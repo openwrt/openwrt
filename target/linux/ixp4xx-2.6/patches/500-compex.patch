@@ -129,8 +129,8 @@ diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/ixdp425-pci.c linux-2.6.19.2-owrt/
  int __init ixdp425_pci_init(void)
  {
  	if (machine_is_ixdp425() || machine_is_ixcdp1100() ||
--			machine_is_avila() || machine_is_ixdp465())
-+			machine_is_avila() || machine_is_ixdp465() || machine_is_compex())
+-			machine_is_ixdp465())
++			machine_is_ixdp465() || machine_is_compex())
  		pci_common_init(&ixdp425_pci);
  	return 0;
  }
@@ -173,8 +173,12 @@ diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/Makefile linux-2.6.19.2-owrt/arch/
 diff -Nur linux-2.6.19.2/arch/arm/tools/mach-types linux-2.6.19.2-owrt/arch/arm/tools/mach-types
 --- linux-2.6.19.2/arch/arm/tools/mach-types	2007-04-10 01:27:55.000000000 +0200
 +++ linux-2.6.19.2-owrt/arch/arm/tools/mach-types	2007-04-09 20:22:33.000000000 +0200
-@@ -1171,3 +1171,4 @@
- cdcs_quoll		MACH_CDCS_QUOLL		CDCS_QUOLL		1158
- quicksilver		MACH_QUICKSILVER	QUICKSILVER		1159
- uplat926		MACH_UPLAT926		UPLAT926		1160
+@@ -1278,7 +1278,7 @@
+ smdk6400		MACH_SMDK6400		SMDK6400		1270
+ nokia_n800		MACH_NOKIA_N800		NOKIA_N800		1271
+ greenphone		MACH_GREENPHONE		GREENPHONE		1272
+-compex42x		MACH_COMPEXWP18		COMPEXWP18		1273
 +compex			MACH_COMPEX		COMPEX			1273
+ xmate			MACH_XMATE		XMATE			1274
+ energizer		MACH_ENERGIZER		ENERGIZER		1275
+ ime1			MACH_IME1		IME1			1276

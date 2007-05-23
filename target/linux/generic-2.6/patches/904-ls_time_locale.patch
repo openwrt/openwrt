@@ -1,24 +1,21 @@
-diff -urN linux-2.6.19.2/scripts/gen_initramfs_list.sh linux-2.6.19.2.new/scripts/gen_initramfs_list.sh
---- linux-2.6.19.2/scripts/gen_initramfs_list.sh	2007-01-10 20:10:37.000000000 +0100
-+++ linux-2.6.19.2.new/scripts/gen_initramfs_list.sh	2007-05-03 16:25:06.000000000 +0200
-@@ -120,9 +120,9 @@
+diff -Nur linux-2.6.21.1/scripts/gen_initramfs_list.sh linux-2.6.21.1-owrt/scripts/gen_initramfs_list.sh
+--- linux-2.6.21.1/scripts/gen_initramfs_list.sh	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1-owrt/scripts/gen_initramfs_list.sh	2007-05-14 12:18:02.000000000 +0200
+@@ -125,7 +125,7 @@
+ 			str="${ftype} ${name} ${location} ${str}"
  			;;
  		"nod")
- 			local dev_type=
--			local maj=$(LC_ALL=C ls -l "${location}" | \
-+			local maj=$(LC_ALL=C ls --time-style=locale -l "${location}" | \
- 					gawk '{sub(/,/, "", $5); print $5}')
--			local min=$(LC_ALL=C ls -l "${location}" | \
-+			local min=$(LC_ALL=C ls --time-style=locale -l "${location}" | \
- 					gawk '{print $6}')
- 
- 			if [ -b "${location}" ]; then
-@@ -133,7 +133,7 @@
- 			str="${ftype} ${name} ${str} ${dev_type} ${maj} ${min}"
+-			local dev=`LC_ALL=C ls -l "${location}"`
++			local dev=`LC_ALL=C ls -l --time-style=locale "${location}"`
+ 			local maj=`field 5 ${dev}`
+ 			local min=`field 6 ${dev}`
+ 			maj=${maj%,}
+@@ -135,7 +135,7 @@
+ 			str="${ftype} ${name} ${str} ${dev} ${maj} ${min}"
  			;;
  		"slink")
--			local target=$(LC_ALL=C ls -l "${location}" | \
-+			local target=$(LC_ALL=C ls --time-style=locale -l "${location}" | \
- 					gawk '{print $11}')
+-			local target=`field 11 $(LC_ALL=C ls -l "${location}")`
++			local target=`field 11 $(LC_ALL=C ls -l --time-style=locale "${location}")`
  			str="${ftype} ${name} ${target} ${str}"
  			;;
+ 		*)

@@ -1,7 +1,17 @@
-diff -Naupr a/drivers/net/ixp4xx/Kconfig b/drivers/net/ixp4xx/Kconfig
---- a/drivers/net/ixp4xx/Kconfig	2007-01-12 21:54:40.000000000 -0700
-+++ b/drivers/net/ixp4xx/Kconfig	2007-01-12 23:28:50.000000000 -0700
-@@ -11,6 +11,7 @@ config IXP4XX_NPE
+---
+ drivers/net/ixp4xx/Kconfig             |   10 +
+ drivers/net/ixp4xx/Makefile            |    1 
+ drivers/net/ixp4xx/npe_ucode.c         |  185 +++++++++++++++++++++++++++++++++
+ drivers/net/ixp4xx/ucode_dl.c          |   43 ++++---
+ include/asm-arm/arch-ixp4xx/platform.h |   19 +++
+ include/linux/ixp_npe.h                |    1 
+ 6 files changed, 239 insertions(+), 20 deletions(-)
+
+Index: linux-2.6.20-rc3/drivers/net/ixp4xx/Kconfig
+===================================================================
+--- linux-2.6.20-rc3.orig/drivers/net/ixp4xx/Kconfig
++++ linux-2.6.20-rc3/drivers/net/ixp4xx/Kconfig
+@@ -11,6 +11,7 @@
  	tristate "IXP4xx NPE support"
  	depends on ARCH_IXP4XX
  	depends on NET_ETHERNET
@@ -9,7 +19,7 @@ diff -Naupr a/drivers/net/ixp4xx/Kconfig b/drivers/net/ixp4xx/Kconfig
  	help
  	  The IXP4XX NPE driver supports the 3 CPU co-processors called
  	  "Network Processing Engines" (NPE). It adds support fo downloading
-@@ -18,7 +19,7 @@ config IXP4XX_NPE
+@@ -18,7 +19,7 @@
  	  More about this at: Documentation/networking/ixp4xx/README.
  	  You can either use this OR the Intel Access Library (IAL)
  
@@ -18,7 +28,7 @@ diff -Naupr a/drivers/net/ixp4xx/Kconfig b/drivers/net/ixp4xx/Kconfig
  	bool "Use Firmware hotplug for Microcode download"
  	depends on IXP4XX_NPE
  	select HOTPLUG
-@@ -28,6 +29,13 @@ config IXP4XX_FW_LOAD
+@@ -28,6 +29,13 @@
  	  /usr/lib/hotplug/firmware/NPE-[ABC]
  	  see Documentation/firmware_class/hotplug-script
  
@@ -32,9 +42,10 @@ diff -Naupr a/drivers/net/ixp4xx/Kconfig b/drivers/net/ixp4xx/Kconfig
  config IXP4XX_MAC
  	tristate "IXP4xx MAC support"
  	depends on IXP4XX_NPE
-diff -Naupr a/drivers/net/ixp4xx/Makefile b/drivers/net/ixp4xx/Makefile
---- a/drivers/net/ixp4xx/Makefile	2007-01-12 21:54:40.000000000 -0700
-+++ b/drivers/net/ixp4xx/Makefile	2007-01-12 23:28:50.000000000 -0700
+Index: linux-2.6.20-rc3/drivers/net/ixp4xx/Makefile
+===================================================================
+--- linux-2.6.20-rc3.orig/drivers/net/ixp4xx/Makefile
++++ linux-2.6.20-rc3/drivers/net/ixp4xx/Makefile
 @@ -1,5 +1,6 @@
  obj-$(CONFIG_IXP4XX_QMGR) += ixp4xx_qmgr.o
  obj-$(CONFIG_IXP4XX_NPE) += ixp4xx_npe.o
@@ -42,9 +53,10 @@ diff -Naupr a/drivers/net/ixp4xx/Makefile b/drivers/net/ixp4xx/Makefile
  obj-$(CONFIG_IXP4XX_MAC) += ixp4xx_mac.o
  obj-$(CONFIG_IXP4XX_CRYPTO) += ixp4xx_crypto.o
  
-diff -Naupr a/drivers/net/ixp4xx/npe_ucode.c b/drivers/net/ixp4xx/npe_ucode.c
---- a/drivers/net/ixp4xx/npe_ucode.c	1969-12-31 17:00:00.000000000 -0700
-+++ b/drivers/net/ixp4xx/npe_ucode.c	2007-01-12 23:28:50.000000000 -0700
+Index: linux-2.6.20-rc3/drivers/net/ixp4xx/npe_ucode.c
+===================================================================
+--- /dev/null
++++ linux-2.6.20-rc3/drivers/net/ixp4xx/npe_ucode.c
 @@ -0,0 +1,185 @@
 +/*
 + * Provide an NPE platform device for microcode handling
@@ -231,9 +243,10 @@ diff -Naupr a/drivers/net/ixp4xx/npe_ucode.c b/drivers/net/ixp4xx/npe_ucode.c
 +
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Alessandro Zummo <a.zummo@towertech.it>");
-diff -Naupr a/drivers/net/ixp4xx/ucode_dl.c b/drivers/net/ixp4xx/ucode_dl.c
---- a/drivers/net/ixp4xx/ucode_dl.c	2007-01-12 21:54:40.000000000 -0700
-+++ b/drivers/net/ixp4xx/ucode_dl.c	2007-01-12 23:28:50.000000000 -0700
+Index: linux-2.6.20-rc3/drivers/net/ixp4xx/ucode_dl.c
+===================================================================
+--- linux-2.6.20-rc3.orig/drivers/net/ixp4xx/ucode_dl.c
++++ linux-2.6.20-rc3/drivers/net/ixp4xx/ucode_dl.c
 @@ -16,6 +16,7 @@
  #include <linux/firmware.h>
  #include <linux/dma-mapping.h>
@@ -255,7 +268,7 @@ diff -Naupr a/drivers/net/ixp4xx/ucode_dl.c b/drivers/net/ixp4xx/ucode_dl.c
  #define EOF_BLOCK 0xf
  #define IMG_SIZE(image) (((image)->size * sizeof(u32)) + \
  		sizeof(struct dl_image))
-@@ -38,21 +45,6 @@ enum blk_type {
+@@ -38,21 +45,6 @@
  	data,
  };
  
@@ -277,7 +290,7 @@ diff -Naupr a/drivers/net/ixp4xx/ucode_dl.c b/drivers/net/ixp4xx/ucode_dl.c
  struct dl_codeblock {
  	u32 npe_addr;
  	u32 size;
-@@ -127,20 +119,33 @@ download_block(struct npe_info *npe, str
+@@ -127,20 +119,33 @@
  	return 0;
  }
  
@@ -313,7 +326,7 @@ diff -Naupr a/drivers/net/ixp4xx/ucode_dl.c b/drivers/net/ixp4xx/ucode_dl.c
  	npe = dev_get_drvdata(dev);
  	if (npe->loaded && (npe->usage > 0)) {
  		printk(KERN_INFO "Cowardly refusing to reload an Image "
-@@ -267,8 +272,7 @@ static ssize_t ucode_write(struct file *
+@@ -267,8 +272,7 @@
  
  static void npe_firmware_probe(struct device *dev)
  {
@@ -323,17 +336,18 @@ diff -Naupr a/drivers/net/ixp4xx/ucode_dl.c b/drivers/net/ixp4xx/ucode_dl.c
  	const struct firmware *fw_entry;
  	struct npe_info *npe = dev_get_drvdata(dev);
  	struct dl_image *image;
-@@ -477,3 +481,4 @@ MODULE_AUTHOR("Christian Hohnstaedt <cho
+@@ -477,3 +481,4 @@
  
  EXPORT_SYMBOL(get_npe_by_id);
  EXPORT_SYMBOL(return_npe_dev);
 +EXPORT_SYMBOL(store_npe_image);
-diff -Naupr a/include/asm-arm/arch-ixp4xx/platform.h b/include/asm-arm/arch-ixp4xx/platform.h
---- a/include/asm-arm/arch-ixp4xx/platform.h	2007-01-12 21:54:40.000000000 -0700
-+++ b/include/asm-arm/arch-ixp4xx/platform.h	2007-01-12 23:28:50.000000000 -0700
-@@ -89,6 +89,21 @@ struct ixp4xx_i2c_pins {
- 
- struct sys_timer;
+Index: linux-2.6.20-rc3/include/asm-arm/arch-ixp4xx/platform.h
+===================================================================
+--- linux-2.6.20-rc3.orig/include/asm-arm/arch-ixp4xx/platform.h
++++ linux-2.6.20-rc3/include/asm-arm/arch-ixp4xx/platform.h
+@@ -86,6 +86,21 @@
+ 	unsigned long scl_pin;
+ };
  
 +struct dl_block {
 +	u32 type;
@@ -353,7 +367,7 @@ diff -Naupr a/include/asm-arm/arch-ixp4xx/platform.h b/include/asm-arm/arch-ixp4
  struct npe_plat_data {
  	const char *name;
  	int data_size;
-@@ -108,6 +123,10 @@ struct mac_plat_info {
+@@ -105,6 +120,10 @@
  
  };
  
@@ -362,12 +376,13 @@ diff -Naupr a/include/asm-arm/arch-ixp4xx/platform.h b/include/asm-arm/arch-ixp4
 +};
 + 
  /*
-  * Frequency of clock used for primary clocksource
-  */
-diff -Naupr a/include/linux/ixp_npe.h b/include/linux/ixp_npe.h
---- a/include/linux/ixp_npe.h	2007-01-12 21:54:40.000000000 -0700
-+++ b/include/linux/ixp_npe.h	2007-01-12 23:28:50.000000000 -0700
-@@ -99,6 +99,7 @@ extern void npe_reset(struct npe_info *n
+  * This structure provide a means for the board setup code
+  * to give information to th pata_ixp4xx driver. It is
+Index: linux-2.6.20-rc3/include/linux/ixp_npe.h
+===================================================================
+--- linux-2.6.20-rc3.orig/include/linux/ixp_npe.h
++++ linux-2.6.20-rc3/include/linux/ixp_npe.h
+@@ -99,6 +99,7 @@
  
  extern struct device *get_npe_by_id(int id);
  extern void return_npe_dev(struct device *dev);

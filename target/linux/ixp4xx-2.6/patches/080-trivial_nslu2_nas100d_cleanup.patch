@@ -1,0 +1,196 @@
+This trivial patch updates the nslu2 and nas-100d headers to
+remove pointless GPIO defines, and updates nslu2-setup.c
+accordingly. In addition minor style cleanups to some comments
+are included.
+
+Signed-off-by: Michael-Luke Jones <mlj28@cam.ac.uk>
+
+Index: linux-2.6.21-armeb/arch/arm/mach-ixp4xx/nslu2-setup.c
+===================================================================
+--- linux-2.6.21-armeb.orig/arch/arm/mach-ixp4xx/nslu2-setup.c	2007-05-09 07:32:43.000000000 -0700
++++ linux-2.6.21-armeb/arch/arm/mach-ixp4xx/nslu2-setup.c	2007-05-09 07:32:46.000000000 -0700
+@@ -50,26 +50,26 @@
+ static struct resource nslu2_led_resources[] = {
+ 	{
+ 		.name		= "ready",  /* green led */
+-		.start		= NSLU2_LED_GRN,
+-		.end		= NSLU2_LED_GRN,
++		.start		= NSLU2_LED_GRN_GPIO,
++		.end		= NSLU2_LED_GRN_GPIO,
+ 		.flags		= IXP4XX_GPIO_HIGH,
+ 	},
+ 	{
+ 		.name		= "status", /* red led */
+-		.start		= NSLU2_LED_RED,
+-		.end		= NSLU2_LED_RED,
++		.start		= NSLU2_LED_RED_GPIO,
++		.end		= NSLU2_LED_RED_GPIO,
+ 		.flags		= IXP4XX_GPIO_HIGH,
+ 	},
+ 	{
+ 		.name		= "disk-1",
+-		.start		= NSLU2_LED_DISK1,
+-		.end		= NSLU2_LED_DISK1,
++		.start		= NSLU2_LED_DISK1_GPIO,
++		.end		= NSLU2_LED_DISK1_GPIO,
+ 		.flags		= IXP4XX_GPIO_LOW,
+ 	},
+ 	{
+ 		.name		= "disk-2",
+-		.start		= NSLU2_LED_DISK2,
+-		.end		= NSLU2_LED_DISK2,
++		.start		= NSLU2_LED_DISK2_GPIO,
++		.end		= NSLU2_LED_DISK2_GPIO,
+ 		.flags		= IXP4XX_GPIO_LOW,
+ 	},
+ };
+@@ -181,7 +181,8 @@
+ 
+ 	pm_power_off = nslu2_power_off;
+ 
+-	/* This is only useful on a modified machine, but it is valuable
++	/*
++	 * This is only useful on a modified machine, but it is valuable
+ 	 * to have it first in order to see debug messages, and so that
+ 	 * it does *not* get removed if platform_add_devices fails!
+ 	 */
+Index: linux-2.6.21-armeb/include/asm-arm/arch-ixp4xx/nslu2.h
+===================================================================
+--- linux-2.6.21-armeb.orig/include/asm-arm/arch-ixp4xx/nslu2.h	2007-05-09 07:32:43.000000000 -0700
++++ linux-2.6.21-armeb/include/asm-arm/arch-ixp4xx/nslu2.h	2007-05-09 07:32:46.000000000 -0700
+@@ -9,7 +9,7 @@
+  * based on ixdp425.h:
+  *	Copyright 2004 (c) MontaVista, Software, Inc.
+  *
+- * This file is licensed under  the terms of the GNU General Public
++ * This file is licensed under the terms of the GNU General Public
+  * License version 2. This program is licensed "as is" without any
+  * warranty of any kind, whether express or implied.
+  */
+@@ -34,36 +34,14 @@
+ #define NSLU2_PCI_INTC_PIN	9
+ #define NSLU2_PCI_INTD_PIN	8
+ 
+-
+ /* NSLU2 Timer */
+ #define NSLU2_FREQ 66000000
+-#define NSLU2_CLOCK_TICK_RATE (((NSLU2_FREQ / HZ & ~IXP4XX_OST_RELOAD_MASK) + 1) * HZ)
+-#define NSLU2_CLOCK_TICKS_PER_USEC ((NSLU2_CLOCK_TICK_RATE + USEC_PER_SEC/2) / USEC_PER_SEC)
+-
+-/* GPIO */
+-
+-#define NSLU2_GPIO0		0
+-#define NSLU2_GPIO1		1
+-#define NSLU2_GPIO2		2
+-#define NSLU2_GPIO3		3
+-#define NSLU2_GPIO4		4
+-#define NSLU2_GPIO5		5
+-#define NSLU2_GPIO6		6
+-#define NSLU2_GPIO7		7
+-#define NSLU2_GPIO8		8
+-#define NSLU2_GPIO9		9
+-#define NSLU2_GPIO10		10
+-#define NSLU2_GPIO11		11
+-#define NSLU2_GPIO12		12
+-#define NSLU2_GPIO13		13
+-#define NSLU2_GPIO14		14
+-#define NSLU2_GPIO15		15
+ 
+ /* Buttons */
+ 
+-#define NSLU2_PB_GPIO		NSLU2_GPIO5
+-#define NSLU2_PO_GPIO		NSLU2_GPIO8	/* power off */
+-#define NSLU2_RB_GPIO		NSLU2_GPIO12
++#define NSLU2_PB_GPIO		5
++#define NSLU2_PO_GPIO		8	/* power off */
++#define NSLU2_RB_GPIO		12
+ 
+ #define NSLU2_PB_IRQ		IRQ_IXP4XX_GPIO5
+ #define NSLU2_RB_IRQ		IRQ_IXP4XX_GPIO12
+@@ -79,16 +57,16 @@
+ 
+ /* LEDs */
+ 
+-#define NSLU2_LED_RED		NSLU2_GPIO0
+-#define NSLU2_LED_GRN		NSLU2_GPIO1
++#define NSLU2_LED_RED_GPIO	0
++#define NSLU2_LED_GRN_GPIO	1
+ 
+-#define NSLU2_LED_RED_BM	(1L << NSLU2_LED_RED)
+-#define NSLU2_LED_GRN_BM	(1L << NSLU2_LED_GRN)
++#define NSLU2_LED_RED_BM	(1L << NSLU2_LED_RED_GPIO)
++#define NSLU2_LED_GRN_BM	(1L << NSLU2_LED_GRN_GPIO)
+ 
+-#define NSLU2_LED_DISK1		NSLU2_GPIO3
+-#define NSLU2_LED_DISK2		NSLU2_GPIO2
++#define NSLU2_LED_DISK1_GPIO	3
++#define NSLU2_LED_DISK2_GPIO	2
+ 
+-#define NSLU2_LED_DISK1_BM	(1L << NSLU2_GPIO2)
+-#define NSLU2_LED_DISK2_BM	(1L << NSLU2_GPIO3)
++#define NSLU2_LED_DISK1_BM	(1L << NSLU2_LED_DISK1_GPIO)
++#define NSLU2_LED_DISK2_BM	(1L << NSLU2_LED_DISK2_GPIO)
+ 
+ 
+Index: linux-2.6.21-armeb/include/asm-arm/arch-ixp4xx/nas100d.h
+===================================================================
+--- linux-2.6.21-armeb.orig/include/asm-arm/arch-ixp4xx/nas100d.h	2007-04-25 20:08:32.000000000 -0700
++++ linux-2.6.21-armeb/include/asm-arm/arch-ixp4xx/nas100d.h	2007-05-09 07:34:14.000000000 -0700
+@@ -10,7 +10,7 @@
+  * based on ixdp425.h:
+  *	Copyright 2004 (c) MontaVista, Software, Inc.
+  *
+- * This file is licensed under  the terms of the GNU General Public
++ * This file is licensed under the terms of the GNU General Public
+  * License version 2. This program is licensed "as is" without any
+  * warranty of any kind, whether express or implied.
+  */
+@@ -36,31 +36,11 @@
+ #define NAS100D_PCI_INTD_PIN	8
+ #define NAS100D_PCI_INTE_PIN	7
+ 
+-/* GPIO */
+-
+-#define NAS100D_GPIO0           0
+-#define NAS100D_GPIO1           1
+-#define NAS100D_GPIO2           2
+-#define NAS100D_GPIO3           3
+-#define NAS100D_GPIO4           4
+-#define NAS100D_GPIO5           5
+-#define NAS100D_GPIO6           6
+-#define NAS100D_GPIO7           7
+-#define NAS100D_GPIO8           8
+-#define NAS100D_GPIO9           9
+-#define NAS100D_GPIO10          10
+-#define NAS100D_GPIO11          11
+-#define NAS100D_GPIO12          12
+-#define NAS100D_GPIO13          13
+-#define NAS100D_GPIO14          14
+-#define NAS100D_GPIO15          15
+-
+-
+ /* Buttons */
+ 
+-#define NAS100D_PB_GPIO         NAS100D_GPIO14
+-#define NAS100D_RB_GPIO         NAS100D_GPIO4
+-#define NAS100D_PO_GPIO         NAS100D_GPIO12   /* power off */
++#define NAS100D_PB_GPIO         14
++#define NAS100D_RB_GPIO         4
++#define NAS100D_PO_GPIO         12   /* power off */
+ 
+ #define NAS100D_PB_IRQ          IRQ_IXP4XX_GPIO14
+ #define NAS100D_RB_IRQ          IRQ_IXP4XX_GPIO4
+Index: linux-2.6.21-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c
+===================================================================
+--- linux-2.6.21-armeb.orig/arch/arm/mach-ixp4xx/nas100d-setup.c	2007-05-09 07:32:43.000000000 -0700
++++ linux-2.6.21-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c	2007-05-09 07:34:55.000000000 -0700
+@@ -155,7 +155,8 @@
+ 
+ 	pm_power_off = nas100d_power_off;
+ 
+-	/* This is only useful on a modified machine, but it is valuable
++	/*
++	 * This is only useful on a modified machine, but it is valuable
+ 	 * to have it first in order to see debug messages, and so that
+ 	 * it does *not* get removed if platform_add_devices fails!
+ 	 */

@@ -1,184 +1,10 @@
-diff -Naur linux-2.6.19.orig/arch/arm/mach-ixp4xx/common.c linux-2.6.19/arch/arm/mach-ixp4xx/common.c
---- linux-2.6.19.orig/arch/arm/mach-ixp4xx/common.c	2006-11-29 14:57:37.000000000 -0700
-+++ linux-2.6.19/arch/arm/mach-ixp4xx/common.c	2007-01-12 21:54:40.000000000 -0700
-@@ -314,6 +314,90 @@
- 	&ixp46x_i2c_controller
- };
- 
-+static struct npe_plat_data npea = {
-+	.name		= "NPE-A",
-+	.data_size	= 0x800,
-+	.inst_size	= 0x1000,
-+	.id		= 0,
-+};
-+
-+static struct npe_plat_data npeb = {
-+	.name		= "NPE-B",
-+	.data_size	= 0x800,
-+	.inst_size	= 0x800,
-+	.id		= 1,
-+};
-+
-+static struct npe_plat_data npec = {
-+	.name		= "NPE-C",
-+	.data_size	= 0x800,
-+	.inst_size	= 0x800,
-+	.id		= 2,
-+};
-+
-+static struct resource res_npea = {
-+	.start		= IXP4XX_NPEA_BASE_PHYS,
-+	.end		= IXP4XX_NPEA_BASE_PHYS + 0xfff,
-+	.flags          = IORESOURCE_MEM,
-+};
-+
-+static struct resource res_npeb = {
-+	.start		= IXP4XX_NPEB_BASE_PHYS,
-+	.end		= IXP4XX_NPEB_BASE_PHYS + 0xfff,
-+	.flags          = IORESOURCE_MEM,
-+};
-+
-+static struct resource res_npec = {
-+	.start		= IXP4XX_NPEC_BASE_PHYS,
-+	.end		= IXP4XX_NPEC_BASE_PHYS + 0xfff,
-+	.flags          = IORESOURCE_MEM,
-+};
-+
-+static struct platform_device dev_npea = {
-+	.name           = "ixp4xx_npe",
-+	.id             = 0,
-+	.dev.platform_data = &npea,
-+	.num_resources  = 1,
-+	.resource       = &res_npea,
-+};
-+
-+static struct platform_device dev_npeb = {
-+	.name           = "ixp4xx_npe",
-+	.id             = 1,
-+	.dev.platform_data = &npeb,
-+	.num_resources  = 1,
-+	.resource       = &res_npeb,
-+};
-+
-+static struct platform_device dev_npec = {
-+	.name           = "ixp4xx_npe",
-+	.id             = 2,
-+	.dev.platform_data = &npec,
-+	.num_resources  = 1,
-+	.resource       = &res_npec,
-+};
-+
-+/* QMGR */
-+static struct resource res_qmgr[] = {
-+{
-+	.start		= IXP4XX_QMGR_BASE_PHYS,
-+	.end		= IXP4XX_QMGR_BASE_PHYS + IXP4XX_QMGR_REGION_SIZE -1,
-+	.flags          = IORESOURCE_MEM,
-+}, {
-+	.start          = IRQ_IXP4XX_QM1,
-+	.flags          = IORESOURCE_IRQ,
-+} };
-+
-+static struct platform_device qmgr = {
-+	.name           = "ixp4xx_qmgr",
-+	.id             = 0,
-+	.dev		= {
-+		.coherent_dma_mask	= DMA_32BIT_MASK,
-+	},
-+	.num_resources  = ARRAY_SIZE(res_qmgr),
-+	.resource       = res_qmgr,
-+};
-+
- unsigned long ixp4xx_exp_bus_size;
- EXPORT_SYMBOL(ixp4xx_exp_bus_size);
- 
-@@ -333,8 +417,19 @@
- 				break;
- 			}
- 		}
-+		npeb.inst_size = 0x1000;
-+		npec.inst_size = 0x1000;
- 	}
- 
-+	platform_device_register(&qmgr);
-+
-+	if (ix_fuse() & IX_FUSE_NPEA)
-+		platform_device_register(&dev_npea);
-+	if (ix_fuse() & IX_FUSE_NPEB)
-+		platform_device_register(&dev_npeb);
-+	if (ix_fuse() & IX_FUSE_NPEC)
-+		platform_device_register(&dev_npec);
-+
- 	printk("IXP4xx: Using %luMiB expansion bus window size\n",
- 			ixp4xx_exp_bus_size >> 20);
- }
-diff -Naur linux-2.6.19.orig/arch/arm/mach-ixp4xx/ixdp425-setup.c linux-2.6.19/arch/arm/mach-ixp4xx/ixdp425-setup.c
---- linux-2.6.19.orig/arch/arm/mach-ixp4xx/ixdp425-setup.c	2006-11-29 14:57:37.000000000 -0700
-+++ linux-2.6.19/arch/arm/mach-ixp4xx/ixdp425-setup.c	2007-01-12 21:54:40.000000000 -0700
-@@ -101,10 +101,59 @@
- 	.resource		= ixdp425_uart_resources
- };
- 
-+/* MACs */
-+static struct resource res_mac0 = {
-+	.start		= IXP4XX_EthB_BASE_PHYS,
-+	.end		= IXP4XX_EthB_BASE_PHYS + 0x1ff,
-+	.flags          = IORESOURCE_MEM,
-+};
-+
-+static struct resource res_mac1 = {
-+	.start		= IXP4XX_EthC_BASE_PHYS,
-+	.end		= IXP4XX_EthC_BASE_PHYS + 0x1ff,
-+	.flags          = IORESOURCE_MEM,
-+};
-+
-+static struct mac_plat_info plat_mac0 = {
-+	.npe_id		= 1,
-+	.phy_id		= 0,
-+	.eth_id		= 0,
-+	.rxq_id		= 27,
-+	.txq_id		= 24,
-+	.rxdoneq_id	= 4,
-+};
-+
-+static struct mac_plat_info plat_mac1 = {
-+	.npe_id		= 2,
-+	.phy_id		= 1,
-+	.eth_id		= 1,
-+	.rxq_id		= 28,
-+	.txq_id		= 25,
-+	.rxdoneq_id	= 5,
-+};
-+
-+static struct platform_device mac0 = {
-+	.name           = "ixp4xx_mac",
-+	.id             = 0,
-+	.dev.platform_data = &plat_mac0,
-+	.num_resources  = 1,
-+	.resource       = &res_mac0,
-+};
-+
-+static struct platform_device mac1 = {
-+	.name           = "ixp4xx_mac",
-+	.id             = 1,
-+	.dev.platform_data = &plat_mac1,
-+	.num_resources  = 1,
-+	.resource       = &res_mac1,
-+};
-+
- static struct platform_device *ixdp425_devices[] __initdata = {
- 	&ixdp425_i2c_controller,
- 	&ixdp425_flash,
--	&ixdp425_uart
-+	&ixdp425_uart,
-+	&mac0,
-+	&mac1,
- };
- 
- static void __init ixdp425_init(void)
-diff -Naur linux-2.6.19.orig/Documentation/networking/ixp4xx/IxNpeMicrocode.h linux-2.6.19/Documentation/networking/ixp4xx/IxNpeMicrocode.h
---- linux-2.6.19.orig/Documentation/networking/ixp4xx/IxNpeMicrocode.h	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/Documentation/networking/ixp4xx/IxNpeMicrocode.h	2007-01-12 21:54:40.000000000 -0700
+diff --git a/Documentation/networking/ixp4xx/IxNpeMicrocode.h b/Documentation/networking/ixp4xx/IxNpeMicrocode.h
+new file mode 100644
+index 0000000..e5a4bd3
+Index: linux-2.6.21-rc1-arm/Documentation/networking/ixp4xx/IxNpeMicrocode.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/Documentation/networking/ixp4xx/IxNpeMicrocode.h	2007-02-21 02:24:35.000000000 -0800
 @@ -0,0 +1,143 @@
 +/*
 + * IxNpeMicrocode.h - Headerfile for compiling the Intel microcode C file
@@ -323,9 +149,77 @@ diff -Naur linux-2.6.19.orig/Documentation/networking/ixp4xx/IxNpeMicrocode.h li
 +	close(fd);
 +	return 0;
 +}
-diff -Naur linux-2.6.19.orig/Documentation/networking/ixp4xx/mc_grab.c linux-2.6.19/Documentation/networking/ixp4xx/mc_grab.c
---- linux-2.6.19.orig/Documentation/networking/ixp4xx/mc_grab.c	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/Documentation/networking/ixp4xx/mc_grab.c	2007-01-12 21:54:40.000000000 -0700
+Index: linux-2.6.21-rc1-arm/Documentation/networking/ixp4xx/README
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/Documentation/networking/ixp4xx/README	2007-02-21 02:24:35.000000000 -0800
+@@ -0,0 +1,62 @@
++Informations about the Networking Driver using the IXP4XX CPU internal NPEs
++and Queue manager.
++
++If this driver is used, the IAL (Intel Access Library) must not be loaded.
++However, the IAL may be loaded, if this Modules are unloaded:
++	ixp4xx_npe.ko, ixp4xx_qmgr.ko ixp4xx_mac.ko
++
++This also means that HW crypto accelleration does NOT work when using this
++driver, unless I have finished my crypto driver for NPE-C
++
++
++Adoption to your custom board:
++------------------------------
++use "arch/arm/mach-ixp4xx/ixdp425-setup.c" as template:
++
++in "static struct mac_plat_info" adopt the entry "phy_id" to your needs
++(Ask your hardware designer about the PHY id)
++
++The order of "&mac0" and "&mac1" in the "struct platform_device"
++determines which of them becomes eth0 and eth1
++
++
++The Microcode:
++---------------
++Solution 1)
++ Configure "CONFIG_HOTPLUG" and "CONFIG_FW_LOADER" and configure
++ IXP4XX_NPE as module.
++ The default hotplug script will load the Firmware from
++ /usr/lib/hotplug/firmware/NPE-[ABC]
++ see Documentation/firmware_class/hotplug-script
++
++ You should take care, that $ACTION is "add" and $SUBSYSTEM is "firmware"
++ to avoid unnessecary calls:
++ test $ACTION = "remove" -o $SUBSYSTEM != "firmware" && exit
++
++Solution 2)
++ create a char-dev: "mknod /dev/misc/npe c 10 184"
++ cat the Microcode into it:
++ cat /usr/lib/hotplug/firmware/NPE-* > /dev/misc/npe
++ This also works if the driver is linked to the kernel
++
++ Having a mix of both (e.g. solution 1 for NPE-B and solution 2 for NPE-C)
++ is perfectly ok and works.
++
++ The state of the NPEs can be seen and changed at:
++ /sys/bus/platform/devices/ixp4xx_npe.X/state
++
++
++Obtaining the Microcode:
++------------------------
++1) IxNpeMicrocode.h in this directory:
++   Download IPL_IXP400NPELIBRARYWITHCRYPTO-2_1.ZIP from Intel
++   It unpacks the Microcode IxNpeMicrocode.c
++   Read the Licence !
++   Compile it with "gcc -Wall IxNpeMicrocode.c -o IxNpeMicrocode" on your host.
++   The resulting images can be moved to "/usr/lib/hotplug/firmware"
++
++2) mc_grab.c in this directory:
++   Compile and execute it either on the host or on the target
++   to grab the microcode from a binary image like the RedBoot bootloader.
++
++
+Index: linux-2.6.21-rc1-arm/Documentation/networking/ixp4xx/mc_grab.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/Documentation/networking/ixp4xx/mc_grab.c	2007-02-21 02:24:35.000000000 -0800
 @@ -0,0 +1,97 @@
 +/*
 + * mc_grab.c  - grabs IXP4XX microcode from a binary datastream
@@ -424,75 +318,280 @@ diff -Naur linux-2.6.19.orig/Documentation/networking/ixp4xx/mc_grab.c linux-2.6
 +		fprintf(stderr, "Error reading  Microcode\n");
 +	return ret;
 +}
-diff -Naur linux-2.6.19.orig/Documentation/networking/ixp4xx/README linux-2.6.19/Documentation/networking/ixp4xx/README
---- linux-2.6.19.orig/Documentation/networking/ixp4xx/README	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/Documentation/networking/ixp4xx/README	2007-01-12 21:54:40.000000000 -0700
-@@ -0,0 +1,62 @@
-+Informations about the Networking Driver using the IXP4XX CPU internal NPEs
-+and Queue manager.
+Index: linux-2.6.21-rc1-arm/arch/arm/mach-ixp4xx/common.c
+===================================================================
+--- linux-2.6.21-rc1-arm.orig/arch/arm/mach-ixp4xx/common.c	2007-02-21 02:24:18.000000000 -0800
++++ linux-2.6.21-rc1-arm/arch/arm/mach-ixp4xx/common.c	2007-02-21 02:24:35.000000000 -0800
+@@ -357,6 +357,90 @@
+ 	&ixp46x_i2c_controller
+ };
+ 
++static struct npe_plat_data npea = {
++	.name		= "NPE-A",
++	.data_size	= 0x800,
++	.inst_size	= 0x1000,
++	.id		= 0,
++};
 +
-+If this driver is used, the IAL (Intel Access Library) must not be loaded.
-+However, the IAL may be loaded, if this Modules are unloaded:
-+	ixp4xx_npe.ko, ixp4xx_qmgr.ko ixp4xx_mac.ko
++static struct npe_plat_data npeb = {
++	.name		= "NPE-B",
++	.data_size	= 0x800,
++	.inst_size	= 0x800,
++	.id		= 1,
++};
 +
-+This also means that HW crypto accelleration does NOT work when using this
-+driver, unless I have finished my crypto driver for NPE-C
++static struct npe_plat_data npec = {
++	.name		= "NPE-C",
++	.data_size	= 0x800,
++	.inst_size	= 0x800,
++	.id		= 2,
++};
 +
++static struct resource res_npea = {
++	.start		= IXP4XX_NPEA_BASE_PHYS,
++	.end		= IXP4XX_NPEA_BASE_PHYS + 0xfff,
++	.flags          = IORESOURCE_MEM,
++};
 +
-+Adoption to your custom board:
-+------------------------------
-+use "arch/arm/mach-ixp4xx/ixdp425-setup.c" as template:
++static struct resource res_npeb = {
++	.start		= IXP4XX_NPEB_BASE_PHYS,
++	.end		= IXP4XX_NPEB_BASE_PHYS + 0xfff,
++	.flags          = IORESOURCE_MEM,
++};
 +
-+in "static struct mac_plat_info" adopt the entry "phy_id" to your needs
-+(Ask your hardware designer about the PHY id)
++static struct resource res_npec = {
++	.start		= IXP4XX_NPEC_BASE_PHYS,
++	.end		= IXP4XX_NPEC_BASE_PHYS + 0xfff,
++	.flags          = IORESOURCE_MEM,
++};
 +
-+The order of "&mac0" and "&mac1" in the "struct platform_device"
-+determines which of them becomes eth0 and eth1
++static struct platform_device dev_npea = {
++	.name           = "ixp4xx_npe",
++	.id             = 0,
++	.dev.platform_data = &npea,
++	.num_resources  = 1,
++	.resource       = &res_npea,
++};
 +
++static struct platform_device dev_npeb = {
++	.name           = "ixp4xx_npe",
++	.id             = 1,
++	.dev.platform_data = &npeb,
++	.num_resources  = 1,
++	.resource       = &res_npeb,
++};
 +
-+The Microcode:
-+---------------
-+Solution 1)
-+ Configure "CONFIG_HOTPLUG" and "CONFIG_FW_LOADER" and configure
-+ IXP4XX_NPE as module.
-+ The default hotplug script will load the Firmware from
-+ /usr/lib/hotplug/firmware/NPE-[ABC]
-+ see Documentation/firmware_class/hotplug-script
++static struct platform_device dev_npec = {
++	.name           = "ixp4xx_npe",
++	.id             = 2,
++	.dev.platform_data = &npec,
++	.num_resources  = 1,
++	.resource       = &res_npec,
++};
 +
-+ You should take care, that $ACTION is "add" and $SUBSYSTEM is "firmware"
-+ to avoid unnessecary calls:
-+ test $ACTION = "remove" -o $SUBSYSTEM != "firmware" && exit
++/* QMGR */
++static struct resource res_qmgr[] = {
++{
++	.start		= IXP4XX_QMGR_BASE_PHYS,
++	.end		= IXP4XX_QMGR_BASE_PHYS + IXP4XX_QMGR_REGION_SIZE -1,
++	.flags          = IORESOURCE_MEM,
++}, {
++	.start          = IRQ_IXP4XX_QM1,
++	.flags          = IORESOURCE_IRQ,
++} };
 +
-+Solution 2)
-+ create a char-dev: "mknod /dev/misc/npe c 10 184"
-+ cat the Microcode into it:
-+ cat /usr/lib/hotplug/firmware/NPE-* > /dev/misc/npe
-+ This also works if the driver is linked to the kernel
++static struct platform_device qmgr = {
++	.name           = "ixp4xx_qmgr",
++	.id             = 0,
++	.dev		= {
++		.coherent_dma_mask	= DMA_32BIT_MASK,
++	},
++	.num_resources  = ARRAY_SIZE(res_qmgr),
++	.resource       = res_qmgr,
++};
 +
-+ Having a mix of both (e.g. solution 1 for NPE-B and solution 2 for NPE-C)
-+ is perfectly ok and works.
+ unsigned long ixp4xx_exp_bus_size;
+ EXPORT_SYMBOL(ixp4xx_exp_bus_size);
+ 
+@@ -378,8 +462,19 @@
+ 				break;
+ 			}
+ 		}
++		npeb.inst_size = 0x1000;
++		npec.inst_size = 0x1000;
+ 	}
+ 
++	platform_device_register(&qmgr);
 +
-+ The state of the NPEs can be seen and changed at:
-+ /sys/bus/platform/devices/ixp4xx_npe.X/state
++	if (ix_fuse() & IX_FUSE_NPEA)
++		platform_device_register(&dev_npea);
++	if (ix_fuse() & IX_FUSE_NPEB)
++		platform_device_register(&dev_npeb);
++	if (ix_fuse() & IX_FUSE_NPEC)
++		platform_device_register(&dev_npec);
 +
+ 	printk("IXP4xx: Using %luMiB expansion bus window size\n",
+ 			ixp4xx_exp_bus_size >> 20);
+ }
+Index: linux-2.6.21-rc1-arm/arch/arm/mach-ixp4xx/ixdp425-setup.c
+===================================================================
+--- linux-2.6.21-rc1-arm.orig/arch/arm/mach-ixp4xx/ixdp425-setup.c	2007-02-21 02:24:18.000000000 -0800
++++ linux-2.6.21-rc1-arm/arch/arm/mach-ixp4xx/ixdp425-setup.c	2007-02-21 02:24:35.000000000 -0800
+@@ -101,10 +101,59 @@
+ 	.resource		= ixdp425_uart_resources
+ };
+ 
++/* MACs */
++static struct resource res_mac0 = {
++	.start		= IXP4XX_EthB_BASE_PHYS,
++	.end		= IXP4XX_EthB_BASE_PHYS + 0x1ff,
++	.flags          = IORESOURCE_MEM,
++};
 +
-+Obtaining the Microcode:
-+------------------------
-+1) IxNpeMicrocode.h in this directory:
-+   Download IPL_IXP400NPELIBRARYWITHCRYPTO-2_1.ZIP from Intel
-+   It unpacks the Microcode IxNpeMicrocode.c
-+   Read the Licence !
-+   Compile it with "gcc -Wall IxNpeMicrocode.c -o IxNpeMicrocode" on your host.
-+   The resulting images can be moved to "/usr/lib/hotplug/firmware"
++static struct resource res_mac1 = {
++	.start		= IXP4XX_EthC_BASE_PHYS,
++	.end		= IXP4XX_EthC_BASE_PHYS + 0x1ff,
++	.flags          = IORESOURCE_MEM,
++};
 +
-+2) mc_grab.c in this directory:
-+   Compile and execute it either on the host or on the target
-+   to grab the microcode from a binary image like the RedBoot bootloader.
++static struct mac_plat_info plat_mac0 = {
++	.npe_id		= 1,
++	.phy_id		= 0,
++	.eth_id		= 0,
++	.rxq_id		= 27,
++	.txq_id		= 24,
++	.rxdoneq_id	= 4,
++};
 +
++static struct mac_plat_info plat_mac1 = {
++	.npe_id		= 2,
++	.phy_id		= 1,
++	.eth_id		= 1,
++	.rxq_id		= 28,
++	.txq_id		= 25,
++	.rxdoneq_id	= 5,
++};
 +
-diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/ixp4xx_crypto.c linux-2.6.19/drivers/net/ixp4xx/ixp4xx_crypto.c
---- linux-2.6.19.orig/drivers/net/ixp4xx/ixp4xx_crypto.c	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/drivers/net/ixp4xx/ixp4xx_crypto.c	2007-01-12 21:54:40.000000000 -0700
++static struct platform_device mac0 = {
++	.name           = "ixp4xx_mac",
++	.id             = 0,
++	.dev.platform_data = &plat_mac0,
++	.num_resources  = 1,
++	.resource       = &res_mac0,
++};
++
++static struct platform_device mac1 = {
++	.name           = "ixp4xx_mac",
++	.id             = 1,
++	.dev.platform_data = &plat_mac1,
++	.num_resources  = 1,
++	.resource       = &res_mac1,
++};
++
+ static struct platform_device *ixdp425_devices[] __initdata = {
+ 	&ixdp425_i2c_controller,
+ 	&ixdp425_flash,
+-	&ixdp425_uart
++	&ixdp425_uart,
++	&mac0,
++	&mac1,
+ };
+ 
+ static void __init ixdp425_init(void)
+Index: linux-2.6.21-rc1-arm/drivers/net/Kconfig
+===================================================================
+--- linux-2.6.21-rc1-arm.orig/drivers/net/Kconfig	2007-02-21 02:24:18.000000000 -0800
++++ linux-2.6.21-rc1-arm/drivers/net/Kconfig	2007-02-21 02:24:35.000000000 -0800
+@@ -201,6 +201,8 @@
+ 
+ source "drivers/net/arm/Kconfig"
+ 
++source "drivers/net/ixp4xx/Kconfig"
++
+ config MACE
+ 	tristate "MACE (Power Mac ethernet) support"
+ 	depends on NET_ETHERNET && PPC_PMAC && PPC32
+Index: linux-2.6.21-rc1-arm/drivers/net/Makefile
+===================================================================
+--- linux-2.6.21-rc1-arm.orig/drivers/net/Makefile	2007-02-21 02:24:18.000000000 -0800
++++ linux-2.6.21-rc1-arm/drivers/net/Makefile	2007-02-21 02:24:35.000000000 -0800
+@@ -212,6 +212,7 @@
+ obj-$(CONFIG_IRDA) += irda/
+ obj-$(CONFIG_ETRAX_ETHERNET) += cris/
+ obj-$(CONFIG_ENP2611_MSF_NET) += ixp2000/
++obj-$(CONFIG_IXP4XX_NPE) += ixp4xx/
+ 
+ obj-$(CONFIG_NETCONSOLE) += netconsole.o
+ 
+Index: linux-2.6.21-rc1-arm/drivers/net/ixp4xx/Kconfig
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/drivers/net/ixp4xx/Kconfig	2007-02-21 02:24:35.000000000 -0800
+@@ -0,0 +1,48 @@
++config IXP4XX_QMGR
++	tristate "IXP4xx Queue Manager support"
++	depends on ARCH_IXP4XX
++	depends on NET_ETHERNET
++	help
++	  The IXP4XX Queue manager is a configurable hardware ringbuffer.
++	  It is used by the NPEs to exchange data from and to the CPU.
++	  You can either use this OR the Intel Access Library (IAL)
++
++config IXP4XX_NPE
++	tristate "IXP4xx NPE support"
++	depends on ARCH_IXP4XX
++	depends on NET_ETHERNET
++	help
++	  The IXP4XX NPE driver supports the 3 CPU co-processors called
++	  "Network Processing Engines" (NPE). It adds support fo downloading
++	  the Microcode (firmware) via Hotplug or  character-special-device.
++	  More about this at: Documentation/networking/ixp4xx/README.
++	  You can either use this OR the Intel Access Library (IAL)
++
++config IXP4XX_FW_LOAD
++	bool "Use Firmware hotplug for Microcode download"
++	depends on IXP4XX_NPE
++	select HOTPLUG
++	select FW_LOADER
++	help
++	  The default hotplug script will load the Firmware from
++	  /usr/lib/hotplug/firmware/NPE-[ABC]
++	  see Documentation/firmware_class/hotplug-script
++
++config IXP4XX_MAC
++	tristate "IXP4xx MAC support"
++	depends on IXP4XX_NPE
++	depends on IXP4XX_QMGR
++	depends on NET_ETHERNET
++	select MII
++	help
++	  The IXP4XX MAC driver supports the MACs on the IXP4XX CPUs.
++	  There are 2 on ixp425 and up to 5 on ixdp465.
++	  You can either use this OR the Intel Access Library (IAL)
++
++config IXP4XX_CRYPTO
++	tristate "IXP4xx crypto support"
++	depends on IXP4XX_NPE
++	depends on IXP4XX_QMGR
++	help
++	  This driver is a generic NPE-crypto access layer.
++	  You need additional code in OCF for example.
+Index: linux-2.6.21-rc1-arm/drivers/net/ixp4xx/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/drivers/net/ixp4xx/Makefile	2007-02-21 02:24:35.000000000 -0800
+@@ -0,0 +1,7 @@
++obj-$(CONFIG_IXP4XX_QMGR) += ixp4xx_qmgr.o
++obj-$(CONFIG_IXP4XX_NPE) += ixp4xx_npe.o
++obj-$(CONFIG_IXP4XX_MAC) += ixp4xx_mac.o
++obj-$(CONFIG_IXP4XX_CRYPTO) += ixp4xx_crypto.o
++
++ixp4xx_npe-objs := ucode_dl.o npe_mh.o npe.o
++ixp4xx_mac-objs := mac_driver.o phy.o
+Index: linux-2.6.21-rc1-arm/drivers/net/ixp4xx/ixp4xx_crypto.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/drivers/net/ixp4xx/ixp4xx_crypto.c	2007-02-21 02:24:35.000000000 -0800
 @@ -0,0 +1,851 @@
 +/*
 + * ixp4xx_crypto.c - interface to the HW crypto
@@ -1345,9 +1444,10 @@ diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/ixp4xx_crypto.c linux-2.6.19/dri
 +module_init(init_crypto);
 +module_exit(finish_crypto);
 +
-diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/ixp4xx_qmgr.c linux-2.6.19/drivers/net/ixp4xx/ixp4xx_qmgr.c
---- linux-2.6.19.orig/drivers/net/ixp4xx/ixp4xx_qmgr.c	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/drivers/net/ixp4xx/ixp4xx_qmgr.c	2007-01-12 21:54:40.000000000 -0700
+Index: linux-2.6.21-rc1-arm/drivers/net/ixp4xx/ixp4xx_qmgr.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/drivers/net/ixp4xx/ixp4xx_qmgr.c	2007-02-21 02:24:35.000000000 -0800
 @@ -0,0 +1,474 @@
 +/*
 + * qmgr.c - reimplementation of the queue configuration interface.
@@ -1823,62 +1923,291 @@ diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/ixp4xx_qmgr.c linux-2.6.19/drive
 +EXPORT_SYMBOL(queue_set_irq_src);
 +EXPORT_SYMBOL(queue_set_watermarks);
 +EXPORT_SYMBOL(queue_len);
-diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/Kconfig linux-2.6.19/drivers/net/ixp4xx/Kconfig
---- linux-2.6.19.orig/drivers/net/ixp4xx/Kconfig	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/drivers/net/ixp4xx/Kconfig	2007-01-12 21:54:40.000000000 -0700
-@@ -0,0 +1,48 @@
-+config IXP4XX_QMGR
-+	tristate "IXP4xx Queue Manager support"
-+	depends on ARCH_IXP4XX
-+	depends on NET_ETHERNET
-+	help
-+	  The IXP4XX Queue manager is a configurable hardware ringbuffer.
-+	  It is used by the NPEs to exchange data from and to the CPU.
-+	  You can either use this OR the Intel Access Library (IAL)
+Index: linux-2.6.21-rc1-arm/drivers/net/ixp4xx/mac.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/drivers/net/ixp4xx/mac.h	2007-02-21 02:24:35.000000000 -0800
+@@ -0,0 +1,275 @@
++/*
++ * Copyright (C) 2002-2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
++ *
++ * This file is released under the GPLv2
++ */
 +
-+config IXP4XX_NPE
-+	tristate "IXP4xx NPE support"
-+	depends on ARCH_IXP4XX
-+	depends on NET_ETHERNET
-+	help
-+	  The IXP4XX NPE driver supports the 3 CPU co-processors called
-+	  "Network Processing Engines" (NPE). It adds support fo downloading
-+	  the Microcode (firmware) via Hotplug or  character-special-device.
-+	  More about this at: Documentation/networking/ixp4xx/README.
-+	  You can either use this OR the Intel Access Library (IAL)
++#include <linux/resource.h>
++#include <linux/netdevice.h>
++#include <linux/io.h>
++#include <linux/mii.h>
++#include <linux/workqueue.h>
++#include <asm/hardware.h>
++#include <linux/ixp_qmgr.h>
 +
-+config IXP4XX_FW_LOAD
-+	bool "Use Firmware hotplug for Microcode download"
-+	depends on IXP4XX_NPE
-+	select HOTPLUG
-+	select FW_LOADER
-+	help
-+	  The default hotplug script will load the Firmware from
-+	  /usr/lib/hotplug/firmware/NPE-[ABC]
-+	  see Documentation/firmware_class/hotplug-script
++/* 32 bit offsets to be added to u32 *pointers */
++#define MAC_TX_CNTRL1       0x00  // 0x000
++#define MAC_TX_CNTRL2       0x01  // 0x004
++#define MAC_RX_CNTRL1       0x04  // 0x010
++#define MAC_RX_CNTRL2       0x05  // 0x014
++#define MAC_RANDOM_SEED     0x08  // 0x020
++#define MAC_THRESH_P_EMPTY  0x0c  // 0x030
++#define MAC_THRESH_P_FULL   0x0e  // 0x038
++#define MAC_BUF_SIZE_TX     0x10  // 0x040
++#define MAC_TX_DEFER        0x14  // 0x050
++#define MAC_RX_DEFER        0x15  // 0x054
++#define MAC_TX_TWO_DEFER_1  0x18  // 0x060
++#define MAC_TX_TWO_DEFER_2  0x19  // 0x064
++#define MAC_SLOT_TIME       0x1c  // 0x070
++#define MAC_MDIO_CMD        0x20  // 0x080 4 registers 0x20 - 0x23
++#define MAC_MDIO_STS        0x24  // 0x090 4 registers 0x24 - 0x27
++#define MAC_ADDR_MASK       0x28  // 0x0A0 6 registers 0x28 - 0x2d
++#define MAC_ADDR            0x30  // 0x0C0 6 registers 0x30 - 0x35
++#define MAC_INT_CLK_THRESH  0x38  // 0x0E0 1 register
++#define MAC_UNI_ADDR        0x3c  // 0x0F0 6 registers 0x3c - 0x41
++#define MAC_CORE_CNTRL      0x7f  // 0x1fC
 +
-+config IXP4XX_MAC
-+	tristate "IXP4xx MAC support"
-+	depends on IXP4XX_NPE
-+	depends on IXP4XX_QMGR
-+	depends on NET_ETHERNET
-+	select MII
-+	help
-+	  The IXP4XX MAC driver supports the MACs on the IXP4XX CPUs.
-+	  There are 2 on ixp425 and up to 5 on ixdp465.
-+	  You can either use this OR the Intel Access Library (IAL)
++/* TX Control Register 1*/
 +
-+config IXP4XX_CRYPTO
-+	tristate "IXP4xx crypto support"
-+	depends on IXP4XX_NPE
-+	depends on IXP4XX_QMGR
-+	help
-+	  This driver is a generic NPE-crypto access layer.
-+	  You need additional code in OCF for example.
-diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/mac_driver.c linux-2.6.19/drivers/net/ixp4xx/mac_driver.c
---- linux-2.6.19.orig/drivers/net/ixp4xx/mac_driver.c	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/drivers/net/ixp4xx/mac_driver.c	2007-01-12 21:54:40.000000000 -0700
-@@ -0,0 +1,849 @@
++#define TX_CNTRL1_TX_EN         BIT(0)
++#define TX_CNTRL1_DUPLEX        BIT(1)
++#define TX_CNTRL1_RETRY         BIT(2)
++#define TX_CNTRL1_PAD_EN        BIT(3)
++#define TX_CNTRL1_FCS_EN        BIT(4)
++#define TX_CNTRL1_2DEFER        BIT(5)
++#define TX_CNTRL1_RMII          BIT(6)
++
++/* TX Control Register 2 */
++#define TX_CNTRL2_RETRIES_MASK  0xf
++
++/* RX Control Register 1 */
++#define RX_CNTRL1_RX_EN         BIT(0)
++#define RX_CNTRL1_PADSTRIP_EN   BIT(1)
++#define RX_CNTRL1_CRC_EN        BIT(2)
++#define RX_CNTRL1_PAUSE_EN      BIT(3)
++#define RX_CNTRL1_LOOP_EN       BIT(4)
++#define RX_CNTRL1_ADDR_FLTR_EN  BIT(5)
++#define RX_CNTRL1_RX_RUNT_EN    BIT(6)
++#define RX_CNTRL1_BCAST_DIS     BIT(7)
++
++/* RX Control Register 2 */
++#define RX_CNTRL2_DEFER_EN      BIT(0)
++
++/* Core Control Register */
++#define CORE_RESET              BIT(0)
++#define CORE_RX_FIFO_FLUSH      BIT(1)
++#define CORE_TX_FIFO_FLUSH      BIT(2)
++#define CORE_SEND_JAM           BIT(3)
++#define CORE_MDC_EN             BIT(4)
++
++/* Definitions for MII access routines*/
++
++#define MII_REG_SHL    16
++#define MII_ADDR_SHL   21
++
++#define MII_GO                  BIT(31)
++#define MII_WRITE               BIT(26)
++#define MII_READ_FAIL           BIT(31)
++
++#define MII_TIMEOUT_10TH_SECS        5
++#define MII_10TH_SEC_IN_MILLIS     100
++
++/*
++ *
++ * Default values
++ *
++ */
++
++#define MAC_DEF_MSG_ENABLE (NETIF_MSG_DRV | NETIF_MSG_PROBE | NETIF_MSG_LINK)
++
++#define MAC_TX_CNTRL1_DEFAULT  (\
++		TX_CNTRL1_TX_EN | \
++		TX_CNTRL1_RETRY  | \
++		TX_CNTRL1_FCS_EN | \
++		TX_CNTRL1_2DEFER | \
++		TX_CNTRL1_PAD_EN )
++
++#define MAC_TX_MAX_RETRIES_DEFAULT 0x0f
++
++#define MAC_RX_CNTRL1_DEFAULT ( \
++		RX_CNTRL1_PADSTRIP_EN | \
++		RX_CNTRL1_CRC_EN | \
++		RX_CNTRL1_RX_EN )
++
++#define MAC_RX_CNTRL2_DEFAULT       0x0
++#define MAC_TX_CNTRL2_DEFAULT       TX_CNTRL2_RETRIES_MASK
++
++/* Thresholds determined by NPE firmware FS */
++#define MAC_THRESH_P_EMPTY_DEFAULT  0x12
++#define MAC_THRESH_P_FULL_DEFAULT   0x30
++
++/* Number of bytes that must be in the tx fifo before
++ * transmission commences */
++#define MAC_BUF_SIZE_TX_DEFAULT     0x8
++
++/* One-part deferral values */
++#define MAC_TX_DEFER_DEFAULT        0x15
++#define MAC_RX_DEFER_DEFAULT        0x16
++
++/* Two-part deferral values... */
++#define MAC_TX_TWO_DEFER_1_DEFAULT  0x08
++#define MAC_TX_TWO_DEFER_2_DEFAULT  0x07
++
++/* This value applies to MII */
++#define MAC_SLOT_TIME_DEFAULT       0x80
++
++/* This value applies to RMII */
++#define MAC_SLOT_TIME_RMII_DEFAULT  0xFF
++
++#define MAC_ADDR_MASK_DEFAULT       0xFF
++
++#define MAC_INT_CLK_THRESH_DEFAULT  0x1
++/* The following is a value chosen at random */
++#define MAC_RANDOM_SEED_DEFAULT     0x8
++
++/* By default we must configure the MAC to generate the MDC clock*/
++#define CORE_DEFAULT                (CORE_MDC_EN)
++
++/* End of Intel provided register information */
++
++extern int
++mdio_read_register(struct net_device *dev, int phy_addr, int phy_reg);
++extern void
++mdio_write_register(struct net_device *dev, int phy_addr, int phy_reg, int val);
++extern void init_mdio(struct net_device *dev, int phy_id);
++
++struct mac_info {
++	u32 __iomem *addr;
++	struct resource *res;
++	struct device *npe_dev;
++	struct net_device *netdev;
++	struct qm_qmgr *qmgr;
++	struct qm_queue *rxq;
++	struct qm_queue *txq;
++	struct qm_queue *rxdoneq;
++	u32 irqflags;
++	struct net_device_stats stat;
++	struct mii_if_info mii;
++	struct delayed_work mdio_thread;
++	int rxq_pkt;
++	int txq_pkt;
++	int unloading;
++	struct mac_plat_info *plat;
++	int npe_stat_num;
++	spinlock_t rx_lock;
++	u32 msg_enable;
++};
++
++static inline void mac_write_reg(struct mac_info *mac, int offset, u32 val)
++{
++	*(mac->addr + offset) = val;
++}
++static inline u32 mac_read_reg(struct mac_info *mac, int offset)
++{
++	return *(mac->addr + offset);
++}
++static inline void mac_set_regbit(struct mac_info *mac, int offset, u32 bit)
++{
++	mac_write_reg(mac, offset, mac_read_reg(mac, offset) | bit);
++}
++static inline void mac_reset_regbit(struct mac_info *mac, int offset, u32 bit)
++{
++	mac_write_reg(mac, offset, mac_read_reg(mac, offset) & ~bit);
++}
++
++static inline void mac_mdio_cmd_write(struct mac_info *mac, u32 cmd)
++{
++	int i;
++	for(i=0; i<4; i++) {
++		mac_write_reg(mac, MAC_MDIO_CMD + i, cmd & 0xff);
++		cmd >>=8;
++	}
++}
++
++#define mac_mdio_cmd_read(mac) mac_mdio_read((mac), MAC_MDIO_CMD)
++#define mac_mdio_status_read(mac) mac_mdio_read((mac), MAC_MDIO_STS)
++static inline u32 mac_mdio_read(struct mac_info *mac, int offset)
++{
++	int i;
++	u32 data = 0;
++	for(i=0; i<4; i++) {
++		data |= (mac_read_reg(mac, offset + i) & 0xff) << (i*8);
++	}
++	return data;
++}
++
++static inline u32 mdio_cmd(int phy_addr, int phy_reg)
++{
++	return phy_addr << MII_ADDR_SHL |
++		phy_reg << MII_REG_SHL |
++	        MII_GO;
++}
++
++#define MAC_REG_LIST { \
++	MAC_TX_CNTRL1, MAC_TX_CNTRL2, \
++	MAC_RX_CNTRL1, MAC_RX_CNTRL2, \
++	MAC_RANDOM_SEED, MAC_THRESH_P_EMPTY, MAC_THRESH_P_FULL, \
++	MAC_BUF_SIZE_TX, MAC_TX_DEFER, MAC_RX_DEFER, \
++	MAC_TX_TWO_DEFER_1, MAC_TX_TWO_DEFER_2, MAC_SLOT_TIME, \
++	MAC_ADDR_MASK +0, MAC_ADDR_MASK +1, MAC_ADDR_MASK +2, \
++	MAC_ADDR_MASK +3, MAC_ADDR_MASK +4, MAC_ADDR_MASK +5, \
++	MAC_ADDR +0, MAC_ADDR +1, MAC_ADDR +2, \
++	MAC_ADDR +3, MAC_ADDR +4, MAC_ADDR +5, \
++	MAC_INT_CLK_THRESH, \
++	MAC_UNI_ADDR +0, MAC_UNI_ADDR +1, MAC_UNI_ADDR +2, \
++	MAC_UNI_ADDR +3, MAC_UNI_ADDR +4, MAC_UNI_ADDR +5, \
++	MAC_CORE_CNTRL \
++}
++
++#define NPE_STAT_NUM            34
++#define NPE_STAT_NUM_BASE       22
++#define NPE_Q_STAT_NUM           4
++
++#define NPE_Q_STAT_STRINGS \
++	{"RX ready to use queue len     "}, \
++	{"RX received queue len         "}, \
++	{"TX to be send queue len       "}, \
++	{"TX done queue len             "},
++
++#define NPE_STAT_STRINGS \
++	{"StatsAlignmentErrors          "}, \
++	{"StatsFCSErrors                "}, \
++	{"StatsInternalMacReceiveErrors "}, \
++	{"RxOverrunDiscards             "}, \
++	{"RxLearnedEntryDiscards        "}, \
++	{"RxLargeFramesDiscards         "}, \
++	{"RxSTPBlockedDiscards          "}, \
++	{"RxVLANTypeFilterDiscards      "}, \
++	{"RxVLANIdFilterDiscards        "}, \
++	{"RxInvalidSourceDiscards       "}, \
++	{"RxBlackListDiscards           "}, \
++	{"RxWhiteListDiscards           "}, \
++	{"RxUnderflowEntryDiscards      "}, \
++	{"StatsSingleCollisionFrames    "}, \
++	{"StatsMultipleCollisionFrames  "}, \
++	{"StatsDeferredTransmissions    "}, \
++	{"StatsLateCollisions           "}, \
++	{"StatsExcessiveCollsions       "}, \
++	{"StatsInternalMacTransmitErrors"}, \
++	{"StatsCarrierSenseErrors       "}, \
++	{"TxLargeFrameDiscards          "}, \
++	{"TxVLANIdFilterDiscards        "}, \
++\
++	{"RxValidFramesTotalOctets      "}, \
++	{"RxUcastPkts                   "}, \
++	{"RxBcastPkts                   "}, \
++	{"RxMcastPkts                   "}, \
++	{"RxPkts64Octets                "}, \
++	{"RxPkts65to127Octets           "}, \
++	{"RxPkts128to255Octets          "}, \
++	{"RxPkts256to511Octets          "}, \
++	{"RxPkts512to1023Octets         "}, \
++	{"RxPkts1024to1518Octets        "}, \
++	{"RxInternalNPEReceiveErrors    "}, \
++	{"TxInternalNPETransmitErrors   "}
++
+Index: linux-2.6.21-rc1-arm/drivers/net/ixp4xx/mac_driver.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/drivers/net/ixp4xx/mac_driver.c	2007-02-21 02:24:46.000000000 -0800
+@@ -0,0 +1,850 @@
 +/*
 + * mac_driver.c - provide a network interface for each MAC
 + *
@@ -2468,10 +2797,11 @@ diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/mac_driver.c linux-2.6.19/driver
 +	.get_ethtool_stats	= ixmac_get_ethtool_stats,
 +};
 +
-+static void mac_mdio_thread(void *_data)
++static void mac_mdio_thread(struct work_struct *work)
 +{
-+	struct net_device *dev = _data;
-+	struct mac_info *mac = netdev_priv(dev);
++	struct mac_info *mac = container_of(work, struct mac_info,
++			mdio_thread.work);
++	struct net_device *dev = mac->netdev;
 +
 +	media_check(dev, 0);
 +	schedule_delayed_work(&mac->mdio_thread, MDIO_INTERVAL);
@@ -2570,7 +2900,7 @@ diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/mac_driver.c linux-2.6.19/driver
 +
 +	init_mdio(dev, plat->phy_id);
 +
-+	INIT_WORK(&mac->mdio_thread, mac_mdio_thread, dev);
++	INIT_DELAYED_WORK(&mac->mdio_thread, mac_mdio_thread);
 +
 +	/* The place of the MAC address is very system dependent.
 +	 * Here we use a random one to be replaced by one of the
@@ -2728,299 +3058,10 @@ diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/mac_driver.c linux-2.6.19/driver
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Christian Hohnstaedt <chohnstaedt@innominate.com>");
 +
-diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/mac.h linux-2.6.19/drivers/net/ixp4xx/mac.h
---- linux-2.6.19.orig/drivers/net/ixp4xx/mac.h	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/drivers/net/ixp4xx/mac.h	2007-01-12 21:54:40.000000000 -0700
-@@ -0,0 +1,275 @@
-+/*
-+ * Copyright (C) 2002-2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
-+ *
-+ * This file is released under the GPLv2
-+ */
-+
-+#include <linux/resource.h>
-+#include <linux/netdevice.h>
-+#include <linux/io.h>
-+#include <linux/mii.h>
-+#include <linux/workqueue.h>
-+#include <asm/hardware.h>
-+#include <linux/ixp_qmgr.h>
-+
-+/* 32 bit offsets to be added to u32 *pointers */
-+#define MAC_TX_CNTRL1       0x00  // 0x000
-+#define MAC_TX_CNTRL2       0x01  // 0x004
-+#define MAC_RX_CNTRL1       0x04  // 0x010
-+#define MAC_RX_CNTRL2       0x05  // 0x014
-+#define MAC_RANDOM_SEED     0x08  // 0x020
-+#define MAC_THRESH_P_EMPTY  0x0c  // 0x030
-+#define MAC_THRESH_P_FULL   0x0e  // 0x038
-+#define MAC_BUF_SIZE_TX     0x10  // 0x040
-+#define MAC_TX_DEFER        0x14  // 0x050
-+#define MAC_RX_DEFER        0x15  // 0x054
-+#define MAC_TX_TWO_DEFER_1  0x18  // 0x060
-+#define MAC_TX_TWO_DEFER_2  0x19  // 0x064
-+#define MAC_SLOT_TIME       0x1c  // 0x070
-+#define MAC_MDIO_CMD        0x20  // 0x080 4 registers 0x20 - 0x23
-+#define MAC_MDIO_STS        0x24  // 0x090 4 registers 0x24 - 0x27
-+#define MAC_ADDR_MASK       0x28  // 0x0A0 6 registers 0x28 - 0x2d
-+#define MAC_ADDR            0x30  // 0x0C0 6 registers 0x30 - 0x35
-+#define MAC_INT_CLK_THRESH  0x38  // 0x0E0 1 register
-+#define MAC_UNI_ADDR        0x3c  // 0x0F0 6 registers 0x3c - 0x41
-+#define MAC_CORE_CNTRL      0x7f  // 0x1fC
-+
-+/* TX Control Register 1*/
-+
-+#define TX_CNTRL1_TX_EN         BIT(0)
-+#define TX_CNTRL1_DUPLEX        BIT(1)
-+#define TX_CNTRL1_RETRY         BIT(2)
-+#define TX_CNTRL1_PAD_EN        BIT(3)
-+#define TX_CNTRL1_FCS_EN        BIT(4)
-+#define TX_CNTRL1_2DEFER        BIT(5)
-+#define TX_CNTRL1_RMII          BIT(6)
-+
-+/* TX Control Register 2 */
-+#define TX_CNTRL2_RETRIES_MASK  0xf
-+
-+/* RX Control Register 1 */
-+#define RX_CNTRL1_RX_EN         BIT(0)
-+#define RX_CNTRL1_PADSTRIP_EN   BIT(1)
-+#define RX_CNTRL1_CRC_EN        BIT(2)
-+#define RX_CNTRL1_PAUSE_EN      BIT(3)
-+#define RX_CNTRL1_LOOP_EN       BIT(4)
-+#define RX_CNTRL1_ADDR_FLTR_EN  BIT(5)
-+#define RX_CNTRL1_RX_RUNT_EN    BIT(6)
-+#define RX_CNTRL1_BCAST_DIS     BIT(7)
-+
-+/* RX Control Register 2 */
-+#define RX_CNTRL2_DEFER_EN      BIT(0)
-+
-+/* Core Control Register */
-+#define CORE_RESET              BIT(0)
-+#define CORE_RX_FIFO_FLUSH      BIT(1)
-+#define CORE_TX_FIFO_FLUSH      BIT(2)
-+#define CORE_SEND_JAM           BIT(3)
-+#define CORE_MDC_EN             BIT(4)
-+
-+/* Definitions for MII access routines*/
-+
-+#define MII_REG_SHL    16
-+#define MII_ADDR_SHL   21
-+
-+#define MII_GO                  BIT(31)
-+#define MII_WRITE               BIT(26)
-+#define MII_READ_FAIL           BIT(31)
-+
-+#define MII_TIMEOUT_10TH_SECS        5
-+#define MII_10TH_SEC_IN_MILLIS     100
-+
-+/*
-+ *
-+ * Default values
-+ *
-+ */
-+
-+#define MAC_DEF_MSG_ENABLE (NETIF_MSG_DRV | NETIF_MSG_PROBE | NETIF_MSG_LINK)
-+
-+#define MAC_TX_CNTRL1_DEFAULT  (\
-+		TX_CNTRL1_TX_EN | \
-+		TX_CNTRL1_RETRY  | \
-+		TX_CNTRL1_FCS_EN | \
-+		TX_CNTRL1_2DEFER | \
-+		TX_CNTRL1_PAD_EN )
-+
-+#define MAC_TX_MAX_RETRIES_DEFAULT 0x0f
-+
-+#define MAC_RX_CNTRL1_DEFAULT ( \
-+		RX_CNTRL1_PADSTRIP_EN | \
-+		RX_CNTRL1_CRC_EN | \
-+		RX_CNTRL1_RX_EN )
-+
-+#define MAC_RX_CNTRL2_DEFAULT       0x0
-+#define MAC_TX_CNTRL2_DEFAULT       TX_CNTRL2_RETRIES_MASK
-+
-+/* Thresholds determined by NPE firmware FS */
-+#define MAC_THRESH_P_EMPTY_DEFAULT  0x12
-+#define MAC_THRESH_P_FULL_DEFAULT   0x30
-+
-+/* Number of bytes that must be in the tx fifo before
-+ * transmission commences */
-+#define MAC_BUF_SIZE_TX_DEFAULT     0x8
-+
-+/* One-part deferral values */
-+#define MAC_TX_DEFER_DEFAULT        0x15
-+#define MAC_RX_DEFER_DEFAULT        0x16
-+
-+/* Two-part deferral values... */
-+#define MAC_TX_TWO_DEFER_1_DEFAULT  0x08
-+#define MAC_TX_TWO_DEFER_2_DEFAULT  0x07
-+
-+/* This value applies to MII */
-+#define MAC_SLOT_TIME_DEFAULT       0x80
-+
-+/* This value applies to RMII */
-+#define MAC_SLOT_TIME_RMII_DEFAULT  0xFF
-+
-+#define MAC_ADDR_MASK_DEFAULT       0xFF
-+
-+#define MAC_INT_CLK_THRESH_DEFAULT  0x1
-+/* The following is a value chosen at random */
-+#define MAC_RANDOM_SEED_DEFAULT     0x8
-+
-+/* By default we must configure the MAC to generate the MDC clock*/
-+#define CORE_DEFAULT                (CORE_MDC_EN)
-+
-+/* End of Intel provided register information */
-+
-+extern int
-+mdio_read_register(struct net_device *dev, int phy_addr, int phy_reg);
-+extern void
-+mdio_write_register(struct net_device *dev, int phy_addr, int phy_reg, int val);
-+extern void init_mdio(struct net_device *dev, int phy_id);
-+
-+struct mac_info {
-+	u32 __iomem *addr;
-+	struct resource *res;
-+	struct device *npe_dev;
-+	struct net_device *netdev;
-+	struct qm_qmgr *qmgr;
-+	struct qm_queue *rxq;
-+	struct qm_queue *txq;
-+	struct qm_queue *rxdoneq;
-+	u32 irqflags;
-+	struct net_device_stats stat;
-+	struct mii_if_info mii;
-+	struct work_struct mdio_thread;
-+	int rxq_pkt;
-+	int txq_pkt;
-+	int unloading;
-+	struct mac_plat_info *plat;
-+	int npe_stat_num;
-+	spinlock_t rx_lock;
-+	u32 msg_enable;
-+};
-+
-+static inline void mac_write_reg(struct mac_info *mac, int offset, u32 val)
-+{
-+	*(mac->addr + offset) = val;
-+}
-+static inline u32 mac_read_reg(struct mac_info *mac, int offset)
-+{
-+	return *(mac->addr + offset);
-+}
-+static inline void mac_set_regbit(struct mac_info *mac, int offset, u32 bit)
-+{
-+	mac_write_reg(mac, offset, mac_read_reg(mac, offset) | bit);
-+}
-+static inline void mac_reset_regbit(struct mac_info *mac, int offset, u32 bit)
-+{
-+	mac_write_reg(mac, offset, mac_read_reg(mac, offset) & ~bit);
-+}
-+
-+static inline void mac_mdio_cmd_write(struct mac_info *mac, u32 cmd)
-+{
-+	int i;
-+	for(i=0; i<4; i++) {
-+		mac_write_reg(mac, MAC_MDIO_CMD + i, cmd & 0xff);
-+		cmd >>=8;
-+	}
-+}
-+
-+#define mac_mdio_cmd_read(mac) mac_mdio_read((mac), MAC_MDIO_CMD)
-+#define mac_mdio_status_read(mac) mac_mdio_read((mac), MAC_MDIO_STS)
-+static inline u32 mac_mdio_read(struct mac_info *mac, int offset)
-+{
-+	int i;
-+	u32 data = 0;
-+	for(i=0; i<4; i++) {
-+		data |= (mac_read_reg(mac, offset + i) & 0xff) << (i*8);
-+	}
-+	return data;
-+}
-+
-+static inline u32 mdio_cmd(int phy_addr, int phy_reg)
-+{
-+	return phy_addr << MII_ADDR_SHL |
-+		phy_reg << MII_REG_SHL |
-+	        MII_GO;
-+}
-+
-+#define MAC_REG_LIST { \
-+	MAC_TX_CNTRL1, MAC_TX_CNTRL2, \
-+	MAC_RX_CNTRL1, MAC_RX_CNTRL2, \
-+	MAC_RANDOM_SEED, MAC_THRESH_P_EMPTY, MAC_THRESH_P_FULL, \
-+	MAC_BUF_SIZE_TX, MAC_TX_DEFER, MAC_RX_DEFER, \
-+	MAC_TX_TWO_DEFER_1, MAC_TX_TWO_DEFER_2, MAC_SLOT_TIME, \
-+	MAC_ADDR_MASK +0, MAC_ADDR_MASK +1, MAC_ADDR_MASK +2, \
-+	MAC_ADDR_MASK +3, MAC_ADDR_MASK +4, MAC_ADDR_MASK +5, \
-+	MAC_ADDR +0, MAC_ADDR +1, MAC_ADDR +2, \
-+	MAC_ADDR +3, MAC_ADDR +4, MAC_ADDR +5, \
-+	MAC_INT_CLK_THRESH, \
-+	MAC_UNI_ADDR +0, MAC_UNI_ADDR +1, MAC_UNI_ADDR +2, \
-+	MAC_UNI_ADDR +3, MAC_UNI_ADDR +4, MAC_UNI_ADDR +5, \
-+	MAC_CORE_CNTRL \
-+}
-+
-+#define NPE_STAT_NUM            34
-+#define NPE_STAT_NUM_BASE       22
-+#define NPE_Q_STAT_NUM           4
-+
-+#define NPE_Q_STAT_STRINGS \
-+	{"RX ready to use queue len     "}, \
-+	{"RX received queue len         "}, \
-+	{"TX to be send queue len       "}, \
-+	{"TX done queue len             "},
-+
-+#define NPE_STAT_STRINGS \
-+	{"StatsAlignmentErrors          "}, \
-+	{"StatsFCSErrors                "}, \
-+	{"StatsInternalMacReceiveErrors "}, \
-+	{"RxOverrunDiscards             "}, \
-+	{"RxLearnedEntryDiscards        "}, \
-+	{"RxLargeFramesDiscards         "}, \
-+	{"RxSTPBlockedDiscards          "}, \
-+	{"RxVLANTypeFilterDiscards      "}, \
-+	{"RxVLANIdFilterDiscards        "}, \
-+	{"RxInvalidSourceDiscards       "}, \
-+	{"RxBlackListDiscards           "}, \
-+	{"RxWhiteListDiscards           "}, \
-+	{"RxUnderflowEntryDiscards      "}, \
-+	{"StatsSingleCollisionFrames    "}, \
-+	{"StatsMultipleCollisionFrames  "}, \
-+	{"StatsDeferredTransmissions    "}, \
-+	{"StatsLateCollisions           "}, \
-+	{"StatsExcessiveCollsions       "}, \
-+	{"StatsInternalMacTransmitErrors"}, \
-+	{"StatsCarrierSenseErrors       "}, \
-+	{"TxLargeFrameDiscards          "}, \
-+	{"TxVLANIdFilterDiscards        "}, \
-+\
-+	{"RxValidFramesTotalOctets      "}, \
-+	{"RxUcastPkts                   "}, \
-+	{"RxBcastPkts                   "}, \
-+	{"RxMcastPkts                   "}, \
-+	{"RxPkts64Octets                "}, \
-+	{"RxPkts65to127Octets           "}, \
-+	{"RxPkts128to255Octets          "}, \
-+	{"RxPkts256to511Octets          "}, \
-+	{"RxPkts512to1023Octets         "}, \
-+	{"RxPkts1024to1518Octets        "}, \
-+	{"RxInternalNPEReceiveErrors    "}, \
-+	{"TxInternalNPETransmitErrors   "}
-+
-diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/Makefile linux-2.6.19/drivers/net/ixp4xx/Makefile
---- linux-2.6.19.orig/drivers/net/ixp4xx/Makefile	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/drivers/net/ixp4xx/Makefile	2007-01-12 21:54:40.000000000 -0700
-@@ -0,0 +1,7 @@
-+obj-$(CONFIG_IXP4XX_QMGR) += ixp4xx_qmgr.o
-+obj-$(CONFIG_IXP4XX_NPE) += ixp4xx_npe.o
-+obj-$(CONFIG_IXP4XX_MAC) += ixp4xx_mac.o
-+obj-$(CONFIG_IXP4XX_CRYPTO) += ixp4xx_crypto.o
-+
-+ixp4xx_npe-objs := ucode_dl.o npe_mh.o npe.o
-+ixp4xx_mac-objs := mac_driver.o phy.o
-diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/npe.c linux-2.6.19/drivers/net/ixp4xx/npe.c
---- linux-2.6.19.orig/drivers/net/ixp4xx/npe.c	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/drivers/net/ixp4xx/npe.c	2007-01-12 21:54:40.000000000 -0700
+Index: linux-2.6.21-rc1-arm/drivers/net/ixp4xx/npe.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/drivers/net/ixp4xx/npe.c	2007-02-21 02:24:35.000000000 -0800
 @@ -0,0 +1,291 @@
 +
 +#include <linux/ixp_npe.h>
@@ -3313,9 +3354,10 @@ diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/npe.c linux-2.6.19/drivers/net/i
 +EXPORT_SYMBOL(npe_stop);
 +EXPORT_SYMBOL(npe_start);
 +EXPORT_SYMBOL(npe_reset);
-diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/npe_mh.c linux-2.6.19/drivers/net/ixp4xx/npe_mh.c
---- linux-2.6.19.orig/drivers/net/ixp4xx/npe_mh.c	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/drivers/net/ixp4xx/npe_mh.c	2007-01-12 21:54:40.000000000 -0700
+Index: linux-2.6.21-rc1-arm/drivers/net/ixp4xx/npe_mh.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/drivers/net/ixp4xx/npe_mh.c	2007-02-21 02:24:35.000000000 -0800
 @@ -0,0 +1,170 @@
 +/*
 + * npe_mh.c - NPE message handler.
@@ -3487,9 +3529,10 @@ diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/npe_mh.c linux-2.6.19/drivers/ne
 +EXPORT_SYMBOL(npe_mh_set_rxqid);
 +EXPORT_SYMBOL(npe_mh_npe_loopback_mode);
 +EXPORT_SYMBOL(npe_mh_get_stats);
-diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/phy.c linux-2.6.19/drivers/net/ixp4xx/phy.c
---- linux-2.6.19.orig/drivers/net/ixp4xx/phy.c	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/drivers/net/ixp4xx/phy.c	2007-01-12 21:54:40.000000000 -0700
+Index: linux-2.6.21-rc1-arm/drivers/net/ixp4xx/phy.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/drivers/net/ixp4xx/phy.c	2007-02-21 02:24:35.000000000 -0800
 @@ -0,0 +1,113 @@
 +/*
 + * phy.c - MDIO functions and mii initialisation
@@ -3604,9 +3647,10 @@ diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/phy.c linux-2.6.19/drivers/net/i
 +	mac->mii.mdio_write = mdio_write_register;
 +}
 +
-diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/ucode_dl.c linux-2.6.19/drivers/net/ixp4xx/ucode_dl.c
---- linux-2.6.19.orig/drivers/net/ixp4xx/ucode_dl.c	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/drivers/net/ixp4xx/ucode_dl.c	2007-01-12 21:54:40.000000000 -0700
+Index: linux-2.6.21-rc1-arm/drivers/net/ixp4xx/ucode_dl.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/drivers/net/ixp4xx/ucode_dl.c	2007-02-21 02:24:35.000000000 -0800
 @@ -0,0 +1,479 @@
 +/*
 + * ucode_dl.c - provide an NPE device and a char-dev for microcode download
@@ -4087,32 +4131,10 @@ diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/ucode_dl.c linux-2.6.19/drivers/
 +
 +EXPORT_SYMBOL(get_npe_by_id);
 +EXPORT_SYMBOL(return_npe_dev);
-diff -Naur linux-2.6.19.orig/drivers/net/Kconfig linux-2.6.19/drivers/net/Kconfig
---- linux-2.6.19.orig/drivers/net/Kconfig	2006-11-29 14:57:37.000000000 -0700
-+++ linux-2.6.19/drivers/net/Kconfig	2007-01-12 21:54:40.000000000 -0700
-@@ -190,6 +190,8 @@
- 
- source "drivers/net/arm/Kconfig"
- 
-+source "drivers/net/ixp4xx/Kconfig"
-+
- config MACE
- 	tristate "MACE (Power Mac ethernet) support"
- 	depends on NET_ETHERNET && PPC_PMAC && PPC32
-diff -Naur linux-2.6.19.orig/drivers/net/Makefile linux-2.6.19/drivers/net/Makefile
---- linux-2.6.19.orig/drivers/net/Makefile	2006-11-29 14:57:37.000000000 -0700
-+++ linux-2.6.19/drivers/net/Makefile	2007-01-12 21:54:40.000000000 -0700
-@@ -209,6 +209,7 @@
- obj-$(CONFIG_IRDA) += irda/
- obj-$(CONFIG_ETRAX_ETHERNET) += cris/
- obj-$(CONFIG_ENP2611_MSF_NET) += ixp2000/
-+obj-$(CONFIG_IXP4XX_NPE) += ixp4xx/
- 
- obj-$(CONFIG_NETCONSOLE) += netconsole.o
- 
-diff -Naur linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h linux-2.6.19/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h
---- linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h	2006-11-29 14:57:37.000000000 -0700
-+++ linux-2.6.19/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h	2007-01-12 21:54:40.000000000 -0700
+Index: linux-2.6.21-rc1-arm/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h
+===================================================================
+--- linux-2.6.21-rc1-arm.orig/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h	2007-02-21 02:24:18.000000000 -0800
++++ linux-2.6.21-rc1-arm/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h	2007-02-21 02:24:35.000000000 -0800
 @@ -22,6 +22,8 @@
  #ifndef _ASM_ARM_IXP4XX_H_
  #define _ASM_ARM_IXP4XX_H_
@@ -4214,9 +4236,10 @@ diff -Naur linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h linux-2.6
  #endif
  
  #endif
-diff -Naur linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/npe_regs.h linux-2.6.19/include/asm-arm/arch-ixp4xx/npe_regs.h
---- linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/npe_regs.h	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/include/asm-arm/arch-ixp4xx/npe_regs.h	2007-01-12 21:54:40.000000000 -0700
+Index: linux-2.6.21-rc1-arm/include/asm-arm/arch-ixp4xx/npe_regs.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/include/asm-arm/arch-ixp4xx/npe_regs.h	2007-02-21 02:24:35.000000000 -0800
 @@ -0,0 +1,82 @@
 +#ifndef NPE_REGS_H
 +#define NPE_REGS_H
@@ -4300,12 +4323,13 @@ diff -Naur linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/npe_regs.h linux-2.6.19
 +
 +#endif
 +
-diff -Naur linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/platform.h linux-2.6.19/include/asm-arm/arch-ixp4xx/platform.h
---- linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/platform.h	2006-11-29 14:57:37.000000000 -0700
-+++ linux-2.6.19/include/asm-arm/arch-ixp4xx/platform.h	2007-01-12 21:54:40.000000000 -0700
-@@ -89,6 +89,25 @@
- 
- struct sys_timer;
+Index: linux-2.6.21-rc1-arm/include/asm-arm/arch-ixp4xx/platform.h
+===================================================================
+--- linux-2.6.21-rc1-arm.orig/include/asm-arm/arch-ixp4xx/platform.h	2007-02-21 02:24:18.000000000 -0800
++++ linux-2.6.21-rc1-arm/include/asm-arm/arch-ixp4xx/platform.h	2007-02-21 02:24:35.000000000 -0800
+@@ -86,6 +86,25 @@
+ 	unsigned long scl_pin;
+ };
  
 +struct npe_plat_data {
 +	const char *name;
@@ -4327,11 +4351,12 @@ diff -Naur linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/platform.h linux-2.6.19
 +};
 +
  /*
-  * Frequency of clock used for primary clocksource
-  */
-diff -Naur linux-2.6.19.orig/include/linux/ixp_crypto.h linux-2.6.19/include/linux/ixp_crypto.h
---- linux-2.6.19.orig/include/linux/ixp_crypto.h	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/include/linux/ixp_crypto.h	2007-01-12 21:54:40.000000000 -0700
+  * This structure provide a means for the board setup code
+  * to give information to th pata_ixp4xx driver. It is
+Index: linux-2.6.21-rc1-arm/include/linux/ixp_crypto.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/include/linux/ixp_crypto.h	2007-02-21 02:24:35.000000000 -0800
 @@ -0,0 +1,192 @@
 +
 +#ifndef IX_CRYPTO_H
@@ -4525,9 +4550,10 @@ diff -Naur linux-2.6.19.orig/include/linux/ixp_crypto.h linux-2.6.19/include/lin
 +		const struct ix_hash_algo *auth, int len);
 +
 +#endif
-diff -Naur linux-2.6.19.orig/include/linux/ixp_npe.h linux-2.6.19/include/linux/ixp_npe.h
---- linux-2.6.19.orig/include/linux/ixp_npe.h	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/include/linux/ixp_npe.h	2007-01-12 21:54:40.000000000 -0700
+Index: linux-2.6.21-rc1-arm/include/linux/ixp_npe.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/include/linux/ixp_npe.h	2007-02-21 02:24:35.000000000 -0800
 @@ -0,0 +1,117 @@
 +/*
 + * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
@@ -4646,9 +4672,10 @@ diff -Naur linux-2.6.19.orig/include/linux/ixp_npe.h linux-2.6.19/include/linux/
 +npe_mh_get_stats(struct npe_info *npe, struct mac_plat_info *mp, u32 phys, int reset);
 +
 +#endif
-diff -Naur linux-2.6.19.orig/include/linux/ixp_qmgr.h linux-2.6.19/include/linux/ixp_qmgr.h
---- linux-2.6.19.orig/include/linux/ixp_qmgr.h	1969-12-31 17:00:00.000000000 -0700
-+++ linux-2.6.19/include/linux/ixp_qmgr.h	2007-01-12 21:54:40.000000000 -0700
+Index: linux-2.6.21-rc1-arm/include/linux/ixp_qmgr.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.21-rc1-arm/include/linux/ixp_qmgr.h	2007-02-21 02:24:35.000000000 -0800
 @@ -0,0 +1,202 @@
 +/*
 + * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>

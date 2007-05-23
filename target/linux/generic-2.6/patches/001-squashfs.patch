@@ -1,7 +1,7 @@
-diff -urN linux-2.6.19.old/fs/Kconfig linux-2.6.19.dev/fs/Kconfig
---- linux-2.6.19.old/fs/Kconfig	2006-12-14 03:13:16.000000000 +0100
-+++ linux-2.6.19.dev/fs/Kconfig	2006-12-14 03:13:16.000000000 +0100
-@@ -1457,6 +1457,71 @@
+diff -Nur linux-2.6.21.1/fs/Kconfig linux-2.6.21.1-owrt/fs/Kconfig
+--- linux-2.6.21.1/fs/Kconfig	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1-owrt/fs/Kconfig	2007-05-23 19:09:55.000000000 +0200
+@@ -1371,6 +1371,71 @@
  
  	  If unsure, say N.
  
@@ -73,10 +73,10 @@ diff -urN linux-2.6.19.old/fs/Kconfig linux-2.6.19.dev/fs/Kconfig
  config VXFS_FS
  	tristate "FreeVxFS file system support (VERITAS VxFS(TM) compatible)"
  	depends on BLOCK
-diff -urN linux-2.6.19.old/fs/Makefile linux-2.6.19.dev/fs/Makefile
---- linux-2.6.19.old/fs/Makefile	2006-12-14 03:13:16.000000000 +0100
-+++ linux-2.6.19.dev/fs/Makefile	2006-12-14 03:13:16.000000000 +0100
-@@ -67,6 +67,7 @@
+diff -Nur linux-2.6.21.1/fs/Makefile linux-2.6.21.1-owrt/fs/Makefile
+--- linux-2.6.21.1/fs/Makefile	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1-owrt/fs/Makefile	2007-05-23 19:09:55.000000000 +0200
+@@ -68,6 +68,7 @@
  obj-$(CONFIG_JBD2)		+= jbd2/
  obj-$(CONFIG_EXT2_FS)		+= ext2/
  obj-$(CONFIG_CRAMFS)		+= cramfs/
@@ -84,9 +84,9 @@ diff -urN linux-2.6.19.old/fs/Makefile linux-2.6.19.dev/fs/Makefile
  obj-$(CONFIG_RAMFS)		+= ramfs/
  obj-$(CONFIG_HUGETLBFS)		+= hugetlbfs/
  obj-$(CONFIG_CODA_FS)		+= coda/
-diff -urN linux-2.6.19.old/fs/squashfs/inode.c linux-2.6.19.dev/fs/squashfs/inode.c
---- linux-2.6.19.old/fs/squashfs/inode.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/fs/squashfs/inode.c	2006-12-14 03:13:16.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/squashfs/inode.c linux-2.6.21.1-owrt/fs/squashfs/inode.c
+--- linux-2.6.21.1/fs/squashfs/inode.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/squashfs/inode.c	2007-05-23 19:52:20.000000000 +0200
 @@ -0,0 +1,2124 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
@@ -2160,13 +2160,13 @@ diff -urN linux-2.6.19.old/fs/squashfs/inode.c linux-2.6.19.dev/fs/squashfs/inod
 +}
 +
 +
-+static kmem_cache_t * squashfs_inode_cachep;
++static struct kmem_cache * squashfs_inode_cachep;
 +
 +
 +static struct inode *squashfs_alloc_inode(struct super_block *sb)
 +{
 +	struct squashfs_inode_info *ei;
-+	ei = kmem_cache_alloc(squashfs_inode_cachep, SLAB_KERNEL);
++	ei = kmem_cache_alloc(squashfs_inode_cachep, GFP_KERNEL);
 +	if (!ei)
 +		return NULL;
 +	return &ei->vfs_inode;
@@ -2179,7 +2179,7 @@ diff -urN linux-2.6.19.old/fs/squashfs/inode.c linux-2.6.19.dev/fs/squashfs/inod
 +}
 +
 +
-+static void init_once(void * foo, kmem_cache_t * cachep, unsigned long flags)
++static void init_once(void * foo, struct kmem_cache * cachep, unsigned long flags)
 +{
 +	struct squashfs_inode_info *ei = foo;
 +
@@ -2212,9 +2212,9 @@ diff -urN linux-2.6.19.old/fs/squashfs/inode.c linux-2.6.19.dev/fs/squashfs/inod
 +MODULE_DESCRIPTION("squashfs, a compressed read-only filesystem");
 +MODULE_AUTHOR("Phillip Lougher <phillip@lougher.org.uk>");
 +MODULE_LICENSE("GPL");
-diff -urN linux-2.6.19.old/fs/squashfs/Makefile linux-2.6.19.dev/fs/squashfs/Makefile
---- linux-2.6.19.old/fs/squashfs/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/fs/squashfs/Makefile	2006-12-14 03:13:16.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/squashfs/Makefile linux-2.6.21.1-owrt/fs/squashfs/Makefile
+--- linux-2.6.21.1/fs/squashfs/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/squashfs/Makefile	2007-05-23 19:09:55.000000000 +0200
 @@ -0,0 +1,7 @@
 +#
 +# Makefile for the linux squashfs routines.
@@ -2223,9 +2223,9 @@ diff -urN linux-2.6.19.old/fs/squashfs/Makefile linux-2.6.19.dev/fs/squashfs/Mak
 +obj-$(CONFIG_SQUASHFS) += squashfs.o
 +squashfs-y += inode.o
 +squashfs-y += squashfs2_0.o
-diff -urN linux-2.6.19.old/fs/squashfs/squashfs2_0.c linux-2.6.19.dev/fs/squashfs/squashfs2_0.c
---- linux-2.6.19.old/fs/squashfs/squashfs2_0.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/fs/squashfs/squashfs2_0.c	2006-12-14 03:13:16.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/squashfs/squashfs2_0.c linux-2.6.21.1-owrt/fs/squashfs/squashfs2_0.c
+--- linux-2.6.21.1/fs/squashfs/squashfs2_0.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/squashfs/squashfs2_0.c	2007-05-23 19:09:55.000000000 +0200
 @@ -0,0 +1,758 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
@@ -2985,9 +2985,9 @@ diff -urN linux-2.6.19.old/fs/squashfs/squashfs2_0.c linux-2.6.19.dev/fs/squashf
 +
 +	return 1;
 +}
-diff -urN linux-2.6.19.old/fs/squashfs/squashfs.h linux-2.6.19.dev/fs/squashfs/squashfs.h
---- linux-2.6.19.old/fs/squashfs/squashfs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/fs/squashfs/squashfs.h	2006-12-14 03:13:16.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/squashfs/squashfs.h linux-2.6.21.1-owrt/fs/squashfs/squashfs.h
+--- linux-2.6.21.1/fs/squashfs/squashfs.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/squashfs/squashfs.h	2007-05-23 19:09:56.000000000 +0200
 @@ -0,0 +1,86 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
@@ -3075,9 +3075,9 @@ diff -urN linux-2.6.19.old/fs/squashfs/squashfs.h linux-2.6.19.dev/fs/squashfs/s
 +	return 0;
 +}
 +#endif
-diff -urN linux-2.6.19.old/include/linux/squashfs_fs.h linux-2.6.19.dev/include/linux/squashfs_fs.h
---- linux-2.6.19.old/include/linux/squashfs_fs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/include/linux/squashfs_fs.h	2006-12-14 03:13:16.000000000 +0100
+diff -Nur linux-2.6.21.1/include/linux/squashfs_fs.h linux-2.6.21.1-owrt/include/linux/squashfs_fs.h
+--- linux-2.6.21.1/include/linux/squashfs_fs.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/include/linux/squashfs_fs.h	2007-05-23 19:09:56.000000000 +0200
 @@ -0,0 +1,911 @@
 +#ifndef SQUASHFS_FS
 +#define SQUASHFS_FS
@@ -3990,9 +3990,9 @@ diff -urN linux-2.6.19.old/include/linux/squashfs_fs.h linux-2.6.19.dev/include/
 +
 +#endif
 +#endif
-diff -urN linux-2.6.19.old/include/linux/squashfs_fs_i.h linux-2.6.19.dev/include/linux/squashfs_fs_i.h
---- linux-2.6.19.old/include/linux/squashfs_fs_i.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/include/linux/squashfs_fs_i.h	2006-12-14 03:13:16.000000000 +0100
+diff -Nur linux-2.6.21.1/include/linux/squashfs_fs_i.h linux-2.6.21.1-owrt/include/linux/squashfs_fs_i.h
+--- linux-2.6.21.1/include/linux/squashfs_fs_i.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/include/linux/squashfs_fs_i.h	2007-05-23 19:09:56.000000000 +0200
 @@ -0,0 +1,45 @@
 +#ifndef SQUASHFS_FS_I
 +#define SQUASHFS_FS_I
@@ -4039,9 +4039,9 @@ diff -urN linux-2.6.19.old/include/linux/squashfs_fs_i.h linux-2.6.19.dev/includ
 +	struct inode	vfs_inode;
 +};
 +#endif
-diff -urN linux-2.6.19.old/include/linux/squashfs_fs_sb.h linux-2.6.19.dev/include/linux/squashfs_fs_sb.h
---- linux-2.6.19.old/include/linux/squashfs_fs_sb.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/include/linux/squashfs_fs_sb.h	2006-12-14 03:13:16.000000000 +0100
+diff -Nur linux-2.6.21.1/include/linux/squashfs_fs_sb.h linux-2.6.21.1-owrt/include/linux/squashfs_fs_sb.h
+--- linux-2.6.21.1/include/linux/squashfs_fs_sb.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/include/linux/squashfs_fs_sb.h	2007-05-23 19:09:56.000000000 +0200
 @@ -0,0 +1,74 @@
 +#ifndef SQUASHFS_FS_SB
 +#define SQUASHFS_FS_SB
@@ -4117,9 +4117,9 @@ diff -urN linux-2.6.19.old/include/linux/squashfs_fs_sb.h linux-2.6.19.dev/inclu
 +	int			(*read_fragment_index_table)(struct super_block *s);
 +};
 +#endif
-diff -urN linux-2.6.19.old/init/do_mounts_rd.c linux-2.6.19.dev/init/do_mounts_rd.c
---- linux-2.6.19.old/init/do_mounts_rd.c	2006-11-29 22:57:37.000000000 +0100
-+++ linux-2.6.19.dev/init/do_mounts_rd.c	2006-12-14 03:13:16.000000000 +0100
+diff -Nur linux-2.6.21.1/init/do_mounts_rd.c linux-2.6.21.1-owrt/init/do_mounts_rd.c
+--- linux-2.6.21.1/init/do_mounts_rd.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1-owrt/init/do_mounts_rd.c	2007-05-23 19:09:56.000000000 +0200
 @@ -5,6 +5,7 @@
  #include <linux/ext2_fs.h>
  #include <linux/romfs_fs.h>
