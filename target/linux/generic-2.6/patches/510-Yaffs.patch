@@ -1,26 +1,26 @@
-diff -urN linux.old/fs/Kconfig linux.dev/fs/Kconfig
---- linux.old/fs/Kconfig	2006-11-29 22:57:37.000000000 +0100
-+++ linux.dev/fs/Kconfig	2006-12-14 04:21:47.000000000 +0100
-@@ -1202,6 +1202,8 @@
+diff -Nur linux-2.6.21.1/fs/Kconfig linux-2.6.21.1-owrt/fs/Kconfig
+--- linux-2.6.21.1/fs/Kconfig	2007-05-14 10:49:47.000000000 +0200
++++ linux-2.6.21.1-owrt/fs/Kconfig	2007-05-14 11:53:15.000000000 +0200
+@@ -1189,6 +1189,8 @@
  	  To compile the EFS file system support as a module, choose M here: the
  	  module will be called efs.
  
 +source "fs/yaffs2/Kconfig"
 +
- config JFFS_FS
- 	tristate "Journalling Flash File System (JFFS) support"
- 	depends on MTD && BLOCK
-diff -urN linux.old/fs/Makefile linux.dev/fs/Makefile
---- linux.old/fs/Makefile	2006-11-29 22:57:37.000000000 +0100
-+++ linux.dev/fs/Makefile	2006-12-14 04:21:47.000000000 +0100
-@@ -114,3 +114,4 @@
+ config JFFS2_FS
+ 	tristate "Journalling Flash File System v2 (JFFS2) support"
+ 	select CRC32
+diff -Nur linux-2.6.21.1/fs/Makefile linux-2.6.21.1-owrt/fs/Makefile
+--- linux-2.6.21.1/fs/Makefile	2007-05-14 10:49:47.000000000 +0200
++++ linux-2.6.21.1-owrt/fs/Makefile	2007-05-14 11:52:43.000000000 +0200
+@@ -115,3 +115,4 @@
  obj-$(CONFIG_DEBUG_FS)		+= debugfs/
  obj-$(CONFIG_OCFS2_FS)		+= ocfs2/
  obj-$(CONFIG_GFS2_FS)           += gfs2/
 +obj-$(CONFIG_YAFFS_FS)		+= yaffs2/
-diff -urN linux.old/fs/yaffs2/devextras.h linux.dev/fs/yaffs2/devextras.h
---- linux.old/fs/yaffs2/devextras.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/devextras.h	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/devextras.h linux-2.6.21.1-owrt/fs/yaffs2/devextras.h
+--- linux-2.6.21.1/fs/yaffs2/devextras.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/devextras.h	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,265 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system. 
@@ -287,9 +287,9 @@ diff -urN linux.old/fs/yaffs2/devextras.h linux.dev/fs/yaffs2/devextras.h
 +#endif
 +
 +#endif
-diff -urN linux.old/fs/yaffs2/Kconfig linux.dev/fs/yaffs2/Kconfig
---- linux.old/fs/yaffs2/Kconfig	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/Kconfig	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/Kconfig linux-2.6.21.1-owrt/fs/yaffs2/Kconfig
+--- linux-2.6.21.1/fs/yaffs2/Kconfig	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/Kconfig	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,135 @@
 +#
 +# YAFFS file system configurations
@@ -426,9 +426,9 @@ diff -urN linux.old/fs/yaffs2/Kconfig linux.dev/fs/yaffs2/Kconfig
 +	  but makes look-ups faster.
 +
 +	  If unsure, say Y.
-diff -urN linux.old/fs/yaffs2/Makefile linux.dev/fs/yaffs2/Makefile
---- linux.old/fs/yaffs2/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/Makefile	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/Makefile linux-2.6.21.1-owrt/fs/yaffs2/Makefile
+--- linux-2.6.21.1/fs/yaffs2/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/Makefile	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,10 @@
 +#
 +# Makefile for the linux YAFFS filesystem routines.
@@ -440,9 +440,9 @@ diff -urN linux.old/fs/yaffs2/Makefile linux.dev/fs/yaffs2/Makefile
 +yaffs-y += yaffs_packedtags2.o yaffs_nand.o yaffs_qsort.o
 +yaffs-y += yaffs_tagscompat.o yaffs_tagsvalidity.o
 +yaffs-y += yaffs_mtdif.o yaffs_mtdif2.o
-diff -urN linux.old/fs/yaffs2/moduleconfig.h linux.dev/fs/yaffs2/moduleconfig.h
---- linux.old/fs/yaffs2/moduleconfig.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/moduleconfig.h	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/moduleconfig.h linux-2.6.21.1-owrt/fs/yaffs2/moduleconfig.h
+--- linux-2.6.21.1/fs/yaffs2/moduleconfig.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/moduleconfig.h	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,32 @@
 +#ifndef __YAFFS_CONFIG_H__
 +#define __YAFFS_CONFIG_H__
@@ -476,9 +476,9 @@ diff -urN linux.old/fs/yaffs2/moduleconfig.h linux.dev/fs/yaffs2/moduleconfig.h
 +#endif /* YAFFS_OUT_OF_TREE */
 +
 +#endif /* __YAFFS_CONFIG_H__ */
-diff -urN linux.old/fs/yaffs2/yaffs_checkptrw.c linux.dev/fs/yaffs2/yaffs_checkptrw.c
---- linux.old/fs/yaffs2/yaffs_checkptrw.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_checkptrw.c	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_checkptrw.c linux-2.6.21.1-owrt/fs/yaffs2/yaffs_checkptrw.c
+--- linux-2.6.21.1/fs/yaffs2/yaffs_checkptrw.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_checkptrw.c	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,384 @@
 +/* YAFFS: Yet another FFS. A NAND-flash specific file system. 
 + *
@@ -864,9 +864,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_checkptrw.c linux.dev/fs/yaffs2/yaffs_checkp
 +
 +
 +
-diff -urN linux.old/fs/yaffs2/yaffs_checkptrw.h linux.dev/fs/yaffs2/yaffs_checkptrw.h
---- linux.old/fs/yaffs2/yaffs_checkptrw.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_checkptrw.h	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_checkptrw.h linux-2.6.21.1-owrt/fs/yaffs2/yaffs_checkptrw.h
+--- linux-2.6.21.1/fs/yaffs2/yaffs_checkptrw.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_checkptrw.h	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,18 @@
 +#ifndef __YAFFS_CHECKPTRW_H__
 +#define __YAFFS_CHECKPTRW_H__
@@ -886,9 +886,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_checkptrw.h linux.dev/fs/yaffs2/yaffs_checkp
 +
 +#endif
 +
-diff -urN linux.old/fs/yaffs2/yaffs_ecc.c linux.dev/fs/yaffs2/yaffs_ecc.c
---- linux.old/fs/yaffs2/yaffs_ecc.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_ecc.c	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_ecc.c linux-2.6.21.1-owrt/fs/yaffs2/yaffs_ecc.c
+--- linux-2.6.21.1/fs/yaffs2/yaffs_ecc.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_ecc.c	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,333 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system. 
@@ -1223,9 +1223,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_ecc.c linux.dev/fs/yaffs2/yaffs_ecc.c
 +
 +}
 +
-diff -urN linux.old/fs/yaffs2/yaffs_ecc.h linux.dev/fs/yaffs2/yaffs_ecc.h
---- linux.old/fs/yaffs2/yaffs_ecc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_ecc.h	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_ecc.h linux-2.6.21.1-owrt/fs/yaffs2/yaffs_ecc.h
+--- linux-2.6.21.1/fs/yaffs2/yaffs_ecc.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_ecc.h	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,44 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system. 
@@ -1271,9 +1271,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_ecc.h linux.dev/fs/yaffs2/yaffs_ecc.h
 +			  yaffs_ECCOther * read_ecc,
 +			  const yaffs_ECCOther * test_ecc);
 +#endif
-diff -urN linux.old/fs/yaffs2/yaffs_fs.c linux.dev/fs/yaffs2/yaffs_fs.c
---- linux.old/fs/yaffs2/yaffs_fs.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_fs.c	2006-12-14 04:33:02.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_fs.c linux-2.6.21.1-owrt/fs/yaffs2/yaffs_fs.c
+--- linux-2.6.21.1/fs/yaffs2/yaffs_fs.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_fs.c	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,2136 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system.
@@ -3411,9 +3411,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_fs.c linux.dev/fs/yaffs2/yaffs_fs.c
 +MODULE_DESCRIPTION("YAFFS2 - a NAND specific flash file system");
 +MODULE_AUTHOR("Charles Manning, Aleph One Ltd., 2002-2006");
 +MODULE_LICENSE("GPL");
-diff -urN linux.old/fs/yaffs2/yaffs_guts.c linux.dev/fs/yaffs2/yaffs_guts.c
---- linux.old/fs/yaffs2/yaffs_guts.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_guts.c	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_guts.c linux-2.6.21.1-owrt/fs/yaffs2/yaffs_guts.c
+--- linux-2.6.21.1/fs/yaffs2/yaffs_guts.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_guts.c	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,6675 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system.
@@ -10090,9 +10090,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_guts.c linux.dev/fs/yaffs2/yaffs_guts.c
 +
 +	    return YAFFS_OK;
 +}
-diff -urN linux.old/fs/yaffs2/yaffs_guts.h linux.dev/fs/yaffs2/yaffs_guts.h
---- linux.old/fs/yaffs2/yaffs_guts.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_guts.h	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_guts.h linux-2.6.21.1-owrt/fs/yaffs2/yaffs_guts.h
+--- linux-2.6.21.1/fs/yaffs2/yaffs_guts.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_guts.h	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,893 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system.
@@ -10987,9 +10987,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_guts.h linux.dev/fs/yaffs2/yaffs_guts.h
 +void yaffs_HandleChunkError(yaffs_Device *dev, yaffs_BlockInfo *bi);
 +
 +#endif
-diff -urN linux.old/fs/yaffs2/yaffsinterface.h linux.dev/fs/yaffs2/yaffsinterface.h
---- linux.old/fs/yaffs2/yaffsinterface.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffsinterface.h	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffsinterface.h linux-2.6.21.1-owrt/fs/yaffs2/yaffsinterface.h
+--- linux-2.6.21.1/fs/yaffs2/yaffsinterface.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffsinterface.h	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,23 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system.
@@ -11014,9 +11014,9 @@ diff -urN linux.old/fs/yaffs2/yaffsinterface.h linux.dev/fs/yaffs2/yaffsinterfac
 +int yaffs_Initialise(unsigned nBlocks);
 +
 +#endif
-diff -urN linux.old/fs/yaffs2/yaffs_mtdif2.c linux.dev/fs/yaffs2/yaffs_mtdif2.c
---- linux.old/fs/yaffs2/yaffs_mtdif2.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_mtdif2.c	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_mtdif2.c linux-2.6.21.1-owrt/fs/yaffs2/yaffs_mtdif2.c
+--- linux-2.6.21.1/fs/yaffs2/yaffs_mtdif2.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_mtdif2.c	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,234 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system. 
@@ -11252,9 +11252,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_mtdif2.c linux.dev/fs/yaffs2/yaffs_mtdif2.c
 +		return YAFFS_FAIL;
 +}
 +
-diff -urN linux.old/fs/yaffs2/yaffs_mtdif2.h linux.dev/fs/yaffs2/yaffs_mtdif2.h
---- linux.old/fs/yaffs2/yaffs_mtdif2.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_mtdif2.h	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_mtdif2.h linux-2.6.21.1-owrt/fs/yaffs2/yaffs_mtdif2.h
+--- linux-2.6.21.1/fs/yaffs2/yaffs_mtdif2.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_mtdif2.h	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,29 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system. 
@@ -11285,9 +11285,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_mtdif2.h linux.dev/fs/yaffs2/yaffs_mtdif2.h
 +			    yaffs_BlockState * state, int *sequenceNumber);
 +
 +#endif
-diff -urN linux.old/fs/yaffs2/yaffs_mtdif.c linux.dev/fs/yaffs2/yaffs_mtdif.c
---- linux.old/fs/yaffs2/yaffs_mtdif.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_mtdif.c	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_mtdif.c linux-2.6.21.1-owrt/fs/yaffs2/yaffs_mtdif.c
+--- linux-2.6.21.1/fs/yaffs2/yaffs_mtdif.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_mtdif.c	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,243 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system. 
@@ -11532,9 +11532,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_mtdif.c linux.dev/fs/yaffs2/yaffs_mtdif.c
 +	return YAFFS_OK;
 +}
 +
-diff -urN linux.old/fs/yaffs2/yaffs_mtdif.h linux.dev/fs/yaffs2/yaffs_mtdif.h
---- linux.old/fs/yaffs2/yaffs_mtdif.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_mtdif.h	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_mtdif.h linux-2.6.21.1-owrt/fs/yaffs2/yaffs_mtdif.h
+--- linux-2.6.21.1/fs/yaffs2/yaffs_mtdif.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_mtdif.h	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,31 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system. 
@@ -11567,9 +11567,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_mtdif.h linux.dev/fs/yaffs2/yaffs_mtdif.h
 +int nandmtd_EraseBlockInNAND(yaffs_Device * dev, int blockNumber);
 +int nandmtd_InitialiseNAND(yaffs_Device * dev);
 +#endif
-diff -urN linux.old/fs/yaffs2/yaffs_nand.c linux.dev/fs/yaffs2/yaffs_nand.c
---- linux.old/fs/yaffs2/yaffs_nand.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_nand.c	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_nand.c linux-2.6.21.1-owrt/fs/yaffs2/yaffs_nand.c
+--- linux-2.6.21.1/fs/yaffs2/yaffs_nand.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_nand.c	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,135 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system. 
@@ -11706,9 +11706,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_nand.c linux.dev/fs/yaffs2/yaffs_nand.c
 +
 +
 + 
-diff -urN linux.old/fs/yaffs2/yaffs_nandemul2k.h linux.dev/fs/yaffs2/yaffs_nandemul2k.h
---- linux.old/fs/yaffs2/yaffs_nandemul2k.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_nandemul2k.h	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_nandemul2k.h linux-2.6.21.1-owrt/fs/yaffs2/yaffs_nandemul2k.h
+--- linux-2.6.21.1/fs/yaffs2/yaffs_nandemul2k.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_nandemul2k.h	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,42 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system. 
@@ -11752,9 +11752,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_nandemul2k.h linux.dev/fs/yaffs2/yaffs_nande
 +int nandemul2k_GetNumberOfBlocks(void);
 +
 +#endif
-diff -urN linux.old/fs/yaffs2/yaffs_nand.h linux.dev/fs/yaffs2/yaffs_nand.h
---- linux.old/fs/yaffs2/yaffs_nand.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_nand.h	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_nand.h linux-2.6.21.1-owrt/fs/yaffs2/yaffs_nand.h
+--- linux-2.6.21.1/fs/yaffs2/yaffs_nand.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_nand.h	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,43 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system. 
@@ -11799,9 +11799,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_nand.h linux.dev/fs/yaffs2/yaffs_nand.h
 +
 +#endif
 +
-diff -urN linux.old/fs/yaffs2/yaffs_packedtags1.c linux.dev/fs/yaffs2/yaffs_packedtags1.c
---- linux.old/fs/yaffs2/yaffs_packedtags1.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_packedtags1.c	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_packedtags1.c linux-2.6.21.1-owrt/fs/yaffs2/yaffs_packedtags1.c
+--- linux-2.6.21.1/fs/yaffs2/yaffs_packedtags1.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_packedtags1.c	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,39 @@
 +#include "yaffs_packedtags1.h"
 +#include "yportenv.h"
@@ -11842,9 +11842,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_packedtags1.c linux.dev/fs/yaffs2/yaffs_pack
 +
 +	}
 +}
-diff -urN linux.old/fs/yaffs2/yaffs_packedtags1.h linux.dev/fs/yaffs2/yaffs_packedtags1.h
---- linux.old/fs/yaffs2/yaffs_packedtags1.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_packedtags1.h	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_packedtags1.h linux-2.6.21.1-owrt/fs/yaffs2/yaffs_packedtags1.h
+--- linux-2.6.21.1/fs/yaffs2/yaffs_packedtags1.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_packedtags1.h	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,22 @@
 +// This is used to pack YAFFS1 tags, not YAFFS2 tags.
 +
@@ -11868,9 +11868,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_packedtags1.h linux.dev/fs/yaffs2/yaffs_pack
 +void yaffs_PackTags1(yaffs_PackedTags1 * pt, const yaffs_ExtendedTags * t);
 +void yaffs_UnpackTags1(yaffs_ExtendedTags * t, const yaffs_PackedTags1 * pt);
 +#endif
-diff -urN linux.old/fs/yaffs2/yaffs_packedtags2.c linux.dev/fs/yaffs2/yaffs_packedtags2.c
---- linux.old/fs/yaffs2/yaffs_packedtags2.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_packedtags2.c	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_packedtags2.c linux-2.6.21.1-owrt/fs/yaffs2/yaffs_packedtags2.c
+--- linux-2.6.21.1/fs/yaffs2/yaffs_packedtags2.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_packedtags2.c	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,184 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system. 
@@ -12056,9 +12056,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_packedtags2.c linux.dev/fs/yaffs2/yaffs_pack
 +	yaffs_DumpTags2(t);
 +
 +}
-diff -urN linux.old/fs/yaffs2/yaffs_packedtags2.h linux.dev/fs/yaffs2/yaffs_packedtags2.h
---- linux.old/fs/yaffs2/yaffs_packedtags2.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_packedtags2.h	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_packedtags2.h linux-2.6.21.1-owrt/fs/yaffs2/yaffs_packedtags2.h
+--- linux-2.6.21.1/fs/yaffs2/yaffs_packedtags2.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_packedtags2.h	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,23 @@
 +/* This is used to pack YAFFS2 tags, not YAFFS1tags. */
 +
@@ -12083,9 +12083,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_packedtags2.h linux.dev/fs/yaffs2/yaffs_pack
 +void yaffs_PackTags2(yaffs_PackedTags2 * pt, const yaffs_ExtendedTags * t);
 +void yaffs_UnpackTags2(yaffs_ExtendedTags * t, yaffs_PackedTags2 * pt);
 +#endif
-diff -urN linux.old/fs/yaffs2/yaffs_qsort.c linux.dev/fs/yaffs2/yaffs_qsort.c
---- linux.old/fs/yaffs2/yaffs_qsort.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_qsort.c	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_qsort.c linux-2.6.21.1-owrt/fs/yaffs2/yaffs_qsort.c
+--- linux-2.6.21.1/fs/yaffs2/yaffs_qsort.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_qsort.c	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,156 @@
 +/*
 + * Copyright (c) 1992, 1993
@@ -12243,9 +12243,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_qsort.c linux.dev/fs/yaffs2/yaffs_qsort.c
 +	}
 +/*		qsort(pn - r, r / es, es, cmp);*/
 +}
-diff -urN linux.old/fs/yaffs2/yaffs_qsort.h linux.dev/fs/yaffs2/yaffs_qsort.h
---- linux.old/fs/yaffs2/yaffs_qsort.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_qsort.h	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_qsort.h linux-2.6.21.1-owrt/fs/yaffs2/yaffs_qsort.h
+--- linux-2.6.21.1/fs/yaffs2/yaffs_qsort.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_qsort.h	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,23 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system.
@@ -12270,9 +12270,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_qsort.h linux.dev/fs/yaffs2/yaffs_qsort.h
 +                   int (*cmp)(const void *, const void *));
 +
 +#endif
-diff -urN linux.old/fs/yaffs2/yaffs_tagscompat.c linux.dev/fs/yaffs2/yaffs_tagscompat.c
---- linux.old/fs/yaffs2/yaffs_tagscompat.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_tagscompat.c	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_tagscompat.c linux-2.6.21.1-owrt/fs/yaffs2/yaffs_tagscompat.c
+--- linux-2.6.21.1/fs/yaffs2/yaffs_tagscompat.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_tagscompat.c	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,532 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system. 
@@ -12806,9 +12806,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_tagscompat.c linux.dev/fs/yaffs2/yaffs_tagsc
 +
 +	return YAFFS_OK;
 +}
-diff -urN linux.old/fs/yaffs2/yaffs_tagscompat.h linux.dev/fs/yaffs2/yaffs_tagscompat.h
---- linux.old/fs/yaffs2/yaffs_tagscompat.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_tagscompat.h	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_tagscompat.h linux-2.6.21.1-owrt/fs/yaffs2/yaffs_tagscompat.h
+--- linux-2.6.21.1/fs/yaffs2/yaffs_tagscompat.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_tagscompat.h	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,40 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system. 
@@ -12850,9 +12850,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_tagscompat.h linux.dev/fs/yaffs2/yaffs_tagsc
 +					  state, int *sequenceNumber);
 +
 +#endif
-diff -urN linux.old/fs/yaffs2/yaffs_tagsvalidity.c linux.dev/fs/yaffs2/yaffs_tagsvalidity.c
---- linux.old/fs/yaffs2/yaffs_tagsvalidity.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_tagsvalidity.c	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_tagsvalidity.c linux-2.6.21.1-owrt/fs/yaffs2/yaffs_tagsvalidity.c
+--- linux-2.6.21.1/fs/yaffs2/yaffs_tagsvalidity.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_tagsvalidity.c	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,31 @@
 +
 +/*
@@ -12885,9 +12885,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_tagsvalidity.c linux.dev/fs/yaffs2/yaffs_tag
 +		tags->validMarker1 == 0x55555555);
 +
 +}
-diff -urN linux.old/fs/yaffs2/yaffs_tagsvalidity.h linux.dev/fs/yaffs2/yaffs_tagsvalidity.h
---- linux.old/fs/yaffs2/yaffs_tagsvalidity.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yaffs_tagsvalidity.h	2006-12-14 04:21:47.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yaffs_tagsvalidity.h linux-2.6.21.1-owrt/fs/yaffs2/yaffs_tagsvalidity.h
+--- linux-2.6.21.1/fs/yaffs2/yaffs_tagsvalidity.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yaffs_tagsvalidity.h	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,25 @@
 +
 +/*
@@ -12914,9 +12914,9 @@ diff -urN linux.old/fs/yaffs2/yaffs_tagsvalidity.h linux.dev/fs/yaffs2/yaffs_tag
 +void yaffs_InitialiseTags(yaffs_ExtendedTags * tags);
 +int yaffs_ValidateTags(yaffs_ExtendedTags * tags);
 +#endif
-diff -urN linux.old/fs/yaffs2/yportenv.h linux.dev/fs/yaffs2/yportenv.h
---- linux.old/fs/yaffs2/yportenv.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/yaffs2/yportenv.h	2006-12-14 04:26:06.000000000 +0100
+diff -Nur linux-2.6.21.1/fs/yaffs2/yportenv.h linux-2.6.21.1-owrt/fs/yaffs2/yportenv.h
+--- linux-2.6.21.1/fs/yaffs2/yportenv.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/fs/yaffs2/yportenv.h	2007-05-14 11:52:43.000000000 +0200
 @@ -0,0 +1,165 @@
 +/*
 + * YAFFS: Yet another FFS. A NAND-flash specific file system. 
