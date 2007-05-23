@@ -8,6 +8,8 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
+#define USE_HOSTCC
+
 #ifndef USE_HOSTCC	/* Shut down "ANSI does not permit..." warnings */
 #include <common.h>	/* to get command definitions like CFG_CMD_JFFS2 */
 #endif
