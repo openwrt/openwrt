@@ -44,11 +44,10 @@ endif
 package/%/Makefile: ;
 target/%/Makefile: ;
 
-tmp/.packageinfo: $(wildcard package/*/Makefile include/package*.mk include/kernel.mk) FORCE
-tmp/.targetinfo: $(wildcard target/*/Makefile include/kernel*.mk)  FORCE
-tmp/.%info:
+tmp/.packageinfo tmp/.targetinfo: FORCE
 	mkdir -p tmp/info
-	$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="$*info" SCAN_DIR="$(patsubst target,target/linux,$*)" SCAN_NAME="$*" SCAN_DEPS="$(filter-out FORCE, $^)" SCAN_EXTRA=""
+	$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPS="" SCAN_TARGET_DEPS="$(wildcard target/*/Makefile include/kernel*.mk)" SCAN_EXTRA=""
+	$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS="$(wildcard package/*/Makefile include/package*.mk include/kernel.mk)" SCAN_EXTRA=""
 
 tmpinfo-clean: FORCE
 	-rm -rf tmp/.*info
