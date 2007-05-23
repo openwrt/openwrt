@@ -97,8 +97,8 @@ diff -urN bb.old/editors/awk.c bb.dev/editors/awk.c
  		switch (c) {
 diff -urN bb.old/editors/awx.c bb.dev/editors/awx.c
 --- bb.old/editors/awx.c	1970-01-01 01:00:00.000000000 +0100
-+++ bb.dev/editors/awx.c	2007-05-23 19:13:40.459655704 +0200
-@@ -0,0 +1,632 @@
++++ bb.dev/editors/awx.c	2007-05-23 22:37:38.547183608 +0200
+@@ -0,0 +1,633 @@
 +/*
 + * awk web extension
 + *
@@ -170,14 +170,14 @@ diff -urN bb.old/editors/awx.c bb.dev/editors/awx.c
 +
 +		p2 = strstr(p, TR_END);
 +		if (p2 == NULL) {
-+			p2 = xstrdup(p);
++			p2 = xstrdup(l);
 +			tr_abort = 1;
 +			break;
 +		}
 +
 +		*p = 0;
-+		*p2 = 0;
 +		len += strlen((tok[_pos++] = l));
++		*p2 = 0;
 +		len += strlen((tok[_pos++] = translate_lookup(p + strlen(TR_START))));
 +
 +		l = p2;
@@ -192,11 +192,12 @@ diff -urN bb.old/editors/awx.c bb.dev/editors/awx.c
 +		strcat(p, tok[i]);
 +		p += strlen(tok[i]);
 +	}
-+	if (tr_abort && p2) {
-+		if (backlog)
-+			free(backlog);
-+		backlog = p2;
++	if (backlog) {
++		free(backlog);
++		backlog = NULL;
 +	}
++	if (tr_abort && p2)
++		backlog = p2;
 +	
 +	return res;
 +}
