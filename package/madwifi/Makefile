@@ -10,13 +10,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=madwifi
-PKG_VERSION:=r2351-20070519
-PKG_BRANCH:=madwifi-hal-0.9.30.13
+PKG_VERSION:=r2362-20070522
+PKG_BRANCH:=madwifi-ng
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_BRANCH)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://snapshots.madwifi.org/$(PKG_BRANCH)
-PKG_MD5SUM:=215b6c66eb1a3c4bcd947f358ade823f
+PKG_MD5SUM:=7a7783ecf6596089afc4aeebdffb397b
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_BRANCH)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
