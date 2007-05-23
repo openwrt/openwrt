@@ -11,7 +11,7 @@ rm -f "$OUTPUT"
 set `ptgen -o "$OUTPUT" -h 16 -s 32 -t 0x27 -p ${KERNELSIZE}m -t 0x83 -p ${ROOTFSSIZE}m`
 
 KERNELOFFSET="$(($1 / 512))"
-ROOTFSOFFSET="$(($2 / 512))"
+ROOTFSOFFSET="$(($3 / 512))"
 
 dd if="$KERNELIMAGE" of="$OUTPUT" bs=512 conv=notrunc seek="$KERNELOFFSET"
 dd if="$ROOTFSIMAGE" of="$OUTPUT" bs=512 conv=notrunc seek="$ROOTFSOFFSET"
