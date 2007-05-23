@@ -195,7 +195,7 @@ diff -urN bb.old/editors/awx.c bb.dev/editors/awx.c
 +	if (tr_abort && p2) {
 +		if (backlog)
 +			free(backlog);
-+		p2 = backlog;
++		backlog = p2;
 +	}
 +	
 +	return res;
