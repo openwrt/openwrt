@@ -146,12 +146,12 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_time.c linux-2.6.19.dev/net/ip
 +static int __init init(void)
 +{
 +	printk("ipt_time loading\n");
-+	return ipt_register_match(&time_match);
++	return xt_register_match(&time_match);
 +}
 +
 +static void __exit fini(void)
 +{
-+	ipt_unregister_match(&time_match);
++	xt_unregister_match(&time_match);
 +	printk("ipt_time unloaded\n");
 +}
 +

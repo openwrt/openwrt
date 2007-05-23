@@ -802,7 +802,7 @@
 +
 +static int __init init(void)
 +{
-+	if (ip6t_register_target(&ip6t_imq_reg))
++	if (xt_register_target(&ip6t_imq_reg))
 +		return -EINVAL;
 +
 +	return 0;
@@ -810,7 +810,7 @@
 +
 +static void __exit fini(void)
 +{
-+	ip6t_unregister_target(&ip6t_imq_reg);
++	xt_unregister_target(&ip6t_imq_reg);
 +}
 +
 +module_init(init);

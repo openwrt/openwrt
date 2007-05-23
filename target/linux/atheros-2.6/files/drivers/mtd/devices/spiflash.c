@@ -38,6 +38,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/platform_device.h>
+#include <linux/sched.h>
 #include <linux/squashfs_fs.h>
 #include <linux/root_dev.h>
 #include <linux/delay.h>

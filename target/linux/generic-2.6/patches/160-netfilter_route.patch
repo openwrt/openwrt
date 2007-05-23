@@ -906,7 +906,7 @@ diff -Nur linux-2.6.21.1/net/ipv6/netfilter/ip6t_ROUTE.c linux-2.6.21.1-owrt/net
 +static int __init init(void)
 +{
 +	printk(KERN_DEBUG "registering ipv6 ROUTE target\n");
-+	if (ip6t_register_target(&ip6t_route_reg))
++	if (xt_register_target(&ip6t_route_reg))
 +		return -EINVAL;
 +
 +	return 0;
@@ -915,7 +915,7 @@ diff -Nur linux-2.6.21.1/net/ipv6/netfilter/ip6t_ROUTE.c linux-2.6.21.1-owrt/net
 +
 +static void __exit fini(void)
 +{
-+	ip6t_unregister_target(&ip6t_route_reg);
++	xt_unregister_target(&ip6t_route_reg);
 +}
 +
 +module_init(init);

@@ -27,9 +27,8 @@
 #define DO_AR5315(...)
 #endif
 
+#include <irq.h>
 
-
-#define MIPS_CPU_IRQ_BASE		0x00
 #define AR531X_HIGH_PRIO                0x10
 #define AR531X_MISC_IRQ_BASE		0x20
 #define AR531X_GPIO_IRQ_BASE            0x30
