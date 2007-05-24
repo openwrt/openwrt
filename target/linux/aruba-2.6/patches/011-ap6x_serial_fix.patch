@@ -1,15 +1,6 @@
 diff -urN linux.old/drivers/serial/8250.c linux.net/drivers/serial/8250.c
 --- linux.old/drivers/serial/8250.c	2006-01-15 07:16:02.000000000 +0100
 +++ linux.net/drivers/serial/8250.c	2006-01-30 06:12:30.509342250 +0100
-@@ -1510,7 +1510,7 @@
- {
- 	struct uart_8250_port *up = (struct uart_8250_port *)port;
- 	unsigned long flags;
--	unsigned char lsr, iir;
-+//	unsigned char lsr, iir;
- 	int retval;
- 
- 	up->capabilities = uart_config[up->port.type].flags;
 @@ -1615,6 +1615,8 @@
  
  	serial8250_set_mctrl(&up->port, up->port.mctrl);
