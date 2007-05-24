@@ -48,12 +48,19 @@ define Image/Prepare
 	$(OBJCOPY_BIN) $(KDIR)/loader_flash.elf $(KDIR)/kernel.flash.bin
 endef
 
+define Image/Build/Initramfs
+	$(OBJCOPY_SREC) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.srec
+endef
+
 define Image/Build
 	$(TARGET_CROSS)objcopy -O srec -I binary --adjust-vma $(FLASH_FS) $(KDIR)/root.$(1) $(KDIR)/root.$(1).srec
 	grep -v S7 $(KDIR)/root.$(1).srec > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
 	grep -v S0 $(KDIR)/kernel.flash.srec >> $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
 	$(CP) $(KDIR)/kernel.flash.bin $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.bin
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).fs
+ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+	$(call Image/Build/Initramfs)
+endif
 endef
 
 $(eval $(call BuildImage))
