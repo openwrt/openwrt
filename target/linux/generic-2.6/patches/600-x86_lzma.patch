@@ -1,6 +1,6 @@
-diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/LzmaDecode.c linux-2.6.21.1-owrt/arch/i386/boot/compressed/LzmaDecode.c
---- linux-2.6.21.1/arch/i386/boot/compressed/LzmaDecode.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/arch/i386/boot/compressed/LzmaDecode.c	2007-05-14 11:55:38.000000000 +0200
+diff -Naur linux-old/arch/i386/boot/compressed/LzmaDecode.c linux-lzma/arch/i386/boot/compressed/LzmaDecode.c
+--- linux-old/arch/i386/boot/compressed/LzmaDecode.c	1969-12-31 19:00:00.000000000 -0500
++++ linux-lzma/arch/i386/boot/compressed/LzmaDecode.c	2005-06-05 00:07:38.000000000 -0400
 @@ -0,0 +1,586 @@
 +/*
 +  LzmaDecode.c
@@ -588,9 +588,9 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/LzmaDecode.c linux-2.6.21.1-o
 +  *outSizeProcessed = nowPos;
 +  return LZMA_RESULT_OK;
 +}
-diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/LzmaDecode.h linux-2.6.21.1-owrt/arch/i386/boot/compressed/LzmaDecode.h
---- linux-2.6.21.1/arch/i386/boot/compressed/LzmaDecode.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/arch/i386/boot/compressed/LzmaDecode.h	2007-05-14 11:55:38.000000000 +0200
+diff -Naur linux-old/arch/i386/boot/compressed/LzmaDecode.h linux-lzma/arch/i386/boot/compressed/LzmaDecode.h
+--- linux-old/arch/i386/boot/compressed/LzmaDecode.h	1969-12-31 19:00:00.000000000 -0500
++++ linux-lzma/arch/i386/boot/compressed/LzmaDecode.h	2005-06-05 00:07:39.000000000 -0400
 @@ -0,0 +1,100 @@
 +/* 
 +  LzmaDecode.h
@@ -692,10 +692,10 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/LzmaDecode.h linux-2.6.21.1-o
 +    UInt32 *outSizeProcessed);
 +
 +#endif
-diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-owrt/arch/i386/boot/compressed/lzma_misc.c
---- linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/arch/i386/boot/compressed/lzma_misc.c	2007-05-14 11:55:38.000000000 +0200
-@@ -0,0 +1,374 @@
+diff -Naur linux-old/arch/i386/boot/compressed/lzma_misc.c linux-lzma/arch/i386/boot/compressed/lzma_misc.c
+--- linux-old/arch/i386/boot/compressed/lzma_misc.c	1969-12-31 19:00:00.000000000 -0500
++++ linux-lzma/arch/i386/boot/compressed/lzma_misc.c	2005-06-04 21:33:48.000000000 -0400
+@@ -0,0 +1,281 @@
 +/*
 + * lzma_misc.c
 + * 
@@ -851,75 +851,15 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-ow
 + * This is set up by the setup-routine at boot-time
 + */
 +static unsigned char *real_mode; /* Pointer to real-mode data */
-+
-+#define RM_EXT_MEM_K   (*(unsigned short *)(real_mode + 0x2))
-+#ifndef STANDARD_MEMORY_BIOS_CALL
-+#define RM_ALT_MEM_K   (*(unsigned long *)(real_mode + 0x1e0))
-+#endif
-+#define RM_SCREEN_INFO (*(struct screen_info *)(real_mode+0))
-+
 +extern unsigned char input_data[];
 +extern int input_len;
 +
 +static void error(char *x);
 +static void *memcpy(void *dest, const void *src, unsigned n);
 +
-+static void putstr(const char *);
-+
-+static char *vidmem = (char *)0xb8000;
-+static int vidport;
-+static int lines, cols;
-+
 +#ifdef CONFIG_X86_NUMAQ
 +void *xquad_portio;
 +#endif
-+
-+ 
-+static void scroll(void)
-+{
-+	int i;
-+
-+	memcpy ( vidmem, vidmem + cols * 2, ( lines - 1 ) * cols * 2 );
-+	for ( i = ( lines - 1 ) * cols * 2; i < lines * cols * 2; i += 2 )
-+		vidmem[i] = ' ';
-+}
-+
-+static void putstr(const char *s)
-+{
-+	int x,y,pos;
-+	char c;
-+
-+	x = RM_SCREEN_INFO.orig_x;
-+	y = RM_SCREEN_INFO.orig_y;
-+
-+	while ( ( c = *s++ ) != '\0' ) {
-+		if ( c == '\n' ) {
-+			x = 0;
-+			if ( ++y >= lines ) {
-+				scroll();
-+				y--;
-+			}
-+		} else {
-+			vidmem [ ( x + cols * y ) * 2 ] = c;
-+			if ( ++x >= cols ) {
-+				x = 0;
-+				if ( ++y >= lines ) {
-+					scroll();
-+					y--;
-+				}
-+			}
-+		}
-+	}
-+
-+	RM_SCREEN_INFO.orig_x = x;
-+	RM_SCREEN_INFO.orig_y = y;
-+
-+	pos = (x + cols * y) * 2;	/* Update cursor position */
-+	outb_p(14, vidport);
-+	outb_p(0xff & (pos >> 9), vidport+1);
-+	outb_p(15, vidport);
-+	outb_p(0xff & (pos >> 1), vidport+1);
-+}
 +
 +static void* memcpy(void* dest, const void* src, unsigned n)
 +{
@@ -948,9 +888,7 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-ow
 +#include "LzmaDecode.h"
 +#include "LzmaDecode.c"
 +
-+#ifdef  _LZMA_IN_CB
 +static int read_byte(void *object, unsigned char **buffer, UInt32 *bufferSize);
-+#endif
 +
 +
 +/*
@@ -968,14 +906,8 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-ow
 +	unsigned int uncompressedSize = 0;
 +	unsigned char* p;
 +	
-+#ifdef  _LZMA_IN_CB
 +	ILzmaInCallback callback;
 +	callback.Read = read_byte;
-+#else	
-+	unsigned char* inputbuf;
-+	unsigned int lzma_workspace_size;
-+	unsigned int compressedSize = 0;
-+#endif
 +
 +	/* lzma args */
 +	i = get_byte();
@@ -991,14 +923,8 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-ow
 +	    *p++ = get_byte();
 +	    
 +	//get compressedSize 
-+#ifdef  _LZMA_IN_CB
 +	for (i = 0; i < 4; i++) 
 +		get_byte();
-+#else
-+	p= (char*)&compressedSize;	
-+	for (i = 0; i < 4; i++) 
-+	    *p++ = get_byte();
-+#endif
 +	
 +	// point it beyond uncompresedSize
 +	workspace = window + uncompressedSize;
@@ -1020,18 +946,12 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-ow
 +	*bufferSize = 1;
 +	val = get_byte();
 +	*buffer = &val;
-+	if ( i++ % ( 1024 * 50 ) == 0 )
-+	       putstr(".");
 +	return LZMA_RESULT_OK;
 +}	
 +#endif
 +
 +static void error(char *x)
 +{
-+	putstr("\n\n");
-+	putstr(x);
-+	putstr("\n\n -- System halted");
-+
 +	while(1);	/* Halt */
 +}
 +
@@ -1039,17 +959,6 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-ow
 +			uch *input_data, unsigned long input_len, uch *output)
 +{
 +	real_mode = rmode;
-+
-+	if (RM_SCREEN_INFO.orig_video_mode == 7) {
-+		vidmem = (char *) 0xb0000;
-+		vidport = 0x3b4;
-+	} else {
-+		vidmem = (char *) 0xb8000;
-+		vidport = 0x3d4;
-+	}
-+
-+	lines = RM_SCREEN_INFO.orig_video_lines;
-+	cols = RM_SCREEN_INFO.orig_video_cols;
 +
 +	window = output;
 +	inbuf  = input_data;	/* Input buffer */
@@ -1065,14 +974,12 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-ow
 +		error("Wrong destination address");
 +#endif
 +
-+	putstr("Uncompressing Linux... ");
 +	lzma_unzip();
-+	putstr("Ok, booting the kernel.\n");
 +	return;
 +}
-diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/Makefile linux-2.6.21.1-owrt/arch/i386/boot/compressed/Makefile
---- linux-2.6.21.1/arch/i386/boot/compressed/Makefile	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1-owrt/arch/i386/boot/compressed/Makefile	2007-05-14 12:01:25.000000000 +0200
+diff -Naur linux-old/arch/i386/boot/compressed/Makefile linux-lzma/arch/i386/boot/compressed/Makefile
+--- linux-old/arch/i386/boot/compressed/Makefile	2005-06-04 21:53:40.000000000 -0400
++++ linux-lzma/arch/i386/boot/compressed/Makefile	2005-06-05 00:25:23.000000000 -0400
 @@ -4,15 +4,15 @@
  # create a compressed vmlinux image from the original vmlinux
  #
@@ -1112,9 +1019,9 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/Makefile linux-2.6.21.1-owrt/
 -$(obj)/piggy.o: $(src)/vmlinux.scr $(obj)/vmlinux.bin.gz FORCE
 +$(obj)/piggy.o: $(src)/vmlinux.scr $(obj)/vmlinux.bin.lzma FORCE
  	$(call if_changed,ld)
-diff -Nur linux-2.6.21.1/scripts/Makefile.lib linux-2.6.21.1-owrt/scripts/Makefile.lib
---- linux-2.6.21.1/scripts/Makefile.lib	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1-owrt/scripts/Makefile.lib	2007-05-14 11:55:38.000000000 +0200
+diff -urN linux-2.6.19.2/scripts/Makefile.lib linux-2.6.19.2.new/scripts/Makefile.lib
+--- linux-2.6.19.2/scripts/Makefile.lib	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2.new/scripts/Makefile.lib	2007-04-15 23:51:54.000000000 +0200
 @@ -162,4 +162,9 @@
  quiet_cmd_gzip = GZIP    $@
  cmd_gzip = gzip -f -9 < $< > $@
