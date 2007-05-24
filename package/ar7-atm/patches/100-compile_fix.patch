@@ -691,3 +691,17 @@ diff -urN sangam_atm-07.01.00.10/tn7sar.c sangam-atm-0.3/tn7sar.c
  #include <linux/proc_fs.h>
  #include <linux/string.h>
  #include <linux/ctype.h>
+
+diff -ur atm.old/tn7dsl.c atm.dev/tn7dsl.c
+--- atm.old/tn7dsl.c	2007-05-24 17:36:33.865636000 +0200
++++ atm.dev/tn7dsl.c	2007-05-24 17:41:32.094298496 +0200
+@@ -3430,8 +3430,7 @@
+   if (initialized == 1)
+     return;
+ 
+-  dslmod_sysctl_header = register_sysctl_table(dslmod_root_table, 1);
+-  dslmod_root_table->child->de->owner = THIS_MODULE;
++  dslmod_sysctl_header = register_sysctl_table(dslmod_root_table);
+ 
+   /*
+    * set the defaults

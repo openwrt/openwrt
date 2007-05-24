@@ -30,8 +30,7 @@
 
 #include <linux/types.h>
 #include <linux/cdev.h>
-
-#include <asm/gpio.h>
+#include <gpio.h>
 
 #define DRVNAME "ar7_gpio"
 #define LONGNAME "TI AR7 GPIOs Driver"

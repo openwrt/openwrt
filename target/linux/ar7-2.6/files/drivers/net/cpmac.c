@@ -38,7 +38,7 @@
 #include <linux/phy.h>
 #include <linux/platform_device.h>
 #include <asm/ar7/ar7.h>
-#include <asm/gpio.h>
+#include <gpio.h>
 
 MODULE_AUTHOR("Eugene Konev");
 MODULE_DESCRIPTION("TI AR7 ethernet driver (CPMAC)");
