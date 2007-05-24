@@ -1,9 +1,9 @@
-diff -urN linux-2.6.16.7/drivers/char/watchdog/Kconfig linux-2.6.16.7.new/drivers/char/watchdog/Kconfig
---- linux-2.6.16.7/drivers/char/watchdog/Kconfig	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7.new/drivers/char/watchdog/Kconfig	2006-04-22 23:23:53.000000000 +0200
-@@ -460,6 +460,14 @@
- 	  timer expired and no process has written to /dev/watchdog during
- 	  that time.
+diff -urN linux-2.6.21.1/drivers/char/watchdog/Kconfig linux-2.6.21.1.new/drivers/char/watchdog/Kconfig
+--- linux-2.6.21.1/drivers/char/watchdog/Kconfig	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.new/drivers/char/watchdog/Kconfig	2007-05-24 20:05:52.000000000 +0200
+@@ -586,6 +586,14 @@
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called rm9k_wdt.
  
 +config MTX1_WATCHDOG
 +	tristate "MTX-1 Hardware Watchdog"
@@ -16,13 +16,14 @@ diff -urN linux-2.6.16.7/drivers/char/watchdog/Kconfig linux-2.6.16.7.new/driver
  # S390 Architecture
  
  config ZVM_WATCHDOG
-diff -urN linux-2.6.16.7/drivers/char/watchdog/Makefile linux-2.6.16.7.new/drivers/char/watchdog/Makefile
---- linux-2.6.16.7/drivers/char/watchdog/Makefile	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7.new/drivers/char/watchdog/Makefile	2006-04-22 23:21:18.000000000 +0200
-@@ -65,6 +65,7 @@
- 
+diff -urN linux-2.6.21.1/drivers/char/watchdog/Makefile linux-2.6.21.1.new/drivers/char/watchdog/Makefile
+--- linux-2.6.21.1/drivers/char/watchdog/Makefile	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.new/drivers/char/watchdog/Makefile	2007-05-24 20:05:41.000000000 +0200
+@@ -74,6 +74,7 @@
  # MIPS Architecture
  obj-$(CONFIG_INDYDOG) += indydog.o
+ obj-$(CONFIG_WDT_RM9K_GPI) += rm9k_wdt.o
 +obj-$(CONFIG_MTX1_WATCHDOG) += mtx-1_watchdog.o
  
  # S390 Architecture
+ 

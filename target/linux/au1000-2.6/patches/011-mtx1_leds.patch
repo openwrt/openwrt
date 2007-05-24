@@ -15,13 +15,13 @@ diff -urN linux-2.6.19.2/drivers/leds/Kconfig linux-2.6.19.2.new/drivers/leds/Kc
  comment "LED Triggers"
  
  config LEDS_TRIGGERS
-diff -urN linux-2.6.19.2/drivers/leds/Makefile linux-2.6.19.2.new/drivers/leds/Makefile
---- linux-2.6.19.2/drivers/leds/Makefile	2007-01-10 20:10:37.000000000 +0100
-+++ linux-2.6.19.2.new/drivers/leds/Makefile	2007-03-02 13:49:35.000000000 +0100
-@@ -13,6 +13,7 @@
- obj-$(CONFIG_LEDS_S3C24XX)		+= leds-s3c24xx.o
- obj-$(CONFIG_LEDS_AMS_DELTA)		+= leds-ams-delta.o
- obj-$(CONFIG_LEDS_NET48XX)		+= leds-net48xx.o
+diff -urN linux-2.6.21.1/drivers/leds/Makefile linux-2.6.21.1.new/drivers/leds/Makefile
+--- linux-2.6.21.1/drivers/leds/Makefile	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.new/drivers/leds/Makefile	2007-05-24 23:39:18.000000000 +0200
+@@ -16,6 +16,7 @@
+ obj-$(CONFIG_LEDS_WRAP)			+= leds-wrap.o
+ obj-$(CONFIG_LEDS_H1940)		+= leds-h1940.o
+ obj-$(CONFIG_LEDS_COBALT)		+= leds-cobalt.o
 +obj-$(CONFIG_LEDS_MTX1)			+= leds-mtx1.o
  
  # LED Triggers

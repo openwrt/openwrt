@@ -376,7 +376,7 @@ diff -urN linux-2.6.19/drivers/i2c/busses/i2c-au1x00gpio.c linux-2.6.19.new/driv
 +		if (adapter->scl_gpio == scl_gpio &&
 +		    adapter->sda_gpio == sda_gpio)
 +		{
-+			i2c_bit_del_bus(&adapter->adapter);
++			i2c_del_adapter(&adapter->adapter);
 +			if (prev)
 +				prev->next = adapter->next;
 +			else
