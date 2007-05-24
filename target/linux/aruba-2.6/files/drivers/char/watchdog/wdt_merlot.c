@@ -4,6 +4,8 @@
 #include <linux/miscdevice.h>
 #include <linux/watchdog.h>
 #include <linux/fs.h>
+#include <linux/jiffies.h>
+#include <linux/timer.h>
 
 #include <asm/io.h>
 #include <asm/uaccess.h>
