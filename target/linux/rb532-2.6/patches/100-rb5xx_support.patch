@@ -1,7 +1,7 @@
 diff -urN linux.old/arch/mips/Kconfig linux.dev/arch/mips/Kconfig
 --- linux.old/arch/mips/Kconfig	2006-11-29 22:57:37.000000000 +0100
 +++ linux.dev/arch/mips/Kconfig	2006-12-14 04:09:50.000000000 +0100
-@@ -728,6 +728,19 @@
+@@ -780,6 +780,19 @@
  	select SYS_SUPPORTS_BIG_ENDIAN
  	select TOSHIBA_BOARDS
  
@@ -21,12 +21,12 @@ diff -urN linux.old/arch/mips/Kconfig linux.dev/arch/mips/Kconfig
  config TOSHIBA_RBTX4927
  	bool "Toshiba TBTX49[23]7 board"
  	select DMA_NONCOHERENT
-@@ -1015,7 +1028,7 @@
+@@ -1106,7 +1119,7 @@
  
  config MIPS_L1_CACHE_SHIFT
  	int
--	default "4" if MACH_DECSTATION
-+	default "4" if MACH_DECSTATION || MIKROTIK_RB500
+-	default "4" if MACH_DECSTATION || SNI_RM
++	default "4" if MACH_DECSTATION || SNI_RM || MIKROTIK_RB500
  	default "7" if SGI_IP27
  	default "5"
  

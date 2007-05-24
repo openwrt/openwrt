@@ -2,8 +2,8 @@ diff -ur linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
 --- linux.old/drivers/net/via-rhine.c	2006-11-29 22:57:37.000000000 +0100
 +++ linux.dev/drivers/net/via-rhine.c	2006-12-14 03:39:01.000000000 +0100
 @@ -33,6 +33,7 @@
- #define DRV_VERSION	"1.4.2"
- #define DRV_RELDATE	"Sept-11-2006"
+ #define DRV_VERSION	"1.4.3"
+ #define DRV_RELDATE	"2007-03-06"
  
 +#define PKT_ALIGN 1
  
@@ -26,10 +26,10 @@ diff -ur linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  #include <asm/irq.h>
  #include <asm/uaccess.h>
 +#include <asm/unaligned.h>
+ #include <linux/dmi.h>
  
  /* These identify the driver base version and may not be removed. */
- static char version[] __devinitdata =
-@@ -123,12 +127,14 @@
+@@ -124,12 +128,14 @@
  
  module_param(max_interrupt_work, int, 0);
  module_param(debug, int, 0);
@@ -46,7 +46,7 @@ diff -ur linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  
  /*
  		Theory of Operation
-@@ -923,7 +929,7 @@
+@@ -924,7 +930,7 @@
  
  	/* Fill in the Rx buffers.  Handle allocation failure gracefully. */
  	for (i = 0; i < RX_RING_SIZE; i++) {
@@ -55,7 +55,7 @@ diff -ur linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  		rp->rx_skbuff[i] = skb;
  		if (skb == NULL)
  			break;
-@@ -1481,6 +1487,9 @@
+@@ -1482,6 +1488,9 @@
  			/* Length should omit the CRC */
  			int pkt_len = data_size - 4;
  
@@ -65,7 +65,7 @@ diff -ur linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  			/* Check if the packet is long enough to accept without
  			   copying to a minimally-sized skbuff. */
  			if (pkt_len < rx_copybreak &&
-@@ -1500,7 +1509,9 @@
+@@ -1501,7 +1510,9 @@
  							       rp->rx_skbuff_dma[entry],
  							       rp->rx_buf_sz,
  							       PCI_DMA_FROMDEVICE);
@@ -76,7 +76,7 @@ diff -ur linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  				skb = rp->rx_skbuff[entry];
  				if (skb == NULL) {
  					printk(KERN_ERR "%s: Inconsistent Rx "
-@@ -1514,6 +1525,14 @@
+@@ -1515,6 +1526,14 @@
  						 rp->rx_skbuff_dma[entry],
  						 rp->rx_buf_sz,
  						 PCI_DMA_FROMDEVICE);
@@ -91,3 +91,4 @@ diff -ur linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  			}
  			skb->protocol = eth_type_trans(skb, dev);
  #ifdef CONFIG_VIA_RHINE_NAPI
+
