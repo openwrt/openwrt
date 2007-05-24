@@ -14,41 +14,26 @@
 #include <linux/platform_device.h>
 #include <linux/leds.h>
 #include <linux/err.h>
-#include <asm/mach-au1x00/au1000.h>
+#include <asm/gpio.h>
 
 static struct platform_device *pdev;
 
-static void mtx1_green_led_set(struct led_classdev *led_cdev, enum led_brightness brightness)
+static void mtx1_led_set(struct led_classdev *led_cdev, enum led_brightness brightness)
 {
-	/* The power LED cannot be controlled the same way as for the Status LED */
-	if (brightness) {
-        	au_writel( 0x18000800, GPIO2_OUTPUT );
-	} else {
-		au_writel( 0x18000000, GPIO2_OUTPUT);
-	}
-}
-
-static void mtx1_red_led_set(struct led_classdev *led_cdev, enum led_brightness brightness)
-{
-	/* We store GPIO address (originally address - 200) in the "flags" field*/
-	unsigned long pinmask = 1 << led_cdev->flags; 
-	if (brightness) {
-		au_writel((pinmask << 16) | pinmask, GPIO2_OUTPUT); 
-	} else { 
-		au_writel((pinmask << 16) | 0, GPIO2_OUTPUT);
-	}
+	if (!strcmp("mtx1:green", led_cdev->name))
+		gpio_set_value(211, brightness ? 1 : 0);
+	else
+		gpio_set_value(212, brightness ? 1 : 0);
 }
 
 static struct led_classdev mtx1_green_led = {
 	.name = "mtx1:green",
-	.brightness_set = mtx1_green_led_set,
+	.brightness_set = mtx1_led_set,
 };
 
 static struct led_classdev mtx1_red_led = {
 	.name = "mtx1:red",
-	.flags = 12,
-	.brightness_set = mtx1_red_led_set,
-	.default_trigger = "ide-disk",
+	.brightness_set = mtx1_led_set,
 };
 
 static int mtx1_leds_probe(struct platform_device *pdev)

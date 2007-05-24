@@ -1,0 +1,32 @@
+--- linux-2.6.21.1/arch/mips/Kconfig	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1-owrt/arch/mips/Kconfig	2007-05-24 13:51:13.000000000 +0200
+@@ -869,6 +869,10 @@
+ 	bool
+ 	default y
+ 
++config GENERIC_GPIO
++	bool
++	default n
++
+ config SCHED_NO_NO_OMIT_FRAME_POINTER
+ 	bool
+ 	default y
+--- linux-2.6.21.1/include/asm-mips/gpio.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/include/asm-mips/gpio.h	2007-05-24 13:51:13.000000000 +0200
+@@ -0,0 +1,6 @@
++#ifndef _ASM_MIPS_GPIO_H
++#define _ASM_MIPS_GPIO_H
++
++#include <gpio.h>
++
++#endif /* _ASM_MIPS_GPIO_H */
+--- linux-2.6.21.1/arch/mips/defconfig	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1-owrt/arch/mips/defconfig	2007-05-24 14:37:52.000000000 +0200
+@@ -71,6 +71,7 @@
+ CONFIG_GENERIC_HWEIGHT=y
+ CONFIG_GENERIC_CALIBRATE_DELAY=y
+ CONFIG_GENERIC_TIME=y
++CONFIG_GENERIC_GPIO=n
+ CONFIG_SCHED_NO_NO_OMIT_FRAME_POINTER=y
+ # CONFIG_GENERIC_HARDIRQS_NO__DO_IRQ is not set
+ CONFIG_ARC=y
