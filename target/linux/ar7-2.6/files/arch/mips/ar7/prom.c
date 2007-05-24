@@ -279,7 +279,6 @@ static void __init console_config(void)
 
 void __init prom_init(void)
 {
-	prom_printf("\nLINUX running...\n");
 	ar7_init_cmdline(fw_arg0, (char **)fw_arg1);
 	ar7_init_env((struct env_var *)fw_arg2);
 	console_config();

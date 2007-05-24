@@ -10,7 +10,6 @@
 #ifndef _ASM_AR7_SPACES_H
 #define _ASM_AR7_SPACES_H
 
-
 #define CAC_BASE		0x80000000
 #define IO_BASE			0xa0000000
 #define UNCAC_BASE		0xa0000000
@@ -21,7 +20,7 @@
  * We handle pages at KSEG0 for kernels with 32 bit address space.
  */
 #define PAGE_OFFSET		0x80000000UL
-#define ARCH_PFN_OFFSET	(0x14000000 >> PAGE_SHIFT)
+#define PHYS_OFFSET 	0x14000000UL
 
 /*
  * Memory above this physical address will be considered highmem.

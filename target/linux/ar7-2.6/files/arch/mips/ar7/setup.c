@@ -49,15 +49,13 @@ static void ar7_machine_power_off(void);
 
 static void ar7_machine_restart(char *command)
 {
-        volatile u32 *softres_reg = (u32 *)ioremap(AR7_REGS_RESET +
+	volatile u32 *softres_reg = (u32 *)ioremap(AR7_REGS_RESET +
 						   AR7_RESET_SOFTWARE, 1);
-	prom_printf("Reboot\n");
-        *softres_reg = 1;
+	*softres_reg = 1;
 }
 
 static void ar7_machine_halt(void)
 {
-	prom_printf("Halt\n");
 	while (1);
 }
 
@@ -65,8 +63,7 @@ static void ar7_machine_power_off(void)
 {
         volatile u32 *power_reg = (u32 *)ioremap(AR7_REGS_POWER, 1);
 	u32 power_state = *power_reg | (3 << 30);
-	prom_printf("Power off\n");
-        *power_reg = power_state;
+	*power_reg = power_state;
 	ar7_machine_halt();
 }
 

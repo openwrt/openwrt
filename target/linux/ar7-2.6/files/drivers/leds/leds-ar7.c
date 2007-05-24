@@ -25,8 +25,7 @@
 #include <linux/leds.h>
 #include <linux/err.h>
 #include <asm/io.h>
-
-#include <asm/gpio.h>
+#include <gpio.h>
 
 #define DRVNAME "ar7-leds"
 #define LONGNAME "TI AR7 LEDs driver"
