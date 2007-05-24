@@ -40,6 +40,7 @@
 #include <linux/irq.h>
 #include <linux/timex.h>
 
+#include <asm/irq_cpu.h>
 #include <asm/mipsregs.h>
 #include <asm/ptrace.h>
 #include <asm/debug.h>
