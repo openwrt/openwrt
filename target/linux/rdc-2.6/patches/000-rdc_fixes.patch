@@ -30,19 +30,6 @@ diff -urN linux-2.6.19/arch/i386/Makefile linux-2.6.19.new/arch/i386/Makefile
  
  # default subarch .h files
  mflags-y += -Iinclude/asm-i386/mach-default
-diff -urN linux-2.6.19/arch/i386/kernel/time.c linux-2.6.19.new/arch/i386/kernel/time.c
---- linux-2.6.19/arch/i386/kernel/time.c	2006-11-29 22:57:37.000000000 +0100
-+++ linux-2.6.19.new/arch/i386/kernel/time.c	2006-12-17 17:13:10.000000000 +0100
-@@ -361,7 +361,8 @@
- static void __init hpet_time_init(void)
- {
- 	struct timespec ts;
--	ts.tv_sec = get_cmos_time();
-+	/* RDC board does not have CMOS */
-+	ts.tv_sec = 0;
- 	ts.tv_nsec = (INITIAL_JIFFIES % HZ) * (NSEC_PER_SEC / HZ);
- 
- 	do_settimeofday(&ts);
 diff -urN linux-2.6.19/arch/i386/mach-rdc/Makefile linux-2.6.19.new/arch/i386/mach-rdc/Makefile
 --- linux-2.6.19/arch/i386/mach-rdc/Makefile	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.19.new/arch/i386/mach-rdc/Makefile	2006-12-17 17:13:33.000000000 +0100
