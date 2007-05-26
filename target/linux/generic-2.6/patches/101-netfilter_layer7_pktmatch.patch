@@ -1,6 +1,6 @@
-diff -ur linux.dev/include/linux/netfilter_ipv4/ipt_layer7.h linux.dev2/include/linux/netfilter_ipv4/ipt_layer7.h
---- linux.dev/include/linux/netfilter_ipv4/ipt_layer7.h	2007-01-01 05:18:48.000000000 +0100
-+++ linux.dev2/include/linux/netfilter_ipv4/ipt_layer7.h	2007-01-01 05:30:46.000000000 +0100
+diff -urN linux-2.6.21.1.old/include/linux/netfilter_ipv4/ipt_layer7.h linux-2.6.21.1.dev/include/linux/netfilter_ipv4/ipt_layer7.h
+--- linux-2.6.21.1.old/include/linux/netfilter_ipv4/ipt_layer7.h	2007-05-26 20:17:47.624408296 +0200
++++ linux-2.6.21.1.dev/include/linux/netfilter_ipv4/ipt_layer7.h	2007-05-26 20:17:48.729240336 +0200
 @@ -21,6 +21,7 @@
      char protocol[MAX_PROTOCOL_LEN];
      char invert:1;
@@ -9,9 +9,9 @@ diff -ur linux.dev/include/linux/netfilter_ipv4/ipt_layer7.h linux.dev2/include/
  };
  
  #endif /* _IPT_LAYER7_H */
-diff -ur linux.dev/net/ipv4/netfilter/ipt_layer7.c linux.dev2/net/ipv4/netfilter/ipt_layer7.c
---- linux.dev/net/ipv4/netfilter/ipt_layer7.c	2007-01-01 05:18:48.000000000 +0100
-+++ linux.dev2/net/ipv4/netfilter/ipt_layer7.c	2007-01-01 05:30:46.000000000 +0100
+diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/ipt_layer7.c linux-2.6.21.1.dev/net/ipv4/netfilter/ipt_layer7.c
+--- linux-2.6.21.1.old/net/ipv4/netfilter/ipt_layer7.c	2007-05-26 20:17:47.626407992 +0200
++++ linux-2.6.21.1.dev/net/ipv4/netfilter/ipt_layer7.c	2007-05-26 20:17:48.729240336 +0200
 @@ -296,33 +296,34 @@
  	}
  }

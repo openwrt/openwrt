@@ -1,6 +1,6 @@
-diff -Nur linux-2.6.21.1/include/linux/LzmaDecode.h linux-2.6.21.1-owrt/include/linux/LzmaDecode.h
---- linux-2.6.21.1/include/linux/LzmaDecode.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/LzmaDecode.h	2007-05-14 10:51:05.000000000 +0200
+diff -urN linux-2.6.21.1.old/include/linux/LzmaDecode.h linux-2.6.21.1.dev/include/linux/LzmaDecode.h
+--- linux-2.6.21.1.old/include/linux/LzmaDecode.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/include/linux/LzmaDecode.h	2007-05-26 19:03:45.705682584 +0200
 @@ -0,0 +1,100 @@
 +/*
 +  LzmaDecode.h
@@ -102,9 +102,9 @@ diff -Nur linux-2.6.21.1/include/linux/LzmaDecode.h linux-2.6.21.1-owrt/include/
 +    UInt32 *outSizeProcessed);
 +
 +#endif
-diff -Nur linux-2.6.21.1/lib/LzmaDecode.c linux-2.6.21.1-owrt/lib/LzmaDecode.c
---- linux-2.6.21.1/lib/LzmaDecode.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/lib/LzmaDecode.c	2007-05-14 10:51:05.000000000 +0200
+diff -urN linux-2.6.21.1.old/lib/LzmaDecode.c linux-2.6.21.1.dev/lib/LzmaDecode.c
+--- linux-2.6.21.1.old/lib/LzmaDecode.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/lib/LzmaDecode.c	2007-05-26 19:03:45.706682432 +0200
 @@ -0,0 +1,663 @@
 +/*
 +  LzmaDecode.c
@@ -769,9 +769,9 @@ diff -Nur linux-2.6.21.1/lib/LzmaDecode.c linux-2.6.21.1-owrt/lib/LzmaDecode.c
 +  *outSizeProcessed = nowPos;
 +  return LZMA_RESULT_OK;
 +}
-diff -Nur linux-2.6.21.1/lib/Makefile linux-2.6.21.1-owrt/lib/Makefile
---- linux-2.6.21.1/lib/Makefile	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1-owrt/lib/Makefile	2007-05-14 10:52:43.000000000 +0200
+diff -urN linux-2.6.21.1.old/lib/Makefile linux-2.6.21.1.dev/lib/Makefile
+--- linux-2.6.21.1.old/lib/Makefile	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/lib/Makefile	2007-05-26 19:03:45.721680152 +0200
 @@ -12,7 +12,7 @@
  
  lib-y	+= kobject.o kref.o kobject_uevent.o klist.o

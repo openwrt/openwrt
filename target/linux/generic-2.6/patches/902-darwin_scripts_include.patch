@@ -1,100 +1,6 @@
-diff -urN linux-2.6.19.1/scripts/mod/file2alias.c linux-2.6.19.1.new/scripts/mod/file2alias.c
---- linux-2.6.19.1/scripts/mod/file2alias.c	2006-12-11 20:32:53.000000000 +0100
-+++ linux-2.6.19.1.new/scripts/mod/file2alias.c	2007-01-02 15:28:47.000000000 +0100
-@@ -37,7 +37,21 @@
-  * even potentially has different endianness and word sizes, since
-  * we handle those differences explicitly below */
- #include "../../include/linux/mod_devicetable.h"
-+#ifndef __APPLE__
- #include "../../include/linux/input.h"
-+#else
-+#define EV_MAX                  0x1f
-+#define KEY_MUTE                113
-+#define KEY_MIN_INTERESTING     KEY_MUTE
-+#define KEY_MAX                 0x1ff
-+#define REL_MAX                 0x0f
-+#define ABS_MAX                 0x3f
-+#define MSC_MAX                 0x07
-+#define LED_MAX                 0x0f
-+#define SND_MAX                 0x07
-+#define FF_MAX          	0x7f
-+#define SW_MAX                  0x0f
-+#endif
- 
- #define ADD(str, sep, cond, field)                              \
- do {                                                            \
-diff -urN linux-2.6.19.1/scripts/mod/mk_elfconfig.c linux-2.6.19.1.new/scripts/mod/mk_elfconfig.c
---- linux-2.6.19.1/scripts/mod/mk_elfconfig.c	2006-12-11 20:32:53.000000000 +0100
-+++ linux-2.6.19.1.new/scripts/mod/mk_elfconfig.c	2007-01-02 15:43:57.000000000 +0100
-@@ -1,7 +1,11 @@
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
-+#ifndef __APPLE__
- #include <elf.h>
-+#else
-+#include "../../../../../tools/sstrip/include/elf.h"
-+#endif
- 
- int
- main(int argc, char **argv)
-diff -urN linux-2.6.19.1/scripts/mod/modpost.h linux-2.6.19.1.new/scripts/mod/modpost.h
---- linux-2.6.19.1/scripts/mod/modpost.h	2006-12-11 20:32:53.000000000 +0100
-+++ linux-2.6.19.1.new/scripts/mod/modpost.h	2007-01-02 15:40:55.000000000 +0100
-@@ -7,7 +7,11 @@
- #include <sys/mman.h>
- #include <fcntl.h>
- #include <unistd.h>
-+#ifndef __APPLE__
- #include <elf.h>
-+#else
-+#include "../../../../../tools/sstrip/include/elf.h"
-+#endif
- 
- #include "elfconfig.h"
- 
-diff -urN linux-2.6.19.1/scripts/mod/sumversion.c linux-2.6.19.1.new/scripts/mod/sumversion.c
---- linux-2.6.19.1/scripts/mod/sumversion.c	2006-12-11 20:32:53.000000000 +0100
-+++ linux-2.6.19.1.new/scripts/mod/sumversion.c	2007-01-02 15:30:23.000000000 +0100
-@@ -8,6 +8,9 @@
- #include <errno.h>
- #include <string.h>
- #include "modpost.h"
-+#ifdef __APPLE__
-+#include <limits.h>
-+#endif
- 
- /*
-  * Stolen form Cryptographic API.
-diff -urN linux-2.6.19.1/scripts/kconfig linux-2.6.19.1.new/scripts/kconfig/Makefile
---- linux-2.6.19.1/scripts/kconfig/Makefile    2007-01-04 17:49:35.000000000 +0100
-+++ linux-2.6.19.1.new/scripts/kconfig/Makefile        2007-01-04 17:50:37.000000000 +0100
-@@ -87,6 +87,9 @@
- # we really need to do so. (Do not call gcc as part of make mrproper)
- HOST_EXTRACFLAGS = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags)
- HOST_LOADLIBES   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOSTCC))
-+ifeq ($(shell uname -s),Darwin)
-+HOST_LOADLIBES  += -lncurses
-+endif
- 
- HOST_EXTRACFLAGS += -DLOCALE
-
-diff -urN linux-2.6.19.1/scripts/genksyms/parse.y linux-2.6.19.1.new/scripts/genksyms/parse.y 
---- linux-2.6.19.1/scripts/genksyms/parse.y	2006-12-11 20:32:53.000000000 +0100
-+++ linux-2.6.19.1.new/scripts/genksyms/parse.y	2007-01-04 19:20:55.000000000 +0100
-@@ -24,7 +24,9 @@
- %{
- 
- #include <assert.h>
-+#ifndef __APPLE__
- #include <malloc.h>
-+#endif
- #include "genksyms.h"
- 
- static int is_typedef;
-diff -urN linux-2.6.19.1/scripts/genksyms/parse.c_shipped linux-2.6.19.1.new/scripts/genksyms/parse.c_shipped
---- linux-2.6.19.1/scripts/genksyms/parse.c_shipped	2007-01-04 19:34:09.000000000 +0100
-+++ linux-2.6.19.1.new/scripts/genksyms/parse.c_shipped	2007-01-04 19:34:02.000000000 +0100
+diff -urN linux-2.6.21.1.old/scripts/genksyms/parse.c_shipped linux-2.6.21.1.dev/scripts/genksyms/parse.c_shipped
+--- linux-2.6.21.1.old/scripts/genksyms/parse.c_shipped	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/scripts/genksyms/parse.c_shipped	2007-05-26 21:26:23.565690112 +0200
 @@ -144,7 +144,9 @@
  
  
@@ -105,8 +11,22 @@ diff -urN linux-2.6.19.1/scripts/genksyms/parse.c_shipped linux-2.6.19.1.new/scr
  #include "genksyms.h"
  
  static int is_typedef;
---- linux-2.6.19.1/scripts/kallsyms.c	2006-12-11 20:32:53.000000000 +0100
-+++ linux-2.6.19.1.new/scripts/kallsyms.c	2007-01-04 19:46:38.000000000 +0100
+diff -urN linux-2.6.21.1.old/scripts/genksyms/parse.y linux-2.6.21.1.dev/scripts/genksyms/parse.y
+--- linux-2.6.21.1.old/scripts/genksyms/parse.y	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/scripts/genksyms/parse.y	2007-05-26 21:26:23.563690416 +0200
+@@ -24,7 +24,9 @@
+ %{
+ 
+ #include <assert.h>
++#ifndef __APPLE__
+ #include <malloc.h>
++#endif
+ #include "genksyms.h"
+ 
+ static int is_typedef;
+diff -urN linux-2.6.21.1.old/scripts/kallsyms.c linux-2.6.21.1.dev/scripts/kallsyms.c
+--- linux-2.6.21.1.old/scripts/kallsyms.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/scripts/kallsyms.c	2007-05-26 21:26:23.579687984 +0200
 @@ -30,6 +30,35 @@
  #include <stdlib.h>
  #include <string.h>
@@ -143,3 +63,84 @@ diff -urN linux-2.6.19.1/scripts/genksyms/parse.c_shipped linux-2.6.19.1.new/scr
  
  #define KSYM_NAME_LEN		127
  
+diff -urN linux-2.6.21.1.old/scripts/kconfig/Makefile linux-2.6.21.1.dev/scripts/kconfig/Makefile
+--- linux-2.6.21.1.old/scripts/kconfig/Makefile	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/scripts/kconfig/Makefile	2007-05-26 21:26:23.553691936 +0200
+@@ -87,6 +87,9 @@
+ # we really need to do so. (Do not call gcc as part of make mrproper)
+ HOST_EXTRACFLAGS = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags)
+ HOST_LOADLIBES   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOSTCC))
++ifeq ($(shell uname -s),Darwin)
++HOST_LOADLIBES  += -lncurses
++endif
+ 
+ HOST_EXTRACFLAGS += -DLOCALE
+ 
+diff -urN linux-2.6.21.1.old/scripts/mod/file2alias.c linux-2.6.21.1.dev/scripts/mod/file2alias.c
+--- linux-2.6.21.1.old/scripts/mod/file2alias.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/scripts/mod/file2alias.c	2007-05-26 21:26:23.552692088 +0200
+@@ -37,7 +37,21 @@
+  * even potentially has different endianness and word sizes, since
+  * we handle those differences explicitly below */
+ #include "../../include/linux/mod_devicetable.h"
++#ifndef __APPLE__
+ #include "../../include/linux/input.h"
++#else
++#define EV_MAX                  0x1f
++#define KEY_MUTE                113
++#define KEY_MIN_INTERESTING     KEY_MUTE
++#define KEY_MAX                 0x1ff
++#define REL_MAX                 0x0f
++#define ABS_MAX                 0x3f
++#define MSC_MAX                 0x07
++#define LED_MAX                 0x0f
++#define SND_MAX                 0x07
++#define FF_MAX          	0x7f
++#define SW_MAX                  0x0f
++#endif
+ 
+ #define ADD(str, sep, cond, field)                              \
+ do {                                                            \
+diff -urN linux-2.6.21.1.old/scripts/mod/mk_elfconfig.c linux-2.6.21.1.dev/scripts/mod/mk_elfconfig.c
+--- linux-2.6.21.1.old/scripts/mod/mk_elfconfig.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/scripts/mod/mk_elfconfig.c	2007-05-26 21:26:23.553691936 +0200
+@@ -1,7 +1,11 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#ifndef __APPLE__
+ #include <elf.h>
++#else
++#include "../../../../../tools/sstrip/include/elf.h"
++#endif
+ 
+ int
+ main(int argc, char **argv)
+diff -urN linux-2.6.21.1.old/scripts/mod/modpost.h linux-2.6.21.1.dev/scripts/mod/modpost.h
+--- linux-2.6.21.1.old/scripts/mod/modpost.h	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/scripts/mod/modpost.h	2007-05-26 21:26:23.553691936 +0200
+@@ -7,7 +7,11 @@
+ #include <sys/mman.h>
+ #include <fcntl.h>
+ #include <unistd.h>
++#ifndef __APPLE__
+ #include <elf.h>
++#else
++#include "../../../../../tools/sstrip/include/elf.h"
++#endif
+ 
+ #include "elfconfig.h"
+ 
+diff -urN linux-2.6.21.1.old/scripts/mod/sumversion.c linux-2.6.21.1.dev/scripts/mod/sumversion.c
+--- linux-2.6.21.1.old/scripts/mod/sumversion.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/scripts/mod/sumversion.c	2007-05-26 21:26:23.553691936 +0200
+@@ -8,6 +8,9 @@
+ #include <errno.h>
+ #include <string.h>
+ #include "modpost.h"
++#ifdef __APPLE__
++#include <limits.h>
++#endif
+ 
+ /*
+  * Stolen form Cryptographic API.

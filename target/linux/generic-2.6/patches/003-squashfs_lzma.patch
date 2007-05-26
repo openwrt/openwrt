@@ -1,6 +1,6 @@
-diff -urN linux-2.6.19.old/fs/squashfs/inode.c linux-2.6.19.dev/fs/squashfs/inode.c
---- linux-2.6.19.old/fs/squashfs/inode.c	2006-12-14 03:13:20.000000000 +0100
-+++ linux-2.6.19.dev/fs/squashfs/inode.c	2006-12-14 03:13:20.000000000 +0100
+diff -urN linux-2.6.21.1.old/fs/squashfs/inode.c linux-2.6.21.1.dev/fs/squashfs/inode.c
+--- linux-2.6.21.1.old/fs/squashfs/inode.c	2007-05-26 19:03:45.499713896 +0200
++++ linux-2.6.21.1.dev/fs/squashfs/inode.c	2007-05-26 19:07:27.951896024 +0200
 @@ -4,6 +4,9 @@
   * Copyright (c) 2002, 2003, 2004, 2005, 2006
   * Phillip Lougher <phillip@lougher.org.uk>
@@ -106,4 +106,3 @@ diff -urN linux-2.6.19.old/fs/squashfs/inode.c linux-2.6.19.dev/fs/squashfs/inod
  	unregister_filesystem(&squashfs_fs_type);
  	destroy_inodecache();
  }
-

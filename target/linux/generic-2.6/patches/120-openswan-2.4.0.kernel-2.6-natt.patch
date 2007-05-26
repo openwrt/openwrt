@@ -1,6 +1,6 @@
-diff -Nur linux-2.6.21.1/include/net/xfrmudp.h linux-2.6.21.1-owrt/include/net/xfrmudp.h
---- linux-2.6.21.1/include/net/xfrmudp.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/net/xfrmudp.h	2007-05-14 11:26:11.000000000 +0200
+diff -urN linux-2.6.21.1.old/include/net/xfrmudp.h linux-2.6.21.1.dev/include/net/xfrmudp.h
+--- linux-2.6.21.1.old/include/net/xfrmudp.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/include/net/xfrmudp.h	2007-05-26 20:24:53.933599448 +0200
 @@ -0,0 +1,10 @@
 +/*
 + * pointer to function for type that xfrm4_input wants, to permit
@@ -12,9 +12,9 @@ diff -Nur linux-2.6.21.1/include/net/xfrmudp.h linux-2.6.21.1-owrt/include/net/x
 +extern int udp4_register_esp_rcvencap(xfrm4_rcv_encap_t func
 +				      , xfrm4_rcv_encap_t *oldfunc);
 +extern int udp4_unregister_esp_rcvencap(xfrm4_rcv_encap_t func);
-diff -Nur linux-2.6.21.1/net/ipv4/Kconfig linux-2.6.21.1-owrt/net/ipv4/Kconfig
---- linux-2.6.21.1/net/ipv4/Kconfig	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1-owrt/net/ipv4/Kconfig	2007-05-14 11:26:11.000000000 +0200
+diff -urN linux-2.6.21.1.old/net/ipv4/Kconfig linux-2.6.21.1.dev/net/ipv4/Kconfig
+--- linux-2.6.21.1.old/net/ipv4/Kconfig	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/net/ipv4/Kconfig	2007-05-26 20:24:53.965594584 +0200
 @@ -266,6 +266,12 @@
  	  Network), but can be distributed all over the Internet. If you want
  	  to do that, say Y here and to "IP multicast routing" below.
@@ -28,9 +28,9 @@ diff -Nur linux-2.6.21.1/net/ipv4/Kconfig linux-2.6.21.1-owrt/net/ipv4/Kconfig
  config IP_MROUTE
  	bool "IP: multicast routing"
  	depends on IP_MULTICAST
-diff -Nur linux-2.6.21.1/net/ipv4/udp.c linux-2.6.21.1-owrt/net/ipv4/udp.c
---- linux-2.6.21.1/net/ipv4/udp.c	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1-owrt/net/ipv4/udp.c	2007-05-14 11:42:44.000000000 +0200
+diff -urN linux-2.6.21.1.old/net/ipv4/udp.c linux-2.6.21.1.dev/net/ipv4/udp.c
+--- linux-2.6.21.1.old/net/ipv4/udp.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/net/ipv4/udp.c	2007-05-26 20:24:53.966594432 +0200
 @@ -101,12 +101,15 @@
  #include <net/route.h>
  #include <net/checksum.h>
