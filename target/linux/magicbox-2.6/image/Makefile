@@ -21,16 +21,17 @@ endef
 
 define Image/Build/jffs2-64k
 	( \
-		dd if=$(KDIR)/uImage bs=65536 conv=sync; \
+		dd if=$(KDIR)/uImage bs=1024k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=65536 conv=sync; \
 	) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
 endef
 
-#define Image/Build/jffs2-128k
-#	( \
-#		dd if=$(LINUX_DIR)/arch/ppc/boot/images/uImage bs=131072 conv=sync; \
-#		dd if=$(KDIR)/root.$(1) bs=131072 conv=sync; \
-#	) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
-#endef
+define Image/Build/squashfs
+	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+	( \
+		dd if=$(LINUX_DIR)/arch/ppc/boot/images/uImage bs=1024k conv=sync; \
+		dd if=$(KDIR)/root.$(1) bs=65536 conv=sync; \
+	) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
+endef
 
 $(eval $(call BuildImage))

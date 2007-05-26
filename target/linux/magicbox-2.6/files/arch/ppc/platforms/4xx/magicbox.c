@@ -24,6 +24,9 @@
 #include <linux/tty.h>
 #include <linux/serial.h>
 #include <linux/serial_core.h>
+#include <linux/platform_device.h>
+#include <linux/mtd/partitions.h>
+#include <linux/mtd/physmap.h>
 
 #include <asm/system.h>
 #include <asm/pci-bridge.h>
@@ -213,6 +216,50 @@ bios_fixup(struct pci_controller *hose, struct pcil0_regs *pcip)
 
 #endif /* DEBUG */
 }
+
+static struct resource magicbox_flash_resource = {
+	.start = 0xffc00000,
+	.end   = 0xffffffffULL,
+	.flags = IORESOURCE_MEM,
+};
+
+static struct mtd_partition magicbox_flash_parts[] = {
+	{
+		.name = "linux",
+		.offset = 0x0,
+		.size = 0x3c0000,
+	},
+	{
+		.name = "rootfs",
+		.offset = 0x100000,
+		.size = 0x2c0000,
+	}
+};
+
+static struct physmap_flash_data magicbox_flash_data = {
+	.width		= 2,
+	.parts		= magicbox_flash_parts,
+	.nr_parts	= ARRAY_SIZE(magicbox_flash_parts),
+};
+
+static struct platform_device magicbox_flash_device = {
+	.name		= "physmap-flash",
+	.id		= 0,
+	.dev = {
+			.platform_data = &magicbox_flash_data,
+		},
+	.num_resources	= 1,
+	.resource	= &magicbox_flash_resource,
+};
+
+static int magicbox_setup_flash(void)
+{
+	platform_device_register(&magicbox_flash_device);
+
+	return 0;
+};
+
+arch_initcall (magicbox_setup_flash);
 
 void __init
 magicbox_setup_arch(void)
