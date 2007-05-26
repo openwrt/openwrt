@@ -1,0 +1,20 @@
+--- linux.old/net/netfilter/Kconfig	2007-05-26 20:05:39.270134976 +0200
++++ linux.dev/net/netfilter/Kconfig	2007-05-26 20:12:44.258526920 +0200
+@@ -165,7 +165,7 @@
+ 
+ config NF_CONNTRACK_H323
+ 	tristate "H.323 protocol support (EXPERIMENTAL)"
+-	depends on EXPERIMENTAL && NF_CONNTRACK && (IPV6 || IPV6=n)
++	depends on EXPERIMENTAL && NF_CONNTRACK
+ 	help
+ 	  H.323 is a VoIP signalling protocol from ITU-T. As one of the most
+ 	  important VoIP protocols, it is widely used by voice hardware and
+@@ -416,7 +416,7 @@
+ 
+ config NETFILTER_XT_TARGET_TCPMSS
+ 	tristate '"TCPMSS" target support'
+-	depends on NETFILTER_XTABLES && (IPV6 || IPV6=n)
++	depends on NETFILTER_XTABLES
+ 	---help---
+ 	  This option adds a `TCPMSS' target, which allows you to alter the
+ 	  MSS value of TCP SYN packets, to control the maximum size for that
