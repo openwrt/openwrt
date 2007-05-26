@@ -40,6 +40,7 @@
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
+#include <linux/sched.h>
 #include <linux/wait.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/map.h>

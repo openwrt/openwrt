@@ -59,5 +59,5 @@ void plat_irq_dispatch(void)
 
 void __init arch_init_irq(void)
 {
-	mips_cpu_irq_init(0);
+	mips_cpu_irq_init();
 }
