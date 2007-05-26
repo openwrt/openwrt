@@ -1,6 +1,6 @@
-diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
---- madwifi.old/ath/if_ath.c	2007-05-23 16:46:50.748935304 +0200
-+++ madwifi.dev/ath/if_ath.c	2007-05-23 16:47:03.275031048 +0200
+diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.dev/ath/if_ath.c
+--- madwifi-ng-r2377-20070526.old/ath/if_ath.c	2007-05-26 18:51:09.199688976 +0200
++++ madwifi-ng-r2377-20070526.dev/ath/if_ath.c	2007-05-26 18:51:09.207687760 +0200
 @@ -75,7 +75,7 @@
  #include <net80211/if_llc.h>
  #endif
@@ -10,7 +10,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  
  #include "net80211/if_athproto.h"
  #include "if_athvar.h"
-@@ -356,7 +356,7 @@
+@@ -368,7 +368,7 @@
  		ath_keyprint(sc, __func__, ix, hk, mac);	\
  } while (0)
  #else /* defined(AR_DEBUG) */
@@ -19,9 +19,9 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  #define	DPRINTF(sc, _m, _fmt, ...)
  #define	KEYPRINTF(sc, k, ix, mac)
  #endif /* defined(AR_DEBUG) */
-diff -ur madwifi.old/ath_rate/amrr/amrr.c madwifi.dev/ath_rate/amrr/amrr.c
---- madwifi.old/ath_rate/amrr/amrr.c	2007-05-21 19:33:26.000000000 +0200
-+++ madwifi.dev/ath_rate/amrr/amrr.c	2007-05-23 16:47:03.276030896 +0200
+diff -urN madwifi-ng-r2377-20070526.old/ath_rate/amrr/amrr.c madwifi-ng-r2377-20070526.dev/ath_rate/amrr/amrr.c
+--- madwifi-ng-r2377-20070526.old/ath_rate/amrr/amrr.c	2007-05-21 19:33:26.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/ath_rate/amrr/amrr.c	2007-05-26 18:51:09.208687608 +0200
 @@ -69,7 +69,7 @@
  
  #include "amrr.h"
@@ -31,9 +31,9 @@ diff -ur madwifi.old/ath_rate/amrr/amrr.c madwifi.dev/ath_rate/amrr/amrr.c
  #ifdef AMRR_DEBUG
  #define	DPRINTF(sc, _fmt, ...) do {					\
  	if (sc->sc_debug & 0x10)					\
-diff -ur madwifi.old/ath_rate/minstrel/minstrel.c madwifi.dev/ath_rate/minstrel/minstrel.c
---- madwifi.old/ath_rate/minstrel/minstrel.c	2007-05-23 16:46:50.731937888 +0200
-+++ madwifi.dev/ath_rate/minstrel/minstrel.c	2007-05-23 16:47:03.276030896 +0200
+diff -urN madwifi-ng-r2377-20070526.old/ath_rate/minstrel/minstrel.c madwifi-ng-r2377-20070526.dev/ath_rate/minstrel/minstrel.c
+--- madwifi-ng-r2377-20070526.old/ath_rate/minstrel/minstrel.c	2007-05-26 18:51:08.653771968 +0200
++++ madwifi-ng-r2377-20070526.dev/ath_rate/minstrel/minstrel.c	2007-05-26 18:51:09.208687608 +0200
 @@ -116,7 +116,7 @@
  
  #include "minstrel.h"
@@ -43,9 +43,9 @@ diff -ur madwifi.old/ath_rate/minstrel/minstrel.c madwifi.dev/ath_rate/minstrel/
  #ifdef MINSTREL_DEBUG
  enum {
  	ATH_DEBUG_RATE		= 0x00000010	/* rate control */
-diff -ur madwifi.old/ath_rate/onoe/onoe.c madwifi.dev/ath_rate/onoe/onoe.c
---- madwifi.old/ath_rate/onoe/onoe.c	2007-05-21 19:33:26.000000000 +0200
-+++ madwifi.dev/ath_rate/onoe/onoe.c	2007-05-23 16:47:03.312025424 +0200
+diff -urN madwifi-ng-r2377-20070526.old/ath_rate/onoe/onoe.c madwifi-ng-r2377-20070526.dev/ath_rate/onoe/onoe.c
+--- madwifi-ng-r2377-20070526.old/ath_rate/onoe/onoe.c	2007-05-21 19:33:26.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/ath_rate/onoe/onoe.c	2007-05-26 18:51:09.209687456 +0200
 @@ -65,7 +65,7 @@
  
  #include "onoe.h"
@@ -55,9 +55,9 @@ diff -ur madwifi.old/ath_rate/onoe/onoe.c madwifi.dev/ath_rate/onoe/onoe.c
  #ifdef ONOE_DEBUG
  enum {
  	ATH_DEBUG_RATE	= 0x00000010,	/* rate control */
-diff -ur madwifi.old/ath_rate/sample/sample.c madwifi.dev/ath_rate/sample/sample.c
---- madwifi.old/ath_rate/sample/sample.c	2007-05-21 19:33:26.000000000 +0200
-+++ madwifi.dev/ath_rate/sample/sample.c	2007-05-23 16:47:03.346020256 +0200
+diff -urN madwifi-ng-r2377-20070526.old/ath_rate/sample/sample.c madwifi-ng-r2377-20070526.dev/ath_rate/sample/sample.c
+--- madwifi-ng-r2377-20070526.old/ath_rate/sample/sample.c	2007-05-21 19:33:26.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/ath_rate/sample/sample.c	2007-05-26 18:51:09.209687456 +0200
 @@ -67,7 +67,7 @@
  
  #include "sample.h"
@@ -67,9 +67,9 @@ diff -ur madwifi.old/ath_rate/sample/sample.c madwifi.dev/ath_rate/sample/sample
  #ifdef SAMPLE_DEBUG
  enum {
  	ATH_DEBUG_NODE		= 0x00080000,	/* node management */
-diff -ur madwifi.old/net80211/ieee80211_proto.c madwifi.dev/net80211/ieee80211_proto.c
---- madwifi.old/net80211/ieee80211_proto.c	2007-05-21 17:53:39.000000000 +0200
-+++ madwifi.dev/net80211/ieee80211_proto.c	2007-05-23 16:47:03.347020104 +0200
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_proto.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_proto.c
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_proto.c	2007-05-21 17:53:39.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_proto.c	2007-05-26 18:51:09.210687304 +0200
 @@ -312,6 +312,7 @@
  }
  EXPORT_SYMBOL(ieee80211_print_essid);
@@ -86,9 +86,9 @@ diff -ur madwifi.old/net80211/ieee80211_proto.c madwifi.dev/net80211/ieee80211_p
  
  int
  ieee80211_fix_rate(struct ieee80211_node *ni, int flags)
-diff -ur madwifi.old/net80211/ieee80211_proto.h madwifi.dev/net80211/ieee80211_proto.h
---- madwifi.old/net80211/ieee80211_proto.h	2007-01-30 05:01:29.000000000 +0100
-+++ madwifi.dev/net80211/ieee80211_proto.h	2007-05-23 16:47:03.347020104 +0200
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_proto.h madwifi-ng-r2377-20070526.dev/net80211/ieee80211_proto.h
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_proto.h	2007-01-30 05:01:29.000000000 +0100
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_proto.h	2007-05-26 18:51:09.211687152 +0200
 @@ -247,7 +247,11 @@
  #endif
  int ieee80211_new_state(struct ieee80211vap *, enum ieee80211_state, int);
@@ -101,9 +101,9 @@ diff -ur madwifi.old/net80211/ieee80211_proto.h madwifi.dev/net80211/ieee80211_p
  struct sk_buff *ieee80211_getcfframe(struct ieee80211vap *, int);
  
  /*
-diff -ur madwifi.old/net80211/ieee80211_var.h madwifi.dev/net80211/ieee80211_var.h
---- madwifi.old/net80211/ieee80211_var.h	2007-05-21 19:33:26.000000000 +0200
-+++ madwifi.dev/net80211/ieee80211_var.h	2007-05-23 16:47:19.427575488 +0200
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_var.h madwifi-ng-r2377-20070526.dev/net80211/ieee80211_var.h
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_var.h	2007-05-24 23:26:38.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_var.h	2007-05-26 18:51:09.211687152 +0200
 @@ -35,8 +35,8 @@
  #ifndef _NET80211_IEEE80211_VAR_H_
  #define _NET80211_IEEE80211_VAR_H_
@@ -115,9 +115,9 @@ diff -ur madwifi.old/net80211/ieee80211_var.h madwifi.dev/net80211/ieee80211_var
  
  /* Definitions for IEEE 802.11 drivers. */
  #include <net80211/ieee80211_linux.h>
-diff -ur madwifi.old/tools/do_multi.c madwifi.dev/tools/do_multi.c
---- madwifi.old/tools/do_multi.c	2007-05-23 16:46:50.718939864 +0200
-+++ madwifi.dev/tools/do_multi.c	2007-05-23 16:47:03.349019800 +0200
+diff -urN madwifi-ng-r2377-20070526.old/tools/do_multi.c madwifi-ng-r2377-20070526.dev/tools/do_multi.c
+--- madwifi-ng-r2377-20070526.old/tools/do_multi.c	2007-05-26 18:51:08.203840368 +0200
++++ madwifi-ng-r2377-20070526.dev/tools/do_multi.c	2007-05-26 18:51:09.212687000 +0200
 @@ -9,16 +9,20 @@
  
      progname = basename(argv[0]);
@@ -139,9 +139,9 @@ diff -ur madwifi.old/tools/do_multi.c madwifi.dev/tools/do_multi.c
      if(strcmp(progname, "athkey") == 0)
  	ret =  athkey_init(argc, argv);
      if(strcmp(progname, "athstats") == 0)
-diff -ur madwifi.old/tools/Makefile madwifi.dev/tools/Makefile
---- madwifi.old/tools/Makefile	2007-05-23 16:46:50.719939712 +0200
-+++ madwifi.dev/tools/Makefile	2007-05-23 16:47:03.349019800 +0200
+diff -urN madwifi-ng-r2377-20070526.old/tools/Makefile madwifi-ng-r2377-20070526.dev/tools/Makefile
+--- madwifi-ng-r2377-20070526.old/tools/Makefile	2007-05-26 18:51:08.203840368 +0200
++++ madwifi-ng-r2377-20070526.dev/tools/Makefile	2007-05-26 18:51:09.212687000 +0200
 @@ -52,7 +52,7 @@
  	
  ifdef DOMULTI

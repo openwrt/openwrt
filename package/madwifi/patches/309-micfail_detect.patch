@@ -1,15 +1,15 @@
-diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
---- madwifi.old/ath/if_ath.c	2007-05-21 07:53:37.247279824 +0200
-+++ madwifi.dev/ath/if_ath.c	2007-05-21 07:55:23.290158856 +0200
-@@ -5598,6 +5598,7 @@
+diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.dev/ath/if_ath.c
+--- madwifi-ng-r2377-20070526.old/ath/if_ath.c	2007-05-26 18:51:09.532638360 +0200
++++ madwifi-ng-r2377-20070526.dev/ath/if_ath.c	2007-05-26 18:51:09.544636536 +0200
+@@ -5609,6 +5609,7 @@
  	u_int phyerr;
- 	int processed = 0, early_stop = 0;
- 	int rx_limit = dev->quota;
-+	int mic_fail = 0;
+ 	u_int processed = 0, early_stop = 0;
+ 	u_int rx_limit = dev->quota;
++	u_int mic_fail = 0;
  
  	/* Let the 802.11 layer know about the new noise floor */
- 	ic->ic_channoise = sc->sc_channoise;
-@@ -5692,31 +5693,16 @@
+ 	sc->sc_channoise = ath_hal_get_channel_noise(ah, &(sc->sc_curchan));
+@@ -5703,31 +5704,16 @@
  			}
  			if (rs->rs_status & HAL_RXERR_MIC) {
  				sc->sc_stats.ast_rx_badmic++;
@@ -46,7 +46,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  		}
  rx_accept:
  		/*
-@@ -5800,6 +5786,20 @@
+@@ -5811,6 +5797,20 @@
  				   rs->rs_rssi);
  		}
  
@@ -67,9 +67,9 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  		/*
  		 * Locate the node for sender, track state, and then
  		 * pass the (referenced) node up to the 802.11 layer
-diff -ur madwifi.old/net80211/ieee80211_crypto_ccmp.c madwifi.dev/net80211/ieee80211_crypto_ccmp.c
---- madwifi.old/net80211/ieee80211_crypto_ccmp.c	2007-05-18 13:19:16.000000000 +0200
-+++ madwifi.dev/net80211/ieee80211_crypto_ccmp.c	2007-05-21 07:54:24.892036720 +0200
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_crypto_ccmp.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_crypto_ccmp.c
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_crypto_ccmp.c	2007-05-17 00:13:10.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_crypto_ccmp.c	2007-05-26 18:51:09.545636384 +0200
 @@ -78,7 +78,7 @@
  static int ccmp_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  static int ccmp_decap(struct ieee80211_key *, struct sk_buff *, int);
@@ -88,9 +88,9 @@ diff -ur madwifi.old/net80211/ieee80211_crypto_ccmp.c madwifi.dev/net80211/ieee8
  {
  	return 1;
  }
-diff -ur madwifi.old/net80211/ieee80211_crypto.h madwifi.dev/net80211/ieee80211_crypto.h
---- madwifi.old/net80211/ieee80211_crypto.h	2007-05-04 15:45:58.000000000 +0200
-+++ madwifi.dev/net80211/ieee80211_crypto.h	2007-05-21 07:54:24.893036568 +0200
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_crypto.h madwifi-ng-r2377-20070526.dev/net80211/ieee80211_crypto.h
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_crypto.h	2007-04-16 14:32:29.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_crypto.h	2007-05-26 18:51:09.545636384 +0200
 @@ -145,7 +145,7 @@
  	int (*ic_encap)(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  	int (*ic_decap)(struct ieee80211_key *, struct sk_buff *, int);
@@ -113,9 +113,9 @@ diff -ur madwifi.old/net80211/ieee80211_crypto.h madwifi.dev/net80211/ieee80211_
  }
  
  /*
-diff -ur madwifi.old/net80211/ieee80211_crypto_none.c madwifi.dev/net80211/ieee80211_crypto_none.c
---- madwifi.old/net80211/ieee80211_crypto_none.c	2006-09-20 10:45:13.000000000 +0200
-+++ madwifi.dev/net80211/ieee80211_crypto_none.c	2007-05-21 07:54:24.893036568 +0200
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_crypto_none.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_crypto_none.c
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_crypto_none.c	2006-09-20 10:45:13.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_crypto_none.c	2007-05-26 18:51:09.545636384 +0200
 @@ -52,7 +52,7 @@
  static int none_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  static int none_decap(struct ieee80211_key *, struct sk_buff *, int);
@@ -134,9 +134,9 @@ diff -ur madwifi.old/net80211/ieee80211_crypto_none.c madwifi.dev/net80211/ieee8
  {
  	struct ieee80211vap *vap = k->wk_private;
  
-diff -ur madwifi.old/net80211/ieee80211_crypto_tkip.c madwifi.dev/net80211/ieee80211_crypto_tkip.c
---- madwifi.old/net80211/ieee80211_crypto_tkip.c	2007-05-18 13:19:16.000000000 +0200
-+++ madwifi.dev/net80211/ieee80211_crypto_tkip.c	2007-05-21 07:54:24.893036568 +0200
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_crypto_tkip.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_crypto_tkip.c
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_crypto_tkip.c	2007-05-17 00:13:10.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_crypto_tkip.c	2007-05-26 18:51:09.546636232 +0200
 @@ -57,7 +57,7 @@
  static int tkip_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  static int tkip_enmic(struct ieee80211_key *, struct sk_buff *, int);
@@ -164,9 +164,9 @@ diff -ur madwifi.old/net80211/ieee80211_crypto_tkip.c madwifi.dev/net80211/ieee8
  		struct ieee80211vap *vap = ctx->tc_vap;
  		u8 mic[IEEE80211_WEP_MICLEN];
  		u8 mic0[IEEE80211_WEP_MICLEN];
-diff -ur madwifi.old/net80211/ieee80211_crypto_wep.c madwifi.dev/net80211/ieee80211_crypto_wep.c
---- madwifi.old/net80211/ieee80211_crypto_wep.c	2006-09-20 10:45:13.000000000 +0200
-+++ madwifi.dev/net80211/ieee80211_crypto_wep.c	2007-05-21 07:54:24.894036416 +0200
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_crypto_wep.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_crypto_wep.c
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_crypto_wep.c	2006-09-20 10:45:13.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_crypto_wep.c	2007-05-26 18:51:09.547636080 +0200
 @@ -54,7 +54,7 @@
  static int wep_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  static int wep_decap(struct ieee80211_key *, struct sk_buff *, int);
@@ -185,9 +185,9 @@ diff -ur madwifi.old/net80211/ieee80211_crypto_wep.c madwifi.dev/net80211/ieee80
  {
  	return 1;
  }
-diff -ur madwifi.old/net80211/ieee80211_input.c madwifi.dev/net80211/ieee80211_input.c
---- madwifi.old/net80211/ieee80211_input.c	2007-05-21 07:53:37.249279520 +0200
-+++ madwifi.dev/net80211/ieee80211_input.c	2007-05-21 07:54:24.895036264 +0200
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_input.c
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c	2007-05-26 18:51:09.534638056 +0200
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_input.c	2007-05-26 18:51:09.548635928 +0200
 @@ -654,7 +654,7 @@
  		 * Next strip any MSDU crypto bits.
  		 */
@@ -197,7 +197,7 @@ diff -ur madwifi.old/net80211/ieee80211_input.c madwifi.dev/net80211/ieee80211_i
  			IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
  				ni->ni_macaddr, "data", "%s", "demic error");
  			IEEE80211_NODE_STAT(ni, rx_demicfail);
-@@ -3778,6 +3778,47 @@
+@@ -3789,6 +3789,47 @@
  }
  #endif
  
@@ -245,9 +245,9 @@ diff -ur madwifi.old/net80211/ieee80211_input.c madwifi.dev/net80211/ieee80211_i
  #ifdef IEEE80211_DEBUG
  /*
   * Debugging support.
-diff -ur madwifi.old/net80211/ieee80211_linux.c madwifi.dev/net80211/ieee80211_linux.c
---- madwifi.old/net80211/ieee80211_linux.c	2007-05-21 07:49:54.528138280 +0200
-+++ madwifi.dev/net80211/ieee80211_linux.c	2007-05-21 07:54:24.896036112 +0200
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_linux.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_linux.c
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_linux.c	2007-05-21 17:53:39.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_linux.c	2007-05-26 18:51:09.549635776 +0200
 @@ -311,8 +311,8 @@
  
  	/* TODO: needed parameters: count, keyid, key type, src address, TSC */
@@ -259,9 +259,9 @@ diff -ur madwifi.old/net80211/ieee80211_linux.c madwifi.dev/net80211/ieee80211_l
  	memset(&wrqu, 0, sizeof(wrqu));
  	wrqu.data.length = strlen(buf);
  	wireless_send_event(dev, IWEVCUSTOM, &wrqu, buf);
-diff -ur madwifi.old/net80211/ieee80211_proto.h madwifi.dev/net80211/ieee80211_proto.h
---- madwifi.old/net80211/ieee80211_proto.h	2007-05-21 07:49:54.574131288 +0200
-+++ madwifi.dev/net80211/ieee80211_proto.h	2007-05-21 07:54:24.896036112 +0200
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_proto.h madwifi-ng-r2377-20070526.dev/net80211/ieee80211_proto.h
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_proto.h	2007-05-26 18:51:09.321670432 +0200
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_proto.h	2007-05-26 18:51:09.549635776 +0200
 @@ -91,6 +91,7 @@
  void ieee80211_set11gbasicrates(struct ieee80211_rateset *, enum ieee80211_phymode);
  enum ieee80211_phymode ieee80211_get11gbasicrates(struct ieee80211_rateset *);

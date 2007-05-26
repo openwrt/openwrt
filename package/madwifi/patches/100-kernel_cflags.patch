@@ -1,6 +1,6 @@
-diff -urN madwifi-ng-refcount-r2313-20070505.old/hal/public/mips-be-elf.inc madwifi-ng-refcount-r2313-20070505.dev/hal/public/mips-be-elf.inc
---- madwifi-ng-refcount-r2313-20070505.old/hal/public/mips-be-elf.inc	2006-05-27 04:48:16.000000000 +0200
-+++ madwifi-ng-refcount-r2313-20070505.dev/hal/public/mips-be-elf.inc	2007-05-13 18:17:54.962213512 +0200
+diff -urN madwifi-ng-r2377-20070526.old/hal/public/mips-be-elf.inc madwifi-ng-r2377-20070526.dev/hal/public/mips-be-elf.inc
+--- madwifi-ng-r2377-20070526.old/hal/public/mips-be-elf.inc	2006-05-27 04:48:16.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/hal/public/mips-be-elf.inc	2007-05-26 18:51:08.033866208 +0200
 @@ -71,5 +71,5 @@
  
  LDOPTS=	-EB
@@ -8,9 +8,9 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/hal/public/mips-be-elf.inc madw
 -COPTS+=	-G 0 -EB -mno-abicalls -fno-pic -mips2 -Wa,--trap \
 +COPTS+=	-G 0 -mno-abicalls -fno-pic -mips32 -Wa,--trap \
  	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
-diff -urN madwifi-ng-refcount-r2313-20070505.old/hal/public/mips-le-elf.inc madwifi-ng-refcount-r2313-20070505.dev/hal/public/mips-le-elf.inc
---- madwifi-ng-refcount-r2313-20070505.old/hal/public/mips-le-elf.inc	2006-05-27 04:48:16.000000000 +0200
-+++ madwifi-ng-refcount-r2313-20070505.dev/hal/public/mips-le-elf.inc	2007-05-13 18:17:54.963213360 +0200
+diff -urN madwifi-ng-r2377-20070526.old/hal/public/mips-le-elf.inc madwifi-ng-r2377-20070526.dev/hal/public/mips-le-elf.inc
+--- madwifi-ng-r2377-20070526.old/hal/public/mips-le-elf.inc	2006-05-27 04:48:16.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/hal/public/mips-le-elf.inc	2007-05-26 18:51:08.033866208 +0200
 @@ -68,5 +68,5 @@
  
  LDOPTS=	-EL
@@ -18,9 +18,9 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/hal/public/mips-le-elf.inc madw
 -COPTS+=	-G 0 -EL -mno-abicalls -fno-pic -mips2 -Wa,--trap \
 +COPTS+=	-G 0 -mno-abicalls -fno-pic -mips32 -Wa,--trap \
  	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
-diff -ur madwifi.old/hal/public/xscale-be-elf.inc madwifi.dev/hal/public/xscale-be-elf.inc
---- madwifi.old/hal/public/xscale-be-elf.inc	2006-09-14 08:21:22.000000000 +0200
-+++ madwifi.dev/hal/public/xscale-be-elf.inc	2007-05-13 19:30:47.106546544 +0200
+diff -urN madwifi-ng-r2377-20070526.old/hal/public/xscale-be-elf.inc madwifi-ng-r2377-20070526.dev/hal/public/xscale-be-elf.inc
+--- madwifi-ng-r2377-20070526.old/hal/public/xscale-be-elf.inc	2006-09-14 08:21:22.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/hal/public/xscale-be-elf.inc	2007-05-26 18:51:08.034866056 +0200
 @@ -77,5 +77,5 @@
  
  LDOPTS=	-EB
@@ -28,9 +28,9 @@ diff -ur madwifi.old/hal/public/xscale-be-elf.inc madwifi.dev/hal/public/xscale-
 -COPTS+= -march=armv4 -mbig-endian -fno-strict-aliasing -fno-common -mapcs-32 \
 +COPTS+= -march=armv5te -mbig-endian -fno-strict-aliasing -fno-common  \
  	-mtune=xscale  -mshort-load-bytes
-diff -urN madwifi-ng-refcount-r2313-20070505.old/Makefile madwifi-ng-refcount-r2313-20070505.dev/Makefile
---- madwifi-ng-refcount-r2313-20070505.old/Makefile	2007-03-08 20:59:06.000000000 +0100
-+++ madwifi-ng-refcount-r2313-20070505.dev/Makefile	2007-05-13 18:17:54.963213360 +0200
+diff -urN madwifi-ng-r2377-20070526.old/Makefile madwifi-ng-r2377-20070526.dev/Makefile
+--- madwifi-ng-r2377-20070526.old/Makefile	2007-05-26 00:31:56.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/Makefile	2007-05-26 18:51:08.034866056 +0200
 @@ -56,7 +56,7 @@
  
  all: modules tools
@@ -40,4 +40,3 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/Makefile madwifi-ng-refcount-r2
  ifdef LINUX24
  	for i in $(DIRS_MODULES); do \
  		$(MAKE) -C $$i || exit 1; \
-

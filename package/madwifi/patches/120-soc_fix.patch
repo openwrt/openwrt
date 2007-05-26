@@ -1,6 +1,6 @@
-diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath_ahb.c madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath_ahb.c
---- madwifi-ng-refcount-r2313-20070505.old/ath/if_ath_ahb.c	2007-03-08 20:59:06.000000000 +0100
-+++ madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath_ahb.c	2007-05-13 18:17:56.367999800 +0200
+diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath_ahb.c madwifi-ng-r2377-20070526.dev/ath/if_ath_ahb.c
+--- madwifi-ng-r2377-20070526.old/ath/if_ath_ahb.c	2007-02-24 02:33:54.000000000 +0100
++++ madwifi-ng-r2377-20070526.dev/ath/if_ath_ahb.c	2007-05-26 18:51:09.112702200 +0200
 @@ -274,12 +274,12 @@
  }
  
@@ -68,10 +68,10 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath_ahb.c madwifi-ng-ref
  			return ret;
  		break;
  	default:
-diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c
---- madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c	2007-05-13 18:17:56.362000712 +0200
-+++ madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c	2007-05-13 18:17:56.371999192 +0200
-@@ -7670,9 +7672,24 @@
+diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.dev/ath/if_ath.c
+--- madwifi-ng-r2377-20070526.old/ath/if_ath.c	2007-05-26 18:51:09.019716336 +0200
++++ madwifi-ng-r2377-20070526.dev/ath/if_ath.c	2007-05-26 18:51:09.116701592 +0200
+@@ -7636,9 +7636,24 @@
  		DPRINTF(sc, ATH_DEBUG_RESET, "%s: beacon queue 0x%x\n",
  			__func__, ath_hal_gettxbuf(ah, sc->sc_bhalq));
  		for (i = 0; i < HAL_NUM_TX_QUEUES; i++)
@@ -83,7 +83,7 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c madwifi-ng-refcoun
 +				 * Double check the hal tx pending count */
 +				npend += ath_hal_numtxpending(ah, sc->sc_txq[i].axq_qnum);
 +			}
-+	}
+ 	}
 +	
 +	if (npend) {
 +		HAL_STATUS status;
@@ -92,7 +92,7 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c madwifi-ng-refcoun
 +		DPRINTF(sc, ATH_DEBUG_RESET, "%s: Unable to stop TxDMA. Reset HAL!\n", __func__);
 +		if (!ath_hal_reset(ah, sc->sc_ic.ic_opmode, &sc->sc_curchan, AH_TRUE, &status))
 +			printk("%s: unable to reset hardware; hal status %u\n", __func__, status);
- 	}
++	}
 +
  	sc->sc_dev->trans_start = jiffies;
  	netif_start_queue(sc->sc_dev);		/* XXX move to callers */

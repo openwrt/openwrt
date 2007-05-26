@@ -1,7 +1,7 @@
-diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
---- madwifi.old/ath/if_ath.c	2007-05-21 07:33:42.392925296 +0200
-+++ madwifi.dev/ath/if_ath.c	2007-05-21 07:35:51.933232176 +0200
-@@ -5660,7 +5660,8 @@
+diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.dev/ath/if_ath.c
+--- madwifi-ng-r2377-20070526.old/ath/if_ath.c	2007-05-26 18:51:08.569784736 +0200
++++ madwifi-ng-r2377-20070526.dev/ath/if_ath.c	2007-05-26 18:51:08.661770752 +0200
+@@ -5672,7 +5672,8 @@
  		 * frame; it'll be dropped where it's not wanted.
  		 */
  		if (rs->rs_keyix != HAL_RXKEYIX_INVALID &&
@@ -11,10 +11,10 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  			struct ath_node *an;
  			/*
  			 * Fast path: node is present in the key map;
-diff -ur madwifi.old/net80211/ieee80211_node.c madwifi.dev/net80211/ieee80211_node.c
---- madwifi.old/net80211/ieee80211_node.c	2007-05-21 07:33:42.371928488 +0200
-+++ madwifi.dev/net80211/ieee80211_node.c	2007-05-21 07:34:13.689167544 +0200
-@@ -1272,8 +1272,6 @@
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_node.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_node.c
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_node.c	2007-05-21 17:53:39.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_node.c	2007-05-26 18:51:08.663770448 +0200
+@@ -1269,8 +1269,6 @@
  	IEEE80211_NODE_TABLE_UNLOCK_IRQ(nt);
  
  	return ni;
@@ -23,7 +23,7 @@ diff -ur madwifi.old/net80211/ieee80211_node.c madwifi.dev/net80211/ieee80211_no
  }
  #ifdef IEEE80211_DEBUG_REFCNT
  EXPORT_SYMBOL(ieee80211_find_rxnode_debug);
-@@ -1281,6 +1279,20 @@
+@@ -1278,6 +1276,20 @@
  EXPORT_SYMBOL(ieee80211_find_rxnode);
  #endif
  
@@ -44,10 +44,10 @@ diff -ur madwifi.old/net80211/ieee80211_node.c madwifi.dev/net80211/ieee80211_no
  /*
   * Return a reference to the appropriate node for sending
   * a data frame.  This handles node discovery in adhoc networks.
-diff -ur madwifi.old/net80211/ieee80211_node.h madwifi.dev/net80211/ieee80211_node.h
---- madwifi.old/net80211/ieee80211_node.h	2007-05-21 07:33:42.372928336 +0200
-+++ madwifi.dev/net80211/ieee80211_node.h	2007-05-21 07:34:13.689167544 +0200
-@@ -317,6 +317,8 @@
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_node.h madwifi-ng-r2377-20070526.dev/net80211/ieee80211_node.h
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_node.h	2007-05-21 17:53:39.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_node.h	2007-05-26 18:51:08.664770296 +0200
+@@ -323,6 +323,8 @@
  	*pni = NULL;			/* guard against use */
  }
  
