@@ -675,8 +675,14 @@ static void unregister_buttons(struct button_t *b)
 	gpio_set_irqenable(0, button_handler);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+static void hotplug_button(struct work_struct *work)
+{
+	struct event_t *event = container_of(work, struct event_t, wq);
+#else
 static void hotplug_button(struct event_t *event)
 {
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 	call_usermodehelper (event->argv[0], event->argv, event->envp, 1);
 #else
@@ -724,7 +730,11 @@ static irqreturn_t button_handler(int irq, void *dev_id, struct pt_regs *regs)
 			scratch += sprintf (scratch, "SEEN=%ld", (jiffies - b->seen)/HZ) + 1;
 			event->envp[i] = 0;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+			INIT_WORK(&event->wq, (void *)(void *)hotplug_button);
+#else
 			INIT_WORK(&event->wq, (void *)(void *)hotplug_button, (void *)event);
+#endif
 			schedule_work(&event->wq);
 		}
 
