@@ -1,6 +1,6 @@
-diff -Nur linux-2.6.21.1/drivers/mtd/Kconfig linux-2.6.21.1-owrt/drivers/mtd/Kconfig
---- linux-2.6.21.1/drivers/mtd/Kconfig	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1-owrt/drivers/mtd/Kconfig	2007-05-14 10:59:59.000000000 +0200
+diff -urN linux-2.6.21.1.old/drivers/mtd/Kconfig linux-2.6.21.1.dev/drivers/mtd/Kconfig
+--- linux-2.6.21.1.old/drivers/mtd/Kconfig	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/drivers/mtd/Kconfig	2007-05-26 19:58:42.320520952 +0200
 @@ -49,6 +49,11 @@
  	  devices. Partitioning on NFTL 'devices' is a different - that's the
  	  'normal' form of partitioning used on a block device.
@@ -13,9 +13,9 @@ diff -Nur linux-2.6.21.1/drivers/mtd/Kconfig linux-2.6.21.1-owrt/drivers/mtd/Kco
  config MTD_REDBOOT_PARTS
  	tristate "RedBoot partition table parsing"
  	depends on MTD_PARTITIONS
-diff -Nur linux-2.6.21.1/drivers/mtd/mtdpart.c linux-2.6.21.1-owrt/drivers/mtd/mtdpart.c
---- linux-2.6.21.1/drivers/mtd/mtdpart.c	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1-owrt/drivers/mtd/mtdpart.c	2007-05-14 11:18:56.000000000 +0200
+diff -urN linux-2.6.21.1.old/drivers/mtd/mtdpart.c linux-2.6.21.1.dev/drivers/mtd/mtdpart.c
+--- linux-2.6.21.1.old/drivers/mtd/mtdpart.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/drivers/mtd/mtdpart.c	2007-05-26 19:58:42.331519280 +0200
 @@ -20,6 +20,8 @@
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>

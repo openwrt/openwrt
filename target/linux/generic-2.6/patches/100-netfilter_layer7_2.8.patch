@@ -1,7 +1,7 @@
-diff -urN linux.old/include/linux/netfilter_ipv4/ip_conntrack.h linux.dev/include/linux/netfilter_ipv4/ip_conntrack.h
---- linux.old/include/linux/netfilter_ipv4/ip_conntrack.h	2007-01-01 05:17:07.000000000 +0100
-+++ linux.dev/include/linux/netfilter_ipv4/ip_conntrack.h	2007-01-01 05:18:48.000000000 +0100
-@@ -127,6 +127,15 @@
+diff -urN linux-2.6.21.1.old/include/linux/netfilter_ipv4/ip_conntrack.h linux-2.6.21.1.dev/include/linux/netfilter_ipv4/ip_conntrack.h
+--- linux-2.6.21.1.old/include/linux/netfilter_ipv4/ip_conntrack.h	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/include/linux/netfilter_ipv4/ip_conntrack.h	2007-05-26 20:13:52.648130120 +0200
+@@ -128,6 +128,15 @@
  	/* Traversed often, so hopefully in different cacheline to top */
  	/* These are my tuples; original and reply */
  	struct ip_conntrack_tuple_hash tuplehash[IP_CT_DIR_MAX];
@@ -17,9 +17,9 @@ diff -urN linux.old/include/linux/netfilter_ipv4/ip_conntrack.h linux.dev/includ
  };
  
  struct ip_conntrack_expect
-diff -urN linux.old/include/linux/netfilter_ipv4/ipt_layer7.h linux.dev/include/linux/netfilter_ipv4/ipt_layer7.h
---- linux.old/include/linux/netfilter_ipv4/ipt_layer7.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/include/linux/netfilter_ipv4/ipt_layer7.h	2007-01-01 05:18:48.000000000 +0100
+diff -urN linux-2.6.21.1.old/include/linux/netfilter_ipv4/ipt_layer7.h linux-2.6.21.1.dev/include/linux/netfilter_ipv4/ipt_layer7.h
+--- linux-2.6.21.1.old/include/linux/netfilter_ipv4/ipt_layer7.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/include/linux/netfilter_ipv4/ipt_layer7.h	2007-05-26 20:13:52.648130120 +0200
 @@ -0,0 +1,26 @@
 +/*
 +  By Matthew Strait <quadong@users.sf.net>, Dec 2003.
@@ -47,9 +47,9 @@ diff -urN linux.old/include/linux/netfilter_ipv4/ipt_layer7.h linux.dev/include/
 +};
 +
 +#endif /* _IPT_LAYER7_H */
-diff -urN linux.old/net/ipv4/netfilter/ip_conntrack_core.c linux.dev/net/ipv4/netfilter/ip_conntrack_core.c
---- linux.old/net/ipv4/netfilter/ip_conntrack_core.c	2007-01-01 05:17:07.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/ip_conntrack_core.c	2007-01-01 05:18:48.000000000 +0100
+diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/ip_conntrack_core.c linux-2.6.21.1.dev/net/ipv4/netfilter/ip_conntrack_core.c
+--- linux-2.6.21.1.old/net/ipv4/netfilter/ip_conntrack_core.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/net/ipv4/netfilter/ip_conntrack_core.c	2007-05-26 20:13:52.649129968 +0200
 @@ -337,6 +337,13 @@
  	 * too. */
  	ip_ct_remove_expectations(ct);
@@ -64,10 +64,10 @@ diff -urN linux.old/net/ipv4/netfilter/ip_conntrack_core.c linux.dev/net/ipv4/ne
  	/* We overload first tuple to link into unconfirmed list. */
  	if (!is_confirmed(ct)) {
  		BUG_ON(list_empty(&ct->tuplehash[IP_CT_DIR_ORIGINAL].list));
-diff -urN linux.old/net/ipv4/netfilter/ip_conntrack_standalone.c linux.dev/net/ipv4/netfilter/ip_conntrack_standalone.c
---- linux.old/net/ipv4/netfilter/ip_conntrack_standalone.c	2007-01-01 05:17:07.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/ip_conntrack_standalone.c	2007-01-01 05:18:48.000000000 +0100
-@@ -192,6 +192,12 @@
+diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/ip_conntrack_standalone.c linux-2.6.21.1.dev/net/ipv4/netfilter/ip_conntrack_standalone.c
+--- linux-2.6.21.1.old/net/ipv4/netfilter/ip_conntrack_standalone.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/net/ipv4/netfilter/ip_conntrack_standalone.c	2007-05-26 20:13:52.649129968 +0200
+@@ -188,6 +188,12 @@
  		return -ENOSPC;
  #endif
  
@@ -80,9 +80,9 @@ diff -urN linux.old/net/ipv4/netfilter/ip_conntrack_standalone.c linux.dev/net/i
  	if (seq_printf(s, "use=%u\n", atomic_read(&conntrack->ct_general.use)))
  		return -ENOSPC;
  
-diff -urN linux.old/net/ipv4/netfilter/ipt_layer7.c linux.dev/net/ipv4/netfilter/ipt_layer7.c
---- linux.old/net/ipv4/netfilter/ipt_layer7.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/ipt_layer7.c	2007-01-01 05:18:48.000000000 +0100
+diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/ipt_layer7.c linux-2.6.21.1.dev/net/ipv4/netfilter/ipt_layer7.c
+--- linux-2.6.21.1.old/net/ipv4/netfilter/ipt_layer7.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/net/ipv4/netfilter/ipt_layer7.c	2007-05-26 20:13:52.650129816 +0200
 @@ -0,0 +1,573 @@
 +/*
 +  Kernel module to match application layer (OSI layer 7) data in connections.
@@ -657,10 +657,10 @@ diff -urN linux.old/net/ipv4/netfilter/ipt_layer7.c linux.dev/net/ipv4/netfilter
 +
 +module_init(ipt_layer7_init);
 +module_exit(ipt_layer7_fini);
-diff -urN linux.old/net/ipv4/netfilter/Kconfig linux.dev/net/ipv4/netfilter/Kconfig
---- linux.old/net/ipv4/netfilter/Kconfig	2007-01-01 05:17:07.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/Kconfig	2007-01-01 05:18:48.000000000 +0100
-@@ -248,6 +248,24 @@
+diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/Kconfig linux-2.6.21.1.dev/net/ipv4/netfilter/Kconfig
+--- linux-2.6.21.1.old/net/ipv4/netfilter/Kconfig	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/net/ipv4/netfilter/Kconfig	2007-05-26 20:13:52.650129816 +0200
+@@ -245,6 +245,24 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -685,10 +685,10 @@ diff -urN linux.old/net/ipv4/netfilter/Kconfig linux.dev/net/ipv4/netfilter/Kcon
  config IP_NF_MATCH_TOS
  	tristate "TOS match support"
  	depends on IP_NF_IPTABLES
-diff -urN linux.old/net/ipv4/netfilter/Makefile linux.dev/net/ipv4/netfilter/Makefile
---- linux.old/net/ipv4/netfilter/Makefile	2007-01-01 05:17:07.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/Makefile	2007-01-01 05:18:48.000000000 +0100
-@@ -63,6 +63,8 @@
+diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/Makefile linux-2.6.21.1.dev/net/ipv4/netfilter/Makefile
+--- linux-2.6.21.1.old/net/ipv4/netfilter/Makefile	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/net/ipv4/netfilter/Makefile	2007-05-26 20:13:52.651129664 +0200
+@@ -92,6 +92,8 @@
  obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
  obj-$(CONFIG_IP_NF_MATCH_ADDRTYPE) += ipt_addrtype.o
  
@@ -697,9 +697,9 @@ diff -urN linux.old/net/ipv4/netfilter/Makefile linux.dev/net/ipv4/netfilter/Mak
  # targets
  obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
  obj-$(CONFIG_IP_NF_TARGET_TOS) += ipt_TOS.o
-diff -urN linux.old/net/ipv4/netfilter/regexp/regexp.c linux.dev/net/ipv4/netfilter/regexp/regexp.c
---- linux.old/net/ipv4/netfilter/regexp/regexp.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/regexp/regexp.c	2007-01-01 05:18:48.000000000 +0100
+diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.21.1.dev/net/ipv4/netfilter/regexp/regexp.c
+--- linux-2.6.21.1.old/net/ipv4/netfilter/regexp/regexp.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/net/ipv4/netfilter/regexp/regexp.c	2007-05-26 20:13:52.652129512 +0200
 @@ -0,0 +1,1197 @@
 +/*
 + * regcomp and regexec -- regsub and regerror are elsewhere
@@ -1898,9 +1898,9 @@ diff -urN linux.old/net/ipv4/netfilter/regexp/regexp.c linux.dev/net/ipv4/netfil
 +#endif
 +
 +
-diff -urN linux.old/net/ipv4/netfilter/regexp/regexp.h linux.dev/net/ipv4/netfilter/regexp/regexp.h
---- linux.old/net/ipv4/netfilter/regexp/regexp.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/regexp/regexp.h	2007-01-01 05:18:48.000000000 +0100
+diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/regexp/regexp.h linux-2.6.21.1.dev/net/ipv4/netfilter/regexp/regexp.h
+--- linux-2.6.21.1.old/net/ipv4/netfilter/regexp/regexp.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/net/ipv4/netfilter/regexp/regexp.h	2007-05-26 20:13:52.652129512 +0200
 @@ -0,0 +1,41 @@
 +/*
 + * Definitions etc. for regexp(3) routines.
@@ -1943,18 +1943,18 @@ diff -urN linux.old/net/ipv4/netfilter/regexp/regexp.h linux.dev/net/ipv4/netfil
 +void regerror(char *s);
 +
 +#endif
-diff -urN linux.old/net/ipv4/netfilter/regexp/regmagic.h linux.dev/net/ipv4/netfilter/regexp/regmagic.h
---- linux.old/net/ipv4/netfilter/regexp/regmagic.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/regexp/regmagic.h	2007-01-01 05:18:48.000000000 +0100
+diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/regexp/regmagic.h linux-2.6.21.1.dev/net/ipv4/netfilter/regexp/regmagic.h
+--- linux-2.6.21.1.old/net/ipv4/netfilter/regexp/regmagic.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/net/ipv4/netfilter/regexp/regmagic.h	2007-05-26 20:13:52.652129512 +0200
 @@ -0,0 +1,5 @@
 +/*
 + * The first byte of the regexp internal "program" is actually this magic
 + * number; the start node begins in the second byte.
 + */
 +#define	MAGIC	0234
-diff -urN linux.old/net/ipv4/netfilter/regexp/regsub.c linux.dev/net/ipv4/netfilter/regexp/regsub.c
---- linux.old/net/ipv4/netfilter/regexp/regsub.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/regexp/regsub.c	2007-01-01 05:18:48.000000000 +0100
+diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/regexp/regsub.c linux-2.6.21.1.dev/net/ipv4/netfilter/regexp/regsub.c
+--- linux-2.6.21.1.old/net/ipv4/netfilter/regexp/regsub.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/net/ipv4/netfilter/regexp/regsub.c	2007-05-26 20:13:52.653129360 +0200
 @@ -0,0 +1,95 @@
 +/*
 + * regsub

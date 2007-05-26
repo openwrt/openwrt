@@ -1,15 +1,15 @@
-diff -Nur linux-2.6.21.1/include/linux/netfilter/oot_conntrack.h linux-2.6.21.1-owrt/include/linux/netfilter/oot_conntrack.h
---- linux-2.6.21.1/include/linux/netfilter/oot_conntrack.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/netfilter/oot_conntrack.h	2007-05-14 14:18:54.000000000 +0200
+diff -urN linux-2.6.21.1.old/include/linux/netfilter/oot_conntrack.h linux-2.6.21.1.dev/include/linux/netfilter/oot_conntrack.h
+--- linux-2.6.21.1.old/include/linux/netfilter/oot_conntrack.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/include/linux/netfilter/oot_conntrack.h	2007-05-26 20:40:10.922195992 +0200
 @@ -0,0 +1,5 @@
 +#if defined(CONFIG_IP_NF_CONNTRACK) || defined(CONFIG_IP_NF_CONNTRACK_MODULE)
 +#	include <linux/netfilter_ipv4/ip_conntrack.h>
 +#else /* linux-2.6.20+ */
 +#	include <net/netfilter/nf_nat_rule.h>
 +#endif
-diff -Nur linux-2.6.21.1/include/linux/netfilter/oot_trans.h linux-2.6.21.1-owrt/include/linux/netfilter/oot_trans.h
---- linux-2.6.21.1/include/linux/netfilter/oot_trans.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/netfilter/oot_trans.h	2007-05-14 14:18:54.000000000 +0200
+diff -urN linux-2.6.21.1.old/include/linux/netfilter/oot_trans.h linux-2.6.21.1.dev/include/linux/netfilter/oot_trans.h
+--- linux-2.6.21.1.old/include/linux/netfilter/oot_trans.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/include/linux/netfilter/oot_trans.h	2007-05-26 20:40:10.940193256 +0200
 @@ -0,0 +1,14 @@
 +/* Out of tree workarounds */
 +#include <linux/version.h>
@@ -25,9 +25,9 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter/oot_trans.h linux-2.6.21.1-owrt
 +#	define tcp_v4_check(tcph, tcph_sz, s, d, csp) \
 +		tcp_v4_check((tcph_sz), (s), (d), (csp))
 +#endif
-diff -Nur linux-2.6.21.1/include/linux/netfilter/xt_CHAOS.h linux-2.6.21.1-owrt/include/linux/netfilter/xt_CHAOS.h
---- linux-2.6.21.1/include/linux/netfilter/xt_CHAOS.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/netfilter/xt_CHAOS.h	2007-05-14 14:18:54.000000000 +0200
+diff -urN linux-2.6.21.1.old/include/linux/netfilter/xt_CHAOS.h linux-2.6.21.1.dev/include/linux/netfilter/xt_CHAOS.h
+--- linux-2.6.21.1.old/include/linux/netfilter/xt_CHAOS.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/include/linux/netfilter/xt_CHAOS.h	2007-05-26 20:40:10.940193256 +0200
 @@ -0,0 +1,14 @@
 +#ifndef _LINUX_XT_CHAOS_H
 +#define _LINUX_XT_CHAOS_H 1
@@ -43,9 +43,9 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter/xt_CHAOS.h linux-2.6.21.1-owrt/
 +};
 +
 +#endif /* _LINUX_XT_CHAOS_H */
-diff -Nur linux-2.6.21.1/include/linux/netfilter/xt_portscan.h linux-2.6.21.1-owrt/include/linux/netfilter/xt_portscan.h
---- linux-2.6.21.1/include/linux/netfilter/xt_portscan.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/netfilter/xt_portscan.h	2007-05-14 14:18:54.000000000 +0200
+diff -urN linux-2.6.21.1.old/include/linux/netfilter/xt_portscan.h linux-2.6.21.1.dev/include/linux/netfilter/xt_portscan.h
+--- linux-2.6.21.1.old/include/linux/netfilter/xt_portscan.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/include/linux/netfilter/xt_portscan.h	2007-05-26 20:40:10.940193256 +0200
 @@ -0,0 +1,8 @@
 +#ifndef _LINUX_XT_PORTSCAN_H
 +#define _LINUX_XT_PORTSCAN_H 1
@@ -55,9 +55,9 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter/xt_portscan.h linux-2.6.21.1-ow
 +};
 +
 +#endif /* _LINUX_XT_PORTSCAN_H */
-diff -Nur linux-2.6.21.1/net/netfilter/find_match.c linux-2.6.21.1-owrt/net/netfilter/find_match.c
---- linux-2.6.21.1/net/netfilter/find_match.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/net/netfilter/find_match.c	2007-05-14 14:18:54.000000000 +0200
+diff -urN linux-2.6.21.1.old/net/netfilter/find_match.c linux-2.6.21.1.dev/net/netfilter/find_match.c
+--- linux-2.6.21.1.old/net/netfilter/find_match.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/net/netfilter/find_match.c	2007-05-26 20:40:10.970188696 +0200
 @@ -0,0 +1,39 @@
 +/*
 +    xt_request_find_match
@@ -98,9 +98,9 @@ diff -Nur linux-2.6.21.1/net/netfilter/find_match.c linux-2.6.21.1-owrt/net/netf
 +
 +/* In case it goes into mainline, let this out-of-tree package compile */
 +#define xt_request_find_match xt_request_find_match_lo
-diff -Nur linux-2.6.21.1/net/netfilter/Kconfig linux-2.6.21.1-owrt/net/netfilter/Kconfig
---- linux-2.6.21.1/net/netfilter/Kconfig	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1-owrt/net/netfilter/Kconfig	2007-05-14 14:30:47.000000000 +0200
+diff -urN linux-2.6.21.1.old/net/netfilter/Kconfig linux-2.6.21.1.dev/net/netfilter/Kconfig
+--- linux-2.6.21.1.old/net/netfilter/Kconfig	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/net/netfilter/Kconfig	2007-05-26 20:40:11.003183680 +0200
 @@ -287,6 +287,14 @@
  
  # alphabetically ordered list of targets
@@ -146,9 +146,9 @@ diff -Nur linux-2.6.21.1/net/netfilter/Kconfig linux-2.6.21.1-owrt/net/netfilter
  config NETFILTER_XT_MATCH_MULTIPORT
  	tristate "Multiple port match support"
  	depends on NETFILTER_XTABLES
-diff -Nur linux-2.6.21.1/net/netfilter/Makefile linux-2.6.21.1-owrt/net/netfilter/Makefile
---- linux-2.6.21.1/net/netfilter/Makefile	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1-owrt/net/netfilter/Makefile	2007-05-14 14:30:47.000000000 +0200
+diff -urN linux-2.6.21.1.old/net/netfilter/Makefile linux-2.6.21.1.dev/net/netfilter/Makefile
+--- linux-2.6.21.1.old/net/netfilter/Makefile	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/net/netfilter/Makefile	2007-05-26 20:40:11.003183680 +0200
 @@ -37,8 +37,10 @@
  obj-$(CONFIG_NETFILTER_XTABLES) += x_tables.o xt_tcpudp.o
  
@@ -168,9 +168,9 @@ diff -Nur linux-2.6.21.1/net/netfilter/Makefile linux-2.6.21.1-owrt/net/netfilte
  obj-$(CONFIG_NETFILTER_XT_MATCH_PKTTYPE) += xt_pkttype.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_QUOTA) += xt_quota.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_REALM) += xt_realm.o
-diff -Nur linux-2.6.21.1/net/netfilter/xt_CHAOS.c linux-2.6.21.1-owrt/net/netfilter/xt_CHAOS.c
---- linux-2.6.21.1/net/netfilter/xt_CHAOS.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/net/netfilter/xt_CHAOS.c	2007-05-14 14:36:58.000000000 +0200
+diff -urN linux-2.6.21.1.old/net/netfilter/xt_CHAOS.c linux-2.6.21.1.dev/net/netfilter/xt_CHAOS.c
+--- linux-2.6.21.1.old/net/netfilter/xt_CHAOS.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/net/netfilter/xt_CHAOS.c	2007-05-26 20:40:11.004183528 +0200
 @@ -0,0 +1,204 @@
 +/*
 +	CHAOS target for netfilter
@@ -376,9 +376,9 @@ diff -Nur linux-2.6.21.1/net/netfilter/xt_CHAOS.c linux-2.6.21.1-owrt/net/netfil
 +MODULE_DESCRIPTION("netfilter CHAOS target");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("ipt_CHAOS");
-diff -Nur linux-2.6.21.1/net/netfilter/xt_DELUDE.c linux-2.6.21.1-owrt/net/netfilter/xt_DELUDE.c
---- linux-2.6.21.1/net/netfilter/xt_DELUDE.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/net/netfilter/xt_DELUDE.c	2007-05-14 14:53:12.000000000 +0200
+diff -urN linux-2.6.21.1.old/net/netfilter/xt_DELUDE.c linux-2.6.21.1.dev/net/netfilter/xt_DELUDE.c
+--- linux-2.6.21.1.old/net/netfilter/xt_DELUDE.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/net/netfilter/xt_DELUDE.c	2007-05-26 20:40:11.004183528 +0200
 @@ -0,0 +1,288 @@
 +/*
 +	DELUDE target
@@ -668,9 +668,9 @@ diff -Nur linux-2.6.21.1/net/netfilter/xt_DELUDE.c linux-2.6.21.1-owrt/net/netfi
 +MODULE_DESCRIPTION("netfilter DELUDE target");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("ipt_DELUDE");
-diff -Nur linux-2.6.21.1/net/netfilter/xt_portscan.c linux-2.6.21.1-owrt/net/netfilter/xt_portscan.c
---- linux-2.6.21.1/net/netfilter/xt_portscan.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/net/netfilter/xt_portscan.c	2007-05-14 14:37:35.000000000 +0200
+diff -urN linux-2.6.21.1.old/net/netfilter/xt_portscan.c linux-2.6.21.1.dev/net/netfilter/xt_portscan.c
+--- linux-2.6.21.1.old/net/netfilter/xt_portscan.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1.dev/net/netfilter/xt_portscan.c	2007-05-26 20:40:11.004183528 +0200
 @@ -0,0 +1,272 @@
 +/*
 +	portscan match for netfilter

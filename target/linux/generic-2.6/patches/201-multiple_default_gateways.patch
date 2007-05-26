@@ -1,6 +1,6 @@
-diff -urN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_nat.h linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_nat.h
---- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_nat.h	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_nat.h	2007-05-14 12:57:39.000000000 +0200
+diff -urN linux-2.6.21.1.old/include/linux/netfilter_ipv4/ip_nat.h linux-2.6.21.1.dev/include/linux/netfilter_ipv4/ip_nat.h
+--- linux-2.6.21.1.old/include/linux/netfilter_ipv4/ip_nat.h	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/include/linux/netfilter_ipv4/ip_nat.h	2007-05-26 20:46:11.801334024 +0200
 @@ -64,6 +64,13 @@
  
  struct ip_conntrack;
@@ -15,9 +15,9 @@ diff -urN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_nat.h linux-2.6.21.1.ne
  /* Set up the info structure to map into this range. */
  extern unsigned int ip_nat_setup_info(struct ip_conntrack *conntrack,
  				      const struct ip_nat_range *range,
-diff -urN linux-2.6.21.1/include/linux/rtnetlink.h linux-2.6.21.1.new/include/linux/rtnetlink.h
---- linux-2.6.21.1/include/linux/rtnetlink.h	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.new/include/linux/rtnetlink.h	2007-05-14 12:57:39.000000000 +0200
+diff -urN linux-2.6.21.1.old/include/linux/rtnetlink.h linux-2.6.21.1.dev/include/linux/rtnetlink.h
+--- linux-2.6.21.1.old/include/linux/rtnetlink.h	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/include/linux/rtnetlink.h	2007-05-26 20:46:11.883321560 +0200
 @@ -293,6 +293,8 @@
  #define RTNH_F_DEAD		1	/* Nexthop is dead (used by multipath)	*/
  #define RTNH_F_PERVASIVE	2	/* Do recursive gateway lookup	*/
@@ -27,9 +27,9 @@ diff -urN linux-2.6.21.1/include/linux/rtnetlink.h linux-2.6.21.1.new/include/li
  
  /* Macros to handle hexthops */
  
-diff -urN linux-2.6.21.1/include/net/flow.h linux-2.6.21.1.new/include/net/flow.h
---- linux-2.6.21.1/include/net/flow.h	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.new/include/net/flow.h	2007-05-14 13:00:27.000000000 +0200
+diff -urN linux-2.6.21.1.old/include/net/flow.h linux-2.6.21.1.dev/include/net/flow.h
+--- linux-2.6.21.1.old/include/net/flow.h	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/include/net/flow.h	2007-05-26 20:46:11.922315632 +0200
 @@ -19,6 +19,8 @@
  		struct {
  			__be32			daddr;
@@ -48,9 +48,9 @@ diff -urN linux-2.6.21.1/include/net/flow.h linux-2.6.21.1.new/include/net/flow.
  #define fl4_tos		nl_u.ip4_u.tos
  #define fl4_scope	nl_u.ip4_u.scope
  
-diff -urN linux-2.6.21.1/net/ipv4/route.c linux-2.6.21.1.new/net/ipv4/route.c
---- linux-2.6.21.1/net/ipv4/route.c	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.new/net/ipv4/route.c	2007-05-14 13:09:24.000000000 +0200
+diff -urN linux-2.6.21.1.old/net/ipv4/route.c linux-2.6.21.1.dev/net/ipv4/route.c
+--- linux-2.6.21.1.old/net/ipv4/route.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/net/ipv4/route.c	2007-05-26 20:46:11.967308792 +0200
 @@ -1208,6 +1208,7 @@
  
  				/* Gateway is different ... */
