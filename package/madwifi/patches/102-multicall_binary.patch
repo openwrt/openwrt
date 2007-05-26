@@ -1,6 +1,6 @@
-diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/80211debug.c madwifi-ng-refcount-r2313-20070505.dev/tools/80211debug.c
---- madwifi-ng-refcount-r2313-20070505.old/tools/80211debug.c	2006-12-08 18:20:08.000000000 +0100
-+++ madwifi-ng-refcount-r2313-20070505.dev/tools/80211debug.c	2007-05-13 18:17:55.115190256 +0200
+diff -urN madwifi-ng-r2377-20070526.old/tools/80211debug.c madwifi-ng-r2377-20070526.dev/tools/80211debug.c
+--- madwifi-ng-r2377-20070526.old/tools/80211debug.c	2007-05-24 23:21:08.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/tools/80211debug.c	2007-05-26 18:51:08.119853136 +0200
 @@ -49,6 +49,10 @@
  #include <getopt.h>
  #include <err.h>
@@ -32,9 +32,9 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/80211debug.c madwifi-ng-r
  	const char *ifname = "ath0";
  	const char *cp, *tp;
  	const char *sep;
-diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/80211stats.c madwifi-ng-refcount-r2313-20070505.dev/tools/80211stats.c
---- madwifi-ng-refcount-r2313-20070505.old/tools/80211stats.c	2007-02-07 22:06:25.000000000 +0100
-+++ madwifi-ng-refcount-r2313-20070505.dev/tools/80211stats.c	2007-05-13 18:17:55.116190104 +0200
+diff -urN madwifi-ng-r2377-20070526.old/tools/80211stats.c madwifi-ng-r2377-20070526.dev/tools/80211stats.c
+--- madwifi-ng-r2377-20070526.old/tools/80211stats.c	2007-02-07 04:18:49.000000000 +0100
++++ madwifi-ng-r2377-20070526.dev/tools/80211stats.c	2007-05-26 18:51:08.119853136 +0200
 @@ -60,6 +60,10 @@
  #include "net80211/ieee80211_crypto.h"
  #include "net80211/ieee80211_ioctl.h"
@@ -66,9 +66,9 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/80211stats.c madwifi-ng-r
  	int c, len;
  	struct ieee80211req_sta_info *si;
  	u_int8_t buf[24*1024], *cp;
-diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/athchans.c madwifi-ng-refcount-r2313-20070505.dev/tools/athchans.c
---- madwifi-ng-refcount-r2313-20070505.old/tools/athchans.c	2007-02-07 22:06:25.000000000 +0100
-+++ madwifi-ng-refcount-r2313-20070505.dev/tools/athchans.c	2007-05-13 18:17:55.116190104 +0200
+diff -urN madwifi-ng-r2377-20070526.old/tools/athchans.c madwifi-ng-r2377-20070526.dev/tools/athchans.c
+--- madwifi-ng-r2377-20070526.old/tools/athchans.c	2007-02-07 04:18:49.000000000 +0100
++++ madwifi-ng-r2377-20070526.dev/tools/athchans.c	2007-05-26 18:51:08.119853136 +0200
 @@ -59,6 +59,10 @@
  #include "net80211/ieee80211_crypto.h"
  #include "net80211/ieee80211_ioctl.h"
@@ -101,9 +101,9 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/athchans.c madwifi-ng-ref
  	const char *ifname = "wifi0";
  	struct ieee80211req_chanlist chanlist;
  	int c;
-diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/athctrl.c madwifi-ng-refcount-r2313-20070505.dev/tools/athctrl.c
---- madwifi-ng-refcount-r2313-20070505.old/tools/athctrl.c	2006-02-03 13:03:03.000000000 +0100
-+++ madwifi-ng-refcount-r2313-20070505.dev/tools/athctrl.c	2007-05-13 18:17:55.117189952 +0200
+diff -urN madwifi-ng-r2377-20070526.old/tools/athctrl.c madwifi-ng-r2377-20070526.dev/tools/athctrl.c
+--- madwifi-ng-r2377-20070526.old/tools/athctrl.c	2006-02-03 13:03:03.000000000 +0100
++++ madwifi-ng-r2377-20070526.dev/tools/athctrl.c	2007-05-26 18:51:08.120852984 +0200
 @@ -53,6 +53,10 @@
  
  #include <net/if.h>
@@ -135,9 +135,9 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/athctrl.c madwifi-ng-refc
  	char device[IFNAMSIZ + 1];
  	int distance = -1;
  	int c;
-diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/athdebug.c madwifi-ng-refcount-r2313-20070505.dev/tools/athdebug.c
---- madwifi-ng-refcount-r2313-20070505.old/tools/athdebug.c	2006-12-08 18:20:08.000000000 +0100
-+++ madwifi-ng-refcount-r2313-20070505.dev/tools/athdebug.c	2007-05-13 18:17:55.117189952 +0200
+diff -urN madwifi-ng-r2377-20070526.old/tools/athdebug.c madwifi-ng-r2377-20070526.dev/tools/athdebug.c
+--- madwifi-ng-r2377-20070526.old/tools/athdebug.c	2007-05-24 23:21:08.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/tools/athdebug.c	2007-05-26 18:51:08.120852984 +0200
 @@ -52,6 +52,10 @@
  #include <getopt.h>
  #include <err.h>
@@ -170,9 +170,9 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/athdebug.c madwifi-ng-ref
  #ifdef __linux__
  	const char *ifname = "wifi0";
  #else
-diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/athkey.c madwifi-ng-refcount-r2313-20070505.dev/tools/athkey.c
---- madwifi-ng-refcount-r2313-20070505.old/tools/athkey.c	2007-02-07 22:06:25.000000000 +0100
-+++ madwifi-ng-refcount-r2313-20070505.dev/tools/athkey.c	2007-05-13 18:17:55.117189952 +0200
+diff -urN madwifi-ng-r2377-20070526.old/tools/athkey.c madwifi-ng-r2377-20070526.dev/tools/athkey.c
+--- madwifi-ng-r2377-20070526.old/tools/athkey.c	2007-02-07 04:18:49.000000000 +0100
++++ madwifi-ng-r2377-20070526.dev/tools/athkey.c	2007-05-26 18:51:08.121852832 +0200
 @@ -59,6 +59,10 @@
  #include "net80211/ieee80211_crypto.h"
  #include "net80211/ieee80211_ioctl.h"
@@ -204,9 +204,9 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/athkey.c madwifi-ng-refco
  	const char *ifname = "wifi0";
  	struct ieee80211req_key setkey;
  	struct ieee80211req_del_key delkey;
-diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/athstats.c madwifi-ng-refcount-r2313-20070505.dev/tools/athstats.c
---- madwifi-ng-refcount-r2313-20070505.old/tools/athstats.c	2007-04-04 23:25:20.000000000 +0200
-+++ madwifi-ng-refcount-r2313-20070505.dev/tools/athstats.c	2007-05-13 18:17:55.118189800 +0200
+diff -urN madwifi-ng-r2377-20070526.old/tools/athstats.c madwifi-ng-r2377-20070526.dev/tools/athstats.c
+--- madwifi-ng-r2377-20070526.old/tools/athstats.c	2007-03-27 03:45:42.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/tools/athstats.c	2007-05-26 18:51:08.121852832 +0200
 @@ -63,6 +63,10 @@
  #include "wireless_copy.h"
  #include "if_athioctl.h"
@@ -239,9 +239,9 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/athstats.c madwifi-ng-ref
  #ifdef __linux__
  	const char *ifname = "wifi0";
  #else
-diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/do_multi.c madwifi-ng-refcount-r2313-20070505.dev/tools/do_multi.c
---- madwifi-ng-refcount-r2313-20070505.old/tools/do_multi.c	1970-01-01 01:00:00.000000000 +0100
-+++ madwifi-ng-refcount-r2313-20070505.dev/tools/do_multi.c	2007-05-13 18:17:55.118189800 +0200
+diff -urN madwifi-ng-r2377-20070526.old/tools/do_multi.c madwifi-ng-r2377-20070526.dev/tools/do_multi.c
+--- madwifi-ng-r2377-20070526.old/tools/do_multi.c	1970-01-01 01:00:00.000000000 +0100
++++ madwifi-ng-r2377-20070526.dev/tools/do_multi.c	2007-05-26 18:51:08.121852832 +0200
 @@ -0,0 +1,30 @@
 +#include <string.h>
 +#include "do_multi.h"
@@ -273,9 +273,9 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/do_multi.c madwifi-ng-ref
 +    
 +    return ret;
 +}
-diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/do_multi.h madwifi-ng-refcount-r2313-20070505.dev/tools/do_multi.h
---- madwifi-ng-refcount-r2313-20070505.old/tools/do_multi.h	1970-01-01 01:00:00.000000000 +0100
-+++ madwifi-ng-refcount-r2313-20070505.dev/tools/do_multi.h	2007-05-13 18:17:55.118189800 +0200
+diff -urN madwifi-ng-r2377-20070526.old/tools/do_multi.h madwifi-ng-r2377-20070526.dev/tools/do_multi.h
+--- madwifi-ng-r2377-20070526.old/tools/do_multi.h	1970-01-01 01:00:00.000000000 +0100
++++ madwifi-ng-r2377-20070526.dev/tools/do_multi.h	2007-05-26 18:51:08.122852680 +0200
 @@ -0,0 +1,9 @@
 +
 +int a80211debug_init(int argc, char *argv[]);
@@ -286,9 +286,9 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/do_multi.h madwifi-ng-ref
 +int athkey_init(int argc, char *argv[]);
 +int athstats_init(int argc, char *argv[]);
 +int wlanconfig_init(int argc, char *argv[]);
-diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/Makefile madwifi-ng-refcount-r2313-20070505.dev/tools/Makefile
---- madwifi-ng-refcount-r2313-20070505.old/tools/Makefile	2007-04-04 23:25:20.000000000 +0200
-+++ madwifi-ng-refcount-r2313-20070505.dev/tools/Makefile	2007-05-13 18:17:55.119189648 +0200
+diff -urN madwifi-ng-r2377-20070526.old/tools/Makefile madwifi-ng-r2377-20070526.dev/tools/Makefile
+--- madwifi-ng-r2377-20070526.old/tools/Makefile	2007-03-27 03:45:42.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/tools/Makefile	2007-05-26 18:51:08.122852680 +0200
 @@ -49,6 +49,12 @@
  
  ALL=	athstats 80211stats athkey athchans athctrl \
@@ -333,9 +333,9 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/Makefile madwifi-ng-refco
  athstats: athstats.c
  	$(CC) -o athstats $(ALL_CFLAGS) -I$(TOP)/ath $(LDFLAGS) athstats.c
  80211stats: 80211stats.c
-diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/wlanconfig.c madwifi-ng-refcount-r2313-20070505.dev/tools/wlanconfig.c
---- madwifi-ng-refcount-r2313-20070505.old/tools/wlanconfig.c	2007-05-04 02:10:06.000000000 +0200
-+++ madwifi-ng-refcount-r2313-20070505.dev/tools/wlanconfig.c	2007-05-13 18:17:55.119189648 +0200
+diff -urN madwifi-ng-r2377-20070526.old/tools/wlanconfig.c madwifi-ng-r2377-20070526.dev/tools/wlanconfig.c
+--- madwifi-ng-r2377-20070526.old/tools/wlanconfig.c	2007-04-29 19:35:25.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/tools/wlanconfig.c	2007-05-26 18:51:08.123852528 +0200
 @@ -62,6 +62,10 @@
  #include "net80211/ieee80211_crypto.h"
  #include "net80211/ieee80211_ioctl.h"

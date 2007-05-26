@@ -1,12 +1,12 @@
-diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c
---- madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c	2007-05-04 23:09:29.000000000 +0200
-+++ madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c	2007-05-13 18:17:55.201177184 +0200
-@@ -260,7 +260,7 @@
+diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.dev/ath/if_ath.c
+--- madwifi-ng-r2377-20070526.old/ath/if_ath.c	2007-05-25 22:03:27.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/ath/if_ath.c	2007-05-26 18:51:08.212839000 +0200
+@@ -257,7 +257,7 @@
  static int ath_xchanmode = AH_TRUE;		/* enable extended channels */
  static char *autocreate = NULL;
  static char *ratectl = DEF_RATE_CTL;
 -static int rfkill = -1;
 +static int rfkill = 0;
- static int countrycode = -1;
- static int outdoor = -1;
- static int xchanmode = -1;
+ #ifdef ATH_CAP_TPC
+ static int tpc = -1;
+ #endif

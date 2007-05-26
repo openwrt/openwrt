@@ -1,7 +1,7 @@
-diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
---- madwifi.old/ath/if_ath.c	2007-05-21 07:45:03.185429104 +0200
-+++ madwifi.dev/ath/if_ath.c	2007-05-21 07:45:55.867420224 +0200
-@@ -2206,6 +2206,17 @@
+diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.dev/ath/if_ath.c
+--- madwifi-ng-r2377-20070526.old/ath/if_ath.c	2007-05-26 18:51:08.924730776 +0200
++++ madwifi-ng-r2377-20070526.dev/ath/if_ath.c	2007-05-26 18:51:08.933729408 +0200
+@@ -2220,6 +2220,17 @@
  		txq->axq_link = &lastds->ds_link;
  		ath_hal_txstart(ah, txq->axq_qnum);
  		sc->sc_dev->trans_start = jiffies;
@@ -19,7 +19,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  	}
  	ATH_TXQ_UNLOCK(txq);
  
-@@ -7246,6 +7257,7 @@
+@@ -7262,6 +7273,7 @@
  			__func__, ds);
  #else
  		ds = bf->bf_desc;		/* NB: last descriptor */
@@ -27,13 +27,13 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  #endif
  		ts = &bf->bf_dsstatus.ds_txstat;
  		status = ath_hal_txprocdesc(ah, ds, ts);
-diff -ur madwifi.old/ath/if_athvar.h madwifi.dev/ath/if_athvar.h
---- madwifi.old/ath/if_athvar.h	2007-05-18 13:19:16.000000000 +0200
-+++ madwifi.dev/ath/if_athvar.h	2007-05-21 07:45:37.720179024 +0200
-@@ -684,6 +684,14 @@
- #endif
+diff -urN madwifi-ng-r2377-20070526.old/ath/if_athvar.h madwifi-ng-r2377-20070526.dev/ath/if_athvar.h
+--- madwifi-ng-r2377-20070526.old/ath/if_athvar.h	2007-05-25 04:38:02.000000000 +0200
++++ madwifi-ng-r2377-20070526.dev/ath/if_athvar.h	2007-05-26 18:51:08.933729408 +0200
+@@ -685,6 +685,14 @@
  	u_int sc_slottimeconf;			/* manual override for slottime */
  	int16_t sc_channoise; 			/* Measured noise of current channel (dBm) */
+ 	u_int64_t sc_tsf;			/* TSF at last rx interrupt */
 +
 +	/* 
 +	 * Several MiniPCI cards and most SoC revs frequently cease all transmission

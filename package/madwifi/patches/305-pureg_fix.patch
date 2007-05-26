@@ -1,7 +1,7 @@
-diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c
---- madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c	2007-05-13 18:17:56.686951312 +0200
-+++ madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c	2007-05-13 18:17:56.700949184 +0200
-@@ -3426,7 +3426,9 @@
+diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.dev/ath/if_ath.c
+--- madwifi-ng-r2377-20070526.old/ath/if_ath.c	2007-05-26 18:51:09.426654472 +0200
++++ madwifi-ng-r2377-20070526.dev/ath/if_ath.c	2007-05-26 18:51:09.440652344 +0200
+@@ -3383,7 +3383,9 @@
  		rfilt |= HAL_RX_FILTER_PROM;
  	if (ic->ic_opmode == IEEE80211_M_STA ||
  	    sc->sc_opmode == HAL_M_IBSS ||	/* NB: AHDEMO too */
@@ -12,9 +12,9 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c madwifi-ng-refcoun
  		rfilt |= HAL_RX_FILTER_BEACON;
  	if (sc->sc_nmonvaps > 0) 
  		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON | 
-diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_input.c madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_input.c
---- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_input.c	2007-05-13 18:17:56.688951008 +0200
-+++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_input.c	2007-05-13 18:17:56.701949032 +0200
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_input.c
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c	2007-05-26 18:51:09.429654016 +0200
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_input.c	2007-05-26 18:51:09.443651888 +0200
 @@ -343,11 +343,12 @@
  				bssid = wh->i_addr3;
  			}
@@ -40,7 +40,7 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_input.c madw
  				/* not interested in */
  				IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
  					bssid, NULL, "%s", "not to bss");
-@@ -2560,7 +2562,7 @@
+@@ -2593,7 +2595,7 @@
  	u_int8_t *frm, *efrm;
  	u_int8_t *ssid, *rates, *xrates, *wpa, *rsn, *wme, *ath;
  	u_int8_t rate;
@@ -49,7 +49,7 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_input.c madw
  	u_int8_t qosinfo;
  
  	wh = (struct ieee80211_frame *) skb->data;
-@@ -2582,11 +2584,15 @@
+@@ -2615,11 +2617,15 @@
  		 *    o station mode when associated (to collect state
  		 *      updates such as 802.11g slot time), or
  		 *    o adhoc mode (to discover neighbors)
@@ -66,7 +66,7 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_input.c madw
  			vap->iv_stats.is_rx_mgtdiscard++;
  			return;
  		}
-@@ -2669,6 +2675,7 @@
+@@ -2702,6 +2708,7 @@
  					break;
  				}
  				scan.erp = frm[2];
@@ -74,7 +74,7 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_input.c madw
  				break;
  			case IEEE80211_ELEMID_RSN:
  				scan.rsn = frm;
-@@ -2810,7 +2817,7 @@
+@@ -2855,7 +2862,7 @@
  			    vap->iv_flags_ext & IEEE80211_FEXT_SWBMISS) {
  				mod_timer(&vap->iv_swbmiss, jiffies + vap->iv_swbmiss_period);
  			}
@@ -83,7 +83,7 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_input.c madw
  			/*
  			 * If scanning, pass the info to the scan module.
  			 * Otherwise, check if it's the right time to do
-@@ -2832,6 +2839,20 @@
+@@ -2877,6 +2884,20 @@
  				ieee80211_bg_scan(vap);
  			return;
  		}
@@ -104,10 +104,10 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_input.c madw
  		/*
  		 * If scanning, just pass information to the scan module.
  		 */
-diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_node.c madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_node.c
---- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_node.c	2007-05-13 18:17:56.690950704 +0200
-+++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_node.c	2007-05-13 18:17:56.702948880 +0200
-@@ -331,10 +331,16 @@
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_node.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_node.c
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_node.c	2007-05-26 18:51:09.430653864 +0200
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_node.c	2007-05-26 18:51:09.444651736 +0200
+@@ -332,10 +332,16 @@
  	/* Update country ie information */
  	ieee80211_build_countryie(ic);
  
@@ -126,9 +126,9 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_node.c madwi
  
  	(void) ieee80211_sta_join1(PASS_NODE(ni));
  }
-diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_proto.c madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_proto.c
---- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_proto.c	2007-05-13 18:17:56.691950552 +0200
-+++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_proto.c	2007-05-13 18:17:56.703948728 +0200
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_proto.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_proto.c
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_proto.c	2007-05-26 18:51:09.431653712 +0200
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_proto.c	2007-05-26 18:51:09.445651584 +0200
 @@ -586,6 +586,28 @@
      { 4, { 2, 4, 11, 22 } },	/* IEEE80211_MODE_TURBO_G (mixed b/g) */
  };
@@ -158,10 +158,10 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_proto.c madw
  /*
   * Mark the basic rates for the 11g rate table based on the
   * specified mode.  For 11b compatibility we mark only 11b
-diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_var.h madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_var.h
---- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_var.h	2007-05-13 18:17:56.579967576 +0200
-+++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_var.h	2007-05-13 18:17:56.704948576 +0200
-@@ -581,6 +581,8 @@
+diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_var.h madwifi-ng-r2377-20070526.dev/net80211/ieee80211_var.h
+--- madwifi-ng-r2377-20070526.old/net80211/ieee80211_var.h	2007-05-26 18:51:09.321670432 +0200
++++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_var.h	2007-05-26 18:51:09.445651584 +0200
+@@ -584,6 +584,8 @@
  void ieee80211_build_countryie(struct ieee80211com *);
  int ieee80211_media_setup(struct ieee80211com *, struct ifmedia *, u_int32_t,
  	ifm_change_cb_t, ifm_stat_cb_t);
