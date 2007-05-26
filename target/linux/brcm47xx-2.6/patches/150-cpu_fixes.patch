@@ -1,7 +1,7 @@
 diff -ur linux.old/arch/mips/kernel/genex.S linux.dev/arch/mips/kernel/genex.S
 --- linux.old/arch/mips/kernel/genex.S	2007-03-23 16:10:35.572499592 +0100
 +++ linux.dev/arch/mips/kernel/genex.S	2007-03-16 11:54:34.901251992 +0100
-@@ -50,6 +50,10 @@
+@@ -51,6 +51,10 @@
  NESTED(except_vec3_generic, 0, sp)
  	.set	push
  	.set	noat
@@ -74,7 +74,7 @@ diff -ur linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  	if (dc_lsize)
  		protected_writeback_dcache_line(addr & ~(dc_lsize - 1));
  	if (!cpu_icache_snoops_remote_store && scache_size)
-@@ -1199,6 +1216,15 @@
+@@ -1173,6 +1190,15 @@
  
  	/* Default cache error handler for R4000 and R5000 family */
  	set_uncached_handler (0x100, &except_vec2_generic, 0x80);
@@ -93,7 +93,7 @@ diff -ur linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
 diff -ur linux.old/arch/mips/mm/tlbex.c linux.dev/arch/mips/mm/tlbex.c
 --- linux.old/arch/mips/mm/tlbex.c	2007-03-16 11:54:34.826263000 +0100
 +++ linux.dev/arch/mips/mm/tlbex.c	2007-03-23 16:03:23.608168152 +0100
-@@ -1174,6 +1174,10 @@
+@@ -1229,6 +1229,10 @@
  #endif
  }
  
@@ -104,7 +104,7 @@ diff -ur linux.old/arch/mips/mm/tlbex.c linux.dev/arch/mips/mm/tlbex.c
  static void __init build_r4000_tlb_refill_handler(void)
  {
  	u32 *p = tlb_handler;
-@@ -1188,6 +1192,12 @@
+@@ -1243,6 +1247,12 @@
  	memset(relocs, 0, sizeof(relocs));
  	memset(final_handler, 0, sizeof(final_handler));
  
@@ -325,7 +325,7 @@ diff -ur linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kcac
 diff -ur linux.old/include/asm-mips/stackframe.h linux.dev/include/asm-mips/stackframe.h
 --- linux.old/include/asm-mips/stackframe.h	2007-03-23 16:10:35.573499440 +0100
 +++ linux.dev/include/asm-mips/stackframe.h	2007-03-16 11:54:34.903251688 +0100
-@@ -334,6 +334,10 @@
+@@ -352,6 +352,10 @@
  		.macro	RESTORE_SP_AND_RET
  		LONG_L	sp, PT_R29(sp)
  		.set	mips3

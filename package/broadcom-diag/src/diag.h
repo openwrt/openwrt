@@ -88,7 +88,11 @@ static struct platform_t platform;
 static void register_buttons(struct button_t *b);
 static void unregister_buttons(struct button_t *b);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+static void hotplug_button(struct work_struct *work);
+#else
 static void hotplug_button(struct event_t *event);
+#endif
 static irqreturn_t button_handler(int irq, void *dev_id, struct pt_regs *regs);
 
 /* leds */
