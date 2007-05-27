@@ -331,3 +331,17 @@ define KernelPackage/usb-net-asix/2.6
 endef
 
 $(eval $(call KernelPackage,usb-net-asix))
+
+
+define KernelPackage/usb-yealink
+  $(call usbdep,@LINUX_2_6)
+  TITLE:=USB Yealink VOIP phone
+  DESCRIPTION:=Kernel support for Yealink VOIP phone
+  KCONFIG:=$(CONFIG_USB_YEALINK)
+  FILES:=$(LINUX_DIR)/drivers/usb/input/yealink.ko
+  AUTOLOAD:=$(call AutoLoad,70,yealink)
+  DEPENDS:=kmod-input-core kmod-input-evdev
+endef
+$(eval $(call KernelPackage,usb-yealink))
+
+
