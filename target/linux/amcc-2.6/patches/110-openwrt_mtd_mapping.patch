@@ -1,0 +1,29 @@
+diff -Nur linux-2.6.21/arch/ppc/platforms/4xx/taishan.c linux-2.6.21-owrt/arch/ppc/platforms/4xx/taishan.c
+--- linux-2.6.21/arch/ppc/platforms/4xx/taishan.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21-owrt/arch/ppc/platforms/4xx/taishan.c	2007-05-28 17:21:46.000000000 +0200
+@@ -60,8 +60,8 @@
+ };
+ 
+ #define RW_PART0_OF	0
+-#define RW_PART0_SZ	0x180000
+-#define RW_PART1_SZ	0x200000
++#define RW_PART0_SZ	0x400000
++#define RW_PART1_SZ	0x3a00000
+ /* Partition 2 will be autosized dynamically... */
+ #define RW_PART3_SZ	0x80000
+ #define RW_PART4_SZ	0x40000
+@@ -73,12 +73,12 @@
+ 		.size = RW_PART0_SZ
+ 	},
+ 	{
+-		.name = "root",
++		.name = "rootfs",
+ 		.offset = MTDPART_OFS_APPEND,
+ 		.size = RW_PART1_SZ,
+ 	},
+ 	{
+-		.name = "user",
++		.name = "diagnostics",
+ 		.offset = MTDPART_OFS_APPEND,
+ /*		.size = RW_PART2_SZ */ /* will be adjusted dynamically */
+ 	},

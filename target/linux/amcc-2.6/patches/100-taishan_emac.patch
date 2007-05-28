@@ -1,0 +1,71 @@
+diff -Nur linux-2.6.21/drivers/net/ibm_emac/ibm_emac_phy.c linux-2.6.21-owrt/drivers/net/ibm_emac/ibm_emac_phy.c
+--- linux-2.6.21/drivers/net/ibm_emac/ibm_emac_phy.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21-owrt/drivers/net/ibm_emac/ibm_emac_phy.c	2007-05-28 16:27:15.000000000 +0200
+@@ -299,11 +299,50 @@
+ 	.ops		= &cis8201_phy_ops
+ };
+ 
++#if defined(CONFIG_TAISHAN)
++static int et1011c_init(struct mii_phy *phy)
++{
++	u16 reg_short;
++
++	reg_short = (u16)(phy_read(phy,0x16));
++	reg_short &= ~(0x7);
++	reg_short |= 0x6;	/* RGMII Trace Delay*/	
++	phy_write(phy, 0x16, reg_short);
++			
++	reg_short = (u16)(phy_read(phy, 0x17));
++	reg_short &= ~(0x40);
++	phy_write(phy, 0x17, reg_short);
++	
++	phy_write(phy,0x1c,0x74f0);
++	return 0;
++}
++	
++static struct mii_phy_ops et1011c_phy_ops = {
++	.init		= et1011c_init,
++	.setup_aneg	= genmii_setup_aneg,
++	.setup_forced	= genmii_setup_forced,
++	.poll_link	= genmii_poll_link,
++	.read_link	= genmii_read_link
++};
++
++static struct mii_phy_def et1011c_phy_def = {
++	.phy_id		= 0x0282f000,
++	.phy_id_mask	= 0x0fffff00,
++	.name		= "ET1011C Gigabit Ethernet",
++	.ops		= &et1011c_phy_ops
++};
++
++static struct mii_phy_def *mii_phy_table[] = {
++	&et1011c_phy_def,
++	NULL
++};
++#else
+ static struct mii_phy_def *mii_phy_table[] = {
+ 	&cis8201_phy_def,
+ 	&genmii_phy_def,
+ 	NULL
+ };
++#endif
+ 
+ int mii_phy_probe(struct mii_phy *phy, int address)
+ {
+diff -Nur linux-2.6.21/drivers/net/ibm_emac/ibm_emac_zmii.c linux-2.6.21-owrt/drivers/net/ibm_emac/ibm_emac_zmii.c
+--- linux-2.6.21/drivers/net/ibm_emac/ibm_emac_zmii.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21-owrt/drivers/net/ibm_emac/ibm_emac_zmii.c	2007-05-28 16:26:48.000000000 +0200
+@@ -170,6 +170,13 @@
+ 	struct ocp_func_emac_data *emacdata = dev->def->additions;
+ 
+ 	if (emacdata->zmii_idx >= 0) {
++#if defined(CONFIG_TAISHAN)
++		/* don't attach emac0 and emac1 */
++		if( dev->def->index < 2 ) 
++		{
++			return -ENODEV;
++		}
++#endif		
+ 		dev->zmii_input = emacdata->zmii_mux;
+ 		dev->zmii_dev =
+ 		    ocp_find_device(OCP_VENDOR_IBM, OCP_FUNC_ZMII,
