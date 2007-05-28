@@ -1,60 +1,36 @@
---- linux-2.6.19.2.old/arch/arm/mach-at91rm9200/vlink_leds.c	2007-04-26 14:11:34.000000000 +0200
-+++ linux-2.6.19.2/arch/arm/mach-at91rm9200/vlink_leds.c	2007-04-26 14:09:01.000000000 +0200
-@@ -98,32 +98,31 @@
- //	printk("leds_init()\n");
- 
- 	/* Enable PIO to access the LEDs */
--	at91_set_gpio_output(AT91_PIN_PC7, 1);
--	at91_set_gpio_output(AT91_PIN_PC8, 1);
--	at91_set_gpio_output(AT91_PIN_PC14, 1);
--	at91_set_gpio_output(AT91_PIN_PC15, 1);
--	at91_set_gpio_output(AT91_PIN_PB14, 1);
--	at91_set_gpio_output(AT91_PIN_PB15, 1);
--	at91_set_gpio_output(AT91_PIN_PB16, 1);
--	at91_set_gpio_output(AT91_PIN_PB17, 1);
--
--	at91_set_gpio_output(AT91_PIN_PB9, 1);
--	at91_set_gpio_output(AT91_PIN_PB10, 1);
--	at91_set_gpio_output(AT91_PIN_PB11, 1);
--	at91_set_gpio_output(AT91_PIN_PB12, 1);
--
--	at91_set_gpio_input(AT91_PIN_PB8, 1);
--	at91_set_gpio_input(AT91_PIN_PB22, 1);
--	at91_set_gpio_input(AT91_PIN_PA19, 1);
--	at91_set_gpio_input(AT91_PIN_PA24, 1);
--	at91_set_gpio_output(AT91_PIN_PA29, 1);
--	at91_set_gpio_output(AT91_PIN_PB2, 1);
--	at91_set_gpio_output(AT91_PIN_PB3, 1);
--	at91_set_gpio_output(AT91_PIN_PB4, 1);
--
--	at91_set_gpio_input(AT91_PIN_PB27, 1);
--	at91_set_gpio_input(AT91_PIN_PB28, 1);
--	at91_set_gpio_input(AT91_PIN_PB29, 1);
-+	at91_set_gpio_output(AT91_PIN_PC7, 1); 	// LED FRONT AP1
-+	at91_set_gpio_output(AT91_PIN_PC8, 1); 	// LED FRONT BP1
-+	at91_set_gpio_output(AT91_PIN_PC14, 1); // LED FRONT BP2
-+	at91_set_gpio_output(AT91_PIN_PC15, 1); // LED FRONT AP2
-+	at91_set_gpio_output(AT91_PIN_PB14, 1); // LED BACK AP1
-+	at91_set_gpio_output(AT91_PIN_PB15, 1); // LED BACK BP1
-+	at91_set_gpio_output(AT91_PIN_PB16, 1); // LED BACK AP2
-+	at91_set_gpio_output(AT91_PIN_PB17, 1); // LED BACK BP2
+--- linux-2.6.21.1.orig/arch/arm/mach-at91/board-vlink.c	2007-05-28 15:53:31.000000000 +0200
++++ linux-2.6.21.1/arch/arm/mach-at91/board-vlink.c	2007-05-28 15:58:46.000000000 +0200
+@@ -149,6 +149,33 @@
+ #endif
+ 	/* LEDs */
+ //	at91_gpio_leds(vlink_leds, ARRAY_SIZE(vlink_leds));
 +
-+	at91_set_gpio_output(AT91_PIN_PB9, 1); 	// ENBSC3
-+	at91_set_gpio_output(AT91_PIN_PB10, 1); // ENBSC2
-+	at91_set_gpio_output(AT91_PIN_PB11, 1); // ENBSC1
-+	at91_set_gpio_output(AT91_PIN_PB12, 1); // GSMONOFF
++/* Other LED's */
++       at91_set_gpio_output(AT91_PIN_PC7, 1);  // LED FRONT AP1
++       at91_set_gpio_output(AT91_PIN_PC8, 1);  // LED FRONT BP1
++       at91_set_gpio_output(AT91_PIN_PB14, 1); // LED BACK AP1
++       at91_set_gpio_output(AT91_PIN_PB15, 1); // LED BACK BP1
++       at91_set_gpio_output(AT91_PIN_PB16, 1); // LED BACK AP2
++       at91_set_gpio_output(AT91_PIN_PB17, 1); // LED BACK BP2
 +
-+	at91_set_gpio_input(AT91_PIN_PB8, 1);  	// JIGPRESENT
-+	at91_set_gpio_input(AT91_PIN_PB22, 1); 	// PWR_IND
-+	at91_set_gpio_input(AT91_PIN_PA19, 1); 	// P1DTR
-+	at91_set_gpio_input(AT91_PIN_PA24, 1); 	// P2DTR
-+	at91_set_gpio_output(AT91_PIN_PB29, 1); // P2DCD
-+	at91_set_gpio_output(AT91_PIN_PB2, 1); 	// P2RI
-+	at91_set_gpio_output(AT91_PIN_PB6, 1);	// P1DCD
-+	at91_set_gpio_output(AT91_PIN_PB7, 1);	// P1RI
++/* SIM Cards */
++       at91_set_gpio_output(AT91_PIN_PB9, 1);  // ENBSC3
++       at91_set_gpio_output(AT91_PIN_PB10, 1); // ENBSC2
++       at91_set_gpio_output(AT91_PIN_PB11, 1); // ENBSC1
 +
-+	at91_set_gpio_input(AT91_PIN_PB27, 1);	// UDB_CNX
-+	at91_set_gpio_output(AT91_PIN_PB28, 1);	// UDB_PUP
++/* GSM Module Control */
++       at91_set_gpio_output(AT91_PIN_PB12, 1); // GSMONOFF
++
++/* Test jig presence detection */
++       at91_set_gpio_input(AT91_PIN_PB8, 1);   // JIGPRESENT
++
++/* Power indicator */
++       at91_set_gpio_input(AT91_PIN_PB22, 1);  // PWR_IND
++
++/* USB Device control */
++       at91_set_gpio_input(AT91_PIN_PB27, 1);  // UDB_CNX
++       at91_set_gpio_output(AT91_PIN_PB28, 1); // UDB_PUP
++
+ }
  
- 	leds_event = at91_leds_event;
- 
+ MACHINE_START(VLINK, "FDL VersaLink")
