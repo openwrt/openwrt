@@ -1,0 +1,16 @@
+diff -ur openswan.old/linux/net/ipsec/sysctl_net_ipsec.c openswan.dev/linux/net/ipsec/sysctl_net_ipsec.c
+--- openswan.old/linux/net/ipsec/sysctl_net_ipsec.c	2004-07-10 21:11:18.000000000 +0200
++++ openswan.dev/linux/net/ipsec/sysctl_net_ipsec.c	2007-05-28 22:40:57.001031592 +0200
+@@ -130,7 +130,11 @@
+ 
+ int ipsec_sysctl_register(void)
+ {
+-        ipsec_table_header = register_sysctl_table(ipsec_root_table, 0);
++#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,20)
++		ipsec_table_header = register_sysctl_table(ipsec_root_table);
++#else
++		ipsec_table_header = register_sysctl_table(ipsec_root_table, 0);
++#endif
+         if (!ipsec_table_header) {
+                 return -ENOMEM;
+ 	}
