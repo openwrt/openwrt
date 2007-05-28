@@ -227,15 +227,4 @@ diff -ruN openswan-2.4.7-old/programs/_startklips/_startklips.in openswan-2.4.7-
          	if test ! -f $ipsecversion
          	then
                  	echo "kernel appears to lack IPsec support (neither CONFIG_KLIPS or CONFIG_NET_KEY are set)"
-diff -urN openswan-2.4.7/programs/_startklips/_startklips.in openswan-2.4.7.new/programs/_startklips/_startklips.in
---- openswan-2.4.7/programs/_startklips/_startklips.in	2006-11-13 21:27:18.000000000 +0100
-+++ openswan-2.4.7.new/programs/_startklips/_startklips.in	2007-04-16 11:57:45.000000000 +0200
-@@ -147,7 +147,7 @@
- 	then
- 		# attach the interface and bring it up
- 		ipsec tncfg --attach --virtual $virt --physical $phys
--		ifconfig $virt inet $addr $type $otheraddr netmask $mask $mtu
-+		ifconfig $virt $addr $type $otheraddr netmask $mask $mtu
- 	fi
- 
- 	# if %defaultroute, note the facts
+
