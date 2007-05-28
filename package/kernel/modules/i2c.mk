@@ -47,9 +47,9 @@ define KernelPackage/i2c-scx200
   DEFAULT:=y if LINUX_2_6_X86_Soekris
   DEPENDS:=kmod-i2c-core kmod-i2c-algos @LINUX_2_6_X86_Soekris
   SUBMENU:=$(I2CMENU)
-  KCONFIG:=$(CONFIG_I2C_SCX200)
+  KCONFIG:=$(CONFIG_SCx200_I2C)
   FILES:=$(LINUX_DIR)/drivers/i2c/busses/scx200_i2c.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/i2c/busses/i2c-isa.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,70,scx200_i2c)
+  AUTOLOAD:=$(call AutoLoad,70,i2c-isa scx200_i2c)
 endef
 $(eval $(call KernelPackage,i2c-scx200))
