@@ -333,17 +333,15 @@ endef
 $(eval $(call KernelPackage,usb-net-asix))
 
 define KernelPackage/usb-hid
-  $(call usbdep,@LINUX_2_6)
+  $(call usbdep,@LINUX_2_6 evdev)
   TITLE:=Support for USB Human Input Devices
   DESCRIPTION:=Kernel support for USB HID devices such as keyboards and mice
   KCONFIG:=$(CONFIG_USB_HID)
-  AUTOLOAD:=$(call AutoLoad,70,usbhid evdev)
+  AUTOLOAD:=$(call AutoLoad,70,usbhid)
 endef
 
 define KernelPackage/usb-hid/2.6
-  FILES:= \
-  	$(LINUX_DIR)/drivers/usb/input/usbhid.ko \
-	$(LINUX_DIR)/drivers/input/evdev.ko
+  FILES:=$(LINUX_DIR)/drivers/usb/input/usbhid.ko
 endef
 $(eval $(call KernelPackage,usb-hid))
 
