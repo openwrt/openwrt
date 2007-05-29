@@ -308,7 +308,7 @@ static void adm5120ser_shutdown(struct uart_port *port)
 }
 
 static void adm5120ser_set_termios(struct uart_port *port,
-    struct termios *termios, struct termios *old)
+    struct ktermios *termios, struct ktermios *old)
 {
 	unsigned int baud, quot, lcrh;
 	unsigned long flags;
