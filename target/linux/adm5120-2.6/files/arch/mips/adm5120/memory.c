@@ -128,8 +128,7 @@ void __init prom_meminit(void)
 }
 #endif
 
-unsigned long __init prom_free_prom_memory(void)
+void __init prom_free_prom_memory(void)
 {
 	/* We do not have to prom memory to free */
-        return 0;
 }
