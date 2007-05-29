@@ -27,6 +27,6 @@ define KernelPackage/pata-artop
 	SUBMENU:=$(BLMENU)
 	AUTOLOAD:=$(call AutoLoad,30,libata pata_artop)
 	FILES:=$(LINUX_DIR)/drivers/ata/pata_artop.$(LINUX_KMOD_SUFFIX)
-	DEPENDS:=+kmod-libata +kmod-ide-core +kmod-scsi-core
+	DEPENDS:=+kmod-libata +kmod-scsi-core
 endef
 $(eval $(call KernelPackage,pata-artop))
