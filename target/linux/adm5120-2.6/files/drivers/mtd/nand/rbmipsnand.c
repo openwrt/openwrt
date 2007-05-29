@@ -66,7 +66,17 @@ static struct mtd_partition partition_info[] = {
 
 static struct mtd_info rmtd;
 static struct nand_chip rnand;
-
+/*========================================================================*/
+/* We need to use the OLD Yaffs-1 OOB layout, otherwise the RB bootloader */
+/* will not be able to find the kernel that we load.  So set the oobinfo  */
+/* when creating the partitions.                                          */ 
+/*========================================================================*/
+static struct nand_ecclayout rb_ecclayout = {
+        .eccbytes = 6,
+        .eccpos = { 8, 9, 10, 13, 14, 15 },
+	.oobavail = 9,
+        .oobfree = { { 0, 4 }, { 6, 2 }, { 11, 2 }, { 4, 1} }
+};
 static unsigned init_ok = 0;
 
 unsigned get_rbnand_block_size(void) {
@@ -93,6 +103,7 @@ int __init rbmips_init(void) {
 		return -ENXIO;
 	}
 	rnand.ecc.mode = NAND_ECC_SOFT;
+	rnand.ecc.layout = &rb_ecclayout;
 	rnand.chip_delay = 25;
 	rnand.options |= NAND_NO_AUTOINCR;
 	rmtd.priv = &rnand;
