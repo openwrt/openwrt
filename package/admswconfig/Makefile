@@ -13,8 +13,8 @@ PKG_VERSION:=0.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://sharon.esrac.ele.tue.nl/users/pe1rxq/linux-adm/admswconfig/
-PKG_MD5SUM:=3d00efbff699af8a4d3179becd881b1e
+PKG_SOURCE_URL:=@openwrt/
+PKG_MD5SUM:=faafd4618f970119a665b11b21ac6a26
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
