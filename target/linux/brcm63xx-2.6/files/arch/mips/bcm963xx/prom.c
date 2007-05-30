@@ -67,8 +67,7 @@ void __init prom_init(void)
 	mips_machtype = MACH_BCM;
 }
 
-unsigned long __init prom_free_prom_memory(void)
+void __init prom_free_prom_memory(void)
 {
 	/* We do not have any memory to free */
-	return 0;
 }
