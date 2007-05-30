@@ -38,6 +38,7 @@
 #include <asm-mips/mips-boards/prom.h>
 
 extern char *prom_getenv(char *envname);
+void prom_printf(char *, ...);
 
 #define PFN_ALIGN(x)    (((unsigned long)(x) + (PAGE_SIZE - 1)) & PAGE_MASK)
 

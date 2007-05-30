@@ -75,6 +75,7 @@ const char *get_system_type(void)
 	return adm5120_board_name();
 }
 
+#ifdef CONFIG_USB
 static struct resource adm5120_hcd_resources[] = {
 	[0] = {
 		.start	= 0x11200000,
@@ -104,4 +105,5 @@ static int __init adm5120_init(void)
 	return platform_add_devices(devices, ARRAY_SIZE(devices));
 }
 
-subsys_initcall(adm5120_init);
+arch_initcall(adm5120_init);
+#endif
