@@ -48,11 +48,12 @@ void adm5120_hw0_irqdispatch(struct pt_regs *regs)
 
 	intsrc = ADM5120_INTC_STATUS & ADM5120_IRQ_MASK;
 
-	for (i = 0; intsrc; intsrc >>= 1, i++)
-		if (intsrc & 0x1)
-			do_IRQ(i);
-		else
-			spurious_interrupt();
+	if (intsrc) {
+		for (i = 0; intsrc; intsrc >>= 1, i++)
+			if (intsrc & 0x1)
+				do_IRQ(i);
+	} else
+		spurious_interrupt();
 }
 
 void mips_timer_interrupt(struct pt_regs *regs)
