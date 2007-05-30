@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006,2007 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,28 +7,33 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define Build/Compile
-	rm -f $(KDIR)/loader.gz $(KDIR)/loader-edimax.gz
-	$(MAKE) -C lzma-loader \
-		BUILD_DIR="$(KDIR)" \
-		TARGET="$(KDIR)" \
-		install
-	echo -ne "\\x00" >> $(KDIR)/loader.gz
-	$(MAKE) -C lzma-loader \
-		BUILD_DIR="$(KDIR)" \
-		TARGET="$(KDIR)" \
-		LOADER=loader-edimax \
-		BZ_STARTUP_ORG=0x6D8 \
-		install
-	echo -ne "\\x00" >> $(KDIR)/loader-edimax.gz
+LOADER_MAKE = $(MAKE) -C lzma-loader KDIR=$(KDIR)
+
+define PrepareLoader
+	$(LOADER_MAKE) LOADER=$(1) LOADER_DATA="" \
+		LZMA_TEXT_START=$(2) LZMA_STARTUP_ORG=$(3) \
+		compile
+
+endef
+define PrepareLZMAKernel
+	$(LOADER_MAKE) LOADER=vmlinux-lzma-$(1) LOADER_DATA=$(KDIR)/vmlinux.lzma \
+		LZMA_TEXT_START=$(2) LZMA_STARTUP_ORG=$(3) \
+		compile
 endef
 
 define Build/Clean
-	$(MAKE) -C lzma-loader clean
+	$(LOADER_MAKE) clean
 endef
 
 define Image/Prepare
 	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+	$(call PrepareLoader,generic,0x80500000,0)
+	$(call PrepareLoader,admboot,0x80500000,0x6D8)
+else
+	$(call PrepareLZMAKernel,generic,0x80500000,0)
+	$(call PrepareLZMAKernel,admboot,0x80500000,0x6D8)
+endif
 endef
 
 define trxalign/jffs2-128k
@@ -47,7 +52,7 @@ endef
 
 define Image/Build/Edimax
 	$(STAGING_DIR)/bin/mkcsysimg -B $(4) -d -w \
-		-r $(KDIR)/loader-edimax.gz \
+		-r $(KDIR)/loader-admboot.gz \
 		-x $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1)-noloader.trx \
 		$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(3)-$(2).bin
 endef
@@ -57,7 +62,7 @@ define Image/Build/MyLoader
 	$(STAGING_DIR)/bin/mkmylofw -B $(4) \
 		-p0x20000:0x10000:ahp:0x80001000 \
 		-p0x30000:0 \
-		-b0x20000:0x10000:h:$(KDIR)/loader.gz \
+		-b0x20000:0x10000:h:$(KDIR)/loader-generic.gz \
 		-b0x30000:0::$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(3)-$(2).trx \
 		$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(3)-$(2).bin
 endef
@@ -67,7 +72,7 @@ define Image/Build/RouterBoard
 endef
 
 define Image/Build
-	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1)) -f $(KDIR)/root.$(1)
+	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx -f $(KDIR)/loader-generic.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1)) -f $(KDIR)/root.$(1)
 	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1)-noloader.trx -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1)) -f $(KDIR)/root.$(1)
 ifneq ($(1),jffs2-128K)
 	$(call Image/Build/Compex,$(1),wp54g-wrt,$(patsubst jffs2-%,jffs2,$(1)))
@@ -97,4 +102,19 @@ ifeq ($(1),tgz)
 endif
 endef
 
+define Image/Build/LZMAKernel
+	$(CP) $(KDIR)/loader-vmlinux-lzma-$(2).$(3) \
+	    $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux-lzma-$(1).$(3)
+endef
+
+define Image/Build/Initramfs
+	$(call Image/Build/LZMAKernel,generic,generic,elf)
+	$(call Image/Build/LZMAKernel,rb-100,generic,elf)
+	$(call Image/Build/LZMAKernel,np27g,generic,bin)
+	$(call Image/Build/LZMAKernel,wp54g,generic,bin)
+	$(call Image/Build/LZMAKernel,br-6104k,admboot,gz)
+	$(call Image/Build/LZMAKernel,cas-771,admboot,gz)
+endef
+
 $(eval $(call BuildImage))
+
