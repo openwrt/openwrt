@@ -1,0 +1,8 @@
+diff -urN linux-2.6.21.1/drivers/serial/Makefile linux-2.6.21.1.new/drivers/serial/Makefile
+--- linux-2.6.21.1/drivers/serial/Makefile	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.new/drivers/serial/Makefile	2007-05-30 20:32:27.000000000 +0200
+@@ -60,3 +60,4 @@
+ obj-$(CONFIG_SERIAL_UARTLITE) += uartlite.o
+ obj-$(CONFIG_SERIAL_NETX) += netx-serial.o
+ obj-$(CONFIG_SERIAL_OF_PLATFORM) += of_serial.o
++obj-$(CONFIG_BCM963XX) += bcm63xx_cons.o

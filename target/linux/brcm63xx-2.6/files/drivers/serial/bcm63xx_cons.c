@@ -75,7 +75,7 @@ typedef struct bcm_serial {
 
 	struct async_icount icount;	/* keep track of things ... */
 	struct tty_struct *tty;	/* tty associated */
-	struct termios normal_termios;
+	struct ktermios normal_termios;
 
 	wait_queue_head_t open_wait;
 	wait_queue_head_t close_wait;
@@ -107,8 +107,8 @@ typedef struct bcm_serial {
 static struct bcm_serial multi[BCM_NUM_UARTS];
 static struct bcm_serial *lines[BCM_NUM_UARTS];
 static struct tty_driver *serial_driver;
-static struct termios *serial_termios[BCM_NUM_UARTS];
-static struct termios *serial_termios_locked[BCM_NUM_UARTS];
+static struct ktermios *serial_termios[BCM_NUM_UARTS];
+static struct ktermios *serial_termios_locked[BCM_NUM_UARTS];
 
 
 static void bcm_stop(struct tty_struct *tty);
@@ -135,7 +135,7 @@ static void send_break(struct bcm_serial *info, int duration);
 static int bcm_ioctl(struct tty_struct *tty, struct file *file,
 		     unsigned int cmd, unsigned long arg);
 static void bcm_set_termios(struct tty_struct *tty,
-			    struct termios *old_termios);
+			    struct ktermios *old_termios);
 static void bcm63xx_cons_close(struct tty_struct *tty, struct file *filp);
 static void bcm_hangup(struct tty_struct *tty);
 static int block_til_ready(struct tty_struct *tty, struct file *filp,
@@ -721,7 +721,7 @@ static int bcm_ioctl(struct tty_struct *tty, struct file *file,
 }
 
 static void bcm_set_termios(struct tty_struct *tty,
-			    struct termios *old_termios)
+			    struct ktermios *old_termios)
 {
 	struct bcm_serial *info = (struct bcm_serial *) tty->driver_data;
 
@@ -894,7 +894,6 @@ static int bcm63xx_cons_open(struct tty_struct *tty, struct file *filp)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 	info->pgrp = process_group(current);
-	info->session = current->signal->session;
 #else
 	info->session = current->session;
 	info->pgrp = current->pgrp;
