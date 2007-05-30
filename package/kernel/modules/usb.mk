@@ -332,6 +332,30 @@ endef
 
 $(eval $(call KernelPackage,usb-net-asix))
 
+define KernelPackage/usb-net-kaweth
+  $(call usbdep,+kmod-usbnet)
+  TITLE:=Kernel module for USB-to-Ethernet Kaweth convertors
+  DESCRIPTION:=Kernel module for USB-to-Ethernet Kaweth convertors
+  DEPENDS:=kmod-usb-net
+  KCONFIG:=$(CONFIG_USB_KAWETH)
+  FILES:=$(LINUX_DIR)/drivers/usb/net/kaweth.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call Autoload,61,kaweth)
+endef
+
+$(eval $(call KernelPackage,usb-net-kaweth))
+
+define KernelPackage/usb-net-pegasus
+  $(call usbdep,+kmod-usbnet)
+  TITLE:=Kernel module for USB-to-Ethernet Pegasus convertors
+  DESCRIPTION:=Kernel module for USB-to-Ethernet Pegasus convertors
+  DEPENDS:=kmod-usb-net
+  KCONFIG:=$(CONFIG_USB_PEGASUS)
+  FILES:=$(LINUX_DIR)/drivers/usb/net/pegasus.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call Autoload,61,pegasus)
+endef
+
+$(eval $(call KernelPackage,usb-net-pegasus))
+
 define KernelPackage/usb-hid
   $(call usbdep,@LINUX_2_6 evdev)
   TITLE:=Support for USB Human Input Devices
