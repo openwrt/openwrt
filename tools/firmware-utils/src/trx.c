@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 	char *ofn = NULL;
 	char *buf;
 	char *e;
-	int c, i, append;
+	int c, i, append = 0;
 	size_t n;
 	uint32_t cur_len;
 	unsigned long maxlen = TRX_MAX_LEN;
@@ -230,7 +230,8 @@ int main(int argc, char **argv)
 	}
 
 	fclose(out);
-
+	
+	printf("Offsets:\n0x%08x\n0x%08x\n0x%08x\n", p->offsets[0], p->offsets[1], p->offsets[2]);
 	return EXIT_SUCCESS;
 }
 
