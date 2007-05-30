@@ -3,7 +3,7 @@
  *
  *  Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
  *
- *  This program was based on the code found in various Linux 
+ *  This program was based on the code found in various Linux
  *  source tarballs released by Edimax for it's devices.
  *  Original author: David Hsu <davidhsu@realtek.com.tw>
  *
@@ -111,7 +111,7 @@ struct board_info {
 	uint32_t webp_size;
 	uint32_t webp_size_max;
 	uint32_t code_size;
-	
+
 	uint32_t addr_code;
 	uint32_t addr_webp;
 };
@@ -123,7 +123,7 @@ struct board_info {
 	.webp_size = ws, .webp_size_max = 3*0x10000, \
 	.addr_code = ac, .addr_webp = aw \
 	}
-	
+
 #define BOARD_ADM(m,n,f, sigw) BOARD(m,n,f, ADM_BOOT_SIG, sigw, \
 	ADM_BOOT_SIZE, ADM_CONF_SIZE, ADM_WEBP_SIZE, \
 	ADM_CODE_ADDR, ADM_WEBP_ADDR)
@@ -135,7 +135,8 @@ struct board_info {
 char *progname;
 char *ofname = NULL;
 int verblevel = 0;
-int size_check = 1;
+int invalid_causes_error = 1;
+int keep_invalid_images = 0;
 
 struct board_info *board = NULL;
 
@@ -146,7 +147,6 @@ struct csys_block *code_block = NULL;
 
 struct csys_block blocks[MAX_NUM_BLOCKS];
 int num_blocks = 0;
-
 
 static struct board_info boards[] = {
 	/* The original Edimax products */
@@ -172,49 +172,37 @@ static struct board_info boards[] = {
 	/* Planet products */
 	BOARD_ADM("XRT-401D", "Planet XRT-401D", 2, SIG_XRT401D),
 	BOARD_ADM("XRT-402D", "Planet XRT-402D", 2, SIG_XRT402D),
-	
+
 	{.model = NULL}
 };
 
 /*
- * Helper routines
+ * Message macros
  */
-void
-errmsgv(int syserr, const char *fmt, va_list arg_ptr)
-{
-	int save = errno;
+#define ERR(fmt, ...) do { \
+	fflush(0); \
+	fprintf(stderr, "[%s] *** error: " fmt "\n", progname, ## __VA_ARGS__ ); \
+} while (0)
 
-	fflush(0);
-	fprintf(stderr, "%s: error, ", progname);
-	vfprintf(stderr, fmt, arg_ptr);
-	if (syserr != 0) {
-		fprintf(stderr, " (%s)", strerror(save));
-	}
-	fprintf(stderr, "\n");
-}
+#define ERRS(fmt, ...) do { \
+	int save = errno; \
+	fflush(0); \
+	fprintf(stderr, "[%s] *** error: " fmt "\n", progname, ## __VA_ARGS__ \
+		, strerror(save)); \
+} while (0)
 
-void
-errmsg(int syserr, const char *fmt, ...)
-{
-	va_list arg_ptr;
-	va_start(arg_ptr, fmt);
-	errmsgv(syserr, fmt, arg_ptr);
-	va_end(arg_ptr);
-}
+#define WARN(fmt, ...) do { \
+	fprintf(stderr, "[%s] *** warning: " fmt "\n", progname, ## __VA_ARGS__ ); \
+} while (0)
 
-void
-dbgmsg(int level, const char *fmt, ...)
-{
-	va_list arg_ptr;
-	if (verblevel >= level) {
-		fflush(0);
-		va_start(arg_ptr, fmt);
-		vfprintf(stderr, fmt, arg_ptr);
-		fprintf(stderr, "\n");
-		va_end(arg_ptr);
-	}
-}
+#define DBG(lev, fmt, ...) do { \
+	if (verblevel < lev) \
+		break;\
+	fprintf(stderr, "[%s] " fmt "\n", progname, ## __VA_ARGS__ ); \
+} while (0)
 
+#define ERR_FATAL		-1
+#define ERR_INVALID_IMAGE	-2
 
 void
 usage(int status)
@@ -235,8 +223,8 @@ usage(int status)
 		 board->model, board->name);
 	};
 	fprintf(stream,
-"  -d              disable check for available space\n"
-"                  add boot code to the image\n"
+"  -d              don't throw error on invalid images\n"
+"  -k              keep invalid images\n"
 "  -b <file>[:<len>[:<padc>]]\n"
 "                  add boot code to the image\n"
 "  -c <file>[:<len>[:<padc>]]\n"
@@ -264,7 +252,7 @@ str2u32(char *arg, uint32_t *val)
 {
 	char *err = NULL;
 	uint32_t t;
-	
+
 	errno=0;
 	t = strtoul(arg, &err, 0);
 	if (errno || (err==arg) || ((err != NULL) && *err)) {
@@ -287,7 +275,7 @@ str2u16(char *arg, uint16_t *val)
 	if (errno || (err==arg) || ((err != NULL) && *err) || (t >= 0x10000)) {
 		return -1;
 	}
-	
+
 	*val = t & 0xFFFF;
 	return 0;
 }
@@ -303,7 +291,7 @@ str2u8(char *arg, uint8_t *val)
 	if (errno || (err==arg) || ((err != NULL) && *err) || (t >= 0x100)) {
 		return -1;
 	}
-	
+
 	*val = t & 0xFF;
 	return 0;
 }
@@ -315,7 +303,7 @@ str2sig(char *arg, uint32_t *sig)
 		return -1;
 
 	*sig = arg[0] | (arg[1] << 8) | (arg[2] << 16) | (arg[3] << 24);
-	
+
 	return 0;
 }
 
@@ -374,8 +362,8 @@ required_arg(char c, char *arg)
 	if (arg == NULL || *arg != '-')
 		return 0;
 
-	errmsg(0,"option -%c requires an argument\n", c);
-	return -1;
+	ERR("option -%c requires an argument\n", c);
+	return ERR_FATAL;
 }
 
 
@@ -403,7 +391,7 @@ uint16_t
 csum8_get(struct csum_state *css)
 {
 	uint8_t t;
-	
+
 	t = css->val;
 	return ~t + 1;
 }
@@ -413,7 +401,7 @@ void
 csum16_update(uint8_t *p, uint32_t len, struct csum_state *css)
 {
 	uint16_t t;
-	
+
 	if (css->odd) {
 		t = css->tmp + (p[0]<<8);
 		css->val += LE16_TO_HOST(t);
@@ -421,7 +409,7 @@ csum16_update(uint8_t *p, uint32_t len, struct csum_state *css)
 		len--;
 		p++;
 	}
-	
+
 	for ( ; len > 1; len -= 2, p +=2 ) {
 		t = p[0] + (p[1] << 8);
 		css->val += LE16_TO_HOST(t);
@@ -497,8 +485,8 @@ write_out_data(FILE *outfile, uint8_t *data, size_t len,
 
 	fwrite(data, len, 1, outfile);
 	if (errno) {
-		errmsg(1,"unable to write output file");
-		return -1;
+		ERRS("unable to write output file");
+		return ERR_FATAL;
 	}
 
 	if (css) {
@@ -515,15 +503,17 @@ write_out_padding(FILE *outfile, size_t len, uint8_t padc,
 {
 	uint8_t buf[512];
 	size_t buflen = sizeof(buf);
+	int err;
 
 	memset(buf, padc, buflen);
 	while (len > 0) {
 		if (len < buflen)
 			buflen = len;
 
-		if (write_out_data(outfile, buf, buflen, css))
-			return -1;
-			
+		err = write_out_data(outfile, buf, buflen, css);
+		if (err)
+			return err;
+
 		len -= buflen;
 	}
 
@@ -535,15 +525,15 @@ int
 block_stat_file(struct csys_block *block)
 {
 	struct stat st;
-	int res;
+	int err;
 
 	if (block->file_name == NULL)
 		return 0;
 
-	res = stat(block->file_name, &st);
-	if (res){
-		errmsg(1, "stat failed on %s", block->file_name);
-		return res;
+	err = stat(block->file_name, &st);
+	if (err){
+		ERRS("stat failed on %s", block->file_name);
+		return ERR_FATAL;
 	}
 
 	block->file_size = st.st_size;
@@ -565,7 +555,7 @@ block_writeout_hdr(FILE *outfile, struct csys_block *block)
 	hdr.addr = HOST_TO_LE32(block->addr);
 	hdr.size = HOST_TO_LE32(block->size-block->size_hdr);
 
-	dbgmsg(1,"writing header for block");
+	DBG(1,"writing header for block");
 	res = write_out_data(outfile, (uint8_t *)&hdr, sizeof(hdr),NULL);
 	return res;
 
@@ -590,8 +580,8 @@ block_writeout_file(FILE *outfile, struct csys_block *block)
 	errno = 0;
 	f = fopen(block->file_name,"r");
 	if (errno) {
-		errmsg(1,"unable to open file: %s", block->file_name);
-		return -1;
+		ERRS("unable to open file: %s", block->file_name);
+		return ERR_FATAL;
 	}
 
 	len = block->file_size;
@@ -603,9 +593,8 @@ block_writeout_file(FILE *outfile, struct csys_block *block)
 		errno = 0;
 		fread(buf, buflen, 1, f);
 		if (errno != 0) {
-			errmsg(1,"unable to read from file: %s",
-				block->file_name);
-			res = -1;
+			ERRS("unable to read from file: %s", block->file_name);
+			res = ERR_FATAL;
 			break;
 		}
 
@@ -621,7 +610,7 @@ block_writeout_file(FILE *outfile, struct csys_block *block)
 }
 
 
-int 
+int
 block_writeout_data(FILE *outfile, struct csys_block *block)
 {
 	int res;
@@ -633,14 +622,14 @@ block_writeout_data(FILE *outfile, struct csys_block *block)
 
 	/* write padding data if neccesary */
 	padlen = block->size_avail - block->file_size;
-	dbgmsg(1,"padding block, length=%d", padlen);
+	DBG(1,"padding block, length=%d", padlen);
 	res = write_out_padding(outfile, padlen, block->padc, block->css);
 
 	return res;
 }
 
 
-int 
+int
 block_writeout_csum(FILE *outfile, struct csys_block *block)
 {
 	uint16_t csum;
@@ -649,7 +638,7 @@ block_writeout_csum(FILE *outfile, struct csys_block *block)
 	if (block->size_csum == 0)
 		return 0;
 
-	dbgmsg(1,"writing checksum for block");
+	DBG(1,"writing checksum for block");
 	csum = HOST_TO_LE16(csum_get(block->css));
 	res = write_out_data(outfile, (uint8_t *)&csum, block->size_csum, NULL);
 
@@ -662,7 +651,7 @@ block_writeout(FILE *outfile, struct csys_block *block)
 {
 	int res;
 	struct csum_state css;
-	
+
 	res = 0;
 
 	if (block == NULL)
@@ -670,7 +659,7 @@ block_writeout(FILE *outfile, struct csys_block *block)
 
 	block->css = NULL;
 
-	dbgmsg(2, "writing block, file=%s, file_size=%d, space=%d",
+	DBG(2, "writing block, file=%s, file_size=%d, space=%d",
 		block->file_name, block->file_size, block->size_avail);
 	res = block_writeout_hdr(outfile, block);
 	if (res)
@@ -718,15 +707,15 @@ write_out_blocks(FILE *outfile)
 	res = 0;
 	for (i=0; i < num_blocks; i++) {
 		block = &blocks[i];
-		
+
 		if (block->type != BLOCK_TYPE_XTRA)
 			continue;
-			
+
 		res = block_writeout(outfile, block);
 		if (res)
 			break;
 	}
-	
+
 	return res;
 }
 
@@ -753,20 +742,20 @@ int
 parse_opt_board(char ch, char *arg)
 {
 
-	dbgmsg(1,"parsing board option: -%c %s", ch, arg);
+	DBG(1,"parsing board option: -%c %s", ch, arg);
 
 	if (board != NULL) {
-		errmsg(0,"only one board option allowed");
-		return -1;
+		ERR("only one board option allowed");
+		return ERR_FATAL;
 	}
 
 	if (required_arg(ch, arg))
-		return -1;
+		return ERR_FATAL;
 
 	board = find_board(arg);
 	if (board == NULL){
-		errmsg(0,"invalid/unknown board specified: %s", arg);
-		return -1;
+		ERR("invalid/unknown board specified: %s", arg);
+		return ERR_FATAL;
 	}
 
 	return 0;
@@ -784,20 +773,20 @@ parse_opt_block(char ch, char *arg)
 	int i;
 
 	if ( num_blocks > MAX_NUM_BLOCKS ) {
-		errmsg(0,"too many blocks specified");
-		return -1;
+		ERR("too many blocks specified");
+		return ERR_FATAL;
 	}
 
 	block = &blocks[num_blocks];
-	
+
 	/* setup default field values */
 	block->need_file = 1;
 	block->padc = 0xFF;
-	
+
 	switch (ch) {
 	case 'b':
 		if (boot_block) {
-			errmsg(0,"only one boot block allowed");
+			WARN("only one boot block allowed");
 			break;
 		}
 		block->type = BLOCK_TYPE_BOOT;
@@ -805,7 +794,7 @@ parse_opt_block(char ch, char *arg)
 		break;
 	case 'c':
 		if (conf_block) {
-			errmsg(0,"only one config block allowed");
+			WARN("only one config block allowed");
 			break;
 		}
 		block->type = BLOCK_TYPE_CONF;
@@ -813,7 +802,7 @@ parse_opt_block(char ch, char *arg)
 		break;
 	case 'w':
 		if (webp_block) {
-			errmsg(0,"only one web block allowed");
+			WARN("only one web block allowed");
 			break;
 		}
 		block->type = BLOCK_TYPE_WEBP;
@@ -824,7 +813,7 @@ parse_opt_block(char ch, char *arg)
 		break;
 	case 'r':
 		if (code_block) {
-			errmsg(0,"only one runtime block allowed");
+			WARN("only one runtime block allowed");
 			break;
 		}
 		block->type = BLOCK_TYPE_CODE;
@@ -836,8 +825,8 @@ parse_opt_block(char ch, char *arg)
 		block->type = BLOCK_TYPE_XTRA;
 		break;
 	default:
-		errmsg(0,"unknown block type \"%c\"", ch);
-		return -1;
+		ERR("unknown block type \"%c\"", ch);
+		return ERR_FATAL;
 	}
 
 	argc = parse_arg(arg, buf, argv);
@@ -847,20 +836,20 @@ parse_opt_block(char ch, char *arg)
 	if (!is_empty_arg(p)) {
 		block->file_name = strdup(p);
 		if (block->file_name == NULL) {
-			errmsg(0,"not enough memory");
-			return -1;
+			ERR("not enough memory");
+			return ERR_FATAL;
 		}
 	} else if (block->need_file){
-		errmsg(0,"no file specified in %s", arg);
-		return -1;
+		ERR("no file specified in %s", arg);
+		return ERR_FATAL;
 	}
 
 	if (block->size_hdr) {
 		p = argv[i++];
 		if (!is_empty_arg(p)) {
 			if (str2u32(p, &block->addr) != 0) {
-				errmsg(0,"invalid start address in %s", arg);
-				return -1;
+				ERR("invalid start address in %s", arg);
+				return ERR_FATAL;
 			}
 			block->addr_set = 1;
 		}
@@ -869,16 +858,16 @@ parse_opt_block(char ch, char *arg)
 	p = argv[i++];
 	if (!is_empty_arg(p)) {
 		if (str2u32(p, &block->size) != 0) {
-			errmsg(0,"invalid block size in %s", arg);
-			return -1;
+			ERR("invalid block size in %s", arg);
+			return ERR_FATAL;
 		}
 		block->size_set = 1;
 	}
 
 	p = argv[i++];
 	if (!is_empty_arg(p) && (str2u8(p, &block->padc) != 0)) {
-		errmsg(0,"invalid paddig character in %s", arg);
-		return -1;
+		ERR("invalid paddig character in %s", arg);
+		return ERR_FATAL;
 	}
 
 	num_blocks++;
@@ -895,6 +884,7 @@ process_blocks(void)
 	int i;
 	int res;
 
+	res = 0;
 	/* collecting stats */
 	for (i = 0; i < num_blocks; i++) {
 		block = &blocks[i];
@@ -914,8 +904,8 @@ process_blocks(void)
 			block->size = board->boot_size;
 		}
 		if (block->size > size_avail) {
-			errmsg(0,"boot block is too big");
-			return -1;
+			WARN("boot block is too big");
+			res = ERR_INVALID_IMAGE;
 		}
 	}
 	size_avail -= board->boot_size;
@@ -929,8 +919,8 @@ process_blocks(void)
 			block->size = board->conf_size;
 		}
 		if (block->size > size_avail) {
-			errmsg(0,"config block is too big");
-			return -1;
+			WARN("config block is too big");
+			res = ERR_INVALID_IMAGE;
 		}
 
 	}
@@ -943,8 +933,8 @@ process_blocks(void)
 			block->size = board->webp_size;
 		board->webp_size = block->size;
 		if (block->size > board->webp_size_max) {
-			errmsg(0,"webpages block is too big");
-			return -1;
+			WARN("webpages block is too big");
+			res = ERR_INVALID_IMAGE;
 		}
 		memcpy(block->sig, board->sig_webp, 4);
 		if (block->addr_set == 0)
@@ -961,9 +951,8 @@ process_blocks(void)
 		}
 		board->code_size = block->size;
 		if (board->code_size > size_avail) {
-			errmsg(0,"code block is too big");
-			if (size_check)
-				return -1;
+			WARN("code block is too big");
+			res = ERR_INVALID_IMAGE;
 		}
 		memcpy(code_block->sig, SIG_CSYS, 4);
 		if (code_block->addr_set == 0)
@@ -981,10 +970,10 @@ process_blocks(void)
 			block->size = ALIGN(block->file_size, 0x10000);
 
 		if (block->size > size_avail) {
-			errmsg(0,"no space for file %s",
-				block->file_name);
-			if (size_check)
-				return -1;
+			WARN("file %s is too big, size=%d, avail=%d",
+				block->file_name, block->file_size,
+				size_avail);
+			res = ERR_INVALID_IMAGE;
 		}
 
 		size_avail -= block->size;
@@ -997,11 +986,10 @@ process_blocks(void)
 			block->size_csum;
 
 		if (block->size_avail < block->file_size) {
-			errmsg(0,"file %s is too big, size=%d, avail=%d",
-				block->file_name, block->file_size, 
+			WARN("file %s is too big, size=%d, avail=%d",
+				block->file_name, block->file_size,
 				block->size_avail);
-			res = -1;
-			break;
+			res = ERR_INVALID_IMAGE;
 		}
 	}
 
@@ -1014,17 +1002,17 @@ main(int argc, char *argv[])
 {
 	int optinvalid = 0;   /* flag for invalid option */
 	int c;
-	int res = EXIT_FAILURE;
+	int res = ERR_FATAL;
 
 	FILE *outfile;
-	
+
 	progname=basename(argv[0]);
 
 	opterr = 0;  /* could not print standard getopt error messages */
 	while ( 1 ) {
 		optinvalid = 0;
-		
-		c = getopt(argc, argv, "b:c:dB:hr:vw:x:");
+
+		c = getopt(argc, argv, "b:B:c:dhkr:vw:x:");
 		if (c == -1)
 			break;
 
@@ -1044,7 +1032,10 @@ main(int argc, char *argv[])
 			optinvalid = parse_opt_block(c,optarg);
 			break;
 		case 'd':
-			size_check = 0;
+			invalid_causes_error = 0;
+			break;
+		case 'k':
+			keep_invalid_images = 1;
 			break;
 		case 'B':
 			optinvalid = parse_opt_board(c,optarg);
@@ -1060,52 +1051,67 @@ main(int argc, char *argv[])
 			break;
 		}
 		if (optinvalid != 0 ){
-			errmsg(0, "invalid option: -%c", optopt);
+			ERR("invalid option: -%c", optopt);
 			goto out;
 		}
 	}
 
+	if (board == NULL) {
+		ERR("no board specified");
+		goto out;
+	}
+
 	if (optind == argc) {
-		errmsg(0, "no output file specified");
+		ERR("no output file specified");
 		goto out;
 	}
 
 	ofname = argv[optind++];
 
 	if (optind < argc) {
-		errmsg(0, "invalid option: %s", argv[optind]);
-		goto out;
-	}
-	
-
-	if (board == NULL) {
-		errmsg(0, "no board specified");
+		ERR("invalid option: %s", argv[optind]);
 		goto out;
 	}
 
-	if (process_blocks() != 0) {
+	res = process_blocks();
+	if (res == ERR_FATAL)
 		goto out;
+
+	if (res == ERR_INVALID_IMAGE) {
+		if (invalid_causes_error)
+			res = ERR_FATAL;
+
+		if (keep_invalid_images == 0) {
+			WARN("generation of invalid images disabled", ofname);
+			goto out;
+		}
+
+		WARN("generating invalid image", ofname);
 	}
 
 	outfile = fopen(ofname, "w");
 	if (outfile == NULL) {
-		errmsg(1, "could not open \"%s\" for writing", ofname);
+		ERRS("could not open \"%s\" for writing", ofname);
+		res = ERR_FATAL;
 		goto out;
 	}
 
-	if (write_out_blocks(outfile) != 0)
+	if (write_out_blocks(outfile) != 0) {
+		res = ERR_FATAL;
 		goto out_flush;
+	}
 
-	dbgmsg(1,"Image file %s completed.", ofname);
-
-	res = EXIT_SUCCESS;
+	DBG(1,"Image file %s completed.", ofname);
 
 out_flush:
 	fflush(outfile);
 	fclose(outfile);
-	if (res != EXIT_SUCCESS) {
+	if (res == ERR_FATAL) {
 		unlink(ofname);
 	}
 out:
-	return res;
+	if (res == ERR_FATAL)
+		return EXIT_FAILURE;
+
+	return EXIT_SUCCESS;
 }
