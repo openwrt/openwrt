@@ -8,31 +8,49 @@
 
 include $(TOPDIR)/rules.mk
 
-LOADER := loader
-BZ_STARTUP_ORG := 0
+LOADER		:= adm5120
+LOADER_NAME	:= loader-$(LOADER)
+LOADER_DATA 	:=
+
+LOADER_BIN	:= $(KDIR)/$(LOADER_NAME).bin
+LOADER_GZ	:= $(KDIR)/$(LOADER_NAME).gz
+LOADER_ELF	:= $(KDIR)/$(LOADER_NAME).elf
+
+LZMA_STARTUP_ORG:= 0
+LZMA_TEXT_START	:= 0x80300000
 
 PKG_NAME := lzma-loader
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
+PKG_BUILD_DIR := $(KDIR)/$(PKG_NAME)
+
+.PHONY : loader-compile
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir $(PKG_BUILD_DIR)
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 	touch $@
 
-$(PKG_BUILD_DIR)/$(LOADER).gz: $(PKG_BUILD_DIR)/.prepared
-	$(MAKE) -C $(PKG_BUILD_DIR) CC="$(TARGET_CC)" \
-		LD="$(TARGET_CROSS)ld" CROSS_COMPILE="$(TARGET_CROSS)" \
-		LOADER=$(LOADER) BZ_STARTUP_ORG=$(BZ_STARTUP_ORG)
+loader-compile: $(PKG_BUILD_DIR)/.prepared
+	$(MAKE) -C $(PKG_BUILD_DIR) CROSS_COMPILE="$(TARGET_CROSS)" \
+		LZMA_STARTUP_ORG=$(LZMA_STARTUP_ORG) \
+		LZMA_TEXT_START=$(LZMA_TEXT_START) \
+		LOADER_DATA=$(LOADER_DATA) \
+		clean all
+
+$(LOADER_GZ): $(PKG_BUILD_DIR)/loader.bin
+	gzip -nc9 $< > $@
+
+$(LOADER_ELF) : $(PKG_BUILD_DIR)/loader.elf
+	$(CP) $< $@
+
+$(LOADER_BIN) : $(PKG_BUILD_DIR)/loader.bin
+	$(CP) $< $@
 
 download:
 prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(PKG_BUILD_DIR)/$(LOADER).gz
-install:
+compile: loader-compile $(LOADER_BIN) $(LOADER_GZ) $(LOADER_ELF)
 
-ifneq ($(TARGET),)
-install: compile
-	$(CP) $(PKG_BUILD_DIR)/$(LOADER).gz $(PKG_BUILD_DIR)/$(LOADER).elf $(PKG_BUILD_DIR)/$(LOADER).bin $(TARGET)/
-endif
+install:
 
 clean:
 	rm -rf $(PKG_BUILD_DIR)
+	rm -f $(KDIR)/loader-*.gz $(KDIR)/loader-*.elf $(KDIR)/loader-*.bin

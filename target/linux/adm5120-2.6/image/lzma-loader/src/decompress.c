@@ -1,7 +1,8 @@
 /*
- * LZMA compressed kernel decompressor for bcm947xx boards
+ * LZMA compressed kernel decompressor for ADM5120 boards
  *
  * Copyright (C) 2005 by Oleg I. Vdovikin <oleg@cs.msu.su>
+ * Copyright (C) 2007 OpenWrt.org
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,11 +34,18 @@
  * 24-Mar-2007 Gabor Juhos
  *   pass original values of the a0,a1,a2,a3 registers to the kernel
  *
+ * 19-May-2007 Gabor Juhos
+ *   endiannes related cleanups
+ *   add support for decompressing an embedded kernel 
+ *
  */
+
+#include <stddef.h>
 
 #include "LzmaDecode.h"
 
-#define BCM4710_FLASH		0x1fc00000	/* Flash */
+#define ADM5120_FLASH_START	0x1fc00000	/* Flash start */
+#define ADM5120_FLASH_END	0x1fe00000	/* Flash end */
 
 #define KSEG0			0x80000000
 #define KSEG1			0xa0000000
@@ -54,7 +62,7 @@
 		"cache %1, (%0);\n"		\
 		".set mips0;\n"			\
 		".set reorder\n"		\
-		:						\
+		:				\
 		: "r" (base),			\
 		  "i" (op));
 
@@ -81,6 +89,7 @@ static __inline__ void blast_dcache(unsigned long size, unsigned long lsize)
 }
 
 #define TRX_MAGIC       0x30524448      /* "HDR0" */
+#define TRX_ALIGN	0x1000
 
 struct trx_header {
 	unsigned int magic;		/* "HDR0" */
@@ -92,26 +101,24 @@ struct trx_header {
 
 /* beyound the image end, size not known in advance */
 extern unsigned char workspace[];
+#if LZMA_WRAPPER
+extern unsigned char _lzma_data_start[];
+extern unsigned char _lzma_data_end[];
+#endif
 
-unsigned int offset;
+extern void board_init(void);
+extern void board_putc(int ch);
+
 unsigned char *data;
+unsigned long datalen;
 
 typedef void (*kernel_entry)(unsigned long reg_a0, unsigned long reg_a1,
 	unsigned long reg_a2, unsigned long reg_a3);
 
-/* flash access should be aligned, so wrapper is used */
-/* read byte from the flash, all accesses are 32-bit aligned */
 static int read_byte(void *object, unsigned char **buffer, UInt32 *bufferSize)
 {
-	static unsigned int val;
-
-	if (((unsigned int)offset % 4) == 0) {
-		val = *(unsigned int *)data;
-		data += 4;
-	}
-
 	*bufferSize = 1;
-	*buffer = ((unsigned char *)&val) + (offset++ & 3);
+	*buffer = data++;
 
 	return LZMA_RESULT_OK;
 }
@@ -121,10 +128,90 @@ static __inline__ unsigned char get_byte(void)
 	unsigned char *buffer;
 	UInt32 fake;
 
-	return read_byte(0, &buffer, &fake), *buffer;
+	read_byte(0, &buffer, &fake);
+	return *buffer;
 }
 
-int uart_write_str(char * str);
+static __inline__ unsigned int read_le32(void *buf)
+{
+	unsigned char *p;
+
+	p = buf;
+	return ((unsigned int)p[0] + ((unsigned int)p[1] << 8) +
+		((unsigned int)p[2] << 16) +((unsigned int)p[3] << 24));
+}
+
+static void print_char(char ch)
+{
+	if (ch == '\n')
+		board_putc('\r');
+    	board_putc(ch);
+}
+
+static void print_str(char * str)
+{
+	while ( *str != 0 )
+    		print_char(*str++);
+}
+
+static void print_hex(int val)
+{
+	int i;
+	int tmp;
+
+	print_str("0x");
+	for ( i=0 ; i<8 ; i++ ) {
+    		tmp = (val >> ((7-i) * 4 )) & 0xf;
+    		tmp = tmp < 10 ? (tmp + '0') : (tmp + 'A' - 10);
+    		board_putc(tmp);
+	}
+}
+
+static unsigned char *find_kernel(void)
+{
+	struct trx_header *hdr;
+	unsigned char *ret;
+
+    	print_str("Looking for TRX header... ");
+	/* look for trx header, 32-bit data access */
+	hdr = NULL;
+	for (ret = ((unsigned char *) KSEG1ADDR(ADM5120_FLASH_START));
+		ret < ((unsigned char *)KSEG1ADDR(ADM5120_FLASH_END));
+		ret += TRX_ALIGN) {
+		
+		if (read_le32(ret) == TRX_MAGIC) {
+			hdr = (struct trx_header *)ret;
+			break;
+		}
+	}
+
+	if (hdr == NULL) {
+		print_str("not found!\n");
+		return NULL;	
+	}
+
+	print_str("found at ");
+	print_hex((unsigned int)ret);
+	print_str(", kernel in partition ");
+	
+	/* compressed kernel is in the partition 0 or 1 */
+	if ((read_le32(&hdr->offsets[1]) == 0) ||
+		(read_le32(&hdr->offsets[1]) > 65536)) {
+		ret += read_le32(&hdr->offsets[0]);
+		print_str("0\n");
+	} else {
+		ret += read_le32(&hdr->offsets[1]);
+		print_str("1\n");
+	}
+		
+	return ret;
+}
+
+static void halt(void)
+{
+	print_str("\nSystem halted!\n");
+	for(;;);
+}
 
 /* should be the first function */
 void decompress_entry(unsigned long reg_a0, unsigned long reg_a1,
@@ -137,23 +224,27 @@ void decompress_entry(unsigned long reg_a0, unsigned long reg_a1,
 	unsigned int lp; /* literal pos state bits */
 	unsigned int pb; /* pos state bits */
 	unsigned int osize; /* uncompressed size */
-
+	int res;
+#if !(LZMA_WRAPPER)
 	ILzmaInCallback callback;
-	callback.Read = read_byte;
+#endif
 
-    uart_write_str("decompress kernel ... ");
+	board_init();
 
-	/* look for trx header, 32-bit data access */
-	for (data = ((unsigned char *) KSEG1ADDR(BCM4710_FLASH));
-		((struct trx_header *)data)->magic != TRX_MAGIC; data += 65536);
+	print_str("\n\nLZMA loader for ADM5120, Copyright (C) 2007 OpenWrt.org\n\n");
 
-	/* compressed kernel is in the partition 0 or 1 */
-	if (((struct trx_header *)data)->offsets[1] > 65536)
-		data += ((struct trx_header *)data)->offsets[0];
-	else
-		data += ((struct trx_header *)data)->offsets[1];
+#if LZMA_WRAPPER
+	data = _lzma_data_start;
+	datalen = _lzma_data_end - _lzma_data_start;
+#else
+	data = find_kernel();
+	if (data == NULL) {
+		/* no compressed kernel found, halting */
+		halt();
+	}
 
-	offset = 0;
+	datalen = ((unsigned char *) KSEG1ADDR(ADM5120_FLASH_END))-data;
+#endif
 
 	/* lzma args */
 	i = get_byte();
@@ -174,68 +265,33 @@ void decompress_entry(unsigned long reg_a0, unsigned long reg_a1,
 	for (i = 0; i < 4; i++)
 		get_byte();
 
+	print_str("decompressing kernel... ");
+
 	/* decompress kernel */
-	if (LzmaDecode(workspace, ~0, lc, lp, pb, &callback,
-		(unsigned char*)LOADADDR, osize, &i) == LZMA_RESULT_OK)
-	{
-		blast_dcache(dcache_size, dcache_lsize);
-		blast_icache(icache_size, icache_lsize);
-
-		/* Jump to load address */
-        uart_write_str("ok\r\n");
-		((kernel_entry) LOADADDR)(reg_a0, reg_a1, reg_a2, reg_a3);
+#if LZMA_WRAPPER
+	res = LzmaDecode(workspace, ~0, lc, lp, pb, data, datalen,
+		(unsigned char*)LOADADDR, osize, &i);
+#else
+	callback.Read = read_byte;
+	res = LzmaDecode(workspace, ~0, lc, lp, pb, &callback,
+		(unsigned char*)LOADADDR, osize, &i);
+#endif
+	if (res != LZMA_RESULT_OK) {
+		print_str("failed, LzmaDecode error: ");
+		print_hex(res);
+		print_str("\n");
+		halt();
 	}
-    uart_write_str("failed\r\n");
-    while (1 );
+
+        print_str("done!\n");
+
+	blast_dcache(dcache_size, dcache_lsize);
+	blast_icache(icache_size, icache_lsize);
+
+	print_str("launching kernel...\n\n");
+
+	/* Jump to load address */
+	((kernel_entry) LOADADDR)(reg_a0, reg_a1, reg_a2, reg_a3);
 }
 
-/*  *********************************************************************
-    *
-    *  ADM5120 UART driver			File: dev_adm_uart.c
-    *
-    *  This is a console device driver for an ADM5120 UART
-    *
-    *********************************************************************
-    *
-    *  Copyright 2006
-    *  Compex Systems. All rights reserved.
-    *
-    ********************************************************************* */
-
-#define READCSR(r)      *(volatile UInt32 *)(0xB2600000+(r))
-#define WRITECSR(r,v)   *(volatile UInt32 *)(0xB2600000+(r)) = v
-
-#define UART_DR_REG         0x00
-#define UART_FR_REG         0x18
-#define UART_TX_FIFO_FULL   0x20
-
-int uart_write(int val)
-{
-	WRITECSR(UART_DR_REG, val);
-    while ( (READCSR(UART_FR_REG) & UART_TX_FIFO_FULL) );
-    return 0;
-}
-
-int uart_write_str(char * str)
-{
-    while ( *str != 0 ) {
-        uart_write ( *str++ );
-    }
-    return 0;
-}
-
-int uart_write_hex(int val)
-{
-    int i;
-    int tmp;
-
-    uart_write_str("0x");
-    for ( i=0 ; i<8 ; i++ ) {
-        tmp = (val >> ((7-i) * 4 )) & 0xf;
-        tmp = tmp < 10 ? (tmp + '0') : (tmp + 'A' - 10);
-        uart_write(tmp);
-    }
-    uart_write_str("\r\n");
-    return 0;
-}
 

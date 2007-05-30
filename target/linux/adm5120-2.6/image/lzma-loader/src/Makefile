@@ -22,51 +22,65 @@
 #
 
 LOADADDR	:= 0x80001000
-BZ_TEXT_START	:= 0x80300000
-BZ_STARTUP_ORG	:= 0
-LOADER		:= loader
+LZMA_TEXT_START	:= 0x80500000
+LZMA_STARTUP_ORG:= 0
+LOADER_DATA	:=
 
-OBJCOPY		:= $(CROSS_COMPILE)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S
+CC		:= $(CROSS_COMPILE)gcc
+LD		:= $(CROSS_COMPILE)ld
+OBJCOPY		:= $(CROSS_COMPILE)objcopy
+OBJDUMP		:= $(CROSS_COMPILE)objdump
+
+BIN_FLAGS	:= -O binary -R .reginfo -R .note -R .comment -R .mdebug -S
 
 CFLAGS		= -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
 		  -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic \
 		  -ffunction-sections -pipe -mlong-calls -fno-common \
 		  -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap
-CFLAGS		+= -DLOADADDR=$(LOADADDR) -D_LZMA_IN_CB
+CFLAGS		+= -DLOADADDR=$(LOADADDR)
 
-ASFLAGS		= $(CFLAGS) -D__ASSEMBLY__ -DBZ_STARTUP_ORG=$(BZ_STARTUP_ORG)
+ASFLAGS		= $(CFLAGS) -D__ASSEMBLY__ -DLZMA_STARTUP_ORG=$(LZMA_STARTUP_ORG)
 
 LDFLAGS		= -static --gc-sections -no-warn-mismatch
-LDFLAGS		+= -e startup -Ttext $(BZ_TEXT_START) -T loader.lds.in
+LDFLAGS		+= -e startup -T loader.lds -Ttext $(LZMA_TEXT_START)
 
-OBJECTS		:= $(LOADER)-head.o decompress.o LzmaDecode.o
+O_FORMAT 	= $(shell $(OBJDUMP) -i | head -2 | grep elf32)
 
-all: $(LOADER).gz $(LOADER).elf
+OBJECTS		:= head.o decompress.o board.o LzmaDecode.o
+
+ifneq ($(strip $(LOADER_DATA)),)
+OBJECTS		+= data.o
+CFLAGS		+= -DLZMA_WRAPPER=1
+else
+CFLAGS		+= -D_LZMA_IN_CB
+endif
+
+all: loader.bin
 
 # Don't build dependencies, this may die if $(CC) isn't gcc
 dep:
 
 install:
 
-decompress.o:
-	$(CC) $(CFLAGS) -c decompress.c -o $@
+%.o : %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(LOADER)-head.o:
-	$(CC) $(ASFLAGS) -c head.S -o $@
+%.o : %.S
+	$(CC) $(ASFLAGS) -c -o $@ $<
 
-$(LOADER).gz: $(LOADER).bin
-	gzip -nc9 $< > $@
+data.o: $(LOADER_DATA)
+	$(LD) -r -b binary --oformat $(O_FORMAT) -T lzma-data.lds -o $@ $<
 
-$(LOADER).elf: $(LOADER).o
-	cp $< $@
+loader.bin: loader.elf
+	$(OBJCOPY) $(BIN_FLAGS) $< $@
 
-$(LOADER).bin: $(LOADER).o
-	$(OBJCOPY) -O binary $< $@
-
-$(LOADER).o: $(OBJECTS)
+loader.elf: $(OBJECTS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
 
 mrproper: clean
 
 clean:
 	rm -f *.gz *.elf *.bin *.o
+
+
+

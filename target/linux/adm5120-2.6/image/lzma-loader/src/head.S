@@ -12,7 +12,11 @@
 
 #define KSEG0		0x80000000
 
+#define C0_STATUS	$12
+#define C0_CAUSE	$13
 #define C0_CONFIG	$16
+#define C0_WATCHLO	$18
+#define C0_WATCHHI	$19
 #define C0_TAGLO	$28
 #define C0_TAGHI	$29
 
@@ -40,17 +44,28 @@
 
 	.text
 
-#if (BZ_STARTUP_ORG)
+#if (LZMA_STARTUP_ORG)
 	.set	noreorder
 
 	b	startup
 	nop
 
-	.org	BZ_STARTUP_ORG
+	.org	LZMA_STARTUP_ORG
 #endif
 
 LEAF(startup)
 	.set noreorder
+	.set mips32
+	
+	mtc0	zero, C0_WATCHLO	# clear watch registers
+	mtc0	zero, C0_WATCHHI
+
+	mtc0	zero, C0_CAUSE		# clear before writing status register
+
+	mfc0	t0, C0_STATUS		# get status register
+	li	t1, ~(0xFF01)
+	and	t0, t1			# mask interrupts
+	mtc0	t0, C0_STATUS		# set up status register
 
 	move	t1, ra			# save return address
 	la	t0, __reloc_label	# get linked address of label
