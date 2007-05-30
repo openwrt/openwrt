@@ -25,7 +25,7 @@ define KernelPackage/pata-artop
 	DESCRIPTION:=Kernel module for ARTOP PATA controller
 	KCONFIG:=$(CONFIG_PATA_ARTOP)
 	SUBMENU:=$(BLMENU)
-	AUTOLOAD:=$(call AutoLoad,30,libata pata_artop)
+	AUTOLOAD:=$(call AutoLoad,30,scsi_mod libata sd_mod pata_artop)
 	FILES:=$(LINUX_DIR)/drivers/ata/pata_artop.$(LINUX_KMOD_SUFFIX)
 	DEPENDS:=+kmod-libata +kmod-scsi-core
 endef
