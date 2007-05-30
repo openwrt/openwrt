@@ -100,11 +100,14 @@ char *prom_getenv(char *envname)
 }
 
 
+extern char _image_cmdline;
 /*
  * initialize the prom module.
  */
 void __init prom_init(void)
 {
+	char *cmd;
+
 	adm5120_info_init();
 
 	/* you should these macros defined in include/asm/bootinfo.h */
@@ -112,7 +115,9 @@ void __init prom_init(void)
 	mips_machtype = adm5120_board.mach_type;
 
 	/* init command line, register a default kernel command line */
-	strcpy(&(arcs_cmdline[0]), CONFIG_CMDLINE);
+	cmd = &_image_cmdline + 8;
+	if( strlen(cmd) > 0) strcpy( &(arcs_cmdline[0]), cmd);
+		else strcpy(&(arcs_cmdline[0]), CONFIG_CMDLINE);
 
 	/* init memory map */
 	prom_meminit();
