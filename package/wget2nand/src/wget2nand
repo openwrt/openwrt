@@ -13,9 +13,9 @@
 	exit 1
 }
 
-# first get an address for eth0 using udhcpc
+# first get an address for br-lan using udhcpc
 killall udhcpc
-/sbin/udhcpc -i eth0
+/sbin/udhcpc -i br-lan
 
 # need to find the wget server from the command line
 url=$1
@@ -45,7 +45,7 @@ mount -t yaffs2 "$boot" /tmp/wget2nand-boot
 
 echo "Copying filesystem..."
 ( wget -O - $url/openwrt-adm5120-2.6-rootfs.tgz) | ( cd /tmp/wget2nand/; tar xvz )
-wget -O /tmp/wget2nand-boot/kernel $url/openwrt-adm5120-2.6-vmlinux 
+wget -O /tmp/wget2nand-boot/kernel $url/openwrt-adm5120-2.6-vmlinux.elf 
 
 # update the command line on the kernel to boot from the right place
 [ ! -e /sbin/patch-cmdline ] && {
