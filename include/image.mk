@@ -65,6 +65,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 else
   define Image/BuildKernel
 	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.elf
+	$(call Image/Build/Initramfs)
   endef
 endif
 
