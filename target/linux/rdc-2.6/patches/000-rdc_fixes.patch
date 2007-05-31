@@ -822,3 +822,42 @@ diff -urN linux-2.6.19/arch/i386/mach-rdc/led.h linux-2.6.19.new/arch/i386/mach-
 +#define LED_BLINK_RANDOM    (LED_BLINK_CMD|0xffff)
 +
 +#endif
+diff -urN linux-2.6.21.1/arch/i386/kernel/time.c linux-2.6.21.1.new/arch/i386/kernel/time.c
+--- linux-2.6.21.1/arch/i386/kernel/time.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.new/arch/i386/kernel/time.c	2007-05-31 13:43:31.000000000 +0200
+@@ -264,8 +264,16 @@
+ /* Duplicate of time_init() below, with hpet_enable part added */
+ void __init hpet_time_init(void)
+ {
++#ifndef CONFIG_X86_RDC
+ 	if (!hpet_enable())
+ 		setup_pit_timer();
++#else
++	struct timespec ts;
++
++	/* RDC devices do not have CMOS */
++	ts.tv_sec = 0;
++	ts.tv_nsec = (INITIAL_JIFFIES % HZ) * (NSEC_PER_SEC / HZ);
++#endif
+ 	time_init_hook();
+ }
+ 
+@@ -279,6 +287,18 @@
+  */
+ void __init time_init(void)
+ {
++#ifndef CONFIG_X86_RDC
+ 	tsc_init();
+ 	late_time_init = choose_time_init();
++#else
++	struct timespec ts;
++
++	/* RDC devices do not have CMOS */
++	ts.tv_sec = 0;
++	ts.tv_nsec = (INITIAL_JIFFIES % HZ) * (NSEC_PER_SEC / HZ);
++
++	do_settimeofday(&ts);
++
++	time_init_hook();
++#endif
+ }
