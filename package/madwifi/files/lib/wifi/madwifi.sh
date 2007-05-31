@@ -35,6 +35,7 @@ scan_atheros() {
 	case "${adhoc:+1}:${sta:+1}:${ap+1}" in
 		# valid mode combinations
 		1::) wds="";;
+		1::1);;
 		:1:1)config_set "$device" nosbeacon 1;; # AP+STA, can't use beacon timers for STA
 		:1:);;
 		::1);;
