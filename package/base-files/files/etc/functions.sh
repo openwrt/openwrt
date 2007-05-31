@@ -141,8 +141,10 @@ config_foreach() {
 }
 
 load_modules() {
-	cd /etc/modules.d
-	sed 's/^[^#]/insmod &/' $* | ash 2>&- || :
+	[ -d /etc/modules.d ] && {
+		cd /etc/modules.d
+		sed 's/^[^#]/insmod &/' $* | ash 2>&- || :
+	}
 }
 
 include() {
