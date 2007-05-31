@@ -51,6 +51,7 @@ install:
 	@if [ -d $(TOPDIR)/files ]; then \
 		$(CP) $(TOPDIR)/files/. $(BUILD_DIR)/root; \
 	fi
+	@mkdir -p $(BUILD_DIR)/root/etc/rc.d
 	@( \
 		cd $(BUILD_DIR)/root; \
 		for script in ./etc/init.d/*; do \
