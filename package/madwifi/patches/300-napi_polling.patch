@@ -1,6 +1,6 @@
-diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.dev/ath/if_ath.c
---- madwifi-ng-r2377-20070526.old/ath/if_ath.c	2007-05-26 18:51:09.318670888 +0200
-+++ madwifi-ng-r2377-20070526.dev/ath/if_ath.c	2007-05-26 18:51:09.331668912 +0200
+diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
+--- madwifi.old/ath/if_ath.c	2007-05-31 06:48:28.561525488 +0200
++++ madwifi.dev/ath/if_ath.c	2007-05-31 06:50:07.143538744 +0200
 @@ -167,7 +167,7 @@
  	int, u_int32_t);
  static void ath_setdefantenna(struct ath_softc *, u_int);
@@ -27,7 +27,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  #ifdef USE_HEADERLEN_RESV
  	dev->hard_header_len += sizeof(struct ieee80211_qosframe) +
  				sizeof(struct llc) +
-@@ -1653,6 +1654,7 @@
+@@ -1643,6 +1644,7 @@
  	 */
  	ath_hal_getisr(ah, &status);		/* NB: clears ISR too */
  	DPRINTF(sc, ATH_DEBUG_INTR, "%s: status 0x%x\n", __func__, status);
@@ -35,7 +35,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	status &= sc->sc_imask;			/* discard unasked for bits */
  	if (status & HAL_INT_FATAL) {
  		sc->sc_stats.ast_hardware++;
-@@ -1688,7 +1690,12 @@
+@@ -1678,7 +1680,12 @@
  		if (status & HAL_INT_RX) {
  			sc->sc_tsf = ath_hal_gettsf64(ah);
  			ath_uapsd_processtriggers(sc);
@@ -49,7 +49,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  		}
  		if (status & HAL_INT_TX) {
  #ifdef ATH_SUPERG_DYNTURBO
-@@ -1714,6 +1721,11 @@
+@@ -1704,6 +1711,11 @@
  				}
  			} 
  #endif
@@ -61,7 +61,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  			ATH_SCHEDULE_TQUEUE(&sc->sc_txtq, &needmark);
  		}
  		if (status & HAL_INT_BMISS) {
-@@ -2176,12 +2188,13 @@
+@@ -2166,12 +2178,13 @@
  	 * Insert the frame on the outbound list and
  	 * pass it on to the hardware.
  	 */
@@ -76,7 +76,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  		ath_hal_intrset(ah, sc->sc_imask & ~HAL_INT_SWBA);
  		ATH_TXQ_INSERT_TAIL(txq, bf, bf_list);
  		DPRINTF(sc, ATH_DEBUG_TX_PROC, "%s: txq depth = %d\n", __func__, txq->axq_depth);
-@@ -2197,6 +2210,7 @@
+@@ -2187,6 +2200,7 @@
  				ito64(bf->bf_daddr), bf->bf_desc);
  		}
  		txq->axq_link = &lastds->ds_link;
@@ -84,7 +84,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  		ath_hal_intrset(ah, sc->sc_imask);
  	} else {
  		ATH_TXQ_INSERT_TAIL(txq, bf, bf_list);
-@@ -2232,7 +2246,7 @@
+@@ -2222,7 +2236,7 @@
  			}
  		}
  	}
@@ -93,7 +93,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  
  	sc->sc_devstats.tx_packets++;
  	sc->sc_devstats.tx_bytes += framelen;
-@@ -2383,8 +2397,14 @@
+@@ -2373,12 +2387,18 @@
  	unsigned int pktlen;
  	int framecnt;
  
@@ -109,7 +109,12 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  
  		bf_ff = TAILQ_LAST(&txq->axq_stageq, axq_headtype);
  		if ((!bf_ff) || ath_ff_flushdonetest(txq, bf_ff)) {
-@@ -2398,7 +2418,7 @@
+-			ATH_TXQ_UNLOCK(txq);
++			ATH_TXQ_UNLOCK_BH(txq);
+ 			break;
+ 		}
+ 
+@@ -2388,7 +2408,7 @@
  		ATH_NODE(ni)->an_tx_ffbuf[bf_ff->bf_skb->priority] = NULL;
  		TAILQ_REMOVE(&txq->axq_stageq, bf_ff, bf_stagelist);
  
@@ -118,7 +123,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  
  		/* encap and xmit */
  		bf_ff->bf_skb = ieee80211_encap(ni, bf_ff->bf_skb, &framecnt);
-@@ -2419,15 +2439,16 @@
+@@ -2409,15 +2429,16 @@
  		}
  		bf_ff->bf_node = NULL;
  
@@ -138,7 +143,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	bf = STAILQ_FIRST(&sc->sc_txbuf);				\
  	if (bf != NULL) {						\
  		STAILQ_REMOVE_HEAD(&sc->sc_txbuf, bf_list);		\
-@@ -2442,11 +2463,23 @@
+@@ -2432,11 +2453,23 @@
  		sc->sc_devstopped = 1;					\
  		ATH_SCHEDULE_TQUEUE(&sc->sc_txtq, NULL); 		\
  	}								\
@@ -163,7 +168,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	}
  
  /*
-@@ -2508,6 +2541,7 @@
+@@ -2498,6 +2531,7 @@
  	if (M_FLAG_GET(skb, M_UAPSD)) {
  		/* bypass FF handling */
  		ATH_HARDSTART_GET_TX_BUF_WITH_LOCK;
@@ -171,7 +176,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  		if (bf == NULL)
  			goto hardstart_fail;
  		goto ff_bypass;
-@@ -2529,7 +2563,7 @@
+@@ -2519,7 +2553,7 @@
  	/* NB: use this lock to protect an->an_ff_txbuf in athff_can_aggregate()
  	 *     call too.
  	 */
@@ -180,7 +185,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	if (athff_can_aggregate(sc, eh, an, skb, vap->iv_fragthreshold, &ff_flush)) {
  
  		if (an->an_tx_ffbuf[skb->priority]) { /* i.e., frame on the staging queue */
-@@ -2539,7 +2573,7 @@
+@@ -2529,7 +2563,7 @@
  			TAILQ_REMOVE(&txq->axq_stageq, bf, bf_stagelist);
  			an->an_tx_ffbuf[skb->priority] = NULL;
  
@@ -189,15 +194,18 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  
  			/*
  			 * chain skbs and add FF magic
-@@ -2566,6 +2600,7 @@
+@@ -2556,8 +2590,9 @@
  			 *     to give the buffer back.
  			 */
  			ATH_HARDSTART_GET_TX_BUF_WITH_LOCK;
 +			ATH_HARDSTART_REL_TX_BUF_WITH_TXQLOCK_ON;
  			if (bf == NULL) {
- 				ATH_TXQ_UNLOCK(txq);
+-				ATH_TXQ_UNLOCK(txq);
++				ATH_TXQ_UNLOCK_BH(txq);
  				goto hardstart_fail;
-@@ -2580,7 +2615,7 @@
+ 			}
+ 			DPRINTF(sc, ATH_DEBUG_XMIT | ATH_DEBUG_FF,
+@@ -2570,7 +2605,7 @@
  
  			TAILQ_INSERT_HEAD(&txq->axq_stageq, bf, bf_stagelist);
  
@@ -206,7 +214,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  
  			return 0;
  		}
-@@ -2591,7 +2626,7 @@
+@@ -2581,7 +2616,7 @@
  			TAILQ_REMOVE(&txq->axq_stageq, bf_ff, bf_stagelist);
  			an->an_tx_ffbuf[skb->priority] = NULL;
  
@@ -215,7 +223,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  
  			/* encap and xmit */
  			bf_ff->bf_skb = ieee80211_encap(ni, bf_ff->bf_skb, &framecnt);
-@@ -2621,9 +2656,9 @@
+@@ -2611,9 +2646,9 @@
  			}
  			bf_ff->bf_node = NULL;
  
@@ -227,7 +235,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  			goto ff_flushdone;
  		}
  		/*
-@@ -2633,14 +2668,13 @@
+@@ -2623,14 +2658,13 @@
  		else if (an->an_tx_ffbuf[skb->priority]) {
  			DPRINTF(sc, ATH_DEBUG_XMIT | ATH_DEBUG_FF,
  				"%s: Out-Of-Order fast-frame\n", __func__);
@@ -245,7 +253,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	}
  
  ff_bypass:
-@@ -2648,6 +2682,7 @@
+@@ -2638,6 +2672,7 @@
  #else /* ATH_SUPERG_FF */
  
  	ATH_HARDSTART_GET_TX_BUF_WITH_LOCK;
@@ -253,7 +261,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  
  #endif /* ATH_SUPERG_FF */
  
-@@ -2669,7 +2704,7 @@
+@@ -2659,7 +2694,7 @@
  		 *  Allocate 1 ath_buf for each frame given 1 was 
  		 *  already alloc'd
  		 */
@@ -262,7 +270,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  		for (bfcnt = 1; bfcnt < framecnt; ++bfcnt) {
  			if ((tbf = STAILQ_FIRST(&sc->sc_txbuf)) != NULL) {
  				STAILQ_REMOVE_HEAD(&sc->sc_txbuf, bf_list);
-@@ -2690,11 +2725,11 @@
+@@ -2680,11 +2715,11 @@
  					STAILQ_INSERT_TAIL(&sc->sc_txbuf, tbf, bf_list);
  				}
  			}
@@ -276,7 +284,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  
  		while ((bf = STAILQ_FIRST(&bf_head)) != NULL && skb != NULL) {
  			unsigned int nextfraglen = 0;
-@@ -2730,7 +2765,7 @@
+@@ -2720,7 +2755,7 @@
  
  hardstart_fail:
  	if (!STAILQ_EMPTY(&bf_head)) {
@@ -285,7 +293,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  		STAILQ_FOREACH_SAFE(tbf, &bf_head, bf_list, tempbf) {
  			tbf->bf_skb = NULL;
  			tbf->bf_node = NULL;
-@@ -2740,7 +2775,7 @@
+@@ -2730,7 +2765,7 @@
  
  			STAILQ_INSERT_TAIL(&sc->sc_txbuf, tbf, bf_list);
  		}
@@ -294,7 +302,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	}
  
  	/* free sk_buffs */
-@@ -2783,7 +2818,7 @@
+@@ -2773,7 +2808,7 @@
  	/*
  	 * Grab a TX buffer and associated resources.
  	 */
@@ -303,7 +311,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	bf = STAILQ_FIRST(&sc->sc_txbuf);
  	if (bf != NULL)
  		STAILQ_REMOVE_HEAD(&sc->sc_txbuf, bf_list);
-@@ -2794,7 +2829,7 @@
+@@ -2784,7 +2819,7 @@
  		sc->sc_devstopped=1;
  		ATH_SCHEDULE_TQUEUE(&sc->sc_txtq, NULL);
  	}
@@ -312,7 +320,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	if (bf == NULL) {
  		printk("ath_mgtstart: discard, no xmit buf\n");
  		sc->sc_stats.ast_tx_nobufmgt++;
-@@ -2823,9 +2858,9 @@
+@@ -2813,9 +2848,9 @@
  		bf->bf_skb = NULL;
  		bf->bf_node = NULL;
  
@@ -324,7 +332,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	}
  	dev_kfree_skb_any(skb);
  	skb = NULL;
-@@ -3293,10 +3328,10 @@
+@@ -3283,10 +3318,10 @@
  	 *
  	 * XXX Using in_softirq is not right since we might
  	 * be called from other soft irq contexts than
@@ -337,7 +345,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	netif_stop_queue(dev);
  }
  
-@@ -3309,7 +3344,7 @@
+@@ -3299,7 +3334,7 @@
  	DPRINTF(sc, ATH_DEBUG_KEYCACHE, "%s:\n", __func__);
  	netif_start_queue(dev);
  	if (!in_softirq())		/* NB: see above */
@@ -346,7 +354,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  }
  
  /*
-@@ -4875,9 +4910,9 @@
+@@ -4866,9 +4901,9 @@
  		bf->bf_node = NULL;
  		bf->bf_desc->ds_link = 0;
  		
@@ -358,7 +366,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  
  		an->an_uapsd_overflowqdepth--;
  	}
-@@ -5553,13 +5588,12 @@
+@@ -5544,13 +5579,12 @@
  	sc->sc_rxotherant = 0;
  }
  
@@ -374,7 +382,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	struct ath_buf *bf;
  	struct ath_softc *sc = dev->priv;
  	struct ieee80211com *ic = &sc->sc_ic;
-@@ -5571,12 +5605,15 @@
+@@ -5562,12 +5596,15 @@
  	unsigned int len;
  	int type;
  	u_int phyerr;
@@ -390,7 +398,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	do {
  		bf = STAILQ_FIRST(&sc->sc_rxbuf);
  		if (bf == NULL) {		/* XXX ??? can this happen */
-@@ -5600,6 +5637,13 @@
+@@ -5591,6 +5628,13 @@
  			/* NB: never process the self-linked entry at the end */
  			break;
  		}
@@ -404,7 +412,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  		skb = bf->bf_skb;
  		if (skb == NULL) {		/* XXX ??? can this happen */
  			printk("%s: no skbuff (%s)\n", dev->name, __func__);
-@@ -5638,6 +5682,7 @@
+@@ -5629,6 +5673,7 @@
  				sc->sc_stats.ast_rx_phyerr++;
  				phyerr = rs->rs_phyerr & 0x1f;
  				sc->sc_stats.ast_rx_phy[phyerr]++;
@@ -412,7 +420,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  			}
  			if (rs->rs_status & HAL_RXERR_DECRYPT) {
  				/*
-@@ -5841,9 +5886,29 @@
+@@ -5840,9 +5885,29 @@
  		STAILQ_INSERT_TAIL(&sc->sc_rxbuf, bf, bf_list);
  		ATH_RXBUF_UNLOCK_IRQ(sc);
  	} while (ath_rxbuf_init(sc, bf) == 0);
@@ -442,7 +450,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  #undef PA2DESC
  }
  
-@@ -6119,22 +6184,22 @@
+@@ -6118,22 +6183,22 @@
  				}
  			}
  
@@ -469,7 +477,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  
  			bf->bf_skbaddr = bus_map_single(sc->sc_bdev,
  				skb->data, skb->len, BUS_DMA_TODEVICE);
-@@ -6600,9 +6665,9 @@
+@@ -6599,9 +6664,9 @@
  		dev_kfree_skb(lastbuf->bf_skb);
  		lastbuf->bf_skb = NULL;
  		ieee80211_unref_node(&lastbuf->bf_node);
@@ -481,7 +489,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  		
  		/*
  		 *  move oldest from overflow to delivery
-@@ -7427,9 +7492,6 @@
+@@ -7426,9 +7491,6 @@
  			if (sc->sc_reapcount > ATH_TXBUF_FREE_THRESHOLD) {
  				if (!sc->sc_dfswait)
  					netif_start_queue(sc->sc_dev);
@@ -491,7 +499,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  				sc->sc_reapcount = 0;
  				sc->sc_devstopped = 0;
  			} else
-@@ -7464,11 +7526,22 @@
+@@ -7463,11 +7525,22 @@
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
  
@@ -514,7 +522,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -7485,6 +7558,7 @@
+@@ -7484,6 +7557,7 @@
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
  
@@ -522,7 +530,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	/*
  	 * Process each active queue.
  	 */
-@@ -7505,6 +7579,16 @@
+@@ -7504,6 +7578,16 @@
  	if (sc->sc_uapsdq && txqactive(sc->sc_ah, sc->sc_uapsdq->axq_qnum))
  		ath_tx_processq(sc, sc->sc_uapsdq);
  
@@ -539,7 +547,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -7522,6 +7606,7 @@
+@@ -7521,6 +7605,7 @@
  	unsigned int i;
  
  	/* Process each active queue. */
@@ -547,7 +555,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	for (i = 0; i < HAL_NUM_TX_QUEUES; i++)
  		if (ATH_TXQ_SETUP(sc, i) && txqactive(sc->sc_ah, i))
  			ath_tx_processq(sc, &sc->sc_txq[i]);
-@@ -7530,6 +7615,16 @@
+@@ -7529,6 +7614,16 @@
  		ath_tx_processq(sc, sc->sc_xrtxq);
  #endif
  
@@ -564,7 +572,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -7628,6 +7723,7 @@
+@@ -7627,6 +7722,7 @@
  ath_draintxq(struct ath_softc *sc)
  {
  	struct ath_hal *ah = sc->sc_ah;
@@ -572,7 +580,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	unsigned int i;
  
  	/* XXX return value */
-@@ -9161,9 +9257,9 @@
+@@ -9160,9 +9256,9 @@
  	dev->mtu = mtu;
  	if ((dev->flags & IFF_RUNNING) && !sc->sc_invalid) {
  		/* NB: the rx buffers may need to be reallocated */
@@ -584,9 +592,10 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
  	}
  	ATH_UNLOCK(sc);
  
-diff -urN madwifi-ng-r2377-20070526.old/ath/if_athvar.h madwifi-ng-r2377-20070526.dev/ath/if_athvar.h
---- madwifi-ng-r2377-20070526.old/ath/if_athvar.h	2007-05-26 18:51:09.020716184 +0200
-+++ madwifi-ng-r2377-20070526.dev/ath/if_athvar.h	2007-05-26 18:51:09.331668912 +0200
+Only in madwifi.dev/ath: if_ath.c.orig
+diff -ur madwifi.old/ath/if_athvar.h madwifi.dev/ath/if_athvar.h
+--- madwifi.old/ath/if_athvar.h	2007-05-31 06:48:28.555526400 +0200
++++ madwifi.dev/ath/if_athvar.h	2007-05-31 06:48:57.847073408 +0200
 @@ -48,6 +48,10 @@
  #include "if_athioctl.h"
  #include "net80211/ieee80211.h"		/* XXX for WME_NUM_AC */
@@ -613,7 +622,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_athvar.h madwifi-ng-r2377-2007052
  #define ATH_TXQ_LOCK_IRQ(_tq)		do {	\
  	unsigned long __axq_lockflags;		\
  	spin_lock_irqsave(&(_tq)->axq_lock, __axq_lockflags);
-@@ -623,7 +631,6 @@
+@@ -624,7 +632,6 @@
  	struct ath_buf *sc_rxbufcur;		/* current rx buffer */
  	u_int32_t *sc_rxlink;			/* link ptr in last RX desc */
  	spinlock_t sc_rxbuflock; 
@@ -621,7 +630,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_athvar.h madwifi-ng-r2377-2007052
  	struct ATH_TQ_STRUCT sc_rxorntq;	/* rxorn intr tasklet */
  	u_int8_t sc_defant;			/* current default antenna */
  	u_int8_t sc_rxotherant;			/* rx's on non-default antenna*/
-@@ -636,6 +643,7 @@
+@@ -637,6 +644,7 @@
  	u_int sc_txintrperiod;			/* tx interrupt batching */
  	struct ath_txq sc_txq[HAL_NUM_TX_QUEUES];
  	struct ath_txq *sc_ac2q[WME_NUM_AC];	/* WME AC -> h/w qnum */ 
@@ -629,7 +638,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_athvar.h madwifi-ng-r2377-2007052
  	struct ATH_TQ_STRUCT sc_txtq;		/* tx intr tasklet */
  	u_int8_t sc_grppoll_str[GRPPOLL_RATE_STR_LEN];  
  	struct ath_descdma sc_bdma;		/* beacon descriptors */
-@@ -702,8 +710,12 @@
+@@ -703,8 +711,12 @@
  #define	ATH_TXBUF_LOCK_DESTROY(_sc)
  #define	ATH_TXBUF_LOCK(_sc)		spin_lock(&(_sc)->sc_txbuflock)
  #define	ATH_TXBUF_UNLOCK(_sc)		spin_unlock(&(_sc)->sc_txbuflock)
@@ -644,7 +653,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_athvar.h madwifi-ng-r2377-2007052
  #define	ATH_TXBUF_LOCK_IRQ(_sc)		do {	\
  	unsigned long __txbuflockflags;		\
  	spin_lock_irqsave(&(_sc)->sc_txbuflock, __txbuflockflags);
-@@ -721,8 +733,12 @@
+@@ -722,8 +734,12 @@
  #define	ATH_RXBUF_LOCK_DESTROY(_sc)
  #define	ATH_RXBUF_LOCK(_sc)		spin_lock(&(_sc)->sc_rxbuflock)
  #define	ATH_RXBUF_UNLOCK(_sc)		spin_unlock(&(_sc)->sc_rxbuflock)
@@ -659,7 +668,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_athvar.h madwifi-ng-r2377-2007052
  #define	ATH_RXBUF_LOCK_IRQ(_sc)		do {	\
  	unsigned long __rxbuflockflags;		\
  	spin_lock_irqsave(&(_sc)->sc_rxbuflock, __rxbuflockflags);
-@@ -732,6 +748,8 @@
+@@ -733,6 +749,8 @@
  #define	ATH_RXBUF_UNLOCK_IRQ_EARLY(_sc)		\
  	spin_unlock_irqrestore(&(_sc)->sc_rxbuflock, __rxbuflockflags);
  
@@ -668,9 +677,10 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_athvar.h madwifi-ng-r2377-2007052
  
  /* Protects the device from concurrent accesses */
  #define	ATH_LOCK_INIT(_sc)		init_MUTEX(&(_sc)->sc_lock)
-diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_beacon.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_beacon.c
---- madwifi-ng-r2377-20070526.old/net80211/ieee80211_beacon.c	2007-01-30 05:01:29.000000000 +0100
-+++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_beacon.c	2007-05-26 18:51:09.332668760 +0200
+Only in madwifi.dev/ath: if_athvar.h.orig
+diff -ur madwifi.old/net80211/ieee80211_beacon.c madwifi.dev/net80211/ieee80211_beacon.c
+--- madwifi.old/net80211/ieee80211_beacon.c	2007-05-31 06:48:28.555526400 +0200
++++ madwifi.dev/net80211/ieee80211_beacon.c	2007-05-31 06:48:57.847073408 +0200
 @@ -286,7 +286,7 @@
  	int len_changed = 0;
  	u_int16_t capinfo;
@@ -689,9 +699,9 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_beacon.c madwifi-ng-r
  
  	return len_changed;
  }
-diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_input.c
---- madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c	2007-05-26 18:51:09.107702960 +0200
-+++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_input.c	2007-05-26 18:51:09.333668608 +0200
+diff -ur madwifi.old/net80211/ieee80211_input.c madwifi.dev/net80211/ieee80211_input.c
+--- madwifi.old/net80211/ieee80211_input.c	2007-05-31 06:48:28.557526096 +0200
++++ madwifi.dev/net80211/ieee80211_input.c	2007-05-31 06:48:57.849073104 +0200
 @@ -1169,8 +1169,9 @@
  		if (ni->ni_vlan != 0 && vap->iv_vlgrp != NULL) {
  			/* attach vlan tag */
@@ -704,7 +714,7 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2
  		dev->last_rx = jiffies;
  	}
  }
-@@ -3668,9 +3669,9 @@
+@@ -3675,9 +3676,9 @@
  	}
  
  	/* Okay, take the first queued packet and put it out... */
@@ -716,9 +726,10 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2
  	if (skb == NULL) {
  		IEEE80211_NOTE_MAC(vap, IEEE80211_MSG_POWER, wh->i_addr2,
  			"%s", "recv ps-poll, but queue empty");
-diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_linux.h madwifi-ng-r2377-20070526.dev/net80211/ieee80211_linux.h
---- madwifi-ng-r2377-20070526.old/net80211/ieee80211_linux.h	2007-05-24 19:31:37.000000000 +0200
-+++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_linux.h	2007-05-26 18:51:09.334668456 +0200
+Only in madwifi.dev/net80211: ieee80211_input.c.orig
+diff -ur madwifi.old/net80211/ieee80211_linux.h madwifi.dev/net80211/ieee80211_linux.h
+--- madwifi.old/net80211/ieee80211_linux.h	2007-05-24 19:31:37.000000000 +0200
++++ madwifi.dev/net80211/ieee80211_linux.h	2007-05-31 06:48:57.849073104 +0200
 @@ -31,6 +31,10 @@
  
  #include <linux/wireless.h>
@@ -819,10 +830,10 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_linux.h madwifi-ng-r2
  
  #if (defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)) && defined(spin_is_locked)
  #define	ACL_LOCK_ASSERT(_as) \
-diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_node.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_node.c
---- madwifi-ng-r2377-20070526.old/net80211/ieee80211_node.c	2007-05-26 18:51:08.748757528 +0200
-+++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_node.c	2007-05-26 18:51:09.335668304 +0200
-@@ -1567,7 +1567,7 @@
+diff -ur madwifi.old/net80211/ieee80211_node.c madwifi.dev/net80211/ieee80211_node.c
+--- madwifi.old/net80211/ieee80211_node.c	2007-05-31 06:48:28.558525944 +0200
++++ madwifi.dev/net80211/ieee80211_node.c	2007-05-31 06:48:57.868070216 +0200
+@@ -1584,7 +1584,7 @@
  	struct ieee80211_node *ni;
  	u_int gen;
  
@@ -831,7 +842,7 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_node.c madwifi-ng-r23
  	gen = ++nt->nt_scangen;
  	
  restart:
-@@ -1587,7 +1587,7 @@
+@@ -1604,7 +1604,7 @@
  	}
  	IEEE80211_NODE_TABLE_UNLOCK_IRQ(nt);
  
@@ -840,9 +851,10 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_node.c madwifi-ng-r23
  }
  EXPORT_SYMBOL(ieee80211_iterate_dev_nodes);
  
-diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_power.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_power.c
---- madwifi-ng-r2377-20070526.old/net80211/ieee80211_power.c	2007-05-24 19:31:37.000000000 +0200
-+++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_power.c	2007-05-26 18:51:09.336668152 +0200
+Only in madwifi.dev/net80211: ieee80211_node.c.orig
+diff -ur madwifi.old/net80211/ieee80211_power.c madwifi.dev/net80211/ieee80211_power.c
+--- madwifi.old/net80211/ieee80211_power.c	2007-05-24 19:31:37.000000000 +0200
++++ madwifi.dev/net80211/ieee80211_power.c	2007-05-31 06:48:57.868070216 +0200
 @@ -147,7 +147,7 @@
  #endif
  		struct sk_buff *skb;
@@ -903,9 +915,9 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_power.c madwifi-ng-r2
  				if (skb == NULL)
  					break;
  				ieee80211_parent_queue_xmit(skb);
-diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_proto.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_proto.c
---- madwifi-ng-r2377-20070526.old/net80211/ieee80211_proto.c	2007-05-26 18:51:09.321670432 +0200
-+++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_proto.c	2007-05-26 18:51:09.337668000 +0200
+diff -ur madwifi.old/net80211/ieee80211_proto.c madwifi.dev/net80211/ieee80211_proto.c
+--- madwifi.old/net80211/ieee80211_proto.c	2007-05-31 06:48:28.564525032 +0200
++++ madwifi.dev/net80211/ieee80211_proto.c	2007-05-31 06:48:57.869070064 +0200
 @@ -635,9 +635,9 @@
  {
  	struct ieee80211com *ic = vap->iv_ic;
@@ -930,9 +942,9 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_proto.c madwifi-ng-r2
  	}
  }
  
-diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_scan_sta.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_scan_sta.c
---- madwifi-ng-r2377-20070526.old/net80211/ieee80211_scan_sta.c	2007-05-21 17:53:39.000000000 +0200
-+++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_scan_sta.c	2007-05-26 18:51:09.338667848 +0200
+diff -ur madwifi.old/net80211/ieee80211_scan_sta.c madwifi.dev/net80211/ieee80211_scan_sta.c
+--- madwifi.old/net80211/ieee80211_scan_sta.c	2007-05-21 17:53:39.000000000 +0200
++++ madwifi.dev/net80211/ieee80211_scan_sta.c	2007-05-31 06:48:57.870069912 +0200
 @@ -163,9 +163,11 @@
  {
  	struct sta_table *st = ss->ss_priv;
