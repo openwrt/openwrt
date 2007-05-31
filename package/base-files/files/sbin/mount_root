@@ -2,55 +2,24 @@
 # Copyright (C) 2006 OpenWrt.org
 . /etc/functions.sh
 
-size=$(awk '/MemTotal:/ {l=5242880;mt=($2*1024);print((s=mt/2)<l)?mt-l:s}' /proc/meminfo)
-mount none /tmp -t tmpfs -o size=$size,nosuid,nodev,mode=1777
-
-if grep devfs /proc/filesystems > /dev/null; then
-	mount none /dev -t devfs
-	M0=/dev/pty/m0
-	M1=/dev/pty/m1
-	HOTPLUG=/sbin/hotplug-call
-else
-	mount -t tmpfs tmpfs /dev -o size=512K
-	mknod /dev/console c 5 1
-	mkdir /dev/shm
-	/sbin/hotplug2 --no-persistent --coldplug --set-rules-file /etc/hotplug2-init.rules
-	M0=/dev/ptmx
-	M1=/dev/ptmx
-	HOTPLUG=
-fi
-
-mkdir -p /dev/pts /dev/shm
-mount none /dev/pts -t devpts
-
-# the shell really doesn't like having stdin/out closed
-# that's why we use /dev/pty/m0 and m1 as replacement
-# for /dev/console if there's no serial console available
-dd if=/dev/console of=/dev/null bs=1 count=0 >/dev/null 2>/dev/null || \
-	exec <$M0 >$M1 2>&0
-
-echo "$HOTPLUG" > /proc/sys/kernel/hotplug
-
 jffs2_ready () {
 	mtdpart="$(find_mtd_part rootfs_data)"
 	magic=$(hexdump $mtdpart -n 4 -e '4/1 "%02x"')
 	[ "$magic" != "deadc0de" ]
 }
 
-[ failsafe != "$1" ] && {
-	grep rootfs_data /proc/mtd >/dev/null 2>/dev/null && {
-		. /bin/firstboot
-		mtd unlock rootfs_data
-		jffs2_ready && {
-			echo "switching to jffs2"
-			mount "$(find_mtd_part rootfs_data)" /jffs -t jffs2 && \
-				fopivot /jffs /rom
-		} || {
-			echo "jffs2 not ready yet; using ramdisk"
-			ramoverlay
-		}
+grep rootfs_data /proc/mtd >/dev/null 2>/dev/null && {
+	. /bin/firstboot
+	mtd unlock rootfs_data
+	jffs2_ready && {
+		echo "switching to jffs2"
+		mount "$(find_mtd_part rootfs_data)" /jffs -t jffs2 && \
+			fopivot /jffs /rom
 	} || {
-		mtd unlock rootfs
-		mount -o remount,rw /dev/root /
+		echo "jffs2 not ready yet; using ramdisk"
+		ramoverlay
 	}
+} || {
+	mtd unlock rootfs
+	mount -o remount,rw /dev/root /
 }
