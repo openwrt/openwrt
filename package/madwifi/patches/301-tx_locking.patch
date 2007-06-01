@@ -1,0 +1,67 @@
+diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
+--- madwifi.old/ath/if_ath.c	2007-06-01 16:44:25.170898128 +0200
++++ madwifi.dev/ath/if_ath.c	2007-06-01 20:01:24.205131816 +0200
+@@ -2555,7 +2555,7 @@
+ 	/* NB: use this lock to protect an->an_ff_txbuf in athff_can_aggregate()
+ 	 *     call too.
+ 	 */
+-	ATH_TXQ_LOCK_IRQ(txq);
++	ATH_TXQ_LOCK_BH(txq);
+ 	if (athff_can_aggregate(sc, eh, an, skb, vap->iv_fragthreshold, &ff_flush)) {
+ 		if (an->an_tx_ffbuf[skb->priority]) { /* i.e., frame on the staging queue */
+ 			bf = an->an_tx_ffbuf[skb->priority];
+@@ -2563,6 +2563,7 @@
+ 			/* get (and remove) the frame from staging queue */
+ 			TAILQ_REMOVE(&txq->axq_stageq, bf, bf_stagelist);
+ 			an->an_tx_ffbuf[skb->priority] = NULL;
++			ATH_TXQ_UNLOCK_BH(txq);
+ 
+ 			/*
+ 			 * chain skbs and add FF magic
+@@ -2585,7 +2586,7 @@
+ 			 */
+ 			ATH_HARDSTART_GET_TX_BUF_WITH_LOCK;
+ 			if (bf == NULL) {
+-				ATH_TXQ_UNLOCK_IRQ_EARLY(txq);
++				ATH_TXQ_UNLOCK_BH(txq);
+ 				goto hardstart_fail;
+ 			}
+ 			DPRINTF(sc, ATH_DEBUG_XMIT | ATH_DEBUG_FF,
+@@ -2597,8 +2598,7 @@
+ 			an->an_tx_ffbuf[skb->priority] = bf;
+ 
+ 			TAILQ_INSERT_HEAD(&txq->axq_stageq, bf, bf_stagelist);
+-
+-			ATH_TXQ_UNLOCK_IRQ_EARLY(txq);
++			ATH_TXQ_UNLOCK_BH(txq);
+ 
+ 			return 0;
+ 		}
+@@ -2650,12 +2650,12 @@
+ 
+ 		ATH_HARDSTART_GET_TX_BUF_WITH_LOCK;
+ 		if (bf == NULL) {
+-			ATH_TXQ_UNLOCK_IRQ_EARLY(txq);
++			ATH_TXQ_UNLOCK_BH(txq);
+ 			goto hardstart_fail;
+ 		}
++		ATH_TXQ_UNLOCK_BH(txq);
+ 	}
+ 
+-	ATH_TXQ_UNLOCK_IRQ(txq);
+ 
+ ff_bypass:
+ 
+diff -ur madwifi.old/ath/if_athvar.h madwifi.dev/ath/if_athvar.h
+--- madwifi.old/ath/if_athvar.h	2007-06-01 16:44:25.149901320 +0200
++++ madwifi.dev/ath/if_athvar.h	2007-06-01 20:00:06.916881416 +0200
+@@ -484,6 +484,8 @@
+ #define ATH_TXQ_INTR_PERIOD		5  /* axq_intrcnt period for intr gen */
+ #define	ATH_TXQ_LOCK_INIT(_tq)		spin_lock_init(&(_tq)->axq_lock)
+ #define	ATH_TXQ_LOCK_DESTROY(_tq)
++#define ATH_TXQ_LOCK_BH(_tq)		spin_lock_bh(&(_tq)->axq_lock);
++#define ATH_TXQ_UNLOCK_BH(_tq)		spin_unlock_bh(&(_tq)->axq_lock);
+ #define ATH_TXQ_LOCK_IRQ(_tq)		do {				\
+ 	unsigned long __axq_lockflags;					\
+ 	spin_lock_irqsave(&(_tq)->axq_lock, __axq_lockflags);
+
