@@ -7,15 +7,33 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+UCODEFILE:=IPL_ixp400NpeLibrary-2_4.zip
+
+ifneq ($(CONFIG_IXP4XX_INCLUDE_UCODE),)
+  define Require/npe-ucode
+	[ -f $(DL_DIR)/$(UCODEFILE) ]
+  endef
+  define Build/Compile/npe
+	$(MAKE) -C npe-ucode \
+		BUILD_DIR="$(KDIR)" \
+		TARGET="$(KDIR)" \
+		compile
+  endef
+  define Image/Build/slug
+	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
+		-L $(KDIR)/apex-nslu2-armeb.bin -m $(KDIR)/NPE-B \
+		-k $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-zImage \
+		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img \
+		-p -o $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-$(1).bin
+  endef
+endif
+
 define Build/Compile
 	$(MAKE) -C apex \
 		BUILD_DIR="$(KDIR)" \
 		TARGET="$(KDIR)" \
 		compile	
-	$(MAKE) -C npe-ucode \
-		BUILD_DIR="$(KDIR)" \
-		TARGET="$(KDIR)" \
-		compile
+	$(call Build/Compile/npe)
 endef
 
 define Build/Clean
@@ -37,14 +55,6 @@ define Image/Build
 	$(call Image/Build/$(1),$(1))
 endef
 
-define Image/Build/slug
-	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
-		-L $(KDIR)/apex-nslu2-armeb.bin -m $(KDIR)/NPE-B \
-		-k $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-zImage \
-		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img \
-		-p -o $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-$(1).bin
-endef
-
 define Image/Build/jffs2-64k
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img bs=65536 conv=sync
 endef
@@ -61,12 +71,6 @@ define Image/Build/squashfs
 endef
 
 $(eval $(call BuildImage))
-
-UCODEFILE:=IPL_ixp400NpeLibrary-2_4.zip
-
-define Require/npe-ucode
-	[ -f $(DL_DIR)/$(UCODEFILE) ]
-endef
 
 $(eval $(call Require,npe-ucode, \
 	You must manually download $(UCODEFILE) from \\\
