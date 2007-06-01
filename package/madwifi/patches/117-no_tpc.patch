@@ -1,0 +1,12 @@
+diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
+--- madwifi.old/ath/if_ath.c	2007-06-01 16:44:25.170898128 +0200
++++ madwifi.dev/ath/if_ath.c	2007-06-01 20:01:24.205131816 +0200
+@@ -271,7 +271,7 @@
+ static char *ratectl = DEF_RATE_CTL;
+ static int rfkill = 0;
+ #ifdef ATH_CAP_TPC
+-static int tpc = -1;
++static int tpc = 0;
+ #endif
+ static int countrycode = -1;
+ static int outdoor = -1;
