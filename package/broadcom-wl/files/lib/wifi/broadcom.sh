@@ -116,9 +116,9 @@ enable_broadcom() {
 		append vif_post_up "vif $_c" "$N"
 		
 		[ "$mode" = "sta" ] || {
-			config_get_bool hidden "$vif" hidden 1
+			config_get_bool hidden "$vif" hidden 0
 			append vif_pre_up "closed $hidden" "$N"
-			config_get_bool isolate "$vif" isolate
+			config_get_bool isolate "$vif" isolate 0
 			append vif_pre_up "ap_isolate $isolate" "$N"
 		}
 
