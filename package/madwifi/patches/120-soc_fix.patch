@@ -1,6 +1,6 @@
-diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath_ahb.c madwifi-ng-r2377-20070526.dev/ath/if_ath_ahb.c
---- madwifi-ng-r2377-20070526.old/ath/if_ath_ahb.c	2007-02-24 02:33:54.000000000 +0100
-+++ madwifi-ng-r2377-20070526.dev/ath/if_ath_ahb.c	2007-05-26 18:51:09.112702200 +0200
+diff -ur madwifi.old/ath/if_ath_ahb.c madwifi.dev/ath/if_ath_ahb.c
+--- madwifi.old/ath/if_ath_ahb.c	2007-05-30 03:41:18.000000000 +0200
++++ madwifi.dev/ath/if_ath_ahb.c	2007-06-01 12:04:02.887273960 +0200
 @@ -275,11 +275,10 @@
  
  
@@ -14,10 +14,11 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath_ahb.c madwifi-ng-r2377-200705
  	u_int16_t devid;
  
  	if (sc == NULL)
-@@ -290,12 +289,16 @@
+@@ -289,13 +288,16 @@
+ 	ath_detach(dev);
  	if (dev->irq)
  		free_irq(dev->irq, dev);
- 	sysType = get_system_type();
+-	sysType = get_system_type();
 -	if (!strcmp(sysType, "Atheros AR5315"))
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
 +	devid = (u32) config->tag;
@@ -32,7 +33,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath_ahb.c madwifi-ng-r2377-200705
  
  	ahb_disable_wmac(devid, wlanNum);
  	free_netdev(dev);
-@@ -401,7 +404,7 @@
+@@ -401,7 +403,7 @@
  
  static int ahb_wmac_remove(struct platform_device *pdev)
  {
@@ -41,7 +42,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath_ahb.c madwifi-ng-r2377-200705
  
  	return 0;
  }
-@@ -439,7 +442,7 @@
+@@ -439,7 +441,7 @@
  			(AR5315_REV_MAJ_M | AR5315_REV_MIN_M));
  		if (((devid & AR5315_REV_MAJ_M) == AR5315_REV_MAJ) ||
  			((devid & AR5315_REV_MAJ_M) == AR5317_REV_MAJ))
@@ -50,7 +51,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath_ahb.c madwifi-ng-r2377-200705
  	}
  
  	devid = (u_int16_t) ((sysRegRead(AR531X_REV) >>8) &
-@@ -452,11 +455,11 @@
+@@ -452,11 +454,11 @@
  		ar5312BspEepromRead(2 * AR531X_RADIO_MASK_OFF, 2,
  			(char *) &radioMask);
  		if ((radioMask & AR531X_RADIO0_MASK) != 0)
