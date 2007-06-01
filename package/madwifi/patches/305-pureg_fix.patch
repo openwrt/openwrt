@@ -15,7 +15,7 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
 diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_input.c
 --- madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c	2007-05-26 18:51:09.429654016 +0200
 +++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_input.c	2007-05-26 18:51:09.443651888 +0200
-@@ -343,11 +343,12 @@
+@@ -321,11 +321,12 @@
  				bssid = wh->i_addr3;
  			}
  			/*
@@ -30,7 +30,7 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2
  				/*
  				 * allow MGT frames to vap->iv_xrvap.
  				 * this will allow roaming between  XR and normal vaps
-@@ -366,7 +367,8 @@
+@@ -344,7 +345,8 @@
  			}
  #else
  			if (!IEEE80211_ADDR_EQ(bssid, vap->iv_bss->ni_bssid) &&
@@ -40,7 +40,7 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2
  				/* not interested in */
  				IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
  					bssid, NULL, "%s", "not to bss");
-@@ -2593,7 +2595,7 @@
+@@ -2555,7 +2557,7 @@
  	u_int8_t *frm, *efrm;
  	u_int8_t *ssid, *rates, *xrates, *wpa, *rsn, *wme, *ath;
  	u_int8_t rate;
@@ -49,13 +49,13 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2
  	u_int8_t qosinfo;
  
  	wh = (struct ieee80211_frame *) skb->data;
-@@ -2615,11 +2617,15 @@
+@@ -2577,11 +2579,15 @@
  		 *    o station mode when associated (to collect state
  		 *      updates such as 802.11g slot time), or
  		 *    o adhoc mode (to discover neighbors)
 +		 *    o ap mode in protection mode (beacons only)
  		 * Frames otherwise received are discarded.
- 		 */ 
+ 		 */
  		if (!((ic->ic_flags & IEEE80211_F_SCAN) ||
  		    (vap->iv_opmode == IEEE80211_M_STA && ni->ni_associd) ||
 -		    vap->iv_opmode == IEEE80211_M_IBSS)) {
@@ -66,7 +66,7 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2
  			vap->iv_stats.is_rx_mgtdiscard++;
  			return;
  		}
-@@ -2702,6 +2708,7 @@
+@@ -2664,6 +2670,7 @@
  					break;
  				}
  				scan.erp = frm[2];
@@ -74,16 +74,7 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2
  				break;
  			case IEEE80211_ELEMID_RSN:
  				scan.rsn = frm;
-@@ -2855,7 +2862,7 @@
- 			    vap->iv_flags_ext & IEEE80211_FEXT_SWBMISS) {
- 				mod_timer(&vap->iv_swbmiss, jiffies + vap->iv_swbmiss_period);
- 			}
--			
-+
- 			/*
- 			 * If scanning, pass the info to the scan module.
- 			 * Otherwise, check if it's the right time to do
-@@ -2877,6 +2884,20 @@
+@@ -2839,6 +2846,20 @@
  				ieee80211_bg_scan(vap);
  			return;
  		}
@@ -170,3 +161,4 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_var.h madwifi-ng-r237
  
  /* Key update synchronization methods.  XXX should not be visible. */
  static __inline void
+
