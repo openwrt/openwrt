@@ -1,0 +1,12 @@
+diff -ur madwifi.old/ath_rate/minstrel/minstrel.c madwifi.dev/ath_rate/minstrel/minstrel.c
+--- madwifi.old/ath_rate/minstrel/minstrel.c	2007-06-01 16:44:25.137903000 +0200
++++ madwifi.dev/ath_rate/minstrel/minstrel.c	2007-06-01 22:03:15.408659936 +0200
+@@ -358,6 +358,8 @@
+ 					if (sn->rs_sampleColumn >= MINSTREL_COLUMNS)
+ 						sn->rs_sampleColumn = 0;
+ 				}
++				if (ndx < sn->max_prob_rate - 2)
++					ndx = sn->max_tp_rate;
+ 			} else
+ 				ndx = sn->max_tp_rate;
+ 		 }
