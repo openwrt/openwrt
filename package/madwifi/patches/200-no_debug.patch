@@ -38,11 +38,11 @@ diff -urN madwifi-ng-r2377-20070526.old/ath_rate/minstrel/minstrel.c madwifi-ng-
  
  #include "minstrel.h"
  
--#define	MINSTREL_DEBUG 
-+#undef	MINSTREL_DEBUG 
+-#define	MINSTREL_DEBUG
++#undef	MINSTREL_DEBUG
  #ifdef MINSTREL_DEBUG
  enum {
- 	ATH_DEBUG_RATE		= 0x00000010	/* rate control */
+ 		ATH_DEBUG_RATE		= 0x00000010	/* rate control */
 diff -urN madwifi-ng-r2377-20070526.old/ath_rate/onoe/onoe.c madwifi-ng-r2377-20070526.dev/ath_rate/onoe/onoe.c
 --- madwifi-ng-r2377-20070526.old/ath_rate/onoe/onoe.c	2007-05-21 19:33:26.000000000 +0200
 +++ madwifi-ng-r2377-20070526.dev/ath_rate/onoe/onoe.c	2007-05-26 18:51:09.209687456 +0200
@@ -160,3 +160,4 @@ diff -urN madwifi-ng-r2377-20070526.old/tools/Makefile madwifi-ng-r2377-20070526
  	ln -s -f madwifi_multi $$i; \
  	done
  
+
