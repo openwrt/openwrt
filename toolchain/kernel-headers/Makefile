@@ -15,8 +15,8 @@ PKG_SOURCE_URL=$(LINUX_SITE)
 
 PKG_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)/linux-$(PKG_VERSION)
 
-LINUX_DIR:=$(PKG_BUILD_DIR)/linux-$(LINUX_VERSION)
-KERNEL_BUILD_DIR:=$(PKG_BUILD_DIR)
+LINUX_DIR:=$(PKG_BUILD_DIR)
+KERNEL_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)
 include $(INCLUDE_DIR)/kernel-defaults.mk
 
 include $(INCLUDE_DIR)/host-build.mk
@@ -39,6 +39,8 @@ endef
 else
 define Build/Prepare
 	$(call Kernel/Prepare/Default)
+	$(SED) 's/@expr length/@-expr length/' $(PKG_BUILD_DIR)/Makefile
+	ln -sf $(PKG_BUILD_DIR) $(LINUX_HEADERS_DIR)
 endef
 endif
 
