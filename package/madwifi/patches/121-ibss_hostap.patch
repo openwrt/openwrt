@@ -112,16 +112,15 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  		sc->sc_nstavaps--;
  		sc->sc_nostabeacons = 0;
  	} else if (vap->iv_opmode == IEEE80211_M_MONITOR)
-@@ -3356,7 +3347,8 @@
- 		 HAL_RX_FILTER_MCAST;
- 	if (ic->ic_opmode != IEEE80211_M_STA)
- 		rfilt |= HAL_RX_FILTER_PROBEREQ;
--	if (ic->ic_opmode != IEEE80211_M_HOSTAP && (dev->flags & IFF_PROMISC))
-+	if ((ic->ic_opmode != IEEE80211_M_HOSTAP && (dev->flags & IFF_PROMISC)) ||
-+		((sc->sc_nvaps > 0) && (sc->sc_nibssvaps > 0)))
- 		rfilt |= HAL_RX_FILTER_PROM;
- 	if (ic->ic_opmode == IEEE80211_M_STA ||
- 	    sc->sc_opmode == HAL_M_IBSS ||	/* NB: AHDEMO too */
+@@ -3368,7 +3367,7 @@
+ 		((ic->ic_opmode == IEEE80211_M_HOSTAP) &&
+ 		 (ic->ic_protmode != IEEE80211_PROT_NONE)))
+ 		rfilt |= HAL_RX_FILTER_BEACON;
+-	if (sc->sc_nmonvaps > 0)
++	if ((sc->sc_nmonvaps > 0) || ((sc->sc_nvaps > 0) && (sc->sc_nibssvaps > 0)))
+ 		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON |
+ 			  HAL_RX_FILTER_PROBEREQ | HAL_RX_FILTER_PROM);
+ 	return rfilt;
 @@ -5809,12 +5801,19 @@
  			type = ieee80211_input(ni, skb, rs->rs_rssi, rs->rs_tstamp);
  			ieee80211_unref_node(&ni);
