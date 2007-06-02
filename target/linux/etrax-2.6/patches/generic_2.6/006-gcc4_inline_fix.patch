@@ -1,0 +1,12 @@
+diff -urN linux-2.6.19.old/include/asm-mips/system.h linux-2.6.19.dev/include/asm-mips/system.h
+--- linux-2.6.19.old/include/asm-mips/system.h	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/include/asm-mips/system.h	2006-12-14 03:13:28.000000000 +0100
+@@ -311,7 +311,7 @@
+    if something tries to do an invalid xchg().  */
+ extern void __xchg_called_with_bad_pointer(void);
+ 
+-static inline unsigned long __xchg(unsigned long x, volatile void * ptr, int size)
++static __always_inline unsigned long __xchg(unsigned long x, volatile void * ptr, int size)
+ {
+ 	switch (size) {
+ 	case 4:

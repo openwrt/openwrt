@@ -1,0 +1,180 @@
+diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/drivers/ds1302.c linux-2.6.19.2/arch/cris/arch-v10/drivers/ds1302.c
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/drivers/ds1302.c	2007-05-28 22:35:23.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/drivers/ds1302.c	2007-05-28 22:55:40.000000000 +0200
+@@ -21,7 +21,7 @@
+ #include <linux/delay.h>
+ #include <linux/bcd.h>
+ #include <linux/capability.h>
+-
++#include <linux/device.h>
+ #include <asm/uaccess.h>
+ #include <asm/system.h>
+ #include <asm/arch/svinto.h>
+@@ -480,6 +480,10 @@
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_SYSFS
++static struct class *rtc_class;
++#endif
++
+ static int __init ds1302_register(void)
+ {
+ 	ds1302_init();
+@@ -488,7 +492,15 @@
+ 		       ds1302_name, RTC_MAJOR_NR);
+ 		return -1;
+ 	}
+-        return 0;
++	
++	#ifdef CONFIG_SYSFS
++	rtc_class = class_create(THIS_MODULE, "rtc");
++	class_device_create(rtc_class, NULL,
++		MKDEV(RTC_MAJOR_NR, 0),
++		NULL, "rtc");
++	#endif
++	
++	return 0;
+ 
+ }
+ 
+diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/drivers/eeprom.c linux-2.6.19.2/arch/cris/arch-v10/drivers/eeprom.c
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/drivers/eeprom.c	2007-05-28 22:35:23.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/drivers/eeprom.c	2007-05-28 23:03:45.000000000 +0200
+@@ -103,6 +103,7 @@
+ #include <linux/delay.h>
+ #include <linux/interrupt.h>
+ #include <linux/wait.h>
++#include <linux/device.h>
+ #include <asm/uaccess.h>
+ #include "i2c.h"
+ 
+@@ -185,6 +186,9 @@
+ };
+ 
+ /* eeprom init call. Probes for different eeprom models. */
++#ifdef CONFIG_SYSFS
++static struct class *eep_class;
++#endif
+ 
+ int __init eeprom_init(void)
+ {
+@@ -202,7 +206,13 @@
+            eeprom_name, EEPROM_MAJOR_NR);
+     return -1;
+   }
+-  
++
++#ifdef CONFIG_SYSFS
++	eep_class = class_create(THIS_MODULE, "eep");
++	class_device_create(eep_class, NULL, MKDEV(EEPROM_MAJOR, 0), NULL, "eeprom");
++#endif
++
++ 
+   printk("EEPROM char device v0.3, (c) 2000 Axis Communications AB\n");
+ 
+   /*
+diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/drivers/gpio.c linux-2.6.19.2/arch/cris/arch-v10/drivers/gpio.c
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/drivers/gpio.c	2007-05-28 22:35:23.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/drivers/gpio.c	2007-05-28 22:59:27.000000000 +0200
+@@ -181,6 +181,7 @@
+ #include <linux/poll.h>
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
++#include <linux/device.h>
+ 
+ #include <asm/etraxgpio.h>
+ #include <asm/arch/svinto.h>
+@@ -938,6 +939,10 @@
+ 
+ /* main driver initialization routine, called from mem.c */
+ 
++#ifdef CONFIG_SYSFS
++static struct class *gpio_class;
++#endif
++
+ static __init int
+ gpio_init(void)
+ {
+@@ -955,6 +960,14 @@
+ 		return res;
+ 	}
+ 
++#ifdef CONFIG_SYSFS
++	gpio_class = class_create(THIS_MODULE, "gpio");
++	class_device_create(gpio_class, NULL, MKDEV(GPIO_MAJOR, 0), NULL, "gpioa");
++	class_device_create(gpio_class, NULL, MKDEV(GPIO_MAJOR, 1), NULL, "gpiob");
++	class_device_create(gpio_class, NULL, MKDEV(GPIO_MAJOR, 2), NULL, "leds");
++	class_device_create(gpio_class, NULL, MKDEV(GPIO_MAJOR, 3), NULL, "gpiog");
++#endif
++
+ 	/* Clear all leds */
+ #if defined (CONFIG_ETRAX_CSP0_LEDS) ||  defined (CONFIG_ETRAX_PA_LEDS) || defined (CONFIG_ETRAX_PB_LEDS)
+ 	LED_NETWORK_SET(0);
+diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/drivers/pcf8563.c linux-2.6.19.2/arch/cris/arch-v10/drivers/pcf8563.c
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/drivers/pcf8563.c	2007-05-28 22:35:23.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/drivers/pcf8563.c	2007-05-28 23:09:02.000000000 +0200
+@@ -26,6 +26,7 @@
+ #include <linux/ioctl.h>
+ #include <linux/delay.h>
+ #include <linux/bcd.h>
++#include <linux/device.h>
+ 
+ #include <asm/uaccess.h>
+ #include <asm/system.h>
+@@ -344,6 +345,10 @@
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_SYSFS
++static struct class *pcf8563_class;
++#endif
++
+ static int __init 
+ pcf8563_register(void)
+ {
+@@ -358,6 +363,10 @@
+ 		       "device.\n", PCF8563_NAME, PCF8563_MAJOR);
+ 		return -1;
+ 	}
++#ifdef CONFIG_SYSFS
++	pcf8563_class = class_create(THIS_MODULE, "pcf8563");
++	class_device_create(pcf8563_class, NULL, MKDEV(PCF8563_MAJOR, 0), NULL, "rtc");
++#endif
+ 
+ 	printk(KERN_INFO "%s Real-Time Clock Driver, %s\n", PCF8563_NAME,
+ 	       DRIVER_VERSION);
+diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/drivers/sync_serial.c linux-2.6.19.2/arch/cris/arch-v10/drivers/sync_serial.c
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/drivers/sync_serial.c	2007-05-28 22:35:23.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/drivers/sync_serial.c	2007-05-28 23:06:41.000000000 +0200
+@@ -29,6 +29,8 @@
+ #include <asm/uaccess.h>
+ #include <asm/system.h>
+ #include <asm/sync_serial.h>
++#include <linux/device.h>
++
+ #include <asm/arch/io_interface_mux.h>
+ 
+ /* The receiver is a bit tricky beacuse of the continuous stream of data.*/
+@@ -241,6 +243,9 @@
+ 	.open    = sync_serial_open,
+ 	.release = sync_serial_release
+ };
++#ifdef CONFIG_SYSFS
++static struct class *syncser_class;
++#endif
+ 
+ static int __init etrax_sync_serial_init(void)
+ {
+@@ -274,6 +279,11 @@
+ 		printk("unable to get major for synchronous serial port\n");
+ 		return -EBUSY;
+ 	}
++#ifdef CONFIG_SYSFS
++	syncser_class = class_create(THIS_MODULE, "syncser");
++	class_device_create(syncser_class, NULL, MKDEV(SYNC_SERIAL_MAJOR, 0), NULL, "syncser0");
++	class_device_create(syncser_class, NULL, MKDEV(SYNC_SERIAL_MAJOR, 1), NULL, "syncser1");
++#endif
+ 
+ 	/* Deselect synchronous serial ports while configuring. */
+ 	SETS(gen_config_ii_shadow, R_GEN_CONFIG_II, sermode1, async);

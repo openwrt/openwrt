@@ -23,7 +23,6 @@ config GDB
 config LARGEFILE
 	bool
 	prompt "Enable large file (files > 2 GB) support?" if TOOLCHAINOPTS
-	depends on !cris
 	default y
 	help
 		Enable large file (files > 2 GB) support

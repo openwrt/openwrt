@@ -1,0 +1,12 @@
+diff -urN linux-2.6.19.2.orig/mm/page_alloc.c linux-2.6.19.2/mm/page_alloc.c
+--- linux-2.6.19.2.orig/mm/page_alloc.c	2007-05-20 03:26:41.000000000 +0200
++++ linux-2.6.19.2/mm/page_alloc.c	2007-05-20 03:28:22.000000000 +0200
+@@ -1200,7 +1200,7 @@
+ unsigned int nr_free_pages(void)
+ {
+ 	unsigned int sum = 0;
+-	struct zone *zone;
++	volatile struct zone *zone;
+ 
+ 	for_each_zone(zone)
+ 		sum += zone->free_pages;

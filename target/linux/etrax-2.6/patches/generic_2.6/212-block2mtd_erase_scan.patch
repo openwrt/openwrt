@@ -1,0 +1,11 @@
+--- linux.dev/drivers/mtd/devices/block2mtd.c.old	2007-02-18 14:08:59.519952312 +0100
++++ linux.dev/drivers/mtd/devices/block2mtd.c	2007-02-18 14:09:04.219237912 +0100
+@@ -111,7 +111,7 @@
+ 		if (IS_ERR(page))
+ 			return PTR_ERR(page);
+ 
+-		max = (u_long*)page_address(page) + PAGE_SIZE;
++		max = (u_long*) ((u8 *) page_address(page) + PAGE_SIZE);
+ 		for (p=(u_long*)page_address(page); p<max; p++)
+ 			if (*p != -1UL) {
+ 				lock_page(page);

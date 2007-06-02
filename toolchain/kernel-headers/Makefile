@@ -15,15 +15,32 @@ PKG_SOURCE_URL=$(LINUX_SITE)
 
 PKG_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)/linux-$(PKG_VERSION)
 
+LINUX_DIR:=$(PKG_BUILD_DIR)/linux-$(LINUX_VERSION)
+KERNEL_BUILD_DIR:=$(PKG_BUILD_DIR)
+include $(INCLUDE_DIR)/kernel-defaults.mk
+
 include $(INCLUDE_DIR)/host-build.mk
 
-define Build/Prepare
+define Build/Prepare/cris
 	mkdir -p $(TOOLCHAIN_BUILD_DIR)
 	bzcat $(DL_DIR)/$(PKG_SOURCE) | $(HOST_TAR) -C $(TOOLCHAIN_BUILD_DIR) $(TAR_OPTIONS)
-	$(PATCH) $(PKG_BUILD_DIR) $(TOPDIR)/target/linux/generic-$(KERNEL)/patches
+	$(PATCH) $(PKG_BUILD_DIR) $(TOPDIR)/target/linux/etrax-2.6/patches/generic_2.6
+	$(PATCH) $(PKG_BUILD_DIR) $(TOPDIR)/target/linux/etrax-2.6/patches/cris
+	ln -sf $(PKG_BUILD_DIR)/include/asm-cris/arch-v10 $(PKG_BUILD_DIR)/include/asm-cris/arch
+	ln -sf $(PKG_BUILD_DIR)/arch/cris/arch-v10 $(PKG_BUILD_DIR)/arch/cris/arch
 	$(SED) 's/@expr length/@-expr length/' $(PKG_BUILD_DIR)/Makefile
 	ln -sf $(PKG_BUILD_DIR) $(LINUX_HEADERS_DIR)
 endef
+
+ifdef Build/Prepare/$(ARCH)
+define Build/Prepare
+	$(call Build/Prepare/$(ARCH))
+endef
+else
+define Build/Prepare
+	$(call Kernel/Prepare/Default)
+endef
+endif
 
 define Build/Configure/powerpc
 	$(CP) $(PKG_BUILD_DIR)/include/asm-ppc/* $(PKG_BUILD_DIR)/include/asm-powerpc/

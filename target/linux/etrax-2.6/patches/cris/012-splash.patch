@@ -1,0 +1,22 @@
+diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/boot/compressed/misc.c linux-2.6.19.2/arch/cris/arch-v10/boot/compressed/misc.c
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/boot/compressed/misc.c	2007-05-28 22:35:23.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/boot/compressed/misc.c	2007-05-28 22:40:43.000000000 +0200
+@@ -266,8 +266,16 @@
+ 		puts("You need an ETRAX 100LX to run linux 2.6\n");
+ 		while(1);
+ 	}
++	puts("\r\n                                           _                       _ _  \r\n"); 
++	puts("                                          | |                     (_) | \r\n"); 
++	puts("   __ _  ___ _ __ ___   ___  ___ _   _ ___| |_ ___ _ __ ___  ___   _| |_\r\n"); 
++	puts("  / _` |/ __| '_ ` _ \\ / _ \\/ __| | | / __| __/ _ \\ '_ ` _ \\/ __| | | __|\r\n");
++	puts(" | (_| | (__| | | | | |  __/\\__ \\ |_| \\__ \\ ||  __/ | | | | \\__ \\_| | |_ \r\n");
++	puts("  \\__,_|\\___|_| |_| |_|\\___||___/\\__, |___/\\__\\___|_| |_| |_|___(_)_|\\__|\r\n");
++	puts("                                  __/ |                                  \r\n");
++	puts("                                 |___/   FOXBOARD @ www.acmesystems.it        \r\n"); 
+ 
+-	puts("Uncompressing Linux...\n");
++	puts("Uncompressing Linux...\r\n");
+ 	gunzip();
+-	puts("Done. Now booting the kernel.\n");
++	puts("Done. Now booting the kernel.\r\n");
+ }

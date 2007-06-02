@@ -1,0 +1,19 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(common.c)
+AC_CONFIG_HEADER(conf.h)
+
+dnl Checks for programs.
+AC_PROG_CC
+
+dnl Checks for libraries.
+AC_CHECK_LIB(pcap, pcap_open_live)
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(termios.h sys/ioctl.h net/if.h netinet/in.h netinet/in_systm.h netinet/ip.h netinet/udp.h netinet/tcp.h netdb.h arpa/inet.h sys/socket.h fcntl.h linux/if_ether.h signal.h string.h stdlib.h stdio.h sys/time.h unistd.h sys/stat.h sys/types.h errno.h linux/sockios.h ctype.h sys/socket.h pcap/pcap.h)
+
+dnl Check for typedefs, structures, and compiler characteristics.
+AC_HEADER_TIME
+
+dnl Checks for library functions.
+AC_OUTPUT(Makefile)

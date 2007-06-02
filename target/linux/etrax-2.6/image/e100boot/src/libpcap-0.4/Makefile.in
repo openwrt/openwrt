@@ -1,0 +1,173 @@
+# $Id: Makefile.in,v 1.7 2002/09/18 15:29:46 pkj Exp $
+#  Copyright (c) 1993, 1994, 1995, 1996
+# 	The Regents of the University of California.  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that: (1) source code distributions
+#  retain the above copyright notice and this paragraph in its entirety, (2)
+#  distributions including binary code include the above copyright notice and
+#  this paragraph in its entirety in the documentation or other materials
+#  provided with the distribution, and (3) all advertising materials mentioning
+#  features or use of this software display the following acknowledgement:
+#  ``This product includes software developed by the University of California,
+#  Lawrence Berkeley Laboratory and its contributors.'' Neither the name of
+#  the University nor the names of its contributors may be used to endorse
+#  or promote products derived from this software without specific prior
+#  written permission.
+#  THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
+#  WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+# @(#) $Header: /usr/local/cvs/linux/tools/build/e100boot/libpcap-0.4/Makefile.in,v 1.7 2002/09/18 15:29:46 pkj Exp $ (LBL)
+
+#
+# Various configurable paths (remember to edit Makefile.in, not Makefile)
+#
+
+# Top level hierarchy
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+# Pathname of directory to install the include files
+INCLDEST = @includedir@
+# Pathname of directory to install the library
+LIBDEST =  @libdir@
+# Pathname of directory to install the man page
+MANDEST = @mandir@
+
+# VPATH
+srcdir = @srcdir@
+VPATH = @srcdir@
+
+#
+# You shouldn't need to edit anything below.
+#
+CFLAGS =
+CC = @CC@
+AR = ar
+INSTALL = @INSTALL@
+RANLIB = @V_RANLIB@
+
+prefix =
+AXIS_USABLE_LIBS = UCLIBC GLIBC
+-include $(AXIS_TOP_DIR)/tools/build/Rules.axis
+ifndef AXIS_BUILDTYPE
+prefix = @prefix@
+endif
+
+CCOPT = @V_CCOPT@
+INCLS = -I. @V_INCLS@
+DEFS = @DEFS@
+
+# Standard CFLAGS
+CFLAGS += $(CCOPT) $(INCLS) $(DEFS)
+
+
+#
+# Flex and bison allow you to specify the prefixes of the global symbols
+# used by the generated parser.  This allows programs to use lex/yacc
+# and link against libpcap.  If you don't have flex or bison, get them.
+#
+LEX = @V_LEX@
+YACC = @V_YACC@
+
+# Explicitly define compilation rule since SunOS 4's make doesn't like gcc.
+# Also, gcc does not remove the .o before forking 'as', which can be a
+# problem if you don't own the file but can write to the directory.
+.c.o:
+	@rm -f $@
+	$(CC) $(CFLAGS) -c $(srcdir)/$*.c
+
+PSRC =	pcap-@V_PCAP@.c
+CSRC =	pcap.c inet.c gencode.c optimize.c nametoaddr.c \
+	etherent.c savefile.c bpf_filter.c bpf_image.c
+GENSRC = scanner.c grammar.c version.c
+
+SRC =	$(PSRC) $(CSRC) $(GENSRC)
+
+# We would like to say "OBJ = $(SRC:.c=.o)" but Ultrix's make cannot
+# hack the extra indirection
+OBJ =	$(PSRC:.c=.o) $(CSRC:.c=.o) $(GENSRC:.c=.o)
+HDR =	pcap.h pcap-int.h pcap-namedb.h pcap-nit.h pcap-pf.h \
+	ethertype.h gencode.h gnuc.h
+GENHDR = \
+	tokdefs.h
+
+TAGHDR = \
+	bpf/net/bpf.h
+
+TAGFILES = \
+	$(SRC) $(HDR) $(TAGHDR)
+
+CLEANFILES = $(OBJ) libpcap.a $(GENSRC) $(GENHDR) lex.yy.c
+
+all: libpcap.a
+
+libpcap.a: $(OBJ)
+	@rm -f $@
+	$(AR) rc $@ $(OBJ)
+	$(RANLIB) $@
+
+scanner.c: $(srcdir)/scanner.l
+	@rm -f $@
+	$(LEX) -t $< > $$$$.$@; mv $$$$.$@ $@
+
+scanner.o: scanner.c tokdefs.h
+tokdefs.h: grammar.c
+grammar.c: $(srcdir)/grammar.y
+	@rm -f grammar.c tokdefs.h
+	$(YACC) -d $<
+	mv y.tab.c grammar.c
+	mv y.tab.h tokdefs.h
+
+grammar.o: grammar.c
+	@rm -f $@
+	$(CC) $(CFLAGS) -Dyylval=pcap_lval -c grammar.c
+
+version.o: version.c
+version.c: $(srcdir)/VERSION
+	@rm -f $@
+	sed -e 's/.*/char pcap_version[] = "&";/' $(srcdir)/VERSION > $@
+
+install: force
+	$(INSTALL) -m 444 -o bin -g bin libpcap.a $(DESTDIR)$(LIBDEST)/libpcap.a
+	$(RANLIB) $(DESTDIR)$(LIBDEST)/libpcap.a
+
+install-incl: force
+	$(INSTALL) -m 444 -o bin -g bin $(srcdir)/pcap.h \
+	    $(DESTDIR)$(INCLDEST)/pcap.h
+	$(INSTALL) -m 444 -o bin -g bin $(srcdir)/pcap-namedb.h \
+	    $(DESTDIR)$(INCLDEST)/pcap-namedb.h
+	$(INSTALL) -m 444 -o bin -g bin $(srcdir)/net/bpf.h \
+	    $(DESTDIR)$(INCLDEST)/net/bpf.h
+
+install-man: force
+	$(INSTALL) -m 444 -o bin -g bin $(srcdir)/pcap.3 \
+	    $(DESTDIR)$(MANDEST)/man3/pcap.3
+
+clean:
+	rm -f $(CLEANFILES)
+
+distclean:
+	rm -f $(CLEANFILES) Makefile config.cache config.log config.status \
+	    gnuc.h os-proto.h bpf_filter.c net
+
+tags: $(TAGFILES)
+	ctags -wtd $(TAGFILES)
+
+tar:	force
+	@cwd=`pwd` ; dir=`basename $$cwd` ; name=libpcap-`cat VERSION` ; \
+	    list="" ; tar="tar chFFf" ; \
+	    for i in `cat FILES` ; do list="$$list $$name/$$i" ; done; \
+	    echo \
+	    "rm -f ../$$name; ln -s $$dir ../$$name" ; \
+	     rm -f ../$$name; ln -s $$dir ../$$name ; \
+	    echo \
+	    "(cd .. ; $$tar - [lots of files]) | compress > /tmp/$$name.tar.Z" ; \
+	     (cd .. ; $$tar - $$list) | compress > /tmp/$$name.tar.Z ; \
+	    echo \
+	    "rm -f ../$$name" ; \
+	     rm -f ../$$name
+
+force:	/tmp
+depend:	$(GENSRC) force
+	./mkdep -c $(CC) $(DEFS) $(INCLS) $(SRC)

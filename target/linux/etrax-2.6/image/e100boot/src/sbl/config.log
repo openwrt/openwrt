@@ -1,0 +1,90 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:530: checking for gcc
+configure:643: checking whether the C compiler (gcc  ) works
+configure:659: gcc -o conftest    conftest.c  1>&5
+configure:685: checking whether the C compiler (gcc  ) is a cross-compiler
+configure:690: checking whether we are using GNU C
+configure:699: gcc -E conftest.c
+configure:718: checking whether gcc accepts -g
+configure:751: checking for pcap_open_live in -lpcap
+configure:770: gcc -o conftest -g -O2   conftest.c -lpcap   1>&5
+/usr/bin/ld: cannot find -lpcap
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 759 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char pcap_open_live();
+
+int main() {
+pcap_open_live()
+; return 0; }
+configure:799: checking how to run the C preprocessor
+configure:820: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:879: checking for ANSI C header files
+configure:892: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:959: gcc -o conftest -g -O2   conftest.c  1>&5
+configure: In function 'main':
+configure:954: warning: incompatible implicit declaration of built-in function 'exit'
+configure:986: checking for termios.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for sys/ioctl.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for net/if.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for netinet/in.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for netinet/in_systm.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for netinet/ip.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for netinet/udp.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for netinet/tcp.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for netdb.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for arpa/inet.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for sys/socket.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for fcntl.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for linux/if_ether.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for signal.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for string.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for stdlib.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for stdio.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for sys/time.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for unistd.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for sys/stat.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for sys/types.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for errno.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for linux/sockios.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for ctype.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:986: checking for sys/socket.h
+configure:986: checking for pcap/pcap.h
+configure:996: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:992:23: error: pcap/pcap.h: No such file or directory
+configure: failed program was:
+#line 991 "configure"
+#include "confdefs.h"
+#include <pcap/pcap.h>
+configure:1024: checking whether time.h and sys/time.h may both be included
+configure:1038: gcc -c -g -O2  conftest.c 1>&5
