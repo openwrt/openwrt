@@ -1,0 +1,189 @@
+dnl @(#) $Header: /usr/local/cvs/linux/tools/build/e100boot/libpcap-0.4/configure.in,v 1.1 1999/08/26 10:05:21 johana Exp $ (LBL)
+dnl
+dnl Copyright (c) 1994, 1995, 1996, 1997
+dnl	The Regents of the University of California.  All rights reserved.
+dnl
+dnl Process this file with autoconf to produce a configure script.
+dnl
+
+AC_INIT(pcap.c)
+
+AC_CANONICAL_SYSTEM
+
+umask 002
+
+if test -z "$PWD" ; then
+	PWD=`pwd`
+fi
+
+AC_LBL_C_INIT(V_CCOPT, V_INCLS)
+
+AC_CHECK_HEADERS(malloc.h sys/ioccom.h sys/sockio.h)
+
+AC_LBL_FIXINCLUDES
+
+AC_CHECK_FUNCS(ether_hostton strerror)
+
+dnl
+dnl Not all versions of test support -c (character special) but it's a
+dnl better way of testing since the device might be protected. So we
+dnl check in our normal order using -r and then check the for the /dev
+dnl guys again using -c.
+dnl
+AC_ARG_WITH(pcap, [  --with-pcap=TYPE        use packet capture TYPE])
+AC_MSG_CHECKING(packet capture type)
+if test ! -z "$with_pcap" ; then
+	V_PCAP="$withval"
+elif test -r /dev/bpf0 ; then
+	V_PCAP=bpf
+elif test -r /usr/include/net/pfilt.h ; then
+	V_PCAP=pf
+elif test -r /dev/enet ; then
+	V_PCAP=enet
+elif test -r /dev/nit ; then
+	V_PCAP=snit
+elif test -r /usr/include/sys/net/nit.h ; then
+	V_PCAP=nit
+elif test -r /usr/include/net/raw.h ; then
+	V_PCAP=snoop
+elif test -r /usr/include/sys/dlpi.h ; then
+	V_PCAP=dlpi
+elif test -r /usr/include/linux/socket.h ; then
+	V_PCAP=linux
+elif test -c /dev/bpf0 ; then		# check again in case not readable
+	V_PCAP=bpf
+elif test -c /dev/enet ; then		# check again in case not readable
+	V_PCAP=enet
+elif test -c /dev/nit ; then		# check again in case not readable
+	V_PCAP=snit
+else
+	V_PCAP=null
+fi
+AC_MSG_RESULT($V_PCAP)
+
+case "$V_PCAP" in
+
+dlpi)
+	AC_CHECK_HEADERS(sys/bufmod.h sys/dlpi_ext.h)
+	AC_MSG_CHECKING(for /dev/dlpi device)
+	if test -c /dev/dlpi ; then
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_DEV_DLPI)
+	else
+		AC_MSG_RESULT(no)
+		dir="/dev/dlpi"
+		AC_MSG_CHECKING(for $dir directory)
+		if test -d $dir ; then
+			AC_MSG_RESULT(yes)
+			AC_DEFINE_UNQUOTED(PCAP_DEV_PREFIX, "$dir")
+		else
+			AC_MSG_RESULT(no)
+		fi
+	fi
+	;;
+
+linux)
+	AC_CHECK_HEADERS(net/if_arp.h)
+	AC_MSG_CHECKING(Linux kernel version)
+	AC_CACHE_VAL(ac_cv_linux_vers,
+	    ac_cv_linux_vers=`uname -r 2>&1 | \
+		sed -n -e '$s/.* //' -e '$s/\..*//p'`)
+	AC_MSG_RESULT($ac_cv_linux_vers)
+	if test $ac_cv_linux_vers -lt 2 ; then
+		AC_MSG_ERROR(version 2 or higher required; see the INSTALL doc for more info)
+	fi
+	;;
+
+null)
+	AC_MSG_WARN(cannot determine packet capture interface)
+	AC_MSG_WARN((see the INSTALL doc for more info))
+	;;
+
+esac
+
+AC_LBL_LEX_AND_YACC(V_LEX, V_YACC, pcap_)
+
+case "$target_os" in
+
+aix*)
+	dnl Workaround to enable certain features
+	AC_DEFINE(_SUN)
+	;;
+
+hpux9*)
+	AC_DEFINE(HAVE_HPUX9)
+	;;
+
+hpux10.0*)
+	;;
+
+hpux10.1*)
+	;;
+
+hpux*)
+	dnl HPUX 10.20 and above is similar to HPUX 9...
+	AC_DEFINE(HAVE_HPUX10_20)
+	;;
+
+sinix*)
+	AC_MSG_CHECKING(if SINIX compiler defines sinix)
+	AC_CACHE_VAL(ac_cv_cc_sinix_defined,
+		AC_TRY_COMPILE(
+		    [],
+		    [int i = sinix;],
+		    ac_cv_cc_sinix_defined=yes,
+		    ac_cv_cc_sinix_defined=no))
+	    AC_MSG_RESULT($ac_cv_cc_sinix_defined)
+	    if test $ac_cv_cc_sinix_defined = no ; then
+		    AC_DEFINE(sinix)
+	    fi
+	;;
+
+solaris*)
+	AC_DEFINE(HAVE_SOLARIS)
+	;;
+
+linux*)
+	V_INCLS="$V_INCLS -Ilinux-include"
+	;;
+esac
+
+AC_CHECK_PROGS(V_RANLIB, ranlib, @true)
+
+AC_LBL_DEVEL(V_CCOPT)
+
+AC_LBL_SOCKADDR_SA_LEN
+
+AC_LBL_UNALIGNED_ACCESS
+
+if test "${srcdir}" = "." ; then
+	srcdirprefix=""
+else
+	srcdirprefix="./"
+fi
+
+if test -r ${srcdirprefix}lbl/gnuc.h ; then
+	rm -f gnuc.h
+	ln -s ${srcdirprefix}lbl/gnuc.h gnuc.h
+fi
+
+rm -f bpf_filter.c
+ln -s ${srcdirprefix}bpf/net/bpf_filter.c bpf_filter.c
+rm -f net
+ln -s ${srcdirprefix}bpf/net net
+
+AC_SUBST(V_CCOPT)
+AC_SUBST(V_INCLS)
+AC_SUBST(V_LEX)
+AC_SUBST(V_PCAP)
+AC_SUBST(V_RANLIB)
+AC_SUBST(V_YACC)
+
+AC_PROG_INSTALL
+
+AC_OUTPUT(Makefile)
+
+if test -f .devel ; then
+	make depend
+fi
+exit 0

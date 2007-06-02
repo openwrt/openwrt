@@ -1,0 +1,42 @@
+#!/bin/sh
+#
+# Calculates the size left in ETRAX cache when bootloader is loaded.
+#
+
+BOOT_FILE=`dirname $0`/net/net.out
+HEADER_FILE=`dirname $0`/src/e100boot.h
+
+for FILE in $BOOT_FILE $HEADER_FILE; do
+	if [ ! -f $FILE ]; then
+		echo "Could not find the file \"$FILE\"!"
+		exit 1
+	fi
+done
+
+# The cache size is given in hex
+CACHE_SIZE=2000
+
+BSS_SIZE=`nm-cris $BOOT_FILE | grep Ebss | cut -d ' ' -f 1 | tr a-f A-F`
+
+TEXT_SIZE=`nm-cris $BOOT_FILE | grep Stext | cut -d ' ' -f 1 | tr a-f A-F`
+
+IO_BUF_END=`grep IO_BUF_END $HEADER_FILE | awk '{ print $3 }' | \
+	    cut -d x -f 2 | tr a-f A-F`
+
+IO_BUF_START=`grep IO_BUF_START $HEADER_FILE | awk '{ print $3 }' | \
+	      cut -d x -f 2 | tr a-f A-F`
+
+FREE_SIZE=`echo "ibase=16 ; \
+		 $CACHE_SIZE - \
+		 ($BSS_SIZE - $TEXT_SIZE + $IO_BUF_END - $IO_BUF_START)" | \
+	   bc`
+
+echo "Free cache size when cbl is loaded will be:"
+echo -e "\t$FREE_SIZE bytes - size of stack"
+
+if [ $FREE_SIZE -lt 0 ]; then
+	echo "Bootloader is too large! You will have to do some optimizing..."
+	exit 1
+fi
+
+exit 0

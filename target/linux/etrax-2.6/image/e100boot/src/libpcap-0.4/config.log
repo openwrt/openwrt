@@ -1,0 +1,61 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:578: checking host system type
+configure:599: checking target system type
+configure:617: checking build system type
+configure:711: checking for gcc
+configure:788: checking whether the C compiler (gcc  ) works
+configure:802: gcc -o conftest    conftest.c  1>&5
+configure:822: checking whether the C compiler (gcc  ) is a cross-compiler
+configure:827: checking whether we are using GNU C
+configure:836: gcc -E conftest.c
+configure:851: checking whether gcc accepts -g
+configure:884: checking gcc version
+configure:1028: checking how to run the C preprocessor
+configure:1049: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1092: checking for malloc.h
+configure:1102: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1092: checking for sys/ioccom.h
+configure:1102: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1098:24: error: sys/ioccom.h: No such file or directory
+configure: failed program was:
+#line 1097 "configure"
+#include "confdefs.h"
+#include <sys/ioccom.h>
+configure:1092: checking for sys/sockio.h
+configure:1102: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1098:24: error: sys/sockio.h: No such file or directory
+configure: failed program was:
+#line 1097 "configure"
+#include "confdefs.h"
+#include <sys/sockio.h>
+configure:1131: checking for ANSI ioctl definitions
+configure:1155: gcc -c -g -O2  conftest.c 1>&5
+configure:1178: checking for ether_hostton
+configure:1206: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:1178: checking for strerror
+configure:1206: gcc -o conftest -g -O2   conftest.c  1>&5
+configure:1238: checking packet capture type
+configure:1341: checking for net/if_arp.h
+configure:1351: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1378: checking Linux kernel version
+configure:1419: checking for flex
+configure:1452: checking for flex 2.4 or higher
+configure:1478: checking for bison
+configure:1602: checking for ranlib
+configure:1672: checking if sockaddr struct has sa_len member
+configure:1686: gcc -c -g -O2  conftest.c 1>&5
+configure: In function 'main':
+configure:1682: error: 'struct sockaddr' has no member named 'sa_len'
+configure: failed program was:
+#line 1677 "configure"
+#include "confdefs.h"
+
+#	include <sys/types.h>
+#	include <sys/socket.h>
+int main() {
+u_int i = sizeof(((struct sockaddr *)0)->sa_len)
+; return 0; }
+configure:1707: checking if unaligned accesses fail
+configure:1803: checking for a BSD compatible install

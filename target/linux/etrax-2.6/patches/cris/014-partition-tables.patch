@@ -1,0 +1,102 @@
+diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/boot/compressed/hw_settings.S linux-2.6.19.2/arch/cris/arch-v10/boot/compressed/hw_settings.S
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/boot/compressed/hw_settings.S	2007-05-29 23:30:35.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/boot/compressed/hw_settings.S	2007-05-29 23:33:44.000000000 +0200
+@@ -60,3 +60,5 @@
+ 	.dword R_PORT_PB_SET
+ 	.dword PB_SET_VALUE
+ 	.dword 0 ; No more register values
++	.ascii "ACME_PART_MAGIC" ; Magic number
++	.dword 0xdeadc0de
+diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/boot/compressed/hw_settings_416.S linux-2.6.19.2/arch/cris/arch-v10/boot/compressed/hw_settings_416.S
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/boot/compressed/hw_settings_416.S	2007-05-29 23:30:35.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/boot/compressed/hw_settings_416.S	2007-05-29 23:33:44.000000000 +0200
+@@ -60,3 +60,5 @@
+ 	.dword R_PORT_PB_SET
+ 	.dword PB_SET_VALUE
+ 	.dword 0 ; No more register values
++	.ascii "ACME_PART_MAGIC" ; Magic number
++	.dword 0xdeadc0de
+diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/boot/compressed/hw_settings_816.S linux-2.6.19.2/arch/cris/arch-v10/boot/compressed/hw_settings_816.S
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/boot/compressed/hw_settings_816.S	2007-05-29 23:30:35.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/boot/compressed/hw_settings_816.S	2007-05-29 23:33:44.000000000 +0200
+@@ -60,3 +60,5 @@
+ 	.dword R_PORT_PB_SET
+ 	.dword PB_SET_VALUE
+ 	.dword 0 ; No more register values
++	.ascii "ACME_PART_MAGIC" ; Magic number
++	.dword 0xdeadc0de
+diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/boot/compressed/hw_settings_832.S linux-2.6.19.2/arch/cris/arch-v10/boot/compressed/hw_settings_832.S
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/boot/compressed/hw_settings_832.S	2007-05-29 23:30:35.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/boot/compressed/hw_settings_832.S	2007-05-29 23:33:44.000000000 +0200
+@@ -60,3 +60,5 @@
+ 	.dword R_PORT_PB_SET
+ 	.dword PB_SET_VALUE
+ 	.dword 0 ; No more register values
++	.ascii "ACME_PART_MAGIC" ; Magic number
++	.dword 0xdeadc0de
+diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/boot/compressed/hw_settings_MCM.S linux-2.6.19.2/arch/cris/arch-v10/boot/compressed/hw_settings_MCM.S
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/boot/compressed/hw_settings_MCM.S	2007-05-29 23:30:35.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/boot/compressed/hw_settings_MCM.S	2007-05-29 23:33:44.000000000 +0200
+@@ -60,3 +60,5 @@
+ 	.dword R_PORT_PB_SET
+ 	.dword PB_SET_VALUE
+ 	.dword 0 ; No more register values
++	.ascii "ACME_PART_MAGIC" ; Magic number
++	.dword 0xdeadc0de
+diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/drivers/axisflashmap.c linux-2.6.19.2/arch/cris/arch-v10/drivers/axisflashmap.c
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/drivers/axisflashmap.c	2007-05-29 23:30:36.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/drivers/axisflashmap.c	2007-05-29 23:36:31.000000000 +0200
+@@ -421,6 +421,11 @@
+ 	struct partitiontable_entry *ptable;
+ 	int use_default_ptable = 1; /* Until proven otherwise. */
+ 	const char pmsg[] = "  /dev/flash%d at 0x%08x, size 0x%08x\n";
++	unsigned int kernel_part_size = 0;
++	unsigned char *flash_mem = (unsigned char*)(FLASH_CACHED_ADDR);
++	unsigned int flash_scan_count = 0;
++	const char *part_magic = "ACME_PART_MAGIC";
++	unsigned int magic_len = strlen(part_magic);
+ 
+ 	if (!(mymtd = flash_probe())) {
+ 		/* There's no reason to use this module if no flash chip can
+@@ -432,6 +437,32 @@
+ 		       mymtd->name, mymtd->size);
+ 		axisflash_mtd = mymtd;
+ 	}
++	/* scan flash to findout where out partition starts */
++	
++	printk(KERN_INFO "Scanning flash for end of kernel magic\n");
++	for(flash_scan_count = 0; flash_scan_count < 100000; flash_scan_count++){
++		if(strncmp(&flash_mem[flash_scan_count], part_magic, magic_len - 1) == 0){
++			//printk(KERN_INFO "Found  end of kernel magic at 0x%.08X\n", flash_scan_count);
++			kernel_part_size = flash_mem[flash_scan_count + magic_len ];
++			kernel_part_size <<= 8;
++			kernel_part_size += flash_mem[flash_scan_count + magic_len + 2];
++			kernel_part_size <<= 8;
++			kernel_part_size += flash_mem[flash_scan_count + magic_len + 1];
++			kernel_part_size <<= 8;
++			kernel_part_size += flash_mem[flash_scan_count + magic_len + 3];
++			printk(KERN_INFO "Kernel ends at 0x%.08X\n", kernel_part_size);
++			flash_scan_count = 1100000;
++		}
++	}
++	
++	
++	if(kernel_part_size){
++		kernel_part_size = (kernel_part_size & 0xffff0000);
++		//printk(KERN_INFO "Configuring partition sizes total flash 0x%.08X - kernel 0x%.08X - rootfs 0x%.08X\n", mymtd->size, kernel_part_size, mymtd->size - kernel_part_size);
++		axis_default_partitions[0].size = kernel_part_size;
++		axis_default_partitions[1].size =  mymtd->size - axis_default_partitions[0].size;
++		axis_default_partitions[1].offset = axis_default_partitions[0].size;
++	}	
+ 
+ 	if (mymtd) {
+ 		mymtd->owner = THIS_MODULE;
+@@ -527,7 +558,7 @@
+ 
+         if (mymtd) {
+ 		if (use_default_ptable) {
+-			printk(KERN_INFO " Using default partition table.\n");
++			printk(KERN_INFO " Using ACME partition table.\n");
+ 			err = add_mtd_partitions(mymtd, axis_default_partitions,
+ 						 NUM_DEFAULT_PARTITIONS);
+ 		} else {

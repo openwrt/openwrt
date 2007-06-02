@@ -1,0 +1,340 @@
+.\" Copyright (c) 1994, 1996, 1997
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that: (1) source code distributions
+.\" retain the above copyright notice and this paragraph in its entirety, (2)
+.\" distributions including binary code include the above copyright notice and
+.\" this paragraph in its entirety in the documentation or other materials
+.\" provided with the distribution, and (3) all advertising materials mentioning
+.\" features or use of this software display the following acknowledgement:
+.\" ``This product includes software developed by the University of California,
+.\" Lawrence Berkeley Laboratory and its contributors.'' Neither the name of
+.\" the University nor the names of its contributors may be used to endorse
+.\" or promote products derived from this software without specific prior
+.\" written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
+.\" WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.TH PCAP 3  "24 June 1998"
+.SH NAME
+pcap \- Packet Capture library
+.SH SYNOPSIS
+.nf
+.ft B
+#include <pcap.h>
+.ft
+.LP
+.ft B
+pcap_t *pcap_open_live(char *device, int snaplen,
+.ti +8
+int promisc, int to_ms, char *ebuf)
+pcap_t *pcap_open_offline(char *fname, char *ebuf)
+pcap_dumper_t *pcap_dump_open(pcap_t *p, char *fname)
+.ft
+.LP
+.ft B
+char errbuf[PCAP_ERRBUF_SIZE];
+char *pcap_lookupdev(char *errbuf)
+int pcap_lookupnet(char *device, bpf_u_int32 *netp,
+.ti +8
+bpf_u_int32 *maskp, char *errbuf)
+.ft
+.LP
+.ft B
+int pcap_dispatch(pcap_t *p, int cnt,
+.ti +8
+pcap_handler callback, u_char *user)
+int pcap_loop(pcap_t *p, int cnt,
+.ti +8
+pcap_handler callback, u_char *user)
+void pcap_dump(u_char *user, struct pcap_pkthdr *h,
+.ti +8
+u_char *sp)
+.ft
+.LP
+.ft B
+int pcap_compile(pcap_t *p, struct bpf_program *fp,
+.ti +8
+char *str, int optimize, bpf_u_int32 netmask)
+int pcap_setfilter(pcap_t *p, struct bpf_program *fp)
+.ft
+.LP
+.ft B
+u_char *pcap_next(pcap_t *p, struct pcap_pkthdr *h)
+.ft
+.LP
+.ft B
+int pcap_datalink(pcap_t *p)
+int pcap_snapshot(pcap_t *p)
+int pcap_is_swapped(pcap_t *p)
+int pcap_major_version(pcap_t *p)
+int pcap_minor_version(pcap_t *p)
+int pcap_stats(pcap_t *p, struct pcap_stat *ps)
+FILE *pcap_file(pcap_t *p)
+int pcap_fileno(pcap_t *p)
+void pcap_perror(pcap_t *p, char *prefix)
+char *pcap_geterr(pcap_t *p)
+char *pcap_strerror(int error)
+.ft
+.LP
+.ft B
+void pcap_close(pcap_t *p)
+void pcap_dump_close(pcap_dumper_t *p)
+.ft
+.fi
+.SH DESCRIPTION
+The Packet Capture library
+provides a high level interface to packet capture systems. All packets
+on the network, even those destined for other hosts, are accessible
+through this mechanism.
+.PP
+.SH ROUTINES
+.B pcap_open_live()
+is used to obtain a packet capture descriptor to look
+at packets on the network.
+.I device
+is a string that specifies the network device to open.
+.I snaplen
+specifies the maximum number of bytes to capture.
+.I promisc
+specifies if the interface is to be put into promiscuous mode.
+(Note that even if this parameter is false, the interface
+could well be in promiscuous mode for some other reason.)
+.I to_ms
+specifies the read timeout in milliseconds.
+.I ebuf
+is used to return error text and is only set when
+.B pcap_open_live()
+fails and returns
+.BR NULL .
+.PP
+.B pcap_open_offline()
+is called to open a ``savefile'' for reading.
+.I fname
+specifies the name of the file to open. The file has
+the same format as those used by
+.B tcpdump(1)
+and
+.BR tcpslice(1) .
+The name "-" in a synonym for
+.BR stdin .
+.I ebuf
+is used to return error text and is only set when
+.B pcap_open_offline()
+fails and returns
+.BR NULL .
+.PP
+.B pcap_dump_open()
+is called to open a ``savefile'' for writing. The name "-" in a synonym
+for
+.BR stdout .
+.B NULL
+is returned on failure.
+.I p
+is a
+.I pcap
+struct as returned by
+.B pcap_open_offline()
+or
+.BR pcap_open_live() .
+.I fname
+specifies the name of the file to open.
+If
+.B NULL
+is returned,
+.B pcap_geterr()
+can be used to get the error text.
+.PP
+.B pcap_lookupdev()
+returns a pointer to a network device suitable for use with
+.B pcap_open_live()
+and
+.BR pcap_lookupnet() .
+If there is an error,
+.B NULL
+is returned and
+.I errbuf
+is filled in with with an appropriate error message.
+.PP
+.B pcap_lookupnet()
+is used to determine the network number and mask
+associated with the network device
+.BR device .
+Both
+.I netp
+and
+.I maskp
+are
+.I bpf_u_int32
+pointers.
+A return of -1 indicates an error in which case
+.I errbuf
+is filled in with with an appropriate error message.
+.PP
+.B pcap_dispatch()
+is used to collect and process packets.
+.I cnt
+specifies the maximum number of packets to process before returning. A
+.I cnt
+of -1 processes all the packets received in one buffer. A
+.I cnt
+of 0 processes all packets until an error occurs,
+.B EOF
+is reached, or the read times out (when doing live reads and a non-zero
+read timeout is specified).
+.I callback
+specifies a routine to be called with three arguments:
+a
+.I u_char
+pointer which is passed in from
+.BR pcap_dispatch() ,
+a pointer to the
+.I pcap_pkthdr
+struct (which precede the actual network headers and data),
+and a
+.I u_char
+pointer to the packet data. The number of packets read is returned.
+Zero is returned when
+.B EOF
+is reached in a ``savefile.'' A return of -1 indicates
+an error in which case
+.B pcap_perror()
+or
+.BR pcap_geterr()
+may be used to display the error text.
+.PP
+.B pcap_dump()
+outputs a packet to the ``savefile'' opened with
+.BR pcap_dump_open() .
+Note that its calling arguments are suitable for use with
+.BR pcap_dispatch() .
+.PP
+.B pcap_compile()
+is used to compile the string
+.I str
+into a filter program.
+.I program
+is a pointer to a
+.I bpf_program
+struct and is filled in by
+.BR pcap_compile() .
+.I optimize
+controls whether optimization on the resulting code is performed.
+.I netmask
+specifies the netmask of the local net.
+.PP
+.B pcap_setfilter()
+is used to specify a filter program.
+.I fp
+is a pointer to an array of
+.I bpf_program
+struct, usually the result of a call to
+.BR pcap_compile() .
+.B \-1
+is returned on failure;
+.B 0
+is returned on success.
+.PP
+.B pcap_loop()
+is similar to
+.B pcap_dispatch()
+except it keeps reading packets until
+.I cnt
+packets are processed or an error occurs.
+It does
+.B not
+return when live read timeouts occur.
+Rather, specifying a non-zero read timeout to
+.B pcap_open_live()
+and then calling
+.B pcap_dispatch()
+allows the reception and processing of any packets that arrive when the
+timeout occurs.
+A negative
+.I cnt
+causes
+.B pcap_loop()
+to loop forever (or at least until an error occurs).
+.PP
+.B pcap_next()
+returns a
+.I u_char
+pointer to the next packet.
+.PP
+.B pcap_datalink()
+returns the link layer type, e.g.
+.BR DLT_EN10MB .
+.PP
+.B pcap_snapshot()
+returns the snapshot length specified when
+.B pcap_open_live
+was called.
+.PP
+.B pcap_is_swapped()
+returns true if the current ``savefile'' uses a different byte order
+than the current system.
+.PP
+.B pcap_major_version()
+returns the major number of the version of the pcap used to write the
+savefile.
+.PP
+.B pcap_minor_version()
+returns the minor number of the version of the pcap used to write the
+savefile.
+.PP
+.B pcap_file()
+returns the name of the ``savefile.''
+.PP
+.B int pcap_stats()
+returns 0 and fills in a
+.B pcap_stat
+struct. The values represent packet statistics from the start of the
+run to the time of the call. If there is an error or the under lying
+packet capture doesn't support packet statistics, -1 is returned and
+the error text can be obtained with
+.B pcap_perror()
+or
+.BR pcap_geterr() .
+.PP
+.B pcap_fileno()
+returns the file descriptor number of the ``savefile.''
+.PP
+.B pcap_perror()
+prints the text of the last pcap library error on
+.BR stderr ,
+prefixed by
+.IR prefix .
+.PP
+.B pcap_geterr()
+returns the error text pertaining to the last pcap library error.
+.PP
+.B pcap_strerror()
+is provided in case
+.BR strerror (1)
+isn't available.
+.PP
+.B pcap_close()
+closes the files associated with
+.I p
+and deallocates resources.
+.PP
+.B pcap_dump_close()
+closes the ``savefile.''
+.PP
+.SH SEE ALSO
+tcpdump(1), tcpslice(1)
+.SH AUTHORS
+Van Jacobson,
+Craig Leres and
+Steven McCanne, all of the
+Lawrence Berkeley National Laboratory, University of California, Berkeley, CA.
+.LP
+The current version is available via anonymous ftp:
+.LP
+.RS
+.I ftp://ftp.ee.lbl.gov/libpcap.tar.Z
+.RE
+.SH BUGS
+Please send bug reports to libpcap@ee.lbl.gov.

@@ -1,0 +1,314 @@
+=head1 NAME
+
+e100boot - Network and serial port bootloader for the ETRAX100 CPU.
+
+=head1 SYNOPSIS
+
+B<e100boot> [B<--device> I<devicename>]
+[B<--file> I<filename>|- I<addr> [I<size>]]
+[B<--flash> I<ram-source> I<flash-offset> I<size>] [B<--pause> I<iter>]
+[B<--memtest> I<addr> I<addr>] [B<--memclear> I<addr> I<addr>]
+[B<--memdump> I<addr> I<addr>] [B<--setreg> I<addr>|I<regname> I<val>]
+[B<--getreg> I<addr>|I<regname>] [B<--verify> I<addr> I<val>]
+[B<--label> I<label>] [B<--loop> I<addr> I<label>] [B<--5400>] [B<--5600>]
+[B<--testcard>] [B<--devboard>] [B<--testcardlx>] [B<--network>] [B<--serial>]
+[B<--baudrate> I<baudrate>] [B<--bootfile> I<file>] [B<--jump> I<addr>]
+[B<--tofiles>] [B<--cmdsonly>] [B<--images>] [B<--noleds>] [B<--help>]
+
+=head1 DESCRIPTION
+
+This boot loader facilitates loading of files over the network or a
+serial port to an ETRAX100. It can also be used for fairly extensive
+hardware debugging as you can read and write to any memory addresses,
+including the ETRAX100 registers. You can also perform memory checks
+and dumps and copy data to flash memories.
+
+The first packet (or the first 784 bytes in the case of serial boot)
+sent to Etrax100 is loaded into the cache. The code in this packet is
+executed and loads the rest of the boot loader into the cache. The
+cache is the only thing we can be sure of exists on all ETRAX100
+products, so the boot loader is limited to the size of the cache,
+8KB. If further boot loading code is needed you have to set up
+external memory and load another boot loader into it, but this is
+rarely needed.
+
+Two programs are involved in this boot loading, one is the program on
+your workstation that sends the packets to ETRAX100, this is called
+the server boot loader or SBL. The other program is the one in
+ETRAX100 that receives packets from the SBL and acts upon the data
+therein, this is called the client boot loader or CBL.
+
+We don't want to edit and recompile the CBL each time we want to load
+level two to different parts of memory, like we do on different
+products. We also want to change things like the setup of external
+memory before we load data into it. To make the boot loading as
+flexible as possible and separate the CBL from level two we send a
+configuration packet to it. After this packet we load other files, if
+we want to.
+
+The configuration packet can contain information to the CBL which lets
+you: initialize external memory, read and write to all ETRAX100
+registers, read and write to any part of memory, load as many other
+files as you like to any part of memory you like, etc. The
+configuration packet is generated on the fly by the SBL.
+
+Since the CBL is unaware of which product it will be loaded on, it
+doesn't do product specific initialization like setting up the
+memory. This must be done with the configuration packet.
+
+=head2 Debugging printout
+
+When doing network boot the debugging printout from the CBL in ETRAX
+is transmitted back over the network and printed by e100boot. When
+doing serial boot that interface will be used. So in either case you
+will not need any other software or hardware to receive the debugging
+printout.
+
+=head2 Creating binaries
+
+The files containing code to be loaded on the ETRAX100 must be
+stripped using the standard GCC binutils.
+
+=head2 How it works, things you don't want to know.
+
+ack, timeout bla, bla... RTFS.
+
+=head2 Compilation and code
+
+Noteworthy is that two separate ETRAX100 binaries are created, one for
+network boot and one for serial boot. They actually contain exactly
+the same code, but linked in different order. This is because the code
+to load the rest of the bootloader over a specific interface must be
+contained in the first data sent to the ETRAX100 and it is too
+difficult to cram the code for both interfaces in the beginning of the
+same binary. Hence two files.
+
+Other stuff you don't want to know is that the cache is mapped from
+0x380000f0 to 0x380020f0. Code starts at the first address followed by
+data up to the symbol I<Ebss>. At the other end is the buffer for boot
+commands (addresses defined by I<IO_BUF_START> and I<IO_BUF_END> below
+which the stack lies and hopefully the stack and I<Ebss> will never
+meet...
+
+The serial data is loaded from 0x380000f0 to 0x380003ff before
+execution starts.
+
+=head1 OPTIONS
+
+The options are done in the order specified on the command line, so
+you probably want to do any memory setup before loading a file to the
+memory, and you probably do not want to perform a memory test after
+you have loaded a file to that memory.
+
+All addresses and sizes must be in hex with optional '0x' prefix, or a
+ETRAX100 register name. Since the B<--setreg> and B<--getreg> options
+only can be performed on dword aligned dwords only the registers that
+conform to this can be named.
+
+Note also that all addresses must be in uncached memory (bit 31 set),
+as the bootloader lies in the cache. If you access any uncached
+address during boot, the bootloader will be destroyed without warning.
+
+It is also possible to specify an address as I<+address>, in which
+case it is considered to be relative to I<IO_BUF_START>. This is
+especially useful in combination with the B<--loop> option below.
+
+=over 4
+
+=item B<--baudrate> I<baudrate>
+
+Set baudrate for files loaded after the boot loader.
+
+=item B<--bootfile> I<filename>
+
+Which boot image to send to ETRAX instead of the default ones.
+
+=item B<--cmdsonly>
+
+Write the commands to file e100boot.cmds.
+
+=item B<--devboard>
+
+Sets registers for the developer board.
+
+=item B<--device> I<devicename>
+
+Which device to send packets on. For network boot the default is
+eth0. For serial boot it is ttyS0.
+
+=item B<--file> I<filename>|- I<address> [I<size>]
+
+The file to load and the address to load it to. If file is loaded on
+stdin, specify filename '-' followed by a size. Size need only be
+given in this case. You can load as many files as you want, each
+specified with a B<--file>.
+
+=item B<--flash> I<ram-source flash-offset size>
+
+Copies the specified RAM area to the flash.
+
+=item B<--getreg> I<address>|I<regname>
+
+Print value of memory location. Must be uncached address.
+
+=item B<--help>
+
+Print the help information.
+
+=item B<--images>
+
+Print information about the internal boot images, then exit.
+
+=item B<--jump> I<address>
+
+Jump to specified address.
+
+=item B<--label> I<label>
+
+Define a label to be used as target by the B<--loop> command. This
+command is only used by the SBL to calculate the address for the
+B<--loop> and does not take up any space in the configuration packet.
+
+=item B<--loop> I<check-address label>
+
+If the contents of check-address is nonzero it is decremented and the
+command parser continues parsing at the label.
+
+If no external memory is initialized yet it can be convenient to use
+an address in the area occupied by the configuration packet. Run
+e100boot with B<--help> to see which addresses the commands are stored
+at. The size of the commands are four bytes for each command plus four
+bytes per argument to the command.
+
+=item B<--memclear> I<start-address end-address>
+
+Clears the specified memory area.
+
+=item B<--memdump> I<start-address end-address>
+
+Prints the contents of the specified memory area.
+
+=item B<--memtest> I<start-address end-address>
+
+Does a fairly extensive test of the specified memory area. Not only
+catches defect memories but also catches things like wrong memory
+setups where memory addresses are mirrored onto each other.
+
+=item B<--network>
+
+Perform a network boot.
+
+=item B<--noleds>
+
+When using the internal images use a version that does not toggle
+general port PA or PB in ETRAX during the boot procedure.
+
+=item B<--pause> I<iterations>
+
+How many I<iterations> to do of an empty loop.
+
+=item B<--serial>
+
+Do a serial boot.
+
+=item B<--setreg> I<address>|I<regname> I<value>
+
+Load dword to dword aligned memory location.
+
+=item B<--testcard>
+
+Configures the memories for the ETRAX 100 testcard.
+
+=item B<--testcardlx>
+
+Configures the memories for the ETRAX100 LX testcard.
+
+=item B<--tofiles>
+
+Write packets to files e100boot.seq[0..]. Does not transmit the data.
+
+=item B<--verify> I<address value>
+
+Verify that memory contains dword. If not loader will stop. This is to
+avoid booting the wrong unit. If you have the units ethernet address
+in the flash memory you can check for that.
+
+=item B<--5400>
+
+Sets R_WAITSTATES, R_DRAM_TIMING and R_DRAM_CONFIG for the 5400
+printserver.
+
+=item B<--5600>
+
+Sets R_WAITSTATES, R_DRAM_TIMING and R_DRAM_CONFIG for the 5600
+printserver.
+
+=back
+
+=head1 EXAMPLES
+
+If you have a stripped binary (file.ima) linked to 0x08000000 that you want
+to boot via the network, do this:
+
+B<e100boot --file file.ima 88000000 --jump 08000000>
+
+Or something like this. Sets waitstates to zero and loads two files,
+the first from stdin:
+
+B<cat file.ima | e100boot --memtest 88000000 8801ffff --memclear
+88000000 8801ffff --setreg b0000000 0 --getreg b0000000 --file -
+88000000 a000 --file file2.ima 88010000 --memdump 88000000 880000ff
+--jump 08000000>
+
+Or this, enables 16 bit parallel port and flashes the led on PA0:
+
+B<e100boot --testcardlx --setreg R_PORT_PA_SET 0x00000000 --setreg
+R_GEN_CONFIG 0x80000004 --setreg R_PAR0_CONFIG 0x00000200 --setreg
+R_PORT_G_DATA 0x00000000 --pause 0x02000000 --setreg R_PORT_G_DATA
+0xffffffff --pause 0x02000000 --setreg R_PORT_G_DATA 0x00000000 --loop
+0x38001e0b 0x38001e60>
+
+Setup the memory, test the SRAM, print the contents of the first 256
+bytes of SRAM, clear SRAM, test the DRAM, print R_DMA_CH0_CMD, load a
+file to SRAM, load another file to SRAM, load file to DRAM, jump to
+code in SRAM.
+
+B<e100boot --setreg b0000000 1000 --setreg b0000008 00006543 --setreg
+b000000c 12966060 --memtest 88000000 80000 --memdump 88000000 880000ff
+--memclear 88000000 80000 --memtest c0000000 400000 --getreg b00001d0
+--file file1.ima 88000000 --file file2.ima 88010000 --file file3.ima
+c0000000 --jump 88000000>
+
+Boot Linux on the testcard.
+
+B<e100boot --setreg b0000000 1000 --setreg b0000008 6557 --setreg
+b000000c 1b988080 --file timage c0000500 --jump 40000500>
+
+Booting over serial port and using labels to flash the leds on port
+PA.
+
+B<e100boot --serial --device /dev/ttyS1 --baudrate 9600 --label first
+--setreg 0x380020e0 00000001 --setreg R_PORT_PA_SET 0x0000ff00 --pause
+0x02000000 --setreg R_PORT_PA_SET 0x0000ffff --pause 0x02000000 --loop
+0x380020e0 first>
+
+=head1 BUGS
+
+You're kidding, right? Check L<AUTHOR|"AUTHOR"> below. The only thing
+would be the hubris of the author, but that I consider a feature. If
+you find any other 'features' report them to
+technology@axis.com. Don't bother the author directly, he is busy
+playing PlayStation2.
+
+=head1 COPYING
+
+Copyright © 1996-2002 Axis Communications AB.
+
+=head1 AUTHOR
+
+Written by Ronny Ranerup.
+
+=head1 SEE ALSO
+
+The fine source, which you can get at http://developer.axis.com.
+

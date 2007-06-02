@@ -1,0 +1,158 @@
+#!/usr/bin/perl
+#!
+#! FILE NAME  : cconv
+#!
+#! PARAMETERS : Name of C program array variable.
+#!
+#! DESCRIPTION: Converts bytes of a binary file to C source code containing
+#!              char array initialized with the binary file data.
+#!
+#! SUBROUTINES:
+#!
+#!---------------------------------------------------------------------------
+#! HISTORY
+#!
+#! DATE         NAME            CHANGES
+#! ----         ----            -------
+#! Dec 15 1997  Sven Ekstrom    Initial version. Rewritten to Perl from C.
+#! Dec 16 1997  Sven Ekstrom    Fixed bug that generated truncated result.
+#!
+#!---------------------------------------------------------------------------
+#!
+#! (C) Copyright 1997, Axis Communications AB, LUND, SWEDEN
+#!
+#!***************************************************************************
+# @(#) cconv 1.2 12/16/97
+
+#********************** CONSTANT SECTION ************************************
+
+$MyName = 'cconv';
+
+# 
+# Number of bytes per line in the result.
+#
+$LineLength = 8;
+
+#********************** MAIN PROGRAM SECTION ********************************
+
+#
+# Make sure the command line contains the name of a C array.
+#
+if (scalar @ARGV != 1 || $ARGV[0] =~ /^-/)
+{
+  die "$MyName: Usage:\n",
+      "\n",
+      "  Syntax\n",
+      "  $MyName <name of C char array>\n",
+      "\n",
+      "  <name of C char array> : This is the name of the char array where\n",
+      "                           the result is placed.\n",
+      "\n",
+      "  Description\n",
+      "\n",
+      "  Reads input from STDIN as binary data. Each byte of input data is\n",
+      "  converted to C char data in hexadecimal form. The whole file read\n",
+      "  from STDIN is converted and the result, C source code definition of\n",
+      "  a char array, is printed on STDOUT.\n",
+      "\n";
+}
+
+#
+# Start with the name and version of this program and the name of the array.
+#
+print "\n",
+      "/* $MyName 1.2 12/16/97, Copyright (C) 1997, Axis Communications AB */\n",
+      "\n",
+      "const char $ARGV[0]\[\] =\n",
+      "{";
+
+#
+# Read all bytes from STDIN, convert them to char data and print them on
+# STDOUT.
+#
+$CurrentOffset = 0;
+while (!eof(STDIN))
+{
+  $Byte = ord(getc);
+
+  if ($CurrentOffset % $LineLength == 0)
+  {
+    #
+    # Start of a new line.
+    #
+    if ($CurrentOffset != 0)
+    {
+      #
+      # This is not the first byte.
+      #
+      print ",";
+    }
+    #
+    # The new line is indented by 2 spaces.
+    #
+    print "\n",
+          "  ";
+  }
+  else
+  {
+    #
+    # Continuing an old line.
+    #
+    print ", ";
+  }
+
+  #
+  # Print the value of the byte as hex char data.
+  #
+  printf("'\\x%02x'", $Byte);
+
+  $CurrentOffset++;
+}
+
+if ($CurrentOffset == 0)
+{
+  #
+  # Initialize the array with a single byte of zero.
+  #
+  print "\n  '\\x00'";
+}
+
+#
+# End with the closing bracket and semicolon.
+#
+print "\n",
+      "};\n";
+
+exit 0;
+
+
+#********************** SUBROUTINE DEFINITION SECTION ***********************
+
+#****************************************************************************
+#*
+#* SUBROUTINE  :
+#*
+#* PARAMETERS  :
+#*
+#* RETURNS     :
+#*
+#* SIDE EFFECTS:
+#*
+#* DESCRIPTION :
+#*
+#*---------------------------------------------------------------------------
+#* HISTORY
+#*
+#* DATE          NAME            CHANGES
+#* ----          ----            -------
+#* May 05, 1995  Sven Ekstrom    Initial version
+#*
+#****************************************************************************
+
+#sub NN
+#{
+#  local() = @_;
+#
+#}
+
+#************************ END OF FILE cconv *********************************

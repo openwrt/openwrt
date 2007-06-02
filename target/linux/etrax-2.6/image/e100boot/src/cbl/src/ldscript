@@ -1,0 +1,38 @@
+SECTIONS
+{
+  . = 0x380000f0;
+  __Stext = .;
+
+  .text :
+  {
+    KEEP (*(.startup))
+    KEEP (*(.text))
+    *(.text.*)
+    KEEP (*(.rodata))
+    *(.rodata.*)
+  } =0
+
+  __Etext = .;
+
+  .data :
+  {
+    __Sdata = .;
+    KEEP (*(.data))
+    *(.data.*)
+  }
+
+    __Edata = .;
+  . = ALIGN (4);
+   __Sbss = .;
+  .bss :
+  {
+   /* The network crc will land in the first four bytes of the
+	bss. Move the variables out of the way. */
+   . = . + 12;
+   *(.bss.*)
+   *(COMMON)
+  }
+
+  __Ebss = .;
+
+}

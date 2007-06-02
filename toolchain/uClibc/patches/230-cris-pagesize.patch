@@ -1,0 +1,24 @@
+diff -urN uClibc-0.9.28.2.orig/ldso/include/dl-syscall.h uClibc-0.9.28.2/ldso/include/dl-syscall.h
+--- uClibc-0.9.28.2.orig/ldso/include/dl-syscall.h	2007-05-22 20:39:28.000000000 +0200
++++ uClibc-0.9.28.2/ldso/include/dl-syscall.h	2007-05-22 20:41:30.000000000 +0200
+@@ -155,8 +155,9 @@
+ static inline void * _dl_mmap(void * addr, unsigned long size, int prot,
+                               int flags, int fd, unsigned long offset)
+ {
+-	if (offset & ((1 << MMAP2_PAGE_SHIFT) - 1))
++	if (offset & ((1 << MMAP2_PAGE_SHIFT) - 1)){
+ 		return MAP_FAILED;
++	}
+ 	return __syscall_mmap2(addr, size, prot, flags,
+ 	                       fd, (off_t) (offset >> MMAP2_PAGE_SHIFT));
+ }
+diff -urN uClibc-0.9.28.2.orig/libc/sysdeps/linux/cris/bits/uClibc_page.h uClibc-0.9.28.2/libc/sysdeps/linux/cris/bits/uClibc_page.h
+--- uClibc-0.9.28.2.orig/libc/sysdeps/linux/cris/bits/uClibc_page.h	2007-05-22 20:39:28.000000000 +0200
++++ uClibc-0.9.28.2/libc/sysdeps/linux/cris/bits/uClibc_page.h	2007-05-22 20:42:25.000000000 +0200
+@@ -24,5 +24,5 @@
+ #define PAGE_SHIFT	13
+ #define PAGE_SIZE	(1UL << PAGE_SHIFT)
+ #define PAGE_MASK	(~(PAGE_SIZE-1))
+-
++#define MMAP2_PAGE_SHIFT PAGE_SHIFT
+ #endif /* _UCLIBC_PAGE_H */

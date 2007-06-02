@@ -1,0 +1,395 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>e100boot - Network and serial port bootloader for the ETRAX100 CPU.</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+<p><a name="__index__"></a></p>
+<!-- INDEX BEGIN -->
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#debugging_printout">Debugging printout</a></li>
+		<li><a href="#creating_binaries">Creating binaries</a></li>
+		<li><a href="#how_it_works__things_you_don_t_want_to_know_">How it works, things you don't want to know.</a></li>
+		<li><a href="#compilation_and_code">Compilation and code</a></li>
+	</ul>
+
+	<li><a href="#options">OPTIONS</a></li>
+	<li><a href="#examples">EXAMPLES</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#copying">COPYING</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+<!-- INDEX END -->
+
+<hr />
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>e100boot - Network and serial port bootloader for the ETRAX100 CPU.</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p><strong>e100boot</strong> [<strong>--device</strong> <em>devicename</em>]
+[<strong>--file</strong> <em>filename</em>|- <em>addr</em> [<em>size</em>]]
+[<strong>--flash</strong> <em>ram-source</em> <em>flash-offset</em> <em>size</em>] [<strong>--pause</strong> <em>iter</em>]
+[<strong>--memtest</strong> <em>addr</em> <em>addr</em>] [<strong>--memclear</strong> <em>addr</em> <em>addr</em>]
+[<strong>--memdump</strong> <em>addr</em> <em>addr</em>] [<strong>--setreg</strong> <em>addr</em>|<em>regname</em> <em>val</em>]
+[<strong>--getreg</strong> <em>addr</em>|<em>regname</em>] [<strong>--verify</strong> <em>addr</em> <em>val</em>]
+[<strong>--label</strong> <em>label</em>] [<strong>--loop</strong> <em>addr</em> <em>label</em>] [<strong>--5400</strong>] [<strong>--5600</strong>]
+[<strong>--testcard</strong>] [<strong>--devboard</strong>] [<strong>--testcardlx</strong>] [<strong>--network</strong>] [<strong>--serial</strong>]
+[<strong>--baudrate</strong> <em>baudrate</em>] [<strong>--bootfile</strong> <em>file</em>] [<strong>--jump</strong> <em>addr</em>]
+[<strong>--tofiles</strong>] [<strong>--cmdsonly</strong>] [<strong>--images</strong>] [<strong>--noleds</strong>] [<strong>--help</strong>]</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This boot loader facilitates loading of files over the network or a
+serial port to an ETRAX100. It can also be used for fairly extensive
+hardware debugging as you can read and write to any memory addresses,
+including the ETRAX100 registers. You can also perform memory checks
+and dumps and copy data to flash memories.</p>
+<p>The first packet (or the first 784 bytes in the case of serial boot)
+sent to Etrax100 is loaded into the cache. The code in this packet is
+executed and loads the rest of the boot loader into the cache. The
+cache is the only thing we can be sure of exists on all ETRAX100
+products, so the boot loader is limited to the size of the cache,
+8KB. If further boot loading code is needed you have to set up
+external memory and load another boot loader into it, but this is
+rarely needed.</p>
+<p>Two programs are involved in this boot loading, one is the program on
+your workstation that sends the packets to ETRAX100, this is called
+the server boot loader or SBL. The other program is the one in
+ETRAX100 that receives packets from the SBL and acts upon the data
+therein, this is called the client boot loader or CBL.</p>
+<p>We don't want to edit and recompile the CBL each time we want to load
+level two to different parts of memory, like we do on different
+products. We also want to change things like the setup of external
+memory before we load data into it. To make the boot loading as
+flexible as possible and separate the CBL from level two we send a
+configuration packet to it. After this packet we load other files, if
+we want to.</p>
+<p>The configuration packet can contain information to the CBL which lets
+you: initialize external memory, read and write to all ETRAX100
+registers, read and write to any part of memory, load as many other
+files as you like to any part of memory you like, etc. The
+configuration packet is generated on the fly by the SBL.</p>
+<p>Since the CBL is unaware of which product it will be loaded on, it
+doesn't do product specific initialization like setting up the
+memory. This must be done with the configuration packet.</p>
+<p>
+</p>
+<h2><a name="debugging_printout">Debugging printout</a></h2>
+<p>When doing network boot the debugging printout from the CBL in ETRAX
+is transmitted back over the network and printed by e100boot. When
+doing serial boot that interface will be used. So in either case you
+will not need any other software or hardware to receive the debugging
+printout.</p>
+<p>
+</p>
+<h2><a name="creating_binaries">Creating binaries</a></h2>
+<p>The files containing code to be loaded on the ETRAX100 must be
+stripped using the standard GCC binutils.</p>
+<p>
+</p>
+<h2><a name="how_it_works__things_you_don_t_want_to_know_">How it works, things you don't want to know.</a></h2>
+<p>ack, timeout bla, bla... RTFS.</p>
+<p>
+</p>
+<h2><a name="compilation_and_code">Compilation and code</a></h2>
+<p>Noteworthy is that two separate ETRAX100 binaries are created, one for
+network boot and one for serial boot. They actually contain exactly
+the same code, but linked in different order. This is because the code
+to load the rest of the bootloader over a specific interface must be
+contained in the first data sent to the ETRAX100 and it is too
+difficult to cram the code for both interfaces in the beginning of the
+same binary. Hence two files.</p>
+<p>Other stuff you don't want to know is that the cache is mapped from
+0x380000f0 to 0x380020f0. Code starts at the first address followed by
+data up to the symbol <em>Ebss</em>. At the other end is the buffer for boot
+commands (addresses defined by <em>IO_BUF_START</em> and <em>IO_BUF_END</em> below
+which the stack lies and hopefully the stack and <em>Ebss</em> will never
+meet...</p>
+<p>The serial data is loaded from 0x380000f0 to 0x380003ff before
+execution starts.</p>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<p>The options are done in the order specified on the command line, so
+you probably want to do any memory setup before loading a file to the
+memory, and you probably do not want to perform a memory test after
+you have loaded a file to that memory.</p>
+<p>All addresses and sizes must be in hex with optional '0x' prefix, or a
+ETRAX100 register name. Since the <strong>--setreg</strong> and <strong>--getreg</strong> options
+only can be performed on dword aligned dwords only the registers that
+conform to this can be named.</p>
+<p>Note also that all addresses must be in uncached memory (bit 31 set),
+as the bootloader lies in the cache. If you access any uncached
+address during boot, the bootloader will be destroyed without warning.</p>
+<p>It is also possible to specify an address as <em>+address</em>, in which
+case it is considered to be relative to <em>IO_BUF_START</em>. This is
+especially useful in combination with the <strong>--loop</strong> option below.</p>
+<dl>
+<dt><strong><a name="item__2d_2dbaudrate_baudrate"><strong>--baudrate</strong> <em>baudrate</em></a></strong>
+
+<dd>
+<p>Set baudrate for files loaded after the boot loader.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dbootfile_filename"><strong>--bootfile</strong> <em>filename</em></a></strong>
+
+<dd>
+<p>Which boot image to send to ETRAX instead of the default ones.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dcmdsonly"><strong>--cmdsonly</strong></a></strong>
+
+<dd>
+<p>Write the commands to file e100boot.cmds.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2ddevboard"><strong>--devboard</strong></a></strong>
+
+<dd>
+<p>Sets registers for the developer board.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2ddevice_devicename"><strong>--device</strong> <em>devicename</em></a></strong>
+
+<dd>
+<p>Which device to send packets on. For network boot the default is
+eth0. For serial boot it is ttyS0.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dfile_filename_7c_2d_address__5bsize_5d"><strong>--file</strong> <em>filename</em>|- <em>address</em> [<em>size</em>]</a></strong>
+
+<dd>
+<p>The file to load and the address to load it to. If file is loaded on
+stdin, specify filename '-' followed by a size. Size need only be
+given in this case. You can load as many files as you want, each
+specified with a <strong>--file</strong>.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dflash_ram_2dsource_flash_2doffset_size"><strong>--flash</strong> <em>ram-source flash-offset size</em></a></strong>
+
+<dd>
+<p>Copies the specified RAM area to the flash.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dgetreg_address_7cregname"><strong>--getreg</strong> <em>address</em>|<em>regname</em></a></strong>
+
+<dd>
+<p>Print value of memory location. Must be uncached address.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dhelp"><strong>--help</strong></a></strong>
+
+<dd>
+<p>Print the help information.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dimages"><strong>--images</strong></a></strong>
+
+<dd>
+<p>Print information about the internal boot images, then exit.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2djump_address"><strong>--jump</strong> <em>address</em></a></strong>
+
+<dd>
+<p>Jump to specified address.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dlabel_label"><strong>--label</strong> <em>label</em></a></strong>
+
+<dd>
+<p>Define a label to be used as target by the <strong>--loop</strong> command. This
+command is only used by the SBL to calculate the address for the
+<strong>--loop</strong> and does not take up any space in the configuration packet.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dloop_check_2daddress_label"><strong>--loop</strong> <em>check-address label</em></a></strong>
+
+<dd>
+<p>If the contents of check-address is nonzero it is decremented and the
+command parser continues parsing at the label.</p>
+</dd>
+<dd>
+<p>If no external memory is initialized yet it can be convenient to use
+an address in the area occupied by the configuration packet. Run
+e100boot with <strong>--help</strong> to see which addresses the commands are stored
+at. The size of the commands are four bytes for each command plus four
+bytes per argument to the command.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dmemclear_start_2daddress_end_2daddress"><strong>--memclear</strong> <em>start-address end-address</em></a></strong>
+
+<dd>
+<p>Clears the specified memory area.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dmemdump_start_2daddress_end_2daddress"><strong>--memdump</strong> <em>start-address end-address</em></a></strong>
+
+<dd>
+<p>Prints the contents of the specified memory area.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dmemtest_start_2daddress_end_2daddress"><strong>--memtest</strong> <em>start-address end-address</em></a></strong>
+
+<dd>
+<p>Does a fairly extensive test of the specified memory area. Not only
+catches defect memories but also catches things like wrong memory
+setups where memory addresses are mirrored onto each other.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dnetwork"><strong>--network</strong></a></strong>
+
+<dd>
+<p>Perform a network boot.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dnoleds"><strong>--noleds</strong></a></strong>
+
+<dd>
+<p>When using the internal images use a version that does not toggle
+general port PA or PB in ETRAX during the boot procedure.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dpause_iterations"><strong>--pause</strong> <em>iterations</em></a></strong>
+
+<dd>
+<p>How many <em>iterations</em> to do of an empty loop.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dserial"><strong>--serial</strong></a></strong>
+
+<dd>
+<p>Do a serial boot.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dsetreg_address_7cregname_value"><strong>--setreg</strong> <em>address</em>|<em>regname</em> <em>value</em></a></strong>
+
+<dd>
+<p>Load dword to dword aligned memory location.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dtestcard"><strong>--testcard</strong></a></strong>
+
+<dd>
+<p>Configures the memories for the ETRAX 100 testcard.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dtestcardlx"><strong>--testcardlx</strong></a></strong>
+
+<dd>
+<p>Configures the memories for the ETRAX100 LX testcard.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dtofiles"><strong>--tofiles</strong></a></strong>
+
+<dd>
+<p>Write packets to files e100boot.seq[0..]. Does not transmit the data.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2dverify_address_value"><strong>--verify</strong> <em>address value</em></a></strong>
+
+<dd>
+<p>Verify that memory contains dword. If not loader will stop. This is to
+avoid booting the wrong unit. If you have the units ethernet address
+in the flash memory you can check for that.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2d5400"><strong>--5400</strong></a></strong>
+
+<dd>
+<p>Sets R_WAITSTATES, R_DRAM_TIMING and R_DRAM_CONFIG for the 5400
+printserver.</p>
+</dd>
+</li>
+<dt><strong><a name="item__2d_2d5600"><strong>--5600</strong></a></strong>
+
+<dd>
+<p>Sets R_WAITSTATES, R_DRAM_TIMING and R_DRAM_CONFIG for the 5600
+printserver.</p>
+</dd>
+</li>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="examples">EXAMPLES</a></h1>
+<p>If you have a stripped binary (file.ima) linked to 0x08000000 that you want
+to boot via the network, do this:</p>
+<p><strong>e100boot --file file.ima 88000000 --jump 08000000</strong></p>
+<p>Or something like this. Sets waitstates to zero and loads two files,
+the first from stdin:</p>
+<p><strong>cat file.ima | e100boot --memtest 88000000 8801ffff --memclear
+88000000 8801ffff --setreg b0000000 0 --getreg b0000000 --file -
+88000000 a000 --file file2.ima 88010000 --memdump 88000000 880000ff
+--jump 08000000</strong></p>
+<p>Or this, enables 16 bit parallel port and flashes the led on PA0:</p>
+<p><strong>e100boot --testcardlx --setreg R_PORT_PA_SET 0x00000000 --setreg
+R_GEN_CONFIG 0x80000004 --setreg R_PAR0_CONFIG 0x00000200 --setreg
+R_PORT_G_DATA 0x00000000 --pause 0x02000000 --setreg R_PORT_G_DATA
+0xffffffff --pause 0x02000000 --setreg R_PORT_G_DATA 0x00000000 --loop
+0x38001e0b 0x38001e60</strong></p>
+<p>Setup the memory, test the SRAM, print the contents of the first 256
+bytes of SRAM, clear SRAM, test the DRAM, print R_DMA_CH0_CMD, load a
+file to SRAM, load another file to SRAM, load file to DRAM, jump to
+code in SRAM.</p>
+<p><strong>e100boot --setreg b0000000 1000 --setreg b0000008 00006543 --setreg
+b000000c 12966060 --memtest 88000000 80000 --memdump 88000000 880000ff
+--memclear 88000000 80000 --memtest c0000000 400000 --getreg b00001d0
+--file file1.ima 88000000 --file file2.ima 88010000 --file file3.ima
+c0000000 --jump 88000000</strong></p>
+<p>Boot Linux on the testcard.</p>
+<p><strong>e100boot --setreg b0000000 1000 --setreg b0000008 6557 --setreg
+b000000c 1b988080 --file timage c0000500 --jump 40000500</strong></p>
+<p>Booting over serial port and using labels to flash the leds on port
+PA.</p>
+<p><strong>e100boot --serial --device /dev/ttyS1 --baudrate 9600 --label first
+--setreg 0x380020e0 00000001 --setreg R_PORT_PA_SET 0x0000ff00 --pause
+0x02000000 --setreg R_PORT_PA_SET 0x0000ffff --pause 0x02000000 --loop
+0x380020e0 first</strong></p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>You're kidding, right? Check <a href="#author">AUTHOR</a> below. The only thing
+would be the hubris of the author, but that I consider a feature. If
+you find any other 'features' report them to
+<a href="mailto:technology@axis.com.">technology@axis.com.</a> Don't bother the author directly, he is busy
+playing PlayStation2.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copying">COPYING</a></h1>
+<p>Copyright © 1996-2002 Axis Communications AB.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Written by Ronny Ranerup.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>The fine source, which you can get at <a href="http://developer.axis.com.">http://developer.axis.com.</a></p>
+
+</body>
+
+</html>

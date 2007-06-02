@@ -1,0 +1,60 @@
+diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/boot/Makefile linux-2.6.19.2/arch/cris/arch-v10/boot/Makefile
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/boot/Makefile	2007-05-19 14:31:06.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/boot/Makefile	2007-05-19 14:32:24.000000000 +0200
+@@ -2,7 +2,7 @@
+ # arch/cris/arch-v10/boot/Makefile
+ #
+ 
+-OBJCOPY = objcopy-cris
++OBJCOPY = /usr/local/cris/objcopy-cris
+ OBJCOPYFLAGS = -O binary --remove-section=.bss
+ 
+ subdir- := compressed rescue
+diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/boot/compressed/Makefile linux-2.6.19.2/arch/cris/arch-v10/boot/compressed/Makefile
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/boot/compressed/Makefile	2007-05-19 14:31:06.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/boot/compressed/Makefile	2007-05-19 14:33:45.000000000 +0200
+@@ -4,10 +4,10 @@
+ 
+ CC = gcc-cris -melf $(LINUXINCLUDE)
+ CFLAGS = -O2
+-LD = ld-cris
++LD = /usr/local/cris/ld-cris
+ LDFLAGS = -T $(obj)/decompress.ld
+ OBJECTS = $(obj)/head.o $(obj)/misc.o
+-OBJCOPY = objcopy-cris
++OBJCOPY = /usr/local/cris/objcopy-cris
+ OBJCOPYFLAGS = -O binary --remove-section=.bss
+ 
+ quiet_cmd_image = BUILD   $@
+@@ -22,10 +22,10 @@
+ 	$(call if_changed,objcopy)
+ 
+ $(obj)/head.o: $(obj)/head.S .config
+-	@$(CC) -D__ASSEMBLY__ -traditional -c $< -o $@
++	/usr/local/cris/gcc-cris -melf $(LINUXINCLUDE) -D__ASSEMBLY__ -traditional -c $< -o $@
+ 
+ $(obj)/misc.o: $(obj)/misc.c .config
+-	@$(CC) -D__KERNEL__ -c $< -o $@
++	/usr/local/cris/gcc-cris -melf $(LINUXINCLUDE) -D__KERNEL__ -c $< -o $@
+ 
+ $(obj)/vmlinux: $(obj)/piggy.gz $(obj)/decompress.bin FORCE
+ 	$(call if_changed,image)
+diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/boot/rescue/Makefile linux-2.6.19.2/arch/cris/arch-v10/boot/rescue/Makefile
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/boot/rescue/Makefile	2007-05-19 14:31:06.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/boot/rescue/Makefile	2007-05-19 14:34:25.000000000 +0200
+@@ -2,12 +2,12 @@
+ # Makefile for rescue (bootstrap) code
+ #
+ 
+-CC = gcc-cris -mlinux $(LINUXINCLUDE)
++CC = /usr/local/cris/gcc-cris -mlinux $(LINUXINCLUDE)
+ CFLAGS = -O2
+ AFLAGS = -traditional
+-LD = gcc-cris -mlinux -nostdlib 
++LD = /usr/local/cris/gcc-cris -mlinux -nostdlib 
+ LDFLAGS = -T $(obj)/rescue.ld
+-OBJCOPY = objcopy-cris
++OBJCOPY = /usr/local/cris/objcopy-cris
+ OBJCOPYFLAGS = -O binary --remove-section=.bss
+ obj-y = head.o
+ OBJECT = $(obj)/$(obj-y)

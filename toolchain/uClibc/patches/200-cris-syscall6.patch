@@ -1,0 +1,34 @@
+diff -urN uClibc-0.9.28.2.orig/libc/sysdeps/linux/cris/bits/syscalls.h uClibc-0.9.28.2/libc/sysdeps/linux/cris/bits/syscalls.h
+--- uClibc-0.9.28.2.orig/libc/sysdeps/linux/cris/bits/syscalls.h	2007-05-15 19:45:43.000000000 +0200
++++ uClibc-0.9.28.2/libc/sysdeps/linux/cris/bits/syscalls.h	2007-05-15 19:47:20.000000000 +0200
+@@ -62,6 +62,30 @@
+ return (type) (INLINE_SYSCALL(name, 5, arg1, arg2, arg3, arg4, arg5)); \
+ }
+ 
++#define _syscall6(type,name,type1,arg1,type2,arg2,type3,arg3,type4,arg4, \
++	  type5,arg5,type6,arg6) \
++type name (type1 arg1,type2 arg2,type3 arg3,type4 arg4,type5 arg5,type6 arg6) \
++{ \
++  register long __a __asm__ ("r10") = (long) arg1; \
++  register long __b __asm__ ("r11") = (long) arg2; \
++  register long __c __asm__ ("r12") = (long) arg3; \
++  register long __d __asm__ ("r13") = (long) arg4; \
++  register long __n_ __asm__ ("r9") = (__NR_##name); \
++  __asm__ __volatile__ (".ifnc %0%1%3%4%5,$r10$r9$r11$r12$r13\n\t" \
++			".err\n\t" \
++			".endif\n\t" \
++			"move %6,$mof\n\tmove %7,$srp\n\t" \
++			"break 13" \
++			: "=r" (__a) \
++			: "r" (__n_), "0" (__a), "r" (__b), \
++			  "r" (__c), "r" (__d), "g" (arg5), "g" (arg6)\
++			: "srp"); \
++  if (__a >= 0) \
++     return (type) __a; \
++   __set_errno ( -__a); \
++  return (type) -1; \
++}
++
+ #undef INLINE_SYSCALL
+ #define INLINE_SYSCALL(name, nr, args...)	\
+   ({						\
