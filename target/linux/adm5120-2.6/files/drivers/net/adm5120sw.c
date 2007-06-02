@@ -21,6 +21,7 @@
 #include "adm5120sw.h"
 
 #include <asm/mach-adm5120/adm5120_info.h>
+#include <asm/mach-adm5120/adm5120_irq.h>
 
 MODULE_AUTHOR("Jeroen Vreeken (pe1rxq@amsat.org)");
 MODULE_DESCRIPTION("ADM5120 ethernet switch driver");
@@ -385,7 +386,7 @@ static int __init adm5120_sw_init(void)
 	int i, err;
 	struct net_device *dev;
 
-	err = request_irq(SW_IRQ, adm5120_sw_irq, 0, "ethernet switch", NULL);
+	err = request_irq(ADM5120_IRQ_SWITCH, adm5120_sw_irq, 0, "ethernet switch", NULL);
 	if (err)
 		goto out;
 
@@ -434,7 +435,7 @@ static int __init adm5120_sw_init(void)
 		memset(netdev_priv(dev), 0, sizeof(struct adm5120_sw));
 		((struct adm5120_sw*)netdev_priv(dev))->port = i;
 		dev->base_addr = SW_BASE;
-		dev->irq = SW_IRQ;
+		dev->irq = ADM5120_IRQ_SWITCH;
 		dev->open = adm5120_sw_open;
 		dev->hard_start_xmit = adm5120_sw_tx;
 		dev->stop = adm5120_sw_stop;
@@ -469,7 +470,7 @@ out_int:
 		unregister_netdev(adm5120_devs[i-1]);
 		free_netdev(adm5120_devs[i-1]);
 	}
-	free_irq(SW_IRQ, NULL);
+	free_irq(ADM5120_IRQ_SWITCH, NULL);
 out:
 	printk(KERN_ERR "ADM5120 Ethernet switch init failed\n");
 	return err;
@@ -484,7 +485,7 @@ static void __exit adm5120_sw_exit(void)
 		free_netdev(adm5120_devs[i-1]);
 	}
 
-	free_irq(SW_IRQ, NULL);
+	free_irq(ADM5120_IRQ_SWITCH, NULL);
 
 	for (i = 0; i < ADM5120_DMA_RXH; i++) {
 		if (!adm5120_skb_rxh[i])

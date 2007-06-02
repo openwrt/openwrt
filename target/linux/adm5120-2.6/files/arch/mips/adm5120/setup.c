@@ -15,15 +15,13 @@
 #include <asm/io.h>
 #include <asm/time.h>
 
-#include <adm5120_info.h>
+#include <asm/mach-adm5120/adm5120_info.h>
+#include <asm/mach-adm5120/adm5120_defs.h>
+#include <asm/mach-adm5120/adm5120_irq.h>
+
+extern void adm5120_time_init(void) __init;
 
 #define ADM5120_SOFTRESET	0x12000004
-#define STATUS_IE		0x00000001
-#define ALLINTS (IE_IRQ0 | IE_IRQ5 | STATUS_IE)
-
-void  mips_time_init(void);
-
-extern unsigned int mips_counter_frequency;
 
 void adm5120_restart(char *command)
 {
@@ -43,25 +41,11 @@ void adm5120_power_off(void)
         adm5120_halt();
 }
 
-void __init adm5120_time_init(void)
-{
-	mips_counter_frequency = adm5120_speed >> 1;
-}
-
-void __init plat_timer_setup(struct irqaction *irq)
-{
-	/* to generate the first timer interrupt */
-	write_c0_compare(read_c0_count()+ mips_counter_frequency/HZ);
-	clear_c0_status(ST0_BEV);
-	set_c0_status(ALLINTS);
-}
-
 void __init plat_mem_setup(void)
 {
 	printk(KERN_INFO "ADM5120 board setup\n");
 
 	board_time_init = adm5120_time_init;
-	//board_timer_setup = mips_timer_setup;
 
 	_machine_restart = adm5120_restart;
 	_machine_halt = adm5120_halt;
@@ -75,16 +59,15 @@ const char *get_system_type(void)
 	return adm5120_board_name();
 }
 
-#ifdef CONFIG_USB
 static struct resource adm5120_hcd_resources[] = {
 	[0] = {
-		.start	= 0x11200000,
-		.end	= 0x11200084,
+		.start	= ADM5120_USBC_BASE,
+		.end	= ADM5120_USBC_BASE+ADM5120_USBC_SIZE-1,
 		.flags	= IORESOURCE_MEM,
 	},
 	[1] = {
-		.start	= 0x3,
-		.end	= 0x3,
+		.start	= ADM5120_IRQ_USBC,
+		.end	= ADM5120_IRQ_USBC,
 		.flags	= IORESOURCE_IRQ,
 	},
 };
@@ -105,5 +88,4 @@ static int __init adm5120_init(void)
 	return platform_add_devices(devices, ARRAY_SIZE(devices));
 }
 
-arch_initcall(adm5120_init);
-#endif
+subsys_initcall(adm5120_init);
