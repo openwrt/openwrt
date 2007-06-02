@@ -1,0 +1,50 @@
+Binary files linux-2.6.19.2.orig/include/linux/byteorder/.swab.h.swp and linux-2.6.19.2/include/linux/byteorder/.swab.h.swp differ
+diff -urN linux-2.6.19.2.orig/include/linux/byteorder/swab.h linux-2.6.19.2/include/linux/byteorder/swab.h
+--- linux-2.6.19.2.orig/include/linux/byteorder/swab.h	2007-06-02 03:13:27.000000000 +0200
++++ linux-2.6.19.2/include/linux/byteorder/swab.h	2007-06-02 03:14:52.000000000 +0200
+@@ -20,6 +20,8 @@
+ /* casts are necessary for constants, because we never know how for sure
+  * how U/UL/ULL map to __u16, __u32, __u64. At least not in a portable way.
+  */
++
++#ifndef _BITS_BYTESWAP_H
+ #define ___swab16(x) \
+ ({ \
+ 	__u16 __x = (x); \
+@@ -37,6 +39,8 @@
+ 		(((__u32)(__x) & (__u32)0x00ff0000UL) >>  8) | \
+ 		(((__u32)(__x) & (__u32)0xff000000UL) >> 24) )); \
+ })
++#endif
++
+ 
+ #define ___swab64(x) \
+ ({ \
+@@ -129,11 +133,13 @@
+ #  define __swab64(x) __fswab64(x)
+ #endif /* OPTIMIZE */
+ 
+-
++#ifndef _BITS_BYTESWAP_H
+ static __inline__ __attribute_const__ __u16 __fswab16(__u16 x)
+ {
+ 	return __arch__swab16(x);
+ }
++#endif
++
+ static __inline__ __u16 __swab16p(const __u16 *x)
+ {
+ 	return __arch__swab16p(x);
+@@ -143,10 +149,12 @@
+ 	__arch__swab16s(addr);
+ }
+ 
++#ifndef _BITS_BYTESWAP_H
+ static __inline__ __attribute_const__ __u32 __fswab32(__u32 x)
+ {
+ 	return __arch__swab32(x);
+ }
++#endif
+ static __inline__ __u32 __swab32p(const __u32 *x)
+ {
+ 	return __arch__swab32p(x);
