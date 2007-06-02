@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=cris
 BOARD:=etrax
-BOARDNAME:=FOXBOARD (ETRAX 100LX)
+BOARDNAME:=Foxboard (ETRAX 100LX)
 FEATURES:=squashfs jffs2
 LINUX_VERSION:=2.6.19.2
 
