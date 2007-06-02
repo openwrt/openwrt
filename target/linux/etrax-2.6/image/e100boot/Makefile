@@ -13,6 +13,10 @@ PKG_NAME:=e100boot
 PKG_VERSION:=0.1
 PKG_RELEASE:=1
 
+PKG_SOURCE:=e100boot.tar.bz2
+PKG_SOURCE_URL:=http://www.acmesystems.it/download/owrt
+PKG_MD5SUM:=
+
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
 
 CRLF_WORKAROUND=1
@@ -20,9 +24,7 @@ CRLF_WORKAROUND=1
 include $(INCLUDE_DIR)/package.mk
 
 define Build/Compile
-	mkdir -p $(PKG_BUILD_DIR)
-	cp -r ./src/* $(PKG_BUILD_DIR)
-	make -C $(PKG_BUILD_DIR)
+	make -C $(PKG_BUILD_DIR)  CC=$(TARGET_CC) STRIP=true 
 endef
 
 define Build/InstallDev
