@@ -1,0 +1,172 @@
+diff -ruaN linux-2.4.34.orig/Documentation/Configure.help linux-2.4.34/Documentation/Configure.help
+--- linux-2.4.34.orig/Documentation/Configure.help	2007-06-01 12:17:16.000000000 +0100
++++ linux-2.4.34/Documentation/Configure.help	2007-06-01 12:20:20.000000000 +0100
+@@ -2986,6 +2986,14 @@
+   If you want to compile it as a module, say M here and read
+   <file:Documentation/modules.txt>.  If unsure, say `N'.
+ 
++iprange match support
++CONFIG_IP_NF_MATCH_IPRANGE
++  This option makes possible to match IP addresses against
++  IP address ranges.
++
++  If you want to compile it as a module, say M here and read
++  <file:Documentation/modules.txt>.  If unsure, say `N'.
++
+ Condition variable match support
+ CONFIG_IP_NF_MATCH_CONDITION
+   This option allows you to match firewall rules against condition
+diff -ruaN linux-2.4.34.orig/include/linux/netfilter_ipv4/ipt_iprange.h linux-2.4.34/include/linux/netfilter_ipv4/ipt_iprange.h
+--- linux-2.4.34.orig/include/linux/netfilter_ipv4/ipt_iprange.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.34/include/linux/netfilter_ipv4/ipt_iprange.h	2007-06-01 12:20:20.000000000 +0100
+@@ -0,0 +1,23 @@
++#ifndef _IPT_IPRANGE_H
++#define _IPT_IPRANGE_H
++
++#define IPRANGE_SRC		0x01	/* Match source IP address */
++#define IPRANGE_DST		0x02	/* Match destination IP address */
++#define IPRANGE_SRC_INV		0x10	/* Negate the condition */
++#define IPRANGE_DST_INV		0x20	/* Negate the condition */
++
++struct ipt_iprange {
++	/* Inclusive: network order. */
++	u_int32_t min_ip, max_ip;
++};
++
++struct ipt_iprange_info
++{
++	struct ipt_iprange src;
++	struct ipt_iprange dst;
++
++	/* Flags from above */
++	u_int8_t flags;
++};
++
++#endif /* _IPT_IPRANGE_H */
+diff -ruaN linux-2.4.34.orig/net/ipv4/netfilter/Config.in linux-2.4.34/net/ipv4/netfilter/Config.in
+--- linux-2.4.34.orig/net/ipv4/netfilter/Config.in	2007-06-01 12:17:17.000000000 +0100
++++ linux-2.4.34/net/ipv4/netfilter/Config.in	2007-06-01 12:20:20.000000000 +0100
+@@ -27,6 +27,7 @@
+ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; then
+ # The simple matches.
+   dep_tristate '  limit match support' CONFIG_IP_NF_MATCH_LIMIT $CONFIG_IP_NF_IPTABLES
++  dep_tristate '  IP range match support' CONFIG_IP_NF_MATCH_IPRANGE $CONFIG_IP_NF_IPTABLES
+   dep_tristate '  quota match support' CONFIG_IP_NF_MATCH_QUOTA $CONFIG_IP_NF_IPTABLES
+ 
+   dep_tristate '  IP set support' CONFIG_IP_NF_SET $CONFIG_IP_NF_IPTABLES
+diff -ruaN linux-2.4.34.orig/net/ipv4/netfilter/ipt_iprange.c linux-2.4.34/net/ipv4/netfilter/ipt_iprange.c
+--- linux-2.4.34.orig/net/ipv4/netfilter/ipt_iprange.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.34/net/ipv4/netfilter/ipt_iprange.c	2007-06-01 12:20:20.000000000 +0100
+@@ -0,0 +1,101 @@
++/*
++ * iptables module to match IP address ranges
++ *   (c) 2003 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
++ *
++ * Released under the terms of GNU GPLv2.
++ *
++ */
++#include <linux/module.h>
++#include <linux/skbuff.h>
++#include <linux/ip.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ipt_iprange.h>
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>");
++MODULE_DESCRIPTION("iptables arbitrary IP range match module");
++
++#if 0
++#define DEBUGP printk
++#else
++#define DEBUGP(format, args...)
++#endif
++
++static int
++match(const struct sk_buff *skb,
++      const struct net_device *in,
++      const struct net_device *out,
++      const void *matchinfo,
++      int offset,
++      const void *hdr,
++      u_int16_t datalen,
++      int *hotdrop)
++{
++	const struct ipt_iprange_info *info = matchinfo;
++	const struct iphdr *iph = skb->nh.iph;
++	
++
++	if (info->flags & IPRANGE_SRC) {
++		if (((ntohl(iph->saddr) < ntohl(info->src.min_ip))
++			  || (ntohl(iph->saddr) > ntohl(info->src.max_ip)))
++			 ^ !!(info->flags & IPRANGE_SRC_INV)) {
++			DEBUGP("src IP %u.%u.%u.%u NOT in range %s"
++			       "%u.%u.%u.%u-%u.%u.%u.%u\n",
++				NIPQUAD(iph->saddr),
++			        info->flags & IPRANGE_SRC_INV ? "(INV) " : "",
++				NIPQUAD(info->src.min_ip),
++				NIPQUAD(info->src.max_ip));
++			return 0;
++		}
++	}
++	if (info->flags & IPRANGE_DST) {
++		if (((ntohl(iph->daddr) < ntohl(info->dst.min_ip))
++			  || (ntohl(iph->daddr) > ntohl(info->dst.max_ip)))
++			 ^ !!(info->flags & IPRANGE_DST_INV)) {
++			DEBUGP("dst IP %u.%u.%u.%u NOT in range %s"
++			       "%u.%u.%u.%u-%u.%u.%u.%u\n",
++				NIPQUAD(iph->daddr),
++			        info->flags & IPRANGE_DST_INV ? "(INV) " : "",
++				NIPQUAD(info->dst.min_ip),
++				NIPQUAD(info->dst.max_ip));
++			return 0;
++		}
++	}
++	return 1;
++}
++
++static int check(const char *tablename,
++		 const struct ipt_ip *ip,
++		 void *matchinfo,
++		 unsigned int matchsize,
++		 unsigned int hook_mask)
++{
++	/* verify size */
++	if (matchsize != IPT_ALIGN(sizeof(struct ipt_iprange_info)))
++		return 0;
++
++	return 1;
++}
++
++static struct ipt_match iprange_match = 
++{ 
++	.list = { NULL, NULL }, 
++	.name = "iprange", 
++	.match = &match, 
++	.checkentry = &check, 
++	.destroy = NULL, 
++	.me = THIS_MODULE
++};
++
++static int __init init(void)
++{
++	return ipt_register_match(&iprange_match);
++}
++
++static void __exit fini(void)
++{
++	ipt_unregister_match(&iprange_match);
++}
++
++module_init(init);
++module_exit(fini);
+diff -ruaN linux-2.4.34.orig/net/ipv4/netfilter/Makefile linux-2.4.34/net/ipv4/netfilter/Makefile
+--- linux-2.4.34.orig/net/ipv4/netfilter/Makefile	2007-06-01 12:17:17.000000000 +0100
++++ linux-2.4.34/net/ipv4/netfilter/Makefile	2007-06-01 12:20:20.000000000 +0100
+@@ -90,6 +90,7 @@
+ # matches
+ obj-$(CONFIG_IP_NF_MATCH_HELPER) += ipt_helper.o
+ obj-$(CONFIG_IP_NF_MATCH_LIMIT) += ipt_limit.o
++obj-$(CONFIG_IP_NF_MATCH_IPRANGE) += ipt_iprange.o
+ obj-$(CONFIG_IP_NF_MATCH_QUOTA) += ipt_quota.o
+ obj-$(CONFIG_IP_NF_MATCH_MARK) += ipt_mark.o
+ obj-$(CONFIG_IP_NF_MATCH_SET) += ipt_set.o

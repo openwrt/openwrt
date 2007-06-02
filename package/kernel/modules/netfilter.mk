@@ -161,6 +161,19 @@ define KernelPackage/ipt-ulog
 endef
 $(eval $(call KernelPackage,ipt-ulog))
 
+define KernelPackage/ipt-iprange
+  TITLE:=Module for matching ip ranges
+  DESCRIPTION:=\
+	Netfilter (IPv4) module for matching ip ranges \\\
+	\\\
+	Includes: \\\
+	- ipt_IPRANGE
+  FILES:=$(LINUX_DIR)/net/ipv4/netfilter/ipt_iprange.$(LINUX_KMOD_SUFFIX)
+  SUBMENU:=$(NFMENU)
+  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_IPRANGE-m)))
+endef
+$(eval $(call KernelPackage,ipt-iprange))
+
 define KernelPackage/ipt-extra
   TITLE:=Extra modules
   DESCRIPTION:=\

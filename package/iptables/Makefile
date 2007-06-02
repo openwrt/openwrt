@@ -133,6 +133,17 @@ define Package/iptables-mod-ulog
 	- libipt_ULOG
 endef
 
+define Package/iptables-mod-iprange
+  $(call Package/iptables/Default)
+  DEPENDS:=iptables +kmod-ipt-iprange
+  TITLE:=ip range module
+  DESCRIPTION:=\
+	iptables extensions for matching ip ranges.\\\
+	\\\
+	Includes: \\\
+	- libipt_iprange
+endef
+
 define Package/iptables-mod-extra
   $(call Package/iptables/Default)
   DEPENDS:=iptables +kmod-ipt-extra
@@ -257,5 +268,6 @@ $(eval $(call BuildPlugin,iptables-mod-imq,$(IPT_IMQ-m)))
 $(eval $(call BuildPlugin,iptables-mod-ipopt,$(IPT_IPOPT-m)))
 $(eval $(call BuildPlugin,iptables-mod-ipsec,$(IPT_IPSEC-m)))
 $(eval $(call BuildPlugin,iptables-mod-nat,$(IPT_NAT-m)))
+$(eval $(call BuildPlugin,iptables-mod-iprange,$(IPT_IPRANGE-m)))
 $(eval $(call BuildPlugin,iptables-mod-ulog,$(IPT_ULOG-m)))
 $(eval $(call BuildPackage,ip6tables))
