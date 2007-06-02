@@ -47,12 +47,19 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  			dev_kfree_skb(skb);
  			skb = NULL;
  			goto rx_next;
-@@ -5806,6 +5790,20 @@
+@@ -5806,6 +5790,27 @@
  				   sc->sc_hwmap[rs->rs_rate].ieeerate,
  				   rs->rs_rssi);
  
 +		/* MIC failure. Drop the packet in any case */
 +		if (mic_fail) {
++			/* Drop control frames which are reported with mic error */
++		    if ((((struct ieee80211_frame *)skb->data)->i_fc[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL) { 
++				dev_kfree_skb(skb);
++				skb = NULL;
++				mic_fail = 0;
++				goto rx_next;
++			}
 +			ni = ieee80211_find_rxnode(ic, 
 +				(const struct ieee80211_frame_min *) skb->data);
 +			if (ni != NULL) {
