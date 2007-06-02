@@ -1,6 +1,14 @@
 diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
 --- madwifi.old/ath/if_ath.c	2007-06-01 12:22:06.641518272 +0200
 +++ madwifi.dev/ath/if_ath.c	2007-06-01 12:22:55.326117088 +0200
+@@ -407,7 +407,6 @@
+  * and use the next two bits as the index of the VAP.
+  */
+ #define ATH_SET_VAP_BSSID_MASK(bssid_mask)      ((bssid_mask)[0] &= ~(((ATH_BCBUF-1)<<2)|0x02))
+-#define ATH_GET_VAP_ID(bssid)                   ((bssid)[0] >> 2)
+ #define ATH_SET_VAP_BSSID(bssid, id) \
+ 		do { \
+ 			if (id) \
 @@ -1048,9 +1048,12 @@
  			ic_opmode = opmode;
  		break;
@@ -121,7 +129,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON |
  			  HAL_RX_FILTER_PROBEREQ | HAL_RX_FILTER_PROM);
  	return rfilt;
-@@ -5809,12 +5801,19 @@
+@@ -5809,12 +5801,20 @@
  			type = ieee80211_input(ni, skb, rs->rs_rssi, rs->rs_tstamp);
  			ieee80211_unref_node(&ni);
  		} else {
@@ -132,7 +140,8 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  			 */
 -			ni = ieee80211_find_rxnode(ic,
 -				(const struct ieee80211_frame_min *) skb->data);
-+			if ((wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK) == IEEE80211_FC0_SUBTYPE_PROBE_REQ)
++			if (((wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK) == IEEE80211_FC0_SUBTYPE_PROBE_REQ) &&
++					(sc->sc_nibssvaps > 0))
 +				/* if this is a probe request, send it to all vaps
 +				 * when looking up nodes, hostap will be preferred over ibss,
 +				 * because ibss will catch all nodes */
