@@ -128,6 +128,9 @@ IPT_QUEUE-$(CONFIG_IP_NF_QUEUE) += $(P_V4)ip_queue
 IPT_ULOG-m :=
 IPT_ULOG-$(CONFIG_IP_NF_TARGET_ULOG) += $(P_V4)ipt_ULOG
 
+IPT_IPRANGE-m :=
+IPT_IPRANGE-$(CONFIG_IP_NF_MATCH_IPRANGE) += $(P_V4)ipt_iprange
+
 IPT_BUILTIN := $(P_V4)ipt_standard
 IPT_BUILTIN += $(P_V4)ipt_icmp $(P_V4)ipt_tcp $(P_V4)ipt_udp
 IPT_BUILTIN += $(IPT_CONNTRACK-y)
