@@ -1,0 +1,13 @@
+diff -ur madwifi.old/net80211/ieee80211_linux.c madwifi.dev/net80211/ieee80211_linux.c
+--- madwifi.old/net80211/ieee80211_linux.c	2007-05-30 03:41:18.000000000 +0200
++++ madwifi.dev/net80211/ieee80211_linux.c	2007-06-02 01:43:40.818092096 +0200
+@@ -285,6 +285,9 @@
+ 		k->wk_cipher->ic_name, k->wk_keyix,
+ 		(unsigned long long)rsc );
+ 
++	/* disabled for now due to bogus events for unknown reasons */
++	return;
++
+ 	/* TODO: needed parameters: count, keyid, key type, src address, TSC */
+ 	snprintf(buf, sizeof(buf), "%s(keyid=%d %scast addr=%s)", tag,
+ 		k->wk_keyix,

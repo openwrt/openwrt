@@ -246,20 +246,6 @@ diff -ur madwifi.old/net80211/ieee80211_input.c madwifi.dev/net80211/ieee80211_i
  #ifdef IEEE80211_DEBUG
  /*
   * Debugging support.
-diff -ur madwifi.old/net80211/ieee80211_linux.c madwifi.dev/net80211/ieee80211_linux.c
---- madwifi.old/net80211/ieee80211_linux.c	2007-05-30 03:41:18.000000000 +0200
-+++ madwifi.dev/net80211/ieee80211_linux.c	2007-06-01 11:45:05.003258624 +0200
-@@ -311,8 +311,8 @@
- 
- 	/* TODO: needed parameters: count, keyid, key type, src address, TSC */
- 	snprintf(buf, sizeof(buf), "%s(keyid=%d %scast addr=%s)", tag,
--		keyix, IEEE80211_IS_MULTICAST(wh->i_addr1) ?  "broad" : "uni",
--		ether_sprintf(wh->i_addr1));
-+		keyix, IEEE80211_IS_MULTICAST(wh->i_addr2) ?  "broad" : "uni",
-+		ether_sprintf(wh->i_addr2));
- 	memset(&wrqu, 0, sizeof(wrqu));
- 	wrqu.data.length = strlen(buf);
- 	wireless_send_event(dev, IWEVCUSTOM, &wrqu, buf);
 diff -ur madwifi.old/net80211/ieee80211_proto.h madwifi.dev/net80211/ieee80211_proto.h
 --- madwifi.old/net80211/ieee80211_proto.h	2007-06-01 11:26:04.172691000 +0200
 +++ madwifi.dev/net80211/ieee80211_proto.h	2007-06-01 11:45:05.004258472 +0200
@@ -271,3 +257,16 @@ diff -ur madwifi.old/net80211/ieee80211_proto.h madwifi.dev/net80211/ieee80211_p
  
  /*
   * Return the size of the 802.11 header for a management or data frame.
+--- madwifi.old/net80211/ieee80211_linux.c	2007-06-02 04:05:42.902538336 +0200
++++ madwifi.dev/net80211/ieee80211_linux.c	2007-06-02 04:05:55.302653232 +0200
+@@ -291,8 +291,8 @@
+ 	/* TODO: needed parameters: count, keyid, key type, src address, TSC */
+ 	snprintf(buf, sizeof(buf), "%s(keyid=%d %scast addr=%s)", tag,
+ 		k->wk_keyix,
+-		IEEE80211_IS_MULTICAST(wh->i_addr1) ?  "broad" : "uni",
+-		ether_sprintf(wh->i_addr1));
++		IEEE80211_IS_MULTICAST(wh->i_addr2) ?  "broad" : "uni",
++		ether_sprintf(wh->i_addr2));
+ 	memset(&wrqu, 0, sizeof(wrqu));
+ 	wrqu.data.length = strlen(buf);
+ 	wireless_send_event(dev, IWEVCUSTOM, &wrqu, buf);
