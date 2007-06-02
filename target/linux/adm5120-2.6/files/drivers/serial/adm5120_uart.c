@@ -24,12 +24,8 @@
 #include <linux/tty_flip.h>
 #include <linux/console.h>
 
-#define ADM5120_UART_BASE0		0x12600000
-#define ADM5120_UART_BASE1		0x12800000
-#define ADM5120_UART_SIZE		0x20
-
-#define ADM5120_UART_IRQ0		1
-#define ADM5120_UART_IRQ1		2
+#include <asm/mach-adm5120/adm5120_defs.h>
+#include <asm/mach-adm5120/adm5120_irq.h>
 
 #define ADM5120_UART_REG(base, reg) \
 	(*(volatile u32 *)KSEG1ADDR((base)+(reg)))
@@ -421,9 +417,9 @@ static struct uart_ops adm5120ser_ops = {
 
 static void adm5120console_put(const char c)
 {
-	while ((ADM5120_UART_REG(ADM5120_UART_BASE0, ADM5120_UART_FR) &
+	while ((ADM5120_UART_REG(ADM5120_UART0_BASE, ADM5120_UART_FR) &
 	     ADM5120_UART_TXFF) != 0);
-	ADM5120_UART_REG(ADM5120_UART_BASE0, ADM5120_UART_DATA) = c;
+	ADM5120_UART_REG(ADM5120_UART0_BASE, ADM5120_UART_DATA) = c;
 }
 
 static void adm5120console_write(struct console *con, const char *s,
@@ -440,14 +436,14 @@ static void adm5120console_write(struct console *con, const char *s,
 static int __init adm5120console_setup(struct console *con, char *options)
 {
 	/* Set to 115200 baud, 8N1 and enable FIFO */
-	ADM5120_UART_REG(ADM5120_UART_BASE0, ADM5120_UART_LCR_L) =
+	ADM5120_UART_REG(ADM5120_UART0_BASE, ADM5120_UART_LCR_L) =
 	    ADM5120_UART_BAUD115200 & 0xff;
-	ADM5120_UART_REG(ADM5120_UART_BASE0, ADM5120_UART_LCR_M) =
+	ADM5120_UART_REG(ADM5120_UART0_BASE, ADM5120_UART_LCR_M) =
 	    ADM5120_UART_BAUD115200 >> 8;
-	ADM5120_UART_REG(ADM5120_UART_BASE0, ADM5120_UART_LCR_H) =
+	ADM5120_UART_REG(ADM5120_UART0_BASE, ADM5120_UART_LCR_H) =
 	    ADM5120_UART_W8 | ADM5120_UART_FIFO_EN;
 	/* Enable port */
-	ADM5120_UART_REG(ADM5120_UART_BASE0, ADM5120_UART_CR) =
+	ADM5120_UART_REG(ADM5120_UART0_BASE, ADM5120_UART_CR) =
 	    ADM5120_UART_EN;
 
 	return 0;
@@ -477,8 +473,8 @@ console_initcall(adm5120console_init);
 
 static struct uart_port adm5120ser_ports[] = {
 	{
-		.iobase =	ADM5120_UART_BASE0,
-		.irq =		ADM5120_UART_IRQ0,
+		.iobase =	ADM5120_UART0_BASE,
+		.irq =		ADM5120_IRQ_UART0,
 		.uartclk =	ADM5120_UARTCLK_FREQ,
 		.fifosize =	16,
 		.ops =		&adm5120ser_ops,
@@ -487,8 +483,8 @@ static struct uart_port adm5120ser_ports[] = {
 	},
 #if (CONFIG_ADM5120_NR_UARTS > 1)
 	{
-		.iobase =	ADM5120_UART_BASE1,
-		.irq =		ADM5120_UART_IRQ1,
+		.iobase =	ADM5120_UART1_BASE,
+		.irq =		ADM5120_IRQ_UART1,
 		.uartclk =	ADM5120_UARTCLK_FREQ,
 		.fifosize =	16,
 		.ops =		&adm5120ser_ops,

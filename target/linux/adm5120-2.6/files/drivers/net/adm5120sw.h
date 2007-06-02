@@ -12,7 +12,6 @@
 
 #define SW_BASE	KSEG1ADDR(0x12000000)
 #define SW_DEVS	6
-#define SW_IRQ 	9
 
 #define ETH_TX_TIMEOUT	HZ/4
 #define ETH_FCS 4;

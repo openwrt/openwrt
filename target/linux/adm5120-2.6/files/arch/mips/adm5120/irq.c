@@ -1,157 +1,203 @@
 /*
- *	Copyright (C) ADMtek Incorporated.
- *		Creator : daniell@admtek.com.tw
- *	Carsten Langgaard, carstenl@mips.com
- *	Copyright (C) 2000, 2001 MIPS Technologies, Inc.
- *	Copyright (C) 2001 Ralf Baechle
- *	Copyright (C) 2005 Jeroen Vreeken (pe1rxq@amsat.org)
+ *  $Id$
+ *
+ *  ADM5120 specific interrupt handlers
+ *
+ *  Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
+ *  Copyright (C) 2007 OpenWrt.org
+ *
+ *  This program is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public License
+ *  as published by the Free Software Foundation; either version 2
+ *  of the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ *  Boston, MA  02110-1301, USA.
+ *
  */
 
-#include <linux/autoconf.h>
 #include <linux/init.h>
-#include <linux/kernel_stat.h>
-#include <linux/signal.h>
-#include <linux/sched.h>
+#include <linux/kernel.h>
+#include <linux/version.h>
 #include <linux/interrupt.h>
-#include <linux/slab.h>
-#include <linux/random.h>
-#include <linux/pm.h>
+#include <linux/ioport.h>
 
 #include <asm/irq.h>
-#include <asm/time.h>
-#include <asm/mipsregs.h>
-#include <asm/gdb-stub.h>
 #include <asm/irq_cpu.h>
+#include <asm/mipsregs.h>
+#include <asm/bitops.h>
 
-#define MIPS_CPU_TIMER_IRQ 7
+#include <asm/mach-adm5120/adm5120_defs.h>
+#include <asm/mach-adm5120/adm5120_irq.h>
 
-extern int setup_irq(unsigned int irq, struct irqaction *irqaction);
-extern irq_desc_t irq_desc[];
-extern asmlinkage void mipsIRQ(void);
+#define INTC_REG(r) (*(volatile u32 *)(KSEG1ADDR(ADM5120_INTC_BASE) + r))
 
-int mips_int_lock(void);
-void mips_int_unlock(int);
+static void adm5120_intc_irq_unmask(unsigned int irq);
+static void adm5120_intc_irq_mask(unsigned int irq);
+static int  adm5120_intc_irq_set_type(unsigned int irq, unsigned int flow_type);
 
-unsigned int mips_counter_frequency;
+static struct irq_chip adm5120_intc_irq_chip = {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+	.name 		= "INTC",
+#else
+	.typename 	= "INTC",
+#endif
+	.unmask 	= adm5120_intc_irq_unmask,
+	.mask 		= adm5120_intc_irq_mask,
+	.mask_ack	= adm5120_intc_irq_mask,
+	.set_type	= adm5120_intc_irq_set_type
+};
 
-#define ADM5120_INTC_REG(reg)	(*(volatile u32 *)(KSEG1ADDR(0x12200000+(reg))))
-#define ADM5120_INTC_STATUS	ADM5120_INTC_REG(0x00)
-#define ADM5120_INTC_ENABLE	ADM5120_INTC_REG(0x08)
-#define ADM5120_INTC_DISABLE	ADM5120_INTC_REG(0x0c)
-#define ADM5120_IRQ_MAX		9
-#define ADM5120_IRQ_MASK	0x3ff
+static struct irqaction adm5120_intc_irq_action = {
+	.handler 	= no_action,
+	.name 		= "cascade [INTC]"
+};
 
-void adm5120_hw0_irqdispatch(struct pt_regs *regs)
+static void adm5120_intc_irq_unmask(unsigned int irq)
 {
-	unsigned long intsrc;
-	int i;
+	unsigned long flags;
 
-	intsrc = ADM5120_INTC_STATUS & ADM5120_IRQ_MASK;
-
-	if (intsrc) {
-		for (i = 0; intsrc; intsrc >>= 1, i++)
-			if (intsrc & 0x1)
-				do_IRQ(i);
-	} else
-		spurious_interrupt();
+	irq -= ADM5120_INTC_IRQ_BASE;
+	local_irq_save(flags);
+	INTC_REG(INTC_REG_IRQ_ENABLE) = (1 << irq);
+	local_irq_restore(flags);
 }
 
-void mips_timer_interrupt(struct pt_regs *regs)
+static void adm5120_intc_irq_mask(unsigned int irq)
 {
-        write_c0_compare(read_c0_count()+ mips_counter_frequency/HZ);
-        ll_timer_interrupt(MIPS_CPU_TIMER_IRQ);
+	unsigned long flags;
+
+	irq -= ADM5120_INTC_IRQ_BASE;
+	local_irq_save(flags);
+	INTC_REG(INTC_REG_IRQ_DISABLE) = (1 << irq);
+	local_irq_restore(flags);
 }
 
-/* Main interrupt dispatcher */
-asmlinkage void plat_irq_dispatch(struct pt_regs *regs)
+static int adm5120_intc_irq_set_type(unsigned int irq, unsigned int flow_type)
 {
-        unsigned int cp0_cause = read_c0_cause() & read_c0_status();
+	/* TODO: not yet tested */
+#if 1
+	unsigned int sense;
+	unsigned long mode;
+	int err;
 
-        if (cp0_cause & CAUSEF_IP7) {
-                mips_timer_interrupt( regs);
-        } else if (cp0_cause & CAUSEF_IP2) {
-                adm5120_hw0_irqdispatch( regs);
-        }
-}
-
-void enable_adm5120_irq(unsigned int irq)
-{
-	int s;
-
-	/* Disable all interrupts (FIQ/IRQ) */
-	s = mips_int_lock();
-
-	if ((irq < 0) || (irq > ADM5120_IRQ_MAX)) 
-		goto err_exit;
-
-	ADM5120_INTC_ENABLE = (1<<irq);
-
-err_exit:
-
-	/* Restore the interrupts states */
-	mips_int_unlock(s);
-}
-
-
-void disable_adm5120_irq(unsigned int irq)
-{
-	int s;
-
-	/* Disable all interrupts (FIQ/IRQ) */
-	s = mips_int_lock();
-
-	if ((irq < 0) || (irq > ADM5120_IRQ_MAX)) 
-		goto err_exit;
-
-	ADM5120_INTC_DISABLE = (1<<irq);
-
-err_exit:
-	/* Restore the interrupts states */
-	mips_int_unlock(s);
-}
-
-unsigned int startup_adm5120_irq(unsigned int irq)
-{
-	enable_adm5120_irq(irq);
+	err = 0;
+	sense = flow_type & (IRQ_TYPE_SENSE_MASK);
+	switch (sense) {
+	case IRQ_TYPE_NONE:
+	case IRQ_TYPE_LEVEL_HIGH:
+		break;
+	case IRQ_TYPE_LEVEL_LOW:
+		switch (irq) {
+		case ADM5120_IRQ_GPIO2:
+		case ADM5120_IRQ_GPIO4:
+			break;
+		default:
+			err = -EINVAL;
+			break;
+		}
+		break;
+	default:
+		err = -EINVAL;
+		break;
+	}
+	
+	if (err)
+		return err;
+	
+	switch (irq) {
+	case ADM5120_IRQ_GPIO2:
+	case ADM5120_IRQ_GPIO4:
+		mode = INTC_REG(INTC_REG_INT_MODE);
+		if (sense == IRQ_TYPE_LEVEL_LOW)
+			mode |= (1 << (irq-ADM5120_INTC_IRQ_BASE));
+		else
+			mode &= (1 << (irq-ADM5120_INTC_IRQ_BASE));
+			
+		INTC_REG(INTC_REG_INT_MODE) = mode;
+		/* fallthrogh */
+	default:
+		irq_desc[irq].status &= ~IRQ_TYPE_SENSE_MASK;
+		irq_desc[irq].status |= sense;
+		break;
+	}
+#endif
 	return 0;
 }
 
-void shutdown_adm5120_irq(unsigned int irq)
+static void adm5120_intc_irq_dispatch(void)
 {
-	disable_adm5120_irq(irq);
+	unsigned long status;
+	int irq;
+
+#if 1
+	/* dispatch only one IRQ at a time */
+	status = INTC_REG(INTC_REG_IRQ_STATUS) & INTC_INT_ALL;
+
+	if (status) {
+		irq = ADM5120_INTC_IRQ_BASE+fls(status)-1;
+		do_IRQ(irq);
+	} else
+		spurious_interrupt();
+#else
+	status = INTC_REG(INTC_REG_IRQ_STATUS) & INTC_INT_ALL;
+	if (status) {
+		for (irq=ADM5120_INTC_IRQ_BASE; irq <= ADM5120_INTC_IRQ_BASE +
+			INTC_IRQ_LAST;	irq++, status >>=1) {
+			if ((status & 1) == 1)
+				do_IRQ(irq);
+		}
+	} else
+		spurious_interrupt();
+#endif
 }
 
-static inline void ack_adm5120_irq(unsigned int irq_nr)
+asmlinkage void plat_irq_dispatch(void)
 {
-	ADM5120_INTC_DISABLE = (1 << irq_nr);
+	unsigned long pending;
+
+	pending = read_c0_status() & read_c0_cause();
+
+	if (pending & STATUSF_IP7)
+		do_IRQ(ADM5120_IRQ_COUNTER);
+	else if (pending & STATUSF_IP2)
+		adm5120_intc_irq_dispatch();
+	else
+		spurious_interrupt();
 }
 
-
-static void end_adm5120_irq(unsigned int irq_nr)
-{
-	ADM5120_INTC_ENABLE = (1 << irq_nr);
-}
-
-static hw_irq_controller adm5120_irq_type = {
-	.typename 	= "MIPS",
-	.startup	= startup_adm5120_irq,
-	.shutdown	= shutdown_adm5120_irq,
-	.enable		= enable_adm5120_irq,
-	.disable	= disable_adm5120_irq,
-	.ack 		= ack_adm5120_irq,
-	.end		= end_adm5120_irq,
-	.set_affinity	= NULL,
-};
-
-
-void __init arch_init_irq(void)
+#define INTC_IRQ_STATUS (IRQ_LEVEL | IRQ_TYPE_LEVEL_HIGH | IRQ_DISABLED)
+static void __init adm5120_intc_irq_init(int base)
 {
 	int i;
-	
-	for (i = 0; i <= ADM5120_IRQ_MAX; i++) {
-		irq_desc[i].status = IRQ_DISABLED;
-		irq_desc[i].action = 0;
-		irq_desc[i].depth = 1;
-		irq_desc[i].chip = &adm5120_irq_type;
+
+	/* disable all interrupts */
+	INTC_REG(INTC_REG_IRQ_DISABLE) = INTC_INT_ALL;
+	/* setup all interrupts to generate IRQ instead of FIQ */
+	INTC_REG(INTC_REG_INT_MODE) = 0;
+	/* set active level for all external interrupts to HIGH */
+	INTC_REG(INTC_REG_INT_LEVEL) = 0;
+	/* disable usage of the TEST_SOURCE register */
+	INTC_REG(INTC_REG_IRQ_SOURCE_SELECT) = 0;
+
+	for(i=ADM5120_INTC_IRQ_BASE; i <= ADM5120_INTC_IRQ_BASE+INTC_IRQ_LAST;
+		i++) {
+		irq_desc[i].status = INTC_IRQ_STATUS;
+		set_irq_chip_and_handler(i, &adm5120_intc_irq_chip, 
+			handle_level_irq);
 	}
+
+	setup_irq(ADM5120_IRQ_INTC, &adm5120_intc_irq_action);
+}
+
+void __init arch_init_irq(void) {
+	mips_cpu_irq_init();
+	adm5120_intc_irq_init(ADM5120_INTC_IRQ_BASE);
 }
