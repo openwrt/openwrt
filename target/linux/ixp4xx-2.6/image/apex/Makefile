@@ -9,14 +9,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=apex
-PKG_VERSION:=1.5.4
+PKG_VERSION:=1.5.6
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=ftp://ftp.buici.com/pub/apex/ \
 	ftp://metalab.unc.edu/pub/Linux/system/boot/apex/
-PKG_MD5SUM:=b07790b259f48653c32955244c23cc57
+PKG_MD5SUM:=1ef0881f80b89c7c0fb5d1c66a3b5ea1
 
 include $(INCLUDE_DIR)/package.mk
 
