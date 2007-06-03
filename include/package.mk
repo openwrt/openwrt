@@ -14,13 +14,16 @@ include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/unpack.mk
 include $(INCLUDE_DIR)/depends.mk
-include $(INCLUDE_DIR)/package-defaults.mk
-include $(INCLUDE_DIR)/package-dumpinfo.mk
-include $(INCLUDE_DIR)/package-ipkg.mk
 
 STAMP_PREPARED:=$(PKG_BUILD_DIR)/.prepared$(if $(DUMP),,_$(shell find ${CURDIR} $(PKG_FILE_DEPEND) $(DEP_FINDPARAMS) | md5s))
 STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/.configured
 STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
+
+include $(INCLUDE_DIR)/quilt.mk
+include $(INCLUDE_DIR)/package-defaults.mk
+include $(INCLUDE_DIR)/package-dumpinfo.mk
+include $(INCLUDE_DIR)/package-ipkg.mk
+
 export CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
 
 ifneq ($(CONFIG_AUTOREBUILD),)

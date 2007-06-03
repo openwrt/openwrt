@@ -26,9 +26,9 @@ ifeq ($(QUIET),1)
 %-compile %-install: FORCE
 	$(MAKE) -C $* $(patsubst $*-%,%,$@) || { $(call MESSAGE, "*** $* $(patsubst $*-%,%,$@) failed"); false; }
 
-%-prepare %-prereq %-download %-clean: FORCE
+%-prepare %-prereq %-download %-clean %-refresh: FORCE
 else
-%-prepare %-prereq %-download %-clean %-compile %-install: FORCE
+%-prepare %-prereq %-download %-clean %-compile %-install %-refresh: FORCE
 endif
 	$(MAKE) -C $* $(patsubst $*-%,%,$@)
 
