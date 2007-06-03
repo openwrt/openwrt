@@ -5,22 +5,30 @@
 # See /LICENSE for more information.
 #
 
+ifeq ($(KERNEL_BUILD),1)
+  PKG_BUILD_DIR:=$(LINUX_DIR)
+endif
+
+define Quilt/Patch
+	@for patch in $$$$( (cd $(1) && ls) 2>/dev/null ); do ( \
+		cp "$(1)/$$$$patch" $(PKG_BUILD_DIR); \
+		cd $(PKG_BUILD_DIR); \
+		quilt import -P$(2)$$$$patch -p 1 "$$$$patch"; \
+		quilt push -f >/dev/null 2>/dev/null; \
+		rm -f "$$$$patch"; \
+	); done
+endef
+
 QUILT?=$(strip $(shell test -f $(PKG_BUILD_DIR)/.quilt_used && echo y))
 ifneq ($(QUILT),)
   STAMP_PREPARED:=$(strip $(STAMP_PREPARED))_q
   STAMP_PATCHED:=$(PKG_BUILD_DIR)/.quilt_patched
   CONFIG_AUTOREBUILD=
-  PATCHES:=$(shell (cd ./patches && ls) 2>/dev/null)
+  PATCHES:=$(shell )
   define Build/Patch/Default
 	rm -rf $(PKG_BUILD_DIR)/patches
 	mkdir -p $(PKG_BUILD_DIR)/patches
-	@for patch in $(PATCHES); do ( \
-		cp "./patches/$$$$patch" $(PKG_BUILD_DIR); \
-		cd $(PKG_BUILD_DIR); \
-		quilt import -p 1 "$$$$patch"; \
-		quilt push -f >/dev/null 2>/dev/null; \
-		rm -f "$$$$patch"; \
-	); done
+	$(call Quilt/Patch,./patches,)
 	@echo
 	touch $(PKG_BUILD_DIR)/.quilt_used
   endef
@@ -34,10 +42,45 @@ else
   endef
 endif
 
+define Kernel/Patch/Default
+	if [ -d $(GENERIC_PLATFORM_DIR)/files ]; then $(CP) $(GENERIC_PLATFORM_DIR)/files/* $(LINUX_DIR)/; fi
+	if [ -d ./files ]; then $(CP) ./files/* $(LINUX_DIR)/; fi
+	$(if $(strip $(QUILT)),$(call Quilt/Patch,$(GENERIC_PLATFORM_DIR)/patches,generic/), \
+		if [ -d $(GENERIC_PLATFORM_DIR)/patches ]; then $(PATCH) $(LINUX_DIR) $(GENERIC_PLATFORM_DIR)/patches; fi \
+	)
+	$(if $(strip $(QUILT)),$(call Quilt/Patch,./patches,platform/), \
+		if [ -d ./files ]; then $(CP) ./files/* $(LINUX_DIR)/; fi \
+	)
+	touch $(PKG_BUILD_DIR)/.quilt_used
+endef
+
 $(STAMP_PATCHED): $(STAMP_PREPARED)
 	@cd $(PKG_BUILD_DIR); quilt pop -a -f >/dev/null 2>/dev/null || true
-	$(if $(strip $(PATCHES)),cd $(PKG_BUILD_DIR); quilt push -a)
+	[ -f "$(PKG_BUILD_DIR)/patches/series" ] && cd $(PKG_BUILD_DIR); quilt push -a
 	touch $@
+
+define Quilt/RefreshDir
+	mkdir -p $(1)
+	-rm -f $(1)/* 2>/dev/null >/dev/null
+	@( \
+		for patch in $$($(if $(2),grep "^$(2)",cat) $(PKG_BUILD_DIR)/patches/series | awk '{print $$1}'); do \
+			$(CP) -v "$(PKG_BUILD_DIR)/patches/$$patch" $(1); \
+		done; \
+	)
+endef
+
+define Quilt/Refresh/Package
+	$(call Quilt/RefreshDir,./patches)
+endef
+
+define Quilt/Refresh/Kernel
+	@[ -z "$$(grep -v '^generic/' $(PKG_BUILD_DIR)/patches/series | grep -v '^platform/')" ] || { \
+		echo "All kernel patches must start with either generic/ or platform/"; \
+		false; \
+	}
+	$(call Quilt/RefreshDir,$(GENERIC_PLATFORM_DIR)/patches,generic/)
+	$(call Quilt/RefreshDir,./patches,platform/)
+endef
 
 refresh: $(STAMP_PREPARED)
 	@[ -f "$(PKG_BUILD_DIR)/.quilt_used" ] || { \
@@ -52,10 +95,5 @@ refresh: $(STAMP_PREPARED)
 		echo "The patches are not sorted in the right order. Please fix."; \
 		false; \
 	}
-	mkdir -p ./patches
-	rm -f ./patches/* 2>/dev/null >/dev/null
-	@( \
-		for patch in $$(cat $(PKG_BUILD_DIR)/patches/series); do \
-			$(CP) -v "$(PKG_BUILD_DIR)/patches/$$patch" ./patches; \
-		done; \
-	)
+	$(if $(KERNEL_BUILD),$(Quilt/Refresh/Kernel),$(Quilt/Refresh/Package))
+

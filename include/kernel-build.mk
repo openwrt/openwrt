@@ -53,6 +53,9 @@ else
   )
 endif
 
+STAMP_PREPARED:=$(LINUX_DIR)/.prepared
+STAMP_CONFIGURED:=$(LINUX_DIR)/.configured
+include $(INCLUDE_DIR)/quilt.mk
 include $(INCLUDE_DIR)/kernel-defaults.mk
 
 define Kernel/Prepare
@@ -82,13 +85,13 @@ define BuildKernel
 		$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_SOURCE) $(LINUX_KERNEL_MD5SUM) $(LINUX_SITE)
   endif
 
-  $(LINUX_DIR)/.prepared: $(DL_DIR)/$(LINUX_SOURCE)
+  $(STAMP_PREPARED): $(DL_DIR)/$(LINUX_SOURCE)
 	-rm -rf $(KERNEL_BUILD_DIR)
 	-mkdir -p $(KERNEL_BUILD_DIR)
 	$(call Kernel/Prepare)
 	touch $$@
 
-  $(LINUX_DIR)/.configured: $(LINUX_DIR)/.prepared $(LINUX_CONFIG)
+  $(STAMP_CONFIGURED): $(LINUX_DIR)/.prepared $(LINUX_CONFIG)
 	$(call Kernel/Configure)
 	touch $$@
 
