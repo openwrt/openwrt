@@ -49,8 +49,9 @@ define Kernel/Patch/Default
 		if [ -d $(GENERIC_PLATFORM_DIR)/patches ]; then $(PATCH) $(LINUX_DIR) $(GENERIC_PLATFORM_DIR)/patches; fi \
 	)
 	$(if $(strip $(QUILT)),$(call Quilt/Patch,./patches,platform/), \
-		if [ -d ./files ]; then $(CP) ./files/* $(LINUX_DIR)/; fi \
+		if [ -d ./patches ]; then $(PATCH) $(LINUX_DIR) ./patches; fi \
 	)
+	$(if $(strip $(QUILT)),touch $(PKG_BUILD_DIR)/.quilt_used)
 endef
 
 $(STAMP_PATCHED): $(STAMP_PREPARED)
