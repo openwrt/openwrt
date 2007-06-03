@@ -1,4 +1,3 @@
-Only in madwifi.dev/ath: if_ath.c.orig
 diff -ur madwifi.old/net80211/ieee80211_crypto_ccmp.c madwifi.dev/net80211/ieee80211_crypto_ccmp.c
 --- madwifi.old/net80211/ieee80211_crypto_ccmp.c	2007-06-02 04:37:47.425966000 +0200
 +++ madwifi.dev/net80211/ieee80211_crypto_ccmp.c	2007-06-02 18:38:27.675882768 +0200
@@ -22,3 +21,19 @@ diff -ur madwifi.old/net80211/ieee80211_crypto_ccmp.c madwifi.dev/net80211/ieee8
  	ctx->cc_vap->iv_stats.is_crypto_ccmp++;
  
  	skb = skb0;
+diff -ur madwifi.old/net80211/ieee80211_crypto_ccmp.c madwifi.dev/net80211/ieee80211_crypto_ccmp.c
+--- madwifi.old/net80211/ieee80211_crypto_ccmp.c	2007-06-02 19:40:56.291006648 +0200
++++ madwifi.dev/net80211/ieee80211_crypto_ccmp.c	2007-06-03 04:19:47.561334192 +0200
+@@ -118,6 +118,12 @@
+ 	ctx->cc_ic = vap->iv_ic;
+ 	ctx->cc_tfm = crypto_alloc_cipher("aes", 0,
+ 					CRYPTO_ALG_ASYNC);
++	
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
++	if (IS_ERR(ctx->cc_tfm))
++		ctx->cc_tfm = NULL;
++#endif
++
+ 	if (ctx->cc_tfm == NULL) {
+ 		IEEE80211_DPRINTF(vap, IEEE80211_MSG_CRYPTO,
+ 				"%s: unable to load kernel AES crypto support\n",
