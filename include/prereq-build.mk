@@ -122,6 +122,3 @@ $(eval $(call RequireCommand,autoconf, \
 	Please install GNU autoconf. \
 ))
 
-$(eval $(call RequireCommand,quilt, \
-	Please install quilt. \
-))
