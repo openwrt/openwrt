@@ -31,6 +31,8 @@ define Kernel/Prepare
 	$(call Kernel/Prepare/Fox)
 endef
 
+DEFAULT_PACKAGES += foxboard-utils
+
 $(eval $(call RequireCommand,/usr/local/cris/gcc-cris, \
 	Please install the binary cris toolchain. \
 ))
