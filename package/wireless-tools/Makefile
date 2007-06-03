@@ -9,15 +9,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wireless-tools
-PKG_VERSION:=28
+PKG_VERSION:=29
+PKG_MINOR:=.pre21
 PKG_RELEASE:=1
 
-PKG_SOURCE:=wireless_tools.$(PKG_VERSION).tar.gz
+PKG_SOURCE:=wireless_tools.$(PKG_VERSION)$(PKG_MINOR).tar.gz
 PKG_SOURCE_URL:=http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux
-PKG_MD5SUM:=599c94497f9c9073c7b052d3dcb7cd16
+PKG_MD5SUM:=953774d6a34050bae4ef3bfa731f6653
 TAR_OPTIONS += || true
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/wireless_tools.28
+PKG_BUILD_DIR:=$(BUILD_DIR)/wireless_tools.$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -37,7 +38,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) -I." \
-		libiw.so.28 iwmulticall
+		libiw.so.$(PKG_VERSION) iwmulticall
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		PREFIX="$(PKG_INSTALL_DIR)" \
 		INSTALL_DIR="$(PKG_INSTALL_DIR)/usr/sbin" \
@@ -50,7 +51,7 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/{iwlib,wireless}.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/libiw.so* $(STAGING_DIR)/usr/lib/
-	ln -sf libiw.so.28 $(STAGING_DIR)/usr/lib/libiw.so
+	ln -sf libiw.so.$(PKG_VERSION) $(STAGING_DIR)/usr/lib/libiw.so
 endef
 	
 define Build/UninstallDev
