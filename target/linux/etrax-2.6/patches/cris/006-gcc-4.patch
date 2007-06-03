@@ -1,100 +1,10 @@
 diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/lib/memset.c linux-2.6.19.2/arch/cris/arch-v10/lib/memset.c
---- linux-2.6.19.2.orig/arch/cris/arch-v10/lib/memset.c	2007-05-20 01:46:35.000000000 +0200
-+++ linux-2.6.19.2/arch/cris/arch-v10/lib/memset.c	2007-05-20 01:51:47.000000000 +0200
-@@ -29,224 +29,21 @@
- 
- #include <linux/types.h>
- 
--/* No, there's no macro saying 12*4, since it is "hard" to get it into
--   the asm in a good way.  Thus better to expose the problem everywhere.
--   */
- 
--/* Assuming 1 cycle per dword written or read (ok, not really true), and
--   one per instruction, then 43+3*(n/48-1) <= 24+24*(n/48-1)
--   so n >= 45.7; n >= 0.9; we win on the first full 48-byte block to set. */
--
--#define ZERO_BLOCK_SIZE (1*12*4)
--
--void *memset(void *pdst,
--             int c,
--             size_t plen)
-+/**
-+ * memset - Fill a region of memory with the given value
-+ * @s: Pointer to the start of the area.
-+ * @c: The byte to fill the area with
-+ * @count: The size of the area.
-+ *
-+ * Do not use memset() to access IO space, use memset_io() instead.
-+ */
-+void *memset(void *s, int c, size_t count)
- {
--  /* Ok.  Now we want the parameters put in special registers.
--     Make sure the compiler is able to make something useful of this. */
--
--  register char *return_dst __asm__ ("r10") = pdst;
--  register int n __asm__ ("r12") = plen;
--  register int lc __asm__ ("r11") = c;
--
--  /* Most apps use memset sanely.  Only those memsetting about 3..4
--     bytes or less get penalized compared to the generic implementation
--     - and that's not really sane use. */
--
--  /* Ugh.  This is fragile at best.  Check with newer GCC releases, if
--     they compile cascaded "x |= x << 8" sanely! */
--  __asm__("movu.b %0,$r13\n\t"
--          "lslq 8,$r13\n\t"
--	  "move.b %0,$r13\n\t"
--	  "move.d $r13,%0\n\t"
--	  "lslq 16,$r13\n\t"
--	  "or.d $r13,%0"
--          : "=r" (lc) : "0" (lc) : "r13");
--
--  {
--    register char *dst __asm__ ("r13") = pdst;
-- 
--  /* This is NONPORTABLE, but since this whole routine is     */
--  /* grossly nonportable that doesn't matter.                 */
--
--  if (((unsigned long) pdst & 3) != 0
--     /* Oops! n=0 must be a legal call, regardless of alignment. */
--      && n >= 3)
--  {
--    if ((unsigned long)dst & 1)
--    {
--      *dst = (char) lc;
--      n--;
--      dst++;
--    }
--
--    if ((unsigned long)dst & 2)
--    {
--      *(short *)dst = lc;
--      n -= 2;
--      dst += 2;
--    }
--  }
--
--  /* Now the fun part.  For the threshold value of this, check the equation
--     above. */
--  /* Decide which copying method to use. */
--  if (n >= ZERO_BLOCK_SIZE)
--  {
--    /* For large copies we use 'movem' */
--
--  /* It is not optimal to tell the compiler about clobbering any
--     registers; that will move the saving/restoring of those registers
--     to the function prologue/epilogue, and make non-movem sizes
--     suboptimal.
--
--      This method is not foolproof; it assumes that the "asm reg"
--     declarations at the beginning of the function really are used
--     here (beware: they may be moved to temporary registers).
--      This way, we do not have to save/move the registers around into
--     temporaries; we can safely use them straight away.
--
--      If you want to check that the allocation was right; then
--      check the equalities in the first comment.  It should say
--      "r13=r13, r12=r12, r11=r11" */
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/lib/memset.c	2007-06-03 13:59:39.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/lib/memset.c	2007-06-03 14:11:43.000000000 +0200
+@@ -110,45 +110,28 @@
+       If you want to check that the allocation was right; then
+       check the equalities in the first comment.  It should say
+       "r13=r13, r12=r12, r11=r11" */
 -    __asm__ volatile ("
 -        ;; Check that the following is true (same register names on
 -        ;; both sides of equal sign, as in r8=r8):
@@ -121,7 +31,28 @@ diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/lib/memset.c linux-2.6.19.2/arc
 -        ;; Now we've got this:
 -	;; r13 - dst
 -	;; r12 - n
--	
++    __asm__ volatile (
++	"subq 	11*4,$sp\n\t"
++        "movem   $r10,[$sp]\n\t"
++        "move.d  $r11,$r0\n\t"
++        "move.d  $r11,$r1\n\t"
++        "move.d  $r11,$r2\n\t"
++        "move.d  $r11,$r3\n\t"
++        "move.d  $r11,$r4\n\t"
++        "move.d  $r11,$r5\n\t"
++        "move.d  $r11,$r6\n\t"
++        "move.d  $r11,$r7\n\t"
++        "move.d  $r11,$r8\n\t"
++        "move.d  $r11,$r9\n\t"
++        "move.d  $r11,$r10\n\t"
++        "subq    12*4,$r12\n\t"
++"0:\n\t"
++   	"subq   12*4,$r12\n\t"
++        "bge     0b\n\t"
++	"movem	$r11,[$r13+]\n\t"
++        "addq   12*4,$r12\n\t"
++        "movem [$sp+],$r10" 
+ 	
 -        ;; Update n for the first loop
 -        subq    12*4,$r12
 -0:
@@ -134,193 +65,159 @@ diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/lib/memset.c linux-2.6.19.2/arc
 -	;; Restore registers from stack
 -        movem [$sp+],$r10" 
 -
--     /* Outputs */ : "=r" (dst), "=r" (n)
--     /* Inputs */ : "0" (dst), "1" (n), "r" (lc));
--    
--  }
--
--    /* Either we directly starts copying, using dword copying
--       in a loop, or we copy as much as possible with 'movem' 
--       and then the last block (<44 bytes) is copied here.
--       This will work since 'movem' will have updated src,dst,n. */
--
--    while ( n >= 16 )
--    {
--      *((long*)dst)++ = lc;
--      *((long*)dst)++ = lc;
--      *((long*)dst)++ = lc;
--      *((long*)dst)++ = lc;
--      n -= 16;
--    }
-+	char *xs = s;
+      /* Outputs */ : "=r" (dst), "=r" (n)
+      /* Inputs */ : "0" (dst), "1" (n), "r" (lc));
+     
+@@ -161,10 +144,14 @@
  
--    /* A switch() is definitely the fastest although it takes a LOT of code.
--     * Particularly if you inline code this.
--     */
--    switch (n)
--    {
--      case 0:
--        break;
--      case 1:
--        *(char*)dst = (char) lc;
--        break;
--      case 2:
--        *(short*)dst = (short) lc;
--        break;
--      case 3:
--        *((short*)dst)++ = (short) lc;
--        *(char*)dst = (char) lc;
--        break;
--      case 4:
--        *((long*)dst)++ = lc;
--        break;
--      case 5:
--        *((long*)dst)++ = lc;
--        *(char*)dst = (char) lc;
--        break;
--      case 6:
--        *((long*)dst)++ = lc;
--        *(short*)dst = (short) lc;
--        break;
--      case 7:
--        *((long*)dst)++ = lc;
--        *((short*)dst)++ = (short) lc;
--        *(char*)dst = (char) lc;
--        break;
--      case 8:
--        *((long*)dst)++ = lc;
--        *((long*)dst)++ = lc;
--        break;
--      case 9:
--        *((long*)dst)++ = lc;
--        *((long*)dst)++ = lc;
--        *(char*)dst = (char) lc;
--        break;
--      case 10:
--        *((long*)dst)++ = lc;
--        *((long*)dst)++ = lc;
--        *(short*)dst = (short) lc;
--        break;
--      case 11:
--        *((long*)dst)++ = lc;
--        *((long*)dst)++ = lc;
--        *((short*)dst)++ = (short) lc;
--        *(char*)dst = (char) lc;
--        break;
--      case 12:
--        *((long*)dst)++ = lc;
--        *((long*)dst)++ = lc;
--        *((long*)dst)++ = lc;
--        break;
--      case 13:
--        *((long*)dst)++ = lc;
--        *((long*)dst)++ = lc;
--        *((long*)dst)++ = lc;
--        *(char*)dst = (char) lc;
--        break;
--      case 14:
--        *((long*)dst)++ = lc;
--        *((long*)dst)++ = lc;
--        *((long*)dst)++ = lc;
--        *(short*)dst = (short) lc;
--        break;
--      case 15:
--        *((long*)dst)++ = lc;
--        *((long*)dst)++ = lc;
--        *((long*)dst)++ = lc;
--        *((short*)dst)++ = (short) lc;
--        *(char*)dst = (char) lc;
--        break;
--    }
--  }
-+	while (count--)
-+		*xs++ = c;
-+	return s;
-+}
+     while ( n >= 16 )
+     {
+-      *((long*)dst)++ = lc;
+-      *((long*)dst)++ = lc;
+-      *((long*)dst)++ = lc;
+-      *((long*)dst)++ = lc;
++      *((long*)dst) = lc;
++      dst+=4;
++      *((long*)dst) = lc;
++      dst+=4;
++      *((long*)dst) = lc;
++      dst+=4;
++      *((long*)dst) = lc;
++      dst+=4;
+       n -= 16;
+     }
  
--  return return_dst; /* destination pointer. */
--} /* memset() */
+@@ -182,67 +169,95 @@
+         *(short*)dst = (short) lc;
+         break;
+       case 3:
+-        *((short*)dst)++ = (short) lc;
++        *((short*)dst) = (short) lc;
++	dst+=2;
+         *(char*)dst = (char) lc;
+         break;
+       case 4:
+-        *((long*)dst)++ = lc;
++        *((long*)dst) = lc;
++	dst+=4;
+         break;
+       case 5:
+-        *((long*)dst)++ = lc;
++        *((long*)dst) = lc;
++	dst+=4;
+         *(char*)dst = (char) lc;
+         break;
+       case 6:
+-        *((long*)dst)++ = lc;
++        *((long*)dst) = lc;
++	dst+=4;
+         *(short*)dst = (short) lc;
+         break;
+       case 7:
+-        *((long*)dst)++ = lc;
+-        *((short*)dst)++ = (short) lc;
++        *((long*)dst) = lc;
++	dst+=4;
++        *((short*)dst) = (short) lc;
++	dst+=2;
+         *(char*)dst = (char) lc;
+         break;
+       case 8:
+-        *((long*)dst)++ = lc;
+-        *((long*)dst)++ = lc;
++        *((long*)dst) = lc;
++	dst+=4;
++        *((long*)dst) = lc;
++	dst+=4;
+         break;
+       case 9:
+-        *((long*)dst)++ = lc;
+-        *((long*)dst)++ = lc;
++        *((long*)dst) = lc;
++	dst+=4;
++        *((long*)dst) = lc;
++	dst+=4;
+         *(char*)dst = (char) lc;
+         break;
+       case 10:
+-        *((long*)dst)++ = lc;
+-        *((long*)dst)++ = lc;
++        *((long*)dst) = lc;
++	dst+=4;
++        *((long*)dst) = lc;
++	dst+=4;
+         *(short*)dst = (short) lc;
+         break;
+       case 11:
+-        *((long*)dst)++ = lc;
+-        *((long*)dst)++ = lc;
+-        *((short*)dst)++ = (short) lc;
++        *((long*)dst) = lc;
++	dst+=4;
++        *((long*)dst) = lc;
++	dst+=4;
++        *((short*)dst) = (short) lc;
++	dst+=2;
+         *(char*)dst = (char) lc;
+         break;
+       case 12:
+-        *((long*)dst)++ = lc;
+-        *((long*)dst)++ = lc;
+-        *((long*)dst)++ = lc;
++        *((long*)dst) = lc;
++	dst+=4;
++        *((long*)dst) = lc;
++	dst+=4;
++        *((long*)dst) = lc;
++	dst+=4;
+         break;
+       case 13:
+-        *((long*)dst)++ = lc;
+-        *((long*)dst)++ = lc;
+-        *((long*)dst)++ = lc;
++        *((long*)dst) = lc;
++	dst+=4;
++        *((long*)dst) = lc;
++	dst+=4;
++        *((long*)dst) = lc;
++	dst+=4;
+         *(char*)dst = (char) lc;
+         break;
+       case 14:
+-        *((long*)dst)++ = lc;
+-        *((long*)dst)++ = lc;
+-        *((long*)dst)++ = lc;
++        *((long*)dst) = lc;
++	dst+=4;
++        *((long*)dst) = lc;
++	dst+=4;
++        *((long*)dst) = lc;
++	dst+=4;
+         *(short*)dst = (short) lc;
+         break;
+       case 15:
+-        *((long*)dst)++ = lc;
+-        *((long*)dst)++ = lc;
+-        *((long*)dst)++ = lc;
+-        *((short*)dst)++ = (short) lc;
++        *((long*)dst) = lc;
++	dst+=4;
++        *((long*)dst) = lc;
++	dst+=4;
++        *((long*)dst) = lc;
++	dst+=4;
++        *((short*)dst) = (short) lc;
++	dst+=2;
+         *(char*)dst = (char) lc;
+         break;
+     }
 diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/lib/string.c linux-2.6.19.2/arch/cris/arch-v10/lib/string.c
---- linux-2.6.19.2.orig/arch/cris/arch-v10/lib/string.c	2007-05-20 01:46:35.000000000 +0200
-+++ linux-2.6.19.2/arch/cris/arch-v10/lib/string.c	2007-05-20 01:51:19.000000000 +0200
-@@ -33,193 +33,21 @@
- 
- #include <linux/types.h>
- 
--void *memcpy(void *pdst,
--             const void *psrc,
--             size_t pn)
-+ /**
-+ * memcpy - Copy one area of memory to another
-+ * @dest: Where to copy to
-+ * @src: Where to copy from
-+ * @count: The size of the area.
-+ *
-+ * You should not use this function to access IO space, use memcpy_toio()
-+ * or memcpy_fromio() instead.
-+ */
-+void *memcpy(void *dest, const void *src, size_t count)
- {
--  /* Ok.  Now we want the parameters put in special registers.
--     Make sure the compiler is able to make something useful of this.
--      As it is now: r10 -> r13; r11 -> r11 (nop); r12 -> r12 (nop).
-+	char *tmp = dest;
-+	const char *s = src;
- 
--     If gcc was allright, it really would need no temporaries, and no
--     stack space to save stuff on. */
--
--  register void *return_dst __asm__ ("r10") = pdst;
--  register char *dst __asm__ ("r13") = pdst;
--  register const char *src __asm__ ("r11") = psrc;
--  register int n __asm__ ("r12") = pn;
--  
-- 
--  /* When src is aligned but not dst, this makes a few extra needless
--     cycles.  I believe it would take as many to check that the
--     re-alignment was unnecessary.  */
--  if (((unsigned long) dst & 3) != 0
--      /* Don't align if we wouldn't copy more than a few bytes; so we
--	 don't have to check further for overflows.  */
--      && n >= 3)
--  {
--    if ((unsigned long) dst & 1)
--    {
--      n--;
--      *(char*)dst = *(char*)src;
--      src++;
--      dst++;
--    }
--
--    if ((unsigned long) dst & 2)
--    {
--      n -= 2;
--      *(short*)dst = *(short*)src;
--      src += 2;
--      dst += 2;
--    }
--  }
--
--  /* Decide which copying method to use. */
--  if (n >= 44*2)                /* Break even between movem and
--                                   move16 is at 38.7*2, but modulo 44. */
--  {
--    /* For large copies we use 'movem' */
--
--  /* It is not optimal to tell the compiler about clobbering any
--     registers; that will move the saving/restoring of those registers
--     to the function prologue/epilogue, and make non-movem sizes
--     suboptimal.
--
--      This method is not foolproof; it assumes that the "asm reg"
--     declarations at the beginning of the function really are used
--     here (beware: they may be moved to temporary registers).
--      This way, we do not have to save/move the registers around into
--     temporaries; we can safely use them straight away.
--
--      If you want to check that the allocation was right; then
--      check the equalities in the first comment.  It should say
--      "r13=r13, r11=r11, r12=r12" */
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/lib/string.c	2007-06-03 13:59:39.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/lib/string.c	2007-06-03 14:21:02.000000000 +0200
+@@ -95,37 +95,19 @@
+       If you want to check that the allocation was right; then
+       check the equalities in the first comment.  It should say
+       "r13=r13, r11=r11, r12=r12" */
 -    __asm__ volatile ("
 -        ;; Check that the following is true (same register names on
 -        ;; both sides of equal sign, as in r8=r8):
@@ -349,113 +246,169 @@ diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/lib/string.c linux-2.6.19.2/arc
 -	;; Restore registers from stack
 -        movem [$sp+],$r10" 
 -
--     /* Outputs */ : "=r" (dst), "=r" (src), "=r" (n) 
--     /* Inputs */ : "0" (dst), "1" (src), "2" (n));
++    __asm__ volatile (
++	"subq 	11*4,$sp\n\t"
++	"movem	$r10,[$sp]\n\t"
++        "subq    44,$r12\n\t"
++"0:\n\t"
++	"movem	[$r11+],$r10\n\t"
++        "subq   44,$r12\n\t"
++        "bge     0b\n\t"
++	"movem	$r10,[$r13+]\n\t"
++        "addq   44,$r12\n\t"
++        "movem [$sp+],$r10\n\t"
+      /* Outputs */ : "=r" (dst), "=r" (src), "=r" (n) 
+      /* Inputs */ : "0" (dst), "1" (src), "2" (n));
 -    
--  }
--
--  /* Either we directly starts copying, using dword copying
--     in a loop, or we copy as much as possible with 'movem' 
--     and then the last block (<44 bytes) is copied here.
--     This will work since 'movem' will have updated src,dst,n. */
--
--  while ( n >= 16 )
--  {
+   }
+ 
+   /* Either we directly starts copying, using dword copying
+@@ -135,10 +117,14 @@
+ 
+   while ( n >= 16 )
+   {
 -    *((long*)dst)++ = *((long*)src)++;
 -    *((long*)dst)++ = *((long*)src)++;
 -    *((long*)dst)++ = *((long*)src)++;
 -    *((long*)dst)++ = *((long*)src)++;
--    n -= 16;
--  }
--
--  /* A switch() is definitely the fastest although it takes a LOT of code.
--   * Particularly if you inline code this.
--   */
--  switch (n)
--  {
--    case 0:
--      break;
--    case 1:
--      *(char*)dst = *(char*)src;
--      break;
--    case 2:
--      *(short*)dst = *(short*)src;
--      break;
--    case 3:
++    *((long*)dst) = *((long*)src);
++    src+=4;dst+=4;
++    *((long*)dst) = *((long*)src);
++    src+=4;dst+=4;
++    *((long*)dst) = *((long*)src);
++    src+=4;dst+=4;
++    *((long*)dst) = *((long*)src);
++    src+=4;dst+=4;
+     n -= 16;
+   }
+ 
+@@ -156,67 +142,95 @@
+       *(short*)dst = *(short*)src;
+       break;
+     case 3:
 -      *((short*)dst)++ = *((short*)src)++;
--      *(char*)dst = *(char*)src;
--      break;
--    case 4:
++      *((short*)dst) = *((short*)src);
++      src+=2;dst+=2;
+       *(char*)dst = *(char*)src;
+       break;
+     case 4:
 -      *((long*)dst)++ = *((long*)src)++;
--      break;
--    case 5:
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
+       break;
+     case 5:
 -      *((long*)dst)++ = *((long*)src)++;
--      *(char*)dst = *(char*)src;
--      break;
--    case 6:
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
+       *(char*)dst = *(char*)src;
+       break;
+     case 6:
 -      *((long*)dst)++ = *((long*)src)++;
--      *(short*)dst = *(short*)src;
--      break;
--    case 7:
--      *((long*)dst)++ = *((long*)src)++;
--      *((short*)dst)++ = *((short*)src)++;
--      *(char*)dst = *(char*)src;
--      break;
--    case 8:
--      *((long*)dst)++ = *((long*)src)++;
--      *((long*)dst)++ = *((long*)src)++;
--      break;
--    case 9:
--      *((long*)dst)++ = *((long*)src)++;
--      *((long*)dst)++ = *((long*)src)++;
--      *(char*)dst = *(char*)src;
--      break;
--    case 10:
--      *((long*)dst)++ = *((long*)src)++;
--      *((long*)dst)++ = *((long*)src)++;
--      *(short*)dst = *(short*)src;
--      break;
--    case 11:
--      *((long*)dst)++ = *((long*)src)++;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
+       *(short*)dst = *(short*)src;
+       break;
+     case 7:
 -      *((long*)dst)++ = *((long*)src)++;
 -      *((short*)dst)++ = *((short*)src)++;
--      *(char*)dst = *(char*)src;
--      break;
--    case 12:
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
++      *((short*)dst) = *((short*)src);
++      src+=2;dst+=2;
+       *(char*)dst = *(char*)src;
+       break;
+     case 8:
 -      *((long*)dst)++ = *((long*)src)++;
 -      *((long*)dst)++ = *((long*)src)++;
--      *((long*)dst)++ = *((long*)src)++;
--      break;
--    case 13:
--      *((long*)dst)++ = *((long*)src)++;
--      *((long*)dst)++ = *((long*)src)++;
--      *((long*)dst)++ = *((long*)src)++;
--      *(char*)dst = *(char*)src;
--      break;
--    case 14:
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
+       break;
+     case 9:
 -      *((long*)dst)++ = *((long*)src)++;
 -      *((long*)dst)++ = *((long*)src)++;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
+       *(char*)dst = *(char*)src;
+       break;
+     case 10:
 -      *((long*)dst)++ = *((long*)src)++;
--      *(short*)dst = *(short*)src;
--      break;
--    case 15:
 -      *((long*)dst)++ = *((long*)src)++;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
+       *(short*)dst = *(short*)src;
+       break;
+     case 11:
 -      *((long*)dst)++ = *((long*)src)++;
 -      *((long*)dst)++ = *((long*)src)++;
 -      *((short*)dst)++ = *((short*)src)++;
--      *(char*)dst = *(char*)src;
--      break;
--  }
--
--  return return_dst; /* destination pointer. */
--} /* memcpy() */
-+	while (count--)
-+		*tmp++ = *s++;
-+	return dest;
-+} 
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
++      *((short*)dst) = *((short*)src);
++      src+=2;dst+=2;
+       *(char*)dst = *(char*)src;
+       break;
+     case 12:
+-      *((long*)dst)++ = *((long*)src)++;
+-      *((long*)dst)++ = *((long*)src)++;
+-      *((long*)dst)++ = *((long*)src)++;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
+       break;
+     case 13:
+-      *((long*)dst)++ = *((long*)src)++;
+-      *((long*)dst)++ = *((long*)src)++;
+-      *((long*)dst)++ = *((long*)src)++;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
+       *(char*)dst = *(char*)src;
+       break;
+     case 14:
+-      *((long*)dst)++ = *((long*)src)++;
+-      *((long*)dst)++ = *((long*)src)++;
+-      *((long*)dst)++ = *((long*)src)++;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
+       *(short*)dst = *(short*)src;
+       break;
+     case 15:
+-      *((long*)dst)++ = *((long*)src)++;
+-      *((long*)dst)++ = *((long*)src)++;
+-      *((long*)dst)++ = *((long*)src)++;
+-      *((short*)dst)++ = *((short*)src)++;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
++      *((long*)dst) = *((long*)src);
++      src+=4;dst+=4;
++      *((short*)dst) = *((short*)src);
++      src+=2;dst+=2;
+       *(char*)dst = *(char*)src;
+       break;
+   }
 diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/lib/usercopy.c linux-2.6.19.2/arch/cris/arch-v10/lib/usercopy.c
---- linux-2.6.19.2.orig/arch/cris/arch-v10/lib/usercopy.c	2007-05-16 22:11:26.000000000 +0200
-+++ linux-2.6.19.2/arch/cris/arch-v10/lib/usercopy.c	2007-05-16 23:17:41.000000000 +0200
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/lib/usercopy.c	2007-06-03 13:59:39.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/lib/usercopy.c	2007-06-03 14:25:55.000000000 +0200
 @@ -88,63 +88,38 @@
         If you want to check that the allocation was right; then
         check the equalities in the first comment.  It should say
