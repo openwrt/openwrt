@@ -51,7 +51,6 @@ define Kernel/Patch/Default
 	$(if $(strip $(QUILT)),$(call Quilt/Patch,./patches,platform/), \
 		if [ -d ./files ]; then $(CP) ./files/* $(LINUX_DIR)/; fi \
 	)
-	touch $(PKG_BUILD_DIR)/.quilt_used
 endef
 
 $(STAMP_PATCHED): $(STAMP_PREPARED)
