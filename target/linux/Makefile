@@ -19,6 +19,9 @@ compile:
 install:
 	$(MAKE) -C $(BOARD)-$(KERNEL) install
 	
+refresh:
+	$(MAKE) -C $(BOARD)-$(KERNEL) refresh
+
 menuconfig:
 	$(MAKE) -C $(BOARD)-$(KERNEL) menuconfig
 
