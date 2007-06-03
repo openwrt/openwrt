@@ -13,12 +13,13 @@ STAMP_PREPARED:=$(PKG_BUILD_DIR)/.prepared_$(shell find ${CURDIR} $(PKG_FILE_DEP
 STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/.configured
 STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
 
+include $(INCLUDE_DIR)/quilt.mk
+
+Build/Patch:=$(Build/Patch/Default)
 ifneq ($(strip $(PKG_UNPACK)),)
   define Build/Prepare/Default
   	$(PKG_UNPACK)
-	@if [ -d ./patches ]; then \
-		$(PATCH) $(PKG_BUILD_DIR) ./patches; \
-	fi
+	$(Build/Patch)
   endef
 endif
 

@@ -10,7 +10,7 @@ ifneq ($(QUILT),)
   STAMP_PREPARED:=$(strip $(STAMP_PREPARED))_q
   STAMP_PATCHED:=$(PKG_BUILD_DIR)/.quilt_patched
   CONFIG_AUTOREBUILD=
-  PATCHES:=$(shell cd ./patches; ls)
+  PATCHES:=$(shell (cd ./patches && ls) 2>/dev/null)
   define Build/Patch/Default
 	rm -rf $(PKG_BUILD_DIR)/patches
 	mkdir -p $(PKG_BUILD_DIR)/patches
@@ -36,18 +36,23 @@ endif
 
 $(STAMP_PATCHED): $(STAMP_PREPARED)
 	@cd $(PKG_BUILD_DIR); quilt pop -a -f >/dev/null 2>/dev/null || true
-	cd $(PKG_BUILD_DIR); quilt push -a
+	$(if $(strip $(PATCHES)),cd $(PKG_BUILD_DIR); quilt push -a)
 	touch $@
 
 refresh: $(STAMP_PREPARED)
+	@[ -f "$(PKG_BUILD_DIR)/.quilt_used" ] || { \
+		echo "The source directory was not unpacked using quilt. Please rebuild with QUILT=1"; \
+		false; \
+	}
 	@[ -f "$(PKG_BUILD_DIR)/patches/series" ] || { \
-		echo "The source directory was not unpacked using quilt. Please rebuild."; \
+		echo "The source directory contains no quilt patches."; \
 		false; \
 	}
 	@[ "$$(cat $(PKG_BUILD_DIR)/patches/series | md5sum)" = "$$(sort $(PKG_BUILD_DIR)/patches/series | md5sum)" ] || { \
 		echo "The patches are not sorted in the right order. Please fix."; \
 		false; \
 	}
+	mkdir -p ./patches
 	rm -f ./patches/* 2>/dev/null >/dev/null
 	@( \
 		for patch in $$(cat $(PKG_BUILD_DIR)/patches/series); do \
