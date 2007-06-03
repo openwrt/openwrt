@@ -31,8 +31,6 @@ define Kernel/Prepare
 	$(call Kernel/Prepare/Fox)
 endef
 
-include $(INCLUDE_DIR)/prereq.mk
-
 $(eval $(call RequireCommand,/usr/local/cris/gcc-cris, \
 	Please install the binary cris toolchain. \
 ))
