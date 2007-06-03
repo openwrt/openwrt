@@ -38,8 +38,8 @@ endef
 define Package/foxboard-utils/install
 	$(INSTALL_DIR) $(1)/
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)
-	mkdir $(1)/www/cgi
-	cd $(1)/www/cgi; ln -s ../../bin/edit.cgi .
+	mkdir -p $(1)/www/cgi-bin
+	cd $(1)/www/cgi-bin; ln -s ../../bin/editcgi.cgi .
 endef
 
 $(eval $(call BuildPackage,foxboard-utils))
