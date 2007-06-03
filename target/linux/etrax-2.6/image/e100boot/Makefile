@@ -24,7 +24,7 @@ CRLF_WORKAROUND=1
 include $(INCLUDE_DIR)/package.mk
 
 define Build/Compile
-	make -C $(PKG_BUILD_DIR)  CC=$(TARGET_CC) STRIP=true 
+	make -C $(PKG_BUILD_DIR) STRIP=true 
 endef
 
 define Build/InstallDev
