@@ -26,53 +26,104 @@
  */
 
 #include <linux/types.h>
-#include <linux/pci.h>
 #include <linux/kernel.h>
-#include <linux/init.h>
+#include <linux/pci.h>
 
 #include <asm/mach-adm5120/adm5120_defs.h>
 
-volatile u32* pci_config_address_reg = (volatile u32*)KSEG1ADDR(ADM5120_PCICFG_ADDR);
-volatile u32* pci_config_data_reg = (volatile u32*)KSEG1ADDR(ADM5120_PCICFG_DATA);
+#define DEBUG	0
+#if DEBUG
+#define DBG(f, ...) printk(f, ## __VA_ARGS__ )
+#else
+#define DBG(f, ...)
+#endif
 
 #define PCI_ENABLE 0x80000000
 
-static int pci_config_read(struct pci_bus *bus, unsigned int devfn, int where,
-                           int size, uint32_t *val)
+static inline void write_cfgaddr(u32 addr)
 {
-	*pci_config_address_reg = ((bus->number & 0xff) << 0x10) |
-	    ((devfn & 0xff) << 0x08) | (where & 0xfc) | PCI_ENABLE;
+	*(volatile u32*)KSEG1ADDR(ADM5120_PCICFG_ADDR) = (addr | PCI_ENABLE);
+}
+
+static inline void write_cfgdata(u32 data)
+{
+	*(volatile u32*)KSEG1ADDR(ADM5120_PCICFG_DATA) = data;
+
+}
+
+static inline u32 read_cfgdata(void)
+{
+	return (*(volatile u32*)KSEG1ADDR(ADM5120_PCICFG_DATA));
+}
+
+static inline u32 mkaddr(struct pci_bus *bus, unsigned int devfn, int where)
+{
+	return (((bus->number & 0xFF) << 16) | ((devfn & 0xFF) << 8) | \
+		(where & 0xFC));
+}
+
+static int pci_config_read(struct pci_bus *bus, unsigned int devfn, int where,
+                           int size, u32 *val)
+{
+	u32 data;
+
+	write_cfgaddr(mkaddr(bus,devfn,where));
+	data = read_cfgdata();	
+
+	DBG("PCI: cfg_read  %02u.%02u.%01u/%02X:%01d, cfg:0x%08X",
+		bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, size, data);
+
 	switch (size) {
 	case 1:
-		*val = ((*pci_config_data_reg)>>((where&3)<<3))&0xff;
+		if (where & 1)
+			data >>= 8;
+		if (where & 2)
+			data >>= 16;
+		data &= 0xFF;
 		break;
 	case 2:
-		*val = ((*pci_config_data_reg)>>((where&3)<<3))&0xffff;
-		break;
-	default:
-		*val = (*pci_config_data_reg);
+		if (where & 2)
+			data >>= 16;
+		data &= 0xFFFF;
 		break;
 	}
+
+	*val = data;
+	DBG(", 0x%08X returned\n", data);
+	
 	return PCIBIOS_SUCCESSFUL;
 }
 
 static int pci_config_write(struct pci_bus *bus, unsigned int devfn, int where,
-                            int size, uint32_t val)
+                            int size, u32 val)
 {
-	*pci_config_address_reg = ((bus->number & 0xff) << 0x10) |
-	    ((devfn & 0xff) << 0x08) | (where & 0xfc) | PCI_ENABLE;
+	u32 data;
+	int s;
+
+	write_cfgaddr(mkaddr(bus,devfn,where));
+	data = read_cfgdata();
+
+	DBG("PCI: cfg_write %02u.%02u.%01u/%02X:%01d, cfg:0x%08X",
+		bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, size, data);
+	    
 	switch (size) {
 	case 1:
-		*(volatile u8 *)(((int)pci_config_data_reg) +
-			    (where & 3)) = val;
+		s = ((where & 3) << 3);
+		data &= ~(0xFF << s);
+		data |= ((val & 0xFF) << s);
 		break;
 	case 2:
-		*(volatile u16 *)(((int)pci_config_data_reg) +
-			    (where & 2)) = (val);
+		s = ((where & 2) << 4);
+		data &= ~(0xFFFF << s);
+		data |= ((val & 0xFFFF) << s);
 		break;
-	default:
-		*pci_config_data_reg = (val);
+	case 4:
+		data = val;
+		break;
 	}
+
+	write_cfgdata(data);
+	DBG(", 0x%08X written\n", data);
 
 	return PCIBIOS_SUCCESSFUL;
 }
