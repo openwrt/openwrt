@@ -231,7 +231,6 @@ int main(int argc, char **argv)
 
 	fclose(out);
 	
-	printf("Offsets:\n0x%08x\n0x%08x\n0x%08x\n", p->offsets[0], p->offsets[1], p->offsets[2]);
 	return EXIT_SUCCESS;
 }
 
