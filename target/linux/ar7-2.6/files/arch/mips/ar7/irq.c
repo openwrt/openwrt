@@ -33,17 +33,17 @@
 
 #define REG_OFFSET(irq, reg) ((irq) / 32 * 0x4 + reg * 0x10)
 #define SEC_REG_OFFSET(reg) (EXCEPT_OFFSET + reg * 0x8)
-#define SR_OFFSET  (SEC_REG_OFFSET(0))
-#define CR_OFFSET(irq)  (REG_OFFSET(irq, 1))
-#define SEC_CR_OFFSET  (SEC_REG_OFFSET(1))
-#define ESR_OFFSET(irq) (REG_OFFSET(irq, 2))
-#define SEC_ESR_OFFSET  (SEC_REG_OFFSET(2))
-#define ECR_OFFSET(irq) (REG_OFFSET(irq, 3))
-#define SEC_ECR_OFFSET  (SEC_REG_OFFSET(3))
+#define SEC_SR_OFFSET  (SEC_REG_OFFSET(0))      /* 0x80 */
+#define CR_OFFSET(irq)  (REG_OFFSET(irq, 1))    /* 0x10 */
+#define SEC_CR_OFFSET  (SEC_REG_OFFSET(1))      /* 0x88 */
+#define ESR_OFFSET(irq) (REG_OFFSET(irq, 2))    /* 0x20 */
+#define SEC_ESR_OFFSET  (SEC_REG_OFFSET(2))     /* 0x90 */
+#define ECR_OFFSET(irq) (REG_OFFSET(irq, 3))    /* 0x30 */
+#define SEC_ECR_OFFSET  (SEC_REG_OFFSET(3))     /* 0x98 */
 #define PIR_OFFSET      (0x40)
 #define MSR_OFFSET      (0x44)
-#define PM_OFFSET(irq)  (REG_OFFSET(irq, 5))
-#define TM_OFFSET(irq)  (REG_OFFSET(irq, 6))
+#define PM_OFFSET(irq)  (REG_OFFSET(irq, 5))    /* 0x50 */
+#define TM_OFFSET(irq)  (REG_OFFSET(irq, 6))    /* 0x60 */
 
 #define REG(addr) (*(volatile u32 *)(KSEG1ADDR(AR7_REGS_IRQ) + addr))
 
@@ -59,6 +59,7 @@ static void ar7_irq_init(int base);
 static int ar7_irq_base;
 
 static struct irq_chip ar7_irq_type = {
+	.typename = "AR7",
 	.name = "AR7",
 	.unmask = ar7_unmask_irq,
 	.mask = ar7_mask_irq,
@@ -174,7 +175,7 @@ static irqreturn_t ar7_secondary_cascade(int interrupt, void *dev)
 	int irq = 0, i;
 	unsigned long status;
 
-	status = REG(SR_OFFSET);
+	status = REG(SEC_SR_OFFSET);
 	if (unlikely(!status)) {
 		spurious_interrupt();
 		return IRQ_NONE;

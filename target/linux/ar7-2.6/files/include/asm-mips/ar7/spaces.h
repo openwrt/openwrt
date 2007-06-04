@@ -19,8 +19,8 @@
  * This handles the memory map.
  * We handle pages at KSEG0 for kernels with 32 bit address space.
  */
-#define PAGE_OFFSET		0x80000000UL
-#define PHYS_OFFSET 	0x14000000UL
+#define PAGE_OFFSET		0x94000000UL
+#define PHYS_OFFSET		0x14000000UL
 
 /*
  * Memory above this physical address will be considered highmem.
