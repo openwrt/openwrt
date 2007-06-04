@@ -196,10 +196,11 @@ static irqreturn_t vlynq_irq(int irq, void *dev_id)
 }
 
 static struct irq_chip vlynq_irq_chip = {
+        .typename = "VLYNQ",
         .name = "vlynq",
         .unmask = vlynq_irq_unmask,
         .mask = vlynq_irq_mask,
-	.set_type = vlynq_irq_type,
+        .set_type = vlynq_irq_type,
 };
 
 static int vlynq_setup_irq(struct vlynq_device *dev)
@@ -235,7 +236,7 @@ static int vlynq_setup_irq(struct vlynq_device *dev)
 		dev->remote->int_device[i >> 2] = 0;
 	}
 
-	if (request_irq(dev->irq, vlynq_irq, SA_SHIRQ, "AR7 VLYNQ", dev)) {
+	if (request_irq(dev->irq, vlynq_irq, SA_SHIRQ, "vlynq", dev)) {
 		printk("%s: request_irq failed\n", dev->dev.bus_id);
 		return -EAGAIN;
 	}

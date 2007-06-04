@@ -223,6 +223,7 @@ static void cpmac_hw_init(struct net_device *dev);
 static int cpmac_stop(struct net_device *dev);
 static int cpmac_open(struct net_device *dev);
 
+#undef CPMAC_DEBUG
 #define CPMAC_LOW_THRESH 32
 #define CPMAC_ALLOC_SIZE 64
 #define CPMAC_SKB_SIZE 1518
@@ -237,6 +238,18 @@ static void cpmac_dump_regs(u32 *base, int count)
 		printk(" 0x%08x", *(base + i));
 	}
 	printk("\n");
+}
+
+static const char *cpmac_dump_buf(const uint8_t * buf, unsigned size)
+{
+    static char buffer[3 * 25 + 1];
+    char *p = &buffer[0];
+    if (size > 20)
+        size = 20;
+    while (size-- > 0) {
+        p += sprintf(p, " %02x", *buf++);
+    }
+    return buffer;
 }
 #endif
 
@@ -446,7 +459,11 @@ static void cpmac_rx(struct net_device *dev)
 
 	desc = priv->rx_head;
 	dma_cache_inv((u32)desc, 16);
-	
+#ifdef CPMAC_DEBUG
+                printk(KERN_DEBUG "%s: len=%d, %s\n", __func__, pkt->datalen,
+                      cpmac_dump_buf(data, pkt->datalen));
+#endif
+
 	while ((desc->dataflags & CPMAC_OWN) == 0) {
 		skb = cpmac_rx_one(dev, priv, desc);
 		if (likely(skb)) {
@@ -558,6 +575,9 @@ static int cpmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct cpmac_priv *priv = netdev_priv(dev);
 
 	len = skb->len;
+#ifdef CPMAC_DEBUG
+        printk(KERN_DEBUG "%s: len=%d\n", __func__, len); //cpmac_dump_buf(const uint8_t * buf, unsigned size)
+#endif
 	if (unlikely(len < ETH_ZLEN)) {
 		if (unlikely(skb_padto(skb, ETH_ZLEN))) {
 			if (printk_ratelimit())
@@ -689,7 +709,9 @@ static irqreturn_t cpmac_irq(int irq, void *dev_id)
 	priv->regs->mac_eoi_vector = 0;
 
 	if (unlikely(status & (INTST_HOST | INTST_STATUS))) {
-		printk(KERN_ERR "%s: hw error, resetting...\n", dev->name);
+		if (printk_ratelimit()) {
+			printk(KERN_ERR "%s: hw error, resetting...\n", dev->name);
+		}
 		spin_lock(&priv->lock);
 		phy_stop(priv->phy);
 		cpmac_reset(dev);

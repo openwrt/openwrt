@@ -174,10 +174,12 @@ static int tnetd7300_get_clock(u32 shift, struct tnetd7300_clock *clock,
 {
 	int product;
 	int base_clock = ar7_ref_clock;
-	int prediv = ((clock->ctrl & PREDIV_MASK) >> PREDIV_SHIFT) + 1;
-	int postdiv = (clock->ctrl & POSTDIV_MASK) + 1;
+	u32 ctrl = clock->ctrl;
+	u32 pll = clock->pll;
+	int prediv = ((ctrl & PREDIV_MASK) >> PREDIV_SHIFT) + 1;
+	int postdiv = (ctrl & POSTDIV_MASK) + 1;
 	int divisor = prediv * postdiv;
-	int mul = ((clock->pll & MUL_MASK) >> MUL_SHIFT) + 1;
+	int mul = ((pll & MUL_MASK) >> MUL_SHIFT) + 1;
 
 	switch ((*bootcr & (BOOT_PLL_SOURCE_MASK << shift)) >> shift) {
 	case BOOT_PLL_SOURCE_BUS:
@@ -197,10 +199,10 @@ static int tnetd7300_get_clock(u32 shift, struct tnetd7300_clock *clock,
 	if (*bootcr & BOOT_PLL_BYPASS)
 		return base_clock / divisor;
 
-	if ((clock->pll & PLL_MODE_MASK) == 0)
+	if ((pll & PLL_MODE_MASK) == 0)
 		return (base_clock >> (mul / 16 + 1)) / divisor;
 
-	if ((clock->pll & (PLL_NDIV | PLL_DIV)) == (PLL_NDIV | PLL_DIV)) {
+	if ((pll & (PLL_NDIV | PLL_DIV)) == (PLL_NDIV | PLL_DIV)) {
 		product = (mul & 1) ? 
 			(base_clock * mul) >> 1 :
 			(base_clock * (mul - 1)) >> 2;

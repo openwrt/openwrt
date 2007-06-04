@@ -246,7 +246,6 @@ static void __init console_config(void)
 
 #ifdef CONFIG_KGDB
 	strcat(prom_getcmdline(), " console=kgdb");
-	prom_printf("Please connect GDB to this port\n");
 	kgdb_enabled = 1;
 	return;
 #endif

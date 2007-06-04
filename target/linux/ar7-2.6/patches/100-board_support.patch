@@ -1,7 +1,7 @@
 diff -Nru linux-2.6.19.2/arch/mips/Kconfig linux-ar7/arch/mips/Kconfig
 --- linux-2.6.19.2/arch/mips/Kconfig	2006-12-12 02:32:53.000000000 +0700
 +++ linux-ar7/arch/mips/Kconfig	2007-01-29 21:52:21.000000000 +0700
-@@ -12,6 +12,19 @@
+@@ -16,6 +16,20 @@
  	prompt "System type"
  	default SGI_IP22
  
@@ -13,6 +13,7 @@ diff -Nru linux-2.6.19.2/arch/mips/Kconfig linux-ar7/arch/mips/Kconfig
 +	select IRQ_CPU
 +	select SWAP_IO_SPACE
 +	select SYS_HAS_CPU_MIPS32_R1
++	select SYS_HAS_EARLY_PRINTK
 +	select SYS_SUPPORTS_32BIT_KERNEL
 +	select SYS_SUPPORTS_LITTLE_ENDIAN
 +	select NEED_MULTIPLE_NODES
