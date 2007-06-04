@@ -1,0 +1,31 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+START=90
+
+config_cb() {
+	local cfg="$CONFIG_SECTION"
+	local res
+	local dev
+	local port 
+	local cfgt
+	config_get cfgt "$cfg" TYPE
+
+	case "$cfgt" in
+		servfox)
+			config_get res $cfg Resolution
+			config_get dev $cfg Device
+			config_get port $cfg Port
+
+			SERVFOX_ARGS="${dev:+-d $dev} ${res:+-s $res} ${port:+-w $port}"
+		;;
+	esac
+}
+
+start() {
+	config_load servfox 
+	/bin/servfox $SERVFOX_ARGS &
+}
+
+stop() {
+	killall servfox 
+}
