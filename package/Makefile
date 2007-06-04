@@ -34,6 +34,9 @@ endif
 
 %-refresh %-update:
 	-$(MAKE) -C $* $(patsubst $*-%,%,$@)
+	
+%-autorefresh:
+	-$(MAKE) -C $* clean refresh QUILT=1
 
 
 # .IGNORE: $(COMPILE_PACKAGES) 
@@ -46,9 +49,7 @@ clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
 prereq: $(PREREQ_PACKAGES)
 download: $(DOWNLOAD_PACKAGES)
 compile: $(COMPILE_PACKAGES)
-ifneq ($(QUILT),)
-  refresh: $(patsubst %,%-refresh,$(package-y) $(package-m) $(package-))
-endif
+refresh: $(patsubst %,%-autorefresh,$(package-y) $(package-m) $(package-))
 
 install-targets: $(INSTALL_PACKAGES)
 install:
