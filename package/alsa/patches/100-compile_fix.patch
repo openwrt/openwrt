@@ -1,7 +1,8 @@
-diff -urN alsa.old/include/adriver.h alsa.dev/include/adriver.h
---- alsa.old/include/adriver.h	2006-04-19 08:24:30.000000000 +0200
-+++ alsa.dev/include/adriver.h	2006-05-31 17:24:49.000000000 +0200
-@@ -451,7 +451,7 @@
+Index: alsa-driver-1.0.14rc1/include/adriver.h
+===================================================================
+--- alsa-driver-1.0.14rc1.orig/include/adriver.h	2007-06-04 13:22:44.887031416 +0200
++++ alsa-driver-1.0.14rc1/include/adriver.h	2007-06-04 13:22:44.956020928 +0200
+@@ -514,7 +514,7 @@
  #endif /* < 2.6.0 */
  
  /* workarounds for USB API */
@@ -10,9 +11,9 @@ diff -urN alsa.old/include/adriver.h alsa.dev/include/adriver.h
  
  #include <linux/usb.h>
  
-@@ -1174,4 +1174,5 @@
-  */
- #define OPL3_HW_OPL3_PC98	0x0305	/* PC9800 */
+@@ -1360,4 +1360,5 @@
+ #endif
+ #endif
  
 +#undef info /* used in several structs */
  #endif /* __SOUND_LOCAL_DRIVER_H */

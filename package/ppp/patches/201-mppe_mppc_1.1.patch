@@ -1,6 +1,7 @@
-diff -ruN ppp-2.4.3.orig/include/linux/ppp-comp.h ppp-2.4.3/include/linux/ppp-comp.h
---- ppp-2.4.3.orig/include/linux/ppp-comp.h	2002-12-06 10:49:15.000000000 +0100
-+++ ppp-2.4.3/include/linux/ppp-comp.h	2004-11-21 13:54:09.000000000 +0100
+Index: ppp-2.4.3/include/linux/ppp-comp.h
+===================================================================
+--- ppp-2.4.3.orig/include/linux/ppp-comp.h	2007-06-04 13:22:08.143617264 +0200
++++ ppp-2.4.3/include/linux/ppp-comp.h	2007-06-04 13:22:12.031026288 +0200
 @@ -36,7 +36,7 @@
   */
  
@@ -62,9 +63,10 @@ diff -ruN ppp-2.4.3.orig/include/linux/ppp-comp.h ppp-2.4.3/include/linux/ppp-co
  /*
   * Definitions for other, as yet unsupported, compression methods.
   */
-diff -ruN ppp-2.4.3.orig/include/net/ppp-comp.h ppp-2.4.3/include/net/ppp-comp.h
---- ppp-2.4.3.orig/include/net/ppp-comp.h	2002-12-06 10:49:15.000000000 +0100
-+++ ppp-2.4.3/include/net/ppp-comp.h	2004-11-21 13:54:09.000000000 +0100
+Index: ppp-2.4.3/include/net/ppp-comp.h
+===================================================================
+--- ppp-2.4.3.orig/include/net/ppp-comp.h	2007-06-04 13:22:08.150616200 +0200
++++ ppp-2.4.3/include/net/ppp-comp.h	2007-06-04 13:22:12.031026288 +0200
 @@ -255,6 +255,33 @@
  	    opts |= MPPE_OPT_UNKNOWN;		\
      } while (/* CONSTCOND */ 0)
@@ -99,9 +101,10 @@ diff -ruN ppp-2.4.3.orig/include/net/ppp-comp.h ppp-2.4.3/include/net/ppp-comp.h
  /*
   * Definitions for other, as yet unsupported, compression methods.
   */
-diff -ruN ppp-2.4.3.orig/pppd/ccp.c ppp-2.4.3/pppd/ccp.c
---- ppp-2.4.3.orig/pppd/ccp.c	2004-11-13 03:28:15.000000000 +0100
-+++ ppp-2.4.3/pppd/ccp.c	2004-11-21 13:54:09.000000000 +0100
+Index: ppp-2.4.3/pppd/ccp.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/ccp.c	2007-06-04 13:22:08.157615136 +0200
++++ ppp-2.4.3/pppd/ccp.c	2007-06-04 13:22:12.033025984 +0200
 @@ -62,12 +62,10 @@
  static char bsd_value[8];
  static char deflate_value[8];
@@ -1461,9 +1464,10 @@ diff -ruN ppp-2.4.3.orig/pppd/ccp.c ppp-2.4.3/pppd/ccp.c
  	ccp_localstate[f->unit] &= ~RACK_PENDING;
  }
 -
-diff -ruN ppp-2.4.3.orig/pppd/ccp.h ppp-2.4.3/pppd/ccp.h
---- ppp-2.4.3.orig/pppd/ccp.h	2004-11-04 11:02:26.000000000 +0100
-+++ ppp-2.4.3/pppd/ccp.h	2004-11-21 13:54:09.000000000 +0100
+Index: ppp-2.4.3/pppd/ccp.h
+===================================================================
+--- ppp-2.4.3.orig/pppd/ccp.h	2007-06-04 13:22:08.162614376 +0200
++++ ppp-2.4.3/pppd/ccp.h	2007-06-04 13:22:12.033025984 +0200
 @@ -37,9 +37,17 @@
      bool predictor_2;		/* do Predictor-2? */
      bool deflate_correct;	/* use correct code for deflate? */
@@ -1482,9 +1486,10 @@ diff -ruN ppp-2.4.3.orig/pppd/ccp.h ppp-2.4.3/pppd/ccp.h
      short method;		/* code for chosen compression method */
  } ccp_options;
  
-diff -ruN ppp-2.4.3.orig/pppd/chap_ms.c ppp-2.4.3/pppd/chap_ms.c
---- ppp-2.4.3.orig/pppd/chap_ms.c	2004-11-12 10:57:43.000000000 +0100
-+++ ppp-2.4.3/pppd/chap_ms.c	2004-11-21 13:54:09.000000000 +0100
+Index: ppp-2.4.3/pppd/chap_ms.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/chap_ms.c	2007-06-04 13:22:08.168613464 +0200
++++ ppp-2.4.3/pppd/chap_ms.c	2007-06-04 13:22:12.033025984 +0200
 @@ -895,13 +895,17 @@
      /*
       * Disable undesirable encryption types.  Note that we don't ENABLE
@@ -1505,9 +1510,10 @@ diff -ruN ppp-2.4.3.orig/pppd/chap_ms.c ppp-2.4.3/pppd/chap_ms.c
  	    break;
  	default:
  	    break;
-diff -ruN ppp-2.4.3.orig/pppd/pppd.8 ppp-2.4.3/pppd/pppd.8
---- ppp-2.4.3.orig/pppd/pppd.8	2004-11-13 13:22:49.000000000 +0100
-+++ ppp-2.4.3/pppd/pppd.8	2004-11-21 14:24:47.000000000 +0100
+Index: ppp-2.4.3/pppd/pppd.8
+===================================================================
+--- ppp-2.4.3.orig/pppd/pppd.8	2007-06-04 13:22:08.175612400 +0200
++++ ppp-2.4.3/pppd/pppd.8	2007-06-04 13:22:12.034025832 +0200
 @@ -622,9 +622,29 @@
  Enables the use of PPP multilink; this is an alias for the `multilink'
  option.  This option is currently only available under Linux.

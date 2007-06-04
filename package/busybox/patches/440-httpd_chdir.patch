@@ -1,6 +1,7 @@
-diff -ur busybox.old/networking/httpd.c busybox.dev/networking/httpd.c
---- busybox.old/networking/httpd.c	2007-02-27 23:15:20.611300000 +0100
-+++ busybox.dev/networking/httpd.c	2007-02-27 23:18:10.022546112 +0100
+Index: busybox-1.4.2/networking/httpd.c
+===================================================================
+--- busybox-1.4.2.orig/networking/httpd.c	2007-06-04 13:21:35.775537960 +0200
++++ busybox-1.4.2/networking/httpd.c	2007-06-04 13:21:36.144481872 +0200
 @@ -102,6 +102,7 @@
  static const char default_path_httpd_conf[] = "/etc";
  static const char httpd_conf[] = "httpd.conf";
@@ -9,7 +10,7 @@ diff -ur busybox.old/networking/httpd.c busybox.dev/networking/httpd.c
  
  #define TIMEOUT 60
  
-@@ -1500,6 +1501,8 @@
+@@ -1505,6 +1506,8 @@
  #if ENABLE_FEATURE_HTTPD_BASIC_AUTH
  	int credentials = -1;  /* if not required this is Ok */
  #endif
@@ -18,7 +19,7 @@ diff -ur busybox.old/networking/httpd.c busybox.dev/networking/httpd.c
  
  	sa.sa_handler = handle_sigalrm;
  	sigemptyset(&sa.sa_mask);
-@@ -1931,7 +1934,6 @@
+@@ -1942,7 +1945,6 @@
  int httpd_main(int argc, char *argv[])
  {
  	unsigned opt;

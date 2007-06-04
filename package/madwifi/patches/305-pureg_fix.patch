@@ -1,7 +1,8 @@
-diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.dev/ath/if_ath.c
---- madwifi-ng-r2377-20070526.old/ath/if_ath.c	2007-05-26 18:51:09.426654472 +0200
-+++ madwifi-ng-r2377-20070526.dev/ath/if_ath.c	2007-05-26 18:51:09.440652344 +0200
-@@ -3383,7 +3383,9 @@
+Index: madwifi-ng-r2420-20070602/ath/if_ath.c
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/ath/if_ath.c	2007-06-04 13:21:58.684055336 +0200
++++ madwifi-ng-r2420-20070602/ath/if_ath.c	2007-06-04 13:21:58.895023264 +0200
+@@ -3362,7 +3362,9 @@
  		rfilt |= HAL_RX_FILTER_PROM;
  	if (ic->ic_opmode == IEEE80211_M_STA ||
  	    sc->sc_opmode == HAL_M_IBSS ||	/* NB: AHDEMO too */
@@ -10,11 +11,12 @@ diff -urN madwifi-ng-r2377-20070526.old/ath/if_ath.c madwifi-ng-r2377-20070526.d
 +		((ic->ic_opmode == IEEE80211_M_HOSTAP) &&
 +		 (ic->ic_protmode != IEEE80211_PROT_NONE)))
  		rfilt |= HAL_RX_FILTER_BEACON;
- 	if (sc->sc_nmonvaps > 0) 
- 		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON | 
-diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_input.c
---- madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c	2007-05-26 18:51:09.429654016 +0200
-+++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_input.c	2007-05-26 18:51:09.443651888 +0200
+ 	if ((sc->sc_nmonvaps > 0) || ((sc->sc_nvaps > 0) && (sc->sc_nibssvaps > 0)))
+ 		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON |
+Index: madwifi-ng-r2420-20070602/net80211/ieee80211_input.c
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_input.c	2007-06-04 13:21:58.461089232 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_input.c	2007-06-04 13:21:58.897022960 +0200
 @@ -321,11 +321,12 @@
  				bssid = wh->i_addr3;
  			}
@@ -40,7 +42,7 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2
  				/* not interested in */
  				IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
  					bssid, NULL, "%s", "not to bss");
-@@ -2555,7 +2557,7 @@
+@@ -2542,7 +2544,7 @@
  	u_int8_t *frm, *efrm;
  	u_int8_t *ssid, *rates, *xrates, *wpa, *rsn, *wme, *ath;
  	u_int8_t rate;
@@ -49,7 +51,7 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2
  	u_int8_t qosinfo;
  
  	wh = (struct ieee80211_frame *) skb->data;
-@@ -2577,11 +2579,15 @@
+@@ -2564,11 +2566,15 @@
  		 *    o station mode when associated (to collect state
  		 *      updates such as 802.11g slot time), or
  		 *    o adhoc mode (to discover neighbors)
@@ -66,7 +68,7 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2
  			vap->iv_stats.is_rx_mgtdiscard++;
  			return;
  		}
-@@ -2664,6 +2670,7 @@
+@@ -2651,6 +2657,7 @@
  					break;
  				}
  				scan.erp = frm[2];
@@ -74,7 +76,7 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2
  				break;
  			case IEEE80211_ELEMID_RSN:
  				scan.rsn = frm;
-@@ -2839,6 +2846,20 @@
+@@ -2826,6 +2833,20 @@
  				ieee80211_bg_scan(vap);
  			return;
  		}
@@ -95,9 +97,10 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_input.c madwifi-ng-r2
  		/*
  		 * If scanning, just pass information to the scan module.
  		 */
-diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_node.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_node.c
---- madwifi-ng-r2377-20070526.old/net80211/ieee80211_node.c	2007-05-26 18:51:09.430653864 +0200
-+++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_node.c	2007-05-26 18:51:09.444651736 +0200
+Index: madwifi-ng-r2420-20070602/net80211/ieee80211_node.c
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_node.c	2007-06-04 13:21:57.503234848 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_node.c	2007-06-04 13:21:58.897022960 +0200
 @@ -332,10 +332,16 @@
  	/* Update country ie information */
  	ieee80211_build_countryie(ic);
@@ -117,11 +120,12 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_node.c madwifi-ng-r23
  
  	(void) ieee80211_sta_join1(PASS_NODE(ni));
  }
-diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_proto.c madwifi-ng-r2377-20070526.dev/net80211/ieee80211_proto.c
---- madwifi-ng-r2377-20070526.old/net80211/ieee80211_proto.c	2007-05-26 18:51:09.431653712 +0200
-+++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_proto.c	2007-05-26 18:51:09.445651584 +0200
+Index: madwifi-ng-r2420-20070602/net80211/ieee80211_proto.c
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_proto.c	2007-06-04 13:21:58.133139088 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_proto.c	2007-06-04 13:21:58.898022808 +0200
 @@ -586,6 +586,28 @@
-     { 4, { 2, 4, 11, 22 } },	/* IEEE80211_MODE_TURBO_G (mixed b/g) */
+ 	{ 4, { 2, 4, 11, 22 } },	/* IEEE80211_MODE_TURBO_G (mixed b/g) */
  };
  
 +static const struct ieee80211_rateset basicpureg[] = {
@@ -149,10 +153,11 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_proto.c madwifi-ng-r2
  /*
   * Mark the basic rates for the 11g rate table based on the
   * specified mode.  For 11b compatibility we mark only 11b
-diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_var.h madwifi-ng-r2377-20070526.dev/net80211/ieee80211_var.h
---- madwifi-ng-r2377-20070526.old/net80211/ieee80211_var.h	2007-05-26 18:51:09.321670432 +0200
-+++ madwifi-ng-r2377-20070526.dev/net80211/ieee80211_var.h	2007-05-26 18:51:09.445651584 +0200
-@@ -584,6 +584,8 @@
+Index: madwifi-ng-r2420-20070602/net80211/ieee80211_var.h
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_var.h	2007-06-04 13:21:58.134138936 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_var.h	2007-06-04 13:21:58.899022656 +0200
+@@ -593,6 +593,8 @@
  void ieee80211_build_countryie(struct ieee80211com *);
  int ieee80211_media_setup(struct ieee80211com *, struct ifmedia *, u_int32_t,
  	ifm_change_cb_t, ifm_stat_cb_t);
@@ -161,4 +166,3 @@ diff -urN madwifi-ng-r2377-20070526.old/net80211/ieee80211_var.h madwifi-ng-r237
  
  /* Key update synchronization methods.  XXX should not be visible. */
  static __inline void
-

@@ -1,6 +1,7 @@
-diff -urN bb.old/editors/awk.c bb.dev/editors/awk.c
---- bb.old/editors/awk.c	2007-05-20 04:17:05.002197784 +0200
-+++ bb.dev/editors/awk.c	2007-05-20 22:40:48.183743936 +0200
+Index: busybox-1.4.2/editors/awk.c
+===================================================================
+--- busybox-1.4.2.orig/editors/awk.c	2007-06-04 13:21:35.202625056 +0200
++++ busybox-1.4.2/editors/awk.c	2007-06-04 13:21:37.927210856 +0200
 @@ -30,6 +30,11 @@
  /* these flags are static, don't change them when value is changed */
  #define	VF_DONTTOUCH (VF_ARRAY | VF_SPECIAL | VF_WALK | VF_CHILD | VF_DIRTY)
@@ -95,9 +96,10 @@ diff -urN bb.old/editors/awk.c bb.dev/editors/awk.c
  	programname = NULL;
  	while((c = getopt(argc, argv, "F:v:f:W:")) != EOF) {
  		switch (c) {
-diff -urN bb.old/editors/awx.c bb.dev/editors/awx.c
---- bb.old/editors/awx.c	1970-01-01 01:00:00.000000000 +0100
-+++ bb.dev/editors/awx.c	2007-05-23 22:37:38.547183608 +0200
+Index: busybox-1.4.2/editors/awx.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ busybox-1.4.2/editors/awx.c	2007-06-04 13:21:37.928210704 +0200
 @@ -0,0 +1,633 @@
 +/*
 + * awk web extension
@@ -732,9 +734,10 @@ diff -urN bb.old/editors/awx.c bb.dev/editors/awx.c
 +	return awk_main(argc, argv);
 +}
 +
-diff -urN bb.old/editors/awx_parser.h bb.dev/editors/awx_parser.h
---- bb.old/editors/awx_parser.h	1970-01-01 01:00:00.000000000 +0100
-+++ bb.dev/editors/awx_parser.h	2007-05-20 22:30:31.380512280 +0200
+Index: busybox-1.4.2/editors/awx_parser.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ busybox-1.4.2/editors/awx_parser.h	2007-06-04 13:21:37.928210704 +0200
 @@ -0,0 +1,38 @@
 +#ifndef __TEMPLATE_PARSER_H
 +#define __TEMPLATE_PARSER_H
@@ -774,9 +777,10 @@ diff -urN bb.old/editors/awx_parser.h bb.dev/editors/awx_parser.h
 +void free_template(struct template_cb *cb, struct template_element *e);
 +
 +#endif
-diff -urN bb.old/editors/awx_parser.l bb.dev/editors/awx_parser.l
---- bb.old/editors/awx_parser.l	1970-01-01 01:00:00.000000000 +0100
-+++ bb.dev/editors/awx_parser.l	2007-05-23 19:13:40.459655704 +0200
+Index: busybox-1.4.2/editors/awx_parser.l
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ busybox-1.4.2/editors/awx_parser.l	2007-06-04 13:21:37.929210552 +0200
 @@ -0,0 +1,302 @@
 +%{
 +#include <stdio.h>
@@ -1080,9 +1084,10 @@ diff -urN bb.old/editors/awx_parser.l bb.dev/editors/awx_parser.l
 +	free(e);
 +	return free_template(cb, next);
 +}
-diff -urN bb.old/editors/Config.in bb.dev/editors/Config.in
---- bb.old/editors/Config.in	2007-05-20 04:17:05.003197632 +0200
-+++ bb.dev/editors/Config.in	2007-05-20 22:30:31.380512280 +0200
+Index: busybox-1.4.2/editors/Config.in
+===================================================================
+--- busybox-1.4.2.orig/editors/Config.in	2007-06-04 13:21:31.486190040 +0200
++++ busybox-1.4.2/editors/Config.in	2007-06-04 13:21:37.929210552 +0200
 @@ -12,6 +12,13 @@
  	  Awk is used as a pattern scanning and processing language.  This is
  	  the BusyBox implementation of that programming language.
@@ -1097,9 +1102,10 @@ diff -urN bb.old/editors/Config.in bb.dev/editors/Config.in
  config FEATURE_AWK_MATH
  	bool "Enable math functions (requires libm)"
  	default y
-diff -urN bb.old/editors/Kbuild bb.dev/editors/Kbuild
---- bb.old/editors/Kbuild	2007-03-18 17:59:37.000000000 +0100
-+++ bb.dev/editors/Kbuild	2007-05-20 22:30:31.381512128 +0200
+Index: busybox-1.4.2/editors/Kbuild
+===================================================================
+--- busybox-1.4.2.orig/editors/Kbuild	2007-06-04 13:21:31.492189128 +0200
++++ busybox-1.4.2/editors/Kbuild	2007-06-04 13:21:37.929210552 +0200
 @@ -10,3 +10,12 @@
  lib-$(CONFIG_PATCH)     += patch.o
  lib-$(CONFIG_SED)       += sed.o
@@ -1113,9 +1119,10 @@ diff -urN bb.old/editors/Kbuild bb.dev/editors/Kbuild
 +editors/awx_parser.o: editors/awx_parser.c FORCE
 +	$(call cmd,force_checksrc)
 +	$(call if_changed_rule,cc_o_c)
-diff -urN bb.old/include/applets.h bb.dev/include/applets.h
---- bb.old/include/applets.h	2007-05-20 04:17:05.003197632 +0200
-+++ bb.dev/include/applets.h	2007-05-20 22:30:31.381512128 +0200
+Index: busybox-1.4.2/include/applets.h
+===================================================================
+--- busybox-1.4.2.orig/include/applets.h	2007-06-04 13:21:36.732392496 +0200
++++ busybox-1.4.2/include/applets.h	2007-06-04 13:21:37.929210552 +0200
 @@ -60,6 +60,7 @@
  USE_ARPING(APPLET(arping, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
  USE_ASH(APPLET_NOUSAGE(ash, ash, _BB_DIR_BIN, _BB_SUID_NEVER))
@@ -1124,9 +1131,10 @@ diff -urN bb.old/include/applets.h bb.dev/include/applets.h
  USE_BASENAME(APPLET(basename, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
  USE_BBCONFIG(APPLET(bbconfig, _BB_DIR_BIN, _BB_SUID_NEVER))
  //USE_BBSH(APPLET(bbsh, _BB_DIR_BIN, _BB_SUID_NEVER))
-diff -urN bb.old/include/cgi.h bb.dev/include/cgi.h
---- bb.old/include/cgi.h	1970-01-01 01:00:00.000000000 +0100
-+++ bb.dev/include/cgi.h	2007-05-20 22:30:31.381512128 +0200
+Index: busybox-1.4.2/include/cgi.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ busybox-1.4.2/include/cgi.h	2007-06-04 13:21:37.929210552 +0200
 @@ -0,0 +1,8 @@
 +#ifndef CGI_H
 +#define CGI_H
@@ -1136,9 +1144,10 @@ diff -urN bb.old/include/cgi.h bb.dev/include/cgi.h
 +int cgi_init(var_handler);
 +
 +#endif
-diff -urN bb.old/libbb/cgi.c bb.dev/libbb/cgi.c
---- bb.old/libbb/cgi.c	1970-01-01 01:00:00.000000000 +0100
-+++ bb.dev/libbb/cgi.c	2007-05-20 22:30:31.382511976 +0200
+Index: busybox-1.4.2/libbb/cgi.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ busybox-1.4.2/libbb/cgi.c	2007-06-04 13:21:37.930210400 +0200
 @@ -0,0 +1,457 @@
 +/* --------------------------------------------------------------------------
 + * functions for processing cgi form data
@@ -1597,9 +1606,10 @@ diff -urN bb.old/libbb/cgi.c bb.dev/libbb/cgi.c
 +
 +	return retval;
 +} 
-diff -urN bb.old/libbb/Kbuild bb.dev/libbb/Kbuild
---- bb.old/libbb/Kbuild	2007-05-20 04:17:05.004197480 +0200
-+++ bb.dev/libbb/Kbuild	2007-05-20 22:30:31.382511976 +0200
+Index: busybox-1.4.2/libbb/Kbuild
+===================================================================
+--- busybox-1.4.2.orig/libbb/Kbuild	2007-06-04 13:21:37.710243840 +0200
++++ busybox-1.4.2/libbb/Kbuild	2007-06-04 13:21:37.930210400 +0200
 @@ -118,3 +118,6 @@
  lib-$(CONFIG_MDEV) += xregcomp.o
  lib-$(CONFIG_LESS) += xregcomp.o

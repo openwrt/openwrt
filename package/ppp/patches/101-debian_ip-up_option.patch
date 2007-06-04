@@ -1,7 +1,8 @@
-diff -ruNp ppp-2.4.3.orig/pppd/ipcp.c ppp-2.4.3/pppd/ipcp.c
---- ppp-2.4.3.orig/pppd/ipcp.c	2004-11-13 13:03:26.000000000 +0100
-+++ ppp-2.4.3/pppd/ipcp.c	2005-02-20 18:45:22.241810136 +0100
-@@ -1846,7 +1846,7 @@ ipcp_up(f)
+Index: ppp-2.4.3/pppd/ipcp.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/ipcp.c	2007-06-04 13:22:08.478566344 +0200
++++ ppp-2.4.3/pppd/ipcp.c	2007-06-04 13:22:09.003486544 +0200
+@@ -1846,7 +1846,7 @@
       */
      if (ipcp_script_state == s_down && ipcp_script_pid == 0) {
  	ipcp_script_state = s_up;
@@ -10,7 +11,7 @@ diff -ruNp ppp-2.4.3.orig/pppd/ipcp.c ppp-2.4.3/pppd/ipcp.c
      }
  }
  
-@@ -1896,7 +1896,7 @@ ipcp_down(f)
+@@ -1896,7 +1896,7 @@
      /* Execute the ip-down script */
      if (ipcp_script_state == s_up && ipcp_script_pid == 0) {
  	ipcp_script_state = s_down;
@@ -19,7 +20,7 @@ diff -ruNp ppp-2.4.3.orig/pppd/ipcp.c ppp-2.4.3/pppd/ipcp.c
      }
  }
  
-@@ -1950,13 +1950,13 @@ ipcp_script_done(arg)
+@@ -1950,13 +1950,13 @@
      case s_up:
  	if (ipcp_fsm[0].state != OPENED) {
  	    ipcp_script_state = s_down;
@@ -35,10 +36,11 @@ diff -ruNp ppp-2.4.3.orig/pppd/ipcp.c ppp-2.4.3/pppd/ipcp.c
  	}
  	break;
      }
-diff -ruNp ppp-2.4.3.orig/pppd/main.c ppp-2.4.3/pppd/main.c
---- ppp-2.4.3.orig/pppd/main.c	2005-02-20 18:46:14.409879384 +0100
-+++ ppp-2.4.3/pppd/main.c	2005-02-20 18:45:22.243809832 +0100
-@@ -314,6 +314,9 @@ main(argc, argv)
+Index: ppp-2.4.3/pppd/main.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/main.c	2007-06-04 13:22:08.487564976 +0200
++++ ppp-2.4.3/pppd/main.c	2007-06-04 13:22:09.004486392 +0200
+@@ -314,6 +314,9 @@
      struct protent *protp;
      char numbuf[16];
  
@@ -48,10 +50,11 @@ diff -ruNp ppp-2.4.3.orig/pppd/main.c ppp-2.4.3/pppd/main.c
      link_stats_valid = 0;
      new_phase(PHASE_INITIALIZE);
  
-diff -ruNp ppp-2.4.3.orig/pppd/options.c ppp-2.4.3/pppd/options.c
---- ppp-2.4.3.orig/pppd/options.c	2005-02-20 18:46:14.410879232 +0100
-+++ ppp-2.4.3/pppd/options.c	2005-02-20 18:46:02.154742448 +0100
-@@ -108,6 +108,8 @@ char	linkname[MAXPATHLEN];	/* logical na
+Index: ppp-2.4.3/pppd/options.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/options.c	2007-06-04 13:22:08.495563760 +0200
++++ ppp-2.4.3/pppd/options.c	2007-06-04 13:22:09.005486240 +0200
+@@ -108,6 +108,8 @@
  bool	tune_kernel;		/* may alter kernel settings */
  int	connect_delay = 1000;	/* wait this many ms after connect script */
  int	req_unit = -1;		/* requested interface unit */
@@ -60,7 +63,7 @@ diff -ruNp ppp-2.4.3.orig/pppd/options.c ppp-2.4.3/pppd/options.c
  bool	multilink = 0;		/* Enable multilink operation */
  char	*bundle_name = NULL;	/* bundle name for multilink */
  bool	dump_options;		/* print out option values */
-@@ -276,6 +278,13 @@ option_t general_options[] = {
+@@ -276,6 +278,13 @@
        "Number of seconds to wait for child processes at exit",
        OPT_PRIO },
  
@@ -74,10 +77,11 @@ diff -ruNp ppp-2.4.3.orig/pppd/options.c ppp-2.4.3/pppd/options.c
  #ifdef HAVE_MULTILINK
      { "multilink", o_bool, &multilink,
        "Enable multilink operation", OPT_PRIO | 1 },
-diff -ruNp ppp-2.4.3.orig/pppd/pppd.h ppp-2.4.3/pppd/pppd.h
---- ppp-2.4.3.orig/pppd/pppd.h	2005-02-20 18:46:14.414878624 +0100
-+++ ppp-2.4.3/pppd/pppd.h	2005-02-20 18:45:22.247809224 +0100
-@@ -312,6 +312,8 @@ extern bool	tune_kernel;	/* May alter ke
+Index: ppp-2.4.3/pppd/pppd.h
+===================================================================
+--- ppp-2.4.3.orig/pppd/pppd.h	2007-06-04 13:22:08.505562240 +0200
++++ ppp-2.4.3/pppd/pppd.h	2007-06-04 13:22:09.005486240 +0200
+@@ -312,6 +312,8 @@
  extern int	connect_delay;	/* Time to delay after connect script */
  extern int	max_data_rate;	/* max bytes/sec through charshunt */
  extern int	req_unit;	/* interface unit number to use */

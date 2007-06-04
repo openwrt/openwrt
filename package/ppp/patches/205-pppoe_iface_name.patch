@@ -1,7 +1,8 @@
-diff -urN ppp-2.4.3/pppd/plugins/rp-pppoe/plugin.c ppp-2.4.3.new/pppd/plugins/rp-pppoe/plugin.c
---- ppp-2.4.3/pppd/plugins/rp-pppoe/plugin.c	2004-11-04 11:07:37.000000000 +0100
-+++ ppp-2.4.3.new/pppd/plugins/rp-pppoe/plugin.c	2007-04-17 18:38:12.000000000 +0200
-@@ -285,9 +285,9 @@
+Index: ppp-2.4.3/pppd/plugins/rp-pppoe/plugin.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/plugins/rp-pppoe/plugin.c	2007-06-04 13:22:09.417423616 +0200
++++ ppp-2.4.3/pppd/plugins/rp-pppoe/plugin.c	2007-06-04 13:22:12.953885992 +0200
+@@ -282,9 +282,9 @@
      if (strlen(cmd) > 4 && !strncmp(cmd, "nic-", 4)) {
  	/* Strip off "nic-" */
  	cmd += 4;

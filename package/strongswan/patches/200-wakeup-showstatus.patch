@@ -1,6 +1,7 @@
-diff -ruN strongswan-2.8.2-orig/programs/Makefile strongswan-2.8.2/programs/Makefile
---- strongswan-2.8.2-orig/programs/Makefile	2006-08-28 07:12:36.000000000 -0400
-+++ strongswan-2.8.2/programs/Makefile	2007-02-05 00:27:47.214280563 -0500
+Index: strongswan-2.8.2/programs/Makefile
+===================================================================
+--- strongswan-2.8.2.orig/programs/Makefile	2007-06-04 13:23:04.661025312 +0200
++++ strongswan-2.8.2/programs/Makefile	2007-06-04 13:23:06.414758704 +0200
 @@ -22,7 +22,7 @@
  SUBDIRS+=_realsetup _secretcensor _startklips _updown _updown_espmark
  SUBDIRS+=auto barf ipsec look manual ranbits secrets starter
@@ -10,9 +11,10 @@ diff -ruN strongswan-2.8.2-orig/programs/Makefile strongswan-2.8.2/programs/Make
  
  ifeq ($(USE_LWRES),true)
  SUBDIRS+=lwdnsq
-diff -ruN strongswan-2.8.2-orig/programs/_showstatus/Makefile strongswan-2.8.2/programs/_showstatus/Makefile
---- strongswan-2.8.2-orig/programs/_showstatus/Makefile	1969-12-31 19:00:00.000000000 -0500
-+++ strongswan-2.8.2/programs/_showstatus/Makefile	2007-02-05 00:31:11.380714322 -0500
+Index: strongswan-2.8.2/programs/_showstatus/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ strongswan-2.8.2/programs/_showstatus/Makefile	2007-06-04 13:23:06.414758704 +0200
 @@ -0,0 +1,22 @@
 +# Makefile for miscelaneous programs
 +# Copyright (C) 2002  Michael Richardson	<mcr@freeswan.org>
@@ -36,9 +38,10 @@ diff -ruN strongswan-2.8.2-orig/programs/_showstatus/Makefile strongswan-2.8.2/p
 +PROGRAMDIR=${LIBDIR}
 +
 +include ../Makefile.program
-diff -ruN strongswan-2.8.2-orig/programs/_showstatus/_showstatus.8 strongswan-2.8.2/programs/_showstatus/_showstatus.8
---- strongswan-2.8.2-orig/programs/_showstatus/_showstatus.8	1969-12-31 19:00:00.000000000 -0500
-+++ strongswan-2.8.2/programs/_showstatus/_showstatus.8	2007-02-05 00:36:00.650410824 -0500
+Index: strongswan-2.8.2/programs/_showstatus/_showstatus.8
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ strongswan-2.8.2/programs/_showstatus/_showstatus.8	2007-06-04 13:23:06.414758704 +0200
 @@ -0,0 +1,23 @@
 +.TH _showstatus 8 "03 Feb 2007"
 +.\"
@@ -63,9 +66,10 @@ diff -ruN strongswan-2.8.2-orig/programs/_showstatus/_showstatus.8 strongswan-2.
 +by Kevin Cody Jr. Original manpage for _updown by Michael Richardson.
 +Original program written by Henry Spencer. Extended for the Linux strongSwan
 +project <http://www.strongswan.org/> by Andreas Steffen.
-diff -ruN strongswan-2.8.2-orig/programs/_showstatus/_showstatus.in strongswan-2.8.2/programs/_showstatus/_showstatus.in
---- strongswan-2.8.2-orig/programs/_showstatus/_showstatus.in	1969-12-31 19:00:00.000000000 -0500
-+++ strongswan-2.8.2/programs/_showstatus/_showstatus.in	2007-02-05 00:55:56.563116192 -0500
+Index: strongswan-2.8.2/programs/_showstatus/_showstatus.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ strongswan-2.8.2/programs/_showstatus/_showstatus.in	2007-06-04 13:23:06.414758704 +0200
 @@ -0,0 +1,70 @@
 +#! /bin/sh
 +#
@@ -137,9 +141,10 @@ diff -ruN strongswan-2.8.2-orig/programs/_showstatus/_showstatus.in strongswan-2
 +		;;
 +esac
 +
-diff -ruN strongswan-2.8.2-orig/programs/wakeup/Makefile strongswan-2.8.2/programs/wakeup/Makefile
---- strongswan-2.8.2-orig/programs/wakeup/Makefile	1969-12-31 19:00:00.000000000 -0500
-+++ strongswan-2.8.2/programs/wakeup/Makefile	2007-02-05 00:28:03.960726309 -0500
+Index: strongswan-2.8.2/programs/wakeup/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ strongswan-2.8.2/programs/wakeup/Makefile	2007-06-04 13:23:06.415758552 +0200
 @@ -0,0 +1,22 @@
 +# Makefile for miscelaneous programs
 +# Copyright (C) 2002  Michael Richardson	<mcr@freeswan.org>
@@ -163,9 +168,10 @@ diff -ruN strongswan-2.8.2-orig/programs/wakeup/Makefile strongswan-2.8.2/progra
 +PROGRAMDIR=${LIBDIR}
 +
 +include ../Makefile.program
-diff -ruN strongswan-2.8.2-orig/programs/wakeup/wakeup.8 strongswan-2.8.2/programs/wakeup/wakeup.8
---- strongswan-2.8.2-orig/programs/wakeup/wakeup.8	1969-12-31 19:00:00.000000000 -0500
-+++ strongswan-2.8.2/programs/wakeup/wakeup.8	2007-02-05 00:36:34.029298760 -0500
+Index: strongswan-2.8.2/programs/wakeup/wakeup.8
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ strongswan-2.8.2/programs/wakeup/wakeup.8	2007-06-04 13:23:06.415758552 +0200
 @@ -0,0 +1,16 @@
 +.TH wakeup 8 "03 Feb 2007"
 +.\"
@@ -183,9 +189,10 @@ diff -ruN strongswan-2.8.2-orig/programs/wakeup/wakeup.8 strongswan-2.8.2/progra
 +by Kevin Cody Jr. Original manpage for _updown by Michael Richardson.
 +Original program written by Henry Spencer. Extended for the Linux strongSwan
 +project <http://www.strongswan.org/> by Andreas Steffen.
-diff -ruN strongswan-2.8.2-orig/programs/wakeup/wakeup.in strongswan-2.8.2/programs/wakeup/wakeup.in
---- strongswan-2.8.2-orig/programs/wakeup/wakeup.in	1969-12-31 19:00:00.000000000 -0500
-+++ strongswan-2.8.2/programs/wakeup/wakeup.in	2007-02-05 00:28:03.961726336 -0500
+Index: strongswan-2.8.2/programs/wakeup/wakeup.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ strongswan-2.8.2/programs/wakeup/wakeup.in	2007-06-04 13:23:06.415758552 +0200
 @@ -0,0 +1,38 @@
 +#! /bin/sh
 +# wakeup script

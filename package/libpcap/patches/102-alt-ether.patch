@@ -1,6 +1,7 @@
-diff -urN libpcap-0.9.4.orig/nametoaddr.c libpcap-0.9.4/nametoaddr.c
---- libpcap-0.9.4.orig/nametoaddr.c	2005-04-20 13:13:51.000000000 +0200
-+++ libpcap-0.9.4/nametoaddr.c	2006-02-05 16:58:46.000000000 +0100
+Index: libpcap-0.9.4/nametoaddr.c
+===================================================================
+--- libpcap-0.9.4.orig/nametoaddr.c	2007-06-04 13:22:03.499323304 +0200
++++ libpcap-0.9.4/nametoaddr.c	2007-06-04 13:22:03.986249280 +0200
 @@ -410,7 +410,7 @@
  	e = ep = (u_char *)malloc(6);
  
@@ -10,9 +11,10 @@ diff -urN libpcap-0.9.4.orig/nametoaddr.c libpcap-0.9.4/nametoaddr.c
  			s += 1;
  		d = xdtoi(*s++);
  		if (isxdigit((unsigned char)*s)) {
-diff -urN libpcap-0.9.4.orig/scanner.l libpcap-0.9.4/scanner.l
---- libpcap-0.9.4.orig/scanner.l	2005-09-05 11:08:07.000000000 +0200
-+++ libpcap-0.9.4/scanner.l	2006-02-05 17:00:13.000000000 +0100
+Index: libpcap-0.9.4/scanner.l
+===================================================================
+--- libpcap-0.9.4.orig/scanner.l	2007-06-04 13:22:03.506322240 +0200
++++ libpcap-0.9.4/scanner.l	2007-06-04 13:22:03.987249128 +0200
 @@ -80,6 +80,7 @@
  N		([0-9]+|(0X|0x)[0-9A-Fa-f]+)
  B		([0-9A-Fa-f][0-9A-Fa-f]?)

@@ -1,6 +1,7 @@
-diff -ur busybox.old/coreutils/md5_sha1_sum.c busybox.dev/coreutils/md5_sha1_sum.c
---- busybox.old/coreutils/md5_sha1_sum.c	2007-01-19 22:23:05.000000000 +0100
-+++ busybox.dev/coreutils/md5_sha1_sum.c	2007-01-22 13:24:51.000000000 +0100
+Index: busybox-1.4.2/coreutils/md5_sha1_sum.c
+===================================================================
+--- busybox-1.4.2.orig/coreutils/md5_sha1_sum.c	2007-06-04 13:21:31.536182440 +0200
++++ busybox-1.4.2/coreutils/md5_sha1_sum.c	2007-06-04 13:21:37.709243992 +0200
 @@ -8,76 +8,10 @@
  
  #include "busybox.h"
@@ -78,10 +79,11 @@ diff -ur busybox.old/coreutils/md5_sha1_sum.c busybox.dev/coreutils/md5_sha1_sum
  int md5_sha1_sum_main(int argc, char **argv)
  {
  	int return_value = EXIT_SUCCESS;
-diff -ur busybox.old/include/libbb.h busybox.dev/include/libbb.h
---- busybox.old/include/libbb.h	2007-01-19 22:23:10.000000000 +0100
-+++ busybox.dev/include/libbb.h	2007-01-22 13:28:56.000000000 +0100
-@@ -637,6 +637,7 @@
+Index: busybox-1.4.2/include/libbb.h
+===================================================================
+--- busybox-1.4.2.orig/include/libbb.h	2007-06-04 13:21:35.388596784 +0200
++++ busybox-1.4.2/include/libbb.h	2007-06-04 13:21:37.709243992 +0200
+@@ -641,6 +641,7 @@
  extern const char bb_uuenc_tbl_std[];
  void bb_uuencode(const unsigned char *s, char *store, const int length, const char *tbl);
  
@@ -89,7 +91,7 @@ diff -ur busybox.old/include/libbb.h busybox.dev/include/libbb.h
  typedef struct sha1_ctx_t {
  	uint32_t count[2];
  	uint32_t hash[5];
-@@ -658,6 +659,8 @@
+@@ -662,6 +663,8 @@
  void md5_begin(md5_ctx_t *ctx);
  void md5_hash(const void *data, size_t length, md5_ctx_t *ctx);
  void *md5_end(void *resbuf, md5_ctx_t *ctx);
@@ -98,9 +100,10 @@ diff -ur busybox.old/include/libbb.h busybox.dev/include/libbb.h
  
  uint32_t *crc32_filltable(int endian);
  
-diff -ur busybox.old/libbb/Kbuild busybox.dev/libbb/Kbuild
---- busybox.old/libbb/Kbuild	2007-01-19 22:23:06.000000000 +0100
-+++ busybox.dev/libbb/Kbuild	2007-01-22 13:29:24.000000000 +0100
+Index: busybox-1.4.2/libbb/Kbuild
+===================================================================
+--- busybox-1.4.2.orig/libbb/Kbuild	2007-06-04 13:21:31.548180616 +0200
++++ busybox-1.4.2/libbb/Kbuild	2007-06-04 13:21:37.710243840 +0200
 @@ -37,6 +37,7 @@
  lib-y += get_last_path_component.o
  lib-y += get_line_from_file.o
@@ -109,8 +112,10 @@ diff -ur busybox.old/libbb/Kbuild busybox.dev/libbb/Kbuild
  lib-y += herror_msg.o
  lib-y += herror_msg_and_die.o
  lib-y += human_readable.o
---- busybox.old/libbb/hash.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox.dev/libbb/hash.c	2007-01-22 13:52:41.000000000 +0100
+Index: busybox-1.4.2/libbb/hash.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ busybox-1.4.2/libbb/hash.c	2007-06-04 13:21:37.710243840 +0200
 @@ -0,0 +1,82 @@
 +/*
 + *  Copyright (C) 2003 Glenn L. McGrath

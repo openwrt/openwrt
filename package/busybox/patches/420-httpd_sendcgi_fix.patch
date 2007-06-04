@@ -1,7 +1,8 @@
-diff -ur busybox.old/networking/httpd.c busybox.dev/networking/httpd.c
---- busybox.old/networking/httpd.c	2007-02-10 16:36:50.950661000 +0100
-+++ busybox.dev/networking/httpd.c	2007-02-11 21:24:52.026742384 +0100
-@@ -1211,9 +1211,10 @@
+Index: busybox-1.4.2/networking/httpd.c
+===================================================================
+--- busybox-1.4.2.orig/networking/httpd.c	2007-06-04 13:21:35.585566840 +0200
++++ busybox-1.4.2/networking/httpd.c	2007-06-04 13:21:35.775537960 +0200
+@@ -1218,9 +1218,10 @@
  #if PIPESIZE >= MAX_MEMORY_BUFF
  # error "PIPESIZE >= MAX_MEMORY_BUFF"
  #endif

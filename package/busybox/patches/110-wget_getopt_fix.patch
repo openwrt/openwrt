@@ -1,6 +1,7 @@
-diff -ur busybox.old/networking/wget.c busybox.dev/networking/wget.c
---- busybox.old/networking/wget.c	2007-01-27 15:44:02.235530528 +0100
-+++ busybox.dev/networking/wget.c	2007-01-27 15:53:26.549741728 +0100
+Index: busybox-1.4.2/networking/wget.c
+===================================================================
+--- busybox-1.4.2.orig/networking/wget.c	2007-06-04 13:21:32.408049896 +0200
++++ busybox-1.4.2/networking/wget.c	2007-06-04 13:21:32.681008400 +0200
 @@ -136,7 +136,7 @@
  		{ "directory-prefix", required_argument, NULL, 'P' },
  		{ "proxy",            required_argument, NULL, 'Y' },
@@ -10,4 +11,3 @@ diff -ur busybox.old/networking/wget.c busybox.dev/networking/wget.c
  		{ "header",           required_argument, NULL, 0xfe },
  		{ 0, 0, 0, 0 }
  	};
-Only in busybox.dev/networking: .wget.c.swp

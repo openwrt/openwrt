@@ -1,7 +1,8 @@
-diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
---- madwifi.old/ath/if_ath.c	2007-06-01 16:44:25.170898128 +0200
-+++ madwifi.dev/ath/if_ath.c	2007-06-01 20:01:24.205131816 +0200
-@@ -2555,7 +2555,7 @@
+Index: madwifi-ng-r2420-20070602/ath/if_ath.c
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/ath/if_ath.c	2007-06-04 13:21:58.427094400 +0200
++++ madwifi-ng-r2420-20070602/ath/if_ath.c	2007-06-04 13:21:58.684055336 +0200
+@@ -2554,7 +2554,7 @@
  	/* NB: use this lock to protect an->an_ff_txbuf in athff_can_aggregate()
  	 *     call too.
  	 */
@@ -10,7 +11,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  	if (athff_can_aggregate(sc, eh, an, skb, vap->iv_fragthreshold, &ff_flush)) {
  		if (an->an_tx_ffbuf[skb->priority]) { /* i.e., frame on the staging queue */
  			bf = an->an_tx_ffbuf[skb->priority];
-@@ -2563,6 +2563,7 @@
+@@ -2562,6 +2562,7 @@
  			/* get (and remove) the frame from staging queue */
  			TAILQ_REMOVE(&txq->axq_stageq, bf, bf_stagelist);
  			an->an_tx_ffbuf[skb->priority] = NULL;
@@ -18,7 +19,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  
  			/*
  			 * chain skbs and add FF magic
-@@ -2585,7 +2586,7 @@
+@@ -2584,7 +2585,7 @@
  			 */
  			ATH_HARDSTART_GET_TX_BUF_WITH_LOCK;
  			if (bf == NULL) {
@@ -27,7 +28,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  				goto hardstart_fail;
  			}
  			DPRINTF(sc, ATH_DEBUG_XMIT | ATH_DEBUG_FF,
-@@ -2597,8 +2598,7 @@
+@@ -2596,8 +2597,7 @@
  			an->an_tx_ffbuf[skb->priority] = bf;
  
  			TAILQ_INSERT_HEAD(&txq->axq_stageq, bf, bf_stagelist);
@@ -37,7 +38,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  
  			return 0;
  		}
-@@ -2650,12 +2650,12 @@
+@@ -2649,12 +2649,12 @@
  
  		ATH_HARDSTART_GET_TX_BUF_WITH_LOCK;
  		if (bf == NULL) {
@@ -52,9 +53,10 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  
  ff_bypass:
  
-diff -ur madwifi.old/ath/if_athvar.h madwifi.dev/ath/if_athvar.h
---- madwifi.old/ath/if_athvar.h	2007-06-01 16:44:25.149901320 +0200
-+++ madwifi.dev/ath/if_athvar.h	2007-06-01 20:00:06.916881416 +0200
+Index: madwifi-ng-r2420-20070602/ath/if_athvar.h
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/ath/if_athvar.h	2007-06-04 13:21:58.428094248 +0200
++++ madwifi-ng-r2420-20070602/ath/if_athvar.h	2007-06-04 13:21:58.684055336 +0200
 @@ -484,6 +484,8 @@
  #define ATH_TXQ_INTR_PERIOD		5  /* axq_intrcnt period for intr gen */
  #define	ATH_TXQ_LOCK_INIT(_tq)		spin_lock_init(&(_tq)->axq_lock)
@@ -64,4 +66,3 @@ diff -ur madwifi.old/ath/if_athvar.h madwifi.dev/ath/if_athvar.h
  #define ATH_TXQ_LOCK_IRQ(_tq)		do {				\
  	unsigned long __axq_lockflags;					\
  	spin_lock_irqsave(&(_tq)->axq_lock, __axq_lockflags);
-

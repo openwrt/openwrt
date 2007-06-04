@@ -1,6 +1,7 @@
-diff -ruN strongswan-2.8.1-orig/lib/libcrypto/libaes/Makefile strongswan-2.8.1/lib/libcrypto/libaes/Makefile
---- strongswan-2.8.1-orig/lib/libcrypto/libaes/Makefile	2004-03-22 16:53:16.000000000 -0500
-+++ strongswan-2.8.1/lib/libcrypto/libaes/Makefile	2007-01-17 00:48:52.260789653 -0500
+Index: strongswan-2.8.2/lib/libcrypto/libaes/Makefile
+===================================================================
+--- strongswan-2.8.2.orig/lib/libcrypto/libaes/Makefile	2007-06-04 13:23:04.777007680 +0200
++++ strongswan-2.8.2/lib/libcrypto/libaes/Makefile	2007-06-04 13:23:04.873992936 +0200
 @@ -25,10 +25,8 @@
  
  $(BLIB): $(LIBOBJ)
@@ -14,9 +15,10 @@ diff -ruN strongswan-2.8.1-orig/lib/libcrypto/libaes/Makefile strongswan-2.8.1/l
  
  testx: test_main_mac.o $(BLIB)
  	$(CC) -o $@ $^ 
-diff -ruN strongswan-2.8.1-orig/lib/libcrypto/libblowfish/Makefile strongswan-2.8.1/lib/libcrypto/libblowfish/Makefile
---- strongswan-2.8.1-orig/lib/libcrypto/libblowfish/Makefile	2004-03-22 16:53:16.000000000 -0500
-+++ strongswan-2.8.1/lib/libcrypto/libblowfish/Makefile	2007-01-17 01:40:41.716879761 -0500
+Index: strongswan-2.8.2/lib/libcrypto/libblowfish/Makefile
+===================================================================
+--- strongswan-2.8.2.orig/lib/libcrypto/libblowfish/Makefile	2007-06-04 13:23:04.783006768 +0200
++++ strongswan-2.8.2/lib/libcrypto/libblowfish/Makefile	2007-06-04 13:23:04.873992936 +0200
 @@ -58,7 +58,7 @@
  lib:	$(LIB)
  
@@ -26,9 +28,10 @@ diff -ruN strongswan-2.8.1-orig/lib/libcrypto/libblowfish/Makefile strongswan-2.
  	$(RANLIB) $(LIB)
  
  # elf
-diff -ruN strongswan-2.8.1-orig/lib/libcrypto/libserpent/Makefile strongswan-2.8.1/lib/libcrypto/libserpent/Makefile
---- strongswan-2.8.1-orig/lib/libcrypto/libserpent/Makefile	2004-03-22 16:53:16.000000000 -0500
-+++ strongswan-2.8.1/lib/libcrypto/libserpent/Makefile	2007-01-17 00:50:37.692571031 -0500
+Index: strongswan-2.8.2/lib/libcrypto/libserpent/Makefile
+===================================================================
+--- strongswan-2.8.2.orig/lib/libcrypto/libserpent/Makefile	2007-06-04 13:23:04.790005704 +0200
++++ strongswan-2.8.2/lib/libcrypto/libserpent/Makefile	2007-06-04 13:23:04.873992936 +0200
 @@ -8,10 +8,8 @@
  
  $(BLIB): $(LIBOBJ)
@@ -42,9 +45,10 @@ diff -ruN strongswan-2.8.1-orig/lib/libcrypto/libserpent/Makefile strongswan-2.8
  
  test: test_main.o $(BLIB)
  	$(CC) -o $@ $^ 
-diff -ruN strongswan-2.8.1-orig/lib/libcrypto/libsha2/Makefile strongswan-2.8.1/lib/libcrypto/libsha2/Makefile
---- strongswan-2.8.1-orig/lib/libcrypto/libsha2/Makefile	2004-03-22 16:53:16.000000000 -0500
-+++ strongswan-2.8.1/lib/libcrypto/libsha2/Makefile	2007-01-17 00:50:46.050791555 -0500
+Index: strongswan-2.8.2/lib/libcrypto/libsha2/Makefile
+===================================================================
+--- strongswan-2.8.2.orig/lib/libcrypto/libsha2/Makefile	2007-06-04 13:23:04.796004792 +0200
++++ strongswan-2.8.2/lib/libcrypto/libsha2/Makefile	2007-06-04 13:23:04.874992784 +0200
 @@ -9,10 +9,8 @@
  
  $(BLIB): $(LIBOBJ)
@@ -58,9 +62,10 @@ diff -ruN strongswan-2.8.1-orig/lib/libcrypto/libsha2/Makefile strongswan-2.8.1/
  
  test: test_main.o $(BLIB)
  	$(CC) -o $@ $^ 
-diff -ruN strongswan-2.8.1-orig/lib/libcrypto/libtwofish/Makefile strongswan-2.8.1/lib/libcrypto/libtwofish/Makefile
---- strongswan-2.8.1-orig/lib/libcrypto/libtwofish/Makefile	2004-03-22 16:53:17.000000000 -0500
-+++ strongswan-2.8.1/lib/libcrypto/libtwofish/Makefile	2007-01-17 00:50:53.533988997 -0500
+Index: strongswan-2.8.2/lib/libcrypto/libtwofish/Makefile
+===================================================================
+--- strongswan-2.8.2.orig/lib/libcrypto/libtwofish/Makefile	2007-06-04 13:23:04.804003576 +0200
++++ strongswan-2.8.2/lib/libcrypto/libtwofish/Makefile	2007-06-04 13:23:04.874992784 +0200
 @@ -9,10 +9,8 @@
  
  $(BLIB): $(LIBOBJ)

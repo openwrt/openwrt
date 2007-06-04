@@ -1,6 +1,8 @@
---- wireless-tools-27.orig/iwlib.c
-+++ wireless-tools-27/iwlib.c
-@@ -622,6 +622,7 @@
+Index: wireless_tools.29/iwlib.c
+===================================================================
+--- wireless_tools.29.orig/iwlib.c	2007-06-04 13:22:18.700012448 +0200
++++ wireless_tools.29/iwlib.c	2007-06-04 13:22:18.773001352 +0200
+@@ -667,6 +667,7 @@
  {
    struct iwreq		wrq;
  
@@ -8,9 +10,11 @@
    memset((char *) info, 0, sizeof(struct wireless_config));
  
    /* Get wireless name */
---- wireless-tools-27.orig/Makefile
-+++ wireless-tools-27/Makefile
-@@ -64,8 +64,8 @@
+Index: wireless_tools.29/Makefile
+===================================================================
+--- wireless_tools.29.orig/Makefile	2007-06-04 13:22:18.707011384 +0200
++++ wireless_tools.29/Makefile	2007-06-04 13:22:18.774001200 +0200
+@@ -73,8 +73,8 @@
  # Install directories
  INSTALL_DIR= $(PREFIX)/sbin/
  INSTALL_LIB= $(PREFIX)/lib/
@@ -21,7 +25,7 @@
  
  # Various commands
  RM = rm -f
-@@ -81,9 +81,9 @@
+@@ -102,9 +102,9 @@
  endif
  
  # Other flags
@@ -31,5 +35,5 @@
 -#CFLAGS=-O2 -W -Wall -Wstrict-prototypes -I.
 +CFLAGS=-O2 -W -Wall -Wstrict-prototypes -I.
  DEPFLAGS=-MMD
- XCFLAGS=$(CFLAGS) $(DEPFLAGS) $(WARN) $(HEADERS) $(WELIB_FLAG)
+ XCFLAGS=$(CFLAGS) $(DEPFLAGS) $(WARN) $(HEADERS) $(WELIB_FLAG) $(WEDEF_FLAG)
  PICFLAG=-fPIC

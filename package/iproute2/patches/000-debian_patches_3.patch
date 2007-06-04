@@ -1,6 +1,7 @@
-diff -Nur iproute2-2.6.15-060110/doc/ip-cref.tex iproute2-2.6.15-060110-owrt/doc/ip-cref.tex
---- iproute2-2.6.15-060110/doc/ip-cref.tex	2004-04-15 22:56:59.000000000 +0200
-+++ iproute2-2.6.15-060110-owrt/doc/ip-cref.tex	2006-03-22 12:49:35.000000000 +0100
+Index: iproute2-2.6.15-060110/doc/ip-cref.tex
+===================================================================
+--- iproute2-2.6.15-060110.orig/doc/ip-cref.tex	2007-06-04 13:22:33.437771968 +0200
++++ iproute2-2.6.15-060110/doc/ip-cref.tex	2007-06-04 13:22:33.577750688 +0200
 @@ -1322,6 +1322,19 @@
      If it is not given, Linux uses the value selected with \verb|sysctl|
      variable \verb|net/ipv4/tcp_reordering|.
@@ -31,9 +32,10 @@ diff -Nur iproute2-2.6.15-060110/doc/ip-cref.tex iproute2-2.6.15-060110-owrt/doc
  \end{thebibliography}
  
  
-diff -Nur iproute2-2.6.15-060110/doc/Makefile iproute2-2.6.15-060110-owrt/doc/Makefile
---- iproute2-2.6.15-060110/doc/Makefile	2005-03-10 20:01:36.000000000 +0100
-+++ iproute2-2.6.15-060110-owrt/doc/Makefile	2006-03-22 12:49:35.000000000 +0100
+Index: iproute2-2.6.15-060110/doc/Makefile
+===================================================================
+--- iproute2-2.6.15-060110.orig/doc/Makefile	2007-06-04 13:22:33.444770904 +0200
++++ iproute2-2.6.15-060110/doc/Makefile	2007-06-04 13:22:33.577750688 +0200
 @@ -14,6 +14,7 @@
  PAGESPERPAGE=2
  
@@ -65,9 +67,10 @@ diff -Nur iproute2-2.6.15-060110/doc/Makefile iproute2-2.6.15-060110-owrt/doc/Ma
  clean:
 -	rm -f *.aux *.log *.toc $(PSFILES) $(DVIFILES) *.html
 +	rm -f *.aux *.log *.toc $(PSFILES) $(DVIFILES) *.html $(TXTFILES)
-diff -Nur iproute2-2.6.15-060110/include/linux/pkt_sched.h iproute2-2.6.15-060110-owrt/include/linux/pkt_sched.h
---- iproute2-2.6.15-060110/include/linux/pkt_sched.h	2005-12-10 00:27:44.000000000 +0100
-+++ iproute2-2.6.15-060110-owrt/include/linux/pkt_sched.h	2006-03-22 12:49:35.000000000 +0100
+Index: iproute2-2.6.15-060110/include/linux/pkt_sched.h
+===================================================================
+--- iproute2-2.6.15-060110.orig/include/linux/pkt_sched.h	2007-06-04 13:22:33.451769840 +0200
++++ iproute2-2.6.15-060110/include/linux/pkt_sched.h	2007-06-04 13:22:33.578750536 +0200
 @@ -1,3 +1,409 @@
 +#if 0
 +#ifndef __LINUX_PKT_SCHED_H
@@ -595,9 +598,10 @@ diff -Nur iproute2-2.6.15-060110/include/linux/pkt_sched.h iproute2-2.6.15-06011
 +};
 +
  #endif
-diff -Nur iproute2-2.6.15-060110/ip/iproute.c iproute2-2.6.15-060110-owrt/ip/iproute.c
---- iproute2-2.6.15-060110/ip/iproute.c	2005-10-13 00:49:50.000000000 +0200
-+++ iproute2-2.6.15-060110-owrt/ip/iproute.c	2006-03-22 12:49:35.000000000 +0100
+Index: iproute2-2.6.15-060110/ip/iproute.c
+===================================================================
+--- iproute2-2.6.15-060110.orig/ip/iproute.c	2007-06-04 13:22:33.456769080 +0200
++++ iproute2-2.6.15-060110/ip/iproute.c	2007-06-04 13:22:33.578750536 +0200
 @@ -60,7 +60,7 @@
  	fprintf(stderr, "OPTIONS := FLAGS [ mtu NUMBER ] [ advmss NUMBER ]\n");
  	fprintf(stderr, "           [ rtt NUMBER ] [ rttvar NUMBER ]\n");
@@ -647,9 +651,10 @@ diff -Nur iproute2-2.6.15-060110/ip/iproute.c iproute2-2.6.15-060110-owrt/ip/ipr
  		} else if (strcmp(*argv, "rtt") == 0) {
  			unsigned rtt;
  			NEXT_ARG();
-diff -Nur iproute2-2.6.15-060110/ip/iptunnel.c iproute2-2.6.15-060110-owrt/ip/iptunnel.c
---- iproute2-2.6.15-060110/ip/iptunnel.c	2005-02-10 19:31:18.000000000 +0100
-+++ iproute2-2.6.15-060110-owrt/ip/iptunnel.c	2006-03-22 12:49:35.000000000 +0100
+Index: iproute2-2.6.15-060110/ip/iptunnel.c
+===================================================================
+--- iproute2-2.6.15-060110.orig/ip/iptunnel.c	2007-06-04 13:22:33.463768016 +0200
++++ iproute2-2.6.15-060110/ip/iptunnel.c	2007-06-04 13:22:33.579750384 +0200
 @@ -225,7 +225,7 @@
  			NEXT_ARG();
  			p->i_flags |= GRE_KEY;
@@ -659,9 +664,10 @@ diff -Nur iproute2-2.6.15-060110/ip/iptunnel.c iproute2-2.6.15-060110-owrt/ip/ip
  			else {
  				if (get_unsigned(&uval, *argv, 0)<0) {
  					fprintf(stderr, "invalid value of \"ikey\"\n");
-diff -Nur iproute2-2.6.15-060110/Makefile iproute2-2.6.15-060110-owrt/Makefile
---- iproute2-2.6.15-060110/Makefile	2005-07-09 00:08:47.000000000 +0200
-+++ iproute2-2.6.15-060110-owrt/Makefile	2006-03-22 12:51:29.000000000 +0100
+Index: iproute2-2.6.15-060110/Makefile
+===================================================================
+--- iproute2-2.6.15-060110.orig/Makefile	2007-06-04 13:22:33.468767256 +0200
++++ iproute2-2.6.15-060110/Makefile	2007-06-04 13:22:33.579750384 +0200
 @@ -32,7 +32,7 @@
  LIBNETLINK=../lib/libnetlink.a ../lib/libutil.a
  
@@ -689,9 +695,10 @@ diff -Nur iproute2-2.6.15-060110/Makefile iproute2-2.6.15-060110-owrt/Makefile
  	do $(MAKE) $(MFLAGS) -C $$i clean; done
  
  clobber: clean
-diff -Nur iproute2-2.6.15-060110/man/man8/ip.8 iproute2-2.6.15-060110-owrt/man/man8/ip.8
---- iproute2-2.6.15-060110/man/man8/ip.8	2006-01-03 20:25:29.000000000 +0100
-+++ iproute2-2.6.15-060110-owrt/man/man8/ip.8	2006-03-22 12:49:35.000000000 +0100
+Index: iproute2-2.6.15-060110/man/man8/ip.8
+===================================================================
+--- iproute2-2.6.15-060110.orig/man/man8/ip.8	2007-06-04 13:22:33.473766496 +0200
++++ iproute2-2.6.15-060110/man/man8/ip.8	2007-06-04 13:22:33.580750232 +0200
 @@ -1808,6 +1808,8 @@
  .RB "IP Command reference " ip-cref.ps
  .br
@@ -701,9 +708,10 @@ diff -Nur iproute2-2.6.15-060110/man/man8/ip.8 iproute2-2.6.15-060110-owrt/man/m
  
  .SH AUTHOR
  Original Manpage  by Michail Litvak <mci@owl.openwall.com>
-diff -Nur iproute2-2.6.15-060110/man/man8/tc.8 iproute2-2.6.15-060110-owrt/man/man8/tc.8
---- iproute2-2.6.15-060110/man/man8/tc.8	2004-06-08 22:34:17.000000000 +0200
-+++ iproute2-2.6.15-060110-owrt/man/man8/tc.8	2006-03-22 12:49:35.000000000 +0100
+Index: iproute2-2.6.15-060110/man/man8/tc.8
+===================================================================
+--- iproute2-2.6.15-060110.orig/man/man8/tc.8	2007-06-04 13:22:33.481765280 +0200
++++ iproute2-2.6.15-060110/man/man8/tc.8	2007-06-04 13:22:33.580750232 +0200
 @@ -341,7 +341,7 @@
  .BR tc-pfifo (8),
  .BR tc-bfifo (8),
@@ -713,9 +721,10 @@ diff -Nur iproute2-2.6.15-060110/man/man8/tc.8 iproute2-2.6.15-060110-owrt/man/m
  
  .SH AUTHOR
  Manpage maintained by bert hubert (ahu@ds9a.nl)
-diff -Nur iproute2-2.6.15-060110/misc/Makefile iproute2-2.6.15-060110-owrt/misc/Makefile
---- iproute2-2.6.15-060110/misc/Makefile	2005-06-23 19:39:57.000000000 +0200
-+++ iproute2-2.6.15-060110-owrt/misc/Makefile	2006-03-22 12:49:35.000000000 +0100
+Index: iproute2-2.6.15-060110/misc/Makefile
+===================================================================
+--- iproute2-2.6.15-060110.orig/misc/Makefile	2007-06-04 13:22:33.486764520 +0200
++++ iproute2-2.6.15-060110/misc/Makefile	2007-06-04 13:22:33.580750232 +0200
 @@ -1,7 +1,8 @@
  SSOBJ=ss.o ssfilter.o
  LNSTATOBJ=lnstat.o lnstat_util.o
@@ -726,9 +735,10 @@ diff -Nur iproute2-2.6.15-060110/misc/Makefile iproute2-2.6.15-060110-owrt/misc/
  
  include ../Config
  
-diff -Nur iproute2-2.6.15-060110/misc/netbug iproute2-2.6.15-060110-owrt/misc/netbug
---- iproute2-2.6.15-060110/misc/netbug	2004-04-15 22:56:59.000000000 +0200
-+++ iproute2-2.6.15-060110-owrt/misc/netbug	2006-03-22 12:49:35.000000000 +0100
+Index: iproute2-2.6.15-060110/misc/netbug
+===================================================================
+--- iproute2-2.6.15-060110.orig/misc/netbug	2007-06-04 13:22:33.492763608 +0200
++++ iproute2-2.6.15-060110/misc/netbug	2007-06-04 13:22:33.580750232 +0200
 @@ -1,23 +1,16 @@
  #! /bin/bash
  
@@ -771,9 +781,10 @@ diff -Nur iproute2-2.6.15-060110/misc/netbug iproute2-2.6.15-060110-owrt/misc/ne
  
  echo "Sending to <$mail>; subject is $netbug"
  
-diff -Nur iproute2-2.6.15-060110/tc/Makefile iproute2-2.6.15-060110-owrt/tc/Makefile
---- iproute2-2.6.15-060110/tc/Makefile	2005-07-06 00:11:37.000000000 +0200
-+++ iproute2-2.6.15-060110-owrt/tc/Makefile	2006-03-22 12:49:35.000000000 +0100
+Index: iproute2-2.6.15-060110/tc/Makefile
+===================================================================
+--- iproute2-2.6.15-060110.orig/tc/Makefile	2007-06-04 13:22:33.498762696 +0200
++++ iproute2-2.6.15-060110/tc/Makefile	2007-06-04 13:22:33.581750080 +0200
 @@ -11,6 +11,7 @@
  TCMODULES += q_prio.o
  TCMODULES += q_tbf.o
@@ -782,9 +793,10 @@ diff -Nur iproute2-2.6.15-060110/tc/Makefile iproute2-2.6.15-060110-owrt/tc/Make
  TCMODULES += f_rsvp.o
  TCMODULES += f_u32.o
  TCMODULES += f_route.o
-diff -Nur iproute2-2.6.15-060110/tc/q_htb.c iproute2-2.6.15-060110-owrt/tc/q_htb.c
---- iproute2-2.6.15-060110/tc/q_htb.c	2005-01-18 23:11:58.000000000 +0100
-+++ iproute2-2.6.15-060110-owrt/tc/q_htb.c	2006-03-22 12:49:35.000000000 +0100
+Index: iproute2-2.6.15-060110/tc/q_htb.c
+===================================================================
+--- iproute2-2.6.15-060110.orig/tc/q_htb.c	2007-06-04 13:22:33.503761936 +0200
++++ iproute2-2.6.15-060110/tc/q_htb.c	2007-06-04 13:22:33.581750080 +0200
 @@ -1,3 +1,311 @@
 +#if 0
 +/*
@@ -1097,9 +1109,10 @@ diff -Nur iproute2-2.6.15-060110/tc/q_htb.c iproute2-2.6.15-060110-owrt/tc/q_htb
  /*
   * q_htb.c		HTB.
   *
-diff -Nur iproute2-2.6.15-060110/tc/q_wrr.c iproute2-2.6.15-060110-owrt/tc/q_wrr.c
---- iproute2-2.6.15-060110/tc/q_wrr.c	1970-01-01 01:00:00.000000000 +0100
-+++ iproute2-2.6.15-060110-owrt/tc/q_wrr.c	2006-03-22 12:49:35.000000000 +0100
+Index: iproute2-2.6.15-060110/tc/q_wrr.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ iproute2-2.6.15-060110/tc/q_wrr.c	2007-06-04 13:22:33.582749928 +0200
 @@ -0,0 +1,322 @@
 +#include <stdio.h>
 +#include <stdlib.h>

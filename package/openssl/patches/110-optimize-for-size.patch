@@ -1,6 +1,7 @@
-diff -ur openssl-0.9.8a/Configure openssl-0.9.8a-owrt/Configure
---- openssl-0.9.8a/Configure	2005-08-02 12:59:42.000000000 +0200
-+++ openssl-0.9.8a-owrt/Configure	2006-03-23 14:16:35.000000000 +0100
+Index: openssl-0.9.8e/Configure
+===================================================================
+--- openssl-0.9.8e.orig/Configure	2007-06-04 13:23:32.150846224 +0200
++++ openssl-0.9.8e/Configure	2007-06-04 13:23:32.217836040 +0200
 @@ -353,6 +353,8 @@
  "linux-alpha+bwx-gcc","gcc:-O3 -DL_ENDIAN -DTERMIO::-D_REENTRANT::-ldl:SIXTY_FOUR_BIT_LONG RC4_CHAR RC4_CHUNK DES_RISC1 DES_UNROLL:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
  "linux-alpha-ccc","ccc:-fast -readonly_strings -DL_ENDIAN -DTERMIO::-D_REENTRANT:::SIXTY_FOUR_BIT_LONG RC4_CHUNK DES_INT DES_PTR DES_RISC1 DES_UNROLL:${no_asm}",

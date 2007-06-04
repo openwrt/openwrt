@@ -1,5 +1,7 @@
---- shfs-0.35.orig/shfs/Linux-2.4/shell.c	3 Jun 2004 13:20:44 -0000	1.8
-+++ shfs-0.35/shfs/Linux-2.4/shell.c	18 Jun 2004 12:19:52 -0000
+Index: shfs-0.35/shfs/Linux-2.4/shell.c
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.4/shell.c	2007-06-04 13:22:59.249847936 +0200
++++ shfs-0.35/shfs/Linux-2.4/shell.c	2007-06-04 13:22:59.643788048 +0200
 @@ -961,11 +961,11 @@
  
  	s = info->sockbuf;
@@ -15,8 +17,10 @@
  
  	result = sock_readln(info, info->sockbuf, SOCKBUF_SIZE);
  	if (result < 0)
---- shfs-0.35.orig/shfs/Linux-2.6/shell.c	3 Jun 2004 13:20:47 -0000	1.9
-+++ shfs-0.35/shfs/Linux-2.6/shell.c	18 Jun 2004 12:19:53 -0000
+Index: shfs-0.35/shfs/Linux-2.6/shell.c
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.6/shell.c	2007-06-04 13:22:59.249847936 +0200
++++ shfs-0.35/shfs/Linux-2.6/shell.c	2007-06-04 13:22:59.643788048 +0200
 @@ -974,11 +974,11 @@
  
  	s = info->sockbuf;

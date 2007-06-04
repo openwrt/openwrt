@@ -1,6 +1,7 @@
-diff -ruN ipsec-tools-0.6.6-old/src/racoon/grabmyaddr.c ipsec-tools-0.6.6-new/src/racoon/grabmyaddr.c
---- ipsec-tools-0.6.6-old/src/racoon/grabmyaddr.c	2005-07-16 06:41:01.000000000 +0200
-+++ ipsec-tools-0.6.6-new/src/racoon/grabmyaddr.c	2006-12-15 15:50:13.000000000 +0100
+Index: ipsec-tools-0.6.6/src/racoon/grabmyaddr.c
+===================================================================
+--- ipsec-tools-0.6.6.orig/src/racoon/grabmyaddr.c	2007-06-04 13:22:36.521303200 +0200
++++ ipsec-tools-0.6.6/src/racoon/grabmyaddr.c	2007-06-04 13:22:37.064220664 +0200
 @@ -77,10 +77,17 @@
  #ifdef __linux__
  #include <linux/types.h>

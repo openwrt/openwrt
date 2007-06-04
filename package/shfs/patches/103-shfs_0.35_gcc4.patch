@@ -1,5 +1,7 @@
---- shfs-0.35/shfs/Linux-2.6/dir.c	2004-06-01 09:16:19.000000000 -0400
-+++ shfs-0.35-new/shfs/Linux-2.6/dir.c	2005-02-11 18:12:00.000000000 -0500
+Index: shfs-0.35/shfs/Linux-2.6/dir.c
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.6/dir.c	2007-06-04 13:22:58.041031704 +0200
++++ shfs-0.35/shfs/Linux-2.6/dir.c	2007-06-04 13:22:58.822912840 +0200
 @@ -19,6 +19,8 @@
  #include "shfs_debug.h"
  #include "proc.h"
@@ -9,9 +11,11 @@
  static int
  shfs_dir_open(struct inode *inode, struct file *filp)
  {
---- shfs-0.35/shfs/Linux-2.6/shfs_fs.h	2004-06-01 09:16:19.000000000 -0400
-+++ shfs-0.35-new/shfs/Linux-2.6/shfs_fs.h	2005-02-11 18:12:03.000000000 -0500
-@@ -50,7 +50,6 @@
+Index: shfs-0.35/shfs/Linux-2.6/shfs_fs.h
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.6/shfs_fs.h	2007-06-04 13:22:58.398977288 +0200
++++ shfs-0.35/shfs/Linux-2.6/shfs_fs.h	2007-06-04 13:22:58.823912688 +0200
+@@ -56,7 +56,6 @@
  #define ROUND_TO_MINS(x) do { (x).tv_sec = ((x).tv_sec / 60) * 60; (x).tv_nsec = 0; } while (0)
  
  /* shfs/dir.c */

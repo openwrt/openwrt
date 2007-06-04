@@ -1,7 +1,8 @@
-diff -ur busybox.old/networking/udhcp/dhcpc.c busybox.dev/networking/udhcp/dhcpc.c
---- busybox.old/networking/udhcp/dhcpc.c	2006-11-10 00:17:26.000000000 +0100
-+++ busybox.dev/networking/udhcp/dhcpc.c	2006-11-10 00:17:10.000000000 +0100
-@@ -330,7 +330,7 @@
+Index: busybox-1.4.2/networking/udhcp/dhcpc.c
+===================================================================
+--- busybox-1.4.2.orig/networking/udhcp/dhcpc.c	2007-06-04 13:21:32.319063424 +0200
++++ busybox-1.4.2/networking/udhcp/dhcpc.c	2007-06-04 13:21:33.430894400 +0200
+@@ -291,7 +291,7 @@
  			/* timeout dropped to zero */
  			switch (state) {
  			case INIT_SELECTING:
@@ -10,7 +11,7 @@ diff -ur busybox.old/networking/udhcp/dhcpc.c busybox.dev/networking/udhcp/dhcpc
  					if (packet_num == 0)
  						xid = random_xid();
  
-@@ -355,7 +355,7 @@
+@@ -316,7 +316,7 @@
  				break;
  			case RENEW_REQUESTED:
  			case REQUESTING:

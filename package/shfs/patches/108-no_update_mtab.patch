@@ -1,5 +1,7 @@
---- shfs-0.35.orig/shfsmount/shfsmount.c	2004-06-01 14:16:19.000000000 +0100
-+++ shfs-0.35/shfsmount/shfsmount.c	2007-03-28 21:23:47.194043034 +0100
+Index: shfs-0.35/shfsmount/shfsmount.c
+===================================================================
+--- shfs-0.35.orig/shfsmount/shfsmount.c	2007-06-04 13:22:57.883055720 +0200
++++ shfs-0.35/shfsmount/shfsmount.c	2007-06-04 13:22:59.838758408 +0200
 @@ -74,7 +74,7 @@
  static int have_uid = 0;
  
@@ -9,8 +11,10 @@
  
  /* preserve owner of files */
  static int preserve = 0;
---- shfs-0.35.orig/shfsmount/shfsumount.c	2004-06-01 14:16:19.000000000 +0100
-+++ shfs-0.35/shfsmount/shfsumount.c	2007-03-28 21:49:28.937840351 +0100
+Index: shfs-0.35/shfsmount/shfsumount.c
+===================================================================
+--- shfs-0.35.orig/shfsmount/shfsumount.c	2007-06-04 13:22:57.890054656 +0200
++++ shfs-0.35/shfsmount/shfsumount.c	2007-06-04 13:22:59.838758408 +0200
 @@ -67,10 +67,6 @@
  	FILE *new_mtab;
  	struct mntent *ment;

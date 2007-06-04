@@ -1,6 +1,8 @@
---- iproute2-2.6.11-050330.new/tc/q_htb.c	Sun May 12 22:18:27 2002
-+++ iproute2-2.6.11-050330.new/tc/q_htb.c	Sat Oct 18 00:05:18 2003
-@@ -34,10 +34,14 @@
+Index: iproute2-2.6.15-060110/tc/q_htb.c
+===================================================================
+--- iproute2-2.6.15-060110.orig/tc/q_htb.c	2007-06-04 13:22:33.581750080 +0200
++++ iproute2-2.6.15-060110/tc/q_htb.c	2007-06-04 13:22:34.291642160 +0200
+@@ -35,10 +35,14 @@
  		" default  minor id of class to which unclassified packets are sent {0}\n"
  		" r2q      DRR quantums are computed as rate in Bps/r2q {10}\n"
  		" debug    string of 16 numbers each 0-3 {0}\n\n"
@@ -16,7 +18,7 @@
  		" ceil     definite upper class rate (no borrows) {rate}\n"
  		" cburst   burst but for ceil {computed}\n"
  		" mtu      max packet size we create rate map for {1600}\n"
-@@ -102,7 +106,9 @@
+@@ -103,7 +107,9 @@
  	struct tc_htb_opt opt;
  	__u32 rtab[256],ctab[256];
  	unsigned buffer=0,cbuffer=0;
@@ -27,7 +29,7 @@
  	struct rtattr *tail;
  
  	memset(&opt, 0, sizeof(opt)); mtu = 1600; /* eth packet len */
-@@ -119,6 +125,16 @@
+@@ -120,6 +126,16 @@
  			if (get_u32(&mtu, *argv, 10)) {
  				explain1("mtu"); return -1;
  			}
@@ -44,7 +46,7 @@
  		} else if (matches(*argv, "quantum") == 0) {
  			NEXT_ARG();
  			if (get_u32(&opt.quantum, *argv, 10)) {
-@@ -190,14 +206,18 @@
+@@ -191,14 +207,18 @@
  	if (!buffer) buffer = opt.rate.rate / HZ + mtu;
  	if (!cbuffer) cbuffer = opt.ceil.rate / HZ + mtu;
  
@@ -65,7 +67,7 @@
  		fprintf(stderr, "htb: failed to calculate ceil rate table.\n");
  		return -1;
  	}
-@@ -221,6 +241,7 @@
+@@ -222,6 +242,7 @@
  	double buffer,cbuffer;
  	SPRINT_BUF(b1);
  	SPRINT_BUF(b2);
@@ -73,7 +75,7 @@
  
  	if (opt == NULL)
  		return 0;
-@@ -243,10 +264,16 @@
+@@ -244,10 +265,16 @@
  	    fprintf(f, "ceil %s ", sprint_rate(hopt->ceil.rate, b1));
  	    cbuffer = ((double)hopt->ceil.rate*tc_core_tick2usec(hopt->cbuffer))/1000000;
  	    if (show_details) {

@@ -1,6 +1,7 @@
-diff -ur busybox.old/networking/httpd.c busybox.dev/networking/httpd.c
---- busybox.old/networking/httpd.c	2007-01-19 22:22:59.000000000 +0100
-+++ busybox.dev/networking/httpd.c	2007-01-22 13:09:03.000000000 +0100
+Index: busybox-1.4.2/networking/httpd.c
+===================================================================
+--- busybox-1.4.2.orig/networking/httpd.c	2007-06-04 13:21:34.401746808 +0200
++++ busybox-1.4.2/networking/httpd.c	2007-06-04 13:21:34.588718384 +0200
 @@ -137,6 +137,7 @@
  	const char *query;
  
@@ -17,7 +18,7 @@ diff -ur busybox.old/networking/httpd.c busybox.dev/networking/httpd.c
  #if ENABLE_FEATURE_HTTPD_SET_REMOTE_PORT_TO_ENV
  		setenv_long("REMOTE_PORT", config->port);
  #endif
-@@ -1629,6 +1631,8 @@
+@@ -1647,6 +1649,8 @@
  					content_type = strdup(skip_whitespace(buf + sizeof("Content-Type:")-1));
  				} else if ((STRNCASECMP(buf, "Referer:") == 0)) {
  					config->referer = strdup(skip_whitespace(buf + sizeof("Referer:")-1));

@@ -1,5 +1,7 @@
---- shfs-0.35.orig/shfs/Linux-2.4/shfs_fs_sb.h	24 Mar 2004 13:40:02 -0000	1.2
-+++ shfs-0.35/shfs/Linux-2.4/shfs_fs_sb.h	3 Jun 2004 17:12:28 -0000
+Index: shfs-0.35/shfs/Linux-2.4/shfs_fs_sb.h
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.4/shfs_fs_sb.h	2007-06-04 13:22:57.941046904 +0200
++++ shfs-0.35/shfs/Linux-2.4/shfs_fs_sb.h	2007-06-04 13:22:59.448817688 +0200
 @@ -38,10 +38,10 @@
  	struct shfs_fileops fops;
  	int version;
@@ -15,8 +17,10 @@
  	char mount_point[SHFS_PATH_MAX];
  	struct semaphore sock_sem;	/* next 4 vars are guarded */
  	struct file *sock;
---- shfs-0.35.orig/shfs/Linux-2.6/shfs_fs_sb.h	24 Mar 2004 13:40:02 -0000	1.2
-+++ shfs-0.35/shfs/Linux-2.6/shfs_fs_sb.h	3 Jun 2004 17:12:28 -0000
+Index: shfs-0.35/shfs/Linux-2.6/shfs_fs_sb.h
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.6/shfs_fs_sb.h	2007-06-04 13:22:57.949045688 +0200
++++ shfs-0.35/shfs/Linux-2.6/shfs_fs_sb.h	2007-06-04 13:22:59.449817536 +0200
 @@ -38,10 +38,10 @@
  	struct shfs_fileops fops;
  	int version;

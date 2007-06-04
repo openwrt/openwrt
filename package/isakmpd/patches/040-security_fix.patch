@@ -1,12 +1,8 @@
-Index: sbin/isakmpd/ipsec.c
+Index: isakmpd-20041012.orig/ipsec.c
 ===================================================================
-RCS file: /cvs/src/sbin/isakmpd/ipsec.c,v
-retrieving revision 1.122
-retrieving revision 1.122.2.1
-diff -u -p -r1.122 -r1.122.2.1
---- isakmpd/ipsec.c	23 Sep 2005 14:44:03 -0000	1.122
-+++ isakmpd/ipsec.c	19 Aug 2006 20:23:28 -0000	1.122.2.1
-@@ -2076,9 +2076,10 @@ ipsec_proto_init(struct proto *proto, ch
+--- isakmpd-20041012.orig.orig/ipsec.c	2007-06-04 13:22:39.283883224 +0200
++++ isakmpd-20041012.orig/ipsec.c	2007-06-04 13:22:40.247736696 +0200
+@@ -2176,9 +2176,10 @@
  {
  	struct ipsec_proto *iproto = proto->data;
  

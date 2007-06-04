@@ -1,15 +1,17 @@
-diff -urN openswan.old/programs/loggerfix openswan.dev/programs/loggerfix
---- openswan.old/programs/loggerfix	1970-01-01 01:00:00.000000000 +0100
-+++ openswan.dev/programs/loggerfix	2006-10-08 20:41:08.000000000 +0200
+Index: openswan-2.4.8/programs/loggerfix
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ openswan-2.4.8/programs/loggerfix	2007-06-04 13:22:50.209222320 +0200
 @@ -0,0 +1,5 @@
 +#!/bin/sh
 +# use filename instead of /dev/null to log, but dont log to flash or ram
 +# pref. log to nfs mount
 +echo "$*" >> /dev/null
 +exit 0
-diff -urN openswan.old/programs/look/look.in openswan.dev/programs/look/look.in
---- openswan.old/programs/look/look.in	2006-10-08 20:43:21.000000000 +0200
-+++ openswan.dev/programs/look/look.in	2006-10-08 20:41:08.000000000 +0200
+Index: openswan-2.4.8/programs/look/look.in
+===================================================================
+--- openswan-2.4.8.orig/programs/look/look.in	2007-06-04 13:22:49.874273240 +0200
++++ openswan-2.4.8/programs/look/look.in	2007-06-04 13:22:50.209222320 +0200
 @@ -84,7 +84,7 @@
  then
  	pat="$pat|$defaultroutephys\$|$defaultroutevirt\$"
@@ -19,9 +21,10 @@ diff -urN openswan.old/programs/look/look.in openswan.dev/programs/look/look.in
  	do
  		pat="$pat|$i\$"
  	done
-diff -urN openswan.old/programs/_plutorun/_plutorun.in openswan.dev/programs/_plutorun/_plutorun.in
---- openswan.old/programs/_plutorun/_plutorun.in	2006-10-08 20:43:21.000000000 +0200
-+++ openswan.dev/programs/_plutorun/_plutorun.in	2006-10-08 20:41:08.000000000 +0200
+Index: openswan-2.4.8/programs/_plutorun/_plutorun.in
+===================================================================
+--- openswan-2.4.8.orig/programs/_plutorun/_plutorun.in	2007-06-04 13:22:49.880272328 +0200
++++ openswan-2.4.8/programs/_plutorun/_plutorun.in	2007-06-04 13:22:50.209222320 +0200
 @@ -147,7 +147,7 @@
  			exit 1
  		fi
@@ -31,9 +34,10 @@ diff -urN openswan.old/programs/_plutorun/_plutorun.in openswan.dev/programs/_pl
  		then
  			echo Cannot write to directory to create \"$stderrlog\".
  			exit 1
-diff -urN openswan.old/programs/_realsetup/_realsetup.in openswan.dev/programs/_realsetup/_realsetup.in
---- openswan.old/programs/_realsetup/_realsetup.in	2006-10-08 20:43:21.000000000 +0200
-+++ openswan.dev/programs/_realsetup/_realsetup.in	2006-10-08 20:41:08.000000000 +0200
+Index: openswan-2.4.8/programs/_realsetup/_realsetup.in
+===================================================================
+--- openswan-2.4.8.orig/programs/_realsetup/_realsetup.in	2007-06-04 13:22:49.888271112 +0200
++++ openswan-2.4.8/programs/_realsetup/_realsetup.in	2007-06-04 13:22:50.210222168 +0200
 @@ -232,7 +232,7 @@
  
  	# misc pre-Pluto setup
@@ -43,9 +47,10 @@ diff -urN openswan.old/programs/_realsetup/_realsetup.in openswan.dev/programs/_
  
  	if test " $IPSECforwardcontrol" = " yes"
  	then
-diff -urN openswan.old/programs/send-pr/send-pr.in openswan.dev/programs/send-pr/send-pr.in
---- openswan.old/programs/send-pr/send-pr.in	2006-10-08 20:43:21.000000000 +0200
-+++ openswan.dev/programs/send-pr/send-pr.in	2006-10-08 20:41:08.000000000 +0200
+Index: openswan-2.4.8/programs/send-pr/send-pr.in
+===================================================================
+--- openswan-2.4.8.orig/programs/send-pr/send-pr.in	2007-06-04 13:22:49.894270200 +0200
++++ openswan-2.4.8/programs/send-pr/send-pr.in	2007-06-04 13:22:50.210222168 +0200
 @@ -402,7 +402,7 @@
  		    else
  			if [ "$fieldname" != "Category" ]
@@ -82,9 +87,10 @@ diff -urN openswan.old/programs/send-pr/send-pr.in openswan.dev/programs/send-pr
  			echo "/^>${fieldname}:/ s/${dpat}//" >> $FIXFIL
  		    fi
  		    echo "${fmtname}${desc}" >> $file
-diff -urN openswan.old/programs/setup/setup.in openswan.dev/programs/setup/setup.in
---- openswan.old/programs/setup/setup.in	2006-10-08 20:43:21.000000000 +0200
-+++ openswan.dev/programs/setup/setup.in	2006-10-08 20:41:08.000000000 +0200
+Index: openswan-2.4.8/programs/setup/setup.in
+===================================================================
+--- openswan-2.4.8.orig/programs/setup/setup.in	2007-06-04 13:22:49.902268984 +0200
++++ openswan-2.4.8/programs/setup/setup.in	2007-06-04 13:22:50.210222168 +0200
 @@ -117,12 +117,21 @@
  # do it
  case "$1" in
@@ -108,9 +114,10 @@ diff -urN openswan.old/programs/setup/setup.in openswan.dev/programs/setup/setup
  	tmp=/var/run/pluto/ipsec_setup.st
  	outtmp=/var/run/pluto/ipsec_setup.out
  	(
-diff -urN openswan.old/programs/showhostkey/showhostkey.in openswan.dev/programs/showhostkey/showhostkey.in
---- openswan.old/programs/showhostkey/showhostkey.in	2006-10-08 20:43:21.000000000 +0200
-+++ openswan.dev/programs/showhostkey/showhostkey.in	2006-10-08 20:41:08.000000000 +0200
+Index: openswan-2.4.8/programs/showhostkey/showhostkey.in
+===================================================================
+--- openswan-2.4.8.orig/programs/showhostkey/showhostkey.in	2007-06-04 13:22:49.908268072 +0200
++++ openswan-2.4.8/programs/showhostkey/showhostkey.in	2007-06-04 13:22:50.214221560 +0200
 @@ -63,7 +63,7 @@
  	exit 1
  fi
@@ -129,9 +136,10 @@ diff -urN openswan.old/programs/showhostkey/showhostkey.in openswan.dev/programs
  		if (id == "") {
  			pat = "^" suffix
  			printid = "default"
-diff -urN openswan.old/programs/starter/klips.c openswan.dev/programs/starter/klips.c
---- openswan.old/programs/starter/klips.c	2006-10-08 20:43:21.000000000 +0200
-+++ openswan.dev/programs/starter/klips.c	2006-10-08 20:41:08.000000000 +0200
+Index: openswan-2.4.8/programs/starter/klips.c
+===================================================================
+--- openswan-2.4.8.orig/programs/starter/klips.c	2007-06-04 13:22:49.914267160 +0200
++++ openswan-2.4.8/programs/starter/klips.c	2007-06-04 13:22:50.214221560 +0200
 @@ -83,7 +83,7 @@
  		if (stat(PROC_MODULES,&stb)==0) {
  			unsetenv("MODPATH");
@@ -141,9 +149,10 @@ diff -urN openswan.old/programs/starter/klips.c openswan.dev/programs/starter/kl
  		}
  		if (stat(PROC_IPSECVERSION,&stb)==0) {
  			_klips_module_loaded = 1;
-diff -urN openswan.old/programs/starter/netkey.c openswan.dev/programs/starter/netkey.c
---- openswan.old/programs/starter/netkey.c	2006-10-08 20:43:21.000000000 +0200
-+++ openswan.dev/programs/starter/netkey.c	2006-10-08 20:41:08.000000000 +0200
+Index: openswan-2.4.8/programs/starter/netkey.c
+===================================================================
+--- openswan-2.4.8.orig/programs/starter/netkey.c	2007-06-04 13:22:49.920266248 +0200
++++ openswan-2.4.8/programs/starter/netkey.c	2007-06-04 13:22:50.214221560 +0200
 @@ -75,7 +75,7 @@
  		if (stat(PROC_MODULES,&stb)==0) {
  			unsetenv("MODPATH");
@@ -153,10 +162,11 @@ diff -urN openswan.old/programs/starter/netkey.c openswan.dev/programs/starter/n
  		}
  		if (stat(PROC_NETKEY,&stb)==0) {
  			_netkey_module_loaded = 1;
-diff -ruN openswan-2.4.7-old/programs/_startklips/_startklips.in openswan-2.4.7-new/programs/_startklips/_startklips.in
---- openswan-2.4.7-old/programs/_startklips/_startklips.in	2006-12-15 16:29:48.000000000 +0100
-+++ openswan-2.4.7-new/programs/_startklips/_startklips.in	2006-12-15 17:18:52.000000000 +0100
-@@ -269,16 +269,16 @@
+Index: openswan-2.4.8/programs/_startklips/_startklips.in
+===================================================================
+--- openswan-2.4.8.orig/programs/_startklips/_startklips.in	2007-06-04 13:22:49.928265032 +0200
++++ openswan-2.4.8/programs/_startklips/_startklips.in	2007-06-04 13:22:50.215221408 +0200
+@@ -272,16 +272,16 @@
      echo "FATAL ERROR: Both KLIPS and NETKEY IPsec code is present in kernel"
      exit
  fi
@@ -177,7 +187,7 @@ diff -ruN openswan-2.4.7-old/programs/_startklips/_startklips.in openswan-2.4.7-
  fi
  if test ! -f $ipsecversion && test ! -f $netkey 
  then
-@@ -291,27 +291,27 @@
+@@ -294,27 +294,27 @@
  # modules shared between klips and netkey
  if test -f $modules
  then
@@ -218,7 +228,7 @@ diff -ruN openswan-2.4.7-old/programs/_startklips/_startklips.in openswan-2.4.7-
  	fi
  
  	if test ! -f $ipsecversion && $klips
-@@ -324,7 +324,7 @@
+@@ -327,7 +327,7 @@
  		fi
                 	unset MODPATH MODULECONF        # no user overrides!
                 	depmod -a >/dev/null 2>&1
@@ -227,4 +237,3 @@ diff -ruN openswan-2.4.7-old/programs/_startklips/_startklips.in openswan-2.4.7-
          	if test ! -f $ipsecversion
          	then
                  	echo "kernel appears to lack IPsec support (neither CONFIG_KLIPS or CONFIG_NET_KEY are set)"
-
