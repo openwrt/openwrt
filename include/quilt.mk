@@ -34,6 +34,7 @@ ifneq ($(QUILT),)
   endef
   $(STAMP_CONFIGURED): $(STAMP_PATCHED)
   prepare: $(STAMP_PATCHED)
+  quilt-check: $(STAMP_PATCHED)
 else
   define Build/Patch/Default
 	@if [ -d ./patches -a "$$$$(ls ./patches | wc -l)" -gt 0 ]; then \
@@ -82,7 +83,7 @@ define Quilt/Refresh/Kernel
 	$(call Quilt/RefreshDir,./patches,platform/)
 endef
 
-refresh: $(STAMP_PREPARED)
+quilt-check: $(STAMP_PREPARED) FORCE
 	@[ -f "$(PKG_BUILD_DIR)/.quilt_used" ] || { \
 		echo "The source directory was not unpacked using quilt. Please rebuild with QUILT=1"; \
 		false; \
@@ -95,5 +96,14 @@ refresh: $(STAMP_PREPARED)
 		echo "The patches are not sorted in the right order. Please fix."; \
 		false; \
 	}
+
+refresh: quilt-check
+	@cd $(PKG_BUILD_DIR); quilt pop -a -f >/dev/null 2>/dev/null
+	@cd $(PKG_BUILD_DIR); while quilt next 2>/dev/null >/dev/null && quilt push; do \
+		quilt refresh; \
+	done; ! quilt next 2>/dev/null >/dev/null
+	$(if $(KERNEL_BUILD),$(Quilt/Refresh/Kernel),$(Quilt/Refresh/Package))
+	
+update: quilt-check
 	$(if $(KERNEL_BUILD),$(Quilt/Refresh/Kernel),$(Quilt/Refresh/Package))
 

@@ -7,23 +7,6 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/target.mk
 
-download:
-	$(MAKE) -C $(BOARD)-$(KERNEL) download
+clean download prepare compile install menuconfig update refresh: FORCE
+	$(MAKE) -C $(BOARD)-$(KERNEL) $@
 
-prepare:
-	$(MAKE) -C $(BOARD)-$(KERNEL) prepare
-
-compile:
-	$(MAKE) -C $(BOARD)-$(KERNEL) compile
-
-install:
-	$(MAKE) -C $(BOARD)-$(KERNEL) install
-	
-refresh:
-	$(MAKE) -C $(BOARD)-$(KERNEL) refresh
-
-menuconfig:
-	$(MAKE) -C $(BOARD)-$(KERNEL) menuconfig
-
-clean:
-	$(MAKE) -C $(BOARD)-$(KERNEL) clean
