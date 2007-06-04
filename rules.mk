@@ -84,7 +84,8 @@ TARGET_CONFIGURE_OPTS:= \
   RANLIB=$(TARGET_CROSS)ranlib \
   STRIP=$(TARGET_CROSS)strip \
   OBJCOPY=$(TARGET_CROSS)objcopy \
-	OBJDUMP=$(TARGET_CROSS)objdump
+	OBJDUMP=$(TARGET_CROSS)objdump \
+	SIZE=$(TARGET_CROSS)size
 
 # strip an entire directory
 RSTRIP:= \
