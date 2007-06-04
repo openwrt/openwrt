@@ -118,7 +118,16 @@ define KernelPackage/soundcore/2.6
 	$(LINUX_DIR)/sound/core/oss/*.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,soundcore snd snd-page-alloc snd-hwdep snd-rawmidi snd-timer snd-pcm snd-mixer-oss snd-pcm-oss)
 endef
+
+define KernelPackage/soundcore/uml-2.6
+  FILES:= \
+	$(LINUX_DIR)/arch/um/drivers/hostaudio.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/sound/soundcore.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,soundcore hostaudio)
+endef
+
 $(eval $(call KernelPackage,soundcore))
+
 
 define KernelPackage/loop
   TITLE:=Loopback device support
