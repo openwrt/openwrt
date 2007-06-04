@@ -1,6 +1,8 @@
---- shfs-0.35.orig/shfs/Linux-2.6/inode.c
-+++ shfs-0.35/shfs/Linux-2.6/inode.c
-@@ -341,12 +341,21 @@ out:
+Index: shfs-0.35/shfs/Linux-2.6/inode.c
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.6/inode.c	2007-06-04 13:22:58.091024104 +0200
++++ shfs-0.35/shfs/Linux-2.6/inode.c	2007-06-04 13:22:58.397977440 +0200
+@@ -337,12 +337,21 @@
  	return -EINVAL;
  }
  
@@ -22,9 +24,11 @@
  
  static struct file_system_type sh_fs_type = {
  	.owner		= THIS_MODULE,
---- shfs-0.35.orig/shfs/Linux-2.6/file.c
-+++ shfs-0.35/shfs/Linux-2.6/file.c
-@@ -199,7 +199,7 @@ shfs_file_open(struct inode *inode, stru
+Index: shfs-0.35/shfs/Linux-2.6/file.c
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.6/file.c	2007-06-04 13:22:58.096023344 +0200
++++ shfs-0.35/shfs/Linux-2.6/file.c	2007-06-04 13:22:58.397977440 +0200
+@@ -199,7 +199,7 @@
  }
  
  static int
@@ -33,7 +37,7 @@
  {
  	struct dentry *dentry = f->f_dentry;
  	struct shfs_sb_info *info = info_from_dentry(dentry);
-@@ -222,6 +222,16 @@ shfs_file_flush(struct file *f)
+@@ -222,6 +222,16 @@
  }
  
  static int
@@ -50,7 +54,7 @@
  shfs_file_release(struct inode *inode, struct file *f)
  {
  	struct dentry *dentry = f->f_dentry;
-@@ -311,7 +321,7 @@ shfs_slow_write(struct file *f, const ch
+@@ -311,7 +321,7 @@
  	DEBUG("\n");
  	written = generic_file_write(f, buf, count, offset);
  	if (written > 0) {
@@ -61,9 +65,9 @@
  	
 Index: shfs-0.35/shfs/Linux-2.6/proc.c
 ===================================================================
---- shfs-0.35.orig/shfs/Linux-2.6/proc.c
-+++ shfs-0.35/shfs/Linux-2.6/proc.c
-@@ -570,6 +570,16 @@ error:
+--- shfs-0.35.orig/shfs/Linux-2.6/proc.c	2007-06-04 13:22:58.102022432 +0200
++++ shfs-0.35/shfs/Linux-2.6/proc.c	2007-06-04 13:22:58.398977288 +0200
+@@ -570,6 +570,16 @@
  	return result;
  }
  
@@ -80,14 +84,16 @@ Index: shfs-0.35/shfs/Linux-2.6/proc.c
  int
  shfs_statfs(struct super_block *sb, struct kstatfs *attr)
  {
-@@ -578,4 +588,5 @@ shfs_statfs(struct super_block *sb, stru
+@@ -578,4 +588,5 @@
  	DEBUG("\n");
  	return info->fops.statfs(info, attr);
  }
 +#endif
  
---- shfs-0.35.orig/shfs/Linux-2.6/shfs_fs.h
-+++ shfs-0.35/shfs/Linux-2.6/shfs_fs.h
+Index: shfs-0.35/shfs/Linux-2.6/shfs_fs.h
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.6/shfs_fs.h	2007-06-04 13:22:58.107021672 +0200
++++ shfs-0.35/shfs/Linux-2.6/shfs_fs.h	2007-06-04 13:22:58.398977288 +0200
 @@ -9,6 +9,12 @@
  
  #include <linux/ioctl.h>
@@ -101,7 +107,7 @@ Index: shfs-0.35/shfs/Linux-2.6/proc.c
  
  #define SHFS_MAX_AGE(info)	(((info)->ttl * HZ) / 1000)
  #define SOCKBUF_SIZE		(SHFS_PATH_MAX * 10)
-@@ -100,7 +106,12 @@ int reply(char *s);
+@@ -101,7 +107,12 @@
  void set_garbage(struct shfs_sb_info *info, int write, int count);
  int get_name(struct dentry *d, char *name);
  int shfs_notify_change(struct dentry *dentry, struct iattr *attr);
@@ -114,9 +120,11 @@ Index: shfs-0.35/shfs/Linux-2.6/proc.c
  	
  /* shfs/inode.c */
  void shfs_set_inode_attr(struct inode *inode, struct shfs_fattr *fattr);
---- shfs-0.35.orig/shfs/Linux-2.6/symlink.c
-+++ shfs-0.35/shfs/Linux-2.6/symlink.c
-@@ -41,7 +41,7 @@ error:
+Index: shfs-0.35/shfs/Linux-2.6/symlink.c
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.6/symlink.c	2007-06-04 13:22:58.113020760 +0200
++++ shfs-0.35/shfs/Linux-2.6/symlink.c	2007-06-04 13:22:58.398977288 +0200
+@@ -41,7 +41,7 @@
  	return result;
  }
  
@@ -125,7 +133,7 @@ Index: shfs-0.35/shfs/Linux-2.6/proc.c
  shfs_follow_link(struct dentry *dentry, struct nameidata *nd)
  {
  	struct shfs_sb_info *info = info_from_dentry(dentry);
-@@ -61,7 +61,7 @@ shfs_follow_link(struct dentry *dentry, 
+@@ -61,7 +61,7 @@
  	DEBUG("%s\n", real_name);
  	result = vfs_follow_link(nd, real_name);
  error:
@@ -134,8 +142,10 @@ Index: shfs-0.35/shfs/Linux-2.6/proc.c
  }
  
  struct inode_operations shfs_symlink_inode_operations = {
---- shfs-0.35.orig/shfs/Linux-2.6/dcache.c	2004-06-01 15:16:19.000000000 +0200
-+++ shfs-0.35/shfs/Linux-2.6/dcache.c	2006-02-17 17:36:02.000000000 +0100
+Index: shfs-0.35/shfs/Linux-2.6/dcache.c
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.6/dcache.c	2007-06-04 13:22:58.121019544 +0200
++++ shfs-0.35/shfs/Linux-2.6/dcache.c	2007-06-04 13:22:58.398977288 +0200
 @@ -68,7 +68,7 @@
  	spin_lock(&dcache_lock);
  	next = parent->d_subdirs.next;

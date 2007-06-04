@@ -1,7 +1,8 @@
-diff -urN busybox.old/miscutils/crond.c busybox.dev/miscutils/crond.c
---- busybox.old/miscutils/crond.c	2004-04-14 19:51:21.000000000 +0200
-+++ busybox.dev/miscutils/crond.c	2005-12-11 22:54:07.878256250 +0100
-@@ -36,7 +36,7 @@
+Index: busybox-1.4.2/miscutils/crond.c
+===================================================================
+--- busybox-1.4.2.orig/miscutils/crond.c	2007-06-04 13:21:32.339060384 +0200
++++ busybox-1.4.2/miscutils/crond.c	2007-06-04 13:21:33.235924040 +0200
+@@ -18,7 +18,7 @@
  #define arysize(ary)    (sizeof(ary)/sizeof((ary)[0]))
  
  #ifndef CRONTABS
@@ -10,11 +11,12 @@ diff -urN busybox.old/miscutils/crond.c busybox.dev/miscutils/crond.c
  #endif
  #ifndef TMPDIR
  #define TMPDIR          "/var/spool/cron"
-diff -urN busybox.old/miscutils/crontab.c busybox.dev/miscutils/crontab.c
---- busybox.old/miscutils/crontab.c	2004-04-14 19:51:21.000000000 +0200
-+++ busybox.dev/miscutils/crontab.c	2005-12-11 22:54:28.647554250 +0100
-@@ -28,7 +28,7 @@
- #include <sys/resource.h>
+Index: busybox-1.4.2/miscutils/crontab.c
+===================================================================
+--- busybox-1.4.2.orig/miscutils/crontab.c	2007-06-04 13:21:32.346059320 +0200
++++ busybox-1.4.2/miscutils/crontab.c	2007-06-04 13:21:33.236923888 +0200
+@@ -13,7 +13,7 @@
+ #include "busybox.h"
  
  #ifndef CRONTABS
 -#define CRONTABS        "/var/spool/cron/crontabs"

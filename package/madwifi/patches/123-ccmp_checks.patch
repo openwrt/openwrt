@@ -1,29 +1,7 @@
-diff -ur madwifi.old/net80211/ieee80211_crypto_ccmp.c madwifi.dev/net80211/ieee80211_crypto_ccmp.c
---- madwifi.old/net80211/ieee80211_crypto_ccmp.c	2007-06-02 04:37:47.425966000 +0200
-+++ madwifi.dev/net80211/ieee80211_crypto_ccmp.c	2007-06-02 18:38:27.675882768 +0200
-@@ -465,6 +465,9 @@
- 	uint8_t *mic, *pos;
- 	u_int space;
- 
-+	if (ctx->cc_tfm == NULL)
-+		return 0;
-+
- 	ctx->cc_vap->iv_stats.is_crypto_ccmp++;
- 
- 	skb = skb0;
-@@ -579,6 +582,9 @@
- 	uint8_t *pos, *mic;
- 	u_int space;
- 
-+	if (ctx->cc_tfm == NULL)
-+		return 0;
-+
- 	ctx->cc_vap->iv_stats.is_crypto_ccmp++;
- 
- 	skb = skb0;
-diff -ur madwifi.old/net80211/ieee80211_crypto_ccmp.c madwifi.dev/net80211/ieee80211_crypto_ccmp.c
---- madwifi.old/net80211/ieee80211_crypto_ccmp.c	2007-06-02 19:40:56.291006648 +0200
-+++ madwifi.dev/net80211/ieee80211_crypto_ccmp.c	2007-06-03 04:19:47.561334192 +0200
+Index: madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_ccmp.c
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_crypto_ccmp.c	2007-06-04 13:21:53.234883736 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_ccmp.c	2007-06-04 13:21:57.936169032 +0200
 @@ -118,6 +118,12 @@
  	ctx->cc_ic = vap->iv_ic;
  	ctx->cc_tfm = crypto_alloc_cipher("aes", 0,
@@ -37,3 +15,23 @@ diff -ur madwifi.old/net80211/ieee80211_crypto_ccmp.c madwifi.dev/net80211/ieee8
  	if (ctx->cc_tfm == NULL) {
  		IEEE80211_DPRINTF(vap, IEEE80211_MSG_CRYPTO,
  				"%s: unable to load kernel AES crypto support\n",
+@@ -465,6 +471,9 @@
+ 	uint8_t *mic, *pos;
+ 	u_int space;
+ 
++	if (ctx->cc_tfm == NULL)
++		return 0;
++
+ 	ctx->cc_vap->iv_stats.is_crypto_ccmp++;
+ 
+ 	skb = skb0;
+@@ -579,6 +588,9 @@
+ 	uint8_t *pos, *mic;
+ 	u_int space;
+ 
++	if (ctx->cc_tfm == NULL)
++		return 0;
++
+ 	ctx->cc_vap->iv_stats.is_crypto_ccmp++;
+ 
+ 	skb = skb0;

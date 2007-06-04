@@ -1,6 +1,7 @@
-diff -urN ppp.old/pppd/plugins/rp-pppoe/discovery.c ppp.dev/pppd/plugins/rp-pppoe/discovery.c
---- ppp.old/pppd/plugins/rp-pppoe/discovery.c	2005-09-05 15:25:35.917232000 +0200
-+++ ppp.dev/pppd/plugins/rp-pppoe/discovery.c	2005-09-05 15:29:17.233586872 +0200
+Index: ppp-2.4.3/pppd/plugins/rp-pppoe/discovery.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/plugins/rp-pppoe/discovery.c	2007-06-04 13:22:09.414424072 +0200
++++ ppp-2.4.3/pppd/plugins/rp-pppoe/discovery.c	2007-06-04 13:22:13.567792664 +0200
 @@ -593,12 +593,14 @@
  	conn->discoveryState = STATE_SENT_PADI;
  	waitForPADO(conn, timeout);

@@ -1,6 +1,7 @@
-diff -ruN linux-atm-2.4.1/configure.in linux-atm-2.4.1.new/configure.in
---- linux-atm-2.4.1/configure.in	2003-04-25 04:17:05.000000000 +0200
-+++ linux-atm-2.4.1.new/configure.in	2005-07-27 15:45:49.532396543 +0200
+Index: linux-atm-2.4.1/configure.in
+===================================================================
+--- linux-atm-2.4.1.orig/configure.in	2007-06-04 13:23:53.853546912 +0200
++++ linux-atm-2.4.1/configure.in	2007-06-04 13:23:55.937230144 +0200
 @@ -153,26 +153,5 @@
  		src/Makefile \
  		src/include/Makefile \
@@ -28,18 +29,19 @@ diff -ruN linux-atm-2.4.1/configure.in linux-atm-2.4.1.new/configure.in
 -		src/extra/ANS/Makefile
  		)
  
-diff -ruN linux-atm-2.4.1/src/Makefile.am linux-atm-2.4.1.new/src/Makefile.am
---- linux-atm-2.4.1/src/Makefile.am	2001-10-03 23:14:53.000000000 +0200
-+++ linux-atm-2.4.1.new/src/Makefile.am	2005-07-27 15:33:52.389309711 +0200
+Index: linux-atm-2.4.1/src/Makefile.am
+===================================================================
+--- linux-atm-2.4.1.orig/src/Makefile.am	2007-06-04 13:23:53.858546152 +0200
++++ linux-atm-2.4.1/src/Makefile.am	2007-06-04 13:23:55.937230144 +0200
 @@ -1,3 +1,2 @@
 -SUBDIRS = include lib test debug qgen saal sigd maint arpd ilmid man led lane \
 -		mpoad switch config extra
 +SUBDIRS = include lib
  
-
-diff -Nur linux-atm-2.4.1.orig/src/include/linux/atmbr2684.h linux-atm-2.4.1/src/include/linux/atmbr2684.h
---- linux-atm-2.4.1.orig/src/include/linux/atmbr2684.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-atm-2.4.1/src/include/linux/atmbr2684.h	2005-11-13 00:06:42.000000000 +0100
+Index: linux-atm-2.4.1/src/include/linux/atmbr2684.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-atm-2.4.1/src/include/linux/atmbr2684.h	2007-06-04 13:23:55.938229992 +0200
 @@ -0,0 +1,117 @@
 +#ifndef _LINUX_ATMBR2684_H
 +#define _LINUX_ATMBR2684_H
@@ -158,4 +160,3 @@ diff -Nur linux-atm-2.4.1.orig/src/include/linux/atmbr2684.h linux-atm-2.4.1/src
 +				struct br2684_filter_set)
 +
 +#endif				/* _LINUX_ATMBR2684_H */
-

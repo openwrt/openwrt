@@ -1,6 +1,7 @@
-diff -urN iptables.old/extensions/libipt_multiport.c iptables.dev/extensions/libipt_multiport.c
---- iptables.old/extensions/libipt_multiport.c	2005-02-19 20:19:17.000000000 +0100
-+++ iptables.dev/extensions/libipt_multiport.c	2006-02-04 05:46:12.154127750 +0100
+Index: iptables-1.3.7/extensions/libipt_multiport.c
+===================================================================
+--- iptables-1.3.7.orig/extensions/libipt_multiport.c	2007-06-04 13:21:43.344387320 +0200
++++ iptables-1.3.7/extensions/libipt_multiport.c	2007-06-04 13:21:43.932297944 +0200
 @@ -8,24 +8,6 @@
  /* To ensure that iptables compiles with an old kernel */
  #include "../include/linux/netfilter_ipv4/ipt_multiport.h"
@@ -26,8 +27,8 @@ diff -urN iptables.old/extensions/libipt_multiport.c iptables.dev/extensions/lib
  static void
  help_v1(void)
  {
-@@ -75,26 +57,6 @@
- 		   "invalid port/service `%s' specified", port);
+@@ -68,26 +50,6 @@
+ 	}
  }
  
 -static unsigned int
@@ -53,8 +54,8 @@ diff -urN iptables.old/extensions/libipt_multiport.c iptables.dev/extensions/lib
  static void
  parse_multi_ports_v1(const char *portstring, 
  		     struct ipt_multiport_v1 *multiinfo,
-@@ -160,58 +122,6 @@
- 			   "multiport only works with TCP or UDP");
+@@ -153,58 +115,6 @@
+ 			   "multiport only works with TCP, UDP, SCTP and DCCP");
  }
  
 -/* Function which parses command options; returns true if it
@@ -112,7 +113,7 @@ diff -urN iptables.old/extensions/libipt_multiport.c iptables.dev/extensions/lib
  static int
  parse_v1(int c, char **argv, int invert, unsigned int *flags,
  	 const struct ipt_entry *entry,
-@@ -289,43 +199,6 @@
+@@ -281,43 +191,6 @@
  		printf("%s", service);
  }
  
@@ -156,7 +157,7 @@ diff -urN iptables.old/extensions/libipt_multiport.c iptables.dev/extensions/lib
  static void
  print_v1(const struct ipt_ip *ip,
  	 const struct ipt_entry_match *match,
-@@ -369,34 +242,6 @@
+@@ -361,34 +234,6 @@
  	printf(" ");
  }
  
@@ -191,7 +192,7 @@ diff -urN iptables.old/extensions/libipt_multiport.c iptables.dev/extensions/lib
  static void save_v1(const struct ipt_ip *ip, 
  		    const struct ipt_entry_match *match)
  {
-@@ -432,19 +277,20 @@
+@@ -424,19 +269,20 @@
  	printf(" ");
  }
  

@@ -1,6 +1,7 @@
-diff -ruN ppp-2.4.3-orig/pppd/plugins/radius/config.c ppp-2.4.3-3/pppd/plugins/radius/config.c
---- ppp-2.4.3-orig/pppd/plugins/radius/config.c	2004-11-14 08:26:26.000000000 +0100
-+++ ppp-2.4.3-3/pppd/plugins/radius/config.c	2004-12-16 04:03:46.000000000 +0100
+Index: ppp-2.4.3/pppd/plugins/radius/config.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/plugins/radius/config.c	2007-06-04 13:22:07.980642040 +0200
++++ ppp-2.4.3/pppd/plugins/radius/config.c	2007-06-04 13:22:13.139857720 +0200
 @@ -369,31 +369,37 @@
  	}
  #endif
@@ -39,9 +40,10 @@ diff -ruN ppp-2.4.3-orig/pppd/plugins/radius/config.c ppp-2.4.3-3/pppd/plugins/r
  
  	return 0;
  }
-diff -ruN ppp-2.4.3-orig/pppd/plugins/radius/options.h ppp-2.4.3-3/pppd/plugins/radius/options.h
---- ppp-2.4.3-orig/pppd/plugins/radius/options.h	2004-11-14 08:26:26.000000000 +0100
-+++ ppp-2.4.3-3/pppd/plugins/radius/options.h	2004-12-16 04:09:16.000000000 +0100
+Index: ppp-2.4.3/pppd/plugins/radius/options.h
+===================================================================
+--- ppp-2.4.3.orig/pppd/plugins/radius/options.h	2007-06-04 13:22:07.989640672 +0200
++++ ppp-2.4.3/pppd/plugins/radius/options.h	2007-06-04 13:22:13.139857720 +0200
 @@ -31,24 +31,21 @@
  static SERVER acctserver = {0};
  static SERVER authserver = {0};

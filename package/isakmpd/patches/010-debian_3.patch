@@ -1,5 +1,7 @@
---- isakmpd-20041012.orig/dpd.c
-+++ isakmpd-20041012/dpd.c
+Index: isakmpd-20041012.orig/dpd.c
+===================================================================
+--- isakmpd-20041012.orig.orig/dpd.c	2007-06-04 13:22:39.088912864 +0200
++++ isakmpd-20041012.orig/dpd.c	2007-06-04 13:22:39.282883376 +0200
 @@ -26,6 +26,7 @@
  
  #include <sys/types.h>
@@ -24,8 +26,10 @@
  	}
  	if (!sa->dpd_event) 
  		log_print("dpd_timer_reset: timer_add_event failed");
---- isakmpd-20041012.orig/ipsec.c
-+++ isakmpd-20041012/ipsec.c
+Index: isakmpd-20041012.orig/ipsec.c
+===================================================================
+--- isakmpd-20041012.orig.orig/ipsec.c	2007-06-04 13:22:39.093912104 +0200
++++ isakmpd-20041012.orig/ipsec.c	2007-06-04 13:22:39.283883224 +0200
 @@ -1020,6 +1020,52 @@
  	}
  }
@@ -99,8 +103,10 @@
  
  	type = conf_get_str(section, "ID-type");
  	if (!type) {
---- isakmpd-20041012.orig/GNUmakefile
-+++ isakmpd-20041012/GNUmakefile
+Index: isakmpd-20041012.orig/GNUmakefile
+===================================================================
+--- isakmpd-20041012.orig.orig/GNUmakefile	2007-06-04 13:22:39.099911192 +0200
++++ isakmpd-20041012.orig/GNUmakefile	2007-06-04 13:22:39.283883224 +0200
 @@ -40,12 +40,12 @@
  # integrated, freebsd/netbsd means FreeBSD/NetBSD with KAME IPsec.
  # darwin means MacOS X 10.2 and later with KAME IPsec. linux means Linux-2.5
@@ -157,8 +163,10 @@
  CFLAGS+=	${IPSEC_CFLAGS}
  LDADD+=		${DESLIB}
  DPADD+=		${DESLIBDEP}
---- isakmpd-20041012.orig/exchange.h
-+++ isakmpd-20041012/exchange.h
+Index: isakmpd-20041012.orig/exchange.h
+===================================================================
+--- isakmpd-20041012.orig.orig/exchange.h	2007-06-04 13:22:39.104910432 +0200
++++ isakmpd-20041012.orig/exchange.h	2007-06-04 13:22:39.283883224 +0200
 @@ -221,6 +221,8 @@
  #define EXCHANGE_FLAG_NAT_T_ENABLE	0x10	/* We are doing NAT-T.  */
  #define EXCHANGE_FLAG_NAT_T_KEEPALIVE	0x20	/* We are the NAT:ed peer.  */
@@ -168,8 +176,10 @@
  
  extern int      exchange_add_certs(struct message *);
  extern void     exchange_finalize(struct message *);
---- isakmpd-20041012.orig/log.c
-+++ isakmpd-20041012/log.c
+Index: isakmpd-20041012.orig/log.c
+===================================================================
+--- isakmpd-20041012.orig.orig/log.c	2007-06-04 13:22:39.110909520 +0200
++++ isakmpd-20041012.orig/log.c	2007-06-04 13:22:39.284883072 +0200
 @@ -79,7 +79,6 @@
  
  struct packhdr {
@@ -237,8 +247,10 @@
  
  	sum = 0;
  	for (i = 0; i < hdrlen; i += 2)
---- isakmpd-20041012.orig/nat_traversal.c
-+++ isakmpd-20041012/nat_traversal.c
+Index: isakmpd-20041012.orig/nat_traversal.c
+===================================================================
+--- isakmpd-20041012.orig.orig/nat_traversal.c	2007-06-04 13:22:39.115908760 +0200
++++ isakmpd-20041012.orig/nat_traversal.c	2007-06-04 13:22:39.284883072 +0200
 @@ -1,4 +1,4 @@
 -/*	$OpenBSD: nat_traversal.c,v 1.7 2004/08/08 19:11:06 deraadt Exp $	*/
 +/*	$OpenBSD: nat_traversal.c,v 1.17 2006/06/14 14:03:33 hshoexer Exp $	*/
@@ -583,8 +595,10 @@
  		return 1;
  
  	hbuf = nat_t_generate_nat_d_hash(msg, sa, &hbuflen);
---- isakmpd-20041012.orig/udp_encap.c
-+++ isakmpd-20041012/udp_encap.c
+Index: isakmpd-20041012.orig/udp_encap.c
+===================================================================
+--- isakmpd-20041012.orig.orig/udp_encap.c	2007-06-04 13:22:39.121907848 +0200
++++ isakmpd-20041012.orig/udp_encap.c	2007-06-04 13:22:39.284883072 +0200
 @@ -61,6 +61,11 @@
  
  #define UDP_SIZE 65536
@@ -616,16 +630,20 @@
  	/* Wildcard address ?  */
  	switch (laddr->sa_family) {
  	case AF_INET:
---- isakmpd-20041012.orig/apps/Makefile
-+++ isakmpd-20041012/apps/Makefile
+Index: isakmpd-20041012.orig/apps/Makefile
+===================================================================
+--- isakmpd-20041012.orig.orig/apps/Makefile	2007-06-04 13:22:39.126907088 +0200
++++ isakmpd-20041012.orig/apps/Makefile	2007-06-04 13:22:39.285882920 +0200
 @@ -31,4 +31,4 @@
  
  SUBDIR= certpatch
  
 -.include <bsd.subdir.mk>
 +#.include <bsd.subdir.mk>
---- isakmpd-20041012.orig/apps/certpatch/GNUmakefile
-+++ isakmpd-20041012/apps/certpatch/GNUmakefile
+Index: isakmpd-20041012.orig/apps/certpatch/GNUmakefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ isakmpd-20041012.orig/apps/certpatch/GNUmakefile	2007-06-04 13:22:39.285882920 +0200
 @@ -0,0 +1,55 @@
 +#	$OpenBSD: Makefile,v 1.7 2003/06/03 14:35:00 ho Exp $
 +#	$EOM: Makefile,v 1.6 2000/03/28 21:22:06 ho Exp $
@@ -682,8 +700,10 @@
 +
 +clean:	
 +	rm -f ${PROG}
---- isakmpd-20041012.orig/pf_key_v2.c
-+++ isakmpd-20041012/pf_key_v2.c
+Index: isakmpd-20041012.orig/pf_key_v2.c
+===================================================================
+--- isakmpd-20041012.orig.orig/pf_key_v2.c	2007-06-04 13:22:39.137905416 +0200
++++ isakmpd-20041012.orig/pf_key_v2.c	2007-06-04 13:22:39.287882616 +0200
 @@ -1055,6 +1055,10 @@
  #endif
  #if defined (USE_NAT_TRAVERSAL) && defined (SADB_X_EXT_UDPENCAP)
@@ -800,8 +820,10 @@
  	msg.sadb_msg_satype = SADB_SATYPE_UNSPEC;
  	msg.sadb_msg_seq = 0;
  	flow = pf_key_v2_msg_new(&msg, 0);
---- isakmpd-20041012.orig/isakmp_num.cst
-+++ isakmpd-20041012/isakmp_num.cst
+Index: isakmpd-20041012.orig/isakmp_num.cst
+===================================================================
+--- isakmpd-20041012.orig.orig/isakmp_num.cst	2007-06-04 13:22:39.143904504 +0200
++++ isakmpd-20041012.orig/isakmp_num.cst	2007-06-04 13:22:39.287882616 +0200
 @@ -57,15 +57,18 @@
    KD				17	# RFC 3547, Key Download
    SEQ				18	# RFC 3547, Sequence Number
@@ -824,8 +846,10 @@
  .
  
  # ISAKMP exchange types.
---- isakmpd-20041012.orig/ipsec_num.cst
-+++ isakmpd-20041012/ipsec_num.cst
+Index: isakmpd-20041012.orig/ipsec_num.cst
+===================================================================
+--- isakmpd-20041012.orig.orig/ipsec_num.cst	2007-06-04 13:22:39.149903592 +0200
++++ isakmpd-20041012.orig/ipsec_num.cst	2007-06-04 13:22:39.287882616 +0200
 @@ -62,10 +62,10 @@
  IPSEC_ENCAP
    TUNNEL				1
@@ -841,8 +865,10 @@
  .
  
  # IPSEC authentication algorithm.
---- isakmpd-20041012.orig/nat_traversal.h
-+++ isakmpd-20041012/nat_traversal.h
+Index: isakmpd-20041012.orig/nat_traversal.h
+===================================================================
+--- isakmpd-20041012.orig.orig/nat_traversal.h	2007-06-04 13:22:39.154902832 +0200
++++ isakmpd-20041012.orig/nat_traversal.h	2007-06-04 13:22:39.287882616 +0200
 @@ -1,4 +1,4 @@
 -/*	$OpenBSD: nat_traversal.h,v 1.2 2004/06/21 23:27:10 ho Exp $	*/
 +/*	$OpenBSD: nat_traversal.h,v 1.4 2005/07/25 15:03:47 hshoexer Exp $	*/
@@ -874,8 +900,10 @@
  void	nat_t_init(void);
  int	nat_t_add_vendor_payloads(struct message *);
  void	nat_t_check_vendor_payload(struct message *, struct payload *);
---- isakmpd-20041012.orig/message.c
-+++ isakmpd-20041012/message.c
+Index: isakmpd-20041012.orig/message.c
+===================================================================
+--- isakmpd-20041012.orig.orig/message.c	2007-06-04 13:22:39.160901920 +0200
++++ isakmpd-20041012.orig/message.c	2007-06-04 13:22:39.288882464 +0200
 @@ -112,6 +112,7 @@
  	message_validate_hash, message_validate_sig, message_validate_nonce,
  	message_validate_notify, message_validate_delete,
@@ -925,8 +953,10 @@
  		return ISAKMP_NAT_OA_SZ;
  #endif
  	/* Not yet supported and any other unknown payloads. */
---- isakmpd-20041012.orig/policy.c
-+++ isakmpd-20041012/policy.c
+Index: isakmpd-20041012.orig/policy.c
+===================================================================
+--- isakmpd-20041012.orig.orig/policy.c	2007-06-04 13:22:39.165901160 +0200
++++ isakmpd-20041012.orig/policy.c	2007-06-04 13:22:39.289882312 +0200
 @@ -511,7 +511,10 @@
  							break;
  						}
@@ -964,8 +994,10 @@
  	/* Get policy file from configuration.  */
  	policy_file = conf_get_str("General", "Policy-file");
  	if (!policy_file)
---- isakmpd-20041012.orig/ike_phase_1.c
-+++ isakmpd-20041012/ike_phase_1.c
+Index: isakmpd-20041012.orig/ike_phase_1.c
+===================================================================
+--- isakmpd-20041012.orig.orig/ike_phase_1.c	2007-06-04 13:22:39.170900400 +0200
++++ isakmpd-20041012.orig/ike_phase_1.c	2007-06-04 13:22:39.290882160 +0200
 @@ -1040,9 +1040,9 @@
  
  		/* Compare expected/desired and received remote ID */
@@ -978,8 +1010,10 @@
  			return -1;
  		}
  		free(rid);
---- isakmpd-20041012.orig/x509.c
-+++ isakmpd-20041012/x509.c
+Index: isakmpd-20041012.orig/x509.c
+===================================================================
+--- isakmpd-20041012.orig.orig/x509.c	2007-06-04 13:22:39.176899488 +0200
++++ isakmpd-20041012.orig/x509.c	2007-06-04 13:22:39.290882160 +0200
 @@ -910,7 +910,11 @@
  	X509_STORE_CTX_init(&csc, x509_cas, cert, NULL);
  #if OPENSSL_VERSION_NUMBER >= 0x00907000L
@@ -992,8 +1026,10 @@
  		X509_STORE_CTX_set_flags(&csc, X509_V_FLAG_CRL_CHECK);
  		X509_STORE_CTX_set_flags(&csc, X509_V_FLAG_CRL_CHECK_ALL);
  	}
---- isakmpd-20041012.orig/sysdep/linux/sysdep.c
-+++ isakmpd-20041012/sysdep/linux/sysdep.c
+Index: isakmpd-20041012.orig/sysdep/linux/sysdep.c
+===================================================================
+--- isakmpd-20041012.orig.orig/sysdep/linux/sysdep.c	2007-06-04 13:22:39.182898576 +0200
++++ isakmpd-20041012.orig/sysdep/linux/sysdep.c	2007-06-04 13:22:39.291882008 +0200
 @@ -169,22 +169,22 @@
      return 0;
  
@@ -1026,8 +1062,10 @@
        return -1;
      }
    return 0;
---- isakmpd-20041012.orig/sysdep/linux/GNUmakefile.sysdep
-+++ isakmpd-20041012/sysdep/linux/GNUmakefile.sysdep
+Index: isakmpd-20041012.orig/sysdep/linux/GNUmakefile.sysdep
+===================================================================
+--- isakmpd-20041012.orig.orig/sysdep/linux/GNUmakefile.sysdep	2007-06-04 13:22:39.187897816 +0200
++++ isakmpd-20041012.orig/sysdep/linux/GNUmakefile.sysdep	2007-06-04 13:22:39.291882008 +0200
 @@ -33,13 +33,13 @@
  LDADD+=		-lgmp ${LIBSYSDEP} ${LIBCRYPTO}
  DPADD+=		${LIBGMP} ${LIBSYSDEP}
@@ -1055,8 +1093,10 @@
  			CFLAGS="${CFLAGS}" MKDEP="${MKDEP}" ${MAKECMDGOALS}
  
  ifeq ($(findstring clean,$(MAKECMDGOALS)),clean)
---- isakmpd-20041012.orig/sysdep/linux/include/bitstring.h
-+++ isakmpd-20041012/sysdep/linux/include/bitstring.h
+Index: isakmpd-20041012.orig/sysdep/linux/include/bitstring.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ isakmpd-20041012.orig/sysdep/linux/include/bitstring.h	2007-06-04 13:22:39.291882008 +0200
 @@ -0,0 +1,132 @@
 +/*	$OpenBSD: bitstring.h,v 1.4 2002/06/19 02:50:10 millert Exp $	*/
 +/*	$NetBSD: bitstring.h,v 1.5 1997/05/14 15:49:55 pk Exp $	*/
@@ -1190,8 +1230,10 @@
 +} while(0)
 +
 +#endif /* !_BITSTRING_H_ */
---- isakmpd-20041012.orig/sysdep/linux/include/sys/queue.h
-+++ isakmpd-20041012/sysdep/linux/include/sys/queue.h
+Index: isakmpd-20041012.orig/sysdep/linux/include/sys/queue.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ isakmpd-20041012.orig/sysdep/linux/include/sys/queue.h	2007-06-04 13:22:39.292881856 +0200
 @@ -0,0 +1,453 @@
 +/*
 + * Copyright (c) 1991, 1993
@@ -1646,8 +1688,10 @@
 +#endif /* _KERNEL */
 +
 +#endif /* !_SYS_QUEUE_H_ */
---- isakmpd-20041012.orig/sysdep/common/pcap.h
-+++ isakmpd-20041012/sysdep/common/pcap.h
+Index: isakmpd-20041012.orig/sysdep/common/pcap.h
+===================================================================
+--- isakmpd-20041012.orig.orig/sysdep/common/pcap.h	2007-06-04 13:22:39.203895384 +0200
++++ isakmpd-20041012.orig/sysdep/common/pcap.h	2007-06-04 13:22:39.292881856 +0200
 @@ -55,8 +55,13 @@
  	u_int32_t linktype;	/* data link type (DLT_*) */
  };
@@ -1663,8 +1707,10 @@
  	u_int32_t caplen;	/* length of portion present */
  	u_int32_t len;		/* length this packet (off wire) */
  };
---- isakmpd-20041012.orig/sysdep/common/libsysdep/arc4random.c
-+++ isakmpd-20041012/sysdep/common/libsysdep/arc4random.c
+Index: isakmpd-20041012.orig/sysdep/common/libsysdep/arc4random.c
+===================================================================
+--- isakmpd-20041012.orig.orig/sysdep/common/libsysdep/arc4random.c	2007-06-04 13:22:39.211894168 +0200
++++ isakmpd-20041012.orig/sysdep/common/libsysdep/arc4random.c	2007-06-04 13:22:39.292881856 +0200
 @@ -78,7 +78,7 @@
  static void
  arc4_stir(struct arc4_stream *as)
@@ -1674,8 +1720,10 @@
  	struct {
  		struct timeval tv;
  		u_int8_t rnd[128 - sizeof(struct timeval)];
---- isakmpd-20041012.orig/x509v3.cnf
-+++ isakmpd-20041012/x509v3.cnf
+Index: isakmpd-20041012.orig/x509v3.cnf
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ isakmpd-20041012.orig/x509v3.cnf	2007-06-04 13:22:39.293881704 +0200
 @@ -0,0 +1,26 @@
 +# default settings
 +CERTPATHLEN             = 1
@@ -1703,4 +1751,3 @@
 +# The address must be provided in the CERTFQDN environment variable
 +[x509v3_FQDN]
 +subjectAltName=DNS:$ENV::CERTFQDN
-

@@ -1,9 +1,10 @@
 Common subdirectories: hostapd-0.5.2/logwatch and hostapd-0.5.2.new/logwatch
-diff -u hostapd-0.5.2/Makefile hostapd-0.5.2.new/Makefile
---- hostapd-0.5.2/Makefile	2006-03-20 03:20:09.000000000 +0000
-+++ hostapd-0.5.2.new/Makefile	2006-03-21 22:25:23.803473592 +0000
-@@ -3,7 +3,7 @@
- DIR_HOSTAP=.
+Index: hostapd-0.5.7/Makefile
+===================================================================
+--- hostapd-0.5.7.orig/Makefile	2007-06-04 13:22:31.790022464 +0200
++++ hostapd-0.5.7/Makefile	2007-06-04 13:22:31.856012432 +0200
+@@ -2,7 +2,7 @@
+ DIR_WPA_SUPPLICANT=.
  
  ifndef CFLAGS
 -CFLAGS = -MMD -O2 -Wall -g
@@ -11,7 +12,7 @@ diff -u hostapd-0.5.2/Makefile hostapd-0.5.2.new/Makefile
  endif
  
  # define HOSTAPD_DUMP_STATE to include SIGUSR1 handler for dumping state to
-@@ -266,7 +266,7 @@
+@@ -336,7 +336,7 @@
  	for i in $(ALL); do cp $$i /usr/local/bin/$$i; done
  
  hostapd: $(OBJS)
@@ -20,7 +21,7 @@ diff -u hostapd-0.5.2/Makefile hostapd-0.5.2.new/Makefile
  
  driver_conf.c: Makefile .config
  	rm -f driver_conf.c
-@@ -330,10 +330,10 @@
+@@ -400,10 +400,10 @@
  endif
  
  nt_password_hash: $(NOBJS)

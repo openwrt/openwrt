@@ -1,16 +1,17 @@
-diff -urN openssl-0.9.8a/Makefile openssl-0.9.8a.new/Makefile
---- openssl-0.9.8a/Makefile	2005-10-11 12:21:48.000000000 +0200
-+++ openssl-0.9.8a.new/Makefile	2006-03-29 15:23:28.107586680 +0200
-@@ -102,7 +102,7 @@
- KRB5_INCLUDES=
- LIBKRB5=
+Index: openssl-0.9.8e/Makefile
+===================================================================
+--- openssl-0.9.8e.orig/Makefile	2007-06-04 13:23:31.995869784 +0200
++++ openssl-0.9.8e/Makefile	2007-06-04 13:23:33.246679632 +0200
+@@ -106,7 +106,7 @@
+ ZLIB_INCLUDE=
+ LIBZLIB=
  
 -DIRS=   crypto ssl engines apps test tools
 +DIRS=   crypto ssl engines apps tools
  SHLIBDIRS= crypto ssl
  
  # dirs in crypto to build
-@@ -119,7 +119,7 @@
+@@ -123,7 +123,7 @@
  
  # tests to perform.  "alltests" is a special word indicating that all tests
  # should be performed.
@@ -19,7 +20,7 @@ diff -urN openssl-0.9.8a/Makefile openssl-0.9.8a.new/Makefile
  
  MAKEFILE= Makefile
  
-@@ -131,7 +131,7 @@
+@@ -135,7 +135,7 @@
  
  TOP=    .
  ONEDIRS=out tmp
@@ -28,7 +29,7 @@ diff -urN openssl-0.9.8a/Makefile openssl-0.9.8a.new/Makefile
  WDIRS=  windows
  LIBS=   libcrypto.a libssl.a
  SHARED_CRYPTO=libcrypto$(SHLIB_EXT)
-@@ -204,7 +204,7 @@
+@@ -225,7 +225,7 @@
  	@[ -n "$(THIS)" ] && $(CLEARENV) && $(MAKE) $(THIS) -e $(BUILDENV)
  
  sub_all: build_all
@@ -37,7 +38,7 @@ diff -urN openssl-0.9.8a/Makefile openssl-0.9.8a.new/Makefile
  
  build_libs: build_crypto build_ssl build_engines
  
-@@ -454,7 +454,7 @@
+@@ -475,7 +475,7 @@
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
  
@@ -46,9 +47,10 @@ diff -urN openssl-0.9.8a/Makefile openssl-0.9.8a.new/Makefile
  
  install_sw:
  	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
-diff -urN openssl-0.9.8b/Makefile.org openssl-0.9.8b.new/Makefile.org
---- openssl-0.9.8b/Makefile.org	2006-09-01 19:34:51.000000000 +0200
-+++ openssl-0.9.8b.new/Makefile.org	2006-09-01 19:36:38.000000000 +0200
+Index: openssl-0.9.8e/Makefile.org
+===================================================================
+--- openssl-0.9.8e.orig/Makefile.org	2007-06-04 13:23:32.857738760 +0200
++++ openssl-0.9.8e/Makefile.org	2007-06-04 13:23:33.246679632 +0200
 @@ -473,7 +473,7 @@
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)

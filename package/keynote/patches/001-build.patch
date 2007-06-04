@@ -1,6 +1,7 @@
-diff -ru keynote-2.3/configure.in keynote-2.3.new/configure.in
---- keynote-2.3/configure.in	2000-09-27 01:16:28.000000000 +0200
-+++ keynote-2.3.new/configure.in	2004-01-16 11:34:03.991537404 +0100
+Index: keynote-2.3/configure.in
+===================================================================
+--- keynote-2.3.orig/configure.in	2007-06-04 13:22:41.284579072 +0200
++++ keynote-2.3/configure.in	2007-06-04 13:22:41.389563112 +0200
 @@ -21,19 +21,13 @@
  AC_PATH_PROG(ECHO, echo, /bin/echo)
  AC_PATH_PROG(SED, sed, /usr/bin/sed)
@@ -22,9 +23,10 @@ diff -ru keynote-2.3/configure.in keynote-2.3.new/configure.in
  
  AC_HEADER_STDC
  AC_HEADER_TIME
-diff -ru keynote-2.3/keynote-keygen.c keynote-2.3.new/keynote-keygen.c
---- keynote-2.3/keynote-keygen.c	2000-09-27 02:09:13.000000000 +0200
-+++ keynote-2.3.new/keynote-keygen.c	2004-01-16 11:32:06.652242269 +0100
+Index: keynote-2.3/keynote-keygen.c
+===================================================================
+--- keynote-2.3.orig/keynote-keygen.c	2007-06-04 13:22:41.290578160 +0200
++++ keynote-2.3/keynote-keygen.c	2007-06-04 13:22:41.389563112 +0200
 @@ -161,7 +161,7 @@
      if (strlen(algname) + 2 > prlen)
      {
@@ -34,10 +36,11 @@ diff -ru keynote-2.3/keynote-keygen.c keynote-2.3.new/keynote-keygen.c
  	exit(-1);
      }
  
-diff -ru keynote-2.3/keynote.l keynote-2.3.new/keynote.l
---- keynote-2.3/keynote.l	2000-08-11 22:49:13.000000000 +0200
-+++ keynote-2.3.new/keynote.l	2004-01-16 11:17:29.910430978 +0100
-@@ -61,7 +61,8 @@ struct lex_list
+Index: keynote-2.3/keynote.l
+===================================================================
+--- keynote-2.3.orig/keynote.l	2007-06-04 13:22:41.295577400 +0200
++++ keynote-2.3/keynote.l	2007-06-04 13:22:41.390562960 +0200
+@@ -61,7 +61,8 @@
  static struct lex_list *keynote_lex_list = (struct lex_list *) NULL;
  static int    keynote_max_lex_list = 32;
  static int    keynote_lex_counter = 0;
@@ -56,9 +59,10 @@ diff -ru keynote-2.3/keynote.l keynote-2.3.new/keynote.l
      }
  
      return en;
-diff -ru keynote-2.3/keynote-ver.l keynote-2.3.new/keynote-ver.l
---- keynote-2.3/keynote-ver.l	2000-08-11 22:49:13.000000000 +0200
-+++ keynote-2.3.new/keynote-ver.l	2004-01-16 11:31:14.667107044 +0100
+Index: keynote-2.3/keynote-ver.l
+===================================================================
+--- keynote-2.3.orig/keynote-ver.l	2007-06-04 13:22:41.301576488 +0200
++++ keynote-2.3/keynote-ver.l	2007-06-04 13:22:41.390562960 +0200
 @@ -267,7 +267,7 @@
      if (0)
      {
@@ -68,9 +72,10 @@ diff -ru keynote-2.3/keynote-ver.l keynote-2.3.new/keynote-ver.l
      }
  }
  
-diff -ru keynote-2.3/keynote-ver.y keynote-2.3.new/keynote-ver.y
---- keynote-2.3/keynote-ver.y	1999-10-12 00:34:29.000000000 +0200
-+++ keynote-2.3.new/keynote-ver.y	2004-01-16 11:07:19.709634736 +0100
+Index: keynote-2.3/keynote-ver.y
+===================================================================
+--- keynote-2.3.orig/keynote-ver.y	2007-06-04 13:22:41.306575728 +0200
++++ keynote-2.3/keynote-ver.y	2007-06-04 13:22:41.390562960 +0200
 @@ -49,7 +49,7 @@
  				 return keynote_errno;
                                 free($1);
@@ -88,9 +93,10 @@ diff -ru keynote-2.3/keynote-ver.y keynote-2.3.new/keynote-ver.y
  %%
  void
  kverror(char *s)
-diff -ru keynote-2.3/keynote.y keynote-2.3.new/keynote.y
---- keynote-2.3/keynote.y	2000-06-14 08:28:23.000000000 +0200
-+++ keynote-2.3.new/keynote.y	2004-01-16 11:14:55.365898229 +0100
+Index: keynote-2.3/keynote.y
+===================================================================
+--- keynote-2.3.orig/keynote.y	2007-06-04 13:22:41.311574968 +0200
++++ keynote-2.3/keynote.y	2007-06-04 13:22:41.391562808 +0200
 @@ -73,8 +73,7 @@
  %}
  %%
@@ -274,9 +280,10 @@ diff -ru keynote-2.3/keynote.y keynote-2.3.new/keynote.y
  %%
  
  /*
-diff -ru keynote-2.3/Makefile.in keynote-2.3.new/Makefile.in
---- keynote-2.3/Makefile.in	2000-09-27 01:16:27.000000000 +0200
-+++ keynote-2.3.new/Makefile.in	2004-01-16 11:35:38.841528129 +0100
+Index: keynote-2.3/Makefile.in
+===================================================================
+--- keynote-2.3.orig/Makefile.in	2007-06-04 13:22:41.317574056 +0200
++++ keynote-2.3/Makefile.in	2007-06-04 13:22:41.391562808 +0200
 @@ -41,7 +41,8 @@
  YACCFLAGS = -d -p kn -b k
  LEXFLAGS2 = -Pkv -s -i
@@ -296,9 +303,10 @@ diff -ru keynote-2.3/Makefile.in keynote-2.3.new/Makefile.in
  
  k.tab.c: keynote.y header.h keynote.h assertion.h config.h
  	$(YACC) $(YACCFLAGS) keynote.y
-diff -ru keynote-2.3/signature.c keynote-2.3.new/signature.c
---- keynote-2.3/signature.c	1999-10-12 00:34:31.000000000 +0200
-+++ keynote-2.3.new/signature.c	2004-01-16 11:30:48.062084986 +0100
+Index: keynote-2.3/signature.c
+===================================================================
+--- keynote-2.3.orig/signature.c	2007-06-04 13:22:41.323573144 +0200
++++ keynote-2.3/signature.c	2007-06-04 13:22:41.392562656 +0200
 @@ -515,7 +515,7 @@
  	kk = dc->dec_key;
  	if (keytype == KEYNOTE_PRIVATE_KEY)

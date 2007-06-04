@@ -1,6 +1,7 @@
-diff -ur madwifi.old/ath_rate/minstrel/minstrel.c madwifi.dev/ath_rate/minstrel/minstrel.c
---- madwifi.old/ath_rate/minstrel/minstrel.c	2007-06-01 16:44:25.137903000 +0200
-+++ madwifi.dev/ath_rate/minstrel/minstrel.c	2007-06-01 22:03:15.408659936 +0200
+Index: madwifi-ng-r2420-20070602/ath_rate/minstrel/minstrel.c
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/ath_rate/minstrel/minstrel.c	2007-06-04 13:21:55.198585208 +0200
++++ madwifi-ng-r2420-20070602/ath_rate/minstrel/minstrel.c	2007-06-04 13:21:57.115293824 +0200
 @@ -358,6 +358,8 @@
  					if (sn->rs_sampleColumn >= MINSTREL_COLUMNS)
  						sn->rs_sampleColumn = 0;

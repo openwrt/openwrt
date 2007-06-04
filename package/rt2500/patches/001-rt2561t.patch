@@ -1,6 +1,7 @@
-diff -urN rt2500-1.1.0-b4/Module/rt_config.h rt2500-1.1.0-b4.new/Module/rt_config.h
---- rt2500-1.1.0-b4/Module/rt_config.h	2006-06-17 22:12:58.000000000 +0200
-+++ rt2500-1.1.0-b4.new/Module/rt_config.h	2006-12-30 02:56:30.000000000 +0100
+Index: rt2500-1.1.0-b4/Module/rt_config.h
+===================================================================
+--- rt2500-1.1.0-b4.orig/Module/rt_config.h	2007-06-04 13:22:53.001797784 +0200
++++ rt2500-1.1.0-b4/Module/rt_config.h	2007-06-04 13:22:53.074786688 +0200
 @@ -55,7 +55,7 @@
  #error  You must compile this driver with "-O".
  #endif
@@ -18,9 +19,10 @@ diff -urN rt2500-1.1.0-b4/Module/rt_config.h rt2500-1.1.0-b4.new/Module/rt_confi
  };
  
  #ifdef RTMP_EMBEDDED
-diff -urN rt2500-1.1.0-b4/Module/rtmp_main.c rt2500-1.1.0-b4.new/Module/rtmp_main.c
---- rt2500-1.1.0-b4/Module/rtmp_main.c	2006-06-17 22:12:58.000000000 +0200
-+++ rt2500-1.1.0-b4.new/Module/rtmp_main.c	2006-12-30 02:56:01.000000000 +0100
+Index: rt2500-1.1.0-b4/Module/rtmp_main.c
+===================================================================
+--- rt2500-1.1.0-b4.orig/Module/rtmp_main.c	2007-06-04 13:22:53.008796720 +0200
++++ rt2500-1.1.0-b4/Module/rtmp_main.c	2007-06-04 13:22:53.074786688 +0200
 @@ -975,6 +975,7 @@
  static struct pci_device_id rt2500_pci_tbl[] __devinitdata =
  {

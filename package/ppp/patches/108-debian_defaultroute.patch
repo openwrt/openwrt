@@ -1,10 +1,11 @@
---- ppp/pppd/ipcp.c	Wed May 31 17:20:41 2000
-+++ ppp/pppd/ipcp.c	Wed May 31 17:27:19 2000
-@@ -145,7 +145,17 @@
-     { "-defaultroute", o_bool, &ipcp_allowoptions[0].default_route,
-       "disable defaultroute option", OPT_A2COPY,
+Index: ppp-2.4.3/pppd/ipcp.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/ipcp.c	2007-06-04 13:22:09.003486544 +0200
++++ ppp-2.4.3/pppd/ipcp.c	2007-06-04 13:22:11.387124176 +0200
+@@ -197,6 +197,16 @@
+       "disable defaultroute option", OPT_ALIAS | OPT_A2CLR,
        &ipcp_wantoptions[0].default_route },
-
+ 
 +#ifdef __linux__
 +    { "replacedefaultroute", o_bool,
 +				&ipcp_wantoptions[0].replace_default_route,
@@ -18,7 +19,7 @@
      { "proxyarp", o_bool, &ipcp_wantoptions[0].proxy_arp,
        "Add proxy ARP entry", OPT_ENABLE|1, &ipcp_allowoptions[0].proxy_arp },
      { "noproxyarp", o_bool, &ipcp_allowoptions[0].proxy_arp,
-@@ -195,7 +205,7 @@
+@@ -263,7 +273,7 @@
      ip_active_pkt
  };
  
@@ -27,7 +28,7 @@
  static void ipcp_script __P((char *));		/* Run an up/down script */
  static void ipcp_script_done __P((void *));
  
-@@ -1344,7 +1354,12 @@
+@@ -1659,7 +1669,12 @@
      if (!sifnpmode(u, PPP_IP, NPMODE_QUEUE))
  	return 0;
      if (wo->default_route)
@@ -40,7 +41,7 @@
  	    default_route_set[u] = 1;
      if (wo->proxy_arp)
  	if (sifproxyarp(u, wo->hisaddr))
-@@ -1420,7 +1435,8 @@
+@@ -1741,7 +1756,8 @@
       */
      if (demand) {
  	if (go->ouraddr != wo->ouraddr || ho->hisaddr != wo->hisaddr) {
@@ -49,8 +50,8 @@
 +				      wo->replace_default_route);
  	    if (go->ouraddr != wo->ouraddr) {
  		warn("Local IP address changed to %I", go->ouraddr);
- 		script_setenv("OLDIPLOCAL", ip_ntoa(wo->ouraddr));
-@@ -1445,7 +1461,12 @@
+ 		script_setenv("OLDIPLOCAL", ip_ntoa(wo->ouraddr), 0);
+@@ -1766,7 +1782,12 @@
  
  	    /* assign a default route through the interface if required */
  	    if (ipcp_wantoptions[f->unit].default_route) 
@@ -63,7 +64,7 @@
  		    default_route_set[f->unit] = 1;
  
  	    /* Make a proxy ARP entry if requested. */
-@@ -1492,7 +1513,12 @@
+@@ -1813,7 +1834,12 @@
  
  	/* assign a default route through the interface if required */
  	if (ipcp_wantoptions[f->unit].default_route) 
@@ -76,7 +77,7 @@
  		default_route_set[f->unit] = 1;
  
  	/* Make a proxy ARP entry if requested. */
-@@ -1559,7 +1585,7 @@
+@@ -1890,7 +1916,7 @@
  	sifnpmode(f->unit, PPP_IP, NPMODE_DROP);
  	sifdown(f->unit);
  	ipcp_clear_addrs(f->unit, ipcp_gotoptions[f->unit].ouraddr,
@@ -85,7 +86,7 @@
      }
  
      /* Execute the ip-down script */
-@@ -1575,16 +1601,25 @@
+@@ -1906,16 +1932,25 @@
   * proxy arp entries, etc.
   */
  static void
@@ -113,9 +114,11 @@
  	cifdefaultroute(unit, ouraddr, hisaddr);
  	default_route_set[unit] = 0;
      }
---- ppp/pppd/ipcp.h	Wed May 31 17:20:41 2000
-+++ ppp/pppd/ipcp.h	Wed May 31 15:56:17 2000
-@@ -47,6 +47,7 @@
+Index: ppp-2.4.3/pppd/ipcp.h
+===================================================================
+--- ppp-2.4.3.orig/pppd/ipcp.h	2007-06-04 13:22:08.263599024 +0200
++++ ppp-2.4.3/pppd/ipcp.h	2007-06-04 13:22:11.387124176 +0200
+@@ -70,6 +70,7 @@
      bool old_addrs;		/* Use old (IP-Addresses) option? */
      bool req_addr;		/* Ask peer to send IP address? */
      bool default_route;		/* Assign default route through interface? */
@@ -123,9 +126,11 @@
      bool proxy_arp;		/* Make proxy ARP entry for peer? */
      bool neg_vj;		/* Van Jacobson Compression? */
      bool old_vj;		/* use old (short) form of VJ option? */
---- ppp/pppd/pppd.h	Wed May 31 17:20:41 2000
-+++ ppp/pppd/pppd.h	Wed May 31 15:56:17 2000
-@@ -416,7 +416,11 @@
+Index: ppp-2.4.3/pppd/pppd.h
+===================================================================
+--- ppp-2.4.3.orig/pppd/pppd.h	2007-06-04 13:22:09.005486240 +0200
++++ ppp-2.4.3/pppd/pppd.h	2007-06-04 13:22:11.388124024 +0200
+@@ -642,7 +642,11 @@
  int  cif6addr __P((int, eui64_t, eui64_t));
  				/* Remove an IPv6 address from i/f */
  #endif
@@ -137,9 +142,11 @@
  				/* Create default route through i/f */
  int  cifdefaultroute __P((int, u_int32_t, u_int32_t));
  				/* Delete default route through i/f */
---- ppp/pppd/sys-linux.c	Wed May 31 17:20:41 2000
-+++ ppp/pppd/sys-linux.c	Wed May 31 17:37:23 2000
-@@ -143,6 +143,8 @@
+Index: ppp-2.4.3/pppd/sys-linux.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/sys-linux.c	2007-06-04 13:22:08.807516336 +0200
++++ ppp-2.4.3/pppd/sys-linux.c	2007-06-04 13:22:11.389123872 +0200
+@@ -206,6 +206,8 @@
  
  static int	if_is_up;	/* Interface has been marked up */
  static u_int32_t default_route_gateway;	/* Gateway for default route added */
@@ -148,7 +155,7 @@
  static u_int32_t proxy_arp_addr;	/* Addr for proxy arp entry added */
  static char proxy_arp_dev[16];		/* Device for proxy arp entry */
  static u_int32_t our_old_addr;		/* for detecting address changes */
-@@ -1209,6 +1211,9 @@
+@@ -1520,6 +1522,9 @@
  	p = NULL;
      }
  
@@ -158,10 +165,23 @@
      SIN_ADDR(rt->rt_dst) = strtoul(cols[route_dest_col], NULL, 16);
      SIN_ADDR(rt->rt_gateway) = strtoul(cols[route_gw_col], NULL, 16);
      SIN_ADDR(rt->rt_genmask) = strtoul(cols[route_mask_col], NULL, 16);
-@@ -1278,19 +1283,53 @@
+@@ -1589,19 +1594,53 @@
  /********************************************************************
   *
   * sifdefaultroute - assign a default route through the address given.
+- */
+-
+-int sifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
+-{
+-    struct rtentry rt;
+-
+-    if (defaultroute_exists(&rt) && strcmp(rt.rt_dev, ifname) != 0) {
+-	u_int32_t old_gateway = SIN_ADDR(rt.rt_gateway);
+-
+-	if (old_gateway != gateway)
+-	    error("not replacing existing default route to %s [%I]",
+-		  rt.rt_dev, old_gateway);
+-	return 0;
 + *
 + * If the global default_rt_repl_rest flag is set, then this function
 + * already replaced the original system defaultroute with some other
@@ -170,22 +190,13 @@
 + * when pppd sets first a defaultroute it it's temporary ppp0 addresses
 + * and then changes the temporary addresses to the addresses for the real
 + * ppp connection when it has come up.
-  */
- 
--int sifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
++ */
++
 +int sifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway, bool replace)
- {
--    struct rtentry rt;
--
--    if (defaultroute_exists(&rt) && strcmp(rt.rt_dev, ifname) != 0) {
--	u_int32_t old_gateway = SIN_ADDR(rt.rt_gateway);
++{
 +    struct rtentry rt, tmp_rt;
 +    struct rtentry *del_rt = NULL;
- 
--	if (old_gateway != gateway)
--	    error("not replacing existing default route to %s [%I]",
--		  rt.rt_dev, old_gateway);
--	return 0;
++
 +    
 +    if (default_rt_repl_rest) {
 +	/* We have already reclaced the original defaultroute, if we
@@ -221,8 +232,8 @@
      }
  
      memset (&rt, '\0', sizeof (rt));
-@@ -1310,6 +1349,12 @@
- 	    error("default route ioctl(SIOCADDRT): %m(%d)", errno);
+@@ -1623,6 +1662,12 @@
+ 	    error("default route ioctl(SIOCADDRT): %m");
  	return 0;
      }
 +    if (default_rt_repl_rest && del_rt)
@@ -234,11 +245,10 @@
  
      default_route_gateway = gateway;
      return 1;
-@@ -1344,6 +1389,16 @@
- 		error("default route ioctl(SIOCDELRT): %m (%d)", errno);
+@@ -1658,6 +1703,16 @@
  	    return 0;
  	}
-+    }
+     }
 +    if (default_rt_repl_rest) {
 +	notice("restoring old default route to %s [%I]",
 +			old_def_rt.rt_dev, SIN_ADDR(old_def_rt.rt_gateway));
@@ -248,6 +258,7 @@
 +	    return 0;
 +        }
 +        default_rt_repl_rest = 0;
-     }
++    }
  
      return 1;
+ }

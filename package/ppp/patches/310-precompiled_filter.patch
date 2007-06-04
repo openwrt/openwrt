@@ -1,6 +1,7 @@
-diff -urN ppp.old/pppd/Makefile.linux ppp.dev/pppd/Makefile.linux
---- ppp.old/pppd/Makefile.linux	2006-03-18 15:58:00.000000000 +0100
-+++ ppp.dev/pppd/Makefile.linux	2006-03-18 16:52:01.000000000 +0100
+Index: ppp-2.4.3/pppd/Makefile.linux
+===================================================================
+--- ppp-2.4.3.orig/pppd/Makefile.linux	2007-06-04 13:22:14.133706632 +0200
++++ ppp-2.4.3/pppd/Makefile.linux	2007-06-04 13:22:14.320678208 +0200
 @@ -50,6 +50,9 @@
  # and that the kernel driver support PPP packet filtering.
  #FILTER=y
@@ -26,9 +27,10 @@ diff -urN ppp.old/pppd/Makefile.linux ppp.dev/pppd/Makefile.linux
  ifdef HAVE_INET6
       PPPDSRCS += ipv6cp.c eui64.c
       HEADERS  += ipv6cp.h eui64.h
-diff -urN ppp.old/pppd/demand.c ppp.dev/pppd/demand.c
---- ppp.old/pppd/demand.c	2006-03-18 15:58:00.000000000 +0100
-+++ ppp.dev/pppd/demand.c	2006-03-18 18:09:16.000000000 +0100
+Index: ppp-2.4.3/pppd/demand.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/demand.c	2007-06-04 13:22:11.613089824 +0200
++++ ppp-2.4.3/pppd/demand.c	2007-06-04 13:22:14.320678208 +0200
 @@ -438,12 +438,14 @@
  	return 0;
      proto = PPP_PROTOCOL(p);
@@ -44,9 +46,10 @@ diff -urN ppp.old/pppd/demand.c ppp.dev/pppd/demand.c
  #endif
      for (i = 0; (protp = protocols[i]) != NULL; ++i) {
  	if (protp->protocol < 0xC000 && (protp->protocol & ~0x8000) == proto) {
-diff -urN ppp.old/pppd/options.c ppp.dev/pppd/options.c
---- ppp.old/pppd/options.c	2006-03-18 15:58:00.000000000 +0100
-+++ ppp.dev/pppd/options.c	2006-03-18 18:05:58.000000000 +0100
+Index: ppp-2.4.3/pppd/options.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/options.c	2007-06-04 13:22:09.005486240 +0200
++++ ppp-2.4.3/pppd/options.c	2007-06-04 13:22:14.321678056 +0200
 @@ -57,14 +57,7 @@
  
  #ifdef PPP_FILTER
@@ -140,9 +143,10 @@ diff -urN ppp.old/pppd/options.c ppp.dev/pppd/options.c
      if (pcap_compile(pc, &active_filter, *argv, 1, netmask) == -1) {
  	option_error("error in active-filter expression: %s\n",
  		     pcap_geterr(pc));
-diff -urN ppp.old/pppd/pcap_pcc.c ppp.dev/pppd/pcap_pcc.c
---- ppp.old/pppd/pcap_pcc.c	1970-01-01 01:00:00.000000000 +0100
-+++ ppp.dev/pppd/pcap_pcc.c	2006-03-18 16:51:31.000000000 +0100
+Index: ppp-2.4.3/pppd/pcap_pcc.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ ppp-2.4.3/pppd/pcap_pcc.c	2007-06-04 13:22:14.321678056 +0200
 @@ -0,0 +1,74 @@
 +#include <pcap.h>
 +#include <pcap-bpf.h>
@@ -218,9 +222,10 @@ diff -urN ppp.old/pppd/pcap_pcc.c ppp.dev/pppd/pcap_pcc.c
 +  fclose (f);
 +  return 0;
 +}
-diff -urN ppp.old/pppd/pcap_pcc.h ppp.dev/pppd/pcap_pcc.h
---- ppp.old/pppd/pcap_pcc.h	1970-01-01 01:00:00.000000000 +0100
-+++ ppp.dev/pppd/pcap_pcc.h	2006-03-18 15:59:14.000000000 +0100
+Index: ppp-2.4.3/pppd/pcap_pcc.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ ppp-2.4.3/pppd/pcap_pcc.h	2007-06-04 13:22:14.321678056 +0200
 @@ -0,0 +1,7 @@
 +#ifndef PCAP_PCC_H
 +#define PCAP_PCC_H

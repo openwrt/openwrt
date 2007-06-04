@@ -1,6 +1,7 @@
-diff -urN aodv-uu-0.9.1/lnx/Makefile aodv-uu-0.9.1.new/lnx/Makefile
---- aodv-uu-0.9.1/lnx/Makefile	2005-03-17 22:37:59.000000000 +0100
-+++ aodv-uu-0.9.1.new/lnx/Makefile	2006-07-25 15:46:02.000000000 +0200
+Index: aodv-uu-0.9.3/lnx/Makefile
+===================================================================
+--- aodv-uu-0.9.3.orig/lnx/Makefile	2007-06-04 13:22:19.859836128 +0200
++++ aodv-uu-0.9.3/lnx/Makefile	2007-06-04 13:22:19.932825032 +0200
 @@ -30,7 +30,7 @@
  KCFLAGS=-Wall -Wno-strict-aliasing -O2 $(KDEFS) $(KINC) $(XDEFS)
  KCFLAGS_ARM=-Wall -O2 -D__KERNEL__ -DMODULE -nostdinc $(shell $(ARM_CC) -print-search-dirs | sed -ne 's/install: \(.*\)/-I \1include/gp') -I$(KERNEL_INC)
@@ -10,15 +11,16 @@ diff -urN aodv-uu-0.9.1/lnx/Makefile aodv-uu-0.9.1.new/lnx/Makefile
  .PHONY: clean clean-2.4 clean-2.6 indent default
  
  # Check for kernel version
-@@ -87,5 +87,3 @@
- 
+@@ -89,5 +89,3 @@
+ 	etags *.c *.h
  indent:
  	indent -kr -i8 -ts8 -sob -l80 -ss -ncs *.c *.h 
 -endif
 -
-diff -urN aodv-uu-0.9.1/Makefile aodv-uu-0.9.1.new/Makefile
---- aodv-uu-0.9.1/Makefile	2006-07-25 15:03:49.000000000 +0200
-+++ aodv-uu-0.9.1.new/Makefile	2006-07-25 15:03:59.000000000 +0200
+Index: aodv-uu-0.9.3/Makefile
+===================================================================
+--- aodv-uu-0.9.3.orig/Makefile	2007-06-04 13:22:19.866835064 +0200
++++ aodv-uu-0.9.3/Makefile	2007-06-04 13:22:19.932825032 +0200
 @@ -87,7 +87,7 @@
  mips: aodvd-mips kaodv-mips
  
@@ -28,7 +30,7 @@ diff -urN aodv-uu-0.9.1/Makefile aodv-uu-0.9.1.new/Makefile
  	./endian > endian.h
  
  $(OBJS): %.o: %.c Makefile
-@@ -138,19 +138,18 @@
+@@ -143,19 +143,18 @@
  	@makedepend -Y./ -- $(DEFS) -- $(SRC) &>/dev/null
  	@makedepend -a -Y./ -- $(KDEFS) kaodv.c &>/dev/null
  

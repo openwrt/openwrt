@@ -1,6 +1,7 @@
-diff -urN -x'*.swp' ppp.old/pppd/auth.c ppp.dev/pppd/auth.c
---- ppp.old/pppd/auth.c	2004-11-12 11:30:51.000000000 +0100
-+++ ppp.dev/pppd/auth.c	2005-07-13 14:54:23.000000000 +0200
+Index: ppp-2.4.3/pppd/auth.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/auth.c	2007-06-04 13:22:07.941647968 +0200
++++ ppp-2.4.3/pppd/auth.c	2007-06-04 13:22:13.340827168 +0200
 @@ -532,6 +532,12 @@
  link_required(unit)
      int unit;
@@ -71,9 +72,10 @@ diff -urN -x'*.swp' ppp.old/pppd/auth.c ppp.dev/pppd/auth.c
      logged_in = 0;
  }
  
-diff -urN -x'*.swp' ppp.old/pppd/main.c ppp.dev/pppd/main.c
---- ppp.old/pppd/main.c	2005-07-13 11:34:28.000000000 +0200
-+++ ppp.dev/pppd/main.c	2005-07-13 14:49:06.000000000 +0200
+Index: ppp-2.4.3/pppd/main.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/main.c	2007-06-04 13:22:10.548251704 +0200
++++ ppp-2.4.3/pppd/main.c	2007-06-04 13:22:13.340827168 +0200
 @@ -537,6 +537,7 @@
  	script_unsetenv("BYTES_RCVD");
  
@@ -82,9 +84,10 @@ diff -urN -x'*.swp' ppp.old/pppd/main.c ppp.dev/pppd/main.c
  	while (phase != PHASE_DEAD) {
  	    handle_events();
  	    get_input();
-diff -urN -x'*.swp' ppp.old/pppd/pppd.h ppp.dev/pppd/pppd.h
---- ppp.old/pppd/pppd.h	2005-07-13 11:34:28.000000000 +0200
-+++ ppp.dev/pppd/pppd.h	2005-07-13 14:48:56.000000000 +0200
+Index: ppp-2.4.3/pppd/pppd.h
+===================================================================
+--- ppp-2.4.3.orig/pppd/pppd.h	2007-06-04 13:22:11.615089520 +0200
++++ ppp-2.4.3/pppd/pppd.h	2007-06-04 13:22:13.341827016 +0200
 @@ -526,6 +526,7 @@
  
  /* Procedures exported from auth.c */
@@ -93,9 +96,10 @@ diff -urN -x'*.swp' ppp.old/pppd/pppd.h ppp.dev/pppd/pppd.h
  void link_terminated __P((int));  /* we are finished with the link */
  void link_down __P((int));	  /* the LCP layer has left the Opened state */
  void upper_layers_down __P((int));/* take all NCPs down */
-diff -urN -x'*.swp' ppp.old/pppd/tty.c ppp.dev/pppd/tty.c
---- ppp.old/pppd/tty.c	2004-11-13 13:07:29.000000000 +0100
-+++ ppp.dev/pppd/tty.c	2005-07-13 14:46:57.000000000 +0200
+Index: ppp-2.4.3/pppd/tty.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/tty.c	2007-06-04 13:22:07.960645080 +0200
++++ ppp-2.4.3/pppd/tty.c	2007-06-04 13:22:13.341827016 +0200
 @@ -755,14 +755,6 @@
  		close(pty_master);
  		pty_master = -1;

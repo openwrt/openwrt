@@ -1,6 +1,7 @@
-diff -urN iproute2-2.6.15-060110/netem/maketable.c iproute2-2.6.15-060110.new/netem/maketable.c
---- iproute2-2.6.15-060110/netem/maketable.c	2005-02-09 23:05:41.000000000 +0100
-+++ iproute2-2.6.15-060110.new/netem/maketable.c	2007-04-08 22:40:21.000000000 +0200
+Index: iproute2-2.6.15-060110/netem/maketable.c
+===================================================================
+--- iproute2-2.6.15-060110.orig/netem/maketable.c	2007-06-04 13:22:33.339786864 +0200
++++ iproute2-2.6.15-060110/netem/maketable.c	2007-06-04 13:22:34.476614040 +0200
 @@ -10,7 +10,9 @@
  #include <stdio.h>
  #include <stdlib.h>
@@ -11,9 +12,10 @@ diff -urN iproute2-2.6.15-060110/netem/maketable.c iproute2-2.6.15-060110.new/ne
  #include <string.h>
  #include <sys/types.h>
  #include <sys/stat.h>
-diff -urN iproute2-2.6.15-060110/netem/normal.c iproute2-2.6.15-060110.new/netem/normal.c
---- iproute2-2.6.15-060110/netem/normal.c	2005-03-30 20:11:49.000000000 +0200
-+++ iproute2-2.6.15-060110.new/netem/normal.c	2007-04-08 22:47:26.000000000 +0200
+Index: iproute2-2.6.15-060110/netem/normal.c
+===================================================================
+--- iproute2-2.6.15-060110.orig/netem/normal.c	2007-06-04 13:22:33.344786104 +0200
++++ iproute2-2.6.15-060110/netem/normal.c	2007-06-04 13:22:34.476614040 +0200
 @@ -8,8 +8,12 @@
  #include <string.h>
  #include <limits.h>
@@ -27,9 +29,10 @@ diff -urN iproute2-2.6.15-060110/netem/normal.c iproute2-2.6.15-060110.new/netem
  
  #define TABLESIZE 16384
  #define TABLEFACTOR NETEM_DIST_SCALE
-diff -urN iproute2-2.6.15-060110/netem/pareto.c iproute2-2.6.15-060110.new/netem/pareto.c
---- iproute2-2.6.15-060110/netem/pareto.c	2005-02-09 23:05:41.000000000 +0100
-+++ iproute2-2.6.15-060110.new/netem/pareto.c	2007-04-08 22:48:36.000000000 +0200
+Index: iproute2-2.6.15-060110/netem/pareto.c
+===================================================================
+--- iproute2-2.6.15-060110.orig/netem/pareto.c	2007-06-04 13:22:33.349785344 +0200
++++ iproute2-2.6.15-060110/netem/pareto.c	2007-06-04 13:22:34.476614040 +0200
 @@ -7,8 +7,12 @@
  #include <math.h>
  #include <limits.h>
@@ -43,9 +46,10 @@ diff -urN iproute2-2.6.15-060110/netem/pareto.c iproute2-2.6.15-060110.new/netem
  
  static const double a=3.0;
  #define TABLESIZE	16384
-diff -urN iproute2-2.6.15-060110/netem/paretonormal.c iproute2-2.6.15-060110.new/netem/paretonormal.c
---- iproute2-2.6.15-060110/netem/paretonormal.c	2005-08-08 22:24:41.000000000 +0200
-+++ iproute2-2.6.15-060110.new/netem/paretonormal.c	2007-04-08 22:49:56.000000000 +0200
+Index: iproute2-2.6.15-060110/netem/paretonormal.c
+===================================================================
+--- iproute2-2.6.15-060110.orig/netem/paretonormal.c	2007-06-04 13:22:33.356784280 +0200
++++ iproute2-2.6.15-060110/netem/paretonormal.c	2007-06-04 13:22:34.476614040 +0200
 @@ -15,10 +15,13 @@
  #include <string.h>
  #include <math.h>

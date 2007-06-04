@@ -1,6 +1,7 @@
-diff -urN madwifi-ng-r2377-20070526.old/ath_rate/minstrel/minstrel.c madwifi-ng-r2377-20070526.dev/ath_rate/minstrel/minstrel.c
---- madwifi-ng-r2377-20070526.old/ath_rate/minstrel/minstrel.c	2007-05-21 19:33:26.000000000 +0200
-+++ madwifi-ng-r2377-20070526.dev/ath_rate/minstrel/minstrel.c	2007-05-26 18:51:08.575783824 +0200
+Index: madwifi-ng-r2420-20070602/ath_rate/minstrel/minstrel.c
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/ath_rate/minstrel/minstrel.c	2007-06-04 13:21:53.488845128 +0200
++++ madwifi-ng-r2420-20070602/ath_rate/minstrel/minstrel.c	2007-06-04 13:21:55.198585208 +0200
 @@ -388,6 +388,9 @@
  		int rc1, rc2, rc3;         /* Index into the rate table, so for example, it is  0..11 */
  		int rixc1, rixc2, rixc3;   /* The actual bit rate used */
@@ -11,4 +12,3 @@ diff -urN madwifi-ng-r2377-20070526.old/ath_rate/minstrel/minstrel.c madwifi-ng-
  		if (sn->is_sampling) {
  			rc1 = sn->max_tp_rate;
  			sn->is_sampling = 0;
-

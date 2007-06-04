@@ -1,7 +1,8 @@
-diff -ruN ppp-2.4.3-orig/pppd/Makefile.linux ppp-2.4.3-3/pppd/Makefile.linux
---- ppp-2.4.3-orig/pppd/Makefile.linux	2004-11-13 13:02:22.000000000 +0100
-+++ ppp-2.4.3-3/pppd/Makefile.linux	2004-12-16 04:43:41.000000000 +0100
-@@ -49,19 +49,19 @@
+Index: ppp-2.4.3/pppd/Makefile.linux
+===================================================================
+--- ppp-2.4.3.orig/pppd/Makefile.linux	2007-06-04 13:22:08.197609056 +0200
++++ ppp-2.4.3/pppd/Makefile.linux	2007-06-04 13:22:11.837055776 +0200
+@@ -48,21 +48,21 @@
  # Uncomment the next line to include support for PPP packet filtering.
  # This requires that the libpcap library and headers be installed
  # and that the kernel driver support PPP packet filtering.
@@ -26,6 +27,8 @@ diff -ruN ppp-2.4.3-orig/pppd/Makefile.linux ppp-2.4.3-3/pppd/Makefile.linux
 -#HAVE_INET6=y
 +HAVE_INET6=y
  
+ # Enable plugins
+ PLUGIN=y
 @@ -77,7 +77,7 @@
  
  INCLUDE_DIRS= -I../include

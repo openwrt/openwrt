@@ -1,6 +1,7 @@
-diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
---- madwifi.old/ath/if_ath.c	2007-06-01 11:26:04.181689864 +0200
-+++ madwifi.dev/ath/if_ath.c	2007-06-01 11:39:53.078678368 +0200
+Index: madwifi-ng-r2420-20070602/ath/if_ath.c
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/ath/if_ath.c	2007-06-04 13:21:58.130139544 +0200
++++ madwifi-ng-r2420-20070602/ath/if_ath.c	2007-06-04 13:21:58.427094400 +0200
 @@ -167,7 +167,7 @@
  	int, u_int32_t);
  static void ath_setdefantenna(struct ath_softc *, u_int);
@@ -10,7 +11,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  static int ath_hardstart(struct sk_buff *, struct net_device *);
  static int ath_mgtstart(struct ieee80211com *, struct sk_buff *);
  #ifdef ATH_SUPERG_COMP
-@@ -443,7 +443,6 @@
+@@ -442,7 +442,6 @@
  	ATH_TXBUF_LOCK_INIT(sc);
  	ATH_RXBUF_LOCK_INIT(sc);
  
@@ -18,7 +19,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  	ATH_INIT_TQUEUE(&sc->sc_txtq,	  ath_tx_tasklet,	dev);
  	ATH_INIT_TQUEUE(&sc->sc_bmisstq,  ath_bmiss_tasklet,	dev);
  	ATH_INIT_TQUEUE(&sc->sc_bstucktq, ath_bstuck_tasklet,	dev);
-@@ -700,6 +699,8 @@
+@@ -699,6 +698,8 @@
  	dev->set_mac_address = ath_set_mac_address;
   	dev->change_mtu = ath_change_mtu;
  	dev->tx_queue_len = ATH_TXBUF - 1;		/* 1 for mgmt frame */
@@ -27,7 +28,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  #ifdef USE_HEADERLEN_RESV
  	dev->hard_header_len += sizeof(struct ieee80211_qosframe) +
  				sizeof(struct llc) +
-@@ -1665,6 +1666,7 @@
+@@ -1664,6 +1665,7 @@
  	 */
  	ath_hal_getisr(ah, &status);		/* NB: clears ISR too */
  	DPRINTF(sc, ATH_DEBUG_INTR, "%s: status 0x%x\n", __func__, status);
@@ -35,7 +36,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  	status &= sc->sc_imask;			/* discard unasked for bits */
  	if (status & HAL_INT_FATAL) {
  		sc->sc_stats.ast_hardware++;
-@@ -1700,7 +1702,12 @@
+@@ -1699,7 +1701,12 @@
  		if (status & HAL_INT_RX) {
  			sc->sc_tsf = ath_hal_gettsf64(ah);
  			ath_uapsd_processtriggers(sc);
@@ -49,7 +50,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  		}
  		if (status & HAL_INT_TX) {
  #ifdef ATH_SUPERG_DYNTURBO
-@@ -1726,6 +1733,11 @@
+@@ -1725,6 +1732,11 @@
  				}
  			}
  #endif
@@ -61,7 +62,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  			ATH_SCHEDULE_TQUEUE(&sc->sc_txtq, &needmark);
  		}
  		if (status & HAL_INT_BMISS) {
-@@ -3296,10 +3308,10 @@
+@@ -3295,10 +3307,10 @@
  	 *
  	 * XXX Using in_softirq is not right since we might
  	 * be called from other soft irq contexts than
@@ -74,7 +75,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  	netif_stop_queue(dev);
  }
  
-@@ -3312,7 +3324,7 @@
+@@ -3311,7 +3323,7 @@
  	DPRINTF(sc, ATH_DEBUG_KEYCACHE, "%s:\n", __func__);
  	netif_start_queue(dev);
  	if (!in_softirq())		/* NB: see above */
@@ -83,7 +84,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  }
  
  /*
-@@ -5573,13 +5585,12 @@
+@@ -5569,13 +5581,12 @@
  	sc->sc_rxotherant = 0;
  }
  
@@ -99,7 +100,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  	struct ath_buf *bf;
  	struct ath_softc *sc = dev->priv;
  	struct ieee80211com *ic = &sc->sc_ic;
-@@ -5591,12 +5602,15 @@
+@@ -5587,12 +5598,15 @@
  	unsigned int len;
  	int type;
  	u_int phyerr;
@@ -115,7 +116,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  	do {
  		bf = STAILQ_FIRST(&sc->sc_rxbuf);
  		if (bf == NULL) {		/* XXX ??? can this happen */
-@@ -5620,6 +5634,13 @@
+@@ -5616,6 +5630,13 @@
  			/* NB: never process the self-linked entry at the end */
  			break;
  		}
@@ -129,7 +130,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  		skb = bf->bf_skb;
  		if (skb == NULL) {		/* XXX ??? can this happen */
  			printk("%s: no skbuff (%s)\n", DEV_NAME(dev), __func__);
-@@ -5658,6 +5679,7 @@
+@@ -5654,6 +5675,7 @@
  				sc->sc_stats.ast_rx_phyerr++;
  				phyerr = rs->rs_phyerr & 0x1f;
  				sc->sc_stats.ast_rx_phy[phyerr]++;
@@ -137,7 +138,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  			}
  			if (rs->rs_status & HAL_RXERR_DECRYPT) {
  				/*
-@@ -5868,9 +5890,29 @@
+@@ -5865,9 +5887,29 @@
  		STAILQ_INSERT_TAIL(&sc->sc_rxbuf, bf, bf_list);
  		ATH_RXBUF_UNLOCK_IRQ(sc);
  	} while (ath_rxbuf_init(sc, bf) == 0);
@@ -167,7 +168,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  #undef PA2DESC
  }
  
-@@ -7487,11 +7529,22 @@
+@@ -7484,11 +7526,22 @@
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
  
@@ -190,7 +191,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -7508,6 +7561,7 @@
+@@ -7505,6 +7558,7 @@
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
  
@@ -198,7 +199,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  	/*
  	 * Process each active queue.
  	 */
-@@ -7528,6 +7582,16 @@
+@@ -7525,6 +7579,16 @@
  	if (sc->sc_uapsdq && txqactive(sc->sc_ah, sc->sc_uapsdq->axq_qnum))
  		ath_tx_processq(sc, sc->sc_uapsdq);
  
@@ -215,7 +216,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -7545,6 +7609,7 @@
+@@ -7542,6 +7606,7 @@
  	unsigned int i;
  
  	/* Process each active queue. */
@@ -223,7 +224,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  	for (i = 0; i < HAL_NUM_TX_QUEUES; i++)
  		if (ATH_TXQ_SETUP(sc, i) && txqactive(sc->sc_ah, i))
  			ath_tx_processq(sc, &sc->sc_txq[i]);
-@@ -7553,6 +7618,16 @@
+@@ -7550,6 +7615,16 @@
  		ath_tx_processq(sc, sc->sc_xrtxq);
  #endif
  
@@ -240,7 +241,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -7651,6 +7726,7 @@
+@@ -7648,6 +7723,7 @@
  ath_draintxq(struct ath_softc *sc)
  {
  	struct ath_hal *ah = sc->sc_ah;
@@ -248,7 +249,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  	unsigned int i;
  
  	/* XXX return value */
-@@ -9170,9 +9246,9 @@
+@@ -9167,9 +9243,9 @@
  	dev->mtu = mtu;
  	if ((dev->flags & IFF_RUNNING) && !sc->sc_invalid) {
  		/* NB: the rx buffers may need to be reallocated */
@@ -260,9 +261,10 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  	}
  	ATH_UNLOCK(sc);
  
-diff -ur madwifi.old/ath/if_athvar.h madwifi.dev/ath/if_athvar.h
---- madwifi.old/ath/if_athvar.h	2007-06-01 11:26:04.158693360 +0200
-+++ madwifi.dev/ath/if_athvar.h	2007-06-01 11:33:26.549439744 +0200
+Index: madwifi-ng-r2420-20070602/ath/if_athvar.h
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/ath/if_athvar.h	2007-06-04 13:21:57.500235304 +0200
++++ madwifi-ng-r2420-20070602/ath/if_athvar.h	2007-06-04 13:21:58.428094248 +0200
 @@ -48,6 +48,10 @@
  #include "if_athioctl.h"
  #include "net80211/ieee80211.h"		/* XXX for WME_NUM_AC */
@@ -299,10 +301,11 @@ diff -ur madwifi.old/ath/if_athvar.h madwifi.dev/ath/if_athvar.h
  
  #define	ATH_RXBUF_LOCK_INIT(_sc)	spin_lock_init(&(_sc)->sc_rxbuflock)
  #define	ATH_RXBUF_LOCK_DESTROY(_sc)
-diff -ur madwifi.old/net80211/ieee80211_input.c madwifi.dev/net80211/ieee80211_input.c
---- madwifi.old/net80211/ieee80211_input.c	2007-06-01 11:26:04.183689560 +0200
-+++ madwifi.dev/net80211/ieee80211_input.c	2007-06-01 11:31:46.931583960 +0200
-@@ -1144,8 +1144,9 @@
+Index: madwifi-ng-r2420-20070602/net80211/ieee80211_input.c
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_input.c	2007-06-04 13:21:57.502235000 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_input.c	2007-06-04 13:21:58.461089232 +0200
+@@ -1128,8 +1128,9 @@
  		if (ni->ni_vlan != 0 && vap->iv_vlgrp != NULL) {
  			/* attach vlan tag */
  			vlan_hwaccel_receive_skb(skb, vap->iv_vlgrp, ni->ni_vlan);

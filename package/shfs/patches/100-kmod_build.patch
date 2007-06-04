@@ -1,5 +1,7 @@
---- shfs-0.35-orig/shfs/Linux-2.4/Makefile	2004-06-01 15:16:19.000000000 +0200
-+++ shfs-0.35-2/shfs/Linux-2.4/Makefile	2005-04-09 02:34:35.000000000 +0200
+Index: shfs-0.35/shfs/Linux-2.4/Makefile
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.4/Makefile	2007-06-04 13:22:58.143016200 +0200
++++ shfs-0.35/shfs/Linux-2.4/Makefile	2007-06-04 13:22:58.209006168 +0200
 @@ -1,3 +1,13 @@
 +#
 +# the original Makefile was trashed and replaced by this one
@@ -14,7 +16,7 @@
  ifndef KERNEL
  KERNEL=$(shell uname -r)
  endif
-@@ -10,67 +24,29 @@
+@@ -10,67 +20,29 @@
  KERNEL_SOURCES=${MODULESDIR}/build
  endif
  

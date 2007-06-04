@@ -1,7 +1,8 @@
-diff -ur busybox.old/networking/httpd.c busybox.dev/networking/httpd.c
---- busybox.old/networking/httpd.c	2007-01-19 22:22:59.000000000 +0100
-+++ busybox.dev/networking/httpd.c	2007-02-10 16:36:50.950661760 +0100
-@@ -1224,7 +1224,7 @@
+Index: busybox-1.4.2/networking/httpd.c
+===================================================================
+--- busybox-1.4.2.orig/networking/httpd.c	2007-06-04 13:21:35.006654848 +0200
++++ busybox-1.4.2/networking/httpd.c	2007-06-04 13:21:35.585566840 +0200
+@@ -1231,7 +1231,7 @@
  				 * "chopped up into small chunks" syndrome here */
  				rbuf[count] = '\0';
  				/* check to see if the user script added headers */
@@ -10,7 +11,7 @@ diff -ur busybox.old/networking/httpd.c busybox.dev/networking/httpd.c
  				if (memcmp(rbuf, HTTP_200, 4) != 0) {
  					/* there is no "HTTP", do it ourself */
  					full_write(s, HTTP_200, sizeof(HTTP_200)-1);
-@@ -1235,9 +1235,9 @@
+@@ -1242,9 +1242,9 @@
  				 * echo -en "Location: http://www.busybox.net\r\n"
  				 * echo -en "\r\n"
  				 */

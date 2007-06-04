@@ -1,5 +1,7 @@
---- shfs-0.35.orig/shfs/Linux-2.6/fcache.c	2007-01-03 22:29:26.000000000 -0600
-+++ shfs-0.35/shfs/Linux-2.6/fcache.c	2007-01-03 22:34:21.000000000 -0600
+Index: shfs-0.35/shfs/Linux-2.6/fcache.c
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.6/fcache.c	2007-06-04 13:22:57.997038392 +0200
++++ shfs-0.35/shfs/Linux-2.6/fcache.c	2007-06-04 13:22:59.019882896 +0200
 @@ -100,7 +100,11 @@
  		VERBOSE("dir in file cache?\n");
  		return -EINVAL;
@@ -72,9 +74,11 @@
  	if (!p) {
  		VERBOSE("inode without info\n");
  		return -EINVAL;
---- shfs-0.35.orig/shfs/Linux-2.6/inode.c	2004-06-01 08:16:19.000000000 -0500
-+++ shfs-0.35/shfs/Linux-2.6/inode.c	2007-01-03 22:39:44.000000000 -0600
-@@ -35,7 +36,11 @@
+Index: shfs-0.35/shfs/Linux-2.6/inode.c
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.6/inode.c	2007-06-04 13:22:58.637940960 +0200
++++ shfs-0.35/shfs/Linux-2.6/inode.c	2007-06-04 13:22:59.020882744 +0200
+@@ -36,7 +36,11 @@
  shfs_set_inode_attr(struct inode *inode, struct shfs_fattr *fattr)
  {
  	struct shfs_sb_info *info = info_from_inode(inode);
@@ -86,7 +90,7 @@
  	struct timespec last_time = inode->i_mtime;
  	loff_t last_size = inode->i_size;
  
-@@ -52,7 +57,9 @@
+@@ -53,7 +57,9 @@
  	inode->i_ctime	= fattr->f_ctime;
  	inode->i_atime	= fattr->f_atime;
  	inode->i_mtime	= fattr->f_mtime;
@@ -96,7 +100,7 @@
  	inode->i_blocks	= fattr->f_blocks;
  	inode->i_size	= fattr->f_size;
  
-@@ -75,7 +82,11 @@
+@@ -76,7 +82,11 @@
  	if (!inode)
  		return NULL;
  	inode->i_ino = fattr->f_ino;
@@ -108,7 +112,7 @@
  	if (!i)
  		return NULL;
  	i->cache = NULL;
-@@ -107,7 +118,11 @@
+@@ -108,7 +118,11 @@
  	struct shfs_inode_info *i;
  
  	DEBUG("ino: %lu\n", inode->i_ino);
@@ -120,7 +124,7 @@
  	if (!i) {
  		VERBOSE("invalid inode\n");
  		goto out;
-@@ -172,7 +190,11 @@
+@@ -176,7 +190,11 @@
  {
  	struct shfs_sb_info *info = info_from_dentry(dentry);
  	struct inode *inode = dentry->d_inode;
@@ -132,8 +136,10 @@
  	int result;
  
          DEBUG("%s\n", dentry->d_name.name);
---- shfs-0.35.orig/shfs/Linux-2.6/dir.c	2007-01-03 22:38:23.000000000 -0600
-+++ shfs-0.35/shfs/Linux-2.6/dir.c	2007-01-03 22:39:06.000000000 -0600
+Index: shfs-0.35/shfs/Linux-2.6/dir.c
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.6/dir.c	2007-06-04 13:22:58.822912840 +0200
++++ shfs-0.35/shfs/Linux-2.6/dir.c	2007-06-04 13:22:59.020882744 +0200
 @@ -302,8 +302,13 @@
  	
  	shfs_invalid_dir_cache(dir);
@@ -148,8 +154,10 @@
  	return result;
  }
  
---- shfs-0.35.orig/shfs/Linux-2.6/file.c	2007-01-03 22:40:24.000000000 -0600
-+++ shfs-0.35/shfs/Linux-2.6/file.c	2007-01-03 22:45:11.000000000 -0600
+Index: shfs-0.35/shfs/Linux-2.6/file.c
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.6/file.c	2007-06-04 13:22:58.397977440 +0200
++++ shfs-0.35/shfs/Linux-2.6/file.c	2007-06-04 13:22:59.020882744 +0200
 @@ -90,7 +90,11 @@
  	struct dentry *dentry = f->f_dentry;
  	struct shfs_sb_info *info = info_from_dentry(dentry);
@@ -227,8 +235,10 @@
  };
  
  struct file_operations shfs_slow_operations = {
---- shfs-0.35.orig/shfs/Linux-2.6/proc.c	2007-01-03 22:45:32.000000000 -0600
-+++ shfs-0.35/shfs/Linux-2.6/proc.c	2007-01-03 22:57:17.000000000 -0600
+Index: shfs-0.35/shfs/Linux-2.6/proc.c
+===================================================================
+--- shfs-0.35.orig/shfs/Linux-2.6/proc.c	2007-06-04 13:22:58.398977288 +0200
++++ shfs-0.35/shfs/Linux-2.6/proc.c	2007-06-04 13:22:59.021882592 +0200
 @@ -149,7 +149,12 @@
  {
  	struct file *f = info->sock;

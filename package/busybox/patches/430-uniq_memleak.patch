@@ -1,6 +1,7 @@
-diff -ur bb.old/coreutils/uniq.c bb.dev/coreutils/uniq.c
---- bb.old/coreutils/uniq.c	2007-01-24 22:34:43.000000000 +0100
-+++ bb.dev/coreutils/uniq.c	2007-02-16 20:04:19.245454368 +0100
+Index: busybox-1.4.2/coreutils/uniq.c
+===================================================================
+--- busybox-1.4.2.orig/coreutils/uniq.c	2007-06-04 13:21:31.993112976 +0200
++++ busybox-1.4.2/coreutils/uniq.c	2007-06-04 13:21:35.960509840 +0200
 @@ -83,6 +83,8 @@
  
  			if (!s0 || strcmp(e0, e1)) {

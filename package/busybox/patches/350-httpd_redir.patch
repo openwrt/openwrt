@@ -1,7 +1,8 @@
-diff -ur bb.old/include/usage.h bb.dev/include/usage.h
---- bb.old/include/usage.h	2007-03-29 13:25:55.080325000 +0200
-+++ bb.dev/include/usage.h	2007-03-29 13:31:04.241326192 +0200
-@@ -1333,7 +1333,8 @@
+Index: busybox-1.4.2/include/usage.h
+===================================================================
+--- busybox-1.4.2.orig/include/usage.h	2007-06-04 13:21:32.103096256 +0200
++++ busybox-1.4.2/include/usage.h	2007-06-04 13:21:35.005655000 +0200
+@@ -1257,7 +1257,8 @@
  	USE_FEATURE_HTTPD_BASIC_AUTH(" [-r <realm>]") \
  	USE_FEATURE_HTTPD_AUTH_MD5(" [-m pass]") \
         " [-h home]" \
@@ -11,7 +12,7 @@ diff -ur bb.old/include/usage.h bb.dev/include/usage.h
  #define httpd_full_usage \
         "Listen for incoming http server requests" \
         "\n\nOptions:\n" \
-@@ -1349,7 +1350,9 @@
+@@ -1273,7 +1274,9 @@
         "	-m PASS		Crypt PASS with md5 algorithm\n") \
         "	-h HOME		Specifies http HOME directory (default ./)\n" \
         "	-e STRING	HTML encode STRING\n" \
@@ -22,10 +23,11 @@ diff -ur bb.old/include/usage.h bb.dev/include/usage.h
  
  #define hwclock_trivial_usage \
         "[-r|--show] [-s|--hctosys] [-w|--systohc] [-l|--localtime] [-u|--utc]"
-diff -ur bb.old/networking/httpd.c bb.dev/networking/httpd.c
---- bb.old/networking/httpd.c	2007-03-29 13:25:55.016335000 +0200
-+++ bb.dev/networking/httpd.c	2007-03-29 13:40:05.353064704 +0200
-@@ -141,6 +141,8 @@
+Index: busybox-1.4.2/networking/httpd.c
+===================================================================
+--- busybox-1.4.2.orig/networking/httpd.c	2007-06-04 13:21:34.588718384 +0200
++++ busybox-1.4.2/networking/httpd.c	2007-06-04 13:21:35.006654848 +0200
+@@ -140,6 +140,8 @@
  	USE_FEATURE_HTTPD_CGI(char *user_agent;)
  
  	const char *configFile;
@@ -34,7 +36,7 @@ diff -ur bb.old/networking/httpd.c bb.dev/networking/httpd.c
  
  	unsigned int rmt_ip;
  #if ENABLE_FEATURE_HTTPD_CGI || DEBUG
-@@ -881,8 +883,11 @@
+@@ -880,8 +882,11 @@
  	}
  #endif
  	if (responseNum == HTTP_MOVED_TEMPORARILY) {
@@ -47,7 +49,7 @@ diff -ur bb.old/networking/httpd.c bb.dev/networking/httpd.c
  				(config->query ? "?" : ""),
  				(config->query ? config->query : ""));
  	}
-@@ -1598,8 +1603,12 @@
+@@ -1594,8 +1599,12 @@
  		*++purl = '\0';       /* so keep last character */
  		test = purl;          /* end ptr */
  
@@ -61,7 +63,7 @@ diff -ur bb.old/networking/httpd.c bb.dev/networking/httpd.c
  			if (is_directory(url + 1, 1, &sb)) {
  				config->found_moved_temporarily = url;
  			}
-@@ -1901,7 +1910,9 @@
+@@ -1897,7 +1906,9 @@
  #endif
  
  enum {
@@ -72,7 +74,7 @@ diff -ur bb.old/networking/httpd.c bb.dev/networking/httpd.c
  	d_opt_decode_url,
  	h_opt_home_httpd,
  	USE_FEATURE_HTTPD_ENCODE_URL_STR(e_opt_encode_url,)
-@@ -1923,7 +1934,7 @@
+@@ -1919,7 +1930,7 @@
  	OPT_FOREGROUND  = 1 << p_opt_foreground,
  };
  
@@ -81,7 +83,7 @@ diff -ur bb.old/networking/httpd.c bb.dev/networking/httpd.c
  	USE_FEATURE_HTTPD_ENCODE_URL_STR("e:")
  	USE_FEATURE_HTTPD_BASIC_AUTH("r:")
  	USE_FEATURE_HTTPD_AUTH_MD5("m:")
-@@ -1954,6 +1965,7 @@
+@@ -1951,6 +1962,7 @@
  	config->ContentLength = -1;
  
  	opt = getopt32(argc, argv, httpd_opts,

@@ -1,6 +1,7 @@
-diff -ur busybox.old/networking/udhcp/clientpacket.c busybox.dev/networking/udhcp/clientpacket.c
---- busybox.old/networking/udhcp/clientpacket.c	2007-03-18 17:59:24.000000000 +0100
-+++ busybox.dev/networking/udhcp/clientpacket.c	2007-05-14 16:03:26.698979472 +0200
+Index: busybox-1.4.2/networking/udhcp/clientpacket.c
+===================================================================
+--- busybox-1.4.2.orig/networking/udhcp/clientpacket.c	2007-06-04 13:21:32.270070872 +0200
++++ busybox-1.4.2/networking/udhcp/clientpacket.c	2007-06-04 13:21:33.813836184 +0200
 @@ -78,6 +78,7 @@
  int send_discover(unsigned long xid, unsigned long requested)
  {

@@ -1,6 +1,8 @@
---- ppp/pppd/demand.c
-+++ ppp/pppd/demand.c	2000/06/28 14:54:04
-@@ -25,6 +25,8 @@
+Index: ppp-2.4.3/pppd/demand.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/demand.c	2007-06-04 13:22:08.217606016 +0200
++++ ppp-2.4.3/pppd/demand.c	2007-06-04 13:22:11.613089824 +0200
+@@ -36,6 +36,8 @@
  #include <errno.h>
  #include <fcntl.h>
  #include <netdb.h>
@@ -9,16 +11,16 @@
  #include <sys/param.h>
  #include <sys/types.h>
  #include <sys/wait.h>
-@@ -32,6 +34,8 @@
+@@ -43,6 +45,8 @@
  #include <sys/resource.h>
  #include <sys/stat.h>
  #include <sys/socket.h>
 +#include <netinet/in.h>
 +#include <arpa/inet.h>
  #ifdef PPP_FILTER
- #include <net/if.h>
- #include <net/bpf.h>
-@@ -210,6 +214,14 @@
+ #include <pcap-bpf.h>
+ #endif
+@@ -221,6 +225,14 @@
      int c, rv;
  
      rv = 0;
@@ -33,7 +35,7 @@
      for (; n > 0; --n) {
  	c = *p++;
  	if (c == PPP_FLAG) {
-@@ -288,17 +300,102 @@
+@@ -299,17 +311,102 @@
   * loopback, now that the real serial link is up.
   */
  void
@@ -137,9 +139,11 @@
  	    output(0, pkt->data, pkt->length);
  	    free(pkt);
  	} else {
---- ppp/pppd/ipcp.c
-+++ ppp/pppd/ipcp.c	2000/06/28 12:32:05
-@@ -1454,7 +1454,7 @@
+Index: ppp-2.4.3/pppd/ipcp.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/ipcp.c	2007-06-04 13:22:11.387124176 +0200
++++ ppp-2.4.3/pppd/ipcp.c	2007-06-04 13:22:11.614089672 +0200
+@@ -1796,7 +1796,7 @@
  		    proxy_arp_set[f->unit] = 1;
  
  	}
@@ -148,9 +152,11 @@
  	sifnpmode(f->unit, PPP_IP, NPMODE_PASS);
  
      } else {
---- ppp/pppd/ipv6cp.c
-+++ ppp/pppd/ipv6cp.c	2000/06/28 12:32:06
-@@ -1153,7 +1153,7 @@
+Index: ppp-2.4.3/pppd/ipv6cp.c
+===================================================================
+--- ppp-2.4.3.orig/pppd/ipv6cp.c	2007-06-04 13:22:08.229604192 +0200
++++ ppp-2.4.3/pppd/ipv6cp.c	2007-06-04 13:22:11.614089672 +0200
+@@ -1232,7 +1232,7 @@
  	    }
  
  	}
@@ -159,9 +165,11 @@
  	sifnpmode(f->unit, PPP_IPV6, NPMODE_PASS);
  
      } else {
---- ppp/pppd/pppd.h
-+++ ppp/pppd/pppd.h	2000/06/28 12:32:06
-@@ -359,7 +359,7 @@
+Index: ppp-2.4.3/pppd/pppd.h
+===================================================================
+--- ppp-2.4.3.orig/pppd/pppd.h	2007-06-04 13:22:11.388124024 +0200
++++ ppp-2.4.3/pppd/pppd.h	2007-06-04 13:22:11.615089520 +0200
+@@ -563,7 +563,7 @@
  void demand_block __P((void));	/* set all NPs to queue up packets */
  void demand_unblock __P((void)); /* set all NPs to pass packets */
  void demand_discard __P((void)); /* set all NPs to discard packets */
