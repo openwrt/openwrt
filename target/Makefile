@@ -51,5 +51,5 @@ image_install: image_compile
 imagebuilder_install: image_install
 	$(MAKE) -C imagebuilder install
 
-%-prereq %-prepare %-download %-clean %-compile %-install %-refresh: FORCE
+%-prereq %-prepare %-download %-clean %-compile %-install %-refresh %-update: FORCE
 	$(MAKE) -C $* $(patsubst $*-%,%,$@)

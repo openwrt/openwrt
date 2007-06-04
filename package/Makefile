@@ -26,11 +26,15 @@ ifeq ($(QUIET),1)
 %-compile %-install: FORCE
 	$(MAKE) -C $* $(patsubst $*-%,%,$@) || { $(call MESSAGE, "*** $* $(patsubst $*-%,%,$@) failed"); false; }
 
-%-prepare %-prereq %-download %-clean %-refresh: FORCE
+%-prepare %-prereq %-download %-clean: FORCE
 else
-%-prepare %-prereq %-download %-clean %-compile %-install %-refresh: FORCE
+%-prepare %-prereq %-download %-clean %-compile %-install: FORCE
 endif
 	$(MAKE) -C $* $(patsubst $*-%,%,$@)
+
+%-refresh %-update:
+	-$(MAKE) -C $* $(patsubst $*-%,%,$@)
+
 
 # .IGNORE: $(COMPILE_PACKAGES) 
 
@@ -42,6 +46,9 @@ clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
 prereq: $(PREREQ_PACKAGES)
 download: $(DOWNLOAD_PACKAGES)
 compile: $(COMPILE_PACKAGES)
+ifneq ($(QUILT),)
+  refresh: $(patsubst %,%-refresh,$(package-y) $(package-m) $(package-))
+endif
 
 install-targets: $(INSTALL_PACKAGES)
 install:
