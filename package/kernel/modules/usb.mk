@@ -8,6 +8,12 @@
 
 USBMENU:=USB Support
 
+ifeq ($(KERNEL),2.4)
+	USBNET_DIR=usb/net
+else
+	USBNET_DIR=net/usb
+endif
+
 define KernelPackage/usb-core
   TITLE:=Support for USB
   DESCRIPTION:=Kernel support for USB
@@ -325,7 +331,7 @@ define KernelPackage/usb-net/2.4
 endef
 
 define KernelPackage/usb-net/2.6
-  FILES:=$(LINUX_DIR)/drivers/usb/net/usbnet.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/usbnet.$(LINUX_KMOD_SUFFIX)
 endef
 
 $(eval $(call KernelPackage,usb-net))
@@ -344,7 +350,7 @@ define KernelPackage/usb-net-asix/2.4
 endef
 
 define KernelPackage/usb-net-asix/2.6
-  FILES:=$(LINUX_DIR)/drivers/usb/net/asix.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/asix.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call Autoload,61,asix)
 endef
 
@@ -356,7 +362,7 @@ define KernelPackage/usb-net-kaweth
   DESCRIPTION:=Kernel module for USB-to-Ethernet Kaweth convertors
   DEPENDS:=kmod-usb-net
   KCONFIG:=$(CONFIG_USB_KAWETH)
-  FILES:=$(LINUX_DIR)/drivers/usb/net/kaweth.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/kaweth.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call Autoload,61,kaweth)
 endef
 
@@ -368,7 +374,7 @@ define KernelPackage/usb-net-pegasus
   DESCRIPTION:=Kernel module for USB-to-Ethernet Pegasus convertors
   DEPENDS:=kmod-usb-net
   KCONFIG:=$(CONFIG_USB_PEGASUS)
-  FILES:=$(LINUX_DIR)/drivers/usb/net/pegasus.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/pegasus.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call Autoload,61,pegasus)
 endef
 

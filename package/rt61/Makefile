@@ -10,12 +10,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=rt61
-PKG_VERSION:=cvs-2007041709
+PKG_VERSION:=cvs-2007060307
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@openwrt/
-PKG_MD5SUM:=3e2675fc0bdb1cfe85fefc5bce9f0ae0
+PKG_MD5SUM:=8d71fee47bdaac4c7d79180a4ea33649
 
 include $(INCLUDE_DIR)/package.mk
 
