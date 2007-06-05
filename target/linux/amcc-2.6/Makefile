@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=powerpc
 BOARD:=amcc
 BOARDNAME:=AMCC Taishan
-FEATURES:=squashfs broken
+FEATURES:=jffs2
 
 define Target/Description
 	Build firmware images for the AMCC Taishan evaluation board

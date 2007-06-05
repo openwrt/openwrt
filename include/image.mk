@@ -38,14 +38,17 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 		
 		$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x10000 -o $(KDIR)/root.jffs2-64k -d $(BUILD_DIR)/root
 		$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x20000 -o $(KDIR)/root.jffs2-128k -d $(BUILD_DIR)/root
+		$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x40000 -o $(KDIR)/root.jffs2-256k -d $(BUILD_DIR)/root
 
 		
 		# add End-of-Filesystem markers
 		$(call add_jffs2_mark,$(KDIR)/root.jffs2-64k)
 		$(call add_jffs2_mark,$(KDIR)/root.jffs2-128k)
+		$(call add_jffs2_mark,$(KDIR)/root.jffs2-256k)
 	
 		$(call Image/Build,jffs2-64k)
 		$(call Image/Build,jffs2-128k)
+		$(call Image/Build,jffs2-256k)
     endef
   endif
     
