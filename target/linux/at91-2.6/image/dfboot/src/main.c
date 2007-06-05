@@ -48,7 +48,8 @@
 #else
 #define AT91C_BOOT_DATAFLASH_ADDR 0xC0008000
 #endif
-#define AT91C_PLLA_VALUE 0x2026BE04	// crystal= 18.432MHz
+#define AT91C_PLLA_VALUE 0x237A3E5A  // crystal= 18.432MHz - fixes BRG error at 115kbps
+//#define AT91C_PLLA_VALUE 0x2026BE04	// crystal= 18.432MHz
 //#define AT91C_PLLA_VALUE 0x202CBE01	// crystal= 4MHz
 
 
