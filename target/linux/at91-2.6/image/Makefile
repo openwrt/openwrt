@@ -9,13 +9,11 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Build/Clean
-#	$(MAKE) -C romboot clean
 	$(MAKE) -C dfboot clean
 	$(MAKE) -C u-boot clean
 endef
 
 define Build/Compile
-#	$(MAKE) -C romboot compile
 	$(MAKE) -C dfboot compile
 	$(MAKE) -C u-boot compile
 	$(KDIR)/u-boot-1.1.4/tools/ubparams
