@@ -1,0 +1,12 @@
+diff -Nur acx-20070101/common.c acx-20070101-owrt/common.c
+--- acx-20070101/common.c	2007-01-10 22:15:27.000000000 +0100
++++ acx-20070101-owrt/common.c	2007-06-02 18:02:39.000000000 +0200
+@@ -2754,7 +2754,7 @@
+ 	skb->dev = adev->ndev;
+ 	skb->dev->last_rx = jiffies;
+ 
+-	skb->mac.raw = skb->data;
++//	skb->mac.raw = skb->data;
+ 	skb->ip_summed = CHECKSUM_NONE;
+ 	skb->pkt_type = PACKET_OTHERHOST;
+ 	skb->protocol = htons(ETH_P_80211_RAW);

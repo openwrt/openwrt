@@ -1,0 +1,56 @@
+--- fuse.old/kernel/dev.c	2007-01-28 21:26:41.000000000 +0000
++++ fuse.dev/kernel/dev.c	2007-05-29 00:28:47.000000000 +0100
+@@ -21,7 +21,11 @@
+ MODULE_ALIAS_MISCDEV(FUSE_MINOR);
+ #endif
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
++static struct kmem_cache *fuse_req_cachep;
++#else
+ static kmem_cache_t *fuse_req_cachep;
++#endif
+ 
+ static struct fuse_conn *fuse_get_conn(struct file *file)
+ {
+@@ -1093,9 +1093,13 @@
+ int __init fuse_dev_init(void)
+ {
+ 	int err = -ENOMEM;
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
++	fuse_req_cachep = KMEM_CACHE(fuse_req, 0);
++#else
+ 	fuse_req_cachep = kmem_cache_create("fuse_request",
+ 					    sizeof(struct fuse_req),
+ 					    0, 0, NULL, NULL);
++#endif
+ 	if (!fuse_req_cachep)
+ 		goto out;
+ 
+--- fuse.old/kernel/inode.c	2007-02-04 13:34:51.000000000 +0000
++++ fuse.dev/kernel/inode.c	2007-05-29 00:26:12.000000000 +0100
+@@ -24,7 +24,7 @@
+ MODULE_LICENSE("GPL");
+ #endif
+ 
+-static kmem_cache_t *fuse_inode_cachep;
++static struct kmem_cache *fuse_inode_cachep;
+ struct list_head fuse_conn_list;
+ DEFINE_MUTEX(fuse_mutex);
+ 
+@@ -804,14 +804,12 @@
+ static decl_subsys(fuse, NULL, NULL);
+ static decl_subsys(connections, NULL, NULL);
+ 
+-static void fuse_inode_init_once(void *foo, kmem_cache_t *cachep,
++static void fuse_inode_init_once(void *foo, struct kmem_cache *cachep,
+ 				 unsigned long flags)
+ {
+ 	struct inode * inode = foo;
+ 
+-	if ((flags & (SLAB_CTOR_VERIFY|SLAB_CTOR_CONSTRUCTOR)) ==
+-	    SLAB_CTOR_CONSTRUCTOR)
+-		inode_init_once(inode);
++	inode_init_once(inode);
+ }
+ 
+ static int __init fuse_fs_init(void)
