@@ -1,0 +1,12 @@
+--- linux-2.6.21.1.old/drivers/mmc/at91_mci.c	2007-06-05 11:08:39.000000000 +0200
++++ linux-2.6.21.1/drivers/mmc/at91_mci.c	2007-06-05 11:28:40.000000000 +0200
+@@ -79,8 +79,7 @@
+ 
+ #define DRIVER_NAME "at91_mci"
+ 
+-//#undef	SUPPORT_4WIRE
+-#define 	SUPPORT_4WIRE
++#undef	SUPPORT_4WIRE
+ 
+ #define FL_SENT_COMMAND	(1 << 0)
+ #define FL_SENT_STOP	(1 << 1)
