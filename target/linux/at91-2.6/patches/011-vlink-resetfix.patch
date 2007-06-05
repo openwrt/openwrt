@@ -1,0 +1,10 @@
+--- linux-2.6.21.1.old/arch/arm/mach-at91/board-vlink.c	2007-06-04 15:45:19.000000000 +0200
++++ linux-2.6.21.1/arch/arm/mach-at91/board-vlink.c	2007-06-05 05:27:19.000000000 +0200
+@@ -175,6 +175,7 @@
+ /* USB Device control */
+        at91_set_gpio_input(AT91_PIN_PB27, 1);  // UDB_CNX
+        at91_set_gpio_output(AT91_PIN_PB28, 1); // UDB_PUP
++			 at91_set_multi_drive(AT91_PIN_PB28, 1); // Set to multi-drive
+ 
+ }
+ 
