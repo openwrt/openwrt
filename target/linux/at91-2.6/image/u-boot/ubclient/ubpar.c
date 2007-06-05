@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
 
 	envptr->crc = crc32(0, envptr->data, ENV_SIZE);
 
-	params = fopen("params", "w");
+	params = fopen("/dev/mtd1", "w");
 	fwrite(envptr, CFG_ENV_SIZE, 1, params);
 	fclose(params);
 
