@@ -328,9 +328,8 @@ static void admhcd_ed_start(struct admhcd *ahcd, struct admhcd_ed *ed)
 	ahcd->dma_en |= ADMHCD_DMA_EN;
 }
 
-static irqreturn_t adm5120hcd_irq(int irq, void *ptr, struct pt_regs *regs)
+static irqreturn_t adm5120hcd_irq(struct usb_hcd *hcd)
 {
-	struct usb_hcd *hcd = (struct usb_hcd *)ptr;
 	struct admhcd *ahcd = hcd_to_admhcd(hcd);
 	u32 intstatus;
 
@@ -689,6 +688,7 @@ static struct hc_driver adm5120_hc_driver = {
 	.description =		hcd_name,
 	.product_desc =		"ADM5120 HCD",
 	.hcd_priv_size =	sizeof(struct admhcd),
+	.irq =			adm5120hcd_irq,
 	.flags =		HCD_USB11,
 	.urb_enqueue =		admhcd_urb_enqueue,
 	.urb_dequeue =		admhcd_urb_dequeue,
@@ -702,72 +702,75 @@ static struct hc_driver adm5120_hc_driver = {
 
 static int __init adm5120hcd_probe(struct platform_device *pdev)
 {
-	struct usb_hcd *hcd;
-	struct admhcd *ahcd;
+        struct usb_hcd *hcd;
+        struct admhcd *ahcd;
 	struct resource *addr, *data;
 	void __iomem *addr_reg;
 	void __iomem *data_reg;
-	int irq, err = 0;
+
+        int err = 0, irq;
 
 	if (pdev->num_resources < 3) {
 		err = -ENODEV;
 		goto out;
-	}
-
-	data = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	addr = platform_get_resource(pdev, IORESOURCE_MEM, 1);
-
-	if (request_irq(data->start, adm5120hcd_irq, 0, hcd_name, hcd)) {
-		printk(KERN_WARNING "Could not request IRQ\n");
-		err = -EBUSY;
-		goto out;
-	}
-
-	if (!addr || !data || irq < 0) {
-		err = -ENODEV;
-		goto out;
-	}
+        }
 
 	if (pdev->dev.dma_mask) {
-		printk(KERN_DEBUG "DMA not supported\n");
-		err = -EINVAL;
-		goto out;
-	}
+                printk(KERN_DEBUG "no we won't dma\n");
+                return -EINVAL;
+        }
+
+	irq = platform_get_irq(pdev, 0);
+	data = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+        addr = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+
+	if (!addr || !data || irq < 0) {
+                err = -ENODEV;
+                goto out;
+        }
 
 	if (!request_mem_region(addr->start, 2, hcd_name)) {
-		err = -EBUSY;
-		goto out;
-	}
-	addr_reg = ioremap(addr->start, resource_len(addr));
-	if (addr_reg == NULL) {
-		err = -ENOMEM;
-		goto out_mem;
-	}
-	if (!request_mem_region(data->start, 2, hcd_name)) {
-		err = -EBUSY;
-		goto out_unmap;
-	}
-	data_reg = ioremap(data->start, resource_len(data));
-	if (data_reg == NULL) {
-		err = -ENOMEM;
-		goto out_mem;
-	}
+                err = -EBUSY;
+                goto out;
+        }
 
+        addr_reg = ioremap(addr->start, resource_len(addr));
+        if (addr_reg == NULL) {
+                err = -ENOMEM;
+                goto out_mem;
+        }
+        if (!request_mem_region(data->start, 2, hcd_name)) {
+                err = -EBUSY;
+                goto out_unmap;
+        }
 
+        data_reg = ioremap(data->start, resource_len(data));
+        if (data_reg == NULL) {
+                err = -ENOMEM;
+                goto out_mem;
+        }
+	
 	hcd = usb_create_hcd(&adm5120_hc_driver, &pdev->dev, pdev->dev.bus_id);
-	if (!hcd)
-		goto out_mem;
+        if (!hcd)
+                goto out_mem;
 
+	hcd->rsrc_start = addr->start;
 	ahcd = hcd_to_admhcd(hcd);
-	ahcd->data_reg = data_reg;
-	ahcd->addr_reg = addr_reg;
+
 	spin_lock_init(&ahcd->lock);
 	INIT_LIST_HEAD(&ahcd->async);
+
+	ahcd->data_reg = data_reg;
+        ahcd->addr_reg = addr_reg;
+
+	hcd->product_desc = "ADM5120 HCD";
 
 	/* Initialise the HCD registers */
 	admhcd_reg_set(ahcd, ADMHCD_REG_INTENABLE, 0);
 	mdelay(10);
+
 	admhcd_reg_set(ahcd, ADMHCD_REG_CONTROL, ADMHCD_SW_RESET);
+
 	while (admhcd_reg_get(ahcd, ADMHCD_REG_CONTROL) & ADMHCD_SW_RESET)
 		mdelay(1);
 
@@ -793,7 +796,7 @@ out_dev:
 out_unmap:
 	iounmap(addr_reg);
 out_mem:
-	release_mem_region(addr->start, 2);
+	release_mem_region(pdev->resource[0].start, pdev->resource[0].end - pdev->resource[0].start);
 out:
 	return err;
 }
