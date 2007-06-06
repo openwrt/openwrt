@@ -1,28 +1,14 @@
-diff -ur linux.old/arch/mips/kernel/head.S linux.dev/arch/mips/kernel/head.S
---- linux.old/arch/mips/kernel/head.S	2006-12-06 17:30:27.000000000 +0100
-+++ linux.dev/arch/mips/kernel/head.S	2006-12-06 18:34:43.000000000 +0100
-@@ -129,15 +129,20 @@
- #endif
- 	.endm
- 
--
+Index: linux-2.6.21.1/arch/mips/kernel/head.S
+===================================================================
+--- linux-2.6.21.1.orig/arch/mips/kernel/head.S	2007-06-07 01:26:11.862575128 +0200
++++ linux-2.6.21.1/arch/mips/kernel/head.S	2007-06-07 01:31:06.499783464 +0200
+@@ -133,6 +133,9 @@
  	j kernel_entry
  	nop
--
-+	nop
-+	
+ 
++EXPORT(_image_cmdline)
++ 	.ascii "CMDLINE:"
++
  	/*
  	 * Reserved space for exception handlers.
  	 * Necessary for machines which link their kernels at KSEG0.
-+	 * Use as temporary storage for the kernel command line, so that it
-+	 * can be updated easily without having to relink the kernel.
- 	 */
--	.fill	0x400
-+	 
-+EXPORT(_image_cmdline)
-+	.ascii "CMDLINE:"
-+	.fill	0x3ec
- 
- EXPORT(stext)					# used for profiling
- EXPORT(_stext)
-
