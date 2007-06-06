@@ -5,8 +5,7 @@
 //#define	PAGESZ_1056			1
 #undef PAGESZ_1056
 #define	SPI_LOW_SPEED			1
-#define AT91C_DELAY_TO_BOOT 		15000
-//#define AT91C_DELAY_TO_BOOT 		1500
+#define AT91C_DELAY_TO_BOOT 		1500
 
 #define	CRC_RETRIES			0x100
 
