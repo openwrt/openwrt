@@ -10,7 +10,6 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ifenslave
-PKG_VERSION:=$(LINUX_VERSION)
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -21,6 +20,7 @@ define Package/ifenslave
   DEPENDS:=@LINUX_2_6 +kmod-bonding
   TITLE:=A utility to manipulate kernel ethernet bonding devices
   DESCRIPTION:=ifenslave is needed to add/remove interfaces to/from ethernet bond devices
+  VERSION:=$(LINUX_VERSION)-$(PKG_RELEASE)
   URL:=http://www.kernel.org
 endef
 
