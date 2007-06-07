@@ -22,8 +22,8 @@ define Image/Prepare
 	for f in $(FOXBOARD); do \
 		cp $(LINUX_DIR)/arch/cris/boot/zImage_$$$$f $(KDIR)/vmlinuz_$$$$f; \
 	done
-	$(MAKE) -C ./e100boot/
-	$(MAKE) -C ./mkfimage/
+	$(MAKE) -C e100boot compile
+	$(MAKE) -C mkfimage compile
 	$(INSTALL_BIN) ./boot_linux $(BIN_DIR)
 endef
 
