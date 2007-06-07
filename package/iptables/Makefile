@@ -160,6 +160,14 @@ define Package/iptables-mod-extra
 	- libipt_NOTRACK
 endef
 
+define Package/iptables-mod-ipset
+  $(call Package/iptables/Default)
+  DEPENDS:=iptables +kmod-ipt-ipset
+  TITLE:=ipset iptables extension
+  DESCRIPTION:=\
+    ipset
+endef
+
 define Package/iptables-utils
   $(call Package/iptables/Default)
   DEPENDS:=iptables
@@ -263,6 +271,7 @@ $(eval $(call BuildPackage,iptables))
 $(eval $(call BuildPackage,iptables-utils))
 $(eval $(call BuildPlugin,iptables-mod-conntrack,$(IPT_CONNTRACK-m)))
 $(eval $(call BuildPlugin,iptables-mod-extra,$(IPT_EXTRA-m)))
+$(eval $(call BuildPlugin,iptables-mod-ipset,$(IPT_IPSET-m)))
 $(eval $(call BuildPlugin,iptables-mod-filter,$(IPT_FILTER-m),$(L7_INSTALL)))
 $(eval $(call BuildPlugin,iptables-mod-imq,$(IPT_IMQ-m)))
 $(eval $(call BuildPlugin,iptables-mod-ipopt,$(IPT_IPOPT-m)))

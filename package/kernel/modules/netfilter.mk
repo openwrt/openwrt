@@ -174,6 +174,17 @@ define KernelPackage/ipt-iprange
 endef
 $(eval $(call KernelPackage,ipt-iprange))
 
+define KernelPackage/ipt-ipset
+  TITLE:=IPSET Modules
+  DESCRIPTION:=\
+  	Netfilter kernel modules for ipset
+  FILES:=$(foreach mod,$(IPT_IPSET-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  SUBMENU:=$(NFMENU)
+  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_IPSET-m)))
+endef
+$(eval $(call KernelPackage,ipt-ipset))
+
+
 define KernelPackage/ipt-extra
   TITLE:=Extra modules
   DESCRIPTION:=\
