@@ -8,11 +8,12 @@
 
 USBMENU:=USB Support
 
-ifeq ($(KERNEL),2.4)
+# This is 2.6.22 specific
+#ifeq ($(KERNEL),2.4)
 	USBNET_DIR=usb/net
-else
-	USBNET_DIR=net/usb
-endif
+#else
+#	USBNET_DIR=net/usb
+#endif
 
 define KernelPackage/usb-core
   TITLE:=Support for USB
