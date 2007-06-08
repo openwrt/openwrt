@@ -1,0 +1,105 @@
+Subject: [PATCH] libpthread: AVR32 support
+
+Implement pt-machine.h for AVR32.
+---
+
+ libpthread/linuxthreads/sysdeps/avr32/pt-machine.h |   92 +++++++++++++++++++++
+ 1 file changed, 92 insertions(+)
+
+Index: uClibc-0.9.28/libpthread/linuxthreads/sysdeps/avr32/pt-machine.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libpthread/linuxthreads/sysdeps/avr32/pt-machine.h	2006-02-07 17:14:47.000000000 +0100
+@@ -0,0 +1,92 @@
++/* Machine-dependent pthreads configuration and inline functions.
++
++   Copyright (C) 2005 Atmel Norway
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation; either version 2.1 of the
++   License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; see the file COPYING.LIB.  If not,
++   write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++   Boston, MA 02111-1307, USA.  */
++
++#ifndef _PT_MACHINE_H
++#define _PT_MACHINE_H   1
++
++#include <features.h>
++
++static inline int
++_test_and_set (int *p, int v) __THROW
++{
++	int result;
++
++	__asm__ __volatile__(
++		"/* Inline test and set */\n"
++		"1:	ssrf	5\n"
++		"	ld.w	%0, %2\n"
++		"	tst	%0, %3\n"
++		"	breq	2f\n"
++		"	stcond	%1, %3\n"
++		"	brne	1b\n"
++		"2:"
++		: "=&r"(result), "=m"(*p)
++		: "m"(*p), "r"(v)
++		: "memory", "cc");
++
++	return result;
++}
++
++#ifndef PT_EI
++# define PT_EI extern inline
++#endif
++
++extern long int testandset (int *spinlock);
++extern int __compare_and_swap (long int *p, long int oldval, long int newval);
++
++/* Spinlock implementation; required.  */
++PT_EI long int
++testandset (int *spinlock)
++{
++	return _test_and_set(spinlock, 1);
++}
++
++
++/* Get some notion of the current stack.  Need not be exactly the top
++   of the stack, just something somewhere in the current frame.  */
++#define CURRENT_STACK_FRAME  stack_pointer
++register char * stack_pointer __asm__ ("sp");
++
++/* Compare-and-swap for semaphores. */
++
++#define HAS_COMPARE_AND_SWAP
++PT_EI int
++__compare_and_swap(long int *p, long int oldval, long int newval)
++{
++	long int result, tmp;
++
++	__asm__ __volatile__(
++		"/* Inline compare and swap */\n"
++		"1:	ssrf	5\n"
++		"	ld.w	%1, %3\n"
++		"	cp.w	%1, %5\n"
++		"	sreq	%0\n"
++		"	brne	2f\n"
++		"	stcond	%2, %4\n"
++		"	brne	1b\n"
++		"2:"
++		: "=&r"(result), "=&r"(tmp), "=m"(*p)
++		: "m"(*p), "r"(newval), "r"(oldval)
++		: "cc", "memory");
++
++	return result;
++}
++
++#endif /* pt-machine.h */

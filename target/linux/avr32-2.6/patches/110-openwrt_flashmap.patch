@@ -1,0 +1,20 @@
+diff -Nur linux-2.6.21.3/arch/avr32/boards/atngw100/flash.c linux-2.6.21.3-owrt/arch/avr32/boards/atngw100/flash.c
+--- linux-2.6.21.3/arch/avr32/boards/atngw100/flash.c	2007-06-07 18:34:04.000000000 +0200
++++ linux-2.6.21.3-owrt/arch/avr32/boards/atngw100/flash.c	2007-06-07 18:36:02.000000000 +0200
+@@ -43,9 +43,14 @@
+ 		.mask_flags     = MTD_WRITEABLE,
+ 	},
+ 	{
+-		.name           = "root",
++		.name           = "kernel",
+ 		.offset         = 0x00020000,
+-		.size           = 0x007d0000,
++		.size           = 0x00100000,
++	},
++	{
++		.name           = "rootfs",
++		.offset         = 0x00120000,
++		.size           = 0x006d0000,
+ 	},
+ 	{
+ 		.name           = "env",

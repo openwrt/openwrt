@@ -1,0 +1,24 @@
+Subject: [PATCH] Fix __libc_fcntl64 prototype in __syscall_fcntl.c
+
+__libc_fcntl64 is a varargs function and should be declared as such.
+Otherwise, the gcc compiler for AVR32, and perhaps other architectures,
+will use the wrong calling convention.
+
+---
+
+ libc/sysdeps/linux/common/__syscall_fcntl.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Index: uClibc-0.9.28/libc/sysdeps/linux/common/__syscall_fcntl.c
+===================================================================
+--- uClibc-0.9.28.orig/libc/sysdeps/linux/common/__syscall_fcntl.c	2006-02-07 16:48:32.000000000 +0100
++++ uClibc-0.9.28/libc/sysdeps/linux/common/__syscall_fcntl.c	2006-02-07 17:19:09.000000000 +0100
+@@ -12,7 +12,7 @@
+ #include <fcntl.h>
+ 
+ #if defined __UCLIBC_HAS_LFS__ && defined __NR_fcntl64
+-extern int __libc_fcntl64(int fd, int cmd, long arg);
++extern int __libc_fcntl64(int fd, int cmd, ...);
+ #endif
+ 
+ #define __NR___syscall_fcntl __NR_fcntl

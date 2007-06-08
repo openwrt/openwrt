@@ -21,6 +21,9 @@ endif
 ifneq (,$(findstring ppc,$(BOARD)))
   KERNELNAME="uImage"
 endif
+ifneq (,$(findstring avr32,$(BOARD)))
+  KERNELNAME="uImage"
+endif
 
 KERNEL_MAKEOPTS := -C $(LINUX_DIR) \
 	CROSS_COMPILE="$(KERNEL_CROSS)" \

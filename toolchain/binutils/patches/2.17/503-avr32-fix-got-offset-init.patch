@@ -1,0 +1,11 @@
+--- a/bfd/elf32-avr32.c	2007-05-31 17:00:13.000000000 +0200
++++ b/bfd/elf32-avr32.c	2007-05-30 14:07:25.000000000 +0200
+@@ -395,6 +395,8 @@ avr32_elf_link_hash_table_create(bfd *ab
+   /* Prevent the BFD core from creating bogus got_entry pointers */
+   ret->root.init_got_refcount.glist = NULL;
+   ret->root.init_plt_refcount.glist = NULL;
++  ret->root.init_got_offset.glist = NULL;
++  ret->root.init_plt_offset.glist = NULL;
+ 
+   return &ret->root.root;
+ }
