@@ -17,11 +17,11 @@ diff -ur linux.old/arch/mips/kernel/head.S linux.dev/arch/mips/kernel/head.S
 +	 * Use as temporary storage for the kernel command line, so that it
 +	 * can be updated easily without having to relink the kernel.
  	 */
--	.fill	0x400
+-	.align 10
 +	 
 +EXPORT(_image_cmdline)
 +	.ascii "CMDLINE:"
-+	.fill	0x3ec
++	.align 10
  
  EXPORT(stext)					# used for profiling
  EXPORT(_stext)
