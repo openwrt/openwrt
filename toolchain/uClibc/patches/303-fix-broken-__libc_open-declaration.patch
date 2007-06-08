@@ -1,0 +1,30 @@
+From nobody Mon Sep 17 00:00:00 2001
+From: Håvard Skinnemoen <hskinnemoen@atmel.com>
+Date: Fri Apr 7 17:10:32 2006 +0200
+Subject: [PATCH] Fix broken __libc_open declaration in open64.c
+
+__libc_open is a vararg function and should therefore be declared as
+such. Fixes bug #4190.
+
+---
+
+ libc/sysdeps/linux/common/open64.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+70f2c81903327a8a346e370830932b80045ab04e
+diff --git a/libc/sysdeps/linux/common/open64.c b/libc/sysdeps/linux/common/open64.c
+index 543aa13..d9a27a7 100644
+--- a/libc/sysdeps/linux/common/open64.c
++++ b/libc/sysdeps/linux/common/open64.c
+@@ -26,7 +26,7 @@
+ #endif
+ 
+ #ifdef __UCLIBC_HAS_LFS__
+-extern int __libc_open (__const char *file, int oflag, mode_t mode);
++extern int __libc_open (__const char *file, int oflag, ...);
+ 
+ /* Open FILE with access OFLAG.  If OFLAG includes O_CREAT,
+    a third argument is the file protection.  */
+-- 
+1.2.4
+

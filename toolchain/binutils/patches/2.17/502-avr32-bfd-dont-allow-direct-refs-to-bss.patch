@@ -1,0 +1,19 @@
+Index: binutils/bfd/elf32-avr32.c
+===================================================================
+--- binutils/bfd/elf32-avr32.c	(revision 24565)
++++ binutils/bfd/elf32-avr32.c	(working copy)
+@@ -2446,9 +2446,13 @@
+ 	     after the relaxation code is done, so we can't really
+ 	     trust that our "distance" is correct.  There's really no
+ 	     easy solution to this problem, so we'll just disallow
+-	     direct references to SEC_DATA sections.  */
++	     direct references to SEC_DATA sections.
++	     
++	     Oh, and .bss isn't actually SEC_DATA, so we disallow
++	     !SEC_HAS_CONTENTS as well. */
+ 	  if (!dynamic && defined
+ 	      && !(sym_sec->flags & SEC_DATA)
++	      && (sym_sec->flags & SEC_HAS_CONTENTS)
+ 	      && next_state->direct)
+ 	    {
+ 	      next_state = &relax_state[next_state->direct];

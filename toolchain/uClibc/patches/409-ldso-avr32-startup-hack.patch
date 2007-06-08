@@ -1,0 +1,40 @@
+Subject: [PATCH] ldso: AVR32 startup hack
+
+AVR32 needs to do both PERFORM_BOOTSTRAP_GOT and a full relocation of
+the GOT. I don't quite remember why, but I think it's because some GOT
+entries just need the load address added to them, while the rest need
+the full relocation code.
+
+This patch should be revisited to figure out whether we're processing
+relocations against undefined symbols and whether that's something we
+should be doing...
+
+---
+
+ ldso/ldso/dl-startup.c |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+Index: uClibc-0.9.28/ldso/ldso/dl-startup.c
+===================================================================
+--- uClibc-0.9.28.orig/ldso/ldso/dl-startup.c	2006-02-07 16:49:27.000000000 +0100
++++ uClibc-0.9.28/ldso/ldso/dl-startup.c	2006-02-07 17:12:09.000000000 +0100
+@@ -217,7 +217,9 @@ static void * __attribute_used__ _dl_sta
+ 	/* some arches (like MIPS) we have to tweak the GOT before relocations */
+ 	PERFORM_BOOTSTRAP_GOT(tpnt);
+ 
+-#else
++#endif
++
++#if !defined(PERFORM_BOOTSTRAP_GOT) || defined(__avr32__)
+ 
+ 	/* OK, now do the relocations.  We do not do a lazy binding here, so
+ 	   that once we are done, we have considerably more flexibility. */
+@@ -259,7 +261,7 @@ static void * __attribute_used__ _dl_sta
+ 				rel_addr += relative_count * sizeof(ELF_RELOC);;
+ 			}
+ 
+-			rpnt = (ELF_RELOC *) (rel_addr + load_addr);
++			rpnt = (ELF_RELOC *) (rel_addr /* + load_addr */);
+ 			for (i = 0; i < rel_size; i += sizeof(ELF_RELOC), rpnt++) {
+ 				reloc_addr = (unsigned long *) (load_addr + (unsigned long) rpnt->r_offset);
+ 				symtab_index = ELF_R_SYM(rpnt->r_info);
