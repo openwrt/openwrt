@@ -30,7 +30,7 @@ define Build/Prepare
 endef
 
 define Build/Compile
-	$(CC) -o $(PKG_BUILD_DIR)/$(PKG_NAME) $(PKG_BUILD_DIR)/$(PKG_NAME).c
+	$(TARGET_CC) -o $(PKG_BUILD_DIR)/$(PKG_NAME) $(PKG_BUILD_DIR)/$(PKG_NAME).c
 endef
 
 define Package/patch-cmdline/install
