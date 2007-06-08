@@ -30,6 +30,7 @@ endef
 define Build/Configure/Default
 	@(cd $(PKG_BUILD_DIR)/$(3); \
 	[ -x configure ] && \
+		$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(PKG_BUILD_DIR)/$(3)/ && \
 		$(2) \
 		CPPFLAGS="-I$(STAGING_DIR)/host/include" \
 		LDFLAGS="-L$(STAGING_DIR)/host/lib" \
