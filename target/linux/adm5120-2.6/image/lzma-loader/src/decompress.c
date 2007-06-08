@@ -277,9 +277,20 @@ void decompress_entry(unsigned long reg_a0, unsigned long reg_a1,
 		(unsigned char*)LOADADDR, osize, &i);
 #endif
 	if (res != LZMA_RESULT_OK) {
-		print_str("failed, LzmaDecode error: ");
-		print_hex(res);
-		print_str("\n");
+		print_str("failed!\n");
+		print_str("LzmaDecode: ");
+		switch (res) {
+		case LZMA_RESULT_DATA_ERROR:
+			print_str("data error\n");
+			break;
+		case LZMA_RESULT_NOT_ENOUGH_MEM:
+			print_str("not enough memory\n");
+			break;
+		default:
+			print_str("unknown error, err=0x");
+			print_hex(res);
+			print_str("\n");
+		}
 		halt();
 	}
 

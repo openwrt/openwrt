@@ -6,6 +6,8 @@ SECTIONS {
 		*(.text.*)
 		*(.rodata)
 		*(.rodata.*)
+		. = ALIGN(16);
+		*(.data.lzma)
 	}
 
 	.data : {
