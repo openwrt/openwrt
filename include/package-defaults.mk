@@ -77,6 +77,7 @@ CONFIGURE_CMD = ./configure
 define Build/Configure/Default
 	(cd $(PKG_BUILD_DIR)/$(CONFIGURE_PATH)/$(strip $(3)); \
 	if [ -x $(CONFIGURE_CMD) ]; then \
+		$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(PKG_BUILD_DIR)/$(3)/ && \
 		$(CONFIGURE_VARS) \
 		$(2) \
 		$(CONFIGURE_CMD) \
