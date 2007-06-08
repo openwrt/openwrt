@@ -32,7 +32,7 @@ ifneq ($(QUILT),)
 	@echo
 	touch $(PKG_BUILD_DIR)/.quilt_used
   endef
-  $(STAMP_CONFIGURED): $(STAMP_PATCHED)
+  $(STAMP_CONFIGURED): $(STAMP_PATCHED) FORCE
   prepare: $(STAMP_PATCHED)
   quilt-check: $(STAMP_PATCHED)
 else
