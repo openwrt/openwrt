@@ -58,7 +58,7 @@ static struct mtd_partition partition_info[] = {
 	size: 4 * 1024 * 1024
     },
     {
-        name: "RouterBoard NAND Main",
+        name: "rootfs",
 	offset: MTDPART_OFS_NXTBLK,
 	size: MTDPART_SIZ_FULL
     }
