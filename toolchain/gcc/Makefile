@@ -69,6 +69,7 @@ define Stage1/Configure
 		--enable-target-optspace \
 		--with-gnu-ld \
 		--disable-nls \
+		--disable-libmudflap \
 	);
 endef
 define Stage1/Compile
@@ -98,6 +99,7 @@ define Stage2/Configure
 		--enable-target-optspace \
 		--with-gnu-ld \
 		--disable-nls \
+		--disable-libmudflap \
 	);
 endef
 define Stage2/Compile
