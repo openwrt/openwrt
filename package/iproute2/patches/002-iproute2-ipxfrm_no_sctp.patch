@@ -1,20 +1,20 @@
-Index: iproute2-2.6.15-060110/ip/ipxfrm.c
+Index: iproute-2.6.20-070313/ip/ipxfrm.c
 ===================================================================
---- iproute2-2.6.15-060110.orig/ip/ipxfrm.c	2007-06-04 13:22:33.399777744 +0200
-+++ iproute2-2.6.15-060110/ip/ipxfrm.c	2007-06-04 13:22:34.104670584 +0200
-@@ -444,7 +444,6 @@
+--- iproute-2.6.20-070313.orig/ip/ipxfrm.c	2007-06-09 13:53:56.000000000 +0100
++++ iproute-2.6.20-070313/ip/ipxfrm.c	2007-06-09 13:53:59.000000000 +0100
+@@ -467,7 +467,6 @@
  	switch (sel->proto) {
  	case IPPROTO_TCP:
  	case IPPROTO_UDP:
 -	case IPPROTO_SCTP:
+ 	case IPPROTO_DCCP:
  	default: /* XXX */
  		if (sel->sport_mask)
- 			fprintf(fp, "sport %u ", ntohs(sel->sport));
-@@ -998,7 +997,6 @@
+@@ -1107,7 +1106,6 @@
  		switch (sel->proto) {
  		case IPPROTO_TCP:
  		case IPPROTO_UDP:
 -		case IPPROTO_SCTP:
+ 		case IPPROTO_DCCP:
  			break;
  		default:
- 			fprintf(stderr, "\"sport\" and \"dport\" are invalid with proto=%s\n", strxf_proto(sel->proto));

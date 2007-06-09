@@ -9,12 +9,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
-PKG_VERSION:=2.6.15-060110
+PKG_VERSION:=2.6.20-070313
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://developer.osdl.org/dev/iproute2/download/
-PKG_MD5SUM:=04f57a6d366d36426d276178b600f5c5
+PKG_MD5SUM:=7bc5883aadf740761fa2dd70b661e8cc
+PKG_BUILD_DIR:=$(BUILD_DIR)/iproute-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -32,6 +33,11 @@ endef
 define Package/tc
   $(call Package/iproute2/Default)
   TITLE:=Traffic control utility
+endef
+
+define Package/genl
+  $(call Package/iproute2/Default)
+  TITLE:=General netlink utility frontend
 endef
 
 define Build/Configure
@@ -61,8 +67,14 @@ define Package/tc/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tc/tc $(1)/usr/sbin/
 endef
 
+define Package/genl/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/genl/genl $(1)/usr/sbin/
+endef
+
 $(eval $(call BuildPackage,ip))
 $(eval $(call BuildPackage,tc))
+$(eval $(call BuildPackage,genl))
 
 $(eval $(call RequireCommand,bison, \
 	$(PKG_NAME) requires GNU bison. \

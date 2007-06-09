@@ -1,7 +1,7 @@
-Index: iproute2-2.6.15-060110/doc/ip-cref.tex
+Index: iproute-2.6.20-070313/doc/ip-cref.tex
 ===================================================================
---- iproute2-2.6.15-060110.orig/doc/ip-cref.tex	2007-06-04 13:22:33.437771968 +0200
-+++ iproute2-2.6.15-060110/doc/ip-cref.tex	2007-06-04 13:22:33.577750688 +0200
+--- iproute-2.6.20-070313.orig/doc/ip-cref.tex	2007-06-09 13:53:56.000000000 +0100
++++ iproute-2.6.20-070313/doc/ip-cref.tex	2007-06-09 13:53:57.000000000 +0100
 @@ -1322,6 +1322,19 @@
      If it is not given, Linux uses the value selected with \verb|sysctl|
      variable \verb|net/ipv4/tcp_reordering|.
@@ -32,10 +32,10 @@ Index: iproute2-2.6.15-060110/doc/ip-cref.tex
  \end{thebibliography}
  
  
-Index: iproute2-2.6.15-060110/doc/Makefile
+Index: iproute-2.6.20-070313/doc/Makefile
 ===================================================================
---- iproute2-2.6.15-060110.orig/doc/Makefile	2007-06-04 13:22:33.444770904 +0200
-+++ iproute2-2.6.15-060110/doc/Makefile	2007-06-04 13:22:33.577750688 +0200
+--- iproute-2.6.20-070313.orig/doc/Makefile	2007-06-09 13:53:56.000000000 +0100
++++ iproute-2.6.20-070313/doc/Makefile	2007-06-09 13:53:57.000000000 +0100
 @@ -14,6 +14,7 @@
  PAGESPERPAGE=2
  
@@ -67,10 +67,10 @@ Index: iproute2-2.6.15-060110/doc/Makefile
  clean:
 -	rm -f *.aux *.log *.toc $(PSFILES) $(DVIFILES) *.html
 +	rm -f *.aux *.log *.toc $(PSFILES) $(DVIFILES) *.html $(TXTFILES)
-Index: iproute2-2.6.15-060110/include/linux/pkt_sched.h
+Index: iproute-2.6.20-070313/include/linux/pkt_sched.h
 ===================================================================
---- iproute2-2.6.15-060110.orig/include/linux/pkt_sched.h	2007-06-04 13:22:33.451769840 +0200
-+++ iproute2-2.6.15-060110/include/linux/pkt_sched.h	2007-06-04 13:22:33.578750536 +0200
+--- iproute-2.6.20-070313.orig/include/linux/pkt_sched.h	2007-06-09 13:53:56.000000000 +0100
++++ iproute-2.6.20-070313/include/linux/pkt_sched.h	2007-06-09 13:53:57.000000000 +0100
 @@ -1,3 +1,409 @@
 +#if 0
 +#ifndef __LINUX_PKT_SCHED_H
@@ -598,29 +598,20 @@ Index: iproute2-2.6.15-060110/include/linux/pkt_sched.h
 +};
 +
  #endif
-Index: iproute2-2.6.15-060110/ip/iproute.c
+Index: iproute-2.6.20-070313/ip/iproute.c
 ===================================================================
---- iproute2-2.6.15-060110.orig/ip/iproute.c	2007-06-04 13:22:33.456769080 +0200
-+++ iproute2-2.6.15-060110/ip/iproute.c	2007-06-04 13:22:33.578750536 +0200
-@@ -60,7 +60,7 @@
+--- iproute-2.6.20-070313.orig/ip/iproute.c	2007-06-09 13:53:56.000000000 +0100
++++ iproute-2.6.20-070313/ip/iproute.c	2007-06-09 13:53:57.000000000 +0100
+@@ -73,7 +73,7 @@
  	fprintf(stderr, "OPTIONS := FLAGS [ mtu NUMBER ] [ advmss NUMBER ]\n");
  	fprintf(stderr, "           [ rtt NUMBER ] [ rttvar NUMBER ]\n");
- 	fprintf(stderr, "           [ window NUMBER] [ cwnd NUMBER ] [ ssthresh NUMBER ]\n");
--	fprintf(stderr, "           [ realms REALM ]\n");
-+	fprintf(stderr, "           [ realms REALM ] [ hoplimit NUMBER ] [ initcwnd NUMBER ]\n");
+ 	fprintf(stderr, "           [ window NUMBER] [ cwnd NUMBER ] [ initcwnd NUMBER ]\n");
+-	fprintf(stderr, "           [ ssthresh NUMBER ] [ realms REALM ]\n");
++	fprintf(stderr, "           [ ssthresh NUMBER ] [ realms REALM ] [ hoplimit NUMBER ]\n");
  	fprintf(stderr, "TYPE := [ unicast | local | broadcast | multicast | throw |\n");
  	fprintf(stderr, "          unreachable | prohibit | blackhole | nat ]\n");
  	fprintf(stderr, "TABLE_ID := [ local | main | default | all | NUMBER ]\n");
-@@ -497,6 +497,8 @@
- 				"cwnd",
- 				"advmss",
- 				"reordering",
-+				"hoplimit",
-+				"initcwnd",
- 			};
- 			static int hz;
- 			if (mxrta[i] == NULL)
-@@ -764,6 +766,30 @@
+@@ -789,6 +789,30 @@
  				invarg("\"reordering\" value is invalid\n", *argv);
  			rta_addattr32(mxrta, sizeof(mxbuf), RTAX_REORDERING, reord);
  #endif
@@ -651,11 +642,11 @@ Index: iproute2-2.6.15-060110/ip/iproute.c
  		} else if (strcmp(*argv, "rtt") == 0) {
  			unsigned rtt;
  			NEXT_ARG();
-Index: iproute2-2.6.15-060110/ip/iptunnel.c
+Index: iproute-2.6.20-070313/ip/iptunnel.c
 ===================================================================
---- iproute2-2.6.15-060110.orig/ip/iptunnel.c	2007-06-04 13:22:33.463768016 +0200
-+++ iproute2-2.6.15-060110/ip/iptunnel.c	2007-06-04 13:22:33.579750384 +0200
-@@ -225,7 +225,7 @@
+--- iproute-2.6.20-070313.orig/ip/iptunnel.c	2007-06-09 13:53:56.000000000 +0100
++++ iproute-2.6.20-070313/ip/iptunnel.c	2007-06-09 13:53:57.000000000 +0100
+@@ -113,7 +113,7 @@
  			NEXT_ARG();
  			p->i_flags |= GRE_KEY;
  			if (strchr(*argv, '.'))
@@ -664,20 +655,11 @@ Index: iproute2-2.6.15-060110/ip/iptunnel.c
  			else {
  				if (get_unsigned(&uval, *argv, 0)<0) {
  					fprintf(stderr, "invalid value of \"ikey\"\n");
-Index: iproute2-2.6.15-060110/Makefile
+Index: iproute-2.6.20-070313/Makefile
 ===================================================================
---- iproute2-2.6.15-060110.orig/Makefile	2007-06-04 13:22:33.468767256 +0200
-+++ iproute2-2.6.15-060110/Makefile	2007-06-04 13:22:33.579750384 +0200
-@@ -32,7 +32,7 @@
- LIBNETLINK=../lib/libnetlink.a ../lib/libutil.a
- 
- all: Config
--	@for i in $(SUBDIRS); \
-+	@set -e; for i in $(SUBDIRS); \
- 	do $(MAKE) $(MFLAGS) -C $$i; done
- 
- Config:
-@@ -47,7 +47,7 @@
+--- iproute-2.6.20-070313.orig/Makefile	2007-06-09 13:53:56.000000000 +0100
++++ iproute-2.6.20-070313/Makefile	2007-06-09 13:53:57.000000000 +0100
+@@ -48,7 +48,7 @@
  		$(DESTDIR)$(DOCDIR)/examples
  	install -m 0644 $(shell find examples/diffserv -maxdepth 1 -type f) \
  		$(DESTDIR)$(DOCDIR)/examples/diffserv
@@ -686,7 +668,7 @@ Index: iproute2-2.6.15-060110/Makefile
  	install -m 0644 $(shell find etc/iproute2 -maxdepth 1 -type f) $(DESTDIR)$(CONFDIR)
  	install -m 0755 -d $(DESTDIR)$(MANDIR)/man8
  	install -m 0644 $(shell find man/man8 -maxdepth 1 -type f) $(DESTDIR)$(MANDIR)/man8
-@@ -58,7 +58,7 @@
+@@ -59,7 +59,7 @@
  
  clean:
  	rm -f cscope.*
@@ -695,10 +677,10 @@ Index: iproute2-2.6.15-060110/Makefile
  	do $(MAKE) $(MFLAGS) -C $$i clean; done
  
  clobber: clean
-Index: iproute2-2.6.15-060110/man/man8/ip.8
+Index: iproute-2.6.20-070313/man/man8/ip.8
 ===================================================================
---- iproute2-2.6.15-060110.orig/man/man8/ip.8	2007-06-04 13:22:33.473766496 +0200
-+++ iproute2-2.6.15-060110/man/man8/ip.8	2007-06-04 13:22:33.580750232 +0200
+--- iproute-2.6.20-070313.orig/man/man8/ip.8	2007-06-09 13:53:56.000000000 +0100
++++ iproute-2.6.20-070313/man/man8/ip.8	2007-06-09 13:53:57.000000000 +0100
 @@ -1808,6 +1808,8 @@
  .RB "IP Command reference " ip-cref.ps
  .br
@@ -708,10 +690,10 @@ Index: iproute2-2.6.15-060110/man/man8/ip.8
  
  .SH AUTHOR
  Original Manpage  by Michail Litvak <mci@owl.openwall.com>
-Index: iproute2-2.6.15-060110/man/man8/tc.8
+Index: iproute-2.6.20-070313/man/man8/tc.8
 ===================================================================
---- iproute2-2.6.15-060110.orig/man/man8/tc.8	2007-06-04 13:22:33.481765280 +0200
-+++ iproute2-2.6.15-060110/man/man8/tc.8	2007-06-04 13:22:33.580750232 +0200
+--- iproute-2.6.20-070313.orig/man/man8/tc.8	2007-06-09 13:53:56.000000000 +0100
++++ iproute-2.6.20-070313/man/man8/tc.8	2007-06-09 13:53:57.000000000 +0100
 @@ -341,7 +341,7 @@
  .BR tc-pfifo (8),
  .BR tc-bfifo (8),
@@ -721,10 +703,10 @@ Index: iproute2-2.6.15-060110/man/man8/tc.8
  
  .SH AUTHOR
  Manpage maintained by bert hubert (ahu@ds9a.nl)
-Index: iproute2-2.6.15-060110/misc/Makefile
+Index: iproute-2.6.20-070313/misc/Makefile
 ===================================================================
---- iproute2-2.6.15-060110.orig/misc/Makefile	2007-06-04 13:22:33.486764520 +0200
-+++ iproute2-2.6.15-060110/misc/Makefile	2007-06-04 13:22:33.580750232 +0200
+--- iproute-2.6.20-070313.orig/misc/Makefile	2007-06-09 13:53:56.000000000 +0100
++++ iproute-2.6.20-070313/misc/Makefile	2007-06-09 13:53:57.000000000 +0100
 @@ -1,7 +1,8 @@
  SSOBJ=ss.o ssfilter.o
  LNSTATOBJ=lnstat.o lnstat_util.o
@@ -735,10 +717,10 @@ Index: iproute2-2.6.15-060110/misc/Makefile
  
  include ../Config
  
-Index: iproute2-2.6.15-060110/misc/netbug
+Index: iproute-2.6.20-070313/misc/netbug
 ===================================================================
---- iproute2-2.6.15-060110.orig/misc/netbug	2007-06-04 13:22:33.492763608 +0200
-+++ iproute2-2.6.15-060110/misc/netbug	2007-06-04 13:22:33.580750232 +0200
+--- iproute-2.6.20-070313.orig/misc/netbug	2007-06-09 13:53:56.000000000 +0100
++++ iproute-2.6.20-070313/misc/netbug	2007-06-09 13:53:57.000000000 +0100
 @@ -1,23 +1,16 @@
  #! /bin/bash
  
@@ -781,10 +763,10 @@ Index: iproute2-2.6.15-060110/misc/netbug
  
  echo "Sending to <$mail>; subject is $netbug"
  
-Index: iproute2-2.6.15-060110/tc/Makefile
+Index: iproute-2.6.20-070313/tc/Makefile
 ===================================================================
---- iproute2-2.6.15-060110.orig/tc/Makefile	2007-06-04 13:22:33.498762696 +0200
-+++ iproute2-2.6.15-060110/tc/Makefile	2007-06-04 13:22:33.581750080 +0200
+--- iproute-2.6.20-070313.orig/tc/Makefile	2007-06-09 13:53:56.000000000 +0100
++++ iproute-2.6.20-070313/tc/Makefile	2007-06-09 13:53:57.000000000 +0100
 @@ -11,6 +11,7 @@
  TCMODULES += q_prio.o
  TCMODULES += q_tbf.o
@@ -793,10 +775,10 @@ Index: iproute2-2.6.15-060110/tc/Makefile
  TCMODULES += f_rsvp.o
  TCMODULES += f_u32.o
  TCMODULES += f_route.o
-Index: iproute2-2.6.15-060110/tc/q_htb.c
+Index: iproute-2.6.20-070313/tc/q_htb.c
 ===================================================================
---- iproute2-2.6.15-060110.orig/tc/q_htb.c	2007-06-04 13:22:33.503761936 +0200
-+++ iproute2-2.6.15-060110/tc/q_htb.c	2007-06-04 13:22:33.581750080 +0200
+--- iproute-2.6.20-070313.orig/tc/q_htb.c	2007-06-09 13:53:56.000000000 +0100
++++ iproute-2.6.20-070313/tc/q_htb.c	2007-06-09 13:53:57.000000000 +0100
 @@ -1,3 +1,311 @@
 +#if 0
 +/*
@@ -1109,10 +1091,10 @@ Index: iproute2-2.6.15-060110/tc/q_htb.c
  /*
   * q_htb.c		HTB.
   *
-Index: iproute2-2.6.15-060110/tc/q_wrr.c
+Index: iproute-2.6.20-070313/tc/q_wrr.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ iproute2-2.6.15-060110/tc/q_wrr.c	2007-06-04 13:22:33.582749928 +0200
++++ iproute-2.6.20-070313/tc/q_wrr.c	2007-06-09 13:53:57.000000000 +0100
 @@ -0,0 +1,322 @@
 +#include <stdio.h>
 +#include <stdlib.h>
