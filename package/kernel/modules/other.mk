@@ -381,6 +381,7 @@ $(eval $(call KernelPackage,input-core))
 define KernelPackage/input-evdev
   TITLE:=Input even device
   DESCRIPTION:=Kernel modules for support of input device events
+  DEPENDS:=+kmod-input-core
   SUBMENU:=$(EMENU)
   KCONFIG:=$(CONFIG_INPUT_EVDEV)
   FILES:=$(LINUX_DIR)/drivers/input/evdev.$(LINUX_KMOD_SUFFIX)
