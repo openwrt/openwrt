@@ -1,7 +1,7 @@
-diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/pronghornmetro-setup.c linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/pronghornmetro-setup.c
---- linux-2.6.19.2/arch/arm/mach-ixp4xx/pronghornmetro-setup.c	2007-04-04 11:48:14.000000000 +0200
-+++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/pronghornmetro-setup.c	2007-04-04 11:52:09.000000000 +0200
-@@ -14,6 +14,7 @@
+diff -Nur linux-2.6.21.1/arch/arm/mach-ixp4xx/pronghornmetro-setup.c linux-2.6.21.1-owrt/arch/arm/mach-ixp4xx/pronghornmetro-setup.c
+--- linux-2.6.21.1/arch/arm/mach-ixp4xx/pronghornmetro-setup.c	2007-06-10 14:10:24.000000000 +0200
++++ linux-2.6.21.1-owrt/arch/arm/mach-ixp4xx/pronghornmetro-setup.c	2007-06-10 14:10:15.000000000 +0200
+@@ -17,6 +17,7 @@
  #include <linux/serial.h>
  #include <linux/tty.h>
  #include <linux/serial_8250.h>
@@ -9,7 +9,7 @@ diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/pronghornmetro-setup.c linux-2.6.1
  #include <linux/slab.h>
  
  #include <asm/types.h>
-@@ -133,12 +134,35 @@
+@@ -122,11 +123,34 @@
  	.resource	= &res_mac1,
  };
  
@@ -24,7 +24,6 @@ diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/pronghornmetro-setup.c linux-2.6.1
 +};
 +
  static struct platform_device *pronghornmetro_devices[] __initdata = {
- 	&pronghornmetro_i2c_controller,
  	&pronghornmetro_flash,
  	&pronghornmetro_uart,
  	&mac0,
@@ -45,7 +44,7 @@ diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/pronghornmetro-setup.c linux-2.6.1
  };
  
  static void __init pronghornmetro_init(void)
-@@ -152,6 +176,8 @@
+@@ -140,6 +164,8 @@
  	*IXP4XX_EXP_CS1 = *IXP4XX_EXP_CS0;
  
  	platform_add_devices(pronghornmetro_devices, ARRAY_SIZE(pronghornmetro_devices));

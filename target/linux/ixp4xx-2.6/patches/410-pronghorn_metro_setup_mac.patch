@@ -1,7 +1,7 @@
-diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/pronghornmetro-setup.c linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/pronghornmetro-setup.c
---- linux-2.6.19.2/arch/arm/mach-ixp4xx/pronghornmetro-setup.c	2007-04-02 21:30:12.000000000 +0200
-+++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/pronghornmetro-setup.c	2007-04-02 21:57:11.000000000 +0200
-@@ -87,10 +87,58 @@
+diff -Nur linux-2.6.21.1/arch/arm/mach-ixp4xx/pronghornmetro-setup.c linux-2.6.21.1-owrt/arch/arm/mach-ixp4xx/pronghornmetro-setup.c
+--- linux-2.6.21.1/arch/arm/mach-ixp4xx/pronghornmetro-setup.c	2007-06-10 14:05:47.000000000 +0200
++++ linux-2.6.21.1-owrt/arch/arm/mach-ixp4xx/pronghornmetro-setup.c	2007-06-10 14:05:38.000000000 +0200
+@@ -76,9 +76,57 @@
  	.resource	= &pronghornmetro_uart_resource,
  };
  
@@ -52,10 +52,8 @@ diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/pronghornmetro-setup.c linux-2.6.1
 +};
 +
  static struct platform_device *pronghornmetro_devices[] __initdata = {
- 	&pronghornmetro_i2c_controller,
  	&pronghornmetro_flash,
--	&pronghornmetro_uart
-+	&pronghornmetro_uart,
+ 	&pronghornmetro_uart,
 +	&mac0,
 +	&mac1,
  };
