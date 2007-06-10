@@ -15,6 +15,11 @@ USBMENU:=USB Support
 #	USBNET_DIR=net/usb
 #endif
 
+define usbdep
+  SUBMENU:=$(USBMENU)
+  DEPENDS:=kmod-usb-core $(1)
+endef
+
 define KernelPackage/usb-core
   TITLE:=Support for USB
   DESCRIPTION:=Kernel support for USB
@@ -35,10 +40,9 @@ $(eval $(call KernelPackage,usb-core))
 
 
 define KernelPackage/usb-uhci
+  $(call usbdep,)
   TITLE:=Support for UHCI controllers
   DESCRIPTION:=Kernel support for USB UHCI controllers
-  DEPENDS:=kmod-usb-core
-  SUBMENU:=$(USBMENU)
 endef
 
 define KernelPackage/usb-uhci/2.4
@@ -55,10 +59,9 @@ endef
 $(eval $(call KernelPackage,usb-uhci))
 
 define KernelPackage/usb-uhci-iv
+  $(call usbdep,@LINUX_2_4)
   TITLE:=Support for Intel/VIA UHCI controllers 
   DESCRIPTION:=Kernel support for Intel/VIA USB UHCI controllers
-  DEPENDS:=kmod-usb-core @LINUX_2_4
-  SUBMENU:=$(USBMENU)
 endef 
 
 define KernelPackage/usb-uhci-iv/2.4
@@ -69,10 +72,9 @@ endef
 $(eval $(call KernelPackage,usb-uhci-iv)) 
 
 define KernelPackage/usb-ohci
+  $(call usbdep,)
   TITLE:=Support for OHCI controllers
   DESCRIPTION:=Kernel support for USB OHCI controllers
-  DEPENDS:=kmod-usb-core
-  SUBMENU:=$(USBMENU)
 endef
 
 define KernelPackage/usb-ohci/2.4
@@ -89,22 +91,14 @@ endef
 $(eval $(call KernelPackage,usb-ohci))
 
 define KernelPackage/usb2
+  $(call usbdep,)
   TITLE:=Support for USB2 controllers
   DESCRIPTION:=Kernel support for USB2 (EHCI) controllers
-  DEPENDS:=kmod-usb-core
-  KCONFIG:=$(CONFIG_USB)
-  SUBMENU:=$(USBMENU)
   FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-hcd.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=$(CONFIG_USB_EHCI_HCD)
   AUTOLOAD:=$(call AutoLoad,50,ehci-hcd)
 endef
 $(eval $(call KernelPackage,usb2))
-
-
-define usbdep
-  SUBMENU:=$(USBMENU)
-  DEPENDS:=kmod-usb-core $(1)
-endef
 
 
 define KernelPackage/usb-acm
@@ -178,10 +172,9 @@ endef
 $(eval $(call KernelPackage,usb-serial))
 
 define KernelPackage/usb-serial-airprime
+  $(call usbdep,kmod-usb-serial)
   TITLE:=Support for Airprime (EVDO) 
   DESCRIPTION:=Kernel support for Airprime (EVDO) 
-  DEPENDS:=kmod-usb-serial
-  SUBMENU:=$(USBMENU)
   KCONFIG:=$(CONFIG_USB_SERIAL_AIRPRIME)
   FILES:=$(LINUX_DIR)/drivers/usb/serial/airprime.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,airprime)
@@ -189,10 +182,9 @@ endef
 $(eval $(call KernelPackage,usb-serial-airprime))
 
 define KernelPackage/usb-serial-belkin
+  $(call usbdep,kmod-usb-serial)
   TITLE:=Support for Belkin devices
   DESCRIPTION:=Kernel support for Belkin USB-to-Serial converters
-  DEPENDS:=kmod-usb-serial
-  SUBMENU:=$(USBMENU)
   KCONFIG:=$(CONFIG_USB_SERIAL_BELKIN)
   FILES:=$(LINUX_DIR)/drivers/usb/serial/belkin_sa.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,belkin_sa)
@@ -201,10 +193,9 @@ $(eval $(call KernelPackage,usb-serial-belkin))
 
 
 define KernelPackage/usb-serial-ftdi
+  $(call usbdep,kmod-usb-serial)
   TITLE:=Support for FTDI devices
   DESCRIPTION:=Kernel support for FTDI USB-to-Serial converters
-  DEPENDS:=kmod-usb-serial
-  SUBMENU:=$(USBMENU)
   KCONFIG:=$(CONFIG_USB_SERIAL_FTDI_SIO)
   FILES:=$(LINUX_DIR)/drivers/usb/serial/ftdi_sio.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,ftdi_sio)
@@ -213,10 +204,9 @@ $(eval $(call KernelPackage,usb-serial-ftdi))
 
 
 define KernelPackage/usb-serial-mct
+  $(call usbdep,kmod-usb-serial)
   TITLE:=Support for Magic Control Tech. devices
   DESCRIPTION:=Kernel support for Magic Control Technology USB-to-Serial converters
-  DEPENDS:=kmod-usb-serial
-  SUBMENU:=$(USBMENU)
   KCONFIG:=$(CONFIG_USB_SERIAL_MCT_U232)
   FILES:=$(LINUX_DIR)/drivers/usb/serial/mct_u232.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,mct_u232)
@@ -224,10 +214,9 @@ endef
 $(eval $(call KernelPackage,usb-serial-mct))
 
 define KernelPackage/usb-serial-pl2303
+  $(call usbdep,kmod-usb-serial)
   TITLE:=Support for Prolific PL2303 devices
   DESCRIPTION:=Kernel support for Prolific PL2303 USB-to-Serial converters
-  DEPENDS:=kmod-usb-serial
-  SUBMENU:=$(USBMENU)
   KCONFIG:=$(CONFIG_USB_SERIAL_PL2303)
   FILES:=$(LINUX_DIR)/drivers/usb/serial/pl2303.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,pl2303)
@@ -236,10 +225,9 @@ $(eval $(call KernelPackage,usb-serial-pl2303))
 
 
 define KernelPackage/usb-serial-sierrawireless
+  $(call usbdep,kmod-usb-serial)
   TITLE:=Support for Sierra Wireless devices
   DESCRIPTION:=Kernel support for Sierra Wireless devices
-  DEPENDS:=kmod-usb-serial
-  SUBMENU:=$(USBMENU)
   KCONFIG:=$(CONFIG_USB_SERIAL_SIERRAWIRELESS)
   FILES:=$(LINUX_DIR)/drivers/usb/serial/sierra.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,sierra)
@@ -248,10 +236,9 @@ $(eval $(call KernelPackage,usb-serial-sierrawireless))
 
 
 define KernelPackage/usb-serial-visor
+  $(call usbdep,kmod-usb-serial)
   TITLE:=Support for Handspring Visor devices
   DESCRIPTION:=Kernel support for Handspring Visor PDAs
-  DEPENDS:=kmod-usb-serial
-  SUBMENU:=$(USBMENU)
   KCONFIG:=$(CONFIG_USB_SERIAL_VISOR)
   FILES:=$(LINUX_DIR)/drivers/usb/serial/visor.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,visor)
@@ -260,14 +247,13 @@ $(eval $(call KernelPackage,usb-serial-visor))
 
 
 define KernelPackage/usb-storage
-  $(call usbdep,)
+  $(call usbdep,+kmod-scsi-core)
   TITLE:=USB Storage support
   DESCRIPTION:=Kernel support for USB Mass Storage devices
   KCONFIG:=$(CONFIG_USB_STORAGE)
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/storage/usb-storage.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,scsi_mod sd_mod usb-storage)
-  DEPENDS:=+kmod-scsi-core
 endef
 $(eval $(call KernelPackage,usb-storage))
 
@@ -323,7 +309,6 @@ define KernelPackage/usb-net
   TITLE:=Kernel modules for USB-to-Ethernet convertors
   DESCRIPTION:=Kernel modules for USB-to-Ethernet convertors
   KCONFIG:=$(CONFIG_USB_USBNET)
-  DEPENDS:=@USB_SUPPORT
   AUTOLOAD:=$(call Autoload,60, usbnet)
 endef
 
@@ -338,10 +323,9 @@ endef
 $(eval $(call KernelPackage,usb-net))
 
 define KernelPackage/usb-net-asix
-  $(call usbdep,+kmod-usbnet)
+  $(call usbdep,kmod-usbnet)
   TITLE:=Kernel module for USB-to-Ethernet Asix convertors
   DESCRIPTION:=Kernel module for USB-to-Ethernet Asix convertors
-  DEPENDS:=kmod-usb-net
   KCONFIG:=$(CONFIG_USB_NET_AX8817X)
 endef
 
@@ -358,10 +342,9 @@ endef
 $(eval $(call KernelPackage,usb-net-asix))
 
 define KernelPackage/usb-net-kaweth
-  $(call usbdep,+kmod-usbnet)
+  $(call usbdep,kmod-usbnet)
   TITLE:=Kernel module for USB-to-Ethernet Kaweth convertors
   DESCRIPTION:=Kernel module for USB-to-Ethernet Kaweth convertors
-  DEPENDS:=kmod-usb-net
   KCONFIG:=$(CONFIG_USB_KAWETH)
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/kaweth.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call Autoload,61,kaweth)
@@ -370,10 +353,9 @@ endef
 $(eval $(call KernelPackage,usb-net-kaweth))
 
 define KernelPackage/usb-net-pegasus
-  $(call usbdep,+kmod-usbnet)
+  $(call usbdep,kmod-usbnet)
   TITLE:=Kernel module for USB-to-Ethernet Pegasus convertors
   DESCRIPTION:=Kernel module for USB-to-Ethernet Pegasus convertors
-  DEPENDS:=kmod-usb-net
   KCONFIG:=$(CONFIG_USB_PEGASUS)
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/pegasus.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call Autoload,61,pegasus)
@@ -382,7 +364,7 @@ endef
 $(eval $(call KernelPackage,usb-net-pegasus))
 
 define KernelPackage/usb-hid
-  $(call usbdep,@LINUX_2_6 evdev)
+  $(call usbdep,@LINUX_2_6 +kmod-input-core +kmod-input-evdev)
   TITLE:=Support for USB Human Input Devices
   DESCRIPTION:=Kernel support for USB HID devices such as keyboards and mice
   KCONFIG:=$(CONFIG_USB_HID)
@@ -395,13 +377,12 @@ endef
 $(eval $(call KernelPackage,usb-hid))
 
 define KernelPackage/usb-yealink
-  $(call usbdep,@LINUX_2_6)
+  $(call usbdep,@LINUX_2_6 +kmod-input-core +kmod-input-evdev)
   TITLE:=USB Yealink VOIP phone
   DESCRIPTION:=Kernel support for Yealink VOIP phone
   KCONFIG:=$(CONFIG_USB_YEALINK)
   FILES:=$(LINUX_DIR)/drivers/usb/input/yealink.ko
   AUTOLOAD:=$(call AutoLoad,70,yealink)
-  DEPENDS:=kmod-input-core kmod-input-evdev
 endef
 $(eval $(call KernelPackage,usb-yealink))
 
