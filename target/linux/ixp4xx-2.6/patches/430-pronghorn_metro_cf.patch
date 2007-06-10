@@ -1,0 +1,57 @@
+diff -Nur linux-2.6.21.1/arch/arm/mach-ixp4xx/pronghornmetro-setup.c linux-2.6.21.1-owrt/arch/arm/mach-ixp4xx/pronghornmetro-setup.c
+--- linux-2.6.21.1/arch/arm/mach-ixp4xx/pronghornmetro-setup.c	2007-06-10 14:31:27.000000000 +0200
++++ linux-2.6.21.1-owrt/arch/arm/mach-ixp4xx/pronghornmetro-setup.c	2007-06-10 14:36:23.000000000 +0200
+@@ -77,6 +77,35 @@
+ 	.resource	= &pronghornmetro_uart_resource,
+ };
+ 
++static struct resource pronghornmetro_pata_resources[] = {
++	{
++		.flags	= IORESOURCE_MEM
++	},
++	{
++		.flags	= IORESOURCE_MEM,
++	},
++	{
++		.name	= "intrq",
++		.start	= IRQ_IXP4XX_GPIO0,
++		.end	= IRQ_IXP4XX_GPIO0,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct ixp4xx_pata_data pronghornmetro_pata_data = {
++	.cs0_bits	= 0xbfff0043,
++	.cs1_bits	= 0xbfff0043,
++};
++
++static struct platform_device pronghornmetro_pata = {
++	.name			= "pata_ixp4xx_cf",
++	.id			= 0,
++	.dev.platform_data      = &pronghornmetro_pata_data,
++	.num_resources		= ARRAY_SIZE(pronghornmetro_pata_resources),
++	.resource		= pronghornmetro_pata_resources,
++};
++
++
+ static struct resource res_mac0 = {
+ 	.start		= IXP4XX_EthB_BASE_PHYS,
+ 	.end		= IXP4XX_EthB_BASE_PHYS + 0x1ff,
+@@ -165,6 +194,17 @@
+ 
+ 	platform_add_devices(pronghornmetro_devices, ARRAY_SIZE(pronghornmetro_devices));
+ 
++	pronghornmetro_pata_resources[0].start = IXP4XX_EXP_BUS_BASE(1);
++	pronghornmetro_pata_resources[0].end = IXP4XX_EXP_BUS_END(1);
++
++	pronghornmetro_pata_resources[1].start = IXP4XX_EXP_BUS_BASE(2);
++	pronghornmetro_pata_resources[1].end = IXP4XX_EXP_BUS_END(2);
++
++	pronghornmetro_pata_data.cs0_cfg = IXP4XX_EXP_CS1;
++	pronghornmetro_pata_data.cs1_cfg = IXP4XX_EXP_CS2;
++
++	platform_device_register(&pronghornmetro_pata);
++
+ 	register_mtd_user(&pronghornmetro_flash_notifier);
+ }
+ 
