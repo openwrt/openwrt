@@ -407,8 +407,8 @@ int __init init_adm5120_map(void)
 	struct mtd_partition *parts;
 	int i, parsed_nr_parts = 0;
 #endif
-	printk("adm5120 : flash init : 0x%08x 0x%08x\n", WINDOW_ADDR, WINDOW_SIZE);
-	adm5120_map.virt = ioremap_nocache(WINDOW_ADDR, WINDOW_SIZE);
+	printk("adm5120 : flash init : 0x%08x 0x%08x\n", WINDOW_ADDR, adm5120_board.flash0_size);
+	adm5120_map.virt = ioremap_nocache(WINDOW_ADDR, adm5120_board.flash0_size);
 
 	if (!adm5120_map.virt) {
 		printk("Failed to ioremap\n");
