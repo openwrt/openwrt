@@ -1,11 +1,21 @@
 --- fuse.old/kernel/file.c	2007-01-28 21:25:02.000000000 +0000
 +++ fuse.dev/kernel/file.c	2007-05-29 00:10:29.000000000 +0100
-@@ -782,7 +782,7 @@
+@@ -781,6 +785,10 @@
+ 
  	if (cmd == F_GETLK) {
  		if (fc->no_lock) {
- #ifdef KERNEL_2_6_17_PLUS
--			if (!posix_test_lock(file, fl, fl))
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
 +			if (!posix_test_lock(file, fl))
++				fl->fl_type = F_UNLCK;
++#else
+ #ifdef KERNEL_2_6_17_PLUS
+ 			if (!posix_test_lock(file, fl, fl))
  				fl->fl_type = F_UNLCK;
- #else
- 			struct file_lock *cfl = posix_test_lock(file, fl);
+@@ -791,6 +799,7 @@
+ 			else
+ 				*fl = *cfl;
+ #endif
++#endif
+ 			err = 0;
+ 		} else
+ 			err = fuse_getlk(file, fl);
