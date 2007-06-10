@@ -226,13 +226,13 @@ endef
 define KernelPackage/mppe/2.4
   KCONFIG:=$(CONFIG_PPP_MPPE_MPPC)
   FILES:=$(LINUX_DIR)/drivers/net/ppp_mppe_mppc.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,ppp_mppe_mppc)
+  AUTOLOAD:=$(call AutoLoad,31,ppp_mppe_mppc)
 endef
 
 define KernelPackage/mppe/2.6
   KCONFIG:=$(CONFIG_PPP_MPPE)
   FILES:=$(LINUX_DIR)/drivers/net/ppp_mppe.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,ppp_mppe)
+  AUTOLOAD:=$(call AutoLoad,31,ppp_mppe)
 endef
 $(eval $(call KernelPackage,mppe))
 
