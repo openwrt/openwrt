@@ -1,17 +1,23 @@
 --- fuse.old/kernel/inode.c	2007-05-29 07:31:43.000000000 +0100
 +++ fuse.dev/kernel/inode.c	2007-05-29 07:29:42.000000000 +0100
-@@ -858,12 +858,12 @@
+@@ -858,12 +858,20 @@
  	if (err)
  		return err;
  #endif
--	kset_set_kset_s(&fuse_subsys, fs_subsys);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
 +	kobj_set_kset_s(&fuse_subsys, fs_subsys);
++#else
+	kset_set_kset_s(&fuse_subsys, fs_subsys);
++#endif
  	err = subsystem_register(&fuse_subsys);
  	if (err)
  		goto out_err;
  
--	kset_set_kset_s(&connections_subsys, fuse_subsys);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
 +	kobj_set_kset_s(&connections_subsys, fuse_subsys);
++#else
+	kset_set_kset_s(&connections_subsys, fuse_subsys);
++#endif
  	err = subsystem_register(&connections_subsys);
  	if (err)
  		goto out_fuse_unregister;
