@@ -10,19 +10,19 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=rt2500
-PKG_VERSION:=1.1.0-b4
+PKG_VERSION:=cvs-2007061115
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=@SF/rt2400
-PKG_MD5SUM:=83b8b9a091705c08d99268479f3b3b6a
+PKG_SOURCE_URL:=@openwrt/
+PKG_MD5SUM:=67a158b24ec46e37edc4545f51338bb9
 
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/rt2500
   SUBMENU:=Wireless Drivers
   TITLE:=Driver for ralink pci wireless chipsets
-  DEPENDS:=@LINUX_2_4 @USB_SUPPORT +wireless-tools
+  DEPENDS:=@USB_SUPPORT +wireless-tools
   DESCRIPTION:=\
 	This package contains a driver for ralink rt2500 pci chipsets.
   URL:=http://rt2x00.serialmonkey.com/
