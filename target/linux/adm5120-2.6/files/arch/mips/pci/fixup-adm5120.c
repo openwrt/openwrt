@@ -66,11 +66,7 @@ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 	int irq;
 	
 	irq = -1;
-#if 1
-	/* FIXME: this code should be working on all boards? */
-	if (slot > 0 && slot < 4)
-		irq = ADM5120_IRQ_PCI0+slot-1;
-#else	
+
 	switch (mips_machtype) {
 	case MACH_ADM5120_RB_111:
 	case MACH_ADM5120_RB_112:
@@ -78,14 +74,14 @@ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 	case MACH_ADM5120_RB_133C:
 	case MACH_ADM5120_RB_153:
 		if (slot > 0 && slot < 4)
-			irq = ADM5120_IRQ_PCI0+slot-1;
+			irq = slot + 5;
 		break;
 	default:
 		if (slot > 1 && slot < 5)
-			irq = ADM5120_IRQ_PCI0+slot-2;
+			irq = ADM5120_IRQ_PCI0+slot-1;
 		break;
 	}
-#endif
+	
 	printk(KERN_INFO "PCI: mapping irq for device %s, slot:%u, pin:%u, "
 		"irq:%d\n", pci_name(dev), slot, pin, irq);
 		
