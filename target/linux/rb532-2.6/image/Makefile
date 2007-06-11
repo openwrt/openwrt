@@ -49,6 +49,10 @@ define Image/cmdline/ext2
 root=/dev/cfa2 rootfstype=ext2 init=/etc/preinit
 endef
 
+define Image/cmdline/squashfs
+root=/dev/cfa2 rootfstype=squashfs init=/etc/preinit
+endef
+
 define Image/Build
 	$(STAGING_DIR)/bin/patch-cmdline $(KDIR)/vmlinux.elf '$(strip $(call Image/cmdline/$(1))) '
 	./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin 4 $(KDIR)/vmlinux.elf $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
