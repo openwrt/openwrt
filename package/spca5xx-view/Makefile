@@ -24,14 +24,14 @@ define Package/spca5xx-view
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=spca5xx streaming applicaton
-  DEPENDS:=kmod-spca5xx-le libpthread
+  DEPENDS:=+kmod-spca5xx-le +libpthread
   DESCRIPTION:=\
 	This package contains a streaming daemon for spca5xx based webcams 
   URL:=http://www.acmesystems.it
 endef
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR)/servfox/ CFLAGS=$(TARTGET_CFLAGS) CC=$(TARGET_CC) 
+	$(MAKE) -C $(PKG_BUILD_DIR)/servfox/ CFLAGS=$(TARTGET_CFLAGS) CC=$(TARGET_CC) all
 	$(MAKE) -C $(PKG_BUILD_DIR)/servfox/ PREFIX="$(PKG_INSTALL_DIR)" install
 endef
 
