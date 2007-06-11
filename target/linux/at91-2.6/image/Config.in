@@ -15,6 +15,7 @@ config AT91_UBOOT
 
 config UBOOT_TARGET
 	string "U-Boot Board Configuration"
+	depends LINUX_2_6_AT91
 	default "vlink"
 	help
 	  For all supported boards there are reqdy-to-use default
