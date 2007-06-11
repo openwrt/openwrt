@@ -21,7 +21,10 @@
 
 static char erase_seq[] = "\b \b";		/* erase sequence	*/
 
-unsigned int usa[2] = {(unsigned int)AT91C_BASE_DBGU, (unsigned int)AT91C_ALTERNATE_USART};
+#define MAX_UARTS 1
+
+//unsigned int usa[2] = {(unsigned int)AT91C_BASE_DBGU, (unsigned int)AT91C_ALTERNATE_USART};
+unsigned int usa[1] = {(unsigned int)AT91C_BASE_DBGU};
 unsigned int us;
 int port_detected;
 
@@ -34,7 +37,7 @@ void at91_init_uarts(void)
 	AT91F_US0_CfgPIO();
 	AT91F_US0_CfgPMC();
 
-	for(i=0; i<2; i++) {
+	for(i=0; i<MAX_UARTS; i++) {
 		us = usa[i];
 		AT91F_US_ResetRx((AT91PS_USART)us);
 		AT91F_US_ResetTx((AT91PS_USART)us);
@@ -74,6 +77,7 @@ int at91_serial_putc(int ch)
 int at91_serial_getc()
 {
 	while(1) {
+#if 0
 		if (!port_detected) {
 			if (us == usa[0]) {
 				us = usa[1];
@@ -82,8 +86,11 @@ int at91_serial_getc()
 				us = usa[0];
 			}
 		}
+#endif
 		if(AT91F_US_RxReady((AT91PS_USART)us)) {
+#if 0
 			port_detected = 1;
+#endif
 			return((int)AT91F_US_GetChar((AT91PS_USART)us));
 		}
 	}
