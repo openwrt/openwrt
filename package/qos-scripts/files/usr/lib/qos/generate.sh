@@ -116,6 +116,14 @@ parse_matching_rule() {
 				add_insmod ipt_connbytes
 				append "$var" "-m connbytes --connbytes $value --connbytes-dir both --connbytes-mode bytes"
 			;;
+			*:direction)
+				value="$(echo "$value" | sed -e 's,-,:,g')"
+				if [ "$value" = "out" ]; then
+					append "$var" "-o $device"
+				elif [ "$value" = "in" ]; then
+					append "$var" "-i $device"
+				fi
+			;;
 			1:pktsize)
 				value="$(echo "$value" | sed -e 's,-,:,g')"
 				add_insmod ipt_length
@@ -357,6 +365,7 @@ start_cg() {
 				append down "iptables -t mangle -A POSTROUTING -o $device -j IMQ --todev $imqdev" "$N"
 			}
 			append down "iptables -t mangle -A PREROUTING -i $device -j ${cg}" "$N"
+			append down "iptables -t mangle -A POSTROUTING -o $device -j ${cg}" "$N"
 			append down "iptables -t mangle -A PREROUTING -i $device -j IMQ --todev $imqdev" "$N"
 		}
 	done
