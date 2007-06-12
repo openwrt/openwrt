@@ -70,6 +70,7 @@ define Build/Compile
 endef
 
 define Package/busybox/install
+	find $(PKG_BUILD_DIR) -lname busybox -exec rm \{\} \;
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
