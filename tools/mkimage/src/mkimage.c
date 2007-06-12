@@ -19,6 +19,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
+#ifdef __APPLE__
+#define __FreeBSD__ 10
+#endif
 
 #include <errno.h>
 #include <fcntl.h>
