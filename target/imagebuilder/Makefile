@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/host.mk
 
 PKG_OS:=$(shell uname -s)
-PKG_CPU:=$(shell uname -m)
+PKG_CPU:=$(shell uname -m | sed "s/ //g")
 
 IB_NAME:=OpenWrt-ImageBuilder-$(BOARD)-$(KERNEL)-for-$(PKG_OS)-$(PKG_CPU)
 IB_BUILD_DIR:=$(BUILD_DIR)/$(IB_NAME)
