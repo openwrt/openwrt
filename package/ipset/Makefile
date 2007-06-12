@@ -9,12 +9,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ipset
-PKG_VERSION:=2.2.3
+PKG_VERSION:=2.2.9a
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-20050914.tar.bz2
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-20061009.tar.bz2
 PKG_SOURCE_URL:=http://ipset.netfilter.org
-PKG_MD5SUM:=1709424cc2cdb925d4fb6fd5fcaefc26
+PKG_MD5SUM:=74ce3226b30cdd386630250bdc3488ef
 
 include $(INCLUDE_DIR)/package.mk
 
