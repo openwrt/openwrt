@@ -300,7 +300,7 @@ define KernelPackage/usb-pwc/2.4
 endef
 
 define KernelPackage/usb-pwc/2.6
-  FILES:=$(LINUX_DIR)/drivers/usb/media/pwc/pwc.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/media/video/pwc/pwc.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,usb-pwc))
 
