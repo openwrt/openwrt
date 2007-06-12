@@ -109,7 +109,8 @@ void __init plat_mem_setup(void)
 	set_io_port_base(io_base);
 
 	prom_meminit();
-	ar7_init_clocks();
+#warning FIXME: clock initialisation
+	//ar7_init_clocks();
 
 	ioport_resource.start = 0;
 	ioport_resource.end   = ~0;
