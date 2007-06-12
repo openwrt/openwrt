@@ -296,9 +296,6 @@ void menu_finalize(struct menu *parent)
 					    "currently only support a "
 					    "single prompt");
 				}
-				if (prop->type == P_DEFAULT)
-					prop_warn(prop, "defaults for choice "
-					    "values not supported");
 			}
 			current_entry = menu;
 			menu_set_type(sym->type);
