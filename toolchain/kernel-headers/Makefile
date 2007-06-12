@@ -17,9 +17,9 @@ PKG_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)/linux-$(PKG_VERSION)
 
 LINUX_DIR:=$(PKG_BUILD_DIR)
 KERNEL_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/kernel-defaults.mk
 
-include $(INCLUDE_DIR)/host-build.mk
 
 define Build/Prepare/cris
 	mkdir -p $(TOOLCHAIN_BUILD_DIR)
