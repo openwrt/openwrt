@@ -72,6 +72,8 @@ define Image/Build
 	$(call Image/Build/CyberTAN,$(1),WAG2,WAG2,$(1))
 	$(call Image/Build/CyberTAN,$(1),WA31,WA31 -b,$(1))
 	$(call Image/Build/CyberTAN,$(1),WA32,WA32 -b,$(1))
+	$(call Image/Build/CyberTAN,$(1),WA7A,WA7A -b,$(1))
+	$(call Image/Build/CyberTAN,$(1),WA7B,WA7B -b,$(1))
 #	$(call Image/Build/sErCoMm,$(1),dg834,$(1))
 #	$(call Image/Build/sErCoMm,$(1),jdr454wb,$(1))
 endef
