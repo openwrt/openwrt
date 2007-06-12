@@ -80,6 +80,13 @@ define Package/libssp
   TITLE:=GCC support library
 endef
 
+define Package/libstdcpp
+  $(call Package/gcc/Default)
+  NAME:=libstdc++
+  TITLE:=GNU Standard C++ Library v3
+  DEPENDS:=@!NATIVE_TOOLCHAIN&&@INSTALL_LIBSTDCPP
+endef
+
 define Package/uclibc/Default
   SECTION:=libs
   CATEGORY:=Base system
@@ -161,6 +168,11 @@ ifeq ($(word 1,$(subst ., ,$(LIBGCC_VERSION))),4)
   endef
 endif
 
+define Package/libstdcpp/install
+	$(INSTALL_DIR) $(1)/lib
+	$(CP) $(STAGING_DIR)/lib/libstdc++.so.* $(1)/lib/
+endef
+
 define Package/libpthread/install
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(STAGING_DIR)/lib/libpthread.so.* $(1)/lib/
@@ -192,5 +204,6 @@ endif
 $(eval $(call BuildPackage,base-files$(TARGET)))
 $(eval $(call BuildPackage,libgcc))
 $(eval $(call BuildPackage,libssp))
+$(eval $(call BuildPackage,libstdcpp))
 $(eval $(call BuildPackage,libpthread))
 $(eval $(call BuildPackage,uclibc))
