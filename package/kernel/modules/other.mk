@@ -291,7 +291,7 @@ define KernelPackage/videodev/2.4
 endef
 
 define KernelPackage/videodev/2.6
-  AUTOLOAD:=$(call AutoLoad,60,v4l2-common v4l1-compat videodev)
+  AUTOLOAD:=$(call AutoLoad,60,v4l2-common v4l1-compat compat_ioctl32 videodev)
 endef
 $(eval $(call KernelPackage,videodev))
 
