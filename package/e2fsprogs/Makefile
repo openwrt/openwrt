@@ -38,6 +38,16 @@ define Package/libuuid
   URL:=http://e2fsprogs.sourceforge.net/
 endef
 
+define Package/libblkid
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=block device id library
+  DESCRIPTION:=\
+  	The blkid library which allows system programs like fsck and mount to quickly\\\
+	and easily find block devices by filesystem UUID and LABEL.
+  URL:=http://e2fsprogs.sourceforge.net/
+endef
+
 define Package/tune2fs
   $(call Package/e2fsprogs)
   TITLE:=Ext2 Filesystem tune utility
@@ -94,6 +104,11 @@ define Package/libuuid/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libuuid.so.* $(1)/usr/lib/
 endef
 
+define Package/libblkid/install
+	$(INSTALL_DIR) $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libblkid.so.* $(1)/usr/lib/
+endef
+
 define Package/tune2fs/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/tune2fs $(1)/usr/sbin/
@@ -106,5 +121,6 @@ endef
 
 $(eval $(call BuildPackage,e2fsprogs))
 $(eval $(call BuildPackage,libuuid))
+$(eval $(call BuildPackage,libblkid))
 $(eval $(call BuildPackage,tune2fs))
 $(eval $(call BuildPackage,resize2fs))
