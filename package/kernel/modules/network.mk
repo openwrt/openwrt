@@ -127,6 +127,7 @@ define KernelPackage/ipv6
 	Kernel modules for IPv6 support
   KCONFIG:=$(CONFIG_IPV6)
   SUBMENU:=$(NSMENU)
+  AUTOLOAD:=$(call AutoLoad,20,ipv6)
 endef
 define KernelPackage/ipv6/2.4
   FILES:=$(LINUX_DIR)/net/ipv6/ipv6.$(LINUX_KMOD_SUFFIX)
