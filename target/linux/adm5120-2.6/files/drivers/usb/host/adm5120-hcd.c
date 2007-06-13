@@ -30,6 +30,8 @@ MODULE_DESCRIPTION("ADM5120 USB Host Controller Driver");
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Jeroen Vreeken (pe1rxq@amsat.org)");
 
+#define PFX	"adm5120-hcd: "
+
 #define ADMHCD_REG_CONTROL		0x00
 #define ADMHCD_REG_INTSTATUS		0x04
 #define ADMHCD_REG_INTENABLE		0x08
@@ -826,11 +828,13 @@ static struct platform_driver adm5120hcd_driver = {
 
 static int __init adm5120hcd_init(void)
 {
-	if (usb_disabled())
+	if (usb_disabled()) 
 		return -ENODEV;
-	if (!adm5120_board.has_usb)
+	if (!adm5120_board.has_usb) {
+		printk(KERN_DEBUG PFX "this board does not have USB\n");
 		return -ENODEV;
 
+	printk(KERN_INFO PFX "registered\n");
 	return platform_driver_register(&adm5120hcd_driver);
 }
 
