@@ -1,7 +1,8 @@
-diff -ur linux.old/arch/mips/kernel/head.S linux.dev/arch/mips/kernel/head.S
---- linux.old/arch/mips/kernel/head.S	2006-12-06 17:30:27.000000000 +0100
-+++ linux.dev/arch/mips/kernel/head.S	2006-12-06 18:34:43.000000000 +0100
-@@ -129,15 +129,20 @@
+Index: linux-2.6.21.1/arch/mips/kernel/head.S
+===================================================================
+--- linux-2.6.21.1.orig/arch/mips/kernel/head.S
++++ linux-2.6.21.1/arch/mips/kernel/head.S
+@@ -129,14 +129,19 @@
  #endif
  	.endm
  
@@ -17,11 +18,9 @@ diff -ur linux.old/arch/mips/kernel/head.S linux.dev/arch/mips/kernel/head.S
 +	 * Use as temporary storage for the kernel command line, so that it
 +	 * can be updated easily without having to relink the kernel.
  	 */
--	.align 10
 +	 
 +EXPORT(_image_cmdline)
 +	.ascii "CMDLINE:"
-+	.align 10
+ 	.align 10
  
  EXPORT(stext)					# used for profiling
- EXPORT(_stext)

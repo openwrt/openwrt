@@ -1,7 +1,8 @@
-diff -urN linux-2.6.19.2/drivers/mtd/maps/Kconfig linux-2.6.19.2-adm5120/drivers/mtd/maps/Kconfig
---- linux-2.6.19.2/drivers/mtd/maps/Kconfig	2007-01-10 20:10:37.000000000 +0100
-+++ linux-2.6.19.2-adm5120/drivers/mtd/maps/Kconfig	2007-01-23 01:13:39.000000000 +0100
-@@ -622,5 +622,10 @@
+Index: linux-2.6.21.1/drivers/mtd/maps/Kconfig
+===================================================================
+--- linux-2.6.21.1.orig/drivers/mtd/maps/Kconfig
++++ linux-2.6.21.1/drivers/mtd/maps/Kconfig
+@@ -605,5 +605,10 @@ config MTD_PLATRAM
  
  	  This selection automatically selects the map_ram driver.
  
@@ -12,10 +13,11 @@ diff -urN linux-2.6.19.2/drivers/mtd/maps/Kconfig linux-2.6.19.2-adm5120/drivers
 +
  endmenu
  
-diff -urN linux-2.6.19.2/drivers/mtd/maps/Makefile linux-2.6.19.2-adm5120/drivers/mtd/maps/Makefile
---- linux-2.6.19.2/drivers/mtd/maps/Makefile	2007-01-10 20:10:37.000000000 +0100
-+++ linux-2.6.19.2-adm5120/drivers/mtd/maps/Makefile	2007-01-23 01:20:52.000000000 +0100
-@@ -43,6 +43,7 @@
+Index: linux-2.6.21.1/drivers/mtd/maps/Makefile
+===================================================================
+--- linux-2.6.21.1.orig/drivers/mtd/maps/Makefile
++++ linux-2.6.21.1/drivers/mtd/maps/Makefile
+@@ -45,6 +45,7 @@ obj-$(CONFIG_MTD_OCELOT)	+= ocelot.o
  obj-$(CONFIG_MTD_SOLUTIONENGINE)+= solutionengine.o
  obj-$(CONFIG_MTD_PCI)		+= pci.o
  obj-$(CONFIG_MTD_ALCHEMY)       += alchemy-flash.o

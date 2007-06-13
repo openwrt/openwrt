@@ -1,10 +1,10 @@
-diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
-index cfe288a..c528024 100644
---- a/drivers/mtd/nand/Kconfig
-+++ b/drivers/mtd/nand/Kconfig
-@@ -55,6 +55,12 @@ config MTD_NAND_TOTO
+Index: linux-2.6.21.1/drivers/mtd/nand/Kconfig
+===================================================================
+--- linux-2.6.21.1.orig/drivers/mtd/nand/Kconfig
++++ linux-2.6.21.1/drivers/mtd/nand/Kconfig
+@@ -75,6 +75,12 @@ config MTD_NAND_TS7250
  	help
- 	  Support for NAND flash on Texas Instruments Toto platform.
+ 	  Support for NAND flash on Technologic Systems TS-7250 platform.
  
 +config MTD_NAND_RB100
 +	tristate "NAND Flash device on RB100 board"
@@ -15,13 +15,13 @@ index cfe288a..c528024 100644
  config MTD_NAND_IDS
  	tristate
  
-diff --git a/drivers/mtd/nand/Makefile b/drivers/mtd/nand/Makefile
-index 4174202..2be57c1 100644
---- a/drivers/mtd/nand/Makefile
-+++ b/drivers/mtd/nand/Makefile
-@@ -8,6 +8,7 @@ obj-$(CONFIG_MTD_NAND_IDS)		+= nand_ids.
- 
+Index: linux-2.6.21.1/drivers/mtd/nand/Makefile
+===================================================================
+--- linux-2.6.21.1.orig/drivers/mtd/nand/Makefile
++++ linux-2.6.21.1/drivers/mtd/nand/Makefile
+@@ -10,6 +10,7 @@ obj-$(CONFIG_MTD_NAND_CAFE)		+= cafe_nan
  obj-$(CONFIG_MTD_NAND_SPIA)		+= spia.o
+ obj-$(CONFIG_MTD_NAND_AMS_DELTA)	+= ams-delta.o
  obj-$(CONFIG_MTD_NAND_TOTO)		+= toto.o
 +obj-$(CONFIG_MTD_NAND_RB100)		+= rbmipsnand.o
  obj-$(CONFIG_MTD_NAND_AUTCPU12)		+= autcpu12.o

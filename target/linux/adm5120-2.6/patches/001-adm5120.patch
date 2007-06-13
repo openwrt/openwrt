@@ -1,10 +1,11 @@
-diff -urN linux-2.6.19.2/arch/mips/Kconfig linux-2.6.19.2.new/arch/mips/Kconfig
---- linux-2.6.19.2/arch/mips/Kconfig	2007-01-10 20:10:37.000000000 +0100
-+++ linux-2.6.19.2.new/arch/mips/Kconfig	2007-01-23 14:49:38.000000000 +0100
-@@ -12,6 +12,21 @@
+Index: linux-2.6.21.1/arch/mips/Kconfig
+===================================================================
+--- linux-2.6.21.1.orig/arch/mips/Kconfig
++++ linux-2.6.21.1/arch/mips/Kconfig
+@@ -16,6 +16,21 @@ choice
  	prompt "System type"
  	default SGI_IP22
-
+ 
 +config MIPS_ADM5120
 +	bool "Support for ADM5120 SoC"
 +	select SYS_HAS_CPU_MIPS32_R1
@@ -23,12 +24,13 @@ diff -urN linux-2.6.19.2/arch/mips/Kconfig linux-2.6.19.2.new/arch/mips/Kconfig
  config MIPS_MTX1
  	bool "4G Systems MTX-1 board"
  	select DMA_NONCOHERENT
-diff -urN linux-2.6.19.2/arch/mips/Makefile linux-2.6.19.2.new/arch/mips/Makefile
---- linux-2.6.19.2/arch/mips/Makefile	2007-01-23 14:02:57.000000000 +0100
-+++ linux-2.6.19.2.new/arch/mips/Makefile	2007-01-23 14:49:39.000000000 +0100
-@@ -165,6 +165,14 @@
+Index: linux-2.6.21.1/arch/mips/Makefile
+===================================================================
+--- linux-2.6.21.1.orig/arch/mips/Makefile
++++ linux-2.6.21.1/arch/mips/Makefile
+@@ -165,6 +165,14 @@ cflags-$(CONFIG_MACH_JAZZ)	+= -Iinclude/
  load-$(CONFIG_MACH_JAZZ)	+= 0xffffffff80080000
-
+ 
  #
 +# ADMtek 5120
 +#
@@ -41,13 +43,14 @@ diff -urN linux-2.6.19.2/arch/mips/Makefile linux-2.6.19.2.new/arch/mips/Makefil
  # Common Alchemy Au1x00 stuff
  #
  core-$(CONFIG_SOC_AU1X00)	+= arch/mips/au1000/common/
-diff -urN linux-2.6.19.2/include/asm-mips/bootinfo.h linux-2.6.19.2.new/include/asm-mips/bootinfo.h
---- linux-2.6.19.2/include/asm-mips/bootinfo.h	2007-01-10 20:10:37.000000000 +0100
-+++ linux-2.6.19.2.new/include/asm-mips/bootinfo.h	2007-01-23 14:49:40.000000000 +0100
-@@ -212,6 +212,42 @@
+Index: linux-2.6.21.1/include/asm-mips/bootinfo.h
+===================================================================
+--- linux-2.6.21.1.orig/include/asm-mips/bootinfo.h
++++ linux-2.6.21.1/include/asm-mips/bootinfo.h
+@@ -213,6 +213,42 @@
  #define MACH_GROUP_NEC_EMMA2RH 25	/* NEC EMMA2RH (was 23)		*/
  #define  MACH_NEC_MARKEINS	0	/* NEC EMMA2RH Mark-eins	*/
-
+ 
 +/*
 + * Valid machtype for group ADMtek ADM5120
 + */
@@ -85,5 +88,5 @@ diff -urN linux-2.6.19.2/include/asm-mips/bootinfo.h linux-2.6.19.2.new/include/
 +#define MACH_ADM5120_ES2108PWR	30	/* ZyXEL Ethernet Switch 2108-PWR */
 +
  #define CL_SIZE			COMMAND_LINE_SIZE
-
+ 
  const char *get_system_type(void);

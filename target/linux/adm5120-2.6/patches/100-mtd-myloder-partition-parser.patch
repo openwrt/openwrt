@@ -1,7 +1,8 @@
-diff -Nur linux-2.6.19.2/drivers/mtd/Kconfig.old linux-2.6.19.2/drivers/mtd/Kconfig
---- linux-2.6.19.2/drivers/mtd/Kconfig.old	2007-03-25 08:13:02.000000000 +0200
-+++ linux-2.6.19.2/drivers/mtd/Kconfig	2007-03-26 13:37:47.000000000 +0200
-@@ -157,6 +157,22 @@
+Index: linux-2.6.21.1/drivers/mtd/Kconfig
+===================================================================
+--- linux-2.6.21.1.orig/drivers/mtd/Kconfig
++++ linux-2.6.21.1/drivers/mtd/Kconfig
+@@ -157,6 +157,22 @@ config MTD_AFS_PARTS
  	  for your particular device. It won't happen automatically. The
  	  'armflash' map driver (CONFIG_MTD_ARMFLASH) does this, for example.
  
@@ -24,10 +25,11 @@ diff -Nur linux-2.6.19.2/drivers/mtd/Kconfig.old linux-2.6.19.2/drivers/mtd/Kcon
  comment "User Modules And Translation Layers"
  	depends on MTD
  
-diff -Nur linux-2.6.19.2/drivers/mtd/Makefile.old linux-2.6.19.2/drivers/mtd/Makefile
---- linux-2.6.19.2/drivers/mtd/Makefile.old	2007-01-10 20:10:37.000000000 +0100
-+++ linux-2.6.19.2/drivers/mtd/Makefile	2007-03-26 13:28:23.000000000 +0200
-@@ -12,6 +12,7 @@
+Index: linux-2.6.21.1/drivers/mtd/Makefile
+===================================================================
+--- linux-2.6.21.1.orig/drivers/mtd/Makefile
++++ linux-2.6.21.1/drivers/mtd/Makefile
+@@ -12,6 +12,7 @@ obj-$(CONFIG_MTD_CONCAT)	+= mtdconcat.o
  obj-$(CONFIG_MTD_REDBOOT_PARTS) += redboot.o
  obj-$(CONFIG_MTD_CMDLINE_PARTS) += cmdlinepart.o
  obj-$(CONFIG_MTD_AFS_PARTS)	+= afs.o
