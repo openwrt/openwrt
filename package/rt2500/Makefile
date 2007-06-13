@@ -22,7 +22,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/rt2500
   SUBMENU:=Wireless Drivers
   TITLE:=Driver for ralink pci wireless chipsets
-  DEPENDS:=@USB_SUPPORT +wireless-tools
+  DEPENDS:=@!BIG_ENDIAN @USB_SUPPORT +wireless-tools
   DESCRIPTION:=\
 	This package contains a driver for ralink rt2500 pci chipsets.
   URL:=http://rt2x00.serialmonkey.com/
