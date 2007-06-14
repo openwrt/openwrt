@@ -51,6 +51,7 @@ rmdir /tmp/cf2nand/p1
 
 echo "Copying filesystem..."
 ( cd /tmp/cf2nand/rootfs; tar c . ) | ( cd /tmp/cf2nand/p2; tar x )
+echo "chmod ugo+x /" > /tmp/cf2nand/p2/etc/uci-defaults/set_root_permission
 sync
 umount /tmp/cf2nand/p2
 rmdir /tmp/cf2nand/p2
