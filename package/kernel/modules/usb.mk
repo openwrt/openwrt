@@ -245,6 +245,17 @@ define KernelPackage/usb-serial-visor
 endef
 $(eval $(call KernelPackage,usb-serial-visor))
 
+define KernelPackage/usb-serial-option
+  $(call usbdep,kmod-usb-serial)
+  TITLE:=Support for Option HSDPA modems
+  DESCRIPTION:=Kernel support for Option HSDPA modems
+  DEPENDS:=@LINUX_2_6
+  KCONFIG:=$(CONFIG_USB_SERIAL_OPTION)
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/option.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,65,option)
+endef
+$(eval $(call KernelPackage,usb-serial-option))
+
 
 define KernelPackage/usb-storage
   $(call usbdep,+kmod-scsi-core)
