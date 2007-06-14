@@ -29,6 +29,17 @@ extern unsigned long crc32 (unsigned long, const unsigned char *, unsigned int);
 #define ENV_CRC ~0
 #endif
 
+#ifdef LAN_IP
+	#warning LAN_IP
+#else
+	#warning LAN_IP NOT DEFINED
+#endif
+#ifdef LAN_SERVERIP
+	#warning LAN_SERVERIP
+#else
+	#warning LAN_SERVERIP NOT DEFINED
+#endif
+
 static char *environment[] = {
 	"bootdelay=3\0"
 	"baudrate=115200\0"
@@ -41,8 +52,8 @@ static char *environment[] = {
 	"flash=run fbargs; bootm 0xc0042000\0"
 	"bootargs=setenv bootargs root=/dev/mtdblock3 ro init=/etc/preinit console=/dev/ttyS0,115200,mem=32M\0"
 	"bootcmd=bootm 0xc0042000\0"
-	"ipaddr=10.0.1.73\0"
-	"serverip=10.0.1.210\0"
+	"ipaddr=" MK_STR(LAN_IP) "\0"
+	"serverip=" MK_STR(LAN_SERVERIP) "\0"
 	"\0"
 	};
 

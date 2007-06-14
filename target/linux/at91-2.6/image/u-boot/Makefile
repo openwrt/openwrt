@@ -22,13 +22,19 @@ PKG_CAT:=bzcat
 include $(INCLUDE_DIR)/package.mk
 
 UBOOT_CONFIG=$(strip $(subst ",, $(CONFIG_UBOOT_TARGET)))
+LAN_IP=$(strip $(CONFIG_UBOOT_IPADDR))
+LAN_SERVERIP=$(strip $(subst ",, $(CONFIG_UBOOT_SERVERIP)))
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) $(UBOOT_CONFIG)_config
 	export CROSS_COMPILE=$(TARGET_CROSS); \
+	export LAN_IP=$(LAN_IP); \
+	export LAN_SERVERIP=$(LAN_SERVERIP); \
 	$(MAKE) -C $(PKG_BUILD_DIR)
 	mkdir -p $(PKG_BUILD_DIR)/ubclient
 	$(CP) ./ubclient/* $(PKG_BUILD_DIR)/ubclient
+	export LAN_IP=$(LAN_IP); \
+	export LAN_SERVERIP=$(LAN_SERVERIP); \
 	$(MAKE) -C $(PKG_BUILD_DIR)/ubclient \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) -Dtarget_$(BOARD)=1"
