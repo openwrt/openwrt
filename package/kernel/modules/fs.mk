@@ -106,10 +106,19 @@ define KernelPackage/fs-nfsd
   DESCRIPTION:=Kernel module for NFS kernel server support
   KCONFIG:=$(CONFIG_NFSD)
   SUBMENU:=$(FSMENU)
-  AUTOLOAD:=$(call AutoLoad,30,nfsd)
   FILES:= \
   	$(LINUX_DIR)/fs/nfsd/nfsd.$(LINUX_KMOD_SUFFIX)
 endef
+
+define KernelPackage/fs-nfsd/2.4
+  AUTOLOAD:=$(call AutoLoad,30,nfsd)
+endef
+
+define KernelPackage/fs-nfsd/2.6
+  FILES+=$(LINUX_DIR)/fs/exportfs/exportfs.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,exportfs nfsd)
+endef
+
 $(eval $(call KernelPackage,fs-nfsd))
 
 define KernelPackage/fs-msdos
