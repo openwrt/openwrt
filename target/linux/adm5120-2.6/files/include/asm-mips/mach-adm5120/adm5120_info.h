@@ -50,6 +50,8 @@ extern unsigned int adm5120_package;
 #define ADM5120_PACKAGE_PQFP	0
 #define ADM5120_PACKAGE_BGA	1
 
+extern unsigned long adm5120_memsize;
+
 extern void adm5120_info_init(void);
 
 static inline int adm5120_package_pqfp(void)
