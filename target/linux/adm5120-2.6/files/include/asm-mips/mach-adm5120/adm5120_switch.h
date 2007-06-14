@@ -85,6 +85,19 @@
 #define CODE_PK_BGA		0		/* BGA package */
 #define CODE_PK_PQFP		1		/* PQFP package */
 
+/* MEMCTRL register bits */
+#define MEMCTRL_SDRS_MASK	BITMASK(3)	/* SDRAM bank size */
+#define MEMCTRL_SDRS_4M		0x01
+#define MEMCTRL_SDRS_8M		0x02
+#define MEMCTRL_SDRS_16M	0x03
+#define MEMCTRL_SDRS_64M	0x04
+#define MEMCTRL_SDRS_128M	0x05
+#define MEMCTRL_SDR1_ENABLE	ONEBIT(5)	/* enable SDRAM bank 1 */
+#define MEMCTRL_SR0S_MASK	BITMASK(3)	/* SRAM0 size */
+#define MEMCTRL_SR0S_SHIFT	8		
+#define MEMCTRL_SR1S_MASK	BITMAKS(3)	/* SRAM1 size */
+#define MEMCTRL_SR1S_SHIFT	16
+
 /* GPIO_CONF0 register bits */
 #define GPIO_CONF0_MASK		BITMASK(8)
 #define GPIO_CONF0_IM_SHIFT	0

@@ -833,6 +833,7 @@ static int __init adm5120hcd_init(void)
 	if (!adm5120_board.has_usb) {
 		printk(KERN_DEBUG PFX "this board does not have USB\n");
 		return -ENODEV;
+	}
 
 	printk(KERN_INFO PFX "registered\n");
 	return platform_driver_register(&adm5120hcd_driver);

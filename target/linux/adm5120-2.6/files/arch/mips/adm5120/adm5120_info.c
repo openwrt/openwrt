@@ -37,6 +37,7 @@ unsigned int adm5120_revision;
 unsigned int adm5120_package;
 unsigned int adm5120_nand_boot;
 unsigned long adm5120_speed;
+unsigned long adm5120_memsize;
 
 /*
  * Locals
@@ -266,7 +267,7 @@ static struct adm5120_board __initdata adm5120_boards[] = {
 		.mach_type	= MACH_ADM5120_UNKNOWN,
 		.has_usb	= 1,
 		.iface_num	= 5,
-		.flash0_size	= 0,
+		.flash0_size	= 4*1024*1024,
 	}
 };
 
@@ -728,6 +729,9 @@ static void __init adm5120_detect_board(void)
 	memcpy(&adm5120_board, board, sizeof(adm5120_board));
 }
 
+#define SWITCH_READ(r) *(u32 *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+(r))
+#define SWITCH_WRITE(r,v) *(u32 *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+(r))=(v)
+
 /*
  * CPU settings detection
  */
@@ -742,7 +746,7 @@ static void __init adm5120_detect_cpuinfo(void)
 	u32 code;
 	u32 clks;
 
-	code = *(u32 *)KSEG1ADDR(ADM5120_SWITCH_BASE+SWITCH_REG_CODE);
+	code = SWITCH_READ(SWITCH_REG_CODE);
 
 	adm5120_product_code = CODE_GET_PC(code);
 	adm5120_revision = CODE_GET_REV(code);
@@ -758,6 +762,127 @@ static void __init adm5120_detect_cpuinfo(void)
 		adm5120_speed += 50000000;
 }
 
+#if 1
+#  define mem_dbg(f, ...)	prom_printf("mem_detect: " f, ## __VA_ARGS__)
+extern void prom_printf(char *, ...);
+#else
+#  define mem_dbg(f, ...)
+#endif
+
+static void __init adm5120_detect_memsize(void)
+{
+	u32	memctrl;
+	u32	size, maxsize;
+	volatile u8	*p,*r;
+	u8	t;
+	
+	memctrl = SWITCH_READ(SWITCH_REG_MEMCTRL);
+	switch (memctrl & MEMCTRL_SDRS_MASK) {
+	case MEMCTRL_SDRS_4M:
+		maxsize = 4 << 20;
+		break;
+	case MEMCTRL_SDRS_8M:
+		maxsize = 8 << 20;
+		break;
+	case MEMCTRL_SDRS_16M:
+		maxsize = 16 << 20;
+		break;
+	default:
+		maxsize = 64 << 20;
+		break;
+	}
+	
+	/* FIXME: need to disable buffers for both SDRAM bank? */
+
+	mem_dbg("checking for %ldMB chip\n",maxsize >> 20);
+
+	/* detect size of the 1st SDRAM bank */
+	p = (volatile u8 *)KSEG1ADDR(0);
+	t = *p;
+	for (size = 2<<20; size <= (maxsize >> 1); size <<= 1) {
+#if 1	
+		r = (p+size);
+		*p = 0x55;
+		mem_dbg("1st pattern at 0x%lx is 0x%02x\n", size, *r);
+		if (*r == 0x55) {
+			*p = 0xAA;
+			mem_dbg("2nd pattern at 0x%lx is 0x%02x\n", size, *r);
+			if (*r == 0xAA) {
+				/* mirrored address */
+				mem_dbg("mirrored data found at 0x%lx\n", size);
+				break;
+			}
+		}
+#else
+		p[0] = 0x55;
+		mem_dbg("1st pattern at 0x%lx is 0x%02x\n", size, p[size]);
+		if (p[size] != 0x55)
+			continue;
+			
+		p[0] = 0xAA;
+		mem_dbg("2nd pattern at 0x%lx is 0x%02x\n", size, p[size]);
+		if (p[size] != 0xAA)
+			continue;
+
+		/* mirrored address */
+		mem_dbg("mirrored data found at 0x%lx\n", size);
+		break;
+#endif
+	}
+	*p = t;
+
+	mem_dbg("%ldMB chip found\n", size >> 20);
+
+	if (size == (32 << 20))
+		/* if bank size is 32MB, 2nd bank is not supported */
+		goto out;
+		
+	if ((memctrl & MEMCTRL_SDR1_ENABLE) == 0)
+		/* if 2nd bank is not enabled, we are done */
+		goto out;
+		
+	/*
+	 * some bootloaders enable 2nd bank, even if the 2nd SDRAM chip 
+	 * are missing.
+	 */
+	mem_dbg("checking second bank\n");
+	p += (maxsize+size)-1;
+	t = *p;
+	*p = 0x55;
+	if (*p != 0x55)
+		goto out;
+		
+	*p = 0xAA;
+	if (*p != 0xAA)
+		goto out;
+		
+	*p = t;
+	if (maxsize != size) {
+		/* adjusting MECTRL register */
+		memctrl &= ~(MEMCTRL_SDRS_MASK);
+		switch (size>>20) {
+		case 4:
+			memctrl |= MEMCTRL_SDRS_4M;
+			break;
+		case 8:
+			memctrl |= MEMCTRL_SDRS_8M;
+			break;
+		case 16:
+			memctrl |= MEMCTRL_SDRS_16M;
+			break;
+		default:
+			memctrl |= MEMCTRL_SDRS_64M;
+			break;
+		}
+		SWITCH_WRITE(SWITCH_REG_MEMCTRL, memctrl);
+	}
+	size <<= 1;
+
+out:
+	adm5120_memsize = size;
+	mem_dbg("%ldMB memory found\n",size>>20);
+}
+
 void __init adm5120_info_show(void)
 {
 	/* FIXME: move this somewhere else */
@@ -769,11 +894,13 @@ void __init adm5120_info_show(void)
 	printk("Boot loader is: %s\n", boot_loader_names[adm5120_boot_loader]);
 	printk("Booted from   : %s flash\n", adm5120_nand_boot ? "NAND":"NOR");
 	printk("Board is      : %s\n", adm5120_board_name());
+	printk("Memory size   : %ldMB\n", adm5120_memsize >> 20);
 }
 
 void __init adm5120_info_init(void)
 {
 	adm5120_detect_cpuinfo();
+	adm5120_detect_memsize();
 	adm5120_detect_board();
 
 	adm5120_info_show();
