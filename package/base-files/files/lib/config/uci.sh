@@ -67,7 +67,7 @@ uci_add_update() {
 	case "$PACKAGE" in
 		/*) UCIFILE="$PACKAGE";;
 		*)
-			UCIDIR="/tmp/.uci/$PACKAGE_BASE"
+			UCIFILE="/tmp/.uci/$PACKAGE_BASE"
 			mkdir -p "/tmp/.uci"
 		;;
 	esac
