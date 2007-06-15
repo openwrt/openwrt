@@ -85,7 +85,11 @@ config_clear() {
 }
 
 config_load() {
-	local file="$UCI_ROOT/etc/config/$1"
+	local file
+	case "$1" in
+		/*) file="$1";;
+		*) file="$UCI_ROOT/etc/config/$1";;
+	esac
 	_C=0
 	export ${NO_EXPORT:+-n} CONFIG_SECTIONS=
 	export ${NO_EXPORT:+-n} CONFIG_NUM_SECTIONS=0

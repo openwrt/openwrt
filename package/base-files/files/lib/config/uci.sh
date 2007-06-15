@@ -62,10 +62,18 @@ uci_add_update() {
 	local PACKAGE="$1"
 	local UPDATE="$2"
 	local PACKAGE_BASE="$(basename "$PACKAGE")"
-	
+	local UCIFILE
+
+	case "$PACKAGE" in
+		/*) UCIFILE="$PACKAGE";;
+		*)
+			UCIDIR="/tmp/.uci/$PACKAGE_BASE"
+			mkdir -p "/tmp/.uci"
+		;;
+	esac
+
 	# FIXME: add locking?
-	mkdir -p "/tmp/.uci"
-	echo "$UPDATE" >> "/tmp/.uci/${PACKAGE_BASE}"
+	echo "$UPDATE" >> "$UCIFILE"
 }
 
 uci_set() {
@@ -74,14 +82,21 @@ uci_set() {
 	local OPTION="$3"
 	local VALUE="$4"
 
-	( # spawn a subshell so you don't mess up the current environment
-		uci_load "$PACKAGE"
-		config_get OLDVAL "$CONFIG" "$OPTION"
-		if [ "$OLDVAL" != "$VALUE" ]; then
-			config_get type "$CONFIG" TYPE
-			[ -z "$type" ]
-		fi
-	) || uci_add_update "$PACKAGE" "config_set '$CONFIG' '$OPTION' '$VALUE'"
+	case "$PACKAGE" in
+		/*)
+			uci_add_update "$PACKAGE" "config_set '$CONFIG' '$OPTION' '$VALUE'"
+		;;
+		*)
+			( # spawn a subshell so you don't mess up the current environment
+				uci_load "$PACKAGE"
+				config_get OLDVAL "$CONFIG" "$OPTION"
+				if [ "$OLDVAL" != "$VALUE" ]; then
+					config_get type "$CONFIG" TYPE
+					[ -z "$type" ]
+				fi
+			) || uci_add_update "$PACKAGE" "config_set '$CONFIG' '$OPTION' '$VALUE'"
+		;;
+	esac
 }
 
 uci_add() {
@@ -116,6 +131,9 @@ uci_commit() {
 	local PACKAGE="$1"
 	local PACKAGE_BASE="$(basename "$PACKAGE")"
 
+	case "$PACKAGE" in
+		/*) return 0;;
+	esac
 	mkdir -p /tmp/.uci
 	LOCK=`which lock` || LOCK=:
 	$LOCK "/tmp/.uci/$PACKAGE_BASE.lock"
