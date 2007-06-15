@@ -55,7 +55,7 @@ config_rename() {
 	local oldvar
 	local newvar
 	
-	[ "$OLD" -a "$NEW" ] || return
+	[ -n "$OLD" -a -n "$NEW" ] || return
 	for oldvar in `set | grep ^CONFIG_${OLD}_ | \
 		sed -e 's/\(.*\)=.*$/\1/'` ; do
 		newvar="CONFIG_${NEW}_${oldvar##CONFIG_${OLD}_}"
@@ -139,7 +139,7 @@ config_foreach() {
 	[ -z "$CONFIG_SECTIONS" ] && return 0
 	for section in ${CONFIG_SECTIONS}; do
 		config_get cfgtype "$section" TYPE
-		[ -n "$type" -a "$cfgtype" != "$type" ] && continue
+		[ -n "$type" -a "x$cfgtype" != "x$type" ] && continue
 		eval "$function \"\$section\""
 	done
 }
@@ -186,7 +186,7 @@ strtok() { # <string> { <variable> [<separator>] ... }
 		shift 2
 	done
 
-	if [ $# -gt 0 -a "$val" ]; then
+	if [ $# -gt 0 -a -n "$val" ]; then
 		export ${NO_EXPORT:+-n} "$1=$val"; count=$((count+1))
 	fi
 
