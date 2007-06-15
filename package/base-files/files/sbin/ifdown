@@ -20,7 +20,7 @@ config_get proto "$cfg" proto
 [ -z "$proto" ] && { echo "interface not found."; exit; }
 
 config_get iface "$cfg" device
-[ "$proto" = "static" ] && {
+[ "static" = "$proto" ] && {
 	env -i ACTION="ifdown" INTERFACE="$cfg" DEVICE="$iface" PROTO=static /sbin/hotplug-call "iface" &
 }
 
@@ -58,5 +58,5 @@ for dev in $ifname $device; do
 done
 
 config_get iftype "$cfg" type
-[ "$iftype" = "bridge" ] && brctl delbr "$ifname" >/dev/null 2>/dev/null
+[ "bridge" = "$iftype" ] && brctl delbr "$ifname" >/dev/null 2>/dev/null
 
