@@ -13,7 +13,7 @@ find_config() {
 		esac
 		config_get device "$ifn" device
 		for ifc in $device $iface $ifaces; do
-			[ "$ifc" = "$1" ] && {
+			[ ."$ifc" = ."$1" ] && {
 				echo "$ifn"
 				return 0
 			}
@@ -74,7 +74,7 @@ prepare_interface() {
 	# if we're called for the bridge interface itself, don't bother trying
 	# to create any interfaces here. The scripts have already done that, otherwise
 	# the bridge interface wouldn't exist.
-	[ "$iface" = "br-$config" ] && return 0;
+	[ "br-$config" = "$iface" ] && return 0;
 
 	[ -f "$iface" ] && return 0;
 	
@@ -181,7 +181,7 @@ setup_interface() {
 				$DEBUG ifconfig "$iface" "$ipaddr" ${netmask:+netmask "$netmask"}
 
 			# don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
-			[ "$proto1" != "$proto" ] && dhcpopts="-n -q"
+			[ ."$proto1" != ."$proto" ] && dhcpopts="-n -q"
 			$DEBUG eval udhcpc -t 0 -i "$iface" ${ipaddr:+-r $ipaddr} ${hostname:+-H $hostname} -b -p "$pidfile" ${dhcpopts:- -R &}
 			lock -u "/var/lock/dhcp-$iface"
 		;;

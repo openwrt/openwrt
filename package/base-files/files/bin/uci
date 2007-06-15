@@ -106,7 +106,7 @@ do_show() {
 		SECTION=""
 	
 		config_cb() {
-			if [ -z "$CONFIG" -o "$CONFIG" = "$2" ]; then
+			if [ -z "$CONFIG" -o ."$CONFIG" = ."$2" ]; then
 				append SECTION "$2"
 				option_cb() {
 					append "${CONFIG_SECTION}_VARS" "$1"
