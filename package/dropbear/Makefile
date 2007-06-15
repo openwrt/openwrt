@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
 PKG_VERSION:=0.49
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://matt.ucc.asn.au/dropbear/releases/ \
@@ -86,6 +86,9 @@ define Package/dropbear/install
 	$(INSTALL_DATA) ./files/dropbear.config $(1)/etc/config/dropbear
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/dropbear.init $(1)/etc/init.d/dropbear
+	$(INSTALL_DIR) $(1)/usr/lib/ipkg/info
+	echo /etc/dropbear/dropbear_rsa_host_key > $(1)/usr/lib/ipkg/info/dropbear.conffiles
+	echo /etc/dropbear/dropbear_dss_host_key >> $(1)/usr/lib/ipkg/info/dropbear.conffiles
 endef
 
 define Package/dropbearconvert/install
