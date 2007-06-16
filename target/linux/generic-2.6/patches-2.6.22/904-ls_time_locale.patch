@@ -1,0 +1,21 @@
+diff -urN linux-2.6.21.1.old/scripts/gen_initramfs_list.sh linux-2.6.21.1.dev/scripts/gen_initramfs_list.sh
+--- linux-2.6.21.1.old/scripts/gen_initramfs_list.sh	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/scripts/gen_initramfs_list.sh	2007-05-26 21:32:53.679383816 +0200
+@@ -125,7 +125,7 @@
+ 			str="${ftype} ${name} ${location} ${str}"
+ 			;;
+ 		"nod")
+-			local dev=`LC_ALL=C ls -l "${location}"`
++			local dev=`LC_ALL=C ls -l --time-style=locale "${location}"`
+ 			local maj=`field 5 ${dev}`
+ 			local min=`field 6 ${dev}`
+ 			maj=${maj%,}
+@@ -135,7 +135,7 @@
+ 			str="${ftype} ${name} ${str} ${dev} ${maj} ${min}"
+ 			;;
+ 		"slink")
+-			local target=`field 11 $(LC_ALL=C ls -l "${location}")`
++			local target=`field 11 $(LC_ALL=C ls -l --time-style=locale "${location}")`
+ 			str="${ftype} ${name} ${target} ${str}"
+ 			;;
+ 		*)

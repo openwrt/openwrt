@@ -47,9 +47,9 @@ define Kernel/Configure/2.6
 endef
 define Kernel/Configure/Default
 	@if [ -f "./config/profile-$(PROFILE)" ]; then \
-		$(SCRIPT_DIR)/config.pl '+' $(GENERIC_PLATFORM_DIR)/config-template '+' $(LINUX_CONFIG) ./config/profile-$(PROFILE) > $(LINUX_DIR)/.config; \
+		$(SCRIPT_DIR)/config.pl '+' $(GENERIC_LINUX_CONFIG) '+' $(LINUX_CONFIG) ./config/profile-$(PROFILE) > $(LINUX_DIR)/.config; \
 	else \
-		$(SCRIPT_DIR)/config.pl '+' $(GENERIC_PLATFORM_DIR)/config-template $(LINUX_CONFIG) > $(LINUX_DIR)/.config; \
+		$(SCRIPT_DIR)/config.pl '+' $(GENERIC_LINUX_CONFIG) $(LINUX_CONFIG) > $(LINUX_DIR)/.config; \
 	fi
 	$(call Kernel/Configure/$(KERNEL))
 	rm -rf $(KERNEL_BUILD_DIR)/modules

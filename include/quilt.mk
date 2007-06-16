@@ -46,11 +46,11 @@ endif
 define Kernel/Patch/Default
 	if [ -d $(GENERIC_PLATFORM_DIR)/files ]; then $(CP) $(GENERIC_PLATFORM_DIR)/files/* $(LINUX_DIR)/; fi
 	if [ -d ./files ]; then $(CP) ./files/* $(LINUX_DIR)/; fi
-	$(if $(strip $(QUILT)),$(call Quilt/Patch,$(GENERIC_PLATFORM_DIR)/patches,generic/), \
-		if [ -d $(GENERIC_PLATFORM_DIR)/patches ]; then $(PATCH) $(LINUX_DIR) $(GENERIC_PLATFORM_DIR)/patches; fi \
+	$(if $(strip $(QUILT)),$(call Quilt/Patch,$(GENERIC_PATCH_DIR),generic/), \
+		if [ -d $(GENERIC_PATCH_DIR) ]; then $(PATCH) $(LINUX_DIR) $(GENERIC_PATCH_DIR); fi \
 	)
-	$(if $(strip $(QUILT)),$(call Quilt/Patch,./patches,platform/), \
-		if [ -d ./patches ]; then $(PATCH) $(LINUX_DIR) ./patches; fi \
+	$(if $(strip $(QUILT)),$(call Quilt/Patch,$(PATCH_DIR),platform/), \
+		if [ -d $(PATCH_DIR) ]; then $(PATCH) $(LINUX_DIR) $(PATCH_DIR); fi \
 	)
 	$(if $(strip $(QUILT)),touch $(PKG_BUILD_DIR)/.quilt_used)
 endef
@@ -79,8 +79,8 @@ define Quilt/Refresh/Kernel
 		echo "All kernel patches must start with either generic/ or platform/"; \
 		false; \
 	}
-	$(call Quilt/RefreshDir,$(GENERIC_PLATFORM_DIR)/patches,generic/)
-	$(call Quilt/RefreshDir,./patches,platform/)
+	$(call Quilt/RefreshDir,$(GENERIC_PATCH_DIR),generic/)
+	$(call Quilt/RefreshDir,$(PATCH_DIR),platform/)
 endef
 
 quilt-check: $(STAMP_PREPARED) FORCE

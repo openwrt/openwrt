@@ -11,9 +11,11 @@ include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/prereq.mk
 
-LINUX_CONFIG ?= ./config/default
+GENERIC_LINUX_CONFIG:=$(GENERIC_PLATFORM_DIR)/config-$(shell [ -f "$(GENERIC_PLATFORM_DIR)/config-$(KERNEL_PATCHVER)" ] && echo "$(KERNEL_PATCHVER)" || echo template ) 
+LINUX_CONFIG_DIR ?= ./config$(shell [ -d "./config-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
+LINUX_CONFIG ?= $(LINUX_CONFIG_DIR)/default
 
--include $(TOPDIR)/target/linux/generic-$(KERNEL)/config-template
+-include $(GENERIC_LINUX_CONFIG)
 -include $(LINUX_CONFIG)
 
 ifneq ($(CONFIG_ATM),)
@@ -166,9 +168,9 @@ prepare: $(LINUX_DIR)/.configured
 compile: $(LINUX_DIR)/.modules
 menuconfig: $(LINUX_DIR)/.prepared FORCE
 	$(call Kernel/Configure)
-	$(SCRIPT_DIR)/config.pl '+' $(GENERIC_PLATFORM_DIR)/config-template $(LINUX_CONFIG) > $(LINUX_DIR)/.config
+	$(SCRIPT_DIR)/config.pl '+' $(GENERIC_LINUX_CONFIG) $(LINUX_CONFIG) > $(LINUX_DIR)/.config
 	$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) menuconfig
-	$(SCRIPT_DIR)/config.pl '>' $(GENERIC_PLATFORM_DIR)/config-template $(LINUX_DIR)/.config > $(LINUX_CONFIG)
+	$(SCRIPT_DIR)/config.pl '>' $(GENERIC_LINUX_CONFIG) $(LINUX_DIR)/.config > $(LINUX_CONFIG)
 
 install: $(LINUX_DIR)/.image
 

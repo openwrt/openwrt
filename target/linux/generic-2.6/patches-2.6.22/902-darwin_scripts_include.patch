@@ -1,0 +1,108 @@
+diff -urN linux-2.6.21.1.old/scripts/genksyms/parse.c_shipped linux-2.6.21.1.dev/scripts/genksyms/parse.c_shipped
+--- linux-2.6.21.1.old/scripts/genksyms/parse.c_shipped	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/scripts/genksyms/parse.c_shipped	2007-05-26 21:26:23.565690112 +0200
+@@ -144,7 +144,9 @@
+ 
+ 
+ #include <assert.h>
++#ifndef __APPLE__
+ #include <malloc.h>
++#endif
+ #include "genksyms.h"
+ 
+ static int is_typedef;
+diff -urN linux-2.6.21.1.old/scripts/genksyms/parse.y linux-2.6.21.1.dev/scripts/genksyms/parse.y
+--- linux-2.6.21.1.old/scripts/genksyms/parse.y	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/scripts/genksyms/parse.y	2007-05-26 21:26:23.563690416 +0200
+@@ -24,7 +24,9 @@
+ %{
+ 
+ #include <assert.h>
++#ifndef __APPLE__
+ #include <malloc.h>
++#endif
+ #include "genksyms.h"
+ 
+ static int is_typedef;
+diff -urN linux-2.6.21.1.old/scripts/kallsyms.c linux-2.6.21.1.dev/scripts/kallsyms.c
+--- linux-2.6.21.1.old/scripts/kallsyms.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/scripts/kallsyms.c	2007-05-26 21:26:23.579687984 +0200
+@@ -30,6 +30,35 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <ctype.h>
++#ifdef __APPLE__
++/* Darwin has no memmem implementation, this one is ripped of the uClibc-0.9.28 source */
++void *memmem (const void *haystack, size_t haystack_len,
++                          const void *needle,  size_t needle_len)
++{
++  const char *begin;
++  const char *const last_possible
++    = (const char *) haystack + haystack_len - needle_len;
++
++  if (needle_len == 0)
++    /* The first occurrence of the empty string is deemed to occur at
++       the beginning of the string.  */
++    return (void *) haystack;
++
++  /* Sanity check, otherwise the loop might search through the whole
++     memory.  */
++  if (__builtin_expect (haystack_len < needle_len, 0))
++    return NULL;
++
++  for (begin = (const char *) haystack; begin <= last_possible; ++begin)
++    if (begin[0] == ((const char *) needle)[0] &&
++        !memcmp ((const void *) &begin[1],
++                 (const void *) ((const char *) needle + 1),
++                 needle_len - 1))
++      return (void *) begin;
++
++  return NULL;
++}
++#endif
+ 
+ #define KSYM_NAME_LEN		127
+ 
+diff -urN linux-2.6.21.1.old/scripts/kconfig/Makefile linux-2.6.21.1.dev/scripts/kconfig/Makefile
+--- linux-2.6.21.1.old/scripts/kconfig/Makefile	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/scripts/kconfig/Makefile	2007-05-26 21:26:23.553691936 +0200
+@@ -87,6 +87,9 @@
+ # we really need to do so. (Do not call gcc as part of make mrproper)
+ HOST_EXTRACFLAGS = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags)
+ HOST_LOADLIBES   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOSTCC))
++ifeq ($(shell uname -s),Darwin)
++HOST_LOADLIBES  += -lncurses
++endif
+ 
+ HOST_EXTRACFLAGS += -DLOCALE
+ 
+diff -urN linux-2.6.21.1.old/scripts/mod/mk_elfconfig.c linux-2.6.21.1.dev/scripts/mod/mk_elfconfig.c
+--- linux-2.6.21.1.old/scripts/mod/mk_elfconfig.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/scripts/mod/mk_elfconfig.c	2007-05-26 21:26:23.553691936 +0200
+@@ -1,7 +1,11 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#ifndef __APPLE__
+ #include <elf.h>
++#else
++#include "../../../../../tools/sstrip/include/elf.h"
++#endif
+ 
+ int
+ main(int argc, char **argv)
+diff -urN linux-2.6.21.1.old/scripts/mod/modpost.h linux-2.6.21.1.dev/scripts/mod/modpost.h
+--- linux-2.6.21.1.old/scripts/mod/modpost.h	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/scripts/mod/modpost.h	2007-05-26 21:26:23.553691936 +0200
+@@ -7,7 +7,11 @@
+ #include <sys/mman.h>
+ #include <fcntl.h>
+ #include <unistd.h>
++#ifndef __APPLE__
+ #include <elf.h>
++#else
++#include "../../../../../tools/sstrip/include/elf.h"
++#endif
+ 
+ #include "elfconfig.h"
+ 

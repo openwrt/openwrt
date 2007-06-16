@@ -1,0 +1,19 @@
+diff -urN linux-2.6.21.1.old/arch/mips/mm/tlbex.c linux-2.6.21.1.dev/arch/mips/mm/tlbex.c
+--- linux-2.6.21.1.old/arch/mips/mm/tlbex.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/arch/mips/mm/tlbex.c	2007-05-26 19:50:19.046030304 +0200
+@@ -887,7 +887,6 @@
+ 	case CPU_R10000:
+ 	case CPU_R12000:
+ 	case CPU_R14000:
+-	case CPU_4KC:
+ 	case CPU_SB1:
+ 	case CPU_SB1A:
+ 	case CPU_4KSC:
+@@ -915,6 +914,7 @@
+ 		tlbw(p);
+ 		break;
+ 
++	case CPU_4KC:
+ 	case CPU_4KEC:
+ 	case CPU_24K:
+ 	case CPU_34K:
