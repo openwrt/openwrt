@@ -10,6 +10,12 @@
 	config_load network
 	exit
 }
+
+# remove the interface's network state
+FILE=/var/state/network.$$
+grep -v "^config_set '$1' " /var/state/network > "$FILE"
+mv "$FILE" /var/state/network
+
 include /lib/network
 scan_interfaces
 

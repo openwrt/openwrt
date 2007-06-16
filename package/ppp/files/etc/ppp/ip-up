@@ -1,5 +1,17 @@
 #!/bin/sh
-[ -z "$6" ] || env -i ACTION="ifup" INTERFACE="$6" DEVICE="$1" PROTO=ppp /sbin/hotplug-call "iface"
+PPP_IFACE="$1"
+PPP_TTY="$2"
+PPP_SPEED="$3"
+PPP_LOCAL="$4"
+PPP_REMOTE="$5"
+PPP_IPPARAM="$6"
+export PPP_IFACE PPP_TTY PPP_SPEED PPP_LOCAL PPP_REMOTE PPP_IPPARAM
+[ -z "$PPP_IPPARAM" ] || env -i ACTION="ifup" INTERFACE="$PPP_IPPARAM" DEVICE="$PPP_IFACE" PROTO=ppp /sbin/hotplug-call "iface"
+[ -z "$PPP_IPPARAM" -o -z "$PPP_LOCAL" ] || {
+	uci set "/var/state/network.$PPP_IPPARAM.ipaddr=$PPP_LOCAL"
+	uci set "/var/state/network.$PPP_IPPARAM.gateway=$PPP_REMOTE"
+}
+
 
 [ -d /etc/ppp/ip-up.d ] && {
 	for SCRIPT in /etc/ppp/ip-up.d/*
