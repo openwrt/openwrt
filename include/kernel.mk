@@ -26,8 +26,11 @@ else
     KERNEL_CROSS:=$(TARGET_CROSS)
   endif
 
+  KERNEL_PATCHVER:=$(shell echo $(LINUX_VERSION) | cut -d. -f1,2,3 | cut -d- -f1)
   PLATFORM_DIR := $(TOPDIR)/target/linux/$(BOARD)-$(KERNEL)
+  PATCH_DIR := ./patches$(shell [ -d "./patches-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
   GENERIC_PLATFORM_DIR := $(TOPDIR)/target/linux/generic-$(KERNEL)
+  GENERIC_PATCH_DIR := $(GENERIC_PLATFORM_DIR)/patches$(shell [ -d "$(GENERIC_PLATFORM_DIR)/patches-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
   KERNEL_BUILD_DIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
   LINUX_DIR := $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
 
@@ -37,10 +40,11 @@ else
   LINUX_KERNEL:=$(KERNEL_BUILD_DIR)/vmlinux
 
   LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.bz2
-  LINUX_SITE:=http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL) \
-           http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL) \
-           http://www.kernel.org/pub/linux/kernel/v$(KERNEL) \
-           http://www.de.kernel.org/pub/linux/kernel/v$(KERNEL)
+  TESTING:=$(if $(findstring -rc,$(LINUX_VERSION)),/testing,)
+  LINUX_SITE:=http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL)$(TESTING) \
+           http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL)$(TESTING) \
+           http://www.kernel.org/pub/linux/kernel/v$(KERNEL)$(TESTING) \
+           http://www.de.kernel.org/pub/linux/kernel/v$(KERNEL)$(TESTING)
 
   PKG_BUILD_DIR ?= $(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 

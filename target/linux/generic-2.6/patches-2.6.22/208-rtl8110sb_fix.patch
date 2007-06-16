@@ -1,0 +1,25 @@
+diff -urN linux-2.6.21.1.old/drivers/net/r8169.c linux-2.6.21.1.dev/drivers/net/r8169.c
+--- linux-2.6.21.1.old/drivers/net/r8169.c	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/drivers/net/r8169.c	2007-05-26 20:58:17.370030816 +0200
+@@ -494,7 +494,7 @@
+ #endif
+ 
+ static const u16 rtl8169_intr_mask =
+-	SYSErr | LinkChg | RxOverflow | RxFIFOOver | TxErr | TxOK | RxErr | RxOK;
++	LinkChg | RxOverflow | RxFIFOOver | TxErr | TxOK | RxErr | RxOK;
+ static const u16 rtl8169_napi_event =
+ 	RxOK | RxOverflow | RxFIFOOver | TxOK | TxErr;
+ static const unsigned int rtl8169_rx_config =
+@@ -2640,10 +2640,12 @@
+ 		if (!(status & rtl8169_intr_mask))
+ 			break;
+ 
++#if 0
+ 		if (unlikely(status & SYSErr)) {
+ 			rtl8169_pcierr_interrupt(dev);
+ 			break;
+ 		}
++#endif
+ 
+ 		if (status & LinkChg)
+ 			rtl8169_check_link_status(dev, tp, ioaddr);

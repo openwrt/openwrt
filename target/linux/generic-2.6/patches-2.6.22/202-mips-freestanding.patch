@@ -1,0 +1,13 @@
+diff -urN linux-2.6.21.1.old/arch/mips/Makefile linux-2.6.21.1.dev/arch/mips/Makefile
+--- linux-2.6.21.1.old/arch/mips/Makefile	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/arch/mips/Makefile	2007-05-26 20:49:09.358341256 +0200
+@@ -589,6 +589,9 @@
+ core-$(CONFIG_TOSHIBA_RBTX4938) += arch/mips/tx4938/common/
+ load-$(CONFIG_TOSHIBA_RBTX4938) += 0xffffffff80100000
+ 
++# temporary until string.h is fixed
++cflags-y += -ffreestanding
++
+ cflags-y			+= -Iinclude/asm-mips/mach-generic
+ drivers-$(CONFIG_PCI)		+= arch/mips/pci/
+ 

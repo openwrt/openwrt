@@ -1,0 +1,18 @@
+diff -urN linux-2.6.21.1.old/include/linux/stddef.h linux-2.6.21.1.dev/include/linux/stddef.h
+--- linux-2.6.21.1.old/include/linux/stddef.h	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/include/linux/stddef.h	2007-05-26 21:29:46.108898864 +0200
+@@ -16,6 +16,7 @@
+ 	false	= 0,
+ 	true	= 1
+ };
++#endif /* __KERNEL__ */
+ 
+ #undef offsetof
+ #ifdef __compiler_offsetof
+@@ -23,6 +24,5 @@
+ #else
+ #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+ #endif
+-#endif /* __KERNEL__ */
+ 
+ #endif

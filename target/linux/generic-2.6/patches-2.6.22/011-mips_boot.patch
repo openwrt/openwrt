@@ -1,0 +1,20 @@
+diff -urN linux-2.6.21.1.old/arch/mips/kernel/head.S linux-2.6.21.1.dev/arch/mips/kernel/head.S
+--- linux-2.6.21.1.old/arch/mips/kernel/head.S	2007-04-27 23:49:26.000000000 +0200
++++ linux-2.6.21.1.dev/arch/mips/kernel/head.S	2007-05-26 19:46:49.061952736 +0200
+@@ -129,11 +129,15 @@
+ #endif
+ 	.endm
+ 
++
++	j kernel_entry
++	nop
++
+ 	/*
+ 	 * Reserved space for exception handlers.
+ 	 * Necessary for machines which link their kernels at KSEG0.
+ 	 */
+-	.fill	0x400
++	.align 10
+ 
+ EXPORT(stext)					# used for profiling
+ EXPORT(_stext)
