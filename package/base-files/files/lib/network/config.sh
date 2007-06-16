@@ -74,9 +74,7 @@ prepare_interface() {
 	# if we're called for the bridge interface itself, don't bother trying
 	# to create any interfaces here. The scripts have already done that, otherwise
 	# the bridge interface wouldn't exist.
-	[ "br-$config" = "$iface" ] && return 0;
-
-	[ -f "$iface" ] && return 0;
+	[ "br-$config" = "$iface" -o -f "$iface" ] && return 0;
 	
 	ifconfig "$iface" 2>/dev/null >/dev/null && {
 		# make sure the interface is removed from any existing bridge and brought down
@@ -155,9 +153,11 @@ setup_interface() {
 			[ -z "$ip6addr" ] || $DEBUG ifconfig "$iface" add "$ip6addr"
 			[ -z "$gateway" ] || $DEBUG route add default gw "$gateway"
 			[ -z "$bcast" ] || $DEBUG ifconfig "$iface" broadcast "$bcast"
-			[ -z "$dns" -o -f /tmp/resolv.conf.auto ] || {
+			[ -z "$dns" ] || {
 				for ns in $dns; do
-					echo "nameserver $ns" >> /tmp/resolv.conf.auto
+					grep "$ns" /tmp/resolv.conf.auto 2>/dev/null >/dev/null || {
+						echo "nameserver $ns" >> /tmp/resolv.conf.auto
+					}
 				done
 			}
 

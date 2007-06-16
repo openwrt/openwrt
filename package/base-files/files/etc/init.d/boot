@@ -35,6 +35,7 @@ start() {
 	mkdir -p /var/run
 	mkdir -p /var/log
 	mkdir -p /var/lock
+	mkdir -p /var/state
 	touch /var/log/wtmp
 	touch /var/log/lastlog
 	ln -s /tmp/resolv.conf.auto /tmp/resolv.conf
