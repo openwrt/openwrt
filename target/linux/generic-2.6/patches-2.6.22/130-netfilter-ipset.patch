@@ -1,6 +1,7 @@
-diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set.h
---- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set.h	2007-06-08 16:29:31.825808000 -0500
+Index: linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set.h	2007-06-17 01:56:58.435888424 +0200
 @@ -0,0 +1,498 @@
 +#ifndef _IP_SET_H
 +#define _IP_SET_H
@@ -500,9 +501,10 @@ diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1.ne
 +#endif				/* __KERNEL__ */
 +
 +#endif /*_IP_SET_H*/
-diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_iphash.h linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_iphash.h
---- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_iphash.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_iphash.h	2007-06-08 16:29:31.829808250 -0500
+Index: linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set_iphash.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set_iphash.h	2007-06-17 01:56:58.435888424 +0200
 @@ -0,0 +1,30 @@
 +#ifndef __IP_SET_IPHASH_H
 +#define __IP_SET_IPHASH_H
@@ -534,9 +536,10 @@ diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_iphash.h linux-2.6.
 +};
 +
 +#endif	/* __IP_SET_IPHASH_H */
-diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_ipmap.h linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_ipmap.h
---- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_ipmap.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_ipmap.h	2007-06-08 16:29:31.829808250 -0500
+Index: linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set_ipmap.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set_ipmap.h	2007-06-17 01:56:58.436888272 +0200
 @@ -0,0 +1,56 @@
 +#ifndef __IP_SET_IPMAP_H
 +#define __IP_SET_IPMAP_H
@@ -594,9 +597,10 @@ diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_ipmap.h linux-2.6.2
 +}
 +	
 +#endif /* __IP_SET_IPMAP_H */
-diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_ipporthash.h linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_ipporthash.h
---- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_ipporthash.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_ipporthash.h	2007-06-08 16:29:31.829808250 -0500
+Index: linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set_ipporthash.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set_ipporthash.h	2007-06-17 01:56:58.436888272 +0200
 @@ -0,0 +1,34 @@
 +#ifndef __IP_SET_IPPORTHASH_H
 +#define __IP_SET_IPPORTHASH_H
@@ -632,9 +636,10 @@ diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_ipporthash.h linux-
 +};
 +
 +#endif	/* __IP_SET_IPPORTHASH_H */
-diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_iptree.h linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_iptree.h
---- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_iptree.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_iptree.h	2007-06-08 16:29:31.829808250 -0500
+Index: linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set_iptree.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set_iptree.h	2007-06-17 01:56:58.436888272 +0200
 @@ -0,0 +1,40 @@
 +#ifndef __IP_SET_IPTREE_H
 +#define __IP_SET_IPTREE_H
@@ -676,161 +681,10 @@ diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_iptree.h linux-2.6.
 +};
 +
 +#endif	/* __IP_SET_IPTREE_H */
-diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_jhash.h linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_jhash.h
---- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_jhash.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_jhash.h	2007-06-08 16:29:31.829808250 -0500
-@@ -0,0 +1,148 @@
-+#ifndef _LINUX_IPSET_JHASH_H
-+#define _LINUX_IPSET_JHASH_H
-+
-+/* This is a copy of linux/jhash.h but the types u32/u8 are changed
-+ * to __u32/__u8 so that the header file can be included into
-+ * userspace code as well. Jozsef Kadlecsik (kadlec@blackhole.kfki.hu)
-+ */
-+
-+/* jhash.h: Jenkins hash support.
-+ *
-+ * Copyright (C) 1996 Bob Jenkins (bob_jenkins@burtleburtle.net)
-+ *
-+ * http://burtleburtle.net/bob/hash/
-+ *
-+ * These are the credits from Bob's sources:
-+ *
-+ * lookup2.c, by Bob Jenkins, December 1996, Public Domain.
-+ * hash(), hash2(), hash3, and mix() are externally useful functions.
-+ * Routines to test the hash are included if SELF_TEST is defined.
-+ * You can use this free for any purpose.  It has no warranty.
-+ *
-+ * Copyright (C) 2003 David S. Miller (davem@redhat.com)
-+ *
-+ * I've modified Bob's hash to be useful in the Linux kernel, and
-+ * any bugs present are surely my fault.  -DaveM
-+ */
-+
-+/* NOTE: Arguments are modified. */
-+#define __jhash_mix(a, b, c) \
-+{ \
-+  a -= b; a -= c; a ^= (c>>13); \
-+  b -= c; b -= a; b ^= (a<<8); \
-+  c -= a; c -= b; c ^= (b>>13); \
-+  a -= b; a -= c; a ^= (c>>12);  \
-+  b -= c; b -= a; b ^= (a<<16); \
-+  c -= a; c -= b; c ^= (b>>5); \
-+  a -= b; a -= c; a ^= (c>>3);  \
-+  b -= c; b -= a; b ^= (a<<10); \
-+  c -= a; c -= b; c ^= (b>>15); \
-+}
-+
-+/* The golden ration: an arbitrary value */
-+#define JHASH_GOLDEN_RATIO	0x9e3779b9
-+
-+/* The most generic version, hashes an arbitrary sequence
-+ * of bytes.  No alignment or length assumptions are made about
-+ * the input key.
-+ */
-+static inline __u32 jhash(void *key, __u32 length, __u32 initval)
-+{
-+	__u32 a, b, c, len;
-+	__u8 *k = key;
-+
-+	len = length;
-+	a = b = JHASH_GOLDEN_RATIO;
-+	c = initval;
-+
-+	while (len >= 12) {
-+		a += (k[0] +((__u32)k[1]<<8) +((__u32)k[2]<<16) +((__u32)k[3]<<24));
-+		b += (k[4] +((__u32)k[5]<<8) +((__u32)k[6]<<16) +((__u32)k[7]<<24));
-+		c += (k[8] +((__u32)k[9]<<8) +((__u32)k[10]<<16)+((__u32)k[11]<<24));
-+
-+		__jhash_mix(a,b,c);
-+
-+		k += 12;
-+		len -= 12;
-+	}
-+
-+	c += length;
-+	switch (len) {
-+	case 11: c += ((__u32)k[10]<<24);
-+	case 10: c += ((__u32)k[9]<<16);
-+	case 9 : c += ((__u32)k[8]<<8);
-+	case 8 : b += ((__u32)k[7]<<24);
-+	case 7 : b += ((__u32)k[6]<<16);
-+	case 6 : b += ((__u32)k[5]<<8);
-+	case 5 : b += k[4];
-+	case 4 : a += ((__u32)k[3]<<24);
-+	case 3 : a += ((__u32)k[2]<<16);
-+	case 2 : a += ((__u32)k[1]<<8);
-+	case 1 : a += k[0];
-+	};
-+
-+	__jhash_mix(a,b,c);
-+
-+	return c;
-+}
-+
-+/* A special optimized version that handles 1 or more of __u32s.
-+ * The length parameter here is the number of __u32s in the key.
-+ */
-+static inline __u32 jhash2(__u32 *k, __u32 length, __u32 initval)
-+{
-+	__u32 a, b, c, len;
-+
-+	a = b = JHASH_GOLDEN_RATIO;
-+	c = initval;
-+	len = length;
-+
-+	while (len >= 3) {
-+		a += k[0];
-+		b += k[1];
-+		c += k[2];
-+		__jhash_mix(a, b, c);
-+		k += 3; len -= 3;
-+	}
-+
-+	c += length * 4;
-+
-+	switch (len) {
-+	case 2 : b += k[1];
-+	case 1 : a += k[0];
-+	};
-+
-+	__jhash_mix(a,b,c);
-+
-+	return c;
-+}
-+
-+
-+/* A special ultra-optimized versions that knows they are hashing exactly
-+ * 3, 2 or 1 word(s).
-+ *
-+ * NOTE: In partilar the "c += length; __jhash_mix(a,b,c);" normally
-+ *       done at the end is not done here.
-+ */
-+static inline __u32 jhash_3words(__u32 a, __u32 b, __u32 c, __u32 initval)
-+{
-+	a += JHASH_GOLDEN_RATIO;
-+	b += JHASH_GOLDEN_RATIO;
-+	c += initval;
-+
-+	__jhash_mix(a, b, c);
-+
-+	return c;
-+}
-+
-+static inline __u32 jhash_2words(__u32 a, __u32 b, __u32 initval)
-+{
-+	return jhash_3words(a, b, 0, initval);
-+}
-+
-+static inline __u32 jhash_1word(__u32 a, __u32 initval)
-+{
-+	return jhash_3words(a, 0, 0, initval);
-+}
-+
-+#endif /* _LINUX_IPSET_JHASH_H */
-diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_macipmap.h linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_macipmap.h
---- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_macipmap.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_macipmap.h	2007-06-08 16:29:31.829808250 -0500
+Index: linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set_macipmap.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set_macipmap.h	2007-06-17 01:56:58.437888120 +0200
 @@ -0,0 +1,38 @@
 +#ifndef __IP_SET_MACIPMAP_H
 +#define __IP_SET_MACIPMAP_H
@@ -870,9 +724,10 @@ diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_macipmap.h linux-2.
 +};
 +
 +#endif	/* __IP_SET_MACIPMAP_H */
-diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_malloc.h linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_malloc.h
---- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_malloc.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_malloc.h	2007-06-08 16:29:31.829808250 -0500
+Index: linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set_malloc.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set_malloc.h	2007-06-17 01:56:58.437888120 +0200
 @@ -0,0 +1,116 @@
 +#ifndef _IP_SET_MALLOC_H
 +#define _IP_SET_MALLOC_H
@@ -990,9 +845,10 @@ diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_malloc.h linux-2.6.
 +#endif				/* __KERNEL__ */
 +
 +#endif /*_IP_SET_MALLOC_H*/
-diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_nethash.h linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_nethash.h
---- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_nethash.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_nethash.h	2007-06-08 16:29:31.829808250 -0500
+Index: linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set_nethash.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set_nethash.h	2007-06-17 01:56:58.437888120 +0200
 @@ -0,0 +1,55 @@
 +#ifndef __IP_SET_NETHASH_H
 +#define __IP_SET_NETHASH_H
@@ -1049,9 +905,10 @@ diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_nethash.h linux-2.6
 +}
 +
 +#endif	/* __IP_SET_NETHASH_H */
-diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_portmap.h linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_portmap.h
---- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_portmap.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/include/linux/netfilter_ipv4/ip_set_portmap.h	2007-06-08 16:29:31.829808250 -0500
+Index: linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set_portmap.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/include/linux/netfilter_ipv4/ip_set_portmap.h	2007-06-17 01:56:58.437888120 +0200
 @@ -0,0 +1,25 @@
 +#ifndef __IP_SET_PORTMAP_H
 +#define __IP_SET_PORTMAP_H
@@ -1078,9 +935,10 @@ diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_portmap.h linux-2.6
 +};
 +
 +#endif /* __IP_SET_PORTMAP_H */
-diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ipt_set.h linux-2.6.21.1.new/include/linux/netfilter_ipv4/ipt_set.h
---- linux-2.6.21.1/include/linux/netfilter_ipv4/ipt_set.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/include/linux/netfilter_ipv4/ipt_set.h	2007-06-08 16:29:31.829808250 -0500
+Index: linux-2.6.22-rc4/include/linux/netfilter_ipv4/ipt_set.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/include/linux/netfilter_ipv4/ipt_set.h	2007-06-17 01:56:58.437888120 +0200
 @@ -0,0 +1,21 @@
 +#ifndef _IPT_SET_H
 +#define _IPT_SET_H
@@ -1103,9 +961,10 @@ diff -ruN linux-2.6.21.1/include/linux/netfilter_ipv4/ipt_set.h linux-2.6.21.1.n
 +};
 +
 +#endif /*_IPT_SET_H*/
-diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1.new/net/ipv4/netfilter/ip_set.c
---- linux-2.6.21.1/net/ipv4/netfilter/ip_set.c	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/net/ipv4/netfilter/ip_set.c	2007-06-08 16:29:31.829808250 -0500
+Index: linux-2.6.22-rc4/net/ipv4/netfilter/ip_set.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/net/ipv4/netfilter/ip_set.c	2007-06-17 01:56:58.439887816 +0200
 @@ -0,0 +1,2001 @@
 +/* Copyright (C) 2000-2002 Joakim Axelsson <gozem@linux.nu>
 + *                         Patrick Schaaf <bof@bof.de>
@@ -3108,9 +2967,10 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1.new/net/ipv4
 +
 +module_init(init);
 +module_exit(fini);
-diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1.new/net/ipv4/netfilter/ip_set_iphash.c
---- linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/net/ipv4/netfilter/ip_set_iphash.c	2007-06-08 16:29:31.829808250 -0500
+Index: linux-2.6.22-rc4/net/ipv4/netfilter/ip_set_iphash.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/net/ipv4/netfilter/ip_set_iphash.c	2007-06-17 01:57:56.984987608 +0200
 @@ -0,0 +1,413 @@
 +/* Copyright (C) 2003-2004 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
 + *
@@ -3132,12 +2992,12 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1.new/n
 +#include <linux/spinlock.h>
 +#include <linux/vmalloc.h>
 +#include <linux/random.h>
++#include <linux/jhash.h>
 +
 +#include <net/ip.h>
 +
 +#include <linux/netfilter_ipv4/ip_set_malloc.h>
 +#include <linux/netfilter_ipv4/ip_set_iphash.h>
-+#include <linux/netfilter_ipv4/ip_set_jhash.h>
 +
 +static int limit = MAX_RANGE;
 +
@@ -3202,8 +3062,8 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1.new/n
 +{
 +	return __testip(set,
 +			ntohl(flags[index] & IPSET_SRC 
-+				? skb->nh.iph->saddr 
-+				: skb->nh.iph->daddr),
++				? ip_hdr(skb)->saddr 
++				: ip_hdr(skb)->daddr),
 +			hash_ip);
 +}
 +
@@ -3259,8 +3119,8 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1.new/n
 +{
 +	return __addip((struct ip_set_iphash *) set->data,
 +		       ntohl(flags[index] & IPSET_SRC 
-+		       		? skb->nh.iph->saddr 
-+				: skb->nh.iph->daddr),
++		       		? ip_hdr(skb)->saddr 
++				: ip_hdr(skb)->daddr),
 +		       hash_ip);
 +}
 +
@@ -3382,8 +3242,8 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1.new/n
 +{
 +	return __delip(set,
 +		       ntohl(flags[index] & IPSET_SRC 
-+				? skb->nh.iph->saddr 
-+				: skb->nh.iph->daddr),
++				? ip_hdr(skb)->saddr 
++				: ip_hdr(skb)->daddr),
 +		       hash_ip);
 +}
 +
@@ -3525,9 +3385,10 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1.new/n
 +
 +module_init(init);
 +module_exit(fini);
-diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1.new/net/ipv4/netfilter/ip_set_ipmap.c
---- linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/net/ipv4/netfilter/ip_set_ipmap.c	2007-06-08 16:29:31.833808500 -0500
+Index: linux-2.6.22-rc4/net/ipv4/netfilter/ip_set_ipmap.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/net/ipv4/netfilter/ip_set_ipmap.c	2007-06-17 01:57:56.985987456 +0200
 @@ -0,0 +1,327 @@
 +/* Copyright (C) 2000-2002 Joakim Axelsson <gozem@linux.nu>
 + *                         Patrick Schaaf <bof@bof.de>
@@ -3549,7 +3410,7 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1.new/ne
 +#include <asm/uaccess.h>
 +#include <asm/bitops.h>
 +#include <linux/spinlock.h>
-+
++#include <linux/skbuff.h>
 +#include <linux/netfilter_ipv4/ip_set_ipmap.h>
 +
 +static inline ip_set_ip_t
@@ -3599,13 +3460,13 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1.new/ne
 +	
 +	DP("flag: %s src: %u.%u.%u.%u dst: %u.%u.%u.%u",
 +	   flags[index] & IPSET_SRC ? "SRC" : "DST",
-+	   NIPQUAD(skb->nh.iph->saddr),
-+	   NIPQUAD(skb->nh.iph->daddr));
++	   NIPQUAD(ip_hdr(skb)->saddr),
++	   NIPQUAD(ip_hdr(skb)->daddr));
 +
 +	res =  __testip(set,
 +			ntohl(flags[index] & IPSET_SRC 
-+				? skb->nh.iph->saddr 
-+				: skb->nh.iph->daddr),
++				? ip_hdr(skb)->saddr 
++				: ip_hdr(skb)->daddr),
 +			hash_ip);
 +	return (res < 0 ? 0 : res);
 +}
@@ -3652,8 +3513,8 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1.new/ne
 +{
 +	return __addip(set,
 +		       ntohl(flags[index] & IPSET_SRC 
-+		       		? skb->nh.iph->saddr 
-+				: skb->nh.iph->daddr),
++		       		? ip_hdr(skb)->saddr 
++				: ip_hdr(skb)->daddr),
 +		       hash_ip);
 +}
 +
@@ -3698,8 +3559,8 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1.new/ne
 +{
 +	return __delip(set,
 +		       ntohl(flags[index] & IPSET_SRC 
-+				? skb->nh.iph->saddr 
-+				: skb->nh.iph->daddr),
++				? ip_hdr(skb)->saddr 
++				: ip_hdr(skb)->daddr),
 +		       hash_ip);
 +}
 +
@@ -3856,9 +3717,10 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1.new/ne
 +
 +module_init(init);
 +module_exit(fini);
-diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipporthash.c linux-2.6.21.1.new/net/ipv4/netfilter/ip_set_ipporthash.c
---- linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipporthash.c	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/net/ipv4/netfilter/ip_set_ipporthash.c	2007-06-08 16:29:31.833808500 -0500
+Index: linux-2.6.22-rc4/net/ipv4/netfilter/ip_set_ipporthash.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/net/ipv4/netfilter/ip_set_ipporthash.c	2007-06-17 01:57:56.985987456 +0200
 @@ -0,0 +1,535 @@
 +/* Copyright (C) 2003-2004 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
 + *
@@ -3882,12 +3744,12 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipporthash.c linux-2.6.21.1.n
 +#include <linux/spinlock.h>
 +#include <linux/vmalloc.h>
 +#include <linux/random.h>
++#include <linux/jhash.h>
 +
 +#include <net/ip.h>
 +
 +#include <linux/netfilter_ipv4/ip_set_malloc.h>
 +#include <linux/netfilter_ipv4/ip_set_ipporthash.h>
-+#include <linux/netfilter_ipv4/ip_set_jhash.h>
 +
 +static int limit = MAX_RANGE;
 +
@@ -4395,9 +4257,10 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipporthash.c linux-2.6.21.1.n
 +
 +module_init(init);
 +module_exit(fini);
-diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1.new/net/ipv4/netfilter/ip_set_iptree.c
---- linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/net/ipv4/netfilter/ip_set_iptree.c	2007-06-08 16:29:31.833808500 -0500
+Index: linux-2.6.22-rc4/net/ipv4/netfilter/ip_set_iptree.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/net/ipv4/netfilter/ip_set_iptree.c	2007-06-17 01:57:56.985987456 +0200
 @@ -0,0 +1,571 @@
 +/* Copyright (C) 2005 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
 + *
@@ -4508,13 +4371,13 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1.new/n
 +	
 +	DP("flag: %s src: %u.%u.%u.%u dst: %u.%u.%u.%u",
 +	   flags[index] & IPSET_SRC ? "SRC" : "DST",
-+	   NIPQUAD(skb->nh.iph->saddr),
-+	   NIPQUAD(skb->nh.iph->daddr));
++	   NIPQUAD(ip_hdr(skb)->saddr),
++	   NIPQUAD(ip_hdr(skb)->daddr));
 +
 +	res =  __testip(set,
 +			ntohl(flags[index] & IPSET_SRC 
-+				? skb->nh.iph->saddr 
-+				: skb->nh.iph->daddr),
++				? ip_hdr(skb)->saddr 
++				: ip_hdr(skb)->daddr),
 +			hash_ip);
 +	return (res < 0 ? 0 : res);
 +}
@@ -4602,8 +4465,8 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1.new/n
 +
 +	return __addip(set,
 +		       ntohl(flags[index] & IPSET_SRC 
-+		       		? skb->nh.iph->saddr 
-+				: skb->nh.iph->daddr),
++		       		? ip_hdr(skb)->saddr 
++				: ip_hdr(skb)->daddr),
 +		       map->timeout,
 +		       hash_ip,
 +		       GFP_ATOMIC);
@@ -4667,8 +4530,8 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1.new/n
 +{
 +	return __delip(set,
 +		       ntohl(flags[index] & IPSET_SRC 
-+		       		? skb->nh.iph->saddr 
-+				: skb->nh.iph->daddr),
++		       		? ip_hdr(skb)->saddr 
++				: ip_hdr(skb)->daddr),
 +		       hash_ip);
 +}
 +
@@ -4970,9 +4833,10 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1.new/n
 +
 +module_init(init);
 +module_exit(fini);
-diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1.new/net/ipv4/netfilter/ip_set_macipmap.c
---- linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/net/ipv4/netfilter/ip_set_macipmap.c	2007-06-08 16:29:31.833808500 -0500
+Index: linux-2.6.22-rc4/net/ipv4/netfilter/ip_set_macipmap.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/net/ipv4/netfilter/ip_set_macipmap.c	2007-06-17 01:57:56.985987456 +0200
 @@ -0,0 +1,353 @@
 +/* Copyright (C) 2000-2002 Joakim Axelsson <gozem@linux.nu>
 + *                         Patrick Schaaf <bof@bof.de>
@@ -5045,12 +4909,12 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1.new
 +	ip_set_ip_t ip;
 +	
 +	ip = ntohl(flags[index] & IPSET_SRC
-+			? skb->nh.iph->saddr
-+			: skb->nh.iph->daddr);
++			? ip_hdr(skb)->saddr
++			: ip_hdr(skb)->daddr);
 +	DP("flag: %s src: %u.%u.%u.%u dst: %u.%u.%u.%u",
 +	   flags[index] & IPSET_SRC ? "SRC" : "DST",
-+	   NIPQUAD(skb->nh.iph->saddr),
-+	   NIPQUAD(skb->nh.iph->daddr));
++	   NIPQUAD(ip_hdr(skb)->saddr),
++	   NIPQUAD(ip_hdr(skb)->daddr));
 +
 +	if (ip < map->first_ip || ip > map->last_ip)
 +		return 0;
@@ -5062,8 +4926,8 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1.new
 +	    (void *) &table[ip - map->first_ip].flags)) {
 +		/* Is mac pointer valid?
 +		 * If so, compare... */
-+		return (skb->mac.raw >= skb->head
-+			&& (skb->mac.raw + ETH_HLEN) <= skb->data
++		return (skb_mac_header(skb) >= skb->head
++			&& (skb_mac_header(skb) + ETH_HLEN) <= skb->data
 +			&& (memcmp(eth_hdr(skb)->h_source,
 +				   &table[ip - map->first_ip].ethernet,
 +				   ETH_ALEN) == 0));
@@ -5120,11 +4984,11 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1.new
 +	ip_set_ip_t ip;
 +	
 +	ip = ntohl(flags[index] & IPSET_SRC
-+			? skb->nh.iph->saddr
-+			: skb->nh.iph->daddr);
++			? ip_hdr(skb)->saddr
++			: ip_hdr(skb)->daddr);
 +
-+	if (!(skb->mac.raw >= skb->head
-+	      && (skb->mac.raw + ETH_HLEN) <= skb->data))
++	if (!(skb_mac_header(skb) >= skb->head
++	      && (skb_mac_header(skb) + ETH_HLEN) <= skb->data))
 +		return -EINVAL;
 +
 +	return __addip(set, ip, eth_hdr(skb)->h_source, hash_ip);
@@ -5174,8 +5038,8 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1.new
 +{
 +	return __delip(set,
 +		       ntohl(flags[index] & IPSET_SRC 
-+		       		? skb->nh.iph->saddr 
-+				: skb->nh.iph->daddr),
++		       		? ip_hdr(skb)->saddr 
++				: ip_hdr(skb)->daddr),
 +		       hash_ip);
 +}
 +
@@ -5327,9 +5191,10 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1.new
 +
 +module_init(init);
 +module_exit(fini);
-diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1.new/net/ipv4/netfilter/ip_set_nethash.c
---- linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/net/ipv4/netfilter/ip_set_nethash.c	2007-06-08 16:29:31.833808500 -0500
+Index: linux-2.6.22-rc4/net/ipv4/netfilter/ip_set_nethash.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/net/ipv4/netfilter/ip_set_nethash.c	2007-06-17 01:57:56.985987456 +0200
 @@ -0,0 +1,481 @@
 +/* Copyright (C) 2003-2004 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
 + *
@@ -5351,12 +5216,12 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1.new/
 +#include <linux/spinlock.h>
 +#include <linux/vmalloc.h>
 +#include <linux/random.h>
++#include <linux/jhash.h>
 +
 +#include <net/ip.h>
 +
 +#include <linux/netfilter_ipv4/ip_set_malloc.h>
 +#include <linux/netfilter_ipv4/ip_set_nethash.h>
-+#include <linux/netfilter_ipv4/ip_set_jhash.h>
 +
 +static int limit = MAX_RANGE;
 +
@@ -5444,8 +5309,8 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1.new/
 +{
 +	return __testip(set,
 +			ntohl(flags[index] & IPSET_SRC 
-+				? skb->nh.iph->saddr 
-+				: skb->nh.iph->daddr),
++				? ip_hdr(skb)->saddr 
++				: ip_hdr(skb)->daddr),
 +			hash_ip);
 +}
 +
@@ -5537,8 +5402,8 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1.new/
 +	struct ip_set_nethash *map = (struct ip_set_nethash *) set->data;
 +	int ret = -ERANGE;
 +	ip_set_ip_t ip = ntohl(flags[index] & IPSET_SRC 
-+					? skb->nh.iph->saddr
-+					: skb->nh.iph->daddr);
++					? ip_hdr(skb)->saddr
++					: ip_hdr(skb)->daddr);
 +	
 +	if (map->cidr[0])
 +		ret = __addip(map, ip, map->cidr[0], hash_ip);
@@ -5666,8 +5531,8 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1.new/
 +	struct ip_set_nethash *map = (struct ip_set_nethash *) set->data;
 +	int ret = -ERANGE;
 +	ip_set_ip_t ip = ntohl(flags[index] & IPSET_SRC 
-+					? skb->nh.iph->saddr
-+					: skb->nh.iph->daddr);
++					? ip_hdr(skb)->saddr
++					: ip_hdr(skb)->daddr);
 +	
 +	if (map->cidr[0])
 +		ret = __delip(map, ip, map->cidr[0], hash_ip);
@@ -5812,9 +5677,10 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1.new/
 +
 +module_init(init);
 +module_exit(fini);
-diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1.new/net/ipv4/netfilter/ip_set_portmap.c
---- linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/net/ipv4/netfilter/ip_set_portmap.c	2007-06-08 16:29:31.833808500 -0500
+Index: linux-2.6.22-rc4/net/ipv4/netfilter/ip_set_portmap.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/net/ipv4/netfilter/ip_set_portmap.c	2007-06-17 01:57:56.985987456 +0200
 @@ -0,0 +1,334 @@
 +/* Copyright (C) 2003-2004 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
 + *
@@ -5845,7 +5711,7 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1.new/
 +static inline ip_set_ip_t
 +get_port(const struct sk_buff *skb, u_int32_t flags)
 +{
-+	struct iphdr *iph = skb->nh.iph;
++	struct iphdr *iph = ip_hdr(skb);
 +	u_int16_t offset = ntohs(iph->frag_off) & IP_OFFSET;
 +
 +	switch (iph->protocol) {
@@ -5856,7 +5722,7 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1.new/
 +		if (offset)
 +			return INVALID_PORT;
 +
-+		if (skb_copy_bits(skb, skb->nh.iph->ihl*4, &tcph, sizeof(tcph)) < 0)
++		if (skb_copy_bits(skb, ip_hdr(skb)->ihl*4, &tcph, sizeof(tcph)) < 0)
 +			/* No choice either */
 +			return INVALID_PORT;
 +	     	
@@ -5869,7 +5735,7 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1.new/
 +		if (offset)
 +			return INVALID_PORT;
 +
-+		if (skb_copy_bits(skb, skb->nh.iph->ihl*4, &udph, sizeof(udph)) < 0)
++		if (skb_copy_bits(skb, ip_hdr(skb)->ihl*4, &udph, sizeof(udph)) < 0)
 +			/* No choice either */
 +			return INVALID_PORT;
 +	     	
@@ -6150,9 +6016,10 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1.new/
 +
 +module_init(init);
 +module_exit(fini);
-diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ipt_set.c linux-2.6.21.1.new/net/ipv4/netfilter/ipt_set.c
---- linux-2.6.21.1/net/ipv4/netfilter/ipt_set.c	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/net/ipv4/netfilter/ipt_set.c	2007-06-08 16:29:31.833808500 -0500
+Index: linux-2.6.22-rc4/net/ipv4/netfilter/ipt_set.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/net/ipv4/netfilter/ipt_set.c	2007-06-17 01:56:58.443887208 +0200
 @@ -0,0 +1,150 @@
 +/* Copyright (C) 2000-2002 Joakim Axelsson <gozem@linux.nu>
 + *                         Patrick Schaaf <bof@bof.de>
@@ -6304,10 +6171,11 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ipt_set.c linux-2.6.21.1.new/net/ipv
 +
 +module_init(ipt_ipset_init);
 +module_exit(ipt_ipset_fini);
-diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ipt_SET.c linux-2.6.21.1.new/net/ipv4/netfilter/ipt_SET.c
---- linux-2.6.21.1/net/ipv4/netfilter/ipt_SET.c	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.21.1.new/net/ipv4/netfilter/ipt_SET.c	2007-06-08 16:29:31.833808500 -0500
-@@ -0,0 +1,168 @@
+Index: linux-2.6.22-rc4/net/ipv4/netfilter/ipt_SET.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/net/ipv4/netfilter/ipt_SET.c	2007-06-17 01:57:56.985987456 +0200
+@@ -0,0 +1,169 @@
 +/* Copyright (C) 2000-2002 Joakim Axelsson <gozem@linux.nu>
 + *                         Patrick Schaaf <bof@bof.de>
 + *                         Martin Josefsson <gandalf@wlug.westbo.se>
@@ -6329,10 +6197,11 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ipt_SET.c linux-2.6.21.1.new/net/ipv
 +#include <linux/if.h>
 +#include <linux/inetdevice.h>
 +#include <linux/version.h>
++#include <linux/skbuff.h>
 +#include <net/protocol.h>
 +#include <net/checksum.h>
 +#include <linux/netfilter_ipv4.h>
-+#include <linux/netfilter_ipv4/ip_nat_rule.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
 +#include <linux/netfilter_ipv4/ipt_set.h>
 +
 +static unsigned int
@@ -6476,10 +6345,11 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/ipt_SET.c linux-2.6.21.1.new/net/ipv
 +
 +module_init(ipt_SET_init);
 +module_exit(ipt_SET_fini);
-diff -ruN linux-2.6.21.1/net/ipv4/netfilter/Kconfig linux-2.6.21.1.new/net/ipv4/netfilter/Kconfig
---- linux-2.6.21.1/net/ipv4/netfilter/Kconfig	2007-04-27 16:49:26.000000000 -0500
-+++ linux-2.6.21.1.new/net/ipv4/netfilter/Kconfig	2007-06-08 16:29:31.833808500 -0500
-@@ -657,5 +657,114 @@
+Index: linux-2.6.22-rc4/net/ipv4/netfilter/Kconfig
+===================================================================
+--- linux-2.6.22-rc4.orig/net/ipv4/netfilter/Kconfig	2007-06-17 01:56:52.055858336 +0200
++++ linux-2.6.22-rc4/net/ipv4/netfilter/Kconfig	2007-06-17 01:56:58.443887208 +0200
+@@ -426,5 +426,114 @@
  	  Allows altering the ARP packet payload: source and destination
  	  hardware and network addresses.
  
@@ -6594,18 +6464,19 @@ diff -ruN linux-2.6.21.1/net/ipv4/netfilter/Kconfig linux-2.6.21.1.new/net/ipv4/
 +
  endmenu
  
-diff -ruN linux-2.6.21.1/net/ipv4/netfilter/Makefile linux-2.6.21.1.new/net/ipv4/netfilter/Makefile
---- linux-2.6.21.1/net/ipv4/netfilter/Makefile	2007-04-27 16:49:26.000000000 -0500
-+++ linux-2.6.21.1.new/net/ipv4/netfilter/Makefile	2007-06-08 16:29:31.837808750 -0500
-@@ -90,6 +90,7 @@
+Index: linux-2.6.22-rc4/net/ipv4/netfilter/Makefile
+===================================================================
+--- linux-2.6.22-rc4.orig/net/ipv4/netfilter/Makefile	2007-06-17 01:56:52.065856816 +0200
++++ linux-2.6.22-rc4/net/ipv4/netfilter/Makefile	2007-06-17 01:56:58.444887056 +0200
+@@ -48,6 +48,7 @@
  obj-$(CONFIG_IP_NF_MATCH_ECN) += ipt_ecn.o
  obj-$(CONFIG_IP_NF_MATCH_AH) += ipt_ah.o
  obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
 +obj-$(CONFIG_IP_NF_MATCH_SET) += ipt_set.o
  obj-$(CONFIG_IP_NF_MATCH_ADDRTYPE) += ipt_addrtype.o
- 
- # targets
-@@ -105,6 +106,17 @@
+ obj-$(CONFIG_IP_NF_MATCH_IPP2P) += ipt_ipp2p.o
+ obj-$(CONFIG_IP_NF_MATCH_LAYER7) += ipt_layer7.o
+@@ -64,6 +65,17 @@
  obj-$(CONFIG_IP_NF_TARGET_ULOG) += ipt_ULOG.o
  obj-$(CONFIG_IP_NF_TARGET_CLUSTERIP) += ipt_CLUSTERIP.o
  obj-$(CONFIG_IP_NF_TARGET_TTL) += ipt_TTL.o
