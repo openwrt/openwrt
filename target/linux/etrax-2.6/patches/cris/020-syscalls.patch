@@ -1,0 +1,361 @@
+diff -urN linux-2.6.19.2.orig/include/asm-cris/unistd.h linux-2.6.19.2/include/asm/unistd.h
+--- linux-2.6.19.2.orig/include/asm-cris/unistd.h	2007-06-16 23:59:11.000000000 +0200
++++ linux-2.6.19.2/include/asm/unistd.h	2007-06-17 03:43:10.000000000 +0200
+@@ -325,9 +325,52 @@
+ #define __NR_getcpu		318
+ #define __NR_epoll_pwait	319
+ 
++#ifdef CONFIG_ETRAX_GPIO 
++	#ifdef CONFIG_FOXBONE
++		#define __NR_gpiosetbits	320
++		#define __NR_gpioclearbits	321
++		#define __NR_gpiosetdir		322
++		#define __NR_gpiotogglebit	323
++		#define __NR_gpiogetbits	324
++		#define __NR_foxboneread	325
++		#define __NR_foxbonewrite	326 
++		#define __NR_foxbonebulkread	327 
++		#define __NR_foxbonebulkwrite	328 
++		#define __NR_foxbonereset	329
++		#define __NR_foxboneintreg	330
++		#define __NR_foxboneintcheck	331
++		#define __NR_foxboneintwait	332
++		#define NR_syscalls 333
++	
++	#else
++		#define __NR_gpiosetbits	320
++		#define __NR_gpioclearbits	321
++		#define __NR_gpiosetdir		322
++		#define __NR_gpiotogglebit	323
++		#define __NR_gpiogetbits	324
++		
++		#define NR_syscalls 325
++	#endif
++#else
++	#ifdef CONFIG_FOXBONE 
++		#define __NR_foxboneread	320
++		#define __NR_foxbonewrite	321 
++		#define __NR_foxbonebulkread	322
++		#define __NR_foxbonebulkwrite	323
++		#define __NR_foxboneintreg	324
++		#define __NR_foxboneintcheck	325
++		#define __NR_foxboneintwait	326
++	
++		#define NR_syscalls 327
++	
++	#else 
++	
++		#define NR_syscalls 320
++	#endif
++#endif
++	
+ #ifdef __KERNEL__
+ 
+-#define NR_syscalls 320
+ 
+ #include <asm/arch/unistd.h>
+ 
+--- linux-2.6.19.2.orig/include/linux/gpio_syscalls.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.2/include/linux/gpio_syscalls.h	2007-06-17 03:44:49.000000000 +0200
+@@ -0,0 +1,75 @@
++#ifndef __LINUX_SYSCALL_GPIO
++#define __LINUX_SYSCALL_GPIO
++#include <linux/autoconf.h>
++#include <linux/kernel.h>
++#include <linux/errno.h>
++#include <asm/unistd.h>
++
++// port defines
++#define PORTA 	'A'
++#define PORTB 	'B'
++#define PORTG 	'G'
++
++//direction defines
++#define DIRIN 	'I'
++#define DIROUT 	'O'
++
++// pin defines for PORTG
++#define PG0	(1<<0)
++#define PG1     (1<<1)
++#define PG2     (1<<2)
++#define PG3     (1<<3)
++#define PG4     (1<<4)
++#define PG5     (1<<5)
++#define PG6     (1<<6)
++#define PG7     (1<<7)
++#define PG8     (1<<8)
++#define PG9     (1<<9)
++#define PG10	(1<<10)
++#define PG11    (1<<11)
++#define PG12    (1<<12)
++#define PG13    (1<<13)
++#define PG14    (1<<14)
++#define PG15    (1<<15)
++#define PG16    (1<<16)
++#define PG17    (1<<17)
++#define PG18    (1<<18)
++#define PG19    (1<<19)
++#define PG20    (1<<20)
++#define PG21    (1<<21)
++#define PG22    (1<<22)
++#define PG23    (1<<23)
++#define PG24    (1<<24)
++
++#define PG8_15	0x00ff00
++#define PG16_23	0xff0000
++
++
++// pin defines for PORTA
++#define PA0	(1<<0)
++#define PA1	(1<<1)
++#define PA2	(1<<2)
++#define PA3	(1<<3)
++#define PA4	(1<<4)
++#define PA5	(1<<5)
++#define PA6	(1<<6)
++#define PA7	(1<<7)
++
++// pin defines for PORTB
++#define PB0	(1<<0)
++#define PB1	(1<<1)
++#define PB2	(1<<2)
++#define PB3	(1<<3)
++#define PB4	(1<<4)
++#define PB5	(1<<5)
++#define PB6	(1<<6)
++#define PB7	(1<<7)
++
++int errno;
++_syscall2(void, gpiosetbits, unsigned char, port, unsigned int, bits);
++_syscall2(void, gpioclearbits, unsigned char, port, unsigned int, bits);
++_syscall3(void, gpiosetdir, unsigned char, port, unsigned char, dir, unsigned int, bits);
++_syscall2(void, gpiotogglebit, unsigned char, port, unsigned int, bits);
++_syscall2(unsigned int, gpiogetbits, unsigned char, port, unsigned int, bits);
++
++#endif
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/kernel/entry.S	2007-06-16 23:58:14.000000000 +0200
++++ linux-2.6.19.2/arch/cris/arch-v10/kernel/entry.S	2007-06-17 03:48:21.000000000 +0200
+@@ -1200,6 +1200,23 @@
+ 	.long sys_move_pages
+ 	.long sys_getcpu
+ 	.long sys_epoll_pwait
++#ifdef CONFIG_ETRAX_GPIO
++	.long sys_gpiosetbits
++	.long sys_gpioclearbits
++	.long sys_gpiosetdir
++	.long sys_gpiotogglebit
++	.long sys_gpiogetbits
++#endif
++#ifdef CONFIG_FOXBONE
++	.long sys_foxboneread
++	.long sys_foxbonewrite
++	.long sys_foxbonebulkread
++	.long sys_foxbonebulkwrite
++	.long sys_foxbonereset
++	.long sys_foxboneintreg
++	.long sys_foxboneintcheck
++	.long sys_foxboneintwait	
++#endif
+ 		
+         /*
+          * NOTE!! This doesn't have to be exact - we just have
+diff -urN linux-2.6.19.2.orig/arch/cris/arch-v10/drivers/gpio_syscalls.c linux-2.6.19.2/arch/cris/arch-v10/drivers/gpio_syscalls.c
+--- linux-2.6.19.2.orig/arch/cris/arch-v10/drivers/gpio_syscalls.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.2/arch/cris/arch-v10/drivers/gpio_syscalls.c	2007-06-17 04:09:15.000000000 +0200
+@@ -0,0 +1,192 @@
++
++#include <linux/autoconf.h>
++
++#include <linux/module.h>
++#include <linux/sched.h>
++#include <linux/slab.h>
++#include <linux/ioport.h>
++#include <linux/errno.h>
++#include <linux/kernel.h>
++#include <linux/fs.h>
++#include <linux/string.h>
++#include <linux/poll.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++
++#include <asm/uaccess.h>
++#include <linux/gpio_syscalls.h>
++
++#include <asm/etraxgpio.h>
++#include <asm/arch/svinto.h>
++#include <asm/io.h>
++#include <asm/system.h>
++#include <asm/irq.h>
++#include <asm/arch/io_interface_mux.h>
++
++#include <asm/unistd.h>
++
++
++extern int errno;
++
++
++asmlinkage void sys_gpiosetbits(unsigned char port, unsigned int bits){
++	switch(port){
++	case 'G':
++	case 'g':
++		*R_PORT_G_DATA = port_g_data_shadow |= bits;
++		break;
++		
++	case 'A':
++	case 'a':
++		*R_PORT_PA_DATA = port_pa_data_shadow |= bits;
++		break;
++
++	case 'B':
++	case 'b':
++		*R_PORT_PB_DATA = port_pb_data_shadow |= bits;
++		break;
++		
++	};
++};
++
++
++asmlinkage void sys_gpioclearbits(unsigned char port, unsigned int bits){
++	switch(port){
++	case 'G':
++	case 'g':
++		*R_PORT_G_DATA = port_g_data_shadow &= ~bits;
++		break;
++		
++	case 'A':
++	case 'a':
++		*R_PORT_PA_DATA = port_pa_data_shadow &= ~bits;
++		break;
++
++	case 'B':
++	case 'b':
++		*R_PORT_PB_DATA = port_pb_data_shadow &= ~bits;
++		break;
++		
++	};
++};
++
++asmlinkage void sys_gpiosetdir(unsigned char port, unsigned char dir, unsigned int bits){
++	if((dir=='I' )||(dir=='i')){
++		switch(port){
++		case 'G':
++		case 'g':
++			if(bits & (1<<0)){
++				genconfig_shadow &= ~IO_MASK(R_GEN_CONFIG, g0dir);
++			};
++			if((bits & 0x0000FF00)==0x0000FF00){
++				genconfig_shadow &= ~IO_MASK(R_GEN_CONFIG, g8_15dir);
++			};			
++			if((bits & 0x00FF0000)==0x00FF0000){
++				genconfig_shadow &= ~IO_MASK(R_GEN_CONFIG, g16_23dir);
++			};			
++			if(bits & (1<<24)){
++				genconfig_shadow &= ~IO_MASK(R_GEN_CONFIG, g24dir);
++			};			
++			*R_GEN_CONFIG = genconfig_shadow;
++			break;
++		
++		case 'A':
++		case 'a':
++			*R_PORT_PA_DIR = port_pa_dir_shadow &= ~(bits & 0xff);
++			break;
++
++		case 'B':
++		case 'b':
++			*R_PORT_PB_DIR = port_pb_dir_shadow &= ~(bits & 0xff);
++			break;
++		};
++	} else if((dir=='O' )||(dir=='o')){
++		switch(port){
++		case 'G':
++		case 'g':
++			if(bits & (1<<0)){
++				genconfig_shadow |= IO_MASK(R_GEN_CONFIG, g0dir);
++			};
++			if((bits & 0x0000FF00)==0x0000FF00){
++				genconfig_shadow |= IO_MASK(R_GEN_CONFIG, g8_15dir);
++			};			
++			if((bits & 0x00FF0000)==0x00FF0000){
++				genconfig_shadow |= IO_MASK(R_GEN_CONFIG, g8_15dir);
++			};			
++			if(bits & (1<<24)){
++				genconfig_shadow |= IO_MASK(R_GEN_CONFIG, g24dir);
++			};			
++			*R_GEN_CONFIG = genconfig_shadow;
++			break;
++		
++		case 'A':
++		case 'a':
++			*R_PORT_PA_DIR = port_pa_dir_shadow |= (bits & 0xff);
++			break;
++
++		case 'B':
++		case 'b':
++			*R_PORT_PB_DIR = port_pb_dir_shadow |= (bits & 0xff);
++			break;
++		};
++	};
++};
++
++
++asmlinkage void sys_gpiotogglebit(unsigned char port, unsigned int bits){
++	switch(port){
++	case 'G':
++	case 'g':
++		if(port_g_data_shadow & bits){
++			*R_PORT_G_DATA = port_g_data_shadow &= ~bits;
++		} else {
++			*R_PORT_G_DATA = port_g_data_shadow |= bits;
++		};
++		break;
++		
++	case 'A':
++	case 'a':
++		if(*R_PORT_PA_DATA & bits){
++			*R_PORT_PA_DATA = port_pa_data_shadow &= ~(bits & 0xff);
++		} else {
++			*R_PORT_PA_DATA = port_pa_data_shadow |= (bits & 0xff);	
++		};
++		break;
++
++	case 'B':
++	case 'b':
++		if(*R_PORT_PB_DATA & bits){
++			*R_PORT_PB_DATA = port_pb_data_shadow &= ~(bits & 0xff);
++		} else {
++			*R_PORT_PB_DATA = port_pb_data_shadow |= (bits & 0xff);	
++		};
++		break;
++		
++	};
++};
++
++
++asmlinkage unsigned int sys_gpiogetbits(unsigned char port, unsigned int bits){
++	unsigned int data = 0;
++	switch(port){
++	case 'G':
++	case 'g':
++		data = *R_PORT_G_DATA;
++		break;
++		
++	case 'A':
++	case 'a':
++		data = *R_PORT_PA_DATA;
++		break;
++
++	case 'B':
++	case 'b':
++		data = *R_PORT_PB_DATA;
++		break;
++		
++	};
++	data &= bits;
++	return data;
++};
++
++
+Only in linux-2.6.19.2/arch/cris/arch-v10/drivers/: gpio_syscalls.c
+diff linux-2.6.19.2.orig/arch/cris/arch-v10/drivers/Makefile linux-2.6.19.2/arch/cris/arch-v10/drivers/Makefile
+8a9
+> obj-$(CONFIG_ETRAX_GPIO)            += gpio_syscalls.o
