@@ -40,6 +40,11 @@ static unsigned char vlan_matrix[SW_DEVS] = {
 	0x41, 0x42, 0x44, 0x48, 0x50, 0x60
 };
 
+/* default settings - unlimited TX and RX on all ports, default shaper mode */ 
+static unsigned char bw_matrix[SW_DEVS] = {
+	0, 0, 0, 0, 0, 0	
+};
+
 static int adm5120_nrdevs;
 
 static struct net_device *adm5120_devs[SW_DEVS];
@@ -205,6 +210,26 @@ static void adm5120_set_vlan(char *matrix)
 	adm5120_set_reg(ADM5120_VLAN_GII, val);
 }
 
+static void adm5120_set_bw(char *matrix)
+{
+	unsigned long val;
+
+	/* Port 0 to 3 are set using the bandwidth control 0 register */
+	val = matrix[0] + (matrix[1]<<8) + (matrix[2]<<16) + (matrix[3]<<24);
+	adm5120_set_reg(ADM5120_BW_CTL0, val);
+
+	/* Port 4 and 5 are set using the bandwidth control 1 register */
+	val = matrix[4];
+	if (matrix[5] == 1)
+		adm5120_set_reg(ADM5120_BW_CTL1, val | 0x80000000);
+	else
+		adm5120_set_reg(ADM5120_BW_CTL1, val & ~0x8000000);
+
+	printk(KERN_DEBUG "D: ctl0 0x%x, ctl1 0x%x\n",
+		adm5120_get_reg(ADM5120_BW_CTL0),
+		adm5120_get_reg(ADM5120_BW_CTL1));
+}
+
 static int adm5120_sw_open(struct net_device *dev)
 {
 	if (!adm5120_if_open++)
@@ -346,6 +371,19 @@ static int adm5120_do_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 			if (err)
 				return -EFAULT;
 			break;
+		case SIOCGETBW:
+			err = copy_to_user(rq->ifr_data, bw_matrix, sizeof(bw_matrix));
+			if (err) 
+				return -EFAULT; 
+			break; 
+		case SIOCSETBW:
+			if (!capable(CAP_NET_ADMIN)) 
+				return -EPERM;
+			err = copy_from_user(bw_matrix, rq->ifr_data, sizeof(bw_matrix));
+			if (err) 
+				return -EFAULT;
+			adm5120_set_bw(bw_matrix);
+			break; 
 		default:
 			return -EOPNOTSUPP;
 	}
