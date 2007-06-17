@@ -38,6 +38,8 @@
 #define ADM5120_MAC_WRITE_DONE	0x00000002
 #define ADM5120_VLAN_EN		0x00000040
 #define ADM5120_MAC_WT1		0x5c
+#define ADM5120_BW_CTL0		0x60		/* Bandwidth control 0 */
+#define ADM5120_BW_CTL1		0x64		/* Bandwidth control 1 */
 #define ADM5120_PHY_CNTL2	0x7c
 #define ADM5120_AUTONEG		0x0000001f	/* Auto negotiate */
 #define ADM5120_NORMAL		0x01f00000	/* PHY normal mode */
@@ -95,6 +97,8 @@ struct adm5120_sw {
 #define SIOCSMATRIX	SIOCDEVPRIVATE
 #define SIOCGMATRIX	SIOCDEVPRIVATE+1
 #define SIOCGADMINFO	SIOCDEVPRIVATE+2
+#define SIOCGETBW	SIOCDEVPRIVATE+3
+#define SIOCSETBW	SIOCDEVPRIVATE+4
 
 struct adm5120_sw_info {
 	u16	magic;
