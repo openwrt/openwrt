@@ -1,0 +1,44 @@
+Index: zd1211-driver-r85/src/zd1205.c
+===================================================================
+--- zd1211-driver-r85.orig/src/zd1205.c	2007-06-17 04:52:12.359529080 +0200
++++ zd1211-driver-r85/src/zd1205.c	2007-06-17 04:52:18.626576344 +0200
+@@ -238,7 +238,9 @@
+ //static int zd1205wext_siwtxpow(struct net_device *dev, struct iw_request_info *info, struct iw_param *rrq, char *extra);
+ static int zd1205wext_giwrange(struct net_device *dev, struct iw_request_info *info, struct iw_point *data, char *extra);
+ /* ath_desc: use new get_wireless_stats in 2.6.10+ */
++#if ((WIRELESS_EXT > 12) && (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)))
+ struct iw_statistics *zd1205wext_iw_get_stats(struct net_device *dev);
++#endif
+ 
+ /* ath_desc: add iwconfig commit support */
+ #if WIRELESS_EXT > 12
+@@ -435,7 +437,7 @@
+ struct iw_handler_def p80211wext_handler_def =
+         {
+ /* ath_desc: depend on wireless version, not kernel version */
+-#if WIRELESS_EXT > 16
++#if ((WIRELESS_EXT > 16) && (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)))
+ 		.get_wireless_stats = &zd1205wext_iw_get_stats,
+ #endif
+         num_standard:
+@@ -4159,7 +4161,11 @@
+                         skb->tail = skb->data = pHdr;
+                         /* ath_desc: fix monitor mode frame length */
+                         skb_put(skb, data_sz - PLCP_HEADER - EXTRA_INFO_LEN - CRC32_LEN);
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22))
+                         skb->mac.raw = skb->data;
++#else
++						skb_set_mac_header(skb, 0);
++#endif
+                         skb->pkt_type = PACKET_OTHERHOST;
+                         skb->protocol = __constant_htons(ETH_P_802_2);
+                         skb->dev = dev;
+@@ -4776,7 +4782,7 @@
+  * updated, then they might be incorrect for a short while. However,
+  * since this cannot actually cause damage, no locking is used.
+  */
+-#if WIRELESS_EXT > 12
++#if ((WIRELESS_EXT > 12) && (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)))
+ struct iw_statistics *zd1205wext_iw_get_stats(struct net_device *dev)
+ {
+ 	struct zd1205_private *macp = dev->priv;
