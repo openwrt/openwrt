@@ -30,7 +30,7 @@ define Package/openswan
   $(call Package/openswan/Default)
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+kmod-openswan +libgmp +ip
+  DEPENDS:=@LINUX_2_4 +kmod-openswan +libgmp +ip
   TITLE+= (daemon)
   DESCRIPTION+=\\\
 	\\\
@@ -41,6 +41,7 @@ endef
 define KernelPackage/openswan
   SUBMENU:=Network Support
   $(call Package/openswan/Default)
+  DEPENDS:=@LINUX_2_4 
   TITLE+= (kernel module)
   DESCRIPTION+=\\\
 	\\\
