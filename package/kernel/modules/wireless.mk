@@ -45,6 +45,18 @@ define KernelPackage/ieee80211-softmac
 endef
 $(eval $(call KernelPackage,ieee80211-softmac))
 
+define KernelPackage/mac80211
+  TITLE:=mac80211 (Devicescape) support
+  DEPENDS:=@LINUX_2_6
+  KCONFIG:=$(CONFIG_IEEE80211_SOFTMAC)
+  FILES:= \
+  	$(LINUX_DIR)/net/wireless/cfg80211.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/mac80211/rc80211_simple.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,cfg80211 mac80211 rc80211_simple)
+  SUBMENU:=$(WIMENU)
+ endef
+$(eval $(call KernelPackage,mac80211))
 
 define KernelPackage/net-bcm43xx
   TITLE:=Broadcom BCM43xx driver
