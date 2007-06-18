@@ -31,7 +31,7 @@ define Package/spca5xx-view
 endef
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR)/servfox/ CFLAGS=$(TARTGET_CFLAGS) CC=$(TARGET_CC) all
+	$(MAKE) -C $(PKG_BUILD_DIR)/servfox/ CFLAGS="$(TARTGET_CFLAGS)" CC="$(TARGET_CC)" all
 	$(MAKE) -C $(PKG_BUILD_DIR)/servfox/ PREFIX="$(PKG_INSTALL_DIR)" install
 endef
 
