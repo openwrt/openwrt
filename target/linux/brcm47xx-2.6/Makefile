@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=brcm47xx
 BOARDNAME:=Broadcom BCM947xx/953xx
-FEATURES:=squashfs
+FEATURES:=squashfs usb
 
 define Target/Description
 	Build firmware images for Broadcom based routers
