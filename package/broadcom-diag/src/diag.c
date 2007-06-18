@@ -104,6 +104,10 @@ enum {
 	
 	/* SimpleTech */
 	STI_NAS,
+
+	/* D-Link */
+	DIR130,
+	DIR330,
 };
 
 static void __init bcm4780_init(void) {
@@ -533,6 +537,30 @@ static struct platform_t __initdata platforms[] = {
 		},
 		.platform_init = bcm4780_init,
 	},
+	/* D-Link */
+	[DIR130] = {
+		.name	  = "D-Link DIR-130",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 3},
+			{ .name = "reserved",	.gpio = 1 << 7},
+		},
+		.leds	   = {
+			{ .name = "diag", 	.gpio = 1 << 0},
+			{ .name = "blue",	.gpio = 1 << 6},
+		},
+	},
+	[DIR330] = {
+		.name	  = "D-Link DIR-330",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 3},
+			{ .name = "reserved",	.gpio = 1 << 7},
+		},
+		.leds	   = {
+			{ .name = "diag", 	.gpio = 1 << 0},
+			{ .name = "usb", 	.gpio = 1 << 4},
+			{ .name = "blue",	.gpio = 1 << 6},
+		},
+	},
 };
 
 static struct platform_t __init *platform_detect(void)
@@ -575,6 +603,13 @@ static struct platform_t __init *platform_detect(void)
 		
 		if (!strcmp(boardnum, "10496"))
 			return &platforms[USR5461];
+
+		/* D-Link */
+		if (!strcmp(getvar("model_name"), "DIR-130"))
+			return &platforms[DIR130];
+		if (!strcmp(getvar("model_name"), "DIR-330"))
+			return &platforms[DIR330];
+
 	} else { /* PMON based - old stuff */
 
 		/* Dell TrueMobile 2300 */
