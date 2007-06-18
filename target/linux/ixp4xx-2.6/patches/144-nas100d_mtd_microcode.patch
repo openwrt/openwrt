@@ -11,7 +11,7 @@ Index: linux-2.6.19/arch/arm/mach-ixp4xx/nas100d-setup.c
  };
  
 +struct npe_ucode_platform_data nas100d_npe_ucode_data = {
-+	.mtd_partition	= "sysconfig",
++	.mtd_partition	= "microcode",
 +};
 +
 +static struct platform_device nas100d_npe_ucode = {
