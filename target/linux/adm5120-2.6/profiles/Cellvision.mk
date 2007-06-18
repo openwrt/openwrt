@@ -7,7 +7,7 @@
 
 define Profile/Cellvision
   NAME:=Cellvision CAS-63x/77x cameras
-  PACKAGES:=kmod-rt2500 kmod-cpia2 kmod-usb-ohci kmod-ehci-hcd kmod-usb-audio
+  PACKAGES:=kmod-rt2500 kmod-cpia2 kmod-usb-ohci kmod-usb2 kmod-usb-audio
 endef
 
 define Profile/Cellvision/Description
