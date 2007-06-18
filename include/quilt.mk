@@ -57,6 +57,10 @@ endef
 
 $(STAMP_PATCHED): $(STAMP_PREPARED)
 	@cd $(PKG_BUILD_DIR); quilt pop -a -f >/dev/null 2>/dev/null || true
+	(\
+		cd $(PKG_BUILD_DIR)/patches; \
+		find * -type f \! -name series | sort > series; \
+	)
 	[ -f "$(PKG_BUILD_DIR)/patches/series" ] && cd $(PKG_BUILD_DIR); quilt push -a
 	touch $@
 
