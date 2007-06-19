@@ -80,6 +80,22 @@ extern struct ssb_bus ssb;
 #endif
 static struct mtd_info *bcm947xx_mtd;
 
+static void bcm947xx_map_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
+{
+	if (len==1) {
+		memcpy_fromio(to, map->virt + from, len);
+	} else {
+		int i;
+		u16 *dest = (u16 *) to;
+		u16 *src  = (u16 *) (map->virt + from);
+		for (i = 0; i < (len / 2); i++) {
+			dest[i] = src[i];
+		}
+		if (len & 1)
+			*((u8 *)dest+len-1) = src[i] & 0xff;
+	}
+}
+
 static struct map_info bcm947xx_map = {
 	name: "Physically mapped flash",
 	size: WINDOW_SIZE,
@@ -372,6 +388,7 @@ int __init init_bcm947xx_map(void)
 		printk("Failed to ioremap\n");
 		return -EIO;
 	}
+
 	simple_map_init(&bcm947xx_map);
 	
 	if (!(bcm947xx_mtd = do_map_probe("cfi_probe", &bcm947xx_map))) {
@@ -379,6 +396,9 @@ int __init init_bcm947xx_map(void)
 		iounmap((void *)bcm947xx_map.virt);
 		return -ENXIO;
 	}
+
+	/* override copy_from routine */
+ 	bcm947xx_map.copy_from = bcm947xx_map_copy_from;
 
 	bcm947xx_mtd->owner = THIS_MODULE;
 
