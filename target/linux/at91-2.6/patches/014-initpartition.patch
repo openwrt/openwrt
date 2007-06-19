@@ -1,0 +1,18 @@
+--- linux-2.6.21.5.old/drivers/mtd/devices/at91_dataflash.c	2007-06-13 13:31:24.000000000 +0200
++++ linux-2.6.21.5/drivers/mtd/devices/at91_dataflash.c	2007-06-19 12:49:48.000000000 +0200
+@@ -161,12 +161,12 @@
+ 		.mask_flags	= MTD_WRITEABLE,	/* read-only */
+ 	},
+ 	{
+-		.name		= "kernel",
++		.name		= "knlroot",
+ 		.offset		= MTDPART_OFS_NXTBLK,
+-		.size		= 5 * 32 * 8 * 1056,	/* 5 sectors */
++		.size		= 0x320400,	/* 5 sectors */
+ 	},
+ 	{
+-		.name		= "filesystem",
++		.name		= "jffs2",
+ 		.offset		= MTDPART_OFS_NXTBLK,
+ 		.size		= MTDPART_SIZ_FULL,	/* rest = 26 sectors */
+ 	}
