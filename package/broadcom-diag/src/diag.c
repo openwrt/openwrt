@@ -912,6 +912,7 @@ static ssize_t diag_proc_read(struct file *file, char *buf, size_t count, loff_t
 		len = 0;
 	}
 
+	kfree(page);
 	return len;
 }
 
