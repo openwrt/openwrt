@@ -152,7 +152,8 @@ enable_broadcom() {
 				wsec_r=1
 				config_get key "$vif" key
 				case "$enc" in
-					wpa2*|WPA2*|PSK2*|psk2*) auth=128; wsec=4;;
+					wpa*+wpa2*|WPA*+WPA2*|*psk+*psk2|*PSK+*PSK2) auth=132; wsec=6;;
+					wpa2*|WPA2*|*PSK2|*psk2) auth=128; wsec=4;;
 					*) auth=4; wsec=2;;
 				esac
 				eval "${vif}_key=\"\$key\""
@@ -165,6 +166,7 @@ enable_broadcom() {
 				config_get server "$vif" server
 				config_get port "$vif" port
 				case "$enc" in
+					wpa*+wpa2*|WPA*+WPA2*) auth=66; wsec=6;;
 					wpa2*|WPA2*) auth=64; wsec=4;;
 					*) auth=2; wsec=2;;
 				esac
