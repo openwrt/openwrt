@@ -17,6 +17,6 @@ FIRMWARE is set {
 	next
 }
 
-SUBSYSTEM ~~ (net|button) {
+SUBSYSTEM ~~ (net|button|usb) {
 	exec /sbin/hotplug-call %SUBSYSTEM%;
 }
