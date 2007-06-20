@@ -2115,7 +2115,7 @@ diff -urN linux-2.6.21.1.old/fs/mini_fo/fist.h linux-2.6.21.1.dev/fs/mini_fo/fis
 diff -urN linux-2.6.21.1.old/fs/mini_fo/inode.c linux-2.6.21.1.dev/fs/mini_fo/inode.c
 --- linux-2.6.21.1.old/fs/mini_fo/inode.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.21.1.dev/fs/mini_fo/inode.c	2007-05-26 21:01:26.164329720 +0200
-@@ -0,0 +1,1573 @@
+@@ -0,0 +1,1564 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
 + * Copyright (c) 2001-2003 Stony Brook University
@@ -2670,9 +2670,6 @@ diff -urN linux-2.6.21.1.old/fs/mini_fo/inode.c linux-2.6.21.1.dev/fs/mini_fo/in
 +		down(&hidden_sto_dir_dentry->d_inode->i_sem);
 +#endif
 +
-+		/* avoid destroying the hidden inode if the file is in use */
-+		dget(hidden_sto_dentry);
-+
 +		/* Delete an old WOL file contained in the storage dir */
 +		meta_dentry = lookup_one_len(META_FILENAME, 
 +					     hidden_sto_dentry, 
@@ -2763,9 +2760,6 @@ diff -urN linux-2.6.21.1.old/fs/mini_fo/inode.c linux-2.6.21.1.dev/fs/mini_fo/in
 +		down(&hidden_sto_dir_dentry->d_inode->i_sem);
 +#endif
 +
-+		/* avoid destroying the hidden inode if the file is in use */
-+		dget(hidden_sto_dentry);
-+
 +		/* Delete an old WOL file contained in the storage dir */
 +		meta_dentry = lookup_one_len(META_FILENAME, 
 +					     hidden_sto_dentry, 
@@ -2810,9 +2804,6 @@ diff -urN linux-2.6.21.1.old/fs/mini_fo/inode.c linux-2.6.21.1.dev/fs/mini_fo/in
 +#else
 +		down(&hidden_sto_dir_dentry->d_inode->i_sem);
 +#endif
-+
-+		/* avoid destroying the hidden inode if the file is in use */
-+		dget(hidden_sto_dentry);
 +
 +		/* Delete an old WOL file contained in the storage dir */
 +		meta_dentry = lookup_one_len(META_FILENAME, 
