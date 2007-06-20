@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Copyright (C) 2006 OpenWrt.org
+
+case "$ACTION" in
+	add)
+		[ -n "${INTERFACE}" ] &&
+		[ "$(expr substr ${INTERFACE} 1 2)" == "8/" ]  && {
+			/sbin/usb-storage &
+		}
+		;;
+esac	
+		
