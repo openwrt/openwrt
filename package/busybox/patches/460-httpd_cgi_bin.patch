@@ -1,0 +1,15 @@
+Index: busybox-1.4.2/networking/httpd.c
+===================================================================
+--- busybox-1.4.2.orig/networking/httpd.c	2007-06-21 18:12:06.791080496 +0200
++++ busybox-1.4.2/networking/httpd.c	2007-06-21 18:14:48.914434000 +0200
+@@ -1715,8 +1715,8 @@
+ 		test = url + 1;      /* skip first '/' */
+ 
+ #if ENABLE_FEATURE_HTTPD_CGI
+-		if (strncmp(test, "cgi-bin", 7) == 0) {
+-			if (test[7] == '/' && test[8] == 0)
++		if (strncmp(test, "cgi-bin/", 8) == 0) {
++			if (test[8] == 0)
+ 				goto FORBIDDEN;     /* protect listing cgi-bin/ */
+ 			sendCgi(url, prequest, length, cookie, content_type);
+ 			break;
