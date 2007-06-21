@@ -1,0 +1,12 @@
+Index: linux-2.6.22-rc4/lib/kobject_uevent.c
+===================================================================
+--- linux-2.6.22-rc4.orig/lib/kobject_uevent.c	2007-06-10 21:32:13.000000000 +0100
++++ linux-2.6.22-rc4/lib/kobject_uevent.c	2007-06-10 21:33:18.000000000 +0100
+@@ -29,6 +29,7 @@
+ u64 uevent_seqnum;
+ char uevent_helper[UEVENT_HELPER_PATH_LEN] = "/sbin/hotplug";
+ static DEFINE_SPINLOCK(sequence_lock);
++EXPORT_SYMBOL(uevent_helper);
+ #if defined(CONFIG_NET)
+ static struct sock *uevent_sock;
+ #endif

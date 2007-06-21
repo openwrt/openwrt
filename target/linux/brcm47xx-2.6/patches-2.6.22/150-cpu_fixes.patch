@@ -1,6 +1,7 @@
-diff -ur linux.old/arch/mips/kernel/genex.S linux.dev/arch/mips/kernel/genex.S
---- linux.old/arch/mips/kernel/genex.S	2007-03-23 16:10:35.572499592 +0100
-+++ linux.dev/arch/mips/kernel/genex.S	2007-03-16 11:54:34.901251992 +0100
+Index: linux-2.6.22-rc4/arch/mips/kernel/genex.S
+===================================================================
+--- linux-2.6.22-rc4.orig/arch/mips/kernel/genex.S	2007-06-10 21:32:12.000000000 +0100
++++ linux-2.6.22-rc4/arch/mips/kernel/genex.S	2007-06-10 21:33:19.000000000 +0100
 @@ -51,6 +51,10 @@
  NESTED(except_vec3_generic, 0, sp)
  	.set	push
@@ -12,9 +13,10 @@ diff -ur linux.old/arch/mips/kernel/genex.S linux.dev/arch/mips/kernel/genex.S
  #if R5432_CP0_INTERRUPT_WAR
  	mfc0	k0, CP0_INDEX
  #endif
-diff -ur linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
---- linux.old/arch/mips/mm/c-r4k.c	2007-03-16 12:11:00.344441000 +0100
-+++ linux.dev/arch/mips/mm/c-r4k.c	2007-03-23 16:03:23.596169976 +0100
+Index: linux-2.6.22-rc4/arch/mips/mm/c-r4k.c
+===================================================================
+--- linux-2.6.22-rc4.orig/arch/mips/mm/c-r4k.c	2007-06-10 21:33:17.000000000 +0100
++++ linux-2.6.22-rc4/arch/mips/mm/c-r4k.c	2007-06-10 21:33:19.000000000 +0100
 @@ -29,6 +29,9 @@
  #include <asm/cacheflush.h> /* for run_uncached() */
  
@@ -90,9 +92,10 @@ diff -ur linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  
  	probe_pcache();
  	setup_scache();
-diff -ur linux.old/arch/mips/mm/tlbex.c linux.dev/arch/mips/mm/tlbex.c
---- linux.old/arch/mips/mm/tlbex.c	2007-03-16 11:54:34.826263000 +0100
-+++ linux.dev/arch/mips/mm/tlbex.c	2007-03-23 16:03:23.608168152 +0100
+Index: linux-2.6.22-rc4/arch/mips/mm/tlbex.c
+===================================================================
+--- linux-2.6.22-rc4.orig/arch/mips/mm/tlbex.c	2007-06-10 21:33:12.000000000 +0100
++++ linux-2.6.22-rc4/arch/mips/mm/tlbex.c	2007-06-10 21:33:19.000000000 +0100
 @@ -1229,6 +1229,10 @@
  #endif
  }
@@ -117,9 +120,10 @@ diff -ur linux.old/arch/mips/mm/tlbex.c linux.dev/arch/mips/mm/tlbex.c
  	/*
  	 * create the plain linear handler
  	 */
-diff -ur linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kcache.h
---- linux.old/include/asm-mips/r4kcache.h	2007-01-10 20:10:37.000000000 +0100
-+++ linux.dev/include/asm-mips/r4kcache.h	2007-03-23 16:38:44.603727816 +0100
+Index: linux-2.6.22-rc4/include/asm-mips/r4kcache.h
+===================================================================
+--- linux-2.6.22-rc4.orig/include/asm-mips/r4kcache.h	2007-06-10 21:32:12.000000000 +0100
++++ linux-2.6.22-rc4/include/asm-mips/r4kcache.h	2007-06-10 21:33:19.000000000 +0100
 @@ -17,6 +17,20 @@
  #include <asm/cpu-features.h>
  #include <asm/mipsmtregs.h>
@@ -322,9 +326,10 @@ diff -ur linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kcac
 +__BUILD_BLAST_CACHE_RANGE(inv_s, scache, Hit_Invalidate_SD,,, )
  
  #endif /* _ASM_R4KCACHE_H */
-diff -ur linux.old/include/asm-mips/stackframe.h linux.dev/include/asm-mips/stackframe.h
---- linux.old/include/asm-mips/stackframe.h	2007-03-23 16:10:35.573499440 +0100
-+++ linux.dev/include/asm-mips/stackframe.h	2007-03-16 11:54:34.903251688 +0100
+Index: linux-2.6.22-rc4/include/asm-mips/stackframe.h
+===================================================================
+--- linux-2.6.22-rc4.orig/include/asm-mips/stackframe.h	2007-06-10 21:32:12.000000000 +0100
++++ linux-2.6.22-rc4/include/asm-mips/stackframe.h	2007-06-10 21:33:19.000000000 +0100
 @@ -352,6 +352,10 @@
  		.macro	RESTORE_SP_AND_RET
  		LONG_L	sp, PT_R29(sp)
