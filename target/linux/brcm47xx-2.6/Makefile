@@ -11,6 +11,9 @@ BOARD:=brcm47xx
 BOARDNAME:=Broadcom BCM947xx/953xx
 FEATURES:=squashfs usb
 
+LINUX_VERSION:=2.6.22-rc5
+LINUX_KERNEL_MD5SUM:=50dda556ae492f68ff7c273e1f357c55
+
 define Target/Description
 	Build firmware images for Broadcom based routers
 	(e.g. Netgear WGT634U)

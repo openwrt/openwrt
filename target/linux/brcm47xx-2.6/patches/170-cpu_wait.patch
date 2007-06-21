@@ -1,13 +1,12 @@
-Index: linux-2.6.22-rc4/arch/mips/kernel/cpu-probe.c
-===================================================================
---- linux-2.6.22-rc4.orig/arch/mips/kernel/cpu-probe.c	2007-06-10 21:33:17.000000000 +0100
-+++ linux-2.6.22-rc4/arch/mips/kernel/cpu-probe.c	2007-06-10 21:33:22.000000000 +0100
+diff -urN linux-2.6.19.2.old/arch/mips/kernel/cpu-probe.c linux-2.6.19.2/arch/mips/kernel/cpu-probe.c
+--- linux-2.6.19.2.old/arch/mips/kernel/cpu-probe.c	2007-05-01 19:28:06.937756121 +0100
++++ linux-2.6.19.2/arch/mips/kernel/cpu-probe.c	2007-05-01 19:31:46.867756121 +0100
 @@ -143,6 +143,8 @@
  	case CPU_34K:
  	case CPU_74K:
   	case CPU_PR4450:
 +	case CPU_BCM3302:
-+	case CPU_BCM4710:
++        case CPU_BCM4710:
  		cpu_wait = r4k_wait;
  		break;
- 	case CPU_TX49XX:
+ 	case CPU_TX49XX:		
