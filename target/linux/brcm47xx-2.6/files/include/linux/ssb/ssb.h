@@ -6,6 +6,9 @@
 #include <linux/list.h>
 #include <linux/types.h>
 #include <linux/spinlock.h>
+#ifdef CONFIG_SSB_PCIHOST
+# include <linux/pci.h>
+#endif
 
 #include <linux/ssb/ssb_regs.h>
 
@@ -98,6 +101,17 @@ struct ssb_sprom {
 };
 
 
+struct ssb_device;
+/* Lowlevel read/write operations on the device MMIO.
+ * Internal, don't use that outside of ssb. */
+struct ssb_bus_ops {
+	u16 (*read16)(struct ssb_device *dev, u16 offset);
+	u32 (*read32)(struct ssb_device *dev, u16 offset);
+	void (*write16)(struct ssb_device *dev, u16 offset, u16 value);
+	void (*write32)(struct ssb_device *dev, u16 offset, u32 value);
+};
+
+
 /* Core-ID values. */
 #define SSB_DEV_CHIPCOMMON	0x800
 #define SSB_DEV_ILINE20		0x801
@@ -149,18 +163,37 @@ struct ssb_device_id {
 #define SSB_ANY_ID		0xFFFF
 #define SSB_ANY_REV		0xFF
 
+/* Some kernel subsystems poke with dev->drvdata, so we must use the
+ * following ugly workaround to get from struct device to struct ssb_device */
+struct __ssb_dev_wrapper {
+	struct device dev;
+	struct ssb_device *sdev;
+};
 
 struct ssb_device {
-	struct device dev;
+	/* Having a copy of the ops pointer in each dev struct
+	 * is an optimization. */
+	const struct ssb_bus_ops *ops;
+
+	struct device *dev;
 	struct ssb_bus *bus;
 	struct ssb_device_id id;
 
 	u8 core_index;
 	unsigned int irq;
+
+	/* Internal-only stuff follows. */
 	void *drvdata;		/* Per-device data */
 	void *devtypedata;	/* Per-devicetype (eg 802.11) data */
 };
-#define dev_to_ssb_dev(_dev) container_of(_dev, struct ssb_device, dev)
+
+/* Go from struct device to struct ssb_device. */
+static inline
+struct ssb_device * dev_to_ssb_dev(struct device *dev)
+{
+	struct __ssb_dev_wrapper *wrap = container_of(dev, struct __ssb_dev_wrapper, dev);
+	return wrap->sdev;
+}
 
 /* Device specific user data */
 static inline
@@ -181,13 +214,6 @@ void * ssb_get_devtypedata(struct ssb_device *dev)
 {
 	return dev->devtypedata;
 }
-
-struct ssb_bus_ops {
-	u16 (*read16)(struct ssb_device *dev, u16 offset);
-	u32 (*read32)(struct ssb_device *dev, u16 offset);
-	void (*write16)(struct ssb_device *dev, u16 offset, u16 value);
-	void (*write32)(struct ssb_device *dev, u16 offset, u32 value);
-};
 
 
 struct ssb_driver {
@@ -218,7 +244,6 @@ enum ssb_bustype {
 	SSB_BUSTYPE_SSB,	/* This SSB bus is the system bus */
 	SSB_BUSTYPE_PCI,	/* SSB is connected to PCI bus */
 	SSB_BUSTYPE_PCMCIA,	/* SSB is connected to PCMCIA bus */
-	//TODO SSB_BUSTYPE_JTAG,
 };
 
 /* board_vendor */
@@ -237,12 +262,6 @@ enum ssb_bustype {
 #define SSB_CHIPPACK_BCM4712S	1	/* Small 200pin 4712 */
 #define SSB_CHIPPACK_BCM4712M	2	/* Medium 225pin 4712 */
 #define SSB_CHIPPACK_BCM4712L	0	/* Large 340pin 4712 */
-
-static inline u16 ssb_read16(struct ssb_device *dev, u16 offset);
-static inline u32 ssb_read32(struct ssb_device *dev, u16 offset);
-static inline void ssb_write16(struct ssb_device *dev, u16 offset, u16 value);
-static inline void ssb_write32(struct ssb_device *dev, u16 offset, u32 value);
-static inline u32 ssb_write32_masked(struct ssb_device *dev, u16 offset, u32 mask, u32 value);
 
 #include <linux/ssb/ssb_driver_chipcommon.h>
 #include <linux/ssb/ssb_driver_mips.h>
@@ -268,6 +287,10 @@ struct ssb_bus {
 	struct pci_dev *host_pci;
 	/* Pointer to the PCMCIA device (only if bustype == SSB_BUSTYPE_PCMCIA). */
 	struct pcmcia_device *host_pcmcia;
+
+#ifdef CONFIG_SSB_PCIHOST
+	struct mutex pci_sprom_mutex;
+#endif
 
 	/* ID information about the PCB. */
 	u16 board_vendor;
@@ -328,32 +351,22 @@ void ssb_device_enable(struct ssb_device *dev, u32 core_specific_flags);
 void ssb_device_disable(struct ssb_device *dev, u32 core_specific_flags);
 
 
+/* Device MMIO register read/write functions. */
 static inline u16 ssb_read16(struct ssb_device *dev, u16 offset)
 {
-	return dev->bus->ops->read16(dev, offset);
+	return dev->ops->read16(dev, offset);
 }
 static inline u32 ssb_read32(struct ssb_device *dev, u16 offset)
 {
-	return dev->bus->ops->read32(dev, offset);
+	return dev->ops->read32(dev, offset);
 }
 static inline void ssb_write16(struct ssb_device *dev, u16 offset, u16 value)
 {
-	dev->bus->ops->write16(dev, offset, value);
+	dev->ops->write16(dev, offset, value);
 }
 static inline void ssb_write32(struct ssb_device *dev, u16 offset, u32 value)
 {
-	dev->bus->ops->write32(dev, offset, value);
-}
-
-static inline u32 ssb_write32_masked(struct ssb_device *dev,
-				  u16 offset,
-				  u32 mask,
-				  u32 value)
-{
-	value &= mask;
-	value |= ssb_read32(dev, offset) & ~mask;
-	ssb_write32(dev, offset, value);
-	return value;
+	dev->ops->write32(dev, offset, value);
 }
 
 
@@ -364,6 +377,21 @@ extern u32 ssb_dma_translation(struct ssb_device *dev);
 #define SSB_DMA_TRANSLATION_SHIFT	30
 
 extern int ssb_dma_set_mask(struct ssb_device *ssb_dev, u64 mask);
+
+
+#ifdef CONFIG_SSB_PCIHOST
+/* PCI-host wrapper driver */
+extern int ssb_pcihost_register(struct pci_driver *driver);
+static inline void ssb_pcihost_unregister(struct pci_driver *driver)
+{
+	pci_unregister_driver(driver);
+}
+#endif /* CONFIG_SSB_PCIHOST */
+
+
+/* Bus-Power handling functions. */
+extern int ssb_bus_may_powerdown(struct ssb_bus *bus);
+extern int ssb_bus_powerup(struct ssb_bus *bus, int dynamic_pctl);
 
 
 /* Various helper functions */

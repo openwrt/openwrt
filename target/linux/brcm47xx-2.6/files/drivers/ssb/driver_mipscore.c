@@ -4,7 +4,6 @@
  *
  * Copyright 2005, Broadcom Corporation
  * Copyright 2006, 2007, Michael Buesch <mb@bu3sch.de>
- * Copyright 2006, 2007, Felix Fietkau <nbd@openwrt.org>
  *
  * Licensed under the GNU/GPL. See COPYING for details.
  */
@@ -16,12 +15,21 @@
 #include <linux/serial_reg.h>
 #include <asm/time.h>
 
-#include "../ssb_private.h"
+#include "ssb_private.h"
 
-#define mips_read32(mcore, offset) ssb_read32((mcore)->dev, offset)
-#define mips_write32(mcore, offset, value) ssb_write32((mcore)->dev, offset, value)
-#define extif_read32(extif, offset) ssb_read32((extif)->dev, offset)
-#define extif_write32(extif, offset, value) ssb_write32((extif)->dev, offset, value)
+
+static inline u32 mips_read32(struct ssb_mipscore *mcore,
+			      u16 offset)
+{
+	return ssb_read32(mcore->dev, offset);
+}
+
+static inline void mips_write32(struct ssb_mipscore *mcore,
+				u16 offset,
+				u32 value)
+{
+	ssb_write32(mcore->dev, offset, value);
+}
 
 static const u32 ipsflag_irq_mask[] = {
 	0,
@@ -109,8 +117,17 @@ static void set_irq(struct ssb_device *dev, unsigned int irq)
 	ssb_write32(mdev, SSB_IPSFLAG, irqflag);
 }
 
-static int ssb_extif_serial_init(struct ssb_extif *dev, struct ssb_serial_port *ports)
+/* XXX: leave here or move into separate extif driver? */
+static int ssb_extif_serial_init(struct ssb_device *dev, struct ssb_serial_ports *ports)
 {
+
+}
+
+
+static void ssb_mips_serial_init(struct ssb_mipscore *mcore)
+{
+	struct ssb_bus *bus = mcore->dev->bus;
+
 	//TODO if (EXTIF available
 #if 0
 		extifregs_t *eir = (extifregs_t *) regs;
@@ -145,14 +162,6 @@ static int ssb_extif_serial_init(struct ssb_extif *dev, struct ssb_serial_port *
 				add((void *) &eir->uartdata, irq, sb_clock(sbh), 2);
 
 #endif
-
-}
-
-
-static void ssb_mips_serial_init(struct ssb_mipscore *mcore)
-{
-	struct ssb_bus *bus = mcore->dev->bus;
-
 	if (bus->extif.dev)
 		mcore->nr_serial_ports = ssb_extif_serial_init(&bus->extif, mcore->serial_ports);
 	else if (bus->chipco.dev)
@@ -165,68 +174,18 @@ static void ssb_mips_flash_detect(struct ssb_mipscore *mcore)
 {
 	struct ssb_bus *bus = mcore->dev->bus;
 
-	mcore->flash_buswidth = 2;
 	if (bus->chipco.dev) {
 		mcore->flash_window = 0x1c000000;
-		mcore->flash_window_size = 0x02000000;
-		if ((ssb_read32(bus->chipco.dev, SSB_CHIPCO_FLASH_CFG)
-				& SSB_CHIPCO_CFG_DS16) == 0)
-			mcore->flash_buswidth = 1;
+		mcore->flash_window_size = 0x800000;
 	} else {
 		mcore->flash_window = 0x1fc00000;
-		mcore->flash_window_size = 0x00400000;
+		mcore->flash_window_size = 0x400000;
 	}
 }
 
-static void ssb_extif_timing_init(struct ssb_extif *extif, u32 ns)
+
+static void ssb_cpu_clock(struct ssb_mipscore *mcore)
 {
-	u32 tmp;
-
-	/* Initialize extif so we can get to the LEDs and external UART */
-	extif_write32(extif, SSB_EXTIF_PROG_CFG, SSB_EXTCFG_EN);
-	
-	/* Set timing for the flash */
-	tmp  = ceildiv(10, ns) << SSB_PROG_WCNT_3_SHIFT;
-	tmp |= ceildiv(40, ns) << SSB_PROG_WCNT_1_SHIFT;
-	tmp |= ceildiv(120, ns);
-	extif_write32(extif, SSB_EXTIF_PROG_WAITCNT, tmp);
-
-	/* Set programmable interface timing for external uart */
-	tmp  = ceildiv(10, ns) << SSB_PROG_WCNT_3_SHIFT;
-	tmp |= ceildiv(20, ns) << SSB_PROG_WCNT_2_SHIFT;
-	tmp |= ceildiv(100, ns) << SSB_PROG_WCNT_1_SHIFT;
-	tmp |= ceildiv(120, ns);
-	extif_write32(extif, SSB_EXTIF_PROG_WAITCNT, tmp);
-}
-
-static inline void ssb_extif_get_clockcontrol(struct ssb_extif *extif,
-				 u32 *pll_type, u32 *n, u32 *m)
-{
-	*pll_type = SSB_PLLTYPE_1;
-	*n = extif_read32(extif, SSB_EXTIF_CLOCK_N);
-	*m = extif_read32(extif, SSB_EXTIF_CLOCK_SB);
-}
-
-u32 ssb_cpu_clock(struct ssb_mipscore *mcore)
-{
-	struct ssb_bus *bus = mcore->dev->bus;
-	u32 pll_type, n, m, rate = 0;
-
-	if (bus->extif.dev) {
-		ssb_extif_get_clockcontrol(&bus->extif, &pll_type, &n, &m);
-	} else if (bus->chipco.dev) {
-		ssb_chipco_get_clockcpu(&bus->chipco, bus->chip_id, &rate,
-			&pll_type, &n, &m);
-	} else
-		return 0;
-
-	if (rate == 0)
-		rate = ssb_calc_clock_rate(pll_type, n, m);
-
-	if (pll_type == SSB_PLLTYPE_6)
-		rate *= 2;
-
-	return rate;
 }
 
 void ssb_mipscore_init(struct ssb_mipscore *mcore)
@@ -246,9 +205,28 @@ void ssb_mipscore_init(struct ssb_mipscore *mcore)
 		hz = 100000000;
 	ns = 1000000000 / hz;
 
-	if (bus->extif.dev)
-		ssb_extif_timing_init(&bus->extif, ns);
-	else if (bus->chipco.dev)
+//TODO
+#if 0
+	if (have EXTIF) {
+		/* Initialize extif so we can get to the LEDs and external UART */
+		W_REG(&eir->prog_config, CF_EN);
+
+		/* Set timing for the flash */
+		tmp = CEIL(10, ns) << FW_W3_SHIFT;	/* W3 = 10nS */
+		tmp = tmp | (CEIL(40, ns) << FW_W1_SHIFT); /* W1 = 40nS */
+		tmp = tmp | CEIL(120, ns);		/* W0 = 120nS */
+		W_REG(&eir->prog_waitcount, tmp);	/* 0x01020a0c for a 100Mhz clock */
+
+		/* Set programmable interface timing for external uart */
+		tmp = CEIL(10, ns) << FW_W3_SHIFT;	/* W3 = 10nS */
+		tmp = tmp | (CEIL(20, ns) << FW_W2_SHIFT); /* W2 = 20nS */
+		tmp = tmp | (CEIL(100, ns) << FW_W1_SHIFT); /* W1 = 100nS */
+		tmp = tmp | CEIL(120, ns);		/* W0 = 120nS */
+		W_REG(&eir->prog_waitcount, tmp);
+	}
+	else... chipcommon
+#endif
+	if (bus->chipco.dev)
 		ssb_chipco_timing_init(&bus->chipco, ns);
 
 	/* Assign IRQs to all cores on the bus, start with irq line 2, because serial usually takes 1 */
@@ -278,5 +256,3 @@ void ssb_mipscore_init(struct ssb_mipscore *mcore)
 	ssb_mips_serial_init(mcore);
 	ssb_mips_flash_detect(mcore);
 }
-
-EXPORT_SYMBOL(ssb_mips_irq);

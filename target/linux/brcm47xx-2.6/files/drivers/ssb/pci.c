@@ -121,7 +121,7 @@ int ssb_pci_xtal(struct ssb_bus *bus, u32 what, int turn_on)
 				err = pci_write_config_dword(bus->host_pci, SSB_GPIO_OUT, out);
 				if (err)
 					goto err_pci;
-				msleep(2);
+				msleep(5);
 			}
 		}
 
@@ -238,6 +238,52 @@ static void sprom_do_read(struct ssb_bus *bus, u16 *sprom)
 
 	for (i = 0; i < SSB_SPROMSIZE_WORDS; i++)
 		sprom[i] = readw(bus->mmio + SSB_SPROM_BASE + (i * 2));
+}
+
+static int sprom_do_write(struct ssb_bus *bus, const u16 *sprom)
+{
+	struct pci_dev *pdev = bus->host_pci;
+	int i, err;
+	u32 spromctl;
+
+	ssb_printk(KERN_NOTICE PFX "Writing SPROM. Do NOT turn off the power! Please stand by...\n");
+	err = pci_read_config_dword(pdev, SSB_SPROMCTL, &spromctl);
+	if (err)
+		goto err_ctlreg;
+	spromctl |= SSB_SPROMCTL_WE;
+	err = pci_write_config_dword(pdev, SSB_SPROMCTL, spromctl);
+	if (err)
+		goto err_ctlreg;
+	ssb_printk(KERN_NOTICE PFX "[ 0%%");
+	msleep(500);
+	for (i = 0; i < SSB_SPROMSIZE_WORDS; i++) {
+		if (i == SSB_SPROMSIZE_WORDS / 4)
+			ssb_printk("25%%");
+		else if (i == SSB_SPROMSIZE_WORDS / 2)
+			ssb_printk("50%%");
+		else if (i == (SSB_SPROMSIZE_WORDS / 4) * 3)
+			ssb_printk("75%%");
+		else if (i % 2)
+			ssb_printk(".");
+		writew(sprom[i], bus->mmio + SSB_SPROM_BASE + (i * 2));
+		mmiowb();
+		msleep(20);
+	}
+	err = pci_read_config_dword(pdev, SSB_SPROMCTL, &spromctl);
+	if (err)
+		goto err_ctlreg;
+	spromctl &= ~SSB_SPROMCTL_WE;
+	err = pci_write_config_dword(pdev, SSB_SPROMCTL, spromctl);
+	if (err)
+		goto err_ctlreg;
+	msleep(500);
+	ssb_printk("100%% ]\n");
+	ssb_printk(KERN_NOTICE PFX "SPROM written.\n");
+
+	return 0;
+err_ctlreg:
+	ssb_printk(KERN_ERR PFX "Could not access SPROM control register.\n");
+	return err;
 }
 
 static void sprom_extract_r1(struct ssb_sprom_r1 *out, const u16 *in)
@@ -472,9 +518,155 @@ const struct ssb_bus_ops ssb_pci_ops = {
 	.write32	= ssb_pci_write32,
 };
 
+static int sprom2hex(const u16 *sprom, char *buf, size_t buf_len)
+{
+	int i, pos = 0;
+
+	for (i = 0; i < SSB_SPROMSIZE_WORDS; i++) {
+		pos += snprintf(buf + pos, buf_len - pos - 1,
+				"%04X", swab16(sprom[i]) & 0xFFFF);
+	}
+	pos += snprintf(buf + pos, buf_len - pos - 1, "\n");
+
+	return pos + 1;
+}
+
+static int hex2sprom(u16 *sprom, const char *dump, size_t len)
+{
+	char tmp[5] = { 0 };
+	int cnt = 0;
+	unsigned long parsed;
+
+	if (len < SSB_SPROMSIZE_BYTES * 2)
+		return -EINVAL;
+
+	while (cnt < SSB_SPROMSIZE_WORDS) {
+		memcpy(tmp, dump, 4);
+		dump += 4;
+		parsed = simple_strtoul(tmp, NULL, 16);
+		sprom[cnt++] = swab16((u16)parsed);
+	}
+
+	return 0;
+}
+
+static ssize_t ssb_pci_attr_sprom_show(struct device *pcidev,
+				       struct device_attribute *attr,
+				       char *buf)
+{
+	struct pci_dev *pdev = container_of(pcidev, struct pci_dev, dev);
+	struct ssb_bus *bus;
+	u16 *sprom;
+	int err = -ENODEV;
+	ssize_t count = 0;
+
+	bus = ssb_pci_dev_to_bus(pdev);
+	if (!bus)
+		goto out;
+	err = -ENOMEM;
+	sprom = kcalloc(SSB_SPROMSIZE_WORDS, sizeof(u16), GFP_KERNEL);
+	if (!sprom)
+		goto out;
+
+	err = -ERESTARTSYS;
+	if (mutex_lock_interruptible(&bus->pci_sprom_mutex))
+		goto out_kfree;
+	sprom_do_read(bus, sprom);
+	mutex_unlock(&bus->pci_sprom_mutex);
+
+	count = sprom2hex(sprom, buf, PAGE_SIZE);
+	err = 0;
+
+out_kfree:
+	kfree(sprom);
+out:
+	return err ? err : count;
+}
+
+static ssize_t ssb_pci_attr_sprom_store(struct device *pcidev,
+					struct device_attribute *attr,
+					const char *buf, size_t count)
+{
+	struct pci_dev *pdev = container_of(pcidev, struct pci_dev, dev);
+	struct ssb_bus *bus;
+	u16 *sprom;
+	int res = 0, err = -ENODEV;
+
+	bus = ssb_pci_dev_to_bus(pdev);
+	if (!bus)
+		goto out;
+	err = -ENOMEM;
+	sprom = kcalloc(SSB_SPROMSIZE_WORDS, sizeof(u16), GFP_KERNEL);
+	if (!sprom)
+		goto out;
+	err = hex2sprom(sprom, buf, count);
+	if (err) {
+		err = -EINVAL;
+		goto out_kfree;
+	}
+	err = sprom_check_crc(sprom);
+	if (err) {
+		err = -EINVAL;
+		goto out_kfree;
+	}
+
+	err = -ERESTARTSYS;
+	if (mutex_lock_interruptible(&bus->pci_sprom_mutex))
+		goto out_kfree;
+	err = ssb_devices_freeze(bus);
+	if (err) {
+		ssb_printk(KERN_ERR PFX "SPROM write: Could not freeze all devices\n");
+		goto out_unlock;
+	}
+	res = sprom_do_write(bus, sprom);
+	err = ssb_devices_thaw(bus);
+	if (err)
+		ssb_printk(KERN_ERR PFX "SPROM write: Could not thaw all devices\n");
+out_unlock:
+	mutex_unlock(&bus->pci_sprom_mutex);
+out_kfree:
+	kfree(sprom);
+out:
+	if (res)
+		return res;
+	return err ? err : count;
+}
+
+static DEVICE_ATTR(ssb_sprom, 0600,
+		   ssb_pci_attr_sprom_show,
+		   ssb_pci_attr_sprom_store);
+
+void ssb_pci_exit(struct ssb_bus *bus)
+{
+	struct pci_dev *pdev;
+
+	if (bus->bustype != SSB_BUSTYPE_PCI)
+		return;
+
+	pdev = bus->host_pci;
+	device_remove_file(&pdev->dev, &dev_attr_ssb_sprom);
+}
+
 int ssb_pci_init(struct ssb_bus *bus)
 {
+	struct pci_dev *pdev;
+	int err;
+
 	if (bus->bustype != SSB_BUSTYPE_PCI)
 		return 0;
-	return ssb_pci_sprom_get(bus);
+
+	pdev = bus->host_pci;
+	mutex_init(&bus->pci_sprom_mutex);
+	err = device_create_file(&pdev->dev, &dev_attr_ssb_sprom);
+	if (err)
+		goto out;
+	err = ssb_pci_sprom_get(bus);
+	if (err)
+		goto err_remove_sprom_file;
+
+out:
+	return err;
+err_remove_sprom_file:
+	device_remove_file(&pdev->dev, &dev_attr_ssb_sprom);
+	return err;
 }

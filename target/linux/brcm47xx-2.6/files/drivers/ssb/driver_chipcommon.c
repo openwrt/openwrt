@@ -12,7 +12,7 @@
 #include <linux/ssb/ssb_regs.h>
 #include <linux/pci.h>
 
-#include "../ssb_private.h"
+#include "ssb_private.h"
 
 
 /* Clock sources */
@@ -38,7 +38,6 @@ static inline void chipco_write32(struct ssb_chipcommon *cc,
 {
 	ssb_write32(cc->dev, offset, value);
 }
-
 
 void ssb_chipco_set_clockmode(struct ssb_chipcommon *cc,
 			      enum ssb_clkmode mode)
@@ -89,7 +88,6 @@ void ssb_chipco_set_clockmode(struct ssb_chipcommon *cc,
 		assert(0);
 	}
 }
-EXPORT_SYMBOL(ssb_chipco_set_clockmode);
 
 /* Get the Slow Clock Source */
 static int chipco_pctl_get_slowclksrc(struct ssb_chipcommon *cc)
@@ -98,8 +96,8 @@ static int chipco_pctl_get_slowclksrc(struct ssb_chipcommon *cc)
 	u32 tmp = 0;
 
 	if (cc->dev->id.revision < 6) {
-		if (bus->bustype == SSB_BUSTYPE_SSB /*TODO ||
-		    bus->bustype == SSB_BUSTYPE_PCMCIA*/)
+		if (bus->bustype == SSB_BUSTYPE_SSB ||
+		    bus->bustype == SSB_BUSTYPE_PCMCIA)
 			return SSB_CHIPCO_CLKSRC_XTALOS;
 		if (bus->bustype == SSB_BUSTYPE_PCI) {
 			pci_read_config_dword(bus->host_pci, SSB_GPIO_OUT, &tmp);
@@ -246,8 +244,8 @@ void ssb_chipcommon_init(struct ssb_chipcommon *cc)
 {
 	if (!cc->dev)
 		return; /* We don't have a ChipCommon */
-	ssb_chipco_set_clockmode(cc, SSB_CLKMODE_FAST);
 	chipco_powercontrol_init(cc);
+	ssb_chipco_set_clockmode(cc, SSB_CLKMODE_FAST);
 	calc_fast_powerup_delay(cc);
 }
 
@@ -262,37 +260,8 @@ void ssb_chipco_resume(struct ssb_chipcommon *cc)
 {
 	if (!cc->dev)
 		return;
-	ssb_chipco_set_clockmode(cc, SSB_CLKMODE_FAST);
 	chipco_powercontrol_init(cc);
-}
-
-void ssb_chipco_get_clockcpu(struct ssb_chipcommon *cc, u32 chip_id, u32 *rate,
-			     u32 *plltype, u32 *n, u32 *m)
-{
-	*rate = 0;
-	*n = chipco_read32(cc, SSB_CHIPCO_CLOCK_N);
-	*plltype = (cc->capabilities & SSB_CHIPCO_CAP_PLLT);
-	switch (*plltype) {
-		case SSB_PLLTYPE_2:
-		case SSB_PLLTYPE_4:
-		case SSB_PLLTYPE_6:
-		case SSB_PLLTYPE_7:
-			*m = chipco_read32(cc, SSB_CHIPCO_CLOCK_MIPS);
-			break;
-		case SSB_PLLTYPE_5:
-			*rate = 200000000;
-			break;
-		case SSB_PLLTYPE_3:
-			/* 5350 uses m2 to control mips */
-			*m = chipco_read32(cc, SSB_CHIPCO_CLOCK_M2);
-			break;
-		default:
-			*m = chipco_read32(cc, SSB_CHIPCO_CLOCK_SB);
-			break;
-	}
-
-	if (*rate == 0 && chip_id == 0x5365)
-		*rate = 200000000;
+	ssb_chipco_set_clockmode(cc, SSB_CLKMODE_FAST);
 }
 
 void ssb_chipco_get_clockcontrol(struct ssb_chipcommon *cc,
@@ -350,6 +319,7 @@ void ssb_chipco_timing_init(struct ssb_chipcommon *cc,
 		chipco_write32(cc, SSB_CHIPCO_PROG_WAITCNT, tmp); /* 0x01020a0c for a 100Mhz clock */
 	}
 }
+
 
 #ifdef CONFIG_SSB_SERIAL
 int ssb_chipco_serial_init(struct ssb_chipcommon *cc,
@@ -430,13 +400,3 @@ int ssb_chipco_serial_init(struct ssb_chipcommon *cc,
 	return nr_ports;
 }
 #endif /* CONFIG_SSB_SERIAL */
-
-/* Set chip watchdog reset timer to fire in 'ticks' backplane cycles */
-int
-ssb_chipco_watchdog(struct ssb_chipcommon *cc, uint ticks)
-{
-	/* instant NMI */
-	chipco_write32(cc, SSB_CHIPCO_WATCHDOG, ticks);
-	return 0;
-}
-EXPORT_SYMBOL(ssb_chipco_watchdog);

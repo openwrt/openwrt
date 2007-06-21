@@ -1,0 +1,256 @@
+Index: linux-2.6.22-rc4/drivers/net/b44.c
+===================================================================
+--- linux-2.6.22-rc4.orig/drivers/net/b44.c	2007-06-10 21:33:15.000000000 +0100
++++ linux-2.6.22-rc4/drivers/net/b44.c	2007-06-10 21:33:23.000000000 +0100
+@@ -128,7 +128,7 @@
+ 	                                       unsigned long offset,
+ 	                                       enum dma_data_direction dir)
+ {
+-	dma_sync_single_range_for_device(&sdev->dev, dma_base,
++	dma_sync_single_range_for_device(sdev->dev, dma_base,
+ 		                        offset & dma_desc_align_mask,
+ 		                        dma_desc_sync_size, dir);
+ }
+@@ -138,7 +138,7 @@
+ 	                                    unsigned long offset,
+ 	                                    enum dma_data_direction dir)
+ {
+-	dma_sync_single_range_for_cpu(&sdev->dev, dma_base,
++	dma_sync_single_range_for_cpu(sdev->dev, dma_base,
+ 		                     offset & dma_desc_align_mask,
+ 		                     dma_desc_sync_size, dir);
+ }
+@@ -563,7 +563,7 @@
+ 
+ 		BUG_ON(skb == NULL);
+ 
+-		dma_unmap_single(&bp->sdev->dev,
++		dma_unmap_single(bp->sdev->dev,
+ 				 pci_unmap_addr(rp, mapping),
+ 				 skb->len,
+ 				 DMA_TO_DEVICE);
+@@ -603,7 +603,7 @@
+ 	if (skb == NULL)
+ 		return -ENOMEM;
+ 	
+-	mapping = dma_map_single(&bp->sdev->dev, skb->data,
++	mapping = dma_map_single(bp->sdev->dev, skb->data,
+ 				 RX_PKT_BUF_SZ,
+ 				 DMA_FROM_DEVICE);
+ 
+@@ -613,18 +613,18 @@
+ 		mapping + RX_PKT_BUF_SZ > DMA_30BIT_MASK) {
+ 		/* Sigh... */
+ 		if (!dma_mapping_error(mapping))
+-			dma_unmap_single(&bp->sdev->dev, mapping, RX_PKT_BUF_SZ,DMA_FROM_DEVICE);
++			dma_unmap_single(bp->sdev->dev, mapping, RX_PKT_BUF_SZ,DMA_FROM_DEVICE);
+ 		dev_kfree_skb_any(skb);
+ 		skb = __dev_alloc_skb(RX_PKT_BUF_SZ,GFP_DMA);
+ 		if (skb == NULL)
+ 			return -ENOMEM;
+-		mapping = dma_map_single(&bp->sdev->dev, skb->data,
++		mapping = dma_map_single(bp->sdev->dev, skb->data,
+ 					 RX_PKT_BUF_SZ,
+ 					 DMA_FROM_DEVICE);
+ 		if (dma_mapping_error(mapping) ||
+ 			mapping + RX_PKT_BUF_SZ > DMA_30BIT_MASK) {
+ 			if (!dma_mapping_error(mapping))
+-				dma_unmap_single(&bp->sdev->dev, mapping, RX_PKT_BUF_SZ,DMA_FROM_DEVICE);
++				dma_unmap_single(bp->sdev->dev, mapping, RX_PKT_BUF_SZ,DMA_FROM_DEVICE);
+ 			dev_kfree_skb_any(skb);
+ 			return -ENOMEM;
+ 		}
+@@ -702,7 +702,7 @@
+ 			                    dest_idx * sizeof(dest_desc),
+ 			                    DMA_BIDIRECTIONAL);
+ 
+-	dma_sync_single_for_device(&bp->sdev->dev, le32_to_cpu(src_desc->addr),
++	dma_sync_single_for_device(bp->sdev->dev, le32_to_cpu(src_desc->addr),
+ 				       RX_PKT_BUF_SZ,
+ 				       DMA_FROM_DEVICE);
+ }
+@@ -724,7 +724,7 @@
+ 		struct rx_header *rh;
+ 		u16 len;
+ 
+-		dma_sync_single_for_cpu(&bp->sdev->dev, map,
++		dma_sync_single_for_cpu(bp->sdev->dev, map,
+ 					    RX_PKT_BUF_SZ,
+ 					    DMA_FROM_DEVICE);
+ 		rh = (struct rx_header *) skb->data;
+@@ -758,7 +758,7 @@
+ 			skb_size = b44_alloc_rx_skb(bp, cons, bp->rx_prod);
+ 			if (skb_size < 0)
+ 				goto drop_it;
+-			dma_unmap_single(&bp->sdev->dev, map,
++			dma_unmap_single(bp->sdev->dev, map,
+ 					 skb_size, DMA_FROM_DEVICE);
+ 			/* Leave out rx_header */
+ 	       	skb_put(skb, len+bp->rx_offset);
+@@ -931,22 +931,22 @@
+ 		goto err_out;
+ 	}
+ 
+-	mapping = dma_map_single(&bp->sdev->dev, skb->data, len, DMA_TO_DEVICE);
++	mapping = dma_map_single(bp->sdev->dev, skb->data, len, DMA_TO_DEVICE);
+ 	if (dma_mapping_error(mapping) || mapping + len > DMA_30BIT_MASK) {
+ 		/* Chip can't handle DMA to/from >1GB, use bounce buffer */
+ 		if (!dma_mapping_error(mapping))
+-			dma_unmap_single(&bp->sdev->dev, mapping, len, DMA_TO_DEVICE);
++			dma_unmap_single(bp->sdev->dev, mapping, len, DMA_TO_DEVICE);
+ 
+ 		bounce_skb = __dev_alloc_skb(TX_PKT_BUF_SZ,
+ 					     GFP_ATOMIC|GFP_DMA);
+ 		if (!bounce_skb)
+ 			goto err_out;
+ 
+-		mapping = dma_map_single(&bp->sdev->dev, bounce_skb->data,
++		mapping = dma_map_single(bp->sdev->dev, bounce_skb->data,
+ 					 len, DMA_TO_DEVICE);
+ 		if (dma_mapping_error(mapping) || mapping + len > DMA_30BIT_MASK) {
+ 			if (!dma_mapping_error(mapping))
+-				dma_unmap_single(&bp->sdev->dev, mapping,
++				dma_unmap_single(bp->sdev->dev, mapping,
+ 					 len, DMA_TO_DEVICE);
+ 			dev_kfree_skb_any(bounce_skb);
+ 			goto err_out;
+@@ -1046,7 +1046,7 @@
+ 
+ 		if (rp->skb == NULL)
+ 			continue;
+-		dma_unmap_single(&bp->sdev->dev,
++		dma_unmap_single(bp->sdev->dev,
+ 				 pci_unmap_addr(rp, mapping),
+ 				 RX_PKT_BUF_SZ,
+ 				 DMA_FROM_DEVICE);
+@@ -1060,7 +1060,7 @@
+ 
+ 		if (rp->skb == NULL)
+ 			continue;
+-		dma_unmap_single(&bp->sdev->dev,
++		dma_unmap_single(bp->sdev->dev,
+ 				 pci_unmap_addr(rp, mapping),
+ 				 rp->skb->len,
+ 				 DMA_TO_DEVICE);
+@@ -1085,12 +1085,12 @@
+ 	memset(bp->tx_ring, 0, B44_TX_RING_BYTES);
+ 
+ 	if (bp->flags & B44_FLAG_RX_RING_HACK)
+-		dma_sync_single_for_device(&bp->sdev->dev, bp->rx_ring_dma,
++		dma_sync_single_for_device(bp->sdev->dev, bp->rx_ring_dma,
+ 			                  DMA_TABLE_BYTES,
+ 			                  DMA_BIDIRECTIONAL);
+ 
+ 	if (bp->flags & B44_FLAG_TX_RING_HACK)
+-		dma_sync_single_for_device(&bp->sdev->dev, bp->tx_ring_dma,
++		dma_sync_single_for_device(bp->sdev->dev, bp->tx_ring_dma,
+ 			                  DMA_TABLE_BYTES,
+ 			                  DMA_TO_DEVICE);
+ 
+@@ -1112,24 +1112,24 @@
+ 	bp->tx_buffers = NULL;
+ 	if (bp->rx_ring) {
+ 		if (bp->flags & B44_FLAG_RX_RING_HACK) {
+-			dma_unmap_single(&bp->sdev->dev, bp->rx_ring_dma,
++			dma_unmap_single(bp->sdev->dev, bp->rx_ring_dma,
+ 					DMA_TABLE_BYTES,
+ 					DMA_BIDIRECTIONAL);
+ 			kfree(bp->rx_ring);
+ 		} else
+-			dma_free_coherent(&bp->sdev->dev, DMA_TABLE_BYTES,
++			dma_free_coherent(bp->sdev->dev, DMA_TABLE_BYTES,
+ 					    bp->rx_ring, bp->rx_ring_dma);
+ 		bp->rx_ring = NULL;
+ 		bp->flags &= ~B44_FLAG_RX_RING_HACK;
+ 	}
+ 	if (bp->tx_ring) {
+ 		if (bp->flags & B44_FLAG_TX_RING_HACK) {
+-			dma_unmap_single(&bp->sdev->dev, bp->tx_ring_dma,
++			dma_unmap_single(bp->sdev->dev, bp->tx_ring_dma,
+ 					DMA_TABLE_BYTES,
+ 					DMA_TO_DEVICE);
+ 			kfree(bp->tx_ring);
+ 		} else
+-			dma_free_coherent(&bp->sdev->dev, DMA_TABLE_BYTES,
++			dma_free_coherent(bp->sdev->dev, DMA_TABLE_BYTES,
+ 					    bp->tx_ring, bp->tx_ring_dma);
+ 		bp->tx_ring = NULL;
+ 		bp->flags &= ~B44_FLAG_TX_RING_HACK;
+@@ -1155,7 +1155,7 @@
+ 		goto out_err;
+ 
+ 	size = DMA_TABLE_BYTES;
+-	bp->rx_ring = dma_alloc_coherent(&bp->sdev->dev, size, &bp->rx_ring_dma, GFP_ATOMIC);
++	bp->rx_ring = dma_alloc_coherent(bp->sdev->dev, size, &bp->rx_ring_dma, GFP_ATOMIC);
+ 	if (!bp->rx_ring) {
+ 		/* Allocation may have failed due to pci_alloc_consistent
+ 		   insisting on use of GFP_DMA, which is more restrictive
+@@ -1167,7 +1167,7 @@
+ 		if (!rx_ring)
+ 			goto out_err;
+ 
+-		rx_ring_dma = dma_map_single(&bp->sdev->dev, rx_ring,
++		rx_ring_dma = dma_map_single(bp->sdev->dev, rx_ring,
+ 			                    DMA_TABLE_BYTES,
+ 			                    DMA_BIDIRECTIONAL);
+ 
+@@ -1182,7 +1182,7 @@
+ 		bp->flags |= B44_FLAG_RX_RING_HACK;
+ 	}
+ 
+-	bp->tx_ring = dma_alloc_coherent(&bp->sdev->dev, size, &bp->tx_ring_dma, GFP_ATOMIC);
++	bp->tx_ring = dma_alloc_coherent(bp->sdev->dev, size, &bp->tx_ring_dma, GFP_ATOMIC);
+ 	if (!bp->tx_ring) {
+ 		/* Allocation may have failed due to dma_alloc_coherent
+ 		   insisting on use of GFP_DMA, which is more restrictive
+@@ -1194,7 +1194,7 @@
+ 		if (!tx_ring)
+ 			goto out_err;
+ 
+-		tx_ring_dma = dma_map_single(&bp->sdev->dev, tx_ring,
++		tx_ring_dma = dma_map_single(bp->sdev->dev, tx_ring,
+ 			                    DMA_TABLE_BYTES,
+ 			                    DMA_TO_DEVICE);
+ 
+@@ -2314,13 +2314,13 @@
+ 
+ 	dev = alloc_etherdev(sizeof(*bp));
+ 	if (!dev) {
+-		dev_err(&sdev->dev, "Etherdev alloc failed, aborting.\n");
++		dev_err(sdev->dev, "Etherdev alloc failed, aborting.\n");
+ 		err = -ENOMEM;
+ 		goto out;
+ 	}
+ 
+ 	SET_MODULE_OWNER(dev);
+-	SET_NETDEV_DEV(dev,&sdev->dev);
++	SET_NETDEV_DEV(dev,sdev->dev);
+ 
+ 	/* No interesting netdevice features in this card... */
+ 	dev->features |= 0;
+@@ -2358,7 +2358,7 @@
+ 
+ 	err = b44_get_invariants(bp);
+ 	if (err) {
+-		dev_err(&sdev->dev,
++		dev_err(sdev->dev,
+ 			"Problem fetching invariants of chip, aborting.\n");
+ 		goto err_out_free_dev;
+ 	}
+@@ -2379,7 +2379,7 @@
+ 
+ 	err = register_netdev(dev);
+ 	if (err) {
+-		dev_err(&sdev->dev, "Cannot register net device, aborting.\n");
++		dev_err(sdev->dev, "Cannot register net device, aborting.\n");
+ 		goto out;
+ 	}
+ 
+@@ -2458,7 +2458,6 @@
+ 	rc = request_irq(dev->irq, b44_interrupt, IRQF_SHARED, dev->name, dev);
+ 	if (rc) {
+ 		printk(KERN_ERR PFX "%s: request_irq failed\n", dev->name);
+-		pci_disable_device(pdev);
+ 		return rc;
+ 	}
+ 

@@ -12,7 +12,8 @@
 #include <linux/pci.h>
 #include <linux/delay.h>
 
-#include "../ssb_private.h"
+#include "ssb_private.h"
+
 
 static inline
 u32 pcicore_read32(struct ssb_pcicore *pc, u16 offset)
@@ -92,9 +93,6 @@ static void __init ssb_fixup_pcibridge(struct pci_dev *dev)
 
 	/* Enable PCI bridge BAR1 prefetch and burst */
 	pci_write_config_dword(dev, SSB_BAR1_CONTROL, 3);
-
-	/* Make sure our latency is high enough to handle the devices behind us */
-	pci_write_config_byte(dev, PCI_LATENCY_TIMER, 0xa8);
 }
 DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, ssb_fixup_pcibridge);
 
@@ -112,7 +110,7 @@ static u32 get_cfgspace_addr(struct ssb_pcicore *pc,
 
 	if (unlikely(pc->cardbusmode && dev > 1))
 		goto out;
-	if (bus == 0) {//FIXME busnumber ok?
+	if (bus == 0) {
 		/* Type 0 transaction */
 		if (unlikely(dev >= SSB_PCI_SLOT_MAX))
 			goto out;
@@ -164,7 +162,8 @@ static int ssb_extpci_read_config(struct ssb_pcicore *pc,
 		val = 0xffffffff;
 		goto unmap;
 	}
-	
+
+	val = readl(mmio);
 	val >>= (8 * (off & 3));
 
 	switch (len) {
@@ -212,10 +211,12 @@ static int ssb_extpci_write_config(struct ssb_pcicore *pc,
 
 	switch (len) {
 	case 1:
+		val = readl(mmio);
 		val &= ~(0xFF << (8 * (off & 3)));
 		val |= *((const u8 *)buf) << (8 * (off & 3));
 		break;
 	case 2:
+		val = readl(mmio);
 		val &= ~(0xFFFF << (8 * (off & 3)));
 		val |= *((const u16 *)buf) << (8 * (off & 3));
 		break;
@@ -223,7 +224,7 @@ static int ssb_extpci_write_config(struct ssb_pcicore *pc,
 		val = *((const u32 *)buf);
 		break;
 	}
-	writel(val, mmio);
+	writel(*((const u32 *)buf), mmio);
 
 	err = 0;
 unmap:
@@ -290,7 +291,10 @@ static void ssb_pcicore_init_hostmode(struct ssb_pcicore *pc)
 {
 	u32 val;
 
-	assert(!extpci_core);
+	if (extpci_core) {
+		WARN_ON(1);
+		return;
+	}
 	extpci_core = pc;
 
 	ssb_dprintk(KERN_INFO PFX "PCIcore in host mode found\n");
@@ -303,8 +307,6 @@ static void ssb_pcicore_init_hostmode(struct ssb_pcicore *pc)
 	udelay(150);
 	val |= SSB_PCICORE_CTL_RST; /* Deassert RST# */
 	pcicore_write32(pc, SSB_PCICORE_CTL, val);
-	val = SSB_PCICORE_ARBCTL_INTERN;
-	pcicore_write32(pc, SSB_PCICORE_ARBCTL, val); 
 	udelay(1);
 
 	//TODO cardbus mode
@@ -321,7 +323,10 @@ static void ssb_pcicore_init_hostmode(struct ssb_pcicore *pc)
 
 	/* Enable PCI bridge BAR0 prefetch and burst */
 	val = PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY;
-	ssb_extpci_write_config(pc, 0, 0, 0, PCI_COMMAND, &val, 4);
+	ssb_extpci_write_config(pc, 0, 0, 0, PCI_COMMAND, &val, 2);
+	/* Clear error conditions */
+	val = 0;
+	ssb_extpci_write_config(pc, 0, 0, 0, PCI_STATUS, &val, 2);
 
 	/* Enable PCI interrupts */
 	pcicore_write32(pc, SSB_PCICORE_IMASK,
@@ -331,7 +336,6 @@ static void ssb_pcicore_init_hostmode(struct ssb_pcicore *pc)
 	 * The following needs change, if we want to port hostmode
 	 * to non-MIPS platform. */
 	set_io_port_base((unsigned long)ioremap_nocache(SSB_PCI_MEM, 0x04000000));
-	mdelay(300);
 	register_pci_controller(&ssb_pcicore_controller);
 }
 
@@ -383,7 +387,8 @@ void ssb_pcicore_init(struct ssb_pcicore *pc)
 	if (!dev)
 		return;
 	bus = dev->bus;
-	ssb_device_enable(dev, 0);
+	if (!ssb_device_is_enabled(dev))
+		ssb_device_enable(dev, 0);
 
 #ifdef CONFIG_SSB_PCICORE_HOSTMODE
 	pc->hostmode = pcicore_is_in_hostmode(pc);

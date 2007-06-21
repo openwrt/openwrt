@@ -124,8 +124,8 @@
 #define SSB_CHIPCO_GPIOOUT		0x0064
 #define SSB_CHIPCO_GPIOOUTEN		0x0068
 #define SSB_CHIPCO_GPIOCTL		0x006C
-#define SSB_CHIPCO_GPIOINTPOL		0x0070
-#define SSB_CHIPCO_GPIOINTMASK		0x0074
+#define SSB_CHIPCO_GPIOPOL		0x0070
+#define SSB_CHIPCO_GPIOIRQ		0x0074
 #define SSB_CHIPCO_WATCHDOG		0x0080
 #define SSB_CHIPCO_GPIOTIMER		0x0088		/* LED powersave (corerev >= 16) */
 #define  SSB_CHIPCO_GPIOTIMER_ONTIME_SHIFT	16
@@ -364,8 +364,6 @@ extern void ssb_chipcommon_init(struct ssb_chipcommon *cc);
 extern void ssb_chipco_suspend(struct ssb_chipcommon *cc, pm_message_t state);
 extern void ssb_chipco_resume(struct ssb_chipcommon *cc);
 
-extern void ssb_chipco_get_clockcpu(struct ssb_chipcommon *cc, u32 chip_id,
-	u32 *rate, u32 *plltype, u32 *n, u32 *m);
 extern void ssb_chipco_get_clockcontrol(struct ssb_chipcommon *cc,
 					u32 *plltype, u32 *n, u32 *m);
 extern void ssb_chipco_timing_init(struct ssb_chipcommon *cc,
@@ -379,47 +377,6 @@ enum ssb_clkmode {
 
 extern void ssb_chipco_set_clockmode(struct ssb_chipcommon *cc,
 				     enum ssb_clkmode mode);
-
-
-/* GPIO functions */
-static inline u32 ssb_chipco_gpio_in(struct ssb_chipcommon *cc,
-				     u32 mask)
-{
-	return ssb_read32(cc->dev, SSB_CHIPCO_GPIOIN) & mask;
-}
-
-static inline u32 ssb_chipco_gpio_out(struct ssb_chipcommon *cc,
-				     u32 mask, u32 value)
-{
-	return ssb_write32_masked(cc->dev, SSB_CHIPCO_GPIOOUT, mask, value);
-}
-
-static inline u32 ssb_chipco_gpio_outen(struct ssb_chipcommon *cc,
-				     u32 mask, u32 value)
-{
-	return ssb_write32_masked(cc->dev, SSB_CHIPCO_GPIOOUTEN, mask, value);
-}
-
-static inline u32 ssb_chipco_gpio_control(struct ssb_chipcommon *cc,
-				     u32 mask, u32 value)
-{
-	return ssb_write32_masked(cc->dev, SSB_CHIPCO_GPIOCTL, mask, value);
-}
-
-static inline u32 ssb_chipco_gpio_intmask(struct ssb_chipcommon *cc,
-				     u32 mask, u32 value)
-{
-	return ssb_write32_masked(cc->dev, SSB_CHIPCO_GPIOINTMASK, mask, value);
-}
-
-static inline u32 ssb_chipco_gpio_polarity(struct ssb_chipcommon *cc,
-				     u32 mask, u32 value)
-{
-	return ssb_write32_masked(cc->dev, SSB_CHIPCO_GPIOINTPOL, mask, value);
-}
-/* TODO: GPIO reservation */
-
-extern int ssb_chipco_watchdog(struct ssb_chipcommon *cc, uint ticks);
 
 #ifdef CONFIG_SSB_SERIAL
 extern int ssb_chipco_serial_init(struct ssb_chipcommon *cc,

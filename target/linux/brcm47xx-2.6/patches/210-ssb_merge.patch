@@ -1,0 +1,421 @@
+Index: linux-2.6.22-rc4/drivers/ssb/driver_chipcommon.c
+===================================================================
+--- linux-2.6.22-rc4.orig/drivers/ssb/driver_chipcommon.c	2007-06-10 21:32:11.000000000 +0100
++++ linux-2.6.22-rc4/drivers/ssb/driver_chipcommon.c	2007-06-10 21:33:25.000000000 +0100
+@@ -264,6 +264,31 @@
+ 	ssb_chipco_set_clockmode(cc, SSB_CLKMODE_FAST);
+ }
+ 
++/* TODO: These two functions are a clear candidate for merging, but one gets
++ * the processor clock, and the other gets the bus clock.
++ */
++void ssb_chipco_get_clockcpu(struct ssb_chipcommon *cc,
++                             u32 *plltype, u32 *n, u32 *m)
++{
++	*n = chipco_read32(cc, SSB_CHIPCO_CLOCK_N);
++	*plltype = (cc->capabilities & SSB_CHIPCO_CAP_PLLT);
++	switch (*plltype) {
++		case SSB_PLLTYPE_2:
++		case SSB_PLLTYPE_4:
++		case SSB_PLLTYPE_6:
++		case SSB_PLLTYPE_7:
++			*m = chipco_read32(cc, SSB_CHIPCO_CLOCK_MIPS);
++			break;
++		case SSB_PLLTYPE_3:
++			/* 5350 uses m2 to control mips */
++			*m = chipco_read32(cc, SSB_CHIPCO_CLOCK_M2);
++			break;
++		default:
++			*m = chipco_read32(cc, SSB_CHIPCO_CLOCK_SB);
++			break;
++	}
++}
++
+ void ssb_chipco_get_clockcontrol(struct ssb_chipcommon *cc,
+ 				 u32 *plltype, u32 *n, u32 *m)
+ {
+@@ -400,3 +425,13 @@
+ 	return nr_ports;
+ }
+ #endif /* CONFIG_SSB_SERIAL */
++
++/* Set chip watchdog reset timer to fire in 'ticks' backplane cycles */
++int
++ssb_chipco_watchdog(struct ssb_chipcommon *cc, uint ticks)
++{
++	/* instant NMI */
++	chipco_write32(cc, SSB_CHIPCO_WATCHDOG, ticks);
++	return 0;
++}
++EXPORT_SYMBOL(ssb_chipco_watchdog);
+Index: linux-2.6.22-rc4/drivers/ssb/driver_mipscore.c
+===================================================================
+--- linux-2.6.22-rc4.orig/drivers/ssb/driver_mipscore.c	2007-06-10 21:32:11.000000000 +0100
++++ linux-2.6.22-rc4/drivers/ssb/driver_mipscore.c	2007-06-10 21:33:25.000000000 +0100
+@@ -4,6 +4,7 @@
+  *
+  * Copyright 2005, Broadcom Corporation
+  * Copyright 2006, 2007, Michael Buesch <mb@bu3sch.de>
++ * Copyright 2006, 2007, Felix Fietkau <nbd@openwrt.org>
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
+@@ -31,6 +32,16 @@
+ 	ssb_write32(mcore->dev, offset, value);
+ }
+ 
++static inline u32 extif_read32(struct ssb_extif *extif, u16 offset)
++{
++	return ssb_read32(extif->dev, offset);
++}
++
++static inline void extif_write32(struct ssb_extif *extif, u16 offset, u32 value)
++{
++	ssb_write32(extif->dev, offset, value);
++}
++
+ static const u32 ipsflag_irq_mask[] = {
+ 	0,
+ 	SSB_IPSFLAG_IRQ1,
+@@ -118,9 +129,9 @@
+ }
+ 
+ /* XXX: leave here or move into separate extif driver? */
+-static int ssb_extif_serial_init(struct ssb_device *dev, struct ssb_serial_ports *ports)
++static int ssb_extif_serial_init(struct ssb_extif *dev, struct ssb_serial_port *ports)
+ {
+-
++	return 0;
+ }
+ 
+ 
+@@ -174,23 +185,76 @@
+ {
+ 	struct ssb_bus *bus = mcore->dev->bus;
+ 
++	mcore->flash_buswidth = 2;
+ 	if (bus->chipco.dev) {
+ 		mcore->flash_window = 0x1c000000;
+-		mcore->flash_window_size = 0x800000;
++		mcore->flash_window_size = 0x02000000;
++		if ((ssb_read32(bus->chipco.dev, SSB_CHIPCO_FLASH_CFG)
++		               & SSB_CHIPCO_CFG_DS16) == 0)
++			mcore->flash_buswidth = 1;
+ 	} else {
+ 		mcore->flash_window = 0x1fc00000;
+-		mcore->flash_window_size = 0x400000;
++		mcore->flash_window_size = 0x00400000;
+ 	}
+ }
+ 
++static void ssb_extif_timing_init(struct ssb_extif *extif, u32 ns)
++{
++	u32 tmp;
++
++	/* Initialize extif so we can get to the LEDs and external UART */
++	extif_write32(extif, SSB_EXTIF_PROG_CFG, SSB_EXTCFG_EN);
++
++	/* Set timing for the flash */
++	tmp  = ceildiv(10, ns) << SSB_PROG_WCNT_3_SHIFT;
++	tmp |= ceildiv(40, ns) << SSB_PROG_WCNT_1_SHIFT;
++	tmp |= ceildiv(120, ns);
++	extif_write32(extif, SSB_EXTIF_PROG_WAITCNT, tmp);
++
++	/* Set programmable interface timing for external uart */
++	tmp  = ceildiv(10, ns) << SSB_PROG_WCNT_3_SHIFT;
++	tmp |= ceildiv(20, ns) << SSB_PROG_WCNT_2_SHIFT;
++	tmp |= ceildiv(100, ns) << SSB_PROG_WCNT_1_SHIFT;
++	tmp |= ceildiv(120, ns);
++	extif_write32(extif, SSB_EXTIF_PROG_WAITCNT, tmp);
++}
+ 
+-static void ssb_cpu_clock(struct ssb_mipscore *mcore)
++static inline void ssb_extif_get_clockcontrol(struct ssb_extif *extif,
++                                              u32 *pll_type, u32 *n, u32 *m)
+ {
++	*pll_type = SSB_PLLTYPE_1;
++	*n = extif_read32(extif, SSB_EXTIF_CLOCK_N);
++	*m = extif_read32(extif, SSB_EXTIF_CLOCK_SB);
+ }
+ 
+-void ssb_mipscore_init(struct ssb_mipscore *mcore)
++u32 ssb_cpu_clock(struct ssb_mipscore *mcore)
+ {
+ 	struct ssb_bus *bus = mcore->dev->bus;
++	u32 pll_type, n, m, rate = 0;
++
++	if (bus->extif.dev) {
++		ssb_extif_get_clockcontrol(&bus->extif, &pll_type, &n, &m);
++	} else if (bus->chipco.dev) {
++		ssb_chipco_get_clockcpu(&bus->chipco, &pll_type, &n, &m);
++	} else
++		return 0;
++
++	if ((pll_type == SSB_PLLTYPE_5) || (bus->chip_id == 0x5365)) {
++		rate = 200000000;
++	} else {
++		rate = ssb_calc_clock_rate(pll_type, n, m);
++	}
++
++	if (pll_type == SSB_PLLTYPE_6) {
++		rate *= 2;
++	}
++
++	return rate;
++}
++
++void ssb_mipscore_init(struct ssb_mipscore *mcore)
++{
++	struct ssb_bus *bus;
+ 	struct ssb_device *dev;
+ 	unsigned long hz, ns;
+ 	unsigned int irq, i;
+@@ -198,6 +262,8 @@
+ 	if (!mcore->dev)
+ 		return; /* We don't have a MIPS core */
+ 
++	bus = mcore->dev->bus;
++
+ 	ssb_dprintk(KERN_INFO PFX "Initializing MIPS core...\n");
+ 
+ 	hz = ssb_clockspeed(bus);
+@@ -205,28 +271,9 @@
+ 		hz = 100000000;
+ 	ns = 1000000000 / hz;
+ 
+-//TODO
+-#if 0
+-	if (have EXTIF) {
+-		/* Initialize extif so we can get to the LEDs and external UART */
+-		W_REG(&eir->prog_config, CF_EN);
+-
+-		/* Set timing for the flash */
+-		tmp = CEIL(10, ns) << FW_W3_SHIFT;	/* W3 = 10nS */
+-		tmp = tmp | (CEIL(40, ns) << FW_W1_SHIFT); /* W1 = 40nS */
+-		tmp = tmp | CEIL(120, ns);		/* W0 = 120nS */
+-		W_REG(&eir->prog_waitcount, tmp);	/* 0x01020a0c for a 100Mhz clock */
+-
+-		/* Set programmable interface timing for external uart */
+-		tmp = CEIL(10, ns) << FW_W3_SHIFT;	/* W3 = 10nS */
+-		tmp = tmp | (CEIL(20, ns) << FW_W2_SHIFT); /* W2 = 20nS */
+-		tmp = tmp | (CEIL(100, ns) << FW_W1_SHIFT); /* W1 = 100nS */
+-		tmp = tmp | CEIL(120, ns);		/* W0 = 120nS */
+-		W_REG(&eir->prog_waitcount, tmp);
+-	}
+-	else... chipcommon
+-#endif
+-	if (bus->chipco.dev)
++	if (bus->extif.dev)
++		ssb_extif_timing_init(&bus->extif, ns);
++	else if (bus->chipco.dev)
+ 		ssb_chipco_timing_init(&bus->chipco, ns);
+ 
+ 	/* Assign IRQs to all cores on the bus, start with irq line 2, because serial usually takes 1 */
+@@ -256,3 +303,5 @@
+ 	ssb_mips_serial_init(mcore);
+ 	ssb_mips_flash_detect(mcore);
+ }
++
++EXPORT_SYMBOL(ssb_mips_irq);
+Index: linux-2.6.22-rc4/drivers/ssb/driver_pcicore.c
+===================================================================
+--- linux-2.6.22-rc4.orig/drivers/ssb/driver_pcicore.c	2007-06-10 21:32:11.000000000 +0100
++++ linux-2.6.22-rc4/drivers/ssb/driver_pcicore.c	2007-06-10 21:33:25.000000000 +0100
+@@ -93,6 +93,9 @@
+ 
+ 	/* Enable PCI bridge BAR1 prefetch and burst */
+ 	pci_write_config_dword(dev, SSB_BAR1_CONTROL, 3);
++
++	/* Make sure our latency is high enough to handle the devices behind us */
++	pci_write_config_byte(dev, PCI_LATENCY_TIMER, 0xa8);
+ }
+ DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, ssb_fixup_pcibridge);
+ 
+@@ -110,7 +113,7 @@
+ 
+ 	if (unlikely(pc->cardbusmode && dev > 1))
+ 		goto out;
+-	if (bus == 0) {
++	if (bus == 0) {//FIXME busnumber ok?
+ 		/* Type 0 transaction */
+ 		if (unlikely(dev >= SSB_PCI_SLOT_MAX))
+ 			goto out;
+@@ -224,7 +227,7 @@
+ 		val = *((const u32 *)buf);
+ 		break;
+ 	}
+-	writel(*((const u32 *)buf), mmio);
++	writel(val, mmio);
+ 
+ 	err = 0;
+ unmap:
+@@ -307,6 +310,8 @@
+ 	udelay(150);
+ 	val |= SSB_PCICORE_CTL_RST; /* Deassert RST# */
+ 	pcicore_write32(pc, SSB_PCICORE_CTL, val);
++	val = SSB_PCICORE_ARBCTL_INTERN;
++	pcicore_write32(pc, SSB_PCICORE_ARBCTL, val); 
+ 	udelay(1);
+ 
+ 	//TODO cardbus mode
+@@ -336,6 +341,7 @@
+ 	 * The following needs change, if we want to port hostmode
+ 	 * to non-MIPS platform. */
+ 	set_io_port_base((unsigned long)ioremap_nocache(SSB_PCI_MEM, 0x04000000));
++	mdelay(300);
+ 	register_pci_controller(&ssb_pcicore_controller);
+ }
+ 
+Index: linux-2.6.22-rc4/include/linux/ssb/ssb_driver_chipcommon.h
+===================================================================
+--- linux-2.6.22-rc4.orig/include/linux/ssb/ssb_driver_chipcommon.h	2007-06-10 21:32:11.000000000 +0100
++++ linux-2.6.22-rc4/include/linux/ssb/ssb_driver_chipcommon.h	2007-06-10 21:33:25.000000000 +0100
+@@ -364,6 +364,8 @@
+ extern void ssb_chipco_suspend(struct ssb_chipcommon *cc, pm_message_t state);
+ extern void ssb_chipco_resume(struct ssb_chipcommon *cc);
+ 
++extern void ssb_chipco_get_clockcpu(struct ssb_chipcommon *cc,
++                                    u32 *plltype, u32 *n, u32 *m);
+ extern void ssb_chipco_get_clockcontrol(struct ssb_chipcommon *cc,
+ 					u32 *plltype, u32 *n, u32 *m);
+ extern void ssb_chipco_timing_init(struct ssb_chipcommon *cc,
+@@ -378,6 +380,46 @@
+ extern void ssb_chipco_set_clockmode(struct ssb_chipcommon *cc,
+ 				     enum ssb_clkmode mode);
+ 
++/* GPIO functions */
++static inline u32 ssb_chipco_gpio_in(struct ssb_chipcommon *cc,
++                                     u32 mask)
++{
++	return ssb_read32(cc->dev, SSB_CHIPCO_GPIOIN) & mask;
++}
++
++static inline u32 ssb_chipco_gpio_out(struct ssb_chipcommon *cc,
++                                      u32 mask, u32 value)
++{
++	return ssb_write32_masked(cc->dev, SSB_CHIPCO_GPIOOUT, mask, value);
++}
++
++static inline u32 ssb_chipco_gpio_outen(struct ssb_chipcommon *cc,
++                                        u32 mask, u32 value)
++{
++	return ssb_write32_masked(cc->dev, SSB_CHIPCO_GPIOOUTEN, mask, value);
++}
++
++static inline u32 ssb_chipco_gpio_control(struct ssb_chipcommon *cc,
++                                          u32 mask, u32 value)
++{
++	return ssb_write32_masked(cc->dev, SSB_CHIPCO_GPIOCTL, mask, value);
++}
++
++static inline u32 ssb_chipco_gpio_intmask(struct ssb_chipcommon *cc,
++                                          u32 mask, u32 value)
++{
++	return ssb_write32_masked(cc->dev, SSB_CHIPCO_GPIOIRQ, mask, value);
++}
++
++static inline u32 ssb_chipco_gpio_polarity(struct ssb_chipcommon *cc,
++                                           u32 mask, u32 value)
++{
++	return ssb_write32_masked(cc->dev, SSB_CHIPCO_GPIOPOL, mask, value);
++}
++/* TODO: GPIO reservation */
++
++extern int ssb_chipco_watchdog(struct ssb_chipcommon *cc, uint ticks);
++
+ #ifdef CONFIG_SSB_SERIAL
+ extern int ssb_chipco_serial_init(struct ssb_chipcommon *cc,
+ 				  struct ssb_serial_port *ports);
+Index: linux-2.6.22-rc4/include/linux/ssb/ssb_driver_extif.h
+===================================================================
+--- linux-2.6.22-rc4.orig/include/linux/ssb/ssb_driver_extif.h	2007-06-10 21:32:11.000000000 +0100
++++ linux-2.6.22-rc4/include/linux/ssb/ssb_driver_extif.h	2007-06-10 21:33:25.000000000 +0100
+@@ -158,6 +158,36 @@
+ /* watchdog */
+ #define SSB_EXTIF_WATCHDOG_CLK		48000000	/* Hz */
+ 
++/* GPIO functions */
++static inline u32 ssb_extif_gpio_in(struct ssb_extif *extif,
++                                    u32 mask)
++{
++	return ssb_read32(extif->dev, SSB_EXTIF_GPIO_IN) & mask;
++}
++
++static inline u32 ssb_extif_gpio_out(struct ssb_extif *extif,
++                                     u32 mask, u32 value)
++{
++	return ssb_write32_masked(extif->dev, SSB_EXTIF_GPIO_OUT(0), mask, value);
++}
++
++static inline u32 ssb_extif_gpio_outen(struct ssb_extif *extif,
++                                       u32 mask, u32 value)
++{
++	return ssb_write32_masked(extif->dev, SSB_EXTIF_GPIO_OUTEN(0), mask, value);
++}
++
++static inline u32 ssb_extif_gpio_polarity(struct ssb_extif *extif,
++                                          u32 mask, u32 value)
++{
++	return ssb_write32_masked(extif->dev, SSB_EXTIF_GPIO_INTPOL, mask, value);
++}
++
++static inline u32 ssb_extif_gpio_intmask(struct ssb_extif *extif,
++                                         u32 mask, u32 value)
++{
++	return ssb_write32_masked(extif->dev, SSB_EXTIF_GPIO_INTMASK, mask, value);
++}
+ 
+ #endif /* __KERNEL__ */
+ #endif /* LINUX_SSB_EXTIFCORE_H_ */
+Index: linux-2.6.22-rc4/include/linux/ssb/ssb_driver_mips.h
+===================================================================
+--- linux-2.6.22-rc4.orig/include/linux/ssb/ssb_driver_mips.h	2007-06-10 21:32:11.000000000 +0100
++++ linux-2.6.22-rc4/include/linux/ssb/ssb_driver_mips.h	2007-06-10 21:33:25.000000000 +0100
+@@ -22,11 +22,13 @@
+ 	int nr_serial_ports;
+ 	struct ssb_serial_port serial_ports[4];
+ 
++	int flash_buswidth;
+ 	u32 flash_window;
+ 	u32 flash_window_size;
+ };
+ 
+ extern void ssb_mipscore_init(struct ssb_mipscore *mcore);
++extern u32 ssb_cpu_clock(struct ssb_mipscore *mcore);
+ 
+ extern unsigned int ssb_mips_irq(struct ssb_device *dev);
+ 
+Index: linux-2.6.22-rc4/include/linux/ssb/ssb.h
+===================================================================
+--- linux-2.6.22-rc4.orig/include/linux/ssb/ssb.h	2007-06-10 21:32:11.000000000 +0100
++++ linux-2.6.22-rc4/include/linux/ssb/ssb.h	2007-06-10 21:33:25.000000000 +0100
+@@ -263,6 +263,12 @@
+ #define SSB_CHIPPACK_BCM4712M	2	/* Medium 225pin 4712 */
+ #define SSB_CHIPPACK_BCM4712L	0	/* Large 340pin 4712 */
+ 
++static inline u16 ssb_read16(struct ssb_device *dev, u16 offset);
++static inline u32 ssb_read32(struct ssb_device *dev, u16 offset);
++static inline void ssb_write16(struct ssb_device *dev, u16 offset, u16 value);
++static inline void ssb_write32(struct ssb_device *dev, u16 offset, u32 value);
++static inline u32 ssb_write32_masked(struct ssb_device *dev, u16 offset, u32 mask, u32 value);
++
+ #include <linux/ssb/ssb_driver_chipcommon.h>
+ #include <linux/ssb/ssb_driver_mips.h>
+ #include <linux/ssb/ssb_driver_extif.h>
+@@ -369,6 +375,16 @@
+ 	dev->ops->write32(dev, offset, value);
+ }
+ 
++static inline u32 ssb_write32_masked(struct ssb_device *dev,
++                                     u16 offset,
++                                     u32 mask,
++                                     u32 value)
++{
++	value &= mask;
++	value |= ssb_read32(dev, offset) & ~mask;
++	ssb_write32(dev, offset, value);
++	return value;
++}
+ 
+ /* Translation (routing) bits that need to be ORed to DMA
+  * addresses before they are given to a device. */
