@@ -1,6 +1,7 @@
-diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
---- linux.old/drivers/net/b44.c	2006-12-11 20:32:53.000000000 +0100
-+++ linux.dev/drivers/net/b44.c	2007-01-03 02:26:02.000000000 +0100
+Index: linux-2.6.22-rc4/drivers/net/b44.c
+===================================================================
+--- linux-2.6.22-rc4.orig/drivers/net/b44.c	2007-06-10 21:32:13.000000000 +0100
++++ linux-2.6.22-rc4/drivers/net/b44.c	2007-06-10 21:33:15.000000000 +0100
 @@ -1,7 +1,9 @@
 -/* b44.c: Broadcom 4400 device driver.
 +/* b44.c: Broadcom 4400/47xx device driver.
@@ -59,9 +60,9 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 -
  static void b44_halt(struct b44 *);
  static void b44_init_rings(struct b44 *);
-
+ 
 @@ -118,6 +115,7 @@
-
+ 
  static int dma_desc_align_mask;
  static int dma_desc_sync_size;
 +static int instance;
@@ -200,35 +201,36 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 -	bw32(bp, B44_SBTMSLOW, (SBTMSLOW_CLOCK | SBTMSLOW_FGC));
 -	br32(bp, B44_SBTMSLOW);
 -	udelay(1);
--
++	bw32(bp, B44_CAM_CTRL, (CAM_CTRL_READ |
++			    (index << CAM_CTRL_INDEX_SHIFT)));
+ 
 -	bw32(bp, B44_SBTMSLOW, (SBTMSLOW_CLOCK));
 -	br32(bp, B44_SBTMSLOW);
 -	udelay(1);
 -}
-+	bw32(bp, B44_CAM_CTRL, (CAM_CTRL_READ |
-+			    (index << CAM_CTRL_INDEX_SHIFT)));
++	b44_wait_bit(bp, B44_CAM_CTRL, CAM_CTRL_BUSY, 100, 1);
  
 -static int ssb_core_unit(struct b44 *bp)
 -{
 -#if 0
 -	u32 val = br32(bp, B44_SBADMATCH0);
 -	u32 base;
-+	b44_wait_bit(bp, B44_CAM_CTRL, CAM_CTRL_BUSY, 100, 1);
++	val = br32(bp, B44_CAM_DATA_LO);
  
 -	type = val & SBADMATCH0_TYPE_MASK;
 -	switch (type) {
 -	case 0:
 -		base = val & SBADMATCH0_BS0_MASK;
 -		break;
-+	val = br32(bp, B44_CAM_DATA_LO);
- 
--	case 1:
--		base = val & SBADMATCH0_BS1_MASK;
--		break;
 +	data[2] = (val >> 24) & 0xFF;
 +	data[3] = (val >> 16) & 0xFF;
 +	data[4] = (val >> 8) & 0xFF;
 +	data[5] = (val >> 0) & 0xFF;
+ 
+-	case 1:
+-		base = val & SBADMATCH0_BS1_MASK;
+-		break;
++	val = br32(bp, B44_CAM_DATA_HI);
  
 -	case 2:
 -	default:
@@ -238,8 +240,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 -#endif
 -	return 0;
 -}
-+	val = br32(bp, B44_CAM_DATA_HI);
- 
+-
 -static int ssb_is_core_up(struct b44 *bp)
 -{
 -	return ((br32(bp, B44_SBTMSLOW) & (SBTMSLOW_RESET | SBTMSLOW_REJECT | SBTMSLOW_CLOCK))
@@ -487,7 +488,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  		} else {
  			struct sk_buff *copy_skb;
  
-@@ -986,23 +932,23 @@
+@@ -985,23 +931,23 @@
  		goto err_out;
  	}
  
@@ -1098,13 +1099,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 -	if (err)
 -		goto out;
 +	bp->dma_offset = ssb_dma_translation(sdev);
- 
--	bp->dev->dev_addr[0] = eeprom[79];
--	bp->dev->dev_addr[1] = eeprom[78];
--	bp->dev->dev_addr[2] = eeprom[81];
--	bp->dev->dev_addr[3] = eeprom[80];
--	bp->dev->dev_addr[4] = eeprom[83];
--	bp->dev->dev_addr[5] = eeprom[82];
++
 +	switch (instance) {
 +	case 1:
 +	       addr = sdev->bus->sprom.r1.et0mac;
@@ -1115,7 +1110,13 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 +	       bp->phy_addr = sdev->bus->sprom.r1.et1phyaddr;
 +	       break;
 +	}
-+
+ 
+-	bp->dev->dev_addr[0] = eeprom[79];
+-	bp->dev->dev_addr[1] = eeprom[78];
+-	bp->dev->dev_addr[2] = eeprom[81];
+-	bp->dev->dev_addr[3] = eeprom[80];
+-	bp->dev->dev_addr[4] = eeprom[83];
+-	bp->dev->dev_addr[5] = eeprom[82];
 +	memcpy(bp->dev->dev_addr, addr, 6);
  
  	if (!is_valid_ether_addr(&bp->dev->dev_addr[0])){
@@ -1139,11 +1140,11 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	/* XXX - really required?
  	   bp->flags |= B44_FLAG_BUGGY_TXPTR;
 -         */
-+	*/
- 
+-
 - 	if (ssb_get_core_rev(bp) >= 7)
 - 		bp->flags |= B44_FLAG_B0_ANDLATER;
--
++	*/
+ 
 -out:
  	return err;
  }
@@ -1351,7 +1352,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 -	struct net_device *dev = pci_get_drvdata(pdev);
 +	struct net_device *dev = ssb_get_drvdata(pdev);
  	struct b44 *bp = netdev_priv(dev);
-	int rc = 0;
+ 	int rc = 0;
  
 -	pci_restore_state(pdev);
 -	rc = pci_enable_device(pdev);
@@ -1404,9 +1405,10 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  }
  
  module_init(b44_init);
-diff -urN linux.old/drivers/net/b44.h linux.dev/drivers/net/b44.h
---- linux.old/drivers/net/b44.h	2006-12-11 20:32:53.000000000 +0100
-+++ linux.dev/drivers/net/b44.h	2007-01-03 02:26:02.000000000 +0100
+Index: linux-2.6.22-rc4/drivers/net/b44.h
+===================================================================
+--- linux-2.6.22-rc4.orig/drivers/net/b44.h	2007-06-10 21:32:13.000000000 +0100
++++ linux-2.6.22-rc4/drivers/net/b44.h	2007-06-10 21:33:15.000000000 +0100
 @@ -129,6 +129,7 @@
  #define  RXCONFIG_FLOW		0x00000020 /* Flow Control Enable */
  #define  RXCONFIG_FLOW_ACCEPT	0x00000040 /* Accept Unicast Flow Control Frame */
@@ -1530,9 +1532,10 @@ diff -urN linux.old/drivers/net/b44.h linux.dev/drivers/net/b44.h
  	struct net_device	*dev;
  
  	dma_addr_t		rx_ring_dma, tx_ring_dma;
-diff -urN linux.old/drivers/net/Kconfig linux.dev/drivers/net/Kconfig
---- linux.old/drivers/net/Kconfig	2007-01-03 02:25:09.000000000 +0100
-+++ linux.dev/drivers/net/Kconfig	2007-01-03 02:26:02.000000000 +0100
+Index: linux-2.6.22-rc4/drivers/net/Kconfig
+===================================================================
+--- linux-2.6.22-rc4.orig/drivers/net/Kconfig	2007-06-10 21:32:48.000000000 +0100
++++ linux-2.6.22-rc4/drivers/net/Kconfig	2007-06-10 21:33:15.000000000 +0100
 @@ -1511,7 +1511,7 @@
  
  config B44
@@ -1542,4 +1545,3 @@ diff -urN linux.old/drivers/net/Kconfig linux.dev/drivers/net/Kconfig
  	select MII
  	help
  	  If you have a network (Ethernet) controller of this type, say Y and
-

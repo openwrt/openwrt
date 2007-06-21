@@ -1,5 +1,7 @@
---- ./arch/mips/mm/init.c.orig	2007-03-22 08:08:34.000000000 -0600
-+++ ./arch/mips/mm/init.c	2007-03-22 08:09:04.000000000 -0600
+Index: linux-2.6.22-rc4/arch/mips/mm/init.c
+===================================================================
+--- linux-2.6.22-rc4.orig/arch/mips/mm/init.c	2007-06-10 21:32:12.000000000 +0100
++++ linux-2.6.22-rc4/arch/mips/mm/init.c	2007-06-10 21:33:21.000000000 +0100
 @@ -207,7 +207,7 @@
  	void *vfrom, *vto;
  
@@ -8,7 +10,7 @@
 +	if (cpu_has_dc_aliases && cpu_use_kmap_coherent) {
  		vfrom = kmap_coherent(from, vaddr);
  		copy_page(vto, vfrom);
- 		kunmap_coherent(from);
+ 		kunmap_coherent();
 @@ -230,7 +230,7 @@
  	struct page *page, unsigned long vaddr, void *dst, const void *src,
  	unsigned long len)
@@ -17,7 +19,7 @@
 +	if (cpu_has_dc_aliases && cpu_use_kmap_coherent) {
  		void *vto = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
  		memcpy(vto, src, len);
- 		kunmap_coherent(page);
+ 		kunmap_coherent();
 @@ -246,7 +246,7 @@
  	struct page *page, unsigned long vaddr, void *dst, const void *src,
  	unsigned long len)
@@ -27,8 +29,10 @@
  		void *vfrom =
  			kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
  		memcpy(dst, vfrom, len);
---- ./include/asm-mips/mach-bcm947xx/cpu-feature-overrides.h.orig	2007-03-22 08:10:54.000000000 -0600
-+++ ./include/asm-mips/mach-bcm947xx/cpu-feature-overrides.h	2007-03-22 08:10:50.000000000 -0600
+Index: linux-2.6.22-rc4/include/asm-mips/mach-bcm947xx/cpu-feature-overrides.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.22-rc4/include/asm-mips/mach-bcm947xx/cpu-feature-overrides.h	2007-06-10 21:33:21.000000000 +0100
 @@ -0,0 +1,13 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -43,8 +47,10 @@
 +#define cpu_use_kmap_coherent	0
 +
 +#endif /* __ASM_MACH_BCM947XX_CPU_FEATURE_OVERRIDES_H */
---- ./include/asm-mips/cpu-features.h.orig	2007-03-22 08:09:16.000000000 -0600
-+++ ./include/asm-mips/cpu-features.h	2007-03-22 08:09:52.000000000 -0600
+Index: linux-2.6.22-rc4/include/asm-mips/cpu-features.h
+===================================================================
+--- linux-2.6.22-rc4.orig/include/asm-mips/cpu-features.h	2007-06-10 21:32:12.000000000 +0100
++++ linux-2.6.22-rc4/include/asm-mips/cpu-features.h	2007-06-10 21:33:21.000000000 +0100
 @@ -101,6 +101,9 @@
  #ifndef cpu_has_pindexed_dcache
  #define cpu_has_pindexed_dcache	(cpu_data[0].dcache.flags & MIPS_CACHE_PINDEX)
