@@ -33,7 +33,7 @@ KERNEL_MAKEOPTS := -C $(LINUX_DIR) \
 # defined in quilt.mk
 Kernel/Patch:=$(Kernel/Patch/Default)
 define Kernel/Prepare/Default
-	bzcat $(DL_DIR)/$(LINUX_SOURCE) | tar -C $(KERNEL_BUILD_DIR) $(TAR_OPTIONS)
+	bzcat $(DL_DIR)/$(LINUX_SOURCE) | $(TAR) -C $(KERNEL_BUILD_DIR) $(TAR_OPTIONS)
 	$(Kernel/Patch)
 endef
 
