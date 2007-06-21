@@ -50,7 +50,7 @@ root=/dev/cfa2 rootfstype=ext2 init=/etc/preinit
 endef
 
 define Image/cmdline/squashfs
-root=/dev/cfa2 rootfstype=squashfs init=/etc/preinit
+block2mtd.block2mtd=/dev/cfa2,65536 root=/dev/mtdblock0 rootfstype=squashfs init=/etc/preinit
 endef
 
 define Image/Build
