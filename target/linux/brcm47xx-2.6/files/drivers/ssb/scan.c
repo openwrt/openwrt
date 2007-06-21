@@ -17,6 +17,13 @@
 #include <linux/pci.h>
 #include <asm/io.h>
 
+#ifdef CONFIG_SSB_PCMCIAHOST
+# include <pcmcia/cs_types.h>
+# include <pcmcia/cs.h>
+# include <pcmcia/cistpl.h>
+# include <pcmcia/ds.h>
+#endif
+
 #include "ssb_private.h"
 
 
@@ -222,14 +229,32 @@ static void __iomem * ssb_ioremap(struct ssb_bus *bus,
 	return mmio;
 }
 
+static int we_support_multiple_80211_cores(struct ssb_bus *bus)
+{
+	/* More than one 802.11 core is only supported by special chips.
+	 * There are chips with two 802.11 cores, but with dangling
+	 * pins on the second core. Be careful and reject them here.
+	 */
+
+#ifdef CONFIG_SSB_PCIHOST
+	if (bus->bustype == SSB_BUSTYPE_PCI) {
+		if (bus->host_pci->vendor == PCI_VENDOR_ID_BROADCOM &&
+		    bus->host_pci->device == 0x4324)
+			return 1;
+	}
+#endif /* CONFIG_SSB_PCIHOST */
+	return 0;
+}
+
 int ssb_bus_scan(struct ssb_bus *bus,
 		 unsigned long baseaddr)
 {
 	int err = -ENOMEM;
 	void __iomem *mmio;
 	u32 idhi, cc, rev, tmp;
-	int i;
+	int dev_i, i;
 	struct ssb_device *dev;
+	int nr_80211_cores = 0;
 
 	mmio = ssb_ioremap(bus, baseaddr);
 	if (!mmio)
@@ -293,11 +318,11 @@ int ssb_bus_scan(struct ssb_bus *bus,
 	}
 
 	/* Fetch basic information about each core/device */
-	for (i = 0; i < bus->nr_devices; i++) {
+	for (i = 0, dev_i = 0; i < bus->nr_devices; i++) {
 		err = scan_switchcore(bus, i);
 		if (err)
 			goto err_unmap;
-		dev = &(bus->devices[i]);
+		dev = &(bus->devices[dev_i]);
 
 		idhi = scan_read32(bus, i, SSB_IDHIGH);
 		dev->id.coreid = (idhi & SSB_IDHIGH_CC) >> SSB_IDHIGH_CC_SHIFT;
@@ -306,8 +331,7 @@ int ssb_bus_scan(struct ssb_bus *bus,
 		dev->id.vendor = (idhi & SSB_IDHIGH_VC) >> SSB_IDHIGH_VC_SHIFT;
 		dev->core_index = i;
 		dev->bus = bus;
-		if ((dev->bus->bustype == SSB_BUSTYPE_PCI) && (bus->host_pci))
-			dev->irq = bus->host_pci->irq;
+		dev->ops = bus->ops;
 
 		ssb_dprintk(KERN_INFO PFX
 			    "Core %d found: %s "
@@ -315,13 +339,19 @@ int ssb_bus_scan(struct ssb_bus *bus,
 			    i, ssb_core_name(dev->id.coreid),
 			    dev->id.coreid, dev->id.revision, dev->id.vendor);
 
-		dev->dev.bus = &ssb_bustype;
-		snprintf(dev->dev.bus_id, sizeof(dev->dev.bus_id),
-			 "ssb%02x:%02x", bus->busnumber, i);
-
 		switch (dev->id.coreid) {
+		case SSB_DEV_80211:
+			nr_80211_cores++;
+			if (nr_80211_cores > 1) {
+				if (!we_support_multiple_80211_cores(bus)) {
+					ssb_dprintk(KERN_INFO PFX "Ignoring additional "
+						    "802.11 core\n");
+					continue;
+				}
+			}
+			break;
 		case SSB_DEV_EXTIF:
-#ifdef CONFIG_BCM947XX
+#ifdef CONFIG_SSB_DRIVER_EXTIF
 			if (bus->extif.dev) {
 				ssb_printk(KERN_WARNING PFX
 					   "WARNING: Multiple EXTIFs found\n");
@@ -340,14 +370,14 @@ int ssb_bus_scan(struct ssb_bus *bus,
 			break;
 		case SSB_DEV_MIPS:
 		case SSB_DEV_MIPS_3302:
-#ifdef CONFIG_BCM947XX
+#ifdef CONFIG_SSB_DRIVER_MIPS
 			if (bus->mipscore.dev) {
 				ssb_printk(KERN_WARNING PFX
 					   "WARNING: Multiple MIPS cores found\n");
 				break;
 			}
 			bus->mipscore.dev = dev;
-#endif /* CONFIG_BCM947XX */
+#endif /* CONFIG_SSB_DRIVER_MIPS */
 			break;
 		case SSB_DEV_PCI:
 		case SSB_DEV_PCIE:
@@ -363,7 +393,11 @@ int ssb_bus_scan(struct ssb_bus *bus,
 		default:
 			break;
 		}
+
+		dev_i++;
 	}
+	bus->nr_devices = dev_i;
+
 	err = 0;
 out:
 	return err;

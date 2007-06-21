@@ -159,37 +159,5 @@ struct ssb_extif {
 #define SSB_EXTIF_WATCHDOG_CLK		48000000	/* Hz */
 
 
-/* GPIO functions */
-static inline u32 ssb_extif_gpio_in(struct ssb_extif *extif,
-				     u32 mask)
-{
-	return ssb_read32(extif->dev, SSB_EXTIF_GPIO_IN) & mask;
-}
-
-static inline u32 ssb_extif_gpio_out(struct ssb_extif *extif,
-				     u32 mask, u32 value)
-{
-	return ssb_write32_masked(extif->dev, SSB_EXTIF_GPIO_OUT(0), mask, value);
-}
-
-static inline u32 ssb_extif_gpio_outen(struct ssb_extif *extif,
-				     u32 mask, u32 value)
-{
-	return ssb_write32_masked(extif->dev, SSB_EXTIF_GPIO_OUTEN(0), mask, value);
-}
-
-static inline u32 ssb_extif_gpio_polarity(struct ssb_extif *extif,
-				     u32 mask, u32 value)
-{
-	return ssb_write32_masked(extif->dev, SSB_EXTIF_GPIO_INTPOL, mask, value);
-}
-
-static inline u32 ssb_extif_gpio_intmask(struct ssb_extif *extif,
-				     u32 mask, u32 value)
-{
-	return ssb_write32_masked(extif->dev, SSB_EXTIF_GPIO_INTMASK, mask, value);
-}
-
-
 #endif /* __KERNEL__ */
 #endif /* LINUX_SSB_EXTIFCORE_H_ */

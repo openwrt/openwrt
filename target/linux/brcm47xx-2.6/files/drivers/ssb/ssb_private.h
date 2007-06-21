@@ -53,6 +53,7 @@ extern int ssb_pci_xtal(struct ssb_bus *bus, u32 what,
 			int turn_on);
 extern int ssb_pci_sprom_get(struct ssb_bus *bus);
 extern void ssb_pci_get_boardtype(struct ssb_bus *bus);
+extern void ssb_pci_exit(struct ssb_bus *bus);
 extern int ssb_pci_init(struct ssb_bus *bus);
 extern const struct ssb_bus_ops ssb_pci_ops;
 
@@ -78,6 +79,9 @@ static inline int ssb_pci_sprom_get(struct ssb_bus *bus)
 	return 0;
 }
 static inline void ssb_pci_get_boardtype(struct ssb_bus *bus)
+{
+}
+static inline void ssb_pci_exit(struct ssb_bus *bus)
 {
 }
 static inline int ssb_pci_init(struct ssb_bus *bus)
@@ -128,8 +132,12 @@ extern void ssb_iounmap(struct ssb_bus *ssb);
 
 
 /* core.c */
-extern struct bus_type ssb_bustype;
 extern u32 ssb_calc_clock_rate(u32 plltype, u32 n, u32 m);
+#ifdef CONFIG_SSB_PCIHOST
+extern int ssb_devices_freeze(struct ssb_bus *bus);
+extern int ssb_devices_thaw(struct ssb_bus *bus);
+extern struct ssb_bus * ssb_pci_dev_to_bus(struct pci_dev *pdev);
+#endif /* CONFIG_SSB_PCIHOST */
 
 
 /* Ceiling division helper. Divides x by y. */

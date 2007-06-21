@@ -71,4 +71,23 @@ config SSB_PCICORE_HOSTMODE
 	help
 	  PCIcore hostmode operation (external PCI bus).
 
+config SSB_DRIVER_MIPS
+	bool "SSB Broadcom MIPS core driver"
+	depends on SSB && MIPS
+	select SSB_SERIAL
+	help
+	  Driver for the Sonics Silicon Backplane attached
+	  Broadcom MIPS core.
+
+	  If unsure, say N
+
+config SSB_DRIVER_EXTIF
+	bool "SSB Broadcom EXTIF core driver"
+	depends on SSB_DRIVER_MIPS
+	help
+	  Driver for the Sonics Silicon Backplane attached
+	  Broadcom EXTIF core.
+
+	  If unsure, say N
+
 endmenu

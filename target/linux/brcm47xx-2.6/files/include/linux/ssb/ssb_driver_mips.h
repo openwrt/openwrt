@@ -3,7 +3,7 @@
 
 #ifdef __KERNEL__
 
-#ifdef CONFIG_BCM947XX
+#ifdef CONFIG_SSB_DRIVER_MIPS
 
 struct ssb_device;
 
@@ -22,17 +22,16 @@ struct ssb_mipscore {
 	int nr_serial_ports;
 	struct ssb_serial_port serial_ports[4];
 
-	int flash_buswidth;
 	u32 flash_window;
 	u32 flash_window_size;
 };
 
 extern void ssb_mipscore_init(struct ssb_mipscore *mcore);
-extern u32 ssb_cpu_clock(struct ssb_mipscore *mcore);
+
 extern unsigned int ssb_mips_irq(struct ssb_device *dev);
 
 
-#else /* CONFIG_BCM947XX */
+#else /* CONFIG_SSB_DRIVER_MIPS */
 
 struct ssb_mipscore {
 };
@@ -42,7 +41,7 @@ void ssb_mipscore_init(struct ssb_mipscore *mcore)
 {
 }
 
-#endif /* CONFIG_BCM947XX */
+#endif /* CONFIG_SSB_DRIVER_MIPS */
 
 #endif /* __KERNEL__ */
 #endif /* LINUX_SSB_MIPSCORE_H_ */
