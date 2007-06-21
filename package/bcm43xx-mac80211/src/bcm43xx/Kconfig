@@ -1,0 +1,101 @@
+config BCM43XX_MAC80211
+	tristate "Broadcom BCM43xx wireless support (mac80211 stack)"
+	depends on MAC80211 && WLAN_80211 && EXPERIMENTAL
+	select FW_LOADER
+	select SSB
+	select HW_RANDOM
+	---help---
+	  This is an experimental driver for the Broadcom 43xx wireless chip,
+	  found in the Apple Airport Extreme and various other devices.
+
+config BCM43XX_MAC80211_PCI
+	bool "BCM43xx PCI device support"
+	depends on BCM43XX_MAC80211 && PCI
+	select SSB_PCIHOST
+	select SSB_DRIVER_PCICORE
+	default y
+	---help---
+	  Broadcom 43xx PCI device support.
+
+	  Say Y, if you have a BCM43xx device connected through the PCI bus.
+	  Please note that most PC-CARD devices are (to the kernel) PCI devices,
+	  too and not PCMCIA.
+	  It's safe to select Y here, even if you don't have a BCM43xx PCI device.
+
+config BCM43XX_MAC80211_PCMCIA
+	bool "BCM43xx PCMCIA device support"
+	depends on BCM43XX_MAC80211 && PCMCIA
+	select SSB_PCMCIAHOST
+	---help---
+	  Broadcom 43xx PCMCIA device support.
+
+	  Support for 16bit PCMCIA devices.
+	  Please note that most PC-CARD devices are _NOT_ 16bit PCMCIA
+	  devices, but 32bit CardBUS devices. CardBUS devices are supported
+	  by "BCM43xx PCI device support".
+
+	  With this config option you can drive bcm43xx cards in
+	  CompactFlash formfactor in a PCMCIA adaptor.
+	  CF bcm43xx cards can sometimes be found in handheld PCs.
+
+	  It's safe to select Y here, even if you don't have a BCM43xx PCMCIA device.
+
+	  If unsure, say N.
+
+config BCM43XX_MAC80211_DEBUG
+	bool "Broadcom BCM43xx debugging (RECOMMENDED)"
+	depends on BCM43XX_MAC80211
+	select SSB_DEBUG if !SSB_SILENT
+	default y
+	---help---
+	  Broadcom 43xx debugging messages.
+	  Say Y, because the driver is still very experimental and
+	  this will help you get it running.
+
+config BCM43XX_MAC80211_DMA
+	bool
+	depends on BCM43XX_MAC80211
+config BCM43XX_MAC80211_PIO
+	bool
+	depends on BCM43XX_MAC80211
+
+choice
+	prompt "BCM43xx data transfer mode"
+	depends on BCM43XX_MAC80211
+	default BCM43XX_MAC80211_DMA_AND_PIO_MODE
+
+config BCM43XX_MAC80211_DMA_AND_PIO_MODE
+	bool "DMA + PIO"
+	select BCM43XX_MAC80211_DMA
+	select BCM43XX_MAC80211_PIO
+	---help---
+	  Include both, Direct Memory Access (DMA) and Programmed I/O (PIO)
+	  data transfer modes.
+	  The actually used mode is selectable through the module
+	  parameter "pio". If the module parameter is pio=0, DMA is used.
+	  Otherwise PIO is used. DMA is default.
+
+	  If unsure, choose this option.
+
+config BCM43XX_MAC80211_DMA_MODE
+	bool "DMA (Direct Memory Access) only"
+	select BCM43XX_MAC80211_DMA
+	---help---
+	  Only include Direct Memory Access (DMA).
+	  This reduces the size of the driver module, by omitting the PIO code.
+
+config BCM43XX_MAC80211_PIO_MODE
+	bool "PIO (Programmed I/O) only"
+	select BCM43XX_MAC80211_PIO
+	---help---
+	  Only include Programmed I/O (PIO).
+	  This reduces the size of the driver module, by omitting the DMA code.
+	  Please note that PIO transfers are slow (compared to DMA).
+
+	  Also note that not all devices of the 43xx series support PIO.
+	  The 4306 (Apple Airport Extreme and others) supports PIO, while
+	  the 4318 is known to _not_ support PIO.
+
+	  Only use PIO, if DMA does not work for you.
+
+endchoice
