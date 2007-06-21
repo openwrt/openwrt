@@ -178,8 +178,10 @@ static int vlynq_config_read(struct pci_bus *bus, unsigned int devfn, int where,
 	case PCI_INTERRUPT_LINE:
 	case PCI_CARDBUS_CIS:
 	case PCI_CAPABILITY_LIST:
-	case PCI_INTERRUPT_PIN:
 		*val = 0;
+		break;
+	case PCI_INTERRUPT_PIN:
+		*val = 1;
 		break;
 	default:
 		printk("%s: Read of unknown register 0x%x (size %d)\n", 
