@@ -15,6 +15,9 @@ PKG_RELEASE:=1
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
+ifeq ($(DUMP),)
+  include $(LINUX_DIR)/.config
+endif
 
 define KernelPackage/mac80211
   SUBMENU:=Wireless Drivers
@@ -41,7 +44,9 @@ endef
 MAKE_OPTS:=-C "$(LINUX_DIR)" \
 	CROSS_COMPILE="$(TARGET_CROSS)" \
 	ARCH="$(LINUX_KARCH)" \
-	EXTRA_CFLAGS="$(BUILDFLAGS)"
+	EXTRA_CFLAGS="$(BUILDFLAGS) -DCONFIG_MAC80211_LEDS" \
+	CONFIG_MAC80211=m \
+	CONFIG_MAC80211_LEDS=y
 
 define Build/Compile
 	$(MAKE) $(MAKE_OPTS) SUBDIRS="$(PKG_BUILD_DIR)/wireless" modules
