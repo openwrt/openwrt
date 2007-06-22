@@ -94,6 +94,8 @@ enable_broadcom() {
 	config_get vifs "$device" vifs
 	config_get distance "$device" distance
 	config_get slottime "$device" slottime
+	config_get rxant "$device" rxant
+	config_get txant "$device" txant
 	local vif_pre_up vif_post_up vif_do_up
 
 	_c=0
@@ -215,6 +217,8 @@ infra $infra
 ${wet:+wet 1}
 802.11d 0
 802.11h 0
+rxant ${rxant:-3}
+txant ${txant:-3}
 
 radio ${radio:-1}
 macfilter 0
