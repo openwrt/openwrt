@@ -8,12 +8,18 @@
 
 USBMENU:=USB Support
 
-# This is 2.6.22 specific
-#ifeq ($(KERNEL),2.4)
-	USBNET_DIR=usb/net
-#else
-#	USBNET_DIR=net/usb
-#endif
+ifeq ($(KERNEL),2.4)
+  USBNET_DIR:=usb/net
+endif
+ifeq ($(KERNEL_PATCHVER),2.6.21)
+  USBNET_DIR:=usb/net
+endif
+USBNET_DIR?=net/usb
+
+ifeq ($(KERNEL_PATCHVER),2.6.21)
+  USBHID_DIR:=drivers/usb/input
+endif
+USBHID_DIR?=drivers/hid/usbhid
 
 define usbdep
   SUBMENU:=$(USBMENU)
@@ -400,7 +406,7 @@ define KernelPackage/usb-hid
 endef
 
 define KernelPackage/usb-hid/2.6
-  FILES:=$(LINUX_DIR)/drivers/usb/input/usbhid.ko
+  FILES:=$(LINUX_DIR)/$(USBHID_DIR)/usbhid.ko
 endef
 $(eval $(call KernelPackage,usb-hid))
 
