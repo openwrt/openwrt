@@ -26,12 +26,14 @@ define KernelPackage/mac80211
   DESCRIPTION:=\
 	This package contains the DeviceScape 80211 wireless stack.
   VERSION:=$(PKG_RELEASE)+$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)
-  FILES:= \
+  ifneq ($(KERNEL_PATCHVER),2.6.21)
+   FILES:= \
 	$(PKG_BUILD_DIR)/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/mac80211/rc80211_lowest.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/mac80211/rc80211_simple.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/wireless/cfg80211.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,20,cfg80211 mac80211 rc80211_lowest rc80211_simple)
+   AUTOLOAD:=$(call AutoLoad,20,cfg80211 mac80211 rc80211_lowest rc80211_simple)
+  endif
 endef
 
 define Build/Prepare
@@ -48,20 +50,11 @@ MAKE_OPTS:=-C "$(LINUX_DIR)" \
 	CONFIG_MAC80211=m \
 	CONFIG_MAC80211_LEDS=y
 
-define Build/Compile
+ifneq ($(KERNEL_PATCHVER),2.6.21)
+  define Build/Compile
 	$(MAKE) $(MAKE_OPTS) SUBDIRS="$(PKG_BUILD_DIR)/wireless" modules
 	$(MAKE) $(MAKE_OPTS) SUBDIRS="$(PKG_BUILD_DIR)/mac80211" modules
-endef
-
-#define Build/InstallDev
-#	mkdir -p $(STAGING_DIR)/usr/include/madwifi
-#	$(CP) $(PKG_BUILD_DIR)/include $(STAGING_DIR)/usr/include/madwifi/
-#	mkdir -p $(STAGING_DIR)/usr/include/madwifi/net80211
-#	$(CP) $(PKG_BUILD_DIR)/net80211/*.h $(STAGING_DIR)/usr/include/madwifi/net80211/
-#endef
-
-#define Build/UninstallDev
-#	rm -rf	$(STAGING_DIR)/usr/include/madwifi
-#endef
+  endef
+endif
 
 $(eval $(call KernelPackage,mac80211))
