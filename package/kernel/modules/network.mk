@@ -110,11 +110,12 @@ define KernelPackage/ipsec6
 	- ah6\\\
 	- esp6\\\
 	- ipcomp6\\\
-	- xfrm6_tunnel
+	- xfrm6_tunnel\\\
+	- tunnel6
   SUBMENU:=$(NSMENU)
   KCONFIG:=$(CONFIG_INET6_AH)
   DEPENDS:=kmod-ipsec
-  FILES:= $(foreach mod,ah6 esp6 ipcomp6 xfrm6_tunnel, \
+  FILES:= $(foreach mod,ah6 esp6 ipcomp6 xfrm6_tunnel tunnel6, \
 	$(LINUX_DIR)/net/ipv6/$(mod).$(LINUX_KMOD_SUFFIX) \
   )
 endef
