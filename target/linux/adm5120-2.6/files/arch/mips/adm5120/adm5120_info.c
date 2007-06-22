@@ -18,6 +18,7 @@
 
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
+#include <asm/byteorder.h>
 
 #include <asm/mach-adm5120/adm5120_defs.h>
 #include <asm/mach-adm5120/adm5120_switch.h>
@@ -775,7 +776,7 @@ static void __init adm5120_detect_memsize(void)
 	u32	size, maxsize;
 	volatile u8	*p,*r;
 	u8	t;
-	
+
 	memctrl = SWITCH_READ(SWITCH_REG_MEMCTRL);
 	switch (memctrl & MEMCTRL_SDRS_MASK) {
 	case MEMCTRL_SDRS_4M:
@@ -791,7 +792,7 @@ static void __init adm5120_detect_memsize(void)
 		maxsize = 64 << 20;
 		break;
 	}
-	
+
 	/* FIXME: need to disable buffers for both SDRAM bank? */
 
 	mem_dbg("checking for %ldMB chip\n",maxsize >> 20);
@@ -800,7 +801,7 @@ static void __init adm5120_detect_memsize(void)
 	p = (volatile u8 *)KSEG1ADDR(0);
 	t = *p;
 	for (size = 2<<20; size <= (maxsize >> 1); size <<= 1) {
-#if 1	
+#if 1
 		r = (p+size);
 		*p = 0x55;
 		mem_dbg("1st pattern at 0x%lx is 0x%02x\n", size, *r);
@@ -818,7 +819,7 @@ static void __init adm5120_detect_memsize(void)
 		mem_dbg("1st pattern at 0x%lx is 0x%02x\n", size, p[size]);
 		if (p[size] != 0x55)
 			continue;
-			
+
 		p[0] = 0xAA;
 		mem_dbg("2nd pattern at 0x%lx is 0x%02x\n", size, p[size]);
 		if (p[size] != 0xAA)
@@ -836,13 +837,13 @@ static void __init adm5120_detect_memsize(void)
 	if (size == (32 << 20))
 		/* if bank size is 32MB, 2nd bank is not supported */
 		goto out;
-		
+
 	if ((memctrl & MEMCTRL_SDR1_ENABLE) == 0)
 		/* if 2nd bank is not enabled, we are done */
 		goto out;
-		
+
 	/*
-	 * some bootloaders enable 2nd bank, even if the 2nd SDRAM chip 
+	 * some bootloaders enable 2nd bank, even if the 2nd SDRAM chip
 	 * are missing.
 	 */
 	mem_dbg("checking second bank\n");
@@ -851,11 +852,11 @@ static void __init adm5120_detect_memsize(void)
 	*p = 0x55;
 	if (*p != 0x55)
 		goto out;
-		
+
 	*p = 0xAA;
 	if (*p != 0xAA)
 		goto out;
-		
+
 	*p = t;
 	if (maxsize != size) {
 		/* adjusting MECTRL register */
@@ -897,11 +898,31 @@ void __init adm5120_info_show(void)
 	printk("Memory size   : %ldMB\n", adm5120_memsize >> 20);
 }
 
+void __init adm5120_swab_test(void)
+{
+#if CONFIG_ADM5120_HARDWARE_SWAB
+	u32	t1,t2;
+
+	t1 = 0x1234;
+	t2 = swab16(t1);
+	printk("hardware swab16 test %s, data:0x%04X, result:0x%04X\n",
+		(t2 == 0x3412) ? "passed" :"failed", t1, t2);
+
+	t1 = 0x12345678;
+	t2 = swab32(t1);
+	printk("hardware swab32 test %s, data:0x%08X, result:0x%08X\n",
+		(t2 == 0x78563412) ? "passed" :"failed", t1, t2);
+
+#endif /* CONFIG_ADM5120_HARDWARE_SWAB */
+}
+
 void __init adm5120_info_init(void)
 {
+
 	adm5120_detect_cpuinfo();
 	adm5120_detect_memsize();
 	adm5120_detect_board();
 
 	adm5120_info_show();
+	adm5120_swab_test();
 }

@@ -2,7 +2,7 @@ Index: linux-2.6.21.1/arch/mips/Kconfig
 ===================================================================
 --- linux-2.6.21.1.orig/arch/mips/Kconfig
 +++ linux-2.6.21.1/arch/mips/Kconfig
-@@ -16,6 +16,21 @@ choice
+@@ -16,6 +16,17 @@ choice
  	prompt "System type"
  	default SGI_IP22
  
@@ -17,13 +17,17 @@ Index: linux-2.6.21.1/arch/mips/Kconfig
 +	select SYS_SUPPORTS_32BIT_KERNEL
 +	select GENERIC_GPIO
 +
-+config PCI_ADM5120
-+	bool "Add PCI control support for ADM5120"
-+	depends on MIPS_ADM5120 && PCI
-+
  config MIPS_MTX1
  	bool "4G Systems MTX-1 board"
  	select DMA_NONCOHERENT
+@@ -766,6 +775,7 @@
+ 
+ endchoice
+ 
++source "arch/mips/adm5120/Kconfig"
+ source "arch/mips/ddb5xxx/Kconfig"
+ source "arch/mips/gt64120/ev64120/Kconfig"
+ source "arch/mips/jazz/Kconfig"
 Index: linux-2.6.21.1/arch/mips/Makefile
 ===================================================================
 --- linux-2.6.21.1.orig/arch/mips/Makefile
