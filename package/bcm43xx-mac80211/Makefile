@@ -32,8 +32,10 @@ define KernelPackage/bcm43xx-mac80211
   VERSION:=$(PKG_RELEASE)+$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)
   DEPENDS:=@LINUX_2_6 +kmod-mac80211
   SUBMENU:=Wireless Drivers
+  ifneq ($(KERNEL_PATCHVER),2.6.21)
 #  AUTOLOAD:=$(call AutoLoad,30,bcm43xx-mac80211)
-  FILES:=$(PKG_BUILD_DIR)/bcm43xx-mac80211.$(LINUX_KMOD_SUFFIX)
+   FILES:=$(PKG_BUILD_DIR)/bcm43xx-mac80211.$(LINUX_KMOD_SUFFIX)
+  endif
 endef
 
 define Build/Prepare
@@ -41,13 +43,15 @@ define Build/Prepare
 	$(CP) ./src/bcm43xx/* $(PKG_BUILD_DIR)/
 endef
 
-define Build/Compile
+ifneq ($(KERNEL_PATCHVER),2.6.21)
+  define Build/Compile
 	$(MAKE) $(MAKE_CONFIGS) -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		EXTRA_CFLAGS="$(BUILDFLAGS)" \
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		modules
-endef
+  endef
+endif
 
 $(eval $(call KernelPackage,bcm43xx-mac80211))
