@@ -1,0 +1,16 @@
+if MIPS_ADM5120
+
+menu "ADM5120 Implementation Options"
+
+config PCI_ADM5120
+	bool "Enable PCI support"
+	select PCI
+	default y
+
+config ADM5120_HARDWARE_SWAB
+	bool "Enable hardware accelerated byte-swapping"
+	default y
+
+endmenu
+
+endif
