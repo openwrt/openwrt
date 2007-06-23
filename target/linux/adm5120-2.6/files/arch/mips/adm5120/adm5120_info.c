@@ -904,12 +904,12 @@ void __init adm5120_swab_test(void)
 	u32	t1,t2;
 
 	t1 = 0x1234;
-	t2 = swab16(t1);
+	t2 = __arch__swab16(t1);
 	printk("hardware swab16 test %s, data:0x%04X, result:0x%04X\n",
 		(t2 == 0x3412) ? "passed" :"failed", t1, t2);
 
 	t1 = 0x12345678;
-	t2 = swab32(t1);
+	t2 = __arch__swab32(t1);
 	printk("hardware swab32 test %s, data:0x%08X, result:0x%08X\n",
 		(t2 == 0x78563412) ? "passed" :"failed", t1, t2);
 

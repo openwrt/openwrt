@@ -9,7 +9,7 @@
 +static __inline__ __attribute_const__ __u16 ___adm5120__swab16(__u16 x)
 +{
 +	__asm__ (
-+	"	sw	%2, 0xC8(%1)			\n"
++	"	sh	%2, 0xCA(%1)			\n"
 +	"	lhu	%0, 0xCC(%1)			\n"
 +	: "=r" (x)
 +	: "r" (0xB2000000), "r" (x));
