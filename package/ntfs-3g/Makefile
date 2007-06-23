@@ -9,12 +9,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ntfs-3g
-PKG_VERSION:=1.0
-PKG_RELEASE:=1
+PKG_VERSION:=1.616
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tgz
 PKG_SOURCE_URL:=http://www.ntfs-3g.org/
-PKG_MD5SUM:=873a8de662849d129fc7c475ad3f5447
+PKG_MD5SUM:=fdb1c55f00263c962a52d0707a6d075e
 
 PKG_BUILD_DEPENDS:=libfuse
 
@@ -33,6 +33,8 @@ endef
 CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-static \
+	, \
+	ac_cv_path_LDCONFIG=""
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
