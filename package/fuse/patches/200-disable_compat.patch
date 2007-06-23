@@ -1,7 +1,7 @@
-Index: fuse-2.6.3/include/fuse_common_compat.h
+Index: fuse-2.6.5/include/fuse_common_compat.h
 ===================================================================
---- fuse-2.6.3.orig/include/fuse_common_compat.h	2007-06-04 13:22:29.628351088 +0200
-+++ fuse-2.6.3/include/fuse_common_compat.h	2007-06-04 13:22:30.344242256 +0200
+--- fuse-2.6.5.orig/include/fuse_common_compat.h	2007-06-23 13:03:50.000000000 +0200
++++ fuse-2.6.5/include/fuse_common_compat.h	2007-06-23 13:03:51.000000000 +0200
 @@ -17,6 +17,7 @@
      unsigned int keep_cache : 1;
  };
@@ -16,10 +16,10 @@ Index: fuse-2.6.3/include/fuse_common_compat.h
  void fuse_unmount_compat22(const char *mountpoint);
 -
 +#endif
-Index: fuse-2.6.3/lib/fuse.c
+Index: fuse-2.6.5/lib/fuse.c
 ===================================================================
---- fuse-2.6.3.orig/lib/fuse.c	2007-06-04 13:22:29.634350176 +0200
-+++ fuse-2.6.3/lib/fuse.c	2007-06-04 13:22:30.345242104 +0200
+--- fuse-2.6.5.orig/lib/fuse.c	2007-06-23 13:03:50.000000000 +0200
++++ fuse-2.6.5/lib/fuse.c	2007-06-23 13:03:51.000000000 +0200
 @@ -128,6 +128,7 @@
  static pthread_mutex_t fuse_context_lock = PTHREAD_MUTEX_INITIALIZER;
  static int fuse_context_ref;
@@ -132,10 +132,10 @@ Index: fuse-2.6.3/lib/fuse.c
  __asm__(".symver fuse_new_compat25,fuse_new@FUSE_2.5");
 +
 +#endif
-Index: fuse-2.6.3/lib/fuse_lowlevel.c
+Index: fuse-2.6.5/lib/fuse_lowlevel.c
 ===================================================================
---- fuse-2.6.3.orig/lib/fuse_lowlevel.c	2007-06-04 13:22:29.639349416 +0200
-+++ fuse-2.6.3/lib/fuse_lowlevel.c	2007-06-04 13:22:30.346241952 +0200
+--- fuse-2.6.5.orig/lib/fuse_lowlevel.c	2007-06-23 13:03:50.000000000 +0200
++++ fuse-2.6.5/lib/fuse_lowlevel.c	2007-06-23 13:03:51.000000000 +0200
 @@ -1297,6 +1297,7 @@
  }
  
@@ -149,10 +149,10 @@ Index: fuse-2.6.3/lib/fuse_lowlevel.c
  
  __asm__(".symver fuse_lowlevel_new_compat25,fuse_lowlevel_new@FUSE_2.5");
 +#endif
-Index: fuse-2.6.3/lib/helper.c
+Index: fuse-2.6.5/lib/helper.c
 ===================================================================
---- fuse-2.6.3.orig/lib/helper.c	2007-06-04 13:22:29.645348504 +0200
-+++ fuse-2.6.3/lib/helper.c	2007-06-04 13:22:30.346241952 +0200
+--- fuse-2.6.5.orig/lib/helper.c	2007-06-23 13:03:50.000000000 +0200
++++ fuse-2.6.5/lib/helper.c	2007-06-23 13:03:51.000000000 +0200
 @@ -195,7 +195,7 @@
                                             struct fuse_args *args)
  {
@@ -175,10 +175,10 @@ Index: fuse-2.6.3/lib/helper.c
  __asm__(".symver fuse_main_real_compat25,fuse_main_real@FUSE_2.5");
  __asm__(".symver fuse_mount_compat25,fuse_mount@FUSE_2.5");
 +#endif
-Index: fuse-2.6.3/lib/mount.c
+Index: fuse-2.6.5/lib/mount.c
 ===================================================================
---- fuse-2.6.3.orig/lib/mount.c	2007-06-04 13:22:29.652347440 +0200
-+++ fuse-2.6.3/lib/mount.c	2007-06-04 13:22:30.346241952 +0200
+--- fuse-2.6.5.orig/lib/mount.c	2007-06-23 13:03:50.000000000 +0200
++++ fuse-2.6.5/lib/mount.c	2007-06-23 13:03:51.000000000 +0200
 @@ -219,11 +219,16 @@
      waitpid(pid, NULL, 0);
  }

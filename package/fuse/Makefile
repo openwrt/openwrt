@@ -10,12 +10,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=fuse
-PKG_VERSION:=2.6.3
+PKG_VERSION:=2.6.5
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
-PKG_MD5SUM:=3f4f5d07d12dedc0a3fd23472171fe94
+PKG_MD5SUM:=66bd30503df55a87b9868835ca5a45bc
 
 include $(INCLUDE_DIR)/package.mk
 
