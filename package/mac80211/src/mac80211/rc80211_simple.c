@@ -289,9 +289,10 @@ static void rate_control_simple_rate_init(void *priv, void *priv_sta,
 	 * as a workaround, */
 	for (i = 0; i < mode->num_rates; i++) {
 		if ((sta->supp_rates & BIT(i)) &&
-		    (mode->rates[i].flags & IEEE80211_RATE_SUPPORTED))
+		    (mode->rates[i].flags & IEEE80211_RATE_SUPPORTED)) {
 			sta->txrate = i;
 			break;
+		}
 	}
 }
 

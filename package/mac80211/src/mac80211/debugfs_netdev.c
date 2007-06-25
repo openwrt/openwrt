@@ -87,16 +87,6 @@ static const struct file_operations name##_ops = {			\
 		IEEE80211_IF_FMT_##format(name, field)			\
 		__IEEE80211_IF_FILE(name)
 
-static struct ieee80211_elem_tspec _tspec = {
-	.nominal_msdu_size = 200,
-	.inactivity_interval = 40,
-	.mean_data_rate = 40000,
-	.min_phy_rate = 6000000,
-	.surplus_band_allow = 8192,
-	.medium_time = 30,
-};
-static u8 _dls_mac[ETH_ALEN];
-
 #define DEBUGFS_QOS_FILE(name, f)					\
 static ssize_t qos_ ##name## _write(struct file *file,			\
 				    const char __user *userbuf,		\
@@ -104,7 +94,7 @@ static ssize_t qos_ ##name## _write(struct file *file,			\
 {									\
 	struct ieee80211_sub_if_data *sdata = file->private_data;	\
 									\
-	f(sdata->dev, &sdata->u.sta, &_tspec);				\
+	f(sdata->dev, &sdata->u.sta, &sdata->u.sta.tspec);		\
 									\
 	return count;							\
 }									\
@@ -132,7 +122,8 @@ DEBUGFS_QOS_FILE(delts_wmm, wmm_send_delts);
 static ssize_t qos_if_dls_mac(const struct ieee80211_sub_if_data *sdata,
 			      char *buf, int buflen)
 {
-	return scnprintf(buf, buflen, MAC_FMT "\n", MAC_ARG(_dls_mac));
+	return scnprintf(buf, buflen, MAC_FMT "\n",
+			 MAC_ARG(sdata->u.sta.dls_mac));
 }
 
 static ssize_t qos_dls_mac_read(struct file *file,
@@ -163,7 +154,7 @@ static ssize_t qos_dls_mac_write(struct file *file, const char __user *userbuf,
 		printk(KERN_ERR "%s: sscanf input error\n", sdata->dev->name);
 		return -EINVAL;
 	}
-	memcpy(_dls_mac, m, ETH_ALEN);
+	memcpy(sdata->u.sta.dls_mac, m, ETH_ALEN);
 	return count;
 }
 
@@ -207,10 +198,12 @@ static ssize_t qos_dls_op_write(struct file *file, const char __user *userbuf,
 	}
 	switch (opt) {
 	case 1:
-		ieee80211_send_dls_req(sdata->dev, &sdata->u.sta, _dls_mac, 0);
+		ieee80211_send_dls_req(sdata->dev, &sdata->u.sta,
+				       sdata->u.sta.dls_mac, 0);
 		break;
 	case 2:
-		ieee80211_send_dls_teardown(sdata->dev, &sdata->u.sta, _dls_mac,
+		ieee80211_send_dls_teardown(sdata->dev, &sdata->u.sta,
+					    sdata->u.sta.dls_mac,
 					    WLAN_REASON_QSTA_NOT_USE);
 		break;
 	default:
@@ -232,8 +225,9 @@ static ssize_t tsinfo_ ##_name## _read(struct file *file,		\
 				       size_t count, loff_t *ppos)	\
 {									\
 	char buf[20];							\
+	struct ieee80211_sub_if_data *sdata = file->private_data;	\
 	int res = scnprintf(buf, count, "%u\n",				\
-			IEEE80211_TSINFO_## _name (_tspec.ts_info));	\
+		IEEE80211_TSINFO_## _name (sdata->u.sta.tspec.ts_info));\
 	return simple_read_from_buffer(userbuf, count, ppos, buf, res);	\
 }									\
 									\
@@ -244,6 +238,7 @@ static ssize_t tsinfo_ ##_name## _write(struct file *file,		\
 	char buf[20];							\
 	size_t size;							\
 	int val;							\
+	struct ieee80211_sub_if_data *sdata = file->private_data;	\
 									\
 	size = min(sizeof(buf) - 1, count);				\
 	buf[size] = '\0';						\
@@ -252,12 +247,11 @@ static ssize_t tsinfo_ ##_name## _write(struct file *file,		\
 									\
 	val = simple_strtoul(buf, NULL, 0);				\
 	if ((val < min_val) || (val > max_val)) {			\
-		struct ieee80211_sub_if_data *sdata = file->private_data;\
 		printk(KERN_ERR "%s: set value (%u) out of range "	\
 		       "[%u, %u]\n",sdata->dev->name,val,min_val,max_val);\
 		return -EINVAL;						\
 	}								\
-	SET_TSINFO_ ##_name (_tspec.ts_info, val);			\
+	IEEE80211_SET_TSINFO_ ##_name (sdata->u.sta.tspec.ts_info, val);\
 	return count;							\
 }									\
 									\
@@ -292,13 +286,15 @@ DEBUGFS_TSINFO_FILE(TSID, 8, 15);
 DEBUGFS_TSINFO_FILE(DIR, 0, 3);
 DEBUGFS_TSINFO_FILE(UP, 0, 7);
 
-#define DEBUGFS_TSPEC_FILE(name)					\
+#define DEBUGFS_TSPEC_FILE(name, format_string, endian_f1, endian_f2)	\
 static ssize_t tspec_ ##name## _read(struct file *file,			\
 				      char __user *userbuf,		\
 				      size_t count, loff_t *ppos)	\
 {									\
 	char buf[20];							\
-	int res = scnprintf(buf, count, "%u\n", _tspec.name);		\
+	struct ieee80211_sub_if_data *sdata = file->private_data;	\
+	int res = scnprintf(buf, count, format_string "\n",		\
+			    endian_f1(sdata->u.sta.tspec.name));	\
 	return simple_read_from_buffer(userbuf, count, ppos, buf, res);	\
 }									\
 									\
@@ -308,13 +304,14 @@ static ssize_t tspec_ ##name## _write(struct file *file,		\
 {									\
 	char buf[20];							\
 	size_t size;							\
+	struct ieee80211_sub_if_data *sdata = file->private_data;	\
 									\
 	size = min(sizeof(buf) - 1, count);				\
 	buf[size] = '\0';						\
 	if (copy_from_user(buf, userbuf, size))				\
 		return -EFAULT;						\
 									\
-	_tspec.name = simple_strtoul(buf, NULL, 0);			\
+	sdata->u.sta.tspec.name = endian_f2(simple_strtoul(buf, NULL, 0));\
 	return count;							\
 }									\
 									\
@@ -334,21 +331,21 @@ static const struct file_operations tspec_ ##name## _ops = {		\
 		sdata->debugfs.sta.tspec.name = NULL;			\
 	} while (0)
 
-DEBUGFS_TSPEC_FILE(nominal_msdu_size);
-DEBUGFS_TSPEC_FILE(max_msdu_size);
-DEBUGFS_TSPEC_FILE(min_service_interval);
-DEBUGFS_TSPEC_FILE(max_service_interval);
-DEBUGFS_TSPEC_FILE(inactivity_interval);
-DEBUGFS_TSPEC_FILE(suspension_interval);
-DEBUGFS_TSPEC_FILE(service_start_time);
-DEBUGFS_TSPEC_FILE(min_data_rate);
-DEBUGFS_TSPEC_FILE(mean_data_rate);
-DEBUGFS_TSPEC_FILE(peak_data_rate);
-DEBUGFS_TSPEC_FILE(burst_size);
-DEBUGFS_TSPEC_FILE(delay_bound);
-DEBUGFS_TSPEC_FILE(min_phy_rate);
-DEBUGFS_TSPEC_FILE(surplus_band_allow);
-DEBUGFS_TSPEC_FILE(medium_time);
+DEBUGFS_TSPEC_FILE(nominal_msdu_size, "%hu", le16_to_cpu, cpu_to_le16);
+DEBUGFS_TSPEC_FILE(max_msdu_size, "%hu", le16_to_cpu, cpu_to_le16);
+DEBUGFS_TSPEC_FILE(min_service_interval, "%u", le32_to_cpu, cpu_to_le32);
+DEBUGFS_TSPEC_FILE(max_service_interval, "%u", le32_to_cpu, cpu_to_le32);
+DEBUGFS_TSPEC_FILE(inactivity_interval, "%u", le32_to_cpu, cpu_to_le32);
+DEBUGFS_TSPEC_FILE(suspension_interval, "%u", le32_to_cpu, cpu_to_le32);
+DEBUGFS_TSPEC_FILE(service_start_time, "%u", le32_to_cpu, cpu_to_le32);
+DEBUGFS_TSPEC_FILE(min_data_rate, "%u", le32_to_cpu, cpu_to_le32);
+DEBUGFS_TSPEC_FILE(mean_data_rate, "%u", le32_to_cpu, cpu_to_le32);
+DEBUGFS_TSPEC_FILE(peak_data_rate, "%u", le32_to_cpu, cpu_to_le32);
+DEBUGFS_TSPEC_FILE(burst_size, "%u", le32_to_cpu, cpu_to_le32);
+DEBUGFS_TSPEC_FILE(delay_bound, "%u", le32_to_cpu, cpu_to_le32);
+DEBUGFS_TSPEC_FILE(min_phy_rate, "%u", le32_to_cpu, cpu_to_le32);
+DEBUGFS_TSPEC_FILE(surplus_band_allow, "%hu", le16_to_cpu, cpu_to_le16);
+DEBUGFS_TSPEC_FILE(medium_time, "%hu", le16_to_cpu, cpu_to_le16);
 
 
 /* common attributes */
@@ -737,7 +734,9 @@ static int netdev_notify(struct notifier_block * nb,
 			 void *ndev)
 {
 	struct net_device *dev = ndev;
+	/* TODO
 	char buf[10+IFNAMSIZ];
+	*/
 
 	if (state != NETDEV_CHANGENAME)
 		return 0;

@@ -293,7 +293,7 @@ static int nl80211_add_virt_intf(struct sk_buff *skb, struct genl_info *info)
 {
 	struct cfg80211_registered_device *drv;
 	int err;
-	unsigned int type = NL80211_IFTYPE_UNSPECIFIED;
+	enum nl80211_iftype type = NL80211_IFTYPE_UNSPECIFIED;
 
 	if (!info->attrs[NL80211_ATTR_IFNAME])
 		return -EINVAL;
@@ -353,7 +353,7 @@ static int nl80211_change_virt_intf(struct sk_buff *skb, struct genl_info *info)
 {
 	struct cfg80211_registered_device *drv;
 	int err, ifindex;
-	unsigned int type;
+	enum nl80211_iftype type;
 	struct net_device *dev;
 
 	if (info->attrs[NL80211_ATTR_IFTYPE]) {

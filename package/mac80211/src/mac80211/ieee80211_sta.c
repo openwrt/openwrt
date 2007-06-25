@@ -714,7 +714,7 @@ static void ieee80211_send_disassoc(struct net_device *dev,
 }
 
 
-int ieee80211_ts_index(u8 direction)
+static int ieee80211_ts_index(u8 direction)
 {
 	if (direction == WLAN_TSINFO_DOWNLINK ||
 	    direction == WLAN_TSINFO_DIRECTLINK)
@@ -822,11 +822,11 @@ void ieee80211_send_delts(struct net_device *dev,
 	struct sk_buff *skb;
 	u8 tsid = IEEE80211_TSINFO_TSID(tp->ts_info);
 	u8 direction = IEEE80211_TSINFO_DIR(tp->ts_info);
-	u32 medium_time = tp->medium_time;
+	u16 medium_time = le16_to_cpu(tp->medium_time);
 	u8 index = ieee80211_ts_index(direction);
 
 	if (ifsta->ts_data[tsid][index].status == TS_STATUS_UNUSED) {
-		printk(KERN_DEBUG "%s: Tring to delete an ACM disabled TS "
+		printk(KERN_DEBUG "%s: Trying to delete an ACM disabled TS "
 		       "(%u:%u)\n", dev->name, tsid, direction);
 		return;
 	}
@@ -859,11 +859,11 @@ void ieee80211_send_delts(struct net_device *dev,
 	memset(&mgmt->u.action.u.delts.ts_info, 0,
 			sizeof(struct ieee80211_ts_info));
 
-	SET_TSINFO_TSID(tp->ts_info, tsid);
-	SET_TSINFO_DIR(tp->ts_info, direction);
-	SET_TSINFO_POLICY(tp->ts_info, WLAN_TSINFO_EDCA);
-	SET_TSINFO_APSD(tp->ts_info, WLAN_TSINFO_PSB_LEGACY);
-	SET_TSINFO_UP(tp->ts_info, ifsta->ts_data[tsid][index].up);
+	IEEE80211_SET_TSINFO_TSID(tp->ts_info, tsid);
+	IEEE80211_SET_TSINFO_DIR(tp->ts_info, direction);
+	IEEE80211_SET_TSINFO_POLICY(tp->ts_info, WLAN_TSINFO_EDCA);
+	IEEE80211_SET_TSINFO_APSD(tp->ts_info, WLAN_TSINFO_PSB_LEGACY);
+	IEEE80211_SET_TSINFO_UP(tp->ts_info, ifsta->ts_data[tsid][index].up);
 
 	ieee80211_sta_tx(dev, skb, 0);
 }
@@ -878,7 +878,7 @@ void wmm_send_delts(struct net_device *dev,
 	struct sk_buff *skb;
 	u8 tsid = IEEE80211_TSINFO_TSID(tp->ts_info);
 	u8 direction = IEEE80211_TSINFO_DIR(tp->ts_info);
-	u32 medium_time = tp->medium_time;
+	u16 medium_time = le16_to_cpu(tp->medium_time);
 	u8 index = ieee80211_ts_index(direction);
 	u8 *pos;
 
@@ -930,11 +930,11 @@ void wmm_send_delts(struct net_device *dev,
 	tspec = (struct ieee80211_elem_tspec *)pos;
 	memset(tspec, 0, sizeof(*tspec));
 
-	SET_TSINFO_TSID(tspec->ts_info, tsid);
-	SET_TSINFO_DIR(tspec->ts_info, direction);
-	SET_TSINFO_POLICY(tspec->ts_info, WLAN_TSINFO_EDCA);
-	SET_TSINFO_APSD(tspec->ts_info, WLAN_TSINFO_PSB_LEGACY);
-	SET_TSINFO_UP(tspec->ts_info, ifsta->ts_data[tsid][index].up);
+	IEEE80211_SET_TSINFO_TSID(tspec->ts_info, tsid);
+	IEEE80211_SET_TSINFO_DIR(tspec->ts_info, direction);
+	IEEE80211_SET_TSINFO_POLICY(tspec->ts_info, WLAN_TSINFO_EDCA);
+	IEEE80211_SET_TSINFO_APSD(tspec->ts_info, WLAN_TSINFO_PSB_LEGACY);
+	IEEE80211_SET_TSINFO_UP(tspec->ts_info, ifsta->ts_data[tsid][index].up);
 
 	ieee80211_sta_tx(dev, skb, 0);
 }
@@ -942,7 +942,7 @@ void wmm_send_delts(struct net_device *dev,
 
 void ieee80211_send_dls_req(struct net_device *dev,
 			    struct ieee80211_if_sta *ifsta,
-			    u8 *addr, u32 timeout)
+			    u8 *addr, u16 timeout)
 {
 	struct ieee80211_hw_mode *mode;
 	struct sk_buff *skb;
@@ -972,7 +972,7 @@ void ieee80211_send_dls_req(struct net_device *dev,
 	memcpy(mgmt->u.action.u.dls_req.dest, addr, ETH_ALEN);
 	memcpy(mgmt->u.action.u.dls_req.src, dev->dev_addr, ETH_ALEN);
 	mgmt->u.action.u.dls_req.capab_info = cpu_to_le16(ifsta->ap_capab);
-	mgmt->u.action.u.dls_req.timeout = timeout;
+	mgmt->u.action.u.dls_req.timeout = cpu_to_le16(timeout);
 
 	/* Add supported rates and extended supported rates */
 	supp_rates = skb_put(skb, 2);

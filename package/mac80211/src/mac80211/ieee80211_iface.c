@@ -198,6 +198,14 @@ void ieee80211_if_set_type(struct net_device *dev, int type)
 		/* Initialize non-AP QSTA QoS Params */
 		ifsta->dot11EDCAAveragingPeriod = 5;
 		ifsta->MPDUExchangeTime = 0;
+#ifdef CONFIG_MAC80211_DEBUGFS
+		ifsta->tspec.nominal_msdu_size = cpu_to_le16(200),
+		ifsta->tspec.inactivity_interval = cpu_to_le32(40),
+		ifsta->tspec.mean_data_rate = cpu_to_le32(40000),
+		ifsta->tspec.min_phy_rate = cpu_to_le32(6000000),
+		ifsta->tspec.surplus_band_allow = cpu_to_le16(8192),
+		ifsta->tspec.medium_time = cpu_to_le16(30),
+#endif
 
 		msdata = IEEE80211_DEV_TO_SUB_IF(sdata->local->mdev);
 		sdata->bss = &msdata->u.ap;

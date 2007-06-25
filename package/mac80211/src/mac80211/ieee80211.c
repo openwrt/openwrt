@@ -1557,7 +1557,7 @@ static int ieee80211_subif_start_xmit(struct sk_buff *skb,
 		memcpy(hdr.addr4, skb->data + ETH_ALEN, ETH_ALEN);
 		hdrlen = 30;
 	} else if (sdata->type == IEEE80211_IF_TYPE_STA) {
-		if (dls_link_status(local, skb->data) == DLS_STATUS_OK){
+		if (dls_link_status(local, skb->data) == DLS_STATUS_OK) {
 			/* DA SA BSSID */
 			memcpy(hdr.addr1, skb->data, ETH_ALEN);
 			memcpy(hdr.addr2, skb->data + ETH_ALEN, ETH_ALEN);
@@ -4962,7 +4962,7 @@ int ieee80211_register_hwmode(struct ieee80211_hw *hw,
 	}
 
 	if (!(hw->flags & IEEE80211_HW_DEFAULT_REG_DOMAIN_CONFIGURED))
-		ieee80211_init_client(local->mdev);
+		ieee80211_set_default_regdomain(mode);
 
 	return 0;
 }
@@ -5113,6 +5113,7 @@ static int __init ieee80211_init(void)
 	}
 
 	ieee80211_debugfs_netdev_init();
+	ieee80211_regdomain_init();
 
 	return 0;
 }
