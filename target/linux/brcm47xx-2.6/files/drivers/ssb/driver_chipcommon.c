@@ -293,15 +293,15 @@ void ssb_chipco_timing_init(struct ssb_chipcommon *cc,
 
 	/* set register for external IO to control LED. */
 	chipco_write32(cc, SSB_CHIPCO_PROG_CFG, 0x11);
-	tmp = ceildiv(10, ns) << SSB_PROG_WCNT_3_SHIFT;		/* Waitcount-3 = 10ns */
-	tmp |= ceildiv(40, ns) << SSB_PROG_WCNT_1_SHIFT;	/* Waitcount-1 = 40ns */
-	tmp |= ceildiv(240, ns);				/* Waitcount-0 = 240ns */
+	tmp = DIV_ROUND_UP(10, ns) << SSB_PROG_WCNT_3_SHIFT;		/* Waitcount-3 = 10ns */
+	tmp |= DIV_ROUND_UP(40, ns) << SSB_PROG_WCNT_1_SHIFT;	/* Waitcount-1 = 40ns */
+	tmp |= DIV_ROUND_UP(240, ns);				/* Waitcount-0 = 240ns */
 	chipco_write32(cc, SSB_CHIPCO_PROG_WAITCNT, tmp);	/* 0x01020a0c for a 100Mhz clock */
 
 	/* Set timing for the flash */
-	tmp = ceildiv(10, ns) << SSB_FLASH_WCNT_3_SHIFT;	/* Waitcount-3 = 10nS */
-	tmp |= ceildiv(10, ns) << SSB_FLASH_WCNT_1_SHIFT;	/* Waitcount-1 = 10nS */
-	tmp |= ceildiv(120, ns);				/* Waitcount-0 = 120nS */
+	tmp = DIV_ROUND_UP(10, ns) << SSB_FLASH_WCNT_3_SHIFT;	/* Waitcount-3 = 10nS */
+	tmp |= DIV_ROUND_UP(10, ns) << SSB_FLASH_WCNT_1_SHIFT;	/* Waitcount-1 = 10nS */
+	tmp |= DIV_ROUND_UP(120, ns);				/* Waitcount-0 = 120nS */
 	if ((bus->chip_id == 0x5365) ||
 	    (dev->id.revision < 9))
 		chipco_write32(cc, SSB_CHIPCO_FLASH_WAITCNT, tmp);
@@ -312,10 +312,10 @@ void ssb_chipco_timing_init(struct ssb_chipcommon *cc,
 
 	if (bus->chip_id == 0x5350) {
 		/* Enable EXTIF */
-		tmp = ceildiv(10, ns) << SSB_PROG_WCNT_3_SHIFT;	  /* Waitcount-3 = 10ns */
-		tmp |= ceildiv(20, ns) << SSB_PROG_WCNT_2_SHIFT;  /* Waitcount-2 = 20ns */
-		tmp |= ceildiv(100, ns) << SSB_PROG_WCNT_1_SHIFT; /* Waitcount-1 = 100ns */
-		tmp |= ceildiv(120, ns);			  /* Waitcount-0 = 120ns */
+		tmp = DIV_ROUND_UP(10, ns) << SSB_PROG_WCNT_3_SHIFT;	  /* Waitcount-3 = 10ns */
+		tmp |= DIV_ROUND_UP(20, ns) << SSB_PROG_WCNT_2_SHIFT;  /* Waitcount-2 = 20ns */
+		tmp |= DIV_ROUND_UP(100, ns) << SSB_PROG_WCNT_1_SHIFT; /* Waitcount-1 = 100ns */
+		tmp |= DIV_ROUND_UP(120, ns);			  /* Waitcount-0 = 120ns */
 		chipco_write32(cc, SSB_CHIPCO_PROG_WAITCNT, tmp); /* 0x01020a0c for a 100Mhz clock */
 	}
 }

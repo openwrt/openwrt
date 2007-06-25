@@ -222,6 +222,13 @@ const struct ssb_bus_ops ssb_pcmcia_ops = {
 	.write32	= ssb_pcmcia_write32,
 };
 
+int ssb_pcmcia_get_invariants(struct ssb_bus *bus,
+			      struct ssb_init_invariants *iv)
+{
+	//TODO
+	return 0;
+}
+
 int ssb_pcmcia_init(struct ssb_bus *bus)
 {
 	conf_reg_t reg;

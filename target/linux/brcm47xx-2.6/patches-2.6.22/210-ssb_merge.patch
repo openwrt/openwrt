@@ -1,7 +1,7 @@
-Index: linux-2.6.22-rc4/drivers/ssb/driver_chipcommon.c
+Index: linux-2.6.22-rc5/drivers/ssb/driver_chipcommon.c
 ===================================================================
---- linux-2.6.22-rc4.orig/drivers/ssb/driver_chipcommon.c	2007-06-10 21:32:11.000000000 +0100
-+++ linux-2.6.22-rc4/drivers/ssb/driver_chipcommon.c	2007-06-10 21:33:25.000000000 +0100
+--- linux-2.6.22-rc5.orig/drivers/ssb/driver_chipcommon.c	2007-06-21 23:04:38.000000000 +0100
++++ linux-2.6.22-rc5/drivers/ssb/driver_chipcommon.c	2007-06-24 20:07:15.000000000 +0100
 @@ -264,6 +264,31 @@
  	ssb_chipco_set_clockmode(cc, SSB_CLKMODE_FAST);
  }
@@ -48,10 +48,10 @@ Index: linux-2.6.22-rc4/drivers/ssb/driver_chipcommon.c
 +	return 0;
 +}
 +EXPORT_SYMBOL(ssb_chipco_watchdog);
-Index: linux-2.6.22-rc4/drivers/ssb/driver_mipscore.c
+Index: linux-2.6.22-rc5/drivers/ssb/driver_mipscore.c
 ===================================================================
---- linux-2.6.22-rc4.orig/drivers/ssb/driver_mipscore.c	2007-06-10 21:32:11.000000000 +0100
-+++ linux-2.6.22-rc4/drivers/ssb/driver_mipscore.c	2007-06-10 21:33:25.000000000 +0100
+--- linux-2.6.22-rc5.orig/drivers/ssb/driver_mipscore.c	2007-06-10 16:44:31.000000000 +0100
++++ linux-2.6.22-rc5/drivers/ssb/driver_mipscore.c	2007-06-24 20:48:52.000000000 +0100
 @@ -4,6 +4,7 @@
   *
   * Copyright 2005, Broadcom Corporation
@@ -116,16 +116,16 @@ Index: linux-2.6.22-rc4/drivers/ssb/driver_mipscore.c
 +	extif_write32(extif, SSB_EXTIF_PROG_CFG, SSB_EXTCFG_EN);
 +
 +	/* Set timing for the flash */
-+	tmp  = ceildiv(10, ns) << SSB_PROG_WCNT_3_SHIFT;
-+	tmp |= ceildiv(40, ns) << SSB_PROG_WCNT_1_SHIFT;
-+	tmp |= ceildiv(120, ns);
++	tmp  = DIV_ROUND_UP(10, ns) << SSB_PROG_WCNT_3_SHIFT;
++	tmp |= DIV_ROUND_UP(40, ns) << SSB_PROG_WCNT_1_SHIFT;
++	tmp |= DIV_ROUND_UP(120, ns);
 +	extif_write32(extif, SSB_EXTIF_PROG_WAITCNT, tmp);
 +
 +	/* Set programmable interface timing for external uart */
-+	tmp  = ceildiv(10, ns) << SSB_PROG_WCNT_3_SHIFT;
-+	tmp |= ceildiv(20, ns) << SSB_PROG_WCNT_2_SHIFT;
-+	tmp |= ceildiv(100, ns) << SSB_PROG_WCNT_1_SHIFT;
-+	tmp |= ceildiv(120, ns);
++	tmp  = DIV_ROUND_UP(10, ns) << SSB_PROG_WCNT_3_SHIFT;
++	tmp |= DIV_ROUND_UP(20, ns) << SSB_PROG_WCNT_2_SHIFT;
++	tmp |= DIV_ROUND_UP(100, ns) << SSB_PROG_WCNT_1_SHIFT;
++	tmp |= DIV_ROUND_UP(120, ns);
 +	extif_write32(extif, SSB_EXTIF_PROG_WAITCNT, tmp);
 +}
  
@@ -217,10 +217,10 @@ Index: linux-2.6.22-rc4/drivers/ssb/driver_mipscore.c
  }
 +
 +EXPORT_SYMBOL(ssb_mips_irq);
-Index: linux-2.6.22-rc4/drivers/ssb/driver_pcicore.c
+Index: linux-2.6.22-rc5/drivers/ssb/driver_pcicore.c
 ===================================================================
---- linux-2.6.22-rc4.orig/drivers/ssb/driver_pcicore.c	2007-06-10 21:32:11.000000000 +0100
-+++ linux-2.6.22-rc4/drivers/ssb/driver_pcicore.c	2007-06-10 21:33:25.000000000 +0100
+--- linux-2.6.22-rc5.orig/drivers/ssb/driver_pcicore.c	2007-06-10 16:44:31.000000000 +0100
++++ linux-2.6.22-rc5/drivers/ssb/driver_pcicore.c	2007-06-24 20:07:15.000000000 +0100
 @@ -93,6 +93,9 @@
  
  	/* Enable PCI bridge BAR1 prefetch and burst */
@@ -266,10 +266,10 @@ Index: linux-2.6.22-rc4/drivers/ssb/driver_pcicore.c
  	register_pci_controller(&ssb_pcicore_controller);
  }
  
-Index: linux-2.6.22-rc4/include/linux/ssb/ssb_driver_chipcommon.h
+Index: linux-2.6.22-rc5/include/linux/ssb/ssb_driver_chipcommon.h
 ===================================================================
---- linux-2.6.22-rc4.orig/include/linux/ssb/ssb_driver_chipcommon.h	2007-06-10 21:32:11.000000000 +0100
-+++ linux-2.6.22-rc4/include/linux/ssb/ssb_driver_chipcommon.h	2007-06-10 21:33:25.000000000 +0100
+--- linux-2.6.22-rc5.orig/include/linux/ssb/ssb_driver_chipcommon.h	2007-06-10 16:44:47.000000000 +0100
++++ linux-2.6.22-rc5/include/linux/ssb/ssb_driver_chipcommon.h	2007-06-24 20:07:15.000000000 +0100
 @@ -364,6 +364,8 @@
  extern void ssb_chipco_suspend(struct ssb_chipcommon *cc, pm_message_t state);
  extern void ssb_chipco_resume(struct ssb_chipcommon *cc);
@@ -326,10 +326,10 @@ Index: linux-2.6.22-rc4/include/linux/ssb/ssb_driver_chipcommon.h
  #ifdef CONFIG_SSB_SERIAL
  extern int ssb_chipco_serial_init(struct ssb_chipcommon *cc,
  				  struct ssb_serial_port *ports);
-Index: linux-2.6.22-rc4/include/linux/ssb/ssb_driver_extif.h
+Index: linux-2.6.22-rc5/include/linux/ssb/ssb_driver_extif.h
 ===================================================================
---- linux-2.6.22-rc4.orig/include/linux/ssb/ssb_driver_extif.h	2007-06-10 21:32:11.000000000 +0100
-+++ linux-2.6.22-rc4/include/linux/ssb/ssb_driver_extif.h	2007-06-10 21:33:25.000000000 +0100
+--- linux-2.6.22-rc5.orig/include/linux/ssb/ssb_driver_extif.h	2007-06-10 16:44:47.000000000 +0100
++++ linux-2.6.22-rc5/include/linux/ssb/ssb_driver_extif.h	2007-06-24 20:07:15.000000000 +0100
 @@ -158,6 +158,36 @@
  /* watchdog */
  #define SSB_EXTIF_WATCHDOG_CLK		48000000	/* Hz */
@@ -367,10 +367,10 @@ Index: linux-2.6.22-rc4/include/linux/ssb/ssb_driver_extif.h
  
  #endif /* __KERNEL__ */
  #endif /* LINUX_SSB_EXTIFCORE_H_ */
-Index: linux-2.6.22-rc4/include/linux/ssb/ssb_driver_mips.h
+Index: linux-2.6.22-rc5/include/linux/ssb/ssb_driver_mips.h
 ===================================================================
---- linux-2.6.22-rc4.orig/include/linux/ssb/ssb_driver_mips.h	2007-06-10 21:32:11.000000000 +0100
-+++ linux-2.6.22-rc4/include/linux/ssb/ssb_driver_mips.h	2007-06-10 21:33:25.000000000 +0100
+--- linux-2.6.22-rc5.orig/include/linux/ssb/ssb_driver_mips.h	2007-06-10 16:44:47.000000000 +0100
++++ linux-2.6.22-rc5/include/linux/ssb/ssb_driver_mips.h	2007-06-24 20:07:15.000000000 +0100
 @@ -22,11 +22,13 @@
  	int nr_serial_ports;
  	struct ssb_serial_port serial_ports[4];
@@ -385,11 +385,11 @@ Index: linux-2.6.22-rc4/include/linux/ssb/ssb_driver_mips.h
  
  extern unsigned int ssb_mips_irq(struct ssb_device *dev);
  
-Index: linux-2.6.22-rc4/include/linux/ssb/ssb.h
+Index: linux-2.6.22-rc5/include/linux/ssb/ssb.h
 ===================================================================
---- linux-2.6.22-rc4.orig/include/linux/ssb/ssb.h	2007-06-10 21:32:11.000000000 +0100
-+++ linux-2.6.22-rc4/include/linux/ssb/ssb.h	2007-06-10 21:33:25.000000000 +0100
-@@ -263,6 +263,12 @@
+--- linux-2.6.22-rc5.orig/include/linux/ssb/ssb.h	2007-06-24 19:49:56.000000000 +0100
++++ linux-2.6.22-rc5/include/linux/ssb/ssb.h	2007-06-24 20:07:15.000000000 +0100
+@@ -270,6 +270,12 @@
  #define SSB_CHIPPACK_BCM4712M	2	/* Medium 225pin 4712 */
  #define SSB_CHIPPACK_BCM4712L	0	/* Large 340pin 4712 */
  
@@ -402,7 +402,7 @@ Index: linux-2.6.22-rc4/include/linux/ssb/ssb.h
  #include <linux/ssb/ssb_driver_chipcommon.h>
  #include <linux/ssb/ssb_driver_mips.h>
  #include <linux/ssb/ssb_driver_extif.h>
-@@ -369,6 +375,16 @@
+@@ -388,6 +394,16 @@
  	dev->ops->write32(dev, offset, value);
  }
  

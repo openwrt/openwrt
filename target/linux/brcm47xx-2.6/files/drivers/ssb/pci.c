@@ -330,12 +330,12 @@ static void sprom_extract_r1(struct ssb_sprom_r1 *out, const u16 *in)
 	SPEX(gpio2, SSB_SPROM1_GPIOB, SSB_SPROM1_GPIOB_P2, 0);
 	SPEX(gpio3, SSB_SPROM1_GPIOB, SSB_SPROM1_GPIOB_P3,
 	     SSB_SPROM1_GPIOB_P3_SHIFT);
-	SPEX(maxpwr_a, SSB_SPROM1_MAXPWR, SSB_SPROM1_MAXPWR_A, 0);
-	SPEX(maxpwr_bg, SSB_SPROM1_MAXPWR, SSB_SPROM1_MAXPWR_BG,
-	     SSB_SPROM1_MAXPWR_BG_SHIFT);
-	SPEX(itssi_a, SSB_SPROM1_ITSSI, SSB_SPROM1_ITSSI_A, 0);
-	SPEX(itssi_bg, SSB_SPROM1_ITSSI, SSB_SPROM1_ITSSI_BG,
-	     SSB_SPROM1_ITSSI_BG_SHIFT);
+	SPEX(maxpwr_a, SSB_SPROM1_MAXPWR, SSB_SPROM1_MAXPWR_A,
+	     SSB_SPROM1_MAXPWR_A_SHIFT);
+	SPEX(maxpwr_bg, SSB_SPROM1_MAXPWR, SSB_SPROM1_MAXPWR_BG, 0);
+	SPEX(itssi_a, SSB_SPROM1_ITSSI, SSB_SPROM1_ITSSI_A,
+	     SSB_SPROM1_ITSSI_A_SHIFT);
+	SPEX(itssi_bg, SSB_SPROM1_ITSSI, SSB_SPROM1_ITSSI_BG, 0);
 	SPEX(boardflags_lo, SSB_SPROM1_BFLLO, 0xFFFF, 0);
 	SPEX(antenna_gain_a, SSB_SPROM1_AGAIN, SSB_SPROM1_AGAIN_A, 0);
 	SPEX(antenna_gain_bg, SSB_SPROM1_AGAIN, SSB_SPROM1_AGAIN_BG,
@@ -407,7 +407,8 @@ static void sprom_extract_r3(struct ssb_sprom_r3 *out, const u16 *in)
 	out->ofdmgpo |= (in[SPOFF(SSB_SPROM3_OFDMGPO) + 1] & 0x00FF) << 8;
 }
 
-static int sprom_extract(struct ssb_sprom *out, const u16 *in)
+static int sprom_extract(struct ssb_bus *bus,
+			 struct ssb_sprom *out, const u16 *in)
 {
 	memset(out, 0, sizeof(*out));
 
@@ -415,16 +416,23 @@ static int sprom_extract(struct ssb_sprom *out, const u16 *in)
 	SPEX(crc, SSB_SPROM_REVISION, SSB_SPROM_REVISION_CRC,
 	     SSB_SPROM_REVISION_CRC_SHIFT);
 
-	if (out->revision == 0)
-		goto unsupported;
-	if (out->revision >= 1 && out->revision <= 3)
+	if ((bus->chip_id & 0xFF00) == 0x4400) {
+		/* Workaround: The BCM44XX chip has a stupid revision
+		 * number stored in the SPROM.
+		 * Always extract r1. */
 		sprom_extract_r1(&out->r1, in);
-	if (out->revision >= 2 && out->revision <= 3)
-		sprom_extract_r2(&out->r2, in);
-	if (out->revision == 3)
-		sprom_extract_r3(&out->r3, in);
-	if (out->revision >= 4)
-		goto unsupported;
+	} else {
+		if (out->revision == 0)
+			goto unsupported;
+		if (out->revision >= 1 && out->revision <= 3)
+			sprom_extract_r1(&out->r1, in);
+		if (out->revision >= 2 && out->revision <= 3)
+			sprom_extract_r2(&out->r2, in);
+		if (out->revision == 3)
+			sprom_extract_r3(&out->r3, in);
+		if (out->revision >= 4)
+			goto unsupported;
+	}
 
 	return 0;
 unsupported:
@@ -434,12 +442,11 @@ unsupported:
 	return 0;
 }
 
-int ssb_pci_sprom_get(struct ssb_bus *bus)
+static int ssb_pci_sprom_get(struct ssb_bus *bus,
+			     struct ssb_sprom *sprom)
 {
 	int err = -ENOMEM;
 	u16 *buf;
-
-	assert(bus->bustype == SSB_BUSTYPE_PCI);
 
 	buf = kcalloc(SSB_SPROMSIZE_WORDS, sizeof(u16), GFP_KERNEL);
 	if (!buf)
@@ -450,21 +457,36 @@ int ssb_pci_sprom_get(struct ssb_bus *bus)
 		ssb_printk(KERN_WARNING PFX
 			   "WARNING: Invalid SPROM CRC (corrupt SPROM)\n");
 	}
-	err = sprom_extract(&bus->sprom, buf);
+	err = sprom_extract(bus, sprom, buf);
 
 	kfree(buf);
 out:
 	return err;
 }
 
-void ssb_pci_get_boardtype(struct ssb_bus *bus)
+static void ssb_pci_get_boardinfo(struct ssb_bus *bus,
+				  struct ssb_boardinfo *bi)
 {
 	pci_read_config_word(bus->host_pci, PCI_SUBSYSTEM_VENDOR_ID,
-			     &bus->board_vendor);
+			     &bi->vendor);
 	pci_read_config_word(bus->host_pci, PCI_SUBSYSTEM_ID,
-			     &bus->board_type);
+			     &bi->type);
 	pci_read_config_word(bus->host_pci, PCI_REVISION_ID,
-			     &bus->board_rev);
+			     &bi->rev);
+}
+
+int ssb_pci_get_invariants(struct ssb_bus *bus,
+			   struct ssb_init_invariants *iv)
+{
+	int err;
+
+	err = ssb_pci_sprom_get(bus, &iv->sprom);
+	if (err)
+		goto out;
+	ssb_pci_get_boardinfo(bus, &iv->boardinfo);
+
+out:
+	return err;
 }
 
 static u16 ssb_pci_read16(struct ssb_device *dev, u16 offset)
@@ -660,13 +682,7 @@ int ssb_pci_init(struct ssb_bus *bus)
 	err = device_create_file(&pdev->dev, &dev_attr_ssb_sprom);
 	if (err)
 		goto out;
-	err = ssb_pci_sprom_get(bus);
-	if (err)
-		goto err_remove_sprom_file;
 
 out:
-	return err;
-err_remove_sprom_file:
-	device_remove_file(&pdev->dev, &dev_attr_ssb_sprom);
 	return err;
 }

@@ -201,16 +201,16 @@
 #define  SSB_SPROM1_GPIOB_P3		0xFF00	/* Pin 3 */
 #define  SSB_SPROM1_GPIOB_P3_SHIFT	8
 #define SSB_SPROM1_MAXPWR		0x1068	/* Power Amplifier Max Power */
-#define  SSB_SPROM1_MAXPWR_A		0x00FF	/* A-PHY (in dBm Q5.2) */
-#define  SSB_SPROM1_MAXPWR_BG		0xFF00	/* B-PHY and G-PHY (in dBm Q5.2) */
-#define  SSB_SPROM1_MAXPWR_BG_SHIFT	8
+#define  SSB_SPROM1_MAXPWR_BG		0x00FF	/* B-PHY and G-PHY (in dBm Q5.2) */
+#define  SSB_SPROM1_MAXPWR_A		0xFF00	/* A-PHY (in dBm Q5.2) */
+#define  SSB_SPROM1_MAXPWR_A_SHIFT	8
 #define SSB_SPROM1_PA1B0		0x106A
 #define SSB_SPROM1_PA1B1		0x106C
 #define SSB_SPROM1_PA1B2		0x106E
 #define SSB_SPROM1_ITSSI		0x1070	/* Idle TSSI Target */
-#define  SSB_SPROM1_ITSSI_A		0x00FF	/* A-PHY */
-#define  SSB_SPROM1_ITSSI_BG		0xFF00	/* B-PHY and G-PHY */
-#define  SSB_SPROM1_ITSSI_BG_SHIFT	8
+#define  SSB_SPROM1_ITSSI_BG		0x00FF	/* B-PHY and G-PHY*/
+#define  SSB_SPROM1_ITSSI_A		0xFF00	/* A-PHY */
+#define  SSB_SPROM1_ITSSI_A_SHIFT	8
 #define SSB_SPROM1_BFLLO		0x1072	/* Boardflags (low 16 bits) */
 #define SSB_SPROM1_AGAIN		0x1074	/* Antenna Gain (in dBm Q5.2) */
 #define  SSB_SPROM1_AGAIN_A		0x00FF	/* A-PHY */

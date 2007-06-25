@@ -202,7 +202,11 @@ void ssb_iounmap(struct ssb_bus *bus)
 		iounmap(bus->mmio);
 		break;
 	case SSB_BUSTYPE_PCI:
+#ifdef CONFIG_SSB_PCIHOST
 		pci_iounmap(bus->host_pci, bus->mmio);
+#else
+		assert(0); /* Can't reach this code. */
+#endif
 		break;
 	}
 	bus->mmio = NULL;
@@ -222,7 +226,11 @@ static void __iomem * ssb_ioremap(struct ssb_bus *bus,
 		mmio = ioremap(baseaddr, SSB_CORE_SIZE);
 		break;
 	case SSB_BUSTYPE_PCI:
+#ifdef CONFIG_SSB_PCIHOST
 		mmio = pci_iomap(bus->host_pci, 0, ~0UL);
+#else
+		assert(0); /* Can't reach this code. */
+#endif
 		break;
 	}
 
