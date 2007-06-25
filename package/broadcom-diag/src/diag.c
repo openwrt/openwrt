@@ -2,7 +2,7 @@
  * diag.c - GPIO interface driver for Broadcom boards
  *
  * Copyright (C) 2006 Mike Baker <mbm@openwrt.org>,
- *                    Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2006-2007 Felix Fietkau <nbd@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,10 +28,13 @@
 #include <linux/version.h>
 #include <asm/uaccess.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-#include <linux/kobject.h>
+#ifndef LINUX_2_4
 #include <linux/workqueue.h>
-#define hotplug_path uevent_helper
+#include <linux/skbuff.h>
+#include <linux/netlink.h>
+#include <net/sock.h>
+extern struct sock *uevent_sock;
+extern u64 uevent_next_seqnum(void);
 #else
 #include <linux/tqueue.h>
 #define INIT_WORK INIT_TQUEUE
@@ -43,6 +46,7 @@
 #include "diag.h"
 #define getvar(str) (nvram_get(str)?:"")
 
+static int fill_event(struct event_t *);
 static unsigned int gpiomask = 0;
 module_param(gpiomask, int, 0644);
 
@@ -713,23 +717,104 @@ static void unregister_buttons(struct button_t *b)
 	gpio_set_irqenable(0, button_handler);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+
+#ifndef LINUX_2_4
+static void add_msg(struct event_t *event, char *msg, int argv)
+{
+	char *s;
+
+	if (argv)
+		return;
+
+	s = skb_put(event->skb, strlen(msg) + 1);
+	strcpy(s, msg);
+}
+
 static void hotplug_button(struct work_struct *work)
 {
 	struct event_t *event = container_of(work, struct event_t, wq);
-#else
-static void hotplug_button(struct event_t *event)
-{
-#endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-	call_usermodehelper (event->argv[0], event->argv, event->envp, 1);
-#else
-	call_usermodehelper (event->argv[0], event->argv, event->envp);
-#endif
+	char *s;
+
+	if (!uevent_sock)
+		return;
+
+	event->skb = alloc_skb(2048, GFP_KERNEL);
+
+	s = skb_put(event->skb, strlen(event->action) + 2);
+	sprintf(s, "%s@", event->action);
+	fill_event(event);
+
+	NETLINK_CB(event->skb).dst_group = 1;
+	netlink_broadcast(uevent_sock, event->skb, 0, 1, GFP_KERNEL);
+
 	kfree(event);
 }
 
+#else /* !LINUX_2_4 */
+static inline char *kzalloc(unsigned int size, unsigned int gfp)
+{
+	char *p;
+
+	p = kmalloc(size, gfp);
+	if (p == NULL)
+		return NULL;
+
+	memset(p, 0, size);
+
+	return p;
+}
+
+static void add_msg(struct event_t *event, char *msg, int argv)
+{
+	if (argv)
+		event->argv[event->anr++] = event->scratch;
+	else
+		event->envp[event->enr++] = event->scratch;
+
+	event->scratch += sprintf(event->scratch, "%s", msg) + 1;
+}
+
+static void hotplug_button(struct event_t *event)
+{
+	char *scratch = kzalloc(256, GFP_KERNEL);
+	event->scratch = scratch;
+
+	add_msg(event, hotplug_path, 1);
+	add_msg(event, "button", 1);
+	fill_event(event);
+	call_usermodehelper (event->argv[0], event->argv, event->envp);
+	kfree(scratch);
+	kfree(event);
+}
+#endif /* !LINUX_2_4 */
+
+static int fill_event (struct event_t *event)
+{
+	static char buf[128];
+
+	add_msg(event, "HOME=/", 0);
+	add_msg(event, "PATH=/sbin:/bin:/usr/sbin:/usr/bin", 0);
+	add_msg(event, "SUBSYSTEM=button", 0);
+	snprintf(buf, 128, "ACTION=%s", event->action);
+	add_msg(event, buf, 0);
+	snprintf(buf, 128, "BUTTON=%s", event->name);
+	add_msg(event, buf, 0);
+	snprintf(buf, 128, "SEEN=%ld", event->seen);
+	add_msg(event, buf, 0);
+#ifndef LINUX_2_4
+	snprintf(buf, 128, "SEQNUM=%llu", uevent_next_seqnum());
+	add_msg(event, buf, 0);
+#endif
+
+	return 0;
+}
+
+
+#ifndef LINUX_2_4
+static irqreturn_t button_handler(int irq, void *dev_id)
+#else
 static irqreturn_t button_handler(int irq, void *dev_id, struct pt_regs *regs)
+#endif
 {
 	struct button_t *b;
 	u32 in, changed;
@@ -748,26 +833,10 @@ static irqreturn_t button_handler(int irq, void *dev_id, struct pt_regs *regs)
 
 		b->pressed ^= 1;
 
-		if ((event = (struct event_t *)kmalloc (sizeof(struct event_t), GFP_ATOMIC))) {
-			int i;
-			char *scratch = event->buf;
-
-			i = 0;
-			event->argv[i++] = hotplug_path;
-			event->argv[i++] = "button";
-			event->argv[i] = 0;
-
-			i = 0;
-			event->envp[i++] = "HOME=/";
-			event->envp[i++] = "PATH=/sbin:/bin:/usr/sbin:/usr/bin";
-			event->envp[i++] = scratch;
-			scratch += sprintf (scratch, "ACTION=%s", b->pressed?"pressed":"released") + 1;
-			event->envp[i++] = scratch;
-			scratch += sprintf (scratch, "BUTTON=%s", b->name) + 1;
-			event->envp[i++] = scratch;
-			scratch += sprintf (scratch, "SEEN=%ld", (jiffies - b->seen)/HZ) + 1;
-			event->envp[i] = 0;
-
+		if ((event = (struct event_t *)kzalloc (sizeof(struct event_t), GFP_ATOMIC))) {
+			event->seen = (jiffies - b->seen)/HZ;
+			event->name = b->name;
+			event->action = b->pressed ? "pressed" : "released";
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
 			INIT_WORK(&event->wq, (void *)(void *)hotplug_button);
 #else
@@ -1024,7 +1093,6 @@ static int __init diag_init(void)
 
 static void __exit diag_exit(void)
 {
-
 	del_timer(&led_timer);
 
 	if (platform.buttons)
