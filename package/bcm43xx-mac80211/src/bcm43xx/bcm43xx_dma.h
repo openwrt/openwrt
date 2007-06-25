@@ -252,10 +252,14 @@ struct bcm43xx_dmaring {
 	u8 dma64;
 	/* Boolean. Is this ring stopped at ieee80211 level? */
 	u8 stopped;
+	/* Lock, only used for TX. */
+	spinlock_t lock;
 	struct bcm43xx_wldev *dev;
 #ifdef CONFIG_BCM43XX_MAC80211_DEBUG
 	/* Maximum number of used slots. */
 	int max_used_slots;
+	/* Last time we injected a ring overflow. */
+	unsigned long last_injected_overflow;
 #endif /* CONFIG_BCM43XX_MAC80211_DEBUG*/
 };
 
@@ -287,8 +291,8 @@ int bcm43xx_dmacontroller_tx_reset(struct bcm43xx_wldev *dev,
 
 u16 bcm43xx_dmacontroller_base(int dma64bit, int dmacontroller_idx);
 
-void bcm43xx_dma_tx_suspend(struct bcm43xx_dmaring *ring);
-void bcm43xx_dma_tx_resume(struct bcm43xx_dmaring *ring);
+void bcm43xx_dma_tx_suspend(struct bcm43xx_wldev *dev);
+void bcm43xx_dma_tx_resume(struct bcm43xx_wldev *dev);
 
 void bcm43xx_dma_get_tx_stats(struct bcm43xx_wldev *dev,
 			      struct ieee80211_tx_queue_stats *stats);
@@ -349,11 +353,11 @@ void bcm43xx_dma_rx(struct bcm43xx_dmaring *ring)
 {
 }
 static inline
-void bcm43xx_dma_tx_suspend(struct bcm43xx_dmaring *ring)
+void bcm43xx_dma_tx_suspend(struct bcm43xx_wldev *dev)
 {
 }
 static inline
-void bcm43xx_dma_tx_resume(struct bcm43xx_dmaring *ring)
+void bcm43xx_dma_tx_resume(struct bcm43xx_wldev *dev)
 {
 }
 

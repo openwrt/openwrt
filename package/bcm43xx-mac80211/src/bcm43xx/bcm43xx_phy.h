@@ -257,6 +257,11 @@ struct bcm43xx_bbatt_list {
 	u8 max_val;
 };
 
+/* tx_control bits. */
+#define BCM43xx_TXCTL_PA3DB	0x40 /* PA Gain 3dB */
+#define BCM43xx_TXCTL_PA2DB	0x20 /* PA Gain 2dB */
+#define BCM43xx_TXCTL_TXMIX	0x10 /* TX Mixer Gain */
+
 /* Write BasebandAttenuation value to the device. */
 void bcm43xx_phy_set_baseband_attenuation(struct bcm43xx_wldev *dev,
 					  u16 baseband_attenuation);
@@ -279,17 +284,6 @@ void bcm43xx_radio_turn_off(struct bcm43xx_wldev *dev);
 int bcm43xx_radio_selectchannel(struct bcm43xx_wldev *dev, u8 channel,
 				int synthetic_pu_workaround);
 
-void bcm43xx_radio_set_txpower_a(struct bcm43xx_wldev *dev, u16 txpower);
-/* Set the txpower on device. If the values are < 0, use the saved ones. */
-void bcm43xx_radio_set_txpower_bg(struct bcm43xx_wldev *dev,
-				  s16 baseband_attenuation,
-				  s16 radio_attenuation,
-				  s16 txctl1);
-
-u16 bcm43xx_default_baseband_attenuation(struct bcm43xx_wldev *dev);
-u16 bcm43xx_default_radio_attenuation(struct bcm43xx_wldev *dev);
-u16 bcm43xx_default_txctl1(struct bcm43xx_wldev *dev);
-
 u8 bcm43xx_radio_aci_detect(struct bcm43xx_wldev *dev, u8 channel);
 u8 bcm43xx_radio_aci_scan(struct bcm43xx_wldev *dev);
 
@@ -305,5 +299,12 @@ void bcm43xx_nrssi_mem_update(struct bcm43xx_wldev *dev);
 void bcm43xx_radio_set_tx_iq(struct bcm43xx_wldev *dev);
 u16 bcm43xx_radio_calibrationvalue(struct bcm43xx_wldev *dev);
 
+void bcm43xx_put_attenuation_into_ranges(struct bcm43xx_wldev *dev,
+					 int *_bbatt, int *_rfatt);
+
+void bcm43xx_set_txpower_g(struct bcm43xx_wldev *dev,
+			   const struct bcm43xx_bbatt *bbatt,
+			   const struct bcm43xx_rfatt *rfatt,
+			   u8 tx_control);
 
 #endif /* BCM43xx_PHY_H_ */

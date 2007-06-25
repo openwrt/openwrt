@@ -149,6 +149,7 @@ enum {
 #define BCM43xx_SHM_SH_ANTSWAP		0x005C /* Antenna swap threshold */
 #define BCM43xx_SHM_SH_HOSTFLO		0x005E /* Hostflags for ucode options (low) */
 #define BCM43xx_SHM_SH_HOSTFHI		0x0060 /* Hostflags for ucode options (high) */
+#define BCM43xx_SHM_SH_RFATT		0x0064 /* Current radio attenuation value */
 #define BCM43xx_SHM_SH_RADAR		0x0066 /* Radar register */
 #define BCM43xx_SHM_SH_PHYTXNOI		0x006E /* PHY noise directly after TX (lower 8bit only) */
 #define BCM43xx_SHM_SH_RFRXSP1		0x0072 /* RF RX SP Register 1 */
@@ -262,7 +263,7 @@ enum {
 
 /* MacFilter offsets. */
 #define BCM43xx_MACFILTER_SELF		0x0000
-#define BCM43xx_MACFILTER_ASSOC		0x0003
+#define BCM43xx_MACFILTER_BSSID		0x0003
 
 /* PowerControl */
 #define BCM43xx_PCTL_IN			0xB0
@@ -552,20 +553,16 @@ struct bcm43xx_phy {
 	/* Desired TX power level (in dBm).
 	 * This is set by the user and adjusted in bcm43xx_phy_xmitpower(). */
 	u8 power_level;
-	/* TX Power control values. */
-	/* B/G PHY */
-	struct {
-		/* Current Radio Attenuation for TXpower recalculation. */
-		u16 rfatt;
-		/* Current Baseband Attenuation for TXpower recalculation. */
-		u16 bbatt;
-		/* Current TXpower control value for TXpower recalculation. */
-		u16 txctl1;
-	};
-	/* A PHY */
-	struct {
-		u16 txpwr_offset;
-	};
+	/* A-PHY TX Power control value. */
+	u16 txpwr_offset;
+
+	/* Current TX power level attenuation control values */
+	struct bcm43xx_bbatt bbatt;
+	struct bcm43xx_rfatt rfatt;
+	u8 tx_control; /* BCM43xx_TXCTL_XXX */
+#ifdef CONFIG_BCM43XX_MAC80211_DEBUG
+	u8 manual_txpower_control; /* Manual TX-power control enabled? */
+#endif
 
 	/* Current Interference Mitigation mode */
 	int interfmode;
@@ -657,10 +654,10 @@ struct bcm43xx_wl {
 	 * Do not modify.
 	 */
 	int if_id;
-	/* MAC address. */
-	u8 *mac_addr;
-	/* Current BSSID (if any). */
-	u8 *bssid;
+	/* MAC address (can be NULL). */
+	const u8 *mac_addr;
+	/* Current BSSID (can be NULL). */
+	const u8 *bssid;
 	/* Interface type. (IEEE80211_IF_TYPE_XXX) */
 	int if_type;
 	/* Counter of active monitor interfaces. */
@@ -881,5 +878,9 @@ void bcm43xx_write32(struct bcm43xx_wldev *dev, u16 offset, u32 value)
 			__value = __max;		\
 		__value;				\
 	})
+
+/* Macros for printing a value in Q5.2 format */
+#define Q52_FMT		"%u.%u"
+#define Q52_ARG(q52)	((q52) / 4), ((((q52) & 3) * 100) / 4)
 
 #endif /* BCM43xx_H_ */
