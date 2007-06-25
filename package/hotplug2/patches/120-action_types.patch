@@ -1,0 +1,13 @@
+Index: hotplug2-0.9/hotplug2.c
+===================================================================
+--- hotplug2-0.9.orig/hotplug2.c	2007-06-25 09:07:07.038012616 +0200
++++ hotplug2-0.9/hotplug2.c	2007-06-25 09:07:19.420130248 +0200
+@@ -555,7 +555,7 @@
+ 		if (cur_seqnum > highest_seqnum)
+ 			highest_seqnum = cur_seqnum;
+ 		
+-		if (tmpevent->action == ACTION_ADD && (!dumb || modalias != NULL)) {
++		if (!dumb || modalias != NULL) {
+ 			/* 
+ 			 * We have more children than we want. Wait until SIGCHLD handler reduces
+ 			 * their numbers.
