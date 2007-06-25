@@ -7,18 +7,14 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+IMGNAME = $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)
 LOADER_MAKE = $(MAKE) -C lzma-loader KDIR=$(KDIR)
 
-define CompileLoader
-	$(LOADER_MAKE) LOADER=$(1) LOADER_DATA="" \
-		LZMA_TEXT_START=$(2) LZMA_STARTUP_ORG=$(3) \
-		compile
-endef
-
-define CompileLZMAKernel
-	$(LOADER_MAKE) LOADER=vmlinux-lzma-$(1) LOADER_DATA=$(KDIR)/vmlinux.lzma \
-		LZMA_TEXT_START=$(2) LZMA_STARTUP_ORG=$(3) \
-		compile
+define Image/Build/Loader
+	$(LOADER_MAKE) LOADER=loader-$(1).$(2) LOADER_DATA="" \
+		LZMA_TEXT_START=$(3) LZMA_STARTUP_ORG=$(4) \
+		CONFIG_PASS_KARGS=$(5) CONFIG_BOARD=$(6) \
+		compile loader.$(2)
 endef
 
 define Build/Clean
@@ -27,11 +23,6 @@ endef
 
 define Image/Prepare
 	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
-	$(call CompileLoader,zyxel,0x80500000,0)
-else	
-	$(call CompileLZMAKernel,zyxel,0x80500000,0)
-endif
 endef
 
 define trxalign/jffs2-128k
@@ -44,25 +35,42 @@ define trxalign/squashfs
 -a 1024
 endef
 
+define Image/Build/TRX
+	$(STAGING_DIR)/bin/trx -o $(1) -f $(3) -f $(KDIR)/vmlinux.lzma \
+		$(call trxalign/$(2)) -f $(KDIR)/root.$(2)
+endef
+
+define Image/Build/TRXNoloader
+	$(STAGING_DIR)/bin/trx -o $(1) -f $(KDIR)/vmlinux.lzma \
+		$(call trxalign/$(2)) -f $(KDIR)/root.$(2)
+endef
+
 define Image/Build/ZyXEL
-	$(CP) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1)-noloader.trx $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(3)-$(2).trx
+	$(call Image/Build/Loader,loader-$(2),gz,0x80500000,0)
+	$(call Image/Build/TRXNoloader,$(IMGNAME)-$(3)-$(2).trx,$(1))
+	#TODO: firmware generation tool needed
 endef
 
 define Image/Build
-	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1)-noloader.trx -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1)) -f $(KDIR)/root.$(1)
-ifneq ($(1),jffs2-128K)
-	#FIXME: firware images yet
-endif
+	#FIXME: No firmware images yet
 endef
 
 define Image/Build/LZMAKernel
-	$(CP) $(KDIR)/loader-vmlinux-lzma-$(2).$(3) \
-	    $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux-lzma-$(1).$(3)
+	$(LOADER_MAKE) TARGET_DIR=$(BIN_DIR) \
+		LOADER=openwrt-$(BOARD)-$(KERNEL)-ramfs-lzma-$(1).$(2) \
+		LOADER_DATA=$(KDIR)/vmlinux.lzma \
+		LZMA_TEXT_START=$(3) LZMA_STARTUP_ORG=$(4) \
+		CONFIG_PASS_KARGS=$(5) CONFIG_BOARD=$(6) \
+		compile loader.$(2)
+endef
+
+define Image/Build/LZMAKernel/ZyXEL
+	$(call Image/Build/LZMAKernel,$(1),$(2),0x80500000,0,y,$(1))
 endef
 
 define Image/Build/Initramfs
-	$(call Image/Build/LZMAKernel,p-334wt,zyxel,bin)
-	$(call Image/Build/LZMAKernel,p-335wt,zyxel,bin)
+	$(call Image/Build/LZMAKernel/Generic,p-334wt,bin)
+	$(call Image/Build/LZMAKernel/Generic,p-335,bin)
 endef
 
 $(eval $(call BuildImage))

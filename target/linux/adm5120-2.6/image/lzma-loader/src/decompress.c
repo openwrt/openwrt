@@ -36,12 +36,13 @@
  *
  * 19-May-2007 Gabor Juhos
  *   endiannes related cleanups
- *   add support for decompressing an embedded kernel 
+ *   add support for decompressing an embedded kernel
  *
  */
 
 #include <stddef.h>
 
+#include "config.h"
 #include "LzmaDecode.h"
 
 #define ADM5120_FLASH_START	0x1fc00000	/* Flash start */
@@ -109,6 +110,19 @@ extern unsigned char _lzma_data_end[];
 extern void board_init(void);
 extern void board_putc(int ch);
 
+struct env_var {
+	char	*name;
+	char	*value;
+};
+
+#ifdef CONFIG_PASS_KARGS
+#define ENVV(n,v)	{.name = (n), .value = (v)}
+struct env_var env_vars[] = {
+	ENVV("board_name",	CONFIG_BOARD_NAME),
+	ENVV(NULL, NULL)
+};
+#endif
+
 unsigned char *data;
 unsigned long datalen;
 
@@ -167,6 +181,7 @@ static void print_hex(int val)
 	}
 }
 
+#if !(LZMA_WRAPPER)
 static unsigned char *find_kernel(void)
 {
 	struct trx_header *hdr;
@@ -178,7 +193,7 @@ static unsigned char *find_kernel(void)
 	for (ret = ((unsigned char *) KSEG1ADDR(ADM5120_FLASH_START));
 		ret < ((unsigned char *)KSEG1ADDR(ADM5120_FLASH_END));
 		ret += TRX_ALIGN) {
-		
+
 		if (read_le32(ret) == TRX_MAGIC) {
 			hdr = (struct trx_header *)ret;
 			break;
@@ -187,13 +202,13 @@ static unsigned char *find_kernel(void)
 
 	if (hdr == NULL) {
 		print_str("not found!\n");
-		return NULL;	
+		return NULL;
 	}
 
 	print_str("found at ");
 	print_hex((unsigned int)ret);
 	print_str(", kernel in partition ");
-	
+
 	/* compressed kernel is in the partition 0 or 1 */
 	if ((read_le32(&hdr->offsets[1]) == 0) ||
 		(read_le32(&hdr->offsets[1]) > 65536)) {
@@ -203,9 +218,10 @@ static unsigned char *find_kernel(void)
 		ret += read_le32(&hdr->offsets[1]);
 		print_str("1\n");
 	}
-		
+
 	return ret;
 }
+#endif /* !(LZMA_WRAPPER) */
 
 static void halt(void)
 {
@@ -231,7 +247,8 @@ void decompress_entry(unsigned long reg_a0, unsigned long reg_a1,
 
 	board_init();
 
-	print_str("\n\nLZMA loader for ADM5120, Copyright (C) 2007 OpenWrt.org\n\n");
+	print_str("\n\nLZMA loader for " CONFIG_BOARD_NAME
+			", Copyright (C) 2007 OpenWrt.org\n\n");
 
 #if LZMA_WRAPPER
 	data = _lzma_data_start;
@@ -301,8 +318,12 @@ void decompress_entry(unsigned long reg_a0, unsigned long reg_a1,
 
 	print_str("launching kernel...\n\n");
 
+#ifdef CONFIG_PASS_KARGS
+	reg_a0 = 0;
+	reg_a1 = 0;
+	reg_a2 = (unsigned long)env_vars;
+	reg_a3 = 0;
+#endif
 	/* Jump to load address */
 	((kernel_entry) LOADADDR)(reg_a0, reg_a1, reg_a2, reg_a3);
 }
-
-
