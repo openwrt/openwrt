@@ -1,0 +1,13 @@
+Index: hotplug2-0.9/common.mak
+===================================================================
+--- hotplug2-0.9.orig/common.mak	2007-06-25 08:08:59.320226312 +0200
++++ hotplug2-0.9/common.mak	2007-06-25 08:09:03.541584568 +0200
+@@ -10,7 +10,7 @@
+ .PHONY: all clean dep install install-recursive clean-recursive \
+ 	dep-recursive all-recursive
+ 
+-MAKEDEP=-gcc $(CFLAGS) -MM $(wildcard *.c *.cc) > .depend
++MAKEDEP=-$(CC) $(CFLAGS) -MM $(wildcard *.c *.cc) > .depend
+ dep: dep-recursive
+ 	$(MAKEDEP)
+ .depend:
