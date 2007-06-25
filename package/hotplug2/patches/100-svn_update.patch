@@ -1,0 +1,542 @@
+diff -urN -x .svn hotplug2-0.9/AUTHORS hotplug2/AUTHORS
+--- hotplug2-0.9/AUTHORS	2006-10-08 18:13:50.000000000 +0200
++++ hotplug2/AUTHORS	2007-06-25 10:51:14.688225416 +0200
+@@ -1,7 +1,11 @@
+  Authors:
+ ----------
+ iSteve <isteve@bofh.cz>
+-Tomas Janousek <tomi@nomi.cz>
++
++ Contributions:
++----------------
++nbd (rules override patch)
++Tomas Janousek <tomi@nomi.cz> (Makefiles, SVN hosting)
+ 
+  Thanks to:
+ ------------
+@@ -10,5 +14,9 @@
+ Randy Dunlap (help with isapnpmap)
+ Igor2 (provided testing machines)
+ yanek (provided testing machines)
++Zdenek Styblik (provided testing OpenWRT device)
++OpenWRT team (for trusting this project)
++mtu (debugging, testing, ideas)
++mnemoc (trivial sanity changes on makefiles, linux24 compat patches)
+ 
+-...anyone taking more than a short peek at the software.
+\ No newline at end of file
++...anyone taking more than a short peek at the software.
+diff -urN -x .svn hotplug2-0.9/Changelog hotplug2/Changelog
+--- hotplug2-0.9/Changelog	2006-10-08 15:32:31.000000000 +0200
++++ hotplug2/Changelog	2007-06-25 10:51:14.689225264 +0200
+@@ -1,3 +1,10 @@
++0.9 - 1.0:
++* Add --set-rules-file.
++* Allow any ACTION.
++* Add 'printdebug' rule.
++* Fix chmod, chown, chgrp.
++* Use octal for chmod and makedev.
++
+ 0.8 - 0.9:
+ * Use signals to handle children.
+ * Separate info and debugging output.
+@@ -44,4 +51,4 @@
+ * Add more actions.
+ * Significant cleanup of rules handling.
+ * Better error reporting.
+- 
+\ No newline at end of file
++ 
+diff -urN -x .svn hotplug2-0.9/docs/hotplug2.8 hotplug2/docs/hotplug2.8
+--- hotplug2-0.9/docs/hotplug2.8	2006-09-26 09:23:36.000000000 +0200
++++ hotplug2/docs/hotplug2.8	2007-06-25 10:51:14.540247912 +0200
+@@ -31,6 +31,8 @@
+ .TP 
+ \fB\-\-set\-modprobe\-cmd <cmd>\fR
+ Sets the application used to perform modprobe. It only gets used in dumb mode. Default is to autodetect: if '/bin/modprobe' is from module\-init\-tools, use '/sbin/modprobe', otherwise use '/sbin/hotplug2\-modwrap'.
++\fB\-\-set\-rules\-file <file>\fR
++Sets the path to the file containing hotplug2 rules.
+ .SH "SIGNALS"
+ .TP 
+ \fBSIGUSR1\fR
+diff -urN -x .svn hotplug2-0.9/docs/hotplug2.rules.doc hotplug2/docs/hotplug2.rules.doc
+--- hotplug2-0.9/docs/hotplug2.rules.doc	2006-09-26 10:19:46.000000000 +0200
++++ hotplug2/docs/hotplug2.rules.doc	2007-06-25 10:51:14.537248368 +0200
+@@ -11,12 +11,12 @@
+ 	[... [...]]
+ }
+ 
+-Comments are allowed, they are prefixed with '#', treating the whole rest of the
+-line as comment. Please note that comments in place of action parameters are not
+-supported.
++Comments are allowed, they are prefixed with '#', treating the whole rest of
++the line as comment. Please note that comments in place of action parameters
++are not supported.
+ 
+-The <key> is one of the environmental variables that have been obtained by the
+-uevent netlink. 
++The <key> is one of the environmental variables that have been obtained by
++the uevent netlink. 
+ 
+  COMMON KEYS
+  -----------
+@@ -66,9 +66,9 @@
+   -------
+ 
+  * run <...>
+-	Execute an application using system();, takes one parameter. Note that
+-	the application has set all environmental variables read by uevent
+-	netlink.
++	Execute an application using system();, takes one parameter. Note
++	that the application has set all environmental variables read by 
++	uevent netlink.
+ 
+  * break
+ 	Break the processing of the current block of actions.
+@@ -86,23 +86,22 @@
+ 
+  * exec <application [parameter [parameter [...]]]> ;
+ 	Execute an application. Takes variable number of parameters, but the
+-	last parameter must be terminated with semicolon. Again, all variables
+-	are set as environmental.
++	last parameter must be terminated with semicolon. Again, all
++	variables are set as environmental.
+ 	
+-	If you need to escape the ';', use '\\;'. Only applies for actions with
+-	variable number of parameters.
++	If you need to escape the ';', use '\\;'. Only applies for actions
++	with variable number of parameters.
+ 	
+  * makedev <path> <mode>
+-	Create a device with given mode. The mode is not in octal unless it
+-	starts with '0', eg. "0644" != "644".
++	Create a device with given mode. Mode is interpreted as octal.
+ 	
+ 	Major, minor and devpath must be set for makedev to be able to work.
+ 	Tests for these variables are also performed internally in makedev
+ 	function.
+ 
+  * symlink <target> <linkname>
+-	Create a symbolic link (symlink, also known as soft link) pointing at
+-	target with name linkname.
++	Create a symbolic link (symlink, also known as soft link) pointing
++	at target with name linkname.
+ 	
+  * chown <path> <owner name>
+ 	Change owner of path to owner name.
+@@ -111,12 +110,14 @@
+ 	Change group of path to group name.
+ 	
+  * chmod <path> <mode>
+-	Change mode of path to given mode. Like with makedev, heading '0' is
+-	necessary for the mode to be interpreted as octal.
++	Change mode of path to given mode. Mode is interpreted as octal.
+ 
+  * setenv <key> <value>
+ 	Sets environmental variable key to the given value. If an env var
+ 	of the given name already exists, it gets overwritten.
++
++ * printdebug
++ 	Prints all variables read from kernel.
+ 	
+  ESCAPING
+  --------
+@@ -136,8 +137,9 @@
+  SAMPLE CONFIG
+  -------------
+ 
+-Below is a sample hotplug2.rules file. It loads modules to all available devices
+-quietly and creates device nodes for block devices.
++Below is a sample hotplug2.rules file. It loads modules to all available
++devices quietly and creates device nodes for block devices. Note that this
++sample is not very viable for real life usage.
+ ---------------------------------------------------------------------------------
+ MODALIAS is set {
+ 	exec modprobe -q %MODALIAS% ;
+@@ -146,3 +148,33 @@
+ SUBSYSTEM == block, DEVPATH is set, MAJOR is set, MINOR is set {
+ 	makedev /dev/%DEVICENAME% 0644
+ }
++
++
++Please find also the more complex set of rules, dedicated to handling most
++common needs.
++---------------------------------------------------------------------------------
++#For debugging
++#ACTION is set {
++#	printdebug
++#}
++
++# Load modules (what old hotplug did)
++MODALIAS is set {
++	exec modprobe -q %MODALIAS% ;
++}
++
++# Create device nodes
++DEVPATH is set, MAJOR is set, MINOR is set {
++	makedev /dev/%DEVICENAME% 0644
++}
++
++# Mount a USB flashdisk
++ACTION == add, PHYSDEVPATH ~~ "/usb[0-9]*/", DEVICENAME ~~ "^sd[a-z][0-9]+$", DEVPATH is set, MAJOR is set, MINOR is set {
++	makedev /dev/%DEVICENAME% 0644
++	exec mount /dev/%DEVICENAME% /mnt/%DEVICENAME%
++}
++
++# Unmount a USB flashdisk
++ACTION == remove, PHYSDEVPATH ~~ "/usb[0-9]*/", DEVICENAME ~~ "^sd[a-z][0-9]+$", MAJOR is set, MINOR is set {
++	exec umount /mnt/%DEVICENAME%
++}
+diff -urN -x .svn hotplug2-0.9/docs/Makefile hotplug2/docs/Makefile
+--- hotplug2-0.9/docs/Makefile	2006-09-26 00:27:02.000000000 +0200
++++ hotplug2/docs/Makefile	2007-06-25 10:51:14.540247912 +0200
+@@ -2,12 +2,13 @@
+ 
+ BINS=
+ SUBDIRS=
+-
++DESTDIR=
++MANDIR=/usr/share/man
+ 
+ all:
+ 
+ install:
+-	$(INSTALL) $(wildcard *.8) /usr/share/man/man8/
++	$(INSTALL) $(wildcard *.8) $(DESTDIR)$(MANDIR)/man8/
+ 
+ 
+ include ../common.mak
+diff -urN -x .svn hotplug2-0.9/examples/Makefile hotplug2/examples/Makefile
+--- hotplug2-0.9/examples/Makefile	2006-09-26 01:03:08.000000000 +0200
++++ hotplug2/examples/Makefile	2007-06-25 10:51:14.685225872 +0200
+@@ -2,19 +2,23 @@
+ 
+ BINS=
+ SUBDIRS=
++DESTDIR=
++KERNELVER=`uname -r`
+ 
+ 
+ all:
+ 
+ install:
+-	case "`uname -r`" in \
+-		2.6.*) \
+-		$(INSTALL) hotplug2.rules-2.6kernel /etc/hotplug2.rules \
+-		;; \
+-		*) \
+-		$(INSTALL) hotplug2.rules-2.4kernel /etc/hotplug2.rules \
+-		;; \
+-	esac
++	if ! [ -e "/etc/hotplug2.rules" ]; then \
++		case "$(KERNELVER)" in \
++			2.6.*) \
++			$(INSTALL) hotplug2.rules-2.6kernel $(DESTDIR)/etc/hotplug2.rules \
++			;; \
++			*) \
++			$(INSTALL) hotplug2.rules-2.4kernel $(DESTDIR)/etc/hotplug2.rules \
++			;; \
++		esac; \
++	fi;
+ 
+ 
+ include ../common.mak
+diff -urN -x .svn hotplug2-0.9/hotplug2.c hotplug2/hotplug2.c
+--- hotplug2-0.9/hotplug2.c	2006-10-08 15:18:23.000000000 +0200
++++ hotplug2/hotplug2.c	2007-06-25 10:51:14.688225416 +0200
+@@ -391,6 +391,7 @@
+ 	int rv = 0;
+ 	int i;
+ 	char *coldplug_command = NULL;
++	char *rules_file = HOTPLUG2_RULE_PATH;
+ 	sigset_t block_mask;
+ 	
+ 	struct rules_t *rules = NULL;
+@@ -435,15 +436,31 @@
+ 						break;
+ 					
+ 					modprobe_command = *argv;
++				} else if (!strcmp(*argv, "--set-rules-file")) {
++					argv++;
++					argc--;
++					if (argc <= 0)
++						break;
++					
++					rules_file = *argv;
+ 				}
+ 			}
+ 		}
+ 	}
+ 	
+-#ifdef HAVE_RULES
++#ifndef HAVE_RULES
++	/*
++	 * We don't use rules, so we use dumb mode only.
++	 */
++	dumb = 1;
++#else
++	/*
++	 * We're not in dumb mode, parse the rules. If we fail,
++	 * faillback to dumb mode.
++	 */
+ 	if (!dumb) {
+ 		filemap = MAP_FAILED;
+-		rule_fd = open(HOTPLUG2_RULE_PATH, O_RDONLY | O_NOATIME);
++		rule_fd = open(rules_file, O_RDONLY | O_NOATIME);
+ 		if (rule_fd == -1) {
+ 			dumb = 1;
+ 			ERROR("rules parse","Unable to open rules file: %s.", strerror(errno));
+@@ -477,10 +494,12 @@
+ 		
+ 		if (dumb == 1)
+ 			ERROR("rules parse","Parsing rules failed, switching to dumb mode.");
+-	} else if (!modprobe_command)
+-#else
+-	if (dumb && !modprobe_command)
++	} else
+ #endif
++	/*
++	 * No modprobe command specified, let's autodetect it.
++	 */
++	if (!modprobe_command)
+ 	{
+ 		if (get_modprobe_command()) {
+ 			ERROR("modprobe_command","Unable to autodetect modprobe command.");
+@@ -536,7 +555,7 @@
+ 		
+ 		modalias = get_hotplug2_value_by_key(tmpevent, "MODALIAS");
+ 		seqnum = get_hotplug2_value_by_key(tmpevent, "SEQNUM");
+-		
++
+ 		if (seqnum == NULL) {
+ 			free_hotplug2_event(tmpevent);
+ 			ERROR("reading events", "Malformed event read (missing SEQNUM).");
+@@ -547,7 +566,7 @@
+ 		if (cur_seqnum > highest_seqnum)
+ 			highest_seqnum = cur_seqnum;
+ 		
+-		if (tmpevent->action == ACTION_ADD && (!dumb || modalias != NULL)) {
++		if ((dumb && tmpevent->action == ACTION_ADD && modalias != NULL) || (!dumb)) {
+ 			/* 
+ 			 * We have more children than we want. Wait until SIGCHLD handler reduces
+ 			 * their numbers.
+@@ -568,11 +587,9 @@
+ 					sigprocmask(SIG_UNBLOCK, &block_mask, 0);
+ 					signal(SIGCHLD, SIG_DFL);
+ 					signal(SIGUSR1, SIG_DFL);
+-#ifdef HAVE_RULES
+ 					if (!dumb)
+ 						perform_action(dup_hotplug2_event(tmpevent), rules);
+ 					else
+-#endif
+ 						perform_dumb_action(dup_hotplug2_event(tmpevent), modalias);
+ 					exit(0);
+ 					break;
+@@ -593,12 +610,10 @@
+ 	signal(SIGINT, SIG_DFL);
+ 	signal(SIGCHLD, SIG_DFL);
+ 	
+-#ifdef HAVE_RULES
+ 	if (!dumb) {
+ 		rules_free(rules);
+ 		free(rules);
+ 	}
+-#endif
+ 
+ 	cleanup();
+ 	
+diff -urN -x .svn hotplug2-0.9/linux24_compat/hotplug2-modwrap.c hotplug2/linux24_compat/hotplug2-modwrap.c
+--- hotplug2-0.9/linux24_compat/hotplug2-modwrap.c	2006-09-25 22:23:07.000000000 +0200
++++ hotplug2/linux24_compat/hotplug2-modwrap.c	2007-06-25 10:51:14.601238640 +0200
+@@ -122,6 +122,12 @@
+ 		free(module);
+ 		free(line);
+ 	}
++
++	if (strcmp(argv[argc - 1], match_alias) == 0) {
++		if (execute(argv)) {
++			ERROR("execute", "Unable to execute: `%s'.", argv[0]);
++		}
++	}	
+ 	
+ 	free(filename);
+ 	free(match_alias);
+diff -urN -x .svn hotplug2-0.9/linux24_compat/Makefile hotplug2/linux24_compat/Makefile
+--- hotplug2-0.9/linux24_compat/Makefile	2006-09-26 00:26:46.000000000 +0200
++++ hotplug2/linux24_compat/Makefile	2007-06-25 10:51:14.601238640 +0200
+@@ -2,13 +2,14 @@
+ 
+ BINS=generate_alias hotplug2-coldplug-2.4 hotplug2-modwrap
+ SUBDIRS=
++DESTDIR=
+ 
+ 
+ all: $(BINS)
+ 
+ install:
+-	$(INSTALL_BIN) hotplug2-coldplug-2.4 hotplug2-modwrap /sbin/
+-	$(INSTALL_BIN) generate_alias /usr/sbin/
++	$(INSTALL_BIN) hotplug2-coldplug-2.4 hotplug2-modwrap $(DESTDIR)/sbin/
++	$(INSTALL_BIN) generate_alias $(DESTDIR)/usr/sbin/
+ 
+ 
+ hotplug2-coldplug-2.4: hotplug2-coldplug-2.4.o ../parser_utils.o ../filemap_utils.o ../mem_utils.o
+diff -urN -x .svn hotplug2-0.9/Makefile hotplug2/Makefile
+--- hotplug2-0.9/Makefile	2006-09-26 01:03:08.000000000 +0200
++++ hotplug2/Makefile	2007-06-25 10:51:14.693224656 +0200
+@@ -2,12 +2,13 @@
+ 
+ BINS=hotplug2 hotplug2-dnode
+ SUBDIRS=linux24_compat docs examples
++DESTDIR=
+ 
+ 
+ all: $(BINS)
+ 
+ install:
+-	$(INSTALL_BIN) $(BINS) /sbin/
++	$(INSTALL_BIN) $(BINS) $(DESTDIR)/sbin/
+ 
+ 
+ hotplug2: hotplug2.o childlist.o mem_utils.o rules.o
+diff -urN -x .svn hotplug2-0.9/rules.c hotplug2/rules.c
+--- hotplug2-0.9/rules.c	2006-09-29 22:19:31.000000000 +0200
++++ hotplug2/rules.c	2007-06-25 10:51:14.692224808 +0200
+@@ -59,6 +59,24 @@
+ 	free(path);
+ }
+ 
++static void rmdir_p(char *path) {
++	char *ptr;
++	
++	path = strdup(path);
++	ptr = path;
++	while (ptr != NULL) {
++		ptr = strrchr(path, '/');
++		if (ptr == NULL)
++			break;
++		
++		*ptr = '\0';
++		
++		if (rmdir(path))
++			break;
++	}
++	free(path);
++}
++
+ static char *replace_str(char *hay, char *needle, char *replacement) {
+         char *ptr, *start, *bptr, *buf;
+         int occurences, j;
+@@ -250,11 +268,30 @@
+ 	return rv;
+ }
+ 
+-static int chown_chgrp(int action, char *file, char *param) {
++static int chmod_file(struct hotplug2_event_t *event, char *file, char *value) {
++	int rv;
++
++	file = replace_key_by_value(strdup(file), event);
++	value = replace_key_by_value(strdup(value), event);
++
++	rv = chmod(file, strtoul(value, 0, 8));
++
++	free(file);
++	free(value);
++
++	return rv;
++}
++
++static int chown_chgrp(struct hotplug2_event_t *event, int action, char *file, char *param) {
+ 	struct group *grp;
+ 	struct passwd *pwd;
+ 	int rv;
+-	
++
++	file = replace_key_by_value(strdup(file), event);
++	param = replace_key_by_value(strdup(param), event);
++
++	rv = -1;
++
+ 	switch (action) {
+ 		case ACT_CHOWN:
+ 			pwd = getpwnam(param);
+@@ -265,8 +302,20 @@
+ 			rv = chown(file, -1, grp->gr_gid);
+ 			break;
+ 	}
++
++	free(file);
++	free(param);
+ 	
+-	return -1;
++	return rv;
++}
++
++static int print_debug(struct hotplug2_event_t *event) {
++	int i;
++
++	for (i = 0; i < event->env_vars_c; i++)
++		printf("%s=%s\n", event->env_vars[i].key, event->env_vars[i].value);
++
++	return 0;
+ }
+ 
+ static int rule_condition_eval(struct hotplug2_event_t *event, struct condition_t *condition) {
+@@ -347,11 +396,11 @@
+ 				last_rv = make_dev_from_event(event, rule->actions[i].parameter[0], strtoul(rule->actions[i].parameter[1], NULL, 0));
+ 				break;
+ 			case ACT_CHMOD:
+-				last_rv = chmod(rule->actions[i].parameter[0], strtoul(rule->actions[i].parameter[1], NULL, 0));
++				last_rv = chmod_file(event, rule->actions[i].parameter[0], rule->actions[i].parameter[1]);
+ 				break;
+ 			case ACT_CHOWN:
+ 			case ACT_CHGRP:
+-				last_rv = chown_chgrp(rule->actions[i].type, rule->actions[i].parameter[0], rule->actions[i].parameter[1]);
++				last_rv = chown_chgrp(event, rule->actions[i].type, rule->actions[i].parameter[0], rule->actions[i].parameter[1]);
+ 				break;
+ 			case ACT_SYMLINK:
+ 				last_rv = make_symlink(event, rule->actions[i].parameter[0], rule->actions[i].parameter[1]);
+@@ -365,6 +414,13 @@
+ 			case ACT_SETENV:
+ 				last_rv = setenv(rule->actions[i].parameter[0], rule->actions[i].parameter[1], 1);
+ 				break;
++			case ACT_REMOVE:
++				last_rv = unlink(rule->actions[i].parameter[0]);
++				rmdir_p(rule->actions[i].parameter[0]);
++				break;
++			case ACT_DEBUG:
++				last_rv = print_debug(event);
++				break;
+ 		}
+ 	}
+ 	
+@@ -518,6 +574,8 @@
+ 		{"chmod", 2, ACT_CHMOD},
+ 		{"chgrp", 2, ACT_CHGRP},
+ 		{"setenv", 2, ACT_SETENV},
++		{"remove", 1, ACT_REMOVE},
++		{"printdebug", 0, ACT_DEBUG},
+ 		/*symlink*/
+ 		{"symlink", 2, ACT_SYMLINK},
+ 		{"softlink", 2, ACT_SYMLINK},
+diff -urN -x .svn hotplug2-0.9/rules.h hotplug2/rules.h
+--- hotplug2-0.9/rules.h	2006-09-25 13:42:22.000000000 +0200
++++ hotplug2/rules.h	2007-06-25 10:51:14.687225568 +0200
+@@ -24,9 +24,11 @@
+ #define ACT_CHGRP			6	/* chgrp <...> */
+ #define ACT_CHOWN			7	/* chown <...> */
+ #define ACT_SYMLINK			8	/* symlink <...> */
+-#define ACT_NEXT_EVENT		9	/* next */
++#define ACT_NEXT_EVENT			9	/* next */
+ #define ACT_NEXT_IF_FAILED		10	/* next_if_failed */
+ #define ACT_SETENV			11	/* setenv <...> */
++#define ACT_REMOVE			12	/* remove <...> */
++#define ACT_DEBUG			13	/* debug */
+ 
+ #define EVAL_MATCH			1
+ #define EVAL_NOT_MATCH			0
+diff -urN -x .svn hotplug2-0.9/TODO hotplug2/TODO
+--- hotplug2-0.9/TODO	1970-01-01 01:00:00.000000000 +0100
++++ hotplug2/TODO	2007-06-25 10:51:14.691224960 +0200
+@@ -0,0 +1 @@
++ - live rules update (via inotify)

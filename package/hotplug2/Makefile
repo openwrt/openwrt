@@ -21,6 +21,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/hotplug2
   SECTION:=utils
   CATEGORY:=Utilities
+  VERSION:=0.9+r102-$(PKG_RELEASE)
   TITLE:=Dynamic device management subsystem for embedded systems
   URL:=http://isteve.bofh.cz/~isteve/hotplug2/
 endef
