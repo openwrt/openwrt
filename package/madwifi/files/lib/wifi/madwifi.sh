@@ -104,6 +104,7 @@ enable_atheros() {
 			esac
 			iwconfig "$ifname" channel 0 >/dev/null 2>/dev/null 
 			ifconfig "$ifname" up
+			sleep 1
 			iwpriv "$ifname" mode "$agmode"
 			iwpriv "$ifname" pureg "$pureg"
 			iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
