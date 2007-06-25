@@ -1,0 +1,142 @@
+Index: hotplug2-0.9/hotplug2.c
+===================================================================
+--- hotplug2-0.9.orig/hotplug2.c	2007-06-25 11:36:44.800185312 +0200
++++ hotplug2-0.9/hotplug2.c	2007-06-25 11:39:08.318367232 +0200
+@@ -313,6 +313,17 @@
+ }
+ 
+ #ifdef HAVE_RULES
++static int action_needs_fork(struct hotplug2_event_t *event, struct rules_t *rules)
++{
++	int i, rv;
++
++	for (i = 0; i < rules->rules_c; i++) {
++		if (rule_needs_fork(event, &rules->rules[i]))
++			return 1;
++	}
++	return 0;
++}
++
+ void perform_action(struct hotplug2_event_t *event, struct rules_t *rules) {
+ 	int i, rv;
+ 	
+@@ -565,14 +576,20 @@
+ 		cur_seqnum = strtoull(seqnum, NULL, 0);
+ 		if (cur_seqnum > highest_seqnum)
+ 			highest_seqnum = cur_seqnum;
+-		
++
+ 		if ((dumb && tmpevent->action == ACTION_ADD && modalias != NULL) || (!dumb)) {
+-			/* 
+-			 * We have more children than we want. Wait until SIGCHLD handler reduces
+-			 * their numbers.
+-			 */
+-			while (child_c >= max_child_c) {
+-				usleep(HOTPLUG2_THROTTLE_INTERVAL);
++			int untracked = 0;
++
++			if (!dumb && !action_needs_fork(tmpevent, rules))
++				untracked = 1;
++			else {
++				/*
++				 * We have more children than we want. Wait until SIGCHLD handler reduces
++				 * their numbers.
++				 */
++				while (child_c >= max_child_c) {
++					usleep(HOTPLUG2_THROTTLE_INTERVAL);
++				}
+ 			}
+ 			
+ 			sigemptyset(&block_mask);
+@@ -595,13 +612,16 @@
+ 					break;
+ 				default:
+ 					DBG("spawn", "spawning: %d.", p);
+-					child = add_child(child, p, cur_seqnum);
+-					child_c++;
++					if (!untracked) {
++						child = add_child(child, p, cur_seqnum);
++						child_c++;
++					}
+ 					break;
+ 			}
+ 			sigprocmask(SIG_UNBLOCK, &block_mask, 0);
+ 		}
+ 		
++done:
+ 		free_hotplug2_event(tmpevent);
+ 	}
+ 
+Index: hotplug2-0.9/rules.c
+===================================================================
+--- hotplug2-0.9.orig/rules.c	2007-06-25 11:36:44.801185160 +0200
++++ hotplug2-0.9/rules.c	2007-06-25 11:36:44.822181968 +0200
+@@ -363,6 +363,41 @@
+ 	return EVAL_NOT_AVAILABLE;
+ }
+ 
++int rule_needs_fork(struct hotplug2_event_t *event, struct rule_t *rule)
++{
++	int i, last_rv;
++
++	for (i = 0; i < rule->conditions_c; i++) {
++		if (rule_condition_eval(event, &(rule->conditions[i])) != EVAL_MATCH)
++			return 0;
++	}
++	for (i = 0; i < rule->actions_c; i++) {
++		switch (rule->actions[i].type) {
++			case ACT_STOP_PROCESSING:
++				return 0;
++				break;
++			case ACT_STOP_IF_FAILED:
++				if (last_rv != 0)
++					return 0;
++				break;
++			case ACT_NEXT_EVENT:
++				return 0;
++				break;
++			case ACT_NEXT_IF_FAILED:
++				if (last_rv != 0)
++					return 0;
++				break;
++			case ACT_RUN_SHELL:
++				return 1;
++				break;
++			case ACT_RUN_NOSHELL:
++				return 1;
++				break;
++		}
++	}
++	return 0;
++}
++
+ int rule_execute(struct hotplug2_event_t *event, struct rule_t *rule) {
+ 	int i, last_rv;
+ 	
+Index: hotplug2-0.9/rules.h
+===================================================================
+--- hotplug2-0.9.orig/rules.h	2007-06-25 11:36:44.801185160 +0200
++++ hotplug2-0.9/rules.h	2007-06-25 11:36:44.822181968 +0200
+@@ -77,5 +77,6 @@
+ int rule_execute(struct hotplug2_event_t *, struct rule_t *);
+ void rules_free(struct rules_t *);
+ struct rules_t *rules_from_config(char *);
++int rule_needs_fork(struct hotplug2_event_t *event, struct rule_t *rule);
+ 
+ #endif /* ifndef RULES_H*/
+Index: hotplug2-0.9/childlist.c
+===================================================================
+--- hotplug2-0.9.orig/childlist.c	2007-06-25 11:40:23.477941240 +0200
++++ hotplug2-0.9/childlist.c	2007-06-25 11:40:48.164188360 +0200
+@@ -41,10 +41,8 @@
+ struct hotplug2_child_t *remove_child_by_pid(struct hotplug2_child_t *child, pid_t pid, event_seqnum_t *largest_seqnum, int *child_c) {
+ 	struct hotplug2_child_t *tmp_child;
+ 	
+-	if (child == NULL) {
+-		ERROR("remove_child_by_pid", "Invalid child list passed (NULL).");
++	if (child == NULL)
+ 		return NULL;
+-	}
+ 	
+ 	tmp_child = child;
+ 	
