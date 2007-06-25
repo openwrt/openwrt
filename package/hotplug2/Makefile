@@ -34,7 +34,6 @@ MAKE_FLAGS += CFLAGS="$(TARGET_CFLAGS) -DHAVE_RULES"
 define Package/hotplug2/install
 	$(INSTALL_DIR) $(1)/etc
 	$(INSTALL_DATA) ./files/hotplug2.rules $(1)/etc/
-	$(INSTALL_DATA) ./files/hotplug2-init.rules $(1)/etc/
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hotplug2 $(1)/sbin/
 endef

@@ -1,0 +1,37 @@
+--- linux-2.6.22-rc5/lib/kobject_uevent.c.old	2007-06-25 07:34:27.002266528 +0200
++++ linux-2.6.22-rc5/lib/kobject_uevent.c	2007-06-25 08:39:53.762308264 +0200
+@@ -30,9 +30,22 @@
+ char uevent_helper[UEVENT_HELPER_PATH_LEN] = "/sbin/hotplug";
+ static DEFINE_SPINLOCK(sequence_lock);
+ #if defined(CONFIG_NET)
+-static struct sock *uevent_sock;
++struct sock *uevent_sock = NULL;
++EXPORT_SYMBOL_GPL(uevent_sock);
+ #endif
+ 
++u64 uevent_next_seqnum(void)
++{
++	u64 seq;
++
++	spin_lock(&sequence_lock);
++	seq = ++uevent_seqnum;
++	spin_unlock(&sequence_lock);
++	
++	return seq;
++}
++EXPORT_SYMBOL_GPL(uevent_next_seqnum);
++
+ static char *action_to_string(enum kobject_action action)
+ {
+ 	switch (action) {
+@@ -169,9 +182,7 @@
+ 	}
+ 
+ 	/* we will send an event, request a new sequence number */
+-	spin_lock(&sequence_lock);
+-	seq = ++uevent_seqnum;
+-	spin_unlock(&sequence_lock);
++	seq = uevent_next_seqnum();
+ 	sprintf(seq_buff, "SEQNUM=%llu", (unsigned long long)seq);
+ 
+ #if defined(CONFIG_NET)

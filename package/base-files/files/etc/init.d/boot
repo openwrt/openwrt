@@ -40,7 +40,7 @@ start() {
 	touch /var/log/lastlog
 	ln -s /tmp/resolv.conf.auto /tmp/resolv.conf
 	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
-	
+
 	/sbin/hotplug2 --persistent --max-children 1 &
 
 	# the coldplugging of network interfaces needs to happen later, so we do it manually here

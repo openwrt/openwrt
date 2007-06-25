@@ -53,7 +53,7 @@ static inline u32 gpio_intpolarity(u32 mask, u32 value)
 	gpio_op(polarity, mask, value);
 }
 
-static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *, struct pt_regs *))
+static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *))
 {
 	int irq;
 
@@ -63,10 +63,12 @@ static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *, 
 		irq = ssb_mips_irq(ssb.extif.dev) + 2;
 	else return;
 	
-	if (enabled)
-		request_irq(irq, handler, SA_SHIRQ | SA_SAMPLE_RANDOM, "gpio", handler);
-	else
+	if (enabled) {
+		if (request_irq(irq, handler, IRQF_SHARED | IRQF_SAMPLE_RANDOM, "gpio", handler))
+			return;
+	} else {
 		free_irq(irq, handler);
+	}
 
 	if (ssb.chipco.dev)
 		ssb_write32_masked(ssb.chipco.dev, SSB_CHIPCO_IRQMASK, SSB_CHIPCO_IRQ_GPIO, (enabled ? SSB_CHIPCO_IRQ_GPIO : 0));

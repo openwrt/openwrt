@@ -74,9 +74,16 @@ struct platform_t {
 
 struct event_t {
 	struct work_struct wq;
-	char buf[256];
-	char *argv[3];
-	char *envp[6];
+	unsigned long seen;
+	char *name, *action;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,0)
+	struct sk_buff *skb;
+#else
+	char *scratch;
+	char *argv[4];
+	char *envp[7];
+	u8 enr, anr;
+#endif
 };
 
 extern char *nvram_get(char *str);
@@ -88,12 +95,13 @@ static struct platform_t platform;
 static void register_buttons(struct button_t *b);
 static void unregister_buttons(struct button_t *b);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+#ifndef LINUX_2_4
 static void hotplug_button(struct work_struct *work);
+static irqreturn_t button_handler(int irq, void *dev_id);
 #else
 static void hotplug_button(struct event_t *event);
-#endif
 static irqreturn_t button_handler(int irq, void *dev_id, struct pt_regs *regs);
+#endif
 
 /* leds */
 

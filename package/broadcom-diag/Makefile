@@ -30,7 +30,7 @@ define Build/Prepare
 endef
 
 ifeq ($(BOARD),brcm)
-	BUILDFLAGS=-DBCMDRIVER -I$(LINUX_DIR)/arch/mips/bcm947xx/include
+	BUILDFLAGS=-DBCMDRIVER -I$(LINUX_DIR)/arch/mips/bcm947xx/include $(if $(CONFIG_LINUX_2_4),-DLINUX_2_4)
 endif
 
 define Build/Compile

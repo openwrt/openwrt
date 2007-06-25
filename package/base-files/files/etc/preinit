@@ -23,7 +23,8 @@ else
 	mount -t tmpfs tmpfs /dev -o size=512K
 	mknod /dev/console c 5 1
 	mkdir /dev/shm
-	/sbin/hotplug2 --no-persistent --coldplug --set-rules-file /etc/hotplug2-init.rules
+	/sbin/hotplug2 --coldplug --set-rules-file /etc/hotplug2-init.rules
+	/sbin/hotplug2 --no-coldplug --persistent --set-rules-file /etc/hotplug2-init.rules &
 	M0=/dev/ptmx
 	M1=/dev/ptmx
 	HOTPLUG=
@@ -42,19 +43,16 @@ dd if=/dev/console of=/dev/null bs=1 count=0 >/dev/null 2>/dev/null && {
 
 exec <$M0 >$M1 2>&0
 
-{
-	echo "- preinit -"
-	[ -e /etc/preinit.arch ] && . /etc/preinit.arch
-	set_state preinit
+echo "- preinit -"
 
-	echo "$HOTPLUG" > /proc/sys/kernel/hotplug
+[ -e /etc/preinit.arch ] && . /etc/preinit.arch
+set_state preinit
+echo "$HOTPLUG" > /proc/sys/kernel/hotplug
+eval ${FAILSAFE:+failsafe}
+lock -w /tmp/.failsafe
+mount_root
 
-	eval ${FAILSAFE:+failsafe}
-	lock -w /tmp/.failsafe
-
-	mount_root
-
-	echo "- init -"
-} | tee /tmp/preinit.log
-
+echo "- init -"
+	
+killall hotplug2
 exec /sbin/init
