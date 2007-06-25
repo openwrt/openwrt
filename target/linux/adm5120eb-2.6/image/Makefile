@@ -69,8 +69,8 @@ define Image/Build/LZMAKernel/ZyXEL
 endef
 
 define Image/Build/Initramfs
-	$(call Image/Build/LZMAKernel/Generic,p-334wt,bin)
-	$(call Image/Build/LZMAKernel/Generic,p-335,bin)
+	$(call Image/Build/LZMAKernel/ZyXEL,p-334wt,bin)
+	$(call Image/Build/LZMAKernel/ZyXEL,p-335,bin)
 endef
 
 $(eval $(call BuildImage))
