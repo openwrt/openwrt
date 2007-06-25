@@ -21,8 +21,8 @@ endif
 
 define KernelPackage/mac80211
   SUBMENU:=Wireless Drivers
-  TITLE:=DeviceScape 802.11 Wireless Networking Stack
-  DEPENDS:=@LINUX_2_6 +kmod-ieee80211
+  TITLE:=Linux 802.11 Wireless Networking Stack
+  DEPENDS:=@LINUX_2_6
   DESCRIPTION:=\
 	This package contains the DeviceScape 80211 wireless stack.
   VERSION:=$(PKG_RELEASE)+$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)
@@ -32,7 +32,7 @@ define KernelPackage/mac80211
 	$(PKG_BUILD_DIR)/mac80211/rc80211_lowest.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/mac80211/rc80211_simple.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/wireless/cfg80211.$(LINUX_KMOD_SUFFIX)
-   AUTOLOAD:=$(call AutoLoad,20,cfg80211 mac80211 rc80211_lowest rc80211_simple)
+   AUTOLOAD:=$(call AutoLoad,20,cfg80211 mac80211 rc80211_simple)
   endif
 endef
 
