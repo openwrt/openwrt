@@ -1,8 +1,8 @@
-Index: linux-2.6.22-rc4/include/linux/ieee80211.h
+Index: linux-2.6.22-rc5/include/linux/ieee80211.h
 ===================================================================
---- linux-2.6.22-rc4.orig/include/linux/ieee80211.h	2007-06-10 21:32:10.000000000 +0100
-+++ linux-2.6.22-rc4/include/linux/ieee80211.h	2007-06-10 21:33:26.000000000 +0100
-@@ -106,6 +106,69 @@
+--- linux-2.6.22-rc5.orig/include/linux/ieee80211.h	2007-06-21 23:26:23.000000000 +0100
++++ linux-2.6.22-rc5/include/linux/ieee80211.h	2007-06-21 23:35:39.000000000 +0100
+@@ -106,6 +106,75 @@
  } __attribute__ ((packed));
  
  
@@ -24,28 +24,34 @@ Index: linux-2.6.22-rc4/include/linux/ieee80211.h
 +}__attribute__ ((packed));
 +
 +
-+#define IEEE80211_TSINFO_TYPE(a)	((a.short1 & 0x0001) >> 0)
-+#define IEEE80211_TSINFO_TSID(a)	((a.short1 & 0x001E) >> 1)
-+#define IEEE80211_TSINFO_DIR(a)		((a.short1 & 0x0060) >> 5)
-+#define IEEE80211_TSINFO_POLICY(a)	((a.short1 & 0x0180) >> 7)
-+#define IEEE80211_TSINFO_AGG(a)		((a.short1 & 0x0200) >> 9)
-+#define IEEE80211_TSINFO_APSD(a)	((a.short1 & 0x0400) >> 10)
-+#define IEEE80211_TSINFO_UP(a)		((a.short1 & 0x3800) >> 11)
-+#define IEEE80211_TSINFO_ACK(a)		((a.short1 & 0xC000) >> 14)
++#define IEEE80211_TSINFO_TYPE(a)	((a.byte1 & 0x01) >> 0)
++#define IEEE80211_TSINFO_TSID(a)	((a.byte1 & 0x1E) >> 1)
++#define IEEE80211_TSINFO_DIR(a)		((a.byte1 & 0x60) >> 5)
++#define IEEE80211_TSINFO_POLICY(a)	((a.byte1 & 0x80) >> 7 + \
++					 (a.byte2 & 0x01) << 1)
++#define IEEE80211_TSINFO_AGG(a)		((a.byte2 & 0x02) >> 1)
++#define IEEE80211_TSINFO_APSD(a)	((a.byte2 & 0x04) >> 2)
++#define IEEE80211_TSINFO_UP(a)		((a.byte2 & 0x38) >> 3)
++#define IEEE80211_TSINFO_ACK(a)		((a.byte2 & 0xC0) >> 6)
 +#define IEEE80211_TSINFO_SCHEDULE(a)	((a.byte3 & 0x01) >> 0)
 +
-+#define SET_TSINFO_TYPE(i, d)		(i.short1 |= (d << 0) & 0x0001)
-+#define SET_TSINFO_TSID(i, d)		(i.short1 |= (d << 1) & 0x001E)
-+#define SET_TSINFO_DIR(i, d)		(i.short1 |= (d << 5) & 0x0060)
-+#define SET_TSINFO_POLICY(i, d)		(i.short1 |= (d << 7) & 0x0180)
-+#define SET_TSINFO_AGG(i, d)		(i.short1 |= (d << 9) & 0x0200)
-+#define SET_TSINFO_APSD(i, d)		(i.short1 |= (d << 10) & 0x0400)
-+#define SET_TSINFO_UP(i, d)		(i.short1 |= (d << 11) & 0x3800)
-+#define SET_TSINFO_ACK(i, d)		(i.short1 |= (d << 14) & 0xC000)
-+#define SET_TSINFO_SCHEDULE(i, d)	(i.byte3 |= (d << 0) & 0x01)
++#define IEEE80211_SET_TSINFO_TYPE(i, d)		(i.byte1 |= (d << 0) & 0x01)
++#define IEEE80211_SET_TSINFO_TSID(i, d)		(i.byte1 |= (d << 1) & 0x1E)
++#define IEEE80211_SET_TSINFO_DIR(i, d)		(i.byte1 |= (d << 5) & 0x60)
++#define IEEE80211_SET_TSINFO_POLICY(i, d)	\
++do {						\
++						i.byte1 |= (d & 0x01) << 7; \
++						i.byte2 |= (d & 0x02) >> 1; \
++} while(0)
++#define IEEE80211_SET_TSINFO_AGG(i, d)		(i.byte2 |= (d << 1) & 0x02)
++#define IEEE80211_SET_TSINFO_APSD(i, d)		(i.byte2 |= (d << 2) & 0x04)
++#define IEEE80211_SET_TSINFO_UP(i, d)		(i.byte2 |= (d << 3) & 0x38)
++#define IEEE80211_SET_TSINFO_ACK(i, d)		(i.byte2 |= (d << 6) & 0xC0)
++#define IEEE80211_SET_TSINFO_SCHEDULE(i, d)	(i.byte3 |= (d << 0) & 0x01)
 +
 +struct ieee80211_ts_info {
-+	__le16 short1;
++	u8 byte1;
++	u8 byte2;
 +	u8 byte3;
 +} __attribute__ ((packed));
 +
@@ -72,7 +78,7 @@ Index: linux-2.6.22-rc4/include/linux/ieee80211.h
  struct ieee80211_mgmt {
  	__le16 frame_control;
  	__le16 duration;
-@@ -173,9 +236,51 @@
+@@ -173,9 +242,51 @@
  				struct {
  					u8 action_code;
  					u8 dialog_token;
@@ -124,7 +130,7 @@ Index: linux-2.6.22-rc4/include/linux/ieee80211.h
  				struct{
  					u8 action_code;
  					u8 element_id;
-@@ -184,6 +289,25 @@
+@@ -184,6 +295,25 @@
  					u8 new_chan;
  					u8 switch_count;
  				} __attribute__((packed)) chan_switch;
@@ -150,7 +156,7 @@ Index: linux-2.6.22-rc4/include/linux/ieee80211.h
  			} u;
  		} __attribute__ ((packed)) action;
  	} u;
-@@ -259,6 +383,18 @@
+@@ -259,6 +389,18 @@
  	WLAN_STATUS_UNSUPP_RSN_VERSION = 44,
  	WLAN_STATUS_INVALID_RSN_IE_CAP = 45,
  	WLAN_STATUS_CIPHER_SUITE_REJECTED = 46,
@@ -169,7 +175,7 @@ Index: linux-2.6.22-rc4/include/linux/ieee80211.h
  };
  
  
-@@ -289,9 +425,50 @@
+@@ -289,9 +431,50 @@
  	WLAN_REASON_INVALID_RSN_IE_CAP = 22,
  	WLAN_REASON_IEEE8021X_FAILED = 23,
  	WLAN_REASON_CIPHER_SUITE_REJECTED = 24,
@@ -220,7 +226,7 @@ Index: linux-2.6.22-rc4/include/linux/ieee80211.h
  /* Information Element IDs */
  enum ieee80211_eid {
  	WLAN_EID_SSID = 0,
-@@ -307,6 +484,15 @@
+@@ -307,6 +490,15 @@
  	WLAN_EID_HP_PARAMS = 8,
  	WLAN_EID_HP_TABLE = 9,
  	WLAN_EID_REQUEST = 10,
@@ -236,7 +242,7 @@ Index: linux-2.6.22-rc4/include/linux/ieee80211.h
  	/* 802.11h */
  	WLAN_EID_PWR_CONSTRAINT = 32,
  	WLAN_EID_PWR_CAPABILITY = 33,
-@@ -321,6 +507,9 @@
+@@ -321,6 +513,9 @@
  	/* 802.11g */
  	WLAN_EID_ERP_INFO = 42,
  	WLAN_EID_EXT_SUPP_RATES = 50,
@@ -246,7 +252,7 @@ Index: linux-2.6.22-rc4/include/linux/ieee80211.h
  	/* 802.11i */
  	WLAN_EID_RSN = 48,
  	WLAN_EID_WPA = 221,
-@@ -329,6 +518,9 @@
+@@ -329,6 +524,9 @@
  	WLAN_EID_QOS_PARAMETER = 222
  };
  
@@ -256,7 +262,7 @@ Index: linux-2.6.22-rc4/include/linux/ieee80211.h
  /* cipher suite selectors */
  #define WLAN_CIPHER_SUITE_USE_GROUP	0x000FAC00
  #define WLAN_CIPHER_SUITE_WEP40		0x000FAC01
-@@ -339,4 +531,37 @@
+@@ -339,4 +537,37 @@
  
  #define WLAN_MAX_KEY_LEN		32
  
@@ -294,10 +300,10 @@ Index: linux-2.6.22-rc4/include/linux/ieee80211.h
 +};
 +
  #endif /* IEEE80211_H */
-Index: linux-2.6.22-rc4/include/linux/nl80211.h
+Index: linux-2.6.22-rc5/include/linux/nl80211.h
 ===================================================================
---- linux-2.6.22-rc4.orig/include/linux/nl80211.h	2007-06-10 21:32:10.000000000 +0100
-+++ linux-2.6.22-rc4/include/linux/nl80211.h	2007-06-10 21:33:26.000000000 +0100
+--- linux-2.6.22-rc5.orig/include/linux/nl80211.h	2007-06-21 23:26:23.000000000 +0100
++++ linux-2.6.22-rc5/include/linux/nl80211.h	2007-06-21 23:34:24.000000000 +0100
 @@ -7,6 +7,217 @@
   */
  
@@ -573,11 +579,19 @@ Index: linux-2.6.22-rc4/include/linux/nl80211.h
 +#define NL80211_KEYTYPE_MAX (__NL80211_KEYTYPE_AFTER_LAST - 1)
 +
  #endif /* __LINUX_NL80211_H */
-Index: linux-2.6.22-rc4/include/net/cfg80211.h
+Index: linux-2.6.22-rc5/include/net/cfg80211.h
 ===================================================================
---- linux-2.6.22-rc4.orig/include/net/cfg80211.h	2007-06-10 21:32:10.000000000 +0100
-+++ linux-2.6.22-rc4/include/net/cfg80211.h	2007-06-10 21:33:26.000000000 +0100
-@@ -11,6 +11,69 @@
+--- linux-2.6.22-rc5.orig/include/net/cfg80211.h	2007-06-21 23:26:23.000000000 +0100
++++ linux-2.6.22-rc5/include/net/cfg80211.h	2007-06-21 23:35:53.000000000 +0100
+@@ -3,6 +3,7 @@
+ 
+ #include <linux/netlink.h>
+ #include <linux/skbuff.h>
++#include <linux/nl80211.h>
+ #include <net/genetlink.h>
+ 
+ /*
+@@ -11,6 +12,69 @@
   * Copyright 2006 Johannes Berg <johannes@sipsolutions.net>
   */
  
@@ -588,7 +602,7 @@ Index: linux-2.6.22-rc4/include/net/cfg80211.h
 + * @active: scan actively or passively on this channel
 + */
 +struct scan_channel {
-+	int phymode;
++	enum nl80211_phymode phymode;
 +	u32 channel;
 +	int active;
 +};
@@ -606,7 +620,7 @@ Index: linux-2.6.22-rc4/include/net/cfg80211.h
 +struct scan_params {
 +	int n_channels;
 +	int active;
-+	int phymode;
++	enum nl80211_phymode phymode;
 +	struct scan_channel *channels;
 +};
 +
@@ -647,7 +661,7 @@ Index: linux-2.6.22-rc4/include/net/cfg80211.h
  /* from net/wireless.h */
  struct wiphy;
  
-@@ -30,11 +93,62 @@
+@@ -30,11 +94,62 @@
   * @add_virtual_intf: create a new virtual interface with the given name
   *
   * @del_virtual_intf: remove the virtual interface determined by ifindex.
@@ -674,10 +688,11 @@ Index: linux-2.6.22-rc4/include/net/cfg80211.h
   */
  struct cfg80211_ops {
  	int	(*add_virtual_intf)(struct wiphy *wiphy, char *name,
- 				    unsigned int type);
+-				    unsigned int type);
++				    enum nl80211_iftype type);
  	int	(*del_virtual_intf)(struct wiphy *wiphy, int ifindex);
 +	int	(*change_virtual_intf)(struct wiphy *wiphy, int ifindex,
-+				       unsigned int type);
++				       enum nl80211_iftype type);
 +
 +	int	(*associate)(struct wiphy *wiphy, struct net_device *dev,
 +			     struct association_params *params);
@@ -710,10 +725,10 @@ Index: linux-2.6.22-rc4/include/net/cfg80211.h
 +			    u32 seq, int flags, u8 cmd);
 +
  #endif /* __NET_CFG80211_H */
-Index: linux-2.6.22-rc4/include/net/iw_handler.h
+Index: linux-2.6.22-rc5/include/net/iw_handler.h
 ===================================================================
---- linux-2.6.22-rc4.orig/include/net/iw_handler.h	2007-06-10 21:32:10.000000000 +0100
-+++ linux-2.6.22-rc4/include/net/iw_handler.h	2007-06-10 21:33:26.000000000 +0100
+--- linux-2.6.22-rc5.orig/include/net/iw_handler.h	2007-06-21 23:26:23.000000000 +0100
++++ linux-2.6.22-rc5/include/net/iw_handler.h	2007-06-21 23:34:24.000000000 +0100
 @@ -431,7 +431,13 @@
   * Those may be called only within the kernel.
   */
@@ -729,10 +744,10 @@ Index: linux-2.6.22-rc4/include/net/iw_handler.h
  
  /* Send a single event to user space */
  extern void wireless_send_event(struct net_device *	dev,
-Index: linux-2.6.22-rc4/include/net/mac80211.h
+Index: linux-2.6.22-rc5/include/net/mac80211.h
 ===================================================================
---- linux-2.6.22-rc4.orig/include/net/mac80211.h	2007-06-10 21:32:10.000000000 +0100
-+++ linux-2.6.22-rc4/include/net/mac80211.h	2007-06-10 21:33:26.000000000 +0100
+--- linux-2.6.22-rc5.orig/include/net/mac80211.h	2007-06-21 23:26:23.000000000 +0100
++++ linux-2.6.22-rc5/include/net/mac80211.h	2007-06-21 23:34:24.000000000 +0100
 @@ -300,7 +300,6 @@
  	/* Following five fields are used for IEEE 802.11H */
  	unsigned int radar_detect;
