@@ -32,7 +32,7 @@ MODULE_LICENSE("GPL");
 
 static LIST_HEAD(attach_queue);
 static LIST_HEAD(buses);
-static int nr_buses;
+static unsigned int next_busnumber;
 static DEFINE_MUTEX(buses_mutex);
 
 static void ssb_buses_lock(void);
@@ -365,7 +365,7 @@ static int ssb_devices_register(struct ssb_bus *bus)
 		dev->release = ssb_release_dev;
 		dev->bus = &ssb_bustype;
 		snprintf(dev->bus_id, sizeof(dev->bus_id),
-			 "ssb%d:%d", bus->busnumber, dev_idx);
+			 "ssb%u:%d", bus->busnumber, dev_idx);
 
 		switch (bus->bustype) {
 		case SSB_BUSTYPE_PCI:
@@ -435,17 +435,6 @@ static int ssb_attach_queued_buses(void)
 	return err;
 }
 
-static void ssb_get_boardtype(struct ssb_bus *bus)
-{//FIXME for pcmcia?
-	if (bus->bustype != SSB_BUSTYPE_PCI) {
-		/* Must set board_vendor, board_type and board_rev
-		 * before calling ssb_bus_*_register() */
-		assert(bus->board_vendor && bus->board_type);
-		return;
-	}
-	ssb_pci_get_boardtype(bus);
-}
-
 static u16 ssb_ssb_read16(struct ssb_device *dev, u16 offset)
 {
 	struct ssb_bus *bus = dev->bus;
@@ -485,7 +474,26 @@ static const struct ssb_bus_ops ssb_ssb_ops = {
 	.write32	= ssb_ssb_write32,
 };
 
+static int ssb_fetch_invariants(struct ssb_bus *bus,
+				int (*get_invariants)(struct ssb_bus *bus,
+						      struct ssb_init_invariants *iv))
+{
+	struct ssb_init_invariants iv;
+	int err;
+
+	memset(&iv, 0, sizeof(iv));
+	err = get_invariants(bus, &iv);
+	if (err)
+		goto out;
+	memcpy(&bus->boardinfo, &iv.boardinfo, sizeof(iv.boardinfo));
+	memcpy(&bus->sprom, &iv.sprom, sizeof(iv.sprom));
+out:
+	return err;
+}
+
 static int ssb_bus_register(struct ssb_bus *bus,
+			    int (*get_invariants)(struct ssb_bus *bus,
+			    			  struct ssb_init_invariants *iv),
 			    unsigned long baseaddr)
 {
 	int err;
@@ -493,13 +501,12 @@ static int ssb_bus_register(struct ssb_bus *bus,
 	spin_lock_init(&bus->bar_lock);
 	INIT_LIST_HEAD(&bus->list);
 
-	ssb_get_boardtype(bus);
 	/* Powerup the bus */
 	err = ssb_pci_xtal(bus, SSB_GPIO_XTAL | SSB_GPIO_PLL, 1);
 	if (err)
 		goto out;
 	ssb_buses_lock();
-	bus->busnumber = nr_buses;
+	bus->busnumber = next_busnumber;
 	/* Scan for devices (cores) */
 	err = ssb_bus_scan(bus, baseaddr);
 	if (err)
@@ -517,6 +524,9 @@ static int ssb_bus_register(struct ssb_bus *bus,
 	/* Initialize basic system devices (if available) */
 	ssb_chipcommon_init(&bus->chipco);
 	ssb_mipscore_init(&bus->mipscore);
+	err = ssb_fetch_invariants(bus, get_invariants);
+	if (err)
+		goto err_pcmcia_exit;
 
 	/* Queue it for attach */
 	list_add_tail(&bus->list, &attach_queue);
@@ -526,7 +536,7 @@ static int ssb_bus_register(struct ssb_bus *bus,
 		if (err)
 			goto err_dequeue;
 	}
-	nr_buses++;
+	next_busnumber++;
 	ssb_buses_unlock();
 
 out:
@@ -534,7 +544,7 @@ out:
 
 err_dequeue:
 	list_del(&bus->list);
-/* err_pcmcia_exit: */
+err_pcmcia_exit:
 /*	ssb_pcmcia_exit(bus); */
 err_pci_exit:
 	ssb_pci_exit(bus);
@@ -556,7 +566,7 @@ int ssb_bus_pcibus_register(struct ssb_bus *bus,
 	bus->host_pci = host_pci;
 	bus->ops = &ssb_pci_ops;
 
-	err = ssb_bus_register(bus, 0);
+	err = ssb_bus_register(bus, ssb_pci_get_invariants, 0);
 	if (!err) {
 		ssb_printk(KERN_INFO PFX "Sonics Silicon Backplane found on "
 			   "PCI device %s\n", host_pci->dev.bus_id);
@@ -570,17 +580,15 @@ EXPORT_SYMBOL(ssb_bus_pcibus_register);
 #ifdef CONFIG_SSB_PCMCIAHOST
 int ssb_bus_pcmciabus_register(struct ssb_bus *bus,
 			       struct pcmcia_device *pcmcia_dev,
-			       unsigned long baseaddr,
-			       void (*fill_sprom)(struct ssb_sprom *sprom))
+			       unsigned long baseaddr)
 {
 	int err;
 
 	bus->bustype = SSB_BUSTYPE_PCMCIA;
 	bus->host_pcmcia = pcmcia_dev;
 	bus->ops = &ssb_pcmcia_ops;
-	fill_sprom(&bus->sprom);
 
-	err = ssb_bus_register(bus, baseaddr);
+	err = ssb_bus_register(bus, ssb_pcmcia_get_invariants, baseaddr);
 	if (!err) {
 		ssb_printk(KERN_INFO PFX "Sonics Silicon Backplane found on "
 			   "PCMCIA device %s\n", pcmcia_dev->devname);
@@ -593,15 +601,15 @@ EXPORT_SYMBOL(ssb_bus_pcmciabus_register);
 
 int ssb_bus_ssbbus_register(struct ssb_bus *bus,
 			    unsigned long baseaddr,
-			    void (*fill_sprom)(struct ssb_sprom *sprom))
+			    int (*get_invariants)(struct ssb_bus *bus,
+			    			  struct ssb_init_invariants *iv))
 {
 	int err;
 
 	bus->bustype = SSB_BUSTYPE_SSB;
 	bus->ops = &ssb_ssb_ops;
-	fill_sprom(&bus->sprom);
 
-	err = ssb_bus_register(bus, baseaddr);
+	err = ssb_bus_register(bus, get_invariants, baseaddr);
 	if (!err) {
 		ssb_printk(KERN_INFO PFX "Sonics Silicon Backplane found at "
 			   "address 0x%08lX\n", baseaddr);

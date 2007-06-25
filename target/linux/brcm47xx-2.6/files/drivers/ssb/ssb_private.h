@@ -51,8 +51,8 @@ extern int ssb_pci_switch_coreidx(struct ssb_bus *bus,
 				  u8 coreidx);
 extern int ssb_pci_xtal(struct ssb_bus *bus, u32 what,
 			int turn_on);
-extern int ssb_pci_sprom_get(struct ssb_bus *bus);
-extern void ssb_pci_get_boardtype(struct ssb_bus *bus);
+extern int ssb_pci_get_invariants(struct ssb_bus *bus,
+				  struct ssb_init_invariants *iv);
 extern void ssb_pci_exit(struct ssb_bus *bus);
 extern int ssb_pci_init(struct ssb_bus *bus);
 extern const struct ssb_bus_ops ssb_pci_ops;
@@ -74,13 +74,6 @@ static inline int ssb_pci_xtal(struct ssb_bus *bus, u32 what,
 {
 	return 0;
 }
-static inline int ssb_pci_sprom_get(struct ssb_bus *bus)
-{
-	return 0;
-}
-static inline void ssb_pci_get_boardtype(struct ssb_bus *bus)
-{
-}
 static inline void ssb_pci_exit(struct ssb_bus *bus)
 {
 }
@@ -99,6 +92,8 @@ extern int ssb_pcmcia_switch_coreidx(struct ssb_bus *bus,
 				     u8 coreidx);
 extern int ssb_pcmcia_switch_segment(struct ssb_bus *bus,
 				     u8 seg);
+extern int ssb_pcmcia_get_invariants(struct ssb_bus *bus,
+				     struct ssb_init_invariants *iv);
 extern int ssb_pcmcia_init(struct ssb_bus *bus);
 extern const struct ssb_bus_ops ssb_pcmcia_ops;
 #else /* CONFIG_SSB_PCMCIAHOST */
@@ -138,14 +133,5 @@ extern int ssb_devices_freeze(struct ssb_bus *bus);
 extern int ssb_devices_thaw(struct ssb_bus *bus);
 extern struct ssb_bus * ssb_pci_dev_to_bus(struct pci_dev *pdev);
 #endif /* CONFIG_SSB_PCIHOST */
-
-
-/* Ceiling division helper. Divides x by y. */
-static inline
-unsigned long ceildiv(unsigned long x, unsigned long y)
-{
-	return ((x + (y - 1)) / y);
-}
-
 
 #endif /* LINUX_SSB_PRIVATE_H_ */

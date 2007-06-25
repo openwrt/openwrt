@@ -100,6 +100,13 @@ struct ssb_sprom {
 	};
 };
 
+/* Information about the PCB the circuitry is soldered on. */
+struct ssb_boardinfo {
+	u16 vendor;
+	u16 type;
+	u16 rev;
+};
+
 
 struct ssb_device;
 /* Lowlevel read/write operations on the device MMIO.
@@ -292,18 +299,10 @@ struct ssb_bus {
 	struct mutex pci_sprom_mutex;
 #endif
 
-	/* ID information about the PCB. */
-	u16 board_vendor;
-	u16 board_type;
-	u16 board_rev;
 	/* ID information about the Chip. */
 	u16 chip_id;
 	u16 chip_rev;
 	u8 chip_package;
-
-	/* Contents of the SPROM.
-	 * If there is no sprom (not on PCI-bus), this is emulated. */
-	struct ssb_sprom sprom;
 
 	/* List of devices (cores) on the backplane. */
 	struct ssb_device devices[SSB_MAX_NR_CORES];
@@ -313,7 +312,7 @@ struct ssb_bus {
 	u8 suspend_cnt;
 
 	/* Software ID number for this bus. */
-	int busnumber;
+	unsigned int busnumber;
 
 	/* The ChipCommon device (if available). */
 	struct ssb_chipcommon chipco;
@@ -324,13 +323,34 @@ struct ssb_bus {
 	/* The EXTif-core device (if available). */
 	struct ssb_extif extif;
 
+	/* The following structure elements are not available in early
+	 * SSB initialization. Though, they are available for regular
+	 * registered drivers at any stage. So be careful when
+	 * using them in the ssb core code. */
+
+	/* ID information about the PCB. */
+	struct ssb_boardinfo boardinfo;
+	/* Contents of the SPROM. */
+	struct ssb_sprom sprom;
+
 	/* Internal. */
 	struct list_head list;
 };
 
+/* The initialization-invariants. */
+struct ssb_init_invariants {
+	struct ssb_boardinfo boardinfo;
+	struct ssb_sprom sprom;
+};
+
+/* Register a SSB system bus. get_invariants() is called after the
+ * basic system devices are initialized.
+ * The invariants are usually fetched from some NVRAM.
+ * Put the invariants into the struct pointed to by iv. */
 extern int ssb_bus_ssbbus_register(struct ssb_bus *bus,
 				   unsigned long baseaddr,
-				   void (*fill_sprom)(struct ssb_sprom *sprom));
+				   int (*get_invariants)(struct ssb_bus *bus,
+				   			 struct ssb_init_invariants *iv));
 #ifdef CONFIG_SSB_PCIHOST
 extern int ssb_bus_pcibus_register(struct ssb_bus *bus,
 				   struct pci_dev *host_pci);
@@ -338,8 +358,7 @@ extern int ssb_bus_pcibus_register(struct ssb_bus *bus,
 #ifdef CONFIG_SSB_PCMCIAHOST
 extern int ssb_bus_pcmciabus_register(struct ssb_bus *bus,
 				      struct pcmcia_device *pcmcia_dev,
-				      unsigned long baseaddr,
-				      void (*fill_sprom)(struct ssb_sprom *sprom));
+				      unsigned long baseaddr);
 #endif /* CONFIG_SSB_PCMCIAHOST */
 
 extern void ssb_bus_unregister(struct ssb_bus *bus);
