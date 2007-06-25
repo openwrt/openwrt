@@ -53,9 +53,16 @@ define trxalign/squashfs
 -a 1024 -f $(KDIR)/root.$(1) -a 0x10000 -A $(KDIR)/fs_mark
 endef
 
-define Image/Build
-	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1),$(1)) 
-ifneq ($(1),jffs2-128k)
+
+define Image/Build/jffs2-128k
+	$(call Image/Build/CyberTAN,$(1),wrt54gs,W54S,4.80.1,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),wrtsl54gs,W54U,2.08.1,$(patsubst jffs2-%,jffs2,$(1)))
+  ifeq ($(KERNEL),2.6)
+	$(call Image/Build/wgt634u,$(1),$(patsubst jffs2-%,jffs2,$(1)))
+  endif
+endef
+
+define Image/Build/jffs2-64k
 	$(call Image/Build/CyberTAN,$(1),wrt54g3g,W54F,2.01.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt54g,W54G,4.60.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt54gs_v4,W54s,1.09.1,$(patsubst jffs2-%,jffs2,$(1)))
@@ -63,16 +70,18 @@ ifneq ($(1),jffs2-128k)
 	$(call Image/Build/CyberTAN,$(1),wrt300n_v1,EWCB,0.93.10,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Motorola,$(1),wa840g,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Motorola,$(1),we800g,3,$(patsubst jffs2-%,jffs2,$(1)))
-endif
-ifneq ($(1),jffs2-64k)
-	$(call Image/Build/CyberTAN,$(1),wrt54gs,W54S,4.80.1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrtsl54gs,W54U,2.08.1,$(patsubst jffs2-%,jffs2,$(1)))
-ifeq ($(KERNEL),2.6)
-	$(call Image/Build/wgt634u,$(1),$(patsubst jffs2-%,jffs2,$(1)))
-endif
-endif
+endef
+
+define Image/Build/squashfs
+	$(call Image/Build/jffs2-64k,$(1))
+	$(call Image/Build/jffs2-128k,$(1))
+endef
+
+define Image/Build
+	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1),$(1))
+	$(call Image/Build/$(1),$(1))
 	$(call Image/Build/Motorola,$(1),wr850g,1,$(1))
-	$(call Image/Build/USR,$(1),usr5461,$(1)) 
+	$(call Image/Build/USR,$(1),usr5461,$(1))
 endef
 
 $(eval $(call BuildImage))
