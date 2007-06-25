@@ -290,6 +290,56 @@ void return_slot(struct bcm43xx_dmaring *ring, int slot)
 	ring->used_slots--;
 }
 
+/* Mac80211-queue to bcm43xx-ring mapping */
+static struct bcm43xx_dmaring * priority_to_txring(struct bcm43xx_wldev *dev,
+						   int queue_priority)
+{
+	struct bcm43xx_dmaring *ring;
+
+/*FIXME: For now we always run on TX-ring-1 */
+return dev->dma.tx_ring1;
+
+	/* 0 = highest priority */
+	switch (queue_priority) {
+	default:
+		assert(0);
+		/* fallthrough */
+	case 0:
+		ring = dev->dma.tx_ring3;
+		break;
+	case 1:
+		ring = dev->dma.tx_ring2;
+		break;
+	case 2:
+		ring = dev->dma.tx_ring1;
+		break;
+	case 3:
+		ring = dev->dma.tx_ring0;
+		break;
+	case 4:
+		ring = dev->dma.tx_ring4;
+		break;
+	case 5:
+		ring = dev->dma.tx_ring5;
+		break;
+	}
+
+	return ring;
+}
+
+/* Bcm43xx-ring to mac80211-queue mapping */
+static inline int txring_to_priority(struct bcm43xx_dmaring *ring)
+{
+	static const u8 idx_to_prio[] =
+		{ 3, 2, 1, 0, 4, 5, };
+
+/*FIXME: have only one queue, for now */
+return 0;
+
+	return idx_to_prio[ring->index];
+}
+
+
 u16 bcm43xx_dmacontroller_base(int dma64bit, int controller_idx)
 {
 	static const u16 map64[] = {
@@ -424,9 +474,11 @@ int bcm43xx_dmacontroller_rx_reset(struct bcm43xx_wldev *dev,
 	u32 value;
 	u16 offset;
 
+	might_sleep();
+
 	offset = dma64 ? BCM43xx_DMA64_RXCTL : BCM43xx_DMA32_RXCTL;
 	bcm43xx_write32(dev, mmio_base + offset, 0);
-	for (i = 0; i < 1000; i++) {
+	for (i = 0; i < 10; i++) {
 		offset = dma64 ? BCM43xx_DMA64_RXSTATUS : BCM43xx_DMA32_RXSTATUS;
 		value = bcm43xx_read32(dev, mmio_base + offset);
 		if (dma64) {
@@ -442,10 +494,10 @@ int bcm43xx_dmacontroller_rx_reset(struct bcm43xx_wldev *dev,
 				break;
 			}
 		}
-		udelay(10);
+		msleep(1);
 	}
 	if (i != -1) {
-		printk(KERN_ERR PFX "Error: Wait on DMA RX status timed out.\n");
+		printk(KERN_ERR PFX "ERROR: DMA RX reset timed out\n");
 		return -ENODEV;
 	}
 
@@ -460,7 +512,9 @@ int bcm43xx_dmacontroller_tx_reset(struct bcm43xx_wldev *dev,
 	u32 value;
 	u16 offset;
 
-	for (i = 0; i < 1000; i++) {
+	might_sleep();
+
+	for (i = 0; i < 10; i++) {
 		offset = dma64 ? BCM43xx_DMA64_TXSTATUS : BCM43xx_DMA32_TXSTATUS;
 		value = bcm43xx_read32(dev, mmio_base + offset);
 		if (dma64) {
@@ -476,11 +530,11 @@ int bcm43xx_dmacontroller_tx_reset(struct bcm43xx_wldev *dev,
 			    value == BCM43xx_DMA32_TXSTAT_STOPPED)
 				break;
 		}
-		udelay(10);
+		msleep(1);
 	}
 	offset = dma64 ? BCM43xx_DMA64_TXCTL : BCM43xx_DMA32_TXCTL;
 	bcm43xx_write32(dev, mmio_base + offset, 0);
-	for (i = 0; i < 1000; i++) {
+	for (i = 0; i < 10; i++) {
 		offset = dma64 ? BCM43xx_DMA64_TXSTATUS : BCM43xx_DMA32_TXSTATUS;
 		value = bcm43xx_read32(dev, mmio_base + offset);
 		if (dma64) {
@@ -496,14 +550,14 @@ int bcm43xx_dmacontroller_tx_reset(struct bcm43xx_wldev *dev,
 				break;
 			}
 		}
-		udelay(10);
+		msleep(1);
 	}
 	if (i != -1) {
-		printk(KERN_ERR PFX "Error: Wait on DMA TX status timed out.\n");
+		printk(KERN_ERR PFX "ERROR: DMA TX reset timed out\n");
 		return -ENODEV;
 	}
 	/* ensure the reset is completed. */
-	udelay(300);
+	msleep(1);
 
 	return 0;
 }
@@ -816,6 +870,10 @@ struct bcm43xx_dmaring * bcm43xx_setup_dmaring(struct bcm43xx_wldev *dev,
 		} else
 			assert(0);
 	}
+	spin_lock_init(&ring->lock);
+#ifdef CONFIG_BCM43XX_MAC80211_DEBUG
+	ring->last_injected_overflow = jiffies;
+#endif
 
 	err = alloc_ringmemory(ring);
 	if (err)
@@ -1143,36 +1201,64 @@ out_unmap_hdr:
 	return err;
 }
 
+static inline
+int should_inject_overflow(struct bcm43xx_dmaring *ring)
+{
+#ifdef CONFIG_BCM43XX_MAC80211_DEBUG
+	if (unlikely(bcm43xx_debug(ring->dev, BCM43xx_DBG_DMAOVERFLOW))) {
+		/* Check if we should inject another ringbuffer overflow
+		 * to test handling of this situation in the stack. */
+		unsigned long next_overflow;
+
+		next_overflow = ring->last_injected_overflow + HZ;
+		if (time_after(jiffies, next_overflow)) {
+			ring->last_injected_overflow = jiffies;
+			dprintk(KERN_DEBUG PFX "Injecting TX ring overflow on "
+				"DMA controller %d\n", ring->index);
+			return 1;
+		}
+	}
+#endif /* CONFIG_BCM43XX_MAC80211_DEBUG */
+	return 0;
+}
+
 int bcm43xx_dma_tx(struct bcm43xx_wldev *dev,
 		   struct sk_buff *skb,
 		   struct ieee80211_tx_control *ctl)
 {
-	struct bcm43xx_dmaring *ring = dev->dma.tx_ring1;
+	struct bcm43xx_dmaring *ring;
 	int err = 0;
+	unsigned long flags;
 
+	ring = priority_to_txring(dev, ctl->queue);
+	spin_lock_irqsave(&ring->lock, flags);
 	assert(ring->tx);
 	if (unlikely(free_slots(ring) < SLOTS_PER_PACKET)) {
-		/* This should never trigger, as we call
-		 * ieee80211_stop_queue() when it's full.
-		 */
 		printkl(KERN_ERR PFX "DMA queue overflow\n");
-		return NETDEV_TX_BUSY;
+		err = -ENOSPC;
+		goto out_unlock;
 	}
+	/* Check if the queue was stopped in mac80211,
+	 * but we got called nevertheless.
+	 * That would be a mac80211 bug. */
+	assert(!ring->stopped);
 
 	err = dma_tx_fragment(ring, skb, ctl);
 	if (unlikely(err)) {
 		printkl(KERN_ERR PFX "DMA tx mapping failure\n");
-		return NETDEV_TX_BUSY;
+		goto out_unlock;
 	}
-
 	ring->nr_tx_packets++;
-	if (free_slots(ring) < SLOTS_PER_PACKET) {
-		/* FIXME: we currently only have one queue */
-		ieee80211_stop_queue(dev->wl->hw, 0);
+	if ((free_slots(ring) < SLOTS_PER_PACKET) ||
+	    should_inject_overflow(ring)) {
+		/* This TX ring is full. */
+		ieee80211_stop_queue(dev->wl->hw, txring_to_priority(ring));
 		ring->stopped = 1;
 	}
+out_unlock:
+	spin_unlock_irqrestore(&ring->lock, flags);
 
-	return 0;
+	return err;
 }
 
 void bcm43xx_dma_handle_txstatus(struct bcm43xx_wldev *dev,
@@ -1187,6 +1273,9 @@ void bcm43xx_dma_handle_txstatus(struct bcm43xx_wldev *dev,
 	ring = parse_cookie(dev, status->cookie, &slot);
 	if (unlikely(!ring))
 		return;
+	assert(irqs_disabled());
+	spin_lock(&ring->lock);
+
 	assert(ring->tx);
 	ops = ring->ops;
 	while (1) {
@@ -1228,24 +1317,32 @@ void bcm43xx_dma_handle_txstatus(struct bcm43xx_wldev *dev,
 	dev->stats.last_tx = jiffies;
 	if (ring->stopped) {
 		assert(free_slots(ring) >= SLOTS_PER_PACKET);
-		/* FIXME: we currently only have one queue */
-		ieee80211_wake_queue(dev->wl->hw, 0);
+		ieee80211_wake_queue(dev->wl->hw, txring_to_priority(ring));
 		ring->stopped = 0;
 	}
+
+	spin_unlock(&ring->lock);
 }
 
 void bcm43xx_dma_get_tx_stats(struct bcm43xx_wldev *dev,
 			      struct ieee80211_tx_queue_stats *stats)
 {
-	struct bcm43xx_dma *dma = &dev->dma;
+	const int nr_queues = dev->wl->hw->queues;
 	struct bcm43xx_dmaring *ring;
 	struct ieee80211_tx_queue_stats_data *data;
+	unsigned long flags;
+	int i;
 
-	ring = dma->tx_ring1;
-	data = &(stats->data[0]);
-	data->len = ring->used_slots / SLOTS_PER_PACKET;
-	data->limit = ring->nr_slots / SLOTS_PER_PACKET;
-	data->count = ring->nr_tx_packets;
+	for (i = 0; i < nr_queues; i++) {
+		data = &(stats->data[i]);
+		ring = priority_to_txring(dev, i);
+
+		spin_lock_irqsave(&ring->lock, flags);
+		data->len = ring->used_slots / SLOTS_PER_PACKET;
+		data->limit = ring->nr_slots / SLOTS_PER_PACKET;
+		data->count = ring->nr_tx_packets;
+		spin_unlock_irqrestore(&ring->lock, flags);
+	}
 }
 
 static void dma_rx(struct bcm43xx_dmaring *ring,
@@ -1368,16 +1465,44 @@ void bcm43xx_dma_rx(struct bcm43xx_dmaring *ring)
 	ring->current_slot = slot;
 }
 
-void bcm43xx_dma_tx_suspend(struct bcm43xx_dmaring *ring)
+static void bcm43xx_dma_tx_suspend_ring(struct bcm43xx_dmaring *ring)
 {
+	unsigned long flags;
+
+	spin_lock_irqsave(&ring->lock, flags);
 	assert(ring->tx);
-	bcm43xx_power_saving_ctl_bits(ring->dev, -1, 1);
 	ring->ops->tx_suspend(ring);
+	spin_unlock_irqrestore(&ring->lock, flags);
 }
 
-void bcm43xx_dma_tx_resume(struct bcm43xx_dmaring *ring)
+static void bcm43xx_dma_tx_resume_ring(struct bcm43xx_dmaring *ring)
 {
+	unsigned long flags;
+
+	spin_lock_irqsave(&ring->lock, flags);
 	assert(ring->tx);
 	ring->ops->tx_resume(ring);
-	bcm43xx_power_saving_ctl_bits(ring->dev, -1, -1);
+	spin_unlock_irqrestore(&ring->lock, flags);
+}
+
+void bcm43xx_dma_tx_suspend(struct bcm43xx_wldev *dev)
+{
+	bcm43xx_power_saving_ctl_bits(dev, -1, 1);
+	bcm43xx_dma_tx_suspend_ring(dev->dma.tx_ring0);
+	bcm43xx_dma_tx_suspend_ring(dev->dma.tx_ring1);
+	bcm43xx_dma_tx_suspend_ring(dev->dma.tx_ring2);
+	bcm43xx_dma_tx_suspend_ring(dev->dma.tx_ring3);
+	bcm43xx_dma_tx_suspend_ring(dev->dma.tx_ring4);
+	bcm43xx_dma_tx_suspend_ring(dev->dma.tx_ring5);
+}
+
+void bcm43xx_dma_tx_resume(struct bcm43xx_wldev *dev)
+{
+	bcm43xx_dma_tx_resume_ring(dev->dma.tx_ring5);
+	bcm43xx_dma_tx_resume_ring(dev->dma.tx_ring4);
+	bcm43xx_dma_tx_resume_ring(dev->dma.tx_ring3);
+	bcm43xx_dma_tx_resume_ring(dev->dma.tx_ring2);
+	bcm43xx_dma_tx_resume_ring(dev->dma.tx_ring1);
+	bcm43xx_dma_tx_resume_ring(dev->dma.tx_ring0);
+	bcm43xx_power_saving_ctl_bits(dev, -1, -1);
 }

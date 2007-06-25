@@ -212,6 +212,23 @@ void bcm43xx_handle_txstatus(struct bcm43xx_wldev *dev,
 void bcm43xx_handle_hwtxstatus(struct bcm43xx_wldev *dev,
 			       const struct bcm43xx_hwtxstatus *hw);
 
+void bcm43xx_tx_suspend(struct bcm43xx_wldev *dev);
+void bcm43xx_tx_resume(struct bcm43xx_wldev *dev);
+
+
+#define BCM43xx_NR_QOSPARMS		22
+enum {
+	BCM43xx_QOSPARM_TXOP = 0,
+	BCM43xx_QOSPARM_CWMIN,
+	BCM43xx_QOSPARM_CWMAX,
+	BCM43xx_QOSPARM_CWCUR,
+	BCM43xx_QOSPARM_AIFS,
+	BCM43xx_QOSPARM_BSLOTS,
+	BCM43xx_QOSPARM_REGGAP,
+	BCM43xx_QOSPARM_STATUS,
+};
+void bcm43xx_qos_init(struct bcm43xx_wldev *dev);
+
 
 /* Helper functions for converting the key-table index from "firmware-format"
  * to "raw-format" and back. The firmware API changed for this at some revision.

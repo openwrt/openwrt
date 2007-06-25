@@ -55,10 +55,6 @@ static int bcm43xx_pcmcia_resume(struct pcmcia_device *dev)
 # define bcm43xx_pcmcia_resume		NULL
 #endif /* CONFIG_PM */
 
-static void bcm43xx_pcmcia_fill_sprom(struct ssb_sprom *sprom)
-{//TODO
-}
-
 static int __devinit bcm43xx_pcmcia_probe(struct pcmcia_device *dev)
 {
 	struct ssb_bus *ssb;
@@ -116,8 +112,7 @@ static int __devinit bcm43xx_pcmcia_probe(struct pcmcia_device *dev)
 	if (res != CS_SUCCESS)
 		goto err_disable;
 
-	err = ssb_bus_pcmciabus_register(ssb, dev, win.Base,
-					 bcm43xx_pcmcia_fill_sprom);
+	err = ssb_bus_pcmciabus_register(ssb, dev, win.Base);
 	dev->priv = ssb;
 
 out:

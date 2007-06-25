@@ -33,6 +33,7 @@
 #include "bcm43xx_main.h"
 
 #include <linux/delay.h>
+#include <linux/sched.h>
 
 
 /* Write the LocalOscillator Control (adjust) value-pair. */
@@ -62,25 +63,30 @@ static void bcm43xx_lo_write(struct bcm43xx_wldev *dev,
 }
 
 static inline
-void assert_rfatt_and_bbatt(const struct bcm43xx_rfatt *rfatt,
-			    const struct bcm43xx_bbatt *bbatt)
+int assert_rfatt_and_bbatt(const struct bcm43xx_rfatt *rfatt,
+			   const struct bcm43xx_bbatt *bbatt)
 {
-	if (BCM43xx_DEBUG) {
-		int err = 0;
+	int err = 0;
 
-		if (unlikely(rfatt->att >= 16)) {
-			dprintk(KERN_ERR PFX "ERROR: invalid rf_att: %u\n",
-				rfatt->att);
-			err = 1;
-		}
-		if (unlikely(bbatt->att >= 9)) {
-			dprintk(KERN_ERR PFX "ERROR: invalid bband_att: %u\n",
-				bbatt->att);
-			err = 1;
-		}
-		if (unlikely(err))
-			dump_stack();
+	/* Check the attenuation values against the LO control array sizes. */
+#if BCM43xx_DEBUG
+	if (rfatt->att >= BCM43xx_NR_RF) {
+		dprintk(KERN_ERR PFX
+			"ERROR: rfatt(%u) >= size of LO array\n",
+			rfatt->att);
+		err = -EINVAL;
 	}
+	if (bbatt->att >= BCM43xx_NR_BB) {
+		dprintk(KERN_ERR PFX
+			"ERROR: bbatt(%u) >= size of LO array\n",
+			bbatt->att);
+		err = -EINVAL;
+	}
+	if (err)
+		dump_stack();
+#endif /* BCM43xx_DEBUG */
+
+	return err;
 }
 
 static
@@ -91,7 +97,8 @@ struct bcm43xx_loctl * bcm43xx_get_lo_g_ctl_nopadmix(struct bcm43xx_wldev *dev,
 	struct bcm43xx_phy *phy = &dev->phy;
 	struct bcm43xx_txpower_lo_control *lo = phy->lo_control;
 
-	assert_rfatt_and_bbatt(rfatt, bbatt);
+	if (assert_rfatt_and_bbatt(rfatt, bbatt))
+		return &(lo->no_padmix[0][0]); /* Just prevent a crash */
 	return &(lo->no_padmix[bbatt->att][rfatt->att]);
 }
 
@@ -101,43 +108,31 @@ struct bcm43xx_loctl * bcm43xx_get_lo_g_ctl(struct bcm43xx_wldev *dev,
 {
 	struct bcm43xx_phy *phy = &dev->phy;
 	struct bcm43xx_txpower_lo_control *lo = phy->lo_control;
-	struct bcm43xx_loctl *ret;
 
-	assert_rfatt_and_bbatt(rfatt, bbatt);
+	if (assert_rfatt_and_bbatt(rfatt, bbatt))
+		return &(lo->no_padmix[0][0]); /* Just prevent a crash */
 	if (rfatt->with_padmix)
-		ret = &(lo->with_padmix[bbatt->att][rfatt->att]);
-	else
-		ret = &(lo->no_padmix[bbatt->att][rfatt->att]);
-
-	return ret;
+		return &(lo->with_padmix[bbatt->att][rfatt->att]);
+	return &(lo->no_padmix[bbatt->att][rfatt->att]);
 }
 
 /* Call a function for every possible LO control value-pair. */
-static int bcm43xx_call_for_each_loctl(struct bcm43xx_wldev *dev,
-				       int (*func)(struct bcm43xx_wldev *,
-						   struct bcm43xx_loctl *))
+static void bcm43xx_call_for_each_loctl(struct bcm43xx_wldev *dev,
+					void (*func)(struct bcm43xx_wldev *,
+						     struct bcm43xx_loctl *))
 {
 	struct bcm43xx_phy *phy = &dev->phy;
 	struct bcm43xx_txpower_lo_control *ctl = phy->lo_control;
 	int i, j;
-	int err;
 
 	for (i = 0; i < BCM43xx_NR_BB; i++) {
-		for (j = 0; j < BCM43xx_NR_RF; j++) {
-			err = func(dev, &(ctl->with_padmix[i][j]));
-			if (unlikely(err))
-				return err;
-		}
+		for (j = 0; j < BCM43xx_NR_RF; j++)
+			func(dev, &(ctl->with_padmix[i][j]));
 	}
 	for (i = 0; i < BCM43xx_NR_BB; i++) {
-		for (j = 0; j < BCM43xx_NR_RF; j++) {
-			err = func(dev, &(ctl->no_padmix[i][j]));
-			if (unlikely(err))
-				return err;
-		}
+		for (j = 0; j < BCM43xx_NR_RF; j++)
+			func(dev, &(ctl->no_padmix[i][j]));
 	}
-
-	return 0;
 }
 
 static u16 lo_b_r15_loop(struct bcm43xx_wldev *dev)
@@ -255,6 +250,7 @@ static u16 lo_measure_feedthrough(struct bcm43xx_wldev *dev,
 {
 	struct bcm43xx_phy *phy = &dev->phy;
 	u16 rfover;
+	u16 feedthrough;
 
 	if (phy->gmode) {
 		lna <<= BCM43xx_PHY_RFOVERVAL_LNA_SHIFT;
@@ -297,8 +293,14 @@ trsw_rx &= (BCM43xx_PHY_RFOVERVAL_TRSWRX | BCM43xx_PHY_RFOVERVAL_BW);
 		bcm43xx_phy_write(dev, BCM43xx_PHY_PGACTL, pga);
 	}
 	udelay(21);
+	feedthrough = bcm43xx_phy_read(dev, BCM43xx_PHY_LO_LEAKAGE);
 
-	return bcm43xx_phy_read(dev, BCM43xx_PHY_LO_LEAKAGE);
+	/* This is a good place to check if we need to relax a bit,
+	 * as this is the main function called regularly
+	 * in the LO calibration. */
+	cond_resched();
+
+	return feedthrough;
 }
 
 /* TXCTL Register and Value Table.
@@ -435,7 +437,7 @@ static void lo_measure_txctl_values(struct bcm43xx_wldev *dev)
 					       & 0xFF00) | lo->tx_bias | lo->tx_magn);
 		}
 	} else {
-		lo->tx_magn = 0; /* FIXME */
+		lo->tx_magn = 0;
 		lo->tx_bias = 0;
 		bcm43xx_radio_write16(dev, 0x52,
 				      bcm43xx_radio_read16(dev, 0x52)
@@ -1008,8 +1010,8 @@ static void lo_measure(struct bcm43xx_wldev *dev)
 }
 
 #if BCM43xx_DEBUG
-static int do_validate_loctl(struct bcm43xx_wldev *dev,
-			     struct bcm43xx_loctl *control)
+static void do_validate_loctl(struct bcm43xx_wldev *dev,
+			      struct bcm43xx_loctl *control)
 {
 	const int is_initializing = (bcm43xx_status(dev) == BCM43xx_STAT_INITIALIZING);
 
@@ -1020,7 +1022,6 @@ static int do_validate_loctl(struct bcm43xx_wldev *dev,
 				    "(first: %d, second: %d, used %u)\n",
 		       control->i, control->q, control->used);
 	}
-	return 0;
 }
 static void validate_all_loctls(struct bcm43xx_wldev *dev)
 {
@@ -1054,15 +1055,17 @@ void bcm43xx_lo_g_adjust(struct bcm43xx_wldev *dev)
 	bcm43xx_lo_write(dev, bcm43xx_lo_g_ctl_current(dev));
 }
 
-static inline void fixup_rfatt_for_txctl1(struct bcm43xx_rfatt *rf,
-					  u16 txctl1)
+static inline void fixup_rfatt_for_txcontrol(struct bcm43xx_rfatt *rf,
+					     u8 tx_control)
 {
-	if ((rf->att < 5) && (txctl1 & 0x0001))
-		rf->att = 4;
+	if (tx_control & BCM43xx_TXCTL_TXMIX) {
+		if (rf->att < 5)
+			rf->att = 4;
+	}
 }
 
 void bcm43xx_lo_g_adjust_to(struct bcm43xx_wldev *dev,
-			  u16 rfatt, u16 bbatt, u16 txctl1)
+			  u16 rfatt, u16 bbatt, u16 tx_control)
 {
 	struct bcm43xx_rfatt rf;
 	struct bcm43xx_bbatt bb;
@@ -1072,7 +1075,7 @@ void bcm43xx_lo_g_adjust_to(struct bcm43xx_wldev *dev,
 	memset(&bb, 0, sizeof(bb));
 	rf.att = rfatt;
 	bb.att = bbatt;
-	fixup_rfatt_for_txctl1(&rf, txctl1);
+	fixup_rfatt_for_txcontrol(&rf, tx_control);
 	loctl = bcm43xx_get_lo_g_ctl(dev, &rf, &bb);
 	bcm43xx_lo_write(dev, loctl);
 }
@@ -1080,20 +1083,18 @@ void bcm43xx_lo_g_adjust_to(struct bcm43xx_wldev *dev,
 struct bcm43xx_loctl * bcm43xx_lo_g_ctl_current(struct bcm43xx_wldev *dev)
 {
 	struct bcm43xx_phy *phy = &dev->phy;
-	struct bcm43xx_txpower_lo_control *lo = phy->lo_control;
 	struct bcm43xx_rfatt rf;
 
-	memcpy(&rf, &lo->rfatt, sizeof(rf));
-	fixup_rfatt_for_txctl1(&rf, phy->txctl1);
+	memcpy(&rf, &phy->rfatt, sizeof(rf));
+	fixup_rfatt_for_txcontrol(&rf, phy->tx_control);
 
-	return bcm43xx_get_lo_g_ctl(dev, &rf, &lo->bbatt);
+	return bcm43xx_get_lo_g_ctl(dev, &rf, &phy->bbatt);
 }
 
-static int do_mark_unused(struct bcm43xx_wldev *dev,
-			  struct bcm43xx_loctl *control)
+static void do_mark_unused(struct bcm43xx_wldev *dev,
+			   struct bcm43xx_loctl *control)
 {
 	control->used = 0;
-	return 0;
 }
 
 void bcm43xx_lo_g_ctl_mark_all_unused(struct bcm43xx_wldev *dev)

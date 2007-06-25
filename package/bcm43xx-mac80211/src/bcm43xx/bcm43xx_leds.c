@@ -109,12 +109,12 @@ static void bcm43xx_led_init_hardcoded(struct bcm43xx_wldev *dev,
 	case 0:
 		led->behaviour = BCM43xx_LED_ACTIVITY;
 		led->activelow = 1;
-		if (bus->board_vendor == PCI_VENDOR_ID_COMPAQ)
+		if (bus->boardinfo.vendor == PCI_VENDOR_ID_COMPAQ)
 			led->behaviour = BCM43xx_LED_RADIO_ALL;
 		break;
 	case 1:
 		led->behaviour = BCM43xx_LED_RADIO_B;
-		if (bus->board_vendor == PCI_VENDOR_ID_ASUSTEK)
+		if (bus->boardinfo.vendor == PCI_VENDOR_ID_ASUSTEK)
 			led->behaviour = BCM43xx_LED_ASSOC;
 		break;
 	case 2:

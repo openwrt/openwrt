@@ -4,6 +4,15 @@
 struct bcm43xx_wldev;
 struct bcm43xx_txstatus;
 
+enum bcm43xx_dyndbg { /* Dynamic debugging features */
+	BCM43xx_DBG_XMITPOWER,
+	BCM43xx_DBG_DMAOVERFLOW,
+	BCM43xx_DBG_PWORK_FAST,
+	BCM43xx_DBG_PWORK_STOP,
+	__BCM43xx_NR_DYNDBG,
+};
+
+
 #ifdef CONFIG_BCM43XX_MAC80211_DEBUG
 
 struct dentry;
@@ -23,17 +32,25 @@ struct bcm43xx_dfsentry {
 	struct dentry *subdir;
 	struct dentry *dentry_tsf;
 	struct dentry *dentry_txstat;
+	struct dentry *dentry_txpower_g;
 	struct dentry *dentry_restart;
 
 	struct bcm43xx_wldev *dev;
 
 	struct bcm43xx_txstatus_log txstatlog;
+
+	/* Enabled/Disabled list for the dynamic debugging features. */
+	u32 dyn_debug[__BCM43xx_NR_DYNDBG];
+	/* Dentries for the dynamic debugging entries. */
+	struct dentry *dyn_debug_dentries[__BCM43xx_NR_DYNDBG];
 };
 
 struct bcm43xx_debugfs {
 	struct dentry *root;
 	struct dentry *dentry_driverinfo;
 };
+
+int bcm43xx_debug(struct bcm43xx_wldev *dev, enum bcm43xx_dyndbg feature);
 
 void bcm43xx_debugfs_init(void);
 void bcm43xx_debugfs_exit(void);
@@ -59,6 +76,12 @@ void bcm43xx_printk_bitdump(const unsigned char *data,
 	} while (0)
 
 #else /* CONFIG_BCM43XX_MAC80211_DEBUG*/
+
+static inline
+int bcm43xx_debug(struct bcm43xx_wldev *dev, enum bcm43xx_dyndbg feature)
+{
+	return 0;
+}
 
 static inline
 void bcm43xx_debugfs_init(void) { }

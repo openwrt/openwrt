@@ -601,3 +601,51 @@ void bcm43xx_handle_hwtxstatus(struct bcm43xx_wldev *dev,
 
 	bcm43xx_handle_txstatus(dev, &status);
 }
+
+/* Stop any TX operation on the device (suspend the hardware queues) */
+void bcm43xx_tx_suspend(struct bcm43xx_wldev *dev)
+{
+	if (bcm43xx_using_pio(dev))
+		bcm43xx_pio_freeze_txqueues(dev);
+	else
+		bcm43xx_dma_tx_suspend(dev);
+}
+
+/* Resume any TX operation on the device (resume the hardware queues) */
+void bcm43xx_tx_resume(struct bcm43xx_wldev *dev)
+{
+	if (bcm43xx_using_pio(dev))
+		bcm43xx_pio_thaw_txqueues(dev);
+	else
+		bcm43xx_dma_tx_resume(dev);
+}
+
+#if 0
+static void upload_qos_parms(struct bcm43xx_wldev *dev,
+			     const u16 *parms,
+			     u16 offset)
+{
+	int i;
+
+	for (i = 0; i < BCM43xx_NR_QOSPARMS; i++) {
+		bcm43xx_shm_write16(dev, BCM43xx_SHM_SHARED,
+				    offset + (i * 2), parms[i]);
+	}
+}
+#endif
+
+/* Initialize the QoS parameters */
+void bcm43xx_qos_init(struct bcm43xx_wldev *dev)
+{
+	/* FIXME: This function must probably be called from the mac80211
+	 * config callback. */
+return;
+
+	bcm43xx_hf_write(dev, bcm43xx_hf_read(dev) | BCM43xx_HF_EDCF);
+	//FIXME kill magic
+	bcm43xx_write16(dev, 0x688,
+			bcm43xx_read16(dev, 0x688) | 0x4);
+
+
+	/*TODO: We might need some stack support here to get the values. */
+}

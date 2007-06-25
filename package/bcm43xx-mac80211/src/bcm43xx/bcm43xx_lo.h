@@ -41,10 +41,6 @@ struct bcm43xx_txpower_lo_control {
 	struct bcm43xx_rfatt_list rfatt_list;
 	struct bcm43xx_bbatt_list bbatt_list;
 
-	/* Current RF and BB attenuation and LO control values. */
-	struct bcm43xx_rfatt rfatt;
-	struct bcm43xx_bbatt bbatt;
-
 	/* Current TX Bias value */
 	u8 tx_bias;
 	/* Current TX Magnification Value (if used by the device) */
@@ -69,7 +65,7 @@ void bcm43xx_lo_g_measure(struct bcm43xx_wldev *dev);
 void bcm43xx_lo_g_adjust(struct bcm43xx_wldev *dev);
 /* Adjust to specific values. */
 void bcm43xx_lo_g_adjust_to(struct bcm43xx_wldev *dev,
-			  u16 rfatt, u16 bbatt, u16 txctl1);
+			  u16 rfatt, u16 bbatt, u16 tx_control);
 
 /* Returns the bcm43xx_lo_g_ctl corresponding to the current
  * attenuation values.

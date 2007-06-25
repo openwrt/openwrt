@@ -452,37 +452,16 @@ void bcm43xx_tsf_write(struct bcm43xx_wldev *dev, u64 tsf)
 	bcm43xx_time_unlock(dev);
 }
 
-static void bcm43xx_measure_channel_change_time(struct bcm43xx_wldev *dev)
-{
-	u64 start, stop;
-	unsigned long flags;
-	u8 oldchan, testchan;
-
-	/* We (ab)use the bcm43xx TSF timer to measure the time needed
-	 * to switch channels. This information is handed over to
-	 * the ieee80211 subsystem.
-	 * Time is measured in microseconds.
-	 */
-
-	spin_lock_irqsave(&dev->wl->irq_lock, flags);
-	oldchan = dev->phy.channel;
-	testchan = (oldchan == 6) ? 7 : 6;
-	bcm43xx_tsf_read(dev, &start);
-	bcm43xx_radio_selectchannel(dev, testchan, 0);
-	bcm43xx_tsf_read(dev, &stop);
-	bcm43xx_radio_selectchannel(dev, oldchan, 0);
-	spin_unlock_irqrestore(&dev->wl->irq_lock, flags);
-
-	assert(stop > start);
-	dev->wl->hw->channel_change_time = stop - start;
-}
-
 static
 void bcm43xx_macfilter_set(struct bcm43xx_wldev *dev,
 			   u16 offset,
 			   const u8 *mac)
 {
+	static const u8 zero_addr[ETH_ALEN] = { 0 };
 	u16 data;
+
+	if (!mac)
+		mac = zero_addr;
 
 	offset |= 0x0020;
 	bcm43xx_write16(dev, BCM43xx_MMIO_MACFILTER_CONTROL, offset);
@@ -496,14 +475,6 @@ void bcm43xx_macfilter_set(struct bcm43xx_wldev *dev,
 	data = mac[4];
 	data |= mac[5] << 8;
 	bcm43xx_write16(dev, BCM43xx_MMIO_MACFILTER_DATA, data);
-}
-
-static void bcm43xx_macfilter_clear(struct bcm43xx_wldev *dev,
-				    u16 offset)
-{
-	static const u8 zero_addr[ETH_ALEN] = { 0 };
-
-	bcm43xx_macfilter_set(dev, offset, zero_addr);
 }
 
 static void bcm43xx_write_mac_bssid_templates(struct bcm43xx_wldev *dev)
@@ -522,6 +493,8 @@ static void bcm43xx_write_mac_bssid_templates(struct bcm43xx_wldev *dev)
 	if (!mac)
 		mac = zero_addr;
 
+	bcm43xx_macfilter_set(dev, BCM43xx_MACFILTER_BSSID, bssid);
+
 	memcpy(mac_bssid, mac, ETH_ALEN);
 	memcpy(mac_bssid + ETH_ALEN, bssid, ETH_ALEN);
 
@@ -533,6 +506,14 @@ static void bcm43xx_write_mac_bssid_templates(struct bcm43xx_wldev *dev)
 		tmp |= (u32)(mac_bssid[i + 3]) << 24;
 		bcm43xx_ram_write(dev, 0x20 + i, tmp);
 	}
+}
+
+static void bcm43xx_upload_card_macaddress(struct bcm43xx_wldev *dev,
+					   const u8 *mac_addr)
+{
+	dev->wl->mac_addr = mac_addr;
+	bcm43xx_write_mac_bssid_templates(dev);
+	bcm43xx_macfilter_set(dev, BCM43xx_MACFILTER_SELF, mac_addr);
 }
 
 static void bcm43xx_set_slot_time(struct bcm43xx_wldev *dev, u16 slot_time)
@@ -1939,7 +1920,6 @@ static void bcm43xx_adjust_opmode(struct bcm43xx_wldev *dev)
 		}
 	}
 	if (wl->monitor) {
-		ctl |= BCM43xx_MACCTL_PROMISC;
 		ctl |= BCM43xx_MACCTL_KEEP_CTL;
 		if (modparam_mon_keep_bad)
 			ctl |= BCM43xx_MACCTL_KEEP_BAD;
@@ -1992,6 +1972,9 @@ static void bcm43xx_rate_memory_init(struct bcm43xx_wldev *dev)
 		bcm43xx_rate_memory_write(dev, BCM43xx_OFDM_RATE_36MB, 1);
 		bcm43xx_rate_memory_write(dev, BCM43xx_OFDM_RATE_48MB, 1);
 		bcm43xx_rate_memory_write(dev, BCM43xx_OFDM_RATE_54MB, 1);
+		if (dev->phy.type == BCM43xx_PHYTYPE_A)
+			break;
+		/* fallthrough */
 	case BCM43xx_PHYTYPE_B:
 		bcm43xx_rate_memory_write(dev, BCM43xx_CCK_RATE_1MB, 0);
 		bcm43xx_rate_memory_write(dev, BCM43xx_CCK_RATE_2MB, 0);
@@ -2259,10 +2242,6 @@ static void do_periodic_work(struct bcm43xx_wldev *dev)
 	if (state % 15 == 0)
 		bcm43xx_periodic_every15sec(dev);
 	bcm43xx_periodic_every1sec(dev);
-
-	dev->periodic_state = state + 1;
-
-	schedule_delayed_work(&dev->periodic_work, HZ);
 }
 
 /* Estimate a "Badness" value based on the periodic work
@@ -2290,43 +2269,56 @@ static void bcm43xx_periodic_work_handler(struct work_struct *work)
 {
 	struct bcm43xx_wldev *dev =
 		container_of(work, struct bcm43xx_wldev, periodic_work.work);
-	unsigned long flags;
+	unsigned long flags, delay;
 	u32 savedirqs = 0;
 	int badness;
 
 	mutex_lock(&dev->wl->mutex);
+
+	if (unlikely(bcm43xx_status(dev) != BCM43xx_STAT_INITIALIZED))
+		goto out;
+	if (unlikely(!dev->started))
+		goto out;
+	if (bcm43xx_debug(dev, BCM43xx_DBG_PWORK_STOP))
+		goto out_requeue;
+
 	badness = estimate_periodic_work_badness(dev->periodic_state);
 	if (badness > BADNESS_LIMIT) {
-		/* Periodic work will take a long time, so we want it to
-		 * be preemtible.
-		 */
-		ieee80211_stop_queues(dev->wl->hw);
 		spin_lock_irqsave(&dev->wl->irq_lock, flags);
-		bcm43xx_mac_suspend(dev);
-		if (bcm43xx_using_pio(dev))
-			bcm43xx_pio_freeze_txqueues(dev);
+		/* Suspend TX as we don't want to transmit packets while
+		 * we recalibrate the hardware. */
+		bcm43xx_tx_suspend(dev);
 		savedirqs = bcm43xx_interrupt_disable(dev, BCM43xx_IRQ_ALL);
+		/* Periodic work will take a long time, so we want it to
+		 * be preemtible and release the spinlock. */
 		spin_unlock_irqrestore(&dev->wl->irq_lock, flags);
 		bcm43xx_synchronize_irq(dev);
-	} else {
-		/* Periodic work should take short time, so we want low
-		 * locking overhead.
-		 */
-		spin_lock_irqsave(&dev->wl->irq_lock, flags);
-	}
 
-	do_periodic_work(dev);
+		do_periodic_work(dev);
 
-	if (badness > BADNESS_LIMIT) {
 		spin_lock_irqsave(&dev->wl->irq_lock, flags);
 		bcm43xx_interrupt_enable(dev, savedirqs);
-		if (bcm43xx_using_pio(dev))
-			bcm43xx_pio_thaw_txqueues(dev);
-		bcm43xx_mac_enable(dev);
-		ieee80211_start_queues(dev->wl->hw);
+		bcm43xx_tx_resume(dev);
+		mmiowb();
+		spin_unlock_irqrestore(&dev->wl->irq_lock, flags);
+	} else {
+		/* Take the global driver lock. This will lock any operation. */
+		spin_lock_irqsave(&dev->wl->irq_lock, flags);
+
+		do_periodic_work(dev);
+
+		mmiowb();
+		spin_unlock_irqrestore(&dev->wl->irq_lock, flags);
 	}
-	mmiowb();
-	spin_unlock_irqrestore(&dev->wl->irq_lock, flags);
+	dev->periodic_state++;
+out_requeue:
+	if (bcm43xx_debug(dev, BCM43xx_DBG_PWORK_FAST))
+		delay = msecs_to_jiffies(50);
+	else
+		delay = round_jiffies(HZ);
+	queue_delayed_work(dev->wl->hw->workqueue,
+			   &dev->periodic_work, delay);
+out:
 	mutex_unlock(&dev->wl->mutex);
 }
 
@@ -2342,7 +2334,7 @@ static void bcm43xx_periodic_tasks_setup(struct bcm43xx_wldev *dev)
 	assert(bcm43xx_status(dev) == BCM43xx_STAT_INITIALIZED);
 	dev->periodic_state = 0;
 	INIT_DELAYED_WORK(work, bcm43xx_periodic_work_handler);
-	schedule_delayed_work(work, 0);
+	queue_delayed_work(dev->wl->hw->workqueue, work, 0);
 }
 
 /* Validate access to the chip (SHM) */
@@ -2444,16 +2436,17 @@ static int bcm43xx_tx(struct ieee80211_hw *hw,
 	int err = -ENODEV;
 	unsigned long flags;
 
+	/* DMA-TX is done without a global lock. */
 	if (unlikely(!dev))
 		goto out;
-	spin_lock_irqsave(&wl->irq_lock, flags);
-	if (likely(bcm43xx_status(dev) == BCM43xx_STAT_INITIALIZED)) {
-		if (bcm43xx_using_pio(dev))
-			err = bcm43xx_pio_tx(dev, skb, ctl);
-		else
-			err = bcm43xx_dma_tx(dev, skb, ctl);
-	}
-	spin_unlock_irqrestore(&wl->irq_lock, flags);
+	assert(bcm43xx_status(dev) == BCM43xx_STAT_INITIALIZED);
+	assert(dev->started);
+	if (bcm43xx_using_pio(dev)) {
+		spin_lock_irqsave(&wl->irq_lock, flags);
+		err = bcm43xx_pio_tx(dev, skb, ctl);
+		spin_unlock_irqrestore(&wl->irq_lock, flags);
+	} else
+		err = bcm43xx_dma_tx(dev, skb, ctl);
 out:
 	if (unlikely(err))
 		return NETDEV_TX_BUSY;
@@ -2672,6 +2665,7 @@ static int bcm43xx_dev_config(struct ieee80211_hw *hw,
 	int antenna_tx;
 	int antenna_rx;
 	int err = 0;
+	u32 savedirqs;
 
 	antenna_tx = bcm43xx_antenna_from_ieee80211(conf->antenna_sel_tx);
 	antenna_rx = bcm43xx_antenna_from_ieee80211(conf->antenna_sel_rx);
@@ -2698,16 +2692,26 @@ static int bcm43xx_dev_config(struct ieee80211_hw *hw,
 	dev = wl->current_dev;
 	phy = &dev->phy;
 
+	/* Disable IRQs while reconfiguring the device.
+	 * This makes it possible to drop the spinlock throughout
+	 * the reconfiguration process. */
 	spin_lock_irqsave(&wl->irq_lock, flags);
-	if (bcm43xx_status(dev) != BCM43xx_STAT_INITIALIZED)
-		goto out_unlock;
+	if ((bcm43xx_status(dev) != BCM43xx_STAT_INITIALIZED) ||
+	    !dev->started) {
+		spin_unlock_irqrestore(&wl->irq_lock, flags);
+		goto out_unlock_mutex;
+	}
+	savedirqs = bcm43xx_interrupt_disable(dev, BCM43xx_IRQ_ALL);
+	spin_unlock_irqrestore(&wl->irq_lock, flags);
+	bcm43xx_synchronize_irq(dev);
 
-	/* Switch to the requested channel. */
+	/* Switch to the requested channel.
+	 * The firmware takes care of races with the TX handler. */
 	if (conf->channel_val != phy->channel)
 		bcm43xx_radio_selectchannel(dev, conf->channel_val, 0);
 
 	/* Enable/Disable ShortSlot timing. */
-	if (!!(conf->flags & IEEE80211_CONF_SHORT_SLOT_TIME) != dev->short_slot) {
+	if ((!!(conf->flags & IEEE80211_CONF_SHORT_SLOT_TIME)) != dev->short_slot) {
 		assert(phy->type == BCM43xx_PHYTYPE_G);
 		if (conf->flags & IEEE80211_CONF_SHORT_SLOT_TIME)
 			bcm43xx_short_slot_timing_enable(dev);
@@ -2742,7 +2746,10 @@ static int bcm43xx_dev_config(struct ieee80211_hw *hw,
 	if (bcm43xx_is_mode(wl, IEEE80211_IF_TYPE_AP))
 		bcm43xx_set_beacon_int(dev, conf->beacon_int);
 
-out_unlock:
+
+	spin_lock_irqsave(&wl->irq_lock, flags);
+	bcm43xx_interrupt_enable(dev, savedirqs);
+	mmiowb();
 	spin_unlock_irqrestore(&wl->irq_lock, flags);
 out_unlock_mutex:
 	mutex_unlock(&wl->mutex);
@@ -2912,6 +2919,7 @@ static int bcm43xx_config_interface(struct ieee80211_hw *hw,
 			if (conf->beacon)
 				bcm43xx_refresh_templates(dev, conf->beacon);
 		}
+		bcm43xx_write_mac_bssid_templates(dev);
 	}
 	spin_unlock_irqrestore(&wl->irq_lock, flags);
 	mutex_unlock(&wl->mutex);
@@ -2927,13 +2935,15 @@ static void bcm43xx_wireless_core_stop(struct bcm43xx_wldev *dev)
 
 	if (!dev->started)
 		return;
+	dev->started = 0;
 
 	mutex_unlock(&wl->mutex);
+	/* Must unlock as it would otherwise deadlock. No races here. */
 	bcm43xx_periodic_tasks_delete(dev);
-	flush_scheduled_work();
+	flush_workqueue(dev->wl->hw->workqueue);
 	mutex_lock(&wl->mutex);
 
-	ieee80211_stop_queues(wl->hw);
+	ieee80211_stop_queues(wl->hw); //FIXME this could cause a deadlock, as mac80211 seems buggy.
 
 	/* Disable and sync interrupts. */
 	spin_lock_irqsave(&wl->irq_lock, flags);
@@ -2944,7 +2954,6 @@ static void bcm43xx_wireless_core_stop(struct bcm43xx_wldev *dev)
 
 	bcm43xx_mac_suspend(dev);
 	free_irq(dev->dev->irq, dev);
-	dev->started = 0;
 	dprintk(KERN_INFO PFX "Wireless interface stopped\n");
 }
 
@@ -3104,11 +3113,6 @@ static void setup_struct_phy_for_init(struct bcm43xx_wldev *dev,
 	}
 	phy->max_lb_gain = 0;
 	phy->trsw_rx_gain = 0;
-
-	/* Set default attenuation values. */
-	phy->bbatt = bcm43xx_default_baseband_attenuation(dev);
-	phy->rfatt = bcm43xx_default_radio_attenuation(dev);
-	phy->txctl1 = bcm43xx_default_txctl1(dev);
 	phy->txpwr_offset = 0;
 
 	/* NRSSI */
@@ -3310,13 +3314,14 @@ static int bcm43xx_wireless_core_init(struct bcm43xx_wldev *dev)
 	bcm43xx_shm_write16(dev, BCM43xx_SHM_SCRATCH,
 			    BCM43xx_SHM_SC_MAXCONT, 0x3FF);
 
-	bcm43xx_write_mac_bssid_templates(dev);
-
 	do {
-		if (bcm43xx_using_pio(dev))
+		if (bcm43xx_using_pio(dev)) {
 			err = bcm43xx_pio_init(dev);
-		else
+		} else {
 			err = bcm43xx_dma_init(dev);
+			if (!err)
+				bcm43xx_qos_init(dev);
+		}
 	} while (err == -EAGAIN);
 	if (err)
 		goto err_chip_exit;
@@ -3331,11 +3336,9 @@ static int bcm43xx_wireless_core_init(struct bcm43xx_wldev *dev)
 	bcm43xx_bluetooth_coext_enable(dev);
 
 	ssb_bus_powerup(bus, 1); /* Enable dynamic PCTL */
-	bcm43xx_macfilter_clear(dev, BCM43xx_MACFILTER_ASSOC);
-	bcm43xx_macfilter_set(dev, BCM43xx_MACFILTER_SELF,
-			      (u8 *)(wl->hw->wiphy->perm_addr));
+	wl->bssid = NULL;
+	bcm43xx_upload_card_macaddress(dev, NULL);
 	bcm43xx_security_init(dev);
-	bcm43xx_measure_channel_change_time(dev);
 	bcm43xx_rng_init(wl);
 
 	bcm43xx_set_status(dev, BCM43xx_STAT_INITIALIZED);
@@ -3397,8 +3400,8 @@ static int bcm43xx_add_interface(struct ieee80211_hw *hw,
 	default:
 		wl->operating = 1;
 		wl->if_id = conf->if_id;
-		wl->mac_addr = conf->mac_addr;
 		wl->if_type = conf->type;
+		bcm43xx_upload_card_macaddress(dev, conf->mac_addr);
 	}
 	bcm43xx_adjust_opmode(dev);
 	spin_unlock_irqrestore(&wl->irq_lock, flags);
@@ -3430,12 +3433,16 @@ static void bcm43xx_remove_interface(struct ieee80211_hw *hw,
 
 	dev = wl->current_dev;
 	if (!wl->operating && wl->monitor == 0) {
+		/* No interface left. */
 		if (dev->started)
 			bcm43xx_wireless_core_stop(dev);
 		bcm43xx_wireless_core_exit(dev);
 	} else {
+		/* Just monitor interfaces left. */
 		spin_lock_irqsave(&wl->irq_lock, flags);
 		bcm43xx_adjust_opmode(dev);
+		if (!wl->operating)
+			bcm43xx_upload_card_macaddress(dev, NULL);
 		spin_unlock_irqrestore(&wl->irq_lock, flags);
 	}
 	mutex_unlock(&wl->mutex);
@@ -3752,13 +3759,13 @@ err_kfree_wldev:
 static void bcm43xx_sprom_fixup(struct ssb_bus *bus)
 {
 	/* boardflags workarounds */
-	if (bus->board_vendor == SSB_BOARDVENDOR_DELL &&
+	if (bus->boardinfo.vendor == SSB_BOARDVENDOR_DELL &&
 	    bus->chip_id == 0x4301 &&
-	    bus->board_rev == 0x74)
+	    bus->boardinfo.rev == 0x74)
 		bus->sprom.r1.boardflags_lo |= BCM43xx_BFL_BTCOEXIST;
-	if (bus->board_vendor == PCI_VENDOR_ID_APPLE &&
-	    bus->board_type == 0x4E &&
-	    bus->board_rev > 0x40)
+	if (bus->boardinfo.vendor == PCI_VENDOR_ID_APPLE &&
+	    bus->boardinfo.type == 0x4E &&
+	    bus->boardinfo.rev > 0x40)
 		bus->sprom.r1.boardflags_lo |= BCM43xx_BFL_PACTRL;
 
 	/* Convert Antennagain values to Q5.2 */
@@ -3798,7 +3805,7 @@ static int bcm43xx_wireless_init(struct ssb_device *dev)
 	hw->max_signal = 100;
 	hw->max_rssi = -110;
 	hw->max_noise = -110;
-	hw->queues = 1;
+	hw->queues = 1; /* FIXME: hardware has more queues */
 	SET_IEEE80211_DEV(hw, dev->dev);
 	if (is_valid_ether_addr(sprom->r1.et1mac))
 		SET_IEEE80211_PERM_ADDR(hw, sprom->r1.et1mac);
@@ -3887,7 +3894,7 @@ void bcm43xx_controller_restart(struct bcm43xx_wldev *dev, const char *reason)
 	if (bcm43xx_status(dev) != BCM43xx_STAT_INITIALIZED)
 		return;
 	printk(KERN_ERR PFX "Controller RESET (%s) ...\n", reason);
-	schedule_work(&dev->restart_work);
+	queue_work(dev->wl->hw->workqueue, &dev->restart_work);
 }
 
 #ifdef CONFIG_PM
