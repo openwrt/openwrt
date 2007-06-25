@@ -8,13 +8,18 @@
 
 include $(TOPDIR)/rules.mk
 
-LOADER		:= adm5120
-LOADER_NAME	:= loader-$(LOADER)
+LOADER		:= loader.bin
+LOADER_NAME	:= $(basename $(notdir $(LOADER)))
 LOADER_DATA 	:=
+TARGET_DIR	:=
 
-LOADER_BIN	:= $(KDIR)/$(LOADER_NAME).bin
-LOADER_GZ	:= $(KDIR)/$(LOADER_NAME).gz
-LOADER_ELF	:= $(KDIR)/$(LOADER_NAME).elf
+ifeq ($(TARGET_DIR),)
+TARGET_DIR	:= $(KDIR)
+endif
+
+LOADER_BIN	:= $(TARGET_DIR)/$(LOADER_NAME).bin
+LOADER_GZ	:= $(TARGET_DIR)/$(LOADER_NAME).gz
+LOADER_ELF	:= $(TARGET_DIR)/$(LOADER_NAME).elf
 
 LZMA_STARTUP_ORG:= 0
 LZMA_TEXT_START	:= 0x80300000
@@ -22,7 +27,7 @@ LZMA_TEXT_START	:= 0x80300000
 PKG_NAME := lzma-loader
 PKG_BUILD_DIR := $(KDIR)/$(PKG_NAME)
 
-.PHONY : loader-compile
+.PHONY : loader-compile loader.bin loader.elf loader.gz
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir $(PKG_BUILD_DIR)
@@ -34,23 +39,25 @@ loader-compile: $(PKG_BUILD_DIR)/.prepared
 		LZMA_STARTUP_ORG=$(LZMA_STARTUP_ORG) \
 		LZMA_TEXT_START=$(LZMA_TEXT_START) \
 		LOADER_DATA=$(LOADER_DATA) \
+		CONFIG_BOARD=$(CONFIG_BOARD) \
+		CONFIG_PASS_KARGS=$(CONFIG_PASS_KARGS) \
 		clean all
 
-$(LOADER_GZ): $(PKG_BUILD_DIR)/loader.bin
-	gzip -nc9 $< > $@
+loader.gz: $(PKG_BUILD_DIR)/loader.bin
+	gzip -nc9 $< > $(LOADER_GZ)
 
-$(LOADER_ELF) : $(PKG_BUILD_DIR)/loader.elf
-	$(CP) $< $@
+loader.elf: $(PKG_BUILD_DIR)/loader.elf
+	$(CP) $< $(LOADER_ELF)
 
-$(LOADER_BIN) : $(PKG_BUILD_DIR)/loader.bin
-	$(CP) $< $@
+loader.bin: $(PKG_BUILD_DIR)/loader.bin
+	$(CP) $< $(LOADER_BIN)
 
 download:
 prepare: $(PKG_BUILD_DIR)/.prepared
-compile: loader-compile $(LOADER_BIN) $(LOADER_GZ) $(LOADER_ELF)
+compile: loader-compile
 
 install:
 
 clean:
 	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(KDIR)/loader-*.gz $(KDIR)/loader-*.elf $(KDIR)/loader-*.bin
+

@@ -25,6 +25,8 @@ LOADADDR	:= 0x80001000
 LZMA_TEXT_START	:= 0x80500000
 LZMA_STARTUP_ORG:= 0
 LOADER_DATA	:=
+CONFIG_PASS_KARGS :=
+CONFIG_BOARD	:=
 
 CC		:= $(CROSS_COMPILE)gcc
 LD		:= $(CROSS_COMPILE)ld
@@ -55,6 +57,16 @@ else
 CFLAGS		+= -D_LZMA_IN_CB
 endif
 
+ifneq ($(strip $(CONFIG_PASS_KARGS)),)
+CFLAGS		+= -DCONFIG_PASS_KARGS
+endif
+
+BOARD_DEF := $(strip $(CONFIG_BOARD))
+BOARD_DEF := $(shell echo $(BOARD_DEF) | tr a-z A-Z | tr -d -)
+ifneq ($(BOARD_DEF),)
+CFLAGS		+= -DCONFIG_BOARD_$(BOARD_DEF)
+endif
+
 all: loader.bin
 
 # Don't build dependencies, this may die if $(CC) isn't gcc
@@ -80,7 +92,7 @@ loader.elf: $(OBJECTS)
 mrproper: clean
 
 clean:
-	rm -f *.gz *.elf *.bin *.o
+	rm -f *.elf *.bin *.o
 
 
 
