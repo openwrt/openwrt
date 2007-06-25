@@ -27,6 +27,7 @@
 #include <asm/mach-adm5120/routerboot.h>
 #include <asm/mach-adm5120/zynos.h>
 
+extern char *prom_getenv(char *envname);
 /*
  * Globals
  */
@@ -53,6 +54,63 @@ static char *boot_loader_names[BOOT_LOADER_LAST+1] = {
 };
 
 static struct adm5120_board __initdata adm5120_boards[] = {
+	/* FIXME: some boards have invalid fields */
+	{
+		.name		= "Cellvision CAS-630/630W",
+		.mach_type	= MACH_ADM5120_CAS630,
+		.has_usb	= 0,
+		.iface_num	= 1,
+		.flash0_size	= 4*1024*1024,
+	},
+	{
+		.name		= "Cellvision CAS-670/670W",
+		.mach_type	= MACH_ADM5120_CAS670,
+		.has_usb	= 0,
+		.iface_num	= 1,
+		.flash0_size	= 4*1024*1024,
+	},
+	{
+		.name		= "Cellvision CAS-700/700W",
+		.mach_type	= MACH_ADM5120_CAS700,
+		.has_usb	= 0,
+		.iface_num	= 1,
+		.flash0_size	= 4*1024*1024,
+	},
+	{
+		.name		= "Cellvision CAS-771/771W",
+		.mach_type	= MACH_ADM5120_CAS771,
+		.has_usb	= 0,
+		.iface_num	= 5,
+		.flash0_size	= 4*1024*1024,
+	},
+	{
+		.name		= "Cellvision CAS-790",
+		.mach_type	= MACH_ADM5120_CAS790,
+		.has_usb	= 0,
+		.iface_num	= 1,
+		.flash0_size	= 4*1024*1024,
+	},
+	{
+		.name		= "Cellvision CAS-861/861W",
+		.mach_type	= MACH_ADM5120_CAS861,
+		.has_usb	= 0,
+		.iface_num	= 1,
+		.flash0_size	= 4*1024*1024,
+	},
+	{
+		.name		= "Cellvision NFS-101U/101WU",
+		.mach_type	= MACH_ADM5120_NFS101U,
+		.has_usb	= 0,
+		.iface_num	= 1,
+		.flash0_size	= 4*1024*1024,
+	},
+	{
+		.name		= "Cellvision NFS-202U/202WU",
+		.mach_type	= MACH_ADM5120_NFS202U,
+		.has_usb	= 0,
+		.iface_num	= 1,
+		.flash0_size	= 4*1024*1024,
+	},
 	{
 		.name		= "Compex NetPassage 27G",
 		.mach_type	= MACH_ADM5120_NP27G,
@@ -117,6 +175,41 @@ static struct adm5120_board __initdata adm5120_boards[] = {
 		.flash0_size	= 4*1024*1024,
 	},
 	{
+		.name		= "Edimax BR-6104K",
+		.mach_type	= MACH_ADM5120_BR6104K,
+		.has_usb	= 0,
+		.iface_num	= 5,
+		.flash0_size	= 2*1024*1024,
+	},
+	{
+		.name		= "Infineon EASY 5120",
+		.mach_type	= MACH_ADM5120_EASY5120,
+		.has_usb	= 0,
+		.iface_num	= 0,
+		.flash0_size	= 2*1024*1024,
+	},
+	{
+		.name		= "Infineon EASY 5120-RT",
+		.mach_type	= MACH_ADM5120_EASY5120RT,
+		.has_usb	= 0,
+		.iface_num	= 0,
+		.flash0_size	= 2*1024*1024,
+	},
+	{
+		.name		= "Infineon EASY 5120P-ATA",
+		.mach_type	= MACH_ADM5120_EASY5120PATA,
+		.has_usb	= 0,
+		.iface_num	= 0,
+		.flash0_size	= 2*1024*1024,
+	},
+	{
+		.name		= "Infineon EASY 83000",
+		.mach_type	= MACH_ADM5120_EASY83000,
+		.has_usb	= 0,
+		.iface_num	= 0,
+		.flash0_size	= 4*1024*1024,
+	},
+	{
 		.name		= "RouterBOARD 111",
 		.mach_type	= MACH_ADM5120_RB_111,
 		.has_usb	= 0,
@@ -159,6 +252,20 @@ static struct adm5120_board __initdata adm5120_boards[] = {
 		.flash0_size	= 128*1024,
 	},
 	{
+		.name		= "ZyXEL ES-2024A",
+		.mach_type	= MACH_ADM5120_ES2024A,
+		.has_usb	= 0,
+		.iface_num	= 0,
+		.flash0_size	= 4*1024*1024,
+	},
+	{
+		.name		= "ZyXEL ES-2024PWR",
+		.mach_type	= MACH_ADM5120_ES2024PWR,
+		.has_usb	= 0,
+		.iface_num	= 0,
+		.flash0_size	= 4*1024*1024,
+	},
+	{
 		.name		= "ZyXEL ES-2108",
 		.mach_type	= MACH_ADM5120_ES2108,
 		.has_usb	= 0,
@@ -187,7 +294,7 @@ static struct adm5120_board __initdata adm5120_boards[] = {
 		.flash0_size	= 4*1024*1024,
 	},
 	{
-		.name		= "ZyXEL ES-2108PWR",
+		.name		= "ZyXEL ES-2108-PWR",
 		.mach_type	= MACH_ADM5120_ES2108PWR,
 		.has_usb	= 0,
 		.iface_num	= 0,
@@ -288,7 +395,7 @@ struct mylo_board {
 
 #define COMPEX_BOARD(d,mt) MYLO_BOARD(VENID_COMPEX,(d),VENID_COMPEX,(d),(mt))
 
-static struct mylo_board  __initdata mylo_boards[] = {
+static struct mylo_board mylo_boards[] __initdata = {
 	COMPEX_BOARD(DEVID_COMPEX_NP27G, MACH_ADM5120_NP27G),
 	COMPEX_BOARD(DEVID_COMPEX_NP28G, MACH_ADM5120_NP28G),
 	COMPEX_BOARD(DEVID_COMPEX_NP28GHS, MACH_ADM5120_NP28GHS),
@@ -308,7 +415,7 @@ struct routerboard {
 };
 
 #define ROUTERBOARD(n, mt) { .name = (n), .mach_type = (mt) }
-static struct routerboard  __initdata routerboards[] = {
+static struct routerboard routerboards[] __initdata = {
 	ROUTERBOARD("111", MACH_ADM5120_RB_111),
 	ROUTERBOARD("112", MACH_ADM5120_RB_112),
 	ROUTERBOARD("133", MACH_ADM5120_RB_133),
@@ -331,7 +438,7 @@ struct zynos_board {
 #define DLINK_BOARD(bi, mt) ZYNOS_BOARD(ZYNOS_VENDOR_ID_DLINK, bi, mt)
 #define LUCENT_BOARD(bi, mt) ZYNOS_BOARD(ZYNOS_VENDOR_ID_LUCENT, bi, mt)
 
-static struct zynos_board __initdata zynos_boards[] = {
+static struct zynos_board zynos_boards[] __initdata = {
 	ZYXEL_BOARD(ZYNOS_BOARD_HS100, MACH_ADM5120_HS100),
 	ZYXEL_BOARD(ZYNOS_BOARD_P334, MACH_ADM5120_P334),
 	ZYXEL_BOARD(ZYNOS_BOARD_P334U, MACH_ADM5120_P334U),
@@ -343,6 +450,31 @@ static struct zynos_board __initdata zynos_boards[] = {
 	ZYXEL_BOARD(ZYNOS_BOARD_P335PLUS, MACH_ADM5120_P335PLUS),
 	ZYXEL_BOARD(ZYNOS_BOARD_P335U, MACH_ADM5120_P335U),
 	DUMMY_BOARD()
+};
+
+struct common_board {
+	char *name;
+	unsigned long	mach_type;
+};
+
+#define DEFBOARD(n, mt) { .name = (n), .mach_type = (mt) }
+static struct common_board common_boards[] __initdata = {
+	DEFBOARD("CAS-630",		MACH_ADM5120_CAS630),
+	DEFBOARD("CAS-670",		MACH_ADM5120_CAS670),
+	DEFBOARD("CAS-700",		MACH_ADM5120_CAS700),
+	DEFBOARD("CAS-771",		MACH_ADM5120_CAS771),
+	DEFBOARD("CAS-790",		MACH_ADM5120_CAS790),
+	DEFBOARD("CAS-861",		MACH_ADM5120_CAS861),
+	DEFBOARD("NFS-101U",		MACH_ADM5120_NFS101U),
+	DEFBOARD("NFS-202U",		MACH_ADM5120_NFS202U),
+	DEFBOARD("EASY 5120",		MACH_ADM5120_EASY5120),
+	DEFBOARD("EASY 5120-RT",	MACH_ADM5120_EASY5120RT),
+	DEFBOARD("EASY 5120P-ATA",	MACH_ADM5120_EASY5120PATA),
+	DEFBOARD("EASY 83000",		MACH_ADM5120_EASY83000),
+	DEFBOARD("BR-6104K",		MACH_ADM5120_BR6104K),
+	DEFBOARD("WP54G-WRT",		MACH_ADM5120_WP54G_WRT),
+	DEFBOARD("P-334WT",		MACH_ADM5120_P334WT),
+	DEFBOARD("P-335",		MACH_ADM5120_P335),
 };
 
 /*
@@ -694,6 +826,34 @@ static unsigned long __init uboot_detect_board(void)
 	return MACH_ADM5120_UNKNOWN;
 }
 
+/*
+ * Misc boards
+ */
+static unsigned long __init prom_detect_board(void)
+{
+	char *name;
+	unsigned long ret;
+	int i;
+
+	ret = MACH_ADM5120_UNKNOWN;
+	name = prom_getenv("board_name");
+	if (name == NULL)
+		goto out;
+
+	if (*name == '\0')
+		goto out;
+
+	for (i=0; i<ARRAY_SIZE(common_boards); i++) {
+		if (strcmp(common_boards[i].name, name) == 0) {
+			ret = common_boards[i].mach_type;
+			break;
+		}
+	}
+
+out:
+	return ret;
+}
+
 static void __init adm5120_detect_board(void)
 {
 	struct adm5120_board *board;
@@ -719,6 +879,8 @@ static void __init adm5120_detect_board(void)
 		adm5120_boot_loader = BOOT_LOADER_UBOOT;
 		if (t == MACH_ADM5120_UNKNOWN)
 			t = uboot_detect_board();
+	} else {
+		t = prom_detect_board();
 	}
 
 	for (board = adm5120_boards; board->mach_type != MACH_ADM5120_UNKNOWN;
@@ -793,7 +955,7 @@ static void __init adm5120_detect_memsize(void)
 		break;
 	}
 
-	/* FIXME: need to disable buffers for both SDRAM bank? */
+	/* FIXME: need to disable buffers for both SDRAM banks? */
 
 	mem_dbg("checking for %ldMB chip\n",maxsize >> 20);
 
@@ -887,33 +1049,15 @@ out:
 void __init adm5120_info_show(void)
 {
 	/* FIXME: move this somewhere else */
-	printk("ADM%04X%s revision %d, running at %ldMHz\n",
+	printk(KERN_INFO "ADM%04X%s revision %d, running at %ldMHz\n",
 		adm5120_product_code,
 		(adm5120_package == ADM5120_PACKAGE_BGA) ? "" : "P",
 		adm5120_revision, (adm5120_speed / 1000000)
 		);
-	printk("Boot loader is: %s\n", boot_loader_names[adm5120_boot_loader]);
-	printk("Booted from   : %s flash\n", adm5120_nand_boot ? "NAND":"NOR");
-	printk("Board is      : %s\n", adm5120_board_name());
-	printk("Memory size   : %ldMB\n", adm5120_memsize >> 20);
-}
-
-void __init adm5120_swab_test(void)
-{
-#if CONFIG_ADM5120_HARDWARE_SWAB
-	u32	t1,t2;
-
-	t1 = 0x1234;
-	t2 = __arch__swab16(t1);
-	printk("hardware swab16 test %s, data:0x%04X, result:0x%04X\n",
-		(t2 == 0x3412) ? "passed" :"failed", t1, t2);
-
-	t1 = 0x12345678;
-	t2 = __arch__swab32(t1);
-	printk("hardware swab32 test %s, data:0x%08X, result:0x%08X\n",
-		(t2 == 0x78563412) ? "passed" :"failed", t1, t2);
-
-#endif /* CONFIG_ADM5120_HARDWARE_SWAB */
+	printk(KERN_INFO "Boot loader is: %s\n", boot_loader_names[adm5120_boot_loader]);
+	printk(KERN_INFO "Booted from   : %s flash\n", adm5120_nand_boot ? "NAND":"NOR");
+	printk(KERN_INFO "Board is      : %s\n", adm5120_board_name());
+	printk(KERN_INFO "Memory size   : %ldMB\n", adm5120_memsize >> 20);
 }
 
 void __init adm5120_info_init(void)
@@ -924,5 +1068,4 @@ void __init adm5120_info_init(void)
 	adm5120_detect_board();
 
 	adm5120_info_show();
-	adm5120_swab_test();
 }

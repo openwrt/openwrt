@@ -5,7 +5,7 @@ Index: linux-2.6.21.1/arch/mips/Kconfig
 @@ -16,6 +16,17 @@ choice
  	prompt "System type"
  	default SGI_IP22
- 
+
 +config MIPS_ADM5120
 +	bool "Support for ADM5120 SoC"
 +	select SYS_HAS_CPU_MIPS32_R1
@@ -21,9 +21,9 @@ Index: linux-2.6.21.1/arch/mips/Kconfig
  	bool "4G Systems MTX-1 board"
  	select DMA_NONCOHERENT
 @@ -766,6 +775,7 @@
- 
+
  endchoice
- 
+
 +source "arch/mips/adm5120/Kconfig"
  source "arch/mips/ddb5xxx/Kconfig"
  source "arch/mips/gt64120/ev64120/Kconfig"
@@ -34,7 +34,7 @@ Index: linux-2.6.21.1/arch/mips/Makefile
 +++ linux-2.6.21.1/arch/mips/Makefile
 @@ -165,6 +165,14 @@ cflags-$(CONFIG_MACH_JAZZ)	+= -Iinclude/
  load-$(CONFIG_MACH_JAZZ)	+= 0xffffffff80080000
- 
+
  #
 +# ADMtek 5120
 +#
@@ -51,10 +51,10 @@ Index: linux-2.6.21.1/include/asm-mips/bootinfo.h
 ===================================================================
 --- linux-2.6.21.1.orig/include/asm-mips/bootinfo.h
 +++ linux-2.6.21.1/include/asm-mips/bootinfo.h
-@@ -213,6 +213,42 @@
+@@ -213,6 +213,57 @@
  #define MACH_GROUP_NEC_EMMA2RH 25	/* NEC EMMA2RH (was 23)		*/
  #define  MACH_NEC_MARKEINS	0	/* NEC EMMA2RH Mark-eins	*/
- 
+
 +/*
 + * Valid machtype for group ADMtek ADM5120
 + */
@@ -90,7 +90,22 @@ Index: linux-2.6.21.1/include/asm-mips/bootinfo.h
 +#define MACH_ADM5120_ES2108G	28	/* ZyXEL Ethernet Switch 2108-G */
 +#define MACH_ADM5120_ES2108LC	29	/* ZyXEL Ethernet Switch 2108-LC */
 +#define MACH_ADM5120_ES2108PWR	30	/* ZyXEL Ethernet Switch 2108-PWR */
++#define MACH_ADM5120_ES2024A	31	/* ZyXEL Ethernet Switch 2024A */
++#define MACH_ADM5120_ES2024PWR	32	/* ZyXEL Ethernet Switch 2024PWR */
++#define MACH_ADM5120_CAS630	33	/* Cellvision CAS-630/630W */
++#define MACH_ADM5120_CAS670	34	/* Cellvision CAS-670/670W */
++#define MACH_ADM5120_CAS700	36	/* Cellvision CAS-700/700W */
++#define MACH_ADM5120_CAS771	37	/* Cellvision CAS-771/771W */
++#define MACH_ADM5120_CAS790	38	/* Cellvision CAS-790 */
++#define MACH_ADM5120_CAS861	39	/* Cellvision CAS-861/861W */
++#define MACH_ADM5120_NFS101U	40	/* Cellvision NFS-101U/101WU */
++#define MACH_ADM5120_NFS202U	41	/* Cellvision NFS-202U/202WU */
++#define MACH_ADM5120_EASY5120	43	/* Infineon EASY 5120 */
++#define MACH_ADM5120_EASY5120RT 44	/* Infineon EASY 5120-RT */
++#define MACH_ADM5120_EASY5120PATA 45	/* Infineon EASY 5120P-ATA */
++#define MACH_ADM5120_EASY83000	46	/* Infineon EASY-83000 */
++#define MACH_ADM5120_BR6104K	47	/* Edimax BR-6104K */
 +
  #define CL_SIZE			COMMAND_LINE_SIZE
- 
+
  const char *get_system_type(void);

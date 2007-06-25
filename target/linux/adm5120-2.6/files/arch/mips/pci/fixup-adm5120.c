@@ -88,13 +88,13 @@ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 	int nr_irqs;
 	int i;
 	int irq;
-	
+
 	irq = -1;
 	if (slot < 1 || slot > 3) {
 		printk("PCI: slot number %u is not supported\n", slot);
 		goto out;
 	}
-	
+
 	GETMAP(default);
 
 	switch (mips_machtype) {
@@ -112,16 +112,10 @@ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 	case MACH_ADM5120_P334WT:
 		/* using default mapping */
 		break;
-#if 0
 	case MACH_ADM5120_CAS771:
-		GETMAP(cas771)
+		GETMAP(cas771);
 		break;
-	case MACH_ADM5120_CAS630:
-	case MACH_ADM5120_CAS670:
-	case MACH_ADM5120_CAS700:
-	case MACH_ADM5120_CAS790:
-	case MACH_ADM5120_CAS861:
-#endif
+
 	case MACH_ADM5120_NP27G:
 	case MACH_ADM5120_NP28GHS:
 	case MACH_ADM5120_WP54AG:
@@ -134,21 +128,21 @@ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 			adm5120_board_name());
 		break;
 	}
-	
+
 	for (i=0; i<nr_irqs; i++, p++) {
-		if ((p->slot == slot) && (PCI_FUNC(dev->devfn) == p->func) && 
+		if ((p->slot == slot) && (PCI_FUNC(dev->devfn) == p->func) &&
 		    (p->pin == pin)) {
 			irq = p->irq;
 			break;
 		}
 	}
-	
+
 	if (irq < 0) {
 		printk(KERN_INFO "PCI: no irq found for %s pin:%u\n",
 			pci_name(dev), pin);
 	} else {
 		printk(KERN_INFO "PCI: mapping irq for %s pin:%u, irq:%d\n",
-			pci_name(dev), pin, irq);		
+			pci_name(dev), pin, irq);
 	}
 
 out:
@@ -161,7 +155,7 @@ static void adm5120_pci_fixup(struct pci_dev *dev)
 		return;
 
 	/* setup COMMAND register */
-	pci_write_config_word(dev, PCI_COMMAND, 
+	pci_write_config_word(dev, PCI_COMMAND,
 		(PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER));
 
 	/* setup CACHE_LINE_SIZE register */
@@ -172,7 +166,7 @@ static void adm5120_pci_fixup(struct pci_dev *dev)
 	pci_write_config_dword(dev, PCI_BASE_ADDRESS_1, 0);
 }
 
-DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ADMTEK, PCI_DEVICE_ID_ADMTEK_ADM5120, 
+DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ADMTEK, PCI_DEVICE_ID_ADMTEK_ADM5120,
 	adm5120_pci_fixup);
 
 int pcibios_plat_dev_init(struct pci_dev *dev)
