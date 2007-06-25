@@ -32,13 +32,12 @@
 
 #include <asm/mach-adm5120/adm5120_info.h>
 
+static char **prom_envp;
+
 void setup_prom_printf(int);
 void prom_printf(char *, ...);
 void prom_meminit(void);
 
-#define ADM5120_ENVC           1
-
-char *adm5120_envp[2*ADM5120_ENVC] = {"memsize","0x001000000"};
 
 #define READCSR(r)      *(volatile unsigned long *)(0xB2600000+(r))
 #define WRITECSR(r,v)   *(volatile unsigned long *)(0xB2600000+(r)) = v
@@ -81,24 +80,23 @@ void prom_printf(char *fmt, ...)
 
 char *prom_getenv(char *envname)
 {
-	int i, index=0;
+	char **env;
+	char *ret;
 
-	i = strlen(envname);
+	ret = NULL;
 
-	printk(KERN_INFO "GETENV: envname is %s\n", envname);
+	if (prom_envp== NULL)
+		return NULL;
 
-	while(index < (2*ADM5120_ENVC)) {
-		if(strncmp(envname, adm5120_envp[index], i) == 0) {
-			printk(KERN_INFO "GETENV: returning %s\n", adm5120_envp[index+1]);
-			return(adm5120_envp[index+1]);
+	for (env = prom_envp; *env != NULL; env++) {
+		if (strcmp(envname, *env++) == 0) {
+			ret = *env;
+			break;
 		}
-		index += 2;
 	}
 
-	printk(KERN_INFO "GETENV: not found.\n");
-	return(NULL);
+	return ret;
 }
-
 
 extern char _image_cmdline;
 /*
@@ -107,6 +105,8 @@ extern char _image_cmdline;
 void __init prom_init(void)
 {
 	char *cmd;
+
+	prom_envp = (char **)fw_arg2;
 
 	adm5120_info_init();
 
