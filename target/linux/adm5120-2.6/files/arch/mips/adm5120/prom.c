@@ -32,7 +32,7 @@
 
 #include <asm/mach-adm5120/adm5120_info.h>
 
-static char **prom_envp;
+static char **prom_envp = NULL;
 
 void setup_prom_printf(int);
 void prom_printf(char *, ...);
@@ -106,7 +106,9 @@ void __init prom_init(void)
 {
 	char *cmd;
 
-	prom_envp = (char **)fw_arg2;
+	if ((fw_arg2 & 3) == 0) {
+		prom_envp = (char **)fw_arg2;
+	}
 
 	adm5120_info_init();
 

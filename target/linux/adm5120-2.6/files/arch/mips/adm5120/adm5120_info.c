@@ -206,7 +206,7 @@ static struct adm5120_board __initdata adm5120_boards[] = {
 		.name		= "Infineon EASY 83000",
 		.mach_type	= MACH_ADM5120_EASY83000,
 		.has_usb	= 0,
-		.iface_num	= 0,
+		.iface_num	= 6,
 		.flash0_size	= 4*1024*1024,
 	},
 	{
@@ -880,7 +880,8 @@ static void __init adm5120_detect_board(void)
 		if (t == MACH_ADM5120_UNKNOWN)
 			t = uboot_detect_board();
 	} else {
-		t = prom_detect_board();
+		if (t == MACH_ADM5120_UNKNOWN)
+			t = prom_detect_board();
 	}
 
 	for (board = adm5120_boards; board->mach_type != MACH_ADM5120_UNKNOWN;
