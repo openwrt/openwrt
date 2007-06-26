@@ -5,7 +5,9 @@
 # See /LICENSE for more information.
 #
 
--include $(TOPDIR)/.config
+ifeq ($(DUMP),)
+  -include $(TOPDIR)/.config
+endif
 include $(TOPDIR)/include/verbose.mk
 
 export SHELL=/usr/bin/env bash -c '. $(TOPDIR)/include/shell.sh; eval "$$2"' --
