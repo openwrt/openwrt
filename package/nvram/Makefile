@@ -40,6 +40,8 @@ define Build/UninstallDev
 endef
 
 define Package/nvram/install
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/nvram.init $(1)/etc/init.d/nvram
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/lib{nvram,shared}*.so $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/usr/sbin
