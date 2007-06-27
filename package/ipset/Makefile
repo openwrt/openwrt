@@ -21,6 +21,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/ipset
   SECTION:=net
   CATEGORY:=Network
+  DEPENDS:=@BROKEN
   TITLE:=Netfilter ip sets administration utility
   URL:=http://ipset.netfilter.org/
 endef
