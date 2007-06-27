@@ -184,6 +184,16 @@ enable_atheros() {
 			iwconfig "$ifname" txpower "${txpwr%%.*}"
 		fi
 
+		config_get frag "$vif" frag
+		if [ -n "$frag" ]; then
+			iwconfig "$ifname" frag "${frag%%.*}"
+		fi
+
+		config_get rts "$vif" rts
+		if [ -n "$rts" ]; then
+			iwconfig "$ifname" rts "${rts%%.*}"
+		fi
+
 		ifconfig "$ifname" up
 		iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
 
@@ -268,6 +278,8 @@ config wifi-iface
 	option hidden	0
 #	option txpower	15
 #	option bgscan	enable
+#	option frag     off
+#	option rts      off
 	option encryption none
 
 EOF
