@@ -4,6 +4,7 @@
  * GNU General Public License.
  */
 
+#include <linux/version.h>
 #include <linux/types.h>
 #include <linux/mm.h>
 #include <linux/interrupt.h>
@@ -97,7 +98,11 @@ static void __init ide_magicbox_register(unsigned long addr,
   	memset(&hw, 0, sizeof(hw));
 	ide_setup_ports(&hw, addr, ide_offsets, caddr + 12, 0, NULL,irq);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
 	if (ide_register_hw(&hw, &hwif) != -1)
+#else
+	if (ide_register_hw(&hw, 1, &hwif) != -1)
+#endif
 	{
 		printk(KERN_NOTICE "magicbox-ide: Registered IDE-CF driver\n");
 		hwif->mmio = 2;
