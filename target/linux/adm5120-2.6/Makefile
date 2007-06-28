@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -11,7 +11,7 @@ BOARD:=adm5120
 BOARDNAME:=ADM5120 (Little Endian)
 FEATURES:=squashfs jffs2 pci usb
 
-LINUX_VERSION:=2.6.21.5
+LINUX_VERSION:=2.6.22-rc6
 
 define Target/Description
 	Build firmware images for Infineon/ADMtek ADM5120 based boards

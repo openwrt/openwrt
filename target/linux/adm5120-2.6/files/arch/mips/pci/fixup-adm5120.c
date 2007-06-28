@@ -91,7 +91,8 @@ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 
 	irq = -1;
 	if (slot < 1 || slot > 3) {
-		printk("PCI: slot number %u is not supported\n", slot);
+		printk(KERN_ALERT "PCI: slot number %u is not supported\n",
+			slot);
 		goto out;
 	}
 
@@ -124,8 +125,8 @@ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 	case MACH_ADM5120_WPP54AG:
 	case MACH_ADM5120_WPP54G:
 	default:
-		printk("PCI: irq map is unknown for %s, using defaults.\n",
-			adm5120_board_name());
+		printk(KERN_ALERT "PCI: irq map is unknown for %s, using "
+			"defaults.\n",	adm5120_board_name());
 		break;
 	}
 
@@ -138,7 +139,7 @@ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 	}
 
 	if (irq < 0) {
-		printk(KERN_INFO "PCI: no irq found for %s pin:%u\n",
+		printk(KERN_ALERT "PCI: no irq found for %s pin:%u\n",
 			pci_name(dev), pin);
 	} else {
 		printk(KERN_INFO "PCI: mapping irq for %s pin:%u, irq:%d\n",
