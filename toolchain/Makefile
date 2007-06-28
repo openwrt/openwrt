@@ -50,7 +50,7 @@ $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME):
 $(TOOLCHAIN_BUILD_DIR):
 	@mkdir -p $@
 
-%-prereq %-download %-clean %-refresh: FORCE
+%-prereq %-download %-clean %-refresh %-update: FORCE
 	$(MAKE) -C $* $(patsubst $*-%,%,$@)
 
 %-prepare: $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME) $(TOOLCHAIN_BUILD_DIR)	
