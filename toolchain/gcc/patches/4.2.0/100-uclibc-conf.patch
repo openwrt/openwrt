@@ -35,26 +35,6 @@
    lt_cv_deplibs_check_method=pass_all
    ;;
  
-@@ -99523,7 +99523,7 @@
- 
-     case "$target" in
-       *-uclinux*)
--        # Don't enable LFS with uClibc
-+        # Don't enable LFS with uClinux
-         ;;
-       *)
-         cat >>confdefs.h <<\_ACEOF
---- gcc/libstdc++-v3/crossconfig.m4
-+++ gcc/libstdc++-v3/crossconfig.m4
-@@ -161,7 +161,7 @@
-     AC_DEFINE(HAVE_INT64_T)
-     case "$target" in
-       *-uclinux*)
--        # Don't enable LFS with uClibc
-+        # Don't enable LFS with uClinux
-         ;;
-       *)
-         AC_DEFINE(_GLIBCXX_USE_LFS)
 --- gcc/zlib/configure
 +++ gcc/zlib/configure
 @@ -3422,7 +3422,7 @@
