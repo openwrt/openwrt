@@ -23,6 +23,8 @@ BOARDNAME:=User Mode Linux
 FEATURES:=broken
 LINUX_CONFIG:=$(CURDIR)/config/$(ARCH)
 
+LINUX_VERSION:=2.6.21.5
+
 include $(INCLUDE_DIR)/kernel-build.mk
 
 # include the profiles

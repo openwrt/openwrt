@@ -11,6 +11,8 @@ BOARD:=rdc
 BOARDNAME:=RDC x86
 FEATURES:=squashfs jffs2 pci broken
 
+LINUX_VERSION:=2.6.21.5
+
 define Target/Description
         Build firmware images for RDC3211 based routers
         (e.g. Airlink101 AR525W, Linksys WRT54R)

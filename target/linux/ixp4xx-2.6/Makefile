@@ -11,6 +11,8 @@ BOARD:=ixp4xx
 BOARDNAME:=Intel XScale IXP4xx
 FEATURES:=squashfs
 
+LINUX_VERSION:=2.6.21.5
+
 define Target/Description
 endef
 

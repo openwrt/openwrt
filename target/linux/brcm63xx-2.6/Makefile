@@ -11,6 +11,8 @@ BOARD:=brcm63xx
 BOARDNAME:=Broadcom BCM963xx
 FEATURES:=squashfs jffs2 broken usb atm
 
+LINUX_VERSION:=2.6.21.5
+
 define Target/Description
 	Build firmware images for Broadcom based xDSL/routers
 	(e.g. Inventel Livebox, Siemens SE515)

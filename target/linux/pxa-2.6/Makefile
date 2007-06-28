@@ -11,6 +11,8 @@ BOARD:=pxa
 BOARDNAME:=PXA
 FEATURES:=jffs2 broken
 
+LINUX_VERSION:=2.6.21.5
+
 define Target/Description
 	Stub for boards based on intel PXA
 endef

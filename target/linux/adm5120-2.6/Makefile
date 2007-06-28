@@ -11,6 +11,8 @@ BOARD:=adm5120
 BOARDNAME:=ADM5120 (Little Endian)
 FEATURES:=squashfs jffs2 pci usb
 
+LINUX_VERSION:=2.6.21.5
+
 define Target/Description
 	Build firmware images for Infineon/ADMtek ADM5120 based boards
 	(e.g : RouterBoard RB1xx, Compex WP54G-WRT ...)

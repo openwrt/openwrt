@@ -11,6 +11,8 @@ BOARD:=sibyte
 BOARDNAME:=SiByte MIPS
 FEATURES:=broken
 
+LINUX_VERSION:=2.6.21.5
+
 include $(INCLUDE_DIR)/kernel-build.mk
 
 # include the profiles
