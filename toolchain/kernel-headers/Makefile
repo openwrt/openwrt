@@ -17,6 +17,8 @@ PKG_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)/linux-$(PKG_VERSION)
 
 LINUX_DIR:=$(PKG_BUILD_DIR)
 KERNEL_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)
+override QUILT:=
+
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/kernel-defaults.mk
 
