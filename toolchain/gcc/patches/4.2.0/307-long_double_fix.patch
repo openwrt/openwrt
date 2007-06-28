@@ -1,0 +1,26 @@
+Index: gcc-4.2.0/gcc/config/rs6000/darwin-ldouble.c
+===================================================================
+--- gcc-4.2.0.orig/gcc/config/rs6000/darwin-ldouble.c	2007-06-28 20:56:39.222667344 +0200
++++ gcc-4.2.0/gcc/config/rs6000/darwin-ldouble.c	2007-06-28 20:57:02.258165416 +0200
+@@ -49,9 +49,10 @@
+ 
+    This code currently assumes big-endian.  */
+ 
+-#if ((!defined (__NO_FPRS__) || defined (_SOFT_FLOAT)) \
++#if (defined (__LONG_DOUBLE_128__) && \
++	((!defined (__NO_FPRS__) || defined (_SOFT_FLOAT)) \
+      && !defined (__LITTLE_ENDIAN__) \
+-     && (defined (__MACH__) || defined (__powerpc__) || defined (_AIX)))
++     && (defined (__MACH__) || defined (__powerpc__) || defined (_AIX))))
+ 
+ #define fabs(x) __builtin_fabs(x)
+ #define isless(x, y) __builtin_isless (x, y)
+@@ -219,7 +220,7 @@
+   return z.ldval;
+ }
+ 
+-#if defined (_SOFT_FLOAT) && defined (__LONG_DOUBLE_128__)
++#ifdef _SOFT_FLOAT
+ 
+ long double __gcc_qneg (double, double);
+ int __gcc_qeq (double, double, double, double);
