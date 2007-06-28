@@ -136,8 +136,8 @@
 #define AR2313_BUFSIZE		(AR2313_MTU + ETH_HLEN + CRC_LEN + RX_OFFSET)
 
 #ifdef MODULE
-MODULE_AUTHOR
-	("Sameer Dekate <sdekate@arubanetworks.com>, Imre Kaloz <kaloz@openwrt.org>, Felix Fietkau <nbd@openwrt.org>");
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Sameer Dekate <sdekate@arubanetworks.com>, Imre Kaloz <kaloz@openwrt.org>, Felix Fietkau <nbd@openwrt.org>");
 MODULE_DESCRIPTION("AR2313 Ethernet driver");
 #endif
 
