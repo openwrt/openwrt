@@ -43,26 +43,4 @@ Index: madwifi-ng-r2420-20070602/ath/if_ath_ahb.c
  
  	return 0;
  }
-@@ -439,7 +441,7 @@
- 			(AR5315_REV_MAJ_M | AR5315_REV_MIN_M));
- 		if (((devid & AR5315_REV_MAJ_M) == AR5315_REV_MAJ) ||
- 			((devid & AR5315_REV_MAJ_M) == AR5317_REV_MAJ))
--			return init_ath_wmac(devid, 0, &config);
-+			return init_ath_wmac(devid, 0);
- 	}
- 
- 	devid = (u_int16_t) ((sysRegRead(AR531X_REV) >>8) &
-@@ -452,11 +454,11 @@
- 		ar5312BspEepromRead(2 * AR531X_RADIO_MASK_OFF, 2,
- 			(char *) &radioMask);
- 		if ((radioMask & AR531X_RADIO0_MASK) != 0)
--			if ((ret = init_ath_wmac(devid, 0, &config)) !=0 )
-+			if ((ret = init_ath_wmac(devid, 0)) !=0 )
- 				return ret;
- 		/* XXX: Fall through?! */
- 	case AR5212_AR2313_REV8:
--		if ((ret = init_ath_wmac(devid, 1, &config)) != 0)
-+		if ((ret = init_ath_wmac(devid, 1)) != 0)
- 			return ret;
- 		break;
- 	default:
+
