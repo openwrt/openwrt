@@ -149,10 +149,9 @@ setup_interface() {
 			config_get dns "$config" dns
 			config_get bcast "$config" broadcast
 			
-			[ -z "$ipaddr" ] || $DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask"
+			[ -z "$ipaddr" ] || $DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask" broadcast "${bcast:-+}"
 			[ -z "$ip6addr" ] || $DEBUG ifconfig "$iface" add "$ip6addr"
 			[ -z "$gateway" ] || $DEBUG route add default gw "$gateway"
-			[ -z "$bcast" ] || $DEBUG ifconfig "$iface" broadcast "$bcast"
 			[ -z "$dns" ] || {
 				for ns in $dns; do
 					grep "$ns" /tmp/resolv.conf.auto 2>/dev/null >/dev/null || {
