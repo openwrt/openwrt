@@ -1,0 +1,71 @@
+Index: linux-2.6.22-rc6/arch/ppc/platforms/4xx/Kconfig
+===================================================================
+--- linux-2.6.22-rc6.orig/arch/ppc/platforms/4xx/Kconfig	2007-06-28 08:23:13.508980416 +0200
++++ linux-2.6.22-rc6/arch/ppc/platforms/4xx/Kconfig	2007-06-28 08:23:15.637656808 +0200
+@@ -53,6 +53,12 @@
+ 	help
+ 	  This option enables support for the IBM PPC405GP evaluation board.
+ 
++config MAGICBOX
++	bool "MagicBox"
++	select WANT_EARLY_SERIAL
++	help
++	  This option enables support for the IBM PPC405EP evaluation board.
++
+ config XILINX_ML300
+ 	bool "Xilinx-ML300"
+ 	select XILINX_VIRTEX_II_PRO
+@@ -184,7 +190,7 @@
+ 
+ config IBM_OCP
+ 	bool
+-	depends on ASH || BAMBOO || BUBINGA || CPCI405 || EBONY || EP405 || LUAN || YUCCA || OCOTEA || REDWOOD_5 || REDWOOD_6 || SYCAMORE || TAISHAN || WALNUT
++	depends on ASH || BAMBOO || BUBINGA || CPCI405 || EBONY || EP405 || LUAN || YUCCA || OCOTEA || REDWOOD_5 || REDWOOD_6 || SYCAMORE || TAISHAN || WALNUT || MAGICBOX
+ 	default y
+ 
+ config IBM_EMAC4
+@@ -194,7 +200,7 @@
+ 
+ config BIOS_FIXUP
+ 	bool
+-	depends on BUBINGA || EP405 || SYCAMORE || WALNUT || CPCI405
++	depends on BUBINGA || EP405 || SYCAMORE || WALNUT || CPCI405 || MAGICBOX
+ 	default y
+ 
+ # OAK doesn't exist but wanted to keep this around for any future 403GCX boards
+@@ -205,7 +211,7 @@
+ 
+ config 405EP
+ 	bool
+-	depends on BUBINGA
++	depends on BUBINGA || MAGICBOX
+ 	default y
+ 
+ config 405GP
+Index: linux-2.6.22-rc6/arch/ppc/platforms/4xx/Makefile
+===================================================================
+--- linux-2.6.22-rc6.orig/arch/ppc/platforms/4xx/Makefile	2007-06-28 08:23:13.516979200 +0200
++++ linux-2.6.22-rc6/arch/ppc/platforms/4xx/Makefile	2007-06-28 08:23:15.637656808 +0200
+@@ -14,6 +14,7 @@
+ obj-$(CONFIG_SYCAMORE)		+= sycamore.o
+ obj-$(CONFIG_TAISHAN)		+= taishan.o
+ obj-$(CONFIG_WALNUT)		+= walnut.o
++obj-$(CONFIG_MAGICBOX)		+= magicbox.o
+ obj-$(CONFIG_XILINX_ML300)	+= xilinx_ml300.o
+ obj-$(CONFIG_XILINX_ML403)	+= xilinx_ml403.o
+ 
+Index: linux-2.6.22-rc6/include/asm-ppc/ibm4xx.h
+===================================================================
+--- linux-2.6.22-rc6.orig/include/asm-ppc/ibm4xx.h	2007-06-28 08:23:13.526977680 +0200
++++ linux-2.6.22-rc6/include/asm-ppc/ibm4xx.h	2007-06-28 08:23:15.637656808 +0200
+@@ -19,6 +19,10 @@
+ 
+ #ifdef CONFIG_40x
+ 
++#if defined(CONFIG_MAGICBOX)
++#include <platforms/4xx/magicbox.h>
++#endif
++
+ #if defined(CONFIG_BUBINGA)
+ #include <platforms/4xx/bubinga.h>
+ #endif
