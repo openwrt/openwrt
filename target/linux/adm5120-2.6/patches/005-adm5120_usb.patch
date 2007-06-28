@@ -1,20 +1,191 @@
-Index: linux-2.6.21.1/drivers/usb/core/hub.c
+Index: linux-2.6.22-rc6/drivers/usb/core/hub.c
 ===================================================================
---- linux-2.6.21.1.orig/drivers/usb/core/hub.c
-+++ linux-2.6.21.1/drivers/usb/core/hub.c
-@@ -2227,6 +2227,8 @@ hub_port_init (struct usb_hub *hub, stru
+--- linux-2.6.22-rc6.orig/drivers/usb/core/hub.c
++++ linux-2.6.22-rc6/drivers/usb/core/hub.c
+@@ -464,7 +464,7 @@ void usb_hub_tt_clear_buffer (struct usb
+ 			: (USB_ENDPOINT_XFER_BULK << 11);
+ 	if (usb_pipein (pipe))
+ 		clear->devinfo |= 1 << 15;
+-	
++
+ 	/* tell keventd to clear state for this TT */
+ 	spin_lock_irqsave (&tt->lock, flags);
+ 	list_add_tail (&clear->clear_list, &tt->clear_list);
+@@ -540,7 +540,7 @@ static int hub_hub_status(struct usb_hub
+ 			"%s failed (err = %d)\n", __FUNCTION__, ret);
+ 	else {
+ 		*status = le16_to_cpu(hub->status->hub.wHubStatus);
+-		*change = le16_to_cpu(hub->status->hub.wHubChange); 
++		*change = le16_to_cpu(hub->status->hub.wHubChange);
+ 		ret = 0;
+ 	}
+ 	mutex_unlock(&hub->status_mutex);
+@@ -1424,7 +1424,7 @@ static int hub_port_status(struct usb_hu
+ 			ret = -EIO;
+ 	} else {
+ 		*status = le16_to_cpu(hub->status->port.wPortStatus);
+-		*change = le16_to_cpu(hub->status->port.wPortChange); 
++		*change = le16_to_cpu(hub->status->port.wPortChange);
+ 		ret = 0;
+ 	}
+ 	mutex_unlock(&hub->status_mutex);
+@@ -2007,7 +2007,7 @@ static inline int remote_wakeup(struct u
+  * Between connect detection and reset signaling there must be a delay
+  * of 100ms at least for debounce and power-settling.  The corresponding
+  * timer shall restart whenever the downstream port detects a disconnect.
+- * 
++ *
+  * Apparently there are some bluetooth and irda-dongles and a number of
+  * low-speed devices for which this debounce period may last over a second.
+  * Not covered by the spec - but easy to deal with.
+@@ -2142,7 +2142,7 @@ hub_port_init (struct usb_hub *hub, stru
+ 		goto fail;
+ 	}
+ 	oldspeed = udev->speed;
+-  
++
+ 	/* USB 2.0 section 5.5.3 talks about ep0 maxpacket ...
+ 	 * it's fixed size except for full speed devices.
+ 	 * For Wireless USB devices, ep0 max packet is always 512 (tho
+@@ -2168,7 +2168,7 @@ hub_port_init (struct usb_hub *hub, stru
+ 	default:
+ 		goto fail;
+ 	}
+- 
++
+ 	type = "";
+ 	switch (udev->speed) {
+ 	case USB_SPEED_LOW:	speed = "low";	break;
+@@ -2194,7 +2194,7 @@ hub_port_init (struct usb_hub *hub, stru
+ 		udev->tt = &hub->tt;
+ 		udev->ttport = port1;
+ 	}
+- 
++
+ 	/* Why interleave GET_DESCRIPTOR and SET_ADDRESS this way?
+ 	 * Because device hardware and firmware is sometimes buggy in
+ 	 * this area, and this is how Linux has done it for ages.
+@@ -2230,6 +2230,8 @@ hub_port_init (struct usb_hub *hub, stru
  					USB_DT_DEVICE << 8, 0,
  					buf, GET_DESCRIPTOR_BUFSIZE,
- 					(i ? USB_CTRL_GET_TIMEOUT : 1000));
+ 					USB_CTRL_GET_TIMEOUT);
 +printk(KERN_CRIT "usb_control_msg: %d %d %d (%d)\n", r, buf->bMaxPacketSize0,
 +buf->bDescriptorType, USB_DT_DEVICE);
  				switch (buf->bMaxPacketSize0) {
  				case 8: case 16: case 32: case 64: case 255:
  					if (buf->bDescriptorType ==
-Index: linux-2.6.21.1/drivers/usb/host/Kconfig
+@@ -2281,7 +2283,7 @@ hub_port_init (struct usb_hub *hub, stru
+ 				udev->devnum, retval);
+ 			goto fail;
+ 		}
+- 
++
+ 		/* cope with hardware quirkiness:
+ 		 *  - let SET_ADDRESS settle, some device hardware wants it
+ 		 *  - read ep0 maxpacket even for high and low speed,
+@@ -2318,7 +2320,7 @@ hub_port_init (struct usb_hub *hub, stru
+ 		udev->ep0.desc.wMaxPacketSize = cpu_to_le16(i);
+ 		ep0_reinit(udev);
+ 	}
+-  
++
+ 	retval = usb_get_device_descriptor(udev, USB_DT_DEVICE_SIZE);
+ 	if (retval < (signed)sizeof(udev->descriptor)) {
+ 		dev_err(&udev->dev, "device descriptor read/%s, error %d\n",
+@@ -2416,7 +2418,7 @@ static void hub_port_connect_change(stru
+ 	struct device *hub_dev = hub->intfdev;
+ 	u16 wHubCharacteristics = le16_to_cpu(hub->descriptor->wHubCharacteristics);
+ 	int status, i;
+- 
++
+ 	dev_dbg (hub_dev,
+ 		"port %d, status %04x, change %04x, %s\n",
+ 		port1, portstatus, portchange, portspeed (portstatus));
+@@ -2425,7 +2427,7 @@ static void hub_port_connect_change(stru
+ 		set_port_led(hub, port1, HUB_LED_AUTO);
+ 		hub->indicator[port1-1] = INDICATOR_AUTO;
+ 	}
+- 
++
+ 	/* Disconnect any existing devices under this port */
+ 	if (hdev->children[port1-1])
+ 		usb_disconnect(&hdev->children[port1-1]);
+@@ -2455,7 +2457,7 @@ static void hub_port_connect_change(stru
+ 		if ((wHubCharacteristics & HUB_CHAR_LPSM) < 2
+ 				&& !(portstatus & (1 << USB_PORT_FEAT_POWER)))
+ 			set_port_feature(hdev, port1, USB_PORT_FEAT_POWER);
+- 
++
+ 		if (portstatus & USB_PORT_STAT_ENABLE)
+   			goto done;
+ 		return;
+@@ -2535,7 +2537,7 @@ static void hub_port_connect_change(stru
+ 				goto loop_disable;
+ 			}
+ 		}
+- 
++
+ 		/* check for devices running slower than they could */
+ 		if (le16_to_cpu(udev->descriptor.bcdUSB) >= 0x0200
+ 				&& udev->speed == USB_SPEED_FULL
+@@ -2587,7 +2589,7 @@ loop:
+ 		if (status == -ENOTCONN)
+ 			break;
+ 	}
+- 
++
+ done:
+ 	hub_port_disable(hub, port1, 1);
+ }
+@@ -2720,7 +2722,7 @@ static void hub_events(void)
+ 				 * EM interference sometimes causes badly
+ 				 * shielded USB devices to be shutdown by
+ 				 * the hub, this hack enables them again.
+-				 * Works at least with mouse driver. 
++				 * Works at least with mouse driver.
+ 				 */
+ 				if (!(portstatus & USB_PORT_STAT_ENABLE)
+ 				    && !connect_change
+@@ -2750,7 +2752,7 @@ static void hub_events(void)
+ 					"resume on port %d, status %d\n",
+ 					i, ret);
+ 			}
+-			
++
+ 			if (portchange & USB_PORT_STAT_C_OVERCURRENT) {
+ 				dev_err (hub_dev,
+ 					"over-current change on port %d\n",
+@@ -2985,7 +2987,7 @@ int usb_reset_device(struct usb_device *
+ 
+ 	if (ret < 0)
+ 		goto re_enumerate;
+- 
++
+ 	/* Device might have changed firmware (DFU or similar) */
+ 	if (memcmp(&udev->descriptor, &descriptor, sizeof descriptor)
+ 			|| config_descriptors_changed (udev)) {
+@@ -2993,7 +2995,7 @@ int usb_reset_device(struct usb_device *
+ 		udev->descriptor = descriptor;	/* for disconnect() calls */
+ 		goto re_enumerate;
+   	}
+-  
++
+ 	if (!udev->actconfig)
+ 		goto done;
+ 
+@@ -3031,7 +3033,7 @@ int usb_reset_device(struct usb_device *
+ 
+ done:
+ 	return 0;
+- 
++
+ re_enumerate:
+ 	hub_port_logical_disconnect(parent_hub, port1);
+ 	return -ENODEV;
+Index: linux-2.6.22-rc6/drivers/usb/host/Kconfig
 ===================================================================
---- linux-2.6.21.1.orig/drivers/usb/host/Kconfig
-+++ linux-2.6.21.1/drivers/usb/host/Kconfig
+--- linux-2.6.22-rc6.orig/drivers/usb/host/Kconfig
++++ linux-2.6.22-rc6/drivers/usb/host/Kconfig
 @@ -224,3 +224,6 @@ config USB_SL811_CS
  	  To compile this driver as a module, choose M here: the
  	  module will be called "sl811_cs".
@@ -22,35 +193,38 @@ Index: linux-2.6.21.1/drivers/usb/host/Kconfig
 +config USB_ADM5120_HCD
 +	tristate "ADM5120 HCD support"
 +	depends on USB && MIPS_ADM5120
-Index: linux-2.6.21.1/drivers/usb/host/Makefile
+Index: linux-2.6.22-rc6/drivers/usb/host/Makefile
 ===================================================================
---- linux-2.6.21.1.orig/drivers/usb/host/Makefile
-+++ linux-2.6.21.1/drivers/usb/host/Makefile
-@@ -16,3 +16,4 @@ obj-$(CONFIG_USB_SL811_HCD)	+= sl811-hcd
- obj-$(CONFIG_USB_SL811_CS)	+= sl811_cs.o
- obj-$(CONFIG_USB_U132_HCD)	+= u132-hcd.o
- obj-$(CONFIG_ETRAX_ARCH_V10)	+= hc_crisv10.o
-+obj-$(CONFIG_USB_ADM5120_HCD)	+= adm5120-hcd.o
-Index: linux-2.6.21.1/drivers/usb/Kconfig
-===================================================================
---- linux-2.6.21.1.orig/drivers/usb/Kconfig
-+++ linux-2.6.21.1/drivers/usb/Kconfig
-@@ -91,8 +91,6 @@ source "drivers/usb/image/Kconfig"
+--- linux-2.6.22-rc6.orig/drivers/usb/host/Makefile
++++ linux-2.6.22-rc6/drivers/usb/host/Makefile
+@@ -8,6 +8,7 @@ endif
  
- source "drivers/usb/net/Kconfig"
+ obj-$(CONFIG_PCI)		+= pci-quirks.o
+ 
++obj-$(CONFIG_USB_ADM5120_HCD)	+= adm5120-hcd.o
+ obj-$(CONFIG_USB_EHCI_HCD)	+= ehci-hcd.o
+ obj-$(CONFIG_USB_ISP116X_HCD)	+= isp116x-hcd.o
+ obj-$(CONFIG_USB_OHCI_HCD)	+= ohci-hcd.o
+Index: linux-2.6.22-rc6/drivers/usb/Kconfig
+===================================================================
+--- linux-2.6.22-rc6.orig/drivers/usb/Kconfig
++++ linux-2.6.22-rc6/drivers/usb/Kconfig
+@@ -88,8 +88,6 @@ source "drivers/usb/storage/Kconfig"
+ 
+ source "drivers/usb/image/Kconfig"
  
 -source "drivers/usb/mon/Kconfig"
 -
  comment "USB port drivers"
  	depends on USB
  
-Index: linux-2.6.21.1/drivers/usb/Makefile
+Index: linux-2.6.22-rc6/drivers/usb/Makefile
 ===================================================================
---- linux-2.6.21.1.orig/drivers/usb/Makefile
-+++ linux-2.6.21.1/drivers/usb/Makefile
-@@ -17,6 +17,7 @@ obj-$(CONFIG_USB_SL811_HCD)	+= host/
+--- linux-2.6.22-rc6.orig/drivers/usb/Makefile
++++ linux-2.6.22-rc6/drivers/usb/Makefile
+@@ -16,6 +16,7 @@ obj-$(CONFIG_USB_UHCI_HCD)	+= host/
+ obj-$(CONFIG_USB_SL811_HCD)	+= host/
  obj-$(CONFIG_USB_U132_HCD)	+= host/
- obj-$(CONFIG_ETRAX_USB_HOST)	+= host/
  obj-$(CONFIG_USB_OHCI_AT91)	+= host/
 +obj-$(CONFIG_USB_ADM5120_HCD)  	+= host/
  
