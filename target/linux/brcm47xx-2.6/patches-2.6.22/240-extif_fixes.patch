@@ -1,0 +1,152 @@
+Index: linux-2.6.22-rc6/drivers/ssb/driver_mipscore.c
+===================================================================
+--- linux-2.6.22-rc6.orig/drivers/ssb/driver_mipscore.c	2007-06-28 11:35:29.077307472 +0200
++++ linux-2.6.22-rc6/drivers/ssb/driver_mipscore.c	2007-06-28 12:11:01.433140112 +0200
+@@ -128,10 +128,46 @@
+ 	ssb_write32(mdev, SSB_IPSFLAG, irqflag);
+ }
+ 
+-/* XXX: leave here or move into separate extif driver? */
++static inline bool serial_exists(u8 *regs)
++{
++	u8 save_mcr, status1 = 0;
++
++	if (regs) {
++		save_mcr = regs[UART_MCR];
++		regs[UART_MCR] = (UART_MCR_LOOP | 0x0a);
++		// Fixme UART_MSR_DSR appears in status1
++		status1 = regs[UART_MSR] & 0xd0;
++		regs[UART_MCR] = save_mcr;
++    }
++	return (status1 == (UART_MSR_DCD | UART_MSR_CTS));
++}
++
+ static int ssb_extif_serial_init(struct ssb_extif *dev, struct ssb_serial_port *ports)
+ {
+-	return 0;
++	u32 i, nr_ports = 0;
++
++	/* Disable GPIO interrupt initially */
++	extif_write32(dev, SSB_EXTIF_GPIO_INTPOL, 0);
++	extif_write32(dev, SSB_EXTIF_GPIO_INTMASK, 0);
++
++	for (i = 0; i < 2; i++) {
++		void __iomem *uart_regs;
++
++		uart_regs = ioremap_nocache(SSB_EUART, 16);
++		uart_regs += (i * 8);
++
++		if (serial_exists(uart_regs) && ports) {
++			extif_write32(dev, SSB_EXTIF_GPIO_INTMASK, 2);
++
++			nr_ports++;
++			ports[i].regs = uart_regs;
++			ports[i].irq = 2;
++			ports[i].baud_base = 13500000;
++			ports[i].reg_shift = 0;
++	    }
++		iounmap(uart_regs);
++    }
++	return nr_ports;
+ }
+ 
+ 
+@@ -139,40 +175,6 @@
+ {
+ 	struct ssb_bus *bus = mcore->dev->bus;
+ 
+-	//TODO if (EXTIF available
+-#if 0
+-		extifregs_t *eir = (extifregs_t *) regs;
+-		sbconfig_t *sb;
+-
+-		/* Determine external UART register base */
+-		sb = (sbconfig_t *)((ulong) eir + SBCONFIGOFF);
+-		base = EXTIF_CFGIF_BASE(sb_base(R_REG(&sb->sbadmatch1)));
+-
+-		/* Determine IRQ */
+-		irq = sb_irq(sbh);
+-
+-		/* Disable GPIO interrupt initially */
+-		W_REG(&eir->gpiointpolarity, 0);
+-		W_REG(&eir->gpiointmask, 0);
+-
+-		/* Search for external UARTs */
+-		n = 2;
+-		for (i = 0; i < 2; i++) {
+-			regs = (void *) REG_MAP(base + (i * 8), 8);
+-			if (BCMINIT(serial_exists)(regs)) {
+-				/* Set GPIO 1 to be the external UART IRQ */
+-				W_REG(&eir->gpiointmask, 2);
+-				if (add)
+-					add(regs, irq, 13500000, 0);
+-			}
+-		}
+-
+-		/* Add internal UART if enabled */
+-		if (R_REG(&eir->corecontrol) & CC_UE)
+-			if (add)
+-				add((void *) &eir->uartdata, irq, sb_clock(sbh), 2);
+-
+-#endif
+ 	if (bus->extif.dev)
+ 		mcore->nr_serial_ports = ssb_extif_serial_init(&bus->extif, mcore->serial_ports);
+ 	else if (bus->chipco.dev)
+@@ -219,7 +221,7 @@
+ 	extif_write32(extif, SSB_EXTIF_PROG_WAITCNT, tmp);
+ }
+ 
+-static inline void ssb_extif_get_clockcontrol(struct ssb_extif *extif,
++void ssb_extif_get_clockcontrol(struct ssb_extif *extif,
+                                               u32 *pll_type, u32 *n, u32 *m)
+ {
+ 	*pll_type = SSB_PLLTYPE_1;
+Index: linux-2.6.22-rc6/drivers/ssb/main.c
+===================================================================
+--- linux-2.6.22-rc6.orig/drivers/ssb/main.c	2007-06-28 11:23:38.418344056 +0200
++++ linux-2.6.22-rc6/drivers/ssb/main.c	2007-06-28 12:07:50.346189744 +0200
+@@ -774,12 +774,12 @@
+ 	u32 plltype;
+ 	u32 clkctl_n, clkctl_m;
+ 
+-	//TODO if EXTIF: PLLTYPE == 1, read n from clockcontrol_n, m from clockcontrol_sb
+-
+-	if (bus->chipco.dev) {
++	if (bus->extif.dev)
++		ssb_extif_get_clockcontrol(&bus->extif, &plltype, &clkctl_n, &clkctl_m);
++	else if (bus->chipco.dev)
+ 		ssb_chipco_get_clockcontrol(&bus->chipco, &plltype,
+ 					    &clkctl_n, &clkctl_m);
+-	} else
++	else
+ 		return 0;
+ 
+ 	if (bus->chip_id == 0x5365) {
+Index: linux-2.6.22-rc6/include/linux/ssb/ssb_driver_extif.h
+===================================================================
+--- linux-2.6.22-rc6.orig/include/linux/ssb/ssb_driver_extif.h	2007-06-28 11:27:47.099538768 +0200
++++ linux-2.6.22-rc6/include/linux/ssb/ssb_driver_extif.h	2007-06-28 11:28:03.482048248 +0200
+@@ -158,6 +158,8 @@
+ /* watchdog */
+ #define SSB_EXTIF_WATCHDOG_CLK		48000000	/* Hz */
+ 
++extern void ssb_extif_get_clockcontrol(struct ssb_extif *, u32 *, u32 *, u32 *);
++
+ /* GPIO functions */
+ static inline u32 ssb_extif_gpio_in(struct ssb_extif *extif,
+                                     u32 mask)
+Index: linux-2.6.22-rc6/include/linux/ssb/ssb_regs.h
+===================================================================
+--- linux-2.6.22-rc6.orig/include/linux/ssb/ssb_regs.h	2007-06-28 12:09:24.943808720 +0200
++++ linux-2.6.22-rc6/include/linux/ssb/ssb_regs.h	2007-06-28 12:09:34.606339792 +0200
+@@ -24,8 +24,8 @@
+ #define SSB_PCI_DMA_SZ		0x40000000	/* Client Mode sb2pcitranslation2 size in bytes */
+ #define SSB_PCIE_DMA_L32		0x00000000	/* PCIE Client Mode sb2pcitranslation2 (2 ZettaBytes), low 32 bits */
+ #define SSB_PCIE_DMA_H32		0x80000000	/* PCIE Client Mode sb2pcitranslation2 (2 ZettaBytes), high 32 bits */
+-#define	SSB_EUART		(SB_EXTIF_BASE + 0x00800000)
+-#define	SSB_LED			(SB_EXTIF_BASE + 0x00900000)
++#define	SSB_EUART		(SSB_EXTIF_BASE + 0x00800000)
++#define	SSB_LED			(SSB_EXTIF_BASE + 0x00900000)
+ 
+ 
+ /* Enumeration space constants */
