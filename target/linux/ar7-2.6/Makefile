@@ -11,6 +11,8 @@ BOARD:=ar7
 BOARDNAME:=TI AR7
 FEATURES:=squashfs jffs2 atm
 
+LINUX_VERSION:=2.6.21.5
+
 define Target/Description
 	Build firmware images for TI AR7 based routers
 endef

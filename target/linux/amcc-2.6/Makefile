@@ -11,6 +11,8 @@ BOARD:=amcc
 BOARDNAME:=AMCC Taishan
 FEATURES:=jffs2
 
+LINUX_VERSION:=2.6.21.5
+
 define Target/Description
 	Build firmware images for the AMCC Taishan evaluation board
 endef

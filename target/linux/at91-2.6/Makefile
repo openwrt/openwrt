@@ -11,6 +11,8 @@ BOARD:=at91
 BOARDNAME:=AT91
 FEATURES:=squashfs
 
+LINUX_VERSION:=2.6.21.5
+
 define Target/Description
   Build fimware images for Figment Design Labs VersaLink board.
 endef

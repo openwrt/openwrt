@@ -11,6 +11,8 @@ BOARD:=adm5120eb
 BOARDNAME:=ADM5120 (Big Endian)
 FEATURES:=squashfs pci usb
 
+LINUX_VERSION:=2.6.21.5
+
 define Target/Description
 	Build firmware images for Infineon/ADMTek ADM5120 based boards running in big-endian mode
 	(e.g : ZyXEL Prestige 335WT ...)

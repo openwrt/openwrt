@@ -11,6 +11,8 @@ BOARD:=iop32x
 BOARDNAME:=Intel XScale IOP32x
 FEATURES:=squashfs jffs2
 
+LINUX_VERSION:=2.6.21.5
+
 define Target/Description
 endef
 
