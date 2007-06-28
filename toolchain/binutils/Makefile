@@ -20,16 +20,9 @@ PKG_SOURCE:=binutils-$(PKG_VERSION).tar.bz2
 PKG_MD5SUM:=unknown
 PKG_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_CAT:=bzcat
+PATCH_DIR:=./patches/$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
-
-
-define Build/Prepare
-	$(call Build/Prepare/Default)
-	if [ -d ./patches/$(PKG_VERSION) ]; then \
-		$(SCRIPT_DIR)/patch-kernel.sh $(PKG_BUILD_DIR) ./patches/$(PKG_VERSION); \
-	fi
-endef
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \

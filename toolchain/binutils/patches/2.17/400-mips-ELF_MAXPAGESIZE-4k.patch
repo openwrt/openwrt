@@ -1,0 +1,13 @@
+Index: binutils-2.17/bfd/elf32-mips.c
+===================================================================
+--- binutils-2.17.orig/bfd/elf32-mips.c	2007-06-28 09:19:34.774949856 +0200
++++ binutils-2.17/bfd/elf32-mips.c	2007-06-28 09:19:36.366707872 +0200
+@@ -1617,7 +1617,7 @@
+ 
+ /* The SVR4 MIPS ABI says that this should be 0x10000, and Linux uses
+    page sizes of up to that limit, so we need to respect it.  */
+-#define ELF_MAXPAGESIZE			0x10000
++#define ELF_MAXPAGESIZE			0x1000
+ #define elf32_bed			elf32_tradbed
+ 
+ /* Include the target file again for this target.  */
