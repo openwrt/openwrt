@@ -57,9 +57,11 @@ Andreas.
 	* read.c (read_a_source_file): Ignore unknown text after line
 	comment character.  Fix misleading comment.
 
---- binutils/gas/read.c.~1.78.~	2004-04-23 08:58:23.000000000 +0200
-+++ binutils/gas/read.c	2004-04-23 21:49:01.000000000 +0200
-@@ -950,10 +950,14 @@ read_a_source_file (char *name)
+Index: binutils-2.17/gas/read.c
+===================================================================
+--- binutils-2.17.orig/gas/read.c	2007-06-28 09:19:34.031062944 +0200
++++ binutils-2.17/gas/read.c	2007-06-28 09:19:39.244270416 +0200
+@@ -1008,10 +1008,14 @@
  	      unsigned int new_length;
  	      char *tmp_buf = 0;
  
@@ -76,7 +78,7 @@ Andreas.
  	      s += 4;
  
  	      sb_new (&sbuf);
-@@ -1052,7 +1056,7 @@ read_a_source_file (char *name)
+@@ -1110,7 +1114,7 @@
  	    continue;
  #endif
  	  input_line_pointer--;
@@ -85,9 +87,3 @@ Andreas.
  	  demand_empty_rest_of_line ();
  	}
  
-
--- 
-Andreas Schwab, SuSE Labs, schwab@suse.de
-SuSE Linux AG, Maxfeldstra&#xC3;e 5, 90409 N&#xC3;rnberg, Germany
-Key fingerprint = 58CA 54C7 6D53 942B 1756  01D3 44D5 214B 8276 4ED5
-"And now for something completely different."

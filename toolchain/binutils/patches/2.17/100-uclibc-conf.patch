@@ -1,5 +1,7 @@
---- binutils-2.16.91.0.7/bfd/configure
-+++ binutils-2.16.91.0.7/bfd/configure
+Index: binutils-2.17/bfd/configure
+===================================================================
+--- binutils-2.17.orig/bfd/configure	2007-06-28 09:19:34.892931920 +0200
++++ binutils-2.17/bfd/configure	2007-06-28 09:19:35.023912008 +0200
 @@ -3576,7 +3576,7 @@
    ;;
  
@@ -9,8 +11,10 @@
    lt_cv_deplibs_check_method=pass_all
    ;;
  
---- binutils-2.16.91.0.7/binutils/configure
-+++ binutils-2.16.91.0.7/binutils/configure
+Index: binutils-2.17/binutils/configure
+===================================================================
+--- binutils-2.17.orig/binutils/configure	2007-06-28 09:19:34.898931008 +0200
++++ binutils-2.17/binutils/configure	2007-06-28 09:19:35.028911248 +0200
 @@ -3411,7 +3411,7 @@
    ;;
  
@@ -20,9 +24,11 @@
    lt_cv_deplibs_check_method=pass_all
    ;;
  
---- binutils-2.16.91.0.7/configure
-+++ binutils-2.16.91.0.7/configure
-@@ -1270,7 +1270,7 @@
+Index: binutils-2.17/configure
+===================================================================
+--- binutils-2.17.orig/configure	2007-06-28 09:19:34.903930248 +0200
++++ binutils-2.17/configure	2007-06-28 09:19:35.030910944 +0200
+@@ -1276,7 +1276,7 @@
    am33_2.0-*-linux*)
      noconfigdirs="$noconfigdirs ${libgcj} target-newlib target-libgloss"
      ;;
@@ -31,7 +37,7 @@
      noconfigdirs="$noconfigdirs ${libgcj} target-newlib target-libgloss"
      ;;    
    sh*-*-pe|mips*-*-pe|*arm-wince-pe)
-@@ -1578,7 +1578,7 @@
+@@ -1584,7 +1584,7 @@
    romp-*-*)
      noconfigdirs="$noconfigdirs bfd binutils ld gas opcodes target-libgloss ${libgcj}"
      ;;
@@ -40,8 +46,10 @@
      case "${host}" in
        i[3456789]86-*-vsta) ;; # don't add gprof back in
        i[3456789]86-*-go32*) ;; # don't add gprof back in
---- binutils-2.16.91.0.7/configure.in
-+++ binutils-2.16.91.0.7/configure.in
+Index: binutils-2.17/configure.in
+===================================================================
+--- binutils-2.17.orig/configure.in	2007-06-28 09:19:34.909929336 +0200
++++ binutils-2.17/configure.in	2007-06-28 09:19:35.031910792 +0200
 @@ -468,7 +468,7 @@
    am33_2.0-*-linux*)
      noconfigdirs="$noconfigdirs ${libgcj} target-newlib target-libgloss"
@@ -60,8 +68,10 @@
      case "${host}" in
        i[[3456789]]86-*-vsta) ;; # don't add gprof back in
        i[[3456789]]86-*-go32*) ;; # don't add gprof back in
---- binutils-2.16.91.0.7/gas/configure
-+++ binutils-2.16.91.0.7/gas/configure
+Index: binutils-2.17/gas/configure
+===================================================================
+--- binutils-2.17.orig/gas/configure	2007-06-28 09:19:34.915928424 +0200
++++ binutils-2.17/gas/configure	2007-06-28 09:19:35.035910184 +0200
 @@ -3411,7 +3411,7 @@
    ;;
  
@@ -71,10 +81,12 @@
    lt_cv_deplibs_check_method=pass_all
    ;;
  
---- binutils-2.16.91.0.7/gprof/configure
-+++ binutils-2.16.91.0.7/gprof/configure
-@@ -3419,6 +3419,11 @@
-   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+Index: binutils-2.17/gprof/configure
+===================================================================
+--- binutils-2.17.orig/gprof/configure	2007-06-28 09:19:34.921927512 +0200
++++ binutils-2.17/gprof/configure	2007-06-28 09:19:35.042909120 +0200
+@@ -3414,6 +3414,11 @@
+   lt_cv_deplibs_check_method=pass_all
    ;;
  
 +linux-uclibc*)
@@ -85,8 +97,10 @@
  netbsd* | knetbsd*-gnu)
    if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
      lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
---- binutils-2.16.91.0.7/ld/configure
-+++ binutils-2.16.91.0.7/ld/configure
+Index: binutils-2.17/ld/configure
+===================================================================
+--- binutils-2.17.orig/ld/configure	2007-06-28 09:19:34.927926600 +0200
++++ binutils-2.17/ld/configure	2007-06-28 09:19:35.046908512 +0200
 @@ -3413,7 +3413,7 @@
    ;;
  
@@ -96,8 +110,10 @@
    lt_cv_deplibs_check_method=pass_all
    ;;
  
---- binutils-2.16.91.0.7/libtool.m4
-+++ binutils-2.16.91.0.7/libtool.m4
+Index: binutils-2.17/libtool.m4
+===================================================================
+--- binutils-2.17.orig/libtool.m4	2007-06-28 09:19:34.933925688 +0200
++++ binutils-2.17/libtool.m4	2007-06-28 09:19:35.047908360 +0200
 @@ -739,7 +739,7 @@
    ;;
  
@@ -107,8 +123,10 @@
    lt_cv_deplibs_check_method=pass_all
    ;;
  
---- binutils-2.16.91.0.7/ltconfig
-+++ binutils-2.16.91.0.7/ltconfig
+Index: binutils-2.17/ltconfig
+===================================================================
+--- binutils-2.17.orig/ltconfig	2007-06-28 09:19:34.939924776 +0200
++++ binutils-2.17/ltconfig	2007-06-28 09:19:35.048908208 +0200
 @@ -602,6 +602,7 @@
  
  # Transform linux* to *-*-linux-gnu*, to support old configure scripts.
@@ -126,8 +144,10 @@
    version_type=linux
    need_lib_prefix=no
    need_version=no
---- binutils-2.16.91.0.7/opcodes/configure
-+++ binutils-2.16.91.0.7/opcodes/configure
+Index: binutils-2.17/opcodes/configure
+===================================================================
+--- binutils-2.17.orig/opcodes/configure	2007-06-28 09:19:34.946923712 +0200
++++ binutils-2.17/opcodes/configure	2007-06-28 09:19:35.051907752 +0200
 @@ -3579,7 +3579,7 @@
    ;;
  
