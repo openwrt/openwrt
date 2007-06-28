@@ -8,6 +8,7 @@
 ifeq ($(KERNEL_BUILD),1)
   PKG_BUILD_DIR:=$(LINUX_DIR)
 endif
+PATCH_DIR?=./patches
 
 define Quilt/Patch
 	@for patch in $$$$( (cd $(1) && ls) 2>/dev/null ); do ( \
@@ -28,7 +29,7 @@ ifneq ($(QUILT),)
   define Build/Patch/Default
 	rm -rf $(PKG_BUILD_DIR)/patches
 	mkdir -p $(PKG_BUILD_DIR)/patches
-	$(call Quilt/Patch,./patches,)
+	$(call Quilt/Patch,$(PATCH_DIR),)
 	@echo
 	touch $(PKG_BUILD_DIR)/.quilt_used
   endef
@@ -37,8 +38,8 @@ ifneq ($(QUILT),)
   quilt-check: $(STAMP_PATCHED)
 else
   define Build/Patch/Default
-	@if [ -d ./patches -a "$$$$(ls ./patches | wc -l)" -gt 0 ]; then \
-		$(PATCH) $(PKG_BUILD_DIR) ./patches; \
+	@if [ -d $(PATCH_DIR) -a "$$$$(ls $(PATCH_DIR) | wc -l)" -gt 0 ]; then \
+		$(PATCH) $(PKG_BUILD_DIR) $(PATCH_DIR); \
 	fi
   endef
 endif
@@ -75,7 +76,7 @@ define Quilt/RefreshDir
 endef
 
 define Quilt/Refresh/Package
-	$(call Quilt/RefreshDir,./patches)
+	$(call Quilt/RefreshDir,$(PATCH_DIR))
 endef
 
 define Quilt/Refresh/Kernel
