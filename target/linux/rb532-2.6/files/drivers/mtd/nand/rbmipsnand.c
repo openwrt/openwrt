@@ -99,8 +99,8 @@ int __init rbmips_init(void)
 	memset(&rnand, 0, sizeof(rnand));
 
 	printk("RB500 nand\n");
-	changeLatchU5(LO_WPX | LO_FOFF | LO_CEX,
-		      LO_ULED | LO_ALE | LO_CLE);
+	changeLatchU5(LO_FOFF | LO_CEX,
+		      LO_ULED | LO_ALE | LO_CLE | LO_WPX);
 	rnand.cmd_ctrl = rbmips_hwcontrol500;
 
 	rnand.dev_ready = rb500_dev_ready;
