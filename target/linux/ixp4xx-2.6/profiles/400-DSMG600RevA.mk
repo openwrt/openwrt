@@ -7,7 +7,7 @@
 
 define Profile/DSMG600RevA
   NAME:=DSM-G600 Rev A
-  PACKAGES:=kmod-via-velocity -kmod-ixp4xx-npe kmod-pata-artop madwifi kmod-usb2
+  PACKAGES:=kmod-via-velocity -kmod-ixp4xx-npe kmod-pata-artop kmod-usb2
 endef
 
 define Profile/DSMG600RevA/Description
