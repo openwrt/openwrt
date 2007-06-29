@@ -49,7 +49,7 @@ $(eval $(call KernelPackage,bonding))
 define KernelPackage/ipip
   TITLE:=IP in IP encapsulation support
   DESCRIPTION:=\
-  	Kernel modules for IP in IP encapsulation
+	Kernel modules for IP in IP encapsulation
   KCONFIG:=$(CONFIG_NET_IPIP)
   SUBMENU:=$(NSMENU)
 endef
@@ -174,7 +174,7 @@ endef
 
 define KernelPackage/ppp/2.6
   FILES:= \
-  	$(LINUX_DIR)/drivers/net/ppp_async.ko \
+	$(LINUX_DIR)/drivers/net/ppp_async.ko \
 	$(LINUX_DIR)/drivers/net/ppp_generic.ko \
 	$(LINUX_DIR)/drivers/net/slhc.ko \
 	$(LINUX_DIR)/lib/crc-ccitt.ko
@@ -183,7 +183,7 @@ endef
 
 define KernelPackage/ppp/2.4
   FILES:= \
-  	$(LINUX_DIR)/drivers/net/ppp_async.o \
+	$(LINUX_DIR)/drivers/net/ppp_async.o \
 	$(LINUX_DIR)/drivers/net/ppp_generic.o \
 	$(LINUX_DIR)/drivers/net/slhc.o
   AUTOLOAD:=$(call AutoLoad,30,slhc ppp_generic ppp_async)
@@ -198,7 +198,7 @@ define KernelPackage/pppoe
   DEPENDS:=kmod-ppp
   KCONFIG:=$(CONFIG_PPPOE)
   FILES:= \
-  	$(LINUX_DIR)/drivers/net/pppoe.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/net/pppoe.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/net/pppox.$(LINUX_KMOD_SUFFIX)
   SUBMENU:=$(NSMENU)
 endef
@@ -322,6 +322,18 @@ define KernelPackage/via-rhine
   AUTOLOAD:=$(call AutoLoad,50,via-rhine)
 endef
 $(eval $(call KernelPackage,via-rhine))
+
+define KernelPackage/via-velocity
+  TITLE:=VIA Velocity Gigabit Ethernet Adapter kernel support
+  DESCRIPTION:=\
+	Kernel modules for VIA Velocity Gigabit Ethernet chipsets.
+  FILES:=$(LINUX_DIR)/drivers/net/via-velocity.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=$(CONFIG_VIA_VELOCITY)
+  DEPENDS:=@LINUX_2_6_IXP4XX
+  SUBMENU:=$(NDMENU)
+  AUTOLOAD:=$(call AutoLoad,50,via-velocity)
+endef
+$(eval $(call KernelPackage,via-velocity))
 
 define KernelPackage/8139too
   TITLE:=RealTek RTL-8139 PCI Fast Ethernet Adapter kernel support
