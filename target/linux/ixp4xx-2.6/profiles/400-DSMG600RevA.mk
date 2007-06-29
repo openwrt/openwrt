@@ -10,7 +10,7 @@ define Profile/DSMG600RevA
   PACKAGES:=kmod-via-velocity \
 	kmod-madwifi wireless-tools \
 	kmod-scsi-core kmod-libata kmod-pata-artop \
-	kmod-usb-core kmod-usb2 kmod-usb-storage \
+	kmod-usb-core kmod-usb-uhci kmod-usb2 kmod-usb-storage \
 	kmod-fs-ext2 kmod-fs-ext3
 endef
 
