@@ -219,17 +219,17 @@ diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/Makefile linux-2.6.19.2-owrt/arch/
 --- linux-2.6.19.2/arch/arm/mach-ixp4xx/Makefile	2007-01-10 20:10:37.000000000 +0100
 +++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/Makefile	2007-04-02 15:49:49.000000000 +0200
 @@ -11,6 +11,7 @@
- obj-pci-$(CONFIG_MACH_GTWX5715)		+= gtwx5715-pci.o
  obj-pci-$(CONFIG_MACH_NSLU2)		+= nslu2-pci.o
  obj-pci-$(CONFIG_MACH_NAS100D)		+= nas100d-pci.o
+ obj-pci-$(CONFIG_MACH_DSMG600)		+= dsmg600-pci.o
 +obj-pci-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-pci.o
  
  obj-y	+= common.o
  
 @@ -20,5 +21,6 @@
- obj-$(CONFIG_MACH_GTWX5715)	+= gtwx5715-setup.o
  obj-$(CONFIG_MACH_NSLU2)	+= nslu2-setup.o nslu2-power.o
  obj-$(CONFIG_MACH_NAS100D)	+= nas100d-setup.o nas100d-power.o
+ obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o dsmg600-power.o
 +obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o

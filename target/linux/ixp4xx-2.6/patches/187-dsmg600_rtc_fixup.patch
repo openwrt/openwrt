@@ -1,0 +1,57 @@
+Index: linux-2.6.21-arm/arch/arm/mach-ixp4xx/dsmg600-setup.c
+===================================================================
+--- linux-2.6.21-arm.orig/arch/arm/mach-ixp4xx/dsmg600-setup.c	2007-05-07 11:29:44.000000000 -0700
++++ linux-2.6.21-arm/arch/arm/mach-ixp4xx/dsmg600-setup.c	2007-05-07 11:31:15.000000000 -0700
+@@ -15,6 +15,7 @@
+ #include <linux/serial.h>
+ #include <linux/serial_8250.h>
+ 
++#include <asm/setup.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/flash.h>
+@@ -142,6 +143,36 @@
+     .init   = dsmg600_timer_init,
+ };
+ 
++static char dsmg600_rtc_probe[] __initdata = "rtc-pcf8563.probe=0,0x51 ";
++
++static void __init dsmg600_fixup(struct machine_desc *desc,
++                struct tag *tags, char **cmdline, struct meminfo *mi)
++{
++    struct tag *t = tags;
++    char *p = *cmdline;
++
++    /* Find the end of the tags table, taking note of any cmdline tag. */
++    for (; t->hdr.size; t = tag_next(t)) {
++        if (t->hdr.tag == ATAG_CMDLINE) {
++            p = t->u.cmdline.cmdline;
++        }
++    }   
++
++    /* Overwrite the end of the table with a new cmdline tag. */
++    t->hdr.tag = ATAG_CMDLINE;
++    t->hdr.size =
++        (sizeof (struct tag_header) +
++        strlen(dsmg600_rtc_probe) + strlen(p) + 1 + 4) >> 2;
++    strlcpy(t->u.cmdline.cmdline, dsmg600_rtc_probe, COMMAND_LINE_SIZE);
++    strlcpy(t->u.cmdline.cmdline + strlen(dsmg600_rtc_probe), p,
++        COMMAND_LINE_SIZE - strlen(dsmg600_rtc_probe));
++
++    /* Terminate the table. */
++    t = tag_next(t);
++    t->hdr.tag = ATAG_NONE;
++    t->hdr.size = 0;
++}
++
+ static void __init dsmg600_init(void)
+ {
+ 	ixp4xx_sys_init();
+@@ -174,6 +205,7 @@
+ 	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
+ 	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xFFFC,
+ 	.boot_params	= 0x00000100,
++	.fixup		= dsmg600_fixup,
+ 	.map_io		= ixp4xx_map_io,
+ 	.init_irq	= ixp4xx_init_irq,
+ 	.timer          = &dsmg600_timer,
