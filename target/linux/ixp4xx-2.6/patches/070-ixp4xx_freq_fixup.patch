@@ -1,0 +1,131 @@
+This patch is required as the frequency fixup in nslu2_init does not
+run sufficiently early in the boot sequence to take effect. In
+addition the dsmg600 setup code behaviour has been improved such
+that a 'fixup' routine is avoided.
+
+Signed-off-by: Michael-Luke Jones <mlj28@cam.ac.uk>
+
+Index: linux-2.6.21-arm/arch/arm/mach-ixp4xx/nslu2-setup.c
+===================================================================
+--- linux-2.6.21-arm.orig/arch/arm/mach-ixp4xx/nslu2-setup.c	2007-05-07 12:05:40.000000000 -0700
++++ linux-2.6.21-arm/arch/arm/mach-ixp4xx/nslu2-setup.c	2007-05-07 12:15:56.000000000 -0700
+@@ -22,6 +22,7 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/flash.h>
++#include <asm/mach/time.h>
+ 
+ static struct flash_platform_data nslu2_flash_data = {
+ 	.map_name		= "cfi_probe",
+@@ -157,10 +158,21 @@
+ 	gpio_line_set(NSLU2_PO_GPIO, IXP4XX_GPIO_HIGH);
+ }
+ 
+-static void __init nslu2_init(void)
++static void __init nslu2_timer_init(void)
+ {
+-	ixp4xx_timer_freq = NSLU2_FREQ;
++    /* The xtal on this machine is non-standard. */
++    ixp4xx_timer_freq = NSLU2_FREQ;
++
++    /* Call standard timer_init function. */
++    ixp4xx_timer_init();
++}
+ 
++static struct sys_timer nslu2_timer = {
++    .init   = nslu2_timer_init,
++};
++
++static void __init nslu2_init(void)
++{
+ 	ixp4xx_sys_init();
+ 
+ 	nslu2_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
+@@ -185,6 +197,6 @@
+ 	.boot_params	= 0x00000100,
+ 	.map_io		= ixp4xx_map_io,
+ 	.init_irq	= ixp4xx_init_irq,
+-	.timer          = &ixp4xx_timer,
++	.timer          = &nslu2_timer,
+ 	.init_machine	= nslu2_init,
+ MACHINE_END
+Index: linux-2.6.21-arm/arch/arm/mach-ixp4xx/common.c
+===================================================================
+--- linux-2.6.21-arm.orig/arch/arm/mach-ixp4xx/common.c	2007-05-07 12:05:40.000000000 -0700
++++ linux-2.6.21-arm/arch/arm/mach-ixp4xx/common.c	2007-05-07 12:15:16.000000000 -0700
+@@ -269,7 +269,7 @@
+ 	.handler	= ixp4xx_timer_interrupt,
+ };
+ 
+-static void __init ixp4xx_timer_init(void)
++void __init ixp4xx_timer_init(void)
+ {
+ 	/* Clear Pending Interrupt by writing '1' to it */
+ 	*IXP4XX_OSST = IXP4XX_OSST_TIMER_1_PEND;
+Index: linux-2.6.21-arm/include/asm-arm/arch-ixp4xx/platform.h
+===================================================================
+--- linux-2.6.21-arm.orig/include/asm-arm/arch-ixp4xx/platform.h	2007-05-07 12:05:40.000000000 -0700
++++ linux-2.6.21-arm/include/asm-arm/arch-ixp4xx/platform.h	2007-05-07 12:15:16.000000000 -0700
+@@ -113,6 +113,7 @@
+ extern void ixp4xx_map_io(void);
+ extern void ixp4xx_init_irq(void);
+ extern void ixp4xx_sys_init(void);
++extern void ixp4xx_timer_init(void);
+ extern struct sys_timer ixp4xx_timer;
+ extern void ixp4xx_pci_preinit(void);
+ struct pci_sys_data;
+Index: linux-2.6.21-arm/arch/arm/mach-ixp4xx/dsmg600-setup.c
+===================================================================
+--- linux-2.6.21-arm.orig/arch/arm/mach-ixp4xx/dsmg600-setup.c	2007-05-07 12:05:42.000000000 -0700
++++ linux-2.6.21-arm/arch/arm/mach-ixp4xx/dsmg600-setup.c	2007-05-07 12:16:07.000000000 -0700
+@@ -18,6 +18,7 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/flash.h>
++#include <asm/mach/time.h>
+ 
+ static struct flash_platform_data dsmg600_flash_data = {
+ 	.map_name		= "cfi_probe",
+@@ -128,6 +129,19 @@
+ 	gpio_line_set(DSMG600_PO_GPIO, IXP4XX_GPIO_HIGH);
+ }
+ 
++static void __init dsmg600_timer_init(void)
++{
++    /* The xtal on this machine is non-standard. */
++    ixp4xx_timer_freq = DSMG600_FREQ;
++
++    /* Call standard timer_init function. */
++    ixp4xx_timer_init();
++}
++
++static struct sys_timer dsmg600_timer = {
++    .init   = dsmg600_timer_init,
++};
++
+ static void __init dsmg600_init(void)
+ {
+ 	ixp4xx_sys_init();
+@@ -155,21 +169,13 @@
+ #endif
+ }
+ 
+-static void __init dsmg600_fixup(struct machine_desc *desc,
+-                struct tag *tags, char **cmdline, struct meminfo *mi)
+-{
+-       /* The xtal on this machine is non-standard. */
+-        ixp4xx_timer_freq = DSMG600_FREQ;
+-}
+-
+ MACHINE_START(DSMG600, "D-Link DSM-G600 RevA")
+ 	/* Maintainer: www.nslu2-linux.org */
+ 	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
+ 	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xFFFC,
+ 	.boot_params	= 0x00000100,
+-	.fixup          = dsmg600_fixup,
+ 	.map_io		= ixp4xx_map_io,
+ 	.init_irq	= ixp4xx_init_irq,
+-	.timer          = &ixp4xx_timer,
++	.timer          = &dsmg600_timer,
+ 	.init_machine	= dsmg600_init,
+ MACHINE_END
