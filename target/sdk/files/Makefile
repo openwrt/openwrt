@@ -76,7 +76,7 @@ world: FORCE
 		cd package; \
 		find . -maxdepth 2 -name Config.in | \
 			sed -e 's,/Config.in,,g' | \
-			xargs -n1 make compile -C; \
+			xargs -n1 $(MAKE) compile -C; \
 	)
 
 clean: FORCE
