@@ -1,6 +1,7 @@
-diff -ur ipkg.old/ipkg-build ipkg.dev/ipkg-build
---- ipkg.old/ipkg-build	Tue Oct 10 22:52:58 2006
-+++ ipkg.dev/ipkg-build	Tue Oct 10 22:56:32 2006
+Index: ipkg-utils-1.7/ipkg-build
+===================================================================
+--- ipkg-utils-1.7.orig/ipkg-build	2007-06-30 15:21:37.621213250 +0200
++++ ipkg-utils-1.7/ipkg-build	2007-06-30 15:21:51.862103250 +0200
 @@ -11,6 +11,8 @@
  
  version=1.0
@@ -10,38 +11,10 @@ diff -ur ipkg.old/ipkg-build ipkg.dev/ipkg-build
  ipkg_extract_value() {
  	sed -e "s/^[^:]*:[[:space:]]*//"
  }
-@@ -184,7 +186,7 @@
- 	g ) group=$OPTARG
- 	    ogargs="$ogargs --group=$group"
- 	    ;;
--        c ) outer=tar
-+        c ) outer=$TAR
-             ;;
-         C ) noclean=1
-             ;;
-@@ -243,8 +245,8 @@
- mkdir $tmp_dir
- 
- echo $CONTROL > $tmp_dir/tarX
--( cd $pkg_dir && tar $ogargs -X $tmp_dir/tarX -czf $tmp_dir/data.tar.gz . )
--( cd $pkg_dir/$CONTROL && tar $ogargs -czf $tmp_dir/control.tar.gz . )
-+( cd $pkg_dir && $TAR $ogargs -X $tmp_dir/tarX -czf $tmp_dir/data.tar.gz . )
-+( cd $pkg_dir/$CONTROL && $TAR $ogargs -czf $tmp_dir/control.tar.gz . )
- rm $tmp_dir/tarX
- 
- echo "2.0" > $tmp_dir/debian-binary
-@@ -254,7 +256,7 @@
- if [ "$outer" = "ar" ] ; then
-   ( cd $tmp_dir && ar -crf $pkg_file ./debian-binary ./data.tar.gz ./control.tar.gz )
- else
--  ( cd $tmp_dir && tar -zcf $pkg_file ./debian-binary ./data.tar.gz ./control.tar.gz )
-+  ( cd $tmp_dir && $TAR -zcf $pkg_file ./debian-binary ./data.tar.gz ./control.tar.gz )
- fi
- 
- rm $tmp_dir/debian-binary $tmp_dir/data.tar.gz $tmp_dir/control.tar.gz
-diff -ur ipkg.old/ipkg-make-index ipkg.dev/ipkg-make-index
---- ipkg.old/ipkg-make-index	Tue Oct 10 22:52:58 2006
-+++ ipkg.dev/ipkg-make-index	Tue Oct 10 22:57:53 2006
+Index: ipkg-utils-1.7/ipkg-make-index
+===================================================================
+--- ipkg-utils-1.7.orig/ipkg-make-index	2007-06-30 15:21:37.225188500 +0200
++++ ipkg-utils-1.7/ipkg-make-index	2007-06-30 15:21:51.866103500 +0200
 @@ -1,4 +1,4 @@
 -#!/usr/bin/python
 +#!/usr/bin/env python
