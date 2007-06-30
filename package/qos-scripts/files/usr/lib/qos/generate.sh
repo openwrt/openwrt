@@ -261,7 +261,7 @@ start_interface() {
 	for dir in up${halfduplex} ${download:+down}; do
 		case "$dir" in
 			up)
-				[ "$overhead" = 1 ] && upload=$(($upload * 98 / 100 - (32 * 128 / $upload)))
+				[ "$overhead" = 1 ] && upload=$(($upload * 98 / 100 - (15 * 128 / $upload)))
 				dev="$device"
 				rate="$upload"
 				dl_mode=""
