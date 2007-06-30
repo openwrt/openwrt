@@ -1,18 +1,22 @@
 DEVICENAME ~~ (tun|tap[0-9]) {
+	nothrottle
 	makedev /dev/net/%DEVICENAME% 0644
 	next
 }
 
 DEVICENAME ~~ (controlC[0-9]|pcmC0D0*) {
-        makedev /dev/snd/%DEVICENAME% 0644
-        next
+	nothrottle
+	makedev /dev/snd/%DEVICENAME% 0644
+	next
 }
 
 DEVPATH is set {
+	nothrottle
 	makedev /dev/%DEVICENAME% 0644
 }
 
 FIRMWARE is set {
+	nothrottle
 	exec /sbin/hotplug-call firmware;
 	next
 }

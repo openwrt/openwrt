@@ -1,6 +1,6 @@
-diff -urN -x .svn hotplug2-0.9/AUTHORS hotplug2/AUTHORS
+diff -urN -x.svn hotplug2-0.9/AUTHORS hotplug2/AUTHORS
 --- hotplug2-0.9/AUTHORS	2006-10-08 18:13:50.000000000 +0200
-+++ hotplug2/AUTHORS	2007-06-25 10:51:14.688225416 +0200
++++ hotplug2/AUTHORS	2007-06-30 12:59:20.459674000 +0200
 @@ -1,7 +1,11 @@
   Authors:
  ----------
@@ -9,7 +9,7 @@ diff -urN -x .svn hotplug2-0.9/AUTHORS hotplug2/AUTHORS
 +
 + Contributions:
 +----------------
-+nbd (rules override patch)
++nbd (rules override patch, various fixes, suggestions, testing etc.)
 +Tomas Janousek <tomi@nomi.cz> (Makefiles, SVN hosting)
  
   Thanks to:
@@ -26,9 +26,9 @@ diff -urN -x .svn hotplug2-0.9/AUTHORS hotplug2/AUTHORS
 -...anyone taking more than a short peek at the software.
 \ No newline at end of file
 +...anyone taking more than a short peek at the software.
-diff -urN -x .svn hotplug2-0.9/Changelog hotplug2/Changelog
+diff -urN -x.svn hotplug2-0.9/Changelog hotplug2/Changelog
 --- hotplug2-0.9/Changelog	2006-10-08 15:32:31.000000000 +0200
-+++ hotplug2/Changelog	2007-06-25 10:51:14.689225264 +0200
++++ hotplug2/Changelog	2007-06-28 14:51:00.009934640 +0200
 @@ -1,3 +1,10 @@
 +0.9 - 1.0:
 +* Add --set-rules-file.
@@ -47,10 +47,31 @@ diff -urN -x .svn hotplug2-0.9/Changelog hotplug2/Changelog
 - 
 \ No newline at end of file
 + 
-diff -urN -x .svn hotplug2-0.9/docs/hotplug2.8 hotplug2/docs/hotplug2.8
+diff -urN -x.svn hotplug2-0.9/common.mak hotplug2/common.mak
+--- hotplug2-0.9/common.mak	2006-09-26 01:03:08.000000000 +0200
++++ hotplug2/common.mak	2007-06-28 14:54:56.013056712 +0200
+@@ -10,7 +10,7 @@
+ .PHONY: all clean dep install install-recursive clean-recursive \
+ 	dep-recursive all-recursive
+ 
+-MAKEDEP=-gcc $(CFLAGS) -MM $(wildcard *.c *.cc) > .depend
++MAKEDEP=-$(CC) $(CFLAGS) -MM $(wildcard *.c *.cc) > .depend
+ dep: dep-recursive
+ 	$(MAKEDEP)
+ .depend:
+diff -urN -x.svn hotplug2-0.9/docs/hotplug2.8 hotplug2/docs/hotplug2.8
 --- hotplug2-0.9/docs/hotplug2.8	2006-09-26 09:23:36.000000000 +0200
-+++ hotplug2/docs/hotplug2.8	2007-06-25 10:51:14.540247912 +0200
-@@ -31,6 +31,8 @@
++++ hotplug2/docs/hotplug2.8	2007-06-28 14:50:59.874955160 +0200
+@@ -22,6 +22,8 @@
+ .TP 
+ \fB\-\-dumb\fR, \fB\-\-no\-dumb\fR
+ Run or do not run hotplug2 in dumb mode. Dumb mode means that rules are being ignored, the only action taken is mload modules to all devices whose uevent exports MODALIAS. Only available if compiled with HAVE_RULES.
++\fB\-\-override\fR, \fB\-\-no\-override\fR
++Allows hotplug2 behavior overriding for different rules, using various flags. See hotplug2 rules documentation for details. The default is not to allow overriding, the flags are therefore ignored.
+ .TP 
+ \fB\-\-max\-children <value>\fR
+ Set the value of maximum children hotplug2 may have running simultaneously. Default is 20.
+@@ -31,6 +33,8 @@
  .TP 
  \fB\-\-set\-modprobe\-cmd <cmd>\fR
  Sets the application used to perform modprobe. It only gets used in dumb mode. Default is to autodetect: if '/bin/modprobe' is from module\-init\-tools, use '/sbin/modprobe', otherwise use '/sbin/hotplug2\-modwrap'.
@@ -59,9 +80,9 @@ diff -urN -x .svn hotplug2-0.9/docs/hotplug2.8 hotplug2/docs/hotplug2.8
  .SH "SIGNALS"
  .TP 
  \fBSIGUSR1\fR
-diff -urN -x .svn hotplug2-0.9/docs/hotplug2.rules.doc hotplug2/docs/hotplug2.rules.doc
+diff -urN -x.svn hotplug2-0.9/docs/hotplug2.rules.doc hotplug2/docs/hotplug2.rules.doc
 --- hotplug2-0.9/docs/hotplug2.rules.doc	2006-09-26 10:19:46.000000000 +0200
-+++ hotplug2/docs/hotplug2.rules.doc	2007-06-25 10:51:14.537248368 +0200
++++ hotplug2/docs/hotplug2.rules.doc	2007-06-28 14:50:59.872955464 +0200
 @@ -11,12 +11,12 @@
  	[... [...]]
  }
@@ -124,7 +145,7 @@ diff -urN -x .svn hotplug2-0.9/docs/hotplug2.rules.doc hotplug2/docs/hotplug2.ru
  	
   * chown <path> <owner name>
  	Change owner of path to owner name.
-@@ -111,12 +110,14 @@
+@@ -111,12 +110,32 @@
  	Change group of path to group name.
  	
   * chmod <path> <mode>
@@ -138,10 +159,28 @@ diff -urN -x .svn hotplug2-0.9/docs/hotplug2.rules.doc hotplug2/docs/hotplug2.ru
 +
 + * printdebug
 + 	Prints all variables read from kernel.
++
++ FLAGS
++ -----
++
++Flags are, syntactically, just like actions; their semantical value is different however.
++Instead of doing something, they instead change the general behavior of the processing
++of the given rule.
++
++Note that for flags to work, you also have to invoke it with --override.
++
++Currently, only one flag is implemented:
++
++ * nothrottle
++ 	Forcibly overrides hotplug2 throttling mechanism. If _all_ rules that match
++	the given kernel event have 'nothrottle' set, hotplug2 will not wait for
++	children count to get under max-children limit. That allows to throttle
++	eg. helper application execution or modprobes, but yet keep node devices
++	fast.
  	
   ESCAPING
   --------
-@@ -136,8 +137,9 @@
+@@ -136,8 +155,9 @@
   SAMPLE CONFIG
   -------------
  
@@ -153,7 +192,7 @@ diff -urN -x .svn hotplug2-0.9/docs/hotplug2.rules.doc hotplug2/docs/hotplug2.ru
  ---------------------------------------------------------------------------------
  MODALIAS is set {
  	exec modprobe -q %MODALIAS% ;
-@@ -146,3 +148,33 @@
+@@ -146,3 +166,33 @@
  SUBSYSTEM == block, DEVPATH is set, MAJOR is set, MINOR is set {
  	makedev /dev/%DEVICENAME% 0644
  }
@@ -187,9 +226,9 @@ diff -urN -x .svn hotplug2-0.9/docs/hotplug2.rules.doc hotplug2/docs/hotplug2.ru
 +ACTION == remove, PHYSDEVPATH ~~ "/usb[0-9]*/", DEVICENAME ~~ "^sd[a-z][0-9]+$", MAJOR is set, MINOR is set {
 +	exec umount /mnt/%DEVICENAME%
 +}
-diff -urN -x .svn hotplug2-0.9/docs/Makefile hotplug2/docs/Makefile
+diff -urN -x.svn hotplug2-0.9/docs/Makefile hotplug2/docs/Makefile
 --- hotplug2-0.9/docs/Makefile	2006-09-26 00:27:02.000000000 +0200
-+++ hotplug2/docs/Makefile	2007-06-25 10:51:14.540247912 +0200
++++ hotplug2/docs/Makefile	2007-06-28 14:50:59.875955008 +0200
 @@ -2,12 +2,13 @@
  
  BINS=
@@ -206,9 +245,9 @@ diff -urN -x .svn hotplug2-0.9/docs/Makefile hotplug2/docs/Makefile
  
  
  include ../common.mak
-diff -urN -x .svn hotplug2-0.9/examples/Makefile hotplug2/examples/Makefile
+diff -urN -x.svn hotplug2-0.9/examples/Makefile hotplug2/examples/Makefile
 --- hotplug2-0.9/examples/Makefile	2006-09-26 01:03:08.000000000 +0200
-+++ hotplug2/examples/Makefile	2007-06-25 10:51:14.685225872 +0200
++++ hotplug2/examples/Makefile	2007-06-28 14:50:59.991937376 +0200
 @@ -2,19 +2,23 @@
  
  BINS=
@@ -241,18 +280,78 @@ diff -urN -x .svn hotplug2-0.9/examples/Makefile hotplug2/examples/Makefile
  
  
  include ../common.mak
-diff -urN -x .svn hotplug2-0.9/hotplug2.c hotplug2/hotplug2.c
+diff -urN -x.svn hotplug2-0.9/hotplug2.c hotplug2/hotplug2.c
 --- hotplug2-0.9/hotplug2.c	2006-10-08 15:18:23.000000000 +0200
-+++ hotplug2/hotplug2.c	2007-06-25 10:51:14.688225416 +0200
-@@ -391,6 +391,7 @@
++++ hotplug2/hotplug2.c	2007-06-30 12:59:20.459674000 +0200
+@@ -36,6 +36,7 @@
+ pid_t coldplug_p;
+ int coldplug = 1;
+ int persistent = 0;
++int override = 0;
+ int max_child_c = 20;
+ int dumb = 0;
+ int terminate = 0;
+@@ -324,6 +325,41 @@
+ 	
+ 	free_hotplug2_event(event);
+ }
++
++int flags_eval(struct hotplug2_event_t *event, struct rules_t *rules) {
++	int flags = FLAG_ALL;
++	int match = 0;
++	int i, j;
++
++	for (i = 0; i < rules->rules_c; i++) {
++		match = 1;
++
++		for (j = 0; j < rules->rules[i].conditions_c; j++) {
++			if (rule_condition_eval(event, &rules->rules[i].conditions[j]) != EVAL_MATCH) {
++				match = 0;
++				break;
++			}
++		}
++
++		/*
++		 * Logical AND between flags we've got already and
++		 * those we're adding.
++		 */
++		if (match) {
++			rule_flags(event, &rules->rules[i]);
++			flags &= rules->rules[i].flags;
++		}
++	}
++
++	/*
++	 * A little trick; if no rule matched, we return FLAG_ALL
++	 * and have it skipped completely.
++	 */
++
++	return flags;
++}
++#else
++#define perform_action(event, rules)
+ #endif
+ 
+ void perform_dumb_action(struct hotplug2_event_t *event, char *modalias) {
+@@ -390,7 +426,9 @@
+ 	int size;
  	int rv = 0;
  	int i;
++	int flags;
  	char *coldplug_command = NULL;
 +	char *rules_file = HOTPLUG2_RULE_PATH;
  	sigset_t block_mask;
  	
  	struct rules_t *rules = NULL;
-@@ -435,15 +436,31 @@
+@@ -402,6 +440,7 @@
+ 		{"persistent", &persistent},
+ 		{"coldplug", &coldplug},
+ 		{"udevtrigger", &coldplug},	/* compatibility */
++		{"override", &override},
+ #ifdef HAVE_RULES
+ 		{"dumb", &dumb},
+ #endif
+@@ -435,15 +474,31 @@
  						break;
  					
  					modprobe_command = *argv;
@@ -286,7 +385,7 @@ diff -urN -x .svn hotplug2-0.9/hotplug2.c hotplug2/hotplug2.c
  		if (rule_fd == -1) {
  			dumb = 1;
  			ERROR("rules parse","Unable to open rules file: %s.", strerror(errno));
-@@ -477,10 +494,12 @@
+@@ -477,10 +532,12 @@
  		
  		if (dumb == 1)
  			ERROR("rules parse","Parsing rules failed, switching to dumb mode.");
@@ -302,7 +401,7 @@ diff -urN -x .svn hotplug2-0.9/hotplug2.c hotplug2/hotplug2.c
  	{
  		if (get_modprobe_command()) {
  			ERROR("modprobe_command","Unable to autodetect modprobe command.");
-@@ -536,7 +555,7 @@
+@@ -536,7 +593,7 @@
  		
  		modalias = get_hotplug2_value_by_key(tmpevent, "MODALIAS");
  		seqnum = get_hotplug2_value_by_key(tmpevent, "SEQNUM");
@@ -311,16 +410,53 @@ diff -urN -x .svn hotplug2-0.9/hotplug2.c hotplug2/hotplug2.c
  		if (seqnum == NULL) {
  			free_hotplug2_event(tmpevent);
  			ERROR("reading events", "Malformed event read (missing SEQNUM).");
-@@ -547,7 +566,7 @@
+@@ -547,13 +604,35 @@
  		if (cur_seqnum > highest_seqnum)
  			highest_seqnum = cur_seqnum;
  		
 -		if (tmpevent->action == ACTION_ADD && (!dumb || modalias != NULL)) {
 +		if ((dumb && tmpevent->action == ACTION_ADD && modalias != NULL) || (!dumb)) {
++			/*
++			 * Pre-evaluation
++			 */
++			if (!dumb && override) {
++				flags = flags_eval(tmpevent, rules);
++
++				DBG("flags", "flag returned: %8x", flags);
++
++				if (flags == FLAG_ALL)
++					continue;
++			} else {
++				flags = FLAG_UNSET;
++			}
++
  			/* 
  			 * We have more children than we want. Wait until SIGCHLD handler reduces
  			 * their numbers.
-@@ -568,11 +587,9 @@
++			 *
++			 * Unless, of course, we've specified otherwise and no rules that match
++			 * need throttling.
+ 			 */
+-			while (child_c >= max_child_c) {
+-				usleep(HOTPLUG2_THROTTLE_INTERVAL);
++			if (!flags & FLAG_NOTHROTTLE) {
++				/*
++				 * Okay, throttle away!
++				 */
++				while (child_c >= max_child_c) {
++					usleep(HOTPLUG2_THROTTLE_INTERVAL);
++				}
+ 			}
+ 			
+ 			sigemptyset(&block_mask);
+@@ -562,17 +641,15 @@
+ 			p = fork();
+ 			switch (p) {
+ 				case -1:
+-					ERROR("event","fork failed: %s.", strerror(errno));
++					ERROR("event", "fork failed: %s.", strerror(errno));
+ 					break;
+ 				case 0:
  					sigprocmask(SIG_UNBLOCK, &block_mask, 0);
  					signal(SIGCHLD, SIG_DFL);
  					signal(SIGUSR1, SIG_DFL);
@@ -332,7 +468,7 @@ diff -urN -x .svn hotplug2-0.9/hotplug2.c hotplug2/hotplug2.c
  						perform_dumb_action(dup_hotplug2_event(tmpevent), modalias);
  					exit(0);
  					break;
-@@ -593,12 +610,10 @@
+@@ -593,12 +670,10 @@
  	signal(SIGINT, SIG_DFL);
  	signal(SIGCHLD, SIG_DFL);
  	
@@ -345,9 +481,9 @@ diff -urN -x .svn hotplug2-0.9/hotplug2.c hotplug2/hotplug2.c
  
  	cleanup();
  	
-diff -urN -x .svn hotplug2-0.9/linux24_compat/hotplug2-modwrap.c hotplug2/linux24_compat/hotplug2-modwrap.c
+diff -urN -x.svn hotplug2-0.9/linux24_compat/hotplug2-modwrap.c hotplug2/linux24_compat/hotplug2-modwrap.c
 --- hotplug2-0.9/linux24_compat/hotplug2-modwrap.c	2006-09-25 22:23:07.000000000 +0200
-+++ hotplug2/linux24_compat/hotplug2-modwrap.c	2007-06-25 10:51:14.601238640 +0200
++++ hotplug2/linux24_compat/hotplug2-modwrap.c	2007-06-28 14:50:59.926947256 +0200
 @@ -122,6 +122,12 @@
  		free(module);
  		free(line);
@@ -361,9 +497,9 @@ diff -urN -x .svn hotplug2-0.9/linux24_compat/hotplug2-modwrap.c hotplug2/linux2
  	
  	free(filename);
  	free(match_alias);
-diff -urN -x .svn hotplug2-0.9/linux24_compat/Makefile hotplug2/linux24_compat/Makefile
+diff -urN -x.svn hotplug2-0.9/linux24_compat/Makefile hotplug2/linux24_compat/Makefile
 --- hotplug2-0.9/linux24_compat/Makefile	2006-09-26 00:26:46.000000000 +0200
-+++ hotplug2/linux24_compat/Makefile	2007-06-25 10:51:14.601238640 +0200
++++ hotplug2/linux24_compat/Makefile	2007-06-28 14:50:59.926947256 +0200
 @@ -2,13 +2,14 @@
  
  BINS=generate_alias hotplug2-coldplug-2.4 hotplug2-modwrap
@@ -381,9 +517,9 @@ diff -urN -x .svn hotplug2-0.9/linux24_compat/Makefile hotplug2/linux24_compat/M
  
  
  hotplug2-coldplug-2.4: hotplug2-coldplug-2.4.o ../parser_utils.o ../filemap_utils.o ../mem_utils.o
-diff -urN -x .svn hotplug2-0.9/Makefile hotplug2/Makefile
+diff -urN -x.svn hotplug2-0.9/Makefile hotplug2/Makefile
 --- hotplug2-0.9/Makefile	2006-09-26 01:03:08.000000000 +0200
-+++ hotplug2/Makefile	2007-06-25 10:51:14.693224656 +0200
++++ hotplug2/Makefile	2007-06-28 14:51:00.014933880 +0200
 @@ -2,12 +2,13 @@
  
  BINS=hotplug2 hotplug2-dnode
@@ -399,9 +535,9 @@ diff -urN -x .svn hotplug2-0.9/Makefile hotplug2/Makefile
  
  
  hotplug2: hotplug2.o childlist.o mem_utils.o rules.o
-diff -urN -x .svn hotplug2-0.9/rules.c hotplug2/rules.c
+diff -urN -x.svn hotplug2-0.9/rules.c hotplug2/rules.c
 --- hotplug2-0.9/rules.c	2006-09-29 22:19:31.000000000 +0200
-+++ hotplug2/rules.c	2007-06-25 10:51:14.692224808 +0200
++++ hotplug2/rules.c	2007-06-30 12:44:52.501430000 +0200
 @@ -59,6 +59,24 @@
  	free(path);
  }
@@ -427,6 +563,15 @@ diff -urN -x .svn hotplug2-0.9/rules.c hotplug2/rules.c
  static char *replace_str(char *hay, char *needle, char *replacement) {
          char *ptr, *start, *bptr, *buf;
          int occurences, j;
+@@ -128,7 +146,7 @@
+         return buf;
+ }
+ 
+-inline int isescaped(char *hay, char *ptr) {
++static inline int isescaped(char *hay, char *ptr) {
+ 	if (ptr <= hay)
+ 		return 0;
+ 	
 @@ -250,11 +268,30 @@
  	return rv;
  }
@@ -460,7 +605,7 @@ diff -urN -x .svn hotplug2-0.9/rules.c hotplug2/rules.c
  	switch (action) {
  		case ACT_CHOWN:
  			pwd = getpwnam(param);
-@@ -265,8 +302,20 @@
+@@ -265,11 +302,23 @@
  			rv = chown(file, -1, grp->gr_gid);
  			break;
  	}
@@ -481,7 +626,11 @@ diff -urN -x .svn hotplug2-0.9/rules.c hotplug2/rules.c
 +	return 0;
  }
  
- static int rule_condition_eval(struct hotplug2_event_t *event, struct condition_t *condition) {
+-static int rule_condition_eval(struct hotplug2_event_t *event, struct condition_t *condition) {
++int rule_condition_eval(struct hotplug2_event_t *event, struct condition_t *condition) {
+ 	int rv;
+ 	char *event_value = NULL;
+ 	regex_t preg;
 @@ -347,11 +396,11 @@
  				last_rv = make_dev_from_event(event, rule->actions[i].parameter[0], strtoul(rule->actions[i].parameter[1], NULL, 0));
  				break;
@@ -496,7 +645,7 @@ diff -urN -x .svn hotplug2-0.9/rules.c hotplug2/rules.c
  				break;
  			case ACT_SYMLINK:
  				last_rv = make_symlink(event, rule->actions[i].parameter[0], rule->actions[i].parameter[1]);
-@@ -365,6 +414,13 @@
+@@ -365,6 +414,27 @@
  			case ACT_SETENV:
  				last_rv = setenv(rule->actions[i].parameter[0], rule->actions[i].parameter[1], 1);
  				break;
@@ -507,22 +656,37 @@ diff -urN -x .svn hotplug2-0.9/rules.c hotplug2/rules.c
 +			case ACT_DEBUG:
 +				last_rv = print_debug(event);
 +				break;
++		}
++	}
++	
++	return 0;
++}
++
++int rule_flags(struct hotplug2_event_t *event, struct rule_t *rule) {
++	int i;
++
++	for (i = 0; i < rule->actions_c; i++) {
++		switch (rule->actions[i].type) {
++			case ACT_FLAG_NOTHROTTLE:
++				rule->flags |= FLAG_NOTHROTTLE;
++				break;
  		}
  	}
  	
-@@ -518,6 +574,8 @@
+@@ -518,6 +588,9 @@
  		{"chmod", 2, ACT_CHMOD},
  		{"chgrp", 2, ACT_CHGRP},
  		{"setenv", 2, ACT_SETENV},
 +		{"remove", 1, ACT_REMOVE},
++		{"nothrottle", 0, ACT_FLAG_NOTHROTTLE},
 +		{"printdebug", 0, ACT_DEBUG},
  		/*symlink*/
  		{"symlink", 2, ACT_SYMLINK},
  		{"softlink", 2, ACT_SYMLINK},
-diff -urN -x .svn hotplug2-0.9/rules.h hotplug2/rules.h
+diff -urN -x.svn hotplug2-0.9/rules.h hotplug2/rules.h
 --- hotplug2-0.9/rules.h	2006-09-25 13:42:22.000000000 +0200
-+++ hotplug2/rules.h	2007-06-25 10:51:14.687225568 +0200
-@@ -24,9 +24,11 @@
++++ hotplug2/rules.h	2007-06-30 12:44:52.501430000 +0200
+@@ -24,9 +24,12 @@
  #define ACT_CHGRP			6	/* chgrp <...> */
  #define ACT_CHOWN			7	/* chown <...> */
  #define ACT_SYMLINK			8	/* symlink <...> */
@@ -532,11 +696,43 @@ diff -urN -x .svn hotplug2-0.9/rules.h hotplug2/rules.h
  #define ACT_SETENV			11	/* setenv <...> */
 +#define ACT_REMOVE			12	/* remove <...> */
 +#define ACT_DEBUG			13	/* debug */
++#define ACT_FLAG_NOTHROTTLE		14	/* sets 'nothrottle' flag */
  
  #define EVAL_MATCH			1
  #define EVAL_NOT_MATCH			0
-diff -urN -x .svn hotplug2-0.9/TODO hotplug2/TODO
+@@ -42,6 +45,11 @@
+ #define STATUS_INITIATOR		3	/* ',' for next cond, '{' for block*/
+ #define STATUS_ACTION			4	/* viz ACT_* and '}' for end of block */
+ 
++#define FLAG_UNSET			0
++#define FLAG_ALL			0xffffffff
++#define FLAG_NOTHROTTLE			1	/* We want this rule to ignore max_children limit */
++
++
+ struct key_rec_t {
+ 	char *key;
+ 	int param;
+@@ -65,6 +73,8 @@
+ 	
+ 	struct action_t *actions;
+ 	int actions_c;
++
++	int flags;
+ };
+ 
+ struct rules_t {
+@@ -72,7 +82,9 @@
+ 	int rules_c;
+ };
+ 
++int rule_condition_eval(struct hotplug2_event_t *, struct condition_t *);
+ int rule_execute(struct hotplug2_event_t *, struct rule_t *);
++int rule_flags(struct hotplug2_event_t *, struct rule_t *);
+ void rules_free(struct rules_t *);
+ struct rules_t *rules_from_config(char *);
+ 
+diff -urN -x.svn hotplug2-0.9/TODO hotplug2/TODO
 --- hotplug2-0.9/TODO	1970-01-01 01:00:00.000000000 +0100
-+++ hotplug2/TODO	2007-06-25 10:51:14.691224960 +0200
++++ hotplug2/TODO	2007-06-28 14:51:00.012934184 +0200
 @@ -0,0 +1 @@
 + - live rules update (via inotify)
