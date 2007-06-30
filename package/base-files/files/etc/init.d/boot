@@ -38,7 +38,7 @@ start() {
 	mkdir -p /var/state
 	touch /var/log/wtmp
 	touch /var/log/lastlog
-	ln -s /tmp/resolv.conf.auto /tmp/resolv.conf
+	ln -sf /tmp/resolv.conf.auto /tmp/resolv.conf
 	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
 
 	/sbin/hotplug2 --override --persistent --max-children 1 &
