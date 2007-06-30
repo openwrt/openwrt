@@ -1,0 +1,82 @@
+Index: madwifi/net80211/ieee80211_wireless.c
+===================================================================
+--- madwifi/net80211/ieee80211_wireless.c (revision 2482)
++++ madwifi/net80211/ieee80211_wireless.c (revision 2484)
+@@ -1102,5 +1102,4 @@
+ 	for (i = 0; i < number; i++) {
+ 		ni = ieee80211_find_node(nt, &vap->iv_spy.mac[i * IEEE80211_ADDR_LEN]);
+-		/* TODO: free node ? */
+ 		/* check we are associated w/ this vap */
+ 		if (ni && (ni->ni_vap == vap)) {
+@@ -1114,4 +1113,5 @@
+ 			spy_stat[i].updated = IW_QUAL_ALL_INVALID;
+ 		}
++		ieee80211_unref_node(&ni);
+ 	}
+ 
+@@ -3191,4 +3191,5 @@
+ 	if (ik->ik_keylen > sizeof(ik->ik_keydata))
+ 		return -E2BIG;
++
+ 	kix = ik->ik_keyix;
+ 	if (kix == IEEE80211_KEYIX_NONE) {
+@@ -3214,4 +3215,5 @@
+ 			ik->ik_flags |= IEEE80211_KEY_GROUP;	/* XXX */
+ 	}
++
+ 	error = 0;
+ 	flags = ik->ik_flags & IEEE80211_KEY_COMMON;
+@@ -3228,5 +3230,5 @@
+ 		memcpy(wk->wk_key, ik->ik_keydata, ik->ik_keylen);
+ 		if (!ieee80211_crypto_setkey(vap, wk,
+-		    ni != NULL ? ni->ni_macaddr : ik->ik_macaddr, ni))
++		    (ni != NULL) ? ni->ni_macaddr : ik->ik_macaddr, ni))
+ 			error = -EIO;
+ 		else if ((ik->ik_flags & IEEE80211_KEY_DEFAULT))
+@@ -3234,4 +3236,5 @@
+ 	} else
+ 		error = -ENXIO;
++
+ 	ieee80211_key_update_end(vap);
+ 	if (ni != NULL)
+Index: madwifi/net80211/ieee80211_output.c
+===================================================================
+--- madwifi/net80211/ieee80211_output.c (revision 2438)
++++ madwifi/net80211/ieee80211_output.c (revision 2484)
+@@ -269,4 +269,5 @@
+ 		 */
+ 		ieee80211_pwrsave(ni, skb);
++		ieee80211_unref_node(&ni);
+ 		return 0;
+ 	}
+@@ -283,5 +284,5 @@
+ 		struct sk_buff *skb1;
+ 		ni = ieee80211_find_txnode(vap->iv_xrvap, eh->ether_dhost);
+-		skb1 = skb_clone(skb,GFP_ATOMIC);
++		skb1 = skb_clone(skb, GFP_ATOMIC);
+ 		if (skb1) {
+ 			cb = (struct ieee80211_cb *) skb1->cb;
+Index: madwifi/ath/if_ath.c
+===================================================================
+--- madwifi/ath/if_ath.c (revision 2482)
++++ madwifi/ath/if_ath.c (revision 2484)
+@@ -8111,14 +8111,13 @@
+ 				/* Depending on the sequence of bringing up devices
+ 				 * it's possible the rates of the root bss isn't
+-				 * filled yet. 
+-				 */
+-				if (vap->iv_ic->ic_newassoc != NULL &&
+-				    wds_ni->ni_rates.rs_nrates != 0) {
++				 * filled yet. */
++				if ((vap->iv_ic->ic_newassoc != NULL) &&
++				    (wds_ni->ni_rates.rs_nrates != 0)) {
+ 					/* Fill in the rates based on our own rates
+ 					 * we rely on the rate selection mechanism
+-					 * to find out which rates actually work!
+-					 */
++					 * to find out which rates actually work! */
+ 					vap->iv_ic->ic_newassoc(wds_ni, 1);
+ 				}
++				ieee80211_unref_node(&wds_ni);
+ 			}
+ 			break;
