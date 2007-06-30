@@ -1,0 +1,25 @@
+diff -urN linux-2.6.19.2/drivers/char/Kconfig linux-2.6.19.2-adm5120/drivers/char/Kconfig
+--- linux-2.6.19.2/drivers/char/Kconfig	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2-adm5120/drivers/char/Kconfig	2007-01-23 01:13:39.000000000 +0100
+@@ -1034,7 +1034,9 @@
+ 	  The mmtimer device allows direct userspace access to the
+ 	  Altix system timer.
+ 
+-source "drivers/char/tpm/Kconfig"
++config ADM5120_GPIO
++	tristate "ADM5120 GPIO"
++	depends on MIPS_ADM5120
+ 
+ config TELCLOCK
+ 	tristate "Telecom clock driver for MPBL0010 ATCA SBC"
+diff -urN linux-2.6.19.2/drivers/char/Makefile linux-2.6.19.2-adm5120/drivers/char/Makefile
+--- linux-2.6.19.2/drivers/char/Makefile	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2-adm5120/drivers/char/Makefile	2007-01-23 01:20:01.000000000 +0100
+@@ -90,6 +90,7 @@
+ obj-$(CONFIG_GPIO_VR41XX)	+= vr41xx_giu.o
+ obj-$(CONFIG_TANBAC_TB0219)	+= tb0219.o
+ obj-$(CONFIG_TELCLOCK)		+= tlclk.o
++obj-$(CONFIG_ADM5120_GPIO) 	+= adm5120_gpio.o
+ 
+ obj-$(CONFIG_WATCHDOG)		+= watchdog/
+ obj-$(CONFIG_MWAVE)		+= mwave/

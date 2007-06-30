@@ -1,0 +1,53 @@
+diff -urN linux-2.6.19.2/drivers/usb/core/hub.c linux-2.6.19.2-adm5120/drivers/usb/core/hub.c
+--- linux-2.6.19.2/drivers/usb/core/hub.c	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2-adm5120/drivers/usb/core/hub.c	2007-01-23 01:13:39.000000000 +0100
+@@ -2156,6 +2156,8 @@
+ 					USB_DT_DEVICE << 8, 0,
+ 					buf, GET_DESCRIPTOR_BUFSIZE,
+ 					(i ? USB_CTRL_GET_TIMEOUT : 1000));
++printk(KERN_CRIT "usb_control_msg: %d %d %d (%d)\n", r, buf->bMaxPacketSize0,
++buf->bDescriptorType, USB_DT_DEVICE);
+ 				switch (buf->bMaxPacketSize0) {
+ 				case 8: case 16: case 32: case 64: case 255:
+ 					if (buf->bDescriptorType ==
+diff -urN linux-2.6.19.2/drivers/usb/host/Kconfig linux-2.6.19.2-adm5120/drivers/usb/host/Kconfig
+--- linux-2.6.19.2/drivers/usb/host/Kconfig	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2-adm5120/drivers/usb/host/Kconfig	2007-01-23 01:13:39.000000000 +0100
+@@ -192,3 +192,6 @@
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called "sl811_cs".
+ 
++config USB_ADM5120_HCD
++	tristate "ADM5120 HCD support"
++	depends on USB && MIPS_ADM5120
+diff -urN linux-2.6.19.2/drivers/usb/host/Makefile linux-2.6.19.2-adm5120/drivers/usb/host/Makefile
+--- linux-2.6.19.2/drivers/usb/host/Makefile	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2-adm5120/drivers/usb/host/Makefile	2007-01-23 01:13:39.000000000 +0100
+@@ -16,3 +16,4 @@
+ obj-$(CONFIG_USB_SL811_CS)	+= sl811_cs.o
+ obj-$(CONFIG_USB_U132_HCD)	+= u132-hcd.o
+ obj-$(CONFIG_ETRAX_ARCH_V10)	+= hc_crisv10.o
++obj-$(CONFIG_USB_ADM5120_HCD)	+= adm5120-hcd.o
+diff -urN linux-2.6.19.2/drivers/usb/Kconfig linux-2.6.19.2-adm5120/drivers/usb/Kconfig
+--- linux-2.6.19.2/drivers/usb/Kconfig	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2-adm5120/drivers/usb/Kconfig	2007-01-23 01:13:39.000000000 +0100
+@@ -91,8 +91,6 @@
+ 
+ source "drivers/usb/net/Kconfig"
+ 
+-source "drivers/usb/mon/Kconfig"
+-
+ comment "USB port drivers"
+ 	depends on USB
+ 
+diff -urN linux-2.6.19.2/drivers/usb/Makefile linux-2.6.19.2-adm5120/drivers/usb/Makefile
+--- linux-2.6.19.2/drivers/usb/Makefile	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2-adm5120/drivers/usb/Makefile	2007-01-23 01:22:18.000000000 +0100
+@@ -17,6 +17,7 @@
+ obj-$(CONFIG_USB_U132_HCD)	+= host/
+ obj-$(CONFIG_ETRAX_USB_HOST)	+= host/
+ obj-$(CONFIG_USB_OHCI_AT91)	+= host/
++obj-$(CONFIG_USB_ADM5120_HCD)  	+= host/
+ 
+ obj-$(CONFIG_USB_ACM)		+= class/
+ obj-$(CONFIG_USB_PRINTER)	+= class/
