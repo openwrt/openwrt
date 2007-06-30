@@ -15,8 +15,13 @@ GENERIC_LINUX_CONFIG:=$(GENERIC_PLATFORM_DIR)/config-$(shell [ -f "$(GENERIC_PLA
 LINUX_CONFIG_DIR ?= ./config$(shell [ -d "./config-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
 LINUX_CONFIG ?= $(LINUX_CONFIG_DIR)/default
 
--include $(GENERIC_LINUX_CONFIG)
--include $(LINUX_CONFIG)
+ifneq ($(DUMP),)
+  TMP_CONFIG:=$(TMP_DIR)/.kconfig-$(BOARD)-$(KERNEL)
+  $(TMP_CONFIG): $(GENERIC_LINUX_CONFIG) $(LINUX_CONFIG)
+	$(SCRIPT_DIR)/config.pl + $^ > $@
+  -include $(TMP_CONFIG)
+  .SILENT: $(TMP_CONFIG)
+endif
 
 ifneq ($(CONFIG_ATM),)
   FEATURES += atm
