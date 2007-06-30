@@ -2,10 +2,11 @@
 # Copyright (C) 2006 OpenWrt.org
 
 ## Please make changes in /etc/firewall.user
-START=35
+START=45
 start() {
 	include /lib/network
 	scan_interfaces
+	config_load /var/state/network
 	
 	config_get WAN wan ifname
 	config_get WANDEV wan device
