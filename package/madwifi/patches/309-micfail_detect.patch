@@ -1,7 +1,7 @@
 Index: madwifi-ng-r2420-20070602/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/ath/if_ath.c	2007-06-04 13:21:58.895023264 +0200
-+++ madwifi-ng-r2420-20070602/ath/if_ath.c	2007-06-04 13:21:59.133986936 +0200
+--- madwifi-ng-r2420-20070602.orig/ath/if_ath.c	2007-06-30 23:52:00.743038750 +0200
++++ madwifi-ng-r2420-20070602/ath/if_ath.c	2007-07-01 00:12:19.127183000 +0200
 @@ -5602,6 +5602,7 @@
  	u_int phyerr;
  	u_int processed = 0, early_stop = 0;
@@ -54,19 +54,19 @@ Index: madwifi-ng-r2420-20070602/ath/if_ath.c
  
 +		/* MIC failure. Drop the packet in any case */
 +		if (mic_fail) {
-+			/* Drop control frames which are reported with mic error */
-+		    if ((((struct ieee80211_frame *)skb->data)->i_fc[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL) { 
-+				dev_kfree_skb(skb);
-+				skb = NULL;
-+				mic_fail = 0;
-+				goto rx_next;
-+			}
-+			ni = ieee80211_find_rxnode(ic, 
-+				(const struct ieee80211_frame_min *) skb->data);
-+			if (ni != NULL) {
++			/* Ignore control frames which are reported with mic error */
++		    if ((((struct ieee80211_frame *)skb->data)->i_fc[0] &
++					IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL) 
++				goto drop_micfail;
++
++			ni = ieee80211_find_rxnode(ic, (const struct ieee80211_frame_min *) skb->data);
++
++			if (ni && ni->ni_table) {
 +				ieee80211_check_mic(ni, skb);
 +				ieee80211_unref_node(&ni);
 +			}
++
++drop_micfail:
 +			dev_kfree_skb_any(skb);
 +			skb = NULL;
 +			mic_fail = 0;
@@ -78,8 +78,8 @@ Index: madwifi-ng-r2420-20070602/ath/if_ath.c
  		 * pass the (referenced) node up to the 802.11 layer
 Index: madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_ccmp.c
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_crypto_ccmp.c	2007-06-04 13:21:57.936169032 +0200
-+++ madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_ccmp.c	2007-06-04 13:21:59.134986784 +0200
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_crypto_ccmp.c	2007-06-30 23:52:00.042995000 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_ccmp.c	2007-06-30 23:52:00.999054750 +0200
 @@ -78,7 +78,7 @@
  static int ccmp_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  static int ccmp_decap(struct ieee80211_key *, struct sk_buff *, int);
@@ -100,8 +100,8 @@ Index: madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_ccmp.c
  }
 Index: madwifi-ng-r2420-20070602/net80211/ieee80211_crypto.h
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_crypto.h	2007-06-04 13:21:53.000919304 +0200
-+++ madwifi-ng-r2420-20070602/net80211/ieee80211_crypto.h	2007-06-04 13:21:59.134986784 +0200
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_crypto.h	2007-06-30 23:51:53.942613750 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_crypto.h	2007-06-30 23:52:01.107061500 +0200
 @@ -145,7 +145,7 @@
  	int (*ic_encap)(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  	int (*ic_decap)(struct ieee80211_key *, struct sk_buff *, int);
@@ -126,8 +126,8 @@ Index: madwifi-ng-r2420-20070602/net80211/ieee80211_crypto.h
  /*
 Index: madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_none.c
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_crypto_none.c	2007-06-04 13:21:53.005918544 +0200
-+++ madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_none.c	2007-06-04 13:21:59.134986784 +0200
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_crypto_none.c	2007-06-30 23:51:53.950614250 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_none.c	2007-06-30 23:52:01.171065500 +0200
 @@ -52,7 +52,7 @@
  static int none_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  static int none_decap(struct ieee80211_key *, struct sk_buff *, int);
@@ -148,8 +148,8 @@ Index: madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_none.c
  
 Index: madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_tkip.c
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_crypto_tkip.c	2007-06-04 13:21:53.011917632 +0200
-+++ madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_tkip.c	2007-06-04 13:21:59.135986632 +0200
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_crypto_tkip.c	2007-06-30 23:51:53.958614750 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_tkip.c	2007-06-30 23:52:01.203067500 +0200
 @@ -57,7 +57,7 @@
  static int tkip_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  static int tkip_enmic(struct ieee80211_key *, struct sk_buff *, int);
@@ -179,8 +179,8 @@ Index: madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_tkip.c
  		u8 mic0[IEEE80211_WEP_MICLEN];
 Index: madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_wep.c
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_crypto_wep.c	2007-06-04 13:21:53.016916872 +0200
-+++ madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_wep.c	2007-06-04 13:21:59.135986632 +0200
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_crypto_wep.c	2007-06-30 23:51:53.966615250 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_wep.c	2007-06-30 23:52:01.211068000 +0200
 @@ -54,7 +54,7 @@
  static int wep_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  static int wep_decap(struct ieee80211_key *, struct sk_buff *, int);
@@ -201,8 +201,8 @@ Index: madwifi-ng-r2420-20070602/net80211/ieee80211_crypto_wep.c
  }
 Index: madwifi-ng-r2420-20070602/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_input.c	2007-06-04 13:21:58.897022960 +0200
-+++ madwifi-ng-r2420-20070602/net80211/ieee80211_input.c	2007-06-04 13:21:59.137986328 +0200
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_input.c	2007-06-30 23:52:00.799042250 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_input.c	2007-06-30 23:52:01.239069750 +0200
 @@ -632,7 +632,7 @@
  		 * Next strip any MSDU crypto bits.
  		 */
@@ -262,8 +262,8 @@ Index: madwifi-ng-r2420-20070602/net80211/ieee80211_input.c
   * Debugging support.
 Index: madwifi-ng-r2420-20070602/net80211/ieee80211_proto.h
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_proto.h	2007-06-04 13:21:58.134138936 +0200
-+++ madwifi-ng-r2420-20070602/net80211/ieee80211_proto.h	2007-06-04 13:21:59.137986328 +0200
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_proto.h	2007-06-30 23:52:00.331013000 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_proto.h	2007-06-30 23:52:01.295073250 +0200
 @@ -91,6 +91,7 @@
  void ieee80211_set11gbasicrates(struct ieee80211_rateset *, enum ieee80211_phymode);
  enum ieee80211_phymode ieee80211_get11gbasicrates(struct ieee80211_rateset *);
@@ -274,8 +274,8 @@ Index: madwifi-ng-r2420-20070602/net80211/ieee80211_proto.h
   * Return the size of the 802.11 header for a management or data frame.
 Index: madwifi-ng-r2420-20070602/net80211/ieee80211_linux.c
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_linux.c	2007-06-04 13:21:57.745198064 +0200
-+++ madwifi-ng-r2420-20070602/net80211/ieee80211_linux.c	2007-06-04 13:21:59.137986328 +0200
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_linux.c	2007-06-30 23:52:00.026994000 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_linux.c	2007-06-30 23:52:01.347076500 +0200
 @@ -291,8 +291,8 @@
  	/* TODO: needed parameters: count, keyid, key type, src address, TSC */
  	snprintf(buf, sizeof(buf), "%s(keyid=%d %scast addr=%s)", tag,
@@ -287,3 +287,50 @@ Index: madwifi-ng-r2420-20070602/net80211/ieee80211_linux.c
  	memset(&wrqu, 0, sizeof(wrqu));
  	wrqu.data.length = strlen(buf);
  	wireless_send_event(dev, IWEVCUSTOM, &wrqu, buf);
+Index: madwifi-ng-r2420-20070602/net80211/ieee80211_output.c
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_output.c	2007-06-30 23:52:00.118999750 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_output.c	2007-06-30 23:52:01.355077000 +0200
+@@ -1077,13 +1077,16 @@
+ 			cip = (struct ieee80211_cipher *) key->wk_cipher;
+ 			ciphdrsize = cip->ic_header;
+ 			tailsize += (cip->ic_trailer + cip->ic_miclen);
++
++			/* add the 8 bytes MIC length */
++			if (cip->ic_cipher == IEEE80211_CIPHER_TKIP)
++				pktlen += IEEE80211_WEP_MICLEN;
+ 		}
+ 
+ 		pdusize = vap->iv_fragthreshold - (hdrsize_nopad + ciphdrsize);
+ 		fragcnt = *framecnt =
+-			((pktlen - (hdrsize_nopad + ciphdrsize)) / pdusize) +
+-			(((pktlen - (hdrsize_nopad + ciphdrsize)) %
+-				pdusize == 0) ? 0 : 1);
++			((pktlen - hdrsize_nopad) / pdusize) +
++			(((pktlen - hdrsize_nopad) % pdusize == 0) ? 0 : 1);
+ 
+ 		/*
+ 		 * Allocate sk_buff for each subsequent fragment; First fragment
+Index: madwifi-ng-r2420-20070602/net80211/ieee80211_node.c
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_node.c	2007-06-30 23:52:54.850420250 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_node.c	2007-07-01 00:18:32.370509250 +0200
+@@ -1885,11 +1885,13 @@
+ 	/* From this point onwards we can no longer find the node,
+ 	 * so no more references are generated
+ 	 */
+-	ieee80211_remove_wds_addr(nt, ni->ni_macaddr);
+-	ieee80211_del_wds_node(nt, ni);
+-	IEEE80211_NODE_TABLE_LOCK_IRQ(nt);
+-	_node_table_leave(nt, ni);
+-	IEEE80211_NODE_TABLE_UNLOCK_IRQ(nt);
++	if (nt) {
++		ieee80211_remove_wds_addr(nt, ni->ni_macaddr);
++		ieee80211_del_wds_node(nt, ni);
++		IEEE80211_NODE_TABLE_LOCK_IRQ(nt);
++		_node_table_leave(nt, ni);
++		IEEE80211_NODE_TABLE_UNLOCK_IRQ(nt);
++	}
+ 
+ 	/*
+ 	 * If node wasn't previously associated all
