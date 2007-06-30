@@ -1,0 +1,27 @@
+Index: linux-2.6.21.1/drivers/mtd/maps/Kconfig
+===================================================================
+--- linux-2.6.21.1.orig/drivers/mtd/maps/Kconfig
++++ linux-2.6.21.1/drivers/mtd/maps/Kconfig
+@@ -605,5 +605,10 @@ config MTD_PLATRAM
+ 
+ 	  This selection automatically selects the map_ram driver.
+ 
++config MTD_ADM5120
++	tristate "Map driver for ADMtek ADM5120 boards"
++	depends on MIPS_ADM5120
++	select MTD_CFI_AMDSTD
++
+ endmenu
+ 
+Index: linux-2.6.21.1/drivers/mtd/maps/Makefile
+===================================================================
+--- linux-2.6.21.1.orig/drivers/mtd/maps/Makefile
++++ linux-2.6.21.1/drivers/mtd/maps/Makefile
+@@ -45,6 +45,7 @@ obj-$(CONFIG_MTD_OCELOT)	+= ocelot.o
+ obj-$(CONFIG_MTD_SOLUTIONENGINE)+= solutionengine.o
+ obj-$(CONFIG_MTD_PCI)		+= pci.o
+ obj-$(CONFIG_MTD_ALCHEMY)       += alchemy-flash.o
++obj-$(CONFIG_MTD_ADM5120)      	+= adm5120_mtd.o
+ obj-$(CONFIG_MTD_LASAT)		+= lasat.o
+ obj-$(CONFIG_MTD_AUTCPU12)	+= autcpu12-nvram.o
+ obj-$(CONFIG_MTD_EDB7312)	+= edb7312.o

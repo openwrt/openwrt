@@ -1,0 +1,38 @@
+--- linux-2.6.19.2/include/asm-mips/byteorder.h	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2.new/include/asm-mips/byteorder.h	2007-05-16 21:14:47.000000000 +0200
+@@ -58,6 +58,35 @@
+ 
+ #endif /* CONFIG_CPU_MIPSR2 */
+ 
++#ifdef CONFIG_ADM5120_HARDWARE_SWAB
++
++static __inline__ __attribute_const__ __u16 ___adm5120__swab16(__u16 x)
++{
++	__asm__ (
++	"	sh	%2, 0xCA(%1)			\n"
++	"	lhu	%0, 0xCC(%1)			\n"
++	: "=r" (x)
++	: "r" (0xB2000000), "r" (x));
++
++	return x;
++}
++
++static __inline__ __attribute_const__ __u32 ___adm5120__swab32(__u32 x)
++{
++	__asm__ (
++	"	sw	%2, 0xC8(%1)			\n"
++	"	lw	%0, 0xCC(%1)			\n"
++	: "=r" (x)
++	: "r" (0xB2000000), "r" (x));
++
++	return x;
++}
++
++#define __arch__swab16(x)	___adm5120__swab16(x)
++#define __arch__swab32(x)	___adm5120__swab32(x)
++
++#endif /* CONFIG_ADM5120_HARDWARE_SWAB */
++
+ #if !defined(__STRICT_ANSI__) || defined(__KERNEL__)
+ #  define __BYTEORDER_HAS_U64__
+ #  define __SWAB_64_THRU_32__
