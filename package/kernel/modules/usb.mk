@@ -21,6 +21,11 @@ ifeq ($(KERNEL_PATCHVER),2.6.21)
 endif
 USBHID_DIR?=drivers/hid/usbhid
 
+ifeq ($(KERNEL_PATCHVER),2.6.21)
+  USBINPUT_DIR:=usb/input
+endif
+USBINPUT_DIR?=input/misc
+
 define usbdep
   SUBMENU:=$(USBMENU)
   DEPENDS:=kmod-usb-core $(1)
@@ -415,7 +420,7 @@ define KernelPackage/usb-yealink
   TITLE:=USB Yealink VOIP phone
   DESCRIPTION:=Kernel support for Yealink VOIP phone
   KCONFIG:=$(CONFIG_USB_YEALINK)
-  FILES:=$(LINUX_DIR)/drivers/usb/input/yealink.ko
+  FILES:=$(LINUX_DIR)/drivers/$(USBINPUT_DIR)/yealink.ko
   AUTOLOAD:=$(call AutoLoad,70,yealink)
 endef
 $(eval $(call KernelPackage,usb-yealink))
