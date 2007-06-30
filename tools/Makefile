@@ -41,7 +41,7 @@ $(TOOL_HOST_INCLUDES): $(STAGING_DIR)/include-host/%.h: ./include/%.h
 $(TOOL_BUILD_DIR):
 	@mkdir -p $@
 
-%-prereq %-download %-clean %-refresh: FORCE
+%-prereq %-download %-clean %-refresh %-update: FORCE
 	$(MAKE) -C $* $(patsubst $*-%,%,$@)
 
 %-prepare: $(TOOL_HOST_INCLUDES) $(TOOL_BUILD_DIR) FORCE
