@@ -1,8 +1,8 @@
 /*
  * wlcompat.c
  *
- * Copyright (C) 2005 Mike Baker,
- *                    Felix Fietkau <openwrt@nbd.name>
+ * Copyright (C) 2005      Mike Baker
+ * Copyright (C) 2005-2007 Felix Fietkau <nbd@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,18 +27,23 @@
 #include <linux/moduleparam.h>
 #include <linux/init.h>
 #include <linux/if_arp.h>
-#include <asm/uaccess.h>
 #include <linux/wireless.h>
 #include <linux/timer.h>
-
+#include <linux/delay.h>
 #include <net/iw_handler.h>
+#include <asm/uaccess.h>
+
+#include <typedefs.h>
+#include <bcmutils.h>
 #include <wlioctl.h>
-#include <proto/802.11.h>
 
 static struct net_device *dev;
-static unsigned short bss_force;
 static struct iw_statistics wstats;
+#ifndef DEBUG
 static int random = 1;
+#endif
+static int last_mode = -1;
+static int scan_cur = 0;
 char buf[WLC_IOCTL_MAXLEN];
 
 /* The frequency of each channel in MHz */
@@ -48,7 +53,8 @@ const long channel_frequency[] = {
 };
 #define NUM_CHANNELS ( sizeof(channel_frequency) / sizeof(channel_frequency[0]) )
 
-#define RNG_POLL_FREQ	2
+#define SCAN_RETRY_MAX	5
+#define RNG_POLL_FREQ	1
 
 typedef struct internal_wsec_key {
 	uint8 index;		// 0x00
@@ -61,10 +67,6 @@ typedef struct internal_wsec_key {
 } wkey;
 
 
-static int wlcompat_private_ioctl(struct net_device *dev,
-			 struct iw_request_info *info,
-			 union iwreq_data *wrqu,
-			 char *extra);
 #ifdef DEBUG
 void print_buffer(int len, unsigned char *buf);
 #endif
@@ -86,44 +88,186 @@ static int wl_ioctl(struct net_device *dev, int cmd, void *buf, int len)
 	return ret;
 }
 
-static int wl_set_val(struct net_device *dev, char *var, void *val, int len)
+static int
+wl_iovar_getbuf(struct net_device *dev, char *iovar, void *param, int paramlen, void *bufptr, int buflen)
 {
-	char buf[128];
-	int buf_len;
-	int ret;
+	int err;
+	uint namelen;
+	uint iolen;
+
+	namelen = strlen(iovar) + 1;	 /* length of iovar name plus null */
+	iolen = namelen + paramlen;
 
 	/* check for overflow */
-	if ((buf_len = strlen(var)) + 1 + len > sizeof(buf))
-		return -1;
-	
-	strcpy(buf, var);
-	buf_len += 1;
+	if (iolen > buflen)
+		return (BCME_BUFTOOSHORT);
 
-	/* append int value onto the end of the name string */
-	memcpy(&(buf[buf_len]), val, len);
-	buf_len += len;
+	memcpy(bufptr, iovar, namelen);	/* copy iovar name including null */
+	memcpy((int8*)bufptr + namelen, param, paramlen);
 
-	ret = wl_ioctl(dev, WLC_SET_VAR, buf, buf_len);
+	err = wl_ioctl(dev, WLC_GET_VAR, bufptr, buflen);
+
+	return (err);
+}
+
+static int
+wl_iovar_setbuf(struct net_device *dev, char *iovar, void *param, int paramlen, void *bufptr, int buflen)
+{
+	uint namelen;
+	uint iolen;
+
+	namelen = strlen(iovar) + 1;	 /* length of iovar name plus null */
+	iolen = namelen + paramlen;
+
+	/* check for overflow */
+	if (iolen > buflen)
+		return (BCME_BUFTOOSHORT);
+
+	memcpy(bufptr, iovar, namelen);	/* copy iovar name including null */
+	memcpy((int8*)bufptr + namelen, param, paramlen);
+
+	return wl_ioctl(dev, WLC_SET_VAR, bufptr, iolen);
+}
+
+static int
+wl_iovar_set(struct net_device *dev, char *iovar, void *param, int paramlen)
+{
+	char smbuf[WLC_IOCTL_SMLEN];
+
+	return wl_iovar_setbuf(dev, iovar, param, paramlen, smbuf, sizeof(smbuf));
+}
+
+static int
+wl_iovar_get(struct net_device *dev, char *iovar, void *bufptr, int buflen)
+{
+	char smbuf[WLC_IOCTL_SMLEN];
+	int ret;
+
+	/* use the return buffer if it is bigger than what we have on the stack */
+	if (buflen > sizeof(smbuf)) {
+		ret = wl_iovar_getbuf(dev, iovar, NULL, 0, bufptr, buflen);
+	} else {
+		ret = wl_iovar_getbuf(dev, iovar, NULL, 0, smbuf, sizeof(smbuf));
+		if (ret == 0)
+			memcpy(bufptr, smbuf, buflen);
+	}
+
 	return ret;
 }
 
-static int wl_get_val(struct net_device *dev, char *var, void *val, int len)
+#ifdef notyet
+/*
+ * format a bsscfg indexed iovar buffer
+ */
+static int
+wl_bssiovar_mkbuf(char *iovar, int bssidx, void *param, int paramlen, void *bufptr, int buflen,
+                  int *plen)
 {
-	char buf[128];
-	int buf_len;
-	int ret;
+	char *prefix = "bsscfg:";
+	int8* p;
+	uint prefixlen;
+	uint namelen;
+	uint iolen;
+
+	prefixlen = strlen(prefix);	/* length of bsscfg prefix */
+	namelen = strlen(iovar) + 1;	/* length of iovar name + null */
+	iolen = prefixlen + namelen + sizeof(int) + paramlen;
 
 	/* check for overflow */
-	if ((buf_len = strlen(var)) + 1 > sizeof(buf) || len > sizeof(buf))
-		return -1;
-	
-	strcpy(buf, var);
-	if (ret = wl_ioctl(dev, WLC_GET_VAR, buf, buf_len + len))
-		return ret;
+	if (buflen < 0 || iolen > (uint)buflen) {
+		*plen = 0;
+		return BCME_BUFTOOSHORT;
+	}
 
-	memcpy(val, buf, len);
+	p = (int8*)bufptr;
+
+	/* copy prefix, no null */
+	memcpy(p, prefix, prefixlen);
+	p += prefixlen;
+
+	/* copy iovar name including null */
+	memcpy(p, iovar, namelen);
+	p += namelen;
+
+	/* bss config index as first param */
+	memcpy(p, &bssidx, sizeof(int32));
+	p += sizeof(int32);
+
+	/* parameter buffer follows */
+	if (paramlen)
+		memcpy(p, param, paramlen);
+
+	*plen = iolen;
 	return 0;
 }
+
+/*
+ * set named & bss indexed driver variable to buffer value
+ */
+static int
+wl_bssiovar_setbuf(struct net_device *dev, char *iovar, int bssidx, void *param, int paramlen, void *bufptr,
+                   int buflen)
+{
+	int err;
+	int iolen;
+
+	err = wl_bssiovar_mkbuf(iovar, bssidx, param, paramlen, bufptr, buflen, &iolen);
+	if (err)
+		return err;
+
+	return wl_ioctl(dev, WLC_SET_VAR, bufptr, iolen);
+}
+
+/*
+ * get named & bss indexed driver variable buffer value
+ */
+static int
+wl_bssiovar_getbuf(struct net_device *dev, char *iovar, int bssidx, void *param, int paramlen, void *bufptr,
+                   int buflen)
+{
+	int err;
+	int iolen;
+
+	err = wl_bssiovar_mkbuf(iovar, bssidx, param, paramlen, bufptr, buflen, &iolen);
+	if (err)
+		return err;
+
+	return wl_ioctl(dev, WLC_GET_VAR, bufptr, buflen);
+}
+
+/*
+ * set named & bss indexed driver variable to buffer value
+ */
+static int
+wl_bssiovar_set(struct net_device *dev, char *iovar, int bssidx, void *param, int paramlen)
+{
+	char smbuf[WLC_IOCTL_SMLEN];
+
+	return wl_bssiovar_setbuf(dev, iovar, bssidx, param, paramlen, smbuf, sizeof(smbuf));
+}
+
+/*
+ * get named & bss indexed driver variable buffer value
+ */
+static int
+wl_bssiovar_get(struct net_device *dev, char *iovar, int bssidx, void *outbuf, int len)
+{
+	char smbuf[WLC_IOCTL_SMLEN];
+	int err;
+
+	/* use the return buffer if it is bigger than what we have on the stack */
+	if (len > (int)sizeof(smbuf)) {
+		err = wl_bssiovar_getbuf(dev, iovar, bssidx, NULL, 0, outbuf, len);
+	} else {
+		memset(smbuf, 0, sizeof(smbuf));
+		err = wl_bssiovar_getbuf(dev, iovar, bssidx, NULL, 0, smbuf, sizeof(smbuf));
+		if (err == 0)
+			memcpy(outbuf, smbuf, len);
+	}
+
+	return err;
+}
+#endif
 
 int get_primary_key(struct net_device *dev)
 {
@@ -145,7 +289,7 @@ static int wlcompat_ioctl_getiwrange(struct net_device *dev,
 	struct iw_range *range;
 
 	range = (struct iw_range *) extra;
-	bzero(extra, sizeof(struct iw_range));
+	memset(extra, 0, sizeof(struct iw_range));
 
 	range->we_version_compiled = WIRELESS_EXT;
 	range->we_version_source = WIRELESS_EXT;
@@ -180,12 +324,12 @@ static int wlcompat_ioctl_getiwrange(struct net_device *dev,
 	range->max_qual.noise = 0;
 	
 	range->min_rts = 0;
-	if (wl_ioctl(dev, WLC_GET_RTS, &range->max_rts, sizeof(int)) < 0)
+	if (wl_iovar_get(dev, "rtsthresh", &range->max_rts, sizeof(int)) < 0)
 		range->max_rts = 2347;
 
 	range->min_frag = 256;
 	
-	if (wl_ioctl(dev, WLC_GET_FRAG, &range->max_frag, sizeof(int)) < 0)
+	if (wl_iovar_get(dev, "fragthresh", &range->max_frag, sizeof(int)) < 0)
 		range->max_frag = 2346;
 
 	range->txpower_capa = IW_TXPOW_DBM;
@@ -199,7 +343,7 @@ static int wlcompat_set_scan(struct net_device *dev,
 			 union iwreq_data *wrqu,
 			 char *extra)
 {
-	int ap = 0, oldap = 0;
+	int ap = 0;
 	wl_scan_params_t params;
 
 	memset(&params, 0, sizeof(params));
@@ -214,23 +358,39 @@ static int wlcompat_set_scan(struct net_device *dev,
 	params.home_time = -1;
 	
 	/* can only scan in STA mode */
-	wl_ioctl(dev, WLC_GET_AP, &oldap, sizeof(oldap));
-	if (oldap > 0)
+	wl_ioctl(dev, WLC_GET_AP, &last_mode, sizeof(last_mode));
+	if (last_mode > 0) {
+		/* switch to ap mode, scan result query will switch back */
 		wl_ioctl(dev, WLC_SET_AP, &ap, sizeof(ap));
-	
-	if (wl_ioctl(dev, WLC_SCAN, &params, 64) < 0)
+
+		/* wait 250 msec after mode change */
+		set_current_state(TASK_INTERRUPTIBLE);
+		schedule_timeout(msecs_to_jiffies(250));
+	}
+
+	scan_cur = SCAN_RETRY_MAX;
+	while (scan_cur-- && (wl_ioctl(dev, WLC_SCAN, &params, 64) < 0)) {
+		/* sometimes the driver takes a few tries... */
+		set_current_state(TASK_INTERRUPTIBLE);
+		schedule_timeout(msecs_to_jiffies(250));
+	}
+
+	if (!scan_cur) 
 		return -EINVAL;
 	
-	if (oldap > 0)
-		wl_ioctl(dev, WLC_SET_AP, &oldap, sizeof(oldap));
+	scan_cur = 0;
 
+	/* wait at least 2 seconds for results */
+	set_current_state(TASK_INTERRUPTIBLE);
+	schedule_timeout(msecs_to_jiffies(2000));
+	
 	return 0;
 }
 
 
 struct iw_statistics *wlcompat_get_wireless_stats(struct net_device *dev)
 {
-	wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
+	struct wl_bss_info *bss_info = (struct wl_bss_info *) buf;
 	get_pktcnt_t pkt;
 	unsigned int rssi, noise, ap;
 	
@@ -283,15 +443,18 @@ static int wlcompat_get_scan(struct net_device *dev,
 	int i, j;
 	int rssi, noise;
 	
+	memset(buf, 0, WLC_IOCTL_MAXLEN);
 	results->buflen = WLC_IOCTL_MAXLEN - sizeof(wl_scan_results_t);
 	
 	if (wl_ioctl(dev, WLC_SCAN_RESULTS, buf, WLC_IOCTL_MAXLEN) < 0)
 		return -EAGAIN;
 	
+	if ((results->count <= 0) && (scan_cur++ < SCAN_RETRY_MAX))
+		return -EAGAIN;
+	
 	bss_info = &(results->bss_info[0]);
 	info_ptr = (char *) bss_info;
 	for (i = 0; i < results->count; i++) {
-
 		/* send the cell address (must be sent first) */
 		iwe.cmd = SIOCGIWAP;
 		iwe.u.ap_addr.sa_family = ARPHRD_ETHER;
@@ -319,7 +482,7 @@ static int wlcompat_get_scan(struct net_device *dev,
 		/* send frequency/channel info */
 		iwe.cmd = SIOCGIWFREQ;
 		iwe.u.freq.e = 0;
-		iwe.u.freq.m = bss_info->channel;
+		iwe.u.freq.m = bss_info->chanspec;
 		current_ev = iwe_stream_add_event(current_ev, end_buf, &iwe, IW_EV_FREQ_LEN);
 
 		/* add quality statistics */
@@ -362,6 +525,10 @@ static int wlcompat_get_scan(struct net_device *dev,
 	wrqu->data.length = (current_ev - extra);
 	wrqu->data.flags = 0;
 
+	if (last_mode > 0)
+		/* switch back to ap mode */
+		wl_ioctl(dev, WLC_SET_AP, &last_mode, sizeof(last_mode));
+	
 	return 0;
 }
 
@@ -430,19 +597,8 @@ static int wlcompat_ioctl(struct net_device *dev,
 			if (wl_ioctl(dev, WLC_GET_INFRA, &infra, sizeof(infra)) < 0)
 				return -EINVAL;
 
-			if (!infra) {
+			if (!infra) 
 				wl_ioctl(dev, WLC_SET_BSSID, wrqu->ap_addr.sa_data, 6);
-
-				reg.size = 4;
-				reg.byteoff = 0x184;
-				reg.val = bss_force << 16 | bss_force;
-				wl_ioctl(dev, WLC_W_REG, &reg, sizeof(reg));
-				
-				reg.byteoff = 0x180;
-				wl_ioctl(dev, WLC_R_REG, &reg, sizeof(reg));
-				reg.val = bss_force << 16;
-				wl_ioctl(dev, WLC_W_REG, &reg, sizeof(reg));
-			}
 
 			if (wl_ioctl(dev, ((ap || !infra) ? WLC_SET_BSSID : WLC_REASSOC), wrqu->ap_addr.sa_data, 6) < 0)
 				return -EINVAL;
@@ -451,20 +607,6 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCGIWAP:
 		{
-#ifdef DEBUG
-			rw_reg_t reg;
-			memset(&reg, 0, sizeof(reg));
-
-			reg.size = 4;
-			reg.byteoff = 0x184;
-			wl_ioctl(dev, WLC_R_REG, &reg, sizeof(reg));
-			printk("bss time = 0x%08x", reg.val);
-			
-			reg.byteoff = 0x180;
-			wl_ioctl(dev, WLC_R_REG, &reg, sizeof(reg));
-			printk("%08x\n", reg.val);
-#endif
-			
 			wrqu->ap_addr.sa_family = ARPHRD_ETHER;
 			if (wl_ioctl(dev,WLC_GET_BSSID,wrqu->ap_addr.sa_data,6) < 0)
 				return -EINVAL;
@@ -487,8 +629,8 @@ static int wlcompat_ioctl(struct net_device *dev,
 			wlc_ssid_t ssid;
 			memset(&ssid, 0, sizeof(ssid));
 			ssid.SSID_len = strlen(extra);
-			if (ssid.SSID_len > WLC_ESSID_MAX_SIZE)
-				ssid.SSID_len = WLC_ESSID_MAX_SIZE;
+			if (ssid.SSID_len > 32)
+				ssid.SSID_len = 32;
 			memcpy(ssid.SSID, extra, ssid.SSID_len);
 			if (wl_ioctl(dev, WLC_SET_SSID, &ssid, sizeof(ssid)) < 0)
 				return -EINVAL;
@@ -496,25 +638,25 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCGIWRTS:
 		{
-			if (wl_ioctl(dev,WLC_GET_RTS,&(wrqu->rts.value),sizeof(int)) < 0) 
+			if (wl_iovar_get(dev, "rtsthresh", &(wrqu->rts.value), sizeof(int)) < 0) 
 				return -EINVAL;
 			break;
 		}
 		case SIOCSIWRTS:
 		{
-			if (wl_ioctl(dev,WLC_SET_RTS,&(wrqu->rts.value),sizeof(int)) < 0) 
+			if (wl_iovar_set(dev, "rtsthresh", &(wrqu->rts.value), sizeof(int)) < 0) 
 				return -EINVAL;
 			break;
 		}
 		case SIOCGIWFRAG:
 		{
-			if (wl_ioctl(dev,WLC_GET_FRAG,&(wrqu->frag.value),sizeof(int)) < 0)
+			if (wl_iovar_get(dev, "fragthresh", &(wrqu->frag.value), sizeof(int)) < 0)
 				return -EINVAL;
 			break;
 		}
 		case SIOCSIWFRAG:
 		{
-			if (wl_ioctl(dev,WLC_SET_FRAG,&(wrqu->frag.value),sizeof(int)) < 0)
+			if (wl_iovar_set(dev, "fragthresh", &(wrqu->frag.value), sizeof(int)) < 0)
 				return -EINVAL;
 			break;
 		}
@@ -524,7 +666,7 @@ static int wlcompat_ioctl(struct net_device *dev,
 
 			wl_ioctl(dev, WLC_GET_RADIO, &radio, sizeof(int));
 			
-			if (wl_get_val(dev, "qtxpower", &(wrqu->txpower.value), sizeof(int)) < 0)
+			if (wl_iovar_get(dev, "qtxpower", &(wrqu->txpower.value), sizeof(int)) < 0)
 				return -EINVAL;
 			
 			override = (wrqu->txpower.value & WL_TXPWR_OVERRIDE) == WL_TXPWR_OVERRIDE;
@@ -548,7 +690,7 @@ static int wlcompat_ioctl(struct net_device *dev,
 			if (!wrqu->txpower.disabled && (wrqu->txpower.value > 0)) {
 				int value;
 				
-				if (wl_get_val(dev, "qtxpower", &value, sizeof(int)) < 0)
+				if (wl_iovar_get(dev, "qtxpower", &value, sizeof(int)) < 0)
 					return -EINVAL;
 				
 				value &= WL_TXPWR_OVERRIDE;
@@ -559,7 +701,7 @@ static int wlcompat_ioctl(struct net_device *dev,
 					return -EINVAL;
 				
 				if (wrqu->txpower.value > 0)
-					if (wl_set_val(dev, "qtxpower", &(wrqu->txpower.value), sizeof(int)) < 0)
+					if (wl_iovar_set(dev, "qtxpower", &(wrqu->txpower.value), sizeof(int)) < 0)
 						return -EINVAL;
 			}
 			break;
@@ -609,34 +751,23 @@ static int wlcompat_ioctl(struct net_device *dev,
 		case SIOCGIWENCODE:
 		{
 			int val;
+			int key = get_primary_key(dev);
+			int *info_addr; 
+			wkey *wep_key;
 			
-			if (wl_ioctl(dev, WLC_GET_WEP, &val, sizeof(val)) < 0)
+			if (wl_ioctl(dev, WLC_GET_WSEC, &val, sizeof(val)) < 0)
 				return -EINVAL;
-			
-
-			if (val > 0) {
-				int key = get_primary_key(dev);
-				
-				wrqu->data.flags = IW_ENCODE_ENABLED;
-				if (key-- > 0) {
-					int *info_addr; 
-					wkey *wep_key;
-					
-					info_addr = (int *) dev->priv;
-					wep_key = (wkey *) ((*info_addr) + 0x2752 + (key * 0x110));
-					
-					wrqu->data.flags |= key + 1;
-					wrqu->data.length = wep_key->len;
-
-					memset(extra, 0, 16);
-					memcpy(extra, wep_key->data, 16);
-				} else {
-					wrqu->data.flags |= IW_ENCODE_NOKEY;
-				}
-			} else {
+			if (!(val & WEP_ENABLED)) {
 				wrqu->data.flags = IW_ENCODE_DISABLED;
+				break;
 			}
-			
+
+			key = get_primary_key(dev);
+			wrqu->data.flags = IW_ENCODE_ENABLED;
+
+			/* the driver apparently doesn't allow us to read the wep key */
+			wrqu->data.flags |= IW_ENCODE_NOKEY;
+
 			break;
 		}
 		case SIOCGIWRANGE:
@@ -716,12 +847,8 @@ static int wlcompat_ioctl(struct net_device *dev,
 			break;
 		}
 		default:
-		{
-			if (info->cmd >= SIOCIWFIRSTPRIV)
-				return wlcompat_private_ioctl(dev, info, wrqu, extra);
-
 			return -EINVAL;
-		}
+			break;
 	}
 	
 	return 0;
@@ -775,183 +902,10 @@ static const iw_handler	 wlcompat_handler[] = {
 };
 
 
-#define WLCOMPAT_SET_MONITOR		SIOCIWFIRSTPRIV + 0
-#define WLCOMPAT_GET_MONITOR		SIOCIWFIRSTPRIV + 1
-#define WLCOMPAT_SET_TXPWR_LIMIT	SIOCIWFIRSTPRIV + 2
-#define WLCOMPAT_GET_TXPWR_LIMIT	SIOCIWFIRSTPRIV + 3
-#define WLCOMPAT_SET_ANTDIV			SIOCIWFIRSTPRIV + 4
-#define WLCOMPAT_GET_ANTDIV			SIOCIWFIRSTPRIV + 5
-#define WLCOMPAT_SET_TXANT			SIOCIWFIRSTPRIV + 6
-#define WLCOMPAT_GET_TXANT			SIOCIWFIRSTPRIV + 7
-#define WLCOMPAT_SET_BSS_FORCE		SIOCIWFIRSTPRIV + 8
-#define WLCOMPAT_GET_BSS_FORCE		SIOCIWFIRSTPRIV + 9
-
-
-static int wlcompat_private_ioctl(struct net_device *dev,
-			 struct iw_request_info *info,
-			 union iwreq_data *wrqu,
-			 char *extra)
-{
-	int *value = (int *) wrqu->name;
-
-	switch (info->cmd) {
-		case WLCOMPAT_SET_MONITOR:
-		{
-			if (wl_ioctl(dev, WLC_SET_MONITOR, value, sizeof(int)) < 0)
-				return -EINVAL;
-
-			break;
-		}
-		case WLCOMPAT_GET_MONITOR:
-		{
-			if (wl_ioctl(dev, WLC_GET_MONITOR, extra, sizeof(int)) < 0)
-				return -EINVAL;
-
-			break;
-		}
-		case WLCOMPAT_SET_TXPWR_LIMIT:
-		{
-			int val;
-			
-
-			if (wl_get_val(dev, "qtxpower", &val, sizeof(int)) < 0)
-				return -EINVAL;
-			
-			if (*extra > 0)
-				val |= WL_TXPWR_OVERRIDE;
-			else
-				val &= ~WL_TXPWR_OVERRIDE;
-			
-			if (wl_set_val(dev, "qtxpower", &val, sizeof(int)) < 0)
-				return -EINVAL;
-			
-			break;
-		}
-		case WLCOMPAT_GET_TXPWR_LIMIT:
-		{
-			if (wl_get_val(dev, "qtxpower", value, sizeof(int)) < 0)
-				return -EINVAL;
-
-			*value = ((*value & WL_TXPWR_OVERRIDE) == WL_TXPWR_OVERRIDE ? 1 : 0);
-
-			break;
-		}
-		case WLCOMPAT_SET_ANTDIV:
-		{
-			if (wl_ioctl(dev, WLC_SET_ANTDIV, value, sizeof(int)) < 0)
-				return -EINVAL;
-
-			break;
-		}
-		case WLCOMPAT_GET_ANTDIV:
-		{
-			if (wl_ioctl(dev, WLC_GET_ANTDIV, extra, sizeof(int)) < 0)
-				return -EINVAL;
-
-			break;
-		}
-		case WLCOMPAT_SET_TXANT:
-		{
-			if (wl_ioctl(dev, WLC_SET_TXANT, value, sizeof(int)) < 0)
-				return -EINVAL;
-
-			break;
-		}
-		case WLCOMPAT_GET_TXANT:
-		{
-			if (wl_ioctl(dev, WLC_GET_TXANT, extra, sizeof(int)) < 0)
-				return -EINVAL;
-
-			break;
-		}
-		case WLCOMPAT_SET_BSS_FORCE:
-		{
-			bss_force = (unsigned short) *value;
-			break;
-		}
-		case WLCOMPAT_GET_BSS_FORCE:
-		{
-			*extra = (int) bss_force;
-			break;
-		}
-		default:
-		{
-			return -EINVAL;
-		}
-			
-	}
-	return 0;
-}
-
-static const struct iw_priv_args wlcompat_private_args[] = 
-{
-	{	WLCOMPAT_SET_MONITOR, 
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		0,
-		"set_monitor"
-	},
-	{	WLCOMPAT_GET_MONITOR, 
-		0,
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		"get_monitor"
-	},
-	{	WLCOMPAT_SET_TXPWR_LIMIT, 
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		0,
-		"set_txpwr_force"
-	},
-	{	WLCOMPAT_GET_TXPWR_LIMIT, 
-		0,
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		"get_txpwr_force"
-	},
-	{	WLCOMPAT_SET_ANTDIV, 
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		0,
-		"set_antdiv"
-	},
-	{	WLCOMPAT_GET_ANTDIV, 
-		0,
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		"get_antdiv"
-	},
-	{	WLCOMPAT_SET_TXANT, 
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		0,
-		"set_txant"
-	},
-	{	WLCOMPAT_GET_TXANT, 
-		0,
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		"get_txant"
-	},
-	{	WLCOMPAT_SET_BSS_FORCE, 
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		0,
-		"set_bss_force"
-	},
-	{	WLCOMPAT_GET_BSS_FORCE, 
-		0,
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		"get_bss_force"
-	},
-};
-
-static const iw_handler wlcompat_private[] =
-{
-	wlcompat_private_ioctl,
-	NULL
-};
-
-
 static const struct iw_handler_def wlcompat_handler_def =
 {
 	.standard	= (iw_handler *) wlcompat_handler,
 	.num_standard	= sizeof(wlcompat_handler)/sizeof(iw_handler),
-	.private	= wlcompat_private,
-	.num_private	= 1,
-	.private_args	= wlcompat_private_args,
-	.num_private_args = sizeof(wlcompat_private_args) / sizeof(wlcompat_private_args[0])
 };
 
 
@@ -979,14 +933,7 @@ static int new_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd) {
 	
 #ifdef DEBUG
 	printk("dev: %s ioctl: 0x%04x\n",dev->name,cmd);
-#endif
-
-	if (cmd >= SIOCIWFIRSTPRIV) {
-		info.cmd = cmd;
-		info.flags = 0;
-		ret = wlcompat_private_ioctl(dev, &info, &(iwr->u), (char *) &(iwr->u));
-#ifdef DEBUG
-	} else if (cmd==SIOCDEVPRIVATE) {
+	if (cmd==SIOCDEVPRIVATE) {
 		wl_ioctl_t *ioc = (wl_ioctl_t *)ifr->ifr_data;
 		unsigned char *buf = ioc->buf;
 		printk("   cmd: %d buf: 0x%08x len: %d\n",ioc->cmd,&(ioc->buf),ioc->len);
@@ -996,8 +943,9 @@ static int new_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd) {
 		printk("   recv: ->");
 		print_buffer(ioc->len, buf);
 		printk("   ret: %d\n", ret);
+	} else
 #endif
-	} else {
+	{
 		ret = old_ioctl(dev,ifr,cmd);
 	}
 	return ret;
@@ -1005,17 +953,22 @@ static int new_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd) {
 
 #ifndef DEBUG
 static struct timer_list rng_timer;
+static spinlock_t rng_lock = SPIN_LOCK_UNLOCKED;
 
 static void rng_timer_tick(unsigned long n)
 {
 	struct net_device *dev = (struct net_device *) n;
+	unsigned long flags;
 	u16 data[4];
 	int i, ret;
 	
 	ret = 0;
+	spin_lock_irqsave(&rng_lock, flags);
 	for (i = 0; i < 3; i++) {
-		ret |= wl_get_val(dev, "rand", &data[i], sizeof(u16));
+		ret |= wl_iovar_get(dev, "rand", &data[i], sizeof(u16));
 	}
+	spin_unlock_irqrestore(&rng_lock, flags);
+
 	if (!ret)
 		batch_entropy_store(*((u32 *) &data[0]), *((u32 *) &data[2]), (jiffies % 255));
 
@@ -1027,7 +980,6 @@ static int __init wlcompat_init()
 {
 	int found = 0, i;
 	char devname[4] = "wl0";
-	bss_force = 0;
 	
 	while (!found && (dev = dev_get_by_name(devname))) {
 		if ((dev->wireless_handlers == NULL) && ((wl_ioctl(dev, WLC_GET_MAGIC, &i, sizeof(i)) == 0) && i == WLC_IOCTL_MAGIC))

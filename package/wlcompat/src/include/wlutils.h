@@ -1,7 +1,7 @@
 /*
  * Broadcom wireless network adapter utility functions
  *
- * Copyright 2004, Broadcom Corporation
+ * Copyright 2006, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -29,31 +29,74 @@
 extern int wl_ioctl(char *name, int cmd, void *buf, int len);
 
 /*
- * Get the MAC (hardware) address of the specified interface.
- * @param	name	interface name
- * @param	hwaddr	6-byte buffer for receiving address
- * @return	>= 0 if successful or < 0 otherwise
- */
-extern int wl_hwaddr(char *name, unsigned char *hwaddr);
-
-/*
  * Probe the specified interface.
  * @param	name	interface name
  * @return	>= 0 if a Broadcom wireless device or < 0 otherwise
  */
 extern int wl_probe(char *name);
 
+extern int wl_iovar_set(char *ifname, char *iovar, void *param, int paramlen);
+extern int wl_iovar_get(char *ifname, char *iovar, void *bufptr, int buflen);
 /*
  * Set/Get named variable.
- * @param	name	interface name
- * @param	var	variable name
- * @param	val	variable value/buffer
- * @param	len	variable value/buffer length
+ * @param	ifname		interface name
+ * @param	iovar		variable name
+ * @param	param		input param value/buffer
+ * @param	paramlen	input param value/buffer length
+ * @param	bufptr		io buffer
+ * @param	buflen		io buffer length
+ * @param	val		val or val pointer for int routines
  * @return	success == 0, failure != 0
  */
-extern int wl_set_val(char *name, char *var, void *val, int len);
-extern int wl_get_val(char *name, char *var, void *val, int len);
-extern int wl_set_int(char *name, char *var, int val);
-extern int wl_get_int(char *name, char *var, int *val);
+/*
+ * set named driver variable to int value
+ * calling example: wl_iovar_setint(ifname, "arate", rate)
+*/
+static inline int
+wl_iovar_setint(char *ifname, char *iovar, int val)
+{
+	return wl_iovar_set(ifname, iovar, &val, sizeof(val));
+}
+
+/*
+ * get named driver variable to int value and return error indication
+ * calling example: wl_iovar_getint(ifname, "arate", &rate)
+ */
+static inline int
+wl_iovar_getint(char *ifname, char *iovar, int *val)
+{
+	return wl_iovar_get(ifname, iovar, val, sizeof(int));
+}
+
+/*
+ * Set/Get named variable indexed by BSS Configuration
+ * @param	ifname		interface name
+ * @param	iovar		variable name
+ * @param	bssidx		bsscfg index
+ * @param	param		input param value/buffer
+ * @param	paramlen	input param value/buffer length
+ * @param	bufptr		io buffer
+ * @param	buflen		io buffer length
+ * @param	val		val or val pointer for int routines
+ * @return	success == 0, failure != 0
+ */
+extern int wl_bssiovar_get(char *ifname, char *iovar, int bssidx, void *outbuf, int len);
+extern int wl_bssiovar_set(char *ifname, char *iovar, int bssidx, void *param, int paramlen);
+/*
+ * set named & bss indexed driver variable to int value
+ */
+static inline int
+wl_bssiovar_setint(char *ifname, char *iovar, int bssidx, int val)
+{
+	return wl_bssiovar_set(ifname, iovar, bssidx, &val, sizeof(int));
+}
+
+static inline int
+wl_bssiovar_getint(char *ifname, char *iovar, int bssidx, int *val)
+{
+	return wl_bssiovar_get(ifname, iovar, bssidx, val, sizeof(int));
+}
+
+extern int wl_bssiovar_setint(char *ifname, char *iovar, int bssidx, int val);
 
 #endif /* _wlutils_h_ */
