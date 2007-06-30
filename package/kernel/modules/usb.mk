@@ -11,19 +11,15 @@ USBMENU:=USB Support
 ifeq ($(KERNEL),2.4)
   USBNET_DIR:=usb/net
 endif
+
 ifeq ($(KERNEL_PATCHVER),2.6.21)
   USBNET_DIR:=usb/net
-endif
-USBNET_DIR?=net/usb
-
-ifeq ($(KERNEL_PATCHVER),2.6.21)
-  USBHID_DIR:=drivers/usb/input
-endif
-USBHID_DIR?=drivers/hid/usbhid
-
-ifeq ($(KERNEL_PATCHVER),2.6.21)
+  USBHID_DIR:=usb/input
   USBINPUT_DIR:=usb/input
 endif
+
+USBNET_DIR?=net/usb
+USBHID_DIR?=hid/usbhid
 USBINPUT_DIR?=input/misc
 
 define usbdep
@@ -411,7 +407,7 @@ define KernelPackage/usb-hid
 endef
 
 define KernelPackage/usb-hid/2.6
-  FILES:=$(LINUX_DIR)/$(USBHID_DIR)/usbhid.ko
+  FILES:=$(LINUX_DIR)/drivers/$(USBHID_DIR)/usbhid.ko
 endef
 $(eval $(call KernelPackage,usb-hid))
 
