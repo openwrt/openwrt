@@ -28,7 +28,6 @@ mount none /proc -t proc
 
 insmod diag
 set_state preinit
-trap 'FAILSAFE=true' USR1
 echo '/sbin/hotplug.failsafe' > /proc/sys/kernel/hotplug
 
 ifname=eth0

@@ -7,3 +7,6 @@ DEVPATH is set {
 	makedev /dev/%DEVICENAME% 0644
 }
 
+SUBSYSTEM ~~ button {
+	exec kill -USR1 1 ;
+}
