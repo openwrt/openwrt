@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
 PKG_VERSION:=2.12r
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=ftp://ftp.kernel.org/pub/linux/utils/$(PKG_NAME)/ \
@@ -30,6 +30,15 @@ endef
 define Package/fdisk
   $(call Package/util-linux/Default)
   TITLE:=Partition table manipulation utility
+  DESCRIPTION:=\
+	This package contains an utility for managing disk partition tables.
+  URL:=http://www.kernel.org/pub/linux/utils/util-linux/
+endef
+
+define Package/cfdisk
+  $(call Package/util-linux/Default)
+  TITLE:=Partition table manipulation utility
+  DEPENDS:=+libncurses
   DESCRIPTION:=\
 	This package contains an utility for managing disk partition tables.
   URL:=http://www.kernel.org/pub/linux/utils/util-linux/
@@ -75,6 +84,10 @@ define Package/fdisk/install
 	$(call Package/Template,sbin/fdisk,$(1)/usr/sbin)
 endef
 
+define Package/cfdisk/install
+	$(call Package/Template,sbin/cfdisk,$(1)/usr/sbin)
+endef
+
 define Package/losetup/install
 	$(call Package/Template,sbin/losetup,$(1)/usr/sbin)
 endef
@@ -86,5 +99,6 @@ define Package/swap-utils/install
 endef
 
 $(eval $(call BuildPackage,fdisk))
+$(eval $(call BuildPackage,cfdisk))
 $(eval $(call BuildPackage,losetup))
 $(eval $(call BuildPackage,swap-utils))
