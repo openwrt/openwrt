@@ -466,12 +466,19 @@ void bcm43xx_rx(struct bcm43xx_wldev *dev,
 
 	/* Skip PLCP and padding */
 	padding = (macstat & BCM43xx_RX_MAC_PADDING) ? 2 : 0;
+	if (unlikely(skb->len < (sizeof(struct bcm43xx_plcp_hdr6) + padding))) {
+		dprintkl(KERN_DEBUG PFX "RX: Packet size underrun (1)\n");
+		goto drop;
+	}
 	plcp = (struct bcm43xx_plcp_hdr6 *)(skb->data + padding);
 	skb_pull(skb, sizeof(struct bcm43xx_plcp_hdr6) + padding);
 	/* The skb contains the Wireless Header + payload data now */
+	if (unlikely(skb->len < (2+2+6/*minimum hdr*/ + FCS_LEN))) {
+		dprintkl(KERN_DEBUG PFX "RX: Packet size underrun (2)\n");
+		goto drop;
+	}
 	wlhdr = (struct ieee80211_hdr *)(skb->data);
 	fctl = le16_to_cpu(wlhdr->frame_control);
-
 	skb_trim(skb, skb->len - FCS_LEN);
 
 	if ((macstat & BCM43xx_RX_MAC_DEC) &&
@@ -496,6 +503,11 @@ void bcm43xx_rx(struct bcm43xx_wldev *dev,
 			wlhdr->frame_control = cpu_to_le16(fctl);
 
 			wlhdr_len = ieee80211_get_hdrlen(fctl);
+			if (unlikely(skb->len < (wlhdr_len + 3))) {
+				dprintkl(KERN_DEBUG PFX
+					 "RX: Packet size underrun (3)\n");
+				goto drop;
+			}
 			if (skb->data[wlhdr_len + 3] & (1 << 5)) {
 				/* The Ext-IV Bit is set in the "KeyID"
 				 * octet of the IV.
@@ -506,7 +518,11 @@ void bcm43xx_rx(struct bcm43xx_wldev *dev,
 				iv_len = 4;
 				icv_len = 4;
 			}
-
+			if (unlikely(skb->len < (wlhdr_len + iv_len + icv_len))) {
+				dprintkl(KERN_DEBUG PFX
+					 "RX: Packet size underrun (4)\n");
+				goto drop;
+			}
 			/* Remove the IV */
 			memmove(skb->data + iv_len, skb->data, wlhdr_len);
 			skb_pull(skb, iv_len);
@@ -553,6 +569,11 @@ void bcm43xx_rx(struct bcm43xx_wldev *dev,
 
 	dev->stats.last_rx = jiffies;
 	ieee80211_rx_irqsafe(dev->wl->hw, skb, &status);
+
+	return;
+drop:
+	dprintkl(KERN_DEBUG PFX "RX: Packet dropped\n");
+	dev_kfree_skb_any(skb);
 }
 
 void bcm43xx_handle_txstatus(struct bcm43xx_wldev *dev,

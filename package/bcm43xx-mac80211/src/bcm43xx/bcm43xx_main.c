@@ -1080,21 +1080,13 @@ static void bcm43xx_write_probe_resp_plcp(struct bcm43xx_wldev *dev,
 {
 	struct bcm43xx_plcp_hdr4 plcp;
 	u32 tmp;
-	u16 packet_time;
+	__le16 dur;
 
 	plcp.data = 0;
 	bcm43xx_generate_plcp_hdr(&plcp, size + FCS_LEN, rate);
-	/*
-	 * 144 + 48 + 10 = preamble + PLCP + SIFS,
-	 * taken from mac80211 timings calculation.
-	 *
-	 * FIXME: long preamble assumed!
-	 *
-	 */
-	packet_time = 202 + (size + FCS_LEN) * 16 / rate;
-	if ((size + FCS_LEN) * 16 % rate >= rate / 2)
-		++packet_time;
-
+	dur = ieee80211_generic_frame_duration(dev->wl->hw,
+					       size,
+					       BCM43xx_RATE_TO_BASE100KBPS(rate));
 	/* Write PLCP in two parts and timing for packet transfer */
 	tmp = le32_to_cpu(plcp.data);
 	bcm43xx_shm_write16(dev, BCM43xx_SHM_SHARED, shm_offset,
@@ -1102,7 +1094,7 @@ static void bcm43xx_write_probe_resp_plcp(struct bcm43xx_wldev *dev,
 	bcm43xx_shm_write16(dev, BCM43xx_SHM_SHARED, shm_offset + 2,
 			    tmp >> 16);
 	bcm43xx_shm_write16(dev, BCM43xx_SHM_SHARED, shm_offset + 6,
-			    packet_time);
+			    le16_to_cpu(dur));
 }
 
 /* Instead of using custom probe response template, this function
@@ -1116,7 +1108,9 @@ static u8 * bcm43xx_generate_probe_resp(struct bcm43xx_wldev *dev,
 {
 	const u8 *src_data;
 	u8 *dest_data;
-	u16 src_size, elem_size, src_pos, dest_pos, tmp;
+	u16 src_size, elem_size, src_pos, dest_pos;
+	__le16 dur;
+	struct ieee80211_hdr *hdr;
 
 	assert(dev->cached_beacon);
 	src_size = dev->cached_beacon->len;
@@ -1146,26 +1140,15 @@ static u8 * bcm43xx_generate_probe_resp(struct bcm43xx_wldev *dev,
 		}
 	}
 	*dest_size = dest_pos;
+	hdr = (struct ieee80211_hdr *)dest_data;
 
 	/* Set the frame control. */
-	dest_data[0] = (IEEE80211_FTYPE_MGMT |
-			IEEE80211_STYPE_PROBE_RESP);
-	dest_data[1] = 0;
-
-	/* Set the duration field.
-	 *
-	 * 144 + 48 + 10 = preamble + PLCP + SIFS,
-	 * taken from mac80211 timings calculation.
-	 *
-	 * FIXME: long preamble assumed!
-	 *
-	 */
-	tmp = 202 + (14 + FCS_LEN) * 16 / rate;
-	if ((14 + FCS_LEN) * 16 % rate >= rate / 2)
-		++tmp;
-
-	dest_data[2] = tmp & 0xFF;
-	dest_data[3] = (tmp >> 8) & 0xFF;
+	hdr->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT |
+					 IEEE80211_STYPE_PROBE_RESP);
+	dur = ieee80211_generic_frame_duration(dev->wl->hw,
+					       *dest_size,
+					       BCM43xx_RATE_TO_BASE100KBPS(rate));
+	hdr->duration_id = dur;
 
 	return dest_data;
 }

@@ -259,6 +259,28 @@ static inline int prev_slot(struct bcm43xx_dmaring *ring, int slot)
 	return slot - 1;
 }
 
+#ifdef CONFIG_BCM43XX_MAC80211_DEBUG
+static void update_max_used_slots(struct bcm43xx_dmaring *ring,
+				  int current_used_slots)
+{
+	if (current_used_slots <= ring->max_used_slots)
+		return;
+	ring->max_used_slots = current_used_slots;
+	if (bcm43xx_debug(ring->dev, BCM43xx_DBG_DMAVERBOSE)) {
+		dprintk(KERN_DEBUG PFX
+			"max_used_slots increased to %d on %s ring %d\n",
+			ring->max_used_slots,
+			ring->tx ? "TX" : "RX",
+			ring->index);
+	}
+}
+#else
+static inline
+void update_max_used_slots(struct bcm43xx_dmaring *ring,
+			   int current_used_slots)
+{ }
+#endif /* DEBUG */
+
 /* Request a slot for usage. */
 static inline
 int request_slot(struct bcm43xx_dmaring *ring)
@@ -273,21 +295,9 @@ int request_slot(struct bcm43xx_dmaring *ring)
 	ring->current_slot = slot;
 	ring->used_slots++;
 
-#ifdef CONFIG_BCM43XX_MAC80211_DEBUG
-	if (ring->used_slots > ring->max_used_slots)
-		ring->max_used_slots = ring->used_slots;
-#endif /* CONFIG_BCM43XX_MAC80211_DEBUG*/
+	update_max_used_slots(ring, ring->used_slots);
 
 	return slot;
-}
-
-/* Return a slot to the free slots. */
-static inline
-void return_slot(struct bcm43xx_dmaring *ring, int slot)
-{
-	assert(ring->tx);
-
-	ring->used_slots--;
 }
 
 /* Mac80211-queue to bcm43xx-ring mapping */
@@ -1254,6 +1264,10 @@ int bcm43xx_dma_tx(struct bcm43xx_wldev *dev,
 		/* This TX ring is full. */
 		ieee80211_stop_queue(dev->wl->hw, txring_to_priority(ring));
 		ring->stopped = 1;
+		if (bcm43xx_debug(dev, BCM43xx_DBG_DMAVERBOSE)) {
+			dprintk(KERN_DEBUG PFX "Stopped TX ring %d\n",
+				ring->index);
+		}
 	}
 out_unlock:
 	spin_unlock_irqrestore(&ring->lock, flags);
@@ -1305,10 +1319,9 @@ void bcm43xx_dma_handle_txstatus(struct bcm43xx_wldev *dev,
 			 */
 			assert(meta->skb == NULL);
 		}
-		/* Everything belonging to the slot is unmapped
-		 * and freed, so we can return it.
-		 */
-		return_slot(ring, slot);
+
+		/* Everything unmapped and free'd. So it's not used anymore. */
+		ring->used_slots--;
 
 		if (meta->is_last_fragment)
 			break;
@@ -1319,6 +1332,10 @@ void bcm43xx_dma_handle_txstatus(struct bcm43xx_wldev *dev,
 		assert(free_slots(ring) >= SLOTS_PER_PACKET);
 		ieee80211_wake_queue(dev->wl->hw, txring_to_priority(ring));
 		ring->stopped = 0;
+		if (bcm43xx_debug(dev, BCM43xx_DBG_DMAVERBOSE)) {
+			dprintk(KERN_DEBUG PFX "Woke up TX ring %d\n",
+				ring->index);
+		}
 	}
 
 	spin_unlock(&ring->lock);
@@ -1445,9 +1462,7 @@ void bcm43xx_dma_rx(struct bcm43xx_dmaring *ring)
 {
 	const struct bcm43xx_dma_ops *ops = ring->ops;
 	int slot, current_slot;
-#ifdef CONFIG_BCM43XX_MAC80211_DEBUG
 	int used_slots = 0;
-#endif
 
 	assert(!ring->tx);
 	current_slot = ops->get_current_rxslot(ring);
@@ -1456,10 +1471,7 @@ void bcm43xx_dma_rx(struct bcm43xx_dmaring *ring)
 	slot = ring->current_slot;
 	for ( ; slot != current_slot; slot = next_slot(ring, slot)) {
 		dma_rx(ring, &slot);
-#ifdef CONFIG_BCM43XX_MAC80211_DEBUG
-		if (++used_slots > ring->max_used_slots)
-			ring->max_used_slots = used_slots;
-#endif
+		update_max_used_slots(ring, ++used_slots);
 	}
 	ops->set_current_rxslot(ring, slot);
 	ring->current_slot = slot;

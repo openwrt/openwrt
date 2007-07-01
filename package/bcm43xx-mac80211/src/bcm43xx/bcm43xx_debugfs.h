@@ -7,6 +7,7 @@ struct bcm43xx_txstatus;
 enum bcm43xx_dyndbg { /* Dynamic debugging features */
 	BCM43xx_DBG_XMITPOWER,
 	BCM43xx_DBG_DMAOVERFLOW,
+	BCM43xx_DBG_DMAVERBOSE,
 	BCM43xx_DBG_PWORK_FAST,
 	BCM43xx_DBG_PWORK_STOP,
 	__BCM43xx_NR_DYNDBG,
