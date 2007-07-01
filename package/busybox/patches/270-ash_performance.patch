@@ -1,0 +1,30 @@
+Index: busybox-1.4.2/shell/ash.c
+===================================================================
+--- busybox-1.4.2.orig/shell/ash.c	2007-07-01 05:33:08.371737750 +0200
++++ busybox-1.4.2/shell/ash.c	2007-07-01 05:33:11.703946000 +0200
+@@ -3957,12 +3957,6 @@
+ 	}
+ #endif
+ 
+-	if (is_safe_applet(name)) {
+-		entry->cmdtype = CMDNORMAL;
+-		entry->u.index = -1;
+-		return;
+-	}
+-
+ 	updatetbl = (path == pathval());
+ 	if (!updatetbl) {
+ 		act |= DO_ALTPATH;
+@@ -4074,6 +4068,12 @@
+ 		goto success;
+ 	}
+ 
++	if (is_safe_applet(name)) {
++		entry->cmdtype = CMDNORMAL;
++		entry->u.index = -1;
++		return;
++	}
++
+ 	/* We failed.  If there was an entry for this command, delete it */
+ 	if (cmdp && updatetbl)
+ 		delete_cmd_entry();
