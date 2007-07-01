@@ -437,6 +437,7 @@ static void bcm43xx_add_dynamic_debug(struct bcm43xx_wldev *dev)
 
 	add_dyn_dbg("debug_xmitpower", BCM43xx_DBG_XMITPOWER, 0);
 	add_dyn_dbg("debug_dmaoverflow", BCM43xx_DBG_DMAOVERFLOW, 0);
+	add_dyn_dbg("debug_dmaverbose", BCM43xx_DBG_DMAVERBOSE, 0);
 	add_dyn_dbg("debug_pwork_fast", BCM43xx_DBG_PWORK_FAST, 0);
 	add_dyn_dbg("debug_pwork_stop", BCM43xx_DBG_PWORK_STOP, 0);
 
