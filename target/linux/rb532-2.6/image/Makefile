@@ -20,10 +20,6 @@ LOADER_MAKEOPTS= \
 		RAMSIZE=$(RAMSIZE) \
 		IMAGE_COPY=$(IMAGE_COPY)
 
-define Build/Compile
-	$(CC) -o $(STAGING_DIR)/bin/patch-cmdline $(PLATFORM_DIR)/src/patch-cmdline.c
-endef
-
 define Build/Clean
 	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader $(LOADER_MAKEOPTS) clean
 endef
