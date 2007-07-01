@@ -148,7 +148,7 @@ Index: linux-2.6.20-rc3/drivers/net/ixp4xx/npe_ucode.c
 +
 +		print_image_info(id, offset - 12, size);
 +
-+		if (size < 24000 && ( IMG_FUNC(id) == 0x01 || IMG_FUNC(id) == 0x00) ) { // XXX fix size/detection
++		if (size < 24000 && ( IMG_FUNC(id) == 0x01 || IMG_FUNC(id) == 0x00) || IMG_FUNC(id) == 0x05 ) { // XXX fix size/detection
 +
 +			struct dl_image *image = kmalloc(size, GFP_KERNEL);
 +
