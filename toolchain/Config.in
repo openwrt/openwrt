@@ -50,7 +50,8 @@ config SOFT_FLOAT
 config TARGET_OPTIMIZATION
 	string
 	prompt "Target Optimizations" if TOOLCHAINOPTS
-	default "-O2 -pipe -march=i486 -funit-at-a-time" if i386
+	default "-O2 -pipe -march=i486 -funit-at-a-time" if LINUX_2_6_X86
+	default "-Os -pipe -march=i486 -funit-at-a-time" if LINUX_2_6_RDC
 	default "-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time" if mipsel || mips
 	default "-Os -pipe -mcpu=xscale -funit-at-a-time" if armeb
 	default "-Os -pipe -funit-at-a-time"
