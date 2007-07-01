@@ -22,6 +22,7 @@ struct adm5120_board {
 	unsigned long	mach_type;
 	unsigned int	iface_num;	/* Number of Ethernet interfaces */
 	unsigned int	has_usb;	/* USB controller presence flag */
+	u32		mem_size;	/* onboard memory size */
 	u32		flash0_size;	/* Flash 0 size */
 };
 
@@ -77,6 +78,11 @@ static inline int adm5120_has_gmii(void)
 static inline char *adm5120_board_name(void)
 {
 	return adm5120_board.name;
+}
+
+static inline u32 adm5120_board_memsize(void)
+{
+	return adm5120_board.mem_size;
 }
 
 #endif /* _ADM5120_INFO_H */

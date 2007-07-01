@@ -15,6 +15,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/string.h>
+#include <linux/module.h>
 
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
@@ -22,6 +23,7 @@
 
 #include <asm/mach-adm5120/adm5120_defs.h>
 #include <asm/mach-adm5120/adm5120_switch.h>
+#include <asm/mach-adm5120/adm5120_mpmc.h>
 #include <asm/mach-adm5120/adm5120_info.h>
 #include <asm/mach-adm5120/myloader.h>
 #include <asm/mach-adm5120/routerboot.h>
@@ -32,6 +34,8 @@ extern char *prom_getenv(char *envname);
  * Globals
  */
 struct adm5120_board adm5120_board;
+EXPORT_SYMBOL_GPL(adm5120_board);
+
 unsigned int adm5120_boot_loader;
 
 unsigned int adm5120_product_code;
@@ -81,6 +85,7 @@ static struct adm5120_board __initdata adm5120_boards[] = {
 		.mach_type	= MACH_ADM5120_CAS771,
 		.has_usb	= 0,
 		.iface_num	= 5,
+		.mem_size	= (32 << 20),
 		.flash0_size	= 4*1024*1024,
 	},
 	{
@@ -137,6 +142,7 @@ static struct adm5120_board __initdata adm5120_boards[] = {
 		.mach_type	= MACH_ADM5120_WP54AG,
 		.has_usb	= 0,
 		.iface_num	= 2,
+		.mem_size	= (16 << 20),
 		.flash0_size	= 4*1024*1024,
 	},
 	{
@@ -179,6 +185,7 @@ static struct adm5120_board __initdata adm5120_boards[] = {
 		.mach_type	= MACH_ADM5120_BR6104K,
 		.has_usb	= 0,
 		.iface_num	= 5,
+		.mem_size	= (16 << 20),
 		.flash0_size	= 2*1024*1024,
 	},
 	{
@@ -926,19 +933,76 @@ static void __init adm5120_detect_cpuinfo(void)
 		adm5120_speed += 50000000;
 }
 
-#if 1
-#  define mem_dbg(f, ...)	prom_printf("mem_detect: " f, ## __VA_ARGS__)
+static void adm5120_ndelay(u32 ns)
+{
+	u32	t;
+
+	SWITCH_WRITE(SWITCH_REG_TIMER, TIMER_PERIOD_DEFAULT);
+	SWITCH_WRITE(SWITCH_REG_TIMER_INT, (TIMER_INT_TOS | TIMER_INT_TOM));
+
+	t = (ns+640) / 640;
+	t &= TIMER_PERIOD_MASK;
+	SWITCH_WRITE(SWITCH_REG_TIMER, t | TIMER_TE);
+
+	/* wait until the timer expires */
+	do {
+		t = SWITCH_READ(SWITCH_REG_TIMER_INT);
+	} while ((t & TIMER_INT_TOS) == 0);
+
+	/* leave the timer disabled */
+	SWITCH_WRITE(SWITCH_REG_TIMER, TIMER_PERIOD_DEFAULT);
+	SWITCH_WRITE(SWITCH_REG_TIMER_INT, (TIMER_INT_TOS | TIMER_INT_TOM));
+}
+
+#define MPMC_READ(r) *(u32 *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+(r))
+#define MPMC_WRITE(r,v) *(u32 *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+(r))=(v)
+
 extern void prom_printf(char *, ...);
+#if 1
+#  define mem_dbg(f, a...)	prom_printf("mem_detect: " f, ## a)
 #else
-#  define mem_dbg(f, ...)
+#  define mem_dbg(f, a...)
 #endif
+
+#define MEM_WR_DELAY	10000 /* 0.01 usec */
+
+static int mem_check_pattern(u8 *addr, unsigned long offs)
+{
+	volatile u32 *p1 = (volatile u32 *)addr;
+	volatile u32 *p2 = (volatile u32 *)(addr+offs);
+	u32 t,u,v;
+
+	/* save original value */
+	t = *p1;
+	u = *p2;
+
+	if (t != u)
+		return 0;
+
+	v = 0x55555555;
+	if (u == v)
+		v = 0xAAAAAAAA;
+
+	mem_dbg("write 0x%08lX to 0x%08lX\n", v, (unsigned long)p1);
+
+	*p1 = v;
+	mem_dbg("delay %d ns\n", MEM_WR_DELAY);
+	adm5120_ndelay(MEM_WR_DELAY);
+	u = *p2;
+
+	mem_dbg("pattern at 0x%08lX is 0x%08lX\n", (unsigned long)p2, u);
+
+	/* restore original value */
+	*p1 = t;
+
+	return (v == u);
+}
 
 static void __init adm5120_detect_memsize(void)
 {
 	u32	memctrl;
 	u32	size, maxsize;
-	volatile u8	*p,*r;
-	u8	t;
+	u8	*p;
 
 	memctrl = SWITCH_READ(SWITCH_REG_MEMCTRL);
 	switch (memctrl & MEMCTRL_SDRS_MASK) {
@@ -956,71 +1020,45 @@ static void __init adm5120_detect_memsize(void)
 		break;
 	}
 
-	/* FIXME: need to disable buffers for both SDRAM banks? */
+	/* disable buffers for both SDRAM banks */
+	mem_dbg("disable buffers for both banks\n");
+	MPMC_WRITE(MPMC_REG_DC0, MPMC_READ(MPMC_REG_DC0) & ~DC_BE);
+	MPMC_WRITE(MPMC_REG_DC1, MPMC_READ(MPMC_REG_DC1) & ~DC_BE);
 
-	mem_dbg("checking for %ldMB chip\n",maxsize >> 20);
+	mem_dbg("checking for %ldMB chip in 1st bank\n", maxsize >> 20);
 
 	/* detect size of the 1st SDRAM bank */
-	p = (volatile u8 *)KSEG1ADDR(0);
-	t = *p;
+	p = (u8 *)KSEG1ADDR(0);
 	for (size = 2<<20; size <= (maxsize >> 1); size <<= 1) {
-#if 1
-		r = (p+size);
-		*p = 0x55;
-		mem_dbg("1st pattern at 0x%lx is 0x%02x\n", size, *r);
-		if (*r == 0x55) {
-			*p = 0xAA;
-			mem_dbg("2nd pattern at 0x%lx is 0x%02x\n", size, *r);
-			if (*r == 0xAA) {
-				/* mirrored address */
-				mem_dbg("mirrored data found at 0x%lx\n", size);
-				break;
-			}
+		if (mem_check_pattern(p, size)) {
+			/* mirrored address */
+			mem_dbg("mirrored data found at offset 0x%lX\n", size);
+			break;
 		}
-#else
-		p[0] = 0x55;
-		mem_dbg("1st pattern at 0x%lx is 0x%02x\n", size, p[size]);
-		if (p[size] != 0x55)
-			continue;
-
-		p[0] = 0xAA;
-		mem_dbg("2nd pattern at 0x%lx is 0x%02x\n", size, p[size]);
-		if (p[size] != 0xAA)
-			continue;
-
-		/* mirrored address */
-		mem_dbg("mirrored data found at 0x%lx\n", size);
-		break;
-#endif
 	}
-	*p = t;
 
-	mem_dbg("%ldMB chip found\n", size >> 20);
+	mem_dbg("chip size in 1st bank is %ldMB\n", size >> 20);
+	adm5120_memsize = size;
 
-	if (size == (32 << 20))
-		/* if bank size is 32MB, 2nd bank is not supported */
+	if (size != maxsize)
+		/* 2nd bank is not supported */
 		goto out;
 
 	if ((memctrl & MEMCTRL_SDR1_ENABLE) == 0)
-		/* if 2nd bank is not enabled, we are done */
+		/* 2nd bank is disabled */
 		goto out;
 
 	/*
 	 * some bootloaders enable 2nd bank, even if the 2nd SDRAM chip
 	 * are missing.
 	 */
-	mem_dbg("checking second bank\n");
-	p += (maxsize+size)-1;
-	t = *p;
-	*p = 0x55;
-	if (*p != 0x55)
-		goto out;
+	mem_dbg("check presence of 2nd bank\n");
 
-	*p = 0xAA;
-	if (*p != 0xAA)
-		goto out;
+	p = (u8 *)KSEG1ADDR(maxsize+size-4);
+	if (mem_check_pattern(p, 0)) {
+		adm5120_memsize += size;
+	}
 
-	*p = t;
 	if (maxsize != size) {
 		/* adjusting MECTRL register */
 		memctrl &= ~(MEMCTRL_SDRS_MASK);
@@ -1040,11 +1078,21 @@ static void __init adm5120_detect_memsize(void)
 		}
 		SWITCH_WRITE(SWITCH_REG_MEMCTRL, memctrl);
 	}
-	size <<= 1;
 
 out:
-	adm5120_memsize = size;
-	mem_dbg("%ldMB memory found\n",size>>20);
+	/* reenable buffer for both SDRAM banks */
+	mem_dbg("enable buffers for both banks\n");
+	MPMC_WRITE(MPMC_REG_DC0, MPMC_READ(MPMC_REG_DC0) | DC_BE);
+	MPMC_WRITE(MPMC_REG_DC1, MPMC_READ(MPMC_REG_DC1) | DC_BE);
+
+	mem_dbg("%dx%ldMB memory found\n", (adm5120_memsize == size) ? 1 : 2 ,
+		size >>20);
+
+	size = adm5120_board_memsize();
+	if (size > 0 && size != adm5120_memsize) {
+		mem_dbg("wrong memory size detected, board settings will be used\n");
+		adm5120_memsize = size;
+	}
 }
 
 void __init adm5120_info_show(void)
@@ -1063,10 +1111,9 @@ void __init adm5120_info_show(void)
 
 void __init adm5120_info_init(void)
 {
-
 	adm5120_detect_cpuinfo();
-	adm5120_detect_memsize();
 	adm5120_detect_board();
+	adm5120_detect_memsize();
 
 	adm5120_info_show();
 }
