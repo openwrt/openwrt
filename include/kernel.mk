@@ -29,7 +29,6 @@ else
   KERNEL_PATCHVER:=$(shell echo $(LINUX_VERSION) | cut -d. -f1,2,3 | cut -d- -f1)
   PLATFORM_DIR := $(TOPDIR)/target/linux/$(BOARD)-$(KERNEL)
   PATCH_DIR := ./patches$(shell [ -d "./patches-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
-  GENERIC_PATCH_DIR := $(GENERIC_PLATFORM_DIR)/patches$(shell [ -d "$(GENERIC_PLATFORM_DIR)/patches-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
   KERNEL_BUILD_DIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
   LINUX_DIR := $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
 
@@ -48,6 +47,7 @@ else
   PKG_BUILD_DIR ?= $(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 endif
 GENERIC_PLATFORM_DIR := $(TOPDIR)/target/linux/generic-$(KERNEL)
+GENERIC_PATCH_DIR := $(GENERIC_PLATFORM_DIR)/patches$(shell [ -d "$(GENERIC_PLATFORM_DIR)/patches-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
 
 
 define KernelPackage/Defaults
