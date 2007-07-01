@@ -93,10 +93,15 @@
 #define MEMCTRL_SDRS_64M	0x04
 #define MEMCTRL_SDRS_128M	0x05
 #define MEMCTRL_SDR1_ENABLE	ONEBIT(5)	/* enable SDRAM bank 1 */
-#define MEMCTRL_SR0S_MASK	BITMASK(3)	/* SRAM0 size */
-#define MEMCTRL_SR0S_SHIFT	8		
-#define MEMCTRL_SR1S_MASK	BITMAKS(3)	/* SRAM1 size */
-#define MEMCTRL_SR1S_SHIFT	16
+
+#define MEMCTRL_SRS0_SHIFT	8		/* shift for SRAM0 size */
+#define MEMCTRL_SRS1_SHIFT	16		/* shift for SRAM1 size */
+#define MEMCTRL_SRS_MASK	BITMASK(3)	/* SRAM size mask */
+#define MEMCTRL_SRS_DISABLED	0x00		/* Disabled */
+#define MEMCTRL_SRS_512K	0x01		/* 512KB*/
+#define MEMCTRL_SRS_1M		0x02		/* 1MB */
+#define MEMCTRL_SRS_2M		0x03		/* 2MB */
+#define MEMCTRL_SRS_4M		0x04		/* 4MB */
 
 /* GPIO_CONF0 register bits */
 #define GPIO_CONF0_MASK		BITMASK(8)
@@ -108,6 +113,15 @@
 #define GPIO_CONF0_IV_MASK	(0xFF << GPIO_CONF0_IV_SHIFT)
 #define GPIO_CONF0_OE_MASK	(0xFF << GPIO_CONF0_OE_SHIFT)
 #define GPIO_CONF0_OV_MASK	(0xFF << GPIO_CONF0_OV_SHIFT)
+
+/* TIMER_INT register bits */
+#define TIMER_INT_TOS		ONEBIT(1)	/* time-out status */
+#define TIMER_INT_TOM		ONEBIT(16)	/* mask time-out interrupt */
+
+/* TIMER register bits */
+#define TIMER_PERIOD_MASK	BITMASK(16)	/* mask for timer period */
+#define TIMER_PERIOD_DEFAULT	0xFFFF		/* default timer period */
+#define TIMER_TE		ONEBIT(16)	/* timer enable bit */
 
 /* PORTx_LED register bits */
 #define LED_MODE_MASK		BITMASK(4)
