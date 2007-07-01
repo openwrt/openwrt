@@ -77,8 +77,13 @@ define Image/Build/MyLoader
 		$(IMGNAME)-$(3)-$(2).bin
 endef
 
+define Image/cmdline/yaffs2
+root=/dev/mtdblock1 rootfstype=yaffs2 init=/etc/preinit
+endef
+
 define Image/Build/RouterBoard
 	$(CP) $(KDIR)/vmlinux.elf $(IMGNAME)-vmlinux
+	$(STAGING_DIR)/bin/patch-cmdline $(KDIR)/vmlinux.elf '$(strip $(call Image/cmdline/yaffs2)) '
 endef
 
 define Image/Build
