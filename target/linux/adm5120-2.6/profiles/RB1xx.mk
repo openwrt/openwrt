@@ -7,7 +7,7 @@
 
 define Profile/RouterBoard
   NAME:=RouterBoard RB1xx
-  PACKAGES:=kmod-madwifi patch-cmdline
+  PACKAGES:=kmod-madwifi
 endef
 
 define Profile/RouterBoard/Description
