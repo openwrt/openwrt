@@ -1,0 +1,67 @@
+--- linux-2.6.21.5/arch/arm/mach-ixp4xx/gateway7001-setup.c.orig	2007-06-19 18:03:37.202848276 +0100
++++ linux-2.6.21.5/arch/arm/mach-ixp4xx/gateway7001-setup.c	2007-06-19 18:09:04.152969985 +0100
+@@ -16,6 +16,7 @@
+ #include <linux/device.h>
+ #include <linux/serial.h>
+ #include <linux/tty.h>
++#include <linux/mtd/mtd.h>
+ #include <linux/serial_8250.h>
+ #include <linux/slab.h>
+ 
+@@ -122,11 +123,48 @@
+ 	.resource	= &res_mac1,
+ };
+ 
++struct npe_ucode_platform_data gateway7001_npe_ucode_data = {
++	.mtd_partition  = "microcode",
++};
++
++static struct platform_device gateway7001_npe_ucode = {
++	.name                   = "ixp4xx_npe_ucode",
++	.id                     = 0,
++	.dev.platform_data      = &gateway7001_npe_ucode_data,
++};
++
+ static struct platform_device *gateway7001_devices[] __initdata = {
+ 	&gateway7001_flash,
+ 	&gateway7001_uart,
+ 	&mac0,
+ 	&mac1,
++	&gateway7001_npe_ucode,
++};
++
++static void gateway7001_flash_add(struct mtd_info *mtd) 
++{
++	if (strcmp(mtd->name, "RedBoot config") == 0) {
++		size_t retlen;
++		u_char mac0[6], mac1[6];
++			if (mtd->read(mtd, 0x0422, 6, &retlen, mac0) == 0 && retlen == 6) {
++				printk(KERN_INFO "gateway 7001 mac0: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n",
++					mac0[0], mac0[1], mac0[2], mac0[3], mac0[4], mac0[5]);
++				memcpy(plat_mac0.hwaddr, mac0, 6);
++			}
++			if (mtd->read(mtd, 0x043B, 6, &retlen, mac1) == 0 && retlen == 6) {
++				printk(KERN_INFO "gateway 7001 mac1: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n",
++					mac1[0], mac1[1], mac1[2], mac1[3], mac1[4], mac1[5]);
++				memcpy(plat_mac1.hwaddr, mac1, 6);
++		}
++	}
++}
++
++static void gateway7001_flash_remove(struct mtd_info *mtd) {
++}
++
++static struct mtd_notifier gateway7001_flash_notifier = {
++	.add = gateway7001_flash_add,
++	.remove = gateway7001_flash_remove,
+ };
+ 
+ static void __init gateway7001_init(void)
+@@ -140,6 +178,7 @@
+ 	*IXP4XX_EXP_CS1 = *IXP4XX_EXP_CS0;
+ 
+ 	platform_add_devices(gateway7001_devices, ARRAY_SIZE(gateway7001_devices));
++	register_mtd_user(&gateway7001_flash_notifier);
+ }
+ 
+ #ifdef CONFIG_MACH_GATEWAY7001
