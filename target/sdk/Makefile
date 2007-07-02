@@ -33,7 +33,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 	$(CP) ./files/Makefile $(SDK_BUILD_DIR)/
 	$(CP) ./files/README.SDK $(SDK_BUILD_DIR)/
 	$(CP) ./files/package/rules.mk $(SDK_BUILD_DIR)/package/
-	echo OPENWRTVERSION:=$(OPENWRTVERSION) > $(SDK_BUILD_DIR)/.version.mk
+	echo OPENWRTVERSION:="$(OPENWRTVERSION)" > $(SDK_BUILD_DIR)/.version.mk
 	rm -rf $(SDK_BUILD_DIR)/staging_dir*/ccache
 	find $(SDK_BUILD_DIR) -name .svn | $(XARGS) rm -rf
 	find $(SDK_BUILD_DIR) -name CVS | $(XARGS) rm -rf
