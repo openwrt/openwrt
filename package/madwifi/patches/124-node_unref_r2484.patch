@@ -1,66 +1,9 @@
-Index: madwifi/net80211/ieee80211_wireless.c
+Index: madwifi-ng-r2420-20070602/ath/if_ath.c
 ===================================================================
---- madwifi/net80211/ieee80211_wireless.c (revision 2482)
-+++ madwifi/net80211/ieee80211_wireless.c (revision 2484)
-@@ -1102,5 +1102,4 @@
- 	for (i = 0; i < number; i++) {
- 		ni = ieee80211_find_node(nt, &vap->iv_spy.mac[i * IEEE80211_ADDR_LEN]);
--		/* TODO: free node ? */
- 		/* check we are associated w/ this vap */
- 		if (ni && (ni->ni_vap == vap)) {
-@@ -1114,4 +1113,5 @@
- 			spy_stat[i].updated = IW_QUAL_ALL_INVALID;
- 		}
-+		ieee80211_unref_node(&ni);
- 	}
- 
-@@ -3191,4 +3191,5 @@
- 	if (ik->ik_keylen > sizeof(ik->ik_keydata))
- 		return -E2BIG;
-+
- 	kix = ik->ik_keyix;
- 	if (kix == IEEE80211_KEYIX_NONE) {
-@@ -3214,4 +3215,5 @@
- 			ik->ik_flags |= IEEE80211_KEY_GROUP;	/* XXX */
- 	}
-+
- 	error = 0;
- 	flags = ik->ik_flags & IEEE80211_KEY_COMMON;
-@@ -3228,5 +3230,5 @@
- 		memcpy(wk->wk_key, ik->ik_keydata, ik->ik_keylen);
- 		if (!ieee80211_crypto_setkey(vap, wk,
--		    ni != NULL ? ni->ni_macaddr : ik->ik_macaddr, ni))
-+		    (ni != NULL) ? ni->ni_macaddr : ik->ik_macaddr, ni))
- 			error = -EIO;
- 		else if ((ik->ik_flags & IEEE80211_KEY_DEFAULT))
-@@ -3234,4 +3236,5 @@
- 	} else
- 		error = -ENXIO;
-+
- 	ieee80211_key_update_end(vap);
- 	if (ni != NULL)
-Index: madwifi/net80211/ieee80211_output.c
-===================================================================
---- madwifi/net80211/ieee80211_output.c (revision 2438)
-+++ madwifi/net80211/ieee80211_output.c (revision 2484)
-@@ -269,4 +269,5 @@
- 		 */
- 		ieee80211_pwrsave(ni, skb);
-+		ieee80211_unref_node(&ni);
- 		return 0;
- 	}
-@@ -283,5 +284,5 @@
- 		struct sk_buff *skb1;
- 		ni = ieee80211_find_txnode(vap->iv_xrvap, eh->ether_dhost);
--		skb1 = skb_clone(skb,GFP_ATOMIC);
-+		skb1 = skb_clone(skb, GFP_ATOMIC);
- 		if (skb1) {
- 			cb = (struct ieee80211_cb *) skb1->cb;
-Index: madwifi/ath/if_ath.c
-===================================================================
---- madwifi/ath/if_ath.c (revision 2482)
-+++ madwifi/ath/if_ath.c (revision 2484)
-@@ -8111,14 +8111,13 @@
+--- madwifi-ng-r2420-20070602.orig/ath/if_ath.c	2007-07-02 23:49:33.450710750 +0200
++++ madwifi-ng-r2420-20070602/ath/if_ath.c	2007-07-02 23:50:43.107064000 +0200
+@@ -8197,16 +8197,15 @@
+ 				wds_ni->ni_rates = vap->iv_bss->ni_rates;
  				/* Depending on the sequence of bringing up devices
  				 * it's possible the rates of the root bss isn't
 -				 * filled yet. 
@@ -80,3 +23,76 @@ Index: madwifi/ath/if_ath.c
 +				ieee80211_unref_node(&wds_ni);
  			}
  			break;
+ 		default:
+Index: madwifi-ng-r2420-20070602/net80211/ieee80211_output.c
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_output.c	2007-07-02 23:49:31.574593500 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_output.c	2007-07-02 23:50:37.462711250 +0200
+@@ -268,6 +268,7 @@
+ 		 * We'll get the frame back when the time is right.
+ 		 */
+ 		ieee80211_pwrsave(ni, skb);
++		ieee80211_unref_node(&ni);
+ 		return 0;
+ 	}
+ 
+@@ -282,7 +283,7 @@
+ 	    vap->iv_xrvap->iv_sta_assoc) {
+ 		struct sk_buff *skb1;
+ 		ni = ieee80211_find_txnode(vap->iv_xrvap, eh->ether_dhost);
+-		skb1 = skb_clone(skb,GFP_ATOMIC);
++		skb1 = skb_clone(skb, GFP_ATOMIC);
+ 		if (skb1) {
+ 			cb = (struct ieee80211_cb *) skb1->cb;
+ 			cb->ni = ni;
+Index: madwifi-ng-r2420-20070602/net80211/ieee80211_wireless.c
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_wireless.c	2007-07-02 23:49:31.566593000 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_wireless.c	2007-07-02 23:49:34.126753000 +0200
+@@ -1088,7 +1088,6 @@
+ 	/* locate a node, read its rssi, check if updated, convert to dBm */
+ 	for (i = 0; i < number; i++) {
+ 		ni = ieee80211_find_node(nt, &vap->iv_spy.mac[i * IEEE80211_ADDR_LEN]);
+-		/* TODO: free node ? */
+ 		/* check we are associated w/ this vap */
+ 		if (ni && (ni->ni_vap == vap)) {
+ 			set_quality(&spy_stat[i], ni->ni_rssi, ic->ic_channoise);
+@@ -1100,6 +1099,7 @@
+ 		} else {
+ 			spy_stat[i].updated = IW_QUAL_ALL_INVALID;
+ 		}
++		ieee80211_unref_node(&ni);
+ 	}
+ 
+ 	/* copy results to userspace */
+@@ -3153,6 +3153,7 @@
+ 	/* NB: this also checks ik->ik_keylen > sizeof(wk->wk_key) */
+ 	if (ik->ik_keylen > sizeof(ik->ik_keydata))
+ 		return -E2BIG;
++
+ 	kix = ik->ik_keyix;
+ 	if (kix == IEEE80211_KEYIX_NONE) {
+ 		/* XXX unicast keys currently must be tx/rx */
+@@ -3176,6 +3177,7 @@
+ 		if ((ik->ik_flags & IEEE80211_KEY_XMIT) == 0)	/* XXX */
+ 			ik->ik_flags |= IEEE80211_KEY_GROUP;	/* XXX */
+ 	}
++
+ 	error = 0;
+ 	flags = ik->ik_flags & IEEE80211_KEY_COMMON;
+ 	ieee80211_key_update_begin(vap);
+@@ -3190,12 +3192,13 @@
+ 		memset(wk->wk_key, 0, sizeof(wk->wk_key));
+ 		memcpy(wk->wk_key, ik->ik_keydata, ik->ik_keylen);
+ 		if (!ieee80211_crypto_setkey(vap, wk,
+-		    ni != NULL ? ni->ni_macaddr : ik->ik_macaddr, ni))
++		    (ni != NULL) ? ni->ni_macaddr : ik->ik_macaddr, ni))
+ 			error = -EIO;
+ 		else if ((ik->ik_flags & IEEE80211_KEY_DEFAULT))
+ 			vap->iv_def_txkey = kix;
+ 	} else
+ 		error = -ENXIO;
++
+ 	ieee80211_key_update_end(vap);
+ 	if (ni != NULL)
+ 		ieee80211_unref_node(&ni);
