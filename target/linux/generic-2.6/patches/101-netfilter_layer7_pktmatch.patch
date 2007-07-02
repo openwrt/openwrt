@@ -1,6 +1,7 @@
-diff -urN linux-2.6.21.1.old/include/linux/netfilter_ipv4/ipt_layer7.h linux-2.6.21.1.dev/include/linux/netfilter_ipv4/ipt_layer7.h
---- linux-2.6.21.1.old/include/linux/netfilter_ipv4/ipt_layer7.h	2007-05-26 20:17:47.624408296 +0200
-+++ linux-2.6.21.1.dev/include/linux/netfilter_ipv4/ipt_layer7.h	2007-05-26 20:17:48.729240336 +0200
+Index: linux-2.6.21.5/include/linux/netfilter_ipv4/ipt_layer7.h
+===================================================================
+--- linux-2.6.21.5.orig/include/linux/netfilter_ipv4/ipt_layer7.h	2007-07-02 00:43:58.271086750 +0200
++++ linux-2.6.21.5/include/linux/netfilter_ipv4/ipt_layer7.h	2007-07-02 01:36:08.914739750 +0200
 @@ -21,6 +21,7 @@
      char protocol[MAX_PROTOCOL_LEN];
      char invert:1;
@@ -9,10 +10,11 @@ diff -urN linux-2.6.21.1.old/include/linux/netfilter_ipv4/ipt_layer7.h linux-2.6
  };
  
  #endif /* _IPT_LAYER7_H */
-diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/ipt_layer7.c linux-2.6.21.1.dev/net/ipv4/netfilter/ipt_layer7.c
---- linux-2.6.21.1.old/net/ipv4/netfilter/ipt_layer7.c	2007-05-26 20:17:47.626407992 +0200
-+++ linux-2.6.21.1.dev/net/ipv4/netfilter/ipt_layer7.c	2007-05-26 20:17:48.729240336 +0200
-@@ -296,33 +296,34 @@
+Index: linux-2.6.21.5/net/ipv4/netfilter/ipt_layer7.c
+===================================================================
+--- linux-2.6.21.5.orig/net/ipv4/netfilter/ipt_layer7.c	2007-07-02 01:27:54.195821750 +0200
++++ linux-2.6.21.5/net/ipv4/netfilter/ipt_layer7.c	2007-07-02 01:37:01.990056750 +0200
+@@ -299,33 +299,34 @@
  	}
  }
  
@@ -62,16 +64,16 @@ diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/ipt_layer7.c linux-2.6.21.1.dev/
  
  	return length;
  }
-@@ -339,7 +340,7 @@
- 	struct ipt_layer7_info * info = (struct ipt_layer7_info *)matchinfo;
+@@ -343,7 +344,7 @@
  	enum ip_conntrack_info master_ctinfo, ctinfo;
- 	struct ip_conntrack *master_conntrack, *conntrack;
+ 	struct nf_conn *master_conntrack;
+ 	struct ip_conntrack *conntrack;
 -	unsigned char * app_data;
 +	unsigned char *app_data, *tmp_data;
  	unsigned int pattern_result, appdatalen;
  	regexp * comppattern;
  
-@@ -362,8 +363,8 @@
+@@ -365,8 +366,8 @@
  		master_conntrack = master_ct(master_conntrack);
  
  	/* if we've classified it or seen too many packets */
@@ -82,7 +84,7 @@ diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/ipt_layer7.c linux-2.6.21.1.dev/
  
  		pattern_result = match_no_append(conntrack, master_conntrack, ctinfo, master_ctinfo, info);
  
-@@ -394,6 +395,23 @@
+@@ -396,6 +397,23 @@
  	comppattern = compile_and_cache(info->pattern, info->protocol);
  	spin_unlock_bh(&list_lock);
  
