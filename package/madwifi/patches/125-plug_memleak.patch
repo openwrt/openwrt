@@ -1,0 +1,13 @@
+Index: madwifi-ng-r2420-20070602/net80211/ieee80211_input.c
+===================================================================
+--- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_input.c	2007-07-02 12:50:31.839514500 +0200
++++ madwifi-ng-r2420-20070602/net80211/ieee80211_input.c	2007-07-02 12:51:10.309918750 +0200
+@@ -2832,7 +2832,7 @@
+ 			ieee80211_add_scan(vap, &scan, wh, subtype, rssi, rstamp);
+ 			return;
+ 		}
+-		if (scan.capinfo & IEEE80211_CAPINFO_IBSS) {
++		if ((vap->iv_opmode == IEEE80211_M_IBSS) && (scan.capinfo & IEEE80211_CAPINFO_IBSS)) {
+ 			if (!IEEE80211_ADDR_EQ(wh->i_addr2, ni->ni_macaddr)) {
+ 				/* Create a new entry in the neighbor table. */
+ 				ni = ieee80211_add_neighbor(vap, wh, &scan);
