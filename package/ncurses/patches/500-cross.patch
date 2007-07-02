@@ -1,0 +1,12 @@
+diff -ur ncurses-5.6/aclocal.m4 ncurses-5.6-owrt/aclocal.m4
+--- ncurses-5.6/aclocal.m4	2006-12-17 17:12:38.000000000 +0100
++++ ncurses-5.6-owrt/aclocal.m4	2007-06-09 19:47:38.000000000 +0200
+@@ -3816,7 +3816,7 @@
+ 			EXTRA_LDFLAGS="-Wl,-rpath,\${libdir} $EXTRA_LDFLAGS"
+ 		fi
+ 		CF_SHARED_SONAME
+-		MK_SHARED_LIB='${CC} ${CFLAGS} -shared -Wl,-soname,'$cf_shared_soname',-stats,-lc -o $[@]'
++		MK_SHARED_LIB='${CC} ${CFLAGS} -shared -Wl,-soname,'$cf_shared_soname',-stats,$(LDFLAGS) -lc -o $[@]'
+ 		;;
+ 	openbsd2*)
+ 		CC_SHARED_OPTS="$CC_SHARED_OPTS -DPIC"
