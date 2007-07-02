@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 IMGNAME = $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)
-LOADER_MAKE = $(MAKE) -C lzma-loader KDIR=$(KDIR)
+LOADER_MAKE = $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
 
 define Image/Build/Loader
 	$(LOADER_MAKE) LOADER=loader-$(1).$(2) LOADER_DATA="" \
