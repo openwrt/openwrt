@@ -1,7 +1,7 @@
-Index: madwifi-ng-r2420-20070602/hal/public/mips-be-elf.inc
+Index: madwifi-ng-r2525-20070630/hal/public/mips-be-elf.inc
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/hal/public/mips-be-elf.inc	2007-06-04 13:21:53.676816552 +0200
-+++ madwifi-ng-r2420-20070602/hal/public/mips-be-elf.inc	2007-06-04 13:21:53.760803784 +0200
+--- madwifi-ng-r2525-20070630.orig/hal/public/mips-be-elf.inc	2007-07-03 23:02:26.509700500 +0200
++++ madwifi-ng-r2525-20070630/hal/public/mips-be-elf.inc	2007-07-03 23:02:26.653709500 +0200
 @@ -71,5 +71,5 @@
  
  LDOPTS=	-EB
@@ -9,10 +9,10 @@ Index: madwifi-ng-r2420-20070602/hal/public/mips-be-elf.inc
 -COPTS+=	-G 0 -EB -mno-abicalls -fno-pic -mips2 -Wa,--trap \
 +COPTS+=	-G 0 -mno-abicalls -fno-pic -mips32 -Wa,--trap \
  	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
-Index: madwifi-ng-r2420-20070602/hal/public/mips-le-elf.inc
+Index: madwifi-ng-r2525-20070630/hal/public/mips-le-elf.inc
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/hal/public/mips-le-elf.inc	2007-06-04 13:21:53.681815792 +0200
-+++ madwifi-ng-r2420-20070602/hal/public/mips-le-elf.inc	2007-06-04 13:21:53.760803784 +0200
+--- madwifi-ng-r2525-20070630.orig/hal/public/mips-le-elf.inc	2007-07-03 23:02:26.517701000 +0200
++++ madwifi-ng-r2525-20070630/hal/public/mips-le-elf.inc	2007-07-03 23:02:26.669710500 +0200
 @@ -68,5 +68,5 @@
  
  LDOPTS=	-EL
@@ -20,10 +20,10 @@ Index: madwifi-ng-r2420-20070602/hal/public/mips-le-elf.inc
 -COPTS+=	-G 0 -EL -mno-abicalls -fno-pic -mips2 -Wa,--trap \
 +COPTS+=	-G 0 -mno-abicalls -fno-pic -mips32 -Wa,--trap \
  	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
-Index: madwifi-ng-r2420-20070602/hal/public/xscale-be-elf.inc
+Index: madwifi-ng-r2525-20070630/hal/public/xscale-be-elf.inc
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/hal/public/xscale-be-elf.inc	2007-06-04 13:21:53.688814728 +0200
-+++ madwifi-ng-r2420-20070602/hal/public/xscale-be-elf.inc	2007-06-04 13:21:53.760803784 +0200
+--- madwifi-ng-r2525-20070630.orig/hal/public/xscale-be-elf.inc	2007-07-03 23:02:26.529701750 +0200
++++ madwifi-ng-r2525-20070630/hal/public/xscale-be-elf.inc	2007-07-03 23:02:26.705712750 +0200
 @@ -77,5 +77,5 @@
  
  LDOPTS=	-EB
@@ -31,16 +31,3 @@ Index: madwifi-ng-r2420-20070602/hal/public/xscale-be-elf.inc
 -COPTS+= -march=armv4 -mbig-endian -fno-strict-aliasing -fno-common -mapcs-32 \
 +COPTS+= -march=armv5te -mbig-endian -fno-strict-aliasing -fno-common  \
  	-mtune=xscale  -mshort-load-bytes
-Index: madwifi-ng-r2420-20070602/Makefile
-===================================================================
---- madwifi-ng-r2420-20070602.orig/Makefile	2007-06-04 13:21:53.694813816 +0200
-+++ madwifi-ng-r2420-20070602/Makefile	2007-06-04 13:21:53.760803784 +0200
-@@ -56,7 +56,7 @@
- 
- all: modules tools
- 
--modules: configcheck svnversion.h
-+modules: svnversion.h
- ifdef LINUX24
- 	for i in $(DIRS_MODULES); do \
- 		$(MAKE) -C $$i || exit 1; \

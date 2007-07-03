@@ -1,9 +1,9 @@
-Index: madwifi-ng-r2420-20070602/net80211/ieee80211_input.c
+Index: madwifi-ng-r2525-20070630/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_input.c	2007-07-02 12:50:31.839514500 +0200
-+++ madwifi-ng-r2420-20070602/net80211/ieee80211_input.c	2007-07-02 12:51:10.309918750 +0200
-@@ -2832,7 +2832,7 @@
- 			ieee80211_add_scan(vap, &scan, wh, subtype, rssi, rstamp);
+--- madwifi-ng-r2525-20070630.orig/net80211/ieee80211_input.c	2007-07-03 23:02:31.005981500 +0200
++++ madwifi-ng-r2525-20070630/net80211/ieee80211_input.c	2007-07-03 23:02:31.926039000 +0200
+@@ -2873,7 +2873,7 @@
+ 			ieee80211_add_scan(vap, &scan, wh, subtype, rssi, rtsf);
  			return;
  		}
 -		if (scan.capinfo & IEEE80211_CAPINFO_IBSS) {

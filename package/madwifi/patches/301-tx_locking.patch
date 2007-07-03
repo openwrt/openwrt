@@ -1,17 +1,17 @@
-Index: madwifi-ng-r2420-20070602/ath/if_ath.c
+Index: madwifi-ng-r2525-20070630/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/ath/if_ath.c	2007-06-04 13:21:58.427094400 +0200
-+++ madwifi-ng-r2420-20070602/ath/if_ath.c	2007-06-04 13:21:58.684055336 +0200
-@@ -2554,7 +2554,7 @@
- 	/* NB: use this lock to protect an->an_ff_txbuf in athff_can_aggregate()
- 	 *     call too.
+--- madwifi-ng-r2525-20070630.orig/ath/if_ath.c	2007-07-03 23:02:32.998106000 +0200
++++ madwifi-ng-r2525-20070630/ath/if_ath.c	2007-07-03 23:02:33.302125000 +0200
+@@ -2567,7 +2567,7 @@
+ 	/* NB: use this lock to protect an->an_tx_ffbuf (and txq->axq_stageq)
+ 	 *	in athff_can_aggregate() call too.
  	 */
 -	ATH_TXQ_LOCK_IRQ(txq);
 +	ATH_TXQ_LOCK_BH(txq);
  	if (athff_can_aggregate(sc, eh, an, skb, vap->iv_fragthreshold, &ff_flush)) {
  		if (an->an_tx_ffbuf[skb->priority]) { /* i.e., frame on the staging queue */
  			bf = an->an_tx_ffbuf[skb->priority];
-@@ -2562,6 +2562,7 @@
+@@ -2575,6 +2575,7 @@
  			/* get (and remove) the frame from staging queue */
  			TAILQ_REMOVE(&txq->axq_stageq, bf, bf_stagelist);
  			an->an_tx_ffbuf[skb->priority] = NULL;
@@ -19,7 +19,7 @@ Index: madwifi-ng-r2420-20070602/ath/if_ath.c
  
  			/*
  			 * chain skbs and add FF magic
-@@ -2584,7 +2585,7 @@
+@@ -2597,7 +2598,7 @@
  			 */
  			ATH_HARDSTART_GET_TX_BUF_WITH_LOCK;
  			if (bf == NULL) {
@@ -28,7 +28,7 @@ Index: madwifi-ng-r2420-20070602/ath/if_ath.c
  				goto hardstart_fail;
  			}
  			DPRINTF(sc, ATH_DEBUG_XMIT | ATH_DEBUG_FF,
-@@ -2596,8 +2597,7 @@
+@@ -2609,8 +2610,7 @@
  			an->an_tx_ffbuf[skb->priority] = bf;
  
  			TAILQ_INSERT_HEAD(&txq->axq_stageq, bf, bf_stagelist);
@@ -38,7 +38,16 @@ Index: madwifi-ng-r2420-20070602/ath/if_ath.c
  
  			return 0;
  		}
-@@ -2649,12 +2649,12 @@
+@@ -2623,7 +2623,7 @@
+ 			an->an_tx_ffbuf[skb->priority] = NULL;
+ 
+ 			/* NB: ath_tx_start -> ath_tx_txqaddbuf uses ATH_TXQ_LOCK too */
+-			ATH_TXQ_UNLOCK_IRQ_EARLY(txq);
++			ATH_TXQ_UNLOCK_BH(txq);
+ 
+ 			/* encap and xmit */
+ 			bf_ff->bf_skb = ieee80211_encap(ni, bf_ff->bf_skb, &framecnt);
+@@ -2674,12 +2674,12 @@
  
  		ATH_HARDSTART_GET_TX_BUF_WITH_LOCK;
  		if (bf == NULL) {
@@ -51,13 +60,13 @@ Index: madwifi-ng-r2420-20070602/ath/if_ath.c
  
 -	ATH_TXQ_UNLOCK_IRQ(txq);
  
+ ff_flush_done:
  ff_bypass:
- 
-Index: madwifi-ng-r2420-20070602/ath/if_athvar.h
+Index: madwifi-ng-r2525-20070630/ath/if_athvar.h
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/ath/if_athvar.h	2007-06-04 13:21:58.428094248 +0200
-+++ madwifi-ng-r2420-20070602/ath/if_athvar.h	2007-06-04 13:21:58.684055336 +0200
-@@ -484,6 +484,8 @@
+--- madwifi-ng-r2525-20070630.orig/ath/if_athvar.h	2007-07-03 23:02:33.002106250 +0200
++++ madwifi-ng-r2525-20070630/ath/if_athvar.h	2007-07-03 23:02:33.302125000 +0200
+@@ -487,6 +487,8 @@
  #define ATH_TXQ_INTR_PERIOD		5  /* axq_intrcnt period for intr gen */
  #define	ATH_TXQ_LOCK_INIT(_tq)		spin_lock_init(&(_tq)->axq_lock)
  #define	ATH_TXQ_LOCK_DESTROY(_tq)
