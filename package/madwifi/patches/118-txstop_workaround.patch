@@ -1,8 +1,8 @@
-Index: madwifi-ng-r2420-20070602/ath/if_ath.c
+Index: madwifi-ng-r2525-20070630/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/ath/if_ath.c	2007-06-04 13:21:56.713354928 +0200
-+++ madwifi-ng-r2420-20070602/ath/if_ath.c	2007-06-04 13:21:56.911324832 +0200
-@@ -2242,6 +2242,17 @@
+--- madwifi-ng-r2525-20070630.orig/ath/if_ath.c	2007-07-03 23:02:29.657897250 +0200
++++ madwifi-ng-r2525-20070630/ath/if_ath.c	2007-07-03 23:02:29.917913500 +0200
+@@ -2253,6 +2253,17 @@
  		txq->axq_link = &lastds->ds_link;
  		ath_hal_txstart(ah, txq->axq_qnum);
  		sc->sc_dev->trans_start = jiffies;
@@ -20,7 +20,7 @@ Index: madwifi-ng-r2420-20070602/ath/if_ath.c
  	}
  	ATH_TXQ_UNLOCK_IRQ(txq);
  
-@@ -7285,6 +7296,7 @@
+@@ -7312,6 +7323,7 @@
  			__func__, ds);
  #else
  		ds = bf->bf_desc;		/* NB: last descriptor */
@@ -28,11 +28,11 @@ Index: madwifi-ng-r2420-20070602/ath/if_ath.c
  #endif
  		ts = &bf->bf_dsstatus.ds_txstat;
  		status = ath_hal_txprocdesc(ah, ds, ts);
-Index: madwifi-ng-r2420-20070602/ath/if_athvar.h
+Index: madwifi-ng-r2525-20070630/ath/if_athvar.h
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/ath/if_athvar.h	2007-06-04 13:21:53.369863216 +0200
-+++ madwifi-ng-r2420-20070602/ath/if_athvar.h	2007-06-04 13:21:56.911324832 +0200
-@@ -686,6 +686,14 @@
+--- madwifi-ng-r2525-20070630.orig/ath/if_athvar.h	2007-07-03 23:02:25.669648000 +0200
++++ madwifi-ng-r2525-20070630/ath/if_athvar.h	2007-07-03 23:02:29.917913500 +0200
+@@ -690,6 +690,14 @@
  	u_int sc_slottimeconf;			/* manual override for slottime */
  	int16_t sc_channoise; 			/* Measured noise of current channel (dBm) */
  	u_int64_t sc_tsf;			/* TSF at last rx interrupt */

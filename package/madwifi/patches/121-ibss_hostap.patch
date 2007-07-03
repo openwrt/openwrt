@@ -1,8 +1,8 @@
-Index: madwifi-ng-r2420-20070602/ath/if_ath.c
+Index: madwifi-ng-r2525-20070630/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/ath/if_ath.c	2007-06-04 13:21:56.911324832 +0200
-+++ madwifi-ng-r2420-20070602/ath/if_ath.c	2007-06-04 13:21:57.500235304 +0200
-@@ -407,7 +407,6 @@
+--- madwifi-ng-r2525-20070630.orig/ath/if_ath.c	2007-07-03 23:02:29.917913500 +0200
++++ madwifi-ng-r2525-20070630/ath/if_ath.c	2007-07-03 23:02:30.957978500 +0200
+@@ -410,7 +410,6 @@
   * and use the next two bits as the index of the VAP.
   */
  #define ATH_SET_VAP_BSSID_MASK(bssid_mask)      ((bssid_mask)[0] &= ~(((ATH_BCBUF-1)<<2)|0x02))
@@ -10,7 +10,7 @@ Index: madwifi-ng-r2420-20070602/ath/if_ath.c
  #define ATH_SET_VAP_BSSID(bssid, id) \
  		do { \
  			if (id) \
-@@ -1048,9 +1047,12 @@
+@@ -1055,9 +1054,12 @@
  			ic_opmode = opmode;
  		break;
  	case IEEE80211_M_IBSS:
@@ -26,28 +26,24 @@ Index: madwifi-ng-r2420-20070602/ath/if_ath.c
  		break;
  	case IEEE80211_M_AHDEMO:
  	case IEEE80211_M_MONITOR:
-@@ -1080,7 +1082,7 @@
+@@ -1087,7 +1089,7 @@
  		return NULL;
  	}
  
 -	if (sc->sc_nvaps >= ATH_BCBUF) {
 +	if (sc->sc_nvaps + sc->sc_nibssvaps >= ATH_BCBUF) {
- 		printk(KERN_WARNING "too many virtual ap's (already got %d)\n", sc->sc_nvaps);
+ 		printk(KERN_WARNING "too many virtual APs (already got %d)\n", sc->sc_nvaps);
  		return NULL;
  	}
-@@ -1115,8 +1117,9 @@
- 	 */
+@@ -1123,6 +1125,7 @@
  	if (opmode == IEEE80211_M_MONITOR)
  		dev->type = ARPHRD_IEEE80211_RADIOTAP;
--	if ((flags & IEEE80211_CLONE_BSSID) &&
--	    sc->sc_nvaps != 0 && opmode != IEEE80211_M_WDS && sc->sc_hasbmask) {
-+	avp->av_bslot = -1;
-+	if ((flags & IEEE80211_CLONE_BSSID) && sc->sc_hasbmask && 
-+	    (opmode == IEEE80211_M_HOSTAP || opmode == IEEE80211_M_IBSS)) {
- 		struct ieee80211vap *v;
- 		unsigned int id_mask, id;
  
-@@ -1129,18 +1132,22 @@
++	avp->av_bslot = -1;
+ 	if ((flags & IEEE80211_CLONE_BSSID) &&
+ 	    opmode != IEEE80211_M_WDS && sc->sc_hasbmask) {
+ 		struct ieee80211vap *v;
+@@ -1137,18 +1140,22 @@
  
  		/* do a full search to mark all the allocated VAPs */
  		id_mask = 0;
@@ -59,7 +55,7 @@ Index: madwifi-ng-r2420-20070602/ath/if_ath.c
 +				id_mask |= (1 << a->av_bslot);
 +		}
  
--		for (id = 0; id < ATH_BCBUF; id++) {
+-		for (id = 1; id < ATH_BCBUF; id++) {
 +		/* IBSS mode has local always set, so don't hand out beacon slot 0 to an IBSS vap */
 +		for (id = (opmode == IEEE80211_M_IBSS ? 1 : 0); id < ATH_BCBUF; id++) {
  			/* get the first available slot */
@@ -74,7 +70,7 @@ Index: madwifi-ng-r2420-20070602/ath/if_ath.c
  	STAILQ_INIT(&avp->av_mcastq.axq_q);
  	ATH_TXQ_LOCK_INIT(&avp->av_mcastq);
  	if (opmode == IEEE80211_M_HOSTAP || opmode == IEEE80211_M_IBSS) {
-@@ -1150,33 +1157,14 @@
+@@ -1158,33 +1165,14 @@
  		 */
  		avp->av_bcbuf = STAILQ_FIRST(&sc->sc_bbuf);
  		STAILQ_REMOVE_HEAD(&sc->sc_bbuf, bf_list);
@@ -110,18 +106,18 @@ Index: madwifi-ng-r2420-20070602/ath/if_ath.c
  			/*
  			 * Multiple VAPs are to transmit beacons and we
  			 * have h/w support for TSF adjusting; enable use
-@@ -1286,7 +1274,9 @@
+@@ -1294,7 +1282,9 @@
  			sc->sc_stagbeacons = 0;
  	}
  
 -	if (vap->iv_opmode == IEEE80211_M_STA) {
 +	if (vap->iv_opmode == IEEE80211_M_IBSS) {
-+		sc->sc_nibssvaps--;	
++		sc->sc_nibssvaps--;
 +	} else if (vap->iv_opmode == IEEE80211_M_STA) {
  		sc->sc_nstavaps--;
  		sc->sc_nostabeacons = 0;
  	} else if (vap->iv_opmode == IEEE80211_M_MONITOR)
-@@ -3362,7 +3352,7 @@
+@@ -3390,7 +3380,7 @@
  	    sc->sc_opmode == HAL_M_IBSS ||	/* NB: AHDEMO too */
  	    (sc->sc_nostabeacons) || sc->sc_scanning)
  		rfilt |= HAL_RX_FILTER_BEACON;
@@ -130,8 +126,8 @@ Index: madwifi-ng-r2420-20070602/ath/if_ath.c
  		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON |
  			  HAL_RX_FILTER_PROBEREQ | HAL_RX_FILTER_PROM);
  	return rfilt;
-@@ -5809,12 +5799,20 @@
- 			type = ieee80211_input(ni, skb, rs->rs_rssi, rs->rs_tstamp);
+@@ -5837,12 +5827,20 @@
+ 			type = ieee80211_input(ni, skb, rs->rs_rssi, rs_tsf);
  			ieee80211_unref_node(&ni);
  		} else {
 +			const struct ieee80211_frame_min *wh = (const struct ieee80211_frame_min *) skb->data;
@@ -153,10 +149,10 @@ Index: madwifi-ng-r2420-20070602/ath/if_ath.c
  			if (ni != NULL) {
  				struct ath_node *an = ATH_NODE(ni);
  				ieee80211_keyix_t keyix;
-Index: madwifi-ng-r2420-20070602/ath/if_athvar.h
+Index: madwifi-ng-r2525-20070630/ath/if_athvar.h
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/ath/if_athvar.h	2007-06-04 13:21:56.911324832 +0200
-+++ madwifi-ng-r2420-20070602/ath/if_athvar.h	2007-06-04 13:21:57.500235304 +0200
+--- madwifi-ng-r2525-20070630.orig/ath/if_athvar.h	2007-07-03 23:02:29.917913500 +0200
++++ madwifi-ng-r2525-20070630/ath/if_athvar.h	2007-07-03 23:02:30.957978500 +0200
 @@ -199,7 +199,7 @@
  #define	ATH_RXBUF	40		/* number of RX buffers */
  #define	ATH_TXBUF	200		/* number of TX buffers */
@@ -166,18 +162,18 @@ Index: madwifi-ng-r2420-20070602/ath/if_athvar.h
  
  /* free buffer threshold to restart net dev */
  #define	ATH_TXBUF_FREE_THRESHOLD  (ATH_TXBUF / 20)
-@@ -594,6 +594,7 @@
- 	u_int16_t sc_nvaps;			/* # of active virtual ap's */
- 	u_int8_t sc_nstavaps;			/* # of active station vaps */
- 	u_int8_t sc_nmonvaps;			/* # of monitor vaps */
+@@ -598,6 +598,7 @@
+ 	u_int16_t sc_nvaps;			/* # of active virtual APs */
+ 	u_int8_t sc_nstavaps;			/* # of active station VAPs */
+ 	u_int8_t sc_nmonvaps;			/* # of monitor VAPs */
 +	u_int8_t sc_nibssvaps;			/* # of active ibss vaps */
  	u_int8_t sc_nbcnvaps;			/* # of vaps sending beacons */
  	u_int sc_fftxqmin;			/* aggregation threshold */
  	HAL_INT sc_imask;			/* interrupt mask copy */
-Index: madwifi-ng-r2420-20070602/net80211/ieee80211_beacon.c
+Index: madwifi-ng-r2525-20070630/net80211/ieee80211_beacon.c
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_beacon.c	2007-06-04 13:21:53.286875832 +0200
-+++ madwifi-ng-r2420-20070602/net80211/ieee80211_beacon.c	2007-06-04 13:21:57.501235152 +0200
+--- madwifi-ng-r2525-20070630.orig/net80211/ieee80211_beacon.c	2007-07-03 23:02:25.413632000 +0200
++++ madwifi-ng-r2525-20070630/net80211/ieee80211_beacon.c	2007-07-03 23:02:30.981980000 +0200
 @@ -111,7 +111,7 @@
  	bo->bo_tim = frm;
  
@@ -187,11 +183,11 @@ Index: madwifi-ng-r2420-20070602/net80211/ieee80211_beacon.c
  		*frm++ = IEEE80211_ELEMID_IBSSPARMS;
  		*frm++ = 2;
  		*frm++ = 0; *frm++ = 0;		/* TODO: ATIM window */
-Index: madwifi-ng-r2420-20070602/net80211/ieee80211_input.c
+Index: madwifi-ng-r2525-20070630/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_input.c	2007-06-04 13:21:53.292874920 +0200
-+++ madwifi-ng-r2420-20070602/net80211/ieee80211_input.c	2007-06-04 13:21:57.502235000 +0200
-@@ -2939,7 +2939,13 @@
+--- madwifi-ng-r2525-20070630.orig/net80211/ieee80211_input.c	2007-07-03 23:02:25.421632500 +0200
++++ madwifi-ng-r2525-20070630/net80211/ieee80211_input.c	2007-07-03 23:02:31.005981500 +0200
+@@ -2980,7 +2980,13 @@
  			return;
  		}
  		if (ni == vap->iv_bss) {
@@ -206,7 +202,7 @@ Index: madwifi-ng-r2420-20070602/net80211/ieee80211_input.c
  				/*
  				 * XXX Cannot tell if the sender is operating
  				 * in ibss mode.  But we need a new node to
-@@ -2948,12 +2954,13 @@
+@@ -2989,12 +2995,13 @@
  				 */
  				ni = ieee80211_fakeup_adhoc_node(vap,
  					wh->i_addr2);
@@ -221,18 +217,17 @@ Index: madwifi-ng-r2420-20070602/net80211/ieee80211_input.c
  		}
  
  		IEEE80211_NOTE_MAC(vap, IEEE80211_MSG_INPUT, wh->i_addr2,
-Index: madwifi-ng-r2420-20070602/net80211/ieee80211_node.c
+Index: madwifi-ng-r2525-20070630/net80211/ieee80211_node.c
 ===================================================================
---- madwifi-ng-r2420-20070602.orig/net80211/ieee80211_node.c	2007-06-04 13:21:55.391555872 +0200
-+++ madwifi-ng-r2420-20070602/net80211/ieee80211_node.c	2007-06-04 13:21:57.503234848 +0200
-@@ -1082,8 +1082,25 @@
+--- madwifi-ng-r2525-20070630.orig/net80211/ieee80211_node.c	2007-07-03 23:02:29.073860750 +0200
++++ madwifi-ng-r2525-20070630/net80211/ieee80211_node.c	2007-07-03 23:02:31.037983500 +0200
+@@ -1084,8 +1084,25 @@
  	IEEE80211_NODE_TABLE_LOCK_ASSERT(nt);
  
  	hash = IEEE80211_NODE_HASH(macaddr);
-+	
++
 +	/* look for non-ibss nodes first */
- 	LIST_FOREACH(ni, &nt->nt_hash[hash], ni_hash) {
--		if (IEEE80211_ADDR_EQ(ni->ni_macaddr, macaddr)) {
++	LIST_FOREACH(ni, &nt->nt_hash[hash], ni_hash) {
 +		if (IEEE80211_ADDR_EQ(ni->ni_macaddr, macaddr) && ni->ni_vap->iv_opmode != IEEE80211_M_IBSS) {
 +			ieee80211_ref_node(ni);	/* mark referenced */
 +#ifdef IEEE80211_DEBUG_REFCNT
@@ -247,7 +242,8 @@ Index: madwifi-ng-r2420-20070602/net80211/ieee80211_node.c
 +	}
 +
 +	/* now look for ibss nodes */
-+	LIST_FOREACH(ni, &nt->nt_hash[hash], ni_hash) {
+ 	LIST_FOREACH(ni, &nt->nt_hash[hash], ni_hash) {
+-		if (IEEE80211_ADDR_EQ(ni->ni_macaddr, macaddr)) {
 +		if (IEEE80211_ADDR_EQ(ni->ni_macaddr, macaddr) && ni->ni_vap->iv_opmode == IEEE80211_M_IBSS) {
  			ieee80211_ref_node(ni);	/* mark referenced */
  #ifdef IEEE80211_DEBUG_REFCNT
