@@ -3,7 +3,16 @@
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 . /etc/diag.sh
 
+failsafe_ip() {
+	ifconfig $ifname 192.168.1.1 netmask 255.255.255.0 broadcast 192.168.1.255 up
+}
+
 failsafe() {
+	[ -n "$ifname" ] && grep "$ifname" /proc/net/dev >/dev/null && {
+		failsafe_ip
+		netmsg 192.168.1.255 "Entering Failsafe!"
+		telnetd -l /bin/login <> /dev/null 2>&1
+	}
 	lock /tmp/.failsafe
 	ash --login
 }

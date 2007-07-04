@@ -1,0 +1,8 @@
+# reset button only supported on ar5315+ at the moment
+grep 'Atheros AR231[567]' /proc/cpuinfo > /dev/null && {
+	ifname=eth0
+	failsafe_ip
+	netmsg 192.168.1.255 "Press reset now, to enter Failsafe!"
+	ifconfig "$ifname" 0.0.0.0 down
+	sleep 2
+}
