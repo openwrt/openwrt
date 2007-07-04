@@ -1,7 +1,7 @@
-Index: linux-2.6.22-rc4/arch/mips/kernel/genex.S
+Index: linux-2.6.22-rc6/arch/mips/kernel/genex.S
 ===================================================================
---- linux-2.6.22-rc4.orig/arch/mips/kernel/genex.S	2007-06-10 21:32:12.000000000 +0100
-+++ linux-2.6.22-rc4/arch/mips/kernel/genex.S	2007-06-10 21:33:19.000000000 +0100
+--- linux-2.6.22-rc6.orig/arch/mips/kernel/genex.S	2007-07-04 01:52:47.812492000 +0200
++++ linux-2.6.22-rc6/arch/mips/kernel/genex.S	2007-07-04 01:53:01.585352750 +0200
 @@ -51,6 +51,10 @@
  NESTED(except_vec3_generic, 0, sp)
  	.set	push
@@ -13,10 +13,10 @@ Index: linux-2.6.22-rc4/arch/mips/kernel/genex.S
  #if R5432_CP0_INTERRUPT_WAR
  	mfc0	k0, CP0_INDEX
  #endif
-Index: linux-2.6.22-rc4/arch/mips/mm/c-r4k.c
+Index: linux-2.6.22-rc6/arch/mips/mm/c-r4k.c
 ===================================================================
---- linux-2.6.22-rc4.orig/arch/mips/mm/c-r4k.c	2007-06-10 21:33:17.000000000 +0100
-+++ linux-2.6.22-rc4/arch/mips/mm/c-r4k.c	2007-06-10 21:33:19.000000000 +0100
+--- linux-2.6.22-rc6.orig/arch/mips/mm/c-r4k.c	2007-07-04 01:53:01.545350250 +0200
++++ linux-2.6.22-rc6/arch/mips/mm/c-r4k.c	2007-07-04 02:17:11.435962750 +0200
 @@ -29,6 +29,9 @@
  #include <asm/cacheflush.h> /* for run_uncached() */
  
@@ -76,11 +76,28 @@ Index: linux-2.6.22-rc4/arch/mips/mm/c-r4k.c
  	if (dc_lsize)
  		protected_writeback_dcache_line(addr & ~(dc_lsize - 1));
  	if (!cpu_icache_snoops_remote_store && scache_size)
-@@ -1173,6 +1190,15 @@
- 
+@@ -1144,6 +1161,17 @@
+ 	 * silly idea of putting something else there ...
+ 	 */
+ 	switch (current_cpu_data.cputype) {
++	case CPU_BCM3302:
++		{
++			u32 cm;
++			cm = read_c0_diag();
++			/* Enable icache */
++			cm |= (1 << 31);
++			/* Enable dcache */
++			cm |= (1 << 30);
++			write_c0_diag(cm);
++		}
++		break;
+ 	case CPU_R4000PC:
+ 	case CPU_R4000SC:
+ 	case CPU_R4000MC:
+@@ -1174,6 +1202,15 @@
  	/* Default cache error handler for R4000 and R5000 family */
  	set_uncached_handler (0x100, &except_vec2_generic, 0x80);
-+	
+ 
 +	/* Check if special workarounds are required */
 +#ifdef CONFIG_BCM947XX
 +	if (current_cpu_data.cputype == CPU_BCM4710 && (current_cpu_data.processor_id & 0xff) == 0) {
@@ -89,13 +106,28 @@ Index: linux-2.6.22-rc4/arch/mips/mm/c-r4k.c
 +	} else
 +#endif
 +		bcm4710 = 0;
- 
++
  	probe_pcache();
  	setup_scache();
-Index: linux-2.6.22-rc4/arch/mips/mm/tlbex.c
+ 
+@@ -1219,5 +1256,13 @@
+ 	build_clear_page();
+ 	build_copy_page();
+ 	local_r4k___flush_cache_all(NULL);
++#ifdef CONFIG_BCM947XX
++	{
++		static void (*_coherency_setup)(void);
++		_coherency_setup = (void (*)(void)) KSEG1ADDR(coherency_setup);
++		_coherency_setup();
++	}
++#else
+ 	coherency_setup();
++#endif
+ }
+Index: linux-2.6.22-rc6/arch/mips/mm/tlbex.c
 ===================================================================
---- linux-2.6.22-rc4.orig/arch/mips/mm/tlbex.c	2007-06-10 21:33:12.000000000 +0100
-+++ linux-2.6.22-rc4/arch/mips/mm/tlbex.c	2007-06-10 21:33:19.000000000 +0100
+--- linux-2.6.22-rc6.orig/arch/mips/mm/tlbex.c	2007-07-04 01:53:01.193328250 +0200
++++ linux-2.6.22-rc6/arch/mips/mm/tlbex.c	2007-07-04 02:17:26.112880000 +0200
 @@ -1229,6 +1229,10 @@
  #endif
  }
@@ -107,23 +139,22 @@ Index: linux-2.6.22-rc4/arch/mips/mm/tlbex.c
  static void __init build_r4000_tlb_refill_handler(void)
  {
  	u32 *p = tlb_handler;
-@@ -1243,6 +1247,12 @@
+@@ -1243,6 +1247,11 @@
  	memset(relocs, 0, sizeof(relocs));
  	memset(final_handler, 0, sizeof(final_handler));
  
 +#ifdef CONFIG_BCM947XX
-+	if (bcm4710) {
++	if (current_cpu_data.cputype == CPU_BCM3302)
 +		i_nop(&p);
-+	}
 +#endif
-+	
++
  	/*
  	 * create the plain linear handler
  	 */
-Index: linux-2.6.22-rc4/include/asm-mips/r4kcache.h
+Index: linux-2.6.22-rc6/include/asm-mips/r4kcache.h
 ===================================================================
---- linux-2.6.22-rc4.orig/include/asm-mips/r4kcache.h	2007-06-10 21:32:12.000000000 +0100
-+++ linux-2.6.22-rc4/include/asm-mips/r4kcache.h	2007-06-10 21:33:19.000000000 +0100
+--- linux-2.6.22-rc6.orig/include/asm-mips/r4kcache.h	2007-07-04 01:52:47.840493750 +0200
++++ linux-2.6.22-rc6/include/asm-mips/r4kcache.h	2007-07-04 01:53:01.673358250 +0200
 @@ -17,6 +17,20 @@
  #include <asm/cpu-features.h>
  #include <asm/mipsmtregs.h>
@@ -326,11 +357,11 @@ Index: linux-2.6.22-rc4/include/asm-mips/r4kcache.h
 +__BUILD_BLAST_CACHE_RANGE(inv_s, scache, Hit_Invalidate_SD,,, )
  
  #endif /* _ASM_R4KCACHE_H */
-Index: linux-2.6.22-rc4/include/asm-mips/stackframe.h
+Index: linux-2.6.22-rc6/include/asm-mips/stackframe.h
 ===================================================================
---- linux-2.6.22-rc4.orig/include/asm-mips/stackframe.h	2007-06-10 21:32:12.000000000 +0100
-+++ linux-2.6.22-rc4/include/asm-mips/stackframe.h	2007-06-10 21:33:19.000000000 +0100
-@@ -352,6 +352,10 @@
+--- linux-2.6.22-rc6.orig/include/asm-mips/stackframe.h	2007-07-04 01:52:47.852494500 +0200
++++ linux-2.6.22-rc6/include/asm-mips/stackframe.h	2007-07-04 01:53:01.697359750 +0200
+@@ -350,6 +350,10 @@
  		.macro	RESTORE_SP_AND_RET
  		LONG_L	sp, PT_R29(sp)
  		.set	mips3
