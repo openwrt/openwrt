@@ -679,6 +679,29 @@ static int wlc_wdsmac(wlc_param param, void *data, void *value)
 	return ret;
 }
 
+static int wlc_pmk(wlc_param param, void *data, void *value)
+{
+	int ret = -1;
+	char *str = (char *) value;
+	wsec_pmk_t pmk;
+	
+	/* driver doesn't support GET */
+
+	if ((param & PARAM_MODE) == SET) {
+		strncpy(pmk.key, value, WSEC_MAX_PSK_LEN);
+		pmk.key_len = strlen(value);
+
+		if (pmk.key_len > WSEC_MAX_PSK_LEN)
+			pmk.key_len = WSEC_MAX_PSK_LEN;
+
+		pmk.flags = WSEC_PASSPHRASE;
+
+		ret = wl_ioctl(interface, WLC_SET_WSEC_PMK, &pmk, sizeof(pmk));
+	}
+	
+	return ret;
+}
+
 static const struct wlc_call wlc_calls[] = {
 	{
 		.name = "version",
@@ -863,6 +886,12 @@ static const struct wlc_call wlc_calls[] = {
 		.handler = wlc_iovar,
 		.data.str = "sup_wpa",
 		.desc = "Built-in WPA supplicant"
+	},
+	{
+		.name = "passphrase",
+		.param = STRING,
+		.handler = wlc_pmk,
+		.desc = "Passphrase for built-in WPA supplicant",
 	},
 	{
 		.name = "maxassoc",

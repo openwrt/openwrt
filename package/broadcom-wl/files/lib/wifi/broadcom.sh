@@ -201,7 +201,15 @@ enable_broadcom() {
 		[ -z "$nasopts" ] || {
 			eval "${vif}_ssid=\"\$ssid\""
 			mode="-A"
-			[ "$vif" = "$sta_if" ] && mode="-S"
+			[ "$ap" = "0" ] && {
+				mode="-S"
+				[ -z "$bridge" ] || {
+					append vif_pre_up "supplicant 1" "$N"
+					append vif_pre_up "passphrase $key" "$N"
+					
+					nas=""
+				}
+			}
 			[ -z "$nas" ] || nas_cmd="${nas_cmd:+$nas_cmd$N}$nas -P /var/run/nas.$ifname.pid -H 34954 ${bridge:+ -l $bridge} -i $ifname $mode -m $auth -w $wsec -s \"\$${vif}_ssid\" -g 3600 $nasopts &"
 		}
 		_c=$(($_c + 1))
