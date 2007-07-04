@@ -262,26 +262,16 @@ detect_atheros() {
 config wifi-device  $dev
 	option type     atheros
 	option channel  5
-#       option diversity 1
-#       option txantenna 0
-#       option rxantenna 0
-#       option distance  2000
-# disable radio to prevent an open ap after reflashing:
-	option disabled 1
 
+	# REMOVE THIS LINE TO ENABLE WIFI:
+	option disabled 1
 
 config wifi-iface
 	option device	$dev
 	option network	lan
 	option mode	ap
 	option ssid	OpenWrt
-	option hidden	0
-#	option txpower	15
-#	option bgscan	enable
-#	option frag     off
-#	option rts      off
 	option encryption none
-
 EOF
 	done
 }
