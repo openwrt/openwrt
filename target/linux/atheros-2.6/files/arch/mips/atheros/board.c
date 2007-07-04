@@ -23,6 +23,7 @@
 #include <linux/serial.h>
 #include <linux/serial_core.h>
 #include <asm/bootinfo.h>
+#include <asm/irq_cpu.h>
 #include <asm/io.h>
 #include "ar531x.h"
 
@@ -189,4 +190,18 @@ void __init plat_timer_setup(struct irqaction *irq)
 	write_c0_compare(count + 1000);
 }
 
+asmlinkage void plat_irq_dispatch(void)
+{
+	DO_AR5312(ar5312_irq_dispatch();)
+	DO_AR5315(ar5315_irq_dispatch();)
+}
 
+void __init arch_init_irq(void)
+{
+	clear_c0_status(ST0_IM);
+	mips_cpu_irq_init();
+
+	/* Initialize interrupt controllers */
+	DO_AR5312(ar5312_misc_intr_init(AR531X_MISC_IRQ_BASE);)
+	DO_AR5315(ar5315_misc_intr_init(AR531X_MISC_IRQ_BASE);)
+}

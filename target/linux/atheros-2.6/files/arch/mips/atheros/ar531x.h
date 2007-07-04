@@ -3,8 +3,32 @@
 
 #include <asm/cpu-info.h>
 #include <ar531x_platform.h>
-#include "ar5312.h"
-#include "ar5315.h"
+#include "ar5312/ar5312.h"
+#include "ar5315/ar5315.h"
+
+
+/*
+ * C access to CLZ instruction
+ * (count leading zeroes).
+ */
+static inline int clz(unsigned long val)
+{
+	int ret;
+
+	__asm__ volatile (
+		".set\tnoreorder\n\t"
+		".set\tnoat\n\t"
+		".set\tmips32\n\t"
+		"clz\t%0,%1\n\t"
+		".set\tmips0\n\t"
+		".set\tat\n\t"
+		".set\treorder"
+		: "=r" (ret)
+		: "r" (val)
+	);
+	
+	return ret;
+}
 
 /*                                                                             
  * Atheros CPUs before the AR2315 are using MIPS 4Kc core, later designs are
@@ -27,11 +51,8 @@
 #define DO_AR5315(...)
 #endif
 
-#include <irq.h>
-
-#define AR531X_HIGH_PRIO                0x10
 #define AR531X_MISC_IRQ_BASE		0x20
-#define AR531X_GPIO_IRQ_BASE            0x30
+#define AR531X_GPIO_IRQ_BASE		0x30
 
 /* Software's idea of interrupts handled by "CPU Interrupt Controller" */
 #define AR531X_IRQ_NONE		MIPS_CPU_IRQ_BASE+0
@@ -47,7 +68,8 @@
 #define AR531X_MISC_IRQ_UART0_DMA	AR531X_MISC_IRQ_BASE+6
 #define AR531X_MISC_IRQ_WATCHDOG	AR531X_MISC_IRQ_BASE+7
 #define AR531X_MISC_IRQ_LOCAL		AR531X_MISC_IRQ_BASE+8
-#define AR531X_MISC_IRQ_COUNT		9
+#define AR531X_MISC_IRQ_SPI 		AR531X_MISC_IRQ_BASE+9
+#define AR531X_MISC_IRQ_COUNT		10
 
 /* GPIO Interrupts [0..7], share AR531X_MISC_IRQ_GPIO */
 #define AR531X_GPIO_IRQ_NONE            AR531X_MISC_IRQ_BASE+0
@@ -127,5 +149,18 @@ extern void ar5315_prom_init(void);
 extern void ar5315_misc_intr_init(int irq_base);
 extern void ar5315_plat_setup(void);
 extern asmlinkage void ar5315_irq_dispatch(void);
+extern void ar5315_pci_irq(int irq);
+static inline u32 sysRegMask(u32 phys, u32 mask, u32 value)
+{
+	u32 reg;
+	
+	reg = sysRegRead(phys);
+	reg &= ~mask;
+	reg |= value & mask;
+	sysRegWrite(phys, reg);
+	reg = sysRegRead(phys); /* flush write to the hardware */
+
+	return reg;
+}
 
 #endif
