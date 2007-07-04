@@ -96,6 +96,7 @@ enum {
 	WE800G,
 	WR850GV1,
 	WR850GV2V3,
+	WR850GP,
 
 	/* Belkin */
 	BELKIN_UNKNOWN,
@@ -494,6 +495,19 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "diag",	.gpio = 1 << 7, .polarity = REVERSE },
 		},
 	},
+	[WR850GP] = {
+		.name		= "Motorola WR850GP",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 5 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
+			{ .name = "wlan",	.gpio = 1 << 0, .polarity = REVERSE },
+			{ .name = "dmz",	.gpio = 1 << 6, .polarity = REVERSE },
+			{ .name = "diag",	.gpio = 1 << 7, .polarity = REVERSE },
+		},
+	},
+
 	/* Belkin */
 	[BELKIN_UNKNOWN] = {
 		.name		= "Belkin (unknown)",
@@ -571,14 +585,59 @@ static struct platform_t __init *platform_detect(void)
 {
 	char *boardnum, *boardtype, *buf;
 
-	boardnum = getvar("boardnum");
-	boardtype = getvar("boardtype");
-
 	if (strcmp(getvar("nvram_type"), "cfe") == 0)
 		return &platforms[WGT634U];
-	
-	if (strncmp(getvar("model_no"), "WL700",5) == 0)
-		return &platforms[WL700GE];
+
+	/* Look for a model identifier */
+
+	/* Based on "model_name" */
+	if (buf = nvram_get("model_name")) {
+		if (!strcmp(buf, "DIR-130"))
+			return &platforms[DIR130];
+		if (!strcmp(buf, "DIR-330"))
+			return &platforms[DIR330];
+	}
+
+	/* Based on "model_no" */
+	if (buf = nvram_get("model_no")) {
+		if (!strncmp(buf,"WL700", 5)) /* WL700* */
+			return &platforms[WL700GE];
+	}
+
+	/* Based on "ModelId" */
+	if (buf = nvram_get("ModelId")) {
+		if (!strcmp(buf, "WR850GP"))
+			return &platforms[WR850GP];
+		if (!strcmp(buf,"WX-5565"))
+			return &platforms[TM2300];
+		if (!strncmp(buf,"WE800G", 6)) /* WE800G* */
+			return &platforms[WE800G];
+	}
+
+	/* Buffalo */
+	if ((buf = (nvram_get("melco_id") ?: nvram_get("buffalo_id")))) {
+		/* Buffalo hardware, check id for specific hardware matches */
+		if (!strcmp(buf, "29bb0332"))
+			return &platforms[WBR2_G54];
+		if (!strcmp(buf, "29129"))
+			return &platforms[WLA2_G54L];
+		if (!strcmp(buf, "30189"))
+			return &platforms[WHR_HP_G54];
+		if (!strcmp(buf, "30182"))
+			return &platforms[WHR_G54S];
+		if (!strcmp(buf, "290441dd"))
+			return &platforms[WHR2_A54G54];
+		if (!strcmp(buf, "31120"))
+			return &platforms[WZR_G300N];
+		if (!strcmp(buf, "30083"))
+			return &platforms[WZR_RS_G54];
+		if (!strcmp(buf, "30103"))
+			return &platforms[WZR_RS_G54HP];
+	}
+
+	/* no easy model number, attempt to guess */
+	boardnum = getvar("boardnum");
+	boardtype = getvar("boardtype");
 
 	if (strncmp(getvar("pmon_ver"), "CFE", 3) == 0) {
 		/* CFE based - newer hardware */
@@ -608,24 +667,10 @@ static struct platform_t __init *platform_detect(void)
 		if (!strcmp(boardnum, "10496"))
 			return &platforms[USR5461];
 
-		/* D-Link */
-		if (!strcmp(getvar("model_name"), "DIR-130"))
-			return &platforms[DIR130];
-		if (!strcmp(getvar("model_name"), "DIR-330"))
-			return &platforms[DIR330];
-
 	} else { /* PMON based - old stuff */
-
-		/* Dell TrueMobile 2300 */
-		if (!strcmp(getvar("ModelId"),"WX-5565"))
-			return &platforms[TM2300];
-	
 		if ((simple_strtoul(getvar("GemtekPmonVer"), NULL, 0) == 9) &&
 			(simple_strtoul(getvar("et0phyaddr"), NULL, 0) == 30)) {
-			if (!strncmp(getvar("ModelId"),"WE800G", 6))
-				return &platforms[WE800G];
-			else
-				return &platforms[WR850GV1];
+			return &platforms[WR850GV1];
 		}
 		if (!strncmp(boardtype, "bcm94710dev", 11)) {
 			if (!strcmp(boardnum, "42"))
@@ -648,26 +693,6 @@ static struct platform_t __init *platform_detect(void)
 		/* unknown asus stuff, probably bcm4702 */
 		if (!strncmp(boardnum, "asusX", 5))
 			return &platforms[ASUS_4702];
-	}
-
-	if ((buf = (nvram_get("melco_id") ?: nvram_get("buffalo_id")))) {
-		/* Buffalo hardware, check id for specific hardware matches */
-		if (!strcmp(buf, "29bb0332"))
-			return &platforms[WBR2_G54];
-		if (!strcmp(buf, "29129"))
-			return &platforms[WLA2_G54L];
-		if (!strcmp(buf, "30189"))
-			return &platforms[WHR_HP_G54];
-		if (!strcmp(buf, "30182"))
-			return &platforms[WHR_G54S];
-		if (!strcmp(buf, "290441dd"))
-			return &platforms[WHR2_A54G54];
-		if (!strcmp(buf, "31120"))
-			return &platforms[WZR_G300N];
-		if (!strcmp(buf, "30083"))
-			return &platforms[WZR_RS_G54];
-		if (!strcmp(buf, "30103"))
-			return &platforms[WZR_RS_G54HP];
 	}
 
 	if (buf || !strcmp(boardnum, "00")) {/* probably buffalo */
