@@ -31,7 +31,7 @@ define Package/fdisk
   $(call Package/util-linux/Default)
   TITLE:=Partition table manipulation utility
   DESCRIPTION:=\
-	This package contains an utility for managing disk partition tables.
+	This package contains a utility for managing disk partition tables.
   URL:=http://www.kernel.org/pub/linux/utils/util-linux/
 endef
 
@@ -40,7 +40,7 @@ define Package/cfdisk
   TITLE:=Partition table manipulation utility
   DEPENDS:=+libncurses
   DESCRIPTION:=\
-	This package contains an utility for managing disk partition tables.
+	This package contains a utility for managing disk partition tables.
   URL:=http://www.kernel.org/pub/linux/utils/util-linux/
 endef
 
@@ -48,7 +48,7 @@ define Package/losetup
   $(call Package/util-linux/Default)
   TITLE:=Loopback devices setup and control utility
   DESCRIPTION:=\
-	This package contains an utility for managing loopback devices.
+	This package contains a utility for managing loopback devices.
 endef
 
 define Package/swap-utils
@@ -59,6 +59,13 @@ define Package/swap-utils
 	- mkswap\\\
 	- swapon\\\
 	- swapoff
+endef
+
+define Package/hwclock
+  $(call Package/util-linux/Default)
+  TITLE:=Utilities for managing the hardware clock
+  DESCRIPTION:=\
+  	 This package contains a utility for managing the hardware clock
 endef
 
 TARGET_CFLAGS += -I$(PKG_BUILD_DIR)/lib
@@ -98,7 +105,12 @@ define Package/swap-utils/install
 	$(call Package/Template,sbin/swapoff,$(1)/usr/sbin)
 endef
 
+define Package/hwclock/install
+	$(call Package/Template,sbin/hwclock,$(1)/usr/sbin)
+endef
+
 $(eval $(call BuildPackage,fdisk))
 $(eval $(call BuildPackage,cfdisk))
 $(eval $(call BuildPackage,losetup))
 $(eval $(call BuildPackage,swap-utils))
+$(eval $(call BuildPackage,hwclock))
