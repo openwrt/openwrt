@@ -98,6 +98,7 @@ prepare_interface() {
 				} || {
 					$DEBUG brctl addbr "br-$config"
 					$DEBUG brctl setfd "br-$config" 0
+					$DEBUG ifconfig "br-$config" up
 					$DEBUG brctl addif "br-$config" "$iface"
 					# Creating the bridge here will have triggered a hotplug event, which will
 					# result in another setup_interface() call, so we simply stop processing
