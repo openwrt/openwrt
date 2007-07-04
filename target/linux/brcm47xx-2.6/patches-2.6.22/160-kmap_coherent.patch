@@ -1,7 +1,7 @@
-Index: linux-2.6.22-rc5/arch/mips/mm/init.c
+Index: linux-2.6.22-rc6/arch/mips/mm/init.c
 ===================================================================
---- linux-2.6.22-rc5.orig/arch/mips/mm/init.c	2007-06-27 23:40:06.406545264 +0200
-+++ linux-2.6.22-rc5/arch/mips/mm/init.c	2007-06-27 23:40:08.920163136 +0200
+--- linux-2.6.22-rc6.orig/arch/mips/mm/init.c	2007-07-04 02:17:11.423962000 +0200
++++ linux-2.6.22-rc6/arch/mips/mm/init.c	2007-07-04 02:17:31.269202250 +0200
 @@ -207,7 +207,7 @@
  	void *vfrom, *vto;
  
@@ -29,10 +29,10 @@ Index: linux-2.6.22-rc5/arch/mips/mm/init.c
  		void *vfrom =
  			kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
  		memcpy(dst, vfrom, len);
-Index: linux-2.6.22-rc5/include/asm-mips/mach-bcm947xx/cpu-feature-overrides.h
+Index: linux-2.6.22-rc6/include/asm-mips/mach-bcm947xx/cpu-feature-overrides.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.22-rc5/include/asm-mips/mach-bcm947xx/cpu-feature-overrides.h	2007-06-27 23:40:08.921162984 +0200
++++ linux-2.6.22-rc6/include/asm-mips/mach-bcm947xx/cpu-feature-overrides.h	2007-07-04 02:17:31.273202500 +0200
 @@ -0,0 +1,13 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -47,10 +47,10 @@ Index: linux-2.6.22-rc5/include/asm-mips/mach-bcm947xx/cpu-feature-overrides.h
 +#define cpu_use_kmap_coherent	0
 +
 +#endif /* __ASM_MACH_BCM947XX_CPU_FEATURE_OVERRIDES_H */
-Index: linux-2.6.22-rc5/include/asm-mips/cpu-features.h
+Index: linux-2.6.22-rc6/include/asm-mips/cpu-features.h
 ===================================================================
---- linux-2.6.22-rc5.orig/include/asm-mips/cpu-features.h	2007-06-27 23:40:06.419543288 +0200
-+++ linux-2.6.22-rc5/include/asm-mips/cpu-features.h	2007-06-27 23:40:08.921162984 +0200
+--- linux-2.6.22-rc6.orig/include/asm-mips/cpu-features.h	2007-07-04 02:17:11.455964000 +0200
++++ linux-2.6.22-rc6/include/asm-mips/cpu-features.h	2007-07-04 02:17:31.305204500 +0200
 @@ -101,6 +101,9 @@
  #ifndef cpu_has_pindexed_dcache
  #define cpu_has_pindexed_dcache	(cpu_data[0].dcache.flags & MIPS_CACHE_PINDEX)
@@ -61,34 +61,3 @@ Index: linux-2.6.22-rc5/include/asm-mips/cpu-features.h
  
  /*
   * I-Cache snoops remote store.  This only matters on SMP.  Some multiprocessors
-Index: linux-2.6.22-rc5/arch/mips/mm/c-r4k.c
-===================================================================
---- linux-2.6.22-rc5.orig/arch/mips/mm/c-r4k.c	2007-06-27 23:40:45.883543848 +0200
-+++ linux-2.6.22-rc5/arch/mips/mm/c-r4k.c	2007-06-27 23:42:06.682260576 +0200
-@@ -339,7 +339,7 @@
- 
- static void r4k_flush_cache_all(void)
- {
--	if (!cpu_has_dc_aliases)
-+	if (!cpu_has_dc_aliases || !cpu_use_kmap_coherent)
- 		return;
- 
- 	r4k_on_each_cpu(local_r4k_flush_cache_all, NULL, 1, 1);
-@@ -380,7 +380,7 @@
- static void r4k_flush_cache_range(struct vm_area_struct *vma,
- 	unsigned long start, unsigned long end)
- {
--	if (!cpu_has_dc_aliases)
-+	if (!cpu_has_dc_aliases || !cpu_use_kmap_coherent)
- 		return;
- 
- 	r4k_on_each_cpu(local_r4k_flush_cache_range, vma, 1, 1);
-@@ -412,7 +412,7 @@
- 
- static void r4k_flush_cache_mm(struct mm_struct *mm)
- {
--	if (!cpu_has_dc_aliases)
-+	if (!cpu_has_dc_aliases || !cpu_use_kmap_coherent)
- 		return;
- 
- 	r4k_on_each_cpu(local_r4k_flush_cache_mm, mm, 1, 1);
