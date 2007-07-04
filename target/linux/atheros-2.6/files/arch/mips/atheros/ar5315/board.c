@@ -26,9 +26,10 @@
 #include <asm/time.h>
 #include <asm/irq.h>
 #include <asm/io.h>
-#include "ar531x.h"
+#include "../ar531x.h"
 
 static int is_5315 = 0;
+
 static struct resource ar5315_eth_res[] = {
 	{
 		.name = "eth0_membase",
@@ -182,7 +183,6 @@ int __init ar5315_init_devices(void)
 {
 	struct ar531x_config *config;
 	struct ar531x_boarddata *bcfg;
-	u32 devid;
 	int dev = 0;
 
 	if (!is_5315)
@@ -193,9 +193,10 @@ int __init ar5315_init_devices(void)
 	bcfg = (struct ar531x_boarddata *) board_config;
 
 #if 0
+	{
 	/* Detect the hardware based on the device ID */
-	devid = sysRegRead(AR5315_SREV) & AR5315_REV_MAJ >> AR5315_REV_MAJ_S;
-	switch(devid) {
+	u32 devid = sysRegRead(AR5315_SREV) & AR5315_REV_MAJ >> AR5315_REV_MAJ_S;
+		switch(devid) {
 		case 0x9:
 			mips_machtype = MACH_ATHEROS_AR2317;
 			break;
@@ -204,6 +205,7 @@ int __init ar5315_init_devices(void)
 		default:
 			mips_machtype = MACH_ATHEROS_AR2315;
 			break;
+		}
 	}
 #endif
 
@@ -220,46 +222,9 @@ int __init ar5315_init_devices(void)
 	ar5315_devs[dev++] = &ar5315_eth;
 	ar5315_devs[dev++] = &ar5315_wmac;
 	ar5315_devs[dev++] = &ar5315_spiflash;
+			
 
 	return platform_add_devices(ar5315_devs, dev);
-}
-
-
-/*
- * Called when an interrupt is received, this function
- * determines exactly which interrupt it was, and it
- * invokes the appropriate handler.
- *
- * Implicitly, we also define interrupt priority by
- * choosing which to dispatch first.
- */
-asmlinkage void ar5315_irq_dispatch(void)
-{
-	int pending = read_c0_status() & read_c0_cause();
-
-	if (pending & CAUSEF_IP3)
-		do_IRQ(AR5315_IRQ_WLAN0_INTRS);
-	else if (pending & CAUSEF_IP4)
-		do_IRQ(AR5315_IRQ_ENET0_INTRS);
-	else if (pending & CAUSEF_IP2) {
-		unsigned int ar531x_misc_intrs = sysRegRead(AR5315_ISR) & sysRegRead(AR5315_IMR);
-
-	    if (ar531x_misc_intrs & AR5315_ISR_TIMER)
-			do_IRQ(AR531X_MISC_IRQ_TIMER);
-		else if (ar531x_misc_intrs & AR5315_ISR_AHB)
-			do_IRQ(AR531X_MISC_IRQ_AHB_PROC);
-		else if (ar531x_misc_intrs & AR5315_ISR_GPIO) {
-			sysRegWrite(AR5315_ISR, sysRegRead(AR5315_IMR) | ~AR5315_ISR_GPIO);
-		} else if (ar531x_misc_intrs & AR5315_ISR_UART0)
-			do_IRQ(AR531X_MISC_IRQ_UART0);
-		else if (ar531x_misc_intrs & AR5315_ISR_WD)
-			do_IRQ(AR531X_MISC_IRQ_WATCHDOG);
-		else
-			do_IRQ(AR531X_MISC_IRQ_NONE);
-	} else if (pending & CAUSEF_IP7)
-		do_IRQ(AR531X_IRQ_CPU_CLOCK);
-	else
-		do_IRQ(AR531X_IRQ_NONE);
 }
 
 static void ar5315_halt(void)
@@ -360,169 +325,6 @@ static inline unsigned int ar5315_apb_frequency(void)
 static void __init ar5315_time_init(void)
 {
 	mips_hpt_frequency = ar5315_cpu_frequency() / 2;
-}
-
-
-
-/* Enable the specified AR531X_MISC_IRQ interrupt */
-static void
-ar5315_misc_intr_enable(unsigned int irq)
-{
-	unsigned int imr;
-
-	imr = sysRegRead(AR5315_IMR);
-	switch(irq)
-	{
-	   case AR531X_MISC_IRQ_TIMER:
-	     imr |= AR5315_ISR_TIMER;
-	     break;
-
-	   case AR531X_MISC_IRQ_AHB_PROC:
-	     imr |= AR5315_ISR_AHB;
-	     break;
-
-	   case AR531X_MISC_IRQ_AHB_DMA:
-	     imr |= 0/* ?? */;
-	     break;
-
-	   case	AR531X_MISC_IRQ_GPIO:
-	     imr |= AR5315_ISR_GPIO;
-	     break;
-
-	   case AR531X_MISC_IRQ_UART0:
-	     imr |= AR5315_ISR_UART0;
-	     break;
-
-
-	   case	AR531X_MISC_IRQ_WATCHDOG:
-	     imr |= AR5315_ISR_WD;
-	     break;
-
-	   case AR531X_MISC_IRQ_LOCAL:
-	     imr |= 0/* ?? */;
-	     break;
-
-	}
-	sysRegWrite(AR5315_IMR, imr);
-	imr=sysRegRead(AR5315_IMR); /* flush write buffer */
-}
-
-/* Disable the specified AR531X_MISC_IRQ interrupt */
-static void
-ar5315_misc_intr_disable(unsigned int irq)
-{
-	unsigned int imr;
-
-	imr = sysRegRead(AR5315_IMR);
-	switch(irq)
-	{
-	   case AR531X_MISC_IRQ_TIMER:
-	     imr &= (~AR5315_ISR_TIMER);
-	     break;
-
-	   case AR531X_MISC_IRQ_AHB_PROC:
-	     imr &= (~AR5315_ISR_AHB);
-	     break;
-
-	   case AR531X_MISC_IRQ_AHB_DMA:
-	     imr &= 0/* ?? */;
-	     break;
-
-	   case	AR531X_MISC_IRQ_GPIO:
-	     imr &= ~AR5315_ISR_GPIO;
-	     break;
-
-	   case AR531X_MISC_IRQ_UART0:
-	     imr &= (~AR5315_ISR_UART0);
-	     break;
-
-	   case	AR531X_MISC_IRQ_WATCHDOG:
-	     imr &= (~AR5315_ISR_WD);
-	     break;
-
-	   case AR531X_MISC_IRQ_LOCAL:
-	     imr &= ~0/* ?? */;
-	     break;
-
-	}
-	sysRegWrite(AR5315_IMR, imr);
-	sysRegRead(AR5315_IMR); /* flush write buffer */
-}
-
-/* Turn on the specified AR531X_MISC_IRQ interrupt */
-static unsigned int
-ar5315_misc_intr_startup(unsigned int irq)
-{
-	ar5315_misc_intr_enable(irq);
-	return 0;
-}
-
-/* Turn off the specified AR531X_MISC_IRQ interrupt */
-static void
-ar5315_misc_intr_shutdown(unsigned int irq)
-{
-	ar5315_misc_intr_disable(irq);
-}
-
-static void
-ar5315_misc_intr_ack(unsigned int irq)
-{
-	ar5315_misc_intr_disable(irq);
-}
-
-static void
-ar5315_misc_intr_end(unsigned int irq)
-{
-	if (!(irq_desc[irq].status & (IRQ_DISABLED | IRQ_INPROGRESS)))
-		ar5315_misc_intr_enable(irq);
-}
-
-static struct irq_chip ar5315_misc_intr_controller = {
-	.typename	= "AR5315 misc",
-	.startup	= ar5315_misc_intr_startup,
-	.shutdown	= ar5315_misc_intr_shutdown,
-	.enable		= ar5315_misc_intr_enable,
-	.disable	= ar5315_misc_intr_disable,
-	.ack		= ar5315_misc_intr_ack,
-	.end		= ar5315_misc_intr_end,
-};
-
-static irqreturn_t ar5315_ahb_proc_handler(int cpl, void *dev_id)
-{
-    sysRegWrite(AR5315_AHB_ERR0,AHB_ERROR_DET);
-    sysRegRead(AR5315_AHB_ERR1);
-
-    printk("AHB fatal error\n");
-    machine_restart("AHB error"); /* Catastrophic failure */
-
-    return IRQ_HANDLED;
-}
-
-static struct irqaction ar5315_ahb_proc_interrupt  = {
-	.handler	= ar5315_ahb_proc_handler,
-	.flags		= SA_INTERRUPT,
-	.name		= "ar5315_ahb_proc_interrupt",
-};
-
-
-static struct irqaction cascade  = {
-	.handler	= no_action,
-	.flags		= SA_INTERRUPT,
-	.name		= "cascade",
-};
-
-void ar5315_misc_intr_init(int irq_base)
-{
-	int i;
-
-	for (i = irq_base; i < irq_base + AR531X_MISC_IRQ_COUNT; i++) {
-		irq_desc[i].status = IRQ_DISABLED;
-		irq_desc[i].action = NULL;
-		irq_desc[i].depth = 1;
-		irq_desc[i].chip = &ar5315_misc_intr_controller;
-	}
-	setup_irq(AR531X_MISC_IRQ_AHB_PROC, &ar5315_ahb_proc_interrupt);
-	setup_irq(AR5315_IRQ_MISC_INTRS, &cascade);
 }
 
 void __init ar5315_prom_init(void)

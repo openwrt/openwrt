@@ -342,12 +342,12 @@
 
 #define AR5315_GPIO_CR_M(x)                (1 << (x))                  /* mask for i/o */
 #define AR5315_GPIO_CR_O(x)                (1 << (x))                  /* output */
-#define AR5315_GPIO_CR_I(x)                (0 << (x))                  /* input */
+#define AR5315_GPIO_CR_I(x)                (0)                         /* input */
 
-#define AR5315_GPIO_INT_S(x,Y)             ((x) << (8 * (Y)))          /* interrupt enable */
-#define AR5315_GPIO_INT_M(Y)               ((0x3F) << (8 * (Y)))       /* mask for int */
-#define AR5315_GPIO_INT_LVL(x,Y)           ((x) << (8 * (Y) + 6))      /* interrupt level */
-#define AR5315_GPIO_INT_LVL_M(Y)           ((0x3) << (8 * (Y) + 6))    /* mask for int level */
+#define AR5315_GPIO_INT_S(x)               (x)                         /* interrupt enable */
+#define AR5315_GPIO_INT_M                  (0x3F)                      /* mask for int */
+#define AR5315_GPIO_INT_LVL(x)             ((x) << 6)                  /* interrupt level */
+#define AR5315_GPIO_INT_LVL_M              ((0x3) << 6)                /* mask for int level */
 
 #define AR5315_RESET_GPIO       5
 #define AR5315_NUM_GPIO         22
