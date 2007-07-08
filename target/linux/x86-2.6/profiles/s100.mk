@@ -7,8 +7,10 @@
 
 define Profile/s100
   NAME:=T-Vision S-100
-  PACKAGES:=pciutils usbutils vim kmod-usb-uhci kmod-usb2 kmod-soundcore
+  PACKAGES:=pciutils
   ARCH:=i686
+  LINUX_CONFIG:=$(CURDIR)/config/profile-s100
+  FEATURES+=usb
 endef
 
 define Profile/s100/Description
