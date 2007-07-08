@@ -16,6 +16,7 @@ setup_broadcom_wds() {
 		[ -z "$network" ] && return
 		
 		config_get addr "$CONFIG_SECTION" bssid
+		addr=$(echo "$addr" | tr 'A-F' 'a-f')
 		[ "$addr" = "$remote" ] && {
 			local cfg="$CONFIG_SECTION"
 			
@@ -28,8 +29,11 @@ setup_broadcom_wds() {
 			config_get key "$cfg" key
 			config_get ssid "$cfg" ssid
 		
-			[ "$encryption" == "psk" ] && \
-			nas4not lan "$iface" up auto aes "$encryption" "$key" "$ssid" 
+			[ "$encryption" != "none" ] && {
+				sleep 1
+				nas4not lan "$iface" up auto aes "$encryption" "$key" "$ssid" 
+			}
+			
 		}
 	}
 
