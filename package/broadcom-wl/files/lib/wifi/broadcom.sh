@@ -191,7 +191,7 @@ enable_broadcom() {
 		append vif_post_up "enabled 1" "$N"
 		
 		config_get ifname "$vif" ifname
-		append if_up "ifconfig $ifname up" ";$N"
+		#append if_up "ifconfig $ifname up" ";$N"
 		local net_cfg bridge
 		net_cfg="$(find_net_config "$vif")"
 		[ -z "$net_cfg" ] || {

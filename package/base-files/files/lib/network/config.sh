@@ -91,7 +91,6 @@ prepare_interface() {
 	case "$iftype" in
 		bridge)
 			[ -x /usr/sbin/brctl ] && {
-				ifconfig "$iface" up 2>/dev/null >/dev/null
 				ifconfig "br-$config" 2>/dev/null >/dev/null && {
 					$DEBUG brctl addif "br-$config" "$iface"
 					# Bridge existed already. No further processing necesary
@@ -104,6 +103,7 @@ prepare_interface() {
 					# result in another setup_interface() call, so we simply stop processing
 					# the current event at this point.
 				}
+				ifconfig "$iface" up 2>/dev/null >/dev/null
 				return 1
 			}
 		;;
