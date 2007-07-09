@@ -482,7 +482,7 @@ static int wlcompat_get_scan(struct net_device *dev,
 		/* send frequency/channel info */
 		iwe.cmd = SIOCGIWFREQ;
 		iwe.u.freq.e = 0;
-		iwe.u.freq.m = bss_info->chanspec;
+		iwe.u.freq.m = bss_info->chanspec & WL_CHANSPEC_CHAN_MASK;
 		current_ev = iwe_stream_add_event(current_ev, end_buf, &iwe, IW_EV_FREQ_LEN);
 
 		/* add quality statistics */
