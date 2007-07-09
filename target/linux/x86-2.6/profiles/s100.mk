@@ -8,7 +8,6 @@
 define Profile/s100
   NAME:=T-Vision S-100
   PACKAGES:=pciutils
-  ARCH:=i686
   LINUX_CONFIG:=$(CURDIR)/config/profile-s100
   FEATURES+=usb
 endef
