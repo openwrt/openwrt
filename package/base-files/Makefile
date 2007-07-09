@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=8
+PKG_RELEASE:=9
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
 PKG_FILE_DEPEND:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
@@ -130,7 +130,7 @@ define Package/base-files$(TARGET)/install
 		fi; \
 	fi
 	$(SED) 's,$$$$R,r$(REV),g' $(1)/etc/banner
-	$(SED) 's,$$$$S,$(BOARD)-$(KERNEL),g' $(1)/etc/ipkg.conf
+	$(SED) 's,$$$$S,$(BOARD)-$(KERNEL),g' -e 's,$$$$A,$(ARCH),g' $(1)/etc/ipkg.conf
 	mkdir -p $(1)/dev
 	mkdir -p $(1)/etc/crontabs
 	mkdir -p $(1)/jffs
