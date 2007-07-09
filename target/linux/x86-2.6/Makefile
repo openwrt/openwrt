@@ -11,7 +11,7 @@ BOARD:=x86
 BOARDNAME:=x86
 FEATURES:=squashfs jffs2 ext2
 
-LINUX_VERSION:=2.6.22-rc6
+LINUX_VERSION:=2.6.22
 
 include $(INCLUDE_DIR)/kernel-build.mk
 DEFAULT_PACKAGES += kmod-natsemi kmod-ne2k-pci
