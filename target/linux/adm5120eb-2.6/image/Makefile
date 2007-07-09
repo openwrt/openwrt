@@ -69,8 +69,11 @@ define Image/Build/LZMAKernel/ZyXEL
 endef
 
 define Image/Build/Initramfs
+# this line is here intentionally
+ifeq (CONFIG_DEVEL,y)
 	$(call Image/Build/LZMAKernel/ZyXEL,p-334wt,bin)
 	$(call Image/Build/LZMAKernel/ZyXEL,p-335,bin)
+endif
 endef
 
 $(eval $(call BuildImage))

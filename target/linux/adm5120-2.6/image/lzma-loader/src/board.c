@@ -1,5 +1,5 @@
 /*
- * ADM5120 specific board support for LZMA decompressor 
+ * ADM5120 specific board support for LZMA decompressor
  *
  * Copyright (C) 2007 OpenWrt.org
  * Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
@@ -24,7 +24,7 @@
 #define READREG(r)	*(volatile unsigned int *)(r)
 #define WRITEREG(r,v)	*(volatile unsigned int *)(r) = v
 
-/* 
+/*
  * INTC definitions
  */
 #define INTC_BASE	0xB2200000
@@ -32,7 +32,7 @@
 /* INTC registers */
 #define INTC_REG_IRQ_DISABLE	0x0C
 
-/* 
+/*
  * UART definitions
  */
 #define UART_BASE	0xB2600000
@@ -61,7 +61,7 @@
 #define UART_FLAG_RXFF	( 1 << 6 )	/* RX FIFO full */
 #define UART_FLAG_TXFE	( 1 << 7 )	/* TX FIFO empty */
 
-/* 
+/*
  * SWITCH definitions
  */
 #define SWITCH_BASE	0xB2000000
@@ -96,8 +96,9 @@
 
 static void uart_init(void)
 {
+#if 0
 	unsigned int t;
-	
+
 	/* disable uart */
 	UART_WRITE(UART_REG_CTRL, 0);
 
@@ -106,7 +107,7 @@ static void uart_init(void)
 	UART_WRITE(UART_REG_LCRM, t);
 	t = UART_READ(UART_REG_LCRL);
 	UART_WRITE(UART_REG_LCRL, t);
-	
+
 	/* keep data, stop, and parity bits, but disable FIFO */
 	t = UART_READ(UART_REG_LCRH);
 	t &= ~(UART_LCRH_FEN);
@@ -117,6 +118,7 @@ static void uart_init(void)
 
 	/* enable uart, and disable interrupts */
 	UART_WRITE(UART_REG_CTRL, UART_CTRL_EN);
+#endif
 }
 
 static void uart_putc(int ch)
@@ -125,7 +127,7 @@ static void uart_putc(int ch)
 
 	UART_WRITE(UART_REG_DATA, ch);
 
-	while ((UART_READ(UART_REG_FLAG) & UART_FLAG_TXFF) != 0);
+	while ((UART_READ(UART_REG_FLAG) & UART_FLAG_TXFE) == 0);
 }
 
 /*
@@ -150,7 +152,7 @@ static void intc_init(void)
 static void switch_init(void)
 {
 	/* disable PHYS ports */
-	SWITCH_WRITE(SWITCH_REG_PORT_CONF0, 
+	SWITCH_WRITE(SWITCH_REG_PORT_CONF0,
 	    (SWITCH_PORTS_HW << PORT_CONF0_DP_SHIFT));
 
 	/* disable CPU port */
@@ -159,7 +161,7 @@ static void switch_init(void)
 	/* disable GPIO lines */
 	SWITCH_WRITE(SWITCH_REG_GPIO_CONF0, 0);
 	SWITCH_WRITE(SWITCH_REG_GPIO_CONF2, 0);
-	
+
 	/* disable LED lines */
 	SWITCH_WRITE(SWITCH_REG_PORT0_LED, 0);
 	SWITCH_WRITE(SWITCH_REG_PORT1_LED, 0);
