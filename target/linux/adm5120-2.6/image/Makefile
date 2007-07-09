@@ -82,7 +82,7 @@ root=/dev/mtdblock1 rootfstype=yaffs2 init=/etc/preinit
 endef
 
 define Image/Build/RouterBoard
-	$(CP) $(KDIR)/vmlinux.elf $(IMGNAME)-vmlinux
+	$(CP) $(KDIR)/vmlinux.elf $(IMGNAME)-rb1xx-vmlinux
 	$(STAGING_DIR)/bin/patch-cmdline $(KDIR)/vmlinux.elf '$(strip $(call Image/cmdline/yaffs2)) '
 endef
 
@@ -91,6 +91,7 @@ define Image/Build
 ifneq ($(1),jffs2-256k)
 ifneq ($(1),jffs2-128k)
 	$(call Image/Build/Compex,$(1),wp54g-wrt,$(patsubst jffs2-%,jffs2,$(1)),WP54G-WRT)
+ifeq (CONFIG_DEVEL,y)
 	$(call Image/Build/Edimax,$(1),br-6104k,$(patsubst jffs2-%,jffs2,$(1)),BR-6104K)
 	$(call Image/Build/Edimax,$(1),br-6104kp,$(patsubst jffs2-%,jffs2,$(1)),BR-6104KP)
 	$(call Image/Build/Edimax,$(1),br-6114wg,$(patsubst jffs2-%,jffs2,$(1)),BR-6114WG)
@@ -115,6 +116,7 @@ ifneq ($(1),jffs2-128k)
 	$(call Image/Build/MyLoader,$(1),wp54ag,$(patsubst jffs2-%,jffs2,$(1)),WP54AG)
 	$(call Image/Build/MyLoader,$(1),wpp54g,$(patsubst jffs2-%,jffs2,$(1)),WPP54G)
 	$(call Image/Build/MyLoader,$(1),wpp54ag,$(patsubst jffs2-%,jffs2,$(1)),WPP54AG)
+endif
 endif
 endif
 ifeq ($(1),tgz)
@@ -143,12 +145,17 @@ define Image/Build/LZMAKernel/Admboot
 	$(call Image/Build/LZMAKernel,$(1),$(2),0x80500000,0x6D8,y,$(1))
 endef
 
+define Image/Build/Initramfs/RouterBoard
+	$(CP) $(KDIR)/vmlinux.elf $(IMGNAME)-ramfs-rb1xx.elf
+endef
+
 define Image/Build/Initramfs
+	$(call Image/Build/Initramfs/RouterBoard)
+	$(call Image/Build/LZMAKernel/Compex,wp54g-wrt,bin)
+ifeq (CONFIG_DEVEL,y)
 	$(call Image/Build/LZMAKernel/Generic,generic,bin)
-	$(call Image/Build/LZMAKernel/Generic,rb-100,elf)
 	$(call Image/Build/LZMAKernel/Generic,np27g,bin)
 	$(call Image/Build/LZMAKernel/Generic,wp54g,bin)
-	$(call Image/Build/LZMAKernel/Compex,wp54g-wrt,bin)
 	$(call Image/Build/LZMAKernel/Admboot,br-6104k,gz)
 	$(call Image/Build/LZMAKernel/Admboot,easy-5120,gz)
 	$(call Image/Build/LZMAKernel/Admboot,easy-83000,gz)
@@ -158,6 +165,7 @@ define Image/Build/Initramfs
 	$(call Image/Build/LZMAKernel/Admboot,cas-771,gz)
 	$(call Image/Build/LZMAKernel/Admboot,cas-790,gz)
 	$(call Image/Build/LZMAKernel/Admboot,cas-861,gz)
+endif
 endef
 
 $(eval $(call BuildImage))
