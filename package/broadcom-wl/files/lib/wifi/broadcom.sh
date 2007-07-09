@@ -232,7 +232,8 @@ txant ${txant:-3}
 radio ${radio:-1}
 macfilter 0
 maclist none
-wds ${wds:-none}
+wds none
+${wds:+wds $wds}
 ${channel:+channel $channel}
 country ${country:-IL0}
 maxassoc ${maxassoc:-128}
