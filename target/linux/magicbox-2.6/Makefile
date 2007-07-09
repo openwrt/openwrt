@@ -11,7 +11,7 @@ BOARD:=magicbox
 BOARDNAME:=Magicbox
 FEATURES:=squashfs jffs2
 
-LINUX_VERSION:=2.6.22-rc6
+LINUX_VERSION:=2.6.22
 
 include $(INCLUDE_DIR)/kernel-build.mk
 
