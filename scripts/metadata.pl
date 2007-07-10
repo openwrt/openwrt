@@ -131,6 +131,20 @@ sub parse_package_metadata() {
 	return %category;
 }
 
+sub merge_package_lists($$) {
+	my $list1 = shift;
+	my $list2 = shift;
+	my @l = ();
+	my %pkgs;
+
+	foreach my $pkg (@$list1, @$list2) {
+		$pkgs{$pkg} = 1;
+	}
+	foreach my $pkg (keys %pkgs) {
+		push @l, $pkg unless ($pkg =~ /^-/ or $pkgs{"-$pkg"});
+	}
+	return sort(@l);
+}
 
 sub gen_target_mk() {
 	my @target = parse_target_metadata();
@@ -149,7 +163,7 @@ sub gen_target_mk() {
   define Profile/$conf\_$profile->{id}
     ID:=$profile->{id}
     NAME:=$profile->{name}
-    PACKAGES:=".join(" ", @{$profile->{packages}})."\n";
+    PACKAGES:=".join(" ", merge_package_lists($target->{packages}, $profile->{packages}))."\n";
 			$profile->{kconfig} and $profiles_def .= "    KCONFIG:=1\n";
 			$profiles_def .= "  endef";
 			$profiles_eval .= "
@@ -303,12 +317,9 @@ config LINUX_$target->{conf}_$profile->{id}
 $profile->{config}
 EOF
 			$profile->{kconfig} and print "\tselect PROFILE_KCONFIG\n";
-			my %pkgs;
-			foreach my $pkg (@{$target->{packages}}, @{$profile->{packages}}) {
-				$pkgs{$pkg} = 1;
-			}
-			foreach my $pkg (keys %pkgs) {
-				print "\tselect DEFAULT_$pkg\n" unless ($pkg =~ /^-/ or $pkgs{"-$pkg"});
+			my @pkglist = merge_package_lists($target->{packages}, $profile->{packages});
+			foreach my $pkg (@pkglist) {
+				print "\tselect DEFAULT_$pkg\n";
 			}
 			print "\n";
 		}
@@ -316,6 +327,7 @@ EOF
 
 	print "endchoice\n";
 }
+
 
 sub find_package_dep($$) {
 	my $pkg = shift;
