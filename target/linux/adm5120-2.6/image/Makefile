@@ -91,7 +91,7 @@ define Image/Build
 ifneq ($(1),jffs2-256k)
 ifneq ($(1),jffs2-128k)
 	$(call Image/Build/Compex,$(1),wp54g-wrt,$(patsubst jffs2-%,jffs2,$(1)),WP54G-WRT)
-ifeq (CONFIG_DEVEL,y)
+ifeq ($(CONFIG_DEVEL),y)
 	$(call Image/Build/Edimax,$(1),br-6104k,$(patsubst jffs2-%,jffs2,$(1)),BR-6104K)
 	$(call Image/Build/Edimax,$(1),br-6104kp,$(patsubst jffs2-%,jffs2,$(1)),BR-6104KP)
 	$(call Image/Build/Edimax,$(1),br-6114wg,$(patsubst jffs2-%,jffs2,$(1)),BR-6114WG)
@@ -152,7 +152,7 @@ endef
 define Image/Build/Initramfs
 	$(call Image/Build/Initramfs/RouterBoard)
 	$(call Image/Build/LZMAKernel/Compex,wp54g-wrt,bin)
-ifeq (CONFIG_DEVEL,y)
+ifeq ($(CONFIG_DEVEL),y)
 	$(call Image/Build/LZMAKernel/Generic,generic,bin)
 	$(call Image/Build/LZMAKernel/Generic,np27g,bin)
 	$(call Image/Build/LZMAKernel/Generic,wp54g,bin)
