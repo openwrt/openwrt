@@ -48,7 +48,7 @@ define AddProfile
     endif
 	$(ID)_NAME:=$(NAME)
 	$(ID)_PACKAGES:=$(PACKAGES)
-    ifneq ($(KCONFIG),)
+    ifeq ($(KCONFIG),)
       PROFILE_LIST += \
   		echo '$(ID):'; [ -z '$(NAME)' ] || echo '	$(NAME)'; echo '	Packages: $(PACKAGES)';
     endif
