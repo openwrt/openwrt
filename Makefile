@@ -147,11 +147,11 @@ distclean: dirclean config-clean symlinkclean docclean
 help:
 	cat README
 
-doc:
-	$(MAKE) -C docs/ openwrt.pdf
+docs docs/compile: FORCE
+	$(MAKE) -C docs compile
 
-docclean:
-	$(MAKE) -C docs/ clean
+docs/clean: FORCE
+	$(MAKE) -C docs clean
 
 symlinkclean:
 	-find package -type l | xargs rm -f
