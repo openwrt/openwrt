@@ -266,7 +266,7 @@ Index: linux-2.6.22-rc6/drivers/net/imq.c
 +err5:
 +	nf_unregister_queue_handler(PF_INET6);
 +err4:
-+	nf_unregister_hook(&imq_egress_ipv6);
++	nf_unregister_hook(&imq_egress_ipv4);
 +#endif
 +err3:
 +	nf_unregister_hook(&imq_ingress_ipv4);
