@@ -247,7 +247,6 @@ start_interface() {
 	config_get device "$iface" device
 	config_get_bool enabled "$iface" enabled 1
 	[ -z "$device" -o 1 -ne "$enabled" ] && {
-		echo "Interface '$iface' not found or disabled." >&2
 		return 1 
 	}
 	config_get upload "$iface" upload
