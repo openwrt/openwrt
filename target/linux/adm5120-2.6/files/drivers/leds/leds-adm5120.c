@@ -163,7 +163,7 @@ LED_ARRAY(wp54g) {
 	LED_INV(ADM5120_GPIO_P1L0, "lan2",	NULL ),
 };
 
-LED_ARRAY(unknown) {
+LED_ARRAY(generic) {
 #if defined(CONFIG_LEDS_ADM5120_DIAG)
 	LED_STD(ADM5120_GPIO_PIN0, "gpio0",	NULL ),
 	LED_STD(ADM5120_GPIO_PIN1, "gpio1",	NULL ),
@@ -198,7 +198,7 @@ LED_ARRAY(unknown) {
 }
 
 static struct mach_data machines[] __initdata = {
-	MACH_DATA(MACH_ADM5120_UNKNOWN, unknown),
+	MACH_DATA(MACH_ADM5120_GENERIC, generic),
 	MACH_DATA(MACH_ADM5120_P334WT,	p334wt),
 	MACH_DATA(MACH_ADM5120_WP54AG,	wp54g),
 	MACH_DATA(MACH_ADM5120_WP54G,	wp54g),

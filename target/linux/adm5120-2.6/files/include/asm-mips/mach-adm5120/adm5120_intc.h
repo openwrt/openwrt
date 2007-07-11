@@ -1,4 +1,6 @@
 /*
+ *  $Id$
+ *
  *  ADM5120 interrupt controller definitions
  *
  *  This header file defines the hardware registers of the ADM5120 SoC
@@ -22,6 +24,7 @@
  *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  *  Boston, MA  02110-1301, USA.
  */
+
 #ifndef _ADM5120_INTC_H_
 #define _ADM5120_INTC_H_
 

@@ -18,6 +18,7 @@
 #include <linux/usb.h>
 #include <linux/platform_device.h>
 
+#include <asm/bootinfo.h>
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/system.h>
@@ -751,7 +752,7 @@ static int __init adm5120hcd_probe(struct platform_device *pdev)
                 err = -ENOMEM;
                 goto out_mem;
         }
-	
+
 	hcd = usb_create_hcd(&adm5120_hc_driver, &pdev->dev, pdev->dev.bus_id);
         if (!hcd)
                 goto out_mem;
@@ -821,22 +822,30 @@ static struct platform_driver adm5120hcd_driver = {
 	.probe =	adm5120hcd_probe,
 	.remove =	adm5120hcd_remove,
 	.driver	=	{
-		.name 	= "adm5120-hcd",
+		.name 	= "adm5120-usbc",
 		.owner 	= THIS_MODULE,
 	},
 };
 
 static int __init adm5120hcd_init(void)
 {
-	if (usb_disabled()) 
-		return -ENODEV;
-	if (!adm5120_board.has_usb) {
-		printk(KERN_DEBUG PFX "this board does not have USB\n");
+	int ret;
+
+	if (usb_disabled()) {
+		printk(KERN_DEBUG PFX "USB support is disabled\n");
 		return -ENODEV;
 	}
 
-	printk(KERN_INFO PFX "registered\n");
-	return platform_driver_register(&adm5120hcd_driver);
+	if (mips_machgroup != MACH_GROUP_ADM5120) {
+		printk(KERN_DEBUG PFX "unsupported machine group\n");
+		return -ENODEV;
+	}
+
+	ret = platform_driver_register(&adm5120hcd_driver);
+	if (ret == 0)
+		printk(KERN_INFO PFX "registered\n");
+
+	return ret;
 }
 
 static void __exit adm5120hcd_exit(void)

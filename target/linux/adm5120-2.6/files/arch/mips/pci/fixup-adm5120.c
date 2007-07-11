@@ -25,7 +25,6 @@
  *
  */
 
-#include <linux/autoconf.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -125,8 +124,7 @@ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 	case MACH_ADM5120_WPP54AG:
 	case MACH_ADM5120_WPP54G:
 	default:
-		printk(KERN_ALERT "PCI: irq map is unknown for %s, using "
-			"defaults.\n",	adm5120_board_name());
+		printk(KERN_ALERT "PCI: irq map is unknown, using defaults.\n");
 		break;
 	}
 

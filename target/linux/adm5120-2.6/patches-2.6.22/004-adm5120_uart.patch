@@ -1,7 +1,7 @@
-Index: linux-2.6.22-rc6/drivers/serial/Makefile
+Index: linux-2.6.22/drivers/serial/Makefile
 ===================================================================
---- linux-2.6.22-rc6.orig/drivers/serial/Makefile
-+++ linux-2.6.22-rc6/drivers/serial/Makefile
+--- linux-2.6.22.orig/drivers/serial/Makefile
++++ linux-2.6.22/drivers/serial/Makefile
 @@ -21,6 +21,7 @@ obj-$(CONFIG_SERIAL_8250_EXAR_ST16C554) 
  obj-$(CONFIG_SERIAL_8250_HUB6) += 8250_hub6.o
  obj-$(CONFIG_SERIAL_8250_MCA) += 8250_mca.o
@@ -10,10 +10,10 @@ Index: linux-2.6.22-rc6/drivers/serial/Makefile
  obj-$(CONFIG_SERIAL_AMBA_PL010) += amba-pl010.o
  obj-$(CONFIG_SERIAL_AMBA_PL011) += amba-pl011.o
  obj-$(CONFIG_SERIAL_CLPS711X) += clps711x.o
-Index: linux-2.6.22-rc6/include/linux/serial_core.h
+Index: linux-2.6.22/include/linux/serial_core.h
 ===================================================================
---- linux-2.6.22-rc6.orig/include/linux/serial_core.h
-+++ linux-2.6.22-rc6/include/linux/serial_core.h
+--- linux-2.6.22.orig/include/linux/serial_core.h
++++ linux-2.6.22/include/linux/serial_core.h
 @@ -143,6 +143,9 @@
  #define PORT_KS8695	76
  
@@ -24,10 +24,10 @@ Index: linux-2.6.22-rc6/include/linux/serial_core.h
  #ifdef __KERNEL__
  
  #include <linux/compiler.h>
-Index: linux-2.6.22-rc6/drivers/serial/Kconfig
+Index: linux-2.6.22/drivers/serial/Kconfig
 ===================================================================
---- linux-2.6.22-rc6.orig/drivers/serial/Kconfig
-+++ linux-2.6.22-rc6/drivers/serial/Kconfig
+--- linux-2.6.22.orig/drivers/serial/Kconfig
++++ linux-2.6.22/drivers/serial/Kconfig
 @@ -270,6 +270,22 @@ config SERIAL_8250_RM9K
  
  comment "Non-8250 serial port support"

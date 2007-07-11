@@ -1,11 +1,25 @@
 /*
- *  Copyright (C) 2006,2007 Gabor Juhos
+ *  $Id$
  *
- *  This program is free software; you can redistribute  it and/or modify it
- *  under  the terms of  the GNU General  Public License as published by the
- *  Free Software Foundation;  either version 2 of the  License, or (at your
- *  option) any later version.
+ *  Compex's MyLoader specific definitions
  *
+ *  Copyright (C) 2006,2007 Gabor Juhos <juhosg@freemail.hu>
+ *  Copyright (C) 2007 OpenWrt.org
+ *
+ *  This program is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public License
+ *  as published by the Free Software Foundation; either version 2
+ *  of the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ *  Boston, MA  02110-1301, USA.
  */
 
 #ifndef _MYLOADER_H_
@@ -163,5 +177,15 @@ struct mylo_board_params {
 	uint32_t	res2;
 	struct mylo_eth_addr addr[MYLO_ETHADDR_COUNT];
 };
+
+struct myloader_info {
+	u32	vid;
+	u32	did;
+	u32	svid;
+	u32	sdid;
+};
+
+extern struct myloader_info myloader_info;
+extern int myloader_present(void) __init;
 
 #endif /* _MYLOADER_H_*/

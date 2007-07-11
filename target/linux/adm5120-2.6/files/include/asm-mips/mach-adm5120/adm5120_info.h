@@ -1,13 +1,23 @@
 /*
- * $Id$
+ *  $Id$
  *
- * Copyright (C) 2007 OpenWrt.org
- * Copyright (C) Gabor Juhos <juhosg@freemail.hu>
+ *  Copyright (C) 2007 OpenWrt.org
+ *  Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
  *
- * This program is free software; you can redistribute  it and/or modify it
- * under  the terms of  the GNU General  Public License as published by the
- * Free Software Foundation;  either version 2 of the  License, or (at your
- * option) any later version.
+ *  This program is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public License
+ *  as published by the Free Software Foundation; either version 2
+ *  of the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ *  Boston, MA  02110-1301, USA.
  */
 
 #ifndef _ADM5120_INFO_H
@@ -15,27 +25,14 @@
 
 #include <linux/types.h>
 
-#define ADM5120_BOARD_NAMELEN	64
-
-struct adm5120_board {
-	char		name[ADM5120_BOARD_NAMELEN];
-	unsigned long	mach_type;
-	unsigned int	iface_num;	/* Number of Ethernet interfaces */
-	unsigned int	has_usb;	/* USB controller presence flag */
-	u32		mem_size;	/* onboard memory size */
-	u32		flash0_size;	/* Flash 0 size */
-};
-
-extern struct adm5120_board adm5120_board;
-
-extern unsigned int adm5120_boot_loader;
-#define BOOT_LOADER_UNKNOWN	0
-#define BOOT_LOADER_CFE		1
-#define BOOT_LOADER_UBOOT	2
-#define BOOT_LOADER_MYLOADER	3
-#define BOOT_LOADER_ROUTERBOOT	4
-#define BOOT_LOADER_BOOTBASE	5
-#define BOOT_LOADER_LAST	5
+extern unsigned int adm5120_prom_type;
+#define ADM5120_PROM_GENERIC	0
+#define ADM5120_PROM_CFE	1
+#define ADM5120_PROM_MYLOADER	2
+#define ADM5120_PROM_ROUTERBOOT	3
+#define ADM5120_PROM_BOOTBASE	4
+#define ADM5120_PROM_UBOOT	5
+#define ADM5120_PROM_LAST	5
 
 extern unsigned int adm5120_product_code;
 extern unsigned int adm5120_revision;
@@ -53,7 +50,22 @@ extern unsigned int adm5120_package;
 
 extern unsigned long adm5120_memsize;
 
-extern void adm5120_info_init(void);
+/*
+ * TODO:remove adm5120_eth* variables when the switch driver will be
+ * 	converted into a real platform driver
+ */
+extern unsigned int adm5120_eth_num_ports;
+extern unsigned char adm5120_eth_macs[6][6];
+
+extern void adm5120_mem_init(void) __init;
+extern void adm5120_time_init(void) __init;
+extern void adm5120_ndelay(u32 ns);
+
+extern void adm5120_restart(char *command);
+extern void adm5120_halt(void);
+extern void adm5120_power_off(void);
+
+extern void (*adm5120_board_reset)(void);
 
 static inline int adm5120_package_pqfp(void)
 {
@@ -73,16 +85,6 @@ static inline int adm5120_has_pci(void)
 static inline int adm5120_has_gmii(void)
 {
 	return (adm5120_package == ADM5120_PACKAGE_BGA);
-}
-
-static inline char *adm5120_board_name(void)
-{
-	return adm5120_board.name;
-}
-
-static inline u32 adm5120_board_memsize(void)
-{
-	return adm5120_board.mem_size;
 }
 
 #endif /* _ADM5120_INFO_H */

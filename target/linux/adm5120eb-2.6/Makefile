@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=adm5120eb
 BOARDNAME:=ADM5120 (Big Endian)
-FEATURES:=squashfs pci usb
+FEATURES:=squashfs pci usb broken
 
 LINUX_VERSION:=2.6.22.1
 

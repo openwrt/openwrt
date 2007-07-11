@@ -1,4 +1,6 @@
 /*
+ *  $Id$
+ *
  *  Parse MyLoader-style flash partition tables and produce a Linux partition
  *  array to match.
  *
@@ -33,7 +35,8 @@
 #include <linux/mtd/partitions.h>
 
 #include <linux/byteorder/generic.h>
-#include <asm/mach-adm5120/myloader.h>
+
+#include <prom/myloader.h>
 
 #define NAME_LEN_MAX		20
 #define NAME_MYLOADER		"MyLoader"
@@ -68,12 +71,10 @@ int parse_myloader_partitions(struct mtd_info *master,
 
 	/* Partition Table is always located on the second erase block */
 	offset = blocklen;
-	printk(KERN_NOTICE "Searching for MyLoader partition table "
-			"in %s at offset 0x%lx\n", master->name, offset);
+	printk(KERN_NOTICE "%s: searching for MyLoader partition table at "
+			"offset 0x%lx\n", master->name, offset);
 
-	ret = master->read(master, offset, sizeof(*tab), &retlen,
-			(void *)tab);
-
+	ret = master->read(master, offset, sizeof(*tab), &retlen, (void *)tab);
 	if (ret)
 		goto out;
 
@@ -84,8 +85,8 @@ int parse_myloader_partitions(struct mtd_info *master,
 
 	/* Check for Partition Table magic number */
 	if (tab->magic != le32_to_cpu(MYLO_MAGIC_PARTITIONS)) {
-		printk(KERN_NOTICE "No MyLoader partition table detected "
-			"in %s\n", master->name);
+		printk(KERN_NOTICE "%s: no MyLoader partition table found\n",
+			master->name);
 		ret = 0;
 		goto out_free_buf;
 	}
@@ -103,7 +104,6 @@ int parse_myloader_partitions(struct mtd_info *master,
 		num_parts++;
 	}
 
-
 	mtd_parts = kzalloc((num_parts*sizeof(*mtd_part) + num_parts*NAME_LEN_MAX),
 			 GFP_KERNEL);
 
@@ -119,6 +119,7 @@ int parse_myloader_partitions(struct mtd_info *master,
 	mtd_part->name = names;
 	mtd_part->offset = 0;
 	mtd_part->size = blocklen;
+	mtd_part->mask_flags = MTD_WRITEABLE;
 	mtd_part++;
 	names += NAME_LEN_MAX;
 
@@ -126,6 +127,7 @@ int parse_myloader_partitions(struct mtd_info *master,
 	mtd_part->name = names;
 	mtd_part->offset = blocklen;
 	mtd_part->size = blocklen;
+	mtd_part->mask_flags = MTD_WRITEABLE;
 	mtd_part++;
 	names += NAME_LEN_MAX;
 
@@ -136,9 +138,9 @@ int parse_myloader_partitions(struct mtd_info *master,
 			continue;
 
 		sprintf(names, "partition%d", i);
-		mtd_part->name = names;
 		mtd_part->offset = le32_to_cpu(part->addr);
 		mtd_part->size = le32_to_cpu(part->size);
+		mtd_part->name = names;
 		mtd_part++;
 		names += NAME_LEN_MAX;
 	}

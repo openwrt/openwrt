@@ -1,7 +1,7 @@
-Index: linux-2.6.22-rc6/drivers/usb/core/hub.c
+Index: linux-2.6.22/drivers/usb/core/hub.c
 ===================================================================
---- linux-2.6.22-rc6.orig/drivers/usb/core/hub.c
-+++ linux-2.6.22-rc6/drivers/usb/core/hub.c
+--- linux-2.6.22.orig/drivers/usb/core/hub.c
++++ linux-2.6.22/drivers/usb/core/hub.c
 @@ -464,7 +464,7 @@ void usb_hub_tt_clear_buffer (struct usb
  			: (USB_ENDPOINT_XFER_BULK << 11);
  	if (usb_pipein (pipe))
@@ -182,21 +182,21 @@ Index: linux-2.6.22-rc6/drivers/usb/core/hub.c
  re_enumerate:
  	hub_port_logical_disconnect(parent_hub, port1);
  	return -ENODEV;
-Index: linux-2.6.22-rc6/drivers/usb/host/Kconfig
+Index: linux-2.6.22/drivers/usb/host/Kconfig
 ===================================================================
---- linux-2.6.22-rc6.orig/drivers/usb/host/Kconfig
-+++ linux-2.6.22-rc6/drivers/usb/host/Kconfig
-@@ -224,3 +224,6 @@ config USB_SL811_CS
+--- linux-2.6.22.orig/drivers/usb/host/Kconfig
++++ linux-2.6.22/drivers/usb/host/Kconfig
+@@ -237,3 +237,6 @@ config USB_SL811_CS
  	  To compile this driver as a module, choose M here: the
  	  module will be called "sl811_cs".
  
 +config USB_ADM5120_HCD
 +	tristate "ADM5120 HCD support"
 +	depends on USB && MIPS_ADM5120
-Index: linux-2.6.22-rc6/drivers/usb/host/Makefile
+Index: linux-2.6.22/drivers/usb/host/Makefile
 ===================================================================
---- linux-2.6.22-rc6.orig/drivers/usb/host/Makefile
-+++ linux-2.6.22-rc6/drivers/usb/host/Makefile
+--- linux-2.6.22.orig/drivers/usb/host/Makefile
++++ linux-2.6.22/drivers/usb/host/Makefile
 @@ -8,6 +8,7 @@ endif
  
  obj-$(CONFIG_PCI)		+= pci-quirks.o
@@ -205,10 +205,10 @@ Index: linux-2.6.22-rc6/drivers/usb/host/Makefile
  obj-$(CONFIG_USB_EHCI_HCD)	+= ehci-hcd.o
  obj-$(CONFIG_USB_ISP116X_HCD)	+= isp116x-hcd.o
  obj-$(CONFIG_USB_OHCI_HCD)	+= ohci-hcd.o
-Index: linux-2.6.22-rc6/drivers/usb/Kconfig
+Index: linux-2.6.22/drivers/usb/Kconfig
 ===================================================================
---- linux-2.6.22-rc6.orig/drivers/usb/Kconfig
-+++ linux-2.6.22-rc6/drivers/usb/Kconfig
+--- linux-2.6.22.orig/drivers/usb/Kconfig
++++ linux-2.6.22/drivers/usb/Kconfig
 @@ -88,8 +88,6 @@ source "drivers/usb/storage/Kconfig"
  
  source "drivers/usb/image/Kconfig"
@@ -218,10 +218,10 @@ Index: linux-2.6.22-rc6/drivers/usb/Kconfig
  comment "USB port drivers"
  	depends on USB
  
-Index: linux-2.6.22-rc6/drivers/usb/Makefile
+Index: linux-2.6.22/drivers/usb/Makefile
 ===================================================================
---- linux-2.6.22-rc6.orig/drivers/usb/Makefile
-+++ linux-2.6.22-rc6/drivers/usb/Makefile
+--- linux-2.6.22.orig/drivers/usb/Makefile
++++ linux-2.6.22/drivers/usb/Makefile
 @@ -16,6 +16,7 @@ obj-$(CONFIG_USB_UHCI_HCD)	+= host/
  obj-$(CONFIG_USB_SL811_HCD)	+= host/
  obj-$(CONFIG_USB_U132_HCD)	+= host/

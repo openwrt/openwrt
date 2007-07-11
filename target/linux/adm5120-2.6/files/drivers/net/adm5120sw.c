@@ -40,9 +40,9 @@ static unsigned char vlan_matrix[SW_DEVS] = {
 	0x41, 0x42, 0x44, 0x48, 0x50, 0x60
 };
 
-/* default settings - unlimited TX and RX on all ports, default shaper mode */ 
+/* default settings - unlimited TX and RX on all ports, default shaper mode */
 static unsigned char bw_matrix[SW_DEVS] = {
-	0, 0, 0, 0, 0, 0	
+	0, 0, 0, 0, 0, 0
 };
 
 static int adm5120_nrdevs;
@@ -373,17 +373,17 @@ static int adm5120_do_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 			break;
 		case SIOCGETBW:
 			err = copy_to_user(rq->ifr_data, bw_matrix, sizeof(bw_matrix));
-			if (err) 
-				return -EFAULT; 
-			break; 
+			if (err)
+				return -EFAULT;
+			break;
 		case SIOCSETBW:
-			if (!capable(CAP_NET_ADMIN)) 
+			if (!capable(CAP_NET_ADMIN))
 				return -EPERM;
 			err = copy_from_user(bw_matrix, rq->ifr_data, sizeof(bw_matrix));
-			if (err) 
+			if (err)
 				return -EFAULT;
 			adm5120_set_bw(bw_matrix);
-			break; 
+			break;
 		default:
 			return -EOPNOTSUPP;
 	}
@@ -428,9 +428,7 @@ static int __init adm5120_sw_init(void)
 	if (err)
 		goto out;
 
-	adm5120_nrdevs = adm5120_board.iface_num;
-	if (adm5120_nrdevs > 5 && !adm5120_has_gmii())
-		adm5120_nrdevs = 5;
+	adm5120_nrdevs = adm5120_eth_num_ports;
 
 	adm5120_set_reg(ADM5120_CPUP_CONF,
 	    ADM5120_DISCCPUPORT | ADM5120_CRC_PADDING |
@@ -483,12 +481,8 @@ static int __init adm5120_sw_init(void)
 		dev->tx_timeout = adm5120_tx_timeout;
 		dev->watchdog_timeo = ETH_TX_TIMEOUT;
 		dev->set_mac_address = adm5120_sw_set_mac_address;
-		/* HACK alert!!!  In the original admtek driver it is asumed
-		   that you can read the MAC addressess from flash, but edimax
-		   decided to leave that space intentionally blank...
-		 */
-		memcpy(dev->dev_addr, "\x00\x50\xfc\x11\x22\x01", 6);
-		dev->dev_addr[5] += i;
+
+		memcpy(dev->dev_addr, adm5120_eth_macs[i], 6);
 		adm5120_write_mac(dev);
 
 		if ((err = register_netdev(dev))) {

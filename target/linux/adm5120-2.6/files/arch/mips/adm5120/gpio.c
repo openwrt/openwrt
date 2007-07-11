@@ -345,7 +345,7 @@ static int __init adm5120_gpio_init(void)
 	return 0;
 }
 
-subsys_initcall(adm5120_gpio_init);
+pure_initcall(adm5120_gpio_init);
 
 EXPORT_SYMBOL(adm5120_gpio_direction_output);
 EXPORT_SYMBOL(adm5120_gpio_direction_input);
