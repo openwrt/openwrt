@@ -17,7 +17,6 @@
 #ifndef __MAGICBOX_H__
 #define __MAGICBOX_H__
 
-#include <linux/autoconf.h>
 #include <platforms/4xx/ibm405ep.h>
 #include <asm/ppcboot.h>
 
@@ -30,7 +29,7 @@
  * for typical configurations at various CPU speeds.
  * The base baud is calculated as (FWDA / EXT UART DIV / 16)
  */
-#define BASE_BAUD       0
+#define BASE_BAUD		0
 
 /* Flash */
 #define PPC40x_FPGA_BASE	0xF0300000

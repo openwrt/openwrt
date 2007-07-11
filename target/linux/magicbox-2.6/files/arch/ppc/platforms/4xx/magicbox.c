@@ -13,7 +13,6 @@
  * or implied.
  */
 
-#include <linux/autoconf.h>
 #include <linux/init.h>
 #include <linux/smp.h>
 #include <linux/threads.h>
@@ -51,7 +50,7 @@
 
 extern bd_t __res;
 
-/* Some IRQs unique to board
+/* Some IRQs unique to the board
  * Used by the generic 405 PCI setup functions in ppc4xx_pci.c
  */
 int __init
@@ -72,7 +71,6 @@ ppc405_map_irq(struct pci_dev *dev, unsigned char idsel, unsigned char pin)
 	const long min_idsel = 1, max_idsel = 4, irqs_per_slot = 4;
 	return PCI_IRQ_TABLE_LOOKUP;
 };
-
 
 /* The serial clock for the chip is an internal clock determined by
  * different clock speeds/dividers.
@@ -100,8 +98,8 @@ magicbox_early_serial_map(void)
 	port.irq = ACTING_UART0_INT;
 	port.uartclk = uart_clock;
 	port.regshift = 0;
-	port.iotype = SERIAL_IO_MEM;
-	port.flags = ASYNC_BOOT_AUTOCONF | ASYNC_SKIP_TEST;
+	port.iotype = UPIO_MEM;
+	port.flags = UPF_BOOT_AUTOCONF | UPF_SKIP_TEST;
 	port.line = 0;
 
 	if (early_serial_setup(&port) != 0) {
@@ -120,6 +118,8 @@ magicbox_early_serial_map(void)
 void __init
 bios_fixup(struct pci_controller *hose, struct pcil0_regs *pcip)
 {
+#ifdef CONFIG_PCI
+
 	unsigned int bar_response, bar;
 	/*
 	 * Expected PCI mapping:
@@ -199,7 +199,7 @@ bios_fixup(struct pci_controller *hose, struct pcil0_regs *pcip)
 		    hose->first_busno, PCI_SLOT(hose->first_busno),
 		    PCI_FUNC(hose->first_busno), bar, bar_response);
 	}
-	/* end work arround */
+	/* end workaround */
 
 #ifdef DEBUG
 	printk("PCI bridge regs after fixup \n");
@@ -214,7 +214,8 @@ bios_fixup(struct pci_controller *hose, struct pcil0_regs *pcip)
 	printk(" ptm2ms\t0x%x\n", in_le32(&(pcip->ptm2ms)));
 	printk(" ptm2la\t0x%x\n", in_le32(&(pcip->ptm2la)));
 
-#endif /* DEBUG */
+#endif
+#endif
 }
 
 static struct resource magicbox_flash_resource = {
@@ -292,5 +293,5 @@ platform_init(unsigned long r3, unsigned long r4, unsigned long r5,
 #ifdef CONFIG_KGDB
 	ppc_md.early_serial_map = bubinga_early_serial_map;
 #endif
-
 }
+
