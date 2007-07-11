@@ -1,7 +1,7 @@
-Index: linux-2.6.22-rc6/drivers/leds/Kconfig
+Index: linux-2.6.22/drivers/leds/Kconfig
 ===================================================================
---- linux-2.6.22-rc6.orig/drivers/leds/Kconfig
-+++ linux-2.6.22-rc6/drivers/leds/Kconfig
+--- linux-2.6.22.orig/drivers/leds/Kconfig
++++ linux-2.6.22/drivers/leds/Kconfig
 @@ -20,6 +20,27 @@ config LEDS_CLASS
  
  comment "LED drivers"
@@ -30,10 +30,10 @@ Index: linux-2.6.22-rc6/drivers/leds/Kconfig
  config LEDS_CORGI
  	tristate "LED Support for the Sharp SL-C7x0 series"
  	depends on LEDS_CLASS && PXA_SHARP_C7xx
-Index: linux-2.6.22-rc6/drivers/leds/Makefile
+Index: linux-2.6.22/drivers/leds/Makefile
 ===================================================================
---- linux-2.6.22-rc6.orig/drivers/leds/Makefile
-+++ linux-2.6.22-rc6/drivers/leds/Makefile
+--- linux-2.6.22.orig/drivers/leds/Makefile
++++ linux-2.6.22/drivers/leds/Makefile
 @@ -5,6 +5,8 @@ obj-$(CONFIG_LEDS_CLASS)		+= led-class.o
  obj-$(CONFIG_LEDS_TRIGGERS)		+= led-triggers.o
  

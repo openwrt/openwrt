@@ -1,14 +1,15 @@
-Index: linux-2.6.22-rc6/arch/mips/Kconfig
+Index: linux-2.6.22/arch/mips/Kconfig
 ===================================================================
---- linux-2.6.22-rc6.orig/arch/mips/Kconfig
-+++ linux-2.6.22-rc6/arch/mips/Kconfig
-@@ -15,6 +15,17 @@ choice
+--- linux-2.6.22.orig/arch/mips/Kconfig
++++ linux-2.6.22/arch/mips/Kconfig
+@@ -15,6 +15,18 @@ choice
  	prompt "System type"
  	default SGI_IP22
  
 +config MIPS_ADM5120
 +	bool "Support for ADM5120 SoC"
 +	select SYS_HAS_CPU_MIPS32_R1
++	select SYS_HAS_EARLY_PRINTK
 +	select DMA_NONCOHERENT
 +	select HW_HAS_PCI
 +	select IRQ_CPU
@@ -20,7 +21,7 @@ Index: linux-2.6.22-rc6/arch/mips/Kconfig
  config MACH_ALCHEMY
  	bool "Alchemy processor based machines"
  
-@@ -658,6 +669,7 @@ config TOSHIBA_RBTX4938
+@@ -658,6 +670,7 @@ config TOSHIBA_RBTX4938
  
  endchoice
  
@@ -28,18 +29,20 @@ Index: linux-2.6.22-rc6/arch/mips/Kconfig
  source "arch/mips/au1000/Kconfig"
  source "arch/mips/ddb5xxx/Kconfig"
  source "arch/mips/gt64120/ev64120/Kconfig"
-Index: linux-2.6.22-rc6/arch/mips/Makefile
+Index: linux-2.6.22/arch/mips/Makefile
 ===================================================================
---- linux-2.6.22-rc6.orig/arch/mips/Makefile
-+++ linux-2.6.22-rc6/arch/mips/Makefile
-@@ -165,6 +165,14 @@ cflags-$(CONFIG_MACH_JAZZ)	+= -Iinclude/
+--- linux-2.6.22.orig/arch/mips/Makefile
++++ linux-2.6.22/arch/mips/Makefile
+@@ -165,6 +165,16 @@ cflags-$(CONFIG_MACH_JAZZ)	+= -Iinclude/
  load-$(CONFIG_MACH_JAZZ)	+= 0xffffffff80080000
  
  #
 +# ADMtek 5120
 +#
 +
++libs-$(CONFIG_MIPS_ADM5120)	+= arch/mips/adm5120/prom/
 +core-$(CONFIG_MIPS_ADM5120)	+= arch/mips/adm5120/
++core-$(CONFIG_MIPS_ADM5120)	+= arch/mips/adm5120/boards/
 +cflags-$(CONFIG_MIPS_ADM5120)	+= -Iinclude/asm-mips/mach-adm5120
 +load-$(CONFIG_MIPS_ADM5120)	+= 0xffffffff80001000
 +
@@ -47,10 +50,10 @@ Index: linux-2.6.22-rc6/arch/mips/Makefile
  # Common Alchemy Au1x00 stuff
  #
  core-$(CONFIG_SOC_AU1X00)	+= arch/mips/au1000/common/
-Index: linux-2.6.22-rc6/include/asm-mips/bootinfo.h
+Index: linux-2.6.22/include/asm-mips/bootinfo.h
 ===================================================================
---- linux-2.6.22-rc6.orig/include/asm-mips/bootinfo.h
-+++ linux-2.6.22-rc6/include/asm-mips/bootinfo.h
+--- linux-2.6.22.orig/include/asm-mips/bootinfo.h
++++ linux-2.6.22/include/asm-mips/bootinfo.h
 @@ -213,6 +213,57 @@
  #define MACH_GROUP_NEC_EMMA2RH 25	/* NEC EMMA2RH (was 23)		*/
  #define  MACH_NEC_MARKEINS	0	/* NEC EMMA2RH Mark-eins	*/
@@ -59,7 +62,7 @@ Index: linux-2.6.22-rc6/include/asm-mips/bootinfo.h
 + * Valid machtype for group ADMtek ADM5120
 + */
 +#define MACH_GROUP_ADM5120	26
-+#define MACH_ADM5120_UNKNOWN	0	/* Unknown board */
++#define MACH_ADM5120_GENERIC	0	/* Generic board */
 +#define MACH_ADM5120_WP54G_WRT	1	/* Compex WP54G-WRT */
 +#define MACH_ADM5120_WP54G	2	/* Compex WP54G */
 +#define MACH_ADM5120_WP54AG	3	/* Compex WP54AG */

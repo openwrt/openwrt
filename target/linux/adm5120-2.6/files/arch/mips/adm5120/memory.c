@@ -1,90 +1,179 @@
-/*****************************************************************************
- * Carsten Langgaard, carstenl@mips.com
- * Copyright (C) 1999,2000 MIPS Technologies, Inc.  All rights reserved.
- * Copyright (C) 2003 ADMtek Incorporated.
- *	daniell@admtek.com.tw
- * Copyright (C) 2005 Jeroen Vreeken (pe1rxq@amsat.org)
+/*
+ *  $Id$
  *
- * ########################################################################
+ *  Copyright (C) 2007 OpenWrt.org
+ *  Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
  *
- *  This program is free software; you can distribute it and/or modify it
- *  under the terms of the GNU General Public License (Version 2) as
- *  published by the Free Software Foundation.
+ *  This program is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public License
+ *  as published by the Free Software Foundation; either version 2
+ *  of the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  for more details.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ *  Boston, MA  02110-1301, USA.
  *
- * ########################################################################
- *
- *****************************************************************************/
+ */
 
-#include <linux/autoconf.h>
 #include <linux/init.h>
-#include <linux/mm.h>
-#include <linux/bootmem.h>
-#include <linux/pfn.h>
-#include <linux/string.h>
+#include <linux/types.h>
+#include <linux/kernel.h>
 
 #include <asm/bootinfo.h>
-#include <asm/page.h>
-#include <asm/sections.h>
+#include <asm/addrspace.h>
 
 #include <asm/mach-adm5120/adm5120_info.h>
-#include <asm-mips/mips-boards/prom.h>
+#include <asm/mach-adm5120/adm5120_defs.h>
+#include <asm/mach-adm5120/adm5120_switch.h>
+#include <asm/mach-adm5120/adm5120_mpmc.h>
 
-#define PFN_ALIGN(x)    (((unsigned long)(x) + (PAGE_SIZE - 1)) & PAGE_MASK)
+#define SWITCH_READ(r) *(u32 *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+(r))
+#define SWITCH_WRITE(r,v) *(u32 *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+(r))=(v)
 
-struct prom_pmemblock mdesc[PROM_MAX_PMEMBLOCKS];
+#define MPMC_READ(r) *(u32 *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+(r))
+#define MPMC_WRITE(r,v) *(u32 *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+(r))=(v)
 
-struct prom_pmemblock * __init prom_getmdesc(void)
+#if 1
+#  define mem_dbg(f, a...)	printk("mem_detect: " f, ## a)
+#else
+#  define mem_dbg(f, a...)
+#endif
+
+#define MEM_WR_DELAY	10000 /* 0.01 usec */
+
+unsigned long adm5120_memsize;
+
+static int __init mem_check_pattern(u8 *addr, unsigned long offs)
 {
-	unsigned int memsize;
-	char cmdline[CL_SIZE], *ptr;
+	volatile u32 *p1 = (volatile u32 *)addr;
+	volatile u32 *p2 = (volatile u32 *)(addr+offs);
+	u32 t,u,v;
 
-	memsize = adm5120_memsize;
-	/* Check the command line for a memsize directive that overrides
-	 * the physical/default amount */
-	strcpy(cmdline, arcs_cmdline);
-	ptr = strstr(cmdline, "memsize=");
-	if (ptr && (ptr != cmdline) && (*(ptr - 1) != ' '))
-	ptr = strstr(ptr, " memsize=");
+	/* save original value */
+	t = *p1;
+	u = *p2;
 
-	if (ptr)
-		memsize = memparse(ptr + 8, &ptr);
-	
-	memset(mdesc, 0, sizeof(mdesc));
-	mdesc[0].type = BOOT_MEM_RAM;
-	mdesc[0].base = CPHYSADDR(PFN_ALIGN(&_end));
-	mdesc[0].size = memsize - mdesc[0].base;
+	if (t != u)
+		return 0;
 
-	return &mdesc[0];
+	v = 0x55555555;
+	if (u == v)
+		v = 0xAAAAAAAA;
+
+	mem_dbg("write 0x%08lX to 0x%08lX\n", v, (unsigned long)p1);
+
+	*p1 = v;
+	mem_dbg("delay %d ns\n", MEM_WR_DELAY);
+	adm5120_ndelay(MEM_WR_DELAY);
+	u = *p2;
+
+	mem_dbg("pattern at 0x%08lX is 0x%08lX\n", (unsigned long)p2, u);
+
+	/* restore original value */
+	*p1 = t;
+
+	return (v == u);
 }
 
-void __init prom_meminit(void)
+static void __init adm5120_detect_memsize(void)
 {
-	struct prom_pmemblock *p;
+	u32	memctrl;
+	u32	size, maxsize;
+	u8	*p;
 
-	p = prom_getmdesc();
-
-	while (p->size)
-	{
-		long type;
-		unsigned long base, size;
-		base = p->base;
-		type = p->type,
-		size = p->size;
-		add_memory_region(base, size, type);
-		p++;
+	memctrl = SWITCH_READ(SWITCH_REG_MEMCTRL);
+	switch (memctrl & MEMCTRL_SDRS_MASK) {
+	case MEMCTRL_SDRS_4M:
+		maxsize = 4 << 20;
+		break;
+	case MEMCTRL_SDRS_8M:
+		maxsize = 8 << 20;
+		break;
+	case MEMCTRL_SDRS_16M:
+		maxsize = 16 << 20;
+		break;
+	default:
+		maxsize = 64 << 20;
+		break;
 	}
+
+	/* disable buffers for both SDRAM banks */
+	mem_dbg("disable buffers for both banks\n");
+	MPMC_WRITE(MPMC_REG_DC0, MPMC_READ(MPMC_REG_DC0) & ~DC_BE);
+	MPMC_WRITE(MPMC_REG_DC1, MPMC_READ(MPMC_REG_DC1) & ~DC_BE);
+
+	mem_dbg("checking for %ldMB chip in 1st bank\n", maxsize >> 20);
+
+	/* detect size of the 1st SDRAM bank */
+	p = (u8 *)KSEG1ADDR(0);
+	for (size = 2<<20; size <= (maxsize >> 1); size <<= 1) {
+		if (mem_check_pattern(p, size)) {
+			/* mirrored address */
+			mem_dbg("mirrored data found at offset 0x%lX\n", size);
+			break;
+		}
+	}
+
+	mem_dbg("chip size in 1st bank is %ldMB\n", size >> 20);
+	adm5120_memsize = size;
+
+	if (size != maxsize)
+		/* 2nd bank is not supported */
+		goto out;
+
+	if ((memctrl & MEMCTRL_SDR1_ENABLE) == 0)
+		/* 2nd bank is disabled */
+		goto out;
+
+	/*
+	 * some bootloaders enable 2nd bank, even if the 2nd SDRAM chip
+	 * are missing.
+	 */
+	mem_dbg("check presence of 2nd bank\n");
+
+	p = (u8 *)KSEG1ADDR(maxsize+size-4);
+	if (mem_check_pattern(p, 0)) {
+		adm5120_memsize += size;
+	}
+
+	if (maxsize != size) {
+		/* adjusting MECTRL register */
+		memctrl &= ~(MEMCTRL_SDRS_MASK);
+		switch (size>>20) {
+		case 4:
+			memctrl |= MEMCTRL_SDRS_4M;
+			break;
+		case 8:
+			memctrl |= MEMCTRL_SDRS_8M;
+			break;
+		case 16:
+			memctrl |= MEMCTRL_SDRS_16M;
+			break;
+		default:
+			memctrl |= MEMCTRL_SDRS_64M;
+			break;
+		}
+		SWITCH_WRITE(SWITCH_REG_MEMCTRL, memctrl);
+	}
+
+out:
+	/* reenable buffer for both SDRAM banks */
+	mem_dbg("enable buffers for both banks\n");
+	MPMC_WRITE(MPMC_REG_DC0, MPMC_READ(MPMC_REG_DC0) | DC_BE);
+	MPMC_WRITE(MPMC_REG_DC1, MPMC_READ(MPMC_REG_DC1) | DC_BE);
+
+	mem_dbg("%dx%ldMB memory found\n", (adm5120_memsize == size) ? 1 : 2 ,
+		size >>20);
 }
 
-void __init prom_free_prom_memory(void)
+void __init adm5120_mem_init(void)
 {
-	/* We do not have to prom memory to free */
+	adm5120_detect_memsize();
+	add_memory_region(0, adm5120_memsize, BOOT_MEM_RAM);
 }

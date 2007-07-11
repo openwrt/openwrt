@@ -1,7 +1,7 @@
 /*
  *  $Id$
  *
- *  ADM5120 specific setup
+ *  ADM5120 specific reset routines
  *
  *  Copyright (C) ADMtek Incorporated.
  *  Copyright (C) 2005 Jeroen Vreeken (pe1rxq@amsat.org)
@@ -25,49 +25,38 @@
  *
  */
 
-#include <linux/init.h>
+#include <linux/types.h>
 #include <linux/kernel.h>
+#include <linux/init.h>
 
-#include <asm/reboot.h>
-#include <asm/io.h>
-#include <asm/time.h>
+#include <asm/bootinfo.h>
+#include <asm/addrspace.h>
 
 #include <asm/mach-adm5120/adm5120_info.h>
 #include <asm/mach-adm5120/adm5120_defs.h>
 #include <asm/mach-adm5120/adm5120_switch.h>
-#include <asm/mach-adm5120/adm5120_board.h>
 
-static char *prom_names[ADM5120_PROM_LAST+1] __initdata = {
-	[ADM5120_PROM_GENERIC]		= "Generic",
-	[ADM5120_PROM_CFE]		= "CFE",
-	[ADM5120_PROM_UBOOT]		= "U-Boot",
-	[ADM5120_PROM_MYLOADER]		= "MyLoader",
-	[ADM5120_PROM_ROUTERBOOT]	= "RouterBOOT",
-	[ADM5120_PROM_BOOTBASE]		= "Bootbase"
-};
+#define ADM5120_SOFTRESET	0x12000004
 
-static void __init adm5120_report(void)
+void (*adm5120_board_reset)(void);
+
+void adm5120_restart(char *command)
 {
-	printk(KERN_INFO "SoC      : ADM%04X%s revision %d, running at %ldMHz\n",
-		adm5120_product_code,
-		(adm5120_package == ADM5120_PACKAGE_BGA) ? "" : "P",
-		adm5120_revision, (adm5120_speed / 1000000)
-		);
-	printk(KERN_INFO "Bootdev  : %s flash\n", adm5120_nand_boot ? "NAND":"NOR");
-	printk(KERN_INFO "Prom     : %s\n", prom_names[adm5120_prom_type]);
+	/* TODO: stop switch before reset */
+
+	if (adm5120_board_reset)
+		adm5120_board_reset();
+
+	*(u32*)KSEG1ADDR(ADM5120_SOFTRESET)=1;
 }
 
-void __init plat_mem_setup(void)
+void adm5120_halt(void)
 {
-	adm5120_soc_init();
-	adm5120_mem_init();
-	adm5120_report();
+        printk(KERN_NOTICE "\n** You can safely turn off the power\n");
+        while (1);
+}
 
-	board_time_init = adm5120_time_init;
-
-	_machine_restart = adm5120_restart;
-	_machine_halt = adm5120_halt;
-	pm_power_off = adm5120_power_off;
-
-	set_io_port_base(KSEG1);
+void adm5120_power_off(void)
+{
+        adm5120_halt();
 }
