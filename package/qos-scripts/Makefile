@@ -19,7 +19,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/qos-scripts
   SECTION:=utils
   CATEGORY:=Base system
-  DEPENDS:=+tc +kmod-sched +iptables-mod-filter +iptables-mod-ipopt +iptables-mod-extra +iptables-mod-conntrack +iptables-mod-imq
+  DEPENDS:=+tc +kmod-sched +iptables-mod-filter +iptables-mod-ipopt +iptables-mod-conntrack +iptables-mod-imq
   TITLE:=QoS scripts
   DESCRIPTION:=QoS scripts \\\
 	 A set of scripts that abstract QoS configuration \\\
