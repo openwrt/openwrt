@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ipset
 PKG_VERSION:=2.2.9a
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-20061009.tar.bz2
 PKG_SOURCE_URL:=http://ipset.netfilter.org
@@ -21,7 +21,6 @@ include $(INCLUDE_DIR)/package.mk
 define Package/ipset
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=@BROKEN
   TITLE:=Netfilter ip sets administration utility
   URL:=http://ipset.netfilter.org/
 endef
