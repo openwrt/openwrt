@@ -37,7 +37,7 @@
 #define DIALOG_BG                    COLOR_WHITE
 #define DIALOG_HL                    FALSE
 
-#define TITLE_FG                     COLOR_YELLOW
+#define TITLE_FG                     COLOR_BLUE
 #define TITLE_BG                     COLOR_WHITE
 #define TITLE_HL                     TRUE
 
@@ -81,7 +81,7 @@
 #define SEARCHBOX_BG                 COLOR_WHITE
 #define SEARCHBOX_HL                 FALSE
 
-#define SEARCHBOX_TITLE_FG           COLOR_YELLOW
+#define SEARCHBOX_TITLE_FG           COLOR_BLUE
 #define SEARCHBOX_TITLE_BG           COLOR_WHITE
 #define SEARCHBOX_TITLE_HL           TRUE
 
@@ -89,7 +89,7 @@
 #define SEARCHBOX_BORDER_BG          COLOR_WHITE
 #define SEARCHBOX_BORDER_HL          TRUE
 
-#define POSITION_INDICATOR_FG        COLOR_YELLOW
+#define POSITION_INDICATOR_FG        COLOR_BLUE
 #define POSITION_INDICATOR_BG        COLOR_WHITE
 #define POSITION_INDICATOR_HL        TRUE
 
@@ -109,7 +109,7 @@
 #define ITEM_SELECTED_BG             COLOR_BLUE
 #define ITEM_SELECTED_HL             TRUE
 
-#define TAG_FG                       COLOR_YELLOW
+#define TAG_FG                       COLOR_BLUE
 #define TAG_BG                       COLOR_WHITE
 #define TAG_HL                       TRUE
 
@@ -117,7 +117,7 @@
 #define TAG_SELECTED_BG              COLOR_BLUE
 #define TAG_SELECTED_HL              TRUE
 
-#define TAG_KEY_FG                   COLOR_YELLOW
+#define TAG_KEY_FG                   COLOR_BLUE
 #define TAG_KEY_BG                   COLOR_WHITE
 #define TAG_KEY_HL                   TRUE
 
