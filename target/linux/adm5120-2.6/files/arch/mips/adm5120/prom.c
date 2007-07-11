@@ -110,7 +110,7 @@ static unsigned long __init detect_machtype_generic(void)
 {
 	char *name;
 
-	name = generic_prom_getenv("board");
+	name = generic_prom_getenv("board_name");
 	return find_machtype_byname(name);
 }
 
@@ -228,8 +228,13 @@ static void __init prom_detect_machtype(void)
 		return;
 	}
 
-	adm5120_prom_type = ADM5120_PROM_GENERIC;
-	mips_machtype = detect_machtype_generic();
+	if (generic_prom_present()) {
+		adm5120_prom_type = ADM5120_PROM_GENERIC;
+		mips_machtype = detect_machtype_generic();
+		return;
+	}
+
+	mips_machtype = MACH_ADM5120_GENERIC;
 }
 
 /* TODO: this is an ugly hack for RouterBOARDS */
