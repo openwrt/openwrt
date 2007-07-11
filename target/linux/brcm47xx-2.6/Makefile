@@ -11,7 +11,7 @@ BOARD:=brcm47xx
 BOARDNAME:=Broadcom BCM947xx/953xx
 FEATURES:=squashfs usb
 
-LINUX_VERSION:=2.6.22
+LINUX_VERSION:=2.6.22.1
 
 define Target/Description
 	Build firmware images for Broadcom based routers
