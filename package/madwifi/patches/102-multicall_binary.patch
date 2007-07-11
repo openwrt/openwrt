@@ -1,7 +1,7 @@
-Index: madwifi-ng-r2525-20070630/tools/80211debug.c
+Index: madwifi-ng-r2568-20070710/tools/80211debug.c
 ===================================================================
---- madwifi-ng-r2525-20070630.orig/tools/80211debug.c	2007-07-03 23:02:26.373692000 +0200
-+++ madwifi-ng-r2525-20070630/tools/80211debug.c	2007-07-03 23:02:27.357753500 +0200
+--- madwifi-ng-r2568-20070710.orig/tools/80211debug.c	2007-07-11 22:59:39.484098617 +0200
++++ madwifi-ng-r2568-20070710/tools/80211debug.c	2007-07-11 22:59:40.108134179 +0200
 @@ -49,6 +49,10 @@
  #include <getopt.h>
  #include <err.h>
@@ -33,10 +33,10 @@ Index: madwifi-ng-r2525-20070630/tools/80211debug.c
  	const char *ifname = "ath0";
  	const char *cp, *tp;
  	const char *sep;
-Index: madwifi-ng-r2525-20070630/tools/80211stats.c
+Index: madwifi-ng-r2568-20070710/tools/80211stats.c
 ===================================================================
---- madwifi-ng-r2525-20070630.orig/tools/80211stats.c	2007-07-03 23:02:26.381692500 +0200
-+++ madwifi-ng-r2525-20070630/tools/80211stats.c	2007-07-03 23:02:27.357753500 +0200
+--- madwifi-ng-r2568-20070710.orig/tools/80211stats.c	2007-07-11 22:59:39.488098843 +0200
++++ madwifi-ng-r2568-20070710/tools/80211stats.c	2007-07-11 22:59:40.112134405 +0200
 @@ -60,6 +60,10 @@
  #include "net80211/ieee80211_crypto.h"
  #include "net80211/ieee80211_ioctl.h"
@@ -68,10 +68,10 @@ Index: madwifi-ng-r2525-20070630/tools/80211stats.c
  	int c, len;
  	struct ieee80211req_sta_info *si;
  	u_int8_t buf[24*1024], *cp;
-Index: madwifi-ng-r2525-20070630/tools/athchans.c
+Index: madwifi-ng-r2568-20070710/tools/athchans.c
 ===================================================================
---- madwifi-ng-r2525-20070630.orig/tools/athchans.c	2007-07-03 23:02:26.389693000 +0200
-+++ madwifi-ng-r2525-20070630/tools/athchans.c	2007-07-03 23:02:27.401756250 +0200
+--- madwifi-ng-r2568-20070710.orig/tools/athchans.c	2007-07-11 22:59:39.496099302 +0200
++++ madwifi-ng-r2568-20070710/tools/athchans.c	2007-07-11 22:59:40.184138509 +0200
 @@ -59,6 +59,10 @@
  #include "net80211/ieee80211_crypto.h"
  #include "net80211/ieee80211_ioctl.h"
@@ -104,10 +104,10 @@ Index: madwifi-ng-r2525-20070630/tools/athchans.c
  	const char *ifname = "wifi0";
  	struct ieee80211req_chanlist chanlist;
  	int c;
-Index: madwifi-ng-r2525-20070630/tools/athctrl.c
+Index: madwifi-ng-r2568-20070710/tools/athctrl.c
 ===================================================================
---- madwifi-ng-r2525-20070630.orig/tools/athctrl.c	2007-07-03 23:02:26.397693500 +0200
-+++ madwifi-ng-r2525-20070630/tools/athctrl.c	2007-07-03 23:02:27.433758250 +0200
+--- madwifi-ng-r2568-20070710.orig/tools/athctrl.c	2007-07-11 22:59:39.504099754 +0200
++++ madwifi-ng-r2568-20070710/tools/athctrl.c	2007-07-11 22:59:40.216140332 +0200
 @@ -53,6 +53,10 @@
  
  #include <net/if.h>
@@ -139,10 +139,10 @@ Index: madwifi-ng-r2525-20070630/tools/athctrl.c
  	char device[IFNAMSIZ + 1];
  	int distance = -1;
  	int c;
-Index: madwifi-ng-r2525-20070630/tools/athdebug.c
+Index: madwifi-ng-r2568-20070710/tools/athdebug.c
 ===================================================================
---- madwifi-ng-r2525-20070630.orig/tools/athdebug.c	2007-07-03 23:02:26.405694000 +0200
-+++ madwifi-ng-r2525-20070630/tools/athdebug.c	2007-07-03 23:02:27.453759500 +0200
+--- madwifi-ng-r2568-20070710.orig/tools/athdebug.c	2007-07-11 22:59:39.508099983 +0200
++++ madwifi-ng-r2568-20070710/tools/athdebug.c	2007-07-11 22:59:40.236141472 +0200
 @@ -52,6 +52,10 @@
  #include <getopt.h>
  #include <err.h>
@@ -175,10 +175,10 @@ Index: madwifi-ng-r2525-20070630/tools/athdebug.c
  #ifdef __linux__
  	const char *ifname = "wifi0";
  #else
-Index: madwifi-ng-r2525-20070630/tools/athkey.c
+Index: madwifi-ng-r2568-20070710/tools/athkey.c
 ===================================================================
---- madwifi-ng-r2525-20070630.orig/tools/athkey.c	2007-07-03 23:02:26.413694500 +0200
-+++ madwifi-ng-r2525-20070630/tools/athkey.c	2007-07-03 23:02:27.477761000 +0200
+--- madwifi-ng-r2568-20070710.orig/tools/athkey.c	2007-07-11 22:59:39.516100443 +0200
++++ madwifi-ng-r2568-20070710/tools/athkey.c	2007-07-11 22:59:40.288144436 +0200
 @@ -59,6 +59,10 @@
  #include "net80211/ieee80211_crypto.h"
  #include "net80211/ieee80211_ioctl.h"
@@ -210,10 +210,10 @@ Index: madwifi-ng-r2525-20070630/tools/athkey.c
  	const char *ifname = "wifi0";
  	struct ieee80211req_key setkey;
  	struct ieee80211req_del_key delkey;
-Index: madwifi-ng-r2525-20070630/tools/athstats.c
+Index: madwifi-ng-r2568-20070710/tools/athstats.c
 ===================================================================
---- madwifi-ng-r2525-20070630.orig/tools/athstats.c	2007-07-03 23:02:26.421695000 +0200
-+++ madwifi-ng-r2525-20070630/tools/athstats.c	2007-07-03 23:02:27.505762750 +0200
+--- madwifi-ng-r2568-20070710.orig/tools/athstats.c	2007-07-11 22:59:39.524100895 +0200
++++ madwifi-ng-r2568-20070710/tools/athstats.c	2007-07-11 22:59:40.328146718 +0200
 @@ -63,6 +63,10 @@
  #include "wireless_copy.h"
  #include "if_athioctl.h"
@@ -246,10 +246,10 @@ Index: madwifi-ng-r2525-20070630/tools/athstats.c
  #ifdef __linux__
  	const char *ifname = "wifi0";
  #else
-Index: madwifi-ng-r2525-20070630/tools/do_multi.c
+Index: madwifi-ng-r2568-20070710/tools/do_multi.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ madwifi-ng-r2525-20070630/tools/do_multi.c	2007-07-03 23:02:27.557766000 +0200
++++ madwifi-ng-r2568-20070710/tools/do_multi.c	2007-07-11 22:59:40.348147859 +0200
 @@ -0,0 +1,30 @@
 +#include <string.h>
 +#include "do_multi.h"
@@ -281,10 +281,10 @@ Index: madwifi-ng-r2525-20070630/tools/do_multi.c
 +    
 +    return ret;
 +}
-Index: madwifi-ng-r2525-20070630/tools/do_multi.h
+Index: madwifi-ng-r2568-20070710/tools/do_multi.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ madwifi-ng-r2525-20070630/tools/do_multi.h	2007-07-03 23:02:27.581767500 +0200
++++ madwifi-ng-r2568-20070710/tools/do_multi.h	2007-07-11 22:59:40.372149222 +0200
 @@ -0,0 +1,9 @@
 +
 +int a80211debug_init(int argc, char *argv[]);
@@ -295,10 +295,10 @@ Index: madwifi-ng-r2525-20070630/tools/do_multi.h
 +int athkey_init(int argc, char *argv[]);
 +int athstats_init(int argc, char *argv[]);
 +int wlanconfig_init(int argc, char *argv[]);
-Index: madwifi-ng-r2525-20070630/tools/Makefile
+Index: madwifi-ng-r2568-20070710/tools/Makefile
 ===================================================================
---- madwifi-ng-r2525-20070630.orig/tools/Makefile	2007-07-03 23:02:26.437696000 +0200
-+++ madwifi-ng-r2525-20070630/tools/Makefile	2007-07-03 23:02:27.605769000 +0200
+--- madwifi-ng-r2568-20070710.orig/tools/Makefile	2007-07-11 22:59:39.540101806 +0200
++++ madwifi-ng-r2568-20070710/tools/Makefile	2007-07-11 22:59:40.388150134 +0200
 @@ -49,6 +49,12 @@
  
  ALL=	athstats 80211stats athkey athchans athctrl \
@@ -343,10 +343,10 @@ Index: madwifi-ng-r2525-20070630/tools/Makefile
  athstats: athstats.c
  	$(CC) -o athstats $(ALL_CFLAGS) -I$(TOP)/ath $(LDFLAGS) athstats.c
  80211stats: 80211stats.c
-Index: madwifi-ng-r2525-20070630/tools/wlanconfig.c
+Index: madwifi-ng-r2568-20070710/tools/wlanconfig.c
 ===================================================================
---- madwifi-ng-r2525-20070630.orig/tools/wlanconfig.c	2007-07-03 23:02:26.449696750 +0200
-+++ madwifi-ng-r2525-20070630/tools/wlanconfig.c	2007-07-03 23:02:27.669773000 +0200
+--- madwifi-ng-r2568-20070710.orig/tools/wlanconfig.c	2007-07-11 22:59:39.548102266 +0200
++++ madwifi-ng-r2568-20070710/tools/wlanconfig.c	2007-07-11 22:59:40.404151049 +0200
 @@ -62,6 +62,10 @@
  #include "net80211/ieee80211_crypto.h"
  #include "net80211/ieee80211_ioctl.h"
