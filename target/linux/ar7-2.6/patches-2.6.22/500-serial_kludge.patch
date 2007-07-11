@@ -1,0 +1,62 @@
+diff -urN linux-2.6.22.orig/drivers/serial/8250.c linux-2.6.22/drivers/serial/8250.c
+--- linux-2.6.22.orig/drivers/serial/8250.c	2007-07-09 01:32:17.000000000 +0200
++++ linux-2.6.22/drivers/serial/8250.c	2007-07-11 03:08:57.000000000 +0200
+@@ -258,6 +258,13 @@
+ 		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
+ 		.flags		= UART_CAP_FIFO,
+ 	},
++	[PORT_AR7] = {
++		.name		= "TI-AR7",
++		.fifo_size	= 16,
++		.tx_loadsz	= 16,
++		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_00,
++		.flags		= UART_CAP_FIFO | UART_CAP_AFE,
++	},
+ };
+ 
+ #if defined (CONFIG_SERIAL_8250_AU1X00)
+@@ -2436,7 +2443,7 @@
+ {
+ 	struct uart_8250_port *up = (struct uart_8250_port *)port;
+ 
+-	wait_for_xmitr(up, UART_LSR_THRE);
++	wait_for_xmitr(up, BOTH_EMPTY);
+ 	serial_out(up, UART_TX, ch);
+ }
+ 
+diff -urN linux-2.6.22.orig/include/linux/serial_core.h linux-2.6.22/include/linux/serial_core.h
+--- linux-2.6.22.orig/include/linux/serial_core.h	2007-07-09 01:32:17.000000000 +0200
++++ linux-2.6.22/include/linux/serial_core.h	2007-07-11 03:09:49.000000000 +0200
+@@ -40,6 +40,7 @@
+ #define PORT_NS16550A	14
+ #define PORT_XSCALE	15
+ #define PORT_RM9000	16	/* PMC-Sierra RM9xxx internal UART */
++#define PORT_AR7	16
+ #define PORT_MAX_8250	16	/* max port ID */
+ 
+ /*
+diff -urN linux-2.6.22.orig/include/linux/serialP.h linux-2.6.22/include/linux/serialP.h
+--- linux-2.6.22.orig/include/linux/serialP.h	2007-07-09 01:32:17.000000000 +0200
++++ linux-2.6.22/include/linux/serialP.h	2007-07-11 03:08:57.000000000 +0200
+@@ -135,6 +135,9 @@
+  * the interrupt line _up_ instead of down, so if we register the IRQ
+  * while the UART is in that state, we die in an IRQ storm. */
+ #define ALPHA_KLUDGE_MCR (UART_MCR_OUT2)
++#elif defined(CONFIG_AR7)
++/* This is how it is set up by bootloader... */
++#define ALPHA_KLUDGE_MCR  (UART_MCR_OUT2 | UART_MCR_OUT1 | UART_MCR_RTS | UART_MCR_DTR)
+ #else
+ #define ALPHA_KLUDGE_MCR 0
+ #endif
+diff -urN linux-2.6.22.orig/scripts/setlocalversion linux-2.6.22/scripts/setlocalversion
+--- linux-2.6.22.orig/scripts/setlocalversion	2007-07-09 01:32:17.000000000 +0200
++++ linux-2.6.22/scripts/setlocalversion	2007-07-11 03:08:57.000000000 +0200
+@@ -1,6 +1,8 @@
+ #!/bin/sh
+ # Print additional version information for non-release trees.
+ 
++exit 0
++
+ usage() {
+ 	echo "Usage: $0 [srctree]" >&2
+ 	exit 1
