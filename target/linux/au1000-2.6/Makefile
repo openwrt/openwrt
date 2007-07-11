@@ -11,7 +11,7 @@ BOARD:=au1000
 BOARDNAME:=AMD Alchemy AU1x00
 FEATURES:=jffs2 usb pci
 
-LINUX_VERSION:=2.6.22
+LINUX_VERSION:=2.6.22.1
 
 define Target/Description
 	Build firmware for AMD Alchemy 1500 boards
