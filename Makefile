@@ -141,7 +141,7 @@ clean: FORCE
 dirclean: clean
 	rm -rf staging_dir_* toolchain_build_* tool_build
 
-distclean: dirclean config-clean symlinkclean docclean
+distclean: dirclean config-clean symlinkclean docs/clean
 	rm -rf dl
 
 help:
