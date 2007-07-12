@@ -146,14 +146,14 @@ static irqreturn_t ar5312_ahb_proc_handler(int cpl, void *dev_id)
 
 static struct irqaction ar5312_ahb_proc_interrupt  = {
 	.handler	= ar5312_ahb_proc_handler,
-	.flags		= SA_INTERRUPT,
+	.flags		= IRQF_DISABLED,
 	.name		= "ar5312_ahb_proc_interrupt",
 };
 
 
 static struct irqaction cascade  = {
 	.handler	= no_action,
-	.flags		= SA_INTERRUPT,
+	.flags		= IRQF_DISABLED,
 	.name		= "cascade",
 };
 

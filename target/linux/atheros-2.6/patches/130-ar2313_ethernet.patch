@@ -1,7 +1,7 @@
 diff -urN linux.old/drivers/net/Kconfig linux.eth/drivers/net/Kconfig
 --- linux.old/drivers/net/Kconfig	2006-12-14 23:53:29.000000000 +0100
 +++ linux.eth/drivers/net/Kconfig	2006-12-16 04:30:11.000000000 +0100
-@@ -313,6 +313,12 @@
+@@ -324,6 +324,12 @@
  
  source "drivers/net/arm/Kconfig"
  
@@ -17,9 +17,9 @@ diff -urN linux.old/drivers/net/Kconfig linux.eth/drivers/net/Kconfig
 diff -urN linux.old/drivers/net/Makefile linux.eth/drivers/net/Makefile
 --- linux.old/drivers/net/Makefile	2006-12-14 23:53:29.000000000 +0100
 +++ linux.eth/drivers/net/Makefile	2006-12-16 04:30:11.000000000 +0100
-@@ -9,6 +9,7 @@
- obj-$(CONFIG_EHEA) += ehea/
+@@ -11,6 +11,7 @@
  obj-$(CONFIG_BONDING) += bonding/
+ obj-$(CONFIG_ATL1) += atl1/
  obj-$(CONFIG_GIANFAR) += gianfar_driver.o
 +obj-$(CONFIG_AR2313) += ar2313/
  
