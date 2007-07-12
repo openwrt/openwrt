@@ -14,6 +14,7 @@
 #include <linux/mtd/map.h>
 #include <linux/mtd/partitions.h>
 #include <linux/autoconf.h>
+#include <linux/sched.h>
 #include <linux/squashfs_fs.h>
 
 static struct mtd_info		*rdc3210_mtd;
