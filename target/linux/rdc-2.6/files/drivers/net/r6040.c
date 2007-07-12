@@ -952,7 +952,7 @@ static int __init r6040_init (void)
 	printk(version);
 	printed_version = 1;
 
-	return pci_module_init (&r6040_driver);
+	return pci_register_driver (&r6040_driver);
 }
 
 
