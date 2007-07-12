@@ -1,23 +1,22 @@
 diff -urN linux.old/drivers/mtd/devices/Kconfig linux.dev/drivers/mtd/devices/Kconfig
 --- linux.old/drivers/mtd/devices/Kconfig	2007-02-04 04:30:26.145338240 +0100
 +++ linux.dev/drivers/mtd/devices/Kconfig	2007-02-02 23:48:28.748969000 +0100
-@@ -68,6 +68,10 @@
+@@ -76,6 +76,10 @@
  	  used for program and data storage.  Set up your spi devices
  	  with the right board-specific platform data.
  
 +config MTD_SPIFLASH
 +	tristate "Atheros AR2315/6/7 SPI Flash support"
-+	depends on MTD && ATHEROS_AR5315
++	depends on ATHEROS_AR5315
 +
  config MTD_SLRAM
  	tristate "Uncached system RAM"
- 	depends on MTD
+ 	help
 diff -urN linux.old/drivers/mtd/devices/Makefile linux.dev/drivers/mtd/devices/Makefile
 --- linux.old/drivers/mtd/devices/Makefile	2007-02-04 04:30:26.146338088 +0100
 +++ linux.dev/drivers/mtd/devices/Makefile	2007-02-02 23:48:28.749969000 +0100
-@@ -17,3 +17,4 @@
- obj-$(CONFIG_MTD_BLOCK2MTD)	+= block2mtd.o
+@@ -18,3 +18,4 @@
  obj-$(CONFIG_MTD_DATAFLASH)	+= mtd_dataflash.o
+ obj-$(CONFIG_MTD_DATAFLASH26)	+= at91_dataflash26.o
  obj-$(CONFIG_MTD_M25P80)	+= m25p80.o
 +obj-$(CONFIG_MTD_SPIFLASH)	+= spiflash.o
-
