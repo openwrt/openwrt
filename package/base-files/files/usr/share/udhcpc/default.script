@@ -47,12 +47,13 @@ case "$1" in
 		}
 		
 		[ -n "$dns" ] && {
-			echo -n > $RESOLV_CONF
-			${domain:+echo search $domain} >> $RESOLV_CONF
+			echo -n > "${RESOLV_CONF}.tmp"
+			${domain:+echo search $domain} >> "${RESOLV_CONF}.tmp"
 			for i in $dns ; do
 				echo "adding dns $i"
-				echo "nameserver $i" >> $RESOLV_CONF
+				echo "nameserver $i" >> "${RESOLV_CONF}.tmp"
 			done
+			mv "${RESOLV_CONF}.tmp" "$RESOLV_CONF"
 		}
 		
 		hotplug_event ifup
