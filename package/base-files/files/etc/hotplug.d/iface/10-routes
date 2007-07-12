@@ -35,6 +35,7 @@ case "$ACTION" in
 	ifup)
 		include /lib/network
 		scan_interfaces
+		config_load /var/state/network
 		config_foreach "add_route" route
 	;;
 esac
