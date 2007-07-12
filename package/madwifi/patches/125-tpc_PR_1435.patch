@@ -1,7 +1,7 @@
 Index: madwifi-ng-r2568-20070710/ath/if_ath.c
 ===================================================================
 --- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-07-12 21:15:09.998476392 +0200
-+++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-07-12 21:15:23.995274023 +0200
++++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-07-12 22:57:09.235191822 +0200
 @@ -273,9 +273,7 @@
  static char *autocreate = NULL;
  static char *ratectl = DEF_RATE_CTL;
@@ -55,7 +55,7 @@ Index: madwifi-ng-r2568-20070710/ath/if_ath.c
  	ath_hal_settpc(ah, tpc);
  #endif
  
-@@ -8787,26 +8786,17 @@
+@@ -8787,26 +8786,16 @@
  	 * Search for the VAP that needs a txpow change, if any
  	 */
  	TAILQ_FOREACH(vap, &ic->ic_vaps, iv_next) {
@@ -71,24 +71,25 @@ Index: madwifi-ng-r2568-20070710/ath/if_ath.c
 -#endif
  	}
  
- 	ic->ic_newtxpowlimit = sc->sc_curtxpow = clamped_txpow;
+-	ic->ic_newtxpowlimit = sc->sc_curtxpow = clamped_txpow;
++	sc->sc_curtxpow = clamped_txpow;
  
 -#ifdef ATH_CAP_TPC
 -	if (ic->ic_newtxpowlimit >= txpowlimit)
 -		ath_hal_settxpowlimit(ah, ic->ic_newtxpowlimit);
 -#else
 -	if (ic->ic_newtxpowlimit != txpowlimit)
-+	if ((tpc && ic->ic_newtxpowlimit >= txpowlimit) ||
-+	    (ic->ic_newtxpowlimit != txpowlimit))
- 		ath_hal_settxpowlimit(ah, ic->ic_newtxpowlimit);
+-		ath_hal_settxpowlimit(ah, ic->ic_newtxpowlimit);
 -#endif
++	if (clamped_txpow != txpowlimit)
++		ath_hal_settxpowlimit(ah, clamped_txpow);
  }
  
  
 Index: madwifi-ng-r2568-20070710/net80211/ieee80211_wireless.c
 ===================================================================
 --- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_wireless.c	2007-07-12 21:15:44.080418612 +0200
-+++ madwifi-ng-r2568-20070710/net80211/ieee80211_wireless.c	2007-07-12 21:16:19.034410527 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_wireless.c	2007-07-12 22:48:39.378136721 +0200
 @@ -1403,6 +1403,7 @@
  	} else {
  		if (!fixed)		/* no change */
