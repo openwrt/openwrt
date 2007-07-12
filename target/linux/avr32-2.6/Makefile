@@ -11,7 +11,7 @@ BOARD:=avr32
 BOARDNAME:=Atmel AVR32
 FEATURES:=squashfs
 
-LINUX_VERSION:=2.6.21.5
+LINUX_VERSION:=2.6.22.1
 
 define Target/Description
   Build firmware images for ATNGW100 board
