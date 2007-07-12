@@ -32,7 +32,7 @@ endef
 define Build/Compile
 	CFLAGS="$(TARGET_CFLAGS)" \
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) -j1 \
+		$(TARGET_CONFIGURE_OPTS) \
 		LINUX_DIR="$(LINUX_DIR)" \
 		EXTRA_CPPFLAGS="$(TARGET_CPPFLAGS) -I$(STAGING_DIR)/usr/include/openssl -I$(STAGING_DIR)/usr/include/keynote" \
 		EXTRA_LDFLAGS="$(TARGET_LDFLAGS)"
