@@ -68,7 +68,7 @@ Index: linux-2.6.21.5/net/ipv4/netfilter/ipt_layer7.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.21.5/net/ipv4/netfilter/ipt_layer7.c	2007-07-02 01:27:54.195821750 +0200
-@@ -0,0 +1,582 @@
+@@ -0,0 +1,583 @@
 +/*
 +  Kernel module to match application layer (OSI layer 7) data in connections.
 +
@@ -542,6 +542,7 @@ Index: linux-2.6.21.5/net/ipv4/netfilter/ipt_layer7.c
 +	.name = "layer7",
 +	.match = &match,
 +	.matchsize  = sizeof(struct ipt_layer7_info),
++	.family = AF_INET,
 +	.me = THIS_MODULE
 +};
 +
