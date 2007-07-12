@@ -24,13 +24,13 @@ $(STAMP_DIR) $(TARGET_DIR):
 
 ifeq ($(QUIET),1)
 %-compile %-install: FORCE
-	$(MAKE) -C $* $(patsubst $*-%,%,$@) || { $(call MESSAGE, "*** $* $(patsubst $*-%,%,$@) failed"); false; }
+	$(MAKE) -j1 -C $* $(patsubst $*-%,%,$@) || { $(call MESSAGE, "*** $* $(patsubst $*-%,%,$@) failed"); false; }
 
 %-prepare %-prereq %-download %-clean: FORCE
 else
 %-prepare %-prereq %-download %-clean %-compile %-install: FORCE
 endif
-	$(MAKE) -C $* $(patsubst $*-%,%,$@)
+	$(MAKE) -j1 -C $* $(patsubst $*-%,%,$@)
 
 %-refresh %-update:
 	-$(MAKE) -C $* $(patsubst $*-%,%,$@)
