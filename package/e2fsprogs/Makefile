@@ -69,6 +69,11 @@ CONFIGURE_ARGS += \
 	--enable-elf-shlibs \
 	--enable-dynamic-e2fsck
 
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(PKG_BUILD_DIR)/config/
+endef
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR)/util \
 		BUILDCC="$(HOSTCC)" \
