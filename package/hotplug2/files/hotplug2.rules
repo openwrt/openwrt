@@ -1,9 +1,4 @@
 $include /etc/hotplug2-init.rules
-FIRMWARE is set {
-	nothrottle
-	exec /sbin/hotplug-call firmware;
-	next
-}
 
 SUBSYSTEM ~~ (net|button|usb) {
 	exec /sbin/hotplug-call %SUBSYSTEM%;
