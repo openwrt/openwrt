@@ -1,7 +1,7 @@
 Index: madwifi-ng-r2568-20070710/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-07-13 11:14:06.322980052 +0200
-+++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-07-13 11:15:00.834086460 +0200
+--- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-07-13 11:18:20.621471697 +0200
++++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-07-13 11:18:21.021494493 +0200
 @@ -153,6 +153,7 @@
  static void ath_turbo_switch_mode(unsigned long);
  static int ath_check_beacon_done(struct ath_softc *);
@@ -88,8 +88,8 @@ Index: madwifi-ng-r2568-20070710/ath/if_ath.c
  static void
 Index: madwifi-ng-r2568-20070710/ath/if_athvar.h
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/ath/if_athvar.h	2007-07-13 11:14:06.274977315 +0200
-+++ madwifi-ng-r2568-20070710/ath/if_athvar.h	2007-07-13 11:14:06.522991448 +0200
+--- madwifi-ng-r2568-20070710.orig/ath/if_athvar.h	2007-07-13 11:18:20.353456423 +0200
++++ madwifi-ng-r2568-20070710/ath/if_athvar.h	2007-07-13 11:18:21.021494493 +0200
 @@ -538,7 +538,8 @@
   */
  #define ATH_TXQ_MOVE_Q(_tqs,_tqd)  ATH_TXQ_MOVE_MCASTQ(_tqs,_tqd)

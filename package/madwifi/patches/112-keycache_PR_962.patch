@@ -1,7 +1,7 @@
 Index: madwifi-ng-r2568-20070710/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-07-11 22:59:41.372206215 +0200
-+++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-07-11 22:59:41.856233797 +0200
+--- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-07-13 11:18:16.181218662 +0200
++++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-07-13 11:18:16.669246471 +0200
 @@ -5732,7 +5732,8 @@
  		 * frame; it'll be dropped where it's not wanted.
  		 */
@@ -14,8 +14,8 @@ Index: madwifi-ng-r2568-20070710/ath/if_ath.c
  			 * Fast path: node is present in the key map;
 Index: madwifi-ng-r2568-20070710/net80211/ieee80211_node.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_node.c	2007-07-11 22:59:39.096076505 +0200
-+++ madwifi-ng-r2568-20070710/net80211/ieee80211_node.c	2007-07-11 22:59:41.860234023 +0200
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_node.c	2007-07-13 11:18:14.117101033 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_node.c	2007-07-13 11:18:16.669246471 +0200
 @@ -1271,8 +1271,6 @@
  	IEEE80211_NODE_TABLE_UNLOCK_IRQ(nt);
  
@@ -48,8 +48,8 @@ Index: madwifi-ng-r2568-20070710/net80211/ieee80211_node.c
   * a data frame.  This handles node discovery in adhoc networks.
 Index: madwifi-ng-r2568-20070710/net80211/ieee80211_node.h
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_node.h	2007-07-11 22:59:39.104076962 +0200
-+++ madwifi-ng-r2568-20070710/net80211/ieee80211_node.h	2007-07-11 22:59:41.884235392 +0200
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_node.h	2007-07-13 11:18:14.125101490 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_node.h	2007-07-13 11:18:16.697248068 +0200
 @@ -328,6 +328,8 @@
  	*pni = NULL;			/* guard against use */
  }
