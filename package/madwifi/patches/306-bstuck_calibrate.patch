@@ -1,0 +1,102 @@
+Index: madwifi-ng-r2568-20070710/ath/if_ath.c
+===================================================================
+--- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-07-13 11:14:06.322980052 +0200
++++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-07-13 11:15:00.834086460 +0200
+@@ -153,6 +153,7 @@
+ static void ath_turbo_switch_mode(unsigned long);
+ static int ath_check_beacon_done(struct ath_softc *);
+ #endif
++static void ath_do_calibrate(struct net_device *);
+ static void ath_beacon_send(struct ath_softc *, int *);
+ static void ath_beacon_start_adhoc(struct ath_softc *, struct ieee80211vap *);
+ static void ath_beacon_return(struct ath_softc *, struct ath_buf *);
+@@ -4173,7 +4174,7 @@
+ 		DPRINTF(sc, ATH_DEBUG_BEACON_PROC,
+ 			"%s: missed %u consecutive beacons\n",
+ 			__func__, sc->sc_bmisscount);
+-		if (sc->sc_bmisscount > BSTUCK_THRESH)
++		if (sc->sc_bmisscount > BSTUCK_CALIBR_THR)
+ 			ATH_SCHEDULE_TQUEUE(&sc->sc_bstucktq, needmark);
+ 		return;
+ 	}
+@@ -4312,8 +4313,17 @@
+ 	 *     check will be true, in which case return 
+ 	 *     without resetting the driver.
+ 	 */
+-	if (sc->sc_bmisscount <= BSTUCK_THRESH)
++	if (sc->sc_bmisscount <= BSTUCK_CALIBR_THR)
+ 		return;
++
++	if (sc->sc_bmisscount <= BSTUCK_RESET_THR) {
++		ATH_LOCK(sc);
++		ath_do_calibrate(dev);
++		mod_timer(&sc->sc_cal_ch, jiffies + (ath_calinterval * HZ));
++		ATH_UNLOCK(sc);
++		return;
++	}
++
+ 	printk("%s: stuck beacon; resetting (bmiss count %u)\n",
+ 		DEV_NAME(dev), sc->sc_bmisscount);
+ 	ath_reset(dev);
+@@ -8027,17 +8037,13 @@
+  * Periodically recalibrate the PHY to account
+  * for temperature/environment changes.
+  */
+-static void
+-ath_calibrate(unsigned long arg)
++static void ath_do_calibrate(struct net_device *dev)
+ {
+-	struct net_device *dev = (struct net_device *) arg;
+ 	struct ath_softc *sc = dev->priv;
+ 	struct ath_hal *ah = sc->sc_ah;
+-	/* u_int32_t nchans; */
+ 	HAL_BOOL isIQdone = AH_FALSE;
+ 
+ 	sc->sc_stats.ast_per_cal++;
+-
+ 	DPRINTF(sc, ATH_DEBUG_CALIBRATE, "%s: channel %u/%x\n",
+ 		__func__, sc->sc_curchan.channel, sc->sc_curchan.channelFlags);
+ 
+@@ -8055,15 +8061,26 @@
+ 			__func__, sc->sc_curchan.channel);
+ 		sc->sc_stats.ast_per_calfail++;
+ 	}
+-
+-	ath_hal_process_noisefloor(ah);
+ 	if (isIQdone == AH_TRUE)
+ 		ath_calinterval = ATH_LONG_CALINTERVAL;
+ 	else
+ 		ath_calinterval = ATH_SHORT_CALINTERVAL;
++}
++
++static void
++ath_calibrate(unsigned long arg)
++{
++	struct net_device *dev = (struct net_device *) arg;
++	struct ath_softc *sc = dev->priv;
++	struct ath_hal *ah = sc->sc_ah;
++
++	ATH_LOCK(sc);
++	ath_do_calibrate(dev);
++	ath_hal_process_noisefloor(ah);
+ 
+ 	sc->sc_cal_ch.expires = jiffies + (ath_calinterval * HZ);
+ 	add_timer(&sc->sc_cal_ch);
++	ATH_UNLOCK(sc);
+ }
+ 
+ static void
+Index: madwifi-ng-r2568-20070710/ath/if_athvar.h
+===================================================================
+--- madwifi-ng-r2568-20070710.orig/ath/if_athvar.h	2007-07-13 11:14:06.274977315 +0200
++++ madwifi-ng-r2568-20070710/ath/if_athvar.h	2007-07-13 11:14:06.522991448 +0200
+@@ -538,7 +538,8 @@
+  */
+ #define ATH_TXQ_MOVE_Q(_tqs,_tqd)  ATH_TXQ_MOVE_MCASTQ(_tqs,_tqd)
+ 
+-#define	BSTUCK_THRESH	10	/* # of stuck beacons before resetting NB: this is a guess*/
++#define	BSTUCK_CALIBR_THR	3	/* # of stuck beacons before restarting calibration */
++#define	BSTUCK_RESET_THR	10	/* # of stuck beacons before resetting NB: this is a guess*/
+ 
+ struct ath_softc {
+ 	struct ieee80211com sc_ic;		/* NB: must be first */
