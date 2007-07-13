@@ -24,7 +24,7 @@ QUILT?=$(strip $(shell test -f $(PKG_BUILD_DIR)/.quilt_used && echo y))
 ifneq ($(QUILT),)
   STAMP_PREPARED:=$(strip $(STAMP_PREPARED))_q
   STAMP_PATCHED:=$(PKG_BUILD_DIR)/.quilt_patched
-  CONFIG_AUTOREBUILD=
+  override CONFIG_AUTOREBUILD=
   PATCHES:=$(shell )
   define Build/Patch/Default
 	rm -rf $(PKG_BUILD_DIR)/patches
