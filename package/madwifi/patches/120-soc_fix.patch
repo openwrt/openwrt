@@ -1,7 +1,7 @@
 Index: madwifi-ng-r2568-20070710/ath/if_ath_ahb.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/ath/if_ath_ahb.c	2007-07-11 22:59:38.860063056 +0200
-+++ madwifi-ng-r2568-20070710/ath/if_ath_ahb.c	2007-07-11 22:59:42.668280075 +0200
+--- madwifi-ng-r2568-20070710.orig/ath/if_ath_ahb.c	2007-07-13 10:20:14.978836242 +0200
++++ madwifi-ng-r2568-20070710/ath/if_ath_ahb.c	2007-07-13 10:21:25.106832611 +0200
 @@ -275,11 +275,10 @@
  
  
@@ -15,14 +15,15 @@ Index: madwifi-ng-r2568-20070710/ath/if_ath_ahb.c
  	u_int16_t devid;
  
  	if (sc == NULL)
-@@ -289,13 +288,16 @@
+@@ -289,13 +288,17 @@
  	ath_detach(dev);
  	if (dev->irq)
  		free_irq(dev->irq, dev);
 -	sysType = get_system_type();
 -	if (!strcmp(sysType, "Atheros AR5315"))
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
-+	devid = (u32) config->tag;
++	devid = sc->aps_sc.devid;
++	config->tag = (unsigned long) devid;
 +#else
 +	if (!strcmp(get_system_type(), "Atheros AR5315"))
  		devid = (u_int16_t) (sysRegRead(AR5315_SREV) &
@@ -34,7 +35,7 @@ Index: madwifi-ng-r2568-20070710/ath/if_ath_ahb.c
  
  	ahb_disable_wmac(devid, wlanNum);
  	free_netdev(dev);
-@@ -401,7 +403,7 @@
+@@ -401,7 +404,7 @@
  
  static int ahb_wmac_remove(struct platform_device *pdev)
  {
