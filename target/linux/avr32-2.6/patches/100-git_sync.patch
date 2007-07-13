@@ -1,7 +1,28 @@
+diff -x .git -Nur linux-2.6.22.1/arch/avr32/boards/atngw100/Kconfig linux-avr32.git/arch/avr32/boards/atngw100/Kconfig
+--- linux-2.6.22.1/arch/avr32/boards/atngw100/Kconfig	1970-01-01 01:00:00.000000000 +0100
++++ linux-avr32.git/arch/avr32/boards/atngw100/Kconfig	2007-07-13 11:24:16.000000000 +0200
+@@ -0,0 +1,12 @@
++# NGW100 customization
++
++config BOARD_ATNGW100_I2C_GPIO
++	bool "Use GPIO for i2c instead of built-in TWI module"
++	help
++	  The driver for the built-in TWI module has been plagued by
++	  various problems, while the i2c-gpio driver is based on the
++	  trusty old i2c-algo-bit bitbanging engine, making it work
++	  on pretty much any setup.
++
++	  Choose 'Y' here if you're having i2c-related problems and
++	  want to rule out the i2c bus driver.
 diff -x .git -Nur linux-2.6.22.1/arch/avr32/boards/atngw100/setup.c linux-avr32.git/arch/avr32/boards/atngw100/setup.c
 --- linux-2.6.22.1/arch/avr32/boards/atngw100/setup.c	2007-07-10 20:56:30.000000000 +0200
-+++ linux-avr32.git/arch/avr32/boards/atngw100/setup.c	2007-07-12 13:59:49.000000000 +0200
-@@ -13,6 +13,7 @@
++++ linux-avr32.git/arch/avr32/boards/atngw100/setup.c	2007-07-13 11:24:16.000000000 +0200
+@@ -9,10 +9,12 @@
+  */
+ #include <linux/clk.h>
+ #include <linux/etherdevice.h>
++#include <linux/i2c-gpio.h>
+ #include <linux/init.h>
  #include <linux/linkage.h>
  #include <linux/platform_device.h>
  #include <linux/types.h>
@@ -9,7 +30,7 @@ diff -x .git -Nur linux-2.6.22.1/arch/avr32/boards/atngw100/setup.c linux-avr32.
  #include <linux/spi/spi.h>
  
  #include <asm/io.h>
-@@ -21,6 +22,7 @@
+@@ -21,6 +23,7 @@
  #include <asm/arch/at32ap7000.h>
  #include <asm/arch/board.h>
  #include <asm/arch/init.h>
@@ -17,7 +38,7 @@ diff -x .git -Nur linux-2.6.22.1/arch/avr32/boards/atngw100/setup.c linux-avr32.
  
  /* Initialized by bootloader-specific startup code. */
  struct tag *bootloader_tags __initdata;
-@@ -39,6 +41,11 @@
+@@ -39,6 +42,11 @@
  	},
  };
  
@@ -29,7 +50,7 @@ diff -x .git -Nur linux-2.6.22.1/arch/avr32/boards/atngw100/setup.c linux-avr32.
  /*
   * The next two functions should go away as the boot loader is
   * supposed to initialize the macb address registers with a valid
-@@ -100,8 +107,31 @@
+@@ -100,8 +108,46 @@
  	at32_setup_serial_console(0);
  }
  
@@ -54,6 +75,21 @@ diff -x .git -Nur linux-2.6.22.1/arch/avr32/boards/atngw100/setup.c linux-avr32.
 +	}
 +};
 +
++#ifdef CONFIG_BOARD_ATNGW100_I2C_GPIO
++static struct i2c_gpio_platform_data i2c_gpio_data = {
++	.sda_pin	= GPIO_PIN_PA(6),
++	.scl_pin	= GPIO_PIN_PA(7),
++};
++
++static struct platform_device i2c_gpio_device = {
++	.name		= "i2c-gpio",
++	.id		= 0,
++	.dev		= {
++		.platform_data	= &i2c_gpio_data,
++	},
++};
++#endif
++
  static int __init atngw100_init(void)
  {
 +	unsigned	i;
@@ -61,7 +97,7 @@ diff -x .git -Nur linux-2.6.22.1/arch/avr32/boards/atngw100/setup.c linux-avr32.
  	/*
  	 * ATNGW100 uses 16-bit SDRAM interface, so we don't need to
  	 * reserve any pins for it.
-@@ -115,6 +145,14 @@
+@@ -115,6 +161,22 @@
  	set_hw_addr(at32_add_device_eth(1, &eth_data[1]));
  
  	at32_add_device_spi(0, spi0_board_info, ARRAY_SIZE(spi0_board_info));
@@ -73,6 +109,14 @@ diff -x .git -Nur linux-2.6.22.1/arch/avr32/boards/atngw100/setup.c linux-avr32.
 +				AT32_GPIOF_OUTPUT | AT32_GPIOF_HIGH);
 +	}
 +	platform_device_register(&ngw_gpio_leds);
++
++#ifdef CONFIG_BOARD_ATNGW100_I2C_GPIO
++	at32_select_gpio(i2c_gpio_data.sda_pin, 0);
++	at32_select_gpio(i2c_gpio_data.scl_pin, 0);
++	platform_device_register(&i2c_gpio_device);
++#else
++	at32_add_device_twi(0);
++#endif
  
  	return 0;
  }
@@ -328,33 +372,859 @@ diff -x .git -Nur linux-2.6.22.1/arch/avr32/boards/atstk1000/Kconfig linux-avr32
 +endif	# stk 1002
 diff -x .git -Nur linux-2.6.22.1/arch/avr32/configs/atngw100_defconfig linux-avr32.git/arch/avr32/configs/atngw100_defconfig
 --- linux-2.6.22.1/arch/avr32/configs/atngw100_defconfig	2007-07-10 20:56:30.000000000 +0200
-+++ linux-avr32.git/arch/avr32/configs/atngw100_defconfig	2007-07-12 13:59:49.000000000 +0200
-@@ -712,7 +712,21 @@
++++ linux-avr32.git/arch/avr32/configs/atngw100_defconfig	2007-07-13 11:24:16.000000000 +0200
+@@ -1,7 +1,7 @@
+ #
+ # Automatically generated make config: don't edit
+-# Linux kernel version: 2.6.22-rc5
+-# Sat Jun 23 15:40:05 2007
++# Linux kernel version: 2.6.22.atmel.1
++# Thu Jul 12 17:49:20 2007
+ #
+ CONFIG_AVR32=y
+ CONFIG_GENERIC_GPIO=y
+@@ -114,6 +114,7 @@
+ CONFIG_CPU_AT32AP7000=y
+ # CONFIG_BOARD_ATSTK1000 is not set
+ CONFIG_BOARD_ATNGW100=y
++# CONFIG_BOARD_ATNGW100_I2C_GPIO is not set
+ CONFIG_LOADER_U_BOOT=y
+ 
+ #
+@@ -122,6 +123,7 @@
+ # CONFIG_AP7000_32_BIT_SMC is not set
+ CONFIG_AP7000_16_BIT_SMC=y
+ # CONFIG_AP7000_8_BIT_SMC is not set
++CONFIG_GPIO_DEV=y
+ CONFIG_LOAD_ADDRESS=0x10000000
+ CONFIG_ENTRY_ADDRESS=0x90000000
+ CONFIG_PHYS_OFFSET=0x10000000
+@@ -145,6 +147,7 @@
+ # CONFIG_RESOURCES_64BIT is not set
+ CONFIG_ZONE_DMA_FLAG=0
+ # CONFIG_OWNERSHIP_TRACE is not set
++CONFIG_DW_DMAC=y
+ # CONFIG_HZ_100 is not set
+ CONFIG_HZ_250=y
+ # CONFIG_HZ_300 is not set
+@@ -153,6 +156,27 @@
+ CONFIG_CMDLINE=""
+ 
+ #
++# Power managment options
++#
++
++#
++# CPU Frequency scaling
++#
++CONFIG_CPU_FREQ=y
++CONFIG_CPU_FREQ_TABLE=y
++# CONFIG_CPU_FREQ_DEBUG is not set
++CONFIG_CPU_FREQ_STAT=m
++# CONFIG_CPU_FREQ_STAT_DETAILS is not set
++CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE=y
++# CONFIG_CPU_FREQ_DEFAULT_GOV_USERSPACE is not set
++CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
++CONFIG_CPU_FREQ_GOV_POWERSAVE=y
++CONFIG_CPU_FREQ_GOV_USERSPACE=y
++CONFIG_CPU_FREQ_GOV_ONDEMAND=y
++# CONFIG_CPU_FREQ_GOV_CONSERVATIVE is not set
++CONFIG_CPU_FREQ_AT32AP=y
++
++#
+ # Bus options
+ #
+ # CONFIG_ARCH_SUPPORTS_MSI is not set
+@@ -187,13 +211,8 @@
+ # CONFIG_NET_KEY_MIGRATE is not set
+ CONFIG_INET=y
+ CONFIG_IP_MULTICAST=y
+-CONFIG_IP_ADVANCED_ROUTER=y
+-CONFIG_ASK_IP_FIB_HASH=y
+-# CONFIG_IP_FIB_TRIE is not set
++# CONFIG_IP_ADVANCED_ROUTER is not set
+ CONFIG_IP_FIB_HASH=y
+-# CONFIG_IP_MULTIPLE_TABLES is not set
+-# CONFIG_IP_ROUTE_MULTIPATH is not set
+-# CONFIG_IP_ROUTE_VERBOSE is not set
+ CONFIG_IP_PNP=y
+ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_IP_PNP_BOOTP is not set
+@@ -240,6 +259,7 @@
+ # CONFIG_NETWORK_SECMARK is not set
+ CONFIG_NETFILTER=y
+ # CONFIG_NETFILTER_DEBUG is not set
++CONFIG_BRIDGE_NETFILTER=y
+ 
+ #
+ # Core Netfilter Configuration
+@@ -284,6 +304,7 @@
+ CONFIG_NETFILTER_XT_MATCH_MARK=m
+ CONFIG_NETFILTER_XT_MATCH_POLICY=m
+ CONFIG_NETFILTER_XT_MATCH_MULTIPORT=m
++# CONFIG_NETFILTER_XT_MATCH_PHYSDEV is not set
+ CONFIG_NETFILTER_XT_MATCH_PKTTYPE=m
+ CONFIG_NETFILTER_XT_MATCH_QUOTA=m
+ CONFIG_NETFILTER_XT_MATCH_REALM=m
+@@ -359,13 +380,19 @@
+ CONFIG_IP6_NF_MANGLE=m
+ CONFIG_IP6_NF_TARGET_HL=m
+ CONFIG_IP6_NF_RAW=m
++
++#
++# Bridge: Netfilter Configuration
++#
++# CONFIG_BRIDGE_NF_EBTABLES is not set
+ # CONFIG_IP_DCCP is not set
+ # CONFIG_IP_SCTP is not set
+ # CONFIG_TIPC is not set
+ # CONFIG_ATM is not set
+-# CONFIG_BRIDGE is not set
++CONFIG_BRIDGE=m
+ CONFIG_VLAN_8021Q=m
+ # CONFIG_DECNET is not set
++CONFIG_LLC=m
+ # CONFIG_LLC2 is not set
+ # CONFIG_IPX is not set
+ # CONFIG_ATALK is not set
+@@ -521,7 +548,6 @@
+ #
+ # Misc devices
+ #
+-# CONFIG_BLINK is not set
+ # CONFIG_IDE is not set
+ 
+ #
+@@ -545,13 +571,26 @@
+ # CONFIG_BONDING is not set
+ # CONFIG_EQUALIZER is not set
+ CONFIG_TUN=m
+-# CONFIG_PHYLIB is not set
++CONFIG_PHYLIB=y
++
++#
++# MII PHY device drivers
++#
++# CONFIG_MARVELL_PHY is not set
++# CONFIG_DAVICOM_PHY is not set
++# CONFIG_QSEMI_PHY is not set
++# CONFIG_LXT_PHY is not set
++# CONFIG_CICADA_PHY is not set
++# CONFIG_VITESSE_PHY is not set
++# CONFIG_SMSC_PHY is not set
++# CONFIG_BROADCOM_PHY is not set
++# CONFIG_FIXED_PHY is not set
+ 
+ #
+ # Ethernet (10 or 100Mbit)
+ #
+ CONFIG_NET_ETHERNET=y
+-CONFIG_MII=y
++# CONFIG_MII is not set
+ CONFIG_MACB=y
+ # CONFIG_NETDEV_1000 is not set
+ # CONFIG_NETDEV_10000 is not set
+@@ -625,7 +664,15 @@
+ # IPMI
+ #
+ # CONFIG_IPMI_HANDLER is not set
+-# CONFIG_WATCHDOG is not set
++CONFIG_WATCHDOG=y
++# CONFIG_WATCHDOG_NOWAYOUT is not set
++
++#
++# Watchdog Device Drivers
++#
++# CONFIG_SOFT_WATCHDOG is not set
++CONFIG_AT32AP700X_WDT=y
++CONFIG_AT32AP700X_WDT_TIMEOUT=2
+ # CONFIG_HW_RANDOM is not set
+ # CONFIG_RTC is not set
+ # CONFIG_GEN_RTC is not set
+@@ -636,7 +683,42 @@
+ # TPM devices
+ #
+ # CONFIG_TCG_TPM is not set
+-# CONFIG_I2C is not set
++CONFIG_I2C=m
++CONFIG_I2C_BOARDINFO=y
++CONFIG_I2C_CHARDEV=m
++
++#
++# I2C Algorithms
++#
++CONFIG_I2C_ALGOBIT=m
++# CONFIG_I2C_ALGOPCF is not set
++# CONFIG_I2C_ALGOPCA is not set
++
++#
++# I2C Hardware Bus support
++#
++CONFIG_I2C_ATMELTWI=m
++CONFIG_I2C_ATMELTWI_BAUDRATE=100000
++CONFIG_I2C_GPIO=m
++# CONFIG_I2C_OCORES is not set
++# CONFIG_I2C_PARPORT_LIGHT is not set
++# CONFIG_I2C_SIMTEC is not set
++# CONFIG_I2C_STUB is not set
++
++#
++# Miscellaneous I2C Chip support
++#
++# CONFIG_SENSORS_DS1337 is not set
++# CONFIG_SENSORS_DS1374 is not set
++# CONFIG_SENSORS_EEPROM is not set
++# CONFIG_SENSORS_PCF8574 is not set
++# CONFIG_SENSORS_PCA9539 is not set
++# CONFIG_SENSORS_PCF8591 is not set
++# CONFIG_SENSORS_MAX6875 is not set
++# CONFIG_I2C_DEBUG_CORE is not set
++# CONFIG_I2C_DEBUG_ALGO is not set
++# CONFIG_I2C_DEBUG_BUS is not set
++# CONFIG_I2C_DEBUG_CHIP is not set
+ 
+ #
+ # SPI support
+@@ -655,7 +737,7 @@
+ # SPI Protocol Masters
+ #
+ # CONFIG_SPI_AT25 is not set
+-# CONFIG_SPI_SPIDEV is not set
++CONFIG_SPI_SPIDEV=m
+ 
+ #
+ # Dallas's 1-wire bus
+@@ -706,21 +788,59 @@
+ #
+ # USB Gadget Support
+ #
+-# CONFIG_USB_GADGET is not set
+-# CONFIG_MMC is not set
++CONFIG_USB_GADGET=y
++# CONFIG_USB_GADGET_DEBUG_FILES is not set
++CONFIG_USB_GADGET_SELECTED=y
++# CONFIG_USB_GADGET_FSL_USB2 is not set
++# CONFIG_USB_GADGET_NET2280 is not set
++# CONFIG_USB_GADGET_PXA2XX is not set
++# CONFIG_USB_GADGET_GOKU is not set
++# CONFIG_USB_GADGET_LH7A40X is not set
++CONFIG_USB_GADGET_ATMEL_USBA=y
++CONFIG_USB_ATMEL_USBA=y
++# CONFIG_USB_GADGET_OMAP is not set
++# CONFIG_USB_GADGET_AT91 is not set
++# CONFIG_USB_GADGET_DUMMY_HCD is not set
++CONFIG_USB_GADGET_DUALSPEED=y
++CONFIG_USB_ZERO=m
++CONFIG_USB_ETH=m
++CONFIG_USB_ETH_RNDIS=y
++CONFIG_USB_GADGETFS=m
++CONFIG_USB_FILE_STORAGE=m
++# CONFIG_USB_FILE_STORAGE_TEST is not set
++CONFIG_USB_G_SERIAL=m
++# CONFIG_USB_MIDI_GADGET is not set
++CONFIG_MMC=y
++# CONFIG_MMC_DEBUG is not set
++# CONFIG_MMC_UNSAFE_RESUME is not set
++
++#
++# MMC/SD Card Drivers
++#
++CONFIG_MMC_BLOCK=y
++
++#
++# MMC/SD Host Controller Drivers
++#
++CONFIG_MMC_ATMELMCI=y
+ 
  #
  # LED devices
  #
 -# CONFIG_NEW_LEDS is not set
 +CONFIG_NEW_LEDS=y
 +CONFIG_LEDS_CLASS=y
-+
-+#
-+# LED drivers
-+#
-+CONFIG_LEDS_GPIO=y
-+
-+#
-+# LED Triggers
-+#
-+CONFIG_LEDS_TRIGGERS=y
-+CONFIG_LEDS_TRIGGER_TIMER=y
-+CONFIG_LEDS_TRIGGER_HEARTBEAT=y
-+
  
  #
  # LED drivers
+ #
++CONFIG_LEDS_GPIO=y
+ 
+ #
+ # LED Triggers
+ #
++CONFIG_LEDS_TRIGGERS=y
++CONFIG_LEDS_TRIGGER_TIMER=y
++CONFIG_LEDS_TRIGGER_HEARTBEAT=y
+ 
+ #
+ # InfiniBand support
+@@ -733,7 +853,51 @@
+ #
+ # Real Time Clock
+ #
+-# CONFIG_RTC_CLASS is not set
++CONFIG_RTC_LIB=y
++CONFIG_RTC_CLASS=y
++CONFIG_RTC_HCTOSYS=y
++CONFIG_RTC_HCTOSYS_DEVICE="rtc0"
++# CONFIG_RTC_DEBUG is not set
++
++#
++# RTC interfaces
++#
++CONFIG_RTC_INTF_SYSFS=y
++CONFIG_RTC_INTF_PROC=y
++CONFIG_RTC_INTF_DEV=y
++# CONFIG_RTC_INTF_DEV_UIE_EMUL is not set
++# CONFIG_RTC_DRV_TEST is not set
++
++#
++# I2C RTC drivers
++#
++# CONFIG_RTC_DRV_DS1307 is not set
++# CONFIG_RTC_DRV_DS1672 is not set
++# CONFIG_RTC_DRV_MAX6900 is not set
++# CONFIG_RTC_DRV_RS5C372 is not set
++# CONFIG_RTC_DRV_ISL1208 is not set
++# CONFIG_RTC_DRV_X1205 is not set
++# CONFIG_RTC_DRV_PCF8563 is not set
++# CONFIG_RTC_DRV_PCF8583 is not set
++
++#
++# SPI RTC drivers
++#
++# CONFIG_RTC_DRV_RS5C348 is not set
++# CONFIG_RTC_DRV_MAX6902 is not set
++
++#
++# Platform RTC drivers
++#
++# CONFIG_RTC_DRV_DS1553 is not set
++# CONFIG_RTC_DRV_DS1742 is not set
++# CONFIG_RTC_DRV_M48T86 is not set
++# CONFIG_RTC_DRV_V3020 is not set
++
++#
++# on-CPU RTC drivers
++#
++CONFIG_RTC_DRV_AT32AP700X=y
+ 
+ #
+ # DMA Engine support
+@@ -767,7 +931,8 @@
+ # CONFIG_OCFS2_FS is not set
+ # CONFIG_MINIX_FS is not set
+ # CONFIG_ROMFS_FS is not set
+-# CONFIG_INOTIFY is not set
++CONFIG_INOTIFY=y
++CONFIG_INOTIFY_USER=y
+ # CONFIG_QUOTA is not set
+ # CONFIG_DNOTIFY is not set
+ # CONFIG_AUTOFS_FS is not set
+@@ -922,7 +1087,7 @@
+ CONFIG_ENABLE_MUST_CHECK=y
+ CONFIG_MAGIC_SYSRQ=y
+ # CONFIG_UNUSED_SYMBOLS is not set
+-# CONFIG_DEBUG_FS is not set
++CONFIG_DEBUG_FS=y
+ # CONFIG_HEADERS_CHECK is not set
+ CONFIG_DEBUG_KERNEL=y
+ # CONFIG_DEBUG_SHIRQ is not set
+diff -x .git -Nur linux-2.6.22.1/arch/avr32/configs/atstk1002_defconfig linux-avr32.git/arch/avr32/configs/atstk1002_defconfig
+--- linux-2.6.22.1/arch/avr32/configs/atstk1002_defconfig	2007-07-10 20:56:30.000000000 +0200
++++ linux-avr32.git/arch/avr32/configs/atstk1002_defconfig	2007-07-13 11:24:16.000000000 +0200
+@@ -1,7 +1,7 @@
+ #
+ # Automatically generated make config: don't edit
+-# Linux kernel version: 2.6.22-rc5
+-# Sat Jun 23 15:32:08 2007
++# Linux kernel version: 2.6.22.atmel.1
++# Thu Jul 12 19:34:17 2007
+ #
+ CONFIG_AVR32=y
+ CONFIG_GENERIC_GPIO=y
+@@ -80,10 +80,10 @@
+ #
+ CONFIG_MODULES=y
+ CONFIG_MODULE_UNLOAD=y
+-# CONFIG_MODULE_FORCE_UNLOAD is not set
++CONFIG_MODULE_FORCE_UNLOAD=y
+ # CONFIG_MODVERSIONS is not set
+ # CONFIG_MODULE_SRCVERSION_ALL is not set
+-# CONFIG_KMOD is not set
++CONFIG_KMOD=y
+ 
+ #
+ # Block layer
+@@ -99,12 +99,12 @@
+ CONFIG_IOSCHED_NOOP=y
+ # CONFIG_IOSCHED_AS is not set
+ # CONFIG_IOSCHED_DEADLINE is not set
+-# CONFIG_IOSCHED_CFQ is not set
++CONFIG_IOSCHED_CFQ=y
+ # CONFIG_DEFAULT_AS is not set
+ # CONFIG_DEFAULT_DEADLINE is not set
+-# CONFIG_DEFAULT_CFQ is not set
+-CONFIG_DEFAULT_NOOP=y
+-CONFIG_DEFAULT_IOSCHED="noop"
++CONFIG_DEFAULT_CFQ=y
++# CONFIG_DEFAULT_NOOP is not set
++CONFIG_DEFAULT_IOSCHED="cfq"
+ 
+ #
+ # System Type and features
+@@ -117,6 +117,11 @@
+ CONFIG_BOARD_ATSTK1002=y
+ CONFIG_BOARD_ATSTK1000=y
+ # CONFIG_BOARD_ATNGW100 is not set
++# CONFIG_BOARD_ATSTK1002_CUSTOM is not set
++# CONFIG_BOARD_ATSTK1002_SPI1 is not set
++# CONFIG_BOARD_ATSTK1002_J2_LED is not set
++# CONFIG_BOARD_ATSTK1002_J2_LED8 is not set
++# CONFIG_BOARD_ATSTK1002_J2_RGB is not set
+ CONFIG_LOADER_U_BOOT=y
+ 
+ #
+@@ -125,6 +130,7 @@
+ # CONFIG_AP7000_32_BIT_SMC is not set
+ CONFIG_AP7000_16_BIT_SMC=y
+ # CONFIG_AP7000_8_BIT_SMC is not set
++CONFIG_GPIO_DEV=y
+ CONFIG_LOAD_ADDRESS=0x10000000
+ CONFIG_ENTRY_ADDRESS=0x90000000
+ CONFIG_PHYS_OFFSET=0x10000000
+@@ -148,6 +154,7 @@
+ # CONFIG_RESOURCES_64BIT is not set
+ CONFIG_ZONE_DMA_FLAG=0
+ # CONFIG_OWNERSHIP_TRACE is not set
++CONFIG_DW_DMAC=y
+ # CONFIG_HZ_100 is not set
+ CONFIG_HZ_250=y
+ # CONFIG_HZ_300 is not set
+@@ -156,6 +163,27 @@
+ CONFIG_CMDLINE=""
+ 
+ #
++# Power managment options
++#
++
++#
++# CPU Frequency scaling
++#
++CONFIG_CPU_FREQ=y
++CONFIG_CPU_FREQ_TABLE=y
++# CONFIG_CPU_FREQ_DEBUG is not set
++CONFIG_CPU_FREQ_STAT=m
++# CONFIG_CPU_FREQ_STAT_DETAILS is not set
++CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE=y
++# CONFIG_CPU_FREQ_DEFAULT_GOV_USERSPACE is not set
++CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
++CONFIG_CPU_FREQ_GOV_POWERSAVE=y
++CONFIG_CPU_FREQ_GOV_USERSPACE=y
++CONFIG_CPU_FREQ_GOV_ONDEMAND=y
++# CONFIG_CPU_FREQ_GOV_CONSERVATIVE is not set
++CONFIG_CPU_FREQ_AT32AP=y
++
++#
+ # Bus options
+ #
+ # CONFIG_ARCH_SUPPORTS_MSI is not set
+@@ -327,6 +355,8 @@
+ #
+ # Self-contained MTD device drivers
+ #
++CONFIG_MTD_DATAFLASH=m
++# CONFIG_MTD_M25P80 is not set
+ # CONFIG_MTD_SLRAM is not set
+ # CONFIG_MTD_PHRAM is not set
+ # CONFIG_MTD_MTDRAM is not set
+@@ -373,7 +403,6 @@
+ #
+ # Misc devices
+ #
+-# CONFIG_BLINK is not set
+ # CONFIG_IDE is not set
+ 
+ #
+@@ -397,13 +426,26 @@
+ # CONFIG_BONDING is not set
+ # CONFIG_EQUALIZER is not set
+ CONFIG_TUN=m
+-# CONFIG_PHYLIB is not set
++CONFIG_PHYLIB=y
++
++#
++# MII PHY device drivers
++#
++# CONFIG_MARVELL_PHY is not set
++# CONFIG_DAVICOM_PHY is not set
++# CONFIG_QSEMI_PHY is not set
++CONFIG_LXT_PHY=y
++# CONFIG_CICADA_PHY is not set
++# CONFIG_VITESSE_PHY is not set
++# CONFIG_SMSC_PHY is not set
++# CONFIG_BROADCOM_PHY is not set
++# CONFIG_FIXED_PHY is not set
+ 
+ #
+ # Ethernet (10 or 100Mbit)
+ #
+ CONFIG_NET_ETHERNET=y
+-CONFIG_MII=y
++# CONFIG_MII is not set
+ CONFIG_MACB=y
+ # CONFIG_NETDEV_1000 is not set
+ # CONFIG_NETDEV_10000 is not set
+@@ -443,7 +485,42 @@
+ #
+ # Input device support
+ #
+-# CONFIG_INPUT is not set
++CONFIG_INPUT=m
++# CONFIG_INPUT_FF_MEMLESS is not set
++CONFIG_INPUT_POLLDEV=m
++
++#
++# Userland interfaces
++#
++CONFIG_INPUT_MOUSEDEV=m
++CONFIG_INPUT_MOUSEDEV_PSAUX=y
++CONFIG_INPUT_MOUSEDEV_SCREEN_X=1024
++CONFIG_INPUT_MOUSEDEV_SCREEN_Y=768
++# CONFIG_INPUT_JOYDEV is not set
++# CONFIG_INPUT_TSDEV is not set
++# CONFIG_INPUT_EVDEV is not set
++# CONFIG_INPUT_EVBUG is not set
++
++#
++# Input Device Drivers
++#
++CONFIG_INPUT_KEYBOARD=y
++# CONFIG_KEYBOARD_ATKBD is not set
++# CONFIG_KEYBOARD_SUNKBD is not set
++# CONFIG_KEYBOARD_LKKBD is not set
++# CONFIG_KEYBOARD_XTKBD is not set
++# CONFIG_KEYBOARD_NEWTON is not set
++# CONFIG_KEYBOARD_STOWAWAY is not set
++CONFIG_KEYBOARD_GPIO=m
++CONFIG_INPUT_MOUSE=y
++# CONFIG_MOUSE_PS2 is not set
++# CONFIG_MOUSE_SERIAL is not set
++# CONFIG_MOUSE_VSXXXAA is not set
++CONFIG_MOUSE_GPIO=m
++# CONFIG_INPUT_JOYSTICK is not set
++# CONFIG_INPUT_TABLET is not set
++# CONFIG_INPUT_TOUCHSCREEN is not set
++# CONFIG_INPUT_MISC is not set
+ 
+ #
+ # Hardware I/O ports
+@@ -477,7 +554,15 @@
+ # IPMI
+ #
+ # CONFIG_IPMI_HANDLER is not set
+-# CONFIG_WATCHDOG is not set
++CONFIG_WATCHDOG=y
++# CONFIG_WATCHDOG_NOWAYOUT is not set
++
++#
++# Watchdog Device Drivers
++#
++# CONFIG_SOFT_WATCHDOG is not set
++CONFIG_AT32AP700X_WDT=y
++CONFIG_AT32AP700X_WDT_TIMEOUT=2
+ # CONFIG_HW_RANDOM is not set
+ # CONFIG_RTC is not set
+ # CONFIG_GEN_RTC is not set
+@@ -488,13 +573,61 @@
+ # TPM devices
+ #
+ # CONFIG_TCG_TPM is not set
+-# CONFIG_I2C is not set
++CONFIG_I2C=m
++CONFIG_I2C_BOARDINFO=y
++CONFIG_I2C_CHARDEV=m
++
++#
++# I2C Algorithms
++#
++CONFIG_I2C_ALGOBIT=m
++# CONFIG_I2C_ALGOPCF is not set
++# CONFIG_I2C_ALGOPCA is not set
++
++#
++# I2C Hardware Bus support
++#
++CONFIG_I2C_ATMELTWI=m
++CONFIG_I2C_ATMELTWI_BAUDRATE=100000
++CONFIG_I2C_GPIO=m
++# CONFIG_I2C_OCORES is not set
++# CONFIG_I2C_PARPORT_LIGHT is not set
++# CONFIG_I2C_SIMTEC is not set
++# CONFIG_I2C_STUB is not set
++
++#
++# Miscellaneous I2C Chip support
++#
++# CONFIG_SENSORS_DS1337 is not set
++# CONFIG_SENSORS_DS1374 is not set
++# CONFIG_SENSORS_EEPROM is not set
++# CONFIG_SENSORS_PCF8574 is not set
++# CONFIG_SENSORS_PCA9539 is not set
++# CONFIG_SENSORS_PCF8591 is not set
++# CONFIG_SENSORS_MAX6875 is not set
++# CONFIG_I2C_DEBUG_CORE is not set
++# CONFIG_I2C_DEBUG_ALGO is not set
++# CONFIG_I2C_DEBUG_BUS is not set
++# CONFIG_I2C_DEBUG_CHIP is not set
+ 
+ #
+ # SPI support
+ #
+-# CONFIG_SPI is not set
+-# CONFIG_SPI_MASTER is not set
++CONFIG_SPI=y
++# CONFIG_SPI_DEBUG is not set
++CONFIG_SPI_MASTER=y
++
++#
++# SPI Master Controller Drivers
++#
++CONFIG_SPI_ATMEL=y
++# CONFIG_SPI_BITBANG is not set
++
++#
++# SPI Protocol Masters
++#
++# CONFIG_SPI_AT25 is not set
++CONFIG_SPI_SPIDEV=m
+ 
+ #
+ # Dallas's 1-wire bus
+@@ -517,14 +650,40 @@
+ #
+ # Graphics support
+ #
+-# CONFIG_BACKLIGHT_LCD_SUPPORT is not set
++CONFIG_BACKLIGHT_LCD_SUPPORT=y
++CONFIG_LCD_CLASS_DEVICE=y
++CONFIG_LCD_LTV350QV=y
++# CONFIG_BACKLIGHT_CLASS_DEVICE is not set
+ 
+ #
+ # Display device support
+ #
+ # CONFIG_DISPLAY_SUPPORT is not set
+ # CONFIG_VGASTATE is not set
+-# CONFIG_FB is not set
++CONFIG_FB=y
++# CONFIG_FIRMWARE_EDID is not set
++# CONFIG_FB_DDC is not set
++CONFIG_FB_CFB_FILLRECT=y
++CONFIG_FB_CFB_COPYAREA=y
++CONFIG_FB_CFB_IMAGEBLIT=y
++# CONFIG_FB_SYS_FILLRECT is not set
++# CONFIG_FB_SYS_COPYAREA is not set
++# CONFIG_FB_SYS_IMAGEBLIT is not set
++# CONFIG_FB_SYS_FOPS is not set
++CONFIG_FB_DEFERRED_IO=y
++# CONFIG_FB_SVGALIB is not set
++# CONFIG_FB_MACMODES is not set
++# CONFIG_FB_BACKLIGHT is not set
++# CONFIG_FB_MODE_HELPERS is not set
++# CONFIG_FB_TILEBLITTING is not set
++
++#
++# Frame buffer hardware drivers
++#
++# CONFIG_FB_S1D13XXX is not set
++CONFIG_FB_ATMEL=y
++# CONFIG_FB_VIRTUAL is not set
++# CONFIG_LOGO is not set
+ 
+ #
+ # Sound
+@@ -532,6 +691,11 @@
+ # CONFIG_SOUND is not set
+ 
+ #
++# HID Devices
++#
++# CONFIG_HID is not set
++
++#
+ # USB support
+ #
+ # CONFIG_USB_ARCH_HAS_HCD is not set
+@@ -545,21 +709,59 @@
+ #
+ # USB Gadget Support
+ #
+-# CONFIG_USB_GADGET is not set
+-# CONFIG_MMC is not set
++CONFIG_USB_GADGET=y
++# CONFIG_USB_GADGET_DEBUG_FILES is not set
++CONFIG_USB_GADGET_SELECTED=y
++# CONFIG_USB_GADGET_FSL_USB2 is not set
++# CONFIG_USB_GADGET_NET2280 is not set
++# CONFIG_USB_GADGET_PXA2XX is not set
++# CONFIG_USB_GADGET_GOKU is not set
++# CONFIG_USB_GADGET_LH7A40X is not set
++CONFIG_USB_GADGET_ATMEL_USBA=y
++CONFIG_USB_ATMEL_USBA=y
++# CONFIG_USB_GADGET_OMAP is not set
++# CONFIG_USB_GADGET_AT91 is not set
++# CONFIG_USB_GADGET_DUMMY_HCD is not set
++CONFIG_USB_GADGET_DUALSPEED=y
++CONFIG_USB_ZERO=m
++CONFIG_USB_ETH=m
++CONFIG_USB_ETH_RNDIS=y
++CONFIG_USB_GADGETFS=m
++CONFIG_USB_FILE_STORAGE=m
++# CONFIG_USB_FILE_STORAGE_TEST is not set
++CONFIG_USB_G_SERIAL=m
++# CONFIG_USB_MIDI_GADGET is not set
++CONFIG_MMC=y
++# CONFIG_MMC_DEBUG is not set
++# CONFIG_MMC_UNSAFE_RESUME is not set
++
++#
++# MMC/SD Card Drivers
++#
++CONFIG_MMC_BLOCK=y
++
++#
++# MMC/SD Host Controller Drivers
++#
++CONFIG_MMC_ATMELMCI=y
+ 
+ #
+ # LED devices
+ #
+-# CONFIG_NEW_LEDS is not set
++CONFIG_NEW_LEDS=y
++CONFIG_LEDS_CLASS=m
+ 
+ #
+ # LED drivers
+ #
++CONFIG_LEDS_GPIO=m
+ 
+ #
+ # LED Triggers
+ #
++CONFIG_LEDS_TRIGGERS=y
++CONFIG_LEDS_TRIGGER_TIMER=m
++CONFIG_LEDS_TRIGGER_HEARTBEAT=m
+ 
+ #
+ # InfiniBand support
+@@ -572,7 +774,50 @@
+ #
+ # Real Time Clock
+ #
+-# CONFIG_RTC_CLASS is not set
++CONFIG_RTC_LIB=y
++CONFIG_RTC_CLASS=y
++# CONFIG_RTC_HCTOSYS is not set
++# CONFIG_RTC_DEBUG is not set
++
++#
++# RTC interfaces
++#
++CONFIG_RTC_INTF_SYSFS=y
++CONFIG_RTC_INTF_PROC=y
++CONFIG_RTC_INTF_DEV=y
++# CONFIG_RTC_INTF_DEV_UIE_EMUL is not set
++# CONFIG_RTC_DRV_TEST is not set
++
++#
++# I2C RTC drivers
++#
++# CONFIG_RTC_DRV_DS1307 is not set
++# CONFIG_RTC_DRV_DS1672 is not set
++# CONFIG_RTC_DRV_MAX6900 is not set
++# CONFIG_RTC_DRV_RS5C372 is not set
++# CONFIG_RTC_DRV_ISL1208 is not set
++# CONFIG_RTC_DRV_X1205 is not set
++# CONFIG_RTC_DRV_PCF8563 is not set
++# CONFIG_RTC_DRV_PCF8583 is not set
++
++#
++# SPI RTC drivers
++#
++# CONFIG_RTC_DRV_RS5C348 is not set
++# CONFIG_RTC_DRV_MAX6902 is not set
++
++#
++# Platform RTC drivers
++#
++# CONFIG_RTC_DRV_DS1553 is not set
++# CONFIG_RTC_DRV_DS1742 is not set
++# CONFIG_RTC_DRV_M48T86 is not set
++# CONFIG_RTC_DRV_V3020 is not set
++
++#
++# on-CPU RTC drivers
++#
++CONFIG_RTC_DRV_AT32AP700X=y
+ 
+ #
+ # DMA Engine support
+@@ -590,11 +835,14 @@
+ #
+ # File systems
+ #
+-CONFIG_EXT2_FS=m
++CONFIG_EXT2_FS=y
+ # CONFIG_EXT2_FS_XATTR is not set
+ # CONFIG_EXT2_FS_XIP is not set
+-# CONFIG_EXT3_FS is not set
++CONFIG_EXT3_FS=y
++# CONFIG_EXT3_FS_XATTR is not set
+ # CONFIG_EXT4DEV_FS is not set
++CONFIG_JBD=y
++# CONFIG_JBD_DEBUG is not set
+ # CONFIG_REISERFS_FS is not set
+ # CONFIG_JFS_FS is not set
+ # CONFIG_FS_POSIX_ACL is not set
+@@ -609,7 +857,7 @@
+ # CONFIG_DNOTIFY is not set
+ # CONFIG_AUTOFS_FS is not set
+ # CONFIG_AUTOFS4_FS is not set
+-# CONFIG_FUSE_FS is not set
++CONFIG_FUSE_FS=m
+ 
+ #
+ # CD-ROM/DVD Filesystems
+@@ -638,7 +886,7 @@
+ # CONFIG_TMPFS_POSIX_ACL is not set
+ # CONFIG_HUGETLB_PAGE is not set
+ CONFIG_RAMFS=y
+-CONFIG_CONFIGFS_FS=m
++CONFIG_CONFIGFS_FS=y
+ 
+ #
+ # Miscellaneous filesystems
+@@ -683,8 +931,14 @@
+ # CONFIG_SUNRPC_BIND34 is not set
+ # CONFIG_RPCSEC_GSS_KRB5 is not set
+ # CONFIG_RPCSEC_GSS_SPKM3 is not set
+-# CONFIG_SMB_FS is not set
+-# CONFIG_CIFS is not set
++CONFIG_SMB_FS=m
++# CONFIG_SMB_NLS_DEFAULT is not set
++CONFIG_CIFS=m
++# CONFIG_CIFS_STATS is not set
++# CONFIG_CIFS_WEAK_PW_HASH is not set
++# CONFIG_CIFS_XATTR is not set
++# CONFIG_CIFS_DEBUG2 is not set
++# CONFIG_CIFS_EXPERIMENTAL is not set
+ # CONFIG_NCP_FS is not set
+ # CONFIG_CODA_FS is not set
+ # CONFIG_AFS_FS is not set
 diff -x .git -Nur linux-2.6.22.1/arch/avr32/drivers/dw-dmac.c linux-avr32.git/arch/avr32/drivers/dw-dmac.c
 --- linux-2.6.22.1/arch/avr32/drivers/dw-dmac.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-avr32.git/arch/avr32/drivers/dw-dmac.c	2007-06-06 11:33:46.000000000 +0200
++++ linux-avr32.git/arch/avr32/drivers/dw-dmac.c	2007-07-13 11:24:16.000000000 +0200
 @@ -0,0 +1,761 @@
 +/*
 + * Driver for the Synopsys DesignWare DMA Controller
@@ -1170,19 +2040,22 @@ diff -x .git -Nur linux-2.6.22.1/arch/avr32/drivers/Makefile linux-avr32.git/arc
 +obj-$(CONFIG_DW_DMAC)			+= dw-dmac.o
 diff -x .git -Nur linux-2.6.22.1/arch/avr32/Kconfig linux-avr32.git/arch/avr32/Kconfig
 --- linux-2.6.22.1/arch/avr32/Kconfig	2007-07-10 20:56:30.000000000 +0200
-+++ linux-avr32.git/arch/avr32/Kconfig	2007-07-12 13:59:49.000000000 +0200
-@@ -113,6 +113,10 @@
++++ linux-avr32.git/arch/avr32/Kconfig	2007-07-13 11:24:16.000000000 +0200
+@@ -113,6 +113,13 @@
  	bool "ATNGW100 Network Gateway"
  endchoice
  
 +if BOARD_ATSTK1000
 +source "arch/avr32/boards/atstk1000/Kconfig"
 +endif
++if BOARD_ATNGW100
++source "arch/avr32/boards/atngw100/Kconfig"
++endif
 +
  choice
  	prompt "Boot loader type"
  	default LOADER_U_BOOT
-@@ -171,6 +175,10 @@
+@@ -171,6 +178,10 @@
  	  enabling Nexus-compliant debuggers to keep track of the PID of the
  	  currently executing task.
  
@@ -1193,7 +2066,7 @@ diff -x .git -Nur linux-2.6.22.1/arch/avr32/Kconfig linux-avr32.git/arch/avr32/K
  # FPU emulation goes here
  
  source "kernel/Kconfig.hz"
-@@ -185,6 +193,27 @@
+@@ -185,6 +196,27 @@
  
  endmenu
  
@@ -4149,19 +5022,23 @@ diff -x .git -Nur linux-2.6.22.1/drivers/i2c/busses/atmeltwi.h linux-avr32.git/d
 +#endif /* __ASM_AVR32_TWI_H__ */
 diff -x .git -Nur linux-2.6.22.1/drivers/i2c/busses/i2c-atmeltwi.c linux-avr32.git/drivers/i2c/busses/i2c-atmeltwi.c
 --- linux-2.6.22.1/drivers/i2c/busses/i2c-atmeltwi.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-avr32.git/drivers/i2c/busses/i2c-atmeltwi.c	2007-07-12 13:59:59.000000000 +0200
-@@ -0,0 +1,348 @@
++++ linux-avr32.git/drivers/i2c/busses/i2c-atmeltwi.c	2007-07-13 11:24:16.000000000 +0200
+@@ -0,0 +1,383 @@
 +/*
 + * i2c Support for Atmel's Two-Wire Interface (TWI)
 + *
 + * Based on the work of Copyright (C) 2004 Rick Bronson
 + * Converted to 2.6 by Andrew Victor <andrew at sanpeople.com>
-+ * Ported to AVR32 and heavily modified by Espen Krangnes <ekrangnes at atmel.com>
++ * Ported to AVR32 and heavily modified by Espen Krangnes
++ * <ekrangnes at atmel.com>
 + *
 + * Copyright (C) 2006 Atmel Corporation
 + *
 + * Borrowed heavily from the original work by:
 + * Copyright (C) 2000 Philip Edelbrock <phil at stimpy.netroedge.com>
++ *
++ * Partialy rewriten by Karel Hojdar <cmkaho at seznam.cz>
++ * bugs removed, interrupt routine markedly rewritten
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -4202,6 +5079,7 @@ diff -x .git -Nur linux-2.6.22.1/drivers/i2c/busses/i2c-atmeltwi.c linux-avr32.g
 +	u8 *buf;
 +	u8 len;
 +	u8 acks_left;
++	u8 nack;
 +	unsigned int irq;
 +
 +};
@@ -4238,8 +5116,7 @@ diff -x .git -Nur linux-2.6.22.1/drivers/i2c/busses/i2c-atmeltwi.c linux-avr32.g
 + * Waits for the i2c status register to set the specified bitmask
 + * Returns 0 if timed out (~100ms).
 + */
-+static short twi_wait_for_completion(struct atmel_twi *twi,
-+		u32 mask)
++static short twi_complete(struct atmel_twi *twi, u32 mask)
 +{
 +	int timeout = msecs_to_jiffies(100);
 +
@@ -4248,9 +5125,15 @@ diff -x .git -Nur linux-2.6.22.1/drivers/i2c/busses/i2c-atmeltwi.c linux-avr32.g
 +
 +	twi_writel(twi, IER, mask);
 +
-+	if(!wait_for_completion_timeout(&twi->comp, timeout))
-+		return -ETIMEDOUT;
++	if (!wait_for_completion_timeout(&twi->comp, timeout)) {
++		/* RESET TWI interface */
++		twi_writel(twi, CR, TWI_BIT(SWRST));
 +
++		/* Reinitialize TWI */
++		twi_hwinit(twi);
++
++		return -ETIMEDOUT;
++	}
 +	return 0;
 +}
 +
@@ -4268,8 +5151,8 @@ diff -x .git -Nur linux-2.6.22.1/drivers/i2c/busses/i2c-atmeltwi.c linux-avr32.g
 +
 +	dev_dbg(&adap->dev, "twi_xfer: processing %d messages:\n", num);
 +
++	twi->nack = 0;
 +	for (i = 0; i < num; i++, pmsg++) {
-+
 +		twi->len = pmsg->len;
 +		twi->buf = pmsg->buf;
 +		twi->acks_left = pmsg->len;
@@ -4286,26 +5169,27 @@ diff -x .git -Nur linux-2.6.22.1/drivers/i2c/busses/i2c-atmeltwi.c linux-avr32.g
 +		twi_writel(twi, CR, TWI_BIT(MSEN));
 +
 +		if (pmsg->flags & I2C_M_RD) {
-+			twi_writel(twi, CR, TWI_BIT(START));
-+			if ( twi_wait_for_completion(twi,TWI_BIT(RXRDY))==-ETIMEDOUT ) {
++			if (twi->len == 1)
++				twi_writel(twi, CR,
++					TWI_BIT(START) | TWI_BIT(STOP));
++			else
++				twi_writel(twi, CR, TWI_BIT(START));
++
++			if (twi_complete(twi, TWI_BIT(RXRDY)) == -ETIMEDOUT) {
 +				dev_dbg(&adap->dev, "RXRDY timeout. Stopped with %d bytes left\n",
 +					twi->acks_left);
 +				return -ETIMEDOUT;
 +			}
-+
-+			/* Send Stop, and Wait until transfer is finished */
-+			if ( twi_wait_for_completion(twi,TWI_BIT(TXCOMP))==-ETIMEDOUT ) {
-+				dev_dbg(&adap->dev, "TXCOMP timeout\n");
-+				return -ETIMEDOUT;
-+			}
-+
 +		} else {
 +			twi_writel(twi, THR, twi->buf[0]);
-+			if ( twi_wait_for_completion(twi,TWI_BIT(TXRDY))==-ETIMEDOUT ) {
++			if (twi_complete(twi, TWI_BIT(TXRDY)) == -ETIMEDOUT) {
 +				dev_dbg(&adap->dev, "TXRDY timeout. Stopped with %d bytes left\n",
 +				twi->acks_left);
 +				return -ETIMEDOUT;
 +			}
++
++			if (twi->nack)
++			    return -ENODEV;
 +		}
 +
 +		/* Disable TWI interface */
@@ -4322,38 +5206,62 @@ diff -x .git -Nur linux-2.6.22.1/drivers/i2c/busses/i2c-atmeltwi.c linux-avr32.g
 +	struct atmel_twi *twi = dev_id;
 +	int status = twi_readl(twi, SR);
 +
-+	if (twi->intmask & status){
-+		if (twi->intmask & TWI_BIT(NACK)) {
++	/* Save state for later debug prints */
++	int old_mask = twi->intmask;
++	int old_status = status;
++
++	if (twi->intmask & status) {
++		if (status & TWI_BIT(NACK))
 +			goto nack;
-+		} else if (twi->intmask & TWI_BIT(RXRDY)){
-+			twi->buf[twi->len - twi->acks_left] = twi_readl(twi,RHR);
-+			if(--twi->acks_left==1)
++
++		status &= twi->intmask;
++
++		if (status & TWI_BIT(TXCOMP))
++		    goto complete;
++
++		else if (status & TWI_BIT(RXRDY)) {
++			if ( twi->acks_left > 0 ) {
++			    twi->buf[twi->len - twi->acks_left] =
++				twi_readl(twi, RHR);
++			    twi->acks_left--;
++			}
++			if ( twi->acks_left == 1 )
 +				twi_writel(twi, CR, TWI_BIT(STOP));
-+			if (twi->acks_left==0)
-+				goto complete;
-+		} else if (twi->intmask & TWI_BIT(TXRDY)) {
-+			twi->acks_left--;
-+			if (twi->acks_left==0) {
++
++			if (twi->acks_left == 0 ) {
 +				twi->intmask = TWI_BIT(TXCOMP);
 +				twi_writel(twi, IER, TWI_BIT(TXCOMP));
-+			} else
++			}
++		} else if (status & TWI_BIT(TXRDY)) {
++			twi->acks_left--;
++			if ( twi->acks_left == 0 ) {
++				twi->intmask = TWI_BIT(TXCOMP);
++				twi_writel(twi, IER, TWI_BIT(TXCOMP));
++			} else if (twi->acks_left > 0)
 +				twi_writel(twi, THR, twi->buf[twi->len - twi->acks_left]);
-+		} else if (twi->intmask & TWI_BIT(TXCOMP)) {
-+			goto complete;
 +		}
 +	}
++
++	dev_dbg(&twi->adapter.dev,
++		"TWI ISR, SR 0x%08X, intmask 0x%08X, acks_left %i.\n",
++		old_status, old_mask, twi->acks_left);
 +
 +	return IRQ_HANDLED;
 +
 +nack:
-+	printk(KERN_INFO "NACK received!\n");
++	dev_dbg(&twi->adapter.dev, "NACK received!\n");
++	twi->nack = 1;
 +
 +complete:
 +	twi_writel(twi, IDR, ~0UL);
 +	complete(&twi->comp);
 +
-+	return IRQ_HANDLED;
++	dev_dbg(&twi->adapter.dev,
++		"TWI ISR, SR 0x%08X, intmask 0x%08X, \
++		acks_left %i - completed.\n",
++		old_status, old_mask, twi->acks_left);
 +
++	return IRQ_HANDLED;
 +}
 +
 +
@@ -4540,6 +5448,241 @@ diff -x .git -Nur linux-2.6.22.1/drivers/i2c/busses/Makefile linux-avr32.git/dri
  
  ifeq ($(CONFIG_I2C_DEBUG_BUS),y)
  EXTRA_CFLAGS += -DDEBUG
+diff -x .git -Nur linux-2.6.22.1/drivers/input/mouse/gpio_mouse.c linux-avr32.git/drivers/input/mouse/gpio_mouse.c
+--- linux-2.6.22.1/drivers/input/mouse/gpio_mouse.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-avr32.git/drivers/input/mouse/gpio_mouse.c	2007-07-13 11:24:16.000000000 +0200
+@@ -0,0 +1,196 @@
++/*
++ * Driver for simulating a mouse on GPIO lines.
++ *
++ * Copyright (C) 2007 Atmel Corporation
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/init.h>
++#include <linux/version.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/input-polldev.h>
++#include <linux/gpio_mouse.h>
++
++#include <asm/gpio.h>
++
++/*
++ * Timer function which is run every scan_ms ms when the device is opened.
++ * The dev input varaible is set to the the input_dev pointer.
++ */
++static void gpio_mouse_scan(struct input_polled_dev *dev)
++{
++	struct gpio_mouse_platform_data *gpio = dev->private;
++	struct input_dev *input = dev->input;
++	int x, y;
++
++	if (gpio->bleft >= 0)
++		input_report_key(input, BTN_LEFT,
++				gpio_get_value(gpio->bleft) ^ gpio->polarity);
++	if (gpio->bmiddle >= 0)
++		input_report_key(input, BTN_MIDDLE,
++				gpio_get_value(gpio->bmiddle) ^ gpio->polarity);
++	if (gpio->bright >= 0)
++		input_report_key(input, BTN_RIGHT,
++				gpio_get_value(gpio->bright) ^ gpio->polarity);
++
++	x = (gpio_get_value(gpio->right) ^ gpio->polarity)
++		- (gpio_get_value(gpio->left) ^ gpio->polarity);
++	y = (gpio_get_value(gpio->down) ^ gpio->polarity)
++		- (gpio_get_value(gpio->up) ^ gpio->polarity);
++
++	input_report_rel(input, REL_X, x);
++	input_report_rel(input, REL_Y, y);
++	input_sync(input);
++}
++
++static int __init gpio_mouse_probe(struct platform_device *pdev)
++{
++	struct gpio_mouse_platform_data *pdata = pdev->dev.platform_data;
++	struct input_polled_dev *input_poll;
++	struct input_dev *input;
++	int pin, i;
++	int error;
++
++	if (!pdata) {
++		dev_err(&pdev->dev, "no platform data\n");
++		error = -ENXIO;
++		goto out;
++	}
++
++	if (pdata->scan_ms < 0) {
++		dev_err(&pdev->dev, "invalid scan time\n");
++		error = -EINVAL;
++		goto out;
++	}
++
++	for (i = 0; i < GPIO_MOUSE_PIN_MAX; i++) {
++		pin = pdata->pins[i];
++
++		if (pin < 0) {
++
++			if (i <= GPIO_MOUSE_PIN_RIGHT) {
++				/* Mouse direction is required. */
++				dev_err(&pdev->dev,
++					"missing GPIO for directions\n");
++				error = -EINVAL;
++				goto out_free_gpios;
++			}
++
++			if (i == GPIO_MOUSE_PIN_BLEFT)
++				dev_dbg(&pdev->dev, "no left button defined\n");
++
++		} else {
++			error = gpio_request(pin, "gpio_mouse");
++			if (error) {
++				dev_err(&pdev->dev, "fail %d pin (%d idx)\n",
++					pin, i);
++				goto out_free_gpios;
++			}
++
++			gpio_direction_input(pin);
++		}
++	}
++
++	input_poll = input_allocate_polled_device();
++	if (!input_poll) {
++		dev_err(&pdev->dev, "not enough memory for input device\n");
++		error = -ENOMEM;
++		goto out_free_gpios;
++	}
++
++	platform_set_drvdata(pdev, input_poll);
++
++	/* set input-polldev handlers */
++	input_poll->private = pdata;
++	input_poll->poll = gpio_mouse_scan;
++	input_poll->poll_interval = pdata->scan_ms;
++
++	input = input_poll->input;
++	input->name = pdev->name;
++	input->id.bustype = BUS_HOST;
++	input->dev.parent = &pdev->dev;
++
++	input_set_capability(input, EV_REL, REL_X);
++	input_set_capability(input, EV_REL, REL_Y);
++	if (pdata->bleft >= 0)
++		input_set_capability(input, EV_KEY, BTN_LEFT);
++	if (pdata->bmiddle >= 0)
++		input_set_capability(input, EV_KEY, BTN_MIDDLE);
++	if (pdata->bright >= 0)
++		input_set_capability(input, EV_KEY, BTN_RIGHT);
++
++	error = input_register_polled_device(input_poll);
++	if (error) {
++		dev_err(&pdev->dev, "could not register input device\n");
++		goto out_free_polldev;
++	}
++
++	dev_dbg(&pdev->dev, "%d ms scan time, buttons: %s%s%s\n",
++			pdata->scan_ms,
++			pdata->bleft < 0 ? "" : "left ",
++			pdata->bmiddle < 0 ? "" : "middle ",
++			pdata->bright < 0 ? "" : "right");
++
++	return 0;
++
++ out_free_polldev:
++	input_free_polled_device(input_poll);
++	platform_set_drvdata(pdev, NULL);
++
++ out_free_gpios:
++	while (--i >= 0) {
++		pin = pdata->pins[i];
++		if (pin)
++			gpio_free(pin);
++	}
++ out:
++	return error;
++}
++
++static int __devexit gpio_mouse_remove(struct platform_device *pdev)
++{
++	struct input_polled_dev *input = platform_get_drvdata(pdev);
++	struct gpio_mouse_platform_data *pdata = input->private;
++	int pin, i;
++
++	input_unregister_polled_device(input);
++	input_free_polled_device(input);
++
++	for (i = 0; i < GPIO_MOUSE_PIN_MAX; i++) {
++		pin = pdata->pins[i];
++		if (pin >= 0)
++			gpio_free(pin);
++	}
++
++	platform_set_drvdata(pdev, NULL);
++
++	return 0;
++}
++
++struct platform_driver gpio_mouse_device_driver = {
++	.remove		= __devexit_p(gpio_mouse_remove),
++	.driver		= {
++		.name	= "gpio_mouse",
++	}
++};
++
++static int __init gpio_mouse_init(void)
++{
++	return platform_driver_probe(&gpio_mouse_device_driver,
++			gpio_mouse_probe);
++}
++module_init(gpio_mouse_init);
++
++static void __exit gpio_mouse_exit(void)
++{
++	platform_driver_unregister(&gpio_mouse_device_driver);
++}
++module_exit(gpio_mouse_exit);
++
++MODULE_AUTHOR("Hans-Christian Egtvedt <hcegtvedt@atmel.com>");
++MODULE_DESCRIPTION("GPIO mouse driver");
++MODULE_LICENSE("GPL");
+diff -x .git -Nur linux-2.6.22.1/drivers/input/mouse/Kconfig linux-avr32.git/drivers/input/mouse/Kconfig
+--- linux-2.6.22.1/drivers/input/mouse/Kconfig	2007-07-10 20:56:30.000000000 +0200
++++ linux-avr32.git/drivers/input/mouse/Kconfig	2007-07-13 11:24:16.000000000 +0200
+@@ -216,4 +216,20 @@
+ 	help
+ 	  Say Y here to support HIL pointers.
+ 
++config MOUSE_GPIO
++	tristate "GPIO mouse"
++	depends on GENERIC_GPIO
++	select INPUT_POLLDEV
++	help
++	  This driver simulates a mouse on GPIO lines of various CPUs (and some
++	  other chips).
++
++	  Say Y here if your device has buttons or a simple joystick connected
++	  directly to GPIO lines. Your board-specific setup logic must also
++	  provide a platform device and platform data saying which GPIOs are
++	  used.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called gpio_mouse.
++
+ endif
+diff -x .git -Nur linux-2.6.22.1/drivers/input/mouse/Makefile linux-avr32.git/drivers/input/mouse/Makefile
+--- linux-2.6.22.1/drivers/input/mouse/Makefile	2007-07-10 20:56:30.000000000 +0200
++++ linux-avr32.git/drivers/input/mouse/Makefile	2007-07-13 11:24:16.000000000 +0200
+@@ -15,6 +15,7 @@
+ obj-$(CONFIG_MOUSE_SERIAL)	+= sermouse.o
+ obj-$(CONFIG_MOUSE_HIL)		+= hil_ptr.o
+ obj-$(CONFIG_MOUSE_VSXXXAA)	+= vsxxxaa.o
++obj-$(CONFIG_MOUSE_GPIO)	+= gpio_mouse.o
+ 
+ psmouse-objs := psmouse-base.o synaptics.o
+ 
 diff -x .git -Nur linux-2.6.22.1/drivers/leds/Kconfig linux-avr32.git/drivers/leds/Kconfig
 --- linux-2.6.22.1/drivers/leds/Kconfig	2007-07-10 20:56:30.000000000 +0200
 +++ linux-avr32.git/drivers/leds/Kconfig	2007-07-12 14:00:02.000000000 +0200
@@ -6330,7 +7473,7 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/Kconfig linux-avr32.git/drivers/net
  	  parts. Say Y to include support for the MACB chip.
 diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/macb.c
 --- linux-2.6.22.1/drivers/net/macb.c	2007-07-10 20:56:30.000000000 +0200
-+++ linux-avr32.git/drivers/net/macb.c	2007-07-12 14:00:04.000000000 +0200
++++ linux-avr32.git/drivers/net/macb.c	2007-07-13 11:24:16.000000000 +0200
 @@ -17,13 +17,14 @@
  #include <linux/init.h>
  #include <linux/netdevice.h>
@@ -6367,7 +7510,8 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/
 -}
 -
 -static void macb_disable_mdio(struct macb *bp)
--{
++static int macb_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
+ {
 -	unsigned long flags;
 -	u32 reg;
 -
@@ -6380,8 +7524,7 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/
 -}
 -
 -static int macb_mdio_read(struct net_device *dev, int phy_id, int location)
-+static int macb_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
- {
+-{
 -	struct macb *bp = netdev_priv(dev);
 +	struct macb *bp = bus->priv;
  	int value;
@@ -6432,39 +7575,39 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/
  			      | MACB_BF(CODE, MACB_MAN_CODE)
 -			      | MACB_BF(DATA, val)));
 +			      | MACB_BF(DATA, value)));
-+
+ 
+-	wait_for_completion(&bp->mdio_complete);
 +	/* wait for end of transfer */
 +	while (!MACB_BFEXT(IDLE, macb_readl(bp, NSR)))
 +		cpu_relax();
  
--	wait_for_completion(&bp->mdio_complete);
-+	return 0;
-+}
- 
 -	macb_disable_mdio(bp);
 -	mutex_unlock(&bp->mdio_mutex);
-+static int macb_mdio_reset(struct mii_bus *bus)
-+{
 +	return 0;
  }
  
 -static int macb_phy_probe(struct macb *bp)
-+static void macb_handle_link_change(struct net_device *dev)
++static int macb_mdio_reset(struct mii_bus *bus)
  {
 -	int phy_address;
 -	u16 phyid1, phyid2;
-+	struct macb *bp = netdev_priv(dev);
-+	struct phy_device *phydev = bp->phy_dev;
-+	unsigned long flags;
++	return 0;
++}
  
 -	for (phy_address = 0; phy_address < 32; phy_address++) {
 -		phyid1 = macb_mdio_read(bp->dev, phy_address, MII_PHYSID1);
 -		phyid2 = macb_mdio_read(bp->dev, phy_address, MII_PHYSID2);
-+	int status_change = 0;
++static void macb_handle_link_change(struct net_device *dev)
++{
++	struct macb *bp = netdev_priv(dev);
++	struct phy_device *phydev = bp->phy_dev;
++	unsigned long flags;
  
 -		if (phyid1 != 0xffff && phyid1 != 0x0000
 -		    && phyid2 != 0xffff && phyid2 != 0x0000)
 -			break;
++	int status_change = 0;
++
 +	spin_lock_irqsave(&bp->lock, flags);
 +
 +	if (phydev->link) {
@@ -6717,15 +7860,82 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/
  
  	/* Enable interrupts */
  	macb_writel(bp, IER, (MACB_BIT(RCOMP)
-@@ -776,18 +795,7 @@
+@@ -776,18 +795,126 @@
  			      | MACB_BIT(TCOMP)
  			      | MACB_BIT(ISR_ROVR)
  			      | MACB_BIT(HRESP)));
--}
--
++
++}
++
++/*
++ * The hash address register is 64 bits long and takes up two
++ * locations in the memory map.  The least significant bits are stored
++ * in EMAC_HSL and the most significant bits in EMAC_HSH.
++ *
++ * The unicast hash enable and the multicast hash enable bits in the
++ * network configuration register enable the reception of hash matched
++ * frames. The destination address is reduced to a 6 bit index into
++ * the 64 bit hash register using the following hash function.  The
++ * hash function is an exclusive or of every sixth bit of the
++ * destination address.
++ *
++ * hi[5] = da[5] ^ da[11] ^ da[17] ^ da[23] ^ da[29] ^ da[35] ^ da[41] ^ da[47]
++ * hi[4] = da[4] ^ da[10] ^ da[16] ^ da[22] ^ da[28] ^ da[34] ^ da[40] ^ da[46]
++ * hi[3] = da[3] ^ da[09] ^ da[15] ^ da[21] ^ da[27] ^ da[33] ^ da[39] ^ da[45]
++ * hi[2] = da[2] ^ da[08] ^ da[14] ^ da[20] ^ da[26] ^ da[32] ^ da[38] ^ da[44]
++ * hi[1] = da[1] ^ da[07] ^ da[13] ^ da[19] ^ da[25] ^ da[31] ^ da[37] ^ da[43]
++ * hi[0] = da[0] ^ da[06] ^ da[12] ^ da[18] ^ da[24] ^ da[30] ^ da[36] ^ da[42]
++ *
++ * da[0] represents the least significant bit of the first byte
++ * received, that is, the multicast/unicast indicator, and da[47]
++ * represents the most significant bit of the last byte received.  If
++ * the hash index, hi[n], points to a bit that is set in the hash
++ * register then the frame will be matched according to whether the
++ * frame is multicast or unicast.  A multicast match will be signalled
++ * if the multicast hash enable bit is set, da[0] is 1 and the hash
++ * index points to a bit set in the hash register.  A unicast match
++ * will be signalled if the unicast hash enable bit is set, da[0] is 0
++ * and the hash index points to a bit set in the hash register.  To
++ * receive all multicast frames, the hash register should be set with
++ * all ones and the multicast hash enable bit should be set in the
++ * network configuration register.
++ */
++
++static inline int hash_bit_value(int bitnr, __u8 *addr)
++{
++	if (addr[bitnr / 8] & (1 << (bitnr % 8)))
++		return 1;
++	return 0;
++}
++
++/*
++ * Return the hash index value for the specified address.
++ */
++static int hash_get_index(__u8 *addr)
++{
++	int i, j, bitval;
++	int hash_index = 0;
++
++	for (j = 0; j < 6; j++) {
++		for (i = 0, bitval = 0; i < 8; i++)
++			bitval ^= hash_bit_value(i*6 + j, addr);
++
++		hash_index |= (bitval << j);
++	}
++
++	return hash_index;
+ }
+ 
 -static void macb_init_phy(struct net_device *dev)
--{
--	struct macb *bp = netdev_priv(dev);
++/*
++ * Add multicast addresses to the internal multicast-hash table.
++ */
++static void macb_sethashtable(struct net_device *dev)
+ {
++	struct dev_mc_list *curr;
++	unsigned long mc_filter[2];
++	unsigned int i, bitnr;
+ 	struct macb *bp = netdev_priv(dev);
  
 -	/* Set some reasonable default settings */
 -	macb_mdio_write(dev, bp->mii.phy_id, MII_ADVERTISE,
@@ -6733,10 +7943,58 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/
 -	macb_mdio_write(dev, bp->mii.phy_id, MII_BMCR,
 -			(BMCR_SPEED100 | BMCR_ANENABLE
 -			 | BMCR_ANRESTART | BMCR_FULLDPLX));
++	mc_filter[0] = mc_filter[1] = 0;
++
++	curr = dev->mc_list;
++	for (i = 0; i < dev->mc_count; i++, curr = curr->next) {
++		if (!curr) break;	/* unexpected end of list */
++
++		bitnr = hash_get_index(curr->dmi_addr);
++		mc_filter[bitnr >> 5] |= 1 << (bitnr & 31);
++	}
++
++	macb_writel(bp, HRB, mc_filter[0]);
++	macb_writel(bp, HRT, mc_filter[1]);
++}
++
++/*
++ * Enable/Disable promiscuous and multicast modes.
++ */
++static void macb_set_rx_mode(struct net_device *dev)
++{
++	unsigned long cfg;
++	struct macb *bp = netdev_priv(dev);
++
++	cfg = macb_readl(bp, NCFGR);
++
++	if (dev->flags & IFF_PROMISC)
++		/* Enable promiscuous mode */
++		cfg |= MACB_BIT(CAF);
++	else if (dev->flags & (~IFF_PROMISC))
++		 /* Disable promiscuous mode */
++		cfg &= ~MACB_BIT(CAF);
++
++	if (dev->flags & IFF_ALLMULTI) {
++		/* Enable all multicast mode */
++		macb_writel(bp, HRB, -1);
++		macb_writel(bp, HRT, -1);
++		cfg |= MACB_BIT(NCFGR_MTI);
++	} else if (dev->mc_count > 0) {
++		/* Enable specific multicasts */
++		macb_sethashtable(dev);
++		cfg |= MACB_BIT(NCFGR_MTI);
++	} else if (dev->flags & (~IFF_ALLMULTI)) {
++		/* Disable all multicast mode */
++		macb_writel(bp, HRB, 0);
++		macb_writel(bp, HRT, 0);
++		cfg &= ~MACB_BIT(NCFGR_MTI);
++	}
++
++	macb_writel(bp, NCFGR, cfg);
  }
  
  static int macb_open(struct net_device *dev)
-@@ -797,6 +805,10 @@
+@@ -797,6 +924,10 @@
  
  	dev_dbg(&bp->pdev->dev, "open\n");
  
@@ -6747,7 +8005,7 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/
  	if (!is_valid_ether_addr(dev->dev_addr))
  		return -EADDRNOTAVAIL;
  
-@@ -810,12 +822,11 @@
+@@ -810,12 +941,11 @@
  
  	macb_init_rings(bp);
  	macb_init_hw(bp);
@@ -6763,7 +8021,7 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/
  
  	return 0;
  }
-@@ -825,10 +836,11 @@
+@@ -825,10 +955,11 @@
  	struct macb *bp = netdev_priv(dev);
  	unsigned long flags;
  
@@ -6777,7 +8035,7 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/
  	spin_lock_irqsave(&bp->lock, flags);
  	macb_reset_hw(bp);
  	netif_carrier_off(dev);
-@@ -845,6 +857,9 @@
+@@ -845,6 +976,9 @@
  	struct net_device_stats *nstat = &bp->stats;
  	struct macb_stats *hwstat = &bp->hw_stats;
  
@@ -6787,16 +8045,16 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/
  	/* Convert HW stats into netdevice stats */
  	nstat->rx_errors = (hwstat->rx_fcs_errors +
  			    hwstat->rx_align_errors +
-@@ -882,18 +897,27 @@
+@@ -882,18 +1016,27 @@
  static int macb_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
  {
  	struct macb *bp = netdev_priv(dev);
 +	struct phy_device *phydev = bp->phy_dev;
- 
--	return mii_ethtool_gset(&bp->mii, cmd);
++
 +	if (!phydev)
 +		return -ENODEV;
-+
+ 
+-	return mii_ethtool_gset(&bp->mii, cmd);
 +	return phy_ethtool_gset(phydev, cmd);
  }
  
@@ -6818,7 +8076,7 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/
  {
  	struct macb *bp = netdev_priv(dev);
  
-@@ -902,104 +926,34 @@
+@@ -902,104 +1045,34 @@
  	strcpy(info->bus_info, bp->pdev->dev.bus_id);
  }
  
@@ -6928,7 +8186,15 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/
  	unsigned long pclk_hz;
  	u32 config;
  	int err = -ENXIO;
-@@ -1080,10 +1034,6 @@
+@@ -1073,6 +1146,7 @@
+ 	dev->stop = macb_close;
+ 	dev->hard_start_xmit = macb_start_xmit;
+ 	dev->get_stats = macb_get_stats;
++	dev->set_multicast_list = macb_set_rx_mode;
+ 	dev->do_ioctl = macb_ioctl;
+ 	dev->poll = macb_poll;
+ 	dev->weight = 64;
+@@ -1080,10 +1154,6 @@
  
  	dev->base_addr = regs->start;
  
@@ -6939,7 +8205,7 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/
  	/* Set MII management clock divider */
  	pclk_hz = clk_get_rate(bp->pclk);
  	if (pclk_hz <= 20000000)
-@@ -1096,20 +1046,9 @@
+@@ -1096,20 +1166,9 @@
  		config = MACB_BF(CLK, MACB_CLK_DIV64);
  	macb_writel(bp, NCFGR, config);
  
@@ -6961,7 +8227,7 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/
  	if (pdata && pdata->is_rmii)
  #if defined(CONFIG_ARCH_AT91)
  		macb_writel(bp, USRIO, (MACB_BIT(RMII) | MACB_BIT(CLKEN)) );
-@@ -1131,9 +1070,11 @@
+@@ -1131,9 +1190,11 @@
  		goto err_out_free_irq;
  	}
  
@@ -6975,7 +8241,7 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/
  
  	printk(KERN_INFO "%s: Atmel MACB at 0x%08lx irq %d "
  	       "(%02x:%02x:%02x:%02x:%02x:%02x)\n",
-@@ -1141,8 +1082,15 @@
+@@ -1141,8 +1202,15 @@
  	       dev->dev_addr[0], dev->dev_addr[1], dev->dev_addr[2],
  	       dev->dev_addr[3], dev->dev_addr[4], dev->dev_addr[5]);
  
@@ -6991,7 +8257,7 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/
  err_out_free_irq:
  	free_irq(dev->irq, dev);
  err_out_iounmap:
-@@ -1153,7 +1101,9 @@
+@@ -1153,7 +1221,9 @@
  	clk_put(bp->hclk);
  #endif
  	clk_disable(bp->pclk);
@@ -7001,7 +8267,7 @@ diff -x .git -Nur linux-2.6.22.1/drivers/net/macb.c linux-avr32.git/drivers/net/
  	clk_put(bp->pclk);
  err_out_free_dev:
  	free_netdev(dev);
-@@ -1171,7 +1121,8 @@
+@@ -1171,7 +1241,8 @@
  
  	if (dev) {
  		bp = netdev_priv(dev);
@@ -11060,6 +12326,71 @@ diff -x .git -Nur linux-2.6.22.1/include/asm-avr32/unaligned.h linux-avr32.git/i
 +#include <asm-generic/unaligned.h>
  
  #endif /* __ASM_AVR32_UNALIGNED_H */
+diff -x .git -Nur linux-2.6.22.1/include/linux/gpio_mouse.h linux-avr32.git/include/linux/gpio_mouse.h
+--- linux-2.6.22.1/include/linux/gpio_mouse.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-avr32.git/include/linux/gpio_mouse.h	2007-07-13 11:24:16.000000000 +0200
+@@ -0,0 +1,61 @@
++/*
++ * Driver for simulating a mouse on GPIO lines.
++ *
++ * Copyright (C) 2007 Atmel Corporation
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#ifndef _GPIO_MOUSE_H
++#define _GPIO_MOUSE_H
++
++#define GPIO_MOUSE_POLARITY_ACT_HIGH	0x00
++#define GPIO_MOUSE_POLARITY_ACT_LOW	0x01
++
++#define GPIO_MOUSE_PIN_UP	0
++#define GPIO_MOUSE_PIN_DOWN	1
++#define GPIO_MOUSE_PIN_LEFT	2
++#define GPIO_MOUSE_PIN_RIGHT	3
++#define GPIO_MOUSE_PIN_BLEFT	4
++#define GPIO_MOUSE_PIN_BMIDDLE	5
++#define GPIO_MOUSE_PIN_BRIGHT	6
++#define GPIO_MOUSE_PIN_MAX	7
++
++/**
++ * struct gpio_mouse_platform_data
++ * @scan_ms: integer in ms specifying the scan periode.
++ * @polarity: Pin polarity, active high or low.
++ * @up: GPIO line for up value.
++ * @down: GPIO line for down value.
++ * @left: GPIO line for left value.
++ * @right: GPIO line for right value.
++ * @bleft: GPIO line for left button.
++ * @bmiddle: GPIO line for middle button.
++ * @bright: GPIO line for right button.
++ *
++ * This struct must be added to the platform_device in the board code.
++ * It is used by the gpio_mouse driver to setup GPIO lines and to
++ * calculate mouse movement.
++ */
++struct gpio_mouse_platform_data {
++	int scan_ms;
++	int polarity;
++
++	union {
++		struct {
++			int up;
++			int down;
++			int left;
++			int right;
++
++			int bleft;
++			int bmiddle;
++			int bright;
++		};
++		int pins[GPIO_MOUSE_PIN_MAX];
++	};
++};
++
++#endif /* _GPIO_MOUSE_H */
 diff -x .git -Nur linux-2.6.22.1/include/linux/leds.h linux-avr32.git/include/linux/leds.h
 --- linux-2.6.22.1/include/linux/leds.h	2007-07-10 20:56:30.000000000 +0200
 +++ linux-avr32.git/include/linux/leds.h	2007-07-12 14:00:30.000000000 +0200
