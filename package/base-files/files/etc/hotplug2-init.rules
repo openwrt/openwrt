@@ -28,6 +28,11 @@ DEVPATH is set {
 	makedev /dev/%DEVICENAME% 0644
 }
 
+FIRMWARE is set {
+	nothrottle
+	exec /sbin/hotplug-call firmware;
+	next
+}
 
 SUBSYSTEM ~~ button {
 	exec kill -USR1 1 ;
