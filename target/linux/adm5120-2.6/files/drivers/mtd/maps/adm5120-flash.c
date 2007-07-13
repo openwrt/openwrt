@@ -485,7 +485,7 @@ static int adm5120_flash_probe(struct platform_device *dev)
 	}
 
 	MAP_INFO(map, "found at 0x%lX, size:%ldKiB, width:%d bits\n",
-		(unsigned long)map->phys, (unsigned long)map->size >> 10,
+		(unsigned long)map->phys, (unsigned long)info->mtd->size >> 10,
 		map->bankwidth*8);
 
 	info->mtd->owner = THIS_MODULE;
