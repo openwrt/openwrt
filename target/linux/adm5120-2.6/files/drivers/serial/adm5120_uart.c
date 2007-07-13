@@ -433,7 +433,7 @@ static void adm5120console_write(struct console *con, const char *s,
 	}
 }
 
-static int __init adm5120console_setup(struct console *con, char *options)
+static int adm5120console_setup(struct console *con, char *options)
 {
 	/* Set to 115200 baud, 8N1 and enable FIFO */
 	ADM5120_UART_REG(ADM5120_UART0_BASE, ADM5120_UART_LCR_L) =
