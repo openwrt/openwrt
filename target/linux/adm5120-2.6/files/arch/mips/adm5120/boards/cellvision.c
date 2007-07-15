@@ -101,6 +101,7 @@ static struct platform_device *cas7xx_devices[] __initdata = {
 static void __init cas6xx_setup(void)
 {
 	gpio_request(ADM5120_GPIO_PIN5, NULL);	/* for flash A20 line */
+	gpio_direction_output(ADM5120_GPIO_PIN5, 0);
 
 	/* setup data for flash0 device */
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
@@ -113,6 +114,7 @@ static void __init cas6xx_setup(void)
 static void __init cas7xx_setup(void)
 {
 	gpio_request(ADM5120_GPIO_PIN5, NULL);	/* for flash A20 line */
+	gpio_direction_output(ADM5120_GPIO_PIN5, 0);
 
 	/* setup data for flash0 device */
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;

@@ -46,7 +46,7 @@ static void switch_bank_gpio5(unsigned bank)
 
 static void wp54_reset(void)
 {
-	gpio_direction_output(ADM5120_GPIO_PIN3, 0);
+	gpio_set_value(ADM5120_GPIO_PIN3, 0);
 }
 
 static struct mtd_partition wp54g_wrt_partitions[] = {
@@ -78,6 +78,7 @@ static struct platform_device *wp54_devices[] __initdata = {
 static void __init np2xg_setup(void)
 {
 	gpio_request(ADM5120_GPIO_PIN5, NULL); /* for flash A20 line */
+	gpio_direction_output(ADM5120_GPIO_PIN5, 0);
 
 	/* setup data for flash0 device */
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
@@ -88,7 +89,11 @@ static void __init np2xg_setup(void)
 static void __init wp54_setup(void)
 {
 	gpio_request(ADM5120_GPIO_PIN5, NULL); /* for flash A20 line */
+	gpio_direction_output(ADM5120_GPIO_PIN5, 0);
+
 	gpio_request(ADM5120_GPIO_PIN3, NULL); /* for system reset */
+	gpio_direction_output(ADM5120_GPIO_PIN3, 1);
+
 
 	/* setup data for flash0 device */
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
@@ -99,7 +104,10 @@ static void __init wp54_setup(void)
 static void __init wp54_wrt_setup(void)
 {
 	gpio_request(ADM5120_GPIO_PIN5, NULL); /* for flash A20 line */
+	gpio_direction_output(ADM5120_GPIO_PIN5, 0);
+
 	gpio_request(ADM5120_GPIO_PIN3, NULL); /* for system reset */
+	gpio_direction_output(ADM5120_GPIO_PIN3, 1);
 
 	/* setup data for flash0 device */
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
