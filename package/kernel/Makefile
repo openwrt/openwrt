@@ -17,6 +17,7 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/packages
 
 # build all in-tree kmod-* packages by default
 KMOD_DEFAULT:=m
+SCAN_DEPS=modules/*.mk
 
 include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)

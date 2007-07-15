@@ -1,9 +1,12 @@
 include $(TOPDIR)/include/verbose.mk
 
+all: tmp/.$(SCAN_TARGET)
+
 SCAN_TARGET ?= packageinfo
 SCAN_NAME ?= package
 SCAN_DIR ?= package
-SCAN_DEPS ?= include/package.mk
+TARGET_STAMP:=tmp/info/.files-$(SCAN_TARGET).stamp
+FILELIST:=tmp/info/.files-$(SCAN_TARGET)-$(SCAN_COOKIE)
 
 ifeq ($(IS_TTY),1)
   define progress
@@ -15,41 +18,48 @@ else
   endef
 endif
 
-SCAN = $(patsubst $(SCAN_DIR)/%/Makefile,%,$(wildcard $(SCAN_DIR)/*/Makefile))
-tmp/.$(SCAN_TARGET):
-	@($(call progress,Collecting $(SCAN_NAME) info: merging...))
-	for file in $(SCAN); do \
-		cat tmp/info/.$(SCAN_TARGET)-$$file; \
-	done > $@
-	@($(call progress,Collecting $(SCAN_NAME) info: done))
-	@echo
-
-ifneq ($(SCAN_EXTRA),)
-SCAN_STAMP=tmp/info/.scan-$(SCAN_TARGET)-$(shell ls $(SCAN_EXTRA) 2>/dev/null | (md5sum || md5) 2>/dev/null | cut -d' ' -f1)
-$(SCAN_STAMP):
-	rm -f tmp/info/.scan-$(SCAN_TARGET)-*
-	touch $@
-endif
-
-# FIXME: generate this dynamically?
-ifeq ($(SCAN_TARGET),packageinfo)
-tmp/info/.packageinfo-kernel: $(wildcard package/kernel/modules/*.mk)
-endif
-
-define scanfiles
-$(foreach FILE,$(SCAN),
-  tmp/.$(SCAN_TARGET): tmp/info/.$(SCAN_TARGET)-$(FILE) $(SCAN_TARGET_DEPS) $(SCAN_DEPS)
-  tmp/info/.$(SCAN_TARGET)-$(FILE): $(SCAN_DIR)/$(FILE)/Makefile $(SCAN_STAMP) $(SCAN_TARGET_DEPS)
-	grep -E 'include (\$$$$\(INCLUDE_DIR\)|\$$$$\(TOPDIR\)/include)/' $(SCAN_DIR)/$(FILE)/Makefile >/dev/null && { \
-		$$(call progress,Collecting $(SCAN_NAME) info: $(SCAN_DIR)/$(FILE)) \
-		echo Source-Makefile: $(SCAN_DIR)/$(FILE)/Makefile; \
-		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $(SCAN_DIR)/$(FILE) 3>/dev/null || echo "ERROR: please fix $(SCAN_DIR)/$(FILE)/Makefile" >&2; \
+define PackageDir
+  tmp/.$(SCAN_TARGET): tmp/info/.$(SCAN_TARGET)-$(1)
+  tmp/info/.$(SCAN_TARGET)-$(1): $(SCAN_DIR)/$(1)/Makefile $(SCAN_STAMP) $(foreach DEP,$(DEPS_$(SCAN_DIR)/$(1)/Makefile) $(SCAN_DEPS),$(wildcard $(if $(filter /%,$(DEP)),$(DEP),$(SCAN_DIR)/$(1)/$(DEP))))
+	{ \
+		$$(call progress,Collecting $(SCAN_NAME) info: $(SCAN_DIR)/$(1)) \
+		echo Source-Makefile: $(SCAN_DIR)/$(1)/Makefile; \
+		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $(SCAN_DIR)/$(1) 2>/dev/null || echo "ERROR: please fix $(SCAN_DIR)/$(1)/Makefile" >&2; \
 		echo; \
 	} > $$@ || true
-)
-
 endef
-$(eval $(call scanfiles))
+
+$(FILELIST):
+	rm -f tmp/info/.files-$(SCAN_TARGET)-*
+	find $(SCAN_DIR) $(SCAN_EXTRA) -mindepth 1 $(if $(SCAN_DEPTH),-maxdepth $(SCAN_DEPTH)) -name Makefile | xargs grep -HE 'call (KernelPackage|Build(Package|Kernel))' | sed -e 's#^$(SCAN_DIR)/##' -e 's#/Makefile:.*##' | uniq > $@
+
+tmp/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
+	( \
+		cat $< | awk '{print "$(SCAN_DIR)/" $$0 "/Makefile" }' | xargs grep -HE '^ *SCAN_DEPS *= *' | awk -F: '{ gsub(/^.*DEPS *= */, "", $$2); print "DEPS_" $$1 "=" $$2 }'; \
+		awk -v deps="$$DEPS" '{ \
+			print "$$(eval $$(call PackageDir," $$0 "))"; \
+		} ' < $<; \
+		true; \
+	) > $@
+
+-include tmp/info/.files-$(SCAN_TARGET).mk
+
+$(TARGET_STAMP):
+	( \
+		$(NO_TRACE_MAKE) $(FILELIST); \
+		MD5SUM=$$(cat $(FILELIST) | (md5sum || md5) | awk '{print $$1}'); \
+		[ -f "$@.$$MD5SUM" ] || { \
+			rm -f $@.*; \
+			touch $@.$$MD5SUM; \
+			touch $@; \
+		} \
+	)
+
+tmp/.$(SCAN_TARGET): $(TARGET_STAMP) $(SCAN_STAMP)
+	$(call progress,Collecting $(SCAN_NAME) info: merging...)
+	cat $(FILELIST) | awk '{print "tmp/info/.$(SCAN_TARGET)-" $$0}' | xargs cat > $@
+	$(call progress,Collecting $(SCAN_NAME) info: done)
+	echo
 
 FORCE:
 .PHONY: FORCE
