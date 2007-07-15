@@ -1,4 +1,6 @@
 /*
+ * $Id$
+ *
  * LZMA compressed kernel decompressor for ADM5120 boards
  *
  * Copyright (C) 2005 by Oleg I. Vdovikin <oleg@cs.msu.su>
@@ -43,6 +45,7 @@
 #include <stddef.h>
 
 #include "config.h"
+#include "printf.h"
 #include "LzmaDecode.h"
 
 #define ADM5120_FLASH_START	0x1fc00000	/* Flash start */
@@ -66,6 +69,12 @@
 		:				\
 		: "r" (base),			\
 		  "i" (op));
+
+#ifdef LZMA_DEBUG
+#  define DBG(f, a...)	printf(f, ## a)
+#else
+#  define DBG(f, a...)	do {} while (0)
+#endif
 
 static __inline__ void blast_icache(unsigned long size, unsigned long lsize)
 {
@@ -100,20 +109,21 @@ struct trx_header {
 	unsigned int offsets[3];	/* Offsets of partitions from start of header */
 };
 
-/* beyound the image end, size not known in advance */
-extern unsigned char workspace[];
-#if LZMA_WRAPPER
-extern unsigned char _lzma_data_start[];
-extern unsigned char _lzma_data_end[];
-#endif
-
-extern void board_init(void);
-extern void board_putc(int ch);
-
 struct env_var {
 	char	*name;
 	char	*value;
 };
+
+/* beyound the image end, size not known in advance */
+extern unsigned char workspace[];
+extern void board_init(void);
+
+typedef void (*kernel_entry)(unsigned long reg_a0, unsigned long reg_a1,
+	unsigned long reg_a2, unsigned long reg_a3);
+
+static int decompress_data(unsigned char *buffer, UInt32 bufferSize,
+	int lc, int lp, int pb, unsigned char *outStream, UInt32 outSize,
+	UInt32 *outSizeProcessed);
 
 #ifdef CONFIG_PASS_KARGS
 #define ENVV(n,v)	{.name = (n), .value = (v)}
@@ -123,111 +133,144 @@ struct env_var env_vars[] = {
 };
 #endif
 
+static void halt(void)
+{
+	printf("\nSystem halted!\n");
+	for(;;);
+}
+
+#if LZMA_WRAPPER
+extern unsigned char _lzma_data_start[];
+extern unsigned char _lzma_data_end[];
+
 unsigned char *data;
 unsigned long datalen;
 
-typedef void (*kernel_entry)(unsigned long reg_a0, unsigned long reg_a1,
-	unsigned long reg_a2, unsigned long reg_a3);
-
-static int read_byte(void *object, unsigned char **buffer, UInt32 *bufferSize)
+static __inline__ unsigned char get_byte(void)
 {
-	*bufferSize = 1;
-	*buffer = data++;
+	datalen--;
+	return *data++;
+}
+
+static void decompress_init(void)
+{
+	data = _lzma_data_start;
+	datalen = _lzma_data_end - _lzma_data_start;
+}
+
+static int decompress_data(unsigned char *buffer, UInt32 bufferSize,
+	int lc, int lp, int pb, unsigned char *outStream, UInt32 outSize,
+	UInt32 *outSizeProcessed)
+{
+	return LzmaDecode(buffer, bufferSize, lc, lp, pb, data, datalen,
+		outStream, outSize, outSizeProcessed);
+}
+#endif /* LZMA_WRAPPER */
+
+#if !(LZMA_WRAPPER)
+
+#define FLASH_BANK_SIZE	(2<<20)
+
+static unsigned char *flash_base = (unsigned char *) KSEG1ADDR(ADM5120_FLASH_START);
+static unsigned long flash_ofs = 0;
+static unsigned long flash_max = 0;
+static unsigned long flash_ofs_mask = (FLASH_BANK_SIZE-1);
+
+static __inline__ unsigned char get_byte(void)
+{
+	return *(flash_base+flash_ofs++);
+}
+
+static int lzma_read_byte(void *object, unsigned char **buffer, UInt32 *bufferSize)
+{
+	unsigned long len;
+
+	if (flash_ofs >= flash_max)
+		return LZMA_RESULT_DATA_ERROR;
+
+	len = flash_max-flash_ofs;
+
+#if (CONFIG_FLASH_SIZE > FLASH_BANK_SIZE)
+	if (flash_ofs < FLASH_BANK_SIZE) {
+		/* switch to bank 0 */
+		DBG("lzma_read_byte: switch to bank 0\n");
+
+		if (len > FLASH_BANK_SIZE-flash_ofs)
+			len = FLASH_BANK_SIZE-flash_ofs;
+	} else {
+		/* switch to bank 1 */
+		DBG("lzma_read_byte: switch to bank 1\n");
+	}
+#endif
+	DBG("lzma_read_byte: ofs=%08X, len=%08X\n", flash_ofs, len);
+
+	*buffer = flash_base+(flash_ofs & flash_ofs_mask);
+	*bufferSize = len;
+	flash_ofs += len;
 
 	return LZMA_RESULT_OK;
 }
 
-static __inline__ unsigned char get_byte(void)
-{
-	unsigned char *buffer;
-	UInt32 fake;
-
-	read_byte(0, &buffer, &fake);
-	return *buffer;
-}
+static ILzmaInCallback lzma_callback = {
+	.Read	= lzma_read_byte,
+};
 
 static __inline__ unsigned int read_le32(void *buf)
 {
-	unsigned char *p;
+	unsigned char *p = buf;
 
-	p = buf;
 	return ((unsigned int)p[0] + ((unsigned int)p[1] << 8) +
 		((unsigned int)p[2] << 16) +((unsigned int)p[3] << 24));
 }
 
-static void print_char(char ch)
+static void decompress_init(void)
 {
-	if (ch == '\n')
-		board_putc('\r');
-    	board_putc(ch);
-}
+	struct trx_header *hdr = NULL;
+	unsigned long kofs,klen;
 
-static void print_str(char * str)
-{
-	while ( *str != 0 )
-    		print_char(*str++);
-}
-
-static void print_hex(int val)
-{
-	int i;
-	int tmp;
-
-	print_str("0x");
-	for ( i=0 ; i<8 ; i++ ) {
-    		tmp = (val >> ((7-i) * 4 )) & 0xf;
-    		tmp = tmp < 10 ? (tmp + '0') : (tmp + 'A' - 10);
-    		board_putc(tmp);
-	}
-}
-
-#if !(LZMA_WRAPPER)
-static unsigned char *find_kernel(void)
-{
-	struct trx_header *hdr;
-	unsigned char *ret;
-
-    	print_str("Looking for TRX header... ");
+    	printf("Looking for TRX header... ");
 	/* look for trx header, 32-bit data access */
-	hdr = NULL;
-	for (ret = ((unsigned char *) KSEG1ADDR(ADM5120_FLASH_START));
-		ret < ((unsigned char *)KSEG1ADDR(ADM5120_FLASH_END));
-		ret += TRX_ALIGN) {
-
-		if (read_le32(ret) == TRX_MAGIC) {
-			hdr = (struct trx_header *)ret;
+	for (flash_ofs = 0; flash_ofs < FLASH_BANK_SIZE; flash_ofs += TRX_ALIGN) {
+		if (read_le32(&flash_base[flash_ofs]) == TRX_MAGIC) {
+			hdr = (struct trx_header *)&flash_base[flash_ofs];
 			break;
 		}
 	}
 
 	if (hdr == NULL) {
-		print_str("not found!\n");
-		return NULL;
+		printf("not found!\n");
+		/* no compressed kernel found, halting */
+		halt();
 	}
-
-	print_str("found at ");
-	print_hex((unsigned int)ret);
-	print_str(", kernel in partition ");
 
 	/* compressed kernel is in the partition 0 or 1 */
-	if ((read_le32(&hdr->offsets[1]) == 0) ||
-		(read_le32(&hdr->offsets[1]) > 65536)) {
-		ret += read_le32(&hdr->offsets[0]);
-		print_str("0\n");
+	kofs = read_le32(&hdr->offsets[1]);
+	if (kofs == 0 || kofs > 65536) {
+		klen = kofs-read_le32(&hdr->offsets[0]);
+		kofs = read_le32(&hdr->offsets[0]);
 	} else {
-		ret += read_le32(&hdr->offsets[1]);
-		print_str("1\n");
+		klen = read_le32(&hdr->offsets[2]);
+		if (klen > kofs)
+			klen -= kofs;
+		else
+			klen = read_le32(&hdr->len)-kofs;
 	}
 
-	return ret;
+	printf("found at %08X, kernel:%08X len:%08X\n", flash_ofs,
+		kofs, klen);
+
+	flash_ofs += kofs;
+	flash_max = flash_ofs+klen;
+}
+
+static int decompress_data(unsigned char *buffer, UInt32 bufferSize,
+	int lc, int lp, int pb, unsigned char *outStream, UInt32 outSize,
+	UInt32 *outSizeProcessed)
+{
+	return LzmaDecode(buffer, bufferSize, lc, lp, pb, &lzma_callback,
+		outStream, outSize, outSizeProcessed);
 }
 #endif /* !(LZMA_WRAPPER) */
-
-static void halt(void)
-{
-	print_str("\nSystem halted!\n");
-	for(;;);
-}
 
 /* should be the first function */
 void decompress_entry(unsigned long reg_a0, unsigned long reg_a1,
@@ -241,27 +284,13 @@ void decompress_entry(unsigned long reg_a0, unsigned long reg_a1,
 	unsigned int pb; /* pos state bits */
 	unsigned int osize; /* uncompressed size */
 	int res;
-#if !(LZMA_WRAPPER)
-	ILzmaInCallback callback;
-#endif
 
 	board_init();
 
-	print_str("\n\nLZMA loader for " CONFIG_BOARD_NAME
+	printf("\n\nLZMA loader for " CONFIG_BOARD_NAME
 			", Copyright (C) 2007 OpenWrt.org\n\n");
 
-#if LZMA_WRAPPER
-	data = _lzma_data_start;
-	datalen = _lzma_data_end - _lzma_data_start;
-#else
-	data = find_kernel();
-	if (data == NULL) {
-		/* no compressed kernel found, halting */
-		halt();
-	}
-
-	datalen = ((unsigned char *) KSEG1ADDR(ADM5120_FLASH_END))-data;
-#endif
+	decompress_init();
 
 	/* lzma args */
 	i = get_byte();
@@ -282,41 +311,32 @@ void decompress_entry(unsigned long reg_a0, unsigned long reg_a1,
 	for (i = 0; i < 4; i++)
 		get_byte();
 
-	print_str("decompressing kernel... ");
+	printf("decompressing kernel... ");
 
 	/* decompress kernel */
-#if LZMA_WRAPPER
-	res = LzmaDecode(workspace, ~0, lc, lp, pb, data, datalen,
-		(unsigned char*)LOADADDR, osize, &i);
-#else
-	callback.Read = read_byte;
-	res = LzmaDecode(workspace, ~0, lc, lp, pb, &callback,
-		(unsigned char*)LOADADDR, osize, &i);
-#endif
+	res = decompress_data(workspace, ~0, lc, lp, pb,
+		(unsigned char *)LOADADDR, osize, &i);
+
 	if (res != LZMA_RESULT_OK) {
-		print_str("failed!\n");
-		print_str("LzmaDecode: ");
+		printf("failed, ");
 		switch (res) {
 		case LZMA_RESULT_DATA_ERROR:
-			print_str("data error\n");
+			printf("data error!\n");
 			break;
 		case LZMA_RESULT_NOT_ENOUGH_MEM:
-			print_str("not enough memory\n");
+			printf("not enough memory!\n");
 			break;
 		default:
-			print_str("unknown error, err=0x");
-			print_hex(res);
-			print_str("\n");
+			printf("unknown error %d!\n", res);
 		}
 		halt();
-	}
-
-        print_str("done!\n");
+	} else
+		printf("done!\n");
 
 	blast_dcache(dcache_size, dcache_lsize);
 	blast_icache(icache_size, icache_lsize);
 
-	print_str("launching kernel...\n\n");
+	printf("launching kernel...\n\n");
 
 #ifdef CONFIG_PASS_KARGS
 	reg_a0 = 0;

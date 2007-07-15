@@ -121,15 +121,6 @@ static void uart_init(void)
 #endif
 }
 
-static void uart_putc(int ch)
-{
-	while ((UART_READ(UART_REG_FLAG) & UART_FLAG_TXFE) == 0);
-
-	UART_WRITE(UART_REG_DATA, ch);
-
-	while ((UART_READ(UART_REG_FLAG) & UART_FLAG_TXFE) == 0);
-}
-
 /*
  * INTC routines
  */
@@ -170,12 +161,13 @@ static void switch_init(void)
 	SWITCH_WRITE(SWITCH_REG_PORT4_LED, 0);
 }
 
-/*
- *  routines needed by decompress.c
- */
 void board_putc(int ch)
 {
-	uart_putc(ch);
+	while ((UART_READ(UART_REG_FLAG) & UART_FLAG_TXFE) == 0);
+
+	UART_WRITE(UART_REG_DATA, ch);
+
+	while ((UART_READ(UART_REG_FLAG) & UART_FLAG_TXFE) == 0);
 }
 
 void board_init(void)

@@ -2,7 +2,7 @@
   LzmaDecode.h
   LZMA Decoder interface
 
-  LZMA SDK 4.05 Copyright (c) 1999-2004 Igor Pavlov (2004-08-25)
+  LZMA SDK 4.16 Copyright (c) 1999-2005 Igor Pavlov (2005-03-18)
   http://www.7-zip.org/
 
   LZMA SDK is licensed under two licenses:
