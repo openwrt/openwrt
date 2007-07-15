@@ -4,6 +4,7 @@ my %preconfig;
 my %package;
 my %srcpackage;
 my %category;
+my %subdir;
 
 sub get_multiline {
 	my $prefix = shift;
@@ -81,6 +82,7 @@ sub parse_package_metadata() {
 			$subdir = $2;
 			$src = $3;
 			$subdir =~ s/^package\///;
+			$subdir{$src} = $subdir;
 			$srcpackage{$src} = [];
 			undef $pkg;
 		};
@@ -518,14 +520,12 @@ sub gen_package_mk() {
 			$dep =~ s/\+//;
 			my $idx;
 			my $pkg_dep = $package{$dep};
-			$pkg_dep or $pkg_dep = $srcpackage{$dep}->[0];
-			next unless defined $pkg_dep;
 			next if defined $pkg_dep->{vdepends};
 
 			if (defined $pkg_dep->{src}) {
 				($pkg->{src} ne $pkg_dep->{src}) and $idx = $pkg_dep->{subdir}.$pkg_dep->{src};
-			} elsif (defined($pkg_dep) && !defined($ENV{SDK})) {
-				$idx = $dep;
+			} elsif (defined($srcpackage{$dep})) {
+				$idx = $subdir{$dep}.$dep;
 			}
 			undef $idx if $idx =~ /^(kernel)|(base-files)$/;
 			if ($idx) {
