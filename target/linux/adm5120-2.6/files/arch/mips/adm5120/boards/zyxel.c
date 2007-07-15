@@ -73,6 +73,7 @@ static struct platform_device *p335_devices[] __initdata = {
 static void __init p33x_setup(void)
 {
 	gpio_request(ADM5120_GPIO_PIN5, NULL); /* for flash A20 line */
+	gpio_direction_output(ADM5120_GPIO_PIN5, 0);
 
 	/* setup data for flash0 device */
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
