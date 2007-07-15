@@ -176,6 +176,7 @@ endef
 
 define Package/ip6tables
   $(call Package/iptables/Default)
+  DEPENDS:=+kmod-ipv6
   CATEGORY:=Network
   TITLE:=IPv6 firewall administration tool
 endef
