@@ -72,12 +72,15 @@ sub parse_package_metadata() {
 	my $pkg;
 	my $makefile;
 	my $preconfig;
+	my $subdir;
 	my $src;
 	while (<>) {
 		chomp;
-		/^Source-Makefile: \s*(.+\/([^\/]+)\/Makefile)\s*$/ and do {
+		/^Source-Makefile: \s*((.+\/)([^\/]+)\/Makefile)\s*$/ and do {
 			$makefile = $1;
-			$src = $2;
+			$subdir = $2;
+			$src = $3;
+			$subdir =~ s/^package\///;
 			$srcpackage{$src} = [];
 			undef $pkg;
 		};
@@ -89,6 +92,7 @@ sub parse_package_metadata() {
 			$pkg->{default} = "m if ALL";
 			$pkg->{depends} = [];
 			$pkg->{builddepends} = [];
+			$pkg->{subdir} = $subdir;
 			$package{$1} = $pkg;
 			push @{$srcpackage{$src}}, $pkg;
 		};
@@ -503,7 +507,7 @@ sub gen_package_mk() {
 			$config = "\$(CONFIG_PACKAGE_$name)"
 		}
 		if ($config) {
-			print "package-$config += $pkg->{src}\n";
+			print "package-$config += $pkg->{subdir}$pkg->{src}\n";
 			$pkg->{prereq} and print "prereq-$config += $pkg->{src}\n";
 		}
 	
@@ -519,7 +523,7 @@ sub gen_package_mk() {
 			next if defined $pkg_dep->{vdepends};
 
 			if (defined $pkg_dep->{src}) {
-				($pkg->{src} ne $pkg_dep->{src}) and $idx = $pkg_dep->{src};
+				($pkg->{src} ne $pkg_dep->{src}) and $idx = $pkg_dep->{subdir}.$pkg_dep->{src};
 			} elsif (defined($pkg_dep) && !defined($ENV{SDK})) {
 				$idx = $dep;
 			}
@@ -531,7 +535,7 @@ sub gen_package_mk() {
 			}
 		}
 		if ($depline) {
-			$line .= "$pkg->{src}-compile: $depline\n";
+			$line .= $pkg->{subdir}."$pkg->{src}-compile: $depline\n";
 		}
 	}
 	
