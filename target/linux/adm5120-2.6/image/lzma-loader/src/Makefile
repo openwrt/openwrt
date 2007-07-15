@@ -38,6 +38,7 @@ BIN_FLAGS	:= -O binary -R .reginfo -R .note -R .comment -R .mdebug -S
 CFLAGS		= -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
 		  -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic \
 		  -ffunction-sections -pipe -mlong-calls -fno-common \
+		  -ffreestanding \
 		  -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap
 CFLAGS		+= -DLOADADDR=$(LOADADDR)
 
@@ -48,7 +49,7 @@ LDFLAGS		+= -e startup -T loader.lds -Ttext $(LZMA_TEXT_START)
 
 O_FORMAT 	= $(shell $(OBJDUMP) -i | head -2 | grep elf32)
 
-OBJECTS		:= head.o decompress.o board.o LzmaDecode.o
+OBJECTS		:= head.o decompress.o board.o printf.o LzmaDecode.o
 
 ifneq ($(strip $(LOADER_DATA)),)
 OBJECTS		+= data.o
