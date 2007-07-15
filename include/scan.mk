@@ -20,11 +20,11 @@ endif
 
 define PackageDir
   tmp/.$(SCAN_TARGET): tmp/info/.$(SCAN_TARGET)-$(1)
-  tmp/info/.$(SCAN_TARGET)-$(1): $(SCAN_DIR)/$(1)/Makefile $(SCAN_STAMP) $(foreach DEP,$(DEPS_$(SCAN_DIR)/$(1)/Makefile) $(SCAN_DEPS),$(wildcard $(if $(filter /%,$(DEP)),$(DEP),$(SCAN_DIR)/$(1)/$(DEP))))
+  tmp/info/.$(SCAN_TARGET)-$(1): $(SCAN_DIR)/$(2)/Makefile $(SCAN_STAMP) $(foreach DEP,$(DEPS_$(SCAN_DIR)/$(1)/Makefile) $(SCAN_DEPS),$(wildcard $(if $(filter /%,$(DEP)),$(DEP),$(SCAN_DIR)/$(1)/$(DEP))))
 	{ \
-		$$(call progress,Collecting $(SCAN_NAME) info: $(SCAN_DIR)/$(1)) \
-		echo Source-Makefile: $(SCAN_DIR)/$(1)/Makefile; \
-		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $(SCAN_DIR)/$(1) 2>/dev/null || echo "ERROR: please fix $(SCAN_DIR)/$(1)/Makefile" >&2; \
+		$$(call progress,Collecting $(SCAN_NAME) info: $(SCAN_DIR)/$(2)) \
+		echo Source-Makefile: $(SCAN_DIR)/$(2)/Makefile; \
+		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $(SCAN_DIR)/$(2) 2>/dev/null || echo "ERROR: please fix $(SCAN_DIR)/$(2)/Makefile" >&2; \
 		echo; \
 	} > $$@ || true
 endef
@@ -37,7 +37,9 @@ tmp/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
 	( \
 		cat $< | awk '{print "$(SCAN_DIR)/" $$0 "/Makefile" }' | xargs grep -HE '^ *SCAN_DEPS *= *' | awk -F: '{ gsub(/^.*DEPS *= */, "", $$2); print "DEPS_" $$1 "=" $$2 }'; \
 		awk -v deps="$$DEPS" '{ \
-			print "$$(eval $$(call PackageDir," $$0 "))"; \
+			info=$$0; \
+			gsub(/\//, "_", info); \
+			print "$$(eval $$(call PackageDir," info "," $$0 "))"; \
 		} ' < $<; \
 		true; \
 	) > $@
@@ -57,7 +59,7 @@ $(TARGET_STAMP):
 
 tmp/.$(SCAN_TARGET): $(TARGET_STAMP) $(SCAN_STAMP)
 	$(call progress,Collecting $(SCAN_NAME) info: merging...)
-	cat $(FILELIST) | awk '{print "tmp/info/.$(SCAN_TARGET)-" $$0}' | xargs cat > $@
+	cat $(FILELIST) | awk '{gsub(/\//, "_", $$0);print "tmp/info/.$(SCAN_TARGET)-" $$0}' | xargs cat > $@
 	$(call progress,Collecting $(SCAN_NAME) info: done)
 	echo
 
