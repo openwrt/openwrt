@@ -36,7 +36,7 @@ diff -urN linux-2.6.21.1.old/include/linux/netfilter_ipv4/ipt_ipp2p.h linux-2.6.
 diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/ipt_ipp2p.c linux-2.6.21.1.dev/net/ipv4/netfilter/ipt_ipp2p.c
 --- linux-2.6.21.1.old/net/ipv4/netfilter/ipt_ipp2p.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.21.1.dev/net/ipv4/netfilter/ipt_ipp2p.c	2007-05-26 20:21:54.587864144 +0200
-@@ -0,0 +1,881 @@
+@@ -0,0 +1,882 @@
 +#if defined(MODVERSIONS)
 +#include <linux/modversions.h>
 +#endif
@@ -893,6 +893,7 @@ diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/ipt_ipp2p.c linux-2.6.21.1.dev/n
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 +	.name		= "ipp2p",
 +	.match		= &match,
++	.family		= AF_INET,
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
 +	.matchsize	= sizeof(struct ipt_p2p_info),
 +#endif
