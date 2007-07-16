@@ -5,7 +5,7 @@
 # See /LICENSE for more information.
 #
 
-include $(TMP_DIR)/.host.mk
+-include $(TMP_DIR)/.host.mk
 
 export TAR
 
@@ -29,6 +29,11 @@ $(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
 		[ -n "$$TAR" -a -x "$$TAR" ] || TAR=`which tar 2>/dev/null`; \
 		echo "TAR:=$$TAR" >> $@; \
 		echo "BASH:=$(shell which bash)" >> $@; \
+		if find -L /tmp -maxdepth 0 >/dev/null 2>/dev/null; then \
+			echo 'FIND_L=find -L $$(1)' >>$@; \
+		else \
+			echo 'FIND_L=find $$(1) -follow' >> $@; \
+		fi; \
 	)
 
 endif
