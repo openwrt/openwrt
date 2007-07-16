@@ -7,6 +7,6 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/target.mk
 
-clean download prepare compile install menuconfig update refresh: FORCE
+clean download prepare compile install menuconfig oldconfig update refresh: FORCE
 	$(MAKE) -C $(BOARD)-$(KERNEL) $@
 
