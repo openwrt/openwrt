@@ -92,9 +92,11 @@ menuconfig: scripts/config/mconf tmp/.config-target.in tmp/.config-package.in FO
 	fi
 	$< Config.in
 
+kernel_oldconfig: .config FORCE
+	$(NO_TRACE_MAKE) -C target/linux oldconfig
+
 kernel_menuconfig: .config FORCE
 	$(NO_TRACE_MAKE) -C target/linux menuconfig
-
 
 package/% target/%: tmp/.packageinfo
 toolchain/% package/% target/%: tmp/.targetinfo

@@ -171,10 +171,10 @@ $(eval $(call shexport,Target/Description))
 download: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(STAMP_CONFIGURED)
 compile: $(LINUX_DIR)/.modules
-menuconfig: $(STAMP_PREPARED) FORCE
+oldconfig menuconfig: $(STAMP_PREPARED) FORCE
 	$(SCRIPT_DIR)/config.pl '+' $(GENERIC_LINUX_CONFIG) $(LINUX_CONFIG) > $(LINUX_DIR)/.config
 	$(call Kernel/Configure)
-	$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) menuconfig
+	$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) $@
 	$(SCRIPT_DIR)/config.pl '>' $(GENERIC_LINUX_CONFIG) $(LINUX_DIR)/.config > $(LINUX_CONFIG)
 
 install: $(LINUX_DIR)/.image
