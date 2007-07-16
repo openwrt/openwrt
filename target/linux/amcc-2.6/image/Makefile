@@ -7,6 +7,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+JFFS2_BLOCKSIZE=256k
+
 define Image/Prepare
 	cp $(LINUX_DIR)/arch/ppc/boot/images/uImage $(KDIR)/uImage
 endef
