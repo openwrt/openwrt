@@ -33,7 +33,7 @@ clean: linux-clean sdk-clean imagebuilder-clean image_clean
 
 prereq: FORCE
 	$(MAKE) -C linux/$(BOARD)-$(KERNEL) prereq
-	$(MAKE) -C $(IMAGE_DIR) prereq
+	[ \! -f $(IMAGE_DIR)/Makefile ] || $(MAKE) -C $(IMAGE_DIR) prereq
 
 sdk_install: FORCE
 	$(MAKE) -C sdk install
