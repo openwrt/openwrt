@@ -93,7 +93,6 @@ menuconfig: scripts/config/mconf tmp/.config-target.in tmp/.config-package.in FO
 	$< Config.in
 
 kernel_menuconfig: .config FORCE
-	-$(MAKE) target/linux-prepare
 	$(NO_TRACE_MAKE) -C target/linux menuconfig
 
 

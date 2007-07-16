@@ -98,15 +98,15 @@ define BuildKernel
 	$(call Kernel/Prepare)
 	touch $$@
 
-  $(STAMP_CONFIGURED): $(LINUX_DIR)/.prepared $(LINUX_CONFIG)
+  $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(LINUX_CONFIG) $(GENERIC_LINUX_CONFIG)
 	$(call Kernel/Configure)
 	touch $$@
 
-  $(LINUX_DIR)/.modules: $(LINUX_DIR)/.configured $(LINUX_DIR)/.config FORCE
+  $(LINUX_DIR)/.modules: $(STAMP_CONFIGURED) $(LINUX_DIR)/.config FORCE
 	$(call Kernel/CompileModules)
 	touch $$@
 
-  $(LINUX_DIR)/.image: $(LINUX_DIR)/.configured FORCE
+  $(LINUX_DIR)/.image: $(STAMP_CONFIGURED) FORCE
 	$(call Kernel/CompileImage)
 	touch $$@
 	
@@ -169,11 +169,11 @@ endef
 $(eval $(call shexport,Target/Description))
 
 download: $(DL_DIR)/$(LINUX_SOURCE)
-prepare: $(LINUX_DIR)/.configured
+prepare: $(STAMP_CONFIGURED)
 compile: $(LINUX_DIR)/.modules
-menuconfig: $(LINUX_DIR)/.prepared FORCE
-	$(call Kernel/Configure)
+menuconfig: $(STAMP_PREPARED) FORCE
 	$(SCRIPT_DIR)/config.pl '+' $(GENERIC_LINUX_CONFIG) $(LINUX_CONFIG) > $(LINUX_DIR)/.config
+	$(call Kernel/Configure)
 	$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) menuconfig
 	$(SCRIPT_DIR)/config.pl '>' $(GENERIC_LINUX_CONFIG) $(LINUX_DIR)/.config > $(LINUX_CONFIG)
 
