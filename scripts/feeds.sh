@@ -30,7 +30,7 @@ setup_symlinks() {
 	# so that we can make this structure be flat in $PACKAGE_DIR
 	for dir in $(ls $1/)
 	do
-		ln -s $1/$dir/*/* $2/
+		ln -s $1/$dir/* $2/
 	done
 }
 
