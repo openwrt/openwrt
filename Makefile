@@ -49,7 +49,7 @@ export SCAN_COOKIE
 
 tmp/.packageinfo tmp/.targetinfo: FORCE
 	mkdir -p tmp/info
-	$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPS="profiles/*.mk $(TOPDIR)/include/kernel*.mk" SCAN_DEPTH=1 SCAN_EXTRA=""
+	$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPS="profiles/*.mk $(TOPDIR)/include/kernel*.mk" SCAN_DEPTH=2 SCAN_EXTRA=""
 	$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS="$(TOPDIR)/include/package*.mk" SCAN_DEPTH=4 SCAN_EXTRA=""
 
 tmpinfo-clean: FORCE
