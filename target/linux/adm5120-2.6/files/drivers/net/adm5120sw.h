@@ -13,14 +13,17 @@
 #define SW_BASE	KSEG1ADDR(0x12000000)
 #define SW_DEVS	6
 
-#define ETH_TX_TIMEOUT	HZ/4
+#define ETH_TX_TIMEOUT		HZ*400
 #define ETH_FCS 4;
 
 #define ADM5120_CODE		0x00		/* CPU description */
 #define ADM5120_CODE_PQFP	0x20000000	/* package type */
+#define ADM5120_SW_CONF		0x20            /* Switch configuration register */
+#define ADM5120_SW_CONF_BPM	0x00300000      /* Mask for backpressure mode */
 #define ADM5120_CPUP_CONF	0x24		/* CPU port config */
 #define ADM5120_DISCCPUPORT	0x00000001	/* disable cpu port */
 #define ADM5120_CRC_PADDING	0x00000002	/* software crc */
+#define ADM5120_BTM		0x00000004      /* bridge test mode */
 #define ADM5120_DISUNSHIFT	9
 #define ADM5120_DISUNALL	0x00007e00	/* disable unknown from all */
 #define ADM5120_DISMCSHIFT	16
@@ -28,6 +31,7 @@
 #define ADM5120_PORT_CONF0	0x28
 #define ADM5120_ENMC		0x00003f00	/* Enable MC routing (ex cpu) */
 #define ADM5120_ENBP		0x003f0000	/* Enable Back Pressure */
+#define ADM5120_PORTDISALL     	0x0000003F
 #define ADM5120_VLAN_GI		0x40		/* VLAN settings */
 #define ADM5120_VLAN_GII	0x44
 #define ADM5120_SEND_TRIG	0x48
@@ -81,10 +85,10 @@ struct adm5120_dma {
 #define ADM5120_DMA_LENSHIFT	16
 #define ADM5120_DMA_FCSERR	0x00000008
 
-#define ADM5120_DMA_TXH		16
+#define ADM5120_DMA_TXH		2
 #define ADM5120_DMA_TXL		64
-#define ADM5120_DMA_RXH		16
-#define ADM5120_DMA_RXL		8
+#define ADM5120_DMA_RXH		2
+#define ADM5120_DMA_RXL		64
 
 #define ADM5120_DMA_RXSIZE	1550
 #define ADM5120_DMA_EXTRA	20
