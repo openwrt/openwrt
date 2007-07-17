@@ -44,7 +44,19 @@ static void switch_bank_gpio3(unsigned bank)
 	}
 }
 
-static struct mtd_partition easy83000_partitions[] = {
+static void switch_bank_gpio5(unsigned bank)
+{
+	switch (bank) {
+	case 0:
+		gpio_set_value(ADM5120_GPIO_PIN5, 0);
+		break;
+	case 1:
+		gpio_set_value(ADM5120_GPIO_PIN5, 1);
+		break;
+	}
+}
+
+static struct mtd_partition easy_partitions[] = {
 	{
 		.name	= "admboot",
 		.offset	= 0,
@@ -61,27 +73,83 @@ static struct mtd_partition easy83000_partitions[] = {
 	}
 };
 
-static struct platform_device *easy83000_devices[] __initdata = {
+static struct platform_device *easy5120pata_devices[] __initdata = {
 	&adm5120_flash0_device,
+	/* TODO: add VINETIC2 device? */
 };
 
-static void __init easy83000_setup(void)
+static struct platform_device *easy5120rt_devices[] __initdata = {
+	&adm5120_flash0_device,
+	&adm5120_usbc_device
+};
+
+static struct platform_device *easy5120wvoip_devices[] __initdata = {
+	&adm5120_flash0_device,
+	/* TODO: add VINETIC2 device? */
+};
+
+static struct platform_device *easy83000_devices[] __initdata = {
+	&adm5120_flash0_device,
+	/* TODO: add VINAX device? */
+};
+
+static void __init easy_setup_pqfp(void)
 {
 	gpio_request(ADM5120_GPIO_PIN3, NULL); /* for flash A20 line */
 	gpio_direction_output(ADM5120_GPIO_PIN3, 0);
 
 	/* setup data for flash0 device */
 	adm5120_flash0_data.switch_bank = switch_bank_gpio3;
-	adm5120_flash0_data.nr_parts = ARRAY_SIZE(easy83000_partitions);
-	adm5120_flash0_data.parts = easy83000_partitions;
+	adm5120_flash0_data.nr_parts = ARRAY_SIZE(easy_partitions);
+	adm5120_flash0_data.parts = easy_partitions;
 
 	/* TODO: setup mac addresses */
 }
 
+static void __init easy_setup_bga(void)
+{
+	gpio_request(ADM5120_GPIO_PIN5, NULL); /* for flash A20 line */
+	gpio_direction_output(ADM5120_GPIO_PIN5, 0);
+
+	/* setup data for flash0 device */
+	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
+	adm5120_flash0_data.nr_parts = ARRAY_SIZE(easy_partitions);
+	adm5120_flash0_data.parts = easy_partitions;
+
+	/* TODO: setup mac addresses */
+}
+
+static struct adm5120_board easy5120pata_board __initdata = {
+	.mach_type	= MACH_ADM5120_EASY5120PATA,
+	.name		= "Infineon EASY 5120P-ATA Reference Board",
+	.board_setup	= easy_setup_pqfp,
+	.num_eth_ports	= 6,
+	.num_devices	= ARRAY_SIZE(easy5120pata_devices),
+	.devices	= easy5120pata_devices,
+};
+
+static struct adm5120_board easy5120rt_board __initdata = {
+	.mach_type	= MACH_ADM5120_EASY5120RT,
+	.name		= "Infineon EASY 5120-RT Reference Board",
+	.board_setup	= easy_setup_bga,
+	.num_eth_ports	= 5,
+	.num_devices	= ARRAY_SIZE(easy5120rt_devices),
+	.devices	= easy5120rt_devices,
+};
+
+static struct adm5120_board easy5120wvoip_board __initdata = {
+	.mach_type	= MACH_ADM5120_EASY5120WVOIP,
+	.name		= "Infineon EASY 5120-WVoIP Reference Board",
+	.board_setup	= easy_setup_bga,
+	.num_eth_ports	= 6,
+	.num_devices	= ARRAY_SIZE(easy5120wvoip_devices),
+	.devices	= easy5120wvoip_devices,
+};
+
 static struct adm5120_board easy83000_board __initdata = {
 	.mach_type	= MACH_ADM5120_EASY83000,
-	.name		= "Infineon EASY-83000",
-	.board_setup	= easy83000_setup,
+	.name		= "Infineon EASY 83000 Reference Board",
+	.board_setup	= easy_setup_pqfp,
 	.num_eth_ports	= 6,
 	.num_devices	= ARRAY_SIZE(easy83000_devices),
 	.devices	= easy83000_devices,
@@ -89,6 +157,9 @@ static struct adm5120_board easy83000_board __initdata = {
 
 static int __init register_boards(void)
 {
+	adm5120_board_register(&easy5120pata_board);
+	adm5120_board_register(&easy5120rt_board);
+	adm5120_board_register(&easy5120wvoip_board);
 	adm5120_board_register(&easy83000_board);
 	return 0;
 }
