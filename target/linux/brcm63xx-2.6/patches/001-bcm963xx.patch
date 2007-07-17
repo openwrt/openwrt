@@ -2,17 +2,17 @@ diff -urN linux-2.6.19/arch/mips/Kconfig linux-2.6.19.new/arch/mips/Kconfig
 --- linux-2.6.19/arch/mips/Kconfig	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/arch/mips/Kconfig	2006-12-16 18:46:31.000000000 +0100
 @@ -4,6 +4,10 @@
-        # Horrible source of confusion.  Die, die, die ...
-        select EMBEDDED
-
+ 	# Horrible source of confusion.  Die, die, die ...
+ 	select EMBEDDED
+ 
 +config CFE
 +       bool
 +       # Common Firmware Environment
 +
  mainmenu "Linux/MIPS Kernel Configuration"
-
+ 
  menu "Machine selection"
-@@ -12,6 +12,18 @@
+@@ -15,6 +15,18 @@
  	prompt "System type"
  	default SGI_IP22
  
@@ -28,9 +28,9 @@ diff -urN linux-2.6.19/arch/mips/Kconfig linux-2.6.19.new/arch/mips/Kconfig
 +	help
 +	 This is a fmaily of boards based on the Broadcom MIPS32
 +
- config MIPS_MTX1
- 	bool "4G Systems MTX-1 board"
- 	select DMA_NONCOHERENT
+ config MACH_ALCHEMY
+ 	bool "Alchemy processor based machines"
+ 
 diff -urN linux-2.6.19/arch/mips/Makefile linux-2.6.19.new/arch/mips/Makefile
 --- linux-2.6.19/arch/mips/Makefile	2006-12-16 17:36:29.000000000 +0100
 +++ linux-2.6.19.new/arch/mips/Makefile	2006-12-16 18:46:31.000000000 +0100
@@ -57,7 +57,7 @@ diff -urN linux-2.6.19/arch/mips/Makefile linux-2.6.19.new/arch/mips/Makefile
 diff -urN linux-2.6.19/arch/mips/kernel/cpu-probe.c linux-2.6.19.new/arch/mips/kernel/cpu-probe.c
 --- linux-2.6.19/arch/mips/kernel/cpu-probe.c	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/arch/mips/kernel/cpu-probe.c	2006-12-16 18:46:31.000000000 +0100
-@@ -602,6 +602,25 @@
+@@ -590,6 +590,25 @@
  		return;
  }
  
@@ -83,7 +83,7 @@ diff -urN linux-2.6.19/arch/mips/kernel/cpu-probe.c linux-2.6.19.new/arch/mips/k
  static inline void cpu_probe_mips(struct cpuinfo_mips *c)
  {
  	decode_configs(c);
-@@ -736,6 +755,9 @@
+@@ -724,6 +743,9 @@
  	case PRID_COMP_LEGACY:
  		cpu_probe_legacy(c);
  		break;
@@ -126,7 +126,7 @@ diff -urN linux-2.6.19/arch/mips/mm/c-r4k.c linux-2.6.19.new/arch/mips/mm/c-r4k.
 diff -urN linux-2.6.19/arch/mips/mm/tlbex.c linux-2.6.19.new/arch/mips/mm/tlbex.c
 --- linux-2.6.19/arch/mips/mm/tlbex.c	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/arch/mips/mm/tlbex.c	2006-12-16 18:46:31.000000000 +0100
-@@ -880,6 +880,9 @@
+@@ -892,6 +892,9 @@
  	case CPU_4KSC:
  	case CPU_20KC:
  	case CPU_25KF:
@@ -139,7 +139,7 @@ diff -urN linux-2.6.19/arch/mips/mm/tlbex.c linux-2.6.19.new/arch/mips/mm/tlbex.
 diff -urN linux-2.6.19/arch/mips/pci/Makefile linux-2.6.19.new/arch/mips/pci/Makefile
 --- linux-2.6.19/arch/mips/pci/Makefile	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/arch/mips/pci/Makefile	2006-12-16 18:48:18.000000000 +0100
-@@ -17,6 +17,7 @@
+@@ -16,6 +16,7 @@
  obj-$(CONFIG_PCI_VR41XX)	+= ops-vr41xx.o pci-vr41xx.o
  obj-$(CONFIG_NEC_CMBVR4133)	+= fixup-vr4133.o
  obj-$(CONFIG_MARKEINS)		+= ops-emma2rh.o pci-emma2rh.o fixup-emma2rh.o
@@ -150,7 +150,7 @@ diff -urN linux-2.6.19/arch/mips/pci/Makefile linux-2.6.19.new/arch/mips/pci/Mak
 diff -urN linux-2.6.19/include/asm-mips/bootinfo.h linux-2.6.19.new/include/asm-mips/bootinfo.h
 --- linux-2.6.19/include/asm-mips/bootinfo.h	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/include/asm-mips/bootinfo.h	2006-12-16 18:46:31.000000000 +0100
-@@ -212,6 +212,14 @@
+@@ -213,6 +213,14 @@
  #define MACH_GROUP_NEC_EMMA2RH 25	/* NEC EMMA2RH (was 23)		*/
  #define  MACH_NEC_MARKEINS	0	/* NEC EMMA2RH Mark-eins	*/
  
