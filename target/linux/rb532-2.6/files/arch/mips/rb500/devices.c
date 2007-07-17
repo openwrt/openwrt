@@ -139,11 +139,17 @@ static struct platform_device nand_slot0 = {
 	.num_resources = ARRAY_SIZE(nand_slot0_res),
 };
 
+static struct platform_device rb500led = {
+	.name = "rb500-led",
+	.id = 0,
+};
+
 
 static struct platform_device *rb500_devs[] = {
 	&korina_dev0,
 	&nand_slot0,
-	&cf_slot0
+	&cf_slot0,
+	&rb500led
 };
 
 static void __init parse_mac_addr(char* macstr)

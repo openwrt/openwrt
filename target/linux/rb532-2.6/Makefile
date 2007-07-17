@@ -11,7 +11,7 @@ BOARD:=rb532
 BOARDNAME:=Mikrotik RouterBoard 532
 FEATURES:=jffs2
 
-LINUX_VERSION:=2.6.21.5
+LINUX_VERSION:=2.6.22.1
 
 include $(INCLUDE_DIR)/kernel-build.mk
 
