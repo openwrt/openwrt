@@ -1,7 +1,7 @@
 diff -urN linux-2.6.19/drivers/mtd/maps/Kconfig linux-2.6.19.new/drivers/mtd/maps/Kconfig
 --- linux-2.6.19/drivers/mtd/maps/Kconfig	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/drivers/mtd/maps/Kconfig	2006-12-18 17:21:07.000000000 +0100
-@@ -224,6 +224,13 @@
+@@ -283,6 +283,13 @@
  	  Flash memory access on 4G Systems MTX-1 Board. If you have one of
  	  these boards and would like to use the flash chips on it, say 'Y'.
  
@@ -18,7 +18,7 @@ diff -urN linux-2.6.19/drivers/mtd/maps/Kconfig linux-2.6.19.new/drivers/mtd/map
 diff -urN linux-2.6.19/drivers/mtd/maps/Makefile linux-2.6.19.new/drivers/mtd/maps/Makefile
 --- linux-2.6.19/drivers/mtd/maps/Makefile	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/drivers/mtd/maps/Makefile	2006-12-18 17:21:07.000000000 +0100
-@@ -70,3 +70,4 @@
+@@ -72,3 +72,4 @@
  obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
  obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o
  obj-$(CONFIG_MTD_TQM834x)	+= tqm834x.o
@@ -35,7 +35,7 @@ diff -urN linux-2.6.19/drivers/mtd/redboot.c linux-2.6.19.new/drivers/mtd/redboo
                               struct mtd_partition **pparts,
                               unsigned long fis_origin)
  {
-@@ -132,6 +132,14 @@
+@@ -146,6 +146,14 @@
  		goto out;
  	}
  
@@ -50,7 +50,7 @@ diff -urN linux-2.6.19/drivers/mtd/redboot.c linux-2.6.19.new/drivers/mtd/redboo
  	for (i = 0; i < numslots; i++) {
  		struct fis_list *new_fl, **prev;
  
-@@ -154,9 +162,8 @@
+@@ -168,9 +176,8 @@
  		new_fl->img = &buf[i];
                  if (fis_origin) {
                          buf[i].flash_base -= fis_origin;
