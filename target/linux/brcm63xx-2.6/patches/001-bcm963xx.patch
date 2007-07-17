@@ -57,7 +57,7 @@ diff -urN linux-2.6.19/arch/mips/Makefile linux-2.6.19.new/arch/mips/Makefile
 diff -urN linux-2.6.19/arch/mips/kernel/cpu-probe.c linux-2.6.19.new/arch/mips/kernel/cpu-probe.c
 --- linux-2.6.19/arch/mips/kernel/cpu-probe.c	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/arch/mips/kernel/cpu-probe.c	2006-12-16 18:46:31.000000000 +0100
-@@ -590,6 +590,25 @@
+@@ -590,6 +590,28 @@
  		return;
  }
  
@@ -74,6 +74,9 @@ diff -urN linux-2.6.19/arch/mips/kernel/cpu-probe.c linux-2.6.19.new/arch/mips/k
 +       case PRID_IMP_BCM6348:
 +               c->cputype = CPU_BCM6348;
 +               break;
++	case PRID_IMP_BCM6358:
++		c->cputype = CPU_BCM6358;
++		break;
 +       default:
 +               c->cputype = CPU_UNKNOWN;
 +               break;
@@ -96,13 +99,14 @@ diff -urN linux-2.6.19/arch/mips/kernel/cpu-probe.c linux-2.6.19.new/arch/mips/k
 diff -urN linux-2.6.19/arch/mips/kernel/proc.c linux-2.6.19.new/arch/mips/kernel/proc.c
 --- linux-2.6.19/arch/mips/kernel/proc.c	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/arch/mips/kernel/proc.c	2006-12-16 18:46:31.000000000 +0100
-@@ -84,6 +84,9 @@
+@@ -84,6 +84,10 @@
  	[CPU_VR4181A]	= "NEC VR4181A",
  	[CPU_SR71000]	= "Sandcraft SR71000",
  	[CPU_PR4450]	= "Philips PR4450",
 +	[CPU_BCM6338]   = "BCM6338",
 +	[CPU_BCM6345]   = "BCM6345",
 +	[CPU_BCM6348]   = "BCM6348",
++	[CPU_BCM6358]	= "BCM6358",
  };
  
  
@@ -113,7 +117,7 @@ diff -urN linux-2.6.19/arch/mips/mm/c-r4k.c linux-2.6.19.new/arch/mips/mm/c-r4k.
  		if (!(config & MIPS_CONF_M))
  			panic("Don't know how to probe P-caches on this cpu.");
  
-+		if (c->cputype == CPU_BCM6338 || c->cputype == CPU_BCM6345 || c->cputype == CPU_BCM6348)
++		if (c->cputype == CPU_BCM6338 || c->cputype == CPU_BCM6345 || c->cputype == CPU_BCM6348 || c->cputype == CPU_BCM6358)
 +		{
 +			printk("bcm963xx: enabling icache and dcache...\n");
 +			/* Enable caches */
@@ -126,13 +130,14 @@ diff -urN linux-2.6.19/arch/mips/mm/c-r4k.c linux-2.6.19.new/arch/mips/mm/c-r4k.
 diff -urN linux-2.6.19/arch/mips/mm/tlbex.c linux-2.6.19.new/arch/mips/mm/tlbex.c
 --- linux-2.6.19/arch/mips/mm/tlbex.c	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/arch/mips/mm/tlbex.c	2006-12-16 18:46:31.000000000 +0100
-@@ -892,6 +892,9 @@
+@@ -892,6 +892,10 @@
  	case CPU_4KSC:
  	case CPU_20KC:
  	case CPU_25KF:
 +	case CPU_BCM6338:
 +	case CPU_BCM6345:
 +	case CPU_BCM6348:
++	case CPU_BCM6358:
  		tlbw(p);
  		break;
  
@@ -150,7 +155,7 @@ diff -urN linux-2.6.19/arch/mips/pci/Makefile linux-2.6.19.new/arch/mips/pci/Mak
 diff -urN linux-2.6.19/include/asm-mips/bootinfo.h linux-2.6.19.new/include/asm-mips/bootinfo.h
 --- linux-2.6.19/include/asm-mips/bootinfo.h	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/include/asm-mips/bootinfo.h	2006-12-16 18:46:31.000000000 +0100
-@@ -213,6 +213,14 @@
+@@ -213,6 +213,15 @@
  #define MACH_GROUP_NEC_EMMA2RH 25	/* NEC EMMA2RH (was 23)		*/
  #define  MACH_NEC_MARKEINS	0	/* NEC EMMA2RH Mark-eins	*/
  
@@ -161,6 +166,7 @@ diff -urN linux-2.6.19/include/asm-mips/bootinfo.h linux-2.6.19.new/include/asm-
 +#define MACH_BCM96338          0
 +#define MACH_BCM96345          1
 +#define MACH_BCM96348          2
++#define MACH_BCM96358		3
 +
  #define CL_SIZE			COMMAND_LINE_SIZE
  
@@ -168,7 +174,7 @@ diff -urN linux-2.6.19/include/asm-mips/bootinfo.h linux-2.6.19.new/include/asm-
 diff -urN linux-2.6.19/include/asm-mips/cpu.h linux-2.6.19.new/include/asm-mips/cpu.h
 --- linux-2.6.19/include/asm-mips/cpu.h	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/include/asm-mips/cpu.h	2006-12-16 18:46:31.000000000 +0100
-@@ -103,6 +103,13 @@
+@@ -103,6 +103,14 @@
  
  #define PRID_IMP_SR71000        0x0400
  
@@ -178,11 +184,12 @@ diff -urN linux-2.6.19/include/asm-mips/cpu.h linux-2.6.19.new/include/asm-mips/
 +#define PRID_IMP_BCM6338       	0x9000
 +#define PRID_IMP_BCM6345       	0x8000
 +#define PRID_IMP_BCM6348       	0x9100
++#define PRID_IMP_BCM6358		0x9200
 +
  /*
   * Definitions for 7:0 on legacy processors
   */
-@@ -200,7 +207,10 @@
+@@ -200,7 +207,11 @@
  #define CPU_SB1A		62
  #define CPU_74K			63
  #define CPU_R14000		64
@@ -190,14 +197,15 @@ diff -urN linux-2.6.19/include/asm-mips/cpu.h linux-2.6.19.new/include/asm-mips/
 +#define CPU_BCM6338             65
 +#define CPU_BCM6345             66
 +#define CPU_BCM6348             67
-+#define CPU_LAST		67
++#define CPU_BCM6358		 68	
++#define CPU_LAST		68
  
  /*
   * ISA Level encodings
 diff -urN linux-2.6.19/include/asm-mips/module.h linux-2.6.19.new/include/asm-mips/module.h
 --- linux-2.6.19/include/asm-mips/module.h	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/include/asm-mips/module.h	2006-12-16 19:03:22.000000000 +0100
-@@ -112,6 +112,12 @@
+@@ -112,6 +112,14 @@
  #define MODULE_PROC_FAMILY "RM9000 "
  #elif defined CONFIG_CPU_SB1
  #define MODULE_PROC_FAMILY "SB1 "
@@ -207,6 +215,8 @@ diff -urN linux-2.6.19/include/asm-mips/module.h linux-2.6.19.new/include/asm-mi
 +#define MODULE_PROC_FAMILY "BCM6345 "
 +#elif defined CONFIG_CPU_BCM6348
 +#define MODULE_PROC_FAMILY "BCM6348 "
++#elif defined CONFIG_CPU_BCM6358
++#define MODULE_PROC_FAMILY "BCM6358 "
  #else
  #error MODULE_PROC_FAMILY undefined for your processor configuration
  #endif
