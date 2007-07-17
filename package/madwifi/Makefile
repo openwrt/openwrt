@@ -81,7 +81,7 @@ endif
 define KernelPackage/madwifi
   SUBMENU:=Wireless Drivers
   TITLE:=Driver for Atheros wireless chipsets
-  DEPENDS:=+wireless-tools
+  DEPENDS:=+wireless-tools @!LINUX_2_6_AVR32
   DESCRIPTION:=\
 	This package contains a driver for Atheros 802.11a/b/g chipsets.
   URL:=http://madwifi.org/

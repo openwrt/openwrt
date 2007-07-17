@@ -26,7 +26,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/acx
   TITLE:=Driver for TI ACX1xx chipset
-  DEPENDS:=@LINUX_2_6 +wireless-tools
+  DEPENDS:=@LINUX_2_6&&!LINUX_2_6_AVR32 +wireless-tools
   DESCRIPTION:=\
 	This package contains a driver for TI ACX1xx 802.11a/b/g chipsets.
   URL:=http://acx100.sourceforge.net/
