@@ -66,14 +66,14 @@ static int __init mem_check_pattern(u8 *addr, unsigned long offs)
 	if (u == v)
 		v = 0xAAAAAAAA;
 
-	mem_dbg("write 0x%08lX to 0x%08lX\n", v, (unsigned long)p1);
+	mem_dbg("write 0x%08x to 0x%08lX\n", v, (unsigned long)p1);
 
 	*p1 = v;
 	mem_dbg("delay %d ns\n", MEM_WR_DELAY);
 	adm5120_ndelay(MEM_WR_DELAY);
 	u = *p2;
 
-	mem_dbg("pattern at 0x%08lX is 0x%08lX\n", (unsigned long)p2, u);
+	mem_dbg("pattern at 0x%08lX is 0x%08x\n", (unsigned long)p2, u);
 
 	/* restore original value */
 	*p1 = t;
@@ -108,19 +108,19 @@ static void __init adm5120_detect_memsize(void)
 	MPMC_WRITE(MPMC_REG_DC0, MPMC_READ(MPMC_REG_DC0) & ~DC_BE);
 	MPMC_WRITE(MPMC_REG_DC1, MPMC_READ(MPMC_REG_DC1) & ~DC_BE);
 
-	mem_dbg("checking for %ldMB chip in 1st bank\n", maxsize >> 20);
+	mem_dbg("checking for %08xMB chip in 1st bank\n", maxsize >> 20);
 
 	/* detect size of the 1st SDRAM bank */
 	p = (u8 *)KSEG1ADDR(0);
 	for (size = 2<<20; size <= (maxsize >> 1); size <<= 1) {
 		if (mem_check_pattern(p, size)) {
 			/* mirrored address */
-			mem_dbg("mirrored data found at offset 0x%lX\n", size);
+			mem_dbg("mirrored data found at offset 0x%08x\n", size);
 			break;
 		}
 	}
 
-	mem_dbg("chip size in 1st bank is %ldMB\n", size >> 20);
+	mem_dbg("chip size in 1st bank is %08xMB\n", size >> 20);
 	adm5120_memsize = size;
 
 	if (size != maxsize)
@@ -168,7 +168,7 @@ out:
 	MPMC_WRITE(MPMC_REG_DC0, MPMC_READ(MPMC_REG_DC0) | DC_BE);
 	MPMC_WRITE(MPMC_REG_DC1, MPMC_READ(MPMC_REG_DC1) | DC_BE);
 
-	mem_dbg("%dx%ldMB memory found\n", (adm5120_memsize == size) ? 1 : 2 ,
+	mem_dbg("%dx%08xMB memory found\n", (adm5120_memsize == size) ? 1 : 2 ,
 		size >>20);
 }
 
