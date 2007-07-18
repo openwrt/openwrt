@@ -43,6 +43,7 @@ define KernelPackage/hostap
   $(call KernelPackage/hostap/Default)
   DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT +kmod-ieee80211 +kmod-crypto
   TITLE:=Host AP support for Prism2/2.5/3
+  KCONFIG:=CONFIG_HOSTAP
   DESCRIPTION+=\\\
 	\\\
 	This package contains the base Host AP driver code that is shared by \\\
@@ -70,6 +71,7 @@ define KernelPackage/hostap-pci
   $(call KernelPackage/hostap/Default)
   DEPENDS:=kmod-hostap
   TITLE:=Host AP driver for PCI adaptors
+  KCONFIG:=CONFIG_HOSTAP_PCI
   DESCRIPTION+=\\\
 	\\\
 	This package contains the Host AP driver for Prism2.5 PCI adaptors.
@@ -89,6 +91,7 @@ endef
 define KernelPackage/hostap-plx
   $(call KernelPackage/hostap/Default)
   DEPENDS:=kmod-hostap
+  KCONFIG:=CONFIG_HOSTAP_PLX
   TITLE:=Host AP driver for PLX9052 based PCI adaptors
   DESCRIPTION+=\\\
 	\\\
