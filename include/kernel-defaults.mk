@@ -46,11 +46,11 @@ define Kernel/Configure/2.6
 	-$(MAKE) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" oldconfig prepare scripts
 endef
 define Kernel/Configure/Default
-	@if [ -f "./config/profile-$(PROFILE)" ]; then \
-		$(SCRIPT_DIR)/config.pl '+' $(GENERIC_LINUX_CONFIG) '+' $(LINUX_CONFIG) ./config/profile-$(PROFILE) > $(LINUX_DIR)/.config; \
-	else \
-		$(SCRIPT_DIR)/config.pl '+' $(GENERIC_LINUX_CONFIG) $(LINUX_CONFIG) > $(LINUX_DIR)/.config; \
-	fi
+	$(SCRIPT_DIR)/config.pl '+' $(GENERIC_LINUX_CONFIG) \
+		$(if $(wildcard ./config/profile-$(PROFILE)),'+' $(LINUX_CONFIG) ./config/profile-$(PROFILE), $(LINUX_CONFIG)) \
+		> $(LINUX_DIR)/.config.target
+	$(SCRIPT_DIR)/metadata.pl kconfig $(TMP_DIR)/.packageinfo $(TOPDIR)/.config > $(LINUX_DIR)/.config.override
+	$(SCRIPT_DIR)/config.pl 'm+' $(LINUX_DIR)/.config.target $(LINUX_DIR)/.config.override >$(LINUX_DIR)/.config
 	$(call Kernel/Configure/$(KERNEL))
 	rm -rf $(KERNEL_BUILD_DIR)/modules
 	@rm -f $(BUILD_DIR)/linux

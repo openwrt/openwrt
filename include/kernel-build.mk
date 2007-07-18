@@ -98,7 +98,7 @@ define BuildKernel
 	$(call Kernel/Prepare)
 	touch $$@
 
-  $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(LINUX_CONFIG) $(GENERIC_LINUX_CONFIG)
+  $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(LINUX_CONFIG) $(GENERIC_LINUX_CONFIG) $(TOPDIR)/.config
 	$(call Kernel/Configure)
 	touch $$@
 

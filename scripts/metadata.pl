@@ -137,6 +137,42 @@ sub parse_package_metadata() {
 	return %category;
 }
 
+sub gen_kconfig_overrides() {
+	my %config;
+	my $package;
+	my $pkginfo = shift @ARGV;
+	my $cfgfile = shift @ARGV;
+
+	# parameter 2: build system config
+	open FILE, "<$cfgfile" or return;
+	while (<FILE>) {
+		/^(CONFIG_.+?)=(.+)$/ and $config{$1} = 1;
+	}
+	close FILE;
+
+	# parameter 1: package metadata
+	open FILE, "<$pkginfo" or return;
+	while (<FILE>) {
+		/^Package:\s*(.+?)\s*$/ and $package = $1;
+		/^Kernel-Config:\s*(.+?)\s*$/ and do {
+			my @config = split /\s+/, $1;
+			foreach my $config (@config) {
+				my $val = 'm';
+				if ($config =~ /^(.+?)=(.+)$/) {
+					$config = $1;
+					$val = $2;
+				}
+				if ($config{"CONFIG_PACKAGE_$package"} and ($config ne 'n')) {
+					print "$config=$val\n";
+				} else {
+					print "# $config is not set\n";
+				}
+			}
+		};
+	};
+	close FILE;
+}
+
 sub merge_package_lists($$) {
 	my $list1 = shift;
 	my $list2 = shift;
@@ -572,13 +608,16 @@ sub parse_command() {
 		/^target_config$/ and return gen_target_config();
 		/^package_mk$/ and return gen_package_mk();
 		/^package_config$/ and return gen_package_config();
+		/^kconfig/ and return gen_kconfig_overrides();
 	}
 	print <<EOF
 Available Commands:
 	$0 target_mk [file] 		Target metadata in makefile format
 	$0 target_config [file] 	Target metadata in Kconfig format
-	$0 package_mk [file] 		Package metadata in makefile format
+	$0 package_mk [file]    	Package metadata in makefile format
 	$0 package_config [file] 	Package metadata in Kconfig format
+	$0 kconfig [file] [config]	Kernel config overrides
+
 EOF
 }
 
