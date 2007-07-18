@@ -407,6 +407,10 @@ int __init init_adm5120_map(void)
 	struct mtd_partition *parts;
 	int i, parsed_nr_parts = 0;
 #endif
+
+	if (adm5120_nand_boot)
+		return -ENODEV;
+
 	printk("adm5120 : flash init : 0x%08x 0x%08x\n", WINDOW_ADDR, adm5120_board.flash0_size);
 	adm5120_map.virt = ioremap_nocache(WINDOW_ADDR, adm5120_board.flash0_size);
 
@@ -433,7 +437,7 @@ int __init init_adm5120_map(void)
 
 #ifdef CONFIG_MTD_PARTITIONS
 
-	if (adm5120_boot_loader == BOOT_LOADER_CFE)
+	if (adm5120_boot_loader == BOOT_LOADER_CFE || adm5120_boot_loader == BOOT_LOADER_UNKNOWN)
 	{
 		printk(KERN_NOTICE "adm5120 : using CFE flash mapping\n");
 		parts = init_mtd_partitions(adm5120_mtd, size);
