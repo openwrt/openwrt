@@ -13,12 +13,14 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/delay.h>
+
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/bootinfo.h>
+#include <asm/mach-adm5120/adm5120_info.h>
+#include <asm/mach-adm5120/adm5120_defs.h>
 
-#define SMEM1_BASE 0x10000000   // from ADM5120 documentation
-#define SMEM1(x) (*((volatile unsigned char *) (KSEG1ADDR(SMEM1_BASE) + x)))
+#define SMEM1(x) (*((volatile unsigned char *) (KSEG1ADDR(ADM5120_SRAM1_BASE) + x)))
 
 #define NAND_RW_REG	0x0	//data register
 #define NAND_SET_CEn	0x1	//CE# low
@@ -86,6 +88,10 @@ unsigned get_rbnand_block_size(void) {
 EXPORT_SYMBOL(get_rbnand_block_size);
 
 int __init rbmips_init(void) {
+
+	if (!adm5120_nand_boot)
+		return -ENODEV;
+
 	memset(&rmtd, 0, sizeof(rmtd));
 	memset(&rnand, 0, sizeof(rnand));
 	printk(KERN_INFO "RB1xx nand\n");
@@ -93,11 +99,11 @@ int __init rbmips_init(void) {
 	MEM32(0xB2000008) = 0x1;
 	SMEM1(NAND_SET_SPn) = 0x01;
 	SMEM1(NAND_CLR_WPn) = 0x01;
-	rnand.IO_ADDR_R = (unsigned char *)KSEG1ADDR(SMEM1_BASE);
+	rnand.IO_ADDR_R = (unsigned char *)KSEG1ADDR(ADM5120_SRAM1_BASE);
 	rnand.IO_ADDR_W = rnand.IO_ADDR_R;
 	rnand.cmd_ctrl = rbmips_hwcontrol100;
 	rnand.dev_ready = rb100_dev_ready;
-	p_nand = (void __iomem *)ioremap(( unsigned long)SMEM1_BASE, 0x1000);
+	p_nand = (void __iomem *)ioremap(( unsigned long)ADM5120_SRAM1_BASE, 0x1000);
 	if (!p_nand) {
 		printk(KERN_WARNING "RB1xx nand Unable ioremap buffer\n");
 		return -ENXIO;
