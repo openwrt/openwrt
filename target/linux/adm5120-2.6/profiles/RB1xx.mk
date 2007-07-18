@@ -8,6 +8,7 @@
 define Profile/RouterBoard
   NAME:=RouterBoard RB1xx
   PACKAGES:=kmod-madwifi
+  FEATURES+=tgz
 endef
 
 define Profile/RouterBoard/Description

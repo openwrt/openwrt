@@ -36,7 +36,7 @@ menu "Target Images"
 
 	config TARGET_ROOTFS_TGZ
 		bool "tgz"
-		default y if !USES_SQUASHFS && !USES_JFFS2
+		default y if USES_TGZ
 		depends !TARGET_ROOTFS_INITRAMFS
 		help
 		  Build a compressed tar archive of the the root filesystem
