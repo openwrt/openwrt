@@ -32,8 +32,14 @@
 struct adm5120_flash_platform_data {
 	void			(*set_vpp)(struct map_info *, int);
 	void			(*switch_bank)(unsigned);
+#ifdef CONFIG_MTD_PARTITIONS
 	unsigned int		nr_parts;
 	struct mtd_partition	*parts;
+#endif
+};
+
+struct adm5120_nand_platform_data {
+	/* TODO : not yet implemented */
 };
 
 struct adm5120_switch_platform_data {
@@ -54,11 +60,13 @@ struct adm5120_pci_platform_data {
 
 extern struct adm5120_flash_platform_data adm5120_flash0_data;
 extern struct adm5120_flash_platform_data adm5120_flash1_data;
+extern struct adm5120_nand_platform_data adm5120_nand_data;
 extern struct adm5120_pci_platform_data adm5120_pci_data;
 extern struct adm5120_switch_platform_data adm5120_switch_data;
 
 extern struct platform_device adm5120_flash0_device;
 extern struct platform_device adm5120_flash1_device;
+extern struct platform_device adm5120_nand_device;
 extern struct platform_device adm5120_usbc_device;
 extern struct platform_device adm5120_pci_device;
 extern struct platform_device adm5120_switch_device;
