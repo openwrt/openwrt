@@ -172,8 +172,8 @@ download: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(STAMP_CONFIGURED)
 compile: $(LINUX_DIR)/.modules
 oldconfig menuconfig: $(STAMP_PREPARED) FORCE
-	$(SCRIPT_DIR)/config.pl '+' $(GENERIC_LINUX_CONFIG) $(LINUX_CONFIG) > $(LINUX_DIR)/.config
 	$(call Kernel/Configure)
+	$(SCRIPT_DIR)/config.pl '+' $(GENERIC_LINUX_CONFIG) $(LINUX_CONFIG) > $(LINUX_DIR)/.config
 	$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) $@
 	$(SCRIPT_DIR)/config.pl '>' $(GENERIC_LINUX_CONFIG) $(LINUX_DIR)/.config > $(LINUX_CONFIG)
 
