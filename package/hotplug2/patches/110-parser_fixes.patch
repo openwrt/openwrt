@@ -1,0 +1,22 @@
+Index: hotplug2-0.9/rules.c
+===================================================================
+--- hotplug2-0.9.orig/rules.c	2007-07-18 09:15:38.968308540 +0200
++++ hotplug2-0.9/rules.c	2007-07-18 09:18:52.135316499 +0200
+@@ -756,6 +756,7 @@
+ 		ERROR("rules parse","Unable to parse rules file.");
+ 		return -1;
+ 	}
++	*return_rules = rules;
+ 
+ 	unmap_file(&filemap);
+ 
+@@ -997,7 +998,8 @@
+ 	
+ 	if (!terminate) {
+ 		/* A little bit hacky cleanup */
+-		return_rules->rules_c--;
++		if (!nested)
++			return_rules->rules_c--;
+ 		return return_rules;
+ 	} else {
+ 		/*
