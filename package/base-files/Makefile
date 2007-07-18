@@ -72,7 +72,7 @@ endef
 define Package/libgcc
   $(call Package/gcc/Default)
   TITLE:=GCC support library
-  DEPENDS:=@!LINUX_2_6_AVR32
+  DEPENDS:=@!LINUX_2_6_AVR32||@!NATIVE_TOOLCHAIN
 endef
 
 define Package/libssp
