@@ -20,7 +20,7 @@ ARCH:=$(shell uname -m | sed \
 )
 BOARD:=uml
 BOARDNAME:=User Mode Linux
-FEATURES:=broken
+FEATURES:=broken ext2
 LINUX_CONFIG:=$(CURDIR)/config/$(ARCH)
 
 LINUX_VERSION:=2.6.22.1
