@@ -114,7 +114,7 @@ struct platform_device adm5120_flash1_device =	{
 struct resource adm5120_nand_resource[] = {
 	[0] = {
 		.start	= ADM5120_SRAM1_BASE,
-		.end	= ADM5120_SRAM1_BASE+0x1000-1,
+		.end	= ADM5120_SRAM1_BASE+ADM5120_MPMC_SIZE-1,
 		.flags	= IORESOURCE_MEM,
 	},
 };
