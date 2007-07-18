@@ -90,6 +90,7 @@ define Image/Build
 # this line is here intentionally
 ifneq ($(1),jffs2-256k)
 ifneq ($(1),jffs2-128k)
+ifneq ($(1),tgz)
 	$(call Image/Build/Compex,$(1),wp54g-wrt,$(patsubst jffs2-%,jffs2,$(1)),WP54G-WRT)
 ifeq ($(CONFIG_DEVEL),y)
 	$(call Image/Build/Edimax,$(1),br-6104k,$(patsubst jffs2-%,jffs2,$(1)),BR-6104K)
@@ -116,6 +117,7 @@ ifeq ($(CONFIG_DEVEL),y)
 	$(call Image/Build/MyLoader,$(1),wp54ag,$(patsubst jffs2-%,jffs2,$(1)),WP54AG)
 	$(call Image/Build/MyLoader,$(1),wpp54g,$(patsubst jffs2-%,jffs2,$(1)),WPP54G)
 	$(call Image/Build/MyLoader,$(1),wpp54ag,$(patsubst jffs2-%,jffs2,$(1)),WPP54AG)
+endif
 endif
 endif
 endif
