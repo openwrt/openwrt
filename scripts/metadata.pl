@@ -139,6 +139,7 @@ sub parse_package_metadata() {
 
 sub gen_kconfig_overrides() {
 	my %config;
+	my %kconfig;
 	my $package;
 	my $pkginfo = shift @ARGV;
 	my $cfgfile = shift @ARGV;
@@ -158,19 +159,29 @@ sub gen_kconfig_overrides() {
 			my @config = split /\s+/, $1;
 			foreach my $config (@config) {
 				my $val = 'm';
+				my $override;
 				if ($config =~ /^(.+?)=(.+)$/) {
 					$config = $1;
+					$override = 1;
 					$val = $2;
 				}
 				if ($config{"CONFIG_PACKAGE_$package"} and ($config ne 'n')) {
-					print "$config=$val\n";
-				} else {
-					print "# $config is not set\n";
+					$kconfig{$config} = $val;
+				} elsif (!$override) {
+					$kconfig{$config} or $kconfig{$config} = 'n';
 				}
 			}
 		};
 	};
 	close FILE;
+
+	foreach my $kconfig (sort keys %kconfig) {
+		if ($kconfig{$kconfig} eq 'n') {
+			print "# $kconfig is not set\n";
+		} else {
+			print "$kconfig=$kconfig{$kconfig}\n";
+		}
+	}
 }
 
 sub merge_package_lists($$) {
