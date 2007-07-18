@@ -19,7 +19,7 @@ define KernelPackage/ieee80211
 	- ieee80211_crypt_tkip \\\
 	- ieee80211_crytp_ccmp \\\
   DEPENDS:=@LINUX_2_6 +kmod-crypto
-  KCONFIG:=$(CONFIG_IEEE80211)
+  KCONFIG:=CONFIG_IEEE80211
   FILES:= \
   	$(LINUX_DIR)/net/ieee80211/*.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,10, \
@@ -37,7 +37,7 @@ $(eval $(call KernelPackage,ieee80211))
 define KernelPackage/ieee80211-softmac
   TITLE:=ieee80211 SoftMAC support
   DEPENDS:=kmod-ieee80211
-  KCONFIG:=$(CONFIG_IEEE80211_SOFTMAC)
+  KCONFIG:=CONFIG_IEEE80211_SOFTMAC
   FILES:= \
 	$(LINUX_DIR)/net/ieee80211/softmac/*.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,ieee80211softmac)
@@ -48,7 +48,7 @@ $(eval $(call KernelPackage,ieee80211-softmac))
 define KernelPackage/mac80211
   TITLE:=mac80211 (Devicescape) support
   DEPENDS:=@LINUX_2_6
-  KCONFIG:=$(CONFIG_MAC80211)
+  KCONFIG:=CONFIG_MAC80211
   FILES:= \
   	$(LINUX_DIR)/net/wireless/cfg80211.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/net/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
@@ -65,7 +65,7 @@ define KernelPackage/net-bcm43xx
 	Includes: \\\
 	- bcm43xx
   DEPENDS:=kmod-ieee80211-softmac
-  KCONFIG:=$(CONFIG_BCM43XX)
+  KCONFIG:=CONFIG_BCM43XX
   FILES:=$(LINUX_DIR)/drivers/net/wireless/bcm43xx/bcm43xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,bcm43xx)
   SUBMENU:=$(WIMENU)
@@ -79,7 +79,7 @@ define KernelPackage/net-ipw2100
 	Includes: \\\
 	- ipw2100
   DEPENDS:=kmod-ieee80211
-  KCONFIG:=$(CONFIG_IPW2100)
+  KCONFIG:=CONFIG_IPW2100
   FILES:=$(LINUX_DIR)/drivers/net/wireless/ipw2100.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,ipw2100)
   SUBMENU:=$(WIMENU)
@@ -93,7 +93,7 @@ define KernelPackage/net-ipw2200
 	Includes: \\\
 	- ipw2200
   DEPENDS:=kmod-ieee80211
-  KCONFIG:=$(CONFIG_IPW2200)
+  KCONFIG:=CONFIG_IPW2200
   FILES:=$(LINUX_DIR)/drivers/net/wireless/ipw2200.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,ipw2200)
   SUBMENU:=$(WIMENU)
@@ -104,7 +104,7 @@ $(eval $(call KernelPackage,net-ipw2200))
 define KernelPackage/net-airo
   TITLE:=Cisco Aironet driver
   DESCRIPTION:=Driver for Cisco Aironet cards
-  KCONFIG:=$(CONFIG_AIRO)
+  KCONFIG:=CONFIG_AIRO
   SUBMENU:=$(WIMENU)
   FILES:=$(LINUX_DIR)/drivers/net/wireless/airo.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,airo)
@@ -115,7 +115,7 @@ $(eval $(call KernelPackage,net-airo))
 define KernelPackage/net-hermes
   TITLE:=Hermes 802.11b chipset support
   DESCRIPTION:=Kernel support for Hermes 802.11b chipsets
-  KCONFIG:=$(CONFIG_HERMES)
+  KCONFIG:=CONFIG_HERMES
   SUBMENU:=$(WIMENU)
   FILES:= \
 	$(LINUX_DIR)/drivers/net/wireless/hermes.$(LINUX_KMOD_SUFFIX) \
@@ -128,7 +128,7 @@ $(eval $(call KernelPackage,net-hermes))
 define KernelPackage/net-hermes-pci
   TITLE:=Intersil Prism 2.5 PCI support
   DESCRIPTION:=Kernel modules for Intersil Prism 2.5 PCI support
-  KCONFIG:=$(CONFIG_PCI_HERMES)
+  KCONFIG:=CONFIG_PCI_HERMES
   DEPENDS:=kmod-net-hermes
   SUBMENU:=$(WIMENU)
   FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco_pci.$(LINUX_KMOD_SUFFIX)
@@ -140,7 +140,7 @@ $(eval $(call KernelPackage,net-hermes-pci))
 define KernelPackage/net-hermes-plx
   TITLE:=PLX9052 based PCI adaptor
   DESCRIPTION:=Kernel modules for Hermes in PLX9052 based PCI adaptors
-  KCONFIG:=$(CONFIG_PLX_HERMES)
+  KCONFIG:=CONFIG_PLX_HERMES
   DEPENDS:=kmod-net-hermes
   SUBMENU:=$(WIMENU)
   FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco_plx.$(LINUX_KMOD_SUFFIX)
@@ -152,7 +152,7 @@ $(eval $(call KernelPackage,net-hermes-plx))
 define KernelPackage/net-prism54
   TITLE:=Intersil Prism54 support
   DESCRIPTION:=Kernel modules for Intersil Prism54 support
-  KCONFIG:=$(CONFIG_PRISM54)
+  KCONFIG:=CONFIG_PRISM54
   SUBMENU:=$(WIMENU)
   FILES:=$(LINUX_DIR)/drivers/net/wireless/prism54/prism54.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,prism54)
@@ -163,7 +163,7 @@ $(eval $(call KernelPackage,net-prism54))
 define KernelPackage/net-zd1211rw
   TITLE:=Zydas ZD1211 support
   DESCRIPTION:=Kernel modules Zydas ZD1211 support, kernel version
-  KCONFIG:=$(CONFIG_ZD1211RW)
+  KCONFIG:=CONFIG_ZD1211RW
   DEPENDS:=+kmod-ieee80211 +zd1211-firmware @LINUX_2_6
   SUBMENU:=$(WIMENU)
   FILES:=$(LINUX_DIR)/drivers/net/wireless/zd1211rw/zd1211rw.$(LINUX_KMOD_SUFFIX)

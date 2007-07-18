@@ -28,6 +28,7 @@ ifneq ($(DUMP),)
 		echo "Category: $(CATEGORY)"; \
 		echo "Title: $(TITLE)"; \
 		echo "Maintainer: $(MAINTAINER)"; \
+		$(if $(KCONFIG),echo "Kernel-Config: $(KCONFIG)";) \
 		echo -n "Description: "; \
 		getvar $(call shvar,Package/$(1)/description); \
 		$(if $(URL),echo;echo "$(URL)";) \

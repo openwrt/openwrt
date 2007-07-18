@@ -52,7 +52,6 @@ GENERIC_PATCH_DIR := $(GENERIC_PLATFORM_DIR)/patches$(shell [ -d "$(GENERIC_PLAT
 
 define KernelPackage/Defaults
   FILES:=
-  KCONFIG:=m
   AUTOLOAD:=
 endef
 
@@ -91,7 +90,6 @@ define KernelPackage
     TITLE:=$(TITLE)
     SECTION:=kernel
     CATEGORY:=Kernel modules
-    DEFAULT:=$(KMOD_DEFAULT)
     DESCRIPTION:=$(DESCRIPTION)
     EXTRA_DEPENDS:=kernel (=$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE))
     $(call KernelPackage/$(1))
@@ -99,15 +97,13 @@ define KernelPackage
     $(call KernelPackage/$(1)/$(BOARD)-$(KERNEL))
   endef
 
-  ifeq ($(findstring m,$(KCONFIG)),m)
-    ifneq ($(strip $(FILES)),)
-      define Package/kmod-$(1)/install
-		mkdir -p $$(1)/lib/modules/$(LINUX_VERSION)
-		$(CP) -L $$(FILES) $$(1)/lib/modules/$(LINUX_VERSION)/
-		$(call ModuleAutoLoad,$(1),$$(1),$(AUTOLOAD))
-		$(call KernelPackage/$(1)/install,$$(1))
-      endef
-    endif
+  ifneq ($(strip $(FILES)),)
+    define Package/kmod-$(1)/install
+	  mkdir -p $$(1)/lib/modules/$(LINUX_VERSION)
+	  $(CP) -L $$(FILES) $$(1)/lib/modules/$(LINUX_VERSION)/
+	  $(call ModuleAutoLoad,$(1),$$(1),$(AUTOLOAD))
+	  $(call KernelPackage/$(1)/install,$$(1))
+    endef
   endif
   $$(eval $$(call BuildPackage,kmod-$(1)))
 

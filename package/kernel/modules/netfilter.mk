@@ -127,7 +127,7 @@ define KernelPackage/ipt-imq
   TITLE:=Intermediate Queueing support
   DESCRIPTION:=\
 	Kernel support for Intermediate Queueing devices
-  KCONFIG:=$(CONFIG_IP_NF_TARGET_IMQ)
+  KCONFIG:=CONFIG_IP_NF_TARGET_IMQ
   FILES:=$(LINUX_DIR)/net/ipv4/netfilter/*IMQ*.$(LINUX_KMOD_SUFFIX) $(LINUX_DIR)/drivers/net/imq.$(LINUX_KMOD_SUFFIX)
   SUBMENU:=$(NFMENU)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(patsubst %.ko,%,$(wildcard $(LINUX_DIR)/net/ipv4/netfilter/*IMQ*.$(LINUX_KMOD_SUFFIX) $(LINUX_DIR)/drivers/net/imq.$(LINUX_KMOD_SUFFIX)))))
@@ -207,7 +207,7 @@ define KernelPackage/ip6tables
   TITLE:=IPv6 modules
   DESCRIPTION:=\
 	Netfilter IPv6 firewalling support
-  KCONFIG:=$(CONFIG_IP6_NF_IPTABLES)
+  KCONFIG:=CONFIG_IP6_NF_IPTABLES
   FILES:=$(LINUX_DIR)/net/ipv6/netfilter/ip*.$(LINUX_KMOD_SUFFIX)
   SUBMENU:=$(NFMENU)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(patsubst %.ko,%,$(wildcard $(LINUX_DIR)/net/ipv6/netfilter/ip6_*.$(LINUX_KMOD_SUFFIX)) $(wildcard $(LINUX_DIR)/net/ipv6/netfilter/ip6table_*.$(LINUX_KMOD_SUFFIX)) $(wildcard $(LINUX_DIR)/net/ipv6/netfilter/ip6t_*.$(LINUX_KMOD_SUFFIX)))))
@@ -220,7 +220,7 @@ define KernelPackage/arptables
   DESCRIPTION:=\
 	Kernel modules for ARP firewalling
   FILES:=$(LINUX_DIR)/net/ipv4/netfilter/arp*.$(LINUX_KMOD_SUFFIX)
-  KCONFIG:=$(CONFIG_IP_NF_ARPTABLES)
+  KCONFIG:=CONFIG_IP_NF_ARPTABLES
   SUBMENU:=$(NFMENU)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(patsubst %.ko,%,$(wildcard $(LINUX_DIR)/net/ipv4/netfilter/arp*.$(LINUX_KMOD_SUFFIX)))))
 endef
@@ -232,7 +232,7 @@ define KernelPackage/ebtables
   DESCRIPTION:=\
 	Kernel modules for Ethernet Bridge firewalling
   FILES:=$(LINUX_DIR)/net/bridge/netfilter/*.$(LINUX_KMOD_SUFFIX)
-  KCONFIG:=$(CONFIG_BRIDGE_NF_EBTABLES)
+  KCONFIG:=CONFIG_BRIDGE_NF_EBTABLES
   SUBMENU:=$(NFMENU)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(patsubst %.ko,%,ebtables.ko $(wildcard $(LINUX_DIR)/net/bridge/netfilter/ebtable_*.$(LINUX_KMOD_SUFFIX)) $(wildcard $(LINUX_DIR)/net/bridge/netfilter/ebt_*.$(LINUX_KMOD_SUFFIX)))))
 endef
