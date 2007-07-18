@@ -16,7 +16,7 @@ define KernelPackage/ata-piix
 	SUBMENU:=$(BLMENU)
 	AUTOLOAD:=$(call AutoLoad,30,scsi_mod libata sd_mod ata_piix)
 	FILES:=$(LINUX_DIR)/drivers/ata/ata_piix.$(LINUX_KMOD_SUFFIX)
-	DEPENDS:=+kmod-libata +kmod-ide-core +kmod-scsi-core
+	DEPENDS:=+kmod-libata +kmod-ide-core +kmod-scsi-core @PCI_SUPPORT
 endef
 $(eval $(call KernelPackage,ata-piix))
 
@@ -27,6 +27,6 @@ define KernelPackage/pata-artop
 	SUBMENU:=$(BLMENU)
 	AUTOLOAD:=$(call AutoLoad,30,scsi_mod libata sd_mod pata_artop)
 	FILES:=$(LINUX_DIR)/drivers/ata/pata_artop.$(LINUX_KMOD_SUFFIX)
-	DEPENDS:=+kmod-libata +kmod-scsi-core
+	DEPENDS:=kmod-libata +kmod-scsi-core @PCI_SUPPORT
 endef
 $(eval $(call KernelPackage,pata-artop))
