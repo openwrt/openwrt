@@ -50,17 +50,14 @@ define KernelPackage/usb-uhci
   $(call usbdep,)
   TITLE:=Support for UHCI controllers
   DESCRIPTION:=Kernel support for USB UHCI controllers
+  KCONFIG:=CONFIG_USB_UHCI_ALT CONFIG_USB_UHCI_HCD
 endef
-
 define KernelPackage/usb-uhci/2.4
   FILES:=$(LINUX_DIR)/drivers/usb/host/uhci.o
-  KCONFIG:=CONFIG_USB_UHCI_ALT
   AUTOLOAD:=$(call AutoLoad,50,uhci)
 endef
-
 define KernelPackage/usb-uhci/2.6
   FILES:=$(LINUX_DIR)/drivers/usb/host/uhci-hcd.ko
-  KCONFIG:=CONFIG_USB_UHCI_HCD
   AUTOLOAD:=$(call AutoLoad,50,uhci-hcd)
 endef
 $(eval $(call KernelPackage,usb-uhci))
