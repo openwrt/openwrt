@@ -109,3 +109,22 @@ struct platform_device adm5120_flash1_device =	{
 	.id	= 1,
 	.dev.platform_data = &adm5120_flash1_data,
 };
+
+/* NAND flash */
+struct resource adm5120_nand_resource[] = {
+	[0] = {
+		.start	= ADM5120_SRAM1_BASE,
+		.end	= ADM5120_SRAM1_BASE+0x1000-1,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+struct adm5120_nand_platform_data adm5120_nand_data;
+
+struct platform_device adm5120_nand_device = {
+	.name 		= "adm5120-nand",
+	.id		= -1,
+	.dev.platform_data = &adm5120_nand_data,
+	.num_resources	= ARRAY_SIZE(adm5120_nand_resource),
+	.resource	= adm5120_nand_resource,
+};
