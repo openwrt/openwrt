@@ -1,0 +1,17 @@
+Index: busybox-1.4.2/networking/udhcp/dhcpc.c
+===================================================================
+--- busybox-1.4.2.orig/networking/udhcp/dhcpc.c	2007-07-18 10:07:20.161035443 +0200
++++ busybox-1.4.2/networking/udhcp/dhcpc.c	2007-07-18 10:09:15.515609124 +0200
+@@ -273,6 +273,12 @@
+ 		tv.tv_sec = timeout - uptime();
+ 		tv.tv_usec = 0;
+ 
++		/* When running on a bridge, the ifindex may have changed (e.g. if
++		 * member interfaces were added/removed or if the status of the
++		 * bridge changed).
++		 * Workaround: refresh it here before processing the next packet */
++		read_interface(client_config.interface, &client_config.ifindex, NULL, client_config.arp);
++
+ 		if (listen_mode != LISTEN_NONE && fd < 0) {
+ 			if (listen_mode == LISTEN_KERNEL)
+ 				fd = listen_socket(INADDR_ANY, CLIENT_PORT, client_config.interface);
