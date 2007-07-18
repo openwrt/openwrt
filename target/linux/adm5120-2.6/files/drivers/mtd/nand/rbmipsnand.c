@@ -115,7 +115,7 @@ static int rbmips_probe(struct platform_device *pdev)
 
 	}
 	
-	data->io_base = ioremap(pdev->resource[0].start, 0x1000);
+	data->io_base = ioremap(pdev->resource[0].start, pdev->resource[0].end - pdev->resource[0].start + 1);
 
 	if (data->io_base == NULL) {
 		dev_err(&pdev->dev, "ioremap failed\n");
