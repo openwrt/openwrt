@@ -310,7 +310,7 @@ define KernelPackage/via-rhine
 	Kernel modules for Via Rhine Ethernet chipsets.
   FILES:=$(LINUX_DIR)/drivers/net/via-rhine.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=CONFIG_VIA_RHINE
-  DEPENDS:=@LINUX_2_6_X86||@LINUX_2_6_RB532
+  DEPENDS:=@LINUX_2_6_X86
   SUBMENU:=$(NDMENU)
   AUTOLOAD:=$(call AutoLoad,50,via-rhine)
 endef
