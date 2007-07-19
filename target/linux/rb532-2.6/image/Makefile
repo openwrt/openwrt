@@ -49,9 +49,16 @@ define Image/cmdline/squashfs
 block2mtd.block2mtd=/dev/cfa2,65536 root=/dev/mtdblock0 rootfstype=squashfs init=/etc/preinit
 endef
 
+# TGZ images should be used with a yaffs2 rootfs
+define Image/cmdline/tgz
+root=/dev/mtdblock1 rootfstype=yaffs2 init=/etc/preinit
+endef
+
 define Image/Build
 	$(STAGING_DIR)/bin/patch-cmdline $(KDIR)/vmlinux.elf '$(strip $(call Image/cmdline/$(1))) '
+ifneq ($(1),tgz)
 	./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin 4 $(KDIR)/vmlinux.elf $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
+endif
 endef
 
 $(eval $(call BuildImage))

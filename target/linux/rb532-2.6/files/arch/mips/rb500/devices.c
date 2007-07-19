@@ -128,6 +128,8 @@ static struct platform_device cf_slot0 = {
 static struct resource nand_slot0_res[] = {
 	{
 		.name = "nand_membase",
+		.start = 0x18a20000,
+		.end = (0x18a20000+0x1000)-1,
 		.flags = IORESOURCE_MEM	
 	}
 };
