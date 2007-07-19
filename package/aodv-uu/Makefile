@@ -21,7 +21,6 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/aodv-uu/Default
   TITLE:=Ad-hoc On-demand Distance Vector Routing
-  DEPENDS:=@BROKEN
   DESCRIPTION:=\
   	AODV is the Ad-hoc On-demand Distance Vector routing protocol \\\
   	implementation created at Uppsala University.
