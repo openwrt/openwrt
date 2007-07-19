@@ -17,5 +17,6 @@ include $(INCLUDE_DIR)/kernel-build.mk
 
 # include the profiles
 -include profiles/*.mk
+DEFAULT_PACKAGES += kmod-via-rhine
 
 $(eval $(call BuildKernel))
