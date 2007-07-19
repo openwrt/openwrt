@@ -1,8 +1,11 @@
-#include <linux/init.h>
+#include <linux/io.h>
+#include <linux/module.h>
+#include <linux/platform_device.h>
 #include <linux/mtd/nand.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/delay.h>
+
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/bootinfo.h>
@@ -29,7 +32,30 @@
 #define LO_ULED  (1 << 7)
 
 #define MEM32(x) *((volatile unsigned *) (x))
-static void __iomem *p_nand;
+
+struct rb500_nand_info {
+        struct nand_chip chip;
+        struct mtd_info mtd;
+        void __iomem *io_base;
+#ifdef CONFIG_MTD_PARTITIONS
+        int     nr_parts;
+        struct mtd_partition *parts;
+#endif
+	int	init_ok;
+	int	flags1;
+	int 	flags2;
+};
+
+static struct mtd_partition partition_info[] = {
+        {
+              name:"RouterBoard NAND Boot",
+              offset:0,
+      size:4 * 1024 * 1024},
+        {
+              name:"rootfs",
+              offset:MTDPART_OFS_NXTBLK,
+      	size:MTDPART_SIZ_FULL}
+};
 
 extern void changeLatchU5(unsigned char orMask, unsigned char nandMask);
 
@@ -66,72 +92,121 @@ static void rbmips_hwcontrol500(struct mtd_info *mtd, int cmd,
 
 }
 
-static struct mtd_partition partition_info[] = {
-	{
-	      name:"RouterBoard NAND Boot",
-	      offset:0,
-      size:4 * 1024 * 1024},
-	{
-	      name:"RouterBoard NAND Main",
-	      offset:MTDPART_OFS_NXTBLK,
-      size:MTDPART_SIZ_FULL}
-};
-
-static struct mtd_info rmtd;
-static struct nand_chip rnand;
-
-static unsigned init_ok = 0;
-
-unsigned get_rbnand_block_size(void)
+unsigned get_rbnand_block_size(struct rb500_nand_info *data)
 {
-	if (init_ok)
-		return rmtd.writesize;
+	if (data->init_ok)
+		return data->mtd.writesize;
 	else
 		return 0;
 }
 
 EXPORT_SYMBOL(get_rbnand_block_size);
 
-int __init rbmips_init(void)
+static int rbmips_probe(struct platform_device *pdev)
 {
+	struct rb500_nand_info *data;
+	int res = 0;
 	int *b;
-	memset(&rmtd, 0, sizeof(rmtd));
-	memset(&rnand, 0, sizeof(rnand));
 
-	printk("RB500 nand\n");
-	changeLatchU5(LO_FOFF | LO_CEX,
-		      LO_ULED | LO_ALE | LO_CLE | LO_WPX);
-	rnand.cmd_ctrl = rbmips_hwcontrol500;
-
-	rnand.dev_ready = rb500_dev_ready;
-	rnand.IO_ADDR_W = (unsigned char *)
-	    KSEG1ADDR(MEM32(IDT434_REG_BASE + DEV2BASE));
-	rnand.IO_ADDR_R = rnand.IO_ADDR_W;
-
-	p_nand = (void __iomem *) ioremap((void *) 0x18a20000, 0x1000);
-	if (!p_nand) {
-		printk("RBnand Unable ioremap buffer");
-		return -ENXIO;
+	/* Allocate memory for the structure */
+	data = kzalloc(sizeof(*data), GFP_KERNEL);
+	if (!data) {
+		dev_err(&pdev->dev, "Failed to allocate device structure\n");
+		return -ENOMEM;
 	}
-	rnand.ecc.mode = NAND_ECC_SOFT;
-	rnand.chip_delay = 25;
-	rnand.options |= NAND_NO_AUTOINCR;
-	rmtd.priv = &rnand;
+
+	data->io_base = ioremap(pdev->resource[0].start, pdev->resource[0].end - pdev->resource[0].start + 1);
+
+	if (data->io_base == NULL) {
+		dev_err(&pdev->dev, "ioremap failed\n");
+		kfree(data);
+		return -EIO;
+        }
+
+	/* FIXME : this seems to work only for newer RB500, check the version to set the right flags accordingly */
+	data->flags1 = LO_FOFF | LO_CEX;
+	data->flags2 = LO_ULED | LO_ALE | LO_CLE | LO_WPX;
+
+	changeLatchU5(data->flags1, data->flags2);
+
+	data->chip.cmd_ctrl = rbmips_hwcontrol500;
+
+	data->chip.dev_ready = rb500_dev_ready;
+	data->chip.IO_ADDR_W = (unsigned char *)KSEG1ADDR(MEM32(IDT434_REG_BASE + DEV2BASE));
+	data->chip.IO_ADDR_R = data->chip.IO_ADDR_W;
+
+	data->chip.ecc.mode = NAND_ECC_SOFT;
+	data->chip.chip_delay = 25;
+	data->chip.options |= NAND_NO_AUTOINCR;
+
+        data->chip.priv = &data;
+        data->mtd.priv = &data->chip;
+        data->mtd.owner = THIS_MODULE;
 
 	b = (int *) KSEG1ADDR(0x18010020);
 	printk("dev2base 0x%08x mask 0x%08x c 0x%08x tc 0x%08x\n", b[0],
 	       b[1], b[2], b[3]);
 
-	if (nand_scan(&rmtd, 1) && nand_scan(&rmtd, 1)
-	    && nand_scan(&rmtd, 1) && nand_scan(&rmtd, 1)) {
-		printk("RBxxx nand device not found\n");
-		iounmap((void *) p_nand);
-		return -ENXIO;
-	}
+	platform_set_drvdata(pdev, data);
 
-	add_mtd_partitions(&rmtd, partition_info, 2);
-	init_ok = 1;
-	return 0;
+	/* Why do we need to scan 4 times ? */
+        if (nand_scan(&data->mtd, 1) && nand_scan(&data->mtd, 1) && nand_scan(&data->mtd, 1)  && nand_scan(&data->mtd, 1)) {
+                printk(KERN_INFO "RB500 nand device not found\n");
+                res = -ENXIO;
+                goto out;
+        }
+
+	printk(KERN_INFO "RB500 NAND\n");
+	add_mtd_partitions(&data->mtd, partition_info, 2);
+	data->init_ok = 1;
+
+        res = add_mtd_device(&data->mtd);
+        if (!res)
+                return res;
+
+        nand_release(&data->mtd);
+out:
+        platform_set_drvdata(pdev, NULL);
+        iounmap(data->io_base);
+        kfree(data);
+        return res;
 }
 
-module_init(rbmips_init);
+static int __devexit rbmips_remove(struct platform_device *pdev)
+{
+        struct rb500_nand_info *data = platform_get_drvdata(pdev);
+
+        nand_release(&data->mtd);
+        iounmap(data->io_base);
+        kfree(data);
+
+        return 0;
+}
+
+static struct platform_driver rb500_nand_driver = {
+        .probe          = rbmips_probe,
+        .remove         = rbmips_remove,
+        .driver         = {
+                .name   = "rb500-nand",
+                .owner  = THIS_MODULE,
+        },
+};
+
+static int __init rb500_nand_init(void)
+{
+        int err;
+        err = platform_driver_register(&rb500_nand_driver);
+        return err;
+}
+
+static void __exit rb500_nand_exit(void)
+{
+        platform_driver_unregister(&rb500_nand_driver);
+}
+
+module_init(rb500_nand_init);
+module_exit(rb500_nand_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("David Goodenough, Felix Fietkau, Florian Fainelli");
+MODULE_DESCRIPTION("RouterBOARD 500 NAND driver");
