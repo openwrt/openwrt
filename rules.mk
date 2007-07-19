@@ -14,6 +14,7 @@ export SHELL=/usr/bin/env bash -c '. $(TOPDIR)/include/shell.sh; eval "$$2"' --
 
 ARCH:=$(strip $(subst ",, $(CONFIG_ARCH)))
 TARGET_OPTIMIZATION:=$(strip $(subst ",, $(CONFIG_TARGET_OPTIMIZATION)))
+BUILD_DIR_SUFFIX:=$(strip $(subst ",, $(CONFIG_BUILD_SUFFIX)))
 WGET:=$(strip $(subst ",, $(CONFIG_WGET)))
 #"))"))")) # fix vim's broken syntax highlighting
 
@@ -30,7 +31,7 @@ STAGING_DIR:=$(TOPDIR)/staging_dir_$(ARCH)
 BIN_DIR:=$(TOPDIR)/bin
 PACKAGE_DIR:=$(BIN_DIR)/packages
 IPKG_TARGET_DIR:=$(PACKAGE_DIR)
-BUILD_DIR:=$(TOPDIR)/build_$(ARCH)
+BUILD_DIR:=$(TOPDIR)/build_$(ARCH)$(BUILD_DIR_SUFFIX)
 TMP_DIR:=$(TOPDIR)/tmp
 STAMP_DIR:=$(BUILD_DIR)/stamp
 TARGET_DIR:=$(BUILD_DIR)/root

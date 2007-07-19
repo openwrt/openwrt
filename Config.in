@@ -123,6 +123,13 @@ config SOURCE_FEEDS
 	help
 		Separate sources with spaces : " "
 
+config BUILD_SUFFIX
+	string
+	prompt "Build suffix to append to the BUILD_DIR variable" if BUILDOPTS
+	default ""
+	help
+		Build suffix to append to the BUILD_DIR variable, i.e: build_dir_suffix
+
 source "toolchain/Config.in"
 source "target/imagebuilder/Config.in"
 source "target/sdk/Config.in"
