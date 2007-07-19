@@ -443,7 +443,7 @@ int __init init_adm5120_map(void)
 		parts = init_mtd_partitions(adm5120_mtd, size);
 
 		for (i = 0; parts[i].name; i++);
-			ret = add_mtd_partitions(adm5120_mtd, parts, i);
+		ret = add_mtd_partitions(adm5120_mtd, parts, i);
 
 		if (ret) {
 			printk(KERN_ERR "Flash: add_mtd_partitions failed\n");
