@@ -121,10 +121,13 @@ endif
 endif
 endif
 endif
-ifeq ($(1),tgz)
-	$(call Image/Build/RouterBoard)
-endif
 endef
+
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+  define Image/BuildKernel
+	$(call Image/Build/RouterBoard)
+  endef
+endif
 
 define Image/Build/LZMAKernel
 	$(LOADER_MAKE) TARGET_DIR=$(BIN_DIR) \
