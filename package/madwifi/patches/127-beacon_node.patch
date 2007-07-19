@@ -1,0 +1,13 @@
+Index: madwifi-ng-r2568-20070710/ath/if_ath.c
+===================================================================
+--- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-07-19 16:58:58.416164190 +0200
++++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-07-19 16:59:28.677888709 +0200
+@@ -4027,6 +4027,8 @@
+ 	}
+ 	bf = avp->av_bcbuf;
+ 	ni = bf->bf_node;
++	if (!ni)
++		return NULL;
+ 
+ #ifdef ATH_SUPERG_DYNTURBO
+ 	/* 
