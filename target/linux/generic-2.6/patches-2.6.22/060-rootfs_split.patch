@@ -461,7 +461,7 @@ Index: linux/drivers/mtd/mtdpart.c
 +		j++;
 +
 +		if (strcmp(part->name, "rootfs") == 0 && slave->registered) {
-+#if CONFIG_MTD_ROOTFS_ROOT_DEV
++#ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
 +			if (ROOT_DEV == 0) {
 +				printk(KERN_NOTICE "mtd: partition \"rootfs\" "
 +					"set to be root filesystem\n");
@@ -480,7 +480,7 @@ Index: linux/drivers/mtd/mtdpart.c
 -			add_mtd_device(&slave->mtd);
 -			slave->registered = 1;
 +#endif
-+#if CONFIG_MTD_ROOTFS_SPLIT
++#ifdef CONFIG_MTD_ROOTFS_SPLIT
 +			ret = split_rootfs_data(master, part, j);
 +			if (ret == 0)
 +				j++;

@@ -2,17 +2,12 @@ Index: linux/drivers/mtd/Kconfig
 ===================================================================
 --- linux.orig/drivers/mtd/Kconfig
 +++ linux/drivers/mtd/Kconfig
-@@ -47,6 +47,16 @@ config MTD_PARTITIONS
+@@ -49,6 +49,11 @@ config MTD_PARTITIONS
  	  devices. Partitioning on NFTL 'devices' is a different - that's the
  	  'normal' form of partitioning used on a block device.
  
-+config MTD_ROOTFS_ROOT_DEV
-+	bool "Automatically set 'rootfs' partition to be root filesystem"
-+	depends on MTD_PARTITIONS
-+	default y
-+
-+config MTD_ROOTFS_SPLIT
-+	bool "Automatically split 'rootfs' partition for squashfs"
++config MTD_SPLIT_ROOTFS
++	bool "Automatically split rootfs partition for squashfs"
 +	depends on MTD_PARTITIONS
 +	default y
 +
@@ -32,7 +27,7 @@ Index: linux/drivers/mtd/mtdpart.c
  
  /* Our partition linked list */
  static LIST_HEAD(mtd_partitions);
-@@ -308,6 +310,265 @@ int del_mtd_partitions(struct mtd_info *
+@@ -308,6 +310,266 @@ int del_mtd_partitions(struct mtd_info *
  	return 0;
  }
  
@@ -62,6 +57,7 @@ Index: linux/drivers/mtd/mtdpart.c
 +	slave->mtd.subpage_sft = master->subpage_sft;
 +
 +	slave->mtd.name = part->name;
++	slave->mtd.bank_size = master->bank_size;
 +	slave->mtd.owner = master->owner;
 +
 +	slave->mtd.read = part_read;
@@ -284,7 +280,7 @@ Index: linux/drivers/mtd/mtdpart.c
 +	if (dpart == NULL)
 +		return 1;
 +
-+	printk(KERN_INFO "mtd: partition \"%s\" created automatically, ofs=%lX, len=%lX \n",
++	printk(KERN_INFO "mtd: \"%s\" created, ofs=%lX, len=%lX \n",
 +		ROOTFS_SPLIT_NAME, dpart->offset, dpart->size);
 +
 +	ret = add_one_partition(master, dpart, index, NULL);
@@ -298,7 +294,7 @@ Index: linux/drivers/mtd/mtdpart.c
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -320,168 +581,31 @@ int add_mtd_partitions(struct mtd_info *
+@@ -320,169 +582,31 @@ int add_mtd_partitions(struct mtd_info *
  		       int nbparts)
  {
  	struct mtd_part *slave;
@@ -331,6 +327,7 @@ Index: linux/drivers/mtd/mtdpart.c
 -		slave->mtd.subpage_sft = master->subpage_sft;
 -
 -		slave->mtd.name = parts[i].name;
+-		slave->mtd.bank_size = master->bank_size;
 -		slave->mtd.owner = master->owner;
 -
 -		slave->mtd.read = part_read;
@@ -455,13 +452,13 @@ Index: linux/drivers/mtd/mtdpart.c
 -				offs += slave->mtd.erasesize;
 +	for (i = 0, j = 0; i < nbparts; i++) {
 +		part = (struct mtd_partition *) &parts[i];
-+		ret = add_one_partition(master, part, j, &slave);
++		ret = add_one_partition(master, part, i, &slave);
 +		if (ret)
 +			return ret;
 +		j++;
 +
 +		if (strcmp(part->name, "rootfs") == 0 && slave->registered) {
-+#if CONFIG_MTD_ROOTFS_ROOT_DEV
++#ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
 +			if (ROOT_DEV == 0) {
 +				printk(KERN_NOTICE "mtd: partition \"rootfs\" "
 +					"set to be root filesystem\n");
@@ -480,7 +477,7 @@ Index: linux/drivers/mtd/mtdpart.c
 -			add_mtd_device(&slave->mtd);
 -			slave->registered = 1;
 +#endif
-+#if CONFIG_MTD_ROOTFS_SPLIT
++#ifdef CONFIG_MTD_ROOTFS_SPLIT
 +			ret = split_rootfs_data(master, part, j);
 +			if (ret == 0)
 +				j++;
