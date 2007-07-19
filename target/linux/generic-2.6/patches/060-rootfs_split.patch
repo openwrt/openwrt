@@ -1,21 +1,28 @@
-diff -urN linux-2.6.21.1.old/drivers/mtd/Kconfig linux-2.6.21.1.dev/drivers/mtd/Kconfig
---- linux-2.6.21.1.old/drivers/mtd/Kconfig	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/drivers/mtd/Kconfig	2007-05-26 19:58:42.320520952 +0200
-@@ -49,6 +49,11 @@
+Index: linux/drivers/mtd/Kconfig
+===================================================================
+--- linux.orig/drivers/mtd/Kconfig
++++ linux/drivers/mtd/Kconfig
+@@ -47,6 +47,16 @@ config MTD_PARTITIONS
  	  devices. Partitioning on NFTL 'devices' is a different - that's the
  	  'normal' form of partitioning used on a block device.
  
-+config MTD_SPLIT_ROOTFS
-+	bool "Automatically split rootfs partition for squashfs"
++config MTD_ROOTFS_ROOT_DEV
++	bool "Automatically set 'rootfs' partition to be root filesystem"
++	depends on MTD_PARTITIONS
++	default y
++
++config MTD_ROOTFS_SPLIT
++	bool "Automatically split 'rootfs' partition for squashfs"
 +	depends on MTD_PARTITIONS
 +	default y
 +
  config MTD_REDBOOT_PARTS
  	tristate "RedBoot partition table parsing"
  	depends on MTD_PARTITIONS
-diff -urN linux-2.6.21.1.old/drivers/mtd/mtdpart.c linux-2.6.21.1.dev/drivers/mtd/mtdpart.c
---- linux-2.6.21.1.old/drivers/mtd/mtdpart.c	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/drivers/mtd/mtdpart.c	2007-05-26 19:58:42.331519280 +0200
+Index: linux/drivers/mtd/mtdpart.c
+===================================================================
+--- linux.orig/drivers/mtd/mtdpart.c
++++ linux/drivers/mtd/mtdpart.c
 @@ -20,6 +20,8 @@
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
@@ -25,15 +32,16 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/mtdpart.c linux-2.6.21.1.dev/drivers/mt
  
  /* Our partition linked list */
  static LIST_HEAD(mtd_partitions);
-@@ -308,6 +310,172 @@
+@@ -308,6 +310,265 @@ int del_mtd_partitions(struct mtd_info *
  	return 0;
  }
  
 +static u_int32_t cur_offset = 0;
-+static int add_mtd_partition(struct mtd_info *master, const struct mtd_partition *part, int i)
++static int add_one_partition(struct mtd_info *master, const struct mtd_partition *part,
++		int i, struct mtd_part **slp)
 +{
 +	struct mtd_part *slave;
-+	
++
 +	/* allocate the partition structure */
 +	slave = kzalloc (sizeof(*slave), GFP_KERNEL);
 +	if (!slave) {
@@ -54,7 +62,6 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/mtdpart.c linux-2.6.21.1.dev/drivers/mt
 +	slave->mtd.subpage_sft = master->subpage_sft;
 +
 +	slave->mtd.name = part->name;
-+	slave->mtd.bank_size = master->bank_size;
 +	slave->mtd.owner = master->owner;
 +
 +	slave->mtd.read = part_read;
@@ -192,62 +199,118 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/mtdpart.c linux-2.6.21.1.dev/drivers/mt
 +		slave->registered = 1;
 +	}
 +
++	if (slp)
++		*slp = slave;
++
 +	return 0;
 +}
++
++#ifdef CONFIG_MTD_ROOTFS_SPLIT
++#define ROOTFS_SPLIT_NAME "rootfs_data"
++static int split_squashfs(struct mtd_info *master, struct mtd_partition *old,
++		struct mtd_partition **new)
++{
++	struct mtd_partition *part = NULL;
++	int len;
++	char buf[512];
++	struct squashfs_super_block *sb = (struct squashfs_super_block *) buf;
++	int ret;
++
++	ret = master->read(master, old->offset, sizeof(*sb), &len, buf);
++	if (ret) {
++		printk(KERN_ALERT "split_squashfs: error occured while reading "
++			"from \"%s\"\n", master->name);
++		goto out;
++	}
++
++	if (len != sizeof(*sb)) {
++		printk(KERN_ALERT "split_squashfs: unable to read superblock "
++			"from \"%s\"\n", master->name);
++		ret=-1;
++		goto out;
++	}
++
++	if (*((u32 *) buf) != SQUASHFS_MAGIC) {
++		printk(KERN_ALERT "split_squasfs: no squashfs found in \"%s\"\n",
++			master->name);
++		ret=0;
++		goto out;
++	}
++
++	if (sb->bytes_used <= 0) {
++		printk(KERN_ALERT "split_squashfs: squashfs is empty in \"%s\"\n",
++			master->name);
++		ret=0;
++		goto out;
++	}
++
++	part = kmalloc(sizeof(*part)+sizeof(ROOTFS_SPLIT_NAME)+1, GFP_KERNEL);
++	if (part == NULL) {
++		printk(KERN_INFO "split_squashfs: no memory for partition \"%s\"\n",
++			ROOTFS_SPLIT_NAME);
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	part->name = (unsigned char *)&part[1];
++	memcpy(part, old, sizeof(*part));
++	strcpy(part->name, ROOTFS_SPLIT_NAME);
++
++	len = (u32) sb->bytes_used;
++	len += (part->offset & 0x000fffff);
++	len +=  (master->erasesize - 1);
++	len &= ~(master->erasesize - 1);
++	len -= (part->offset & 0x000fffff);
++	part->offset += len;
++	part->size -= len;
++
++	ret = 0;
++
++out:
++	*new = part;
++	return ret;
++}
++
++static int split_rootfs_data(struct mtd_info *master, struct mtd_partition *part,
++		int index)
++{
++	struct mtd_partition *dpart;
++	int ret;
++
++	ret = split_squashfs(master, part, &dpart);
++	if (ret)
++		return ret;
++
++	if (dpart == NULL)
++		return 1;
++
++	printk(KERN_INFO "mtd: partition \"%s\" created automatically, ofs=%lX, len=%lX \n",
++		ROOTFS_SPLIT_NAME, dpart->offset, dpart->size);
++
++	ret = add_one_partition(master, dpart, index, NULL);
++	if (ret)
++		kfree(dpart);
++
++	return ret;
++}
++#endif /* CONFIG_MTD_ROOTFS_SPLIT */
 +
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -319,170 +487,53 @@
- 		       const struct mtd_partition *parts,
+@@ -320,168 +581,31 @@ int add_mtd_partitions(struct mtd_info *
  		       int nbparts)
  {
--	struct mtd_part *slave;
+ 	struct mtd_part *slave;
 -	u_int32_t cur_offset = 0;
 -	int i;
 +	struct mtd_partition *part;
-+	int i, ret = 0;
++	int i, j, ret = 0;
  
  	printk (KERN_NOTICE "Creating %d MTD partitions on \"%s\":\n", nbparts, master->name);
  
- 	for (i = 0; i < nbparts; i++) {
-+		part = (struct mtd_partition *) &parts[i];
-+		ret = add_mtd_partition(master, part, i);
-+		if (ret)
-+			return ret;
-+		if (strcmp(part->name, "rootfs") == 0) {
-+#ifdef CONFIG_MTD_SPLIT_ROOTFS
-+			int len;
-+			char buf[512];
-+			struct squashfs_super_block *sb = (struct squashfs_super_block *) buf;
-+#define ROOTFS_SPLIT_NAME "rootfs_data"
-+			if ((master->read(master, part->offset, sizeof(struct squashfs_super_block), &len, buf) == 0) &&
-+					(len == sizeof(struct squashfs_super_block)) &&
-+					(*((u32 *) buf) == SQUASHFS_MAGIC) &&
-+					(sb->bytes_used > 0)) {
-+
-+				
-+				part = kmalloc(sizeof(struct mtd_partition), GFP_KERNEL);
-+				memcpy(part, &parts[i], sizeof(struct mtd_partition));
-+				
-+				part->name = kmalloc(sizeof(ROOTFS_SPLIT_NAME) + 1, GFP_KERNEL);
-+				strcpy(part->name, ROOTFS_SPLIT_NAME);
-+
-+				len = (u32) sb->bytes_used;
-+				len += (part->offset & 0x000fffff);
-+				len +=  (master->erasesize - 1);
-+				len &= ~(master->erasesize - 1);
-+				len -= (part->offset & 0x000fffff);
-+				part->offset += len;
-+				part->size -= len;
-+			
-+				if (master->erasesize <= part->size)
-+					ret = add_mtd_partition(master, part, i + 1);
-+				else
-+					kfree(part->name);
-+				if (ret)
-+					return ret;
- 
+-	for (i = 0; i < nbparts; i++) {
+-
 -		/* allocate the partition structure */
 -		slave = kzalloc (sizeof(*slave), GFP_KERNEL);
 -		if (!slave) {
@@ -268,7 +331,6 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/mtdpart.c linux-2.6.21.1.dev/drivers/mt
 -		slave->mtd.subpage_sft = master->subpage_sft;
 -
 -		slave->mtd.name = parts[i].name;
--		slave->mtd.bank_size = master->bank_size;
 -		slave->mtd.owner = master->owner;
 -
 -		slave->mtd.read = part_read;
@@ -326,8 +388,7 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/mtdpart.c linux-2.6.21.1.dev/drivers/mt
 -				printk(KERN_NOTICE "Moving partition %d: "
 -				       "0x%08x -> 0x%08x\n", i,
 -				       cur_offset, slave->offset);
-+				kfree(part);
- 			}
+-			}
 -		}
 -		if (slave->mtd.size == MTDPART_SIZ_FULL)
 -			slave->mtd.size = master->size - slave->offset;
@@ -392,7 +453,20 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/mtdpart.c linux-2.6.21.1.dev/drivers/mt
 -							offs + slave->offset))
 -					slave->mtd.ecc_stats.badblocks++;
 -				offs += slave->mtd.erasesize;
--			}
++	for (i = 0, j = 0; i < nbparts; i++) {
++		part = (struct mtd_partition *) &parts[i];
++		ret = add_one_partition(master, part, j, &slave);
++		if (ret)
++			return ret;
++		j++;
++
++		if (strcmp(part->name, "rootfs") == 0 && slave->registered) {
++#if CONFIG_MTD_ROOTFS_ROOT_DEV
++			if (ROOT_DEV == 0) {
++				printk(KERN_NOTICE "mtd: partition \"rootfs\" "
++					"set to be root filesystem\n");
++				ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, slave->mtd.index);
+ 			}
 -		}
 -
 -		if(parts[i].mtdp)
@@ -405,8 +479,12 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/mtdpart.c linux-2.6.21.1.dev/drivers/mt
 -			/* register our partition */
 -			add_mtd_device(&slave->mtd);
 -			slave->registered = 1;
-+#endif /* CONFIG_MTD_SPLIT_ROOTFS */
-+			ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, i);
++#endif
++#if CONFIG_MTD_ROOTFS_SPLIT
++			ret = split_rootfs_data(master, part, j);
++			if (ret == 0)
++				j++;
++#endif
  		}
  	}
  
