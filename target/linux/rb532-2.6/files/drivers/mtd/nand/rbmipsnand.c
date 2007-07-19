@@ -33,6 +33,8 @@
 
 #define MEM32(x) *((volatile unsigned *) (x))
 
+extern unsigned int board_type;
+
 struct rb500_nand_info {
         struct nand_chip chip;
         struct mtd_info mtd;
@@ -123,9 +125,14 @@ static int rbmips_probe(struct platform_device *pdev)
 		return -EIO;
         }
 
-	/* FIXME : this seems to work only for newer RB500, check the version to set the right flags accordingly */
-	data->flags1 = LO_FOFF | LO_CEX;
-	data->flags2 = LO_ULED | LO_ALE | LO_CLE | LO_WPX;
+	if (board_type > 500) {
+		data->flags1 = LO_FOFF | LO_CEX;
+		data->flags2 = LO_ULED | LO_ALE | LO_CLE | LO_WPX;
+	}
+	else {
+		data->flags1 = LO_WPX | LO_FOFF | LO_CEX;
+		data->flags2 = LO_ULED | LO_ALE | LO_CLE;
+	}
 
 	changeLatchU5(data->flags1, data->flags2);
 
