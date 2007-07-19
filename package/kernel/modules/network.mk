@@ -53,7 +53,6 @@ define KernelPackage/ipip
   KCONFIG:=CONFIG_NET_IPIP
   SUBMENU:=$(NSMENU)
 endef
-$(eval $(call KernelPackage,ipip))
 
 define KernelPackage/ipip/2.4
   FILES:=$(LINUX_DIR)/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX)
@@ -66,7 +65,7 @@ define KernelPackage/ipip/2.6
 	$(LINUX_DIR)/net/ipv4/tunnel4.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,ipip tunnel4)
 endef
-
+$(eval $(call KernelPackage,ipip))
 
 define KernelPackage/ipsec
   TITLE:=IPsec related modules (IPv4 and IPv6)
