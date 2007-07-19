@@ -67,6 +67,7 @@ struct adm5120_nand_info {
 	int	nr_parts;
 	struct mtd_partition *parts;
 #endif
+	unsigned int	init_ok;
 };
 
 static int rb100_dev_ready(struct mtd_info *mtd)
@@ -93,11 +94,10 @@ static void rbmips_hwcontrol100(struct mtd_info *mtd, int cmd, unsigned int ctrl
 /* when creating the partitions.                                          */ 
 /*========================================================================*/
 
-static unsigned init_ok = 0;
 
 unsigned get_rbnand_block_size(struct adm5120_nand_info *data)
 {
-	return init_ok ? data->mtd.writesize : 0;
+	return data->init_ok ? data->mtd.writesize : 0;
 }
 
 EXPORT_SYMBOL(get_rbnand_block_size);
@@ -132,6 +132,7 @@ static int rbmips_probe(struct platform_device *pdev)
 	data->mtd.priv = &data->chip;
 	data->mtd.owner = THIS_MODULE;
 
+	data->init_ok = 0;
 	data->chip.IO_ADDR_R = (unsigned char *)KSEG1ADDR(ADM5120_SRAM1_BASE);
 	data->chip.IO_ADDR_W = data->chip.IO_ADDR_R;
 	data->chip.cmd_ctrl = rbmips_hwcontrol100;
@@ -151,7 +152,7 @@ static int rbmips_probe(struct platform_device *pdev)
 	}
 
 	add_mtd_partitions(&data->mtd, partition_info, 2);
-	init_ok = 1;
+	data->init_ok = 1;
 
 	res = add_mtd_device(&data->mtd);
 	if (!res)
