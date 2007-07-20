@@ -253,8 +253,8 @@ Index: linux/drivers/mtd/mtdpart.c
 +		goto out;
 +	}
 +
-+	part->name = (unsigned char *)&part[1];
 +	memcpy(part, old, sizeof(*part));
++	part->name = (unsigned char *)&part[1];
 +	strcpy(part->name, ROOTFS_SPLIT_NAME);
 +
 +	len = (u32) sb->bytes_used;
