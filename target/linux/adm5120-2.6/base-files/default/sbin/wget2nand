@@ -45,16 +45,8 @@ mount -t yaffs2 "$boot" /tmp/wget2nand-boot
 
 echo "Copying filesystem..."
 ( wget -O - $url/openwrt-adm5120-2.6-rootfs.tgz) | ( cd /tmp/wget2nand/; tar xvz )
-wget -O /tmp/wget2nand-boot/kernel $url/openwrt-adm5120-2.6-vmlinux.elf 
+wget -O /tmp/wget2nand-boot/kernel $url/openwrt-adm5120-2.6-rb1xx-vmlinux
 
-# update the command line on the kernel to boot from the right place
-[ ! -e /sbin/patch-cmdline ] && {
-	echo "Cannot find patch-cmdline"
-	exit 1
-}
-
-echo "Patching the kernel command line"
-/sbin/patch-cmdline /tmp/wget2nand-boot/kernel "root=/dev/mtdblock1 rootfstype=yaffs2 init=/etc/preinit "
 chmod +x /tmp/wget2nand-boot/kernel
 
 # make sure everything is written before we unmount the partitions
