@@ -537,6 +537,9 @@ static int __init adm5120_sw_init(void)
 	adm5120_set_reg(ADM5120_PHY_CNTL3, adm5120_get_reg(ADM5120_PHY_CNTL3) |
 	    ADM5120_PHY_NTH);
 
+	/* Force all the packets from all ports are low priority */
+	adm5120_set_reg(ADM5120_PRI_CNTL, 0);
+
 	adm5120_set_reg(ADM5120_INT_MASK, ADM5120_INTMASKALL);
 	adm5120_set_reg(ADM5120_INT_ST, ADM5120_INTMASKALL);
 
