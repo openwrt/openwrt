@@ -53,12 +53,11 @@ struct trx_header {
 
 #define BLOCK_LEN_MIN		0x10000
 
-static struct mtd_info *trx_mtd_master = NULL;
-static struct mtd_info *trx_mtds[TRX_MAX_OFFSET];
+static struct mtd_info *trx_mtd = NULL;
+static unsigned long trx_offset = 0;
+static int trx_nr_parts = 0;
 static struct mtd_partition trx_parts[TRX_MAX_OFFSET];
 static struct trx_header trx_hdr;
-static int trx_nr_parts = 0;
-static int trx_rootfs_part = -1;
 
 static int __init trxsplit_checktrx(struct mtd_info *mtd, unsigned long offset)
 {
@@ -66,11 +65,15 @@ static int __init trxsplit_checktrx(struct mtd_info *mtd, unsigned long offset)
 	int err;
 
 	err = mtd->read(mtd, offset, sizeof(trx_hdr), &retlen, (void *)&trx_hdr);
-	if (err)
+	if (err) {
+		printk(KERN_ALERT PFX "unable to read from '%s'\n", mtd->name);
 		goto err_out;
+	}
 
-	if (retlen != sizeof(trx_hdr))
+	if (retlen != sizeof(trx_hdr)) {
+		printk(KERN_ALERT PFX "reading failed on '%s'\n", mtd->name);
 		goto err_out;
+	}
 
 	trx_hdr.magic = le32_to_cpu(trx_hdr.magic);
 	trx_hdr.len = le32_to_cpu(trx_hdr.len);
@@ -89,55 +92,67 @@ static int __init trxsplit_checktrx(struct mtd_info *mtd, unsigned long offset)
 
 	/* TODO: add crc32 checking too? */
 
-	return 1;
+	return 0;
 
 err_out:
-	return 0;
+	return -1;
 }
 
-static void __init trxsplit_create_partitions(struct mtd_info *mtd,
-	unsigned long offset)
+static int __init trxsplit_create_partitions(void)
 {
 	struct mtd_partition *part = trx_parts;
+	int ret = 0;
 	int i;
 
-	for (i=0;i<TRX_MAX_OFFSET;i++) {
+	if (trx_mtd == NULL)
+		goto out;
+
+	printk(KERN_INFO PFX "creating TRX partitions in '%s' (%d,%d)\n",
+		trx_mtd->name, MTD_BLOCK_MAJOR, trx_mtd->index);
+
+	for (i=0; i<TRX_MAX_OFFSET;i++) {
 		part = &trx_parts[i];
 		if (trx_hdr.offsets[i] == 0)
 			continue;
-		part->offset = offset + trx_hdr.offsets[i];
-		part->mtdp = &trx_mtds[trx_nr_parts];
+		part->offset = trx_offset + trx_hdr.offsets[i];
 		trx_nr_parts++;
 	}
 
 	for (i=0; i<trx_nr_parts-1; i++) {
 		trx_parts[i].size = trx_parts[i+1].offset - trx_parts[i].offset;
 	}
-	trx_parts[i].size = mtd->size - trx_parts[i].offset;
+	trx_parts[i].size = trx_mtd->size - trx_parts[i].offset;
 
 	i=0;
 	part = &trx_parts[i];
 	if (part->size < TRX_MIN_KERNEL_SIZE) {
-		part->name = "trx_loader";
+		part->name = "loader";
 		i++;
 	}
 
 	part = &trx_parts[i];
-	part->name = "trx_kernel";
+	part->name = "kernel";
 	i++;
 
 	part = &trx_parts[i];
-	part->name = "trx_rootfs";
-	trx_rootfs_part = i;
+	part->name = "rootfs";
+
+	ret = add_mtd_partitions(trx_mtd, trx_parts, trx_nr_parts);
+	if (ret) {
+		printk(KERN_ALERT PFX "creating TRX partitions failed\n");
+	}
+
+out:
+	return ret;
 }
 
 static void __init trxsplit_add_mtd(struct mtd_info *mtd)
 {
 	unsigned long offset;
 	unsigned long blocklen;
-	int found;
+	int err;
 
-	if (trx_mtd_master)
+	if (trx_mtd)
 		return;
 
 	blocklen = mtd->erasesize;
@@ -146,27 +161,27 @@ static void __init trxsplit_add_mtd(struct mtd_info *mtd)
 
 	printk(KERN_INFO PFX "searching TRX header in '%s'\n", mtd->name);
 
-	found = 0;
+	err = 0;
 	for (offset=0; offset < mtd->size; offset+=blocklen) {
-		found = trxsplit_checktrx(mtd, offset);
-		if (found)
+		err = trxsplit_checktrx(mtd, offset);
+		if (err == 0)
 			break;
 	}
 
-	if (found == 0) {
+	if (err) {
 		printk(KERN_ALERT PFX "no TRX header found\n");
 		return;
 	}
 
 	printk(KERN_INFO PFX "TRX header found at 0x%lX\n", offset);
 
-	trxsplit_create_partitions(mtd, offset);
-
-	trx_mtd_master = mtd;
+	trx_mtd = mtd;
+	trx_offset = offset;
 }
 
-static void trxsplit_remove_mtd(struct mtd_info *mtd)
+static void __init trxsplit_remove_mtd(struct mtd_info *mtd)
 {
+	/* nothing to do */
 }
 
 static struct mtd_notifier trxsplit_notifier __initdata = {
@@ -182,38 +197,12 @@ static void __init trxsplit_find_trx(void)
 
 static int __init trxsplit_init(void)
 {
-	int err;
-	int i;
+	int ret;
 
 	trxsplit_find_trx();
 
-	if (trx_mtd_master == NULL)
-		goto err;
-
-	printk(KERN_INFO PFX "creating TRX partitions in '%s'\n",
-		trx_mtd_master->name);
-
-	err = add_mtd_partitions(trx_mtd_master, trx_parts, trx_nr_parts);
-	if (err) {
-		printk(KERN_ALERT PFX "creating TRX partitions failed\n");
-		goto err;
-	}
-
-	for (i=0; i<trx_nr_parts; i++) {
-		/* TODO: add error checking */
-		add_mtd_device(trx_mtds[i]);
-	}
-
-	if (ROOT_DEV == 0 && trx_rootfs_part >= 0) {
-		printk(KERN_INFO PFX "set '%s' to be root filesystem\n",
-			trx_mtds[trx_rootfs_part]->name);
-		ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, trx_mtds[trx_rootfs_part]->index);
-	}
-
-	return 0;
-
-err:
-	return -1;
+	ret = trxsplit_create_partitions();
+	return ret;
 }
 
 late_initcall(trxsplit_init);
