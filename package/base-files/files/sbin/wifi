@@ -36,6 +36,7 @@ bridge_interface() {(
 
 
 wifi_updown() {
+	[ enable = "$1" ] && wifi_updown disable "$2"
 	for device in ${2:-$DEVICES}; do (
 	        config_get disabled "$device" disabled
 	        [ 1 == "$disabled" ] && {

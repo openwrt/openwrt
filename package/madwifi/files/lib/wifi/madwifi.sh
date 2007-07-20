@@ -73,7 +73,6 @@ enable_atheros() {
 	config_get channel "$device" channel
 	config_get vifs "$device" vifs
 	
-	disable_atheros "$device"
 	local first=1
 	for vif in $vifs; do
 		nosbeacon=
