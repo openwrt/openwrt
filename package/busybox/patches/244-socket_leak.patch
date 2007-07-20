@@ -1,0 +1,12 @@
+Index: busybox-1.4.2/networking/udhcp/socket.c
+===================================================================
+--- busybox-1.4.2.orig/networking/udhcp/socket.c	2007-07-20 02:27:30.440097649 +0200
++++ busybox-1.4.2/networking/udhcp/socket.c	2007-07-20 02:27:54.849488669 +0200
+@@ -83,6 +83,7 @@
+ 		DEBUG("adapter hardware address %02x:%02x:%02x:%02x:%02x:%02x",
+ 			arp[0], arp[1], arp[2], arp[3], arp[4], arp[5]);
+ 	}
++	close(fd);
+ 
+ 	return 0;
+ }
