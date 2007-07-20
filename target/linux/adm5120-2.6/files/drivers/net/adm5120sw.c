@@ -262,7 +262,7 @@ static int adm5120_sw_open(struct net_device *dev)
 {
 	unsigned long val;
 	int i;
-	
+
 	netif_start_queue(dev);
 	if (!adm5120_if_open++) {
 		/* enable interrupts on first open */
@@ -284,7 +284,7 @@ static int adm5120_sw_stop(struct net_device *dev)
 {
 	unsigned long val;
 	int i;
-	
+
 	if (!--adm5120_if_open) {
 		adm5120_set_reg(ADM5120_INT_MASK, ADM5120_INTMASKALL);
 	}
@@ -321,7 +321,7 @@ static int adm5120_sw_tx(struct sk_buff *skb, struct net_device *dev)
 	dma->status =
 	    ((skb->len<ETH_ZLEN?ETH_ZLEN:skb->len) << ADM5120_DMA_LENSHIFT) |
 	    (0x1 << priv->port);
-	
+
 	dma->len = skb->len < ETH_ZLEN ? ETH_ZLEN : skb->len;
 	priv->stats.tx_packets++;
 	priv->stats.tx_bytes += skb->len;
@@ -554,7 +554,7 @@ static int __init adm5120_sw_init(void)
 	adm5120_set_reg(ADM5120_RECEIVE_HBADDR, KSEG1ADDR(adm5120_dma_rxh));
 	adm5120_set_reg(ADM5120_RECEIVE_LBADDR, KSEG1ADDR(adm5120_dma_rxl));
 
-	for (i=0; i<adm5120_nrdevs; i++) {
+	for (i = 0; i < SW_DEVS; i++) {
 		adm5120_devs[i] = alloc_etherdev(sizeof(struct adm5120_sw));
 		if (!adm5120_devs[i]) {
 			err = -ENOMEM;
@@ -612,9 +612,9 @@ static void __exit adm5120_sw_exit(void)
 {
 	int i;
 
-	for (i = 0; i < adm5120_nrdevs; i++) {
+	for (i = 0; i < SW_DEVS; i++) {
 		unregister_netdev(adm5120_devs[i]);
-		free_netdev(adm5120_devs[i-1]);
+		free_netdev(adm5120_devs[i]);
 	}
 
 	free_irq(ADM5120_IRQ_SWITCH, NULL);
