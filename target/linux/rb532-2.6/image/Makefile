@@ -49,8 +49,7 @@ define Image/cmdline/squashfs
 block2mtd.block2mtd=/dev/cfa2,65536 root=/dev/mtdblock0 rootfstype=squashfs init=/etc/preinit
 endef
 
-# TGZ images should be used with a yaffs2 rootfs
-define Image/cmdline/tgz
+define Image/cmdline/yaffs2
 root=/dev/mtdblock1 rootfstype=yaffs2 init=/etc/preinit
 endef
 
@@ -58,5 +57,16 @@ define Image/Build
 	$(STAGING_DIR)/bin/patch-cmdline $(KDIR)/vmlinux.elf '$(strip $(call Image/cmdline/$(1))) '
 	./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin 4 $(KDIR)/vmlinux.elf $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
 endef
+
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+  define Image/Prepare
+	$(STAGING_DIR)/bin/patch-cmdline $(KDIR)/vmlinux '$(strip $(call Image/cmdline/yaffs2)) '
+	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
+	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader $(LOADER_MAKEOPTS) clean compile	
+  endef
+  define Image/BuildKernel
+	$(CP) $(KDIR)/loader.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux
+  endef
+endif
 
 $(eval $(call BuildImage))
