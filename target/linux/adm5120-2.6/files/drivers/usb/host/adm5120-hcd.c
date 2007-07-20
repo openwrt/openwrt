@@ -63,8 +63,17 @@ MODULE_AUTHOR("Jeroen Vreeken (pe1rxq@amsat.org)");
 #define ADMHCD_STATE_SUS	0x00000003	/* bus state suspended */
 #define ADMHCD_DMA_EN		0x00000004	/* enable dma engine */
 
-#define ADMHCD_NPS		0x00000020	/* No Power Switch */
+#define ADMHCD_RST_ST		0x00		/* USB reset state */
+#define ADMHCD_RSM_ST		0x01		/* USB resume state */
+#define ADMHCD_OPR_ST		0x10		/* USB operational state */
+#define ADMHCD_SUS_ST		0x11		/* USB suspend state */
+
+#define ADMHCD_NPS		0x00000200	/* No Power Switch */
+#define ADMHCD_PSM		0x00000100	/* Power switch mode */
+#define ADMHCD_OPCM		0x00000400	/* Over current protect mode */
+#define ADMHCD_NOCP		0x00000800	/* No over current protect mode */
 #define ADMHCD_LPSC		0x04000000	/* Local power switch change */
+#define ADMHCD_LPS		0x01000000	/* Local power switch/global power switch */
 
 #define ADMHCD_CCS		0x00000001	/* current connect status */
 #define ADMHCD_PES		0x00000002	/* port enable status */
@@ -150,7 +159,6 @@ static int admhcd_td_err[16] = {
 struct admhcd {
 	spinlock_t	lock;
 
-	void __iomem *addr_reg;
 	void __iomem *data_reg;
 	/* Root hub registers */
 	u32 rhdesca;
@@ -687,18 +695,135 @@ err:
 	return retval;
 }
 
+static int admhcd_start(struct usb_hcd *hcd)
+{
+	struct admhcd *ahcd = hcd_to_admhcd(hcd);
+	unsigned long flags;
+
+	spin_lock_irqsave(&ahcd->lock, flags);
+
+ 	/* Initialise the HCD registers */
+        admhcd_reg_set(ahcd, ADMHCD_REG_INTENABLE, 0);
+        mdelay(10);
+
+        admhcd_reg_set(ahcd, ADMHCD_REG_CONTROL, ADMHCD_SW_RESET);
+
+        while (admhcd_reg_get(ahcd, ADMHCD_REG_CONTROL) & ADMHCD_SW_RESET)
+                mdelay(1);
+
+	/* Enable USB host mode */
+        admhcd_reg_set(ahcd, ADMHCD_REG_CONTROL, ADMHCD_HOST_EN);
+
+	/* Set host specific settings */
+        admhcd_reg_set(ahcd, ADMHCD_REG_HOSTHEAD, 0x00000000);
+        admhcd_reg_set(ahcd, ADMHCD_REG_FMINTERVAL, 0x20002edf);
+        admhcd_reg_set(ahcd, ADMHCD_REG_LSTHRESH, 0x628);
+
+	/* Set interrupts */
+        admhcd_reg_set(ahcd, ADMHCD_REG_INTENABLE,
+            ADMHCD_INT_ACT | ADMHCD_INT_FATAL | ADMHCD_INT_SW | ADMHCD_INT_TD);
+        admhcd_reg_set(ahcd, ADMHCD_REG_INTSTATUS,
+            ADMHCD_INT_ACT | ADMHCD_INT_FATAL | ADMHCD_INT_SW | ADMHCD_INT_TD);
+
+        admhcd_reg_set(ahcd, ADMHCD_REG_RHDESCR, ADMHCD_NPS | ADMHCD_LPSC);
+        admhcd_reg_set(ahcd, ADMHCD_REG_HOSTCONTROL, ADMHCD_STATE_OP);
+
+
+       	hcd->state = HC_STATE_RUNNING;
+
+	spin_unlock_irqrestore(&ahcd->lock, flags);
+       	return 0;
+}
+
+static int admhcd_sw_reset(struct admhcd *ahcd)
+{
+	int retries = 15;
+	unsigned long flags;
+	int ret = 0;
+
+	spin_lock_irqsave(&ahcd->lock, flags);
+
+	admhcd_reg_set(ahcd, ADMHCD_REG_INTENABLE, 0);
+        mdelay(10);
+
+        admhcd_reg_set(ahcd, ADMHCD_REG_CONTROL, ADMHCD_SW_RESET);
+
+        while (--retries) {
+		mdelay(1);
+		if (!(admhcd_reg_get(ahcd, ADMHCD_REG_CONTROL) & ADMHCD_SW_RESET))
+			break;
+	}
+	if (!retries) {
+		printk(KERN_WARNING "%s Software reset timeout\n", hcd_name);
+		ret = -ETIME;
+	}
+	spin_unlock_irqrestore(&ahcd->lock, flags);
+	return ret;
+}
+
+static int admhcd_reset(struct usb_hcd *hcd)
+{
+	struct admhcd *ahcd = hcd_to_admhcd(hcd);
+        u32 val = 0;
+	int ret, timeout = 15; /* ms */
+	unsigned long t;
+
+	ret = admhcd_sw_reset(ahcd);
+	if (ret)
+		return ret;
+
+	t = jiffies + msecs_to_jiffies(timeout);
+        while (time_before_eq(jiffies, t)) {
+                msleep(4);
+                spin_lock_irq(&ahcd->lock);
+                val = admhcd_reg_get(ahcd, ADMHCD_REG_HOSTCONTROL) & ADMHCD_OPR_ST;
+                spin_unlock_irq(&ahcd->lock);
+                if (val)
+                        break;
+        }
+        if (!val) {
+                printk(KERN_WARNING "Device not ready after %dms\n", timeout);
+                ret = -ENODEV;
+        }
+        return ret;
+}
+
+static void admhcd_stop(struct usb_hcd *hcd)
+{
+	struct admhcd *ahcd = hcd_to_admhcd(hcd);
+        unsigned long flags;
+	u32 val;
+
+        spin_lock_irqsave(&ahcd->lock, flags);
+        admhcd_reg_set(ahcd, ADMHCD_REG_INTENABLE, 0);
+	
+	/* Set global control of power for ports */
+	val = admhcd_reg_get(ahcd, ADMHCD_REG_RHDESCR);
+	val &= (~ADMHCD_PSM | ADMHCD_LPS);
+	admhcd_reg_set(ahcd, ADMHCD_REG_RHDESCR, val);
+
+	spin_unlock_irqrestore(&ahcd->lock, flags);
+
+	/* Ask for software reset */
+	admhcd_sw_reset(ahcd);
+}
+
+
 static struct hc_driver adm5120_hc_driver = {
 	.description =		hcd_name,
 	.product_desc =		"ADM5120 HCD",
 	.hcd_priv_size =	sizeof(struct admhcd),
 	.irq =			adm5120hcd_irq,
-	.flags =		HCD_USB11,
+	.flags =		HCD_MEMORY|HCD_USB11,
 	.urb_enqueue =		admhcd_urb_enqueue,
 	.urb_dequeue =		admhcd_urb_dequeue,
 	.endpoint_disable =	admhcd_endpoint_disable,
 	.get_frame_number =	admhcd_get_frame_number,
 	.hub_status_data =	admhcd_hub_status_data,
 	.hub_control =		admhcd_hub_control,
+	.start	=		admhcd_start,
+	.stop	=		admhcd_stop,
+	.reset =		admhcd_reset,
 };
 
 #define resource_len(r) (((r)->end - (r)->start) + 1)
@@ -707,13 +832,12 @@ static int __init adm5120hcd_probe(struct platform_device *pdev)
 {
         struct usb_hcd *hcd;
         struct admhcd *ahcd;
-	struct resource *addr, *data;
-	void __iomem *addr_reg;
+	struct resource *data;
 	void __iomem *data_reg;
 
         int err = 0, irq;
 
-	if (pdev->num_resources < 3) {
+	if (pdev->num_resources < 2) {
 		err = -ENODEV;
 		goto out;
         }
@@ -725,23 +849,12 @@ static int __init adm5120hcd_probe(struct platform_device *pdev)
 
 	irq = platform_get_irq(pdev, 0);
 	data = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-        addr = platform_get_resource(pdev, IORESOURCE_MEM, 1);
 
-	if (!addr || !data || irq < 0) {
+	if (!data || irq < 0) {
                 err = -ENODEV;
                 goto out;
         }
 
-	if (!request_mem_region(addr->start, 2, hcd_name)) {
-                err = -EBUSY;
-                goto out;
-        }
-
-        addr_reg = ioremap(addr->start, resource_len(addr));
-        if (addr_reg == NULL) {
-                err = -ENOMEM;
-                goto out_mem;
-        }
         if (!request_mem_region(data->start, 2, hcd_name)) {
                 err = -EBUSY;
                 goto out_unmap;
@@ -757,36 +870,18 @@ static int __init adm5120hcd_probe(struct platform_device *pdev)
         if (!hcd)
                 goto out_mem;
 
-	hcd->rsrc_start = addr->start;
+	hcd->rsrc_start = data->start;
+	hcd->rsrc_len	= resource_len(data);
+	hcd->regs = (u32)data_reg;
 	ahcd = hcd_to_admhcd(hcd);
 
 	spin_lock_init(&ahcd->lock);
 	INIT_LIST_HEAD(&ahcd->async);
 
 	ahcd->data_reg = data_reg;
-        ahcd->addr_reg = addr_reg;
+	ahcd->base = (u32)data_reg;
 
 	hcd->product_desc = "ADM5120 HCD";
-
-	/* Initialise the HCD registers */
-	admhcd_reg_set(ahcd, ADMHCD_REG_INTENABLE, 0);
-	mdelay(10);
-
-	admhcd_reg_set(ahcd, ADMHCD_REG_CONTROL, ADMHCD_SW_RESET);
-
-	while (admhcd_reg_get(ahcd, ADMHCD_REG_CONTROL) & ADMHCD_SW_RESET)
-		mdelay(1);
-
-	admhcd_reg_set(ahcd, ADMHCD_REG_CONTROL, ADMHCD_HOST_EN);
-	admhcd_reg_set(ahcd, ADMHCD_REG_HOSTHEAD, 0x00000000);
-	admhcd_reg_set(ahcd, ADMHCD_REG_FMINTERVAL, 0x20002edf);
-	admhcd_reg_set(ahcd, ADMHCD_REG_LSTHRESH, 0x628);
-	admhcd_reg_set(ahcd, ADMHCD_REG_INTENABLE,
-	    ADMHCD_INT_ACT | ADMHCD_INT_FATAL | ADMHCD_INT_SW | ADMHCD_INT_TD);
-	admhcd_reg_set(ahcd, ADMHCD_REG_INTSTATUS,
-	    ADMHCD_INT_ACT | ADMHCD_INT_FATAL | ADMHCD_INT_SW | ADMHCD_INT_TD);
-	admhcd_reg_set(ahcd, ADMHCD_REG_RHDESCR, ADMHCD_NPS | ADMHCD_LPSC);
-	admhcd_reg_set(ahcd, ADMHCD_REG_HOSTCONTROL, ADMHCD_STATE_OP);
 
 	err = usb_add_hcd(hcd, irq, IRQF_DISABLED);
 	if (err)
@@ -797,9 +892,9 @@ static int __init adm5120hcd_probe(struct platform_device *pdev)
 out_dev:
 	usb_put_hcd(hcd);
 out_unmap:
-	iounmap(addr_reg);
+	iounmap(data_reg);
 out_mem:
-	release_mem_region(pdev->resource[0].start, pdev->resource[0].end - pdev->resource[0].start);
+	release_mem_region(pdev->resource[0].start, pdev->resource[0].end - pdev->resource[0].start +1);
 out:
 	return err;
 }
