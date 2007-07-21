@@ -50,7 +50,11 @@
 #define DRV_DESC	"ADM5120 flash MAP driver"
 #define MAX_PARSED_PARTS 8
 
-#define MAP_DBG(m, f, a...)	printk(KERN_DEBUG "%s: " f, (m->name) , ## a)
+#ifdef ADM5120_FLASH_DEBUG
+#define MAP_DBG(m, f, a...)	printk(KERN_INFO "%s: " f, (m->name) , ## a)
+#else
+#define MAP_DBG(m, f, a...)	do {} while (0)
+#endif
 #define MAP_ERR(m, f, a...)	printk(KERN_ERR "%s: " f, (m->name) , ## a)
 #define MAP_INFO(m, f, a...)	printk(KERN_INFO "%s: " f, (m->name) , ## a)
 
@@ -145,7 +149,7 @@ static void adm5120_flash_switchbank(struct map_info *map,
 	if (bank > 1)
 		BUG();
 
-	MAP_DBG(map, "ofs=%lu, switching to bank %u\n", ofs, bank);
+	MAP_DBG(map, "switching to bank %u, ofs=%lX\n", bank, ofs);
 	amap->switch_bank(bank);
 }
 
@@ -190,26 +194,24 @@ static void adm5120_flash_copy_from(struct map_info *map, void *to,
 	char *p;
 	ssize_t t;
 
-	MAP_DBG(map, "copying %lu byte(s) from %lu to %lX\n",
-		(unsigned long)len, from, (unsigned long)to);
+	MAP_DBG(map, "copy_from, to=%lX, from=%lX, len=%lX\n",
+		(unsigned long)to, from, (unsigned long)len);
 
 	if (from > amap->chip_size)
 		return;
 
 	p = (char *)to;
 	while (len > 0) {
-		if (len > BANK_SIZE - (from & BANK_OFFS_MASK))
-			t = BANK_SIZE - (from & BANK_OFFS_MASK);
-		else
-			t = len;
-
-		MAP_DBG(map, "copying %lu byte(s) from %lu to %lX\n",
-			(unsigned long)t, (from & BANK_OFFS_MASK),
-			(unsigned long)p);
+		t = len;
+		if (from < BANK_SIZE && from+len > BANK_SIZE)
+			t = BANK_SIZE-from;
 
 		FLASH_LOCK();
+		MAP_DBG(map, "copying %lu byte(s) from %lX to %lX\n",
+			(unsigned long)t, (from & BANK_OFFS_MASK),
+			(unsigned long)p);
 		adm5120_flash_switchbank(map, from);
-		inline_map_copy_from(map, to, (from & BANK_OFFS_MASK), t);
+		inline_map_copy_from(map, p, (from & BANK_OFFS_MASK), t);
 		FLASH_UNLOCK();
 		p += t;
 		from += t;
