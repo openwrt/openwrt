@@ -298,10 +298,10 @@ endef
 $(eval $(call KernelPackage,ueagle-atm))
 
 define KernelPackage/usb-pwc
-  $(call usbdep,+kmod-videodev)
+  $(call usbdep,+kmod-videodev @LINUX_2_6)
   TITLE:=Philips WebCam driver
   DESCRIPTION:=Kernel modules for supporting Philips WebCam USB devices
-  KCONFIG:=CONFIG_USB_PWC
+  KCONFIG:=CONFIG_USB_PWC CONFIG_VIDEO_V4L1=y CONFIG_VIDEO_CAPTURE_DRIVERS=y CONFIG_V4L_USB_DRIVERS=y CONFIG_USB_PWC_DEBUG=n
   AUTOLOAD:=$(call AutoLoad,70,pwc)
 endef
 
