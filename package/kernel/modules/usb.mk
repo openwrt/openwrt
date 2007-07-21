@@ -407,7 +407,7 @@ define KernelPackage/usb-yealink
   $(call usbdep,@LINUX_2_6 +kmod-input-core +kmod-input-evdev)
   TITLE:=USB Yealink VOIP phone
   DESCRIPTION:=Kernel support for Yealink VOIP phone
-  KCONFIG:=CONFIG_USB_YEALINK
+  KCONFIG:=CONFIG_USB_YEALINK CONFIG_INPUT_YEALINK CONFIG_INPUT=m CONFIG_INPUT_MISC=y
   FILES:=$(LINUX_DIR)/drivers/$(USBINPUT_DIR)/yealink.ko
   AUTOLOAD:=$(call AutoLoad,70,yealink)
 endef
