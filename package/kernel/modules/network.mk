@@ -28,7 +28,7 @@ define KernelPackage/atmtcp
     Kernel module for ATM over TCP support
   DEPENDS:=@LINUX_2_6 kmod-atm
   FILES:=$(LINUX_DIR)/drivers/atm/atmtcp.$(LINUX_KMOD_SUFFIX)
-  KCONFIG:=CONFIG_ATM_TCP
+  KCONFIG:=CONFIG_ATM_TCP CONFIG_ATM_DRIVERS=y
   SUBMENU:=$(NSMENU)
   AUTOLOAD:=$(call AutoLoad,40,atmtcp)
 endef
