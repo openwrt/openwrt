@@ -9,7 +9,7 @@ define Profile/NSLU2
   NAME:=Linksys NSLU2
   PACKAGES:=kmod-ixp4xx-npe devio \
 	kmod-scsi-core \
-	kmod-usb-core kmod-usb2 kmod-usb-storage \
+	kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-storage \
 	kmod-fs-ext2 kmod-fs-ext3
 endef
 
