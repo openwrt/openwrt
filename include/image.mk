@@ -35,14 +35,15 @@ endef
 
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
   ifeq ($(CONFIG_TARGET_ROOTFS_JFFS2),y)
+    define Image/mkfs/jffs2/sub
+		@# FIXME: removing this line will cause the foreach loop below to execute the next statement only on the first iteration, don't ask why ;)
+		$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(1) -d $(BUILD_DIR)/root
+		$(call add_jffs2_mark,$(KDIR)/root.jffs2-$(1))
+		$(call Image/Build,jffs2-$(1))
+    endef
     define Image/mkfs/jffs2
 		rm -rf $(BUILD_DIR)/root/jffs
-		
-		$(foreach SZ,$(JFFS2_BLOCKSIZE),\
-			$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e $(patsubst %k,%KiB,$(SZ)) -o $(KDIR)/root.jffs2-$(SZ) -d $(BUILD_DIR)/root; \
-			$(call add_jffs2_mark,$(KDIR)/root.jffs2-$(SZ)); \
-			$(call Image/Build,jffs2-$(SZ)) \
-		)
+		$(foreach SZ,$(JFFS2_BLOCKSIZE),$(call Image/mkfs/jffs2/sub,$(SZ)))
     endef
   endif
     
