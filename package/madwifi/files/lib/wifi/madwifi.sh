@@ -50,6 +50,7 @@ scan_atheros() {
 disable_atheros() (
 	local device="$1"
 
+	set_wifi_down "$device"
 	# kill all running hostapd and wpa_supplicant processes that
 	# are running on atheros vifs 
 	for pid in `pidof hostapd wpa_supplicant`; do
@@ -204,6 +205,7 @@ enable_atheros() {
 			start_net "$ifname" "$net_cfg"
 		}
 		iwconfig "$ifname" essid "$ssid"
+		set_wifi_up "$vif" "$ifname"
 		case "$mode" in
 			ap)
 				config_get_bool isolate "$vif" isolate 0

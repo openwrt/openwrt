@@ -72,6 +72,25 @@ start_net() {(
 	setup_interface "$1" "$2"
 )}
 
+set_wifi_up() {
+	local cfg="$1"
+	local ifname="$2"
+	uci set "/var/state/wireless.${cfg}.up=1"
+	uci set "/var/state/wireless.${cfg}.ifname=$ifname"
+}
+
+set_wifi_down() {
+	local cfg="$1"
+	local vifs vif vifstr
+	config_get vifs "$cfg" vifs
+	for vif in $vifs; do
+		append vifstr "$vif" "|"
+	done
+	FILE="/var/state/wireless.$$"
+	grep -vE "^config_set '($vifstr)' " /var/state/wireless > "$FILE"
+	mv "$FILE" /var/state/wireless
+}
+
 scan_wifi() {
 	local cfgfile="$1"
 	config_cb() {
