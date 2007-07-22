@@ -1,7 +1,7 @@
 Index: madwifi-ng-r2568-20070710/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-07-13 11:18:17.733307111 +0200
-+++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-07-13 11:18:18.945376179 +0200
+--- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-07-23 01:48:42.258388337 +0200
++++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-07-23 01:48:43.370451713 +0200
 @@ -273,9 +273,7 @@
  static char *autocreate = NULL;
  static char *ratectl = DEF_RATE_CTL;
@@ -88,8 +88,8 @@ Index: madwifi-ng-r2568-20070710/ath/if_ath.c
  
 Index: madwifi-ng-r2568-20070710/net80211/ieee80211_wireless.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_wireless.c	2007-07-13 11:18:13.473064331 +0200
-+++ madwifi-ng-r2568-20070710/net80211/ieee80211_wireless.c	2007-07-13 11:18:18.949376408 +0200
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_wireless.c	2007-07-23 01:48:37.670126869 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_wireless.c	2007-07-23 01:48:43.374451939 +0200
 @@ -1403,6 +1403,7 @@
  	} else {
  		if (!fixed)		/* no change */
