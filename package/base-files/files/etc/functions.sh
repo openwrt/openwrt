@@ -146,14 +146,16 @@ config_set() {
 
 config_foreach() {
 	local function="$1"
-	local type="$2"
+	[ "$#" -ge 1 ] && shift
+	local type="$1"
+	[ "$#" -ge 1 ] && shift
 	local section cfgtype
 	
 	[ -z "$CONFIG_SECTIONS" ] && return 0
 	for section in ${CONFIG_SECTIONS}; do
 		config_get cfgtype "$section" TYPE
 		[ -n "$type" -a "x$cfgtype" != "x$type" ] && continue
-		eval "$function \"\$section\""
+		eval "$function \"\$section\" \"\$@\""
 	done
 }
 

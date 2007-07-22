@@ -67,24 +67,26 @@ EOF
 }
 
 initscript="$1"
-action="$2"
+[ "$#" -ge 1 ] && shift
+action="$1"
+[ "$#" -ge 1 ] && shift
 
 . "$initscript"
 
 cmds=
 for cmd in $EXTRA_COMMANDS; do
-	cmds="${cmds:+$cmds$N}$cmd) $cmd;;"
+	cmds="${cmds:+$cmds$N}$cmd) $cmd \"\$@\";;"
 done
 eval "case \"\$action\" in
-	start) start;;
-	stop) stop;;
-	reload) reload || restart;;
-	restart) restart;;
-	boot) boot;;
-	shutdown) shutdown;;
-	enable) enable;;
-	enabled) enabled;;
-	disable) disable;;
+	start) start \"\$@\";;
+	stop) stop \"\$@\";;
+	reload) reload \"\$@\" || restart \"\$@\";;
+	restart) restart \"\$@\";;
+	boot) boot \"\$@\";;
+	shutdown) shutdown \"\$@\";;
+	enable) enable \"\$@\";;
+	enabled) enabled \"\$@\";;
+	disable) disable \"\$@\";;
 	$cmds
 	*) help;;
 esac"
