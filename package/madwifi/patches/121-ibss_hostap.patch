@@ -1,7 +1,7 @@
 Index: madwifi-ng-r2568-20070710/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-07-13 11:18:17.213277476 +0200
-+++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-07-13 11:18:17.733307111 +0200
+--- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-07-23 01:48:41.758359843 +0200
++++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-07-23 01:48:42.258388337 +0200
 @@ -410,7 +410,6 @@
   * and use the next two bits as the index of the VAP.
   */
@@ -151,8 +151,8 @@ Index: madwifi-ng-r2568-20070710/ath/if_ath.c
  				ieee80211_keyix_t keyix;
 Index: madwifi-ng-r2568-20070710/ath/if_athvar.h
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/ath/if_athvar.h	2007-07-13 11:18:13.781081883 +0200
-+++ madwifi-ng-r2568-20070710/ath/if_athvar.h	2007-07-13 11:18:17.737307338 +0200
+--- madwifi-ng-r2568-20070710.orig/ath/if_athvar.h	2007-07-23 01:48:38.006146018 +0200
++++ madwifi-ng-r2568-20070710/ath/if_athvar.h	2007-07-23 01:48:42.262388566 +0200
 @@ -204,7 +204,7 @@
  #define	ATH_RXBUF	40		/* number of RX buffers */
  #define	ATH_TXBUF	200		/* number of TX buffers */
@@ -172,8 +172,8 @@ Index: madwifi-ng-r2568-20070710/ath/if_athvar.h
  	HAL_INT sc_imask;			/* interrupt mask copy */
 Index: madwifi-ng-r2568-20070710/net80211/ieee80211_beacon.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_beacon.c	2007-07-13 11:18:13.785082112 +0200
-+++ madwifi-ng-r2568-20070710/net80211/ieee80211_beacon.c	2007-07-13 11:18:17.857314176 +0200
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_beacon.c	2007-07-23 01:48:38.010146245 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_beacon.c	2007-07-23 01:48:42.278389477 +0200
 @@ -111,7 +111,7 @@
  	bo->bo_tim = frm;
  
@@ -185,8 +185,8 @@ Index: madwifi-ng-r2568-20070710/net80211/ieee80211_beacon.c
  		*frm++ = 0; *frm++ = 0;		/* TODO: ATIM window */
 Index: madwifi-ng-r2568-20070710/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_input.c	2007-07-13 11:18:13.793082567 +0200
-+++ madwifi-ng-r2568-20070710/net80211/ieee80211_input.c	2007-07-13 11:18:17.885315771 +0200
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_input.c	2007-07-23 01:48:38.018146699 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_input.c	2007-07-23 01:48:42.282389707 +0200
 @@ -2981,7 +2981,13 @@
  			return;
  		}
@@ -219,8 +219,8 @@ Index: madwifi-ng-r2568-20070710/net80211/ieee80211_input.c
  		IEEE80211_NOTE_MAC(vap, IEEE80211_MSG_INPUT, wh->i_addr2,
 Index: madwifi-ng-r2568-20070710/net80211/ieee80211_node.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_node.c	2007-07-13 11:18:16.669246471 +0200
-+++ madwifi-ng-r2568-20070710/net80211/ieee80211_node.c	2007-07-13 11:18:17.925318050 +0200
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_node.c	2007-07-23 01:48:41.230329754 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_node.c	2007-07-23 01:48:42.330392441 +0200
 @@ -1084,8 +1084,25 @@
  	IEEE80211_NODE_TABLE_LOCK_ASSERT(nt);
  

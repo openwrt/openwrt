@@ -1,7 +1,7 @@
 Index: madwifi-ng-r2568-20070710/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-07-13 11:18:20.353456423 +0200
-+++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-07-13 11:18:20.621471697 +0200
+--- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-07-23 01:48:45.406567742 +0200
++++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-07-23 01:48:45.690583928 +0200
 @@ -3384,7 +3384,9 @@
  		rfilt |= HAL_RX_FILTER_PROM;
  	if (ic->ic_opmode == IEEE80211_M_STA ||
@@ -15,8 +15,8 @@ Index: madwifi-ng-r2568-20070710/ath/if_ath.c
  		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON |
 Index: madwifi-ng-r2568-20070710/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_input.c	2007-07-13 11:18:20.045438868 +0200
-+++ madwifi-ng-r2568-20070710/net80211/ieee80211_input.c	2007-07-13 11:18:20.621471697 +0200
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_input.c	2007-07-23 01:48:45.030546315 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_input.c	2007-07-23 01:48:45.690583928 +0200
 @@ -321,11 +321,12 @@
  				bssid = wh->i_addr3;
  			}
@@ -99,8 +99,8 @@ Index: madwifi-ng-r2568-20070710/net80211/ieee80211_input.c
  		 */
 Index: madwifi-ng-r2568-20070710/net80211/ieee80211_node.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_node.c	2007-07-13 11:18:17.925318050 +0200
-+++ madwifi-ng-r2568-20070710/net80211/ieee80211_node.c	2007-07-13 11:18:20.637472608 +0200
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_node.c	2007-07-23 01:48:42.330392441 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_node.c	2007-07-23 01:48:45.694584154 +0200
 @@ -332,10 +332,16 @@
  	/* Update country ie information */
  	ieee80211_build_countryie(ic);
@@ -122,8 +122,8 @@ Index: madwifi-ng-r2568-20070710/net80211/ieee80211_node.c
  }
 Index: madwifi-ng-r2568-20070710/net80211/ieee80211_proto.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_proto.c	2007-07-13 11:18:19.601413567 +0200
-+++ madwifi-ng-r2568-20070710/net80211/ieee80211_proto.c	2007-07-13 11:18:20.665474204 +0200
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_proto.c	2007-07-23 01:48:44.570520097 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_proto.c	2007-07-23 01:48:45.718585522 +0200
 @@ -586,6 +586,28 @@
  	{ 4, { 2, 4, 11, 22 } },	/* IEEE80211_MODE_TURBO_G (mixed b/g) */
  };
@@ -155,8 +155,8 @@ Index: madwifi-ng-r2568-20070710/net80211/ieee80211_proto.c
   * specified mode.  For 11b compatibility we mark only 11b
 Index: madwifi-ng-r2568-20070710/net80211/ieee80211_var.h
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_var.h	2007-07-13 11:18:19.625414935 +0200
-+++ madwifi-ng-r2568-20070710/net80211/ieee80211_var.h	2007-07-13 11:18:20.705476482 +0200
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_var.h	2007-07-23 01:48:44.622523064 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_var.h	2007-07-23 01:48:45.734586433 +0200
 @@ -592,6 +592,8 @@
  void ieee80211_build_countryie(struct ieee80211com *);
  int ieee80211_media_setup(struct ieee80211com *, struct ifmedia *, u_int32_t,

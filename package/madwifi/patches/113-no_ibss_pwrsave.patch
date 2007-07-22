@@ -1,13 +1,13 @@
 Index: madwifi-ng-r2568-20070710/net80211/ieee80211_scan.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_scan.c	2007-07-13 11:18:14.033096248 +0200
-+++ madwifi-ng-r2568-20070710/net80211/ieee80211_scan.c	2007-07-13 11:18:16.977264023 +0200
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_scan.c	2007-07-23 01:48:38.374166989 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_scan.c	2007-07-23 01:48:41.534347075 +0200
 @@ -291,7 +291,8 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	int delay;
  
 -	ieee80211_sta_pwrsave(vap, 1);
-+	if (vap->iv_opmode != IEEE80211_M_IBSS) 
++	if (vap->iv_opmode != IEEE80211_M_IBSS)
 +	    ieee80211_sta_pwrsave(vap, 1);
  	/*
  	 * Use an initial 1ms delay to ensure the null
