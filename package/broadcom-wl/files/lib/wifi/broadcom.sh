@@ -71,6 +71,7 @@ scan_broadcom() {
 }
 
 disable_broadcom() {
+	set_wifi_down "$1"
 	wlc down
 	(
 		include /lib/network
@@ -197,6 +198,7 @@ enable_broadcom() {
 		[ -z "$net_cfg" ] || {
 			bridge="$(bridge_interface "$net_cfg")"
 			append if_up "start_net '$ifname' '$net_cfg'" ";$N"
+			append if_up "set_wifi_up '$vif' '$ifname'" ";$N"
 		}
 		[ -z "$nasopts" ] || {
 			eval "${vif}_ssid=\"\$ssid\""
