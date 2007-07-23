@@ -1,7 +1,7 @@
 Index: madwifi-ng-r2568-20070710/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_input.c	2007-07-23 01:48:42.282389707 +0200
-+++ madwifi-ng-r2568-20070710/net80211/ieee80211_input.c	2007-07-23 01:48:44.214499810 +0200
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_input.c	2007-07-24 00:01:54.068861828 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_input.c	2007-07-24 00:02:44.035709278 +0200
 @@ -2875,7 +2875,7 @@
  		}
  		if ((vap->iv_opmode == IEEE80211_M_IBSS) && 
@@ -11,3 +11,16 @@ Index: madwifi-ng-r2568-20070710/net80211/ieee80211_input.c
  				/* Create a new entry in the neighbor table. */
  				ni = ieee80211_add_neighbor(vap, wh, &scan);
  			} else {
+Index: madwifi-ng-r2568-20070710/net80211/ieee80211_node.c
+===================================================================
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_node.c	2007-07-24 00:02:51.284122342 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_node.c	2007-07-24 00:03:04.540877800 +0200
+@@ -1205,7 +1205,7 @@
+ 	struct ieee80211com *ic = vap->iv_ic;
+ 	struct ieee80211_node *ni;
+ 
+-	ni = ieee80211_dup_bss(vap, wh->i_addr2, 1);
++	ni = ieee80211_dup_bss(vap, wh->i_addr2, 0);
+ 	if (ni != NULL) {
+ 		ni->ni_esslen = sp->ssid[1];
+ 		memcpy(ni->ni_essid, sp->ssid + 2, sp->ssid[1]);
