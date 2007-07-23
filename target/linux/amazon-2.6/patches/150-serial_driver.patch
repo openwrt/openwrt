@@ -1,0 +1,12 @@
+Index: linux-2.6.21.5/drivers/serial/Makefile
+===================================================================
+--- linux-2.6.21.5.orig/drivers/serial/Makefile	2007-06-24 10:51:45.005412992 +0200
++++ linux-2.6.21.5/drivers/serial/Makefile	2007-06-24 10:51:54.885910928 +0200
+@@ -5,6 +5,7 @@
+ #
+ 
+ obj-$(CONFIG_SERIAL_CORE) += serial_core.o
++obj-$(CONFIG_AMAZON_ASC_UART) += amazon_asc.o
+ obj-$(CONFIG_SERIAL_21285) += 21285.o
+ obj-$(CONFIG_SERIAL_8250) += 8250.o
+ obj-$(CONFIG_SERIAL_8250_PNP) += 8250_pnp.o
