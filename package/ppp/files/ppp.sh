@@ -24,6 +24,7 @@ start_pppd() {
 
 	config_get connect "$cfg" connect
 	config_get disconnect "$cfg" disconnect
+	config_get pppd_options "$cfg" pppd_options
 
 	interval="${keepalive##*[, ]}"
 	[ "$interval" != "$keepalive" ] || interval=5
@@ -40,7 +41,8 @@ start_pppd() {
 		linkname "$cfg" \
 		ipparam "$cfg" \
 		${connect:+connect "$connect"} \
-		${disconnect:+disconnect "$disconnect"}
+		${disconnect:+disconnect "$disconnect"} \
+		${pppd_options}
 
 	lock -u "/var/lock/ppp-${cfg}"
 }
