@@ -71,8 +71,10 @@ static struct board_desc common_boards[] __initdata = {
 	DEFBOARD("112",			MACH_ADM5120_RB_112),
 	DEFBOARD("133",			MACH_ADM5120_RB_133),
 	DEFBOARD("133C",		MACH_ADM5120_RB_133C),
-	DEFBOARD("miniROUTER",		MACH_ADM5120_RB_150),
+	DEFBOARD("133C3",		MACH_ADM5120_RB_133C),
+	DEFBOARD("150",			MACH_ADM5120_RB_153), /* it's intentional */
 	DEFBOARD("153",			MACH_ADM5120_RB_153),
+	DEFBOARD("miniROUTER",		MACH_ADM5120_RB_150),
 };
 
 static unsigned long __init find_machtype_byname(char *name)

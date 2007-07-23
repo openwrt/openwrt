@@ -49,6 +49,14 @@
 #endif
 
 /*
+ * Compex boards
+ */
+#if defined(CONFIG_BOARD_WP54GWRT)
+#  define CONFIG_BOARD_NAME	"WP54G-WRT"
+#  define CONFIG_FLASH_SIZE	FLASH_4M
+#endif
+
+/*
  * Edimax boards
  */
 #if defined(CONFIG_BOARD_BR6104K)
