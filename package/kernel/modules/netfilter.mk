@@ -231,6 +231,7 @@ define KernelPackage/ebtables
   TITLE:=Bridge firewalling modules
   DESCRIPTION:=\
 	Kernel modules for Ethernet Bridge firewalling
+  DEPENDS:=@LINUX_2_6
   FILES:=$(LINUX_DIR)/net/bridge/netfilter/*.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=CONFIG_BRIDGE_NF_EBTABLES
   SUBMENU:=$(NFMENU)
