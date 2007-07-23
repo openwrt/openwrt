@@ -52,7 +52,8 @@ $(eval $(call Require,working-gcc, \
 
 define Require/working-g++
 	echo 'int main(int argc, char **argv) { return 0; }' | \
-		g++ -x c++ -o $(TMP_DIR)/a.out -lstdc++ -
+		g++ -x c++ -o $(TMP_DIR)/a.out -lstdc++ - && \
+		$(TMP_DIR)/a.out
 endef
 
 $(eval $(call Require,working-g++, \
