@@ -249,6 +249,20 @@ define KernelPackage/nls-iso8859-1/2.6
 endef
 $(eval $(call KernelPackage,nls-iso8859-1))
 
+define KernelPackage/nls-iso8859-2
+  TITLE:=ISO 8859-2 (Latin 2; Central European Languages)
+  DESCRIPTION:=Kernel module for ISO 8859-2 (Latin 2)
+  KCONFIG:=CONFIG_NLS_ISO8859_2
+  SUBMENU:=$(FSMENU)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-2.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,25,nls_iso8859-2)
+endef
+
+define KernelPackage/nls-iso8859-2/2.6
+  DEPENDS:=+kmod-nls-base
+endef
+$(eval $(call KernelPackage,nls-iso8859-2))
+
 define KernelPackage/nls-iso8859-15
   TITLE:=ISO 8859-15 (Latin 9; Western, with Euro symbol)
   DESCRIPTION:=Kernel module for ISO 8859-15 (Latin 9)
