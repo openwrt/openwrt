@@ -23,9 +23,6 @@ ifneq ($(DUMP),)
   .SILENT: $(TMP_CONFIG)
 endif
 
-ifneq ($(CONFIG_ATM),)
-  FEATURES += atm
-endif
 ifneq ($(CONFIG_PCI),)
   FEATURES += pci
 endif
@@ -34,9 +31,6 @@ ifneq ($(CONFIG_USB),)
 endif
 ifneq ($(CONFIG_PCMCIA)$(CONFIG_PCCARD),)
   FEATURES += pcmcia
-endif
-ifneq ($(CONFIG_VIDEO_DEV),)
-  FEATURES += video
 endif
 
 # remove duplicates

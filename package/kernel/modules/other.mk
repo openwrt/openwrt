@@ -41,51 +41,6 @@ define KernelPackage/crypto
 endef
 $(eval $(call KernelPackage,crypto))
 
-define KernelPackage/ide-core
-  TITLE:=Kernel support for IDE
-  DESCRIPTION:=\
-	Useful for usb mass storage devices (e.g. on WL-HDD)\\\
-	\\\
-	Includes: \\\
-	- ide-core \\\
-	- ide-detect \\\
-	- ide-disk
-  KCONFIG:=CONFIG_IDE
-  FILES:=$(LINUX_DIR)/drivers/ide/*.$(LINUX_KMOD_SUFFIX)
-  SUBMENU:=$(EMENU)
-  AUTOLOAD:=$(call AutoLoad,20,ide-core) $(call AutoLoad,90,ide-generic ide-detect ide-disk)
-endef
-$(eval $(call KernelPackage,ide-core))
-
-define KernelPackage/ide-pdc202xx
-  TITLE:=PDC202xx IDE driver
-  SUBMENU:=$(EMENU)
-  DEPENDS:=@LINUX_2_4
-  KCONFIG:=CONFIG_BLK_DEV_PDC202XX_OLD
-  FILES:=$(LINUX_DIR)/drivers/ide/pci/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,pdc202xx_old)
-endef
-$(eval $(call KernelPackage,ide-pdc202xx))
-
-define KernelPackage/ide-aec62xx
-  TITLE:=AEC62xx IDE driver
-  SUBMENU:=$(EMENU)
-  KCONFIG:=CONFIG_BLK_DEV_AEC62XX
-  FILES:=$(LINUX_DIR)/drivers/ide/pci/aec62xx.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,aec62xx)
-endef
-$(eval $(call KernelPackage,ide-aec62xx))
-
-define KernelPackage/scsi-core
-  TITLE:=Kernel support for SCSI
-  SUBMENU:=$(EMENU)
-  KCONFIG:=CONFIG_SCSI CONFIG_BLK_DEV_SD
-  FILES:= \
-    $(LINUX_DIR)/drivers/scsi/scsi_mod.$(LINUX_KMOD_SUFFIX) \
-    $(LINUX_DIR)/drivers/scsi/sd_mod.$(LINUX_KMOD_SUFFIX)
-endef
-$(eval $(call KernelPackage,scsi-core))
-
 define KernelPackage/lp
   TITLE:=Parallel port and line printer support
   DEPENDS:=@LINUX_2_4
@@ -278,7 +233,6 @@ $(eval $(call KernelPackage,softdog))
 define KernelPackage/videodev
   TITLE=Video4Linux support
   DESCRIPTION:=Kernel modules for Video4Linux support
-  DEPENDS:=@VIDEO_SUPPORT
   SUBMENU:=$(EMENU)
   KCONFIG:=CONFIG_VIDEO_DEV
   FILES:=$(LINUX_DIR)/drivers/media/video/*.$(LINUX_KMOD_SUFFIX)
@@ -340,6 +294,7 @@ $(eval $(call KernelPackage,scx200-wdt))
 define KernelPackage/hwmon
   TITLE:=Hardware monitoring support
   DESCRIPTION:=Kernel modules for hardware monitoring
+  DEPENDS:=@LINUX_2_6
   SUBMENU:=$(EMENU)
   KCONFIG:=CONFIG_HWMON_VID
   FILES:= \

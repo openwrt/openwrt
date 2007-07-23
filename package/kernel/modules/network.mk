@@ -10,9 +10,9 @@ NSMENU:=Network Support
 
 define KernelPackage/atm
   TITLE:=ATM support
-  DEPENDS:=@ATM_SUPPORT
   DESCRIPTION:= \
     Kernel modules for ATM support
+  DEPENDS:=@LINUX_2_6
   FILES:= \
     $(LINUX_DIR)/net/atm/atm.$(LINUX_KMOD_SUFFIX) \
     $(LINUX_DIR)/net/atm/br2684.$(LINUX_KMOD_SUFFIX)
@@ -38,7 +38,6 @@ define KernelPackage/bonding
   TITLE:=Ethernet bonding driver
   DESCRIPTION:= \
     Kernel module for NIC bonding.
-  DEPENDS:=@LINUX_2_6_X86
   FILES:=$(LINUX_DIR)/drivers/net/bonding/bonding.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=CONFIG_BONDING
   SUBMENU:=$(NSMENU)
@@ -208,7 +207,7 @@ define KernelPackage/pppoa
   TITLE:=PPPoA support
   DESCRIPTION:=\
 	Kernel modules for PPPoA (PPP over ATM) support
-  DEPENDS:=kmod-ppp
+  DEPENDS:=kmod-ppp kmod-atm
   KCONFIG:=CONFIG_PPPOATM
   FILES:=$(LINUX_DIR)/net/atm/pppoatm.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,pppoatm)
@@ -263,6 +262,7 @@ $(eval $(call KernelPackage,ax25))
 
 define KernelPackage/mp-alg
   TITLE:=ECMP caching algorithms
+  DEPENDS:=@LINUX_2_6
   DESCRIPTION:= \
 	Kernel modules that provide several different algorithms for multipath \\\
 	route selection from the route cache. The iproute "mpath" argument allows \\\

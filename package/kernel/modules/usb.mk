@@ -171,7 +171,7 @@ endef
 $(eval $(call KernelPackage,usb-serial))
 
 define KernelPackage/usb-serial-airprime
-  $(call usbdep,kmod-usb-serial)
+  $(call usbdep,kmod-usb-serial @LINUX_2_6)
   TITLE:=Support for Airprime (EVDO) 
   DESCRIPTION:=Kernel support for Airprime (EVDO) 
   KCONFIG:=CONFIG_USB_SERIAL_AIRPRIME
@@ -224,7 +224,7 @@ $(eval $(call KernelPackage,usb-serial-pl2303))
 
 
 define KernelPackage/usb-serial-sierrawireless
-  $(call usbdep,kmod-usb-serial)
+  $(call usbdep,kmod-usb-serial @LINUX_2_6)
   TITLE:=Support for Sierra Wireless devices
   DESCRIPTION:=Kernel support for Sierra Wireless devices
   KCONFIG:=CONFIG_USB_SERIAL_SIERRAWIRELESS
@@ -245,7 +245,7 @@ endef
 $(eval $(call KernelPackage,usb-serial-visor))
 
 define KernelPackage/usb-serial-option
-  $(call usbdep,kmod-usb-serial)
+  $(call usbdep,kmod-usb-serial @LINUX_2_6)
   TITLE:=Support for Option HSDPA modems
   DESCRIPTION:=Kernel support for Option HSDPA modems
   DEPENDS:=@LINUX_2_6
@@ -315,18 +315,11 @@ endef
 $(eval $(call KernelPackage,usb-pwc))
 
 define KernelPackage/cpia2
-  $(call usbdep,+kmod-videodev)
+  $(call usbdep,+kmod-videodev @LINUX_2_6)
   TITLE:=CPIA2 video driver
   DESCRIPTION:=Kernel modules for CPIA2 WebCam devices
   KCONFIG:=CONFIG_VIDEO_CPIA2
   AUTOLOAD:=$(call AutoLoad,70,cpia2)
-endef
-
-define KernelPackage/cpia2/2.4
-  FILES:=$(LINUX_DIR)/drivers/usb/cpia2.$(LINUX_KMOD_SUFFIX)
-endef
-
-define KernelPackage/cpia2/2.6
   FILES:=$(LINUX_DIR)/drivers/media/video/cpia2/cpia2.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,cpia2))
@@ -350,18 +343,10 @@ endef
 $(eval $(call KernelPackage,usb-net))
 
 define KernelPackage/usb-net-asix
-  $(call usbdep,kmod-usb-net)
+  $(call usbdep,kmod-usb-net @LINUX_2_6)
   TITLE:=Kernel module for USB-to-Ethernet Asix convertors
   DESCRIPTION:=Kernel module for USB-to-Ethernet Asix convertors
   KCONFIG:=CONFIG_USB_NET_AX8817X
-endef
-
-define KernelPackage/usb-net-asix/2.4
-  FILES:=$(LINUX_DIR)/drivers/usb/ax8817x.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call Autoload,61,ax8817x)
-endef
-
-define KernelPackage/usb-net-asix/2.6
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/asix.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call Autoload,61,asix)
 endef
@@ -369,7 +354,7 @@ endef
 $(eval $(call KernelPackage,usb-net-asix))
 
 define KernelPackage/usb-net-kaweth
-  $(call usbdep,kmod-usb-net)
+  $(call usbdep,kmod-usb-net @LINUX_2_6)
   TITLE:=Kernel module for USB-to-Ethernet Kaweth convertors
   DESCRIPTION:=Kernel module for USB-to-Ethernet Kaweth convertors
   KCONFIG:=CONFIG_USB_KAWETH
@@ -380,7 +365,7 @@ endef
 $(eval $(call KernelPackage,usb-net-kaweth))
 
 define KernelPackage/usb-net-pegasus
-  $(call usbdep,kmod-usb-net)
+  $(call usbdep,kmod-usb-net @LINUX_2_6)
   TITLE:=Kernel module for USB-to-Ethernet Pegasus convertors
   DESCRIPTION:=Kernel module for USB-to-Ethernet Pegasus convertors
   KCONFIG:=CONFIG_USB_PEGASUS

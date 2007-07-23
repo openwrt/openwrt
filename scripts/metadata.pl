@@ -247,9 +247,7 @@ sub target_config_features(@) {
 		/broken/ and $ret .= "\tdepends BROKEN\n";
 		/pci/ and $ret .= "\tselect PCI_SUPPORT\n";
 		/usb/ and $ret .= "\tselect USB_SUPPORT\n";
-		/atm/ and $ret .= "\tselect ATM_SUPPORT\n";
 		/pcmcia/ and $ret .= "\tselect PCMCIA_SUPPORT\n";
-		/video/ and $ret .= "\tselect VIDEO_SUPPORT\n";
 		/squashfs/ and $ret .= "\tselect USES_SQUASHFS\n";
 		/jffs2/ and $ret .= "\tselect USES_JFFS2\n";
 		/ext2/ and $ret .= "\tselect USES_EXT2\n";

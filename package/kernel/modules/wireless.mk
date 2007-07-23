@@ -17,7 +17,7 @@ define KernelPackage/ieee80211
 	- ieee80211 \\\
 	- ieee80211_crypt_wep \\\
 	- ieee80211_crypt_tkip \\\
-	- ieee80211_crytp_ccmp \\\
+	- ieee80211_crytp_ccmp
   DEPENDS:=@LINUX_2_6 +kmod-crypto
   KCONFIG:=CONFIG_IEEE80211
   FILES:= \
@@ -115,6 +115,7 @@ $(eval $(call KernelPackage,net-airo))
 define KernelPackage/net-hermes
   TITLE:=Hermes 802.11b chipset support
   DESCRIPTION:=Kernel support for Hermes 802.11b chipsets
+  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_HERMES
   SUBMENU:=$(WIMENU)
   FILES:= \
@@ -128,6 +129,7 @@ $(eval $(call KernelPackage,net-hermes))
 define KernelPackage/net-hermes-pci
   TITLE:=Intersil Prism 2.5 PCI support
   DESCRIPTION:=Kernel modules for Intersil Prism 2.5 PCI support
+  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_PCI_HERMES
   DEPENDS:=kmod-net-hermes
   SUBMENU:=$(WIMENU)
@@ -140,6 +142,7 @@ $(eval $(call KernelPackage,net-hermes-pci))
 define KernelPackage/net-hermes-plx
   TITLE:=PLX9052 based PCI adaptor
   DESCRIPTION:=Kernel modules for Hermes in PLX9052 based PCI adaptors
+  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_PLX_HERMES
   DEPENDS:=kmod-net-hermes
   SUBMENU:=$(WIMENU)
