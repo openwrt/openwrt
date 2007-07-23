@@ -157,6 +157,7 @@ define KernelPackage/capi
   TITLE:=CAPI Support
   DESCRIPTION:=Kernel module for basic CAPI support
   KCONFIG:=CONFIG_ISDN CONFIG_ISDN_CAPI CONFIG_ISDN_CAPI_CAPI20
+  DEPENDS:=@LINUX_2_6
   SUBMENU:=$(EMENU)
   AUTOLOAD:=$(call AutoLoad,30,kernelcapi capi)
   FILES:=$(LINUX_DIR)/drivers/isdn/capi/*capi.$(LINUX_KMOD_SUFFIX)
@@ -363,6 +364,7 @@ define KernelPackage/input-core
   TITLE:=Input device core
   DESCRIPTION:=Kernel modules for support of input device
   SUBMENU:=$(EMENU)
+  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_INPUT
   FILES:=$(LINUX_DIR)/drivers/input/input-core.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,input-core)
