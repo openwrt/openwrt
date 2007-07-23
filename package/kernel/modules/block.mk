@@ -9,7 +9,7 @@ define KernelPackage/ide-core
 	- ide-core \\\
 	- ide-detect \\\
 	- ide-disk
-  KCONFIG:=CONFIG_IDE
+  KCONFIG:=CONFIG_IDE CONFIG_BLK_DEV_IDE CONFIG_IDE_GENERIC CONFIG_BLK_DEV_IDEDISK
   SUBMENU:=$(BLMENU)
 endef
 define KernelPackage/ide-core/2.4
@@ -23,9 +23,8 @@ define KernelPackage/ide-core/2.6
   FILES:= \
 	$(LINUX_DIR)/drivers/ide/ide-core.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/ide/ide-detect.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/ide/ide-disk.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,20,ide-core) $(call AutoLoad,90,ide-generic ide-detect ide-disk)
+  AUTOLOAD:=$(call AutoLoad,20,ide-core) $(call AutoLoad,90,ide-generic ide-disk)
 endef
 $(eval $(call KernelPackage,ide-core))
 
