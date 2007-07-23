@@ -7,6 +7,7 @@
 # $Id$
 
 NFMENU:=Netfilter Extensions
+include $(INCLUDE_DIR)/netfilter.mk
 
 define KernelPackage/ipt-conntrack
   TITLE:=Modules for connection tracking
@@ -17,6 +18,7 @@ define KernelPackage/ipt-conntrack
 	- ipt_conntrack \\\
 	- ipt_helper \\\
 	- ipt_connmark/CONNMARK
+  KCONFIG:=$(KCONFIG_IPT_CONNTRACK)
   FILES:=$(foreach mod,$(IPT_CONNTRACK-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   SUBMENU:=$(NFMENU)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_CONNTRACK-m)))
@@ -31,6 +33,7 @@ define KernelPackage/ipt-filter
 	Includes: \\\
 	- ipt_ipp2p \\\
 	- ipt_layer7
+  KCONFIG:=$(KCONFIG_IPT_FILTER)
   FILES:=$(foreach mod,$(IPT_FILTER-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   SUBMENU:=$(NFMENU)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_FILTER-m)))
@@ -52,6 +55,7 @@ define KernelPackage/ipt-ipopt
 	- ipt_tcpmms \\\
 	- ipt_ttl/TTL \\\
 	- ipt_unclean
+  KCONFIG:=$(KCONFIG_IPT_IPOPT)
   FILES:=$(foreach mod,$(IPT_IPOPT-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   SUBMENU:=$(NFMENU)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_IPOPT-m)))
@@ -66,6 +70,7 @@ define KernelPackage/ipt-ipsec
 	Includes: \\\
 	- ipt_ah \\\
 	- ipt_esp
+  KCONFIG:=$(KCONFIG_IPT_IPSEC)
   FILES:=$(foreach mod,$(IPT_IPSEC-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   SUBMENU:=$(NFMENU)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_IPSEC-m)))
@@ -80,6 +85,7 @@ define KernelPackage/ipt-nat
 	Includes: \\\
 	- ipt_REDIRECT \\\
 	- ipt_NETMAP
+  KCONFIG:=$(KCONFIG_IPT_NAT)
   FILES:=$(foreach mod,$(IPT_NAT-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   SUBMENU:=$(NFMENU)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_NAT-m)))
@@ -97,6 +103,7 @@ define KernelPackage/ipt-nathelper
 	- ip_conntrack_irc \\\
 	- ip_nat_irc \\\
 	- ip_conntrack_tftp
+  KCONFIG:=$(KCONFIG_IPT_NAT_DEFAULT)
   FILES:=$(foreach mod,$(IPT_NAT_DEFAULT-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   SUBMENU:=$(NFMENU)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_NAT_DEFAULT-m)))
@@ -117,6 +124,7 @@ define KernelPackage/ipt-nathelper-extra
 	- ip_conntrack_sip \\\
 	- ip_nat_sip \\\
 	- ip_nat_snmp_basic
+  KCONFIG:=$(KCONFIG_IPT_NAT_EXTRA)
   FILES:=$(foreach mod,$(IPT_NAT_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   SUBMENU:=$(NFMENU)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_NAT_EXTRA-m)))
@@ -142,6 +150,7 @@ define KernelPackage/ipt-queue
 	\\\
 	Includes: \\\
 	- ipt_QUEUE
+  KCONFIG:=$(KCONFIG_IPT_QUEUE)
   FILES:=$(foreach mod,$(IPT_QUEUE-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   SUBMENU:=$(NFMENU)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_QUEUE-m)))
@@ -155,6 +164,7 @@ define KernelPackage/ipt-ulog
 	\\\
 	Includes: \\\
 	- ipt_ULOG
+  KCONFIG:=$(KCONFIG_IPT_ULOG)
   FILES:=$(foreach mod,$(IPT_ULOG-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   SUBMENU:=$(NFMENU)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_ULOG-m)))
@@ -178,6 +188,7 @@ define KernelPackage/ipt-ipset
   TITLE:=IPSET Modules
   DESCRIPTION:=\
   	Netfilter kernel modules for ipset
+  KCONFIG:=$(KCONFIG_IPT_IPSET)
   FILES:=$(foreach mod,$(IPT_IPSET-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   SUBMENU:=$(NFMENU)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_IPSET-m)))
@@ -197,6 +208,7 @@ define KernelPackage/ipt-extra
 	- ipt_recent \\\
 	- iptable_raw \\\
 	- xt_NOTRACK 
+  KCONFIG:=$(KCONFIG_IPT_EXTRA)
   FILES:=$(foreach mod,$(IPT_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   SUBMENU:=$(NFMENU)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_EXTRA-m)))
