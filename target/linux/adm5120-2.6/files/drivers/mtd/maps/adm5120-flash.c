@@ -61,7 +61,7 @@
 struct adm5120_map_info {
 	struct map_info	map;
 	void 		(*switch_bank)(unsigned);
-	unsigned long	chip_size;
+	unsigned long	window_size;
 };
 
 struct adm5120_flash_info {
@@ -158,14 +158,14 @@ static map_word adm5120_flash_read(struct map_info *map, unsigned long ofs)
 	struct adm5120_map_info *amap = map_to_amap(map);
 	map_word ret;
 
-	MAP_DBG(map, "reading from ofs %lu\n", ofs);
+	MAP_DBG(map, "reading from ofs %lX\n", ofs);
 
-	if (ofs >= amap->chip_size)
+	if (ofs >= amap->window_size)
 		return map_word_ff(map);
 
 	FLASH_LOCK();
 	adm5120_flash_switchbank(map, ofs);
-	ret = inline_map_read(map, (ofs & BANK_OFFS_MASK));
+	ret = inline_map_read(map, (ofs & (amap->window_size-1)));
 	FLASH_UNLOCK();
 
 	return ret;
@@ -176,14 +176,14 @@ static void adm5120_flash_write(struct map_info *map, const map_word datum,
 {
 	struct adm5120_map_info *amap = map_to_amap(map);
 
-	MAP_DBG(map,"writing to ofs %lu\n", ofs);
+	MAP_DBG(map,"writing to ofs %lX\n", ofs);
 
-	if (ofs > amap->chip_size)
+	if (ofs > amap->window_size)
 		return;
 
 	FLASH_LOCK();
 	adm5120_flash_switchbank(map, ofs);
-	inline_map_write(map, datum, (ofs & BANK_OFFS_MASK));
+	inline_map_write(map, datum, (ofs & (amap->window_size-1)));
 	FLASH_UNLOCK();
 }
 
@@ -197,21 +197,21 @@ static void adm5120_flash_copy_from(struct map_info *map, void *to,
 	MAP_DBG(map, "copy_from, to=%lX, from=%lX, len=%lX\n",
 		(unsigned long)to, from, (unsigned long)len);
 
-	if (from > amap->chip_size)
+	if (from > amap->window_size)
 		return;
 
 	p = (char *)to;
 	while (len > 0) {
 		t = len;
-		if (from < BANK_SIZE && from+len > BANK_SIZE)
+		if ((from < BANK_SIZE) && ((from+len) > BANK_SIZE))
 			t = BANK_SIZE-from;
 
 		FLASH_LOCK();
 		MAP_DBG(map, "copying %lu byte(s) from %lX to %lX\n",
-			(unsigned long)t, (from & BANK_OFFS_MASK),
+			(unsigned long)t, (from & (amap->window_size-1)),
 			(unsigned long)p);
 		adm5120_flash_switchbank(map, from);
-		inline_map_copy_from(map, p, (from & BANK_OFFS_MASK), t);
+		inline_map_copy_from(map, p, (from & (amap->window_size-1)), t);
 		FLASH_UNLOCK();
 		p += t;
 		from += t;
@@ -267,8 +267,8 @@ static int adm5120_flash_initinfo(struct adm5120_flash_info *info,
 	/* get memory window size */
 	t = SWITCH_READ(SWITCH_REG_MEMCTRL) >> fdesc->srs_shift;
 	t &= MEMCTRL_SRS_MASK;
-	info->amap.chip_size = flash_sizes[t];
-	if (info->amap.chip_size == 0) {
+	info->amap.window_size = flash_sizes[t];
+	if (info->amap.window_size == 0) {
 		MAP_ERR(map, "invalid flash size detected\n");
 		goto err_out;
 	}
@@ -298,7 +298,7 @@ static int adm5120_flash_initinfo(struct adm5120_flash_info *info,
 
 	MAP_INFO(map, "probing at 0x%lX, size:%ldKiB, width:%d bits\n",
 		(unsigned long)map->phys,
-		(unsigned long)info->amap.chip_size >> 10,
+		(unsigned long)info->amap.window_size >> 10,
 		map->bankwidth*8);
 
 	return 0;
@@ -316,7 +316,7 @@ static void adm5120_flash_initbanks(struct adm5120_flash_info *info)
 		return;
 
 	if (info->amap.switch_bank) {
-		info->amap.chip_size = info->mtd->size;
+		info->amap.window_size = info->mtd->size;
 		return;
 	}
 
@@ -324,7 +324,7 @@ static void adm5120_flash_initbanks(struct adm5120_flash_info *info)
 		(unsigned long)map->size >> 10,
 		(unsigned long)info->mtd->size >> 10);
 
-	info->mtd->size = info->amap.chip_size;
+	info->mtd->size = info->amap.window_size;
 }
 
 #ifdef CONFIG_MTD_PARTITIONS
@@ -471,13 +471,13 @@ static int adm5120_flash_probe(struct platform_device *dev)
 
 	adm5120_flash_initbanks(info);
 
-	if (info->mtd->size < info->amap.chip_size) {
+	if (info->mtd->size < info->amap.window_size) {
 		/* readjust resources */
 		iounmap(map->virt);
 		release_resource(info->res);
 		kfree(info->res);
 
-		info->amap.chip_size = info->mtd->size;
+		info->amap.window_size = info->mtd->size;
 		map->size = info->mtd->size;
 		MAP_INFO(map, "reducing map size to %ldKiB\n",
 			(unsigned long)map->size >> 10);
