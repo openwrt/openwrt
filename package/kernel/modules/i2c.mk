@@ -11,6 +11,7 @@ I2CMENU:=I2C Bus
 define KernelPackage/i2c-core
   TITLE:=I2C support
   DESCRIPTION:=Kernel modules for i2c support
+  DEPENDS:=@LINUX_2_6
   SUBMENU:=$(I2CMENU)
   KCONFIG:=CONFIG_I2C
   FILES:=$(LINUX_DIR)/drivers/i2c/*.$(LINUX_KMOD_SUFFIX)
