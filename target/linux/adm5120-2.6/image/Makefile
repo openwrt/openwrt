@@ -86,10 +86,7 @@ define Image/Build/RouterBoard
 	$(STAGING_DIR)/bin/patch-cmdline $(KDIR)/vmlinux.elf '$(strip $(call Image/cmdline/yaffs2)) '
 endef
 
-define Image/Build
-# this line is here intentionally
-ifneq ($(1),jffs2-256k)
-ifneq ($(1),jffs2-128k)
+define Image/Build/jffs2-64k
 	$(call Image/Build/Compex,$(1),wp54g-wrt,$(patsubst jffs2-%,jffs2,$(1)),WP54G-WRT)
 ifeq ($(CONFIG_DEVEL),y)
 	$(call Image/Build/Edimax,$(1),br-6104k,$(patsubst jffs2-%,jffs2,$(1)),BR-6104K)
@@ -117,8 +114,14 @@ ifeq ($(CONFIG_DEVEL),y)
 	$(call Image/Build/MyLoader,$(1),wpp54g,$(patsubst jffs2-%,jffs2,$(1)),WPP54G)
 	$(call Image/Build/MyLoader,$(1),wpp54ag,$(patsubst jffs2-%,jffs2,$(1)),WPP54AG)
 endif
-endif
-endif
+endef
+
+define Image/Build/squashfs
+$(call Image/Build/jffs2-64k,$(1))
+endef
+
+define Image/Build
+$(call Image/Build/$(1),$(1))
 endef
 
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
