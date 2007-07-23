@@ -806,6 +806,12 @@ for (i = 0; i < RX_DCNT; i++) {
 	phy_write(ioaddr, lp->phy_addr, 4, PHY_CAP);
 	phy_write(ioaddr, lp->phy_addr, 0, PHY_MODE);
 
+	/* Port priority */
+	phy_write(ioaddr,29,19,(phy_read(ioaddr,29,19)|0x0020)); /* port 0 */
+	phy_write(ioaddr,29,19,(phy_read(ioaddr,29,19)|0x0020)); /* port 1 */
+	phy_write(ioaddr,29,20,(phy_read(ioaddr,29,20)|0x2000)); /* port 2 */
+	phy_write(ioaddr,29,20,(phy_read(ioaddr,29,20)|0x0020)); /* port 3 */
+
 	if (PHY_MODE == 0x3100) 
 		lp->phy_mode = phy_mode_chk(dev);
 	else lp->phy_mode = (PHY_MODE & 0x0100) ? 0x8000:0x0;
