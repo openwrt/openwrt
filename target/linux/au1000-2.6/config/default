@@ -10,7 +10,7 @@ CONFIG_BASE_SMALL=0
 CONFIG_BITREVERSE=y
 # CONFIG_BROADCOM_PHY is not set
 CONFIG_CHR_DEV_SG=m
-CONFIG_CMDLINE="root=/dev/mtdblock0 rootfstype=jffs2 init=/etc/preinit"
+CONFIG_CMDLINE="root=/dev/mtdblock0 rootfstype=squashfs,jffs2 init=/etc/preinit"
 # CONFIG_CPU_BIG_ENDIAN is not set
 CONFIG_CPU_HAS_LLSC=y
 CONFIG_CPU_HAS_PREFETCH=y
