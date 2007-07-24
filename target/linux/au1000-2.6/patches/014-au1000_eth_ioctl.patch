@@ -1,0 +1,26 @@
+diff --git a/drivers/net/au1000_eth.c b/drivers/net/au1000_eth.c
+index c27cfce..99a1c61 100644
+--- a/drivers/net/au1000_eth.c
++++ b/drivers/net/au1000_eth.c
+@@ -1316,12 +1316,20 @@ static void set_rx_mode(struct net_device *dev)
+ static int au1000_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+ {
+ 	struct au1000_private *aup = (struct au1000_private *)dev->priv;
++	struct mii_ioctl_data *data = if_mii(rq);
++	int rc = -EOPNOTSUPP;
+ 
+ 	if (!netif_running(dev)) return -EINVAL;
+ 
+ 	if (!aup->phy_dev) return -EINVAL; // PHY not controllable
+ 
+-	return phy_mii_ioctl(aup->phy_dev, if_mii(rq), cmd);
++	switch (cmd) {
++	default:
++		rc = phy_mii_ioctl(aup->phy_dev, data, cmd);
++		break;
++	}
++
++	return rc;
+ }
+ 
+ static struct net_device_stats *au1000_get_stats(struct net_device *dev)
