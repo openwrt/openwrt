@@ -32,6 +32,7 @@
 #include <linux/device.h>
 #include <asm/addrspace.h>
 #include <asm/io.h>
+#include <asm/ar7/ar7.h>
 #include <asm/ar7/vlynq.h>
 
 #define PER_DEVICE_IRQS 32
@@ -288,7 +289,7 @@ EXPORT_SYMBOL(vlynq_unregister_driver);
 
 int vlynq_device_enable(struct vlynq_device *dev)
 {
-	u32 val;
+    u32 div;
 	int result;
 	struct plat_vlynq_ops *ops = dev->dev.platform_data;
 
@@ -299,17 +300,24 @@ int vlynq_device_enable(struct vlynq_device *dev)
 	dev->local->control = 0;
 	dev->remote->control = 0;
 
-	if (vlynq_linked(dev)) 
+    div = ar7_dsp_freq() / 62500000;
+    if(ar7_dsp_freq() / div != 62500000)
+    {
+		printk(KERN_WARNING
+		       "VLYNQ: Adjusted requested frequency %d to %d\n",
+		       62500000, ar7_dsp_freq() / div);
+    }
+    
+    printk("VLYNQ: Setting clock to %d (clock divider %u)\n", ar7_dsp_freq() / div, div);
+	dev->local->control = VLYNQ_CTRL_CLOCK_DIV((div - 1)) |
+		VLYNQ_CTRL_CLOCK_INT;
+
+//	dev->local->control = VLYNQ_CTRL_CLOCK_INT;
+
+    if (vlynq_linked(dev)) 
 		return vlynq_setup_irq(dev);
 
-	for (val = 0; val < 8; val++) {
-		dev->local->control = VLYNQ_CTRL_CLOCK_DIV(val) |
-			VLYNQ_CTRL_CLOCK_INT;
-		if (vlynq_linked(dev)) 
-			return vlynq_setup_irq(dev);
-	}
-
-	return -ENODEV;
+    return -ENODEV;
 }
 
 void vlynq_device_disable(struct vlynq_device *dev)

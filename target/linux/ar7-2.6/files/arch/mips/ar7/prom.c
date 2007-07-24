@@ -26,6 +26,7 @@
 #include <linux/serial_reg.h>
 #include <linux/spinlock.h>
 #include <linux/module.h>
+#include <linux/string.h>
 #include <asm/io.h>
 #include <asm/bootinfo.h>
 #include <asm/mips-boards/prom.h>
@@ -245,9 +246,12 @@ static void __init console_config(void)
 		return;
 
 #ifdef CONFIG_KGDB
-	strcat(prom_getcmdline(), " console=kgdb");
-	kgdb_enabled = 1;
-	return;
+	if (!strstr(prom_getcmdline(), "nokgdb"))
+	{
+            strcat(prom_getcmdline(), " console=kgdb");
+            kgdb_enabled = 1;
+            return;
+	}
 #endif
 
 	if ((s = prom_getenv("modetty0"))) {
@@ -305,6 +309,28 @@ int prom_putchar(char c)
 	while ((serial_in(UART_LSR) & UART_LSR_TEMT) == 0);
 	serial_out(UART_TX, c);
 	return 1;
+}
+
+// from adm5120/prom.c
+void prom_printf(char *fmt, ...)
+{
+    va_list args;
+    int l;
+    char *p, *buf_end;
+    char buf[1024];
+
+    va_start(args, fmt);
+    l = vsprintf(buf, fmt, args); /* hopefully i < sizeof(buf) */
+    va_end(args);
+
+    buf_end = buf + l;
+
+    for (p = buf; p < buf_end; p++) {
+        /* Crude cr/nl handling is better than none */
+        if (*p == '\n')
+            prom_putchar('\r');
+        prom_putchar(*p);
+    }
 }
 
 #ifdef CONFIG_KGDB
