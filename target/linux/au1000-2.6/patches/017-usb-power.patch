@@ -1,0 +1,16 @@
+diff -urN linux-2.6.22.1.orig/arch/mips/au1000/mtx-1/board_setup.c linux-2.6.22.1/arch/mips/au1000/mtx-1/board_setup.c
+--- linux-2.6.22.1.orig/arch/mips/au1000/mtx-1/board_setup.c	2007-07-24 18:42:22.852011842 +0200
++++ linux-2.6.22.1/arch/mips/au1000/mtx-1/board_setup.c	2007-07-25 00:39:37.797519773 +0200
+@@ -54,11 +54,10 @@
+ 
+ void __init board_setup(void)
+ {
+-#ifdef CONFIG_USB_OHCI
+ 	// enable USB power switch
++	printk("mtx-1: turning on the usb power switch\n");
+ 	au_writel( au_readl(GPIO2_DIR) | 0x10, GPIO2_DIR );
+ 	au_writel( 0x100000, GPIO2_OUTPUT );
+-#endif // defined (CONFIG_USB_OHCI)
+ 
+ #ifdef CONFIG_PCI
+ #if defined(__MIPSEB__)
