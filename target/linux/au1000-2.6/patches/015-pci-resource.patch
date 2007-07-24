@@ -1,8 +1,14 @@
-1683c1683
-< #define IOPORT_RESOURCE_END   0xffffffff
----
-> #define IOPORT_RESOURCE_END   0xfffffffffULL
-1685c1685
-< #define IOMEM_RESOURCE_END    0xffffffff
----
-> #define IOMEM_RESOURCE_END    0xfffffffffULL
+--- linux-2.6.22.1.orig/include/asm-mips/mach-au1x00/au1000.h	2007-07-24 18:44:21.598778839 +0200
++++ linux-2.6.22.1/include/asm-mips/mach-au1x00/au1000.h	2007-07-24 22:08:49.761901610 +0200
+@@ -1680,9 +1680,9 @@
+ #define PCI_LAST_DEVFN  (19<<3)
+ 
+ #define IOPORT_RESOURCE_START 0x00001000 /* skip legacy probing */
+-#define IOPORT_RESOURCE_END   0xffffffff
++#define IOPORT_RESOURCE_END   0xfffffffffULL
+ #define IOMEM_RESOURCE_START  0x10000000
+-#define IOMEM_RESOURCE_END    0xffffffff
++#define IOMEM_RESOURCE_END    0xfffffffffULL
+ 
+   /*
+    * Borrowed from the PPC arch:
