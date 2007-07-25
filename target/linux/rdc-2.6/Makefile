@@ -11,7 +11,7 @@ BOARD:=rdc
 BOARDNAME:=RDC x86
 FEATURES:=squashfs jffs2 pci broken
 
-LINUX_VERSION:=2.6.21.5
+LINUX_VERSION:=2.6.22.1
 
 define Target/Description
         Build firmware images for RDC3211 based routers
@@ -24,7 +24,8 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
     define Kernel/SetInitramfs
 	rm -f $(BUILD_DIR)/root/sbin/init
 	ln -s /etc/preinit $(BUILD_DIR)/root/sbin/init
-	$(CP) $(PLATFORM_DIR)/image/preinit.arch $(BUILD_DIR)/root/etc/
+	# $(CP) $(PLATFORM_DIR)/image/preinit.arch $(BUILD_DIR)/root/etc/
+	sed -i 's,exec /sbin/init,exec /bin/busybox init,g' $(BUILD_DIR)/root/etc/preinit
     endef
 endif
 

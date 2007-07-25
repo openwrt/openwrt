@@ -5,9 +5,9 @@
 # See /LICENSE for more information.
 #
 
-define Profile/Ralink
-  NAME:=Ralink WiFi
-  PACKAGES:=kmod-rt61
+define Profile/ar525w
+  NAME:=AirLink101 AR525W
+  PACKAGES:=kmod-rt61 kmod-r6040
 endef
-$(eval $(call Profile,Ralink))
+$(eval $(call Profile,ar525w))
 
