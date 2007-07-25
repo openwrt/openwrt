@@ -292,6 +292,17 @@ define KernelPackage/natsemi
 endef
 $(eval $(call KernelPackage,natsemi))
 
+define KernelPackage/r6040
+  TITLE:=RDC Fast-Ethernet support
+  DESCRIPTION:=\
+	Kernel modules for RDC Fast-Ethernet adapters.
+  FILES:=$(LINUX_DIR)/drivers/net/r6040.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=CONFIG_R6040
+  DEPENDS:=@LINUX_2_6_RDC
+  SUBMENU:=$(NDMENU)
+endef
+$(eval $(call KernelPackage,r6040))
+
 define KernelPackage/sis900
   TITLE:=SiS 900 Ethernet support
   DESCRIPTION:=\
