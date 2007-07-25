@@ -25,9 +25,15 @@
 #ifndef _ADM5120_PLATFORM_H_
 #define _ADM5120_PLATFORM_H_
 
+#include <linux/device.h>
+#include <linux/platform_device.h>
+
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/map.h>
 #include <linux/mtd/partitions.h>
+
+#include <linux/amba/bus.h>
+#include <linux/amba/serial.h>
 
 struct adm5120_flash_platform_data {
 	void			(*set_vpp)(struct map_info *, int);
@@ -63,6 +69,8 @@ extern struct adm5120_flash_platform_data adm5120_flash1_data;
 extern struct adm5120_nand_platform_data adm5120_nand_data;
 extern struct adm5120_pci_platform_data adm5120_pci_data;
 extern struct adm5120_switch_platform_data adm5120_switch_data;
+extern struct amba_pl010_data adm5120_uart0_data;
+extern struct amba_pl010_data adm5120_uart1_data;
 
 extern struct platform_device adm5120_flash0_device;
 extern struct platform_device adm5120_flash1_device;
@@ -70,5 +78,8 @@ extern struct platform_device adm5120_nand_device;
 extern struct platform_device adm5120_usbc_device;
 extern struct platform_device adm5120_pci_device;
 extern struct platform_device adm5120_switch_device;
+extern struct amba_device adm5120_uart0_device;
+extern struct amba_device adm5120_uart1_device;
+
 
 #endif /* _ADM5120_PLATFORM_H_ */

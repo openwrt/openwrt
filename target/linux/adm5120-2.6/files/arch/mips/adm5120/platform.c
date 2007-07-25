@@ -38,6 +38,9 @@
 #include <asm/mach-adm5120/adm5120_switch.h>
 #include <asm/mach-adm5120/adm5120_platform.h>
 
+static void adm5120_uart_set_mctrl(struct amba_device *dev, void __iomem *base,
+		unsigned int mctrl);
+
 #if 1
 /*
  * TODO:remove global adm5120_eth* variables when the switch driver will be
@@ -128,3 +131,45 @@ struct platform_device adm5120_nand_device = {
 	.num_resources	= ARRAY_SIZE(adm5120_nand_resource),
 	.resource	= adm5120_nand_resource,
 };
+
+/* built-in UARTs */
+struct amba_pl010_data adm5120_uart0_data = {
+	.set_mctrl = adm5120_uart_set_mctrl
+};
+
+struct amba_device adm5120_uart0_device = {
+	.dev		= {
+		.bus_id	= "APB:UART0",
+		.platform_data = &adm5120_uart0_data,
+	},
+	.res		= {
+		.start	= ADM5120_UART0_BASE,
+		.end	= ADM5120_UART0_BASE + ADM5120_UART_SIZE - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+	.irq		= { ADM5120_IRQ_UART0, -1 },
+	.periphid	= 0x0041010,
+};
+
+struct amba_pl010_data adm5120_uart1_data = {
+	.set_mctrl = adm5120_uart_set_mctrl
+};
+
+struct amba_device adm5120_uart1_device = {
+	.dev		= {
+		.bus_id	= "APB:UART1",
+		.platform_data = &adm5120_uart1_data,
+	},
+	.res		= {
+		.start	= ADM5120_UART1_BASE,
+		.end	= ADM5120_UART1_BASE + ADM5120_UART_SIZE - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+	.irq		= { ADM5120_IRQ_UART1, -1 },
+	.periphid	= 0x0041010,
+};
+
+static void adm5120_uart_set_mctrl(struct amba_device *dev, void __iomem *base,
+		unsigned int mctrl)
+{
+}
