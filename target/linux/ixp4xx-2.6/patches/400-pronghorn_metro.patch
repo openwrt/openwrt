@@ -217,7 +217,7 @@ diff -Nur linux-2.6.21.1/arch/arm/mach-ixp4xx/pronghornmetro-setup.c linux-2.6.2
 +	ixp4xx_sys_init();
 +
 +	pronghornmetro_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
-+	pronghornmetro_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + SZ_32M - 1;
++	pronghornmetro_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + SZ_16M - 1;
 +
 +	*IXP4XX_EXP_CS0 |= IXP4XX_FLASH_WRITABLE;
 +	*IXP4XX_EXP_CS1 = *IXP4XX_EXP_CS0;
