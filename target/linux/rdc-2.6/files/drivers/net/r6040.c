@@ -139,6 +139,7 @@ struct r6040_private {
 	u16	mcr0, mcr1;
 	dma_addr_t desc_dma;
 	char	*desc_pool;
+	u16	switch_sig;
 };
 
 struct r6040_chip_info {
@@ -164,10 +165,15 @@ static struct r6040_chip_info r6040_chip_info[] __devinitdata =
 {
 	{ "RDC R6040 Knight", R6040_PCI_CMD, R6040_IO_SIZE, 0}
 };
+static char *parent = NULL;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int NUM_MAC_TABLE = 2 ;
+module_param(parent, charp, 0444);
+#else
+MODULE_PARM(parent, "s");
 #endif
+MODULE_PARM_DESC(parent, "Parent network device name");
 
 static int phy_table[] = { 0x1, 0x2};
 static u8 adr_table[2][8] = {{0x00, 0x00, 0x60, 0x00, 0x00, 0x01}, {0x00, 0x00, 0x60, 0x00, 0x00, 0x02}};
@@ -188,6 +194,7 @@ static struct net_device_stats *r6040_get_stats(struct net_device *dev);
 static int r6040_close(struct net_device *dev);
 static void set_multicast_list(struct net_device *dev);
 static struct ethtool_ops netdev_ethtool_ops;
+static int netdev_ioctl (struct net_device *dev, struct ifreq *rq, int cmd);
 static void r6040_down(struct net_device *dev);
 static void r6040_up(struct net_device *dev);
 static void r6040_tx_timeout (struct net_device *dev);
@@ -263,6 +270,7 @@ static int __devinit r6040_init_one (struct pci_dev *pdev,
 	/* Init RDC private data */
 	lp->mcr0 = 0x1002;
 	lp->phy_addr = phy_table[card_idx];
+	lp->switch_sig = 0;
 
 	/* The RDC-specific entries in the device structure. */
 	dev->open = &r6040_open;
@@ -270,6 +278,7 @@ static int __devinit r6040_init_one (struct pci_dev *pdev,
 	dev->stop = &r6040_close;
 	dev->get_stats = &r6040_get_stats;
 	dev->set_multicast_list = &set_multicast_list;
+	dev->do_ioctl = &netdev_ioctl;
 	dev->ethtool_ops = &netdev_ethtool_ops;
 	dev->tx_timeout = &r6040_tx_timeout;
 	dev->watchdog_timeo = TX_TIMEOUT;
@@ -328,13 +337,15 @@ r6040_open(struct net_device *dev)
 
 	netif_start_queue(dev);
 
+	if (lp->switch_sig != 0x0243)
+	{
 	/* set and active a timer process */
 	init_timer(&lp->timer);
 	lp->timer.expires = TIMER_WUT;
 	lp->timer.data = (unsigned long)dev;
 	lp->timer.function = &r6040_timer;
 	add_timer(&lp->timer);
-
+	}
 	return 0;
 }
 
@@ -606,6 +617,53 @@ r6040_close(struct net_device *dev)
 	return 0;
 }
 
+#define DMZ_GPIO	1
+#define RDC3210_CFGREG_ADDR	0x0CF8
+#define RDC3210_CFGREG_DATA	0x0CFC
+static int netdev_ioctl (struct net_device *dev, struct ifreq *rq, int cmd)
+{
+	struct r6040_private *lp = dev->priv;
+
+	RDC_DBUG("netdev_ioctl()", 0);
+	if (lp->switch_sig == 0x0243 && cmd == SIOCDEVPRIVATE)
+	{
+		unsigned long *data = (unsigned long *)rq->ifr_data, args[4];
+		int ioaddr = dev->base_addr;
+		unsigned int val;
+
+		data = (unsigned long *)rq->ifr_data;
+		if (copy_from_user(args, data, 4*sizeof(unsigned long)))
+			return -EFAULT;
+
+		/* port priority */
+		if(args[0]&(1<<31))phy_write(ioaddr,29,19,(phy_read(ioaddr,29,19)|0x2000));	/* port 0 */
+		if(args[0]&(1<<29))phy_write(ioaddr,29,19,(phy_read(ioaddr,29,19)|0x0020));	/* port 1 */
+		if(args[0]&(1<<27))phy_write(ioaddr,29,20,(phy_read(ioaddr,29,20)|0x2000));	/* port 2 */
+		if(args[0]&(1<<25))phy_write(ioaddr,29,20,(phy_read(ioaddr,29,20)|0x0020));	/* port 3 */
+
+		/* DMZ LED */
+		val = 0x80000000 | (7 << 11) | ((0x48));
+		outl(val, RDC3210_CFGREG_ADDR);
+		udelay(10);
+		val = inl(RDC3210_CFGREG_DATA);
+
+		val |= (0x1 << DMZ_GPIO);
+		outl(val, RDC3210_CFGREG_DATA);
+		udelay(10);
+
+		val = 0x80000000 | (7 << 11) | ((0x4C));
+		outl(val, RDC3210_CFGREG_ADDR);
+		udelay(10);
+		val = inl(RDC3210_CFGREG_DATA);
+		if(args[0]&(1<<23))	/* DMZ enabled */
+			val &= ~(0x1 << DMZ_GPIO);	/* low activated */
+		else val |= (0x1 << DMZ_GPIO);
+		outl(val, RDC3210_CFGREG_DATA);
+		udelay(10);
+	}
+	return 0;
+}
+
 /**
 	Stop RDC MAC and Free the allocated resource
  */
@@ -802,20 +860,19 @@ for (i = 0; i < RX_DCNT; i++) {
 	/* Buffer Size Register */
 	outw(MAX_BUF_SIZE, ioaddr+0x18);
 
+	if ((lp->switch_sig = phy_read(ioaddr, 0, 2)) == 0x0243)	// ICPlus IP175C Signature
+{
+	phy_write(ioaddr, 29,31, 0x175C);	//Enable registers
+	lp->phy_mode = 0x8000;
+} else {
 	/* PHY Mode Check */
 	phy_write(ioaddr, lp->phy_addr, 4, PHY_CAP);
 	phy_write(ioaddr, lp->phy_addr, 0, PHY_MODE);
 
-	/* Port priority */
-	phy_write(ioaddr,29,19,(phy_read(ioaddr,29,19)|0x0020)); /* port 0 */
-	phy_write(ioaddr,29,19,(phy_read(ioaddr,29,19)|0x0020)); /* port 1 */
-	phy_write(ioaddr,29,20,(phy_read(ioaddr,29,20)|0x2000)); /* port 2 */
-	phy_write(ioaddr,29,20,(phy_read(ioaddr,29,20)|0x0020)); /* port 3 */
-
 	if (PHY_MODE == 0x3100) 
 		lp->phy_mode = phy_mode_chk(dev);
 	else lp->phy_mode = (PHY_MODE & 0x0100) ? 0x8000:0x0;
-
+}
 	/* MAC Bus Control Register */
 	outw(MBCR_DEFAULT, ioaddr+0x8);
 
@@ -958,6 +1015,19 @@ static int __init r6040_init (void)
 	printk(version);
 	printed_version = 1;
 
+	if (parent != NULL)
+	{
+		struct net_device *the_parent = dev_get_by_name(parent);
+
+		if (the_parent == NULL)
+		{
+			printk (KERN_ERR DRV_NAME ": Unknown device \"%s\" specified.\n", parent);
+			return -EINVAL;
+		}
+		memcpy((u8 *)&adr_table[0][0], the_parent->dev_addr, 6);
+		memcpy((u8 *)&adr_table[1][0], the_parent->dev_addr, 6);
+		++*(u8 *)&adr_table[0][5];
+	}
 	return pci_register_driver (&r6040_driver);
 }
 
