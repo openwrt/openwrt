@@ -33,6 +33,7 @@
 
 #include <asm/mach-adm5120/adm5120_info.h>
 #include <asm/mach-adm5120/adm5120_defs.h>
+#include <asm/mach-adm5120/adm5120_irq.h>
 #include <asm/mach-adm5120/adm5120_board.h>
 #include <asm/mach-adm5120/adm5120_platform.h>
 
@@ -86,6 +87,10 @@ static int __init adm5120_board_setup(void)
 
 	if (board->board_setup)
 		board->board_setup();
+
+	/* register UARTs */
+	amba_device_register(&adm5120_uart0_device, &iomem_resource);
+	amba_device_register(&adm5120_uart1_device, &iomem_resource);
 
 	/* register PCI controller */
 	if (adm5120_package_bga())
