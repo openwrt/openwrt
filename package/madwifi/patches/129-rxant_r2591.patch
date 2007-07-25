@@ -1,0 +1,14 @@
+Index: madwifi-ng-r2568-20070710/ath/if_ath.c
+===================================================================
+--- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-07-25 16:02:49.730126121 +0200
++++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-07-25 16:03:20.355871384 +0200
+@@ -1882,6 +1882,9 @@
+ 	 */
+ 	ath_update_txpow(sc);
+ 
++	/* Set the default RX antenna; it may get lost on reset. */
++	ath_setdefantenna(sc, sc->sc_defant);
++
+ 	/*
+ 	 * Setup the hardware after reset: the key cache
+ 	 * is filled as needed and the receive engine is
