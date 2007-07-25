@@ -1,7 +1,7 @@
 diff -urN linux-2.6.17/drivers/net/Kconfig linux-2.6.17.new/drivers/net/Kconfig
 --- linux-2.6.17/drivers/net/Kconfig	2006-06-18 03:49:35.000000000 +0200
 +++ linux-2.6.17.new/drivers/net/Kconfig	2006-09-25 13:14:27.000000000 +0200
-@@ -1358,6 +1358,23 @@
+@@ -1358,6 +1358,24 @@
  	  <file:Documentation/networking/net-modules.txt>.  The module will be
  	  called apricot.
  
@@ -21,6 +21,7 @@ diff -urN linux-2.6.17/drivers/net/Kconfig linux-2.6.17.new/drivers/net/Kconfig
 +
 +config R6040_NAPI
 +	bool "NAPI support for R6040"
++	depends on R6040
 +	default y
  config B44
  	tristate "Broadcom 4400 ethernet support (EXPERIMENTAL)"
