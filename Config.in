@@ -129,6 +129,12 @@ config BUILD_SUFFIX
 	help
 		Build suffix to append to the BUILD_DIR variable, i.e: build_dir_suffix
 
+config SOURCE_FEEDS_REV
+	string
+	prompt "Revision for the source feed svn checkout" if BUILDOPTS
+	default ""
+
+
 source "toolchain/Config.in"
 source "target/imagebuilder/Config.in"
 source "target/sdk/Config.in"

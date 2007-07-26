@@ -37,11 +37,11 @@ setup_symlinks() {
 checkout_feed() {
 	# We ensure the feed has not already been checked out, if so, we just update the source feed
 	if [ -d $FEEDS_DIR/$2 ]; then
-		svn up $FEEDS_DIR/$2
+		svn up ${3:+-r$3} $FEEDS_DIR/$2
 		echo "Updated to revision $(LANG=C svn info $FEEDS_DIR/$2 | awk '/^Revision:/ { print $2 }' )";
 	# Otherwise, we have to checkout in the $FEEDS_DIR 
 	else
-		svn co $1 $FEEDS_DIR/$2
+		svn co ${3:+-r$3} $1 $FEEDS_DIR/$2
 		echo "Checked out revision $(LANG=C svn info $FEEDS_DIR/$2 | awk '/^Revision:/ { print $2 }' )";
 	fi
 }
@@ -57,7 +57,7 @@ delete_symlinks "$PACKAGE_DIR"
 for feed in $1
 do
 	name=$(extract_feed_name "$feed")
-	checkout_feed "$feed" "$name"
+	checkout_feed "$feed" "$name" "$2"
 done
 # Finally setup symlinks
 setup_symlinks "$FEEDS_DIR" "$PACKAGE_DIR"

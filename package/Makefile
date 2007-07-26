@@ -77,7 +77,7 @@ $(PACKAGE_DIR)/Packages: $(PACKAGE_DIR)/*.ipk
 	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages)
 
 symlinks:
-	../scripts/feeds.sh $(CONFIG_SOURCE_FEEDS) 
+	../scripts/feeds.sh $(CONFIG_SOURCE_FEEDS) $(CONFIG_SOURCE_FEEDS_REV)
 
 ifeq ($(MAKECMDGOALS),compile)
 MAKEFLAGS:=$(MAKEFLAGS) -j$(CONFIG_JLEVEL)
