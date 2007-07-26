@@ -556,7 +556,7 @@ sub gen_package_mk() {
 		}
 		if ($config) {
 			print "package-$config += $pkg->{subdir}$pkg->{src}\n";
-			$pkg->{prereq} and print "prereq-$config += $pkg->{src}\n";
+			$pkg->{prereq} and print "prereq-$config += $pkg->{subdir}$pkg->{src}\n";
 		}
 	
 		my $hasdeps = 0;
