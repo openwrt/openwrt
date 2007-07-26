@@ -28,6 +28,7 @@
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/pci.h>
+#include <linux/spinlock.h>
 
 #include <asm/mach-adm5120/adm5120_defs.h>
 
@@ -39,6 +40,8 @@
 #endif
 
 #define PCI_ENABLE 0x80000000
+
+static spinlock_t pci_lock = SPIN_LOCK_UNLOCKED;
 
 static inline void write_cfgaddr(u32 addr)
 {
@@ -65,8 +68,10 @@ static inline u32 mkaddr(struct pci_bus *bus, unsigned int devfn, int where)
 static int pci_config_read(struct pci_bus *bus, unsigned int devfn, int where,
                            int size, u32 *val)
 {
+	unsigned long flags;
 	u32 data;
 
+	spin_lock_irqsave(&pci_lock, flags);
 	write_cfgaddr(mkaddr(bus,devfn,where));
 	data = read_cfgdata();	
 
@@ -90,6 +95,7 @@ static int pci_config_read(struct pci_bus *bus, unsigned int devfn, int where,
 
 	*val = data;
 	DBG(", 0x%08X returned\n", data);
+	spin_unlock_irqrestore(&pci_lock, flags);
 	
 	return PCIBIOS_SUCCESSFUL;
 }
@@ -97,9 +103,11 @@ static int pci_config_read(struct pci_bus *bus, unsigned int devfn, int where,
 static int pci_config_write(struct pci_bus *bus, unsigned int devfn, int where,
                             int size, u32 val)
 {
+	unsigned long flags;
 	u32 data;
 	int s;
 
+	spin_lock_irqsave(&pci_lock, flags);
 	write_cfgaddr(mkaddr(bus,devfn,where));
 	data = read_cfgdata();
 
@@ -124,6 +132,7 @@ static int pci_config_write(struct pci_bus *bus, unsigned int devfn, int where,
 
 	write_cfgdata(data);
 	DBG(", 0x%08X written\n", data);
+	spin_unlock_irqrestore(&pci_lock, flags);
 
 	return PCIBIOS_SUCCESSFUL;
 }
