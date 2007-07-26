@@ -980,7 +980,7 @@ diff -Naur linux-old/arch/i386/boot/compressed/lzma_misc.c linux-lzma/arch/i386/
 diff -Naur linux-old/arch/i386/boot/compressed/Makefile linux-lzma/arch/i386/boot/compressed/Makefile
 --- linux-old/arch/i386/boot/compressed/Makefile	2005-06-04 21:53:40.000000000 -0400
 +++ linux-lzma/arch/i386/boot/compressed/Makefile	2005-06-05 00:25:23.000000000 -0400
-@@ -4,15 +4,15 @@
+@@ -4,7 +4,7 @@
  # create a compressed vmlinux image from the original vmlinux
  #
  
@@ -989,17 +989,16 @@ diff -Naur linux-old/arch/i386/boot/compressed/Makefile linux-lzma/arch/i386/boo
  			vmlinux.bin.all vmlinux.relocs
  EXTRA_AFLAGS	:= -traditional
  
- LDFLAGS_vmlinux := -T
--CFLAGS_misc.o += -fPIC
-+CFLAGS_lzma_misc.o += -fPIC
- hostprogs-y	:= relocs
+@@ -17,7 +17,7 @@
+ 	   $(call cc-option,-fno-stack-protector)
+ LDFLAGS := -m elf_i386
  
 -$(obj)/vmlinux: $(src)/vmlinux.lds $(obj)/head.o $(obj)/misc.o $(obj)/piggy.o FORCE
 +$(obj)/vmlinux: $(src)/vmlinux.lds $(obj)/head.o $(obj)/lzma_misc.o $(obj)/piggy.o FORCE
  	$(call if_changed,ld)
  	@:
  
-@@ -32,14 +32,14 @@
+@@ -37,14 +37,14 @@
  	$(call if_changed,relocbin)
  
  ifdef CONFIG_RELOCATABLE
