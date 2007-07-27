@@ -89,4 +89,4 @@ extern int vlynq_irq_to_virq(struct vlynq_device *dev, int irq);
 extern int vlynq_set_local_irq(struct vlynq_device *dev, int virq);
 extern int vlynq_set_remote_irq(struct vlynq_device *dev, int virq);
 
-#endif
+#endif /* __VLYNQ_H__ */

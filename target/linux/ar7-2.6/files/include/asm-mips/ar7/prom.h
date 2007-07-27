@@ -24,5 +24,4 @@
 extern char *prom_getenv(char *name);
 extern void prom_printf(char *fmt, ...);
 
-#endif // __PROM_H__
-
+#endif /* __PROM_H__ */

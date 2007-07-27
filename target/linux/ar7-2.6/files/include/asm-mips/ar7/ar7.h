@@ -166,4 +166,4 @@ static inline void ar7_device_off(u32 bit)
 	mdelay(20);
 }
 
-#endif
+#endif /* __AR7_H__ */
