@@ -33,78 +33,13 @@
 #include <asm/gdb-stub.h>
 
 #include <asm/ar7/ar7.h>
+#include <asm/ar7/prom.h>
 
 #define MAX_ENTRY 80
 
 struct env_var {
 	char *name;
 	char *value;
-};
-
-struct psp_chip_map {
-	u16 chip;
-	char *names[50];
-};
-
-/* I hate this. No. *I* *HATE* *THIS* */
-static __initdata struct psp_chip_map psp_chip_map[] = {
-	{
-		.chip = AR7_CHIP_7100,
-		.names = {
-			"dummy", "cpufrequency", "memsize",
-			"flashsize", "modetty0", "modetty1", "prompt",
-			"bootcfg", "maca", "macb", "usb_rndis_mac",
-			"macap", "my_ipaddress", "server_ipaddress",
-			"bline_maca", "bline_macb", "bline_rndis",
-			"bline_atm", "usb_pid", "usb_vid",
-			"usb_eppolli", "gateway_ipaddress",
-			"subnet_mask", "usb_serial", "usb_board_mac",
-			"remote_user", "remote_pass", "remote_dir",
-			"sysfrequency", "link_timeout", "mac_port",
-			"path", "hostname", "tftpcfg", "buildops",
-			"tftp_fo_fname", "tftp_fo_ports",
-			"console_state", "mipsfrequency", 
-		},
-	},
-	{
-		.chip = AR7_CHIP_7200,
-		.names = {
-			"dummy", "cpufrequency", "memsize",
-			"flashsize", "modetty0", "modetty1", "prompt",
-			"bootcfg", "maca", "macb", "usb_rndis_mac",
-			"macap", "my_ipaddress", "server_ipaddress",
-			"bline_maca", "bline_macb", "bline_rndis",
-			"bline_atm", "usb_pid", "usb_vid",
-			"usb_eppolli", "gateway_ipaddress",
-			"subnet_mask", "usb_serial", "usb_board_mac",
-			"remote_user", "remote_pass", "remote_dir",
-			"sysfrequency", "link_timeout", "mac_port",
-			"path", "hostname", "tftpcfg", "buildops",
-			"tftp_fo_fname", "tftp_fo_ports",
-			"console_state", "mipsfrequency", 
-		},
-	},
-	{
-		.chip = AR7_CHIP_7300,
-		.names = {
-			"dummy", "cpufrequency", "memsize",
-			"flashsize", "modetty0", "modetty1", "prompt",
-			"bootcfg", "maca", "macb", "usb_rndis_mac",
-			"macap", "my_ipaddress", "server_ipaddress",
-			"bline_maca", "bline_macb", "bline_rndis",
-			"bline_atm", "usb_pid", "usb_vid",
-			"usb_eppolli", "gateway_ipaddress",
-			"subnet_mask", "usb_serial", "usb_board_mac",
-			"remote_user", "remote_pass", "remote_dir",
-			"sysfrequency", "link_timeout", "mac_port",
-			"path", "hostname", "tftpcfg", "buildops",
-			"tftp_fo_fname", "tftp_fo_ports",
-			"console_state", "mipsfrequency", 
-		},
-	},
-	{
-		.chip = 0x0,
-	},
 };
 
 static struct env_var adam2_env[MAX_ENTRY] = { { 0, }, };
@@ -155,15 +90,71 @@ struct psbl_rec {
 
 static __initdata char psp_env_version[] = "TIENV0.8";
 
-struct psp_env_var {
-	unsigned char num;
-	unsigned char ctrl;
-	unsigned short csum;
-	unsigned char len;
-	unsigned char data[11];
+struct psp_env_chunk {
+	u8 num;
+	u8 ctrl;
+	u16 csum;
+	u8 len;
+	char data[11];
+} __attribute__ ((packed));
+
+struct psp_var_map_entry {
+	u8 num;
+	char *value;
 };
 
-static char psp_env_data[2048] = { 0, };
+static struct psp_var_map_entry psp_var_map[] = {
+	{ 1, "cpufrequency" },
+	{ 2, "memsize" },
+	{ 3, "flashsize" },
+	{ 4, "modetty0" },
+	{ 5, "modetty1" },
+	{ 8, "maca" },
+	{ 9, "macb" },
+	{ 28, "sysfrequency" },
+	{ 38, "mipsfrequency" },
+};
+
+/*
+
+Well-known variable (num is looked up in table above for matching variable name)
+Example: cpufrequency=211968000
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+| 01 |CTRL|CHECKSUM | 01 | _2 | _1 | _1 | _9 | _6 | _8 | _0 | _0 | _0 | \0 | FF |
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+Name=Value pair in a single chunk
+Example: NAME=VALUE
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+| 00 |CTRL|CHECKSUM | 01 | _N | _A | _M | _E | _0 | _V | _A | _L | _U | _E | \0 |
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+Name=Value pair in 2 chunks (len is the number of chunks)
+Example: bootloaderVersion=1.3.7.15
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+| 00 |CTRL|CHECKSUM | 02 | _b | _o | _o | _t | _l | _o | _a | _d | _e | _r | _V |
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+| _e | _r | _s | _i | _o | _n | \0 | _1 | _. | _3 | _. | _7 | _. | _1 | _5 | \0 |
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+ 
+
+Data is padded with 0xFF
+
+*/
+
+#define PSP_ENV_SIZE  4096
+
+static char psp_env_data[PSP_ENV_SIZE] = { 0, };
+
+static char * __init lookup_psp_var_map(u8 num)
+{
+	int i;
+
+	for (i = 0; i < sizeof(psp_var_map); i++)
+		if (psp_var_map[i].num == num)
+			return psp_var_map[i].value;
+	
+	return NULL;
+}
 
 static void __init add_adam2_var(char *name, char *value)
 {
@@ -180,41 +171,29 @@ static void __init add_adam2_var(char *name, char *value)
 	}
 }
 
-static int __init parse_psp_env(void *start)
+static int __init parse_psp_env(void *psp_env_base)
 {
-	int i, j;
-	u16 chip;
-	struct psp_chip_map *map;
-	char *src, *dest, *name, *value;
-	struct psp_env_var *vars = start;
+	int i, n;
+	char *name, *value;
+	struct psp_env_chunk *chunks = (struct psp_env_chunk *)psp_env_data;
 
-	chip = ar7_chip_id();
-	for (map = psp_chip_map; map->chip; map++)
-		if (map->chip == chip)
-			break;
-
-	if (!map->chip)
-		return -EINVAL;
+	memcpy_fromio(chunks, psp_env_base, PSP_ENV_SIZE);
 
 	i = 1;
-	j = 0;
-	dest = psp_env_data;
-	while (vars[i].num < 0xff) {
-		src = vars[i].data;
-		if (vars[i].num) {
-			strcpy(dest, map->names[vars[i].num]);
-			name = dest;
+	n = PSP_ENV_SIZE / sizeof(struct psp_env_chunk);
+	while (i < n) {
+		if ((chunks[i].num == 0xff) || ((i + chunks[i].len) > n))
+			break;
+		value = chunks[i].data;
+		if (chunks[i].num) {
+			name = lookup_psp_var_map(chunks[i].num);
 		} else {
-			strcpy(dest, src);
-			name = dest;
-			src += strlen(src) + 1;
-		}			
-		dest += strlen(dest) + 1;
-		strcpy(dest, src);
-		value = dest;
-		dest += strlen(dest) + 1;
-		add_adam2_var(name, value);
-		i += vars[i].len;
+			name = value;
+			value += strlen(name) + 1;
+		}
+		if (name)
+			add_adam2_var(name, value);
+		i += chunks[i].len;
 	}
 	return 0;
 }

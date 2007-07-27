@@ -32,6 +32,7 @@
 #include <asm/io.h>
 #include <asm/ar7/ar7.h>
 #include <asm/ar7/gpio.h>
+#include <asm/ar7/prom.h>
 #include <asm/ar7/vlynq.h>
 
 struct plat_vlynq_data {

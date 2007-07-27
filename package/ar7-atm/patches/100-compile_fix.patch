@@ -344,17 +344,13 @@ diff -urN sangam_atm-07.01.00.10/tn7atm.c sangam-atm-0.3/tn7atm.c
  
    dgprintf (1, "Leave tn7atm_close\n");
  }
-@@ -1518,8 +1467,11 @@
+@@ -1518,8 +1467,7 @@
                                   * firewall is on */
  
    dgprintf (3, "pushing the skb...\n");
 -
 -  skb->stamp = vcc->timestamp = xtime;
-+  {
-+    struct timeval tv;
-+    do_gettimeofday(&tv);
-+    skb_set_timestamp(skb, &tv);
-+  }
++  __net_timestamp(skb);
  
    xdump ((unsigned char *) skb->data, skb->len, 5);
  

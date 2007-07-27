@@ -21,7 +21,6 @@
 #ifndef __PROM_H__
 #define __PROM_H__
 
-extern void prom_init(void);
 extern char *prom_getenv(char *name);
 extern void prom_printf(char *fmt, ...);
 
