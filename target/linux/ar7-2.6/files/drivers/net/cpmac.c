@@ -1173,9 +1173,9 @@ int __devinit cpmac_init(void)
 #warning FIXME: unhardcode gpio&reset bits
 	ar7_gpio_disable(26);
 	ar7_gpio_disable(27);
-	ar7_device_reset(17);
-	ar7_device_reset(21);
-	ar7_device_reset(26);
+	ar7_device_reset(AR7_RESET_BIT_CPMAC_LO);
+	ar7_device_reset(AR7_RESET_BIT_CPMAC_HI);
+	ar7_device_reset(AR7_RESET_BIT_EPHY);
 
 	cpmac_mii.reset(&cpmac_mii);
 

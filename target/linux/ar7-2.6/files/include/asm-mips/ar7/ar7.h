@@ -53,7 +53,10 @@
 #define  AR7_RESET_SOFTWARE    0x4
 #define  AR7_RESET_STATUS      0x8
 
-#define AR7_RESET_BIT_MDIO   22
+#define AR7_RESET_BIT_CPMAC_LO 17
+#define AR7_RESET_BIT_CPMAC_HI 21
+#define AR7_RESET_BIT_MDIO     22
+#define AR7_RESET_BIT_EPHY     26
 
 /* GPIO control registers */
 #define  AR7_GPIO_INPUT  0x0
@@ -82,8 +85,6 @@ struct plat_dsl_data {
 	int reset_bit_dsl;
 	int reset_bit_sar;
 };
-
-extern char *prom_getenv(char *envname);
 
 extern int ar7_cpu_clock, ar7_bus_clock, ar7_dsp_clock;
 

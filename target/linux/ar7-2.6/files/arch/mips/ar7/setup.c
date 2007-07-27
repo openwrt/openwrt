@@ -116,6 +116,9 @@ void __init plat_mem_setup(void)
 	ioport_resource.end   = ~0;
 	iomem_resource.start  = 0;
 	iomem_resource.end    = ~0;
+
+	printk("%s, ID: 0x%04x, Revision: 0x%02x\n", get_system_type(), 
+		ar7_chip_id(), ar7_chip_rev());
 }
 
 console_initcall(ar7_init_console);
