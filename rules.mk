@@ -138,4 +138,3 @@ endef
 all:
 FORCE: ;
 .PHONY: FORCE
-%: ;
