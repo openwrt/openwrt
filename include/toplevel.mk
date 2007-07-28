@@ -13,6 +13,7 @@ all: world
 
 SHELL:=/usr/bin/env bash
 OPENWRTVERSION:=$(RELEASE)
+include $(TOPDIR)/include/verbose.mk
 ifneq ($(VERSION),)
   OPENWRTVERSION:=$(VERSION) ($(OPENWRTVERSION))
 else
@@ -33,25 +34,25 @@ export SCAN_COOKIE
 
 tmp/.packageinfo tmp/.targetinfo prepare-tmpinfo:
 	@mkdir -p tmp/info
-	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS="$(TOPDIR)/include/package*.mk" SCAN_DEPTH=4 SCAN_EXTRA=""
-	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPS="profiles/*.mk $(TOPDIR)/include/kernel*.mk" SCAN_DEPTH=2 SCAN_EXTRA=""
+	@+$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS="$(TOPDIR)/include/package*.mk" SCAN_DEPTH=4 SCAN_EXTRA=""
+	@+$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPS="profiles/*.mk $(TOPDIR)/include/kernel*.mk" SCAN_DEPTH=2 SCAN_EXTRA=""
 	@for type in package target; do \
 		f=tmp/.$${type}info; t=tmp/.config-$${type}.in; \
 		[ "$$t" -nt "$$f" ] || ./scripts/metadata.pl $${type}_config < "$$f" > "$$t" || { rm -f "$$t"; echo "Failed to build $$t"; false; break; }; \
 	done
 
 .config: ./scripts/config/conf prepare-tmpinfo
-	if [ \! -f .config ]; then \
+	@+if [ \! -f .config ]; then \
 		[ -e $(HOME)/.openwrt/defconfig ] && cp $(HOME)/.openwrt/defconfig .config; \
-		$(NO_TRACE_MAKE) menuconfig; \
+		$(NO_TRACE_MAKE) menuconfig QUIET=0 OPENWRT_BUILD=; \
 	fi
 	$< -D .config Config.in &> /dev/null
 
 scripts/config/mconf:
-	$(MAKE) -C scripts/config all
+	@+$(MAKE) -C scripts/config all
 
 scripts/config/conf:
-	$(MAKE) -C scripts/config conf
+	@+$(MAKE) -C scripts/config conf
 
 config: scripts/config/conf prepare-tmpinfo FORCE
 	$< Config.in
@@ -81,24 +82,25 @@ kernel_menuconfig: .config FORCE
 tmp/.prereq-build: include/prereq-build.mk
 	mkdir -p tmp
 	rm -f tmp/.host.mk
-	$(NO_TRACE_MAKE) -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
+	@+$(NO_TRACE_MAKE) -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
 	}
 	touch $@
 
-tmp/.prereq-package: tmp/.packageinfo
+tmp/.prereq-package: tmp/.packageinfo .config
 tmp/.prereq-target: tmp/.targetinfo .config
 tmp/.prereq-package tmp/.prereq-target: include/prereq.mk 
 	mkdir -p tmp
 	rm -f tmp/.host.mk
-	$(NO_TRACE_MAKE) -s -C $(patsubst tmp/.prereq-%,%,$@) prereq 2>/dev/null || { \
+	@+$(NO_TRACE_MAKE) -s -C $(patsubst tmp/.prereq-%,%,$@) prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
 	}
 	touch $@
 
-prereq: tmp/.prereq-build tmp/.prereq-package tmp/.prereq-target .config FORCE ;
+prereq: tmp/.prereq-build tmp/.prereq-package tmp/.prereq-target .config FORCE
+	@true
 
 download: .config FORCE
 	$(MAKE) -j1 tools/download
@@ -111,7 +113,7 @@ clean dirclean distclean:
 
 %::
 	@$(SUBMAKE) -s prereq QUIET=0 OPENWRT_BUILD=
-	@$(MAKE) $@ 
+	@+$(MAKE) $@ 
 
 help:
 	cat README
