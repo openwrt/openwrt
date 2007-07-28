@@ -6,25 +6,27 @@
 #
 # Main makefile for the toolchain
 #
+file:=${lastword ${MAKEFILE_LIST}}
+curdir:=$(patsubst %/Makefile,%,${file})
 
 # subdirectories to descend into
-toolchain/builddirs := kernel-headers $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_NATIVE_TOOLCHAIN),,binutils gcc uClibc)
+$(curdir)/builddirs := kernel-headers $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_NATIVE_TOOLCHAIN),,binutils gcc uClibc)
 
 # builddir dependencies
-toolchain/uClibc/prepare:=toolchain/kernel-headers/prepare
+$(curdir)/uClibc/prepare:=$(curdir)/kernel-headers/prepare
 ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
-  toolchain/binutils/prepare:=toolchain/uClibc/prepare
-  toolchain/gcc/prepare:=toolchain/binutils/install
-  toolchain/uClibc/compile:=toolchain/gcc/compile
+  $(curdir)/binutils/prepare:=$(curdir)/uClibc/prepare
+  $(curdir)/gcc/prepare:=$(curdir)/binutils/install
+  $(curdir)/uClibc/compile:=$(curdir)/gcc/compile
 endif
-toolchain/gcc/install:=toolchain/uClibc/install
+$(curdir)/gcc/install:=$(curdir)/uClibc/install
 
 # prerequisites for the individual targets
-toolchain/ := .config $(tools/stamp)
-toolchain//prepare = $(STAGING_DIR)/include-host/.done
-toolchain//compile = $(1)/prepare
-toolchain//install = $(1)/compile
+$(curdir)/ := .config $(tools/stamp)
+$(curdir)//prepare = $(STAGING_DIR)/include-host/.done
+$(curdir)//compile = $(1)/prepare
+$(curdir)//install = $(1)/compile
 
-$(eval $(call stampfile,toolchain,toolchain))
-$(eval $(call subdir,toolchain))
+$(eval $(call stampfile,$(curdir),toolchain))
+$(eval $(call subdir,$(curdir)))
 

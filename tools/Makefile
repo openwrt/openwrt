@@ -7,25 +7,29 @@
 # Main makefile for the host tools
 #
 
-curdir:=tools
+file:=${lastword ${MAKEFILE_LIST}}
+curdir:=$(patsubst %/Makefile,%,${file})
 
 # subdirectories to descend into
-tools/builddirs := sed sstrip ipkg-utils ext2fs squashfs mtd-utils lzma mkimage firmware-utils patch-cmdline $(if $(CONFIG_CCACHE),ccache)
+$(curdir)/builddirs := sed sstrip ipkg-utils ext2fs squashfs mtd-utils lzma mkimage firmware-utils patch-cmdline $(if $(CONFIG_CCACHE),ccache)
 
 # builddir dependencies
-tools/squashfs/compile := tools/lzma/install
+$(curdir)/squashfs/compile := $(curdir)/lzma/install
 
 # preparatory work
+define copy_include
 $(STAGING_DIR)/include-host/.done:
-	@mkdir -p $$(dirname $@)
-	@cp tools/include/*.h $$(dirname $@)/
-	@touch $@
+	@mkdir -p $$$$(dirname $$@)
+	@cp $(1)/include/*.h $$$$(dirname $$@)/
+	@touch $$@
+$(curdir)//prepare = $(STAGING_DIR)/include-host/.done
+endef
+$(eval $(call copy_include,$(curdir)))
 
 # prerequisites for the individual targets
-tools/ := .config
-tools//prepare = $(STAGING_DIR)/include-host/.done
-tools//compile = $(1)/prepare
-tools//install = $(1)/compile
+$(curdir)/ := .config
+$(curdir)//compile = $(1)/prepare
+$(curdir)//install = $(1)/compile
 
-$(eval $(call stampfile,tools,tools))
-$(eval $(call subdir,tools))
+$(eval $(call stampfile,$(curdir),tools))
+$(eval $(call subdir,$(curdir)))
