@@ -23,7 +23,10 @@ export LANG=C
 export TOPDIR=${CURDIR}
 export IS_TTY=$(shell tty -s && echo 1 || echo 0)
 
-include $(TOPDIR)/include/verbose.mk
+include ./rules.mk 
+include $(INCLUDE_DIR)/depends.mk
+include $(INCLUDE_DIR)/subdir.mk
+include tools/Makefile
 
 OPENWRTVERSION:=$(RELEASE)
 ifneq ($(VERSION),)
@@ -100,7 +103,7 @@ kernel_menuconfig: .config FORCE
 
 package/% target/%: tmp/.packageinfo
 toolchain/% package/% target/%: tmp/.targetinfo
-package/% target/% tools/% toolchain/%: FORCE
+package/% target/% toolchain/%: FORCE
 	$(MAKE) -C $(patsubst %/$*,%,$@) $*
 
 
@@ -130,8 +133,7 @@ download: .config FORCE
 	$(MAKE) package/download
 	$(MAKE) target/download
 
-world: .config FORCE
-	$(MAKE) tools/install
+world: .config $(tools/stamp) FORCE
 	$(MAKE) toolchain/install
 	$(MAKE) target/compile
 	$(MAKE) package/compile
@@ -162,5 +164,4 @@ symlinkclean:
 	rm -rf tmp
 
 .SILENT: clean dirclean distclean symlinkclean config-clean download world help tmp/.packageinfo tmp/.targetinfo tmpinfo-clean tmp/.config-package.in tmp/.config-target.in .config scripts/config/mconf scripts/config/conf menuconfig tmp/.prereq-build tmp/.prereq-package tmp/.prereq-target
-FORCE: ;
-.PHONY: FORCE help
+.PHONY: help
