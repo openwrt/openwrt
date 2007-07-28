@@ -1,7 +1,6 @@
 # Makefile for OpenWrt
 #
-# Copyright (C) 2006 OpenWrt.org
-# Copyright (C) 2006 by Felix Fietkau <openwrt@nbd.name>
+# Copyright (C) 2007 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,22 +8,21 @@
 
 all: world
 
-
 TOPDIR:=${CURDIR}
 LC_ALL:=C
 LANG:=C
 IS_TTY:=${shell tty -s && echo 1 || echo 0}
 export TOPDIR LC_ALL LANG IS_TTY
 
-include rules.mk
-
 ifneq ($(OPENWRT_BUILD),1)
   export OPENWRT_BUILD:=1
-  include $(INCLUDE_DIR)/toplevel.mk
+  include $(TOPDIR)/include/toplevel.mk
 else
+  include rules.mk
   include $(INCLUDE_DIR)/depends.mk
   include $(INCLUDE_DIR)/subdir.mk
   include tools/Makefile
+  include toolchain/Makefile
 
 clean: FORCE
 	rm -rf build_* bin tmp
@@ -38,8 +36,7 @@ distclean: dirclean config-clean symlinkclean docs/clean
 toolchain/% package/% target/%: FORCE
 	$(MAKE) -C $(patsubst %/$*,%,$@) $*
 
-world: .config $(tools/stamp) FORCE
-	$(MAKE) toolchain/install
+world: .config $(tools/stamp) $(toolchain/stamp) FORCE
 	$(MAKE) target/compile
 	$(MAKE) package/compile
 	$(MAKE) package/install
