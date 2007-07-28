@@ -32,7 +32,7 @@ define subdir
     $(call warn,$(1),d,BD $(1)/$(bd))
     $(foreach target,$(SUBTARGETS),
       $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(target): $($(1)/$(bd)/$(target)) $(call $(1)//$(target),$(1)/$(bd)))
-		@$$(MAKE) -j1 -C $(1)/$(bd) $(target)
+		@+$$(MAKE) -j1 -C $(1)/$(bd) $(target)
 
       # legacy targets
       $(call warn_eval,$(1)/$(bd),l,T,$(1)/$(bd)-$(target): $(1)/$(bd)/$(target))
@@ -49,7 +49,7 @@ define stampfile
   $(call rdep,$(1),$$($(1)/stamp))
 
   $$($(1)/stamp):
-	@$(MAKE) $(1)/install
+	@+$(MAKE) $(1)/install
 	@mkdir -p $$$$(dirname $$($(1)/stamp))
 	@touch $$($(1)/stamp)
   .PRECIOUS: $$($(1)/stamp) # work around a make bug
