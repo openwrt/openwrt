@@ -5,7 +5,7 @@
 # l: show legacy targets
 
 ifeq ($(DEBUG),all)
-  build_debug:=dt
+  build_debug:=dlt
 else
   build_debug:=$(DEBUG)
 endif
