@@ -39,7 +39,7 @@ define subdir
 	)
   )
   $(foreach target,$(SUBTARGETS),
-    $(call warn_eval,$(1),t,T,$(1)/$(target): $($(1)/) $(foreach bd,$($(1)/builddirs),$(1)/$(bd)/$(target)))
+    $(call warn_eval,$(1),t,T,$(1)/$(target): $($(1)/) $(foreach bd,$(if $($(1)/builddirs-$(target)),$($(1)/builddirs-$(target)),$($(1)/builddirs)),$(1)/$(bd)/$(target)))
   )
 endef
 
