@@ -23,8 +23,6 @@ $(call warn,$(1),$(2),$(3)	$(4))
 $(4)
 endef
 
-dep/compile=$(1)/prepare
-dep/install=$(1)/compile
 SUBTARGETS:=clean download prepare compile install update refresh prereq
 
 # Parameters: <subdir>
@@ -33,7 +31,7 @@ define subdir
   $(foreach bd,$($(1)/builddirs),
     $(call warn,$(1),d,BD $(1)/$(bd))
     $(foreach target,$(SUBTARGETS),
-      $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(target): $(call dep/$(target),$(1)/$(bd)) $($(1)/$(bd)/$(target)) $($(1)//$(target)))
+      $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(target): $($(1)/$(bd)/$(target)) $(call $(1)//$(target),$(1)/$(bd)))
 		@$$(MAKE) -j1 -C $(1)/$(bd) $(target)
 
       # legacy targets

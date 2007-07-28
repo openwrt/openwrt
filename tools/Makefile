@@ -23,6 +23,9 @@ $(STAGING_DIR)/include-host/.done:
 
 # prerequisites for the individual targets
 $(curdir)/ := .config
-$(curdir)//prepare := $(STAGING_DIR)/include-host/.done
+$(curdir)//prepare = $(STAGING_DIR)/include-host/.done
+$(curdir)//compile = $(1)/prepare
+$(curdir)//install = $(1)/compile
+
 $(eval $(call stampfile,$(curdir),tools))
 $(eval $(call subdir,$(curdir)))
