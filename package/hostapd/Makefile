@@ -29,7 +29,7 @@ endef
 
 define Package/hostapd
   $(call Package/hostapd/Default)
-  DEPENDS:=+libopenssl @!LINUX_2_6_AVR32
+  DEPENDS:=+libopenssl @!LINUX_2_6_AVR32 @!LINUX_2_6_ETRAX
   TITLE+= (full)
   DESCRIPTION:=\
 	This package contains a full featured IEEE 802.1x/WPA/EAP/RADIUS \\\
@@ -42,7 +42,7 @@ endef
 
 define Package/hostapd-mini
   $(call Package/hostapd/Default)
-  DEPENDS:=@!LINUX_2_6_AVR32
+  DEPENDS:=@!LINUX_2_6_AVR32 @!LINUX_2_6_ETRAX
   TITLE+= (WPA-PSK only)
   DESCRIPTION:=\
 	This package contains a minimal IEEE 802.1x/WPA/EAP/RADIUS Authenticator \\\

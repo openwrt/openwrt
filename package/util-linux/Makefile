@@ -30,6 +30,7 @@ endef
 define Package/fdisk
   $(call Package/util-linux/Default)
   TITLE:=Partition table manipulation utility
+  DEPENDS:=@!LINUX_2_6_ETRAX
   DESCRIPTION:=\
 	This package contains a utility for managing disk partition tables.
   URL:=http://www.kernel.org/pub/linux/utils/util-linux/
@@ -38,7 +39,7 @@ endef
 define Package/cfdisk
   $(call Package/util-linux/Default)
   TITLE:=Partition table manipulation utility
-  DEPENDS:=+libncurses
+  DEPENDS:=+libncurses @!LINUX_2_6_ETRAX
   DESCRIPTION:=\
 	This package contains a utility for managing disk partition tables.
   URL:=http://www.kernel.org/pub/linux/utils/util-linux/
@@ -47,6 +48,7 @@ endef
 define Package/losetup
   $(call Package/util-linux/Default)
   TITLE:=Loopback devices setup and control utility
+  DEPENDS:=@!LINUX_2_6_ETRAX
   DESCRIPTION:=\
 	This package contains a utility for managing loopback devices.
 endef
@@ -54,6 +56,7 @@ endef
 define Package/swap-utils
   $(call Package/util-linux/Default)
   TITLE:=Swap space management utilities
+  DEPENDS:=@!LINUX_2_6_ETRAX
   DESCRIPTION:=\
 	This package contains a collection of tools for managing swap space: \\\
 	- mkswap\\\
@@ -64,6 +67,7 @@ endef
 define Package/hwclock
   $(call Package/util-linux/Default)
   TITLE:=Utilities for managing the hardware clock
+  DEPENDS:=@!LINUX_2_6_ETRAX
   DESCRIPTION:=\
   	 This package contains a utility for managing the hardware clock
 endef
