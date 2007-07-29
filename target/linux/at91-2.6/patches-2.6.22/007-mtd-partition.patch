@@ -1,0 +1,39 @@
+diff -urN linux-2.6.22.1.old/drivers/mtd/devices/at91_dataflash.c linux-2.6.22.1/drivers/mtd/devices/at91_dataflash.c
+--- linux-2.6.22.1.old/drivers/mtd/devices/at91_dataflash.c	2007-07-29 07:50:05.000000000 +0200
++++ linux-2.6.22.1/drivers/mtd/devices/at91_dataflash.c	2007-07-29 07:56:11.000000000 +0200
+@@ -173,7 +173,7 @@
+ };
+ #endif
+ 
+-static const char *part_probes[] = { "cmdlinepart", NULL, };
++static const char *part_probes[] = { "cmdlinepart", "at91part", NULL, };
+ 
+ #endif
+ 
+diff -urN linux-2.6.22.1.old/drivers/mtd/Kconfig linux-2.6.22.1/drivers/mtd/Kconfig
+--- linux-2.6.22.1.old/drivers/mtd/Kconfig	2007-07-29 07:54:27.000000000 +0200
++++ linux-2.6.22.1/drivers/mtd/Kconfig	2007-07-29 07:55:21.000000000 +0200
+@@ -160,6 +160,12 @@
+ 	  for your particular device. It won't happen automatically. The
+ 	  'armflash' map driver (CONFIG_MTD_ARMFLASH) does this, for example.
+ 
++config MTD_AT91_PARTS
++	tristate "Atmel AT91 partitioning support"
++	depends on MTD_PARTITIONS && ARCH_AT91RM9200 && AT91_SPI
++	---help---
++	  Atmel AT91 partitioning support
++	
+ comment "User Modules And Translation Layers"
+ 
+ config MTD_CHAR
+diff -urN linux-2.6.22.1.old/drivers/mtd/Makefile linux-2.6.22.1/drivers/mtd/Makefile
+--- linux-2.6.22.1.old/drivers/mtd/Makefile	2007-07-10 20:56:30.000000000 +0200
++++ linux-2.6.22.1/drivers/mtd/Makefile	2007-07-29 07:55:39.000000000 +0200
+@@ -11,6 +11,7 @@
+ obj-$(CONFIG_MTD_REDBOOT_PARTS) += redboot.o
+ obj-$(CONFIG_MTD_CMDLINE_PARTS) += cmdlinepart.o
+ obj-$(CONFIG_MTD_AFS_PARTS)	+= afs.o
++obj-$(CONFIG_MTD_AT91_PARTS)   += at91part.o
+ 
+ # 'Users' - code which presents functionality to userspace.
+ obj-$(CONFIG_MTD_CHAR)		+= mtdchar.o
