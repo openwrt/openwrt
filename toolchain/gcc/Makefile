@@ -44,6 +44,7 @@ endif
 
 include $(INCLUDE_DIR)/host-build.mk
 
+STAMP_BUILT:=$(STAGING_DIR)/stampfiles/.host_gcc-initial_installed
 BUILD_DIR1:=$(TOOLCHAIN_BUILD_DIR)/gcc-$(PKG_VERSION)-initial
 BUILD_DIR2:=$(TOOLCHAIN_BUILD_DIR)/gcc-$(PKG_VERSION)-final
 
