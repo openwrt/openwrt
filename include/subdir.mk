@@ -25,6 +25,11 @@ endef
 
 SUBTARGETS:=clean download prepare compile install update refresh prereq
 
+define subtarget
+  $(call warn_eval,$(1),t,T,$(1)/$(2): $($(1)/) $(foreach bd,$(if $($(1)/builddirs-$(2)),$($(1)/builddirs-$(2)),$($(1)/builddirs)),$(1)/$(bd)/$(2)))
+
+endef
+
 # Parameters: <subdir>
 define subdir
   $(call warn,$(1),d,D $(1))
@@ -38,9 +43,7 @@ define subdir
       $(call warn_eval,$(1)/$(bd),l,T,$(1)/$(bd)-$(target): $(1)/$(bd)/$(target))
 	)
   )
-  $(foreach target,$(SUBTARGETS),
-    $(call warn_eval,$(1),t,T,$(1)/$(target): $($(1)/) $(foreach bd,$(if $($(1)/builddirs-$(target)),$($(1)/builddirs-$(target)),$($(1)/builddirs)),$(1)/$(bd)/$(target)) ;)
-  )
+  $(foreach target,$(SUBTARGETS),$(call subtarget,$(1),$(target)))
 endef
 
 # Parameters: <subdir> <name>

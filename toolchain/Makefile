@@ -7,7 +7,7 @@
 # Main makefile for the toolchain
 #
 file:=${lastword ${MAKEFILE_LIST}}
-curdir:=$(patsubst %/Makefile,%,${file})
+curdir:=toolchain
 
 # subdirectories to descend into
 $(curdir)/builddirs := kernel-headers $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_NATIVE_TOOLCHAIN),,binutils gcc uClibc)

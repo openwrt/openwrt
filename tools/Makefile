@@ -8,7 +8,7 @@
 #
 
 file:=${lastword ${MAKEFILE_LIST}}
-curdir:=$(patsubst %/Makefile,%,${file})
+curdir:=tools
 
 # subdirectories to descend into
 $(curdir)/builddirs := sed sstrip ipkg-utils ext2fs squashfs mtd-utils lzma mkimage firmware-utils patch-cmdline $(if $(CONFIG_CCACHE),ccache)
