@@ -73,7 +73,7 @@ endef
 
 define Build/Compile
 	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(PKG_BUILD_DIR)/Rules.mak
-	PATH=$(TARGET_PATH) $(MAKE) -j $(CONFIG_JLEVEL) -C $(PKG_BUILD_DIR) \
+	PATH=$(TARGET_PATH) $(MAKE) -C $(PKG_BUILD_DIR) \
 		PREFIX= \
 		DEVEL_PREFIX=/ \
 		RUNTIME_PREFIX=/ \
