@@ -6,7 +6,6 @@
 #
 # Main makefile for the toolchain
 #
-file:=${lastword ${MAKEFILE_LIST}}
 curdir:=toolchain
 
 # subdirectories to descend into

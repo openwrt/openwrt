@@ -6,8 +6,6 @@
 #
 # Main makefile for the host tools
 #
-
-file:=${lastword ${MAKEFILE_LIST}}
 curdir:=tools
 
 # subdirectories to descend into
