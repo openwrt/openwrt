@@ -35,7 +35,7 @@ dirclean: clean
 distclean: dirclean config-clean symlinkclean docs/clean
 	rm -rf dl
 
-toolchain/% package/% target/%: FORCE
+package/% target/%: FORCE
 	$(MAKE) -C $(patsubst %/$*,%,$@) $*
 
 world: .config $(tools/stamp) $(toolchain/stamp) FORCE
