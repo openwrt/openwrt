@@ -11,9 +11,9 @@ curdir:=package
 include .config
 -include $(TMP_DIR)/.packagedeps
 $(curdir)/builddirs:=$(sort $(package-) $(package-y) $(package-m))
-$(curdir)/builddirs-compile:=$(sort $(package-y) $(package-m))
-$(curdir)/builddirs-install:=. $(sort $(package-y))
+$(curdir)/builddirs-default:=. $(sort $(package-y) $(package-m))
 $(curdir)/builddirs-prereq:=. $(sort $(prereq-y) $(prereq-m))
+$(curdir)/builddirs-install:=. $(sort $(package-y))
 
 $(curdir)//compile:=.config prereq
 $(curdir)/install:=$(curdir)/install-cleanup
