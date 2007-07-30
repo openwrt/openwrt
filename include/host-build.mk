@@ -84,7 +84,7 @@ ifneq ($(CONFIG_AUTOREBUILD),)
   define HostBuild/Autoclean
     $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)
     $(call rdep,${CURDIR} $(PKG_FILE_DEPEND),$(STAMP_PREPARED))
-    $(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),$(PKG_BUILD_DIR)/.dep_files, -and -not -path "/.*" -and -not -path "*/ipkg*")
+    $(if $(filter prepare,$(MAKECMDGOALS)),,$(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),$(PKG_BUILD_DIR)/.dep_files, -and -not -path "/.*" -and -not -path "*/ipkg*"))
   endef
 endif
 
