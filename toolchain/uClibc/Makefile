@@ -37,7 +37,6 @@ UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
-	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(PKG_BUILD_DIR)/Rules.mak
 	if [ -e config/$(ARCH).$(BOARD) ]; then \
 		$(CP) config/$(ARCH).$(BOARD) $(PKG_BUILD_DIR)/.config; \
 	else \
@@ -73,6 +72,7 @@ define Build/Configure
 endef
 
 define Build/Compile
+	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(PKG_BUILD_DIR)/Rules.mak
 	PATH=$(TARGET_PATH) $(MAKE) -j $(CONFIG_JLEVEL) -C $(PKG_BUILD_DIR) \
 		PREFIX= \
 		DEVEL_PREFIX=/ \
