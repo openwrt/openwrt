@@ -28,7 +28,7 @@ override MAKEFLAGS=
 export CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
 
 ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
-  ifneq ($(CONFIG_AUTOREBUILD),)
+  ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
     define Build/Autoclean
       $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)
       $(call rdep,${CURDIR} $(PKG_FILE_DEPEND),$(STAMP_PREPARED))
@@ -36,6 +36,7 @@ ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
     endef
   endif
 endif
+
 
 define Build/DefaultTargets
   ifneq ($(strip $(PKG_SOURCE_URL)),)
@@ -62,7 +63,6 @@ define Build/DefaultTargets
 
   $(STAMP_BUILT): $(STAMP_CONFIGURED)
 	$(Build/Compile)
-	@$(NO_TRACE_MAKE) $(PKG_BUILD_DIR)/.dep_files
 	touch $$@
 
   ifdef Build/InstallDev

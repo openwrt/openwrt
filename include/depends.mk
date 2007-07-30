@@ -19,11 +19,13 @@ define rdep
   )
 
   ifneq ($(3),)
-    ifneq ($$(shell find $(1) $(DEP_FINDPARAMS) $(4) 2>/dev/null | md5s),$(if $(3),$(shell cat $(3) 2>/dev/null)))
+    ifneq ($$(shell find $(1) $(DEP_FINDPARAMS) $(4) 2>/dev/null | md5s),$(if $(3),$(shell cat $(3) || touch $(3) 2>/dev/null)))
       $(2): $(3)
     endif
   
-    $(3): FORCE
-	  @-find $(1) $(DEP_FINDPARAMS) $(4) 2>/dev/null | md5s > $$@
   endif
+
+  $(3): FORCE
+	  @-find $(1) $(DEP_FINDPARAMS) $(4) 2>/dev/null | md5s > $$@
+  .PRECIOUS: $(3)
 endef
