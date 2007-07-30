@@ -34,18 +34,6 @@ define Build/Prepare/cris
 	ln -sf $(PKG_BUILD_DIR) $(LINUX_HEADERS_DIR)
 endef
 
-ifdef Build/Prepare/$(ARCH)
-define Build/Prepare
-	$(call Build/Prepare/$(ARCH))
-endef
-else
-define Build/Prepare
-	$(call Kernel/Prepare/Default)
-	$(SED) 's/@expr length/@-expr length/' $(PKG_BUILD_DIR)/Makefile
-	ln -sf $(PKG_BUILD_DIR) $(LINUX_HEADERS_DIR)
-endef
-endif
-
 define Build/Configure/powerpc
 	$(CP) $(PKG_BUILD_DIR)/include/asm-ppc/* $(PKG_BUILD_DIR)/include/asm-powerpc/
 	rm -rf $(PKG_BUILD_DIR)/include/asm-ppc
@@ -60,10 +48,20 @@ KMAKE := $(MAKE) -C $(PKG_BUILD_DIR) \
 	ARCH=$(LINUX_KARCH) \
 	CONFIG_SHELL=$(BASH)
 
-define Build/Configure
+define Build/Prepare/Default
+	$(call Kernel/Prepare/Default)
+	$(SED) 's/@expr length/@-expr length/' $(PKG_BUILD_DIR)/Makefile
+	ln -sf $(PKG_BUILD_DIR) $(LINUX_HEADERS_DIR)
+endef
+
+define Build/Prepare
+	$(if $(Build/Prepare/$(ARCH)),$(Build/Prepare/$(ARCH)),$(Build/Prepare/Default))
 	yes '' | $(KMAKE) oldconfig
 	$(KMAKE) include/linux/version.h include/asm
 	$(call Build/Configure/$(ARCH))
+endef
+
+define Build/Configure
 endef
 
 define Build/Compile
