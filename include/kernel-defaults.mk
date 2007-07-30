@@ -59,7 +59,7 @@ endef
 
 define Kernel/CompileModules/Default
 	rm -f $(LINUX_DIR)/vmlinux $(LINUX_DIR)/System.map
-	$(MAKE) -j$(CONFIG_JLEVEL) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" modules
+	$(MAKE) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" modules
 endef
 
 ifeq ($(KERNEL),2.6)
@@ -82,7 +82,7 @@ ifeq ($(KERNEL),2.6)
 endif
 define Kernel/CompileImage/Default
 	$(call Kernel/SetInitramfs)
-	$(MAKE) -j$(CONFIG_JLEVEL) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" $(KERNELNAME)
+	$(MAKE) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" $(KERNELNAME)
 	$(KERNEL_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)
 	$(KERNEL_CROSS)objcopy -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux.elf
 endef

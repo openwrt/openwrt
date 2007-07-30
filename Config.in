@@ -101,13 +101,6 @@ config TAR_VERBOSITY
 	prompt "Tar verbose" if BUILDOPTS
 	default n
 
-config JLEVEL
-	int
-	prompt "Number of jobs to run simultaneously" if BUILDOPTS
-	default "1"
-	help
-	    Number of jobs to run simultanesouly
-
 config CCACHE
 	bool
 	prompt "Use ccache" if BUILDOPTS
