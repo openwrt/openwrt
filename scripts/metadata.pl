@@ -576,12 +576,12 @@ sub gen_package_mk() {
 			undef $idx if $idx =~ /^(kernel)|(base-files)$/;
 			if ($idx) {
 				next if $dep{$pkg->{src}."->".$idx};
-				$depline .= " $idx\-compile";
+				$depline .= " \$(curdir)/$idx/compile";
 				$dep{$pkg->{src}."->".$idx} = 1;
 			}
 		}
 		if ($depline) {
-			$line .= $pkg->{subdir}."$pkg->{src}-compile: $depline\n";
+			$line .= "\$(curdir)/".$pkg->{subdir}."$pkg->{src}/compile := $depline\n";
 		}
 	}
 	
@@ -604,7 +604,7 @@ $cmds \\
 	) > \$@
 	
 ifneq (\$(UCI_PRECONFIG)\$(CONFIG_UCI_PRECONFIG),)
-  preconfig: \$(TARGET_DIR)/etc/uci-defaults/$preconfig
+  package/preconfig: \$(TARGET_DIR)/etc/uci-defaults/$preconfig
 endif
 EOF
 	}

@@ -1,32 +1,14 @@
-# debug flags:
+# 
+# Copyright (C) 2007 OpenWrt.org
 #
-# d: show subdirectory tree
-# t: show added targets
-# l: show legacy targets
-
-ifeq ($(DEBUG),all)
-  build_debug:=dlt
-else
-  build_debug:=$(DEBUG)
-endif
-
-define debug
-$$(findstring $(2),$$(if $$(DEBUG_DIR),$$(if $$(filter $$(DEBUG_DIR)%,$(1)),$(build_debug)),$(build_debug)))
-endef
-
-define warn
-$$(if $(call debug,$(1),$(2)),$$(warning $(3)))
-endef
-
-define warn_eval
-$(call warn,$(1),$(2),$(3)	$(4))
-$(4)
-endef
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
 
 SUBTARGETS:=clean download prepare compile install update refresh prereq
 
 define subtarget
-  $(call warn_eval,$(1),t,T,$(1)/$(2): $($(1)/) $(foreach bd,$(if $($(1)/builddirs-$(2)),$($(1)/builddirs-$(2)),$($(1)/builddirs)),$(1)/$(bd)/$(2)))
+  $(call warn_eval,$(1),t,T,$(1)/$(2): $($(1)/) $(foreach bd,$(if $($(1)/builddirs-$(2)),$(filter-out .,$($(1)/builddirs-$(2))),$($(1)/builddirs)),$(1)/$(bd)/$(2)))
 
 endef
 
@@ -46,19 +28,19 @@ define subdir
   $(foreach target,$(SUBTARGETS),$(call subtarget,$(1),$(target)))
 endef
 
-# Parameters: <subdir> <name>
+# Parameters: <subdir> <name> <target>
 define stampfile
-  $(1)/stamp:=$(STAGING_DIR)/stampfiles/.$(2)_installed
-  $(call rdep,$(1),$$($(1)/stamp))
+  $(1)/stamp-$(3):=$(STAGING_DIR)/stampfiles/.$(2)_$(3)
+  $(call rdep,$(1),$$($(1)/stamp-$(3)),)
 
-  $$($(1)/stamp):
-	@+$(MAKE) $(1)/install
-	@mkdir -p $$$$(dirname $$($(1)/stamp))
-	@touch $$($(1)/stamp)
-  .PRECIOUS: $$($(1)/stamp) # work around a make bug
+  $$($(1)/stamp-$(3)):
+	@+$(MAKE) $(1)/$(3)
+	@mkdir -p $$$$(dirname $$($(1)/stamp-$(3)))
+	@touch $$($(1)/stamp-$(3))
+  .PRECIOUS: $$($(1)/stamp-$(3)) # work around a make bug
 
-  $(1)//clean:=$(1)/stamp/clean
-  $(1)/stamp/clean: FORCE
-	@rm -f $$($(1)/stamp)
+  $(1)//clean:=$(1)/stamp-$(3)/clean
+  $(1)/stamp-$(3)/clean: FORCE
+	@rm -f $$($(1)/stamp-$(3))
 
 endef

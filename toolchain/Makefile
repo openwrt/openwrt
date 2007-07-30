@@ -21,11 +21,11 @@ endif
 $(curdir)/gcc/install:=$(curdir)/uClibc/install
 
 # prerequisites for the individual targets
-$(curdir)/ := .config $(tools/stamp)
+$(curdir)/ := .config $(tools/stamp-install) prereq
 $(curdir)//prepare = $(STAGING_DIR)/include-host/.done
 $(curdir)//compile = $(1)/prepare
 $(curdir)//install = $(1)/compile
 
-$(eval $(call stampfile,$(curdir),toolchain))
+$(eval $(call stampfile,$(curdir),toolchain,install))
 $(eval $(call subdir,$(curdir)))
 

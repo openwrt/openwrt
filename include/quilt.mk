@@ -10,6 +10,10 @@ ifeq ($(KERNEL_BUILD),1)
 endif
 PATCH_DIR?=./patches
 
+ifeq ($(MAKECMDGOALS),refresh)
+  override QUILT=1
+endif
+
 define Quilt/Patch
 	@for patch in $$$$( (cd $(1) && ls) 2>/dev/null ); do ( \
 		cp "$(1)/$$$$patch" $(PKG_BUILD_DIR); \

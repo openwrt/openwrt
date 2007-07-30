@@ -1,17 +1,18 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2007 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 
+TMP_DIR ?= $(TOPDIR)/tmp
 -include $(TMP_DIR)/.host.mk
 
 export TAR
-TMP_DIR ?= $(TOPDIR)/tmp
 
 ifneq ($(__host_inc),1)
 __host_inc:=1
+.PRECIOUS: $(TMP_DIR)/.host.mk
 $(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
 	@mkdir -p $(TMP_DIR)
 	@( \
