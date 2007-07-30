@@ -18,6 +18,8 @@ ifneq ($(OPENWRT_BUILD),1)
   export OPENWRT_BUILD:=1
   include $(TOPDIR)/include/toplevel.mk
 else
+  include $(TOPDIR)/include/host.mk
+
   include rules.mk
   include $(INCLUDE_DIR)/depends.mk
   include $(INCLUDE_DIR)/subdir.mk

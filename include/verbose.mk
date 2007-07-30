@@ -26,7 +26,7 @@ ifeq ($(IS_TTY),1)
 endif
 
 define MESSAGE
-	echo -e "$(_Y)$(1)$(_N)" >&3
+	/bin/echo -e "$(_Y)$(1)$(_N)" >&3
 endef
 
 ifneq ($(KBUILD_VERBOSE),99)
