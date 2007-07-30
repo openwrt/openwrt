@@ -188,6 +188,6 @@ rebuild: FORCE
 	@$(MAKE) compile
 
 image-prereq:
-	$(MAKE) -C image prereq
+	$(MAKE) -s -C image prereq
 
 prereq: image-prereq
