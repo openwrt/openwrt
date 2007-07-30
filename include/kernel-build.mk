@@ -11,6 +11,8 @@ include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/prereq.mk
 
+override MAKEFLAGS=
+
 GENERIC_LINUX_CONFIG:=$(GENERIC_PLATFORM_DIR)/config-$(shell [ -f "$(GENERIC_PLATFORM_DIR)/config-$(KERNEL_PATCHVER)" ] && echo "$(KERNEL_PATCHVER)" || echo template ) 
 LINUX_CONFIG_DIR ?= ./config$(shell [ -d "./config-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
 LINUX_CONFIG ?= $(LINUX_CONFIG_DIR)/default
@@ -172,6 +174,7 @@ oldconfig menuconfig: $(STAMP_PREPARED) FORCE
 	$(SCRIPT_DIR)/config.pl '>' $(GENERIC_LINUX_CONFIG) $(LINUX_DIR)/.config > $(LINUX_CONFIG)
 
 install: $(LINUX_DIR)/.image
+	$(MAKE) -C image install
 
 clean: FORCE
 	rm -f $(STAMP_DIR)/.linux-compile
@@ -184,4 +187,7 @@ rebuild: FORCE
 	fi
 	@$(MAKE) compile
 
+image-prereq:
+	$(MAKE) -C image prereq
 
+prereq: image-prereq

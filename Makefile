@@ -25,9 +25,16 @@ else
   include rules.mk
   include $(INCLUDE_DIR)/depends.mk
   include $(INCLUDE_DIR)/subdir.mk
+  include $(INCLUDE_DIR)/target.mk
+  include target/Makefile
   include package/Makefile
   include tools/Makefile
   include toolchain/Makefile
+
+$(toolchain/stamp-compile): $(tools/stamp-compile)
+$(target/stamp-compile): $(toolchain/stamp-install) $(tools/stamp-install)
+$(package/stamp-compile): $(target/stamp-compile)
+$(target/stamp-install): $(package/stamp-compile) $(package/stamp-install)
 
 clean: FORCE
 	rm -rf build_* bin tmp
@@ -38,32 +45,13 @@ dirclean: clean
 distclean: dirclean config-clean symlinkclean docs/clean
 	rm -rf dl
 
-target/%: FORCE
-	$(MAKE) -C $(patsubst %/$*,%,$@) $*
-
 # check prerequisites before starting to build
-prereq: tmp/.prereq-target $(package/stamp-prereq) ;
+prereq: $(package/stamp-prereq) $(target/stamp-prereq) ;
 
-world: .config $(tools/stamp-install) $(toolchain/stamp-install) FORCE
-	$(MAKE) target/compile
-	$(MAKE) package/compile
-	$(MAKE) package/install
-	$(MAKE) target/install
+world: .config $(tools/stamp-install) $(toolchain/stamp-install) $(target/stamp-compile) $(package/stamp-compile) $(package/stamp-install) $(target/stamp-install) FORCE
 	$(MAKE) package/index
 
 package/symlinks:
 	$(SCRIPT_DIR)/feeds.sh $(CONFIG_SOURCE_FEEDS) $(CONFIG_SOURCE_FEEDS_REV)	
-
-# FIXME: remove after converting target/ to new structure
-tmp/.prereq-target: tmp/.targetinfo .config
-tmp/.prereq-target: include/prereq.mk 
-	mkdir -p tmp
-	rm -f tmp/.host.mk
-	@+$(NO_TRACE_MAKE) -s -C target prereq 2>/dev/null || { \
-		echo "Prerequisite check failed. Use FORCE=1 to override."; \
-		false; \
-	}
-	touch $@
-.SILENT: tmp/.prereq-target
 
 endif

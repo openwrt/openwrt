@@ -26,7 +26,6 @@ $(eval $(call copy_include,$(curdir)))
 
 # prerequisites for the individual targets
 $(curdir)/ := .config prereq
-$(curdir)//compile = $(1)/prepare
 $(curdir)//install = $(1)/compile
 
 $(eval $(call stampfile,$(curdir),tools,install))

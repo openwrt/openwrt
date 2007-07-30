@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2007 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,14 @@
 
 curdir:=package
 
-include .config
 -include $(TMP_DIR)/.packagedeps
 $(curdir)/builddirs:=$(sort $(package-) $(package-y) $(package-m))
 $(curdir)/builddirs-default:=. $(sort $(package-y) $(package-m))
 $(curdir)/builddirs-prereq:=. $(sort $(prereq-y) $(prereq-m))
 $(curdir)/builddirs-install:=. $(sort $(package-y))
 
-$(curdir)//compile:=.config prereq
+$(curdir)//compile = $(1)/prepare
+$(curdir)//install = $(1)/compile
 $(curdir)/install:=$(curdir)/install-cleanup
 $(curdir)/install-cleanup:
 	rm -rf $(BUILD_DIR)/root
@@ -39,5 +39,12 @@ $(curdir)/install-cleanup:
 $(curdir)/index: FORCE
 	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages)
 
+$(curdir)/flags-install:= -j1
+
 $(eval $(call stampfile,$(curdir),package,prereq))
+$(eval $(call stampfile,$(curdir),package,compile))
+$(eval $(call stampfile,$(curdir),package,install))
+
+$($(curdir)/stamp-install): $($(curdir)/stamp-compile)
+
 $(eval $(call subdir,$(curdir)))

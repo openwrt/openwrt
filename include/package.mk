@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006,2007 OpenWrt.org
+# Copyright (C) 2006-2007 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -24,6 +24,7 @@ include $(INCLUDE_DIR)/package-defaults.mk
 include $(INCLUDE_DIR)/package-dumpinfo.mk
 include $(INCLUDE_DIR)/package-ipkg.mk
 
+override MAKEFLAGS=
 export CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
 
 ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
