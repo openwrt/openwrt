@@ -23,7 +23,7 @@ define subdir
   $(foreach bd,$($(1)/builddirs),
     $(call warn,$(1),d,BD $(1)/$(bd))
     $(foreach target,$(SUBTARGETS),
-      $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(target): $($(1)/$(bd)/$(target)) $(call $(1)//$(target),$(1)/$(bd)))
+      $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(target): $(if $(QUILT),,$($(1)/$(bd)/$(target)) $(call $(1)//$(target),$(1)/$(bd))))
 		+$$(MAKE) -j1 -C $(1)/$(bd) $(target)
         $$(if $(call debug,$(1)/$(bd),v),,.SILENT: $(1)/$(bd)/$(target))
 
