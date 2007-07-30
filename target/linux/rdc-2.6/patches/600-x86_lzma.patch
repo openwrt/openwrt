@@ -825,6 +825,7 @@ diff -Naur linux-old/arch/i386/boot/compressed/lzma_misc.c linux-lzma/arch/i386/
 +
 +static unsigned insize;  /* valid bytes in inbuf */
 +static unsigned inptr;   /* index of next byte to be processed in inbuf */
++static unsigned long workspace;
 +
 +#define get_byte()  (inptr < insize ? inbuf[inptr++] : fill_inbuf())
 +		
@@ -902,7 +903,6 @@ diff -Naur linux-old/arch/i386/boot/compressed/lzma_misc.c linux-lzma/arch/i386/
 +	unsigned int lc; /* literal context bits */
 +	unsigned int lp; /* literal pos state bits */
 +	unsigned int pb; /* pos state bits */
-+	unsigned char* workspace;
 +	unsigned int uncompressedSize = 0;
 +	unsigned char* p;
 +	
@@ -927,10 +927,10 @@ diff -Naur linux-old/arch/i386/boot/compressed/lzma_misc.c linux-lzma/arch/i386/
 +		get_byte();
 +	
 +	// point it beyond uncompresedSize
-+	workspace = window + uncompressedSize;
++	//workspace = window + uncompressedSize;
 +	
 +	/* decompress kernel */
-+	if (LzmaDecode(workspace, ~0, lc, lp, pb, &callback,
++	if (LzmaDecode((unsigned char*)workspace, ~0, lc, lp, pb, &callback,
 +		(unsigned char*)window, uncompressedSize, &i) == LZMA_RESULT_OK)
 +		return 0;
 +	else
@@ -967,7 +967,7 @@ diff -Naur linux-old/arch/i386/boot/compressed/lzma_misc.c linux-lzma/arch/i386/
 +
 +	if ((u32)output & (CONFIG_PHYSICAL_ALIGN -1))
 +		error("Destination address not CONFIG_PHYSICAL_ALIGN aligned");
-+	if (end > ((-__PAGE_OFFSET-(512 <<20)-1) & 0x7fffffff))
++	if ((workspace = end) > ((-__PAGE_OFFSET-(512 <<20)-1) & 0x7fffffff))
 +		error("Destination address too large");
 +#ifndef CONFIG_RELOCATABLE
 +	if ((u32)output != LOAD_PHYSICAL_ADDR)
@@ -1029,6 +1029,14 @@ diff -urN linux-2.6.19.2/scripts/Makefile.lib linux-2.6.19.2.new/scripts/Makefil
 +# LZMA
 +#
 +quiet_cmd_lzma = LZMA $@
-+cmd_lzma = lzma e $< $@ -lc7 -lp0 -pb0
++cmd_lzma = bash -e scripts/lzma_kern $< $@ -lc7 -lp0 -pb0
 +# to use lzmacomp,
 +# cmd_lzma = lzmacomp $< 700 > $@
+diff -u linux/scripts/lzma_kern linux/scripts/lzma_kern
+--- linux/scripts/lzma_kern	2007-07-27 20:18:17.013014750 -0700
++++ linux/scripts/lzma_kern	2007-07-27 20:18:17.013014750 -0700
+@@ -0,0 +1,4 @@
++get-size() { echo "$5" ;}
++printf -v len '%.8x' "$(get-size $(ls -l "$1"))"
++lzma e "$@"
++echo -ne "\x$(echo $len | cut -c 7,8)\x$(echo $len | cut -c 5,6)\x$(echo $len | cut -c 3,4)\x$(echo $len | cut -c 1,2)" >> "$2"
