@@ -14,8 +14,6 @@ $(curdir)/builddirs-default:=. $(sort $(package-y) $(package-m))
 $(curdir)/builddirs-prereq:=. $(sort $(prereq-y) $(prereq-m))
 $(curdir)/builddirs-install:=. $(sort $(package-y))
 
-$(curdir)//compile = $(1)/prepare
-$(curdir)//install = $(1)/compile
 $(curdir)/install:=$(curdir)/install-cleanup
 $(curdir)/install-cleanup:
 	rm -rf $(BUILD_DIR)/root
