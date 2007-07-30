@@ -42,8 +42,8 @@ clean: FORCE
 dirclean: clean
 	rm -rf staging_dir_* toolchain_build_* tool_build
 
-distclean: dirclean config-clean symlinkclean docs/clean
-	rm -rf dl
+distclean: dirclean 
+	rm -rf dl .config*
 
 # check prerequisites before starting to build
 prereq: $(package/stamp-prereq) $(target/stamp-prereq) ;
