@@ -10,6 +10,8 @@ curdir:=toolchain
 
 # subdirectories to descend into
 $(curdir)/builddirs := kernel-headers $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_NATIVE_TOOLCHAIN),,binutils gcc uClibc)
+$(curdir)/builddirs-compile:=. $(filter-out kernel-headers,$($(curdir)/builddirs))
+$(curdir)/builddirs-install:=$($(curdir)/builddirs-compile)
 
 # builddir dependencies
 $(curdir)/uClibc/prepare:=$(curdir)/kernel-headers/prepare
