@@ -26,7 +26,7 @@ include $(INCLUDE_DIR)/package-ipkg.mk
 
 export CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
 
-ifeq ($(DUMP),)
+ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   ifneq ($(CONFIG_AUTOREBUILD),)
     define Build/Autoclean
       $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)

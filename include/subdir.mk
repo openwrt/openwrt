@@ -7,8 +7,13 @@
 
 SUBTARGETS:=clean download prepare compile install update refresh prereq
 
+subtarget-default = $(filter-out ., \
+	$(if $($(1)/builddirs-$(2)),$($(1)/builddirs-$(2)), \
+	$(if $($(1)/builddirs-default),$($(1)/builddirs-default), \
+	$($(1)/builddirs))))
+
 define subtarget
-  $(call warn_eval,$(1),t,T,$(1)/$(2): $($(1)/) $(foreach bd,$(if $($(1)/builddirs-$(2)),$(filter-out .,$($(1)/builddirs-$(2))),$($(1)/builddirs)),$(1)/$(bd)/$(2)))
+  $(call warn_eval,$(1),t,T,$(1)/$(2): $($(1)/) $(foreach bd,$(call subtarget-default,$(1),$(2)),$(1)/$(bd)/$(2)))
 
 endef
 
