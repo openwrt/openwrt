@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2007 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,6 +12,7 @@ include $(INCLUDE_DIR)/depends.mk
 STAMP_PREPARED:=$(PKG_BUILD_DIR)/.prepared_$(shell find ${CURDIR} $(PKG_FILE_DEPEND) $(DEP_FINDPARAMS) | md5s)
 STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/.configured
 STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
+override MAKEFLAGS=
 
 include $(INCLUDE_DIR)/quilt.mk
 
