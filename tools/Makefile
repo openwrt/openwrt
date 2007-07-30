@@ -21,6 +21,7 @@ $(STAGING_DIR)/include-host/.done:
 	@cp $(1)/include/*.h $$$$(dirname $$@)/
 	@touch $$@
 $(curdir)//prepare = $(STAGING_DIR)/include-host/.done
+$(curdir)//compile = $(STAGING_DIR)/include-host/.done
 endef
 $(eval $(call copy_include,$(curdir)))
 
