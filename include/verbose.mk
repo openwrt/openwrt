@@ -44,7 +44,7 @@ ifneq ($(KBUILD_VERBOSE),99)
       MAKE:=&>/dev/null $(MAKE)
     endif
     export QUIET:=1
-    MAKE:=cmd() { $(MAKE) $$* || {  echo "make $$*: build failed. Please re-run make with V=99 to see what's going on"; false; } } 3>&1 4>&2; cmd
+    MAKE:=cmd() { $(MAKE) -s $$* || {  echo "make $$*: build failed. Please re-run make with V=99 to see what's going on"; false; } } 3>&1 4>&2; cmd
   endif
 
   .SILENT: $(MAKECMDGOALS)

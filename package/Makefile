@@ -6,53 +6,18 @@
 #
 # $Id$
 
-include $(TOPDIR)/rules.mk
-include $(TOPDIR)/.config
-include $(INCLUDE_DIR)/host.mk
+curdir:=package
 
-all: compile
+include .config
+-include $(TMP_DIR)/.packagedeps
+$(curdir)/builddirs:=$(sort $(package-) $(package-y) $(package-m))
+$(curdir)/builddirs-compile:=$(sort $(package-y) $(package-m))
+$(curdir)/builddirs-install:=. $(sort $(package-y))
+$(curdir)/builddirs-prereq:=. $(sort $(prereq-y) $(prereq-m))
 
-include $(TMP_DIR)/.packagedeps
-
-PREREQ_PACKAGES:=$(patsubst %,%-prereq,$(prereq-y) $(prereq-m))
-DOWNLOAD_PACKAGES:=$(patsubst %,%-download,$(package-y) $(package-m))
-COMPILE_PACKAGES:=$(patsubst %,%-compile,$(package-y) $(package-m))
-INSTALL_PACKAGES:=$(patsubst %,%-install,$(package-y))
-
-$(STAMP_DIR) $(TARGET_DIR):
-	mkdir -p $@
-
-ifeq ($(QUIET),1)
-%-compile %-install: FORCE
-	$(MAKE) -j1 -C $* $(patsubst $*-%,%,$@) || { $(call MESSAGE, "*** $* $(patsubst $*-%,%,$@) failed"); false; }
-
-%-prepare %-prereq %-download %-clean: FORCE
-else
-%-prepare %-prereq %-download %-clean %-compile %-install: FORCE
-endif
-	$(MAKE) -j1 -C $* $(patsubst $*-%,%,$@)
-
-%-refresh %-update:
-	-$(MAKE) -C $* $(patsubst $*-%,%,$@)
-	
-%-autorefresh:
-	-$(MAKE) -C $* clean refresh QUILT=1
-
-
-# .IGNORE: $(COMPILE_PACKAGES) 
-
-$(TMP_DIR)/.packagedeps: $(TMP_DIR)/.packageinfo
-	@$(TOPDIR)/scripts/metadata.pl package_mk < $< > $@ || rm -f $@
-
-preconfig:
-clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
-prereq: $(PREREQ_PACKAGES)
-download: $(DOWNLOAD_PACKAGES)
-compile: $(COMPILE_PACKAGES)
-refresh: $(patsubst %,%-autorefresh,$(package-y) $(package-m) $(package-))
-
-install-targets: $(INSTALL_PACKAGES)
-install:
+$(curdir)//compile:=.config prereq
+$(curdir)/install:=$(curdir)/install-cleanup
+$(curdir)/install-cleanup:
 	rm -rf $(BUILD_DIR)/root
 	$(MAKE) install-targets
 	$(MAKE) preconfig
@@ -71,16 +36,8 @@ install:
 	@-find $(BUILD_DIR)/root -name .svn  | $(XARGS) rm -rf
 	@-find $(BUILD_DIR)/root -name '.#*' | $(XARGS) rm -f
 
-index: $(PACKAGE_DIR)/Packages
-
-$(PACKAGE_DIR)/Packages: $(PACKAGE_DIR)/*.ipk
+$(curdir)/index: FORCE
 	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages)
 
-symlinks:
-	../scripts/feeds.sh $(CONFIG_SOURCE_FEEDS) $(CONFIG_SOURCE_FEEDS_REV)
-
-ifeq ($(MAKECMDGOALS),compile)
-MAKEFLAGS:=$(MAKEFLAGS) -j$(CONFIG_JLEVEL)
-else
-.NOTPARALLEL:
-endif
+$(eval $(call stampfile,$(curdir),package,prereq))
+$(eval $(call subdir,$(curdir)))

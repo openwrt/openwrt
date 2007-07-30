@@ -9,10 +9,9 @@
 RELEASE:=Kamikaze
 #VERSION:=2.0 # uncomment for final release
 
-all: world
-
 SHELL:=/usr/bin/env bash
 OPENWRTVERSION:=$(RELEASE)
+PREP_MK= OPENWRT_BUILD= QUIET=0
 include $(TOPDIR)/include/verbose.mk
 ifneq ($(VERSION),)
   OPENWRTVERSION:=$(VERSION) ($(OPENWRTVERSION))
@@ -26,27 +25,26 @@ export OPENWRTVERSION
 
 ifeq ($(FORCE),)
   .config scripts/config/conf scripts/config/mconf: tmp/.prereq-build
-  world: prereq
 endif
 
 SCAN_COOKIE?=$(shell echo $$$$)
 export SCAN_COOKIE
 
-tmp/.packageinfo tmp/.targetinfo prepare-tmpinfo:
-	@mkdir -p tmp/info
-	@+$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS="$(TOPDIR)/include/package*.mk" SCAN_DEPTH=4 SCAN_EXTRA=""
-	@+$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPS="profiles/*.mk $(TOPDIR)/include/kernel*.mk" SCAN_DEPTH=2 SCAN_EXTRA=""
-	@for type in package target; do \
+tmp/.packageinfo tmp/.targetinfo prepare-tmpinfo: FORCE
+	mkdir -p tmp/info
+	+$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS="$(TOPDIR)/include/package*.mk" SCAN_DEPTH=4 SCAN_EXTRA=""
+	+$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPS="profiles/*.mk $(TOPDIR)/include/kernel*.mk" SCAN_DEPTH=2 SCAN_EXTRA=""
+	for type in package target; do \
 		f=tmp/.$${type}info; t=tmp/.config-$${type}.in; \
 		[ "$$t" -nt "$$f" ] || ./scripts/metadata.pl $${type}_config < "$$f" > "$$t" || { rm -f "$$t"; echo "Failed to build $$t"; false; break; }; \
 	done
+	./scripts/metadata.pl package_mk < tmp/.packageinfo > tmp/.packagedeps || { rm -f tmp/.packagedeps; false; }
 
 .config: ./scripts/config/conf prepare-tmpinfo
 	@+if [ \! -f .config ]; then \
 		[ -e $(HOME)/.openwrt/defconfig ] && cp $(HOME)/.openwrt/defconfig .config; \
-		$(NO_TRACE_MAKE) menuconfig QUIET=0 OPENWRT_BUILD=; \
+		$(NO_TRACE_MAKE) menuconfig $(PREP_MK); \
 	fi
-	$< -D .config Config.in &> /dev/null
 
 scripts/config/mconf:
 	@+$(MAKE) -C scripts/config all
@@ -88,20 +86,6 @@ tmp/.prereq-build: include/prereq-build.mk
 	}
 	touch $@
 
-tmp/.prereq-package: tmp/.packageinfo .config
-tmp/.prereq-target: tmp/.targetinfo .config
-tmp/.prereq-package tmp/.prereq-target: include/prereq.mk 
-	mkdir -p tmp
-	rm -f tmp/.host.mk
-	@+$(NO_TRACE_MAKE) -s -C $(patsubst tmp/.prereq-%,%,$@) prereq 2>/dev/null || { \
-		echo "Prerequisite check failed. Use FORCE=1 to override."; \
-		false; \
-	}
-	touch $@
-
-prereq: tmp/.prereq-build tmp/.prereq-package tmp/.prereq-target .config FORCE
-	@true
-
 download: .config FORCE
 	$(MAKE) -j1 tools/download
 	$(MAKE) -j1 toolchain/download
@@ -111,8 +95,12 @@ download: .config FORCE
 clean dirclean distclean:
 	@$(MAKE) $@ 
 
+prereq:: .config
+	@+$(SUBMAKE) -s tmp/.prereq-build $(PREP_MK)
+	@$(NO_TRACE_MAKE) -s $@
+
 %::
-	@$(SUBMAKE) -s prereq QUIET=0 OPENWRT_BUILD=
+	@+$(PREP_MK) $(NO_TRACE_MAKE) -s prereq
 	@+$(MAKE) $@ 
 
 help:
@@ -128,7 +116,9 @@ symlinkclean:
 	-find package -type l | xargs rm -f
 	rm -rf tmp
 
-.SILENT: symlinkclean clean dirclean distclean config-clean download help tmpinfo-clean .config scripts/config/mconf scripts/config/conf menuconfig tmp/.prereq-build tmp/.prereq-package tmp/.prereq-target
+ifeq ($(findstring v,$(DEBUG)),)
+  .SILENT: symlinkclean clean dirclean distclean config-clean download help tmpinfo-clean .config scripts/config/mconf scripts/config/conf menuconfig tmp/.prereq-build tmp/.prereq-package tmp/.prereq-target tmp/.packageinfo tmp/.targetinfo prepare-tmpinfo
+endif
 .PHONY: help FORCE
 .NOTPARALLEL:
 
