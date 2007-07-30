@@ -8,6 +8,7 @@
 -include $(TMP_DIR)/.host.mk
 
 export TAR
+TMP_DIR ?= $(TOPDIR)/tmp
 
 ifneq ($(__host_inc),1)
 __host_inc:=1
