@@ -7,8 +7,8 @@
 curdir:=target
 
 $(curdir)/builddirs:=linux sdk imagebuilder
-$(curdir)/builddirs-prereq:=linux
-$(curdir)/builddirs-default:=linux $(if $(CONFIG_SDK),sdk) $(if $(CONFIG_IB),imagebuilder)
+$(curdir)/builddirs-default:=linux
+$(curdir)/builddirs-install:=linux $(if $(CONFIG_SDK),sdk) $(if $(CONFIG_IB),imagebuilder)
 
 $(curdir)/imagebuilder/prepare:=$(curdir)/linux/install
 
