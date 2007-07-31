@@ -48,7 +48,7 @@ distclean: dirclean
 # check prerequisites before starting to build
 prereq: $(package/stamp-prereq) $(target/stamp-prereq) ;
 
-world: .config $(tools/stamp-install) $(toolchain/stamp-install) $(target/stamp-compile) $(package/stamp-compile) $(package/stamp-install) $(target/stamp-install) FORCE
+world: .config $(tools/stamp-install) $(toolchain/stamp-install) $(target/stamp-compile) $(package/stamp-cleanup) $(package/stamp-compile) $(package/stamp-install) $(package/stamp-rootfs-prepare) $(target/stamp-install) FORCE
 	$(MAKE) package/index
 
 package/symlinks:
