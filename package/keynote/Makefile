@@ -35,6 +35,9 @@ CONFIGURE_ARGS += \
 	--enable-static \
 	--enable-shared
 
+MAKE_FLAGS += \
+	CFLAGS="$(TARGET_CFLAGS)"
+
 define Build/InstallDev
 	mkdir -p $(STAGING_DIR)/usr/include/keynote
 	$(CP) $(PKG_BUILD_DIR)/{assertion,header,keynote,signature}.h $(STAGING_DIR)/usr/include/keynote/
