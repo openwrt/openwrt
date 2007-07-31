@@ -12,6 +12,8 @@ ifeq ($(DUMP),1)
 else
   include $(INCLUDE_DIR)/target.mk
 
+  export GCC_HONOUR_COPTS=s
+
   ifeq ($(KERNEL),2.6)
     LINUX_KMOD_SUFFIX=ko
   else
