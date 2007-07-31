@@ -141,6 +141,8 @@ static int __init ar7_gpio_init(void)
 
 	ar7_gpio_major = rc;
 
+	rc = 0;
+
 	goto out;
 
 out_put:
