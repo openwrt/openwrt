@@ -216,7 +216,6 @@ define KernelPackage/softdog
   DESCRIPTION:=Software watchdog driver
   SUBMENU:=$(EMENU)
   KCONFIG:=CONFIG_SOFT_WATCHDOG
-  FILES:=$(LINUX_DIR)/drivers/char/softdog.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,softdog)
 endef
 
