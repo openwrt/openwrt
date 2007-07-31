@@ -73,10 +73,27 @@ static unsigned expect_close;
 /* XXX currently fixed, allows max margin ~68.72 secs */
 #define prescale_value 0xFFFF
 
+// Offset of the WDT registers
+static unsigned long ar7_regs_wdt;
+// Pointer to the remapped WDT IO space
+static ar7_wdt_t *ar7_wdt;
+static void ar7_wdt_get_regs(void)
+{
+    u16 chip_id = ar7_chip_id();
+    switch (chip_id)
+    {
+    case AR7_CHIP_7100:
+    case AR7_CHIP_7200:
+        ar7_regs_wdt = AR7_REGS_WDT;
+        break;
+    default:
+        ar7_regs_wdt = UR8_REGS_WDT;
+        break;
+    }
+}
+                     
 static void ar7_wdt_kick(u32 value)
 {
-	volatile ar7_wdt_t *ar7_wdt = (ar7_wdt_t *)ioremap(AR7_REGS_WDT, sizeof(ar7_wdt_t));
-
 	ar7_wdt->kick_lock = 0x5555;
 	if ((ar7_wdt->kick_lock & 3) == 1) {
 		ar7_wdt->kick_lock = 0xAAAA;
@@ -90,8 +107,6 @@ static void ar7_wdt_kick(u32 value)
 
 static void ar7_wdt_prescale(u32 value)
 {
-	volatile ar7_wdt_t *ar7_wdt = (ar7_wdt_t *)ioremap(AR7_REGS_WDT, sizeof(ar7_wdt_t));
-
 	ar7_wdt->prescale_lock = 0x5A5A;
 	if ((ar7_wdt->prescale_lock & 3) == 1) {
 		ar7_wdt->prescale_lock = 0xA5A5;
@@ -105,8 +120,6 @@ static void ar7_wdt_prescale(u32 value)
 
 static void ar7_wdt_change(u32 value)
 {
-	volatile ar7_wdt_t *ar7_wdt = (ar7_wdt_t *)ioremap(AR7_REGS_WDT, sizeof(ar7_wdt_t));
-
 	ar7_wdt->change_lock = 0x6666;
 	if ((ar7_wdt->change_lock & 3) == 1) {
 		ar7_wdt->change_lock = 0xBBBB;
@@ -120,8 +133,6 @@ static void ar7_wdt_change(u32 value)
 
 static void ar7_wdt_disable(u32 value)
 {
-	volatile ar7_wdt_t *ar7_wdt = (ar7_wdt_t *)ioremap(AR7_REGS_WDT, sizeof(ar7_wdt_t));
-
 	ar7_wdt->disable_lock = 0x7777;
 	if ((ar7_wdt->disable_lock & 3) == 1) {
 		ar7_wdt->disable_lock = 0xCCCC;
@@ -285,11 +296,15 @@ static struct miscdevice ar7_wdt_miscdev = {
 static int __init ar7_wdt_init(void)
 {
 	int rc;
+    
+    ar7_wdt_get_regs();
 
-	if (!request_mem_region(AR7_REGS_WDT, sizeof(ar7_wdt_t), LONGNAME)) {
+	if (!request_mem_region(ar7_regs_wdt, sizeof(ar7_wdt_t), LONGNAME)) {
 		printk(KERN_WARNING DRVNAME ": watchdog I/O region busy\n");
 		return -EBUSY;
 	}
+
+	ar7_wdt = (ar7_wdt_t *)ioremap(ar7_regs_wdt, sizeof(ar7_wdt_t));
 
 	ar7_wdt_disable_wdt();
 	ar7_wdt_prescale(prescale_value);
@@ -313,7 +328,7 @@ static int __init ar7_wdt_init(void)
 out_register:
 	misc_deregister(&ar7_wdt_miscdev);
 out_alloc:
-	release_mem_region(AR7_REGS_WDT, sizeof(ar7_wdt_t));
+	release_mem_region(ar7_regs_wdt, sizeof(ar7_wdt_t));
 out:
 	return rc;
 }
@@ -322,7 +337,8 @@ static void __exit ar7_wdt_cleanup(void)
 {
         unregister_reboot_notifier(&ar7_wdt_notifier);
 	misc_deregister(&ar7_wdt_miscdev);
-	release_mem_region(AR7_REGS_WDT, sizeof(ar7_wdt_t));
+    iounmap(ar7_wdt);
+	release_mem_region(ar7_regs_wdt, sizeof(ar7_wdt_t));
 }
 
 module_init(ar7_wdt_init);

@@ -252,30 +252,40 @@ static struct platform_device vlynq_high = {
  * as xscale and, obviously, don't work...
  */
 #if !defined(CONFIG_SERIAL_8250)
+
+static struct plat_serial8250_port uart0_data =
+{
+	.mapbase = AR7_REGS_UART0,
+	.irq = AR7_IRQ_UART0,
+	.regshift = 2,
+	.iotype = UPIO_MEM,
+	.flags = UPF_BOOT_AUTOCONF | UPF_IOREMAP,
+};
+
+static struct plat_serial8250_port uart1_data =
+{
+	.mapbase = UR8_REGS_UART1,
+	.irq = AR7_IRQ_UART1,
+	.regshift = 2,
+	.iotype = UPIO_MEM,
+	.flags = UPF_BOOT_AUTOCONF | UPF_IOREMAP,
+};
+
 static struct plat_serial8250_port uart_data[] = {
-	{
-		.mapbase = AR7_REGS_UART0,
-		.irq = AR7_IRQ_UART0,
-		.regshift = 2,
-		.iotype = UPIO_MEM,
-		.flags = UPF_BOOT_AUTOCONF | UPF_IOREMAP,
-	},
-	{
-		.mapbase = AR7_REGS_UART1,
-		.irq = AR7_IRQ_UART1,
-		.regshift = 2,
-		.iotype = UPIO_MEM,
-		.flags = UPF_BOOT_AUTOCONF | UPF_IOREMAP,
-	},
-	{
-		.flags = 0,
-	},
+    uart0_data,
+    uart1_data,
+	{ .flags = 0 }
+};
+
+static struct plat_serial8250_port uart_data_single[] = {
+    uart0_data,
+	{ .flags = 0 }
 };
 
 static struct platform_device uart = {
 	.id = 0,
 	.name = "serial8250",
-	.dev.platform_data = uart_data,
+	.dev.platform_data = uart_data_single
 };
 #endif
 
@@ -317,7 +327,8 @@ static int __init ar7_register_devices(void)
 {
 	int res;
 
-#if defined(CONFIG_SERIAL_8250)
+#ifdef CONFIG_SERIAL_8250
+
 	static struct uart_port uart_port[2];
 
 	memset(uart_port, 0, sizeof(struct uart_port) * 2);
@@ -334,24 +345,38 @@ static int __init ar7_register_devices(void)
 	if (res)
 		return res;
 
-	uart_port[1].type = PORT_AR7;
-	uart_port[1].line = 1;
-	uart_port[1].irq = AR7_IRQ_UART1;
-	uart_port[1].uartclk = ar7_bus_freq() / 2;
-	uart_port[1].iotype = UPIO_MEM;
-	uart_port[1].mapbase = AR7_REGS_UART1;
-	uart_port[1].membase = ioremap(uart_port[1].mapbase, 256);
-	uart_port[1].regshift = 2;
-	res = early_serial_setup(&uart_port[1]);
-	if (res)
-		return res;
-#else
+
+    // Only TNETD73xx have a second serial port
+    if (ar7_has_second_uart()) {
+    	uart_port[1].type = PORT_AR7;
+    	uart_port[1].line = 1;
+    	uart_port[1].irq = AR7_IRQ_UART1;
+    	uart_port[1].uartclk = ar7_bus_freq() / 2;
+    	uart_port[1].iotype = UPIO_MEM;
+    	uart_port[1].mapbase = UR8_REGS_UART1;
+    	uart_port[1].membase = ioremap(uart_port[1].mapbase, 256);
+    	uart_port[1].regshift = 2;
+    	res = early_serial_setup(&uart_port[1]);
+    	if (res)
+    		return res;
+    }
+    
+#else // !CONFIG_SERIAL_8250
+
 	uart_data[0].uartclk = ar7_bus_freq() / 2;
 	uart_data[1].uartclk = uart_data[0].uartclk;
+
+    // Only TNETD73xx have a second serial port
+    if (ar7_has_second_uart()) {
+        uart.dev.platform_data = uart_data;
+    }
+
 	res = platform_device_register(&uart);
 	if (res)
 		return res;
-#endif
+        
+#endif // CONFIG_SERIAL_8250
+
 	res = platform_device_register(&physmap_flash);
 	if (res)
 		return res;
