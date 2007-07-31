@@ -1,7 +1,7 @@
-Index: iptables-1.3.7/extensions/Makefile
+Index: iptables-1.3.8/extensions/Makefile
 ===================================================================
---- iptables-1.3.7.orig/extensions/Makefile	2007-06-04 13:21:43.398379112 +0200
-+++ iptables-1.3.7/extensions/Makefile	2007-06-04 13:21:43.484366040 +0200
+--- iptables-1.3.8.orig/extensions/Makefile	2007-07-31 15:27:55.000000000 -0500
++++ iptables-1.3.8/extensions/Makefile	2007-07-31 15:27:55.000000000 -0500
 @@ -13,6 +13,10 @@
  PF6_EXT_SE_SLIB:=SECMARK CONNSECMARK
  endif
@@ -13,10 +13,10 @@ Index: iptables-1.3.7/extensions/Makefile
  # Optionals
  PF_EXT_SLIB_OPTS:=$(foreach T,$(wildcard extensions/.*-test),$(shell KERNEL_DIR=$(KERNEL_DIR) $(T)))
  PF6_EXT_SLIB_OPTS:=$(foreach T,$(wildcard extensions/.*-test6),$(shell KERNEL_DIR=$(KERNEL_DIR) $(T)))
-Index: iptables-1.3.7/extensions/libipt_ipp2p.c
+Index: iptables-1.3.8/extensions/libipt_ipp2p.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ iptables-1.3.7/extensions/libipt_ipp2p.c	2007-06-04 13:21:43.485365888 +0200
++++ iptables-1.3.8/extensions/libipt_ipp2p.c	2007-07-31 15:27:55.000000000 -0500
 @@ -0,0 +1,401 @@
 +
 +#include <stdio.h>
@@ -419,10 +419,10 @@ Index: iptables-1.3.7/extensions/libipt_ipp2p.c
 +    register_match(&ipp2p);
 +}
 +
-Index: iptables-1.3.7/include/linux/netfilter_ipv4/ipt_ipp2p.h
+Index: iptables-1.3.8/include/linux/netfilter_ipv4/ipt_ipp2p.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ iptables-1.3.7/include/linux/netfilter_ipv4/ipt_ipp2p.h	2007-06-04 13:21:43.485365888 +0200
++++ iptables-1.3.8/include/linux/netfilter_ipv4/ipt_ipp2p.h	2007-07-31 15:27:55.000000000 -0500
 @@ -0,0 +1,31 @@
 +#ifndef __IPT_IPP2P_H
 +#define __IPT_IPP2P_H
