@@ -27,6 +27,9 @@ define Package/ebtables
   URL:=http://ebtables.sourceforge.net/
 endef
 
+MAKE_FLAGS += \
+	CFLAGS="$(TARGET_CFLAGS)"
+
 define Package/ebtables/install
 	$(INSTALL_DIR) $(1)/etc
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ethertypes $(1)/etc/
