@@ -28,26 +28,20 @@
 #define AR7_REGS_BASE 0x08610000
 
 #define AR7_REGS_MAC0   (AR7_REGS_BASE + 0x0000)
-#define AR7_REGS_EMIF   (AR7_REGS_BASE + 0x0800)
 #define AR7_REGS_GPIO   (AR7_REGS_BASE + 0x0900)
-#define AR7_REGS_POWER  (AR7_REGS_BASE + 0x0a00)
-#define AR7_REGS_WDT    (AR7_REGS_BASE + 0x0b00)
-#define AR7_REGS_TIMER0 (AR7_REGS_BASE + 0x0c00)
-#define AR7_REGS_TIMER1 (AR7_REGS_BASE + 0x0d00)
+#define AR7_REGS_POWER  (AR7_REGS_BASE + 0x0a00) // 0x08610A00 - 0x08610BFF (512 bytes, 128 bytes / clock)
 #define AR7_REGS_UART0  (AR7_REGS_BASE + 0x0e00)
-#define AR7_REGS_UART1  (AR7_REGS_BASE + 0x0f00)
-#define AR7_REGS_I2C    (AR7_REGS_BASE + 0x1000)
-#define AR7_REGS_USB    (AR7_REGS_BASE + 0x1200)
-#define AR7_REGS_DMA    (AR7_REGS_BASE + 0x1400)
 #define AR7_REGS_RESET  (AR7_REGS_BASE + 0x1600)
-#define AR7_REGS_BIST   (AR7_REGS_BASE + 0x1700)
 #define AR7_REGS_VLYNQ0 (AR7_REGS_BASE + 0x1800)
 #define AR7_REGS_DCL    (AR7_REGS_BASE + 0x1A00)
 #define AR7_REGS_VLYNQ1 (AR7_REGS_BASE + 0x1C00)
 #define AR7_REGS_MDIO   (AR7_REGS_BASE + 0x1E00)
-#define AR7_REGS_FSER   (AR7_REGS_BASE + 0x2000)
 #define AR7_REGS_IRQ    (AR7_REGS_BASE + 0x2400)
 #define AR7_REGS_MAC1   (AR7_REGS_BASE + 0x2800)
+
+#define AR7_REGS_WDT    (AR7_REGS_BASE + 0x1f00)
+#define UR8_REGS_WDT    (AR7_REGS_BASE + 0x0b00)
+#define UR8_REGS_UART1  (AR7_REGS_BASE + 0x0f00)
 
 #define  AR7_RESET_PEREPHERIAL 0x0
 #define  AR7_RESET_SOFTWARE    0x4
@@ -63,8 +57,6 @@
 #define  AR7_GPIO_OUTPUT 0x4
 #define  AR7_GPIO_DIR    0x8
 #define  AR7_GPIO_ENABLE 0xC
-
-#define AR7_GPIO_BIT_STATUS_LED   8
 
 #define AR7_CHIP_7100 0x18
 #define AR7_CHIP_7200 0x2b
@@ -131,6 +123,7 @@ static inline int ar7_has_high_cpmac(void)
 	}
 }
 #define ar7_has_high_vlynq ar7_has_high_cpmac
+#define ar7_has_second_uart ar7_has_high_cpmac
 
 static inline void ar7_device_enable(u32 bit)
 {
