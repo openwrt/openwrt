@@ -581,7 +581,7 @@ sub gen_package_mk() {
 			}
 		}
 		if ($depline) {
-			$line .= "\$(curdir)/".$pkg->{subdir}."$pkg->{src}/compile := $depline\n";
+			$line .= "\$(curdir)/".$pkg->{subdir}."$pkg->{src}/compile += $depline\n";
 		}
 	}
 	
