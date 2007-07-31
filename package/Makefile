@@ -15,10 +15,11 @@ $(curdir)/builddirs-prereq:=. $(sort $(prereq-y) $(prereq-m))
 $(curdir)/builddirs-install:=. $(sort $(package-y))
 
 $(curdir)/install:=$(curdir)/install-cleanup
-$(curdir)/install-cleanup:
+
+$(curdir)/cleanup:
 	rm -rf $(BUILD_DIR)/root
-	$(MAKE) install-targets
-	$(MAKE) preconfig
+
+$(curdir)/rootfs-prepare:
 	@if [ -d $(TOPDIR)/files ]; then \
 		$(CP) $(TOPDIR)/files/. $(BUILD_DIR)/root; \
 	fi
@@ -33,16 +34,19 @@ $(curdir)/install-cleanup:
 	@-find $(BUILD_DIR)/root -name CVS   | $(XARGS) rm -rf
 	@-find $(BUILD_DIR)/root -name .svn  | $(XARGS) rm -rf
 	@-find $(BUILD_DIR)/root -name '.#*' | $(XARGS) rm -f
-
-$(curdir)/index: FORCE
-	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages)
+	@(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages)
 
 $(curdir)/flags-install:= -j1
 
 $(eval $(call stampfile,$(curdir),package,prereq))
+$(eval $(call stampfile,$(curdir),package,cleanup))
 $(eval $(call stampfile,$(curdir),package,compile))
 $(eval $(call stampfile,$(curdir),package,install))
+$(eval $(call stampfile,$(curdir),package,rootfs-prepare))
 
-$($(curdir)/stamp-install): $($(curdir)/stamp-compile)
+$($(curdir)/stamp-cleanup): $(TMP_DIR)/.build
+$($(curdir)/stamp-compile): $($(curdir)/stamp-cleanup) $(TMP_DIR)/.build
+$($(curdir)/stamp-install): $($(curdir)/stamp-compile) $(TMP_DIR)/.build
+$($(curdir)/stamp-rootfs-prepare): $($(curdir)/stamp-install) $(TMP_DIR)/.build
 
 $(eval $(call subdir,$(curdir)))
