@@ -169,7 +169,7 @@ define KernelPackage/bluetooth
   DEPENDS:=@USB_SUPPORT
   DESCRIPTION:=Kernel support for Bluetooth devices
   SUBMENU:=$(EMENU)
-  KCONFIG:=CONFIG_BLUEZ CONFIG_BT
+  KCONFIG:=CONFIG_BLUEZ CONFIG_BT CONFIG_USB_BLUETOOTH
  endef
 
  define KernelPackage/bluetooth/2.4
