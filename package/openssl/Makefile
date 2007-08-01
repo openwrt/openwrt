@@ -60,7 +60,7 @@ endef
 
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc2 no-rc5 no-sha0 no-smime \
 					no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5
-OPENSSL_OPTIONS:= shared no-dso no-ec no-err no-fips no-hw no-threads zlib \
+OPENSSL_OPTIONS:= shared no-dso no-ec no-err no-fips no-hw no-threads zlib-dynamic \
 					no-engines no-sse2 no-perlasm
 
 
