@@ -16,10 +16,10 @@ $(curdir)/builddirs-install:=. $(sort $(package-y))
 
 $(curdir)/install:=$(curdir)/install-cleanup
 
-$(curdir)/cleanup:
+$(curdir)/cleanup: $(TMP_DIR)/.build
 	rm -rf $(BUILD_DIR)/root
 
-$(curdir)/rootfs-prepare:
+$(curdir)/rootfs-prepare: $(TMP_DIR)/.build
 	@if [ -d $(TOPDIR)/files ]; then \
 		$(CP) $(TOPDIR)/files/. $(BUILD_DIR)/root; \
 	fi
@@ -34,6 +34,8 @@ $(curdir)/rootfs-prepare:
 	@-find $(BUILD_DIR)/root -name CVS   | $(XARGS) rm -rf
 	@-find $(BUILD_DIR)/root -name .svn  | $(XARGS) rm -rf
 	@-find $(BUILD_DIR)/root -name '.#*' | $(XARGS) rm -f
+
+$(curdir)/index: FORCE
 	@(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages)
 
 $(curdir)/flags-install:= -j1
