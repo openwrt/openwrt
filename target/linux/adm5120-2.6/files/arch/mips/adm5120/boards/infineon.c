@@ -123,7 +123,7 @@ static struct adm5120_board easy5120pata_board __initdata = {
 	.mach_type	= MACH_ADM5120_EASY5120PATA,
 	.name		= "Infineon EASY 5120P-ATA Reference Board",
 	.board_setup	= easy_setup_pqfp,
-	.num_eth_ports	= 6,
+	.eth_num_ports	= 6,
 	.num_devices	= ARRAY_SIZE(easy5120pata_devices),
 	.devices	= easy5120pata_devices,
 };
@@ -132,7 +132,7 @@ static struct adm5120_board easy5120rt_board __initdata = {
 	.mach_type	= MACH_ADM5120_EASY5120RT,
 	.name		= "Infineon EASY 5120-RT Reference Board",
 	.board_setup	= easy_setup_bga,
-	.num_eth_ports	= 5,
+	.eth_num_ports	= 5,
 	.num_devices	= ARRAY_SIZE(easy5120rt_devices),
 	.devices	= easy5120rt_devices,
 };
@@ -141,7 +141,7 @@ static struct adm5120_board easy5120wvoip_board __initdata = {
 	.mach_type	= MACH_ADM5120_EASY5120WVOIP,
 	.name		= "Infineon EASY 5120-WVoIP Reference Board",
 	.board_setup	= easy_setup_bga,
-	.num_eth_ports	= 6,
+	.eth_num_ports	= 6,
 	.num_devices	= ARRAY_SIZE(easy5120wvoip_devices),
 	.devices	= easy5120wvoip_devices,
 };
@@ -150,7 +150,7 @@ static struct adm5120_board easy83000_board __initdata = {
 	.mach_type	= MACH_ADM5120_EASY83000,
 	.name		= "Infineon EASY 83000 Reference Board",
 	.board_setup	= easy_setup_pqfp,
-	.num_eth_ports	= 6,
+	.eth_num_ports	= 6,
 	.num_devices	= ARRAY_SIZE(easy83000_devices),
 	.devices	= easy83000_devices,
 };

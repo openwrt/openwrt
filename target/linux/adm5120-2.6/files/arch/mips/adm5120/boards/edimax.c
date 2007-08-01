@@ -61,11 +61,16 @@ static void __init br6104k_setup(void) {
 	/* TODO: setup mac addresses, if possible */
 }
 
+unsigned char br6104k_vlans[6] = {
+	0x41, 0x42, 0x44, 0x48, 0x50, 0x00
+};
+
 static struct adm5120_board br6104k_board __initdata = {
 	.mach_type	= MACH_ADM5120_BR6104K,
 	.name		= "Edimax BR-6104K",
 	.board_setup	= br6104k_setup,
-	.num_eth_ports	= 5,
+	.eth_num_ports	= 5,
+	.eth_vlans	= br6104k_vlans,
 	.num_devices	= ARRAY_SIZE(br6104k_devices),
 	.devices	= br6104k_devices,
 };

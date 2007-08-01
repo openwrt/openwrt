@@ -39,7 +39,7 @@ static struct platform_device *generic_devices[] __initdata = {
 static struct adm5120_board generic_board __initdata = {
 	.mach_type	= MACH_ADM5120_GENERIC,
 	.name		= "Generic ADM5120 board",
-	.num_eth_ports	= 6,
+	.eth_num_ports	= 6,
 	.num_devices	= ARRAY_SIZE(generic_devices),
 	.devices	= generic_devices,
 };

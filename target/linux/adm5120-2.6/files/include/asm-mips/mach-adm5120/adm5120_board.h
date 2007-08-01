@@ -37,7 +37,8 @@ struct adm5120_board {
 	void			(*board_setup)(void);
 	void			(*board_reset)(void);
 
-	unsigned int		num_eth_ports;
+	unsigned int		eth_num_ports;
+	unsigned char		*eth_vlans;
 	unsigned int		num_devices;
 	struct platform_device	**devices;
 

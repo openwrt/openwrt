@@ -59,11 +59,32 @@ static void __init rb1xx_setup(void)
 	/* TODO: setup mac address */
 }
 
+static unsigned char rb11x_vlans[6] __initdata = {
+	/* FIXME: untested */
+	0x41, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+static unsigned char rb133_vlans[6] __initdata = {
+	/* FIXME: untested */
+	0x41, 0x42, 0x44, 0x00, 0x00, 0x00
+};
+
+static unsigned char rb133c_vlans[6] __initdata = {
+	/* FIXME: untested */
+	0x44, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+static unsigned char rb153_vlans[6] __initdata = {
+	/* FIXME: untested */
+	0x41, 0x42, 0x44, 0x48, 0x50, 0x00
+};
+
 static struct adm5120_board rb111_board __initdata = {
 	.mach_type	= MACH_ADM5120_RB_111,
 	.name		= "Mikrotik RouterBOARD 111",
 	.board_setup	= rb1xx_setup,
-	.num_eth_ports	= 1,
+	.eth_num_ports	= 1,
+	.eth_vlans	= rb11x_vlans,
 	.num_devices	= ARRAY_SIZE(rb1xx_devices),
 	.devices	= rb1xx_devices,
 };
@@ -72,7 +93,8 @@ static struct adm5120_board rb112_board __initdata = {
 	.mach_type	= MACH_ADM5120_RB_112,
 	.name		= "Mikrotik RouterBOARD 112",
 	.board_setup	= rb1xx_setup,
-	.num_eth_ports	= 1,
+	.eth_num_ports	= 1,
+	.eth_vlans	= rb11x_vlans,
 	.num_devices	= ARRAY_SIZE(rb1xx_devices),
 	.devices	= rb1xx_devices,
 };
@@ -81,7 +103,8 @@ static struct adm5120_board rb133_board __initdata = {
 	.mach_type	= MACH_ADM5120_RB_133,
 	.name		= "Mikrotik RouterBOARD 133",
 	.board_setup	= rb1xx_setup,
-	.num_eth_ports	= 3,
+	.eth_num_ports	= 3,
+	.eth_vlans	= rb133_vlans,
 	.num_devices	= ARRAY_SIZE(rb1xx_devices),
 	.devices	= rb1xx_devices,
 };
@@ -90,7 +113,8 @@ static struct adm5120_board rb133c_board __initdata = {
 	.mach_type	= MACH_ADM5120_RB_133C,
 	.name		= "Mikrotik RouterBOARD 133C",
 	.board_setup	= rb1xx_setup,
-	.num_eth_ports	= 1,
+	.eth_num_ports	= 1,
+	.eth_vlans	= rb133c_vlans,
 	.num_devices	= ARRAY_SIZE(rb1xx_devices),
 	.devices	= rb1xx_devices,
 };
@@ -99,7 +123,8 @@ static struct adm5120_board rb153_board __initdata = {
 	.mach_type	= MACH_ADM5120_RB_153,
 	.name		= "Mikrotik RouterBOARD 153",
 	.board_setup	= rb1xx_setup,
-	.num_eth_ports	= 5,
+	.eth_num_ports	= 5,
+	.eth_vlans	= rb153_vlans,
 	.num_devices	= ARRAY_SIZE(rb1xx_devices),
 	.devices	= rb1xx_devices,
 };

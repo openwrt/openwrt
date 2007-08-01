@@ -117,11 +117,27 @@ static void __init wp54_wrt_setup(void)
 	/* TODO: setup mac address */
 }
 
+unsigned char np27g_vlans[6] __initdata = {
+	/* FIXME: untested */
+	0x41, 0x42, 0x44, 0x48, 0x50, 0x00
+};
+
+unsigned char np28g_vlans[6] __initdata = {
+	/* FIXME: untested */
+	0x41, 0x42, 0x44, 0x48, 0x00, 0x00
+};
+
+unsigned char wp54_vlans[6] __initdata = {
+	/* FIXME: untested */
+	0x41, 0x42, 0x00, 0x00, 0x00, 0x00
+};
+
 static struct adm5120_board np27g_board __initdata = {
 	.mach_type	= MACH_ADM5120_NP27G,
 	.name		= "Compex NetPassage 27G",
 	.board_setup	= np2xg_setup,
-	.num_eth_ports	= 4,
+	.eth_num_ports	= 5,
+	.eth_vlans	= np27g_vlans,
 	.num_devices	= ARRAY_SIZE(np2xg_devices),
 	.devices	= np2xg_devices,
 };
@@ -130,7 +146,8 @@ static struct adm5120_board np28g_board __initdata = {
 	.mach_type	= MACH_ADM5120_NP28G,
 	.name		= "Compex NetPassage 28G",
 	.board_setup	= np2xg_setup,
-	.num_eth_ports	= 3,
+	.eth_num_ports	= 4,
+	.eth_vlans	= np28g_vlans,
 	.num_devices	= ARRAY_SIZE(np2xg_devices),
 	.devices	= np2xg_devices,
 };
@@ -140,7 +157,8 @@ static struct adm5120_board wp54ag_board __initdata = {
 	.name		= "Compex WP54AG",
 	.board_setup	= wp54_setup,
 	.board_reset	= wp54_reset,
-	.num_eth_ports	= 2,
+	.eth_num_ports	= 2,
+	.eth_vlans	= wp54_vlans,
 	.num_devices	= ARRAY_SIZE(wp54_devices),
 	.devices	= wp54_devices,
 };
@@ -150,7 +168,8 @@ static struct adm5120_board wp54g_board __initdata = {
 	.name		= "Compex WP54G",
 	.board_setup	= wp54_setup,
 	.board_reset	= wp54_reset,
-	.num_eth_ports	= 2,
+	.eth_num_ports	= 2,
+	.eth_vlans	= wp54_vlans,
 	.num_devices	= ARRAY_SIZE(wp54_devices),
 	.devices	= wp54_devices,
 };
@@ -160,7 +179,8 @@ static struct adm5120_board wp54g_wrt_board __initdata = {
 	.name		= "Compex WP54G-WRT",
 	.board_setup	= wp54_wrt_setup,
 	.board_reset	= wp54_reset,
-	.num_eth_ports	= 2,
+	.eth_num_ports	= 2,
+	.eth_vlans	= wp54_vlans,
 	.num_devices	= ARRAY_SIZE(wp54_devices),
 	.devices	= wp54_devices,
 };
@@ -170,7 +190,8 @@ static struct adm5120_board wpp54ag_board __initdata = {
 	.name		= "Compex WPP54AG",
 	.board_setup	= wp54_setup,
 	.board_reset	= wp54_reset,
-	.num_eth_ports	= 2,
+	.eth_num_ports	= 2,
+	.eth_vlans	= wp54_vlans,
 	.num_devices	= ARRAY_SIZE(wp54_devices),
 	.devices	= wp54_devices,
 };
@@ -180,7 +201,8 @@ static struct adm5120_board wpp54g_board __initdata = {
 	.name		= "Compex WPP54G",
 	.board_setup	= wp54_setup,
 	.board_reset	= wp54_reset,
-	.num_eth_ports	= 2,
+	.eth_num_ports	= 2,
+	.eth_vlans	= wp54_vlans,
 	.num_devices	= ARRAY_SIZE(wp54_devices),
 	.devices	= wp54_devices,
 };
