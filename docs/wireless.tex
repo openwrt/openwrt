@@ -25,7 +25,7 @@ config wifi-iface
 config wifi-device      "wifi0"
     option type         "atheros"
     option channel      "5"
-    option mode  	"11g"
+    option agmode  	"11g"
 
 config wifi-iface
     option device       "wifi0"
@@ -77,7 +77,7 @@ config wifi-device     wifi device name
     option channel  1-14
     option maxassoc 1-128 (broadcom only)
     option distance 1-n
-    option mode     11b, 11g, 11a, 11bg (atheros only)
+    option agmode     11b, 11g, 11a, 11bg (atheros only)
 
 config wifi-iface
     option network  the interface you want wifi to bridge with 
