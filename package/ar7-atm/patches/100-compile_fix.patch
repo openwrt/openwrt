@@ -92,7 +92,7 @@ diff -urN sangam_atm-07.01.00.10/Makefile sangam-atm-0.3/Makefile
 +tiatm-objs += cpsar.o aal5sar.o tn7sar.o tn7atm.o tn7dsl.o dsl_hal_api.o dsl_hal_support.o
 diff -urN sangam_atm-07.01.00.10/tn7atm.c sangam-atm-0.3/tn7atm.c
 --- sangam_atm-07.01.00.10/tn7atm.c	2006-10-26 16:48:52.000000000 +0200
-+++ sangam-atm-0.3/tn7atm.c	2007-04-18 15:34:05.000000000 +0200
++++ sangam-atm-0.3/tn7atm.c	2007-07-27 20:49:07.000000000 +0200
 @@ -58,7 +58,6 @@
   *    UR8_MERGE_END   CQ10979*
  *********************************************************************************************/
@@ -248,11 +248,11 @@ diff -urN sangam_atm-07.01.00.10/tn7atm.c sangam-atm-0.3/tn7atm.c
 -
 -  /* find a free VPI/VCI */
 -  tn7atm_walk_vccs(vcc, &vpi, &vci);
--
--  vcc->vpi = vpi;
--  vcc->vci = vci;
 +//  MOD_INC_USE_COUNT;
  
+-  vcc->vpi = vpi;
+-  vcc->vci = vci;
+-
 -  if ((vci == ATM_VCI_UNSPEC) || (vpi == ATM_VCI_UNSPEC))
 +  if ((vcc->vci == ATM_VCI_UNSPEC) || (vcc->vpi == ATM_VCI_UNSPEC))
    {
@@ -354,7 +354,7 @@ diff -urN sangam_atm-07.01.00.10/tn7atm.c sangam-atm-0.3/tn7atm.c
  
    xdump ((unsigned char *) skb->data, skb->len, 5);
  
-@@ -1715,8 +1667,7 @@
+@@ -1715,8 +1663,7 @@
  
    kfree (dev->dev_data);
  
@@ -364,7 +364,7 @@ diff -urN sangam_atm-07.01.00.10/tn7atm.c sangam-atm-0.3/tn7atm.c
  
    /*
     * remove proc entries
-@@ -1875,9 +1826,6 @@
+@@ -1875,9 +1822,6 @@
    /*
     * Set up proc entry for atm stats
     */
@@ -374,7 +374,7 @@ diff -urN sangam_atm-07.01.00.10/tn7atm.c sangam-atm-0.3/tn7atm.c
      printk ("Creating new root folder %s in the proc for the driver stats \n",
              drv_proc_root_folder);
      root_proc_dir_entry = proc_mkdir (drv_proc_root_folder, NULL);
-@@ -1887,7 +1835,6 @@
+@@ -1887,7 +1831,6 @@
        return -ENOMEM;
      }
      proc_root_already_exists = FALSE;
@@ -382,7 +382,7 @@ diff -urN sangam_atm-07.01.00.10/tn7atm.c sangam-atm-0.3/tn7atm.c
  
    /*
     * AV: Clean-up. Moved all the definitions to the data structure.
-@@ -2469,7 +2416,5 @@
+@@ -2469,7 +2412,5 @@
      return count;
  }
  
@@ -487,7 +487,7 @@ diff -urN sangam_atm-07.01.00.10/tn7dsl.c sangam-atm-0.3/tn7dsl.c
  // * UR8_MERGE_START CQ10640   Jack Zhang
  int tn7dsl_dump_dsp_memory(char *input_str) //cph99
    {
-@@ -430,101 +406,72 @@
+@@ -430,101 +406,74 @@
    return CpuFrequency;
  }
  
@@ -587,6 +587,7 @@ diff -urN sangam_atm-07.01.00.10/tn7dsl.c sangam-atm-0.3/tn7dsl.c
 -  filp->f_pos = secOffset;
 -  bytesRead = filp->f_op->read(filp,ptr,secLength,&filp->f_pos);
 +	const struct firmware *fw_entry;
++	size_t size;
  
 -  set_fs(oldfs);
 -  /*
@@ -607,16 +608,17 @@ diff -urN sangam_atm-07.01.00.10/tn7dsl.c sangam-atm-0.3/tn7dsl.c
 +		device_unregister(&avsar);
 +		return -1;
 +	}
++	size = fw_entry->size;
 +	device_unregister(&avsar);
-+	if(fw_entry->size > 0x5ffff) {
++	if(size > 0x5ffff) {
 +			printk(KERN_ERR
-+			"avsar: Firmware too big (%d bytes)\n", fw_entry->size);
++			"avsar: Firmware too big (%d bytes)\n", size);
 +			release_firmware(fw_entry);
 +			return -1;
 +		}
-+	memcpy(ptr, fw_entry->data, fw_entry->size);
++	memcpy(ptr, fw_entry->data, size);
 +	release_firmware(fw_entry);
-+	return fw_entry->size;
++	return size;
 +}
 +
 +unsigned int shim_read_overlay_page(void *ptr, unsigned int secOffset, unsigned int secLength)
@@ -645,11 +647,11 @@ diff -urN sangam_atm-07.01.00.10/tn7dsl.c sangam-atm-0.3/tn7dsl.c
 +	}
 +	memcpy(ptr + secOffset, fw_entry->data, secLength);
 +	release_firmware(fw_entry);
-+	return fw_entry->size;
++	return secLength;
  }
  
  int shim_osLoadDebugFWImage(unsigned char *ptr)
-@@ -3367,7 +3314,7 @@
+@@ -3367,7 +3316,7 @@
     */
    if(write)
      {
@@ -658,7 +660,7 @@ diff -urN sangam_atm-07.01.00.10/tn7dsl.c sangam-atm-0.3/tn7dsl.c
  
      switch (ctl->ctl_name)
        {
-@@ -3453,7 +3400,7 @@
+@@ -3453,7 +3402,7 @@
    else
      {
      len += sprintf(info+len, mod_req);
@@ -667,6 +669,16 @@ diff -urN sangam_atm-07.01.00.10/tn7dsl.c sangam-atm-0.3/tn7dsl.c
      }
    return ret;
  }
+@@ -3483,8 +3432,7 @@
+   if (initialized == 1)
+     return;
+ 
+-  dslmod_sysctl_header = register_sysctl_table(dslmod_root_table, 1);
+-  dslmod_root_table->child->de->owner = THIS_MODULE;
++  dslmod_sysctl_header = register_sysctl_table(dslmod_root_table);
+ 
+   /*
+    * set the defaults
 diff -urN sangam_atm-07.01.00.10/tn7sar.c sangam-atm-0.3/tn7sar.c
 --- sangam_atm-07.01.00.10/tn7sar.c	2006-07-27 10:34:42.000000000 +0200
 +++ sangam-atm-0.3/tn7sar.c	2007-04-18 03:47:39.000000000 +0200
@@ -687,17 +699,3 @@ diff -urN sangam_atm-07.01.00.10/tn7sar.c sangam-atm-0.3/tn7sar.c
  #include <linux/proc_fs.h>
  #include <linux/string.h>
  #include <linux/ctype.h>
-
-diff -ur atm.old/tn7dsl.c atm.dev/tn7dsl.c
---- atm.old/tn7dsl.c	2007-05-24 17:36:33.865636000 +0200
-+++ atm.dev/tn7dsl.c	2007-05-24 17:41:32.094298496 +0200
-@@ -3430,8 +3430,7 @@
-   if (initialized == 1)
-     return;
- 
--  dslmod_sysctl_header = register_sysctl_table(dslmod_root_table, 1);
--  dslmod_root_table->child->de->owner = THIS_MODULE;
-+  dslmod_sysctl_header = register_sysctl_table(dslmod_root_table);
- 
-   /*
-    * set the defaults
