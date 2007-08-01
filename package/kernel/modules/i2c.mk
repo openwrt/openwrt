@@ -30,18 +30,6 @@ define KernelPackage/i2c-algos
 endef
 $(eval $(call KernelPackage,i2c-algos))
 
-define KernelPackage/i2c-au1x00gpio
-  TITLE:=I2C GPIO interface for Au1x00 devices
-  DESCRIPTION:=I2C GPIO interface for Au1x00 devices
-  DEFAULT:=y if LINUX_2_6_AU1000
-  DEPENDS:=kmod-i2c-core kmod-i2c-algos @LINUX_2_6_AU1000
-  SUBMENU:=$(I2CMENU)
-  KCONFIG:=CONFIG_I2C_AU1X00GPIO
-  FILES:=$(LINUX_DIR)/drivers/i2c/busses/i2c-au1x00gpio.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call Autoload,70,i2c-au1x00gpio)
-endef
-$(eval $(call KernelPackage,i2c-au1x00gpio))
-
 define KernelPackage/i2c-scx200
   TITLE:=SCX200 i2c support
   DESCRIPTION:=Kernel module for SCX200 i2c bus
