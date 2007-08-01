@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=madwifi
 PKG_VERSION:=r2568-20070710
 PKG_BRANCH:=madwifi-ng
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_BRANCH)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://snapshots.madwifi.org/$(PKG_BRANCH)
