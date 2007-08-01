@@ -128,7 +128,7 @@ static struct adm5120_board cas630_board __initdata = {
 	.mach_type	= MACH_ADM5120_CAS630,
 	.name		= "Cellvision CAS-630/630W",
 	.board_setup	= cas6xx_setup,
-	.num_eth_ports	= 1,
+	.eth_num_ports	= 1,
 	.num_devices	= ARRAY_SIZE(cas6xx_devices),
 	.devices	= cas6xx_devices,
 };
@@ -137,7 +137,7 @@ static struct adm5120_board cas670_board __initdata = {
 	.mach_type	= MACH_ADM5120_CAS670,
 	.name		= "Cellvision CAS-670/670W",
 	.board_setup	= cas6xx_setup,
-	.num_eth_ports	= 1,
+	.eth_num_ports	= 1,
 	.num_devices	= ARRAY_SIZE(cas6xx_devices),
 	.devices	= cas6xx_devices,
 };
@@ -146,7 +146,7 @@ static struct adm5120_board cas700_board __initdata = {
 	.mach_type	= MACH_ADM5120_CAS700,
 	.name		= "Cellvision CAS-700/700W",
 	.board_setup	= cas7xx_setup,
-	.num_eth_ports	= 1,
+	.eth_num_ports	= 1,
 	.num_devices	= ARRAY_SIZE(cas7xx_devices),
 	.devices	= cas7xx_devices,
 };
@@ -155,7 +155,7 @@ static struct adm5120_board cas771_board __initdata = {
 	.mach_type	= MACH_ADM5120_CAS771,
 	.name		= "Cellvision CAS-771/771W",
 	.board_setup	= cas7xx_setup,
-	.num_eth_ports	= 1,
+	.eth_num_ports	= 1,
 	.num_devices	= ARRAY_SIZE(cas7xx_devices),
 	.devices	= cas7xx_devices,
 };
@@ -164,7 +164,7 @@ static struct adm5120_board cas790_board __initdata = {
 	.mach_type	= MACH_ADM5120_CAS790,
 	.name		= "Cellvision CAS-790",
 	.board_setup	= cas7xx_setup,
-	.num_eth_ports	= 1,
+	.eth_num_ports	= 1,
 	.num_devices	= ARRAY_SIZE(cas7xx_devices),
 	.devices	= cas7xx_devices,
 };
@@ -173,7 +173,7 @@ static struct adm5120_board cas861_board __initdata = {
 	.mach_type	= MACH_ADM5120_CAS861,
 	.name		= "Cellvision CAS-861/861W",
 	.board_setup	= cas7xx_setup,
-	.num_eth_ports	= 1,
+	.eth_num_ports	= 1,
 	.num_devices	= ARRAY_SIZE(cas7xx_devices),
 	.devices	= cas7xx_devices,
 };

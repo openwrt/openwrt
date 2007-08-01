@@ -56,6 +56,7 @@ extern unsigned long adm5120_memsize;
  */
 extern unsigned int adm5120_eth_num_ports;
 extern unsigned char adm5120_eth_macs[6][6];
+extern unsigned char adm5120_eth_vlans[6];
 
 extern void adm5120_soc_init(void) __init;
 extern void adm5120_mem_init(void) __init;

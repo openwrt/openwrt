@@ -33,19 +33,6 @@ MODULE_AUTHOR("Jeroen Vreeken (pe1rxq@amsat.org)");
 MODULE_DESCRIPTION("ADM5120 ethernet switch driver");
 MODULE_LICENSE("GPL");
 
-/*
- *	The ADM5120 uses an internal matrix to determine which ports
- *	belong to which VLAN.
- *	The default generates a VLAN (and device) for each port
- *	(including MII port) and the CPU port is part of all of them.
- *
- *	Another example, one big switch and everything mapped to eth0:
- *	0x7f, 0x00, 0x00, 0x00, 0x00, 0x00
- */
-static unsigned char vlan_matrix[SW_DEVS] = {
-	0x41, 0x42, 0x44, 0x48, 0x50, 0x60
-};
-
 /* default settings - unlimited TX and RX on all ports, default shaper mode */
 static unsigned char bw_matrix[SW_DEVS] = {
 	0, 0, 0, 0, 0, 0
@@ -274,7 +261,7 @@ static int adm5120_sw_open(struct net_device *dev)
 	val = adm5120_get_reg(ADM5120_PORT_CONF0);
 	for (i=0; i<SW_DEVS; i++) {
 		if (dev == adm5120_devs[i])
-			val &= ~vlan_matrix[i];
+			val &= ~adm5120_eth_vlans[i];
 	}
 	adm5120_set_reg(ADM5120_PORT_CONF0, val);
 	return 0;
@@ -292,7 +279,7 @@ static int adm5120_sw_stop(struct net_device *dev)
 	val = adm5120_get_reg(ADM5120_PORT_CONF0) | ADM5120_PORTDISALL;
 	for (i=0; i<SW_DEVS; i++) {
 		if ((dev != adm5120_devs[i]) && netif_running(adm5120_devs[i]))
-			val &= ~vlan_matrix[i];
+			val &= ~adm5120_eth_vlans[i];
 	}
 	adm5120_set_reg(ADM5120_PORT_CONF0, val);
 	netif_stop_queue(dev);
@@ -351,7 +338,7 @@ static struct net_device_stats *adm5120_sw_stats(struct net_device *dev)
 	int portmask;
 	unsigned long adm5120_cpup_conf_reg;
 
-	portmask = vlan_matrix[priv->port] & 0x3f;
+	portmask = adm5120_eth_vlans[priv->port] & 0x3f;
 
 	adm5120_cpup_conf_reg = adm5120_get_reg(ADM5120_CPUP_CONF);
 
@@ -398,7 +385,7 @@ static void adm5120_set_multicast_list(struct net_device *dev)
 	struct adm5120_sw *priv = netdev_priv(dev);
 	int portmask;
 
-	portmask = vlan_matrix[priv->port] & 0x3f;
+	portmask = adm5120_eth_vlans[priv->port] & 0x3f;
 
 	if (dev->flags & IFF_PROMISC)
 		adm5120_set_reg(ADM5120_CPUP_CONF,
@@ -460,15 +447,15 @@ static int adm5120_do_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 		case SIOCSMATRIX:
 			if (!capable(CAP_NET_ADMIN))
 				return -EPERM;
-			err = copy_from_user(vlan_matrix, rq->ifr_data,
-			    sizeof(vlan_matrix));
+			err = copy_from_user(adm5120_eth_vlans, rq->ifr_data,
+			    sizeof(adm5120_eth_vlans));
 			if (err)
 				return -EFAULT;
-			adm5120_set_vlan(vlan_matrix);
+			adm5120_set_vlan(adm5120_eth_vlans);
 			break;
 		case SIOCGMATRIX:
-			err = copy_to_user(rq->ifr_data, vlan_matrix,
-			    sizeof(vlan_matrix));
+			err = copy_to_user(rq->ifr_data, adm5120_eth_vlans,
+			    sizeof(adm5120_eth_vlans));
 			if (err)
 				return -EFAULT;
 			break;
@@ -592,7 +579,7 @@ static int __init adm5120_sw_init(void)
 		printk(KERN_INFO "%s: ADM5120 switch port%d\n", dev->name, i);
 	}
 	/* setup vlan/port mapping after devs are filled up */
-	adm5120_set_vlan(vlan_matrix);
+	adm5120_set_vlan(adm5120_eth_vlans);
 
 	adm5120_set_reg(ADM5120_CPUP_CONF,
 	    ADM5120_CRC_PADDING | ADM5120_DISUNALL | ADM5120_DISMCALL);

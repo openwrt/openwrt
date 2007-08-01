@@ -55,8 +55,17 @@ static struct mtd_partition p33x_partitions[] = {
 		.offset	= MTDPART_OFS_APPEND,
 		.size	= 16*1024,
 	} , {
-		.name	= "firmware",
+		.name	= "bootext",
 		.offset	= MTDPART_OFS_APPEND,
+		.size	= 96*1024,
+		.mask_flags = MTD_WRITEABLE,
+	} , {
+		.name	= "trx",
+		.offset	= MTDPART_OFS_APPEND,
+		.size	= MTDPART_SIZ_FULL,
+	} , {
+		.name	= "firmware",
+		.offset	= 32*1024,
 		.size	= MTDPART_SIZ_FULL,
 	}
 };
@@ -83,10 +92,17 @@ static void __init p33x_setup(void)
 	/* TODO: setup mac address */
 }
 
+unsigned char p33x_vlans[6] __initdata = {
+	/* FIXME: untested */
+	0x50, 0x48, 0x44, 0x42, 0x41, 0x00
+};
+
 static struct adm5120_board p334wt_board __initdata = {
 	.mach_type	= MACH_ADM5120_P334WT,
 	.name		= "ZyXEL Prestige 334WT",
 	.board_setup	= p33x_setup,
+	.eth_num_ports	= 5,
+	.eth_vlans	= p33x_vlans,
 	.num_devices	= ARRAY_SIZE(p334_devices),
 	.devices	= p334_devices,
 };
@@ -95,6 +111,8 @@ static struct adm5120_board p335_board __initdata = {
 	.mach_type	= MACH_ADM5120_P335,
 	.name		= "ZyXEL Prestige 335/335WT",
 	.board_setup	= p33x_setup,
+	.eth_num_ports	= 5,
+	.eth_vlans	= p33x_vlans,
 	.num_devices	= ARRAY_SIZE(p335_devices),
 	.devices	= p335_devices,
 };

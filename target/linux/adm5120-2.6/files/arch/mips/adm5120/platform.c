@@ -47,6 +47,8 @@ static void adm5120_uart_set_mctrl(struct amba_device *dev, void __iomem *base,
  *	converted into a real platform driver
  */
 unsigned int adm5120_eth_num_ports = 6;
+EXPORT_SYMBOL_GPL(adm5120_eth_num_ports);
+
 unsigned char adm5120_eth_macs[6][6] = {
 	{'\00', 'A', 'D', 'M', '\x51', '\x20' },
 	{'\00', 'A', 'D', 'M', '\x51', '\x21' },
@@ -55,9 +57,13 @@ unsigned char adm5120_eth_macs[6][6] = {
 	{'\00', 'A', 'D', 'M', '\x51', '\x24' },
 	{'\00', 'A', 'D', 'M', '\x51', '\x25' }
 };
-
-EXPORT_SYMBOL_GPL(adm5120_eth_num_ports);
 EXPORT_SYMBOL_GPL(adm5120_eth_macs);
+
+unsigned char adm5120_eth_vlans[6] = {
+	0x41, 0x42, 0x44, 0x48, 0x50, 0x60
+};
+EXPORT_SYMBOL_GPL(adm5120_eth_vlans);
+
 #else
 /* Built-in ethernet switch */
 struct adm5120_switch_platform_data adm5120_switch_data;
