@@ -251,7 +251,7 @@ define KernelPackage/ax25
   TITLE:=AX25 support
   DESCRIPTION:=Kernel modules for AX25 support
   SUBMENU:=$(NSMENU)
-  KCONFIG:=CONFIG_AX25
+  KCONFIG:=CONFIG_AX25 CONFIG_MKISS
   FILES:= \
 	$(LINUX_DIR)/net/ax25/ax25.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/net/hamradio/mkiss.$(LINUX_KMOD_SUFFIX)
