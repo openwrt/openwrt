@@ -29,6 +29,7 @@
 
 #define DRVNAME "ar7-leds"
 #define LONGNAME "TI AR7 LEDs driver"
+#define AR7_GPIO_BIT_STATUS_LED 8
 
 MODULE_AUTHOR("Nicolas Thill <nico@openwrt.org>");
 MODULE_DESCRIPTION(LONGNAME);
