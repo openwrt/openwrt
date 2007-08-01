@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zlib
 PKG_VERSION:=1.2.3
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.zlib.net @SF/zlib
@@ -62,8 +62,10 @@ define Build/UninstallDev
 		$(STAGING_DIR)/usr/lib/libz.{a,so*}
 endef
 
+# libz.so is needed for openssl (zlib-dynamic)
 define Package/zlib/install
 	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libz.so $(1)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libz.so.* $(1)/usr/lib/
 endef
 
