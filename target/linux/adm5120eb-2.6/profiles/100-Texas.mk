@@ -6,7 +6,7 @@
 #
 
 define Profile/Texas
-  NAME:=Texas Instruments WiFi (default)
+  NAME:=Texas Instruments WiFi
   PACKAGES:=kmod-acx
 endef
 
