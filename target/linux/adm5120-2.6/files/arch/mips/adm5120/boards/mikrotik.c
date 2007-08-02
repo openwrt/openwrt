@@ -1,7 +1,7 @@
 /*
  *  $Id$
  *
- *  Mikrotik RouterBOARDs 111/112/133/133C/153
+ *  Mikrotik RouterBOARDs 111/112/133/133C/150/153
  *
  *  Copyright (C) 2007 OpenWrt.org
  *  Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
@@ -50,6 +50,11 @@ static struct platform_device *rb1xx_devices[] __initdata = {
 	&adm5120_nand_device,
 };
 
+static struct platform_device *rb150_devices[] __initdata = {
+	&adm5120_flash0_device,
+	/* TODO: nand device is not yet supported */
+};
+
 static void __init rb1xx_setup(void)
 {
 	/* setup data for flash0 device */
@@ -74,7 +79,7 @@ static unsigned char rb133c_vlans[6] __initdata = {
 	0x44, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-static unsigned char rb153_vlans[6] __initdata = {
+static unsigned char rb15x_vlans[6] __initdata = {
 	/* FIXME: untested */
 	0x41, 0x42, 0x44, 0x48, 0x50, 0x00
 };
@@ -119,12 +124,22 @@ static struct adm5120_board rb133c_board __initdata = {
 	.devices	= rb1xx_devices,
 };
 
+static struct adm5120_board rb150_board __initdata = {
+	.mach_type	= MACH_ADM5120_RB_150,
+	.name		= "Mikrotik RouterBOARD 150",
+	.board_setup	= rb1xx_setup,
+	.eth_num_ports	= 5,
+	.eth_vlans	= rb15x_vlans,
+	.num_devices	= ARRAY_SIZE(rb150_devices),
+	.devices	= rb150_devices,
+};
+
 static struct adm5120_board rb153_board __initdata = {
 	.mach_type	= MACH_ADM5120_RB_153,
 	.name		= "Mikrotik RouterBOARD 153",
 	.board_setup	= rb1xx_setup,
 	.eth_num_ports	= 5,
-	.eth_vlans	= rb153_vlans,
+	.eth_vlans	= rb15x_vlans,
 	.num_devices	= ARRAY_SIZE(rb1xx_devices),
 	.devices	= rb1xx_devices,
 };
@@ -135,6 +150,7 @@ static int __init register_boards(void)
 	adm5120_board_register(&rb112_board);
 	adm5120_board_register(&rb133_board);
 	adm5120_board_register(&rb133c_board);
+	adm5120_board_register(&rb150_board);
 	adm5120_board_register(&rb153_board);
 	return 0;
 }
