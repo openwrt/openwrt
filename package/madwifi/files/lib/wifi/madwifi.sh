@@ -157,7 +157,7 @@ enable_atheros() {
 		config_get ssid "$vif" ssid
 
 		[ "$mode" = "sta" ] && {
-			config_get_bool bgscan "$vif" bgscan 1
+			config_get_bool bgscan "$vif" bgscan 0
 			iwpriv "$ifname" bgscan "$bgscan"
 		}
 
