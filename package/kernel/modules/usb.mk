@@ -90,6 +90,16 @@ define KernelPackage/usb-ohci/2.6
 endef
 $(eval $(call KernelPackage,usb-ohci))
 
+define KernelPackage/usb-adm5120
+  $(call usbdep,@LINUX_2_6_ADM5120||@LINUX_2_6_ADM5120EB)
+  TITLE:=Support for the ADM5120 HCD controller
+  DESCRIPTION:=Kernel support for the ADM5120 HCD USB controller
+  KCONFIG:=CONFIG_USB_ADM5120_HCD
+  FILES:=$(LINUX_DIR)/drivers/usb/host/adm5120-hcd.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,adm5120-hcd)
+endef
+$(eval $(call KernelPackage,usb-adm5120))
+
 define KernelPackage/usb2
   $(call usbdep,)
   TITLE:=Support for USB2 controllers
