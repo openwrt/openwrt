@@ -34,60 +34,62 @@ MODULE_AUTHOR("Jeroen Vreeken (pe1rxq@amsat.org)");
 #define PFX	"adm5120-hcd: "
 
 #define ADMHCD_REG_CONTROL		0x00
+#define  ADMHCD_SW_RESET		0x00000008	/* Reset */
+#define  ADMHCD_DMAA			0x00000004	/* DMA arbitration control */
+#define  ADMHCD_SW_INTREQ		0x00000002	/* request software int */
+#define  ADMHCD_HOST_EN			0x00000001	/* Host enable */
 #define ADMHCD_REG_INTSTATUS		0x04
+#define  ADMHCD_INT_ACT			0x80000000	/* Interrupt active */
+#define  ADMHCD_INT_FATAL		0x40000000	/* Fatal interrupt */
+#define  ADMHCD_INT_SW			0x20000000	/* software interrupt */
+#define  ADMHCD_INT_TD			0x00100000	/* TD completed */
+#define  ADMHCD_FNO			0x00000800	/* Frame number overaflow */
+#define  ADMHCD_SO			0x00000400	/* Scheduling overrun */
+#define  ADMHCD_INSMI			0x00000200	/* Root hub status change */
+#define  ADMHCD_BABI			0x00000100	/* Babble detected, host mode */
+#define  ADMHCD_RESI			0x00000020	/* Resume detected */
+#define  ADMHCD_SOFI			0x00000010	/* SOF transmitted/received, host mode */
 #define ADMHCD_REG_INTENABLE		0x08
+#define  ADMHCD_INT_EN			0x80000000	/* Interrupt enable */
+#define  ADMHCD_INTMASK			0x00000001	/* Interrupt mask */	
 #define ADMHCD_REG_HOSTCONTROL		0x10
+#define  ADMHCD_DMA_EN			0x00000004	/* USB host DMA enable */
+#define  ADMHCD_STATE_RST		0x00000000	/* bus state reset */
+#define  ADMHCD_STATE_RES		0x00000001	/* bus state resume */
+#define  ADMHCD_STATE_OP		0x00000002	/* bus state operational */
+#define  ADMHCD_STATE_SUS		0x00000003	/* bus state suspended */
 #define ADMHCD_REG_FMINTERVAL		0x18
 #define ADMHCD_REG_FMNUMBER		0x1c
 #define ADMHCD_REG_LSTHRESH		0x70
 #define ADMHCD_REG_RHDESCR		0x74
+#define  ADMHCD_CRWE			0x20000000	/* Clear wakeup enable */
+#define  ADMHCD_DRWE			0x10000000	/* Device remote wakeup enable */
+#define  ADMHCD_HW_OCIC			0x08000000	/* Over current indication change */
+#define  ADMHCD_LPSC			0x04000000	/* Local power switch change */
+#define  ADMHCD_OCI			0x02000000	/* Over current indication */
+#define  ADMHCD_LPS			0x01000000	/* Local power switch/global power switch */
+#define  ADMHCD_NOCP			0x00000800	/* No over current protect mode */
+#define  ADMHCD_OPCM			0x00000400	/* Over current protect mode */
+#define  ADMHCD_NPS			0x00000200	/* No Power Switch */
+#define  ADMHCD_PSM			0x00000100	/* Power switch mode */
 #define ADMHCD_REG_PORTSTATUS0		0x78
+#define  ADMHCD_CCS			0x00000001	/* current connect status */
+#define  ADMHCD_PES			0x00000002	/* port enable status */
+#define  ADMHCD_PSS			0x00000004	/* port suspend status */
+#define  ADMHCD_POCI			0x00000008	/* port overcurrent indicator */
+#define  ADMHCD_PRS			0x00000010	/* port reset status */
+#define  ADMHCD_PPS			0x00000100	/* port power status */
+#define  ADMHCD_LSDA			0x00000200	/* low speed device attached */
+#define  ADMHCD_CSC			0x00010000	/* connect status change */
+#define  ADMHCD_PESC			0x00020000	/* enable status change */
+#define  ADMHCD_PSSC			0x00040000	/* suspend status change */
+#define  ADMHCD_OCIC			0x00080000	/* overcurrent change*/
+#define  ADMHCD_PRSC			0x00100000	/* reset status change */
 #define ADMHCD_REG_PORTSTATUS1		0x7c
 #define ADMHCD_REG_HOSTHEAD		0x80
 
 
 #define ADMHCD_NUMPORTS		2
-
-#define ADMHCD_HOST_EN		0x00000001	/* Host enable */
-#define ADMHCD_SW_INTREQ	0x00000002	/* request software int */
-#define ADMHCD_SW_RESET		0x00000008	/* Reset */
-
-#define ADMHCD_INT_TD		0x00100000	/* TD completed */
-#define ADMHCD_INT_SW		0x20000000	/* software interrupt */
-#define ADMHCD_INT_FATAL	0x40000000	/* Fatal interrupt */
-#define ADMHCD_INT_ACT		0x80000000	/* Interrupt active */
-
-#define ADMHCD_STATE_RST	0x00000000	/* bus state reset */
-#define ADMHCD_STATE_RES	0x00000001	/* bus state resume */
-#define ADMHCD_STATE_OP		0x00000002	/* bus state operational */
-#define ADMHCD_STATE_SUS	0x00000003	/* bus state suspended */
-#define ADMHCD_DMA_EN		0x00000004	/* enable dma engine */
-
-#define ADMHCD_RST_ST		0x00		/* USB reset state */
-#define ADMHCD_RSM_ST		0x01		/* USB resume state */
-#define ADMHCD_OPR_ST		0x10		/* USB operational state */
-#define ADMHCD_SUS_ST		0x11		/* USB suspend state */
-
-#define ADMHCD_NPS		0x00000200	/* No Power Switch */
-#define ADMHCD_PSM		0x00000100	/* Power switch mode */
-#define ADMHCD_OPCM		0x00000400	/* Over current protect mode */
-#define ADMHCD_NOCP		0x00000800	/* No over current protect mode */
-#define ADMHCD_LPSC		0x04000000	/* Local power switch change */
-#define ADMHCD_LPS		0x01000000	/* Local power switch/global power switch */
-
-#define ADMHCD_CCS		0x00000001	/* current connect status */
-#define ADMHCD_PES		0x00000002	/* port enable status */
-#define ADMHCD_PSS		0x00000004	/* port suspend status */
-#define ADMHCD_POCI		0x00000008	/* port overcurrent indicator */
-#define ADMHCD_PRS		0x00000010	/* port reset status */
-#define ADMHCD_PPS		0x00000100	/* port power status */
-#define ADMHCD_LSDA		0x00000200	/* low speed device attached */
-#define ADMHCD_CSC		0x00010000	/* connect status change */
-#define ADMHCD_PESC		0x00020000	/* enable status change */
-#define ADMHCD_PSSC		0x00040000	/* suspend status change */
-#define ADMHCD_OCIC		0x00080000	/* overcurrent change*/
-#define ADMHCD_PRSC		0x00100000	/* reset status change */
-
 
 struct admhcd_ed {
 	/* Don't change first four, they used for DMA */
@@ -700,6 +702,8 @@ static int admhcd_start(struct usb_hcd *hcd)
 	struct admhcd *ahcd = hcd_to_admhcd(hcd);
 	unsigned long flags;
 
+	printk(KERN_DEBUG PFX "calling admhcd_start\n");
+
 	spin_lock_irqsave(&ahcd->lock, flags);
 
  	/* Initialise the HCD registers */
@@ -708,8 +712,12 @@ static int admhcd_start(struct usb_hcd *hcd)
 
         admhcd_reg_set(ahcd, ADMHCD_REG_CONTROL, ADMHCD_SW_RESET);
 
-        while (admhcd_reg_get(ahcd, ADMHCD_REG_CONTROL) & ADMHCD_SW_RESET)
+        while (admhcd_reg_get(ahcd, ADMHCD_REG_CONTROL) & ADMHCD_SW_RESET) {
+		printk(KERN_WARNING PFX "waiting for reset to complete\n");
                 mdelay(1);
+	}
+	
+	hcd->uses_new_polling = 1;
 
 	/* Enable USB host mode */
         admhcd_reg_set(ahcd, ADMHCD_REG_CONTROL, ADMHCD_HOST_EN);
@@ -725,13 +733,17 @@ static int admhcd_start(struct usb_hcd *hcd)
         admhcd_reg_set(ahcd, ADMHCD_REG_INTSTATUS,
             ADMHCD_INT_ACT | ADMHCD_INT_FATAL | ADMHCD_INT_SW | ADMHCD_INT_TD);
 
+	/* Power on all ports */
         admhcd_reg_set(ahcd, ADMHCD_REG_RHDESCR, ADMHCD_NPS | ADMHCD_LPSC);
-        admhcd_reg_set(ahcd, ADMHCD_REG_HOSTCONTROL, ADMHCD_STATE_OP);
 
+	/* HCD is now operationnal */
+        admhcd_reg_set(ahcd, ADMHCD_REG_HOSTCONTROL, ADMHCD_STATE_OP);
 
        	hcd->state = HC_STATE_RUNNING;
 
 	spin_unlock_irqrestore(&ahcd->lock, flags);
+
+	printk(KERN_DEBUG PFX "returning 0 from admhcd_start\n");
        	return 0;
 }
 
@@ -776,7 +788,7 @@ static int admhcd_reset(struct usb_hcd *hcd)
         while (time_before_eq(jiffies, t)) {
                 msleep(4);
                 spin_lock_irq(&ahcd->lock);
-                val = admhcd_reg_get(ahcd, ADMHCD_REG_HOSTCONTROL) & ADMHCD_OPR_ST;
+                val = admhcd_reg_get(ahcd, ADMHCD_REG_HOSTCONTROL) & ADMHCD_STATE_RST;
                 spin_unlock_irq(&ahcd->lock);
                 if (val)
                         break;
@@ -814,7 +826,7 @@ static struct hc_driver adm5120_hc_driver = {
 	.product_desc =		"ADM5120 HCD",
 	.hcd_priv_size =	sizeof(struct admhcd),
 	.irq =			adm5120hcd_irq,
-	.flags =		HCD_MEMORY|HCD_USB11,
+	.flags =		HCD_USB11,
 	.urb_enqueue =		admhcd_urb_enqueue,
 	.urb_dequeue =		admhcd_urb_dequeue,
 	.endpoint_disable =	admhcd_endpoint_disable,
@@ -838,54 +850,64 @@ static int __init adm5120hcd_probe(struct platform_device *pdev)
         int err = 0, irq;
 
 	if (pdev->num_resources < 2) {
+		printk(KERN_WARNING PFX "not enough resources\n");
 		err = -ENODEV;
 		goto out;
-        }
-
-	if (pdev->dev.dma_mask) {
-                printk(KERN_DEBUG "no we won't dma\n");
-                return -EINVAL;
         }
 
 	irq = platform_get_irq(pdev, 0);
 	data = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 
+	if (pdev->dev.dma_mask) {
+                printk(KERN_DEBUG PFX "no we won't dma\n");
+                return -EINVAL;
+        }
+
 	if (!data || irq < 0) {
+		printk(KERN_DEBUG PFX "either IRQ or data resource is invalid\n");
                 err = -ENODEV;
                 goto out;
         }
 
         if (!request_mem_region(data->start, 2, hcd_name)) {
+		printk(KERN_DEBUG PFX "cannot request memory regions for the data resource\n");
                 err = -EBUSY;
-                goto out_unmap;
+                goto out;
         }
 
         data_reg = ioremap(data->start, resource_len(data));
+
         if (data_reg == NULL) {
+		printk(KERN_DEBUG PFX "unable to ioremap\n");
                 err = -ENOMEM;
                 goto out_mem;
         }
 
 	hcd = usb_create_hcd(&adm5120_hc_driver, &pdev->dev, pdev->dev.bus_id);
-        if (!hcd)
+        if (!hcd) {
+		printk(KERN_DEBUG PFX "unable to create the hcd\n");
+		err = -ENOMEM;
                 goto out_mem;
+	}
 
 	hcd->rsrc_start = data->start;
-	hcd->rsrc_len	= resource_len(data);
-	hcd->regs = (u32)data_reg;
+	hcd->rsrc_len = resource_len(data);
+	hcd->regs = data_reg;
+	
 	ahcd = hcd_to_admhcd(hcd);
+	ahcd->data_reg = data_reg;
+	ahcd->base = (u32)data_reg;
 
 	spin_lock_init(&ahcd->lock);
 	INIT_LIST_HEAD(&ahcd->async);
 
-	ahcd->data_reg = data_reg;
-	ahcd->base = (u32)data_reg;
-
 	hcd->product_desc = "ADM5120 HCD";
 
 	err = usb_add_hcd(hcd, irq, IRQF_DISABLED);
-	if (err)
+	if (err) {
+		printk(KERN_DEBUG PFX "unable to add hcd\n");
 		goto out_dev;
+	}
 
 	return 0;
 
@@ -898,6 +920,25 @@ out_mem:
 out:
 	return err;
 }
+
+#ifdef CONFIG_PM
+static int adm5120hcd_suspend(struct platform_device *pdev,  pm_message_t state)
+{
+	pdev-dev.power.power_state = state;
+	mdelay(1);
+	return 0;
+}
+
+static int adm5120hcd_resume(struct platform_device *pdev, pm_message_t state)
+{
+	pdev->dev.power.power_state = PMSG_ON;
+	mdelay(1);
+	return 0;
+}
+#else
+#define adm5120hcd_suspend 	NULL
+#define adm5120hcd_resume 	NULL
+#endif
 
 static int __init_or_module adm5120hcd_remove(struct platform_device *pdev)
 {
@@ -916,8 +957,10 @@ static int __init_or_module adm5120hcd_remove(struct platform_device *pdev)
 static struct platform_driver adm5120hcd_driver = {
 	.probe =	adm5120hcd_probe,
 	.remove =	adm5120hcd_remove,
+	.suspend = 	adm5120hcd_suspend,
+	.remove = 	adm5120hcd_resume,
 	.driver	=	{
-		.name 	= "adm5120-usbc",
+		.name 	= (char *)hcd_name,
 		.owner 	= THIS_MODULE,
 	},
 };
@@ -944,8 +987,9 @@ static int __init adm5120hcd_init(void)
 }
 
 static void __exit adm5120hcd_exit(void)
-{
+{	
 	platform_driver_unregister(&adm5120hcd_driver);
+	printk(KERN_INFO PFX "driver unregistered\n");
 }
 
 module_init(adm5120hcd_init);
