@@ -29,6 +29,7 @@ define Build/Compile
 	$(call cc,srec2bin)
 	$(call cc,mkmylofw)
 	$(call cc,mkcsysimg)
+	$(call cc,mkzynfw)
 endef
 
 define Build/Install
