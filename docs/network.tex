@@ -102,3 +102,13 @@ As value it takes a list of ports with these optional suffixes:
 The CPU port defaults to tagged, all other ports to untagged.
 On Broadcom hardware the CPU port is always 5. The other ports may vary with
 different hardware.
+
+For instance, if you wish to have 3 vlans, like one 3-port switch, 1 port in a
+DMZ, and another one as your WAN interface, use the following configuration :
+
+\begin{Verbatim}
+config switch       "eth0"
+    option vlan0    "1 2 3 5*"
+    option vlan1    "0 5"
+    option vlan2    "4 5"
+\end{Verbatim}
