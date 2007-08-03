@@ -54,6 +54,7 @@ MODULE_AUTHOR("Jeroen Vreeken (pe1rxq@amsat.org)");
 #define  ADMHCD_INTMASK			0x00000001	/* Interrupt mask */
 #define ADMHCD_REG_HOSTCONTROL		0x10
 #define  ADMHCD_DMA_EN			0x00000004	/* USB host DMA enable */
+#define  ADMHCD_STATE_MASK		0x00000003
 #define  ADMHCD_STATE_RST		0x00000000	/* bus state reset */
 #define  ADMHCD_STATE_RES		0x00000001	/* bus state resume */
 #define  ADMHCD_STATE_OP		0x00000002	/* bus state operational */
@@ -776,7 +777,7 @@ static int admhcd_sw_reset(struct admhcd *ahcd)
 static int admhcd_reset(struct usb_hcd *hcd)
 {
 	struct admhcd *ahcd = hcd_to_admhcd(hcd);
-        u32 val = 0;
+        u32 state = 0;
 	int ret, timeout = 15; /* ms */
 	unsigned long t;
 
@@ -785,19 +786,22 @@ static int admhcd_reset(struct usb_hcd *hcd)
 		return ret;
 
 	t = jiffies + msecs_to_jiffies(timeout);
-        while (time_before_eq(jiffies, t)) {
-                msleep(4);
+	do {
                 spin_lock_irq(&ahcd->lock);
-                val = admhcd_reg_get(ahcd, ADMHCD_REG_HOSTCONTROL) & ADMHCD_STATE_RST;
+                state = admhcd_reg_get(ahcd, ADMHCD_REG_HOSTCONTROL);
                 spin_unlock_irq(&ahcd->lock);
-                if (val)
+		state &= ADMHCD_STATE_MASK;
+                if (state == ADMHCD_STATE_RST)
                         break;
-        }
-        if (!val) {
+                msleep(4);
+	} while (time_before_eq(jiffies, t));
+
+        if (state != ADMHCD_STATE_RST) {
                 printk(KERN_WARNING "%s: device not ready after %dms\n",
 			hcd_name, timeout);
                 ret = -ENODEV;
         }
+
         return ret;
 }
 
