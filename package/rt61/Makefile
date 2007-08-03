@@ -33,7 +33,7 @@ define KernelPackage/rt61
 endef
 
 define KernelPackage/rt61/install
-	mkdir $(1)/lib/firmware
+	mkdir -p $(1)/lib/firmware
 	$(CP) -L $(PKG_BUILD_DIR)/Module/rt2*.bin $(1)/lib/firmware
 endef
 
