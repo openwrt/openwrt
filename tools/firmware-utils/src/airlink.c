@@ -135,6 +135,7 @@ int generate_image(char *kname, char *fsname, char *fname, int EHDR)
 	else
 		write(ffd, header + 2, 0x20);
 	write(ffd, bk, lenk);
+	lenk += 0x20;
 	if (!JFFS2) JFFS2 = 0x20;
 	printf("Padding header+kernel - 0x%x +  0x%x = 0x%x\n",
 	       lenk, ((lenk - 1 + JFFS2) / JFFS2) * JFFS2 - lenk,
