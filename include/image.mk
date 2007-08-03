@@ -8,6 +8,9 @@
 include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/host.mk
+
+override MAKEFLAGS=
+override MAKE:=$(SUBMAKE)
 KDIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
 
 ifneq ($(CONFIG_BIG_ENDIAN),y)
@@ -94,14 +97,14 @@ define BuildImage
 download:
 prepare:
 ifneq ($(IB),1)
-  compile: compile-targets
+  compile: compile-targets FORCE
 	$(call Build/Compile)
 else
   compile:
 endif
 
 ifneq ($(IB),1)
-  install: compile install-targets
+  install: compile install-targets FORCE
 	$(call Image/Prepare)
 	$(call Image/mkfs/prepare)
 	$(call Image/BuildKernel)

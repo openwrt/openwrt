@@ -174,7 +174,7 @@ oldconfig menuconfig: $(STAMP_PREPARED) FORCE
 	$(SCRIPT_DIR)/config.pl '>' $(GENERIC_LINUX_CONFIG) $(LINUX_DIR)/.config > $(LINUX_CONFIG)
 
 install: $(LINUX_DIR)/.image
-	$(MAKE) -C image install
+	$(MAKE) -C image compile install
 
 clean: FORCE
 	rm -f $(STAMP_DIR)/.linux-compile
@@ -188,6 +188,6 @@ rebuild: FORCE
 	@$(MAKE) compile
 
 image-prereq:
-	$(MAKE) -s -C image prereq
+	$(SUBMAKE) -s -C image prereq
 
 prereq: image-prereq
