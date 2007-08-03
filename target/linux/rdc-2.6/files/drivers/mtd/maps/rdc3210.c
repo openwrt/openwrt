@@ -29,6 +29,7 @@ struct map_info rdc3210_map =
 /* Dante: This is the default static mapping, however this is nothing but a hint. (Say dynamic mapping) */
 static struct mtd_partition rdc3210_parts[] = 
 {
+#if CONFIG_MTD_RDC3210_SIZE == 0x400000
 	{ name: "linux",   offset:  0,          size: 0x003C0000 },	/* 3840 KB = (Kernel + ROMFS) = (768 KB + 3072 KB) */
 	{ name: "romfs",   offset:  0x000C0000, size: 0x00300000 },	/* 3072 KB */
 	{ name: "nvram",   offset:  0x003C0000, size: 0x00010000 },	/*   64 KB */
@@ -36,6 +37,17 @@ static struct mtd_partition rdc3210_parts[] =
 	{ name: "factory", offset:  0x003D0000, size: 0x00010000 },	/*   64 KB */
 #endif
 	{ name: "bootldr", offset:  0x003E0000, size: 0x00020000 },	/*  128 KB */
+#elif CONFIG_MTD_RDC3210_SIZE == 0x200000
+	{ name: "linux",   offset:  0x00010000, size: 0x001E0000 },
+	{ name: "romfs",   offset:  0x000D0000, size: 0x00120000 },
+	{ name: "nvram",   offset:  0x00000000, size: 0x00010000 },	/*   64 KB */
+#ifdef CONFIG_MTD_RDC3210_FACTORY_PRESENT
+#error Unsupported configuration!
+#endif
+	{ name: "bootldr", offset:  0x001F0000, size: 0x00010000 },
+#else
+#error Unsupported configuration!
+#endif
 };
 
 static __u32 crctab[257] = {
@@ -197,19 +209,42 @@ static int __init init_rdc3210_map(void)
 
 #include "imghdr.h"
 
+	typedef struct {
+		u8	magic[4];
+		u32	kernelsz, ramdisksz;
+		u8	magic2[4];
+		u32	sz2;
+	}sc_imghdr_t;
+
 	if (rdc3210_mtd) 
 	{	// Dante
-		gt_imghdr_t	*hdr = (gt_imghdr_t *)(rdc3210_map.map_priv_1)
+		sc_imghdr_t	*hdr2= (sc_imghdr_t *)(rdc3210_map.map_priv_1);
+		gt_imghdr_t	*hdr = (gt_imghdr_t *)hdr2
 #ifdef CONFIG_MTD_RDC3210_ALLOW_JFFS2
 			, *ptmp
 #endif
 			;
-		unsigned int	tmp = hdr->kernelsz + sizeof(gt_imghdr_t), tmp2 = rdc3210_mtd->erasesize;
-		unsigned int	tmp3 = ((tmp / 32) + ((tmp % 32) ? 1 : 0)) * 32;
-		unsigned int	tmp4 = ((tmp / tmp2) + ((tmp % tmp2) ? 1 : 0)) * tmp2;
-		int	len;
+		int	len, tmp, tmp2, tmp3, tmp4, hdr_type = 0;
 		
-		if(memcmp(hdr->magic, GTIMG_MAGIC, 4))
+		if(!memcmp(hdr->magic, GTIMG_MAGIC, 4))
+		{
+			hdr_type = 1;
+			tmp = hdr->kernelsz + sizeof(gt_imghdr_t);
+			tmp2 = rdc3210_mtd->erasesize;
+			tmp3 = ((tmp / 32) + ((tmp % 32) ? 1 : 0)) * 32;
+			tmp4 = ((tmp / tmp2) + ((tmp % tmp2) ? 1 : 0)) * tmp2;
+		}
+#ifndef CONFIG_MTD_RDC3210_ALLOW_JFFS2
+		else if (!memcmp(hdr2->magic, "CSYS", 4))
+		{
+			hdr_type = 2;
+			tmp = hdr2->ramdisksz + hdr2->kernelsz + sizeof(sc_imghdr_t);
+			tmp2 = rdc3210_mtd->erasesize;
+			tmp3 = ((tmp / 32) + ((tmp % 32) ? 1 : 0)) * 32;
+			tmp4 = ((tmp / tmp2) + ((tmp % tmp2) ? 1 : 0)) * tmp2;
+		}
+#endif
+		else
 		{
 			iounmap((void *)rdc3210_map.map_priv_1);
 			rdc3210_map.map_priv_1 = 0L;
@@ -253,6 +288,7 @@ static int __init init_rdc3210_map(void)
 		rdc3210_parts[3].offset = tmp - (tmp % tmp2);
 		rdc3210_parts[3].size   = rdc3210_mtd->size - rdc3210_parts[3].offset;
 #endif
+		if (hdr_type == 1) {
 		/* 3. Adjust NVRAM */
 #ifdef CONFIG_MTD_RDC3210_ALLOW_JFFS2
 		if (*(__u32 *)(((unsigned char *)ptmp)+tmp3) == SQUASHFS_MAGIC)
@@ -273,13 +309,19 @@ static int __init init_rdc3210_map(void)
 		rdc3210_parts[2].offset = tmp - (tmp % tmp2);
 		}
 		rdc3210_parts[2].size   = rdc3210_parts[3].offset - rdc3210_parts[2].offset;
+		}
+		else if (hdr_type == 2)
+		{
+			len = 0;
+			tmp4 = tmp3;
+		}
 		
 		/* 4. Adjust Linux (Kernel + ROMFS) */
-		rdc3210_parts[0].size   = rdc3210_parts[len + 2].offset - rdc3210_parts[0].offset;
+		rdc3210_parts[0].size   = rdc3210_parts[len + hdr_type + 1].offset - rdc3210_parts[0].offset;
 
 		/* 5. Adjust ROMFS */
 		rdc3210_parts[1].offset = rdc3210_parts[0].offset + tmp4;
-		rdc3210_parts[1].size   = rdc3210_parts[2].offset - rdc3210_parts[1].offset;
+		rdc3210_parts[1].size   = rdc3210_parts[hdr_type + 1].offset - rdc3210_parts[1].offset;
 #ifdef CONFIG_MTD_RDC3210_ALLOW_JFFS2
 		if (!(hdr->reserved || len))
 		{

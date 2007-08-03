@@ -24,8 +24,8 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
     define Kernel/SetInitramfs
 	rm -f $(BUILD_DIR)/root/sbin/init
 	ln -s /etc/preinit $(BUILD_DIR)/root/sbin/init
-	# $(CP) $(PLATFORM_DIR)/image/preinit.arch $(BUILD_DIR)/root/etc/
 	sed -i 's,exec /sbin/init,exec /bin/busybox init,g' $(BUILD_DIR)/root/etc/preinit
+	sed -i 's,/sbin/init,/bin/busybox init,g' $(BUILD_DIR)/root/init
     endef
 endif
 
