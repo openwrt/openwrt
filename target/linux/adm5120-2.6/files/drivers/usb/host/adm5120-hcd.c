@@ -51,7 +51,7 @@ MODULE_AUTHOR("Jeroen Vreeken (pe1rxq@amsat.org)");
 #define  ADMHCD_SOFI			0x00000010	/* SOF transmitted/received, host mode */
 #define ADMHCD_REG_INTENABLE		0x08
 #define  ADMHCD_INT_EN			0x80000000	/* Interrupt enable */
-#define  ADMHCD_INTMASK			0x00000001	/* Interrupt mask */	
+#define  ADMHCD_INTMASK			0x00000001	/* Interrupt mask */
 #define ADMHCD_REG_HOSTCONTROL		0x10
 #define  ADMHCD_DMA_EN			0x00000004	/* USB host DMA enable */
 #define  ADMHCD_STATE_RST		0x00000000	/* bus state reset */
@@ -716,7 +716,7 @@ static int admhcd_start(struct usb_hcd *hcd)
 		printk(KERN_WARNING PFX "waiting for reset to complete\n");
                 mdelay(1);
 	}
-	
+
 	hcd->uses_new_polling = 1;
 
 	/* Enable USB host mode */
@@ -766,7 +766,7 @@ static int admhcd_sw_reset(struct admhcd *ahcd)
 			break;
 	}
 	if (!retries) {
-		printk(KERN_WARNING "%s Software reset timeout\n", hcd_name);
+		printk(KERN_WARNING "%s: software reset timeout\n", hcd_name);
 		ret = -ETIME;
 	}
 	spin_unlock_irqrestore(&ahcd->lock, flags);
@@ -794,7 +794,8 @@ static int admhcd_reset(struct usb_hcd *hcd)
                         break;
         }
         if (!val) {
-                printk(KERN_WARNING "Device not ready after %dms\n", timeout);
+                printk(KERN_WARNING "%s: device not ready after %dms\n",
+			hcd_name, timeout);
                 ret = -ENODEV;
         }
         return ret;
@@ -808,7 +809,7 @@ static void admhcd_stop(struct usb_hcd *hcd)
 
         spin_lock_irqsave(&ahcd->lock, flags);
         admhcd_reg_set(ahcd, ADMHCD_REG_INTENABLE, 0);
-	
+
 	/* Set global control of power for ports */
 	val = admhcd_reg_get(ahcd, ADMHCD_REG_RHDESCR);
 	val &= (~ADMHCD_PSM | ADMHCD_LPS);
@@ -869,14 +870,13 @@ static int __init adm5120hcd_probe(struct platform_device *pdev)
                 goto out;
         }
 
-        if (!request_mem_region(data->start, 2, hcd_name)) {
+        if (!request_mem_region(data->start, resource_len(data), hcd_name)) {
 		printk(KERN_DEBUG PFX "cannot request memory regions for the data resource\n");
                 err = -EBUSY;
                 goto out;
         }
 
         data_reg = ioremap(data->start, resource_len(data));
-
         if (data_reg == NULL) {
 		printk(KERN_DEBUG PFX "unable to ioremap\n");
                 err = -ENOMEM;
@@ -887,13 +887,13 @@ static int __init adm5120hcd_probe(struct platform_device *pdev)
         if (!hcd) {
 		printk(KERN_DEBUG PFX "unable to create the hcd\n");
 		err = -ENOMEM;
-                goto out_mem;
+                goto out_unmap;
 	}
 
 	hcd->rsrc_start = data->start;
 	hcd->rsrc_len = resource_len(data);
 	hcd->regs = data_reg;
-	
+
 	ahcd = hcd_to_admhcd(hcd);
 	ahcd->data_reg = data_reg;
 	ahcd->base = (u32)data_reg;
@@ -987,7 +987,7 @@ static int __init adm5120hcd_init(void)
 }
 
 static void __exit adm5120hcd_exit(void)
-{	
+{
 	platform_driver_unregister(&adm5120hcd_driver);
 	printk(KERN_INFO PFX "driver unregistered\n");
 }

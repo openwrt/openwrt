@@ -97,7 +97,7 @@ struct resource adm5120_usbc_resources[] = {
 };
 
 struct platform_device adm5120_usbc_device = {
-	.name		= "adm5120-usbc",
+	.name		= "adm5120-hcd",
 	.id		= -1,
 	.num_resources	= ARRAY_SIZE(adm5120_usbc_resources),
 	.resource	= adm5120_usbc_resources,
