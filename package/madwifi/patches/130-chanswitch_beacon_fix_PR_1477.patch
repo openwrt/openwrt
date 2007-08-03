@@ -1,0 +1,42 @@
+Signed-off-by: Andrew Lunn <andrew@lunn.ch>
+
+Index: trunk/net80211/ieee80211_beacon.c
+===================================================================
+--- trunk/net80211/ieee80211_beacon.c	(revision 2631)
++++ trunk/net80211/ieee80211_beacon.c	(working copy)
+@@ -305,13 +305,17 @@
+ 		 */
+ 		c = ieee80211_doth_findchan(vap, ic->ic_chanchange_chan);
+ 		if (c == NULL) {
++			/*
++			 * The channel we have been requested to change to
++			 * is not valid. Drop the channel switch annoucement
++			 * from the beacon and don't change channel.
++			 */
+ 			IEEE80211_DPRINTF(vap, IEEE80211_MSG_DOTH,
+-				"%s: find channel failure\n", __func__);
+-			IEEE80211_UNLOCK_IRQ_EARLY(ic);
+-			return 0;
++					  "%s: find channel failure\n", 
++					  __func__);
++		} else {
++			ic->ic_bsschan = c;
+ 		}
+-		ic->ic_bsschan = c;
+-
+ 		skb_pull(skb, sizeof(struct ieee80211_frame));
+ 		skb_trim(skb, 0);
+ 		frm = skb->data;
+@@ -321,8 +325,10 @@
+ 		vap->iv_flags &= ~IEEE80211_F_CHANSWITCH;
+ 		ic->ic_flags &= ~IEEE80211_F_CHANSWITCH;
+ 
+-		/* NB: only for the first VAP to get here */
+-		if (ic->ic_curchan != c) {
++		/* NB: only for the first VAP to get here, and we have a valid
++		 *     new channel to change to.
++		 */
++		if (c && ic->ic_curchan != c) {
+ 			ic->ic_curchan = c;
+ 			ic->ic_set_channel(ic);
+ 		}
