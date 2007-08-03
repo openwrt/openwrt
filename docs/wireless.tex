@@ -3,6 +3,12 @@ The WiFi settings are configured in the file \texttt{/etc/config/wireless}
 it should detect your card and create a sample configuration file. By default '\texttt{option network  lan}' is
 commented. This prevents unsecured sharing of the network over the wireless interface.
 
+Each wireless driver has its own configuration script in \texttt{/lib/wifi/driver\_name.sh} which handles
+driver specific options and configurations. This script is also calling driver specific binaries like wlc for
+Broadcom, or hostapd and wpa\_supplicant for atheros.
+
+The reason for using such architecture, is that it abstracts the driver configuration 
+
 \paragraph{Generic Broadcom wireless config:}
 
 \begin{Verbatim}
@@ -210,3 +216,49 @@ Only the following mode combinations are supported:
             \item 1x \texttt{adhoc}
         \end{itemize}
 \end{itemize}
+
+\paragraph{Adding a new driver configuration}
+
+Since we currently only support two different wireless drivers : Broadcom and Atheros,
+you might be interested in adding support for another driver like Ralink RT2x00, 
+Texas Instruments ACX100/111.
+
+The driver specific script should be placed in \texttt{/lib/wifi/<driver>.sh} and has to
+include several functions providing :
+
+\begin{itemize}
+	\item detection of the driver presence
+	\item enabling/disabling the wifi interface(s)
+	\item configuration reading and setting
+	\item third-party programs calling (nas, supplicant)
+\end{itemize}
+
+Each driver script should append the driver to a global DRIVERS variable :
+
+\begin{verbatim}
+append DRIVERS "driver name"
+\end{verbatim}
+
+\subparagraph{scan\_driver}
+
+This function will parse the \texttt{/etc/config/wireless} and make sure there
+are no configuration incompatibilities, like enabling hidden SSIDS with ad-hoc mode
+for instance. This can be more complex if your driver supports a lof of configuration
+options. It does not enable your wireless driver to work.
+
+\subparagraph{enable\_driver}
+
+This function will enable the driver and read the configuration file to create application
+specific configuration files for the NAS or supplicant program. It will not check the
+configuration consistency.
+
+\subparagraph{disable\_driver}
+
+This function should properly shutdown the wireless interfaces and kill associated programs
+running on top of it.
+
+\subparagraph{detec\_driver}
+
+This function should reliably report the existence of the driver and of one or more of its
+wireless interfaces. A basic configuration file has to be generated in the meantime.
+
