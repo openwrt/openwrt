@@ -71,6 +71,7 @@ disable_atheros() (
 )
 
 enable_atheros() {
+	local device="$1"
 	config_get channel "$device" channel
 	config_get vifs "$device" vifs
 	
