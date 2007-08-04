@@ -38,11 +38,11 @@ bridge_interface() {(
 wifi_updown() {
 	[ enable = "$1" ] && wifi_updown disable "$2"
 	for device in ${2:-$DEVICES}; do (
-	        config_get disabled "$device" disabled
-	        [ 1 == "$disabled" ] && {
-	        	echo "'$device' is disabled"
-	        	set disable
-	        }
+		config_get disabled "$device" disabled
+		[ 1 == "$disabled" ] && {
+			echo "'$device' is disabled"
+			set disable
+		}
 		config_get iftype "$device" type
 		if eval "type ${1}_$iftype" 2>/dev/null >/dev/null; then
 			eval "scan_$iftype '$device'"
