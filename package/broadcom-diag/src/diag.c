@@ -113,6 +113,7 @@ enum {
 	/* D-Link */
 	DIR130,
 	DIR330,
+	DWL3150,
 };
 
 static void __init bcm4780_init(void) {
@@ -579,6 +580,16 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "blue",	.gpio = 1 << 6},
 		},
 	},
+	[DWL3150] = {
+		.name	= "D-Link DWL-3150",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 7},
+		},
+		.leds	  = {
+			{ .name = "diag",	.gpio = 1 << 2},
+			{ .name = "status",	.gpio = 1 << 1},
+		},
+	},
 };
 
 static struct platform_t __init *platform_detect(void)
@@ -664,7 +675,7 @@ static struct platform_t __init *platform_detect(void)
 				return &platforms[WL500GD];
 		}
 		
-		if (!strcmp(boardnum, "10496"))
+		if (!strcmp(boardnum, "10496") && !strcmp(boardtype, "0x467")) 
 			return &platforms[USR5461];
 
 	} else { /* PMON based - old stuff */
@@ -714,6 +725,9 @@ static struct platform_t __init *platform_detect(void)
 
 	if (!strncmp(boardnum, "04FN52", 6)) /* SimpleTech SimpleShare */
 		return &platforms[STI_NAS];
+
+	if (!strcmp(getvar("boardnum"), "10") && !strcmp(getvar("boardrev"), "0x13")) /* D-Link DWL-3150 */
+		return &platforms[DWL3150];
 
 	/* not found */
 	return NULL;
