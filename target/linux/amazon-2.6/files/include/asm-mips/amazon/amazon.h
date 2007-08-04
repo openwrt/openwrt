@@ -24,7 +24,10 @@
    the program to operate with any other programs), even if such holder or  
    other party has been advised of the possibility of such damages. 
 ******************************************************************************/
-		
+
+#define amazon_readl(a)			readl(((u32*)(a)))
+#define amazon_writel(a,b)		writel(a, ((u32*)(b)))
+
 /* check ADSL link status */
 #define AMAZON_CHECK_LINK
          
@@ -962,119 +965,55 @@ If set and clear bit are written concurrently with 1, the associated bit is not 
 /*  Module      :  ICU register address and bits                       */
 /***********************************************************************/
          
-#define AMAZON_ICU                          (KSEG1+0x1F101000)
+#define AMAZON_ICU								(KSEG1+0x1F101000)
 /***********************************************************************/   
 
-      
 /***IM0 Interrupt Status Register***/ 
-#define AMAZON_ICU_IM0_ISR                      ((volatile u32*)(AMAZON_ICU+ 0x0010))
-#define AMAZON_ICU_IM0_ISR_IR(value)               (1 << (value))
-                      
-      
-/***IM1 Interrupt Status Register***/ 
-#define AMAZON_ICU_IM1_ISR                      ((volatile u32*)(AMAZON_ICU+ 0x0020))
-#define AMAZON_ICU_IM1_ISR_IR(value)               (1 << (value))
-                      
-      
-/***IM2 Interrupt Status Register***/ 
-#define AMAZON_ICU_IM2_ISR                      ((volatile u32*)(AMAZON_ICU+ 0x0030))
-#define AMAZON_ICU_IM2_ISR_IR(value)               (1 << (value))
-                      
-/***IM3 Interrupt Status Register***/
-#define AMAZON_ICU_IM3_ISR                      ((volatile u32*)(AMAZON_ICU+ 0x0040))
-#define AMAZON_ICU_IM3_ISR_IR(value)               (1 << (value))
-                                                                                       
-/***IM4 Interrupt Status Register***/
-#define AMAZON_ICU_IM4_ISR                      ((volatile u32*)(AMAZON_ICU+ 0x0050))
-#define AMAZON_ICU_IM4_ISR_IR(value)               (1 << (value))
-
+#define AMAZON_ICU_IM0_ISR						(AMAZON_ICU + 0x0010)
+#define AMAZON_ICU_IM1_ISR						(AMAZON_ICU + 0x0020)
+#define AMAZON_ICU_IM2_ISR						(AMAZON_ICU + 0x0030)
+#define AMAZON_ICU_IM3_ISR						(AMAZON_ICU + 0x0040)
+#define AMAZON_ICU_IM4_ISR						(AMAZON_ICU + 0x0050)
 	                
 /***IM0 Interrupt Enable Register***/ 
-#define AMAZON_ICU_IM0_IER                      ((volatile u32*)(AMAZON_ICU+ 0x0014))
-#define AMAZON_ICU_IM0_IER_IR(value)               (1 << (value))
-                      
-      
-/***IM1 Interrupt Enable Register***/ 
-#define AMAZON_ICU_IM1_IER                      ((volatile u32*)(AMAZON_ICU+ 0x0024))
-#define AMAZON_ICU_IM1_IER_IR(value)               (1 << (value))
-                      
-      
-/***IM2 Interrupt Enable Register***/ 
-#define AMAZON_ICU_IM2_IER                      ((volatile u32*)(AMAZON_ICU+ 0x0034))
-#define AMAZON_ICU_IM2_IER_IR(value)               (1 << (value))
-                      
-/***IM3 Interrupt Enable Register***/
-#define AMAZON_ICU_IM3_IER                      ((volatile u32*)(AMAZON_ICU+ 0x0044))
-#define AMAZON_ICU_IM3_IER_IR(value)               (1 << (value))
-                                                                                       
-/***IM4 Interrupt Enable Register***/
-#define AMAZON_ICU_IM4_IER                      ((volatile u32*)(AMAZON_ICU+ 0x0054))
-#define AMAZON_ICU_IM4_IER_IR(value)               (1 << (value))
+#define AMAZON_ICU_IM0_IER						(AMAZON_ICU + 0x0014)
+#define AMAZON_ICU_IM1_IER						(AMAZON_ICU + 0x0024)
+#define AMAZON_ICU_IM2_IER						(AMAZON_ICU + 0x0034)
+#define AMAZON_ICU_IM3_IER						(AMAZON_ICU + 0x0044)
+#define AMAZON_ICU_IM4_IER						(AMAZON_ICU + 0x0054)
 
-            
 /***IM0 Interrupt Output Status Register***/ 
-#define AMAZON_ICU_IM0_IOSR                    ((volatile u32*)(AMAZON_ICU+ 0x0018))
-#define AMAZON_ICU_IM0_IOSR_IR(value)               (1 << (value))
-                      
-      
-/***IM1 Interrupt Output Status Register***/ 
-#define AMAZON_ICU_IM1_IOSR                    ((volatile u32*)(AMAZON_ICU+ 0x0028))
-#define AMAZON_ICU_IM1_IOSR_IR(value)               (1 << (value))
-                      
-      
-/***IM2 Interrupt Output Status Register***/ 
-#define AMAZON_ICU_IM2_IOSR                    ((volatile u32*)(AMAZON_ICU+ 0x0038))
-#define AMAZON_ICU_IM2_IOSR_IR(value)               (1 << (value))
-                      
-/***IM3 Interrupt Output Status Register***/
-#define AMAZON_ICU_IM3_IOSR                    ((volatile u32*)(AMAZON_ICU+ 0x0048))
-#define AMAZON_ICU_IM3_IOSR_IR(value)               (1 << (value))
-                                                                                       
-/***IM4 Interrupt Output Status Register***/
-#define AMAZON_ICU_IM4_IOSR                    ((volatile u32*)(AMAZON_ICU+ 0x0058))
-#define AMAZON_ICU_IM4_IOSR_IR(value)               (1 << (value))
+#define AMAZON_ICU_IM0_IOSR						(AMAZON_ICU + 0x0018)
+#define AMAZON_ICU_IM1_IOSR						(AMAZON_ICU + 0x0028)
+#define AMAZON_ICU_IM2_IOSR						(AMAZON_ICU + 0x0038)
+#define AMAZON_ICU_IM3_IOSR						(AMAZON_ICU + 0x0048)
+#define AMAZON_ICU_IM4_IOSR						(AMAZON_ICU + 0x0058)
 
-            
 /***IM0 Interrupt Request Set Register***/ 
-#define AMAZON_ICU_IM0_IRSR                    ((volatile u32*)(AMAZON_ICU+ 0x001c))
-#define AMAZON_ICU_IM0_IRSR_IR(value)               (1 << (value))
-                      
-      
-/***IM1 Interrupt Request Set Register***/ 
-#define AMAZON_ICU_IM1_IRSR                    ((volatile u32*)(AMAZON_ICU+ 0x002c))
-#define AMAZON_ICU_IM1_IRSR_IR(value)               (1 << (value))
-                      
-      
-/***IM2 Interrupt Request Set Register***/ 
-#define AMAZON_ICU_IM2_IRSR                    ((volatile u32*)(AMAZON_ICU+ 0x003c))
-#define AMAZON_ICU_IM2_IRSR_IR(value)               (1 << (value))
-                      
-/***IM3 Interrupt Request Set Register***/
-#define AMAZON_ICU_IM3_IRSR                    ((volatile u32*)(AMAZON_ICU+ 0x004c))
-#define AMAZON_ICU_IM3_IRSR_IR(value)               (1 << (value))
-                                                                                       
-/***IM4 Interrupt Request Set Register***/
-#define AMAZON_ICU_IM4_IRSR                    ((volatile u32*)(AMAZON_ICU+ 0x005c))
-#define AMAZON_ICU_IM4_IRSR_IR(value)               (1 << (value))
+#define AMAZON_ICU_IM0_IRSR						(AMAZON_ICU + 0x001c)
+#define AMAZON_ICU_IM1_IRSR						(AMAZON_ICU + 0x002c)
+#define AMAZON_ICU_IM2_IRSR						(AMAZON_ICU + 0x003c)
+#define AMAZON_ICU_IM3_IRSR						(AMAZON_ICU + 0x004c)
+#define AMAZON_ICU_IM4_IRSR						(AMAZON_ICU + 0x005c)
 
 /***Interrupt Vector Value Register***/
-#define AMAZON_ICU_IM_VEC                      ((volatile u32*)(AMAZON_ICU+ 0x0060))
+#define AMAZON_ICU_IM_VEC						(AMAZON_ICU + 0x0060)
 
 /***Interrupt Vector Value Mask***/
-#define AMAZON_ICU_IM0_VEC_MASK                0x0000001f
-#define AMAZON_ICU_IM1_VEC_MASK                0x000003e0
-#define AMAZON_ICU_IM2_VEC_MASK                0x00007c00
-#define AMAZON_ICU_IM3_VEC_MASK                0x000f8000
-#define AMAZON_ICU_IM4_VEC_MASK                0x01f00000
+#define AMAZON_ICU_IM0_VEC_MASK					0x0000001f
+#define AMAZON_ICU_IM1_VEC_MASK					0x000003e0
+#define AMAZON_ICU_IM2_VEC_MASK					0x00007c00
+#define AMAZON_ICU_IM3_VEC_MASK					0x000f8000
+#define AMAZON_ICU_IM4_VEC_MASK					0x01f00000
 
 /***DMA Interrupt Mask Value***/
-#define AMAZON_DMA_H_MASK			0x00000fff
+#define AMAZON_DMA_H_MASK						0x00000fff
                                                                                        
 /***External Interrupt Control Register***/
-#define AMAZON_ICU_EXTINTCR                ((volatile u32*)(AMAZON_ICU+ 0x0000))                                                                                    
-#define AMAZON_ICU_IRNICR                  ((volatile u32*)(AMAZON_ICU+ 0x0004))                                                                                       
-#define AMAZON_ICU_IRNCR                   ((volatile u32*)(AMAZON_ICU+ 0x0008))                                                                                       
-#define AMAZON_ICU_IRNEN                   ((volatile u32*)(AMAZON_ICU+ 0x000c))
+#define AMAZON_ICU_EXTINTCR						(AMAZON_ICU + 0x0000)
+#define AMAZON_ICU_IRNICR						(AMAZON_ICU + 0x0004)   
+#define AMAZON_ICU_IRNCR						(AMAZON_ICU + 0x0008)   
+#define AMAZON_ICU_IRNEN						(AMAZON_ICU + 0x000c)
 
 /***********************************************************************/
 /*  Module      :   PCI/Card-BUS/PC-Card register address and bits     */
