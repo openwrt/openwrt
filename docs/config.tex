@@ -61,8 +61,11 @@ You can access already processed options with the \texttt{config\_get} command
 Syntax:
 
 \begin{Verbatim}
-config_get <section> <option>            # prints the value of the option
-config_get <variable> <section> <option> # stores the value inside the variable
+# print the value of the option
+config_get <section> <option>
+
+# store the value inside the variable
+config_get <variable> <section> <option>
 \end{Verbatim}
 
 In busybox ash the three-option \texttt{config\_get} is faster, because it does not
