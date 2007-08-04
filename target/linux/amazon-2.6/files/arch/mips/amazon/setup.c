@@ -18,6 +18,7 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
  */
+
 #include <linux/init.h>
 #include <linux/sched.h>
 #include <linux/module.h>
@@ -44,7 +45,7 @@ unsigned int amazon_get_cpu_hz(void)
 	/*-----------------------------------*/
 	/**CGU CPU Clock Reduction Register***/ 
 	/*-----------------------------------*/
-	switch((*AMAZON_CGU_CPUCRD) & 0x3){
+	switch(amazon_readl(AMAZON_CGU_CPUCRD) & 0x3){
 		case 0:
 			/*divider ration 1/1, 235 MHz clock */
 			return 235000000;
@@ -69,7 +70,7 @@ unsigned int amazon_get_fpi_hz(void)
 	/*-------------------------------------*/
 	/***CGU Clock Divider Select Register***/
 	/*-------------------------------------*/
-	switch ((*AMAZON_CGU_DIV) & 0x3)
+	switch (amazon_readl(AMAZON_CGU_DIV) & 0x3)
 	{
 		case 1:
 			return clkCPU >> 1;
@@ -81,20 +82,19 @@ unsigned int amazon_get_fpi_hz(void)
 	}
 }
 
-/* get the CPU version number  - based on sysLib.c from VxWorks sources */
 /* this doesn't really belong here, but it's a convenient location */
 unsigned int amazon_get_cpu_ver(void)
 {
 	static unsigned int cpu_ver = 0;
 	if (cpu_ver == 0)
-		cpu_ver = *AMAZON_MCD_CHIPID & 0xFFFFF000;
+		cpu_ver = amazon_readl(AMAZON_MCD_CHIPID) & 0xFFFFF000;
 	return cpu_ver;
 }
 
 void amazon_time_init(void)
 {
 	mips_hpt_frequency = amazon_get_cpu_hz()/2;
-	printk("mips_hpt_frequency:%d\n",mips_hpt_frequency);
+	printk("mips_hpt_frequency:%d\n", mips_hpt_frequency);
 }
 
 extern int hr_time_resolution;
@@ -121,43 +121,13 @@ void __init plat_timer_setup(struct irqaction *irq)
 	/* cpu counter for timer interrupts */
 	setup_irq(MIPS_CPU_TIMER_IRQ, irq);
 
-#if 0
-	/* to generate the first CPU timer interrupt */
-	write_c0_compare(read_c0_count() + amazon_get_cpu_hz()/(2*HZ));
-#endif
-
 	/* enable the timer in the PMU */
-	*(AMAZON_PMU_PWDCR) = (*(AMAZON_PMU_PWDCR))| AMAZON_PMU_PWDCR_GPT|AMAZON_PMU_PWDCR_FPI;
-	/* setup the GPTU for timer tick  f_fpi == f_gptu*/
-	*(AMAZON_GPTU_CLC) = 0x100;
-
-	*(AMAZON_GPTU_CAPREL) = 0xffff;
-	*(AMAZON_GPTU_T6CON) = 0x80C0;
-	//setup_irq(AMAZON_TIMER6_INT,&hrt_irqaction);
-
-#if 0
-#ifdef CONFIG_HIGH_RES_TIMERS
-	/* GPTU timer 6 */
-	int retval;
-	if ( hr_time_resolution > 200000000 || hr_time_resolution < 40) {
-		prom_printf("hr_time_resolution is out of range, HIGH_RES_TIMER is diabled.\n");
-		return;
-	}
+	amazon_writel(amazon_readl(AMAZON_PMU_PWDCR)| AMAZON_PMU_PWDCR_GPT|AMAZON_PMU_PWDCR_FPI, AMAZON_PMU_PWDCR);
 	
-	/* enable the timer in the PMU */
-        *(AMAZON_PMU_PWDCR) = (*(AMAZON_PMU_PWDCR))| AMAZON_PMU_PWDCR_GPT|AMAZON_PMU_PWDCR_FPI;
 	/* setup the GPTU for timer tick  f_fpi == f_gptu*/
-	*(AMAZON_GPTU_CLC) = 0x100;
-
-	*(AMAZON_GPTU_CAPREL) = 0xffff;
-	*(AMAZON_GPTU_T6CON) = 0x80C0;
-	
-	retval = setup_irq(AMAZON_TIMER6_INT,&hrt_irqaction);
-	if (retval){
-		prom_printf("reqeust_irq failed %d. HIGH_RES_TIMER is diabled\n",AMAZON_TIMER6_INT);		
-	}
-#endif //CONFIG_HIGH_RES_TIMERS		
-#endif
+	amazon_writel(0x0100, AMAZON_GPTU_CLC);
+	amazon_writel(0xffff, AMAZON_GPTU_CAPREL);
+	amazon_writel(0x80C0, AMAZON_GPTU_T6CON);
 }
 
 void __init plat_mem_setup(void)
@@ -165,7 +135,7 @@ void __init plat_mem_setup(void)
 	u32 chipid = 0;
 	u32 part_no = 0;
 	
-	chipid = *(AMAZON_MCD_CHIPID);
+	chipid = amazon_readl(AMAZON_MCD_CHIPID);
 	part_no = AMAZON_MCD_CHIPID_PART_NUMBER_GET(chipid);
 	
 	if(part_no == AMAZON_CHIPID_YANGTSE){
@@ -180,17 +150,17 @@ void __init plat_mem_setup(void)
 	board_time_init = amazon_time_init;
 
 	//stop reset TPE and DFE
-	*(AMAZON_RST_REQ) = 0x0;
+	amazon_writel(0, AMAZON_RST_REQ);
 	//clock
-	*(AMAZON_PMU_PWDCR) = 0x3fff;
+	amazon_writel(0x3fff, AMAZON_PMU_PWDCR);
 	//reenable trace capability
-	part_no = *(AMAZON_BCU_ECON);
+	part_no = readl(AMAZON_BCU_ECON);
 }
 
 static void amazon_machine_restart(char *command)
 {
     local_irq_disable();
-    *AMAZON_RST_REQ = AMAZON_RST_ALL;
+    amazon_writel(AMAZON_RST_ALL, AMAZON_RST_REQ);
     for (;;) ;
 }
 

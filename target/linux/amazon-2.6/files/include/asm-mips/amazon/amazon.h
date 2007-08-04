@@ -129,39 +129,27 @@
 /***********************************************************************/   
 
 /***CGU Clock Divider Select Register***/
-#define AMAZON_CGU_DIV                   	((volatile u32*)(AMAZON_CGU+ 0x0000))			
-
+#define AMAZON_CGU_DIV							(AMAZON_CGU + 0x0000)			
 /***CGU PLL0 Status Register***/ 
-#define AMAZON_CGU_PLL0SR                   	((volatile u32*)(AMAZON_CGU+ 0x0004))
-      
+#define AMAZON_CGU_PLL0SR						(AMAZON_CGU + 0x0004)
 /***CGU PLL1 Status Register***/ 
-#define AMAZON_CGU_PLL1SR                   	((volatile u32*)(AMAZON_CGU+ 0x0008))
-      
+#define AMAZON_CGU_PLL1SR						(AMAZON_CGU + 0x0008)
 /***CGU Interface Clock Control Register***/ 
-#define AMAZON_CGU_IFCCR                   	((volatile u32*)(AMAZON_CGU+ 0x000c))
-      
+#define AMAZON_CGU_IFCCR						(AMAZON_CGU + 0x000c)
 /***CGU Oscillator Control Register***/ 
-#define AMAZON_CGU_OSCCR                   	((volatile u32*)(AMAZON_CGU+ 0x0010))
-      
+#define AMAZON_CGU_OSCCR						(AMAZON_CGU + 0x0010)
 /***CGU Memory Clock Delay Register***/ 
-#define AMAZON_CGU_MCDEL                   	((volatile u32*)(AMAZON_CGU+ 0x0014))
-      
+#define AMAZON_CGU_MCDEL						(AMAZON_CGU + 0x0014)
 /***CGU CPU Clock Reduction Register***/ 
-#define AMAZON_CGU_CPUCRD                   	((volatile u32*)(AMAZON_CGU+ 0x0018))
-
-/* 165001:henryhsu:20050603:Source Add by Bing Tao */
-
+#define AMAZON_CGU_CPUCRD						(AMAZON_CGU + 0x0018)
 /***CGU Test Register**/
-#define AMAZON_CGU_TST                          ((volatile u32*)(AMAZON_CGU+ 0x003c))
-
-/* 165001 */
-
+#define AMAZON_CGU_TST							(AMAZON_CGU + 0x003c)
 
 /***********************************************************************/
 /*  Module      :  PMU register address and bits                       */
 /***********************************************************************/
          
-#define AMAZON_PMU                          AMAZON_CGU
+#define AMAZON_PMU								AMAZON_CGU
 /***********************************************************************/   
 
       
