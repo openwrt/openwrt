@@ -675,7 +675,7 @@ static struct platform_t __init *platform_detect(void)
 				return &platforms[WL500GD];
 		}
 		
-		if (!strcmp(boardnum, "10496") && !strcmp(boardtype, "0x467")) 
+		if (!strcmp(boardnum, "10496"))
 			return &platforms[USR5461];
 
 	} else { /* PMON based - old stuff */
