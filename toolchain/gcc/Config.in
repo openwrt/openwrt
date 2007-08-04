@@ -39,4 +39,9 @@ config INSTALL_LIBSTDCPP
 	help
 	    Build/install c++ compiler and libstdc++?
 
-
+config INSTALL_LIBGCJ
+	bool
+	prompt "Build/install java compiler and GNU classpath ?" if TOOLCHAINOPTS
+	default n
+	help
+	    Build/install java compiler and GNU classpath ?
