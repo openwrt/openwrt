@@ -1,6 +1,3 @@
 [ ifup = "$ACTION" ] && {
 	uci set "/var/state/network.$INTERFACE.up=1"
-	[ -z "$DEVICE" ] || {
-		uci set "/var/state/network.$INTERFACE.ifname=$DEVICE"
-	}
 }
