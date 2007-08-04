@@ -235,30 +235,84 @@ include several functions providing :
 
 Each driver script should append the driver to a global DRIVERS variable :
 
-\begin{verbatim}
+\begin{Verbatim}
 append DRIVERS "driver name"
-\end{verbatim}
+\end{Verbatim}
 
-\subparagraph{scan\_driver}
+\subparagraph{\texttt{scan\_<driver>}}
 
 This function will parse the \texttt{/etc/config/wireless} and make sure there
 are no configuration incompatibilities, like enabling hidden SSIDS with ad-hoc mode
 for instance. This can be more complex if your driver supports a lof of configuration
-options. It does not enable your wireless driver to work.
+options. It does not change the state of the interface.
 
-\subparagraph{enable\_driver}
+Example:
+\begin{Verbatim}
+scan_dummy() {
+	local device="$1"
 
-This function will enable the driver and read the configuration file to create application
-specific configuration files for the NAS or supplicant program. It will not check the
-configuration consistency.
+	config_get vifs "$device" vifs
+	for vif in $vifs; do
+		# check config consistency for wifi-iface sections
+	done
+	# check mode combination
+}
+\end{Verbatim}
 
-\subparagraph{disable\_driver}
+\subparagraph{\texttt{enable\_<driver>}}
 
-This function should properly shutdown the wireless interfaces and kill associated programs
-running on top of it.
+This function will bring up the wifi device and optionally create application specific
+configuration files, e.g. for the WPA authenticator or supplicant.
 
-\subparagraph{detec\_driver}
+Example:
+\begin{Verbatim}
+enable_dummy() {
+	local device="$1"
 
-This function should reliably report the existence of the driver and of one or more of its
-wireless interfaces. A basic configuration file has to be generated in the meantime.
+	config_get vifs "$device" vifs
+	for vif in $vifs; do
+		# bring up virtual interface belonging to
+		# the wifi-device "$device"
+	done
+}
+\end{Verbatim}
 
+\subparagraph{\texttt{disable\_<driver>}}
+
+This function will bring down the wifi device and all its virtual interfaces (if supported).
+
+Example:
+\begin{Verbatim}
+disable_dummy() {
+	local device="$1"
+
+	# bring down virtual interfaces belonging to
+	# "$device" regardless of whether they are
+	# configured or not. Don't rely on the vifs
+	# variable at this point
+}
+\end{Verbatim}
+
+\subparagraph{\texttt{detect\_<driver>}}
+
+This function looks for interfaces that are usable with the driver. Template config sections
+for new devices should be written to stdout. Must check for already existing config sections
+belonging to the interfaces before creating new templates.
+
+Example:
+\begin{Verbatim}
+detect_dummy() {
+	[ wifi-device = "$(config_get dummydev type)" ] && return 0
+	cat <<EOF
+config wifi-device dummydev
+	option type dummy
+	# REMOVE THIS LINE TO ENABLE WIFI:
+	option disabled 1
+
+config wifi-iface
+	option device dummydev
+	option mode ap
+	option ssid OpenWrt
+EOF
+}
+\end{Verbatim}
