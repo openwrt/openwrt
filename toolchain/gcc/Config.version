@@ -8,7 +8,7 @@ config GCC_VERSION
 
 if !TOOLCHAINOPTS
 	config GCC_VERSION_3_4_6
-		default y if LINUX_2_4
+		default y if LINUX_2_4||LINUX_2_6_RDC
 
 	config GCC_VERSION_4_2_0
 		default y if LINUX_2_6_MAGICBOX
