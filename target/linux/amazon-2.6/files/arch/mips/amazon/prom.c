@@ -1,6 +1,21 @@
 /*
- * copyright 2007 john crispin <blogic@openwrt.org> 
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program; if not, write to the Free Software
+ *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+ *
+ *   Copyright 2007 John Crispin <blogic@openwrt.org> 
  */
+
 #include <linux/init.h>
 #include <linux/string.h>
 #include <linux/ctype.h>
@@ -17,11 +32,11 @@
 void prom_putchar(char c)
 {
 	/* Wait for FIFO to empty */
-	while (((*AMAZON_ASC_FSTAT) >> 8) != 0x00) ;
+	while ((amazon_readl(AMAZON_ASC_FSTAT) >> 8) != 0x00) ;
 	/* Crude cr/nl handling is better than none */
 	if(c == '\n')
-		*AMAZON_ASC_TBUF=('\r');
-	*AMAZON_ASC_TBUF=(c);
+		amazon_writel('\r', AMAZON_ASC_TBUF);
+	amazon_writel(c, AMAZON_ASC_TBUF);
 }
 
 void prom_printf(const char * fmt, ...)
@@ -32,7 +47,8 @@ void prom_printf(const char * fmt, ...)
 	char buf[1024];	
 
 	va_start(args, fmt);
-	l = vsprintf(buf, fmt, args); /* hopefully i < sizeof(buf) */
+	/* FIXME - hopefully i < sizeof(buf) */
+	l = vsprintf(buf, fmt, args); 
 	va_end(args);
 	buf_end = buf + l;
 	

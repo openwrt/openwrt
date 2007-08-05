@@ -1,11 +1,5 @@
 /*
- *  linux/drivers/char/amazon_asc.c
- *
  *  Driver for AMAZONASC serial ports
- *
- *  Copyright (C) 2004 Infineon IFAP DC COM CPE
- *  Copyright (C) 2007 Felix Fietkau <nbd@openwrt.org>
- *  Copyright (C) 2007 John Crispin <blogic@openwrt.org>
  *
  *  Based on drivers/char/serial.c, by Linus Torvalds, Theodore Ts'o.
  *  Based on drivers/serial/serial_s3c2400.c
@@ -24,9 +18,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- *  $Id: amazon_asc.c,v 1.2 2005/04/01 02:40:48 pliu Exp $
- *
- * This is a generic driver for AMAZONASC-type serial ports.
+ * Copyright (C) 2004 Infineon IFAP DC COM CPE
+ * Copyright (C) 2007 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2007 John Crispin <blogic@openwrt.org>
  */
 
 #include <linux/module.h>
@@ -61,46 +55,23 @@
 
 #define PORT_AMAZONASC  111
 
-#if defined(CONFIG_SERIAL_AMAZONASC_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ)
-#define SUPPORT_SYSRQ
-#endif
-
 #include <linux/serial_core.h>
 
 #define UART_NR		1
+
+#define UART_DUMMY_UER_RX 1
 
 #define SERIAL_AMAZONASC_MAJOR	TTY_MAJOR
 #define CALLOUT_AMAZONASC_MAJOR	TTYAUX_MAJOR
 #define SERIAL_AMAZONASC_MINOR	64
 #define SERIAL_AMAZONASC_NR	UART_NR
 
+static void amazonasc_tx_chars(struct uart_port *port);
 extern void prom_printf(const char * fmt, ...);
 static struct uart_port amazonasc_ports[UART_NR];
 static struct uart_driver amazonasc_reg;
-#ifdef CONFIG_SERIAL_AMAZONASC_CONSOLE /*SUPPORT_SYSRQ*/
-static struct console amazonasc_console;
-#endif
 static unsigned int uartclk = 0;
-
-#define SET_BIT(reg, mask)    *reg |= (mask)
-#define CLEAR_BIT(reg, mask)  *reg &= (~mask) 
-#define CLEAR_BITS(reg, mask) CLEAR_BIT(reg, mask)
-#define SET_BITS(reg, mask)   SET_BIT(reg, mask)
-#define SET_BITFIELD(reg, mask, off, val) \
-				{*reg &= (~mask); *reg |= (val << off);}
-
-static void amazonasc_tx_chars(struct uart_port *port);
-
-/* fake flag to indicate CREAD was not set -> throw away all bytes */
-#define UART_DUMMY_UER_RX 1
-
-/* macro to set the bit corresponding to an interrupt number */
-#define BIT_NO(irq) (1 << (irq - 64))
-
-#define  SERIAL_DEBUG
-
 extern unsigned int amazon_get_fpi_hz(void);
-static int tx_enabled = 0;
 
 static void amazonasc_stop_tx(struct uart_port *port)
 {
@@ -122,7 +93,7 @@ static void amazonasc_start_tx(struct uart_port *port)
 static void amazonasc_stop_rx(struct uart_port *port)
 {
 	/* clear the RX enable bit */
-	*AMAZON_ASC_WHBCON = ASCWHBCON_CLRREN;
+	amazon_writel(ASCWHBCON_CLRREN, AMAZON_ASC_WHBCON);
 }
 
 static void amazonasc_enable_ms(struct uart_port *port)
@@ -136,14 +107,13 @@ amazonasc_rx_chars(struct uart_port *port)
 {
 	struct tty_struct *tty = port->info->tty;
 	unsigned int ch = 0, rsr = 0, fifocnt;
-	unsigned long flags;
 
-	fifocnt = *AMAZON_ASC_FSTAT & ASCFSTAT_RXFFLMASK;
+	fifocnt = amazon_readl(AMAZON_ASC_FSTAT) & ASCFSTAT_RXFFLMASK;
 	while (fifocnt--)
 	{
 		u8 flag = TTY_NORMAL;
-		ch = *AMAZON_ASC_RBUF;
-		rsr = (*AMAZON_ASC_CON & ASCCON_ANY) | UART_DUMMY_UER_RX;
+		ch = amazon_readl(AMAZON_ASC_RBUF);
+		rsr = (amazon_readl(AMAZON_ASC_CON) & ASCCON_ANY) | UART_DUMMY_UER_RX;
 		tty_flip_buffer_push(tty);
 		port->icount.rx++;
 
@@ -154,14 +124,14 @@ amazonasc_rx_chars(struct uart_port *port)
 		if (rsr & ASCCON_ANY) {
 			if (rsr & ASCCON_PE) {
 				port->icount.parity++;
-				SET_BIT(AMAZON_ASC_WHBCON, ASCWHBCON_CLRPE);
+				amazon_writel_masked(AMAZON_ASC_WHBCON, ASCWHBCON_CLRPE, ASCWHBCON_CLRPE);
 			} else if (rsr & ASCCON_FE) {
 				port->icount.frame++;
-				SET_BIT(AMAZON_ASC_WHBCON, ASCWHBCON_CLRFE);
+				amazon_writel_masked(AMAZON_ASC_WHBCON, ASCWHBCON_CLRFE, ASCWHBCON_CLRFE);
 			}
 			if (rsr & ASCCON_OE) {
 				port->icount.overrun++;
-				SET_BIT(AMAZON_ASC_WHBCON, ASCWHBCON_CLROE);
+				amazon_writel_masked(AMAZON_ASC_WHBCON, ASCWHBCON_CLROE, ASCWHBCON_CLROE);
 			}
 
 			rsr &= port->read_status_mask;
@@ -199,11 +169,11 @@ static void amazonasc_tx_chars(struct uart_port *port)
 		return;
 	}
 	
-	while (((*AMAZON_ASC_FSTAT & ASCFSTAT_TXFFLMASK)
+	while (((amazon_readl(AMAZON_ASC_FSTAT) & ASCFSTAT_TXFFLMASK)
 			>> ASCFSTAT_TXFFLOFF) != AMAZONASC_TXFIFO_FULL)
 	{
 		if (port->x_char) {
-			*AMAZON_ASC_TBUF = port->x_char;
+			amazon_writel(port->x_char, AMAZON_ASC_TBUF);
 			port->icount.tx++;
 			port->x_char = 0;
 			continue;
@@ -212,7 +182,7 @@ static void amazonasc_tx_chars(struct uart_port *port)
 		if (uart_circ_empty(xmit))
 			break;
 
-		*AMAZON_ASC_TBUF = xmit->buf[xmit->tail];
+		amazon_writel(xmit->buf[xmit->tail], AMAZON_ASC_TBUF);
 		xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
 		port->icount.tx++;
 	}
@@ -223,13 +193,13 @@ static void amazonasc_tx_chars(struct uart_port *port)
 
 static irqreturn_t amazonasc_tx_int(int irq, void *port)
 {
-	*(AMAZON_ASC_IRNCR1) = ASC_IRNCR_TIR;
+	amazon_writel(ASC_IRNCR_TIR, AMAZON_ASC_IRNCR1);
 	amazonasc_start_tx(port);
 
 	/* clear any pending interrupts */
-	SET_BIT(AMAZON_ASC_WHBCON, ASCWHBCON_CLRPE);
-	SET_BIT(AMAZON_ASC_WHBCON, ASCWHBCON_CLRFE);
-	SET_BIT(AMAZON_ASC_WHBCON, ASCWHBCON_CLROE);
+	amazon_writel_masked(AMAZON_ASC_WHBCON, 
+			(ASCWHBCON_CLRPE | ASCWHBCON_CLRFE | ASCWHBCON_CLROE), 
+			(ASCWHBCON_CLRPE | ASCWHBCON_CLRFE | ASCWHBCON_CLROE));
 
 	return IRQ_HANDLED;
 }
@@ -237,15 +207,16 @@ static irqreturn_t amazonasc_tx_int(int irq, void *port)
 static irqreturn_t amazonasc_er_int(int irq, void *port)
 {
 	/* clear any pending interrupts */
-	SET_BIT(AMAZON_ASC_WHBCON, ASCWHBCON_CLRPE);
-	SET_BIT(AMAZON_ASC_WHBCON, ASCWHBCON_CLRFE);
-	SET_BIT(AMAZON_ASC_WHBCON, ASCWHBCON_CLROE);
+	amazon_writel_masked(AMAZON_ASC_WHBCON, 
+			(ASCWHBCON_CLRPE | ASCWHBCON_CLRFE | ASCWHBCON_CLROE), 
+			(ASCWHBCON_CLRPE | ASCWHBCON_CLRFE | ASCWHBCON_CLROE));
+	
 	return IRQ_HANDLED;
 }
 
 static irqreturn_t amazonasc_rx_int(int irq, void *port)
 {
-	*(AMAZON_ASC_IRNCR1) = ASC_IRNCR_RIR;
+	amazon_writel(ASC_IRNCR_RIR, AMAZON_ASC_IRNCR1);
 	amazonasc_rx_chars((struct uart_port *) port);
 	return IRQ_HANDLED;
 }
@@ -260,7 +231,7 @@ static u_int amazonasc_tx_empty(struct uart_port *port)
 	 * 16 bytes to be transmitted before reporting that the
 	 * transmitter is empty.
 	 */
-	status = *AMAZON_ASC_FSTAT & ASCFSTAT_TXFFLMASK;
+	status = amazon_readl(AMAZON_ASC_FSTAT) & ASCFSTAT_TXFFLMASK;
 	return status ? 0 : TIOCSER_TEMT;
 }
 
@@ -294,7 +265,6 @@ static int amazonasc_startup(struct uart_port *port)
 
 	amazonasc_ports[0].uartclk = uartclk;
 
-	/* block the IRQs */
 	local_irq_save(flags);
 
 	/* this setup was probably already done in u-boot */
@@ -302,61 +272,45 @@ static int amazonasc_startup(struct uart_port *port)
 	 * P1.3 (RX) in, Alternate 10
 	 * P1.4 (TX) in, Alternate 10
 	 */
-	 SET_BITFIELD((AMAZON_GPIO_P1_DIR), 0x8, 4, 1); 	//P1.4 output, P1.3 input
-	 SET_BIT((AMAZON_GPIO_P1_ALTSEL0), 0x18); 		//ALTSETL0 11
-	 CLEAR_BIT((AMAZON_GPIO_P1_ALTSEL1), 0x18);	 	//ALTSETL1 00
-	 SET_BITFIELD((AMAZON_GPIO_P1_OD), 0x8, 4, 1);
+	 amazon_writel_masked(AMAZON_GPIO_P1_DIR, 0x18, 0x10); 	//P1.4 output, P1.3 input
+	 amazon_writel_masked(AMAZON_GPIO_P1_ALTSEL0, 0x18, 0x18); 		//ALTSETL0 11
+	 amazon_writel_masked(AMAZON_GPIO_P1_ALTSEL1, 0x18, 0);	 	//ALTSETL1 00
+	 amazon_writel_masked(AMAZON_GPIO_P1_OD, 0x18, 0x10);
 	
 	/* set up the CLC */
-	CLEAR_BIT(AMAZON_ASC_CLC, AMAZON_ASC_CLC_DISS);
-	SET_BITFIELD(AMAZON_ASC_CLC, ASCCLC_RMCMASK, ASCCLC_RMCOFFSET, 1);
+	amazon_writel_masked(AMAZON_ASC_CLC, AMAZON_ASC_CLC_DISS, 0);
+	amazon_writel_masked(AMAZON_ASC_CLC, ASCCLC_RMCMASK, 1 << ASCCLC_RMCOFFSET);
+	
 	/* asynchronous mode */
-	con = ASCCON_M_8ASYNC;
-	/* set error signals  - framing and overrun */
-	con |= ASCCON_FEN;
-	con |= ASCCON_OEN;
-	con |= ASCCON_PEN;
+	con = ASCCON_M_8ASYNC | ASCCON_FEN | ASCCON_OEN | ASCCON_PEN;
+	
 	/* choose the line - there's only one */
-	*AMAZON_ASC_PISEL = 0;
-#if 1
-	*AMAZON_ASC_TXFCON = (((AMAZONASC_TXFIFO_FL<<ASCTXFCON_TXFITLOFF)&ASCTXFCON_TXFITLMASK) | ASCTXFCON_TXFEN |ASCTXFCON_TXFFLU);
-	*AMAZON_ASC_RXFCON = (((AMAZONASC_RXFIFO_FL<<ASCRXFCON_RXFITLOFF)&ASCRXFCON_RXFITLMASK) | ASCRXFCON_RXFEN |ASCRXFCON_RXFFLU);
+	amazon_writel(0, AMAZON_ASC_PISEL);
+	amazon_writel(((AMAZONASC_TXFIFO_FL << ASCTXFCON_TXFITLOFF) & ASCTXFCON_TXFITLMASK) | ASCTXFCON_TXFEN | ASCTXFCON_TXFFLU, 
+		AMAZON_ASC_TXFCON);
+	amazon_writel(((AMAZONASC_RXFIFO_FL << ASCRXFCON_RXFITLOFF) & ASCRXFCON_RXFITLMASK) | ASCRXFCON_RXFEN | ASCRXFCON_RXFFLU, 
+		AMAZON_ASC_RXFCON);
 	wmb();
-#else
-	/* TXFIFO's fill level */
-	SET_BITFIELD(AMAZON_ASC_TXFCON, ASCTXFCON_TXFITLMASK,
-		ASCTXFCON_TXFITLOFF, AMAZONASC_TXFIFO_FL);
-	/* enable TXFIFO */
-	SET_BIT(AMAZON_ASC_TXFCON, ASCTXFCON_TXFEN);
-	/* RXFIFO's fill level */
-	SET_BITFIELD(AMAZON_ASC_RXFCON, ASCRXFCON_RXFITLMASK,
-		ASCRXFCON_RXFITLOFF, AMAZONASC_RXFIFO_FL);
-	/* enable RXFIFO */
-	SET_BIT(AMAZON_ASC_RXFCON, ASCRXFCON_RXFEN);
-	/* now really set CON */
-#endif
-	SET_BIT(AMAZON_ASC_CON,con);
+	
+	amazon_writel_masked(AMAZON_ASC_CON, con, con);
 
-	/*
-	 * Allocate the IRQs
-	 */
 	retval = request_irq(AMAZONASC_RIR, amazonasc_rx_int, 0, "asc_rx", port);
 	if (retval){
-		printk("-------req1 failed\n");
+		printk("failed to request amazonasc_rx_int\n");
 		return retval;
 	}
 	retval = request_irq(AMAZONASC_TIR, amazonasc_tx_int, 0, "asc_tx", port);
 	if (retval){
-		printk("----------req2 failed\n");
+		printk("failed to request amazonasc_tx_int\n");
 		goto err1;
 	}
 
 	retval = request_irq(AMAZONASC_EIR, amazonasc_er_int, 0, "asc_er", port);
 	if (retval){
-		printk("---------req3 failed\n");
+		printk("failed to request amazonasc_er_int\n");
 		goto err2;
 	}
-	/* unblock the IRQs */
+	
 	local_irq_restore(flags);
 	return 0;
 
@@ -371,22 +325,19 @@ err1:
 
 static void amazonasc_shutdown(struct uart_port *port)
 {
-	/*
-	 * Free the interrupts
-	 */
 	free_irq(AMAZONASC_RIR, port);
 	free_irq(AMAZONASC_TIR, port);
 	free_irq(AMAZONASC_EIR, port);
 	/*
 	 * disable the baudrate generator to disable the ASC
 	 */
-	*AMAZON_ASC_CON = 0;
+	amazon_writel(0, AMAZON_ASC_CON);
 
 	/* flush and then disable the fifos */
-	SET_BIT(AMAZON_ASC_RXFCON, ASCRXFCON_RXFFLU);
-	CLEAR_BIT(AMAZON_ASC_RXFCON, ASCRXFCON_RXFEN);
-	SET_BIT(AMAZON_ASC_TXFCON, ASCTXFCON_TXFFLU);
-	CLEAR_BIT(AMAZON_ASC_TXFCON, ASCTXFCON_TXFEN);
+	amazon_writel_masked(AMAZON_ASC_RXFCON, ASCRXFCON_RXFFLU, ASCRXFCON_RXFFLU);
+	amazon_writel_masked(AMAZON_ASC_RXFCON, ASCRXFCON_RXFEN, 0);
+	amazon_writel_masked(AMAZON_ASC_TXFCON, ASCTXFCON_TXFFLU, ASCTXFCON_TXFFLU);
+	amazon_writel_masked(AMAZON_ASC_TXFCON, ASCTXFCON_TXFEN, 0);
 }
 
 static void amazonasc_set_termios(struct uart_port *port, struct ktermios *new, struct ktermios *old)
@@ -426,23 +377,12 @@ static void amazonasc_set_termios(struct uart_port *port, struct ktermios *new, 
 	port->read_status_mask = ASCCON_OE;
 	if (iflag & INPCK)
 		port->read_status_mask |= ASCCON_FE | ASCCON_PE;
-	/* the ASC can't really detect or generate a BREAK */
-#if 0
-	if (iflag & (BRKINT | PARMRK))
-		port->read_status_mask |= UERSTAT_BREAK;
-#endif
-	/*
-	 * Characters to ignore
-	 */
+	
 	port->ignore_status_mask = 0;
 	if (iflag & IGNPAR)
 		port->ignore_status_mask |= ASCCON_FE | ASCCON_PE;
-#if 0
-	/* always ignore breaks - the ASC can't handle them XXXX */
-	port->ignore_status_mask |= UERSTAT_BREAK;
-#endif
+	
 	if (iflag & IGNBRK) {
-		/*port->ignore_status_mask |= UERSTAT_BREAK;*/
 		/*
 		 * If we're ignoring parity and break indicators,
 		 * ignore overruns too (for real raw support).
@@ -468,7 +408,7 @@ static void amazonasc_set_termios(struct uart_port *port, struct ktermios *new, 
 	local_irq_save(flags);
 
 	/* set up CON */
-	*AMAZON_ASC_CON = con;
+	amazon_writel(con, AMAZON_ASC_CON);
 
 	/* Set baud rate - take a divider of 2 into account */
     baud = uart_get_baud_rate(port, new, old, 0, port->uartclk/16);
@@ -477,17 +417,16 @@ static void amazonasc_set_termios(struct uart_port *port, struct ktermios *new, 
 
 	/* the next 3 probably already happened when we set CON above */
 	/* disable the baudrate generator */
-	CLEAR_BIT(AMAZON_ASC_CON, ASCCON_R);
+	amazon_writel_masked(AMAZON_ASC_CON, ASCCON_R, 0);
 	/* make sure the fractional divider is off */
-	CLEAR_BIT(AMAZON_ASC_CON, ASCCON_FDE);
+	amazon_writel_masked(AMAZON_ASC_CON, ASCCON_FDE, 0);
 	/* set up to use divisor of 2 */
-	CLEAR_BIT(AMAZON_ASC_CON, ASCCON_BRS);
+	amazon_writel_masked(AMAZON_ASC_CON, ASCCON_BRS, 0);
 	/* now we can write the new baudrate into the register */
-	*AMAZON_ASC_BTR = quot;
+	amazon_writel(quot, AMAZON_ASC_BTR);
 	/* turn the baudrate generator back on */
-	SET_BIT(AMAZON_ASC_CON, ASCCON_R);
+	amazon_writel_masked(AMAZON_ASC_CON, ASCCON_R, ASCCON_R);
 
-	/* unblock the IRQs */
 	local_irq_restore(flags);
 }
 
@@ -539,18 +478,18 @@ static int amazonasc_verify_port(struct uart_port *port, struct serial_struct *s
 }
 
 static struct uart_ops amazonasc_pops = {
-	.tx_empty =	amazonasc_tx_empty,
+	.tx_empty =		amazonasc_tx_empty,
 	.set_mctrl =	amazonasc_set_mctrl,
 	.get_mctrl =	amazonasc_get_mctrl,
-	.stop_tx =	amazonasc_stop_tx,
-	.start_tx =	amazonasc_start_tx,
-	.stop_rx =	amazonasc_stop_rx,
+	.stop_tx =		amazonasc_stop_tx,
+	.start_tx =		amazonasc_start_tx,
+	.stop_rx =		amazonasc_stop_rx,
 	.enable_ms =	amazonasc_enable_ms,
 	.break_ctl =	amazonasc_break_ctl,
-	.startup =	amazonasc_startup,
-	.shutdown =	amazonasc_shutdown,
+	.startup =		amazonasc_startup,
+	.shutdown =		amazonasc_shutdown,
 	.set_termios =	amazonasc_set_termios,
-	.type =		amazonasc_type,
+	.type =			amazonasc_type,
 	.release_port =	amazonasc_release_port,
 	.request_port =	amazonasc_request_port,
 	.config_port =	amazonasc_config_port,
@@ -572,45 +511,36 @@ static struct uart_port amazonasc_ports[UART_NR] = {
 	},
 };
 
-
-
 static void amazonasc_console_write(struct console *co, const char *s, u_int count)
 {
 	int i, fifocnt;
 	unsigned long flags;
-	/* block the IRQ */
 	local_irq_save(flags);
-	/*
-	 *	Now, do each character
-	 */
 	for (i = 0; i < count;)
 	{
 		/* wait until the FIFO is not full */
 		do
 		{
-			fifocnt = (*AMAZON_ASC_FSTAT & ASCFSTAT_TXFFLMASK)
+			fifocnt = (amazon_readl(AMAZON_ASC_FSTAT) & ASCFSTAT_TXFFLMASK)
 					>> ASCFSTAT_TXFFLOFF;
 		} while (fifocnt == AMAZONASC_TXFIFO_FULL);
-#if 1
 		if (s[i] == '\0')
 		{
 			break;
 		}
-#endif
 		if (s[i] == '\n')
 		{
-			*AMAZON_ASC_TBUF = '\r';
+			amazon_writel('\r', AMAZON_ASC_TBUF);
 			do
 			{
-				fifocnt = (*AMAZON_ASC_FSTAT &
+				fifocnt = (amazon_readl(AMAZON_ASC_FSTAT) &
 				ASCFSTAT_TXFFLMASK) >> ASCFSTAT_TXFFLOFF;
 			} while (fifocnt == AMAZONASC_TXFIFO_FULL);
 		}
-		*AMAZON_ASC_TBUF = s[i];
+		amazon_writel(s[i], AMAZON_ASC_TBUF);
 		i++;
-	} /* for */
+	} 
 
-	/* restore the IRQ */
 	local_irq_restore(flags);
 }
 
@@ -619,7 +549,7 @@ amazonasc_console_get_options(struct uart_port *port, int *baud, int *parity, in
 {
 	u_int lcr_h;
 
-	lcr_h = *AMAZON_ASC_CON;
+	lcr_h = amazon_readl(AMAZON_ASC_CON);
 	/* do this only if the ASC is turned on */
 	if (lcr_h & ASCCON_R) {
 		u_int quot, div, fdiv, frac;
@@ -638,13 +568,13 @@ amazonasc_console_get_options(struct uart_port *port, int *baud, int *parity, in
 		else
 			*bits = 8;
 
-		quot = *AMAZON_ASC_BTR + 1;
+		quot = amazon_readl(AMAZON_ASC_BTR) + 1;
 		
 		/* this gets hairy if the fractional divider is used */
 		if (lcr_h & ASCCON_FDE)
 		{
 			div = 1;
-			fdiv = *AMAZON_ASC_FDV;
+			fdiv = amazon_readl(AMAZON_ASC_FDV);
 			if (fdiv == 0)
 				fdiv = 512;
 			frac = 512;
