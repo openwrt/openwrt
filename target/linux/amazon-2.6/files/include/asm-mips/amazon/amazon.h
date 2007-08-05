@@ -25,8 +25,9 @@
    other party has been advised of the possibility of such damages. 
 ******************************************************************************/
 
-#define amazon_readl(a)			readl(((u32*)(a)))
-#define amazon_writel(a,b)		writel(a, ((u32*)(b)))
+#define amazon_readl(a)					readl(((u32*)(a)))
+#define amazon_writel(a,b)				writel(a, ((u32*)(b)))
+#define amazon_writel_masked(a,b,c)		writel((readl(((u32*)(a))) & ~b) | (c & b), ((u32*)(a)))
 
 /* check ADSL link status */
 #define AMAZON_CHECK_LINK
@@ -625,124 +626,124 @@ If set and clear bit are written concurrently with 1, the associated bit is not 
 
       
 /***ASC Port Input Select Register***/ 
-#define AMAZON_ASC_PISEL                    ((volatile u32*)(AMAZON_ASC+ 0x0004))
-#define AMAZON_ASC_PISEL_RIS                              (1 << 0)
+#define AMAZON_ASC_PISEL					(AMAZON_ASC+ 0x0004)
+#define AMAZON_ASC_PISEL_RIS				(1 << 0)
       
 /***ASC Control Register***/ 
-#define AMAZON_ASC_CON                      ((volatile u32*)(AMAZON_ASC+ 0x0010))
-#define AMAZON_ASC_CON_R                              (1 << 15)
-#define AMAZON_ASC_CON_LB                              (1 << 14)
-#define AMAZON_ASC_CON_BRS                              (1 << 13)
-#define AMAZON_ASC_CON_ODD                              (1 << 12)
-#define AMAZON_ASC_CON_FDE                              (1 << 11)
-#define AMAZON_ASC_CON_OE                              (1 << 10)
-#define AMAZON_ASC_CON_FE                              (1 << 9)
-#define AMAZON_ASC_CON_PE                              (1 << 8)
-#define AMAZON_ASC_CON_OEN                              (1 << 7)
-#define AMAZON_ASC_CON_FEN                              (1 << 6)
-#define AMAZON_ASC_CON_PENRXDI                  (1 << 5)
-#define AMAZON_ASC_CON_REN                              (1 << 4)
-#define AMAZON_ASC_CON_STP                              (1 << 3)
-#define AMAZON_ASC_CON_M(value)                (((( 1 << 3) - 1) & (value)) << 0)
+#define AMAZON_ASC_CON						(AMAZON_ASC+ 0x0010)
+#define AMAZON_ASC_CON_R					(1 << 15)
+#define AMAZON_ASC_CON_LB					(1 << 14)
+#define AMAZON_ASC_CON_BRS					(1 << 13)
+#define AMAZON_ASC_CON_ODD					(1 << 12)
+#define AMAZON_ASC_CON_FDE					(1 << 11)
+#define AMAZON_ASC_CON_OE					(1 << 10)
+#define AMAZON_ASC_CON_FE					(1 << 9)
+#define AMAZON_ASC_CON_PE					(1 << 8)
+#define AMAZON_ASC_CON_OEN					(1 << 7)
+#define AMAZON_ASC_CON_FEN					(1 << 6)
+#define AMAZON_ASC_CON_PENRXDI				(1 << 5)
+#define AMAZON_ASC_CON_REN					(1 << 4)
+#define AMAZON_ASC_CON_STP					(1 << 3)
+#define AMAZON_ASC_CON_M(value)				(((( 1 << 3) - 1) & (value)) << 0)
  
 /***ASC Write Hardware Modified Control Register***/ 
-#define AMAZON_ASC_WHBCON                   ((volatile u32*)(AMAZON_ASC+ 0x0050))
-#define AMAZON_ASC_WHBCON_SETOE                          (1 << 13)
-#define AMAZON_ASC_WHBCON_SETFE                          (1 << 12)
-#define AMAZON_ASC_WHBCON_SETPE                          (1 << 11)
-#define AMAZON_ASC_WHBCON_CLROE                          (1 << 10)
-#define AMAZON_ASC_WHBCON_CLRFE                          (1 << 9)
-#define AMAZON_ASC_WHBCON_CLRPE                          (1 << 8)
-#define AMAZON_ASC_WHBCON_SETREN                        (1 << 5)
-#define AMAZON_ASC_WHBCON_CLRREN                        (1 << 4)
+#define AMAZON_ASC_WHBCON					(AMAZON_ASC+ 0x0050)
+#define AMAZON_ASC_WHBCON_SETOE				(1 << 13)
+#define AMAZON_ASC_WHBCON_SETFE				(1 << 12)
+#define AMAZON_ASC_WHBCON_SETPE				(1 << 11)
+#define AMAZON_ASC_WHBCON_CLROE				(1 << 10)
+#define AMAZON_ASC_WHBCON_CLRFE				(1 << 9)
+#define AMAZON_ASC_WHBCON_CLRPE				(1 << 8)
+#define AMAZON_ASC_WHBCON_SETREN			(1 << 5)
+#define AMAZON_ASC_WHBCON_CLRREN			(1 << 4)
       
 /***ASC Baudrate Timer/Reload Register***/ 
-#define AMAZON_ASC_BTR                      ((volatile u32*)(AMAZON_ASC+ 0x0014))
-#define AMAZON_ASC_BTR_BR_VALUE(value)          (((( 1 << 13) - 1) & (value)) << 0)
+#define AMAZON_ASC_BTR						(AMAZON_ASC+ 0x0014)
+#define AMAZON_ASC_BTR_BR_VALUE(value)		(((( 1 << 13) - 1) & (value)) << 0)
       
 /***ASC Fractional Divider Register***/ 
-#define AMAZON_ASC_FDV                      ((volatile u32*)(AMAZON_ASC+ 0x0018))
-#define AMAZON_ASC_FDV_FD_VALUE(value)          (((( 1 << 9) - 1) & (value)) << 0)
+#define AMAZON_ASC_FDV						(AMAZON_ASC+ 0x0018)
+#define AMAZON_ASC_FDV_FD_VALUE(value)		(((( 1 << 9) - 1) & (value)) << 0)
       
 /***ASC IrDA Pulse Mode/Width Register***/ 
-#define AMAZON_ASC_PMW                      ((volatile u32*)(AMAZON_ASC+ 0x001C))
-#define AMAZON_ASC_PMW_IRPW                            (1 << 8)
-#define AMAZON_ASC_PMW_PW_VALUE(value)          (((( 1 << 8) - 1) & (value)) << 0)
+#define AMAZON_ASC_PMW						(AMAZON_ASC+ 0x001C)
+#define AMAZON_ASC_PMW_IRPW					(1 << 8)
+#define AMAZON_ASC_PMW_PW_VALUE(value)		(((( 1 << 8) - 1) & (value)) << 0)
       
 /***ASC Transmit Buffer Register***/ 
-#define AMAZON_ASC_TBUF                    ((volatile u32*)(AMAZON_ASC+ 0x0020))
-#define AMAZON_ASC_TBUF_TD_VALUE(value)          (((( 1 << 9) - 1) & (value)) << 0)
+#define AMAZON_ASC_TBUF						(AMAZON_ASC+ 0x0020)
+#define AMAZON_ASC_TBUF_TD_VALUE(value)		(((( 1 << 9) - 1) & (value)) << 0)
       
 /***ASC Receive Buffer Register***/ 
-#define AMAZON_ASC_RBUF                    ((volatile u32*)(AMAZON_ASC+ 0x0024))
-#define AMAZON_ASC_RBUF_RD_VALUE(value)          (((( 1 << 9) - 1) & (value)) << 0)
+#define AMAZON_ASC_RBUF						(AMAZON_ASC+ 0x0024)
+#define AMAZON_ASC_RBUF_RD_VALUE(value)		(((( 1 << 9) - 1) & (value)) << 0)
       
 /***ASC Autobaud Control Register***/ 
-#define AMAZON_ASC_ABCON                    ((volatile u32*)(AMAZON_ASC+ 0x0030))
-#define AMAZON_ASC_ABCON_RXINV                          (1 << 11)
-#define AMAZON_ASC_ABCON_TXINV                          (1 << 10)
-#define AMAZON_ASC_ABCON_ABEM(value)               (((( 1 << 2) - 1) & (value)) << 8)
-#define AMAZON_ASC_ABCON_FCDETEN                      (1 << 4)
-#define AMAZON_ASC_ABCON_ABDETEN                      (1 << 3)
-#define AMAZON_ASC_ABCON_ABSTEN                        (1 << 2)
-#define AMAZON_ASC_ABCON_AUREN                          (1 << 1)
-#define AMAZON_ASC_ABCON_ABEN                            (1 << 0)
+#define AMAZON_ASC_ABCON					(AMAZON_ASC+ 0x0030)
+#define AMAZON_ASC_ABCON_RXINV				(1 << 11)
+#define AMAZON_ASC_ABCON_TXINV				(1 << 10)
+#define AMAZON_ASC_ABCON_ABEM(value)		(((( 1 << 2) - 1) & (value)) << 8)
+#define AMAZON_ASC_ABCON_FCDETEN			(1 << 4)
+#define AMAZON_ASC_ABCON_ABDETEN			(1 << 3)
+#define AMAZON_ASC_ABCON_ABSTEN				(1 << 2)
+#define AMAZON_ASC_ABCON_AUREN				(1 << 1)
+#define AMAZON_ASC_ABCON_ABEN				(1 << 0)
       
 /***Receive FIFO Control Register***/ 
-#define AMAZON_ASC_RXFCON                       ((volatile u32*)(AMAZON_ASC+ 0x0040))
-#define AMAZON_ASC_RXFCON_RXFITL(value)             (((( 1 << 6) - 1) & (value)) << 8)
-#define AMAZON_ASC_RXFCON_RXTMEN                        (1 << 2)
-#define AMAZON_ASC_RXFCON_RXFFLU                        (1 << 1)
-#define AMAZON_ASC_RXFCON_RXFEN                          (1 << 0)
+#define AMAZON_ASC_RXFCON					(AMAZON_ASC+ 0x0040)
+#define AMAZON_ASC_RXFCON_RXFITL(value)		(((( 1 << 6) - 1) & (value)) << 8)
+#define AMAZON_ASC_RXFCON_RXTMEN			(1 << 2)
+#define AMAZON_ASC_RXFCON_RXFFLU			(1 << 1)
+#define AMAZON_ASC_RXFCON_RXFEN				(1 << 0)
       
 /***Transmit FIFO Control Register***/ 
-#define AMAZON_ASC_TXFCON                       ((volatile u32*)(AMAZON_ASC+ 0x0044))
-#define AMAZON_ASC_TXFCON_TXFITL(value)             (((( 1 << 6) - 1) & (value)) << 8)
-#define AMAZON_ASC_TXFCON_TXTMEN                        (1 << 2)
-#define AMAZON_ASC_TXFCON_TXFFLU                        (1 << 1)
-#define AMAZON_ASC_TXFCON_TXFEN                          (1 << 0)
+#define AMAZON_ASC_TXFCON					(AMAZON_ASC+ 0x0044)
+#define AMAZON_ASC_TXFCON_TXFITL(value)		(((( 1 << 6) - 1) & (value)) << 8)
+#define AMAZON_ASC_TXFCON_TXTMEN			(1 << 2)
+#define AMAZON_ASC_TXFCON_TXFFLU			(1 << 1)
+#define AMAZON_ASC_TXFCON_TXFEN				(1 << 0)
       
 /***FIFO Status Register***/ 
-#define AMAZON_ASC_FSTAT                        ((volatile u32*)(AMAZON_ASC+ 0x0048))
-#define AMAZON_ASC_FSTAT_TXFFL(value)              (((( 1 << 6) - 1) & (value)) << 8)
-#define AMAZON_ASC_FSTAT_RXFFL(value)              (((( 1 << 6) - 1) & (value)) << 0)
+#define AMAZON_ASC_FSTAT					(AMAZON_ASC+ 0x0048)
+#define AMAZON_ASC_FSTAT_TXFFL(value)		(((( 1 << 6) - 1) & (value)) << 8)
+#define AMAZON_ASC_FSTAT_RXFFL(value)		(((( 1 << 6) - 1) & (value)) << 0)
       
 /***ASC Write HW Modified Autobaud Control Register***/ 
-#define AMAZON_ASC_WHBABCON                 ((volatile u32*)(AMAZON_ASC+ 0x0054))
-#define AMAZON_ASC_WHBABCON_SETABEN                      (1 << 1)
-#define AMAZON_ASC_WHBABCON_CLRABEN                      (1 << 0)
+#define AMAZON_ASC_WHBABCON					(AMAZON_ASC+ 0x0054)
+#define AMAZON_ASC_WHBABCON_SETABEN			(1 << 1)
+#define AMAZON_ASC_WHBABCON_CLRABEN			(1 << 0)
       
 /***ASC Autobaud Status Register***/ 
-#define AMAZON_ASC_ABSTAT                   ((volatile u32*)(AMAZON_ASC+ 0x0034))
-#define AMAZON_ASC_ABSTAT_DETWAIT                      (1 << 4)
-#define AMAZON_ASC_ABSTAT_SCCDET                        (1 << 3)
-#define AMAZON_ASC_ABSTAT_SCSDET                        (1 << 2)
-#define AMAZON_ASC_ABSTAT_FCCDET                        (1 << 1)
-#define AMAZON_ASC_ABSTAT_FCSDET                        (1 << 0)
+#define AMAZON_ASC_ABSTAT					(AMAZON_ASC+ 0x0034)
+#define AMAZON_ASC_ABSTAT_DETWAIT			(1 << 4)
+#define AMAZON_ASC_ABSTAT_SCCDET			(1 << 3)
+#define AMAZON_ASC_ABSTAT_SCSDET			(1 << 2)
+#define AMAZON_ASC_ABSTAT_FCCDET			(1 << 1)
+#define AMAZON_ASC_ABSTAT_FCSDET			(1 << 0)
       
 /***ASC Write HW Modified Autobaud Status Register***/ 
-#define AMAZON_ASC_WHBABSTAT                 ((volatile u32*)(AMAZON_ASC+ 0x0058))
-#define AMAZON_ASC_WHBABSTAT_SETDETWAIT                (1 << 9)
-#define AMAZON_ASC_WHBABSTAT_CLRDETWAIT                (1 << 8)
-#define AMAZON_ASC_WHBABSTAT_SETSCCDET                  (1 << 7)
-#define AMAZON_ASC_WHBABSTAT_CLRSCCDET                  (1 << 6)
-#define AMAZON_ASC_WHBABSTAT_SETSCSDET                  (1 << 5)
-#define AMAZON_ASC_WHBABSTAT_CLRSCSDET                  (1 << 4)
-#define AMAZON_ASC_WHBABSTAT_SETFCCDET                  (1 << 3)
-#define AMAZON_ASC_WHBABSTAT_CLRFCCDET                  (1 << 2)
-#define AMAZON_ASC_WHBABSTAT_SETFCSDET                  (1 << 1)
-#define AMAZON_ASC_WHBABSTAT_CLRFCSDET                  (1 << 0)
+#define AMAZON_ASC_WHBABSTAT				(AMAZON_ASC+ 0x0058)
+#define AMAZON_ASC_WHBABSTAT_SETDETWAIT		(1 << 9)
+#define AMAZON_ASC_WHBABSTAT_CLRDETWAIT		(1 << 8)
+#define AMAZON_ASC_WHBABSTAT_SETSCCDET		(1 << 7)
+#define AMAZON_ASC_WHBABSTAT_CLRSCCDET		(1 << 6)
+#define AMAZON_ASC_WHBABSTAT_SETSCSDET		(1 << 5)
+#define AMAZON_ASC_WHBABSTAT_CLRSCSDET		(1 << 4)
+#define AMAZON_ASC_WHBABSTAT_SETFCCDET		(1 << 3)
+#define AMAZON_ASC_WHBABSTAT_CLRFCCDET		(1 << 2)
+#define AMAZON_ASC_WHBABSTAT_SETFCSDET		(1 << 1)
+#define AMAZON_ASC_WHBABSTAT_CLRFCSDET		(1 << 0)
       
 /***ASC Clock Control Register***/ 
-#define AMAZON_ASC_CLC                      ((volatile u32*)(AMAZON_ASC+ 0x0000))
-#define AMAZON_ASC_CLC_RMC(value)                (((( 1 << 8) - 1) & (value)) << 8)
-#define AMAZON_ASC_CLC_DISS                            (1 << 1)
-#define AMAZON_ASC_CLC_DISR                            (1 << 0)		
+#define AMAZON_ASC_CLC						(AMAZON_ASC+ 0x0000)
+#define AMAZON_ASC_CLC_RMC(value)			(((( 1 << 8) - 1) & (value)) << 8)
+#define AMAZON_ASC_CLC_DISS					(1 << 1)
+#define AMAZON_ASC_CLC_DISR					(1 << 0)		
 
 /***ASC IRNCR0 **/
-#define AMAZON_ASC_IRNCR0			((volatile u32*)(AMAZON_ASC+ 0x00FC))
+#define AMAZON_ASC_IRNCR0					(AMAZON_ASC+ 0x00FC)
 /***ASC IRNCR1 **/
-#define AMAZON_ASC_IRNCR1			((volatile u32*)(AMAZON_ASC+ 0x00F8))
+#define AMAZON_ASC_IRNCR1					(AMAZON_ASC+ 0x00F8)
 #define ASC_IRNCR_TIR	0x1
 #define ASC_IRNCR_RIR	0x2
 #define ASC_IRNCR_EIR	0x4
