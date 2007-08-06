@@ -325,7 +325,7 @@ find_board(char *model){
 
 	board = NULL;
 	for (tmp = boards; tmp->model != NULL; tmp++){
-		if (strcmp(model, tmp->model) == 0) {
+		if (strcasecmp(model, tmp->model) == 0) {
 			board = tmp;
 			break;
 		}
