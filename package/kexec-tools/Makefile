@@ -21,7 +21,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/kexec-tools
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@LINUX_2_6_X86 +zlib
+  DEPENDS:=@LINUX_2_6_X86||@LINUX_2_6_RDC +zlib
   TITLE:=Kernel boots kernel
   DESCRIPTION:=\
 	kexec is a set of systems call that allows you to load \\\
@@ -32,7 +32,7 @@ endef
 MAKE_FLAGS += \
 	DESTDIR="$(PKG_INSTALL_DIR)" \
 	EXTRA_CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS)" \
-	BUILD_CFLAGS="-O2" \
+	BUILD_CFLAGS="-Os" \
 	LIBS="$(TARGET_LDFLAGS) -lz" \
 	install
 
