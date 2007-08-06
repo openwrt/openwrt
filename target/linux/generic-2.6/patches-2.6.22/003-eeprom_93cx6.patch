@@ -1,0 +1,34 @@
+From: Francois Romieu <romieu@fr.zoreil.com>
+Date: Tue, 3 Jul 2007 22:31:44 +0000 (+0200)
+Subject: eeprom_93cx6: shorten pulse timing to match spec (bis)
+X-Git-Tag: v2.6.23-rc1~1151^2~11
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=8abd531e3f77188de2fc41e677d075cc66e61631
+
+eeprom_93cx6: shorten pulse timing to match spec (bis)
+
+Based on an original idea by John W. Linville.
+
+It is the missing part of 42d45ccd60636c28e35c2016f091783bc14ad99c
+
+Signed-off-by: Francois Romieu <romieu@fr.zoreil.com>
+Signed-off-by: Jeff Garzik <jeff@garzik.org>
+---
+
+diff --git a/drivers/misc/eeprom_93cx6.c b/drivers/misc/eeprom_93cx6.c
+index ac515b0..ea55654 100644
+--- a/drivers/misc/eeprom_93cx6.c
++++ b/drivers/misc/eeprom_93cx6.c
+@@ -55,10 +55,10 @@ static inline void eeprom_93cx6_pulse_low(struct eeprom_93cx6 *eeprom)
+ 
+ 	/*
+ 	 * Add a short delay for the pulse to work.
+-	 * According to the specifications the minimal time
+-	 * should be 450ns so a 1us delay is sufficient.
++	 * According to the specifications the "maximum minimum"
++	 * time should be 450ns.
+ 	 */
+-	udelay(1);
++	ndelay(450);
+ }
+ 
+ static void eeprom_93cx6_startup(struct eeprom_93cx6 *eeprom)

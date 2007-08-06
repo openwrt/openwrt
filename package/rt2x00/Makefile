@@ -9,7 +9,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=kmod-rt2x00
+PKG_NAME:=rt2x00
+#PKG_VERSION:=cvs-20070725
 PKG_VERSION:=git-200706018
 
 include $(INCLUDE_DIR)/package.mk
@@ -84,6 +85,11 @@ define KernelPackage/rt61-pci
   AUTOLOAD:=$(call AutoLoad,27,rt61pci)
 endef
 
+define KernelPackage/rt61-pci/install
+	mkdir -p $(1)/lib/firmware
+	$(CP) -L $(PKG_BUILD_DIR)/rt2?61*.bin $(1)/lib/firmware
+endef
+
 define KernelPackage/rt73-usb
   $(call Package/rt2x00/Default)
   DEPENDS:=+kmod-rt2x00-usb
@@ -93,6 +99,11 @@ define KernelPackage/rt73-usb
   AUTOLOAD:=$(call AutoLoad,27,rt73usb)
 endef
 
+define KernelPackage/rt73-usb/install
+	mkdir -p $(1)/lib/firmware
+	$(CP) -L $(PKG_BUILD_DIR)/rt73.bin $(1)/lib/firmware
+endef
+
 define Build/Prepare
 	$(call Build/Prepare/Default)
 	$(CP) -r src/* $(PKG_BUILD_DIR)/
@@ -100,13 +111,14 @@ define Build/Prepare
 endef
 
 define Build/Compile
+#	$(MAKE) -C "$(PKG_BUILD_DIR)" config_header
 	$(MAKE) -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
-		ARCH="$(LINUX_KARCH)" \
+		ARCH="$(LINUX_KARCH)" V="$(V)" \
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		KERNELVERSION="$(KERNEL)" \
 		KERNEL_SOURCE="$(LINUX_DIR)" \
-		EXTRA_CFLAGS="$(BUILDFLAGS) -include $(PKG_BUILD_DIR)/rt2x00_compat.h" \
+		CFLAGS_MODULE="-DMODULE -include $(PKG_BUILD_DIR)/rt2x00_compat.h" \
 		KDIR="$(LINUX_DIR)"
 endef
 
