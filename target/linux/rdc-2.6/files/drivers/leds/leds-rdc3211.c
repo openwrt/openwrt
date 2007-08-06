@@ -15,11 +15,10 @@
 #include <linux/platform_device.h>
 #include <linux/leds.h>
 #include <linux/err.h>
-#include <linux/delay.h>
 
-#include <asm/io.h>
 #include <asm/gpio.h>
 
+/* This is just for testing purpose */
 int gpio;
 module_param(gpio, int, 0444);
 MODULE_PARM_DESC(gpio, " GPIO line");
@@ -29,6 +28,7 @@ static void rdc321x_led_set(struct led_classdev *led_cdev, enum led_brightness b
 	gpio_set_value(gpio, brightness ? 1 : 0);
 }
 
+/* The DMZ led is at GPIO line 1 */
 static struct led_classdev rdc321x_dmz_led = {
 	.name = "rdc321x:dmz",
 	.brightness_set = rdc321x_led_set,
