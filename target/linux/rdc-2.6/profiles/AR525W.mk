@@ -7,7 +7,7 @@
 
 define Profile/ar525w
   NAME:=AirLink101 AR525W
-  PACKAGES:=kmod-rt61 kmod-r6040
+  PACKAGES:=kmod-rt61-pci kmod-r6040
 endef
 $(eval $(call Profile,ar525w))
 

@@ -7,7 +7,7 @@
 
 define Profile/wl153
   NAME:=Sitecom WL-153
-  PACKAGES:=kmod-rt61 kmod-r6040
+  PACKAGES:=kmod-rt61-pci kmod-r6040
 endef
 $(eval $(call Profile,wl153))
 

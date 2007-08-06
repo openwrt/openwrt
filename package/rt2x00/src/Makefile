@@ -1,4 +1,4 @@
-rt2x00lib-objs := rt2x00dev.o rt2x00mac.o
+rt2x00lib-objs := rt2x00dev.o rt2x00mac.o rt2x00firmware.o
 
 EXTRA_CFLAGS += -DCONFIG_RT2X00_LIB_FIRMWARE
 
