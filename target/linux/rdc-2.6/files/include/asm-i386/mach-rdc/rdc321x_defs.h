@@ -1,0 +1,1 @@
+#define RDC_FLASH_BASE		0xffc00000
