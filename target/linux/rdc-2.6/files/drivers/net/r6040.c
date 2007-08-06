@@ -638,8 +638,8 @@ static int netdev_ioctl (struct net_device *dev, struct ifreq *rq, int cmd)
 		if(args[0]&(1<<27))phy_write(ioaddr,29,20,(phy_read(ioaddr,29,20)|0x2000));	/* port 2 */
 		if(args[0]&(1<<25))phy_write(ioaddr,29,20,(phy_read(ioaddr,29,20)|0x0020));	/* port 3 */
 
-	}
-	return 0;
+	} 
+	return -EOPNOTSUPP;
 }
 
 /**
