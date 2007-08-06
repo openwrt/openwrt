@@ -732,7 +732,7 @@ find_board(char *name)
 
 	ret = NULL;
 	for (board = boards; board->name != NULL; board++){
-		if (strcmp(name, board->name) == 0) {
+		if (strcasecmp(name, board->name) == 0) {
 			ret = board;
 			break;
 		}
