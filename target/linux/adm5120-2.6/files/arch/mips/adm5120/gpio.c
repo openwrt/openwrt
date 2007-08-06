@@ -204,10 +204,27 @@ static inline int leds_direction_output(unsigned led, int value)
 
 	t = GPIO_READ(reg);
 	t &= ~(LED_MODE_MASK << s);
-	if (value)
-		t |= (LED_MODE_OUT_HIGH << s);
-	else
+
+	switch (value) {
+	case ADM5120_GPIO_LOW:
 		t |= (LED_MODE_OUT_LOW << s);
+		break;
+	case ADM5120_GPIO_FLASH:
+	case ADM5120_GPIO_LINK:
+	case ADM5120_GPIO_SPEED:
+	case ADM5120_GPIO_DUPLEX:
+	case ADM5120_GPIO_ACT:
+	case ADM5120_GPIO_COLL:
+	case ADM5120_GPIO_LINK_ACT:
+	case ADM5120_GPIO_DUPLEX_COLL:
+	case ADM5120_GPIO_10M_ACT:
+	case ADM5120_GPIO_100M_ACT:
+		t |= ((value & LED_MODE_MASK) << s);
+		break;
+	default:
+		t |= (LED_MODE_OUT_HIGH << s);
+		break;
+	}
 
 	GPIO_WRITE(t,reg);
 
@@ -230,24 +247,6 @@ static inline int leds_get_value(unsigned led)
 		return 0;
 
 	return 1;
-}
-
-static inline void leds_set_value(unsigned led, int value)
-{
-	gpio_reg_t *reg;
-	u32 s,t;
-
-	reg = led_table[led].reg;
-	s = led_table[led].mode_shift;
-
-	t = GPIO_READ(reg);
-	t &= ~(LED_MODE_MASK << s);
-	if (value)
-		t |= (LED_MODE_OUT_HIGH << s);
-	else
-		t |= (LED_MODE_OUT_LOW << s);
-
-	GPIO_WRITE(t,reg);
 }
 
 /*
@@ -294,7 +293,7 @@ void adm5120_gpio_set_value(unsigned gpio, int value)
 	}
 
 	gpio -= ADM5120_GPIO_P0L0;
-	leds_set_value(gpio, value);
+	leds_direction_output(gpio, value);
 }
 
 int adm5120_gpio_request(unsigned gpio, const char *label)
