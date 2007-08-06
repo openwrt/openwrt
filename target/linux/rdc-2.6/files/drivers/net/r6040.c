@@ -861,24 +861,35 @@ for (i = 0; i < RX_DCNT; i++) {
 	outw(MAX_BUF_SIZE, ioaddr+0x18);
 
 	if ((lp->switch_sig = phy_read(ioaddr, 0, 2)) == 0x0243)	// ICPlus IP175C Signature
-{
-	phy_write(ioaddr, 29,31, 0x175C);	//Enable registers
-	lp->phy_mode = 0x8000;
-} else {
-	/* PHY Mode Check */
-	phy_write(ioaddr, lp->phy_addr, 4, PHY_CAP);
-	phy_write(ioaddr, lp->phy_addr, 0, PHY_MODE);
+	{
+		phy_write(ioaddr, 29,31, 0x175C);	//Enable registers
+		lp->phy_mode = 0x8000;
+	} else {
+		/* PHY Mode Check */
+		phy_write(ioaddr, lp->phy_addr, 4, PHY_CAP);
+		phy_write(ioaddr, lp->phy_addr, 0, PHY_MODE);
 
-	if (PHY_MODE == 0x3100) 
-		lp->phy_mode = phy_mode_chk(dev);
-	else lp->phy_mode = (PHY_MODE & 0x0100) ? 0x8000:0x0;
-}
+		if (PHY_MODE == 0x3100)
+			lp->phy_mode = phy_mode_chk(dev);
+		else
+			lp->phy_mode = (PHY_MODE & 0x0100) ? 0x8000:0x0;
+	}
 	/* MAC Bus Control Register */
 	outw(MBCR_DEFAULT, ioaddr+0x8);
 
 	/* MAC TX/RX Enable */
 	lp->mcr0 |= lp->phy_mode;
 	outw(lp->mcr0, ioaddr);
+
+	/* set interrupt waiting time and packet numbers */
+	outw(0x0802, ioaddr + 0x0C);
+	outw(0x0802, ioaddr + 0x10);
+
+	/* upgrade performance (by RDC guys) */
+	phy_write(ioaddr,30,17,(phy_read(ioaddr,30,17)|0x4000));        //bit 14=1
+	phy_write(ioaddr,30,17,~((~phy_read(ioaddr,30,17))|0x2000));    //bit 13=0
+	phy_write(ioaddr,0,19,0x0000);
+	phy_write(ioaddr,0,30,0x01F0);
 
 	/* Interrupt Mask Register */
 	outw(R6040_INT_MASK, ioaddr + 0x40);
