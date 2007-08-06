@@ -617,9 +617,6 @@ r6040_close(struct net_device *dev)
 	return 0;
 }
 
-#define DMZ_GPIO	1
-#define RDC3210_CFGREG_ADDR	0x0CF8
-#define RDC3210_CFGREG_DATA	0x0CFC
 static int netdev_ioctl (struct net_device *dev, struct ifreq *rq, int cmd)
 {
 	struct r6040_private *lp = dev->priv;
@@ -641,25 +638,6 @@ static int netdev_ioctl (struct net_device *dev, struct ifreq *rq, int cmd)
 		if(args[0]&(1<<27))phy_write(ioaddr,29,20,(phy_read(ioaddr,29,20)|0x2000));	/* port 2 */
 		if(args[0]&(1<<25))phy_write(ioaddr,29,20,(phy_read(ioaddr,29,20)|0x0020));	/* port 3 */
 
-		/* DMZ LED */
-		val = 0x80000000 | (7 << 11) | ((0x48));
-		outl(val, RDC3210_CFGREG_ADDR);
-		udelay(10);
-		val = inl(RDC3210_CFGREG_DATA);
-
-		val |= (0x1 << DMZ_GPIO);
-		outl(val, RDC3210_CFGREG_DATA);
-		udelay(10);
-
-		val = 0x80000000 | (7 << 11) | ((0x4C));
-		outl(val, RDC3210_CFGREG_ADDR);
-		udelay(10);
-		val = inl(RDC3210_CFGREG_DATA);
-		if(args[0]&(1<<23))	/* DMZ enabled */
-			val &= ~(0x1 << DMZ_GPIO);	/* low activated */
-		else val |= (0x1 << DMZ_GPIO);
-		outl(val, RDC3210_CFGREG_DATA);
-		udelay(10);
 	}
 	return 0;
 }
