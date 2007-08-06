@@ -10,100 +10,67 @@
  */
 
 #include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/init.h>
 #include <linux/platform_device.h>
 #include <linux/leds.h>
 #include <linux/err.h>
+#include <linux/delay.h>
 
 #include <asm/io.h>
+#include <asm/gpio.h>
 
-#define LED_VAL	0x8000384C    // the data ofset of gpio 0~30
+int gpio;
+module_param(gpio, int, 0444);
+MODULE_PARM_DESC(gpio, " GPIO line");
 
-static struct platform_device *pdev;
-
-static void rdc3211_led_set(struct led_classdev *led_cdev, enum led_brightness brightness)
+static void rdc321x_led_set(struct led_classdev *led_cdev, enum led_brightness brightness)
 {
-	unsigned long ul_ledstat = 0xffffffff;
-	unsigned long led_bit = 1 << (led_cdev->flags);
-
-	if (brightness)
-		ul_ledstat &= ~led_bit;
-	else
-		ul_ledstat|=  led_bit;
-
-	outl(LED_VAL, 0xcf8);
-	outl(ul_ledstat, 0xcfc);
+	gpio_set_value(gpio, brightness ? 1 : 0);
 }
 
-static struct led_classdev rdc3211_power_led = {
-	.name = "rdc3211:power",
-	.flags = 15,
-	.brightness_set = rdc3211_led_set,
+static struct led_classdev rdc321x_dmz_led = {
+	.name = "rdc321x:dmz",
+	.brightness_set = rdc321x_led_set,
 };
 
-static struct led_classdev rdc3211_dmz_led = {
-	.name = "rdc3211:dmz",
-	.flags = 16,
-	.brightness_set = rdc3211_led_set,
-};
-
-static int rdc3211_leds_probe(struct platform_device *pdev)
+static int rdc321x_leds_probe(struct platform_device *pdev)
 {
-	int ret;
-
-	ret = led_classdev_register(&pdev->dev, &rdc3211_power_led);
-	if (ret < 0)
-		return ret;
-
-	ret = led_classdev_register(&pdev->dev, &rdc3211_dmz_led);
-	if (ret < 0)
-		led_classdev_unregister(&rdc3211_power_led);
-
-	return ret;
+	return led_classdev_register(&pdev->dev, &rdc321x_dmz_led);
 }
 
-static int rdc3211_leds_remove(struct platform_device *pdev)
+static int rdc321x_leds_remove(struct platform_device *pdev)
 {
-	led_classdev_unregister(&rdc3211_power_led);
-	led_classdev_unregister(&rdc3211_dmz_led);
+	led_classdev_unregister(&rdc321x_dmz_led);
 	return 0;
 }
 
-static struct platform_driver rdc3211_leds_driver = {
-	.probe = rdc3211_leds_probe,
-	.remove = rdc3211_leds_remove,
+static struct platform_driver rdc321x_leds_driver = {
+	.probe = rdc321x_leds_probe,
+	.remove = rdc321x_leds_remove,
 	.driver = {
-		.name = "rdc3211-leds",
+		.name = "rdc321x-leds",
+		.owner = THIS_MODULE,
 	}
 };
 
-static int __init rdc3211_leds_init(void)
+static int __init rdc321x_leds_init(void)
 {
 	int ret;
 
-	ret = platform_driver_register(&rdc3211_leds_driver);
-	if (ret < 0)
-		goto out;
+	ret = platform_driver_register(&rdc321x_leds_driver);
 
-	pdev = platform_device_register_simple("rdc3211-leds", -1, NULL, 0);
-	if (IS_ERR(pdev)) {
-		ret = PTR_ERR(pdev);
-		platform_driver_unregister(&rdc3211_leds_driver);
-		goto out;
-	}
-
-out:
 	return ret;
 }
 		
-static void __exit rdc3211_leds_exit(void)
+static void __exit rdc321x_leds_exit(void)
 {
-	platform_driver_unregister(&rdc3211_leds_driver);
+	platform_driver_unregister(&rdc321x_leds_driver);
 }
 
-module_init(rdc3211_leds_init);
-module_exit(rdc3211_leds_exit);
+module_init(rdc321x_leds_init);
+module_exit(rdc321x_leds_exit);
 		
 MODULE_AUTHOR("Florian Fainelli <florian@openwrt.org>");
-MODULE_DESCRIPTION("RDC3211 LED driver");
+MODULE_DESCRIPTION("RDC321x LED driver");
 MODULE_LICENSE("GPL");
