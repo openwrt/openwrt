@@ -167,6 +167,8 @@ $(eval $(call shexport,Target/Description))
 download: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(STAMP_CONFIGURED)
 compile: $(LINUX_DIR)/.modules
+	$(MAKE) -C image compile
+
 oldconfig menuconfig: $(STAMP_PREPARED) FORCE
 	$(call Kernel/Configure)
 	$(SCRIPT_DIR)/config.pl '+' $(GENERIC_LINUX_CONFIG) $(LINUX_CONFIG) > $(LINUX_DIR)/.config

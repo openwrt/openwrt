@@ -19,12 +19,23 @@ ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
   $(curdir)/binutils/prepare:=$(curdir)/uClibc/prepare
   $(curdir)/gcc/prepare:=$(curdir)/binutils/install
   $(curdir)/uClibc/compile:=$(curdir)/gcc/compile
+  $(curdir)/gcc/install:=$(curdir)/uClibc/compile
+  $(curdir)/uClibc/install:=$(curdir)/gcc/install
 endif
-$(curdir)/gcc/install:=$(curdir)/uClibc/install
+
+$(TOOLCHAIN_DIR)/info.mk: .config
+	@for dir in $(TOOLCHAIN_DIR); do ( \
+		set -x; \
+		mkdir -p "$$dir"; \
+		cd "$$dir"; \
+		mkdir -p bin lib include stamp; \
+	); done
+	@grep GCC_VERSION $@ >/dev/null 2>&1 || $(INSTALL_DATA) $(TOPDIR)/toolchain/info.mk $@
+	@touch $@
 
 # prerequisites for the individual targets
 $(curdir)/ := .config prereq
-$(curdir)//prepare = $(STAGING_DIR)/include-host/.done
+$(curdir)//prepare = $(STAGING_DIR)/.prepared $(TOOLCHAIN_DIR)/info.mk
 $(curdir)//compile = $(1)/prepare
 $(curdir)//install = $(1)/compile
 

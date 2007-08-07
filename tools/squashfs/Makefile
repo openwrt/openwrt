@@ -14,21 +14,22 @@ PKG_SOURCE_URL:=@SF/squashfs
 PKG_MD5SUM:=9fd05d0bfbb712f5fb95edafea5bc733
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/$(PKG_NAME)$(PKG_VERSION)
+PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR)/squashfs-tools mksquashfs-lzma LZMAPATH=$(STAGING_DIR)/host/lib
+	$(MAKE) -C $(PKG_BUILD_DIR)/squashfs-tools \
+		LZMAPATH=$(STAGING_DIR_HOST)/lib \
+		mksquashfs-lzma 
 endef
 
 define Build/Install
-	mkdir -p $(STAGING_DIR)/bin
-	$(CP) $(PKG_BUILD_DIR)/squashfs-tools/mksquashfs-lzma $(STAGING_DIR)/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/squashfs-tools/mksquashfs-lzma $(STAGING_DIR_HOST)/bin/
 endef
 
 define Build/Clean
-	rm -f $(STAGING_DIR)/bin/mksquashfs-lzma
+	rm -f $(STAGING_DIR_HOST)/bin/mksquashfs-lzma
 endef
 
 $(eval $(call HostBuild))

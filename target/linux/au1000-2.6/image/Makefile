@@ -29,7 +29,7 @@ OBJCOPY_SREC := $(TARGET_CROSS)objcopy -S -O srec $(addprefix --remove-section=,
 OBJCOPY_BIN := $(TARGET_CROSS)objcopy -S -O binary $(addprefix --remove-section=,$(DROP_SECTIONS))
 
 define Image/Prepare
-	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
+	cat $(KDIR)/vmlinux | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
 	
 	# Build RAM image
 	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader \

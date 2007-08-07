@@ -65,8 +65,9 @@ endef
 
 define Build/InstallDev
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(STAGING_DIR)" \
+		DESTDIR="$(STAGING_DIR_HOST)" \
 		install
+	mv $(STAGING_DIR_HOST)/usr/sbin/grub $(STAGING_DIR_HOST)/bin
 endef
 
 $(eval $(call Build/DefaultTargets))

@@ -67,7 +67,7 @@ ifeq ($(KERNEL),2.6)
     define Kernel/SetInitramfs
 		mv $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
 		grep -v INITRAMFS $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
-		echo 'CONFIG_INITRAMFS_SOURCE="../../root"' >> $(LINUX_DIR)/.config
+		echo 'CONFIG_INITRAMFS_SOURCE="$(TARGET_DIR)"' >> $(LINUX_DIR)/.config
 		echo 'CONFIG_INITRAMFS_ROOT_UID=0' >> $(LINUX_DIR)/.config
 		echo 'CONFIG_INITRAMFS_ROOT_GID=0' >> $(LINUX_DIR)/.config
     endef
@@ -75,7 +75,7 @@ ifeq ($(KERNEL),2.6)
     define Kernel/SetInitramfs
 		mv $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
 		grep -v INITRAMFS $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
-		rm -f $(BUILD_DIR)/root/init
+		rm -f $(TARGET_DIR)/init
 		echo 'CONFIG_INITRAMFS_SOURCE=""' >> $(LINUX_DIR)/.config
     endef
   endif

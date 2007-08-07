@@ -25,25 +25,27 @@ else
   include rules.mk
   include $(INCLUDE_DIR)/depends.mk
   include $(INCLUDE_DIR)/subdir.mk
-  include $(INCLUDE_DIR)/target.mk
   include target/Makefile
   include package/Makefile
   include tools/Makefile
   include toolchain/Makefile
 
 $(toolchain/stamp-compile): $(tools/stamp-compile)
-$(target/stamp-compile): $(toolchain/stamp-install) $(tools/stamp-install)
+$(target/stamp-compile): $(toolchain/stamp-install) $(tools/stamp-install) $(BUILD_DIR)/.prepared
 $(package/stamp-compile): $(target/stamp-compile)
 $(target/stamp-install): $(package/stamp-compile) $(package/stamp-install)
 
+$(BUILD_DIR)/.prepared: Makefile
+	@mkdir -p $$(dirname $@)
+	@touch $@
+
 clean: FORCE
-	rm -rf build_* bin tmp
+	rm -rf $(BUILD_DIR) $(BIN_DIR)
+	$(MAKE) target/linux/clean
+	rm -rf $(TMP_DIR)
 
 dirclean: clean
-	rm -rf staging_dir_* toolchain_build_* tool_build
-
-distclean: dirclean 
-	rm -rf dl .config*
+	rm -rf $(STAGING_DIR) $(STAGING_DIR_HOST) $(STAGING_DIR_TOOLCHAIN) $(BUILD_DIR_TOOLCHAIN) $(BUILD_DIR_HOST)
 
 # check prerequisites before starting to build
 prereq: $(package/stamp-prereq) $(target/stamp-prereq) ;

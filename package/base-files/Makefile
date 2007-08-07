@@ -23,9 +23,7 @@ include $(INCLUDE_DIR)/package.mk
 
 ifneq ($(DUMP),1)
   TARGET:=-$(BOARD)-$(KERNEL)
-  UCLIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version 2>/dev/null}
-  UCLIBC_EXTRA_VERSION:=${shell cat $(STAGING_DIR)/uclibc_extra_version 2>/dev/null}
-  LIBGCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version 2>/dev/null}
+  LIBGCC_VERSION:=$(GCC_VERSION)
 else
   UCLIBC_VERSION:=<UCLIBC_VERSION>
   LIBGCC_VERSION:=<LIBGCC_VERSION>
@@ -92,7 +90,7 @@ define Package/uclibc/Default
   CATEGORY:=Base system
   DEPENDS:=@!NATIVE_TOOLCHAIN
   URL:=http://uclibc.org/
-  VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
+  VERSION:=$(UCLIBC_VERSION)$(UCLIBC_PATCHVER)-$(PKG_RELEASE)
 endef
 
 define Package/libpthread
@@ -158,43 +156,43 @@ endef
 
 define Package/libgcc/install
 	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(STAGING_DIR)/lib/libgcc_s.so.* $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib/libgcc_s.so.* $(1)/lib/
 endef
 
 ifeq ($(word 1,$(subst ., ,$(LIBGCC_VERSION))),4)
   define Package/libssp/install
 	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(STAGING_DIR)/lib/libssp.so.* $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib/libssp.so.* $(1)/lib/
   endef
 endif
 
 define Package/libstdcpp/install
 	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(STAGING_DIR)/lib/libstdc++.so.* $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib/libstdc++.so.* $(1)/lib/
 endef
 
 define Package/libpthread/install
 	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(STAGING_DIR)/lib/libpthread.so.* $(1)/lib/
-	$(CP) $(STAGING_DIR)/lib/libpthread-$(UCLIBC_VERSION).so $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib/libpthread.so.* $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib/libpthread-$(UCLIBC_VERSION).so $(1)/lib/
 endef
 
 define Package/uclibc/install
 	$(INSTALL_DIR) $(1)/lib
 	for file in ld-uClibc libc libcrypt libdl libm libnsl libresolv librt libuClibc libutil; do \
-		$(CP) $(STAGING_DIR)/lib/$$$$file.so.* $(1)/lib/; \
-		$(CP) $(STAGING_DIR)/lib/$$$$file-$(UCLIBC_VERSION).so $(1)/lib/; \
+		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file.so.* $(1)/lib/; \
+		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file-$(UCLIBC_VERSION).so $(1)/lib/; \
 	done
 endef
 
 define Package/ldd/install
 	$(INSTALL_DIR) $(1)/bin/
-	$(CP) $(TOOLCHAIN_BUILD_DIR)/uClibc-$(UCLIBC_EXTRA_VERSION)/utils/ldd $(1)/bin/
+	$(CP) $(TOOLCHAIN_DIR)/utils/ldd $(1)/bin/
 endef
 
 define Package/ldconfig/install
 	$(INSTALL_DIR) $(1)/bin/
-	$(CP) $(TOOLCHAIN_BUILD_DIR)/uClibc-$(UCLIBC_EXTRA_VERSION)/utils/ldconfig $(1)/bin/
+	$(CP) $(TOOLCHAIN_DIR)/utils/ldconfig $(1)/bin/
 endef
 
 ifneq ($(DUMP),1)

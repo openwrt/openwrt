@@ -22,7 +22,7 @@ define Build/Clean
 endef
 
 define Image/Prepare
-	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
+	cat $(KDIR)/vmlinux | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
 endef
 
 define trxalign/jffs2-128k
@@ -36,12 +36,12 @@ define trxalign/squashfs
 endef
 
 define Image/Build/TRX
-	$(STAGING_DIR)/bin/trx -o $(1) -f $(3) -f $(KDIR)/vmlinux.lzma \
+	$(STAGING_DIR_HOST)/bin/trx -o $(1) -f $(3) -f $(KDIR)/vmlinux.lzma \
 		$(call trxalign/$(2)) -f $(KDIR)/root.$(2)
 endef
 
 define Image/Build/TRXNoloader
-	$(STAGING_DIR)/bin/trx -o $(1) -f $(KDIR)/vmlinux.lzma \
+	$(STAGING_DIR_HOST)/bin/trx -o $(1) -f $(KDIR)/vmlinux.lzma \
 		$(call trxalign/$(2)) -f $(KDIR)/root.$(2)
 endef
 
@@ -53,7 +53,7 @@ endef
 define Image/Build/Edimax
 	$(call Image/Build/Loader,$(2),gz,0x80500000,0x6D8,y,$(2))
 	$(call Image/Build/TRXNoloader,$(IMGNAME)-$(3)-$(2).trx,$(1))
-	$(STAGING_DIR)/bin/mkcsysimg -B $(4) -d -w \
+	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(4) -d -w \
 		-r $(KDIR)/loader-$(2).gz \
 		-x $(IMGNAME)-$(3)-$(2).trx \
 		$(IMGNAME)-$(3)-$(2).bin
@@ -69,7 +69,7 @@ endef
 define Image/Build/MyLoader
 	$(call Image/Build/Loader,$(2),gz,0x80500000,0)
 	$(call Image/Build/TRXNoloader,$(IMGNAME)-$(3)-$(2).trx,$(1))
-	$(STAGING_DIR)/bin/mkmylofw -B $(4) \
+	$(STAGING_DIR_HOST)/bin/mkmylofw -B $(4) \
 		-p0x20000:0x10000:ahp:0x80001000 \
 		-p0x30000:0 \
 		-b0x20000:0x10000:h:$(KDIR)/loader-$(2).gz \
@@ -83,7 +83,7 @@ endef
 
 define Image/Build/RouterBoard
 	$(CP) $(KDIR)/vmlinux.elf $(IMGNAME)-rb1xx-vmlinux
-	$(STAGING_DIR)/bin/patch-cmdline $(KDIR)/vmlinux.elf '$(strip $(call Image/cmdline/yaffs2)) '
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux.elf '$(strip $(call Image/cmdline/yaffs2)) '
 endef
 
 define Image/Build/jffs2-64k

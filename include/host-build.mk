@@ -5,6 +5,9 @@
 # See /LICENSE for more information.
 #
 
+PKG_BUILD_DIR ?= $(BUILD_DIR_HOST)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
+PKG_INSTALL_DIR ?= $(PKG_BUILD_DIR)/host-install
+
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/unpack.mk
 include $(INCLUDE_DIR)/depends.mk
@@ -12,6 +15,8 @@ include $(INCLUDE_DIR)/depends.mk
 STAMP_PREPARED:=$(PKG_BUILD_DIR)/.prepared_$(shell find ${CURDIR} $(PKG_FILE_DEPEND) $(DEP_FINDPARAMS) | md5s)
 STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/.configured
 STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
+STAMP_INSTALLED:=$(STAGING_DIR_HOST)/stamp/.$(PKG_NAME)_installed
+
 override MAKEFLAGS=
 
 include $(INCLUDE_DIR)/quilt.mk
@@ -33,24 +38,19 @@ define Build/Configure/Default
 	[ -x configure ] && \
 		$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(PKG_BUILD_DIR)/$(3)/ && \
 		$(2) \
-		CPPFLAGS="-I$(STAGING_DIR)/host/include" \
-		LDFLAGS="-L$(STAGING_DIR)/host/lib" \
+		CPPFLAGS="$(HOST_CFLAGS)" \
+		LDFLAGS="$(HOST_LDFLAGS)" \
+		SHELL="$(BASH)" \
 		./configure \
-		--target=$(GNU_TARGET_NAME) \
-		--host=$(GNU_TARGET_NAME) \
+		--target=$(GNU_HOST_NAME) \
+		--host=$(GNU_HOST_NAME) \
 		--build=$(GNU_HOST_NAME) \
 		--program-prefix="" \
 		--program-suffix="" \
-		--prefix=/usr \
-		--exec-prefix=/usr \
-		--bindir=/usr/bin \
-		--sbindir=/usr/sbin \
-		--libexecdir=/usr/lib \
-		--sysconfdir=/etc \
-		--datadir=/usr/share \
-		--localstatedir=/var \
-		--mandir=/usr/man \
-		--infodir=/usr/info \
+		--prefix=$(STAGING_DIR_HOST) \
+		--exec-prefix=$(STAGING_DIR_HOST) \
+		--sysconfdir=$(STAGING_DIR_HOST)/etc \
+		--localstatedir=$(STAGING_DIR_HOST)/var \
 		$(DISABLE_NLS) \
 		$(1); \
 		true; \
@@ -84,7 +84,7 @@ ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
   define HostBuild/Autoclean
     $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)
     $(call rdep,${CURDIR} $(PKG_FILE_DEPEND),$(STAMP_PREPARED))
-    $(if $(filter prepare,$(MAKECMDGOALS)),,$(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),$(PKG_BUILD_DIR)/.dep_files, -and -not -path "/.*" -and -not -path "*/ipkg*"))
+    $(if $(if $(Build/Compile),$(filter prepare,$(MAKECMDGOALS)),1),,$(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),$(PKG_BUILD_DIR)/.dep_files, -and -not -path "/.*" -and -not -path "*/ipkg*"))
   endef
 endif
 
@@ -107,19 +107,19 @@ define HostBuild
 	$(call Build/Compile)
 	touch $$@
 
-  $(STAGING_DIR)/stampfiles/.host_$(PKG_NAME)-installed: $(STAMP_BUILT)
+  $(STAMP_INSTALLED): $(STAMP_BUILT)
 	$(call Build/Install)
 	mkdir -p $$(shell dirname $$@)
 	touch $$@
 	
   ifdef Build/Install
-    install: $(STAGING_DIR)/stampfiles/.host_$(PKG_NAME)-installed
+    install: $(STAMP_INSTALLED)
   endif
 
   package-clean: FORCE
 	$(call Build/Clean)
 	$(call Build/Uninstall)
-	rm -f $(STAGING_DIR)/stampfiles/.host_$(PKG_NAME)-installed
+	rm -f $(STAMP_INSTALLED) $(STAMP_BUILT)
 
   download:
   prepare: $(STAMP_PREPARED)

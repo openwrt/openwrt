@@ -16,9 +16,14 @@ PKG_SOURCE_URL:=http://www.uclibc.org/downloads
 PKG_MD5SUM:=959f25286e317f0d9e2103445c5a14c2
 PKG_CAT:=bzcat
 
-PKG_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)/uClibc-$(PKG_VERSION)$(PKG_EXTRAVERSION)
+STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
+BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
+PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/uClibc-$(PKG_VERSION)$(PKG_EXTRAVERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
+
+STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.uclibc_installed
+STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.uclibc-utils_installed
 
 UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 		-e 's/i.86/i386/' \
@@ -37,32 +42,19 @@ UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
-	if [ -e config/$(ARCH).$(BOARD) ]; then \
-		$(CP) config/$(ARCH).$(BOARD) $(PKG_BUILD_DIR)/.config; \
-	else \
-		$(CP) config/$(ARCH) $(PKG_BUILD_DIR)/.config; \
-	fi
+	$(CP) config/$(ARCH)$(if $(wildcard config/$(ARCH).$(BOARD)),$(BOARD)) $(PKG_BUILD_DIR)/.config
 	$(SED) 's,^KERNEL_SOURCE=.*,KERNEL_SOURCE=\"$(LINUX_HEADERS_DIR)\",g' \
+		-e 's,.*HAS_FPU.*,HAS_FPU=$(if $(CONFIG_SOFT_FLOAT),n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,y),g' \
+		-e 's,^.*UCLIBC_HAS_LFS.*,UCLIBC_HAS_LFS=$(if $(CONFIG_LARGEFILE),y,n),g' \
+		-e 's,.*DO_C99_MATH.*,DO_C99_MATH=$(if $(CONFIG_C99_MATH),y,n),g' \
 		$(PKG_BUILD_DIR)/.config
-ifeq ($(CONFIG_LARGEFILE),y)
-	$(SED) 's,^.*UCLIBC_HAS_LFS.*,UCLIBC_HAS_LFS=y,g' $(PKG_BUILD_DIR)/.config
-else
-	$(SED) 's,^.*UCLIBC_HAS_LFS.*,UCLIBC_HAS_LFS=n,g' $(PKG_BUILD_DIR)/.config
-endif
-	$(SED) 's,.*UCLIBC_HAS_WCHAR.*,UCLIBC_HAS_WCHAR=y,g' $(PKG_BUILD_DIR)/.config
-ifeq ($(CONFIG_SOFT_FLOAT),y)
-	$(SED) 's,.*HAS_FPU.*,HAS_FPU=n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,g' $(PKG_BUILD_DIR)/.config
-endif
-ifeq ($(CONFIG_C99_MATH),y)
-	$(SED) 's,.*DO_C99_MATH.*,DO_C99_MATH=y,g' $(PKG_BUILD_DIR)/.config
-endif
-	mkdir -p $(TOOLCHAIN_BUILD_DIR)/uClibc_dev/usr/include
-	mkdir -p $(TOOLCHAIN_BUILD_DIR)/uClibc_dev/usr/lib
-	mkdir -p $(TOOLCHAIN_BUILD_DIR)/uClibc_dev/lib
+	mkdir -p $(BUILD_DIR_HOST)/uClibc_dev/usr/include
+	mkdir -p $(BUILD_DIR_HOST)/uClibc_dev/usr/lib
+	mkdir -p $(BUILD_DIR_HOST)/uClibc_dev/lib
 	PATH=$(TARGET_PATH) $(MAKE) -C $(PKG_BUILD_DIR) \
-		PREFIX=$(TOOLCHAIN_BUILD_DIR)/uClibc_dev/ \
+		PREFIX=$(BUILD_DIR_HOST)/uClibc_dev/ \
 		DEVEL_PREFIX=/usr/ \
-		RUNTIME_PREFIX=$(TOOLCHAIN_BUILD_DIR)/uClibc_dev/ \
+		RUNTIME_PREFIX=$(BUILD_DIR_HOST)/uClibc_dev/ \
 		HOSTCC="$(HOSTCC)" \
 		CPU_CFLAGS="$(TARGET_CFLAGS)" \
 		pregen install_dev;
@@ -71,34 +63,31 @@ endef
 define Build/Configure
 endef
 
-define Build/Compile
-	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(PKG_BUILD_DIR)/Rules.mak
-	PATH=$(TARGET_PATH) $(MAKE) -C $(PKG_BUILD_DIR) \
-		PREFIX= \
+UCLIBC_MAKE := PATH=$(TARGET_PATH) $(MAKE) -C $(PKG_BUILD_DIR) \
 		DEVEL_PREFIX=/ \
 		RUNTIME_PREFIX=/ \
 		HOSTCC="$(HOSTCC)" \
-		CPU_CFLAGS="$(TARGET_CFLAGS)" \
-		all
+		CPU_CFLAGS="$(TARGET_CFLAGS)"
+
+define Build/Compile
+	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(PKG_BUILD_DIR)/Rules.mak
+	$(UCLIBC_MAKE) PREFIX= all 
+	$(UCLIBC_MAKE) PREFIX=$(STAGING_DIR_HOST)/ install_runtime install_dev
+	$(SED) 's,UCLIBC_VERSION=.*,UCLIBC_VERSION=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
+	$(SED) 's,UCLIBC_PATCHVER=.*,UCLIBC_PATCHVER=$(PKG_EXTRAVERSION),' $(TOOLCHAIN_DIR)/info.mk
 endef
 
 define Build/Install
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		PREFIX=$(STAGING_DIR)/ \
-		DEVEL_PREFIX=/ \
-		RUNTIME_PREFIX=/ \
-		install_runtime
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		PREFIX=$(STAGING_DIR)/ \
-		DEVEL_PREFIX=/ \
-		RUNTIME_PREFIX=/ \
-		install_dev
-	echo $(PKG_VERSION) > $(STAGING_DIR)/uclibc_version
-	echo $(PKG_VERSION)$(PKG_EXTRAVERSION) > $(STAGING_DIR)/uclibc_extra_version
+	$(UCLIBC_MAKE) PREFIX= utils
+	$(INSTALL_DIR) $(TOOLCHAIN_DIR)/target-utils
+	$(INSTALL_BIN) \
+		$(PKG_BUILD_DIR)/utils/ldd \
+		$(PKG_BUILD_DIR)/utils/ldconfig \
+		$(TOOLCHAIN_DIR)/target-utils/
 endef
 
 define Build/Clean
-	rm -rf $(PKG_BUILD_DIR) $(TOOLCHAIN_BUILD_DIR)/uClibc_dev
+	rm -rf $(PKG_BUILD_DIR) $(BUILD_DIR_HOST)/uClibc_dev
 endef
 
 $(eval $(call HostBuild))

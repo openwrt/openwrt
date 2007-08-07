@@ -33,7 +33,7 @@ define Build/Clean
 endef
 
 define Image/Prepare
-	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
+	cat $(KDIR)/vmlinux | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
 
 	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader \
 		$(LOADER_MAKEOPTS) \
@@ -52,13 +52,13 @@ endef
 
 define Image/Build/CyberTAN
 	(dd if=/dev/zero bs=16 count=1; cat $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin) | \
-		$(STAGING_DIR)/bin/addpattern -p $(3) -o $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(4).bin
+		$(STAGING_DIR_HOST)/bin/addpattern -p $(3) -o $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(4).bin
 endef
 
 #define Image/Build/sErCoMm
 #	cat sercomm/adam2.bin "$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin" > "$(KDIR)/dgfw.tmp"
 #	dd if=sercomm/$(2) of="$(KDIR)/dgfw.tmp" bs=$$$$((0x3e0000 - 80)) seek=1 conv=notrunc
-#	$(STAGING_DIR)/bin/dgfirmware -f -w "$(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(3).img" "$(KDIR)/dgfw.tmp"
+#	$(STAGING_DIR_HOST)/bin/dgfirmware -f -w "$(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(3).img" "$(KDIR)/dgfw.tmp"
 #	rm -f "$(KDIR)/dgfw.tmp"
 #endef
 

@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/image.mk
 define Image/BuildKernel
 	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.elf
 	gzip -9 -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.bin.gz
-	$(STAGING_DIR)/bin/lzma e $(KDIR)/vmlinux $(KDIR)/vmlinux.bin.l7
+	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux $(KDIR)/vmlinux.bin.l7
 	dd if=$(KDIR)/vmlinux.bin.l7 of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.lzma bs=65536 conv=sync
 	dd if=$(KDIR)/vmlinux.bin.gz of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.gz bs=65536 conv=sync
 endef
