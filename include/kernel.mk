@@ -30,9 +30,9 @@ else
 
   KERNEL_PATCHVER:=$(shell echo $(LINUX_VERSION) | cut -d. -f1,2,3 | cut -d- -f1)
   PLATFORM_DIR := $(TOPDIR)/target/linux/$(BOARD)-$(KERNEL)
-  PATCH_DIR := ./patches$(shell [ -d "./patches-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
-  KERNEL_BUILD_DIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
-  LINUX_DIR := $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
+  PATCH_DIR ?= ./patches$(shell [ -d "./patches-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
+  KERNEL_BUILD_DIR ?= $(BUILD_DIR_BASE)/linux-$(KERNEL)-$(BOARD)$(if $(BUILD_SUFFIX),_$(BUILD_SUFFIX))
+  LINUX_DIR ?= $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
 
   MODULES_SUBDIR:=lib/modules/$(LINUX_VERSION)
   TARGET_MODULES_DIR := $(LINUX_TARGET_DIR)/$(MODULES_SUBDIR)

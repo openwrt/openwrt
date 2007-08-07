@@ -14,7 +14,8 @@ PKG_MD5SUM:=05b928f41fa5b482e49ca2c24762a0ae
 PKG_SOURCE_URL:=http://ftp.gnu.org/gnu/gdb
 PKG_CAT:=bzcat
 
-PKG_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
+BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -22,7 +23,7 @@ define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
 		gdb_cv_func_sigsetjmp=yes \
 		$(PKG_BUILD_DIR)/configure \
-		--prefix=$(STAGING_DIR) \
+		--prefix=$(TOOLCHAIN_DIR) \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(GNU_HOST_NAME) \
 		--target=$(REAL_GNU_TARGET_NAME) \
@@ -40,16 +41,14 @@ define Build/Compile
 endef
 
 define Build/Install
-	(cd $(STAGING_DIR)/bin; \
-		install -c $(PKG_BUILD_DIR)/gdb/gdb $(TARGET_CROSS)gdb; \
-		ln -fs $(TARGET_CROSS)gdb $(GNU_TARGET_NAME)-gdb; \
-	);
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/gdb/gdb $(TARGET_CROSS)gdb
+	ln -fs $(TARGET_CROSS)gdb $(TOOLCHAIN_DIR)/$(GNU_TARGET_NAME)-gdb; \
 endef
 
 define Build/Clean
 	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(STAGING_DIR)/bin/$(TARGET_CROSS)gdb
-	rm -f $(STAGING_DIR)/bin/$(GNU_TARGET_NAME)-gdb
+	rm -f $(TOOLCHAIN_DIR)/bin/$(TARGET_CROSS)gdb
+	rm -f $(TOOLCHAIN_DIR)/bin/$(GNU_TARGET_NAME)-gdb
 endef
 
 $(eval $(call HostBuild))

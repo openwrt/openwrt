@@ -18,6 +18,7 @@ PKG_MD5SUM:=9b7dc52656f5cbec846a7ba3299f73bd
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/bridge-utils-$(PKG_VERSION)
 
+include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/bridge

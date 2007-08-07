@@ -15,15 +15,19 @@ $(curdir)/builddirs := sed sstrip ipkg-utils ext2fs squashfs mtd-utils lzma mkim
 $(curdir)/squashfs/compile := $(curdir)/lzma/install
 
 # preparatory work
-define copy_include
-$(STAGING_DIR)/include-host/.done:
-	@mkdir -p $$$$(dirname $$@)
-	@cp $(1)/include/*.h $$$$(dirname $$@)/
-	@touch $$@
-$(curdir)//prepare = $(STAGING_DIR)/include-host/.done
-$(curdir)//compile = $(STAGING_DIR)/include-host/.done
-endef
-$(eval $(call copy_include,$(curdir)))
+$(STAGING_DIR)/.prepared: $(TMP_DIR)/.build
+	@for dir in $(STAGING_DIR) $(STAGING_DIR_HOST); do ( \
+		set -x; \
+		mkdir -p "$$dir"; \
+		cd "$$dir"; \
+		mkdir -p bin lib include stamp; \
+	); done
+	mkdir -p $(BUILD_DIR_HOST)/stamp $(BUILD_DIR)/stamp
+	$(INSTALL_DATA) $(TOPDIR)/tools/include/*.h $(STAGING_DIR_HOST)/include/
+	touch $@
+
+$(curdir)//prepare = $(STAGING_DIR)/.prepared
+$(curdir)//compile = $(STAGING_DIR)/.prepared
 
 # prerequisites for the individual targets
 $(curdir)/ := .config prereq

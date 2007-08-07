@@ -16,8 +16,6 @@ PKG_SOURCE_URL:=@SF/$(PKG_NAME)
 PKG_MD5SUM:=664431bf6737df1c265500e1f0b5d40c
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/host-build.mk
 
 define Build/Configure
@@ -43,17 +41,16 @@ endef
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CFLAGS="-O2 -I $(STAGING_DIR)/include-host -include getline.h" \
+		CFLAGS="$(HOST_CFLAGS) -include getline.h" \
 		all
 endef
 
 define Build/Install
-	mkdir -p $(STAGING_DIR)/bin
-	install -m0755 $(PKG_BUILD_DIR)/genext2fs $(STAGING_DIR)/bin/
+	install -m0755 $(PKG_BUILD_DIR)/genext2fs $(STAGING_DIR_HOST)/bin/
 endef
 
 define Build/Clean
-	rm -f $(STAGING_DIR)/bin/genext2fs
+	rm -f $(STAGING_DIR_HOST)/bin/genext2fs
 endef
 
 $(eval $(call HostBuild))

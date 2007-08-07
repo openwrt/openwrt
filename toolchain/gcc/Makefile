@@ -27,39 +27,33 @@ PATCH_DIR=./patches/$(PKG_VERSION)
 PKG_SOURCE_URL:=ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-$(PKG_VERSION) \
 	http://mirrors.rcn.net/pub/sourceware/gcc/releases/gcc-$(PKG_VERSION) \
 	ftp://ftp.gnu.org/gnu/gcc/releases/gcc-$(PKG_VERSION)
-	
 PKG_SOURCE:=gcc-$(PKG_VERSION).tar.bz2
-PKG_MD5SUM:=unknown
-PKG_CAT:=bzcat
-
-PKG_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)/gcc-$(PKG_VERSION)
-
-TARGET_LANGUAGES:=c
-ifeq ($(CONFIG_INSTALL_LIBSTDCPP),y)
-TARGET_LANGUAGES:=$(TARGET_LANGUAGES),c++
-endif
-ifeq ($(CONFIG_INSTALL_LIBGCJ),y)
-TARGET_LANGUAGES:=$(TARGET_LANGUAGES),java
-endif
+STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
+BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
 
 include $(INCLUDE_DIR)/host-build.mk
 
-STAMP_BUILT:=$(STAGING_DIR)/stampfiles/.host_gcc-initial_installed
-BUILD_DIR1:=$(TOOLCHAIN_BUILD_DIR)/gcc-$(PKG_VERSION)-initial
-BUILD_DIR2:=$(TOOLCHAIN_BUILD_DIR)/gcc-$(PKG_VERSION)-final
+STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed
+BUILD_DIR1:=$(BUILD_DIR_HOST)/gcc-$(PKG_VERSION)-initial
+BUILD_DIR2:=$(BUILD_DIR_HOST)/gcc-$(PKG_VERSION)-final
+
+SEP:=,
+TARGET_LANGUAGES:="c$(if $(CONFIG_INSTALL_LIBSTDCPP),$(SEP)c++)$(if $(CONFIG_INSTALL_LIBGCJ),$(SEP)java)"
 
 define Stage1/Configure
+	$(SED) 's,TARGET_CROSS=.*,TARGET_CROSS=$(REAL_GNU_TARGET_NAME)-,' $(TOOLCHAIN_DIR)/info.mk
+	$(SED) 's,GCC_VERSION=.*,GCC_VERSION=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
 	mkdir -p $(BUILD_DIR1)
 	(cd $(BUILD_DIR1); rm -f config.cache; \
 		SHELL="$(BASH)" \
 		$(PKG_BUILD_DIR)/configure \
-		--prefix=$(STAGING_DIR) \
+		--prefix=$(TOOLCHAIN_DIR) \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(GNU_HOST_NAME) \
 		--target=$(REAL_GNU_TARGET_NAME) \
 		--enable-languages=c \
 		--disable-shared \
-		--with-sysroot=$(TOOLCHAIN_BUILD_DIR)/uClibc_dev/ \
+		--with-sysroot=$(BUILD_DIR_HOST)/uClibc_dev/ \
 		--disable-__cxa_atexit \
 		--enable-target-optspace \
 		--with-gnu-ld \
@@ -77,14 +71,14 @@ endef
 define Stage2/Configure
 	mkdir -p $(BUILD_DIR2)
 	# Important!  Required for limits.h to be fixed.
-	rm -rf $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
-	ln -sf ../include $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
-	rm -rf $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/lib
-	ln -sf ../lib $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/lib
+	rm -rf $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
+	ln -sf ../include $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
+	rm -rf $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/lib
+	ln -sf ../lib $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/lib
 	(cd $(BUILD_DIR2); rm -f config.cache; \
 		SHELL="$(BASH)" \
 		$(PKG_BUILD_DIR)/configure \
-		--prefix=$(STAGING_DIR) \
+		--prefix=$(TOOLCHAIN_DIR) \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(GNU_HOST_NAME) \
 		--target=$(REAL_GNU_TARGET_NAME) \
@@ -97,15 +91,20 @@ define Stage2/Configure
 		--disable-libmudflap \
 	);
 endef
+
 define Stage2/Compile
-	export SHELL="$(BASH)"; $(MAKE) -C $(BUILD_DIR2) all
+	$(MAKE) -C $(BUILD_DIR2) \
+		SHELL="$(BASH)" \
+		all
 endef
+
 define Stage2/Install
-	export SHELL="$(BASH)"; $(MAKE) -C $(BUILD_DIR2) install
-	echo $(PKG_VERSION) > $(STAGING_DIR)/gcc_version
+	$(MAKE) -C $(BUILD_DIR2) \
+		SHELL="$(BASH)" \
+		install
 	# Set up the symlinks to enable lying about target name.
 	set -e; \
-	(cd $(STAGING_DIR); \
+	(cd $(TOOLCHAIN_DIR); \
 		ln -sf $(REAL_GNU_TARGET_NAME) $(GNU_TARGET_NAME); \
 		cd bin; \
 		for app in $(REAL_GNU_TARGET_NAME)-* ; do \
@@ -129,7 +128,7 @@ endef
 
 define Build/Compile
 	$(call Stage1/Compile)
-	$(call Stage1/Install)
+	$(if $(wildcard $(TOOLCHAIN_DIR)/bin/$(GNU_TARGET_NAME)-gcc),,$(call Stage1/Install))
 endef
 
 define Build/Install
@@ -139,11 +138,13 @@ define Build/Install
 endef
 
 define Build/Clean
-	rm -rf $(PKG_BUILD_DIR)
-	rm -rf $(BUILD_DIR1)
-	rm -rf $(BUILD_DIR2)
-	rm -f $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)-gc*
-	rm -f $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)-c*
+	rm -rf \
+		$(PKG_BUILD_DIR) \
+		$(BUILD_DIR1) \
+		$(BUILD_DIR2) \
+		$(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME) \
+		$(TOOLCHAIN_DIR)/bin/$(REAL_GNU_TARGET_NAME)-gc* \
+		$(TOOLCHAIN_DIR)/bin/$(REAL_GNU_TARGET_NAME)-c*
 endef
 
 $(eval $(call HostBuild))

@@ -5,33 +5,32 @@
 # See /LICENSE for more information.
 #
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME=kernel-headers
-PKG_VERSION=$(LINUX_VERSION)
+PKG_NAME:=linux
+PKG_VERSION:=$(LINUX_VERSION)
+PKG_SOURCE:=$(LINUX_SOURCE)
+PKG_SOURCE_URL:=$(LINUX_SITE)
 
-PKG_SOURCE=$(LINUX_SOURCE)
-PKG_SOURCE_URL=$(LINUX_SITE)
+KERNEL_BUILD_DIR := $(BUILD_DIR_TOOLCHAIN)
+PKG_BUILD_DIR := $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
+LINUX_DIR := $(PKG_BUILD_DIR)
+BUILD_DIR := $(KERNEL_BUILD_DIR)
 
-PKG_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)/linux-$(PKG_VERSION)
-
-LINUX_DIR:=$(PKG_BUILD_DIR)
-KERNEL_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)
+STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
+BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
 override QUILT:=
 
+include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/kernel-defaults.mk
 
-
 define Build/Prepare/cris
-	mkdir -p $(TOOLCHAIN_BUILD_DIR)
+	mkdir -p $(BUILD_DIR_TOOLCHAIN)
 	bzcat $(DL_DIR)/$(PKG_SOURCE) | $(HOST_TAR) -C $(TOOLCHAIN_BUILD_DIR) $(TAR_OPTIONS)
 	$(PATCH) $(PKG_BUILD_DIR) $(TOPDIR)/target/linux/etrax-2.6/patches/generic_2.6
 	$(PATCH) $(PKG_BUILD_DIR) $(TOPDIR)/target/linux/etrax-2.6/patches/cris
-	ln -sf $(PKG_BUILD_DIR)/include/asm-cris/arch-v10 $(PKG_BUILD_DIR)/include/asm-cris/arch
-	ln -sf $(PKG_BUILD_DIR)/arch/cris/arch-v10 $(PKG_BUILD_DIR)/arch/cris/arch
-	$(SED) 's/@expr length/@-expr length/' $(PKG_BUILD_DIR)/Makefile
-	ln -sf $(PKG_BUILD_DIR) $(LINUX_HEADERS_DIR)
+	ln -sf arch-v10 $(PKG_BUILD_DIR)/include/asm-cris/arch
+	ln -sf arch-v10 $(PKG_BUILD_DIR)/arch/cris/arch
 endef
 
 define Build/Configure/powerpc
@@ -48,14 +47,10 @@ KMAKE := $(MAKE) -C $(PKG_BUILD_DIR) \
 	ARCH=$(LINUX_KARCH) \
 	CONFIG_SHELL=$(BASH)
 
-define Build/Prepare/Default
-	$(call Kernel/Prepare/Default)
-	$(SED) 's/@expr length/@-expr length/' $(PKG_BUILD_DIR)/Makefile
-	ln -sf $(PKG_BUILD_DIR) $(LINUX_HEADERS_DIR)
-endef
-
 define Build/Prepare
-	$(if $(Build/Prepare/$(ARCH)),$(Build/Prepare/$(ARCH)),$(Build/Prepare/Default))
+	$(if $(Build/Prepare/$(ARCH)),$(Build/Prepare/$(ARCH)),$(call Kernel/Prepare/Default))
+	$(SED) 's/@expr length/@-expr length/' $(PKG_BUILD_DIR)/Makefile
+	ln -sf linux-$(LINUX_VERSION) $(LINUX_HEADERS_DIR)
 	yes '' | $(KMAKE) oldconfig
 	$(KMAKE) include/linux/version.h include/asm
 	$(call Build/Configure/$(ARCH))

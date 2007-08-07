@@ -17,23 +17,23 @@ $(curdir)/builddirs-install:=. $(sort $(package-y))
 $(curdir)/install:=$(curdir)/install-cleanup
 
 $(curdir)/cleanup: $(TMP_DIR)/.build
-	rm -rf $(BUILD_DIR)/root
+	rm -rf $(TARGET_DIR)
 
 $(curdir)/rootfs-prepare: $(TMP_DIR)/.build
 	@if [ -d $(TOPDIR)/files ]; then \
-		$(CP) $(TOPDIR)/files/. $(BUILD_DIR)/root; \
+		$(CP) $(TOPDIR)/files/. $(TARGET_DIR); \
 	fi
-	@mkdir -p $(BUILD_DIR)/root/etc/rc.d
+	@mkdir -p $(TARGET_DIR)/etc/rc.d
 	@( \
-		cd $(BUILD_DIR)/root; \
+		cd $(TARGET_DIR); \
 		for script in ./etc/init.d/*; do \
 			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
-			IPKG_INSTROOT=$(BUILD_DIR)/root $(which bash) ./etc/rc.common $$script enable; \
+			IPKG_INSTROOT=$(TARGET_DIR) $(which bash) ./etc/rc.common $$script enable; \
 		done || true \
 	)
-	@-find $(BUILD_DIR)/root -name CVS   | $(XARGS) rm -rf
-	@-find $(BUILD_DIR)/root -name .svn  | $(XARGS) rm -rf
-	@-find $(BUILD_DIR)/root -name '.#*' | $(XARGS) rm -f
+	@-find $(TARGET_DIR) -name CVS   | $(XARGS) rm -rf
+	@-find $(TARGET_DIR) -name .svn  | $(XARGS) rm -rf
+	@-find $(TARGET_DIR) -name '.#*' | $(XARGS) rm -f
 
 $(curdir)/index: FORCE
 	@(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages)

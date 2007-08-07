@@ -12,7 +12,7 @@ define Build/Clean
 endef
 
 define Image/Prepare
-	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
+	cat $(KDIR)/vmlinux | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
 	rm -f $(KDIR)/loader.gz
 	$(MAKE) -C lzma-loader \
 		BUILD_DIR="$(KDIR)" \
@@ -32,15 +32,15 @@ ifneq ($(KERNEL),2.4)
 endif
 
 define Image/Build/CyberTAN
-	$(STAGING_DIR)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx -o $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(5).bin
+	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx -o $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(5).bin
 endef
 
 define Image/Build/Motorola
-	$(STAGING_DIR)/bin/motorola-bin -$(3) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(4).bin
+	$(STAGING_DIR_HOST)/bin/motorola-bin -$(3) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(4).bin
 endef
 
 define Image/Build/USR
-	$(STAGING_DIR)/bin/trx2usr $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(3).bin
+	$(STAGING_DIR_HOST)/bin/trx2usr $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(3).bin
 endef
 
 define trxalign/jffs2-128k
@@ -78,7 +78,7 @@ define Image/Build/squashfs
 endef
 
 define Image/Build
-	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1),$(1))
+	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1),$(1))
 	$(call Image/Build/$(1),$(1))
 	$(call Image/Build/Motorola,$(1),wr850g,1,$(1))
 	$(call Image/Build/USR,$(1),usr5461,$(1))

@@ -94,7 +94,7 @@ download: .config FORCE
 	$(MAKE) -j1 package/download
 	$(MAKE) -j1 target/download
 
-clean dirclean distclean:
+clean dirclean:
 	@$(MAKE) $@ 
 
 prereq:: .config
@@ -117,6 +117,9 @@ docs/clean: FORCE
 symlinkclean:
 	-find package -type l | xargs rm -f
 	rm -rf tmp
+
+distclean:
+	rm -rf tmp build_dir staging_dir dl .config*
 
 ifeq ($(findstring v,$(DEBUG)),)
   .SILENT: symlinkclean clean dirclean distclean config-clean download help tmpinfo-clean .config scripts/config/mconf scripts/config/conf menuconfig tmp/.prereq-build tmp/.prereq-package tmp/.prereq-target prepare-tmpinfo

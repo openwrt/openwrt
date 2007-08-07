@@ -22,7 +22,7 @@ define Build/Clean
 endef
 
 define Image/Prepare
-	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
+	cat $(KDIR)/vmlinux | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
 endef
 
 define trxalign/jffs2-128k
@@ -36,12 +36,12 @@ define trxalign/squashfs
 endef
 
 define Image/Build/TRX
-	$(STAGING_DIR)/bin/trx -o $(1) -f $(3) -f $(KDIR)/vmlinux.lzma \
+	$(STAGING_DIR_HOST)/bin/trx -o $(1) -f $(3) -f $(KDIR)/vmlinux.lzma \
 		$(call trxalign/$(2)) -f $(KDIR)/root.$(2)
 endef
 
 define Image/Build/TRXNoloader
-	$(STAGING_DIR)/bin/trx -o $(1) -f $(KDIR)/vmlinux.lzma \
+	$(STAGING_DIR_HOST)/bin/trx -o $(1) -f $(KDIR)/vmlinux.lzma \
 		$(call trxalign/$(2)) -f $(KDIR)/root.$(2)
 endef
 

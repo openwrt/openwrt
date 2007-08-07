@@ -49,7 +49,7 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
 		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1))) $(BOOTOPTS)#g' \
 		-e 's#@BAUDRATE@#$(CONFIG_X86_GRUB_BAUDRATE)#g' \
 		./grub/menu.lst > $(KDIR)/root.grub/boot/grub/menu.lst
-	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(STAGING_DIR)/usr/sbin:$(STAGING_DIR)/bin:$(PATH)" ./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).image $(CONFIG_X86_GRUB_KERNELPART) $(KDIR)/root.grub $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
+	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).image $(CONFIG_X86_GRUB_KERNELPART) $(KDIR)/root.grub $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
 	$(call Image/Build/grub/$(1))
   endef
 endif
@@ -58,11 +58,10 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
   define Image/Prepare/grub
 	# for the image builder
 	$(CP) \
-		$(STAGING_DIR)/usr/lib/grub/i386-pc/stage1 \
-		$(STAGING_DIR)/usr/lib/grub/i386-pc/stage2 \
-		$(STAGING_DIR)/usr/lib/grub/i386-pc/e2fs_stage1_5 \
+		$(STAGING_DIR_HOST)/usr/lib/grub/i386-pc/stage1 \
+		$(STAGING_DIR_HOST)/usr/lib/grub/i386-pc/stage2 \
+		$(STAGING_DIR_HOST)/usr/lib/grub/i386-pc/e2fs_stage1_5 \
 		$(KDIR)/
-	$(CP) $(STAGING_DIR)/usr/sbin/grub $(STAGING_DIR)/bin
   endef
 endif
 
