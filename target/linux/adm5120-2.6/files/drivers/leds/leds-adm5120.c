@@ -71,61 +71,6 @@ n ## _leds [] __initdata =
 #define LED_INV(g,n,t)	LED_DATA((n),(t),(g), 1, 0)
 
 /*
- * ZyXEL boards
- */
-#if defined(CONFIG_LEDS_ADM5120_EXPERIMENTAL)
-LED_ARRAY(p334) { /* FIXME: untested */
-	LED_INV(ADM5120_GPIO_xxxx, "power",	NULL ),
-	LED_INV(ADM5120_GPIO_xxxx, "lan1",	NULL ),
-	LED_INV(ADM5120_GPIO_xxxx, "lan2",	NULL ),
-	LED_INV(ADM5120_GPIO_xxxx, "lan3",	NULL ),
-	LED_INV(ADM5120_GPIO_xxxx, "lan4",	NULL ),
-	LED_INV(ADM5120_GPIO_xxxx, "wan",	NULL ),
-};
-#endif
-
-LED_ARRAY(p334wt) {
-	LED_INV(ADM5120_GPIO_PIN2, "power",	NULL ),
-	LED_INV(ADM5120_GPIO_P3L0, "lan1",	NULL ),
-	LED_INV(ADM5120_GPIO_P2L0, "lan2",	NULL ),
-	LED_INV(ADM5120_GPIO_P1L0, "lan3",	NULL ),
-	LED_INV(ADM5120_GPIO_P0L0, "lan4",	NULL ),
-	LED_INV(ADM5120_GPIO_P4L0, "wan",	NULL ),
-	LED_INV(ADM5120_GPIO_P4L2, "wlan",	NULL ),
-	LED_INV(ADM5120_GPIO_P2L2, "otist",	NULL ),
-	LED_INV(ADM5120_GPIO_P1L2, "hidden",	NULL ),
-};
-
-#if defined(CONFIG_LEDS_ADM5120_EXPERIMENTAL)
-LED_ARRAY(p335) { /* FIXME: untested */
-	LED_INV(ADM5120_GPIO_PIN2, "power",	NULL ),
-	LED_INV(ADM5120_GPIO_P3L0, "lan1",	NULL ),
-	LED_INV(ADM5120_GPIO_P2L0, "lan2",	NULL ),
-	LED_INV(ADM5120_GPIO_P1L0, "lan3",	NULL ),
-	LED_INV(ADM5120_GPIO_P0L0, "lan4",	NULL ),
-	LED_INV(ADM5120_GPIO_P4L0, "wan",	NULL ),
-	LED_INV(ADM5120_GPIO_P4L2, "wlan",	NULL ),
-	LED_INV(ADM5120_GPIO_P2L2, "otist",	NULL ),
-	LED_INV(ADM5120_GPIO_xxxx, "usb",	NULL ),
-};
-#endif
-
-/*
- * Mikrotik boards
- */
-#if defined(CONFIG_LEDS_ADM5120_EXPERIMENTAL)
-LED_ARRAY(rb100) { /* FIXME: untested */
-	LED_STD(ADM5120_GPIO_PIN6, "power",	NULL ),
-	LED_STD(ADM5120_GPIO_PIN3, "user",	NULL ),
-};
-#endif
-
-LED_ARRAY(rb133) {
-	LED_STD(ADM5120_GPIO_PIN6, "power",	NULL ),
-	LED_STD(ADM5120_GPIO_PIN5, "user",	NULL ),
-};
-
-/*
  * Compex boards
  */
 #if defined(CONFIG_LEDS_ADM5120_EXPERIMENTAL)
@@ -168,6 +113,81 @@ LED_ARRAY(wp54g) {
 	LED_INV(ADM5120_GPIO_P1L0, "lan2",	NULL ),
 };
 
+/*
+ * Edimax boards
+ */
+LED_ARRAY(br6104k) {
+	LED_STD(ADM5120_GPIO_PIN0, "power",		NULL ),
+	LED_INV(ADM5120_GPIO_P0L1, "wan_speed",		NULL ),
+	LED_INV(ADM5120_GPIO_P0L0, "wan_lnkact",	NULL ),
+	LED_INV(ADM5120_GPIO_P1L1, "lan1_speed",	NULL ),
+	LED_INV(ADM5120_GPIO_P1L0, "lan1_lnkact",	NULL ),
+	LED_INV(ADM5120_GPIO_P2L1, "lan2_speed",	NULL ),
+	LED_INV(ADM5120_GPIO_P2L0, "lan2_lnkact",	NULL ),
+	LED_INV(ADM5120_GPIO_P3L1, "lan3_speed",	NULL ),
+	LED_INV(ADM5120_GPIO_P3L0, "lan3_lnkact",	NULL ),
+	LED_INV(ADM5120_GPIO_P4L1, "lan4_speed",	NULL ),
+	LED_INV(ADM5120_GPIO_P4L0, "lan4_lnkact",	NULL ),
+};
+
+/*
+ * Mikrotik boards
+ */
+#if defined(CONFIG_LEDS_ADM5120_EXPERIMENTAL)
+LED_ARRAY(rb100) { /* FIXME: untested */
+	LED_STD(ADM5120_GPIO_PIN6, "power",	NULL ),
+	LED_STD(ADM5120_GPIO_PIN3, "user",	NULL ),
+};
+#endif
+
+LED_ARRAY(rb133) {
+	LED_STD(ADM5120_GPIO_PIN6, "power",	NULL ),
+	LED_STD(ADM5120_GPIO_PIN5, "user",	NULL ),
+};
+
+/*
+ * ZyXEL boards
+ */
+#if defined(CONFIG_LEDS_ADM5120_EXPERIMENTAL)
+LED_ARRAY(p334) { /* FIXME: untested */
+	LED_INV(ADM5120_GPIO_xxxx, "power",	NULL ),
+	LED_INV(ADM5120_GPIO_xxxx, "lan1",	NULL ),
+	LED_INV(ADM5120_GPIO_xxxx, "lan2",	NULL ),
+	LED_INV(ADM5120_GPIO_xxxx, "lan3",	NULL ),
+	LED_INV(ADM5120_GPIO_xxxx, "lan4",	NULL ),
+	LED_INV(ADM5120_GPIO_xxxx, "wan",	NULL ),
+};
+#endif
+
+LED_ARRAY(p334wt) {
+	LED_INV(ADM5120_GPIO_PIN2, "power",	NULL ),
+	LED_INV(ADM5120_GPIO_P3L0, "lan1",	NULL ),
+	LED_INV(ADM5120_GPIO_P2L0, "lan2",	NULL ),
+	LED_INV(ADM5120_GPIO_P1L0, "lan3",	NULL ),
+	LED_INV(ADM5120_GPIO_P0L0, "lan4",	NULL ),
+	LED_INV(ADM5120_GPIO_P4L0, "wan",	NULL ),
+	LED_INV(ADM5120_GPIO_P4L2, "wlan",	NULL ),
+	LED_INV(ADM5120_GPIO_P2L2, "otist",	NULL ),
+	LED_INV(ADM5120_GPIO_P1L2, "hidden",	NULL ),
+};
+
+#if defined(CONFIG_LEDS_ADM5120_EXPERIMENTAL)
+LED_ARRAY(p335) { /* FIXME: untested */
+	LED_INV(ADM5120_GPIO_PIN2, "power",	NULL ),
+	LED_INV(ADM5120_GPIO_P3L0, "lan1",	NULL ),
+	LED_INV(ADM5120_GPIO_P2L0, "lan2",	NULL ),
+	LED_INV(ADM5120_GPIO_P1L0, "lan3",	NULL ),
+	LED_INV(ADM5120_GPIO_P0L0, "lan4",	NULL ),
+	LED_INV(ADM5120_GPIO_P4L0, "wan",	NULL ),
+	LED_INV(ADM5120_GPIO_P4L2, "wlan",	NULL ),
+	LED_INV(ADM5120_GPIO_P2L2, "otist",	NULL ),
+	LED_INV(ADM5120_GPIO_xxxx, "usb",	NULL ),
+};
+#endif
+
+/*
+ * Generic board
+ */
 LED_ARRAY(generic) {
 #if defined(CONFIG_LEDS_ADM5120_DIAG)
 	LED_STD(ADM5120_GPIO_PIN0, "gpio0",	NULL ),
@@ -204,15 +224,21 @@ LED_ARRAY(generic) {
 
 static struct mach_data machines[] __initdata = {
 	MACH_DATA(MACH_ADM5120_GENERIC, generic),
-	MACH_DATA(MACH_ADM5120_P334WT,	p334wt),
+	/* Compex */
 	MACH_DATA(MACH_ADM5120_WP54AG,	wp54g),
 	MACH_DATA(MACH_ADM5120_WP54G,	wp54g),
 	MACH_DATA(MACH_ADM5120_WP54G_WRT, wp54g),
 	MACH_DATA(MACH_ADM5120_WPP54AG,	wp54g),
 	MACH_DATA(MACH_ADM5120_WPP54G,	wp54g),
+	/* Edimax */
+	MACH_DATA(MACH_ADM5120_BR6104K,	br6104k),
+	/* Mikrotik */
 	MACH_DATA(MACH_ADM5120_RB_133,	rb133),
 	MACH_DATA(MACH_ADM5120_RB_133C,	rb133),
+	/* ZyXEL */
+	MACH_DATA(MACH_ADM5120_P334WT,	p334wt),
 #if defined(CONFIG_LEDS_ADM5120_EXPERIMENTAL)
+	/* untested */
 	MACH_DATA(MACH_ADM5120_P334,	p334),
 	MACH_DATA(MACH_ADM5120_P335,	p335),
 	MACH_DATA(MACH_ADM5120_RB_111,	rb100),
