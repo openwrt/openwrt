@@ -45,7 +45,7 @@ MODULE_DESCRIPTION("TI AR7 ethernet driver (CPMAC)");
 MODULE_LICENSE("GPL");
 
 static int rx_ring_size = 64;
-static int disable_napi = 1;
+static int disable_napi = 0;
 module_param(rx_ring_size, int, 64);
 module_param(disable_napi, int, 0);
 MODULE_PARM_DESC(rx_ring_size, "Size of rx ring (in skbs)");
