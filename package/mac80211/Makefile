@@ -57,4 +57,13 @@ ifneq ($(KERNEL_PATCHVER),2.6.21)
   endef
 endif
 
+define Build/InstallDev
+	mkdir -p $(STAGING_DIR)/usr/include/mac80211
+	$(CP) $(PKG_BUILD_DIR)/mac80211/{hostapd_ioctl,ieee80211_common}.h $(STAGING_DIR)/usr/include/mac80211
+endef
+
+define Build/UninstallDev
+	rm -rf	$(STAGING_DIR)/usr/include/mac80211
+endef
+
 $(eval $(call KernelPackage,mac80211))
