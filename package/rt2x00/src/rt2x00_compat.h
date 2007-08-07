@@ -51,6 +51,12 @@
 #endif
 #endif
 
+#if (defined(CONFIG_RT2X00_DEBUGFS))
+#if (!defined(CONFIG_MAC80211_DEBUGFS) && !defined(CONFIG_MAC80211_DEBUGFS_MODULE))
+#error mac80211 debugfs support has been disabled in your kernel!
+#endif
+#endif
+
 #if (defined(CONFIG_RT2400PCI_BUTTON) || defined(CONFIG_RT2500PCI_BUTTON) || defined(CONFIG_RT61PCI_BUTTON))
 #if (!defined(CONFIG_RFKILL) && !defined (CONFIG_RFKILL_MODULE))
 #error RFKILL has been disabled in your kernel!

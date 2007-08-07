@@ -28,43 +28,6 @@
 #ifndef RT2X00LIB_H
 #define RT2X00LIB_H
 
-struct rt2x00_dev;
-struct data_desc;
-struct data_entry_desc;
-struct data_entry;
-
-/*
- * Details about the supported modes, rates and channels
- * of a particular chipset. This is used by rt2x00lib
- * to build the ieee80211_hw_mode array for mac80211.
- */
-struct hw_mode_spec {
-	/*
-	 * Default mac address.
-	 */
-	char *mac_addr;
-
-	/*
-	 * Number of modes, rates and channels.
-	 */
-	int num_modes;
-	int num_rates;
-	int num_channels;
-
-	/*
-	 * txpower values.
-	 */
-	const u8 *tx_power_a;
-	const u8 *tx_power_bg;
-	u8 tx_power_default;
-
-	/*
-	 * Device/chipset specific value.
-	 */
-	const u32 *chan_val_a;
-	const u32 *chan_val_bg;
-};
-
 /*
  * Driver allocation handlers.
  */
@@ -99,8 +62,6 @@ void rt2x00lib_write_tx_desc(struct rt2x00_dev *rt2x00dev,
 int rt2x00lib_tx(struct ieee80211_hw *hw, struct sk_buff *skb,
 	struct ieee80211_tx_control *control);
 int rt2x00lib_reset(struct ieee80211_hw *hw);
-int rt2x00lib_open(struct ieee80211_hw *hw);
-int rt2x00lib_stop(struct ieee80211_hw *hw);
 int rt2x00lib_add_interface(struct ieee80211_hw *hw,
 	struct ieee80211_if_init_conf *conf);
 void rt2x00lib_remove_interface(struct ieee80211_hw *hw,
@@ -114,5 +75,7 @@ int rt2x00lib_get_tx_stats(struct ieee80211_hw *hw,
 	struct ieee80211_tx_queue_stats *stats);
 int rt2x00lib_conf_tx(struct ieee80211_hw *hw, int queue,
 	const struct ieee80211_tx_queue_params *params);
+
+#include "rt2x00debug.h"
 
 #endif /* RT2X00LIB_H */

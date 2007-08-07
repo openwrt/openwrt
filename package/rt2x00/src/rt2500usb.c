@@ -38,6 +38,7 @@
 #include <linux/etherdevice.h>
 
 #include "rt2x00.h"
+#include "rt2x00lib.h"
 #include "rt2x00usb.h"
 #include "rt2500usb.h"
 
@@ -638,8 +639,9 @@ static void rt2500usb_disable_led(struct rt2x00_dev *rt2x00dev)
 /*
  * Link tuning
  */
-static void rt2500usb_link_tuner(struct rt2x00_dev *rt2x00dev, int rssi)
+static void rt2500usb_link_tuner(struct rt2x00_dev *rt2x00dev)
 {
+	int rssi = rt2x00_get_link_rssi(&rt2x00dev->link);
 	u16 bbp_thresh;
 	u16 cca_alarm;
 	u16 vgc_bound;
@@ -734,62 +736,19 @@ static void rt2500usb_link_tuner(struct rt2x00_dev *rt2x00dev, int rssi)
 
 	if (r17 > up_bound) {
 		rt2500usb_bbp_write(rt2x00dev, 17, up_bound);
-		rt2x00dev->link.curr_noise = up_bound;
+		rt2x00dev->rx_status.noise = up_bound;
 	} else if (cca_alarm > 512 && r17 < up_bound) {
 		rt2500usb_bbp_write(rt2x00dev, 17, ++r17);
-		rt2x00dev->link.curr_noise = r17;
+		rt2x00dev->rx_status.noise = r17;
 	} else if (cca_alarm < 100 && r17 > low_bound) {
 		rt2500usb_bbp_write(rt2x00dev, 17, --r17);
-		rt2x00dev->link.curr_noise = r17;
+		rt2x00dev->rx_status.noise = r17;
 	}
 }
 
 /*
  * Initialization functions.
  */
-static void rt2500usb_init_rxring(struct rt2x00_dev *rt2x00dev)
-{
-	struct usb_device *usb_dev =
-		interface_to_usbdev(rt2x00dev_usb(rt2x00dev));
-	unsigned int i;
-
-	for (i = 0; i < rt2x00dev->rx->stats.limit; i++) {
-		usb_fill_bulk_urb(
-			rt2x00dev->rx->entry[i].priv,
-			usb_dev,
-			usb_rcvbulkpipe(usb_dev, 1),
-			rt2x00dev->rx->entry[i].skb->data,
-			rt2x00dev->rx->entry[i].skb->len,
-			rt2500usb_interrupt_rxdone,
-			&rt2x00dev->rx->entry[i]);
-	}
-
-	rt2x00_ring_index_clear(rt2x00dev->rx);
-}
-
-static void rt2500usb_init_txring(struct rt2x00_dev *rt2x00dev,
-	const int queue)
-{
-	struct data_ring *ring = rt2x00_get_ring(rt2x00dev, queue);
-	unsigned int i;
-
-	for (i = 0; i < ring->stats.limit; i++)
-		ring->entry[i].flags = 0;
-
-	rt2x00_ring_index_clear(ring);
-}
-
-static int rt2500usb_init_rings(struct rt2x00_dev *rt2x00dev)
-{
-	rt2500usb_init_rxring(rt2x00dev);
-	rt2500usb_init_txring(rt2x00dev, IEEE80211_TX_QUEUE_DATA0);
-	rt2500usb_init_txring(rt2x00dev, IEEE80211_TX_QUEUE_DATA1);
-	rt2500usb_init_txring(rt2x00dev, IEEE80211_TX_QUEUE_AFTER_BEACON);
-	rt2500usb_init_txring(rt2x00dev, IEEE80211_TX_QUEUE_BEACON);
-
-	return 0;
-}
-
 static int rt2500usb_init_registers(struct rt2x00_dev *rt2x00dev)
 {
 	u16 reg;
@@ -801,7 +760,10 @@ static int rt2500usb_init_registers(struct rt2x00_dev *rt2x00dev)
 		USB_VENDOR_REQUEST_OUT, 0x0308, 0xf0, NULL, 0,
 		REGISTER_TIMEOUT);
 
-	rt2500usb_register_write(rt2x00dev, TXRX_CSR2, 0x0001);
+	rt2500usb_register_read(rt2x00dev, TXRX_CSR2, &reg);
+	rt2x00_set_field16(&reg, TXRX_CSR2_DISABLE_RX, 1);
+	rt2500usb_register_write(rt2x00dev, TXRX_CSR2, reg);
+
 	rt2500usb_register_write(rt2x00dev, MAC_CSR13, 0x1111);
 	rt2500usb_register_write(rt2x00dev, MAC_CSR14, 0x1e11);
 
@@ -819,9 +781,7 @@ static int rt2500usb_init_registers(struct rt2x00_dev *rt2x00dev)
 
 	rt2500usb_register_write(rt2x00dev, MAC_CSR1, 0x0004);
 
-	reg = 0;
-	rt2500usb_register_read(rt2x00dev, MAC_CSR0, &reg);
-	if (reg >= 0x0003) {
+	if (rt2x00_rev(&rt2x00dev->chip) >= RT2570_VERSION_C) {
 		rt2500usb_register_read(rt2x00dev, PHY_CSR2, &reg);
 		reg &= ~0x0002;
 	} else {
@@ -962,8 +922,7 @@ static int rt2500usb_enable_radio(struct rt2x00_dev *rt2x00dev)
 	/*
 	 * Initialize all registers.
 	 */
-	if (rt2500usb_init_rings(rt2x00dev) ||
-	    rt2500usb_init_registers(rt2x00dev) ||
+	if (rt2500usb_init_registers(rt2x00dev) ||
 	    rt2500usb_init_bbp(rt2x00dev)) {
 		ERROR(rt2x00dev, "Register initialization failed.\n");
 		return -EIO;
@@ -1107,7 +1066,7 @@ static void rt2500usb_write_tx_desc(struct rt2x00_dev *rt2x00dev,
 	rt2x00_set_field32(&word, TXD_W0_OFDM,
 		test_bit(ENTRY_TXD_OFDM_RATE, &entry->flags));
 	rt2x00_set_field32(&word, TXD_W0_NEW_SEQ,
-		test_bit(ENTRY_TXD_NEW_SEQ, &entry->flags));
+		control->flags & IEEE80211_TXCTL_FIRST_FRAGMENT);
 	rt2x00_set_field32(&word, TXD_W0_IFS, desc->ifs);
 	rt2x00_set_field32(&word, TXD_W0_DATABYTE_COUNT, length);
 	rt2x00_set_field32(&word, TXD_W0_CIPHER, CIPHER_NONE);
@@ -1141,74 +1100,40 @@ static void rt2500usb_kick_tx_queue(struct rt2x00_dev *rt2x00dev, int queue)
 }
 
 /*
- * Interrupt functions.
+ * RX control handlers
  */
-static void rt2500usb_interrupt_rxdone(struct urb *urb)
+static int rt2500usb_fill_rxdone(struct data_entry *entry,
+	int *signal, int *rssi, int *ofdm)
 {
-	struct data_entry *entry = (struct data_entry*)urb->context;
-	struct data_ring *ring = entry->ring;
-	struct rt2x00_dev *rt2x00dev = ring->rt2x00dev;
-	struct data_desc *rxd = (struct data_desc*)
-		(entry->skb->data + urb->actual_length - ring->desc_size);
+	struct urb *urb = entry->priv;
+	struct data_desc *rxd = (struct data_desc*)(entry->skb->data +
+		(urb->actual_length - entry->ring->desc_size));
 	u32 word0;
 	u32 word1;
-	int signal;
-	int rssi;
-	int ofdm;
-	u16 size;
-
-	if (!test_bit(DEVICE_ENABLED_RADIO, &rt2x00dev->flags) ||
-	    !test_and_clear_bit(ENTRY_OWNER_NIC, &entry->flags))
-		return;
-
-	/*
-	 * Check if the received data is simply too small
-	 * to be actually valid, or if the urb is signaling
-	 * a problem.
-	 */
-	if (urb->actual_length < entry->ring->desc_size || urb->status)
-		goto skip_entry;
 
 	rt2x00_desc_read(rxd, 0, &word0);
 	rt2x00_desc_read(rxd, 1, &word1);
 
 	/*
 	 * TODO: Don't we need to keep statistics
-	 * updated about events like CRC and physical errors?
+	 * updated about these errors?
 	 */
 	if (rt2x00_get_field32(word0, RXD_W0_CRC) ||
 	    rt2x00_get_field32(word0, RXD_W0_PHYSICAL_ERROR))
-		goto skip_entry;
+		return -EINVAL;
 
 	/*
 	 * Obtain the status about this packet.
 	 */
-	size = rt2x00_get_field32(word0, RXD_W0_DATABYTE_COUNT) - FCS_LEN;
-	signal = rt2x00_get_field32(word1, RXD_W1_SIGNAL);
-	rssi = rt2x00_get_field32(word1, RXD_W1_RSSI);
-	ofdm = rt2x00_get_field32(word0, RXD_W0_OFDM);
+	*signal = rt2x00_get_field32(word1, RXD_W1_SIGNAL);
+	*rssi = rt2x00_get_field32(word1, RXD_W1_RSSI) -
+		entry->ring->rt2x00dev->rssi_offset;
+	*ofdm = rt2x00_get_field32(word0, RXD_W0_OFDM);
 
 	/*
-	 * Trim the skb_buffer to only contain the valid
-	 * frame data (so ignore the device's descriptor).
+	 * rt2570 includes the FCS, so fix data length accordingly.
 	 */
-	skb_trim(entry->skb, size);
-
-	/*
-	 * Send the packet to upper layer, and update urb.
-	 */
-	rt2x00lib_rxdone(entry, NULL, ring->data_size + ring->desc_size,
-		signal, rssi, ofdm);
-	urb->transfer_buffer = entry->skb->data;
-	urb->transfer_buffer_length = entry->skb->len;
-
-skip_entry:
-	if (test_bit(DEVICE_ENABLED_RADIO, &ring->rt2x00dev->flags)) {
-		__set_bit(ENTRY_OWNER_NIC, &entry->flags);
-		usb_submit_urb(urb, GFP_ATOMIC);
-	}
-
-	rt2x00_ring_index_inc(ring);
+	return rt2x00_get_field32(word0, RXD_W0_DATABYTE_COUNT) - FCS_LEN;
 }
 
 /*
@@ -1217,6 +1142,7 @@ skip_entry:
 static int rt2500usb_alloc_eeprom(struct rt2x00_dev *rt2x00dev)
 {
 	u16 word;
+	u8 *mac;
 
 	/*
 	 * Allocate the eeprom memory, check the eeprom width
@@ -1234,6 +1160,12 @@ static int rt2500usb_alloc_eeprom(struct rt2x00_dev *rt2x00dev)
 	/*
 	 * Start validation of the data that has been read.
 	 */
+	mac = rt2x00_eeprom_addr(rt2x00dev, EEPROM_MAC_ADDR_0);
+	if (!is_valid_ether_addr(mac)) {
+		random_ether_addr(mac);
+		EEPROM(rt2x00dev, "MAC: " MAC_FMT "\n", MAC_ARG(mac));
+	}
+
 	rt2x00_eeprom_read(rt2x00dev, EEPROM_ANTENNA, &word);
 	if (word == 0xffff) {
 		rt2x00_set_field16(&word, EEPROM_ANTENNA_NUM, 2);
@@ -1259,7 +1191,7 @@ static int rt2500usb_alloc_eeprom(struct rt2x00_dev *rt2x00dev)
 	rt2x00_eeprom_read(rt2x00dev, EEPROM_CALIBRATE_OFFSET, &word);
 	if (word == 0xffff) {
 		rt2x00_set_field16(&word, EEPROM_CALIBRATE_OFFSET_RSSI,
-			MAX_RX_SSI);
+			DEFAULT_RSSI_OFFSET);
 		rt2x00_eeprom_write(rt2x00dev, EEPROM_CALIBRATE_OFFSET, word);
 		EEPROM(rt2x00dev, "Calibrate offset: 0x%04x\n", word);
 	}
@@ -1366,7 +1298,7 @@ static int rt2500usb_init_eeprom(struct rt2x00_dev *rt2x00dev)
 	 * Read the RSSI <-> dBm offset information.
 	 */
 	rt2x00_eeprom_read(rt2x00dev, EEPROM_CALIBRATE_OFFSET, &eeprom);
-	rt2x00dev->hw->max_rssi =
+	rt2x00dev->rssi_offset =
 		rt2x00_get_field16(eeprom, EEPROM_CALIBRATE_OFFSET_RSSI);
 
 	return 0;
@@ -1443,16 +1375,16 @@ static void rt2500usb_init_hw_mode(struct rt2x00_dev *rt2x00dev)
 		IEEE80211_HW_WEP_INCLUDE_IV |
 		IEEE80211_HW_DATA_NULLFUNC_ACK |
 		IEEE80211_HW_NO_TKIP_WMM_HWACCEL |
-		IEEE80211_HW_MONITOR_DURING_OPER;
+		IEEE80211_HW_MONITOR_DURING_OPER |
+		IEEE80211_HW_NO_PROBE_FILTERING;
 	rt2x00dev->hw->extra_tx_headroom = TXD_DESC_SIZE;
 	rt2x00dev->hw->max_rssi = MAX_RX_SSI;
 	rt2x00dev->hw->max_noise = MAX_RX_NOISE;
 	rt2x00dev->hw->queues = 2;
 
-	/*
-	 * This device supports ATIM
-	 */
-	__set_bit(DEVICE_SUPPORT_ATIM, &rt2x00dev->flags);
+	SET_IEEE80211_DEV(rt2x00dev->hw, &rt2x00dev_usb(rt2x00dev)->dev);
+	SET_IEEE80211_PERM_ADDR(rt2x00dev->hw,
+		rt2x00_eeprom_addr(rt2x00dev, EEPROM_MAC_ADDR_0));
 
 	/*
 	 * Set device specific, but channel independent RF values.
@@ -1475,7 +1407,6 @@ static void rt2500usb_init_hw_mode(struct rt2x00_dev *rt2x00dev)
 	/*
 	 * Initialize hw_mode information.
 	 */
-	spec->mac_addr = rt2x00_eeprom_addr(rt2x00dev, EEPROM_MAC_ADDR_0);
 	spec->num_modes = 2;
 	spec->num_rates = 12;
 	spec->num_channels = 14;
@@ -1522,6 +1453,11 @@ static int rt2500usb_init_hw(struct rt2x00_dev *rt2x00dev)
 	 */
 	rt2500usb_init_hw_mode(rt2x00dev);
 
+	/*
+	 * This device supports ATIM
+	 */
+	__set_bit(DEVICE_SUPPORT_ATIM, &rt2x00dev->flags);
+
 	return 0;
 }
 
@@ -1551,8 +1487,6 @@ static int rt2500usb_get_stats(struct ieee80211_hw *hw,
 static const struct ieee80211_ops rt2500usb_mac80211_ops = {
 	.tx			= rt2x00lib_tx,
 	.reset			= rt2x00lib_reset,
-	.open			= rt2x00lib_open,
-	.stop			= rt2x00lib_stop,
 	.add_interface		= rt2x00lib_add_interface,
 	.remove_interface	= rt2x00lib_remove_interface,
 	.config			= rt2x00lib_config,
@@ -1573,6 +1507,7 @@ static const struct rt2x00lib_ops rt2500usb_rt2x00_ops = {
 	.write_tx_desc		= rt2500usb_write_tx_desc,
 	.write_tx_data		= rt2x00usb_write_tx_data,
 	.kick_tx_queue		= rt2500usb_kick_tx_queue,
+	.fill_rxdone		= rt2500usb_fill_rxdone,
 	.config_type		= rt2500usb_config_type,
 	.config_phymode		= rt2500usb_config_phymode,
 	.config_channel		= rt2500usb_config_channel,
@@ -1665,14 +1600,11 @@ static struct usb_driver rt2500usb_driver = {
 
 static int __init rt2500usb_init(void)
 {
-	printk(KERN_INFO "Loading module: %s - %s by %s.\n",
-		DRV_NAME, DRV_VERSION, DRV_PROJECT);
 	return usb_register(&rt2500usb_driver);
 }
 
 static void __exit rt2500usb_exit(void)
 {
-	printk(KERN_INFO "Unloading module: %s.\n", DRV_NAME);
 	usb_deregister(&rt2500usb_driver);
 }
 

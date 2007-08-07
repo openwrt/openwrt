@@ -36,6 +36,7 @@
 #include <linux/usb.h>
 
 #include "rt2x00.h"
+#include "rt2x00lib.h"
 #include "rt2x00usb.h"
 
 /*
@@ -62,47 +63,12 @@ int rt2x00usb_vendor_request(const struct rt2x00_dev *rt2x00dev,
 			return 0;
 	}
 
-	ERROR(rt2x00dev, "vendor request error. Request 0x%02x failed "
-		"for offset 0x%04x with error %d.\n", request, offset, status);
+	ERROR(rt2x00dev, "Vendor Request 0x%02x failed for offset 0x%04x"
+		" with error %d.\n", request, offset, status);
 
 	return status;
 }
 EXPORT_SYMBOL_GPL(rt2x00usb_vendor_request);
-
-/*
- * Radio handlers
- */
-void rt2x00usb_enable_radio(struct rt2x00_dev *rt2x00dev)
-{
-	unsigned int i;
-
-	/*
-	 * Start the RX ring.
-	 */
-	for (i = 0; i < rt2x00dev->rx->stats.limit; i++) {
-		__set_bit(ENTRY_OWNER_NIC, &rt2x00dev->rx->entry[i].flags);
-		usb_submit_urb(rt2x00dev->rx->entry[i].priv, GFP_ATOMIC);
-	}
-}
-EXPORT_SYMBOL_GPL(rt2x00usb_enable_radio);
-
-void rt2x00usb_disable_radio(struct rt2x00_dev *rt2x00dev)
-{
-	struct data_ring *ring;
-	unsigned int i;
-
-	rt2x00usb_vendor_request(rt2x00dev, USB_RX_CONTROL,
-		USB_VENDOR_REQUEST_OUT, 0x00, 0x00, NULL, 0, REGISTER_TIMEOUT);
-
-	/*
-	 * Cancel all rings.
-	 */
-	ring_for_each(rt2x00dev, ring) {
-		for (i = 0; i < ring->stats.limit; i++)
-			usb_kill_urb(ring->entry[i].priv);
-	}
-}
-EXPORT_SYMBOL_GPL(rt2x00usb_disable_radio);
 
 /*
  * Beacon handlers.
@@ -329,6 +295,120 @@ int rt2x00usb_write_tx_data(struct rt2x00_dev *rt2x00dev,
 EXPORT_SYMBOL_GPL(rt2x00usb_write_tx_data);
 
 /*
+ * RX data handlers.
+ */
+static void rt2x00usb_interrupt_rxdone(struct urb *urb)
+{
+	struct data_entry *entry = (struct data_entry*)urb->context;
+	struct data_ring *ring = entry->ring;
+	struct rt2x00_dev *rt2x00dev = ring->rt2x00dev;
+	int signal;
+	int rssi;
+	int ofdm;
+	int size;
+
+	if (!test_bit(DEVICE_ENABLED_RADIO, &rt2x00dev->flags) ||
+	    !test_and_clear_bit(ENTRY_OWNER_NIC, &entry->flags))
+		return;
+
+	/*
+	 * Check if the received data is simply too small
+	 * to be actually valid, or if the urb is signaling
+	 * a problem.
+	 */
+	if (urb->actual_length < entry->ring->desc_size || urb->status)
+		goto skip_entry;
+
+	size = rt2x00dev->ops->lib->fill_rxdone(entry, &signal, &rssi, &ofdm);
+	if (size < 0)
+		goto skip_entry;
+
+	/*
+	 * Trim the skb_buffer to only contain the valid
+	 * frame data (so ignore the device's descriptor).
+	 */
+	skb_trim(entry->skb, size);
+
+	/*
+	 * Send the packet to upper layer, and update urb.
+	 */
+	rt2x00lib_rxdone(entry, NULL, ring->data_size + ring->desc_size,
+		signal, rssi, ofdm);
+	urb->transfer_buffer = entry->skb->data;
+	urb->transfer_buffer_length = entry->skb->len;
+
+skip_entry:
+	if (test_bit(DEVICE_ENABLED_RADIO, &ring->rt2x00dev->flags)) {
+		__set_bit(ENTRY_OWNER_NIC, &entry->flags);
+		usb_submit_urb(urb, GFP_ATOMIC);
+	}
+
+	rt2x00_ring_index_inc(ring);
+}
+
+/*
+ * Radio handlers
+ */
+void rt2x00usb_enable_radio(struct rt2x00_dev *rt2x00dev)
+{
+	struct usb_device *usb_dev =
+		interface_to_usbdev(rt2x00dev_usb(rt2x00dev));
+	struct data_ring *ring;
+	struct data_entry *entry;
+	unsigned int i;
+
+	/*
+	 * Initialize the TX rings
+	 */
+	txringall_for_each(rt2x00dev, ring) {
+		for (i = 0; i < ring->stats.limit; i++)
+			ring->entry[i].flags = 0;
+
+		rt2x00_ring_index_clear(ring);
+	}
+
+	/*
+	 * Initialize and start the RX ring.
+	 */
+	rt2x00_ring_index_clear(rt2x00dev->rx);
+
+	for (i = 0; i < rt2x00dev->rx->stats.limit; i++) {
+		entry = &rt2x00dev->rx->entry[i];
+
+		usb_fill_bulk_urb(
+			entry->priv,
+			usb_dev,
+			usb_rcvbulkpipe(usb_dev, 1),
+			entry->skb->data,
+			entry->skb->len,
+			rt2x00usb_interrupt_rxdone,
+			entry);
+
+		__set_bit(ENTRY_OWNER_NIC, &entry->flags);
+		usb_submit_urb(entry->priv, GFP_ATOMIC);
+	}
+}
+EXPORT_SYMBOL_GPL(rt2x00usb_enable_radio);
+
+void rt2x00usb_disable_radio(struct rt2x00_dev *rt2x00dev)
+{
+	struct data_ring *ring;
+	unsigned int i;
+
+	rt2x00usb_vendor_request(rt2x00dev, USB_RX_CONTROL,
+		USB_VENDOR_REQUEST_OUT, 0x00, 0x00, NULL, 0, REGISTER_TIMEOUT);
+
+	/*
+	 * Cancel all rings.
+	 */
+	ring_for_each(rt2x00dev, ring) {
+		for (i = 0; i < ring->stats.limit; i++)
+			usb_kill_urb(ring->entry[i].priv);
+	}
+}
+EXPORT_SYMBOL_GPL(rt2x00usb_disable_radio);
+
+/*
  * Device initialization handlers.
  */
 static int rt2x00usb_alloc_ring(struct rt2x00_dev *rt2x00dev,
@@ -433,7 +513,6 @@ int rt2x00usb_probe(struct usb_interface *usb_intf,
 
 	rt2x00dev = hw->priv;
 	rt2x00dev->dev = usb_intf;
-	rt2x00dev->device = &usb_intf->dev;
 	rt2x00dev->ops = ops;
 	rt2x00dev->hw = hw;
 

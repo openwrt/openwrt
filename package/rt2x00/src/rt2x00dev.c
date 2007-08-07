@@ -38,6 +38,7 @@
 #include <linux/etherdevice.h>
 
 #include "rt2x00.h"
+#include "rt2x00lib.h"
 #include "rt2x00dev.h"
 
 /*
@@ -67,6 +68,9 @@ int rt2x00lib_enable_radio(struct rt2x00_dev *rt2x00dev)
 
 	ieee80211_start_queues(rt2x00dev->hw);
 
+	if (is_interface_present(&rt2x00dev->interface))
+		rt2x00_start_link_tune(rt2x00dev);
+
 	return 0;
 }
 
@@ -74,6 +78,8 @@ void rt2x00lib_disable_radio(struct rt2x00_dev *rt2x00dev)
 {
 	if (!__test_and_clear_bit(DEVICE_ENABLED_RADIO, &rt2x00dev->flags))
 		return;
+
+	rt2x00_stop_link_tune(rt2x00dev);
 
 	ieee80211_stop_queues(rt2x00dev->hw);
 
@@ -87,7 +93,7 @@ void rt2x00lib_toggle_rx(struct rt2x00_dev *rt2x00dev, int enable)
 	/*
 	 * When we are disabling the rx, we should also stop the link tuner.
 	 */
-	if (!enable && work_pending(&rt2x00dev->link.work.work))
+	if (!enable)
 		rt2x00_stop_link_tune(rt2x00dev);
 
 	rt2x00dev->ops->lib->set_device_state(rt2x00dev,
@@ -96,7 +102,7 @@ void rt2x00lib_toggle_rx(struct rt2x00_dev *rt2x00dev, int enable)
 	/*
 	 * When we are enabling the rx, we should also start the link tuner.
 	 */
-	if (enable)
+	if (enable && is_interface_present(&rt2x00dev->interface))
 		rt2x00_start_link_tune(rt2x00dev);
 }
 
@@ -104,7 +110,6 @@ static void rt2x00lib_link_tuner(struct work_struct *work)
 {
 	struct rt2x00_dev *rt2x00dev =
 		container_of(work, struct rt2x00_dev, link.work.work);
-	int rssi;
 
 	/*
 	 * Update promisc mode (this function will first check
@@ -119,20 +124,13 @@ static void rt2x00lib_link_tuner(struct work_struct *work)
 	if (test_bit(CONFIG_DISABLE_LINK_TUNING, &rt2x00dev->flags))
 		return;
 
-	/*
-	 * Retrieve link quality.
-	 * Also convert rssi to dBm using the max_rssi value.
-	 */
-	rssi = rt2x00_get_link_rssi(&rt2x00dev->link);
-	rssi -= rt2x00dev->hw->max_rssi;
-
-	rt2x00dev->ops->lib->link_tuner(rt2x00dev, rssi);
+	rt2x00dev->ops->lib->link_tuner(rt2x00dev);
 
 	/*
 	 * Increase tuner counter, and reschedule the next link tuner run.
 	 */
 	rt2x00dev->link.count++;
-	queue_delayed_work(rt2x00dev->workqueue, &rt2x00dev->link.work,
+	queue_delayed_work(rt2x00dev->hw->workqueue, &rt2x00dev->link.work,
 		LINK_TUNE_INTERVAL);
 }
 
@@ -423,23 +421,6 @@ static int rt2x00lib_init_hw(struct rt2x00_dev *rt2x00dev)
 	int status;
 
 	/*
-	 * Initialize device.
-	 */
-	SET_IEEE80211_DEV(rt2x00dev->hw, rt2x00dev->device);
-
-	/*
-	 * Initialize MAC address.
-	 */
-	if (!is_valid_ether_addr(spec->mac_addr)) {
-		ERROR(rt2x00dev, "Invalid MAC addr: " MAC_FMT ".\n",
-			MAC_ARG(spec->mac_addr));
-		return -EINVAL;
-	}
-
-	rt2x00dev->ops->lib->config_mac_addr(rt2x00dev, spec->mac_addr);
-	SET_IEEE80211_PERM_ADDR(rt2x00dev->hw, spec->mac_addr);
-
-	/*
 	 * Initialize HW modes.
 	 */
 	status = rt2x00lib_init_hw_modes(rt2x00dev, spec);
@@ -463,7 +444,7 @@ static int rt2x00lib_init_hw(struct rt2x00_dev *rt2x00dev)
 /*
  * Initialization/uninitialization handlers.
  */
-static int rt2x00lib_alloc_ring(struct data_ring *ring,
+static int rt2x00lib_alloc_ring_entries(struct data_ring *ring,
 	const u16 max_entries, const u16 data_size, const u16 desc_size)
 {
 	struct data_entry *entry;
@@ -491,14 +472,14 @@ static int rt2x00lib_alloc_ring(struct data_ring *ring,
 	return 0;
 }
 
-static int rt2x00lib_allocate_rings(struct rt2x00_dev *rt2x00dev)
+static int rt2x00lib_allocate_ring_entries(struct rt2x00_dev *rt2x00dev)
 {
 	struct data_ring *ring;
 
 	/*
 	 * Allocate the RX ring.
 	 */
-	if (rt2x00lib_alloc_ring(rt2x00dev->rx,
+	if (rt2x00lib_alloc_ring_entries(rt2x00dev->rx,
 		RX_ENTRIES, DATA_FRAME_SIZE, rt2x00dev->ops->rxd_size))
 		return -ENOMEM;
 
@@ -506,7 +487,7 @@ static int rt2x00lib_allocate_rings(struct rt2x00_dev *rt2x00dev)
 	 * First allocate the TX rings.
 	 */
 	txring_for_each(rt2x00dev, ring) {
-		if (rt2x00lib_alloc_ring(ring,
+		if (rt2x00lib_alloc_ring_entries(ring,
 			TX_ENTRIES, DATA_FRAME_SIZE, rt2x00dev->ops->txd_size))
 			return -ENOMEM;
 	}
@@ -514,7 +495,7 @@ static int rt2x00lib_allocate_rings(struct rt2x00_dev *rt2x00dev)
 	/*
 	 * Allocate the BEACON ring.
 	 */
-	if (rt2x00lib_alloc_ring(&rt2x00dev->bcn[0],
+	if (rt2x00lib_alloc_ring_entries(&rt2x00dev->bcn[0],
 		BEACON_ENTRIES, MGMT_FRAME_SIZE, rt2x00dev->ops->txd_size))
 		return -ENOMEM;
 
@@ -522,7 +503,7 @@ static int rt2x00lib_allocate_rings(struct rt2x00_dev *rt2x00dev)
 	 * Allocate the Atim ring.
 	 */
 	if (test_bit(DEVICE_SUPPORT_ATIM, &rt2x00dev->flags)) {
-		if (rt2x00lib_alloc_ring(&rt2x00dev->bcn[1],
+		if (rt2x00lib_alloc_ring_entries(&rt2x00dev->bcn[1],
 			ATIM_ENTRIES, DATA_FRAME_SIZE, rt2x00dev->ops->txd_size))
 			return -ENOMEM;
 	}
@@ -530,7 +511,7 @@ static int rt2x00lib_allocate_rings(struct rt2x00_dev *rt2x00dev)
 	return 0;
 }
 
-static void rt2x00lib_free_rings(struct rt2x00_dev *rt2x00dev)
+static void rt2x00lib_free_ring_entries(struct rt2x00_dev *rt2x00dev)
 {
 	struct data_ring *ring;
 
@@ -550,7 +531,7 @@ int rt2x00lib_initialize(struct rt2x00_dev *rt2x00dev)
 	/*
 	 * Allocate all data rings.
 	 */
-	status = rt2x00lib_allocate_rings(rt2x00dev);
+	status = rt2x00lib_allocate_ring_entries(rt2x00dev);
 	if (status) {
 		ERROR(rt2x00dev, "DMA allocation failed.\n");
 		return status;
@@ -578,7 +559,7 @@ exit_unitialize:
 	rt2x00lib_uninitialize(rt2x00dev);
 
 exit:
-	rt2x00lib_free_rings(rt2x00dev);
+	rt2x00lib_free_ring_entries(rt2x00dev);
 
 	return status;
 }
@@ -587,11 +568,6 @@ void rt2x00lib_uninitialize(struct rt2x00_dev *rt2x00dev)
 {
 	if (!__test_and_clear_bit(DEVICE_INITIALIZED, &rt2x00dev->flags))
 		return;
-
-	/*
-	 * Flush out all pending work.
-	 */
-	flush_workqueue(rt2x00dev->workqueue);
 
 	/*
 	 * Unregister rfkill.
@@ -606,7 +582,7 @@ void rt2x00lib_uninitialize(struct rt2x00_dev *rt2x00dev)
 	/*
 	 * Free allocated datarings.
 	 */
-	rt2x00lib_free_rings(rt2x00dev);
+	rt2x00lib_free_ring_entries(rt2x00dev);
 }
 
 /*
@@ -658,13 +634,6 @@ static int rt2x00lib_alloc_rings(struct rt2x00_dev *rt2x00dev)
 int rt2x00lib_probe_dev(struct rt2x00_dev *rt2x00dev)
 {
 	int retval = -ENOMEM;
-
-	/*
-	 * Create workqueue.
-	 */
-	rt2x00dev->workqueue = create_singlethread_workqueue(DRV_NAME);
-	if (!rt2x00dev->workqueue)
-		goto exit;
 
 	/*
 	 * Let the driver probe the device to detect the capabilities.
@@ -764,14 +733,6 @@ void rt2x00lib_remove_dev(struct rt2x00_dev *rt2x00dev)
 	rt2x00lib_deinit_hw(rt2x00dev);
 
 	/*
-	 * Free workqueue.
-	 */
-	if (likely(rt2x00dev->workqueue)) {
-		destroy_workqueue(rt2x00dev->workqueue);
-		rt2x00dev->workqueue = NULL;
-	}
-
-	/*
 	 * Free ring structures.
 	 */
 	kfree(rt2x00dev->rx);
@@ -823,13 +784,6 @@ int rt2x00lib_resume(struct rt2x00_dev *rt2x00dev)
 		ERROR(rt2x00dev, "Failed to allocate device.\n");
 		return retval;
 	}
-
-	/*
-	 * Set device mode to awake for power management.
-	 */
-	retval = rt2x00dev->ops->lib->set_device_state(rt2x00dev, STATE_AWAKE);
-	if (retval)
-		return retval;
 
 	return 0;
 }
@@ -914,14 +868,14 @@ void rt2x00lib_rxdone(struct data_entry *entry, char *data,
 			 */
 			if (signal & 0x08)
 				val = rate->val2;
-			val = rate->val;
+			else
+				val = rate->val;
 			break;
 		}
 	}
 
 	rx_status->rate = val;
 	rx_status->ssi = rssi;
-	rx_status->noise = rt2x00dev->link.curr_noise;
 	rt2x00_update_link_rssi(&rt2x00dev->link, rssi);
 
 	/*
@@ -1000,12 +954,6 @@ void rt2x00lib_write_tx_desc(struct rt2x00_dev *rt2x00dev,
 	 */
 	if (ieee80211_get_morefrag(ieee80211hdr))
 		__set_bit(ENTRY_TXD_MORE_FRAG, &entry->flags);
-
-	/*
-	 * Check if this is a new sequence
-	 */
-	if ((seq_ctrl & IEEE80211_SCTL_FRAG) == 0)
-		__set_bit(ENTRY_TXD_NEW_SEQ, &entry->flags);
 
 	/*
 	 * Beacons and probe responses require the tsf timestamp

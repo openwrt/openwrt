@@ -33,6 +33,7 @@
 #include <linux/netdevice.h>
 
 #include "rt2x00.h"
+#include "rt2x00lib.h"
 #include "rt2x00dev.h"
 
 static int rt2x00_tx_rts_cts(struct rt2x00_dev *rt2x00dev,
@@ -129,60 +130,18 @@ int rt2x00lib_reset(struct ieee80211_hw *hw)
 }
 EXPORT_SYMBOL_GPL(rt2x00lib_reset);
 
-int rt2x00lib_open(struct ieee80211_hw *hw)
-{
-	struct rt2x00_dev *rt2x00dev = hw->priv;
-	int status;
-
-	/*
-	 * We must wait on the firmware before
-	 * we can safely continue.
-	 */
-	status = rt2x00lib_load_firmware_wait(rt2x00dev);
-	if (status)
-		return status;
-
-	/*
-	 * Initialize the device.
-	 */
-	status = rt2x00lib_initialize(rt2x00dev);
-	if (status)
-		return status;
-
-	/*
-	 * Enable radio.
-	 */
-	status = rt2x00lib_enable_radio(rt2x00dev);
-	if (status) {
-		rt2x00lib_uninitialize(rt2x00dev);
-		return status;
-	}
-
-	return 0;
-}
-EXPORT_SYMBOL_GPL(rt2x00lib_open);
-
-int rt2x00lib_stop(struct ieee80211_hw *hw)
-{
-	struct rt2x00_dev *rt2x00dev = hw->priv;
-
-	rt2x00lib_disable_radio(rt2x00dev);
-
-	return 0;
-}
-EXPORT_SYMBOL_GPL(rt2x00lib_stop);
-
 int rt2x00lib_add_interface(struct ieee80211_hw *hw,
 	struct ieee80211_if_init_conf *conf)
 {
 	struct rt2x00_dev *rt2x00dev = hw->priv;
 	struct interface *intf = &rt2x00dev->interface;
+	int status;
 
 	/*
 	 * We only support 1 non-monitor interface.
 	 */
 	if (conf->type != IEEE80211_IF_TYPE_MNTR &&
-	    is_interface_present(&rt2x00dev->interface))
+	    is_interface_present(intf))
 		return -ENOBUFS;
 
 	/*
@@ -200,17 +159,39 @@ int rt2x00lib_add_interface(struct ieee80211_hw *hw,
 	}
 
 	/*
-	 * If this is the first interface which is being added,
-	 * we should write the MAC address to the device.
+	 * Initialize interface, and enable the radio when this
+	 * is the first interface that is brought up.
 	 */
-	if (!test_bit(DEVICE_ENABLED_RADIO, &rt2x00dev->flags))
-		rt2x00dev->ops->lib->config_mac_addr(rt2x00dev, conf->mac_addr);
+	if (!test_bit(DEVICE_ENABLED_RADIO, &rt2x00dev->flags)) {
+		/*
+		 * We must wait on the firmware before
+		 * we can safely continue.
+		 */
+		status = rt2x00lib_load_firmware_wait(rt2x00dev);
+		if (status)
+			return status;
 
-	/*
-	 * Enable periodic link tuning if this is a non-monitor interface.
-	 */
-	if (conf->type != IEEE80211_IF_TYPE_MNTR)
-		rt2x00_start_link_tune(rt2x00dev);
+		/*
+		 * Before initialization, the mac address should
+		 * be configured.
+		 */
+		rt2x00dev->ops->lib->config_mac_addr(rt2x00dev,
+			conf->mac_addr);
+ 
+		/*
+		 * Initialize the device.
+		 */
+		status = rt2x00lib_initialize(rt2x00dev);
+		if (status)
+			return status;
+
+		/*
+		 * Enable radio.
+		 */
+		status = rt2x00lib_enable_radio(rt2x00dev);
+		if (status)
+			return status;
+	}
 
 	return 0;
 }
@@ -226,12 +207,12 @@ void rt2x00lib_remove_interface(struct ieee80211_hw *hw,
 	 * We only support 1 non-monitor interface.
 	 */
 	if (conf->type != IEEE80211_IF_TYPE_MNTR &&
-	    !is_interface_present(&rt2x00dev->interface))
+	    !is_interface_present(intf))
 		return;
 
 	/*
-	 * We support muliple monitor mode interfaces.
-	 * All we need to do is decrease the monitor_count.
+	 * When removing an monitor interface, decrease monitor_count.
+	 * For non-monitor interfaces, all interface data needs to be reset.
 	 */
 	if (conf->type == IEEE80211_IF_TYPE_MNTR) {
 		intf->monitor_count--;
@@ -243,33 +224,18 @@ void rt2x00lib_remove_interface(struct ieee80211_hw *hw,
 	}
 
 	/*
-	 * When this is a non-monitor mode, stop the periodic link tuning.
+	 * If this was the last interface,
+	 * this is the time to disable the radio.
+	 * If this is not the last interface, then we should
+	 * check if we should switch completely to monitor
+	 * mode or completely switch to the non-monitor mode.
 	 */
-	if (conf->type != IEEE80211_IF_TYPE_MNTR)
-		rt2x00_stop_link_tune(rt2x00dev);
-
-	/*
-	 * Check if we still have 1 non-monitor or a monitor
-	 * interface enabled. In that case we should update the
-	 * registers.
-	 */
-	if (is_monitor_present(&rt2x00dev->interface) ^
-	    is_interface_present(&rt2x00dev->interface)) {
-		if (is_interface_present(&rt2x00dev->interface))
-			rt2x00lib_config_type(rt2x00dev,
-				rt2x00dev->interface.type);
-		else
-			rt2x00lib_config_type(rt2x00dev,
-				IEEE80211_IF_TYPE_MNTR);
-	}
-
-	/*
-	 * Check which interfaces have been disabled.
-	 */
-	if (!is_interface_present(&rt2x00dev->interface))
-		__clear_bit(INTERFACE_ENABLED, &rt2x00dev->flags);
-	else if (!is_monitor_present(&rt2x00dev->interface))
-		__clear_bit(INTERFACE_ENABLED_MONITOR, &rt2x00dev->flags);
+	if (!is_monitor_present(intf) && !is_interface_present(intf))
+		rt2x00lib_disable_radio(rt2x00dev);
+	else if (is_monitor_present(intf) ^ is_interface_present(intf))
+		rt2x00lib_config_type(rt2x00dev,
+			is_interface_present(intf) ?
+				intf->type : IEEE80211_IF_TYPE_MNTR);
 }
 EXPORT_SYMBOL_GPL(rt2x00lib_remove_interface);
 
@@ -373,10 +339,10 @@ void rt2x00lib_set_multicast_list(struct ieee80211_hw *hw,
 	 * Check if the new state is different then the old state.
 	 */
 	if (test_bit(INTERFACE_ENABLED_PROMISC, &rt2x00dev->flags) ==
-	    (flags & IFF_PROMISC))
+	    !!(flags & IFF_PROMISC))
 		return;
 
-	rt2x00dev->interface.promisc = (flags & IFF_PROMISC);
+	rt2x00dev->interface.promisc = !!(flags & IFF_PROMISC);
 
 	/*
 	 * Schedule the link tuner if this does not run
@@ -384,7 +350,7 @@ void rt2x00lib_set_multicast_list(struct ieee80211_hw *hw,
 	 * switched off when it is not required.
 	 */
 	if (!work_pending(&rt2x00dev->link.work.work))
-		queue_work(rt2x00dev->workqueue, &rt2x00dev->link.work.work);
+		queue_work(rt2x00dev->hw->workqueue, &rt2x00dev->link.work.work);
 }
 EXPORT_SYMBOL_GPL(rt2x00lib_set_multicast_list);
 

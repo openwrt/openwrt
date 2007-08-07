@@ -28,8 +28,6 @@
 #ifndef RT2X00DEBUG_H
 #define RT2X00DEBUG_H
 
-#include <net/wireless.h>
-
 typedef void (debug_access_t)(struct rt2x00_dev *rt2x00dev,
 	const unsigned long word, void *data);
 

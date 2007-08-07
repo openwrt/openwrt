@@ -10,8 +10,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=rt2x00
-#PKG_VERSION:=cvs-20070725
-PKG_VERSION:=git-200706018
+PKG_VERSION:=cvs-20070712
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -107,18 +106,20 @@ endef
 define Build/Prepare
 	$(call Build/Prepare/Default)
 	$(CP) -r src/* $(PKG_BUILD_DIR)/
-	sed 's/\$$$$(CONFIG_RT.*)/m\t\t/g' src/Makefile > $(PKG_BUILD_DIR)/Makefile
+	wget -N -P $(DL_DIR) http://www.ralinktech.com.tw/data/RT61_Firmware_V1.2.zip
+	wget -N -P $(DL_DIR) http://www.ralinktech.com.tw/data/RT71W_Firmware_V1.8.zip
+	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/RT61_Firmware_V1.2.zip
+	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/RT71W_Firmware_V1.8.zip
 endef
 
 define Build/Compile
-#	$(MAKE) -C "$(PKG_BUILD_DIR)" config_header
+	$(MAKE) -C "$(PKG_BUILD_DIR)" config_header
 	$(MAKE) -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" V="$(V)" \
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		KERNELVERSION="$(KERNEL)" \
 		KERNEL_SOURCE="$(LINUX_DIR)" \
-		CFLAGS_MODULE="-DMODULE -include $(PKG_BUILD_DIR)/rt2x00_compat.h" \
 		KDIR="$(LINUX_DIR)"
 endef
 
