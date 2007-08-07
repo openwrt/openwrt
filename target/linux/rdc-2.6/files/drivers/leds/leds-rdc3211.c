@@ -19,7 +19,7 @@
 #include <asm/gpio.h>
 
 /* This is just for testing purpose */
-int gpio;
+int gpio=-1;
 module_param(gpio, int, 0444);
 MODULE_PARM_DESC(gpio, " GPIO line");
 
@@ -58,7 +58,7 @@ static int __init rdc321x_leds_init(void)
 {
 	int ret;
 
-	ret = platform_driver_register(&rdc321x_leds_driver);
+	ret = gpio+1?platform_driver_register(&rdc321x_leds_driver):-EINVAL;
 
 	return ret;
 }

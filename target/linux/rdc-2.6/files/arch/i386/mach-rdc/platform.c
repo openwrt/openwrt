@@ -30,13 +30,12 @@
 #include <linux/platform_device.h>
 
 #include <asm/gpio.h>
-#include <asm/mach-rdc/rdc321x_defs.h>
 
 /* FIXME : Flash */
 static struct resource rdc_flash_resource[] = {
 	[0] = {
-		.start = RDC_FLASH_BASE,
-		.end = RDC_FLASH_BASE+CONFIG_MTD_RDC3210_SIZE-1,
+		.start = (u32)-CONFIG_MTD_RDC3210_SIZE,
+		.end = (u32)-1,
 		.flags = IORESOURCE_MEM,
 	},
 };

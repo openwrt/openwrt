@@ -22,14 +22,14 @@ static unsigned int rdc_gpio_read(unsigned gpio)
 {
 	unsigned int val;
 
-	val = 0x80000000 | (7 << 11) | ((0x48));
+	val = 0x80000000 | (7 << 11) | ((gpio&0x20?0x84:0x48));
         outl(val, RDC3210_CFGREG_ADDR);
         udelay(10);
         val = inl(RDC3210_CFGREG_DATA);
-        val |= (0x1 << gpio);
+        val |= (0x1 << (gpio & 0x1F));
         outl(val, RDC3210_CFGREG_DATA);
         udelay(10);
-        val = 0x80000000 | (7 << 11) | ((0x4C));
+        val = 0x80000000 | (7 << 11) | ((gpio&0x20?0x88:0x4C));
         outl(val, RDC3210_CFGREG_ADDR);
         udelay(10);
         val = inl(RDC3210_CFGREG_DATA);
@@ -37,7 +37,7 @@ static unsigned int rdc_gpio_read(unsigned gpio)
 	return val;
 }
 
-void rdc_gpio_write(unsigned int val)
+static void rdc_gpio_write(unsigned int val)
 {
 	if (val) {
 		outl(val, RDC3210_CFGREG_DATA);
@@ -47,7 +47,7 @@ void rdc_gpio_write(unsigned int val)
 
 int rdc_gpio_get_value(unsigned gpio)
 {
-	return ((int)rdc_gpio_read(gpio));
+	return (gpio>0x3A?-EINVAL:(int)rdc_gpio_read(gpio));
 }
 EXPORT_SYMBOL(rdc_gpio_get_value);
 
@@ -55,12 +55,13 @@ void rdc_gpio_set_value(unsigned gpio, int value)
 {
 	unsigned int val;
 
+	if (gpio > 0x3A) return;
 	val = rdc_gpio_read(gpio);
 
 	if (value)
-		val &= ~(0x1 << gpio);
+		val &= ~(0x1 << (gpio & 0x1F));
 	else
-		val |= (0x1 << gpio);
+		val |= (0x1 << (gpio & 0x1F));
 
 	rdc_gpio_write(val);
 }
