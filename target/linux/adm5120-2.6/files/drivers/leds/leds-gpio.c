@@ -66,11 +66,14 @@ static void gpio_led_set(struct led_classdev *led_cdev,
 	pdata = led->pdata;
 
 	switch (brightness) {
+	case LED_FULL:
+		gpio_direction_output(pdata->gpio, pdata->value_on);
+		break;
 	case LED_OFF:
 		gpio_direction_output(pdata->gpio, pdata->value_off);
 		break;
 	default:
-		gpio_direction_output(pdata->gpio, pdata->value_on);
+		gpio_direction_output(pdata->gpio, brightness);
 		break;
 	}
 }
