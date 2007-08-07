@@ -8,14 +8,14 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=i386
 BOARD:=rdc
-BOARDNAME:=RDC x86
+BOARDNAME:=RDC321x x86
 FEATURES:=squashfs jffs2 broken
 
 LINUX_VERSION:=2.6.22.1
 
 define Target/Description
-        Build firmware images for RDC3211 based routers
-        (e.g. Airlink101 AR525W, Linksys WRT54R)
+        Build firmware images for RDC321x based routers
+        (e.g. Airlink101 AR525W, Linksys WRT54R, Sitecom WL-153)
 endef
 
 include $(INCLUDE_DIR)/kernel-build.mk
@@ -27,6 +27,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	ln -s /etc/preinit $(TARGET_DIR)/sbin/init
 	sed -i 's,exec /sbin/init,exec /bin/busybox init,g' $(TARGET_DIR)/etc/preinit
 	sed -i 's,/sbin/init,/bin/busybox init,g' $(TARGET_DIR)/init
+	mv $(TARGET_DIR)/init $(TARGET_DIR)/linuxrc
 	sed -i 's,eth0,eth1,g' $(TARGET_DIR)/etc/config/network
     endef
 endif
