@@ -38,10 +38,18 @@
 #define RF5222				0x0010
 
 /*
- * Max RSSI value, required for RSSI <-> dBm conversion.
+ * RT2570 version
  */
-#define MAX_RX_SSI			120
+#define RT2570_VERSION_B		2
+#define RT2570_VERSION_C		3
+#define RT2570_VERSION_D		4
+
+/*
+ * Signal information.
+ */
+#define MAX_RX_SSI			-1
 #define MAX_RX_NOISE			-110
+#define DEFAULT_RSSI_OFFSET		120
 
 /*
  * Register layout information.
@@ -728,10 +736,5 @@
 	(((__txpower) >= MAX_TXPOWER) ? MAX_TXPOWER :	\
 	(__txpower));					\
 })
-
-/*
- * Interrupt functions.
- */
-static void rt2500usb_interrupt_rxdone(struct urb *urb);
 
 #endif /* RT2500USB_H */

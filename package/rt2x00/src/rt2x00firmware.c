@@ -29,10 +29,12 @@
  */
 #define DRV_NAME "rt2x00lib"
 
+#include <linux/delay.h>
 #include <linux/crc-itu-t.h>
 #include <linux/firmware.h>
 
 #include "rt2x00.h"
+#include "rt2x00lib.h"
 #include "rt2x00firmware.h"
 
 static void rt2x00lib_load_firmware_continued(const struct firmware *fw,
@@ -90,12 +92,17 @@ int rt2x00lib_load_firmware(struct rt2x00_dev *rt2x00dev)
 	 * Read correct firmware from harddisk.
 	 */
 	fw_name = rt2x00dev->ops->lib->get_fw_name(rt2x00dev);
-	BUG_ON(fw_name == NULL);
+	if (!fw_name) {
+		ERROR(rt2x00dev,
+			"Invalid firmware filename.\n"
+			"Please file bug report to %s.\n", DRV_PROJECT);
+		return -EINVAL;
+	}
 
 	INFO(rt2x00dev, "Loading firmware file '%s'.\n", fw_name);
 
 	status = request_firmware_nowait(THIS_MODULE, FW_ACTION_HOTPLUG,
-		fw_name, rt2x00dev->device, rt2x00dev,
+		fw_name, wiphy_dev(rt2x00dev->hw->wiphy), rt2x00dev,
 		&rt2x00lib_load_firmware_continued);
 
 	if (status)

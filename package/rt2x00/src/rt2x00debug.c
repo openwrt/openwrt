@@ -30,6 +30,7 @@
 #include <asm/uaccess.h>
 
 #include "rt2x00.h"
+#include "rt2x00debug.h"
 
 #define PRINT_REG8_STR		( "0x%.2x\n" )
 #define PRINT_REG16_STR		( "0x%.4x\n" )

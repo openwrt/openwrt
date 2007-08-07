@@ -29,21 +29,17 @@
 #define RT2X00_H
 
 #include <linux/bitops.h>
+#include <linux/prefetch.h>
 #include <linux/skbuff.h>
 #include <linux/workqueue.h>
 
 #include <net/mac80211.h>
 
-#include "rt2x00lib.h"
-#include "rt2x00debug.h"
-
 /*
  * Module information.
+ * DRV_NAME should be set within the individual module source files.
  */
-#ifndef DRV_NAME
-#define DRV_NAME	"rt2x00"
-#endif /* DRV_NAME */
-#define DRV_VERSION	"2.0.1"
+#define DRV_VERSION	"2.0.2"
 #define DRV_PROJECT	"http://rt2x00.serialmonkey.com"
 
 /*
@@ -142,7 +138,7 @@
 /*
  * Interval defines
  */
-#define LINK_TUNE_INTERVAL	( 1 * HZ )
+#define LINK_TUNE_INTERVAL	( round_jiffies(HZ) )
 #define RFKILL_POLL_INTERVAL	( HZ / 4 )
 
 /*
@@ -392,7 +388,6 @@ struct data_entry {
 #define ENTRY_TXD_MORE_FRAG	5
 #define ENTRY_TXD_REQ_TIMESTAMP	6
 #define ENTRY_TXD_REQ_ACK	7
-#define ENTRY_TXD_NEW_SEQ	8
 
 	/*
 	 * Ring we belong to.
@@ -570,16 +565,25 @@ struct link {
 	u32 count;
 
 	/*
-	 * RSSI statistics.
-	 */
-	u32 count_rssi;
-	u32 total_rssi;
-
-	/*
 	 * Misc statistics.
+	 * For the average RSSI value we use the "Walking average" approach.
+	 * When adding RSSI to the average value the following calculation
+	 * is needed:
+	 *
+	 * 	avg_rssi = ((avg_rssi * 7) + rssi) / 8;
+	 *
+	 * The advantage of this approach is that we only need 1 variable
+	 * to store the average in (No need for a count and a total).
+	 * But more importantly, normal average values will over time
+	 * move less and less towards newly added values.
+	 * This means that with link tuning, the device can have a very
+	 * good RSSI for a few minutes but when the device is moved away
+	 * from the AP the average will not decrease fast enough to
+	 * compensate. The walking average compensates this and will
+	 * move towards the new values correctly.
 	 */
-	u32 curr_noise;
-	u32 false_cca;
+	int avg_rssi;
+	int false_cca;
 
 	/*
 	 * Work structure for scheduling periodic link tuning.
@@ -637,6 +641,33 @@ static inline int is_monitor_present(struct interface *intf)
 }
 
 /*
+ * Details about the supported modes, rates and channels
+ * of a particular chipset. This is used by rt2x00lib
+ * to build the ieee80211_hw_mode array for mac80211.
+ */
+struct hw_mode_spec {
+	/*
+	 * Number of modes, rates and channels.
+	 */
+	int num_modes;
+	int num_rates;
+	int num_channels;
+
+	/*
+	 * txpower values.
+	 */
+	const u8 *tx_power_a;
+	const u8 *tx_power_bg;
+	u8 tx_power_default;
+
+	/*
+	 * Device/chipset specific value.
+	 */
+	const u32 *chan_val_a;
+	const u32 *chan_val_bg;
+};
+
+/*
  * rt2x00lib callback functions.
  */
 struct rt2x00lib_ops {
@@ -665,7 +696,7 @@ struct rt2x00lib_ops {
 	int (*set_device_state)(struct rt2x00_dev *rt2x00dev,
 		enum dev_state state);
 	int (*rfkill_poll)(struct rt2x00_dev *rt2x00dev);
-	void (*link_tuner)(struct rt2x00_dev *rt2x00dev, int rssi);
+	void (*link_tuner)(struct rt2x00_dev *rt2x00dev);
 
 	/*
 	 * TX control handlers
@@ -681,12 +712,18 @@ struct rt2x00lib_ops {
 	void (*kick_tx_queue)(struct rt2x00_dev *rt2x00dev, int queue);
 
 	/*
+	 * RX control handlers
+	 */
+	int (*fill_rxdone)(struct data_entry *entry,
+		int *signal, int *rssi, int *ofdm);
+
+	/*
 	 * Configuration handlers.
 	 */
 	void (*config_type)(struct rt2x00_dev *rt2x00dev, const int type);
 	void (*config_phymode)(struct rt2x00_dev *rt2x00dev, const int phy);
 	void (*config_channel)(struct rt2x00_dev *rt2x00dev, const int value,
-	const int channel, const int txpower);
+		const int channel, const int txpower);
 	void (*config_mac_addr)(struct rt2x00_dev *rt2x00dev, u8 *mac);
 	void (*config_bssid)(struct rt2x00_dev *rt2x00dev, u8 *bssid);
 	void (*config_promisc)(struct rt2x00_dev *rt2x00dev, const int promisc);
@@ -723,7 +760,6 @@ struct rt2x00_dev {
 	 * macro's should be used for correct typecasting.
 	 */
 	void *dev;
-	struct device *device;
 #define rt2x00dev_pci(__dev)	( (struct pci_dev*)(__dev)->dev )
 #define rt2x00dev_usb(__dev)	( (struct usb_interface*)(__dev)->dev )
 
@@ -796,12 +832,9 @@ struct rt2x00_dev {
 	 * If enabled, the debugfs interface structures
 	 * required for deregistration of debugfs.
 	 */
+#ifdef CONFIG_RT2X00_LIB_DEBUGFS
 	const struct rt2x00debug_intf *debugfs_intf;
-
-	/*
-	 * Queue for deferred work.
-	 */
-	struct workqueue_struct *workqueue;
+#endif /* CONFIG_RT2X00_LIB_DEBUGFS */
 
 	/*
 	 * Interface configuration.
@@ -844,9 +877,9 @@ struct rt2x00_dev {
 	u8 led_mode;
 
 	/*
-	 * EEPROM bus width (PCI devices only).
+	 * Rssi <-> Dbm offset
 	 */
-	u8 eeprom_width;
+	u8 rssi_offset;
 
 	/*
 	 * Frequency offset (for rt61pci & rt73usb).
@@ -907,14 +940,22 @@ static inline struct data_ring* rt2x00_get_ring(
  * The 1 + Atim check will assure that the address directly after
  * the ring array is obtained and the for-each loop exits correctly.
  */
-#define ring_for_each(__dev, __entry)		\
-	for ((__entry) = (__dev)->rx;		\
-		(__entry) != &(__dev)->bcn[1 +	\
-			test_bit(DEVICE_SUPPORT_ATIM, &rt2x00dev->flags)]; \
-		(__entry)++)
+#define ring_end(__dev) \
+	&(__dev)->bcn[1 + test_bit(DEVICE_SUPPORT_ATIM, &rt2x00dev->flags)]
 
-#define txring_for_each(__dev, __entry)		\
-	for ((__entry) = (__dev)->tx; (__entry) != (__dev)->bcn; (__entry)++)
+#define ring_loop(__entry, __start, __end)			\
+	for ((__entry) = (__start);				\
+	     prefetch(&(__entry)[1]), (__entry) != (__end);	\
+	     (__entry) = &(__entry)[1])
+
+#define ring_for_each(__dev, __entry) \
+	ring_loop(__entry, (__dev)->rx, ring_end(__dev))
+
+#define txring_for_each(__dev, __entry) \
+	ring_loop(__entry, (__dev)->tx, (__dev)->bcn)
+
+#define txringall_for_each(__dev, __entry) \
+	ring_loop(__entry, (__dev)->tx, ring_end(__dev))
 
 /*
  * EEPROM access.
@@ -944,11 +985,10 @@ static inline void rt2x00_eeprom_write(const struct rt2x00_dev *rt2x00dev,
 static inline void rt2x00_start_link_tune(struct rt2x00_dev *rt2x00dev)
 {
 	rt2x00dev->link.count = 0;
-	rt2x00dev->link.count_rssi = 0;
-	rt2x00dev->link.total_rssi = 0;
-	rt2x00dev->link.curr_noise = 0;
+	rt2x00dev->link.avg_rssi = 0;
+	rt2x00dev->link.false_cca = 0;
 
-	queue_delayed_work(rt2x00dev->workqueue,
+	queue_delayed_work(rt2x00dev->hw->workqueue,
 		&rt2x00dev->link.work, LINK_TUNE_INTERVAL);
 }
 
@@ -956,26 +996,20 @@ static inline void rt2x00_stop_link_tune(struct rt2x00_dev *rt2x00dev)
 {
 	if (work_pending(&rt2x00dev->link.work.work))
 		cancel_rearming_delayed_workqueue(
-			rt2x00dev->workqueue, &rt2x00dev->link.work);
+			rt2x00dev->hw->workqueue, &rt2x00dev->link.work);
 }
 
-static inline void rt2x00_update_link_rssi(struct link *link, u32 rssi)
+static inline void rt2x00_update_link_rssi(struct link *link, int rssi)
 {
-	link->count_rssi++;
-	link->total_rssi += rssi;
+	if (!link->avg_rssi)
+		link->avg_rssi = rssi;
+	else
+		link->avg_rssi = ((link->avg_rssi * 7) + rssi) / 8;
 }
 
-static inline u32 rt2x00_get_link_rssi(struct link *link)
+static inline int rt2x00_get_link_rssi(struct link *link)
 {
-	u32 average = 0;
-
-	if (link->count_rssi && link->total_rssi)
-		average = link->total_rssi / link->count_rssi;
-
-	link->count_rssi = 0;
-	link->total_rssi = 0;
-
-	return average;
+	return link->avg_rssi;
 }
 
 /*

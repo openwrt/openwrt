@@ -36,10 +36,11 @@
 #define RF2527				0x0004
 
 /*
- * Max RSSI value, required for RSSI <-> dBm conversion.
+ * Signal information.
  */
-#define MAX_RX_SSI			120
+#define MAX_RX_SSI			-1
 #define MAX_RX_NOISE			-110
+#define DEFAULT_RSSI_OFFSET		120
 
 /*
  * Register layout information.
@@ -749,6 +750,20 @@ struct hw_pairwise_ta_entry {
 #define EEPROM_TXPOWER_A_2		FIELD16(0xff00)
 
 /*
+ * EEPROM RSSI offset 802.11BG
+ */
+#define EEPROM_RSSI_OFFSET_BG		0x004d
+#define EEPROM_RSSI_OFFSET_BG_1		FIELD16(0x00ff)
+#define EEPROM_RSSI_OFFSET_BG_2		FIELD16(0xff00)
+
+/*
+ * EEPROM RSSI offset 802.11A
+ */
+#define EEPROM_RSSI_OFFSET_A		0x004e
+#define EEPROM_RSSI_OFFSET_A_1		FIELD16(0x00ff)
+#define EEPROM_RSSI_OFFSET_A_2		FIELD16(0xff00)
+
+/*
  * BBP content.
  * The wordsize of the BBP is 8 bits.
  */
@@ -886,7 +901,8 @@ struct hw_pairwise_ta_entry {
  * RSSI: RSSI reported by BBP.
  */
 #define RXD_W1_SIGNAL			FIELD32(0x000000ff)
-#define RXD_W1_RSSI			FIELD32(0x0000ff00)
+#define RXD_W1_RSSI_AGC			FIELD32(0x00001f00)
+#define RXD_W1_RSSI_LNA			FIELD32(0x00006000)
 #define RXD_W1_FRAME_OFFSET		FIELD32(0x7f000000)
 
 /*
@@ -938,10 +954,5 @@ struct hw_pairwise_ta_entry {
 	(((__txpower) >= MAX_TXPOWER) ? MAX_TXPOWER :	\
 	(__txpower));					\
 })
-
-/*
- * Interrupt functions.
- */
-static void rt73usb_interrupt_rxdone(struct urb *urb);
 
 #endif /* RT73USB_H */

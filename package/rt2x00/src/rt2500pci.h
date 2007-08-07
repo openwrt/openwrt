@@ -45,10 +45,11 @@
 #define RT2560_VERSION_D		4
 
 /*
- * Max RSSI value, required for RSSI <-> dBm conversion.
+ * Signal information.
  */
-#define MAX_RX_SSI			121
+#define MAX_RX_SSI			-1
 #define MAX_RX_NOISE			-110
+#define DEFAULT_RSSI_OFFSET		121
 
 /*
  * Register layout information.
@@ -1044,6 +1045,11 @@
  */
 #define BBP_R14_RX_ANTENNA		FIELD8(0x03)
 #define BBP_R14_RX_IQ_FLIP		FIELD8(0x04)
+
+/*
+ * BBP_R70
+ */
+#define BBP_R70_JAPAN_FILTER		FIELD8(0x08)
 
 /*
  * DMA descriptor defines.

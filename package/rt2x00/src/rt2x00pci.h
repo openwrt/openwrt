@@ -43,12 +43,13 @@
 #define REGISTER_BUSY_DELAY	100
 
 /*
- * TX descriptor available flag.
- * This flag is the combination of the TXD_W0_OWNER_NIC
- * and TXD_W0_VALID flag which have the same value on all
- * PCI drivers.
+ * Descriptor availability flags.
+ * All PCI device descriptors have these 2 flags
+ * with the exact same definition.
  */
-#define TXD_ENTRY_AVAILABLE	FIELD32(0x00000003)
+#define TXD_ENTRY_OWNER_NIC	FIELD32(0x00000001)
+#define TXD_ENTRY_VALID		FIELD32(0x00000002)
+#define RXD_ENTRY_OWNER_NIC	FIELD32(0x00000001)
 
 /*
  * Register access.
@@ -92,6 +93,11 @@ void rt2x00pci_beacondone(struct rt2x00_dev *rt2x00dev, const int queue);
 int rt2x00pci_write_tx_data(struct rt2x00_dev *rt2x00dev,
 	struct data_ring *ring, struct sk_buff *skb,
 	struct ieee80211_tx_control *control);
+
+/*
+ * RX data handlers.
+ */
+void rt2x00pci_rxdone(struct rt2x00_dev *rt2x00dev);
 
 /*
  * Device initialization handlers.

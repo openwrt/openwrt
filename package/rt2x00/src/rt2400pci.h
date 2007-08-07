@@ -34,10 +34,11 @@
 #define RF2421				0x0001
 
 /*
- * Max RSSI value, required for RSSI <-> dBm conversion.
+ * Signal information.
  */
-#define MAX_RX_SSI			100
+#define MAX_RX_SSI			-1
 #define MAX_RX_NOISE			-110
+#define DEFAULT_RSSI_OFFSET		100
 
 /*
  * Register layout information.

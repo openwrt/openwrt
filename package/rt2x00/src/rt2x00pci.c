@@ -36,6 +36,7 @@
 #include <linux/pci.h>
 
 #include "rt2x00.h"
+#include "rt2x00lib.h"
 #include "rt2x00pci.h"
 
 /*
@@ -109,7 +110,8 @@ int rt2x00pci_write_tx_data(struct rt2x00_dev *rt2x00dev,
 
 	rt2x00_desc_read(txd, 0, &word);
 
-	if (rt2x00_get_field32(word, TXD_ENTRY_AVAILABLE)) {
+	if (rt2x00_get_field32(word, TXD_ENTRY_OWNER_NIC) ||
+	    rt2x00_get_field32(word, TXD_ENTRY_VALID)) {
 		ERROR(rt2x00dev,
 			"Arrived at non-free entry in the non-full queue %d.\n"
 			"Please file bug report to %s.\n",
@@ -118,11 +120,11 @@ int rt2x00pci_write_tx_data(struct rt2x00_dev *rt2x00dev,
 		return -EINVAL;
 	}
 
+	entry->skb = skb;
+	memcpy(&entry->tx_status.control, control, sizeof(*control));
 	memcpy(entry->data_addr, skb->data, skb->len);
 	rt2x00lib_write_tx_desc(rt2x00dev, entry, txd, ieee80211hdr,
 		skb->len, control);
-	memcpy(&entry->tx_status.control, control, sizeof(*control));
-	entry->skb = skb;
 
 	rt2x00_ring_index_inc(ring);
 
@@ -132,6 +134,50 @@ int rt2x00pci_write_tx_data(struct rt2x00_dev *rt2x00dev,
 	return 0;
 }
 EXPORT_SYMBOL_GPL(rt2x00pci_write_tx_data);
+
+/*
+ * RX data handlers.
+ */
+void rt2x00pci_rxdone(struct rt2x00_dev *rt2x00dev)
+{
+	struct data_ring *ring = rt2x00dev->rx;
+	struct data_entry *entry;
+	struct data_desc *rxd;
+	u32 desc;
+	int signal;
+	int rssi;
+	int ofdm;
+	int size;
+
+	while (1) {
+		entry = rt2x00_get_data_entry(ring);
+		rxd = entry->priv;
+		rt2x00_desc_read(rxd, 0, &desc);
+
+		if (rt2x00_get_field32(desc, RXD_ENTRY_OWNER_NIC))
+			break;
+
+		size = rt2x00dev->ops->lib->fill_rxdone(
+			entry, &signal, &rssi, &ofdm);
+		if (size < 0)
+			goto skip_entry;
+
+		/*
+		 * Send the packet to upper layer.
+		 */
+		rt2x00lib_rxdone(entry, entry->data_addr, size,
+			signal, rssi, ofdm);
+
+skip_entry:
+		if (test_bit(DEVICE_ENABLED_RADIO, &ring->rt2x00dev->flags)) {
+			rt2x00_set_field32(&desc, RXD_ENTRY_OWNER_NIC, 1);
+			rt2x00_desc_write(rxd, 0, desc);
+		}
+
+		rt2x00_ring_index_inc(ring);
+	}
+}
+EXPORT_SYMBOL_GPL(rt2x00pci_rxdone);
 
 /*
  * Device initialization handlers.
@@ -304,7 +350,6 @@ int rt2x00pci_probe(struct pci_dev *pci_dev, const struct pci_device_id *id)
 
 	rt2x00dev = hw->priv;
 	rt2x00dev->dev = pci_dev;
-	rt2x00dev->device = &pci_dev->dev;
 	rt2x00dev->ops = ops;
 	rt2x00dev->hw = hw;
 

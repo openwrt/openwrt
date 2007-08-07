@@ -70,7 +70,7 @@ static void rt2x00lib_rfkill_poll(struct work_struct *work)
 	rfkill_switch_all(rt2x00dev->rfkill->type,
 		rt2x00dev->ops->lib->rfkill_poll(rt2x00dev));
 
-	queue_delayed_work(rt2x00dev->workqueue, &rt2x00dev->rfkill_work,
+	queue_delayed_work(rt2x00dev->hw->workqueue, &rt2x00dev->rfkill_work,
 		RFKILL_POLL_INTERVAL);
 }
 
@@ -92,7 +92,7 @@ void rt2x00lib_unregister_rfkill(struct rt2x00_dev *rt2x00dev)
 {
 	if (delayed_work_pending(&rt2x00dev->rfkill_work))
 		cancel_rearming_delayed_workqueue(
-			rt2x00dev->workqueue, &rt2x00dev->rfkill_work);
+			rt2x00dev->hw->workqueue, &rt2x00dev->rfkill_work);
 
 	rfkill_unregister(rt2x00dev->rfkill);
 }
