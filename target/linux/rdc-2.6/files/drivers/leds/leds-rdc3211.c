@@ -18,14 +18,9 @@
 
 #include <asm/gpio.h>
 
-/* This is just for testing purpose */
-int gpio=-1;
-module_param(gpio, int, 0444);
-MODULE_PARM_DESC(gpio, " GPIO line");
-
 static void rdc321x_led_set(struct led_classdev *led_cdev, enum led_brightness brightness)
 {
-	gpio_set_value(gpio, brightness ? 1 : 0);
+	gpio_set_value(1, brightness ? 1 : 0);
 }
 
 /* The DMZ led is at GPIO line 1 */
@@ -58,7 +53,7 @@ static int __init rdc321x_leds_init(void)
 {
 	int ret;
 
-	ret = gpio+1?platform_driver_register(&rdc321x_leds_driver):-EINVAL;
+	ret = platform_driver_register(&rdc321x_leds_driver);
 
 	return ret;
 }
