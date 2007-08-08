@@ -38,9 +38,9 @@ static struct mtd_partition rdc3210_parts[] =
 #endif
 	{ name: "bootldr", offset:  0x003E0000, size: 0x00020000 },	/*  128 KB */
 #elif CONFIG_MTD_RDC3210_SIZE == 0x200000
-	{ name: "linux",   offset:  0x00010000, size: 0x001E0000 },
-	{ name: "romfs",   offset:  0x000D0000, size: 0x00120000 },
-	{ name: "nvram",   offset:  0x00000000, size: 0x00010000 },	/*   64 KB */
+	{ name: "linux",   offset:  0x00008000, size: 0x001E8000 },
+	{ name: "romfs",   offset:  0x000C8000, size: 0x00128000 },
+	{ name: "nvram",   offset:  0x00000000, size: 0x00008000 },	/*   64 KB */
 #ifdef CONFIG_MTD_RDC3210_FACTORY_PRESENT
 #error Unsupported configuration!
 #endif
