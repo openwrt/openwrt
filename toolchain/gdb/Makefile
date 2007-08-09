@@ -42,7 +42,7 @@ endef
 
 define Build/Install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/gdb/gdb $(TARGET_CROSS)gdb
-	ln -fs $(TARGET_CROSS)gdb $(TOOLCHAIN_DIR)/$(GNU_TARGET_NAME)-gdb; \
+	ln -fs $(TARGET_CROSS)gdb $(TOOLCHAIN_DIR)/$(GNU_TARGET_NAME)-gdb
 endef
 
 define Build/Clean
