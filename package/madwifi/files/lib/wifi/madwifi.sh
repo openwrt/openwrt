@@ -157,10 +157,8 @@ enable_atheros() {
 		esac
 		config_get ssid "$vif" ssid
 
-		[ "$mode" = "sta" ] && {
-			config_get_bool bgscan "$vif" bgscan 0
-			iwpriv "$ifname" bgscan "$bgscan"
-		}
+		config_get_bool bgscan "$vif" bgscan 0
+		iwpriv "$ifname" bgscan "$bgscan"
 
 		config_get_bool antdiv "$device" diversity 1
 		sysctl -w dev."$device".diversity="$antdiv" >&-
