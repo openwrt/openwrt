@@ -34,10 +34,11 @@ void __init prom_init(void)
 
 	DO_AR5312(ar5312_prom_init();)
 	DO_AR5315(ar5315_prom_init();)
-
+#if 0
 	argv = (char **)fw_arg1;
 	/* RedBoot desired command line is argv[1] */ 
 	strcat(arcs_cmdline, argv[1]);
+#endif
 }
 
 void __init prom_free_prom_memory(void)
