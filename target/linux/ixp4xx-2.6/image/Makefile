@@ -25,6 +25,11 @@ ifneq ($(CONFIG_IXP4XX_INCLUDE_UCODE),)
 		-k $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-zImage \
 		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img \
 		-p -o $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-$(1).bin
+	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
+		-F -L $(KDIR)/apex-nslu2-armeb.bin -m $(KDIR)/NPE-B \
+		-k $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-zImage \
+		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img \
+		-p -o $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-$(1)-16mb.bin
   endef
 endif
 
