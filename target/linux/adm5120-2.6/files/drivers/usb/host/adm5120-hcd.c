@@ -89,7 +89,6 @@ MODULE_AUTHOR("Jeroen Vreeken (pe1rxq@amsat.org)");
 #define ADMHCD_REG_PORTSTATUS1		0x7c
 #define ADMHCD_REG_HOSTHEAD		0x80
 
-
 #define ADMHCD_NUMPORTS		2
 
 struct admhcd_ed {
@@ -136,9 +135,9 @@ struct admhcd_td {
 
 static int admhcd_td_err[16] = {
 	0,		/* No */
-	-EREMOTEIO,		/* CRC */
+	-EREMOTEIO,	/* CRC */
 	-EREMOTEIO,	/* bit stuff */
-	-EREMOTEIO,		/* data toggle */
+	-EREMOTEIO,	/* data toggle */
 	-EPIPE,		/* stall */
 	-ETIMEDOUT,	/* timeout */
 	-EPROTO,	/* pid err */
@@ -203,14 +202,14 @@ static void admhcd_lock(struct admhcd *ahcd)
 {
 	spin_lock_irqsave(&ahcd->lock, ahcd->flags);
 	ahcd->dma_en = admhcd_reg_get(ahcd, ADMHCD_REG_HOSTCONTROL) &
-	    ADMHCD_DMA_EN;
+		ADMHCD_DMA_EN;
 	admhcd_reg_set(ahcd, ADMHCD_REG_HOSTCONTROL, ADMHCD_STATE_OP);
 }
 
 static void admhcd_unlock(struct admhcd *ahcd)
 {
 	admhcd_reg_set(ahcd, ADMHCD_REG_HOSTCONTROL,
-	    ADMHCD_STATE_OP | ahcd->dma_en);
+		ADMHCD_STATE_OP | ahcd->dma_en);
 	spin_unlock_irqrestore(&ahcd->lock, ahcd->flags);
 }
 
@@ -218,12 +217,12 @@ static struct admhcd_td *admhcd_td_alloc(struct admhcd_ed *ed, struct urb *urb)
 {
 	struct admhcd_td *tdn, *td;
 
-	tdn = kmalloc(sizeof(struct admhcd_td), GFP_ATOMIC);
+	tdn = kzalloc(sizeof(*tdn), GFP_ATOMIC);
 	if (!tdn)
 		return NULL;
+
 	tdn->real = tdn;
 	tdn = (struct admhcd_td *)KSEG1ADDR(tdn);
-	memset(tdn, 0, sizeof(struct admhcd_td));
 	if (ed->cur == NULL) {
 		ed->cur = tdn;
 		ed->head = tdn;
@@ -265,7 +264,7 @@ static void admhcd_td_free(struct admhcd_ed *ed, struct urb *urb)
    in the DMA chain
  */
 static struct admhcd_ed *admhcd_get_ed(struct admhcd *ahcd,
-    struct usb_host_endpoint *ep, struct urb *urb)
+		struct usb_host_endpoint *ep, struct urb *urb)
 {
 	struct admhcd_ed *hosthead;
 	struct admhcd_ed *found = NULL, *ed = NULL;
@@ -284,10 +283,9 @@ static struct admhcd_ed *admhcd_get_ed(struct admhcd *ahcd,
 		}
 	}
 	if (!found) {
-		found = kmalloc(sizeof(struct admhcd_ed), GFP_ATOMIC);
+		found = kzalloc(sizeof(*found), GFP_ATOMIC);
 		if (!found)
 			goto out;
-		memset(found, 0, sizeof(struct admhcd_ed));
 		found->real = found;
 		found->ep = ep;
 		found = (struct admhcd_ed *)KSEG1ADDR(found);
@@ -313,7 +311,7 @@ out:
 }
 
 static struct admhcd_td *admhcd_td_fill(u32 control, struct admhcd_td *td,
-    dma_addr_t data, int len)
+		dma_addr_t data, int len)
 {
 	td->buffer = data;
 	td->buflen = len;
@@ -342,7 +340,7 @@ static void admhcd_ed_start(struct admhcd *ahcd, struct admhcd_ed *ed)
 	ahcd->dma_en |= ADMHCD_DMA_EN;
 }
 
-static irqreturn_t adm5120hcd_irq(struct usb_hcd *hcd)
+static irqreturn_t admhcd_irq(struct usb_hcd *hcd)
 {
 	struct admhcd *ahcd = hcd_to_admhcd(hcd);
 	u32 intstatus;
@@ -350,12 +348,14 @@ static irqreturn_t adm5120hcd_irq(struct usb_hcd *hcd)
 	intstatus = admhcd_reg_get(ahcd, ADMHCD_REG_INTSTATUS);
 	if (intstatus & ADMHCD_INT_FATAL) {
 		admhcd_reg_set(ahcd, ADMHCD_REG_INTSTATUS, ADMHCD_INT_FATAL);
-		//
+		/* FIXME: handle fatal interrupts */
 	}
+
 	if (intstatus & ADMHCD_INT_SW) {
 		admhcd_reg_set(ahcd, ADMHCD_REG_INTSTATUS, ADMHCD_INT_SW);
-		//
+		/* FIXME: handle software interrupts */
 	}
+
 	if (intstatus & ADMHCD_INT_TD) {
 		struct admhcd_ed *ed, *head;
 
@@ -389,7 +389,7 @@ static irqreturn_t adm5120hcd_irq(struct usb_hcd *hcd)
 }
 
 static int admhcd_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
-    struct urb *urb, gfp_t mem_flags)
+		struct urb *urb, gfp_t mem_flags)
 {
 	struct admhcd *ahcd = hcd_to_admhcd(hcd);
 	struct admhcd_ed *ed;
@@ -404,26 +404,26 @@ static int admhcd_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
 		return -ENOMEM;
 
 	switch(usb_pipetype(pipe)) {
-		case PIPE_CONTROL:
-			size = 2;
-		case PIPE_INTERRUPT:
-		case PIPE_BULK:
-		default:
-			size += urb->transfer_buffer_length / 4096;
-			if (urb->transfer_buffer_length % 4096)
-				size++;
-			if (size == 0)
-				size++;
-			else if (urb->transfer_flags & URB_ZERO_PACKET &&
-			    !(urb->transfer_buffer_length %
-			      usb_maxpacket(urb->dev, pipe, usb_pipeout(pipe)))) {
-				size++;
-				zero = 1;
-			}
-			break;
-		case PIPE_ISOCHRONOUS:
-			size = urb->number_of_packets;
-			break;
+	case PIPE_CONTROL:
+		size = 2;
+	case PIPE_INTERRUPT:
+	case PIPE_BULK:
+	default:
+		size += urb->transfer_buffer_length / 4096;
+		if (urb->transfer_buffer_length % 4096)
+			size++;
+		if (size == 0)
+			size++;
+		else if (urb->transfer_flags & URB_ZERO_PACKET &&
+		    !(urb->transfer_buffer_length %
+		      usb_maxpacket(urb->dev, pipe, usb_pipeout(pipe)))) {
+			size++;
+			zero = 1;
+		}
+		break;
+	case PIPE_ISOCHRONOUS:
+		size = urb->number_of_packets;
+		break;
 	}
 
 	admhcd_lock(ahcd);
@@ -451,52 +451,52 @@ static int admhcd_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
 	}
 
 	switch(usb_pipetype(pipe)) {
-		case PIPE_CONTROL:
-			td = admhcd_td_fill(ADMHCD_TD_SETUP | ADMHCD_TD_DATA0,
-			    td, (dma_addr_t)urb->setup_packet, 8);
-			while (data_len > 0) {
-				td = admhcd_td_fill(ADMHCD_TD_DATA1
-				    | ADMHCD_TD_R |
-				    (usb_pipeout(pipe) ?
-				    ADMHCD_TD_OUT : ADMHCD_TD_IN), td,
-				    data, data_len % 4097);
-				data_len -= 4096;
-			}
-			admhcd_td_fill(ADMHCD_TD_DATA1 | (usb_pipeout(pipe) ?
-			    ADMHCD_TD_IN : ADMHCD_TD_OUT), td,
-			    data, 0);
-			break;
-		case PIPE_INTERRUPT:
-		case PIPE_BULK:
-			//info ok for interrupt?
-			i = 0;
-			while(data_len > 4096) {
-				td = admhcd_td_fill((usb_pipeout(pipe) ?
-				    ADMHCD_TD_OUT :
-				    ADMHCD_TD_IN | ADMHCD_TD_R) |
-				    (i ? ADMHCD_TD_TOGGLE : toggle), td,
-				    data, 4096);
-				data += 4096;
-				data_len -= 4096;
-				i++;
-			}
+	case PIPE_CONTROL:
+		td = admhcd_td_fill(ADMHCD_TD_SETUP | ADMHCD_TD_DATA0,
+		    td, (dma_addr_t)urb->setup_packet, 8);
+		while (data_len > 0) {
+			td = admhcd_td_fill(ADMHCD_TD_DATA1
+			    | ADMHCD_TD_R |
+			    (usb_pipeout(pipe) ?
+			    ADMHCD_TD_OUT : ADMHCD_TD_IN), td,
+			    data, data_len % 4097);
+			data_len -= 4096;
+		}
+		admhcd_td_fill(ADMHCD_TD_DATA1 | (usb_pipeout(pipe) ?
+		    ADMHCD_TD_IN : ADMHCD_TD_OUT), td,
+		    data, 0);
+		break;
+	case PIPE_INTERRUPT:
+	case PIPE_BULK:
+		//info ok for interrupt?
+		i = 0;
+		while(data_len > 4096) {
 			td = admhcd_td_fill((usb_pipeout(pipe) ?
-			    ADMHCD_TD_OUT : ADMHCD_TD_IN) |
-			    (i ? ADMHCD_TD_TOGGLE : toggle), td, data, data_len);
+			    ADMHCD_TD_OUT :
+			    ADMHCD_TD_IN | ADMHCD_TD_R) |
+			    (i ? ADMHCD_TD_TOGGLE : toggle), td,
+			    data, 4096);
+			data += 4096;
+			data_len -= 4096;
 			i++;
-			if (zero)
-				admhcd_td_fill((usb_pipeout(pipe) ?
-				    ADMHCD_TD_OUT : ADMHCD_TD_IN) |
-				    (i ? ADMHCD_TD_TOGGLE : toggle), td, 0, 0);
-			break;
-		case PIPE_ISOCHRONOUS:
-			for (i = 0; i < urb->number_of_packets; i++) {
-				td = admhcd_td_fill(ADMHCD_TD_ISO |
-				    ((urb->start_frame + i) & 0xffff), td,
-				    data + urb->iso_frame_desc[i].offset,
-				    urb->iso_frame_desc[i].length);
-			}
-			break;
+		}
+		td = admhcd_td_fill((usb_pipeout(pipe) ?
+		    ADMHCD_TD_OUT : ADMHCD_TD_IN) |
+		    (i ? ADMHCD_TD_TOGGLE : toggle), td, data, data_len);
+		i++;
+		if (zero)
+			admhcd_td_fill((usb_pipeout(pipe) ?
+			    ADMHCD_TD_OUT : ADMHCD_TD_IN) |
+			    (i ? ADMHCD_TD_TOGGLE : toggle), td, 0, 0);
+		break;
+	case PIPE_ISOCHRONOUS:
+		for (i = 0; i < urb->number_of_packets; i++) {
+			td = admhcd_td_fill(ADMHCD_TD_ISO |
+			    ((urb->start_frame + i) & 0xffff), td,
+			    data + urb->iso_frame_desc[i].offset,
+			    urb->iso_frame_desc[i].length);
+		}
+		break;
 	}
 	urb->hcpriv = ed;
 	admhcd_ed_start(ahcd, ed);
@@ -551,6 +551,7 @@ static void admhcd_endpoint_disable(struct usb_hcd *hcd, struct usb_host_endpoin
 	}
 	for (edt = head; edt->next != ed; edt = edt->next);
 	edt->next = ed->next;
+
 out_free:
 	kfree(ed->real);
 out:
@@ -591,7 +592,7 @@ static __u8 root_hub_hub_des[] = {
 };
 
 static int admhcd_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
-    u16 wIndex, char *buf, u16 wLength)
+		u16 wIndex, char *buf, u16 wLength)
 {
 	struct admhcd *ahcd = hcd_to_admhcd(hcd);
 	int retval = 0, len;
@@ -707,45 +708,45 @@ static int admhcd_start(struct usb_hcd *hcd)
 
 	spin_lock_irqsave(&ahcd->lock, flags);
 
- 	/* Initialise the HCD registers */
-        admhcd_reg_set(ahcd, ADMHCD_REG_INTENABLE, 0);
-        mdelay(10);
+	/* Initialise the HCD registers */
+	admhcd_reg_set(ahcd, ADMHCD_REG_INTENABLE, 0);
+	mdelay(10);
 
-        admhcd_reg_set(ahcd, ADMHCD_REG_CONTROL, ADMHCD_SW_RESET);
+	admhcd_reg_set(ahcd, ADMHCD_REG_CONTROL, ADMHCD_SW_RESET);
 
-        while (admhcd_reg_get(ahcd, ADMHCD_REG_CONTROL) & ADMHCD_SW_RESET) {
+	while (admhcd_reg_get(ahcd, ADMHCD_REG_CONTROL) & ADMHCD_SW_RESET) {
 		printk(KERN_WARNING PFX "waiting for reset to complete\n");
-                mdelay(1);
+		mdelay(1);
 	}
 
 	hcd->uses_new_polling = 1;
 
 	/* Enable USB host mode */
-        admhcd_reg_set(ahcd, ADMHCD_REG_CONTROL, ADMHCD_HOST_EN);
+	admhcd_reg_set(ahcd, ADMHCD_REG_CONTROL, ADMHCD_HOST_EN);
 
 	/* Set host specific settings */
-        admhcd_reg_set(ahcd, ADMHCD_REG_HOSTHEAD, 0x00000000);
-        admhcd_reg_set(ahcd, ADMHCD_REG_FMINTERVAL, 0x20002edf);
-        admhcd_reg_set(ahcd, ADMHCD_REG_LSTHRESH, 0x628);
+	admhcd_reg_set(ahcd, ADMHCD_REG_HOSTHEAD, 0x00000000);
+	admhcd_reg_set(ahcd, ADMHCD_REG_FMINTERVAL, 0x20002edf);
+	admhcd_reg_set(ahcd, ADMHCD_REG_LSTHRESH, 0x628);
 
 	/* Set interrupts */
-        admhcd_reg_set(ahcd, ADMHCD_REG_INTENABLE,
-            ADMHCD_INT_ACT | ADMHCD_INT_FATAL | ADMHCD_INT_SW | ADMHCD_INT_TD);
-        admhcd_reg_set(ahcd, ADMHCD_REG_INTSTATUS,
-            ADMHCD_INT_ACT | ADMHCD_INT_FATAL | ADMHCD_INT_SW | ADMHCD_INT_TD);
+	admhcd_reg_set(ahcd, ADMHCD_REG_INTENABLE, ADMHCD_INT_ACT |
+		ADMHCD_INT_FATAL | ADMHCD_INT_SW | ADMHCD_INT_TD);
+	admhcd_reg_set(ahcd, ADMHCD_REG_INTSTATUS, ADMHCD_INT_ACT |
+		ADMHCD_INT_FATAL | ADMHCD_INT_SW | ADMHCD_INT_TD);
 
 	/* Power on all ports */
-        admhcd_reg_set(ahcd, ADMHCD_REG_RHDESCR, ADMHCD_NPS | ADMHCD_LPSC);
+	admhcd_reg_set(ahcd, ADMHCD_REG_RHDESCR, ADMHCD_NPS | ADMHCD_LPSC);
 
 	/* HCD is now operationnal */
-        admhcd_reg_set(ahcd, ADMHCD_REG_HOSTCONTROL, ADMHCD_STATE_OP);
+	admhcd_reg_set(ahcd, ADMHCD_REG_HOSTCONTROL, ADMHCD_STATE_OP);
 
-       	hcd->state = HC_STATE_RUNNING;
+	hcd->state = HC_STATE_RUNNING;
 
 	spin_unlock_irqrestore(&ahcd->lock, flags);
 
 	printk(KERN_DEBUG PFX "returning 0 from admhcd_start\n");
-       	return 0;
+	return 0;
 }
 
 static int admhcd_sw_reset(struct admhcd *ahcd)
@@ -757,11 +758,11 @@ static int admhcd_sw_reset(struct admhcd *ahcd)
 	spin_lock_irqsave(&ahcd->lock, flags);
 
 	admhcd_reg_set(ahcd, ADMHCD_REG_INTENABLE, 0);
-        mdelay(10);
+	mdelay(10);
 
-        admhcd_reg_set(ahcd, ADMHCD_REG_CONTROL, ADMHCD_SW_RESET);
+	admhcd_reg_set(ahcd, ADMHCD_REG_CONTROL, ADMHCD_SW_RESET);
 
-        while (--retries) {
+	while (--retries) {
 		mdelay(1);
 		if (!(admhcd_reg_get(ahcd, ADMHCD_REG_CONTROL) & ADMHCD_SW_RESET))
 			break;
@@ -777,7 +778,7 @@ static int admhcd_sw_reset(struct admhcd *ahcd)
 static int admhcd_reset(struct usb_hcd *hcd)
 {
 	struct admhcd *ahcd = hcd_to_admhcd(hcd);
-        u32 state = 0;
+	u32 state = 0;
 	int ret, timeout = 15; /* ms */
 	unsigned long t;
 
@@ -787,32 +788,32 @@ static int admhcd_reset(struct usb_hcd *hcd)
 
 	t = jiffies + msecs_to_jiffies(timeout);
 	do {
-                spin_lock_irq(&ahcd->lock);
-                state = admhcd_reg_get(ahcd, ADMHCD_REG_HOSTCONTROL);
-                spin_unlock_irq(&ahcd->lock);
+		spin_lock_irq(&ahcd->lock);
+		state = admhcd_reg_get(ahcd, ADMHCD_REG_HOSTCONTROL);
+		spin_unlock_irq(&ahcd->lock);
 		state &= ADMHCD_STATE_MASK;
-                if (state == ADMHCD_STATE_RST)
-                        break;
-                msleep(4);
+		if (state == ADMHCD_STATE_RST)
+			break;
+		msleep(4);
 	} while (time_before_eq(jiffies, t));
 
-        if (state != ADMHCD_STATE_RST) {
-                printk(KERN_WARNING "%s: device not ready after %dms\n",
+	if (state != ADMHCD_STATE_RST) {
+		printk(KERN_WARNING "%s: device not ready after %dms\n",
 			hcd_name, timeout);
-                ret = -ENODEV;
-        }
+		ret = -ENODEV;
+	}
 
-        return ret;
+	return ret;
 }
 
 static void admhcd_stop(struct usb_hcd *hcd)
 {
 	struct admhcd *ahcd = hcd_to_admhcd(hcd);
-        unsigned long flags;
+	unsigned long flags;
 	u32 val;
 
-        spin_lock_irqsave(&ahcd->lock, flags);
-        admhcd_reg_set(ahcd, ADMHCD_REG_INTENABLE, 0);
+	spin_lock_irqsave(&ahcd->lock, flags);
+	admhcd_reg_set(ahcd, ADMHCD_REG_INTENABLE, 0);
 
 	/* Set global control of power for ports */
 	val = admhcd_reg_get(ahcd, ADMHCD_REG_RHDESCR);
@@ -830,7 +831,7 @@ static struct hc_driver adm5120_hc_driver = {
 	.description =		hcd_name,
 	.product_desc =		"ADM5120 HCD",
 	.hcd_priv_size =	sizeof(struct admhcd),
-	.irq =			adm5120hcd_irq,
+	.irq =			admhcd_irq,
 	.flags =		HCD_USB11,
 	.urb_enqueue =		admhcd_urb_enqueue,
 	.urb_dequeue =		admhcd_urb_dequeue,
@@ -847,51 +848,51 @@ static struct hc_driver adm5120_hc_driver = {
 
 static int __init adm5120hcd_probe(struct platform_device *pdev)
 {
-        struct usb_hcd *hcd;
-        struct admhcd *ahcd;
+	struct usb_hcd *hcd;
+	struct admhcd *ahcd;
 	struct resource *data;
 	void __iomem *data_reg;
 
-        int err = 0, irq;
+	int err = 0, irq;
 
 	if (pdev->num_resources < 2) {
 		printk(KERN_WARNING PFX "not enough resources\n");
 		err = -ENODEV;
 		goto out;
-        }
+	}
 
 	irq = platform_get_irq(pdev, 0);
 	data = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 
 	if (pdev->dev.dma_mask) {
-                printk(KERN_DEBUG PFX "no we won't dma\n");
-                return -EINVAL;
-        }
+		printk(KERN_DEBUG PFX "no we won't dma\n");
+		return -EINVAL;
+	}
 
 	if (!data || irq < 0) {
 		printk(KERN_DEBUG PFX "either IRQ or data resource is invalid\n");
-                err = -ENODEV;
-                goto out;
-        }
+		err = -ENODEV;
+		goto out;
+	}
 
-        if (!request_mem_region(data->start, resource_len(data), hcd_name)) {
+	if (!request_mem_region(data->start, resource_len(data), hcd_name)) {
 		printk(KERN_DEBUG PFX "cannot request memory regions for the data resource\n");
-                err = -EBUSY;
-                goto out;
-        }
+		err = -EBUSY;
+		goto out;
+	}
 
-        data_reg = ioremap(data->start, resource_len(data));
-        if (data_reg == NULL) {
+	data_reg = ioremap(data->start, resource_len(data));
+	if (data_reg == NULL) {
 		printk(KERN_DEBUG PFX "unable to ioremap\n");
-                err = -ENOMEM;
-                goto out_mem;
+		err = -ENOMEM;
+		goto out_mem;
         }
 
 	hcd = usb_create_hcd(&adm5120_hc_driver, &pdev->dev, pdev->dev.bus_id);
-        if (!hcd) {
+	if (!hcd) {
 		printk(KERN_DEBUG PFX "unable to create the hcd\n");
 		err = -ENOMEM;
-                goto out_unmap;
+		goto out_unmap;
 	}
 
 	hcd->rsrc_start = data->start;
