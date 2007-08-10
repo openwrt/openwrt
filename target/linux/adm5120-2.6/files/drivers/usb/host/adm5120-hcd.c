@@ -90,6 +90,7 @@ MODULE_AUTHOR("Jeroen Vreeken (pe1rxq@amsat.org)");
 #define ADMHCD_REG_HOSTHEAD		0x80
 
 #define ADMHCD_NUMPORTS		2
+#define ADMHCD_DESC_ALIGN	16
 
 struct admhcd_ed {
 	/* Don't change first four, they used for DMA */
@@ -155,13 +156,12 @@ static int admhcd_td_err[16] = {
 #define ADMHCD_TD_ERRMASK	0x38000000
 #define ADMHCD_TD_ERRSHIFT	27
 
-#define TD(td)	((struct admhcd_td *)(((u32)(td)) & ~0xf))
-#define ED(ed)	((struct admhcd_ed *)(((u32)(ed)) & ~0xf))
+#define TD(td)	((struct admhcd_td *)(((u32)(td)) & ~(ADMHCD_DESC_ALIGN-1)))
+#define ED(ed)	((struct admhcd_ed *)(((u32)(ed)) & ~(ADMHCD_DESC_ALIGN-1)))
 
 struct admhcd {
 	spinlock_t	lock;
 
-	void __iomem *data_reg;
 	/* Root hub registers */
 	u32 rhdesca;
 	u32 rhdescb;
@@ -173,7 +173,6 @@ struct admhcd {
 	u32		base;
 	u32		dma_en;
 	unsigned long	flags;
-
 };
 
 static inline struct admhcd *hcd_to_admhcd(struct usb_hcd *hcd)
@@ -217,12 +216,12 @@ static struct admhcd_td *admhcd_td_alloc(struct admhcd_ed *ed, struct urb *urb)
 {
 	struct admhcd_td *tdn, *td;
 
-	tdn = kzalloc(sizeof(*tdn), GFP_ATOMIC);
+	tdn = kzalloc(sizeof(*tdn)+ADMHCD_DESC_ALIGN, GFP_ATOMIC);
 	if (!tdn)
 		return NULL;
 
 	tdn->real = tdn;
-	tdn = (struct admhcd_td *)KSEG1ADDR(tdn);
+	tdn = TD(KSEG1ADDR(tdn));
 	if (ed->cur == NULL) {
 		ed->cur = tdn;
 		ed->head = tdn;
@@ -283,12 +282,12 @@ static struct admhcd_ed *admhcd_get_ed(struct admhcd *ahcd,
 		}
 	}
 	if (!found) {
-		found = kzalloc(sizeof(*found), GFP_ATOMIC);
+		found = kzalloc(sizeof(*found)+ADMHCD_DESC_ALIGN, GFP_ATOMIC);
 		if (!found)
 			goto out;
 		found->real = found;
 		found->ep = ep;
-		found = (struct admhcd_ed *)KSEG1ADDR(found);
+		found = ED(KSEG1ADDR(found));
 		found->control = usb_pipedevice(pipe) |
 		    (usb_pipeendpoint(pipe) << ADMHCD_ED_EPSHIFT) |
 		    (usb_pipeint(pipe) ? ADMHCD_ED_INT : 0) |
@@ -900,7 +899,6 @@ static int __init adm5120hcd_probe(struct platform_device *pdev)
 	hcd->regs = data_reg;
 
 	ahcd = hcd_to_admhcd(hcd);
-	ahcd->data_reg = data_reg;
 	ahcd->base = (u32)data_reg;
 
 	spin_lock_init(&ahcd->lock);
@@ -921,7 +919,7 @@ out_dev:
 out_unmap:
 	iounmap(data_reg);
 out_mem:
-	release_mem_region(pdev->resource[0].start, pdev->resource[0].end - pdev->resource[0].start +1);
+	release_mem_region(data->start, resource_len(data));
 out:
 	return err;
 }
