@@ -64,7 +64,7 @@ endef
 
 define Image/Build
 	dd if=$(KDIR)/loader.bin $(call align/$(1)) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin
-	cat $(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)/root.$(1) >> $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin
+	cat $(KDIR)/root.$(1) >> $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin
 	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin)
 	$(call Image/Build/CyberTAN,$(1),AG1B,AG1B,$(1))
 	$(call Image/Build/CyberTAN,$(1),WA21,WA21,$(1))
