@@ -24,6 +24,16 @@ define KernelPackage/fs-minix
 endef
 $(eval $(call KernelPackage,fs-minix))
 
+define KernelPackage/fs-ntfs
+  TITLE:=NTFS filesystem support
+  DESCRIPTION:=Kernel module for NTFS filesystem support
+  KCONFIG:=CONFIG_NTFS_FS
+  SUBMENU:=$(FSMENU)
+  AUTOLOAD:=$(call AutoLoad,30,ntfs)
+  FILES:=$(LINUX_DIR)/fs/ntfs/ntfs.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,fs-ntfs))
+
 define KernelPackage/fs-ext2
   TITLE:=EXT2 filesystem support
   DESCRIPTION:=Kernel module for EXT2 filesystem support
