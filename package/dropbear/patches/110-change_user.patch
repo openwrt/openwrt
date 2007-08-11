@@ -1,7 +1,7 @@
-Index: dropbear-0.49/svr-chansession.c
+Index: dropbear-0.50/svr-chansession.c
 ===================================================================
---- dropbear-0.49.orig/svr-chansession.c	2007-06-04 13:21:39.455978448 +0200
-+++ dropbear-0.49/svr-chansession.c	2007-06-04 13:21:39.751933456 +0200
+--- dropbear-0.50.orig/svr-chansession.c	2007-08-10 23:47:48.000000000 +0200
++++ dropbear-0.50/svr-chansession.c	2007-08-10 23:47:48.000000000 +0200
 @@ -908,12 +908,12 @@
  	/* We can only change uid/gid as root ... */
  	if (getuid() == 0) {

@@ -9,13 +9,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
-PKG_VERSION:=0.49
-PKG_RELEASE:=2
+PKG_VERSION:=0.50
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://matt.ucc.asn.au/dropbear/releases/ \
-				http://www.mirrors.wiretapped.net/security/cryptography/apps/ssh/dropbear/
-PKG_MD5SUM:=7b20c85f1ee34f018a1b948eae003df9
+	http://www.mirrors.wiretapped.net/security/cryptography/apps/ssh/dropbear/
+PKG_MD5SUM:=5c0f7405b915799c3d952d3a93a5df69
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -75,8 +75,7 @@ endef
 	
 define Package/dropbear/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/dropbearmulti \
-		$(1)/usr/sbin/dropbear
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/dropbearmulti $(1)/usr/sbin/dropbear
 	$(INSTALL_DIR) $(1)/usr/bin
 	ln -sf ../sbin/dropbear $(1)/usr/bin/scp
 	ln -sf ../sbin/dropbear $(1)/usr/bin/ssh
@@ -93,8 +92,7 @@ endef
 
 define Package/dropbearconvert/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/dropbearconvert \
-		$(1)/usr/bin/dropbearconvert
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/dropbearconvert $(1)/usr/bin/dropbearconvert
 endef
 
 $(eval $(call BuildPackage,dropbear))
