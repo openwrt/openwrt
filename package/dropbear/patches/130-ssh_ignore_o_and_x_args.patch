@@ -1,8 +1,8 @@
-Index: dropbear-0.49/cli-runopts.c
+Index: dropbear-0.50/cli-runopts.c
 ===================================================================
---- dropbear-0.49.orig/cli-runopts.c	2007-06-04 13:21:39.414984680 +0200
-+++ dropbear-0.49/cli-runopts.c	2007-06-04 13:21:40.122877064 +0200
-@@ -203,6 +203,10 @@
+--- dropbear-0.50.orig/cli-runopts.c	2007-08-10 23:47:47.000000000 +0200
++++ dropbear-0.50/cli-runopts.c	2007-08-10 23:47:49.000000000 +0200
+@@ -219,6 +219,10 @@
  					debug_trace = 1;
  					break;
  #endif
@@ -13,7 +13,7 @@ Index: dropbear-0.49/cli-runopts.c
  				case 'F':
  				case 'e':
  				case 'c':
-@@ -214,7 +218,6 @@
+@@ -230,7 +234,6 @@
  #ifndef ENABLE_CLI_LOCALTCPFWD
  				case 'L':
  #endif
