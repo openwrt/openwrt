@@ -89,7 +89,7 @@ MODULE_AUTHOR("Jeroen Vreeken (pe1rxq@amsat.org)");
 #define ADMHCD_REG_PORTSTATUS1		0x7c
 #define ADMHCD_REG_HOSTHEAD		0x80
 
-#define ADMHCD_NUMPORTS		2
+#define ADMHCD_NUMPORTS			1
 #define ADMHCD_DESC_ALIGN	16
 
 struct admhcd_ed {
@@ -703,8 +703,6 @@ static int admhcd_start(struct usb_hcd *hcd)
 	struct admhcd *ahcd = hcd_to_admhcd(hcd);
 	unsigned long flags;
 
-	printk(KERN_DEBUG PFX "calling admhcd_start\n");
-
 	spin_lock_irqsave(&ahcd->lock, flags);
 
 	/* Initialise the HCD registers */
@@ -718,7 +716,7 @@ static int admhcd_start(struct usb_hcd *hcd)
 		mdelay(1);
 	}
 
-	hcd->uses_new_polling = 1;
+	//hcd->uses_new_polling = 1;
 
 	/* Enable USB host mode */
 	admhcd_reg_set(ahcd, ADMHCD_REG_CONTROL, ADMHCD_HOST_EN);
@@ -744,7 +742,6 @@ static int admhcd_start(struct usb_hcd *hcd)
 
 	spin_unlock_irqrestore(&ahcd->lock, flags);
 
-	printk(KERN_DEBUG PFX "returning 0 from admhcd_start\n");
 	return 0;
 }
 
@@ -927,7 +924,7 @@ out:
 #ifdef CONFIG_PM
 static int adm5120hcd_suspend(struct platform_device *pdev,  pm_message_t state)
 {
-	pdev-dev.power.power_state = state;
+	pdev->dev.power.power_state = state;
 	mdelay(1);
 	return 0;
 }
