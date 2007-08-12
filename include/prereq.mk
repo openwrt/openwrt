@@ -47,4 +47,12 @@ define RequireCommand
   $$(eval $$(call Require,$(1),$(2)))
 endef
 
+define RequireHeader
+  define Require/$(1)
+    [ -e "$(1)" ]
+  endef
+  
+  $$(eval $$(call Require,$(1),$(2)))
+endef
+
 .NOTPARALLEL:
