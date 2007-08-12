@@ -1,0 +1,15 @@
+--- admswconfig-0.1.orig/admswconfig.c	2007-05-30 12:55:35.000000000 +0200
++++ admswconfig-0.1/admswconfig.c	2007-07-24 19:22:14.000000000 +0200
+@@ -111,9 +111,9 @@
+ 		}
+ 	} else {
+ 		/* display matrix */
+-		printf("ethX\tport0\tport1\tport2\tport3\tport4");
+-		if (info.ports == 6)
+-			printf("\tport5");
++		printf("ethX");
++		for (i = 0; i < info.ports; i++)
++			printf("\tport%d", i);
+ 		printf("\tCPU\n");
+ 		for (i = 0; i < info.ports; i++) {
+ 			printf("%d", i);
