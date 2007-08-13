@@ -93,9 +93,7 @@ define Stage2/Configure
 endef
 
 define Stage2/Compile
-	$(MAKE) -C $(BUILD_DIR2) \
-		SHELL="$(BASH)" \
-		all
+	export SHELL="\$(BASH)"; \$(MAKE) -C \$(BUILD_DIR2) all
 endef
 
 define Stage2/Install
