@@ -119,7 +119,7 @@ define Build/Compile
 		ARCH="$(LINUX_KARCH)" V="$(V)" \
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		KERNELVERSION="$(KERNEL)" \
-		KERNEL_SOURCE="$(LINUX_DIR)" \
+		KERNEL_SOURCES="$(LINUX_DIR)" \
 		KDIR="$(LINUX_DIR)"
 endef
 
