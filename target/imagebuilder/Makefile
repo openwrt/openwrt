@@ -29,7 +29,7 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 		$(TMP_DIR)/.targetinfo \
 		./files/Makefile \
 		$(IB_BUILD_DIR)/
-	$(CP) $(TOPDIR)/staging_dir_$(ARCH)/bin/* $(IB_BUILD_DIR)/staging_dir_$(ARCH)/bin
+	$(CP) $(TOOLCHAIN_DIR)/bin/* $(IB_BUILD_DIR)/staging_dir_$(ARCH)/bin
 	$(CP) $(TOPDIR)/target/linux/* $(IB_BUILD_DIR)/target/linux
 	rm -rf $(IB_BUILD_DIR)/target/linux/*/patches
 	-cp $(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)/* $(IB_BUILD_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD) # don't copy subdirectories here
