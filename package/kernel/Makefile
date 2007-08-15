@@ -18,7 +18,6 @@ SCAN_DEPS=modules/*.mk
 
 include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)
-  -include $(LINUX_DIR)/.config
   NF_KMOD:=1
   include $(INCLUDE_DIR)/netfilter.mk
 endif
