@@ -51,9 +51,6 @@ endif
 GENERIC_PLATFORM_DIR := $(TOPDIR)/target/linux/generic-$(KERNEL)
 GENERIC_PATCH_DIR := $(GENERIC_PLATFORM_DIR)/patches$(shell [ -d "$(GENERIC_PLATFORM_DIR)/patches-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
 
-ifeq ($(DUMP),)
-  -include $(LINUX_DIR)/.config
-endif
 
 define KernelPackage/Defaults
   FILES:=
