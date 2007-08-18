@@ -299,21 +299,20 @@ int vlynq_device_enable(struct vlynq_device *dev)
 
 	dev->local->control = 0;
 	dev->remote->control = 0;
+	dev->local->control = VLYNQ_CTRL_CLOCK_INT;
 
 	div = ar7_dsp_freq() / 62500000;
-	if(ar7_dsp_freq() / div != 62500000)
-	{
-		printk(KERN_WARNING
-			"VLYNQ: Adjusted requested frequency %d to %d\n",
-			62500000, ar7_dsp_freq() / div);
-	}
+	if (div != 0 ) {
+		if (ar7_dsp_freq() / div != 62500000) {
+			printk(KERN_WARNING
+				"VLYNQ: Adjusted requested frequency %d to %d\n",
+				62500000, ar7_dsp_freq() / div);
+		}
     
-	printk("VLYNQ: Setting clock to %d (clock divider %u)\n", ar7_dsp_freq() / div, div);
-		dev->local->control = VLYNQ_CTRL_CLOCK_DIV((div - 1)) |
-		VLYNQ_CTRL_CLOCK_INT;
-/*
-	dev->local->control = VLYNQ_CTRL_CLOCK_INT;
-*/
+		printk("VLYNQ: Setting clock to %d (clock divider %u)\n", 
+			ar7_dsp_freq() / div, div);
+		dev->local->control |= VLYNQ_CTRL_CLOCK_DIV((div - 1));
+	}
 	if (vlynq_linked(dev)) 
 		return vlynq_setup_irq(dev);
 
