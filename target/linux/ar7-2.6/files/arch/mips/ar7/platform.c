@@ -90,7 +90,7 @@ static struct resource physmap_flash_resource = {
 	.name = "mem",
 	.flags = IORESOURCE_MEM,
 	.start = 0x10000000,
-	.end = 0x103fffff,
+	.end = 0x107fffff,
 };	
 
 static struct resource cpmac_low_res[] = {
