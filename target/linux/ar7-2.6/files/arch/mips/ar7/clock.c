@@ -135,7 +135,7 @@ static void approximate(int base, int target, int *prediv,
 }
 
 static void calculate(int base, int target, int *prediv, int *postdiv,
-		      int *mul)
+	int *mul)
 {
 	int tmp_gcd, tmp_base, tmp_freq;
 
@@ -179,7 +179,7 @@ static int tnetd7300_dsp_clock(void)
 }
 
 static int tnetd7300_get_clock(u32 shift, struct tnetd7300_clock *clock,
-			       u32 *bootcr, u32 bus_clock)
+	u32 *bootcr, u32 bus_clock)
 {
 	int product;
 	int base_clock = ar7_ref_clock;
@@ -225,7 +225,7 @@ static int tnetd7300_get_clock(u32 shift, struct tnetd7300_clock *clock,
 }
 
 static void tnetd7300_set_clock(u32 shift, struct tnetd7300_clock *clock,
-				u32 *bootcr, u32 frequency)
+	u32 *bootcr, u32 frequency)
 {
 	u32 status;
 	int prediv, postdiv, mul;
@@ -264,30 +264,28 @@ static void __init tnetd7300_init_clocks(void)
 	struct tnetd7300_clocks *clocks = (struct tnetd7300_clocks *)ioremap_nocache(AR7_REGS_POWER + 0x20, sizeof(struct tnetd7300_clocks)); 
 
 	ar7_bus_clock = tnetd7300_get_clock(BUS_PLL_SOURCE_SHIFT, 
-					    &clocks->bus, bootcr,
-					    ar7_afe_clock);
+		&clocks->bus, bootcr, ar7_afe_clock);
 
 	if (*bootcr & BOOT_PLL_ASYNC_MODE) {
 		ar7_cpu_clock = tnetd7300_get_clock(CPU_PLL_SOURCE_SHIFT, 
-						    &clocks->cpu,
-						    bootcr, ar7_afe_clock);
+			&clocks->cpu, bootcr, ar7_afe_clock);
 	} else {
 		ar7_cpu_clock = ar7_bus_clock;
 	}
 
 	tnetd7300_set_clock(USB_PLL_SOURCE_SHIFT, &clocks->usb,
-			    bootcr, 48000000);
+		bootcr, 48000000);
 
 	if (ar7_dsp_clock == 250000000)
 		tnetd7300_set_clock(DSP_PLL_SOURCE_SHIFT, &clocks->dsp,
-				    bootcr, ar7_dsp_clock);
+			bootcr, ar7_dsp_clock);
 
 	iounmap(clocks);
 	iounmap(bootcr);
 }
 
 static int tnetd7200_get_clock(int base, struct tnetd7200_clock *clock,
-			       u32 *bootcr, u32 bus_clock)
+	u32 *bootcr, u32 bus_clock)
 {
 	int divisor = ((clock->prediv & 0x1f) + 1) * 
 		((clock->postdiv & 0x1f) + 1);
@@ -300,61 +298,61 @@ static int tnetd7200_get_clock(int base, struct tnetd7200_clock *clock,
 
 
 static void tnetd7200_set_clock(int base, struct tnetd7200_clock *clock,
-				int prediv, int postdiv, int postdiv2, int mul, u32 frequency) 
+	int prediv, int postdiv, int postdiv2, int mul, u32 frequency)
 {
-    printk("Clocks: base = %d, frequency = %u, prediv = %d, postdiv = %d, postdiv2 = %d, mul = %d\n",
-        base, frequency, prediv, postdiv, postdiv2, mul);
+	printk("Clocks: base = %d, frequency = %u, prediv = %d, postdiv = %d, postdiv2 = %d, mul = %d\n",
+		base, frequency, prediv, postdiv, postdiv2, mul);
 
-    clock->ctrl = 0;
+	clock->ctrl = 0;
 	clock->prediv = DIVISOR_ENABLE_MASK | ((prediv - 1) & 0x1F);
-    clock->mul = ((mul - 1) & 0xF);
+	clock->mul = ((mul - 1) & 0xF);
 
-    for(mul = 0; mul < 2000; mul++) /* nop */;
+	for(mul = 0; mul < 2000; mul++) /* nop */;
 
-    while(clock->status & 0x1) /* nop */;
+	while(clock->status & 0x1) /* nop */;
 
-    clock->postdiv = DIVISOR_ENABLE_MASK | ((postdiv - 1) & 0x1F);
+	clock->postdiv = DIVISOR_ENABLE_MASK | ((postdiv - 1) & 0x1F);
 
-    clock->cmden |= 1;
-    clock->cmd |= 1;
+	clock->cmden |= 1;
+	clock->cmd |= 1;
 
-    while(clock->status & 0x1) /* nop */;
+	while(clock->status & 0x1) /* nop */;
 
-    clock->postdiv2 = DIVISOR_ENABLE_MASK | ((postdiv2 - 1) & 0x1F);
+	clock->postdiv2 = DIVISOR_ENABLE_MASK | ((postdiv2 - 1) & 0x1F);
 
-    clock->cmden |= 1;
-    clock->cmd |= 1;
+	clock->cmden |= 1;
+	clock->cmd |= 1;
 
-    while(clock->status & 0x1) /* nop */;
+	while(clock->status & 0x1) /* nop */;
 
-    clock->ctrl |= 1;
+	clock->ctrl |= 1;
 }
 
 static int tnetd7200_get_clock_base(int clock_id, u32 *bootcr)
 {
-    if (*bootcr & BOOT_PLL_ASYNC_MODE) {
-        // Async
-        switch (clock_id) {
-        case TNETD7200_CLOCK_ID_DSP:
-            return ar7_ref_clock;
-        default:
-            return ar7_afe_clock;
-        }
-    } else {
-        // Sync
+	if (*bootcr & BOOT_PLL_ASYNC_MODE) {
+		// Async
+		switch (clock_id) {
+		case TNETD7200_CLOCK_ID_DSP:
+			return ar7_ref_clock;
+		default:
+			return ar7_afe_clock;
+        	}
+	} else {
+        	// Sync
 		if (*bootcr & BOOT_PLL_2TO1_MODE) {
-            // 2:1
-            switch (clock_id) {
-            case TNETD7200_CLOCK_ID_DSP:
-                return ar7_ref_clock;
-            default:
-                return ar7_afe_clock;
-            }
-        } else {
-            // 1:1
-            return ar7_ref_clock;
-        }
-    }
+			// 2:1
+			switch (clock_id) {
+			case TNETD7200_CLOCK_ID_DSP:
+				return ar7_ref_clock;
+			default:
+				return ar7_afe_clock;
+			}
+        	} else {
+			// 1:1
+			return ar7_ref_clock;
+		}
+	}
 }
 
 
@@ -362,91 +360,91 @@ static void __init tnetd7200_init_clocks(void)
 {
 	u32 *bootcr = (u32 *)ioremap_nocache(AR7_REGS_DCL, 4);
 	struct tnetd7200_clocks *clocks = (struct tnetd7200_clocks *)ioremap_nocache(AR7_REGS_POWER + 0x80, sizeof(struct tnetd7200_clocks)); 
-    int cpu_base, cpu_mul, cpu_prediv, cpu_postdiv;
-    int dsp_base, dsp_mul, dsp_prediv, dsp_postdiv;
-    int usb_base, usb_mul, usb_prediv, usb_postdiv;
+	int cpu_base, cpu_mul, cpu_prediv, cpu_postdiv;
+	int dsp_base, dsp_mul, dsp_prediv, dsp_postdiv;
+	int usb_base, usb_mul, usb_prediv, usb_postdiv;
 
-    /*
-        Log from Fritz!Box 7170 Annex B:
+/*
+	Log from Fritz!Box 7170 Annex B:
 
-        CPU revision is: 00018448
-        Clocks: Async mode
-        Clocks: Setting DSP clock
-        Clocks: prediv: 1, postdiv: 1, mul: 5
-        Clocks: base = 25000000, frequency = 125000000, prediv = 1, postdiv = 2, postdiv2 = 1, mul = 10
-        Clocks: Setting CPU clock
-        Adjusted requested frequency 211000000 to 211968000
-        Clocks: prediv: 1, postdiv: 1, mul: 6
-        Clocks: base = 35328000, frequency = 211968000, prediv = 1, postdiv = 1, postdiv2 = -1, mul = 6
-        Clocks: Setting USB clock
-        Adjusted requested frequency 48000000 to 48076920
-        Clocks: prediv: 13, postdiv: 1, mul: 5
-        Clocks: base = 125000000, frequency = 48000000, prediv = 13, postdiv = 1, postdiv2 = -1, mul = 5
+	CPU revision is: 00018448
+	Clocks: Async mode
+	Clocks: Setting DSP clock
+	Clocks: prediv: 1, postdiv: 1, mul: 5
+	Clocks: base = 25000000, frequency = 125000000, prediv = 1, postdiv = 2, postdiv2 = 1, mul = 10
+	Clocks: Setting CPU clock
+	Adjusted requested frequency 211000000 to 211968000
+	Clocks: prediv: 1, postdiv: 1, mul: 6
+	Clocks: base = 35328000, frequency = 211968000, prediv = 1, postdiv = 1, postdiv2 = -1, mul = 6
+	Clocks: Setting USB clock
+	Adjusted requested frequency 48000000 to 48076920
+	Clocks: prediv: 13, postdiv: 1, mul: 5
+	Clocks: base = 125000000, frequency = 48000000, prediv = 13, postdiv = 1, postdiv2 = -1, mul = 5
 
-        DSL didn't work if you didn't set the postdiv 2:1 postdiv2 combination, driver hung on startup.
-        Haven't tested this on a synchronous board, neither do i know what to do with ar7_dsp_clock
-    */
+	DSL didn't work if you didn't set the postdiv 2:1 postdiv2 combination, driver hung on startup.
+	Haven't tested this on a synchronous board, neither do i know what to do with ar7_dsp_clock
+*/
 
-    cpu_base = tnetd7200_get_clock_base(TNETD7200_CLOCK_ID_CPU, bootcr);
-    dsp_base = tnetd7200_get_clock_base(TNETD7200_CLOCK_ID_DSP, bootcr);
+	cpu_base = tnetd7200_get_clock_base(TNETD7200_CLOCK_ID_CPU, bootcr);
+	dsp_base = tnetd7200_get_clock_base(TNETD7200_CLOCK_ID_DSP, bootcr);
 
 	if (*bootcr & BOOT_PLL_ASYNC_MODE) {
-        printk("Clocks: Async mode\n");
+		printk("Clocks: Async mode\n");
 
-        printk("Clocks: Setting DSP clock\n");
-        calculate(dsp_base, TNETD7200_DEF_DSP_CLK, &dsp_prediv, &dsp_postdiv, &dsp_mul);
-        ar7_bus_clock = ((dsp_base / dsp_prediv) * dsp_mul) / dsp_postdiv;
-        tnetd7200_set_clock(dsp_base, &clocks->dsp, 
-            dsp_prediv, dsp_postdiv * 2, dsp_postdiv, dsp_mul * 2, 
-            ar7_bus_clock);
+		printk("Clocks: Setting DSP clock\n");
+		calculate(dsp_base, TNETD7200_DEF_DSP_CLK, &dsp_prediv, &dsp_postdiv, &dsp_mul);
+		ar7_bus_clock = ((dsp_base / dsp_prediv) * dsp_mul) / dsp_postdiv;
+		tnetd7200_set_clock(dsp_base, &clocks->dsp, 
+			dsp_prediv, dsp_postdiv * 2, dsp_postdiv, dsp_mul * 2, 
+			ar7_bus_clock);
 
-        printk("Clocks: Setting CPU clock\n");
-        calculate(cpu_base, TNETD7200_DEF_CPU_CLK, &cpu_prediv, &cpu_postdiv, &cpu_mul);
-        ar7_cpu_clock = ((cpu_base / cpu_prediv) * cpu_mul) / cpu_postdiv;
-        tnetd7200_set_clock(cpu_base, &clocks->cpu, 
-            cpu_prediv, cpu_postdiv, -1, cpu_mul, 
-            ar7_cpu_clock);
+		printk("Clocks: Setting CPU clock\n");
+		calculate(cpu_base, TNETD7200_DEF_CPU_CLK, &cpu_prediv, &cpu_postdiv, &cpu_mul);
+		ar7_cpu_clock = ((cpu_base / cpu_prediv) * cpu_mul) / cpu_postdiv;
+		tnetd7200_set_clock(cpu_base, &clocks->cpu, 
+			cpu_prediv, cpu_postdiv, -1, cpu_mul, 
+			ar7_cpu_clock);
 
 	} else {
 		if (*bootcr & BOOT_PLL_2TO1_MODE) {
-            printk("Clocks: Sync 2:1 mode\n");
+			printk("Clocks: Sync 2:1 mode\n");
 
-            printk("Clocks: Setting CPU clock\n");
-            calculate(cpu_base, TNETD7200_DEF_CPU_CLK, &cpu_prediv, &cpu_postdiv, &cpu_mul);
-            ar7_cpu_clock = ((cpu_base / cpu_prediv) * cpu_mul) / cpu_postdiv;
-            tnetd7200_set_clock(cpu_base, &clocks->cpu, 
-                cpu_prediv, cpu_postdiv, -1, cpu_mul, 
-                ar7_cpu_clock);
+			printk("Clocks: Setting CPU clock\n");
+			calculate(cpu_base, TNETD7200_DEF_CPU_CLK, &cpu_prediv, &cpu_postdiv, &cpu_mul);
+			ar7_cpu_clock = ((cpu_base / cpu_prediv) * cpu_mul) / cpu_postdiv;
+			tnetd7200_set_clock(cpu_base, &clocks->cpu, 
+				cpu_prediv, cpu_postdiv, -1, cpu_mul, 
+				ar7_cpu_clock);
 
-            printk("Clocks: Setting DSP clock\n");
-            calculate(dsp_base, TNETD7200_DEF_DSP_CLK, &dsp_prediv, &dsp_postdiv, &dsp_mul);
-            ar7_bus_clock = ar7_cpu_clock / 2;
-            tnetd7200_set_clock(dsp_base, &clocks->dsp, 
-                dsp_prediv, dsp_postdiv * 2, dsp_postdiv, dsp_mul * 2, 
-                ar7_bus_clock);
+			printk("Clocks: Setting DSP clock\n");
+			calculate(dsp_base, TNETD7200_DEF_DSP_CLK, &dsp_prediv, &dsp_postdiv, &dsp_mul);
+			ar7_bus_clock = ar7_cpu_clock / 2;
+			tnetd7200_set_clock(dsp_base, &clocks->dsp, 
+				dsp_prediv, dsp_postdiv * 2, dsp_postdiv, dsp_mul * 2, 
+				ar7_bus_clock);
 		} else {
-            printk("Clocks: Sync 1:1 mode\n");
+			printk("Clocks: Sync 1:1 mode\n");
 
-            printk("Clocks: Setting DSP clock\n");
-            calculate(dsp_base, TNETD7200_DEF_CPU_CLK, &dsp_prediv, &dsp_postdiv, &dsp_mul);
-            ar7_bus_clock = ((dsp_base / dsp_prediv) * dsp_mul) / dsp_postdiv;
-            tnetd7200_set_clock(dsp_base, &clocks->dsp, 
-                dsp_prediv, dsp_postdiv * 2, dsp_postdiv, dsp_mul * 2, 
-                ar7_bus_clock);
+			printk("Clocks: Setting DSP clock\n");
+			calculate(dsp_base, TNETD7200_DEF_CPU_CLK, &dsp_prediv, &dsp_postdiv, &dsp_mul);
+			ar7_bus_clock = ((dsp_base / dsp_prediv) * dsp_mul) / dsp_postdiv;
+			tnetd7200_set_clock(dsp_base, &clocks->dsp, 
+				dsp_prediv, dsp_postdiv * 2, dsp_postdiv, dsp_mul * 2, 
+				ar7_bus_clock);
 
-            ar7_cpu_clock = ar7_bus_clock;
+			ar7_cpu_clock = ar7_bus_clock;
 		}
 	}
 
-    printk("Clocks: Setting USB clock\n");
-    usb_base = ar7_bus_clock;
-    calculate(usb_base, TNETD7200_DEF_USB_CLK, &usb_prediv, &usb_postdiv, &usb_mul);
-    tnetd7200_set_clock(usb_base, &clocks->usb, 
-        usb_prediv, usb_postdiv, -1, usb_mul, 
-        TNETD7200_DEF_USB_CLK);
+	printk("Clocks: Setting USB clock\n");
+	usb_base = ar7_bus_clock;
+	calculate(usb_base, TNETD7200_DEF_USB_CLK, &usb_prediv, &usb_postdiv, &usb_mul);
+	tnetd7200_set_clock(usb_base, &clocks->usb, 
+		usb_prediv, usb_postdiv, -1, usb_mul, 
+		TNETD7200_DEF_USB_CLK);
 
-#warning FIXME: ????! Hrmm
-    ar7_dsp_clock = ar7_cpu_clock;
+	#warning FIXME: ????! Hrmm
+	ar7_dsp_clock = ar7_cpu_clock;
 
 	iounmap(clocks);
 	iounmap(bootcr);
