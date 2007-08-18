@@ -1,7 +1,7 @@
 diff -urN linux-2.6.22/arch/mips/Kconfig linux-2.6.22.new/arch/mips/Kconfig
 --- linux-2.6.22/arch/mips/Kconfig	2007-07-09 01:32:17.000000000 +0200
 +++ linux-2.6.22.new/arch/mips/Kconfig	2007-07-11 02:34:51.000000000 +0200
-@@ -15,6 +15,21 @@
+@@ -15,6 +15,20 @@
  	prompt "System type"
  	default SGI_IP22
  
@@ -18,41 +18,10 @@ diff -urN linux-2.6.22/arch/mips/Kconfig linux-2.6.22.new/arch/mips/Kconfig
 +	select SYS_SUPPORTS_KGDB
 +	select SYS_SUPPORTS_LITTLE_ENDIAN
 +	select GENERIC_GPIO
-+	select ZONE_DMA
 +
  config MACH_ALCHEMY
  	bool "Alchemy processor based machines"
  
-diff -urN linux-2.6.22/arch/mips/kernel/setup.c linux-2.6.22.new/arch/mips/kernel/setup.c
--- linux-2.6.22/arch/mips/kernel/setup.c	2007-07-09 01:32:17.000000000 +0200
-+++ linux-2.6.22.new/arch/mips/kernel/setup.c	2007-07-11 02:32:39.000000000 +0200
-@@ -258,7 +258,7 @@
-  * Initialize the bootmem allocator. It also setup initrd related data
-  * if needed.
-  */
--#ifdef CONFIG_SGI_IP27
-+#ifdef CONFIG_NEED_MULTIPLE_NODES
- 
- static void __init bootmem_init(void)
- {
-@@ -266,7 +266,7 @@
- 	finalize_initrd();
- }
- 
--#else  /* !CONFIG_SGI_IP27 */
-+#else  /* !CONFIG_NEED_MULTIPLE_NODES */
- 
- static void __init bootmem_init(void)
- {
-@@ -392,7 +392,7 @@
- 	finalize_initrd();
- }
- 
--#endif	/* CONFIG_SGI_IP27 */
-+#endif	/* CONFIG_NEED_MULTIPLE_NODES */
- 
- /*
-  * arch_mem_init - initialize memory managment subsystem
 diff -urN linux-2.6.22/arch/mips/kernel/traps.c linux-2.6.22.new/arch/mips/kernel/traps.c
 --- linux-2.6.22/arch/mips/kernel/traps.c	2007-07-09 01:32:17.000000000 +0200
 +++ linux-2.6.22.new/arch/mips/kernel/traps.c	2007-07-11 02:32:39.000000000 +0200
