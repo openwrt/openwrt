@@ -96,6 +96,7 @@ struct region_info_user {
 #define MEMGETREGIONINFO	_IOWR('M', 8, struct region_info_user)
 #define	MEMREADDATA             _IOWR('M', 9, struct mtd_oob_buf)
 #define	MEMWRITEDATA            _IOWR('M', 10, struct mtd_oob_buf)
+#define MTDREFRESH				_IO('M', 23)
 
 #ifndef __KERNEL__
 
