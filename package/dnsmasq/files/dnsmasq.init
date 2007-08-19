@@ -44,14 +44,14 @@ dhcp_add() {
 	}
 	
 	config_get start "$cfg" start
-	config_get end "$cfg" end
+	config_get limit "$cfg" limit
 	config_get leasetime "$cfg" leasetime
 	config_get options "$cfg" options
 
 	leasetime="${leasetime:-12h}"
 	start="$(dhcp_calc "${start:-100}")"
-	end="$((${end:-150} + 1))"
-	eval "$(ipcalc.sh $ipaddr $netmask $start $end)"
+	limit="$((${limit:-150} + 1))"
+	eval "$(ipcalc.sh $ipaddr $netmask $start $limit)"
 	append args "-F $START,$END,$NETMASK,$leasetime${options:+ $options}"
 }
 
