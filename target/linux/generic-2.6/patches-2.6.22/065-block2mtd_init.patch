@@ -32,7 +32,7 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/devices/block2mtd.c linux-2.6.21.1.dev/
 +	if (!mtdname)
 +		mtdname = devname;
 +
-+	dev->mtd.name = kmalloc(strlen(mtdname), GFP_KERNEL);
++	dev->mtd.name = kmalloc(strlen(mtdname) + 1, GFP_KERNEL);
 +
  	if (!dev->mtd.name)
  		goto devinit_err;
