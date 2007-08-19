@@ -71,7 +71,7 @@ static unsigned char rb11x_vlans[6] __initdata = {
 
 static unsigned char rb133_vlans[6] __initdata = {
 	/* FIXME: untested */
-	0x41, 0x42, 0x44, 0x00, 0x00, 0x00
+	0x44, 0x42, 0x41, 0x00, 0x00, 0x00
 };
 
 static unsigned char rb133c_vlans[6] __initdata = {
