@@ -10,12 +10,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ipsec-tools
-PKG_VERSION:=0.6.6
+PKG_VERSION:=0.6.7
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/ipsec-tools
-PKG_MD5SUM:=e908f3cf367e31c7902df5ab16fbe5c3
+PKG_MD5SUM:=4fb764f282dc21cf9a656c58e13dacbb
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -28,15 +28,16 @@ define Package/ipsec-tools
 endef
 
 CONFIGURE_ARGS += \
-		--enable-shared \
-		--enable-static \
-		--with-kernel-headers="$(LINUX_DIR)/include" \
-		--without-readline \
-		--with-openssl="$(STAGING_DIR)/usr" \
-		--without-libradius \
-		--without-libpam \
-		--enable-dpd \
-		--enable-natt
+	--enable-shared \
+	--enable-static \
+	--with-kernel-headers="$(LINUX_DIR)/include" \
+	--without-readline \
+	--with-openssl="$(STAGING_DIR)/usr" \
+	--without-libradius \
+	--without-libpam \
+	--enable-dpd \
+	--enable-hybrid \
+	--enable-natt
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); touch \
@@ -47,6 +48,7 @@ define Build/Configure
 		configure \
 	);
 	$(call Build/Configure/Default)
+	echo "#undef HAVE_SHADOW_H" >> $(PKG_BUILD_DIR)/config.h
 endef
 
 # override CFLAGS holding "-Werror" that break builds on compile warnings
@@ -60,7 +62,10 @@ endef
 define Package/ipsec-tools/install
 	$(INSTALL_DIR) $(1)/etc
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)/src/racoon/samples/racoon.conf $(1)/etc/
-	$(INSTALL_DIR) $(1)/usr/lib/
+	$(SED) 's|@sysconfdir_x@|/etc|g' $(1)/etc/racoon.conf
+	$(INSTALL_DIR) $(1)/etc/racoon
+	$(INSTALL_CONF) $(PKG_BUILD_DIR)/src/racoon/samples/psk.txt $(1)/etc/racoon/
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipsec.so.* $(1)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libracoon.so.* $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/usr/sbin
@@ -68,6 +73,11 @@ define Package/ipsec-tools/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/racoon $(1)/usr/sbin/
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/racoonctl $(1)/usr/sbin/
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/setkey $(1)/usr/sbin/
+endef
+
+define Package/ipsec-tools/conffiles
+/etc/racoon.conf
+/etc/racoon/psk.txt
 endef
 
 $(eval $(call BuildPackage,ipsec-tools))
