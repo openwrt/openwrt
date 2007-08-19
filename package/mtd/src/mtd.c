@@ -242,6 +242,25 @@ mtd_erase(const char *mtd)
 }
 
 int
+mtd_refresh(const char *mtd)
+{
+	int fd;
+
+	fd = mtd_open(mtd, O_RDWR | O_SYNC);
+	if(fd < 0) {
+		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
+		exit(1);
+	}
+	if (ioctl(fd, MTDREFRESH, NULL)) {
+		fprintf(stderr, "Failed to refresh the MTD device\n");
+		close(fd);
+		exit(1);
+	}
+	close(fd);
+	return 0;
+}
+
+int
 mtd_write(int imagefd, const char *mtd)
 {
 	int fd, i, result;
@@ -318,6 +337,7 @@ void usage(void)
 	"The device is in the format of mtdX (eg: mtd4) or its label.\n"
 	"mtd recognizes these commands:\n"
 	"        unlock                  unlock the device\n"
+	"        refresh                 refresh mtd partition\n"
 	"        erase                   erase all data on device\n"
 	"        write <imagefile>|-     write <imagefile> (use - for stdin) to device\n"
 	"Following options are available:\n"
@@ -338,7 +358,8 @@ int main (int argc, char **argv)
 	enum {
 		CMD_ERASE,
 		CMD_WRITE,
-		CMD_UNLOCK
+		CMD_UNLOCK,
+		CMD_REFRESH
 	} cmd;
 	
 	erase[0] = NULL;
@@ -379,6 +400,9 @@ int main (int argc, char **argv)
 
 	if ((strcmp(argv[0], "unlock") == 0) && (argc == 2)) {
 		cmd = CMD_UNLOCK;
+		device = argv[1];
+	} else if ((strcmp(argv[0], "refresh") == 0) && (argc == 2)) {
+		cmd = CMD_REFRESH;
 		device = argv[1];
 	} else if ((strcmp(argv[0], "erase") == 0) && (argc == 2)) {
 		cmd = CMD_ERASE;
@@ -448,6 +472,13 @@ int main (int argc, char **argv)
 			if (quiet < 2)
 				fprintf(stderr, "Writing from %s to %s ... ", imagefile, device);
 			mtd_write(imagefd, device);
+			if (quiet < 2)
+				fprintf(stderr, "\n");
+			break;
+		case CMD_REFRESH:
+			if (quiet < 2)
+				fprintf(stderr, "Refreshing mtd partition %s ... ");
+			mtd_refresh(device);
 			if (quiet < 2)
 				fprintf(stderr, "\n");
 			break;
