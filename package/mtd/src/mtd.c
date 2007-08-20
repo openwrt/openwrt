@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/syscall.h>
 #include <fcntl.h>
@@ -43,13 +44,15 @@
 #include <sys/reboot.h>
 #include <linux/reboot.h>
 
-#include "mtd.h"
+#include "mtd-api.h"
 
 #define TRX_MAGIC       0x30524448      /* "HDR0" */
 #define BUFSIZE (16 * 1024)
 #define MAX_ARGS 8
 
 #define DEBUG
+
+#define JFFS2_DEFAULT_DIR	"tmp"
 
 #define SYSTYPE_UNKNOWN     0
 #define SYSTYPE_BROADCOM    1
@@ -63,16 +66,86 @@ struct trx_header {
 	uint32_t offsets[3];    /* Offsets of partitions from start of header */
 };
 
-char buf[BUFSIZE];
-int buflen;
+static char buf[BUFSIZE];
+static char *imagefile;
+static int buflen;
 int quiet;
+int mtdsize = 0;
+int erasesize = 0;
+
+int mtd_open(const char *mtd)
+{
+	FILE *fp;
+	char dev[PATH_MAX];
+	int i;
+	int ret;
+	int flags = O_RDWR | O_SYNC;
+
+	if ((fp = fopen("/proc/mtd", "r"))) {
+		while (fgets(dev, sizeof(dev), fp)) {
+			if (sscanf(dev, "mtd%d:", &i) && strstr(dev, mtd)) {
+				snprintf(dev, sizeof(dev), "/dev/mtd/%d", i);
+				if ((ret=open(dev, flags))<0) {
+					snprintf(dev, sizeof(dev), "/dev/mtd%d", i);
+					ret=open(dev, flags);
+				}
+				fclose(fp);
+				return ret;
+			}
+		}
+		fclose(fp);
+	}
+
+	return open(mtd, flags);
+}
+
+int mtd_check_open(const char *mtd)
+{
+	struct mtd_info_user mtdInfo;
+	int fd;
+
+	fd = mtd_open(mtd);
+	if(fd < 0) {
+		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
+		return 0;
+	}
+
+	if(ioctl(fd, MEMGETINFO, &mtdInfo)) {
+		fprintf(stderr, "Could not get MTD device info from %s\n", mtd);
+		close(fd);
+		return 0;
+	}
+	mtdsize = mtdInfo.size;
+	erasesize = mtdInfo.erasesize;
+
+	return fd;
+}
+
+int mtd_erase_block(int fd, int offset)
+{
+	struct erase_info_user mtdEraseInfo;
+
+	mtdEraseInfo.start = offset;
+	mtdEraseInfo.length = erasesize;
+	ioctl(fd, MEMUNLOCK, &mtdEraseInfo);
+	if (ioctl (fd, MEMERASE, &mtdEraseInfo) < 0) {
+		fprintf(stderr, "Erasing mtd failed.\n");
+		exit(1);
+	}
+}
+
+int mtd_write_buffer(int fd, char *buf, int offset, int length)
+{
+	lseek(fd, offset, SEEK_SET);
+	write(fd, buf, length);
+}
+
 
 #ifdef target_brcm
-int
+static int
 image_check_brcm(int imagefd, const char *mtd)
 {
 	struct trx_header *trx = (struct trx_header *) buf;
-	struct mtd_info_user mtdInfo;
 	int fd;
 
 	if (strcmp(mtd, "linux") != 0)
@@ -94,18 +167,13 @@ image_check_brcm(int imagefd, const char *mtd)
 	}
 
 	/* check if image fits to mtd device */
-	fd = mtd_open(mtd, O_RDWR | O_SYNC);
+	fd = mtd_check_open(mtd);
 	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		exit(1);
 	}
 
-	if(ioctl(fd, MEMGETINFO, &mtdInfo)) {
-		fprintf(stderr, "Could not get MTD device info from %s\n", mtd);
-		exit(1);
-	}
-		
-	if(mtdInfo.size < trx->len) {
+	if(mtdsize < trx->len) {
 		fprintf(stderr, "Image too big for partition: %s\n", mtd);
 		close(fd);
 		return 0;
@@ -116,7 +184,7 @@ image_check_brcm(int imagefd, const char *mtd)
 }
 #endif /* target_brcm */
 
-int
+static int
 image_check(int imagefd, const char *mtd)
 {
 	int fd, systype;
@@ -129,48 +197,35 @@ image_check(int imagefd, const char *mtd)
 #endif
 }
 
-int mtd_check(char *mtd)
+static int mtd_check(const char *mtd)
 {
-	struct mtd_info_user mtdInfo;
 	int fd;
 
-	fd = mtd_open(mtd, O_RDWR | O_SYNC);
-	if(fd < 0) {
-		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
+	fd = mtd_check_open(mtd);
+	if (!fd)
 		return 0;
-	}
-
-	if(ioctl(fd, MEMGETINFO, &mtdInfo)) {
-		fprintf(stderr, "Could not get MTD device info from %s\n", mtd);
-		close(fd);
-		return 0;
-	}
 
 	close(fd);
 	return 1;
 }
 
-int
+static int
 mtd_unlock(const char *mtd)
 {
 	int fd;
-	struct mtd_info_user mtdInfo;
 	struct erase_info_user mtdLockInfo;
 
-	fd = mtd_open(mtd, O_RDWR | O_SYNC);
-	if(fd < 0) {
+	fd = mtd_check_open(mtd);
+	if(fd <= 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		exit(1);
 	}
 
-	if(ioctl(fd, MEMGETINFO, &mtdInfo)) {
-		fprintf(stderr, "Could not get MTD device info from %s\n", mtd);
-		close(fd);
-		exit(1);
-	}
+	if (quiet < 2) 
+		fprintf(stderr, "Unlocking %s ...\n", mtd);
 
 	mtdLockInfo.start = 0;
-	mtdLockInfo.length = mtdInfo.size;
+	mtdLockInfo.length = mtdsize;
 	if(ioctl(fd, MEMUNLOCK, &mtdLockInfo)) {
 		close(fd);
 		return 0;
@@ -180,56 +235,26 @@ mtd_unlock(const char *mtd)
 	return 0;
 }
 
-int
-mtd_open(const char *mtd, int flags)
-{
-	FILE *fp;
-	char dev[PATH_MAX];
-	int i;
-	int ret;
-
-	if ((fp = fopen("/proc/mtd", "r"))) {
-		while (fgets(dev, sizeof(dev), fp)) {
-			if (sscanf(dev, "mtd%d:", &i) && strstr(dev, mtd)) {
-				snprintf(dev, sizeof(dev), "/dev/mtd/%d", i);
-				if ((ret=open(dev, flags))<0) {
-					snprintf(dev, sizeof(dev), "/dev/mtd%d", i);
-					ret=open(dev, flags);
-				}
-				fclose(fp);
-				return ret;
-			}
-		}
-		fclose(fp);
-	}
-
-	return open(mtd, flags);
-}
-
-int
+static int
 mtd_erase(const char *mtd)
 {
 	int fd;
-	struct mtd_info_user mtdInfo;
 	struct erase_info_user mtdEraseInfo;
 
-	fd = mtd_open(mtd, O_RDWR | O_SYNC);
-	if(fd < 0) {
+	if (quiet < 2)
+		fprintf(stderr, "Erasing %s ...\n", mtd);
+
+	fd = mtd_check_open(mtd);
+	if(fd <= 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		exit(1);
 	}
 
-	if(ioctl(fd, MEMGETINFO, &mtdInfo)) {
-		fprintf(stderr, "Could not get MTD device info from %s\n", mtd);
-		close(fd);
-		exit(1);
-	}
-
-	mtdEraseInfo.length = mtdInfo.erasesize;
+	mtdEraseInfo.length = erasesize;
 
 	for (mtdEraseInfo.start = 0;
-		 mtdEraseInfo.start < mtdInfo.size;
-		 mtdEraseInfo.start += mtdInfo.erasesize) {
+		 mtdEraseInfo.start < mtdsize;
+		 mtdEraseInfo.start += erasesize) {
 		
 		ioctl(fd, MEMUNLOCK, &mtdEraseInfo);
 		if(ioctl(fd, MEMERASE, &mtdEraseInfo))
@@ -241,46 +266,50 @@ mtd_erase(const char *mtd)
 
 }
 
-int
+static int
 mtd_refresh(const char *mtd)
 {
 	int fd;
 
-	fd = mtd_open(mtd, O_RDWR | O_SYNC);
-	if(fd < 0) {
+	if (quiet < 2)
+		fprintf(stderr, "Refreshing mtd partition %s ... ", mtd);
+
+	fd = mtd_check_open(mtd);
+	if(fd <= 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		exit(1);
 	}
+
 	if (ioctl(fd, MTDREFRESH, NULL)) {
 		fprintf(stderr, "Failed to refresh the MTD device\n");
 		close(fd);
 		exit(1);
 	}
 	close(fd);
+
+	if (quiet < 2)
+		fprintf(stderr, "\n");
+
 	return 0;
 }
 
-int
+static int
 mtd_write(int imagefd, const char *mtd)
 {
 	int fd, i, result;
 	size_t r, w, e;
-	struct mtd_info_user mtdInfo;
 	struct erase_info_user mtdEraseInfo;
 	int ret = 0;
 
-	fd = mtd_open(mtd, O_RDWR | O_SYNC);
+	fd = mtd_check_open(mtd);
 	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		exit(1);
 	}
-
-	if(ioctl(fd, MEMGETINFO, &mtdInfo)) {
-		fprintf(stderr, "Could not get MTD device info from %s\n", mtd);
-		close(fd);
-		exit(1);
-	}
 		
+	if (quiet < 2)
+		fprintf(stderr, "Writing from %s to %s ... ", imagefile, mtd);
+
 	r = w = e = 0;
 	if (!quiet)
 		fprintf(stderr, " [ ]");
@@ -296,17 +325,13 @@ mtd_write(int imagefd, const char *mtd)
 
 		/* need to erase the next block before writing data to it */
 		while (w > e) {
-			mtdEraseInfo.start = e;
-			mtdEraseInfo.length = mtdInfo.erasesize;
-
 			if (!quiet)
 				fprintf(stderr, "\b\b\b[e]");
+
+			mtd_erase_block(fd, e);
+
 			/* erase the chunk */
-			if (ioctl (fd,MEMERASE,&mtdEraseInfo) < 0) {
-				fprintf(stderr, "Erasing mtd failed: %s\n", mtd);
-				exit(1);
-			}
-			e += mtdInfo.erasesize;
+			e += erasesize;
 		}
 		
 		if (!quiet)
@@ -327,11 +352,14 @@ mtd_write(int imagefd, const char *mtd)
 	if (!quiet)
 		fprintf(stderr, "\b\b\b\b");
 
+	if (quiet < 2)
+		fprintf(stderr, "\n");
+
 	close(fd);
 	return 0;
 }
 
-void usage(void)
+static void usage(void)
 {
 	fprintf(stderr, "Usage: mtd [<options> ...] <command> [<arguments> ...] <device>\n\n"
 	"The device is in the format of mtdX (eg: mtd4) or its label.\n"
@@ -340,26 +368,44 @@ void usage(void)
 	"        refresh                 refresh mtd partition\n"
 	"        erase                   erase all data on device\n"
 	"        write <imagefile>|-     write <imagefile> (use - for stdin) to device\n"
+	"        jffs2write <file>       append <file> to the jffs2 partition on the device\n"
 	"Following options are available:\n"
 	"        -q                      quiet mode (once: no [w] on writing,\n"
 	"                                           twice: no status messages)\n"
 	"        -r                      reboot after successful command\n"
 	"        -f                      force write without trx checks\n"
-	"        -e <device>             erase <device> before executing the command\n\n"
+	"        -e <device>             erase <device> before executing the command\n"
+	"        -d <name>               directory for jffs2write, defaults to \"tmp\"\n"
+	"\n"
 	"Example: To write linux.trx to mtd4 labeled as linux and reboot afterwards\n"
 	"         mtd -r write linux.trx linux\n\n");
 	exit(1);
 }
 
+static void do_reboot(void)
+{
+	fprintf(stderr, "Rebooting ...\n");
+	fflush(stderr);
+
+	/* try regular reboot method first */
+	system("/sbin/reboot");
+	sleep(2);
+
+	/* if we're still alive at this point, force the kernel to reboot */
+	syscall(SYS_reboot,LINUX_REBOOT_MAGIC1,LINUX_REBOOT_MAGIC2,LINUX_REBOOT_CMD_RESTART,NULL);
+}
+
 int main (int argc, char **argv)
 {
 	int ch, i, boot, unlock, imagefd, force, unlocked;
-	char *erase[MAX_ARGS], *device, *imagefile;
+	char *erase[MAX_ARGS], *device;
+	char *jffs2dir = JFFS2_DEFAULT_DIR;
 	enum {
 		CMD_ERASE,
 		CMD_WRITE,
 		CMD_UNLOCK,
-		CMD_REFRESH
+		CMD_REFRESH,
+		CMD_JFFS2WRITE
 	} cmd;
 	
 	erase[0] = NULL;
@@ -368,7 +414,7 @@ int main (int argc, char **argv)
 	buflen = 0;
 	quiet = 0;
 
-	while ((ch = getopt(argc, argv, "frqe:")) != -1)
+	while ((ch = getopt(argc, argv, "frqe:d:")) != -1)
 		switch (ch) {
 			case 'f':
 				force = 1;
@@ -387,7 +433,9 @@ int main (int argc, char **argv)
 				erase[i++] = optarg;
 				erase[i] = NULL;
 				break;
-			
+			case 'd':
+				jffs2dir = optarg;
+				break;
 			case '?':
 			default:
 				usage();
@@ -434,6 +482,15 @@ int main (int argc, char **argv)
 				exit(1);
 			}
 		}
+	} else if ((strcmp(argv[0], "jffs2write") == 0) && (argc == 3)) {
+		cmd = CMD_JFFS2WRITE;
+		device = argv[2];
+	
+		imagefile = argv[1];
+		if (!mtd_check(device)) {
+			fprintf(stderr, "Can't open device for writing!\n");
+			exit(1);
+		}
 	} else {
 		usage();
 	}
@@ -443,53 +500,43 @@ int main (int argc, char **argv)
 	i = 0;
 	unlocked = 0;
 	while (erase[i] != NULL) {
-		if (quiet < 2)
-			fprintf(stderr, "Unlocking %s ...\n", erase[i]);
 		mtd_unlock(erase[i]);
-		if (quiet < 2)
-			fprintf(stderr, "Erasing %s ...\n", erase[i]);
 		mtd_erase(erase[i]);
 		if (strcmp(erase[i], device) == 0)
 			unlocked = 1;
 		i++;
 	}
 	
-	if (!unlocked) {
-		if (quiet < 2) 
-			fprintf(stderr, "Unlocking %s ...\n", device);
-		mtd_unlock(device);
-	}
 		
 	switch (cmd) {
 		case CMD_UNLOCK:
+			if (!unlocked)
+				mtd_unlock(device);
 			break;
 		case CMD_ERASE:
-			if (quiet < 2)
-				fprintf(stderr, "Erasing %s ...\n", device);
+			if (!unlocked)
+				mtd_unlock(device);
 			mtd_erase(device);
 			break;
 		case CMD_WRITE:
-			if (quiet < 2)
-				fprintf(stderr, "Writing from %s to %s ... ", imagefile, device);
+			if (!unlocked)
+				mtd_unlock(device);
 			mtd_write(imagefd, device);
-			if (quiet < 2)
-				fprintf(stderr, "\n");
+			break;
+		case CMD_JFFS2WRITE:
+			if (!unlocked)
+				mtd_unlock(device);
+			mtd_write_jffs2(device, imagefile, jffs2dir);
 			break;
 		case CMD_REFRESH:
-			if (quiet < 2)
-				fprintf(stderr, "Refreshing mtd partition %s ... ");
 			mtd_refresh(device);
-			if (quiet < 2)
-				fprintf(stderr, "\n");
 			break;
 	}
 
 	sync();
 	
-	if (boot) {
-		fprintf(stderr, "Rebooting ...\n");
-		fflush(stderr);
-		syscall(SYS_reboot,LINUX_REBOOT_MAGIC1,LINUX_REBOOT_MAGIC2,LINUX_REBOOT_CMD_RESTART,NULL);
-	}
+	if (boot)
+		do_reboot();
+
 	return 0;
 }
