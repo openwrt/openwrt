@@ -1,12 +1,6 @@
-# $Id$
+CC = gcc
+CFLAGS += -Wall
 
-all: mtd
-
-%.o: %.c
-	$(CC) -I. $(CFLAGS) $(EXTRA_CFLAGS) -c -o $@ $^
-
-mtd: mtd.o
-	$(CC) -o $@ $^
-
+mtd: mtd.o jffs2.o crc32.o
 clean:
-	rm -f *.o mtd
+	rm -f *.o jffs2 
