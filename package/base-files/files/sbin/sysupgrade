@@ -1,0 +1,92 @@
+#!/bin/sh
+. /etc/functions.sh
+
+# initialize defaults
+RAMFS_COPY_BIN=""	# extra programs for temporary ramfs root
+RAMFS_COPY_DATA=""	# extra data files
+export INTERACTIVE=0
+export VERBOSE=1
+export SAVE_CONFIG=1
+
+# parse options
+while [ -n "$1" ]; do 
+	case "$1" in
+		-i) export INTERACTIVE=1;;
+		-v) export VERBOSE="$(($VERBOSE + 1))";;
+		-q) export VERBOSE="$(($VERBOSE - 1))";;
+		-*)
+			echo "Invalid option: $1"
+			exit 1
+		;;
+		*) break;;
+	esac
+	shift;
+done
+
+export CONFFILES=/tmp/sysupgrade.conffiles
+export CONF_TAR=/tmp/sysupgrade.tgz
+
+export ARGV="$*"
+export ARGC="$#"
+
+[ -z "$ARGV" ] && {
+	cat <<EOF
+Usage: $0 [options] <image file or URL>
+
+Options:
+	-i	interactive mode
+	-v	more verbose
+	-q	less verbose
+
+EOF
+	exit 1
+}
+
+add_uci_conffiles() {
+	local file="$1"
+	find /etc/config > "$file"
+	return 0
+}
+
+# hooks
+sysupgrade_image_check="platform_check_image"
+sysupgrade_init_conffiles="add_uci_conffiles"
+
+include /lib/upgrade
+
+do_save_conffiles() {
+	[ -z "$(rootfs_type)" ] && {
+		echo "Cannot save config while running from ramdisk."
+		ask_bool 0 "Abort" && exit
+		return 0
+	}
+	run_hooks "$CONFFILES" $sysupgrade_init_conffiles
+	ask_bool 0 "Edit config file list" && vi "$CONFFILES"
+
+	v "Saving config files..."
+	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
+	tar c${TAR_V}zf "$CONF_TAR" -T "$CONFFILES" 2>/dev/null
+}
+
+type platform_check_image >/dev/null 2>/dev/null || {
+	echo "Firmware upgrade is not implemented for this platform."
+	exit 1
+}
+
+for check in $sysupgrade_image_check; do
+	( eval "$check \"\$ARGV\"" ) || {
+		echo "Image check '$check' failed."
+		exit 1
+	}
+done
+
+if ask_bool $SAVE_CONFIG "Keep config files over reflash"; then
+	do_save_conffiles
+	export SAVE_CONFIG=1
+else
+	export SAVE_CONFIG=0
+fi
+run_hooks "" $sysupgrade_pre_upgrade
+
+v "Switching to ramdisk..."
+run_ramfs '. /etc/functions.sh; include /lib/upgrade; do_upgrade'

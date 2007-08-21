@@ -52,7 +52,7 @@
 
 #define DEBUG
 
-#define JFFS2_DEFAULT_DIR	"tmp"
+#define JFFS2_DEFAULT_DIR	"" /* directory name without /, empty means root dir */
 
 #define SYSTYPE_UNKNOWN     0
 #define SYSTYPE_BROADCOM    1

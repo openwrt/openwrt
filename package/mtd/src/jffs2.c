@@ -147,7 +147,7 @@ static void add_file(char *name, int parent)
 	else
 		fname = name;
 
-	inode = add_dirent(name, IFTODT(S_IFREG), parent);
+	inode = add_dirent(fname, IFTODT(S_IFREG), parent);
 	memset(&ri, 0, sizeof(ri));
 	ri.magic = JFFS2_MAGIC_BITMASK;
 	ri.nodetype = JFFS2_NODETYPE_INODE;
@@ -223,6 +223,9 @@ int mtd_write_jffs2(char *mtd, char *filename, char *dir)
 		goto done;
 	}
 
+	if (!*dir)
+		target_ino = 1;
+
 	/* parse the structure of the jffs2 first
 	 * locate the directory that the file is going to be placed in */
 	for(;;) {
@@ -253,7 +256,7 @@ int mtd_write_jffs2(char *mtd, char *filename, char *dir)
 					struct jffs2_raw_dirent *de = (struct jffs2_raw_dirent *) node;
 					
 					/* is this the right directory name and is it a subdirectory of / */
-					if ((de->pino == 1) && !strncmp(de->name, dir, de->nsize))
+					if (*dir && (de->pino == 1) && !strncmp(de->name, dir, de->nsize))
 						target_ino = de->ino;
 
 					/* store the last inode and version numbers for adding extra files */
