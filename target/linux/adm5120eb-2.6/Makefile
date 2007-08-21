@@ -11,7 +11,7 @@ BOARD:=adm5120eb
 BOARDNAME:=ADM5120 (Big Endian)
 FEATURES:=squashfs pci usb broken
 
-LINUX_VERSION:=2.6.22.1
+LINUX_VERSION:=2.6.22.4
 
 define Target/Description
 	Build firmware images for Infineon/ADMTek ADM5120 based boards running in big-endian mode
