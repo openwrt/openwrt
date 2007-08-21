@@ -254,6 +254,29 @@ define KernelPackage/usb-serial-visor
 endef
 $(eval $(call KernelPackage,usb-serial-visor))
 
+define KernelPackage/usb-serial-keyspan
+  $(call usbdep,kmod-usb-serial)
+  TITLE:=Support for Keyspan USB-to-Serial devices
+  DESCRIPTION:=Kernel support for Keyspan USB-to-Serial devices
+  KCONFIG:= \
+		$(CONFIG_USB_SERIAL_KEYSPAN) \
+		$(CONFIG_USB_SERIAL_KEYSPAN_USA28) \
+		$(CONFIG_USB_SERIAL_KEYSPAN_USA28X) \
+		$(CONFIG_USB_SERIAL_KEYSPAN_USA28XA) \
+		$(CONFIG_USB_SERIAL_KEYSPAN_USA28XB) \
+		$(CONFIG_USB_SERIAL_KEYSPAN_USA19) \
+		$(CONFIG_USB_SERIAL_KEYSPAN_USA18X) \
+		$(CONFIG_USB_SERIAL_KEYSPAN_USA19W) \
+		$(CONFIG_USB_SERIAL_KEYSPAN_USA19QW) \
+		$(CONFIG_USB_SERIAL_KEYSPAN_USA19QI) \
+		$(CONFIG_USB_SERIAL_KEYSPAN_MPR) \
+		$(CONFIG_USB_SERIAL_KEYSPAN_USA49W) \
+		$(CONFIG_USB_SERIAL_KEYSPAN_USA49WLC)
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/keyspan.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,65,keyspan)
+endef
+$(eval $(call KernelPackage,usb-serial-keyspan))
+
 define KernelPackage/usb-serial-option
   $(call usbdep,kmod-usb-serial @LINUX_2_6)
   TITLE:=Support for Option HSDPA modems
