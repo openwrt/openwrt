@@ -11,7 +11,7 @@ BOARD:=rdc
 BOARDNAME:=RDC321x x86
 FEATURES:=squashfs jffs2 broken
 
-LINUX_VERSION:=2.6.22.1
+LINUX_VERSION:=2.6.22.4
 
 define Target/Description
         Build firmware images for RDC321x based routers

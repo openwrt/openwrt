@@ -11,7 +11,7 @@ BOARD:=adm5120
 BOARDNAME:=ADM5120 (Little Endian)
 FEATURES:=squashfs jffs2 tgz broken
 
-LINUX_VERSION:=2.6.22.1
+LINUX_VERSION:=2.6.22.4
 
 define Target/Description
 	Build firmware images for Infineon/ADMtek ADM5120 based boards

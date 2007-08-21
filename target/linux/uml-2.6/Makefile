@@ -23,7 +23,7 @@ BOARDNAME:=User Mode Linux
 FEATURES:=broken ext2
 LINUX_CONFIG:=$(CURDIR)/config/$(ARCH)
 
-LINUX_VERSION:=2.6.22.1
+LINUX_VERSION:=2.6.22.4
 
 include $(INCLUDE_DIR)/kernel-build.mk
 

@@ -11,7 +11,7 @@ BOARD:=atheros
 BOARDNAME:=Atheros
 FEATURES:=squashfs jffs2
 
-LINUX_VERSION:=2.6.22.1
+LINUX_VERSION:=2.6.22.4
 
 define Target/Description
 	Build firmware images for Atheros SoC boards
