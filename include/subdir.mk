@@ -36,7 +36,7 @@ endef
 
 # Parameters: <subdir> <name> <target>
 define stampfile
-  $(1)/stamp-$(3):=$(STAGING_DIR)/stampfiles/.$(2)_$(3)
+  $(1)/stamp-$(3):=$(STAGING_DIR)/stamp/.$(2)_$(3)
   $(if $(__rdep_$(1)),,
     $(call rdep,$(1),$$($(1)/stamp-$(3)),)
     __rdep_$(1):=1
