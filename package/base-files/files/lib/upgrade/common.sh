@@ -1,0 +1,151 @@
+#!/bin/sh
+
+RAM_ROOT=/tmp/root
+
+ldd() { LD_TRACE_LOADED_OBJECTS=1 $*; }
+libs() { ldd $* | awk '{print $3}'; }
+
+install_file() { # <file> [ <file> ... ]
+	for file in "$@"; do
+		dest="$RAM_ROOT/$file"
+		[ -f $file -a ! -f $dest ] && {
+			dir="$(dirname $dest)"
+			mkdir -p "$dir"
+			cp $file $dest
+		}
+	done
+}
+
+install_bin() { # <file> [ <symlink> ... ]
+	src=$1
+	files=$1
+	[ -x "$src" ] && files="$src $(libs $src)"
+	install_file $files
+	shift
+	for link in "$@"; do {
+		dest="$RAM_ROOT/$link"
+		dir="$(dirname $dest)"
+		mkdir -p "$dir"
+		[ -f "$dest" ] || ln -s $src $dest
+	}; done
+}
+
+pivot() { # <new_root> <old_root>
+	mount | grep "on $1 type" 2>&- 1>&- || mount -o bind $1 $1
+	mkdir -p $1$2 $1/proc $1/dev $1/tmp $1/jffs && \
+	mount -o move /proc $1/proc && \
+	pivot_root $1 $1$2 || {
+        umount $1 $1
+		return 1
+	}
+	mount -o move $2/dev /dev
+	mount -o move $2/tmp /tmp
+	mount -o move $2/jffs /jffs 2>&-
+	return 0
+}
+
+run_ramfs() { # <command> [...]
+	install_bin /bin/busybox /bin/ash /bin/sh /bin/mount /bin/umount /sbin/pivot_root /usr/bin/wget /sbin/reboot /bin/sync /bin/dd /bin/grep /bin/cp /bin/mv /bin/tar /usr/bin/md5sum "/usr/bin/[" /bin/vi
+	install_bin /sbin/mtd
+	for file in $RAMFS_COPY_BIN; do
+		install_bin $file
+	done
+	install_file /etc/resolv.conf /etc/functions.sh /lib/upgrade/*.sh $RAMFS_COPY_DATA
+
+	pivot $RAM_ROOT /mnt || {
+		echo "Failed to switch over to ramfs. Please reboot."
+		exit 1
+	}
+
+	mount -o remount,ro /mnt
+	umount -l /mnt
+
+	grep /jffs /proc/mounts > /dev/null && {
+		mount -o remount,ro /jffs
+		umount -l /jffs
+	}
+
+	# spawn a new shell from ramdisk to reduce the probability of cache issues
+	exec /bin/busybox ash -c "$*"
+}
+
+run_hooks() {
+	local arg="$1"; shift
+	for func in "$@"; do
+		eval "$func $arg"
+	done
+}
+
+ask_bool() {
+	local default="$1"; shift;
+	local answer="$default"
+
+	[ "$INTERACTIVE" -eq 1 ] && {
+		case "$default" in
+			0) echo -n "$* (y/N): ";;
+			*) echo -n "$* (Y/n): ";;
+		esac
+		read answer
+		case "$answer" in
+			y*) answer=1;;
+			n*) answer=0;;
+			*) answer="$default";;
+		esac
+	}
+	[ "$answer" -gt 0 ]
+}
+
+v() {
+	[ "$VERBOSE" -ge 1 ] && echo "$@"
+}
+
+rootfs_type() {
+	mount | awk '($3 ~ /^\/$/) && ($5 !~ /rootfs/) { print $5 }'
+}
+
+get_image() {
+	local from="$1"
+
+	case "$from" in
+		http://*|ftp://*) wget -O- -q "$from";;
+		*) cat "$from"
+	esac
+}
+
+get_magic_word() {
+	get_image "$1" | dd bs=2 count=1 2>/dev/null | hexdump | awk '$2 { print $2 }'
+}
+
+refresh_mtd_partitions() {
+	mtd refresh rootfs
+}
+
+jffs2_copy_config() {
+	if grep rootfs_data /proc/mtd >/dev/null; then
+		# squashfs+jffs2
+		mtd -e rootfs_data jffs2write "$CONF_TAR" rootfs_data
+	else
+		# jffs2
+		mtd jffs2write "$CONF_TAR" rootfs
+	fi
+}
+
+do_upgrade() {
+	v "Performing system upgrade..."
+	platform_do_upgrade "$ARGV"
+	
+	[ "$SAVE_CONFIG" -eq 1 ] && {
+		v "Refreshing partitions"
+		if type 'platform_refresh_partitions' >/dev/null 2>/dev/null; then
+			platform_refresh_partitions
+		else
+			refresh_mtd_partitions
+		fi
+		if type 'platform_copy_config' >/dev/null 2>/dev/null; then
+			platform_copy_config
+		else
+			jffs2_copy_config
+		fi
+	}
+	ask_bool 1 "Reboot" && reboot
+}
