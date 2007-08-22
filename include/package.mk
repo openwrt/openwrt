@@ -105,15 +105,15 @@ endif
 endef
 
 # prevent libtool from setting rpath when linking
-define Build/Fix/libtool/rpath
+define libtool_disable_rpath
 	find $(PKG_BUILD_DIR) -name 'libtool' | xargs \
 		$(SED) 's,^hardcode_libdir_flag_spec=.*,hardcode_libdir_flag_spec=" -D__LIBTOOL_IS_A_FOOL__ ",g'
 endef
 
 # prevent libtool from linking against host development libraries
-define Build/Fix/libtool
+define libtool_fixup_libdir
 	find $(PKG_BUILD_DIR) -name '*.la' | xargs \
-		$(SED) "s,^$(1)='/usr/lib',$(1)='$(STAGING_DIR)/usr/lib',g"
+		$(SED) "s,^libdir='/usr/lib',libdir='$(strip $(1))/usr/lib',g"
 endef
 
 define Build/Prepare
