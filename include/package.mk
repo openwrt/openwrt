@@ -111,9 +111,9 @@ define Build/Fix/libtool/rpath
 endef
 
 # prevent libtool from linking against host development libraries
-define Build/Fix/libtool/libdir
+define Build/Fix/libtool
 	find $(PKG_BUILD_DIR) -name '*.la' | xargs \
-		$(SED) "s,^libdir='/usr/lib',libdir='$(STAGING_DIR)/usr/lib',g"
+		$(SED) "s,^$(1)='/usr/lib',$(1)='$(STAGING_DIR)/usr/lib',g"
 endef
 
 define Build/Prepare
