@@ -189,6 +189,19 @@ endef
 $(eval $(call KernelPackage,ppp))
 
 
+define KernelPackage/ppp-synctty
+  TITLE:=PPP sync tty support
+  DESCRIPTION:=\
+	Kernel modules for PPP sync tty support
+  DEPENDS:=kmod-ppp
+  KCONFIG:=CONFIG_PPP_SYNC_TTY
+  SUBMENU:=$(NSMENU)
+  FILES:=$(LINUX_DIR)/drivers/net/ppp_synctty.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,ppp_synctty)
+endef
+$(eval $(call KernelPackage,ppp-synctty))
+
+
 define KernelPackage/pppoe
   TITLE:=PPPoE support
   DESCRIPTION:=\
