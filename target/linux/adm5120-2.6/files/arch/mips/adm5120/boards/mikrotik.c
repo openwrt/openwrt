@@ -64,6 +64,11 @@ static void __init rb1xx_setup(void)
 	/* TODO: setup mac address */
 }
 
+#if 0
+/*
+ * RB1xx boards have bad network performance with the default VLAN matrixes.
+ * Disable it while the ethernet driver gets fixed.
+ */
 static unsigned char rb11x_vlans[6] __initdata = {
 	/* FIXME: untested */
 	0x41, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -83,6 +88,15 @@ static unsigned char rb15x_vlans[6] __initdata = {
 	/* FIXME: untested */
 	0x41, 0x42, 0x44, 0x48, 0x50, 0x00
 };
+#else
+static unsigned char rb_vlans[6] __initdata = {
+	0x7F, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+#define rb11x_vlans	rb_vlans
+#define rb133_vlans	rb_vlans
+#define rb133c_vlans	rb_vlans
+#define rb15x_vlans	rb_vlans
+#endif
 
 static struct adm5120_board rb111_board __initdata = {
 	.mach_type	= MACH_ADM5120_RB_111,
