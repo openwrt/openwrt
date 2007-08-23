@@ -59,6 +59,7 @@ define Stage1/Configure
 		--with-gnu-ld \
 		--disable-nls \
 		--disable-libmudflap \
+		--disable-multilib \
 	);
 endef
 define Stage1/Compile
@@ -89,6 +90,7 @@ define Stage2/Configure
 		--with-gnu-ld \
 		--disable-nls \
 		--disable-libmudflap \
+		--disable-mutlitlib \
 	);
 endef
 
