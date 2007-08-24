@@ -113,7 +113,10 @@ define Build/Prepare
 endef
 
 define Build/Compile
-	$(MAKE) -C "$(PKG_BUILD_DIR)" config_header
+	$(MAKE) -C "$(PKG_BUILD_DIR)" \
+		KERNDIR="$(LINUX_DIR)" \
+		config_header
+
 	$(MAKE) -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" V="$(V)" \
