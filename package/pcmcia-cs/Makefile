@@ -7,6 +7,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=pcmcia-cs
 PKG_VERSION:=3.2.8
@@ -21,12 +22,12 @@ include $(INCLUDE_DIR)/package.mk
 define Package/pcmcia-cs
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@PCMCIA_SUPPORT
+  DEPENDS:=@LINUX_2_4 @PCMCIA_SUPPORT
   TITLE:=PCMCIA/Cardbus management utilities
   URL:=http://pcmcia-cs.sourceforge.net/
 endef
 
-$(PKG_BUILD_DIR)/.configured: $(LINUX_DIR)/.config
+$(STAMP_CONFIGURED): $(LINUX_DIR)/.config
 
 define Build/Configure
 	( cd $(PKG_BUILD_DIR); \
