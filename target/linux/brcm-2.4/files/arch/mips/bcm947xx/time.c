@@ -99,6 +99,17 @@ static struct irqaction bcm947xx_timer_irqaction = {
 void __init
 bcm947xx_timer_setup(struct irqaction *irq)
 {
+	int x;
+
 	/* Enable the timer interrupt */
 	setup_irq(7, &bcm947xx_timer_irqaction);
+
+	sti();
+
+	for (x=0; x<5; x++) {
+		unsigned long ticks; 
+		ticks = jiffies;
+		while (ticks == jiffies) 
+			/* do nothing */;
+	}
 }
