@@ -22,7 +22,7 @@ define Package/e2fsprogs
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Ext2/3 filesystem utilities
-  DEPENDS:=+libuuid
+  DEPENDS:=+libblkid +libuuid
   DESCRIPTION:=\
 	This package contains essential ext2 filesystem utilities which consists of \\\
 	e2fsck, mke2fs, debugfs, dumpe2fs, tune2fs, and most of the other core ext2 \\\
@@ -92,6 +92,15 @@ define Build/InstallDev
 		BUILDCC="$(HOSTCC)" \
 		DESTDIR="$(STAGING_DIR)" \
 		install-libs
+	$(SED) 's,-I$$$${includedir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/{blkid,com_err,e2p,ext2fs,ss,uuid}.pc
+	$(SED) 's,-L$$$${libdir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/{blkid,com_err,e2p,ext2fs,ss,uuid}.pc
+endef
+
+define Build/UninstallDev
+	-$(MAKE) -C $(PKG_BUILD_DIR) \
+		BUILDCC="$(HOSTCC)" \
+		DESTDIR="$(STAGING_DIR)" \
+		uninstall-libs
 endef
 
 define Package/e2fsprogs/install
@@ -101,7 +110,7 @@ define Package/e2fsprogs/install
 	ln -sf mke2fs $(1)/usr/sbin/mkfs.ext2
 	ln -sf mke2fs $(1)/usr/sbin/mkfs.ext3
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(foreach lib,blkid com_err e2p ext2fs,$(PKG_INSTALL_DIR)/usr/lib/lib$(lib).so.*) $(1)/usr/lib/
+	$(CP) $(foreach lib,com_err e2p ext2fs,$(PKG_INSTALL_DIR)/usr/lib/lib$(lib).so.*) $(1)/usr/lib/
 endef
 
 define Package/libuuid/install
