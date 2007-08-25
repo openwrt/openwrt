@@ -1,0 +1,61 @@
+diff -ruN rt61-cvs-2007060307-old/Module/rt_config.h rt61-cvs-2007060307-new/Module/rt_config.h
+--- rt61-cvs-2007060307-old/Module/rt_config.h	2007-06-03 14:35:29.000000000 +0200
++++ rt61-cvs-2007060307-new/Module/rt_config.h	2007-08-25 20:45:36.000000000 +0200
+@@ -162,7 +162,6 @@
+ #endif
+ 
+ #ifdef __BIG_ENDIAN
+-#warning Compiling for big endian machine.
+ #define BIG_ENDIAN TRUE
+ #endif				/* __BIG_ENDIAN */
+ 
+diff -ruN rt61-cvs-2007060307-old/Module/rtmp.h rt61-cvs-2007060307-new/Module/rtmp.h
+--- rt61-cvs-2007060307-old/Module/rtmp.h	2007-05-19 19:19:17.000000000 +0200
++++ rt61-cvs-2007060307-new/Module/rtmp.h	2007-08-25 20:44:27.000000000 +0200
+@@ -1617,14 +1617,8 @@
+ VOID RTMPFreeDMAMemory(IN PRTMP_ADAPTER pAdapter);
+ // Enable & Disable NIC interrupt via writing interrupt mask register
+ // Since it use ADAPTER structure, it have to be put after structure definition.
+-#ifdef BIG_ENDIAN
+-inline
+-#endif
+- VOID NICDisableInterrupt(IN PRTMP_ADAPTER pAdapter);
+-#ifdef BIG_ENDIAN
+-inline
+-#endif
+- VOID NICEnableInterrupt(IN PRTMP_ADAPTER pAdapter);
++VOID NICDisableInterrupt(IN PRTMP_ADAPTER pAdapter);
++VOID NICEnableInterrupt(IN PRTMP_ADAPTER pAdapter);
+ VOID NICInitTxRxRingAndBacklogQueue(IN PRTMP_ADAPTER pAdapter);
+ VOID NICReadEEPROMParameters(IN PRTMP_ADAPTER pAd);
+ VOID NICInitAsicFromEEPROM(IN PRTMP_ADAPTER pAd);
+diff -ruN rt61-cvs-2007060307-old/Module/rtmp_init.c rt61-cvs-2007060307-new/Module/rtmp_init.c
+--- rt61-cvs-2007060307-old/Module/rtmp_init.c	2007-05-23 14:14:23.000000000 +0200
++++ rt61-cvs-2007060307-new/Module/rtmp_init.c	2007-08-25 20:43:51.000000000 +0200
+@@ -549,24 +549,14 @@
+ 
+ // By removing 'inline' directive from the function definitions.
+ // Then Driverloader is compiled and runs smooth after kernel 2.6.9
+-#ifdef BIG_ENDIAN
+-inline VOID
+-#else
+-VOID
+-#endif
+-NICDisableInterrupt(IN PRTMP_ADAPTER pAdapter)
++VOID NICDisableInterrupt(IN PRTMP_ADAPTER pAdapter)
+ {
+ 	RTMP_IO_WRITE32(pAdapter, INT_MASK_CSR, 0xffffff7f);	// 0xffffff7f
+ 	RTMP_IO_WRITE32(pAdapter, MCU_INT_MASK_CSR, 0xffffffff);
+ 	RTMP_CLEAR_FLAG(pAdapter, fRTMP_ADAPTER_INTERRUPT_ACTIVE);
+ }
+ 
+-#ifdef BIG_ENDIAN
+-inline VOID
+-#else
+-VOID
+-#endif
+-NICEnableInterrupt(IN PRTMP_ADAPTER pAdapter)
++VOID NICEnableInterrupt(IN PRTMP_ADAPTER pAdapter)
+ {
+ 	//
+ 	// Flag "fOP_STATUS_DOZE" On, means ASIC put to sleep, else means ASIC WakeUp
