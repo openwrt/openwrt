@@ -23,4 +23,5 @@ endif
 LINUX_KERNEL_MD5SUM?=x
 
 KERNEL:=2.$(word 2,$(subst ., ,$(strip $(LINUX_VERSION))))
+KERNEL_PATCHVER:=$(shell echo $(LINUX_VERSION) | cut -d. -f1,2,3 | cut -d- -f1)
 
