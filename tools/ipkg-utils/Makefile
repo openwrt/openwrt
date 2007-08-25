@@ -17,9 +17,6 @@ PKG_CAT:=zcat
 include $(INCLUDE_DIR)/host-build.mk
 
 define Build/Install
-	mkdir -p $(STAGING_DIR)/etc
-	echo "dest root /" > $(STAGING_DIR)/etc/ipkg.conf
-	echo "option offline_root $(TARGET_DIR)" >> $(STAGING_DIR)/etc/ipkg.conf
 	$(INSTALL_BIN) \
 		$(PKG_BUILD_DIR)/ipkg-build \
 		$(PKG_BUILD_DIR)/ipkg-buildpackage \
