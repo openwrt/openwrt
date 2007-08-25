@@ -99,6 +99,12 @@ define KernelPackage
     $(call KernelPackage/$(1)/$(BOARD)-$(KERNEL))
   endef
 
+  ifdef KernelPackage/$(1)/description
+    define Package/kmod-$(1)/description
+$(call KernelPackage/$(1)/description)
+    endef
+  endif
+
   ifneq ($(if $(KCONFIG),$(filter m,$(foreach c,$(filter-out %=y %=n %=m,$(KCONFIG)),$($(c)))),.),)
     ifneq ($(strip $(FILES)),)
       define Package/kmod-$(1)/install
