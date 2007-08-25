@@ -111,6 +111,11 @@ start() {
 			c["vlan0ports"]="1 2 3 4 5*"
 			c["vlan1ports"]="0 5"
 		}
+
+		if (model == "Motorola WR850G V2/V3") {
+			c["vlan0ports"]="0 1 2 3 5*"
+			c["vlan1ports"]="4 5"
+		}
 		
 		print "#### VLAN configuration "
 		print "config switch eth0"
