@@ -60,7 +60,7 @@ ifeq ($(DUMP),)
 		$($(1)_COMMANDS) \
 	)
 
-    $$(IPKG_$(1)): $(PKG_BUILD_DIR)/.built $$(IDIR_$(1))/CONTROL/control
+    $$(IPKG_$(1)): $(STAGING_DIR)/etc/ipkg.conf $(PKG_BUILD_DIR)/.built $$(IDIR_$(1))/CONTROL/control
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	mkdir -p $(PACKAGE_DIR)
 	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' | $(XARGS) rm -rf
@@ -70,6 +70,11 @@ ifeq ($(DUMP),)
 
     $$(INFO_$(1)): $$(IPKG_$(1))
 	$(IPKG) install $$(IPKG_$(1))
+
+    $(STAGING_DIR)/etc/ipkg.conf:
+	mkdir -p $(STAGING_DIR)/etc
+	echo "dest root /" > $(STAGING_DIR)/etc/ipkg.conf
+	echo "option offline_root $(TARGET_DIR)" >> $(STAGING_DIR)/etc/ipkg.conf
 
     $(1)-clean:
 	rm -f $(PACKAGE_DIR)/$(1)_*
