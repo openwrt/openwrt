@@ -13,10 +13,7 @@ PKG_VERSION:=2.12r
 PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=ftp://ftp.kernel.org/pub/linux/utils/$(PKG_NAME)/ \
-	http://ftp.kernel.org/pub/linux/utils/$(PKG_NAME)/ \
-	ftp://ftp.de.kernel.org/pub/linux/utils/$(PKG_NAME)/ \
-	http://ftp.de.kernel.org/pub/linux/utils/$(PKG_NAME)/
+PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/
 PKG_MD5SUM:=c261230b27fc0fbcc287c76884caf2d3
 
 include $(INCLUDE_DIR)/package.mk

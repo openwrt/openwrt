@@ -42,10 +42,7 @@ else
 
   LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.bz2
   TESTING:=$(if $(findstring -rc,$(LINUX_VERSION)),/testing,)
-  LINUX_SITE:=http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL)$(TESTING) \
-           http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL)$(TESTING) \
-           http://www.kernel.org/pub/linux/kernel/v$(KERNEL)$(TESTING) \
-           http://www.de.kernel.org/pub/linux/kernel/v$(KERNEL)$(TESTING)
+  LINUX_SITE:=@KERNEL/linux/kernel/v$(KERNEL)$(TESTING) \
 
   PKG_BUILD_DIR ?= $(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 endif
