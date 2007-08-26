@@ -13,12 +13,7 @@ PKG_VERSION:=106
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=ftp://ftp.kernel.org/pub/linux/utils/kernel/hotplug/ \
-	http://ftp.kernel.org/pub/linux/utils/kernel/hotplug/ \
-	ftp://ftp.de.kernel.org/pub/linux/utils/kernel/hotplug/ \
-	http://ftp.de.kernel.org/pub/linux/utils/kernel/hotplug/ \
-	ftp://ftp.fr.kernel.org/pub/linux/utils/kernel/hotplug/ \
-	http://ftp.fr.kernel.org/pub/linux/utils/kernel/hotplug/
+PKG_SOURCE_URL:=@KERNEL/linux/utils/kernel/hotplug/
 PKG_MD5SUM:=320ccd2d0f4540d10e021bafa14f8985
 
 include $(INCLUDE_DIR)/package.mk

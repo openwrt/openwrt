@@ -112,15 +112,23 @@ foreach my $mirror (@ARGV) {
 			push @mirrors, "http://downloads.sourceforge.net/$1";
 		}
 	} elsif ($mirror =~ /^\@GNU\/(.+)$/) {
-		my $gnupath = $1;
-		push @mirrors, "ftp://ftp.gnu.org/gnu/$gnupath";
-		push @mirrors, "ftp://ftp.belnet.be/mirror/ftp.gnu.org/gnu/$gnupath";
-		push @mirrors, "ftp://ftp.mirror.nl/pub/mirror/gnu/$gnupath";
-		push @mirrors, "http://mirror.switch.ch/ftp/mirror/gnu/$gnupath";
-		push @mirrors, "ftp://ftp.uu.net/archive/systems/gnu/$gnupath";
-		push @mirrors, "ftp://ftp.eu.uu.net/pub/gnu/$gnupath";
-		push @mirrors, "ftp://ftp.leo.org/pub/comp/os/unix/gnu/$gnupath";
-		push @mirrors, "ftp://ftp.digex.net/pub/gnu/$gnupath";
+		push @mirrors, "ftp://ftp.gnu.org/gnu/$1";
+		push @mirrors, "ftp://ftp.belnet.be/mirror/ftp.gnu.org/gnu/$1";
+		push @mirrors, "ftp://ftp.mirror.nl/pub/mirror/gnu/$1";
+		push @mirrors, "http://mirror.switch.ch/ftp/mirror/gnu/$1";
+		push @mirrors, "ftp://ftp.uu.net/archive/systems/gnu/$1";
+		push @mirrors, "ftp://ftp.eu.uu.net/pub/gnu/$1";
+		push @mirrors, "ftp://ftp.leo.org/pub/comp/os/unix/gnu/$1";
+		push @mirrors, "ftp://ftp.digex.net/pub/gnu/$1";
+	} elsif ($mirror =~ /^\@KERNEL\/(.+)$/) {
+		push @mirrors, "ftp://ftp.us.kernel.org/pub/$1";
+		push @mirrors, "http://ftp.us.kernel.org/pub/$1";
+		push @mirrors, "ftp://ftp.kernel.org/pub/$1";
+		push @mirrors, "http://ftp.kernel.org/pub/$1";
+		push @mirrors, "ftp://ftp.de.kernel.org/pub/$1";
+		push @mirrors, "http://ftp.de.kernel.org/pub/$1";
+		push @mirrors, "ftp://ftp.fr.kernel.org/pub/$1";
+		push @mirrors, "http://ftp.fr.kernel.org/pub/$1";
 	} else {
 		push @mirrors, $mirror;
 	}
