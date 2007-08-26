@@ -14,7 +14,6 @@ BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
 override QUILT:=
 
 include $(INCLUDE_DIR)/kernel.mk
-include $(INCLUDE_DIR)/kernel-version.mk
 
 PKG_NAME:=linux
 PKG_VERSION:=$(LINUX_VERSION)
