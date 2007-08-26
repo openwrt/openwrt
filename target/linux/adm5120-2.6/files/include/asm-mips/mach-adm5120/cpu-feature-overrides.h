@@ -28,6 +28,8 @@
 #ifndef __ASM_MACH_ADM5120_CPU_FEATURE_OVERRIDES_H
 #define __ASM_MACH_ADM5120_CPU_FEATURE_OVERRIDES_H
 
+#ifdef CONFIG_ADM5120_CPU_OVERRIDES
+
 /*
  * The ADM5120 SOC has a built-in MIPS 4Kc core.
  */
@@ -80,5 +82,8 @@
 
 #define cpu_dcache_line_size()		16
 #define cpu_icache_line_size()		16
+
+#endif  /* CONFIG_ADM5120_CPU_OVERRIDES */
+
 
 #endif /* __ASM_MACH_ADM5120_CPU_FEATURE_OVERRIDES_H */
