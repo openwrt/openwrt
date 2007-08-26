@@ -90,7 +90,7 @@ define Stage2/Configure
 		--with-gnu-ld \
 		--disable-nls \
 		--disable-libmudflap \
-		--disable-mutlitlib \
+		--disable-multilib \
 	);
 endef
 
