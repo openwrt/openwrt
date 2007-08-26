@@ -21,13 +21,13 @@ include $(INCLUDE_DIR)/package.mk
 define Package/util-linux/Default
   SECTION:=utils
   CATEGORY:=Utilities
+  DEPENDS:=@!LINUX_2_6_ETRAX
   URL:=http://www.kernel.org/pub/linux/utils/util-linux/
 endef
 
 define Package/fdisk
   $(call Package/util-linux/Default)
   TITLE:=Partition table manipulation utility
-  DEPENDS:=@!LINUX_2_6_ETRAX
   DESCRIPTION:=\
 	This package contains a utility for managing disk partition tables.
   URL:=http://www.kernel.org/pub/linux/utils/util-linux/
@@ -36,7 +36,7 @@ endef
 define Package/cfdisk
   $(call Package/util-linux/Default)
   TITLE:=Partition table manipulation utility
-  DEPENDS:=+libncurses @!LINUX_2_6_ETRAX
+  DEPENDS+= +libncurses
   DESCRIPTION:=\
 	This package contains a utility for managing disk partition tables.
   URL:=http://www.kernel.org/pub/linux/utils/util-linux/
@@ -45,7 +45,6 @@ endef
 define Package/losetup
   $(call Package/util-linux/Default)
   TITLE:=Loopback devices setup and control utility
-  DEPENDS:=@!LINUX_2_6_ETRAX
   DESCRIPTION:=\
 	This package contains a utility for managing loopback devices.
 endef
@@ -53,7 +52,6 @@ endef
 define Package/swap-utils
   $(call Package/util-linux/Default)
   TITLE:=Swap space management utilities
-  DEPENDS:=@!LINUX_2_6_ETRAX
   DESCRIPTION:=\
 	This package contains a collection of tools for managing swap space: \\\
 	- mkswap\\\
@@ -64,19 +62,26 @@ endef
 define Package/hwclock
   $(call Package/util-linux/Default)
   TITLE:=Utilities for managing the hardware clock
-  DEPENDS:=@!LINUX_2_6_ETRAX
   DESCRIPTION:=\
   	 This package contains a utility for managing the hardware clock
 endef
 
-TARGET_CFLAGS += -I$(PKG_BUILD_DIR)/lib
+define Build/Configure
+	# this is NOT GNU configure!
+	( cd $(PKG_BUILD_DIR); \
+		CC="$(TARGET_CC)" \
+		CFLAGS="$(TARGET_CPPFLAGS)" \
+		LDFLAGS="$(TARGET_LDFLAGS)" \
+		./configure \
+	);
+endef
+
 define Build/Compile
-	$(call Build/Compile/Default, \
+	$(MAKE) -C $(PKG_BUILD_DIR) \
 		OPT="$(TARGET_CFLAGS)" \
 		INSTALLSUID="install -m 4755" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install \
-	)
+		all install
 endef
 
 define Package/Template
