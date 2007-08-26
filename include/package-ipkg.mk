@@ -71,11 +71,6 @@ ifeq ($(DUMP),)
     $$(INFO_$(1)): $$(IPKG_$(1))
 	$(IPKG) install $$(IPKG_$(1))
 
-    $(STAGING_DIR)/etc/ipkg.conf:
-	mkdir -p $(STAGING_DIR)/etc
-	echo "dest root /" > $(STAGING_DIR)/etc/ipkg.conf
-	echo "option offline_root $(TARGET_DIR)" >> $(STAGING_DIR)/etc/ipkg.conf
-
     $(1)-clean:
 	rm -f $(PACKAGE_DIR)/$(1)_*
 
@@ -88,4 +83,10 @@ ifeq ($(DUMP),)
     $$(eval $$(call Build/DefaultTargets,$(1)))
 
   endef
+
+  $(STAGING_DIR)/etc/ipkg.conf:
+	mkdir -p $(STAGING_DIR)/etc
+	echo "dest root /" > $(STAGING_DIR)/etc/ipkg.conf
+	echo "option offline_root $(TARGET_DIR)" >> $(STAGING_DIR)/etc/ipkg.conf
+
 endif
