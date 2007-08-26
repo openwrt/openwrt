@@ -5,6 +5,8 @@
 # See /LICENSE for more information.
 #
 
+include $(INCLUDE_DIR)/kernel-version.mk
+
 ifeq ($(DUMP),1)
   KERNEL?=<KERNEL>
   BOARD?=<BOARD>

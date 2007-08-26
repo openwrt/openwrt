@@ -6,7 +6,6 @@
 #
 KERNEL_BUILD:=1
 
-include $(INCLUDE_DIR)/kernel-version.mk
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/prereq.mk
