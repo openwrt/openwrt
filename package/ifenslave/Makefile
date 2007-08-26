@@ -12,6 +12,8 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=ifenslave
 PKG_RELEASE:=1
 
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ifenslave
@@ -25,16 +27,16 @@ define Package/ifenslave
 endef
 
 define Build/Prepare
-	$(CP) $(LINUX_DIR)/Documentation/networking/ifenslave.c  $(PKG_BUILD_DIR)/
 endef
 
 define Build/Compile
-	$(TARGET_CC) $(TARGET_CFLAGS) $(PKG_BUILD_DIR)/ifenslave.c -o $(PKG_BUILD_DIR)/$(PKG_NAME)
+	$(TARGET_CC) $(TARGET_CFLAGS) -o $(PKG_BUILD_DIR)/ifenslave \
+		$(LINUX_DIR)/Documentation/networking/ifenslave.c
 endef
 
 define Package/ifenslave/install
 	$(INSTALL_DIR) $(1)/sbin
-	$(CP) $(PKG_BUILD_DIR)/$(PKG_NAME) $(1)/sbin/
+	$(CP) $(PKG_BUILD_DIR)/ifenslave $(1)/sbin/
 endef
 
 $(eval $(call BuildPackage,ifenslave))
