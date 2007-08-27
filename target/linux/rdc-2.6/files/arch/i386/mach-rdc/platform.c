@@ -31,6 +31,8 @@
 
 #include <asm/gpio.h>
 
+#define PFX "rdc321x: "
+
 /* FIXME : Flash */
 static struct resource rdc_flash_resource[] = {
 	[0] = {
@@ -54,17 +56,26 @@ static struct platform_device rdc321x_leds = {
 	.num_resources = 0,
 };
 
+static struct platform_device rdc321x_wdt = {
+	.name = "rdc321x-wdt",
+	.id = -1,
+	.num_resources = 0,
+};
+
 static int __init rdc_board_setup(void)
 {
 	int err;
 
 	err = platform_device_register(&rdc_flash_device);
 	if (err)
-		printk(KERN_ALERT "rdc321x: failed to register flash\n");
+		printk(KERN_ALERT PFX "failed to register flash\n");
 
 	err = platform_device_register(&rdc321x_leds);
 	if (err)
-		printk(KERN_ALERT "rdc321x: failed to register LEDS\n");
+		printk(KERN_ALERT PFX "failed to register LEDS\n");
+
+	err = platform_device_register(&rdc321x_wdt);
+		printk(KERN_ALERT PFX "failed to register watchdog\n");
 
 	return err; 
 }
