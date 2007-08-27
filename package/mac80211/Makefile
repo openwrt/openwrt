@@ -23,17 +23,16 @@ define KernelPackage/mac80211
   SUBMENU:=Wireless Drivers
   TITLE:=Linux 802.11 Wireless Networking Stack
   DEPENDS:=@LINUX_2_6
+  KCONFIG:=CONFIG_MAC80211
   DESCRIPTION:=\
 	This package contains the DeviceScape 80211 wireless stack.
   VERSION:=$(PKG_RELEASE)+$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)
-  ifneq ($(KERNEL_PATCHVER),2.6.21)
-   FILES:= \
+  FILES:= \
 	$(PKG_BUILD_DIR)/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/mac80211/rc80211_lowest.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/mac80211/rc80211_simple.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/wireless/cfg80211.$(LINUX_KMOD_SUFFIX)
-   AUTOLOAD:=$(call AutoLoad,20,cfg80211 mac80211 rc80211_simple)
-  endif
+  AUTOLOAD:=$(call AutoLoad,20,cfg80211 mac80211 rc80211_simple)
 endef
 
 define Build/Prepare
@@ -43,23 +42,29 @@ define Build/Prepare
 	$(CP) ./src/wireless/* $(PKG_BUILD_DIR)/wireless/
 endef
 
-MAKE_OPTS:=-C "$(LINUX_DIR)" \
+ifneq ($(CONFIG_MAC80211),)
+
+  MAKE_OPTS:= \
 	CROSS_COMPILE="$(TARGET_CROSS)" \
 	ARCH="$(LINUX_KARCH)" \
 	EXTRA_CFLAGS="$(BUILDFLAGS) -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS" \
 	CONFIG_MAC80211=m \
-	CONFIG_MAC80211_LEDS=$(CONFIG_LEDS_TRIGGERS)
+	CONFIG_MAC80211_LEDS=$(CONFIG_LEDS_TRIGGERS) \
 
-ifneq ($(KERNEL_PATCHVER),2.6.21)
-  define Build/Compile
-	$(MAKE) $(MAKE_OPTS) SUBDIRS="$(PKG_BUILD_DIR)/wireless" modules
-	$(MAKE) $(MAKE_OPTS) SUBDIRS="$(PKG_BUILD_DIR)/mac80211" modules
+  define Build/Compile/it
+	$(MAKE) -C "$(LINUX_DIR)" $(MAKE_OPTS) SUBDIRS="$(PKG_BUILD_DIR)/wireless" modules
+	$(MAKE) -C "$(LINUX_DIR)" $(MAKE_OPTS) SUBDIRS="$(PKG_BUILD_DIR)/mac80211" modules
   endef
+
 endif
+
+define Build/Compile
+  	$(call Build/Compile/it)
+endef
 
 define Build/InstallDev
 	mkdir -p $(STAGING_DIR)/usr/include/mac80211
-	$(CP) $(PKG_BUILD_DIR)/mac80211/{hostapd_ioctl,ieee80211_common}.h $(STAGING_DIR)/usr/include/mac80211
+	$(CP) $(PKG_BUILD_DIR)/mac80211/{hostapd_ioctl,ieee80211_common}.h $(STAGING_DIR)/usr/include/mac80211/
 endef
 
 define Build/UninstallDev
