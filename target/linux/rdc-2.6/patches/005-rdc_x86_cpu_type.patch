@@ -1,0 +1,22 @@
+diff -urN linux-2.6.22.1/arch/i386/kernel/cpu/Makefile linux-2.6.22.1.new/arch/i386/kernel/cpu/Makefile
+--- linux-2.6.22.1/arch/i386/kernel/cpu/Makefile	2007-08-11 22:16:24.000000000 +0200
++++ linux-2.6.22.1.new/arch/i386/kernel/cpu/Makefile	2007-08-13 16:37:32.000000000 +0200
+@@ -12,6 +12,7 @@
+ obj-y	+=	rise.o
+ obj-y	+=	nexgen.o
+ obj-y	+=	umc.o
++obj-$(CONFIG_X86_RDC)	+=	rdc.o
+ 
+ obj-$(CONFIG_X86_MCE)	+=	mcheck/
+ 
+diff -urN linux-2.6.22.1/arch/i386/kernel/cpu/Makefile linux-2.6.22.1.new/arch/i386/kernel/cpu/Makefile
+--- linux-2.6.22.1/include/asm-i386/processor.h	2007-08-13 16:42:25.000000000 +0200
++++ linux-2.6.22.1.new/include/asm-i386/processor.h	2007-08-13 16:51:19.000000000 +0200
+@@ -92,6 +92,7 @@
+ #define X86_VENDOR_TRANSMETA 7
+ #define X86_VENDOR_NSC 8
+ #define X86_VENDOR_NUM 9
++#define X86_VENDOR_RDC 10
+ #define X86_VENDOR_UNKNOWN 0xff
+ 
+ /*
