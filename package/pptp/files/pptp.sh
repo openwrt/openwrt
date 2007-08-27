@@ -7,11 +7,12 @@ setup_interface_pptp() {
 	local config="$2"
 	
 	config_get device "$config" device
+	config_get ipproto "$config" ipproto
 
 	for module in slhc ppp_generic ppp_async ip_gre; do
 		/sbin/insmod $module 2>&- >&-
 	done
-	setup_interface "$iface" "$config" "dhcp"
+	setup_interface "$iface" "$config" "${ipproto:-dhcp}"
 
 	config_get mtu "$cfg" mtu
 	config_get server "$cfg" server
