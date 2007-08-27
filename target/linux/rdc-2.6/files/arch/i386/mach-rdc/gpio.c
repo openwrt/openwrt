@@ -15,8 +15,12 @@
 #include <linux/module.h>
 #include <linux/delay.h>
 
-#define RDC3210_CFGREG_ADDR     0x0CF8
-#define RDC3210_CFGREG_DATA     0x0CFC
+#include <asm/mach-rdc/rdc321x_defs.h>
+
+static inline int rdc_gpio_is_valid(unsigned gpio)
+{
+	return ((gpio > RDC_MAX_GPIO) ? 0 : 1);
+}
 
 static unsigned int rdc_gpio_read(unsigned gpio)
 {
@@ -47,7 +51,8 @@ static void rdc_gpio_write(unsigned int val)
 
 int rdc_gpio_get_value(unsigned gpio)
 {
-	return (gpio>0x3A?-EINVAL:(int)rdc_gpio_read(gpio));
+	if (rdc_gpio_is_valid(gpio))
+		return (int)rdc_gpio_read(gpio);
 }
 EXPORT_SYMBOL(rdc_gpio_get_value);
 
@@ -55,7 +60,9 @@ void rdc_gpio_set_value(unsigned gpio, int value)
 {
 	unsigned int val;
 
-	if (gpio > 0x3A) return;
+	if (!rdc_gpio_is_valid(gpio))
+		return;
+	
 	val = rdc_gpio_read(gpio);
 
 	if (value)
