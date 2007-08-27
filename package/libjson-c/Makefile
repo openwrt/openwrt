@@ -1,0 +1,46 @@
+# 
+# Copyright (C) 2006 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+# $Id: Makefile 6643 2007-03-23 08:11:08Z nico $
+
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=json-c
+PKG_VERSION:=0.7
+PKG_RELEASE:=1
+
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=http://oss.metaparadigm.com/json-c/
+PKG_MD5SUM:=
+
+include $(INCLUDE_DIR)/package.mk
+
+define Package/json-c
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=javascript object notation
+  DESCRIPTION:=library for javascript object notation backends
+  URL:=http://oss.metaparadigm.com/json-c/
+endef
+
+define Build/Compile
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CCOPT="$(TARGET_CFLAGS) -I$(BUILD_DIR)/linux/include" \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		all install
+endef
+
+define Build/InstallDev
+	mkdir -p $(STAGING_DIR)/
+	$(CP) -r $(PKG_INSTALL_DIR)/* $(STAGING_DIR)
+endef
+
+define Package/libpcap/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libjson.so.* $(1)/usr/lib/
+endef
+
+$(eval $(call BuildPackage,json-c))
