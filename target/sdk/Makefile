@@ -15,15 +15,16 @@ PKG_CPU:=$(shell uname -m)
 
 SDK_NAME:=OpenWrt-SDK-$(BOARD)-$(KERNEL)-for-$(PKG_OS)-$(PKG_CPU)
 SDK_BUILD_DIR:=$(BUILD_DIR)/$(SDK_NAME)
+EXCLUDE_DIRS:=ccache stamp
 
 all: compile
 
 $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 	mkdir -p $(SDK_BUILD_DIR)/dl $(SDK_BUILD_DIR)/package
 	$(CP) $(INCLUDE_DIR) $(SCRIPT_DIR) $(TOPDIR)/docs $(SDK_BUILD_DIR)/
-	$(TAR) -cf - -C $(TOPDIR) --exclude=ccache/ staging_dir_$(ARCH) | \
+	$(TAR) -cf - -C $(TOPDIR) --exclude="$(EXCLUDE_DIRS)" staging_dir/$(ARCH) | \
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
-	(cd $(SDK_BUILD_DIR)/staging_dir_$(ARCH); \
+	(cd $(SDK_BUILD_DIR)/staging_dir/$(ARCH); \
 		rm -rf info man share stampfiles; \
 		cd usr; \
 		rm -rf doc info man share; \
@@ -34,7 +35,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 	$(CP) ./files/README.SDK $(SDK_BUILD_DIR)/
 	$(CP) ./files/package/rules.mk $(SDK_BUILD_DIR)/package/
 	echo OPENWRTVERSION:="$(OPENWRTVERSION)" > $(SDK_BUILD_DIR)/.version.mk
-	rm -rf $(SDK_BUILD_DIR)/staging_dir*/ccache
+	rm -rf $(SDK_BUILD_DIR)/staging_dir/$(ARCH)/{ccache,stamp}
 	find $(SDK_BUILD_DIR) -name .svn | $(XARGS) rm -rf
 	find $(SDK_BUILD_DIR) -name CVS | $(XARGS) rm -rf
 	(cd $(BUILD_DIR); \
