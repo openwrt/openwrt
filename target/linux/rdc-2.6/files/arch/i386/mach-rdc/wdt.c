@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2007 Florian Fainelli <florian@openwrt.org>
  *
- * This driver is highly inspired from the rdc321x_wdt driver
+ * This driver is highly inspired from the cpu5_wdt driver
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
