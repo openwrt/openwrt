@@ -298,7 +298,7 @@ config BUSYBOX_CONFIG_FEATURE_SHARED_BUSYBOX
 	  You need to have a working dynamic linker to use this variant.
 
 config BUSYBOX_CONFIG_LFS
-	bool
+	bool "Support large files over 2 GB"
 	default y
 	select BUSYBOX_CONFIG_FDISK_SUPPORT_LARGE_DISKS
 	help
