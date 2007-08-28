@@ -1,0 +1,20 @@
+Index: acx-20070101/pci.c
+===================================================================
+--- acx-20070101.orig/pci.c	2007-06-04 13:22:42.489395912 +0200
++++ acx-20070101/pci.c	2007-06-04 13:22:42.557385576 +0200
+@@ -925,10 +925,13 @@
+ 
+ 	acx_lock(adev, flags);
+ 
+-	acxpci_l_reset_mac(adev);
+-
+ 	ecpu_ctrl = read_reg16(adev, IO_ACX_ECPU_CTRL) & 1;
+ 	if (!ecpu_ctrl) {
++		acxpci_l_reset_mac(adev);
++		ecpu_ctrl = read_reg16(adev, IO_ACX_ECPU_CTRL) & 1;
++	}
++
++	if (!ecpu_ctrl) {
+ 		msg = "eCPU is already running. ";
+ 		goto end_unlock;
+ 	}
