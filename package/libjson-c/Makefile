@@ -18,7 +18,7 @@ PKG_MD5SUM:=
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/json-c
+define Package/libjson
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=javascript object notation
@@ -28,19 +28,30 @@ endef
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CCOPT="$(TARGET_CFLAGS) -I$(BUILD_DIR)/linux/include" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
 endef
 
 define Build/InstallDev
-	mkdir -p $(STAGING_DIR)/
-	$(CP) -r $(PKG_INSTALL_DIR)/* $(STAGING_DIR)
+	mkdir -p $(STAGING_DIR)/usr/include
+	$(CP) -r $(PKG_INSTALL_DIR)/usr/include/json $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
+	$(CP) -r $(PKG_INSTALL_DIR)/usr/lib/libjson.{a,so*} $(STAGING_DIR)/usr/lib/
+	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
+	$(CP) -r $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/json.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(SED) 's,-I$$$${includedir}/,-I$(STAGING_DIR)/usr/include/,g' $(STAGING_DIR)/usr/lib/pkgconfig/json.pc
+	$(SED) 's,-L$$$${libdir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/json.pc
 endef
 
-define Package/libpcap/install
+define Build/UninstallDev
+	rm -rf	$(STAGING_DIR)/usr/include/json \
+		$(STAGING_DIR)/usr/lib/libjson.{a,so*} \
+		$(STAGING_DIR)/usr/lib/pkgconfig/json.pc
+endef
+
+define Package/libjson/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libjson.so.* $(1)/usr/lib/
 endef
 
-$(eval $(call BuildPackage,json-c))
+$(eval $(call BuildPackage,libjson))
