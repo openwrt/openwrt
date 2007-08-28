@@ -11,7 +11,8 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=fonera-mp3d
 PKG_RELEASE:=1
 PKG_VERSION:=1.0
-PKG_BUILD_DEPENDS:=json-c
+
+PKG_BUILD_DEPENDS:=libjson
 
 include $(INCLUDE_DIR)/package.mk
 
