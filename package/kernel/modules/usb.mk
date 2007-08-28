@@ -334,16 +334,10 @@ define KernelPackage/usb-pwc
   TITLE:=Philips WebCam driver
   DESCRIPTION:=Kernel modules for supporting Philips WebCam USB devices
   KCONFIG:=CONFIG_USB_PWC CONFIG_VIDEO_V4L1=y CONFIG_VIDEO_CAPTURE_DRIVERS=y CONFIG_V4L_USB_DRIVERS=y CONFIG_USB_PWC_DEBUG=n
+  FILES:=$(LINUX_DIR)/drivers/media/video/pwc/pwc.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,70,pwc)
 endef
 
-define KernelPackage/usb-pwc/2.4
-  FILES:=$(LINUX_DIR)/drivers/usb/pwc.$(LINUX_KMOD_SUFFIX)
-endef
-
-define KernelPackage/usb-pwc/2.6
-  FILES:=$(LINUX_DIR)/drivers/media/video/pwc/pwc.$(LINUX_KMOD_SUFFIX)
-endef
 $(eval $(call KernelPackage,usb-pwc))
 
 define KernelPackage/cpia2
@@ -412,12 +406,10 @@ define KernelPackage/usb-hid
   TITLE:=Support for USB Human Input Devices
   DESCRIPTION:=Kernel support for USB HID devices such as keyboards and mice
   KCONFIG:=CONFIG_USB_HID
+  FILES:=$(LINUX_DIR)/drivers/$(USBHID_DIR)/usbhid.ko
   AUTOLOAD:=$(call AutoLoad,70,usbhid)
 endef
 
-define KernelPackage/usb-hid/2.6
-  FILES:=$(LINUX_DIR)/drivers/$(USBHID_DIR)/usbhid.ko
-endef
 $(eval $(call KernelPackage,usb-hid))
 
 define KernelPackage/usb-yealink
