@@ -128,6 +128,15 @@ define Build/Compile
   $(call Build/Compile/Default,)
 endef
 
+define Build/Compile/PyMod
+ cd $(PKG_BUILD_DIR); \
+ $(1) \
+ CFLAGS='-I$(STAGING_DIR)/usr/include' \
+ LDFLAGS='$(TARGET_LDFLAGS) -L$(STAGING_DIR)/usr/lib' \
+ $(STAGING_DIR)/usr/bin/hostpython ./setup.py $(2) \
+ --prefix=$(PKG_INSTALL_DIR)/usr
+endef
+
 $(PACKAGE_DIR):
 	mkdir -p $@
 		
