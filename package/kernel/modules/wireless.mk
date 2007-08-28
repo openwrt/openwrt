@@ -129,7 +129,6 @@ define KernelPackage/net-hermes-pci
   DESCRIPTION:=Kernel modules for Intersil Prism 2.5 PCI support
   DEPENDS:=kmod-net-hermes
   KCONFIG:=CONFIG_PCI_HERMES
-  SUBMENU:=$(WIMENU)
   FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco_pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,55,orinoco_pci)
 endef
@@ -155,7 +154,6 @@ define KernelPackage/net-prism54
   TITLE:=Intersil Prism54 support
   DESCRIPTION:=Kernel modules for Intersil Prism54 support
   KCONFIG:=CONFIG_PRISM54
-  SUBMENU:=$(WIMENU)
   FILES:=$(LINUX_DIR)/drivers/net/wireless/prism54/prism54.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,prism54)
 endef
