@@ -126,6 +126,7 @@ $(eval $(call KernelPackage,capi))
 
 
 define KernelPackage/pcmcia-core
+  SUBMENU:=$(EMENU)
   TITLE:=PCMCIA/CardBus support
   DESCRIPTION:=Kernel support for PCMCIA/CardBus controllers
   DEPENDS:=@PCMCIA_SUPPORT
