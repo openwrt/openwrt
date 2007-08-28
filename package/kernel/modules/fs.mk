@@ -226,6 +226,7 @@ define KernelPackage/nls-base
   FILES:=$(LINUX_DIR)/fs/nls/nls_base.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,nls_base)
 endef
+
 $(eval $(call KernelPackage,nls-base))
 
 
