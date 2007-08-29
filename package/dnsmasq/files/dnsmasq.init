@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2007 OpenWrt.org
 
 START=60
 
@@ -16,28 +16,172 @@ dhcp_calc() {
 	echo "$res"
 }
 
-dhcp_add() {
+append_bool() {
+	local section="$1"
+	local option="$2"
+	local value="$3"
+	local _tmp
+	config_get_bool _tmp "$section" "$option"
+	[ "$_tmp" -gt 0 ] && append args "$3"
+}
+
+dnsmasq() {
+	local cfg="$1"
+	append_bool "$cfg" authoritative "-K"
+	append_bool "$cfg" nodaemon "-d"
+	append_bool "$cfg" domainneeded "-D"
+	append_bool "$cfg" filterwin2k "-f"
+	append_bool "$cfg" nohosts "-I $nohosts"
+	append_bool "$cfg" nonegcache "-N"
+	append_bool "$cfg" strictorder "-o"
+	append_bool "$cfg" logqueries "-q"
+	append_bool "$cfg" noresolv "-I $noresolv"
+	append_bool "$cfg" localise_queries "-I $localise_queries"
+	append_bool "$cfg" readethers "-Z"
+	append_bool "$cfg" dbus "-l"
+	
+	config_get dnsforwardmax "$cfg" dnsforwardmax
+	dnsforwardmax="${dnsforwardmax:-150}"
+	append args "-0 $dnsforwardmax"
+	
+	config_get port "$cfg" port
+	port="${port:-53}"
+	append args "-p $port"
+	
+	config_get ednspacket_max "$cfg" ednspacket_max
+	ednspacket_max="${ednspacket_max:-1280}"
+	append args "-P $ednspacket_max"
+	
+	config_get dhcpleasemax "$cfg" dhcpleasemax
+	dhcpleasemax="${dhcpleasemax:-150}"
+	append args "-X $dhcpleasemax"
+	
+	config_get addnhosts "$cfg" addnhosts
+	config_get interface "$cfg" interface
+	config_get exceptinterface "$cfg" exceptinterface
+	config_get queryport "$cfg" queryport
+	config_get domain "$cfg" domain
+}
+
+dhcp_subscrid_add() {
+	local cfg="$1"
+	
+	config_get name "$cfg" name
+	[ -n "$name" ] || return 0
+	
+	config_get subscriberid "$cfg" subscriberid
+	[ -n "$subscriberid" ] || return 0
+	
+	append args "--dhcp-subscrid=$name,$subscriberid"
+	
+	dhcp_option_add "$cfg" "$name"
+}
+
+dhcp_remoteid_add() {
 	local cfg="$1"
 
+	config_get name "$cfg" name
+	[ -n "$name" ] || return 0
+	
+	config_get remoteid "$cfg" remoteid
+	[ -n "$remoteid" ] || return 0
+	
+	append args "--dhcp-remoteid=$name,$remoteid"
+	
+	dhcp_option_add "$cfg" "$name"
+}
+
+dhcp_circuitid_add() {
+	local cfg="$1"
+	
+	config_get name "$cfg" name
+	[ -n "$name" ] || return 0
+	
+	config_get circuitid "$cfg" circuitid
+	[ -n "$circuitid" ] || return 0
+	
+	append args "--dhcp-circuitid=$name,$circuitid"
+	
+	dhcp_option_add "$cfg" "$name"
+}
+
+dhcp_userclass_add() {
+	local cfg="$1"
+	
+	config_get name "$cfg" name
+	[ -n "$name" ] || return 0
+	
+	config_get userclass "$cfg" userclass
+	[ -n "$userclass" ] || return 0
+	
+	append args "--dhcp-userclass=$name,$userclass"
+	
+	dhcp_option_add "$cfg" "$name"
+}
+
+dhcp_vendorclass_add() {
+	local cfg="$1"
+	
+	config_get name "$cfg" name
+	[ -n "$name" ] || return 0
+	
+	config_get vendorclass "$cfg" vendorclass
+	[ -n "$vendorclass" ] || return 0
+	
+	append args "--dhcp-vendorclass=$name,$vendorclass"
+	
+	dhcp_option_add "$cfg" "$name"
+}
+
+dhcp_host_add() {
+	local cfg="$1"
+	
+	config_get name "$cfg" name
+	[ -n "$name" ] || return 0
+	
+	config_get mac "$cfg" mac
+	[ -n "$mac" ] || return 0
+
+	
+	append args "--dhcp-host=$mac,$ip"
+	
+	dhcp_option_add "$cfg" "$name"
+}
+
+dhcp_mac_add() {
+	local cfg="$1"
+	
+	config_get name "$cfg" name
+	[ -n "$name" ] || return 0
+	
+	config_get mac "$cfg" mac
+	[ -n "$mac" ] || return 0
+	
+	append args "--dhcp-mac=$name,$mac"
+	
+	dhcp_option_add "$cfg" "$name"
+}
+
+dhcp_add() {
+	local cfg="$1"
 	config_get net "$cfg" interface
 	[ -n "$net" ] || return 0
-	
+
+	config_get name "$cfg" name
+	[ -n "$name" ] || name="$net"
+
 	config_get ifname "$net" ifname
 	[ -n "$ifname" ] || return 0
-	
-	config_get_bool ignore "$cfg" ignore
-	[ "$ignore" -gt 0 ] && {
-		append args "-I $ifname"
-		return 0
-	}
-	
+
+	append_bool "$cfg" ingore "-I $ifname"
+
 	config_get proto "$net" proto
 	[ static = "$proto" ] || return 0
-	
+
 	config_get ipaddr "$net" ipaddr
 	config_get netmask "$net" netmask
 
-	# check for an already active dhcp server on the interface, unless 'force' is set
+	#check for an already active dhcp server on the interface, unless 'force' is set
 	config_get_bool force "$cfg" force 0
 	[ "$force" -gt 0 ] || {
 		udhcpc -n -q -R -s /bin/true -t 1 -i $ifname >&- && return 0
@@ -51,20 +195,44 @@ dhcp_add() {
 	leasetime="${leasetime:-12h}"
 	start="$(dhcp_calc "${start:-100}")"
 	limit="$((${limit:-150} + 1))"
-	eval "$(ipcalc.sh $ipaddr $netmask $start $limit)"
-	append args "-F $START,$END,$NETMASK,$leasetime${options:+ $options}"
+	eval "$(ipcalc.sh $ipaddr $netmask $start $end)"
+	append args "--dhcp-range=$name,$START,$END,$NETMASK,$leasetime${options:+ $options}"
+	
+	dhcp_option_add "$cfg" "$name"
+}
+
+dhcp_option_add () {
+	local cfg="$1"
+	local name="$2"
+	
+	for count in $(seq 0 100); do
+		eval current_value=\$CONFIG_"$cfg"_dhcp"$count"
+		if [ -z "$current_value" ]; then
+			let "count-=1"
+			break
+		fi
+		append args "-O $name","$current_value"
+	done
+
 }
 
 start() {
 	include /lib/network
 	scan_interfaces
-	config_load /var/state/network
 	config_load dhcp
 
 	args=""
+	config_foreach dnsmasq dnsmasq
+	config_foreach dhcp_host_add host
+	config_foreach dhcp_mac_add mac
+	config_foreach dhcp_vendorclass_add vendorclass
+	config_foreach dhcp_userclass_add userclass
+	config_foreach dhcp_circuitid_add circuitid
+	config_foreach dhcp_remoteid_add remoteid
+	config_foreach dhcp_subscrid_add subscrid
 	config_foreach dhcp_add dhcp
-	
-	dnsmasq $args && {
+
+	/usr/sbin/dnsmasq $args && {
 		rm -f /tmp/resolv.conf
 		cat > /tmp/resolv.conf <<EOF
 nameserver 127.0.0.1
