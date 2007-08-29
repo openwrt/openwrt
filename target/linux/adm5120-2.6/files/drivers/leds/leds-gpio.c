@@ -4,7 +4,7 @@
  *  Driver for LEDs connected to GPIO lines
  *
  *  Copyright (C) 2007 OpenWrt.org
- *  Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
+ *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This file was derived from:
  *    /drivers/led/leds-s3c24xx.c
@@ -207,6 +207,6 @@ static void __exit gpio_led_exit(void)
 module_init(gpio_led_init);
 module_exit(gpio_led_exit);
 
-MODULE_AUTHOR("Gabor Juhos <juhosg@freemail.hu>");
+MODULE_AUTHOR("Gabor Juhos <juhosg at openwrt.org>");
 MODULE_DESCRIPTION(DRV_DESC);
 MODULE_LICENSE("GPL");

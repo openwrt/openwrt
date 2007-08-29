@@ -2,7 +2,7 @@
  *  $Id$
  *
  *  Copyright (C) 2007 OpenWrt.org
- *  Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
+ *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This code was based on the information of the ZyXEL's firmware 
  *  image format written by Kolja Waschk, can be found at: 

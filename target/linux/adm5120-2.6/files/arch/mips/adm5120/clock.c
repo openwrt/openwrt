@@ -4,7 +4,7 @@
  *  ADM5120 minimal CLK API implementation
  *
  *  Copyright (C) 2007 OpenWrt.org
- *  Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
+ *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This file was based on the CLK API implementation in:
  *	arch/mips/tx4938/toshiba_rbtx4938/setup.c

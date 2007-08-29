@@ -3,7 +3,7 @@
  *
  *  ADM5120 specific interrupt handlers
  *
- *  Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
+ *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
  *  Copyright (C) 2007 OpenWrt.org
  *
  *  This program is free software; you can redistribute it and/or

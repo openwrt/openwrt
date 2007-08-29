@@ -4,7 +4,7 @@
  *  ADM5120 specific hooks for MIPS CPU Counter/Compare timer
  *
  *  Copyright (C) 2007 OpenWrt.org
- *  Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
+ *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This file was based on: arch/mips/gt64120/wrppmc/time.c
  *	Original author: Mark.Zhan

@@ -16,7 +16,7 @@
 # Copyright 2005  Oleg I. Vdovikin <oleg@cs.msu.su>
 #   Cleaned up, modified for lzma support, removed from kernel
 #
-# Copyright 2007 Gabor Juhos <juhosg@freemail.hu>
+# Copyright 2007 Gabor Juhos <juhosg at openwrt.org>
 #   Modified to support user defined entry point address.
 #   Added support for make targets with different names
 #

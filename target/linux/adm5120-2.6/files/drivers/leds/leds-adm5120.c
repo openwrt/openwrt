@@ -4,7 +4,7 @@
  *  ADM5120 GPIO LED devices
  *
  *  Copyright (C) 2007 OpenWrt.org
- *  Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
+ *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License
@@ -355,7 +355,7 @@ adm5120_leds_exit(void)
 module_init(adm5120_leds_init);
 module_exit(adm5120_leds_exit);
 
-MODULE_AUTHOR("Gabor Juhos <juhosg@freemail.hu>");
+MODULE_AUTHOR("Gabor Juhos <juhosg at openwrt.org>");
 MODULE_DESCRIPTION(DRV_DESC);
 MODULE_LICENSE("GPL");
 

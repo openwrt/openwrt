@@ -5,7 +5,7 @@
  *  array to match.
  *
  *  Copyright (C) 2007 OpenWrt.org
- *  Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
+ *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This file was based on drivers/mtd/redboot.c
  *  Author: Red Hat, Inc. - David Woodhouse <dwmw2@cambridge.redhat.com>
@@ -173,6 +173,6 @@ static void __exit mylo_mtd_parser_exit(void)
 module_init(mylo_mtd_parser_init);
 module_exit(mylo_mtd_parser_exit);
 
-MODULE_AUTHOR("Gabor Juhos <juhosg@freemail.hu>");
+MODULE_AUTHOR("Gabor Juhos <juhosg at openwrt.org>");
 MODULE_DESCRIPTION("Parsing code for MyLoader partition tables");
 MODULE_LICENSE("GPL");
