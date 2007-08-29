@@ -4,7 +4,7 @@
  *  Platform driver for NOR flash devices on ADM5120 based boards
  *
  *  Copyright (C) 2007 OpenWrt.org
- *  Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
+ *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This file was derived from: drivers/mtd/map/physmap.c
  *	Copyright (C) 2003 MontaVista Software Inc.
@@ -570,5 +570,5 @@ module_init(adm5120_flash_init);
 module_exit(adm5120_flash_exit);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Gabor Juhos <juhosg@freemail.hu>");
+MODULE_AUTHOR("Gabor Juhos <juhosg at openwrt.org>");
 MODULE_DESCRIPTION(DRV_DESC);

@@ -1,7 +1,7 @@
 /*
  *  $Id$
  *
- *  Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
+ *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This program was based on the code found in various Linux 
  *  source tarballs released by Edimax for it's devices.
