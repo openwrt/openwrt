@@ -53,7 +53,7 @@ endef
 define Image/Build/Edimax
 	$(call Image/Build/Loader,$(2),gz,0x80500000,0x6D8,y,$(2))
 	$(call Image/Build/TRXNoloader,$(IMGNAME)-$(3)-$(2).trx,$(1))
-	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(4) -d -w \
+	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(2) -d -w \
 		-r $(KDIR)/loader-$(2).gz \
 		-x $(IMGNAME)-$(3)-$(2).trx \
 		$(IMGNAME)-$(3)-$(2).bin
@@ -69,7 +69,7 @@ endef
 define Image/Build/MyLoader
 	$(call Image/Build/Loader,$(2),gz,0x80500000,0)
 	$(call Image/Build/TRXNoloader,$(IMGNAME)-$(3)-$(2).trx,$(1))
-	$(STAGING_DIR_HOST)/bin/mkmylofw -B $(4) \
+	$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) \
 		-p0x20000:0x10000:ahp:0x80001000 \
 		-p0x30000:0 \
 		-b0x20000:0x10000:h:$(KDIR)/loader-$(2).gz \
@@ -87,32 +87,32 @@ define Image/Build/RouterBoard
 endef
 
 define Image/Build/jffs2-64k
-	$(call Image/Build/Compex,$(1),wp54g-wrt,$(patsubst jffs2-%,jffs2,$(1)),WP54G-WRT)
+	$(call Image/Build/Compex,$(1),wp54g-wrt,$(patsubst jffs2-%,jffs2,$(1)))
 ifeq ($(CONFIG_DEVEL),y)
-	$(call Image/Build/Edimax,$(1),br-6104k,$(patsubst jffs2-%,jffs2,$(1)),BR-6104K)
-	$(call Image/Build/Edimax,$(1),br-6104kp,$(patsubst jffs2-%,jffs2,$(1)),BR-6104KP)
-	$(call Image/Build/Edimax,$(1),br-6114wg,$(patsubst jffs2-%,jffs2,$(1)),BR-6114WG)
-	$(call Image/Build/Edimax,$(1),br-6524k,$(patsubst jffs2-%,jffs2,$(1)),BR-6524K)
-	$(call Image/Build/Edimax,$(1),br-6524kp,$(patsubst jffs2-%,jffs2,$(1)),BR-6524KP)
-	$(call Image/Build/Edimax,$(1),br-6541k,$(patsubst jffs2-%,jffs2,$(1)),BR-6541K)
-	$(call Image/Build/Edimax,$(1),br-6541kp,$(patsubst jffs2-%,jffs2,$(1)),BR-6541KP)
-	$(call Image/Build/Edimax,$(1),ew-7207apg,$(patsubst jffs2-%,jffs2,$(1)),EW-7207APg)
-	$(call Image/Build/Edimax,$(1),ps-1205uwg,$(patsubst jffs2-%,jffs2,$(1)),PS-1205UWg)
-	$(call Image/Build/Edimax,$(1),ps-3205u,$(patsubst jffs2-%,jffs2,$(1)),PS-3205U)
-	$(call Image/Build/Edimax,$(1),ps-3205uwg,$(patsubst jffs2-%,jffs2,$(1)),PS-3205UWg)
-	$(call Image/Build/Edimax,$(1),br-6524wg,$(patsubst jffs2-%,jffs2,$(1)),BR-6524WG)
-	$(call Image/Build/Edimax,$(1),br-6524wp,$(patsubst jffs2-%,jffs2,$(1)),BR-6524WP)
+	$(call Image/Build/Edimax,$(1),br-6104k,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Edimax,$(1),br-6104kp,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Edimax,$(1),br-6114wg,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Edimax,$(1),br-6524k,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Edimax,$(1),br-6524kp,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Edimax,$(1),br-6541k,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Edimax,$(1),br-6541kp,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Edimax,$(1),ew-7207apg,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Edimax,$(1),ps-1205uwg,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Edimax,$(1),ps-3205u,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Edimax,$(1),ps-3205uwg,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Edimax,$(1),br-6524wg,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Edimax,$(1),br-6524wp,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Infineon,$(1),easy-5120p-ata,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Infineon,$(1),easy-5120-rt,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Infineon,$(1),easy-5120-wvoip,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Infineon,$(1),easy-83000,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/MyLoader,$(1),np27g,$(patsubst jffs2-%,jffs2,$(1)),NP27G)
-	$(call Image/Build/MyLoader,$(1),np28g,$(patsubst jffs2-%,jffs2,$(1)),NP28G)
-	$(call Image/Build/MyLoader,$(1),np28ghs,$(patsubst jffs2-%,jffs2,$(1)),NP28GHS)
-	$(call Image/Build/MyLoader,$(1),wp54g,$(patsubst jffs2-%,jffs2,$(1)),WP54G)
-	$(call Image/Build/MyLoader,$(1),wp54ag,$(patsubst jffs2-%,jffs2,$(1)),WP54AG)
-	$(call Image/Build/MyLoader,$(1),wpp54g,$(patsubst jffs2-%,jffs2,$(1)),WPP54G)
-	$(call Image/Build/MyLoader,$(1),wpp54ag,$(patsubst jffs2-%,jffs2,$(1)),WPP54AG)
+	$(call Image/Build/MyLoader,$(1),np27g,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/MyLoader,$(1),np28g,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/MyLoader,$(1),np28ghs,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/MyLoader,$(1),wp54g,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/MyLoader,$(1),wp54ag,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/MyLoader,$(1),wpp54g,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/MyLoader,$(1),wpp54ag,$(patsubst jffs2-%,jffs2,$(1)))
 endif
 endef
 
