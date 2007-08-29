@@ -39,6 +39,9 @@ while (@ARGV > 0) {
 		$options{"findopts"} .= " -and -not -path \\*".$str."\\*"
 	} elsif ($path =~ /^-f/) {
 		$options{"findopts"} .= " -follow";
+	} elsif ($path =~ /^-n/) {
+		my $arg = $ARGV[0];
+		$options{$path} = $arg;
 	} elsif ($path =~ /^-/) {
 		$options{$path} = 1;
 	} else {
@@ -54,7 +57,9 @@ while (@ARGV > 0) {
 	}
 }
 
-if ($options{"-p"}) {
+if ($options{"-n"}) {
+	exit ($n eq $options{"-n"} ? 0 : 1);
+} elsif ($options{"-p"}) {
 	print "$n\n";
 } elsif ($options{"-t"}) {
 	print "$ts\n";
