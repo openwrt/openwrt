@@ -38,7 +38,7 @@ endef
 define stampfile
   $(1)/stamp-$(3):=$(STAGING_DIR)/stamp/.$(2)_$(3)
   $$($(1)/stamp-$(3)): $(TMP_DIR)/.build
-	@+$(SCRIPT_DIR)/timestamp.pl -n $$($(1)/stamp-$(3)) $(1) || \
+	@+$(SCRIPT_DIR)/timestamp.pl -n $$($(1)/stamp-$(3)) $(1) $(4) || \
 		$(MAKE) $$($(1)/flags-$(3)) $(1)/$(3)
 	@mkdir -p $$$$(dirname $$($(1)/stamp-$(3)))
 	@touch $$($(1)/stamp-$(3))
