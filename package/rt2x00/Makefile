@@ -130,8 +130,8 @@ ifndef ($(CONFIG_MAC80211),)
 
   PKG_EXTRA_CFLAGS:= \
 	-I$(STAGING_DIR)/usr/include/mac80211 \
-	$(patsubst CONFIG_%, -DCONFIG_%=1, $(filter %=m,$(PKG_EXTRA_KCONFIG))) \
-	$(patsubst CONFIG_%, -DCONFIG_%=1, $(filter %=y,$(PKG_EXTRA_KCONFIG))) \
+	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=m,%,$(filter %=m,$(PKG_EXTRA_KCONFIG)))) \
+	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=y,%,$(filter %=y,$(PKG_EXTRA_KCONFIG)))) \
 
   define Build/Compile/it
 	$(MAKE) -C "$(LINUX_DIR)" \
