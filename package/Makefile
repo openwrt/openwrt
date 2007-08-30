@@ -40,15 +40,10 @@ $(curdir)/index: FORCE
 
 $(curdir)/flags-install:= -j1
 
-$(eval $(call stampfile,$(curdir),package,prereq))
-$(eval $(call stampfile,$(curdir),package,cleanup))
-$(eval $(call stampfile,$(curdir),package,compile))
-$(eval $(call stampfile,$(curdir),package,install))
-$(eval $(call stampfile,$(curdir),package,rootfs-prepare))
-
-$($(curdir)/stamp-cleanup): $(TMP_DIR)/.build
-$($(curdir)/stamp-compile): $($(curdir)/stamp-cleanup) $(TMP_DIR)/.build
-$($(curdir)/stamp-install): $($(curdir)/stamp-compile) $(TMP_DIR)/.build
-$($(curdir)/stamp-rootfs-prepare): $($(curdir)/stamp-install) $(TMP_DIR)/.build
+$(eval $(call stampfile,$(curdir),package,prereq,.config))
+$(eval $(call stampfile,$(curdir),package,cleanup,$(TMP_DIR)/.build))
+$(eval $(call stampfile,$(curdir),package,compile,$(TMP_DIR)/.build))
+$(eval $(call stampfile,$(curdir),package,install,$(TMP_DIR)/.build))
+$(eval $(call stampfile,$(curdir),package,rootfs-prepare,$(TMP_DIR)/.build))
 
 $(eval $(call subdir,$(curdir)))
