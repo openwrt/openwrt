@@ -39,24 +39,27 @@ else
 endif
 
 #
-# Include kernel and rt2x00 config.
-#
-include $(KERNEL_SOURCES)/.config
-include $(SUBDIRS)/config
-
-#
 # Determine if and with what options the rt2x00 drivers should be build
 #
 rt2x00lib-objs := rt2x00dev.o rt2x00mac.o
 
 ifeq ($(CONFIG_RT2X00),y)
+	obj-m += rt2x00lib.o
+
+ifneq ($(CONFIG_PCI),)
+	obj-m += rt2x00pci.o
+endif
+
+ifneq ($(CONFIG_USB),)
+	obj-m += rt2x00usb.o
+endif
 
 ifeq ($(CONFIG_RT2X00_LIB_DEBUGFS),y)
 	rt2x00lib-objs += rt2x00debug.o
 endif
 
 ifeq ($(CONFIG_RT2400PCI),y)
-	obj-m += rt2400pci.o rt2x00pci.o rt2x00lib.o
+	obj-m += rt2400pci.o
 ifeq ($(CONFIG_RT2400PCI_RFKILL),y)
 	rt2x00lib-objs += rt2x00rfkill.o
 	CFLAGS += -DCONFIG_RT2X00_LIB_RFKILL
@@ -64,7 +67,7 @@ endif
 endif
 
 ifeq ($(CONFIG_RT2500PCI),y)
-	obj-m += rt2500pci.o rt2x00pci.o rt2x00lib.o
+	obj-m += rt2500pci.o
 ifeq ($(CONFIG_RT2500PCI_RFKILL),y)
 	rt2x00lib-objs += rt2x00rfkill.o
 	CFLAGS += -DCONFIG_RT2X00_LIB_RFKILL
@@ -72,13 +75,13 @@ endif
 endif
 
 ifeq ($(CONFIG_RT2500USB),y)
-	obj-m += rt2500usb.o rt2x00usb.o rt2x00lib.o
+	obj-m += rt2500usb.o
 endif
 
 ifeq ($(CONFIG_RT61PCI),y)
 	CFLAGS += -DCONFIG_RT2X00_LIB_FIRMWARE
 	rt2x00lib-objs += rt2x00firmware.o
-	obj-m += rt61pci.o rt2x00pci.o rt2x00lib.o
+	obj-m += rt61pci.o
 ifeq ($(CONFIG_RT61PCI_RFKILL),y)
 	rt2x00lib-objs += rt2x00rfkill.o
 	CFLAGS += -DCONFIG_RT2X00_LIB_RFKILL
@@ -88,13 +91,12 @@ endif
 ifeq ($(CONFIG_RT73USB),y)
 	CFLAGS += -DCONFIG_RT2X00_LIB_FIRMWARE
 	rt2x00lib-objs += rt2x00firmware.o
-	obj-m += rt73usb.o rt2x00usb.o rt2x00lib.o
+	obj-m += rt73usb.o
 endif
 
 endif
 
 MAKEFLAGS += --no-print-directory
-CFLAGS := -include $(SUBDIRS)/rt2x00_compat.h $(CFLAGS)
 
 all: default
 
