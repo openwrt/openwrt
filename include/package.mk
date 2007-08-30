@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/unpack.mk
 include $(INCLUDE_DIR)/depends.mk
 
-STAMP_PREPARED:=$(PKG_BUILD_DIR)/.prepared$(if $(DUMP),,_$(shell find ${CURDIR} $(PKG_FILE_DEPEND) $(DEP_FINDPARAMS) | md5s))
+STAMP_PREPARED:=$(PKG_BUILD_DIR)/.prepared$(if $(DUMP),,_$(shell $(call find_md5,${CURDIR} $(PKG_FILE_DEPEND),)))
 STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/.configured
 STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
 
@@ -32,8 +32,8 @@ ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
     define Build/Autoclean
       $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)
-      $(call rdep,${CURDIR} $(PKG_FILE_DEPEND),$(STAMP_PREPARED))
-      $(if $(filter prepare,$(MAKECMDGOALS)),,$(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),$(PKG_BUILD_DIR)/.dep_files, -and -not -path "/.*" -and -not -path "*/ipkg*"))
+      $(call rdep,${CURDIR} $(PKG_FILE_DEPEND),$(STAMP_PREPARED),$(PKG_BUILD_DIR)/.dep_files,-x "/.dep_*")
+      $(if $(filter prepare,$(MAKECMDGOALS)),,$(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),,-x "/.dep_*" -x "*/ipkg*"))
     endef
   endif
 endif
@@ -64,14 +64,11 @@ define Build/DefaultTargets
 
   $(STAMP_BUILT): $(STAMP_CONFIGURED)
 	$(Build/Compile)
+	$(Build/InstallDev)
 	touch $$@
 
   ifdef Build/InstallDev
-    compile: $(STAGING_DIR)/stamp/.$(PKG_NAME)-installed
-    $(STAGING_DIR)/stamp/.$(PKG_NAME)-installed: $(STAMP_BUILT)
-	mkdir -p $(STAGING_DIR)/stamp
-	$(Build/InstallDev)
-	touch $$@
+    compile: $(STAMP_BUILT)
   endif
 
   define Build/DefaultTargets
