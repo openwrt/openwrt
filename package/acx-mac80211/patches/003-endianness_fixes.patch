@@ -107,3 +107,15 @@
  	    "waiting for cards to probe...\n");
  
  	res = pci_register_driver(&acxpci_drv_id);
+diff -ruN acx-mac80211-20070610-old/wlan_hdr.h acx-mac80211-20070610-new/wlan_hdr.h
+--- acx-mac80211-20070610-old/wlan_hdr.h	2007-06-10 20:23:27.000000000 +0200
++++ acx-mac80211-20070610-new/wlan_hdr.h	2007-08-30 18:56:23.000000000 +0200
+@@ -125,7 +125,7 @@
+  #define IEEE16(a,n) a = n, a##i = n,
+ #else
+  #ifdef __BIG_ENDIAN
+-  #define IEEE16(a,n) a = n a##i = ((n&0xff)*256 + ((n&0xff00/256)),
++  #define IEEE16(a,n) a = n, a##i = ((n&0xff)*256 + (n&0xff00)/256),
+  #endif
+ #endif
+ 
