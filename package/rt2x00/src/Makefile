@@ -97,6 +97,7 @@ endif
 endif
 
 MAKEFLAGS += --no-print-directory
+CFLAGS := -include $(SUBDIRS)/rt2x00_compat.h $(CFLAGS)
 
 all: default
 
