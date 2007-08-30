@@ -173,7 +173,7 @@ dhcp_add() {
 	config_get ifname "$net" ifname
 	[ -n "$ifname" ] || return 0
 
-	append_bool "$cfg" ingore "-I $ifname"
+	append_bool "$cfg" ignore "-I $ifname"
 
 	config_get proto "$net" proto
 	[ static = "$proto" ] || return 0
