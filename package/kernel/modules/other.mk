@@ -8,6 +8,18 @@
 
 EMENU:=Other modules
 
+define KernelPackage/crc-itu-t
+  SUBMENU:=$(EMENU)
+  TITLE:=CRC ITU-T V.41 support
+  DESCRIPTION:=Kernel module for CRC ITU-T V.41 support
+  KCONFIG:=CONFIG_CRC_ITU_T
+  FILES:=$(LINUX_DIR)/lib/crc-itu-t.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,crc-itu-t)
+endef
+
+$(eval $(call KernelPackage,crc-itu-t))
+
+
 define KernelPackage/crypto
   SUBMENU:=$(EMENU)
   TITLE:=CryptoAPI modules
@@ -41,6 +53,19 @@ define KernelPackage/crypto
 endef
 
 $(eval $(call KernelPackage,crypto))
+
+
+define KernelPackage/eeprom-93cx6
+  SUBMENU:=$(EMENU)
+  TITLE:=EEPROM 93CX6 support
+  DESCRIPTION:=Kernel module for EEPROM 93CX6 support
+  DEPENDS:=@LINUX_2_6
+  KCONFIG:=CONFIG_EEPROM_93CX6
+  FILES:=$(LINUX_DIR)/drivers/misc/eeprom_93cx6.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,eeprom_93cx6)
+endef
+
+$(eval $(call KernelPackage,eeprom-93cx6))
 
 
 define KernelPackage/lp
