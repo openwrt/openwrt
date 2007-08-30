@@ -39,12 +39,12 @@ $(call KernelPackage/rt2x00/Default)
   DEPENDS+= +kmod-mac80211 +kmod-crypto
   TITLE+= (LIB)
   FILES:=$(PKG_BUILD_DIR)/rt2x00lib.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,25,ecb arc4 rt2x00lib)
+  AUTOLOAD:=$(call AutoLoad,25,blkcipher ecb arc4 rt2x00lib)
 endef
 
 define KernelPackage/rt2x00-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-lib
+  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-lib +kmod-eeprom-93cx6
   TITLE+= (PCI)
   FILES:=$(PKG_BUILD_DIR)/rt2x00pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,26,rt2x00pci)
@@ -76,7 +76,7 @@ endef
 
 define KernelPackage/rt2500-usb
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-rt2x00-usb
+  DEPENDS+= +kmod-rt2x00-usb +kmod-crc-itu-t
   TITLE+= (RT2500 USB)
   FILES:=$(PKG_BUILD_DIR)/rt2500usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2500usb)
@@ -84,7 +84,7 @@ endef
 
 define KernelPackage/rt61-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-rt2x00-pci
+  DEPENDS+= +kmod-rt2x00-pci +kmod-crc-itu-t
   TITLE+= (RT2x61 PCI)
   FILES:=$(PKG_BUILD_DIR)/rt61pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt61pci)
@@ -106,12 +106,19 @@ $(DL_DIR)/$(PKG_FW6X_NAME):
 $(DL_DIR)/$(PKG_FW7X_NAME):
 	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_FW7X_NAME)" "$(PKG_FW7X_MD5SUM)" $(PKG_FW7X_URL)
 
+# only try to build if the kernel is recent enough (has in-kernel mac80211)
 ifndef ($(CONFIG_MAC80211),)
 
   PKG_EXTRA_KCONFIG:= \
 	CONFIG_RT2X00=y \
 	CONFIG_RT2X00_DEBUG=y \
 
+  ifneq ($(CONFIG_PACKAGE_kmod-rt2x00-pci),)
+    PKG_EXTRA_KCONFIG+= CONFIG_RT2X00PCI=y
+  endif
+  ifneq ($(CONFIG_PACKAGE_kmod-rt2x00-usb),)
+    PKG_EXTRA_KCONFIG+= CONFIG_RT2X00USB=y
+  endif
   ifneq ($(CONFIG_PACKAGE_kmod-rt2400-pci),)
     PKG_EXTRA_KCONFIG+= CONFIG_RT2400PCI=y
   endif

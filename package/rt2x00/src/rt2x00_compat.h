@@ -38,7 +38,7 @@
 
 #if (defined(CONFIG_RT2500USB) || defined(CONFIG_RT73USB))
 #if (!defined(CONFIG_USB) && !defined(CONFIG_USB_MODULE))
-#warning USB has been disabled in your kernel!
+#error USB has been disabled in your kernel!
 #endif
 #endif
 
