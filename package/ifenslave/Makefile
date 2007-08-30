@@ -36,7 +36,7 @@ endef
 
 define Package/ifenslave/install
 	$(INSTALL_DIR) $(1)/sbin
-	$(CP) $(PKG_BUILD_DIR)/ifenslave $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ifenslave $(1)/sbin/
 endef
 
 $(eval $(call BuildPackage,ifenslave))
