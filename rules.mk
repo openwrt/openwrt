@@ -8,6 +8,7 @@
 ifeq ($(DUMP),)
   -include $(TOPDIR)/.config
 endif
+include $(TOPDIR)/include/debug.mk
 include $(TOPDIR)/include/verbose.mk
 
 TMP_DIR:=$(TOPDIR)/tmp
@@ -25,6 +26,7 @@ ARCH:=$(call qstrip,$(CONFIG_ARCH))
 TARGET_OPTIMIZATION:=$(call qstrip,$(CONFIG_TARGET_OPTIMIZATION))
 BUILD_SUFFIX:=$(call qstrip,$(CONFIG_BUILD_SUFFIX))
 GCCV:=$(call qstrip,$(CONFIG_GCC_VERSION))
+SUBDIR:=$(patsubst $(TOPDIR)/%,%,${CURDIR})
 
 OPTIMIZE_FOR_CPU:=$(ARCH)
 

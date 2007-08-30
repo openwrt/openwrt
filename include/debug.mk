@@ -10,12 +10,15 @@
 # d: show subdirectory tree
 # t: show added targets
 # l: show legacy targets
+# r: show autorebuild messages
 # v: verbose (no .SILENCE for common targets)
 
-ifeq ($(DEBUG),all)
-  build_debug:=dltv
-else
-  build_debug:=$(DEBUG)
+ifeq ($(DUMP),)
+  ifeq ($(DEBUG),all)
+    build_debug:=dltvr
+  else
+    build_debug:=$(DEBUG)
+  endif
 endif
 
 define debug
@@ -24,6 +27,10 @@ endef
 
 define warn
 $$(if $(call debug,$(1),$(2)),$$(warning $(3)))
+endef
+
+define debug_eval
+$$(if $(call debug,$(1),$(2)),$(3))
 endef
 
 define warn_eval
