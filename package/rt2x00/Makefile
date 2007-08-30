@@ -12,11 +12,22 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=rt2x00
 PKG_VERSION:=cvs-20070712
 
-include $(INCLUDE_DIR)/package.mk
+PKG_FW6X_NAME:=RT61_Firmware_V1.2.zip
+PKG_FW6X_URL:=http://www.ralinktech.com.tw/data/
+PKG_FW6X_MD5SUM:=fe64f389f0863ef349a8c97e0fbc8838
 
-define Package/rt2x00/Default
+PKG_FW7X_NAME:=RT71W_Firmware_V1.8.zip
+PKG_FW7X_URL:=http://www.ralinktech.com.tw/data/
+PKG_FW7X_MD5SUM:=db4ef70b61e483f34db496738507b275
+
+include $(INCLUDE_DIR)/package.mk
+ifeq ($(DUMP),)
+  include $(LINUX_DIR)/.config
+endif
+
+define KernelPackage/rt2x00/Default
   SUBMENU:=Wireless Drivers
-  TITLE:=Ralink GPL Drivers
+  TITLE:=Ralink Drivers for RT2x00 cards
   DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_MAC80211
   DESCRIPTION:=Ralink GPL Drivers for rt2x00 cards
@@ -24,108 +35,140 @@ define Package/rt2x00/Default
 endef
 
 define KernelPackage/rt2x00-lib
-  $(call Package/rt2x00/Default)
+$(call KernelPackage/rt2x00/Default)
   DEPENDS+= +kmod-mac80211 +kmod-crypto
   TITLE+= (LIB)
-  DESCRIPTION+= (LIB)
   FILES:=$(PKG_BUILD_DIR)/rt2x00lib.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,ecb arc4 rt2x00lib)
 endef
 
 define KernelPackage/rt2x00-pci
-  $(call Package/rt2x00/Default)
+$(call KernelPackage/rt2x00/Default)
   DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-lib
   TITLE+= (PCI)
-  DESCRIPTION+= (PCI)
   FILES:=$(PKG_BUILD_DIR)/rt2x00pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,26,rt2x00pci)
 endef
 
 define KernelPackage/rt2x00-usb
-  $(call Package/rt2x00/Default)
+$(call KernelPackage/rt2x00/Default)
   DEPENDS+= @USB_SUPPORT +kmod-rt2x00-lib +kmod-usb-core
   TITLE+= (USB)
-  DESCRIPTION+= (USB)
   FILES:=$(PKG_BUILD_DIR)/rt2x00usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,26,rt2x00usb)
 endef
 
 define KernelPackage/rt2400-pci
-  $(call Package/rt2x00/Default)
+$(call KernelPackage/rt2x00/Default)
   DEPENDS+= +kmod-rt2x00-pci
   TITLE+= (RT2400 PCI)
-  DESCRIPTION+= (RT2400 PCI)
   FILES:=$(PKG_BUILD_DIR)/rt2400pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2400pci)
 endef
 
 define KernelPackage/rt2500-pci
-  $(call Package/rt2x00/Default)
+$(call KernelPackage/rt2x00/Default)
   DEPENDS+= +kmod-rt2x00-pci
   TITLE+= (RT2500 PCI)
-  DESCRIPTION+= (RT2500 PCI)
   FILES:=$(PKG_BUILD_DIR)/rt2500pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2500pci)
 endef
 
 define KernelPackage/rt2500-usb
-  $(call Package/rt2x00/Default)
+$(call KernelPackage/rt2x00/Default)
   DEPENDS+= +kmod-rt2x00-usb
   TITLE+= (RT2500 USB)
-  DESCRIPTION+= (RT2500 USB)
   FILES:=$(PKG_BUILD_DIR)/rt2500usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2500usb)
 endef
 
 define KernelPackage/rt61-pci
-  $(call Package/rt2x00/Default)
+$(call KernelPackage/rt2x00/Default)
   DEPENDS+= +kmod-rt2x00-pci
   TITLE+= (RT2x61 PCI)
-  DESCRIPTION+= (RT2x61 PCI)
   FILES:=$(PKG_BUILD_DIR)/rt61pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt61pci)
 endef
 
-define KernelPackage/rt61-pci/install
-	mkdir -p $(1)/lib/firmware
-	$(CP) -L $(PKG_BUILD_DIR)/rt2?61*.bin $(1)/lib/firmware
-endef
-
 define KernelPackage/rt73-usb
-  $(call Package/rt2x00/Default)
+  $(call KernelPackage/rt2x00/Default)
   DEPENDS+= +kmod-rt2x00-usb
   TITLE+= (RT73 USB)
-  DESCRIPTION+= (RT73 USB)
   FILES:=$(PKG_BUILD_DIR)/rt73usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt73usb)
 endef
 
-define KernelPackage/rt73-usb/install
-	mkdir -p $(1)/lib/firmware
-	$(CP) -L $(PKG_BUILD_DIR)/rt73.bin $(1)/lib/firmware
-endef
+$(STAMP_PREPARED): $(DL_DIR)/$(PKG_FW6X_NAME) $(DL_DIR)/$(PKG_FW7X_NAME)
+
+$(DL_DIR)/$(PKG_FW6X_NAME):
+	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_FW6X_NAME)" "$(PKG_FW6X_MD5SUM)" $(PKG_FW6X_URL)
+
+$(DL_DIR)/$(PKG_FW7X_NAME):
+	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_FW7X_NAME)" "$(PKG_FW7X_MD5SUM)" $(PKG_FW7X_URL)
+
+ifndef ($(CONFIG_MAC80211),)
+
+  PKG_EXTRA_KCONFIG:= \
+	CONFIG_RT2X00=y \
+	CONFIG_RT2X00_DEBUG=y \
+
+  ifneq ($(CONFIG_PACKAGE_kmod-rt2400-pci),)
+    PKG_EXTRA_KCONFIG+= CONFIG_RT2400PCI=y
+  endif
+  ifneq ($(CONFIG_PACKAGE_kmod-rt2500-pci),)
+    PKG_EXTRA_KCONFIG+= CONFIG_RT2500PCI=y
+  endif
+  ifneq ($(CONFIG_PACKAGE_kmod-rt2500-usb),)
+    PKG_EXTRA_KCONFIG+= CONFIG_RT2500USB=y
+  endif
+  ifneq ($(CONFIG_PACKAGE_kmod-rt61-pci),)
+    PKG_EXTRA_KCONFIG+= CONFIG_RT61PCI=y
+  endif
+  ifneq ($(CONFIG_PACKAGE_kmod-rt73-usb),)
+    PKG_EXTRA_KCONFIG+= CONFIG_RT73USB=y
+  endif
+
+  PKG_EXTRA_CFLAGS:= \
+	-I$(STAGING_DIR)/usr/include/mac80211 \
+	$(patsubst CONFIG_%, -DCONFIG_%=1, $(filter %=m,$(PKG_EXTRA_KCONFIG))) \
+	$(patsubst CONFIG_%, -DCONFIG_%=1, $(filter %=y,$(PKG_EXTRA_KCONFIG))) \
+
+  define Build/Compile/it
+	$(MAKE) -C "$(LINUX_DIR)" \
+		ARCH="$(LINUX_KARCH)" \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
+		SUBDIRS="$(PKG_BUILD_DIR)" \
+		$(PKG_EXTRA_KCONFIG) \
+		EXTRA_CFLAGS="$(PKG_EXTRA_CFLAGS)" \
+		V="$(V)" \
+		modules
+  endef
+
+endif
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
 	$(CP) -r src/* $(PKG_BUILD_DIR)/
-	wget -N -P $(DL_DIR) http://www.ralinktech.com.tw/data/RT61_Firmware_V1.2.zip
-	wget -N -P $(DL_DIR) http://www.ralinktech.com.tw/data/RT71W_Firmware_V1.8.zip
-	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/RT61_Firmware_V1.2.zip
-	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/RT71W_Firmware_V1.8.zip
+	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(PKG_FW6X_NAME)
+	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(PKG_FW7X_NAME)
+endef
+
+define Build/Configure
+	touch $(PKG_BUILD_DIR)/rt2x00_config.h
 endef
 
 define Build/Compile
-	$(MAKE) -C "$(PKG_BUILD_DIR)" \
-		KERNDIR="$(LINUX_DIR)" \
-		config_header
+$(call Build/Compile/it)
+endef
 
-	$(MAKE) -C "$(LINUX_DIR)" \
-		CROSS_COMPILE="$(TARGET_CROSS)" \
-		ARCH="$(LINUX_KARCH)" V="$(V)" \
-		SUBDIRS="$(PKG_BUILD_DIR)" \
-		KERNELVERSION="$(KERNEL)" \
-		KERNEL_SOURCES="$(LINUX_DIR)" \
-		KDIR="$(LINUX_DIR)"
+define KernelPackage/rt61-pci/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rt2?61*.bin $(1)/lib/firmware/
+endef
+
+define KernelPackage/rt73-usb/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rt73.bin $(1)/lib/firmware/
 endef
 
 $(eval $(call KernelPackage,rt2x00-lib))
