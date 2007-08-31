@@ -3,6 +3,7 @@ scan_ppp() {
 	pppdev="${pppdev:-0}"
 	config_set "$1" ifname "ppp$pppdev"
 	config_set "$1" unit "$pppdev"
+	pppdev="$(($pppdev + 1))"
 }
 
 start_pppd() {
@@ -38,6 +39,7 @@ start_pppd() {
 		defaultroute \
 		replacedefaultroute \
 		${username:+user "$username" password "$password"} \
+		unit "$pppdev" \
 		linkname "$cfg" \
 		ipparam "$cfg" \
 		${connect:+connect "$connect"} \
