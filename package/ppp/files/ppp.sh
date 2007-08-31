@@ -39,7 +39,7 @@ start_pppd() {
 		defaultroute \
 		replacedefaultroute \
 		${username:+user "$username" password "$password"} \
-		unit "$pppdev" \
+		unit "$unit" \
 		linkname "$cfg" \
 		ipparam "$cfg" \
 		${connect:+connect "$connect"} \
