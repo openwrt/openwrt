@@ -19,7 +19,7 @@
 
 static inline int rdc_gpio_is_valid(unsigned gpio)
 {
-	return ((gpio > RDC_MAX_GPIO) ? 0 : 1);
+	return (gpio <= RDC_MAX_GPIO);
 }
 
 static unsigned int rdc_gpio_read(unsigned gpio)
@@ -53,6 +53,8 @@ int rdc_gpio_get_value(unsigned gpio)
 {
 	if (rdc_gpio_is_valid(gpio))
 		return (int)rdc_gpio_read(gpio);
+	else
+		return -EINVAL;
 }
 EXPORT_SYMBOL(rdc_gpio_get_value);
 
