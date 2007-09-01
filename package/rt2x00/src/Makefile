@@ -46,11 +46,11 @@ rt2x00lib-objs := rt2x00dev.o rt2x00mac.o
 ifeq ($(CONFIG_RT2X00),y)
 	obj-m += rt2x00lib.o
 
-ifeq ($(CONFIG_RT2x00PCI),y)
+ifeq ($(CONFIG_RT2X00PCI),y)
 	obj-m += rt2x00pci.o
 endif
 
-ifeq ($(CONFIG_RT2x00USB),y)
+ifeq ($(CONFIG_RT2X00USB),y)
 	obj-m += rt2x00usb.o
 endif
 
