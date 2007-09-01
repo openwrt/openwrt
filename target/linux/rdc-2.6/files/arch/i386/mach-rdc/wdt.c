@@ -212,7 +212,7 @@ static int __devinit rdc321x_wdt_probe(struct platform_device *pdev)
 
 	if ( (err = misc_register(&rdc321x_wdt_misc)) < 0 ) {
 		printk(KERN_ERR PFX "misc_register failed\n");
-		goto no_misc;
+		return err;
 	}
 
 	/* Reset the watchdog */
@@ -230,9 +230,6 @@ static int __devinit rdc321x_wdt_probe(struct platform_device *pdev)
 	printk(KERN_INFO PFX "init success\n");
 
 	return 0;
-
-no_misc:
-	return err;
 }
 
 static int rdc321x_wdt_remove(struct platform_device *pdev)
