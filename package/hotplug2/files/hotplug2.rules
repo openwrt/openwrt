@@ -5,6 +5,6 @@ SUBSYSTEM ~~ (net|button|usb) {
 }
 
 DEVICENAME ~~ (watchdog) {
-	exec /sbin/watchdog -t 10 /dev/watchdog;
+	exec /sbin/watchdog -t 5 /dev/watchdog;
 	next
 }
