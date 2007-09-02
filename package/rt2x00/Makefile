@@ -31,7 +31,6 @@ define KernelPackage/rt2x00/Default
   DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_MAC80211
   DESCRIPTION:=Ralink GPL Drivers for rt2x00 cards
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(LINUX_RELEASE)
 endef
 
 define KernelPackage/rt2x00-lib

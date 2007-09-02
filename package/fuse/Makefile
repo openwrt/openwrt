@@ -47,7 +47,6 @@ define KernelPackage/fuse
 	\\\
 	This package contains the FUSE kernel module.
   FILES:=$(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/fuse/fuse.$(LINUX_KMOD_SUFFIX)
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   AUTOLOAD:=$(call AutoLoad,80,fuse)
 endef
 

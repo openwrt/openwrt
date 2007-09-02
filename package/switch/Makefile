@@ -22,7 +22,6 @@ define KernelPackage/switch
   TITLE:=Switch drivers
   DESCRIPTION:=\
 	This package contains switch drivers for ADM6996L and BCM53XX RoboSwitch.
-  VERSION:=$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)
   FILES:= \
 	$(PKG_BUILD_DIR)/switch-core.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/switch-adm.$(LINUX_KMOD_SUFFIX) \

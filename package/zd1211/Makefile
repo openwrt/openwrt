@@ -31,7 +31,6 @@ define KernelPackage/zd1211
 	USB-WLAN-Chip.\\\
 	Initially contributed by ZyDAS, this driver is actively maintained by the \\\
 	open source community.
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   FILES:=$(PKG_BUILD_DIR)/zd1211.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,zd1211) 
 endef

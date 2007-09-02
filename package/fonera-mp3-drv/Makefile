@@ -18,7 +18,6 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/fonera-mp3-driver
   SUBMENU:=Other modules
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(LINUX_RELEASE)
   DEPENDS:=@LINUX_2_6_ATHEROS
   TITLE:=Fonera-MP3 driver (VS1011X)
   DESCRIPTION:=driver for a vs1011X attached to a fonera

@@ -85,7 +85,6 @@ define KernelPackage/madwifi
   DESCRIPTION:=\
 	This package contains a driver for Atheros 802.11a/b/g chipsets.
   URL:=http://madwifi.org/
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   FILES:= \
 		$(PKG_BUILD_DIR)/ath_hal/ath_hal.$(LINUX_KMOD_SUFFIX) \
 		$(BUS_MODULES) \

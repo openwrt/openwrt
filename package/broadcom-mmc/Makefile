@@ -31,7 +31,6 @@ define KernelPackage/broadcom-mmc
 	Kernel driver for the Linksys WRT54G MM/SD-Card Mod
   URL:=http://kiel.kool.dk/
   FILES:=$(PKG_BUILD_DIR)/mmc.$(LINUX_KMOD_SUFFIX)
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(PKG_RELEASE)
   AUTOLOAD:=$(call AutoLoad,80,mmc)
 endef 
 

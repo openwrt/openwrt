@@ -46,7 +46,6 @@ define KernelPackage/openswan
   DESCRIPTION+=\\\
 	\\\
 	This package contains the Openswan kernel module.
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   FILES:=$(PKG_BUILD_DIR)/modobj*/ipsec.$(LINUX_KMOD_SUFFIX)
 endef
 

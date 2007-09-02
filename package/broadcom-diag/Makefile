@@ -20,7 +20,6 @@ define KernelPackage/diag
   SUBMENU:=Other modules
   DEPENDS:=@LINUX_2_4_BRCM||LINUX_2_6_BRCM||LINUX_2_6_BRCM47XX
   TITLE:=Driver for router LEDs and Buttons
-  VERSION:=$(PKG_RELEASE)+$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)
   FILES:=$(PKG_BUILD_DIR)/diag.$(LINUX_KMOD_SUFFIX)
 endef
 

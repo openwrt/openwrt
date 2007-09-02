@@ -47,7 +47,6 @@ define KernelPackage/strongswan
   DESCRIPTION+=\\\
 	\\\
 	This package contains the strongSwan kernel module.
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   FILES:=$(PKG_BUILD_DIR)/linux/net/ipsec/ipsec.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,ipsec)
 endef
