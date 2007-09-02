@@ -36,7 +36,6 @@ define KernelPackage/brcm-wl/Default
   DESCRIPTION:=\
 	This package contains the proprietary wireless driver for the Broadcom \\\
 	BCM43xx chipset
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(PKG_RELEASE)
   FILES:=$(PKG_BUILD_DIR)/kmod/wl$(1).o
   AUTOLOAD:=$(call AutoLoad,30,wl$(1))
 endef

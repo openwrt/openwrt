@@ -24,7 +24,6 @@ define KernelPackage/wlcompat/Default
   DESCRIPTION:=\
 	This package contains a wrapper module, that provides Wireless Extension \\\
 	support for the proprietary Broadcom wl module.
-  VERSION:=$(LINUX_VERSION)+$(BOARD)-$(PKG_RELEASE)
 endef
 
 define KernelPackage/wlcompat

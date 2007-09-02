@@ -23,7 +23,6 @@ define KernelPackage/bcm43xx-mac80211
   SUBMENU:=Wireless Drivers
   TITLE:=Broadcom 43xx wireless support
   DESCRIPTION:=Kernel module for Broadcom 43xx wireless support (mac80211)
-  VERSION:=$(PKG_RELEASE)+$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)
   DEPENDS:=@LINUX_2_6_BRCM47XX +kmod-mac80211
   KCONFIG:=CONFIG_MAC80211
   FILES:=$(PKG_BUILD_DIR)/bcm43xx-mac80211.$(LINUX_KMOD_SUFFIX)

@@ -26,7 +26,6 @@ define KernelPackage/rt61
   DESCRIPTION:=\
         This package contains a driver for ralink rt2x61 pci chipsets.
   URL:=http://rt2x00.serialmonkey.com/
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   FILES:= \
                 $(PKG_BUILD_DIR)/Module/rt61.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,rt61)

@@ -24,7 +24,6 @@ define KernelPackage/uvcvideo
   DEPENDS:=@LINUX_2_6 kmod-usb-core kmod-videodev @VIDEO_SUPPORT
   TITLE:=Driver for Linux-UVC based USB cameras
   URL:=http://linux-uvc.berlios.de/
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   FILES:=$(PKG_BUILD_DIR)/uvcvideo.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,uvcvideo)
 endef

@@ -24,7 +24,6 @@ define KernelPackage/gspca
   DEPENDS:=@LINUX_2_6 kmod-usb-core kmod-videodev @VIDEO_SUPPORT
   TITLE:=Driver for SPCA5xx based USB cameras
   URL:=http://mxhaard.free.fr/
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   FILES:=$(PKG_BUILD_DIR)/gspca.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,gspca)
 endef

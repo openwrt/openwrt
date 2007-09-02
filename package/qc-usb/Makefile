@@ -40,7 +40,6 @@ define KernelPackage/usb-qc
 	other webcams with similar chipsets.
   SUBMENU:=USB Support
   DEPENDS:=@LINUX_2_6 @USB_SUPPORT @VIDEO_SUPPORT kmod-usb-core +kmod-videodev
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   FILES:=$(PKG_BUILD_DIR)/quickcam.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,quickcam)
 endef

@@ -25,7 +25,6 @@ define KernelPackage/spca5xx-le
   DEPENDS:=@LINUX_2_6 kmod-videodev @VIDEO_SUPPORT
   TITLE:=Driver for SPCA5xx based USB cameras (Light Edition)
   URL:=http://mxhaard.free.fr/
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   FILES:=$(PKG_BUILD_DIR)/spca5xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,spca5xx)
 endef

@@ -46,7 +46,6 @@ define KernelPackage/aodv-uu
   FILES:=$(PKG_BUILD_DIR)/lnx/kaodv.$(LINUX_KMOD_SUFFIX)
   SUBMENU:=Network Support
   AUTOLOAD:=$(call AutoLoad,80,$(shell cat ./files/aodv-uu.modules))
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
 endef
 
 ifeq ($(CONFIG_LINUX_2_6),y)

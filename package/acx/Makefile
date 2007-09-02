@@ -30,7 +30,6 @@ define KernelPackage/acx
   DESCRIPTION:=\
 	This package contains a driver for TI ACX1xx 802.11a/b/g chipsets.
   URL:=http://acx100.sourceforge.net/
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   SUBMENU:=Wireless Drivers
   FILES:= \
 		$(PKG_BUILD_DIR)/acx.$(LINUX_KMOD_SUFFIX)

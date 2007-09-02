@@ -24,7 +24,6 @@ define KernelPackage/sangam-atm-annex-a
   DEPENDS:=@LINUX_2_6_AR7 +kmod-atm 
   TITLE:=AR7 ADSL driver (Annex A, ADSL over POTS)
   DESCRIPTION:=The AR7 ADSL driver for Annex A (ADSL over POTS)
-  VERSION:=$(PKG_VERSION)+$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)
   FILES:=$(PKG_BUILD_DIR)/tiatm.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,tiatm)
 endef

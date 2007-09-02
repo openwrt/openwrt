@@ -26,7 +26,6 @@ define KernelPackage/mac80211
   KCONFIG:=CONFIG_MAC80211
   DESCRIPTION:=\
 	This package contains the DeviceScape 80211 wireless stack.
-  VERSION:=$(PKG_RELEASE)+$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)
   FILES:= \
 	$(PKG_BUILD_DIR)/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/mac80211/rc80211_lowest.$(LINUX_KMOD_SUFFIX) \
