@@ -1,0 +1,30 @@
+--- linux-2.4.34-old/drivers/usb/serial/usbserial.c	2007-08-27 15:32:14.000000000 +0200
++++ linux-2.4.34-new/drivers/usb/serial/usbserial.c	2007-09-02 14:10:52.000000000 +0200
+@@ -331,6 +331,7 @@
+ #ifdef CONFIG_USB_SERIAL_GENERIC
+ static __u16	vendor	= 0x05f9;
+ static __u16	product	= 0xffff;
++static int	maxSize = 0;
+ 
+ static struct usb_device_id generic_device_ids[9]; /* Initially all zeroes. */
+ 
+@@ -1557,7 +1558,11 @@
+ 			err("No free urbs available");
+ 			goto probe_error;
+ 		}
++#ifdef CONFIG_USB_SERIAL_GENERIC
++		buffer_size = (endpoint->wMaxPacketSize > maxSize) ? endpoint->wMaxPacketSize : maxSize;
++#else
+ 		buffer_size = endpoint->wMaxPacketSize;
++#endif
+ 		port->bulk_in_endpointAddress = endpoint->bEndpointAddress;
+ 		port->bulk_in_buffer = kmalloc (buffer_size, GFP_KERNEL);
+ 		if (!port->bulk_in_buffer) {
+@@ -1945,4 +1950,7 @@
+ 
+ MODULE_PARM(product, "h");
+ MODULE_PARM_DESC(product, "User specified USB idProduct");
++
++MODULE_PARM(maxSize,"i");
++MODULE_PARM_DESC(maxSize,"User specified USB endpoint size");
+ #endif
