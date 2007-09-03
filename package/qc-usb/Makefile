@@ -20,7 +20,6 @@ PKG_MD5SUM:=6f6787e1dda11ca3b936ad434154f426
 PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
-include $(INCLUDE_DIR)/kernel.mk
 
 define Package/qc-usb-utils
   SECTION:=utils
