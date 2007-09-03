@@ -80,8 +80,8 @@ define Build/Compile
 	(cd $(PKG_BUILD_DIR); rm -f config.cache; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
+		CPPFLAGS="$(TARGET_CPPFLAGS)" \
+		LDFLAGS="$(TARGET_LDFLAGS)" \
 		./configure \
 			--target=$(GNU_TARGET_NAME) \
 			--host=$(GNU_TARGET_NAME) \
