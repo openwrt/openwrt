@@ -107,18 +107,6 @@ RSTRIP:= \
   STRIP_KMOD="$(TARGET_CROSS)strip --strip-unneeded --remove-section=.comment" \
   $(SCRIPT_DIR)/rstrip.sh
 
-# where to build (and put) .ipk packages
-IPKG:= \
-  IPKG_TMP=$(TMP_DIR)/ipkg \
-  IPKG_INSTROOT=$(TARGET_DIR) \
-  IPKG_CONF_DIR=$(STAGING_DIR)/etc \
-  IPKG_OFFLINE_ROOT=$(TARGET_DIR) \
-  $(SCRIPT_DIR)/ipkg -force-defaults -force-depends
-
-# invoke ipkg-build with some default options
-IPKG_BUILD:= \
-  ipkg-build -c -o 0 -g 0
-
 ifeq ($(CONFIG_ENABLE_LOCALE),true)
   DISABLE_NLS:=
 else
