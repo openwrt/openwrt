@@ -48,12 +48,12 @@ define Package/fonera-mp3d/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mp3d $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/cli/mplay $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/www/cgi-bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/cgi/mp3.cgi $(1)/www/cgi-bin/
+	ln -sf mp3.cgi $(1)/www/cgi-bin/mp3_cmd.cgi
+	ln -sf mp3.cgi $(1)/www/cgi-bin/mp3_json.cgi 
+	ln -sf mp3.cgi $(1)/www/cgi-bin/mp3_remote.cgi 
 	$(INSTALL_DIR) $(1)/www/local
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/cgi/{stylesheet.css,json.js} $(1)/www/local
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/cgi/mp3.cgi $(1)/www/cgi-bin
-	ln -s mp3.cgi $(1)/www/cgi-bin/mp3_cmd.cgi
-	ln -s mp3.cgi $(1)/www/cgi-bin/mp3_json.cgi 
-	ln -s mp3.cgi $(1)/www/cgi-bin/mp3_remote.cgi 
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/cgi/{stylesheet.css,json.js} $(1)/www/local/
 endef
 
 $(eval $(call BuildPackage,fonera-mp3d))
