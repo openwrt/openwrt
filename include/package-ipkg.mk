@@ -5,6 +5,18 @@
 # See /LICENSE for more information.
 #
 
+# where to build (and put) .ipk packages
+IPKG:= \
+  IPKG_TMP=$(TMP_DIR)/ipkg \
+  IPKG_INSTROOT=$(TARGET_DIR) \
+  IPKG_CONF_DIR=$(STAGING_DIR)/etc \
+  IPKG_OFFLINE_ROOT=$(TARGET_DIR) \
+  $(SCRIPT_DIR)/ipkg -force-defaults -force-depends
+
+# invoke ipkg-build with some default options
+IPKG_BUILD:= \
+  ipkg-build -c -o 0 -g 0
+
 define BuildIPKGVariable
   $(call shexport,Package/$(1)/$(2))
   $(1)_COMMANDS += var2file "$(call shvar,Package/$(1)/$(2))" $(2);
