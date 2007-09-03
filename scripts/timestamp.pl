@@ -47,7 +47,7 @@ while (@ARGV > 0) {
 	} else {
 		my ($tmp, $fname) = get_ts($path, $options{"findopts"});
 		if ($tmp > $ts) {
-			if ($options{'-f'}) {
+			if ($options{'-F'}) {
 				$n = $fname;
 			} else {
 				$n = $path;
