@@ -104,7 +104,8 @@ $(call KernelPackage/$(1)/description)
     endef
   endif
 
-  ifneq ($(if $(KCONFIG),$(filter m,$(foreach c,$(filter-out %=y %=n %=m,$(KCONFIG)),$($(c)))),.),)
+  # check that all CONFIG_* symbols in $(KCONFIG) are set to 'm'
+  ifeq ($(filter-out m,$(foreach c,$(filter-out %=y %=n %=m,$(KCONFIG)),$(if $($(c)),$($(c)),n))),)
     ifneq ($(strip $(FILES)),)
       define Package/kmod-$(1)/install
 		  mkdir -p $$(1)/lib/modules/$(LINUX_VERSION)

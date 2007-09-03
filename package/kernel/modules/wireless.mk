@@ -20,9 +20,17 @@ define KernelPackage/ieee80211
 	- ieee80211_crypt_tkip \\\
 	- ieee80211_crytp_ccmp
   DEPENDS:=@LINUX_2_6 +kmod-crypto
-  KCONFIG:=CONFIG_IEEE80211
+  KCONFIG:= \
+	CONFIG_IEEE80211 \
+	CONFIG_IEEE80211_CRYPT_WEP \
+	CONFIG_IEEE80211_CRYPT_CCMP \
+	CONFIG_IEEE80211_CRYPT_TKIP
   FILES:= \
-  	$(LINUX_DIR)/net/ieee80211/*.$(LINUX_KMOD_SUFFIX)
+  	$(LINUX_DIR)/net/ieee80211/ieee80211_crypt.$(LINUX_KMOD_SUFFIX) \
+  	$(LINUX_DIR)/net/ieee80211/ieee80211.$(LINUX_KMOD_SUFFIX) \
+  	$(LINUX_DIR)/net/ieee80211/ieee80211_crypt_wep.$(LINUX_KMOD_SUFFIX) \
+  	$(LINUX_DIR)/net/ieee80211/ieee80211_crypt_tkip.$(LINUX_KMOD_SUFFIX) \
+  	$(LINUX_DIR)/net/ieee80211/ieee80211_crypt_ccmp.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,10, \
 	ieee80211_crypt \
 	ieee80211 \
@@ -40,8 +48,7 @@ define KernelPackage/ieee80211-softmac
   TITLE:=ieee80211 SoftMAC support
   DEPENDS:=kmod-ieee80211
   KCONFIG:=CONFIG_IEEE80211_SOFTMAC
-  FILES:= \
-	$(LINUX_DIR)/net/ieee80211/softmac/*.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/ieee80211/softmac/ieee80211softmac.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,ieee80211softmac)
 endef
 

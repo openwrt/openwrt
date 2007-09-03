@@ -12,17 +12,20 @@ P_XT:=netfilter/
 endif
 
 define nf_add
-$(1)-$$($(2)) += $(3)
-KCONFIG_$(1) += $(2)
+ $(1)-$$($(2)) += $(3)
+ ifeq ($$($(2)),m)
+  KCONFIG_$(1) += $(2)
+ endif
 endef
+
 IPT_CONNTRACK-m :=
-$(eval $(call nf_add,IPT_CONNTRACK,CONFIG_IP_NF_MATCH_CONNMARK, $(P_V4)ipt_connmark))
-$(eval $(call nf_add,IPT_CONNTRACK,CONFIG_IP_NF_TARGET_CONNMARK, $(P_V4)ipt_CONNMARK))
-$(eval $(call nf_add,IPT_CONNTRACK,CONFIG_IP_NF_MATCH_CONNTRACK, $(P_V4)ipt_conntrack))
 $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_IP_NF_MATCH_HELPER, $(P_V4)ipt_helper))
 $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_IP_NF_MATCH_STATE, $(P_V4)ipt_state))
+$(eval $(call nf_add,IPT_CONNTRACK,CONFIG_IP_NF_MATCH_CONNMARK, $(P_V4)ipt_connmark))
 $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_NETFILTER_XT_MATCH_CONNMARK, $(P_XT)xt_connmark))
+$(eval $(call nf_add,IPT_CONNTRACK,CONFIG_IP_NF_TARGET_CONNMARK, $(P_V4)ipt_CONNMARK))
 $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_NETFILTER_XT_TARGET_CONNMARK, $(P_XT)xt_CONNMARK))
+$(eval $(call nf_add,IPT_CONNTRACK,CONFIG_IP_NF_MATCH_CONNTRACK, $(P_V4)ipt_conntrack))
 $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_NETFILTER_XT_MATCH_CONNTRACK, $(P_XT)xt_conntrack))
 $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_NETFILTER_XT_MATCH_HELPER, $(P_XT)xt_helper))
 $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_NETFILTER_XT_MATCH_STATE, $(P_XT)xt_state))

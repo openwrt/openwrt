@@ -14,10 +14,12 @@ define KernelPackage/atm
   DESCRIPTION:= \
     Kernel modules for ATM support
   DEPENDS:=@LINUX_2_6
-  KCONFIG:=CONFIG_ATM
+  KCONFIG:= \
+	CONFIG_ATM \
+	CONFIG_ATM_BR2684
   FILES:= \
-    $(LINUX_DIR)/net/atm/atm.$(LINUX_KMOD_SUFFIX) \
-    $(LINUX_DIR)/net/atm/br2684.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/net/atm/atm.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/atm/br2684.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,atm br2684)
 endef
 
@@ -55,18 +57,14 @@ define KernelPackage/ipip
   DESCRIPTION:=\
 	Kernel modules for IP in IP encapsulation
   KCONFIG:=CONFIG_NET_IPIP
-endef
-
-define KernelPackage/ipip/2.4
   FILES:=$(LINUX_DIR)/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,ipip)
 endef
 
 define KernelPackage/ipip/2.6
-  FILES:= \
-	$(LINUX_DIR)/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/ipv4/tunnel4.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,ipip tunnel4)
+  KCONFIG+=CONFIG_INET_TUNNEL
+  FILES+=$(LINUX_DIR)/net/ipv4/tunnel4.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD+=$(call AutoLoad,31,tunnel4)
 endef
 
 $(eval $(call KernelPackage,ipip))
@@ -81,7 +79,9 @@ define KernelPackage/ipsec
 	- af_key\\\
 	- xfrm_user
   DEPENDS:=@LINUX_2_6
-  KCONFIG:=CONFIG_NET_KEY
+  KCONFIG:= \
+	CONFIG_NET_KEY \
+	CONFIG_XFRM_USER
   FILES:= \
 	$(LINUX_DIR)/net/key/af_key.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/net/xfrm/xfrm_user.$(LINUX_KMOD_SUFFIX)
@@ -101,7 +101,11 @@ define KernelPackage/ipsec4
 	- ipcomp\\\
 	- xfrm4_tunnel
   DEPENDS:=kmod-ipsec
-  KCONFIG:=CONFIG_INET_AH
+  KCONFIG:= \
+	CONFIG_INET_AH \
+	CONFIG_INET_ESP \
+	CONFIG_INET_IPCOMP \
+	CONFIG_INET_XFRM_TUNNEL
   FILES:= $(foreach mod,ah4 esp4 ipcomp xfrm4_tunnel, \
 	$(LINUX_DIR)/net/ipv4/$(mod).$(LINUX_KMOD_SUFFIX) \
   )
@@ -122,7 +126,12 @@ define KernelPackage/ipsec6
 	- xfrm6_tunnel\\\
 	- tunnel6
   DEPENDS:=kmod-ipsec
-  KCONFIG:=CONFIG_INET6_AH
+  KCONFIG:= \
+	CONFIG_INET6_AH \
+	CONFIG_INET6_ESP \
+	CONFIG_INET6_IPCOMP \
+	CONFIG_INET6_XFRM_TUNNEL \
+	CONFIG_INET6_TUNNEL
   FILES:= $(foreach mod,ah6 esp6 ipcomp6 xfrm6_tunnel tunnel6, \
 	$(LINUX_DIR)/net/ipv6/$(mod).$(LINUX_KMOD_SUFFIX) \
   )
@@ -137,17 +146,14 @@ define KernelPackage/ipv6
   DESCRIPTION:=\
 	Kernel modules for IPv6 support
   KCONFIG:=CONFIG_IPV6
+  FILES:=$(LINUX_DIR)/net/ipv6/ipv6.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,ipv6)
 endef
 
-define KernelPackage/ipv6/2.4
-  FILES:=$(LINUX_DIR)/net/ipv6/ipv6.$(LINUX_KMOD_SUFFIX)
-endef
-
 define KernelPackage/ipv6/2.6
-  FILES:= \
-	$(LINUX_DIR)/net/ipv6/ipv6.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/ipv6/sit.$(LINUX_KMOD_SUFFIX)
+  KCONFIG+=CONFIG_IPV6_SIT
+  FILES+=$(LINUX_DIR)/net/ipv6/sit.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD+=$(call AutoLoad,21,sit)
 endef
 
 $(eval $(call KernelPackage,ipv6))
@@ -183,23 +189,25 @@ define KernelPackage/ppp
   TITLE:=PPP modules
   DESCRIPTION:=\
 	Kernel modules for PPP support
-  KCONFIG:=CONFIG_PPP
+  KCONFIG:= \
+	CONFIG_PPP \
+	CONFIG_PPP_ASYNC
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/ppp_async.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/net/ppp_generic.$(LINUX_KMOD_SUFFIX) \
+  	$(LINUX_DIR)/drivers/net/slhc.$(LINUX_KMOD_SUFFIX)
 endef
 
 define KernelPackage/ppp/2.4
-  FILES:= \
-	$(LINUX_DIR)/drivers/net/ppp_async.o \
-	$(LINUX_DIR)/drivers/net/ppp_generic.o \
-	$(LINUX_DIR)/drivers/net/slhc.o
   AUTOLOAD:=$(call AutoLoad,30,slhc ppp_generic ppp_async)
 endef
 
 define KernelPackage/ppp/2.6
+  KCONFIG+= \
+	CONFIG_SLHC \
+	CONFIG_CRC_CCITT
   FILES:= \
-	$(LINUX_DIR)/drivers/net/ppp_async.ko \
-	$(LINUX_DIR)/drivers/net/ppp_generic.ko \
-	$(LINUX_DIR)/drivers/net/slhc.ko \
-	$(LINUX_DIR)/lib/crc-ccitt.ko
+	$(LINUX_DIR)/lib/crc-ccitt.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,crc-ccitt slhc ppp_generic ppp_async)
 endef
 
@@ -254,15 +262,16 @@ define KernelPackage/mppe
   TITLE:=Microsoft PPP compression/encryption
   DESCRIPTION:=Kernel modules for Microsoft PPP compression/encryption
   DEPENDS:=kmod-ppp
-  KCONFIG:=CONFIG_PPP_MPPE_MPPC CONFIG_PPP_MPPE
 endef
 
 define KernelPackage/mppe/2.4
+  KCONFIG:=CONFIG_PPP_MPPE_MPPC
   FILES:=$(LINUX_DIR)/drivers/net/ppp_mppe_mppc.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,31,ppp_mppe_mppc)
 endef
 
 define KernelPackage/mppe/2.6
+  KCONFIG:=CONFIG_PPP_MPPE
   FILES:=$(LINUX_DIR)/drivers/net/ppp_mppe.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,31,ppp_mppe)
 endef
@@ -275,18 +284,20 @@ define KernelPackage/sched
   TITLE:=Traffic schedulers
   DESCRIPTION:=\
 	Kernel schedulers for IP traffic
+  KCONFIG:=CONFIG_NET_SCHED
   FILES:=$(LINUX_DIR)/net/sched/*.$(LINUX_KMOD_SUFFIX)
 endef
 
 $(eval $(call KernelPackage,sched))
 
 
-
 define KernelPackage/ax25
   SUBMENU:=$(NSMENU)
   TITLE:=AX25 support
   DESCRIPTION:=Kernel modules for AX25 support
-  KCONFIG:=CONFIG_AX25 CONFIG_MKISS
+  KCONFIG:= \
+	CONFIG_AX25 \
+	CONFIG_MKISS
   FILES:= \
 	$(LINUX_DIR)/net/ax25/ax25.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/net/hamradio/mkiss.$(LINUX_KMOD_SUFFIX)
@@ -306,8 +317,16 @@ define KernelPackage/mp-alg
 	specifying which algorithm to use for routes. \\\
 	quagga (at least <=0.99.6) requires a multipath patch to support this \\\
 	cached mp route feature.
-  KCONFIG:=CONFIG_IP_ROUTE_MULTIPATH_RR CONFIG_IP_ROUTE_MULTIPATH_RANDOM CONFIG_IP_ROUTE_MULTIPATH_WRANDOM CONFIG_IP_ROUTE_MULTIPATH_DRR
-  FILES:=$(LINUX_DIR)/net/ipv4/multipath_*.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:= \
+	CONFIG_IP_ROUTE_MULTIPATH_RR \
+	CONFIG_IP_ROUTE_MULTIPATH_RANDOM \
+	CONFIG_IP_ROUTE_MULTIPATH_WRANDOM \
+	CONFIG_IP_ROUTE_MULTIPATH_DRR
+  FILES:= \
+	$(LINUX_DIR)/net/ipv4/multipath_rr.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/ipv4/multipath_random.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/ipv4/multipath_wrandom.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/ipv4/multipath_drr.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,35,multipath_rr multipath_random multipath_wrandom multipath_drr)
 endef
 
