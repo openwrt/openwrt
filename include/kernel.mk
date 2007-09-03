@@ -44,7 +44,7 @@ else
   TESTING:=$(if $(findstring -rc,$(LINUX_VERSION)),/testing,)
   LINUX_SITE:=@KERNEL/linux/kernel/v$(KERNEL)$(TESTING) \
 
-  PKG_BUILD_DIR ?= $(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+  PKG_BUILD_DIR ?= $(KERNEL_BUILD_DIR)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
 endif
 GENERIC_PLATFORM_DIR := $(TOPDIR)/target/linux/generic-$(KERNEL)
 GENERIC_PATCH_DIR := $(GENERIC_PLATFORM_DIR)/patches$(shell [ -d "$(GENERIC_PLATFORM_DIR)/patches-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
