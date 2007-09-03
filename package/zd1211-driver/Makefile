@@ -9,15 +9,13 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=zd1211
+PKG_NAME:=zd1211-driver
 PKG_VERSION:=r85
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-driver-$(PKG_VERSION).tgz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tgz
 PKG_SOURCE_URL:=@openwrt/
 PKG_MD5SUM:=885cf08742c95cc416258257b5842b22
-
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-driver-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
