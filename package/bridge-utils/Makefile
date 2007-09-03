@@ -7,18 +7,16 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=bridge
+PKG_NAME:=bridge-utils
 PKG_VERSION:=1.0.6
 PKG_RELEASE:=1
 
-PKG_SOURCE:=bridge-utils-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/bridge
 PKG_MD5SUM:=9b7dc52656f5cbec846a7ba3299f73bd
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/bridge-utils-$(PKG_VERSION)
-
-include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/bridge
