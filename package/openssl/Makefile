@@ -69,8 +69,8 @@ define Build/Configure
 		./Configure linux-openwrt \
 			--prefix=/usr \
 			--openssldir=/etc/ssl \
-			-I$(STAGING_DIR)/usr/include \
-			-L$(STAGING_DIR)/usr/lib -ldl \
+			$(TARGET_CPPFLAGS) \
+			$(TARGET_LDFLAGS) -ldl \
 			-DOPENSSL_SMALL_FOOTPRINT \
 			$(OPENSSL_NO_CIPHERS) \
 			$(OPENSSL_OPTIONS) \
