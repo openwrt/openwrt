@@ -97,8 +97,8 @@ TARGET_CONFIGURE_OPTS:= \
   RANLIB=$(TARGET_CROSS)ranlib \
   STRIP=$(TARGET_CROSS)strip \
   OBJCOPY=$(TARGET_CROSS)objcopy \
-	OBJDUMP=$(TARGET_CROSS)objdump \
-	SIZE=$(TARGET_CROSS)size
+  OBJDUMP=$(TARGET_CROSS)objdump \
+  SIZE=$(TARGET_CROSS)size
 
 # strip an entire directory
 RSTRIP:= \
@@ -109,7 +109,6 @@ RSTRIP:= \
 
 # where to build (and put) .ipk packages
 IPKG:= \
-  PATH="$(STAGING_DIR_HOST)/bin:$(PATH)" \
   IPKG_TMP=$(TMP_DIR)/ipkg \
   IPKG_INSTROOT=$(TARGET_DIR) \
   IPKG_CONF_DIR=$(STAGING_DIR)/etc \
