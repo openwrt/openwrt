@@ -12,8 +12,6 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=kmod-switch
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
-
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/switch
