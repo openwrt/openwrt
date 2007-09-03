@@ -72,7 +72,10 @@ define KernelPackage/lp
   SUBMENU:=$(EMENU)
   TITLE:=Parallel port and line printer support
   DEPENDS:=@LINUX_2_4
-  KCONFIG:=CONFIG_PARPORT
+  KCONFIG:= \
+	CONFIG_PARPORT \
+	CONFIG_PRINTER \
+	CONFIG_PPDEV
   FILES:= \
 	$(LINUX_DIR)/drivers/parport/parport.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/char/lp.$(LINUX_KMOD_SUFFIX) \
@@ -96,17 +99,41 @@ define KernelPackage/soundcore/2.4
 endef
 
 define KernelPackage/soundcore/2.6
+  KCONFIG+= \
+	CONFIG_SND \
+	CONFIG_SND_HWDEP \
+	CONFIG_SND_RAWMIDI \
+	CONFIG_SND_TIMER \
+	CONFIG_SND_PCM
   FILES:= \
 	$(LINUX_DIR)/sound/soundcore.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/sound/core/*.$(LINUX_KMOD_SUFFIX) \
-	$(if $(CONFIG_SND_MIXER_OSS)$(CONFIG_SND_PCM_OSS),$(LINUX_DIR)/sound/core/oss/*.$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,30,soundcore snd snd-page-alloc snd-hwdep snd-rawmidi snd-timer snd-pcm $(if $(CONFIG_SND_MIXER_OSS),snd-mixer-oss) $(if $(CONFIG_SND_PCM_OSS),snd-pcm-oss))
+	$(LINUX_DIR)/sound/core/snd.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/sound/core/snd-page-alloc.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/sound/core/snd-hwdep.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/sound/core/snd-rawmidi.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/sound/core/snd-timer.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/sound/core/snd-pcm.$(LINUX_KMOD_SUFFIX) \
+	$(if $(CONFIG_SND_MIXER_OSS),$(LINUX_DIR)/sound/core/oss/snd-mixer-oss.$(LINUX_KMOD_SUFFIX)) \
+	$(if $(CONFIG_SND_PCM_OSS),$(LINUX_DIR)/sound/core/oss/snd-pcm-oss.$(LINUX_KMOD_SUFFIX))
+  AUTOLOAD:=$(call AutoLoad,30, \
+	soundcore \
+	snd \
+	snd-page-alloc \
+	snd-hwdep \
+	snd-rawmidi \
+	snd-timer \
+	snd-pcm \
+	$(if $(CONFIG_SND_MIXER_OSS),snd-mixer-oss) \
+	$(if $(CONFIG_SND_PCM_OSS),snd-pcm-oss) \
+  )
 endef
 
 define KernelPackage/soundcore/uml-2.6
+  KCONFIG+= \
+	CONFIG_HOSTAUDIO
   FILES:= \
-	$(LINUX_DIR)/arch/um/drivers/hostaudio.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/sound/soundcore.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/sound/soundcore.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/arch/um/drivers/hostaudio.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,soundcore hostaudio)
 endef
 
@@ -142,8 +169,13 @@ define KernelPackage/capi
   TITLE:=CAPI Support
   DESCRIPTION:=Kernel module for basic CAPI support
   DEPENDS:=@LINUX_2_6
-  KCONFIG:=CONFIG_ISDN CONFIG_ISDN_CAPI CONFIG_ISDN_CAPI_CAPI20
-  FILES:=$(LINUX_DIR)/drivers/isdn/capi/*capi.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:= \
+	CONFIG_ISDN \
+	CONFIG_ISDN_CAPI \
+	CONFIG_ISDN_CAPI_CAPI20
+  FILES:= \
+	$(LINUX_DIR)/drivers/isdn/capi/kernelcapi.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/isdn/capi/capi.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,kernelcapi capi)
 endef
 
@@ -155,30 +187,43 @@ define KernelPackage/pcmcia-core
   TITLE:=PCMCIA/CardBus support
   DESCRIPTION:=Kernel support for PCMCIA/CardBus controllers
   DEPENDS:=@PCMCIA_SUPPORT
-  KCONFIG:=CONFIG_PCMCIA CONFIG_PCCARD CONFIG_PCMCIA_AU1X00
 endef
 
-ifneq ($(CONFIG_LINUX_2_6_AU1000),)
-  PCMCIA_SOCKET_DRIVER:=au1x00_ss
-else
-  PCMCIA_SOCKET_DRIVER:=yenta_socket
-endif
-
 define KernelPackage/pcmcia-core/2.4
+  KCONFIG:= \
+	CONFIG_PCMCIA \
+	CONFIG_CARDBUS
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/$(PCMCIA_SOCKET_DRIVER).$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/ds.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,pcmcia_core $(PCMCIA_SOCKET_DRIVER) ds)
+	$(LINUX_DIR)/drivers/pcmcia/ds.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,pcmcia_core yenta_socket ds)
 endef
 
 define KernelPackage/pcmcia-core/2.6
+  KCONFIG:= \
+	CONFIG_PCCARD \
+	CONFIG_PCMCIA \
+	CONFIG_YENTA \
+	CONFIG_PCCARD_NONSTATIC \
+	PCMCIA_DEBUG=n
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/$(PCMCIA_SOCKET_DRIVER).$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,pcmcia_core pcmcia rsrc_nonstatic $(PCMCIA_SOCKET_DRIVER))
+	$(LINUX_DIR)/drivers/pcmcia/pcmcia.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,pcmcia_core pcmcia rsrc_nonstatic yenta_socket)
 endef
+
+define KernelPackage/pcmcia-core/au1000-2.6
+  FILES:= \
+	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/pcmcia.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/au1x00_ss.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,pcmcia_core pcmcia rsrc_nonstatic au1x00_ss)
+endef
+
 
 $(eval $(call KernelPackage,pcmcia-core))
 
@@ -188,15 +233,16 @@ define KernelPackage/pcmcia-serial
   TITLE:=Serial devices support
   DESCRIPTION:=Kernel support for PCMCIA/CardBus serial devices
   DEPENDS:=kmod-pcmcia-core
-  KCONFIG:=CONFIG_PCMCIA_SERIAL_CS CONFIG_SERIAL_8250_CS
   AUTOLOAD:=$(call AutoLoad,45,serial_cs)
 endef
 
 define KernelPackage/pcmcia-serial/2.4
+  KCONFIG:=CONFIG_PCMCIA_SERIAL_CS
   FILES:=$(LINUX_DIR)/drivers/char/pcmcia/serial_cs.$(LINUX_KMOD_SUFFIX)
 endef
 
 define KernelPackage/pcmcia-serial/2.6
+  KCONFIG:=CONFIG_SERIAL_8250_CS
   FILES:=$(LINUX_DIR)/drivers/serial/serial_cs.$(LINUX_KMOD_SUFFIX)
 endef
 
@@ -208,10 +254,17 @@ define KernelPackage/bluetooth
   TITLE:=Bluetooth support
   DEPENDS:=@USB_SUPPORT
   DESCRIPTION:=Kernel support for Bluetooth devices
-  KCONFIG:=CONFIG_BLUEZ CONFIG_BT CONFIG_USB_BLUETOOTH
- endef
+endef
 
- define KernelPackage/bluetooth/2.4
+define KernelPackage/bluetooth/2.4
+  KCONFIG:= \
+	CONFIG_BLUEZ \
+	CONFIG_BLUEZ_L2CAP \
+	CONFIG_BLUEZ_SCO \
+	CONFIG_BLUEZ_RFCOMM \
+	CONFIG_BLUEZ_BNEP \
+	CONFIG_BLUEZ_HCIUART \
+	CONFIG_BLUEZ_HCIUSB
   FILES:= \
 	$(LINUX_DIR)/net/bluetooth/bluez.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
@@ -224,6 +277,14 @@ define KernelPackage/bluetooth
 endef
 
 define KernelPackage/bluetooth/2.6
+  KCONFIG:= \
+	CONFIG_BT \
+	CONFIG_BT_L2CAP \
+	CONFIG_BT_SCO \
+	CONFIG_BT_RFCOMM \
+	CONFIG_BT_BNEP \
+	CONFIG_BT_HCIUSB \
+	CONFIG_BT_HCIUART
   FILES:= \
 	$(LINUX_DIR)/net/bluetooth/bluetooth.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
@@ -243,7 +304,10 @@ define KernelPackage/mmc
   TITLE:=MMC/SD Card Support
   DEPENDS:=@LINUX_2_6_AT91
   DESCRIPTION:=Kernel support for MMC/SD cards
-  KCONFIG:=CONFIG_MMC
+  KCONFIG:= \
+	CONFIG_MMC \
+	CONFIG_MMC_BLOCK \
+	CONFIG_MMC_AT91
   FILES:= \
 	$(LINUX_DIR)/drivers/mmc/mmc_core.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/mmc/mmc_block.$(LINUX_KMOD_SUFFIX) \
@@ -278,15 +342,25 @@ define KernelPackage/videodev
   TITLE=Video4Linux support
   DESCRIPTION:=Kernel modules for Video4Linux support
   KCONFIG:=CONFIG_VIDEO_DEV
-  FILES:=$(LINUX_DIR)/drivers/media/video/*.$(LINUX_KMOD_SUFFIX)
 endef
 
 define KernelPackage/videodev/2.4
+  FILES:=$(LINUX_DIR)/drivers/media/video/videodev.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,videodev)
 endef
 
 define KernelPackage/videodev/2.6
-  AUTOLOAD:=$(call AutoLoad,60,v4l2-common v4l1-compat compat_ioctl32 videodev)
+  FILES:= \
+	$(LINUX_DIR)/drivers/media/video/v4l2-common.$(LINUX_KMOD_SUFFIX) \
+	$(if $(CONFIG_VIDEO_V4L1_COMPAT),$(LINUX_DIR)/drivers/media/video/v4l1-compat.$(LINUX_KMOD_SUFFIX)) \
+	$(LINUX_DIR)/drivers/media/video/compat_ioctl32.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/media/video/videodev.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,60, \
+	v4l2-common \
+	$(if $(CONFIG_VIDEO_V4L1_COMPAT),v4l1-compat) \
+	compat_ioctl32 \
+	videodev \
+  )
 endef
 
 $(eval $(call KernelPackage,videodev))
@@ -349,7 +423,10 @@ define KernelPackage/hwmon
   TITLE:=Hardware monitoring support
   DESCRIPTION:=Kernel modules for hardware monitoring
   DEPENDS:=@LINUX_2_6
-  KCONFIG:=CONFIG_HWMON_VID
+  KCONFIG:= \
+	CONFIG_HWMON \
+	CONFIG_HWMON_VID \
+	CONFIG_HWMON_DEBUG_CHIP=n
   FILES:= \
 	$(LINUX_DIR)/drivers/hwmon/hwmon.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/hwmon/hwmon-vid.$(LINUX_KMOD_SUFFIX)
