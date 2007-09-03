@@ -126,12 +126,14 @@ define Build/Compile
 endef
 
 define Build/Compile/PyMod
- cd $(PKG_BUILD_DIR); \
- $(1) \
- CFLAGS='-I$(STAGING_DIR)/usr/include' \
- LDFLAGS='$(TARGET_LDFLAGS) -L$(STAGING_DIR)/usr/lib' \
- $(STAGING_DIR)/usr/bin/hostpython ./setup.py $(2) \
- --prefix=$(PKG_INSTALL_DIR)/usr
+	( cd $(PKG_BUILD_DIR); \
+		CFLAGS="$(TARGET_CFLAGS)" \
+		CPPFLAGS="$(TARGET_CPPFLAGS)" \
+		LDFLAGS="$(TARGET_LDFLAGS)" \
+		$(1) \
+		$(STAGING_DIR)/usr/bin/hostpython ./setup.py $(2) \
+			--prefix="$(PKG_INSTALL_DIR)/usr" \
+	)
 endef
 
 $(PACKAGE_DIR):
