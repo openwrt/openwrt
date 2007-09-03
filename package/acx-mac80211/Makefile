@@ -17,8 +17,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.hauke-m.de/fileadmin/acx
 PKG_MD5SUM:=7c6c70722a5a2ad6ad25075467ea4909
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 PKG_FW_NAME:=tiacx111c16
 PKG_FW_URL:=http://teknoraver.campuslife.it/software/acx-mac80211/
 PKG_FW_MD5SUM:=7026826460376f6b174f9225bd7781b9

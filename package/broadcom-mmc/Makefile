@@ -13,8 +13,6 @@ PKG_NAME:=broadcom-mmc
 PKG_VERSION:=0.1
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
 
 MAKEFLAGS_KMOD:= -C "$(LINUX_DIR)" \
