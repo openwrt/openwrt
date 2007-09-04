@@ -99,16 +99,20 @@ EXPORT_SYMBOL(ar7_bus_clock);
 int ar7_dsp_clock = 0;
 EXPORT_SYMBOL(ar7_dsp_clock);
 
-static int gcd(int x, int y)
+static int gcd(int a, int b)
 {
-	if (x > y)
-		return (x % y) ? gcd(y, x % y) : y;
-	return (y % x) ? gcd(x, y % x) : x;
-}
+	int c;
 
-static inline int ABS(int x)
-{
-	return (x >= 0) ? x : -x;
+	if ( a < b) {
+		c = a;
+		a = b;
+		b = c;
+	}
+	while (c = (a % b)) {
+		a = b;
+		b = c;
+	}
+	return b;
 }
 
 static void approximate(int base, int target, int *prediv,
@@ -118,7 +122,7 @@ static void approximate(int base, int target, int *prediv,
 	for (i = 1; i <= 16; i++) {
 		for (j = 1; j <= 32; j++) {
 			for (k = 1; k <= 32; k++) {
-				freq = ABS(base / j * i / k - target);
+				freq = abs(base / j * i / k - target);
 				if (freq < res) {
 					res = freq;
 					*mul = i;
