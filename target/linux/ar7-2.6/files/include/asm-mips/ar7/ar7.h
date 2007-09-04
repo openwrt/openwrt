@@ -66,6 +66,11 @@
 #define AR7_IRQ_UART0  15
 #define AR7_IRQ_UART1  16
 
+/* Clocks */
+#define AR7_AFE_CLOCK  35328000
+#define AR7_REF_CLOCK  25000000
+#define AR7_XTAL_CLOCK 24000000
+
 struct plat_cpmac_data {
 	int reset_bit;
 	int power_bit;
