@@ -103,12 +103,12 @@ static int gcd(int a, int b)
 {
 	int c;
 
-	if ( a < b) {
+	if (a < b) {
 		c = a;
 		a = b;
 		b = c;
 	}
-	while (c = (a % b)) {
+	while ((c = (a % b))) {
 		a = b;
 		b = c;
 	}
