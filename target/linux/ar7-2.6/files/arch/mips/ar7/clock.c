@@ -92,10 +92,6 @@ struct tnetd7200_clocks {
 	struct tnetd7200_clock usb;
 } __attribute__ ((packed));
 
-int ar7_afe_clock = 35328000;
-int ar7_ref_clock = 25000000;
-int ar7_xtal_clock = 24000000;
-
 int ar7_cpu_clock = 150000000;
 EXPORT_SYMBOL(ar7_cpu_clock);
 int ar7_bus_clock = 125000000;
@@ -182,7 +178,7 @@ static int tnetd7300_get_clock(u32 shift, struct tnetd7300_clock *clock,
 	u32 *bootcr, u32 bus_clock)
 {
 	int product;
-	int base_clock = ar7_ref_clock;
+	int base_clock = AR7_REF_CLOCK;
 	u32 ctrl = clock->ctrl;
 	u32 pll = clock->pll;
 	int prediv = ((ctrl & PREDIV_MASK) >> PREDIV_SHIFT) + 1;
@@ -195,10 +191,10 @@ static int tnetd7300_get_clock(u32 shift, struct tnetd7300_clock *clock,
 		base_clock = bus_clock;
 		break;
 	case BOOT_PLL_SOURCE_REF:
-		base_clock = ar7_ref_clock;
+		base_clock = AR7_REF_CLOCK;
 		break;
 	case BOOT_PLL_SOURCE_XTAL:
-		base_clock = ar7_xtal_clock;
+		base_clock = AR7_XTAL_CLOCK;
 		break;
 	case BOOT_PLL_SOURCE_CPU:
 		base_clock = ar7_cpu_clock;
@@ -236,10 +232,10 @@ static void tnetd7300_set_clock(u32 shift, struct tnetd7300_clock *clock,
 		base_clock = ar7_bus_clock;
 		break;
 	case BOOT_PLL_SOURCE_REF:
-		base_clock = ar7_ref_clock;
+		base_clock = AR7_REF_CLOCK;
 		break;
 	case BOOT_PLL_SOURCE_XTAL:
-		base_clock = ar7_xtal_clock;
+		base_clock = AR7_XTAL_CLOCK;
 		break;
 	case BOOT_PLL_SOURCE_CPU:
 		base_clock = ar7_cpu_clock;
@@ -264,11 +260,11 @@ static void __init tnetd7300_init_clocks(void)
 	struct tnetd7300_clocks *clocks = (struct tnetd7300_clocks *)ioremap_nocache(AR7_REGS_POWER + 0x20, sizeof(struct tnetd7300_clocks)); 
 
 	ar7_bus_clock = tnetd7300_get_clock(BUS_PLL_SOURCE_SHIFT, 
-		&clocks->bus, bootcr, ar7_afe_clock);
+		&clocks->bus, bootcr, AR7_AFE_CLOCK);
 
 	if (*bootcr & BOOT_PLL_ASYNC_MODE) {
 		ar7_cpu_clock = tnetd7300_get_clock(CPU_PLL_SOURCE_SHIFT, 
-			&clocks->cpu, bootcr, ar7_afe_clock);
+			&clocks->cpu, bootcr, AR7_AFE_CLOCK);
 	} else {
 		ar7_cpu_clock = ar7_bus_clock;
 	}
@@ -334,23 +330,23 @@ static int tnetd7200_get_clock_base(int clock_id, u32 *bootcr)
 		// Async
 		switch (clock_id) {
 		case TNETD7200_CLOCK_ID_DSP:
-			return ar7_ref_clock;
+			return AR7_REF_CLOCK;
 		default:
-			return ar7_afe_clock;
-        	}
+			return AR7_AFE_CLOCK;
+		}
 	} else {
         	// Sync
 		if (*bootcr & BOOT_PLL_2TO1_MODE) {
 			// 2:1
 			switch (clock_id) {
 			case TNETD7200_CLOCK_ID_DSP:
-				return ar7_ref_clock;
+				return AR7_REF_CLOCK;
 			default:
-				return ar7_afe_clock;
+				return AR7_AFE_CLOCK;
 			}
         	} else {
 			// 1:1
-			return ar7_ref_clock;
+			return AR7_REF_CLOCK;
 		}
 	}
 }
