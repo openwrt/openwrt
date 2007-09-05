@@ -181,6 +181,13 @@ define Package/ip6tables
   TITLE:=IPv6 firewall administration tool
 endef
 
+define Package/ip6tables-utils
+ $(call Package/iptables/Default)
+ DEPENDS:=ip6tables
+ CATEGORY:=Network
+ TITLE:=ip6tables save and restore utilities
+endef
+
 define Build/Configure
 	rm -f $(PKG_BUILD_DIR)/.configured*
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -196,7 +203,7 @@ define Build/Compile
 		LDFLAGS="-rdynamic -static-libgcc" \
 		KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
+		all experimental install install-experimental
 endef
 
 define Build/InstallDev
@@ -252,6 +259,11 @@ define Package/ip6tables/install
 	)
 endef
 
+define Package/ip6tables-utils/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/ip6tables-{save,restore} $(1)/usr/sbin/
+endef
+
 define BuildPlugin
   define Package/$(1)/install
 	$(INSTALL_DIR) $$(1)/usr/lib/iptables
@@ -281,3 +293,4 @@ $(eval $(call BuildPlugin,iptables-mod-nat,$(IPT_NAT-m)))
 $(eval $(call BuildPlugin,iptables-mod-iprange,$(IPT_IPRANGE-m)))
 $(eval $(call BuildPlugin,iptables-mod-ulog,$(IPT_ULOG-m)))
 $(eval $(call BuildPackage,ip6tables))
+$(eval $(call BuildPackage,ip6tables-utils))
