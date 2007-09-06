@@ -110,7 +110,8 @@ define BuildKernel
 
   ifeq ($(DUMP),1)
     dumpinfo:
-		@echo 'Target: $(BOARD)-$(KERNEL)'
+		@echo 'Target: $(BOARD)'
+		@echo 'Target-Kernel: $(KERNEL)'
 		@echo 'Target-Name: $(BOARDNAME) [$(KERNEL)]'
 		@echo 'Target-Path: $(subst $(TOPDIR)/,,$(PWD))'
 		@echo 'Target-Arch: $(ARCH)'

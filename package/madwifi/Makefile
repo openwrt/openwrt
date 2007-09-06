@@ -43,12 +43,9 @@ ifeq ($(ARCH),powerpc)
 endif
 
 BUS:=PCI
-ifneq ($(CONFIG_LINUX_2_6_ATHEROS),)
+ifneq ($(CONFIG_TARGET_ATHEROS),)
   BUS:=AHB
   HAL_TARGET:=ap51
-endif
-ifneq ($(CONFIG_LINUX_2_6_ARUBA),)
-  BUS:=PCI AHB	# no suitable HAL for AHB yet.
 endif
 
 BUS_MODULES:=

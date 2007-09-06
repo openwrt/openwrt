@@ -21,7 +21,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/util-linux/Default
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@!LINUX_2_6_ETRAX
+  DEPENDS:=@!TARGET_ETRAX
   URL:=http://www.kernel.org/pub/linux/utils/util-linux/
 endef
 

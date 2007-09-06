@@ -25,13 +25,13 @@ define Package/broadcom-wl/Default
   CATEGORY:=Kernel modules
   DEPENDS:=@PACKAGE_kmod-brcm-wl||PACKAGE_kmod-brcm-wl-mimo
   SUBMENU:=Proprietary BCM43xx WiFi driver
-  SUBMENUDEP:=@LINUX_2_4_BRCM
+  SUBMENUDEP:=@TARGET_BRCM_2_4
 endef
 
 define KernelPackage/brcm-wl/Default
   $(call Package/broadcom-wl/Default)
   SECTION:=kernel
-  DEPENDS:=@LINUX_2_4_BRCM
+  DEPENDS:=@TARGET_BRCM_2_4
   TITLE:=Kernel driver for BCM43xx chipsets
   DESCRIPTION:=\
 	This package contains the proprietary wireless driver for the Broadcom \\\

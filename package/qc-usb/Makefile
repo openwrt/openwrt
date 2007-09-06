@@ -36,7 +36,7 @@ define KernelPackage/usb-qc
 	Kernel support for Logitech's QuickCam Express webcam and \\\
 	other webcams with similar chipsets.
   SUBMENU:=USB Support
-  DEPENDS:=@LINUX_2_6 @USB_SUPPORT @VIDEO_SUPPORT kmod-usb-core +kmod-videodev
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT kmod-usb-core +kmod-videodev
   FILES:=$(PKG_BUILD_DIR)/quickcam.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,quickcam)
 endef

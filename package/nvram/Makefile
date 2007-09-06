@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/nvram
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@LINUX_2_4_BRCM
+  DEPENDS:=@TARGET_BRCM_2_4
   TITLE:=Broadcom config utility
   DESCRIPTION:=\
 	This package contains an utility to control broadcom's 'nvram' config \\\

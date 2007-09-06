@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/switch
   SUBMENU:=Other modules
-  DEPENDS:=@LINUX_2_6_BRCM||LINUX_2_4_BRCM||LINUX_2_6_BRCM47XX
+  DEPENDS:=@TARGET_BRCM_2_4||TARGET_BRCM47XX
   TITLE:=Switch drivers
   DESCRIPTION:=\
 	This package contains switch drivers for ADM6996L and BCM53XX RoboSwitch.

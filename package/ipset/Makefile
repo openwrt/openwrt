@@ -21,7 +21,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/ipset
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=@!LINUX_2_6_ETRAX
+  DEPENDS:=@!TARGET_ETRAX
   TITLE:=Netfilter ip sets administration utility
   URL:=http://ipset.netfilter.org/
 endef

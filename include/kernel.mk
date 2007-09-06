@@ -30,9 +30,9 @@ else
     KERNEL_CROSS:=$(TARGET_CROSS)
   endif
 
-  PLATFORM_DIR := $(TOPDIR)/target/linux/$(BOARD)-$(KERNEL)
+  PLATFORM_DIR := $(TOPDIR)/target/linux/$(BOARD)
   PATCH_DIR ?= ./patches$(shell [ -d "./patches-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
-  KERNEL_BUILD_DIR ?= $(BUILD_DIR_BASE)/linux-$(KERNEL)-$(BOARD)$(if $(BUILD_SUFFIX),_$(BUILD_SUFFIX))
+  KERNEL_BUILD_DIR ?= $(BUILD_DIR_BASE)/linux-$(BOARD)$(if $(BUILD_SUFFIX),_$(BUILD_SUFFIX))
   LINUX_DIR ?= $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
 
   MODULES_SUBDIR:=lib/modules/$(LINUX_VERSION)
