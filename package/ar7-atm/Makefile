@@ -21,7 +21,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/sangam-atm-annex-a
   SUBMENU:=Network Devices
-  DEPENDS:=@LINUX_2_6_AR7 +kmod-atm 
+  DEPENDS:=@TARGET_AR7 +kmod-atm 
   TITLE:=AR7 ADSL driver (Annex A, ADSL over POTS)
   DESCRIPTION:=The AR7 ADSL driver for Annex A (ADSL over POTS)
   FILES:=$(PKG_BUILD_DIR)/tiatm.$(LINUX_KMOD_SUFFIX)

@@ -22,18 +22,17 @@ sub parse_target_metadata() {
 	my ($target, @target, $profile);	
 	while (<>) {
 		chomp;
-		/^Target:\s*((.+)-(\d+\.\d+))\s*$/ and do {
-			my $conf = uc $3.'_'.$2;
+		/^Target:\s*(.+)\s*$/ and do {
+			my $conf = uc $1;
 			$conf =~ tr/\.-/__/;
 			$target = {
-				id => $1,
 				conf => $conf,
-				board => $2,
-				kernel => $3,
+				board => $1,
 				profiles => []
 			};
 			push @target, $target;
 		};
+		/^Target-Kernel:\s*(\d+\.\d+)\s*$/ and $target->{kernel} = $1;
 		/^Target-Name:\s*(.+)\s*$/ and $target->{name} = $1;
 		/^Target-Path:\s*(.+)\s*$/ and $target->{path} = $1;
 		/^Target-Arch:\s*(.+)\s*$/ and $target->{arch} = $1;
@@ -203,27 +202,25 @@ sub gen_target_mk() {
 	my @target = parse_target_metadata();
 	
 	@target = sort {
-		$a->{id} cmp $b->{id}
+		$a->{board} cmp $b->{board}
 	} @target;
 	
 	foreach my $target (@target) {
 		my ($profiles_def, $profiles_eval);
-		my $conf = uc $target->{kernel}.'_'.$target->{board};
-		$conf =~ tr/\.-/__/;
-		
+
 		foreach my $profile (@{$target->{profiles}}) {
 			$profiles_def .= "
-  define Profile/$conf\_$profile->{id}
+  define Profile/$target->{conf}\_$profile->{id}
     ID:=$profile->{id}
     NAME:=$profile->{name}
     PACKAGES:=".join(" ", merge_package_lists($target->{packages}, $profile->{packages}))."\n";
 			$profile->{kconfig} and $profiles_def .= "    KCONFIG:=1\n";
 			$profiles_def .= "  endef";
 			$profiles_eval .= "
-\$(eval \$(call AddProfile,$conf\_$profile->{id}))"
+\$(eval \$(call AddProfile,$target->{conf}\_$profile->{id}))"
 		}
 		print "
-ifeq (\$(CONFIG_LINUX_$conf),y)
+ifeq (\$(CONFIG_TARGET_$target->{conf}),y)
   define Target
     KERNEL:=$target->{kernel}
     BOARD:=$target->{board}
@@ -268,7 +265,7 @@ sub gen_target_config() {
 	print <<EOF;
 choice
 	prompt "Target System"
-	default LINUX_2_4_BRCM
+	default TARGET_BRCM_2_4
 	reset if !DEVEL
 	
 EOF
@@ -289,7 +286,7 @@ EOF
 		}
 	
 		print <<EOF
-config LINUX_$target->{conf}
+config TARGET_$target->{conf}
 	bool "$target->{name}"
 	select $target->{arch}
 	select LINUX_$kernel
@@ -299,58 +296,6 @@ EOF
 	}
 
 	print <<EOF;
-if DEVEL
-
-config LINUX_2_6_ARM
-	bool "UNSUPPORTED little-endian arm platform"
-	depends BROKEN
-	select LINUX_2_6
-	select arm
-
-config LINUX_2_6_CRIS
-	bool "UNSUPPORTED cris platform"
-	depends BROKEN
-	select LINUX_2_6
-	select cris
-
-config LINUX_2_6_M68K
-	bool "UNSUPPORTED m68k platform"
-	depends BROKEN
-	select LINUX_2_6
-	select m68k
-
-config LINUX_2_6_SH3
-	bool "UNSUPPORTED little-endian sh3 platform"
-	depends BROKEN
-	select LINUX_2_6
-	select sh3
-
-config LINUX_2_6_SH3EB
-	bool "UNSUPPORTED big-endian sh3 platform"
-	depends BROKEN
-	select LINUX_2_6
-	select sh3eb
-
-config LINUX_2_6_SH4
-	bool "UNSUPPORTED little-endian sh4 platform"
-	depends BROKEN
-	select LINUX_2_6
-	select sh4
-
-config LINUX_2_6_SH4EB
-	bool "UNSUPPORTED big-endian sh4 platform"
-	depends BROKEN
-	select LINUX_2_6
-	select sh4eb
-
-config LINUX_2_6_SPARC
-	bool "UNSUPPORTED sparc platform"
-	depends BROKEN
-	select LINUX_2_6
-	select sparc
-
-endif
-
 endchoice
 
 choice
@@ -363,9 +308,9 @@ EOF
 		
 		foreach my $profile (@$profiles) {
 			print <<EOF;
-config LINUX_$target->{conf}_$profile->{id}
+config TARGET_$target->{conf}_$profile->{id}
 	bool "$profile->{name}"
-	depends LINUX_$target->{conf}
+	depends TARGET_$target->{conf}
 $profile->{config}
 EOF
 			$profile->{kconfig} and print "\tselect PROFILE_KCONFIG\n";

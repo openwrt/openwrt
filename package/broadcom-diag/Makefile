@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/diag
   SUBMENU:=Other modules
-  DEPENDS:=@LINUX_2_4_BRCM||LINUX_2_6_BRCM||LINUX_2_6_BRCM47XX
+  DEPENDS:=@TARGET_BRCM_2_4||TARGET_BRCM47XX
   TITLE:=Driver for router LEDs and Buttons
   FILES:=$(PKG_BUILD_DIR)/diag.$(LINUX_KMOD_SUFFIX)
 endef

@@ -23,7 +23,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/yamonenv
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@LINUX_2_6_AU1000
+  DEPENDS:=@TARGET_AU1000
   TITLE:=YAMON configuration utility
   URL:=http://meshcube.org/nylon/stable/sources/
 endef

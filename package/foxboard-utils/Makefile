@@ -27,7 +27,7 @@ define Package/foxboard-utils
   DESCRIPTION:=\
 	This package contains a collection of tools for configuring the foxboard gpio pins/leds 
   URL:=http://www.acmesystems.it
-  DEPENDS:=@LINUX_2_6_ETRAX
+  DEPENDS:=@TARGET_ETRAX
 endef
 
 define Build/Compile

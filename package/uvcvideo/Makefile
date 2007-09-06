@@ -21,7 +21,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/uvcvideo
   SUBMENU:=USB Support
-  DEPENDS:=@LINUX_2_6 kmod-usb-core kmod-videodev @VIDEO_SUPPORT
+  DEPENDS:=@LINUX_2_6 kmod-usb-core kmod-videodev
   TITLE:=Driver for Linux-UVC based USB cameras
   URL:=http://linux-uvc.berlios.de/
   FILES:=$(PKG_BUILD_DIR)/uvcvideo.$(LINUX_KMOD_SUFFIX)

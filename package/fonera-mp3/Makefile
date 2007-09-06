@@ -19,7 +19,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/fonera-mp3d
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@LINUX_2_6_ATHEROS
+  DEPENDS:=@TARGET_ATHEROS
   TITLE:=Daemon for fonera-mp3
   DESCRIPTION:=Daemon to drive a vs1011X mp3 decoder attached to the \
 	  fonera gpio pins

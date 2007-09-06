@@ -122,7 +122,7 @@ distclean:
 	rm -rf tmp build_dir staging_dir dl .config*
 
 ifeq ($(findstring v,$(DEBUG)),)
-  .SILENT: symlinkclean clean dirclean distclean config-clean download help tmpinfo-clean .config scripts/config/mconf scripts/config/conf menuconfig tmp/.prereq-build tmp/.prereq-package tmp/.prereq-target prepare-tmpinfo
+  .SILENT: symlinkclean clean dirclean distclean config-clean download help tmpinfo-clean .config scripts/config/mconf scripts/config/conf menuconfig tmp/.prereq-build tmp/.prereq-package prepare-tmpinfo
 endif
 .PHONY: help FORCE
 .NOTPARALLEL:
