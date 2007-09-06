@@ -39,10 +39,10 @@
 
 #define VLYNQ_CTRL_PM_ENABLE       0x80000000
 #define VLYNQ_CTRL_CLOCK_INT       0x00008000
-#define VLYNQ_CTRL_CLOCK_DIV(x)    ((x & 7) << 16)
+#define VLYNQ_CTRL_CLOCK_DIV(x)    (((x) & 7) << 16)
 #define VLYNQ_CTRL_INT_LOCAL       0x00004000
 #define VLYNQ_CTRL_INT_ENABLE      0x00002000
-#define VLYNQ_CTRL_INT_VECTOR(x)   ((x & 0x1f) << 8)
+#define VLYNQ_CTRL_INT_VECTOR(x)   (((x) & 0x1f) << 8)
 #define VLYNQ_CTRL_INT2CFG         0x00000080
 #define VLYNQ_CTRL_RESET           0x00000001
 
@@ -197,11 +197,11 @@ static irqreturn_t vlynq_irq(int irq, void *dev_id)
 }
 
 static struct irq_chip vlynq_irq_chip = {
-        .typename = "VLYNQ",
-        .name = "vlynq",
-        .unmask = vlynq_irq_unmask,
-        .mask = vlynq_irq_mask,
-        .set_type = vlynq_irq_type,
+	.typename = "VLYNQ",
+	.name = "vlynq",
+	.unmask = vlynq_irq_unmask,
+	.mask = vlynq_irq_mask,
+	.set_type = vlynq_irq_type,
 };
 
 static int vlynq_setup_irq(struct vlynq_device *dev)
@@ -452,14 +452,14 @@ static int vlynq_probe(struct platform_device *pdev)
 	if (!request_mem_region(regs_res->start, len, dev->dev.bus_id)) {
 		printk("%s: Can't request vlynq registers\n", dev->dev.bus_id);
 		result = -ENXIO;
-                goto fail_request;
+		goto fail_request;
 	}
 
 	dev->local = ioremap_nocache(regs_res->start, len);
-        if (!dev->local) {
+	if (!dev->local) {
 		printk("%s: Can't remap vlynq registers\n", dev->dev.bus_id);
 		result = -ENXIO;
-                goto fail_remap;
+		goto fail_remap;
 	}
 
 	dev->remote = (struct vlynq_regs *)((u32)dev->local + 128);

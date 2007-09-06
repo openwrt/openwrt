@@ -7,20 +7,22 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DROP_SECTIONS := .reginfo .mdebug .comment .note .pdr .options .MIPS.options
-OBJCOPY_SREC := $(TARGET_CROSS)objcopy -S -O srec $(addprefix --remove-section=,$(DROP_SECTIONS))
+DROP_SECTIONS:=.reginfo .mdebug .comment .note .pdr .options .MIPS.options
+OBJCOPY_SREC:=$(TARGET_CROSS)objcopy -S -O srec $(addprefix --remove-section=,$(DROP_SECTIONS))
 
-LOADADDR := 0x94600000
-KERNEL_ENTRY := 0x94100000
-RAMSTART := 0x94000000
-RAMSIZE := 0x00100000
+LOADADDR:=0x94600000
+KERNEL_ENTRY:=0x94100000
+RAMSTART:=0x94000000
+RAMSIZE:=0x00100000
+
+EVA_LOADADDR := 0x94100000
 
 LOADER_MAKEOPTS= \
-		KDIR=$(KDIR) \
-		LOADADDR=$(LOADADDR) \
-		KERNEL_ENTRY=$(KERNEL_ENTRY) \
-		RAMSTART=$(RAMSTART) \
-		RAMSIZE=$(RAMSIZE)
+	KDIR=$(KDIR) \
+	LOADADDR=$(LOADADDR) \
+	KERNEL_ENTRY=$(KERNEL_ENTRY) \
+	RAMSTART=$(RAMSTART) \
+	RAMSIZE=$(RAMSIZE)
 
 CFLAGS := -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
 	-fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic \

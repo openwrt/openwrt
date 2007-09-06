@@ -98,14 +98,14 @@ static struct resource cpmac_low_res[] = {
 		.name = "regs",
 		.flags = IORESOURCE_MEM,
 		.start = AR7_REGS_MAC0,
-		.end = AR7_REGS_MAC0 + 0x7FF,
+		.end = AR7_REGS_MAC0 + 0x7ff,
 	},
 	{
 		.name = "irq",
 		.flags = IORESOURCE_IRQ,
 		.start = 27,
 		.end = 27,
-        },
+	},
 };
 
 static struct resource cpmac_high_res[] = {
@@ -113,14 +113,14 @@ static struct resource cpmac_high_res[] = {
 		.name = "regs",
 		.flags = IORESOURCE_MEM,
 		.start = AR7_REGS_MAC1,
-		.end = AR7_REGS_MAC1 + 0x7FF,
+		.end = AR7_REGS_MAC1 + 0x7ff,
 	},
 	{
 		.name = "irq",
 		.flags = IORESOURCE_IRQ,
 		.start = 41,
 		.end = 41,
-        },
+	},
 };
 
 static struct resource vlynq_low_res[] = {
@@ -135,7 +135,7 @@ static struct resource vlynq_low_res[] = {
 		.flags = IORESOURCE_IRQ,
 		.start = 29,
 		.end = 29,
-        },
+	},
 	{
 		.name = "mem",
 		.flags = IORESOURCE_MEM,
@@ -155,14 +155,14 @@ static struct resource vlynq_high_res[] = {
 		.name = "regs",
 		.flags = IORESOURCE_MEM,
 		.start = AR7_REGS_VLYNQ1,
-		.end = AR7_REGS_VLYNQ1 + 0xFF,
+		.end = AR7_REGS_VLYNQ1 + 0xff,
 	},
 	{
 		.name = "irq",
 		.flags = IORESOURCE_IRQ,
 		.start = 33,
 		.end = 33,
-        },
+	},
 	{
 		.name = "mem",
 		.flags = IORESOURCE_MEM,
@@ -272,13 +272,13 @@ static struct plat_serial8250_port uart1_data =
 };
 
 static struct plat_serial8250_port uart_data[] = {
-    uart0_data,
-    uart1_data,
+	uart0_data,
+	uart1_data,
 	{ .flags = 0 }
 };
 
 static struct plat_serial8250_port uart_data_single[] = {
-    uart0_data,
+	uart0_data,
 	{ .flags = 0 }
 };
 
@@ -346,35 +346,35 @@ static int __init ar7_register_devices(void)
 		return res;
 
 
-    // Only TNETD73xx have a second serial port
-    if (ar7_has_second_uart()) {
-    	uart_port[1].type = PORT_AR7;
-    	uart_port[1].line = 1;
-    	uart_port[1].irq = AR7_IRQ_UART1;
-    	uart_port[1].uartclk = ar7_bus_freq() / 2;
-    	uart_port[1].iotype = UPIO_MEM;
-    	uart_port[1].mapbase = UR8_REGS_UART1;
-    	uart_port[1].membase = ioremap(uart_port[1].mapbase, 256);
-    	uart_port[1].regshift = 2;
-    	res = early_serial_setup(&uart_port[1]);
-    	if (res)
-    		return res;
-    }
-    
+	// Only TNETD73xx have a second serial port
+	if (ar7_has_second_uart()) {
+		uart_port[1].type = PORT_AR7;
+		uart_port[1].line = 1;
+		uart_port[1].irq = AR7_IRQ_UART1;
+		uart_port[1].uartclk = ar7_bus_freq() / 2;
+		uart_port[1].iotype = UPIO_MEM;
+		uart_port[1].mapbase = UR8_REGS_UART1;
+		uart_port[1].membase = ioremap(uart_port[1].mapbase, 256);
+		uart_port[1].regshift = 2;
+		res = early_serial_setup(&uart_port[1]);
+		if (res)
+			return res;
+	}
+
 #else // !CONFIG_SERIAL_8250
 
 	uart_data[0].uartclk = ar7_bus_freq() / 2;
 	uart_data[1].uartclk = uart_data[0].uartclk;
 
-    // Only TNETD73xx have a second serial port
-    if (ar7_has_second_uart()) {
-        uart.dev.platform_data = uart_data;
-    }
+	// Only TNETD73xx have a second serial port
+	if (ar7_has_second_uart()) {
+		uart.dev.platform_data = uart_data;
+	}
 
 	res = platform_device_register(&uart);
 	if (res)
 		return res;
-        
+
 #endif // CONFIG_SERIAL_8250
 
 	res = platform_device_register(&physmap_flash);

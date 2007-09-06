@@ -71,7 +71,7 @@ static struct semaphore open_semaphore;
 static unsigned expect_close;
 
 /* XXX currently fixed, allows max margin ~68.72 secs */
-#define prescale_value 0xFFFF
+#define prescale_value 0xffff
 
 // Offset of the WDT registers
 static unsigned long ar7_regs_wdt;
@@ -79,37 +79,37 @@ static unsigned long ar7_regs_wdt;
 static ar7_wdt_t *ar7_wdt;
 static void ar7_wdt_get_regs(void)
 {
-    u16 chip_id = ar7_chip_id();
-    switch (chip_id)
-    {
-    case AR7_CHIP_7100:
-    case AR7_CHIP_7200:
-        ar7_regs_wdt = AR7_REGS_WDT;
-        break;
-    default:
-        ar7_regs_wdt = UR8_REGS_WDT;
-        break;
-    }
+	u16 chip_id = ar7_chip_id();
+	switch (chip_id)
+	{
+	case AR7_CHIP_7100:
+	case AR7_CHIP_7200:
+		ar7_regs_wdt = AR7_REGS_WDT;
+		break;
+	default:
+		ar7_regs_wdt = UR8_REGS_WDT;
+		break;
+	}
 }
-                     
+
 static void ar7_wdt_kick(u32 value)
 {
 	ar7_wdt->kick_lock = 0x5555;
 	if ((ar7_wdt->kick_lock & 3) == 1) {
-		ar7_wdt->kick_lock = 0xAAAA;
+		ar7_wdt->kick_lock = 0xaaaa;
 		if ((ar7_wdt->kick_lock & 3) == 3) {
 			ar7_wdt->kick = value;
 			return;
 		}
- 	}
- 	printk(KERN_ERR DRVNAME ": failed to unlock WDT kick reg\n");
+	}
+	printk(KERN_ERR DRVNAME ": failed to unlock WDT kick reg\n");
 }
 
 static void ar7_wdt_prescale(u32 value)
 {
-	ar7_wdt->prescale_lock = 0x5A5A;
+	ar7_wdt->prescale_lock = 0x5a5a;
 	if ((ar7_wdt->prescale_lock & 3) == 1) {
-		ar7_wdt->prescale_lock = 0xA5A5;
+		ar7_wdt->prescale_lock = 0xa5a5;
 		if ((ar7_wdt->prescale_lock & 3) == 3) {
 			ar7_wdt->prescale = value;
 			return;
@@ -122,7 +122,7 @@ static void ar7_wdt_change(u32 value)
 {
 	ar7_wdt->change_lock = 0x6666;
 	if ((ar7_wdt->change_lock & 3) == 1) {
-		ar7_wdt->change_lock = 0xBBBB;
+		ar7_wdt->change_lock = 0xbbbb;
 		if ((ar7_wdt->change_lock & 3) == 3) {
 			ar7_wdt->change = value;
 			return;
@@ -135,9 +135,9 @@ static void ar7_wdt_disable(u32 value)
 {
 	ar7_wdt->disable_lock = 0x7777;
 	if ((ar7_wdt->disable_lock & 3) == 1) {
-		ar7_wdt->disable_lock = 0xCCCC;
+		ar7_wdt->disable_lock = 0xcccc;
 		if ((ar7_wdt->disable_lock & 3) == 2) {
-			ar7_wdt->disable_lock = 0xDDDD; 
+			ar7_wdt->disable_lock = 0xdddd;
 			if ((ar7_wdt->disable_lock & 3) == 3) {
 				ar7_wdt->disable = value;
 				return;
@@ -153,7 +153,7 @@ static void ar7_wdt_update_margin(int new_margin)
 
 	change = new_margin * (ar7_vbus_freq() / prescale_value);
 	if (change < 1) change = 1;
-	if (change > 0xFFFF) change = 0xFFFF;
+	if (change > 0xffff) change = 0xffff;
 	ar7_wdt_change(change);
 	margin = change * prescale_value / ar7_vbus_freq();
 	printk(KERN_INFO DRVNAME
@@ -192,19 +192,19 @@ static int ar7_wdt_release(struct inode *inode, struct file *file)
 	} else if (!nowayout) {
 		ar7_wdt_disable_wdt();
 	}
-        up(&open_semaphore);
+	up(&open_semaphore);
 
 	return 0;
 }
 
 static int ar7_wdt_notify_sys(struct notifier_block *this, 
-			      unsigned long code, void *unused)
+	unsigned long code, void *unused)
 {
 	if (code == SYS_HALT || code == SYS_POWER_OFF)
 		if (!nowayout)
 			ar7_wdt_disable_wdt();
 
-        return NOTIFY_DONE;
+	return NOTIFY_DONE;
 }
 
 static struct notifier_block ar7_wdt_notifier =
@@ -213,7 +213,7 @@ static struct notifier_block ar7_wdt_notifier =
 };
 
 static ssize_t ar7_wdt_write(struct file *file, const char *data, 
-			     size_t len, loff_t *ppos)
+	size_t len, loff_t *ppos)
 {
 	if (ppos != &file->f_pos)
 		return -ESPIPE;
@@ -238,7 +238,7 @@ static ssize_t ar7_wdt_write(struct file *file, const char *data,
 }
 
 static int ar7_wdt_ioctl(struct inode *inode, struct file *file, 
-			 unsigned int cmd, unsigned long arg)
+	unsigned int cmd, unsigned long arg)
 {
 	static struct watchdog_info ident = {
 		.identity = LONGNAME,
@@ -248,8 +248,6 @@ static int ar7_wdt_ioctl(struct inode *inode, struct file *file,
 	int new_margin;
 	
 	switch (cmd) {
-	default:
-		return -ENOTTY;
 	case WDIOC_GETSUPPORT:
 		if(copy_to_user((struct watchdog_info *)arg, &ident, 
 				sizeof(ident)))
@@ -276,6 +274,8 @@ static int ar7_wdt_ioctl(struct inode *inode, struct file *file,
 		if (put_user(margin, (int *)arg))
 			return -EFAULT;
 		return 0;
+	default:
+		return -ENOTTY;
 	}
 }
 
@@ -296,8 +296,8 @@ static struct miscdevice ar7_wdt_miscdev = {
 static int __init ar7_wdt_init(void)
 {
 	int rc;
-    
-    ar7_wdt_get_regs();
+
+	ar7_wdt_get_regs();
 
 	if (!request_mem_region(ar7_regs_wdt, sizeof(ar7_wdt_t), LONGNAME)) {
 		printk(KERN_WARNING DRVNAME ": watchdog I/O region busy\n");
@@ -314,15 +314,15 @@ static int __init ar7_wdt_init(void)
 
 	rc = misc_register(&ar7_wdt_miscdev);
 	if (rc) {
-                printk(KERN_ERR DRVNAME ": unable to register misc device\n");
+		printk(KERN_ERR DRVNAME ": unable to register misc device\n");
 		goto out_alloc;
 	}
 
 	rc = register_reboot_notifier(&ar7_wdt_notifier);
-        if (rc) {
-                printk(KERN_ERR DRVNAME ": unable to register reboot notifier\n");
+	if (rc) {
+		printk(KERN_ERR DRVNAME ": unable to register reboot notifier\n");
 		goto out_register;
-        }
+	}
 	goto out;
 
 out_register:
@@ -335,9 +335,9 @@ out:
 
 static void __exit ar7_wdt_cleanup(void)
 {
-        unregister_reboot_notifier(&ar7_wdt_notifier);
+	unregister_reboot_notifier(&ar7_wdt_notifier);
 	misc_deregister(&ar7_wdt_miscdev);
-    iounmap(ar7_wdt);
+	iounmap(ar7_wdt);
 	release_mem_region(ar7_regs_wdt, sizeof(ar7_wdt_t));
 }
 

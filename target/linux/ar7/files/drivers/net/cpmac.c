@@ -242,14 +242,14 @@ static void cpmac_dump_regs(u32 *base, int count)
 
 static const char *cpmac_dump_buf(const uint8_t * buf, unsigned size)
 {
-    static char buffer[3 * 25 + 1];
-    char *p = &buffer[0];
-    if (size > 20)
-        size = 20;
-    while (size-- > 0) {
-        p += sprintf(p, " %02x", *buf++);
-    }
-    return buffer;
+	static char buffer[3 * 25 + 1];
+	char *p = &buffer[0];
+	if (size > 20)
+		size = 20;
+	while (size-- > 0) {
+		p += sprintf(p, " %02x", *buf++);
+	}
+	return buffer;
 }
 #endif
 
@@ -336,7 +336,7 @@ static void cpmac_set_multicast_list(struct net_device *dev)
 	if(dev->flags & IFF_PROMISC) {
 		priv->regs->mbp &= ~MBP_PROMISCCHAN(0); /* promisc channel 0 */
 		priv->regs->mbp |= MBP_RXPROMISC;
-        } else {
+	} else {
 		priv->regs->mbp &= ~MBP_RXPROMISC;
 		if(dev->flags & IFF_ALLMULTI) {
 			/* enable all multicast mode */
@@ -460,8 +460,8 @@ static void cpmac_rx(struct net_device *dev)
 	desc = priv->rx_head;
 	dma_cache_inv((u32)desc, 16);
 #ifdef CPMAC_DEBUG
-                printk(KERN_DEBUG "%s: len=%d, %s\n", __func__, pkt->datalen,
-                      cpmac_dump_buf(data, pkt->datalen));
+	printk(KERN_DEBUG "%s: len=%d, %s\n", __func__, pkt->datalen,
+		cpmac_dump_buf(data, pkt->datalen));
 #endif
 
 	while ((desc->dataflags & CPMAC_OWN) == 0) {
@@ -527,13 +527,13 @@ static int cpmac_poll(struct net_device *dev, int *budget)
 static void
 cpmac_alloc_skbs(struct work_struct *work)
 {
-        struct cpmac_priv *priv = container_of(work, struct cpmac_priv,
-					       alloc_work);
+	struct cpmac_priv *priv = container_of(work, struct cpmac_priv,
+		alloc_work);
 #else
 static void
 cpmac_alloc_skbs(void *data)
 {
-        struct net_device *dev = (struct net_device*)data;
+	struct net_device *dev = (struct net_device*)data;
 	struct cpmac_priv *priv = netdev_priv(dev);
 #endif
 	unsigned long flags;
@@ -576,7 +576,7 @@ static int cpmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	len = skb->len;
 #ifdef CPMAC_DEBUG
-        printk(KERN_DEBUG "%s: len=%d\n", __func__, len); //cpmac_dump_buf(const uint8_t * buf, unsigned size)
+	printk(KERN_DEBUG "%s: len=%d\n", __func__, len); //cpmac_dump_buf(const uint8_t * buf, unsigned size)
 #endif
 	if (unlikely(len < ETH_ZLEN)) {
 		if (unlikely(skb_padto(skb, ETH_ZLEN))) {
@@ -753,42 +753,42 @@ static int cpmac_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 
 static int cpmac_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
 {
-        struct cpmac_priv *priv = netdev_priv(dev);
+	struct cpmac_priv *priv = netdev_priv(dev);
 
-        if (priv->phy)
-                return phy_ethtool_gset(priv->phy, cmd);
+	if (priv->phy)
+		return phy_ethtool_gset(priv->phy, cmd);
 
-        return -EINVAL;
+	return -EINVAL;
 }
 
 static int cpmac_set_settings(struct net_device *dev, struct ethtool_cmd *cmd)
 {
-        struct cpmac_priv *priv = netdev_priv(dev);
+	struct cpmac_priv *priv = netdev_priv(dev);
 
-        if (!capable(CAP_NET_ADMIN))
-                return -EPERM;
+	if (!capable(CAP_NET_ADMIN))
+		return -EPERM;
 
-        if (priv->phy)
-                return phy_ethtool_sset(priv->phy, cmd);
+	if (priv->phy)
+		return phy_ethtool_sset(priv->phy, cmd);
 
-        return -EINVAL;
+	return -EINVAL;
 }
 
 static void cpmac_get_drvinfo(struct net_device *dev, 
 			      struct ethtool_drvinfo *info)
 {
-        strcpy(info->driver, "cpmac");
-        strcpy(info->version, "0.0.3");
-        info->fw_version[0] = '\0';
-        sprintf(info->bus_info, "%s", "cpmac");
-        info->regdump_len = 0;
+	strcpy(info->driver, "cpmac");
+	strcpy(info->version, "0.0.3");
+	info->fw_version[0] = '\0';
+	sprintf(info->bus_info, "%s", "cpmac");
+	info->regdump_len = 0;
 }
 
 static const struct ethtool_ops cpmac_ethtool_ops = {
-        .get_settings = cpmac_get_settings,
-        .set_settings = cpmac_set_settings,
-        .get_drvinfo = cpmac_get_drvinfo,
-        .get_link = ethtool_op_get_link,
+	.get_settings = cpmac_get_settings,
+	.set_settings = cpmac_set_settings,
+	.get_drvinfo = cpmac_get_drvinfo,
+	.get_link = ethtool_op_get_link,
 };
 
 static struct net_device_stats *cpmac_stats(struct net_device *dev)
@@ -806,7 +806,7 @@ static int cpmac_change_mtu(struct net_device *dev, int mtu)
 	unsigned long flags;
 	struct cpmac_priv *priv = netdev_priv(dev);
 	spinlock_t *lock = &priv->lock;
-    
+
 	if ((mtu < 68) || (mtu > 1500))
 		return -EINVAL;
 
@@ -937,9 +937,9 @@ static int cpmac_open(struct net_device *dev)
 	priv->rx_head = &priv->desc_ring[CPMAC_TX_RING_SIZE];
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
-        INIT_WORK(&priv->alloc_work, cpmac_alloc_skbs);
+	INIT_WORK(&priv->alloc_work, cpmac_alloc_skbs);
 #else
-        INIT_WORK(&priv->alloc_work, cpmac_alloc_skbs, dev);
+	INIT_WORK(&priv->alloc_work, cpmac_alloc_skbs, dev);
 #endif
 	schedule_work(&priv->alloc_work);
 	flush_scheduled_work();
@@ -961,7 +961,7 @@ static int cpmac_open(struct net_device *dev)
 	}
 
 	if((res = request_irq(dev->irq, cpmac_irq, SA_INTERRUPT,
-			      dev->name, dev))) {
+			dev->name, dev))) {
 		printk("%s: failed to obtain irq\n", dev->name);
 		goto fail_irq;
 	}

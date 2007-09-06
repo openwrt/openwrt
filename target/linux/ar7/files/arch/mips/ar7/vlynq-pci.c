@@ -394,7 +394,7 @@ int pcibios_map_irq(struct pci_dev *pdev, u8 slot, u8 pin)
 
 	return vlynq_virq_to_irq(dev, priv->config->irq);
 }
-                                                                        
+
 /* Do platform specific device initialization at pci_enable_device() time */
 int pcibios_plat_dev_init(struct pci_dev *dev)
 {
