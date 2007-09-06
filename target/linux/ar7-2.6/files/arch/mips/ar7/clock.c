@@ -272,10 +272,10 @@ static void __init tnetd7300_init_clocks(void)
 	} else {
 		ar7_cpu_clock = ar7_bus_clock;
 	}
-
+#if 0
 	tnetd7300_set_clock(USB_PLL_SOURCE_SHIFT, &clocks->usb,
 		bootcr, 48000000);
-
+#endif
 	if (ar7_dsp_clock == 250000000)
 		tnetd7300_set_clock(DSP_PLL_SOURCE_SHIFT, &clocks->dsp,
 			bootcr, ar7_dsp_clock);
