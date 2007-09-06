@@ -34,7 +34,7 @@ endef
 
 $(FILELIST):
 	rm -f tmp/info/.files-$(SCAN_TARGET)-*
-	$(call FIND_L, $(SCAN_DIR)) $(SCAN_EXTRA) -mindepth 1 $(if $(SCAN_DEPTH),-maxdepth $(SCAN_DEPTH)) -name Makefile | xargs grep -HE 'call (Build/DefaultTargets|KernelPackage|Build(Package|Kernel))' | sed -e 's#^$(SCAN_DIR)/##' -e 's#/Makefile:.*##' | uniq > $@
+	$(call FIND_L, $(SCAN_DIR)) $(SCAN_EXTRA) -mindepth 1 $(if $(SCAN_DEPTH),-maxdepth $(SCAN_DEPTH)) -name Makefile | xargs grep -HE 'call (Build/DefaultTargets|Build(Package|Kernel)|.+Package)' | sed -e 's#^$(SCAN_DIR)/##' -e 's#/Makefile:.*##' | uniq > $@
 
 tmp/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
 	( \
