@@ -225,11 +225,10 @@ static void __init console_config(void)
 		return;
 
 #ifdef CONFIG_KGDB
-	if (!strstr(prom_getcmdline(), "nokgdb"))
-	{
-            strcat(prom_getcmdline(), " console=kgdb");
-            kgdb_enabled = 1;
-            return;
+	if (!strstr(prom_getcmdline(), "nokgdb")) {
+		strcat(prom_getcmdline(), " console=kgdb");
+		kgdb_enabled = 1;
+		return;
 	}
 #endif
 
@@ -293,23 +292,23 @@ int prom_putchar(char c)
 // from adm5120/prom.c
 void prom_printf(char *fmt, ...)
 {
-    va_list args;
-    int l;
-    char *p, *buf_end;
-    char buf[1024];
-
-    va_start(args, fmt);
-    l = vsprintf(buf, fmt, args); /* hopefully i < sizeof(buf) */
-    va_end(args);
-
-    buf_end = buf + l;
-
-    for (p = buf; p < buf_end; p++) {
-        /* Crude cr/nl handling is better than none */
-        if (*p == '\n')
-            prom_putchar('\r');
-        prom_putchar(*p);
-    }
+	va_list args;
+	int l;
+	char *p, *buf_end;
+	char buf[1024];
+	
+	va_start(args, fmt);
+	l = vsprintf(buf, fmt, args); /* hopefully i < sizeof(buf) */
+	va_end(args);
+	
+	buf_end = buf + l;
+	
+	for (p = buf; p < buf_end; p++) {
+		/* Crude cr/nl handling is better than none */
+		if (*p == '\n')
+			prom_putchar('\r');
+		prom_putchar(*p);
+	}
 }
 
 #ifdef CONFIG_KGDB
@@ -320,7 +319,7 @@ int putDebugChar(char c)
 
 char getDebugChar(void)
 {
-       return prom_getchar();
+	return prom_getchar();
 }
 #endif
 

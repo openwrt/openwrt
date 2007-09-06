@@ -339,7 +339,7 @@ static int tnetd7200_get_clock_base(int clock_id, u32 *bootcr)
 			return AR7_AFE_CLOCK;
 		}
 	} else {
-        	// Sync
+		// Sync
 		if (*bootcr & BOOT_PLL_2TO1_MODE) {
 			// 2:1
 			switch (clock_id) {
@@ -348,7 +348,7 @@ static int tnetd7200_get_clock_base(int clock_id, u32 *bootcr)
 			default:
 				return AR7_AFE_CLOCK;
 			}
-        	} else {
+		} else {
 			// 1:1
 			return AR7_REF_CLOCK;
 		}

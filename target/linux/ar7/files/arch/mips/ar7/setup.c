@@ -61,7 +61,7 @@ static void ar7_machine_halt(void)
 
 static void ar7_machine_power_off(void)
 {
-        volatile u32 *power_reg = (u32 *)ioremap(AR7_REGS_POWER, 1);
+	volatile u32 *power_reg = (u32 *)ioremap(AR7_REGS_POWER, 1);
 	u32 power_state = *power_reg | (3 << 30);
 	*power_reg = power_state;
 	ar7_machine_halt();
