@@ -25,7 +25,7 @@ define Package/strongswan/Default
   URL:=http://www.strongswan.org/
 endef
 
-define Package/strongswan/Default/descritpion
+define Package/strongswan/Default/description
  strongSwan is an IPsec implementation for Linux.
 endef
 
