@@ -25,9 +25,11 @@ define Package/spca5xx-view
   CATEGORY:=Utilities
   TITLE:=spca5xx streaming applicaton
   DEPENDS:=+kmod-spca5xx-le +libpthread
-  DESCRIPTION:=\
-	This package contains a streaming daemon for spca5xx based webcams 
-  URL:=http://www.acmesystems.it
+  URL:=http://www.acmesystems.it/
+endef
+
+define Package/spca5xx-view/description
+ This package contains a streaming daemon for spca5xx based webcams 
 endef
 
 define Build/Compile

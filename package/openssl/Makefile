@@ -23,24 +23,28 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/openssl/Default
   TITLE:=Open source SSL toolkit
-  DESCRIPTION:=\
-	The OpenSSL Project is a collaborative effort to develop a robust, \\\
-	commercial-grade, full-featured, and Open Source toolkit implementing the \\\
-	Secure Sockets Layer (SSL v2/v3) and Transport Layer Security (TLS v1) \\\
-	protocols as well as a full-strength general purpose cryptography library.
   URL:=http://www.openssl.org/
 endef
 
+define Package/openssl/Default/description
+ The OpenSSL Project is a collaborative effort to develop a robust, 
+ commercial-grade, full-featured, and Open Source toolkit implementing the 
+ Secure Sockets Layer (SSL v2/v3) and Transport Layer Security (TLS v1) 
+ protocols as well as a full-strength general purpose cryptography library.
+endef
+
 define Package/libopenssl
-  $(call Package/openssl/Default)
+$(call Package/openssl/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   DEPENDS:=+zlib
   TITLE+= (libraries)
-  DESCRIPTION+=\\\
-	\\\
-	This package contains the OpenSSL shared libraries, needed by other \\\
-	programs.
+endef
+
+define Package/libopenssl/description
+$(call Package/openssl/Default/description)
+ This package contains the OpenSSL shared libraries, needed by other 
+ programs.
 endef
 
 define Package/openssl-util
@@ -49,14 +53,17 @@ define Package/openssl-util
   CATEGORY:=Utilities
   DEPENDS:=+libopenssl
   TITLE+= (utility)
-  DESCRIPTION+=\\\
-	\\\
-	This package contains the OpenSSL command-line utility.
 endef
 
 define Package/openssl-util/conffiles
 /etc/ssl/openssl.cnf
 endef
+
+define Package/openssl-util/description
+$(call Package/openssl/Default/description)
+ This package contains the OpenSSL command-line utility.
+endef
+
 
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc2 no-rc5 no-sha0 no-smime \
 					no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5

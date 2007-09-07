@@ -34,7 +34,7 @@ define Package/iptables/Default
 endef
 
 define Package/iptables
-  $(call Package/iptables/Default)
+$(call Package/iptables/Default)
   TITLE:=IPv4 firewall administration tool
   MENU:=1
 endef
@@ -45,137 +45,144 @@ define Package/iptables/conffiles
 endef
 
 define Package/iptables-mod-conntrack
-  $(call Package/iptables/Default)
+$(call Package/iptables/Default)
   DEPENDS:=iptables +kmod-ipt-conntrack
   TITLE:=connection tracking modules
-  DESCRIPTION:=\
-	iptables extensions for connection tracking.\\\
-	\\\
-	Includes: \\\
-	- libipt_conntrack \\\
-	- libipt_helper \\\
-	- libipt_connmark/CONNMARK
+endef
+
+define Package/iptables-mod-conntrack/description
+ iptables extensions for connection tracking.
+ Includes:
+ - libipt_conntrack
+ - libipt_helper
+ - libipt_connmark/CONNMARK
 endef
 
 define Package/iptables-mod-filter
-  $(call Package/iptables/Default)
+$(call Package/iptables/Default)
   DEPENDS:=iptables +kmod-ipt-filter
   TITLE:=filter modules
-  DESCRIPTION:=\
-	iptables extensions for packet content inspection.\\\
-	\\\
-	Includes: \\\
-	- libipt_ipp2p \\\
-	- libipt_layer7 
+endef
+
+define Package/iptables-mod-filter/description
+ iptables extensions for packet content inspection.
+ Includes: 
+ - libipt_ipp2p
+ - libipt_layer7 
 endef
 
 define Package/iptables-mod-imq
-  $(call Package/iptables/Default)
+$(call Package/iptables/Default)
   DEPENDS:=iptables +kmod-ipt-imq
   TITLE:=IMQ support
-  DESCRIPTION:=\
-	iptables extension for IMQ support.\\\
-	\\\
-	Includes: \\\
-	- libipt_IMQ
+endef
+
+define Package/iptables-mod-imq/description
+ iptables extension for IMQ support.
+ Includes: 
+ - libipt_IMQ
 endef
 
 define Package/iptables-mod-ipopt
-  $(call Package/iptables/Default)
+$(call Package/iptables/Default)
   DEPENDS:=iptables +kmod-ipt-ipopt
   TITLE:=IP/Packet option modules
-  DESCRIPTION:=\
-	iptables extensions for matching/changing IP packet options.\\\
-	\\\
-	Includes: \\\
-	- libipt_CLASSIFY \\\
-	- libipt_dscp/DSCP \\\
-	- libipt_ecn/ECN \\\
-	- libipt_length \\\
-	- libipt_mac \\\
-	- libipt_tos/TOS \\\
-	- libipt_tcpmms \\\
-	- libipt_ttl/TTL \\\
-	- libipt_unclean 
+endef
+
+define Package/iptables-mod-ipopt/description
+ iptables extensions for matching/changing IP packet options.\\\
+ Includes: 
+ - libipt_CLASSIFY
+ - libipt_dscp/DSCP
+ - libipt_ecn/ECN
+ - libipt_length
+ - libipt_mac
+ - libipt_tos/TOS
+ - libipt_tcpmms
+ - libipt_ttl/TTL
+ - libipt_unclean 
 endef
 
 define Package/iptables-mod-ipsec
-  $(call Package/iptables/Default)
+$(call Package/iptables/Default)
   DEPENDS:=iptables +kmod-ipt-ipsec
   TITLE:=IPSec extensions
-  DESCRIPTION:=\
-	iptables extensions for matching ipsec traffic.\\\
-	\\\
-	Includes: \\\
-	- libipt_ah \\\
-	- libipt_esp
+endef
+
+define Package/iptables-mod-ipsec/description
+ iptables extensions for matching ipsec traffic.
+ Includes: 
+ - libipt_ah
+ - libipt_esp
 endef
 
 define Package/iptables-mod-nat
-  $(call Package/iptables/Default)
+$(call Package/iptables/Default)
   DEPENDS:=iptables +kmod-ipt-nat
   TITLE:=extra NAT targets
-  DESCRIPTION:=\
-	iptables extensions for different NAT targets.\\\
-	\\\
-	Includes: \\\
-	- libipt_REDIRECT
+endef
+
+define Package/iptables-mod-nat/description
+ iptables extensions for different NAT targets.
+ Includes: 
+ - libipt_REDIRECT
 endef
 
 define Package/iptables-mod-ulog
-  $(call Package/iptables/Default)
+$(call Package/iptables/Default)
   DEPENDS:=iptables +kmod-ipt-ulog
   TITLE:=user-space packet logging
-  DESCRIPTION:=\
-	iptables extensions for user-space packet logging.\\\
-	\\\
-	Includes: \\\
-	- libipt_ULOG
+endef
+
+define Package/iptables-mod-ulog/description
+ iptables extensions for user-space packet logging.
+ Includes: 
+ - libipt_ULOG
 endef
 
 define Package/iptables-mod-iprange
-  $(call Package/iptables/Default)
+$(call Package/iptables/Default)
   DEPENDS:=iptables +kmod-ipt-iprange
   TITLE:=ip range module
-  DESCRIPTION:=\
-	iptables extensions for matching ip ranges.\\\
-	\\\
-	Includes: \\\
-	- libipt_iprange
+endef
+
+define Package/iptables-mod-iprange/description
+ iptables extensions for matching ip ranges.
+ Includes: 
+ - libipt_iprange
 endef
 
 define Package/iptables-mod-extra
-  $(call Package/iptables/Default)
+$(call Package/iptables/Default)
   DEPENDS:=iptables +kmod-ipt-extra
   TITLE:=other extra iptables extensions
-  DESCRIPTION:=\
-	other extra iptables extensions.\\\
-	\\\
-	Includes: \\\
-	- libipt_limit \\\
-	- libipt_owner \\\
-	- libipt_physdev \\\
-	- libipt_pkttype \\\
-	- libipt_recent \\\
-	- libipt_NOTRACK
+endef
+
+define Package/iptables-mod-extra/description
+ other extra iptables extensions.
+ Includes: 
+ - libipt_limit
+ - libipt_owner
+ - libipt_physdev
+ - libipt_pkttype
+ - libipt_recent
+ - libipt_NOTRACK
 endef
 
 define Package/iptables-mod-ipset
-  $(call Package/iptables/Default)
+$(call Package/iptables/Default)
   DEPENDS:=iptables +kmod-ipt-ipset
   TITLE:=ipset iptables extension
-  DESCRIPTION:=\
-    ipset
 endef
 
 define Package/iptables-utils
-  $(call Package/iptables/Default)
+$(call Package/iptables/Default)
   DEPENDS:=iptables
   TITLE:=iptables save and restore utilities
 endef
 
 define Package/ip6tables
-  $(call Package/iptables/Default)
+$(call Package/iptables/Default)
   DEPENDS:=+kmod-ipv6
   CATEGORY:=Network
   TITLE:=IPv6 firewall administration tool

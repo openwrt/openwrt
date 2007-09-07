@@ -27,9 +27,10 @@ define Package/hotplug2
 endef
 
 define Package/hotplug2/description
-Hotplug2 is a trivial replacement of some of the UDev functionality
-in a tiny pack, intended for Linux early userspace: Init RAM FS and InitRD.
+ Hotplug2 is a trivial replacement of some of the UDev functionality
+ in a tiny pack, intended for Linux early userspace: Init RAM FS and InitRD.
 endef
+
 MAKE_FLAGS += CFLAGS="$(TARGET_CFLAGS) -DHAVE_RULES -I."
 
 define Package/hotplug2/install

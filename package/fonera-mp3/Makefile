@@ -21,9 +21,11 @@ define Package/fonera-mp3d
   CATEGORY:=Utilities
   DEPENDS:=@TARGET_ATHEROS
   TITLE:=Daemon for fonera-mp3
-  DESCRIPTION:=Daemon to drive a vs1011X mp3 decoder attached to the \
-	  fonera gpio pins
 endef
+
+define Package/fonera-mp3d/description
+ Daemon to drive a vs1011X mp3 decoder attached to the 
+ fonera gpio pins
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)

@@ -29,26 +29,22 @@ define KernelPackage/hostap/Default/2.6
   VERSION:=$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)
 endef
 define KernelPackage/hostap/Default
+$(call KernelPackage/hostap/Default/$(KERNEL))
   SUBMENU:=Wireless Drivers
-  DESCRIPTION:=\
-	Host AP is a driver for 802.11b wireless cards based on Intersil \\\
-	Prism2/2.5/3 chipset. It supports so called Host AP mode that allows the \\\
-	card to act as an IEEE 802.11 access point.
   URL:=http://hostap.epitest.fi/
-  $(call KernelPackage/hostap/Default/$(KERNEL))
 endef
 
+define KernelPackage/hostap/Default/description
+ Host AP is a driver for 802.11b wireless cards based on Intersil 
+ Prism2/2.5/3 chipset. It supports so called Host AP mode that allows the 
+ card to act as an IEEE 802.11 access point.
+endef
 
 define KernelPackage/hostap
-  $(call KernelPackage/hostap/Default)
+$(call KernelPackage/hostap/Default)
   DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT +kmod-ieee80211 +kmod-crypto
   TITLE:=Host AP support for Prism2/2.5/3
   KCONFIG:=CONFIG_HOSTAP
-  DESCRIPTION+=\\\
-	\\\
-	This package contains the base Host AP driver code that is shared by \\\
-	different hardware models. You will also need to enable support for \\\
-	PLX/PCI/CS version of the driver to actually use the driver.
 endef
 define KernelPackage/hostap/2.4
   DEPENDS:=+kmod-crypto
@@ -65,15 +61,18 @@ define KernelPackage/hostap/2.6
   AUTOLOAD:=$(call AutoLoad,60,hostap)
 endef
 
+define KernelPackage/hostap/description
+$(call KernelPackage/hostap/Default/description)
+ This package contains the base Host AP driver code that is shared by 
+ different hardware models. You will also need to enable support for 
+ PLX/PCI/CS version of the driver to actually use the driver.
+endef
 
 define KernelPackage/hostap-pci
-  $(call KernelPackage/hostap/Default)
+$(call KernelPackage/hostap/Default)
   DEPENDS:=kmod-hostap
   TITLE:=Host AP driver for PCI adaptors
   KCONFIG:=CONFIG_HOSTAP_PCI
-  DESCRIPTION+=\\\
-	\\\
-	This package contains the Host AP driver for Prism2.5 PCI adaptors.
   AUTOLOAD:=$(call AutoLoad,60,hostap_pci)
 endef
 define KernelPackage/hostap-pci/2.4
@@ -85,16 +84,16 @@ define KernelPackage/hostap-pci/2.6
 	$(LINUX_DIR)/drivers/net/wireless/hostap/hostap_pci.$(LINUX_KMOD_SUFFIX)
 endef
 
+define KernelPackage/hostap-pci/description
+$(call KernelPackage/hostap/Default/description)
+ This package contains the Host AP driver for Prism2.5 PCI adaptors.
+endef
 
 define KernelPackage/hostap-plx
-  $(call KernelPackage/hostap/Default)
+$(call KernelPackage/hostap/Default)
   DEPENDS:=kmod-hostap
   KCONFIG:=CONFIG_HOSTAP_PLX
   TITLE:=Host AP driver for PLX9052 based PCI adaptors
-  DESCRIPTION+=\\\
-	\\\
-	This package contains the Host AP driver for Prism2/2.5/3 in PLX9052 \\\
-	based PCI adaptors.
   AUTOLOAD:=$(call AutoLoad,60,hostap_plx)
 endef
 define KernelPackage/hostap-plx/2.4
@@ -104,6 +103,12 @@ endef
 define KernelPackage/hostap-plx/2.6
   FILES:= \
 	$(LINUX_DIR)/drivers/net/wireless/hostap/hostap_plx.$(LINUX_KMOD_SUFFIX)
+endef
+
+define KernelPackage/hostap-plx/description
+$(call KernelPackage/hostap/Default/description)
+ This package contains the Host AP driver for Prism2/2.5/3 in PLX9052 
+ based PCI adaptors.
 endef
 
 

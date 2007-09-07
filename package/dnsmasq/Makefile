@@ -22,13 +22,15 @@ define Package/dnsmasq
   SECTION:=net
   CATEGORY:=Base system
   TITLE:=A lightweight DNS and DHCP server
-  DESCRIPTION:=\
-	It is intended to provide coupled DNS and DHCP service to a LAN.
   URL:=http://www.thekelleys.org.uk/dnsmasq/
 endef
 
 define Package/dnsmasq/conffiles
 /etc/dnsmasq.conf
+endef
+
+define Package/dnsmasq/description
+ It is intended to provide coupled DNS and DHCP service to a LAN.
 endef
 
 define Build/Compile

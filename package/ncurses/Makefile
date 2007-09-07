@@ -22,7 +22,6 @@ define Package/libncurses
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Terminal handling library
-  DESCRIPTION:=Terminal handling library
   URL:=http://www.gnu.org/software/ncurses/
 endef
 

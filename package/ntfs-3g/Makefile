@@ -25,9 +25,11 @@ define Package/ntfs-3g
   DEPENDS:=+libfuse +fuse-utils
   SECTION:=utils
   CATEGORY:=Utilities
-  DESCRIPTION:=\
-	Third generation Read/Write NTFS driver
   URL:=http://www.ntfs-3g.org
+endef
+
+define Package/ntfs-3g/description
+ This package contains the third generation Read/Write NTFS driver
 endef
 
 CONFIGURE_ARGS += \
@@ -64,6 +66,7 @@ define Package/ntfs-3g/install
 endef
 
 $(eval $(call BuildPackage,ntfs-3g))
+
 $(eval $(call RequireCommand,pkg-config, \
 	$(PKG_NAME) requires pkg-config. \
 ))

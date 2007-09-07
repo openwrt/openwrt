@@ -28,63 +28,78 @@ define Package/ppp/Default
 endef
 
 define Package/ppp
-  $(call Package/ppp/Default)
+$(call Package/ppp/Default)
   DEPENDS:=+kmod-ppp
   TITLE:=PPP daemon
-  DESCRIPTION:=\
-	This package contains the PPP (Point-to-Point Protocol) daemon.
   MENU:=1
 endef
 
+define Package/ppp/description
+ This package contains the PPP (Point-to-Point Protocol) daemon.
+endef
+
 define Package/ppp-mod-pppoa
-  $(call Package/ppp/Default)
+$(call Package/ppp/Default)
   DEPENDS:=ppp +linux-atm +kmod-pppoa
   TITLE:=PPPoA plugin
-  DESCRIPTION:=\
-	This package contains a PPPoA (PPP over ATM) plugin for ppp.
+endef
+
+define Package/ppp-mod-pppoa/description
+ This package contains a PPPoA (PPP over ATM) plugin for ppp.
 endef
 
 define Package/ppp-mod-pppoe
-  $(call Package/ppp/Default)
+$(call Package/ppp/Default)
   DEPENDS:=ppp +kmod-pppoe
   TITLE:=PPPoE plugin
-  DESCRIPTION:=\
-	This package contains a PPPoE (PPP over Ethernet) plugin for ppp.
+endef
+
+define Package/ppp-mod-pppoe/description
+ This package contains a PPPoE (PPP over Ethernet) plugin for ppp.
 endef
 
 define Package/ppp-mod-radius
-  $(call Package/ppp/Default)
+$(call Package/ppp/Default)
   DEPENDS:=ppp
   TITLE:=RADIUS plugin
-  DESCRIPTION:=\
-	This package contains a RADIUS (Remote Authentication Dial-In User \\\
-	Service) plugin for ppp.
+endef
+
+define Package/ppp-mod-radius/description
+ This package contains a RADIUS (Remote Authentication Dial-In User 
+ Service) plugin for ppp.
 endef
 
 define Package/chat
-  $(call Package/ppp/Default)
+$(call Package/ppp/Default)
   DEPENDS:=ppp
   TITLE:=Establish conversation with a modem
-  DESCRIPTION:=\
-	This package contains an utility to establish conversation with other \\\
-	PPP servers (via a modem).
+endef
+
+define Package/chat/description
+ This package contains an utility to establish conversation with other 
+ PPP servers (via a modem).
 endef
 
 define Package/pppdump
-  $(call Package/ppp/Default)
+$(call Package/ppp/Default)
   DEPENDS:=ppp
   TITLE:=Read PPP record file
-  DESCRIPTION:=\
-	This package contains an utility to read PPP record file.
+endef
+
+define Package/pppdump/description
+ This package contains an utility to read PPP record file.
 endef
 
 define Package/pppstats
-  $(call Package/ppp/Default)
+$(call Package/ppp/Default)
   DEPENDS:=ppp
   TITLE:=Report PPP statistics
-  DESCRIPTION:=\
-	This package contains an utility to report PPP statistics.
 endef
+
+define Package/pppstats/description
+ This package contains an utility to report PPP statistics.
+endef
+
 
 define Build/Configure
 $(call Build/Configure/Default,, \

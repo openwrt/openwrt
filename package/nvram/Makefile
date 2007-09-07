@@ -18,9 +18,10 @@ define Package/nvram
   CATEGORY:=Utilities
   DEPENDS:=@TARGET_BRCM_2_4
   TITLE:=Broadcom config utility
-  DESCRIPTION:=\
-	This package contains an utility to control broadcom's 'nvram' config \\\
-	area.
+endef
+
+define Package/nvram/description
+ This package contains an utility to control broadcom's 'nvram' config area.
 endef
 
 define Build/Prepare

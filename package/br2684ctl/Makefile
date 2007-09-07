@@ -25,7 +25,6 @@ define Package/$(PKG_NAME)
   SECTION:=net
   CATEGORY:=Base system
   TITLE:=ATM Ethernet bridging configuration utility
-  DESCRIPTION:=ATM Ethernet bridging configuration utility
   URL:=http://ftp.debian.org/debian/pool/main/b/br2684ctl
 endef
 

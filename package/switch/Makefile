@@ -18,13 +18,15 @@ define KernelPackage/switch
   SUBMENU:=Other modules
   DEPENDS:=@TARGET_BRCM_2_4||TARGET_BRCM47XX
   TITLE:=Switch drivers
-  DESCRIPTION:=\
-	This package contains switch drivers for ADM6996L and BCM53XX RoboSwitch.
   FILES:= \
 	$(PKG_BUILD_DIR)/switch-core.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/switch-adm.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/switch-robo.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,switch-core switch-robo switch-adm)
+endef
+
+define KernelPackage/switch/description
+ This package contains switch drivers for ADM6996L and BCM53XX RoboSwitch.
 endef
 
 define Build/Prepare

@@ -27,13 +27,14 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/acx
   TITLE:=Driver for TI ACX1xx chipset
   DEPENDS:=@LINUX_2_6 @!TARGET_AVR32 +wireless-tools
-  DESCRIPTION:=\
-	This package contains a driver for TI ACX1xx 802.11a/b/g chipsets.
   URL:=http://acx100.sourceforge.net/
   SUBMENU:=Wireless Drivers
-  FILES:= \
-		$(PKG_BUILD_DIR)/acx.$(LINUX_KMOD_SUFFIX)
+  FILES:= $(PKG_BUILD_DIR)/acx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,acx)
+endef
+
+define KernelPackage/acx/description
+ This package contains a driver for TI ACX1xx 802.11a/b/g chipsets.
 endef
 
 define Build/Compile

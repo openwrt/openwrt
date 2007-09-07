@@ -17,19 +17,23 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/bridge
 PKG_MD5SUM:=9b7dc52656f5cbec846a7ba3299f73bd
 
+include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/bridge
   SECTION:=net
   CATEGORY:=Base system
   TITLE:=Ethernet bridging configuration utility
-  DESCRIPTION:=\
-	Manage ethernet bridging: a way to connect networks together to \\\
-	form a larger network.
   URL:=http://bridge.sourceforge.net/
 endef
 
-CONFIGURE_ARGS += --with-linux-headers="$(LINUX_DIR)"
+define Package/bridge/description
+ Manage ethernet bridging: a way to connect networks together to 
+ form a larger network.
+endef
+
+CONFIGURE_ARGS += \
+	--with-linux-headers="$(LINUX_DIR)" \
 
 define Package/bridge/install
 	$(INSTALL_DIR) $(1)/usr/sbin

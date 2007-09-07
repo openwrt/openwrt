@@ -33,48 +33,62 @@ define KernelPackage/brcm-wl/Default
   SECTION:=kernel
   DEPENDS:=@TARGET_BRCM_2_4
   TITLE:=Kernel driver for BCM43xx chipsets
-  DESCRIPTION:=\
-	This package contains the proprietary wireless driver for the Broadcom \\\
-	BCM43xx chipset
   FILES:=$(PKG_BUILD_DIR)/kmod/wl$(1).o
   AUTOLOAD:=$(call AutoLoad,30,wl$(1))
 endef
 
+define KernelPackage/brcm-wl/Default/description
+ This package contains the proprietary wireless driver for the Broadcom 
+ BCM43xx chipset.
+endef
+
 define KernelPackage/brcm-wl
-  $(call KernelPackage/brcm-wl/Default,)
+$(call KernelPackage/brcm-wl/Default,)
   TITLE+= (normal version)
-  DESCRIPTION+= (normal version).
+endef
+
+define KernelPackage/brcm-wl/description
+$(call KernelPackage/brcm-wl/Default/description)
 endef
 
 define KernelPackage/brcm-wl-mimo
-  $(call KernelPackage/brcm-wl/Default,_mimo)
+$(call KernelPackage/brcm-wl/Default,_mimo)
   TITLE+= (MIMO version)
-  DESCRIPTION+= (MIMO version).
+endef
+
+define KernelPackage/brcm-wl-mimo/description
+$(call KernelPackage/brcm-wl/Default/description)
 endef
 
 define Package/wlc
-  $(call Package/broadcom-wl/Default)
+$(call Package/broadcom-wl/Default)
   TITLE:=wl driver setup utility
-  DESCRIPTION:=\
-	This package contains an utility for initializing the proprietary Broadcom \\\
-	wl driver.
+endef
+
+define Package/wlc/description
+ This package contains an utility for initializing the proprietary Broadcom 
+ wl driver.
 endef
 
 define Package/wl
-  $(call Package/broadcom-wl/Default)
+$(call Package/broadcom-wl/Default)
   TITLE:=Proprietary Broadcom wl driver config utility
-  DESCRIPTION:=\
-	This package contains the proprietary utility (wl) for configuring the \\\
-	proprietary Broadcom wl driver.
+endef
+
+define Package/wl/description
+ This package contains the proprietary utility (wl) for configuring the 
+ proprietary Broadcom wl driver.
 endef
 
 define Package/nas
-  $(call Package/broadcom-wl/Default)
-  DEPENDS+=+nvram
+$(call Package/broadcom-wl/Default)
+  DEPENDS+= +nvram
   TITLE:=Proprietary Broadcom WPA/WPA2 authenticator
-  DESCRIPTION:=\
-	This package contains the proprietary WPA/WPA2 authenticator (nas) for the \\\
-	proprietary Broadcom wl driver.
+endef
+
+define Package/nas/description
+ This package contains the proprietary WPA/WPA2 authenticator (nas) for the 
+ proprietary Broadcom wl driver.
 endef
 
 

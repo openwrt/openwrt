@@ -20,9 +20,11 @@ define Package/mtd
   SECTION:=utils
   CATEGORY:=Base system
   TITLE:=Update utility for trx firmware images
-  DESCRIPTION:=\
-	This package contains an utility useful to upgrade from other firmware or \\\
-	older OpenWrt releases.
+endef
+
+define Package/mtd/description
+ This package contains an utility useful to upgrade from other firmware or 
+ older OpenWrt releases.
 endef
 
 define Build/Prepare

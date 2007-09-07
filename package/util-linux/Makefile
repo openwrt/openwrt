@@ -26,44 +26,52 @@ define Package/util-linux/Default
 endef
 
 define Package/fdisk
-  $(call Package/util-linux/Default)
+$(call Package/util-linux/Default)
   TITLE:=Partition table manipulation utility
-  DESCRIPTION:=\
-	This package contains a utility for managing disk partition tables.
-  URL:=http://www.kernel.org/pub/linux/utils/util-linux/
+endef
+
+define Package/fdisk/description
+ This package contains a utility for managing disk partition tables.
 endef
 
 define Package/cfdisk
-  $(call Package/util-linux/Default)
+$(call Package/util-linux/Default)
   TITLE:=Partition table manipulation utility
-  DEPENDS+= +libncurses
-  DESCRIPTION:=\
-	This package contains a utility for managing disk partition tables.
-  URL:=http://www.kernel.org/pub/linux/utils/util-linux/
+  DEPENDS:= +libncurses
+endef
+
+define Package/cfdisk/description
+ This package contains a utility for managing disk partition tables.
 endef
 
 define Package/losetup
-  $(call Package/util-linux/Default)
+$(call Package/util-linux/Default)
   TITLE:=Loopback devices setup and control utility
-  DESCRIPTION:=\
-	This package contains a utility for managing loopback devices.
+endef
+
+define Package/losetup/description
+ This package contains a utility for managing loopback devices.
 endef
 
 define Package/swap-utils
-  $(call Package/util-linux/Default)
+$(call Package/util-linux/Default)
   TITLE:=Swap space management utilities
-  DESCRIPTION:=\
-	This package contains a collection of tools for managing swap space: \\\
-	- mkswap\\\
-	- swapon\\\
-	- swapoff
+endef
+
+define Package/swap-utils/description
+ This package contains a collection of tools for managing swap space: 
+ - mkswap
+ - swapon
+ - swapoff
 endef
 
 define Package/hwclock
-  $(call Package/util-linux/Default)
+$(call Package/util-linux/Default)
   TITLE:=Utilities for managing the hardware clock
-  DESCRIPTION:=\
-  	 This package contains a utility for managing the hardware clock
+endef
+
+define Package/hwclock/description
+ This package contains a utility for managing the hardware clock.
 endef
 
 define Build/Configure

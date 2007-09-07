@@ -18,7 +18,12 @@ PKG_MD5SUM:=06f7806782e357797fad1d34b7ced0c6
 
 include $(INCLUDE_DIR)/package.mk
 
+define Package/e2fsprogs/Default
+  URL:=http://e2fsprogs.sourceforge.net/
+endef
+
 define Package/e2fsprogs
+$(call Package/e2fsprogs/Default)
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Ext2/3 filesystem utilities
@@ -29,36 +34,44 @@ define Package/e2fsprogs
 	filesystem utilities.
 endef
 
+define Package/e2fsprogs/description
+ This package contains essential ext2 filesystem utilities which consists of 
+ e2fsck, mke2fs, debugfs, dumpe2fs, tune2fs, and most of the other core ext2 
+ filesystem utilities.
+endef
+
 define Package/libuuid
+$(call Package/e2fsprogs/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=DCE compatible Universally Unique Identifier library
-  DESCRIPTION:=\
-		Library for generating DCE compatible Universally Unique Identifiers
-  URL:=http://e2fsprogs.sourceforge.net/
+endef
+
+define Package/libuuid/description
+ Library for generating DCE compatible Universally Unique Identifiers.
 endef
 
 define Package/libblkid
+$(call Package/e2fsprogs/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=block device id library
-  DESCRIPTION:=\
-  	The blkid library which allows system programs like fsck and mount to quickly\\\
-	and easily find block devices by filesystem UUID and LABEL.
-  URL:=http://e2fsprogs.sourceforge.net/
+endef
+
+define Package/libblkid/description
+ The blkid library which allows system programs like fsck and mount to 
+ quickly and easily find block devices by filesystem UUID and LABEL.
 endef
 
 define Package/tune2fs
-  $(call Package/e2fsprogs)
+$(call Package/e2fsprogs)
   TITLE:=Ext2 Filesystem tune utility
-  DESCRIPTION:=Ext2 Filesystem tune utility
   DEPENDS:=e2fsprogs
 endef
 
 define Package/resize2fs
-  $(call Package/e2fsprogs)
+$(call Package/e2fsprogs)
   TITLE:=Ext2 Filesystem resize utility
-  DESCRIPTION:=Ext2 Filesystem resize utility
   DEPENDS:=e2fsprogs
 endef
 
@@ -119,7 +132,7 @@ define Package/libuuid/install
 endef
 
 define Package/libblkid/install
-	$(INSTALL_DIR) $(1)/usr/lib/
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libblkid.so.* $(1)/usr/lib/
 endef
 

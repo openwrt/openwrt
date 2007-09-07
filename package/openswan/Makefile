@@ -21,33 +21,40 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/openswan/Default
   TITLE:=Openswan
-  DESCRIPTION:=\
-	Openswan is an IPsec implementation for Linux.
   URL:=http://www.openswan.org/
 endef
 
+define Package/openswan/Default/description
+ Openswan is an IPsec implementation for Linux.
+endef
+
 define Package/openswan
-  $(call Package/openswan/Default)
+$(call Package/openswan/Default)
   SECTION:=net
   CATEGORY:=Network
   DEPENDS:=@LINUX_2_4 +kmod-openswan +libgmp +ip
   TITLE+= (daemon)
-  DESCRIPTION+=\\\
-	\\\
-	This package contains the Openswan user-land daemon.
   URL:=http://www.openswan.org/
 endef
 
+define Package/openswan/description
+$(call Package/openswan/Default/description)
+ This package contains the Openswan user-land daemon.
+endef
+
 define KernelPackage/openswan
+$(call Package/openswan/Default)
   SUBMENU:=Network Support
-  $(call Package/openswan/Default)
   DEPENDS:=@LINUX_2_4 
   TITLE+= (kernel module)
-  DESCRIPTION+=\\\
-	\\\
-	This package contains the Openswan kernel module.
   FILES:=$(PKG_BUILD_DIR)/modobj*/ipsec.$(LINUX_KMOD_SUFFIX)
 endef
+
+define KernelPackage/openswan/description
+$(call Package/openswan/Default/description)
+ This package contains the Openswan kernel module.
+endef
+
 
 PKG_MAKE_OPTS:= \
 		LINUX_RELEASE="$(LINUX_RELEASE)" \

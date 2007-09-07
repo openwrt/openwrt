@@ -30,7 +30,6 @@ define KernelPackage/rt2x00/Default
   TITLE:=Ralink Drivers for RT2x00 cards
   DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_MAC80211
-  DESCRIPTION:=Ralink GPL Drivers for rt2x00 cards
 endef
 
 define KernelPackage/rt2x00-lib

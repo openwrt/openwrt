@@ -22,9 +22,11 @@ define Package/pptp
   SECTION:=net
   CATEGORY:=Network
   TITLE:=PPTP client
-  DESCRIPTION:=\
-	This package contains a PPTP (Point-to-Point Tunneling Protocol) client.
   URL:=http://pptpclient.sourceforge.net/
+endef
+
+define Package/pptp/daemon
+ This package contains a PPTP (Point-to-Point Tunneling Protocol) client.
 endef
 
 define Package/pptp/install

@@ -24,7 +24,6 @@ PKG_UNPACK:=mkdir -p $(PKG_BUILD_DIR); gzip -dc $(DL_DIR)/$(PKG_SOURCE) | $(TAR)
 define KernelPackage/nozomi
   SUBMENU:=Other modules
   TITLE:=Option Globetrotter HSDPA driver
-  DESCRIPTION:=Option Globetrotter HSDPA driver
   URL:=http://www.pharscape.org/
   DEPENDS:=@LINUX_2_4 @PCMCIA_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/noz.$(LINUX_KMOD_SUFFIX)

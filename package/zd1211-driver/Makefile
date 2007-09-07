@@ -24,20 +24,27 @@ define KernelPackage/zd1211
   SUBMENU:=Wireless Drivers
   DEPENDS:=@LINUX_2_6 @USB_SUPPORT
   TITLE:=Driver for Zydas 1211 based USB devices
-  DESCRIPTION:=\
-	This package contains a Linux driver for the ZyDAS ZD1211 802.11b/g \\\
-	USB-WLAN-Chip.\\\
-	Initially contributed by ZyDAS, this driver is actively maintained by the \\\
-	open source community.
   FILES:=$(PKG_BUILD_DIR)/zd1211.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,zd1211) 
+endef
+
+define KernelPackage/zd1211/description
+ This package contains a Linux driver for the ZyDAS ZD1211 802.11b/g 
+ USB-WLAN-Chip.
+ Initially contributed by ZyDAS, this driver is actively maintained by the 
+ open source community.
 endef
 
 define Package/zd1211-utils
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=zd1211 user-space utilities
-  DESCRIPTION:=zd1211 user-space utilities : apdbg, zd1211-sta
+endef
+
+define Package/zd1211-utils/description
+  zd1211 user-space utilities : 
+ - apdbg
+ - zd1211-sta
 endef
 
 define Build/Compile
