@@ -28,10 +28,6 @@ $(call Package/e2fsprogs/Default)
   CATEGORY:=Utilities
   TITLE:=Ext2/3 filesystem utilities
   DEPENDS:=+libblkid +libuuid
-  DESCRIPTION:=\
-	This package contains essential ext2 filesystem utilities which consists of \\\
-	e2fsck, mke2fs, debugfs, dumpe2fs, tune2fs, and most of the other core ext2 \\\
-	filesystem utilities.
 endef
 
 define Package/e2fsprogs/description
