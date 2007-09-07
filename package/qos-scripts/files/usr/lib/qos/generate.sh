@@ -116,6 +116,22 @@ parse_matching_rule() {
 				add_insmod ipt_connbytes
 				append "$var" "-m connbytes --connbytes $value --connbytes-dir both --connbytes-mode bytes"
 			;;
+			*:tos)
+                                add_insmod ipt_tos
+                                case "$value" in
+                                        !*) append "$var" "-m tos ! --tos $value";;
+                                        *) append "$var" "-m tos --tos $value"
+                                esac
+                        ;;
+			*:dscp)
+                                add_insmod ipt_dscp
+				dscp_option="--dscp"
+                                [ -z "${value%%[EBCA]*}" ] && dscp_option="--dscp-class"
+				case "$value" in
+                                       	!*) append "$var" "-m dscp ! $dscp_option $value";;
+                                       	*) append "$var" "-m dscp $dscp_option $value"
+                                esac
+                        ;;
 			*:direction)
 				value="$(echo "$value" | sed -e 's,-,:,g')"
 				if [ "$value" = "out" ]; then
@@ -146,6 +162,19 @@ parse_matching_rule() {
 					!*) append "$var" "-m mark ! --mark $class";;
 					*) append "$var" "-m mark --mark $class";;
 				esac
+			;;
+			1:TOS)
+				add_insmod ipt_TOS
+				config_get TOS "$rule" 'TOS'
+				suffix="-j TOS --set-tos "${TOS:-"Normal-Service"}
+			;;
+			1:DSCP)
+				add_insmod ipt_DSCP
+				config_get DSCP "$rule" 'DSCP'
+				[ -z "${DSCP%%[EBCA]*}" ] && set_value="--set-dscp-class $DSCP" \
+				|| set_value="--set-dscp $DSCP"
+				suffix="-j DSCP $set_value"
+			;;
 		esac
 	done
 	append "$var" "$suffix"
@@ -327,6 +356,16 @@ add_rules() {
 		config_get target "$rule" target
 		config_get target "$target" classnr
 		config_get options "$rule" options
+
+		## If we want to override the TOS field, let's clear the DSCP field first.
+		[ ! -z "$(echo $options | grep 'TOS')" ] && {
+			s_options=${options%%TOS}
+			add_insmod ipt_DSCP
+			parse_matching_rule iptrule "$rule" "$s_options" "$prefix" "-j DSCP --set-dscp 0"
+			append "$var" "$iptrule" "$N"
+			unset iptrule
+		}
+
 		parse_matching_rule iptrule "$rule" "$options" "$prefix" "-j MARK --set-mark $target"
 		append "$var" "$iptrule" "$N"
 	done
