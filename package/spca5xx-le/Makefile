@@ -22,7 +22,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/spca5xx-le
   SUBMENU:=Other modules
-  DEPENDS:=@LINUX_2_6 kmod-videodev @VIDEO_SUPPORT
+  DEPENDS:=@LINUX_2_6 kmod-videodev
   TITLE:=Driver for SPCA5xx based USB cameras (Light Edition)
   URL:=http://mxhaard.free.fr/
   FILES:=$(PKG_BUILD_DIR)/spca5xx.$(LINUX_KMOD_SUFFIX)
