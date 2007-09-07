@@ -34,12 +34,12 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
-ifeq ($(BOARD),brcm)
-BUILDFLAGS := -DBROADCOM -DBCMDRIVER -I$(LINUX_DIR)/arch/mips/bcm947xx/include
+ifeq ($(BOARD),brcm-2.4)
+  BUILDFLAGS := -DBROADCOM -DBCMDRIVER -I$(LINUX_DIR)/arch/mips/bcm947xx/include
 else
-ifeq ($(BOARD),brcm47xx)
-BUILDFLAGS := -DBROADCOM
-endif
+  ifeq ($(BOARD),brcm47xx)
+    BUILDFLAGS := -DBROADCOM
+  endif
 endif
 
 

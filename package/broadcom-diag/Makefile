@@ -26,7 +26,7 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
-ifeq ($(BOARD),brcm)
+ifeq ($(BOARD),brcm-2.4)
 	BUILDFLAGS=-DBCMDRIVER -I$(LINUX_DIR)/arch/mips/bcm947xx/include $(if $(CONFIG_LINUX_2_4),-DLINUX_2_4)
 endif
 
