@@ -26,6 +26,7 @@ endef
 define Package/fonera-mp3d/description
  Daemon to drive a vs1011X mp3 decoder attached to the 
  fonera gpio pins
+endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
