@@ -21,10 +21,12 @@ define Package/qos-scripts
   CATEGORY:=Base system
   DEPENDS:=+tc +kmod-sched +iptables-mod-filter +iptables-mod-ipopt +iptables-mod-conntrack +iptables-mod-imq
   TITLE:=QoS scripts
-  DESCRIPTION:=QoS scripts \\\
-	 A set of scripts that abstract QoS configuration \\\
-	 into a simple configuration file supporting stanzas that specify \\\
-	 any number of QoS entries.
+endef
+
+define Package/qos-scripts/description
+ A set of scripts that abstract QoS configuration into a simple 
+ configuration file supporting stanzas that specify any number of QoS 
+ entries.
 endef
 
 define Build/Prepare

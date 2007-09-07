@@ -19,19 +19,30 @@ PKG_MD5SUM:=dc4d5c36532503a2f234f3303a0bf563
 
 include $(INCLUDE_DIR)/package.mk
 
-define KernelPackage/sangam-atm-annex-a
+define KernelPackage/sangam-atm/Default
   SUBMENU:=Network Devices
   DEPENDS:=@TARGET_AR7 +kmod-atm 
-  TITLE:=AR7 ADSL driver (Annex A, ADSL over POTS)
-  DESCRIPTION:=The AR7 ADSL driver for Annex A (ADSL over POTS)
+  TITLE:=AR7 ADSL driver
   FILES:=$(PKG_BUILD_DIR)/tiatm.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,tiatm)
 endef
 
+define KernelPackage/sangam-atm-annex-a
+$(call KernelPackage/sangam-atm/Default)
+  TITLE+= (Annex A, ADSL over POTS)
+endef
+
+define KernelPackage/sangam-atm-annex-a/description
+ The AR7 ADSL driver for Annex A (ADSL over POTS).
+endef
+
 define KernelPackage/sangam-atm-annex-b
-  $(call KernelPackage/sangam-atm-annex-a)
-  TITLE:=AR7 ADSL driver (Annex B, ADSL over ISDN)
-  DESCRIPTION:=The AR7 ADSL driver for Annex B (ADSL over ISDN)
+$(call KernelPackage/sangam-atm/Default)
+  TITLE+= (Annex B, ADSL over ISDN)
+endef
+
+define KernelPackage/sangam-atm-annex-b/description
+ The AR7 ADSL driver for Annex B (ADSL over ISDN).
 endef
 
 define Build/Compile

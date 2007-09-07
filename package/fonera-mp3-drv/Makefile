@@ -20,9 +20,12 @@ define KernelPackage/fonera-mp3-driver
   SUBMENU:=Other modules
   DEPENDS:=@TARGET_ATHEROS
   TITLE:=Fonera-MP3 driver (VS1011X)
-  DESCRIPTION:=driver for a vs1011X attached to a fonera
   FILES:=$(PKG_BUILD_DIR)/mp3_drv.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,mp3-drv)
+endef
+
+define KernelPackage/fonera-mp3-driver/description
+ This package a kernel driver for a vs1011X attached to a fonera.
 endef
 
 define Build/Prepare

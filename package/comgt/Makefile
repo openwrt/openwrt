@@ -25,12 +25,14 @@ define Package/comgt
   CATEGORY:=Utilities
   TITLE:=Option/Vodafone 3G/GPRS control tool
   DEPENDS:=+chat
-  DESCRIPTION:=\
-	comgt is a scripting language interpreter useful for establishing communications \\\
-	on serial lines and through PCMCIA modems as well as GPRS and 3G datacards.
   URL:= http://www.pharscape.org/content/view/46/70/
 endef
 
+define Package/comgt/description
+ comgt is a scripting language interpreter useful for establishing 
+ communications on serial lines and through PCMCIA modems as well as GPRS 
+ and 3G datacards.
+endef
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -60,4 +62,3 @@ define Package/comgt/install
 endef
 
 $(eval $(call BuildPackage,comgt))
-

@@ -21,14 +21,15 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/rt2500
   SUBMENU:=Wireless Drivers
-  TITLE:=Driver for ralink pci wireless chipsets
+  TITLE:=Driver for Ralink RT2500 pci wireless chipsets
   DEPENDS:=@!BIG_ENDIAN @USB_SUPPORT +wireless-tools
-  DESCRIPTION:=\
-	This package contains a driver for ralink rt2500 pci chipsets.
   URL:=http://rt2x00.serialmonkey.com/
-  FILES:= \
-		$(PKG_BUILD_DIR)/Module/rt2500.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(PKG_BUILD_DIR)/Module/rt2500.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,rt2500)
+endef
+
+define KernelPackage/rt2500/description
+ This package contains a driver for Ralink RT2500 pci chipsets.
 endef
 
 define Build/Compile

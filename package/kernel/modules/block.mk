@@ -3,13 +3,6 @@ BLMENU:=Block Devices
 define KernelPackage/ide-core
   SUBMENU:=$(BLMENU)
   TITLE:=Kernel support for IDE
-  DESCRIPTION:=\
-	Useful for usb mass storage devices (e.g. on WL-HDD)\\\
-	\\\
-	Includes: \\\
-	- ide-core \\\
-	- ide-detect \\\
-	- ide-disk
   KCONFIG:= \
 	CONFIG_IDE \
 	CONFIG_BLK_DEV_IDE \
@@ -29,6 +22,14 @@ define KernelPackage/ide-core/2.6
   KCONFIG+=CONFIG_IDE_GENERIC
   FILES+=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD+=$(call AutoLoad,30,ide-generic)
+endef
+
+define KernelPackage/ide-core/description
+ Kernel support for IDE, useful for usb mass storage devices (e.g. on WL-HDD)
+ Includes:
+ - ide-core
+ - ide-detect
+ - ide-disk
 endef
 
 $(eval $(call KernelPackage,ide-core))
@@ -64,8 +65,8 @@ define KernelPackage/scsi-core
 	CONFIG_SCSI \
 	CONFIG_BLK_DEV_SD
   FILES:= \
-    $(LINUX_DIR)/drivers/scsi/scsi_mod.$(LINUX_KMOD_SUFFIX) \
-    $(LINUX_DIR)/drivers/scsi/sd_mod.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/scsi/scsi_mod.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/scsi/sd_mod.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,scsi_mod) $(call AutoLoad,40,sd_mod)
 endef
 
@@ -87,11 +88,14 @@ $(eval $(call KernelPackage,libata))
 define KernelPackage/ata-piix
   SUBMENU:=$(BLMENU)
   TITLE:=ata-piix
-  DESCRIPTION:=Kernel module for Intel PIIX SATA controller
   DEPENDS:=+kmod-libata +kmod-ide-core +kmod-scsi-core
   KCONFIG:=CONFIG_ATA_PIIX
   FILES:=$(LINUX_DIR)/drivers/ata/ata_piix.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,41,ata_piix)
+endef
+
+define KernelPackage/ata-piix/description
+ Kernel module for Intel PIIX SATA controller
 endef
 
 $(eval $(call KernelPackage,ata-piix))
@@ -100,11 +104,14 @@ $(eval $(call KernelPackage,ata-piix))
 define KernelPackage/pata-artop
   SUBMENU:=$(BLMENU)
   TITLE:=pata-artop
-  DESCRIPTION:=Kernel module for ARTOP PATA controller
   DEPENDS:=+kmod-libata +kmod-scsi-core
   KCONFIG:=CONFIG_PATA_ARTOP
   FILES:=$(LINUX_DIR)/drivers/ata/pata_artop.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,41,pata_artop)
+endef
+
+define KernelPackage/pata-artop/description
+ Kernel module for ARTOP PATA controller
 endef
 
 $(eval $(call KernelPackage,pata-artop))

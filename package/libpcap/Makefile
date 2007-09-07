@@ -22,10 +22,12 @@ define Package/libpcap
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Low-level packet capture library
-  DESCRIPTION:=\
-	This package contains a system-independent library for user-level \\\
-	network packet capture.
   URL:=http://www.tcpdump.org/
+endef
+
+define Package/libpcap/description
+ This package contains a system-independent library for user-level network 
+ packet capture.
 endef
 
 CONFIGURE_ARGS += \

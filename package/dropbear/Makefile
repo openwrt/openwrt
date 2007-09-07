@@ -28,8 +28,10 @@ define Package/dropbear
   SECTION:=net
   CATEGORY:=Base system
   TITLE:=Small SSH2 client/server
-  DESCRIPTION:=\
-	A small SSH2 server/client designed for small memory environments.
+endef
+
+define Package/dropbear/description
+ A small SSH2 server/client designed for small memory environments.
 endef
 
 define Package/dropbearconvert

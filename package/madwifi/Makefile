@@ -79,8 +79,6 @@ define KernelPackage/madwifi
   SUBMENU:=Wireless Drivers
   TITLE:=Driver for Atheros wireless chipsets
   DEPENDS:=+wireless-tools @!LINUX_2_6_AVR32 @!LINUX_2_6_ETRAX
-  DESCRIPTION:=\
-	This package contains a driver for Atheros 802.11a/b/g chipsets.
   URL:=http://madwifi.org/
   FILES:= \
 		$(PKG_BUILD_DIR)/ath_hal/ath_hal.$(LINUX_KMOD_SUFFIX) \
@@ -88,6 +86,10 @@ define KernelPackage/madwifi
 		$(PKG_BUILD_DIR)/ath_rate/$(RATE_CONTROL)/ath_rate_$(RATE_CONTROL).$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/net80211/wlan*.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,$(MADWIFI_AUTOLOAD))
+endef
+
+define KernelPackage/madwifi/description
+ This package contains a driver for Atheros 802.11a/b/g chipsets.
 endef
 
 MADWIFI_MAKEOPTS= -C $(PKG_BUILD_DIR) \

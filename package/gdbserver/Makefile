@@ -20,8 +20,11 @@ define Package/gdbserver
   CATEGORY:=Utilities
   DEPENDS:=@GDB@
   TITLE:=Remote Server for the GNU Debugger
-  DESCRIPTION:=GDBSERVER is a program that allows you to run GDB on a different machine\\\
-than the one which is running the program being debugged.
+endef
+
+define Package/gdbserver/description
+ GDBSERVER is a program that allows you to run GDB on a different machine 
+ than the one which is running the program being debugged.
 endef
 
 define Build/Configure

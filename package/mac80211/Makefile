@@ -22,14 +22,16 @@ define KernelPackage/mac80211
   TITLE:=Linux 802.11 Wireless Networking Stack
   DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_MAC80211
-  DESCRIPTION:=\
-	This package contains the DeviceScape 80211 wireless stack.
   FILES:= \
 	$(PKG_BUILD_DIR)/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/mac80211/rc80211_lowest.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/mac80211/rc80211_simple.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/wireless/cfg80211.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,cfg80211 mac80211 rc80211_simple)
+endef
+
+define KernelPackage/mac80211/description
+ This package contains the DeviceScape 80211 wireless stack.
 endef
 
 define Build/Prepare

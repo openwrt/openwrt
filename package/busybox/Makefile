@@ -37,8 +37,8 @@ define Package/busybox
 endef
 
 define Package/busybox/description
-The Swiss Army Knife of embedded Linux.
-	It slices, it dices, it makes Julian Fries.
+ The Swiss Army Knife of embedded Linux.
+ It slices, it dices, it makes Julian Fries.
 endef
 
 define Package/busybox/config

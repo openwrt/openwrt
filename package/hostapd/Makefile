@@ -35,38 +35,44 @@ define Package/hostapd/Default
 endef
 
 define Package/hostapd
-  $(call Package/hostapd/Default)
+$(call Package/hostapd/Default)
   DEPENDS:=+libopenssl @!TARGET_AVR32 @!TARGET_ETRAX
   TITLE+= (full)
-  DESCRIPTION:=\
-	This package contains a full featured IEEE 802.1x/WPA/EAP/RADIUS \\\
-	Authenticator.
 endef
 
 define Package/hostapd/conffiles
 /etc/hostapd.conf
 endef
 
+define Package/hostapd/description
+ This package contains a full featured IEEE 802.1x/WPA/EAP/RADIUS 
+ Authenticator.
+endef
+
 define Package/hostapd-mini
-  $(call Package/hostapd/Default)
+$(call Package/hostapd/Default)
   DEPENDS:=@!TARGET_AVR32 @!TARGET_ETRAX
   TITLE+= (WPA-PSK only)
-  DESCRIPTION:=\
-	This package contains a minimal IEEE 802.1x/WPA/EAP/RADIUS Authenticator \\\
-	(WPA-PSK only).
 endef
 
 define Package/hostapd-mini/conffiles
 /etc/hostapd.conf
 endef
 
+define Package/hostapd-mini/description
+ This package contains a minimal IEEE 802.1x/WPA/EAP/RADIUS Authenticator 
+ (WPA-PSK only).
+endef
+
 define Package/hostapd-utils
   $(call Package/hostapd/Default)
   DEPENDS:=@PACKAGE_hostapd||PACKAGE_hostapd-mini
   TITLE+= (utils)
-  DESCRIPTION:=\
-	This package contains a command line utility to control the \\\
-	IEEE 802.1x/WPA/EAP/RADIUS Authenticator.
+endef
+
+define Package/hostapd-utils/description
+ This package contains a command line utility to control the 
+ IEEE 802.1x/WPA/EAP/RADIUS Authenticator.
 endef
 
 define Build/ConfigureTarget

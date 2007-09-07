@@ -34,8 +34,6 @@ define Package/base-files$(TARGET)
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=Base filesystem for OpenWrt
-  DESCRIPTION:=\
-	This package contains a base filesystem and system scripts for OpenWrt.
   URL:=http://openwrt.org/
   VERSION:=$(PKG_RELEASE)-$(REV)
   $(call Config,network.lan.proto,string,static,LAN Protocol)
@@ -58,6 +56,10 @@ define Package/base-files$(TARGET)/conffiles
 $(call $(TARGET)/conffiles)
 endef
 
+define Package/base-files$(TARGET)/description
+ This package contains a base filesystem and system scripts for OpenWrt.
+endef
+
 define Package/gcc/Default
   SECTION:=libs
   CATEGORY:=Base system
@@ -67,18 +69,18 @@ define Package/gcc/Default
 endef
 
 define Package/libgcc
-  $(call Package/gcc/Default)
+$(call Package/gcc/Default)
   TITLE:=GCC support library
   DEPENDS:=@!TARGET_AVR32 @!NATIVE_TOOLCHAIN
 endef
 
 define Package/libssp
-  $(call Package/gcc/Default)
+$(call Package/gcc/Default)
   TITLE:=GCC support library
 endef
 
 define Package/libstdcpp
-  $(call Package/gcc/Default)
+$(call Package/gcc/Default)
   NAME:=libstdc++
   TITLE:=GNU Standard C++ Library v3
   DEPENDS:=@!NATIVE_TOOLCHAIN&&@INSTALL_LIBSTDCPP
@@ -93,12 +95,12 @@ define Package/uclibc/Default
 endef
 
 define Package/libpthread
-  $(call Package/uclibc/Default)
+$(call Package/uclibc/Default)
   TITLE:=POSIX thread library
 endef
 
 define Package/uclibc
-  $(call Package/uclibc/Default)
+$(call Package/uclibc/Default)
   TITLE:=C library embedded systems
 endef
 

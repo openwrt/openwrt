@@ -26,10 +26,12 @@ define Package/wireless-tools
   SECTION:=net
   CATEGORY:=Base system
   TITLE:=Tools for manipulating Linux Wireless Extensions
-  DESCRIPTION:=\
-	This package contains a collection of tools for configuring wireless \\\
-	adapters implementing the "Linux Wireless Extensions".
   URL:=http://hplabs.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html
+endef
+
+define Package/wireless-tools/description
+ This package contains a collection of tools for configuring wireless 
+ adapters implementing the "Linux Wireless Extensions".
 endef
 
 define Build/Compile

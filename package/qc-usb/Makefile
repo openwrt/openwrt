@@ -19,26 +19,34 @@ PKG_MD5SUM:=6f6787e1dda11ca3b936ad434154f426
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/qc-usb-utils
-  SECTION:=utils
-  CATEGORY:=Utilities
-  TITLE:=Utility programs for the qc-usb kernel module
-  DESCRIPTION:=\
-  	Utilities to tweak parameters of your QuickCam Express or \\\
-  	similar webcam. These programs are completely useless without a \\\
-  	qc-usb-modules package.
+define Package/qc-usb/Default
   URL:=http://qce-ga.sourceforge.net/
 endef
 
+define Package/qc-usb-utils
+$(call Package/qc-usb/Default)
+  SECTION:=utils
+  CATEGORY:=Utilities
+  TITLE:=Utility programs for the qc-usb kernel module
+endef
+
+define Package/qc-usb-utils/description
+ Utilities to tweak parameters of your QuickCam Express or similar webcam. 
+ These programs are completely useless without a qc-usb-modules package.
+endef
+
 define KernelPackage/usb-qc
+$(call Package/qc-usb/Default)
   TITLE:=Support for USB QuickCam Express webcam
-  DESCRIPTION:=\
-	Kernel support for Logitech's QuickCam Express webcam and \\\
-	other webcams with similar chipsets.
   SUBMENU:=USB Support
   DEPENDS:=@LINUX_2_6 @USB_SUPPORT kmod-usb-core +kmod-videodev
   FILES:=$(PKG_BUILD_DIR)/quickcam.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,quickcam)
+endef
+
+define KernelPackage/usb-qc/description
+ Kernel support for Logitech's QuickCam Express webcam and other webcams 
+ with similar chipsets.
 endef
 
 ifneq ($(CONFIG_PACKAGE_kmod-usb-qc),)

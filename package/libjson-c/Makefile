@@ -22,8 +22,11 @@ define Package/libjson
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=javascript object notation
-  DESCRIPTION:=library for javascript object notation backends
   URL:=http://oss.metaparadigm.com/json-c/
+endef
+
+define Package/libjson/description
+ This package contains a library for javascript object notation backends.
 endef
 
 define Build/Compile

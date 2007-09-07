@@ -20,11 +20,14 @@ endif
 define KernelPackage/bcm43xx-mac80211
   SUBMENU:=Wireless Drivers
   TITLE:=Broadcom 43xx wireless support
-  DESCRIPTION:=Kernel module for Broadcom 43xx wireless support (mac80211)
   DEPENDS:=@TARGET_BRCM47XX +kmod-mac80211
   KCONFIG:=CONFIG_MAC80211
   FILES:=$(PKG_BUILD_DIR)/bcm43xx-mac80211.$(LINUX_KMOD_SUFFIX)
 #  AUTOLOAD:=$(call AutoLoad,30,bcm43xx-mac80211)
+endef
+
+define KernelPackage/bcm43xx-mac80211/description
+ Kernel module for Broadcom 43xx wireless support (mac80211)
 endef
 
 ifneq ($(CONFIG_MAC80211),)

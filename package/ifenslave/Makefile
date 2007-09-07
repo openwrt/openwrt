@@ -19,9 +19,12 @@ define Package/ifenslave
   CATEGORY:=Network
   DEPENDS:=@LINUX_2_6 +kmod-bonding
   TITLE:=A utility to manipulate kernel ethernet bonding devices
-  DESCRIPTION:=ifenslave is needed to add/remove interfaces to/from ethernet bond devices
   VERSION:=$(LINUX_VERSION)-$(PKG_RELEASE)
   URL:=http://www.kernel.org
+endef
+
+define Package/ifenslave/description
+ ifenslave is needed to add/remove interfaces to/from ethernet bond devices.
 endef
 
 define Build/Prepare

@@ -37,7 +37,6 @@ define Package/kernel
   CATEGORY:=Kernel
   DEFAULT:=y
   TITLE:=Virtual kernel package
-  DESCRIPTION:=Virtual kernel package
   VERSION:=$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)
 endef
 

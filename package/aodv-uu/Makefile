@@ -21,31 +21,37 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/aodv-uu/Default
   TITLE:=Ad-hoc On-demand Distance Vector Routing
-  DESCRIPTION:=\
-  	AODV is the Ad-hoc On-demand Distance Vector routing protocol \\\
-  	implementation created at Uppsala University.
   URL:=http://core.it.uu.se/core/index.php/AODV-UU
 endef
 
+define Package/aodv-uu/Default/description
+ AODV is the Ad-hoc On-demand Distance Vector routing protocol 
+ implementation created at Uppsala University.
+endef
+
 define Package/aodv-uu
-  $(call Package/aodv-uu/Default)
+$(call Package/aodv-uu/Default)
   SECTION:=net
   CATEGORY:=Network
   TITLE+= (daemon)
-  DESCRIPTION+=\\\
-  	\\\
-  	This package contains the AODV userland daemon.
+endef
+
+define Package/aodv-uu/description
+$(call Package/aodv-uu/Default/description)
+ This package contains the AODV userland daemon.
 endef
 
 define KernelPackage/aodv-uu
-  $(call Package/aodv-uu/Default)
+$(call Package/aodv-uu/Default)
   TITLE+= (kernel module)
-  DESCRIPTION+=\\\
-  	\\\
-  	This package contains the AODV kernel module.
   FILES:=$(PKG_BUILD_DIR)/lnx/kaodv.$(LINUX_KMOD_SUFFIX)
   SUBMENU:=Network Support
   AUTOLOAD:=$(call AutoLoad,80,$(shell cat ./files/aodv-uu.modules))
+endef
+
+define KernelPackage/aodv-uu/description
+$(call Package/aodv-uu/Default/description)
+ This package contains the AODV kernel module.
 endef
 
 ifeq ($(CONFIG_LINUX_2_6),y)
