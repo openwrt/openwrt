@@ -123,6 +123,12 @@ $(call KernelPackage/$(1)/description)
 		  $(call KernelPackage/$(1)/install,$$(1))
       endef
     endif
+  $(if $(CONFIG_PACKAGE_kmod-$(1)),
+    else
+      compile: kmod-$(1)-unavailable
+      kmod-$(1)-unavailable:
+		@echo "WARNING: kmod-$(1) is not available in the kernel config"
+  )
   endif
   $$(eval $$(call BuildPackage,kmod-$(1)))
 
