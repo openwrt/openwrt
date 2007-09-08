@@ -36,7 +36,7 @@ endef
 
 define Package/hostapd
 $(call Package/hostapd/Default)
-  DEPENDS:=+libopenssl @!TARGET_AVR32 @!TARGET_ETRAX
+  DEPENDS:=+libopenssl @!TARGET_avr32 @!TARGET_etrax
   TITLE+= (full)
 endef
 

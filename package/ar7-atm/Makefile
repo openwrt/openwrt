@@ -21,7 +21,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/sangam-atm/Default
   SUBMENU:=Network Devices
-  DEPENDS:=@TARGET_AR7 +kmod-atm 
+  DEPENDS:=@TARGET_ar7 +kmod-atm 
   TITLE:=AR7 ADSL driver
   FILES:=$(PKG_BUILD_DIR)/tiatm.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,tiatm)

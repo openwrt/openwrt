@@ -12,7 +12,10 @@ BOARDNAME:=Foxboard (ETRAX 100LX)
 FEATURES:=squashfs jffs2
 LINUX_VERSION:=2.6.19.2
 
-include $(INCLUDE_DIR)/kernel-build.mk
+include $(INCLUDE_DIR)/target.mk
+
+KERNELNAME:="zImage"
+DEFAULT_PACKAGES += foxboard-utils
 
 define Target/Description
 	Build fimware images for the FOXBOARD made by acmesystems.it
@@ -31,14 +34,10 @@ define Kernel/Prepare
 	$(call Kernel/Prepare/Fox)
 endef
 
-DEFAULT_PACKAGES += foxboard-utils
-
-$(eval $(call RequireCommand,/usr/local/cris/gcc-cris, \
-	Please install the binary cris toolchain. \
-))
-
 #include the profiles
 -include profiles/*.mk
 
-KERNELNAME:="zImage"
-$(eval $(call BuildKernel))
+$(eval $(call BuildTarget))
+$(eval $(call RequireCommand,/usr/local/cris/gcc-cris, \
+	Please install the binary cris toolchain. \
+))

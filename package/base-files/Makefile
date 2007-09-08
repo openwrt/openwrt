@@ -71,7 +71,7 @@ endef
 define Package/libgcc
 $(call Package/gcc/Default)
   TITLE:=GCC support library
-  DEPENDS:=@!TARGET_AVR32 @!NATIVE_TOOLCHAIN
+  DEPENDS:=@!TARGET_avr32 @!NATIVE_TOOLCHAIN
 endef
 
 define Package/libssp
@@ -123,6 +123,11 @@ define Package/base-files$(TARGET)/install
 	if [ -d $(PLATFORM_DIR)/base-files/default/. ]; then \
 		$(CP) $(PLATFORM_DIR)/base-files/default/* $(1)/; \
 	fi
+	$(if $(filter-out $(PLATFORM_DIR),$(PLATFORM_SUBDIR)), \
+		if [ -d $(PLATFORM_SUBDIR)/base-files/default/. ]; then \
+			$(CP) $(PLATFORM_SUBDIR)/base-files/default/* $(1)/; \
+		fi \
+	)
 	if [ "$(PROFILE)" != "Default" ]; then \
 		if [ -d $(PLATFORM_DIR)/base-files/profile-$(PROFILE)/. ]; then \
 			$(CP) $(PLATFORM_DIR)/base-files/profile-$(PROFILE)/* $(1)/; \

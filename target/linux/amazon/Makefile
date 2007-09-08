@@ -10,6 +10,9 @@ ARCH:=mips
 BOARD:=amazon
 BOARDNAME:=Infineon Amazon
 FEATURES:=squashfs jffs2 broken
+LINUX_VERSION:=2.6.21.5
+
+include $(INCLUDE_DIR)/target.mk
 
 define Target/Description
 	Build firmware images for Infineon Amazon boards
@@ -17,9 +20,7 @@ endef
 
 KERNELNAME:="uImage"
 
-include $(INCLUDE_DIR)/kernel-build.mk
-
 # include the profiles
 -include profiles/*.mk
 
-$(eval $(call BuildKernel))
+$(eval $(call BuildTarget))

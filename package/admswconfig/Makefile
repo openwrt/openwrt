@@ -22,7 +22,7 @@ define Package/admswconfig
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=ADM5120 Switch configuration tool
-  DEPENDS:=@TARGET_ADM5120||TARGET_ADM5120EB
+  DEPENDS:=@TARGET_adm5120
   URL:=http://sharon.esrac.ele.tue.nl/users/pe1rxq/linux-adm/admswconfig/
 endef
 

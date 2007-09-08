@@ -5,6 +5,7 @@
 # See /LICENSE for more information.
 #
 
+override TARGET_BUILD=
 include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/host.mk

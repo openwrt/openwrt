@@ -10,17 +10,16 @@ ARCH:=mips
 BOARD:=brcm63xx
 BOARDNAME:=Broadcom BCM963xx
 FEATURES:=squashfs jffs2 broken usb atm
-
 LINUX_VERSION:=2.6.22.4
+
+include $(INCLUDE_DIR)/target.mk
 
 define Target/Description
 	Build firmware images for Broadcom based xDSL/routers
 	(e.g. Inventel Livebox, Siemens SE515)
 endef
 
-include $(INCLUDE_DIR)/kernel-build.mk
-
 # include the profiles
 -include profiles/*.mk
 
-$(eval $(call BuildKernel))
+$(eval $(call BuildTarget))

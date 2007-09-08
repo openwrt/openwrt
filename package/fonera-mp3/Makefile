@@ -19,7 +19,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/fonera-mp3d
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@TARGET_ATHEROS
+  DEPENDS:=@TARGET_atheros
   TITLE:=Daemon for fonera-mp3
 endef
 

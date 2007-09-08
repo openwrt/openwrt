@@ -5,15 +5,15 @@
 # See /LICENSE for more information.
 #
 
-include $(INCLUDE_DIR)/kernel-version.mk
+ifeq ($(__target_inc),)
+  include $(INCLUDE_DIR)/target.mk
+endif
 
 ifeq ($(DUMP),1)
   KERNEL?=<KERNEL>
   BOARD?=<BOARD>
   LINUX_VERSION?=<LINUX_VERSION>
 else
-  include $(INCLUDE_DIR)/target.mk
-
   export GCC_HONOUR_COPTS=s
 
   ifeq ($(KERNEL),2.6)
@@ -30,9 +30,8 @@ else
     KERNEL_CROSS:=$(TARGET_CROSS)
   endif
 
-  PLATFORM_DIR := $(TOPDIR)/target/linux/$(BOARD)
   PATCH_DIR ?= ./patches$(shell [ -d "./patches-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
-  KERNEL_BUILD_DIR ?= $(BUILD_DIR_BASE)/linux-$(BOARD)$(if $(BUILD_SUFFIX),_$(BUILD_SUFFIX))
+  KERNEL_BUILD_DIR ?= $(BUILD_DIR_BASE)/linux-$(BOARD)$(if $(SUBTARGET),_$(SUBTARGET))$(if $(BUILD_SUFFIX),_$(BUILD_SUFFIX))
   LINUX_DIR ?= $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
 
   MODULES_SUBDIR:=lib/modules/$(LINUX_VERSION)
@@ -46,8 +45,18 @@ else
 
   PKG_BUILD_DIR ?= $(KERNEL_BUILD_DIR)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
 endif
-GENERIC_PLATFORM_DIR := $(TOPDIR)/target/linux/generic-$(KERNEL)
-GENERIC_PATCH_DIR := $(GENERIC_PLATFORM_DIR)/patches$(shell [ -d "$(GENERIC_PLATFORM_DIR)/patches-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
+
+ifneq (,$(findstring uml,$(BOARD)))
+  LINUX_KARCH:=um
+else
+  LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
+	-e 's/mipsel/mips/' \
+	-e 's/mipseb/mips/' \
+	-e 's/powerpc/ppc/' \
+	-e 's/sh[234]/sh/' \
+	-e 's/armeb/arm/' \
+  )
+endif
 
 
 define KernelPackage/Defaults

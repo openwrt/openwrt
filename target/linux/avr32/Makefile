@@ -10,18 +10,15 @@ ARCH:=avr32
 BOARD:=avr32
 BOARDNAME:=Atmel AVR32
 FEATURES:=squashfs
-
 LINUX_VERSION:=2.6.22.4
+
+include $(INCLUDE_DIR)/target.mk
 
 define Target/Description
   Build firmware images for ATNGW100 board
 endef
 
-KERNEL:=2.6
-
-include $(INCLUDE_DIR)/kernel-build.mk
-
 #include the profiles
 -include profiles/*.mk
 
-$(eval $(call BuildKernel))
+$(eval $(call BuildTarget))

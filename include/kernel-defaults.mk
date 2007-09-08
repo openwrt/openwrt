@@ -46,11 +46,9 @@ define Kernel/Configure/2.6
 	-$(MAKE) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" oldconfig prepare scripts
 endef
 define Kernel/Configure/Default
-	$(SCRIPT_DIR)/config.pl '+' $(GENERIC_LINUX_CONFIG) \
-		$(if $(wildcard ./config/profile-$(PROFILE)),'+' $(LINUX_CONFIG) ./config/profile-$(PROFILE), $(LINUX_CONFIG)) \
-		> $(LINUX_DIR)/.config.target
+	$(LINUX_CONFCMD) > $(LINUX_DIR)/.config.target
 	$(SCRIPT_DIR)/metadata.pl kconfig $(TMP_DIR)/.packageinfo $(TOPDIR)/.config > $(LINUX_DIR)/.config.override
-	$(SCRIPT_DIR)/config.pl 'm+' $(LINUX_DIR)/.config.target $(LINUX_DIR)/.config.override >$(LINUX_DIR)/.config
+	$(SCRIPT_DIR)/kconfig.pl 'm+' $(LINUX_DIR)/.config.target $(LINUX_DIR)/.config.override > $(LINUX_DIR)/.config
 	$(call Kernel/Configure/$(KERNEL))
 	rm -rf $(KERNEL_BUILD_DIR)/modules
 	@rm -f $(BUILD_DIR)/linux
@@ -88,7 +86,6 @@ define Kernel/CompileImage/Default
 endef
 
 define Kernel/Clean/Default
-	rm -f $(LINUX_DIR)/.linux-compile
 	rm -f $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/.configured
 	rm -f $(LINUX_KERNEL)
 	$(MAKE) -C $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION) clean

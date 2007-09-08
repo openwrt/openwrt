@@ -39,6 +39,8 @@ $(curdir)//prepare = $(STAGING_DIR)/.prepared $(TOOLCHAIN_DIR)/info.mk
 $(curdir)//compile = $(1)/prepare
 $(curdir)//install = $(1)/compile
 
-$(eval $(call stampfile,$(curdir),toolchain,install))
+$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed:
+
+$(eval $(call stampfile,$(curdir),toolchain,install,$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed))
 $(eval $(call subdir,$(curdir)))
 

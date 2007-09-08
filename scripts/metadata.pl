@@ -23,15 +23,16 @@ sub parse_target_metadata() {
 	while (<>) {
 		chomp;
 		/^Target:\s*(.+)\s*$/ and do {
-			my $conf = uc $1;
-			$conf =~ tr/\.-/__/;
+			my $conf = $1;
+			$conf =~ tr#/\.\-/#___#;
 			$target = {
+				id => $1,
 				conf => $conf,
-				board => $1,
 				profiles => []
 			};
 			push @target, $target;
 		};
+		/^Target-Board:\s*(.+)\s*$/ and $target->{board} = $1;
 		/^Target-Kernel:\s*(\d+\.\d+)\s*$/ and $target->{kernel} = $1;
 		/^Target-Name:\s*(.+)\s*$/ and $target->{name} = $1;
 		/^Target-Path:\s*(.+)\s*$/ and $target->{path} = $1;
@@ -198,45 +199,6 @@ sub merge_package_lists($$) {
 	return sort(@l);
 }
 
-sub gen_target_mk() {
-	my @target = parse_target_metadata();
-	
-	@target = sort {
-		$a->{board} cmp $b->{board}
-	} @target;
-	
-	foreach my $target (@target) {
-		my ($profiles_def, $profiles_eval);
-
-		foreach my $profile (@{$target->{profiles}}) {
-			$profiles_def .= "
-  define Profile/$target->{conf}\_$profile->{id}
-    ID:=$profile->{id}
-    NAME:=$profile->{name}
-    PACKAGES:=".join(" ", merge_package_lists($target->{packages}, $profile->{packages}))."\n";
-			$profile->{kconfig} and $profiles_def .= "    KCONFIG:=1\n";
-			$profiles_def .= "  endef";
-			$profiles_eval .= "
-\$(eval \$(call AddProfile,$target->{conf}\_$profile->{id}))"
-		}
-		print "
-ifeq (\$(CONFIG_TARGET_$target->{conf}),y)
-  define Target
-    KERNEL:=$target->{kernel}
-    BOARD:=$target->{board}
-    BOARDNAME:=$target->{name}
-    LINUX_VERSION:=$target->{version}
-    LINUX_RELEASE:=$target->{release}
-    LINUX_KARCH:=$target->{karch}
-    DEFAULT_PACKAGES:=".join(" ", @{$target->{packages}})."
-  endef$profiles_def
-endif$profiles_eval
-
-"
-	}
-	print "\$(eval \$(call Target))\n";
-}
-
 sub target_config_features(@) {
 	my $ret;
 
@@ -265,7 +227,7 @@ sub gen_target_config() {
 	print <<EOF;
 choice
 	prompt "Target System"
-	default TARGET_BRCM_2_4
+	default TARGET_brcm_2_4
 	reset if !DEVEL
 	
 EOF
@@ -297,6 +259,14 @@ EOF
 
 	print <<EOF;
 endchoice
+
+config TARGET_BOARD
+	string
+EOF
+	foreach my $target (@target) {
+		print "\t\tdefault \"".$target->{board}."\" if TARGET_".$target->{conf}."\n";
+	}
+	print <<EOF;
 
 choice
 	prompt "Target Profile"
@@ -559,7 +529,6 @@ EOF
 sub parse_command() {
 	my $cmd = shift @ARGV;
 	for ($cmd) {
-		/^target_mk$/ and return gen_target_mk();
 		/^target_config$/ and return gen_target_config();
 		/^package_mk$/ and return gen_package_mk();
 		/^package_config$/ and return gen_package_config();
@@ -567,7 +536,6 @@ sub parse_command() {
 	}
 	print <<EOF
 Available Commands:
-	$0 target_mk [file] 		Target metadata in makefile format
 	$0 target_config [file] 	Target metadata in Kconfig format
 	$0 package_mk [file]    	Package metadata in makefile format
 	$0 package_config [file] 	Package metadata in Kconfig format

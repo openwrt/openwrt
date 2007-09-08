@@ -5,6 +5,9 @@
 # See /LICENSE for more information.
 #
 
+ifneq ($(__rules_inc),1)
+__rules_inc=1
+
 ifeq ($(DUMP),)
   -include $(TOPDIR)/.config
 endif
@@ -12,8 +15,6 @@ include $(TOPDIR)/include/debug.mk
 include $(TOPDIR)/include/verbose.mk
 
 TMP_DIR:=$(TOPDIR)/tmp
-
-include $(TOPDIR)/include/target.mk
 
 export SHELL=/usr/bin/env bash -c '. $(TOPDIR)/include/shell.sh; eval "$$2"' --
 
@@ -23,6 +24,7 @@ endef
 #"))
 
 ARCH:=$(call qstrip,$(CONFIG_ARCH))
+BOARD:=$(call qstrip,$(CONFIG_TARGET_BOARD))
 TARGET_OPTIMIZATION:=$(call qstrip,$(CONFIG_TARGET_OPTIMIZATION))
 BUILD_SUFFIX:=$(call qstrip,$(CONFIG_BUILD_SUFFIX))
 GCCV:=$(call qstrip,$(CONFIG_GCC_VERSION))
@@ -37,7 +39,7 @@ SCRIPT_DIR:=$(TOPDIR)/scripts
 BUILD_DIR_BASE:=$(TOPDIR)/build_dir
 BUILD_DIR:=$(BUILD_DIR_BASE)/$(ARCH)$(if $(BUILD_SUFFIX),_$(BUILD_SUFFIX))
 BUILD_DIR_HOST:=$(BUILD_DIR_BASE)/host
-BUILD_DIR_TOOLCHAIN:=$(BUILD_DIR_BASE)/toolchain-$(ARCH)
+BUILD_DIR_TOOLCHAIN:=$(BUILD_DIR_BASE)/toolchain-$(ARCH)_gcc$(GCCV)
 STAGING_DIR:=$(TOPDIR)/staging_dir/$(ARCH)
 STAGING_DIR_HOST:=$(TOPDIR)/staging_dir/host
 TOOLCHAIN_DIR:=$(TOPDIR)/staging_dir/toolchain-$(ARCH)_gcc$(GCCV)
@@ -133,3 +135,5 @@ endef
 all:
 FORCE: ;
 .PHONY: FORCE
+
+endif #__rules_inc
