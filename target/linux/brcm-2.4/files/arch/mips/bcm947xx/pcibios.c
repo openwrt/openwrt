@@ -143,6 +143,7 @@ pcibios_init(void)
 	spin_unlock_irqrestore(&sbh_lock, flags);
 
 	set_io_port_base((unsigned long) ioremap_nocache(SB_PCI_MEM, 0x04000000));
+	mdelay(300); /* workaround for atheros cards */
 
 	/* Scan the SB bus */
 	pci_scan_bus(0, &pcibios_ops, NULL);
