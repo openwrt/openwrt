@@ -19,7 +19,4 @@ define Target/Description
 	(e.g. Inventel Livebox, Siemens SE515)
 endef
 
-# include the profiles
--include profiles/*.mk
-
 $(eval $(call BuildTarget))

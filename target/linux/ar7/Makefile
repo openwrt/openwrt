@@ -19,6 +19,4 @@ define Target/Description
 	Build firmware images for TI AR7 based routers
 endef
 
--include profiles/*.mk
-
 $(eval $(call BuildTarget))

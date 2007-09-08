@@ -18,7 +18,4 @@ define Target/Description
   Build firmware images for ATNGW100 board
 endef
 
-#include the profiles
--include profiles/*.mk
-
 $(eval $(call BuildTarget))

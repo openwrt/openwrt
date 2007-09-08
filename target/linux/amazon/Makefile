@@ -20,7 +20,4 @@ endef
 
 KERNELNAME:="uImage"
 
-# include the profiles
--include profiles/*.mk
-
 $(eval $(call BuildTarget))

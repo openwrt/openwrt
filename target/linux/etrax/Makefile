@@ -34,9 +34,6 @@ define Kernel/Prepare
 	$(call Kernel/Prepare/Fox)
 endef
 
-#include the profiles
--include profiles/*.mk
-
 $(eval $(call BuildTarget))
 $(eval $(call RequireCommand,/usr/local/cris/gcc-cris, \
 	Please install the binary cris toolchain. \

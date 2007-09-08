@@ -15,7 +15,4 @@ LINUX_VERSION:=2.6.21.6
 
 include $(INCLUDE_DIR)/target.mk
 
-# include the profiles
--include profiles/*.mk
-
 $(eval $(call BuildTarget))

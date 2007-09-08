@@ -70,13 +70,17 @@ define Profile
 	getvar "$(call shvar,Profile/$(1)/Description)"; \
 	echo "@@"; \
 	echo;
-  ifeq ($(CONFIG_TARGET_$(call target_conf,$(BOARD)_$(if $(2),$(2)_)$(1))),y)
+  ifeq ($(CONFIG_TARGET_$(call target_conf,$(BOARD)_$(if $(SUBTARGET),$(SUBTARGET)_)$(1))),y)
     PROFILE=$(1)
   endif
 endef
 
-$(eval $(call shexport,Target/Description))
+-include $(PLATFORM_DIR)/profiles/*.mk
+ifneq ($(PLATFORM_DIR),$(PLATFORM_SUBDIR))
+  -include $(PLATFORM_SUBDIR)/profiles/*.mk
+endif
 
+$(eval $(call shexport,Target/Description))
 
 include $(INCLUDE_DIR)/kernel-version.mk
 

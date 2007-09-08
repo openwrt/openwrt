@@ -22,7 +22,4 @@ define Target/Description
   Build fimware images for Figment Design Labs VersaLink board.
 endef
 
-#include the profiles
--include profiles/*.mk
-
 $(eval $(call BuildTarget))

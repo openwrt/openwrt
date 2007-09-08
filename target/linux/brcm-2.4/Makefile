@@ -22,7 +22,4 @@ define Target/Description
 	(e.g. Linksys WRT54G(S), Asus WL-500g, Motorola WR850G)
 endef
 
-# include the profiles
--include profiles/*.mk
-
 $(eval $(call BuildTarget))
