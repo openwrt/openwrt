@@ -27,8 +27,5 @@ define Kernel/BuildImage
 	$(CP) $(LINUX_DIR)/arch/mips/boot/compressed/images/zImage.srec $(LINUX_DIR)/zImage.srec
 endef
 
-# include the profiles
--include profiles/*.mk
-
 $(eval $(call BuildTarget))
 

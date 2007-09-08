@@ -21,7 +21,4 @@ define Target/Description
 	(e.g. Netgear WGT634U)
 endef
 
-# include the profiles
--include profiles/*.mk
-
 $(eval $(call BuildTarget))

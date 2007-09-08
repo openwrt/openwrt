@@ -32,7 +32,4 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
   endef
 endif
 
-# include the profiles
--include profiles/*.mk
-
 $(eval $(call BuildTarget))

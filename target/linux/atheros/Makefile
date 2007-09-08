@@ -21,7 +21,4 @@ define Target/Description
 	Build firmware images for Atheros SoC boards
 endef
 
-# include the profiles
--include profiles/*.mk
-
 $(eval $(call BuildTarget))

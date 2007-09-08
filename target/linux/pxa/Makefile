@@ -19,7 +19,4 @@ define Target/Description
 	Stub for boards based on intel PXA
 endef
 
-# include the profiles
--include profiles/*.mk
-
 $(eval $(call BuildTarget))

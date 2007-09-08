@@ -19,7 +19,4 @@ define Target/Description
 	Build firmware images for the AMCC Taishan evaluation board
 endef
 
-# include the profiles
--include profiles/*.mk
-
 $(eval $(call BuildTarget))
