@@ -226,7 +226,7 @@ define KernelPackage/ppp/2.6
   KCONFIG+= \
 	CONFIG_SLHC \
 	CONFIG_CRC_CCITT
-  FILES:= \
+  FILES+= \
 	$(LINUX_DIR)/lib/crc-ccitt.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,crc-ccitt slhc ppp_generic ppp_async)
 endef
