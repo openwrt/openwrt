@@ -22,8 +22,8 @@ PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/uClibc-$(PKG_VERSION)$(PKG_EXTRAVERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
 
-STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.uclibc_installed
-STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.uclibc-utils_installed
+STAMP_BUILT:=$(STAGING_DIR)/stamp/.uclibc_installed
+STAMP_INSTALLED:=$(STAGING_DIR)/stamp/.uclibc-utils_installed
 
 UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 		-e 's/i.86/i386/' \

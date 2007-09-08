@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/nvram
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@TARGET_BRCM_2_4
+  DEPENDS:=@TARGET_brcm_2_4
   TITLE:=Broadcom config utility
 endef
 

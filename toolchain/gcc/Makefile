@@ -33,7 +33,7 @@ BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
 
 include $(INCLUDE_DIR)/host-build.mk
 
-STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed
+STAMP_BUILT:=$(STAGING_DIR)/stamp/.gcc-initial_installed
 BUILD_DIR1:=$(BUILD_DIR_HOST)/gcc-$(PKG_VERSION)-initial
 BUILD_DIR2:=$(BUILD_DIR_HOST)/gcc-$(PKG_VERSION)-final
 

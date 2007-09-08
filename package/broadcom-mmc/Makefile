@@ -23,7 +23,7 @@ MAKEFLAGS_KMOD:= -C "$(LINUX_DIR)" \
 
 define KernelPackage/broadcom-mmc
   SUBMENU:=Other modules
-  DEPENDS:=@TARGET_BRCM_2_4
+  DEPENDS:=@TARGET_brcm_2_4
   TITLE:=Kernel driver for the Linksys WRT54G MM/SD-Card Mod
   DESCRIPTION:=\
 	Kernel driver for the Linksys WRT54G MM/SD-Card Mod

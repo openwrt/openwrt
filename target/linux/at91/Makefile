@@ -14,14 +14,15 @@ FEATURES:=squashfs usb
 #LINUX_VERSION:=2.6.21.5
 LINUX_VERSION:=2.6.22.4
 
+include $(INCLUDE_DIR)/target.mk
+
+KERNELNAME:="uImage"
+
 define Target/Description
   Build fimware images for Figment Design Labs VersaLink board.
 endef
 
-include $(INCLUDE_DIR)/kernel-build.mk
-
 #include the profiles
 -include profiles/*.mk
 
-KERNELNAME:="uImage"
-$(eval $(call BuildKernel))
+$(eval $(call BuildTarget))

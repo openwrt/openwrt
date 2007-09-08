@@ -8,5 +8,5 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/target.mk
 
 prereq clean download prepare compile install menuconfig oldconfig update refresh: FORCE
-	$(MAKE) -C $(BOARD) $@
+	TARGET_BUILD=1 $(MAKE) -C $(BOARD) $@
 

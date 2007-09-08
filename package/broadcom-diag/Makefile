@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/diag
   SUBMENU:=Other modules
-  DEPENDS:=@TARGET_BRCM_2_4||TARGET_BRCM47XX
+  DEPENDS:=@TARGET_brcm_2_4||TARGET_brcm47xx
   TITLE:=Driver for router LEDs and Buttons
   FILES:=$(PKG_BUILD_DIR)/diag.$(LINUX_KMOD_SUFFIX)
 endef
@@ -27,7 +27,7 @@ define Build/Prepare
 endef
 
 ifeq ($(BOARD),brcm-2.4)
-	BUILDFLAGS=-DBCMDRIVER -I$(LINUX_DIR)/arch/mips/bcm947xx/include $(if $(CONFIG_LINUX_2_4),-DLINUX_2_4)
+	BUILDFLAGS=-DBCMDRIVER -I$(LINUX_DIR)/arch/mips/bcm947xx/include -DLINUX_2_4
 endif
 
 define Build/Compile

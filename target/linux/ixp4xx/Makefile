@@ -13,12 +13,9 @@ FEATURES:=squashfs
 
 LINUX_VERSION:=2.6.21.6
 
-define Target/Description
-endef
-
-include $(INCLUDE_DIR)/kernel-build.mk
+include $(INCLUDE_DIR)/target.mk
 
 # include the profiles
 -include profiles/*.mk
 
-$(eval $(call BuildKernel))
+$(eval $(call BuildTarget))

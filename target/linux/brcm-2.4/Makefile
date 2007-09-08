@@ -11,17 +11,18 @@ BOARD:=brcm-2.4
 BOARDNAME:=Broadcom BCM947xx/953xx
 FEATURES:=squashfs
 
+KERNEL:=2.4
+
+include $(INCLUDE_DIR)/target.mk
+
+DEFAULT_PACKAGES += kmod-switch kmod-diag nvram 
+
 define Target/Description
 	Build firmware images for Broadcom based routers
 	(e.g. Linksys WRT54G(S), Asus WL-500g, Motorola WR850G)
 endef
 
-KERNEL:=2.4
-
-include $(INCLUDE_DIR)/kernel-build.mk
-DEFAULT_PACKAGES += kmod-switch kmod-diag nvram
-
 # include the profiles
 -include profiles/*.mk
 
-$(eval $(call BuildKernel))
+$(eval $(call BuildTarget))

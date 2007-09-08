@@ -45,7 +45,7 @@ clean: FORCE
 	rm -rf $(TMP_DIR)
 
 dirclean: clean
-	rm -rf $(STAGING_DIR) $(STAGING_DIR_HOST) $(STAGING_DIR_TOOLCHAIN) $(BUILD_DIR_TOOLCHAIN) $(BUILD_DIR_HOST)
+	rm -rf $(STAGING_DIR) $(STAGING_DIR_HOST) $(STAGING_DIR_TOOLCHAIN) $(TOOLCHAIN_DIR) $(BUILD_DIR_HOST)
 
 # check prerequisites before starting to build
 prereq: $(package/stamp-prereq) $(target/stamp-prereq) ;

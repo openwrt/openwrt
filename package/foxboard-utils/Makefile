@@ -25,7 +25,7 @@ define Package/foxboard-utils
   CATEGORY:=Base system
   TITLE:=Foxboard base tools
   URL:=http://www.acmesystems.it
-  DEPENDS:=@TARGET_ETRAX
+  DEPENDS:=@TARGET_etrax
 endef
 
 define Package/foxboard-utils/description

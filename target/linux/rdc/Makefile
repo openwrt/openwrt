@@ -13,15 +13,15 @@ FEATURES:=squashfs jffs2 broken
 
 LINUX_VERSION:=2.6.22.4
 
+include $(INCLUDE_DIR)/target.mk
+
 define Target/Description
         Build firmware images for RDC321x based routers
         (e.g. Airlink101 AR525W, Linksys WRT54R, Sitecom WL-153)
 endef
 
-include $(INCLUDE_DIR)/kernel-build.mk
-
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
-    define Kernel/SetInitramfs
+  define Kernel/SetInitramfs
 	echo "r6040 parent=wlan0" > $(TARGET_DIR)/etc/modules.d/99-r6040
 	$(RM) $(TARGET_DIR)/sbin/init
 	ln -s /etc/preinit $(TARGET_DIR)/sbin/init
@@ -29,10 +29,10 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	sed -i 's,/sbin/init,/bin/busybox init,g' $(TARGET_DIR)/init
 	mv $(TARGET_DIR)/init $(TARGET_DIR)/linuxrc
 	sed -i 's,eth0,eth1,g' $(TARGET_DIR)/etc/config/network
-    endef
+  endef
 endif
 
 # include the profiles
 -include profiles/*.mk
 
-$(eval $(call BuildKernel))
+$(eval $(call BuildTarget))

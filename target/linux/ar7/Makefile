@@ -13,12 +13,12 @@ FEATURES:=squashfs jffs2 atm
 
 LINUX_VERSION:=2.6.22.4
 
+include $(INCLUDE_DIR)/target.mk
+
 define Target/Description
 	Build firmware images for TI AR7 based routers
 endef
 
-include $(INCLUDE_DIR)/kernel-build.mk
-
 -include profiles/*.mk
 
-$(eval $(call BuildKernel))
+$(eval $(call BuildTarget))

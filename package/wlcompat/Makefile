@@ -16,8 +16,8 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/wlcompat/Default
   SUBMENU:=Proprietary BCM43xx WiFi driver
-  SUBMENUDEP:=@TARGET_BRCM_2_4
-  DEPENDS:=@TARGET_BRCM_2_4 @PACKAGE_kmod-brcm-wl||PACKAGE_kmod-brcm-wl-mimo +wireless-tools
+  SUBMENUDEP:=@TARGET_brcm_2_4
+  DEPENDS:=@TARGET_brcm_2_4 @PACKAGE_kmod-brcm-wl||PACKAGE_kmod-brcm-wl-mimo +wireless-tools
   TITLE:=Broadcom wl wrapper module
 endef
 

@@ -13,11 +13,11 @@ FEATURES:=squashfs jffs2 ext2
 
 LINUX_VERSION:=2.6.22.4
 
-include $(INCLUDE_DIR)/kernel-build.mk
+include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += kmod-natsemi kmod-ne2k-pci
 
 # include the profiles
 -include profiles/*.mk
 
-$(eval $(call BuildKernel))
+$(eval $(call BuildTarget))
 
