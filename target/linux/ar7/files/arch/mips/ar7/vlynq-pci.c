@@ -54,7 +54,7 @@ struct vlynq_pci_private {
 
 static struct vlynq_pci_config known_devices[] = {
 	{
-		.chip_id = 0x00000009, .name = "TI ACX111",
+		.chip_id = 0x00000009, .name = "TI TNETW1130",
 		.rx_mapping = {
 			{ .size = 0x22000, .offset = 0xf0000000 },
 			{ .size = 0x40000, .offset = 0xc0000000 },
@@ -65,9 +65,41 @@ static struct vlynq_pci_config known_devices[] = {
 		.irq_type = IRQ_TYPE_EDGE_RISING,
 		.class = PCI_CLASS_NETWORK_OTHER,
 		.num_regs = 5,
-		.regs = { 
-			{ .offset = 0x790, .value = (0xd0000000 - (ARCH_PFN_OFFSET << PAGE_SHIFT)) },
-			{ .offset = 0x794, .value = (0xd0000000 - (ARCH_PFN_OFFSET << PAGE_SHIFT)) },
+		.regs = {
+			{
+				.offset = 0x790,
+				.value = (0xd0000000 - PHYS_OFFSET)
+			},
+			{
+				.offset = 0x794,
+				.value = (0xd0000000 - PHYS_OFFSET)
+			},
+			{ .offset = 0x740, .value = 0 },
+			{ .offset = 0x744, .value = 0x00010000 },
+			{ .offset = 0x764, .value = 0x00010000 },
+		},
+	},
+	{
+		.chip_id = 0x00000029, .name = "TI TNETW1350",
+		.rx_mapping = {
+			{ .size = 0x100000, .offset = 0x00300000 },
+			{ .size = 0x80000, .offset = 0x00000000 },
+			{ .size = 0x0, .offset = 0x0 },
+			{ .size = 0x0, .offset = 0x0 },
+		},
+		.irq = 0, .chip = 0x9066104c,
+		.irq_type = IRQ_TYPE_EDGE_RISING,
+		.class = PCI_CLASS_NETWORK_OTHER,
+		.num_regs = 5,
+		.regs = {
+			{
+				.offset = 0x790,
+				.value = (0x60000000 - PHYS_OFFSET)
+			},
+			{
+				.offset = 0x794,
+				.value = (0x60000000 - PHYS_OFFSET)
+			},
 			{ .offset = 0x740, .value = 0 },
 			{ .offset = 0x744, .value = 0x00010000 },
 			{ .offset = 0x764, .value = 0x00010000 },
@@ -328,8 +360,8 @@ static int vlynq_pci_probe(struct vlynq_device *dev)
 	}
 
 	for (i = 0; i < config->num_regs; i++)
-		*(volatile u32 *)(addr + config->regs[i].offset) =
-			config->regs[i].value;
+		iowrite32(config->regs[i].value,
+			  (u32 *)(addr + config->regs[i].offset));
 
 	dev->priv = priv;
 	for (i = 0; i < VLYNQ_PCI_SLOTS; i++) {
