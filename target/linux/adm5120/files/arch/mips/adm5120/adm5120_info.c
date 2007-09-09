@@ -25,21 +25,19 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 
+#include <asm/io.h>
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
 
-#include <asm/mach-adm5120/adm5120_info.h>
-#include <asm/mach-adm5120/adm5120_defs.h>
-#include <asm/mach-adm5120/adm5120_switch.h>
+#include <adm5120_info.h>
+#include <adm5120_defs.h>
+#include <adm5120_switch.h>
 
 unsigned int adm5120_product_code;
 unsigned int adm5120_revision;
 unsigned int adm5120_package;
 unsigned int adm5120_nand_boot;
 unsigned long adm5120_speed;
-
-#define SWITCH_READ(r) *(u32 *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+(r))
-#define SWITCH_WRITE(r,v) *(u32 *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+(r))=(v)
 
 /*
  * CPU settings detection
@@ -54,21 +52,21 @@ void adm5120_ndelay(u32 ns)
 {
 	u32	t;
 
-	SWITCH_WRITE(SWITCH_REG_TIMER, TIMER_PERIOD_DEFAULT);
-	SWITCH_WRITE(SWITCH_REG_TIMER_INT, (TIMER_INT_TOS | TIMER_INT_TOM));
+	SW_WRITE_REG(TIMER, TIMER_PERIOD_DEFAULT);
+	SW_WRITE_REG(TIMER_INT, (TIMER_INT_TOS | TIMER_INT_TOM));
 
 	t = (ns+640) / 640;
 	t &= TIMER_PERIOD_MASK;
-	SWITCH_WRITE(SWITCH_REG_TIMER, t | TIMER_TE);
+	SW_WRITE_REG(TIMER, t | TIMER_TE);
 
 	/* wait until the timer expires */
 	do {
-		t = SWITCH_READ(SWITCH_REG_TIMER_INT);
+		t = SW_READ_REG(TIMER_INT);
 	} while ((t & TIMER_INT_TOS) == 0);
 
 	/* leave the timer disabled */
-	SWITCH_WRITE(SWITCH_REG_TIMER, TIMER_PERIOD_DEFAULT);
-	SWITCH_WRITE(SWITCH_REG_TIMER_INT, (TIMER_INT_TOS | TIMER_INT_TOM));
+	SW_WRITE_REG(TIMER, TIMER_PERIOD_DEFAULT);
+	SW_WRITE_REG(TIMER_INT, (TIMER_INT_TOS | TIMER_INT_TOM));
 }
 
 void __init adm5120_soc_init(void)
@@ -76,7 +74,7 @@ void __init adm5120_soc_init(void)
 	u32 code;
 	u32 clks;
 
-	code = SWITCH_READ(SWITCH_REG_CODE);
+	code = SW_READ_REG(CODE);
 
 	adm5120_product_code = CODE_GET_PC(code);
 	adm5120_revision = CODE_GET_REV(code);

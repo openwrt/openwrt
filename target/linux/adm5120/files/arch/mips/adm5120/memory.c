@@ -25,19 +25,14 @@
 #include <linux/types.h>
 #include <linux/kernel.h>
 
+#include <asm/io.h>
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
 
-#include <asm/mach-adm5120/adm5120_info.h>
-#include <asm/mach-adm5120/adm5120_defs.h>
-#include <asm/mach-adm5120/adm5120_switch.h>
-#include <asm/mach-adm5120/adm5120_mpmc.h>
-
-#define SWITCH_READ(r) *(u32 *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+(r))
-#define SWITCH_WRITE(r,v) *(u32 *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+(r))=(v)
-
-#define MPMC_READ(r) *(u32 *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+(r))
-#define MPMC_WRITE(r,v) *(u32 *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+(r))=(v)
+#include <adm5120_info.h>
+#include <adm5120_defs.h>
+#include <adm5120_switch.h>
+#include <adm5120_mpmc.h>
 
 #if 1
 #  define mem_dbg(f, a...)	printk("mem_detect: " f, ## a)
@@ -45,19 +40,19 @@
 #  define mem_dbg(f, a...)
 #endif
 
-#define MEM_WR_DELAY	10000 /* 0.01 usec */
-
 unsigned long adm5120_memsize;
+
+#define MEM_READL(a)		__raw_readl((void __iomem *)(a))
+#define MEM_WRITEL(a, v)	__raw_writel((v), (void __iomem *)(a))
 
 static int __init mem_check_pattern(u8 *addr, unsigned long offs)
 {
-	volatile u32 *p1 = (volatile u32 *)addr;
-	volatile u32 *p2 = (volatile u32 *)(addr+offs);
+	u32 *p1 = (u32 *)addr;
+	u32 *p2 = (u32 *)(addr+offs);
 	u32 t,u,v;
-
 	/* save original value */
-	t = *p1;
-	u = *p2;
+	t = MEM_READL(p1);
+	u = MEM_READL(p2);
 
 	if (t != u)
 		return 0;
@@ -68,15 +63,17 @@ static int __init mem_check_pattern(u8 *addr, unsigned long offs)
 
 	mem_dbg("write 0x%08X to 0x%08lX\n", v, (unsigned long)p1);
 
-	*p1 = v;
-	mem_dbg("delay %d ns\n", MEM_WR_DELAY);
-	adm5120_ndelay(MEM_WR_DELAY);
-	u = *p2;
+	MEM_WRITEL(p1, v);
+
+	/* flush write buffers */
+	MPMC_WRITE_REG(CTRL, MPMC_READ_REG(CTRL) | MPMC_CTRL_DWB);
+
+	u = MEM_READL(p2);
 
 	mem_dbg("pattern at 0x%08lX is 0x%08X\n", (unsigned long)p2, u);
 
 	/* restore original value */
-	*p1 = t;
+	MEM_WRITEL(p1, t);
 
 	return (v == u);
 }
@@ -87,7 +84,7 @@ static void __init adm5120_detect_memsize(void)
 	u32	size, maxsize;
 	u8	*p;
 
-	memctrl = SWITCH_READ(SWITCH_REG_MEMCTRL);
+	memctrl = SW_READ_REG(MEMCTRL);
 	switch (memctrl & MEMCTRL_SDRS_MASK) {
 	case MEMCTRL_SDRS_4M:
 		maxsize = 4 << 20;
@@ -102,11 +99,6 @@ static void __init adm5120_detect_memsize(void)
 		maxsize = 64 << 20;
 		break;
 	}
-
-	/* disable buffers for both SDRAM banks */
-	mem_dbg("disable buffers for both banks\n");
-	MPMC_WRITE(MPMC_REG_DC0, MPMC_READ(MPMC_REG_DC0) & ~DC_BE);
-	MPMC_WRITE(MPMC_REG_DC1, MPMC_READ(MPMC_REG_DC1) & ~DC_BE);
 
 	mem_dbg("checking for %uMB chip in 1st bank\n", maxsize >> 20);
 
@@ -159,15 +151,10 @@ static void __init adm5120_detect_memsize(void)
 			memctrl |= MEMCTRL_SDRS_64M;
 			break;
 		}
-		SWITCH_WRITE(SWITCH_REG_MEMCTRL, memctrl);
+		SW_WRITE_REG(MEMCTRL, memctrl);
 	}
 
 out:
-	/* reenable buffer for both SDRAM banks */
-	mem_dbg("enable buffers for both banks\n");
-	MPMC_WRITE(MPMC_REG_DC0, MPMC_READ(MPMC_REG_DC0) | DC_BE);
-	MPMC_WRITE(MPMC_REG_DC1, MPMC_READ(MPMC_REG_DC1) | DC_BE);
-
 	mem_dbg("%dx%uMB memory found\n", (adm5120_memsize == size) ? 1 : 2 ,
 		size >>20);
 }
