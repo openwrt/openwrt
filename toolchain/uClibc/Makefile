@@ -44,7 +44,7 @@ define Build/Prepare
 	$(call Build/Prepare/Default)
 	$(CP) config/$(ARCH)$(if $(wildcard config/$(ARCH).$(BOARD)),$(BOARD)) $(PKG_BUILD_DIR)/.config
 	$(SED) 's,^KERNEL_SOURCE=.*,KERNEL_SOURCE=\"$(LINUX_HEADERS_DIR)\",g' \
-		-e 's,.*HAS_FPU.*,HAS_FPU=$(if $(CONFIG_SOFT_FLOAT),n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,y),g' \
+		-e 's,.*HAS_FPU.*,HAS_FPU=$(if $(CONFIG_SOFT_FLOAT),n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,n),g' \
 		-e 's,^.*UCLIBC_HAS_LFS.*,UCLIBC_HAS_LFS=$(if $(CONFIG_LARGEFILE),y,n),g' \
 		-e 's,.*DO_C99_MATH.*,DO_C99_MATH=$(if $(CONFIG_C99_MATH),y,n),g' \
 		$(PKG_BUILD_DIR)/.config
