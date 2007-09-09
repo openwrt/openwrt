@@ -89,7 +89,14 @@ $(eval $(call KernelPackage,lp))
 define KernelPackage/soundcore
   SUBMENU:=$(EMENU)
   TITLE:=Sound support
-  KCONFIG:=CONFIG_SOUND
+  KCONFIG:= \
+	CONFIG_SOUND \
+	CONFIG_SND \
+	CONFIG_SND_HWDEP \
+	CONFIG_SND_RAWMIDI \
+	CONFIG_SND_TIMER \
+	CONFIG_SND_PCM \
+	CONFIG_HOSTAUDIO
 endef
 
 define KernelPackage/soundcore/2.4
@@ -98,12 +105,12 @@ define KernelPackage/soundcore/2.4
 endef
 
 define KernelPackage/soundcore/2.6
-  KCONFIG+= \
-	CONFIG_SND \
-	CONFIG_SND_HWDEP \
-	CONFIG_SND_RAWMIDI \
-	CONFIG_SND_TIMER \
-	CONFIG_SND_PCM
+#  KCONFIG+= \
+#	CONFIG_SND \
+#	CONFIG_SND_HWDEP \
+#	CONFIG_SND_RAWMIDI \
+#	CONFIG_SND_TIMER \
+#	CONFIG_SND_PCM
   FILES:= \
 	$(LINUX_DIR)/sound/soundcore.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/sound/core/snd.$(LINUX_KMOD_SUFFIX) \
@@ -128,8 +135,8 @@ define KernelPackage/soundcore/2.6
 endef
 
 define KernelPackage/soundcore/uml-2.6
-  KCONFIG+= \
-	CONFIG_HOSTAUDIO
+#  KCONFIG+= \
+#	CONFIG_HOSTAUDIO
   FILES:= \
 	$(LINUX_DIR)/sound/soundcore.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/arch/um/drivers/hostaudio.$(LINUX_KMOD_SUFFIX)
@@ -198,12 +205,19 @@ define KernelPackage/pcmcia-core
   SUBMENU:=$(EMENU)
   TITLE:=PCMCIA/CardBus support
   DEPENDS:=@PCMCIA_SUPPORT
-endef
-
-define KernelPackage/pcmcia-core/2.4
   KCONFIG:= \
 	CONFIG_PCMCIA \
 	CONFIG_CARDBUS
+	CONFIG_PCCARD \
+	CONFIG_YENTA \
+	CONFIG_PCCARD_NONSTATIC \
+	PCMCIA_DEBUG=n
+endef
+
+define KernelPackage/pcmcia-core/2.4
+#  KCONFIG:= \
+#	CONFIG_PCMCIA \
+#	CONFIG_CARDBUS
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/pcmcia/ds.$(LINUX_KMOD_SUFFIX) \
@@ -212,12 +226,12 @@ define KernelPackage/pcmcia-core/2.4
 endef
 
 define KernelPackage/pcmcia-core/2.6
-  KCONFIG:= \
-	CONFIG_PCCARD \
-	CONFIG_PCMCIA \
-	CONFIG_YENTA \
-	CONFIG_PCCARD_NONSTATIC \
-	PCMCIA_DEBUG=n
+#  KCONFIG:= \
+#	CONFIG_PCCARD \
+#	CONFIG_PCMCIA \
+#	CONFIG_YENTA \
+#	CONFIG_PCCARD_NONSTATIC \
+#	PCMCIA_DEBUG=n
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia.$(LINUX_KMOD_SUFFIX) \
@@ -246,16 +260,19 @@ define KernelPackage/pcmcia-serial
   SUBMENU:=$(EMENU)
   TITLE:=Serial devices support
   DEPENDS:=kmod-pcmcia-core
+  KCONFIG:= \
+	CONFIG_PCMCIA_SERIAL_CS \
+  	CONFIG_SERIAL_8250_CS
   AUTOLOAD:=$(call AutoLoad,45,serial_cs)
 endef
 
 define KernelPackage/pcmcia-serial/2.4
-  KCONFIG:=CONFIG_PCMCIA_SERIAL_CS
+#  KCONFIG:=CONFIG_PCMCIA_SERIAL_CS
   FILES:=$(LINUX_DIR)/drivers/char/pcmcia/serial_cs.$(LINUX_KMOD_SUFFIX)
 endef
 
 define KernelPackage/pcmcia-serial/2.6
-  KCONFIG:=CONFIG_SERIAL_8250_CS
+#  KCONFIG:=CONFIG_SERIAL_8250_CS
   FILES:=$(LINUX_DIR)/drivers/serial/serial_cs.$(LINUX_KMOD_SUFFIX)
 endef
 
@@ -270,9 +287,6 @@ define KernelPackage/bluetooth
   SUBMENU:=$(EMENU)
   TITLE:=Bluetooth support
   DEPENDS:=@USB_SUPPORT
-endef
-
-define KernelPackage/bluetooth/2.4
   KCONFIG:= \
 	CONFIG_BLUEZ \
 	CONFIG_BLUEZ_L2CAP \
@@ -281,6 +295,24 @@ define KernelPackage/bluetooth/2.4
 	CONFIG_BLUEZ_BNEP \
 	CONFIG_BLUEZ_HCIUART \
 	CONFIG_BLUEZ_HCIUSB
+	CONFIG_BT \
+	CONFIG_BT_L2CAP \
+	CONFIG_BT_SCO \
+	CONFIG_BT_RFCOMM \
+	CONFIG_BT_BNEP \
+	CONFIG_BT_HCIUSB \
+	CONFIG_BT_HCIUART
+endef
+
+define KernelPackage/bluetooth/2.4
+#  KCONFIG:= \
+#	CONFIG_BLUEZ \
+#	CONFIG_BLUEZ_L2CAP \
+#	CONFIG_BLUEZ_SCO \
+#	CONFIG_BLUEZ_RFCOMM \
+#	CONFIG_BLUEZ_BNEP \
+#	CONFIG_BLUEZ_HCIUART \
+#	CONFIG_BLUEZ_HCIUSB
   FILES:= \
 	$(LINUX_DIR)/net/bluetooth/bluez.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
@@ -293,14 +325,14 @@ define KernelPackage/bluetooth/2.4
 endef
 
 define KernelPackage/bluetooth/2.6
-  KCONFIG:= \
-	CONFIG_BT \
-	CONFIG_BT_L2CAP \
-	CONFIG_BT_SCO \
-	CONFIG_BT_RFCOMM \
-	CONFIG_BT_BNEP \
-	CONFIG_BT_HCIUSB \
-	CONFIG_BT_HCIUART
+#  KCONFIG:= \
+#	CONFIG_BT \
+#	CONFIG_BT_L2CAP \
+#	CONFIG_BT_SCO \
+#	CONFIG_BT_RFCOMM \
+#	CONFIG_BT_BNEP \
+#	CONFIG_BT_HCIUSB \
+#	CONFIG_BT_HCIUART
   FILES:= \
 	$(LINUX_DIR)/net/bluetooth/bluetooth.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \

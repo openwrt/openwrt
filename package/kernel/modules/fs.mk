@@ -182,13 +182,15 @@ $(eval $(call KernelPackage,fs-nfs))
 define KernelPackage/fs-nfsd
   SUBMENU:=$(FSMENU)
   TITLE:=NFS kernel server support
-  KCONFIG:=CONFIG_NFSD
+  KCONFIG:= \
+	CONFIG_NFSD \
+	CONFIG_EXPORTFS
   FILES:=$(LINUX_DIR)/fs/nfsd/nfsd.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,nfsd)
 endef
 
 define KernelPackage/fs-nfsd/2.6
-  KCONFIG+=CONFIG_EXPORTFS
+#  KCONFIG+=CONFIG_EXPORTFS
   FILES+=$(LINUX_DIR)/fs/exportfs/exportfs.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD+=$(call AutoLoad,30,exportfs)
 endef

@@ -62,13 +62,15 @@ $(eval $(call KernelPackage,bonding))
 define KernelPackage/ipip
   SUBMENU:=$(NSMENU)
   TITLE:=IP in IP encapsulation support
-  KCONFIG:=CONFIG_NET_IPIP
+  KCONFIG:= \
+	CONFIG_NET_IPIP \
+	CONFIG_INET_TUNNEL
   FILES:=$(LINUX_DIR)/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,ipip)
 endef
 
 define KernelPackage/ipip/2.6
-  KCONFIG+=CONFIG_INET_TUNNEL
+#  KCONFIG+=CONFIG_INET_TUNNEL
   FILES+=$(LINUX_DIR)/net/ipv4/tunnel4.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD+=$(call AutoLoad,31,tunnel4)
 endef
@@ -159,13 +161,15 @@ $(eval $(call KernelPackage,ipsec6))
 define KernelPackage/ipv6
   SUBMENU:=$(NSMENU)
   TITLE:=IPv6 support
-  KCONFIG:=CONFIG_IPV6
+  KCONFIG:= \
+	CONFIG_IPV6 \
+  	CONFIG_IPV6_SIT
   FILES:=$(LINUX_DIR)/net/ipv6/ipv6.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,ipv6)
 endef
 
 define KernelPackage/ipv6/2.6
-  KCONFIG+=CONFIG_IPV6_SIT
+#  KCONFIG+=CONFIG_IPV6_SIT
   FILES+=$(LINUX_DIR)/net/ipv6/sit.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD+=$(call AutoLoad,21,sit)
 endef
@@ -211,7 +215,9 @@ define KernelPackage/ppp
   TITLE:=PPP modules
   KCONFIG:= \
 	CONFIG_PPP \
-	CONFIG_PPP_ASYNC
+	CONFIG_PPP_ASYNC \
+	CONFIG_SLHC \
+	CONFIG_CRC_CCITT
   FILES:= \
 	$(LINUX_DIR)/drivers/net/ppp_async.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/net/ppp_generic.$(LINUX_KMOD_SUFFIX) \
@@ -223,9 +229,9 @@ define KernelPackage/ppp/2.4
 endef
 
 define KernelPackage/ppp/2.6
-  KCONFIG+= \
-	CONFIG_SLHC \
-	CONFIG_CRC_CCITT
+#  KCONFIG+= \
+#	CONFIG_SLHC \
+#	CONFIG_CRC_CCITT
   FILES+= \
 	$(LINUX_DIR)/lib/crc-ccitt.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,crc-ccitt slhc ppp_generic ppp_async)
@@ -291,16 +297,19 @@ define KernelPackage/mppe
   SUBMENU:=$(NSMENU)
   TITLE:=Microsoft PPP compression/encryption
   DEPENDS:=kmod-ppp
+  KCONFIG:= \
+	CONFIG_PPP_MPPE_MPPC \
+	CONFIG_PPP_MPPE
 endef
 
 define KernelPackage/mppe/2.4
-  KCONFIG:=CONFIG_PPP_MPPE_MPPC
+#  KCONFIG:=CONFIG_PPP_MPPE_MPPC
   FILES:=$(LINUX_DIR)/drivers/net/ppp_mppe_mppc.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,31,ppp_mppe_mppc)
 endef
 
 define KernelPackage/mppe/2.6
-  KCONFIG:=CONFIG_PPP_MPPE
+#  KCONFIG:=CONFIG_PPP_MPPE
   FILES:=$(LINUX_DIR)/drivers/net/ppp_mppe.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,31,ppp_mppe)
 endef
