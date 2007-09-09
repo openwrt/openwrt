@@ -177,7 +177,7 @@ define KernelPackage/usb-audio
   $(call usbdep,+kmod-soundcore)
   TITLE:=Support for audio devices
   KCONFIG:= \
-	CONFIG_USB_AUDIO
+	CONFIG_USB_AUDIO \
 	CONFIG_SND_USB_AUDIO
 endef
 
