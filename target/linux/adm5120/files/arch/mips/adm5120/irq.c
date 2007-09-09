@@ -29,6 +29,7 @@
 #include <linux/interrupt.h>
 #include <linux/ioport.h>
 
+#include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/irq_cpu.h>
 #include <asm/mipsregs.h>
@@ -37,18 +38,18 @@
 #include <asm/mach-adm5120/adm5120_defs.h>
 #include <asm/mach-adm5120/adm5120_irq.h>
 
-#define INTC_REG(r) (*(volatile u32 *)(KSEG1ADDR(ADM5120_INTC_BASE) + r))
+#define INTC_WRITE(reg, val)	__raw_writel((val), \
+	(void __iomem *)(KSEG1ADDR(ADM5120_INTC_BASE) + reg))
+
+#define INTC_READ(reg)		__raw_readl( \
+	(void __iomem *)(KSEG1ADDR(ADM5120_INTC_BASE) + reg))
 
 static void adm5120_intc_irq_unmask(unsigned int irq);
 static void adm5120_intc_irq_mask(unsigned int irq);
 static int  adm5120_intc_irq_set_type(unsigned int irq, unsigned int flow_type);
 
 static struct irq_chip adm5120_intc_irq_chip = {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
 	.name 		= "INTC",
-#else
-	.typename 	= "INTC",
-#endif
 	.unmask 	= adm5120_intc_irq_unmask,
 	.mask 		= adm5120_intc_irq_mask,
 	.mask_ack	= adm5120_intc_irq_mask,
@@ -62,22 +63,14 @@ static struct irqaction adm5120_intc_irq_action = {
 
 static void adm5120_intc_irq_unmask(unsigned int irq)
 {
-	unsigned long flags;
-
 	irq -= ADM5120_INTC_IRQ_BASE;
-	local_irq_save(flags);
-	INTC_REG(INTC_REG_IRQ_ENABLE) = (1 << irq);
-	local_irq_restore(flags);
+	INTC_WRITE(INTC_REG_IRQ_ENABLE, 1 << irq);
 }
 
 static void adm5120_intc_irq_mask(unsigned int irq)
 {
-	unsigned long flags;
-
 	irq -= ADM5120_INTC_IRQ_BASE;
-	local_irq_save(flags);
-	INTC_REG(INTC_REG_IRQ_DISABLE) = (1 << irq);
-	local_irq_restore(flags);
+	INTC_WRITE(INTC_REG_IRQ_DISABLE, 1 << irq);
 }
 
 static int adm5120_intc_irq_set_type(unsigned int irq, unsigned int flow_type)
@@ -86,9 +79,8 @@ static int adm5120_intc_irq_set_type(unsigned int irq, unsigned int flow_type)
 #if 1
 	unsigned int sense;
 	unsigned long mode;
-	int err;
+	int err = 0;
 
-	err = 0;
 	sense = flow_type & (IRQ_TYPE_SENSE_MASK);
 	switch (sense) {
 	case IRQ_TYPE_NONE:
@@ -108,20 +100,20 @@ static int adm5120_intc_irq_set_type(unsigned int irq, unsigned int flow_type)
 		err = -EINVAL;
 		break;
 	}
-	
+
 	if (err)
 		return err;
-	
+
 	switch (irq) {
 	case ADM5120_IRQ_GPIO2:
 	case ADM5120_IRQ_GPIO4:
-		mode = INTC_REG(INTC_REG_INT_MODE);
+		mode = INTC_READ(INTC_REG_INT_MODE);
 		if (sense == IRQ_TYPE_LEVEL_LOW)
 			mode |= (1 << (irq-ADM5120_INTC_IRQ_BASE));
 		else
 			mode &= (1 << (irq-ADM5120_INTC_IRQ_BASE));
-			
-		INTC_REG(INTC_REG_INT_MODE) = mode;
+
+		INTC_WRITE(INTC_REG_INT_MODE, mode);
 		/* fallthrogh */
 	default:
 		irq_desc[irq].status &= ~IRQ_TYPE_SENSE_MASK;
@@ -137,33 +129,21 @@ static void adm5120_intc_irq_dispatch(void)
 	unsigned long status;
 	int irq;
 
-#if 1
 	/* dispatch only one IRQ at a time */
-	status = INTC_REG(INTC_REG_IRQ_STATUS) & INTC_INT_ALL;
+	status = INTC_READ(INTC_REG_IRQ_STATUS) & INTC_INT_ALL;
 
 	if (status) {
 		irq = ADM5120_INTC_IRQ_BASE+fls(status)-1;
 		do_IRQ(irq);
 	} else
 		spurious_interrupt();
-#else
-	status = INTC_REG(INTC_REG_IRQ_STATUS) & INTC_INT_ALL;
-	if (status) {
-		for (irq=ADM5120_INTC_IRQ_BASE; irq <= ADM5120_INTC_IRQ_BASE +
-			INTC_IRQ_LAST;	irq++, status >>=1) {
-			if ((status & 1) == 1)
-				do_IRQ(irq);
-		}
-	} else
-		spurious_interrupt();
-#endif
 }
 
 asmlinkage void plat_irq_dispatch(void)
 {
 	unsigned long pending;
 
-	pending = read_c0_status() & read_c0_cause();
+	pending = read_c0_status() & read_c0_cause() & ST0_IM;
 
 	if (pending & STATUSF_IP7)
 		do_IRQ(ADM5120_IRQ_COUNTER);
@@ -174,23 +154,24 @@ asmlinkage void plat_irq_dispatch(void)
 }
 
 #define INTC_IRQ_STATUS (IRQ_LEVEL | IRQ_TYPE_LEVEL_HIGH | IRQ_DISABLED)
+
 static void __init adm5120_intc_irq_init(int base)
 {
 	int i;
 
 	/* disable all interrupts */
-	INTC_REG(INTC_REG_IRQ_DISABLE) = INTC_INT_ALL;
+	INTC_WRITE(INTC_REG_IRQ_DISABLE, INTC_INT_ALL);
 	/* setup all interrupts to generate IRQ instead of FIQ */
-	INTC_REG(INTC_REG_INT_MODE) = 0;
+	INTC_WRITE(INTC_REG_INT_MODE, 0);
 	/* set active level for all external interrupts to HIGH */
-	INTC_REG(INTC_REG_INT_LEVEL) = 0;
+	INTC_WRITE(INTC_REG_INT_LEVEL, 0);
 	/* disable usage of the TEST_SOURCE register */
-	INTC_REG(INTC_REG_IRQ_SOURCE_SELECT) = 0;
+	INTC_WRITE(INTC_REG_IRQ_SOURCE_SELECT, 0);
 
-	for(i=ADM5120_INTC_IRQ_BASE; i <= ADM5120_INTC_IRQ_BASE+INTC_IRQ_LAST;
+	for (i = ADM5120_INTC_IRQ_BASE; i <= ADM5120_INTC_IRQ_BASE+INTC_IRQ_LAST;
 		i++) {
 		irq_desc[i].status = INTC_IRQ_STATUS;
-		set_irq_chip_and_handler(i, &adm5120_intc_irq_chip, 
+		set_irq_chip_and_handler(i, &adm5120_intc_irq_chip,
 			handle_level_irq);
 	}
 
