@@ -89,6 +89,7 @@ $(eval $(call nf_add,IPT_IPOPT,CONFIG_IP_NF_TARGET_TTL, $(P_V4)ipt_TTL))
 $(eval $(call nf_add,IPT_IPOPT,CONFIG_IP_NF_MATCH_UNCLEAN, $(P_V4)ipt_unclean))
 $(eval $(call nf_add,IPT_IPOPT,CONFIG_IP_NF_MATCH_MULTIPORT, $(P_V4)ipt_multiport))
 $(eval $(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_MATCH_MULTIPORT, $(P_XT)xt_multiport))
+$(eval $(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_MATCH_STATISTIC, $(P_XT)xt_statistic))
 
 IPT_IPSEC-m :=
 $(eval $(call nf_add,IPT_IPSEC,CONFIG_IP_NF_MATCH_AH_ESP, $(P_V4)ipt_ah $(P_V4)ipt_esp))
