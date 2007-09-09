@@ -41,10 +41,10 @@
 
 #include <asm/io.h>
 
-#include <asm/mach-adm5120/adm5120_defs.h>
-#include <asm/mach-adm5120/adm5120_switch.h>
-#include <asm/mach-adm5120/adm5120_mpmc.h>
-#include <asm/mach-adm5120/adm5120_platform.h>
+#include <adm5120_defs.h>
+#include <adm5120_switch.h>
+#include <adm5120_mpmc.h>
+#include <adm5120_platform.h>
 
 #define DRV_NAME	"adm5120-flash"
 #define DRV_DESC	"ADM5120 flash MAP driver"
@@ -78,7 +78,6 @@ struct adm5120_flash_info {
 struct flash_desc {
 	u32	phys;
 	u32	srs_shift;
-	u32	mpmc_reg;
 };
 
 /*
@@ -98,11 +97,9 @@ static u32 flash_sizes[8] = {
 static struct flash_desc flash_descs[2] = {
 	{
 		.phys		= ADM5120_SRAM0_BASE,
-		.mpmc_reg	= MPMC_REG_SC1,
 		.srs_shift	= MEMCTRL_SRS0_SHIFT,
 	}, {
 		.phys		= ADM5120_SRAM1_BASE,
-		.mpmc_reg	= MPMC_REG_SC0,
 		.srs_shift	= MEMCTRL_SRS1_SHIFT,
 	}
 };
@@ -242,11 +239,6 @@ out:
 	return err;
 }
 
-#define SWITCH_READ(r) *(u32 *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+(r))
-#define SWITCH_WRITE(r,v) *(u32 *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+(r))=(v)
-#define MPMC_READ(r) *(u32 *)(KSEG1ADDR(ADM5120_MPMC_BASE)+(r))
-#define MPMC_WRITE(r,v) *(u32 *)(KSEG1ADDR(ADM5120_MPMC_BASE)+(r))=(v)
-
 static int adm5120_flash_initinfo(struct adm5120_flash_info *info,
 		struct platform_device *dev)
 {
@@ -265,7 +257,7 @@ static int adm5120_flash_initinfo(struct adm5120_flash_info *info,
 	fdesc = &flash_descs[dev->id];
 
 	/* get memory window size */
-	t = SWITCH_READ(SWITCH_REG_MEMCTRL) >> fdesc->srs_shift;
+	t = SW_READ_REG(MEMCTRL) >> fdesc->srs_shift;
 	t &= MEMCTRL_SRS_MASK;
 	info->amap.window_size = flash_sizes[t];
 	if (info->amap.window_size == 0) {
@@ -274,7 +266,14 @@ static int adm5120_flash_initinfo(struct adm5120_flash_info *info,
 	}
 
 	/* get flash bus width */
-	t = MPMC_READ(fdesc->mpmc_reg) & SC_MW_MASK;
+	switch (dev->id) {
+	case 0:
+		t = MPMC_READ_REG(SC1) & SC_MW_MASK;
+		break;
+	case 1:
+		t = MPMC_READ_REG(SC0) & SC_MW_MASK;
+		break;
+	}
 	map->bankwidth = flash_bankwidths[t];
 	if (map->bankwidth == 0) {
 		MAP_ERR(map, "invalid bus width detected\n");
