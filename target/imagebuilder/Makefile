@@ -24,7 +24,7 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 	$(CP) \
 		$(INCLUDE_DIR) $(SCRIPT_DIR) $(PACKAGE_DIR) \
 		$(TOPDIR)/rules.mk $(TOPDIR)/.config \
-		$(TMP_DIR)/.target.mk \
+		$(INCLUDE_DIR)/target.mk \
 		$(TMP_DIR)/.packageinfo \
 		$(TMP_DIR)/.targetinfo \
 		./files/Makefile \
