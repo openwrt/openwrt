@@ -5,6 +5,7 @@ my %package;
 my %srcpackage;
 my %category;
 my %subdir;
+my %board;
 
 sub get_multiline {
 	my $prefix = shift;
@@ -18,21 +19,28 @@ sub get_multiline {
 	return $str;
 }
 
+sub confstr($) {
+	my $conf = shift;
+	$conf =~ tr#/\.\-/#___#;
+	return $conf;
+}
+
 sub parse_target_metadata() {
 	my ($target, @target, $profile);	
 	while (<>) {
 		chomp;
 		/^Target:\s*(.+)\s*$/ and do {
-			my $conf = $1;
-			$conf =~ tr#/\.\-/#___#;
 			$target = {
 				id => $1,
-				conf => $conf,
+				conf => confstr($1),
 				profiles => []
 			};
 			push @target, $target;
 		};
-		/^Target-Board:\s*(.+)\s*$/ and $target->{board} = $1;
+		/^Target-Board:\s*(.+)\s*$/ and do {
+			$target->{board} = $1;
+			$target->{boardconf} = confstr($1);
+		};
 		/^Target-Kernel:\s*(\d+\.\d+)\s*$/ and $target->{kernel} = $1;
 		/^Target-Name:\s*(.+)\s*$/ and $target->{name} = $1;
 		/^Target-Path:\s*(.+)\s*$/ and $target->{path} = $1;
@@ -247,14 +255,16 @@ EOF
 			undef $help;
 		}
 	
-		print <<EOF
+		print <<EOF;
 config TARGET_$target->{conf}
 	bool "$target->{name}"
 	select $target->{arch}
 	select LINUX_$kernel
-$features$help
-
 EOF
+		if ($target->{id} ne $target->{board}) {
+			print "\tselect TARGET_".$target->{boardconf}."\n";
+		}
+		print "$features$help\n\n"
 	}
 
 	print <<EOF;
@@ -265,6 +275,15 @@ config TARGET_BOARD
 EOF
 	foreach my $target (@target) {
 		print "\t\tdefault \"".$target->{board}."\" if TARGET_".$target->{conf}."\n";
+	}
+
+	# add hidden target config options 
+	foreach my $target (@target) {
+		next if $board{$target->{board}};
+		if ($target->{id} ne $target->{board}) {
+			print "\nconfig TARGET_".$target->{boardconf}."\n\tbool\n";
+			$board{$target->{board}} = 1;
+		}
 	}
 	print <<EOF;
 
