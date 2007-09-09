@@ -6,7 +6,7 @@ Index: linux-2.6.22.1/arch/mips/pci/Makefile
  obj-$(CONFIG_VICTOR_MPC30X)	+= fixup-mpc30x.o
  obj-$(CONFIG_ZAO_CAPCELLA)	+= fixup-capcella.o
  obj-$(CONFIG_WR_PPMC)		+= fixup-wrppmc.o
-+obj-$(CONFIG_PCI_ADM5120)	+= fixup-adm5120.o ops-adm5120.o pci-adm5120.o
++obj-$(CONFIG_PCI_ADM5120)	+= pci-adm5120.o
 Index: linux-2.6.22.1/include/linux/pci_ids.h
 ===================================================================
 --- linux-2.6.22.1.orig/include/linux/pci_ids.h
