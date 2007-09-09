@@ -11,5 +11,3 @@ obj-y	+= reset.o
 obj-y	+= time.o
 
 obj-y	+= trxsplit.o
-
-EXTRA_AFLAGS := $(CFLAGS)
