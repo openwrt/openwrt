@@ -26,6 +26,11 @@
 #ifndef _ADM5120_MPMC_H_
 #define _ADM5120_MPMC_H_
 
+#define MPMC_READ_REG(r)	__raw_readl( \
+	(void __iomem *)KSEG1ADDR(ADM5120_MPMC_BASE) + MPMC_REG_ ## r)
+#define MPMC_WRITE_REG(r, v)	__raw_writel((v), \
+	(void __iomem *)KSEG1ADDR(ADM5120_MPMC_BASE) + MPMC_REG_ ## r)
+
 #define MPMC_REG_CTRL	0x0000
 #define MPMC_REG_STATUS	0x0004
 #define MPMC_REG_CONF	0x0008
@@ -46,7 +51,9 @@
 #define MPMC_REG_SC2    0x0240
 #define MPMC_REG_SC3    0x0260
 
+/* Control register bits */
 #define MPMC_CTRL_AM		( 1 << 1 )
+#define MPMC_CTRL_DWB		( 1 << 3 )
 
 /* Dynamic Control register bits */
 #define MPMC_DC_CE		( 1 << 0 )
