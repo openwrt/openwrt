@@ -5,6 +5,7 @@ define KernelPackage/ide-core
   TITLE:=Kernel support for IDE
   KCONFIG:= \
 	CONFIG_IDE \
+	CONFIG_IDE_GENERIC \
 	CONFIG_BLK_DEV_IDE \
 	CONFIG_IDE_GENERIC \
 	CONFIG_BLK_DEV_IDEDISK
@@ -20,6 +21,7 @@ define KernelPackage/ide-core/2.4
 endef
 
 define KernelPackage/ide-core/2.6
+#  KCONFIG+=CONFIG_IDE_GENERIC
   FILES+=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD+=$(call AutoLoad,30,ide-generic)
 endef

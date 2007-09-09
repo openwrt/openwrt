@@ -54,16 +54,19 @@ $(eval $(call KernelPackage,usb-core))
 define KernelPackage/usb-uhci
   $(call usbdep,)
   TITLE:=Support for UHCI controllers
+  KCONFIG:= \
+	CONFIG_USB_UHCI_ALT \
+	CONFIG_USB_UHCI_HCD
 endef
 
 define KernelPackage/usb-uhci/2.4
-  KCONFIG:=CONFIG_USB_UHCI_ALT
+#  KCONFIG:=CONFIG_USB_UHCI_ALT
   FILES:=$(LINUX_DIR)/drivers/usb/host/uhci.o
   AUTOLOAD:=$(call AutoLoad,50,uhci)
 endef
 
 define KernelPackage/usb-uhci/2.6
-  KCONFIG:=CONFIG_USB_UHCI_HCD
+#  KCONFIG:=CONFIG_USB_UHCI_HCD
   FILES:=$(LINUX_DIR)/drivers/usb/host/uhci-hcd.ko
   AUTOLOAD:=$(call AutoLoad,50,uhci-hcd)
 endef
@@ -93,16 +96,19 @@ $(eval $(call KernelPackage,usb-uhci-iv))
 define KernelPackage/usb-ohci
   $(call usbdep,)
   TITLE:=Support for OHCI controllers
+  KCONFIG:= \
+	CONFIG_USB_OHCI \
+	CONFIG_USB_OHCI_HCD
 endef
 
 define KernelPackage/usb-ohci/2.4
-  KCONFIG:=CONFIG_USB_OHCI
+#  KCONFIG:=CONFIG_USB_OHCI
   FILES:=$(LINUX_DIR)/drivers/usb/host/usb-ohci.o
   AUTOLOAD:=$(call AutoLoad,50,usb-ohci)
 endef
 
 define KernelPackage/usb-ohci/2.6
-  KCONFIG:=CONFIG_USB_OHCI_HCD
+#  KCONFIG:=CONFIG_USB_OHCI_HCD
   FILES:=$(LINUX_DIR)/drivers/usb/host/ohci-hcd.ko
   AUTOLOAD:=$(call AutoLoad,50,ohci-hcd)
 endef
@@ -170,16 +176,19 @@ $(eval $(call KernelPackage,usb-acm))
 define KernelPackage/usb-audio
   $(call usbdep,+kmod-soundcore)
   TITLE:=Support for audio devices
+  KCONFIG:= \
+	CONFIG_USB_AUDIO
+	CONFIG_SND_USB_AUDIO
 endef
 
 define KernelPackage/usb-audio/2.4
-  KCONFIG:=CONFIG_USB_AUDIO
+#  KCONFIG:=CONFIG_USB_AUDIO
   FILES:=$(LINUX_DIR)/drivers/usb/audio.o
   AUTOLOAD:=$(call AutoLoad,60,audio)
 endef
 
 define KernelPackage/usb-audio/2.6
-  KCONFIG:=CONFIG_SND_USB_AUDIO
+#  KCONFIG:=CONFIG_SND_USB_AUDIO
   FILES:= \
 	$(LINUX_DIR)/sound/usb/snd-usb-lib.ko \
 	$(LINUX_DIR)/sound/usb/snd-usb-audio.ko
