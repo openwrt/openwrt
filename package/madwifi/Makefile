@@ -43,7 +43,7 @@ ifeq ($(ARCH),powerpc)
 endif
 
 BUS:=PCI
-ifneq ($(CONFIG_TARGET_ATHEROS),)
+ifneq ($(CONFIG_TARGET_atheros),)
   BUS:=AHB
   HAL_TARGET:=ap51
 endif
