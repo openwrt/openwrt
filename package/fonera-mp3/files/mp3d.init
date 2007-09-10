@@ -1,0 +1,12 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2007 OpenWrt.org
+
+START=90
+
+start() {
+	/usr/bin/mp3d
+}
+
+stop() {
+	killall mp3d 
+}

@@ -57,6 +57,8 @@ define Package/fonera-mp3d/install
 	ln -sf mp3.cgi $(1)/www/cgi-bin/mp3_remote.cgi 
 	$(INSTALL_DIR) $(1)/www/local
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/cgi/{stylesheet.css,json.js} $(1)/www/local/
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/mp3d.init $(1)/etc/init.d/mp3d
 endef
 
 $(eval $(call BuildPackage,fonera-mp3d))
