@@ -30,6 +30,7 @@
 #include <linux/timer.h>
 #include <linux/init.h>
 #include <linux/genhd.h>
+#include <linux/device.h> 
 
 // do we want debuging info ?
 #if 0
@@ -271,6 +272,8 @@ struct file_operations modulemp3_fops = {
         release:       module_close
 };
 
+static struct class *mp3_class; 
+
 static int __init mod_init(void){
 	printk("mp3_drv.ko : VS1011b Driver\n");
 	printk("mp3_drv.ko : Made by John '2B|!2B' Crispin (john@phrozen.org)\n");
@@ -280,7 +283,13 @@ static int __init mod_init(void){
 		printk( "mp3_drv.ko : Error whilst opening %s (%d)\n", DEV_NAME, DEV_MAJOR);
 		return( -ENODEV );
 	}
-	
+
+	printk("mp3_drv.ko : using sysfs to create device nodes\n");
+	mp3_class = class_create(THIS_MODULE, DEV_NAME); 
+	class_device_create(mp3_class, NULL, 
+		MKDEV(DEV_MAJOR, 0), 
+		NULL, DEV_NAME); 
+
 	mp3_info[0].is_open = 0;
 	printk("mp3_drv.ko : Device %s registered for major ID %d\n", DEV_NAME, DEV_MAJOR);
 	crystal_freq = CRYSTAL12288;
