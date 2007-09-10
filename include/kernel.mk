@@ -43,7 +43,9 @@ else
   TESTING:=$(if $(findstring -rc,$(LINUX_VERSION)),/testing,)
   LINUX_SITE:=@KERNEL/linux/kernel/v$(KERNEL)$(TESTING) \
 
-  PKG_BUILD_DIR ?= $(KERNEL_BUILD_DIR)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
+  ifneq ($(TARGET_BUILD),1)
+    PKG_BUILD_DIR ?= $(KERNEL_BUILD_DIR)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
+  endif
 endif
 
 ifneq (,$(findstring uml,$(BOARD)))
