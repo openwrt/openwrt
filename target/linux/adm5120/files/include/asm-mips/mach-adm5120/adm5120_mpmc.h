@@ -52,8 +52,14 @@
 #define MPMC_REG_SC3    0x0260
 
 /* Control register bits */
-#define MPMC_CTRL_AM		( 1 << 1 )
-#define MPMC_CTRL_DWB		( 1 << 3 )
+#define MPMC_CTRL_AM		( 1 << 1 )	/* Address Mirror */
+#define MPMC_CTRL_LPM		( 1 << 2 )	/* Low Power Mode */
+#define MPMC_CTRL_DWB		( 1 << 3 )	/* Drain Write Buffers */
+
+/* Status register bits */
+#define MPMC_STATUS_BUSY	( 1 << 0 )	/* Busy */
+#define MPMC_STATUS_WBS		( 1 << 1 )	/* Write Buffer Status */
+#define MPMC_STATUS_SRA		( 1 << 2 )	/* Self-Refresh Acknowledge*/
 
 /* Dynamic Control register bits */
 #define MPMC_DC_CE		( 1 << 0 )

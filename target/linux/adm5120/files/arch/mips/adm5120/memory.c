@@ -50,10 +50,11 @@ static int __init mem_check_pattern(u8 *addr, unsigned long offs)
 	u32 *p1 = (u32 *)addr;
 	u32 *p2 = (u32 *)(addr+offs);
 	u32 t,u,v;
+
 	/* save original value */
 	t = MEM_READL(p1);
-	u = MEM_READL(p2);
 
+	u = MEM_READL(p2);
 	if (t != u)
 		return 0;
 
@@ -64,10 +65,7 @@ static int __init mem_check_pattern(u8 *addr, unsigned long offs)
 	mem_dbg("write 0x%08X to 0x%08lX\n", v, (unsigned long)p1);
 
 	MEM_WRITEL(p1, v);
-
-	/* flush write buffers */
-	MPMC_WRITE_REG(CTRL, MPMC_READ_REG(CTRL) | MPMC_CTRL_DWB);
-
+	adm5120_ndelay(1000);
 	u = MEM_READL(p2);
 
 	mem_dbg("pattern at 0x%08lX is 0x%08X\n", (unsigned long)p2, u);
