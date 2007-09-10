@@ -5,7 +5,7 @@
 # See /LICENSE for more information.
 #
 
-ifeq ($(KERNEL_BUILD),1)
+ifeq ($(TARGET_BUILD),1)
   PKG_BUILD_DIR:=$(LINUX_DIR)
 endif
 PATCH_DIR?=./patches
