@@ -15,7 +15,7 @@ ifeq ($(MAKECMDGOALS),refresh)
 endif
 
 define Quilt/Patch
-	@for patch in $$$$( (cd $(1) && ls) 2>/dev/null ); do ( \
+	@for patch in $$$$( (cd $(1) && if [ -f series ]; then grep -v '^#' series; else ls; fi; ) 2>/dev/null ); do ( \
 		cp "$(1)/$$$$patch" $(PKG_BUILD_DIR); \
 		cd $(PKG_BUILD_DIR); \
 		quilt import -P$(2)$$$$patch -p 1 "$$$$patch"; \
@@ -59,7 +59,7 @@ define Kernel/Patch/Default
 	$(if $(strip $(QUILT)),touch $(PKG_BUILD_DIR)/.quilt_used)
 endef
 
-ifeq ($(KERNEL_BUILD),1)
+ifeq ($(TARGET_BUILD),1)
 $(STAMP_PATCHED): $(STAMP_PREPARED)
 	@cd $(PKG_BUILD_DIR); quilt pop -a -f >/dev/null 2>/dev/null || true
 	(\
