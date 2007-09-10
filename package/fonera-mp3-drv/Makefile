@@ -21,7 +21,7 @@ define KernelPackage/fonera-mp3-driver
   DEPENDS:=@TARGET_atheros
   TITLE:=Fonera-MP3 driver (VS1011X)
   FILES:=$(PKG_BUILD_DIR)/mp3_drv.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,25,mp3-drv)
+  AUTOLOAD:=$(call AutoLoad,25,mp3_drv)
 endef
 
 define KernelPackage/fonera-mp3-driver/description
