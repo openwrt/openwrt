@@ -2,6 +2,7 @@
 # Copyright (C) 2007 OpenWrt.org
 
 START=60
+DNS_SERVERS=""
 
 dhcp_calc() {
 	local ip="$1"
@@ -173,6 +174,11 @@ dhcp_add() {
 	config_get ifname "$net" ifname
 	[ -n "$ifname" ] || return 0
 
+	config_get dnsserver "$net" dns
+	[ -n "$dnsserver" ] && {
+		DNS_SERVERS="$DNS_SERVERS $dnsserver"
+	}
+
 	append_bool "$cfg" ignore "-I $ifname"
 
 	config_get proto "$net" proto
@@ -234,10 +240,10 @@ start() {
 
 	/usr/sbin/dnsmasq $args && {
 		rm -f /tmp/resolv.conf
-		cat > /tmp/resolv.conf <<EOF
-nameserver 127.0.0.1
-search lan
-EOF
+		DNS_SERVERS="$DNS_SERVERS 127.0.0.1"
+		for DNS_SERVER in $DNS_SERVERS ; do
+			echo "nameserver $DNS_SERVER" >> /tmp/resolv.conf
+		done	
 	}
 }
 
