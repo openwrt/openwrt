@@ -46,33 +46,36 @@
 #define VLYNQ_CTRL_INT2CFG         0x00000080
 #define VLYNQ_CTRL_RESET           0x00000001
 
-#define VLYNQ_STATUS_RERROR        0x00000100
-#define VLYNQ_STATUS_LERROR        0x00000080
 #define VLYNQ_STATUS_LINK          0x00000001
+#define VLYNQ_STATUS_LERROR        0x00000080
+#define VLYNQ_STATUS_RERROR        0x00000100
 
 #define VINT_ENABLE    0x00000100
 #define VINT_TYPE_EDGE 0x00000080
 #define VINT_LEVEL_LOW 0x00000040
-#define VINT_VECTOR(x) (x & 0x1f)
+#define VINT_VECTOR(x) ((x) & 0x1f)
 #define VINT_OFFSET(irq) (8 * ((irq) % 4))
 
 #define VLYNQ_AUTONEGO_V2          0x00010000
 
 struct vlynq_regs {
-	volatile u32 revision;
-	volatile u32 control;
-	volatile u32 status;
-	volatile u32 int_prio;
-	volatile u32 int_status;
-	volatile u32 int_pending;
-	volatile u32 int_ptr;
-	volatile u32 tx_offset;
-	volatile struct vlynq_mapping rx_mapping[4];
-	volatile u32 chip;
-	volatile u32 autonego;
-	volatile u32 unused[6];
-	volatile u32 int_device[8];
+	u32 revision;
+	u32 control;
+	u32 status;
+	u32 int_prio;
+	u32 int_status;
+	u32 int_pending;
+	u32 int_ptr;
+	u32 tx_offset;
+	struct vlynq_mapping rx_mapping[4];
+	u32 chip;
+	u32 autonego;
+	u32 unused[6];
+	u32 int_device[8];
 } __attribute__ ((packed));
+
+#define vlynq_reg_read(reg) readl(&(reg))
+#define vlynq_reg_write(reg, val)  writel(val, &(reg))
 
 #ifdef VLYNQ_DEBUG
 static void vlynq_dump_regs(struct vlynq_device *dev)
@@ -99,51 +102,51 @@ static void vlynq_dump_mem(u32 *base, int count)
 int vlynq_linked(struct vlynq_device *dev)
 {
 	int i;
+
 	for (i = 0; i < 10; i++)
-		if (dev->local->status & VLYNQ_STATUS_LINK) {
-			printk("%s: linked\n", dev->dev.bus_id);
+		if (vlynq_reg_read(dev->local->status) & VLYNQ_STATUS_LINK)
 			return 1;
-		} else {
+		else
 			mdelay(1);
-		}
+
 	return 0;
 }
 
 static void vlynq_irq_unmask(unsigned int irq)
 {
-	volatile u32 val;
-	struct vlynq_device *dev = irq_desc[irq].chip_data;
+	u32 val;
+	struct vlynq_device *dev = get_irq_chip_data(irq);
 	int virq;
 
 	BUG_ON(!dev);
 	virq = irq - dev->irq_start;
-	val = dev->remote->int_device[virq >> 2];
+	val = vlynq_reg_read(dev->remote->int_device[virq >> 2]);
 	val |= (VINT_ENABLE | virq) << VINT_OFFSET(virq);
-	dev->remote->int_device[virq >> 2] = val;
+	vlynq_reg_write(dev->remote->int_device[virq >> 2], val);
 }
 
 static void vlynq_irq_mask(unsigned int irq)
 {
-	volatile u32 val;
-	struct vlynq_device *dev = irq_desc[irq].chip_data;
+	u32 val;
+	struct vlynq_device *dev = get_irq_chip_data(irq);
 	int virq;
 
 	BUG_ON(!dev);
 	virq = irq - dev->irq_start;
-	val = dev->remote->int_device[virq >> 2];
+	val = vlynq_reg_read(dev->remote->int_device[virq >> 2]);
 	val &= ~(VINT_ENABLE << VINT_OFFSET(virq));
-	dev->remote->int_device[virq >> 2] = val;
+	vlynq_reg_write(dev->remote->int_device[virq >> 2], val);
 }
 
 static int vlynq_irq_type(unsigned int irq, unsigned int flow_type)
 {
-	volatile u32 val;
+	u32 val;
 	struct vlynq_device *dev = irq_desc[irq].chip_data;
 	int virq;
 
 	BUG_ON(!dev);
 	virq = irq - dev->irq_start;
-	val = dev->remote->int_device[virq >> 2];
+	val = vlynq_reg_read(dev->remote->int_device[virq >> 2]);
 	switch (flow_type & IRQ_TYPE_SENSE_MASK) {
 	case IRQ_TYPE_EDGE_RISING:
 	case IRQ_TYPE_EDGE_FALLING:
@@ -162,7 +165,7 @@ static int vlynq_irq_type(unsigned int irq, unsigned int flow_type)
 	default:
 		return -EINVAL;
 	}
-	dev->remote->int_device[virq >> 2] = val;
+	vlynq_reg_write(dev->remote->int_device[virq >> 2], val);
 	return 0;
 }
 
@@ -172,18 +175,18 @@ static irqreturn_t vlynq_irq(int irq, void *dev_id)
 	u32 status, ack;
 	int virq = 0;
 
-	status = dev->local->int_status;
-	dev->local->int_status = status;
+	status = vlynq_reg_read(dev->local->int_status);
+	vlynq_reg_write(dev->local->int_status, status);
 
 	if (status & (1 << dev->local_irq)) { /* Local vlynq IRQ. Ack */
-		ack = dev->local->status;
-		dev->local->status = ack;
+		ack = vlynq_reg_read(dev->local->status);
+		vlynq_reg_write(dev->local->status, ack);
 	}
 
 	if (status & (1 << dev->remote_irq)) { /* Remote vlynq IRQ. Ack */
-		ack = dev->remote->status;
-		dev->remote->status = ack;
-	} 
+		ack = vlynq_reg_read(dev->remote->status);
+		vlynq_reg_write(dev->remote->status, ack);
+	}
 
 	status &= ~((1 << dev->local_irq) | (1 << dev->remote_irq));
 	while (status) {
@@ -197,7 +200,6 @@ static irqreturn_t vlynq_irq(int irq, void *dev_id)
 }
 
 static struct irq_chip vlynq_irq_chip = {
-	.typename = "VLYNQ",
 	.name = "vlynq",
 	.unmask = vlynq_irq_unmask,
 	.mask = vlynq_irq_mask,
@@ -218,23 +220,22 @@ static int vlynq_setup_irq(struct vlynq_device *dev)
 	val = VLYNQ_CTRL_INT_VECTOR(dev->local_irq);
 	val |= VLYNQ_CTRL_INT_ENABLE | VLYNQ_CTRL_INT_LOCAL |
 		VLYNQ_CTRL_INT2CFG;
-	dev->local->int_ptr = 0x14;
-	dev->local->control |= val;
+	val |= vlynq_reg_read(dev->local->control);
+	vlynq_reg_write(dev->local->int_ptr, 0x14);
+	vlynq_reg_write(dev->local->control, val);
 
 	val = VLYNQ_CTRL_INT_VECTOR(dev->remote_irq);
 	val |= VLYNQ_CTRL_INT_ENABLE;
-	dev->remote->int_ptr = 0x14;
-	dev->remote->control |= val;
+	val |= vlynq_reg_read(dev->remote->control);
+	vlynq_reg_write(dev->remote->int_ptr, 0x14);
+	vlynq_reg_write(dev->remote->control, val);
 
 	for (i = 0; i < PER_DEVICE_IRQS; i++) {
 		if ((i == dev->local_irq) || (i == dev->remote_irq))
 			continue;
-		irq_desc[dev->irq_start + i].status = IRQ_DISABLED;
-		irq_desc[dev->irq_start + i].action = 0;
-		irq_desc[dev->irq_start + i].depth = 1;
-		irq_desc[dev->irq_start + i].chip = &vlynq_irq_chip;
-		irq_desc[dev->irq_start + i].chip_data = dev;
-		dev->remote->int_device[i >> 2] = 0;
+		set_irq_chip(dev->irq_start + i, &vlynq_irq_chip);
+		set_irq_chip_data(dev->irq_start + i, dev);
+		vlynq_reg_write(dev->remote->int_device[i >> 2], 0);
 	}
 
 	if (request_irq(dev->irq, vlynq_irq, SA_SHIRQ, "vlynq", dev)) {
@@ -297,24 +298,28 @@ int vlynq_device_enable(struct vlynq_device *dev)
 	if (result)
 		return result;
 
-	dev->local->control = 0;
-	dev->remote->control = 0;
-	dev->local->control = VLYNQ_CTRL_CLOCK_INT;
+	vlynq_reg_write(dev->local->control, 0);
+	vlynq_reg_write(dev->remote->control, 0);
 
-	div = ar7_dsp_freq() / 62500000;
-	if (div != 0 ) {
-		if (ar7_dsp_freq() / div != 62500000) {
-			printk(KERN_WARNING
-				"VLYNQ: Adjusted requested frequency %d to %d\n",
-				62500000, ar7_dsp_freq() / div);
-		}
-    
-		printk("VLYNQ: Setting clock to %d (clock divider %u)\n", 
-			ar7_dsp_freq() / div, div);
-		dev->local->control |= VLYNQ_CTRL_CLOCK_DIV((div - 1));
-	}
-	if (vlynq_linked(dev)) 
+/*
+	if (vlynq_linked(dev)) {
+		printk(KERN_INFO "%s: linked (using external clock)\n",
+			dev->dev.bus_id);
 		return vlynq_setup_irq(dev);
+	}
+*/
+
+	for (div = 1; div <= 8; div++) {
+		mdelay(20); 
+		vlynq_reg_write(dev->local->control, VLYNQ_CTRL_CLOCK_INT | 
+			VLYNQ_CTRL_CLOCK_DIV(div - 1));
+		vlynq_reg_write(dev->remote->control, 0);
+		if (vlynq_linked(dev)) {
+			printk(KERN_INFO "%s: linked (using internal clock, div: %d)\n",
+				dev->dev.bus_id, div);
+			return vlynq_setup_irq(dev);
+		}
+	}
 
 	return -ENODEV;
 }
@@ -327,14 +332,9 @@ void vlynq_device_disable(struct vlynq_device *dev)
 	ops->off(dev);
 }
 
-u32 vlynq_local_id(struct vlynq_device *dev)
-{
-	return dev->local->chip;
-}
-
 u32 vlynq_remote_id(struct vlynq_device *dev)
 {
-	return dev->remote->chip;
+	return vlynq_reg_read(dev->remote->chip);
 }
 
 void vlynq_set_local_mapping(struct vlynq_device *dev, u32 tx_offset,
@@ -342,10 +342,10 @@ void vlynq_set_local_mapping(struct vlynq_device *dev, u32 tx_offset,
 {
 	int i;
 
-	dev->local->tx_offset = tx_offset;
+	vlynq_reg_write(dev->local->tx_offset, tx_offset);
 	for (i = 0; i < 4; i++) {
-		dev->local->rx_mapping[i].offset = mapping[i].offset;
-		dev->local->rx_mapping[i].size = mapping[i].size;
+		vlynq_reg_write(dev->local->rx_mapping[i].offset, mapping[i].offset);
+		vlynq_reg_write(dev->local->rx_mapping[i].size, mapping[i].size);
 	}
 }
 
@@ -354,10 +354,10 @@ void vlynq_set_remote_mapping(struct vlynq_device *dev, u32 tx_offset,
 {
 	int i;
 
-	dev->remote->tx_offset = tx_offset;
+	vlynq_reg_write(dev->remote->tx_offset, tx_offset);
 	for (i = 0; i < 4; i++) {
-		dev->remote->rx_mapping[i].offset = mapping[i].offset;
-		dev->remote->rx_mapping[i].size = mapping[i].size;
+		vlynq_reg_write(dev->remote->rx_mapping[i].offset, mapping[i].offset);
+		vlynq_reg_write(dev->remote->rx_mapping[i].size, mapping[i].size);
 	}
 }
 
@@ -427,7 +427,7 @@ static int vlynq_probe(struct platform_device *pdev)
 	if (!irq_res)
 		return -ENODEV;
 
-	dev = kmalloc(sizeof(struct vlynq_device), GFP_KERNEL);
+	dev = kzalloc(sizeof(struct vlynq_device), GFP_KERNEL);
 	if (!dev) {
 		printk(KERN_ERR "vlynq: failed to allocate device structure\n");
 		return -ENOMEM;
@@ -517,7 +517,7 @@ EXPORT_SYMBOL(vlynq_bus_type);
 #ifdef CONFIG_PCI
 extern void vlynq_pci_init(void);
 #endif
-int __init vlynq_init(void)
+static int __init vlynq_init(void)
 {
 	int res = 0;
 
