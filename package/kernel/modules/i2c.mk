@@ -53,8 +53,8 @@ $(eval $(call KernelPackage,i2c-algos))
 define KernelPackage/i2c-scx200
   SUBMENU:=$(I2CMENU)
   TITLE:=SCX200 i2c support
-  DEFAULT:=y if LINUX_2_6_X86_Soekris
-  DEPENDS:=kmod-i2c-core kmod-i2c-algos @LINUX_2_6_X86_Soekris
+  DEFAULT:=y if TARGET_x86_Soekris
+  DEPENDS:=@TARGET_x86_Soekris kmod-i2c-core kmod-i2c-algos
   KCONFIG:= \
 	CONFIG_I2C_ISA \
 	CONFIG_SCx200_I2C

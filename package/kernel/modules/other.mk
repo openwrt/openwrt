@@ -360,7 +360,7 @@ $(eval $(call KernelPackage,bluetooth))
 define KernelPackage/mmc
   SUBMENU:=$(EMENU)
   TITLE:=MMC/SD Card Support
-  DEPENDS:=@LINUX_2_6_AT91
+  DEPENDS:=@TARGET_at91
   KCONFIG:= \
 	CONFIG_MMC \
 	CONFIG_MMC_BLOCK \
@@ -436,7 +436,7 @@ $(eval $(call KernelPackage,videodev))
 define KernelPackage/leds-net48xx
   SUBMENU:=$(EMENU)
   TITLE:=Soekris Net48xx LED support
-  DEPENDS:=@LINUX_2_6_X86
+  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_LEDS_NET48XX
   FILES:=$(LINUX_DIR)/drivers/leds/leds-net48xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,leds-net48xx)
@@ -452,7 +452,7 @@ $(eval $(call KernelPackage,leds-net48xx))
 define KernelPackage/nsc-gpio
   SUBMENU:=$(EMENU)
   TITLE:=Natsemi GPIO support
-  DEPENDS:=@LINUX_2_6_X86
+  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_NSC_GPIO
   FILES:=$(LINUX_DIR)/drivers/char/nsc_gpio.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,nsc_gpio)
@@ -468,7 +468,7 @@ $(eval $(call KernelPackage,nsc-gpio))
 define KernelPackage/scx200-gpio
   SUBMENU:=$(EMENU)
   TITLE:=Natsemi SCX200 GPIO support
-  DEPENDS:=kmod-nsc-gpio @LINUX_2_6_X86
+  DEPENDS:=@TARGET_x86 kmod-nsc-gpio
   KCONFIG:=CONFIG_SCx200_GPIO
   FILES:=$(LINUX_DIR)/drivers/char/scx200_gpio.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,scx200_gpio)
@@ -484,7 +484,7 @@ $(eval $(call KernelPackage,scx200-gpio))
 define KernelPackage/scx200-wdt
   SUBMENU:=$(EMENU)
   TITLE:=Natsemi SCX200 Watchdog support
-  DEPENDS:=@LINUX_2_6_X86
+  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_SC1200_WDT
   FILES:=$(LINUX_DIR)/drivers/char/watchdog/scx200_wdt.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,scx200_wdt)

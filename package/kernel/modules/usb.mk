@@ -121,7 +121,7 @@ $(eval $(call KernelPackage,usb-ohci))
 
 
 define KernelPackage/usb-adm5120
-  $(call usbdep,@LINUX_2_6_ADM5120||@LINUX_2_6_ADM5120EB)
+  $(call usbdep,@TARGET_adm5120_router_be||@TARGET_adm5120_router_le)
   TITLE:=Support for the ADM5120 HCD controller
   KCONFIG:=CONFIG_USB_ADM5120_HCD
   FILES:=$(LINUX_DIR)/drivers/usb/host/adm5120-hcd.$(LINUX_KMOD_SUFFIX)
