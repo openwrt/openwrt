@@ -1,7 +1,5 @@
 /*
- * $Id$
- * 
- * Copyright (C) 2007 OpenWrt.org
+ * Copyright (C) 2007 Eugene Konev <ejka@openwrt.org>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +16,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * TI AR7 flash partition table.
- * Based on ar7 map by Felix Fietkau.
+ * Based on ar7 map by Felix Fietkau <nbd@openwrt.org>
  *
  */
 
@@ -45,10 +43,11 @@ static int create_mtd_partitions(struct mtd_info *master,
 	struct ar7_bin_rec header;
 	unsigned int offset, len;
 	unsigned int pre_size = master->erasesize, post_size = 0,
-		root_offset = 0xe0000;
+	unsigned int root_offset = 0xe0000;
+
 	int retries = 10;
 
-	printk("Parsing AR7 partition map...\n");
+	printk(KERN_INFO "Parsing AR7 partition map...\n");
 
 	ar7_parts[0].name = "loader";
 	ar7_parts[0].offset = 0;
@@ -98,7 +97,7 @@ static int create_mtd_partitions(struct mtd_info *master,
 		root_offset &= ~(u32)0xff;
 		break;
 	default:
-		printk("Unknown magic: %08x\n", header.checksum);
+		printk(KERN_WARNING "Unknown magic: %08x\n", header.checksum);
 		break;
 	}
 
@@ -136,5 +135,5 @@ static int __init ar7_parser_init(void)
 module_init(ar7_parser_init);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Felix Fietkau, Eugene Konev");
+MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>, Eugene Konev <ejka@openwrt.org>");
 MODULE_DESCRIPTION("MTD partitioning for TI AR7");
