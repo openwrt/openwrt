@@ -1,18 +1,16 @@
 /*
- * $Id: gpio.h 6693 2007-03-25 05:42:16Z ejka $
- * 
  * Copyright (C) 2007 OpenWrt.org
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -30,7 +28,8 @@ extern void gpio_free(unsigned gpio);
 /* Common GPIO layer */
 static inline int gpio_direction_input(unsigned gpio)
 {
-	void __iomem *gpio_dir = (void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_DIR);
+	void __iomem *gpio_dir =
+		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_DIR);
 
 	if (gpio >= AR7_GPIO_MAX)
 		return -EINVAL;
@@ -42,7 +41,8 @@ static inline int gpio_direction_input(unsigned gpio)
 
 static inline int gpio_direction_output(unsigned gpio)
 {
-	void __iomem *gpio_dir = (void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_DIR);
+	void __iomem *gpio_dir =
+		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_DIR);
 
 	if (gpio >= AR7_GPIO_MAX)
 		return -EINVAL;
@@ -54,7 +54,8 @@ static inline int gpio_direction_output(unsigned gpio)
 
 static inline int gpio_get_value(unsigned gpio)
 {
-	void __iomem *gpio_in = (void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_INPUT);
+	void __iomem *gpio_in =
+		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_INPUT);
 
 	if (gpio >= AR7_GPIO_MAX)
 		return -EINVAL;
@@ -64,14 +65,15 @@ static inline int gpio_get_value(unsigned gpio)
 
 static inline void gpio_set_value(unsigned gpio, int value)
 {
-	void __iomem *gpio_out = (void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_OUTPUT);
+	void __iomem *gpio_out =
+		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_OUTPUT);
 	volatile unsigned tmp;
 
 	if (gpio >= AR7_GPIO_MAX)
 		return;
 
 	tmp = readl(gpio_out) & ~(1 << gpio);
-	if (value) 
+	if (value)
 		tmp |= 1 << gpio;
 	writel(tmp, gpio_out);
 }
@@ -89,7 +91,8 @@ static inline int irq_to_gpio(unsigned irq)
 /* Board specific GPIO functions */
 static inline int ar7_gpio_enable(unsigned gpio)
 {
-	void __iomem *gpio_en =	(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_ENABLE);
+	void __iomem *gpio_en =
+		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_ENABLE);
 
 	if (gpio >= AR7_GPIO_MAX)
 		return -EINVAL;
@@ -101,7 +104,8 @@ static inline int ar7_gpio_enable(unsigned gpio)
 
 static inline int ar7_gpio_disable(unsigned gpio)
 {
-	void __iomem *gpio_en =	(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_ENABLE);
+	void __iomem *gpio_en =
+		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_ENABLE);
 
 	if (gpio >= AR7_GPIO_MAX)
 		return -EINVAL;

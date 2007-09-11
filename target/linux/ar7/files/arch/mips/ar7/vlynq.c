@@ -1,18 +1,16 @@
 /*
- * $Id$
- * 
  * Copyright (C) 2006, 2007 OpenWrt.org
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -30,8 +28,9 @@
 #include <linux/irq.h>
 #include <linux/interrupt.h>
 #include <linux/device.h>
+#include <linux/io.h>
+
 #include <asm/addrspace.h>
-#include <asm/io.h>
 #include <asm/ar7/ar7.h>
 #include <asm/ar7/vlynq.h>
 
@@ -81,10 +80,13 @@ struct vlynq_regs {
 static void vlynq_dump_regs(struct vlynq_device *dev)
 {
 	int i;
-	printk("VLYNQ local=%p remote=%p\n", dev->local, dev->remote);
+	printk(KERN_DEBUG "VLYNQ local=%p remote=%p\n",
+			dev->local, dev->remote);
 	for (i = 0; i < 32; i++) {
-		printk("VLYNQ: local %d: %08x\n", i + 1, ((u32 *)dev->local)[i]);
-		printk("VLYNQ: remote %d: %08x\n", i + 1, ((u32 *)dev->remote)[i]);
+		printk(KERN_DEBUG "VLYNQ: local %d: %08x\n",
+			i + 1, ((u32 *)dev->local)[i]);
+		printk(KERN_DEBUG "VLYNQ: remote %d: %08x\n",
+			i + 1, ((u32 *)dev->remote)[i]);
 	}
 }
 
@@ -92,10 +94,10 @@ static void vlynq_dump_mem(u32 *base, int count)
 {
 	int i;
 	for (i = 0; i < (count + 3) / 4; i++) {
-		if (i % 4 == 0) printk("\nMEM[0x%04x]:", i * 4);
-		printk(" 0x%08x", *(base + i));
+		if (i % 4 == 0) printk(KERN_DEBUG "\nMEM[0x%04x]:", i * 4);
+		printk(KERN_DEBUG " 0x%08x", *(base + i));
 	}
-	printk("\n");
+	printk(KERN_DEBUG "\n");
 }
 #endif
 
@@ -212,8 +214,9 @@ static int vlynq_setup_irq(struct vlynq_device *dev)
 	int i;
 
 	if (dev->local_irq == dev->remote_irq) {
-		printk("%s: local vlynq irq should be different from remote\n", 
-		       dev->dev.bus_id);
+		printk(KERN_WARNING
+			"%s: local vlynq irq should be different from remote\n",
+			dev->dev.bus_id);
 		return -EINVAL;
 	}
 
@@ -239,7 +242,7 @@ static int vlynq_setup_irq(struct vlynq_device *dev)
 	}
 
 	if (request_irq(dev->irq, vlynq_irq, SA_SHIRQ, "vlynq", dev)) {
-		printk("%s: request_irq failed\n", dev->dev.bus_id);
+		printk(KERN_ERR "%s: request_irq failed\n", dev->dev.bus_id);
 		return -EAGAIN;
 	}
 
@@ -363,7 +366,7 @@ void vlynq_set_remote_mapping(struct vlynq_device *dev, u32 tx_offset,
 
 int vlynq_virq_to_irq(struct vlynq_device *dev, int virq)
 {
-	if ((virq < 0) || (virq >= PER_DEVICE_IRQS)) 
+	if ((virq < 0) || (virq >= PER_DEVICE_IRQS))
 		return -EINVAL;
 
 	if ((virq == dev->local_irq) || (virq == dev->remote_irq))
@@ -374,7 +377,7 @@ int vlynq_virq_to_irq(struct vlynq_device *dev, int virq)
 
 int vlynq_irq_to_virq(struct vlynq_device *dev, int irq)
 {
-	if ((irq < dev->irq_start) || (irq >= dev->irq_start + PER_DEVICE_IRQS)) 
+	if ((irq < dev->irq_start) || (irq >= dev->irq_start + PER_DEVICE_IRQS))
 		return -EINVAL;
 
 	return irq - dev->irq_start;
@@ -382,7 +385,7 @@ int vlynq_irq_to_virq(struct vlynq_device *dev, int irq)
 
 int vlynq_set_local_irq(struct vlynq_device *dev, int virq)
 {
-	if ((virq < 0) || (virq >= PER_DEVICE_IRQS)) 
+	if ((virq < 0) || (virq >= PER_DEVICE_IRQS))
 		return -EINVAL;
 
 	if (virq == dev->remote_irq)
@@ -395,7 +398,7 @@ int vlynq_set_local_irq(struct vlynq_device *dev, int virq)
 
 int vlynq_set_remote_irq(struct vlynq_device *dev, int virq)
 {
-	if ((virq < 0) || (virq >= PER_DEVICE_IRQS)) 
+	if ((virq < 0) || (virq >= PER_DEVICE_IRQS))
 		return -EINVAL;
 
 	if (virq == dev->local_irq)
@@ -450,14 +453,16 @@ static int vlynq_probe(struct platform_device *pdev)
 
 	len = regs_res->end - regs_res->start;
 	if (!request_mem_region(regs_res->start, len, dev->dev.bus_id)) {
-		printk("%s: Can't request vlynq registers\n", dev->dev.bus_id);
+		printk(KERN_ERR "%s: Can't request vlynq registers\n",
+							dev->dev.bus_id);
 		result = -ENXIO;
 		goto fail_request;
 	}
 
 	dev->local = ioremap_nocache(regs_res->start, len);
 	if (!dev->local) {
-		printk("%s: Can't remap vlynq registers\n", dev->dev.bus_id);
+		printk(KERN_ERR "%s: Can't remap vlynq registers\n",
+							dev->dev.bus_id);
 		result = -ENXIO;
 		goto fail_remap;
 	}
@@ -474,7 +479,7 @@ static int vlynq_probe(struct platform_device *pdev)
 		goto fail_register;
 	platform_set_drvdata(pdev, dev);
 
-	printk("%s: regs 0x%p, irq %d, mem 0x%p\n",
+	printk(KERN_INFO "%s: regs 0x%p, irq %d, mem 0x%p\n",
 	       dev->dev.bus_id, (void *)dev->regs_start, dev->irq,
 	       (void *)dev->mem_start);
 

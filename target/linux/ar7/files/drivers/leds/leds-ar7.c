@@ -24,7 +24,7 @@
 #include <linux/platform_device.h>
 #include <linux/leds.h>
 #include <linux/err.h>
-#include <asm/io.h>
+#include <linux/io.h>
 #include <gpio.h>
 
 #define DRVNAME "ar7-leds"
@@ -35,7 +35,7 @@ MODULE_AUTHOR("Nicolas Thill <nico@openwrt.org>");
 MODULE_DESCRIPTION(LONGNAME);
 MODULE_LICENSE("GPL");
 
-static void ar7_status_led_set(struct led_classdev *pled, 
+static void ar7_status_led_set(struct led_classdev *pled,
 		enum led_brightness value)
 {
 	gpio_set_value(AR7_GPIO_BIT_STATUS_LED, value ? 0 : 1);
@@ -69,7 +69,7 @@ static int ar7_leds_probe(struct platform_device *pdev)
 	int rc;
 
 	rc = led_classdev_register(&pdev->dev, &ar7_status_led);
-	if (rc < 0 )
+	if (rc < 0)
 		goto out;
 
 	ar7_gpio_enable(AR7_GPIO_BIT_STATUS_LED);

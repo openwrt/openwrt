@@ -33,11 +33,10 @@
 #include <linux/reboot.h>
 #include <linux/fs.h>
 #include <linux/ioport.h>
+#include <linux/io.h>
+#include <linux/uaccess.h>
 
 #include <asm/addrspace.h>
-#include <asm/io.h>
-#include <asm/uaccess.h>
-
 #include <asm/ar7/ar7.h>
 
 #define DRVNAME "ar7_wdt"
@@ -56,7 +55,7 @@ static int nowayout = WATCHDOG_NOWAYOUT;
 module_param(nowayout, int, 0);
 MODULE_PARM_DESC(nowayout, "Disable watchdog shutdown on close");
 
-typedef struct {
+struct ar7_wdt {
 	u32 kick_lock;
 	u32 kick;
 	u32 change_lock;
@@ -65,7 +64,7 @@ typedef struct {
 	u32 disable;
 	u32 prescale_lock;
 	u32 prescale;
-} ar7_wdt_t;
+};
 
 static struct semaphore open_semaphore;
 static unsigned expect_close;
@@ -73,15 +72,14 @@ static unsigned expect_close;
 /* XXX currently fixed, allows max margin ~68.72 secs */
 #define prescale_value 0xffff
 
-// Offset of the WDT registers
+/* Offset of the WDT registers */
 static unsigned long ar7_regs_wdt;
-// Pointer to the remapped WDT IO space
-static ar7_wdt_t *ar7_wdt;
+/* Pointer to the remapped WDT IO space */
+static struct ar7_wdt *ar7_wdt;
 static void ar7_wdt_get_regs(void)
 {
 	u16 chip_id = ar7_chip_id();
-	switch (chip_id)
-	{
+	switch (chip_id) {
 	case AR7_CHIP_7100:
 	case AR7_CHIP_7200:
 		ar7_regs_wdt = AR7_REGS_WDT;
@@ -91,6 +89,7 @@ static void ar7_wdt_get_regs(void)
 		break;
 	}
 }
+
 
 static void ar7_wdt_kick(u32 value)
 {
@@ -188,7 +187,9 @@ static int ar7_wdt_open(struct inode *inode, struct file *file)
 static int ar7_wdt_release(struct inode *inode, struct file *file)
 {
 	if (!expect_close) {
-		printk(KERN_WARNING DRVNAME ": watchdog device closed unexpectedly, will not disable the watchdog timer\n");
+		printk(KERN_WARNING DRVNAME
+		": watchdog device closed unexpectedly,"
+		"will not disable the watchdog timer\n");
 	} else if (!nowayout) {
 		ar7_wdt_disable_wdt();
 	}
@@ -197,8 +198,8 @@ static int ar7_wdt_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static int ar7_wdt_notify_sys(struct notifier_block *this, 
-	unsigned long code, void *unused)
+static int ar7_wdt_notify_sys(struct notifier_block *this,
+			      unsigned long code, void *unused)
 {
 	if (code == SYS_HALT || code == SYS_POWER_OFF)
 		if (!nowayout)
@@ -207,13 +208,12 @@ static int ar7_wdt_notify_sys(struct notifier_block *this,
 	return NOTIFY_DONE;
 }
 
-static struct notifier_block ar7_wdt_notifier =
-{
+static struct notifier_block ar7_wdt_notifier = {
 	.notifier_call = ar7_wdt_notify_sys
 };
 
-static ssize_t ar7_wdt_write(struct file *file, const char *data, 
-	size_t len, loff_t *ppos)
+static ssize_t ar7_wdt_write(struct file *file, const char *data,
+			     size_t len, loff_t *ppos)
 {
 	if (ppos != &file->f_pos)
 		return -ESPIPE;
@@ -237,19 +237,21 @@ static ssize_t ar7_wdt_write(struct file *file, const char *data,
 	return len;
 }
 
-static int ar7_wdt_ioctl(struct inode *inode, struct file *file, 
-	unsigned int cmd, unsigned long arg)
+static int ar7_wdt_ioctl(struct inode *inode, struct file *file,
+			 unsigned int cmd, unsigned long arg)
 {
 	static struct watchdog_info ident = {
 		.identity = LONGNAME,
-		.firmware_version = 1, 
+		.firmware_version = 1,
 		.options = (WDIOF_SETTIMEOUT | WDIOF_KEEPALIVEPING),
 	};
 	int new_margin;
-	
+
 	switch (cmd) {
+	default:
+		return -ENOTTY;
 	case WDIOC_GETSUPPORT:
-		if(copy_to_user((struct watchdog_info *)arg, &ident, 
+		if (copy_to_user((struct watchdog_info *)arg, &ident,
 				sizeof(ident)))
 			return -EFAULT;
 		return 0;
@@ -274,8 +276,6 @@ static int ar7_wdt_ioctl(struct inode *inode, struct file *file,
 		if (put_user(margin, (int *)arg))
 			return -EFAULT;
 		return 0;
-	default:
-		return -ENOTTY;
 	}
 }
 
@@ -297,14 +297,16 @@ static int __init ar7_wdt_init(void)
 {
 	int rc;
 
-	ar7_wdt_get_regs();
+    ar7_wdt_get_regs();
 
-	if (!request_mem_region(ar7_regs_wdt, sizeof(ar7_wdt_t), LONGNAME)) {
+	if (!request_mem_region(ar7_regs_wdt, sizeof(struct ar7_wdt),
+							LONGNAME)) {
 		printk(KERN_WARNING DRVNAME ": watchdog I/O region busy\n");
 		return -EBUSY;
 	}
 
-	ar7_wdt = (ar7_wdt_t *)ioremap(ar7_regs_wdt, sizeof(ar7_wdt_t));
+	ar7_wdt = (struct ar7_wdt *)
+			ioremap(ar7_regs_wdt, sizeof(struct ar7_wdt));
 
 	ar7_wdt_disable_wdt();
 	ar7_wdt_prescale(prescale_value);
@@ -320,7 +322,8 @@ static int __init ar7_wdt_init(void)
 
 	rc = register_reboot_notifier(&ar7_wdt_notifier);
 	if (rc) {
-		printk(KERN_ERR DRVNAME ": unable to register reboot notifier\n");
+		printk(KERN_ERR DRVNAME
+			": unable to register reboot notifier\n");
 		goto out_register;
 	}
 	goto out;
@@ -328,7 +331,7 @@ static int __init ar7_wdt_init(void)
 out_register:
 	misc_deregister(&ar7_wdt_miscdev);
 out_alloc:
-	release_mem_region(ar7_regs_wdt, sizeof(ar7_wdt_t));
+	release_mem_region(ar7_regs_wdt, sizeof(struct ar7_wdt));
 out:
 	return rc;
 }
@@ -338,7 +341,7 @@ static void __exit ar7_wdt_cleanup(void)
 	unregister_reboot_notifier(&ar7_wdt_notifier);
 	misc_deregister(&ar7_wdt_miscdev);
 	iounmap(ar7_wdt);
-	release_mem_region(ar7_regs_wdt, sizeof(ar7_wdt_t));
+	release_mem_region(ar7_regs_wdt, sizeof(struct ar7_wdt));
 }
 
 module_init(ar7_wdt_init);
