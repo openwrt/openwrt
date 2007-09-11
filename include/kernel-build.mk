@@ -77,10 +77,10 @@ define BuildKernel
 	$(MAKE) -C image compile TARGET_BUILD=
 
   oldconfig menuconfig: $(STAMP_PREPARED) FORCE
-	$(Kernel/Configure)
 	$(LINUX_CONFCMD) > $(LINUX_DIR)/.config
 	$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) $$@
 	$(SCRIPT_DIR)/kconfig.pl '>' $(GENERIC_LINUX_CONFIG) $(LINUX_DIR)/.config > $(LINUX_CONFIG)
+	$(Kernel/Configure)
 
   install: $(LINUX_DIR)/.image
 	TARGET_BUILD="" $(MAKE) -C image compile install
