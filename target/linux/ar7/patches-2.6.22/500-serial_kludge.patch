@@ -48,15 +48,3 @@ diff -urN linux-2.6.22.orig/include/linux/serialP.h linux-2.6.22/include/linux/s
  #else
  #define ALPHA_KLUDGE_MCR 0
  #endif
-diff -urN linux-2.6.22.orig/scripts/setlocalversion linux-2.6.22/scripts/setlocalversion
---- linux-2.6.22.orig/scripts/setlocalversion	2007-07-09 01:32:17.000000000 +0200
-+++ linux-2.6.22/scripts/setlocalversion	2007-07-11 03:08:57.000000000 +0200
-@@ -1,6 +1,8 @@
- #!/bin/sh
- # Print additional version information for non-release trees.
- 
-+exit 0
-+
- usage() {
- 	echo "Usage: $0 [srctree]" >&2
- 	exit 1

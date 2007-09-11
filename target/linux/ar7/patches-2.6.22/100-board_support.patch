@@ -26,37 +26,31 @@ diff -urN linux-2.6.22/arch/mips/Kconfig linux-2.6.22.new/arch/mips/Kconfig
 diff -urN linux-2.6.22/arch/mips/kernel/traps.c linux-2.6.22.new/arch/mips/kernel/traps.c
 --- linux-2.6.22/arch/mips/kernel/traps.c	2007-07-09 01:32:17.000000000 +0200
 +++ linux-2.6.22.new/arch/mips/kernel/traps.c	2007-07-11 02:32:39.000000000 +0200
-@@ -1051,11 +1051,6 @@
- unsigned long exception_handlers[32];
- unsigned long vi_handlers[64];
- 
--/*
-- * As a side effect of the way this is implemented we're limited
-- * to interrupt handlers in the address range from
-- * KSEG0 <= x < KSEG0 + 256mb on the Nevada.  Oh well ...
-- */
- void *set_except_vector(int n, void *addr)
- {
- 	unsigned long handler = (unsigned long) addr;
-@@ -1063,9 +1058,15 @@
+@@ -1075,9 +1075,23 @@ void *set_except_vector(int n, void *addr)
  
  	exception_handlers[n] = handler;
  	if (n == 0 && cpu_has_divec) {
--		*(volatile u32 *)(ebase + 0x200) = 0x08000000 |
--		                                 (0x03ffffff & (handler >> 2));
--		flush_icache_range(ebase + 0x200, ebase + 0x204);
++#ifdef CONFIG_AR7
 +		/* lui k0, 0x0000 */
-+		*(volatile u32 *)(CAC_BASE+0x200) = 0x3c1a0000 | (handler >> 16);
++		*(volatile u32 *)(CAC_BASE+0x200) =
++				0x3c1a0000 | (handler >> 16);
 +		/* ori k0, 0x0000 */
-+		*(volatile u32 *)(CAC_BASE+0x204) = 0x375a0000 | (handler & 0xffff);
++		*(volatile u32 *)(CAC_BASE+0x204) =
++				0x375a0000 | (handler & 0xffff);
 +		/* jr k0 */
 +		*(volatile u32 *)(CAC_BASE+0x208) = 0x03400008;
 +		/* nop */
 +		*(volatile u32 *)(CAC_BASE+0x20C) = 0x00000000;
 +		flush_icache_range(CAC_BASE+0x200, CAC_BASE+0x210);
++#else
+ 		*(volatile u32 *)(ebase + 0x200) = 0x08000000 |
+ 		                                 (0x03ffffff & (handler >> 2));
+ 		flush_icache_range(ebase + 0x200, ebase + 0x204);
++#endif
  	}
  	return (void *)old_handler;
  }
+
 diff -urN linux-2.6.22/arch/mips/Makefile linux-2.6.22.new/arch/mips/Makefile
 --- linux-2.6.22/arch/mips/Makefile	2007-07-09 01:32:17.000000000 +0200
 +++ linux-2.6.22.new/arch/mips/Makefile	2007-07-11 02:32:39.000000000 +0200

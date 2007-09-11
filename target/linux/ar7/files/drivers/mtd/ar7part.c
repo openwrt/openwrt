@@ -59,7 +59,7 @@ static int create_mtd_partitions(struct mtd_info *master,
 	ar7_parts[1].size = master->erasesize;
 	ar7_parts[1].mask_flags = 0;
 
-	do {
+	do { /* Try 10 blocks starting from master->erasesize */
 		offset = pre_size;
 		master->read(master, offset,
 			sizeof(header), &len, (u_char *)&header);
