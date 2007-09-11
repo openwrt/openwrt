@@ -86,18 +86,18 @@ struct cpmac_regs {
 	u32 unused1[56];
 	u32 mbp;
 /* MBP bits */
-#define MBP_RXPASSCRC         0x40000000
-#define MBP_RXQOS             0x20000000
-#define MBP_RXNOCHAIN         0x10000000
-#define MBP_RXCMF             0x01000000
-#define MBP_RXSHORT           0x00800000
-#define MBP_RXCEF             0x00400000
-#define MBP_RXPROMISC         0x00200000
-#define MBP_PROMISCCHAN(chan) (((chan) & 0x7) << 16)
-#define MBP_RXBCAST           0x00002000
-#define MBP_BCASTCHAN(chan)   (((chan) & 0x7) << 8)
-#define MBP_RXMCAST           0x00000020
-#define MBP_MCASTCHAN(chan)   ((chan) & 0x7)
+#define MBP_RXPASSCRC		0x40000000
+#define MBP_RXQOS		0x20000000
+#define MBP_RXNOCHAIN		0x10000000
+#define MBP_RXCMF		0x01000000
+#define MBP_RXSHORT		0x00800000
+#define MBP_RXCEF		0x00400000
+#define MBP_RXPROMISC		0x00200000
+#define MBP_PROMISCCHAN(chan)	(((chan) & 0x7) << 16)
+#define MBP_RXBCAST		0x00002000
+#define MBP_BCASTCHAN(chan)	(((chan) & 0x7) << 8)
+#define MBP_RXMCAST		0x00000020
+#define MBP_MCASTCHAN(chan)	((chan) & 0x7)
 	u32 unicast_enable;
 	u32 unicast_clear;
 	u32 max_len;
@@ -107,27 +107,27 @@ struct cpmac_regs {
 	u32 flow_thre[8];
 	u32 free_buffer[8];
 	u32 mac_control;
-#define MAC_TXPTYPE  0x00000200
-#define MAC_TXPACE   0x00000040
-#define MAC_MII      0x00000020
-#define MAC_TXFLOW   0x00000010
-#define MAC_RXFLOW   0x00000008
-#define MAC_MTEST    0x00000004
-#define MAC_LOOPBACK 0x00000002
-#define MAC_FDX      0x00000001
+#define MAC_TXPTYPE	0x00000200
+#define MAC_TXPACE	0x00000040
+#define MAC_MII		0x00000020
+#define MAC_TXFLOW	0x00000010
+#define MAC_RXFLOW	0x00000008
+#define MAC_MTEST	0x00000004
+#define MAC_LOOPBACK	0x00000002
+#define MAC_FDX		0x00000001
 	u32 mac_status;
-#define MACST_QOS    0x4
-#define MACST_RXFLOW 0x2
-#define MACST_TXFLOW 0x1
+#define MACST_QOS	0x4
+#define MACST_RXFLOW	0x2
+#define MACST_TXFLOW	0x1
 	u32 emc_control;
 	u32 unused3;
 	struct cpmac_int_regs tx_int;
 	u32 mac_int_vector;
 /* Int Status bits */
-#define INTST_STATUS 0x80000
-#define INTST_HOST   0x40000
-#define INTST_RX     0x20000
-#define INTST_TX     0x10000
+#define INTST_STATUS	0x80000
+#define INTST_HOST	0x40000
+#define INTST_RX	0x20000
+#define INTST_TX	0x10000
 	u32 mac_eoi_vector;
 	u32 unused4[2];
 	struct cpmac_int_regs rx_int;
@@ -158,24 +158,24 @@ struct cpmac_regs {
 struct cpmac_mdio_regs {
 	u32 version;
 	volatile u32 control;
-#define MDIOC_IDLE        0x80000000
-#define MDIOC_ENABLE      0x40000000
-#define MDIOC_PREAMBLE    0x00100000
-#define MDIOC_FAULT       0x00080000
-#define MDIOC_FAULTDETECT 0x00040000
-#define MDIOC_INTTEST     0x00020000
-#define MDIOC_CLKDIV(div) ((div) & 0xff)
+#define MDIOC_IDLE		0x80000000
+#define MDIOC_ENABLE		0x40000000
+#define MDIOC_PREAMBLE		0x00100000
+#define MDIOC_FAULT		0x00080000
+#define MDIOC_FAULTDETECT	0x00040000
+#define MDIOC_INTTEST		0x00020000
+#define MDIOC_CLKDIV(div)	((div) & 0xff)
 	volatile u32 alive;
 	u32 link;
 	struct cpmac_int_regs link_int;
 	struct cpmac_int_regs user_int;
 	u32 unused[20];
 	volatile u32 access;
-#define MDIO_BUSY       0x80000000
-#define MDIO_WRITE      0x40000000
-#define MDIO_REG(reg)   (((reg) & 0x1f) << 21)
-#define MDIO_PHY(phy)   (((phy) & 0x1f) << 16)
-#define MDIO_DATA(data) ((data) & 0xffff)
+#define MDIO_BUSY	0x80000000
+#define MDIO_WRITE	0x40000000
+#define MDIO_REG(reg)	(((reg) & 0x1f) << 21)
+#define MDIO_PHY(phy)	(((phy) & 0x1f) << 16)
+#define MDIO_DATA(data)	((data) & 0xffff)
 	u32 physel;
 } __attribute__ ((packed));
 
@@ -222,10 +222,10 @@ static int cpmac_stop(struct net_device *dev);
 static int cpmac_open(struct net_device *dev);
 
 #undef CPMAC_DEBUG
-#define CPMAC_LOW_THRESH 32
-#define CPMAC_ALLOC_SIZE 64
-#define CPMAC_SKB_SIZE 1518
-#define CPMAC_TX_RING_SIZE 8
+#define CPMAC_LOW_THRESH	32
+#define CPMAC_ALLOC_SIZE	64
+#define CPMAC_SKB_SIZE		1518
+#define CPMAC_TX_RING_SIZE	8
 
 #ifdef CPMAC_DEBUG
 static void cpmac_dump_regs(u32 *base, int count)
@@ -1089,7 +1089,6 @@ static int __devinit cpmac_probe(struct platform_device *pdev)
 		dev->weight = min(rx_ring_size, 64);
 	}
 
-	memset(priv, 0, sizeof(struct cpmac_priv));
 	spin_lock_init(&priv->lock);
 	priv->msg_enable = netif_msg_init(NETIF_MSG_WOL, 0x3fff);
 	priv->config = pdata;
