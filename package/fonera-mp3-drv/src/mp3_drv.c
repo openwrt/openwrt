@@ -101,11 +101,12 @@ static DECLARE_COMPLETION(mp3_exit);
 static int mp3_playback_thread(void *data){
 	int j;
 	unsigned long timeout;
+	unsigned char empty = 0;
 	printk("started kthread\n");
 	daemonize("kmp3");
 	while(mp3_buffering_status != MP3_PLAY_FINISHED){
 		if((mp3_buffering_status == MP3_PLAYING) || (mp3_buffering_status == MP3_BUFFER_FINISHED)){
-			while(VS1011_NEEDS_DATA){
+			while((VS1011_NEEDS_DATA) && (!empty)){
 				if(mp3_buffer_offset_read == MP3_BUFFER_SIZE){
 					mp3_buffer_offset_read = 0;
 				}
@@ -115,6 +116,7 @@ static int mp3_playback_thread(void *data){
 						printk("mp3_drv.ko : finished playing\n");
 						mp3_buffering_status = MP3_PLAY_FINISHED;
 					} else {
+						empty = 1;
 						printk("mp3_drv.ko : buffer empty ?\n");
 						if(mp3_buffering_status != MP3_PLAY_FINISHED){
 						}
@@ -128,8 +130,9 @@ static int mp3_playback_thread(void *data){
 				}
 			}
 		}
+		empty = 0;
 		timeout = 1;	
-        	timeout = wait_event_interruptible_timeout(wq, (timeout==0), timeout);	
+       	timeout = wait_event_interruptible_timeout(wq, (timeout==0), timeout);	
 	}
 	complete_and_exit(&mp3_exit, 0); 
 }
