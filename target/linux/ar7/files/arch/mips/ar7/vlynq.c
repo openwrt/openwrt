@@ -436,8 +436,6 @@ static int vlynq_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
-	memset(dev, 0, sizeof(struct vlynq_device));
-
 	dev->id = pdev->id;
 	dev->dev.bus = &vlynq_bus_type;
 	dev->dev.parent = &pdev->dev;
