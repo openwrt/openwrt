@@ -25,9 +25,8 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/platform_device.h>
-#include <asm/uaccess.h>
-#include <asm/io.h>
-
+#include <linux/uaccess.h>
+#include <linux/io.h>
 #include <linux/types.h>
 #include <linux/cdev.h>
 #include <gpio.h>
@@ -39,7 +38,7 @@ MODULE_AUTHOR("Nicolas Thill <nico@openwrt.org>");
 MODULE_DESCRIPTION(LONGNAME);
 MODULE_LICENSE("GPL");
 
-static int ar7_gpio_major = 0;
+static int ar7_gpio_major;
 
 static ssize_t ar7_gpio_write(struct file *file, const char __user *buf,
 	size_t len, loff_t *ppos)
@@ -84,8 +83,8 @@ static ssize_t ar7_gpio_write(struct file *file, const char __user *buf,
 	return len;
 }
 
-static ssize_t ar7_gpio_read(struct file *file, char __user * buf,
-	size_t len, loff_t * ppos)
+static ssize_t ar7_gpio_read(struct file *file, char __user *buf,
+	size_t len, loff_t *ppos)
 {
 	int pin = iminor(file->f_dentry->d_inode);
 	int value;

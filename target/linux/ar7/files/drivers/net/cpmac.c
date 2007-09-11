@@ -1,18 +1,16 @@
 /*
- * $Id$
- * 
  * Copyright (C) 2006, 2007 OpenWrt.org
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -23,7 +21,7 @@
 #include <linux/moduleparam.h>
 
 #include <linux/sched.h>
-#include <linux/kernel.h> /* printk() */
+#include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/errno.h>
 #include <linux/types.h>
@@ -45,7 +43,7 @@ MODULE_DESCRIPTION("TI AR7 ethernet driver (CPMAC)");
 MODULE_LICENSE("GPL");
 
 static int rx_ring_size = 64;
-static int disable_napi = 0;
+static int disable_napi;
 module_param(rx_ring_size, int, 64);
 module_param(disable_napi, int, 0);
 MODULE_PARM_DESC(rx_ring_size, "Size of rx ring (in skbs)");
@@ -53,40 +51,40 @@ MODULE_PARM_DESC(disable_napi, "Disable NAPI polling");
 
 /* Register definitions */
 struct cpmac_control_regs {
-	volatile u32 revision;
-	volatile u32 control;
-	volatile u32 teardown;
-	volatile u32 unused;
+	u32 revision;
+	u32 control;
+	u32 teardown;
+	u32 unused;
 } __attribute__ ((packed));
 
 struct cpmac_int_regs {
-	volatile u32 stat_raw;
-	volatile u32 stat_masked;
-	volatile u32 enable;
-	volatile u32 clear;
+	u32 stat_raw;
+	u32 stat_masked;
+	u32 enable;
+	u32 clear;
 } __attribute__ ((packed));
 
 struct cpmac_stats {
-	volatile u32 good;
-	volatile u32 bcast;
-	volatile u32 mcast;
-	volatile u32 pause;
-	volatile u32 crc_error;
-	volatile u32 align_error;
-	volatile u32 oversized;
-	volatile u32 jabber;
-	volatile u32 undersized;
-	volatile u32 fragment;
-	volatile u32 filtered;
-	volatile u32 qos_filtered;
-	volatile u32 octets;
+	u32 good;
+	u32 bcast;
+	u32 mcast;
+	u32 pause;
+	u32 crc_error;
+	u32 align_error;
+	u32 oversized;
+	u32 jabber;
+	u32 undersized;
+	u32 fragment;
+	u32 filtered;
+	u32 qos_filtered;
+	u32 octets;
 } __attribute__ ((packed));
 
 struct cpmac_regs {
 	struct cpmac_control_regs tx_ctrl;
 	struct cpmac_control_regs rx_ctrl;
-	volatile u32 unused1[56];
-	volatile u32 mbp;
+	u32 unused1[56];
+	u32 mbp;
 /* MBP bits */
 #define MBP_RXPASSCRC         0x40000000
 #define MBP_RXQOS             0x20000000
@@ -100,15 +98,15 @@ struct cpmac_regs {
 #define MBP_BCASTCHAN(chan)   (((chan) & 0x7) << 8)
 #define MBP_RXMCAST           0x00000020
 #define MBP_MCASTCHAN(chan)   ((chan) & 0x7)
-	volatile u32 unicast_enable;
-	volatile u32 unicast_clear;
-	volatile u32 max_len;
-	volatile u32 buffer_offset;
-	volatile u32 filter_flow_threshold;
-	volatile u32 unused2[2];
-	volatile u32 flow_thre[8];
-	volatile u32 free_buffer[8];
-	volatile u32 mac_control;
+	u32 unicast_enable;
+	u32 unicast_clear;
+	u32 max_len;
+	u32 buffer_offset;
+	u32 filter_flow_threshold;
+	u32 unused2[2];
+	u32 flow_thre[8];
+	u32 free_buffer[8];
+	u32 mac_control;
 #define MAC_TXPTYPE  0x00000200
 #define MAC_TXPACE   0x00000040
 #define MAC_MII      0x00000020
@@ -117,48 +115,48 @@ struct cpmac_regs {
 #define MAC_MTEST    0x00000004
 #define MAC_LOOPBACK 0x00000002
 #define MAC_FDX      0x00000001
-	volatile u32 mac_status;
+	u32 mac_status;
 #define MACST_QOS    0x4
 #define MACST_RXFLOW 0x2
 #define MACST_TXFLOW 0x1
-	volatile u32 emc_control;
-	volatile u32 unused3;
+	u32 emc_control;
+	u32 unused3;
 	struct cpmac_int_regs tx_int;
-	volatile u32 mac_int_vector;
+	u32 mac_int_vector;
 /* Int Status bits */
 #define INTST_STATUS 0x80000
 #define INTST_HOST   0x40000
 #define INTST_RX     0x20000
 #define INTST_TX     0x10000
-	volatile u32 mac_eoi_vector;
-	volatile u32 unused4[2];
+	u32 mac_eoi_vector;
+	u32 unused4[2];
 	struct cpmac_int_regs rx_int;
-	volatile u32 mac_int_stat_raw;
-	volatile u32 mac_int_stat_masked;
-	volatile u32 mac_int_enable;
-	volatile u32 mac_int_clear;
-	volatile u32 mac_addr_low[8];
-	volatile u32 mac_addr_mid;
-	volatile u32 mac_addr_high;
-	volatile u32 mac_hash_low;
-	volatile u32 mac_hash_high;
-	volatile u32 boff_test;
-	volatile u32 pac_test;
-	volatile u32 rx_pause;
-	volatile u32 tx_pause;
-	volatile u32 unused5[2];
+	u32 mac_int_stat_raw;
+	u32 mac_int_stat_masked;
+	u32 mac_int_enable;
+	u32 mac_int_clear;
+	u32 mac_addr_low[8];
+	u32 mac_addr_mid;
+	u32 mac_addr_high;
+	u32 mac_hash_low;
+	u32 mac_hash_high;
+	u32 boff_test;
+	u32 pac_test;
+	u32 rx_pause;
+	u32 tx_pause;
+	u32 unused5[2];
 	struct cpmac_stats rx_stats;
 	struct cpmac_stats tx_stats;
-	volatile u32 unused6[232];
-	volatile u32 tx_ptr[8];
-	volatile u32 rx_ptr[8];
-	volatile u32 tx_ack[8];
-	volatile u32 rx_ack[8];
-	
+	u32 unused6[232];
+	u32 tx_ptr[8];
+	u32 rx_ptr[8];
+	u32 tx_ack[8];
+	u32 rx_ack[8];
+
 } __attribute__ ((packed));
 
 struct cpmac_mdio_regs {
-	volatile u32 version;
+	u32 version;
 	volatile u32 control;
 #define MDIOC_IDLE        0x80000000
 #define MDIOC_ENABLE      0x40000000
@@ -168,7 +166,7 @@ struct cpmac_mdio_regs {
 #define MDIOC_INTTEST     0x00020000
 #define MDIOC_CLKDIV(div) ((div) & 0xff)
 	volatile u32 alive;
-	volatile u32 link;
+	u32 link;
 	struct cpmac_int_regs link_int;
 	struct cpmac_int_regs user_int;
 	u32 unused[20];
@@ -178,7 +176,7 @@ struct cpmac_mdio_regs {
 #define MDIO_REG(reg)   (((reg) & 0x1f) << 21)
 #define MDIO_PHY(phy)   (((phy) & 0x1f) << 16)
 #define MDIO_DATA(data) ((data) & 0xffff)
-	volatile u32 physel;
+	u32 physel;
 } __attribute__ ((packed));
 
 /* Descriptor */
@@ -200,7 +198,7 @@ struct cpmac_desc {
 
 struct cpmac_priv {
 	struct net_device_stats stats;
-	spinlock_t lock;
+	spinlock_t lock; /* irq{save,restore} */
 	struct sk_buff *skb_pool;
 	int free_skbs;
 	struct cpmac_desc *rx_head;
@@ -234,29 +232,28 @@ static void cpmac_dump_regs(u32 *base, int count)
 {
 	int i;
 	for (i = 0; i < (count + 3) / 4; i++) {
-		if (i % 4 == 0) printk("\nCPMAC[0x%04x]:", i * 4);
-		printk(" 0x%08x", *(base + i));
+		if (i % 4 == 0) printk(KERN_DEBUG "\nCPMAC[0x%04x]:", i * 4);
+		printk(KERN_DEBUG " 0x%08x", *(base + i));
 	}
-	printk("\n");
+	printk(KERN_DEBUG "\n");
 }
 
-static const char *cpmac_dump_buf(const uint8_t * buf, unsigned size)
+static const char *cpmac_dump_buf(const uint8_t *buf, unsigned size)
 {
 	static char buffer[3 * 25 + 1];
 	char *p = &buffer[0];
 	if (size > 20)
 		size = 20;
-	while (size-- > 0) {
+	while (size-- > 0)
 		p += sprintf(p, " %02x", *buf++);
-	}
 	return buffer;
 }
 #endif
 
 static int cpmac_mdio_read(struct mii_bus *bus, int phy_id, int regnum)
 {
-	struct cpmac_mdio_regs *regs = (struct cpmac_mdio_regs *)bus->priv;
-	volatile u32 val;
+	struct cpmac_mdio_regs *regs = bus->priv;
+	u32 val;
 
 	while ((val = regs->access) & MDIO_BUSY);
 	regs->access = MDIO_BUSY | MDIO_REG(regnum & 0x1f) |
@@ -266,13 +263,14 @@ static int cpmac_mdio_read(struct mii_bus *bus, int phy_id, int regnum)
 	return val & 0xffff;
 }
 
-static int cpmac_mdio_write(struct mii_bus *bus, int phy_id, int regnum, u16 val)
+static int cpmac_mdio_write(struct mii_bus *bus, int phy_id,
+			    int regnum, u16 val)
 {
-	struct cpmac_mdio_regs *regs = (struct cpmac_mdio_regs *)bus->priv;
-	volatile u32 tmp;
+	struct cpmac_mdio_regs *regs = bus->priv;
+	u32 tmp;
 
 	while ((tmp = regs->access) & MDIO_BUSY);
-	regs->access = MDIO_BUSY | MDIO_WRITE | 
+	regs->access = MDIO_BUSY | MDIO_WRITE |
 		MDIO_REG(regnum & 0x1f) | MDIO_PHY(phy_id & 0x1f) |
 		val;
 
@@ -281,7 +279,7 @@ static int cpmac_mdio_write(struct mii_bus *bus, int phy_id, int regnum, u16 val
 
 static int cpmac_mdio_reset(struct mii_bus *bus)
 {
-	struct cpmac_mdio_regs *regs = (struct cpmac_mdio_regs *)bus->priv;
+	struct cpmac_mdio_regs *regs = bus->priv;
 
 	ar7_device_reset(AR7_RESET_BIT_MDIO);
 	regs->control = MDIOC_ENABLE |
@@ -333,17 +331,17 @@ static void cpmac_set_multicast_list(struct net_device *dev)
 	int hashlo = 0, hashhi = 0;
 	struct cpmac_priv *priv = netdev_priv(dev);
 
-	if(dev->flags & IFF_PROMISC) {
+	if (dev->flags & IFF_PROMISC) {
 		priv->regs->mbp &= ~MBP_PROMISCCHAN(0); /* promisc channel 0 */
 		priv->regs->mbp |= MBP_RXPROMISC;
 	} else {
 		priv->regs->mbp &= ~MBP_RXPROMISC;
-		if(dev->flags & IFF_ALLMULTI) {
+		if (dev->flags & IFF_ALLMULTI) {
 			/* enable all multicast mode */
 			priv->regs->mac_hash_low = 0xffffffff;
 			priv->regs->mac_hash_high = 0xffffffff;
 		} else {
-			for(i = 0, iter = dev->mc_list; i < dev->mc_count;
+			for (i = 0, iter = dev->mc_list; i < dev->mc_count;
 			    i++, iter = iter->next) {
 				hash = 0;
 				tmp = iter->dmi_addr[0];
@@ -359,7 +357,7 @@ static void cpmac_set_multicast_list(struct net_device *dev)
 				tmp = iter->dmi_addr[6];
 				hash  ^= (tmp >> 6) ^ tmp;
 				hash &= 0x3f;
-				if(hash < 32) {
+				if (hash < 32) {
 					hashlo |= 1<<hash;
 				} else {
 					hashhi |= 1<<(hash - 32);
@@ -372,15 +370,15 @@ static void cpmac_set_multicast_list(struct net_device *dev)
 	}
 }
 
-static struct sk_buff *cpmac_get_skb(struct net_device *dev) 
+static struct sk_buff *cpmac_get_skb(struct net_device *dev)
 {
 	struct sk_buff *skb;
 	struct cpmac_priv *priv = netdev_priv(dev);
 
 	skb = priv->skb_pool;
-	if (likely(skb)) {
+	if (likely(skb))
 		priv->skb_pool = skb->next;
-	} else {
+	else {
 		skb = dev_alloc_skb(CPMAC_SKB_SIZE + 2);
 		if (skb) {
 			skb->next = NULL;
@@ -398,7 +396,7 @@ static struct sk_buff *cpmac_get_skb(struct net_device *dev)
 	return skb;
 }
 
-static inline struct sk_buff *cpmac_rx_one(struct net_device *dev, 
+static struct sk_buff *cpmac_rx_one(struct net_device *dev,
 					   struct cpmac_priv *priv,
 					   struct cpmac_desc *desc)
 {
@@ -430,7 +428,7 @@ static inline struct sk_buff *cpmac_rx_one(struct net_device *dev,
 	} else {
 #ifdef CPMAC_DEBUG
 		if (printk_ratelimit())
-			printk("%s: low on skbs, dropping packet\n",
+			printk(KERN_NOTICE "%s: low on skbs, dropping packet\n",
 			       dev->name);
 #endif
 		priv->stats.rx_dropped++;
@@ -466,9 +464,8 @@ static void cpmac_rx(struct net_device *dev)
 
 	while ((desc->dataflags & CPMAC_OWN) == 0) {
 		skb = cpmac_rx_one(dev, priv, desc);
-		if (likely(skb)) {
+		if (likely(skb))
 			netif_rx(skb);
-		}
 		desc = desc->next;
 		dma_cache_inv((u32)desc, 16);
 	}
@@ -487,7 +484,7 @@ static int cpmac_poll(struct net_device *dev, int *budget)
 
 	if (unlikely(!priv->rx_head)) {
 		if (printk_ratelimit())
-			printk(KERN_WARNING "%s: rx: polling, but no queue\n",
+			printk(KERN_NOTICE "%s: rx: polling, but no queue\n",
 			       dev->name);
 		netif_rx_complete(dev);
 		return 0;
@@ -495,7 +492,7 @@ static int cpmac_poll(struct net_device *dev, int *budget)
 
 	desc = priv->rx_head;
 	dma_cache_inv((u32)desc, 16);
-	
+
 	while ((received < quota) && ((desc->dataflags & CPMAC_OWN) == 0)) {
 		skb = cpmac_rx_one(dev, priv, desc);
 		if (likely(skb)) {
@@ -510,7 +507,7 @@ static int cpmac_poll(struct net_device *dev, int *budget)
 	*budget -= received;
 	dev->quota -= received;
 #ifdef CPMAC_DEBUG
-	printk("%s: processed %d packets\n", dev->name, received);
+	printk(KERN_DEBUG "%s: processed %d packets\n", dev->name, received);
 #endif
 	if (desc->dataflags & CPMAC_OWN) {
 		priv->regs->rx_ptr[0] = virt_to_phys(desc);
@@ -523,19 +520,11 @@ static int cpmac_poll(struct net_device *dev, int *budget)
 	return 1;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
 static void
 cpmac_alloc_skbs(struct work_struct *work)
 {
 	struct cpmac_priv *priv = container_of(work, struct cpmac_priv,
-		alloc_work);
-#else
-static void
-cpmac_alloc_skbs(void *data)
-{
-	struct net_device *dev = (struct net_device*)data;
-	struct cpmac_priv *priv = netdev_priv(dev);
-#endif
+			alloc_work);
 	unsigned long flags;
 	int i, num_skbs = 0;
 	struct sk_buff *skb, *skbs = NULL;
@@ -554,15 +543,15 @@ cpmac_alloc_skbs(void *data)
 	if (skbs) {
 		spin_lock_irqsave(&priv->lock, flags);
 		for (skb = priv->skb_pool; skb && skb->next; skb = skb->next);
-		if (!skb) {
+		if (!skb)
 			priv->skb_pool = skbs;
-		} else {
+		else
 			skb->next = skbs;
-		}
 		priv->free_skbs += num_skbs;
 		spin_unlock_irqrestore(&priv->lock, flags);
 #ifdef CPMAC_DEBUG
-		printk("%s: allocated %d skbs\n", priv->dev->name, num_skbs);
+		printk(KERN_DEBUG "%s: allocated %d skbs\n",
+			priv->dev->name, num_skbs);
 #endif
 	}
 }
@@ -576,13 +565,15 @@ static int cpmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	len = skb->len;
 #ifdef CPMAC_DEBUG
-	printk(KERN_DEBUG "%s: len=%d\n", __func__, len); //cpmac_dump_buf(const uint8_t * buf, unsigned size)
+	printk(KERN_DEBUG "%s: len=%d\n", __func__, len);
+	/* cpmac_dump_buf(const uint8_t * buf, unsigned size) */
 #endif
 	if (unlikely(len < ETH_ZLEN)) {
 		if (unlikely(skb_padto(skb, ETH_ZLEN))) {
 			if (printk_ratelimit())
-				printk(KERN_NOTICE "%s: padding failed, dropping\n",
-				       dev->name); 
+				printk(KERN_NOTICE
+					"%s: padding failed, dropping\n",
+								dev->name);
 			spin_lock_irqsave(&priv->lock, flags);
 			priv->stats.tx_dropped++;
 			spin_unlock_irqrestore(&priv->lock, flags);
@@ -599,7 +590,8 @@ static int cpmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	desc = &priv->desc_ring[chan];
 	dma_cache_inv((u32)desc, 16);
 	if (desc->dataflags & CPMAC_OWN) {
-		printk(KERN_NOTICE "%s: tx dma ring full, dropping\n", dev->name);
+		printk(KERN_NOTICE "%s: tx dma ring full, dropping\n",
+								dev->name);
 		priv->stats.tx_dropped++;
 		spin_unlock_irqrestore(&priv->lock, flags);
 		return -ENOMEM;
@@ -634,11 +626,10 @@ static void cpmac_end_xmit(struct net_device *dev, int channel)
 		dev_kfree_skb_irq(desc->skb);
 		if (netif_queue_stopped(dev))
 			netif_wake_queue(dev);
-	} else {
+	} else
 		if (printk_ratelimit())
 			printk(KERN_NOTICE "%s: end_xmit: spurious interrupt\n",
-			       dev->name); 
-	}
+			       dev->name);
 	spin_unlock(&priv->lock);
 }
 
@@ -668,7 +659,7 @@ static inline void cpmac_free_rx_ring(struct net_device *dev)
 
 	desc = priv->rx_head;
 	dma_cache_inv((u32)desc, 16);
-	
+
 	for (i = 0; i < rx_ring_size; i++) {
 		desc->buflen = CPMAC_SKB_SIZE;
 		if ((desc->dataflags & CPMAC_OWN) == 0) {
@@ -683,7 +674,7 @@ static inline void cpmac_free_rx_ring(struct net_device *dev)
 
 static irqreturn_t cpmac_irq(int irq, void *dev_id)
 {
-	struct net_device *dev = (struct net_device *)dev_id;
+	struct net_device *dev = dev_id;
 	struct cpmac_priv *priv = netdev_priv(dev);
 	u32 status;
 
@@ -692,14 +683,13 @@ static irqreturn_t cpmac_irq(int irq, void *dev_id)
 
 	status = priv->regs->mac_int_vector;
 
-	if (status & INTST_TX) {
+	if (status & INTST_TX)
 		cpmac_end_xmit(dev, (status & 7));
-	}
 
 	if (status & INTST_RX) {
-		if (disable_napi) {
+		if (disable_napi)
 			cpmac_rx(dev);
-		} else {
+		else {
 			priv->regs->rx_int.enable = 0;
 			priv->regs->rx_int.clear = 0xff;
 			netif_rx_schedule(dev);
@@ -709,9 +699,9 @@ static irqreturn_t cpmac_irq(int irq, void *dev_id)
 	priv->regs->mac_eoi_vector = 0;
 
 	if (unlikely(status & (INTST_HOST | INTST_STATUS))) {
-		if (printk_ratelimit()) {
-			printk(KERN_ERR "%s: hw error, resetting...\n", dev->name);
-		}
+		if (printk_ratelimit())
+			printk(KERN_ERR "%s: hw error, resetting...\n",
+								dev->name);
 		spin_lock(&priv->lock);
 		phy_stop(priv->phy);
 		cpmac_reset(dev);
@@ -731,7 +721,7 @@ static void cpmac_tx_timeout(struct net_device *dev)
 	priv->stats.tx_errors++;
 	desc = &priv->desc_ring[priv->tx_head++];
 	priv->tx_head %= 8;
-	printk("%s: transmit timeout\n", dev->name);
+	printk(KERN_NOTICE "%s: transmit timeout\n", dev->name);
 	if (desc->skb)
 		dev_kfree_skb(desc->skb);
 	netif_wake_queue(dev);
@@ -744,7 +734,7 @@ static int cpmac_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 		return -EINVAL;
 	if (!priv->phy)
 		return -EINVAL;
-	if ((cmd == SIOCGMIIPHY) || (cmd == SIOCGMIIREG) || 
+	if ((cmd == SIOCGMIIPHY) || (cmd == SIOCGMIIREG) ||
 	    (cmd == SIOCSMIIREG))
 		return phy_mii_ioctl(priv->phy, if_mii(ifr), cmd);
 
@@ -774,7 +764,7 @@ static int cpmac_set_settings(struct net_device *dev, struct ethtool_cmd *cmd)
 	return -EINVAL;
 }
 
-static void cpmac_get_drvinfo(struct net_device *dev, 
+static void cpmac_get_drvinfo(struct net_device *dev,
 			      struct ethtool_drvinfo *info)
 {
 	strcpy(info->driver, "cpmac");
@@ -894,12 +884,8 @@ static int cpmac_open(struct net_device *dev)
 	struct cpmac_desc *desc;
 	struct sk_buff *skb;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
 	priv->phy = phy_connect(dev, priv->phy_name, &cpmac_adjust_link,
 				0, PHY_INTERFACE_MODE_MII);
-#else
-	priv->phy = phy_connect(dev, priv->phy_name, &cpmac_adjust_link, 0);
-#endif
 	if (IS_ERR(priv->phy)) {
 		printk(KERN_ERR "%s: Could not attach to PHY\n", dev->name);
 		return PTR_ERR(priv->phy);
@@ -907,8 +893,8 @@ static int cpmac_open(struct net_device *dev)
 
 	if (!request_mem_region(dev->mem_start, dev->mem_end -
 				dev->mem_start, dev->name)) {
-		printk("%s: failed to request registers\n",
-		       dev->name); 
+		printk(KERN_ERR "%s: failed to request registers\n",
+		       dev->name);
 		res = -ENXIO;
 		goto fail_reserve;
 	}
@@ -916,7 +902,7 @@ static int cpmac_open(struct net_device *dev)
 	priv->regs = ioremap_nocache(dev->mem_start, dev->mem_end -
 				     dev->mem_start);
 	if (!priv->regs) {
-		printk("%s: failed to remap registers\n", dev->name);
+		printk(KERN_ERR "%s: failed to remap registers\n", dev->name);
 		res = -ENXIO;
 		goto fail_remap;
 	}
@@ -936,11 +922,7 @@ static int cpmac_open(struct net_device *dev)
 	priv->free_skbs = 0;
 	priv->rx_head = &priv->desc_ring[CPMAC_TX_RING_SIZE];
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
 	INIT_WORK(&priv->alloc_work, cpmac_alloc_skbs);
-#else
-	INIT_WORK(&priv->alloc_work, cpmac_alloc_skbs, dev);
-#endif
 	schedule_work(&priv->alloc_work);
 	flush_scheduled_work();
 
@@ -960,9 +942,9 @@ static int cpmac_open(struct net_device *dev)
 		dma_cache_wback((u32)desc, 16);
 	}
 
-	if((res = request_irq(dev->irq, cpmac_irq, SA_INTERRUPT,
-			dev->name, dev))) {
-		printk("%s: failed to obtain irq\n", dev->name);
+	if ((res = request_irq(dev->irq, cpmac_irq, SA_INTERRUPT,
+			      dev->name, dev))) {
+		printk(KERN_ERR "%s: failed to obtain irq\n", dev->name);
 		goto fail_irq;
 	}
 
@@ -1039,7 +1021,7 @@ static int cpmac_stop(struct net_device *dev)
 	return 0;
 }
 
-static int external_switch = 0;
+static int external_switch;
 
 static int __devinit cpmac_probe(struct platform_device *pdev)
 {
@@ -1048,9 +1030,6 @@ static int __devinit cpmac_probe(struct platform_device *pdev)
 	struct cpmac_priv *priv;
 	struct net_device *dev;
 	struct plat_cpmac_data *pdata;
-
-	if (strcmp(pdev->name, "cpmac") != 0)
-		return -ENODEV;
 
 	pdata = pdev->dev.platform_data;
 
@@ -1063,10 +1042,10 @@ static int __devinit cpmac_probe(struct platform_device *pdev)
 	}
 
 	if (phy_id == PHY_MAX_ADDR) {
-		if (external_switch) {
+		if (external_switch)
 			phy_id = 0;
-		} else {
-			printk("cpmac: no PHY present\n");
+		else {
+			printk(KERN_ERR "cpmac: no PHY present\n");
 			return -ENODEV;
 		}
 	}
@@ -1074,7 +1053,8 @@ static int __devinit cpmac_probe(struct platform_device *pdev)
 	dev = alloc_etherdev(sizeof(struct cpmac_priv));
 
 	if (!dev) {
-		printk(KERN_ERR "cpmac: Unable to allocate net_device structure!\n");
+		printk(KERN_ERR
+			"cpmac: Unable to allocate net_device structure!\n");
 		return -ENOMEM;
 	}
 
@@ -1084,7 +1064,7 @@ static int __devinit cpmac_probe(struct platform_device *pdev)
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "regs");
 	if (!res) {
-	        rc = -ENODEV;
+		rc = -ENODEV;
 		goto fail;
 	}
 
@@ -1099,8 +1079,8 @@ static int __devinit cpmac_probe(struct platform_device *pdev)
 	dev->hard_start_xmit    = cpmac_start_xmit;
 	dev->do_ioctl           = cpmac_ioctl;
 	dev->get_stats          = cpmac_stats;
-	dev->change_mtu         = cpmac_change_mtu;  
-	dev->set_mac_address    = cpmac_set_mac_address;  
+	dev->change_mtu         = cpmac_change_mtu;
+	dev->set_mac_address    = cpmac_set_mac_address;
 	dev->set_multicast_list = cpmac_set_multicast_list;
 	dev->tx_timeout         = cpmac_tx_timeout;
 	dev->ethtool_ops        = &cpmac_ethtool_ops;
@@ -1115,27 +1095,23 @@ static int __devinit cpmac_probe(struct platform_device *pdev)
 	priv->config = pdata;
 	priv->dev = dev;
 	memcpy(dev->dev_addr, priv->config->dev_addr, sizeof(dev->dev_addr));
-	if (phy_id == 31) {
+	if (phy_id == 31)
 		snprintf(priv->phy_name, BUS_ID_SIZE, PHY_ID_FMT,
 			 cpmac_mii.id, phy_id);
-	} else {
+	else
 		snprintf(priv->phy_name, BUS_ID_SIZE, "fixed@%d:%d", 100, 1);
-	}
 
 	if ((rc = register_netdev(dev))) {
-		printk("cpmac: error %i registering device %s\n",
+		printk(KERN_ERR "cpmac: error %i registering device %s\n",
 		       rc, dev->name);
 		goto fail;
 	}
 
-	printk("cpmac: device %s (regs: %p, irq: %d, phy: %s, mac: ",
+	printk(KERN_INFO "cpmac: device %s (regs: %p, irq: %d, phy: %s, mac: ",
 	       dev->name, (u32 *)dev->mem_start, dev->irq,
 	       priv->phy_name);
-	for (i = 0; i < 6; i++) {
-		printk("%02x", dev->dev_addr[i]);
-		if (i < 5) printk(":");
-		else printk(")\n");
-	}
+	for (i = 0; i < 6; i++)
+		printk("%02x%s", dev->dev_addr[i], i < 5 ? ":" : ")\n");
 
 	return 0;
 
@@ -1160,13 +1136,13 @@ static struct platform_driver cpmac_driver = {
 
 int __devinit cpmac_init(void)
 {
-	volatile u32 mask;
+	u32 mask;
 	int i, res;
-	cpmac_mii.priv = (struct cpmac_mdio_regs *)
+	cpmac_mii.priv =
 		ioremap_nocache(AR7_REGS_MDIO, sizeof(struct cpmac_mdio_regs));
 
 	if (!cpmac_mii.priv) {
-		printk("Can't ioremap mdio registers\n");
+		printk(KERN_ERR "Can't ioremap mdio registers\n");
 		return -ENXIO;
 	}
 

@@ -36,8 +36,8 @@ struct ar7_bin_rec {
 
 static struct mtd_partition ar7_parts[5];
 
-static int create_mtd_partitions(struct mtd_info *master, 
-				 struct mtd_partition **pparts, 
+static int create_mtd_partitions(struct mtd_info *master,
+				 struct mtd_partition **pparts,
 				 unsigned long origin)
 {
 	struct ar7_bin_rec header;
@@ -61,7 +61,8 @@ static int create_mtd_partitions(struct mtd_info *master,
 
 	do {
 		offset = pre_size;
-		master->read(master, offset, sizeof(header), &len, (u_char *)&header);
+		master->read(master, offset,
+			sizeof(header), &len, (u_char *)&header);
 		if (!strncmp((char *)&header, "TIENV0.8", 8))
 			ar7_parts[1].offset = pre_size;
 		if (header.checksum == 0xfeedfa42)
@@ -83,7 +84,7 @@ static int create_mtd_partitions(struct mtd_info *master,
 		while (header.length) {
 			offset += sizeof(header) + header.length;
 			master->read(master, offset, sizeof(header),
-				     &len, (u_char *)&header); 
+				     &len, (u_char *)&header);
 		}
 		root_offset = offset + sizeof(header) + 4;
 		break;
@@ -91,7 +92,7 @@ static int create_mtd_partitions(struct mtd_info *master,
 		while (header.length) {
 			offset += sizeof(header) + header.length;
 			master->read(master, offset, sizeof(header),
-				     &len, (u_char *)&header); 
+				     &len, (u_char *)&header);
 		}
 		root_offset = offset + sizeof(header) + 4 + 0xff;
 		root_offset &= ~(u32)0xff;
@@ -101,7 +102,8 @@ static int create_mtd_partitions(struct mtd_info *master,
 		break;
 	}
 
-	master->read(master, root_offset, sizeof(header), &len, (u_char *)&header);
+	master->read(master, root_offset,
+		sizeof(header), &len, (u_char *)&header);
 	if (header.checksum != SQUASHFS_MAGIC) {
 		root_offset += master->erasesize - 1;
 		root_offset &= ~(master->erasesize - 1);

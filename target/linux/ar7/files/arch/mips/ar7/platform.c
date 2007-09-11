@@ -1,18 +1,16 @@
 /*
- * $Id$
- * 
  * Copyright (C) 2006, 2007 OpenWrt.org
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -28,8 +26,9 @@
 #include <linux/serial.h>
 #include <linux/serial_8250.h>
 #include <linux/ioport.h>
+#include <linux/io.h>
+
 #include <asm/addrspace.h>
-#include <asm/io.h>
 #include <asm/ar7/ar7.h>
 #include <asm/ar7/gpio.h>
 #include <asm/ar7/prom.h>
@@ -91,7 +90,7 @@ static struct resource physmap_flash_resource = {
 	.flags = IORESOURCE_MEM,
 	.start = 0x10000000,
 	.end = 0x107fffff,
-};	
+};
 
 static struct resource cpmac_low_res[] = {
 	{
@@ -253,8 +252,7 @@ static struct platform_device vlynq_high = {
  */
 #if !defined(CONFIG_SERIAL_8250)
 
-static struct plat_serial8250_port uart0_data =
-{
+static struct plat_serial8250_port uart0_data = {
 	.mapbase = AR7_REGS_UART0,
 	.irq = AR7_IRQ_UART0,
 	.regshift = 2,
@@ -262,8 +260,7 @@ static struct plat_serial8250_port uart0_data =
 	.flags = UPF_BOOT_AUTOCONF | UPF_IOREMAP,
 };
 
-static struct plat_serial8250_port uart1_data =
-{
+static struct plat_serial8250_port uart1_data = {
 	.mapbase = UR8_REGS_UART1,
 	.irq = AR7_IRQ_UART1,
 	.regshift = 2,
@@ -346,7 +343,7 @@ static int __init ar7_register_devices(void)
 		return res;
 
 
-	// Only TNETD73xx have a second serial port
+	/* Only TNETD73xx have a second serial port */
 	if (ar7_has_second_uart()) {
 		uart_port[1].type = PORT_AR7;
 		uart_port[1].line = 1;
@@ -361,21 +358,20 @@ static int __init ar7_register_devices(void)
 			return res;
 	}
 
-#else // !CONFIG_SERIAL_8250
+#else /* !CONFIG_SERIAL_8250 */
 
 	uart_data[0].uartclk = ar7_bus_freq() / 2;
 	uart_data[1].uartclk = uart_data[0].uartclk;
 
-	// Only TNETD73xx have a second serial port
-	if (ar7_has_second_uart()) {
+	/* Only TNETD73xx have a second serial port */
+	if (ar7_has_second_uart())
 		uart.dev.platform_data = uart_data;
-	}
 
 	res = platform_device_register(&uart);
 	if (res)
 		return res;
 
-#endif // CONFIG_SERIAL_8250
+#endif /* CONFIG_SERIAL_8250 */
 
 	res = platform_device_register(&physmap_flash);
 	if (res)

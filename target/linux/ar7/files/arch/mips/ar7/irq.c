@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright (C) 2006, 2007 OpenWrt.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -25,23 +23,23 @@
 #include <asm/mipsregs.h>
 #include <asm/ar7/ar7.h>
 
-#define EXCEPT_OFFSET 0x80
-#define PACE_OFFSET   0xA0
-#define CHNLS_OFFSET  0x200
+#define EXCEPT_OFFSET	0x80
+#define PACE_OFFSET	0xA0
+#define CHNLS_OFFSET	0x200
 
-#define REG_OFFSET(irq, reg) ((irq) / 32 * 0x4 + reg * 0x10)
-#define SEC_REG_OFFSET(reg) (EXCEPT_OFFSET + reg * 0x8)
-#define SEC_SR_OFFSET  (SEC_REG_OFFSET(0))      /* 0x80 */
-#define CR_OFFSET(irq)  (REG_OFFSET(irq, 1))    /* 0x10 */
-#define SEC_CR_OFFSET  (SEC_REG_OFFSET(1))      /* 0x88 */
-#define ESR_OFFSET(irq) (REG_OFFSET(irq, 2))    /* 0x20 */
-#define SEC_ESR_OFFSET  (SEC_REG_OFFSET(2))     /* 0x90 */
-#define ECR_OFFSET(irq) (REG_OFFSET(irq, 3))    /* 0x30 */
-#define SEC_ECR_OFFSET  (SEC_REG_OFFSET(3))     /* 0x98 */
-#define PIR_OFFSET      (0x40)
-#define MSR_OFFSET      (0x44)
-#define PM_OFFSET(irq)  (REG_OFFSET(irq, 5))    /* 0x50 */
-#define TM_OFFSET(irq)  (REG_OFFSET(irq, 6))    /* 0x60 */
+#define REG_OFFSET(irq, reg)	((irq) / 32 * 0x4 + reg * 0x10)
+#define SEC_REG_OFFSET(reg)	(EXCEPT_OFFSET + reg * 0x8)
+#define SEC_SR_OFFSET		(SEC_REG_OFFSET(0))	/* 0x80 */
+#define CR_OFFSET(irq)		(REG_OFFSET(irq, 1))	/* 0x10 */
+#define SEC_CR_OFFSET		(SEC_REG_OFFSET(1))	/* 0x88 */
+#define ESR_OFFSET(irq)		(REG_OFFSET(irq, 2))	/* 0x20 */
+#define SEC_ESR_OFFSET		(SEC_REG_OFFSET(2))	/* 0x90 */
+#define ECR_OFFSET(irq)		(REG_OFFSET(irq, 3))	/* 0x30 */
+#define SEC_ECR_OFFSET		(SEC_REG_OFFSET(3))	/* 0x98 */
+#define PIR_OFFSET		(0x40)
+#define MSR_OFFSET		(0x44)
+#define PM_OFFSET(irq)		(REG_OFFSET(irq, 5))	/* 0x50 */
+#define TM_OFFSET(irq)		(REG_OFFSET(irq, 6))	/* 0x60 */
 
 #define REG(addr) ((u32 *)(KSEG1ADDR(AR7_REGS_IRQ) + addr))
 
@@ -73,6 +71,7 @@ static struct irq_chip ar7_sec_irq_type = {
 
 static struct irqaction ar7_cascade_action = {
 	.handler = no_action,
+
 	.name = "AR7 cascade interrupt"
 };
 

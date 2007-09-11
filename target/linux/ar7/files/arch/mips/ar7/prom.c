@@ -1,8 +1,6 @@
 /*
- * $Id$
- * 
  * Copyright (C) 2006, 2007 OpenWrt.org
- * 
+ *
  * Carsten Langgaard, carstenl@mips.com
  * Copyright (C) 1999,2000 MIPS Technologies, Inc.  All rights reserved.
  *
@@ -27,9 +25,8 @@
 #include <linux/spinlock.h>
 #include <linux/module.h>
 #include <linux/string.h>
-#include <asm/io.h>
+#include <linux/io.h>
 #include <asm/bootinfo.h>
-#include <asm/mips-boards/prom.h>
 #include <asm/gdb-stub.h>
 
 #include <asm/ar7/ar7.h>
@@ -44,7 +41,7 @@ struct env_var {
 
 static struct env_var adam2_env[MAX_ENTRY] = { { 0, }, };
 
-char * prom_getenv(char *name)
+char *prom_getenv(char *name)
 {
 	int i;
 	for (i = 0; (i < MAX_ENTRY) && adam2_env[i].name; i++)
@@ -53,6 +50,7 @@ char * prom_getenv(char *name)
 
 	return NULL;
 }
+EXPORT_SYMBOL(prom_getenv);
 
 char * __init prom_getcmdline(void)
 {
@@ -67,8 +65,8 @@ static void  __init ar7_init_cmdline(int argc, char *argv[])
 	actr = 1; /* Always ignore argv[0] */
 
 	cp = &(arcs_cmdline[0]);
-	while(actr < argc) {
-	        strcpy(cp, argv[actr]);
+	while (actr < argc) {
+		strcpy(cp, argv[actr]);
 		cp += strlen(argv[actr]);
 		*cp++ = ' ';
 		actr++;
@@ -119,23 +117,23 @@ static struct psp_var_map_entry psp_var_map[] = {
 
 Well-known variable (num is looked up in table above for matching variable name)
 Example: cpufrequency=211968000
-+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-| 01 |CTRL|CHECKSUM | 01 | _2 | _1 | _1 | _9 | _6 | _8 | _0 | _0 | _0 | \0 | FF |
-+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+---
+| 01 |CTRL|CHECKSUM | 01 | _2 | _1 | _1 | _9 | _6 | _8 | _0 | _0 | _0 | \0 | FF
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+---
 
 Name=Value pair in a single chunk
 Example: NAME=VALUE
-+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-| 00 |CTRL|CHECKSUM | 01 | _N | _A | _M | _E | _0 | _V | _A | _L | _U | _E | \0 |
-+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+---
+| 00 |CTRL|CHECKSUM | 01 | _N | _A | _M | _E | _0 | _V | _A | _L | _U | _E | \0
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+---
 
 Name=Value pair in 2 chunks (len is the number of chunks)
 Example: bootloaderVersion=1.3.7.15
-+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-| 00 |CTRL|CHECKSUM | 02 | _b | _o | _o | _t | _l | _o | _a | _d | _e | _r | _V |
-+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-| _e | _r | _s | _i | _o | _n | \0 | _1 | _. | _3 | _. | _7 | _. | _1 | _5 | \0 |
-+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+ 
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+---
+| 00 |CTRL|CHECKSUM | 02 | _b | _o | _o | _t | _l | _o | _a | _d | _e | _r | _V
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+---
+| _e | _r | _s | _i | _o | _n | \0 | _1 | _. | _3 | _. | _7 | _. | _1 | _5 | \0
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+---
 
 Data is padded with 0xFF
 
@@ -152,7 +150,7 @@ static char * __init lookup_psp_var_map(u8 num)
 	for (i = 0; i < sizeof(psp_var_map); i++)
 		if (psp_var_map[i].num == num)
 			return psp_var_map[i].value;
-	
+
 	return NULL;
 }
 
@@ -204,7 +202,7 @@ static void __init ar7_init_env(struct env_var *env)
 	struct psbl_rec *psbl = (struct psbl_rec *)(KSEG1ADDR(0x14000300));
 	void *psp_env = (void *)KSEG1ADDR(psbl->env_base);
 
-	if(strcmp(psp_env, psp_env_version) == 0) {
+	if (strcmp(psp_env, psp_env_version) == 0) {
 		parse_psp_env(psp_env);
 	} else {
 		for (i = 0; i < MAX_ENTRY; i++, env++)
@@ -289,20 +287,20 @@ int prom_putchar(char c)
 	return 1;
 }
 
-// from adm5120/prom.c
+/* from adm5120/prom.c */
 void prom_printf(char *fmt, ...)
 {
 	va_list args;
 	int l;
 	char *p, *buf_end;
 	char buf[1024];
-	
+
 	va_start(args, fmt);
 	l = vsprintf(buf, fmt, args); /* hopefully i < sizeof(buf) */
 	va_end(args);
-	
+
 	buf_end = buf + l;
-	
+
 	for (p = buf; p < buf_end; p++) {
 		/* Crude cr/nl handling is better than none */
 		if (*p == '\n')
@@ -319,8 +317,6 @@ int putDebugChar(char c)
 
 char getDebugChar(void)
 {
-	return prom_getchar();
+       return prom_getchar();
 }
 #endif
-
-EXPORT_SYMBOL(prom_getenv);

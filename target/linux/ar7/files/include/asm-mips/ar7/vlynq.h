@@ -1,18 +1,16 @@
 /*
- * $Id$
- * 
  * Copyright (C) 2006, 2007 OpenWrt.org
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -65,7 +63,7 @@ struct plat_vlynq_ops {
 
 extern struct bus_type vlynq_bus_type;
 
-extern int __vlynq_register_driver(struct vlynq_driver *driver, 
+extern int __vlynq_register_driver(struct vlynq_driver *driver,
 				   struct module *owner);
 
 static inline int vlynq_register_driver(struct vlynq_driver *driver)
@@ -80,8 +78,8 @@ extern u32 vlynq_remote_id(struct vlynq_device *dev);
 extern void vlynq_set_local_mapping(struct vlynq_device *dev,
 				    u32 tx_offset,
 				    struct vlynq_mapping *mapping);
-extern void vlynq_set_remote_mapping(struct vlynq_device *dev, 
-				     u32 tx_offset, 
+extern void vlynq_set_remote_mapping(struct vlynq_device *dev,
+				     u32 tx_offset,
 				     struct vlynq_mapping *mapping);
 extern int vlynq_virq_to_irq(struct vlynq_device *dev, int virq);
 extern int vlynq_irq_to_virq(struct vlynq_device *dev, int irq);
