@@ -387,7 +387,7 @@ NDMENU:=Network Devices
 define KernelPackage/natsemi
   SUBMENU:=$(NDMENU)
   TITLE:=National Semiconductor DP8381x series 
-  DEPENDS:=@LINUX_2_6_X86
+  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_NATSEMI
   FILES:=$(LINUX_DIR)/drivers/net/natsemi.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,natsemi)
@@ -404,7 +404,7 @@ $(eval $(call KernelPackage,natsemi))
 define KernelPackage/r6040
   SUBMENU:=$(NDMENU)
   TITLE:=RDC Fast-Ethernet support
-  DEPENDS:=@LINUX_2_6_RDC
+  DEPENDS:=@TARGET_rdc
   KCONFIG:=CONFIG_R6040
   FILES:=$(LINUX_DIR)/drivers/net/r6040.$(LINUX_KMOD_SUFFIX)
 endef
@@ -419,7 +419,7 @@ $(eval $(call KernelPackage,r6040))
 define KernelPackage/sis900
   SUBMENU:=$(NDMENU)
   TITLE:=SiS 900 Ethernet support
-  DEPENDS:=@LINUX_2_6_X86
+  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_SIS900
   FILES:=$(LINUX_DIR)/drivers/net/sis900.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,sis900)
@@ -435,7 +435,7 @@ $(eval $(call KernelPackage,sis900))
 define KernelPackage/via-rhine
   SUBMENU:=$(NDMENU)
   TITLE:=Via Rhine ethernet support
-  DEPENDS:=@LINUX_2_6_X86
+  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_VIA_RHINE
   FILES:=$(LINUX_DIR)/drivers/net/via-rhine.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,via-rhine)
@@ -451,7 +451,7 @@ $(eval $(call KernelPackage,via-rhine))
 define KernelPackage/via-velocity
   SUBMENU:=$(NDMENU)
   TITLE:=VIA Velocity Gigabit Ethernet Adapter kernel support
-  DEPENDS:=@LINUX_2_6_IXP4XX
+  DEPENDS:=@TARGET_ixp4xx
   KCONFIG:=CONFIG_VIA_VELOCITY
   FILES:=$(LINUX_DIR)/drivers/net/via-velocity.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,via-velocity)
@@ -467,7 +467,7 @@ $(eval $(call KernelPackage,via-velocity))
 define KernelPackage/8139too
   SUBMENU:=$(NDMENU)
   TITLE:=RealTek RTL-8139 PCI Fast Ethernet Adapter kernel support
-  DEPENDS:=@LINUX_2_6_X86
+  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_8139TOO
   FILES:=$(LINUX_DIR)/drivers/net/8139too.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,8139too)
@@ -483,7 +483,7 @@ $(eval $(call KernelPackage,8139too))
 define KernelPackage/r8169
   SUBMENU:=$(NDMENU)
   TITLE:=RealTek RTL-8169 PCI Gigabit Ethernet Adapter kernel support
-  DEPENDS:=@LINUX_2_6_X86 
+  DEPENDS:=@TARGET_x86 
   KCONFIG:=CONFIG_R8169 CONFIG_R8169_NAPI=y CONFIG_R8169_VLAN=n
   FILES:=$(LINUX_DIR)/drivers/net/r8169.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,r8169)
@@ -499,7 +499,7 @@ $(eval $(call KernelPackage,r8169))
 define KernelPackage/ne2k-pci
   SUBMENU:=$(NDMENU)
   TITLE:=ne2k-pci Ethernet Adapter kernel support
-  DEPENDS:=@LINUX_2_6_X86
+  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_NE2K_PCI
   FILES:= \
 	$(LINUX_DIR)/drivers/net/ne2k-pci.$(LINUX_KMOD_SUFFIX) \
@@ -517,7 +517,7 @@ $(eval $(call KernelPackage,ne2k-pci))
 define KernelPackage/ixp4xx-npe
   SUBMENU:=$(NDMENU)
   TITLE:=Intel(R) IXP4xx ethernet support
-  DEPENDS:=@LINUX_2_6_IXP4XX
+  DEPENDS:=@TARGET_ixp4xx
   KCONFIG:=CONFIG_IXP4XX_MAC
   FILES:= \
 	$(LINUX_DIR)/drivers/net/ixp4xx/ixp4xx_npe.$(LINUX_KMOD_SUFFIX) \
@@ -536,7 +536,7 @@ $(eval $(call KernelPackage,ixp4xx-npe))
 define KernelPackage/e100
   SUBMENU:=$(NDMENU)
   TITLE:=Intel(R) PRO/100+ cards kernel support
-  DEPENDS:=@LINUX_2_6_X86
+  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_E100
   FILES:=$(LINUX_DIR)/drivers/net/e100.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,e100)
@@ -552,7 +552,7 @@ $(eval $(call KernelPackage,e100))
 define KernelPackage/e1000
   SUBMENU:=$(NDMENU)
   TITLE:=Intel(R) PRO/1000 cards kernel support
-  DEPENDS:=@LINUX_2_6_X86
+  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_E1000
   FILES:=$(LINUX_DIR)/drivers/net/e1000/e1000.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,e1000)
@@ -568,7 +568,7 @@ $(eval $(call KernelPackage,e1000))
 define KernelPackage/3c59x
   SUBMENU:=$(NDMENU)
   TITLE:=3Com 3c590/3c900 series (592/595/597) Vortex/Boomerang
-  DEPENDS:=@LINUX_2_6_X86
+  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_3C59X
   FILES:=$(LINUX_DIR)/drivers/net/3c59x.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,3c59x)
