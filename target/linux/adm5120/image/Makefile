@@ -7,14 +7,11 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-IMGNAME = $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)
-LOADER_MAKE = $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
+LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
+IMGNAME := $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)
 
-define Image/Build/Loader
-	$(LOADER_MAKE) LOADER=loader-$(1).$(2) LOADER_DATA="" \
-		LZMA_TEXT_START=$(3) LZMA_STARTUP_ORG=$(4) \
-		CONFIG_PASS_KARGS=$(5) CONFIG_BOARD=$(6) \
-		compile loader.$(2)
+define imgname
+$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(patsubst jffs2-%,jffs2,$(1))-$(2)
 endef
 
 define Build/Clean
@@ -25,110 +22,12 @@ define Image/Prepare
 	cat $(KDIR)/vmlinux | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
 endef
 
-define trxalign/jffs2-128k
--a 0x20000
+define Image/Build/Loader
+	$(LOADER_MAKE) LOADER=loader-$(1).$(2) LOADER_DATA="" \
+		LZMA_TEXT_START=$(3) LZMA_STARTUP_ORG=$(4) \
+		CONFIG_PASS_KARGS=$(5) CONFIG_BOARD=$(6) \
+		compile loader.$(2)
 endef
-define trxalign/jffs2-64k
--a 0x10000
-endef
-define trxalign/squashfs
--a 1024
-endef
-
-define Image/Build/TRX
-	$(STAGING_DIR_HOST)/bin/trx -o $(1) -f $(3) -f $(KDIR)/vmlinux.lzma \
-		$(call trxalign/$(2)) -f $(KDIR)/root.$(2)
-endef
-
-define Image/Build/TRXNoloader
-	$(STAGING_DIR_HOST)/bin/trx -o $(1) -f $(KDIR)/vmlinux.lzma \
-		$(call trxalign/$(2)) -f $(KDIR)/root.$(2)
-endef
-
-define Image/Build/Compex
-	$(call Image/Build/Loader,$(2),gz,0x80500000,0,y,$(2))
-	$(call Image/Build/TRX,$(IMGNAME)-$(3)-$(2).trx,$(1),$(KDIR)/loader-$(2).gz)
-endef
-
-define Image/Build/Edimax
-	$(call Image/Build/Loader,$(2),gz,0x80500000,0x6D8,y,$(2))
-	$(call Image/Build/TRXNoloader,$(IMGNAME)-$(3)-$(2).trx,$(1))
-	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(2) -d -w \
-		-r $(KDIR)/loader-$(2).gz \
-		-x $(IMGNAME)-$(3)-$(2).trx \
-		$(IMGNAME)-$(3)-$(2).bin
-endef
-
-define Image/Build/Infineon
-	$(call Image/Build/Loader,$(2),gz,0x80500000,0x6D8,y,$(2))
-	$(call Image/Build/TRXNoloader,$(IMGNAME)-$(3)-$(2).trx,$(1))
-	dd if=$(KDIR)/loader-$(2).gz of=$(IMGNAME)-$(3)-$(2).img bs=64k conv=sync
-	cat $(IMGNAME)-$(3)-$(2).trx >>$(IMGNAME)-$(3)-$(2).img
-endef
-
-define Image/Build/MyLoader
-	$(call Image/Build/Loader,$(2),gz,0x80500000,0)
-	$(call Image/Build/TRXNoloader,$(IMGNAME)-$(3)-$(2).trx,$(1))
-	$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) \
-		-p0x20000:0x10000:ahp:0x80001000 \
-		-p0x30000:0 \
-		-b0x20000:0x10000:h:$(KDIR)/loader-$(2).gz \
-		-b0x30000:0::$(IMGNAME)-$(3)-$(2).trx \
-		$(IMGNAME)-$(3)-$(2).bin
-endef
-
-define Image/cmdline/yaffs2
-root=/dev/mtdblock1 rootfstype=yaffs2 init=/etc/preinit
-endef
-
-define Image/Build/RouterBoard
-	$(CP) $(KDIR)/vmlinux.elf $(IMGNAME)-rb1xx-vmlinux
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux.elf '$(strip $(call Image/cmdline/yaffs2)) '
-endef
-
-define Image/Build/jffs2-64k
-	$(call Image/Build/Compex,$(1),wp54g-wrt,$(patsubst jffs2-%,jffs2,$(1)))
-ifeq ($(CONFIG_DEVEL),y)
-	$(call Image/Build/Edimax,$(1),br-6104k,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Edimax,$(1),br-6104kp,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Edimax,$(1),br-6114wg,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Edimax,$(1),br-6524k,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Edimax,$(1),br-6524kp,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Edimax,$(1),br-6541k,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Edimax,$(1),br-6541kp,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Edimax,$(1),ew-7207apg,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Edimax,$(1),ps-1205uwg,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Edimax,$(1),ps-3205u,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Edimax,$(1),ps-3205uwg,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Edimax,$(1),br-6524wg,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Edimax,$(1),br-6524wp,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Infineon,$(1),easy-5120p-ata,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Infineon,$(1),easy-5120-rt,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Infineon,$(1),easy-5120-wvoip,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Infineon,$(1),easy-83000,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/MyLoader,$(1),np27g,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/MyLoader,$(1),np28g,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/MyLoader,$(1),np28ghs,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/MyLoader,$(1),wp54g,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/MyLoader,$(1),wp54ag,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/MyLoader,$(1),wpp54g,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/MyLoader,$(1),wpp54ag,$(patsubst jffs2-%,jffs2,$(1)))
-endif
-endef
-
-define Image/Build/squashfs
-$(call Image/Build/jffs2-64k,$(1))
-endef
-
-define Image/Build
-$(call Image/Build/$(1),$(1))
-endef
-
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
-  define Image/BuildKernel
-	$(call Image/Build/RouterBoard)
-  endef
-endif
 
 define Image/Build/LZMAKernel
 	$(LOADER_MAKE) TARGET_DIR=$(BIN_DIR) \
@@ -139,10 +38,6 @@ define Image/Build/LZMAKernel
 		compile loader.$(2)
 endef
 
-define Image/Build/LZMAKernel/Compex
-	$(call Image/Build/LZMAKernel,$(1),$(2),0x80500000,0,y,$(1))
-endef
-
 define Image/Build/LZMAKernel/Generic
 	$(call Image/Build/LZMAKernel,$(1),$(2),0x80500000,0)
 endef
@@ -151,27 +46,38 @@ define Image/Build/LZMAKernel/Admboot
 	$(call Image/Build/LZMAKernel,$(1),$(2),0x80500000,0x6D8,y,$(1))
 endef
 
-define Image/Build/Initramfs/RouterBoard
-	$(CP) $(KDIR)/vmlinux.elf $(IMGNAME)-ramfs-rb1xx.elf
+define Image/Build/LZMAKernel/KArgs
+	$(call Image/Build/LZMAKernel,$(1),$(2),0x80500000,0,y,$(1))
+endef
+
+define trxalign/jffs2-128k
+-a 0x20000 -f $(KDIR)/root.jffs2-128k
+endef
+define trxalign/jffs2-64k
+-a 0x10000 -f $(KDIR)/root.jffs2-64k
+endef
+define trxalign/squashfs
+-a 1024 -f $(KDIR)/root.squashfs
+endef
+
+define Image/Build/TRX
+	$(STAGING_DIR_HOST)/bin/trx -o $(1) -f $(3) -f $(KDIR)/vmlinux.lzma \
+		$(call trxalign/$(2))
+endef
+
+define Image/Build/TRXNoloader
+	$(STAGING_DIR_HOST)/bin/trx -o $(1) -f $(KDIR)/vmlinux.lzma \
+		$(call trxalign/$(2))
+endef
+
+include $(SUBTARGET).mk
+
+define Image/Build
+	$(call Image/Build/Profile/$(PROFILE),$(1))
 endef
 
 define Image/Build/Initramfs
-	$(call Image/Build/Initramfs/RouterBoard)
-	$(call Image/Build/LZMAKernel/Compex,wp54g-wrt,bin)
-ifeq ($(CONFIG_DEVEL),y)
-	$(call Image/Build/LZMAKernel/Generic,generic,bin)
-	$(call Image/Build/LZMAKernel/Generic,np27g,bin)
-	$(call Image/Build/LZMAKernel/Generic,wp54g,bin)
-	$(call Image/Build/LZMAKernel/Admboot,br-6104k,gz)
-	$(call Image/Build/LZMAKernel/Admboot,easy-5120,gz)
-	$(call Image/Build/LZMAKernel/Admboot,easy-83000,gz)
-	$(call Image/Build/LZMAKernel/Admboot,cas-630,gz)
-	$(call Image/Build/LZMAKernel/Admboot,cas-670,gz)
-	$(call Image/Build/LZMAKernel/Admboot,cas-700,gz)
-	$(call Image/Build/LZMAKernel/Admboot,cas-771,gz)
-	$(call Image/Build/LZMAKernel/Admboot,cas-790,gz)
-	$(call Image/Build/LZMAKernel/Admboot,cas-861,gz)
-endif
+	$(call Image/Build/Profile/$(PROFILE),Initramfs)
 endef
 
 $(eval $(call BuildImage))

@@ -6,11 +6,11 @@
 #
 
 define Profile/Ralink
-  NAME:=Ralink WiFi
-  PACKAGES:=kmod-rt2500
+	NAME:=Ralink WiFi
+	PACKAGES:=kmod-rt2500
 endef
 
 define Profile/Ralink/Description
-        Package set compatible with hardware using Ralink WiFi cards
+	Package set compatible with hardware using Ralink WiFi cards.
 endef
 $(eval $(call Profile,Ralink))
