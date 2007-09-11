@@ -76,7 +76,6 @@ static inline int vlynq_register_driver(struct vlynq_driver *driver)
 extern void vlynq_unregister_driver(struct vlynq_driver *driver);
 extern int vlynq_device_enable(struct vlynq_device *dev);
 extern void vlynq_device_disable(struct vlynq_device *dev);
-extern u32 vlynq_local_id(struct vlynq_device *dev);
 extern u32 vlynq_remote_id(struct vlynq_device *dev);
 extern void vlynq_set_local_mapping(struct vlynq_device *dev,
 				    u32 tx_offset,
