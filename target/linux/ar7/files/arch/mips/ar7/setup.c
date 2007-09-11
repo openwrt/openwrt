@@ -1,8 +1,8 @@
 /*
  * $Id$
- * 
+ *
  * Copyright (C) 2006, 2007 OpenWrt.org
- * 
+ *
  * Carsten Langgaard, carstenl@mips.com
  * Copyright (C) 2000 MIPS Technologies, Inc.  All rights reserved.
  *
@@ -20,26 +20,12 @@
  *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
  */
 #include <linux/init.h>
-#include <linux/sched.h>
 #include <linux/ioport.h>
-#include <linux/pci.h>
-#include <linux/tty.h>
 #include <linux/pm.h>
-#include <linux/serial_8250.h>
-#include <linux/serial_core.h>
-#include <linux/serial.h>
-#include <linux/serial_reg.h>
 
-#include <asm/cpu.h>
-#include <asm/irq.h>
-#include <asm/mips-boards/generic.h>
 #include <asm/mips-boards/prom.h>
-#include <asm/dma.h>
-#include <asm/time.h>
-#include <asm/traps.h>
-#include <asm/io.h>
 #include <asm/reboot.h>
-#include <asm/gdb-stub.h>
+#include <asm/time.h>
 #include <asm/ar7/ar7.h>
 
 extern void ar7_time_init(void);
@@ -49,9 +35,9 @@ static void ar7_machine_power_off(void);
 
 static void ar7_machine_restart(char *command)
 {
-	volatile u32 *softres_reg = (u32 *)ioremap(AR7_REGS_RESET +
-						   AR7_RESET_SOFTWARE, 1);
-	*softres_reg = 1;
+	u32 *softres_reg = (u32 *)ioremap(AR7_REGS_RESET +
+					  AR7_RESET_SOFTWARE, 1);
+	writel(1, softres_reg);
 }
 
 static void ar7_machine_halt(void)
@@ -61,9 +47,9 @@ static void ar7_machine_halt(void)
 
 static void ar7_machine_power_off(void)
 {
-	volatile u32 *power_reg = (u32 *)ioremap(AR7_REGS_POWER, 1);
-	u32 power_state = *power_reg | (3 << 30);
-	*power_reg = power_state;
+	u32 *power_reg = (u32 *)ioremap(AR7_REGS_POWER, 1);
+	u32 power_state = readl(power_reg) | (3 << 30);
+	writel(power_state, power_reg);
 	ar7_machine_halt();
 }
 
@@ -109,7 +95,6 @@ void __init plat_mem_setup(void)
 	set_io_port_base(io_base);
 
 	prom_meminit();
-#warning FIXME: clock initialisation
 	ar7_init_clocks();
 
 	ioport_resource.start = 0;
