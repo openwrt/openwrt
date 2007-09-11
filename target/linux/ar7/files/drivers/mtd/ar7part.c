@@ -42,7 +42,7 @@ static int create_mtd_partitions(struct mtd_info *master,
 {
 	struct ar7_bin_rec header;
 	unsigned int offset, len;
-	unsigned int pre_size = master->erasesize, post_size = 0,
+	unsigned int pre_size = master->erasesize, post_size = 0;
 	unsigned int root_offset = 0xe0000;
 
 	int retries = 10;
