@@ -12,5 +12,3 @@ obj-y := \
 
 obj-$(CONFIG_PCI) += \
 	vlynq-pci.o
-
-EXTRA_AFLAGS := $(CFLAGS)
