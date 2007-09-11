@@ -173,15 +173,15 @@ int mp3_stream_setup(unsigned char *url, unsigned int type, unsigned char *ip,
 			ip);
 	printf("Sending request :\n%s\n", icy_request);
 	send(mp3_stream.sockfd, icy_request, strlen(icy_request), 0);
-	//wait 200 ms ??!? some icecast servers seem to not push data to us fast enough ?!?!?
-	poll(0,0,200);	
-	if ((mp3_stream.numbytes=recv(mp3_stream.sockfd, mp3_stream.buf, MAX_PACKET_SIZE-1, 0)) == -1) {
-		perror("recv");
-		return MP3_ERROR;
+	mp3_stream.numbytes = 0;
+	while(mp3_stream.numbytes < MAX_PACKET_SIZE-1) {
+		if ((mp3_stream.numbytes += recv(mp3_stream.sockfd, &mp3_stream.buf[mp3_stream.numbytes], MAX_PACKET_SIZE - 1 - mp3_stream.numbytes, 0)) == -1) {
+			perror("recv");
+			return MP3_ERROR;
+		}
 	}
 	mp3_stream.buf[mp3_stream.numbytes] = '\0';
 	printf("numbytes = %d\n", mp3_stream.numbytes);
-	printf("------\n%s\n---------\n", mp3_stream.buf);
 	unsigned char *p = strstr(mp3_stream.buf, "\r\n\r\n");
 	if(p) {
 		*p = '\0';
