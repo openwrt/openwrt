@@ -71,13 +71,7 @@ static struct irq_chip ar7_sec_irq_type = {
 
 static struct irqaction ar7_cascade_action = {
 	.handler = no_action,
-
 	.name = "AR7 cascade interrupt"
-};
-
-static struct irqaction ar7_sec_cascade_action = {
-	.handler = no_action,
-	.name = "AR7 secondary cascade interrupt"
 };
 
 static void ar7_unmask_irq(unsigned int irq)
@@ -146,7 +140,7 @@ static void __init ar7_irq_init(int base)
 	}
 
 	setup_irq(2, &ar7_cascade_action);
-	setup_irq(ar7_irq_base, &ar7_sec_cascade_action);
+	setup_irq(ar7_irq_base, &ar7_cascade_action);
 	set_c0_status(IE_IRQ0);
 }
 
