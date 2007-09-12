@@ -59,7 +59,7 @@ struct ar7_wdt {
 	u32 kick_lock;
 	u32 kick;
 	u32 change_lock;
-	u32 change ;
+	u32 change;
 	u32 disable_lock;
 	u32 disable;
 	u32 prescale_lock;
@@ -186,13 +186,13 @@ static int ar7_wdt_open(struct inode *inode, struct file *file)
 
 static int ar7_wdt_release(struct inode *inode, struct file *file)
 {
-	if (!expect_close) {
+	if (!expect_close)
 		printk(KERN_WARNING DRVNAME
 		": watchdog device closed unexpectedly,"
 		"will not disable the watchdog timer\n");
-	} else if (!nowayout) {
+	else if (!nowayout)
 		ar7_wdt_disable_wdt();
-	}
+
 	up(&open_semaphore);
 
 	return 0;
@@ -280,24 +280,24 @@ static int ar7_wdt_ioctl(struct inode *inode, struct file *file,
 }
 
 static struct file_operations ar7_wdt_fops = {
-	.owner	 = THIS_MODULE,
-	.write   = ar7_wdt_write,
-	.ioctl   = ar7_wdt_ioctl,
-	.open    = ar7_wdt_open,
-	.release = ar7_wdt_release,
+	.owner		= THIS_MODULE,
+	.write		= ar7_wdt_write,
+	.ioctl		= ar7_wdt_ioctl,
+	.open		= ar7_wdt_open,
+	.release	= ar7_wdt_release,
 };
 
 static struct miscdevice ar7_wdt_miscdev = {
-	.minor = WATCHDOG_MINOR,
-	.name  = "watchdog",
-	.fops  = &ar7_wdt_fops,
+	.minor		= WATCHDOG_MINOR,
+	.name		= "watchdog",
+	.fops		= &ar7_wdt_fops,
 };
 
 static int __init ar7_wdt_init(void)
 {
 	int rc;
 
-    ar7_wdt_get_regs();
+	ar7_wdt_get_regs();
 
 	if (!request_mem_region(ar7_regs_wdt, sizeof(struct ar7_wdt),
 							LONGNAME)) {
