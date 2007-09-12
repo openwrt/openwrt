@@ -60,14 +60,14 @@ struct tnetd7300_clock {
 #define PLL_DIV		0x00000002
 #define PLL_STATUS	0x00000001
 	u32 unused2[3];
-} __attribute__ ((packed));
+} __packed;
 
 struct tnetd7300_clocks {
 	struct tnetd7300_clock bus;
 	struct tnetd7300_clock cpu;
 	struct tnetd7300_clock usb;
 	struct tnetd7300_clock dsp;
-} __attribute__ ((packed));
+} __packed;
 
 struct tnetd7200_clock {
 	volatile u32 ctrl;
@@ -82,13 +82,13 @@ struct tnetd7200_clock {
 	volatile u32 status;
 	volatile u32 cmden;
 	u32 padding[15];
-} __attribute__ ((packed));
+} __packed;
 
 struct tnetd7200_clocks {
 	struct tnetd7200_clock cpu;
 	struct tnetd7200_clock dsp;
 	struct tnetd7200_clock usb;
-} __attribute__ ((packed));
+} __packed;
 
 int ar7_cpu_clock = 150000000;
 EXPORT_SYMBOL(ar7_cpu_clock);
@@ -117,8 +117,8 @@ static void approximate(int base, int target, int *prediv,
 			int *postdiv, int *mul)
 {
 	int i, j, k, freq, res = target;
-	for (i = 1; i <= 16; i++) {
-		for (j = 1; j <= 32; j++) {
+	for (i = 1; i <= 16; i++)
+		for (j = 1; j <= 32; j++)
 			for (k = 1; k <= 32; k++) {
 				freq = abs(base / j * i / k - target);
 				if (freq < res) {
@@ -128,8 +128,6 @@ static void approximate(int base, int target, int *prediv,
 					*postdiv = k;
 				}
 			}
-		}
-	}
 }
 
 static void calculate(int base, int target, int *prediv, int *postdiv,
@@ -249,9 +247,9 @@ static void tnetd7300_set_clock(u32 shift, struct tnetd7300_clock *clock,
 	clock->ctrl = ((prediv - 1) << PREDIV_SHIFT) | (postdiv - 1);
 	mdelay(1);
 	clock->pll = 4;
-	do {
+	do
 		status = clock->pll;
-	} while (status & PLL_STATUS);
+	while (status & PLL_STATUS);
 	clock->pll = ((mul - 1) << MUL_SHIFT) | (0xff << 3) | 0x0e;
 	mdelay(75);
 }
@@ -267,12 +265,11 @@ static void __init tnetd7300_init_clocks(void)
 	ar7_bus_clock = tnetd7300_get_clock(BUS_PLL_SOURCE_SHIFT,
 		&clocks->bus, bootcr, AR7_AFE_CLOCK);
 
-	if (*bootcr & BOOT_PLL_ASYNC_MODE) {
+	if (*bootcr & BOOT_PLL_ASYNC_MODE)
 		ar7_cpu_clock = tnetd7300_get_clock(CPU_PLL_SOURCE_SHIFT,
 			&clocks->cpu, bootcr, AR7_AFE_CLOCK);
-	} else {
+	else
 		ar7_cpu_clock = ar7_bus_clock;
-	}
 /*
 	tnetd7300_set_clock(USB_PLL_SOURCE_SHIFT, &clocks->usb,
 		bootcr, 48000000);
@@ -333,7 +330,7 @@ static void tnetd7200_set_clock(int base, struct tnetd7200_clock *clock,
 
 static int tnetd7200_get_clock_base(int clock_id, u32 *bootcr)
 {
-	if (*bootcr & BOOT_PLL_ASYNC_MODE) {
+	if (*bootcr & BOOT_PLL_ASYNC_MODE)
 		/* Async */
 		switch (clock_id) {
 		case TNETD7200_CLOCK_ID_DSP:
@@ -341,9 +338,9 @@ static int tnetd7200_get_clock_base(int clock_id, u32 *bootcr)
 		default:
 			return AR7_AFE_CLOCK;
 		}
-	} else {
+	else
 		/* Sync */
-		if (*bootcr & BOOT_PLL_2TO1_MODE) {
+		if (*bootcr & BOOT_PLL_2TO1_MODE)
 			/* 2:1 */
 			switch (clock_id) {
 			case TNETD7200_CLOCK_ID_DSP:
@@ -351,11 +348,9 @@ static int tnetd7200_get_clock_base(int clock_id, u32 *bootcr)
 			default:
 				return AR7_AFE_CLOCK;
 			}
-		} else {
+		else
 			/* 1:1 */
 			return AR7_REF_CLOCK;
-		}
-	}
 }
 
 
@@ -420,7 +415,7 @@ static void __init tnetd7200_init_clocks(void)
 			cpu_prediv, cpu_postdiv, -1, cpu_mul,
 			ar7_cpu_clock);
 
-	} else {
+	} else
 		if (*bootcr & BOOT_PLL_2TO1_MODE) {
 			printk(KERN_INFO "Clocks: Sync 2:1 mode\n");
 
@@ -454,7 +449,6 @@ static void __init tnetd7200_init_clocks(void)
 
 			ar7_cpu_clock = ar7_bus_clock;
 		}
-	}
 
 	printk(KERN_INFO "Clocks: Setting USB clock\n");
 	usb_base = ar7_bus_clock;

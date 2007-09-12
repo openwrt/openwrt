@@ -32,16 +32,16 @@ diff -urN linux-2.6.22/arch/mips/kernel/traps.c linux-2.6.22.new/arch/mips/kerne
  	if (n == 0 && cpu_has_divec) {
 +#ifdef CONFIG_AR7
 +		/* lui k0, 0x0000 */
-+		*(volatile u32 *)(CAC_BASE+0x200) =
++		*(volatile u32 *)(ebase + 0x200) =
 +				0x3c1a0000 | (handler >> 16);
 +		/* ori k0, 0x0000 */
-+		*(volatile u32 *)(CAC_BASE+0x204) =
++		*(volatile u32 *)(ebase + 0x204) =
 +				0x375a0000 | (handler & 0xffff);
 +		/* jr k0 */
-+		*(volatile u32 *)(CAC_BASE+0x208) = 0x03400008;
++		*(volatile u32 *)(ebase + 0x208) = 0x03400008;
 +		/* nop */
-+		*(volatile u32 *)(CAC_BASE+0x20C) = 0x00000000;
-+		flush_icache_range(CAC_BASE+0x200, CAC_BASE+0x210);
++		*(volatile u32 *)(ebase + 0x20C) = 0x00000000;
++		flush_icache_range(ebase + 0x200, ebase + 0x210);
 +#else
  		*(volatile u32 *)(ebase + 0x200) = 0x08000000 |
  		                                 (0x03ffffff & (handler >> 2));
