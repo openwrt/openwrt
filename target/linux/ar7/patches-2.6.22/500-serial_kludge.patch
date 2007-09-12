@@ -38,13 +38,14 @@ diff -urN linux-2.6.22.orig/include/linux/serial_core.h linux-2.6.22/include/lin
 diff -urN linux-2.6.22.orig/include/linux/serialP.h linux-2.6.22/include/linux/serialP.h
 --- linux-2.6.22.orig/include/linux/serialP.h	2007-07-09 01:32:17.000000000 +0200
 +++ linux-2.6.22/include/linux/serialP.h	2007-07-11 03:08:57.000000000 +0200
-@@ -135,6 +135,9 @@
+@@ -135,6 +135,10 @@
   * the interrupt line _up_ instead of down, so if we register the IRQ
   * while the UART is in that state, we die in an IRQ storm. */
  #define ALPHA_KLUDGE_MCR (UART_MCR_OUT2)
 +#elif defined(CONFIG_AR7)
 +/* This is how it is set up by bootloader... */
-+#define ALPHA_KLUDGE_MCR  (UART_MCR_OUT2 | UART_MCR_OUT1 | UART_MCR_RTS | UART_MCR_DTR)
++#define ALPHA_KLUDGE_MCR (UART_MCR_OUT2 | UART_MCR_OUT1 \
++			| UART_MCR_RTS | UART_MCR_DTR)
  #else
  #define ALPHA_KLUDGE_MCR 0
  #endif
