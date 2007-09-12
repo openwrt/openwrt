@@ -55,6 +55,9 @@ static int nowayout = WATCHDOG_NOWAYOUT;
 module_param(nowayout, int, 0);
 MODULE_PARM_DESC(nowayout, "Disable watchdog shutdown on close");
 
+#define READ_REG(x) readl((void __iomem*)&(x))
+#define WRITE_REG(x,v) writel((v), (void __iomem*)&(x))
+
 struct ar7_wdt {
 	u32 kick_lock;
 	u32 kick;
@@ -93,11 +96,11 @@ static void ar7_wdt_get_regs(void)
 
 static void ar7_wdt_kick(u32 value)
 {
-	ar7_wdt->kick_lock = 0x5555;
-	if ((ar7_wdt->kick_lock & 3) == 1) {
-		ar7_wdt->kick_lock = 0xaaaa;
-		if ((ar7_wdt->kick_lock & 3) == 3) {
-			ar7_wdt->kick = value;
+	WRITE_REG(ar7_wdt->kick_lock, 0x5555);
+	if ((READ_REG(ar7_wdt->kick_lock) & 3) == 1) {
+		WRITE_REG(ar7_wdt->kick_lock, 0xaaaa);
+		if ((READ_REG(ar7_wdt->kick_lock) & 3) == 3) {
+			WRITE_REG(ar7_wdt->kick, value);
 			return;
 		}
 	}
@@ -106,11 +109,11 @@ static void ar7_wdt_kick(u32 value)
 
 static void ar7_wdt_prescale(u32 value)
 {
-	ar7_wdt->prescale_lock = 0x5a5a;
-	if ((ar7_wdt->prescale_lock & 3) == 1) {
-		ar7_wdt->prescale_lock = 0xa5a5;
-		if ((ar7_wdt->prescale_lock & 3) == 3) {
-			ar7_wdt->prescale = value;
+	WRITE_REG(ar7_wdt->prescale_lock, 0x5a5a);
+	if ((READ_REG(ar7_wdt->prescale_lock) & 3) == 1) {
+		WRITE_REG(ar7_wdt->prescale_lock, 0xa5a5);
+		if ((READ_REG(ar7_wdt->prescale_lock) & 3) == 3) {
+			WRITE_REG(ar7_wdt->prescale, value);
 			return;
 		}
 	}
@@ -119,11 +122,11 @@ static void ar7_wdt_prescale(u32 value)
 
 static void ar7_wdt_change(u32 value)
 {
-	ar7_wdt->change_lock = 0x6666;
-	if ((ar7_wdt->change_lock & 3) == 1) {
-		ar7_wdt->change_lock = 0xbbbb;
-		if ((ar7_wdt->change_lock & 3) == 3) {
-			ar7_wdt->change = value;
+	WRITE_REG(ar7_wdt->change_lock, 0x6666);
+	if ((READ_REG(ar7_wdt->change_lock) & 3) == 1) {
+		WRITE_REG(ar7_wdt->change_lock, 0xbbbb);
+		if ((READ_REG(ar7_wdt->change_lock) & 3) == 3) {
+			WRITE_REG(ar7_wdt->change, value);
 			return;
 		}
 	}
@@ -132,13 +135,13 @@ static void ar7_wdt_change(u32 value)
 
 static void ar7_wdt_disable(u32 value)
 {
-	ar7_wdt->disable_lock = 0x7777;
-	if ((ar7_wdt->disable_lock & 3) == 1) {
-		ar7_wdt->disable_lock = 0xcccc;
-		if ((ar7_wdt->disable_lock & 3) == 2) {
-			ar7_wdt->disable_lock = 0xdddd;
-			if ((ar7_wdt->disable_lock & 3) == 3) {
-				ar7_wdt->disable = value;
+	WRITE_REG(ar7_wdt->disable_lock, 0x7777);
+	if ((READ_REG(ar7_wdt->disable_lock) & 3) == 1) {
+		WRITE_REG(ar7_wdt->disable_lock, 0xcccc);
+		if ((READ_REG(ar7_wdt->disable_lock) & 3) == 2) {
+			WRITE_REG(ar7_wdt->disable_lock, 0xdddd);
+			if ((READ_REG(ar7_wdt->disable_lock) & 3) == 3) {
+				WRITE_REG(ar7_wdt->disable, value);
 				return;
 			}
 		}
