@@ -438,8 +438,10 @@ void vlynq_set_local_mapping(struct vlynq_device *dev, u32 tx_offset,
 
 	vlynq_reg_write(dev->local->tx_offset, tx_offset);
 	for (i = 0; i < 4; i++) {
-		vlynq_reg_write(dev->local->rx_mapping[i].offset, mapping[i].offset);
-		vlynq_reg_write(dev->local->rx_mapping[i].size, mapping[i].size);
+		vlynq_reg_write(dev->local->rx_mapping[i].offset,
+							mapping[i].offset);
+		vlynq_reg_write(dev->local->rx_mapping[i].size,
+							mapping[i].size);
 	}
 }
 
@@ -450,8 +452,10 @@ void vlynq_set_remote_mapping(struct vlynq_device *dev, u32 tx_offset,
 
 	vlynq_reg_write(dev->remote->tx_offset, tx_offset);
 	for (i = 0; i < 4; i++) {
-		vlynq_reg_write(dev->remote->rx_mapping[i].offset, mapping[i].offset);
-		vlynq_reg_write(dev->remote->rx_mapping[i].size, mapping[i].size);
+		vlynq_reg_write(dev->remote->rx_mapping[i].offset,
+							mapping[i].offset);
+		vlynq_reg_write(dev->remote->rx_mapping[i].size,
+							mapping[i].size);
 	}
 }
 

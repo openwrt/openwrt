@@ -133,7 +133,8 @@ static inline u32 vlynq_get_mapped(struct vlynq_device *dev, int res)
 	return ret;
 }
 
-static inline u32 vlynq_read(u32 val, int size) {
+static inline u32 vlynq_read(u32 val, int size)
+{
 	switch (size) {
 	case 1:
 		return *(u8 *)&val;

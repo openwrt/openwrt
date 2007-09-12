@@ -20,8 +20,8 @@
 #define _ASM_MACH_MMZONE_H
 
 extern pg_data_t __node_data[];
-#define NODE_DATA(nid)		(&__node_data[nid])
-#define NODE_MEM_MAP(nid)	(NODE_DATA(nid)->node_mem_map)
-#define pa_to_nid(addr)		(((addr) >= ARCH_PFN_OFFSET << PAGE_SHIFT) ? 0 : -1)
+#define NODE_DATA(nid) (&__node_data[nid])
+#define NODE_MEM_MAP(nid) (NODE_DATA(nid)->node_mem_map)
+#define pa_to_nid(addr) (((addr) >= ARCH_PFN_OFFSET << PAGE_SHIFT) ? 0 : -1)
 
 #endif /* _ASM_MACH_MMZONE_H */

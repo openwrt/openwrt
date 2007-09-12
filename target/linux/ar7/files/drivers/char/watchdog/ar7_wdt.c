@@ -1,6 +1,6 @@
 /*
  * linux/drivers/char/ar7_wdt.c
- * 
+ *
  * Copyright (C) 2007 OpenWrt.org
  * Copyright (c) 2005 Enrik Berkhan <Enrik.Berkhan@akk.org>
  *
@@ -12,12 +12,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -55,8 +55,8 @@ static int nowayout = WATCHDOG_NOWAYOUT;
 module_param(nowayout, int, 0);
 MODULE_PARM_DESC(nowayout, "Disable watchdog shutdown on close");
 
-#define READ_REG(x) readl((void __iomem*)&(x))
-#define WRITE_REG(x,v) writel((v), (void __iomem*)&(x))
+#define READ_REG(x) readl((void __iomem *)&(x))
+#define WRITE_REG(x, v) writel((v), (void __iomem *)&(x))
 
 struct ar7_wdt {
 	u32 kick_lock;
