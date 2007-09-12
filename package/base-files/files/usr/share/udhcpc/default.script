@@ -7,6 +7,7 @@ RESOLV_CONF="/tmp/resolv.conf.auto"
 
 hotplug_event() {
 	scan_interfaces
+	config_load /var/state/network
 	for ifc in $interfaces; do
 		config_get ifname $ifc ifname
 		[ "$ifname" = "$interface" ] || continue
