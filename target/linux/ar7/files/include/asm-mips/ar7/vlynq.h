@@ -16,7 +16,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-
 #ifndef __VLYNQ_H__
 #define __VLYNQ_H__
 
@@ -29,13 +28,34 @@ struct vlynq_device_id {
 	u32 id;
 };
 
+enum vlynq_divisor {
+	vlynq_div_auto = 0,
+	vlynq_ldiv1,
+	vlynq_ldiv2,
+	vlynq_ldiv3,
+	vlynq_ldiv4,
+	vlynq_ldiv5,
+	vlynq_ldiv6,
+	vlynq_ldiv7,
+	vlynq_ldiv8,
+	vlynq_rdiv1,
+	vlynq_rdiv2,
+	vlynq_rdiv3,
+	vlynq_rdiv4,
+	vlynq_rdiv5,
+	vlynq_rdiv6,
+	vlynq_rdiv7,
+	vlynq_rdiv8,
+	vlynq_div_external
+};
+
 struct vlynq_regs;
 struct vlynq_device {
 	u32 id;
 	int irq;
 	int local_irq;
 	int remote_irq;
-	int clock_div;
+	enum vlynq_divisor divisor;
 	u32 regs_start, regs_end;
 	u32 mem_start, mem_end;
 	u32 irq_start, irq_end;

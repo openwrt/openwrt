@@ -143,7 +143,8 @@ static inline u32 vlynq_read(u32 val, int size) {
 	return val;
 }
 
-static int vlynq_config_read(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 *val)
+static int vlynq_config_read(struct pci_bus *bus, unsigned int devfn,
+			     int where, int size, u32 *val)
 {
 	struct vlynq_device *dev;
 	struct vlynq_pci_private *priv;
@@ -194,7 +195,7 @@ static int vlynq_config_read(struct pci_bus *bus, unsigned int devfn, int where,
 	case PCI_BASE_ADDRESS_3:
 		resno = (where - PCI_BASE_ADDRESS_0) >> 2;
 		if (priv->sz_mask & (1 << resno)) {
-		        priv->sz_mask &= ~(1 << resno);
+			priv->sz_mask &= ~(1 << resno);
 			*val = priv->config->rx_mapping[resno].size;
 		} else {
 			*val = vlynq_get_mapped(dev, resno);
@@ -214,14 +215,15 @@ static int vlynq_config_read(struct pci_bus *bus, unsigned int devfn, int where,
 		*val = 1;
 		break;
 	default:
-		printk("%s: Read of unknown register 0x%x (size %d)\n", 
-		       dev->dev.bus_id, where, size);
+		printk(KERN_NOTICE "%s: Read of unknown register 0x%x "
+		       "(size %d)\n", dev->dev.bus_id, where, size);
 		return PCIBIOS_BAD_REGISTER_NUMBER;
 	}
 	return PCIBIOS_SUCCESSFUL;
 }
 
-static int vlynq_config_write(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 val)
+static int vlynq_config_write(struct pci_bus *bus, unsigned int devfn,
+			      int where, int size, u32 val)
 {
 	struct vlynq_device *dev;
 	struct vlynq_pci_private *priv;
@@ -275,8 +277,9 @@ static int vlynq_config_write(struct pci_bus *bus, unsigned int devfn, int where
 	case PCI_ROM_ADDRESS:
 		break;
 	default:
-		printk("%s: Write to unknown register 0x%x (size %d) value=0x%x\n", 
-		       dev->dev.bus_id, where, size, val);
+		printk(KERN_NOTICE "%s: Write to unknown register 0x%x "
+		       "(size %d) value=0x%x\n", dev->dev.bus_id, where, size,
+		       val);
 		return PCIBIOS_BAD_REGISTER_NUMBER;
 	}
 	return PCIBIOS_SUCCESSFUL;
@@ -309,6 +312,7 @@ static int vlynq_pci_probe(struct vlynq_device *dev)
 	if (result)
 		return result;
 
+	dev->divisor = vlynq_ldiv4;
 	result = vlynq_device_enable(dev);
 	if (result)
 		return result;
@@ -319,17 +323,17 @@ static int vlynq_pci_probe(struct vlynq_device *dev)
 			config = &known_devices[i];
 
 	if (!config) {
-		printk("vlynq-pci: skipping unknown device "
-		       "%04x:%04x at %s\n", chip_id >> 16, 
+		printk(KERN_DEBUG "vlynq-pci: skipping unknown device "
+		       "%04x:%04x at %s\n", chip_id >> 16,
 		       chip_id & 0xffff, dev->dev.bus_id);
 		result = -ENODEV;
 		goto fail;
 	}
 
-	printk("vlynq-pci: attaching device %s at %s\n",
+	printk(KERN_NOTICE "vlynq-pci: attaching device %s at %s\n",
 	       config->name, dev->dev.bus_id);
 
-	priv = kmalloc(sizeof(struct vlynq_pci_private), GFP_KERNEL);
+	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
 	if (!priv) {
 		printk(KERN_ERR "%s: failed to allocate private data\n",
 		       dev->dev.bus_id);
@@ -337,7 +341,6 @@ static int vlynq_pci_probe(struct vlynq_device *dev)
 		goto fail;
 	}
 
-	memset(priv, 0, sizeof(struct vlynq_pci_private));
 	priv->latency = 64;
 	priv->cache_line = 32;
 	priv->config = config;
@@ -402,7 +405,7 @@ int vlynq_pci_init(void)
 {
 	int res;
 	res = vlynq_register_driver(&vlynq_pci);
-	if (res) 
+	if (res)
 		return res;
 
 	register_pci_controller(&vlynq_controller);
