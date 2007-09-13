@@ -68,3 +68,19 @@ diff -urN linux-2.6.22/arch/mips/Makefile linux-2.6.22.new/arch/mips/Makefile
  # Acer PICA 61, Mips Magnum 4000 and Olivetti M700.
  #
  core-$(CONFIG_MACH_JAZZ)	+= arch/mips/jazz/
+diff -urN linux-2.6.22.4/include/asm-mips/page.h linux-2.6.22.4.new/include/asm-mips/page.h
+--- linux-2.6.22.4/include/asm-mips/page.h	2007-08-21 12:33:06.000000000 +0800
++++ linux-2.6.22.4.new/include/asm-mips/page.h	2007-09-13 15:13:00.000000000 +0800
+@@ -187,8 +187,10 @@
+ #define VM_DATA_DEFAULT_FLAGS	(VM_READ | VM_WRITE | VM_EXEC | \
+ 				 VM_MAYREAD | VM_MAYWRITE | VM_MAYEXEC)
+ 
+-#define UNCAC_ADDR(addr)	((addr) - PAGE_OFFSET + UNCAC_BASE)
+-#define CAC_ADDR(addr)		((addr) - UNCAC_BASE + PAGE_OFFSET)
++#define UNCAC_ADDR(addr)	((addr) - PAGE_OFFSET + UNCAC_BASE +	\
++				 PHYS_OFFSET)
++#define CAC_ADDR(addr)		((addr) - UNCAC_BASE + PAGE_OFFSET -	\
++				 PHYS_OFFSET)
+ 
+ #include <asm-generic/memory_model.h>
+ #include <asm-generic/page.h>
