@@ -71,9 +71,9 @@ define Image/Build/Profile/Texas
 endef
 
 define Image/Build/Profile/P-334WT
-	$(call Image/Build/Board/P-334WT,$(1))
+	$(call Image/Build/Board/P-334WT/$(1))
 endef
 
 define Image/Build/Profile/P-335WT
-	$(call Image/Build/Board/P-335WT,$(1))
+	$(call Image/Build/Board/P-335WT/$(1))
 endef
