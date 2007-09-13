@@ -272,7 +272,7 @@ static int vlynq_setup_irq(struct vlynq_device *dev)
 			set_irq_chip_data(dev->irq_start + i, dev);
 		} else if (i == dev->remote_irq) {
 			set_irq_chip_and_handler(dev->irq_start + i,
-						 &vlynq_local_chip,
+						 &vlynq_remote_chip,
 						 handle_level_irq);
 			set_irq_chip_data(dev->irq_start + i, dev);
 		} else {
@@ -615,7 +615,7 @@ EXPORT_SYMBOL(vlynq_bus_type);
 #ifdef CONFIG_PCI
 extern void vlynq_pci_init(void);
 #endif
-int __init vlynq_init(void)
+static int __init vlynq_init(void)
 {
 	int res = 0;
 
@@ -641,7 +641,7 @@ fail_bus:
 
 /* Add this back when vlynq-pci crap is gone */
 #if 0
-void __devexit vlynq_exit(void)
+static void __devexit vlynq_exit(void)
 {
 	platform_driver_unregister(&vlynq_driver);
 	bus_unregister(&vlynq_bus_type);
