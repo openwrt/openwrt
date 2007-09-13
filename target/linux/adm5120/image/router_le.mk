@@ -192,11 +192,11 @@ define Image/Build/Board/BR-6104K
 endef
 
 define Image/Build/Board/BR-6104K/squashfs
-	$(call Image/Build/BR-6104K,squashfs)
+	$(call Image/Build/Board/BR-6104K,squashfs)
 endef
 
 define Image/Build/Board/BR-6104K/jffs2-64k
-	$(call Image/Build/BR-6104K,jffs2-64k)
+	$(call Image/Build/Board/BR-6104K,jffs2-64k)
 endef
 
 define Image/Build/Board/BR-6104K/Initramfs
@@ -292,19 +292,19 @@ define Image/Build/Profile/WP54G
 endef
 
 define Image/Build/Profile/NP27G
-	$(call Image/Build/Group/NP27G,$(1))
+	$(call Image/Build/Board/NP27G/$(1))
 endef
 
 define Image/Build/Profile/NP28G
-	$(call Image/Build/Group/NP28G,$(1))
+	$(call Image/Build/Board/NP28G/$(1))
 endef
 
 define Image/Build/Profile/CAS-771
-	$(call Image/Build/Board/CAS-771,$(1))
+	$(call Image/Build/Board/CAS-771/$(1))
 endef
 
 define Image/Build/Profile/CAS-771W
-	$(call Image/Build/Board/CAS-771W,$(1))
+	$(call Image/Build/Board/CAS-771W/$(1))
 endef
 
 define Image/Build/Profile/RouterBoard
