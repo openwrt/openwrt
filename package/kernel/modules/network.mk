@@ -293,6 +293,22 @@ endef
 $(eval $(call KernelPackage,pppoa))
 
 
+define KernelPackage/ipoa
+  SUBMENU:=$(NSMENU)
+  TITLE:=IPoA support
+  DEPENDS:=kmod-atm
+  KCONFIG:=CONFIG_ATM_CLIP
+  FILES:=$(LINUX_DIR)/net/atm/clip.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,clip)
+endef
+
+define KernelPackage/ipoa/description
+  Kernel modules for IPoA (IP over ATM) support
+endef
+
+$(eval $(call KernelPackage,ipoa))
+
+
 define KernelPackage/mppe
   SUBMENU:=$(NSMENU)
   TITLE:=Microsoft PPP compression/encryption
