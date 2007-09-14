@@ -21,6 +21,7 @@
 #include <linux/types.h>
 #include <linux/module.h>
 #include <linux/delay.h>
+#include <linux/dma-mapping.h>
 #include <linux/platform_device.h>
 #include <linux/mtd/physmap.h>
 #include <linux/serial.h>
@@ -219,8 +220,8 @@ static struct platform_device cpmac_low = {
 	.id = 0,
 	.name = "cpmac",
 	.dev = {
-		.dma_mask = &cpmac_dma_mask;
-		.coherent_dma_mask = DMA_32BIT_MASK;
+		.dma_mask = &cpmac_dma_mask,
+		.coherent_dma_mask = DMA_32BIT_MASK,
 		.platform_data = &cpmac_low_data,
 	},
 	.resource = cpmac_low_res,
@@ -231,8 +232,8 @@ static struct platform_device cpmac_high = {
 	.id = 1,
 	.name = "cpmac",
 	.dev = {
-		.dma_mask = &cpmac_dma_mask;
-		.coherent_dma_mask = DMA_32BIT_MASK;
+		.dma_mask = &cpmac_dma_mask,
+		.coherent_dma_mask = DMA_32BIT_MASK,
 		.platform_data = &cpmac_high_data,
 	},
 	.resource = cpmac_high_res,
