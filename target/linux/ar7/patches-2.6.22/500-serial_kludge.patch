@@ -15,12 +15,15 @@ diff -urN linux-2.6.22.orig/drivers/serial/8250.c linux-2.6.22/drivers/serial/82
  };
  
  #if defined (CONFIG_SERIAL_8250_AU1X00)
-@@ -2436,7 +2443,7 @@
+@@ -2453,7 +2453,11 @@
  {
  	struct uart_8250_port *up = (struct uart_8250_port *)port;
  
--	wait_for_xmitr(up, UART_LSR_THRE);
++#ifdef CONFIG_AR7
 +	wait_for_xmitr(up, BOTH_EMPTY);
++#else
+ 	wait_for_xmitr(up, UART_LSR_THRE);
++#endif
  	serial_out(up, UART_TX, ch);
  }
  
