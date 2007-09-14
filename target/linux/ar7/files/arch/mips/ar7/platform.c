@@ -214,10 +214,15 @@ static struct platform_device physmap_flash = {
 	.num_resources = 1,
 };
 
+static u64 cpmac_dma_mask = DMA_32BIT_MASK;
 static struct platform_device cpmac_low = {
 	.id = 0,
 	.name = "cpmac",
-	.dev.platform_data = &cpmac_low_data,
+	.dev = {
+		.dma_mask = &cpmac_dma_mask;
+		.coherent_dma_mask = DMA_32BIT_MASK;
+		.platform_data = &cpmac_low_data,
+	},
 	.resource = cpmac_low_res,
 	.num_resources = ARRAY_SIZE(cpmac_low_res),
 };
@@ -225,7 +230,11 @@ static struct platform_device cpmac_low = {
 static struct platform_device cpmac_high = {
 	.id = 1,
 	.name = "cpmac",
-	.dev.platform_data = &cpmac_high_data,
+	.dev = {
+		.dma_mask = &cpmac_dma_mask;
+		.coherent_dma_mask = DMA_32BIT_MASK;
+		.platform_data = &cpmac_high_data,
+	},
 	.resource = cpmac_high_res,
 	.num_resources = ARRAY_SIZE(cpmac_high_res),
 };
