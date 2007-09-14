@@ -218,7 +218,7 @@ static struct notifier_block ar7_wdt_notifier = {
 static ssize_t ar7_wdt_write(struct file *file, const char *data,
 			     size_t len, loff_t *ppos)
 {
-	if (ppos != &file->f_pos)
+	if (*ppos != file->f_pos)
 		return -ESPIPE;
 
 	/* check for a magic close character */
