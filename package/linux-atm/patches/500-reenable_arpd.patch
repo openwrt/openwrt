@@ -1,0 +1,49 @@
+diff -urN linux-atm-2.4.1/configure linux-atm-2.4.1.new/configure
+--- linux-atm-2.4.1/configure	2007-09-15 21:07:25.000000000 +0200
++++ linux-atm-2.4.1.new/configure	2007-09-15 22:07:22.000000000 +0200
+@@ -8825,7 +8825,7 @@
+ fi;
+ 
+ 
+-                                                                      ac_config_files="$ac_config_files Makefile doc/Makefile m4/Makefile src/Makefile src/include/Makefile src/lib/Makefile"
++                                                                      ac_config_files="$ac_config_files Makefile doc/Makefile m4/Makefile src/Makefile src/include/Makefile src/lib/Makefile src/arpd/Makefile"
+ cat >confcache <<\_ACEOF
+ # This file is a shell script that caches the results of configure
+ # tests run on this system so they can be shared between configure
+@@ -9367,6 +9367,7 @@
+   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
+   "src/include/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/include/Makefile" ;;
+   "src/lib/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/lib/Makefile" ;;
++  "src/arpd/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/arpd/Makefile" ;;
+   "default-1" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
+   "config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
+   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
+diff -urN linux-atm-2.4.1/configure.in linux-atm-2.4.1.new/configure.in
+--- linux-atm-2.4.1/configure.in	2007-09-15 21:07:13.000000000 +0200
++++ linux-atm-2.4.1.new/configure.in	2007-09-15 21:08:16.000000000 +0200
+@@ -153,5 +153,6 @@
+ 		src/Makefile \
+ 		src/include/Makefile \
+ 		src/lib/Makefile \
++		src/arpd/Makefile \
+ 		)
+ 
+diff -urN linux-atm-2.4.1/src/Makefile.am linux-atm-2.4.1.new/src/Makefile.am
+--- linux-atm-2.4.1/src/Makefile.am	2007-09-15 21:07:13.000000000 +0200
++++ linux-atm-2.4.1.new/src/Makefile.am	2007-09-15 21:08:27.000000000 +0200
+@@ -1,2 +1,2 @@
+-SUBDIRS = include lib
++SUBDIRS = include lib arpd
+ 
+diff -urN linux-atm-2.4.1/src/Makefile.in linux-atm-2.4.1.new/src/Makefile.in
+--- linux-atm-2.4.1/src/Makefile.in	2007-09-15 21:07:25.000000000 +0200
++++ linux-atm-2.4.1.new/src/Makefile.in	2007-09-15 22:10:03.000000000 +0200
+@@ -96,7 +96,7 @@
+ VERSION = @VERSION@
+ YACC = @YACC@
+ 
+-SUBDIRS = include lib
++SUBDIRS = include lib arpd
+ mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+ CONFIG_HEADER = ../config.h
+ CONFIG_CLEAN_FILES = 
