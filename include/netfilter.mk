@@ -6,6 +6,9 @@
 #
 # $Id: netfilter.mk 2411 2005-11-11 03:41:43Z nico $
 
+ifneq ($(__inc_netfiler),1)
+__inc_netfiler:=1
+
 ifeq ($(NF_KMOD),1)
 P_V4:=ipv4/netfilter/
 P_XT:=netfilter/
@@ -161,3 +164,5 @@ IPT_BUILTIN += $(IPT_IPSEC-y)
 IPT_BUILTIN += $(IPT_IPSET-y)
 IPT_BUILTIN += $(IPT_NAT-y)
 IPT_BUILTIN += $(IPT_ULOG-y)
+
+endif # __inc_netfiler
