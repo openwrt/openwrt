@@ -29,6 +29,18 @@ define Package/linux-atm/description
   This package contains a library for accessing the Linux ATM subsystem.
 endef
 
+define Package/atm-tools
+  SECTION:=net
+  CATEGORY:=Network
+  DEPENDS:=linux-atm
+  TITLE:=Linux ATM tools
+  URL:=http://linux-atm.sourceforge.net/
+endef
+
+define Package/atm-tools/description
+  This package contains the Linux ATM tools.
+endef
+
 define Build/Configure
 	$(call Build/Configure/Default)
 	# prevent autoheader invocation
@@ -62,4 +74,12 @@ define Package/linux-atm/install
 	cp -f $(PKG_INSTALL_DIR)/usr/lib/libatm.so.1 $(1)/usr/lib
 endef
 
+define Package/atm-tools/install
+	$(INSTALL_DIR) $(1)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/atmarp{,d} $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/lib/network
+	$(INSTALL_BIN) ./files/ipoa.sh $(1)/lib/network/
+endef
+
 $(eval $(call BuildPackage,linux-atm))
+$(eval $(call BuildPackage,atm-tools))
