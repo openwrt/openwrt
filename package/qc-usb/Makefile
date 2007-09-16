@@ -4,7 +4,7 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-# $Id: $
+# $Id$
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
@@ -35,21 +35,21 @@ define Package/qc-usb-utils/description
  These programs are completely useless without a qc-usb-modules package.
 endef
 
-define KernelPackage/usb-qc
+define KernelPackage/video-quickcam
 $(call Package/qc-usb/Default)
-  TITLE:=Support for USB QuickCam Express webcam
-  SUBMENU:=USB Support
-  DEPENDS:=@LINUX_2_6 @USB_SUPPORT kmod-usb-core +kmod-videodev
+  SUBMENU:=Video Support
+  TITLE:=USB QuickCam Express webcam support
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core +kmod-video-core
   FILES:=$(PKG_BUILD_DIR)/quickcam.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,quickcam)
 endef
 
-define KernelPackage/usb-qc/description
+define KernelPackage/video-quickcam/description
  Kernel support for Logitech's QuickCam Express webcam and other webcams 
  with similar chipsets.
 endef
 
-ifneq ($(CONFIG_PACKAGE_kmod-usb-qc),)
+ifneq ($(CONFIG_PACKAGE_kmod-video-quickcam),)
   define Build/Compile/kmod
 	$(MAKE) -C $(LINUX_DIR) \
 		PATH="$(TARGET_PATH)" \
@@ -66,7 +66,6 @@ endif
 
 define Build/Compile
 	$(call Build/Compile/kmod)
-
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		qcset
@@ -78,4 +77,4 @@ define Package/qc-usb-utils/install
 endef
 
 $(eval $(call BuildPackage,qc-usb-utils))
-$(eval $(call KernelPackage,usb-qc))
+$(eval $(call KernelPackage,video-quickcam))

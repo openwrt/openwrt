@@ -448,37 +448,6 @@ endef
 $(eval $(call KernelPackage,ueagle-atm))
 
 
-define KernelPackage/usb-pwc
-  $(call usbdep,+kmod-videodev @LINUX_2_6)
-  TITLE:=Philips WebCam driver
-  KCONFIG:=CONFIG_USB_PWC CONFIG_VIDEO_V4L1=y CONFIG_VIDEO_CAPTURE_DRIVERS=y CONFIG_V4L_USB_DRIVERS=y CONFIG_USB_PWC_DEBUG=n
-  FILES:=$(LINUX_DIR)/drivers/media/video/pwc/pwc.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,70,pwc)
-endef
-
-
-define KernelPackage/usb-pwc/description
- Kernel modules for supporting Philips WebCam USB devices
-endef
-
-$(eval $(call KernelPackage,usb-pwc))
-
-
-define KernelPackage/cpia2
-  $(call usbdep,+kmod-videodev @LINUX_2_6)
-  TITLE:=CPIA2 video driver
-  KCONFIG:=CONFIG_VIDEO_CPIA2
-  FILES:=$(LINUX_DIR)/drivers/media/video/cpia2/cpia2.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,70,cpia2)
-endef
-
-define KernelPackage/cpia2/description
- Kernel modules for CPIA2 WebCam devices
-endef
-
-$(eval $(call KernelPackage,cpia2))
-
-
 define KernelPackage/usb-net
   $(call usbdep,)
   TITLE:=Kernel modules for USB-to-Ethernet convertors

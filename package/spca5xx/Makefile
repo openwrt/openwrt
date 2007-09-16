@@ -19,10 +19,10 @@ PKG_MD5SUM:=e18a21b80e1728c6b51b799d1e671f8c
 
 include $(INCLUDE_DIR)/package.mk
 
-define KernelPackage/gspca
-  SUBMENU:=Other modules
-  DEPENDS:=@LINUX_2_6 kmod-usb-core kmod-videodev
-  TITLE:=Driver for SPCA5xx based USB cameras
+define KernelPackage/video-gspca
+  SUBMENU:=Video Support
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core +kmod-video-core
+  TITLE:=SPCA5xx based USB webcam support
   URL:=http://mxhaard.free.fr/
   FILES:=$(PKG_BUILD_DIR)/gspca.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,gspca)
@@ -39,4 +39,4 @@ define Build/Compile
 		modules
 endef
 
-$(eval $(call KernelPackage,gspca))
+$(eval $(call KernelPackage,video-gspca))
