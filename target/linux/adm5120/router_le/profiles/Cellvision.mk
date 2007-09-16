@@ -7,7 +7,7 @@
 
 define Profile/CAS-771
 	NAME:=Cellvision CAS-771 IP camera
-	PACKAGES:=kmod-cpia2 kmod-usb-ohci kmod-usb2 kmod-usb-audio
+	PACKAGES:=kmod-video-cpia2 kmod-usb-ohci kmod-usb2 kmod-usb-audio
 endef
 
 define Profile/CAS-771/Description
@@ -16,7 +16,7 @@ endef
 
 define Profile/CAS-771W
 	NAME:=Cellvision CAS-771W IP camera
-	PACKAGES:=kmod-cpia2 kmod-usb-ohci kmod-usb2 kmod-usb-audio kmod-rt2500
+	PACKAGES:=kmod-video-cpia2 kmod-usb-ohci kmod-usb2 kmod-usb-audio kmod-rt2500
 endef
 
 define Profile/CAS-771W/Description

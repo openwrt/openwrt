@@ -24,7 +24,7 @@ define Package/spca5xx-view
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=spca5xx streaming applicaton
-  DEPENDS:=+kmod-spca5xx-le +libpthread
+  DEPENDS:=+kmod-video-spca5xx-le +libpthread
   URL:=http://www.acmesystems.it/
 endef
 
