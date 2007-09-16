@@ -72,13 +72,13 @@ scan_broadcom() {
 	macfilter=0
 	case "$macfilter" in
 		allow|2)
-			macfilter=allow;
+			macfilter=2;
 		;;
 		deny|1)
-			macfilter=deny;
+			macfilter=1;
 		;;
 		disable|0)
-			macfilter=disabled;
+			macfilter=0;
 		;;
 	esac
 }
@@ -247,7 +247,7 @@ rxant ${rxant:-3}
 txant ${txant:-3}
 
 radio ${radio:-1}
-macfilter ${macfilter:-disabled}
+macfilter ${macfilter:-0}
 maclist ${maclist:-none}
 wds none
 ${wds:+wds $wds}
