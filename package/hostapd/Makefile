@@ -16,14 +16,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_MD5SUM:=40416b48cae9c78e5a2452caf214aff3
 
-PKG_BUILD_DEPENDS:=
-
-ifeq ($(shell grep "CONFIG_PACKAGE_kmod-madwifi is not set" $(TOPDIR)/.config),)
-  PKG_BUILD_DEPENDS+=madwifi
-endif
-ifeq ($(shell grep "CONFIG_PACKAGE_kmod-mac80211 is not set" $(TOPDIR)/.config),)
-  PKG_BUILD_DEPENDS+=mac80211
-endif
+PKG_BUILD_DEPENDS:= mac80211 madwifi
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -32,12 +25,13 @@ define Package/hostapd/Default
   CATEGORY:=Network
   TITLE:=IEEE 802.1x Authenticator
   URL:=http://hostap.epitest.fi/
+  DEPENDS:=@!TARGET_avr32 @!TARGET_etrax
 endef
 
 define Package/hostapd
 $(call Package/hostapd/Default)
-  DEPENDS:=+libopenssl @!TARGET_avr32 @!TARGET_etrax
   TITLE+= (full)
+  DEPENDS+= +libopenssl
 endef
 
 define Package/hostapd/conffiles
@@ -51,7 +45,6 @@ endef
 
 define Package/hostapd-mini
 $(call Package/hostapd/Default)
-  DEPENDS:=@!TARGET_AVR32 @!TARGET_ETRAX
   TITLE+= (WPA-PSK only)
 endef
 
@@ -66,8 +59,8 @@ endef
 
 define Package/hostapd-utils
   $(call Package/hostapd/Default)
-  DEPENDS:=@PACKAGE_hostapd||PACKAGE_hostapd-mini
   TITLE+= (utils)
+  DEPENDS:=@PACKAGE_hostapd||PACKAGE_hostapd-mini
 endef
 
 define Package/hostapd-utils/description
