@@ -22,7 +22,7 @@ include $(INCLUDE_DIR)/package.mk
 #FIXME: add proper dependency handling on kmod-usb-core packages
 define KernelPackage/zd1211
   SUBMENU:=Wireless Drivers
-  DEPENDS:=@LINUX_2_6 @USB_SUPPORT
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core
   TITLE:=Driver for Zydas 1211 based USB devices
   FILES:=$(PKG_BUILD_DIR)/zd1211.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,zd1211) 
