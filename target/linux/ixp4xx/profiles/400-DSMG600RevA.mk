@@ -9,7 +9,8 @@ define Profile/DSMG600RevA
   NAME:=DSM-G600 Rev A
   PACKAGES:=kmod-via-velocity \
 	kmod-madwifi wireless-tools \
-	kmod-scsi-core kmod-libata kmod-pata-artop \
+	kmod-scsi-core \
+	kmod-ata-core kmod-ata-artop \
 	kmod-usb-core kmod-usb-uhci kmod-usb2 kmod-usb-storage \
 	kmod-fs-ext2 kmod-fs-ext3
 endef
