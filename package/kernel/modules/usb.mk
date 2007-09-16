@@ -404,7 +404,7 @@ $(eval $(call KernelPackage,usb-storage))
 
 
 define KernelPackage/usb-atm
-  $(call usbdep,@LINUX_2_6 kmod-atm)
+  $(call usbdep,@LINUX_2_6 +kmod-atm)
   TITLE:=Support for ATM on USB bus
   KCONFIG:=CONFIG_USB_ATM
   FILES:=$(LINUX_DIR)/drivers/usb/atm/usbatm.$(LINUX_KMOD_SUFFIX)
@@ -419,7 +419,7 @@ $(eval $(call KernelPackage,usb-atm))
 
 
 define KernelPackage/usb-speedtouch
-  $(call usbdep,@LINUX_2_6 kmod-atm)
+  $(call usbdep,@LINUX_2_6 +kmod-atm)
   TITLE:=Support for SpeedTouch ADSL modems
   KCONFIG:=CONFIG_USB_SPEEDTOUCH
   FILES:=$(LINUX_DIR)/drivers/usb/atm/speedtch.$(LINUX_KMOD_SUFFIX)
@@ -434,7 +434,7 @@ $(eval $(call KernelPackage,usb-speedtouch))
 
 
 define KernelPackage/ueagle-atm
-  $(call usbdep,@LINUX_2_6 kmod-atm)
+  $(call usbdep,@LINUX_2_6 +kmod-atm)
   TITLE:=Driver for Eagle 8051 based USB ADSL modems
   FILES:=$(LINUX_DIR)/drivers/usb/atm/ueagle-atm.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=CONFIG_USB_UEAGLEATM
