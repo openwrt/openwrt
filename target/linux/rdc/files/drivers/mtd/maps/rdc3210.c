@@ -45,6 +45,15 @@ static struct mtd_partition rdc3210_parts[] =
 #error Unsupported configuration!
 #endif
 	{ name: "bootldr", offset:  0x001F0000, size: 0x00010000 },
+
+#elif CONFIG_MTD_RDC3210_SIZE == 0x800000
+        { name: "linux",   offset:  0,          size: 0x001F0000 },     /* 1984 KB */
+        { name: "config",  offset:  0x001F0000, size: 0x00010000 },     /*   64 KB */
+        { name: "romfs",   offset:  0x00200000, size: 0x005D0000 },     /* 5952 KB */
+#ifdef CONFIG_MTD_RDC3210_FACTORY_PRESENT
+        { name: "factory", offset:  0x007D0000, size: 0x00010000 },     /*   64 KB */
+#endif
+        { name: "bootldr", offset:  0x007E0000, size: 0x00010000 },     /*   64 KB */
 #else
 #error Unsupported configuration!
 #endif
@@ -189,6 +198,10 @@ static int __init init_rdc3210_map(void)
 {
 	rdc3210_map.phys = -rdc3210_map.size;
        	printk(KERN_NOTICE "flash device: %x at %x\n", rdc3210_map.size, rdc3210_map.phys);
+
+#if CONFIG_MTD_RDC3210_SIZE == 0x800000
+	simple_map_init(&rdc3210_map);
+#endif
        	
 	rdc3210_map.map_priv_1 = (unsigned long)(rdc3210_map.virt = ioremap_nocache(rdc3210_map.phys, rdc3210_map.size));
 
@@ -201,7 +214,7 @@ static int __init init_rdc3210_map(void)
 #ifdef CONFIG_MTD_RDC3210_STATIC_MAP	/* Dante: This is for fixed map */
 	if (rdc3210_mtd) 
 	{
-		rdc3210_mtd->module = THIS_MODULE;
+		rdc3210_mtd->owner = THIS_MODULE;
 		add_mtd_partitions(rdc3210_mtd, rdc3210_parts, sizeof(rdc3210_parts)/sizeof(rdc3210_parts[0]));
 		return 0;
 	}
