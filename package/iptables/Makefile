@@ -195,6 +195,11 @@ define Package/ip6tables-utils
  TITLE:=ip6tables save and restore utilities
 endef
 
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	chmod a+x $(PKG_BUILD_DIR)/extensions/.*-test*
+endef
+
 define Build/Configure
 	rm -f $(PKG_BUILD_DIR)/.configured*
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -202,7 +207,6 @@ define Build/Configure
 endef
 
 define Build/Compile
-	chmod a+x $(PKG_BUILD_DIR)/extensions/.*-test*
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
