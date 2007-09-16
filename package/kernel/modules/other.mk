@@ -387,6 +387,22 @@ endef
 $(eval $(call KernelPackage,leds-net48xx))
 
 
+define KernelPackage/leds-wrap
+  SUBMENU:=$(EMENU)
+  TITLE:=PCengines WRAP LED support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_LEDS_WRAP
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-wrap.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,leds-wrap)
+endef
+
+define KernelPackage/leds-wrap/description
+ Kernel module for PCengines WRAP LEDs
+endef
+
+$(eval $(call KernelPackage,leds-wrap))
+
+
 define KernelPackage/nsc-gpio
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Natsemi GPIO support
