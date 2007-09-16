@@ -201,14 +201,6 @@ define Package/uclibc/install
 	done
 endef
 
-define Package/InstallDev
-	$(INSTALL_DIR) $(STAGING_DIR)/lib
-        for file in ld-uClibc libc libcrypt libdl libm libnsl libresolv librt libuClibc libutil; do \
-                $(CP) $(TOOLCHAIN_DIR)/lib/$$$$file.so.* $(STAGING_DIR)/lib/; \
-                $(CP) $(TOOLCHAIN_DIR)/lib/$$$$file-$(UCLIBC_VERSION).so $(STAGING_DIR)/lib/; \
-        done
-endef
-
 define Package/ldd/install
 	$(INSTALL_DIR) $(1)/bin/
 	$(CP) $(TOOLCHAIN_DIR)/target-utils/ldd $(1)/bin/
