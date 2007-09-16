@@ -85,7 +85,7 @@ $(eval $(call KernelPackage,ipip))
 define KernelPackage/ipsec
   SUBMENU:=$(NSMENU)
   TITLE:=IPsec related modules (IPv4 and IPv6)
-  DEPENDS:=@LINUX_2_6
+  DEPENDS:=@LINUX_2_6 +kmod-crypto
   KCONFIG:= \
 	CONFIG_NET_KEY \
 	CONFIG_XFRM_USER
@@ -280,7 +280,7 @@ $(eval $(call KernelPackage,pppoe))
 define KernelPackage/pppoa
   SUBMENU:=$(NSMENU)
   TITLE:=PPPoA support
-  DEPENDS:=kmod-ppp kmod-atm
+  DEPENDS:=kmod-ppp +kmod-atm
   KCONFIG:=CONFIG_PPPOATM
   FILES:=$(LINUX_DIR)/net/atm/pppoatm.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,pppoatm)
@@ -312,7 +312,7 @@ $(eval $(call KernelPackage,ipoa))
 define KernelPackage/mppe
   SUBMENU:=$(NSMENU)
   TITLE:=Microsoft PPP compression/encryption
-  DEPENDS:=kmod-ppp
+  DEPENDS:=kmod-ppp +kmod-crypto
   KCONFIG:= \
 	CONFIG_PPP_MPPE_MPPC \
 	CONFIG_PPP_MPPE
