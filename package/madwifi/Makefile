@@ -16,12 +16,11 @@ PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_BRANCH)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://snapshots.madwifi.org/$(PKG_BRANCH)
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_BRANCH)-$(PKG_VERSION)
 PKG_MD5SUM:=fe5d41acd085d2c46934be3f8839e694
 
-include $(INCLUDE_DIR)/package.mk
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_BRANCH)-$(PKG_VERSION)
 
-RATE_CONTROL:=minstrel
+include $(INCLUDE_DIR)/package.mk
 
 ifeq ($(ARCH),mips)
   HAL_TARGET:=mips-be-elf
@@ -42,19 +41,28 @@ ifeq ($(ARCH),powerpc)
   HAL_TARGET:=powerpc-be-elf
 endif
 
-BUS:=PCI
 ifneq ($(CONFIG_TARGET_atheros),)
   BUS:=AHB
   HAL_TARGET:=ap51
+else
+  ifneq ($(CONFIG_PCI_SUPPORT),)
+    BUS:=PCI
+  endif
 endif
 
-BUS_MODULES:=
-ifeq ($(findstring AHB,$(BUS)),AHB)
-  BUS_MODULES+=$(PKG_BUILD_DIR)/ath/ath_ahb.$(LINUX_KMOD_SUFFIX)
-endif
-ifeq ($(findstring PCI,$(BUS)),PCI)
-  BUS_MODULES+=$(PKG_BUILD_DIR)/ath/ath_pci.$(LINUX_KMOD_SUFFIX)
-endif
+RATE_CONTROL:=minstrel
+
+MADWIFI_FILES:= \
+	$(PKG_BUILD_DIR)/net80211/wlan.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/net80211/wlan_scan_ap.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/net80211/wlan_scan_sta.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/ath_hal/ath_hal.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/ath_rate/$(RATE_CONTROL)/ath_rate_$(RATE_CONTROL).$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/net80211/wlan_acl.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/net80211/wlan_ccmp.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/net80211/wlan_tkip.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/net80211/wlan_wep.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/net80211/wlan_xauth.$(LINUX_KMOD_SUFFIX) \
 
 MADWIFI_AUTOLOAD:= \
 	wlan \
@@ -66,25 +74,23 @@ MADWIFI_AUTOLOAD:= \
 	wlan_ccmp \
 	wlan_tkip \
 	wlan_wep \
-	wlan_xauth
+	wlan_xauth \
 
 ifeq ($(findstring AHB,$(BUS)),AHB)
-	MADWIFI_AUTOLOAD += ath_ahb
+	MADWIFI_FILES+= $(PKG_BUILD_DIR)/ath/ath_ahb.$(LINUX_KMOD_SUFFIX)
+	MADWIFI_AUTOLOAD+= ath_ahb
 endif
 ifeq ($(findstring PCI,$(BUS)),PCI)
-	MADWIFI_AUTOLOAD += ath_pci
+	MADWIFI_FILES+= $(PKG_BUILD_DIR)/ath/ath_pci.$(LINUX_KMOD_SUFFIX)
+	MADWIFI_AUTOLOAD+= ath_pci
 endif
 
 define KernelPackage/madwifi
   SUBMENU:=Wireless Drivers
   TITLE:=Driver for Atheros wireless chipsets
-  DEPENDS:=+wireless-tools @!LINUX_2_6_AVR32 @!LINUX_2_6_ETRAX
   URL:=http://madwifi.org/
-  FILES:= \
-		$(PKG_BUILD_DIR)/ath_hal/ath_hal.$(LINUX_KMOD_SUFFIX) \
-		$(BUS_MODULES) \
-		$(PKG_BUILD_DIR)/ath_rate/$(RATE_CONTROL)/ath_rate_$(RATE_CONTROL).$(LINUX_KMOD_SUFFIX) \
-		$(PKG_BUILD_DIR)/net80211/wlan*.$(LINUX_KMOD_SUFFIX)
+  DEPENDS:=+wireless-tools @PCI_SUPPORT||TARGET_atheros @!TARGET_avr32 @!TARGET_etrax
+  FILES:=$(MADWIFI_FILES)
   AUTOLOAD:=$(call AutoLoad,50,$(MADWIFI_AUTOLOAD))
 endef
 
@@ -92,28 +98,33 @@ define KernelPackage/madwifi/description
  This package contains a driver for Atheros 802.11a/b/g chipsets.
 endef
 
-MADWIFI_MAKEOPTS= -C $(PKG_BUILD_DIR) \
-		PATH="$(TARGET_PATH)" \
-		ARCH="$(LINUX_KARCH)" \
-		CROSS_COMPILE="$(TARGET_CROSS)" \
-		TARGET="$(HAL_TARGET)" \
-		TOOLPREFIX="$(KERNEL_CROSS)" \
-		TOOLPATH="$(KERNEL_CROSS)" \
-		KERNELPATH="$(LINUX_DIR)" \
-		LDOPTS="--no-warn-mismatch " \
-		ATH_RATE="ath_rate/$(RATE_CONTROL)" \
-		WARNINGS="" \
-		DOMULTI=1
+MAKE_ARGS:= \
+	PATH="$(TARGET_PATH)" \
+	ARCH="$(LINUX_KARCH)" \
+	CROSS_COMPILE="$(TARGET_CROSS)" \
+	TARGET="$(HAL_TARGET)" \
+	TOOLPREFIX="$(KERNEL_CROSS)" \
+	TOOLPATH="$(KERNEL_CROSS)" \
+	KERNELPATH="$(LINUX_DIR)" \
+	LDOPTS="--no-warn-mismatch " \
+	ATH_RATE="ath_rate/$(RATE_CONTROL)" \
+	WARNINGS="" \
+	DOMULTI=1
+
+MAKE_VARS:= \
+	COPTS="-DCONFIG_ATHEROS_RATE_DEFAULT='\"$(RATE_CONTROL)\"'" \
 
 ifeq ($(findstring AHB,$(BUS)),AHB)
   define Build/Compile/ahb
-	COPTS="-DCONFIG_ATHEROS_RATE_DEFAULT='\"$(RATE_CONTROL)\"'" $(MAKE) $(MADWIFI_MAKEOPTS) BUS="AHB" modules
+	$(MAKE_VARS) $(MAKE) -C $(PKG_BUILD_DIR) $(MAKE_ARGS) BUS="AHB" modules
+	$(MAKE) -C $(PKG_BUILD_DIR) $(MAKE_ARGS) CFLAGS="$(TARGET_CFLAGS)" tools
   endef
 endif
 
 ifeq ($(findstring PCI,$(BUS)),PCI)
   define Build/Compile/pci
-	COPTS="-DCONFIG_ATHEROS_RATE_DEFAULT='\"$(RATE_CONTROL)\"'" $(MAKE) $(MADWIFI_MAKEOPTS) BUS="PCI" modules
+	$(MAKE_VARS) $(MAKE) -C $(PKG_BUILD_DIR) $(MAKE_ARGS) BUS="PCI" modules
+	$(MAKE) -C $(PKG_BUILD_DIR) $(MAKE_ARGS) CFLAGS="$(TARGET_CFLAGS)" tools
   endef
 endif
 
@@ -124,9 +135,6 @@ endef
 define Build/Compile
 	$(call Build/Compile/ahb)
 	$(call Build/Compile/pci)
-	$(MAKE) $(MADWIFI_MAKEOPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		tools
 endef
 
 define Build/InstallDev
