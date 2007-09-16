@@ -20,10 +20,10 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
 
-define KernelPackage/spca5xx-le
-  SUBMENU:=Other modules
-  DEPENDS:=@LINUX_2_6 kmod-videodev
-  TITLE:=Driver for SPCA5xx based USB cameras (Light Edition)
+define KernelPackage/video-spca5xx-le
+  SUBMENU:=Video Support
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core +kmod-video-core
+  TITLE:=SPCA5xx based USB webcam support (Light Edition)
   URL:=http://mxhaard.free.fr/
   FILES:=$(PKG_BUILD_DIR)/spca5xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,spca5xx)
@@ -40,4 +40,4 @@ define Build/Compile
 		modules
 endef
 
-$(eval $(call KernelPackage,spca5xx-le))
+$(eval $(call KernelPackage,video-spca5xx-le))

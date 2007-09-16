@@ -19,10 +19,10 @@ PKG_MD5SUM:=36c742d9dd1cf533fa059a1eeffa3e32
 
 include $(INCLUDE_DIR)/package.mk
 
-define KernelPackage/uvcvideo
-  SUBMENU:=USB Support
-  DEPENDS:=@LINUX_2_6 kmod-usb-core kmod-videodev
-  TITLE:=Driver for Linux-UVC based USB cameras
+define KernelPackage/video-uvc
+  SUBMENU:=Video Support
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core +kmod-video-core
+  TITLE:=Linux-UVC based USB webcam support
   URL:=http://linux-uvc.berlios.de/
   FILES:=$(PKG_BUILD_DIR)/uvcvideo.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,uvcvideo)
@@ -39,4 +39,4 @@ define Build/Compile
 		modules
 endef
 
-$(eval $(call KernelPackage,uvcvideo))
+$(eval $(call KernelPackage,video-uvc))

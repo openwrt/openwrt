@@ -401,38 +401,6 @@ endef
 $(eval $(call KernelPackage,softdog))
 
 
-define KernelPackage/videodev
-  SUBMENU:=$(EMENU)
-  TITLE=Video4Linux support
-  KCONFIG:=CONFIG_VIDEO_DEV
-endef
-
-define KernelPackage/videodev/2.4
-  FILES:=$(LINUX_DIR)/drivers/media/video/videodev.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,60,videodev)
-endef
-
-define KernelPackage/videodev/2.6
-  FILES:= \
-	$(LINUX_DIR)/drivers/media/video/v4l2-common.$(LINUX_KMOD_SUFFIX) \
-	$(if $(CONFIG_VIDEO_V4L1_COMPAT),$(LINUX_DIR)/drivers/media/video/v4l1-compat.$(LINUX_KMOD_SUFFIX)) \
-	$(LINUX_DIR)/drivers/media/video/compat_ioctl32.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/media/video/videodev.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,60, \
-	v4l2-common \
-	$(if $(CONFIG_VIDEO_V4L1_COMPAT),v4l1-compat) \
-	compat_ioctl32 \
-	videodev \
-  )
-endef
-
-define KernelPackage/videodev/description
- Kernel modules for Video4Linux support
-endef
-
-$(eval $(call KernelPackage,videodev))
-
-
 define KernelPackage/leds-net48xx
   SUBMENU:=$(EMENU)
   TITLE:=Soekris Net48xx LED support
