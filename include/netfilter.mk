@@ -16,9 +16,7 @@ endif
 
 define nf_add
  $(1)-$$($(2)) += $(3)
- ifeq ($$($(2)),m)
-  KCONFIG_$(1) += $(2)
- endif
+ KCONFIG_$(1) += $(2)
 endef
 
 IPT_CONNTRACK-m :=
