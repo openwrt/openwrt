@@ -1,7 +1,15 @@
-BLMENU:=Block Devices
+#
+# Copyright (C) 2006 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+# $Id$
+
+BLOCK_MENU:=Block Devices
 
 define KernelPackage/ide-core
-  SUBMENU:=$(BLMENU)
+  SUBMENU:=$(BLOCK_MENU)
   TITLE:=Kernel support for IDE
   KCONFIG:= \
 	CONFIG_IDE \
@@ -38,7 +46,7 @@ $(eval $(call KernelPackage,ide-core))
 
 
 define KernelPackage/ide-pdc202xx
-  SUBMENU:=$(BLMENU)
+  SUBMENU:=$(BLOCK_MENU)
   TITLE:=PDC202xx IDE driver
   DEPENDS:=@LINUX_2_4
   KCONFIG:=CONFIG_BLK_DEV_PDC202XX_OLD
@@ -50,7 +58,7 @@ $(eval $(call KernelPackage,ide-pdc202xx))
 
 
 define KernelPackage/ide-aec62xx
-  SUBMENU:=$(BLMENU)
+  SUBMENU:=$(BLOCK_MENU)
   TITLE:=AEC62xx IDE driver
   DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_BLK_DEV_AEC62XX
@@ -62,7 +70,7 @@ $(eval $(call KernelPackage,ide-aec62xx))
 
 
 define KernelPackage/scsi-core
-  SUBMENU:=$(BLMENU)
+  SUBMENU:=$(BLOCK_MENU)
   TITLE:=Kernel support for SCSI
   KCONFIG:= \
 	CONFIG_SCSI \
@@ -77,7 +85,7 @@ $(eval $(call KernelPackage,scsi-core))
 
 
 define KernelPackage/libata
-  SUBMENU:=$(BLMENU)
+  SUBMENU:=$(BLOCK_MENU)
   TITLE:=libata
   DEPENDS:=@PCI_SUPPORT @LINUX_2_6
   KCONFIG:=CONFIG_ATA
@@ -89,7 +97,7 @@ $(eval $(call KernelPackage,libata))
 
 
 define KernelPackage/ata-piix
-  SUBMENU:=$(BLMENU)
+  SUBMENU:=$(BLOCK_MENU)
   TITLE:=ata-piix
   DEPENDS:=+kmod-libata +kmod-ide-core +kmod-scsi-core
   KCONFIG:=CONFIG_ATA_PIIX
@@ -105,7 +113,7 @@ $(eval $(call KernelPackage,ata-piix))
 
 
 define KernelPackage/pata-artop
-  SUBMENU:=$(BLMENU)
+  SUBMENU:=$(BLOCK_MENU)
   TITLE:=pata-artop
   DEPENDS:=+kmod-libata +kmod-scsi-core
   KCONFIG:=CONFIG_PATA_ARTOP

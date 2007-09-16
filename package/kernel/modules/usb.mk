@@ -6,7 +6,7 @@
 #
 # $Id$
 
-USBMENU:=USB Support
+USB_MENU:=USB Support
 
 ifeq ($(KERNEL),2.4)
   USBNET_DIR:=usb/net
@@ -23,13 +23,13 @@ USBHID_DIR?=hid/usbhid
 USBINPUT_DIR?=input/misc
 
 define usbdep
-  SUBMENU:=$(USBMENU)
+  SUBMENU:=$(USB_MENU)
   DEPENDS:=kmod-usb-core $(1)
 endef
 
 
 define KernelPackage/usb-core
-  SUBMENU:=$(USBMENU)
+  SUBMENU:=$(USB_MENU)
   TITLE:=Support for USB
   DEPENDS:=@USB_SUPPORT
   KCONFIG:=CONFIG_USB
