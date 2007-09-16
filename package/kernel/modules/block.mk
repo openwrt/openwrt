@@ -136,3 +136,35 @@ define KernelPackage/scsi-core
 endef
 
 $(eval $(call KernelPackage,scsi-core))
+
+
+define KernelPackage/loop
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Loopback device support
+  KCONFIG:= \
+	CONFIG_BLK_DEV_LOOP \
+	CONFIG_BLK_DEV_CRYPTOLOOP=n
+  FILES:=$(LINUX_DIR)/drivers/block/loop.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,loop)
+endef
+
+define KernelPackage/loop/description
+ Kernel module for loopback device support
+endef
+
+$(eval $(call KernelPackage,loop))
+
+
+define KernelPackage/nbd
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Network block device support
+  KCONFIG:=CONFIG_BLK_DEV_NBD
+  FILES:=$(LINUX_DIR)/drivers/block/nbd.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,nbd)
+endef
+
+define KernelPackage/nbd/description
+ Kernel module for network block device support
+endef
+
+$(eval $(call KernelPackage,nbd))
