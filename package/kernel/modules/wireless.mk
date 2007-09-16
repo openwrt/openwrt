@@ -64,7 +64,7 @@ $(eval $(call KernelPackage,ieee80211-softmac))
 define KernelPackage/net-bcm43xx
   SUBMENU:=$(WIMENU)
   TITLE:=Broadcom BCM43xx driver
-  DEPENDS:=kmod-ieee80211-softmac
+  DEPENDS:=@PCI_SUPPORT +kmod-ieee80211-softmac
   KCONFIG:=CONFIG_BCM43XX
   FILES:=$(LINUX_DIR)/drivers/net/wireless/bcm43xx/bcm43xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,bcm43xx)
@@ -82,7 +82,7 @@ $(eval $(call KernelPackage,net-bcm43xx))
 define KernelPackage/net-ipw2100
   SUBMENU:=$(WIMENU)
   TITLE:=Intel IPW2100 driver
-  DEPENDS:=kmod-ieee80211
+  DEPENDS:=@PCI_SUPPORT +kmod-ieee80211
   KCONFIG:=CONFIG_IPW2100
   FILES:=$(LINUX_DIR)/drivers/net/wireless/ipw2100.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,ipw2100)
@@ -100,7 +100,7 @@ $(eval $(call KernelPackage,net-ipw2100))
 define KernelPackage/net-ipw2200
   SUBMENU:=$(WIMENU)
   TITLE:=Intel IPW2200 driver
-  DEPENDS:=kmod-ieee80211
+  DEPENDS:=@PCI_SUPPORT +kmod-ieee80211
   KCONFIG:=CONFIG_IPW2200
   FILES:=$(LINUX_DIR)/drivers/net/wireless/ipw2200.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,ipw2200)
@@ -118,6 +118,7 @@ $(eval $(call KernelPackage,net-ipw2200))
 define KernelPackage/net-airo
   SUBMENU:=$(WIMENU)
   TITLE:=Cisco Aironet driver
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_AIRO
   FILES:=$(LINUX_DIR)/drivers/net/wireless/airo.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,airo)
@@ -133,7 +134,7 @@ $(eval $(call KernelPackage,net-airo))
 define KernelPackage/net-hermes
   SUBMENU:=$(WIMENU)
   TITLE:=Hermes 802.11b chipset support
-  DEPENDS:=@LINUX_2_6
+  DEPENDS:=@LINUX_2_6 @PCI_SUPPORT||PCMCIA_SUPPORT
   KCONFIG:=CONFIG_HERMES
   FILES:= \
 	$(LINUX_DIR)/drivers/net/wireless/hermes.$(LINUX_KMOD_SUFFIX) \
@@ -151,7 +152,7 @@ $(eval $(call KernelPackage,net-hermes))
 define KernelPackage/net-hermes-pci
   SUBMENU:=$(WIMENU)
   TITLE:=Intersil Prism 2.5 PCI support
-  DEPENDS:=kmod-net-hermes
+  DEPENDS:=@PCI_SUPPORT kmod-net-hermes
   KCONFIG:=CONFIG_PCI_HERMES
   FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco_pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,55,orinoco_pci)
@@ -167,7 +168,7 @@ $(eval $(call KernelPackage,net-hermes-pci))
 define KernelPackage/net-hermes-plx
   SUBMENU:=$(WIMENU)
   TITLE:=PLX9052 based PCI adaptor
-  DEPENDS:=kmod-net-hermes
+  DEPENDS:=@PCI_SUPPORT kmod-net-hermes
   KCONFIG:=CONFIG_PLX_HERMES
   FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco_plx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,55,orinoco_plx)
@@ -183,6 +184,7 @@ $(eval $(call KernelPackage,net-hermes-plx))
 define KernelPackage/net-prism54
   SUBMENU:=$(WIMENU)
   TITLE:=Intersil Prism54 support
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_PRISM54
   FILES:=$(LINUX_DIR)/drivers/net/wireless/prism54/prism54.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,prism54)
@@ -198,7 +200,7 @@ $(eval $(call KernelPackage,net-prism54))
 define KernelPackage/net-zd1211rw
   SUBMENU:=$(WIMENU)
   TITLE:=Zydas ZD1211 support
-  DEPENDS:=+kmod-ieee80211 +zd1211-firmware @LINUX_2_6
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-ieee80211 +zd1211-firmware
   KCONFIG:=CONFIG_ZD1211RW
   FILES:=$(LINUX_DIR)/drivers/net/wireless/zd1211rw/zd1211rw.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,zd1211rw)

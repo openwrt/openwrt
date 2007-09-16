@@ -34,7 +34,7 @@ endef
 
 define KernelPackage/rt2x00-lib
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-mac80211 +kmod-crypto
+  DEPENDS+= @PCI_SUPPORT||USB_SUPPORT +kmod-mac80211 +kmod-crypto
   TITLE+= (LIB)
   FILES:=$(PKG_BUILD_DIR)/rt2x00lib.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,blkcipher ecb arc4 rt2x00lib)
@@ -58,7 +58,7 @@ endef
 
 define KernelPackage/rt2400-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-rt2x00-pci
+  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci
   TITLE+= (RT2400 PCI)
   FILES:=$(PKG_BUILD_DIR)/rt2400pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2400pci)
@@ -66,7 +66,7 @@ endef
 
 define KernelPackage/rt2500-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-rt2x00-pci
+  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci
   TITLE+= (RT2500 PCI)
   FILES:=$(PKG_BUILD_DIR)/rt2500pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2500pci)
@@ -74,7 +74,7 @@ endef
 
 define KernelPackage/rt2500-usb
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-rt2x00-usb +kmod-crc-itu-t
+  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb +kmod-crc-itu-t
   TITLE+= (RT2500 USB)
   FILES:=$(PKG_BUILD_DIR)/rt2500usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2500usb)
@@ -82,7 +82,7 @@ endef
 
 define KernelPackage/rt61-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-rt2x00-pci +kmod-crc-itu-t
+  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci +kmod-crc-itu-t
   TITLE+= (RT2x61 PCI)
   FILES:=$(PKG_BUILD_DIR)/rt61pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt61pci)
@@ -90,7 +90,7 @@ endef
 
 define KernelPackage/rt73-usb
   $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-rt2x00-usb
+  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb
   TITLE+= (RT73 USB)
   FILES:=$(PKG_BUILD_DIR)/rt73usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt73usb)
