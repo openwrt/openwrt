@@ -31,6 +31,7 @@ define KernelPackage/acx-mac80211
   TITLE:=ACX111 Mac80211 driver
   DESCRIPTION:=Driver for acx111 cards (Mac80211 version)
   DEPENDS:=@LINUX_2_6 +kmod-mac80211
+  KCONFIG:=CONFIG_MAC80211
   FILES:=$(PKG_BUILD_DIR)/acx-mac80211.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,acx-mac80211)
 endef
