@@ -6,10 +6,10 @@
 #
 # $Id$
 
-EMENU:=Other modules
+OTHER_MENU:=Other modules
 
 define KernelPackage/crc-itu-t
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=CRC ITU-T V.41 support
   KCONFIG:=CONFIG_CRC_ITU_T
   FILES:=$(LINUX_DIR)/lib/crc-itu-t.$(LINUX_KMOD_SUFFIX)
@@ -24,7 +24,7 @@ $(eval $(call KernelPackage,crc-itu-t))
 
 
 define KernelPackage/crypto
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=CryptoAPI modules
   KCONFIG:= \
 	CONFIG_CRYPTO_HMAC=m \
@@ -59,7 +59,7 @@ $(eval $(call KernelPackage,crypto))
 
 
 define KernelPackage/eeprom-93cx6
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=EEPROM 93CX6 support
   DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_EEPROM_93CX6
@@ -75,7 +75,7 @@ $(eval $(call KernelPackage,eeprom-93cx6))
 
 
 define KernelPackage/lp
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=Parallel port and line printer support
   DEPENDS:=@LINUX_2_4
   KCONFIG:= \
@@ -93,7 +93,7 @@ $(eval $(call KernelPackage,lp))
 
 
 define KernelPackage/soundcore
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=Sound support
   KCONFIG:= \
 	CONFIG_SOUND \
@@ -157,7 +157,7 @@ $(eval $(call KernelPackage,soundcore))
 
 
 define KernelPackage/loop
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=Loopback device support
   KCONFIG:=CONFIG_BLK_DEV_LOOP
   FILES:=$(LINUX_DIR)/drivers/block/loop.$(LINUX_KMOD_SUFFIX)
@@ -172,7 +172,7 @@ $(eval $(call KernelPackage,loop))
 
 
 define KernelPackage/nbd
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=Network block device support
   KCONFIG:=CONFIG_BLK_DEV_NBD
   FILES:=$(LINUX_DIR)/drivers/block/nbd.$(LINUX_KMOD_SUFFIX)
@@ -187,7 +187,7 @@ $(eval $(call KernelPackage,nbd))
 
 
 define KernelPackage/capi
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=CAPI Support
   DEPENDS:=@LINUX_2_6
   KCONFIG:= \
@@ -208,7 +208,7 @@ $(eval $(call KernelPackage,capi))
 
 
 define KernelPackage/pcmcia-core
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=PCMCIA/CardBus support
   DEPENDS:=@PCMCIA_SUPPORT
   KCONFIG:= \
@@ -263,7 +263,7 @@ $(eval $(call KernelPackage,pcmcia-core))
 
 
 define KernelPackage/pcmcia-serial
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=Serial devices support
   DEPENDS:=kmod-pcmcia-core
   KCONFIG:= \
@@ -290,7 +290,7 @@ $(eval $(call KernelPackage,pcmcia-serial))
 
 
 define KernelPackage/bluetooth
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
   DEPENDS:=@USB_SUPPORT
   KCONFIG:= \
@@ -358,7 +358,7 @@ $(eval $(call KernelPackage,bluetooth))
 
 
 define KernelPackage/mmc
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=MMC/SD Card Support
   DEPENDS:=@TARGET_at91
   KCONFIG:= \
@@ -380,7 +380,7 @@ $(eval $(call KernelPackage,mmc))
 
 
 define KernelPackage/softdog
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=Software watchdog driver
   KCONFIG:=CONFIG_SOFT_WATCHDOG
   AUTOLOAD:=$(call AutoLoad,50,softdog)
@@ -402,7 +402,7 @@ $(eval $(call KernelPackage,softdog))
 
 
 define KernelPackage/leds-net48xx
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=Soekris Net48xx LED support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_LEDS_NET48XX
@@ -418,7 +418,7 @@ $(eval $(call KernelPackage,leds-net48xx))
 
 
 define KernelPackage/nsc-gpio
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=Natsemi GPIO support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_NSC_GPIO
@@ -434,7 +434,7 @@ $(eval $(call KernelPackage,nsc-gpio))
 
 
 define KernelPackage/scx200-gpio
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=Natsemi SCX200 GPIO support
   DEPENDS:=@TARGET_x86 kmod-nsc-gpio
   KCONFIG:=CONFIG_SCx200_GPIO
@@ -450,7 +450,7 @@ $(eval $(call KernelPackage,scx200-gpio))
 
 
 define KernelPackage/scx200-wdt
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=Natsemi SCX200 Watchdog support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_SC1200_WDT
@@ -466,7 +466,7 @@ $(eval $(call KernelPackage,scx200-wdt))
 
 
 define KernelPackage/hwmon
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=Hardware monitoring support
   DEPENDS:=@LINUX_2_6
   KCONFIG:= \
@@ -487,7 +487,7 @@ $(eval $(call KernelPackage,hwmon))
 
 
 define KernelPackage/hwmon-pc87360
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=PC87360 monitoring support
   DEPENDS:=kmod-hwmon
   KCONFIG:=CONFIG_SENSORS_PC87360
@@ -503,7 +503,7 @@ $(eval $(call KernelPackage,hwmon-pc87360))
 
 
 define KernelPackage/input-core
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=Input device core
   DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_INPUT
@@ -519,7 +519,7 @@ $(eval $(call KernelPackage,input-core))
 
 
 define KernelPackage/input-evdev
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=Input even device
   DEPENDS:=+kmod-input-core
   KCONFIG:=CONFIG_INPUT_EVDEV

@@ -6,11 +6,11 @@
 #
 # $Id$
 
-NFMENU:=Netfilter Extensions
+NF_MENU:=Netfilter Extensions
 include $(INCLUDE_DIR)/netfilter.mk
 
 define KernelPackage/ipt-conntrack
-  SUBMENU:=$(NFMENU)
+  SUBMENU:=$(NF_MENU)
   TITLE:=Modules for connection tracking
   KCONFIG:=$(KCONFIG_IPT_CONNTRACK)
   FILES:=$(foreach mod,$(IPT_CONNTRACK-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
@@ -29,7 +29,7 @@ $(eval $(call KernelPackage,ipt-conntrack))
 
 
 define KernelPackage/ipt-filter
-  SUBMENU:=$(NFMENU)
+  SUBMENU:=$(NF_MENU)
   TITLE:=Modules for packet content inspection
   KCONFIG:=$(KCONFIG_IPT_FILTER)
   FILES:=$(foreach mod,$(IPT_FILTER-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
@@ -47,7 +47,7 @@ $(eval $(call KernelPackage,ipt-filter))
 
 
 define KernelPackage/ipt-ipopt
-  SUBMENU:=$(NFMENU)
+  SUBMENU:=$(NF_MENU)
   TITLE:=Modules for matching/changing IP packet options
   KCONFIG:=$(KCONFIG_IPT_IPOPT)
   FILES:=$(foreach mod,$(IPT_IPOPT-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
@@ -72,7 +72,7 @@ $(eval $(call KernelPackage,ipt-ipopt))
 
 
 define KernelPackage/ipt-ipsec
-  SUBMENU:=$(NFMENU)
+  SUBMENU:=$(NF_MENU)
   TITLE:=Modules for matching IPSec packets
   KCONFIG:=$(KCONFIG_IPT_IPSEC)
   FILES:=$(foreach mod,$(IPT_IPSEC-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
@@ -90,7 +90,7 @@ $(eval $(call KernelPackage,ipt-ipsec))
 
 
 define KernelPackage/ipt-nat
-  SUBMENU:=$(NFMENU)
+  SUBMENU:=$(NF_MENU)
   TITLE:=Modules for extra NAT targets
   KCONFIG:=$(KCONFIG_IPT_NAT)
   FILES:=$(foreach mod,$(IPT_NAT-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
@@ -108,7 +108,7 @@ $(eval $(call KernelPackage,ipt-nat))
 
 
 define KernelPackage/ipt-nathelper
-  SUBMENU:=$(NFMENU)
+  SUBMENU:=$(NF_MENU)
   TITLE:=Default Conntrack and NAT helpers
   KCONFIG:=$(KCONFIG_IPT_NAT_DEFAULT)
   FILES:=$(foreach mod,$(IPT_NAT_DEFAULT-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
@@ -129,7 +129,7 @@ $(eval $(call KernelPackage,ipt-nathelper))
 
 
 define KernelPackage/ipt-nathelper-extra
-  SUBMENU:=$(NFMENU)
+  SUBMENU:=$(NF_MENU)
   TITLE:=Extra Conntrack and NAT helpers
   KCONFIG:=$(KCONFIG_IPT_NAT_EXTRA)
   FILES:=$(foreach mod,$(IPT_NAT_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
@@ -153,7 +153,7 @@ $(eval $(call KernelPackage,ipt-nathelper-extra))
 
 
 define KernelPackage/ipt-imq
-  SUBMENU:=$(NFMENU)
+  SUBMENU:=$(NF_MENU)
   TITLE:=Intermediate Queueing support
   KCONFIG:=CONFIG_IP_NF_TARGET_IMQ
   FILES:=$(LINUX_DIR)/net/ipv4/netfilter/*IMQ*.$(LINUX_KMOD_SUFFIX) $(LINUX_DIR)/drivers/net/imq.$(LINUX_KMOD_SUFFIX)
@@ -168,7 +168,7 @@ $(eval $(call KernelPackage,ipt-imq))
 
 
 define KernelPackage/ipt-queue
-  SUBMENU:=$(NFMENU)
+  SUBMENU:=$(NF_MENU)
   TITLE:=Module for user-space packet queueing
   KCONFIG:=$(KCONFIG_IPT_QUEUE)
   FILES:=$(foreach mod,$(IPT_QUEUE-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
@@ -185,7 +185,7 @@ $(eval $(call KernelPackage,ipt-queue))
 
 
 define KernelPackage/ipt-ulog
-  SUBMENU:=$(NFMENU)
+  SUBMENU:=$(NF_MENU)
   TITLE:=Module for user-space packet logging
   KCONFIG:=$(KCONFIG_IPT_ULOG)
   FILES:=$(foreach mod,$(IPT_ULOG-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
@@ -202,7 +202,7 @@ $(eval $(call KernelPackage,ipt-ulog))
 
 
 define KernelPackage/ipt-iprange
-  SUBMENU:=$(NFMENU)
+  SUBMENU:=$(NF_MENU)
   TITLE:=Module for matching ip ranges
   FILES:=$(LINUX_DIR)/net/ipv4/netfilter/ipt_iprange.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_IPRANGE-m)))
@@ -218,7 +218,7 @@ $(eval $(call KernelPackage,ipt-iprange))
 
 
 define KernelPackage/ipt-ipset
-  SUBMENU:=$(NFMENU)
+  SUBMENU:=$(NF_MENU)
   TITLE:=IPSET Modules
   KCONFIG:=$(KCONFIG_IPT_IPSET)
   FILES:=$(foreach mod,$(IPT_IPSET-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
@@ -233,7 +233,7 @@ $(eval $(call KernelPackage,ipt-ipset))
 
 
 define KernelPackage/ipt-extra
-  SUBMENU:=$(NFMENU)
+  SUBMENU:=$(NF_MENU)
   TITLE:=Extra modules
   KCONFIG:=$(KCONFIG_IPT_EXTRA)
   FILES:=$(foreach mod,$(IPT_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
@@ -256,7 +256,7 @@ $(eval $(call KernelPackage,ipt-extra))
 
 
 define KernelPackage/ip6tables
-  SUBMENU:=$(NFMENU)
+  SUBMENU:=$(NF_MENU)
   TITLE:=IPv6 modules
   KCONFIG:=CONFIG_IP6_NF_IPTABLES
   FILES:=$(LINUX_DIR)/net/ipv6/netfilter/ip*.$(LINUX_KMOD_SUFFIX)
@@ -271,7 +271,7 @@ $(eval $(call KernelPackage,ip6tables))
 
 
 define KernelPackage/arptables
-  SUBMENU:=$(NFMENU)
+  SUBMENU:=$(NF_MENU)
   TITLE:=ARP firewalling modules
   FILES:=$(LINUX_DIR)/net/ipv4/netfilter/arp*.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=CONFIG_IP_NF_ARPTABLES
@@ -286,7 +286,7 @@ $(eval $(call KernelPackage,arptables))
 
 
 define KernelPackage/ebtables
-  SUBMENU:=$(NFMENU)
+  SUBMENU:=$(NF_MENU)
   TITLE:=Bridge firewalling modules
   DEPENDS:=@LINUX_2_6
   FILES:=$(LINUX_DIR)/net/bridge/netfilter/*.$(LINUX_KMOD_SUFFIX)

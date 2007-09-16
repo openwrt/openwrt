@@ -6,10 +6,10 @@
 #
 # $Id$
 
-NSMENU:=Network Support
+NETWORK_SUPPORT_MENU:=Network Support
 
 define KernelPackage/atm
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=ATM support
   DEPENDS:=@LINUX_2_6
   KCONFIG:= \
@@ -29,7 +29,7 @@ $(eval $(call KernelPackage,atm))
 
 
 define KernelPackage/atmtcp
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=ATM over TCP
   DEPENDS:=@LINUX_2_6 kmod-atm
   KCONFIG:=CONFIG_ATM_TCP CONFIG_ATM_DRIVERS=y
@@ -45,7 +45,7 @@ $(eval $(call KernelPackage,atmtcp))
 
 
 define KernelPackage/bonding
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Ethernet bonding driver
   KCONFIG:=CONFIG_BONDING
   FILES:=$(LINUX_DIR)/drivers/net/bonding/bonding.$(LINUX_KMOD_SUFFIX)
@@ -60,7 +60,7 @@ $(eval $(call KernelPackage,bonding))
 
 
 define KernelPackage/ipip
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IP in IP encapsulation support
   KCONFIG:= \
 	CONFIG_NET_IPIP \
@@ -83,7 +83,7 @@ $(eval $(call KernelPackage,ipip))
 
 
 define KernelPackage/ipsec
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPsec related modules (IPv4 and IPv6)
   DEPENDS:=@LINUX_2_6 +kmod-crypto
   KCONFIG:= \
@@ -105,7 +105,7 @@ $(eval $(call KernelPackage,ipsec))
 
 
 define KernelPackage/ipsec4
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPsec related modules (IPv4)
   DEPENDS:=kmod-ipsec
   KCONFIG:= \
@@ -131,7 +131,7 @@ $(eval $(call KernelPackage,ipsec4))
 
 
 define KernelPackage/ipsec6
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPsec related modules (IPv6)
   DEPENDS:=kmod-ipsec
   KCONFIG:= \
@@ -159,7 +159,7 @@ $(eval $(call KernelPackage,ipsec6))
 
 
 define KernelPackage/ipv6
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPv6 support
   KCONFIG:= \
 	CONFIG_IPV6 \
@@ -182,7 +182,7 @@ $(eval $(call KernelPackage,ipv6))
 
 
 define KernelPackage/gre
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=GRE support
   KCONFIG:=CONFIG_NET_IPGRE
   FILES=$(LINUX_DIR)/net/ipv4/ip_gre.$(LINUX_KMOD_SUFFIX)
@@ -196,7 +196,7 @@ $(eval $(call KernelPackage,gre))
 
 
 define KernelPackage/tun
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Universal TUN/TAP driver
   KCONFIG:=CONFIG_TUN
   FILES:=$(LINUX_DIR)/drivers/net/tun.$(LINUX_KMOD_SUFFIX)
@@ -211,7 +211,7 @@ $(eval $(call KernelPackage,tun))
 
 
 define KernelPackage/ppp
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPP modules
   KCONFIG:= \
 	CONFIG_PPP \
@@ -245,7 +245,7 @@ $(eval $(call KernelPackage,ppp))
 
 
 define KernelPackage/ppp-synctty
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPP sync tty support
   DEPENDS:=kmod-ppp
   KCONFIG:=CONFIG_PPP_SYNC_TTY
@@ -261,7 +261,7 @@ $(eval $(call KernelPackage,ppp-synctty))
 
 
 define KernelPackage/pppoe
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPPoE support
   DEPENDS:=kmod-ppp
   KCONFIG:=CONFIG_PPPOE
@@ -278,7 +278,7 @@ $(eval $(call KernelPackage,pppoe))
 
 
 define KernelPackage/pppoa
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPPoA support
   DEPENDS:=kmod-ppp +kmod-atm
   KCONFIG:=CONFIG_PPPOATM
@@ -294,7 +294,7 @@ $(eval $(call KernelPackage,pppoa))
 
 
 define KernelPackage/ipoa
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPoA support
   DEPENDS:=kmod-atm
   KCONFIG:=CONFIG_ATM_CLIP
@@ -310,7 +310,7 @@ $(eval $(call KernelPackage,ipoa))
 
 
 define KernelPackage/mppe
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Microsoft PPP compression/encryption
   DEPENDS:=kmod-ppp +kmod-crypto
   KCONFIG:= \
@@ -338,7 +338,7 @@ $(eval $(call KernelPackage,mppe))
 
 
 define KernelPackage/sched
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic schedulers
   KCONFIG:=CONFIG_NET_SCHED
   FILES:=$(LINUX_DIR)/net/sched/*.$(LINUX_KMOD_SUFFIX)
@@ -352,7 +352,7 @@ $(eval $(call KernelPackage,sched))
 
 
 define KernelPackage/ax25
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=AX25 support
   KCONFIG:= \
 	CONFIG_AX25 \
@@ -371,7 +371,7 @@ $(eval $(call KernelPackage,ax25))
 
 
 define KernelPackage/mp-alg
-  SUBMENU:=$(NSMENU)
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=ECMP caching algorithms
   DEPENDS:=@LINUX_2_6
   KCONFIG:= \
@@ -398,10 +398,10 @@ endef
 $(eval $(call KernelPackage,mp-alg))
 
 
-NDMENU:=Network Devices
+NETWORK_DEVICES_MENU:=Network Devices
 
 define KernelPackage/natsemi
-  SUBMENU:=$(NDMENU)
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=National Semiconductor DP8381x series 
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_NATSEMI
@@ -418,7 +418,7 @@ $(eval $(call KernelPackage,natsemi))
 
 
 define KernelPackage/r6040
-  SUBMENU:=$(NDMENU)
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RDC Fast-Ethernet support
   DEPENDS:=@TARGET_rdc
   KCONFIG:=CONFIG_R6040
@@ -433,7 +433,7 @@ $(eval $(call KernelPackage,r6040))
 
 
 define KernelPackage/sis900
-  SUBMENU:=$(NDMENU)
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=SiS 900 Ethernet support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_SIS900
@@ -449,7 +449,7 @@ $(eval $(call KernelPackage,sis900))
 
 
 define KernelPackage/via-rhine
-  SUBMENU:=$(NDMENU)
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Via Rhine ethernet support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_VIA_RHINE
@@ -465,7 +465,7 @@ $(eval $(call KernelPackage,via-rhine))
 
 
 define KernelPackage/via-velocity
-  SUBMENU:=$(NDMENU)
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=VIA Velocity Gigabit Ethernet Adapter kernel support
   DEPENDS:=@TARGET_ixp4xx
   KCONFIG:=CONFIG_VIA_VELOCITY
@@ -481,7 +481,7 @@ $(eval $(call KernelPackage,via-velocity))
 
 
 define KernelPackage/8139too
-  SUBMENU:=$(NDMENU)
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8139 PCI Fast Ethernet Adapter kernel support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_8139TOO
@@ -497,7 +497,7 @@ $(eval $(call KernelPackage,8139too))
 
 
 define KernelPackage/r8169
-  SUBMENU:=$(NDMENU)
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8169 PCI Gigabit Ethernet Adapter kernel support
   DEPENDS:=@TARGET_x86 
   KCONFIG:=CONFIG_R8169 CONFIG_R8169_NAPI=y CONFIG_R8169_VLAN=n
@@ -513,7 +513,7 @@ $(eval $(call KernelPackage,r8169))
 
 
 define KernelPackage/ne2k-pci
-  SUBMENU:=$(NDMENU)
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=ne2k-pci Ethernet Adapter kernel support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_NE2K_PCI
@@ -531,7 +531,7 @@ $(eval $(call KernelPackage,ne2k-pci))
 
 
 define KernelPackage/ixp4xx-npe
-  SUBMENU:=$(NDMENU)
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) IXP4xx ethernet support
   DEPENDS:=@TARGET_ixp4xx
   KCONFIG:=CONFIG_IXP4XX_MAC
@@ -550,7 +550,7 @@ $(eval $(call KernelPackage,ixp4xx-npe))
 
 
 define KernelPackage/e100
-  SUBMENU:=$(NDMENU)
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) PRO/100+ cards kernel support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_E100
@@ -566,7 +566,7 @@ $(eval $(call KernelPackage,e100))
 
 
 define KernelPackage/e1000
-  SUBMENU:=$(NDMENU)
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) PRO/1000 cards kernel support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_E1000
@@ -582,7 +582,7 @@ $(eval $(call KernelPackage,e1000))
 
 
 define KernelPackage/3c59x
-  SUBMENU:=$(NDMENU)
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=3Com 3c590/3c900 series (592/595/597) Vortex/Boomerang
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_3C59X

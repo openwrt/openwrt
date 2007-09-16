@@ -1,4 +1,12 @@
-FSMENU:=Filesystems
+#
+# Copyright (C) 2006 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+# $Id$
+
+FS_MENU:=Filesystems
 
 define KernelPackage/nls/Depends
   ifneq ($(KERNEL),2.4)
@@ -7,7 +15,7 @@ define KernelPackage/nls/Depends
 endef
 
 define KernelPackage/fs-cifs
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=CIFS support
   DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_CIFS
@@ -25,7 +33,7 @@ $(eval $(call KernelPackage,fs-cifs))
 
 
 define KernelPackage/fs-minix
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=Minix filesystem support
   KCONFIG:=CONFIG_MINIX_FS
   FILES:=$(LINUX_DIR)/fs/minix/minix.$(LINUX_KMOD_SUFFIX)
@@ -40,7 +48,7 @@ $(eval $(call KernelPackage,fs-minix))
 
 
 define KernelPackage/fs-ntfs
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=NTFS filesystem support
   KCONFIG:=CONFIG_NTFS_FS
   FILES:=$(LINUX_DIR)/fs/ntfs/ntfs.$(LINUX_KMOD_SUFFIX)
@@ -55,7 +63,7 @@ $(eval $(call KernelPackage,fs-ntfs))
 
 
 define KernelPackage/fs-ext2
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=EXT2 filesystem support
   KCONFIG:=CONFIG_EXT2_FS
   FILES:=$(LINUX_DIR)/fs/ext2/ext2.$(LINUX_KMOD_SUFFIX)
@@ -70,7 +78,7 @@ $(eval $(call KernelPackage,fs-ext2))
 
 
 define KernelPackage/fs-ext3
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=EXT3 filesystem support
   KCONFIG:= \
 	CONFIG_EXT3_FS \
@@ -89,7 +97,7 @@ $(eval $(call KernelPackage,fs-ext3))
 
 
 define KernelPackage/fs-hfs
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=HFS+ filesystem support
   DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_HFS_FS
@@ -106,7 +114,7 @@ $(eval $(call KernelPackage,fs-hfs))
 
 
 define KernelPackage/fs-hfsplus
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=HFS+ filesystem support
   DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_HFSPLUS_FS
@@ -124,7 +132,7 @@ $(eval $(call KernelPackage,fs-hfsplus))
 
 
 define KernelPackage/fs-isofs
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=ISO9660 filesystem support
   KCONFIG:=CONFIG_ISO9660_FS CONFIG_JOLIET=y CONFIG_ZISOFS=n
   FILES:=$(LINUX_DIR)/fs/isofs/isofs.$(LINUX_KMOD_SUFFIX)
@@ -141,7 +149,7 @@ $(eval $(call KernelPackage,fs-isofs))
 
 
 define KernelPackage/fs-udf
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=UDF filesystem support
   DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_UDF_FS
@@ -159,7 +167,7 @@ $(eval $(call KernelPackage,fs-udf))
 
 
 define KernelPackage/fs-nfs
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=NFS filesystem support
   KCONFIG:= \
 	CONFIG_NFS_FS \
@@ -180,7 +188,7 @@ $(eval $(call KernelPackage,fs-nfs))
 
 
 define KernelPackage/fs-nfsd
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=NFS kernel server support
   KCONFIG:= \
 	CONFIG_NFSD \
@@ -203,7 +211,7 @@ $(eval $(call KernelPackage,fs-nfsd))
 
 
 define KernelPackage/fs-msdos
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=MSDOS filesystem support
   DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_MSDOS_FS
@@ -221,7 +229,7 @@ $(eval $(call KernelPackage,fs-msdos))
 
 
 define KernelPackage/fs-vfat
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=VFAT filesystem support
   KCONFIG:= \
 	CONFIG_FAT_FS \
@@ -242,7 +250,7 @@ $(eval $(call KernelPackage,fs-vfat))
 
 
 define KernelPackage/fs-xfs
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=XFS filesystem support
   KCONFIG:=CONFIG_XFS_FS
   FILES:=$(LINUX_DIR)/fs/xfs/xfs.$(LINUX_KMOD_SUFFIX)
@@ -257,7 +265,7 @@ $(eval $(call KernelPackage,fs-xfs))
 
 
 define KernelPackage/nls-base
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=Native Language Support
   KCONFIG:=CONFIG_NLS
   FILES:=$(LINUX_DIR)/fs/nls/nls_base.$(LINUX_KMOD_SUFFIX)
@@ -272,7 +280,7 @@ $(eval $(call KernelPackage,nls-base))
 
 
 define KernelPackage/nls-cp437
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=Codepage 437 (United States, Canada)
   DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_NLS_CODEPAGE_437
@@ -290,7 +298,7 @@ $(eval $(call KernelPackage,nls-cp437))
 
 
 define KernelPackage/nls-cp850
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=Codepage 850 (Europe)
   DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_NLS_CODEPAGE_850
@@ -308,7 +316,7 @@ $(eval $(call KernelPackage,nls-cp850))
 
 
 define KernelPackage/nls-cp1250
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=Codepage 1250 (Eastern Europe)
   DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_NLS_CODEPAGE_1250
@@ -326,7 +334,7 @@ $(eval $(call KernelPackage,nls-cp1250))
 
 
 define KernelPackage/nls-iso8859-1
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=ISO 8859-1 (Latin 1; Western European Languages)
   DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_NLS_ISO8859_1
@@ -344,7 +352,7 @@ $(eval $(call KernelPackage,nls-iso8859-1))
 
 
 define KernelPackage/nls-iso8859-2
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=ISO 8859-2 (Latin 2; Central European Languages)
   DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_NLS_ISO8859_2
@@ -362,7 +370,7 @@ $(eval $(call KernelPackage,nls-iso8859-2))
 
 
 define KernelPackage/nls-iso8859-15
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=ISO 8859-15 (Latin 9; Western, with Euro symbol)
   DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_NLS_ISO8859_15
@@ -380,7 +388,7 @@ $(eval $(call KernelPackage,nls-iso8859-15))
 
 
 define KernelPackage/nls-koi8r
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=KOI8-R (Russian)
   DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_NLS_KOI8_R
@@ -398,7 +406,7 @@ $(eval $(call KernelPackage,nls-koi8r))
 
 
 define KernelPackage/nls-utf8
-  SUBMENU:=$(FSMENU)
+  SUBMENU:=$(FS_MENU)
   TITLE:=UTF-8
   DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_NLS_UTF8

@@ -6,10 +6,10 @@
 #
 # $Id $
 
-I2CMENU:=I2C Bus
+I2C_MENU:=I2C support
 
 define KernelPackage/i2c-core
-  SUBMENU:=$(I2CMENU)
+  SUBMENU:=$(I2C_MENU)
   TITLE:=I2C support
   DEPENDS:=@LINUX_2_6
   KCONFIG:= \
@@ -29,7 +29,7 @@ $(eval $(call KernelPackage,i2c-core))
 
 
 define KernelPackage/i2c-algos
-  SUBMENU:=$(I2CMENU)
+  SUBMENU:=$(I2C_MENU)
   TITLE:=I2C algorithms support
   DEPENDS:=kmod-i2c-core
   KCONFIG:= \
@@ -51,7 +51,7 @@ $(eval $(call KernelPackage,i2c-algos))
 
 
 define KernelPackage/i2c-scx200
-  SUBMENU:=$(I2CMENU)
+  SUBMENU:=$(I2C_MENU)
   TITLE:=SCX200 i2c support
   DEFAULT:=y if TARGET_x86_Soekris
   DEPENDS:=@TARGET_x86_Soekris kmod-i2c-core kmod-i2c-algos

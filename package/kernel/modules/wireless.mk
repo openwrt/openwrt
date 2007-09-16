@@ -6,10 +6,10 @@
 #
 # $Id$
 
-WIMENU:=Wireless Drivers
+WIRELESS_MENU:=Wireless Drivers
 
 define KernelPackage/ieee80211
-  SUBMENU:=$(WIMENU)
+  SUBMENU:=$(WIRELESS_MENU)
   TITLE:=802.11 Networking stack
   DEPENDS:=@LINUX_2_6 +kmod-crypto
   KCONFIG:= \
@@ -46,7 +46,7 @@ $(eval $(call KernelPackage,ieee80211))
 
 
 define KernelPackage/ieee80211-softmac
-  SUBMENU:=$(WIMENU)
+  SUBMENU:=$(WIRELESS_MENU)
   TITLE:=ieee80211 SoftMAC support
   DEPENDS:=kmod-ieee80211
   KCONFIG:=CONFIG_IEEE80211_SOFTMAC
@@ -62,7 +62,7 @@ $(eval $(call KernelPackage,ieee80211-softmac))
 
 
 define KernelPackage/net-bcm43xx
-  SUBMENU:=$(WIMENU)
+  SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Broadcom BCM43xx driver
   DEPENDS:=@PCI_SUPPORT +kmod-ieee80211-softmac
   KCONFIG:=CONFIG_BCM43XX
@@ -80,7 +80,7 @@ $(eval $(call KernelPackage,net-bcm43xx))
 
 
 define KernelPackage/net-ipw2100
-  SUBMENU:=$(WIMENU)
+  SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Intel IPW2100 driver
   DEPENDS:=@PCI_SUPPORT +kmod-ieee80211
   KCONFIG:=CONFIG_IPW2100
@@ -98,7 +98,7 @@ $(eval $(call KernelPackage,net-ipw2100))
 
 
 define KernelPackage/net-ipw2200
-  SUBMENU:=$(WIMENU)
+  SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Intel IPW2200 driver
   DEPENDS:=@PCI_SUPPORT +kmod-ieee80211
   KCONFIG:=CONFIG_IPW2200
@@ -116,7 +116,7 @@ $(eval $(call KernelPackage,net-ipw2200))
 
 
 define KernelPackage/net-airo
-  SUBMENU:=$(WIMENU)
+  SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Cisco Aironet driver
   DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_AIRO
@@ -132,7 +132,7 @@ $(eval $(call KernelPackage,net-airo))
 
 
 define KernelPackage/net-hermes
-  SUBMENU:=$(WIMENU)
+  SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Hermes 802.11b chipset support
   DEPENDS:=@LINUX_2_6 @PCI_SUPPORT||PCMCIA_SUPPORT
   KCONFIG:=CONFIG_HERMES
@@ -150,7 +150,7 @@ $(eval $(call KernelPackage,net-hermes))
 
 
 define KernelPackage/net-hermes-pci
-  SUBMENU:=$(WIMENU)
+  SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Intersil Prism 2.5 PCI support
   DEPENDS:=@PCI_SUPPORT kmod-net-hermes
   KCONFIG:=CONFIG_PCI_HERMES
@@ -166,7 +166,7 @@ $(eval $(call KernelPackage,net-hermes-pci))
 
 
 define KernelPackage/net-hermes-plx
-  SUBMENU:=$(WIMENU)
+  SUBMENU:=$(WIRELESS_MENU)
   TITLE:=PLX9052 based PCI adaptor
   DEPENDS:=@PCI_SUPPORT kmod-net-hermes
   KCONFIG:=CONFIG_PLX_HERMES
@@ -182,7 +182,7 @@ $(eval $(call KernelPackage,net-hermes-plx))
 
 
 define KernelPackage/net-prism54
-  SUBMENU:=$(WIMENU)
+  SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Intersil Prism54 support
   DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_PRISM54
@@ -198,7 +198,7 @@ $(eval $(call KernelPackage,net-prism54))
 
 
 define KernelPackage/net-zd1211rw
-  SUBMENU:=$(WIMENU)
+  SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Zydas ZD1211 support
   DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-ieee80211 +zd1211-firmware
   KCONFIG:=CONFIG_ZD1211RW
