@@ -27,7 +27,6 @@ define Package/wpa-supplicant
   URL:=http://hostap.epitest.fi/wpa_supplicant/
 endef
 
-
 define Package/wpa-cli
   SECTION:=net
   CATEGORY:=Network
@@ -36,6 +35,13 @@ define Package/wpa-cli
   DESCRIPTION:=
 endef
 
+define Package/wpa-passphrase
+  SECTION:=net
+  CATEGORY:=Network
+  DEPENDS:=wpa-supplicant
+  TITLE:=Set WPA passphrase for a SSID
+  DESCRIPTION:=
+endef
 
 define Build/Configure
 	cp ./files/config.$(ARCH) $(PKG_BUILD_DIR)/.config
@@ -65,5 +71,11 @@ define Package/wpa-cli/install
 	$(CP) $(PKG_BUILD_DIR)/wpa_cli $(1)/usr/sbin/
 endef
 
+define Package/wpa-passphrase/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wpa_passphrase $(1)/usr/sbin/
+endef
+
 $(eval $(call BuildPackage,wpa-supplicant))
 $(eval $(call BuildPackage,wpa-cli))
+$(eval $(call BuildPackage,wpa-passphrase))
