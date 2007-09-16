@@ -14,11 +14,11 @@ PKG_VERSION:=cvs-20070712
 
 PKG_FW6X_NAME:=RT61_Firmware_V1.2.zip
 PKG_FW6X_URL:=http://www.ralinktech.com.tw/data/
-PKG_FW6X_MD5SUM:=fe64f389f0863ef349a8c97e0fbc8838
+PKG_FW6X_MD5SUM:=d4c690c93b470bc9a681297c2adc6281
 
 PKG_FW7X_NAME:=RT71W_Firmware_V1.8.zip
 PKG_FW7X_URL:=http://www.ralinktech.com.tw/data/
-PKG_FW7X_MD5SUM:=db4ef70b61e483f34db496738507b275
+PKG_FW7X_MD5SUM:=1e7a5dc574e0268574fcda3fd5cf52f7
 
 include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)
