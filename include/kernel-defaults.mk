@@ -61,8 +61,6 @@ define Kernel/Configure/Default
 	$(SCRIPT_DIR)/kconfig.pl 'm+' $(LINUX_DIR)/.config.target $(LINUX_DIR)/.config.override > $(LINUX_DIR)/.config
 	$(call Kernel/Configure/$(KERNEL))
 	rm -rf $(KERNEL_BUILD_DIR)/modules
-	@rm -f $(BUILD_DIR)/linux
-	ln -sf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION) $(BUILD_DIR)/linux
 endef
 
 define Kernel/CompileModules/Default
