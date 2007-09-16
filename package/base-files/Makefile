@@ -104,6 +104,16 @@ $(call Package/uclibc/Default)
   TITLE:=C library embedded systems
 endef
 
+define Package/ldd
+$(call Package/uclibc/Default)
+  TITLE:=LDD trace utility
+endef
+
+define Package/ldconfig
+$(call Package/uclibc/Default)
+  TITLE:=Shared library path configuration
+endef
+
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 endef
@@ -191,14 +201,22 @@ define Package/uclibc/install
 	done
 endef
 
+define Package/InstallDev
+	$(INSTALL_DIR) $(STAGING_DIR)/lib
+        for file in ld-uClibc libc libcrypt libdl libm libnsl libresolv librt libuClibc libutil; do \
+                $(CP) $(TOOLCHAIN_DIR)/lib/$$$$file.so.* $(STAGING_DIR)/lib/; \
+                $(CP) $(TOOLCHAIN_DIR)/lib/$$$$file-$(UCLIBC_VERSION).so $(STAGING_DIR)/lib/; \
+        done
+endef
+
 define Package/ldd/install
 	$(INSTALL_DIR) $(1)/bin/
-	$(CP) $(TOOLCHAIN_DIR)/utils/ldd $(1)/bin/
+	$(CP) $(TOOLCHAIN_DIR)/target-utils/ldd $(1)/bin/
 endef
 
 define Package/ldconfig/install
 	$(INSTALL_DIR) $(1)/bin/
-	$(CP) $(TOOLCHAIN_DIR)/utils/ldconfig $(1)/bin/
+	$(CP) $(TOOLCHAIN_DIR)/target-utils/ldconfig $(1)/bin/
 endef
 
 ifneq ($(DUMP),1)
@@ -211,3 +229,5 @@ $(eval $(call BuildPackage,libssp))
 $(eval $(call BuildPackage,libstdcpp))
 $(eval $(call BuildPackage,libpthread))
 $(eval $(call BuildPackage,uclibc))
+$(eval $(call BuildPackage,ldd))
+$(eval $(call BuildPackage,ldconfig))
