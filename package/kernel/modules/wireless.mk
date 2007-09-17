@@ -64,7 +64,7 @@ $(eval $(call KernelPackage,ieee80211-softmac))
 define KernelPackage/net-bcm43xx
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Broadcom BCM43xx driver
-  DEPENDS:=@PCI_SUPPORT +kmod-ieee80211-softmac
+  DEPENDS:=@TARGET_brcm47xx||TARGET_brcm63xx +kmod-ieee80211-softmac
   KCONFIG:=CONFIG_BCM43XX
   FILES:=$(LINUX_DIR)/drivers/net/wireless/bcm43xx/bcm43xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,bcm43xx)
