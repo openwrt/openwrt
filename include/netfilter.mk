@@ -7,7 +7,7 @@
 # $Id: netfilter.mk 2411 2005-11-11 03:41:43Z nico $
 
 ifneq ($(__inc_netfilter),1)
-__inc_netftiler:=1
+__inc_netfilter:=1
 
 ifeq ($(NF_KMOD),1)
 P_V4:=ipv4/netfilter/
