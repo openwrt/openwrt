@@ -1,0 +1,32 @@
+--- acx-mac80211-20070610/pci.c	2007-06-10 20:23:27.000000000 +0200
++++ acx-mac80211-20070610.new/pci.c	2007-09-17 01:07:38.000000000 +0200
+@@ -1693,7 +1693,9 @@
+ /** done with board specific setup **/
+ 
+ 	/* need to be able to restore PCI state after a suspend */
++#ifdef CONFIG_PM
+ 	pci_save_state(pdev);
++#endif
+ 
+ 
+ 	acx_init_task_scheduler(adev);
+@@ -1740,7 +1742,9 @@
+ 	pci_disable_device(pdev);
+       fail_pci_enable_device:
+ 
++#ifdef CONFIG_PM
+ 	pci_set_power_state(pdev, PCI_D3hot);
++#endif
+       fail_register_netdev:
+ 	ieee80211_free_hw(ieee);
+       done:
+@@ -1872,7 +1876,9 @@
+ 	ieee80211_free_hw(adev->ieee);
+ 
+ 	/* put device into ACPI D3 mode (shutdown) */
++#ifdef CONFIG_PM
+ 	pci_set_power_state(pdev, PCI_D3hot);
++#endif
+ //	kfree(ieee);
+       end:
+ 	FN_EXIT0;
