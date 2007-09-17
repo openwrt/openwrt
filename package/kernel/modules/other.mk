@@ -367,7 +367,7 @@ $(eval $(call KernelPackage,leds-net48xx))
 
 
 define KernelPackage/leds-wrap
-  SUBMENU:=$(EMENU)
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=PCengines WRAP LED support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_LEDS_WRAP
