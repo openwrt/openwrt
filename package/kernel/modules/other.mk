@@ -92,9 +92,11 @@ endef
 $(eval $(call KernelPackage,lp))
 
 
+# XXX: remove @!TARGET_* later when we have PCI & USB support properly detected on all targets
 define KernelPackage/soundcore
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Sound support
+  DEPENDS:=@PCI_SUPPORT||USB_SUPPORT @!TARGET_atheros
   KCONFIG:= \
 	CONFIG_SOUND \
 	CONFIG_SND \
@@ -238,10 +240,11 @@ endef
 $(eval $(call KernelPackage,pcmcia-serial))
 
 
+# XXX: remove @!TARGET_* later when we have USB support properly detected on all targets
 define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
-  DEPENDS:=@USB_SUPPORT
+  DEPENDS:=@USB_SUPPORT @!TARGET_atheros
   KCONFIG:= \
 	CONFIG_BLUEZ \
 	CONFIG_BLUEZ_L2CAP \
