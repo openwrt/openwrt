@@ -25,10 +25,11 @@ ifeq ($(DUMP),)
   include $(LINUX_DIR)/.config
 endif
 
+# XXX: remove @!TARGET_* later when we have PCI & USB support properly detected on all targets
 define KernelPackage/rt2x00/Default
   SUBMENU:=Wireless Drivers
   TITLE:=Ralink Drivers for RT2x00 cards
-  DEPENDS:=@LINUX_2_6
+  DEPENDS:=@LINUX_2_6 @!TARGET_atheros
   KCONFIG:=CONFIG_MAC80211
 endef
 
