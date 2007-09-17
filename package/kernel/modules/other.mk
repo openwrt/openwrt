@@ -156,27 +156,6 @@ endef
 $(eval $(call KernelPackage,soundcore))
 
 
-define KernelPackage/capi
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=CAPI Support
-  DEPENDS:=@LINUX_2_6
-  KCONFIG:= \
-	CONFIG_ISDN \
-	CONFIG_ISDN_CAPI \
-	CONFIG_ISDN_CAPI_CAPI20
-  FILES:= \
-	$(LINUX_DIR)/drivers/isdn/capi/kernelcapi.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/isdn/capi/capi.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,kernelcapi capi)
-endef
-
-define KernelPackage/capi/description
- Kernel module for basic CAPI support
-endef
-
-$(eval $(call KernelPackage,capi))
-
-
 define KernelPackage/pcmcia-core
   SUBMENU:=$(OTHER_MENU)
   TITLE:=PCMCIA/CardBus support

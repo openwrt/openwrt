@@ -59,6 +59,27 @@ endef
 $(eval $(call KernelPackage,bonding))
 
 
+define KernelPackage/capi
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=CAPI (ISDN) Support
+  DEPENDS:=@LINUX_2_6
+  KCONFIG:= \
+	CONFIG_ISDN \
+	CONFIG_ISDN_CAPI \
+	CONFIG_ISDN_CAPI_CAPI20
+  FILES:= \
+	$(LINUX_DIR)/drivers/isdn/capi/kernelcapi.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/isdn/capi/capi.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,kernelcapi capi)
+endef
+
+define KernelPackage/capi/description
+ Kernel module for basic CAPI (ISDN) support
+endef
+
+$(eval $(call KernelPackage,capi))
+
+
 define KernelPackage/ipip
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IP in IP encapsulation support
