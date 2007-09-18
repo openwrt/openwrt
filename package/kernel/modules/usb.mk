@@ -515,6 +515,21 @@ endef
 $(eval $(call KernelPackage,usb-net-pegasus))
 
 
+define KernelPackage/usb-net-cdc-ether
+  $(call usbdep,kmod-usb-net @LINUX_2_6)
+  TITLE:=Support for cdc ethernet connections
+  KCONFIG:=CONFIG_USB_NET_CDCETHER
+  FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/cdc_ether.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,61,cdc-ether)
+endef
+
+define KernelPackage/usb-net-cdc-ether/description
+ Kernel support for USB CDC Ethernet devices
+endef
+
+$(eval $(call KernelPackage,usb-net-cdc-ether))
+
+
 define KernelPackage/usb-hid
   $(call usbdep,@LINUX_2_6 +kmod-input-core +kmod-input-evdev)
   TITLE:=Support for USB Human Input Devices
