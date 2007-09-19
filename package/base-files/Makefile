@@ -156,6 +156,7 @@ define Package/base-files$(TARGET)/install
 	mkdir -p $(1)/usr/bin
 	mkdir -p $(1)/sys
 	mkdir -p $(1)/www
+	mkdir -p $(1)/root
 	ln -sf /proc/mounts $(1)/etc/mtab
 	rm -f $(1)/var
 	ln -sf /tmp $(1)/var
