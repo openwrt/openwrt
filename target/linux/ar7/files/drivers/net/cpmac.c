@@ -119,7 +119,7 @@ MODULE_PARM_DESC(dumb_switch, "Assume switch is not connected to MDIO bus");
 #define CPMAC_TX_ACK(channel)		(0x0640 + (channel) * 4)
 #define CPMAC_RX_ACK(channel)		(0x0660 + (channel) * 4)
 #define CPMAC_REG_END			0x0680
-/* 
+/*
  * Rx/Tx statistics
  * TODO: use some of them to fill stats in cpmac_stats()
  */
@@ -344,7 +344,7 @@ static void cpmac_set_multicast_list(struct net_device *dev)
 			cpmac_write(priv->regs, CPMAC_MAC_HASH_LO, 0xffffffff);
 			cpmac_write(priv->regs, CPMAC_MAC_HASH_HI, 0xffffffff);
 		} else {
-			/* 
+			/*
 			 * cpmac uses some strange mac address hashing
 			 * (not crc32)
 			 */
@@ -413,7 +413,7 @@ static struct sk_buff *cpmac_rx_one(struct net_device *dev,
 		}
 	} else {
 		if (netif_msg_rx_err(priv) && net_ratelimit())
-			printk(KERN_WARNING 
+			printk(KERN_WARNING
 			       "%s: low on skbs, dropping packet\n", dev->name);
 		priv->stats.rx_dropped++;
 	}
@@ -502,7 +502,7 @@ static int cpmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	if (unlikely(skb_padto(skb, ETH_ZLEN))) {
 		if (netif_msg_tx_err(priv) && net_ratelimit())
-			printk(KERN_WARNING "%s: tx: padding failed, dropping\n",
+			printk(KERN_WARNING"%s: tx: padding failed, dropping\n",
 			       dev->name);
 		spin_lock_irqsave(&priv->lock, flags);
 		priv->stats.tx_dropped++;
@@ -624,7 +624,7 @@ static inline void cpmac_free_rx_ring(struct net_device *dev)
 static irqreturn_t cpmac_irq(int irq, void *dev_id)
 {
 	struct net_device *dev = dev_id;
- 	struct cpmac_priv *priv;
+	struct cpmac_priv *priv;
 	u32 status;
 
 	if (!dev)
