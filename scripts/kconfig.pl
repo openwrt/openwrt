@@ -72,7 +72,7 @@ sub config_diff($$) {
 	my %config;
 	
 	foreach my $config (keys %$cfg2) {
-		if (!$cfg1->{$config} or $cfg1->{$config} ne $cfg2->{$config}) {
+		if (!defined($cfg1->{$config}) or $cfg1->{$config} ne $cfg2->{$config}) {
 			$config{$config} = $cfg2->{$config};
 		}
 	}
