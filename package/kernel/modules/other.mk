@@ -96,7 +96,7 @@ $(eval $(call KernelPackage,lp))
 define KernelPackage/soundcore
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Sound support
-  DEPENDS:=@PCI_SUPPORT||USB_SUPPORT @!TARGET_atheros
+  DEPENDS:=@USB_SUPPORT @!TARGET_atheros
   KCONFIG:= \
 	CONFIG_SOUND \
 	CONFIG_SND \
