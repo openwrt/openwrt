@@ -1023,7 +1023,6 @@ static int __devinit cpmac_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
-	SET_MODULE_OWNER(dev);
 	platform_set_drvdata(pdev, dev);
 	priv = netdev_priv(dev);
 
@@ -1098,7 +1097,7 @@ static int __devexit cpmac_remove(struct platform_device *pdev)
 static struct platform_driver cpmac_driver = {
 	.driver.name = "cpmac",
 	.probe = cpmac_probe,
-	.remove = cpmac_remove,
+	.remove = __devexit_p(cpmac_remove),
 };
 
 int __devinit cpmac_init(void)
