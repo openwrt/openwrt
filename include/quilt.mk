@@ -26,7 +26,6 @@ endef
 
 QUILT?=$(strip $(shell test -f $(PKG_BUILD_DIR)/.quilt_used && echo y))
 ifneq ($(QUILT),)
-  STAMP_PREPARED:=$(strip $(STAMP_PREPARED))_q
   STAMP_PATCHED:=$(PKG_BUILD_DIR)/.quilt_patched
   override CONFIG_AUTOREBUILD=
   define Build/Patch/Default
