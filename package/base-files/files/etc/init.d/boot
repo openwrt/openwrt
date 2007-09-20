@@ -41,7 +41,7 @@ start() {
 	ln -sf /tmp/resolv.conf.auto /tmp/resolv.conf
 	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
 
-	/sbin/hotplug2 --override --persistent --max-children 1 &
+	/sbin/hotplug2 --override --persistent --max-children 1 --no-coldplug &
 
 	# the coldplugging of network interfaces needs to happen later, so we do it manually here
 	for iface in $(awk -F: '/:/ {print $1}' /proc/net/dev); do
