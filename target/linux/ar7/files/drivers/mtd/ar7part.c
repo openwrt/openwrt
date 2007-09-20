@@ -31,13 +31,8 @@
 #define AR7_PARTS	4
 #define ROOT_OFFSET	0xe0000
 
-#ifdef CONFIG_CPU_LITTLE_ENDIAN
-#define LOADER_MAGIC1	0xfeedfa42
-#define LOADER_MAGIC2	0xfeed1281
-#else
-#define LOADER_MAGIC1	0x42faedfe
-#define LOADER_MAGIC2	0x8112edfe
-#endif
+#define LOADER_MAGIC1	le32_to_cpu(0xfeedfa42)
+#define LOADER_MAGIC2	le32_to_cpu(0xfeed1281)
 
 struct ar7_bin_rec {
 	unsigned int checksum;
