@@ -174,9 +174,9 @@ define KernelPackage/fs-nfs
 	CONFIG_LOCKD \
 	CONFIG_SUNRPC
   FILES:= \
-  	$(LINUX_DIR)/fs/nfs/nfs.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/fs/lockd/lockd.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/net/sunrpc/sunrpc.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/fs/nfs/nfs.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/fs/lockd/lockd.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/sunrpc/sunrpc.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,sunrpc lockd nfs)
 endef
 
@@ -226,6 +226,21 @@ define KernelPackage/fs-msdos/description
 endef
 
 $(eval $(call KernelPackage,fs-msdos))
+
+
+define KernelPackage/fs-reiserfs
+  SUBMENU:=$(FS_MENU)
+  TITLE:=ReiserFS filesystem support
+  KCONFIG:=CONFIG_REISERFS_FS
+  FILES:=$(LINUX_DIR)/fs/reiserfs/reiserfs.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,reiserfs)
+endef
+
+define KernelPackage/fs-reiserfs/description
+ Kernel module for ReiserFS support
+endef
+
+$(eval $(call KernelPackage,fs-reiserfs))
 
 
 define KernelPackage/fs-vfat

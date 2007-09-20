@@ -10,7 +10,7 @@ define Profile/FSG3
   PACKAGES:= \
 	kmod-madwifi wireless-tools \
 	kmod-usb-core kmod-usb-uhci kmod-usb2 kmod-usb-storage \
-	kmod-fs-ext2
+	kmod-fs-ext2 kmod-fs-reiserfs
 endef
 
 define Profile/FSG3/Description
