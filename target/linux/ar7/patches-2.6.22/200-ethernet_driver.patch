@@ -7,7 +7,7 @@ diff -Nru linux-2.6.19.2/drivers/net/Kconfig linux-ar7/drivers/net/Kconfig
  
 +config CPMAC
 +	tristate "TI AR7 CPMAC Ethernet support (EXPERIMENTAL)"
-+	depends on NET_ETHERNET && EXPERIMENTAL && AR7
++	depends on EXPERIMENTAL && AR7
 +	select PHYLIB
 +	select FIXED_PHY
 +	select FIXED_MII_100_FDX
