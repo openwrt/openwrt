@@ -50,6 +50,11 @@ else
   endif
 endif
 
+# XXX: remove this check later when we have PCI support properly detected on all targets
+ifneq ($(CONFIG_TARGET_uml),)
+ BUS:=
+endif
+
 RATE_CONTROL:=minstrel
 
 MADWIFI_FILES:= \
@@ -89,7 +94,7 @@ define KernelPackage/madwifi
   SUBMENU:=Wireless Drivers
   TITLE:=Driver for Atheros wireless chipsets
   URL:=http://madwifi.org/
-  DEPENDS:=+wireless-tools @PCI_SUPPORT||TARGET_atheros @!TARGET_avr32 @!TARGET_etrax
+  DEPENDS:=+wireless-tools @PCI_SUPPORT||TARGET_atheros @!TARGET_avr32 @!TARGET_etrax @!TARGET_uml
   FILES:=$(MADWIFI_FILES)
   AUTOLOAD:=$(call AutoLoad,50,$(MADWIFI_AUTOLOAD))
 endef
