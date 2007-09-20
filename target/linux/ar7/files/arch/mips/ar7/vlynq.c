@@ -276,7 +276,9 @@ static int vlynq_setup_irq(struct vlynq_device *dev)
 						 handle_level_irq);
 			set_irq_chip_data(dev->irq_start + i, dev);
 		} else {
-			set_irq_chip(dev->irq_start + i, &vlynq_irq_chip);
+			set_irq_chip_and_handler(dev->irq_start + i,
+						 &vlynq_irq_chip,
+						 handle_simple_irq);
 			set_irq_chip_data(dev->irq_start + i, dev);
 			vlynq_reg_write(dev->remote->int_device[i >> 2], 0);
 		}
