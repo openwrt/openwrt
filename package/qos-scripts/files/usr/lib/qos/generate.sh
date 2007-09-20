@@ -17,6 +17,7 @@ add_insmod() {
 		reset_cb
 		include /lib/network
 		scan_interfaces
+		config_load /var/state/network
 		config_get "$1" ifname
 	)}
 } || {
