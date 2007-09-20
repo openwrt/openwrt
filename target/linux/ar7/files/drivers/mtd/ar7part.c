@@ -26,7 +26,18 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/bootmem.h>
-#include <linux/squashfs_fs.h>
+#include <linux/magic.h>
+
+#define AR7_PARTS	4
+#define ROOT_OFFSET	0xe0000
+
+#ifdef CONFIG_CPU_LITTLE_ENDIAN
+#define LOADER_MAGIC1	0xfeedfa42
+#define LOADER_MAGIC2	0xfeed1281
+#else
+#define LOADER_MAGIC1	0x42faedfe
+#define LOADER_MAGIC2	0x8112edfe
+#endif
 
 struct ar7_bin_rec {
 	unsigned int checksum;
@@ -34,7 +45,7 @@ struct ar7_bin_rec {
 	unsigned int address;
 };
 
-static struct mtd_partition ar7_parts[5];
+static struct mtd_partition ar7_parts[AR7_PARTS];
 
 static int create_mtd_partitions(struct mtd_info *master,
 				 struct mtd_partition **pparts,
@@ -43,11 +54,9 @@ static int create_mtd_partitions(struct mtd_info *master,
 	struct ar7_bin_rec header;
 	unsigned int offset, len;
 	unsigned int pre_size = master->erasesize, post_size = 0;
-	unsigned int root_offset = 0xe0000;
+	unsigned int root_offset = ROOT_OFFSET;
 
 	int retries = 10;
-
-	printk(KERN_INFO "Parsing AR7 partition map...\n");
 
 	ar7_parts[0].name = "loader";
 	ar7_parts[0].offset = 0;
@@ -65,9 +74,9 @@ static int create_mtd_partitions(struct mtd_info *master,
 			sizeof(header), &len, (u_char *)&header);
 		if (!strncmp((char *)&header, "TIENV0.8", 8))
 			ar7_parts[1].offset = pre_size;
-		if (header.checksum == 0xfeedfa42)
+		if (header.checksum == LOADER_MAGIC1)
 			break;
-		if (header.checksum == 0xfeed1281)
+		if (header.checksum == LOADER_MAGIC2)
 			break;
 		pre_size += master->erasesize;
 	} while (retries--);
@@ -80,7 +89,7 @@ static int create_mtd_partitions(struct mtd_info *master,
 	}
 
 	switch (header.checksum) {
-	case 0xfeedfa42:
+	case LOADER_MAGIC1:
 		while (header.length) {
 			offset += sizeof(header) + header.length;
 			master->read(master, offset, sizeof(header),
@@ -88,7 +97,7 @@ static int create_mtd_partitions(struct mtd_info *master,
 		}
 		root_offset = offset + sizeof(header) + 4;
 		break;
-	case 0xfeed1281:
+	case LOADER_MAGIC2:
 		while (header.length) {
 			offset += sizeof(header) + header.length;
 			master->read(master, offset, sizeof(header),
@@ -120,7 +129,7 @@ static int create_mtd_partitions(struct mtd_info *master,
 	ar7_parts[3].mask_flags = 0;
 
 	*pparts = ar7_parts;
-	return 4;
+	return AR7_PARTS;
 }
 
 static struct mtd_part_parser ar7_parser = {
