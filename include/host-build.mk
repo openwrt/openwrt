@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/unpack.mk
 include $(INCLUDE_DIR)/depends.mk
 
-STAMP_PREPARED:=$(PKG_BUILD_DIR)/.prepared_$(shell $(call find_md5,${CURDIR} $(PKG_FILE_DEPEND),))
+STAMP_PREPARED=$(PKG_BUILD_DIR)/.prepared$(if $(QUILT)$(DUMP),,$(shell $(call find_md5,${CURDIR} $(PKG_FILE_DEPEND),)))
 STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/.configured
 STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
 STAMP_INSTALLED:=$(STAGING_DIR_HOST)/stamp/.$(PKG_NAME)_installed
