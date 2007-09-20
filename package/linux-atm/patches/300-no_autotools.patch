@@ -11986,3 +11986,42 @@ Index: linux-atm-2.4.1/src/Makefile.in
  mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
  CONFIG_HEADER = ../config.h
  CONFIG_CLEAN_FILES = 
+diff -urN linux-atm-2.4.1/src/arpd/Makefile.in linux-atm-2.4.1.new/src/arpd/Makefile.in
+--- linux-atm-2.4.1/src/arpd/Makefile.in	2003-04-30 16:44:05.000000000 +0200
++++ linux-atm-2.4.1.new/src/arpd/Makefile.in	2007-09-20 20:16:13.000000000 +0200
+@@ -63,24 +63,35 @@
+ host_triplet = @host@
+ target_alias = @target_alias@
+ target_triplet = @target@
++AR = @AR@
+ AS = @AS@
+ CC = @CC@
++CXX = @CXX@
++CXXCPP = @CXXCPP@
+ DLLTOOL = @DLLTOOL@
+ ECHO = @ECHO@
++EGREP = @EGREP@
+ EXEEXT = @EXEEXT@
++F77 = @F77@
++GCJ = @GCJ@
++GCJFLAGS = @GCJFLAGS@
++HAVE_LIB = @HAVE_LIB@
+ LEX = @LEX@
++LIB = @LIB@
+ LIBTOOL = @LIBTOOL@
+ LIBTOOL_DEPS = @LIBTOOL_DEPS@
+ LIBVER_AGE = @LIBVER_AGE@
+ LIBVER_CURRENT = @LIBVER_CURRENT@
+ LIBVER_REVISION = @LIBVER_REVISION@
+ LN_S = @LN_S@
++LTLIB = @LTLIB@
+ MAKEINFO = @MAKEINFO@
+ OBJDUMP = @OBJDUMP@
+ OBJEXT = @OBJEXT@
+ PACKAGE = @PACKAGE@
+ PERL = @PERL@
+ RANLIB = @RANLIB@
++RC = @RC@
+ STRIP = @STRIP@
+ VERSION = @VERSION@
+ YACC = @YACC@
