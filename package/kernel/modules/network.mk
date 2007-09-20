@@ -80,29 +80,6 @@ endef
 $(eval $(call KernelPackage,capi))
 
 
-define KernelPackage/ipip
-  SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=IP in IP encapsulation support
-  KCONFIG:= \
-	CONFIG_NET_IPIP \
-	CONFIG_INET_TUNNEL
-  FILES:=$(LINUX_DIR)/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,ipip)
-endef
-
-define KernelPackage/ipip/2.6
-#  KCONFIG+=CONFIG_INET_TUNNEL
-  FILES+=$(LINUX_DIR)/net/ipv4/tunnel4.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD+=$(call AutoLoad,31,tunnel4)
-endef
-
-define KernelPackage/ipip/description
- Kernel modules for IP in IP encapsulation
-endef
-
-$(eval $(call KernelPackage,ipip))
-
-
 define KernelPackage/ipsec
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPsec related modules (IPv4 and IPv6)
@@ -128,13 +105,16 @@ $(eval $(call KernelPackage,ipsec))
 define KernelPackage/ipsec4
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPsec related modules (IPv4)
-  DEPENDS:=kmod-ipsec
+  DEPENDS:=kmod-ipsec +kmod-iptunnel4
   KCONFIG:= \
 	CONFIG_INET_AH \
 	CONFIG_INET_ESP \
 	CONFIG_INET_IPCOMP \
+	CONFIG_INET_XFRM_MODE_BEET \
+	CONFIG_INET_XFRM_MODE_TRANSPORT \
+	CONFIG_INET_XFRM_MODE_TUNNEL \
 	CONFIG_INET_XFRM_TUNNEL
-  FILES:= $(foreach mod,ah4 esp4 ipcomp xfrm4_tunnel, \
+  FILES:= $(foreach mod,ah4 esp4 ipcomp xfrm4_mode_beet xfrm4_mode_transport xfrm4_mode_tunnel xfrm4_tunnel , \
 	$(LINUX_DIR)/net/ipv4/$(mod).$(LINUX_KMOD_SUFFIX) \
   )
 endef
@@ -145,6 +125,9 @@ define KernelPackage/ipsec4/description
  - ah4
  - esp4
  - ipcomp
+ - xfrm4_mode_beet
+ - xfrm4_mode_transport
+ - xfrm4_mode_tunnel
  - xfrm4_tunnel
 endef
 
@@ -154,14 +137,16 @@ $(eval $(call KernelPackage,ipsec4))
 define KernelPackage/ipsec6
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPsec related modules (IPv6)
-  DEPENDS:=kmod-ipsec
+  DEPENDS:=kmod-ipsec +kmod-iptunnel6
   KCONFIG:= \
 	CONFIG_INET6_AH \
 	CONFIG_INET6_ESP \
 	CONFIG_INET6_IPCOMP \
-	CONFIG_INET6_XFRM_TUNNEL \
-	CONFIG_INET6_TUNNEL
-  FILES:= $(foreach mod,ah6 esp6 ipcomp6 xfrm6_tunnel tunnel6, \
+	CONFIG_INET6_XFRM_MODE_BEET \
+	CONFIG_INET6_XFRM_MODE_TRANSPORT \
+	CONFIG_INET6_XFRM_MODE_TUNNEL \
+	CONFIG_INET6_XFRM_TUNNEL
+  FILES:= $(foreach mod,ah6 esp6 ipcomp6 xfrm6_mode_beet xfrm6_mode_transport xfrm6_mode_tunnel xfrm6_tunnel, \
 	$(LINUX_DIR)/net/ipv6/$(mod).$(LINUX_KMOD_SUFFIX) \
   )
 endef
@@ -172,11 +157,52 @@ define KernelPackage/ipsec6/description
  - ah6
  - esp6
  - ipcomp6
+ - xfrm6_mode_beet
+ - xfrm6_mode_transport
+ - xfrm6_mode_tunnel
  - xfrm6_tunnel
- - tunnel6
 endef
 
 $(eval $(call KernelPackage,ipsec6))
+
+
+define KernelPackage/iptunnel4
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=IP tunneling (IPv4)
+  KCONFIG:= \
+	CONFIG_NET_IPIP \
+	CONFIG_INET_TUNNEL
+  FILES:=$(LINUX_DIR)/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,ipip)
+endef
+
+define KernelPackage/iptunnel4/2.6
+#  KCONFIG+=CONFIG_INET_TUNNEL
+  FILES+=$(LINUX_DIR)/net/ipv4/tunnel4.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD+=$(call AutoLoad,31,tunnel4)
+endef
+
+define KernelPackage/iptunnel4/description
+ Kernel modules for IPv4 tunneling (IP in IP encapsulation)
+endef
+
+$(eval $(call KernelPackage,iptunnel4))
+
+
+define KernelPackage/iptunnel6
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=IP tunneling (IPv6)
+  DEPENDS:= @LINUX_2_6
+  KCONFIG:=CONFIG_INET6_TUNNEL
+  FILES:=$(LINUX_DIR)/net/ipv6/tunnel6.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,31,tunnel6)
+endef
+
+define KernelPackage/iptunnel6/description
+ Kernel modules for IPv6 tunneling (IPv6 in IPv6 tunnels)
+endef
+
+$(eval $(call KernelPackage,iptunnel6))
 
 
 define KernelPackage/ipv6
