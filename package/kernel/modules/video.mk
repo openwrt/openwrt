@@ -44,10 +44,26 @@ endef
 $(eval $(call KernelPackage,video-core))
 
 
+define KernelPackage/video-cpia2
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=CPIA2 video driver
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core kmod-video-core
+  KCONFIG:=CONFIG_VIDEO_CPIA2
+  FILES:=$(LINUX_DIR)/drivers/media/video/cpia2/cpia2.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,70,cpia2)
+endef
+
+define KernelPackage/video-cpia2/description
+ Kernel modules for supporting CPIA2 USB based cameras.
+endef
+
+$(eval $(call KernelPackage,video-cpia2))
+
+
 define KernelPackage/video-pwc
   SUBMENU:=$(VIDEO_MENU)
-  TITLE:=Philips webcam support
-  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core +kmod-video-core
+  TITLE:=Philips USB webcam support
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core kmod-video-core
   KCONFIG:= \
 	CONFIG_USB_PWC \
 	CONFIG_USB_PWC_DEBUG=n
@@ -62,18 +78,3 @@ endef
 
 $(eval $(call KernelPackage,video-pwc))
 
-
-define KernelPackage/video-cpia2
-  SUBMENU:=$(VIDEO_MENU)
-  TITLE:=CPIA2 video driver
-  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core +kmod-video-core
-  KCONFIG:=CONFIG_VIDEO_CPIA2
-  FILES:=$(LINUX_DIR)/drivers/media/video/cpia2/cpia2.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,70,cpia2)
-endef
-
-define KernelPackage/video-cpia2/description
- Kernel modules for supporting CPIA2 USB based cameras.
-endef
-
-$(eval $(call KernelPackage,video-cpia2))

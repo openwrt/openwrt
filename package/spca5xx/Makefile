@@ -21,9 +21,9 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/video-gspca
   SUBMENU:=Video Support
-  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core +kmod-video-core
   TITLE:=SPCA5xx based USB webcam support
   URL:=http://mxhaard.free.fr/
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core kmod-video-core
   FILES:=$(PKG_BUILD_DIR)/gspca.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,gspca)
 endef
@@ -32,9 +32,6 @@ define Build/Compile
 	$(MAKE) -C $(LINUX_DIR) \
 		ARCH="$(LINUX_KARCH)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
-		KERNELVERSION="$(KERNEL)" \
-		KERNEL_VERSION="$(LINUX_VERSION)" \
-		KERNELDIR="$(LINUX_DIR)" \
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		modules
 endef
