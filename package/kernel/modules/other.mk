@@ -178,7 +178,7 @@ $(eval $(call KernelPackage,pcmcia-serial))
 define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
-  DEPENDS:=@USB_SUPPORT @!TARGET_atheros
+  DEPENDS:=@USB_SUPPORT @!TARGET_atheros @!TARGET_uml
   KCONFIG:= \
 	CONFIG_BLUEZ \
 	CONFIG_BLUEZ_L2CAP \
