@@ -29,7 +29,7 @@ endif
 define KernelPackage/rt2x00/Default
   SUBMENU:=Wireless Drivers
   TITLE:=Ralink Drivers for RT2x00 cards
-  DEPENDS:=@LINUX_2_6 @!TARGET_atheros
+  DEPENDS:=@LINUX_2_6 @!TARGET_atheros @!TARGET_uml
   KCONFIG:=CONFIG_MAC80211
 endef
 

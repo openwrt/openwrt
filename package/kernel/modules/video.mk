@@ -11,6 +11,7 @@ VIDEO_MENU:=Video Support
 define KernelPackage/video-core
   SUBMENU:=$(VIDEO_MENU)
   TITLE=Video4Linux support
+  DEPENDS:= @!TARGET_uml
   KCONFIG:= \
 	CONFIG_VIDEO_DEV \
 	CONFIG_VIDEO_V4L1=y \
