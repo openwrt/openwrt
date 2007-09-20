@@ -174,7 +174,7 @@ $(eval $(call KernelPackage,usb-acm))
 
 
 define KernelPackage/usb-audio
-  $(call usbdep,+kmod-soundcore)
+  $(call usbdep,+kmod-sound-core)
   TITLE:=Support for audio devices
   KCONFIG:= \
 	CONFIG_USB_AUDIO \
