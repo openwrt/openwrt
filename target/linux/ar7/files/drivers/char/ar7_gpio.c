@@ -73,7 +73,7 @@ static ssize_t ar7_gpio_write(struct file *file, const char __user *buf,
 		case 'o':
 		case 'O':
 		case '>':
-			gpio_direction_output(pin);
+			gpio_direction_output(pin, 0);
 			break;
 		default:
 			return -EINVAL;

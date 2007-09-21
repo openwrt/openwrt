@@ -22,36 +22,10 @@
 
 #define AR7_GPIO_MAX 32
 
-extern int gpio_request(unsigned gpio, char *label);
+extern int gpio_request(unsigned gpio, const char *label);
 extern void gpio_free(unsigned gpio);
 
 /* Common GPIO layer */
-static inline int gpio_direction_input(unsigned gpio)
-{
-	void __iomem *gpio_dir =
-		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_DIR);
-
-	if (gpio >= AR7_GPIO_MAX)
-		return -EINVAL;
-
-	writel(readl(gpio_dir) | (1 << gpio), gpio_dir);
-
-	return 0;
-}
-
-static inline int gpio_direction_output(unsigned gpio)
-{
-	void __iomem *gpio_dir =
-		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_DIR);
-
-	if (gpio >= AR7_GPIO_MAX)
-		return -EINVAL;
-
-	writel(readl(gpio_dir) & ~(1 << gpio), gpio_dir);
-
-	return 0;
-}
-
 static inline int gpio_get_value(unsigned gpio)
 {
 	void __iomem *gpio_in =
@@ -76,6 +50,33 @@ static inline void gpio_set_value(unsigned gpio, int value)
 	if (value)
 		tmp |= 1 << gpio;
 	writel(tmp, gpio_out);
+}
+
+static inline int gpio_direction_input(unsigned gpio)
+{
+	void __iomem *gpio_dir =
+		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_DIR);
+
+	if (gpio >= AR7_GPIO_MAX)
+		return -EINVAL;
+
+	writel(readl(gpio_dir) | (1 << gpio), gpio_dir);
+
+	return 0;
+}
+
+static inline int gpio_direction_output(unsigned gpio, int value)
+{
+	void __iomem *gpio_dir =
+		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_DIR);
+
+	if (gpio >= AR7_GPIO_MAX)
+		return -EINVAL;
+
+	gpio_set_value(gpio, value);
+	writel(readl(gpio_dir) & ~(1 << gpio), gpio_dir);
+
+	return 0;
 }
 
 static inline int gpio_to_irq(unsigned gpio)

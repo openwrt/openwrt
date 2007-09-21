@@ -58,10 +58,9 @@ static int vlynq_on(struct vlynq_device *dev)
 	if ((result = ar7_gpio_enable(pdata->gpio_bit)))
 		goto out_enabled;
 
-	if ((result = gpio_direction_output(pdata->gpio_bit)))
+	if ((result = gpio_direction_output(pdata->gpio_bit, 0)))
 		goto out_gpio_enabled;
 
-	gpio_set_value(pdata->gpio_bit, 0);
 	mdelay(50);
 
 	gpio_set_value(pdata->gpio_bit, 1);

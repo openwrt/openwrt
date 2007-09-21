@@ -73,7 +73,7 @@ static int ar7_leds_probe(struct platform_device *pdev)
 		goto out;
 
 	ar7_gpio_enable(AR7_GPIO_BIT_STATUS_LED);
-	gpio_direction_output(AR7_GPIO_BIT_STATUS_LED);
+	gpio_direction_output(AR7_GPIO_BIT_STATUS_LED, 0);
 
 out:
 	return rc;
