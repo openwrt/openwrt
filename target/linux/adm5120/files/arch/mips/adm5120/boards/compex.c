@@ -68,7 +68,7 @@ static struct mtd_partition wp54g_wrt_partitions[] = {
 
 static struct platform_device *np2xg_devices[] __initdata = {
 	&adm5120_flash0_device,
-	&adm5120_usbc_device,
+	&adm5120_hcd_device,
 };
 
 static struct platform_device *wp54_devices[] __initdata = {

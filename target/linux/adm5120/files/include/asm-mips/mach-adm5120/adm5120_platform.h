@@ -75,7 +75,7 @@ extern struct amba_pl010_data adm5120_uart1_data;
 extern struct platform_device adm5120_flash0_device;
 extern struct platform_device adm5120_flash1_device;
 extern struct platform_device adm5120_nand_device;
-extern struct platform_device adm5120_usbc_device;
+extern struct platform_device adm5120_hcd_device;
 extern struct platform_device adm5120_pci_device;
 extern struct platform_device adm5120_switch_device;
 extern struct amba_device adm5120_uart0_device;

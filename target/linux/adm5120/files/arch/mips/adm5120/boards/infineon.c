@@ -80,7 +80,6 @@ static struct platform_device *easy5120pata_devices[] __initdata = {
 
 static struct platform_device *easy5120rt_devices[] __initdata = {
 	&adm5120_flash0_device,
-	&adm5120_usbc_device
 };
 
 static struct platform_device *easy5120wvoip_devices[] __initdata = {
