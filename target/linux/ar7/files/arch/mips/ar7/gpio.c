@@ -20,9 +20,9 @@
 
 #include <asm/ar7/gpio.h>
 
-static char *ar7_gpio_list[AR7_GPIO_MAX] = { 0, };
+static const char *ar7_gpio_list[AR7_GPIO_MAX] = { 0, };
 
-int gpio_request(unsigned gpio, char *label)
+int gpio_request(unsigned gpio, const char *label)
 {
 	if (gpio >= AR7_GPIO_MAX)
 		return -EINVAL;
