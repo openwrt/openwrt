@@ -9,9 +9,10 @@ include $(INCLUDE_DIR)/image.mk
 
 LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
 IMGNAME := $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)
+JFFS2EOF := $(KDIR)/jffs2.eof
 
 define imgname
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(patsubst jffs2-%,jffs2,$(1))-$(2)
+$(IMGNAME)-$(patsubst jffs2-%,jffs2,$(1))-$(2)
 endef
 
 define Build/Clean
@@ -20,6 +21,9 @@ endef
 
 define Image/Prepare
 	cat $(KDIR)/vmlinux | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
+	rm -f $(JFFS2EOF)
+	touch $(JFFS2EOF)
+	$(call prepare_generic_squashfs,$(JFFS2EOF))
 endef
 
 define Image/Build/Loader
@@ -53,11 +57,13 @@ endef
 define trxalign/jffs2-128k
 -a 0x20000 -f $(KDIR)/root.jffs2-128k
 endef
+
 define trxalign/jffs2-64k
 -a 0x10000 -f $(KDIR)/root.jffs2-64k
 endef
+
 define trxalign/squashfs
--a 1024 -f $(KDIR)/root.squashfs
+-a 1024 -f $(KDIR)/root.squashfs -a 0x10000 -A $(JFFS2EOF)
 endef
 
 define Image/Build/TRX
