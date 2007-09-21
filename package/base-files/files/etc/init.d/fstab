@@ -1,0 +1,42 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2007 OpenWrt.org
+
+START=20
+
+do_mount() {
+	local cfg="$1"
+	config_get fstype "$cfg" fstype
+	fstype="${fstype:-auto}"
+	config_get options "$cfg" options
+	options="${options:-rw}"
+	config_get device "$cfg" device
+	[ -n "device" ] || return 0
+	config_get target "$cfg" target
+	[ -n "target" ] || return 0
+	mkdir -p $target
+	config_get_bool enabled "$cfg" "enabled" '1'
+	[ "$enabled" -gt 0 ] && {
+	  /bin/mount -t $fstype -o $options $device $target 
+	}
+}
+
+do_unmount() {
+	local cfg="$1"
+	config_get target "$cfg" target
+	[ -n "target" ] || return 0
+	config_get_bool enabled "$cfg" "enabled" '1'
+	[ "$enabled" -gt 0 ] && {
+	  /bin/umount $target 
+	}
+}
+	
+start() {
+	config_load fstab
+	config_foreach do_mount mount
+}
+
+stop() {
+	config_load fstab
+	config_foreach do_unmount mount
+}
+
