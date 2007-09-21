@@ -60,6 +60,7 @@ ifeq ($(DUMP),)
 			DEPENDS=$$$${DEPENDS:+$$$$DEPENDS, }$$$${depend##+}; \
 		done; \
 		echo "Depends: $$$$DEPENDS"; \
+		echo "Provides: $(PROVIDES)"; \
 		echo "Source: $(SOURCE)"; \
 		echo "Section: $(SECTION)"; \
 		echo "Priority: $(PRIORITY)"; \
