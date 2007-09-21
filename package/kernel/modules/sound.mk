@@ -13,7 +13,6 @@ define KernelPackage/sound-core
   SUBMENU:=$(SOUND_MENU)
   TITLE:=Sound support
   DEPENDS:=@USB_SUPPORT @!TARGET_atheros
-  PROVIDES:=kmod-soundcore
   KCONFIG:= \
 	CONFIG_SOUND \
 	CONFIG_SND \
