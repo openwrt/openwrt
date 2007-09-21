@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=npe-ucode
 PKG_VERSION:=2.4
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=IPL_ixp400NpeLibrary-2_4.zip
@@ -35,6 +35,7 @@ endef
 
 define Build/InstallDev
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/NPE-B $(TARGET)/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/NPE-C $(TARGET)/
 endef
 
 $(eval $(call Build/DefaultTargets))
