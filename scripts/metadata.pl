@@ -132,11 +132,15 @@ sub parse_package_metadata() {
 		/^Prereq-Check:/ and $pkg->{prereq} = 1;
 		/^Preconfig:\s*(.+)\s*$/ and do {
 			my $pkgname = $pkg->{name};
-			$preconfig{$pkgname} or $preconfig{$pkgname} = [];
-			$preconfig = {
-				id => $1
-			};
-			push @{$preconfig{$pkgname}}, $preconfig;
+			$preconfig{$pkgname} or $preconfig{$pkgname} = {};
+			if (exists $preconfig{$pkgname}->{$1}) {
+				$preconfig = $preconfig{$pkgname}->{$1};
+			} else {
+				$preconfig = {
+					id => $1
+				};
+				$preconfig{$pkgname}->{$1} = $preconfig;
+			}
 		};
 		/^Preconfig-Type:\s*(.*?)\s*$/ and $preconfig->{type} = $1;
 		/^Preconfig-Label:\s*(.*?)\s*$/ and $preconfig->{label} = $1;
@@ -451,14 +455,14 @@ sub gen_package_config() {
 	parse_package_metadata();
 	print "menuconfig UCI_PRECONFIG\n\tbool \"Image configuration\"\n";
 	foreach my $preconfig (keys %preconfig) {
-		foreach my $cfg (@{$preconfig{$preconfig}}) {
-			my $conf = $cfg->{id};
+		foreach my $cfg (keys %{$preconfig{$preconfig}}) {
+			my $conf = $preconfig{$preconfig}->{$cfg}->{id};
 			$conf =~ tr/\.-/__/;
 			print <<EOF
 	config UCI_PRECONFIG_$conf
-		string "$cfg->{label}" if UCI_PRECONFIG
+		string "$preconfig{$preconfig}->{$cfg}->{label}" if UCI_PRECONFIG
 		depends PACKAGE_$preconfig
-		default "$cfg->{default}"
+		default "$preconfig{$preconfig}->{$cfg}->{default}"
 
 EOF
 		}
@@ -524,10 +528,10 @@ sub gen_package_mk() {
 	}
 	foreach my $preconfig (keys %preconfig) {
 		my $cmds;
-		foreach my $cfg (@{$preconfig{$preconfig}}) {
-			my $conf = $cfg->{id};
+		foreach my $cfg (keys %{$preconfig{$preconfig}}) {
+			my $conf = $preconfig{$preconfig}->{$cfg}->{id};
 			$conf =~ tr/\.-/__/;
-			$cmds .= "\techo \"uci set '$cfg->{id}=\$(subst \",,\$(CONFIG_UCI_PRECONFIG_$conf))'\"; \\\n";
+			$cmds .= "\techo \"uci set '$preconfig{$preconfig}->{$cfg}->{id}=\$(subst \",,\$(CONFIG_UCI_PRECONFIG_$conf))'\"; \\\n";
 		}
 		next unless $cmds;
 		print <<EOF

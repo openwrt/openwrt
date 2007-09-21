@@ -20,6 +20,7 @@ $(curdir)/cleanup: $(TMP_DIR)/.build
 	rm -rf $(TARGET_DIR)
 
 $(curdir)/rootfs-prepare: $(TMP_DIR)/.build
+	@-$(MAKE) package/preconfig
 	@if [ -d $(TOPDIR)/files ]; then \
 		$(CP) $(TOPDIR)/files/. $(TARGET_DIR); \
 	fi
