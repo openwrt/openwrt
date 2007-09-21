@@ -28,6 +28,10 @@
 #include <linux/serial_8250.h>
 #include <linux/ioport.h>
 #include <linux/io.h>
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
+#include <linux/leds.h>
+#endif
 
 #include <asm/addrspace.h>
 #include <asm/ar7/ar7.h>
@@ -295,6 +299,38 @@ static struct platform_device uart = {
 };
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
+static struct gpio_led default_leds[] = {
+	{ .name = "status", .gpio = 8, .active_low = 1, },
+};
+
+static struct gpio_led fb_leds[] = {
+	{ .name = "1", .gpio = 7, },
+	{ .name = "2", .gpio = 13, .active_low = 1, },
+	{ .name = "3", .gpio = 10, .active_low = 1, },
+	{ .name = "4", .gpio = 12, .active_low = 1, },
+	{ .name = "5", .gpio = 9, .active_low = 1, },
+};
+
+static struct gpio_led fb_fon_leds[] = {
+	{ .name = "1", .gpio = 8, },
+	{ .name = "2", .gpio = 3, .active_low = 1, },
+	{ .name = "3", .gpio = 5, },
+	{ .name = "4", .gpio = 4, .active_low = 1, },
+	{ .name = "5", .gpio = 11, .active_low = 1, },
+};
+
+static struct gpio_led_platform_data ar7_led_data;
+
+static struct platform_device ar7_gpio_leds = {
+	.name = "leds-gpio",
+	.id = -1,
+	.dev = {
+		.platform_data = &ar7_led_data,
+	}
+};
+#endif
+
 static inline unsigned char char2hex(char h)
 {
 	switch (h) {
@@ -409,7 +445,15 @@ static int __init ar7_register_devices(void)
 
 	cpmac_get_mac(0, cpmac_low_data.dev_addr);
 	res = platform_device_register(&cpmac_low);
+	if (res)
+		return res;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
+#warning FIXME: add model detection
+	ar7_led_data.num_leds = ARRAY_SIZE(default_leds);
+	ar7_led_data.leds = default_leds;
+	res = platform_device_register(&ar7_gpio_leds);
+#endif
 	return res;
 }
 
