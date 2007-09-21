@@ -1,34 +1,3 @@
-Index: linux-2.6.22.1/drivers/usb/core/hub.c
-===================================================================
---- linux-2.6.22.1.orig/drivers/usb/core/hub.c
-+++ linux-2.6.22.1/drivers/usb/core/hub.c
-@@ -540,7 +540,7 @@ static int hub_hub_status(struct usb_hub
- 			"%s failed (err = %d)\n", __FUNCTION__, ret);
- 	else {
- 		*status = le16_to_cpu(hub->status->hub.wHubStatus);
--		*change = le16_to_cpu(hub->status->hub.wHubChange); 
-+		*change = le16_to_cpu(hub->status->hub.wHubChange);
- 		ret = 0;
- 	}
- 	mutex_unlock(&hub->status_mutex);
-@@ -1424,7 +1424,7 @@ static int hub_port_status(struct usb_hu
- 			ret = -EIO;
- 	} else {
- 		*status = le16_to_cpu(hub->status->port.wPortStatus);
--		*change = le16_to_cpu(hub->status->port.wPortChange); 
-+		*change = le16_to_cpu(hub->status->port.wPortChange);
- 		ret = 0;
- 	}
- 	mutex_unlock(&hub->status_mutex);
-@@ -2230,6 +2230,8 @@ hub_port_init (struct usb_hub *hub, stru
- 					USB_DT_DEVICE << 8, 0,
- 					buf, GET_DESCRIPTOR_BUFSIZE,
- 					USB_CTRL_GET_TIMEOUT);
-+printk(KERN_CRIT "usb_control_msg: %d %d %d (%d)\n", r, buf->bMaxPacketSize0,
-+buf->bDescriptorType, USB_DT_DEVICE);
- 				switch (buf->bMaxPacketSize0) {
- 				case 8: case 16: case 32: case 64: case 255:
- 					if (buf->bDescriptorType ==
 Index: linux-2.6.22.1/drivers/usb/host/Kconfig
 ===================================================================
 --- linux-2.6.22.1.orig/drivers/usb/host/Kconfig
@@ -38,8 +7,8 @@ Index: linux-2.6.22.1/drivers/usb/host/Kconfig
  	  module will be called "sl811_cs".
  
 +config USB_ADM5120_HCD
-+	tristate "ADM5120 HCD support"
-+	depends on USB && MIPS_ADM5120
++	tristate "ADM5120 HCD support (EXPERIMENTAL)"
++	depends on USB && MIPS_ADM5120 && EXPERIMENTAL
 Index: linux-2.6.22.1/drivers/usb/host/Makefile
 ===================================================================
 --- linux-2.6.22.1.orig/drivers/usb/host/Makefile

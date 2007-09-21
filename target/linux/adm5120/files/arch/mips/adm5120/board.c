@@ -31,11 +31,11 @@
 
 #include <asm/bootinfo.h>
 
-#include <asm/mach-adm5120/adm5120_info.h>
-#include <asm/mach-adm5120/adm5120_defs.h>
-#include <asm/mach-adm5120/adm5120_irq.h>
-#include <asm/mach-adm5120/adm5120_board.h>
-#include <asm/mach-adm5120/adm5120_platform.h>
+#include <adm5120_info.h>
+#include <adm5120_defs.h>
+#include <adm5120_irq.h>
+#include <adm5120_board.h>
+#include <adm5120_platform.h>
 
 static LIST_HEAD(adm5120_boards);
 static char adm5120_board_name[ADM5120_BOARD_NAMELEN];
@@ -88,7 +88,6 @@ static int __init adm5120_board_setup(void)
 	if (board->eth_vlans)
 		memcpy(adm5120_eth_vlans, board->eth_vlans,
 			sizeof(adm5120_eth_vlans));
-
 
 	if (board->board_setup)
 		board->board_setup();

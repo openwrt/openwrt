@@ -34,6 +34,7 @@
 
 static struct platform_device *generic_devices[] __initdata = {
 	&adm5120_flash0_device,
+	&adm5120_hcd_device,
 };
 
 static struct adm5120_board generic_board __initdata = {

@@ -76,7 +76,7 @@ static struct platform_device *p334_devices[] __initdata = {
 
 static struct platform_device *p335_devices[] __initdata = {
 	&adm5120_flash0_device,
-	&adm5120_usbc_device,
+	&adm5120_hcd_device,
 };
 
 static void __init p33x_setup(void)

@@ -83,7 +83,7 @@ struct platform_device adm5120_pci_device = {
 };
 
 /* USB Host Controller */
-struct resource adm5120_usbc_resources[] = {
+struct resource adm5120_hcd_resources[] = {
 	[0] = {
 		.start	= ADM5120_USBC_BASE,
 		.end	= ADM5120_USBC_BASE+ADM5120_USBC_SIZE-1,
@@ -96,11 +96,17 @@ struct resource adm5120_usbc_resources[] = {
 	},
 };
 
-struct platform_device adm5120_usbc_device = {
+static u64 adm5120_hcd_dma_mask = ~(u32)0;
+
+struct platform_device adm5120_hcd_device = {
 	.name		= "adm5120-hcd",
-	.id		= -1,
-	.num_resources	= ARRAY_SIZE(adm5120_usbc_resources),
-	.resource	= adm5120_usbc_resources,
+	.id		= 0,
+	.num_resources	= ARRAY_SIZE(adm5120_hcd_resources),
+	.resource	= adm5120_hcd_resources,
+	.dev = {
+		.dma_mask	= &adm5120_hcd_dma_mask,
+		.coherent_dma_mask = 0xFFFFFFFF,
+	}
 };
 
 /* NOR flash 0 */

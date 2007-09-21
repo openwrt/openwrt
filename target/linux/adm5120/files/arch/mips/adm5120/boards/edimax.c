@@ -51,6 +51,7 @@ static struct mtd_partition br6104k_partitions[] = {
 
 static struct platform_device *br6104k_devices[] __initdata = {
 	&adm5120_flash0_device,
+	&adm5120_hcd_device,
 };
 
 static void __init br6104k_setup(void) {
