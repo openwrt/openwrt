@@ -83,7 +83,7 @@ Index: linux-2.6.22.1/drivers/mtd/chips/Kconfig
  	  including the AMD Am29LV320.
  
 +config MTD_CFI_FIXUP_MACRONIX_BOOTLOC
-+	bool "Force bottom boot for Macronix flash chips"
++	bool "Fix boot-block location for Macronix flash chips"
 +	depends on MTD_CFI_AMDSTD
 +	help
 +	  Some Macronix flash chips have no/wrong boot-block location in the
