@@ -169,6 +169,7 @@ $(eval $(call KernelPackage,ipsec6))
 define KernelPackage/iptunnel4
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IP tunneling (IPv4)
+  PROVIDES:=kmod-ipip
   KCONFIG:= \
 	CONFIG_NET_IPIP \
 	CONFIG_INET_TUNNEL
