@@ -61,6 +61,23 @@ endef
 $(eval $(call KernelPackage,video-cpia2))
 
 
+define KernelPackage/video-konica
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Konica USB webcam support
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-video kmod-video-core
+  KCONFIG:=CONFIG_USB_KONICAWC
+  FILES:=$(LINUX_DIR)/drivers/media/video/usbvideo/konicawc.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,70,konicawc)
+endef
+
+define KernelPackage/video-konica/description
+ Kernel support for webcams based on a Konica chipset. This is known to 
+ work with the Intel YC76 webcam.
+endef
+
+$(eval $(call KernelPackage,video-konica))
+
+
 define KernelPackage/video-pwc
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Philips USB webcam support
