@@ -175,7 +175,7 @@ $(eval $(call KernelPackage,usb-acm))
 
 define KernelPackage/usb-audio
   $(call usbdep,+kmod-sound-core)
-  TITLE:=Support for audio devices
+  TITLE:=Support for USB audio devices
   KCONFIG:= \
 	CONFIG_USB_AUDIO \
 	CONFIG_SND_USB_AUDIO
@@ -401,6 +401,21 @@ define KernelPackage/usb-storage/description
 endef
 
 $(eval $(call KernelPackage,usb-storage))
+
+
+define KernelPackage/usb-video
+  $(call usbdep,@LINUX_2_6)
+  TITLE:=Support for USB video devices
+  KCONFIG:=CONFIG_VIDEO_USBVIDEO
+  FILES:=$(LINUX_DIR)/drivers/media/video/usbvideo/usbvideo.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,60,usbvideo)
+endef
+
+define KernelPackage/usb-video/description
+ Kernel support for USB video devices
+endef
+
+$(eval $(call KernelPackage,usb-video))
 
 
 define KernelPackage/usb-atm
