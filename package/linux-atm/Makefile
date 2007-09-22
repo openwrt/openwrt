@@ -53,19 +53,21 @@ define Build/Compile
 		all install
 endef
 
-define Build/InstallDev
+ifneq ($(CONFIG_PACKAGE_linux-atm),)
+  define Build/InstallDev
 	mkdir -p $(STAGING_DIR)/usr/include
 	$(CP)	$(PKG_INSTALL_DIR)/usr/include/atm{,d,sap}.h \
 		$(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
 	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libatm.{a,so*} \
 		$(STAGING_DIR)/usr/lib/
-endef
+  endef
 
-define Build/UninstallDev
+  define Build/UninstallDev
 	rm -rf	$(STAGING_DIR)/usr/include/atm{,d,sap}.h \
 		$(STAGING_DIR)/usr/lib/libatm.{a,so*}
-endef
+  endef
+endif
 
 define Package/linux-atm/install
 	$(INSTALL_DIR) $(1)/usr/lib
