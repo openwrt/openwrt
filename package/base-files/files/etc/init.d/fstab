@@ -20,6 +20,16 @@ do_mount() {
 	}
 }
 
+do_swapon() {
+	local cfg="$1"
+	config_get device "$cfg" device
+	[ -n "device" ] || return 0
+	config_get_bool enabled "$cfg" "enabled" '1'
+	[ "$enabled" -gt 0 ] && [ -x /usr/sbin/swapon ] && {
+	  /usr/sbin/swapon $device
+	}
+}
+
 do_unmount() {
 	local cfg="$1"
 	config_get target "$cfg" target
@@ -30,13 +40,25 @@ do_unmount() {
 	}
 }
 	
+do_swapoff() {
+	local cfg="$1"
+	config_get device "$cfg" device
+	[ -n "device" ] || return 0
+	config_get_bool enabled "$cfg" "enabled" '1'
+	[ "$enabled" -gt 0 ] && [ -x /usr/sbin/swapoff ] && {
+	  /usr/sbin/swapoff $device
+	}
+}
+
 start() {
 	config_load fstab
 	config_foreach do_mount mount
+	config_foreach do_swapon swap
 }
 
 stop() {
 	config_load fstab
 	config_foreach do_unmount mount
+	config_foreach do_swapoff swap
 }
 
