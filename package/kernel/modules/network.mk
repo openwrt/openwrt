@@ -328,7 +328,7 @@ define KernelPackage/pppoa
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPPoA support
   DEPENDS:=kmod-ppp +kmod-atm
-  KCONFIG:=CONFIG_PPPOATM
+  KCONFIG:=CONFIG_PPPOATM CONFIG_ATM_DRIVERS=y
   FILES:=$(LINUX_DIR)/net/atm/pppoatm.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,pppoatm)
 endef
