@@ -113,11 +113,17 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/openssl $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{crypto,ssl}.{a,so*} $(STAGING_DIR)/usr/lib/
+	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/{openssl,libcrypto,libssl}.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(SED) 's,^includedir=.*,includedir=$(STAGING_DIR)/usr/include,g' $(STAGING_DIR)/usr/lib/pkgconfig/{openssl,libcrypto,libssl}.pc
+	$(SED) 's,^libdir=.*,libdir=$(STAGING_DIR)/usr/lib,g' $(STAGING_DIR)/usr/lib/pkgconfig/{openssl,libcrypto,libssl}.pc
+	$(SED) 's,$(TARGET_LDFLAGS),,g' $(STAGING_DIR)/usr/lib/pkgconfig/{openssl,libcrypto,libssl}.pc
 endef
 
 define Build/UninstallDev
 	rm -rf	$(STAGING_DIR)/usr/include/openssl \
-		$(STAGING_DIR)/usr/lib/lib{crypto,ssl}.{a,so*}
+		$(STAGING_DIR)/usr/lib/lib{crypto,ssl}.{a,so*} \
+		$(STAGING_DIR)/usr/lib/pkgconfig/{openssl,libcrypto,libssl}.pc
 endef
 
 define Package/libopenssl/install
