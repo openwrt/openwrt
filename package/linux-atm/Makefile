@@ -47,10 +47,8 @@ define Build/Configure
 	touch $(PKG_BUILD_DIR)/stamp-h.in
 endef
 
-TARGET_CFLAGS := -I$(PKG_BUILD_DIR)/src/include $(TARGET_CFLAGS)
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
 endef
@@ -71,7 +69,7 @@ endef
 
 define Package/linux-atm/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	cp -f $(PKG_INSTALL_DIR)/usr/lib/libatm.so.1 $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libatm.so.* $(1)/usr/lib/
 endef
 
 define Package/atm-tools/install
