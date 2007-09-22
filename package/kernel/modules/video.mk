@@ -78,6 +78,41 @@ endef
 $(eval $(call KernelPackage,video-konica))
 
 
+define KernelPackage/video-ov511
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=OV511 USB webcam support
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core kmod-video-core
+  KCONFIG:=CONFIG_VIDEO_OV511
+  FILES:=$(LINUX_DIR)/drivers/media/video/ov511.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,70,ov511)
+endef
+
+
+define KernelPackage/video-ov511/description
+ Kernel modules for supporting OmniVision OV511 USB webcams.
+endef
+
+$(eval $(call KernelPackage,video-ov511))
+
+
+define KernelPackage/video-ovcamchip
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=OV6xxx/OV7xxx Camera Chip support
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-i2c-core kmod-video-core
+  KCONFIG:=CONFIG_VIDEO_OVCAMCHIP
+  FILES:=$(LINUX_DIR)/drivers/media/video/ovcamchip/ovcamchip.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,70,ovcamchip)
+endef
+
+
+define KernelPackage/video-ovcamchip/description
+ Kernel modules for supporting OmniVision OV6xxx and OV7xxx series of 
+ camera chips.
+endef
+
+$(eval $(call KernelPackage,video-ovcamchip))
+
+
 define KernelPackage/video-pwc
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Philips USB webcam support
