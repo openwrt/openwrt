@@ -1,7 +1,7 @@
 /*
  *  $Id$
  *
- *  Mikrotik RouterBOARDs 111/112/133/133C/150/153
+ *  Mikrotik RouterBOARDs 1xx series
  *
  *  Copyright (C) 2007 OpenWrt.org
  *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
@@ -87,6 +87,10 @@ static unsigned char rb133c_vlans[6] __initdata = {
 static unsigned char rb15x_vlans[6] __initdata = {
 	/* FIXME: untested */
 	0x41, 0x42, 0x44, 0x48, 0x50, 0x00
+
+static unsigned char rb192_vlans[6] __initdata = {
+	/* FIXME: untested */
+	0x41, 0x50, 0x48, 0x44, 0x42, 0x00
 };
 #else
 static unsigned char rb_vlans[6] __initdata = {
@@ -96,6 +100,7 @@ static unsigned char rb_vlans[6] __initdata = {
 #define rb133_vlans	rb_vlans
 #define rb133c_vlans	rb_vlans
 #define rb15x_vlans	rb_vlans
+#define rb192_vlans	rb_vlans
 #endif
 
 static struct adm5120_board rb111_board __initdata = {
@@ -158,6 +163,16 @@ static struct adm5120_board rb153_board __initdata = {
 	.devices	= rb1xx_devices,
 };
 
+static struct adm5120_board rb153_board __initdata = {
+	.mach_type	= MACH_ADM5120_RB_192,
+	.name		= "Mikrotik RouterBOARD 192",
+	.board_setup	= rb1xx_setup,
+	.eth_num_ports	= 5,
+	.eth_vlans	= rb192_vlans,
+	.num_devices	= ARRAY_SIZE(rb1xx_devices),
+	.devices	= rb1xx_devices,
+};
+
 static int __init register_boards(void)
 {
 	adm5120_board_register(&rb111_board);
@@ -166,6 +181,7 @@ static int __init register_boards(void)
 	adm5120_board_register(&rb133c_board);
 	adm5120_board_register(&rb150_board);
 	adm5120_board_register(&rb153_board);
+	adm5120_board_register(&rb192_board);
 	return 0;
 }
 
