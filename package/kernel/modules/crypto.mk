@@ -8,6 +8,8 @@
 
 CRYPTO_MENU:=Cryptographic API modules
 
+# XXX: added CONFIG_CRYPTO_HMAC to KCONFIG so that CONFIG_CRYPTO_HASH is 
+# always set, even if no hash modules are selected
 define KernelPackage/crypto-core
   SUBMENU:=$(CRYPTO_MENU)
   TITLE:=Core CryptoAPI modules
@@ -19,6 +21,7 @@ define KernelPackage/crypto-core
 	CONFIG_CRYPTO_DEFLATE \
 	CONFIG_CRYPTO_ECB \
 	CONFIG_CRYPTO_HASH \
+	CONFIG_CRYPTO_HMAC \
 	CONFIG_CRYPTO_MANAGER
   FILES:= \
 	$(LINUX_DIR)/crypto/crypto_algapi.$(LINUX_KMOD_SUFFIX) \
