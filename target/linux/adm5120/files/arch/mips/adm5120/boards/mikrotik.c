@@ -163,7 +163,7 @@ static struct adm5120_board rb153_board __initdata = {
 	.devices	= rb1xx_devices,
 };
 
-static struct adm5120_board rb153_board __initdata = {
+static struct adm5120_board rb192_board __initdata = {
 	.mach_type	= MACH_ADM5120_RB_192,
 	.name		= "Mikrotik RouterBOARD 192",
 	.board_setup	= rb1xx_setup,
