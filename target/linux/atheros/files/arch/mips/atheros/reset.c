@@ -10,11 +10,15 @@
 #include "ar531x.h"
 #include "ar5315/ar5315.h"
 
+#define AR531X_RESET_GPIO_IRQ	(AR531X_GPIO_IRQ_BASE + bcfg->resetConfigGpio)
+
 struct event_t {
 	struct work_struct wq;
 	int set;
 	long int jiffies;
 };
+
+static struct ar531x_boarddata *bcfg;
 
 extern struct sock *uevent_sock;
 extern u64 uevent_next_seqnum(void);
@@ -94,15 +98,24 @@ static irqreturn_t button_handler(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
+void ar531x_disable_reset_button(void)
+{
+	disable_irq(AR531X_RESET_GPIO_IRQ);	
+}
+
+EXPORT_SYMBOL(ar531x_disable_reset_button);
+
 int __init ar531x_init_reset(void)
 {
-	struct ar531x_boarddata *bcfg;
 	bcfg = (struct ar531x_boarddata *) board_config;
 
 	seen = jiffies;
-	request_irq(AR531X_GPIO_IRQ_BASE + bcfg->resetConfigGpio, &button_handler, IRQF_SAMPLE_RANDOM, "ar531x_reset", NULL);
+	
+	request_irq(AR531X_RESET_GPIO_IRQ, &button_handler, IRQF_SAMPLE_RANDOM, "ar531x_reset", NULL);
 
 	return 0;
 }
+
+
 
 module_init(ar531x_init_reset);
