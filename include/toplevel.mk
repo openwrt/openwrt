@@ -30,15 +30,17 @@ endif
 SCAN_COOKIE?=$(shell echo $$$$)
 export SCAN_COOKIE
 
+prepare-mk: FORCE ;
+
 prepare-tmpinfo: FORCE
 	mkdir -p tmp/info
 	+$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS="$(TOPDIR)/include/package*.mk" SCAN_DEPTH=4 SCAN_EXTRA=""
 	+$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPS="profiles/*.mk $(TOPDIR)/include/kernel*.mk" SCAN_DEPTH=2 SCAN_EXTRA="" SCAN_MAKEOPTS="TARGET_BUILD=1"
 	for type in package target; do \
 		f=tmp/.$${type}info; t=tmp/.config-$${type}.in; \
-		[ "$$t" -nt "$$f" ] || ./scripts/metadata.pl $${type}_config < "$$f" > "$$t" || { rm -f "$$t"; echo "Failed to build $$t"; false; break; }; \
+		[ "$$t" -nt "$$f" ] || ./scripts/metadata.pl $${type}_config "$$f" > "$$t" || { rm -f "$$t"; echo "Failed to build $$t"; false; break; }; \
 	done
-	./scripts/metadata.pl package_mk < tmp/.packageinfo > tmp/.packagedeps || { rm -f tmp/.packagedeps; false; }
+	./scripts/metadata.pl package_mk tmp/.packageinfo > tmp/.packagedeps || { rm -f tmp/.packagedeps; false; }
 	touch $(TOPDIR)/tmp/.build
 
 .config: ./scripts/config/conf prepare-tmpinfo
@@ -64,7 +66,7 @@ defconfig: scripts/config/conf prepare-tmpinfo FORCE
 	$< -D .config Config.in
 
 oldconfig: scripts/config/conf prepare-tmpinfo FORCE
-	$< -o Config.in
+	$< -$(if $(CONFDEFAULT),$(CONFDEFAULT),o) Config.in
 
 menuconfig: scripts/config/mconf prepare-tmpinfo FORCE
 	if [ \! -f .config -a -e $(HOME)/.openwrt/defconfig ]; then \

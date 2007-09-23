@@ -579,28 +579,11 @@ int main(int ac, char **av)
 		}
 	case ask_all:
 	case ask_new:
-		conf_read(NULL);
-		break;
 	case set_no:
 	case set_mod:
 	case set_yes:
 	case set_random:
-		name = getenv("KCONFIG_ALLCONFIG");
-		if (name && !stat(name, &tmpstat)) {
-			conf_read_simple(name);
-			break;
-		}
-		switch (input_mode) {
-		case set_no:	 name = "allno.config"; break;
-		case set_mod:	 name = "allmod.config"; break;
-		case set_yes:	 name = "allyes.config"; break;
-		case set_random: name = "allrandom.config"; break;
-		default: break;
-		}
-		if (!stat(name, &tmpstat))
-			conf_read_simple(name);
-		else if (!stat("all.config", &tmpstat))
-			conf_read_simple("all.config");
+		conf_read(NULL);
 		break;
 	default:
 		break;

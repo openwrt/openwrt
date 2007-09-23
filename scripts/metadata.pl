@@ -1,23 +1,10 @@
 #!/usr/bin/perl
+use FindBin;
+use lib "$FindBin::Bin";
 use strict;
-my %preconfig;
-my %package;
-my %srcpackage;
-my %category;
-my %subdir;
+use metadata;
+
 my %board;
-
-sub get_multiline {
-	my $prefix = shift;
-	my $str;
-	while (<>) {
-		last if /^@@/;
-		s/^\s*//g;
-		$str .= (($_ and $prefix) ? $prefix . $_ : $_);
-	}
-
-	return $str;
-}
 
 sub confstr($) {
 	my $conf = shift;
@@ -26,8 +13,13 @@ sub confstr($) {
 }
 
 sub parse_target_metadata() {
-	my ($target, @target, $profile);	
-	while (<>) {
+	my $file = shift @ARGV;
+	my ($target, @target, $profile);
+	open FILE, "<$file" or do {
+		warn "Can't open file '$file': $!\n";
+		return;
+	};
+	while (<FILE>) {
 		chomp;
 		/^Target:\s*(.+)\s*$/ and do {
 			$target = {
@@ -46,7 +38,7 @@ sub parse_target_metadata() {
 		/^Target-Path:\s*(.+)\s*$/ and $target->{path} = $1;
 		/^Target-Arch:\s*(.+)\s*$/ and $target->{arch} = $1;
 		/^Target-Features:\s*(.+)\s*$/ and $target->{features} = [ split(/\s+/, $1) ];
-		/^Target-Description:/ and $target->{desc} = get_multiline();
+		/^Target-Description:/ and $target->{desc} = get_multiline(*FILE);
 		/^Linux-Version:\s*(.+)\s*$/ and $target->{version} = $1;
 		/^Linux-Release:\s*(.+)\s*$/ and $target->{release} = $1;
 		/^Linux-Kernel-Arch:\s*(.+)\s*$/ and $target->{karch} = $1;
@@ -61,10 +53,11 @@ sub parse_target_metadata() {
 		};
 		/^Target-Profile-Name:\s*(.+)\s*$/ and $profile->{name} = $1;
 		/^Target-Profile-Packages:\s*(.*)\s*$/ and $profile->{packages} = [ split(/\s+/, $1) ];
-		/^Target-Profile-Description:\s*(.*)\s*/ and $profile->{desc} = get_multiline();
-		/^Target-Profile-Config:/ and $profile->{config} = get_multiline("\t");
+		/^Target-Profile-Description:\s*(.*)\s*/ and $profile->{desc} = get_multiline(*FILE);
+		/^Target-Profile-Config:/ and $profile->{config} = get_multiline(*FILE, "\t");
 		/^Target-Profile-Kconfig:/ and $profile->{kconfig} = 1;
 	}
+	close FILE;
 	foreach my $target (@target) {
 		@{$target->{profiles}} > 0 or $target->{profiles} = [
 			{
@@ -75,78 +68,6 @@ sub parse_target_metadata() {
 		];
 	}
 	return @target;
-}
-
-sub parse_package_metadata() {
-	my $pkg;
-	my $makefile;
-	my $preconfig;
-	my $subdir;
-	my $src;
-	while (<>) {
-		chomp;
-		/^Source-Makefile: \s*((.+\/)([^\/]+)\/Makefile)\s*$/ and do {
-			$makefile = $1;
-			$subdir = $2;
-			$src = $3;
-			$subdir =~ s/^package\///;
-			$subdir{$src} = $subdir;
-			$srcpackage{$src} = [];
-			undef $pkg;
-		};
-		/^Package:\s*(.+?)\s*$/ and do {
-			$pkg = {};
-			$pkg->{src} = $src;
-			$pkg->{makefile} = $makefile;
-			$pkg->{name} = $1;
-			$pkg->{default} = "m if ALL";
-			$pkg->{depends} = [];
-			$pkg->{builddepends} = [];
-			$pkg->{subdir} = $subdir;
-			$package{$1} = $pkg;
-			push @{$srcpackage{$src}}, $pkg;
-		};
-		/^Version: \s*(.+)\s*$/ and $pkg->{version} = $1;
-		/^Title: \s*(.+)\s*$/ and $pkg->{title} = $1;
-		/^Menu: \s*(.+)\s*$/ and $pkg->{menu} = $1;
-		/^Submenu: \s*(.+)\s*$/ and $pkg->{submenu} = $1;
-		/^Submenu-Depends: \s*(.+)\s*$/ and $pkg->{submenudep} = $1;
-		/^Default: \s*(.+)\s*$/ and $pkg->{default} = $1;
-		/^Provides: \s*(.+)\s*$/ and do {
-			my @vpkg = split /\s+/, $1;
-			foreach my $vpkg (@vpkg) {
-				$package{$vpkg} or $package{$vpkg} = { vdepends => [] };
-				push @{$package{$vpkg}->{vdepends}}, $pkg->{name};
-			}
-		};
-		/^Depends: \s*(.+)\s*$/ and $pkg->{depends} = [ split /\s+/, $1 ];
-		/^Build-Depends: \s*(.+)\s*$/ and $pkg->{builddepends} = [ split /\s+/, $1 ];
-		/^Category: \s*(.+)\s*$/ and do {
-			$pkg->{category} = $1;
-			defined $category{$1} or $category{$1} = {};
-			defined $category{$1}->{$src} or $category{$1}->{$src} = [];
-			push @{$category{$1}->{$src}}, $pkg;
-		};
-		/^Description: \s*(.*)\s*$/ and $pkg->{description} = "\t\t $1\n". get_multiline("\t\t ");
-		/^Config: \s*(.*)\s*$/ and $pkg->{config} = "$1\n".get_multiline();
-		/^Prereq-Check:/ and $pkg->{prereq} = 1;
-		/^Preconfig:\s*(.+)\s*$/ and do {
-			my $pkgname = $pkg->{name};
-			$preconfig{$pkgname} or $preconfig{$pkgname} = {};
-			if (exists $preconfig{$pkgname}->{$1}) {
-				$preconfig = $preconfig{$pkgname}->{$1};
-			} else {
-				$preconfig = {
-					id => $1
-				};
-				$preconfig{$pkgname}->{$1} = $preconfig;
-			}
-		};
-		/^Preconfig-Type:\s*(.*?)\s*$/ and $preconfig->{type} = $1;
-		/^Preconfig-Label:\s*(.*?)\s*$/ and $preconfig->{label} = $1;
-		/^Preconfig-Default:\s*(.*?)\s*$/ and $preconfig->{default} = $1;
-	}
-	return %category;
 }
 
 sub gen_kconfig_overrides() {
@@ -318,18 +239,29 @@ EOF
 	print "endchoice\n";
 }
 
-
-sub find_package_dep($$) {
+my %dep_check;
+sub __find_package_dep($$) {
 	my $pkg = shift;
 	my $name = shift;
 	my $deps = ($pkg->{vdepends} or $pkg->{depends});
 
 	return 0 unless defined $deps;
 	foreach my $dep (@{$deps}) {
+		next if $dep_check{$dep};
+		$dep_check{$dep} = 1;
 		return 1 if $dep eq $name;
-		return 1 if ($package{$dep} and (find_package_dep($package{$dep},$name) == 1));
+		return 1 if ($package{$dep} and (__find_package_dep($package{$dep},$name) == 1));
 	}
 	return 0;
+}
+
+# wrapper to avoid infinite recursion
+sub find_package_dep($$) {
+	my $pkg = shift;
+	my $name = shift;
+
+	%dep_check = ();
+	return __find_package_dep($pkg, $name);
 }
 
 sub package_depends($$) {
@@ -452,7 +384,7 @@ sub print_package_config_category($) {
 }
 
 sub gen_package_config() {
-	parse_package_metadata();
+	parse_package_metadata($ARGV[0]) or exit 1;
 	print "menuconfig UCI_PRECONFIG\n\tbool \"Image configuration\"\n";
 	foreach my $preconfig (keys %preconfig) {
 		foreach my $cfg (keys %{$preconfig{$preconfig}}) {
@@ -478,7 +410,7 @@ sub gen_package_mk() {
 	my %dep;
 	my $line;
 
-	parse_package_metadata();
+	parse_package_metadata($ARGV[0]) or exit 1;
 	foreach my $name (sort {uc($a) cmp uc($b)} keys %package) {
 		my $config;
 		my $pkg = $package{$name};
