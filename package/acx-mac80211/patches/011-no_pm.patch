@@ -20,13 +20,13 @@
        fail_register_netdev:
  	ieee80211_free_hw(ieee);
        done:
-@@ -1872,7 +1876,9 @@
+@@ -1809,7 +1821,9 @@
  	ieee80211_free_hw(adev->ieee);
  
  	/* put device into ACPI D3 mode (shutdown) */
 +#ifdef CONFIG_PM
  	pci_set_power_state(pdev, PCI_D3hot);
 +#endif
- //	kfree(ieee);
        end:
  	FN_EXIT0;
+ }
