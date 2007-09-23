@@ -35,7 +35,7 @@ endef
 
 define KernelPackage/rt2x00-lib
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT||USB_SUPPORT +kmod-mac80211 +kmod-crypto
+  DEPENDS+= @PCI_SUPPORT||USB_SUPPORT +kmod-mac80211
   TITLE+= (LIB)
   FILES:=$(PKG_BUILD_DIR)/rt2x00lib.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,blkcipher ecb arc4 rt2x00lib)

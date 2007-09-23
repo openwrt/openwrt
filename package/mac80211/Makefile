@@ -20,7 +20,7 @@ endif
 define KernelPackage/mac80211
   SUBMENU:=Wireless Drivers
   TITLE:=Linux 802.11 Wireless Networking Stack
-  DEPENDS:=@LINUX_2_6
+  DEPENDS:=@LINUX_2_6 +kmod-crypto-arc4 +kmod-crypto-aes
   KCONFIG:=CONFIG_MAC80211
   FILES:= \
 	$(PKG_BUILD_DIR)/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
