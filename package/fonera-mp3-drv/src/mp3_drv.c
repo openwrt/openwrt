@@ -31,6 +31,7 @@
 #include <linux/init.h>
 #include <linux/genhd.h>
 #include <linux/device.h> 
+#include <asm-mips/mach-atheros/reset.h>
 
 // do we want debuging info ?
 #if 0
@@ -282,6 +283,10 @@ static int __init mod_init(void){
 	printk("mp3_drv.ko : Made by John '2B|!2B' Crispin (john@phrozen.org)\n");
 	printk("mp3_drv.ko : Starting ...\n");
 	
+	printk("disabling atheros reset button irq\n");
+
+	ar531x_disable_reset_button();
+
 	if(register_chrdev(DEV_MAJOR, DEV_NAME, &modulemp3_fops)) {
 		printk( "mp3_drv.ko : Error whilst opening %s (%d)\n", DEV_NAME, DEV_MAJOR);
 		return( -ENODEV );
