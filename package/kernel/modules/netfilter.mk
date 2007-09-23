@@ -259,8 +259,8 @@ define KernelPackage/ip6tables
   SUBMENU:=$(NF_MENU)
   TITLE:=IPv6 modules
   KCONFIG:=CONFIG_IP6_NF_IPTABLES
-  FILES:=$(LINUX_DIR)/net/ipv6/netfilter/ip*.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(patsubst %.ko,%,$(wildcard $(LINUX_DIR)/net/ipv6/netfilter/ip6_*.$(LINUX_KMOD_SUFFIX)) $(wildcard $(LINUX_DIR)/net/ipv6/netfilter/ip6table_*.$(LINUX_KMOD_SUFFIX)) $(wildcard $(LINUX_DIR)/net/ipv6/netfilter/ip6t_*.$(LINUX_KMOD_SUFFIX)))))
+  FILES:=$(foreach mod,$(IPT_IPV6-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_IPV6-m)))
 endef
 
 define KernelPackage/ip6tables/description
