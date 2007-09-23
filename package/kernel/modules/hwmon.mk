@@ -29,13 +29,29 @@ endef
 $(eval $(call KernelPackage,hwmon-core))
 
 
+define KernelPackage/hwmon-lm77
+  SUBMENU:=$(HWMON_MENU)
+  TITLE:=LM77 monitoring support
+  DEPENDS:=kmod-hwmon-core
+  KCONFIG:=CONFIG_SENSORS_LM77
+  FILES:=$(LINUX_DIR)/drivers/hwmon/lm77.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,60,lm77)
+endef
+ 
+define KernelPackage/hwmon-lm77/description
+ Kernel module for LM77 thermal monitor chip 
+endef
+
+$(eval $(call KernelPackage,hwmon-lm77))
+
+
 define KernelPackage/hwmon-pc87360
   SUBMENU:=$(HWMON_MENU)
   TITLE:=PC87360 monitoring support
+  DEPENDS:=kmod-hwmon-core
   KCONFIG:=CONFIG_SENSORS_PC87360
   FILES:=$(LINUX_DIR)/drivers/hwmon/pc87360.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,pc87360)
-  DEPENDS:=kmod-hwmon-core
 endef
 
 define KernelPackage/hwmon-pc87360/description
