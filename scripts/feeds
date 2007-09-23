@@ -1,0 +1,322 @@
+#!/usr/bin/perl
+use Getopt::Std;
+use FindBin;
+use Cwd;
+use lib "$FindBin::Bin";
+use metadata;
+use warnings;
+use strict;
+
+chdir "$FindBin::Bin/..";
+$ENV{TOPDIR}=getcwd();
+
+my @feeds;
+my %build_packages;
+my %installed;
+
+sub parse_config() {
+	my $line = 0;
+	my %name;
+
+	open FEEDS, "feeds.conf";
+	while (<FEEDS>) {
+		chomp;
+		s/#.+$//;
+		next unless /\S/;
+		my @line = split /\s+/, $_, 3;
+		$line++;
+
+		my $valid = 1;
+		$line[0] =~ /^src-\w+$/ or $valid = 0;
+		$line[1] =~ /^\w+$/ or $valid = 0;
+		$line[2] =~ /\s/ and $valid = 0;
+		$valid or die "Syntax error in feeds.list, line: $line\n";
+
+		$name{$line[1]} and die "Duplicate feed name '$line[1]', line: $line\n";
+		$name{$line[1]} = 1;
+
+		push @feeds, [@line];
+	}
+	close FEEDS;
+}
+
+sub update_svn($$) {
+	my $name = shift;
+	my $src = shift;
+
+	system("svn co $src ./feeds/$name") == 0 or return 1;
+	-d "./feeds/$name.tmp" or mkdir "./feeds/$name.tmp" or return 1;
+	-d "./feeds/$name.tmp/info" or mkdir "./feeds/$name.tmp/info" or return 1;
+
+	system("make -s prepare-mk TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
+	system("make -s -f include/scan.mk IS_TTY=1 SCAN_TARGET=\"packageinfo\" SCAN_DIR=\"feeds/$name\" SCAN_NAME=\"package\" SCAN_DEPS=\"$ENV{TOPDIR}/include/package*.mk\" SCAN_DEPTH=4 SCAN_EXTRA=\"\" TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
+	system("ln -sf $name.tmp/.packageinfo ./feeds/$name.index");
+
+	return 0;
+}
+
+sub get_feed($) {
+	my $feed = shift;
+
+	clear_packages();
+	parse_package_metadata("./feeds/$feed.index") or return;
+	return { %package };
+}
+
+sub get_installed() {
+	system("make -s prepare-tmpinfo");
+	clear_packages();
+	parse_package_metadata("./tmp/.packageinfo");
+	%installed = %package;
+}
+
+sub search_feed {
+	my $feed = shift;
+	my @substr = @_;
+	my $display;
+	
+	return unless @substr > 0;
+	get_feed($feed);
+	foreach my $name (sort { lc($a) cmp lc($b) } keys %package) {
+		my $pkg = $package{$name};
+		my $substr;
+		my $pkgmatch = 1;
+
+		foreach my $substr (@substr) {
+			my $match;
+			foreach my $key (qw(name title description)) {
+				$substr and $pkg->{$key} =~ m/$substr/i and $match = 1;
+			}
+			$match or undef $pkgmatch;
+		};
+		$pkgmatch and do {
+			$display or do {
+				print "Search results in feed '$feed':\n";
+				$display = 1;
+			};
+			printf "\%-25s\t\%s\n", $pkg->{name}, $pkg->{title};
+		};
+	}
+	return 0;
+}
+
+
+sub search {
+	my %opts;
+
+	getopt('r:', \%opts);
+	foreach my $feed (@feeds) {
+		search_feed($feed->[1], @ARGV) if (!defined($opts{r}) or $opts{r} eq $feed->[1]);
+	}
+}
+
+sub install_svn() {
+	my $feed = shift;
+	my $pkg = shift;
+	my $path = $pkg->{makefile};
+	$path =~ s/\/Makefile$//;
+
+	-d "./package/feeds" or mkdir "./package/feeds";
+	-d "./package/feeds/$feed->[1]" or mkdir "./package/feeds/$feed->[1]";
+	system("ln -sf ../../../$path ./package/feeds/$feed->[1]/");
+
+	return 0;
+}
+
+my %install_method = (
+	'src-svn' => \&install_svn
+);
+
+my %feed;
+
+sub lookup_package($$) {
+	my $feed = shift;
+	my $package = shift;
+
+	foreach my $feed ($feed, @feeds) {
+		next unless $feed->[1];
+		next unless $feed{$feed->[1]};
+		$feed{$feed->[1]}->{$package} and return $feed;
+	}
+	return;
+}
+
+sub install_package {
+	my $feed = shift;
+	my $name = shift;
+	my $ret = 0;
+
+	$feed = lookup_package($feed, $name);
+	$feed or do {
+		$installed{$name} and return 0;
+		warn "WARNING: Package '$name' is not available.\n";
+		return 1;
+	};
+
+	my $pkg = $feed{$feed->[1]}->{$name} or return 1;
+	my $src = $pkg->{src};
+	my $type = $feed->[0];
+	$src or $src = $name;
+
+	# previously installed packages set the runtime package
+	# newly installed packages set the source package
+	$installed{$src} and return 0;
+
+	# install all dependencies
+	foreach my $dep (@{$pkg->{depends}}) {
+		next if $dep =~ /@/;
+		$dep =~ s/^\+//;
+		install_package($feed, $dep) == 0 or $ret = 1;
+	}
+
+	# check previously installed packages
+	$installed{$name} and return 0;
+	$installed{$src} = 1;
+	warn "Installing package '$src'\n";
+
+	$install_method{$type} or do {
+		warn "Unknown installation method: '$type'\n";
+		return 1;
+	};
+
+	&{$install_method{$type}}($feed, $pkg) == 0 or do {
+		warn "failed.\n";
+		return 1;
+	};
+
+	return $ret;
+}
+
+sub refresh_config {
+	my $default = shift;
+	$default or $default = "o";
+
+	# workaround for timestamp check
+	system("rm -f tmp/.packageinfo");
+
+	# refresh the config 
+	system("make oldconfig CONFDEFAULT=\"$default\" Config.in >/dev/null 2>/dev/null");
+}
+
+sub install {
+	my $name;
+	my %opts;
+	my $feed;
+	my $ret = 0;
+	
+	getopt('p:d:', \%opts);
+	get_installed();
+
+	foreach my $f (@feeds) {
+		# index all feeds
+		$feed{$f->[1]} = get_feed($f->[1]);
+
+		# look up the preferred feed
+		$opts{p} and $f->[1] eq $opts{p} and $feed = $f;
+	}
+
+	while ($name = shift @ARGV) {
+		install_package($feed, $name) == 0 or $ret = 1;
+	}
+
+	# workaround for timestamp check
+	
+	# set the defaults
+	if ($opts{d} and $opts{d} =~ /^[ymn]$/) {
+		refresh_config($opts{d});
+	}
+
+	return $ret;
+}
+
+sub uninstall {
+	my $name;
+	my $uninstall;
+
+	if ($ARGV[0] eq '-a') {
+		system("rm -rf ./package/feeds");
+		$uninstall = 1;
+	} else {
+		get_installed();
+		while ($name = shift @ARGV) {
+			my $pkg = $installed{$name};
+			$pkg or do {
+				warn "WARNING: $name not installed\n";
+				next;
+			};
+			$pkg->{src} and $name = $pkg->{src};
+			warn "Uninstalling package '$name'\n";
+			system("rm -f ./package/feeds/*/$name");
+			$uninstall = 1;
+		}
+	}
+	$uninstall and refresh_config();
+	return 0;
+}
+
+sub usage() {
+	print <<EOF;
+Usage: $0 <command> [options]
+
+Commands:
+	install [options] <package>: Install a package
+	Options:
+	    -p <feedname>: Prefer this feed when installing packages
+	    -d <y|m|n>:    Set default for newly installed packages
+
+	search [options] <substring>: Search for a package
+	Options:
+	    -r <feedname>: Only search in this feed
+
+	uninstall -a|<package>: Uninstall a package
+	    -a uninstalls all packages
+
+	update:	Update packages and lists of feeds in feeds.list
+	clean: Remove downloaded/generated files
+
+EOF
+	exit(1);
+}
+
+my %update_method = (
+	'src-svn' => \&update_svn
+);
+
+my %commands = (
+	'update' => sub {
+		-d "feeds" or do {
+			mkdir "feeds" or die "Unable to create the feeds directory";
+		};
+		$ENV{SCAN_COOKIE} = $$;
+		$ENV{KBUILD_VERBOSE} = 99;
+		foreach my $feed (@feeds) {
+			my ($type, $name, $src) = @$feed;
+			$update_method{$type} or do {
+				warn "Unknown type '$type' in feed $name\n";
+				next;
+			};
+			warn "Updating feed '$name'...\n";
+			&{$update_method{$type}}($name, $src) == 0 or do {
+				warn "failed.\n";
+				return 1;
+			};
+		}
+		return 0;
+	},
+	'install' => \&install,
+	'search' => \&search,
+	'uninstall' => \&uninstall,
+	'clean' => sub {
+		system("rm -rf feeds");
+	}
+);
+
+my $arg = shift @ARGV;
+$arg or usage();
+parse_config;
+foreach my $cmd (keys %commands) {
+	$arg eq $cmd and do {
+		exit(&{$commands{$cmd}}());
+	};
+}
+usage();

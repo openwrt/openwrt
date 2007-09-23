@@ -1,15 +1,15 @@
 include $(TOPDIR)/include/verbose.mk
 TMP_DIR:=$(TOPDIR)/tmp
 
-all: tmp/.$(SCAN_TARGET)
+all: $(TMP_DIR)/.$(SCAN_TARGET)
 
 include $(TOPDIR)/include/host.mk
 
 SCAN_TARGET ?= packageinfo
 SCAN_NAME ?= package
 SCAN_DIR ?= package
-TARGET_STAMP:=tmp/info/.files-$(SCAN_TARGET).stamp
-FILELIST:=tmp/info/.files-$(SCAN_TARGET)-$(SCAN_COOKIE)
+TARGET_STAMP:=$(TMP_DIR)/info/.files-$(SCAN_TARGET).stamp
+FILELIST:=$(TMP_DIR)/info/.files-$(SCAN_TARGET)-$(SCAN_COOKIE)
 
 ifeq ($(IS_TTY),1)
   define progress
@@ -22,8 +22,8 @@ else
 endif
 
 define PackageDir
-  tmp/.$(SCAN_TARGET): tmp/info/.$(SCAN_TARGET)-$(1)
-  tmp/info/.$(SCAN_TARGET)-$(1): $(SCAN_DIR)/$(2)/Makefile $(SCAN_STAMP) $(foreach DEP,$(DEPS_$(SCAN_DIR)/$(1)/Makefile) $(SCAN_DEPS),$(wildcard $(if $(filter /%,$(DEP)),$(DEP),$(SCAN_DIR)/$(1)/$(DEP))))
+  $(TMP_DIR)/.$(SCAN_TARGET): $(TMP_DIR)/info/.$(SCAN_TARGET)-$(1)
+  $(TMP_DIR)/info/.$(SCAN_TARGET)-$(1): $(SCAN_DIR)/$(2)/Makefile $(SCAN_STAMP) $(foreach DEP,$(DEPS_$(SCAN_DIR)/$(1)/Makefile) $(SCAN_DEPS),$(wildcard $(if $(filter /%,$(DEP)),$(DEP),$(SCAN_DIR)/$(1)/$(DEP))))
 	{ \
 		$$(call progress,Collecting $(SCAN_NAME) info: $(SCAN_DIR)/$(2)) \
 		echo Source-Makefile: $(SCAN_DIR)/$(2)/Makefile; \
@@ -33,10 +33,10 @@ define PackageDir
 endef
 
 $(FILELIST):
-	rm -f tmp/info/.files-$(SCAN_TARGET)-*
+	rm -f $(TMP_DIR)/info/.files-$(SCAN_TARGET)-*
 	$(call FIND_L, $(SCAN_DIR)) $(SCAN_EXTRA) -mindepth 1 $(if $(SCAN_DEPTH),-maxdepth $(SCAN_DEPTH)) -name Makefile | xargs grep -HE 'call (Build/DefaultTargets|Build(Package|Target)|.+Package)' | sed -e 's#^$(SCAN_DIR)/##' -e 's#/Makefile:.*##' | uniq > $@
 
-tmp/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
+$(TMP_DIR)/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
 	( \
 		cat $< | awk '{print "$(SCAN_DIR)/" $$0 "/Makefile" }' | xargs grep -HE '^ *SCAN_DEPS *= *' | awk -F: '{ gsub(/^.*DEPS *= */, "", $$2); print "DEPS_" $$1 "=" $$2 }'; \
 		awk -v deps="$$DEPS" '{ \
@@ -47,7 +47,7 @@ tmp/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
 		true; \
 	) > $@
 
--include tmp/info/.files-$(SCAN_TARGET).mk
+-include $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk
 
 $(TARGET_STAMP):
 	( \
@@ -60,9 +60,9 @@ $(TARGET_STAMP):
 		} \
 	)
 
-tmp/.$(SCAN_TARGET): $(TARGET_STAMP) $(SCAN_STAMP)
+$(TMP_DIR)/.$(SCAN_TARGET): $(TARGET_STAMP) $(SCAN_STAMP)
 	$(call progress,Collecting $(SCAN_NAME) info: merging...)
-	cat $(FILELIST) | awk '{gsub(/\//, "_", $$0);print "tmp/info/.$(SCAN_TARGET)-" $$0}' | xargs cat > $@
+	cat $(FILELIST) | awk '{gsub(/\//, "_", $$0);print "$(TMP_DIR)/info/.$(SCAN_TARGET)-" $$0}' | xargs cat > $@
 	$(call progress,Collecting $(SCAN_NAME) info: done)
 	echo
 
