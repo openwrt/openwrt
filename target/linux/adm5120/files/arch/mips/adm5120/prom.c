@@ -75,6 +75,7 @@ static struct board_desc common_boards[] __initdata = {
 	DEFBOARD("133C3",		MACH_ADM5120_RB_133C),
 	DEFBOARD("150",			MACH_ADM5120_RB_153), /* it's intentional */
 	DEFBOARD("153",			MACH_ADM5120_RB_153),
+	DEFBOARD("192",			MACH_ADM5120_RB_192),
 	DEFBOARD("miniROUTER",		MACH_ADM5120_RB_150),
 };
 
