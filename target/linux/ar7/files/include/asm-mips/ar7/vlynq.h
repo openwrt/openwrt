@@ -19,6 +19,10 @@
 #ifndef __VLYNQ_H__
 #define __VLYNQ_H__
 
+#include <linux/device.h>
+#include <linux/module.h>
+#include <linux/types.h>
+
 struct vlynq_mapping {
 	u32 size;
 	u32 offset;
