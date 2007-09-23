@@ -11,7 +11,7 @@ WIRELESS_MENU:=Wireless Drivers
 define KernelPackage/ieee80211
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=802.11 Networking stack
-  DEPENDS:=@LINUX_2_6 +kmod-crypto
+  DEPENDS:=@LINUX_2_6 +kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic
   KCONFIG:= \
 	CONFIG_IEEE80211 \
 	CONFIG_IEEE80211_CRYPT_WEP \
