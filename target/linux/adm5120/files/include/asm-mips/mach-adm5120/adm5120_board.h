@@ -41,6 +41,8 @@ struct adm5120_board {
 	unsigned char		*eth_vlans;
 	unsigned int		num_devices;
 	struct platform_device	**devices;
+	unsigned int		pci_nr_irqs;
+	struct adm5120_pci_irq	*pci_irq_map;
 
 	struct list_head	list;
 };

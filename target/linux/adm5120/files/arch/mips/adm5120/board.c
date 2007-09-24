@@ -96,9 +96,8 @@ static int __init adm5120_board_setup(void)
 	amba_device_register(&adm5120_uart0_device, &iomem_resource);
 	amba_device_register(&adm5120_uart1_device, &iomem_resource);
 
-	/* register PCI controller */
-	if (adm5120_package_bga())
-		platform_device_register(&adm5120_pci_device);
+	/* setup PCI irq map */
+	adm5120_pci_set_irq_map(board->pci_nr_irqs, board->pci_irq_map);
 
 	/* register board devices */
 	if (board->num_devices > 0 && board->devices != NULL ) {
@@ -109,6 +108,7 @@ static int __init adm5120_board_setup(void)
 
 	return 0;
 }
+postcore_initcall(adm5120_board_setup);
 
 void __init adm5120_board_register(struct adm5120_board *board)
 {
@@ -125,4 +125,3 @@ void __init adm5120_register_boards(struct adm5120_board **boards,
 		adm5120_board_register(boards[i]);
 }
 
-arch_initcall(adm5120_board_setup);

@@ -29,8 +29,8 @@
 #include <asm/bootinfo.h>
 #include <asm/gpio.h>
 
-#include <asm/mach-adm5120/adm5120_board.h>
-#include <asm/mach-adm5120/adm5120_platform.h>
+#include <adm5120_board.h>
+#include <adm5120_platform.h>
 
 static struct platform_device *generic_devices[] __initdata = {
 	&adm5120_flash0_device,

@@ -29,8 +29,9 @@
 #include <asm/bootinfo.h>
 #include <asm/gpio.h>
 
-#include <asm/mach-adm5120/adm5120_board.h>
-#include <asm/mach-adm5120/adm5120_platform.h>
+#include <adm5120_board.h>
+#include <adm5120_platform.h>
+#include <adm5120_irq.h>
 
 static void switch_bank_gpio5(unsigned bank)
 {
@@ -43,6 +44,10 @@ static void switch_bank_gpio5(unsigned bank)
 		break;
 	}
 }
+
+static struct adm5120_pci_irq p33x_pci_irqs[] __initdata = {
+	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI0),
+};
 
 static struct mtd_partition p33x_partitions[] = {
 	{
@@ -105,6 +110,8 @@ static struct adm5120_board p334wt_board __initdata = {
 	.eth_vlans	= p33x_vlans,
 	.num_devices	= ARRAY_SIZE(p334_devices),
 	.devices	= p334_devices,
+	.pci_nr_irqs	= ARRAY_SIZE(p33x_pci_irqs),
+	.pci_irq_map	= p33x_pci_irqs,
 };
 
 static struct adm5120_board p335_board __initdata = {
@@ -115,6 +122,8 @@ static struct adm5120_board p335_board __initdata = {
 	.eth_vlans	= p33x_vlans,
 	.num_devices	= ARRAY_SIZE(p335_devices),
 	.devices	= p335_devices,
+	.pci_nr_irqs	= ARRAY_SIZE(p33x_pci_irqs),
+	.pci_irq_map	= p33x_pci_irqs,
 };
 
 static int __init register_boards(void)

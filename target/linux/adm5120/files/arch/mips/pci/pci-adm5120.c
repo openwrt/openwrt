@@ -40,7 +40,7 @@
 #include <adm5120_defs.h>
 #include <adm5120_info.h>
 #include <adm5120_defs.h>
-#include <adm5120_irq.h>
+#include <adm5120_platform.h>
 
 #undef DEBUG
 
@@ -51,6 +51,11 @@
 #endif
 
 #define PCI_ENABLE 0x80000000
+
+/* -------------------------------------------------------------------------*/
+
+static unsigned int adm5120_pci_nr_irqs __initdata = 0;
+static struct adm5120_pci_irq *adm5120_pci_irq_map __initdata = NULL;
 
 static spinlock_t pci_lock = SPIN_LOCK_UNLOCKED;
 
@@ -187,99 +192,34 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ADMTEK, PCI_DEVICE_ID_ADMTEK_ADM5120,
 
 /* -------------------------------------------------------------------------*/
 
-struct adm5120_pci_irq {
-	u8	slot;
-	u8	func;
-	u8	pin;
-	unsigned irq;
-};
-
-#define PCIIRQ(s,f,p,i) { 	\
-	.slot = (s),		\
-	.func = (f),		\
-	.pin  = (p),		\
-	.irq  = (i)		\
-	}
-
-static struct adm5120_pci_irq default_pci_irqs[] __initdata = {
-	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI0),
-};
-
-static struct adm5120_pci_irq rb1xx_pci_irqs[] __initdata = {
-	PCIIRQ(1, 0, 1, ADM5120_IRQ_PCI0),
-	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI1),
-	PCIIRQ(3, 0, 1, ADM5120_IRQ_PCI2)
-};
-
-static struct adm5120_pci_irq cas771_pci_irqs[] __initdata = {
-	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI0),
-	PCIIRQ(3, 0, 1, ADM5120_IRQ_PCI1),
-	PCIIRQ(3, 2, 3, ADM5120_IRQ_PCI2)
-};
-
-static struct adm5120_pci_irq np28g_pci_irqs[] __initdata = {
-	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI0),
-	PCIIRQ(3, 0, 1, ADM5120_IRQ_PCI0),
-	PCIIRQ(3, 1, 2, ADM5120_IRQ_PCI1),
-	PCIIRQ(3, 2, 3, ADM5120_IRQ_PCI2)
-};
-
-#define GETMAP(n) do { 				\
-		nr_irqs = ARRAY_SIZE(n ## _pci_irqs); 	\
-		p = n ## _pci_irqs;			\
-	} while (0)
+void __init adm5120_pci_set_irq_map(unsigned int nr_irqs,
+		struct adm5120_pci_irq *map)
+{
+	adm5120_pci_nr_irqs = nr_irqs;
+	adm5120_pci_irq_map = map;
+}
 
 int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 {
-	struct adm5120_pci_irq	*p;
-	int nr_irqs;
+	int irq = -1;
 	int i;
-	int irq;
 
-	irq = -1;
+	if ((!adm5120_pci_nr_irqs) || (!adm5120_pci_irq_map)) {
+		printk(KERN_ALERT "PCI: pci_irq_map is not initialized\n");
+		goto out;
+	}
+
 	if (slot < 1 || slot > 3) {
 		printk(KERN_ALERT "PCI: slot number %u is not supported\n",
 			slot);
 		goto out;
 	}
 
-	GETMAP(default);
-
-	switch (mips_machtype) {
-	case MACH_ADM5120_RB_111:
-	case MACH_ADM5120_RB_112:
-	case MACH_ADM5120_RB_133:
-	case MACH_ADM5120_RB_133C:
-	case MACH_ADM5120_RB_153:
-		GETMAP(rb1xx);
-		break;
-	case MACH_ADM5120_NP28G:
-		GETMAP(np28g);
-		break;
-	case MACH_ADM5120_P335:
-	case MACH_ADM5120_P334WT:
-		/* using default mapping */
-		break;
-	case MACH_ADM5120_CAS771:
-		GETMAP(cas771);
-		break;
-
-	case MACH_ADM5120_NP27G:
-	case MACH_ADM5120_NP28GHS:
-	case MACH_ADM5120_WP54AG:
-	case MACH_ADM5120_WP54G:
-	case MACH_ADM5120_WP54G_WRT:
-	case MACH_ADM5120_WPP54AG:
-	case MACH_ADM5120_WPP54G:
-	default:
-		printk(KERN_ALERT "PCI: irq map is unknown, using defaults.\n");
-		break;
-	}
-
-	for (i = 0; i < nr_irqs; i++, p++) {
-		if ((p->slot == slot) && (PCI_FUNC(dev->devfn) == p->func) &&
-		    (p->pin == pin)) {
-			irq = p->irq;
+	for (i = 0; i < adm5120_pci_nr_irqs; i++) {
+		if ((adm5120_pci_irq_map[i].slot == slot)
+			&& (adm5120_pci_irq_map[i].func == PCI_FUNC(dev->devfn))
+			&& (adm5120_pci_irq_map[i].pin == pin)) {
+			irq = adm5120_pci_irq_map[i].irq;
 			break;
 		}
 	}
