@@ -103,9 +103,9 @@ void __init prom_init(void)
 	add_memory_region(ddr->ddrbase + 0x400, memsize - 0x600, BOOT_MEM_RAM);
 }
 
-void prom_free_prom_memory(void)
+void __init prom_free_prom_memory(void)
 {
-	/* FIXME: STUB */
+	/* No prom memory to free */
 }
 
 extern char _image_cmdline;
