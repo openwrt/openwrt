@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/gdbserver
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@GDB@
+  DEPENDS:=@GDB
   TITLE:=Remote Server for the GNU Debugger
 endef
 
