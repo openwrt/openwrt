@@ -920,7 +920,7 @@ sub defaultPartitions {
 	     'offset'=>0x007f8000,        'size'=>0x00004000,
 	     'variable'=>0, 'header'=>0,  'pseudo'=>1, 'data'=>undef, 'byteswap'=>0},
 	    {'name'=>'Microcode',	  'file'=>'NPE-B',
-	     'offset'=>0x007fc000,        'size'=>0x00003000,
+	     'offset'=>0x007fc000,        'size'=>0x00003fe0,
 	     'variable'=>0, 'header'=>16, 'pseudo'=>1, 'data'=>undef, 'byteswap'=>0},
 	    {'name'=>'Trailer',           'file'=>'Trailer',
 	     'offset'=>0x007ffff0,        'size'=>0x00000010,
