@@ -29,8 +29,9 @@
 #include <asm/bootinfo.h>
 #include <asm/gpio.h>
 
-#include <asm/mach-adm5120/adm5120_board.h>
-#include <asm/mach-adm5120/adm5120_platform.h>
+#include <adm5120_board.h>
+#include <adm5120_platform.h>
+#include <adm5120_irq.h>
 
 static void switch_bank_gpio5(unsigned bank)
 {
@@ -48,6 +49,17 @@ static void wp54_reset(void)
 {
 	gpio_set_value(ADM5120_GPIO_PIN3, 0);
 }
+
+static struct adm5120_pci_irq wp54_pci_irqs[] __initdata = {
+	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI0),
+};
+
+static struct adm5120_pci_irq np28g_pci_irqs[] __initdata = {
+	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI0),
+	PCIIRQ(3, 0, 1, ADM5120_IRQ_PCI0),
+	PCIIRQ(3, 1, 2, ADM5120_IRQ_PCI1),
+	PCIIRQ(3, 2, 3, ADM5120_IRQ_PCI2)
+};
 
 static struct mtd_partition wp54g_wrt_partitions[] = {
 	{
@@ -148,6 +160,8 @@ static struct adm5120_board np28g_board __initdata = {
 	.eth_vlans	= np28g_vlans,
 	.num_devices	= ARRAY_SIZE(np2xg_devices),
 	.devices	= np2xg_devices,
+	.pci_nr_irqs	= ARRAY_SIZE(np28g_pci_irqs),
+	.pci_irq_map	= np28g_pci_irqs,
 };
 
 static struct adm5120_board wp54ag_board __initdata = {
@@ -159,6 +173,8 @@ static struct adm5120_board wp54ag_board __initdata = {
 	.eth_vlans	= wp54_vlans,
 	.num_devices	= ARRAY_SIZE(wp54_devices),
 	.devices	= wp54_devices,
+	.pci_nr_irqs	= ARRAY_SIZE(wp54_pci_irqs),
+	.pci_irq_map	= wp54_pci_irqs,
 };
 
 static struct adm5120_board wp54g_board __initdata = {
@@ -170,6 +186,8 @@ static struct adm5120_board wp54g_board __initdata = {
 	.eth_vlans	= wp54_vlans,
 	.num_devices	= ARRAY_SIZE(wp54_devices),
 	.devices	= wp54_devices,
+	.pci_nr_irqs	= ARRAY_SIZE(wp54_pci_irqs),
+	.pci_irq_map	= wp54_pci_irqs,
 };
 
 static struct adm5120_board wp54g_wrt_board __initdata = {
@@ -181,6 +199,8 @@ static struct adm5120_board wp54g_wrt_board __initdata = {
 	.eth_vlans	= wp54_vlans,
 	.num_devices	= ARRAY_SIZE(wp54_devices),
 	.devices	= wp54_devices,
+	.pci_nr_irqs	= ARRAY_SIZE(wp54_pci_irqs),
+	.pci_irq_map	= wp54_pci_irqs,
 };
 
 static struct adm5120_board wpp54ag_board __initdata = {
@@ -192,6 +212,8 @@ static struct adm5120_board wpp54ag_board __initdata = {
 	.eth_vlans	= wp54_vlans,
 	.num_devices	= ARRAY_SIZE(wp54_devices),
 	.devices	= wp54_devices,
+	.pci_nr_irqs	= ARRAY_SIZE(wp54_pci_irqs),
+	.pci_irq_map	= wp54_pci_irqs,
 };
 
 static struct adm5120_board wpp54g_board __initdata = {
@@ -203,6 +225,8 @@ static struct adm5120_board wpp54g_board __initdata = {
 	.eth_vlans	= wp54_vlans,
 	.num_devices	= ARRAY_SIZE(wp54_devices),
 	.devices	= wp54_devices,
+	.pci_nr_irqs	= ARRAY_SIZE(wp54_pci_irqs),
+	.pci_irq_map	= wp54_pci_irqs,
 };
 
 static int __init register_boards(void)

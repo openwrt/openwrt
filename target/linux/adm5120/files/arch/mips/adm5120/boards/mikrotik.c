@@ -29,8 +29,15 @@
 #include <asm/bootinfo.h>
 #include <asm/gpio.h>
 
-#include <asm/mach-adm5120/adm5120_board.h>
-#include <asm/mach-adm5120/adm5120_platform.h>
+#include <adm5120_board.h>
+#include <adm5120_platform.h>
+#include <adm5120_irq.h>
+
+static struct adm5120_pci_irq rb1xx_pci_irqs[] __initdata = {
+	PCIIRQ(1, 0, 1, ADM5120_IRQ_PCI0),
+	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI1),
+	PCIIRQ(3, 0, 1, ADM5120_IRQ_PCI2)
+};
 
 static struct mtd_partition rb1xx_partitions[] = {
 	{
@@ -111,6 +118,8 @@ static struct adm5120_board rb111_board __initdata = {
 	.eth_vlans	= rb11x_vlans,
 	.num_devices	= ARRAY_SIZE(rb1xx_devices),
 	.devices	= rb1xx_devices,
+	.pci_nr_irqs	= ARRAY_SIZE(rb1xx_pci_irqs),
+	.pci_irq_map	= rb1xx_pci_irqs,
 };
 
 static struct adm5120_board rb112_board __initdata = {
@@ -121,6 +130,8 @@ static struct adm5120_board rb112_board __initdata = {
 	.eth_vlans	= rb11x_vlans,
 	.num_devices	= ARRAY_SIZE(rb1xx_devices),
 	.devices	= rb1xx_devices,
+	.pci_nr_irqs	= ARRAY_SIZE(rb1xx_pci_irqs),
+	.pci_irq_map	= rb1xx_pci_irqs,
 };
 
 static struct adm5120_board rb133_board __initdata = {
@@ -141,6 +152,8 @@ static struct adm5120_board rb133c_board __initdata = {
 	.eth_vlans	= rb133c_vlans,
 	.num_devices	= ARRAY_SIZE(rb1xx_devices),
 	.devices	= rb1xx_devices,
+	.pci_nr_irqs	= ARRAY_SIZE(rb1xx_pci_irqs),
+	.pci_irq_map	= rb1xx_pci_irqs,
 };
 
 static struct adm5120_board rb150_board __initdata = {
@@ -161,6 +174,8 @@ static struct adm5120_board rb153_board __initdata = {
 	.eth_vlans	= rb15x_vlans,
 	.num_devices	= ARRAY_SIZE(rb1xx_devices),
 	.devices	= rb1xx_devices,
+	.pci_nr_irqs	= ARRAY_SIZE(rb1xx_pci_irqs),
+	.pci_irq_map	= rb1xx_pci_irqs,
 };
 
 static struct adm5120_board rb192_board __initdata = {
@@ -171,6 +186,8 @@ static struct adm5120_board rb192_board __initdata = {
 	.eth_vlans	= rb192_vlans,
 	.num_devices	= ARRAY_SIZE(rb1xx_devices),
 	.devices	= rb1xx_devices,
+	.pci_nr_irqs	= ARRAY_SIZE(rb1xx_pci_irqs),
+	.pci_irq_map	= rb1xx_pci_irqs,
 };
 
 static int __init register_boards(void)

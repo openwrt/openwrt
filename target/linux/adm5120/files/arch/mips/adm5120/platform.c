@@ -74,14 +74,6 @@ struct platform_device adm5120_switch_device = {
 };
 #endif
 
-/* PCI Host Controller */
-struct adm5120_pci_platform_data adm5120_pci_data;
-struct platform_device adm5120_pci_device = {
-	.name	= "adm5120-pci",
-	.id	= -1,
-	.dev.platform_data = &adm5120_pci_data,
-};
-
 /* USB Host Controller */
 struct resource adm5120_hcd_resources[] = {
 	[0] = {

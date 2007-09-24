@@ -59,10 +59,17 @@ struct adm5120_pci_irq {
 	unsigned irq;
 };
 
-struct adm5120_pci_platform_data {
-	unsigned int	nr_irqs;
-	struct adm5120_pci_irq	*irqs;
-};
+#define PCIIRQ(s,f,p,i) {.slot = (s), .func = (f), .pin  = (p), .irq  = (i)}
+
+#ifdef CONFIG_PCI
+extern void adm5120_pci_set_irq_map(unsigned int nr_irqs,
+		struct adm5120_pci_irq *map) __init;
+#else
+static inline void adm5120_pci_set_irq_map(unsigned int nr_irqs,
+		struct adm5120_pci_irq *map)
+{
+}
+#endif
 
 extern struct adm5120_flash_platform_data adm5120_flash0_data;
 extern struct adm5120_flash_platform_data adm5120_flash1_data;

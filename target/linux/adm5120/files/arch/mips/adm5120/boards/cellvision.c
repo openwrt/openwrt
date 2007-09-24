@@ -29,8 +29,9 @@
 #include <asm/bootinfo.h>
 #include <asm/gpio.h>
 
-#include <asm/mach-adm5120/adm5120_board.h>
-#include <asm/mach-adm5120/adm5120_platform.h>
+#include <adm5120_board.h>
+#include <adm5120_platform.h>
+#include <adm5120_irq.h>
 
 static void switch_bank_gpio5(unsigned bank)
 {
@@ -43,6 +44,12 @@ static void switch_bank_gpio5(unsigned bank)
 		break;
 	}
 }
+
+static struct adm5120_pci_irq cas771_pci_irqs[] __initdata = {
+	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI0),
+	PCIIRQ(3, 0, 1, ADM5120_IRQ_PCI1),
+	PCIIRQ(3, 2, 3, ADM5120_IRQ_PCI2)
+};
 
 static struct mtd_partition cas6xx_partitions[] = {
 	{
@@ -158,6 +165,8 @@ static struct adm5120_board cas771_board __initdata = {
 	.eth_num_ports	= 1,
 	.num_devices	= ARRAY_SIZE(cas7xx_devices),
 	.devices	= cas7xx_devices,
+	.pci_nr_irqs	= ARRAY_SIZE(cas771_pci_irqs),
+	.pci_irq_map	= cas771_pci_irqs,
 };
 
 static struct adm5120_board cas790_board __initdata = {
