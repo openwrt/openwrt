@@ -33,7 +33,7 @@
 
 #define MEM32(x) *((volatile unsigned *) (x))
 
-extern unsigned int board_type;
+extern char *board_type;
 
 struct rb500_nand_info {
         struct nand_chip chip;
@@ -125,7 +125,7 @@ static int rbmips_probe(struct platform_device *pdev)
 		return -EIO;
         }
 
-	if (board_type > 500) {
+	if (!strcmp(board_type, "500r5")) {
 		data->flags1 = LO_FOFF | LO_CEX;
 		data->flags2 = LO_ULED | LO_ALE | LO_CLE | LO_WPX;
 	}
