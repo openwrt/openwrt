@@ -7,7 +7,7 @@ DNS_SERVERS=""
 dhcp_calc() {
 	local ip="$1"
 	local res=0
-	
+
 	while [ -n "$ip" ]; do
 		part="${ip%%.*}"
 		res="$(($res * 256))"
@@ -21,9 +21,19 @@ append_bool() {
 	local section="$1"
 	local option="$2"
 	local value="$3"
-	local _tmp
-	config_get_bool _tmp "$section" "$option"
-	[ "$_tmp" -gt 0 ] && append args "$3"
+	local _loctmp
+	config_get_bool _loctmp "$section" "$option"
+	[ "$_loctmp" -gt 0 ] && append args "$3"
+}
+
+append_parm() {
+	local section="$1"
+	local option="$2"
+	local switch="$3"
+	local _loctmp
+	config_get _loctmp "$section" "$option"
+	[ -z "$_loctmp" ] && return 0
+	append args "$switch $_loctmp"
 }
 
 dnsmasq() {
@@ -40,23 +50,12 @@ dnsmasq() {
 	append_bool "$cfg" localise_queries "-y"
 	append_bool "$cfg" readethers "-Z"
 	append_bool "$cfg" dbus "-l"
-	
-	config_get dnsforwardmax "$cfg" dnsforwardmax
-	dnsforwardmax="${dnsforwardmax:-150}"
-	append args "-0 $dnsforwardmax"
-	
-	config_get port "$cfg" port
-	port="${port:-53}"
-	append args "-p $port"
-	
-	config_get ednspacket_max "$cfg" ednspacket_max
-	ednspacket_max="${ednspacket_max:-1280}"
-	append args "-P $ednspacket_max"
-	
-	config_get dhcpleasemax "$cfg" dhcpleasemax
-	dhcpleasemax="${dhcpleasemax:-150}"
-	append args "-X $dhcpleasemax"
-	
+
+	append_parm "$cfg" dnsforwardmax "-0"
+	append_parm "$cfg" port "-p"
+	append_parm "$cfg" ednspacket_max "-P"
+	append_parm "$cfg" dhcpleasemax "-X"
+
 	config_get addnhosts "$cfg" addnhosts
 	config_get interface "$cfg" interface
 	config_get exceptinterface "$cfg" exceptinterface
@@ -66,15 +65,15 @@ dnsmasq() {
 
 dhcp_subscrid_add() {
 	local cfg="$1"
-	
+
 	config_get name "$cfg" name
 	[ -n "$name" ] || return 0
-	
+
 	config_get subscriberid "$cfg" subscriberid
 	[ -n "$subscriberid" ] || return 0
-	
+
 	append args "--dhcp-subscrid=$name,$subscriberid"
-	
+
 	dhcp_option_add "$cfg" "$name"
 }
 
@@ -83,83 +82,83 @@ dhcp_remoteid_add() {
 
 	config_get name "$cfg" name
 	[ -n "$name" ] || return 0
-	
+
 	config_get remoteid "$cfg" remoteid
 	[ -n "$remoteid" ] || return 0
-	
+
 	append args "--dhcp-remoteid=$name,$remoteid"
-	
+
 	dhcp_option_add "$cfg" "$name"
 }
 
 dhcp_circuitid_add() {
 	local cfg="$1"
-	
+
 	config_get name "$cfg" name
 	[ -n "$name" ] || return 0
-	
+
 	config_get circuitid "$cfg" circuitid
 	[ -n "$circuitid" ] || return 0
-	
+
 	append args "--dhcp-circuitid=$name,$circuitid"
-	
+
 	dhcp_option_add "$cfg" "$name"
 }
 
 dhcp_userclass_add() {
 	local cfg="$1"
-	
+
 	config_get name "$cfg" name
 	[ -n "$name" ] || return 0
-	
+
 	config_get userclass "$cfg" userclass
 	[ -n "$userclass" ] || return 0
-	
+
 	append args "--dhcp-userclass=$name,$userclass"
-	
+
 	dhcp_option_add "$cfg" "$name"
 }
 
 dhcp_vendorclass_add() {
 	local cfg="$1"
-	
+
 	config_get name "$cfg" name
 	[ -n "$name" ] || return 0
-	
+
 	config_get vendorclass "$cfg" vendorclass
 	[ -n "$vendorclass" ] || return 0
-	
+
 	append args "--dhcp-vendorclass=$name,$vendorclass"
-	
+
 	dhcp_option_add "$cfg" "$name"
 }
 
 dhcp_host_add() {
 	local cfg="$1"
-	
+
 	config_get name "$cfg" name
 	[ -n "$name" ] || return 0
-	
+
 	config_get mac "$cfg" mac
 	[ -n "$mac" ] || return 0
 
-	
+
 	append args "--dhcp-host=$mac,$ip"
-	
+
 	dhcp_option_add "$cfg" "$name"
 }
 
 dhcp_mac_add() {
 	local cfg="$1"
-	
+
 	config_get name "$cfg" name
 	[ -n "$name" ] || return 0
-	
+
 	config_get mac "$cfg" mac
 	[ -n "$mac" ] || return 0
-	
+
 	append args "--dhcp-mac=$name,$mac"
-	
+
 	dhcp_option_add "$cfg" "$name"
 }
 
@@ -192,7 +191,7 @@ dhcp_add() {
 	[ "$force" -gt 0 ] || {
 		udhcpc -n -q -R -s /bin/true -t 1 -i $ifname >&- && return 0
 	}
-	
+
 	config_get start "$cfg" start
 	config_get limit "$cfg" limit
 	config_get leasetime "$cfg" leasetime
@@ -203,14 +202,14 @@ dhcp_add() {
 	limit="$((${limit:-150} + 1))"
 	eval "$(ipcalc.sh $ipaddr $netmask $start $limit)"
 	append args "--dhcp-range=$name,$START,$END,$NETMASK,$leasetime${options:+ $options}"
-	
+
 	dhcp_option_add "$cfg" "$name"
 }
 
-dhcp_option_add () {
+dhcp_option_add() {
 	local cfg="$1"
 	local name="$2"
-	
+
 	for count in $(seq 0 100); do
 		eval current_value=\$CONFIG_"$cfg"_dhcp"$count"
 		if [ -z "$current_value" ]; then
@@ -225,6 +224,7 @@ dhcp_option_add () {
 start() {
 	include /lib/network
 	scan_interfaces
+	config_load /var/state/network
 	config_load dhcp
 
 	args=""
@@ -243,7 +243,7 @@ start() {
 		DNS_SERVERS="$DNS_SERVERS 127.0.0.1"
 		for DNS_SERVER in $DNS_SERVERS ; do
 			echo "nameserver $DNS_SERVER" >> /tmp/resolv.conf
-		done	
+		done
 	}
 }
 
