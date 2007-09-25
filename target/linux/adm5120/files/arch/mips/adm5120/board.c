@@ -108,7 +108,7 @@ static int __init adm5120_board_setup(void)
 
 	return 0;
 }
-postcore_initcall(adm5120_board_setup);
+arch_initcall(adm5120_board_setup);
 
 void __init adm5120_board_register(struct adm5120_board *board)
 {
