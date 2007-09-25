@@ -74,7 +74,6 @@ static inline void adm5120_pci_set_irq_map(unsigned int nr_irqs,
 extern struct adm5120_flash_platform_data adm5120_flash0_data;
 extern struct adm5120_flash_platform_data adm5120_flash1_data;
 extern struct adm5120_nand_platform_data adm5120_nand_data;
-extern struct adm5120_pci_platform_data adm5120_pci_data;
 extern struct adm5120_switch_platform_data adm5120_switch_data;
 extern struct amba_pl010_data adm5120_uart0_data;
 extern struct amba_pl010_data adm5120_uart1_data;
@@ -83,10 +82,8 @@ extern struct platform_device adm5120_flash0_device;
 extern struct platform_device adm5120_flash1_device;
 extern struct platform_device adm5120_nand_device;
 extern struct platform_device adm5120_hcd_device;
-extern struct platform_device adm5120_pci_device;
 extern struct platform_device adm5120_switch_device;
 extern struct amba_device adm5120_uart0_device;
 extern struct amba_device adm5120_uart1_device;
-
 
 #endif /* _ADM5120_PLATFORM_H_ */
