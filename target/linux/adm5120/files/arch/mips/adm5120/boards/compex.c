@@ -191,7 +191,7 @@ static struct adm5120_board wp54g_board __initdata = {
 };
 
 static struct adm5120_board wp54g_wrt_board __initdata = {
-	.mach_type	= MACH_ADM5120_WP54G,
+	.mach_type	= MACH_ADM5120_WP54G_WRT,
 	.name		= "Compex WP54G-WRT",
 	.board_setup	= wp54_wrt_setup,
 	.board_reset	= wp54_reset,
