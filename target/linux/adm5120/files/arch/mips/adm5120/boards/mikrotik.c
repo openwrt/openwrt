@@ -142,6 +142,8 @@ static struct adm5120_board rb133_board __initdata = {
 	.eth_vlans	= rb133_vlans,
 	.num_devices	= ARRAY_SIZE(rb1xx_devices),
 	.devices	= rb1xx_devices,
+	.pci_nr_irqs	= ARRAY_SIZE(rb1xx_pci_irqs),
+	.pci_irq_map	= rb1xx_pci_irqs,
 };
 
 static struct adm5120_board rb133c_board __initdata = {
