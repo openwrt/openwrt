@@ -8,10 +8,12 @@
 
 WIRELESS_MENU:=Wireless Drivers
 
+# NOTE: dependency on 2.6 was removed since it was inherited by kmod-hostap 
+#       and prevented it from even showing up in menuconfig on 2.4
 define KernelPackage/ieee80211
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=802.11 Networking stack
-  DEPENDS:=@LINUX_2_6 +kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic
+  DEPENDS:=+kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic
   KCONFIG:= \
 	CONFIG_IEEE80211 \
 	CONFIG_IEEE80211_CRYPT_WEP \
