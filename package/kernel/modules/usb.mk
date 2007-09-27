@@ -467,7 +467,7 @@ define KernelPackage/usb-net
   $(call usbdep,)
   TITLE:=Kernel modules for USB-to-Ethernet convertors
   KCONFIG:=CONFIG_USB_USBNET
-  AUTOLOAD:=$(call Autoload,60, usbnet)
+  AUTOLOAD:=$(call Autoload,60,usbnet)
 endef
 
 define KernelPackage/usb-net/2.4
@@ -535,7 +535,7 @@ define KernelPackage/usb-net-cdc-ether
   TITLE:=Support for cdc ethernet connections
   KCONFIG:=CONFIG_USB_NET_CDCETHER
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/cdc_ether.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,61,cdc-ether)
+  AUTOLOAD:=$(call AutoLoad,61,cdc_ether)
 endef
 
 define KernelPackage/usb-net-cdc-ether/description
