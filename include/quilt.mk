@@ -5,6 +5,9 @@
 # See /LICENSE for more information.
 #
 
+ifneq ($(__quilt_inc),1)
+__quilt_inc:=1
+
 ifeq ($(TARGET_BUILD),1)
   PKG_BUILD_DIR:=$(LINUX_DIR)
 endif
@@ -134,3 +137,4 @@ refresh: quilt-check
 update: quilt-check
 	$(if $(KERNEL_BUILD),$(Quilt/Refresh/Kernel),$(Quilt/Refresh/Package))
 
+endif

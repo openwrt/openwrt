@@ -5,6 +5,9 @@
 # See /LICENSE for more information.
 #
 
+ifneq ($(__prereq_inc),1)
+__prereq_inc:=1
+
 prereq:
 	if [ -f $(TMP_DIR)/.prereq-error ]; then \
 		echo; \
@@ -15,6 +18,7 @@ prereq:
 	fi
 
 .SILENT: prereq
+endif
 
 define Require
   export PREREQ_CHECK=1

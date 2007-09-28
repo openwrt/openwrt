@@ -23,7 +23,7 @@ define BuildIPKGVariable
 endef
 
 ifeq ($(DUMP),)
-  define BuildIPKG
+  define BuildTarget/ipkg
     IPKG_$(1):=$(PACKAGE_DIR)/$(1)_$(VERSION)_$(PKGARCH).ipk
     IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(1)
     INFO_$(1):=$(IPKG_STATE_DIR)/info/$(1).list
@@ -92,9 +92,6 @@ ifeq ($(DUMP),)
     $(PKG_BUILD_DIR)/.version-$(1)_$(VERSION)_$(PKGARCH): $(STAMP_PREPARED)
 	-@rm -f $(PKG_BUILD_DIR)/.version-$(1)_* 2>/dev/null
 	@touch $$@
-
-    $$(eval $$(call Build/DefaultTargets,$(1)))
-
   endef
 
   $(STAGING_DIR)/etc/ipkg.conf:
