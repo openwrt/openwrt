@@ -97,8 +97,15 @@ endif
   $(call shexport,Package/$(1)/description)
   $(call shexport,Package/$(1)/config)
 
-  $(Dumpinfo)
-  $(BuildIPKG)
+  $(if $(DUMP), \
+    $(Dumpinfo), \
+    $(foreach target, \
+      $(if $(Package/$(1)/targets),$(Package/$(1)/targets), \
+        $(if $(PKG_TARGETS),$(PKG_TARGETS), ipkg ) \
+      ), $(BuildTarget/$(target)) \
+    ) \
+  )
+  $(if $(DUMP),,$(call Build/DefaultTargets,$(1)))
 endef
 
 # prevent libtool from setting rpath when linking
