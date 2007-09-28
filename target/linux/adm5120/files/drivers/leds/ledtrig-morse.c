@@ -32,6 +32,15 @@
 
 #include "leds.h"
 
+#define MORSE_DELAY_BASE	(HZ/2)
+
+#define MORSE_STATE_BLINK_START	0
+#define MORSE_STATE_BLINK_STOP	1
+
+#define MORSE_DIT_LEN	1
+#define MORSE_DAH_LEN	3
+#define MORSE_SPACE_LEN	7
+
 struct morse_trig_data {
 	unsigned long delay;
 	char *msg;
@@ -64,17 +73,17 @@ static inline unsigned char tomorse(char c) {
 
 static inline unsigned long dit_len(struct morse_trig_data *morse_data)
 {
-	return morse_data->delay;
+	return MORSE_DIT_LEN*morse_data->delay;
 }
 
 static inline unsigned long dah_len(struct morse_trig_data *morse_data)
 {
-	return 3*morse_data->delay;
+	return MORSE_DAH_LEN*morse_data->delay;
 }
 
 static inline unsigned long space_len(struct morse_trig_data *morse_data)
 {
-	return 7*morse_data->delay;
+	return MORSE_SPACE_LEN*morse_data->delay;
 }
 
 static void morse_timer_function(unsigned long data)
@@ -88,17 +97,17 @@ static void morse_timer_function(unsigned long data)
 		goto set_led;
 
 	switch (morse_data->state) {
-	case 0:
+	case MORSE_STATE_BLINK_START:
 		/* Starting a new blink.  We have a valid code in morse. */
 		delay = (morse_data->morse & 001) ? dah_len(morse_data):
 			dit_len(morse_data);
 		brightness = LED_FULL;
-		morse_data->state = 1;
+		morse_data->state = MORSE_STATE_BLINK_STOP;
 		morse_data->morse >>= 1;
 		break;
-	case 1:
+	case MORSE_STATE_BLINK_STOP:
 		/* Coming off of a blink. */
-		morse_data->state = 0;
+		morse_data->state = MORSE_STATE_BLINK_START;
 
 		if (morse_data->morse > 1) {
 			/* Not done yet, just a one-dit pause. */
@@ -122,7 +131,8 @@ static void morse_timer_function(unsigned long data)
 
 		if (!(morse_data->morse = tomorse(*morse_data->msgpos))) {
 			delay = space_len(morse_data);
-			morse_data->state = 1;	/* And get us back here */
+			/* And get us back here */
+			morse_data->state = MORSE_STATE_BLINK_STOP;
 		}
 		morse_data->msgpos++;
 		break;
@@ -193,12 +203,12 @@ static ssize_t morse_msg_store(struct class_device *dev, const char *buf,
 	memcpy(m,buf,size);
 	m[size]='\0';
 
-	if (!morse_data->msg)
+	if (morse_data->msg)
 		kfree(morse_data->msg);
 
 	morse_data->msg = m;
 	morse_data->msgpos = NULL;
-	morse_data->state = 1;
+	morse_data->state = MORSE_STATE_BLINK_STOP;
 
 	mod_timer(&morse_data->timer, jiffies + 1);
 
@@ -217,12 +227,10 @@ static void morse_trig_activate(struct led_classdev *led_cdev)
 	if (!morse_data)
 		return;
 
-	led_cdev->trigger_data = morse_data;
-
-	morse_data->delay = (HZ/2);
+	morse_data->delay = MORSE_DELAY_BASE;
 	init_timer(&morse_data->timer);
 	morse_data->timer.function = morse_timer_function;
-	morse_data->timer.data = (unsigned long) led_cdev;
+	morse_data->timer.data = (unsigned long)led_cdev;
 
 	rc = class_device_create_file(led_cdev->class_dev,
 				&class_device_attr_delay);
@@ -232,13 +240,14 @@ static void morse_trig_activate(struct led_classdev *led_cdev)
 				&class_device_attr_message);
 	if (rc) goto err_delay;
 
+	led_cdev->trigger_data = morse_data;
+
 	return;
 
 err_delay:
 	class_device_remove_file(led_cdev->class_dev,
 				&class_device_attr_delay);
 err:
-	led_cdev->trigger_data = NULL;
 	kfree(morse_data);
 }
 
@@ -255,15 +264,16 @@ static void morse_trig_deactivate(struct led_classdev *led_cdev)
 		&class_device_attr_delay);
 
 	del_timer_sync(&morse_data->timer);
-	if (!morse_data->msg)
+	if (morse_data->msg)
 		kfree(morse_data->msg);
+
 	kfree(morse_data);
 }
 
 static struct led_trigger morse_led_trigger = {
-	.name     = "morse",
-	.activate = morse_trig_activate,
-	.deactivate = morse_trig_deactivate,
+	.name		= "morse",
+	.activate	= morse_trig_activate,
+	.deactivate	= morse_trig_deactivate,
 };
 
 static int __init morse_trig_init(void)
@@ -279,6 +289,6 @@ static void __exit morse_trig_exit(void)
 module_init(morse_trig_init);
 module_exit(morse_trig_exit);
 
-MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
+MODULE_AUTHOR("Gabor Juhos <juhosg at openwrt.org>");
 MODULE_DESCRIPTION("Morse LED trigger");
 MODULE_LICENSE("GPL");
