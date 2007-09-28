@@ -140,34 +140,34 @@ define Package/libncurses/install
 endef
 
 define Build/InstallDev
-	mkdir -p $(STAGING_DIR)/usr/include
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/curses.h $(STAGING_DIR)/usr/include/
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/ncurses.h $(STAGING_DIR)/usr/include/
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/ncurses_dll.h $(STAGING_DIR)/usr/include/
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/menu.h $(STAGING_DIR)/usr/include/
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/panel.h $(STAGING_DIR)/usr/include/
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/term{,cap}.h $(STAGING_DIR)/usr/include/
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/unctrl.h $(STAGING_DIR)/usr/include/
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/form.h $(STAGING_DIR)/usr/include/
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/eti.h $(STAGING_DIR)/usr/include/
-	mkdir -p $(STAGING_DIR)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcurses.so $(STAGING_DIR)/usr/lib/
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel,menu,form}.{a,so*} $(STAGING_DIR)/usr/lib/
+	mkdir -p $(1)/usr/include
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/curses.h $(1)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/ncurses.h $(1)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/ncurses_dll.h $(1)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/menu.h $(1)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/panel.h $(1)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/term{,cap}.h $(1)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/unctrl.h $(1)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/form.h $(1)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/eti.h $(1)/usr/include/
+	mkdir -p $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcurses.so $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel,menu,form}.{a,so*} $(1)/usr/lib/
 endef
 
 define Build/UninstallDev
 	rm -rf \
-		$(STAGING_DIR)/usr/include/curses.h \
-		$(STAGING_DIR)/usr/include/ncurses.h \
-		$(STAGING_DIR)/usr/include/ncurses_dll.h \
-		$(STAGING_DIR)/usr/include/menu.h \
-		$(STAGING_DIR)/usr/include/panel.h \
-		$(STAGING_DIR)/usr/include/term{,cap}.h \
-		$(STAGING_DIR)/usr/include/unctrl.h \
-		$(STAGING_DIR)/usr/include/form.h \
-		$(STAGING_DIR)/usr/include/eti.h \
-		$(STAGING_DIR)/usr/lib/libcurses.so \
-		$(STAGING_DIR)/usr/lib/lib{ncurses,panel,menu,form}.{a,so*}
+		$(1)/usr/include/curses.h \
+		$(1)/usr/include/ncurses.h \
+		$(1)/usr/include/ncurses_dll.h \
+		$(1)/usr/include/menu.h \
+		$(1)/usr/include/panel.h \
+		$(1)/usr/include/term{,cap}.h \
+		$(1)/usr/include/unctrl.h \
+		$(1)/usr/include/form.h \
+		$(1)/usr/include/eti.h \
+		$(1)/usr/lib/libcurses.so \
+		$(1)/usr/lib/lib{ncurses,panel,menu,form}.{a,so*}
 endef
 
 $(eval $(call BuildPackage,libncurses))

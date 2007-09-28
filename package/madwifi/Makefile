@@ -143,14 +143,14 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	mkdir -p $(STAGING_DIR)/usr/include/madwifi
-	$(CP) $(PKG_BUILD_DIR)/include $(STAGING_DIR)/usr/include/madwifi/
-	mkdir -p $(STAGING_DIR)/usr/include/madwifi/net80211
-	$(CP) $(PKG_BUILD_DIR)/net80211/*.h $(STAGING_DIR)/usr/include/madwifi/net80211/
+	mkdir -p $(1)/usr/include/madwifi
+	$(CP) $(PKG_BUILD_DIR)/include $(1)/usr/include/madwifi/
+	mkdir -p $(1)/usr/include/madwifi/net80211
+	$(CP) $(PKG_BUILD_DIR)/net80211/*.h $(1)/usr/include/madwifi/net80211/
 endef
 
 define Build/UninstallDev
-	rm -rf	$(STAGING_DIR)/usr/include/madwifi
+	rm -rf $(1)/usr/include/madwifi
 endef
 
 define KernelPackage/madwifi/install

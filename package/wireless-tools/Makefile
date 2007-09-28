@@ -49,16 +49,16 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	mkdir -p $(STAGING_DIR)/usr/include
-	$(CP) $(PKG_BUILD_DIR)/{iwlib,wireless}.h $(STAGING_DIR)/usr/include/
-	mkdir -p $(STAGING_DIR)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/libiw.so* $(STAGING_DIR)/usr/lib/
-	ln -sf libiw.so.$(PKG_VERSION) $(STAGING_DIR)/usr/lib/libiw.so
+	mkdir -p $(1)/usr/include
+	$(CP) $(PKG_BUILD_DIR)/{iwlib,wireless}.h $(1)/usr/include/
+	mkdir -p $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libiw.so* $(1)/usr/lib/
+	ln -sf libiw.so.$(PKG_VERSION) $(1)/usr/lib/libiw.so
 endef
 	
 define Build/UninstallDev
-	rm -f	$(STAGING_DIR)/usr/include/{iwlib,wireless}.h \
-		$(STAGING_DIR)/usr/lib/libiw.so*
+	rm -f	$(1)/usr/include/{iwlib,wireless}.h \
+		$(1)/usr/lib/libiw.so*
 endef
 
 define Package/wireless-tools/install

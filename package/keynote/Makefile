@@ -41,15 +41,15 @@ MAKE_FLAGS += \
 	CFLAGS="$(TARGET_CFLAGS)"
 
 define Build/InstallDev
-	mkdir -p $(STAGING_DIR)/usr/include/keynote
-	$(CP) $(PKG_BUILD_DIR)/{assertion,header,keynote,signature}.h $(STAGING_DIR)/usr/include/keynote/
-	mkdir -p $(STAGING_DIR)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/libkeynote.a $(STAGING_DIR)/usr/lib/
+	mkdir -p $(1)/usr/include/keynote
+	$(CP) $(PKG_BUILD_DIR)/{assertion,header,keynote,signature}.h $(1)/usr/include/keynote/
+	mkdir -p $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libkeynote.a $(1)/usr/lib/
 endef
 
 define Build/UninstallDev
-	rm -rf	$(STAGING_DIR)/usr/include/keynote \
-		$(STAGING_DIR)/usr/lib/libkeynote.a
+	rm -rf	$(1)/usr/include/keynote \
+		$(1)/usr/lib/libkeynote.a
 endef
 
 define Package/keynote/install

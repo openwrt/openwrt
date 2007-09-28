@@ -64,7 +64,7 @@ define Build/DefaultTargets
 
   $(STAMP_BUILT): $(STAMP_CONFIGURED)
 	$(Build/Compile)
-	$(Build/InstallDev)
+	$(call Build/InstallDev,$(STAGING_DIR))
 	touch $$@
 
   ifdef Build/InstallDev
@@ -142,7 +142,7 @@ configure: $(STAMP_CONFIGURED)
 compile:
 install:
 clean: FORCE
-	$(Build/UninstallDev)
+	$(call Build/UninstallDev,$(STAGING_DIR))
 	$(Build/Clean)
 	@rm -f $(STAGING_DIR)/stamp/.$(PKG_NAME)-installed
 	@rm -rf $(PKG_BUILD_DIR)
