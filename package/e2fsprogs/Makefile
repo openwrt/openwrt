@@ -99,10 +99,10 @@ endef
 define Build/InstallDev
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		BUILDCC="$(HOSTCC)" \
-		DESTDIR="$(STAGING_DIR)" \
+		DESTDIR="$(1)" \
 		install-libs
-	$(SED) 's,-I$$$${includedir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/{blkid,com_err,e2p,ext2fs,ss,uuid}.pc
-	$(SED) 's,-L$$$${libdir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/{blkid,com_err,e2p,ext2fs,ss,uuid}.pc
+	$(SED) 's,-I$$$${includedir},,g' $(1)/usr/lib/pkgconfig/{blkid,com_err,e2p,ext2fs,ss,uuid}.pc
+	$(SED) 's,-L$$$${libdir},,g' $(1)/usr/lib/pkgconfig/{blkid,com_err,e2p,ext2fs,ss,uuid}.pc
 endef
 
 define Build/UninstallDev

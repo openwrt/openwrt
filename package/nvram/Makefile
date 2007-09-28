@@ -30,12 +30,12 @@ define Build/Prepare
 endef
 
 define Build/InstallDev
-	mkdir -p $(STAGING_DIR)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/lib{nvram,shared}*.so $(STAGING_DIR)/usr/lib/
+	mkdir -p $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/lib{nvram,shared}*.so $(1)/usr/lib/
 endef
 
 define Build/UninstallDev
-	rm -f $(STAGING_DIR)/usr/lib/lib{nvram,shared}*.so
+	rm -f $(1)/usr/lib/lib{nvram,shared}*.so
 endef
 
 define Package/nvram/install

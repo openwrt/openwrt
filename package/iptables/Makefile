@@ -222,22 +222,22 @@ define Build/InstallDev
 		$(TARGET_CONFIGURE_OPTS) \
 		COPT_FLAGS="$(TARGET_CFLAGS)" \
 		KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
-		DESTDIR="$(STAGING_DIR)" \
+		DESTDIR="$(1)" \
 		install-devel
-	$(CP) $(PKG_BUILD_DIR)/include $(STAGING_DIR)/usr
-	$(CP) $(PKG_BUILD_DIR)/libiptc/libiptc.a $(STAGING_DIR)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/include $(1)/usr
+	$(CP) $(PKG_BUILD_DIR)/libiptc/libiptc.a $(1)/usr/lib
 endef
 
 define Build/UninstallDev
-	rm -rf $(STAGING_DIR)/usr/include/libipq.h
-	rm -rf $(STAGING_DIR)/usr/include/libipulog
-	rm -rf $(STAGING_DIR)/usr/include/libipq
-	rm -rf $(STAGING_DIR)/usr/include/libiptc
-	rm -rf $(STAGING_DIR)/usr/include/linux/netfilter*
-	rm -rf $(STAGING_DIR)/usr/include/iptables*
-	rm -rf $(STAGING_DIR)/usr/include/ip6tables*
-	rm -rf $(STAGING_DIR)/usr/lib/libipq.a
-	rm -rf $(STAGING_DIR)/usr/lib/libiptc.a
+	rm -rf $(1)/usr/include/libipq.h
+	rm -rf $(1)/usr/include/libipulog
+	rm -rf $(1)/usr/include/libipq
+	rm -rf $(1)/usr/include/libiptc
+	rm -rf $(1)/usr/include/linux/netfilter*
+	rm -rf $(1)/usr/include/iptables*
+	rm -rf $(1)/usr/include/ip6tables*
+	rm -rf $(1)/usr/lib/libipq.a
+	rm -rf $(1)/usr/lib/libiptc.a
 endef
 
 define Package/iptables/install

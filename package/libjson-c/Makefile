@@ -36,20 +36,20 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	mkdir -p $(STAGING_DIR)/usr/include
-	$(CP) -r $(PKG_INSTALL_DIR)/usr/include/json $(STAGING_DIR)/usr/include/
-	mkdir -p $(STAGING_DIR)/usr/lib
-	$(CP) -r $(PKG_INSTALL_DIR)/usr/lib/libjson.{a,so*} $(STAGING_DIR)/usr/lib/
-	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	$(CP) -r $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/json.pc $(STAGING_DIR)/usr/lib/pkgconfig/
-	$(SED) 's,-I$$$${includedir}/,-I$(STAGING_DIR)/usr/include/,g' $(STAGING_DIR)/usr/lib/pkgconfig/json.pc
-	$(SED) 's,-L$$$${libdir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/json.pc
+	mkdir -p $(1)/usr/include
+	$(CP) -r $(PKG_INSTALL_DIR)/usr/include/json $(1)/usr/include/
+	mkdir -p $(1)/usr/lib
+	$(CP) -r $(PKG_INSTALL_DIR)/usr/lib/libjson.{a,so*} $(1)/usr/lib/
+	mkdir -p $(1)/usr/lib/pkgconfig
+	$(CP) -r $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/json.pc $(1)/usr/lib/pkgconfig/
+	$(SED) 's,-I$$$${includedir}/,-I$(1)/usr/include/,g' $(1)/usr/lib/pkgconfig/json.pc
+	$(SED) 's,-L$$$${libdir},,g' $(1)/usr/lib/pkgconfig/json.pc
 endef
 
 define Build/UninstallDev
-	rm -rf	$(STAGING_DIR)/usr/include/json \
-		$(STAGING_DIR)/usr/lib/libjson.{a,so*} \
-		$(STAGING_DIR)/usr/lib/pkgconfig/json.pc
+	rm -rf	$(1)/usr/include/json \
+		$(1)/usr/lib/libjson.{a,so*} \
+		$(1)/usr/lib/pkgconfig/json.pc
 endef
 
 define Package/libjson/install

@@ -49,17 +49,17 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	mkdir -p $(STAGING_DIR)/usr/include
+	mkdir -p $(1)/usr/include
 	$(CP)	$(PKG_INSTALL_DIR)/usr/include/z{conf,lib}.h \
-		$(STAGING_DIR)/usr/include/
-	mkdir -p $(STAGING_DIR)/usr/lib
+		$(1)/usr/include/
+	mkdir -p $(1)/usr/lib
 	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libz.{a,so*} \
-		$(STAGING_DIR)/usr/lib/
+		$(1)/usr/lib/
 endef
 	
 define Build/UninstallDev
-	rm -rf	$(STAGING_DIR)/usr/include/z{conf,lib}.h \
-		$(STAGING_DIR)/usr/lib/libz.{a,so*}
+	rm -rf	$(1)/usr/include/z{conf,lib}.h \
+		$(1)/usr/lib/libz.{a,so*}
 endef
 
 # libz.so is needed for openssl (zlib-dynamic)
