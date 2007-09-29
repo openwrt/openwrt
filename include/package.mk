@@ -49,6 +49,7 @@ define Download/default
 endef
 
 define Build/DefaultTargets
+  $(if $(QUILT),$(Build/Quilt))
   $(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
   $(call Build/Autoclean)
 

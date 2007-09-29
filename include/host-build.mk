@@ -87,6 +87,7 @@ define Download/default
 endef
 
 define HostBuild
+  $(if $(QUILT),$(Build/Quilt))
   $(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
   $(if $(DUMP),,$(call HostBuild/Autoclean))
   

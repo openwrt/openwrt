@@ -48,6 +48,7 @@ define Download/kernel
 endef
 
 define BuildKernel
+  $(if $(QUILT),$(Build/Quilt))
   $(if $(LINUX_SITE),$(call Download,kernel))
 
   $(STAMP_PREPARED): $(DL_DIR)/$(LINUX_SOURCE)
