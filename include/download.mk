@@ -23,8 +23,8 @@ $(strip \
 endef
 
 # code for creating tarballs from svn/git checkouts - useful for mirror support
-dl_pack/bz2=tar cfj $(1) $(2)
-dl_pack/gz=tar cfz $(1) $(2)
+dl_pack/bz2=$(TAR) cfj $(1) $(2)
+dl_pack/gz=$(TAR) cfz $(1) $(2)
 dl_pack/unknown=echo "ERROR: Unknown pack format for file $(1)"; false
 define dl_pack
 	$(if $(dl_pack/$(call ext,$(1))),$(dl_pack/$(call ext,$(1))),$(dl_pack/unknown))
