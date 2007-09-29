@@ -20,6 +20,7 @@ STAMP_PREPARED=$(PKG_BUILD_DIR)/.prepared$(if $(QUILT)$(DUMP),,_$(shell $(call f
 STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/.configured
 STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
 
+include $(INCLUDE_DIR)/download.mk
 include $(INCLUDE_DIR)/quilt.mk
 include $(INCLUDE_DIR)/package-defaults.mk
 include $(INCLUDE_DIR)/package-dumpinfo.mk
@@ -38,18 +39,16 @@ ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   endif
 endif
 
+define Download/default
+  FILE:=$(PKG_SOURCE)
+  URL:=$(PKG_SOURCE_URL)
+  PROTO:=$(PKG_SOURCE_PROTO)
+  VERSION:=$(PKG_SOURCE_VERSION)
+  MD5SUM:=$(PKG_MD5SUM)
+endef
 
 define Build/DefaultTargets
-  ifneq ($(strip $(PKG_SOURCE_URL)),)
-    download: $(DL_DIR)/$(PKG_SOURCE)
-
-    $(DL_DIR)/$(PKG_SOURCE):
-	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE)" "$(PKG_MD5SUM)" $(PKG_SOURCE_URL)
-
-    $(STAMP_PREPARED): $(DL_DIR)/$(PKG_SOURCE)
-  endif
-
+  $(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
   $(call Build/Autoclean)
 
   $(STAMP_PREPARED):

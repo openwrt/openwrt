@@ -19,6 +19,7 @@ STAMP_INSTALLED:=$(STAGING_DIR_HOST)/stamp/.$(PKG_NAME)_installed
 
 override MAKEFLAGS=
 
+include $(INCLUDE_DIR)/download.mk
 include $(INCLUDE_DIR)/quilt.mk
 
 Build/Patch:=$(Build/Patch/Default)
@@ -69,17 +70,6 @@ define Build/Compile
   $(call Build/Compile/Default)
 endef
 
-		
-ifneq ($(strip $(PKG_SOURCE)),)
-  download: $(DL_DIR)/$(PKG_SOURCE)
-
-  $(DL_DIR)/$(PKG_SOURCE):
-	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE)" "$(PKG_MD5SUM)" $(PKG_SOURCE_URL)
-
-  $(STAMP_PREPARED): $(DL_DIR)/$(PKG_SOURCE)
-endif
-
 ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
   define HostBuild/Autoclean
     $(call rdep,${CURDIR} $(PKG_FILE_DEPEND),$(STAMP_PREPARED))
@@ -87,10 +77,17 @@ ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
   endef
 endif
 
+define Download/default
+  FILE:=$(PKG_SOURCE)
+  URL:=$(PKG_SOURCE_URL)
+  PROTO:=$(PKG_SOURCE_PROTO)
+  VERSION:=$(PKG_SOURCE_VERSION)
+  MD5SUM:=$(PKG_MD5SUM)
+endef
+
 define HostBuild
-  ifeq ($(DUMP),)
-    $(call HostBuild/Autoclean)
-  endif
+  $(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
+  $(if $(DUMP),,$(call HostBuild/Autoclean))
   
   $(STAMP_PREPARED):
 	@-rm -rf $(PKG_BUILD_DIR)

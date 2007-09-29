@@ -10,15 +10,14 @@ use strict;
 use warnings;
 use File::Basename;
 
+@ARGV > 2 or die "Syntax: $0 <target dir> <filename> <md5sum> [<mirror> ...]\n";
+
 my $target = shift @ARGV;
 my $filename = shift @ARGV;
 my $md5sum = shift @ARGV;
 my $scriptdir = dirname($0);
 my @mirrors;
-
 my $ok;
-
-@ARGV > 0 or die "Syntax: $0 <target dir> <filename> <md5sum> <mirror> [<mirror> ...]\n";
 
 sub localmirrors {
     my @mlist;
