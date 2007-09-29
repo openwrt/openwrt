@@ -44,7 +44,12 @@ ifneq ($(QUILT),)
 else
   define Build/Patch/Default
 	@if [ -d $(PATCH_DIR) -a "$$$$(ls $(PATCH_DIR) | wc -l)" -gt 0 ]; then \
-		$(PATCH) $(PKG_BUILD_DIR) $(PATCH_DIR); \
+		if [ -f $(PATCH_DIR)/series ]; then \
+			grep -vE '^#' $(PATCH_DIR)/series | xargs -n1 \
+				$(PATCH) $(PKG_BUILD_DIR) $(PATCH_DIR); \
+		else \
+			$(PATCH) $(PKG_BUILD_DIR) $(PATCH_DIR); \
+		fi; \
 	fi
   endef
 endif
