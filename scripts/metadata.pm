@@ -63,6 +63,7 @@ sub parse_package_metadata($) {
 			$pkg->{depends} = [];
 			$pkg->{builddepends} = [];
 			$pkg->{subdir} = $subdir;
+			$pkg->{tristate} = 1;
 			$package{$1} = $pkg;
 			push @{$srcpackage{$src}}, $pkg;
 		};
@@ -88,6 +89,13 @@ sub parse_package_metadata($) {
 			push @{$category{$1}->{$src}}, $pkg;
 		};
 		/^Description: \s*(.*)\s*$/ and $pkg->{description} = "\t\t $1\n". get_multiline(*FILE, "\t\t ");
+		/^Type: \s*(.+)\s*$/ and do {
+			$pkg->{type} = [ split /\s+/, $1 ];
+			undef $pkg->{tristate};
+			foreach my $type (@{$pkg->{type}}) {
+				$type =~ /ipkg/ and $pkg->{tristate} = 1;
+			}
+		};
 		/^Config: \s*(.*)\s*$/ and $pkg->{config} = "$1\n".get_multiline(*FILE);
 		/^Prereq-Check:/ and $pkg->{prereq} = 1;
 		/^Preconfig:\s*(.+)\s*$/ and do {
