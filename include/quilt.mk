@@ -17,12 +17,16 @@ ifeq ($(MAKECMDGOALS),refresh)
   override QUILT=1
 endif
 
+define filter_series
+sed -e s,\\\#.*,, $(1) | grep -E \[a-zA-Z0-9\]
+endef
+
 define PatchDir/Quilt
 	@if [ -s $(1)/series ]; then \
 		mkdir -p $(PKG_BUILD_DIR)/patches$(if $(2),/$(2)); \
 		cp $(1)/series $(PKG_BUILD_DIR)/patches$(if $(2),/$(2))/; \
 	fi
-	@for patch in $$$$( (cd $(1) && if [ -f series ]; then grep -v '^#' series; else ls; fi; ) 2>/dev/null ); do ( \
+	@for patch in $$$$( (cd $(1) && if [ -f series ]; then $(call filter_series,series); else ls; fi; ) 2>/dev/null ); do ( \
 		cp "$(1)/$$$$patch" $(PKG_BUILD_DIR); \
 		cd $(PKG_BUILD_DIR); \
 		quilt import -P$(2)$$$$patch -p 1 "$$$$patch"; \
@@ -35,7 +39,7 @@ endef
 define PatchDir/Default
 	@if [ -d "$(1)" -a "$$$$(ls $(1) | wc -l)" -gt 0 ]; then \
 		if [ -s "$(1)/series" ]; then \
-			grep -vE '^#' $(1)/series | xargs -n1 \
+			$(call filter_series,$(1)/series) | xargs -n1 \
 				$(PATCH) $(PKG_BUILD_DIR) "$(1)"; \
 		else \
 			$(PATCH) $(PKG_BUILD_DIR) "$(1)"; \
@@ -69,34 +73,12 @@ define Kernel/Patch/Default
 	$(call PatchDir,$(PATCH_DIR),platform/)
 endef
 
-$(STAMP_PATCHED): $(STAMP_PREPARED)
-	@( \
-		cd $(PKG_BUILD_DIR)/patches; \
-		quilt pop -a -f >/dev/null 2>/dev/null; \
-		if [ -s ".subdirs" ]; then \
-			rm -f series; \
-			for file in $$(cat .subdirs); do \
-				if [ -f $$file/series ]; then \
-					echo "Converting $$file/series"; \
-					awk -v file="$$file/" '$$0 !~ /^#/ { print file $$0 }' $$file/series >> series; \
-				else \
-					echo "Sorting patches in $$file"; \
-					find $$file/* -type f \! -name series | sort >> series; \
-				fi; \
-			done; \
-		else \
-			find * -type f \! -name series | sort > series; \
-		fi; \
-	)
-	if [ -s "$(PKG_BUILD_DIR)/patches/series" ]; then (cd $(PKG_BUILD_DIR); quilt push -a); fi
-	touch $@
-
 define Quilt/RefreshDir
 	mkdir -p $(1)
 	-rm -f $(1)/* 2>/dev/null >/dev/null
 	@( \
-		for patch in $$($(if $(2),grep "^$(2)",cat) $(PKG_BUILD_DIR)/patches/series | awk '{print $$1}'); do \
-			$(CP) -v "$(PKG_BUILD_DIR)/patches/$$patch" $(1); \
+		for patch in $$$$($(if $(2),grep "^$(2)",cat) $(PKG_BUILD_DIR)/patches/series | awk '{print $$$$1}'); do \
+			$(CP) -v "$(PKG_BUILD_DIR)/patches/$$$$patch" $(1); \
 		done; \
 	)
 endef
@@ -114,7 +96,34 @@ define Quilt/Refresh/Kernel
 	$(call Quilt/RefreshDir,$(PATCH_DIR),platform/)
 endef
 
-quilt-check: $(STAMP_PREPARED) FORCE
+define Quilt/Refresh
+$(if $(TARGET_BUILD),$(Quilt/Refresh/Kernel),$(Quilt/Refresh/Package))
+endef
+
+$(STAMP_PATCHED): $(STAMP_PREPARED)
+	@( \
+		cd $(PKG_BUILD_DIR)/patches; \
+		quilt pop -a -f >/dev/null 2>/dev/null; \
+		if [ -s ".subdirs" ]; then \
+			rm -f series; \
+			for file in $$(cat .subdirs); do \
+				if [ -f $$file/series ]; then \
+					echo "Converting $$file/series"; \
+					$(call filter_series,$$file/series) | awk -v file="$$file/" '$$0 !~ /^#/ { print file $$0 }' >> series; \
+				else \
+					echo "Sorting patches in $$file"; \
+					find $$file/* -type f \! -name series | sort >> series; \
+				fi; \
+			done; \
+		else \
+			find * -type f \! -name series | sort > series; \
+		fi; \
+	)
+	if [ -s "$(PKG_BUILD_DIR)/patches/series" ]; then (cd $(PKG_BUILD_DIR); quilt push -a); fi
+	touch $@
+
+define Build/Quilt
+  quilt-check: $(STAMP_PREPARED) FORCE
 	@[ -f "$(PKG_BUILD_DIR)/.quilt_used" ] || { \
 		echo "The source directory was not unpacked using quilt. Please rebuild with QUILT=1"; \
 		false; \
@@ -123,19 +132,20 @@ quilt-check: $(STAMP_PREPARED) FORCE
 		echo "The source directory contains no quilt patches."; \
 		false; \
 	}
-	@[ "$$(cat $(PKG_BUILD_DIR)/patches/series | md5sum)" = "$$(sort $(PKG_BUILD_DIR)/patches/series | md5sum)" ] || { \
+	@[ -n "$$$$(ls $(PKG_BUILD_DIR)/patches/*/series)" -o "$$$$(cat $(PKG_BUILD_DIR)/patches/series | md5sum)" = "$$(sort $(PKG_BUILD_DIR)/patches/series | md5sum)" ] || { \
 		echo "The patches are not sorted in the right order. Please fix."; \
 		false; \
 	}
 
-refresh: quilt-check
+  refresh: quilt-check
 	@cd $(PKG_BUILD_DIR); quilt pop -a -f >/dev/null 2>/dev/null
 	@cd $(PKG_BUILD_DIR); while quilt next 2>/dev/null >/dev/null && quilt push; do \
 		quilt refresh; \
 	done; ! quilt next 2>/dev/null >/dev/null
-	$(if $(KERNEL_BUILD),$(Quilt/Refresh/Kernel),$(Quilt/Refresh/Package))
+	$(Quilt/Refresh)
 	
-update: quilt-check
-	$(if $(KERNEL_BUILD),$(Quilt/Refresh/Kernel),$(Quilt/Refresh/Package))
+  update: quilt-check
+	$(Quilt/Refresh)
+endef
 
 endif
