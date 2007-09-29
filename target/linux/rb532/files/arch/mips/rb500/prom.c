@@ -136,7 +136,7 @@ void __init prom_setup_cmdline(void){
 #endif
 		if (i>0) *(cp++) = ' ';
 		if (strncmp(prom_argv[i], BOARD_TAG, sizeof(BOARD_TAG) - 1) == 0) {
-			board_type = kzalloc(sizeof(prom_argv[i] + BOARD_TAG -1), GFP_KERNEL);
+			board_type = (char *)kzalloc((sizeof(prom_argv[i]) + sizeof(BOARD_TAG) -1), GFP_KERNEL);
 			strcpy(board_type, prom_argv[i] + sizeof(BOARD_TAG) -1);
 		}
 		if (strncmp(prom_argv[i], GPIO_TAG, sizeof(GPIO_TAG) - 1) == 0) {
