@@ -28,9 +28,10 @@ PKG_UNPACK:= \
 
 include $(INCLUDE_DIR)/package.mk
 
+# XXX: remove @!TARGET_* later when we have PCI support properly detected on all targets
 define KernelPackage/acx
   TITLE:=Driver for TI ACX1xx chipset
-  DEPENDS:=@LINUX_2_6 @!TARGET_avr32 +wireless-tools
+  DEPENDS:=@LINUX_2_6 +wireless-tools @!TARGET_atheros @!TARGET_avr32
   URL:=http://acx100.sourceforge.net/
   SUBMENU:=Wireless Drivers
   FILES:= $(PKG_BUILD_DIR)/acx.$(LINUX_KMOD_SUFFIX)
