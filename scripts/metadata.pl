@@ -361,7 +361,7 @@ sub print_package_config_category($) {
 			print "\t";
 			$pkg->{menu} and print "menu";
 			print "config PACKAGE_".$pkg->{name}."\n";
-			print "\t\ttristate \"$title\"\n";
+			print "\t\t".($pkg->{tristate} ? 'tristate' : 'bool')." \"$title\"\n";
 			print "\t\tdefault y if DEFAULT_".$pkg->{name}."\n";
 			foreach my $default (split /\s*,\s*/, $pkg->{default}) {
 				print "\t\tdefault $default\n";

@@ -28,6 +28,7 @@ ifneq ($(DUMP),)
 		echo "Category: $(CATEGORY)"; \
 		echo "Title: $(TITLE)"; \
 		echo "Maintainer: $(MAINTAINER)"; \
+		echo "Type: $(if $(Package/$(1)/targets),$(Package/$(1)/targets),$(if $(PKG_TARGETS),$(PKG_TARGETS),ipkg))"; \
 		$(if $(KCONFIG),echo "Kernel-Config: $(KCONFIG)";) \
 		echo -n "Description: "; \
 		getvar $(call shvar,Package/$(1)/description); \
