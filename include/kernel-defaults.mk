@@ -45,6 +45,7 @@ Kernel/Patch:=$(Kernel/Patch/Default)
 define Kernel/Prepare/Default
 	bzcat $(DL_DIR)/$(LINUX_SOURCE) | $(TAR) -C $(KERNEL_BUILD_DIR) $(TAR_OPTIONS)
 	$(Kernel/Patch)
+	$(if $(QUILT),touch $(LINUX_DIR)/.quilt_used)
 endef
 
 define Kernel/Configure/2.4
