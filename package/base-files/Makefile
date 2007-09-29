@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2007 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -130,19 +130,14 @@ define Package/base-files$(TARGET)/install
 	if [ -d $(GENERIC_PLATFORM_DIR)/base-files/. ]; then \
 		$(CP) $(GENERIC_PLATFORM_DIR)/base-files/* $(1)/; \
 	fi
-	if [ -d $(PLATFORM_DIR)/base-files/default/. ]; then \
-		$(CP) $(PLATFORM_DIR)/base-files/default/* $(1)/; \
+	if [ -d $(PLATFORM_DIR)/base-files/. ]; then \
+		$(CP) $(PLATFORM_DIR)/base-files/* $(1)/; \
 	fi
 	$(if $(filter-out $(PLATFORM_DIR),$(PLATFORM_SUBDIR)), \
-		if [ -d $(PLATFORM_SUBDIR)/base-files/default/. ]; then \
-			$(CP) $(PLATFORM_SUBDIR)/base-files/default/* $(1)/; \
+		if [ -d $(PLATFORM_SUBDIR)/base-files/. ]; then \
+			$(CP) $(PLATFORM_SUBDIR)/base-files/* $(1)/; \
 		fi \
 	)
-	if [ "$(PROFILE)" != "Default" ]; then \
-		if [ -d $(PLATFORM_DIR)/base-files/profile-$(PROFILE)/. ]; then \
-			$(CP) $(PLATFORM_DIR)/base-files/profile-$(PROFILE)/* $(1)/; \
-		fi; \
-	fi
 	$(SED) 's,$$$$R,r$(REV),g' $(1)/etc/banner
 	$(SED) 's,$$$$S,$(BOARD)-$(KERNEL),g' -e 's,$$$$A,$(ARCH),g' $(1)/etc/ipkg.conf
 	mkdir -p $(1)/dev
