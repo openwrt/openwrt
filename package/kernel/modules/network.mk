@@ -645,7 +645,7 @@ define KernelPackage/3c59x
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=3Com 3c590/3c900 series (592/595/597) Vortex/Boomerang
   DEPENDS:=@TARGET_x86
-  KCONFIG:=CONFIG_3C59X
+  KCONFIG:=CONFIG_VORTEX
   FILES:=$(LINUX_DIR)/drivers/net/3c59x.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,3c59x)
 endef
