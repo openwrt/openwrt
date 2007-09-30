@@ -139,7 +139,7 @@ define Package/base-files$(TARGET)/install
 		fi \
 	)
 	$(SED) 's,$$$$R,r$(REV),g' $(1)/etc/banner
-	$(SED) 's,$$$$S,$(BOARD)-$(KERNEL),g' -e 's,$$$$A,$(ARCH),g' $(1)/etc/ipkg.conf
+	$(SED) 's,$$$$S,$(BOARD),g' -e 's,$$$$A,$(ARCH),g' $(1)/etc/ipkg.conf
 	mkdir -p $(1)/dev
 	mkdir -p $(1)/etc/crontabs
 	mkdir -p $(1)/jffs
