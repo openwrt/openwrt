@@ -247,11 +247,13 @@ static void __init console_config(void)
 		parity = 'n';
 	if (bits != '7' && bits != '8')
 		bits = '8';
-	if (flow == '\0')
-		flow = 'r';
 
-	sprintf(console_string, " console=ttyS0,%d%c%c%c", baud,
-		parity, bits, flow);
+	if (flow == 'r')
+		sprintf(console_string, " console=ttyS0,%d%c%c%c", baud,
+			parity, bits, flow);
+        else
+		sprintf(console_string, " console=ttyS0,%d%c%c", baud, parity,
+			bits);
 	strcat(prom_getcmdline(), console_string);
 #endif
 }
