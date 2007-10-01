@@ -59,7 +59,9 @@ static int trx_nr_parts = 0;
 static struct mtd_partition trx_parts[TRX_MAX_OFFSET];
 static struct trx_header trx_hdr;
 
-static int __init trxsplit_checktrx(struct mtd_info *mtd, unsigned long offset)
+static int trxsplit_refresh_partitions(struct mtd_info *mtd);
+
+static int trxsplit_checktrx(struct mtd_info *mtd, unsigned long offset)
 {
 	size_t retlen;
 	int err;
@@ -98,17 +100,39 @@ err_out:
 	return -1;
 }
 
-static int __init trxsplit_create_partitions(void)
+static void trxsplit_findtrx(struct mtd_info *mtd)
+{
+	unsigned long offset;
+	unsigned long blocklen;
+	int err;
+
+	blocklen = mtd->erasesize;
+	if (blocklen < BLOCK_LEN_MIN)
+		blocklen = BLOCK_LEN_MIN;
+
+	printk(KERN_INFO PFX "searching TRX header in '%s'\n", mtd->name);
+
+	err = 0;
+	for (offset=0; offset < mtd->size; offset+=blocklen) {
+		err = trxsplit_checktrx(mtd, offset);
+		if (err == 0)
+			break;
+	}
+
+	if (err)
+		return;
+
+	printk(KERN_INFO PFX "TRX header found at 0x%lX\n", offset);
+
+	trx_mtd = mtd;
+	trx_offset = offset;
+}
+
+static void trxsplit_create_partitions(struct mtd_info *mtd)
 {
 	struct mtd_partition *part = trx_parts;
-	int ret = 0;
+	int err;
 	int i;
-
-	if (trx_mtd == NULL)
-		goto out;
-
-	printk(KERN_INFO PFX "creating TRX partitions in '%s' (%d,%d)\n",
-		trx_mtd->name, MTD_BLOCK_MAJOR, trx_mtd->index);
 
 	for (i=0; i<TRX_MAX_OFFSET;i++) {
 		part = &trx_parts[i];
@@ -121,7 +145,7 @@ static int __init trxsplit_create_partitions(void)
 	for (i=0; i<trx_nr_parts-1; i++) {
 		trx_parts[i].size = trx_parts[i+1].offset - trx_parts[i].offset;
 	}
-	trx_parts[i].size = trx_mtd->size - trx_parts[i].offset;
+	trx_parts[i].size = mtd->size - trx_parts[i].offset;
 
 	i=0;
 	part = &trx_parts[i];
@@ -137,46 +161,38 @@ static int __init trxsplit_create_partitions(void)
 	part = &trx_parts[i];
 	part->name = "rootfs";
 
-	ret = add_mtd_partitions(trx_mtd, trx_parts, trx_nr_parts);
-	if (ret) {
-		printk(KERN_ALERT PFX "creating TRX partitions failed\n");
+	err = add_mtd_partitions(mtd, trx_parts, trx_nr_parts);
+	if (err) {
+		printk(KERN_ALERT PFX "adding TRX partitions failed\n");
+		return;
 	}
 
-out:
-	return ret;
+	mtd->refresh_device = trxsplit_refresh_partitions;
+}
+
+static int trxsplit_refresh_partitions(struct mtd_info *mtd)
+{
+	printk(KERN_INFO PFX "refreshing TRX partitions in '%s' (%d,%d)\n",
+		mtd->name, MTD_BLOCK_MAJOR, mtd->index);
+
+	/* remove old partitions */
+	del_mtd_partitions(mtd);
+
+	trxsplit_findtrx(mtd);
+	if (!trx_mtd)
+		goto err;
+
+	trxsplit_create_partitions(trx_mtd);
+	return 1;
+
+err:
+	return 0;
 }
 
 static void __init trxsplit_add_mtd(struct mtd_info *mtd)
 {
-	unsigned long offset;
-	unsigned long blocklen;
-	int err;
-
-	if (trx_mtd)
-		return;
-
-	blocklen = mtd->erasesize;
-	if (blocklen < BLOCK_LEN_MIN)
-		blocklen = BLOCK_LEN_MIN;
-
-	printk(KERN_INFO PFX "searching TRX header in '%s'\n", mtd->name);
-
-	err = 0;
-	for (offset=0; offset < mtd->size; offset+=blocklen) {
-		err = trxsplit_checktrx(mtd, offset);
-		if (err == 0)
-			break;
-	}
-
-	if (err) {
-		printk(KERN_ALERT PFX "no TRX header found\n");
-		return;
-	}
-
-	printk(KERN_INFO PFX "TRX header found at 0x%lX\n", offset);
-
-	trx_mtd = mtd;
-	trx_offset = offset;
+	if (!trx_mtd)
+		trxsplit_findtrx(mtd);
 }
 
 static void __init trxsplit_remove_mtd(struct mtd_info *mtd)
@@ -189,7 +205,7 @@ static struct mtd_notifier trxsplit_notifier __initdata = {
 	.remove	= trxsplit_remove_mtd,
 };
 
-static void __init trxsplit_find_trx(void)
+static void __init trxsplit_scan(void)
 {
 	register_mtd_user(&trxsplit_notifier);
 	unregister_mtd_user(&trxsplit_notifier);
@@ -197,12 +213,15 @@ static void __init trxsplit_find_trx(void)
 
 static int __init trxsplit_init(void)
 {
-	int ret;
+	trxsplit_scan();
 
-	trxsplit_find_trx();
+	if (trx_mtd) {
+		printk(KERN_INFO PFX "creating TRX partitions in '%s' (%d,%d)\n",
+			trx_mtd->name, MTD_BLOCK_MAJOR, trx_mtd->index);
+		trxsplit_create_partitions(trx_mtd);
+	}
 
-	ret = trxsplit_create_partitions();
-	return ret;
+	return 0;
 }
 
 late_initcall(trxsplit_init);
