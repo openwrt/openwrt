@@ -180,6 +180,27 @@ static struct resource vlynq_high_res[] = {
 	},
 };
 
+static struct resource usb_res[] = {
+	{
+		.name = "regs",
+		.flags = IORESOURCE_MEM,
+		.start = AR7_REGS_USB,
+		.end = AR7_REGS_USB + 0xff,
+	},
+	{
+		.name = "irq",
+		.flags = IORESOURCE_IRQ,
+		.start = 32,
+		.end = 32,
+	},
+	{
+		.name = "mem",
+		.flags = IORESOURCE_MEM,
+		.start = 0x03400000,
+		.end = 0x034001fff,
+	},
+};
+
 static struct physmap_flash_data physmap_flash_data = {
 	.width = 2,
 };
@@ -331,6 +352,13 @@ static struct platform_device ar7_gpio_leds = {
 };
 #endif
 
+static struct platform_device ar7_udc = {
+	.id = -1,
+	.name = "ar7_udc",
+	.resource = usb_res,
+	.num_resources = ARRAY_SIZE(usb_res),
+};
+
 static inline unsigned char char2hex(char h)
 {
 	switch (h) {
@@ -454,6 +482,11 @@ static int __init ar7_register_devices(void)
 	ar7_led_data.leds = default_leds;
 	res = platform_device_register(&ar7_gpio_leds);
 #endif
+	if (res)
+		return res;
+
+	res = platform_device_register(&ar7_udc);
+
 	return res;
 }
 
