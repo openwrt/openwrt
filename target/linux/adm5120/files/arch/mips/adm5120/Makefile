@@ -9,5 +9,3 @@ obj-y	+= gpio.o
 obj-y	+= platform.o
 obj-y	+= reset.o
 obj-y	+= time.o
-
-obj-y	+= trxsplit.o
