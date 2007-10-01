@@ -313,7 +313,7 @@ static int vlynq_pci_probe(struct vlynq_device *dev)
 	if (result)
 		return result;
 
-	dev->divisor = vlynq_ldiv4;
+	dev->divisor = vlynq_div_auto;
 	result = vlynq_device_enable(dev);
 	if (result)
 		return result;
