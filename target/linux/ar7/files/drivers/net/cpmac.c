@@ -42,22 +42,25 @@ MODULE_AUTHOR("Eugene Konev");
 MODULE_DESCRIPTION("TI AR7 ethernet driver (CPMAC)");
 MODULE_LICENSE("GPL");
 
-static int rx_ring_size = 64;
 static int disable_napi;
 static int debug_level = 8;
 static int dumb_switch;
 
-module_param(rx_ring_size, int, 0644);
 module_param(disable_napi, int, 0644);
 /* Next 2 are only used in cpmac_probe, so it's pointless to change them */
 module_param(debug_level, int, 0444);
 module_param(dumb_switch, int, 0444);
 
-MODULE_PARM_DESC(rx_ring_size, "Size of rx ring (in skbs)");
 MODULE_PARM_DESC(disable_napi, "Disable NAPI polling");
 MODULE_PARM_DESC(debug_level, "Number of NETIF_MSG bits to enable");
 MODULE_PARM_DESC(dumb_switch, "Assume switch is not connected to MDIO bus");
 
+/* stolen from net/ieee80211.h */
+#ifndef MAC_FMT
+#define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
+#define MAC_ARG(x) ((u8*)(x))[0], ((u8*)(x))[1], ((u8*)(x))[2], \
+		   ((u8*)(x))[3], ((u8*)(x))[4], ((u8*)(x))[5]
+#endif
 /* frame size + 802.1q tag */
 #define CPMAC_SKB_SIZE		(ETH_FRAME_LEN + 4)
 #define CPMAC_TX_RING_SIZE	8
@@ -195,21 +198,19 @@ struct cpmac_desc {
 };
 
 struct cpmac_priv {
-	struct net_device_stats stats;
 	spinlock_t lock;
 	struct cpmac_desc *rx_head;
 	int tx_head, tx_tail;
+	int ring_size;
 	struct cpmac_desc *desc_ring;
 	dma_addr_t dma_ring;
 	void __iomem *regs;
 	struct mii_bus *mii_bus;
 	struct phy_device *phy;
 	char phy_name[BUS_ID_SIZE];
-	struct plat_cpmac_data *config;
 	int oldlink, oldspeed, oldduplex;
 	u32 msg_enable;
-	struct net_device *dev;
-	struct work_struct alloc_work;
+	struct platform_device *pdev;
 };
 
 static irqreturn_t cpmac_irq(int, void *);
@@ -313,18 +314,6 @@ static int cpmac_config(struct net_device *dev, struct ifmap *map)
 	return 0;
 }
 
-static int cpmac_set_mac_address(struct net_device *dev, void *addr)
-{
-	struct sockaddr *sa = addr;
-
-	if (dev->flags & IFF_UP)
-		return -EBUSY;
-
-	memcpy(dev->dev_addr, sa->sa_data, dev->addr_len);
-
-	return 0;
-}
-
 static void cpmac_set_multicast_list(struct net_device *dev)
 {
 	struct dev_mc_list *iter;
@@ -397,8 +386,8 @@ static struct sk_buff *cpmac_rx_one(struct net_device *dev,
 		skb_put(desc->skb, desc->datalen);
 		desc->skb->protocol = eth_type_trans(desc->skb, dev);
 		desc->skb->ip_summed = CHECKSUM_NONE;
-		priv->stats.rx_packets++;
-		priv->stats.rx_bytes += desc->datalen;
+		dev->stats.rx_packets++;
+		dev->stats.rx_bytes += desc->datalen;
 		result = desc->skb;
 		dma_unmap_single(&dev->dev, desc->data_mapping, CPMAC_SKB_SIZE,
 				 DMA_FROM_DEVICE);
@@ -415,7 +404,7 @@ static struct sk_buff *cpmac_rx_one(struct net_device *dev,
 		if (netif_msg_rx_err(priv) && net_ratelimit())
 			printk(KERN_WARNING
 			       "%s: low on skbs, dropping packet\n", dev->name);
-		priv->stats.rx_dropped++;
+		dev->stats.rx_dropped++;
 	}
 	spin_unlock_irqrestore(&priv->lock, flags);
 
@@ -505,7 +494,7 @@ static int cpmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 			printk(KERN_WARNING"%s: tx: padding failed, dropping\n",
 			       dev->name);
 		spin_lock_irqsave(&priv->lock, flags);
-		priv->stats.tx_dropped++;
+		dev->stats.tx_dropped++;
 		spin_unlock_irqrestore(&priv->lock, flags);
 		return -ENOMEM;
 	}
@@ -522,7 +511,7 @@ static int cpmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		if (netif_msg_tx_err(priv) && net_ratelimit())
 			printk(KERN_WARNING "%s: tx dma ring full, dropping\n",
 			       dev->name);
-		priv->stats.tx_dropped++;
+		dev->stats.tx_dropped++;
 		spin_unlock_irqrestore(&priv->lock, flags);
 		dev_kfree_skb_any(skb);
 		return -ENOMEM;
@@ -558,8 +547,8 @@ static void cpmac_end_xmit(struct net_device *dev, int channel)
 	desc = &priv->desc_ring[channel];
 	cpmac_write(priv->regs, CPMAC_TX_ACK(channel), (u32)desc->mapping);
 	if (likely(desc->skb)) {
-		priv->stats.tx_packets++;
-		priv->stats.tx_bytes += desc->skb->len;
+		dev->stats.tx_packets++;
+		dev->stats.tx_bytes += desc->skb->len;
 		dma_unmap_single(&dev->dev, desc->data_mapping, desc->skb->len,
 				 DMA_TO_DEVICE);
 
@@ -581,8 +570,9 @@ static void cpmac_reset(struct net_device *dev)
 {
 	int i;
 	struct cpmac_priv *priv = netdev_priv(dev);
+	struct plat_cpmac_data *pdata = priv->pdev->dev.platform_data;
 
-	ar7_device_reset(priv->config->reset_bit);
+	ar7_device_reset(pdata->reset_bit);
 	cpmac_write(priv->regs, CPMAC_RX_CONTROL,
 		    cpmac_read(priv->regs, CPMAC_RX_CONTROL) & ~1);
 	cpmac_write(priv->regs, CPMAC_TX_CONTROL,
@@ -606,7 +596,7 @@ static inline void cpmac_free_rx_ring(struct net_device *dev)
 
 	desc = priv->rx_head;
 
-	for (i = 0; i < rx_ring_size; i++) {
+	for (i = 0; i < priv->ring_size; i++) {
 		desc->buflen = CPMAC_SKB_SIZE;
 		if ((desc->dataflags & CPMAC_OWN) == 0) {
 			if (netif_msg_rx_err(priv) && net_ratelimit())
@@ -615,7 +605,7 @@ static inline void cpmac_free_rx_ring(struct net_device *dev)
 			if (unlikely(netif_msg_hw(priv)))
 				cpmac_dump_desc(dev, desc);
 			desc->dataflags = CPMAC_OWN;
-			priv->stats.rx_dropped++;
+			dev->stats.rx_dropped++;
 		}
 		desc = desc->next;
 	}
@@ -674,7 +664,7 @@ static void cpmac_tx_timeout(struct net_device *dev)
 	struct cpmac_priv *priv = netdev_priv(dev);
 	struct cpmac_desc *desc;
 
-	priv->stats.tx_errors++;
+	dev->stats.tx_errors++;
 	desc = &priv->desc_ring[priv->tx_head++];
 	priv->tx_head %= 8;
 	if (netif_msg_tx_err(priv) && net_ratelimit())
@@ -721,6 +711,31 @@ static int cpmac_set_settings(struct net_device *dev, struct ethtool_cmd *cmd)
 	return -EINVAL;
 }
 
+static void cpmac_get_ringparam(struct net_device *dev, struct ethtool_ringparam* ring)
+{
+	struct cpmac_priv *priv = netdev_priv(dev);
+
+	ring->rx_max_pending = 1024;
+	ring->rx_mini_max_pending = 1;
+	ring->rx_jumbo_max_pending = 1;
+	ring->tx_max_pending = 1;
+
+	ring->rx_pending = priv->ring_size;
+	ring->rx_mini_pending = 1;
+	ring->rx_jumbo_pending = 1;
+	ring->tx_pending = 1;
+}
+
+static int cpmac_set_ringparam(struct net_device *dev, struct ethtool_ringparam* ring)
+{
+	struct cpmac_priv *priv = netdev_priv(dev);
+
+	if (dev->flags && IFF_UP)
+		return -EBUSY;
+	priv->ring_size = ring->rx_pending;
+	return 0;
+}
+
 static void cpmac_get_drvinfo(struct net_device *dev,
 			      struct ethtool_drvinfo *info)
 {
@@ -736,33 +751,9 @@ static const struct ethtool_ops cpmac_ethtool_ops = {
 	.set_settings = cpmac_set_settings,
 	.get_drvinfo = cpmac_get_drvinfo,
 	.get_link = ethtool_op_get_link,
+	.get_ringparam = cpmac_get_ringparam,
+	.set_ringparam = cpmac_set_ringparam,
 };
-
-static struct net_device_stats *cpmac_stats(struct net_device *dev)
-{
-	struct cpmac_priv *priv = netdev_priv(dev);
-
-	if (netif_device_present(dev))
-		return &priv->stats;
-
-	return NULL;
-}
-
-static int cpmac_change_mtu(struct net_device *dev, int mtu)
-{
-	unsigned long flags;
-	struct cpmac_priv *priv = netdev_priv(dev);
-	spinlock_t *lock = &priv->lock;
-
-	if ((mtu < 68) || (mtu > 1500))
-		return -EINVAL;
-
-	spin_lock_irqsave(lock, flags);
-	dev->mtu = mtu;
-	spin_unlock_irqrestore(lock, flags);
-
-	return 0;
-}
 
 static void cpmac_adjust_link(struct net_device *dev)
 {
@@ -846,6 +837,7 @@ static int cpmac_open(struct net_device *dev)
 {
 	int i, size, res;
 	struct cpmac_priv *priv = netdev_priv(dev);
+	struct resource *mem;
 	struct cpmac_desc *desc;
 	struct sk_buff *skb;
 
@@ -858,8 +850,8 @@ static int cpmac_open(struct net_device *dev)
 		return PTR_ERR(priv->phy);
 	}
 
-	if (!request_mem_region(dev->mem_start, dev->mem_end -
-				dev->mem_start, dev->name)) {
+	mem = platform_get_resource_byname(priv->pdev, IORESOURCE_MEM, "regs");
+	if (!request_mem_region(mem->start, mem->end - mem->start, dev->name)) {
 		if (netif_msg_drv(priv))
 			printk(KERN_ERR "%s: failed to request registers\n",
 			       dev->name);
@@ -867,8 +859,7 @@ static int cpmac_open(struct net_device *dev)
 		goto fail_reserve;
 	}
 
-	priv->regs = ioremap(dev->mem_start, dev->mem_end -
-			     dev->mem_start);
+	priv->regs = ioremap(mem->start, mem->end - mem->start);
 	if (!priv->regs) {
 		if (netif_msg_drv(priv))
 			printk(KERN_ERR "%s: failed to remap registers\n",
@@ -878,7 +869,7 @@ static int cpmac_open(struct net_device *dev)
 	}
 
 	priv->rx_head = NULL;
-	size = rx_ring_size + CPMAC_TX_RING_SIZE;
+	size = priv->ring_size + CPMAC_TX_RING_SIZE;
 	priv->desc_ring = dma_alloc_coherent(&dev->dev,
 					     sizeof(struct cpmac_desc) * size,
 					     &priv->dma_ring,
@@ -892,7 +883,7 @@ static int cpmac_open(struct net_device *dev)
 	for (i = 0; i < size; i++)
 		priv->desc_ring[i].mapping = priv->dma_ring + sizeof(*desc) * i;
 
-	for (i = 0, desc = &priv->rx_head[i]; i < rx_ring_size; i++, desc++) {
+	for (i = 0, desc = &priv->rx_head[i]; i < priv->ring_size; i++, desc++) {
 		skb = netdev_alloc_skb(dev, CPMAC_SKB_SIZE);
 		if (unlikely(!skb)) {
 			res = -ENOMEM;
@@ -906,7 +897,7 @@ static int cpmac_open(struct net_device *dev)
 		desc->hw_data = (u32)desc->data_mapping;
 		desc->buflen = CPMAC_SKB_SIZE;
 		desc->dataflags = CPMAC_OWN;
-		desc->next = &priv->rx_head[(i + 1) % rx_ring_size];
+		desc->next = &priv->rx_head[(i + 1) % priv->ring_size];
 		desc->hw_next = (u32)desc->next->mapping;
 	}
 
@@ -926,7 +917,7 @@ static int cpmac_open(struct net_device *dev)
 
 fail_irq:
 fail_desc:
-	for (i = 0; i < rx_ring_size; i++) {
+	for (i = 0; i < priv->ring_size; i++) {
 		if (priv->rx_head[i].skb) {
 			kfree_skb(priv->rx_head[i].skb);
 			dma_unmap_single(&dev->dev,
@@ -940,8 +931,7 @@ fail_alloc:
 	iounmap(priv->regs);
 
 fail_remap:
-	release_mem_region(dev->mem_start, dev->mem_end -
-			   dev->mem_start);
+	release_mem_region(mem->start, mem->end - mem->start);
 
 fail_reserve:
 	phy_disconnect(priv->phy);
@@ -953,6 +943,7 @@ static int cpmac_stop(struct net_device *dev)
 {
 	int i;
 	struct cpmac_priv *priv = netdev_priv(dev);
+	struct resource *mem;
 
 	netif_stop_queue(dev);
 
@@ -968,10 +959,11 @@ static int cpmac_stop(struct net_device *dev)
 	cpmac_write(priv->regs, CPMAC_MBP, 0);
 
 	free_irq(dev->irq, dev);
-	release_mem_region(dev->mem_start, dev->mem_end -
-			   dev->mem_start);
+	iounmap(priv->regs);
+	mem = platform_get_resource_byname(priv->pdev, IORESOURCE_MEM, "regs");
+	release_mem_region(mem->start, mem->end - mem->start);
 	priv->rx_head = &priv->desc_ring[CPMAC_TX_RING_SIZE];
-	for (i = 0; i < rx_ring_size; i++) {
+	for (i = 0; i < priv->ring_size; i++) {
 		if (priv->rx_head[i].skb) {
 			kfree_skb(priv->rx_head[i].skb);
 			dma_unmap_single(&dev->dev,
@@ -982,7 +974,7 @@ static int cpmac_stop(struct net_device *dev)
 	}
 
 	dma_free_coherent(&dev->dev, sizeof(struct cpmac_desc) *
-			  (CPMAC_TX_RING_SIZE + rx_ring_size),
+			  (CPMAC_TX_RING_SIZE + priv->ring_size),
 			  priv->desc_ring, priv->dma_ring);
 	return 0;
 }
@@ -991,8 +983,8 @@ static int external_switch;
 
 static int __devinit cpmac_probe(struct platform_device *pdev)
 {
-	int i, rc, phy_id;
-	struct resource *res;
+	int rc, phy_id;
+	struct resource *mem;
 	struct cpmac_priv *priv;
 	struct net_device *dev;
 	struct plat_cpmac_data *pdata;
@@ -1026,14 +1018,13 @@ static int __devinit cpmac_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, dev);
 	priv = netdev_priv(dev);
 
-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "regs");
-	if (!res) {
+	priv->pdev = pdev;
+	mem = platform_get_resource_byname(pdev, IORESOURCE_MEM, "regs");
+	if (!mem) {
 		rc = -ENODEV;
 		goto fail;
 	}
 
-	dev->mem_start = res->start;
-	dev->mem_end = res->end;
 	dev->irq = platform_get_irq_byname(pdev, "irq");
 
 	dev->open               = cpmac_open;
@@ -1041,22 +1032,18 @@ static int __devinit cpmac_probe(struct platform_device *pdev)
 	dev->set_config         = cpmac_config;
 	dev->hard_start_xmit    = cpmac_start_xmit;
 	dev->do_ioctl           = cpmac_ioctl;
-	dev->get_stats          = cpmac_stats;
-	dev->change_mtu         = cpmac_change_mtu;
-	dev->set_mac_address    = cpmac_set_mac_address;
 	dev->set_multicast_list = cpmac_set_multicast_list;
 	dev->tx_timeout         = cpmac_tx_timeout;
 	dev->ethtool_ops        = &cpmac_ethtool_ops;
 	if (!disable_napi) {
 		dev->poll = cpmac_poll;
-		dev->weight = min(rx_ring_size, 64);
+		dev->weight = 64;
 	}
 
 	spin_lock_init(&priv->lock);
 	priv->msg_enable = netif_msg_init(debug_level, 0xff);
-	priv->config = pdata;
-	priv->dev = dev;
-	memcpy(dev->dev_addr, priv->config->dev_addr, sizeof(dev->dev_addr));
+	priv->ring_size = 64;
+	memcpy(dev->dev_addr, pdata->dev_addr, sizeof(dev->dev_addr));
 	if (phy_id == 31) {
 		snprintf(priv->phy_name, BUS_ID_SIZE, PHY_ID_FMT,
 			 cpmac_mii.id, phy_id);
@@ -1073,11 +1060,9 @@ static int __devinit cpmac_probe(struct platform_device *pdev)
 
 	if (netif_msg_probe(priv)) {
 		printk(KERN_INFO
-		       "cpmac: device %s (regs: %p, irq: %d, phy: %s, mac: ",
-		       dev->name, (u32 *)dev->mem_start, dev->irq,
-		       priv->phy_name);
-		for (i = 0; i < 6; i++)
-			printk("%02x%s", dev->dev_addr[i], i < 5 ? ":" : ")\n");
+		       "cpmac: device %s (regs: %p, irq: %d, phy: %s, mac: "
+		       MAC_FMT ")\n", dev->name, (void *)mem->start, dev->irq,
+		       priv->phy_name, MAC_ARG(dev->dev_addr));
 	}
 	return 0;
 
