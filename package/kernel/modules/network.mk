@@ -458,6 +458,22 @@ endef
 $(eval $(call KernelPackage,mp-alg))
 
 
+define KernelPackage/pktgen
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Network packet generator
+  DEPENDS:=@LINUX_2_6
+  KCONFIG:=CONFIG_NET_PKTGEN
+  FILES:=$(LINUX_DIR)/net/core/pktgen.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,99,pktgen)
+endef
+
+define KernelPackage/pktgen/description
+  Kernel modules for the Network Packet Generator
+endef
+
+$(eval $(call KernelPackage,pktgen))
+
+
 NETWORK_DEVICES_MENU:=Network Devices
 
 define KernelPackage/natsemi
