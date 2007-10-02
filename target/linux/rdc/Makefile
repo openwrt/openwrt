@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=i386
 BOARD:=rdc
 BOARDNAME:=RDC321x x86
-FEATURES:=squashfs jffs2 broken
+FEATURES:=squashfs jffs2 broken pci
 
 LINUX_VERSION:=2.6.22.4
 
