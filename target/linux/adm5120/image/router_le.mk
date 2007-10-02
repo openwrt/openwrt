@@ -226,7 +226,7 @@ endef
 # Mikrotik RB-1xx
 #
 define Image/Build/Board/RB1xx/Initramfs
-	$(CP) $(KDIR)/vmlinux.elf $(IMGNAME)-ramfs-rb1xx.elf
+	$(CP) $(KDIR)/vmlinux.elf $(call imgname,netboot,rb1xx)
 endef
 
 #
@@ -266,6 +266,7 @@ define Image/Build/Group/All
 	$(call Image/Build/Group/Edimax,$(1))
 	$(call Image/Build/Group/Cellvision,$(1))
 	$(call Image/Build/Group/Infineon,$(1))
+	$(call Image/Build/Board/RB1xx/$(1))
 endef
 
 #
@@ -311,14 +312,14 @@ define Image/Build/Profile/RouterBoard
 	$(call Image/Build/Board/RB1xx/$(1))
 endef
 
-ifeq ($(PROFILE),Routerboard)
+ifeq ($(PROFILE),RouterBoard)
   define Image/cmdline/yaffs2
-	root=/dev/mtdblock1 rootfstype=yaffs2 init=/etc/preinit
+	root=/dev/mtdblock3 rootfstype=yaffs2 init=/etc/preinit
   endef
 
   define Image/BuildKernel/RouterBoard
-	$(CP) $(KDIR)/vmlinux.elf $(IMGNAME)-rb1xx-vmlinux
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux.elf \
+	$(CP) $(KDIR)/vmlinux.elf $(call imgname,kernel,rb1xx)
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(call imgname,kernel,rb1xx) \
 		'$(strip $(call Image/cmdline/yaffs2))'
   endef
 

@@ -12,7 +12,7 @@ IMGNAME := $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)
 JFFS2EOF := $(KDIR)/jffs2.eof
 
 define imgname
-$(IMGNAME)-$(patsubst jffs2-%,jffs2,$(1))-$(2)
+$(IMGNAME)-$(2)-$(patsubst jffs2-%,jffs2,$(1))
 endef
 
 define Build/Clean
@@ -35,7 +35,7 @@ endef
 
 define Image/Build/LZMAKernel
 	$(LOADER_MAKE) TARGET_DIR=$(BIN_DIR) \
-		LOADER=openwrt-$(BOARD)-$(KERNEL)-ramfs-lzma-$(1).$(2) \
+		LOADER=openwrt-$(BOARD)-$(KERNEL)-$(1)-ramfs.$(2) \
 		LOADER_DATA=$(KDIR)/vmlinux.lzma \
 		LZMA_TEXT_START=$(3) LZMA_STARTUP_ORG=$(4) \
 		CONFIG_PASS_KARGS=$(5) CONFIG_BOARD=$(6) \
