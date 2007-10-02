@@ -132,7 +132,7 @@ define Build/Quilt
 		echo "The source directory contains no quilt patches."; \
 		false; \
 	}
-	@[ -n "$$$$(ls $(PKG_BUILD_DIR)/patches/*/series)" -o "$$$$(cat $(PKG_BUILD_DIR)/patches/series | md5sum)" = "$$(sort $(PKG_BUILD_DIR)/patches/series | md5sum)" ] || { \
+	@[ -n "$$$$(ls $(PKG_BUILD_DIR)/patches/series)" -o "$$$$(cat $(PKG_BUILD_DIR)/patches/series | md5sum)" = "$$(sort $(PKG_BUILD_DIR)/patches/series | md5sum)" ] || { \
 		echo "The patches are not sorted in the right order. Please fix."; \
 		false; \
 	}
