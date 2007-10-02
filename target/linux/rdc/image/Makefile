@@ -43,7 +43,8 @@ endef
 
 define Image/Build
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).bzImage
-	$(call Image/Build/$(PROFILE),$(1),$(PROFILE),$(patsubst jffs2-%k,%,$(1)))
+	$(call Image/Build/ar525w,$(1),ar525w,$(patsubst jffs2-%k,%,$(1)))
+	$(call Image/Build/wl153,$(1),wl153,$(patsubst jffs2-%k,%,$(1)))
 endef
 
 $(eval $(call BuildImage))
