@@ -28,12 +28,16 @@
 #include <linux/list.h>
 #include <linux/device.h>
 #include <linux/platform_device.h>
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
+#include <linux/leds.h>
+#endif
 
 #include <asm/gpio.h>
 
 #define PFX "rdc321x: "
 
-/* FIXME : Flash */
+/* Flash */
 static struct resource rdc_flash_resource[] = {
 	[0] = {
 		.start = (u32)-CONFIG_MTD_RDC3210_SIZE,
@@ -50,34 +54,47 @@ static struct platform_device rdc_flash_device = {
 };
 
 /* LEDS */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
+static struct gpio_led default_leds[] = {
+        { .name = "rdc:dmz", .gpio = 1, .active_low = 1, },
+};
+
+static struct gpio_led_platform_data rdc321x_led_data = {
+	.num_leds = ARRAY_SIZE(default_leds),
+	.leds = default_leds,
+};
+
 static struct platform_device rdc321x_leds = {
-	.name = "rdc321x-leds",
+	.name = "leds-gpio",
+	.id = -1,
+	.dev = {
+		.platform_data = &rdc321x_led_data,
+	}
+};
+#else
+static struct platform_device rdc321x_leds = {
+	.name "rdc321x-leds",
 	.id = -1,
 	.num_resources = 0,
 };
+#endif
 
+/* Watchdog */
 static struct platform_device rdc321x_wdt = {
 	.name = "rdc321x-wdt",
 	.id = -1,
 	.num_resources = 0,
 };
 
+static struct platform_device *rdc321x_devs[] = {
+	&rdc_flash_device,
+	&rdc321x_leds,
+	&rdc321x_wdt
+};
+
 static int __init rdc_board_setup(void)
 {
-	int err;
-
-	err = platform_device_register(&rdc_flash_device);
-	if (err)
-		printk(KERN_ALERT PFX "failed to register flash\n");
-
-	err = platform_device_register(&rdc321x_leds);
-	if (err)
-		printk(KERN_ALERT PFX "failed to register LEDS\n");
-
-	err = platform_device_register(&rdc321x_wdt);
-		printk(KERN_ALERT PFX "failed to register watchdog\n");
-
-	return err; 
+	return platform_add_devices(rdc321x_devs, ARRAY_SIZE(rdc321x_devs));
 }
 
 arch_initcall(rdc_board_setup);
