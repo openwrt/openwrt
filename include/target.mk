@@ -75,7 +75,7 @@ define Profile
   endif
 endef
 
-ifeq ($(DUMP)$(if $(TARGET_BUILD),,1),)
+ifeq ($(if $(TARGET_BUILD),$(DUMP)),1)
   -include $(PLATFORM_DIR)/profiles/*.mk
   ifneq ($(PLATFORM_DIR),$(PLATFORM_SUBDIR))
     -include $(PLATFORM_SUBDIR)/profiles/*.mk
