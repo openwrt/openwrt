@@ -10,12 +10,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=acx-mac80211
-PKG_VERSION:=20070718
+PKG_VERSION:=20071003
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://teknoraver.campuslife.it/software/acx-mac80211/
-PKG_MD5SUM:=c6f339384c8ad17181a9f867a227ddae
+PKG_SOURCE_URL:=@SF/acx100
+PKG_MD5SUM:=dff7b396299001724e522d3ccf79c883
 
 PKG_FW_NAME:=tiacx111c16
 PKG_FW_URL:=http://teknoraver.campuslife.it/software/acx-mac80211/
@@ -32,7 +32,7 @@ define KernelPackage/acx-mac80211
   TITLE:=ACX111 Mac80211 driver
   DESCRIPTION:=Driver for acx111 cards (Mac80211 version)
   DEPENDS:=@LINUX_2_6 +kmod-mac80211 @!TARGET_atheros
-  KCONFIG:=CONFIG_MAC80211
+#  KCONFIG:=CONFIG_MAC80211
   FILES:=$(PKG_BUILD_DIR)/acx-mac80211.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,acx-mac80211)
 endef
