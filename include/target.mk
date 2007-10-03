@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2007 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -75,10 +75,22 @@ define Profile
   endif
 endef
 
-ifeq ($(if $(TARGET_BUILD),$(DUMP)),1)
-  -include $(PLATFORM_DIR)/profiles/*.mk
-  ifneq ($(PLATFORM_DIR),$(PLATFORM_SUBDIR))
+ifneq ($(PLATFORM_DIR),$(PLATFORM_SUBDIR))
+  define IncludeProfiles
+    -include $(PLATFORM_DIR)/profiles/*.mk
     -include $(PLATFORM_SUBDIR)/profiles/*.mk
+  endef
+else
+  define IncludeProfiles
+    -include $(PLATFORM_DIR)/profiles/*.mk
+  endef
+endif
+
+ifeq ($(TARGET_BUILD),1)
+  $(eval $(call IncludeProfiles))
+else
+  ifeq ($(DUMP),)
+    $(eval $(call IncludeProfiles))
   endif
 endif
 
