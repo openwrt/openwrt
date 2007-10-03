@@ -96,6 +96,13 @@ config AUTOREBUILD
 	help
 		Automatically rebuild packages when their files change
 
+config BUILD_SUFFIX
+	string
+	prompt "Build suffix to append to the BUILD_DIR variable" if BUILDOPTS
+	default ""
+	help
+		Build suffix to append to the BUILD_DIR variable, i.e: build_dir_suffix
+
 config TAR_VERBOSITY
 	bool 
 	prompt "Tar verbose" if BUILDOPTS
@@ -114,13 +121,6 @@ config SOURCE_FEEDS
 	default "https://svn.openwrt.org/openwrt/packages/"
 	help
 		Separate sources with spaces : " "
-
-config BUILD_SUFFIX
-	string
-	prompt "Build suffix to append to the BUILD_DIR variable" if BUILDOPTS
-	default ""
-	help
-		Build suffix to append to the BUILD_DIR variable, i.e: build_dir_suffix
 
 config SOURCE_FEEDS_REV
 	string
