@@ -42,9 +42,9 @@ define Package/busybox/description
 endef
 
 define Package/busybox/config
-	source "$(SOURCE)/target-config.in"
 	menu "Configuration"
 		depends on PACKAGE_busybox
+		source "$(SOURCE)/target-config.in"
 		source "$(SOURCE)/config/Config.in"
 	endmenu
 endef
