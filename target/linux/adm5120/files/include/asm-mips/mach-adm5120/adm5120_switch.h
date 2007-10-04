@@ -171,6 +171,8 @@
 #define P5TBC_SHIFT		8
 #define P5RBC_SHIFT		12
 
+#define BW_CNTL1_NAND_ENABLE	0x100
+
 /* PHY_CNTL0 register bits */
 #define PHY_CNTL0_PHYA_MASK	BITMASK(5)
 #define PHY_CNTL0_PHYR_MASK	BITMASK(5)
