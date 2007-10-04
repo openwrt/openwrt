@@ -1,0 +1,22 @@
+Index: linux-2.6.23-rc9/drivers/leds/Kconfig
+===================================================================
+--- linux-2.6.23-rc9.orig/drivers/leds/Kconfig	2007-10-02 12:51:05.000000000 +0800
++++ linux-2.6.23-rc9/drivers/leds/Kconfig	2007-10-03 23:43:31.000000000 +0800
+@@ -133,4 +133,8 @@
+ 	  load average.
+ 	  If unsure, say Y.
+ 
++config LEDS_TRIGGER_MORSE
++	tristate "LED Morse Trigger"
++	depends on LEDS_TRIGGERS
++
+ endif # NEW_LEDS
+Index: linux-2.6.23-rc9/drivers/leds/Makefile
+===================================================================
+--- linux-2.6.23-rc9.orig/drivers/leds/Makefile	2007-10-02 12:51:05.000000000 +0800
++++ linux-2.6.23-rc9/drivers/leds/Makefile	2007-10-03 23:42:24.000000000 +0800
+@@ -22,3 +22,4 @@
+ obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledtrig-timer.o
+ obj-$(CONFIG_LEDS_TRIGGER_IDE_DISK)	+= ledtrig-ide-disk.o
+ obj-$(CONFIG_LEDS_TRIGGER_HEARTBEAT)	+= ledtrig-heartbeat.o
++obj-$(CONFIG_LEDS_TRIGGER_MORSE)	+= ledtrig-morse.o

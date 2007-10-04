@@ -1,0 +1,97 @@
+Index: linux-2.6.23-rc7/include/net/xfrmudp.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.23-rc7/include/net/xfrmudp.h	2007-10-02 00:58:05.000000000 +0800
+@@ -0,0 +1,10 @@
++/*
++ * pointer to function for type that xfrm4_input wants, to permit
++ * decoupling of XFRM from udp.c
++ */
++#define HAVE_XFRM4_UDP_REGISTER
++
++typedef int (*xfrm4_rcv_encap_t)(struct sk_buff *skb, __u16 encap_type);
++extern int udp4_register_esp_rcvencap(xfrm4_rcv_encap_t func
++				      , xfrm4_rcv_encap_t *oldfunc);
++extern int udp4_unregister_esp_rcvencap(xfrm4_rcv_encap_t func);
+Index: linux-2.6.23-rc7/net/ipv4/Kconfig
+===================================================================
+--- linux-2.6.23-rc7.orig/net/ipv4/Kconfig	2007-10-02 00:58:02.000000000 +0800
++++ linux-2.6.23-rc7/net/ipv4/Kconfig	2007-10-02 00:58:05.000000000 +0800
+@@ -224,6 +224,12 @@
+ 	  Network), but can be distributed all over the Internet. If you want
+ 	  to do that, say Y here and to "IP multicast routing" below.
+ 
++config IPSEC_NAT_TRAVERSAL
++	bool "IPSEC NAT-Traversal (KLIPS compatible)"
++	depends on INET
++	---help---
++          Includes support for RFC3947/RFC3948 NAT-Traversal of ESP over UDP.
++
+ config IP_MROUTE
+ 	bool "IP: multicast routing"
+ 	depends on IP_MULTICAST
+Index: linux-2.6.23-rc7/net/ipv4/xfrm4_input.c
+===================================================================
+--- linux-2.6.23-rc7.orig/net/ipv4/xfrm4_input.c	2007-10-02 00:58:02.000000000 +0800
++++ linux-2.6.23-rc7/net/ipv4/xfrm4_input.c	2007-10-02 00:58:33.000000000 +0800
+@@ -15,6 +15,7 @@
+ #include <linux/netfilter_ipv4.h>
+ #include <net/ip.h>
+ #include <net/xfrm.h>
++#include <net/xfrmudp.h>
+ 
+ static int xfrm4_parse_spi(struct sk_buff *skb, u8 nexthdr, __be32 *spi, __be32 *seq)
+ {
+@@ -161,6 +162,29 @@
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_IPSEC_NAT_TRAVERSAL
++static xfrm4_rcv_encap_t xfrm4_rcv_encap_func = NULL;
++
++int udp4_register_esp_rcvencap(xfrm4_rcv_encap_t func,
++			       xfrm4_rcv_encap_t *oldfunc)
++{
++	if(oldfunc != NULL)
++		*oldfunc = xfrm4_rcv_encap_func;
++
++	xfrm4_rcv_encap_func = func;
++	return 0;
++}
++
++int udp4_unregister_esp_rcvencap(xfrm4_rcv_encap_t func)
++{
++	if(xfrm4_rcv_encap_func != func)
++		return -1;
++
++	xfrm4_rcv_encap_func = NULL;
++	return 0;
++}
++#endif /* CONFIG_IPSEC_NAT_TRAVERSAL */
++
+ /* If it's a keepalive packet, then just eat it.
+  * If it's an encapsulated packet, then pass it to the
+  * IPsec xfrm input.
+@@ -251,7 +275,13 @@
+ 	iph->protocol = IPPROTO_ESP;
+ 
+ 	/* process ESP */
++#ifdef CONFIG_IPSEC_NAT_TRAVERSAL
++	if(xfrm4_rcv_encap_func == NULL)
++		goto drop;
++	ret = (*xfrm4_rcv_encap_func)(skb, up->encap_type);
++#else
+ 	ret = xfrm4_rcv_encap(skb, encap_type);
++#endif
+ 	return ret;
+ 
+ drop:
+@@ -265,3 +295,8 @@
+ }
+ 
+ EXPORT_SYMBOL(xfrm4_rcv);
++
++#ifdef CONFIG_IPSEC_NAT_TRAVERSAL
++EXPORT_SYMBOL(udp4_register_esp_rcvencap);
++EXPORT_SYMBOL(udp4_unregister_esp_rcvencap);
++#endif
