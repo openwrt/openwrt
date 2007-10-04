@@ -1,10 +1,17 @@
 /*
  *  $Id$
  *
- *  Mikrotik RouterBOARDs 1xx series
+ *  Mikrotik RouterBOARD 1xx series
  *
  *  Copyright (C) 2007 OpenWrt.org
  *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ *
+ *  NAND initialization code was based on a driver for Linux 2.6.19+ which
+ *  was derived from the driver for Linux 2.4.xx published by Mikrotik for
+ *  their RouterBoard 1xx and 5xx series boards.
+ *    Copyright (C) 2007 David Goodenough <david.goodenough@linkchoose.co.uk>
+ *    Copyright (C) 2007 Florian Fainelli <florian@openwrt.org>
+ *    The original Mikrotik code seems not to have a license.
  *
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License
@@ -25,13 +32,33 @@
 
 #include <linux/kernel.h>
 #include <linux/init.h>
+#include <linux/delay.h>
 
 #include <asm/bootinfo.h>
 #include <asm/gpio.h>
 
+#include <adm5120_defs.h>
+#include <adm5120_irq.h>
+#include <adm5120_nand.h>
 #include <adm5120_board.h>
 #include <adm5120_platform.h>
-#include <adm5120_irq.h>
+
+#define RB1XX_NAND_CHIP_DELAY	25
+
+#define RB150_NAND_BASE		0x1FC80000
+#define RB150_NAND_SIZE		1
+
+#define RB150_GPIO_NAND_READY	ADM5120_GPIO_PIN0
+#define RB150_GPIO_NAND_NCE	ADM5120_GPIO_PIN1
+#define RB150_GPIO_NAND_CLE	ADM5120_GPIO_P2L2
+#define RB150_GPIO_NAND_ALE	ADM5120_GPIO_P3L2
+
+#define RB150_NAND_DELAY	100
+
+#define RB150_NAND_WRITE(v) \
+	writeb((v),(void __iomem *)KSEG1ADDR(RB150_NAND_BASE))
+
+/*--------------------------------------------------------------------------*/
 
 static struct adm5120_pci_irq rb1xx_pci_irqs[] __initdata = {
 	PCIIRQ(1, 0, 1, ADM5120_IRQ_PCI0),
@@ -39,7 +66,7 @@ static struct adm5120_pci_irq rb1xx_pci_irqs[] __initdata = {
 	PCIIRQ(3, 0, 1, ADM5120_IRQ_PCI2)
 };
 
-static struct mtd_partition rb1xx_partitions[] = {
+static struct mtd_partition rb1xx_nor_partitions[] = {
 	{
 		.name	= "booter",
 		.offset	= 0,
@@ -52,24 +79,42 @@ static struct mtd_partition rb1xx_partitions[] = {
 	}
 };
 
+static struct mtd_partition rb1xx_nand_partitions[] = {
+	{
+		.name	= "kernel",
+		.offset	= 0,
+		.size	= 4 * 1024 * 1024,
+	} , {
+		.name	= "rootfs",
+		.offset	= MTDPART_OFS_NXTBLK,
+		.size	= MTDPART_SIZ_FULL
+	}
+};
+
 static struct platform_device *rb1xx_devices[] __initdata = {
 	&adm5120_flash0_device,
 	&adm5120_nand_device,
 };
 
-static struct platform_device *rb150_devices[] __initdata = {
-	&adm5120_flash0_device,
-	/* TODO: nand device is not yet supported */
+/*
+ * We need to use the OLD Yaffs-1 OOB layout, otherwise the RB bootloader
+ * will not be able to find the kernel that we load.  So set the oobinfo
+ * when creating the partitions
+ */
+static struct nand_ecclayout rb1xx_nand_ecclayout = {
+        .eccbytes	= 6,
+        .eccpos		= { 8, 9, 10, 13, 14, 15 },
+        .oobavail	= 9,
+        .oobfree	= { { 0, 4 }, { 6, 2 }, { 11, 2 }, { 4, 1 } }
 };
 
-static void __init rb1xx_setup(void)
-{
-	/* setup data for flash0 device */
-	adm5120_flash0_data.nr_parts = ARRAY_SIZE(rb1xx_partitions);
-	adm5120_flash0_data.parts = rb1xx_partitions;
-
-	/* TODO: setup mac address */
-}
+static struct resource rb150_nand_resource[] = {
+	[0] = {
+		.start	= RB150_NAND_BASE,
+		.end	= RB150_NAND_BASE + RB150_NAND_SIZE-1,
+		.flags	= IORESOURCE_MEM,
+	},
+};
 
 #if 0
 /*
@@ -109,6 +154,86 @@ static unsigned char rb_vlans[6] __initdata = {
 #define rb15x_vlans	rb_vlans
 #define rb192_vlans	rb_vlans
 #endif
+
+/*--------------------------------------------------------------------------*/
+
+static int rb150_nand_ready(struct mtd_info *mtd) {
+
+	return gpio_get_value(RB150_GPIO_NAND_READY);
+}
+
+static void rb150_nand_cmd_ctrl(struct mtd_info *mtd, int cmd,
+		unsigned int ctrl)
+{
+	if (ctrl & NAND_CTRL_CHANGE) {
+		gpio_set_value(RB150_GPIO_NAND_CLE, (ctrl & NAND_CLE) ? 1 : 0);
+		gpio_set_value(RB150_GPIO_NAND_ALE, (ctrl & NAND_ALE) ? 1 : 0);
+		gpio_set_value(RB150_GPIO_NAND_NCE, (ctrl & NAND_NCE) ? 0 : 1);
+	}
+
+	udelay(RB150_NAND_DELAY);
+
+	if (cmd != NAND_CMD_NONE)
+		RB150_NAND_WRITE(cmd);
+}
+
+/*--------------------------------------------------------------------------*/
+
+static void __init rb1xx_mac_setup(void)
+{
+	/* TODO */
+}
+
+static void __init rb1xx_flash_setup(void)
+{
+	/* setup data for flash0 device */
+	adm5120_flash0_data.nr_parts = ARRAY_SIZE(rb1xx_nor_partitions);
+	adm5120_flash0_data.parts = rb1xx_nor_partitions;
+
+	/* setup data for NAND device */
+	adm5120_nand_data.chip.nr_chips = 1;
+	adm5120_nand_data.chip.nr_partitions = ARRAY_SIZE(rb1xx_nand_partitions);
+	adm5120_nand_data.chip.partitions = rb1xx_nand_partitions;
+	adm5120_nand_data.chip.ecclayout = &rb1xx_nand_ecclayout;
+	adm5120_nand_data.chip.chip_delay = RB1XX_NAND_CHIP_DELAY;
+	adm5120_nand_data.chip.options = NAND_NO_AUTOINCR;
+}
+
+static void __init rb1xx_setup(void)
+{
+	/* enable NAND flash interface */
+	adm5120_nand_enable();
+
+	/* initialize NAND chip */
+	adm5120_nand_set_spn(1);
+	adm5120_nand_set_wpn(0);
+
+	rb1xx_flash_setup();
+	rb1xx_mac_setup();
+}
+
+static void __init rb150_setup(void)
+{
+	/* setup GPIO pins for NAND flash chip */
+	gpio_request(RB150_GPIO_NAND_READY, "nand-ready");
+	gpio_direction_input(RB150_GPIO_NAND_READY);
+	gpio_request(RB150_GPIO_NAND_NCE, "nand-nce");
+	gpio_direction_output(RB150_GPIO_NAND_NCE, 1);
+	gpio_request(RB150_GPIO_NAND_CLE, "nand-cle");
+	gpio_direction_output(RB150_GPIO_NAND_CLE, 0);
+	gpio_request(RB150_GPIO_NAND_ALE, "nand-ale");
+	gpio_direction_output(RB150_GPIO_NAND_ALE, 0);
+
+	adm5120_nand_device.num_resources = ARRAY_SIZE(rb150_nand_resource);
+	adm5120_nand_device.resource = rb150_nand_resource;
+	adm5120_nand_data.ctrl.cmd_ctrl = rb150_nand_cmd_ctrl;
+	adm5120_nand_data.ctrl.dev_ready = rb150_nand_ready;
+
+	rb1xx_flash_setup();
+	rb1xx_mac_setup();
+}
+
+/*--------------------------------------------------------------------------*/
 
 static struct adm5120_board rb111_board __initdata = {
 	.mach_type	= MACH_ADM5120_RB_111,
@@ -161,11 +286,11 @@ static struct adm5120_board rb133c_board __initdata = {
 static struct adm5120_board rb150_board __initdata = {
 	.mach_type	= MACH_ADM5120_RB_150,
 	.name		= "Mikrotik RouterBOARD 150",
-	.board_setup	= rb1xx_setup,
+	.board_setup	= rb150_setup,
 	.eth_num_ports	= 5,
 	.eth_vlans	= rb15x_vlans,
-	.num_devices	= ARRAY_SIZE(rb150_devices),
-	.devices	= rb150_devices,
+	.num_devices	= ARRAY_SIZE(rb1xx_devices),
+	.devices	= rb1xx_devices,
 };
 
 static struct adm5120_board rb153_board __initdata = {

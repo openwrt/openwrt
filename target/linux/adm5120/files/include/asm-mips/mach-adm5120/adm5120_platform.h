@@ -31,6 +31,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/map.h>
 #include <linux/mtd/partitions.h>
+#include <linux/mtd/nand.h>
 
 #include <linux/amba/bus.h>
 #include <linux/amba/serial.h>
@@ -42,10 +43,6 @@ struct adm5120_flash_platform_data {
 	unsigned int		nr_parts;
 	struct mtd_partition	*parts;
 #endif
-};
-
-struct adm5120_nand_platform_data {
-	/* TODO : not yet implemented */
 };
 
 struct adm5120_switch_platform_data {
@@ -73,7 +70,7 @@ static inline void adm5120_pci_set_irq_map(unsigned int nr_irqs,
 
 extern struct adm5120_flash_platform_data adm5120_flash0_data;
 extern struct adm5120_flash_platform_data adm5120_flash1_data;
-extern struct adm5120_nand_platform_data adm5120_nand_data;
+extern struct platform_nand_data adm5120_nand_data;
 extern struct adm5120_switch_platform_data adm5120_switch_data;
 extern struct amba_pl010_data adm5120_uart0_data;
 extern struct amba_pl010_data adm5120_uart1_data;
@@ -85,5 +82,12 @@ extern struct platform_device adm5120_hcd_device;
 extern struct platform_device adm5120_switch_device;
 extern struct amba_device adm5120_uart0_device;
 extern struct amba_device adm5120_uart1_device;
+
+extern void adm5120_uart_set_mctrl(struct amba_device *dev, void __iomem *base,
+		unsigned int mctrl);
+
+extern void adm5120_nand_cmd_ctrl(struct mtd_info *mtd, int cmd,
+		unsigned int ctrl);
+extern int adm5120_nand_ready(struct mtd_info *mtd);
 
 #endif /* _ADM5120_PLATFORM_H_ */

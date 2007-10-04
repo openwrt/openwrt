@@ -32,14 +32,12 @@
 #include <asm/bootinfo.h>
 #include <asm/gpio.h>
 
-#include <asm/mach-adm5120/adm5120_defs.h>
-#include <asm/mach-adm5120/adm5120_info.h>
-#include <asm/mach-adm5120/adm5120_irq.h>
-#include <asm/mach-adm5120/adm5120_switch.h>
-#include <asm/mach-adm5120/adm5120_platform.h>
-
-static void adm5120_uart_set_mctrl(struct amba_device *dev, void __iomem *base,
-		unsigned int mctrl);
+#include <adm5120_defs.h>
+#include <adm5120_info.h>
+#include <adm5120_irq.h>
+#include <adm5120_switch.h>
+#include <adm5120_nand.h>
+#include <adm5120_platform.h>
 
 #if 1
 /*
@@ -120,20 +118,23 @@ struct platform_device adm5120_flash1_device =	{
 /* NAND flash */
 struct resource adm5120_nand_resource[] = {
 	[0] = {
-		.start	= ADM5120_SRAM1_BASE,
-		.end	= ADM5120_SRAM1_BASE+ADM5120_MPMC_SIZE-1,
+		.start	= ADM5120_NAND_BASE,
+		.end	= ADM5120_NAND_BASE + ADM5120_NAND_SIZE-1,
 		.flags	= IORESOURCE_MEM,
 	},
 };
 
-struct adm5120_nand_platform_data adm5120_nand_data;
+struct platform_nand_data adm5120_nand_data = {
+	.ctrl.dev_ready	= adm5120_nand_ready,
+	.ctrl.cmd_ctrl	= adm5120_nand_cmd_ctrl,
+};
 
 struct platform_device adm5120_nand_device = {
-	.name 		= "adm5120-nand",
+	.name 		= "gen_nand",
 	.id		= -1,
-	.dev.platform_data = &adm5120_nand_data,
 	.num_resources	= ARRAY_SIZE(adm5120_nand_resource),
 	.resource	= adm5120_nand_resource,
+	.dev.platform_data = &adm5120_nand_data,
 };
 
 /* built-in UARTs */
@@ -173,7 +174,25 @@ struct amba_device adm5120_uart1_device = {
 	.periphid	= 0x0041010,
 };
 
-static void adm5120_uart_set_mctrl(struct amba_device *dev, void __iomem *base,
+void adm5120_uart_set_mctrl(struct amba_device *dev, void __iomem *base,
 		unsigned int mctrl)
 {
 }
+
+int adm5120_nand_ready(struct mtd_info *mtd)
+{
+	return ((adm5120_nand_get_status() & ADM5120_NAND_STATUS_READY) != 0);
+}
+
+void adm5120_nand_cmd_ctrl(struct mtd_info *mtd, int cmd, unsigned int ctrl)
+{
+	if (ctrl & NAND_CTRL_CHANGE) {
+		adm5120_nand_set_cle(ctrl & NAND_CLE);
+		adm5120_nand_set_ale(ctrl & NAND_ALE);
+		adm5120_nand_set_cen(ctrl & NAND_NCE);
+	}
+
+	if (cmd != NAND_CMD_NONE)
+		NAND_WRITE_REG(NAND_REG_DATA, cmd);
+}
+
