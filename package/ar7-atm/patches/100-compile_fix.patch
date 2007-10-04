@@ -1,6 +1,6 @@
-diff -urN sangam_atm-07.02.01.00/cppi_cpaal5.c sangam_atm-07.02.01.00/cppi_cpaal5.c
+diff -urN sangam_atm-07.02.01.00/cppi_cpaal5.c sangam_atm-07.02.01.00.new/cppi_cpaal5.c
 --- sangam_atm-07.02.01.00/cppi_cpaal5.c	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00/cppi_cpaal5.c	2007-08-06 18:58:42.000000000 +0200
++++ sangam_atm-07.02.01.00.new/cppi_cpaal5.c	2007-10-04 16:17:43.000000000 +0200
 @@ -352,7 +352,7 @@
             {
              /* malloc failed, add this RCB to Needs Buffer List */
@@ -10,9 +10,9 @@ diff -urN sangam_atm-07.02.01.00/cppi_cpaal5.c sangam_atm-07.02.01.00/cppi_cpaal
  
              if(HalDev->NeedsCount < MAX_NEEDS)                                  /* +MJH 030410 */
                {                                                                 /* +MJH 030410 */
-diff -urN sangam_atm-07.02.01.00/dsl_hal_api.c sangam_atm-07.02.01.00/dsl_hal_api.c
+diff -urN sangam_atm-07.02.01.00/dsl_hal_api.c sangam_atm-07.02.01.00.new/dsl_hal_api.c
 --- sangam_atm-07.02.01.00/dsl_hal_api.c	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00/dsl_hal_api.c	2007-08-06 18:58:42.000000000 +0200
++++ sangam_atm-07.02.01.00.new/dsl_hal_api.c	2007-10-04 16:17:43.000000000 +0200
 @@ -241,15 +241,15 @@
  *  UR8_MERGE_START_END CQ11247_TR69_DS_LATN_SATN  YW
  *  12/18/06   Yan Wang      CQ11247: TR069 range and precision changes for LATNds, SATNds  
@@ -34,9 +34,9 @@ diff -urN sangam_atm-07.02.01.00/dsl_hal_api.c sangam_atm-07.02.01.00/dsl_hal_ap
  
  //  UR8_MERGE_START CQ11054   Jack Zhang
  static unsigned int highprecision_selected = 0;  //By default we use low precision for backward compt.
-diff -urN sangam_atm-07.02.01.00/dsl_hal_support.c sangam_atm-07.02.01.00/dsl_hal_support.c
+diff -urN sangam_atm-07.02.01.00/dsl_hal_support.c sangam_atm-07.02.01.00.new/dsl_hal_support.c
 --- sangam_atm-07.02.01.00/dsl_hal_support.c	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00/dsl_hal_support.c	2007-08-06 18:58:42.000000000 +0200
++++ sangam_atm-07.02.01.00.new/dsl_hal_support.c	2007-10-04 16:17:43.000000000 +0200
 @@ -140,9 +140,9 @@
  *                                          oamFeature are overriden
  // UR8_MERGE_END CQ10774 Ram
@@ -50,9 +50,9 @@ diff -urN sangam_atm-07.02.01.00/dsl_hal_support.c sangam_atm-07.02.01.00/dsl_ha
  
  #define NUM_READ_RETRIES 3
  static unsigned int dslhal_support_adsl2ByteSwap32(unsigned int in32Bits);
-diff -urN sangam_atm-07.02.01.00/dsl_hal_support.h sangam_atm-07.02.01.00/dsl_hal_support.h
+diff -urN sangam_atm-07.02.01.00/dsl_hal_support.h sangam_atm-07.02.01.00.new/dsl_hal_support.h
 --- sangam_atm-07.02.01.00/dsl_hal_support.h	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00/dsl_hal_support.h	2007-08-06 18:58:42.000000000 +0200
++++ sangam_atm-07.02.01.00.new/dsl_hal_support.h	2007-10-04 16:17:43.000000000 +0200
 @@ -49,7 +49,7 @@
  *    04Nov05     0.11.00            CPH    Fixed T1413 mode got Zero DS/US rate when DSL_BIT_TMODE is set.
  *******************************************************************************/
@@ -62,9 +62,9 @@ diff -urN sangam_atm-07.02.01.00/dsl_hal_support.h sangam_atm-07.02.01.00/dsl_ha
  
  #define virtual2Physical(a)    (((int)a)&~0xe0000000)
  /* External Function Prototype Declarations */
-diff -urN sangam_atm-07.02.01.00/Makefile sangam_atm-07.02.01.00/Makefile
+diff -urN sangam_atm-07.02.01.00/Makefile sangam_atm-07.02.01.00.new/Makefile
 --- sangam_atm-07.02.01.00/Makefile	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00/Makefile	2007-08-06 18:58:42.000000000 +0200
++++ sangam_atm-07.02.01.00.new/Makefile	2007-10-04 16:17:43.000000000 +0200
 @@ -1,18 +1,9 @@
 -# File: drivers/atm/ti_evm3/Makefile
  #
@@ -90,9 +90,9 @@ diff -urN sangam_atm-07.02.01.00/Makefile sangam_atm-07.02.01.00/Makefile
 +EXTRA_CFLAGS += -DEL -I$(PWD) -DPOST_SILICON -DCOMMON_NSP -DNO_ACT -D__NO__VOICE_PATCH__ -DEL
 +obj-$(CONFIG_SANGAM_ATM) := tiatm.o
 +tiatm-objs += cpsar.o aal5sar.o tn7sar.o tn7atm.o tn7dsl.o dsl_hal_api.o dsl_hal_support.o
-diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
+diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
 --- sangam_atm-07.02.01.00/tn7atm.c	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00/tn7atm.c	2007-08-06 18:58:42.000000000 +0200
++++ sangam_atm-07.02.01.00.new/tn7atm.c	2007-10-04 16:21:50.000000000 +0200
 @@ -61,7 +61,6 @@
   *    UR8_MERGE_END   CQ11057*
  *********************************************************************************************/
@@ -101,16 +101,24 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
  #include <linux/kernel.h>
  #include <linux/module.h>
  #include <linux/init.h>
-@@ -70,7 +69,7 @@
+@@ -69,11 +68,14 @@
+ #include <linux/delay.h>
  #include <linux/spinlock.h>
  #include <linux/smp_lock.h>
- #include <asm/io.h>
+-#include <asm/io.h>
 -#include <asm/mips-boards/prom.h>
-+#include <asm/ar7/ar7.h>
  #include <linux/proc_fs.h>
  #include <linux/string.h>
  #include <linux/ctype.h>
-@@ -82,6 +81,7 @@
++
++#include <asm/io.h>
++#include <asm/ar7/ar7.h>
++#include <asm/ar7/prom.h>
++
+ #include "dsl_hal_api.h"
+ #include "tn7atm.h"
+ #include "tn7api.h"
+@@ -82,6 +84,7 @@
  #include "dsl_hal_register.h"
  
  #ifdef MODULE
@@ -118,7 +126,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
  MODULE_DESCRIPTION ("Tnetd73xx ATM Device Driver");
  MODULE_AUTHOR ("Zhicheng Tang");
  #endif
-@@ -100,9 +100,9 @@
+@@ -100,9 +103,9 @@
  
  /*end of externs */
  
@@ -131,7 +139,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
  
  #define tn7atm_kfree_skb(x)     dev_kfree_skb(x)
  
-@@ -114,7 +114,7 @@
+@@ -114,7 +117,7 @@
  /* prototypes */
  static int tn7atm_set_can_support_adsl2 (int can);
  
@@ -140,7 +148,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
  
  static void tn7atm_close (struct atm_vcc *vcc);
  
-@@ -257,13 +257,12 @@
+@@ -257,13 +260,12 @@
          getsockopt:     NULL,
          setsockopt:     NULL,
          send:           tn7atm_send,
@@ -155,7 +163,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
  static struct proc_dir_entry *root_proc_dir_entry = NULL;
  #define DRV_PROC_MODE 0644
  static int proc_root_already_exists = TRUE;
-@@ -564,56 +563,6 @@
+@@ -564,56 +566,6 @@
  
  /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   *
@@ -212,7 +220,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
   *  Function: int tn7atm_sar_irq(void)
   *
   *  Description: tnetd73xx SAR interrupt.
-@@ -709,8 +658,8 @@
+@@ -709,8 +661,8 @@
    {
      def_sar_inter_pace = os_atoi (ptr);
    }
@@ -223,7 +231,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
  
    /*
     * Reigster Receive interrupt A
-@@ -880,11 +829,15 @@
+@@ -880,11 +832,15 @@
  #define ATM_VBR_RT     5
  #endif
  
@@ -240,16 +248,16 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
  
    dgprintf(1, "tn7atm_open()\n");
  
-@@ -896,24 +849,18 @@
+@@ -896,24 +852,18 @@
      return -1;
    }
  
 -  MOD_INC_USE_COUNT;
--
--  /* find a free VPI/VCI */
--  tn7atm_walk_vccs(vcc, &vpi, &vci);
 +//  MOD_INC_USE_COUNT;
  
+-  /* find a free VPI/VCI */
+-  tn7atm_walk_vccs(vcc, &vpi, &vci);
+-
 -  vcc->vpi = vpi;
 -  vcc->vci = vci;
 -
@@ -271,7 +279,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
    {
      /* always use (max_dma_chan+1) for clear eoc */
      tn7atm_activate_vc_parm.chan = EOC_DMA_CHAN;
-@@ -921,7 +868,7 @@
+@@ -921,7 +871,7 @@
      /* check to see whether clear eoc is opened or not */
      if (tn7atm_activate_vc_parm.priv->lut[tn7atm_activate_vc_parm.chan].inuse)
      {
@@ -280,7 +288,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
        printk("tn7atm_open: Clear EOC channel (dmachan=%d) already in use.\n", tn7atm_activate_vc_parm.chan);
        return -EBUSY;
      }
-@@ -930,7 +877,7 @@
+@@ -930,7 +880,7 @@
      if (rc)
      {
        printk("tn7atm_open: failed to setup clear_eoc\n");
@@ -289,7 +297,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
        return -EBUSY;
      }
      tn7atm_set_lut(tn7atm_activate_vc_parm.priv,vcc, tn7atm_activate_vc_parm.chan);
-@@ -939,17 +886,17 @@
+@@ -939,17 +889,17 @@
    }
    else  /* PVC channel setup */
    {
@@ -310,7 +318,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
          printk("PVC already opened. dmachan = %d\n", rc);
          return -EBUSY;
        }
-@@ -981,6 +928,7 @@
+@@ -981,6 +931,7 @@
         tn7atm_activate_vc_parm.priority = 2;
         break;
  
@@ -318,7 +326,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
       case ATM_VBR: /* Variable Bit Rate-Non RealTime*/
         tn7atm_activate_vc_parm.qos = 1;
         tn7atm_activate_vc_parm.priority = 1;
-@@ -1002,6 +950,7 @@
+@@ -1002,6 +953,7 @@
             tn7atm_activate_vc_parm.mbs = vcc->qos.txtp.max_pcr;
         tn7atm_activate_vc_parm.cdvt = vcc->qos.txtp.max_cdv;
         break;
@@ -326,7 +334,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
  
       default:
           tn7atm_activate_vc_parm.qos = 2;
-@@ -1029,7 +978,7 @@
+@@ -1029,7 +981,7 @@
     if (rc < 0)
     {
        printk("failed to activate hw channel\n");
@@ -335,7 +343,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
        tn7atm_lut_clear(vcc, tn7atm_activate_vc_parm.chan);
        //spin_unlock_irqrestore(&chan_init_lock, flags);
        return -EBUSY;
-@@ -1119,7 +1068,7 @@
+@@ -1119,7 +1071,7 @@
    tn7atm_lut_clear (vcc, dmachan);
    //spin_unlock_irqrestore (&closeLock, closeFlag);
  
@@ -344,7 +352,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
  
    dgprintf (1, "Leave tn7atm_close\n");
  }
-@@ -1533,8 +1482,7 @@
+@@ -1533,8 +1485,7 @@
                                   * firewall is on */
  
    dgprintf (3, "pushing the skb...\n");
@@ -354,7 +362,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
  
    xdump ((unsigned char *) skb->data, skb->len, 5);
  
-@@ -1730,8 +1678,7 @@
+@@ -1730,8 +1681,7 @@
  
    kfree (dev->dev_data);
  
@@ -364,7 +372,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
  
    /*
     * remove proc entries
-@@ -1890,9 +1837,6 @@
+@@ -1890,9 +1840,6 @@
    /*
     * Set up proc entry for atm stats
     */
@@ -374,7 +382,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
      printk ("Creating new root folder %s in the proc for the driver stats \n",
              drv_proc_root_folder);
      root_proc_dir_entry = proc_mkdir (drv_proc_root_folder, NULL);
-@@ -1902,7 +1846,6 @@
+@@ -1902,7 +1849,6 @@
        return -ENOMEM;
      }
      proc_root_already_exists = FALSE;
@@ -382,7 +390,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
  
    /*
     * AV: Clean-up. Moved all the definitions to the data structure.
-@@ -2484,7 +2427,5 @@
+@@ -2484,7 +2430,5 @@
      return count;
  }
  
@@ -390,9 +398,9 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00/tn7atm.c
  module_init (tn7atm_detect);
  module_exit (tn7atm_exit);
 -#endif /* MODULE */
-diff -urN sangam_atm-07.02.01.00/tn7atm.h sangam_atm-07.02.01.00/tn7atm.h
+diff -urN sangam_atm-07.02.01.00/tn7atm.h sangam_atm-07.02.01.00.new/tn7atm.h
 --- sangam_atm-07.02.01.00/tn7atm.h	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00/tn7atm.h	2007-08-06 18:58:42.000000000 +0200
++++ sangam_atm-07.02.01.00.new/tn7atm.h	2007-10-04 16:17:43.000000000 +0200
 @@ -19,7 +19,8 @@
  //#include  "mips_support.h"
  #include  <linux/list.h>
@@ -403,9 +411,9 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.h sangam_atm-07.02.01.00/tn7atm.h
  
  #ifdef CONFIG_MODVERSIONS
  #include <linux/modversions.h>
-diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00/tn7dsl.c
+diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00.new/tn7dsl.c
 --- sangam_atm-07.02.01.00/tn7dsl.c	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00/tn7dsl.c	2007-08-06 18:58:42.000000000 +0200
++++ sangam_atm-07.02.01.00.new/tn7dsl.c	2007-10-04 16:23:53.000000000 +0200
 @@ -94,7 +94,6 @@
  *  1/02/07  JZ     CQ11054: Data Precision and Range Changes for TR-069 Conformance
  *  UR8_MERGE_END   CQ11054*
@@ -414,25 +422,29 @@ diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00/tn7dsl.c
  #include <linux/kernel.h>
  #include <linux/module.h>
  #include <linux/init.h>
-@@ -103,7 +102,7 @@
+@@ -102,8 +101,6 @@
+ #include <linux/delay.h>
  #include <linux/spinlock.h>
  #include <linux/smp_lock.h>
- #include <asm/io.h>
+-#include <asm/io.h>
 -#include <asm/mips-boards/prom.h>
-+#include <asm/ar7/ar7.h>
  #include <linux/proc_fs.h>
  #include <linux/string.h>
  #include <linux/ctype.h>
-@@ -111,6 +110,8 @@
+@@ -111,6 +108,12 @@
  #include <linux/timer.h>
  #include <linux/vmalloc.h>
  #include <linux/file.h>
 +#include <linux/firmware.h>
 +
++#include <asm/io.h>
++#include <asm/ar7/ar7.h>
++#include <asm/ar7/prom.h>
++
  /* Modules specific header files */
  #include "tn7atm.h"
  #include "tn7api.h"
-@@ -323,6 +324,14 @@
+@@ -323,6 +326,14 @@
  #define gDot1(a) ((a>0)?(a%10):((-a)%10))
  //  UR8_MERGE_END   CQ11054*
  
@@ -447,7 +459,7 @@ diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00/tn7dsl.c
  int os_atoi(const char *pStr)
  {
    int MulNeg = (*pStr == '-' ? -1 : 1);
-@@ -359,39 +368,6 @@
+@@ -359,39 +370,6 @@
  #endif
  }
  
@@ -487,7 +499,7 @@ diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00/tn7dsl.c
  // * UR8_MERGE_START CQ10640   Jack Zhang
  int tn7dsl_dump_dsp_memory(char *input_str) //cph99
    {
-@@ -441,101 +417,74 @@
+@@ -441,101 +419,74 @@
    return CpuFrequency;
  }
  
@@ -565,7 +577,9 @@ diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00/tn7dsl.c
 -
 -  dgprintf(4,"shim_read_overlay_page\n");
 -  //dgprintf(4,"sec offset=%d, sec length =%d\n", secOffset, secLength);
--
++	const struct firmware *fw_entry;
++	size_t size;
+ 
 -  filp=filp_open(DSP_FIRMWARE_PATH,00,O_RDONLY);
 -  if(filp ==NULL)
 -  {
@@ -586,9 +600,7 @@ diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00/tn7dsl.c
 -  set_fs(KERNEL_DS);
 -  filp->f_pos = secOffset;
 -  bytesRead = filp->f_op->read(filp,ptr,secLength,&filp->f_pos);
-+	const struct firmware *fw_entry;
-+	size_t size;
- 
+-
 -  set_fs(oldfs);
 -  /*
 -   * Close the file
@@ -651,7 +663,7 @@ diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00/tn7dsl.c
  }
  
  int shim_osLoadDebugFWImage(unsigned char *ptr)
-@@ -3442,7 +3391,7 @@
+@@ -3442,7 +3393,7 @@
     */
    if(write)
      {
@@ -660,7 +672,7 @@ diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00/tn7dsl.c
  
      switch (ctl->ctl_name)
        {
-@@ -3528,7 +3477,7 @@
+@@ -3528,7 +3479,7 @@
    else
      {
      len += sprintf(info+len, mod_req);
@@ -669,7 +681,7 @@ diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00/tn7dsl.c
      }
    return ret;
  }
-@@ -3558,8 +3507,7 @@
+@@ -3558,8 +3509,7 @@
    if (initialized == 1)
      return;
  
@@ -679,9 +691,9 @@ diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00/tn7dsl.c
  
    /*
     * set the defaults
-diff -urN sangam_atm-07.02.01.00/tn7sar.c sangam_atm-07.02.01.00/tn7sar.c
+diff -urN sangam_atm-07.02.01.00/tn7sar.c sangam_atm-07.02.01.00.new/tn7sar.c
 --- sangam_atm-07.02.01.00/tn7sar.c	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00/tn7sar.c	2007-08-06 18:58:42.000000000 +0200
++++ sangam_atm-07.02.01.00.new/tn7sar.c	2007-10-04 16:18:26.000000000 +0200
 @@ -42,7 +42,6 @@
   * UR8_MERGE_END CQ10700
   *******************************************************************************/
@@ -690,12 +702,19 @@ diff -urN sangam_atm-07.02.01.00/tn7sar.c sangam_atm-07.02.01.00/tn7sar.c
  #include <linux/kernel.h>
  #include <linux/module.h>
  #include <linux/init.h>
-@@ -51,7 +50,7 @@
+@@ -50,12 +49,13 @@
+ #include <linux/delay.h>
  #include <linux/spinlock.h>
  #include <linux/smp_lock.h>
- #include <asm/io.h>
+-#include <asm/io.h>
 -#include <asm/mips-boards/prom.h>
-+#include <asm/ar7/ar7.h>
  #include <linux/proc_fs.h>
  #include <linux/string.h>
  #include <linux/ctype.h>
+ 
++#include <asm/io.h>
++#include <asm/ar7/ar7.h>
++#include <asm/ar7/prom.h>
+ 
+ #define _CPHAL_AAL5
+ #define _CPHAL_SAR
