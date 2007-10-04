@@ -123,7 +123,7 @@ $(STAMP_PATCHED): $(STAMP_PREPARED)
 	touch $@
 
 $(STAMP_CHECKED): $(STAMP_PATCHED)
-	if [ -s "$(PKG_BUILD_DIR)/patches/series" ]; then (cd $(PKG_BUILD_DIR); quilt push -a); fi
+	if [ -s "$(PKG_BUILD_DIR)/patches/series" ]; then (cd $(PKG_BUILD_DIR); quilt next >/dev/null 2>&1 && quilt push -a || quilt top >/dev/null 2>&1); fi
 	touch $@
 
 define Build/Quilt
