@@ -54,10 +54,11 @@ endef
 QUILT?=$(strip $(shell test -f $(PKG_BUILD_DIR)/.quilt_used && echo y))
 ifneq ($(QUILT),)
   STAMP_PATCHED:=$(PKG_BUILD_DIR)/.quilt_patched
+  STAMP_CHECKED:=$(PKG_BUILD_DIR)/.quilt_checked
   override CONFIG_AUTOREBUILD=
-  $(STAMP_CONFIGURED): $(STAMP_PATCHED) FORCE
+  $(STAMP_CONFIGURED): $(STAMP_CHECKED) FORCE
   prepare: $(STAMP_PATCHED)
-  quilt-check: $(STAMP_PATCHED)
+  quilt-check: $(STAMP_CHECKED)
 endif
 
 define Build/Patch/Default
@@ -119,6 +120,9 @@ $(STAMP_PATCHED): $(STAMP_PREPARED)
 			find * -type f \! -name series | sort > series; \
 		fi; \
 	)
+	touch $@
+
+$(STAMP_CHECKED): $(STAMP_PATCHED)
 	if [ -s "$(PKG_BUILD_DIR)/patches/series" ]; then (cd $(PKG_BUILD_DIR); quilt push -a); fi
 	touch $@
 
