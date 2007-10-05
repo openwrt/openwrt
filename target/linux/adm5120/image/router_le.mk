@@ -16,7 +16,11 @@ define Image/Build/Edimax
 	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(2) -d -w \
 		-r $(KDIR)/loader-$(2).gz \
 		-x $(call imgname,$(1),$(2)).trx \
-		$(call imgname,$(1),$(2)).bin
+		$(call imgname,$(1),$(2))-webui.bin
+	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(2) -d \
+		-r $(KDIR)/loader-$(2).gz \
+		-x $(call imgname,$(1),$(2)).trx \
+		$(call imgname,$(1),$(2))-xmodem.bin
 endef
 
 define Image/Build/Infineon
@@ -195,10 +199,6 @@ define Image/Build/Board/BR6104K/squashfs
 	$(call Image/Build/Board/BR6104K,squashfs)
 endef
 
-define Image/Build/Board/BR6104K/jffs2-64k
-	$(call Image/Build/Board/BR6104K,jffs2-64k)
-endef
-
 define Image/Build/Board/BR6104K/Initramfs
 	$(call Image/Build/LZMAKernel/Admboot,br-6104k,gz)
 endef
@@ -306,6 +306,10 @@ endef
 
 define Image/Build/Profile/CAS771W
 	$(call Image/Build/Board/CAS771W/$(1))
+endef
+
+define Image/Build/Profile/BR6104KP
+	$(call Image/Build/Board/BR6104K/$(1))
 endef
 
 define Image/Build/Profile/RouterBoard
