@@ -56,7 +56,7 @@ static struct platform_device rdc_flash_device = {
 /* LEDS */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
 static struct gpio_led default_leds[] = {
-        { .name = "rdc:dmz", .gpio = 1, .active_low = 1, },
+        { .name = "rdc:dmz", .gpio = 1, },
 };
 
 static struct gpio_led_platform_data rdc321x_led_data = {
@@ -73,7 +73,7 @@ static struct platform_device rdc321x_leds = {
 };
 #else
 static struct platform_device rdc321x_leds = {
-	.name "rdc321x-leds",
+	.name = "rdc321x-leds",
 	.id = -1,
 	.num_resources = 0,
 };
