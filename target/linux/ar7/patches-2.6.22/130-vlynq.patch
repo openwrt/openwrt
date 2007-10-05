@@ -1,0 +1,20 @@
+Index: linux-2.6.22.4/drivers/Kconfig
+===================================================================
+--- linux-2.6.22.4.orig/drivers/Kconfig	2007-10-06 01:09:43.000000000 +0800
++++ linux-2.6.22.4/drivers/Kconfig	2007-10-06 01:12:19.000000000 +0800
+@@ -84,4 +84,6 @@
+ 
+ source "drivers/kvm/Kconfig"
+ 
++source "drivers/vlynq/Kconfig"
++
+ endmenu
+Index: linux-2.6.22.4/drivers/Makefile
+===================================================================
+--- linux-2.6.22.4.orig/drivers/Makefile	2007-10-06 01:09:43.000000000 +0800
++++ linux-2.6.22.4/drivers/Makefile	2007-10-06 01:12:37.000000000 +0800
+@@ -81,3 +81,4 @@
+ obj-$(CONFIG_DMA_ENGINE)	+= dma/
+ obj-$(CONFIG_HID)		+= hid/
+ obj-$(CONFIG_PPC_PS3)		+= ps3/
++obj-$(CONFIG_VLYNQ)		+= vlynq/

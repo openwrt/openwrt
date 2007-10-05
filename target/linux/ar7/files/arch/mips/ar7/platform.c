@@ -29,6 +29,7 @@
 #include <linux/ioport.h>
 #include <linux/io.h>
 #include <linux/version.h>
+#include <linux/vlynq.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
 #include <linux/leds.h>
 #endif
@@ -37,7 +38,6 @@
 #include <asm/ar7/ar7.h>
 #include <asm/ar7/gpio.h>
 #include <asm/ar7/prom.h>
-#include <asm/ar7/vlynq.h>
 
 struct plat_vlynq_data {
 	struct plat_vlynq_ops ops;
