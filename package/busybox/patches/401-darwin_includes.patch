@@ -1,8 +1,8 @@
-Index: busybox-1.4.2/include/platform.h
+Index: busybox-1.7.2/include/platform.h
 ===================================================================
---- busybox-1.4.2.orig/include/platform.h	2007-06-04 13:21:32.055103552 +0200
-+++ busybox-1.4.2/include/platform.h	2007-06-04 13:21:35.387596936 +0200
-@@ -128,9 +128,11 @@
+--- busybox-1.7.2.orig/include/platform.h	2007-09-03 13:48:46.000000000 +0200
++++ busybox-1.7.2/include/platform.h	2007-10-04 15:20:58.301274440 +0200
+@@ -137,9 +137,11 @@
  # include <netinet/in.h>
  #endif
  
@@ -14,30 +14,20 @@ Index: busybox-1.4.2/include/platform.h
  
  /* ---- Compiler dependent settings ------------------------- */
  #if (defined __digital__ && defined __unix__)
-@@ -161,7 +163,7 @@
+@@ -179,7 +181,7 @@
  #define HAVE_STDINT_H
  #else
  /* Largest integral types.  */
 -#if __BIG_ENDIAN__
 +#if __BIG_ENDIAN__ && !__APPLE__
- typedef long int                intmax_t;
- typedef unsigned long int       uintmax_t;
+ typedef long                intmax_t;
+ typedef unsigned long       uintmax_t;
  #else
-Index: busybox-1.4.2/include/libbb.h
+Index: busybox-1.7.2/include/libbb.h
 ===================================================================
---- busybox-1.4.2.orig/include/libbb.h	2007-06-04 13:21:32.062102488 +0200
-+++ busybox-1.4.2/include/libbb.h	2007-06-04 13:21:35.388596784 +0200
-@@ -17,7 +17,9 @@
- #include <errno.h>
- #include <fcntl.h>
- #include <inttypes.h>
-+#ifndef __APPLE__
- #include <malloc.h>
-+#endif
- #include <netdb.h>
- #include <setjmp.h>
- #include <signal.h>
-@@ -30,7 +32,9 @@
+--- busybox-1.7.2.orig/include/libbb.h	2007-09-16 20:48:10.000000000 +0200
++++ busybox-1.7.2/include/libbb.h	2007-10-04 15:20:22.275221430 +0200
+@@ -31,7 +31,9 @@
  #include <sys/mman.h>
  #include <sys/socket.h>
  #include <sys/stat.h>

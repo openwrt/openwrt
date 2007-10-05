@@ -87,7 +87,7 @@ config BUSYBOX_CONFIG_ASH_MATH_SUPPORT
 
 config BUSYBOX_CONFIG_ASH_MATH_SUPPORT_64
 	bool "Extend Posix math support to 64 bit"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_ASH_MATH_SUPPORT
 	help
 	  Enable 64-bit math support in the ash shell.  This will make
@@ -107,7 +107,7 @@ config BUSYBOX_CONFIG_ASH_BUILTIN_ECHO
 	select BUSYBOX_CONFIG_ECHO
 	depends on BUSYBOX_CONFIG_ASH
 	help
-	  Enable support for echo, built in to ash.
+	  Enable support for echo, builtin to ash.
 
 config BUSYBOX_CONFIG_ASH_BUILTIN_TEST
 	bool "Builtin version of 'test'"
@@ -115,7 +115,7 @@ config BUSYBOX_CONFIG_ASH_BUILTIN_TEST
 	select BUSYBOX_CONFIG_TEST
 	depends on BUSYBOX_CONFIG_ASH
 	help
-	  Enable support for test, built in to ash.
+	  Enable support for test, builtin to ash.
 
 config BUSYBOX_CONFIG_ASH_CMDCMD
 	bool "'command' command to override shell builtins"
@@ -135,7 +135,7 @@ config BUSYBOX_CONFIG_ASH_MAIL
 
 config BUSYBOX_CONFIG_ASH_OPTIMIZE_FOR_SIZE
 	bool "Optimize for size instead of speed"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_ASH
 	help
 	  Compile ash for reduced size at the price of speed.
@@ -153,7 +153,7 @@ config BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT
 
 config BUSYBOX_CONFIG_ASH_EXPAND_PRMT
 	bool "Expand prompt string"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_ASH
 	help
 	  "PS#" may be contain volatile content, such as backquote commands.
@@ -176,6 +176,54 @@ config BUSYBOX_CONFIG_HUSH
 	  word ), arithmetic expansion, aliases, brace expansion, tilde
 	  expansion, &> and >& redirection of stdout+stderr, etc.
 
+config BUSYBOX_CONFIG_HUSH_HELP
+	bool "help builtin"
+	default n
+	depends on BUSYBOX_CONFIG_HUSH
+	help
+	  Enable help builtin in hush. Code size + ~1 kbyte.
+
+config BUSYBOX_CONFIG_HUSH_INTERACTIVE
+	bool "Interactive mode"
+	default n
+	depends on BUSYBOX_CONFIG_HUSH
+	help
+	  Enable interactive mode (prompt and command editing).
+	  Without this, hush simply reads and executes commands
+	  from stdin just like a shell script from the file.
+	  No prompt, no PS1/PS2 magic shell variables.
+
+config BUSYBOX_CONFIG_HUSH_JOB
+	bool "Job control"
+	default n
+	depends on BUSYBOX_CONFIG_HUSH_INTERACTIVE
+	help
+	  Enable job control: Ctrl-Z backgrounds, Ctrl-C interrupts current
+	  command (not entire shell), fg/bg builtins work. Without this option,
+	  "cmd &" still works by simply spawning a process and immediately
+	  prompting for next command (or executing next command in a script),
+	  but no separate process group is formed.
+
+config BUSYBOX_CONFIG_HUSH_TICK
+	bool "Process substitution"
+	default n
+	depends on BUSYBOX_CONFIG_HUSH
+	help
+	  Enable process substitution `command` and $(command) in hush.
+
+config BUSYBOX_CONFIG_HUSH_IF
+	bool "Support if/then/elif/else/fi"
+	default n
+	depends on BUSYBOX_CONFIG_HUSH
+	help
+	  Enable if/then/elif/else/fi in hush.
+
+config BUSYBOX_CONFIG_HUSH_LOOPS
+	bool "Support for, while and until loops"
+	default n
+	depends on BUSYBOX_CONFIG_HUSH
+	help
+	  Enable for, while and until loops in hush.
 
 config BUSYBOX_CONFIG_LASH
 	bool "lash"
@@ -216,12 +264,12 @@ config BUSYBOX_CONFIG_FEATURE_SH_EXTRA_QUIET
 	help
 	  Remove the busybox introduction when starting a shell.
 
-config BUSYBOX_CONFIG_FEATURE_SH_STANDALONE_SHELL
+config BUSYBOX_CONFIG_FEATURE_SH_STANDALONE
 	bool "Standalone shell"
 	default n
-	depends on BUSYBOX_CONFIG_MSH || BUSYBOX_CONFIG_LASH || BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_ASH
+	depends on (BUSYBOX_CONFIG_MSH || BUSYBOX_CONFIG_LASH || BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_ASH) && BUSYBOX_CONFIG_FEATURE_PREFER_APPLETS
 	help
-	  This option causes the selected busybox shell to use busybox applets
+	  This option causes busybox shells to use busybox applets
 	  in preference to executables in the PATH whenever possible.  For
 	  example, entering the command 'ifconfig' into the shell would cause
 	  busybox to use the ifconfig busybox applet.  Specifying the fully
@@ -230,66 +278,43 @@ config BUSYBOX_CONFIG_FEATURE_SH_STANDALONE_SHELL
 	  is generally used when creating a statically linked version of busybox
 	  for use as a rescue shell, in the event that you screw up your system.
 
-	  Note that this will *also* cause applets to take precedence
-	  over shell builtins of the same name.  So turning this on will
-	  eliminate any performance gained by turning on the builtin "echo"
-	  and "test" commands in ash.
+	  This is implemented by re-execing /proc/self/exe (typically)
+	  with right parameters. Some selected applets ("NOFORK" applets)
+	  can even be executed without creating new process.
+	  Instead, busybox will call <applet>_main() internally.
 
-	  Note that when using this option, the shell will attempt to directly
-	  run '/bin/busybox'.  If you do not have the busybox binary sitting in
-	  that exact location with that exact name, this option will not work at
-	  all.
+	  However, this causes problems in chroot jails without mounted /proc
+	  and with ps/top (command name can be shown as 'exe' for applets
+	  started this way).
+# untrue?
+#	  Note that this will *also* cause applets to take precedence
+#	  over shell builtins of the same name.  So turning this on will
+#	  eliminate any performance gained by turning on the builtin "echo"
+#	  and "test" commands in ash.
+# untrue?
+#	  Note that when using this option, the shell will attempt to directly
+#	  run '/bin/busybox'.  If you do not have the busybox binary sitting in
+#	  that exact location with that exact name, this option will not work at
+#	  all.
 
-config BUSYBOX_CONFIG_FEATURE_COMMAND_EDITING
-	bool "Command line editing"
-	default y
-	depends on BUSYBOX_CONFIG_MSH || BUSYBOX_CONFIG_LASH || BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_ASH
-	help
-	  Enable command editing in shell.
-
-config BUSYBOX_CONFIG_FEATURE_COMMAND_EDITING_VI
-	bool "vi-style line editing commands"
+config BUSYBOX_CONFIG_CTTYHACK
+	bool "cttyhack"
 	default n
-	depends on BUSYBOX_CONFIG_FEATURE_COMMAND_EDITING
 	help
-	  Enable vi-style line editing in the shell.  This mode can be
-	  turned on and off with "set -o vi" and "set +o vi".
+	  One common problem reported on the mailing list is "can't access tty;
+	  job control turned off" error message which typically appears when
+	  one tries to use shell with stdin/stdout opened to /dev/console.
+	  This device is special - it cannot be a controlling tty.
 
-config BUSYBOX_CONFIG_FEATURE_COMMAND_HISTORY
-	int "History size"
-	range 0 99999
-	default 15
-	depends on BUSYBOX_CONFIG_FEATURE_COMMAND_EDITING
-	help
-	  Specify command history size in shell.
+	  Proper solution is to use correct device instead of /dev/console.
 
-config BUSYBOX_CONFIG_FEATURE_COMMAND_SAVEHISTORY
-	bool "History saving"
-	default n
-	depends on BUSYBOX_CONFIG_ASH && BUSYBOX_CONFIG_FEATURE_COMMAND_EDITING
-	help
-	  Enable history saving in ash shell.
+	  cttyhack provides "quick and dirty" solution to this problem.
+	  It analyzes stdin with various ioctls, trying to determine whether
+	  it is a /dev/ttyN or /dev/ttySN (virtual terminal or serial line).
+	  If it detects one, it closes stdin/out/err and reopens that device.
+	  Then it executes given program. Usage example for /etc/inittab
+	  (for busybox init):
 
-config BUSYBOX_CONFIG_FEATURE_COMMAND_TAB_COMPLETION
-	bool "Tab completion"
-	default y
-	depends on BUSYBOX_CONFIG_FEATURE_COMMAND_EDITING
-	help
-	  Enable tab completion in shell.
-
-config BUSYBOX_CONFIG_FEATURE_COMMAND_USERNAME_COMPLETION
-	bool "Username completion"
-	default n
-	depends on BUSYBOX_CONFIG_FEATURE_COMMAND_TAB_COMPLETION
-	help
-	  Enable username completion in shell.
-
-config BUSYBOX_CONFIG_FEATURE_SH_FANCY_PROMPT
-	bool "Fancy shell prompts"
-	default y
-	depends on BUSYBOX_CONFIG_FEATURE_COMMAND_EDITING
-	help
-	  Setting this option allows for prompts to use things like \w and
-	  \$ and also using escape codes.
+	  ::respawn:/bin/cttyhack /bin/sh
 
 endmenu

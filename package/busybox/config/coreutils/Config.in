@@ -65,13 +65,6 @@ config BUSYBOX_CONFIG_CKSUM
 	help
 	  cksum is used to calculate the CRC32 checksum of a file.
 
-config BUSYBOX_CONFIG_CMP
-	bool "cmp"
-	default n
-	help
-	  cmp is used to compare two files and returns the result
-	  to standard output.
-
 config BUSYBOX_CONFIG_COMM
 	bool "comm"
 	default n
@@ -142,38 +135,6 @@ config BUSYBOX_CONFIG_DF
 	  df reports the amount of disk space used and available
 	  on filesystems.
 
-config BUSYBOX_CONFIG_DIFF
-	bool "diff"
-	default n
-	help
-	  diff compares two files or directories and outputs the
-	  differences between them in a form that can be given to
-	  the patch command.
-
-config BUSYBOX_CONFIG_FEATURE_DIFF_BINARY
-	bool "Enable checks for binary files"
-	default n
-	depends on BUSYBOX_CONFIG_DIFF
-	help
-	  This option enables support for checking for binary files
-	  before a comparison is carried out.
-
-config BUSYBOX_CONFIG_FEATURE_DIFF_DIR
-	bool "Enable directory support"
-	default n
-	depends on BUSYBOX_CONFIG_DIFF
-	help
-	  This option enables support for directory and subdirectory
-	  comparison.
-
-config BUSYBOX_CONFIG_FEATURE_DIFF_MINIMAL
-	bool "Enable -d option to find smaller sets of changes"
-	default n
-	depends on BUSYBOX_CONFIG_DIFF
-	help
-	  Enabling this option allows the use of -d to make diff
-	  try hard to find the smallest possible set of changes.
-
 config BUSYBOX_CONFIG_DIRNAME
 	bool "dirname"
 	default y
@@ -238,6 +199,19 @@ config BUSYBOX_CONFIG_FEATURE_ENV_LONG_OPTIONS
 	depends on BUSYBOX_CONFIG_ENV && BUSYBOX_CONFIG_GETOPT_LONG
 	help
 	  Support long options for the env applet.
+
+config BUSYBOX_CONFIG_EXPAND
+	bool "expand"
+	default n
+	help
+	  By default, convert all tabs to spaces.
+
+config BUSYBOX_CONFIG_FEATURE_EXPAND_LONG_OPTIONS
+	bool "Enable long options"
+	default n
+	depends on BUSYBOX_CONFIG_EXPAND && BUSYBOX_CONFIG_GETOPT_LONG
+	help
+	  Support long options for the expand applet.
 
 config BUSYBOX_CONFIG_EXPR
 	bool "expr"
@@ -474,6 +448,20 @@ config BUSYBOX_CONFIG_PWD
 	help
 	  pwd is used to print the current directory.
 
+config BUSYBOX_CONFIG_READLINK
+	bool "readlink"
+	default n
+	help
+	  This program reads a symbolic link and returns the name
+	  of the file it points to
+
+config BUSYBOX_CONFIG_FEATURE_READLINK_FOLLOW
+	bool "Enable canonicalization by following all symlinks (-f)"
+	default n
+	depends on BUSYBOX_CONFIG_READLINK
+	help
+	  Enable the readlink option (-f).
+
 config BUSYBOX_CONFIG_REALPATH
 	bool "realpath"
 	default n
@@ -535,6 +523,21 @@ config BUSYBOX_CONFIG_FEATURE_SORT_BIG
 
 	  The SuSv3 sort standard is available at:
 	  http://www.opengroup.org/onlinepubs/007904975/utilities/sort.html
+
+config BUSYBOX_CONFIG_SPLIT
+	bool "split"
+	default n
+	help
+	  split a file into pieces.
+
+config BUSYBOX_CONFIG_FEATURE_SPLIT_FANCY
+	bool "fancy extensions"
+	default n
+	depends on BUSYBOX_CONFIG_SPLIT
+	help
+	  Add support for features not required by SUSv3.
+	  Supports additional suffixes 'b' for 512 bytes,
+	  'g' for 1GiB for the -b option.
 
 config BUSYBOX_CONFIG_STAT
 	bool "stat"
@@ -665,6 +668,19 @@ config BUSYBOX_CONFIG_UNAME
 	help
 	  uname is used to print system information.
 
+config BUSYBOX_CONFIG_UNEXPAND
+	bool "unexpand"
+	default n
+	help
+	  By default, convert only leading sequences of blanks to tabs.
+
+config BUSYBOX_CONFIG_FEATURE_UNEXPAND_LONG_OPTIONS
+	bool "Enable long options"
+	default n
+	depends on BUSYBOX_CONFIG_UNEXPAND && BUSYBOX_CONFIG_GETOPT_LONG
+	help
+	  Support long options for the unexpand applet.
+
 config BUSYBOX_CONFIG_UNIQ
 	bool "uniq"
 	default y
@@ -688,14 +704,6 @@ config BUSYBOX_CONFIG_UUENCODE
 	default n
 	help
 	  uuencode is used to uuencode a file.
-
-config BUSYBOX_CONFIG_WATCH
-	bool "watch"
-	default n
-	select BUSYBOX_CONFIG_DATE
-	help
-	  watch is used to execute a program periodically, showing
-	  output to the screen.
 
 config BUSYBOX_CONFIG_WC
 	bool "wc"

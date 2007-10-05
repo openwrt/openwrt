@@ -32,6 +32,16 @@ config BUSYBOX_CONFIG_APP_DUMPLEASES
 
 	  See http://udhcp.busybox.net for further details.
 
+config BUSYBOX_CONFIG_FEATURE_UDHCPD_WRITE_LEASES_EARLY
+	bool "Rewrite the lease file at every new acknowledge"
+	default n
+	depends on BUSYBOX_CONFIG_APP_UDHCPD
+	help
+	  If selected, udhcpd will write a new file with leases every
+	  time a new lease has been accepted, thus eleminating the need
+	  to send SIGUSR1 for the initial writing, or updating. Any timed
+	  rewriting remains undisturbed
+
 config BUSYBOX_CONFIG_APP_UDHCPC
 	bool "udhcp Client (udhcpc)"
 	default y
@@ -41,17 +51,6 @@ config BUSYBOX_CONFIG_APP_UDHCPC
 
 	  The udhcp client negotiates a lease with the DHCP server and
 	  notifies a set of scripts when a lease is obtained or lost.
-
-	  See http://udhcp.busybox.net for further details.
-
-config BUSYBOX_CONFIG_FEATURE_UDHCP_SYSLOG
-	bool "Log udhcp messages to syslog"
-	default n
-	depends on BUSYBOX_CONFIG_APP_UDHCPD || BUSYBOX_CONFIG_APP_UDHCPC
-	select BUSYBOX_CONFIG_FEATURE_SYSLOG
-	help
-	  If not daemonized, udhcpd prints its messages to stdout/stderr.
-	  If this option is selected, it will also log them to syslog.
 
 	  See http://udhcp.busybox.net for further details.
 
@@ -65,3 +64,11 @@ config BUSYBOX_CONFIG_FEATURE_UDHCP_DEBUG
 	  the background.
 
 	  See http://udhcp.busybox.net for further details.
+
+config BUSYBOX_CONFIG_FEATURE_RFC3397
+	bool "Support for RFC3397 domain search (experimental)"
+	default y
+	depends on BUSYBOX_CONFIG_APP_UDHCPD || BUSYBOX_CONFIG_APP_UDHCPC
+	help
+	  If selected, both client and server will support passing of domain
+	  search lists via option 119, specified in RFC3397.

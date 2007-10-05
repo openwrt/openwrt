@@ -17,20 +17,6 @@ config BUSYBOX_CONFIG_PIPE_PROGRESS
 	help
 	  Display a dot to indicate pipe activity.
 
-config BUSYBOX_CONFIG_READLINK
-	bool "readlink"
-	default n
-	help
-	  This program reads a symbolic link and returns the name
-	  of the file it points to
-
-config BUSYBOX_CONFIG_FEATURE_READLINK_FOLLOW
-	bool "Enable canonicalization by following all symlinks (-f)"
-	default n
-	depends on BUSYBOX_CONFIG_READLINK
-	help
-	  Enable the readlink option (-f).
-
 config BUSYBOX_CONFIG_RUN_PARTS
 	bool "run-parts"
 	default n
@@ -52,6 +38,15 @@ config BUSYBOX_CONFIG_FEATURE_RUN_PARTS_LONG_OPTIONS
 	depends on BUSYBOX_CONFIG_RUN_PARTS && BUSYBOX_CONFIG_GETOPT_LONG
 	help
 	  Support long options for the run-parts applet.
+
+config BUSYBOX_CONFIG_FEATURE_RUN_PARTS_FANCY
+	bool "Support additional arguments"
+	default n
+	depends on BUSYBOX_CONFIG_RUN_PARTS
+	help
+	  Support additional options:
+	  -l --list print the names of the all matching files (not
+	            limited to executables), but don't actually run them.
 
 config BUSYBOX_CONFIG_START_STOP_DAEMON
 	bool "start-stop-daemon"

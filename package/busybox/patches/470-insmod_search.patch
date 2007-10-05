@@ -1,0 +1,488 @@
+Index: busybox-1.7.2/modutils/insmod.c
+===================================================================
+--- busybox-1.7.2.orig/modutils/insmod.c	2007-09-03 13:48:35.000000000 +0200
++++ busybox-1.7.2/modutils/insmod.c	2007-10-05 01:43:47.686834357 +0200
+@@ -61,19 +61,107 @@
+ #include "libbb.h"
+ #include <libgen.h>
+ #include <sys/utsname.h>
++#if ENABLE_FEATURE_2_6_MODULES
++#include <sys/mman.h>
++#include <asm/unistd.h>
++#include <sys/syscall.h>
++#endif
+ 
+ #if !ENABLE_FEATURE_2_4_MODULES && !ENABLE_FEATURE_2_6_MODULES
+ #undef ENABLE_FEATURE_2_4_MODULES
+ #define ENABLE_FEATURE_2_4_MODULES 1
+ #endif
+ 
+-#if !ENABLE_FEATURE_2_4_MODULES
+-#define insmod_ng_main insmod_main
++#if ENABLE_FEATURE_2_4_MODULES
++int insmod_main_24(int argc, char **argv);
+ #endif
+-
+ #if ENABLE_FEATURE_2_6_MODULES
+-extern int insmod_ng_main( int argc, char **argv);
++int insmod_main_26(int argc, char **argv);
+ #endif
++int insmod_main(int argc, char **argv);
++
++static char *g_filename = NULL;
++#define _PATH_MODULES	"/lib/modules"
++
++static int check_module_name_match(const char *filename, struct stat *statbuf,
++				   void *userdata, int depth)
++{
++	char *fullname = (char *) userdata;
++
++	if (fullname[0] == '\0')
++		return FALSE;
++	else {
++		char *tmp, *tmp1 = xstrdup(filename);
++		tmp = bb_get_last_path_component(tmp1);
++		if (strcmp(tmp, fullname) == 0) {
++			free(tmp1);
++			/* Stop searching if we find a match */
++			g_filename = xstrdup(filename);
++			return FALSE;
++		}
++		free(tmp1);
++	}
++	return TRUE;
++}
++
++static int find_module(char *filename)
++{
++	char *module_dir, real_module_dir[FILENAME_MAX];
++	int len, slen, ret = ENOENT, k_version;
++	struct utsname myuname;
++	const char *suffix;
++	struct stat st;
++
++	/* check the kernel version */
++	if ((uname(&myuname) != 0) || (myuname.release[0] != '2'))
++		return EINVAL;
++
++	k_version = myuname.release[2] - '0';
++#if ENABLE_FEATURE_2_4_MODULES
++	if (k_version <= 4)
++		suffix = ".o";
++	else
++#endif
++		suffix = ".ko";
++
++	len = strlen(filename);
++	slen = strlen(suffix);
++
++	/* check for suffix and absolute path first */
++	if ((len < slen + 2) || (strcmp(filename + len - slen, suffix) != 0)) {
++		filename = xasprintf("%s%s", filename, suffix);
++	} else {
++		filename = strdup(filename);
++		if ((stat(filename, &st) == 0) && S_ISREG(st.st_mode))
++			return 0;
++	}
++
++	/* next: scan /lib/modules/<release> */
++	/* Jump through hoops in case /lib/modules/`uname -r`
++	* is a symlink.  We do not want recursive_action to
++	* follow symlinks, but we do want to follow the
++	* /lib/modules/`uname -r` dir, So resolve it ourselves
++	* if it is a link... */
++	module_dir = concat_path_file(_PATH_MODULES, myuname.release);
++	if (realpath(module_dir, real_module_dir) != NULL) {
++		free(module_dir);
++		module_dir = real_module_dir;
++	}
++
++	recursive_action(module_dir, ACTION_RECURSE,
++		check_module_name_match, 0, filename, 0);
++
++	/* Check if we have a complete path */
++	if (g_filename != NULL) {
++		if ((stat(g_filename, &st) == 0) && S_ISREG(st.st_mode))
++			ret = 0;
++		else
++			free(g_filename);
++	}
++	free(filename);
++
++	return ret;
++}
+ 
+ 
+ #if ENABLE_FEATURE_2_4_MODULES
+@@ -677,7 +765,6 @@
+ #endif
+ 
+ 
+-#define _PATH_MODULES	"/lib/modules"
+ enum { STRVERSIONLEN = 64 };
+ 
+ /*======================================================================*/
+@@ -790,37 +877,6 @@
+ static int n_ext_modules_used;
+ extern int delete_module(const char *);
+ 
+-static char *m_filename;
+-static char *m_fullName;
+-
+-
+-/*======================================================================*/
+-
+-
+-static int check_module_name_match(const char *filename, struct stat *statbuf,
+-				void *userdata, int depth)
+-{
+-	char *fullname = (char *) userdata;
+-
+-	if (fullname[0] == '\0')
+-		return FALSE;
+-	else {
+-		char *tmp, *tmp1 = xstrdup(filename);
+-		tmp = bb_get_last_path_component(tmp1);
+-		if (strcmp(tmp, fullname) == 0) {
+-			free(tmp1);
+-			/* Stop searching if we find a match */
+-			m_filename = xstrdup(filename);
+-			return FALSE;
+-		}
+-		free(tmp1);
+-	}
+-	return TRUE;
+-}
+-
+-
+-/*======================================================================*/
+-
+ static struct obj_file *arch_new_file(void)
+ {
+ 	struct arch_file *f;
+@@ -3952,33 +4008,35 @@
+ void print_load_map(struct obj_file *f);
+ #endif
+ 
+-int insmod_main( int argc, char **argv);
+-int insmod_main( int argc, char **argv)
++int insmod_main_24( int argc, char **argv)
+ {
+ 	char *opt_o, *arg1;
+ 	int len;
+ 	int k_crcs;
+-	char *tmp, *tmp1;
+ 	unsigned long m_size;
+ 	ElfW(Addr) m_addr;
+ 	struct obj_file *f;
+ 	struct stat st;
+ 	char *m_name = 0;
+-	int exit_status = EXIT_FAILURE;
++	int ret = EINVAL;
+ 	int m_has_modinfo;
+ #if ENABLE_FEATURE_INSMOD_VERSION_CHECKING
+ 	struct utsname uts_info;
+ 	char m_strversion[STRVERSIONLEN];
+ 	int m_version, m_crcs;
+ #endif
+-#if ENABLE_FEATURE_CLEAN_UP
+-	FILE *fp = 0;
+-#else
+-	FILE *fp;
+-#endif
+-	int k_version = 0;
++	FILE *fp = NULL;
++	int k_version;
+ 	struct utsname myuname;
+ 
++	/* check the kernel version */
++	if ((uname(&myuname) != 0) || (myuname.release[0] != '2'))
++		return EINVAL;
++
++	k_version = myuname.release[2] - '0';
++	if (k_version > 4)
++		return ENOTSUP;
++
+ 	/* Parse any options */
+ 	getopt32(argv, OPTION_STR, &opt_o);
+ 	arg1 = argv[optind];
+@@ -3987,110 +4045,18 @@
+ 		m_name = xstrdup(opt_o);
+ 	}
+ 
+-	if (arg1 == NULL) {
++	if (arg1 == NULL)
+ 		bb_show_usage();
+-	}
+-
+-	/* Grab the module name */
+-	tmp1 = xstrdup(arg1);
+-	tmp = basename(tmp1);
+-	len = strlen(tmp);
+-
+-	if (uname(&myuname) == 0) {
+-		if (myuname.release[0] == '2') {
+-			k_version = myuname.release[2] - '0';
+-		}
+-	}
+-
+-#if ENABLE_FEATURE_2_6_MODULES
+-	if (k_version > 4 && len > 3 && tmp[len - 3] == '.'
+-	 && tmp[len - 2] == 'k' && tmp[len - 1] == 'o'
+-	) {
+-		len -= 3;
+-		tmp[len] = '\0';
+-	} else
+-#endif
+-		if (len > 2 && tmp[len - 2] == '.' && tmp[len - 1] == 'o') {
+-			len -= 2;
+-			tmp[len] = '\0';
+-		}
+-
+-
+-#if ENABLE_FEATURE_2_6_MODULES
+-	if (k_version > 4)
+-		m_fullName = xasprintf("%s.ko", tmp);
+-	else
+-#endif
+-		m_fullName = xasprintf("%s.o", tmp);
+ 
+-	if (!m_name) {
+-		m_name = tmp;
+-	} else {
+-		free(tmp1);
+-		tmp1 = 0;       /* flag for free(m_name) before exit() */
+-	}
+-
+-	/* Get a filedesc for the module.  Check we we have a complete path */
+-	if (stat(arg1, &st) < 0 || !S_ISREG(st.st_mode)
+-	 || (fp = fopen(arg1, "r")) == NULL
+-	) {
+-		/* Hmm.  Could not open it.  First search under /lib/modules/`uname -r`,
+-		 * but do not error out yet if we fail to find it... */
+-		if (k_version) {	/* uname succeedd */
+-			char *module_dir;
+-			char *tmdn;
+-			char real_module_dir[FILENAME_MAX];
+-
+-			tmdn = concat_path_file(_PATH_MODULES, myuname.release);
+-			/* Jump through hoops in case /lib/modules/`uname -r`
+-			 * is a symlink.  We do not want recursive_action to
+-			 * follow symlinks, but we do want to follow the
+-			 * /lib/modules/`uname -r` dir, So resolve it ourselves
+-			 * if it is a link... */
+-			if (realpath(tmdn, real_module_dir) == NULL)
+-				module_dir = tmdn;
+-			else
+-				module_dir = real_module_dir;
+-			recursive_action(module_dir, ACTION_RECURSE,
+-					check_module_name_match, 0, m_fullName, 0);
+-			free(tmdn);
+-		}
+-
+-		/* Check if we have found anything yet */
+-		if (m_filename == 0 || ((fp = fopen(m_filename, "r")) == NULL)) {
+-			char module_dir[FILENAME_MAX];
+-
+-			free(m_filename);
+-			m_filename = 0;
+-			if (realpath (_PATH_MODULES, module_dir) == NULL)
+-				strcpy(module_dir, _PATH_MODULES);
+-			/* No module found under /lib/modules/`uname -r`, this
+-			 * time cast the net a bit wider.  Search /lib/modules/ */
+-			if (!recursive_action(module_dir, ACTION_RECURSE,
+-						    check_module_name_match, 0, m_fullName, 0)
+-			) {
+-				if (m_filename == 0
+-				 || ((fp = fopen(m_filename, "r")) == NULL)
+-				) {
+-					bb_error_msg("%s: no module by that name found", m_fullName);
+-					goto out;
+-				}
+-			} else
+-				bb_error_msg_and_die("%s: no module by that name found", m_fullName);
+-		}
+-	} else
+-		m_filename = xstrdup(arg1);
+-
+-	if (flag_verbose)
+-		printf("Using %s\n", m_filename);
++	ret = find_module(arg1);
++	if (ret)
++		goto out;
+ 
+-#if ENABLE_FEATURE_2_6_MODULES
+-	if (k_version > 4) {
+-		argv[optind] = m_filename;
+-		optind--;
+-		return insmod_ng_main(argc - optind, argv + optind);
++	fp = fopen(g_filename, "r");
++	if (!fp) {
++		ret = errno;
++		goto out;
+ 	}
+-#endif
+ 
+ 	f = obj_load(fp, LOADBITS);
+ 	if (f == NULL)
+@@ -4120,7 +4086,7 @@
+ 				"\t%s was compiled for kernel version %s\n"
+ 				"\twhile this kernel is version %s",
+ 				flag_force_load ? "warning: " : "",
+-				m_filename, m_strversion, uts_info.release);
++				g_filename, m_strversion, uts_info.release);
+ 			if (!flag_force_load)
+ 				goto out;
+ 		}
+@@ -4173,7 +4139,7 @@
+ 	hide_special_symbols(f);
+ 
+ #if ENABLE_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
+-	add_ksymoops_symbols(f, m_filename, m_name);
++	add_ksymoops_symbols(f, g_filename, m_name);
+ #endif /* FEATURE_INSMOD_KSYMOOPS_SYMBOLS */
+ 
+ 	new_create_module_ksymtab(f);
+@@ -4220,8 +4186,7 @@
+ 	if (flag_print_load_map)
+ 		print_load_map(f);
+ 
+-	exit_status = EXIT_SUCCESS;
+-
++	ret = 0;
+ out:
+ #if ENABLE_FEATURE_CLEAN_UP
+ 	if (fp)
+@@ -4229,21 +4194,13 @@
+ 	free(tmp1);
+ 	if (!tmp1)
+ 		free(m_name);
+-	free(m_filename);
++	free(g_filename);
+ #endif
+ 	return exit_status;
+ }
+-
+-
+ #endif
+ 
+-
+ #if ENABLE_FEATURE_2_6_MODULES
+-
+-#include <sys/mman.h>
+-#include <asm/unistd.h>
+-#include <sys/syscall.h>
+-
+ /* We use error numbers in a loose translation... */
+ static const char *moderror(int err)
+ {
+@@ -4261,19 +4218,33 @@
+ 	}
+ }
+ 
+-int insmod_ng_main(int argc, char **argv);
+-int insmod_ng_main(int argc, char **argv)
++int insmod_main_26(int argc, char **argv)
+ {
+-	long ret;
+-	size_t len;
++	char *filename, *options;
++	struct utsname myuname;
++	int k_version;
+ 	int optlen;
++	size_t len;
+ 	void *map;
+-	char *filename, *options;
++	long ret = 0;
++
++	/* check the kernel version */
++	if ((uname(&myuname) != 0) || (myuname.release[0] != '2'))
++		return EINVAL;
++
++	k_version = myuname.release[2] - '0';
++	if (k_version <= 4)
++		return ENOTSUP;
+ 
+ 	filename = *++argv;
+ 	if (!filename)
+ 		bb_show_usage();
+ 
++	g_filename = filename;
++	ret = find_module(filename);
++	if (ret)
++		goto done;
++
+ 	/* Rest is options */
+ 	options = xzalloc(1);
+ 	optlen = 0;
+@@ -4283,36 +4254,46 @@
+ 		optlen += sprintf(options + optlen, (strchr(*argv,' ') ? "\"%s\" " : "%s "), *argv);
+ 	}
+ 
+-#if 0
+-	/* Any special reason why mmap? It isn't performace critical... */
+-	int fd;
+-	struct stat st;
+-	unsigned long len;
+-	fd = xopen(filename, O_RDONLY);
+-	fstat(fd, &st);
+-	len = st.st_size;
+-	map = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0);
+-	if (map == MAP_FAILED) {
+-		bb_perror_msg_and_die("cannot mmap '%s'", filename);
+-	}
+-
+-	/* map == NULL on Blackfin, probably on other MMU-less systems too. Workaround. */
+-	if (map == NULL) {
+-		map = xmalloc(len);
+-		xread(fd, map, len);
+-	}
+-#else
+ 	len = MAXINT(ssize_t);
+-	map = xmalloc_open_read_close(filename, &len);
+-#endif
+-
++	map = xmalloc_open_read_close(g_filename, &len);
+ 	ret = syscall(__NR_init_module, map, len, options);
+ 	if (ret != 0) {
+ 		bb_perror_msg_and_die("cannot insert '%s': %s (%li)",
+-				filename, moderror(errno), ret);
++				g_filename, moderror(errno), ret);
+ 	}
++done:
++	if (g_filename && (g_filename != filename))
++		free(g_filename);
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ #endif
++
++int insmod_main(int argc, char **argv)
++{
++	int ret;
++
++#if ENABLE_FEATURE_2_6_MODULES
++	ret = insmod_main_26(argc, argv);
++	if (ret != ENOTSUP)
++		goto done;
++#endif
++
++#if ENABLE_FEATURE_2_4_MODULES
++	ret = insmod_main_24(argc, argv);
++	if (ret != ENOTSUP)
++		goto done;
++#endif
++
++	fprintf(stderr, "Error: Kernel version not supported\n");
++	return 1;
++
++done:
++	if (ret) {
++		errno = ret;
++		bb_perror_msg("Loading module failed");
++		return ret;
++	} else
++		return 0;
++}

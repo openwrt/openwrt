@@ -1,26 +1,18 @@
-Index: busybox-1.4.2/networking/httpd.c
+Index: busybox-1.7.2/networking/httpd.c
 ===================================================================
---- busybox-1.4.2.orig/networking/httpd.c	2007-06-04 13:21:35.006654848 +0200
-+++ busybox-1.4.2/networking/httpd.c	2007-06-04 13:21:35.585566840 +0200
-@@ -1231,7 +1231,7 @@
- 				 * "chopped up into small chunks" syndrome here */
- 				rbuf[count] = '\0';
- 				/* check to see if the user script added headers */
--#define HTTP_200 "HTTP/1.0 200 OK\r\n\r\n"
-+#define HTTP_200 "HTTP/1.0 200 OK\r\n"
- 				if (memcmp(rbuf, HTTP_200, 4) != 0) {
- 					/* there is no "HTTP", do it ourself */
- 					full_write(s, HTTP_200, sizeof(HTTP_200)-1);
-@@ -1242,9 +1242,9 @@
- 				 * echo -en "Location: http://www.busybox.net\r\n"
- 				 * echo -en "\r\n"
- 				 */
--				//if (!strstr(rbuf, "ontent-")) {
--				//	full_write(s, "Content-type: text/plain\r\n\r\n", 28);
--				//}
-+				if (!strstr(rbuf, "ontent-")) {
-+					full_write(s, "Content-type: text/plain\r\n\r\n", 28);
-+				}
- 				firstLine = 0;
- 			}
- 			if (full_write(s, rbuf, count) != count)
+--- busybox-1.7.2.orig/networking/httpd.c	2007-10-04 15:06:51.993046080 +0200
++++ busybox-1.7.2/networking/httpd.c	2007-10-04 15:25:10.815664410 +0200
+@@ -1314,10 +1314,10 @@
+ 						if (full_write(1, HTTP_200, sizeof(HTTP_200)-1) != sizeof(HTTP_200)-1)
+ 							break;
+ 					}
+-					/* Commented out:
+-					if (!strstr(rbuf, "ontent-")) {
+-						full_write(s, "Content-type: text/plain\r\n\r\n", 28);
++					if (!strstr(rbuf, "ontent-") && !strstr(rbuf, "ocation:")) {
++						full_write(1, "Content-type: text/plain\r\n\r\n", 28);
+ 					}
++					/* Previously commented out:
+ 					 * Counter-example of valid CGI without Content-type:
+ 					 * echo -en "HTTP/1.0 302 Found\r\n"
+ 					 * echo -en "Location: http://www.busybox.net\r\n"

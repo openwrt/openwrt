@@ -100,8 +100,7 @@ config BUSYBOX_CONFIG_FEATURE_INSTALLER
 	help
 	  Enable 'busybox --install [-s]' support.  This will allow you to use
 	  busybox at runtime to create hard links or symlinks for all the
-	  applets that are compiled into busybox.  This feature requires the
-	  /proc filesystem.
+	  applets that are compiled into busybox.
 
 config BUSYBOX_CONFIG_LOCALE_SUPPORT
 	bool "Enable locale support (system needs locale for this to work)"
@@ -140,6 +139,13 @@ config BUSYBOX_CONFIG_FEATURE_CLEAN_UP
 	  Don't enable this unless you have a really good reason to clean
 	  things up manually.
 
+config BUSYBOX_CONFIG_FEATURE_PIDFILE
+	bool "Support writing pidfiles"
+	default y
+	help
+	  This option makes some applets (e.g. crond, syslogd, inetd) write
+	  a pidfile in /var/run. Some applications rely on them.
+
 config BUSYBOX_CONFIG_FEATURE_SUID
 	bool "Support for SUID/SGID handling"
 	default y
@@ -154,13 +160,6 @@ config BUSYBOX_CONFIG_FEATURE_SUID
 	  one that needs it.  The applets currently marked to need the suid bit
 	  are login, passwd, su, ping, traceroute, crontab, dnsd, ipcrm, ipcs,
 	  and vlock.
-
-config BUSYBOX_CONFIG_FEATURE_SYSLOG
-	bool "Support for syslog"
-	default y
-	help
-	  This option is auto-selected when you select any applet which may
-	  send its output to syslog. You do not need to select it manually.
 
 config BUSYBOX_CONFIG_FEATURE_SUID_CONFIG
 	bool "Runtime SUID/SGID configuration via /etc/busybox.conf"
@@ -202,14 +201,6 @@ config BUSYBOX_CONFIG_FEATURE_SUID_CONFIG_QUIET
 	  /etc/busybox.conf should be readable by the user needing the SUID, check
 	  this option to avoid users to be notified about missing permissions.
 
-config BUSYBOX_CONFIG_FEATURE_HAVE_RPC
-	bool "RPC support"
-	default y
-	help
-	  Select this if you have rpc support.
-	  This automatically turns off all configuration options that rely
-	  on RPC.
-
 config BUSYBOX_CONFIG_SELINUX
 	bool "Support NSA Security Enhanced Linux"
 	default n
@@ -230,6 +221,20 @@ config BUSYBOX_CONFIG_SELINUX
 
 	  Most people will leave this set to 'N'.
 
+config BUSYBOX_CONFIG_FEATURE_PREFER_APPLETS
+	bool "exec prefers applets"
+	default y
+	help
+	  This is an experimental option which directs applets about to
+	  call 'exec' to try and find an applicable busybox applet before
+	  searching the PATH. This is typically done by exec'ing
+	  /proc/self/exe.
+	  This may affect shell, find -exec, xargs and similar applets.
+	  They will use applets even if /bin/<applet> -> busybox link
+	  is missing (or is not a link to busybox). However, this causes
+	  problems in chroot jails without mounted /proc and with ps/top
+	  (command name can be shown as 'exe' for applets started this way).
+
 config BUSYBOX_CONFIG_BUSYBOX_EXEC_PATH
 	string "Path to BusyBox executable"
 	default "/proc/self/exe"
@@ -239,6 +244,22 @@ config BUSYBOX_CONFIG_BUSYBOX_EXEC_PATH
 	  mounted, /proc/self/exe always points to the currently running
 	  executable.  If you haven't got /proc, set this to wherever you
 	  want to run BusyBox from.
+
+# These are auto-selected by other options
+
+config BUSYBOX_CONFIG_FEATURE_SYSLOG
+	bool "Support for logging to syslog"
+	default y
+	help
+	  This option is auto-selected when you select any applet which may
+	  send its output to syslog. You do not need to select it manually.
+
+config BUSYBOX_CONFIG_FEATURE_HAVE_RPC
+	bool "RPC support"
+	default y
+	help
+	  This is automatically selected if any of enabled applets need it.
+	  You do not need to select it manually.
 
 endmenu
 
@@ -298,7 +319,7 @@ config BUSYBOX_CONFIG_FEATURE_SHARED_BUSYBOX
 	  You need to have a working dynamic linker to use this variant.
 
 config BUSYBOX_CONFIG_LFS
-	bool "Support large files over 2 GB"
+	bool
 	default y
 	select BUSYBOX_CONFIG_FDISK_SUPPORT_LARGE_DISKS
 	help
@@ -343,21 +364,29 @@ config BUSYBOX_CONFIG_DEBUG
 
 	  Most people should answer N.
 
-config BUSYBOX_CONFIG_DEBUG_PESSIMIZE
-	bool "Disable compiler optimizations."
+config BUSYBOX_CONFIG_WERROR
+	bool "Abort compilation on any warning"
 	default n
-	depends on BUSYBOX_CONFIG_DEBUG
 	help
-	  The compiler's optimization of source code can eliminate and reorder
-	  code, resulting in an executable that's hard to understand when
-	  stepping through it with a debugger.  This switches it off, resulting
-	  in a much bigger executable that more closely matches the source
-	  code.
+	  Selecting this will add -Werror to gcc command line.
+
+	  Most people should answer N.
+
+# Seems to be unused
+#config DEBUG_PESSIMIZE
+#	bool "Disable compiler optimizations."
+#	default n
+#	depends on DEBUG
+#	help
+#	  The compiler's optimization of source code can eliminate and reorder
+#	  code, resulting in an executable that's hard to understand when
+#	  stepping through it with a debugger.  This switches it off, resulting
+#	  in a much bigger executable that more closely matches the source
+#	  code.
 
 choice
 	prompt "Additional debugging library"
 	default BUSYBOX_CONFIG_NO_DEBUG_LIB
-	depends on BUSYBOX_CONFIG_DEBUG
 	help
 	  Using an additional debugging library will make BusyBox become
 	  considerable larger and will cause it to run more slowly.  You
@@ -417,31 +446,30 @@ config BUSYBOX_CONFIG_INSTALL_NO_USR
 	  that you really want this behaviour.
 
 choice
-       prompt "Applets links"
-       default BUSYBOX_CONFIG_INSTALL_APPLET_SYMLINKS
-       help
-         Choose how you install applets links.
+	prompt "Applets links"
+	default BUSYBOX_CONFIG_INSTALL_APPLET_SYMLINKS
+	help
+	  Choose how you install applets links.
 
 config BUSYBOX_CONFIG_INSTALL_APPLET_SYMLINKS
-       bool "as soft-links"
-       help
-         Install applets as soft-links to the busybox binary. This needs some
-         free inodes on the filesystem, but might help with filesystem
-         generators that can't cope with hard-links.
+	bool "as soft-links"
+	help
+	  Install applets as soft-links to the busybox binary. This needs some
+	  free inodes on the filesystem, but might help with filesystem
+	  generators that can't cope with hard-links.
 
 config BUSYBOX_CONFIG_INSTALL_APPLET_HARDLINKS
-       bool "as hard-links"
-       help
-         Install applets as hard-links to the busybox binary. This might count
-         on a filesystem with few inodes.
+	bool "as hard-links"
+	help
+	  Install applets as hard-links to the busybox binary. This might count
+	  on a filesystem with few inodes.
 
 config BUSYBOX_CONFIG_INSTALL_APPLET_DONT
-       bool
-       prompt "not installed"
-       depends on BUSYBOX_CONFIG_FEATURE_INSTALLER || BUSYBOX_CONFIG_FEATURE_SH_STANDALONE_SHELL
-       help
-         Do not install applet links. Useful when using the -install feature
-         or a standalone shell for rescue pruposes.
+	bool "not installed"
+	depends on BUSYBOX_CONFIG_FEATURE_INSTALLER || BUSYBOX_CONFIG_FEATURE_SH_STANDALONE || BUSYBOX_CONFIG_FEATURE_PREFER_APPLETS
+	help
+	  Do not install applet links. Useful when using the -install feature
+	  or a standalone shell for rescue purposes.
 
 endchoice
 
@@ -476,3 +504,5 @@ source package/busybox/config/procps/Config.in
 source package/busybox/config/shell/Config.in
 source package/busybox/config/sysklogd/Config.in
 source package/busybox/config/runit/Config.in
+source package/busybox/config/selinux/Config.in
+source package/busybox/config/ipsvd/Config.in

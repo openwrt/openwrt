@@ -134,7 +134,7 @@ config BUSYBOX_CONFIG_FEATURE_CHECK_TAINTED_MODULE
 config BUSYBOX_CONFIG_FEATURE_2_4_MODULES
 	# Simulate indentation
 	bool "Support version 2.2.x to 2.4.x Linux kernels"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE
 	help
 	  Support module loading for 2.2.x and 2.4.x Linux kernels.

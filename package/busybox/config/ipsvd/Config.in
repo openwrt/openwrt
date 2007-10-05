@@ -1,0 +1,20 @@
+#
+# For a description of the syntax of this configuration file,
+# see scripts/kbuild/config-language.txt.
+#
+
+menu "ipsvd utilities"
+
+config BUSYBOX_CONFIG_TCPSVD
+	bool "tcpsvd"
+	default n
+	help
+	  tcpsvd listens on a tcp port and runs a program for each new connection
+
+config BUSYBOX_CONFIG_UDPSVD
+	bool "udpsvd"
+	default n
+	help
+	  udpsvd listens on a udp port and runs a program for each new connection
+
+endmenu

@@ -19,6 +19,13 @@ config BUSYBOX_CONFIG_BBCONFIG
 	  The bbconfig applet will print the config file with which
 	  busybox was built.
 
+config BUSYBOX_CONFIG_CHRT
+	bool "chrt"
+	default n
+	help
+	  manipulate real-time attributes of a process.
+	  This requires sched_{g,s}etparam support in your libc.
+
 config BUSYBOX_CONFIG_CROND
 	bool "crond"
 	default y
@@ -256,19 +263,19 @@ config BUSYBOX_CONFIG_MAKEDEVS
 	  'leaf' is traditionally what busybox follows, it allows multiple
 	  devices of a particluar type to be created per command.
 	  e.g. /dev/hda[0-9]
-          Device properties are passed as command line arguments.
+	  Device properties are passed as command line arguments.
 	  .
 	  'table' reads device properties from a file or stdin, allowing
 	  a batch of unrelated devices to be made with one command.
-          User/group names are allowed as an alternative to uid/gid.
+	  User/group names are allowed as an alternative to uid/gid.
 
 choice
 	prompt "Choose makedevs behaviour"
-	depends BUSYBOX_CONFIG_MAKEDEVS
+	depends on BUSYBOX_CONFIG_MAKEDEVS
 	default BUSYBOX_CONFIG_FEATURE_MAKEDEVS_TABLE
 
 config BUSYBOX_CONFIG_FEATURE_MAKEDEVS_LEAF
-        bool "leaf"
+	bool "leaf"
 
 config BUSYBOX_CONFIG_FEATURE_MAKEDEVS_TABLE
 	bool "table"
@@ -289,12 +296,6 @@ config BUSYBOX_CONFIG_MT
 	  to advance or rewind a tape past a specified number of archive
 	  files on the tape.
 
-config BUSYBOX_CONFIG_NMETER
-	bool "nmeter"
-	default n
-	help
-	  nmeter prints various system parameters continuously.
-
 config BUSYBOX_CONFIG_RAIDAUTORUN
 	bool "raidautorun"
 	default n
@@ -303,11 +304,11 @@ config BUSYBOX_CONFIG_RAIDAUTORUN
 	  search and start RAID arrays.
 
 config BUSYBOX_CONFIG_READAHEAD
-        bool "readahead"
+	bool "readahead"
 	default n
-	depends on LFS
+	depends on BUSYBOX_CONFIG_LFS
 	help
- 	  Preload the files listed on the command line into RAM cache so that
+	  Preload the files listed on the command line into RAM cache so that
 	  subsequent reads on these files will not block on disk I/O.
 
 	  This applet just calls the readahead(2) system call on each file.
@@ -320,19 +321,19 @@ config BUSYBOX_CONFIG_READAHEAD
 	  run this applet as a background job.
 
 config BUSYBOX_CONFIG_RUNLEVEL
-        bool "runlevel"
+	bool "runlevel"
 	default n
 	help
- 	  find the current and previous system runlevel.
+	  find the current and previous system runlevel.
 
 	  This applet uses utmp but does not rely on busybox supporing
 	  utmp on purpose. It is used by e.g. emdebian via /etc/init.d/rc.
 
 config BUSYBOX_CONFIG_RX
-        bool "rx"
+	bool "rx"
 	default n
 	help
- 	  Receive files using the Xmodem protocol.
+	  Receive files using the Xmodem protocol.
 
 config BUSYBOX_CONFIG_STRINGS
 	bool "strings"
@@ -370,6 +371,14 @@ config BUSYBOX_CONFIG_TIME
 	  The time command runs the specified program with the given arguments.
 	  When the command finishes, time writes a message to standard output
 	  giving timing statistics about this program run.
+
+config BUSYBOX_CONFIG_TTYSIZE
+	bool "ttysize"
+	default n
+	help
+	  A replacement for "stty size". Unlike stty, can report only width,
+	  only height, or both, in any order. It also does not complain on error,
+	  but returns default 80x24. Usage in shell scripts: width=`ttysize w`.
 
 config BUSYBOX_CONFIG_WATCHDOG
 	bool "watchdog"

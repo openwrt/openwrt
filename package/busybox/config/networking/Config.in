@@ -12,17 +12,25 @@ config BUSYBOX_CONFIG_FEATURE_IPV6
 	  Enable IPv6 support in busybox.
 	  This adds IPv6 support in the networking applets.
 
+config BUSYBOX_CONFIG_VERBOSE_RESOLUTION_ERRORS
+	bool "Verbose resolution errors"
+	default y
+	help
+	  Enable if you are not satisfied with simplistic
+	  "can't resolve 'hostname.com'" and want to know more.
+	  This may increase size of your executable a bit.
+
 config BUSYBOX_CONFIG_ARP
 	bool "arp"
 	default n
 	help
-	  Manipulate the system ARP cache
+	  Manipulate the system ARP cache.
 
 config BUSYBOX_CONFIG_ARPING
 	bool "arping"
 	default y
 	help
-	  Ping hosts by ARP packets
+	  Ping hosts by ARP packets.
 
 config BUSYBOX_CONFIG_DNSD
 	bool "dnsd"
@@ -67,13 +75,21 @@ config BUSYBOX_CONFIG_HOSTNAME
 	bool "hostname"
 	default n
 	help
-	  Show or set the system's host name
+	  Show or set the system's host name.
 
 config BUSYBOX_CONFIG_HTTPD
 	bool "httpd"
 	default y
 	help
 	  Serve web pages via an HTTP server.
+
+config BUSYBOX_CONFIG_FEATURE_HTTPD_USE_SENDFILE
+	bool "Use sendfile system call"
+	default y
+	depends on BUSYBOX_CONFIG_HTTPD
+	help
+	  When enabled, httpd will use the kernel sendfile() function
+	  instead of read/write loop.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_RELOAD_CONFIG_SIGHUP
 	bool "Support reloading the global config file using hup signal"
@@ -132,7 +148,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
 	help
 	  This option enables support for running scripts through an
 	  interpreter. Turn this on if you want PHP scripts to work
-	  properly. You need to supply an addition line in your httpd
+	  properly. You need to supply an additional line in your httpd
 	  config file:
 	  *.php:/path/to/your/php
 
@@ -153,6 +169,19 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_ENCODE_URL_STR
 	  strings for display of the browser.  Output goes to stdout.
 	  For example, httpd -e "<Hello World>" as
 	  "&#60Hello&#32World&#62".
+
+config BUSYBOX_CONFIG_FEATURE_HTTPD_ERROR_PAGES
+	bool "Enable support for custom error pages"
+	default y
+	depends on BUSYBOX_CONFIG_HTTPD
+	help
+	  This option allows you to define custom error pages in
+	  the configuration file instead of the default HTTP status
+	  error pages. For instance, if you add the line:
+	        E404:/path/e404.html
+	  in the config file, the server will respond the specified
+	  '/path/e404.html' file instead of the terse '404 NOT FOUND'
+	  message.
 
 config BUSYBOX_CONFIG_IFCONFIG
 	bool "ifconfig"
@@ -204,7 +233,6 @@ config BUSYBOX_CONFIG_FEATURE_IFCONFIG_BROADCAST_PLUS
 config BUSYBOX_CONFIG_IFUPDOWN
 	bool "ifupdown"
 	default n
-	select BUSYBOX_CONFIG_RUN_PARTS
 	help
 	  Activate or deactivate the specified interfaces.  This applet makes
 	  use of either "ifconfig" and "route" or the "ip" command to actually
@@ -215,8 +243,18 @@ config BUSYBOX_CONFIG_IFUPDOWN
 	  against my better judgement (since this will surely result in plenty
 	  of support questions on the mailing list), I do not force you to
 	  enable these additional options.  It is up to you to supply either
-	  "ifconfig" and "route" or the "ip" command, either via busybox or via
-	  standalone utilities.
+	  "ifconfig", "route" and "run-parts" or the "ip" command, either
+	  via busybox or via standalone utilities.
+
+config BUSYBOX_CONFIG_IFUPDOWN_IFSTATE_PATH
+	string "Absolute path to ifstate file"
+	default "/var/run/ifstate"
+	help
+	  ifupdown keeps state information in a file called ifstate.
+	  Typically it is located in /var/run/ifstate, however
+	  some distributions tend to put it in other places
+	  (debian, for example, uses /etc/network/run/ifstate).
+	  This config option defines location of ifstate.
 
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP
 	bool "Use ip applet"
@@ -259,7 +297,7 @@ config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IPV4
 	default n
 	depends on BUSYBOX_CONFIG_IFUPDOWN
 	help
-	  If you want busybox to talk IPv4, leave this on.
+	  If you want ifup/ifdown to talk IPv4, leave this on.
 
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IPV6
 	bool "Enable support for IPv6"
@@ -268,13 +306,14 @@ config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IPV6
 	help
 	  If you need support for IPv6, turn this option on.
 
-config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IPX
-	bool "Enable support for IPX"
-	default n
-	depends on BUSYBOX_CONFIG_IFUPDOWN
-	help
-	  If this option is selected you can use busybox to work with IPX
-	  networks.
+### UNUSED
+### config FEATURE_IFUPDOWN_IPX
+### 	bool "Enable support for IPX"
+### 	default n
+### 	depends on IFUPDOWN
+### 	help
+### 	  If this option is selected you can use busybox to work with IPX
+### 	  networks.
 
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_MAPPING
 	bool "Enable mapping support"
@@ -283,6 +322,16 @@ config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_MAPPING
 	help
 	  This enables support for the "mapping" stanza, unless you have
 	  a weird network setup you don't need it.
+
+config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_EXTERNAL_DHCP
+	bool "Enable support for external dhcp clients"
+	default n
+	depends on BUSYBOX_CONFIG_IFUPDOWN
+	help
+	  This enables support for the external dhcp clients. Clients are
+	  tried in the following order: dhcpcd, dhclient, pump and udhcpc.
+	  Otherwise, if udhcpc applet is enabled, it is used.
+	  Otherwise, ifup/ifdown will have no support for DHCP.
 
 config BUSYBOX_CONFIG_INETD
 	bool "inetd"
@@ -330,7 +379,7 @@ config BUSYBOX_CONFIG_FEATURE_INETD_RPC
 	bool "Support RPC services"
 	default n
 	depends on BUSYBOX_CONFIG_INETD
-	depends on BUSYBOX_CONFIG_FEATURE_HAVE_RPC
+	select BUSYBOX_CONFIG_FEATURE_HAVE_RPC
 	help
 	  Support Sun-RPC based services
 
@@ -387,6 +436,7 @@ config BUSYBOX_CONFIG_FEATURE_IP_SHORT_FORMS
 	  ip link   -> iplink
 	  ip route  -> iproute
 	  ip tunnel -> iptunnel
+	  ip rule   -> iprule
 
 	  Say N unless you desparately need the short form of the ip
 	  object commands.
@@ -466,7 +516,7 @@ config BUSYBOX_CONFIG_NETMSG
 	  simple program for sending udp broadcast messages
 
 config BUSYBOX_CONFIG_NC_SERVER
-	bool "Netcat server options (-lp)"
+	bool "Netcat server options (-l)"
 	default n
 	depends on BUSYBOX_CONFIG_NC
 	help
@@ -487,6 +537,14 @@ config BUSYBOX_CONFIG_NETSTAT
 	help
 	  netstat prints information about the Linux networking subsystem.
 
+config BUSYBOX_CONFIG_FEATURE_NETSTAT_WIDE
+	bool "  Enable wide netstat output"
+	default y
+	depends on BUSYBOX_CONFIG_NETSTAT
+	help
+	  Add support for wide columns. Useful when displaying IPv6 addresses
+	  (-W option).
+
 config BUSYBOX_CONFIG_NSLOOKUP
 	bool "nslookup"
 	default y
@@ -500,6 +558,19 @@ config BUSYBOX_CONFIG_PING
 	  ping uses the ICMP protocol's mandatory ECHO_REQUEST datagram to
 	  elicit an ICMP ECHO_RESPONSE from a host or gateway.
 
+config BUSYBOX_CONFIG_PING6
+	bool "ping6"
+	default y
+	depends on BUSYBOX_CONFIG_FEATURE_IPV6 && BUSYBOX_CONFIG_PING
+	help
+	  This will give you a ping that can talk IPv6.
+
+config BUSYBOX_CONFIG_PSCAN
+	bool "pscan"
+	default n
+	help
+	  Simple network port scanner.
+
 config BUSYBOX_CONFIG_FEATURE_FANCY_PING
 	bool "Enable fancy ping output"
 	default y
@@ -508,26 +579,17 @@ config BUSYBOX_CONFIG_FEATURE_FANCY_PING
 	  Make the output from the ping applet include statistics, and at the
 	  same time provide full support for ICMP packets.
 
-config BUSYBOX_CONFIG_PING6
-	bool "ping6"
-	default y
-	depends on BUSYBOX_CONFIG_FEATURE_IPV6
-	help
-	  This will give you a ping that can talk IPv6.
-
-config BUSYBOX_CONFIG_FEATURE_FANCY_PING6
-	bool "Enable fancy ping6 output"
-	default y
-	depends on BUSYBOX_CONFIG_PING6
-	help
-	  Make the output from the ping6 applet include statistics, and at the
-	  same time provide full support for ICMP packets.
-
 config BUSYBOX_CONFIG_ROUTE
 	bool "route"
 	default y
 	help
 	  Route displays or manipulates the kernel's IP routing tables.
+
+config BUSYBOX_CONFIG_SLATTACH
+	bool "slattach"
+	default n
+	help
+	  slattach is a small utility to attach network interfaces to serial lines.
 
 config BUSYBOX_CONFIG_TELNET
 	bool "telnet"
@@ -702,13 +764,6 @@ config BUSYBOX_CONFIG_FEATURE_WGET_AUTHENTICATION
 	depends on BUSYBOX_CONFIG_WGET
 	help
 	  Support authenticated HTTP transfers.
-
-config BUSYBOX_CONFIG_FEATURE_WGET_IP6_LITERAL
-	bool "Enable IPv6 literal addresses"
-	default y
-	depends on BUSYBOX_CONFIG_WGET && BUSYBOX_CONFIG_FEATURE_IPV6
-	help
-	  Support IPv6 address literal notation in URLs.
 
 config BUSYBOX_CONFIG_FEATURE_WGET_LONG_OPTIONS
 	bool "Enable long options"

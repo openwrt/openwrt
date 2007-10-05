@@ -1,69 +1,76 @@
-Index: busybox-1.4.2/include/usage.h
+Index: busybox-1.7.2/include/usage.h
 ===================================================================
---- busybox-1.4.2.orig/include/usage.h	2007-06-04 13:21:32.103096256 +0200
-+++ busybox-1.4.2/include/usage.h	2007-06-04 13:21:35.005655000 +0200
-@@ -1257,7 +1257,8 @@
- 	USE_FEATURE_HTTPD_BASIC_AUTH(" [-r <realm>]") \
+--- busybox-1.7.2.orig/include/usage.h	2007-10-04 17:12:35.230910708 +0200
++++ busybox-1.7.2/include/usage.h	2007-10-04 17:32:12.994027602 +0200
+@@ -1350,7 +1350,8 @@
+ 	USE_FEATURE_HTTPD_BASIC_AUTH(" [-r realm]") \
  	USE_FEATURE_HTTPD_AUTH_MD5(" [-m pass]") \
         " [-h home]" \
--       " [-d/-e <string>]"
-+       " [-d/-e <string>]" \
+-       " [-d/-e string]"
++       " [-d/-e string]" \
 +       " [-R <path> [-H <host>]]"
  #define httpd_full_usage \
-        "Listen for incoming http server requests" \
-        "\n\nOptions:\n" \
-@@ -1273,7 +1274,9 @@
-        "	-m PASS		Crypt PASS with md5 algorithm\n") \
-        "	-h HOME		Specifies http HOME directory (default ./)\n" \
-        "	-e STRING	HTML encode STRING\n" \
--       "	-d STRING	URL decode STRING"
-+       "	-d STRING	URL decode STRING\n" \
-+       "	-R PATH 	Redirect target path\n" \
-+       "	-H HOST 	Redirect target host"
+        "Listen for incoming HTTP requests" \
+        "\n\nOptions:" \
+@@ -1368,6 +1369,8 @@
+        "\n	-h HOME		Home directory (default .)" \
+        "\n	-e STRING	HTML encode STRING" \
+        "\n	-d STRING	URL decode STRING" \
++       "\n	-R PATH 	Redirect target path" \
++       "\n	-H HOST 	Redirect target host" \
  
  #define hwclock_trivial_usage \
-        "[-r|--show] [-s|--hctosys] [-w|--systohc] [-l|--localtime] [-u|--utc]"
-Index: busybox-1.4.2/networking/httpd.c
+        "[-r|--show] [-s|--hctosys] [-w|--systohc]" \
+Index: busybox-1.7.2/networking/httpd.c
 ===================================================================
---- busybox-1.4.2.orig/networking/httpd.c	2007-06-04 13:21:34.588718384 +0200
-+++ busybox-1.4.2/networking/httpd.c	2007-06-04 13:21:35.006654848 +0200
-@@ -140,6 +140,8 @@
- 	USE_FEATURE_HTTPD_CGI(char *user_agent;)
+--- busybox-1.7.2.orig/networking/httpd.c	2007-10-04 17:13:12.509035065 +0200
++++ busybox-1.7.2/networking/httpd.c	2007-10-04 17:32:33.711208213 +0200
+@@ -230,6 +230,8 @@
  
- 	const char *configFile;
-+	const char *redirectPath;
-+	const char *redirectHost;
+ 	const char *found_mime_type;
+ 	const char *found_moved_temporarily;
++	const char *redirect_path;
++	const char *redirect_host;
+ 	Htaccess_IP *ip_a_d;    /* config allow/deny lines */
  
- 	unsigned int rmt_ip;
- #if ENABLE_FEATURE_HTTPD_CGI || DEBUG
-@@ -880,8 +882,11 @@
+ 	USE_FEATURE_HTTPD_BASIC_AUTH(const char *g_realm;)
+@@ -264,6 +266,8 @@
+ #define home_httpd        (G.home_httpd       )
+ #define found_mime_type   (G.found_mime_type  )
+ #define found_moved_temporarily (G.found_moved_temporarily)
++#define redirect_path     (G.redirect_path    )
++#define redirect_host     (G.redirect_host    )
+ #define ContentLength     (G.ContentLength    )
+ #define last_mod          (G.last_mod         )
+ #define ip_a_d            (G.ip_a_d           )
+@@ -901,8 +905,11 @@
  	}
  #endif
  	if (responseNum == HTTP_MOVED_TEMPORARILY) {
--		len += sprintf(buf+len, "Location: %s/%s%s\r\n",
-+		len += sprintf(buf+len, "Location: %s%s%s%s%s%s\r\n",
-+				(config->redirectHost ? "http://" : ""),
-+				(config->redirectHost ? config->redirectHost : ""),
- 				config->found_moved_temporarily,
-+				(config->redirectHost ? "" : "/"),
- 				(config->query ? "?" : ""),
- 				(config->query ? config->query : ""));
+-		len += sprintf(iobuf + len, "Location: %s/%s%s\r\n",
++		len += sprintf(iobuf + len, "Location: %s%s%s%s%s%s\r\n",
++				(redirect_host ? "http://" : ""),
++				(redirect_host ? redirect_host : ""),
+ 				found_moved_temporarily,
++				(redirect_host ? "" : "/"),
+ 				(g_query ? "?" : ""),
+ 				(g_query ? g_query : ""));
  	}
-@@ -1594,8 +1599,12 @@
- 		*++purl = '\0';       /* so keep last character */
- 		test = purl;          /* end ptr */
+@@ -1730,8 +1737,12 @@
+ 	*++urlp = '\0';       /* so keep last character */
+ 	tptr = urlp;          /* end ptr */
  
-+		/* redirect active */
-+		if (config->redirectPath && (strncmp(url, config->redirectPath, strlen(config->redirectPath)) != 0))
-+			config->found_moved_temporarily = config->redirectPath;
++	/* redirect active */
++	if (redirect_path && (strncmp(urlcopy, redirect_path, strlen(redirect_path)) != 0))
++		found_moved_temporarily = redirect_path;
 +
- 		/* If URL is directory, adding '/' */
--		if (test[-1] != '/') {
-+		if(!config->redirectPath && (test[-1] != '/')) {
- 			if (is_directory(url + 1, 1, &sb)) {
- 				config->found_moved_temporarily = url;
- 			}
-@@ -1897,7 +1906,9 @@
+ 	/* If URL is a directory, add '/' */
+-	if (tptr[-1] != '/') {
++	if (!redirect_path && (tptr[-1] != '/')) {
+ 		if (is_directory(urlcopy + 1, 1, &sb)) {
+ 			found_moved_temporarily = urlcopy;
+ 		}
+@@ -2004,7 +2015,9 @@
  #endif
  
  enum {
@@ -74,20 +81,18 @@ Index: busybox-1.4.2/networking/httpd.c
  	d_opt_decode_url,
  	h_opt_home_httpd,
  	USE_FEATURE_HTTPD_ENCODE_URL_STR(e_opt_encode_url,)
-@@ -1919,7 +1930,7 @@
- 	OPT_FOREGROUND  = 1 << p_opt_foreground,
- };
- 
--static const char httpd_opts[] = "c:d:h:"
-+static const char httpd_opts[] = "R:H:c:d:h:"
- 	USE_FEATURE_HTTPD_ENCODE_URL_STR("e:")
- 	USE_FEATURE_HTTPD_BASIC_AUTH("r:")
- 	USE_FEATURE_HTTPD_AUTH_MD5("m:")
-@@ -1951,6 +1962,7 @@
- 	config->ContentLength = -1;
- 
- 	opt = getopt32(argc, argv, httpd_opts,
-+			&(config->redirectPath), &(config->redirectHost),
- 			&(config->configFile), &url_for_decode, &home_httpd
+@@ -2053,12 +2066,13 @@
+ 	/* We do not "absolutize" path given by -h (home) opt.
+ 	 * If user gives relative path in -h, $SCRIPT_FILENAME can end up
+ 	 * relative too. */
+-	opt = getopt32(argv, "c:d:h:"
++	opt = getopt32(argv, "R:H:c:d:h:"
+ 			USE_FEATURE_HTTPD_ENCODE_URL_STR("e:")
+ 			USE_FEATURE_HTTPD_BASIC_AUTH("r:")
+ 			USE_FEATURE_HTTPD_AUTH_MD5("m:")
+ 			USE_FEATURE_HTTPD_SETUID("u:")
+ 			"p:ifv",
++			&redirect_path, &redirect_host,
+ 			&configFile, &url_for_decode, &home_httpd
  			USE_FEATURE_HTTPD_ENCODE_URL_STR(, &url_for_encode)
- 			USE_FEATURE_HTTPD_BASIC_AUTH(, &(config->realm))
+ 			USE_FEATURE_HTTPD_BASIC_AUTH(, &g_realm)

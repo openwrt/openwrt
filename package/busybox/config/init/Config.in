@@ -38,6 +38,11 @@ config BUSYBOX_CONFIG_FEATURE_INIT_SCTTY
 	  behavour, but is often what you want in an embedded system where
 	  the console is only accessed during development or for maintenance.
 
+config BUSYBOX_CONFIG_FEATURE_INIT_SYSLOG
+	bool "Enable init to write to syslog"
+	default y
+	depends on BUSYBOX_CONFIG_INIT
+
 config BUSYBOX_CONFIG_FEATURE_EXTRA_QUIET
 	bool "Be _extra_ quiet on boot"
 	default n
