@@ -1,13 +1,13 @@
-Index: busybox-1.4.2/networking/wget.c
+Index: busybox-1.7.2/networking/wget.c
 ===================================================================
---- busybox-1.4.2.orig/networking/wget.c	2007-06-04 13:21:32.408049896 +0200
-+++ busybox-1.4.2/networking/wget.c	2007-06-04 13:21:32.681008400 +0200
-@@ -136,7 +136,7 @@
- 		{ "directory-prefix", required_argument, NULL, 'P' },
- 		{ "proxy",            required_argument, NULL, 'Y' },
- 		{ "user-agent",       required_argument, NULL, 'U' },
--		{ "passive-ftp",      no_argument, NULL, 0xff },
-+		{ "passive-ftp",      no_argument, NULL, 0xfd },
- 		{ "header",           required_argument, NULL, 0xfe },
- 		{ 0, 0, 0, 0 }
- 	};
+--- busybox-1.7.2.orig/networking/wget.c	2007-10-04 14:35:17.057059834 +0200
++++ busybox-1.7.2/networking/wget.c	2007-10-04 14:35:27.013627222 +0200
+@@ -140,7 +140,7 @@
+ 		"directory-prefix\0" Required_argument "P"
+ 		"proxy\0"            Required_argument "Y"
+ 		"user-agent\0"       Required_argument "U"
+-		"passive-ftp\0"      No_argument       "\xff"
++		"passive-ftp\0"      No_argument       "\xfd"
+ 		"header\0"           Required_argument "\xfe"
+ 		;
+ 	applet_long_options = wget_longopts;

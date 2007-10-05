@@ -1,19 +1,19 @@
 
 	Copyright (C) 2006 OpenWrt.org
 
-Index: busybox-1.4.2/networking/httpd.c
+Index: busybox-1.7.2/networking/httpd.c
 ===================================================================
---- busybox-1.4.2.orig/networking/httpd.c	2007-06-04 13:21:32.190083032 +0200
-+++ busybox-1.4.2/networking/httpd.c	2007-06-04 13:21:34.401746808 +0200
-@@ -1402,12 +1402,26 @@
+--- busybox-1.7.2.orig/networking/httpd.c	2007-09-30 01:54:12.000000000 +0200
++++ busybox-1.7.2/networking/httpd.c	2007-10-04 14:59:20.287304836 +0200
+@@ -1527,12 +1527,26 @@
  			if (ENABLE_FEATURE_HTTPD_AUTH_MD5) {
  				char *cipher;
  				char *pp;
 +				char *ppnew = NULL;
 +				struct passwd *pwd = NULL;
  
- 				if (strncmp(p, request, u-request) != 0) {
- 					/* user uncompared */
+ 				if (strncmp(p, request, u - request) != 0) {
+ 					/* user doesn't match */
  					continue;
  				}
  				pp = strchr(p, ':');
@@ -29,10 +29,10 @@ Index: busybox-1.4.2/networking/httpd.c
 +					strcpy(ppnew + 1, pwd->pw_passwd);
 +					pp = ppnew;
 +				}
- 				if (pp && pp[1] == '$' && pp[2] == '1' &&
- 						pp[3] == '$' && pp[4]) {
- 					pp++;
-@@ -1417,6 +1431,10 @@
+ 				if (pp && pp[1] == '$' && pp[2] == '1'
+ 				 && pp[3] == '$' && pp[4]
+ 				) {
+@@ -1543,6 +1557,10 @@
  					/* unauthorized */
  					continue;
  				}

@@ -59,6 +59,7 @@ config BUSYBOX_CONFIG_FEATURE_IPC_SYSLOG
 config BUSYBOX_CONFIG_FEATURE_IPC_SYSLOG_BUFFER_SIZE
 	int "    Circular buffer size in Kbytes (minimum 4KB)"
 	default 16
+	range 4 2147483647
 	depends on BUSYBOX_CONFIG_FEATURE_IPC_SYSLOG
 	help
 	  This option sets the size of the circular buffer
@@ -88,8 +89,6 @@ config BUSYBOX_CONFIG_FEATURE_LOGREAD_REDUCED_LOCKING
 config BUSYBOX_CONFIG_KLOGD
 	bool "klogd"
 	default y
-	depends on BUSYBOX_CONFIG_SYSLOGD
-	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  klogd is a utility which intercepts and logs all
 	  messages from the Linux kernel and sends the messages

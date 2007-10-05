@@ -27,6 +27,45 @@ config BUSYBOX_CONFIG_FEATURE_AWK_MATH
 	  Enable math functions of the Awk programming language.
 	  NOTE: This will require libm to be present for linking.
 
+config BUSYBOX_CONFIG_CMP
+	bool "cmp"
+	default n
+	help
+	  cmp is used to compare two files and returns the result
+	  to standard output.
+
+config BUSYBOX_CONFIG_DIFF
+	bool "diff"
+	default y
+	help
+	  diff compares two files or directories and outputs the
+	  differences between them in a form that can be given to
+	  the patch command.
+
+config BUSYBOX_CONFIG_FEATURE_DIFF_BINARY
+	bool "Enable checks for binary files"
+	default n
+	depends on BUSYBOX_CONFIG_DIFF
+	help
+	  This option enables support for checking for binary files
+	  before a comparison is carried out.
+
+config BUSYBOX_CONFIG_FEATURE_DIFF_DIR
+	bool "Enable directory support"
+	default n
+	depends on BUSYBOX_CONFIG_DIFF
+	help
+	  This option enables support for directory and subdirectory
+	  comparison.
+
+config BUSYBOX_CONFIG_FEATURE_DIFF_MINIMAL
+	bool "Enable -d option to find smaller sets of changes"
+	default n
+	depends on BUSYBOX_CONFIG_DIFF
+	help
+	  Enabling this option allows the use of -d to make diff
+	  try hard to find the smallest possible set of changes.
+
 config BUSYBOX_CONFIG_ED
 	bool "ed"
 	default n
@@ -56,6 +95,16 @@ config BUSYBOX_CONFIG_VI
 	  text editor <grin>.  It does, however, have a rather steep
 	  learning curve.  If you are not already comfortable with 'vi'
 	  you may wish to use something else.
+
+config BUSYBOX_CONFIG_FEATURE_VI_MAX_LEN
+	int "Maximum line length in vi"
+	range 256 16384
+	default 1024
+	depends on BUSYBOX_CONFIG_VI
+	help
+	  vi uses on-stack buffers for intermediate line buffers.
+	  You may want to decrease this parameter if your target machine
+	  benefits from smaller stack usage.
 
 config BUSYBOX_CONFIG_FEATURE_VI_COLON
 	bool "Enable \":\" colon commands (no \"ex\" mode)"

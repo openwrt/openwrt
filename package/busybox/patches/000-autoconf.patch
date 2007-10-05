@@ -1,12 +1,13 @@
-Index: busybox-1.4.2/applets/Kbuild
+Index: busybox-1.7.2/applets/Kbuild
 ===================================================================
---- busybox-1.4.2.orig/applets/Kbuild	2007-06-04 13:21:32.429046704 +0200
-+++ busybox-1.4.2/applets/Kbuild	2007-06-04 13:21:32.495036672 +0200
-@@ -10,6 +10,7 @@
+--- busybox-1.7.2.orig/applets/Kbuild	2007-10-04 14:30:23.484330073 +0200
++++ busybox-1.7.2/applets/Kbuild	2007-10-04 14:33:47.751970627 +0200
+@@ -20,6 +20,6 @@
+ HOSTCFLAGS_usage.o = -I$(srctree)/include
  
- # Generated file needs additional love
- 
-+applets/usage: include/autoconf.h
- applets/applets.o: include/usage_compressed.h
- 
- hostprogs-y += usage
+ applets/applets.o:          include/usage_compressed.h
+-applets/usage:              .config $(srctree)/applets/usage_compressed
+-include/usage_compressed.h: applets/usage $(srctree)/applets/usage_compressed
++applets/usage:              .config $(srctree)/applets/usage_compressed include/autoconf.h
++include/usage_compressed.h: applets/usage $(srctree)/applets/usage_compressed include/autoconf.h
+ 	$(call cmd,gen_usage_compressed)

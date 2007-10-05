@@ -142,6 +142,13 @@ config BUSYBOX_CONFIG_RPM
 	help
 	  Mini RPM applet - queries and extracts RPM packages.
 
+config BUSYBOX_CONFIG_FEATURE_RPM_BZ2
+	bool "Enable handling of rpms with bzip2-compressed data inside"
+	default n
+	depends on BUSYBOX_CONFIG_RPM
+	help
+	  Enable handling of rpms with bzip2-compressed data inside.
+
 config BUSYBOX_CONFIG_TAR
 	bool "tar"
 	default y
@@ -206,6 +213,15 @@ config BUSYBOX_CONFIG_FEATURE_TAR_OLDGNU_COMPATIBILITY
 	  This option is required to unpack archives created in
 	  the old GNU format; help to kill this old format by
 	  repacking your ancient archives with the new format.
+
+config BUSYBOX_CONFIG_FEATURE_TAR_OLDSUN_COMPATIBILITY
+	bool "Enable untarring of tarballs with checksums produced by buggy Sun tar"
+	default n
+	depends on BUSYBOX_CONFIG_TAR
+	help
+	  This option is required to unpack archives created by some old
+	  version of Sun's tar (it was calculating checksum using signed arithmetic).
+	  It is said to be fixed in newer Sun tar, but "old" tarballs still exist.
 
 config BUSYBOX_CONFIG_FEATURE_TAR_GNU_EXTENSIONS
 	bool "Enable support for some GNU tar extensions"

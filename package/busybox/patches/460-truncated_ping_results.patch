@@ -1,0 +1,40 @@
+Index: busybox-1.7.2/networking/ping.c
+===================================================================
+--- busybox-1.7.2.orig/networking/ping.c	2007-09-03 13:48:27.000000000 +0200
++++ busybox-1.7.2/networking/ping.c	2007-10-04 15:38:15.424376713 +0200
+@@ -91,7 +91,7 @@
+ 	struct sockaddr_in pingaddr;
+ 	struct icmp *pkt;
+ 	int pingsock, c;
+-	char packet[DEFDATALEN + MAXIPLEN + MAXICMPLEN];
++	char packet[datalen + ICMP_MINLEN + MAXIPLEN + MAXICMPLEN];
+ 
+ 	pingsock = create_icmp_socket();
+ 	pingaddr = lsa->sin;
+@@ -101,7 +101,7 @@
+ 	pkt->icmp_type = ICMP_ECHO;
+ 	pkt->icmp_cksum = in_cksum((unsigned short *) pkt, sizeof(packet));
+ 
+-	c = xsendto(pingsock, packet, DEFDATALEN + ICMP_MINLEN,
++	c = xsendto(pingsock, packet, datalen + ICMP_MINLEN,
+ 			   (struct sockaddr *) &pingaddr, sizeof(pingaddr));
+ 
+ 	/* listen for replies */
+@@ -135,7 +135,7 @@
+ 	struct icmp6_hdr *pkt;
+ 	int pingsock, c;
+ 	int sockopt;
+-	char packet[DEFDATALEN + MAXIPLEN + MAXICMPLEN];
++	char packet[datalen + ICMP_MINLEN + MAXIPLEN + MAXICMPLEN];
+ 
+ 	pingsock = create_icmp6_socket();
+ 	pingaddr = lsa->sin6;
+@@ -147,7 +147,7 @@
+ 	sockopt = offsetof(struct icmp6_hdr, icmp6_cksum);
+ 	setsockopt(pingsock, SOL_RAW, IPV6_CHECKSUM, &sockopt, sizeof(sockopt));
+ 
+-	c = xsendto(pingsock, packet, DEFDATALEN + sizeof (struct icmp6_hdr),
++	c = xsendto(pingsock, packet, datalen + sizeof (struct icmp6_hdr),
+ 			   (struct sockaddr *) &pingaddr, sizeof(pingaddr));
+ 
+ 	/* listen for replies */

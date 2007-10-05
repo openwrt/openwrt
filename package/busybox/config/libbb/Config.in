@@ -26,4 +26,105 @@ config BUSYBOX_CONFIG_MD5_SIZE_VS_SPEED
 	  2                   3.0                5088
 	  3 (smallest)        5.1                4912
 
+config BUSYBOX_CONFIG_FEATURE_FAST_TOP
+	bool "Faster /proc scanning code (+100 bytes)"
+	default y
+	help
+	  This option makes top (and ps) ~20% faster (or 20% less CPU hungry),
+	  but code size is slightly bigger.
+
+config BUSYBOX_CONFIG_FEATURE_ETC_NETWORKS
+	bool "Support for /etc/networks"
+	default n
+	help
+	  Enable support for network names in /etc/networks. This is
+	  a rarely used feature which allows you to use names
+	  instead of IP/mask pairs in route command.
+
+config BUSYBOX_CONFIG_FEATURE_EDITING
+	bool "Command line editing"
+	default y
+	help
+	  Enable line editing (mainly for shell command line).
+
+config BUSYBOX_CONFIG_FEATURE_EDITING_MAX_LEN
+	int "Maximum length of input"
+	range 128 8192
+	default 512
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING
+	help
+	  Line editing code uses on-stack buffers for storage.
+	  You may want to decrease this parameter if your target machine
+	  benefits from smaller stack usage.
+
+config BUSYBOX_CONFIG_FEATURE_EDITING_FANCY_KEYS
+	bool "Additional editing keys"
+	default y
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING
+	help
+	  Enable additonal editing keys (Ctrl-E, Ctrl-U etc).
+	  Arrow keys, Home/End/Delete and Ctrl-W work even without this option.
+
+config BUSYBOX_CONFIG_FEATURE_EDITING_VI
+	bool "vi-style line editing commands"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING
+	help
+	  Enable vi-style line editing.  In shells, this mode can be
+	  turned on and off with "set -o vi" and "set +o vi".
+
+config BUSYBOX_CONFIG_FEATURE_EDITING_HISTORY
+	int "History size"
+	range 0 99999
+	default 256
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING
+	help
+	  Specify command history size.
+
+config BUSYBOX_CONFIG_FEATURE_EDITING_SAVEHISTORY
+	bool "History saving"
+	default n
+	depends on BUSYBOX_CONFIG_ASH && BUSYBOX_CONFIG_FEATURE_EDITING
+	help
+	  Enable history saving in ash shell.
+
+config BUSYBOX_CONFIG_FEATURE_TAB_COMPLETION
+	bool "Tab completion"
+	default y
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING
+	help
+	  Enable tab completion.
+
+config BUSYBOX_CONFIG_FEATURE_USERNAME_COMPLETION
+	bool "Username completion"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_TAB_COMPLETION
+	help
+	  Enable username completion.
+
+config BUSYBOX_CONFIG_FEATURE_EDITING_FANCY_PROMPT
+	bool "Fancy shell prompts"
+	default y
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING
+	help
+	  Setting this option allows for prompts to use things like \w and
+	  \$ and escape codes.
+
+config BUSYBOX_CONFIG_MONOTONIC_SYSCALL
+	bool "Use clock_gettime(CLOCK_MONOTONIC) syscall"
+	default n
+	help
+	  Use clock_gettime(CLOCK_MONOTONIC) syscall for measuring
+	  time intervals (time, ping, traceroute etc need this).
+	  Probably requires Linux 2.6+. If not selected, gettimeofday
+	  will be used instead (which gives wrong results if date/time
+	  is reset).
+
+config BUSYBOX_CONFIG_IOCTL_HEX2STR_ERROR
+	bool "Use ioctl names rather than hex values in error messages"
+	default y
+	help
+	  Use ioctl names rather than hex values in error messages
+	  (e.g. VT_DISALLOCATE rather than 0x5608). If disabled this
+	  saves about 1400 bytes.
 endmenu

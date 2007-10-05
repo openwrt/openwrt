@@ -9,13 +9,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
-PKG_VERSION:=1.4.2
+PKG_VERSION:=1.7.2
 PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.busybox.net/downloads \
 		http://distfiles.gentoo.org/distfiles/
-PKG_MD5SUM:=b4c61fb15642be9dde20e8493788c585
+PKG_MD5SUM:=c91ec9756e2000073a9dd8fa9fc3f89e
 
 include $(INCLUDE_DIR)/package.mk
 

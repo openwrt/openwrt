@@ -1,10 +1,10 @@
-Index: busybox-1.4.2/coreutils/md5_sha1_sum.c
+Index: busybox-1.7.2/coreutils/md5_sha1_sum.c
 ===================================================================
---- busybox-1.4.2.orig/coreutils/md5_sha1_sum.c	2007-06-04 13:21:31.536182440 +0200
-+++ busybox-1.4.2/coreutils/md5_sha1_sum.c	2007-06-04 13:21:37.709243992 +0200
-@@ -8,76 +8,10 @@
+--- busybox-1.7.2.orig/coreutils/md5_sha1_sum.c	2007-09-03 13:48:39.000000000 +0200
++++ busybox-1.7.2/coreutils/md5_sha1_sum.c	2007-10-04 15:45:02.423570273 +0200
+@@ -8,75 +8,10 @@
  
- #include "busybox.h"
+ #include "libbb.h"
  
 -typedef enum { HASH_SHA1, HASH_MD5 } hash_algo_t;
 -
@@ -36,9 +36,8 @@ Index: busybox-1.4.2/coreutils/md5_sha1_sum.c
 -
 -	src_fd = STDIN_FILENO;
 -	if (NOT_LONE_DASH(filename)) {
--		src_fd = open(filename, O_RDONLY);
+-		src_fd = open_or_warn(filename, O_RDONLY);
 -		if (src_fd < 0) {
--			bb_perror_msg("%s", filename);
 -			return NULL;
 -		}
 -	}
@@ -76,35 +75,35 @@ Index: busybox-1.4.2/coreutils/md5_sha1_sum.c
 -	return hash_value;
 -}
 -
+ int md5_sha1_sum_main(int argc, char **argv);
  int md5_sha1_sum_main(int argc, char **argv)
  {
- 	int return_value = EXIT_SUCCESS;
-Index: busybox-1.4.2/include/libbb.h
+Index: busybox-1.7.2/include/libbb.h
 ===================================================================
---- busybox-1.4.2.orig/include/libbb.h	2007-06-04 13:21:35.388596784 +0200
-+++ busybox-1.4.2/include/libbb.h	2007-06-04 13:21:37.709243992 +0200
-@@ -641,6 +641,7 @@
+--- busybox-1.7.2.orig/include/libbb.h	2007-10-04 15:20:22.275221430 +0200
++++ busybox-1.7.2/include/libbb.h	2007-10-04 15:42:10.585777803 +0200
+@@ -947,6 +947,7 @@
  extern const char bb_uuenc_tbl_std[];
- void bb_uuencode(const unsigned char *s, char *store, const int length, const char *tbl);
+ void bb_uuencode(char *store, const void *s, int length, const char *tbl);
  
 +typedef enum { HASH_SHA1, HASH_MD5 } hash_algo_t;
  typedef struct sha1_ctx_t {
  	uint32_t count[2];
  	uint32_t hash[5];
-@@ -662,6 +663,8 @@
+@@ -968,6 +969,8 @@
  void md5_begin(md5_ctx_t *ctx);
  void md5_hash(const void *data, size_t length, md5_ctx_t *ctx);
  void *md5_end(void *resbuf, md5_ctx_t *ctx);
 +unsigned char *hash_bin_to_hex(unsigned char *hash_value, unsigned hash_length);
 +uint8_t *hash_file(const char *filename, hash_algo_t hash_algo);
  
- uint32_t *crc32_filltable(int endian);
+ uint32_t *crc32_filltable(uint32_t *tbl256, int endian);
  
-Index: busybox-1.4.2/libbb/Kbuild
+Index: busybox-1.7.2/libbb/Kbuild
 ===================================================================
---- busybox-1.4.2.orig/libbb/Kbuild	2007-06-04 13:21:31.548180616 +0200
-+++ busybox-1.4.2/libbb/Kbuild	2007-06-04 13:21:37.710243840 +0200
-@@ -37,6 +37,7 @@
+--- busybox-1.7.2.orig/libbb/Kbuild	2007-09-03 13:48:41.000000000 +0200
++++ busybox-1.7.2/libbb/Kbuild	2007-10-04 15:42:10.613779401 +0200
+@@ -38,6 +38,7 @@
  lib-y += get_last_path_component.o
  lib-y += get_line_from_file.o
  lib-y += getopt32.o
@@ -112,11 +111,11 @@ Index: busybox-1.4.2/libbb/Kbuild
  lib-y += herror_msg.o
  lib-y += herror_msg_and_die.o
  lib-y += human_readable.o
-Index: busybox-1.4.2/libbb/hash.c
+Index: busybox-1.7.2/libbb/hash.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.4.2/libbb/hash.c	2007-06-04 13:21:37.710243840 +0200
-@@ -0,0 +1,82 @@
++++ busybox-1.7.2/libbb/hash.c	2007-10-04 15:45:08.279904000 +0200
+@@ -0,0 +1,81 @@
 +/*
 + *  Copyright (C) 2003 Glenn L. McGrath
 + *  Copyright (C) 2003-2004 Erik Andersen
@@ -158,20 +157,19 @@ Index: busybox-1.4.2/libbb/hash.c
 +
 +	src_fd = STDIN_FILENO;
 +	if (NOT_LONE_DASH(filename)) {
-+		src_fd = open(filename, O_RDONLY);
++		src_fd = open_or_warn(filename, O_RDONLY);
 +		if (src_fd < 0) {
-+			bb_perror_msg("%s", filename);
 +			return NULL;
 +		}
 +	}
 +
 +	/* figure specific hash algorithims */
-+	if (hash_algo==HASH_MD5) {
++	if (ENABLE_MD5SUM && hash_algo==HASH_MD5) {
 +		md5_begin(&context.md5);
 +		update = (void (*)(const void*, size_t, void*))md5_hash;
 +		final = (void (*)(void*, void*))md5_end;
 +		hash_len = 16;
-+	} else if (hash_algo==HASH_SHA1) {
++	} else if (ENABLE_SHA1SUM && hash_algo==HASH_SHA1) {
 +		sha1_begin(&context.sha1);
 +		update = (void (*)(const void*, size_t, void*))sha1_hash;
 +		final = (void (*)(void*, void*))sha1_end;
