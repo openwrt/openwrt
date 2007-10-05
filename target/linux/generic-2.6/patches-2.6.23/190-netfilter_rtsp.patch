@@ -1,7 +1,7 @@
 Index: linux-2.6.23-rc9/include/linux/netfilter/nf_conntrack_rtsp.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc9/include/linux/netfilter/nf_conntrack_rtsp.h	2007-10-03 23:41:29.000000000 +0800
++++ linux-2.6.23-rc9/include/linux/netfilter/nf_conntrack_rtsp.h	2007-10-05 21:26:39.000000000 +0800
 @@ -0,0 +1,63 @@
 +/*
 + * RTSP extension for IP connection tracking.
@@ -69,7 +69,7 @@ Index: linux-2.6.23-rc9/include/linux/netfilter/nf_conntrack_rtsp.h
 Index: linux-2.6.23-rc9/include/linux/netfilter_helpers.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc9/include/linux/netfilter_helpers.h	2007-10-03 23:41:29.000000000 +0800
++++ linux-2.6.23-rc9/include/linux/netfilter_helpers.h	2007-10-05 21:26:39.000000000 +0800
 @@ -0,0 +1,133 @@
 +/*
 + * Helpers for netfiler modules.  This file provides implementations for basic
@@ -207,7 +207,7 @@ Index: linux-2.6.23-rc9/include/linux/netfilter_helpers.h
 Index: linux-2.6.23-rc9/include/linux/netfilter_mime.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc9/include/linux/netfilter_mime.h	2007-10-03 23:41:29.000000000 +0800
++++ linux-2.6.23-rc9/include/linux/netfilter_mime.h	2007-10-05 21:26:39.000000000 +0800
 @@ -0,0 +1,89 @@
 +/*
 + * MIME functions for netfilter modules.  This file provides implementations
@@ -300,8 +300,8 @@ Index: linux-2.6.23-rc9/include/linux/netfilter_mime.h
 +#endif /* _NETFILTER_MIME_H */
 Index: linux-2.6.23-rc9/net/ipv4/netfilter/Makefile
 ===================================================================
---- linux-2.6.23-rc9.orig/net/ipv4/netfilter/Makefile	2007-10-02 15:04:56.000000000 +0800
-+++ linux-2.6.23-rc9/net/ipv4/netfilter/Makefile	2007-10-03 23:41:29.000000000 +0800
+--- linux-2.6.23-rc9.orig/net/ipv4/netfilter/Makefile	2007-10-05 21:26:39.000000000 +0800
++++ linux-2.6.23-rc9/net/ipv4/netfilter/Makefile	2007-10-05 21:26:39.000000000 +0800
 @@ -23,6 +23,7 @@
  obj-$(CONFIG_NF_NAT_FTP) += nf_nat_ftp.o
  obj-$(CONFIG_NF_NAT_H323) += nf_nat_h323.o
@@ -312,8 +312,8 @@ Index: linux-2.6.23-rc9/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_NF_NAT_SNMP_BASIC) += nf_nat_snmp_basic.o
 Index: linux-2.6.23-rc9/net/netfilter/Kconfig
 ===================================================================
---- linux-2.6.23-rc9.orig/net/netfilter/Kconfig	2007-10-02 15:04:56.000000000 +0800
-+++ linux-2.6.23-rc9/net/netfilter/Kconfig	2007-10-03 23:41:29.000000000 +0800
+--- linux-2.6.23-rc9.orig/net/netfilter/Kconfig	2007-10-05 21:26:39.000000000 +0800
++++ linux-2.6.23-rc9/net/netfilter/Kconfig	2007-10-05 21:26:39.000000000 +0800
 @@ -249,6 +249,16 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
@@ -333,8 +333,8 @@ Index: linux-2.6.23-rc9/net/netfilter/Kconfig
  	depends on EXPERIMENTAL && NF_CONNTRACK && NETFILTER_NETLINK
 Index: linux-2.6.23-rc9/net/netfilter/Makefile
 ===================================================================
---- linux-2.6.23-rc9.orig/net/netfilter/Makefile	2007-10-02 15:04:56.000000000 +0800
-+++ linux-2.6.23-rc9/net/netfilter/Makefile	2007-10-03 23:41:29.000000000 +0800
+--- linux-2.6.23-rc9.orig/net/netfilter/Makefile	2007-10-05 21:26:39.000000000 +0800
++++ linux-2.6.23-rc9/net/netfilter/Makefile	2007-10-05 21:26:39.000000000 +0800
 @@ -33,6 +33,7 @@
  obj-$(CONFIG_NF_CONNTRACK_SANE) += nf_conntrack_sane.o
  obj-$(CONFIG_NF_CONNTRACK_SIP) += nf_conntrack_sip.o
@@ -345,8 +345,8 @@ Index: linux-2.6.23-rc9/net/netfilter/Makefile
  obj-$(CONFIG_NETFILTER_XTABLES) += x_tables.o xt_tcpudp.o
 Index: linux-2.6.23-rc9/net/ipv4/netfilter/Kconfig
 ===================================================================
---- linux-2.6.23-rc9.orig/net/ipv4/netfilter/Kconfig	2007-10-02 15:04:56.000000000 +0800
-+++ linux-2.6.23-rc9/net/ipv4/netfilter/Kconfig	2007-10-03 23:41:29.000000000 +0800
+--- linux-2.6.23-rc9.orig/net/ipv4/netfilter/Kconfig	2007-10-05 21:26:39.000000000 +0800
++++ linux-2.6.23-rc9/net/ipv4/netfilter/Kconfig	2007-10-05 21:26:39.000000000 +0800
 @@ -314,6 +314,11 @@
  	depends on IP_NF_IPTABLES && NF_CONNTRACK && NF_NAT
  	default NF_NAT && NF_CONNTRACK_IRC
@@ -362,8 +362,8 @@ Index: linux-2.6.23-rc9/net/ipv4/netfilter/Kconfig
 Index: linux-2.6.23-rc9/net/netfilter/nf_conntrack_rtsp.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc9/net/netfilter/nf_conntrack_rtsp.c	2007-10-03 23:41:29.000000000 +0800
-@@ -0,0 +1,515 @@
++++ linux-2.6.23-rc9/net/netfilter/nf_conntrack_rtsp.c	2007-10-05 21:46:43.000000000 +0800
+@@ -0,0 +1,513 @@
 +/*
 + * RTSP extension for IP connection tracking
 + * (C) 2003 by Tom Marshall <tmarshall at real.com>
@@ -687,7 +687,7 @@ Index: linux-2.6.23-rc9/net/netfilter/nf_conntrack_rtsp.c
 +		DEBUGP("udp transport found, ports=(%d,%hu,%hu)\n",
 +		       (int)expinfo.pbtype, expinfo.loport, expinfo.hiport);
 +
-+		exp = nf_conntrack_expect_alloc(ct);
++		exp = nf_ct_expect_alloc(ct);
 +		if (!exp) {
 +			ret = NF_DROP;
 +			goto out;
@@ -695,7 +695,7 @@ Index: linux-2.6.23-rc9/net/netfilter/nf_conntrack_rtsp.c
 +
 +		be_loport = htons(expinfo.loport);
 +
-+		nf_conntrack_expect_init(exp, ct->tuplehash[!dir].tuple.src.l3num,
++		nf_ct_expect_init(exp, ct->tuplehash[!dir].tuple.src.l3num,
 +			&ct->tuplehash[!dir].tuple.src.u3, &ct->tuplehash[!dir].tuple.dst.u3,
 +			IPPROTO_UDP, NULL, &be_loport); 
 +
@@ -706,7 +706,7 @@ Index: linux-2.6.23-rc9/net/netfilter/nf_conntrack_rtsp.c
 +
 +		if (expinfo.pbtype == pb_range) {
 +			DEBUGP("Changing expectation mask to handle multiple ports\n");
-+			exp->mask.dst.u.udp.port  = 0xfffe;
++			exp->mask.src.u.udp.port  = 0xfffe;
 +		}
 +
 +		DEBUGP("expect_related %u.%u.%u.%u:%u-%u.%u.%u.%u:%u\n",
@@ -718,11 +718,11 @@ Index: linux-2.6.23-rc9/net/netfilter/nf_conntrack_rtsp.c
 +		if (nf_nat_rtsp_hook)
 +			/* pass the request off to the nat helper */
 +			ret = nf_nat_rtsp_hook(pskb, ctinfo, hdrsoff, hdrslen, &expinfo, exp);
-+		else if (nf_conntrack_expect_related(exp) != 0) {
-+			INFOP("nf_conntrack_expect_related failed\n");
++		else if (nf_ct_expect_related(exp) != 0) {
++			INFOP("nf_ct_expect_related failed\n");
 +			ret  = NF_DROP;
 +		}
-+		nf_conntrack_expect_put(exp);
++		nf_ct_expect_put(exp);
 +		goto out;
 +	}
 +out:
@@ -845,8 +845,6 @@ Index: linux-2.6.23-rc9/net/netfilter/nf_conntrack_rtsp.c
 +		memset(hlpr, 0, sizeof(struct nf_conntrack_helper));
 +		hlpr->tuple.src.u.tcp.port = htons(ports[i]);
 +		hlpr->tuple.dst.protonum = IPPROTO_TCP;
-+		hlpr->mask.src.u.tcp.port = 0xFFFF;
-+		hlpr->mask.dst.protonum = 0xFF;
 +		hlpr->max_expected = max_outstanding;
 +		hlpr->timeout = setup_timeout;
 +		hlpr->me = THIS_MODULE;
@@ -882,7 +880,7 @@ Index: linux-2.6.23-rc9/net/netfilter/nf_conntrack_rtsp.c
 Index: linux-2.6.23-rc9/net/ipv4/netfilter/nf_nat_rtsp.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc9/net/ipv4/netfilter/nf_nat_rtsp.c	2007-10-03 23:41:29.000000000 +0800
++++ linux-2.6.23-rc9/net/ipv4/netfilter/nf_nat_rtsp.c	2007-10-05 21:41:16.000000000 +0800
 @@ -0,0 +1,496 @@
 +/*
 + * RTSP extension for TCP NAT alteration
@@ -1043,7 +1041,7 @@ Index: linux-2.6.23-rc9/net/ipv4/netfilter/nf_nat_rtsp.c
 +        for (loport = prtspexp->loport; loport != 0; loport++) /* XXX: improper wrap? */
 +        {
 +            t->dst.u.udp.port = htons(loport);
-+            if (nf_conntrack_expect_related(exp) == 0)
++            if (nf_ct_expect_related(exp) == 0)
 +            {
 +                DEBUGP("using port %hu\n", loport);
 +                break;
@@ -1059,9 +1057,9 @@ Index: linux-2.6.23-rc9/net/ipv4/netfilter/nf_nat_rtsp.c
 +        for (loport = prtspexp->loport; loport != 0; loport += 2) /* XXX: improper wrap? */
 +        {
 +            t->dst.u.udp.port = htons(loport);
-+            if (nf_conntrack_expect_related(exp) == 0)
++            if (nf_ct_expect_related(exp) == 0)
 +            {
-+                hiport = loport + ~exp->mask.dst.u.udp.port;
++                hiport = loport + ~exp->mask.src.u.udp.port;
 +                DEBUGP("using ports %hu-%hu\n", loport, hiport);
 +                break;
 +            }
@@ -1076,7 +1074,7 @@ Index: linux-2.6.23-rc9/net/ipv4/netfilter/nf_nat_rtsp.c
 +        for (loport = prtspexp->loport; loport != 0; loport++) /* XXX: improper wrap? */
 +        {
 +            t->dst.u.udp.port = htons(loport);
-+            if (nf_conntrack_expect_related(exp) == 0)
++            if (nf_ct_expect_related(exp) == 0)
 +            {
 +                DEBUGP("using port %hu (1 of 2)\n", loport);
 +                break;
@@ -1085,7 +1083,7 @@ Index: linux-2.6.23-rc9/net/ipv4/netfilter/nf_nat_rtsp.c
 +        for (hiport = prtspexp->hiport; hiport != 0; hiport++) /* XXX: improper wrap? */
 +        {
 +            t->dst.u.udp.port = htons(hiport);
-+            if (nf_conntrack_expect_related(exp) == 0)
++            if (nf_ct_expect_related(exp) == 0)
 +            {
 +                DEBUGP("using port %hu (2 of 2)\n", hiport);
 +                break;
@@ -1151,7 +1149,7 @@ Index: linux-2.6.23-rc9/net/ipv4/netfilter/nf_nat_rtsp.c
 +                                                         off, diff, NULL, 0))
 +                    {
 +                        /* mangle failed, all we can do is bail */
-+			nf_conntrack_unexpect_related(exp);
++			nf_ct_unexpect_related(exp);
 +                        return 0;
 +                    }
 +                    get_skb_tcpdata(*pskb, &ptcp, &tcplen);
@@ -1221,7 +1219,7 @@ Index: linux-2.6.23-rc9/net/ipv4/netfilter/nf_nat_rtsp.c
 +                                              origoff, origlen, rbuf, rbuflen))
 +                    {
 +                        /* mangle failed, all we can do is bail */
-+			nf_conntrack_unexpect_related(exp);
++			nf_ct_unexpect_related(exp);
 +                        return 0;
 +                    }
 +                    get_skb_tcpdata(*pskb, &ptcp, &tcplen);
