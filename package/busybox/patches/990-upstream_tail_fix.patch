@@ -1,0 +1,40 @@
+diff -urN busybox-1.7.2/coreutils/tail.c busybox-1.7.2-tail/coreutils/tail.c
+--- busybox-1.7.2/coreutils/tail.c	2007-09-03 12:48:40.000000000 +0100
++++ busybox-1.7.2-tail/coreutils/tail.c	2007-10-02 11:16:28.000000000 +0100
+@@ -47,13 +47,16 @@
+ static ssize_t tail_read(int fd, char *buf, size_t count)
+ {
+ 	ssize_t r;
+-	off_t current, end;
++	off_t current;
+ 	struct stat sbuf;
+ 
+-	end = current = lseek(fd, 0, SEEK_CUR);
+-	if (!fstat(fd, &sbuf))
+-		end = sbuf.st_size;
+-	lseek(fd, end < current ? 0 : current, SEEK_SET);
++	/* (A good comment is missing here) */
++	current = lseek(fd, 0, SEEK_CUR);
++	/* /proc files report zero st_size, don't lseek them. */
++	if (fstat(fd, &sbuf) == 0 && sbuf.st_size)
++		if (sbuf.st_size < current)
++			lseek(fd, 0, SEEK_SET);
++
+ 	r = safe_read(fd, buf, count);
+ 	if (r < 0) {
+ 		bb_perror_msg(bb_msg_read_error);
+@@ -67,8 +70,12 @@
+ 
+ static unsigned eat_num(const char *p)
+ {
+-	if (*p == '-') p++;
+-	else if (*p == '+') { p++; G.status = EXIT_FAILURE; }
++	if (*p == '-')
++		p++;
++	else if (*p == '+') {
++		p++;
++		G.status = EXIT_FAILURE;
++	}
+ 	return xatou_sfx(p, tail_suffixes);
+ }
+ 
