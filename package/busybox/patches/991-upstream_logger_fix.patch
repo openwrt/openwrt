@@ -1,0 +1,26 @@
+diff -urN busybox-1.7.2/sysklogd/logger.c busybox-1.7.2-logger/sysklogd/logger.c
+--- busybox-1.7.2/sysklogd/logger.c	2007-09-03 12:48:35.000000000 +0100
++++ busybox-1.7.2-logger/sysklogd/logger.c	2007-10-02 10:56:53.000000000 +0100
+@@ -107,7 +107,7 @@
+ 	argv += optind;
+ 	if (!argc) {
+ #define strbuf bb_common_bufsiz1
+-		while (fgets(strbuf, BUFSIZ, stdin)) {
++		while (fgets(strbuf, COMMON_BUFSIZE, stdin)) {
+ 			if (strbuf[0]
+ 			 && NOT_LONE_CHAR(strbuf, '\n')
+ 			) {
+@@ -117,11 +117,11 @@
+ 		}
+ 	} else {
+ 		char *message = NULL;
+-		int len = 1; /* for NUL */
++		int len = 0;
+ 		int pos = 0;
+ 		do {
+ 			len += strlen(*argv) + 1;
+-			message = xrealloc(message, len);
++			message = xrealloc(message, len + 1);
+ 			sprintf(message + pos, " %s", *argv),
+ 			pos = len;
+ 		} while (*++argv);
