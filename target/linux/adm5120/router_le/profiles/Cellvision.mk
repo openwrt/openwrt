@@ -5,23 +5,23 @@
 # See /LICENSE for more information.
 #
 
-define Profile/CAS-771
+define Profile/CAS771
 	NAME:=Cellvision CAS-771 IP camera
 	PACKAGES:=kmod-video-cpia2 kmod-usb-ohci kmod-usb2 kmod-usb-audio
 endef
 
-define Profile/CAS-771/Description
+define Profile/CAS771/Description
 	Package set optimized for the Cellvision CAS-771 device.
 endef
 
-define Profile/CAS-771W
+define Profile/CAS771W
 	NAME:=Cellvision CAS-771W IP camera
 	PACKAGES:=kmod-video-cpia2 kmod-usb-ohci kmod-usb2 kmod-usb-audio kmod-rt2500
 endef
 
-define Profile/CAS-771W/Description
+define Profile/CAS771W/Description
 	Package set optimized for the Cellvision CAS-771W device.
 endef
 
-$(eval $(call Profile,CAS-771))
-$(eval $(call Profile,CAS-771W))
+$(eval $(call Profile,CAS771))
+$(eval $(call Profile,CAS771W))

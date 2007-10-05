@@ -12,38 +12,38 @@ endef
 #
 # ZyXEL Prestige 334WT
 #
-define Image/Build/Board/P-334WT
+define Image/Build/Board/P334WT
 	$(call Image/Build/ZyXEL,$(1),p-334wt)
 endef
 
-define Image/Build/Board/P-334WT/squashfs
-	$(call Image/Build/Board/P-334WT,squashfs)
+define Image/Build/Board/P334WT/squashfs
+	$(call Image/Build/Board/P334WT,squashfs)
 endef
 
-define Image/Build/Board/P-334WT/jffs2-64k
-	$(call Image/Build/Board/P-334WT,jffs2-64k)
+define Image/Build/Board/P334WT/jffs2-64k
+	$(call Image/Build/Board/P334WT,jffs2-64k)
 endef
 
-define Image/Build/Board/P-334WT/Initramfs
+define Image/Build/Board/P334WT/Initramfs
 	$(call Image/Build/LZMAKernel/KArgs,p-334wt,bin)
 endef
 
 #
 # ZyXEL Prestige 335WT
 #
-define Image/Build/Board/P-335WT
+define Image/Build/Board/P335WT
 	$(call Image/Build/ZyXEL,$(1),p-335wt)
 endef
 
-define Image/Build/Board/P-335WT/squashfs
-	$(call Image/Build/Board/P-335WT,$(1))
+define Image/Build/Board/P335WT/squashfs
+	$(call Image/Build/Board/P335WT,$(1))
 endef
 
-define Image/Build/Board/P-335WT/jffs2-64k
-	$(call Image/Build/Board/P-335WT,$(1))
+define Image/Build/Board/P335WT/jffs2-64k
+	$(call Image/Build/Board/P335WT,$(1))
 endef
 
-define Image/Build/Board/P-335WT/Initramfs
+define Image/Build/Board/P335WT/Initramfs
 	$(call Image/Build/LZMAKernel/KArgs,p-335wt,bin)
 endef
 
@@ -51,8 +51,8 @@ endef
 # Groups
 #
 define Image/Build/Group/All
-	$(call Image/Build/Board/P-334WT/$(1))
-	$(call Image/Build/Board/P-335WT/$(1))
+	$(call Image/Build/Board/P334WT/$(1))
+	$(call Image/Build/Board/P335WT/$(1))
 endef
 
 #
@@ -70,10 +70,10 @@ define Image/Build/Profile/Texas
 	$(call Image/Build/Group/All,$(1))
 endef
 
-define Image/Build/Profile/P-334WT
-	$(call Image/Build/Board/P-334WT/$(1))
+define Image/Build/Profile/P334WT
+	$(call Image/Build/Board/P334WT/$(1))
 endef
 
-define Image/Build/Profile/P-335WT
-	$(call Image/Build/Board/P-335WT/$(1))
+define Image/Build/Profile/P335WT
+	$(call Image/Build/Board/P335WT/$(1))
 endef
