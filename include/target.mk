@@ -150,6 +150,7 @@ define BuildTargets/DumpCurrent
 	 echo 'Target-Path: $(subst $(TOPDIR)/,,$(PWD))'; \
 	 echo 'Target-Arch: $(ARCH)'; \
 	 echo 'Target-Features: $(FEATURES)'; \
+	 echo 'Target-Depends: $(DEPENDS)'; \
 	 echo 'Linux-Version: $(LINUX_VERSION)'; \
 	 echo 'Linux-Release: $(LINUX_RELEASE)'; \
 	 echo 'Linux-Kernel-Arch: $(LINUX_KARCH)'; \
