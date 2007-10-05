@@ -1,7 +1,7 @@
 Index: busybox-1.7.2/modutils/insmod.c
 ===================================================================
 --- busybox-1.7.2.orig/modutils/insmod.c	2007-10-05 14:39:19.922555340 +0200
-+++ busybox-1.7.2/modutils/insmod.c	2007-10-05 14:59:26.327304435 +0200
++++ busybox-1.7.2/modutils/insmod.c	2007-10-05 21:08:55.442650322 +0200
 @@ -61,19 +61,107 @@
  #include "libbb.h"
  #include <libgen.h>
@@ -160,7 +160,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  static struct obj_file *arch_new_file(void)
  {
  	struct arch_file *f;
-@@ -3952,33 +4008,33 @@
+@@ -3952,145 +4008,57 @@
  void print_load_map(struct obj_file *f);
  #endif
  
@@ -176,8 +176,9 @@ Index: busybox-1.7.2/modutils/insmod.c
  	ElfW(Addr) m_addr;
  	struct obj_file *f;
 -	struct stat st;
- 	char *m_name = 0;
+-	char *m_name = 0;
 -	int exit_status = EXIT_FAILURE;
++	char *tmp = NULL, *m_name = NULL;
 +	int ret = EINVAL;
  	int m_has_modinfo;
  #if ENABLE_FEATURE_INSMOD_VERSION_CHECKING
@@ -206,7 +207,8 @@ Index: busybox-1.7.2/modutils/insmod.c
  	/* Parse any options */
  	getopt32(argv, OPTION_STR, &opt_o);
  	arg1 = argv[optind];
-@@ -3987,110 +4043,18 @@
+ 	if (option_mask32 & OPT_o) { // -o /* name the output module */
+-		free(m_name);
  		m_name = xstrdup(opt_o);
  	}
  
@@ -225,7 +227,7 @@ Index: busybox-1.7.2/modutils/insmod.c
 -			k_version = myuname.release[2] - '0';
 -		}
 -	}
--
+ 
 -#if ENABLE_FEATURE_2_6_MODULES
 -	if (k_version > 4 && len > 3 && tmp[len - 3] == '.'
 -	 && tmp[len - 2] == 'k' && tmp[len - 1] == 'o'
@@ -246,14 +248,19 @@ Index: busybox-1.7.2/modutils/insmod.c
 -	else
 -#endif
 -		m_fullName = xasprintf("%s.o", tmp);
++	ret = find_module(arg1);
++	if (ret)
++		goto out;
  
--	if (!m_name) {
+ 	if (!m_name) {
 -		m_name = tmp;
 -	} else {
 -		free(tmp1);
 -		tmp1 = 0;       /* flag for free(m_name) before exit() */
--	}
--
++		tmp = xstrdup(arg1);
++		m_name = basename(tmp);
+ 	}
+ 
 -	/* Get a filedesc for the module.  Check we we have a complete path */
 -	if (stat(arg1, &st) < 0 || !S_ISREG(st.st_mode)
 -	 || (fp = fopen(arg1, "r")) == NULL
@@ -307,10 +314,7 @@ Index: busybox-1.7.2/modutils/insmod.c
 -
 -	if (flag_verbose)
 -		printf("Using %s\n", m_filename);
-+	ret = find_module(arg1);
-+	if (ret)
-+		goto out;
- 
+-
 -#if ENABLE_FEATURE_2_6_MODULES
 -	if (k_version > 4) {
 -		argv[optind] = m_filename;
@@ -325,7 +329,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  
  	f = obj_load(fp, LOADBITS);
  	if (f == NULL)
-@@ -4120,7 +4084,7 @@
+@@ -4120,7 +4088,7 @@
  				"\t%s was compiled for kernel version %s\n"
  				"\twhile this kernel is version %s",
  				flag_force_load ? "warning: " : "",
@@ -334,7 +338,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  			if (!flag_force_load)
  				goto out;
  		}
-@@ -4173,7 +4137,7 @@
+@@ -4173,7 +4141,7 @@
  	hide_special_symbols(f);
  
  #if ENABLE_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
@@ -343,7 +347,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  #endif /* FEATURE_INSMOD_KSYMOOPS_SYMBOLS */
  
  	new_create_module_ksymtab(f);
-@@ -4220,8 +4184,7 @@
+@@ -4220,30 +4188,22 @@
  	if (flag_print_load_map)
  		print_load_map(f);
  
@@ -353,9 +357,12 @@ Index: busybox-1.7.2/modutils/insmod.c
  out:
  #if ENABLE_FEATURE_CLEAN_UP
  	if (fp)
-@@ -4229,21 +4192,13 @@
- 	free(tmp1);
- 	if (!tmp1)
+ 		fclose(fp);
+-	free(tmp1);
+-	if (!tmp1)
++	if (tmp)
++		free(tmp);
++	else if (m_name)
  		free(m_name);
 -	free(m_filename);
 +	free(g_filename);
@@ -377,7 +384,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  /* We use error numbers in a loose translation... */
  static const char *moderror(int err)
  {
-@@ -4261,19 +4216,33 @@
+@@ -4261,19 +4221,33 @@
  	}
  }
  
@@ -416,7 +423,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  	/* Rest is options */
  	options = xzalloc(1);
  	optlen = 0;
-@@ -4283,36 +4252,46 @@
+@@ -4283,36 +4257,46 @@
  		optlen += sprintf(options + optlen, (strchr(*argv,' ') ? "\"%s\" " : "%s "), *argv);
  	}
  
