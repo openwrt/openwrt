@@ -1,7 +1,7 @@
 Index: busybox-1.7.2/modutils/insmod.c
 ===================================================================
---- busybox-1.7.2.orig/modutils/insmod.c	2007-09-03 13:48:35.000000000 +0200
-+++ busybox-1.7.2/modutils/insmod.c	2007-10-05 01:43:47.686834357 +0200
+--- busybox-1.7.2.orig/modutils/insmod.c	2007-10-05 14:39:19.922555340 +0200
++++ busybox-1.7.2/modutils/insmod.c	2007-10-05 14:59:26.327304435 +0200
 @@ -61,19 +61,107 @@
  #include "libbb.h"
  #include <libgen.h>
@@ -160,7 +160,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  static struct obj_file *arch_new_file(void)
  {
  	struct arch_file *f;
-@@ -3952,33 +4008,35 @@
+@@ -3952,33 +4008,33 @@
  void print_load_map(struct obj_file *f);
  #endif
  
@@ -169,13 +169,13 @@ Index: busybox-1.7.2/modutils/insmod.c
 +int insmod_main_24( int argc, char **argv)
  {
  	char *opt_o, *arg1;
- 	int len;
+-	int len;
  	int k_crcs;
 -	char *tmp, *tmp1;
  	unsigned long m_size;
  	ElfW(Addr) m_addr;
  	struct obj_file *f;
- 	struct stat st;
+-	struct stat st;
  	char *m_name = 0;
 -	int exit_status = EXIT_FAILURE;
 +	int ret = EINVAL;
@@ -206,7 +206,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  	/* Parse any options */
  	getopt32(argv, OPTION_STR, &opt_o);
  	arg1 = argv[optind];
-@@ -3987,110 +4045,18 @@
+@@ -3987,110 +4043,18 @@
  		m_name = xstrdup(opt_o);
  	}
  
@@ -325,7 +325,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  
  	f = obj_load(fp, LOADBITS);
  	if (f == NULL)
-@@ -4120,7 +4086,7 @@
+@@ -4120,7 +4084,7 @@
  				"\t%s was compiled for kernel version %s\n"
  				"\twhile this kernel is version %s",
  				flag_force_load ? "warning: " : "",
@@ -334,7 +334,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  			if (!flag_force_load)
  				goto out;
  		}
-@@ -4173,7 +4139,7 @@
+@@ -4173,7 +4137,7 @@
  	hide_special_symbols(f);
  
  #if ENABLE_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
@@ -343,7 +343,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  #endif /* FEATURE_INSMOD_KSYMOOPS_SYMBOLS */
  
  	new_create_module_ksymtab(f);
-@@ -4220,8 +4186,7 @@
+@@ -4220,8 +4184,7 @@
  	if (flag_print_load_map)
  		print_load_map(f);
  
@@ -353,14 +353,15 @@ Index: busybox-1.7.2/modutils/insmod.c
  out:
  #if ENABLE_FEATURE_CLEAN_UP
  	if (fp)
-@@ -4229,21 +4194,13 @@
+@@ -4229,21 +4192,13 @@
  	free(tmp1);
  	if (!tmp1)
  		free(m_name);
 -	free(m_filename);
 +	free(g_filename);
  #endif
- 	return exit_status;
+-	return exit_status;
++	return ret;
  }
 -
 -
@@ -376,7 +377,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  /* We use error numbers in a loose translation... */
  static const char *moderror(int err)
  {
-@@ -4261,19 +4218,33 @@
+@@ -4261,19 +4216,33 @@
  	}
  }
  
@@ -415,7 +416,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  	/* Rest is options */
  	options = xzalloc(1);
  	optlen = 0;
-@@ -4283,36 +4254,46 @@
+@@ -4283,36 +4252,46 @@
  		optlen += sprintf(options + optlen, (strchr(*argv,' ') ? "\"%s\" " : "%s "), *argv);
  	}
  
