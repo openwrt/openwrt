@@ -5,23 +5,23 @@
 # See /LICENSE for more information.
 #
 
-define Profile/P-334WT
-	NAME:=ZyXEL Prestige P-334WT
+define Profile/P334WT
+	NAME:=ZyXEL Prestige 334WT
 	PACKAGES:=kmod-acx
 endef
 
-define Profile/P-334WT/Description
-	Package set optimized for the ZyXEL Prestige P-334WT board.
+define Profile/P334WT/Description
+	Package set optimized for the ZyXEL Prestige 334WT board.
 endef
 
-define Profile/P-335WT
-	NAME:=ZyXEL Prestige P-335WT
+define Profile/P335WT
+	NAME:=ZyXEL Prestige 335WT
 	PACKAGES:=kmod-acx kmod-usb-core kmod-usb-adm5120
 endef
 
-define Profile/P-335WT/Description
-	Package set optimized for the ZyXEL Prestige P-335WT board.
+define Profile/P335WT/Description
+	Package set optimized for the ZyXEL Prestige 335WT board.
 endef
 
-$(eval $(call Profile,P-334WT))
-$(eval $(call Profile,P-335WT))
+$(eval $(call Profile,P334WT))
+$(eval $(call Profile,P335WT))

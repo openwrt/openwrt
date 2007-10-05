@@ -40,14 +40,14 @@ endef
 #
 # Cellvision CAS-771
 #
-define Image/Build/Board/CAS-771/Initramfs
+define Image/Build/Board/CAS771/Initramfs
 	$(call Image/Build/LZMAKernel/Admboot,cas-771,gz)
 endef
 
 #
 # Cellvision CAS-771W
 #
-define Image/Build/Board/CAS-771W/Initramfs
+define Image/Build/Board/CAS771W/Initramfs
 	$(call Image/Build/LZMAKernel/Admboot,cas-771w,gz)
 endef
 
@@ -168,57 +168,57 @@ endef
 #
 # Compex WP54G-WRT
 #
-define Image/Build/Board/WP54G-WRT
+define Image/Build/Board/WP54GWRT
 	$(call Image/Build/Compex,$(1),wp54g-wrt)
 endef
 
-define Image/Build/Board/WP54G-WRT/squashfs
-	$(call Image/Build/Board/WP54G-WRT,squashfs)
+define Image/Build/Board/WP54GWRT/squashfs
+	$(call Image/Build/Board/WP54GWRT,squashfs)
 endef
 
-define Image/Build/Board/WP54G-WRT/jffs2-64k
-	$(call Image/Build/Board/WP54G-WRT,jffs2-64k)
+define Image/Build/Board/WP54GWRT/jffs2-64k
+	$(call Image/Build/Board/WP54GWRT,jffs2-64k)
 endef
 
-define Image/Build/Board/WP54G-WRT/Initramfs
+define Image/Build/Board/WP54GWRT/Initramfs
 	$(call Image/Build/LZMAKernel/KArgs,wp54g-wrt,bin)
 endef
 
 #
 # Edimax BR-6104K/KP
 #
-define Image/Build/Board/BR-6104K
+define Image/Build/Board/BR6104K
 	$(call Image/Build/Edimax,$(1),br-6104k)
 endef
 
-define Image/Build/Board/BR-6104K/squashfs
-	$(call Image/Build/Board/BR-6104K,squashfs)
+define Image/Build/Board/BR6104K/squashfs
+	$(call Image/Build/Board/BR6104K,squashfs)
 endef
 
-define Image/Build/Board/BR-6104K/jffs2-64k
-	$(call Image/Build/Board/BR-6104K,jffs2-64k)
+define Image/Build/Board/BR6104K/jffs2-64k
+	$(call Image/Build/Board/BR6104K,jffs2-64k)
 endef
 
-define Image/Build/Board/BR-6104K/Initramfs
+define Image/Build/Board/BR6104K/Initramfs
 	$(call Image/Build/LZMAKernel/Admboot,br-6104k,gz)
 endef
 
 #
 # Infineon EASY 83000
 #
-define Image/Build/Board/EASY-83000
+define Image/Build/Board/EASY83000
 	$(call Image/Build/Infineon,$(1),easy-83000)
 endef
 
-define Image/Build/Board/EASY-83000/squashfs
-	$(call Image/Build/Board/EASY-83000,squashfs)
+define Image/Build/Board/EASY83000/squashfs
+	$(call Image/Build/Board/EASY83000,squashfs)
 endef
 
-define Image/Build/Board/EASY-83000/jffs2-64k
-	$(call Image/Build/Board/EASY-83000,jffs2-64k)
+define Image/Build/Board/EASY83000/jffs2-64k
+	$(call Image/Build/Board/EASY83000,jffs2-64k)
 endef
 
-define Image/Build/Board/EASY-83000/Initramfs
+define Image/Build/Board/EASY83000/Initramfs
 	$(call Image/Build/LZMAKernel/Admboot,easy-83000,gz)
 endef
 
@@ -233,8 +233,8 @@ endef
 # Groups
 #
 define Image/Build/Group/Cellvision
-	$(call Image/Build/Board/CAS-771/$(1))
-	$(call Image/Build/Board/CAS-771W/$(1))
+	$(call Image/Build/Board/CAS771/$(1))
+	$(call Image/Build/Board/CAS771W/$(1))
 endef
 
 define Image/Build/Group/WP54G
@@ -242,7 +242,7 @@ define Image/Build/Group/WP54G
 	$(call Image/Build/Board/WP54AG/$(1))
 	$(call Image/Build/Board/WPP54G/$(1))
 	$(call Image/Build/Board/WPP54AG/$(1))
-	$(call Image/Build/Board/WP54G-WRT/$(1))
+	$(call Image/Build/Board/WP54GWRT/$(1))
 endef
 
 define Image/Build/Group/Compex
@@ -253,11 +253,11 @@ define Image/Build/Group/Compex
 endef
 
 define Image/Build/Group/Edimax
-	$(call Image/Build/Board/BR-6104K/$(1))
+	$(call Image/Build/Board/BR6104K/$(1))
 endef
 
 define Image/Build/Group/Infineon
-	$(call Image/Build/Board/EASY-83000/$(1))
+	$(call Image/Build/Board/EASY83000/$(1))
 endef
 
 define Image/Build/Group/All
@@ -300,12 +300,12 @@ define Image/Build/Profile/NP28G
 	$(call Image/Build/Board/NP28G/$(1))
 endef
 
-define Image/Build/Profile/CAS-771
-	$(call Image/Build/Board/CAS-771/$(1))
+define Image/Build/Profile/CAS771
+	$(call Image/Build/Board/CAS771/$(1))
 endef
 
-define Image/Build/Profile/CAS-771W
-	$(call Image/Build/Board/CAS-771W/$(1))
+define Image/Build/Profile/CAS771W
+	$(call Image/Build/Board/CAS771W/$(1))
 endef
 
 define Image/Build/Profile/RouterBoard
