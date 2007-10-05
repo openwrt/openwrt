@@ -151,7 +151,7 @@ void rb500_cmd_ctrl(struct mtd_info *mtd, int cmd, unsigned int ctrl)
 }
 
 static struct resource nand_slot0_res[] = {
-	{
+	[0] = {
 		.name = "nand_membase",
 		.flags = IORESOURCE_MEM
 	}
@@ -163,8 +163,8 @@ struct platform_nand_data rb500_nand_data = {
 };
 
 static struct platform_device nand_slot0 = {
-	.id = 0,
 	.name = "gen_nand",
+	.id = -1,
 	.resource = nand_slot0_res,
 	.num_resources = ARRAY_SIZE(nand_slot0_res),
 	.dev.platform_data = &rb500_nand_data,
@@ -234,6 +234,13 @@ static void __init rb500_nand_setup(void)
 		changeLatchU5(LO_FOFF | LO_CEX, LO_ULED | LO_ALE | LO_CLE | LO_WPX);
         else
 		changeLatchU5(LO_WPX | LO_FOFF | LO_CEX, LO_ULED | LO_ALE | LO_CLE);
+
+	/* Setup NAND specific settings */
+	rb500_nand_data.chip.nr_chips = 1;
+	rb500_nand_data.chip.nr_partitions = ARRAY_SIZE(rb500_partition_info);
+	rb500_nand_data.chip.partitions = rb500_partition_info;
+	rb500_nand_data.chip.chip_delay = NAND_CHIP_DELAY;
+	rb500_nand_data.chip.options = NAND_NO_AUTOINCR;
 }
 
 
@@ -248,19 +255,12 @@ static int __init plat_setup_devices(void)
 		cf_slot0_res[0].end = cf_slot0_res[0].start + 0x1000;
 	}
 
-	/* Initialise the NAND device */
-	rb500_nand_setup();
-
 	/* Read the NAND resources from the device controller */
 	nand_slot0_res[0].start = readl(CFG_DC_DEV2 + CFG_DC_DEVBASE);
 	nand_slot0_res[0].end = nand_slot0_res[0].start + 0x1000;
-
-	/* Setup NAND specific settings */
-	rb500_nand_data.chip.nr_chips = 1;
-	rb500_nand_data.chip.nr_partitions = ARRAY_SIZE(rb500_partition_info);
-	rb500_nand_data.chip.partitions = rb500_partition_info;
-	rb500_nand_data.chip.chip_delay = NAND_CHIP_DELAY;
-	rb500_nand_data.chip.options = NAND_NO_AUTOINCR;
+	
+	/* Initialise the NAND device */
+	rb500_nand_setup();
 
 	return platform_add_devices(rb500_devs, ARRAY_SIZE(rb500_devs));
 }

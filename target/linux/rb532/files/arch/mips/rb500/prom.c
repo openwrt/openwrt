@@ -42,7 +42,7 @@ extern void __init setup_serial_port(void);
 
 unsigned int idt_cpu_freq = 132000000;
 EXPORT_SYMBOL(idt_cpu_freq);
-char *board_type;
+char board_type[11];
 EXPORT_SYMBOL(board_type);
 unsigned int gpio_bootup_state = 0;
 EXPORT_SYMBOL(gpio_bootup_state);
@@ -135,8 +135,8 @@ void __init prom_setup_cmdline(void){
 		}
 #endif
 		if (i>0) *(cp++) = ' ';
+
 		if (strncmp(prom_argv[i], BOARD_TAG, sizeof(BOARD_TAG) - 1) == 0) {
-			board_type = (char *)kzalloc((sizeof(prom_argv[i]) + sizeof(BOARD_TAG) -1), GFP_KERNEL);
 			strcpy(board_type, prom_argv[i] + sizeof(BOARD_TAG) -1);
 		}
 		if (strncmp(prom_argv[i], GPIO_TAG, sizeof(GPIO_TAG) - 1) == 0) {
