@@ -25,7 +25,9 @@ sub parse_target_metadata() {
 			$target = {
 				id => $1,
 				conf => confstr($1),
-				profiles => []
+				profiles => [],
+				features => [],
+				depends => []
 			};
 			push @target, $target;
 		};
@@ -38,6 +40,7 @@ sub parse_target_metadata() {
 		/^Target-Path:\s*(.+)\s*$/ and $target->{path} = $1;
 		/^Target-Arch:\s*(.+)\s*$/ and $target->{arch} = $1;
 		/^Target-Features:\s*(.+)\s*$/ and $target->{features} = [ split(/\s+/, $1) ];
+		/^Target-Depends:\s*(.+)\s*$/ and $target->{depends} = [ split(/\s+/, $1) ];
 		/^Target-Description:/ and $target->{desc} = get_multiline(*FILE);
 		/^Linux-Version:\s*(.+)\s*$/ and $target->{version} = $1;
 		/^Linux-Release:\s*(.+)\s*$/ and $target->{release} = $1;
@@ -189,6 +192,20 @@ EOF
 		if ($target->{id} ne $target->{board}) {
 			print "\tselect TARGET_".$target->{boardconf}."\n";
 		}
+		foreach my $dep (@{$target->{depends}}) {
+			my $mode = "depends";
+			my $flags;
+			my $name;
+
+			$dep =~ /^([@\+\-]+)(.+)$/;
+			$flags = $1;
+			$name = $2;
+
+			$flags =~ /-/ and $mode = "deselect";
+			$flags =~ /\+/ and $mode = "select";
+			$flags =~ /@/ and print "\t$mode $name\n";
+		}
+		
 		print "$features$help\n\n"
 	}
 
