@@ -69,11 +69,13 @@ diff -urN linux.old/drivers/pci/Makefile linux.dev/drivers/pci/Makefile
 diff -urN linux.old/include/asm-mips/bootinfo.h linux.dev/include/asm-mips/bootinfo.h
 --- linux.old/include/asm-mips/bootinfo.h	2006-11-29 22:57:37.000000000 +0100
 +++ linux.dev/include/asm-mips/bootinfo.h	2006-12-14 04:09:50.000000000 +0100
-@@ -212,6 +212,8 @@
+@@ -212,6 +212,10 @@
  #define MACH_GROUP_NEC_EMMA2RH 25	/* NEC EMMA2RH (was 23)		*/
  #define  MACH_NEC_MARKEINS	0	/* NEC EMMA2RH Mark-eins	*/
  
-+#define MACH_GROUP_MIKROTIK    24 /* Mikrotik Boards			    */
++#define MACH_GROUP_MIKROTIK    26 /* Mikrotik Boards			    */
++#define  MACH_MIKROTIK_RB532	0	/* Mikrotik RouterBoard 532 */
++#define  MACH_MIKROTIK_RB532A	1	/* Mikrotik RouterBoard 532A */
 +
  #define CL_SIZE			COMMAND_LINE_SIZE
  

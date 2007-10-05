@@ -23,6 +23,8 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 
+#include <asm/bootinfo.h>
+
 #include <asm/rc32434/rc32434.h>
 #include <asm/rc32434/dma.h>
 #include <asm/rc32434/dma_v.h>
@@ -230,10 +232,14 @@ static void __init parse_mac_addr(char *macstr)
 
 static void __init rb500_nand_setup(void)
 {
-	if (!strcmp(board_type, "500r5"))
+	switch (mips_machtype) {
+	case MACH_MIKROTIK_RB532A:
 		changeLatchU5(LO_FOFF | LO_CEX, LO_ULED | LO_ALE | LO_CLE | LO_WPX);
-        else
+		break;
+	default:
 		changeLatchU5(LO_WPX | LO_FOFF | LO_CEX, LO_ULED | LO_ALE | LO_CLE);
+		break;
+	}
 
 	/* Setup NAND specific settings */
 	rb500_nand_data.chip.nr_chips = 1;
@@ -258,7 +264,7 @@ static int __init plat_setup_devices(void)
 	/* Read the NAND resources from the device controller */
 	nand_slot0_res[0].start = readl(CFG_DC_DEV2 + CFG_DC_DEVBASE);
 	nand_slot0_res[0].end = nand_slot0_res[0].start + 0x1000;
-	
+
 	/* Initialise the NAND device */
 	rb500_nand_setup();
 

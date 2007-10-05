@@ -228,6 +228,8 @@ static int __init rc32434_pci_init(void)
 
 	register_pci_controller(&rc32434_controller);
 	rc32434_sync();
+
+	return 0;
 }
 
 arch_initcall(rc32434_pci_init);

@@ -19,7 +19,7 @@
 #include <asm/rc32434/pci.h>
 
 #ifdef CONFIG_PCI
-extern void *rc32434_time_init(void);
+extern void rc32434_time_init(void);
 extern int __init rc32434_pcibridge_init(void);
 #endif
 
