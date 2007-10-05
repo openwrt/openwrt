@@ -249,7 +249,7 @@ static struct platform_driver rdc321x_wdt_driver = {
 	.remove = rdc321x_wdt_remove,
 	.driver = {
 		.owner = THIS_MODULE,
-		.name = "rdc321x_wdt",
+		.name = "rdc321x-wdt",
 	},
 };
 
