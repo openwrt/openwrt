@@ -1,0 +1,13 @@
+menu "TI VLYNQ"
+
+config VLYNQ
+	bool "TI VLYNQ bus support"
+	depends on AR7 && EXPERIMENTAL
+	help
+	  Support for the TI VLYNQ bus
+
+	  The module will be called vlynq
+
+	  If unsure, say N
+
+endmenu

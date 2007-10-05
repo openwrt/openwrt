@@ -21,15 +21,14 @@
 #include <linux/kernel.h>
 #include <linux/string.h>
 #include <linux/device.h>
+#include <linux/module.h>
 #include <linux/errno.h>
 #include <linux/platform_device.h>
 #include <linux/interrupt.h>
 #include <linux/device.h>
 #include <linux/io.h>
 
-#include <asm/ar7/vlynq.h>
-
-#define PER_DEVICE_IRQS			32
+#include <linux/vlynq.h>
 
 #define VLYNQ_CTRL_PM_ENABLE		0x80000000
 #define VLYNQ_CTRL_CLOCK_INT		0x00008000
@@ -73,6 +72,8 @@ struct vlynq_regs {
 
 #define vlynq_reg_read(reg) readl(&(reg))
 #define vlynq_reg_write(reg, val)  writel(val, &(reg))
+
+static int __vlynq_enable_device(struct vlynq_device *dev);
 
 #ifdef VLYNQ_DEBUG
 static void vlynq_dump_regs(struct vlynq_device *dev)
@@ -189,7 +190,6 @@ static void vlynq_remote_ack(unsigned int irq)
 	vlynq_reg_write(dev->remote->status, status);
 }
 
-#warning FIXME: process one irq per call
 static irqreturn_t vlynq_irq(int irq, void *dev_id)
 {
 	struct vlynq_device *dev = dev_id;
@@ -236,7 +236,7 @@ static struct irq_chip vlynq_remote_chip = {
 static int vlynq_setup_irq(struct vlynq_device *dev)
 {
 	u32 val;
-	int i;
+	int i, virq;
 
 	if (dev->local_irq == dev->remote_irq) {
 		printk(KERN_ERR
@@ -264,23 +264,21 @@ static int vlynq_setup_irq(struct vlynq_device *dev)
 	vlynq_reg_write(dev->remote->int_ptr, VLYNQ_INT_OFFSET);
 	vlynq_reg_write(dev->remote->control, val);
 
-	for (i = 0; i < PER_DEVICE_IRQS; i++) {
-		if (i == dev->local_irq) {
-			set_irq_chip_and_handler(dev->irq_start + i,
-						 &vlynq_local_chip,
+	for (i = dev->irq_start; i <= dev->irq_end; i++) {
+		virq = i - dev->irq_start;
+		if (virq == dev->local_irq) {
+			set_irq_chip_and_handler(i, &vlynq_local_chip,
 						 handle_level_irq);
-			set_irq_chip_data(dev->irq_start + i, dev);
-		} else if (i == dev->remote_irq) {
-			set_irq_chip_and_handler(dev->irq_start + i,
-						 &vlynq_remote_chip,
+			set_irq_chip_data(i, dev);
+		} else if (virq == dev->remote_irq) {
+			set_irq_chip_and_handler(i, &vlynq_remote_chip,
 						 handle_level_irq);
-			set_irq_chip_data(dev->irq_start + i, dev);
+			set_irq_chip_data(i, dev);
 		} else {
-			set_irq_chip_and_handler(dev->irq_start + i,
-						 &vlynq_irq_chip,
+			set_irq_chip_and_handler(i, &vlynq_irq_chip,
 						 handle_simple_irq);
-			set_irq_chip_data(dev->irq_start + i, dev);
-			vlynq_reg_write(dev->remote->int_device[i >> 2], 0);
+			set_irq_chip_data(i, dev);
+			vlynq_reg_write(dev->remote->int_device[virq >> 2], 0);
 		}
 	}
 
@@ -292,30 +290,59 @@ static int vlynq_setup_irq(struct vlynq_device *dev)
 	return 0;
 }
 
-static void vlynq_free_irq(struct vlynq_device *dev)
-{
-	free_irq(dev->irq, dev);
-}
-
 static void vlynq_device_release(struct device *dev)
 {
 	struct vlynq_device *vdev = to_vlynq_device(dev);
 	kfree(vdev);
 }
 
+static int vlynq_device_match(struct device *dev,
+			      struct device_driver *drv)
+{
+	struct vlynq_device *vdev = to_vlynq_device(dev);
+	struct vlynq_driver *vdrv = to_vlynq_driver(drv);
+	struct plat_vlynq_ops *ops = dev->platform_data;
+	struct vlynq_device_id *ids = vdrv->id_table;
+	u32 id = 0;
+	int result;
+
+	while (ids->id) {
+		vdev->divisor = ids->divisor;
+		result = __vlynq_enable_device(vdev);
+		if (result == 0) {
+			id = vlynq_reg_read(vdev->remote->chip);
+			ops->off(vdev);
+			if (ids->id == id) {
+				vlynq_set_drvdata(vdev, ids);
+				return 1;
+			}
+		}
+		ids++;
+	}
+	return 0;
+}
+
 static int vlynq_device_probe(struct device *dev)
 {
+	struct vlynq_device *vdev = to_vlynq_device(dev);
 	struct vlynq_driver *drv = to_vlynq_driver(dev->driver);
-	if (drv->probe)
-		return drv->probe(to_vlynq_device(dev));
-	return 0;
+	struct vlynq_device_id *id = vlynq_get_drvdata(vdev);
+	int result = -ENODEV;
+
+	get_device(dev);
+	if (drv && drv->probe)
+		result = drv->probe(vdev, id);
+	if (result)
+		put_device(dev);
+	return result;
 }
 
 static int vlynq_device_remove(struct device *dev)
 {
 	struct vlynq_driver *drv = to_vlynq_driver(dev->driver);
-	if (drv->remove)
-		return drv->remove(to_vlynq_device(dev));
+	if (drv && drv->remove)
+		drv->remove(to_vlynq_device(dev));
+	put_device(dev);
 	return 0;
 }
 
@@ -333,7 +360,7 @@ void vlynq_unregister_driver(struct vlynq_driver *driver)
 }
 EXPORT_SYMBOL(vlynq_unregister_driver);
 
-int vlynq_device_enable(struct vlynq_device *dev)
+static int __vlynq_enable_device(struct vlynq_device *dev)
 {
 	int i, result;
 	struct plat_vlynq_ops *ops = dev->dev.platform_data;
@@ -344,7 +371,7 @@ int vlynq_device_enable(struct vlynq_device *dev)
 
 	switch (dev->divisor) {
 	case vlynq_div_auto:
-		/* First try locally supplied clock */
+		/* Only try locally supplied clock, others cause problems */
 		vlynq_reg_write(dev->remote->control, 0);
 		for (i = vlynq_ldiv1; i <= vlynq_ldiv8; i++) {
 			vlynq_reg_write(dev->local->control,
@@ -354,30 +381,10 @@ int vlynq_device_enable(struct vlynq_device *dev)
 				printk(KERN_DEBUG
 				       "%s: using local clock divisor %d\n",
 				       dev->dev.bus_id, i - vlynq_ldiv1 + 1);
-				return vlynq_setup_irq(dev);
+				dev->divisor = i;
+				return 0;
 			}
 		}
-		/* Then remotely supplied clock */
-		vlynq_reg_write(dev->local->control, 0);
-		for (i = vlynq_rdiv1; i <= vlynq_rdiv8; i++) {
-			vlynq_reg_write(dev->remote->control,
-					VLYNQ_CTRL_CLOCK_INT |
-					VLYNQ_CTRL_CLOCK_DIV(i - vlynq_rdiv1));
-			if (vlynq_linked(dev)) {
-				printk(KERN_DEBUG
-				       "%s: using remote clock divisor %d\n",
-				       dev->dev.bus_id, i - vlynq_rdiv1 + 1);
-				return vlynq_setup_irq(dev);
-			}
-		}
-		/* At last, externally supplied clock */
-		vlynq_reg_write(dev->remote->control, 0);
-		if (vlynq_linked(dev)) {
-			printk(KERN_DEBUG "%s: using external clock\n",
-			       dev->dev.bus_id);
-			return vlynq_setup_irq(dev);
-		}
-		break;
 	case vlynq_ldiv1: case vlynq_ldiv2: case vlynq_ldiv3: case vlynq_ldiv4:
 	case vlynq_ldiv5: case vlynq_ldiv6: case vlynq_ldiv7: case vlynq_ldiv8:
 		vlynq_reg_write(dev->remote->control, 0);
@@ -389,7 +396,7 @@ int vlynq_device_enable(struct vlynq_device *dev)
 			printk(KERN_DEBUG
 			       "%s: using local clock divisor %d\n",
 			       dev->dev.bus_id, dev->divisor - vlynq_ldiv1 + 1);
-			return vlynq_setup_irq(dev);
+			return 0;
 		}
 		break;
 	case vlynq_rdiv1: case vlynq_rdiv2: case vlynq_rdiv3: case vlynq_rdiv4:
@@ -403,7 +410,7 @@ int vlynq_device_enable(struct vlynq_device *dev)
 			printk(KERN_DEBUG
 			       "%s: using remote clock divisor %d\n",
 			       dev->dev.bus_id, dev->divisor - vlynq_rdiv1 + 1);
-			return vlynq_setup_irq(dev);
+			return 0;
 		}
 		break;
 	case vlynq_div_external:
@@ -412,31 +419,51 @@ int vlynq_device_enable(struct vlynq_device *dev)
 		if (vlynq_linked(dev)) {
 			printk(KERN_DEBUG "%s: using external clock\n",
 			       dev->dev.bus_id);
-			return vlynq_setup_irq(dev);
+			return 0;
 		}
 		break;
 	}
 
+	ops->off(dev);
 	return -ENODEV;
 }
 
-void vlynq_device_disable(struct vlynq_device *dev)
+int vlynq_enable_device(struct vlynq_device *dev)
+{
+	struct plat_vlynq_ops *ops = dev->dev.platform_data;
+	int result = -ENODEV;
+
+	result = __vlynq_enable_device(dev);
+	if (result)
+		return result;
+
+	result = vlynq_setup_irq(dev);
+	if (result)
+		ops->off(dev);
+
+	dev->enabled = !result;
+	return result;
+}
+EXPORT_SYMBOL(vlynq_enable_device);
+
+
+void vlynq_disable_device(struct vlynq_device *dev)
 {
 	struct plat_vlynq_ops *ops = dev->dev.platform_data;
 
-	vlynq_free_irq(dev);
+	dev->enabled = 0;
+	free_irq(dev->irq, dev);
 	ops->off(dev);
 }
+EXPORT_SYMBOL(vlynq_disable_device);
 
-u32 vlynq_remote_id(struct vlynq_device *dev)
-{
-	return vlynq_reg_read(dev->remote->chip);
-}
-
-void vlynq_set_local_mapping(struct vlynq_device *dev, u32 tx_offset,
-			     struct vlynq_mapping *mapping)
+int vlynq_set_local_mapping(struct vlynq_device *dev, u32 tx_offset,
+			    struct vlynq_mapping *mapping)
 {
 	int i;
+
+	if (!dev->enabled)
+		return -ENXIO;
 
 	vlynq_reg_write(dev->local->tx_offset, tx_offset);
 	for (i = 0; i < 4; i++) {
@@ -445,12 +472,17 @@ void vlynq_set_local_mapping(struct vlynq_device *dev, u32 tx_offset,
 		vlynq_reg_write(dev->local->rx_mapping[i].size,
 							mapping[i].size);
 	}
+	return 0;
 }
+EXPORT_SYMBOL(vlynq_set_local_mapping);
 
-void vlynq_set_remote_mapping(struct vlynq_device *dev, u32 tx_offset,
-			      struct vlynq_mapping *mapping)
+int vlynq_set_remote_mapping(struct vlynq_device *dev, u32 tx_offset,
+			     struct vlynq_mapping *mapping)
 {
 	int i;
+
+	if (!dev->enabled)
+		return -ENXIO;
 
 	vlynq_reg_write(dev->remote->tx_offset, tx_offset);
 	for (i = 0; i < 4; i++) {
@@ -459,27 +491,17 @@ void vlynq_set_remote_mapping(struct vlynq_device *dev, u32 tx_offset,
 		vlynq_reg_write(dev->remote->rx_mapping[i].size,
 							mapping[i].size);
 	}
+	return 0;
 }
-
-int vlynq_virq_to_irq(struct vlynq_device *dev, int virq)
-{
-	if ((virq < 0) || (virq >= PER_DEVICE_IRQS))
-		return -EINVAL;
-
-	return dev->irq_start + virq;
-}
-
-int vlynq_irq_to_virq(struct vlynq_device *dev, int irq)
-{
-	if ((irq < dev->irq_start) || (irq >= dev->irq_start + PER_DEVICE_IRQS))
-		return -EINVAL;
-
-	return irq - dev->irq_start;
-}
+EXPORT_SYMBOL(vlynq_set_remote_mapping);
 
 int vlynq_set_local_irq(struct vlynq_device *dev, int virq)
 {
-	if ((virq < 0) || (virq >= PER_DEVICE_IRQS))
+	int irq = dev->irq_start + virq;
+	if (dev->enabled)
+		return -EBUSY;
+
+	if ((irq < dev->irq_start) || (irq > dev->irq_end))
 		return -EINVAL;
 
 	if (virq == dev->remote_irq)
@@ -489,10 +511,15 @@ int vlynq_set_local_irq(struct vlynq_device *dev, int virq)
 
 	return 0;
 }
+EXPORT_SYMBOL(vlynq_set_local_irq);
 
 int vlynq_set_remote_irq(struct vlynq_device *dev, int virq)
 {
-	if ((virq < 0) || (virq >= PER_DEVICE_IRQS))
+	int irq = dev->irq_start + virq;
+	if (dev->enabled)
+		return -EBUSY;
+
+	if ((irq < dev->irq_start) || (irq > dev->irq_end))
 		return -EINVAL;
 
 	if (virq == dev->local_irq)
@@ -502,15 +529,13 @@ int vlynq_set_remote_irq(struct vlynq_device *dev, int virq)
 
 	return 0;
 }
+EXPORT_SYMBOL(vlynq_set_remote_irq);
 
 static int vlynq_probe(struct platform_device *pdev)
 {
 	struct vlynq_device *dev;
 	struct resource *regs_res, *mem_res, *irq_res;
 	int len, result;
-
-	if (strcmp(pdev->name, "vlynq"))
-		return -ENODEV;
 
 	regs_res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "regs");
 	if (!regs_res)
@@ -560,14 +585,14 @@ static int vlynq_probe(struct platform_device *pdev)
 		goto fail_remap;
 	}
 
-	dev->remote = (struct vlynq_regs *)((u32)dev->local +
+	dev->remote = (struct vlynq_regs *)((void *)dev->local +
 					    VLYNQ_REMOTE_OFFSET);
 
 	dev->irq = platform_get_irq_byname(pdev, "irq");
 	dev->irq_start = irq_res->start;
 	dev->irq_end = irq_res->end;
-	dev->local_irq = 31;
-	dev->remote_irq = 30;
+	dev->local_irq = dev->irq_end - dev->irq_start;
+	dev->remote_irq = dev->local_irq - 1;
 
 	if (device_register(&dev->dev))
 		goto fail_register;
@@ -604,20 +629,18 @@ static int vlynq_remove(struct platform_device *pdev)
 static struct platform_driver vlynq_driver = {
 	.driver.name = "vlynq",
 	.probe = vlynq_probe,
-	.remove = vlynq_remove,
+	.remove = __devexit_p(vlynq_remove),
 };
 
 struct bus_type vlynq_bus_type = {
 	.name = "vlynq",
+	.match = vlynq_device_match,
 	.probe = vlynq_device_probe,
 	.remove = vlynq_device_remove,
 };
 EXPORT_SYMBOL(vlynq_bus_type);
 
-#ifdef CONFIG_PCI
-extern void vlynq_pci_init(void);
-#endif
-static int __init vlynq_init(void)
+static int __devinit vlynq_init(void)
 {
 	int res = 0;
 
@@ -629,10 +652,6 @@ static int __init vlynq_init(void)
 	if (res)
 		goto fail_platform;
 
-#ifdef CONFIG_PCI
-	vlynq_pci_init();
-#endif
-
 	return 0;
 
 fail_platform:
@@ -641,13 +660,11 @@ fail_bus:
 	return res;
 }
 
-/* Add this back when vlynq-pci crap is gone */
-#if 0
 static void __devexit vlynq_exit(void)
 {
 	platform_driver_unregister(&vlynq_driver);
 	bus_unregister(&vlynq_bus_type);
 }
-#endif
 
-subsys_initcall(vlynq_init);
+module_init(vlynq_init);
+module_exit(vlynq_exit);

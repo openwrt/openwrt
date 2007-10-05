@@ -2,7 +2,7 @@ Index: linux-2.6.23-rc6/arch/mips/Kconfig
 ===================================================================
 --- linux-2.6.23-rc6.orig/arch/mips/Kconfig	2007-09-21 16:23:51.000000000 +0800
 +++ linux-2.6.23-rc6/arch/mips/Kconfig	2007-09-21 16:24:11.000000000 +0800
-@@ -15,6 +15,23 @@
+@@ -15,6 +15,22 @@
  	prompt "System type"
  	default SGI_IP22
  
@@ -10,7 +10,6 @@ Index: linux-2.6.23-rc6/arch/mips/Kconfig
 +	bool "Texas Instruments AR7"
 +	select BOOT_ELF32
 +	select DMA_NONCOHERENT
-+	select HW_HAS_PCI
 +	select IRQ_CPU
 +	select NO_EXCEPT_FILL
 +	select SWAP_IO_SPACE

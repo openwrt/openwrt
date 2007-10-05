@@ -7,8 +7,4 @@ obj-y := \
 	time.o \
 	platform.o \
 	gpio.o \
-	clock.o \
-	vlynq.o
-
-obj-$(CONFIG_PCI) += \
-	vlynq-pci.o
+	clock.o
