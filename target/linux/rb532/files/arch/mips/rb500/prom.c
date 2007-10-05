@@ -1,5 +1,5 @@
 /*
-* prom.c 
+* prom.c
 **********************************************************************
 * P . Sadik Oct 10, 2003
 *
@@ -42,11 +42,8 @@ extern void __init setup_serial_port(void);
 
 unsigned int idt_cpu_freq = 132000000;
 EXPORT_SYMBOL(idt_cpu_freq);
-char board_type[11];
-EXPORT_SYMBOL(board_type);
 unsigned int gpio_bootup_state = 0;
 EXPORT_SYMBOL(gpio_bootup_state);
-
 
 char mips_mac_address[18] = "08:00:06:05:40:01";
 EXPORT_SYMBOL(mips_mac_address);
@@ -67,9 +64,6 @@ EXPORT_SYMBOL(soft_reboot);
 extern int remote_debug;
 #endif
 
-extern unsigned long mips_machgroup;
-extern unsigned long mips_machtype;
-
 #define FREQ_TAG   "HZ="
 #define GPIO_TAG   "gpio="
 #define KMAC_TAG   "kmac="
@@ -77,6 +71,9 @@ extern unsigned long mips_machtype;
 #define BOARD_TAG  "board="
 #define IGNORE_CMDLINE_MEM 1
 #define DEBUG_DDR
+
+#define BOARD_RB532	"500"
+#define BOARD_RB532A	"500r5"
 
 void parse_soft_settings(unsigned *ptr, unsigned size);
 void parse_hard_settings(unsigned *ptr, unsigned size);
@@ -87,7 +84,7 @@ void __init prom_init(void)
 {
 	DDR_t ddr = (DDR_t) DDR_VirtualAddress; /* define the pointer to the DDR registers */
 	phys_t memsize = 0-ddr->ddrmask;
-	
+
 	/* this should be the very first message, even before serial is properly initialized */
 	prom_setup_cmdline();
 	setup_serial_port();
@@ -108,6 +105,17 @@ void __init prom_free_prom_memory(void)
 	/* No prom memory to free */
 }
 
+static inline int match_tag(char *arg, const char *tag)
+{
+	return (strncmp(arg, tag, strlen(tag)) == 0);
+}
+
+static inline unsigned long tag2ul(char *arg, const char *tag)
+{
+	char *num = arg+strlen(tag);
+	return simple_strtoul(num, 0, 10);
+}
+
 extern char _image_cmdline;
 void __init prom_setup_cmdline(void){
 	char cmd_line[CL_SIZE];
@@ -115,32 +123,36 @@ void __init prom_setup_cmdline(void){
 	int prom_argc;
 	char **prom_argv, **prom_envp;
 	int i;
-	
+
 	prom_argc = fw_arg0;
 	prom_argv = (char **) fw_arg1;
 	prom_envp = (char **) fw_arg2;
-	
+
 	cp=cmd_line;
 		/* Note: it is common that parameters start at argv[1] and not argv[0],
 		however, our elf loader starts at [0] */
 	for(i=0;i<prom_argc;i++){
-		if (strncmp(prom_argv[i], FREQ_TAG, sizeof(FREQ_TAG) - 1) == 0) {
-			idt_cpu_freq = simple_strtoul(prom_argv[i] + sizeof(FREQ_TAG) - 1, 0, 10);
+		if (match_tag(prom_argv[i], FREQ_TAG)) {
+			idt_cpu_freq = tag2ul(prom_argv[i], FREQ_TAG);
 			continue;
 		}
 #ifdef IGNORE_CMDLINE_MEM
 		/* parses out the "mem=xx" arg */
-		if (strncmp(prom_argv[i], MEM_TAG, sizeof(MEM_TAG) - 1) == 0) {
+		if (match_tag(prom_argv[i], MEM_TAG)) {
 			continue;
 		}
 #endif
 		if (i>0) *(cp++) = ' ';
-
-		if (strncmp(prom_argv[i], BOARD_TAG, sizeof(BOARD_TAG) - 1) == 0) {
-			strcpy(board_type, prom_argv[i] + sizeof(BOARD_TAG) -1);
+		if (match_tag(prom_argv[i], BOARD_TAG)) {
+			char *board = prom_argv[i] + strlen(BOARD_TAG);
+			if (match_tag(board, BOARD_RB532A))
+				mips_machtype = MACH_MIKROTIK_RB532A;
+			else
+				mips_machtype = MACH_MIKROTIK_RB532;
 		}
-		if (strncmp(prom_argv[i], GPIO_TAG, sizeof(GPIO_TAG) - 1) == 0) {
-			gpio_bootup_state =  simple_strtoul(prom_argv[i] + sizeof(GPIO_TAG) - 1, 0, 10);
+
+		if (match_tag(prom_argv[i], GPIO_TAG)) {
+			gpio_bootup_state = tag2ul(prom_argv[i], GPIO_TAG);
 		}
 		strcpy(cp,prom_argv[i]);
 		cp+=strlen(prom_argv[i]);
@@ -148,7 +160,7 @@ void __init prom_setup_cmdline(void){
 	*(cp++) = ' ';
 	strcpy(cp,(&_image_cmdline + 8));
 	cp += strlen(&_image_cmdline);
-	
+
 	i=strlen(arcs_cmdline);
 	if (i>0){
 		*(cp++) = ' ';
@@ -160,7 +172,7 @@ void __init prom_setup_cmdline(void){
 	else
 		strcpy(cp,GPIO_INIT_BUTTON);
 	cmd_line[CL_SIZE-1] = '\0';
-	
+
 	strcpy(arcs_cmdline,cmd_line);
 }
 
