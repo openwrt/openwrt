@@ -115,8 +115,6 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{crypto,ssl}.{a,so*} $(1)/usr/lib/
 	mkdir -p $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/{openssl,libcrypto,libssl}.pc $(1)/usr/lib/pkgconfig/
-	$(SED) 's,^includedir=.*,includedir=$(1)/usr/include,g' $(1)/usr/lib/pkgconfig/{openssl,libcrypto,libssl}.pc
-	$(SED) 's,^libdir=.*,libdir=$(1)/usr/lib,g' $(1)/usr/lib/pkgconfig/{openssl,libcrypto,libssl}.pc
 	$(SED) 's,$(TARGET_LDFLAGS),,g' $(1)/usr/lib/pkgconfig/{openssl,libcrypto,libssl}.pc
 endef
 
