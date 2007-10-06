@@ -101,8 +101,6 @@ define Build/InstallDev
 		BUILDCC="$(HOSTCC)" \
 		DESTDIR="$(1)" \
 		install-libs
-	$(SED) 's,-I$$$${includedir},,g' $(1)/usr/lib/pkgconfig/{blkid,com_err,e2p,ext2fs,ss,uuid}.pc
-	$(SED) 's,-L$$$${libdir},,g' $(1)/usr/lib/pkgconfig/{blkid,com_err,e2p,ext2fs,ss,uuid}.pc
 endef
 
 define Build/UninstallDev

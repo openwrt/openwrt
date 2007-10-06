@@ -42,8 +42,6 @@ define Build/InstallDev
 	$(CP) -r $(PKG_INSTALL_DIR)/usr/lib/libjson.{a,so*} $(1)/usr/lib/
 	mkdir -p $(1)/usr/lib/pkgconfig
 	$(CP) -r $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/json.pc $(1)/usr/lib/pkgconfig/
-	$(SED) 's,-I$$$${includedir}/,-I$(1)/usr/include/,g' $(1)/usr/lib/pkgconfig/json.pc
-	$(SED) 's,-L$$$${libdir},,g' $(1)/usr/lib/pkgconfig/json.pc
 endef
 
 define Build/UninstallDev
