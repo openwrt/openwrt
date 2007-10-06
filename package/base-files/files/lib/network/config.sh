@@ -177,13 +177,14 @@ setup_interface() {
 			config_get netmask "$config" netmask
 			config_get hostname "$config" hostname
 			config_get proto1 "$config" proto
+			config_get clientid "$config" clientid
 
 			[ -z "$ipaddr" ] || \
 				$DEBUG ifconfig "$iface" "$ipaddr" ${netmask:+netmask "$netmask"}
 
 			# don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
 			[ ."$proto1" != ."$proto" ] && dhcpopts="-n -q"
-			$DEBUG eval udhcpc -t 0 -i "$iface" ${ipaddr:+-r $ipaddr} ${hostname:+-H $hostname} -b -p "$pidfile" ${dhcpopts:- -R &}
+			$DEBUG eval udhcpc -t 0 -i "$iface" ${ipaddr:+-r $ipaddr} ${hostname:+-H $hostname} ${clientid:+-c $clientid} -b -p "$pidfile" ${dhcpopts:- -R &}
 			lock -u "/var/lock/dhcp-$iface"
 		;;
 		*)
