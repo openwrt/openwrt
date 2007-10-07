@@ -121,6 +121,10 @@ define libtool_fixup_libdir
 		$(SED) "s,^libdir='/usr/lib',libdir='$(strip $(1))/usr/lib',g"
 endef
 
+define pkg_install_files
+	$(foreach install_file,$(2),$(INSTALL_DIR) $(1)/`dirname $(install_file)`; $(CP) $(PKG_INSTALL_DIR)/$(install_file) $(1)/`dirname $(install_file)`;)
+endef
+
 define Build/Prepare
   $(call Build/Prepare/Default,)
 endef
