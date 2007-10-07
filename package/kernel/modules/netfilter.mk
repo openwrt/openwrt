@@ -250,6 +250,9 @@ define KernelPackage/ipt-extra/description
  - ipt_recent 
  - iptable_raw 
  - xt_NOTRACK 
+ - xt_TARPIT 
+ - xt_DELUDE 
+ - xt_CHAOS 
 endef
 
 $(eval $(call KernelPackage,ipt-extra))

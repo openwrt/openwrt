@@ -1,0 +1,106 @@
+diff -N -u -r iptables-1.3.8-20070817/extensions/libipt_TARPIT.c iptables-1.3.8-20070817-nf/extensions/libipt_TARPIT.c
+--- iptables-1.3.8-20070817/extensions/libipt_TARPIT.c	1969-12-31 19:00:00.000000000 -0500
++++ iptables-1.3.8-20070817-nf/extensions/libipt_TARPIT.c	2007-08-18 14:49:25.000000000 -0400
+@@ -0,0 +1,58 @@
++/* Shared library add-on to iptables for TARPIT support */
++#include <stdio.h>
++#include <getopt.h>
++#include <iptables.h>
++
++static void
++help(void)
++{
++	fputs(
++"TARPIT takes no options\n"
++"\n", stdout);
++}
++
++static struct option opts[] = {
++	{ 0 }
++};
++
++static int
++parse(int c, char **argv, int invert, unsigned int *flags,
++      const struct ipt_entry *entry,
++      struct ipt_entry_target **target)
++{
++	return 0;
++}
++
++static void final_check(unsigned int flags)
++{
++}
++
++static void
++print(const struct ipt_ip *ip,
++      const struct ipt_entry_target *target,
++      int numeric)
++{
++}
++
++static void save(const struct ipt_ip *ip, const struct ipt_entry_target *target)
++{
++}
++
++static struct iptables_target tarpit = {
++	.next		= NULL,
++	.name		= "TARPIT",
++	.version	= IPTABLES_VERSION,
++	.size		= IPT_ALIGN(0),
++	.userspacesize	= IPT_ALIGN(0),
++	.help		= &help,
++	.parse		= &parse,
++	.final_check	= &final_check,
++	.print		= &print,
++	.save		= &save,
++	.extra_opts	= opts
++};
++
++void _init(void)
++{
++	register_target(&tarpit);
++}
+diff -N -u -r iptables-1.3.8-20070817/extensions/libipt_TARPIT.man iptables-1.3.8-20070817-nf/extensions/libipt_TARPIT.man
+--- iptables-1.3.8-20070817/extensions/libipt_TARPIT.man	1969-12-31 19:00:00.000000000 -0500
++++ iptables-1.3.8-20070817-nf/extensions/libipt_TARPIT.man	2007-08-18 14:49:25.000000000 -0400
+@@ -0,0 +1,34 @@
++Captures and holds incoming TCP connections using no local
++per-connection resources. Connections are accepted, but immediately
++switched to the persist state (0 byte window), in which the remote
++side stops sending data and asks to continue every 60-240 seconds.
++Attempts to close the connection are ignored, forcing the remote side
++to time out the connection in 12-24 minutes.
++
++This offers similar functionality to LaBrea
++<http://www.hackbusters.net/LaBrea/> but doesn't require dedicated
++hardware or IPs. Any TCP port that you would normally DROP or REJECT
++can instead become a tarpit.
++
++To tarpit connections to TCP port 80 destined for the current machine:
++.IP
++iptables -A INPUT -p tcp -m tcp --dport 80 -j TARPIT
++.P
++To significantly slow down Code Red/Nimda-style scans of unused address
++space, forward unused ip addresses to a Linux box not acting as a router
++(e.g. "ip route 10.0.0.0 255.0.0.0 ip.of.linux.box" on a Cisco), enable IP
++forwarding on the Linux box, and add:
++.IP
++iptables -A FORWARD -p tcp -j TARPIT
++.IP
++iptables -A FORWARD -j DROP
++.TP
++NOTE:
++If you use the conntrack module while you are using TARPIT, you should
++also use the NOTRACK target, or the kernel will unnecessarily allocate
++resources for each TARPITted connection. To TARPIT incoming
++connections to the standard IRC port while using conntrack, you could:
++.IP
++iptables -t raw -A PREROUTING -p tcp --dport 6667 -j NOTRACK
++.IP
++iptables -A INPUT -p tcp --dport 6667 -j TARPIT
+diff -N -u -r iptables-1.3.8-20070817/extensions/.TARPIT-test iptables-1.3.8-20070817-nf/extensions/.TARPIT-test
+--- iptables-1.3.8-20070817/extensions/.TARPIT-test	1969-12-31 19:00:00.000000000 -0500
++++ iptables-1.3.8-20070817-nf/extensions/.TARPIT-test	2007-08-18 14:49:25.000000000 -0400
+@@ -0,0 +1,2 @@
++#! /bin/sh
++[ -f $KERNEL_DIR/net/netfilter/xt_TARPIT.c ] && echo TARPIT

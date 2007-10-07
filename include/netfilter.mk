@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -60,8 +60,9 @@ $(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_MATCH_PORTSCAN, $(P_XT)xt_por
 #$(eval $(call nf_add,IPT_EXTRA,CONFIG_IP_NF_MATCH_QUOTA, $(P_V4)ipt_quota))
 $(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_MATCH_QUOTA, $(P_XT)xt_quota))
 
-$(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_TARGET_CHAOS, $(P_XT)xt_CHAOS))
+$(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_TARGET_TARPIT, $(P_XT)xt_TARPIT))
 $(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_TARGET_DELUDE, $(P_XT)xt_DELUDE))
+$(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_TARGET_CHAOS, $(P_XT)xt_CHAOS))
 $(eval $(call nf_add,IPT_EXTRA,CONFIG_IP_NF_TARGET_LOG, $(P_V4)ipt_LOG))
 $(eval $(call nf_add,IPT_EXTRA,CONFIG_IP_NF_TARGET_REJECT, $(P_V4)ipt_REJECT))
 #$(eval $(call nf_add,IPT_EXTRA,CONFIG_IP_NF_TARGET_ROUTE, $(P_V4)ipt_ROUTE))

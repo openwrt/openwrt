@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
 PKG_VERSION:=1.3.8
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
@@ -166,7 +166,11 @@ define Package/iptables-mod-extra/description
  - libipt_physdev
  - libipt_pkttype
  - libipt_recent
+ - iptable_raw
  - libipt_NOTRACK
+ - libipt_TARPIT
+ - libipt_DELUDE
+ - libipt_CHAOS
 endef
 
 define Package/iptables-mod-ipset
