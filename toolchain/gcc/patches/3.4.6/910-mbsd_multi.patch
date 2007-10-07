@@ -67,7 +67,7 @@ Index: gcc-3.4.6/gcc/c-opts.c
 +    char *ev = getenv ("GCC_HONOUR_COPTS");
 +    int evv;
 +    if (ev == NULL)
-+      evv = 0;
++      evv = -1;
 +    else if ((*ev == '0') || (*ev == '\0'))
 +      evv = 0;
 +    else if (*ev == '1')
