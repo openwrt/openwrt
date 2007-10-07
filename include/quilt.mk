@@ -23,8 +23,8 @@ endef
 
 define PatchDir/Quilt
 	@if [ -s $(1)/series ]; then \
-		mkdir -p $(PKG_BUILD_DIR)/patches$(if $(2),/$(2)); \
-		cp $(1)/series $(PKG_BUILD_DIR)/patches$(if $(2),/$(2))/; \
+		mkdir -p $(PKG_BUILD_DIR)/patches/$(2); \
+		cp $(1)/series $(PKG_BUILD_DIR)/patches/$(2); \
 	fi
 	@for patch in $$$$( (cd $(1) && if [ -f series ]; then $(call filter_series,series); else ls; fi; ) 2>/dev/null ); do ( \
 		cp "$(1)/$$$$patch" $(PKG_BUILD_DIR); \
@@ -110,10 +110,10 @@ $(STAMP_PATCHED): $(STAMP_PREPARED)
 			for file in $$(cat .subdirs); do \
 				if [ -f $$file/series ]; then \
 					echo "Converting $$file/series"; \
-					$(call filter_series,$$file/series) | awk -v file="$$file/" '$$0 !~ /^#/ { print file $$0 }' >> series; \
+					$(call filter_series,$$file/series) | awk -v file="$$file/" '$$0 !~ /^#/ { print file $$0 }' | sed -e s,//,/,g >> series; \
 				else \
 					echo "Sorting patches in $$file"; \
-					find $$file/* -type f \! -name series | sort >> series; \
+					find $$file/* -type f \! -name series | sed -e s,//,/,g | sort >> series; \
 				fi; \
 			done; \
 		else \
