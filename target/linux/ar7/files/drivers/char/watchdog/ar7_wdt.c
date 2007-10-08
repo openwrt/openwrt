@@ -1,7 +1,7 @@
 /*
- * linux/drivers/char/ar7_wdt.c
+ * drivers/watchdog/ar7_wdt.c
  *
- * Copyright (C) 2007 OpenWrt.org
+ * Copyright (C) 2007 Nicolas Thill <nico@openwrt.org>
  * Copyright (c) 2005 Enrik Berkhan <Enrik.Berkhan@akk.org>
  *
  * Some code taken from:
@@ -184,7 +184,7 @@ static int ar7_wdt_open(struct inode *inode, struct file *file)
 	ar7_wdt_enable_wdt();
 	expect_close = 0;
 
-	return 0;
+	return nonseekable_open(inode, file);
 }
 
 static int ar7_wdt_release(struct inode *inode, struct file *file)
@@ -218,9 +218,6 @@ static struct notifier_block ar7_wdt_notifier = {
 static ssize_t ar7_wdt_write(struct file *file, const char *data,
 			     size_t len, loff_t *ppos)
 {
-	if (*ppos != file->f_pos)
-		return -ESPIPE;
-
 	/* check for a magic close character */
 	if (len) {
 		size_t i;
@@ -317,23 +314,24 @@ static int __init ar7_wdt_init(void)
 
 	sema_init(&open_semaphore, 1);
 
-	rc = misc_register(&ar7_wdt_miscdev);
-	if (rc) {
-		printk(KERN_ERR DRVNAME ": unable to register misc device\n");
-		goto out_alloc;
-	}
-
 	rc = register_reboot_notifier(&ar7_wdt_notifier);
 	if (rc) {
 		printk(KERN_ERR DRVNAME
 			": unable to register reboot notifier\n");
+		goto out_alloc;
+	}
+
+	rc = misc_register(&ar7_wdt_miscdev);
+	if (rc) {
+		printk(KERN_ERR DRVNAME ": unable to register misc device\n");
 		goto out_register;
 	}
 	goto out;
 
 out_register:
-	misc_deregister(&ar7_wdt_miscdev);
+	unregister_reboot_notifier(&ar7_wdt_notifier);
 out_alloc:
+	iounmap(ar7_wdt);
 	release_mem_region(ar7_regs_wdt, sizeof(struct ar7_wdt));
 out:
 	return rc;
@@ -341,8 +339,8 @@ out:
 
 static void __exit ar7_wdt_cleanup(void)
 {
-	unregister_reboot_notifier(&ar7_wdt_notifier);
 	misc_deregister(&ar7_wdt_miscdev);
+	unregister_reboot_notifier(&ar7_wdt_notifier);
 	iounmap(ar7_wdt);
 	release_mem_region(ar7_regs_wdt, sizeof(struct ar7_wdt));
 }
