@@ -10,12 +10,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=linux-uvc
-PKG_VERSION:=r111
+PKG_VERSION:=r131
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://naaa.de/programme/linux-uvc/
-PKG_MD5SUM:=36c742d9dd1cf533fa059a1eeffa3e32
+PKG_MD5SUM:=e1f5e5c9bdf865726438dc3ff3a5ae60
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -23,7 +23,7 @@ define KernelPackage/video-uvc
   SUBMENU:=Video Support
   TITLE:=USB Video Class (UVC) support
   URL:=http://linux-uvc.berlios.de/
-  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core kmod-video-core
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core +kmod-video-core
   FILES:=$(PKG_BUILD_DIR)/uvcvideo.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,uvcvideo)
 endef
