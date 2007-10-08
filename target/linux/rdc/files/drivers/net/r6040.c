@@ -13,15 +13,17 @@
 
 	Modification List
 	----------	------------------------------------------------
+	10-07-2007	Clean up the driver using checkpatch
 	08-24-2006	Support at linux 2.6.10 above
 	03-24-2006	Support NAPI
-	03-21-2006	By Charies,change spin_lock_irqsave(lp->lock, flags) to
-			spin_lock_irqsave(&lp->lock, flags) in set_multicast_list
+	03-21-2006	By Charies,change spin_lock_irqsave(lp->lock, flags) 
+			to spin_lock_irqsave(&lp->lock, flags)
+			in set_multicast_list
 	03-15-2006      Modify the set_multicast_list ,due to when re-plug the ethernet,
 			it will forget the previous setting
-	07-12-2005      Tim, modify the set_multicast_list
-	03-28-2005      Tim, modify some error mac register offset in 
-	                function set_multicast_list
+	07-12-2005	Tim, modify the set_multicast_list
+	03-28-2005	Tim, modify some error mac register offset in 
+			function set_multicast_list
 	03-27-2005	Tim, Add the internal state machine reset
 			Sten, If multicast address more than 4, enter PROM mode
 			Changed rdc to r6040
@@ -65,11 +67,14 @@
 #define ALLOC_DESC_SIZE	((TX_DCNT+RX_DCNT)*sizeof(struct r6040_descriptor)+0x10)
 #define MBCR_DEFAULT	0x012A	/* MAC Bus Control Register */
 
+/* PHY settings */
+#define ICPLUS_PHY_ID	0x0243
+
 /* Debug enable or not */
 #define RDC_DEBUG	0
 
 #if RDC_DEBUG > 1
-#define RDC_DBUG(msg, value) printk("%s %x\n", msg, value);
+#define RDC_DBUG(msg, value) printk(KERN_ERR "%s %x\n", msg, value);
 #else
 #define RDC_DBUG(msg, value)
 #endif
@@ -92,7 +97,7 @@
 #include <linux/etherdevice.h>
 #include <linux/skbuff.h>
 #include <linux/init.h>
-#include <linux/delay.h>	/* for udelay() */
+#include <linux/delay.h>
 #include <linux/mii.h>
 #include <linux/ethtool.h>
 #include <linux/crc32.h>
@@ -104,7 +109,7 @@
 #include <asm/irq.h>
 #include <asm/uaccess.h>
 
-MODULE_AUTHOR("Sten Wang <sten.wang@rdc.com.tw>");
+MODULE_AUTHOR("Sten Wang <sten.wang@rdc.com.tw>, Daniel Gimpelevich <daniel@gimpelevich.san-francisco.ca.us>, Florian Fainelli <florian@openwrt.org>");
 MODULE_LICENSE("GPL");
 #ifdef CONFIG_R6040_NAPI
 MODULE_DESCRIPTION("RDC R6040 NAPI PCI FastEthernet Driver");
@@ -123,12 +128,12 @@ struct r6040_descriptor {
 	struct r6040_descriptor *vndescp;	/* 14-17 */
 	struct sk_buff *skb_ptr;	/* 18-1B */
 	u32	rev2;			/* 1C-1F */
-} __attribute__(( aligned(32) ));
+} __attribute__((aligned(32)));
 
 struct r6040_private {
 	struct net_device_stats stats;
-	spinlock_t lock;
-  	struct timer_list timer;
+	spinlock_t lock;		/* driver lock */
+	struct timer_list timer;
 	struct pci_dev *pdev;
 
 	struct r6040_descriptor *rx_insert_ptr;
@@ -156,16 +161,16 @@ static int NAPI_status;
 static int __devinitdata printed_version;
 #ifdef CONFIG_R6040_NAPI
 static char version[] __devinitdata =
-	KERN_INFO DRV_NAME ": RDC R6040 NAPI net driver, version "DRV_VERSION " (" DRV_RELDATE ")\n";	
+	KERN_INFO DRV_NAME ": RDC R6040 NAPI net driver, version "DRV_VERSION " (" DRV_RELDATE ")\n";
 #else
 static char version[] __devinitdata =
-	KERN_INFO DRV_NAME ": RDC R6040 net driver, version "DRV_VERSION " (" DRV_RELDATE ")\n";	
+	KERN_INFO DRV_NAME ": RDC R6040 net driver, version "DRV_VERSION " (" DRV_RELDATE ")\n";
 #endif
 static struct r6040_chip_info r6040_chip_info[] __devinitdata =
 {
 	{ "RDC R6040 Knight", R6040_PCI_CMD, R6040_IO_SIZE, 0}
 };
-static char *parent = NULL;
+static char *parent;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int NUM_MAC_TABLE = 2 ;
@@ -176,15 +181,18 @@ MODULE_PARM(parent, "s");
 MODULE_PARM_DESC(parent, "Parent network device name");
 
 static int phy_table[] = { 0x1, 0x2};
-static u8 adr_table[2][8] = {{0x00, 0x00, 0x60, 0x00, 0x00, 0x01}, {0x00, 0x00, 0x60, 0x00, 0x00, 0x02}};
+static u8 adr_table[2][8] = {
+	{0x00, 0x00, 0x60, 0x00, 0x00, 0x01},
+	{0x00, 0x00, 0x60, 0x00, 0x00, 0x02}
+};
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 10)
 	module_param_array(adr_table, int, &NUM_MAC_TABLE, 0644);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) 
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	module_param_array(adr_table, int, NUM_MAC_TABLE, 0644);
 #else
 	MODULE_PARM(adr_table, "2-4i");
-#endif 
+#endif
 MODULE_PARM_DESC(adr_table, "MAC Address (assigned)");
 
 static int r6040_open(struct net_device *dev);
@@ -203,7 +211,7 @@ static void r6040_timer(unsigned long);
 static int phy_mode_chk(struct net_device *dev);
 static int phy_read(int ioaddr, int phy_adr, int reg_idx);
 static void phy_write(int ioaddr, int phy_adr, int reg_idx, int dat);
-static void rx_buf_alloc(struct r6040_private *lp,struct net_device *dev);
+static void rx_buf_alloc(struct r6040_private *lp, struct net_device *dev);
 #ifdef CONFIG_R6040_NAPI
 static int r6040_poll(struct net_device *netdev, int *budget);
 #endif
@@ -215,15 +223,16 @@ static int __devinit r6040_init_one (struct pci_dev *pdev,
 	struct net_device *dev;
 	struct r6040_private *lp;
 	int ioaddr, io_size, err;
-	static int card_idx = -1; 
+	static int card_idx = -1;
 	int chip_id = (int)ent->driver_data;
 
 	RDC_DBUG("r6040_init_one()", 0);
 
 	if (printed_version++)
-		printk(version);
+		printk(KERN_INFO version);
 
-	if ((err = pci_enable_device (pdev)))
+	err = pci_enable_device(pdev);
+	if (err)
 		return err;
 
 	/* this should always be supported */
@@ -288,7 +297,8 @@ static int __devinit r6040_init_one (struct pci_dev *pdev,
 #endif
 
 	/* Register net device. After this dev->name assign */
-	if ((err = register_netdev(dev))) {
+	err = register_netdev(dev);
+	if (err) {
 		printk(KERN_ERR DRV_NAME ": Failed to register net device\n");
 		goto err_out_res;
 	}
@@ -330,21 +340,21 @@ r6040_open(struct net_device *dev)
 	if (i) return i;
 
 	/* Allocate Descriptor memory */
-	lp->desc_pool = pci_alloc_consistent(lp->pdev, ALLOC_DESC_SIZE, &lp->desc_dma); 
-	if (!lp->desc_pool) return -ENOMEM; 
+	lp->desc_pool = pci_alloc_consistent(lp->pdev, ALLOC_DESC_SIZE, &lp->desc_dma);
+	if (!lp->desc_pool)
+		return -ENOMEM;
 
 	r6040_up(dev);
 
 	netif_start_queue(dev);
 
-	if (lp->switch_sig != 0x0243)
-	{
-	/* set and active a timer process */
-	init_timer(&lp->timer);
-	lp->timer.expires = TIMER_WUT;
-	lp->timer.data = (unsigned long)dev;
-	lp->timer.function = &r6040_timer;
-	add_timer(&lp->timer);
+	if (lp->switch_sig != ICPLUS_PHY_ID) {
+		/* set and active a timer process */
+		init_timer(&lp->timer);
+		lp->timer.expires = TIMER_WUT;
+		lp->timer.data = (unsigned long)dev;
+		lp->timer.function = &r6040_timer;
+		add_timer(&lp->timer);
 	}
 	return 0;
 }
@@ -353,14 +363,14 @@ static void
 r6040_tx_timeout (struct net_device *dev)
 {
 	struct r6040_private *lp = dev->priv;
-	//int ioaddr = dev->base_addr;
-	//struct r6040_descriptor *descptr = lp->tx_remove_ptr;
+	/* int ioaddr = dev->base_addr;
+	struct r6040_descriptor *descptr = lp->tx_remove_ptr; */
 
 	RDC_DBUG("r6040_tx_timeout()", 0);
 
 	/* Transmitter timeout, serious problems. */
 	/* Sten: Nothing need to do so far. */
-	printk(KERN_ERR DRV_NAME ": Big Trobule, transmit timeout/n"); 
+	printk(KERN_ERR DRV_NAME ": Big Trobule, transmit timeout/n");
 	lp->stats.tx_errors++;
 	netif_stop_queue(dev);
 
@@ -380,7 +390,7 @@ r6040_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	RDC_DBUG("r6040_start_xmit()", 0);
 
-	if (skb == NULL)	/* NULL skb directly return */ 
+	if (skb == NULL)	/* NULL skb directly return */
 		return 0;
 	if (skb->len >= MAX_BUF_SIZE) {	/* Packet too long, drop it */
 		dev_kfree_skb(skb);
@@ -393,7 +403,7 @@ r6040_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	/* TX resource check */
 	if (!lp->tx_free_desc) { 
 		spin_unlock_irqrestore(&lp->lock, flags);
-		printk(KERN_ERR DRV_NAME ": NO TX DESC "); 
+		printk(KERN_ERR DRV_NAME ": NO TX DESC ");
 		return 1;
 	}
 
@@ -404,8 +414,11 @@ r6040_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	/* Set TX descriptor & Transmit it */
 	lp->tx_free_desc--;
 	descptr = lp->tx_insert_ptr;
-	if (skb->len < 0x3c) descptr->len = 0x3c;
-	else descptr->len = skb->len;
+	if (skb->len < 0x3c)
+		descptr->len = 0x3c;
+	else
+		descptr->len = skb->len;
+
 	descptr->skb_ptr = skb;
 	descptr->buf = cpu_to_le32(pci_map_single(lp->pdev, skb->data, skb->len, PCI_DMA_TODEVICE));
 	descptr->status = 0x8000;
@@ -414,7 +427,7 @@ r6040_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 #if RDC_DEBUG
  printk("Xmit(): %08lx:%04x %04x %08lx %08lx %08lx %08lx\n", descptr, descptr->status, descptr->len, descptr->buf, descptr->skb_ptr, descptr->ndesc, descptr->vndescp);
-#endif 
+#endif
 
 	/* If no tx resource, stop */
 	if (!lp->tx_free_desc) 
@@ -435,11 +448,11 @@ r6040_interrupt(int irq, void *dev_id)
 	struct sk_buff *skb_ptr;
 	int ioaddr, status;
 	unsigned long flags;
-#ifdef CONFIG_R6040_NAPI	
+#ifdef CONFIG_R6040_NAPI
 	int handled = 1;
 #else
 	int handled = 0;
-#endif	
+#endif
 
 	RDC_DBUG("r6040_interrupt()", 0);
 	if (dev == NULL) {
@@ -456,23 +469,22 @@ r6040_interrupt(int irq, void *dev_id)
 	status = inw(ioaddr + 0x3c);	/* Read INTR status and clear */
 	
 
-#ifdef CONFIG_R6040_NAPI		
-
-	    if(netif_rx_schedule_prep(dev))	
-	        {
-	        NAPI_status = status ;     
+#ifdef CONFIG_R6040_NAPI
+	if (netif_rx_schedule_prep(dev)) {
+	    	NAPI_status = status;
 		__netif_rx_schedule(dev);
-	        }
-	
+	}
+
 	spin_unlock_irqrestore(&lp->lock, flags);
-	return IRQ_RETVAL(handled);	
+	return IRQ_RETVAL(handled);
 #else		
 	/* TX interrupt request */
 	if (status & 0x10) {
 		handled = 1;
 		descptr = lp->tx_remove_ptr;
-		while(lp->tx_free_desc < TX_DCNT) {
-			if (descptr->status & 0x8000) break; /* Not complte */
+		while (lp->tx_free_desc < TX_DCNT) {
+			if (descptr->status & 0x8000)
+				break; /* Not complte */
 			skb_ptr = descptr->skb_ptr;
 			pci_unmap_single(lp->pdev, descptr->buf, skb_ptr->len, PCI_DMA_TODEVICE);
 			dev_kfree_skb_irq(skb_ptr); /* Free buffer */
@@ -481,7 +493,8 @@ r6040_interrupt(int irq, void *dev_id)
 			lp->tx_free_desc++;
 		}
 		lp->tx_remove_ptr = descptr;
-		if (lp->tx_free_desc) netif_wake_queue(dev);
+		if (lp->tx_free_desc)
+			netif_wake_queue(dev);
 	} 
 
 	/* RX interrupt request */
@@ -538,26 +551,27 @@ set_multicast_list(struct net_device *dev)
 
 	RDC_DBUG("set_multicast_list()", 0);
 
-	/* MAC Address */	
+	/* MAC Address */
 	adrp = (u16 *) dev->dev_addr;
-	outw(adrp[0], ioaddr + 0x68); 
-	outw(adrp[1], ioaddr + 0x6A); 
-	outw(adrp[2], ioaddr + 0x6C); 
+	outw(adrp[0], ioaddr + 0x68);
+	outw(adrp[1], ioaddr + 0x6A);
+	outw(adrp[2], ioaddr + 0x6C);
 
 
-#if RDC_DEBUG 
+#if RDC_DEBUG
 	printk("MAC ADDR: %04x %04x %04x\n", adrp[0], adrp[1], adrp[2]);
 #endif
 
 	/* Promiscous Mode */
 	spin_lock_irqsave(&lp->lock, flags);
 	i = inw(ioaddr) & ~0x0120;		/* Clear AMCP & PROM */
-	if (dev->flags & IFF_PROMISC)
-	    {	
-	 	i |= 0x0020;
-		lp->mcr0 |= 0x0020 ;
-	    }
-	if (dev->mc_count > 4) i |= 0x0020;	/* Too many multicast address */
+	if (dev->flags & IFF_PROMISC) {
+		i |= 0x0020;
+		lp->mcr0 |= 0x0020;
+	}
+	if (dev->mc_count > 4)
+		i |= 0x0020;	/* Too many multicast address */
+
 	outw(i, ioaddr);
 	spin_unlock_irqrestore(&lp->lock, flags);
 	
@@ -566,20 +580,20 @@ set_multicast_list(struct net_device *dev)
 		return;
 
 	/* Multicast Address 1~4 case */
-	for (i = 0, mcptr = dev->mc_list; (i<dev->mc_count) && (i<4); i++) {
+	for (i = 0, mcptr = dev->mc_list; (i < dev->mc_count) && (i < 4); i++) {
 		adrp = (u16 *)mcptr->dmi_addr;
-		outw(adrp[0], ioaddr + 0x70 + 8*i); 
-		outw(adrp[1], ioaddr + 0x72 + 8*i); 
-		outw(adrp[2], ioaddr + 0x74 + 8*i); 
+		outw(adrp[0], ioaddr + 0x70 + 8*i);
+		outw(adrp[1], ioaddr + 0x72 + 8*i);
+		outw(adrp[2], ioaddr + 0x74 + 8*i);
 		mcptr = mcptr->next;
-#if RDC_DEBUG 
+#if RDC_DEBUG
 	printk("M_ADDR: %04x %04x %04x\n", adrp[0], adrp[1], adrp[2]);
 #endif
 	}
 	for (i = dev->mc_count; i < 4; i++) {
-		outw(0xffff, ioaddr + 0x68 + 8*i); 
-		outw(0xffff, ioaddr + 0x6A + 8*i); 
-		outw(0xffff, ioaddr + 0x6C + 8*i); 
+		outw(0xffff, ioaddr + 0x68 + 8*i);
+		outw(0xffff, ioaddr + 0x6A + 8*i);
+		outw(0xffff, ioaddr + 0x6C + 8*i);
 	}
 }
 
@@ -604,7 +618,7 @@ r6040_close(struct net_device *dev)
 	RDC_DBUG("r6040_close()", 0);
 
  	/* deleted timer */
- 	del_timer_sync(&lp->timer);
+	del_timer_sync(&lp->timer);
 
 	spin_lock_irq(&lp->lock);
 
@@ -622,8 +636,8 @@ static int netdev_ioctl (struct net_device *dev, struct ifreq *rq, int cmd)
 	struct r6040_private *lp = dev->priv;
 
 	RDC_DBUG("netdev_ioctl()", 0);
-	if (lp->switch_sig == 0x0243 && cmd == SIOCDEVPRIVATE)
-	{
+
+	if (lp->switch_sig == ICPLUS_PHY_ID && cmd == SIOCDEVPRIVATE) {
 		unsigned long *data = (unsigned long *)rq->ifr_data, args[4];
 		int ioaddr = dev->base_addr;
 		unsigned int val;
@@ -633,12 +647,12 @@ static int netdev_ioctl (struct net_device *dev, struct ifreq *rq, int cmd)
 			return -EFAULT;
 
 		/* port priority */
-		if(args[0]&(1<<31))phy_write(ioaddr,29,19,(phy_read(ioaddr,29,19)|0x2000));	/* port 0 */
-		if(args[0]&(1<<29))phy_write(ioaddr,29,19,(phy_read(ioaddr,29,19)|0x0020));	/* port 1 */
-		if(args[0]&(1<<27))phy_write(ioaddr,29,20,(phy_read(ioaddr,29,20)|0x2000));	/* port 2 */
-		if(args[0]&(1<<25))phy_write(ioaddr,29,20,(phy_read(ioaddr,29,20)|0x0020));	/* port 3 */
+		if(args[0]&(1<<31))phy_write(ioaddr, 29, 19, (phy_read(ioaddr, 29, 19) | 0x2000));	/* port 0 */
+		if(args[0]&(1<<29))phy_write(ioaddr, 29, 19, (phy_read(ioaddr, 29, 19) | 0x0020));	/* port 1 */
+		if(args[0]&(1<<27))phy_write(ioaddr, 29, 20, (phy_read(ioaddr, 29, 20) | 0x2000));	/* port 2 */
+		if(args[0]&(1<<25))phy_write(ioaddr, 29, 20, (phy_read(ioaddr, 29, 20) | 0x0020));	/* port 3 */
 
-	} 
+	}
 	return -EOPNOTSUPP;
 }
 
@@ -697,19 +711,18 @@ static int r6040_poll(struct net_device *dev, int *budget)
 	unsigned long flags;
 	
 	
-	ioaddr = dev->base_addr;	
+	ioaddr = dev->base_addr;
 	lp = (struct r6040_private *)dev->priv;
-	unsigned long rx_work = dev->quota ;
-	unsigned long rx ;
-	
-	
+	unsigned long rx_work = dev->quota;
+	unsigned long rx;	
 #if 1
 	/* TX interrupt request */
 	if (NAPI_status & 0x10) {
-		
 		descptr = lp->tx_remove_ptr;
-		while(lp->tx_free_desc < TX_DCNT) {
-			if (descptr->status & 0x8000) break; /* Not complte */
+		while (lp->tx_free_desc < TX_DCNT) {
+			if (descptr->status & 0x8000)
+				break; /* Not complte */
+			
 			skb_ptr = descptr->skb_ptr;
 			pci_unmap_single(lp->pdev, descptr->buf, skb_ptr->len, PCI_DMA_TODEVICE);
 			dev_kfree_skb_irq(skb_ptr); /* Free buffer */
@@ -719,36 +732,36 @@ static int r6040_poll(struct net_device *dev, int *budget)
 		}
 		lp->tx_remove_ptr = descptr;
 		if (lp->tx_free_desc) netif_wake_queue(dev);
-	} 
+	}
 #endif	
 #if 1
 	/* RX interrupt request */
-	if (NAPI_status & 0x01) {		
-		
+	if (NAPI_status & 0x01) {
 		descptr = lp->rx_remove_ptr;
-		while(lp->rx_free_desc) {
-			if (descptr->status & 0x8000) break; /* No Rx packet */
+		while (lp->rx_free_desc) {
+			if (descptr->status & 0x8000)
+				break; /* No Rx packet */
 			skb_ptr = descptr->skb_ptr;
 			descptr->skb_ptr = 0;
 			skb_ptr->dev = dev;
 			skb_put(skb_ptr, descptr->len - 4);
 			pci_unmap_single(lp->pdev, descptr->buf, MAX_BUF_SIZE, PCI_DMA_FROMDEVICE);
-             		skb_ptr->protocol = eth_type_trans(skb_ptr, dev);             		  
-             		netif_receive_skb(skb_ptr); /* Send to upper layer */
+			skb_ptr->protocol = eth_type_trans(skb_ptr, dev);
+			netif_receive_skb(skb_ptr); /* Send to upper layer */
 			lp->stats.rx_packets++;
 			lp->stats.rx_bytes += descptr->len;
 			descptr = descptr->vndescp; /* To next descriptor */
 			lp->rx_free_desc--;
 		}
 		lp->rx_remove_ptr = descptr;
-		
 	}
 	/* Allocate new RX buffer */
-	if (lp->rx_free_desc < RX_DCNT) rx_buf_alloc(lp,dev);
+	if (lp->rx_free_desc < RX_DCNT)
+		rx_buf_alloc(lp, dev);
 	
 	local_irq_disable();
 	netif_rx_complete(dev);
-	outw(R6040_INT_MASK,ioaddr + 0x40);	
+	outw(R6040_INT_MASK, ioaddr + 0x40);
 	local_irq_enable();
 	return 0;
 #endif		
@@ -777,7 +790,7 @@ static void r6040_up(struct net_device *dev)
 	lp->tx_remove_ptr = lp->tx_insert_ptr;
 	lp->rx_insert_ptr = (struct r6040_descriptor *)lp->tx_insert_ptr+TX_DCNT;
 	lp->rx_remove_ptr = lp->rx_insert_ptr;
-	
+
 	/* Init TX descriptor */
 	descptr = lp->tx_insert_ptr;
 	desc_dma = lp->desc_dma;
@@ -804,9 +817,9 @@ static void r6040_up(struct net_device *dev)
 	(descptr - 1)->vndescp = lp->rx_insert_ptr;
 
 	/* Allocate buffer for RX descriptor */
-	rx_buf_alloc(lp,dev);
+	rx_buf_alloc(lp, dev);
 
-#if RDC_DEBUG 
+#if RDC_DEBUG
 descptr = lp->tx_insert_ptr;
 for (i = 0; i < TX_DCNT; i++) {
  printk("%08lx:%04x %04x %08lx %08lx %08lx %08lx\n", descptr, descptr->status, descptr->len, descptr->buf, descptr->skb_ptr, descptr->ndesc, descptr->vndescp);
@@ -821,8 +834,8 @@ for (i = 0; i < RX_DCNT; i++) {
 
 	/* MAC operation register */
 	outw(0x01, ioaddr+0x04);	/* Reset MAC */
-        outw(2   , ioaddr+0xAC);        /* Reset internal state machine */
-	outw(0   , ioaddr+0xAC);
+        outw(2, ioaddr+0xAC);		/* Reset internal state machine */
+	outw(0, ioaddr+0xAC);
 	udelay(5000);
 
 	/* TX and RX descriptor start Register */
@@ -838,9 +851,8 @@ for (i = 0; i < RX_DCNT; i++) {
 	/* Buffer Size Register */
 	outw(MAX_BUF_SIZE, ioaddr+0x18);
 
-	if ((lp->switch_sig = phy_read(ioaddr, 0, 2)) == 0x0243)	// ICPlus IP175C Signature
-	{
-		phy_write(ioaddr, 29,31, 0x175C);	//Enable registers
+	if ((lp->switch_sig = phy_read(ioaddr, 0, 2)) == ICPLUS_PHY_ID) {
+		phy_write(ioaddr, 29,31, 0x175C); /* Enable registers */
 		lp->phy_mode = 0x8000;
 	} else {
 		/* PHY Mode Check */
@@ -864,10 +876,10 @@ for (i = 0; i < RX_DCNT; i++) {
 	outw(0x0802, ioaddr + 0x10);
 
 	/* upgrade performance (by RDC guys) */
-	phy_write(ioaddr,30,17,(phy_read(ioaddr,30,17)|0x4000));        //bit 14=1
-	phy_write(ioaddr,30,17,~((~phy_read(ioaddr,30,17))|0x2000));    //bit 13=0
-	phy_write(ioaddr,0,19,0x0000);
-	phy_write(ioaddr,0,30,0x01F0);
+	phy_write(ioaddr, 30, 17, (phy_read(ioaddr, 30, 17) | 0x4000));        //bit 14=1
+	phy_write(ioaddr, 30, 17, ~((~phy_read(ioaddr, 30, 17)) | 0x2000));    //bit 13=0
+	phy_write(ioaddr, 0, 19, 0x0000);
+	phy_write(ioaddr, 0, 30, 0x01F0);
 
 	/* Interrupt Mask Register */
 	outw(R6040_INT_MASK, ioaddr + 0x40);
@@ -879,48 +891,52 @@ for (i = 0; i < RX_DCNT; i++) {
 */
 static void r6040_timer(unsigned long data)
 {
- 	struct net_device *dev=(struct net_device *)data;
+	struct net_device *dev = (struct net_device *)data;
 	struct r6040_private *lp = dev->priv;
 	u16 ioaddr = dev->base_addr, phy_mode;
- 
+
  	RDC_DBUG("r6040_timer()", 0);
 
 	/* Polling PHY Chip Status */
 	if (PHY_MODE == 0x3100) 
 		phy_mode = phy_mode_chk(dev);
-	else phy_mode = (PHY_MODE & 0x0100) ? 0x8000:0x0;
+	else
+		phy_mode = (PHY_MODE & 0x0100) ? 0x8000:0x0;
 
 	if (phy_mode != lp->phy_mode) {
 		lp->phy_mode = phy_mode;
 		lp->mcr0 = (lp->mcr0 & 0x7fff) | phy_mode;
 		outw(lp->mcr0, ioaddr);
-		printk("<RDC> Link Change %x \n", inw(ioaddr));
+		printk(KERN_INFO "Link Change %x \n", inw(ioaddr));
 	}
 
 	/* Debug */
 //	printk("<RDC> Timer: CR0 %x CR40 %x CR3C %x\n", inw(ioaddr), inw(ioaddr+0x40), inw(ioaddr+0x3c));
 
- 	/* Timer active again */
- 	lp->timer.expires = TIMER_WUT;
- 	add_timer(&lp->timer);
+	/* Timer active again */
+	lp->timer.expires = TIMER_WUT;
+	add_timer(&lp->timer);
 }
 
 /* Allocate skb buffer for rx descriptor */
-static void rx_buf_alloc(struct r6040_private *lp,struct net_device *dev)
+static void rx_buf_alloc(struct r6040_private *lp, struct net_device *dev)
 {
 	struct r6040_descriptor *descptr;
 	int ioaddr = dev->base_addr ;
 
 	RDC_DBUG("rx_buf_alloc()", 0);
+
 	descptr = lp->rx_insert_ptr;
-	while(lp->rx_free_desc < RX_DCNT){
+	while (lp->rx_free_desc < RX_DCNT) {
 		descptr->skb_ptr = dev_alloc_skb(MAX_BUF_SIZE);
-		if (!descptr->skb_ptr) break;
+
+		if (!descptr->skb_ptr)
+			break;
 		descptr->buf = cpu_to_le32(pci_map_single(lp->pdev, descptr->skb_ptr->tail, MAX_BUF_SIZE, PCI_DMA_FROMDEVICE));
 		descptr->status = 0x8000;
 		descptr = descptr->vndescp;
 		lp->rx_free_desc++;
-		outw(lp->mcr0 | 0x0002, ioaddr);	//Trigger Rx DMA
+		outw(lp->mcr0 | 0x0002, ioaddr); /* Trigger Rx DMA */
 	}
 	lp->rx_insert_ptr = descptr;
 }
@@ -935,7 +951,8 @@ static int phy_mode_chk(struct net_device *dev)
 
 	/* PHY Link Status Check */
 	phy_dat = phy_read(ioaddr, lp->phy_addr, 1);
-	if (!(phy_dat & 0x4)) return 0x8000;	/* Link Failed, full duplex */
+	if (!(phy_dat & 0x4))
+		return 0x8000;	/* Link Failed, full duplex */
 
 	/* PHY Chip Auto-Negotiation Status */
 	phy_dat = phy_read(ioaddr, lp->phy_addr, 1);
@@ -943,8 +960,10 @@ static int phy_mode_chk(struct net_device *dev)
 		/* Auto Negotiation Mode */
 		phy_dat = phy_read(ioaddr, lp->phy_addr, 5);
 		phy_dat &= phy_read(ioaddr, lp->phy_addr, 4);
-		if (phy_dat & 0x140) phy_dat = 0x8000;
-		else phy_dat = 0;
+		if (phy_dat & 0x140)
+			phy_dat = 0x8000;
+		else
+			phy_dat = 0;
 	} else {
 		/* Force Mode */
 		phy_dat = phy_read(ioaddr, lp->phy_addr, 0);
@@ -962,7 +981,7 @@ static int phy_read(int ioaddr, int phy_addr, int reg_idx)
 
 	RDC_DBUG("phy_read()", 0);
 	outw(0x2000 + reg_idx + (phy_addr << 8), ioaddr + 0x20);
-	do{}while( (i++ < 2048) && (inw(ioaddr + 0x20) & 0x2000) );
+	do {} while ((i++ < 2048) && (inw(ioaddr + 0x20) & 0x2000));
 
 	return inw(ioaddr + 0x24);
 }
@@ -984,8 +1003,9 @@ enum {
 
 static struct pci_device_id r6040_pci_tbl[] = {
 	{0x17F3, 0x6040, PCI_ANY_ID, PCI_ANY_ID, 0, 0, RDC_6040},
-	//{0x1106, 0x3065, PCI_ANY_ID, PCI_ANY_ID, 0, 0, RDC_6040},
-	{0,}			/* terminate list */
+	/* {PCI_VENDOR_ID_RDC, PCI_DEVICE_ID_R6040, PCI_ANY_ID, PCI_ANY_ID, 0, 0, RDC_6040},*/
+	/*{0x1106, 0x3065, PCI_ANY_ID, PCI_ANY_ID, 0, 0, RDC_6040},*/
+	{0,}
 };
 MODULE_DEVICE_TABLE(pci, r6040_pci_tbl);
 
@@ -1001,15 +1021,13 @@ static int __init r6040_init (void)
 {
 	RDC_DBUG("r6040_init()", 0);
 
-	printk(version);
+	printk(KERN_INFO version);
 	printed_version = 1;
 
-	if (parent != NULL)
-	{
+	if (parent != NULL) {
 		struct net_device *the_parent = dev_get_by_name(parent);
 
-		if (the_parent == NULL)
-		{
+		if (the_parent == NULL) {
 			printk (KERN_ERR DRV_NAME ": Unknown device \"%s\" specified.\n", parent);
 			return -EINVAL;
 		}
@@ -1029,13 +1047,3 @@ static void __exit r6040_cleanup (void)
 
 module_init(r6040_init);
 module_exit(r6040_cleanup);
-
-
-/*
- * Local variables:
- *  compile-command: "gcc -DMODULE -D__KERNEL__ -I/usr/src/linux/net/inet -Wall -Wstrict-prototypes -O6 -c r6040.c `[ -f /usr/include/linux/modversions.h ] && echo -DMODVERSIONS`"
- *  c-indent-level: 4
- *  c-basic-offset: 4
- *  tab-width: 4
- * End:
- */
