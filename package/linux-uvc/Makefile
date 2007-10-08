@@ -23,7 +23,7 @@ define KernelPackage/video-uvc
   SUBMENU:=Video Support
   TITLE:=USB Video Class (UVC) support
   URL:=http://linux-uvc.berlios.de/
-  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core +kmod-video-core
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core kmod-video-core
   FILES:=$(PKG_BUILD_DIR)/uvcvideo.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,uvcvideo)
 endef
