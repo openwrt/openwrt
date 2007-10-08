@@ -134,7 +134,7 @@ diff -Nru 1/pci.c 2/pci.c
  
  	if (ptr) {
  		log(L_DEBUG, "%s sz=%d adr=0x%p phy=0x%08llx\n",
-@@ -4016,10 +4017,371 @@
+@@ -4016,10 +4017,370 @@
  	return OK;
  }
  
@@ -477,7 +477,6 @@ diff -Nru 1/pci.c 2/pci.c
 +
 +	/* remove dev registration */
 +
-+	free_irq(adev->irq, adev);
 +	acx_sem_unlock(adev);
 +	vlynq_disable_device(vdev);
 +
@@ -506,7 +505,7 @@ diff -Nru 1/pci.c 2/pci.c
  static const struct pci_device_id acxpci_id_tbl[] __devinitdata = {
  	{
  	 .vendor = PCI_VENDOR_ID_TI,
-@@ -4071,7 +4433,7 @@
+@@ -4071,7 +4432,7 @@
  	.resume = acxpci_e_resume
  #endif /* CONFIG_PM */
  };
@@ -515,7 +514,7 @@ diff -Nru 1/pci.c 2/pci.c
  
  /***********************************************************************
  ** acxpci_e_init_module
-@@ -4080,7 +4442,7 @@
+@@ -4080,7 +4441,7 @@
  */
  int __init acxpci_e_init_module(void)
  {
@@ -524,7 +523,7 @@ diff -Nru 1/pci.c 2/pci.c
  
  	FN_ENTER;
  
-@@ -4100,10 +4462,15 @@
+@@ -4100,10 +4461,15 @@
  #endif
  	log(L_INIT,
  	    "acx: " ENDIANNESS_STRING
@@ -541,7 +540,7 @@ diff -Nru 1/pci.c 2/pci.c
  	FN_EXIT1(res);
  	return res;
  }
-@@ -4119,7 +4486,12 @@
+@@ -4119,7 +4485,12 @@
  {
  	FN_ENTER;
  
