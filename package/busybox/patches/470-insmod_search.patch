@@ -1,8 +1,8 @@
 Index: busybox-1.7.2/modutils/insmod.c
 ===================================================================
---- busybox-1.7.2.orig/modutils/insmod.c	2007-10-05 14:39:19.922555340 +0200
-+++ busybox-1.7.2/modutils/insmod.c	2007-10-05 21:08:55.442650322 +0200
-@@ -61,19 +61,107 @@
+--- busybox-1.7.2.orig/modutils/insmod.c	2007-10-08 22:22:17.132454529 +0200
++++ busybox-1.7.2/modutils/insmod.c	2007-10-08 22:29:04.267655851 +0200
+@@ -61,19 +61,110 @@
  #include "libbb.h"
  #include <libgen.h>
  #include <sys/utsname.h>
@@ -101,12 +101,15 @@ Index: busybox-1.7.2/modutils/insmod.c
 +		check_module_name_match, 0, filename, 0);
 +
 +	/* Check if we have a complete path */
-+	if (g_filename != NULL) {
-+		if ((stat(g_filename, &st) == 0) && S_ISREG(st.st_mode))
-+			ret = 0;
-+		else
-+			free(g_filename);
-+	}
++	if (g_filename == NULL)
++		goto done;
++
++	if ((stat(g_filename, &st) == 0) && S_ISREG(st.st_mode))
++		ret = 0;
++	else
++		free(g_filename);
++
++done:
 +	free(filename);
 +
 +	return ret;
@@ -114,7 +117,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  
  
  #if ENABLE_FEATURE_2_4_MODULES
-@@ -677,7 +765,6 @@
+@@ -677,7 +768,6 @@
  #endif
  
  
@@ -122,7 +125,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  enum { STRVERSIONLEN = 64 };
  
  /*======================================================================*/
-@@ -790,37 +877,6 @@
+@@ -790,37 +880,6 @@
  static int n_ext_modules_used;
  extern int delete_module(const char *);
  
@@ -160,7 +163,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  static struct obj_file *arch_new_file(void)
  {
  	struct arch_file *f;
-@@ -3952,145 +4008,57 @@
+@@ -3952,145 +4011,57 @@
  void print_load_map(struct obj_file *f);
  #endif
  
@@ -227,7 +230,7 @@ Index: busybox-1.7.2/modutils/insmod.c
 -			k_version = myuname.release[2] - '0';
 -		}
 -	}
- 
+-
 -#if ENABLE_FEATURE_2_6_MODULES
 -	if (k_version > 4 && len > 3 && tmp[len - 3] == '.'
 -	 && tmp[len - 2] == 'k' && tmp[len - 1] == 'o'
@@ -241,7 +244,7 @@ Index: busybox-1.7.2/modutils/insmod.c
 -			tmp[len] = '\0';
 -		}
 -
--
+ 
 -#if ENABLE_FEATURE_2_6_MODULES
 -	if (k_version > 4)
 -		m_fullName = xasprintf("%s.ko", tmp);
@@ -329,7 +332,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  
  	f = obj_load(fp, LOADBITS);
  	if (f == NULL)
-@@ -4120,7 +4088,7 @@
+@@ -4120,7 +4091,7 @@
  				"\t%s was compiled for kernel version %s\n"
  				"\twhile this kernel is version %s",
  				flag_force_load ? "warning: " : "",
@@ -338,7 +341,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  			if (!flag_force_load)
  				goto out;
  		}
-@@ -4173,7 +4141,7 @@
+@@ -4173,7 +4144,7 @@
  	hide_special_symbols(f);
  
  #if ENABLE_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
@@ -347,7 +350,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  #endif /* FEATURE_INSMOD_KSYMOOPS_SYMBOLS */
  
  	new_create_module_ksymtab(f);
-@@ -4220,30 +4188,22 @@
+@@ -4220,30 +4191,22 @@
  	if (flag_print_load_map)
  		print_load_map(f);
  
@@ -384,7 +387,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  /* We use error numbers in a loose translation... */
  static const char *moderror(int err)
  {
-@@ -4261,19 +4221,33 @@
+@@ -4261,19 +4224,32 @@
  	}
  }
  
@@ -415,15 +418,14 @@ Index: busybox-1.7.2/modutils/insmod.c
  	if (!filename)
  		bb_show_usage();
  
-+	g_filename = filename;
 +	ret = find_module(filename);
-+	if (ret)
++	if (ret || (g_filename == NULL))
 +		goto done;
 +
  	/* Rest is options */
  	options = xzalloc(1);
  	optlen = 0;
-@@ -4283,36 +4257,46 @@
+@@ -4283,36 +4259,47 @@
  		optlen += sprintf(options + optlen, (strchr(*argv,' ') ? "\"%s\" " : "%s "), *argv);
  	}
  
@@ -471,6 +473,7 @@ Index: busybox-1.7.2/modutils/insmod.c
 +{
 +	int ret;
 +
++	g_filename = NULL;
 +#if ENABLE_FEATURE_2_6_MODULES
 +	ret = insmod_main_26(argc, argv);
 +	if (ret != ENOTSUP)
