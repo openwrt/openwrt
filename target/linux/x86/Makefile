@@ -19,4 +19,6 @@ DEFAULT_PACKAGES += kmod-natsemi kmod-ne2k-pci
 $(eval $(call Target,generic))
 $(eval $(call Target,mediacenter))
 $(eval $(call BuildTarget))
-
+$(eval $(call RequireCommand,mkisofs, \
+   	Please install mkisofs. \
+))

@@ -48,6 +48,13 @@ menu "Target Images"
 		help
 		  Ext2 file system with some free space for uml images
 
+	config TARGET_ROOTFS_ISO 
+		bool "iso" 
+		default n 
+		depends TARGET_ROOTFS_INITRAMFS && TARGET_x86 
+		help 
+		  Create some bootable ISO image 
+
 comment "Image Options"
 
 source "target/linux/*/image/Config.in"

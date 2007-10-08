@@ -74,6 +74,20 @@ define Image/Build/squashfs
     $(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
 
+define Image/Build/iso 
+	$(CP) \
+		$(STAGING_DIR_HOST)/usr/lib/grub/i386-pc/stage2_eltorito \
+		$(KDIR)/root.grub/boot/grub/stage2_eltorito 
+	sed -i \
+		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1))) $(BOOTOPTS)#g' \
+		-e 's#@BAUDRATE@#$(CONFIG_X86_GRUB_BAUDRATE)#g' \
+		-e 's#(hd0,0)#(cd)#g' \
+		 $(KDIR)/root.grub/boot/grub/menu.lst 
+	$(CP) $(KDIR)/bzImage $(KDIR)/root.grub/boot/vmlinuz 
+	mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table \
+		-o $(KDIR)/root.iso $(KDIR)/root.grub 
+endef 
+
 define Image/BuildKernel
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinuz
 endef
@@ -86,3 +100,4 @@ define Image/Build
 endef
 
 $(eval $(call BuildImage))
+

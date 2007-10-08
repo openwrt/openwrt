@@ -81,6 +81,12 @@ ifeq ($(CONFIG_TARGET_ROOTFS_EXT2FS),y)
   endef
 endif
 
+ifeq ($(CONFIG_TARGET_ROOTFS_ISO),y) 
+  define Image/mkfs/iso 
+		$(call Image/Build,iso) 
+  endef 
+endif 
+
 
 define Image/mkfs/prepare/default
 	find $(TARGET_DIR) -type f -not -perm +0100 -not -name 'ssh_host*' | $(XARGS) chmod 0644
@@ -113,6 +119,7 @@ ifneq ($(IB),1)
 	$(call Image/mkfs/squashfs)
 	$(call Image/mkfs/tgz)
 	$(call Image/mkfs/ext2)
+	$(call Image/mkfs/iso)
 else
   install: compile install-targets
 	$(call Image/BuildKernel)
@@ -120,6 +127,7 @@ else
 	$(call Image/mkfs/squashfs)
 	$(call Image/mkfs/tgz)
 	$(call Image/mkfs/ext2)
+	$(call Image/mkfs/iso)
 endif
 	
 ifneq ($(IB),1)
