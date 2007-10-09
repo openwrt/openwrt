@@ -16,7 +16,7 @@ include $(TOPDIR)/include/verbose.mk
 ifneq ($(VERSION),)
   OPENWRTVERSION:=$(VERSION) ($(OPENWRTVERSION))
 else
-  REV:=$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' )
+  REV:=$(if $(wildcard .svn/entries),$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' ))
   ifneq ($(REV),)
     OPENWRTVERSION:=$(OPENWRTVERSION)/r$(REV)
   endif
