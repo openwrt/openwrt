@@ -137,16 +137,19 @@ endef
 
 $(eval $(call KernelPackage,scsi-core))
 
-define KernelPackage/scsi-generic 
-  TITLE:=Kernel support for SCSI generic 
-  SUBMENU:=$(EMENU) 
-  KCONFIG:=$(CONFIG_CHR_DEV_SG) 
-  FILES:= \ 
-    $(LINUX_DIR)/drivers/scsi/sg.$(LINUX_KMOD_SUFFIX) 
-  AUTOLOAD:=$(call AutoLoad,65,sg) 
+
+define KernelPackage/scsi-generic
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Kernel support for SCSI generic
+  KCONFIG:= \
+	CONFIG_CHR_DEV_SG
+  FILES:= \
+	$(LINUX_DIR)/drivers/scsi/sg.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,65,sg)
 endef
 
-$(eval $(call KernelPackage,scsi-generic)) 
+$(eval $(call KernelPackage,scsi-generic))
+
 
 define KernelPackage/loop
   SUBMENU:=$(BLOCK_MENU)
