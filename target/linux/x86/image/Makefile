@@ -14,14 +14,6 @@ ROOTPART=$(strip $(subst ",, $(CONFIG_X86_GRUB_ROOTPART)))
 
 
 ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
-  define Build/Compile
-	$(MAKE) -C grub compile
-  endef
-
-  define Build/Clean
-	$(MAKE) -C grub clean
-  endef
-
   define Image/cmdline/squashfs
     block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=squashfs init=/etc/preinit
   endef
