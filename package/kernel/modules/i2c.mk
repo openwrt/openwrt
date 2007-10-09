@@ -93,6 +93,22 @@ endef
 $(eval $(call KernelPackage,i2c-gpio))
 
 
+define KernelPackage/i2c-gpio-custom
+  SUBMENU:=$(I2C_MENU)
+  TITLE:=Custom GPIO-based I2C device
+  DEPENDS:=@TARGET_adm5120 kmod-i2c-core +kmod-i2c-gpio
+  KCONFIG:=CONFIG_I2C_GPIO_CUSTOM
+  FILES:=$(LINUX_DIR)/drivers/i2c/busses/i2c-gpio-custom.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,58,i2c-gpio-custom)
+endef
+
+define KernelPackage/i2c-gpio-custom/description
+ Kernel module for register a custom i2c-gpio platform device.
+endef
+
+$(eval $(call KernelPackage,i2c-gpio-custom))
+
+
 define KernelPackage/i2c-scx200
   SUBMENU:=$(I2C_MENU)
   TITLE:=Geode SCx200 I2C using GPIO pins
