@@ -19,8 +19,17 @@ PKG_MD5SUM:=cd3f3eb54446be6003156158d51f4884
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/grub-$(PKG_VERSION)
+PKG_TARGETS:=bin
 
 include $(INCLUDE_DIR)/package.mk
+
+define Package/grub
+  SECTION:=boot
+  DEPENDS:=@TARGET_x86
+  CATEGORY:=Boot Loaders
+  TITLE:=GRand Unified Bootloader
+  URL:=http://www.gnu.org/software/grub/
+endef
 
 ifeq ($(HOST_ARCH),x86_64)
 CONFIGURE_FLAGS:= \
@@ -70,4 +79,4 @@ define Build/InstallDev
 	mv $(STAGING_DIR_HOST)/usr/sbin/grub $(STAGING_DIR_HOST)/bin
 endef
 
-$(eval $(call Build/DefaultTargets))
+$(eval $(call BuildPackage,grub))
