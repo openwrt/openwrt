@@ -1,7 +1,7 @@
-Index: linux-2.6.23-rc9/drivers/net/r8169.c
+Index: linux-2.6.23/drivers/net/r8169.c
 ===================================================================
---- linux-2.6.23-rc9.orig/drivers/net/r8169.c	2007-10-02 12:50:51.000000000 +0800
-+++ linux-2.6.23-rc9/drivers/net/r8169.c	2007-10-03 23:39:30.000000000 +0800
+--- linux-2.6.23.orig/drivers/net/r8169.c	2007-10-10 04:31:38.000000000 +0800
++++ linux-2.6.23/drivers/net/r8169.c	2007-10-10 13:53:17.000000000 +0800
 @@ -1459,7 +1459,7 @@
  		.hw_start	= rtl_hw_start_8169,
  		.region		= 1,
@@ -29,7 +29,7 @@ Index: linux-2.6.23-rc9/drivers/net/r8169.c
  				  RxFIFOOver | TxErr | TxOK | RxOK | RxErr,
  		.napi_event	= RxFIFOOver | TxErr | TxOK | RxOK | RxOverflow
  	}
-@@ -2769,10 +2769,12 @@
+@@ -2779,10 +2779,12 @@
  			break;
  		}
  

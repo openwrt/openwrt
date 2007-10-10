@@ -1,7 +1,7 @@
-Index: linux-2.6.23-rc6/include/linux/LzmaDecode.h
+Index: linux-2.6.23/include/linux/LzmaDecode.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc6/include/linux/LzmaDecode.h	2007-09-21 16:23:55.000000000 +0800
++++ linux-2.6.23/include/linux/LzmaDecode.h	2007-10-10 13:51:27.000000000 +0800
 @@ -0,0 +1,100 @@
 +/*
 +  LzmaDecode.h
@@ -103,10 +103,10 @@ Index: linux-2.6.23-rc6/include/linux/LzmaDecode.h
 +    UInt32 *outSizeProcessed);
 +
 +#endif
-Index: linux-2.6.23-rc6/lib/LzmaDecode.c
+Index: linux-2.6.23/lib/LzmaDecode.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc6/lib/LzmaDecode.c	2007-09-21 16:23:55.000000000 +0800
++++ linux-2.6.23/lib/LzmaDecode.c	2007-10-10 13:51:27.000000000 +0800
 @@ -0,0 +1,663 @@
 +/*
 +  LzmaDecode.c
@@ -771,16 +771,16 @@ Index: linux-2.6.23-rc6/lib/LzmaDecode.c
 +  *outSizeProcessed = nowPos;
 +  return LZMA_RESULT_OK;
 +}
-Index: linux-2.6.23-rc6/lib/Makefile
+Index: linux-2.6.23/lib/Makefile
 ===================================================================
---- linux-2.6.23-rc6.orig/lib/Makefile	2007-09-21 16:23:55.000000000 +0800
-+++ linux-2.6.23-rc6/lib/Makefile	2007-09-21 16:23:55.000000000 +0800
+--- linux-2.6.23.orig/lib/Makefile	2007-10-10 13:50:24.000000000 +0800
++++ linux-2.6.23/lib/Makefile	2007-10-10 13:51:53.000000000 +0800
 @@ -13,7 +13,7 @@
  lib-y	+= kobject.o kref.o kobject_uevent.o klist.o
  
  obj-y += div64.o sort.o parser.o halfmd4.o debug_locks.o random32.o \
--	 bust_spinlocks.o hexdump.o
-+	 bust_spinlocks.o hexdump.o LzmaDecode.o
+-	 bust_spinlocks.o hexdump.o kasprintf.o
++	 bust_spinlocks.o hexdump.o kasprintf.o LzmaDecode.o
  
  ifeq ($(CONFIG_DEBUG_KOBJECT),y)
  CFLAGS_kobject.o += -DDEBUG
