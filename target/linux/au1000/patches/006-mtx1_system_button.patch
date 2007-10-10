@@ -15,7 +15,7 @@ diff -urN linux-2.6.16.7/arch/mips/au1000/mtx-1/Makefile linux-2.6.16.7.new/arch
 @@ -8,3 +8,4 @@
  #
  
- lib-y := init.o board_setup.o irqmap.o
+ lib-y := init.o board_setup.o irqmap.o platform.o
 +obj-y := mtx-1_sysbtn.o
 diff -urN linux-2.6.16.7/arch/mips/au1000/mtx-1/mtx-1_sysbtn.c linux-2.6.16.7.new/arch/mips/au1000/mtx-1/mtx-1_sysbtn.c
 --- linux-2.6.16.7/arch/mips/au1000/mtx-1/mtx-1_sysbtn.c	1970-01-01 01:00:00.000000000 +0100
