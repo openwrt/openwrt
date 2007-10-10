@@ -26,13 +26,31 @@
 
 #include <asm/gpio.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
-static struct gpio_led default_leds[] = {
-        { .name = "mtx1:green", .gpio = 211, .active_low = 1, },
-	{ .name = "mtx1:red", gpio = 212, .active_low = 1, },
-}
+static struct resource mtx1_wdt_res[] = {
+	[0] = {
+		.start = 15,
+		.end = 15,
+		.name = "mtx1-wdt-gpio",
+		.flags = IORESOURCE_IRQ,
+	}
+};
 
-static struct gpio_led_platform_data mtx1_led_data;
+static struct platform_device mtx1_wdt = {
+	.name = "mtx1-wdt",
+	.id = 0,
+	.num_resources = ARRAY_SIZE(mtx1_wdt_res),
+	.resource = mtx1_wdt_res,
+};
+
+static struct gpio_led default_leds[] = {
+        { .name = "mtx1:green", .gpio = 211, },
+	{ .name = "mtx1:red", .gpio = 212, },
+};
+
+static struct gpio_led_platform_data mtx1_led_data = {
+	.num_leds = ARRAY_SIZE(default_leds),
+	.leds = default_leds,
+};
 
 static struct platform_device mtx1_gpio_leds = {
         .name = "leds-gpio",
@@ -41,18 +59,16 @@ static struct platform_device mtx1_gpio_leds = {
                 .platform_data = &mtx1_led_data,
         }
 };
-#endif
+
+static struct platform_device *mtx1_devs[] = {
+	&mtx1_gpio_leds,
+	&mtx1_wdt
+};
 
 static int __init mtx1_register_devices(void)
 {
-	int res;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
-	mtx1_led_data.num_leds = ARRAY_SIZE(default_leds);
-        mtx1_led_data.leds = default_leds;
-	res = platform_device_register(&mtx1_gpio_leds);
-#endif
-	return res;
+	return platform_add_devices(mtx1_devs, ARRAY_SIZE(mtx1_devs));
 }
 
-arch_initall(mtx1_register_devices);
+arch_initcall(mtx1_register_devices);
 
