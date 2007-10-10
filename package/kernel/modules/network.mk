@@ -80,10 +80,25 @@ endef
 $(eval $(call KernelPackage,capi))
 
 
+define KernelPackage/ipip
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=IP-in-IP encapsulation
+  KCONFIG:=CONFIG_NET_IPIP
+  FILES:=$(LINUX_DIR)/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,ipip)
+endef
+
+define KernelPackage/ipip/description
+ Kernel modules for IP-in-IP encapsulation
+endef
+
+$(eval $(call KernelPackage,ipip))
+
+
 define KernelPackage/ipsec
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPsec related modules (IPv4 and IPv6)
-  DEPENDS:=@LINUX_2_6 +kmod-crypto-des +kmod-crypto-hmac +kmod-crypto-md5 +kmod-crypto-sha1
+  DEPENDS:=@LINUX_2_6 +kmod-crypto-core +kmod-crypto-des +kmod-crypto-hmac +kmod-crypto-md5 +kmod-crypto-sha1
   KCONFIG:= \
 	CONFIG_NET_KEY \
 	CONFIG_XFRM_USER
@@ -166,24 +181,22 @@ endef
 $(eval $(call KernelPackage,ipsec6))
 
 
+# NOTE: tunnel4 is not selectable by itself, so enable ipip for that
 define KernelPackage/iptunnel4
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=IP tunneling (IPv4)
+  TITLE:=IPv4 tunneling
+  DEPENDS:= @LINUX_2_6
   KCONFIG:= \
 	CONFIG_NET_IPIP \
 	CONFIG_INET_TUNNEL
-  FILES:=$(LINUX_DIR)/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,ipip)
-endef
-
-define KernelPackage/iptunnel4/2.6
-#  KCONFIG+=CONFIG_INET_TUNNEL
-  FILES+=$(LINUX_DIR)/net/ipv4/tunnel4.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD+=$(call AutoLoad,31,tunnel4)
+  FILES:= $(foreach mod,tunnel4, \
+	$(LINUX_DIR)/net/ipv4/$(mod).$(LINUX_KMOD_SUFFIX) \
+  )
+  AUTOLOAD:=$(call AutoLoad,31,tunnel4)
 endef
 
 define KernelPackage/iptunnel4/description
- Kernel modules for IPv4 tunneling (IP in IP encapsulation)
+ Kernel modules for IPv4 tunneling
 endef
 
 $(eval $(call KernelPackage,iptunnel4))
@@ -191,15 +204,18 @@ $(eval $(call KernelPackage,iptunnel4))
 
 define KernelPackage/iptunnel6
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=IP tunneling (IPv6)
+  TITLE:=IPv6 tunneling
   DEPENDS:= @LINUX_2_6
-  KCONFIG:=CONFIG_INET6_TUNNEL
-  FILES:=$(LINUX_DIR)/net/ipv6/tunnel6.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:= \
+	CONFIG_INET6_TUNNEL
+  FILES:= $(foreach mod,tunnel6, \
+	$(LINUX_DIR)/net/ipv6/$(mod).$(LINUX_KMOD_SUFFIX) \
+  )
   AUTOLOAD:=$(call AutoLoad,31,tunnel6)
 endef
 
 define KernelPackage/iptunnel6/description
- Kernel modules for IPv6 tunneling (IPv6 in IPv6 tunnels)
+ Kernel modules for IPv6 tunneling
 endef
 
 $(eval $(call KernelPackage,iptunnel6))
@@ -208,17 +224,9 @@ $(eval $(call KernelPackage,iptunnel6))
 define KernelPackage/ipv6
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPv6 support
-  KCONFIG:= \
-	CONFIG_IPV6 \
-  	CONFIG_IPV6_SIT
+  KCONFIG:=CONFIG_IPV6
   FILES:=$(LINUX_DIR)/net/ipv6/ipv6.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,ipv6)
-endef
-
-define KernelPackage/ipv6/2.6
-#  KCONFIG+=CONFIG_IPV6_SIT
-  FILES+=$(LINUX_DIR)/net/ipv6/sit.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD+=$(call AutoLoad,21,sit)
 endef
 
 define KernelPackage/ipv6/description
@@ -226,6 +234,22 @@ define KernelPackage/ipv6/description
 endef
 
 $(eval $(call KernelPackage,ipv6))
+
+
+define KernelPackage/sit
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=IPv6-in-IPv4 tunnelling
+  DEPENDS:= @LINUX_2_6 +kmod-ipv6 +kmod-iptunnel4
+  KCONFIG+=CONFIG_IPV6_SIT
+  FILES:=$(LINUX_DIR)/net/ipv6/sit.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,32,sit)
+endef
+
+define KernelPackage/sit/description
+ Kernel modules for IPv6-in-IPv4 tunnelling
+endef
+
+$(eval $(call KernelPackage,sit))
 
 
 define KernelPackage/gre
