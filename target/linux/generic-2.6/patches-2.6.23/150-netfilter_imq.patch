@@ -1,7 +1,7 @@
-Index: linux-2.6.23-rc6/drivers/net/imq.c
+Index: linux-2.6.23/drivers/net/imq.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc6/drivers/net/imq.c	2007-09-21 16:24:02.000000000 +0800
++++ linux-2.6.23/drivers/net/imq.c	2007-10-10 13:52:54.000000000 +0800
 @@ -0,0 +1,402 @@
 +/*
 + *             Pseudo-driver for the intermediate queue device.
@@ -405,10 +405,10 @@ Index: linux-2.6.23-rc6/drivers/net/imq.c
 +MODULE_AUTHOR("http://www.linuximq.net");
 +MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.23-rc6/drivers/net/Kconfig
+Index: linux-2.6.23/drivers/net/Kconfig
 ===================================================================
---- linux-2.6.23-rc6.orig/drivers/net/Kconfig	2007-09-21 16:23:53.000000000 +0800
-+++ linux-2.6.23-rc6/drivers/net/Kconfig	2007-09-21 16:24:02.000000000 +0800
+--- linux-2.6.23.orig/drivers/net/Kconfig	2007-10-10 04:31:38.000000000 +0800
++++ linux-2.6.23/drivers/net/Kconfig	2007-10-10 13:52:54.000000000 +0800
 @@ -112,6 +112,129 @@
  	  To compile this driver as a module, choose M here: the module
  	  will be called eql.  If unsure, say N.
@@ -539,11 +539,11 @@ Index: linux-2.6.23-rc6/drivers/net/Kconfig
  config TUN
  	tristate "Universal TUN/TAP device driver support"
  	select CRC32
-Index: linux-2.6.23-rc6/drivers/net/Makefile
+Index: linux-2.6.23/drivers/net/Makefile
 ===================================================================
---- linux-2.6.23-rc6.orig/drivers/net/Makefile	2007-09-21 16:23:53.000000000 +0800
-+++ linux-2.6.23-rc6/drivers/net/Makefile	2007-09-21 16:24:02.000000000 +0800
-@@ -130,6 +130,7 @@
+--- linux-2.6.23.orig/drivers/net/Makefile	2007-10-10 04:31:38.000000000 +0800
++++ linux-2.6.23/drivers/net/Makefile	2007-10-10 13:52:54.000000000 +0800
+@@ -131,6 +131,7 @@
  obj-$(CONFIG_XEN_NETDEV_FRONTEND) += xen-netfront.o
  
  obj-$(CONFIG_DUMMY) += dummy.o
@@ -551,10 +551,10 @@ Index: linux-2.6.23-rc6/drivers/net/Makefile
  obj-$(CONFIG_IFB) += ifb.o
  obj-$(CONFIG_MACVLAN) += macvlan.o
  obj-$(CONFIG_DE600) += de600.o
-Index: linux-2.6.23-rc6/include/linux/imq.h
+Index: linux-2.6.23/include/linux/imq.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc6/include/linux/imq.h	2007-09-21 16:24:02.000000000 +0800
++++ linux-2.6.23/include/linux/imq.h	2007-10-10 13:52:54.000000000 +0800
 @@ -0,0 +1,9 @@
 +#ifndef _IMQ_H
 +#define _IMQ_H
@@ -565,10 +565,10 @@ Index: linux-2.6.23-rc6/include/linux/imq.h
 +#define IMQ_F_ENQUEUE  0x80
 +
 +#endif /* _IMQ_H */
-Index: linux-2.6.23-rc6/include/linux/netfilter_ipv4/ipt_IMQ.h
+Index: linux-2.6.23/include/linux/netfilter_ipv4/ipt_IMQ.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc6/include/linux/netfilter_ipv4/ipt_IMQ.h	2007-09-21 16:24:02.000000000 +0800
++++ linux-2.6.23/include/linux/netfilter_ipv4/ipt_IMQ.h	2007-10-10 13:52:54.000000000 +0800
 @@ -0,0 +1,8 @@
 +#ifndef _IPT_IMQ_H
 +#define _IPT_IMQ_H
@@ -578,10 +578,10 @@ Index: linux-2.6.23-rc6/include/linux/netfilter_ipv4/ipt_IMQ.h
 +};
 +
 +#endif /* _IPT_IMQ_H */
-Index: linux-2.6.23-rc6/include/linux/netfilter_ipv6/ip6t_IMQ.h
+Index: linux-2.6.23/include/linux/netfilter_ipv6/ip6t_IMQ.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc6/include/linux/netfilter_ipv6/ip6t_IMQ.h	2007-09-21 16:24:02.000000000 +0800
++++ linux-2.6.23/include/linux/netfilter_ipv6/ip6t_IMQ.h	2007-10-10 13:52:54.000000000 +0800
 @@ -0,0 +1,8 @@
 +#ifndef _IP6T_IMQ_H
 +#define _IP6T_IMQ_H
@@ -591,10 +591,10 @@ Index: linux-2.6.23-rc6/include/linux/netfilter_ipv6/ip6t_IMQ.h
 +};
 +
 +#endif /* _IP6T_IMQ_H */
-Index: linux-2.6.23-rc6/include/linux/skbuff.h
+Index: linux-2.6.23/include/linux/skbuff.h
 ===================================================================
---- linux-2.6.23-rc6.orig/include/linux/skbuff.h	2007-09-21 16:23:53.000000000 +0800
-+++ linux-2.6.23-rc6/include/linux/skbuff.h	2007-09-21 16:24:02.000000000 +0800
+--- linux-2.6.23.orig/include/linux/skbuff.h	2007-10-10 04:31:38.000000000 +0800
++++ linux-2.6.23/include/linux/skbuff.h	2007-10-10 13:52:54.000000000 +0800
 @@ -296,6 +296,10 @@
  	struct nf_conntrack	*nfct;
  	struct sk_buff		*nfct_reasm;
@@ -606,10 +606,10 @@ Index: linux-2.6.23-rc6/include/linux/skbuff.h
  #ifdef CONFIG_BRIDGE_NETFILTER
  	struct nf_bridge_info	*nf_bridge;
  #endif
-Index: linux-2.6.23-rc6/net/core/dev.c
+Index: linux-2.6.23/net/core/dev.c
 ===================================================================
---- linux-2.6.23-rc6.orig/net/core/dev.c	2007-09-21 16:23:53.000000000 +0800
-+++ linux-2.6.23-rc6/net/core/dev.c	2007-09-21 16:24:02.000000000 +0800
+--- linux-2.6.23.orig/net/core/dev.c	2007-10-10 04:31:38.000000000 +0800
++++ linux-2.6.23/net/core/dev.c	2007-10-10 13:52:54.000000000 +0800
 @@ -94,6 +94,9 @@
  #include <linux/skbuff.h>
  #include <net/sock.h>
@@ -630,10 +630,10 @@ Index: linux-2.6.23-rc6/net/core/dev.c
  			dev_queue_xmit_nit(skb, dev);
  
  		if (netif_needs_gso(dev, skb)) {
-Index: linux-2.6.23-rc6/net/core/skbuff.c
+Index: linux-2.6.23/net/core/skbuff.c
 ===================================================================
---- linux-2.6.23-rc6.orig/net/core/skbuff.c	2007-09-21 16:23:53.000000000 +0800
-+++ linux-2.6.23-rc6/net/core/skbuff.c	2007-09-21 16:24:02.000000000 +0800
+--- linux-2.6.23.orig/net/core/skbuff.c	2007-10-10 04:31:38.000000000 +0800
++++ linux-2.6.23/net/core/skbuff.c	2007-10-10 13:52:54.000000000 +0800
 @@ -421,6 +421,10 @@
  	C(ip_summed);
  	skb_copy_queue_mapping(n, skb);
@@ -656,10 +656,10 @@ Index: linux-2.6.23-rc6/net/core/skbuff.c
  #ifdef CONFIG_NET_SCHED
  #ifdef CONFIG_NET_CLS_ACT
  	new->tc_verd = old->tc_verd;
-Index: linux-2.6.23-rc6/net/ipv4/netfilter/ipt_IMQ.c
+Index: linux-2.6.23/net/ipv4/netfilter/ipt_IMQ.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc6/net/ipv4/netfilter/ipt_IMQ.c	2007-09-21 16:24:02.000000000 +0800
++++ linux-2.6.23/net/ipv4/netfilter/ipt_IMQ.c	2007-10-10 13:52:54.000000000 +0800
 @@ -0,0 +1,69 @@
 +/*
 + * This target marks packets to be enqueued to an imq device
@@ -730,10 +730,10 @@ Index: linux-2.6.23-rc6/net/ipv4/netfilter/ipt_IMQ.c
 +MODULE_AUTHOR("http://www.linuximq.net");
 +MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.23-rc6/net/ipv4/netfilter/Kconfig
+Index: linux-2.6.23/net/ipv4/netfilter/Kconfig
 ===================================================================
---- linux-2.6.23-rc6.orig/net/ipv4/netfilter/Kconfig	2007-09-21 16:24:02.000000000 +0800
-+++ linux-2.6.23-rc6/net/ipv4/netfilter/Kconfig	2007-09-21 16:24:02.000000000 +0800
+--- linux-2.6.23.orig/net/ipv4/netfilter/Kconfig	2007-10-10 13:52:53.000000000 +0800
++++ linux-2.6.23/net/ipv4/netfilter/Kconfig	2007-10-10 13:52:54.000000000 +0800
 @@ -351,6 +351,17 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
@@ -752,10 +752,10 @@ Index: linux-2.6.23-rc6/net/ipv4/netfilter/Kconfig
  config IP_NF_TARGET_TOS
  	tristate "TOS target support"
  	depends on IP_NF_MANGLE
-Index: linux-2.6.23-rc6/net/ipv4/netfilter/Makefile
+Index: linux-2.6.23/net/ipv4/netfilter/Makefile
 ===================================================================
---- linux-2.6.23-rc6.orig/net/ipv4/netfilter/Makefile	2007-09-21 16:24:02.000000000 +0800
-+++ linux-2.6.23-rc6/net/ipv4/netfilter/Makefile	2007-09-21 16:24:02.000000000 +0800
+--- linux-2.6.23.orig/net/ipv4/netfilter/Makefile	2007-10-10 13:52:53.000000000 +0800
++++ linux-2.6.23/net/ipv4/netfilter/Makefile	2007-10-10 13:52:54.000000000 +0800
 @@ -58,6 +58,7 @@
  obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
  obj-$(CONFIG_IP_NF_TARGET_TOS) += ipt_TOS.o
@@ -764,10 +764,10 @@ Index: linux-2.6.23-rc6/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
  obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
-Index: linux-2.6.23-rc6/net/ipv6/netfilter/ip6t_IMQ.c
+Index: linux-2.6.23/net/ipv6/netfilter/ip6t_IMQ.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc6/net/ipv6/netfilter/ip6t_IMQ.c	2007-09-21 16:24:02.000000000 +0800
++++ linux-2.6.23/net/ipv6/netfilter/ip6t_IMQ.c	2007-10-10 13:52:54.000000000 +0800
 @@ -0,0 +1,69 @@
 +/*
 + * This target marks packets to be enqueued to an imq device
@@ -838,10 +838,10 @@ Index: linux-2.6.23-rc6/net/ipv6/netfilter/ip6t_IMQ.c
 +MODULE_AUTHOR("http://www.linuximq.net");
 +MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.23-rc6/net/ipv6/netfilter/Kconfig
+Index: linux-2.6.23/net/ipv6/netfilter/Kconfig
 ===================================================================
---- linux-2.6.23-rc6.orig/net/ipv6/netfilter/Kconfig	2007-09-21 16:23:53.000000000 +0800
-+++ linux-2.6.23-rc6/net/ipv6/netfilter/Kconfig	2007-09-21 16:24:02.000000000 +0800
+--- linux-2.6.23.orig/net/ipv6/netfilter/Kconfig	2007-10-10 04:31:38.000000000 +0800
++++ linux-2.6.23/net/ipv6/netfilter/Kconfig	2007-10-10 13:52:54.000000000 +0800
 @@ -173,6 +173,15 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
@@ -858,10 +858,10 @@ Index: linux-2.6.23-rc6/net/ipv6/netfilter/Kconfig
  config IP6_NF_TARGET_HL
  	tristate  'HL (hoplimit) target support'
  	depends on IP6_NF_MANGLE
-Index: linux-2.6.23-rc6/net/ipv6/netfilter/Makefile
+Index: linux-2.6.23/net/ipv6/netfilter/Makefile
 ===================================================================
---- linux-2.6.23-rc6.orig/net/ipv6/netfilter/Makefile	2007-09-21 16:23:53.000000000 +0800
-+++ linux-2.6.23-rc6/net/ipv6/netfilter/Makefile	2007-09-21 16:24:02.000000000 +0800
+--- linux-2.6.23.orig/net/ipv6/netfilter/Makefile	2007-10-10 04:31:38.000000000 +0800
++++ linux-2.6.23/net/ipv6/netfilter/Makefile	2007-10-10 13:52:54.000000000 +0800
 @@ -13,6 +13,7 @@
  obj-$(CONFIG_IP6_NF_MATCH_OWNER) += ip6t_owner.o
  obj-$(CONFIG_IP6_NF_FILTER) += ip6table_filter.o
@@ -870,10 +870,10 @@ Index: linux-2.6.23-rc6/net/ipv6/netfilter/Makefile
  obj-$(CONFIG_IP6_NF_TARGET_HL) += ip6t_HL.o
  obj-$(CONFIG_IP6_NF_QUEUE) += ip6_queue.o
  obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_LOG.o
-Index: linux-2.6.23-rc6/net/sched/sch_generic.c
+Index: linux-2.6.23/net/sched/sch_generic.c
 ===================================================================
---- linux-2.6.23-rc6.orig/net/sched/sch_generic.c	2007-09-21 16:23:53.000000000 +0800
-+++ linux-2.6.23-rc6/net/sched/sch_generic.c	2007-09-21 16:24:02.000000000 +0800
+--- linux-2.6.23.orig/net/sched/sch_generic.c	2007-10-10 04:31:38.000000000 +0800
++++ linux-2.6.23/net/sched/sch_generic.c	2007-10-10 13:52:54.000000000 +0800
 @@ -190,6 +190,11 @@
  	return ret;
  }

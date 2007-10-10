@@ -1,7 +1,8 @@
-diff -urN linux-2.6.22.4/fs/Kconfig linux-2.6.22.4-squashfs/fs/Kconfig
---- linux-2.6.22.4/fs/Kconfig	2007-08-21 06:33:06.000000000 +0200
-+++ linux-2.6.22.4-squashfs/fs/Kconfig	2007-09-20 19:13:44.000000000 +0200
-@@ -1367,6 +1367,71 @@
+Index: linux-2.6.23/fs/Kconfig
+===================================================================
+--- linux-2.6.23.orig/fs/Kconfig	2007-10-10 13:52:12.000000000 +0800
++++ linux-2.6.23/fs/Kconfig	2007-10-10 13:52:14.000000000 +0800
+@@ -1364,6 +1364,71 @@
  
  	  If unsure, say N.
  
@@ -73,9 +74,10 @@ diff -urN linux-2.6.22.4/fs/Kconfig linux-2.6.22.4-squashfs/fs/Kconfig
  config VXFS_FS
  	tristate "FreeVxFS file system support (VERITAS VxFS(TM) compatible)"
  	depends on BLOCK
-diff -urN linux-2.6.22.4/fs/Makefile linux-2.6.22.4-squashfs/fs/Makefile
---- linux-2.6.22.4/fs/Makefile	2007-08-21 06:33:06.000000000 +0200
-+++ linux-2.6.22.4-squashfs/fs/Makefile	2007-09-20 19:13:44.000000000 +0200
+Index: linux-2.6.23/fs/Makefile
+===================================================================
+--- linux-2.6.23.orig/fs/Makefile	2007-10-10 13:52:12.000000000 +0800
++++ linux-2.6.23/fs/Makefile	2007-10-10 13:52:14.000000000 +0800
 @@ -72,6 +72,7 @@
  obj-$(CONFIG_JBD2)		+= jbd2/
  obj-$(CONFIG_EXT2_FS)		+= ext2/
@@ -84,9 +86,10 @@ diff -urN linux-2.6.22.4/fs/Makefile linux-2.6.22.4-squashfs/fs/Makefile
  obj-$(CONFIG_RAMFS)		+= ramfs/
  obj-$(CONFIG_HUGETLBFS)		+= hugetlbfs/
  obj-$(CONFIG_CODA_FS)		+= coda/
-diff -urN linux-2.6.22.4/fs/squashfs/inode.c linux-2.6.22.4-squashfs/fs/squashfs/inode.c
---- linux-2.6.22.4/fs/squashfs/inode.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22.4-squashfs/fs/squashfs/inode.c	2007-09-20 19:13:44.000000000 +0200
+Index: linux-2.6.23/fs/squashfs/inode.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.23/fs/squashfs/inode.c	2007-10-10 13:52:14.000000000 +0800
 @@ -0,0 +1,2122 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
@@ -2210,9 +2213,10 @@ diff -urN linux-2.6.22.4/fs/squashfs/inode.c linux-2.6.22.4-squashfs/fs/squashfs
 +MODULE_DESCRIPTION("squashfs, a compressed read-only filesystem");
 +MODULE_AUTHOR("Phillip Lougher <phillip@lougher.org.uk>");
 +MODULE_LICENSE("GPL");
-diff -urN linux-2.6.22.4/fs/squashfs/Makefile linux-2.6.22.4-squashfs/fs/squashfs/Makefile
---- linux-2.6.22.4/fs/squashfs/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22.4-squashfs/fs/squashfs/Makefile	2007-09-20 19:13:44.000000000 +0200
+Index: linux-2.6.23/fs/squashfs/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.23/fs/squashfs/Makefile	2007-10-10 13:52:14.000000000 +0800
 @@ -0,0 +1,7 @@
 +#
 +# Makefile for the linux squashfs routines.
@@ -2221,9 +2225,10 @@ diff -urN linux-2.6.22.4/fs/squashfs/Makefile linux-2.6.22.4-squashfs/fs/squashf
 +obj-$(CONFIG_SQUASHFS) += squashfs.o
 +squashfs-y += inode.o
 +squashfs-y += squashfs2_0.o
-diff -urN linux-2.6.22.4/fs/squashfs/squashfs2_0.c linux-2.6.22.4-squashfs/fs/squashfs/squashfs2_0.c
---- linux-2.6.22.4/fs/squashfs/squashfs2_0.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22.4-squashfs/fs/squashfs/squashfs2_0.c	2007-09-20 19:13:44.000000000 +0200
+Index: linux-2.6.23/fs/squashfs/squashfs2_0.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.23/fs/squashfs/squashfs2_0.c	2007-10-10 13:52:14.000000000 +0800
 @@ -0,0 +1,758 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
@@ -2983,9 +2988,10 @@ diff -urN linux-2.6.22.4/fs/squashfs/squashfs2_0.c linux-2.6.22.4-squashfs/fs/sq
 +
 +	return 1;
 +}
-diff -urN linux-2.6.22.4/fs/squashfs/squashfs.h linux-2.6.22.4-squashfs/fs/squashfs/squashfs.h
---- linux-2.6.22.4/fs/squashfs/squashfs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22.4-squashfs/fs/squashfs/squashfs.h	2007-09-20 19:13:44.000000000 +0200
+Index: linux-2.6.23/fs/squashfs/squashfs.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.23/fs/squashfs/squashfs.h	2007-10-10 13:52:14.000000000 +0800
 @@ -0,0 +1,86 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
@@ -3073,10 +3079,11 @@ diff -urN linux-2.6.22.4/fs/squashfs/squashfs.h linux-2.6.22.4-squashfs/fs/squas
 +	return 0;
 +}
 +#endif
-diff -urN linux-2.6.22.4/include/linux/magic.h linux-2.6.22.4-squashfs/include/linux/magic.h
---- linux-2.6.22.4/include/linux/magic.h	2007-08-21 06:33:06.000000000 +0200
-+++ linux-2.6.22.4-squashfs/include/linux/magic.h	2007-09-20 19:15:43.000000000 +0200
-@@ -36,6 +36,9 @@
+Index: linux-2.6.23/include/linux/magic.h
+===================================================================
+--- linux-2.6.23.orig/include/linux/magic.h	2007-10-10 13:52:12.000000000 +0800
++++ linux-2.6.23/include/linux/magic.h	2007-10-10 13:52:14.000000000 +0800
+@@ -35,6 +35,9 @@
  #define REISER2FS_SUPER_MAGIC_STRING	"ReIsEr2Fs"
  #define REISER2FS_JR_SUPER_MAGIC_STRING	"ReIsEr3Fs"
  
@@ -3086,9 +3093,10 @@ diff -urN linux-2.6.22.4/include/linux/magic.h linux-2.6.22.4-squashfs/include/l
  #define SMB_SUPER_MAGIC		0x517B
  #define USBDEVICE_SUPER_MAGIC	0x9fa2
  
-diff -urN linux-2.6.22.4/include/linux/squashfs_fs.h linux-2.6.22.4-squashfs/include/linux/squashfs_fs.h
---- linux-2.6.22.4/include/linux/squashfs_fs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22.4-squashfs/include/linux/squashfs_fs.h	2007-09-20 19:15:01.000000000 +0200
+Index: linux-2.6.23/include/linux/squashfs_fs.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.23/include/linux/squashfs_fs.h	2007-10-10 13:52:14.000000000 +0800
 @@ -0,0 +1,911 @@
 +#ifndef SQUASHFS_FS
 +#define SQUASHFS_FS
@@ -4001,9 +4009,10 @@ diff -urN linux-2.6.22.4/include/linux/squashfs_fs.h linux-2.6.22.4-squashfs/inc
 +
 +#endif
 +#endif
-diff -urN linux-2.6.22.4/include/linux/squashfs_fs_i.h linux-2.6.22.4-squashfs/include/linux/squashfs_fs_i.h
---- linux-2.6.22.4/include/linux/squashfs_fs_i.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22.4-squashfs/include/linux/squashfs_fs_i.h	2007-09-20 19:13:44.000000000 +0200
+Index: linux-2.6.23/include/linux/squashfs_fs_i.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.23/include/linux/squashfs_fs_i.h	2007-10-10 13:52:14.000000000 +0800
 @@ -0,0 +1,45 @@
 +#ifndef SQUASHFS_FS_I
 +#define SQUASHFS_FS_I
@@ -4050,9 +4059,10 @@ diff -urN linux-2.6.22.4/include/linux/squashfs_fs_i.h linux-2.6.22.4-squashfs/i
 +	struct inode	vfs_inode;
 +};
 +#endif
-diff -urN linux-2.6.22.4/include/linux/squashfs_fs_sb.h linux-2.6.22.4-squashfs/include/linux/squashfs_fs_sb.h
---- linux-2.6.22.4/include/linux/squashfs_fs_sb.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22.4-squashfs/include/linux/squashfs_fs_sb.h	2007-09-20 19:13:44.000000000 +0200
+Index: linux-2.6.23/include/linux/squashfs_fs_sb.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.23/include/linux/squashfs_fs_sb.h	2007-10-10 13:52:14.000000000 +0800
 @@ -0,0 +1,74 @@
 +#ifndef SQUASHFS_FS_SB
 +#define SQUASHFS_FS_SB
@@ -4128,9 +4138,10 @@ diff -urN linux-2.6.22.4/include/linux/squashfs_fs_sb.h linux-2.6.22.4-squashfs/
 +	int			(*read_fragment_index_table)(struct super_block *s);
 +};
 +#endif
-diff -urN linux-2.6.22.4/init/do_mounts_rd.c linux-2.6.22.4-squashfs/init/do_mounts_rd.c
---- linux-2.6.22.4/init/do_mounts_rd.c	2007-08-21 06:33:06.000000000 +0200
-+++ linux-2.6.22.4-squashfs/init/do_mounts_rd.c	2007-09-20 19:13:44.000000000 +0200
+Index: linux-2.6.23/init/do_mounts_rd.c
+===================================================================
+--- linux-2.6.23.orig/init/do_mounts_rd.c	2007-10-10 13:52:12.000000000 +0800
++++ linux-2.6.23/init/do_mounts_rd.c	2007-10-10 13:52:14.000000000 +0800
 @@ -5,6 +5,7 @@
  #include <linux/ext2_fs.h>
  #include <linux/romfs_fs.h>

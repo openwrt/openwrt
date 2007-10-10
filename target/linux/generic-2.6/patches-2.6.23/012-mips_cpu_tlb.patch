@@ -1,8 +1,8 @@
-Index: linux-2.6.23-rc6/arch/mips/mm/tlbex.c
+Index: linux-2.6.23/arch/mips/mm/tlbex.c
 ===================================================================
---- linux-2.6.23-rc6.orig/arch/mips/mm/tlbex.c	2007-09-21 16:23:54.000000000 +0800
-+++ linux-2.6.23-rc6/arch/mips/mm/tlbex.c	2007-09-21 16:23:58.000000000 +0800
-@@ -887,7 +887,6 @@
+--- linux-2.6.23.orig/arch/mips/mm/tlbex.c	2007-10-10 04:31:38.000000000 +0800
++++ linux-2.6.23/arch/mips/mm/tlbex.c	2007-10-10 13:52:34.000000000 +0800
+@@ -902,7 +902,6 @@
  	case CPU_R10000:
  	case CPU_R12000:
  	case CPU_R14000:
@@ -10,7 +10,7 @@ Index: linux-2.6.23-rc6/arch/mips/mm/tlbex.c
  	case CPU_SB1:
  	case CPU_SB1A:
  	case CPU_4KSC:
-@@ -916,6 +915,7 @@
+@@ -933,6 +932,7 @@
  		tlbw(p);
  		break;
  
