@@ -1,42 +1,19 @@
 --- linux-2.6.22.4.orig/drivers/i2c/busses/Kconfig	2007-08-21 06:33:06.000000000 +0200
 +++ linux-2.6.22.4/drivers/i2c/busses/Kconfig	2007-10-09 12:53:13.000000000 +0200
-@@ -125,6 +125,40 @@
+@@ -125,6 +125,17 @@
  	  This is a very simple bitbanging I2C driver utilizing the
  	  arch-neutral GPIO API to control the SCL and SDA lines.
  
 +config I2C_GPIO_CUSTOM
-+	tristate "Custom GPIO-based I2C device"
++	tristate "Custom GPIO-based I2C driver"
 +	depends on GENERIC_GPIO
 +	select I2C_GPIO
 +	help
-+	  This is an I2C driver to register a custom i2c-gpio device.
++	  This is an I2C driver to register 1 to 4 custom I2C buses using 
++	  GPIO lines.
 +
 +	  This support is also available as a module.  If so, the module
-+	  will be called i2c-gpio-dev.
-+
-+config I2C_GPIO_CUSTOM_SDA
-+	int "Custom GPIO pin for SDA"
-+	depends on I2C_GPIO_CUSTOM
-+	default "0"
-+	help
-+	  Enter the GPIO pin number used for the SDA signal.  This value can
-+	  also be specified with a module parameter.
-+
-+config I2C_GPIO_CUSTOM_SCL
-+	int "Custom GPIO pin for SCL"
-+	depends on I2C_GPIO_CUSTOM
-+	default "1"
-+	help
-+	  Enter the GPIO pin number used for the SCL signal.  This value can
-+	  also be specified with a module parameter.
-+
-+config I2C_GPIO_CUSTOM_DEVICE_ID
-+	int "Custom GPIO device id"
-+	depends on I2C_GPIO_CUSTOM
-+	default	"0"
-+	help
-+	  Enter the number used for the device id of the custom i2c-gpio device.
-+	  This value can also be specified with a module parameter.
++	  will be called i2c-gpio-custom.
 +
  config I2C_HYDRA
  	tristate "CHRP Apple Hydra Mac I/O I2C interface"
