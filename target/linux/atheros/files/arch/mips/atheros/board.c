@@ -29,6 +29,8 @@
 
 char *board_config, *radio_config;
 
+extern int early_serial_setup(struct uart_port *port);
+
 static u8 *find_board_config(char *flash_limit)
 {
 	char *addr;
