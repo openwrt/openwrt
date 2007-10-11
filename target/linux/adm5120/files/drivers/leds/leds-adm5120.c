@@ -38,6 +38,7 @@
 #include <adm5120_info.h>
 
 #define NUM_LEDS_MAX	23
+#define DRV_DESC	"LED driver for the ADM5120 based boards"
 
 #define ADM5120_GPIO_xxxx	0x100	/* an unknown pin */
 
