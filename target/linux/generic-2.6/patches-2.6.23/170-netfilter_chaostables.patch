@@ -179,7 +179,7 @@ Index: linux-2.6.23/net/netfilter/xt_CHAOS.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
 +++ linux-2.6.23/net/netfilter/xt_CHAOS.c	2007-10-10 13:52:59.000000000 +0800
-@@ -0,0 +1,204 @@
+@@ -0,0 +1,205 @@
 +/*
 +	CHAOS target for netfilter
 +
@@ -233,7 +233,8 @@ Index: linux-2.6.23/net/netfilter/xt_CHAOS.c
 +	const int protoff = ip_hdrlen(*pskb);
 +	const int offset  = ntohs(ip_hdr(*pskb)->frag_off) & IP_OFFSET;
 +	const struct xt_target *destiny;
-+	int hotdrop = 0, ret;
++	bool hotdrop = false;
++	int ret;
 +
 +	ret = xm_tcp->match(*pskb, in, out, xm_tcp, &tcp_params,
 +	                    offset, protoff, &hotdrop);
@@ -284,7 +285,7 @@ Index: linux-2.6.23/net/netfilter/xt_CHAOS.c
 +	return NF_DROP;
 +}
 +
-+static int xt_chaos_checkentry(const char *tablename, const void *entry,
++static bool xt_chaos_checkentry(const char *tablename, const void *entry,
 +    const struct xt_target *target, void *targinfo,
 +#ifdef HAVE_TARGINFOSIZE
 +    unsigned int targinfosize,
@@ -295,14 +296,14 @@ Index: linux-2.6.23/net/netfilter/xt_CHAOS.c
 +	if(info->variant == XTCHAOS_DELUDE && !have_delude) {
 +		printk(KERN_WARNING PFX "Error: Cannot use --delude when "
 +		       "DELUDE module not available\n");
-+		return 0;
++		return false;
 +	}
 +	if(info->variant == XTCHAOS_TARPIT && !have_tarpit) {
 +		printk(KERN_WARNING PFX "Error: Cannot use --tarpit when "
 +		       "TARPIT module not available\n");
-+		return 0;
++		return false;
 +	}
-+	return 1;
++	return true;
 +}
 +
 +static struct xt_target xt_chaos_info = {
@@ -634,7 +635,7 @@ Index: linux-2.6.23/net/netfilter/xt_DELUDE.c
 +	return NF_DROP;
 +}
 +
-+static int xt_delude_check(const char *tablename, const void *e_void,
++static bool xt_delude_check(const char *tablename, const void *e_void,
 +    const struct xt_target *target, void *targinfo,
 +#ifdef HAVE_TARGINFOSIZE
 +    unsigned int targinfosize,
@@ -644,9 +645,9 @@ Index: linux-2.6.23/net/netfilter/xt_DELUDE.c
 +	if(hook_mask & ~((1 << NF_IP_LOCAL_IN) | (1 << NF_IP_FORWARD))) {
 +		printk(KERN_WARNING PFX "DELUDE may not be used in chains "
 +		       "other than INPUT and FORWARD\n");
-+		return 0;
++		return false;
 +	}
-+	return 1;
++	return true;
 +}
 +
 +static struct xt_target xt_delude_info = {
@@ -854,10 +855,10 @@ Index: linux-2.6.23/net/netfilter/xt_portscan.c
 +	return mark;
 +}
 +
-+static int xt_portscan_match(const struct sk_buff *skb,
++static bool xt_portscan_match(const struct sk_buff *skb,
 +    const struct net_device *in, const struct net_device *out,
 +    const struct xt_match *match, const void *matchinfo, int offset,
-+    unsigned int protoff, int *hotdrop)
++    unsigned int protoff, bool *hotdrop)
 +{
 +	const struct xt_portscan_info *info = matchinfo;
 +	enum ip_conntrack_info ctstate;
@@ -867,7 +868,7 @@ Index: linux-2.6.23/net/netfilter/xt_portscan.c
 +
 +	tcph = skb_header_pointer(skb, protoff, sizeof(tcph_buf), &tcph_buf);
 +	if(tcph == NULL)
-+		return 0;
++		return false;
 +
 +	/* Check for invalid packets: -m conntrack --ctstate INVALID */
 +	if((ctdata = nf_ct_get(skb, &ctstate)) == NULL) {
@@ -877,7 +878,7 @@ Index: linux-2.6.23/net/netfilter/xt_portscan.c
 +		 * If @ctdata is NULL, we cannot match the other scan
 +		 * types, return.
 +		 */
-+		return 0;
++		return false;
 +	}
 +
 +	/*
@@ -903,7 +904,7 @@ Index: linux-2.6.23/net/netfilter/xt_portscan.c
 +	       (info->match_gr && ctdata->mark == mark_grscan);
 +}
 +
-+static int xt_portscan_checkentry(const char *tablename, const void *entry,
++static bool xt_portscan_checkentry(const char *tablename, const void *entry,
 +    const struct xt_match *match, void *matchinfo,
 +#ifdef HAVE_MATCHINFOSIZE
 +    unsigned int matchinfosize,
@@ -916,15 +917,15 @@ Index: linux-2.6.23/net/netfilter/xt_portscan.c
 +		printk(KERN_WARNING PFX "matchinfosize %u != %Zu\n",
 +		       matchinfosize,
 +		       XT_ALIGN(sizeof(struct xt_portscan_info)));
-+		return 0;
++		return false;
 +	}
 +#endif
 +	if((info->match_stealth & ~1) || (info->match_syn & ~1) ||
 +	  (info->match_cn & ~1) || (info->match_gr & ~1)) {
 +		printk(KERN_WARNING PFX "Invalid flags\n");
-+		return 0;
++		return false;
 +	}
-+	return 1;
++	return true;
 +}
 +
 +static struct xt_match xt_portscan = {
