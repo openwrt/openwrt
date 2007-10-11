@@ -37,7 +37,7 @@
 #define CFE_EPTSEAL	0x43464531 /* CFE1 is the magic number to recognize CFE
 from other bootloaders */
 
-static int cfe_found = 0;
+static int cfe_found;
 
 static u32 cfe_handle;
 static u32 cfe_entry;
@@ -58,20 +58,16 @@ int __init cfe_present(void)
 	cfe_seal = (u32) fw_arg3;
 
 	/* Check for CFE by finding the CFE magic number */
-	if (cfe_seal != CFE_EPTSEAL) {
-		/* We are not booted from CFE */
+	if (cfe_seal != CFE_EPTSEAL)
 		return 0;
-	}
 
 	/* cfe_a1_val must be 0, because only one CPU present in the ADM5120 */
-	if (a1 != 0) {
+	if (a1 != 0)
 		return 0;
-	}
 
 	/* The cfe_handle, and the cfe_entry must be kernel mode addresses */
-	if ((cfe_handle < KSEG0) || (cfe_entry < KSEG0)) {
+	if ((cfe_handle < KSEG0) || (cfe_entry < KSEG0))
 		return 0;
-	}
 
 	cfe_found = 1;
 	return 1;

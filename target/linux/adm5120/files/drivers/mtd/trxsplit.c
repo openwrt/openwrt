@@ -38,24 +38,24 @@
 #define TRX_MAGIC	0x30524448	/* "HDR0" */
 #define TRX_VERSION	1
 #define TRX_MAX_LEN	0x3A0000
-#define TRX_NO_HEADER	1		/* Do not write TRX header */
-#define TRX_GZ_FILES	0x2     /* Contains up to TRX_MAX_OFFSET individual gzip files */
+#define TRX_NO_HEADER	0x1	/* do not write TRX header */
+#define TRX_GZ_FILES	0x2     /* contains individual gzip files */
 #define TRX_MAX_OFFSET	3
 #define TRX_MIN_KERNEL_SIZE	256*1024
 
 struct trx_header {
-	u32 magic;		/* "HDR0" */
-	u32 len;		/* Length of file including header */
-	u32 crc32;		/* 32-bit CRC from flag_version to end of file */
-	u32 flag_version;	/* 0:15 flags, 16:31 version */
-	u32 offsets[TRX_MAX_OFFSET];	/* Offsets of partitions from start of header */
+	u32 magic;	/* "HDR0" */
+	u32 len;	/* Length of file including header */
+	u32 crc32;	/* 32-bit CRC from flag_version to end of file */
+	u32 flag_version; /* 0:15 flags, 16:31 version */
+	u32 offsets[TRX_MAX_OFFSET]; /* Offsets of partitions */
 };
 
 #define BLOCK_LEN_MIN		0x10000
 
-static struct mtd_info *trx_mtd = NULL;
-static unsigned long trx_offset = 0;
-static int trx_nr_parts = 0;
+static int trx_nr_parts;
+static unsigned long trx_offset;
+static struct mtd_info *trx_mtd;
 static struct mtd_partition trx_parts[TRX_MAX_OFFSET];
 static struct trx_header trx_hdr;
 
@@ -66,7 +66,8 @@ static int trxsplit_checktrx(struct mtd_info *mtd, unsigned long offset)
 	size_t retlen;
 	int err;
 
-	err = mtd->read(mtd, offset, sizeof(trx_hdr), &retlen, (void *)&trx_hdr);
+	err = mtd->read(mtd, offset, sizeof(trx_hdr), &retlen,
+			(void *)&trx_hdr);
 	if (err) {
 		printk(KERN_ALERT PFX "unable to read from '%s'\n", mtd->name);
 		goto err_out;
@@ -113,7 +114,7 @@ static void trxsplit_findtrx(struct mtd_info *mtd)
 	printk(KERN_INFO PFX "searching TRX header in '%s'\n", mtd->name);
 
 	err = 0;
-	for (offset=0; offset < mtd->size; offset+=blocklen) {
+	for (offset = 0; offset < mtd->size; offset += blocklen) {
 		err = trxsplit_checktrx(mtd, offset);
 		if (err == 0)
 			break;
@@ -134,7 +135,7 @@ static void trxsplit_create_partitions(struct mtd_info *mtd)
 	int err;
 	int i;
 
-	for (i=0; i<TRX_MAX_OFFSET;i++) {
+	for (i = 0; i < TRX_MAX_OFFSET; i++) {
 		part = &trx_parts[i];
 		if (trx_hdr.offsets[i] == 0)
 			continue;
@@ -142,12 +143,12 @@ static void trxsplit_create_partitions(struct mtd_info *mtd)
 		trx_nr_parts++;
 	}
 
-	for (i=0; i<trx_nr_parts-1; i++) {
+	for (i = 0; i < trx_nr_parts-1; i++)
 		trx_parts[i].size = trx_parts[i+1].offset - trx_parts[i].offset;
-	}
+
 	trx_parts[i].size = mtd->size - trx_parts[i].offset;
 
-	i=0;
+	i = 0;
 	part = &trx_parts[i];
 	if (part->size < TRX_MIN_KERNEL_SIZE) {
 		part->name = "loader";
@@ -216,8 +217,9 @@ static int __init trxsplit_init(void)
 	trxsplit_scan();
 
 	if (trx_mtd) {
-		printk(KERN_INFO PFX "creating TRX partitions in '%s' (%d,%d)\n",
-			trx_mtd->name, MTD_BLOCK_MAJOR, trx_mtd->index);
+		printk(KERN_INFO PFX "creating TRX partitions in '%s' "
+			"(%d,%d)\n", trx_mtd->name, MTD_BLOCK_MAJOR,
+			trx_mtd->index);
 		trxsplit_create_partitions(trx_mtd);
 	}
 

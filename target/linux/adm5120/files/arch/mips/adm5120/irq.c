@@ -29,19 +29,19 @@
 #include <linux/interrupt.h>
 #include <linux/ioport.h>
 
-#include <asm/io.h>
+#include <linux/io.h>
 #include <asm/irq.h>
 #include <asm/irq_cpu.h>
 #include <asm/mipsregs.h>
 #include <asm/bitops.h>
 
-#include <asm/mach-adm5120/adm5120_defs.h>
-#include <asm/mach-adm5120/adm5120_irq.h>
+#include <adm5120_defs.h>
+#include <adm5120_irq.h>
 
 #define INTC_WRITE(reg, val)	__raw_writel((val), \
 	(void __iomem *)(KSEG1ADDR(ADM5120_INTC_BASE) + reg))
 
-#define INTC_READ(reg)		__raw_readl( \
+#define INTC_READ(reg)		__raw_readl(\
 	(void __iomem *)(KSEG1ADDR(ADM5120_INTC_BASE) + reg))
 
 static void adm5120_intc_irq_unmask(unsigned int irq);
@@ -168,7 +168,8 @@ static void __init adm5120_intc_irq_init(int base)
 	/* disable usage of the TEST_SOURCE register */
 	INTC_WRITE(INTC_REG_IRQ_SOURCE_SELECT, 0);
 
-	for (i = ADM5120_INTC_IRQ_BASE; i <= ADM5120_INTC_IRQ_BASE+INTC_IRQ_LAST;
+	for (i = ADM5120_INTC_IRQ_BASE;
+		i <= ADM5120_INTC_IRQ_BASE+INTC_IRQ_LAST;
 		i++) {
 		irq_desc[i].status = INTC_IRQ_STATUS;
 		set_irq_chip_and_handler(i, &adm5120_intc_irq_chip,

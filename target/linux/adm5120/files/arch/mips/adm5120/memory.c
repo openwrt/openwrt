@@ -24,8 +24,8 @@
 #include <linux/init.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
+#include <linux/io.h>
 
-#include <asm/io.h>
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
 
@@ -34,8 +34,8 @@
 #include <adm5120_switch.h>
 #include <adm5120_mpmc.h>
 
-#if 1
-#  define mem_dbg(f, a...)	printk("mem_detect: " f, ## a)
+#ifdef DEBUG
+#  define mem_dbg(f, a...)	printk(KERN_INFO "mem_detect: " f, ## a)
 #else
 #  define mem_dbg(f, a...)
 #endif
@@ -49,7 +49,7 @@ static int __init mem_check_pattern(u8 *addr, unsigned long offs)
 {
 	u32 *p1 = (u32 *)addr;
 	u32 *p2 = (u32 *)(addr+offs);
-	u32 t,u,v;
+	u32 t, u, v;
 
 	/* save original value */
 	t = MEM_READL(p1);
@@ -128,9 +128,8 @@ static void __init adm5120_detect_memsize(void)
 	mem_dbg("check presence of 2nd bank\n");
 
 	p = (u8 *)KSEG1ADDR(maxsize+size-4);
-	if (mem_check_pattern(p, 0)) {
+	if (mem_check_pattern(p, 0))
 		adm5120_memsize += size;
-	}
 
 	if (maxsize != size) {
 		/* adjusting MECTRL register */
@@ -154,7 +153,7 @@ static void __init adm5120_detect_memsize(void)
 
 out:
 	mem_dbg("%dx%uMB memory found\n", (adm5120_memsize == size) ? 1 : 2 ,
-		size >>20);
+		size>>20);
 }
 
 void __init adm5120_mem_init(void)

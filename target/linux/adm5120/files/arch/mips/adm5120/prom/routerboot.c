@@ -36,13 +36,13 @@
 #include "prom_read.h"
 
 static struct rb_hard_settings rb_hs;
-static int rb_found = 0;
+static int rb_found;
 
 static int __init routerboot_load_hs(u8 *buf, u16 buflen)
 {
-	u16 id,len;
+	u16 id, len;
 	u8 *mac;
-	int i,j;
+	int i, j;
 
 	memset(&rb_hs, 0, sizeof(rb_hs));
 
@@ -88,8 +88,8 @@ static int __init routerboot_load_hs(u8 *buf, u16 buflen)
 			if (rb_hs.mac_count > RB_MAX_MAC_COUNT)
 				rb_hs.mac_count = RB_MAX_MAC_COUNT;
 			mac = buf;
-			for (i=0; i < rb_hs.mac_count; i++) {
-				for (j=0; j < RB_MAC_SIZE; j++)
+			for (i = 0; i < rb_hs.mac_count; i++) {
+				for (j = 0; j < RB_MAC_SIZE; j++)
 					rb_hs.macs[i][j] = mac[j];
 				mac += RB_MAC_SIZE;
 			}
@@ -111,7 +111,7 @@ int __init routerboot_present(void)
 {
 	struct rb_bios_settings	*bs;
 	u8 *base;
-	u32 off,len;
+	u32 off, len;
 
 	if (rb_found)
 		goto out;

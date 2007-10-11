@@ -54,80 +54,80 @@ struct adm5120_leddev {
 	struct gpio_led_platform_data pdata;
 };
 
-static int led_count = 0;
+static int led_count;
 static struct adm5120_leddev *led_devs[NUM_LEDS_MAX];
 
 #define LED_ARRAY(n)				\
 static struct gpio_led n ## _leds [] __initdata =
 
-#define LED_DATA(n,t,g,al) {			\
-	.name = (n),				\
-	.default_trigger = (t),			\
-	.gpio = (g),				\
-	.active_low = (al)			\
-	}
+#define LED_DATA(n, t, g, a) {	\
+	.name = (n),		\
+	.default_trigger = (t), \
+	.gpio = (g),		\
+	.active_low = (a)	\
+}
 
-#define LED_STD(g,n,t)	LED_DATA((n),(t),(g), 0)
-#define LED_INV(g,n,t)	LED_DATA((n),(t),(g), 1)
+#define LED_STD(g, n, t)	LED_DATA((n), (t), (g), 0)
+#define LED_INV(g, n, t)	LED_DATA((n), (t), (g), 1)
 
 /*
  * Compex boards
  */
 #if defined(CONFIG_LEDS_ADM5120_EXPERIMENTAL)
 LED_ARRAY(np27g) { /* FIXME: untested */
-	LED_STD(ADM5120_GPIO_xxxx, "lan1",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "lan2",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "lan3",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "lan4",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "wan_cond",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "wlan",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "wan_act",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "usb1",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "usb2",	NULL ),
-	LED_INV(ADM5120_GPIO_PIN2, "power",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "diag",	NULL ),
+	LED_STD(ADM5120_GPIO_xxxx, "lan1",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "lan2",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "lan3",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "lan4",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "wan_cond",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "wlan",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "wan_act",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "usb1",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "usb2",	NULL),
+	LED_INV(ADM5120_GPIO_PIN2, "power",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "diag",	NULL),
 };
 #endif
 
 #if defined(CONFIG_LEDS_ADM5120_EXPERIMENTAL)
 LED_ARRAY(np28g) { /* FIXME: untested */
-	LED_STD(ADM5120_GPIO_xxxx, "lan1",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "lan2",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "lan3",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "wan",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "wlan",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "usb1",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "usb2",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "usb3",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "usb4",	NULL ),
-	LED_INV(ADM5120_GPIO_PIN2, "power",	NULL ),
-	LED_STD(ADM5120_GPIO_xxxx, "diag",	NULL ),
+	LED_STD(ADM5120_GPIO_xxxx, "lan1",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "lan2",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "lan3",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "wan",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "wlan",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "usb1",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "usb2",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "usb3",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "usb4",	NULL),
+	LED_INV(ADM5120_GPIO_PIN2, "power",	NULL),
+	LED_STD(ADM5120_GPIO_xxxx, "diag",	NULL),
 };
 #endif
 
 LED_ARRAY(wp54g) {
-	LED_INV(ADM5120_GPIO_PIN2, "diag",	NULL ),
-	LED_INV(ADM5120_GPIO_PIN6, "wlan",	NULL ),
-	LED_INV(ADM5120_GPIO_PIN7, "wan",	NULL ),
-	LED_INV(ADM5120_GPIO_P0L0, "lan1",	NULL ),
-	LED_INV(ADM5120_GPIO_P1L0, "lan2",	NULL ),
+	LED_INV(ADM5120_GPIO_PIN2, "diag",	NULL),
+	LED_INV(ADM5120_GPIO_PIN6, "wlan",	NULL),
+	LED_INV(ADM5120_GPIO_PIN7, "wan",	NULL),
+	LED_INV(ADM5120_GPIO_P0L0, "lan1",	NULL),
+	LED_INV(ADM5120_GPIO_P1L0, "lan2",	NULL),
 };
 
 /*
  * Edimax boards
  */
 LED_ARRAY(br6104k) {
-	LED_STD(ADM5120_GPIO_PIN0, "power",		NULL ),
-	LED_INV(ADM5120_GPIO_P0L1, "wan_speed",		NULL ),
-	LED_INV(ADM5120_GPIO_P0L0, "wan_lnkact",	NULL ),
-	LED_INV(ADM5120_GPIO_P1L1, "lan1_speed",	NULL ),
-	LED_INV(ADM5120_GPIO_P1L0, "lan1_lnkact",	NULL ),
-	LED_INV(ADM5120_GPIO_P2L1, "lan2_speed",	NULL ),
-	LED_INV(ADM5120_GPIO_P2L0, "lan2_lnkact",	NULL ),
-	LED_INV(ADM5120_GPIO_P3L1, "lan3_speed",	NULL ),
-	LED_INV(ADM5120_GPIO_P3L0, "lan3_lnkact",	NULL ),
-	LED_INV(ADM5120_GPIO_P4L1, "lan4_speed",	NULL ),
-	LED_INV(ADM5120_GPIO_P4L0, "lan4_lnkact",	NULL ),
+	LED_STD(ADM5120_GPIO_PIN0, "power",		NULL),
+	LED_INV(ADM5120_GPIO_P0L1, "wan_speed",		NULL),
+	LED_INV(ADM5120_GPIO_P0L0, "wan_lnkact",	NULL),
+	LED_INV(ADM5120_GPIO_P1L1, "lan1_speed",	NULL),
+	LED_INV(ADM5120_GPIO_P1L0, "lan1_lnkact",	NULL),
+	LED_INV(ADM5120_GPIO_P2L1, "lan2_speed",	NULL),
+	LED_INV(ADM5120_GPIO_P2L0, "lan2_lnkact",	NULL),
+	LED_INV(ADM5120_GPIO_P3L1, "lan3_speed",	NULL),
+	LED_INV(ADM5120_GPIO_P3L0, "lan3_lnkact",	NULL),
+	LED_INV(ADM5120_GPIO_P4L1, "lan4_speed",	NULL),
+	LED_INV(ADM5120_GPIO_P4L0, "lan4_lnkact",	NULL),
 };
 
 /*
@@ -135,14 +135,14 @@ LED_ARRAY(br6104k) {
  */
 #if defined(CONFIG_LEDS_ADM5120_EXPERIMENTAL)
 LED_ARRAY(rb100) { /* FIXME: untested */
-	LED_STD(ADM5120_GPIO_PIN6, "power",	NULL ),
-	LED_STD(ADM5120_GPIO_PIN3, "user",	NULL ),
+	LED_STD(ADM5120_GPIO_PIN6, "power",	NULL),
+	LED_STD(ADM5120_GPIO_PIN3, "user",	NULL),
 };
 #endif
 
 LED_ARRAY(rb133) {
-	LED_STD(ADM5120_GPIO_PIN6, "power",	NULL ),
-	LED_STD(ADM5120_GPIO_PIN5, "user",	NULL ),
+	LED_STD(ADM5120_GPIO_PIN6, "power",	NULL),
+	LED_STD(ADM5120_GPIO_PIN5, "user",	NULL),
 };
 
 /*
@@ -150,38 +150,38 @@ LED_ARRAY(rb133) {
  */
 #if defined(CONFIG_LEDS_ADM5120_EXPERIMENTAL)
 LED_ARRAY(p334) { /* FIXME: untested */
-	LED_INV(ADM5120_GPIO_xxxx, "power",	NULL ),
-	LED_INV(ADM5120_GPIO_xxxx, "lan1",	NULL ),
-	LED_INV(ADM5120_GPIO_xxxx, "lan2",	NULL ),
-	LED_INV(ADM5120_GPIO_xxxx, "lan3",	NULL ),
-	LED_INV(ADM5120_GPIO_xxxx, "lan4",	NULL ),
-	LED_INV(ADM5120_GPIO_xxxx, "wan",	NULL ),
+	LED_INV(ADM5120_GPIO_xxxx, "power",	NULL),
+	LED_INV(ADM5120_GPIO_xxxx, "lan1",	NULL),
+	LED_INV(ADM5120_GPIO_xxxx, "lan2",	NULL),
+	LED_INV(ADM5120_GPIO_xxxx, "lan3",	NULL),
+	LED_INV(ADM5120_GPIO_xxxx, "lan4",	NULL),
+	LED_INV(ADM5120_GPIO_xxxx, "wan",	NULL),
 };
 #endif
 
 LED_ARRAY(p334wt) {
-	LED_INV(ADM5120_GPIO_PIN2, "power",	NULL ),
-	LED_INV(ADM5120_GPIO_P3L0, "lan1",	NULL ),
-	LED_INV(ADM5120_GPIO_P2L0, "lan2",	NULL ),
-	LED_INV(ADM5120_GPIO_P1L0, "lan3",	NULL ),
-	LED_INV(ADM5120_GPIO_P0L0, "lan4",	NULL ),
-	LED_INV(ADM5120_GPIO_P4L0, "wan",	NULL ),
-	LED_INV(ADM5120_GPIO_P4L2, "wlan",	NULL ),
-	LED_INV(ADM5120_GPIO_P2L2, "otist",	NULL ),
-	LED_INV(ADM5120_GPIO_P1L2, "hidden",	NULL ),
+	LED_INV(ADM5120_GPIO_PIN2, "power",	NULL),
+	LED_INV(ADM5120_GPIO_P3L0, "lan1",	NULL),
+	LED_INV(ADM5120_GPIO_P2L0, "lan2",	NULL),
+	LED_INV(ADM5120_GPIO_P1L0, "lan3",	NULL),
+	LED_INV(ADM5120_GPIO_P0L0, "lan4",	NULL),
+	LED_INV(ADM5120_GPIO_P4L0, "wan",	NULL),
+	LED_INV(ADM5120_GPIO_P4L2, "wlan",	NULL),
+	LED_INV(ADM5120_GPIO_P2L2, "otist",	NULL),
+	LED_INV(ADM5120_GPIO_P1L2, "hidden",	NULL),
 };
 
 #if defined(CONFIG_LEDS_ADM5120_EXPERIMENTAL)
 LED_ARRAY(p335) { /* FIXME: untested */
-	LED_INV(ADM5120_GPIO_PIN2, "power",	NULL ),
-	LED_INV(ADM5120_GPIO_P3L0, "lan1",	NULL ),
-	LED_INV(ADM5120_GPIO_P2L0, "lan2",	NULL ),
-	LED_INV(ADM5120_GPIO_P1L0, "lan3",	NULL ),
-	LED_INV(ADM5120_GPIO_P0L0, "lan4",	NULL ),
-	LED_INV(ADM5120_GPIO_P4L0, "wan",	NULL ),
-	LED_INV(ADM5120_GPIO_P4L2, "wlan",	NULL ),
-	LED_INV(ADM5120_GPIO_P2L2, "otist",	NULL ),
-	LED_INV(ADM5120_GPIO_xxxx, "usb",	NULL ),
+	LED_INV(ADM5120_GPIO_PIN2, "power",	NULL),
+	LED_INV(ADM5120_GPIO_P3L0, "lan1",	NULL),
+	LED_INV(ADM5120_GPIO_P2L0, "lan2",	NULL),
+	LED_INV(ADM5120_GPIO_P1L0, "lan3",	NULL),
+	LED_INV(ADM5120_GPIO_P0L0, "lan4",	NULL),
+	LED_INV(ADM5120_GPIO_P4L0, "wan",	NULL),
+	LED_INV(ADM5120_GPIO_P4L2, "wlan",	NULL),
+	LED_INV(ADM5120_GPIO_P2L2, "otist",	NULL),
+	LED_INV(ADM5120_GPIO_xxxx, "usb",	NULL),
 };
 #endif
 
@@ -190,36 +190,36 @@ LED_ARRAY(p335) { /* FIXME: untested */
  */
 LED_ARRAY(generic) {
 #if defined(CONFIG_LEDS_ADM5120_DIAG)
-	LED_STD(ADM5120_GPIO_PIN0, "gpio0",	NULL ),
-	LED_STD(ADM5120_GPIO_PIN1, "gpio1",	NULL ),
-	LED_STD(ADM5120_GPIO_PIN2, "gpio2",	NULL ),
-	LED_STD(ADM5120_GPIO_PIN3, "gpio3",	NULL ),
-	LED_STD(ADM5120_GPIO_PIN4, "gpio4",	NULL ),
-	LED_STD(ADM5120_GPIO_PIN5, "gpio5",	NULL ),
-	LED_STD(ADM5120_GPIO_PIN6, "gpio6",	NULL ),
-	LED_STD(ADM5120_GPIO_PIN7, "gpio7",	NULL ),
-	LED_STD(ADM5120_GPIO_P0L0, "port0led0",	NULL ),
-	LED_STD(ADM5120_GPIO_P0L1, "port0led1",	NULL ),
-	LED_STD(ADM5120_GPIO_P0L2, "port0led2",	NULL ),
-	LED_STD(ADM5120_GPIO_P1L0, "port1led0",	NULL ),
-	LED_STD(ADM5120_GPIO_P1L1, "port1led1",	NULL ),
-	LED_STD(ADM5120_GPIO_P1L2, "port1led2",	NULL ),
-	LED_STD(ADM5120_GPIO_P2L0, "port2led0",	NULL ),
-	LED_STD(ADM5120_GPIO_P2L1, "port2led1",	NULL ),
-	LED_STD(ADM5120_GPIO_P2L2, "port2led2",	NULL ),
-	LED_STD(ADM5120_GPIO_P3L0, "port3led0",	NULL ),
-	LED_STD(ADM5120_GPIO_P3L1, "port3led1",	NULL ),
-	LED_STD(ADM5120_GPIO_P3L2, "port3led2",	NULL ),
-	LED_STD(ADM5120_GPIO_P4L0, "port4led0",	NULL ),
-	LED_STD(ADM5120_GPIO_P4L1, "port4led1",	NULL ),
-	LED_STD(ADM5120_GPIO_P4L2, "port4led2",	NULL ),
+	LED_STD(ADM5120_GPIO_PIN0, "gpio0",	NULL),
+	LED_STD(ADM5120_GPIO_PIN1, "gpio1",	NULL),
+	LED_STD(ADM5120_GPIO_PIN2, "gpio2",	NULL),
+	LED_STD(ADM5120_GPIO_PIN3, "gpio3",	NULL),
+	LED_STD(ADM5120_GPIO_PIN4, "gpio4",	NULL),
+	LED_STD(ADM5120_GPIO_PIN5, "gpio5",	NULL),
+	LED_STD(ADM5120_GPIO_PIN6, "gpio6",	NULL),
+	LED_STD(ADM5120_GPIO_PIN7, "gpio7",	NULL),
+	LED_STD(ADM5120_GPIO_P0L0, "port0led0",	NULL),
+	LED_STD(ADM5120_GPIO_P0L1, "port0led1",	NULL),
+	LED_STD(ADM5120_GPIO_P0L2, "port0led2",	NULL),
+	LED_STD(ADM5120_GPIO_P1L0, "port1led0",	NULL),
+	LED_STD(ADM5120_GPIO_P1L1, "port1led1",	NULL),
+	LED_STD(ADM5120_GPIO_P1L2, "port1led2",	NULL),
+	LED_STD(ADM5120_GPIO_P2L0, "port2led0",	NULL),
+	LED_STD(ADM5120_GPIO_P2L1, "port2led1",	NULL),
+	LED_STD(ADM5120_GPIO_P2L2, "port2led2",	NULL),
+	LED_STD(ADM5120_GPIO_P3L0, "port3led0",	NULL),
+	LED_STD(ADM5120_GPIO_P3L1, "port3led1",	NULL),
+	LED_STD(ADM5120_GPIO_P3L2, "port3led2",	NULL),
+	LED_STD(ADM5120_GPIO_P4L0, "port4led0",	NULL),
+	LED_STD(ADM5120_GPIO_P4L1, "port4led1",	NULL),
+	LED_STD(ADM5120_GPIO_P4L2, "port4led2",	NULL),
 #endif
 };
 
-#define MACH_DATA(m, n) {				\
+#define MACH_DATA(m, n) { 				\
 	.machtype	= (m),				\
 	.nr_leds	= ARRAY_SIZE(n ## _leds),	\
-	.leds		= n ## _leds			\
+	.leds		= n ## _leds 			\
 }
 
 static struct mach_data machines[] __initdata = {
@@ -262,17 +262,10 @@ create_leddev(int id, struct gpio_led *led)
 	p->pdev.name = "leds-gpio";
 	p->pdev.id = id;
 	p->pdev.dev.platform_data = &p->pdata;
-	p->pdata.num_leds=1;
+	p->pdata.num_leds = 1;
 	p->pdata.leds = &p->led;
 
 	return p;
-}
-
-static void
-destroy_leddev(struct adm5120_leddev *leddev)
-{
-	if (leddev)
-		kfree(leddev);
 }
 
 static struct mach_data * __init
@@ -282,7 +275,7 @@ adm5120_leds_findmach(unsigned long machtype)
 	int i;
 
 	mach = NULL;
-	for (i=0; i<ARRAY_SIZE(machines); i++) {
+	for (i = 0; i < ARRAY_SIZE(machines); i++) {
 		if (machines[i].machtype == machtype) {
 			mach = &machines[i];
 			break;
@@ -315,7 +308,7 @@ adm5120_leds_init(void)
 		goto err;
 	}
 
-	for (i=0; i < mach->nr_leds; i++) {
+	for (i = 0; i < mach->nr_leds; i++) {
 		led_devs[i] = create_leddev(i, &mach->leds[i]);
 		if (led_devs[i] == NULL) {
 			ret = -ENOMEM;
@@ -323,7 +316,7 @@ adm5120_leds_init(void)
 		}
 	}
 
-	for (i=0; i < mach->nr_leds; i++) {
+	for (i = 0; i < mach->nr_leds; i++) {
 		ret = platform_device_register(&led_devs[i]->pdev);
 		if (ret)
 			goto err_unregister;
@@ -333,12 +326,12 @@ adm5120_leds_init(void)
 	return 0;
 
 err_unregister:
-	for (i--; i>=0; i--)
+	for (i--; i >= 0; i--)
 		platform_device_unregister(&led_devs[i]->pdev);
 
 err_destroy:
-	for (i=0; i<led_count; i++)
-		destroy_leddev(led_devs[i]);
+	for (i = 0; i < led_count; i++)
+		kfree(led_devs[i]);
 err:
 	return ret;
 }
@@ -348,9 +341,9 @@ adm5120_leds_exit(void)
 {
 	int i;
 
-	for (i=0; i < led_count; i++) {
+	for (i = 0; i < led_count; i++) {
 		platform_device_unregister(&led_devs[i]->pdev);
-		destroy_leddev(led_devs[i]);
+		kfree(led_devs[i]);
 	}
 }
 

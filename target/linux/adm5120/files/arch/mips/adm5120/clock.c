@@ -34,7 +34,7 @@
 #include <linux/err.h>
 #include <linux/clk.h>
 
-#include <asm/mach-adm5120/adm5120_defs.h>
+#include <adm5120_defs.h>
 
 struct clk {
 	unsigned long rate;
@@ -46,16 +46,16 @@ static struct clk uart_clk = {
 
 struct clk *clk_get(struct device *dev, const char *id)
 {
-       if (!strcmp(id, "UARTCLK"))
-               return &uart_clk;
+	if (!strcmp(id, "UARTCLK"))
+		return &uart_clk;
 
-       return ERR_PTR(-ENOENT);
+	return ERR_PTR(-ENOENT);
 }
 EXPORT_SYMBOL(clk_get);
 
 int clk_enable(struct clk *clk)
 {
-       return 0;
+	return 0;
 }
 EXPORT_SYMBOL(clk_enable);
 
@@ -66,7 +66,7 @@ EXPORT_SYMBOL(clk_disable);
 
 unsigned long clk_get_rate(struct clk *clk)
 {
-       return clk->rate;
+	return clk->rate;
 }
 EXPORT_SYMBOL(clk_get_rate);
 

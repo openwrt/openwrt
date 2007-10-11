@@ -40,7 +40,7 @@
 #define BOARD_PARAMS_ADDR	KSEG1ADDR(ADM5120_SRAM0_BASE+0x0F800)
 #define PART_TABLE_ADDR		KSEG1ADDR(ADM5120_SRAM0_BASE+0x10000)
 
-static int myloader_found = 0;
+static int myloader_found;
 
 struct myloader_info myloader_info;
 

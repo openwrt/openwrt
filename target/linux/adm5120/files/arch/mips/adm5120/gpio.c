@@ -29,19 +29,19 @@
 #include <linux/module.h>
 #include <linux/delay.h>
 #include <linux/platform_device.h>
+#include <linux/io.h>
 
 #include <asm/addrspace.h>
-#include <asm/io.h>
 #include <asm/gpio.h>
 
-#include <asm/mach-adm5120/adm5120_defs.h>
-#include <asm/mach-adm5120/adm5120_info.h>
-#include <asm/mach-adm5120/adm5120_switch.h>
+#include <adm5120_defs.h>
+#include <adm5120_info.h>
+#include <adm5120_switch.h>
 
-typedef void __iomem *	gpio_reg_t;
-#define GPIO_READ(r)	readl((r))
-#define GPIO_WRITE(v,r)	writel((v),(r))
-#define GPIO_REG(r)	(gpio_reg_t)(KSEG1ADDR(ADM5120_SWITCH_BASE)+r)
+
+#define GPIO_READ(r)		readl((r))
+#define GPIO_WRITE(v, r)	writel((v), (r))
+#define GPIO_REG(r)	(void __iomem *)(KSEG1ADDR(ADM5120_SWITCH_BASE)+r)
 
 struct adm5120_gpio_line {
 	u32 flags;
@@ -52,15 +52,15 @@ struct adm5120_gpio_line {
 #define GPIO_FLAG_USED		0x02
 
 struct led_desc {
-	gpio_reg_t reg;	/* LED register address */
-	u8 iv_shift;	/* shift amount for input bit */
-	u8 mode_shift;	/* shift amount for mode bits */
+	void __iomem *reg;	/* LED register address */
+	u8 iv_shift;		/* shift amount for input bit */
+	u8 mode_shift;		/* shift amount for mode bits */
 };
 
-#define LED_DESC(_port,_led) { \
-		.reg = GPIO_REG(SWITCH_REG_PORT0_LED+_port*4), \
-		.iv_shift = LED0_IV_SHIFT+_led, \
-		.mode_shift = _led*4 \
+#define LED_DESC(p, l) { \
+		.reg = GPIO_REG(SWITCH_REG_PORT0_LED+((p) * 4)), \
+		.iv_shift = LED0_IV_SHIFT + (l), \
+		.mode_shift = (l) * 4 \
 	}
 
 static struct led_desc led_table[15] = {
@@ -97,10 +97,8 @@ static struct adm5120_gpio_line adm5120_gpio_map[ADM5120_GPIO_COUNT] = {
 	[ADM5120_GPIO_P4L2] = {.flags = GPIO_FLAG_VALID}
 };
 
-#define gpio_is_invalid(g) ( \
-		(g) > ADM5120_GPIO_MAX || \
-		((adm5120_gpio_map[(g)].flags & GPIO_FLAG_VALID) == 0) \
-	)
+#define gpio_is_invalid(g) ((g) > ADM5120_GPIO_MAX || \
+		((adm5120_gpio_map[(g)].flags & GPIO_FLAG_VALID) == 0))
 
 #define gpio_is_used(g)	((adm5120_gpio_map[(g)].flags & GPIO_FLAG_USED) != 0)
 
@@ -114,7 +112,7 @@ static struct adm5120_gpio_line adm5120_gpio_map[ADM5120_GPIO_COUNT] = {
 
 static inline int pins_direction_input(unsigned pin)
 {
-	gpio_reg_t *reg;
+	void __iomem **reg;
 	u32 t;
 
 	reg = GPIO_REG(SWITCH_REG_GPIO_CONF0);
@@ -122,14 +120,14 @@ static inline int pins_direction_input(unsigned pin)
 	t = GPIO_READ(reg);
 	t &= ~(PIN_OE(pin));
 	t |= PIN_IM(pin);
-	GPIO_WRITE(t,reg);
+	GPIO_WRITE(t, reg);
 
 	return 0;
 }
 
 static inline int pins_direction_output(unsigned pin, int value)
 {
-	gpio_reg_t *reg;
+	void __iomem **reg;
 	u32 t;
 
 	reg = GPIO_REG(SWITCH_REG_GPIO_CONF0);
@@ -141,14 +139,14 @@ static inline int pins_direction_output(unsigned pin, int value)
 	if (value)
 		t |= PIN_OV(pin);
 
-	GPIO_WRITE(t,reg);
+	GPIO_WRITE(t, reg);
 
 	return 0;
 }
 
 static inline int pins_get_value(unsigned pin)
 {
-	gpio_reg_t *reg;
+	void __iomem **reg;
 	u32 t;
 
 	reg = GPIO_REG(SWITCH_REG_GPIO_CONF0);
@@ -164,7 +162,7 @@ static inline int pins_get_value(unsigned pin)
 
 static inline void pins_set_value(unsigned pin, int value)
 {
-	gpio_reg_t *reg;
+	void __iomem **reg;
 	u32 t;
 
 	reg = GPIO_REG(SWITCH_REG_GPIO_CONF0);
@@ -175,7 +173,7 @@ static inline void pins_set_value(unsigned pin, int value)
 	else
 		t |= PIN_OV(pin);
 
-	GPIO_WRITE(t,reg);
+	GPIO_WRITE(t, reg);
 }
 
 /*
@@ -183,20 +181,20 @@ static inline void pins_set_value(unsigned pin, int value)
  */
 static inline int leds_direction_input(unsigned led)
 {
-	gpio_reg_t *reg;
+	void __iomem **reg;
 	u32 t;
 
 	reg = led_table[led].reg;
 	t = GPIO_READ(reg);
 	t &= ~(LED_MODE_MASK << led_table[led].mode_shift);
-	GPIO_WRITE(t,reg);
+	GPIO_WRITE(t, reg);
 
 	return 0;
 }
 
 static inline int leds_direction_output(unsigned led, int value)
 {
-	gpio_reg_t *reg;
+	void __iomem **reg;
 	u32 t, s;
 
 	reg = led_table[led].reg;
@@ -226,14 +224,14 @@ static inline int leds_direction_output(unsigned led, int value)
 		break;
 	}
 
-	GPIO_WRITE(t,reg);
+	GPIO_WRITE(t, reg);
 
 	return 0;
 }
 
 static inline int leds_get_value(unsigned led)
 {
-	gpio_reg_t *reg;
+	void __iomem **reg;
 	u32 t, m;
 
 	reg = led_table[led].reg;
@@ -263,6 +261,7 @@ int adm5120_gpio_direction_input(unsigned gpio)
 	gpio -= ADM5120_GPIO_P0L0;
 	return leds_direction_input(gpio);
 }
+EXPORT_SYMBOL(adm5120_gpio_direction_input);
 
 int adm5120_gpio_direction_output(unsigned gpio, int value)
 {
@@ -275,6 +274,7 @@ int adm5120_gpio_direction_output(unsigned gpio, int value)
 	gpio -= ADM5120_GPIO_P0L0;
 	return leds_direction_output(gpio, value);
 }
+EXPORT_SYMBOL(adm5120_gpio_direction_output);
 
 int adm5120_gpio_get_value(unsigned gpio)
 {
@@ -284,6 +284,7 @@ int adm5120_gpio_get_value(unsigned gpio)
 	gpio -= ADM5120_GPIO_P0L0;
 	return leds_get_value(gpio);
 }
+EXPORT_SYMBOL(adm5120_gpio_get_value);
 
 void adm5120_gpio_set_value(unsigned gpio, int value)
 {
@@ -295,6 +296,7 @@ void adm5120_gpio_set_value(unsigned gpio, int value)
 	gpio -= ADM5120_GPIO_P0L0;
 	leds_direction_output(gpio, value);
 }
+EXPORT_SYMBOL(adm5120_gpio_set_value);
 
 int adm5120_gpio_request(unsigned gpio, const char *label)
 {
@@ -309,6 +311,7 @@ int adm5120_gpio_request(unsigned gpio, const char *label)
 
 	return 0;
 }
+EXPORT_SYMBOL(adm5120_gpio_request);
 
 void adm5120_gpio_free(unsigned gpio)
 {
@@ -318,18 +321,21 @@ void adm5120_gpio_free(unsigned gpio)
 	adm5120_gpio_map[gpio].flags &= ~GPIO_FLAG_USED;
 	adm5120_gpio_map[gpio].label = NULL;
 }
+EXPORT_SYMBOL(adm5120_gpio_free);
 
 int adm5120_gpio_to_irq(unsigned gpio)
 {
 	/* FIXME: not yet implemented */
 	return -EINVAL;
 }
+EXPORT_SYMBOL(adm5120_gpio_to_irq);
 
 int adm5120_irq_to_gpio(unsigned irq)
 {
 	/* FIXME: not yet implemented */
 	return -EINVAL;
 }
+EXPORT_SYMBOL(adm5120_irq_to_gpio);
 
 static int __init adm5120_gpio_init(void)
 {
@@ -337,7 +343,7 @@ static int __init adm5120_gpio_init(void)
 
 	if (adm5120_package_pqfp()) {
 		/* GPIO pins 4-7 are unavailable in ADM5120P */
-		for (i=ADM5120_GPIO_PIN4; i<=ADM5120_GPIO_PIN7; i++)
+		for (i = ADM5120_GPIO_PIN4; i <= ADM5120_GPIO_PIN7; i++)
 			adm5120_gpio_map[i].flags &= ~GPIO_FLAG_VALID;
 	}
 
@@ -345,12 +351,3 @@ static int __init adm5120_gpio_init(void)
 }
 
 pure_initcall(adm5120_gpio_init);
-
-EXPORT_SYMBOL(adm5120_gpio_direction_output);
-EXPORT_SYMBOL(adm5120_gpio_direction_input);
-EXPORT_SYMBOL(adm5120_gpio_get_value);
-EXPORT_SYMBOL(adm5120_gpio_set_value);
-EXPORT_SYMBOL(adm5120_gpio_request);
-EXPORT_SYMBOL(adm5120_gpio_free);
-EXPORT_SYMBOL(adm5120_gpio_to_irq);
-EXPORT_SYMBOL(adm5120_irq_to_gpio);

@@ -37,8 +37,8 @@
 #include <asm/cpu.h>
 #include <asm/time.h>
 
-#include <asm/mach-adm5120/adm5120_info.h>
-#include <asm/mach-adm5120/adm5120_irq.h>
+#include <adm5120_info.h>
+#include <adm5120_irq.h>
 
 void __init adm5120_time_init(void)
 {
