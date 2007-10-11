@@ -1,0 +1,17 @@
+Index: linux-2.6.23/arch/mips/kernel/head.S
+===================================================================
+--- linux-2.6.23.orig/arch/mips/kernel/head.S
++++ linux-2.6.23/arch/mips/kernel/head.S
+@@ -136,7 +136,12 @@
+ 	/*
+ 	 * Reserved space for exception handlers.
+ 	 * Necessary for machines which link their kernels at KSEG0.
++	 * Use as temporary storage for the kernel command line, so that it
++	 * can be updated easily without having to relink the kernel.
+ 	 */
++
++EXPORT(_image_cmdline)
++	.ascii "CMDLINE:"
+ 	.fill	0x400
+ #endif
+ 
