@@ -1,0 +1,64 @@
+#!/bin/sh /etc/rc.common
+START=46
+STOP=46
+
+start_service() {
+	local section="$1"
+	
+	include /lib/network
+	scan_interfaces
+	config_load /var/state/network
+
+	config_get LAN lan ifname
+        config_get tnlifname "$section" tnlifname
+	config_get remoteip4 "$section" remoteip4
+	config_get localip4 "$section" localip4
+	config_get localip6 "$section" localip6
+	config_get prefix "$section" prefix
+
+	ip tunnel add $tnlifname mode sit remote $remoteip4 local $localip4 ttl 255
+	ifconfig $tnlifname up
+	ip addr add $localip6 dev $tnlifname
+	ip route add ::/0 dev $tnlifname
+	ip route add 2000::/3 dev $tnlifname
+	ip -6 addr add $prefix dev $LAN
+}
+
+stop_service() {
+	local section="$1"
+	
+	include /lib/network
+	scan_interfaces
+	config_load /var/state/network
+
+	config_get LAN lan ifname
+        config_get tnlifname "$section" tnlifname
+	config_get remoteip4 "$section" remoteip4
+	config_get localip4 "$section" localip4
+	config_get localip6 "$section" localip6
+	config_get prefix "$section" prefix
+
+	ip -6 addr del $prefix dev $LAN
+	ip -6 ro del 2000::/3 dev $tnlifname
+	ip -6 ro del ::/0 dev $tnlifname
+	ip addr del $localip6 dev $tnlifname
+	ifconfig $tnlifname down
+	ip tunnel del $tnlifname
+}
+start() {
+	if ! [ -f /proc/net/if_inet6 ]; then
+		echo "IPv6 not enabled, install kmod-ipv6";
+		exit 1;
+	fi
+	if ! [ -x /sbin/ip ]; then
+		echo "ip is required to setup the tunnel";
+		exit 1;
+	fi
+	config_load "6tunnel"
+	config_foreach start_service 6tunnel
+}
+
+stop () {
+	config_load "6tunnel"
+	config_foreach stop_service 6tunnel
+}
