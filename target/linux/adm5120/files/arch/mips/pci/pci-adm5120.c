@@ -28,12 +28,12 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/spinlock.h>
+#include <linux/io.h>
 
 #include <linux/pci.h>
 #include <linux/pci_ids.h>
 #include <linux/pci_regs.h>
 
-#include <asm/io.h>
 #include <asm/delay.h>
 #include <asm/bootinfo.h>
 
@@ -45,7 +45,7 @@
 #undef DEBUG
 
 #ifdef DEBUG
-#define DBG(f, a...)	printk(KERN_DEBUG f, ## a )
+#define DBG(f, a...)	printk(KERN_DEBUG f, ## a)
 #else
 #define DBG(f, a...)	do {} while (0)
 #endif
@@ -54,8 +54,8 @@
 
 /* -------------------------------------------------------------------------*/
 
-static unsigned int adm5120_pci_nr_irqs __initdata = 0;
-static struct adm5120_pci_irq *adm5120_pci_irq_map __initdata = NULL;
+static unsigned int adm5120_pci_nr_irqs __initdata;
+static struct adm5120_pci_irq *adm5120_pci_irq_map __initdata;
 
 static spinlock_t pci_lock = SPIN_LOCK_UNLOCKED;
 
@@ -93,7 +93,7 @@ static int pci_config_read(struct pci_bus *bus, unsigned int devfn, int where,
 
 	spin_lock_irqsave(&pci_lock, flags);
 
-	write_cfgaddr(mkaddr(bus,devfn,where));
+	write_cfgaddr(mkaddr(bus, devfn, where));
 	data = read_cfgdata();
 
 	DBG("PCI: cfg_read  %02u.%02u.%01u/%02X:%01d, cfg:0x%08X",
@@ -132,7 +132,7 @@ static int pci_config_write(struct pci_bus *bus, unsigned int devfn, int where,
 
 	spin_lock_irqsave(&pci_lock, flags);
 
-	write_cfgaddr(mkaddr(bus,devfn,where));
+	write_cfgaddr(mkaddr(bus, devfn, where));
 	data = read_cfgdata();
 
 	DBG("PCI: cfg_write %02u.%02u.%01u/%02X:%01d, cfg:0x%08X",
@@ -226,10 +226,10 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 
 	if (irq < 0) {
 		printk(KERN_ALERT "PCI: no irq found for %s pin:%u\n",
-			pci_name(dev), pin);
+			pci_name((struct pci_dev *)dev), pin);
 	} else {
 		printk(KERN_INFO "PCI: mapping irq for %s pin:%u, irq:%d\n",
-			pci_name(dev), pin, irq);
+			pci_name((struct pci_dev *)dev), pin, irq);
 	}
 
 out:

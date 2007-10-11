@@ -32,14 +32,13 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/slab.h>
+#include <linux/io.h>
 #include <linux/device.h>
-
 #include <linux/platform_device.h>
+
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/map.h>
 #include <linux/mtd/partitions.h>
-
-#include <asm/io.h>
 
 #include <adm5120_defs.h>
 #include <adm5120_switch.h>
@@ -173,7 +172,7 @@ static void adm5120_flash_write(struct map_info *map, const map_word datum,
 {
 	struct adm5120_map_info *amap = map_to_amap(map);
 
-	MAP_DBG(map,"writing to ofs %lX\n", ofs);
+	MAP_DBG(map, "writing to ofs %lX\n", ofs);
 
 	if (ofs > amap->window_size)
 		return;
@@ -329,7 +328,7 @@ static void adm5120_flash_initbanks(struct adm5120_flash_info *info)
 #ifdef CONFIG_MTD_PARTITIONS
 static int adm5120_flash_initparts(struct adm5120_flash_info *info)
 {
-	struct adm5120_flash_platform_data *pdata = info->dev->dev.platform_data;
+	struct adm5120_flash_platform_data *pdata;
 	struct map_info *map = &info->amap.map;
 	int num_parsers;
 	const char *parser[2];
@@ -339,6 +338,7 @@ static int adm5120_flash_initparts(struct adm5120_flash_info *info)
 
 	info->nr_parts = 0;
 
+	pdata = info->dev->dev.platform_data;
 	if (pdata == NULL)
 		goto out;
 
@@ -357,7 +357,7 @@ static int adm5120_flash_initparts(struct adm5120_flash_info *info)
 		num_parsers = MAX_PARSED_PARTS;
 
 	parser[1] = NULL;
-	for (i=0; i<num_parsers; i++) {
+	for (i = 0; i < num_parsers; i++) {
 		parser[0] = parse_types[i];
 
 		MAP_INFO(map, "parsing \"%s\" partitions\n",
@@ -394,7 +394,7 @@ static void adm5120_flash_remove_mtd(struct adm5120_flash_info *info)
 
 	if (info->nr_parts) {
 		del_mtd_partitions(info->mtd);
-		for (i=0; i<MAX_PARSED_PARTS; i++)
+		for (i = 0; i < MAX_PARSED_PARTS; i++)
 			if (info->parts[i] != NULL)
 				kfree(info->parts[i]);
 	} else {
@@ -496,7 +496,8 @@ static int adm5120_flash_probe(struct platform_device *dev)
 		goto err_out;
 
 	if (info->nr_parts == 0) {
-		MAP_INFO(map, "no partitions available, registering whole flash\n");
+		MAP_INFO(map, "no partitions available, registering "
+			"whole flash\n");
 		add_mtd_device(info->mtd);
 	}
 
@@ -508,7 +509,8 @@ err_out:
 }
 
 #ifdef CONFIG_PM
-static int adm5120_flash_suspend(struct platform_device *dev, pm_message_t state)
+static int adm5120_flash_suspend(struct platform_device *dev,
+		pm_message_t state)
 {
 	struct adm5120_flash_info *info = platform_get_drvdata(dev);
 	int ret = 0;

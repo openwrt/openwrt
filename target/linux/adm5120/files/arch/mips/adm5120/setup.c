@@ -27,15 +27,15 @@
 
 #include <linux/init.h>
 #include <linux/kernel.h>
+#include <linux/io.h>
 
 #include <asm/reboot.h>
-#include <asm/io.h>
 #include <asm/time.h>
 
-#include <asm/mach-adm5120/adm5120_info.h>
-#include <asm/mach-adm5120/adm5120_defs.h>
-#include <asm/mach-adm5120/adm5120_switch.h>
-#include <asm/mach-adm5120/adm5120_board.h>
+#include <adm5120_info.h>
+#include <adm5120_defs.h>
+#include <adm5120_switch.h>
+#include <adm5120_board.h>
 
 static char *prom_names[ADM5120_PROM_LAST+1] __initdata = {
 	[ADM5120_PROM_GENERIC]		= "Generic",
@@ -48,12 +48,13 @@ static char *prom_names[ADM5120_PROM_LAST+1] __initdata = {
 
 static void __init adm5120_report(void)
 {
-	printk(KERN_INFO "SoC      : ADM%04X%s revision %d, running at %ldMHz\n",
+	printk(KERN_INFO "SoC      : ADM%04X%s revision %d, running "
+		"at %ldMHz\n",
 		adm5120_product_code,
-		(adm5120_package == ADM5120_PACKAGE_BGA) ? "" : "P",
-		adm5120_revision, (adm5120_speed / 1000000)
-		);
-	printk(KERN_INFO "Bootdev  : %s flash\n", adm5120_nand_boot ? "NAND":"NOR");
+		adm5120_package_bga() ? "" : "P",
+		adm5120_revision, (adm5120_speed / 1000000));
+	printk(KERN_INFO "Bootdev  : %s flash\n",
+		adm5120_nand_boot ? "NAND":"NOR");
 	printk(KERN_INFO "Prom     : %s\n", prom_names[adm5120_prom_type]);
 }
 
@@ -67,7 +68,7 @@ void __init plat_mem_setup(void)
 
 	_machine_restart = adm5120_restart;
 	_machine_halt = adm5120_halt;
-	pm_power_off = adm5120_power_off;
+	pm_power_off = adm5120_halt;
 
 	set_io_port_base(KSEG1);
 }

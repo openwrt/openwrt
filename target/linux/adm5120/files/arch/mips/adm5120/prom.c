@@ -27,8 +27,8 @@
 #include <linux/kernel.h>
 #include <linux/string.h>
 #include <linux/mm.h>
+#include <linux/io.h>
 
-#include <asm/io.h>
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
 
@@ -52,31 +52,31 @@ struct board_desc {
 #define DEFBOARD(n, mt) { .mach_type = (mt), .name = (n)}
 static struct board_desc common_boards[] __initdata = {
 	/* Cellvision/SparkLAN boards */
-	DEFBOARD("CAS-630",		MACH_ADM5120_CAS630),
-	DEFBOARD("CAS-670",		MACH_ADM5120_CAS670),
-	DEFBOARD("CAS-771",		MACH_ADM5120_CAS771),
-	DEFBOARD("CAS-790",		MACH_ADM5120_CAS790),
-	DEFBOARD("CAS-861",		MACH_ADM5120_CAS861),
+	DEFBOARD("CAS-630",	MACH_ADM5120_CAS630),
+	DEFBOARD("CAS-670",	MACH_ADM5120_CAS670),
+	DEFBOARD("CAS-771",	MACH_ADM5120_CAS771),
+	DEFBOARD("CAS-790",	MACH_ADM5120_CAS790),
+	DEFBOARD("CAS-861",	MACH_ADM5120_CAS861),
 	/* Compex boards */
-	DEFBOARD("WP54G-WRT",		MACH_ADM5120_WP54G_WRT),
+	DEFBOARD("WP54G-WRT",	MACH_ADM5120_WP54G_WRT),
 	/* Edimax boards */
-	DEFBOARD("BR-6104K",		MACH_ADM5120_BR6104K),
-	DEFBOARD("BR-6104KP",		MACH_ADM5120_BR6104K),
+	DEFBOARD("BR-6104K",	MACH_ADM5120_BR6104K),
+	DEFBOARD("BR-6104KP",	MACH_ADM5120_BR6104K),
 	/* Infineon boards */
 	DEFBOARD("EASY 5120P-ATA",	MACH_ADM5120_EASY5120PATA),
 	DEFBOARD("EASY 5120-RT",	MACH_ADM5120_EASY5120RT),
 	DEFBOARD("EASY 5120-WVoIP",	MACH_ADM5120_EASY5120WVOIP),
 	DEFBOARD("EASY 83000",		MACH_ADM5120_EASY83000),
 	/* Mikrotik RouterBOARDs */
-	DEFBOARD("111",			MACH_ADM5120_RB_111),
-	DEFBOARD("112",			MACH_ADM5120_RB_112),
-	DEFBOARD("133",			MACH_ADM5120_RB_133),
-	DEFBOARD("133C",		MACH_ADM5120_RB_133C),
-	DEFBOARD("133C3",		MACH_ADM5120_RB_133C),
-	DEFBOARD("150",			MACH_ADM5120_RB_153), /* it's intentional */
-	DEFBOARD("153",			MACH_ADM5120_RB_153),
-	DEFBOARD("192",			MACH_ADM5120_RB_192),
-	DEFBOARD("miniROUTER",		MACH_ADM5120_RB_150),
+	DEFBOARD("111",		MACH_ADM5120_RB_111),
+	DEFBOARD("112",		MACH_ADM5120_RB_112),
+	DEFBOARD("133",		MACH_ADM5120_RB_133),
+	DEFBOARD("133C",	MACH_ADM5120_RB_133C),
+	DEFBOARD("133C3",	MACH_ADM5120_RB_133C),
+	DEFBOARD("150",		MACH_ADM5120_RB_153), /* it's intentional */
+	DEFBOARD("153",		MACH_ADM5120_RB_153),
+	DEFBOARD("192",		MACH_ADM5120_RB_192),
+	DEFBOARD("miniROUTER",	MACH_ADM5120_RB_150),
 };
 
 static unsigned long __init find_machtype_byname(char *name)
@@ -91,7 +91,7 @@ static unsigned long __init find_machtype_byname(char *name)
 	if (*name == '\0')
 		goto out;
 
-	for (i=0; i<ARRAY_SIZE(common_boards); i++) {
+	for (i = 0; i < ARRAY_SIZE(common_boards); i++) {
 		if (strcmp(common_boards[i].name, name) == 0) {
 			ret = common_boards[i].mach_type;
 			break;
@@ -131,8 +131,8 @@ static struct {
 	u16		vendor_id;
 	u16		board_id;
 } zynos_boards[] __initdata = {
-#define ZYNOS_BOARD(vi, bi, mt) { .vendor_id = (vi), .board_id = (bi), \
-		.mach_type = (mt) }
+#define ZYNOS_BOARD(vi, bi, mt) \
+	{.vendor_id = (vi), .board_id = (bi), .mach_type = (mt)}
 
 #define ZYXEL_BOARD(bi, mt) ZYNOS_BOARD(ZYNOS_VENDOR_ID_ZYXEL, bi, mt)
 #define DLINK_BOARD(bi, mt) ZYNOS_BOARD(ZYNOS_VENDOR_ID_DLINK, bi, mt)
@@ -155,7 +155,7 @@ static unsigned long __init detect_machtype_bootbase(void)
 	int i;
 
 	ret = MACH_ADM5120_GENERIC;
-	for (i=0; i<ARRAY_SIZE(zynos_boards); i++) {
+	for (i = 0; i < ARRAY_SIZE(zynos_boards); i++) {
 		if (zynos_boards[i].vendor_id == bootbase_info.vendor_id &&
 			zynos_boards[i].board_id == bootbase_info.board_id) {
 			ret = zynos_boards[i].mach_type;
@@ -173,9 +173,10 @@ static struct {
 	u16	svid;
 	u16	sdid;
 } mylo_boards[]  __initdata = {
-#define MYLO_BOARD(v,d,sv,sd,mt) { .vid = (v), .did = (d), .svid = (sv), \
-	.sdid = (sd), .mach_type = (mt) }
-#define COMPEX_BOARD(d,mt) MYLO_BOARD(VENID_COMPEX,(d),VENID_COMPEX,(d),(mt))
+#define MYLO_BOARD(v, d, sv, sd, mt) \
+	{.vid = (v), .did = (d), .svid = (sv), .sdid = (sd), .mach_type = (mt)}
+#define COMPEX_BOARD(d, mt) \
+	MYLO_BOARD(VENID_COMPEX, (d), VENID_COMPEX, (d), (mt))
 
 	COMPEX_BOARD(DEVID_COMPEX_NP27G, MACH_ADM5120_NP27G),
 	COMPEX_BOARD(DEVID_COMPEX_NP28G, MACH_ADM5120_NP28G),
@@ -193,7 +194,7 @@ static unsigned long __init detect_machtype_myloader(void)
 	int i;
 
 	ret = MACH_ADM5120_GENERIC;
-	for (i=0; i<ARRAY_SIZE(mylo_boards); i++) {
+	for (i = 0; i < ARRAY_SIZE(mylo_boards); i++) {
 		if (mylo_boards[i].vid == myloader_info.vid &&
 			mylo_boards[i].did == myloader_info.did &&
 			mylo_boards[i].svid == myloader_info.svid &&
@@ -249,8 +250,10 @@ static void __init prom_init_cmdline(void)
 
 	/* init command line, register a default kernel command line */
 	cmd = &_image_cmdline + 8;
-	if( strlen(cmd) > 0) strcpy( &(arcs_cmdline[0]), cmd);
-		else strcpy(&(arcs_cmdline[0]), CONFIG_CMDLINE);
+	if (strlen(cmd) > 0)
+		strcpy(arcs_cmdline, cmd);
+	else
+		strcpy(arcs_cmdline, CONFIG_CMDLINE);
 
 }
 

@@ -56,7 +56,7 @@
 #define RB150_NAND_DELAY	100
 
 #define RB150_NAND_WRITE(v) \
-	writeb((v),(void __iomem *)KSEG1ADDR(RB150_NAND_BASE))
+	writeb((v), (void __iomem *)KSEG1ADDR(RB150_NAND_BASE))
 
 /*--------------------------------------------------------------------------*/
 
@@ -66,7 +66,7 @@ static struct adm5120_pci_irq rb1xx_pci_irqs[] __initdata = {
 	PCIIRQ(3, 0, 1, ADM5120_IRQ_PCI2)
 };
 
-static struct mtd_partition rb1xx_nor_partitions[] = {
+static struct mtd_partition rb1xx_nor_parts[] = {
 	{
 		.name	= "booter",
 		.offset	= 0,
@@ -79,7 +79,7 @@ static struct mtd_partition rb1xx_nor_partitions[] = {
 	}
 };
 
-static struct mtd_partition rb1xx_nand_partitions[] = {
+static struct mtd_partition rb1xx_nand_parts[] = {
 	{
 		.name	= "kernel",
 		.offset	= 0,
@@ -102,10 +102,10 @@ static struct platform_device *rb1xx_devices[] __initdata = {
  * when creating the partitions
  */
 static struct nand_ecclayout rb1xx_nand_ecclayout = {
-        .eccbytes	= 6,
-        .eccpos		= { 8, 9, 10, 13, 14, 15 },
-        .oobavail	= 9,
-        .oobfree	= { { 0, 4 }, { 6, 2 }, { 11, 2 }, { 4, 1 } }
+	.eccbytes	= 6,
+	.eccpos		= { 8, 9, 10, 13, 14, 15 },
+	.oobavail	= 9,
+	.oobfree	= { { 0, 4 }, { 6, 2 }, { 11, 2 }, { 4, 1 } }
 };
 
 static struct resource rb150_nand_resource[] = {
@@ -157,8 +157,8 @@ static unsigned char rb_vlans[6] __initdata = {
 
 /*--------------------------------------------------------------------------*/
 
-static int rb150_nand_ready(struct mtd_info *mtd) {
-
+static int rb150_nand_ready(struct mtd_info *mtd)
+{
 	return gpio_get_value(RB150_GPIO_NAND_READY);
 }
 
@@ -187,13 +187,13 @@ static void __init rb1xx_mac_setup(void)
 static void __init rb1xx_flash_setup(void)
 {
 	/* setup data for flash0 device */
-	adm5120_flash0_data.nr_parts = ARRAY_SIZE(rb1xx_nor_partitions);
-	adm5120_flash0_data.parts = rb1xx_nor_partitions;
+	adm5120_flash0_data.nr_parts = ARRAY_SIZE(rb1xx_nor_parts);
+	adm5120_flash0_data.parts = rb1xx_nor_parts;
 
 	/* setup data for NAND device */
 	adm5120_nand_data.chip.nr_chips = 1;
-	adm5120_nand_data.chip.nr_partitions = ARRAY_SIZE(rb1xx_nand_partitions);
-	adm5120_nand_data.chip.partitions = rb1xx_nand_partitions;
+	adm5120_nand_data.chip.nr_partitions = ARRAY_SIZE(rb1xx_nand_parts);
+	adm5120_nand_data.chip.partitions = rb1xx_nand_parts;
 	adm5120_nand_data.chip.ecclayout = &rb1xx_nand_ecclayout;
 	adm5120_nand_data.chip.chip_delay = RB1XX_NAND_CHIP_DELAY;
 	adm5120_nand_data.chip.options = NAND_NO_AUTOINCR;

@@ -65,7 +65,6 @@ extern void adm5120_ndelay(u32 ns);
 
 extern void adm5120_restart(char *command);
 extern void adm5120_halt(void);
-extern void adm5120_power_off(void);
 
 extern void (*adm5120_board_reset)(void);
 

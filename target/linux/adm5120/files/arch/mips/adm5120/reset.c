@@ -29,14 +29,15 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 
+#include <linux/irq.h>
+#include <linux/io.h>
+
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
 
-#include <asm/mach-adm5120/adm5120_info.h>
-#include <asm/mach-adm5120/adm5120_defs.h>
-#include <asm/mach-adm5120/adm5120_switch.h>
-
-#define ADM5120_SOFTRESET	0x12000004
+#include <adm5120_info.h>
+#include <adm5120_defs.h>
+#include <adm5120_switch.h>
 
 void (*adm5120_board_reset)(void);
 
@@ -47,16 +48,16 @@ void adm5120_restart(char *command)
 	if (adm5120_board_reset)
 		adm5120_board_reset();
 
-	*(u32*)KSEG1ADDR(ADM5120_SOFTRESET)=1;
+	SW_WRITE_REG(SOFT_RESET, 1);
 }
 
 void adm5120_halt(void)
 {
-        printk(KERN_NOTICE "\n** You can safely turn off the power\n");
-        while (1);
-}
+	local_irq_disable();
 
-void adm5120_power_off(void)
-{
-        adm5120_halt();
+	printk(KERN_NOTICE "\n** You can safely turn off the power\n");
+	while (1) {
+		if (cpu_wait)
+			cpu_wait();
+	};
 }

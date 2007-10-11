@@ -41,7 +41,7 @@
 #define BOOTEXT_ADDR_MIN	KSEG1ADDR(ADM5120_SRAM0_BASE)
 #define BOOTEXT_ADDR_MAX	(BOOTEXT_ADDR_MIN + (2*1024*1024))
 
-static int bootbase_found = 0;
+static int bootbase_found;
 static struct zynos_board_info *board_info;
 
 struct bootbase_info bootbase_info;
@@ -68,12 +68,12 @@ static inline u32 bootbase_get_bootext_addr(void)
 
 static inline u16 bootbase_get_vendor_id(void)
 {
-#define CHECK_VENDOR(n) (strnicmp(board_info->vendor,(n),strlen(n)) == 0)
+#define CHECK_VENDOR(n) (strnicmp(board_info->vendor, (n), strlen(n)) == 0)
 	unsigned char vendor[ZYNOS_NAME_LEN];
 	int i;
 
-	for (i=0; i<ZYNOS_NAME_LEN; i++)
-		vendor[i]=board_info->vendor[i];
+	for (i = 0; i < ZYNOS_NAME_LEN; i++)
+		vendor[i] = board_info->vendor[i];
 
 	if CHECK_VENDOR(ZYNOS_VENDOR_ZYXEL)
 		return ZYNOS_VENDOR_ID_ZYXEL;

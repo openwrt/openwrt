@@ -54,7 +54,6 @@ int parse_myloader_partitions(struct mtd_info *master,
 	int num_parts;
 	int ret, i;
 	size_t retlen;
-	size_t parts_len;
 	char *names;
 	unsigned long offset;
 	unsigned long blocklen;
@@ -104,8 +103,8 @@ int parse_myloader_partitions(struct mtd_info *master,
 		num_parts++;
 	}
 
-	mtd_parts = kzalloc((num_parts*sizeof(*mtd_part) + num_parts*NAME_LEN_MAX),
-			 GFP_KERNEL);
+	mtd_parts = kzalloc((num_parts * sizeof(*mtd_part) +
+				num_parts * NAME_LEN_MAX), GFP_KERNEL);
 
 	if (!mtd_parts) {
 		ret = -ENOMEM;

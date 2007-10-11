@@ -37,6 +37,8 @@
 #include <adm5120_board.h>
 #include <adm5120_platform.h>
 
+#define PFX	"adm5120: "
+
 static LIST_HEAD(adm5120_boards);
 static char adm5120_board_name[ADM5120_BOARD_NAMELEN];
 
@@ -70,14 +72,14 @@ static int __init adm5120_board_setup(void)
 
 	board = adm5120_board_find(mips_machtype);
 	if (board == NULL) {
-		printk(KERN_ALERT "adm5120: no board registered for machtype %lu"
-			", trying generic\n", mips_machtype);
+		printk(KERN_ALERT PFX"no board registered for "
+			"machtype %lu, trying generic\n", mips_machtype);
 		board = adm5120_board_find(MACH_ADM5120_GENERIC);
 		if (board == NULL)
-			panic("adm5120: unsupported board\n");
+			panic(PFX "unsupported board\n");
 	}
 
-	printk(KERN_INFO "adm5120: setting up board '%s'\n", board->name);
+	printk(KERN_INFO PFX "setting up board '%s'\n", board->name);
 
 	memcpy(&adm5120_board_name, board->name, ADM5120_BOARD_NAMELEN);
 
@@ -100,10 +102,10 @@ static int __init adm5120_board_setup(void)
 	adm5120_pci_set_irq_map(board->pci_nr_irqs, board->pci_irq_map);
 
 	/* register board devices */
-	if (board->num_devices > 0 && board->devices != NULL ) {
+	if (board->num_devices > 0 && board->devices != NULL) {
 		err = platform_add_devices(board->devices, board->num_devices);
 		if (err)
-			printk(KERN_ALERT "adm5120: adding board devices failed\n");
+			printk(KERN_ALERT PFX "adding board devices failed\n");
 	}
 
 	return 0;
@@ -113,7 +115,7 @@ arch_initcall(adm5120_board_setup);
 void __init adm5120_board_register(struct adm5120_board *board)
 {
 	list_add(&board->list, &adm5120_boards);
-	printk(KERN_INFO "adm5120: registered board '%s'\n", board->name);
+	printk(KERN_INFO PFX "registered board '%s'\n", board->name);
 }
 
 void __init adm5120_register_boards(struct adm5120_board **boards,
@@ -121,7 +123,7 @@ void __init adm5120_register_boards(struct adm5120_board **boards,
 {
 	int i;
 
-	for (i=0; i<num; i++)
+	for (i = 0; i < num; i++)
 		adm5120_board_register(boards[i]);
 }
 
