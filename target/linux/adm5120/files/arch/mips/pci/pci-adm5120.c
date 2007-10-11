@@ -199,7 +199,7 @@ void __init adm5120_pci_set_irq_map(unsigned int nr_irqs,
 	adm5120_pci_irq_map = map;
 }
 
-int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	int irq = -1;
 	int i;

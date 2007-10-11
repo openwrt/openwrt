@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 BOARD:=adm5120
-LINUX_VERSION:=2.6.22.4
+LINUX_VERSION:=2.6.23
 FEATURES:=squashfs jffs2 tgz broken
 
 include $(INCLUDE_DIR)/target.mk

@@ -29,13 +29,13 @@
 #include <linux/leds.h>
 #include <linux/err.h>
 
-#include <linux/gpio_leds.h>
+#include <linux/io.h>
+#include <linux/leds.h>
 
 #include <asm/bootinfo.h>
-#include <asm/io.h>
 #include <asm/gpio.h>
 
-#include <asm/mach-adm5120/adm5120_info.h>
+#include <adm5120_info.h>
 
 #define NUM_LEDS_MAX	23
 
@@ -43,12 +43,13 @@
 
 struct mach_data {
 	unsigned long machtype;
-	unsigned count;
-	struct gpio_led_platform_data *data;
+	unsigned nr_leds;
+	struct gpio_led *leds;
 };
 
 struct adm5120_leddev {
 	struct platform_device pdev;
+	struct gpio_led led;
 	struct gpio_led_platform_data pdata;
 };
 
@@ -56,19 +57,17 @@ static int led_count = 0;
 static struct adm5120_leddev *led_devs[NUM_LEDS_MAX];
 
 #define LED_ARRAY(n)				\
-static struct gpio_led_platform_data		\
-n ## _leds [] __initdata =
+static struct gpio_led n ## _leds [] __initdata =
 
-#define LED_DATA(n,t,g,off,on) {		\
+#define LED_DATA(n,t,g,al) {			\
 	.name = (n),				\
-	.trigger = (t),				\
+	.default_trigger = (t),			\
 	.gpio = (g),				\
-	.value_off = (off),			\
-	.value_on = (on)			\
+	.active_low = (al)			\
 	}
 
-#define LED_STD(g,n,t)	LED_DATA((n),(t),(g), 0, 1)
-#define LED_INV(g,n,t)	LED_DATA((n),(t),(g), 1, 0)
+#define LED_STD(g,n,t)	LED_DATA((n),(t),(g), 0)
+#define LED_INV(g,n,t)	LED_DATA((n),(t),(g), 1)
 
 /*
  * Compex boards
@@ -218,8 +217,8 @@ LED_ARRAY(generic) {
 
 #define MACH_DATA(m, n) {				\
 	.machtype	= (m),				\
-	.count		= ARRAY_SIZE(n ## _leds),	\
-	.data		= n ## _leds			\
+	.nr_leds	= ARRAY_SIZE(n ## _leds),	\
+	.leds		= n ## _leds			\
 }
 
 static struct mach_data machines[] __initdata = {
@@ -250,7 +249,7 @@ static struct mach_data machines[] __initdata = {
 };
 
 static struct adm5120_leddev * __init
-create_leddev(struct gpio_led_platform_data *data)
+create_leddev(int id, struct gpio_led *led)
 {
 	struct adm5120_leddev *p;
 
@@ -258,17 +257,21 @@ create_leddev(struct gpio_led_platform_data *data)
 	if (p == NULL)
 		return NULL;
 
-	memcpy(&p->pdata, data, sizeof(p->pdata));
+	memcpy(&p->led, led, sizeof(p->led));
+	p->pdev.name = "leds-gpio";
+	p->pdev.id = id;
 	p->pdev.dev.platform_data = &p->pdata;
+	p->pdata.num_leds=1;
+	p->pdata.leds = &p->led;
 
 	return p;
 }
 
 static void
-destroy_leddev(struct adm5120_leddev *led)
+destroy_leddev(struct adm5120_leddev *leddev)
 {
-	if (led)
-		kfree(led);
+	if (leddev)
+		kfree(leddev);
 }
 
 static struct mach_data * __init
@@ -311,23 +314,21 @@ adm5120_leds_init(void)
 		goto err;
 	}
 
-	for (i=0; i < mach->count; i++) {
-		led_devs[i] = create_leddev(&mach->data[i]);
+	for (i=0; i < mach->nr_leds; i++) {
+		led_devs[i] = create_leddev(i, &mach->leds[i]);
 		if (led_devs[i] == NULL) {
 			ret = -ENOMEM;
 			goto err_destroy;
 		}
-		led_devs[i]->pdev.name = "gpio-led";
-		led_devs[i]->pdev.id = i;
 	}
 
-	for (i=0; i < mach->count; i++) {
+	for (i=0; i < mach->nr_leds; i++) {
 		ret = platform_device_register(&led_devs[i]->pdev);
 		if (ret)
 			goto err_unregister;
 	}
 
-	led_count = mach->count;
+	led_count = mach->nr_leds;
 	return 0;
 
 err_unregister:
