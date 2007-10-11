@@ -1,0 +1,45 @@
+Index: linux-2.6.23/drivers/leds/Kconfig
+===================================================================
+--- linux-2.6.23.orig/drivers/leds/Kconfig
++++ linux-2.6.23/drivers/leds/Kconfig
+@@ -18,6 +18,27 @@ config LEDS_CLASS
+ 
+ comment "LED drivers"
+ 
++config LEDS_GPIO
++	tristate "LED support for LEDS on GPIO lines"
++	depends on LEDS_CLASS && GENERIC_GPIO
++	help
++	  This option enables support for LEDs connected to GPIO lines
++
++config LEDS_ADM5120
++	tristate "LED Support for ADM5120 GPIO LEDs"
++	depends on LEDS_GPIO && MIPS_ADM5120
++	help
++	  This option enables support for LEDs connected to GPIO lines
++	  on ADM5120 SoC based platforms.
++
++config LEDS_ADM5120_EXPERIMENTAL
++	bool "Enable ADM5120 LEDs experimental code"
++	depends on LEDS_ADM5120
++
++config LEDS_ADM5120_DIAG
++	bool "Enable ADM5120 LEDs diagnostic mode"
++	depends on LEDS_ADM5120
++
+ config LEDS_CORGI
+ 	tristate "LED Support for the Sharp SL-C7x0 series"
+ 	depends on LEDS_CLASS && PXA_SHARP_C7xx
+Index: linux-2.6.23/drivers/leds/Makefile
+===================================================================
+--- linux-2.6.23.orig/drivers/leds/Makefile
++++ linux-2.6.23/drivers/leds/Makefile
+@@ -5,6 +5,8 @@ obj-$(CONFIG_LEDS_CLASS)		+= led-class.o
+ obj-$(CONFIG_LEDS_TRIGGERS)		+= led-triggers.o
+ 
+ # LED Platform Drivers
++obj-$(CONFIG_LEDS_GPIO)		+= leds-gpio.o
++obj-$(CONFIG_LEDS_ADM5120)		+= leds-adm5120.o
+ obj-$(CONFIG_LEDS_CORGI)		+= leds-corgi.o
+ obj-$(CONFIG_LEDS_LOCOMO)		+= leds-locomo.o
+ obj-$(CONFIG_LEDS_SPITZ)		+= leds-spitz.o
