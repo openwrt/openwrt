@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2007 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,12 +9,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ipset
-PKG_VERSION:=2.2.9a
-PKG_RELEASE:=2
+PKG_VERSION:=2.3.0
+PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-20061009.tar.bz2
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-20070828.tar.bz2
 PKG_SOURCE_URL:=http://ipset.netfilter.org
-PKG_MD5SUM:=74ce3226b30cdd386630250bdc3488ef
+PKG_MD5SUM:=9e17798dfd8ed87c63a1f3498f9fe64d
 
 include $(INCLUDE_DIR)/package.mk
 
