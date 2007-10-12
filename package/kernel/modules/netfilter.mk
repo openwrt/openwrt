@@ -227,6 +227,18 @@ endef
 
 define KernelPackage/ipt-ipset/description
  Netfilter kernel modules for ipset
+ Includes: 
+ - ip_set 
+ - ip_set_iphash 
+ - ip_set_ipmap 
+ - ip_set_ipporthash 
+ - ip_set_iptree 
+ - ip_set_iptreemap
+ - ip_set_macipmap 
+ - ip_set_nethash 
+ - ip_set_portmap 
+ - ipt_set 
+ - ipt_SET
 endef
 
 $(eval $(call KernelPackage,ipt-ipset))
