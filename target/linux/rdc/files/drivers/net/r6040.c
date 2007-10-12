@@ -229,7 +229,7 @@ static int __devinit r6040_init_one (struct pci_dev *pdev,
 	RDC_DBUG("r6040_init_one()", 0);
 
 	if (printed_version++)
-		printk(KERN_INFO version);
+		printk(KERN_INFO "%s\n", version);
 
 	err = pci_enable_device(pdev);
 	if (err)
@@ -1021,7 +1021,7 @@ static int __init r6040_init (void)
 {
 	RDC_DBUG("r6040_init()", 0);
 
-	printk(KERN_INFO version);
+	printk(KERN_INFO "%s\n", version);
 	printed_version = 1;
 
 	if (parent != NULL) {

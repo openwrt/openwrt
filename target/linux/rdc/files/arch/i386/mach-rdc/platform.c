@@ -29,13 +29,9 @@
 #include <linux/device.h>
 #include <linux/platform_device.h>
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
 #include <linux/leds.h>
-#endif
 
 #include <asm/gpio.h>
-
-#define PFX "rdc321x: "
 
 /* Flash */
 static struct resource rdc_flash_resource[] = {
@@ -54,9 +50,8 @@ static struct platform_device rdc_flash_device = {
 };
 
 /* LEDS */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
 static struct gpio_led default_leds[] = {
-        { .name = "rdc:dmz", .gpio = 1, },
+        { .name = "rdc321x:dmz", .gpio = 1, },
 };
 
 static struct gpio_led_platform_data rdc321x_led_data = {
@@ -71,13 +66,6 @@ static struct platform_device rdc321x_leds = {
 		.platform_data = &rdc321x_led_data,
 	}
 };
-#else
-static struct platform_device rdc321x_leds = {
-	.name = "rdc321x-leds",
-	.id = -1,
-	.num_resources = 0,
-};
-#endif
 
 /* Watchdog */
 static struct platform_device rdc321x_wdt = {
