@@ -59,7 +59,7 @@ ifneq ($(findstring 2.6.23,$(LINUX_VERSION)),)
 		modules
   endef
 else
-  override CONFIG_kmod-b43=
+  override CONFIG_PACKAGE_kmod-b43=
 endif
 
 $(eval $(call KernelPackage,b43))
