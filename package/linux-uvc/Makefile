@@ -10,12 +10,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=linux-uvc
-PKG_VERSION:=r131
+PKG_VERSION:=r132
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://naaa.de/programme/linux-uvc/
-PKG_MD5SUM:=e1f5e5c9bdf865726438dc3ff3a5ae60
+PKG_MD5SUM:=7e1d72ee2033403696fca6bd21042afa
 
 include $(INCLUDE_DIR)/package.mk
 
