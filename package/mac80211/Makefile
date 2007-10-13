@@ -44,9 +44,7 @@ MAKE_OPTS:= \
 	EXTRA_CFLAGS="$(BUILDFLAGS)" \
 	$(foreach opt,$(CONFOPTS),CONFIG_$(opt)=m) \
 	CONFIG_MAC80211_LEDS=$(CONFIG_LEDS_TRIGGERS) \
-	LINUXINCLUDE="-I${CURDIR}/src/include -I$(LINUX_DIR)/include -include linux/autoconf.h" \
-	V=1
-
+	LINUXINCLUDE="-I${CURDIR}/src/include -I$(LINUX_DIR)/include -include linux/autoconf.h"
 
 ifneq ($(findstring 2.6.23,$(LINUX_VERSION)),)
   define Build/Prepare
@@ -63,7 +61,7 @@ ifneq ($(findstring 2.6.23,$(LINUX_VERSION)),)
 
   define Build/InstallDev
 	mkdir -p $(1)/usr/include/mac80211
-	$(CP) ./src/include $(1)/usr/include/mac80211/
+	$(CP) ./src/include/* $(1)/usr/include/mac80211/
   endef
 
   define Build/UninstallDev
