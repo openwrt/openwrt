@@ -72,6 +72,8 @@ ifneq ($(findstring 2.6.23,$(LINUX_VERSION)),)
 	$(INSTALL_DIR) $(1)/lib/wifi
 	$(INSTALL_DATA) ./files/lib/wifi/mac80211.sh $(1)/lib/wifi
   endef
+else
+  override CONFIG_PACKAGE_kmod-mac80211=
 endif
 
 $(eval $(call KernelPackage,mac80211))
