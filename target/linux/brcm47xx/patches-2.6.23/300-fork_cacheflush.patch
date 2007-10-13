@@ -1,0 +1,13 @@
+Index: linux-2.6.23/include/asm-mips/cacheflush.h
+===================================================================
+--- linux-2.6.23.orig/include/asm-mips/cacheflush.h	2007-10-13 11:01:52.780284289 +0200
++++ linux-2.6.23/include/asm-mips/cacheflush.h	2007-10-13 11:02:16.289624011 +0200
+@@ -32,7 +32,7 @@
+ extern void (*flush_cache_all)(void);
+ extern void (*__flush_cache_all)(void);
+ extern void (*flush_cache_mm)(struct mm_struct *mm);
+-#define flush_cache_dup_mm(mm)	do { (void) (mm); } while (0)
++#define flush_cache_dup_mm(mm) flush_cache_mm(mm)
+ extern void (*flush_cache_range)(struct vm_area_struct *vma,
+ 	unsigned long start, unsigned long end);
+ extern void (*flush_cache_page)(struct vm_area_struct *vma, unsigned long page, unsigned long pfn);
