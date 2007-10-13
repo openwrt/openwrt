@@ -10,12 +10,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ipsec-tools
-PKG_VERSION:=0.6.7
+PKG_VERSION:=0.7
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/ipsec-tools
-PKG_MD5SUM:=4fb764f282dc21cf9a656c58e13dacbb
+PKG_MD5SUM:=c0a586924edde35264ecfe94ad1c261f
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -37,6 +37,7 @@ CONFIGURE_ARGS += \
 	--without-libpam \
 	--enable-dpd \
 	--enable-hybrid \
+	--enable-security-context=no \
 	--enable-natt
 
 define Build/Configure
