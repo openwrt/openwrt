@@ -26,8 +26,9 @@
 				    * send and receive non-IEEE 802.1X frames
 				    */
 #define WLAN_STA_SHORT_PREAMBLE BIT(7)
+/* whether this is an AP that we are associated with as a client */
+#define WLAN_STA_ASSOC_AP BIT(8)
 #define WLAN_STA_WME BIT(9)
-#define WLAN_STA_HT  BIT(10)
 #define WLAN_STA_WDS BIT(27)
 
 
@@ -91,36 +92,10 @@ struct sta_info {
 	int channel_use;
 	int channel_use_raw;
 
-	u8 antenna_sel_tx;
-	u8 antenna_sel_rx;
-
-
-	int key_idx_compression; /* key table index for compression and TX
-				  * filtering; used only if sta->key is not
-				  * set */
-
-#ifdef CONFIG_MAC80211_DEBUGFS
-	int debugfs_registered;
-#endif
-	unsigned int assoc_ap:1; /* whether this is an AP that we are
-				  * associated with as a client */
-	unsigned int dls_sta:1; /* whether this stations is a DLS peer of us */
-
-#define DLS_STATUS_OK		0
-#define DLS_STATUS_NOLINK	1
-	int dls_status;
-	u32 dls_timeout;
-
-#ifdef CONFIG_HOSTAPD_WPA_TESTING
-	u32 wpa_trigger;
-#endif /* CONFIG_HOSTAPD_WPA_TESTING */
-
 #ifdef CONFIG_MAC80211_DEBUG_COUNTERS
 	unsigned int wme_rx_queue[NUM_RX_DATA_QUEUES];
 	unsigned int wme_tx_queue[NUM_RX_DATA_QUEUES];
 #endif /* CONFIG_MAC80211_DEBUG_COUNTERS */
-
-	int vlan_id;
 
 	u16 listen_interval;
 
@@ -160,12 +135,18 @@ struct sta_info {
  */
 #define STA_INFO_CLEANUP_INTERVAL (10 * HZ)
 
+static inline void __sta_info_get(struct sta_info *sta)
+{
+	kref_get(&sta->kref);
+}
+
 struct sta_info * sta_info_get(struct ieee80211_local *local, u8 *addr);
 int sta_info_min_txrate_get(struct ieee80211_local *local);
 void sta_info_put(struct sta_info *sta);
 struct sta_info * sta_info_add(struct ieee80211_local *local,
 			       struct net_device *dev, u8 *addr, gfp_t gfp);
-void sta_info_free(struct sta_info *sta, int locked);
+void sta_info_remove(struct sta_info *sta);
+void sta_info_free(struct sta_info *sta);
 void sta_info_init(struct ieee80211_local *local);
 int sta_info_start(struct ieee80211_local *local);
 void sta_info_stop(struct ieee80211_local *local);

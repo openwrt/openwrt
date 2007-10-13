@@ -39,59 +39,9 @@ static ssize_t _show_permaddr(struct device *dev,
 		       addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
 }
 
-static ssize_t _store_add_iface(struct device *dev,
-				struct device_attribute *attr,
-				const char *buf, size_t len)
-{
-	struct cfg80211_registered_device *rdev = dev_to_rdev(dev);
-	int res;
-
-	if (len > IFNAMSIZ)
-		return -EINVAL;
-
-	if (!rdev->ops->add_virtual_intf)
-		return -ENOSYS;
-
-	rtnl_lock();
-	res = rdev->ops->add_virtual_intf(&rdev->wiphy, (char*)buf,
-					  NL80211_IFTYPE_UNSPECIFIED);
-	rtnl_unlock();
-
-	return res ? res : len;
-}
-
-static ssize_t _store_remove_iface(struct device *dev,
-				   struct device_attribute *attr,
-				   const char *buf, size_t len)
-{
-	struct cfg80211_registered_device *rdev = dev_to_rdev(dev);
-	int res, ifidx;
-	struct net_device *netdev;
-
-	if (len > IFNAMSIZ)
-		return -EINVAL;
-
-	if (!rdev->ops->del_virtual_intf)
-		return -ENOSYS;
-
-	netdev = dev_get_by_name(buf);
-	if (!netdev)
-		return -ENODEV;
-	ifidx = netdev->ifindex;
-	dev_put(netdev);
-
-	rtnl_lock();
-	res = rdev->ops->del_virtual_intf(&rdev->wiphy, ifidx);
-	rtnl_unlock();
-
-	return res ? res : len;
-}
-
 static struct device_attribute ieee80211_dev_attrs[] = {
 	__ATTR(index, S_IRUGO, _show_index, NULL),
 	__ATTR(macaddress, S_IRUGO, _show_permaddr, NULL),
-	__ATTR(add_iface, S_IWUGO, NULL, _store_add_iface),
-	__ATTR(remove_iface, S_IWUGO, NULL, _store_remove_iface),
 	{}
 };
 
@@ -102,12 +52,14 @@ static void wiphy_dev_release(struct device *dev)
 	cfg80211_dev_free(rdev);
 }
 
+#ifdef CONFIG_HOTPLUG
 static int wiphy_uevent(struct device *dev, char **envp,
 			int num_envp, char *buf, int size)
 {
 	/* TODO, we probably need stuff here */
 	return 0;
 }
+#endif
 
 struct class ieee80211_class = {
 	.name = "ieee80211",
