@@ -1,0 +1,184 @@
+diff -Nur linux-2.6.21.6-orig/arch/arm/mach-ixp4xx/fsg-power.c linux-2.6.21.6/arch/arm/mach-ixp4xx/fsg-power.c
+--- linux-2.6.21.6-orig/arch/arm/mach-ixp4xx/fsg-power.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.6/arch/arm/mach-ixp4xx/fsg-power.c	2007-10-12 22:32:27.000000000 +0200
+@@ -0,0 +1,168 @@
++/*
++ * arch/arm/mach-ixp4xx/fsg-power.c
++ *
++ * FSG buttons driver
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/reboot.h>
++#include <linux/irq.h>
++#include <linux/interrupt.h>
++#include <asm/mach-types.h>
++#include <linux/kernel.h>
++
++struct event_t {
++	struct work_struct wq;
++	char *button_name;
++	int action;
++};
++
++static void hotplug_button(struct event_t *event)
++{
++	static char buf[128];
++	char *argv[3], *envp[6], *action;
++	int i;
++
++        i = 0;
++        argv[i++] = "/sbin/hotplug";
++        argv[i++] = "button";
++        argv[i] = 0;
++
++	i = 0;
++	/* minimal command environment */
++	envp [i++] = "HOME=/";
++	envp [i++] = "PATH=/sbin:/bin:/usr/sbin:/usr/bin";
++	envp [i++] = "SUBSYSTEM=button";
++
++	snprintf(buf, 128, "BUTTON=%s", event->button_name);
++	envp [i++] = buf;
++
++	action = event->action ? "released" : "pressed";
++	snprintf(buf, 128, "ACTION=%s", action);
++	envp [i++] = buf;
++
++	envp [i] = 0;
++
++	// create hotplug event
++	call_usermodehelper (argv[0], argv, envp, 0);
++
++	//destroy event structure
++	kfree(event);
++}
++
++static irqreturn_t fsg_sync_button_handler(int irq, void *dev_id)
++{
++	int holdkey;
++
++	//check button status
++	gpio_line_get(FSG_SB_GPIO, &holdkey);
++
++	struct event_t *event;
++	//create event
++	if ((event = (struct event_t *)kzalloc (sizeof(struct event_t), GFP_ATOMIC))) {
++		event->action = holdkey;
++		event->button_name = "sync";
++			
++		INIT_WORK(&event->wq, (void *)(void *)hotplug_button);
++		schedule_work(&event->wq);			
++	}
++
++	return IRQ_HANDLED;
++}
++
++static irqreturn_t fsg_reset_button_handler(int irq, void *dev_id)
++{
++	int holdkey;
++
++	//check button status
++	gpio_line_get(FSG_RB_GPIO, &holdkey);
++
++	struct event_t *event;
++	//create event
++	if ((event = (struct event_t *)kzalloc (sizeof(struct event_t), GFP_ATOMIC))) {
++		event->action = holdkey;
++		event->button_name = "reset";
++			
++		INIT_WORK(&event->wq, (void *)(void *)hotplug_button);
++		schedule_work(&event->wq);			
++	}
++
++	return IRQ_HANDLED;
++}
++
++static irqreturn_t fsg_unplug_button_handler(int irq, void *dev_id)
++{
++	int holdkey;
++
++	//check button status
++	gpio_line_get(FSG_UB_GPIO, &holdkey);
++
++	struct event_t *event;
++	//create event
++	if ((event = (struct event_t *)kzalloc (sizeof(struct event_t), GFP_ATOMIC))) {
++		event->action = holdkey;
++		event->button_name = "unplug";
++			
++		INIT_WORK(&event->wq, (void *)(void *)hotplug_button);
++		schedule_work(&event->wq);			
++	}
++
++	return IRQ_HANDLED;
++}
++
++static int __init fsg_buttons_init(void)
++{
++	if (!(machine_is_fsg()))
++		return;
++
++	/* Configure interrupt input for SYNC button */
++	set_irq_type(FSG_SB_IRQ, IRQT_BOTHEDGE);
++	if (request_irq(FSG_SB_IRQ, &fsg_sync_button_handler, IRQF_DISABLED, "SYNC", NULL) < 0) {
++		printk(KERN_DEBUG "SYNC button IRQ %d not available\n", FSG_SB_IRQ);
++		return -EIO;
++	}
++	else
++		printk("SYNC button registered on IRQ%d\n", FSG_SB_IRQ);
++
++	/* Configure interrupt input for RESET button */
++	set_irq_type(FSG_RB_IRQ, IRQT_BOTHEDGE);
++	if (request_irq(FSG_RB_IRQ, &fsg_reset_button_handler, IRQF_DISABLED, "RESET", NULL) < 0) {
++		printk(KERN_DEBUG "RESET button IRQ %d not available\n", FSG_RB_IRQ);
++		return -EIO;
++	}
++	else
++		printk("RESET button registered on IRQ%d\n", FSG_RB_IRQ);
++
++	/* Configure interrupt input for UNPLUG button */
++	set_irq_type(FSG_UB_IRQ, IRQT_BOTHEDGE);
++	if (request_irq(FSG_UB_IRQ, &fsg_unplug_button_handler, IRQF_DISABLED, "RESET", NULL) < 0) {
++		printk(KERN_DEBUG "UNPLUG button IRQ %d not available\n", FSG_UB_IRQ);
++		return -EIO;
++	}
++	else
++		printk("UNPLUG button registered on IRQ%d\n", FSG_UB_IRQ);
++
++	return 0;
++}
++
++static void __exit fsg_buttons_exit(void)
++{
++	if (!(machine_is_fsg()))
++		return;
++
++	free_irq(FSG_SB_IRQ, NULL);
++	free_irq(FSG_RB_IRQ, NULL);
++	free_irq(FSG_UB_IRQ, NULL);
++}
++
++module_init(fsg_buttons_init);
++module_exit(fsg_buttons_exit);
++
++MODULE_AUTHOR("Zintis Petersons <Zintis.Petersons@e-mail.lv>");
++MODULE_DESCRIPTION("FSG buttons driver");
++MODULE_LICENSE("GPL");
+diff -Nur linux-2.6.21.6-orig/arch/arm/mach-ixp4xx/Makefile linux-2.6.21.6/arch/arm/mach-ixp4xx/Makefile
+--- linux-2.6.21.6-orig/arch/arm/mach-ixp4xx/Makefile	2007-10-12 14:34:18.000000000 +0200
++++ linux-2.6.21.6/arch/arm/mach-ixp4xx/Makefile	2007-10-12 22:34:06.000000000 +0200
+@@ -30,7 +30,7 @@
+ obj-$(CONFIG_MACH_NSLU2)	+= nslu2-setup.o nslu2-power.o
+ obj-$(CONFIG_MACH_NAS100D)	+= nas100d-setup.o nas100d-power.o
+ obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o dsmg600-power.o
+-obj-$(CONFIG_MACH_FSG)          += fsg-setup.o
++obj-$(CONFIG_MACH_FSG)          += fsg-setup.o fsg-power.o
+ obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
+ obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
+ obj-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-setup.o
