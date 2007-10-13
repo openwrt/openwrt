@@ -32,19 +32,20 @@ define KernelPackage/mac80211/description
 Linux 802.11 Wireless Networking Stack
 endef
 
-CONFOPTS:=MAC80211 CFG80211 NL80211
+CONFOPTS:=MAC80211 CFG80211
 
 BUILDFLAGS:= \
 	$(foreach opt,$(CONFOPTS),-DCONFIG_$(opt) ) \
-	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS)
+	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS -DCONFIG_NL80211)
 
 MAKE_OPTS:= \
 	CROSS_COMPILE="$(TARGET_CROSS)" \
 	ARCH="$(LINUX_KARCH)" \
 	EXTRA_CFLAGS="$(BUILDFLAGS)" \
 	$(foreach opt,$(CONFOPTS),CONFIG_$(opt)=m) \
+	CONFIG_NL80211=y \
 	CONFIG_MAC80211_LEDS=$(CONFIG_LEDS_TRIGGERS) \
-	LINUXINCLUDE="-I${CURDIR}/src/include -I$(LINUX_DIR)/include -include linux/autoconf.h"
+	LINUXINCLUDE="-I${CURDIR}/src/include -I$(LINUX_DIR)/include -include linux/autoconf.h" \
 
 ifneq ($(findstring 2.6.23,$(LINUX_VERSION)),)
   define Build/Prepare
