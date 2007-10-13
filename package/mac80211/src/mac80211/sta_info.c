@@ -19,7 +19,6 @@
 #include "ieee80211_i.h"
 #include "ieee80211_rate.h"
 #include "sta_info.h"
-#include "debugfs_key.h"
 #include "debugfs_sta.h"
 
 /* Caller must hold local->sta_lock */
@@ -32,42 +31,34 @@ static void sta_info_hash_add(struct ieee80211_local *local,
 
 
 /* Caller must hold local->sta_lock */
-static void sta_info_hash_del(struct ieee80211_local *local,
-			      struct sta_info *sta, int dls)
+static int sta_info_hash_del(struct ieee80211_local *local,
+			     struct sta_info *sta)
 {
 	struct sta_info *s;
 
 	s = local->sta_hash[STA_HASH(sta->addr)];
 	if (!s)
-		return;
-	if (memcmp(s->addr, sta->addr, ETH_ALEN) == 0) {
-		if (dls && !s->dls_sta)
-			return;
+		return -ENOENT;
+	if (s == sta) {
 		local->sta_hash[STA_HASH(sta->addr)] = s->hnext;
-		return;
+		return 0;
 	}
 
-	while (s->hnext && memcmp(s->hnext->addr, sta->addr, ETH_ALEN) != 0)
+	while (s->hnext && s->hnext != sta)
 		s = s->hnext;
 	if (s->hnext) {
-		if (dls && !s->hnext->dls_sta)
-			return;
-		s->hnext = s->hnext->hnext;
-	} else
-		printk(KERN_ERR "%s: could not remove STA " MAC_FMT " from "
-		       "hash table\n", local->mdev->name, MAC_ARG(sta->addr));
-}
+		s->hnext = sta->hnext;
+		return 0;
+	}
 
-static inline void __sta_info_get(struct sta_info *sta)
-{
-	kref_get(&sta->kref);
+	return -ENOENT;
 }
 
 struct sta_info *sta_info_get(struct ieee80211_local *local, u8 *addr)
 {
 	struct sta_info *sta;
 
-	spin_lock_bh(&local->sta_lock);
+	read_lock_bh(&local->sta_lock);
 	sta = local->sta_hash[STA_HASH(addr)];
 	while (sta) {
 		if (memcmp(sta->addr, addr, ETH_ALEN) == 0) {
@@ -76,33 +67,11 @@ struct sta_info *sta_info_get(struct ieee80211_local *local, u8 *addr)
 		}
 		sta = sta->hnext;
 	}
-	spin_unlock_bh(&local->sta_lock);
+	read_unlock_bh(&local->sta_lock);
 
 	return sta;
 }
 EXPORT_SYMBOL(sta_info_get);
-
-struct sta_info *dls_info_get(struct ieee80211_local *local, u8 *addr)
-{
-	struct sta_info *sta;
-
-	spin_lock_bh(&local->sta_lock);
-	sta = local->sta_hash[STA_HASH(addr)];
-	while (sta) {
-		if (memcmp(sta->addr, addr, ETH_ALEN) == 0) {
-			if (!sta->dls_sta) {
-				sta = NULL;
-				break;
-			}
-			__sta_info_get(sta);
-			break;
-		}
-		sta = sta->hnext;
-	}
-	spin_unlock_bh(&local->sta_lock);
-
-	return sta;
-}
 
 int sta_info_min_txrate_get(struct ieee80211_local *local)
 {
@@ -111,7 +80,7 @@ int sta_info_min_txrate_get(struct ieee80211_local *local)
 	int min_txrate = 9999999;
 	int i;
 
-	spin_lock_bh(&local->sta_lock);
+	read_lock_bh(&local->sta_lock);
 	mode = local->oper_hw_mode;
 	for (i = 0; i < STA_HASH_SIZE; i++) {
 		sta = local->sta_hash[i];
@@ -121,7 +90,7 @@ int sta_info_min_txrate_get(struct ieee80211_local *local)
 			sta = sta->hnext;
 		}
 	}
-	spin_unlock_bh(&local->sta_lock);
+	read_unlock_bh(&local->sta_lock);
 	if (min_txrate == 9999999)
 		min_txrate = 0;
 
@@ -148,8 +117,6 @@ static void sta_info_release(struct kref *kref)
 	}
 	rate_control_free_sta(sta->rate_ctrl, sta->rate_ctrl_priv);
 	rate_control_put(sta->rate_ctrl);
-	if (sta->key)
-		ieee80211_debugfs_key_sta_del(sta->key, sta);
 	kfree(sta);
 }
 
@@ -176,7 +143,6 @@ struct sta_info * sta_info_add(struct ieee80211_local *local,
 	sta->rate_ctrl_priv = rate_control_alloc_sta(sta->rate_ctrl, gfp);
 	if (!sta->rate_ctrl_priv) {
 		rate_control_put(sta->rate_ctrl);
-		kref_put(&sta->kref, sta_info_release);
 		kfree(sta);
 		return NULL;
 	}
@@ -188,63 +154,40 @@ struct sta_info * sta_info_add(struct ieee80211_local *local,
 	skb_queue_head_init(&sta->tx_filtered);
 	__sta_info_get(sta);	/* sta used by caller, decremented by
 				 * sta_info_put() */
-	spin_lock_bh(&local->sta_lock);
+	write_lock_bh(&local->sta_lock);
 	list_add(&sta->list, &local->sta_list);
 	local->num_sta++;
 	sta_info_hash_add(local, sta);
-	spin_unlock_bh(&local->sta_lock);
-	if (local->ops->sta_table_notification)
-		local->ops->sta_table_notification(local_to_hw(local),
-						  local->num_sta);
-	sta->key_idx_compression = HW_KEY_IDX_INVALID;
+	if (local->ops->sta_notify)
+		local->ops->sta_notify(local_to_hw(local), dev->ifindex,
+					STA_NOTIFY_ADD, addr);
+	write_unlock_bh(&local->sta_lock);
 
 #ifdef CONFIG_MAC80211_VERBOSE_DEBUG
 	printk(KERN_DEBUG "%s: Added STA " MAC_FMT "\n",
-	       local->mdev->name, MAC_ARG(addr));
+	       wiphy_name(local->hw.wiphy), MAC_ARG(addr));
 #endif /* CONFIG_MAC80211_VERBOSE_DEBUG */
 
 #ifdef CONFIG_MAC80211_DEBUGFS
-	if (!in_interrupt()) {
-		sta->debugfs_registered = 1;
-		ieee80211_sta_debugfs_add(sta);
-		rate_control_add_sta_debugfs(sta);
-	} else {
-		/* debugfs entry adding might sleep, so schedule process
-		 * context task for adding entry for STAs that do not yet
-		 * have one. */
-		queue_work(local->hw.workqueue, &local->sta_debugfs_add);
-	}
+	/* debugfs entry adding might sleep, so schedule process
+	 * context task for adding entry for STAs that do not yet
+	 * have one. */
+	queue_work(local->hw.workqueue, &local->sta_debugfs_add);
 #endif
 
 	return sta;
 }
 
-static void finish_sta_info_free(struct ieee80211_local *local,
-				 struct sta_info *sta)
-{
-#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
-	printk(KERN_DEBUG "%s: Removed STA " MAC_FMT "\n",
-	       local->mdev->name, MAC_ARG(sta->addr));
-#endif /* CONFIG_MAC80211_VERBOSE_DEBUG */
-
-	if (sta->key) {
-		ieee80211_debugfs_key_remove(sta->key);
-		ieee80211_key_free(sta->key);
-		sta->key = NULL;
-	}
-
-	rate_control_remove_sta_debugfs(sta);
-	ieee80211_sta_debugfs_remove(sta);
-
-	sta_info_put(sta);
-}
-
-static void sta_info_remove(struct sta_info *sta)
+/* Caller must hold local->sta_lock */
+void sta_info_remove(struct sta_info *sta)
 {
 	struct ieee80211_local *local = sta->local;
 	struct ieee80211_sub_if_data *sdata;
 
-	sta_info_hash_del(local, sta, 0);
+	/* don't do anything if we've been removed already */
+	if (sta_info_hash_del(local, sta))
+		return;
+
 	list_del(&sta->list);
 	sdata = IEEE80211_DEV_TO_SUB_IF(sta->dev);
 	if (sta->flags & WLAN_STA_PS) {
@@ -254,61 +197,44 @@ static void sta_info_remove(struct sta_info *sta)
 	}
 	local->num_sta--;
 	sta_info_remove_aid_ptr(sta);
+
 }
 
-void sta_info_free(struct sta_info *sta, int locked)
+void sta_info_free(struct sta_info *sta)
 {
 	struct sk_buff *skb;
 	struct ieee80211_local *local = sta->local;
 
-	if (!locked) {
-		spin_lock_bh(&local->sta_lock);
-		sta_info_remove(sta);
-		spin_unlock_bh(&local->sta_lock);
-	} else {
-		sta_info_remove(sta);
-	}
-	if (local->ops->sta_table_notification)
-		local->ops->sta_table_notification(local_to_hw(local),
-						  local->num_sta);
+	might_sleep();
+
+	write_lock_bh(&local->sta_lock);
+	sta_info_remove(sta);
+	write_unlock_bh(&local->sta_lock);
 
 	while ((skb = skb_dequeue(&sta->ps_tx_buf)) != NULL) {
 		local->total_ps_buffered--;
-		dev_kfree_skb_any(skb);
+		dev_kfree_skb(skb);
 	}
 	while ((skb = skb_dequeue(&sta->tx_filtered)) != NULL) {
-		dev_kfree_skb_any(skb);
+		dev_kfree_skb(skb);
 	}
 
-	if (sta->key) {
-		if (local->ops->set_key) {
-			struct ieee80211_key_conf *key;
-			key = ieee80211_key_data2conf(local, sta->key);
-			if (key) {
-				local->ops->set_key(local_to_hw(local),
-						   DISABLE_KEY,
-						   sta->addr, key, sta->aid);
-				kfree(key);
-			}
-		}
-	} else if (sta->key_idx_compression != HW_KEY_IDX_INVALID) {
-		struct ieee80211_key_conf conf;
-		memset(&conf, 0, sizeof(conf));
-		conf.hw_key_idx = sta->key_idx_compression;
-		conf.alg = ALG_NULL;
-		conf.flags |= IEEE80211_KEY_FORCE_SW_ENCRYPT;
-		local->ops->set_key(local_to_hw(local), DISABLE_KEY,
-				   sta->addr, &conf, sta->aid);
-		sta->key_idx_compression = HW_KEY_IDX_INVALID;
-	}
+#ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+	printk(KERN_DEBUG "%s: Removed STA " MAC_FMT "\n",
+	       wiphy_name(local->hw.wiphy), MAC_ARG(sta->addr));
+#endif /* CONFIG_MAC80211_VERBOSE_DEBUG */
 
-#ifdef CONFIG_MAC80211_DEBUGFS
-	if (in_atomic()) {
-		list_add(&sta->list, &local->deleted_sta_list);
-		queue_work(local->hw.workqueue, &local->sta_debugfs_add);
-	} else
-#endif
-		finish_sta_info_free(local, sta);
+	ieee80211_key_free(sta->key);
+	sta->key = NULL;
+
+	if (local->ops->sta_notify)
+		local->ops->sta_notify(local_to_hw(local), sta->dev->ifindex,
+					STA_NOTIFY_REMOVE, sta->addr);
+
+	rate_control_remove_sta_debugfs(sta);
+	ieee80211_sta_debugfs_remove(sta);
+
+	sta_info_put(sta);
 }
 
 
@@ -369,13 +295,13 @@ static void sta_info_cleanup(unsigned long data)
 	struct ieee80211_local *local = (struct ieee80211_local *) data;
 	struct sta_info *sta;
 
-	spin_lock_bh(&local->sta_lock);
+	read_lock_bh(&local->sta_lock);
 	list_for_each_entry(sta, &local->sta_list, list) {
 		__sta_info_get(sta);
 		sta_info_cleanup_expire_buffered(local, sta);
 		sta_info_put(sta);
 	}
-	spin_unlock_bh(&local->sta_lock);
+	read_unlock_bh(&local->sta_lock);
 
 	local->sta_cleanup.expires = jiffies + STA_INFO_CLEANUP_INTERVAL;
 	add_timer(&local->sta_cleanup);
@@ -389,35 +315,20 @@ static void sta_info_debugfs_add_task(struct work_struct *work)
 	struct sta_info *sta, *tmp;
 
 	while (1) {
-		spin_lock_bh(&local->sta_lock);
-		if (!list_empty(&local->deleted_sta_list)) {
-			sta = list_entry(local->deleted_sta_list.next,
-					 struct sta_info, list);
-			list_del(local->deleted_sta_list.next);
-		} else
-			sta = NULL;
-		spin_unlock_bh(&local->sta_lock);
-		if (!sta)
-			break;
-		finish_sta_info_free(local, sta);
-	}
-
-	while (1) {
 		sta = NULL;
-		spin_lock_bh(&local->sta_lock);
+		read_lock_bh(&local->sta_lock);
 		list_for_each_entry(tmp, &local->sta_list, list) {
-			if (!tmp->debugfs_registered) {
+			if (!tmp->debugfs.dir) {
 				sta = tmp;
 				__sta_info_get(sta);
 				break;
 			}
 		}
-		spin_unlock_bh(&local->sta_lock);
+		read_unlock_bh(&local->sta_lock);
 
 		if (!sta)
 			break;
 
-		sta->debugfs_registered = 1;
 		ieee80211_sta_debugfs_add(sta);
 		rate_control_add_sta_debugfs(sta);
 		sta_info_put(sta);
@@ -427,9 +338,8 @@ static void sta_info_debugfs_add_task(struct work_struct *work)
 
 void sta_info_init(struct ieee80211_local *local)
 {
-	spin_lock_init(&local->sta_lock);
+	rwlock_init(&local->sta_lock);
 	INIT_LIST_HEAD(&local->sta_list);
-	INIT_LIST_HEAD(&local->deleted_sta_list);
 
 	init_timer(&local->sta_cleanup);
 	local->sta_cleanup.expires = jiffies + STA_INFO_CLEANUP_INTERVAL;
@@ -449,17 +359,8 @@ int sta_info_start(struct ieee80211_local *local)
 
 void sta_info_stop(struct ieee80211_local *local)
 {
-	struct sta_info *sta, *tmp;
-
 	del_timer(&local->sta_cleanup);
-
-	list_for_each_entry_safe(sta, tmp, &local->sta_list, list) {
-		/* sta_info_free must be called with 0 as the last
-		 * parameter to ensure all debugfs sta entries are
-		 * unregistered. We don't need locking at this
-		 * point. */
-		sta_info_free(sta, 0);
-	}
+	sta_info_flush(local, NULL);
 }
 
 void sta_info_remove_aid_ptr(struct sta_info *sta)
@@ -487,10 +388,19 @@ void sta_info_remove_aid_ptr(struct sta_info *sta)
 void sta_info_flush(struct ieee80211_local *local, struct net_device *dev)
 {
 	struct sta_info *sta, *tmp;
+	LIST_HEAD(tmp_list);
 
-	spin_lock_bh(&local->sta_lock);
+	write_lock_bh(&local->sta_lock);
 	list_for_each_entry_safe(sta, tmp, &local->sta_list, list)
-		if (!dev || dev == sta->dev)
-			sta_info_free(sta, 1);
-	spin_unlock_bh(&local->sta_lock);
+		if (!dev || dev == sta->dev) {
+			__sta_info_get(sta);
+			sta_info_remove(sta);
+			list_add_tail(&sta->list, &tmp_list);
+		}
+	write_unlock_bh(&local->sta_lock);
+
+	list_for_each_entry_safe(sta, tmp, &tmp_list, list) {
+		sta_info_free(sta);
+		sta_info_put(sta);
+	}
 }

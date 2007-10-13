@@ -162,10 +162,15 @@ int cfg80211_dev_rename(struct cfg80211_registered_device *rdev,
 
 	/* this will check for collisions */
 	result = device_rename(&rdev->wiphy.dev, newname);
-	if (!result)
+	if (result)
 		return result;
 
-	/* TODO: do debugfs rename! */
+	if (!debugfs_rename(rdev->wiphy.debugfsdir->d_parent,
+			    rdev->wiphy.debugfsdir,
+			    rdev->wiphy.debugfsdir->d_parent,
+			    newname))
+		printk(KERN_ERR "cfg80211: failed to rename debugfs dir to %s!\n",
+		       newname);
 
 	nl80211_notify_dev_rename(rdev);
 
@@ -355,7 +360,7 @@ out_fail_notifier:
 out_fail_sysfs:
 	return err;
 }
-module_init(cfg80211_init);
+subsys_initcall(cfg80211_init);
 
 static void cfg80211_exit(void)
 {

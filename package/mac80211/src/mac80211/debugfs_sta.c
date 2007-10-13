@@ -60,9 +60,7 @@ static const struct file_operations sta_ ##name## _ops = {		\
 		STA_OPS(name)
 
 STA_FILE(aid, aid, D);
-STA_FILE(key_idx_compression, key_idx_compression, D);
 STA_FILE(dev, dev->name, S);
-STA_FILE(vlan_id, vlan_id, D);
 STA_FILE(rx_packets, rx_packets, LU);
 STA_FILE(tx_packets, tx_packets, LU);
 STA_FILE(rx_bytes, rx_bytes, LU);
@@ -87,7 +85,7 @@ static ssize_t sta_flags_read(struct file *file, char __user *userbuf,
 {
 	char buf[100];
 	struct sta_info *sta = file->private_data;
-	int res = scnprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s",
+	int res = scnprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s",
 		sta->flags & WLAN_STA_AUTH ? "AUTH\n" : "",
 		sta->flags & WLAN_STA_ASSOC ? "ASSOC\n" : "",
 		sta->flags & WLAN_STA_PS ? "PS\n" : "",
@@ -96,7 +94,6 @@ static ssize_t sta_flags_read(struct file *file, char __user *userbuf,
 		sta->flags & WLAN_STA_AUTHORIZED ? "AUTHORIZED\n" : "",
 		sta->flags & WLAN_STA_SHORT_PREAMBLE ? "SHORT PREAMBLE\n" : "",
 		sta->flags & WLAN_STA_WME ? "WME\n" : "",
-		sta->flags & WLAN_STA_HT ? "HT\n" : "",
 		sta->flags & WLAN_STA_WDS ? "WDS\n" : "");
 	return simple_read_from_buffer(userbuf, count, ppos, buf, res);
 }

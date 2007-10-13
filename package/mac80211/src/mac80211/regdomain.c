@@ -32,6 +32,7 @@
 #include <linux/module.h>
 #include <linux/netdevice.h>
 #include <net/mac80211.h>
+#include "ieee80211_i.h"
 
 static int ieee80211_regdom = 0x10; /* FCC */
 module_param(ieee80211_regdom, int, 0444);
@@ -80,12 +81,6 @@ static void ieee80211_unmask_channel(int mode, struct ieee80211_channel *chan)
 	int i;
 
 	chan->flag = 0;
-
-	if (ieee80211_regdom == 64 &&
-	    (mode == MODE_ATHEROS_TURBO || mode == MODE_ATHEROS_TURBOG)) {
-		/* Do not allow Turbo modes in Japan. */
-		return;
-	}
 
 	for (i = 0; channel_range[i].start_freq; i++) {
 		const struct ieee80211_channel_range *r = &channel_range[i];
