@@ -472,7 +472,11 @@ static int cpmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	len = max(skb->len, ETH_ZLEN);
 	queue = skb->queue_mapping;
+#ifdef CONFIG_NETDEVICES_MULTIQUEUE
 	netif_stop_subqueue(dev, queue);
+#else
+	netif_stop_queue(dev);
+#endif
 
 	desc = &priv->desc_ring[queue];
 	if (unlikely(desc->dataflags & CPMAC_OWN)) {
@@ -529,14 +533,24 @@ static void cpmac_end_xmit(struct net_device *dev, int queue)
 
 		dev_kfree_skb_irq(desc->skb);
 		desc->skb = NULL;
+#ifdef CONFIG_NETDEVICES_MULTIQUEUE
 		if (netif_subqueue_stopped(dev, queue))
 			netif_wake_subqueue(dev, queue);
+#else
+		if (netif_queue_stopped(dev))
+			netif_wake_queue(dev);
+#endif
 	} else {
 		if (netif_msg_tx_err(priv) && net_ratelimit())
 			printk(KERN_WARNING
 			       "%s: end_xmit: spurious interrupt\n", dev->name);
+#ifdef CONFIG_NETDEVICES_MULTIQUEUE
 		if (netif_subqueue_stopped(dev, queue))
 			netif_wake_subqueue(dev, queue);
+#else
+		if (netif_queue_stopped(dev))
+			netif_wake_queue(dev);
+#endif
 	}
 }
 
@@ -710,12 +724,18 @@ static void cpmac_tx_timeout(struct net_device *dev)
 	 * FIXME: waking up random queue is not the best thing to
 	 * do... on the other hand why we got here at all?
 	 */
+#ifdef CONFIG_NETDEVICES_MULTIQUEUE
 	for (i = 0; i < CPMAC_QUEUES; i++)
 		if (priv->desc_ring[i].skb) {
 			dev_kfree_skb_any(priv->desc_ring[i].skb);
 			netif_wake_subqueue(dev, i);
 			break;
 		}
+#else
+	if (priv->desc_ring[0].skb)
+		dev_kfree_skb_any(priv->desc_ring[0].skb);
+	netif_wake_queue(dev);
+#endif
 }
 
 static int cpmac_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
