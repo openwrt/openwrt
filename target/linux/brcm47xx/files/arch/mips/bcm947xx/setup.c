@@ -31,6 +31,7 @@
 #include <linux/serial.h>
 #include <linux/serial_core.h>
 #include <linux/serial_reg.h>
+#include <linux/serial_8250.h>
 #include <asm/bootinfo.h>
 #include <asm/time.h>
 #include <asm/reboot.h>
@@ -107,13 +108,27 @@ static void bcm47xx_fill_sprom_nvram(struct ssb_sprom *sprom)
 		sprom->r1.et1phyaddr = simple_strtoul(s, NULL, 10);
 }
 
+static int bcm47xx_get_invariants(struct ssb_bus *bus, struct ssb_init_invariants *iv)
+{
+	char *s;
+	
+	// TODO
+	//iv->boardinfo.vendor = 
+	if ((s = nvram_get("boardtype")))
+		iv->boardinfo.type = (u16)simple_strtoul(s, NULL, 0);
+	if ((s = nvram_get("boardrev")))
+		iv->boardinfo.rev = (u16)simple_strtoul(s, NULL, 0);
+	bcm47xx_fill_sprom(&iv->sprom);
+	return 0;
+}
+
 void __init plat_mem_setup(void)
 {
 	int i, err;
 	char *s;
 	struct ssb_mipscore *mcore;
 
-	err = ssb_bus_ssbbus_register(&ssb, SSB_ENUM_BASE, bcm47xx_fill_sprom);
+	err = ssb_bus_ssbbus_register(&ssb, SSB_ENUM_BASE, bcm47xx_get_invariants);
 	if (err) {
 		const char *msg = "Failed to initialize SSB bus (err %d)\n";
 		cfe_printk(msg, err); /* Make sure the message gets out of the box. */
