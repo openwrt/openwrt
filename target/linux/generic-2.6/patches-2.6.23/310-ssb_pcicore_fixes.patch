@@ -1,8 +1,8 @@
-Index: linux-2.6.23-rc6/drivers/ssb/driver_pcicore.c
+Index: linux-2.6.23/drivers/ssb/driver_pcicore.c
 ===================================================================
---- linux-2.6.23-rc6.orig/drivers/ssb/driver_pcicore.c	2007-09-21 16:23:52.000000000 +0800
-+++ linux-2.6.23-rc6/drivers/ssb/driver_pcicore.c	2007-09-21 16:24:08.000000000 +0800
-@@ -93,6 +93,9 @@
+--- linux-2.6.23.orig/drivers/ssb/driver_pcicore.c	2007-10-13 04:20:23.235499369 +0200
++++ linux-2.6.23/drivers/ssb/driver_pcicore.c	2007-10-13 04:21:28.895241103 +0200
+@@ -93,10 +93,13 @@
  
  	/* Enable PCI bridge BAR1 prefetch and burst */
  	pci_write_config_dword(dev, SSB_BAR1_CONTROL, 3);
@@ -12,6 +12,11 @@ Index: linux-2.6.23-rc6/drivers/ssb/driver_pcicore.c
  }
  DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, ssb_fixup_pcibridge);
  
+-int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
++int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+ {
+ 	return ssb_mips_irq(extpci_core->dev) + 2;
+ }
 @@ -110,7 +113,7 @@
  
  	if (unlikely(pc->cardbusmode && dev > 1))
@@ -35,7 +40,7 @@ Index: linux-2.6.23-rc6/drivers/ssb/driver_pcicore.c
  	val |= SSB_PCICORE_CTL_RST; /* Deassert RST# */
  	pcicore_write32(pc, SSB_PCICORE_CTL, val);
 +	val = SSB_PCICORE_ARBCTL_INTERN;
-+	pcicore_write32(pc, SSB_PCICORE_ARBCTL, val); 
++	pcicore_write32(pc, SSB_PCICORE_ARBCTL, val);
  	udelay(1);
  
  	//TODO cardbus mode
