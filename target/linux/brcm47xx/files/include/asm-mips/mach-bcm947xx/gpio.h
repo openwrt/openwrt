@@ -27,12 +27,12 @@ static inline int gpio_direction_input(unsigned gpio)
 	return 0;
 }
 
-static inline int gpio_direction_output(unsigned gpio)
+static inline int gpio_direction_output(unsigned gpio, int value)
 {
 	if (ssb.chipco.dev)
-		ssb_chipco_gpio_outen(&ssb.chipco, 1 << gpio, 1 << gpio);
+		ssb_chipco_gpio_outen(&ssb.chipco, 1 << gpio, value << gpio);
 	else if (ssb.extif.dev)
-		ssb_extif_gpio_outen(&ssb.extif, 1 << gpio, 1 << gpio);
+		ssb_extif_gpio_outen(&ssb.extif, 1 << gpio, value << gpio);
 	else
 		return -EINVAL;
 
