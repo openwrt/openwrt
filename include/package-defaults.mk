@@ -30,7 +30,6 @@ define Package/Default
   SUBMENU:=
   SUBMENUDEP:=
   TITLE:=
-  DESCRIPTION:=
   KCONFIG:=
 endef
 
