@@ -103,6 +103,17 @@ define KernelPackage/madwifi/description
  This package contains a driver for Atheros 802.11a/b/g chipsets.
 endef
 
+define KernelPackage/madwifi-karma
+  $(call KernelPackage/madwifi)
+  TITLE:=Madwifi for Karma support
+  URL:=http://www.digininja.org/
+endef
+
+define KernelPackage/madwifi-karma/description
+  This package contains a modified driver to be used with 
+  the Karma software for Atheros 802.11a/b/g chipsets.
+endef
+
 MAKE_ARGS:= \
 	PATH="$(TARGET_PATH)" \
 	ARCH="$(LINUX_KARCH)" \
@@ -135,6 +146,9 @@ endif
 
 define Build/Configure
 	$(SED) 's,-E[LB] ,,g' $(PKG_BUILD_DIR)/hal/public/*.inc
+ifneq ($(CONFIG_PACKAGE_kmod-madwifi-karma),)
+	$(PATCH) $(PKG_BUILD_DIR) ./files
+endif
 endef
 
 define Build/Compile
@@ -160,4 +174,12 @@ define KernelPackage/madwifi/install
 	$(CP) $(PKG_BUILD_DIR)/tools/{madwifi_multi,80211stats,athchans,athctrl,athkey,athstats,wlanconfig} $(1)/usr/sbin/
 endef
 
+define KernelPackage/madwifi-karma/install
+	$(INSTALL_DIR) $(1)/lib/wifi
+	$(INSTALL_DATA) ./files/lib/wifi/madwifi.sh $(1)/lib/wifi
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(CP) $(PKG_BUILD_DIR)/tools/{madwifi_multi,80211stats,athchans,athctrl,athkey,athstats,wlanconfig} $(1)/usr/sbin/
+endef
+
 $(eval $(call KernelPackage,madwifi))
+$(eval $(call KernelPackage,madwifi-karma))
