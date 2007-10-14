@@ -85,8 +85,8 @@ define Image/BuildKernel
 endef
 
 define Image/Build
-	$(call Image/Build/$(1))
 	$(call Image/Build/grub,$(1))
+	$(call Image/Build/$(1))
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).fs
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinuz
 endef
