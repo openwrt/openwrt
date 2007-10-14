@@ -161,6 +161,9 @@ struct ar2313_private {
 
 	struct tasklet_struct rx_tasklet;
 	int unloading;
+
+	struct phy_device *phy_dev;
+	struct mii_bus mii_bus;
 };
 
 
