@@ -20,6 +20,7 @@ ifneq ($(OPENWRT_BUILD),1)
   override OPENWRT_BUILD=1
   export OPENWRT_BUILD
   include $(TOPDIR)/include/debug.mk
+  include $(TOPDIR)/include/depends.mk
   include $(TOPDIR)/include/toplevel.mk
 else
   include rules.mk

@@ -52,7 +52,7 @@ prepare-tmpinfo: FORCE
 scripts/config/mconf:
 	@+$(MAKE) -C scripts/config all
 
-$(call  rdep,scripts/config,scripts/config/mconf)
+$(eval $(call rdep,scripts/config,scripts/config/mconf))
 
 scripts/config/conf:
 	@+$(MAKE) -C scripts/config conf
