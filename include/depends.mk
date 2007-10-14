@@ -28,7 +28,7 @@ define rdep
 		) \
 		{ \
 			[ -f "$(2)_check.1" ] && mv "$(2)_check.1"; \
-		    $(SCRIPT_DIR)/timestamp.pl $(DEP_FINDPARAMS) $(4) -n $(2) $(1) && { \
+		    $(TOPDIR)/scripts/timestamp.pl $(DEP_FINDPARAMS) $(4) -n $(2) $(1) && { \
 				$(call debug_eval,$(SUBDIR),r,echo "No need to rebuild $(2)";) \
 				touch -r "$(2)" "$(2)_check"; \
 			} \
