@@ -45,8 +45,6 @@ $(STAMP_BUILT): $(DL_DIR)/$(PKG_FW_NAME)
 $(DL_DIR)/$(PKG_FW_NAME):
 	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_FW_NAME)" "$(PKG_FW_MD5SUM)" $(PKG_FW_URL)
 
-ifneq ($(CONFIG_MAC80211),)
-
   PKG_EXTRA_KCONFIG:= \
 	CONFIG_ACX_MAC80211=m \
 	CONFIG_ACX_MAC80211_PCI=m \
@@ -66,8 +64,6 @@ ifneq ($(CONFIG_MAC80211),)
 		V="$(V)" \
 		modules
   endef
-
-endif
 
 define Build/Configure
 endef
