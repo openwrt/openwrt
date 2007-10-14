@@ -17,7 +17,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/b43
   SUBMENU:=Wireless Drivers
   TITLE:=Broadcom 43xx wireless support
-  DEPENDS:=@TARGET_brcm47xx +kmod-mac80211
+  DEPENDS:=@TARGET_brcm47xx +kmod-mac80211 @BROKEN
   FILES:=$(PKG_BUILD_DIR)/b43.$(LINUX_KMOD_SUFFIX)
 #  AUTOLOAD:=$(call AutoLoad,30,b43)
 endef
