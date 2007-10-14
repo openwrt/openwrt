@@ -301,6 +301,8 @@ sub mconf_depends($$) {
 	my $depends = shift;
 	my $only_dep = shift;
 	my $res;
+	my $dep = shift;
+	$dep or $dep = {};
 
 	$depends or return;
 	my @depends = @$depends;
@@ -321,10 +323,14 @@ sub mconf_depends($$) {
 				# thus if FOO depends on other config options, these dependencies
 				# will not be checked. To fix this, we simply emit all of FOO's
 				# depends here as well.
-				$package{$depend} and $res .= mconf_depends($package{$depend}->{depends}, 1);
+				$package{$depend} and mconf_depends($package{$depend}->{depends}, 1, $dep);
 			};
 			$flags =~ /@/ or $depend = "PACKAGE_$depend";
 		}
+		$dep->{$depend} =~ /select/ or $dep->{$depend} = $m;
+	}
+	foreach my $depend (keys %$dep) {
+		my $m = $dep->{$depend};
 		$res .= "\t\t$m $depend\n";
 	}
 	return $res;
