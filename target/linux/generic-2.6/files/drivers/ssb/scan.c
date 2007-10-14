@@ -15,19 +15,17 @@
 #include <linux/ssb/ssb.h>
 #include <linux/ssb/ssb_regs.h>
 #include <linux/pci.h>
-#include <asm/io.h>
+#include <linux/io.h>
 
-#ifdef CONFIG_SSB_PCMCIAHOST
-# include <pcmcia/cs_types.h>
-# include <pcmcia/cs.h>
-# include <pcmcia/cistpl.h>
-# include <pcmcia/ds.h>
-#endif
+#include <pcmcia/cs_types.h>
+#include <pcmcia/cs.h>
+#include <pcmcia/cistpl.h>
+#include <pcmcia/ds.h>
 
 #include "ssb_private.h"
 
 
-const char * ssb_core_name(u16 coreid)
+const char *ssb_core_name(u16 coreid)
 {
 	switch (coreid) {
 	case SSB_DEV_CHIPCOMMON:
@@ -205,7 +203,7 @@ void ssb_iounmap(struct ssb_bus *bus)
 #ifdef CONFIG_SSB_PCIHOST
 		pci_iounmap(bus->host_pci, bus->mmio);
 #else
-		assert(0); /* Can't reach this code. */
+		SSB_BUG_ON(1); /* Can't reach this code. */
 #endif
 		break;
 	}
@@ -213,8 +211,8 @@ void ssb_iounmap(struct ssb_bus *bus)
 	bus->mapped_device = NULL;
 }
 
-static void __iomem * ssb_ioremap(struct ssb_bus *bus,
-				  unsigned long baseaddr)
+static void __iomem *ssb_ioremap(struct ssb_bus *bus,
+				 unsigned long baseaddr)
 {
 	void __iomem *mmio = NULL;
 
@@ -229,7 +227,7 @@ static void __iomem * ssb_ioremap(struct ssb_bus *bus,
 #ifdef CONFIG_SSB_PCIHOST
 		mmio = pci_iomap(bus->host_pci, 0, ~0UL);
 #else
-		assert(0); /* Can't reach this code. */
+		SSB_BUG_ON(1); /* Can't reach this code. */
 #endif
 		break;
 	}

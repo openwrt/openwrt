@@ -55,7 +55,7 @@ static void bcm47xx_machine_restart(char *command)
 	 */
 
 	/* Set the watchdog timer to reset immediately */
-	ssb_chipco_watchdog(&ssb.chipco, 1);
+	ssb_chipco_watchdog_timer_set(&ssb.chipco, 1);
 	while (1)
 		cpu_relax();
 }
@@ -64,7 +64,7 @@ static void bcm47xx_machine_halt(void)
 {
 	/* Disable interrupts and watchdog and spin forever */
 	local_irq_disable();
-	ssb_chipco_watchdog(&ssb.chipco, 0);
+	ssb_chipco_watchdog_timer_set(&ssb.chipco, 0);
 	while (1)
 		cpu_relax();
 }

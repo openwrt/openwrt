@@ -3,7 +3,6 @@
 
 #include <linux/ssb/ssb.h>
 #include <linux/types.h>
-#include <asm/io.h>
 
 
 #define PFX	"ssb: "
@@ -16,31 +15,19 @@
 
 /* dprintk: Debugging printk; vanishes for non-debug compilation */
 #ifdef CONFIG_SSB_DEBUG
-# define ssb_dprintk(fmt, x...)	ssb_printk(fmt ,##x)
+# define ssb_dprintk(fmt, x...)	ssb_printk(fmt , ##x)
 #else
 # define ssb_dprintk(fmt, x...)	do { /* nothing */ } while (0)
 #endif
 
-/* printkl: Rate limited printk */
-#define ssb_printkl(fmt, x...)	do {		\
-	if (printk_ratelimit())			\
-		ssb_printk(fmt ,##x);		\
-				} while (0)
-
-/* dprintkl: Rate limited debugging printk */
 #ifdef CONFIG_SSB_DEBUG
-# define ssb_dprintkl			ssb_printkl
+# define SSB_WARN_ON(x)		WARN_ON(x)
+# define SSB_BUG_ON(x)		BUG_ON(x)
 #else
-# define ssb_dprintkl(fmt, x...)	do { /* nothing */ } while (0)
+static inline int __ssb_do_nothing(int x) { return x; }
+# define SSB_WARN_ON(x)		__ssb_do_nothing(unlikely(!!(x)))
+# define SSB_BUG_ON(x)		__ssb_do_nothing(unlikely(!!(x)))
 #endif
-
-#define assert(cond)	do {						\
-	if (unlikely(!(cond))) {					\
-		ssb_dprintk(KERN_ERR PFX "BUG: Assertion failed (%s) "	\
-			    "at: %s:%d:%s()\n",				\
-			    #cond, __FILE__, __LINE__, __func__);	\
-	}								\
-		       } while (0)
 
 
 /* pci.c */
@@ -120,7 +107,7 @@ static inline int ssb_pcmcia_init(struct ssb_bus *bus)
 
 
 /* scan.c */
-extern const char * ssb_core_name(u16 coreid);
+extern const char *ssb_core_name(u16 coreid);
 extern int ssb_bus_scan(struct ssb_bus *bus,
 			unsigned long baseaddr);
 extern void ssb_iounmap(struct ssb_bus *ssb);
@@ -128,10 +115,22 @@ extern void ssb_iounmap(struct ssb_bus *ssb);
 
 /* core.c */
 extern u32 ssb_calc_clock_rate(u32 plltype, u32 n, u32 m);
-#ifdef CONFIG_SSB_PCIHOST
 extern int ssb_devices_freeze(struct ssb_bus *bus);
 extern int ssb_devices_thaw(struct ssb_bus *bus);
-extern struct ssb_bus * ssb_pci_dev_to_bus(struct pci_dev *pdev);
+extern struct ssb_bus *ssb_pci_dev_to_bus(struct pci_dev *pdev);
+
+/* b43_pci_bridge.c */
+#ifdef CONFIG_SSB_PCIHOST
+extern int __init b43_pci_ssb_bridge_init(void);
+extern void __exit b43_pci_ssb_bridge_exit(void);
+#else /* CONFIG_SSB_PCIHOST */
+static inline int b43_pci_ssb_bridge_init(void)
+{
+	return 0;
+}
+static inline void b43_pci_ssb_bridge_exit(void)
+{
+}
 #endif /* CONFIG_SSB_PCIHOST */
 
 #endif /* LINUX_SSB_PRIVATE_H_ */

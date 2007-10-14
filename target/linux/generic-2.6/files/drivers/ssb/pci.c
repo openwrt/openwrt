@@ -23,6 +23,11 @@
 #include "ssb_private.h"
 
 
+/* Define the following to 1 to enable a printk on each coreswitch. */
+#define SSB_VERBOSE_PCICORESWITCH_DEBUG		0
+
+
+/* Lowlevel coreswitching */
 int ssb_pci_switch_coreidx(struct ssb_bus *bus, u8 coreidx)
 {
 	int err;
@@ -60,10 +65,12 @@ int ssb_pci_switch_core(struct ssb_bus *bus,
 	int err;
 	unsigned long flags;
 
-	ssb_dprintk(KERN_INFO PFX
-		    "Switching to %s core, index %d\n",
-		    ssb_core_name(dev->id.coreid),
-		    dev->core_index);
+#if SSB_VERBOSE_PCICORESWITCH_DEBUG
+	ssb_printk(KERN_INFO PFX
+		   "Switching to %s core, index %d\n",
+		   ssb_core_name(dev->id.coreid),
+		   dev->core_index);
+#endif
 
 	spin_lock_irqsave(&bus->bar_lock, flags);
 	err = ssb_pci_switch_coreidx(bus, dev->core_index);
@@ -74,6 +81,7 @@ int ssb_pci_switch_core(struct ssb_bus *bus,
 	return err;
 }
 
+/* Enable/disable the on board crystal oscillator and/or PLL. */
 int ssb_pci_xtal(struct ssb_bus *bus, u32 what, int turn_on)
 {
 	int err;
@@ -158,7 +166,9 @@ err_pci:
 	goto out;
 }
 
+/* Get the word-offset for a SSB_SPROM_XXX define. */
 #define SPOFF(offset)	(((offset) - SSB_SPROM_BASE) / sizeof(u16))
+/* Helper to extract some _offset, which is one of the SSB_SPROM_XXX defines. */
 #define SPEX(_outvar, _offset, _mask, _shift)	\
 	out->_outvar = ((in[SPOFF(_offset)] & (_mask)) >> (_shift))
 
@@ -296,15 +306,15 @@ static void sprom_extract_r1(struct ssb_sprom_r1 *out, const u16 *in)
 	SPEX(pci_pid, SSB_SPROM1_PID, 0xFFFF, 0);
 	for (i = 0; i < 3; i++) {
 		v = in[SPOFF(SSB_SPROM1_IL0MAC) + i];
-		*(((u16 *)out->il0mac) + i) = cpu_to_be16(v);
+		*(((__be16 *)out->il0mac) + i) = cpu_to_be16(v);
 	}
 	for (i = 0; i < 3; i++) {
 		v = in[SPOFF(SSB_SPROM1_ET0MAC) + i];
-		*(((u16 *)out->et0mac) + i) = cpu_to_be16(v);
+		*(((__be16 *)out->et0mac) + i) = cpu_to_be16(v);
 	}
 	for (i = 0; i < 3; i++) {
 		v = in[SPOFF(SSB_SPROM1_ET1MAC) + i];
-		*(((u16 *)out->et1mac) + i) = cpu_to_be16(v);
+		*(((__be16 *)out->et1mac) + i) = cpu_to_be16(v);
 	}
 	SPEX(et0phyaddr, SSB_SPROM1_ETHPHY, SSB_SPROM1_ETHPHY_ET0A, 0);
 	SPEX(et1phyaddr, SSB_SPROM1_ETHPHY, SSB_SPROM1_ETHPHY_ET1A,
@@ -342,7 +352,7 @@ static void sprom_extract_r1(struct ssb_sprom_r1 *out, const u16 *in)
 	     SSB_SPROM1_AGAIN_BG_SHIFT);
 	for (i = 0; i < 4; i++) {
 		v = in[SPOFF(SSB_SPROM1_OEM) + i];
-		*(((u16 *)out->oem) + i) = cpu_to_le16(v);
+		*(((__le16 *)out->oem) + i) = cpu_to_le16(v);
 	}
 }
 
@@ -364,7 +374,7 @@ static void sprom_extract_r2(struct ssb_sprom_r2 *out, const u16 *in)
 	SPEX(ofdm_pwr_off, SSB_SPROM2_OPO, SSB_SPROM2_OPO_VALUE, 0);
 	for (i = 0; i < 4; i++) {
 		v = in[SPOFF(SSB_SPROM2_CCODE) + i];
-		*(((u16 *)out->country_str) + i) = cpu_to_le16(v);
+		*(((__le16 *)out->country_str) + i) = cpu_to_le16(v);
 	}
 }
 
@@ -489,50 +499,81 @@ out:
 	return err;
 }
 
+#ifdef CONFIG_SSB_DEBUG
+static int ssb_pci_assert_buspower(struct ssb_bus *bus)
+{
+	if (likely(bus->powered_up))
+		return 0;
+
+	printk(KERN_ERR PFX "FATAL ERROR: Bus powered down "
+	       "while accessing PCI MMIO space\n");
+	if (bus->power_warn_count <= 10) {
+		bus->power_warn_count++;
+		dump_stack();
+	}
+
+	return -ENODEV;
+}
+#else /* DEBUG */
+static inline int ssb_pci_assert_buspower(struct ssb_bus *bus)
+{
+	return 0;
+}
+#endif /* DEBUG */
+
 static u16 ssb_pci_read16(struct ssb_device *dev, u16 offset)
 {
 	struct ssb_bus *bus = dev->bus;
 
+	if (unlikely(ssb_pci_assert_buspower(bus)))
+		return 0xFFFF;
 	if (unlikely(bus->mapped_device != dev)) {
 		if (unlikely(ssb_pci_switch_core(bus, dev)))
 			return 0xFFFF;
 	}
-	return readw(bus->mmio + offset);
+	return ioread16(bus->mmio + offset);
 }
 
 static u32 ssb_pci_read32(struct ssb_device *dev, u16 offset)
 {
 	struct ssb_bus *bus = dev->bus;
 
+	if (unlikely(ssb_pci_assert_buspower(bus)))
+		return 0xFFFFFFFF;
 	if (unlikely(bus->mapped_device != dev)) {
 		if (unlikely(ssb_pci_switch_core(bus, dev)))
 			return 0xFFFFFFFF;
 	}
-	return readl(bus->mmio + offset);
+	return ioread32(bus->mmio + offset);
 }
 
 static void ssb_pci_write16(struct ssb_device *dev, u16 offset, u16 value)
 {
 	struct ssb_bus *bus = dev->bus;
 
+	if (unlikely(ssb_pci_assert_buspower(bus)))
+		return;
 	if (unlikely(bus->mapped_device != dev)) {
 		if (unlikely(ssb_pci_switch_core(bus, dev)))
 			return;
 	}
-	writew(value, bus->mmio + offset);
+	iowrite16(value, bus->mmio + offset);
 }
 
 static void ssb_pci_write32(struct ssb_device *dev, u16 offset, u32 value)
 {
 	struct ssb_bus *bus = dev->bus;
 
+	if (unlikely(ssb_pci_assert_buspower(bus)))
+		return;
 	if (unlikely(bus->mapped_device != dev)) {
 		if (unlikely(ssb_pci_switch_core(bus, dev)))
 			return;
 	}
-	writel(value, bus->mmio + offset);
+	iowrite32(value, bus->mmio + offset);
 }
 
+/* Not "static", as it's used in main.c */
 const struct ssb_bus_ops ssb_pci_ops = {
 	.read16		= ssb_pci_read16,
 	.read32		= ssb_pci_read32,
@@ -590,6 +631,9 @@ static ssize_t ssb_pci_attr_sprom_show(struct device *pcidev,
 	if (!sprom)
 		goto out;
 
+	/* Use interruptible locking, as the SPROM write might
+	 * be holding the lock for several seconds. So allow userspace
+	 * to cancel operation. */
 	err = -ERESTARTSYS;
 	if (mutex_lock_interruptible(&bus->pci_sprom_mutex))
 		goto out_kfree;
@@ -632,10 +676,18 @@ static ssize_t ssb_pci_attr_sprom_store(struct device *pcidev,
 		goto out_kfree;
 	}
 
+	/* Use interruptible locking, as the SPROM write might
+	 * be holding the lock for several seconds. So allow userspace
+	 * to cancel operation. */
 	err = -ERESTARTSYS;
 	if (mutex_lock_interruptible(&bus->pci_sprom_mutex))
 		goto out_kfree;
 	err = ssb_devices_freeze(bus);
+	if (err == -EOPNOTSUPP) {
+		ssb_printk(KERN_ERR PFX "SPROM write: Could not freeze devices. "
+			   "No suspend support. Is CONFIG_PM enabled?\n");
+		goto out_unlock;
+	}
 	if (err) {
 		ssb_printk(KERN_ERR PFX "SPROM write: Could not freeze all devices\n");
 		goto out_unlock;

@@ -13,34 +13,43 @@
 #include <linux/delay.h>
 #include <linux/ssb/ssb.h>
 #include <linux/ssb/ssb_regs.h>
+#include <linux/dma-mapping.h>
+#include <linux/pci.h>
 
-#ifdef CONFIG_SSB_PCIHOST
-# include <linux/pci.h>
-#endif
-
-#ifdef CONFIG_SSB_PCMCIAHOST
-# include <pcmcia/cs_types.h>
-# include <pcmcia/cs.h>
-# include <pcmcia/cistpl.h>
-# include <pcmcia/ds.h>
-#endif
+#include <pcmcia/cs_types.h>
+#include <pcmcia/cs.h>
+#include <pcmcia/cistpl.h>
+#include <pcmcia/ds.h>
 
 
 MODULE_DESCRIPTION("Sonics Silicon Backplane driver");
 MODULE_LICENSE("GPL");
 
 
+/* Temporary list of yet-to-be-attached buses */
 static LIST_HEAD(attach_queue);
+/* List if running buses */
 static LIST_HEAD(buses);
+/* Software ID counter */
 static unsigned int next_busnumber;
+/* buses_mutes locks the two buslists and the next_busnumber.
+ * Don't lock this directly, but use ssb_buses_[un]lock() below. */
 static DEFINE_MUTEX(buses_mutex);
+
+/* There are differences in the codeflow, if the bus is
+ * initialized from early boot, as various needed services
+ * are not available early. This is a mechanism to delay
+ * these initializations to after early boot has finished.
+ * It's also used to avoid mutex locking, as that's not
+ * available and needed early. */
+static bool ssb_is_early_boot = 1;
 
 static void ssb_buses_lock(void);
 static void ssb_buses_unlock(void);
 
 
 #ifdef CONFIG_SSB_PCIHOST
-struct ssb_bus * ssb_pci_dev_to_bus(struct pci_dev *pdev)
+struct ssb_bus *ssb_pci_dev_to_bus(struct pci_dev *pdev)
 {
 	struct ssb_bus *bus;
 
@@ -58,7 +67,7 @@ found:
 }
 #endif /* CONFIG_SSB_PCIHOST */
 
-static struct ssb_device * ssb_device_get(struct ssb_device *dev)
+static struct ssb_device *ssb_device_get(struct ssb_device *dev)
 {
 	if (dev)
 		get_device(dev->dev);
@@ -122,6 +131,9 @@ static void ssb_bus_suspend(struct ssb_bus *bus, pm_message_t state)
 #ifdef CONFIG_SSB_DRIVER_PCICORE
 	bus->pcicore.setup_done = 0;
 #endif
+#ifdef CONFIG_SSB_DEBUG
+	bus->powered_up = 0;
+#endif
 }
 
 static int ssb_device_suspend(struct device *dev, pm_message_t state)
@@ -159,20 +171,53 @@ int ssb_devices_freeze(struct ssb_bus *bus)
 	int i;
 	pm_message_t state = PMSG_FREEZE;
 
+	/* First check that we are capable to freeze all devices. */
 	for (i = 0; i < bus->nr_devices; i++) {
 		dev = &(bus->devices[i]);
-		if (!dev->dev->driver)
-			continue;
-		if (!device_is_registered(dev->dev))
+		if (!dev->dev ||
+		    !dev->dev->driver ||
+		    !device_is_registered(dev->dev))
 			continue;
 		drv = drv_to_ssb_drv(dev->dev->driver);
-		if (drv && drv->suspend) {
-			err = drv->suspend(dev, state);
-			if (err)
-				goto out;
+		if (!drv)
+			continue;
+		if (!drv->suspend) {
+			/* Nope, can't suspend this one. */
+			return -EOPNOTSUPP;
 		}
 	}
-out:
+	/* Now suspend all devices */
+	for (i = 0; i < bus->nr_devices; i++) {
+		dev = &(bus->devices[i]);
+		if (!dev->dev ||
+		    !dev->dev->driver ||
+		    !device_is_registered(dev->dev))
+			continue;
+		drv = drv_to_ssb_drv(dev->dev->driver);
+		if (!drv)
+			continue;
+		err = drv->suspend(dev, state);
+		if (err) {
+			ssb_printk(KERN_ERR PFX "Failed to freeze device %s\n",
+				   dev->dev->bus_id);
+			goto err_unwind;
+		}
+	}
+
+	return 0;
+err_unwind:
+	for (i--; i >= 0; i--) {
+		dev = &(bus->devices[i]);
+		if (!dev->dev ||
+		    !dev->dev->driver ||
+		    !device_is_registered(dev->dev))
+			continue;
+		drv = drv_to_ssb_drv(dev->dev->driver);
+		if (!drv)
+			continue;
+		if (drv->resume)
+			drv->resume(dev);
+	}
 	return err;
 }
 
@@ -180,24 +225,28 @@ int ssb_devices_thaw(struct ssb_bus *bus)
 {
 	struct ssb_device *dev;
 	struct ssb_driver *drv;
-	int err = 0;
+	int err;
 	int i;
 
 	for (i = 0; i < bus->nr_devices; i++) {
 		dev = &(bus->devices[i]);
-		if (!dev->dev->driver)
-			continue;
-		if (!device_is_registered(dev->dev))
+		if (!dev->dev ||
+		    !dev->dev->driver ||
+		    !device_is_registered(dev->dev))
 			continue;
 		drv = drv_to_ssb_drv(dev->dev->driver);
-		if (drv && drv->resume) {
-			err = drv->resume(dev);
-			if (err)
-				goto out;
+		if (!drv)
+			continue;
+		if (SSB_WARN_ON(!drv->resume))
+			continue;
+		err = drv->resume(dev);
+		if (err) {
+			ssb_printk(KERN_ERR PFX "Failed to thaw device %s\n",
+				   dev->dev->bus_id);
 		}
 	}
-out:
-	return err;
+
+	return 0;
 }
 #endif /* CONFIG_SSB_PCIHOST */
 
@@ -271,27 +320,47 @@ static int ssb_bus_match(struct device *dev, struct device_driver *drv)
 	return 0;
 }
 
+static int ssb_device_uevent(struct device *dev, char **envp, int num_envp,
+			     char *buffer, int buffer_size)
+{
+	struct ssb_device *ssb_dev = dev_to_ssb_dev(dev);
+	int ret, i = 0, length = 0;
+
+	if (!dev)
+		return -ENODEV;
+
+	ret = add_uevent_var(envp, num_envp, &i,
+			     buffer, buffer_size, &length,
+			     "MODALIAS=ssb:v%04Xid%04Xrev%02X",
+			     ssb_dev->id.vendor, ssb_dev->id.coreid,
+			     ssb_dev->id.revision);
+	envp[i] = NULL;
+
+	return ret;
+}
+
 static struct bus_type ssb_bustype = {
-	.name		= NULL, /* Intentionally NULL to indicate early boot */
+	.name		= "ssb",
 	.match		= ssb_bus_match,
 	.probe		= ssb_device_probe,
 	.remove		= ssb_device_remove,
 	.shutdown	= ssb_device_shutdown,
 	.suspend	= ssb_device_suspend,
 	.resume		= ssb_device_resume,
+	.uevent		= ssb_device_uevent,
 };
-
-#define is_early_boot()		(ssb_bustype.name == NULL)
 
 static void ssb_buses_lock(void)
 {
-	if (!is_early_boot())
+	/* See the comment at the ssb_is_early_boot definition */
+	if (!ssb_is_early_boot)
 		mutex_lock(&buses_mutex);
 }
 
 static void ssb_buses_unlock(void)
 {
-	if (!is_early_boot())
+	/* See the comment at the ssb_is_early_boot definition */
+	if (!ssb_is_early_boot)
 		mutex_unlock(&buses_mutex);
 }
 
@@ -421,9 +490,14 @@ static int ssb_attach_queued_buses(void)
 		 * is too early in boot for embedded systems
 		 * (no udelay() available). So do it here in attach stage.
 		 */
+		err = ssb_bus_powerup(bus, 0);
+		if (err)
+			goto error;
 		ssb_pcicore_init(&bus->pcicore);
+		ssb_bus_may_powerdown(bus);
 
 		err = ssb_devices_register(bus);
+error:
 		if (err) {
 			drop_them_all = 1;
 			list_del(&bus->list);
@@ -467,6 +541,7 @@ static void ssb_ssb_write32(struct ssb_device *dev, u16 offset, u32 value)
 	writel(value, bus->mmio + offset);
 }
 
+/* Ops for the plain SSB bus without a host-device (no PCI or PCMCIA). */
 static const struct ssb_bus_ops ssb_ssb_ops = {
 	.read16		= ssb_ssb_read16,
 	.read32		= ssb_ssb_read32,
@@ -475,8 +550,7 @@ static const struct ssb_bus_ops ssb_ssb_ops = {
 };
 
 static int ssb_fetch_invariants(struct ssb_bus *bus,
-				int (*get_invariants)(struct ssb_bus *bus,
-						      struct ssb_init_invariants *iv))
+				ssb_invariants_func_t get_invariants)
 {
 	struct ssb_init_invariants iv;
 	int err;
@@ -492,8 +566,7 @@ out:
 }
 
 static int ssb_bus_register(struct ssb_bus *bus,
-			    int (*get_invariants)(struct ssb_bus *bus,
-			    			  struct ssb_init_invariants *iv),
+			    ssb_invariants_func_t get_invariants,
 			    unsigned long baseaddr)
 {
 	int err;
@@ -522,15 +595,22 @@ static int ssb_bus_register(struct ssb_bus *bus,
 		goto err_pci_exit;
 
 	/* Initialize basic system devices (if available) */
+	err = ssb_bus_powerup(bus, 0);
+	if (err)
+		goto err_pcmcia_exit;
 	ssb_chipcommon_init(&bus->chipco);
 	ssb_mipscore_init(&bus->mipscore);
 	err = ssb_fetch_invariants(bus, get_invariants);
-	if (err)
+	if (err) {
+		ssb_bus_may_powerdown(bus);
 		goto err_pcmcia_exit;
+	}
+	ssb_bus_may_powerdown(bus);
 
-	/* Queue it for attach */
+	/* Queue it for attach.
+	 * See the comment at the ssb_is_early_boot definition. */
 	list_add_tail(&bus->list, &attach_queue);
-	if (!is_early_boot()) {
+	if (!ssb_is_early_boot) {
 		/* This is not early boot, so we must attach the bus now */
 		err = ssb_attach_queued_buses();
 		if (err)
@@ -601,8 +681,7 @@ EXPORT_SYMBOL(ssb_bus_pcmciabus_register);
 
 int ssb_bus_ssbbus_register(struct ssb_bus *bus,
 			    unsigned long baseaddr,
-			    int (*get_invariants)(struct ssb_bus *bus,
-			    			  struct ssb_init_invariants *iv))
+			    ssb_invariants_func_t get_invariants)
 {
 	int err;
 
@@ -695,13 +774,13 @@ u32 ssb_calc_clock_rate(u32 plltype, u32 n, u32 m)
 	case SSB_PLLTYPE_2: /* 48Mhz, 4 dividers */
 		n1 += SSB_CHIPCO_CLK_T2_BIAS;
 		n2 += SSB_CHIPCO_CLK_T2_BIAS;
-		assert((n1 >= 2) && (n1 <= 7));
-		assert((n2 >= 5) && (n2 <= 23));
+		SSB_WARN_ON(!((n1 >= 2) && (n1 <= 7)));
+		SSB_WARN_ON(!((n2 >= 5) && (n2 <= 23)));
 		break;
 	case SSB_PLLTYPE_5: /* 25Mhz, 4 dividers */
 		return 100000000;
 	default:
-		assert(0);
+		SSB_WARN_ON(1);
 	}
 
 	switch (plltype) {
@@ -750,9 +829,9 @@ u32 ssb_calc_clock_rate(u32 plltype, u32 n, u32 m)
 		m1 += SSB_CHIPCO_CLK_T2_BIAS;
 		m2 += SSB_CHIPCO_CLK_T2M2_BIAS;
 		m3 += SSB_CHIPCO_CLK_T2_BIAS;
-		assert((m1 >= 2) && (m1 <= 7));
-		assert((m2 >= 3) && (m2 <= 10));
-		assert((m3 >= 2) && (m3 <= 7));
+		SSB_WARN_ON(!((m1 >= 2) && (m1 <= 7)));
+		SSB_WARN_ON(!((m2 >= 3) && (m2 <= 10)));
+		SSB_WARN_ON(!((m3 >= 2) && (m3 <= 7)));
 
 		if (!(mc & SSB_CHIPCO_CLK_T2MC_M1BYP))
 			clock /= m1;
@@ -762,7 +841,7 @@ u32 ssb_calc_clock_rate(u32 plltype, u32 n, u32 m)
 			clock /= m3;
 		return clock;
 	default:
-		assert(0);
+		SSB_WARN_ON(1);
 	}
 	return 0;
 }
@@ -774,12 +853,13 @@ u32 ssb_clockspeed(struct ssb_bus *bus)
 	u32 plltype;
 	u32 clkctl_n, clkctl_m;
 
-	//TODO if EXTIF: PLLTYPE == 1, read n from clockcontrol_n, m from clockcontrol_sb
-
-	if (bus->chipco.dev) {
+	if (ssb_extif_available(&bus->extif))
+		ssb_extif_get_clockcontrol(&bus->extif, &plltype,
+					   &clkctl_n, &clkctl_m);
+	else if (bus->chipco.dev)
 		ssb_chipco_get_clockcontrol(&bus->chipco, &plltype,
 					    &clkctl_n, &clkctl_m);
-	} else
+	else
 		return 0;
 
 	if (bus->chip_id == 0x5365) {
@@ -804,7 +884,7 @@ static u32 ssb_tmslow_reject_bitmask(struct ssb_device *dev)
 	case SSB_IDLOW_SSBREV_23:
 		return SSB_TMSLOW_REJECT_23;
 	default:
-		assert(0);
+		WARN_ON(1);
 	}
 	return (SSB_TMSLOW_REJECT_22 | SSB_TMSLOW_REJECT_23);
 }
@@ -822,6 +902,18 @@ int ssb_device_is_enabled(struct ssb_device *dev)
 }
 EXPORT_SYMBOL(ssb_device_is_enabled);
 
+static void ssb_flush_tmslow(struct ssb_device *dev)
+{
+	/* Make _really_ sure the device has finished the TMSLOW
+	 * register write transaction, as we risk running into
+	 * a machine check exception otherwise.
+	 * Do this by reading the register back to commit the
+	 * PCI write and delay an additional usec for the device
+	 * to react to the change. */
+	ssb_read32(dev, SSB_TMSLOW);
+	udelay(1);
+}
+
 void ssb_device_enable(struct ssb_device *dev, u32 core_specific_flags)
 {
 	u32 val;
@@ -830,9 +922,7 @@ void ssb_device_enable(struct ssb_device *dev, u32 core_specific_flags)
 	ssb_write32(dev, SSB_TMSLOW,
 		    SSB_TMSLOW_RESET | SSB_TMSLOW_CLOCK |
 		    SSB_TMSLOW_FGC | core_specific_flags);
-	/* flush */
-	ssb_read32(dev, SSB_TMSLOW);
-	udelay(1);
+	ssb_flush_tmslow(dev);
 
 	/* Clear SERR if set. This is a hw bug workaround. */
 	if (ssb_read32(dev, SSB_TMSHIGH) & SSB_TMSHIGH_SERR)
@@ -847,18 +937,16 @@ void ssb_device_enable(struct ssb_device *dev, u32 core_specific_flags)
 	ssb_write32(dev, SSB_TMSLOW,
 		    SSB_TMSLOW_CLOCK | SSB_TMSLOW_FGC |
 		    core_specific_flags);
-	/* flush */
-	ssb_read32(dev, SSB_TMSLOW);
-	udelay(1);
+	ssb_flush_tmslow(dev);
 
 	ssb_write32(dev, SSB_TMSLOW, SSB_TMSLOW_CLOCK |
 		    core_specific_flags);
-	/* flush */
-	ssb_read32(dev, SSB_TMSLOW);
-	udelay(1);
+	ssb_flush_tmslow(dev);
 }
 EXPORT_SYMBOL(ssb_device_enable);
 
+/* Wait for a bit in a register to get set or unset.
+ * timeout is in units of ten-microseconds */
 static int ssb_wait_bit(struct ssb_device *dev, u16 reg, u32 bitmask,
 			int timeout, int set)
 {
@@ -898,22 +986,18 @@ void ssb_device_disable(struct ssb_device *dev, u32 core_specific_flags)
 		    SSB_TMSLOW_FGC | SSB_TMSLOW_CLOCK |
 		    reject | SSB_TMSLOW_RESET |
 		    core_specific_flags);
-	/* flush */
-	ssb_read32(dev, SSB_TMSLOW);
-	udelay(1);
+	ssb_flush_tmslow(dev);
 
 	ssb_write32(dev, SSB_TMSLOW,
 		    reject | SSB_TMSLOW_RESET |
 		    core_specific_flags);
-	/* flush */
-	ssb_read32(dev, SSB_TMSLOW);
-	udelay(1);
+	ssb_flush_tmslow(dev);
 }
 EXPORT_SYMBOL(ssb_device_disable);
 
 u32 ssb_dma_translation(struct ssb_device *dev)
 {
-	switch(dev->bus->bustype) {
+	switch (dev->bus->bustype) {
 	case SSB_BUSTYPE_SSB:
 		return 0;
 	case SSB_BUSTYPE_PCI:
@@ -943,28 +1027,31 @@ EXPORT_SYMBOL(ssb_dma_set_mask);
 int ssb_bus_may_powerdown(struct ssb_bus *bus)
 {
 	struct ssb_chipcommon *cc;
-	int err;
+	int err = 0;
 
 	/* On buses where more than one core may be working
 	 * at a time, we must not powerdown stuff if there are
 	 * still cores that may want to run. */
 	if (bus->bustype == SSB_BUSTYPE_SSB)
-		return 0;
+		goto out;
 
 	cc = &bus->chipco;
 	ssb_chipco_set_clockmode(cc, SSB_CLKMODE_SLOW);
 	err = ssb_pci_xtal(bus, SSB_GPIO_XTAL | SSB_GPIO_PLL, 0);
 	if (err)
 		goto error;
-
-	return 0;
+out:
+#ifdef CONFIG_SSB_DEBUG
+	bus->powered_up = 0;
+#endif
+	return err;
 error:
 	ssb_printk(KERN_ERR PFX "Bus powerdown failed\n");
-	return err;
+	goto out;
 }
 EXPORT_SYMBOL(ssb_bus_may_powerdown);
 
-int ssb_bus_powerup(struct ssb_bus *bus, int dynamic_pctl)
+int ssb_bus_powerup(struct ssb_bus *bus, bool dynamic_pctl)
 {
 	struct ssb_chipcommon *cc;
 	int err;
@@ -977,6 +1064,9 @@ int ssb_bus_powerup(struct ssb_bus *bus, int dynamic_pctl)
 	mode = dynamic_pctl ? SSB_CLKMODE_DYNAMIC : SSB_CLKMODE_FAST;
 	ssb_chipco_set_clockmode(cc, mode);
 
+#ifdef CONFIG_SSB_DEBUG
+	bus->powered_up = 1;
+#endif
 	return 0;
 error:
 	ssb_printk(KERN_ERR PFX "Bus powerup failed\n");
@@ -993,15 +1083,15 @@ u32 ssb_admatch_base(u32 adm)
 		base = (adm & SSB_ADM_BASE0);
 		break;
 	case SSB_ADM_TYPE1:
-		assert(!(adm & SSB_ADM_NEG)); /* unsupported */
+		SSB_WARN_ON(adm & SSB_ADM_NEG); /* unsupported */
 		base = (adm & SSB_ADM_BASE1);
 		break;
 	case SSB_ADM_TYPE2:
-		assert(!(adm & SSB_ADM_NEG)); /* unsupported */
+		SSB_WARN_ON(adm & SSB_ADM_NEG); /* unsupported */
 		base = (adm & SSB_ADM_BASE2);
 		break;
 	default:
-		assert(0);
+		SSB_WARN_ON(1);
 	}
 
 	return base;
@@ -1017,15 +1107,15 @@ u32 ssb_admatch_size(u32 adm)
 		size = ((adm & SSB_ADM_SZ0) >> SSB_ADM_SZ0_SHIFT);
 		break;
 	case SSB_ADM_TYPE1:
-		assert(!(adm & SSB_ADM_NEG)); /* unsupported */
+		SSB_WARN_ON(adm & SSB_ADM_NEG); /* unsupported */
 		size = ((adm & SSB_ADM_SZ1) >> SSB_ADM_SZ1_SHIFT);
 		break;
 	case SSB_ADM_TYPE2:
-		assert(!(adm & SSB_ADM_NEG)); /* unsupported */
+		SSB_WARN_ON(adm & SSB_ADM_NEG); /* unsupported */
 		size = ((adm & SSB_ADM_SZ2) >> SSB_ADM_SZ2_SHIFT);
 		break;
 	default:
-		assert(0);
+		SSB_WARN_ON(1);
 	}
 	size = (1 << (size + 1));
 
@@ -1037,7 +1127,8 @@ static int __init ssb_modinit(void)
 {
 	int err;
 
-	ssb_bustype.name = "ssb";
+	/* See the comment at the ssb_is_early_boot definition */
+	ssb_is_early_boot = 0;
 	err = bus_register(&ssb_bustype);
 	if (err)
 		return err;
@@ -1051,12 +1142,21 @@ static int __init ssb_modinit(void)
 	if (err)
 		bus_unregister(&ssb_bustype);
 
+	err = b43_pci_ssb_bridge_init();
+	if (err) {
+		ssb_printk(KERN_ERR "Broadcom 43xx PCI-SSB-bridge "
+			   "initialization failed");
+		/* don't fail SSB init because of this */
+		err = 0;
+	}
+
 	return err;
 }
 subsys_initcall(ssb_modinit);
 
 static void __exit ssb_modexit(void)
 {
+	b43_pci_ssb_bridge_exit();
 	bus_unregister(&ssb_bustype);
 }
 module_exit(ssb_modexit)

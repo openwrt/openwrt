@@ -1,31 +1,30 @@
 #ifndef LINUX_SSB_REGS_H_
 #define LINUX_SSB_REGS_H_
-#ifdef __KERNEL__
 
 
 /* SiliconBackplane Address Map.
  * All regions may not exist on all chips.
  */
-#define SSB_SDRAM_BASE		0x00000000	/* Physical SDRAM */
-#define SSB_PCI_MEM		0x08000000	/* Host Mode sb2pcitranslation0 (64 MB) */
-#define SSB_PCI_CFG		0x0c000000	/* Host Mode sb2pcitranslation1 (64 MB) */
-#define	SSB_SDRAM_SWAPPED	0x10000000	/* Byteswapped Physical SDRAM */
-#define SSB_ENUM_BASE    	0x18000000	/* Enumeration space base */
-#define	SSB_ENUM_LIMIT		0x18010000	/* Enumeration space limit */
+#define SSB_SDRAM_BASE		0x00000000U	/* Physical SDRAM */
+#define SSB_PCI_MEM		0x08000000U	/* Host Mode sb2pcitranslation0 (64 MB) */
+#define SSB_PCI_CFG		0x0c000000U	/* Host Mode sb2pcitranslation1 (64 MB) */
+#define	SSB_SDRAM_SWAPPED	0x10000000U	/* Byteswapped Physical SDRAM */
+#define SSB_ENUM_BASE    	0x18000000U	/* Enumeration space base */
+#define	SSB_ENUM_LIMIT		0x18010000U	/* Enumeration space limit */
 
-#define	SSB_FLASH2		0x1c000000	/* Flash Region 2 (region 1 shadowed here) */
-#define	SSB_FLASH2_SZ		0x02000000	/* Size of Flash Region 2 */
+#define	SSB_FLASH2		0x1c000000U	/* Flash Region 2 (region 1 shadowed here) */
+#define	SSB_FLASH2_SZ		0x02000000U	/* Size of Flash Region 2 */
 
-#define	SSB_EXTIF_BASE		0x1f000000	/* External Interface region base address */
-#define	SSB_FLASH1		0x1fc00000	/* Flash Region 1 */
-#define	SSB_FLASH1_SZ		0x00400000	/* Size of Flash Region 1 */
+#define	SSB_EXTIF_BASE		0x1f000000U	/* External Interface region base address */
+#define	SSB_FLASH1		0x1fc00000U	/* Flash Region 1 */
+#define	SSB_FLASH1_SZ		0x00400000U	/* Size of Flash Region 1 */
 
-#define SSB_PCI_DMA		0x40000000	/* Client Mode sb2pcitranslation2 (1 GB) */
-#define SSB_PCI_DMA_SZ		0x40000000	/* Client Mode sb2pcitranslation2 size in bytes */
-#define SSB_PCIE_DMA_L32		0x00000000	/* PCIE Client Mode sb2pcitranslation2 (2 ZettaBytes), low 32 bits */
-#define SSB_PCIE_DMA_H32		0x80000000	/* PCIE Client Mode sb2pcitranslation2 (2 ZettaBytes), high 32 bits */
-#define	SSB_EUART		(SB_EXTIF_BASE + 0x00800000)
-#define	SSB_LED			(SB_EXTIF_BASE + 0x00900000)
+#define SSB_PCI_DMA		0x40000000U	/* Client Mode sb2pcitranslation2 (1 GB) */
+#define SSB_PCI_DMA_SZ		0x40000000U	/* Client Mode sb2pcitranslation2 size in bytes */
+#define SSB_PCIE_DMA_L32	0x00000000U	/* PCIE Client Mode sb2pcitranslation2 (2 ZettaBytes), low 32 bits */
+#define SSB_PCIE_DMA_H32	0x80000000U	/* PCIE Client Mode sb2pcitranslation2 (2 ZettaBytes), high 32 bits */
+#define	SSB_EUART		(SSB_EXTIF_BASE + 0x00800000)
+#define	SSB_LED			(SSB_EXTIF_BASE + 0x00900000)
 
 
 /* Enumeration space constants */
@@ -268,7 +267,7 @@ enum {
 	SSB_SPROM1CCODE_NONE,
 };
 
-/* Address-Match values and masks (SSB_ADMATCH?) */
+/* Address-Match values and masks (SSB_ADMATCHxxx) */
 #define SSB_ADM_TYPE			0x00000003	/* Address type */
 #define  SSB_ADM_TYPE0			0
 #define  SSB_ADM_TYPE1			1
@@ -290,5 +289,4 @@ enum {
 #define SSB_ADM_BASE2_SHIFT		16
 
 
-#endif /* __KERNEL__ */
 #endif /* LINUX_SSB_REGS_H_ */

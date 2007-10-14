@@ -20,12 +20,6 @@
 #ifndef LINUX_SSB_EXTIFCORE_H_
 #define LINUX_SSB_EXTIFCORE_H_
 
-#ifdef __KERNEL__
-
-struct ssb_extif {
-	struct ssb_device *dev;
-};
-
 /* external interface address space */
 #define	SSB_EXTIF_PCMCIA_MEMBASE(x)	(x)
 #define	SSB_EXTIF_PCMCIA_IOBASE(x)	((x) + 0x100000)
@@ -159,5 +153,52 @@ struct ssb_extif {
 #define SSB_EXTIF_WATCHDOG_CLK		48000000	/* Hz */
 
 
-#endif /* __KERNEL__ */
+
+#ifdef CONFIG_SSB_DRIVER_EXTIF
+
+struct ssb_extif {
+	struct ssb_device *dev;
+};
+
+static inline bool ssb_extif_available(struct ssb_extif *extif)
+{
+	return (extif->dev != NULL);
+}
+
+extern void ssb_extif_get_clockcontrol(struct ssb_extif *extif,
+			               u32 *plltype, u32 *n, u32 *m);
+
+extern void ssb_extif_timing_init(struct ssb_extif *extif,
+				  unsigned long ns);
+
+u32 ssb_extif_gpio_in(struct ssb_extif *extif, u32 mask);
+
+void ssb_extif_gpio_out(struct ssb_extif *extif, u32 mask, u32 value);
+
+void ssb_extif_gpio_outen(struct ssb_extif *extif, u32 mask, u32 value);
+
+#ifdef CONFIG_SSB_SERIAL
+extern int ssb_extif_serial_init(struct ssb_extif *extif,
+				 struct ssb_serial_port *ports);
+#endif /* CONFIG_SSB_SERIAL */
+
+
+#else /* CONFIG_SSB_DRIVER_EXTIF */
+/* extif disabled */
+
+struct ssb_extif {
+};
+
+static inline bool ssb_extif_available(struct ssb_extif *extif)
+{
+	return 0;
+}
+
+static inline
+void ssb_extif_get_clockcontrol(struct ssb_extif *extif,
+			        u32 *plltype, u32 *n, u32 *m)
+{
+}
+
+#endif /* CONFIG_SSB_DRIVER_EXTIF */
 #endif /* LINUX_SSB_EXTIFCORE_H_ */

@@ -1,14 +1,12 @@
 #ifndef LINUX_SSB_H_
 #define LINUX_SSB_H_
-#ifdef __KERNEL__
 
 #include <linux/device.h>
 #include <linux/list.h>
 #include <linux/types.h>
 #include <linux/spinlock.h>
-#ifdef CONFIG_SSB_PCIHOST
-# include <linux/pci.h>
-#endif
+#include <linux/pci.h>
+#include <linux/mod_devicetable.h>
 
 #include <linux/ssb/ssb_regs.h>
 
@@ -156,20 +154,6 @@ struct ssb_bus_ops {
 /* Vendor-ID values */
 #define SSB_VENDOR_BROADCOM	0x4243
 
-struct ssb_device_id {
-	u16 vendor;
-	u16 coreid;
-	u8 revision;
-};
-#define SSB_DEVICE(_vendor, _coreid, _revision)  \
-	{ .vendor = _vendor, .coreid = _coreid, .revision = _revision, }
-#define SSB_DEVTABLE_END  \
-	{ 0, },
-
-#define SSB_ANY_VENDOR		0xFFFF
-#define SSB_ANY_ID		0xFFFF
-#define SSB_ANY_REV		0xFF
-
 /* Some kernel subsystems poke with dev->drvdata, so we must use the
  * following ugly workaround to get from struct device to struct ssb_device */
 struct __ssb_dev_wrapper {
@@ -198,7 +182,8 @@ struct ssb_device {
 static inline
 struct ssb_device * dev_to_ssb_dev(struct device *dev)
 {
-	struct __ssb_dev_wrapper *wrap = container_of(dev, struct __ssb_dev_wrapper, dev);
+	struct __ssb_dev_wrapper *wrap;
+	wrap = container_of(dev, struct __ssb_dev_wrapper, dev);
 	return wrap->sdev;
 }
 
@@ -296,6 +281,7 @@ struct ssb_bus {
 	struct pcmcia_device *host_pcmcia;
 
 #ifdef CONFIG_SSB_PCIHOST
+	/* Mutex to protect the SPROM writing. */
 	struct mutex pci_sprom_mutex;
 #endif
 
@@ -333,8 +319,13 @@ struct ssb_bus {
 	/* Contents of the SPROM. */
 	struct ssb_sprom sprom;
 
-	/* Internal. */
+	/* Internal-only stuff follows. Do not touch. */
 	struct list_head list;
+#ifdef CONFIG_SSB_DEBUG
+	/* Is the bus already powered up? */
+	bool powered_up;
+	int power_warn_count;
+#endif /* DEBUG */
 };
 
 /* The initialization-invariants. */
@@ -342,6 +333,9 @@ struct ssb_init_invariants {
 	struct ssb_boardinfo boardinfo;
 	struct ssb_sprom sprom;
 };
+/* Type of function to fetch the invariants. */
+typedef int (*ssb_invariants_func_t)(struct ssb_bus *bus,
+				     struct ssb_init_invariants *iv);
 
 /* Register a SSB system bus. get_invariants() is called after the
  * basic system devices are initialized.
@@ -349,8 +343,7 @@ struct ssb_init_invariants {
  * Put the invariants into the struct pointed to by iv. */
 extern int ssb_bus_ssbbus_register(struct ssb_bus *bus,
 				   unsigned long baseaddr,
-				   int (*get_invariants)(struct ssb_bus *bus,
-				   			 struct ssb_init_invariants *iv));
+				   ssb_invariants_func_t get_invariants);
 #ifdef CONFIG_SSB_PCIHOST
 extern int ssb_bus_pcibus_register(struct ssb_bus *bus,
 				   struct pci_dev *host_pci);
@@ -365,8 +358,12 @@ extern void ssb_bus_unregister(struct ssb_bus *bus);
 
 extern u32 ssb_clockspeed(struct ssb_bus *bus);
 
+/* Is the device enabled in hardware? */
 int ssb_device_is_enabled(struct ssb_device *dev);
+/* Enable a device and pass device-specific SSB_TMSLOW flags.
+ * If no device-specific flags are available, use 0. */
 void ssb_device_enable(struct ssb_device *dev, u32 core_specific_flags);
+/* Disable a device in hardware and pass SSB_TMSLOW flags (if any). */
 void ssb_device_disable(struct ssb_device *dev, u32 core_specific_flags);
 
 
@@ -408,9 +405,15 @@ static inline void ssb_pcihost_unregister(struct pci_driver *driver)
 #endif /* CONFIG_SSB_PCIHOST */
 
 
-/* Bus-Power handling functions. */
+/* If a driver is shutdown or suspended, call this to signal
+ * that the bus may be completely powered down. SSB will decide,
+ * if it's really time to power down the bus, based on if there
+ * are other devices that want to run. */
 extern int ssb_bus_may_powerdown(struct ssb_bus *bus);
-extern int ssb_bus_powerup(struct ssb_bus *bus, int dynamic_pctl);
+/* Before initializing and enabling a device, call this to power-up the bus.
+ * If you want to allow use of dynamic-power-control, pass the flag.
+ * Otherwise static always-on powercontrol will be used. */
+extern int ssb_bus_powerup(struct ssb_bus *bus, bool dynamic_pctl);
 
 
 /* Various helper functions */
@@ -418,5 +421,4 @@ extern u32 ssb_admatch_base(u32 adm);
 extern u32 ssb_admatch_size(u32 adm);
 
 
-#endif /* __KERNEL__ */
 #endif /* LINUX_SSB_H_ */

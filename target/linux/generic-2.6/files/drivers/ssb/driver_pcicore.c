@@ -34,8 +34,10 @@ void pcicore_write32(struct ssb_pcicore *pc, u16 offset, u32 value)
 #ifdef CONFIG_SSB_PCICORE_HOSTMODE
 
 #include <asm/paccess.h>
-/* Read the bus and catch bus exceptions. This is MIPS specific. */
-#define mips_busprobe(val, addr)	get_dbe((val), (addr))
+/* Probe a 32bit value on the bus and catch bus exceptions.
+ * Returns nonzero on a bus exception.
+ * This is MIPS specific */
+#define mips_busprobe32(val, addr)	get_dbe((val), ((u32 *)(addr)))
 
 /* Assume one-hot slot wiring */
 #define SSB_PCI_SLOT_MAX	16
@@ -45,8 +47,8 @@ static DEFINE_SPINLOCK(cfgspace_lock);
 /* Core to access the external PCI config space. Can only have one. */
 static struct ssb_pcicore *extpci_core;
 
-u32 pci_iobase = 0x100;
-u32 pci_membase = SSB_PCI_DMA;
+static u32 ssb_pcicore_pcibus_iobase = 0x100;
+static u32 ssb_pcicore_pcibus_membase = SSB_PCI_DMA;
 
 int pcibios_plat_dev_init(struct pci_dev *d)
 {
@@ -54,12 +56,16 @@ int pcibios_plat_dev_init(struct pci_dev *d)
 	int pos, size;
 	u32 *base;
 
-	printk("PCI: Fixing up device %s\n", pci_name(d));
+	ssb_printk(KERN_INFO "PCI: Fixing up device %s\n",
+		   pci_name(d));
 
 	/* Fix up resource bases */
 	for (pos = 0; pos < 6; pos++) {
 		res = &d->resource[pos];
-		base = ((res->flags & IORESOURCE_IO) ? &pci_iobase : &pci_membase);
+		if (res->flags & IORESOURCE_IO)
+			base = &ssb_pcicore_pcibus_iobase;
+		else
+			base = &ssb_pcicore_pcibus_membase;
 		if (res->end) {
 			size = res->end - res->start + 1;
 			if (*base & (size - 1))
@@ -85,7 +91,7 @@ static void __init ssb_fixup_pcibridge(struct pci_dev *dev)
 	if (dev->bus->number != 0 || PCI_SLOT(dev->devfn) != 0)
 		return;
 
-	printk("PCI: fixing up bridge\n");
+	ssb_printk(KERN_INFO "PCI: fixing up bridge\n");
 
 	/* Enable PCI bridge bus mastering and memory space */
 	pci_set_master(dev);
@@ -93,10 +99,13 @@ static void __init ssb_fixup_pcibridge(struct pci_dev *dev)
 
 	/* Enable PCI bridge BAR1 prefetch and burst */
 	pci_write_config_dword(dev, SSB_BAR1_CONTROL, 3);
+
+	/* Make sure our latency is high enough to handle the devices behind us */
+	pci_write_config_byte(dev, PCI_LATENCY_TIMER, 0xa8);
 }
 DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, ssb_fixup_pcibridge);
 
-int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	return ssb_mips_irq(extpci_core->dev) + 2;
 }
@@ -147,7 +156,7 @@ static int ssb_extpci_read_config(struct ssb_pcicore *pc,
 	u32 addr, val;
 	void __iomem *mmio;
 
-	assert(pc->hostmode);
+	SSB_WARN_ON(!pc->hostmode);
 	if (unlikely(len != 1 && len != 2 && len != 4))
 		goto out;
 	addr = get_cfgspace_addr(pc, bus, dev, func, off);
@@ -158,7 +167,7 @@ static int ssb_extpci_read_config(struct ssb_pcicore *pc,
 	if (!mmio)
 		goto out;
 
-	if (mips_busprobe(val, (u32 *) mmio)) {
+	if (mips_busprobe32(val, mmio)) {
 		val = 0xffffffff;
 		goto unmap;
 	}
@@ -193,7 +202,7 @@ static int ssb_extpci_write_config(struct ssb_pcicore *pc,
 	u32 addr, val = 0;
 	void __iomem *mmio;
 
-	assert(pc->hostmode);
+	SSB_WARN_ON(!pc->hostmode);
 	if (unlikely(len != 1 && len != 2 && len != 4))
 		goto out;
 	addr = get_cfgspace_addr(pc, bus, dev, func, off);
@@ -204,7 +213,7 @@ static int ssb_extpci_write_config(struct ssb_pcicore *pc,
 	if (!mmio)
 		goto out;
 
-	if (mips_busprobe(val, (u32 *) mmio)) {
+	if (mips_busprobe32(val, mmio)) {
 		val = 0xffffffff;
 		goto unmap;
 	}
@@ -224,7 +233,7 @@ static int ssb_extpci_write_config(struct ssb_pcicore *pc,
 		val = *((const u32 *)buf);
 		break;
 	}
-	writel(*((const u32 *)buf), mmio);
+	writel(val, mmio);
 
 	err = 0;
 unmap:
@@ -269,7 +278,7 @@ static struct pci_ops ssb_pcicore_pciops = {
 static struct resource ssb_pcicore_mem_resource = {
 	.name	= "SSB PCIcore external memory",
 	.start	= SSB_PCI_DMA,
-	.end	= (u32)SSB_PCI_DMA + (u32)SSB_PCI_DMA_SZ - 1,
+	.end	= SSB_PCI_DMA + SSB_PCI_DMA_SZ - 1,
 	.flags	= IORESOURCE_MEM,
 };
 
@@ -291,10 +300,8 @@ static void ssb_pcicore_init_hostmode(struct ssb_pcicore *pc)
 {
 	u32 val;
 
-	if (extpci_core) {
-		WARN_ON(1);
+	if (WARN_ON(extpci_core))
 		return;
-	}
 	extpci_core = pc;
 
 	ssb_dprintk(KERN_INFO PFX "PCIcore in host mode found\n");
@@ -304,12 +311,14 @@ static void ssb_pcicore_init_hostmode(struct ssb_pcicore *pc)
 	pcicore_write32(pc, SSB_PCICORE_CTL, val);
 	val |= SSB_PCICORE_CTL_CLK; /* Clock on */
 	pcicore_write32(pc, SSB_PCICORE_CTL, val);
-	udelay(150);
+	udelay(150); /* Assertion time demanded by the PCI standard */
 	val |= SSB_PCICORE_CTL_RST; /* Deassert RST# */
 	pcicore_write32(pc, SSB_PCICORE_CTL, val);
-	udelay(1);
+	val = SSB_PCICORE_ARBCTL_INTERN;
+	pcicore_write32(pc, SSB_PCICORE_ARBCTL, val);
+	udelay(1); /* Assertion time demanded by the PCI standard */
 
-	//TODO cardbus mode
+	/*TODO cardbus mode */
 
 	/* 64MB I/O window */
 	pcicore_write32(pc, SSB_PCICORE_SBTOPCI0,
@@ -336,6 +345,9 @@ static void ssb_pcicore_init_hostmode(struct ssb_pcicore *pc)
 	 * The following needs change, if we want to port hostmode
 	 * to non-MIPS platform. */
 	set_io_port_base((unsigned long)ioremap_nocache(SSB_PCI_MEM, 0x04000000));
+	/* Give some time to the PCI controller to configure itself with the new
+	 * values. Not waiting at this point causes crashes of the machine. */
+	mdelay(10);
 	register_pci_controller(&ssb_pcicore_controller);
 }
 
@@ -364,7 +376,7 @@ static int pcicore_is_in_hostmode(struct ssb_pcicore *pc)
 	if (bus->chip_id == 0x5350)
 		return 0;
 
-	return !mips_busprobe(tmp, (u32 *) (bus->mmio + (pc->dev->core_index * SSB_CORE_SIZE)));
+	return !mips_busprobe32(tmp, (bus->mmio + (pc->dev->core_index * SSB_CORE_SIZE)));
 }
 #endif /* CONFIG_SSB_PCICORE_HOSTMODE */
 
@@ -430,6 +442,7 @@ static void ssb_pcie_mdio_write(struct ssb_pcicore *pc, u8 device,
 	v |= (u32)address << 18;
 	v |= data;
 	pcicore_write32(pc, mdio_data, v);
+	/* Wait for the device to complete the transaction */
 	udelay(10);
 	for (i = 0; i < 10; i++) {
 		v = pcicore_read32(pc, mdio_control);
@@ -458,7 +471,8 @@ static void ssb_commit_settings(struct ssb_bus *bus)
 	struct ssb_device *dev;
 
 	dev = bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev;
-	assert(dev);
+	if (WARN_ON(!dev))
+		return;
 	/* This forces an update of the cached registers. */
 	ssb_broadcast_value(dev, 0xFD8, 0);
 }
@@ -496,9 +510,15 @@ int ssb_pcicore_dev_irqvecs_enable(struct ssb_pcicore *pc,
 		u32 intvec;
 
 		intvec = ssb_read32(pdev, SSB_INTVEC);
-		tmp = ssb_read32(dev, SSB_TPSFLAG);
-		tmp &= SSB_TPSFLAG_BPFLAG;
-		intvec |= tmp;
+		if ((bus->chip_id & 0xFF00) == 0x4400) {
+			/* Workaround: On the BCM44XX the BPFLAG routing
+			 * bit is wrong. Use a hardcoded constant. */
+			intvec |= 0x00000002;
+		} else {
+			tmp = ssb_read32(dev, SSB_TPSFLAG);
+			tmp &= SSB_TPSFLAG_BPFLAG;
+			intvec |= tmp;
+		}
 		ssb_write32(pdev, SSB_INTVEC, intvec);
 	}
 
@@ -525,7 +545,7 @@ int ssb_pcicore_dev_irqvecs_enable(struct ssb_pcicore *pc,
 			pcicore_write32(pc, SSB_PCICORE_SBTOPCI2, tmp);
 		}
 	} else {
-		assert(pdev->id.coreid == SSB_DEV_PCIE);
+		WARN_ON(pdev->id.coreid != SSB_DEV_PCIE);
 		//TODO: Better make defines for all these magic PCIE values.
 		if ((pdev->id.revision == 0) || (pdev->id.revision == 1)) {
 			/* TLP Workaround register. */
