@@ -41,10 +41,17 @@ define Image/Build/wl153
 	$(RM) $(KDIR)/bzSize.tmp $(KDIR)/bzSize $(KDIR)/rdSize
 endef
 
+define Image/Build/dir450
+	touch $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1)-$(2).img
+	mv $(KDIR)/root.$(1) $(KDIR)/root.tmp
+	dd of=$(KDIR)/root.$(1) if=$(KDIR)/root.tmp $(call trxalign/$(1)) conv=sync
+	$(RM) $(KDIR)/root.tmp
+	cp $(KDIR)/root.$(1) $(BIN_DIR)/onlyrootfs-$(BOARD)-$(1)-$(2).img
+endef
+
 define Image/Build
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).bzImage
-	$(call Image/Build/ar525w,$(1),ar525w,$(patsubst jffs2-%k,%,$(1)))
-	$(call Image/Build/wl153,$(1),wl153,$(patsubst jffs2-%k,%,$(1)))
+	$(call Image/Build/$(PROFILE),$(1),$(PROFILE),$(patsubst jffs2-%k,%,$(1)))
 endef
 
 $(eval $(call BuildImage))
