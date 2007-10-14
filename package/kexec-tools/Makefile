@@ -48,6 +48,7 @@ define Package/kexec-tools/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/kexec $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/kdump $(1)/usr/bin/
+	$(INSTALL_BIN) ./files/kexec.sh $(1)/usr/bin/kexec.mtd
 endef
 
 $(eval $(call BuildPackage,kexec-tools))
