@@ -30,11 +30,14 @@ endif
 define KernelPackage/acx-mac80211
   SUBMENU:=Wireless Drivers
   TITLE:=ACX111 Mac80211 driver
-  DESCRIPTION:=Driver for acx111 cards (Mac80211 version)
-  DEPENDS:=@LINUX_2_6 +kmod-mac80211 @!TARGET_atheros
+    DEPENDS:=@LINUX_2_6 +kmod-mac80211 @!TARGET_atheros
 #  KCONFIG:=CONFIG_MAC80211
   FILES:=$(PKG_BUILD_DIR)/acx-mac80211.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,acx-mac80211)
+endef
+
+define KernelPackage/acx-mac80211/description
+	Driver for acx111 cards (Mac80211 version)
 endef
 
 $(STAMP_BUILT): $(DL_DIR)/$(PKG_FW_NAME)
