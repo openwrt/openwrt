@@ -1,9 +1,10 @@
-diff -urN linux.old/drivers/net/Kconfig linux.eth/drivers/net/Kconfig
---- linux.old/drivers/net/Kconfig	2006-12-14 23:53:29.000000000 +0100
-+++ linux.eth/drivers/net/Kconfig	2006-12-16 04:30:11.000000000 +0100
-@@ -324,6 +324,12 @@
- 
- source "drivers/net/arm/Kconfig"
+Index: linux-2.6.23/drivers/net/Kconfig
+===================================================================
+--- linux-2.6.23.orig/drivers/net/Kconfig	2007-10-14 00:55:22.000000000 +0200
++++ linux-2.6.23/drivers/net/Kconfig	2007-10-14 00:56:32.000000000 +0200
+@@ -348,6 +348,12 @@
+ 	  AX88796 driver, using platform bus to provide
+ 	  chip detection and resources
  
 +config AR2313
 +	tristate "AR2313 Ethernet support"
@@ -13,15 +14,16 @@ diff -urN linux.old/drivers/net/Kconfig linux.eth/drivers/net/Kconfig
 +
  config MACE
  	tristate "MACE (Power Mac ethernet) support"
- 	depends on NET_ETHERNET && PPC_PMAC && PPC32
-diff -urN linux.old/drivers/net/Makefile linux.eth/drivers/net/Makefile
---- linux.old/drivers/net/Makefile	2006-12-14 23:53:29.000000000 +0100
-+++ linux.eth/drivers/net/Makefile	2006-12-16 04:30:11.000000000 +0100
-@@ -11,6 +11,7 @@
- obj-$(CONFIG_BONDING) += bonding/
- obj-$(CONFIG_ATL1) += atl1/
- obj-$(CONFIG_GIANFAR) += gianfar_driver.o
+ 	depends on PPC_PMAC && PPC32
+Index: linux-2.6.23/drivers/net/Makefile
+===================================================================
+--- linux-2.6.23.orig/drivers/net/Makefile	2007-10-14 00:55:22.000000000 +0200
++++ linux-2.6.23/drivers/net/Makefile	2007-10-14 00:56:55.000000000 +0200
+@@ -182,6 +182,7 @@
+ obj-$(CONFIG_LGUEST_NET) += lguest_net.o
+ obj-$(CONFIG_MIPS_JAZZ_SONIC) += jazzsonic.o
+ obj-$(CONFIG_MIPS_AU1X00_ENET) += au1000_eth.o
 +obj-$(CONFIG_AR2313) += ar2313/
- 
- gianfar_driver-objs := gianfar.o \
- 		gianfar_ethtool.o \
+ obj-$(CONFIG_MIPS_SIM_NET) += mipsnet.o
+ obj-$(CONFIG_SGI_IOC3_ETH) += ioc3-eth.o
+ obj-$(CONFIG_DECLANCE) += declance.o
