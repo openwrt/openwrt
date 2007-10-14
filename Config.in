@@ -144,8 +144,17 @@ config SOURCE_FEEDS_REV
 
 
 source "toolchain/Config.in"
+menuconfig BUILDSYSTEM_SETTINGS
+    bool "Buildsystem settings" 
+
+config DOWNLOAD_FOLDER
+	string
+	prompt "Download folder"
+	default ""
+	depends BUILDSYSTEM_SETTINGS 
 source "target/imagebuilder/Config.in"
 source "target/sdk/Config.in"
 
 source "tmp/.config-package.in"
+
 
