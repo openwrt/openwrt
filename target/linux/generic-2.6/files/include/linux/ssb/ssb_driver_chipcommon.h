@@ -12,7 +12,6 @@
  *
  * Licensed under the GPL version 2. See COPYING for details.
  */
-#ifdef __KERNEL__
 
 /** ChipCommon core registers. **/
 
@@ -364,6 +363,8 @@ extern void ssb_chipcommon_init(struct ssb_chipcommon *cc);
 extern void ssb_chipco_suspend(struct ssb_chipcommon *cc, pm_message_t state);
 extern void ssb_chipco_resume(struct ssb_chipcommon *cc);
 
+extern void ssb_chipco_get_clockcpu(struct ssb_chipcommon *cc,
+                                    u32 *plltype, u32 *n, u32 *m);
 extern void ssb_chipco_get_clockcontrol(struct ssb_chipcommon *cc,
 					u32 *plltype, u32 *n, u32 *m);
 extern void ssb_chipco_timing_init(struct ssb_chipcommon *cc,
@@ -378,10 +379,18 @@ enum ssb_clkmode {
 extern void ssb_chipco_set_clockmode(struct ssb_chipcommon *cc,
 				     enum ssb_clkmode mode);
 
+extern void ssb_chipco_watchdog_timer_set(struct ssb_chipcommon *cc,
+					  u32 ticks);
+
+u32 ssb_chipco_gpio_in(struct ssb_chipcommon *cc, u32 mask);
+
+void ssb_chipco_gpio_out(struct ssb_chipcommon *cc, u32 mask, u32 value);
+
+void ssb_chipco_gpio_outen(struct ssb_chipcommon *cc, u32 mask, u32 value);
+
 #ifdef CONFIG_SSB_SERIAL
 extern int ssb_chipco_serial_init(struct ssb_chipcommon *cc,
 				  struct ssb_serial_port *ports);
 #endif /* CONFIG_SSB_SERIAL */
 
-#endif /* __KERNEL__ */
 #endif /* LINUX_SSB_CHIPCO_H_ */

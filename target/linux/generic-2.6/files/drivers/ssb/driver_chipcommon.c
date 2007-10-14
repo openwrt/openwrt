@@ -16,7 +16,7 @@
 
 
 /* Clock sources */
-enum {
+enum ssb_clksrc {
 	/* PCI clock */
 	SSB_CHIPCO_CLKSRC_PCI,
 	/* Crystal slow clock oscillator */
@@ -37,6 +37,14 @@ static inline void chipco_write32(struct ssb_chipcommon *cc,
 				  u32 value)
 {
 	ssb_write32(cc->dev, offset, value);
+}
+
+static inline void chipco_write32_masked(struct ssb_chipcommon *cc, u16 offset,
+					 u32 mask, u32 value)
+{
+	value &= mask;
+	value |= chipco_read32(cc, offset) & ~mask;
+	chipco_write32(cc, offset, value);
 }
 
 void ssb_chipco_set_clockmode(struct ssb_chipcommon *cc,
@@ -85,15 +93,15 @@ void ssb_chipco_set_clockmode(struct ssb_chipcommon *cc,
 			ssb_pci_xtal(bus, SSB_GPIO_XTAL, 0);
 		break;
 	default:
-		assert(0);
+		SSB_WARN_ON(1);
 	}
 }
 
 /* Get the Slow Clock Source */
-static int chipco_pctl_get_slowclksrc(struct ssb_chipcommon *cc)
+static enum ssb_clksrc chipco_pctl_get_slowclksrc(struct ssb_chipcommon *cc)
 {
 	struct ssb_bus *bus = cc->dev->bus;
-	u32 tmp = 0;
+	u32 uninitialized_var(tmp);
 
 	if (cc->dev->id.revision < 6) {
 		if (bus->bustype == SSB_BUSTYPE_SSB ||
@@ -123,9 +131,9 @@ static int chipco_pctl_get_slowclksrc(struct ssb_chipcommon *cc)
 /* Get maximum or minimum (depending on get_max flag) slowclock frequency. */
 static int chipco_pctl_clockfreqlimit(struct ssb_chipcommon *cc, int get_max)
 {
-	int limit;
-	int clocksrc;
-	int divisor;
+	int uninitialized_var(limit);
+	enum ssb_clksrc clocksrc;
+	int divisor = 1;
 	u32 tmp;
 
 	clocksrc = chipco_pctl_get_slowclksrc(cc);
@@ -138,13 +146,11 @@ static int chipco_pctl_clockfreqlimit(struct ssb_chipcommon *cc, int get_max)
 			divisor = 32;
 			break;
 		default:
-			assert(0);
-			divisor = 1;
+			SSB_WARN_ON(1);
 		}
 	} else if (cc->dev->id.revision < 10) {
 		switch (clocksrc) {
 		case SSB_CHIPCO_CLKSRC_LOPWROS:
-			divisor = 1;
 			break;
 		case SSB_CHIPCO_CLKSRC_XTALOS:
 		case SSB_CHIPCO_CLKSRC_PCI:
@@ -152,9 +158,6 @@ static int chipco_pctl_clockfreqlimit(struct ssb_chipcommon *cc, int get_max)
 			divisor = (tmp >> 16) + 1;
 			divisor *= 4;
 			break;
-		default:
-			assert(0);
-			divisor = 1;
 		}
 	} else {
 		tmp = chipco_read32(cc, SSB_CHIPCO_SYSCLKCTL);
@@ -181,9 +184,6 @@ static int chipco_pctl_clockfreqlimit(struct ssb_chipcommon *cc, int get_max)
 		else
 			limit = 25000000;
 		break;
-	default:
-		assert(0);
-		limit = 0;
 	}
 	limit /= divisor;
 
@@ -235,7 +235,7 @@ static void calc_fast_powerup_delay(struct ssb_chipcommon *cc)
 	minfreq = chipco_pctl_clockfreqlimit(cc, 0);
 	pll_on_delay = chipco_read32(cc, SSB_CHIPCO_PLLONDELAY);
 	tmp = (((pll_on_delay + 2) * 1000000) + (minfreq - 1)) / minfreq;
-	assert((tmp & ~0xFFFF) == 0);
+	SSB_WARN_ON(tmp & ~0xFFFF);
 
 	cc->fast_pwrup_delay = tmp;
 }
@@ -264,6 +264,30 @@ void ssb_chipco_resume(struct ssb_chipcommon *cc)
 	ssb_chipco_set_clockmode(cc, SSB_CLKMODE_FAST);
 }
 
+/* Get the processor clock */
+void ssb_chipco_get_clockcpu(struct ssb_chipcommon *cc,
+                             u32 *plltype, u32 *n, u32 *m)
+{
+	*n = chipco_read32(cc, SSB_CHIPCO_CLOCK_N);
+	*plltype = (cc->capabilities & SSB_CHIPCO_CAP_PLLT);
+	switch (*plltype) {
+	case SSB_PLLTYPE_2:
+	case SSB_PLLTYPE_4:
+	case SSB_PLLTYPE_6:
+	case SSB_PLLTYPE_7:
+		*m = chipco_read32(cc, SSB_CHIPCO_CLOCK_MIPS);
+		break;
+	case SSB_PLLTYPE_3:
+		/* 5350 uses m2 to control mips */
+		*m = chipco_read32(cc, SSB_CHIPCO_CLOCK_M2);
+		break;
+	default:
+		*m = chipco_read32(cc, SSB_CHIPCO_CLOCK_SB);
+		break;
+	}
+}
+
+/* Get the bus clock */
 void ssb_chipco_get_clockcontrol(struct ssb_chipcommon *cc,
 				 u32 *plltype, u32 *n, u32 *m)
 {
@@ -320,6 +344,27 @@ void ssb_chipco_timing_init(struct ssb_chipcommon *cc,
 	}
 }
 
+/* Set chip watchdog reset timer to fire in 'ticks' backplane cycles */
+void ssb_chipco_watchdog_timer_set(struct ssb_chipcommon *cc, u32 ticks)
+{
+	/* instant NMI */
+	chipco_write32(cc, SSB_CHIPCO_WATCHDOG, ticks);
+}
+
+u32 ssb_chipco_gpio_in(struct ssb_chipcommon *cc, u32 mask)
+{
+	return chipco_read32(cc, SSB_CHIPCO_GPIOIN) & mask;
+}
+
+void ssb_chipco_gpio_out(struct ssb_chipcommon *cc, u32 mask, u32 value)
+{
+	chipco_write32_masked(cc, SSB_CHIPCO_GPIOOUT, mask, value);
+}
+
+void ssb_chipco_gpio_outen(struct ssb_chipcommon *cc, u32 mask, u32 value)
+{
+	chipco_write32_masked(cc, SSB_CHIPCO_GPIOOUTEN, mask, value);
+}
 
 #ifdef CONFIG_SSB_SERIAL
 int ssb_chipco_serial_init(struct ssb_chipcommon *cc,
@@ -352,10 +397,8 @@ int ssb_chipco_serial_init(struct ssb_chipcommon *cc,
 		} else if (cc->dev->id.revision >= 3) {
 			/* Internal backplane clock */
 			baud_base = ssb_clockspeed(bus);
-			div = 2; /* Minimum divisor */
-			chipco_write32(cc, SSB_CHIPCO_CLKDIV,
-				       (chipco_read32(cc, SSB_CHIPCO_CLKDIV)
-				        & ~SSB_CHIPCO_CLKDIV_UART) | div);
+			div = chipco_read32(cc, SSB_CHIPCO_CLKDIV)
+			      & SSB_CHIPCO_CLKDIV_UART;
 		} else {
 			/* Fixed internal backplane clock */
 			baud_base = 88000000;

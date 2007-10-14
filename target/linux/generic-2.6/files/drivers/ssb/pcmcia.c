@@ -21,6 +21,10 @@
 #include "ssb_private.h"
 
 
+/* Define the following to 1 to enable a printk on each coreswitch. */
+#define SSB_VERBOSE_PCMCIACORESWITCH_DEBUG		0
+
+
 int ssb_pcmcia_switch_coreidx(struct ssb_bus *bus,
 			      u8 coreidx)
 {
@@ -91,10 +95,12 @@ int ssb_pcmcia_switch_core(struct ssb_bus *bus,
 	int err;
 	unsigned long flags;
 
-	ssb_dprintk(KERN_INFO PFX
-		    "Switching to %s core, index %d\n",
-		    ssb_core_name(dev->id.coreid),
-		    dev->core_index);
+#if SSB_VERBOSE_PCMCIACORESWITCH_DEBUG
+	ssb_printk(KERN_INFO PFX
+		   "Switching to %s core, index %d\n",
+		   ssb_core_name(dev->id.coreid),
+		   dev->core_index);
+#endif
 
 	spin_lock_irqsave(&bus->bar_lock, flags);
 	err = ssb_pcmcia_switch_coreidx(bus, dev->core_index);
@@ -112,7 +118,7 @@ int ssb_pcmcia_switch_segment(struct ssb_bus *bus, u8 seg)
 	conf_reg_t reg;
 	int res, err = 0;
 
-	assert(seg == 0 || seg == 1);
+	SSB_WARN_ON((seg != 0) && (seg != 1));
 	reg.Offset = 0x34;
 	reg.Function = 0;
 	spin_lock_irqsave(&bus->bar_lock, flags);
@@ -145,6 +151,9 @@ error:
 	goto out_unlock;
 }
 
+/* These are the main device register access functions.
+ * do_select_core is inline to have the likely hotpath inline.
+ * All unlikely codepaths are out-of-line. */
 static inline int do_select_core(struct ssb_bus *bus,
 				 struct ssb_device *dev,
 				 u16 *offset)
@@ -176,7 +185,7 @@ static u16 ssb_pcmcia_read16(struct ssb_device *dev, u16 offset)
 	if (unlikely(do_select_core(bus, dev, &offset)))
 		return 0xFFFF;
 	x = readw(bus->mmio + offset);
-//printk("R16 0x%04X, 0x%04X\n", offset, x);
+
 	return x;
 }
 
@@ -188,7 +197,7 @@ static u32 ssb_pcmcia_read32(struct ssb_device *dev, u16 offset)
 	if (unlikely(do_select_core(bus, dev, &offset)))
 		return 0xFFFFFFFF;
 	x = readl(bus->mmio + offset);
-//printk("R32 0x%04X, 0x%08X\n", offset, x);
+
 	return x;
 }
 
@@ -198,7 +207,6 @@ static void ssb_pcmcia_write16(struct ssb_device *dev, u16 offset, u16 value)
 
 	if (unlikely(do_select_core(bus, dev, &offset)))
 		return;
-//printk("W16 0x%04X, 0x%04X\n", offset, value);
 	writew(value, bus->mmio + offset);
 }
 
@@ -208,13 +216,13 @@ static void ssb_pcmcia_write32(struct ssb_device *dev, u16 offset, u32 value)
 
 	if (unlikely(do_select_core(bus, dev, &offset)))
 		return;
-//printk("W32 0x%04X, 0x%08X\n", offset, value);
 	readw(bus->mmio + offset);
 	writew(value >> 16, bus->mmio + offset + 2);
 	readw(bus->mmio + offset);
 	writew(value, bus->mmio + offset);
 }
 
+/* Not "static", as it's used in main.c */
 const struct ssb_bus_ops ssb_pcmcia_ops = {
 	.read16		= ssb_pcmcia_read16,
 	.read32		= ssb_pcmcia_read32,
