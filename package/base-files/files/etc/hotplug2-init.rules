@@ -17,7 +17,7 @@ DEVICENAME ~~ (ppp) {
 	next
 }
 
-DEVICENAME ~~ (controlC[0-9]|pcmC0D0*) {
+DEVICENAME ~~ (controlC[0-9]|pcmC0D0*|timer) {
 	nothrottle
 	makedev /dev/snd/%DEVICENAME% 0644
 	next
