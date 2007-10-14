@@ -36,6 +36,7 @@
 #include <linux/pkt_sched.h>
 #include <linux/compile.h>
 #include <linux/mii.h>
+#include <linux/phy.h>
 #include <linux/ethtool.h>
 #include <linux/ctype.h>
 #include <linux/platform_device.h>
@@ -144,15 +145,19 @@ MODULE_DESCRIPTION("AR2313 Ethernet driver");
 #define virt_to_phys(x) ((u32)(x) & 0x1fffffff)
 
 // prototypes
-static short armiiread(struct net_device *dev, short phy, short reg);
-static void armiiwrite(struct net_device *dev, short phy, short reg,
-					   short data);
 #ifdef TX_TIMEOUT
 static void ar2313_tx_timeout(struct net_device *dev);
 #endif
 static void ar2313_halt(struct net_device *dev);
 static void rx_tasklet_func(unsigned long data);
+static void rx_tasklet_cleanup(struct net_device *dev);
 static void ar2313_multicast_list(struct net_device *dev);
+
+static int mdiobus_read(struct mii_bus *bus, int phy_addr, int regnum);
+static int mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum, u16 value);
+static int mdiobus_reset(struct mii_bus *bus);
+static int mdiobus_probe (struct net_device *dev);
+static void ar2313_adjust_link(struct net_device *dev);
 
 #ifndef ERR
 #define ERR(fmt, args...) printk("%s: " fmt, __func__, ##args)
@@ -277,9 +282,28 @@ int __init ar2313_probe(struct platform_device *pdev)
 		   dev->dev_addr[0], dev->dev_addr[1], dev->dev_addr[2],
 		   dev->dev_addr[3], dev->dev_addr[4], dev->dev_addr[5], dev->irq);
 
-	/* start link poll timer */
-	ar2313_setup_timer(dev);
+	sp->mii_bus.priv = dev;
+	sp->mii_bus.read = mdiobus_read;
+	sp->mii_bus.write = mdiobus_write;
+	sp->mii_bus.reset = mdiobus_reset;
+	sp->mii_bus.name = "ar2313_eth_mii";
+	sp->mii_bus.id = 0;
+	sp->mii_bus.irq = kmalloc(sizeof(int), GFP_KERNEL);
+	*sp->mii_bus.irq = PHY_POLL;
+	
+	mdiobus_register(&sp->mii_bus);
 
+	if (mdiobus_probe(dev) != 0) {
+		printk(KERN_ERR "ar2313: mdiobus_probe failed");
+		rx_tasklet_cleanup(dev);
+		ar2313_init_cleanup(dev);
+		unregister_netdev(dev);
+		kfree(dev);
+	} else {
+		/* start link poll timer */
+		ar2313_setup_timer(dev);
+	}
+	
 	return 0;
 }
 
@@ -591,7 +615,7 @@ static void ar2313_check_link(struct net_device *dev)
 	struct ar2313_private *sp = dev->priv;
 	u16 phyData;
 
-	phyData = armiiread(dev, sp->phy, MII_BMSR);
+	phyData = mdiobus_read(&sp->mii_bus, sp->phy, MII_BMSR);
 	if (sp->phyData != phyData) {
 		if (phyData & BMSR_LSTATUS) {
 			/* link is present, ready link partner ability to deterine
@@ -600,10 +624,10 @@ static void ar2313_check_link(struct net_device *dev)
 			u16 reg;
 
 			sp->link = 1;
-			reg = armiiread(dev, sp->phy, MII_BMCR);
+			reg = mdiobus_read(&sp->mii_bus, sp->phy, MII_BMCR);
 			if (reg & BMCR_ANENABLE) {
 				/* auto neg enabled */
-				reg = armiiread(dev, sp->phy, MII_LPA);
+				reg = mdiobus_read(&sp->mii_bus, sp->phy, MII_LPA);
 				duplex = (reg & (LPA_100FULL | LPA_10FULL)) ? 1 : 0;
 			} else {
 				/* no auto neg, just read duplex config */
@@ -1217,194 +1241,19 @@ static int ar2313_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	return 0;
 }
 
-static int netdev_get_ecmd(struct net_device *dev,
-						   struct ethtool_cmd *ecmd)
-{
-	struct ar2313_private *np = dev->priv;
-	u32 tmp;
-
-	ecmd->supported =
-		(SUPPORTED_10baseT_Half | SUPPORTED_10baseT_Full |
-		 SUPPORTED_100baseT_Half | SUPPORTED_100baseT_Full |
-		 SUPPORTED_Autoneg | SUPPORTED_TP | SUPPORTED_MII);
-
-	ecmd->port = PORT_TP;
-	/* only supports internal transceiver */
-	ecmd->transceiver = XCVR_INTERNAL;
-	/* not sure what this is for */
-	ecmd->phy_address = 1;
-
-	ecmd->advertising = ADVERTISED_MII;
-	tmp = armiiread(dev, np->phy, MII_ADVERTISE);
-	if (tmp & ADVERTISE_10HALF)
-		ecmd->advertising |= ADVERTISED_10baseT_Half;
-	if (tmp & ADVERTISE_10FULL)
-		ecmd->advertising |= ADVERTISED_10baseT_Full;
-	if (tmp & ADVERTISE_100HALF)
-		ecmd->advertising |= ADVERTISED_100baseT_Half;
-	if (tmp & ADVERTISE_100FULL)
-		ecmd->advertising |= ADVERTISED_100baseT_Full;
-
-	tmp = armiiread(dev, np->phy, MII_BMCR);
-	if (tmp & BMCR_ANENABLE) {
-		ecmd->advertising |= ADVERTISED_Autoneg;
-		ecmd->autoneg = AUTONEG_ENABLE;
-	} else {
-		ecmd->autoneg = AUTONEG_DISABLE;
-	}
-
-	if (ecmd->autoneg == AUTONEG_ENABLE) {
-		tmp = armiiread(dev, np->phy, MII_LPA);
-		if (tmp & (LPA_100FULL | LPA_10FULL)) {
-			ecmd->duplex = DUPLEX_FULL;
-		} else {
-			ecmd->duplex = DUPLEX_HALF;
-		}
-		if (tmp & (LPA_100FULL | LPA_100HALF)) {
-			ecmd->speed = SPEED_100;
-		} else {
-			ecmd->speed = SPEED_10;
-		}
-	} else {
-		if (tmp & BMCR_FULLDPLX) {
-			ecmd->duplex = DUPLEX_FULL;
-		} else {
-			ecmd->duplex = DUPLEX_HALF;
-		}
-		if (tmp & BMCR_SPEED100) {
-			ecmd->speed = SPEED_100;
-		} else {
-			ecmd->speed = SPEED_10;
-		}
-	}
-
-	/* ignore maxtxpkt, maxrxpkt for now */
-
-	return 0;
-}
-
-static int netdev_set_ecmd(struct net_device *dev,
-						   struct ethtool_cmd *ecmd)
-{
-	struct ar2313_private *np = dev->priv;
-	u32 tmp;
-
-	if (ecmd->speed != SPEED_10 && ecmd->speed != SPEED_100)
-		return -EINVAL;
-	if (ecmd->duplex != DUPLEX_HALF && ecmd->duplex != DUPLEX_FULL)
-		return -EINVAL;
-	if (ecmd->port != PORT_TP)
-		return -EINVAL;
-	if (ecmd->transceiver != XCVR_INTERNAL)
-		return -EINVAL;
-	if (ecmd->autoneg != AUTONEG_DISABLE
-		&& ecmd->autoneg != AUTONEG_ENABLE)
-		return -EINVAL;
-	/* ignore phy_address, maxtxpkt, maxrxpkt for now */
-
-	/* WHEW! now lets bang some bits */
-
-	tmp = armiiread(dev, np->phy, MII_BMCR);
-	if (ecmd->autoneg == AUTONEG_ENABLE) {
-		/* turn on autonegotiation */
-		tmp |= BMCR_ANENABLE;
-		printk("%s: Enabling auto-neg\n", dev->name);
-	} else {
-		/* turn off auto negotiation, set speed and duplexity */
-		tmp &= ~(BMCR_ANENABLE | BMCR_SPEED100 | BMCR_FULLDPLX);
-		if (ecmd->speed == SPEED_100)
-			tmp |= BMCR_SPEED100;
-		if (ecmd->duplex == DUPLEX_FULL)
-			tmp |= BMCR_FULLDPLX;
-		printk("%s: Hard coding %d/%s\n", dev->name,
-			   (ecmd->speed == SPEED_100) ? 100 : 10,
-			   (ecmd->duplex == DUPLEX_FULL) ? "full" : "half");
-	}
-	armiiwrite(dev, np->phy, MII_BMCR, tmp);
-	np->phyData = 0;
-	return 0;
-}
-
-static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
-{
-	struct ar2313_private *np = dev->priv;
-	u32 cmd;
-
-	if (get_user(cmd, (u32 *) useraddr))
-		return -EFAULT;
-
-	switch (cmd) {
-		/* get settings */
-	case ETHTOOL_GSET:{
-			struct ethtool_cmd ecmd = { ETHTOOL_GSET };
-			spin_lock_irq(&np->lock);
-			netdev_get_ecmd(dev, &ecmd);
-			spin_unlock_irq(&np->lock);
-			if (copy_to_user(useraddr, &ecmd, sizeof(ecmd)))
-				return -EFAULT;
-			return 0;
-		}
-		/* set settings */
-	case ETHTOOL_SSET:{
-			struct ethtool_cmd ecmd;
-			int r;
-			if (copy_from_user(&ecmd, useraddr, sizeof(ecmd)))
-				return -EFAULT;
-			spin_lock_irq(&np->lock);
-			r = netdev_set_ecmd(dev, &ecmd);
-			spin_unlock_irq(&np->lock);
-			return r;
-		}
-		/* restart autonegotiation */
-	case ETHTOOL_NWAY_RST:{
-			int tmp;
-			int r = -EINVAL;
-			/* if autoneg is off, it's an error */
-			tmp = armiiread(dev, np->phy, MII_BMCR);
-			if (tmp & BMCR_ANENABLE) {
-				tmp |= (BMCR_ANRESTART);
-				armiiwrite(dev, np->phy, MII_BMCR, tmp);
-				r = 0;
-			}
-			return r;
-		}
-		/* get link status */
-	case ETHTOOL_GLINK:{
-			struct ethtool_value edata = { ETHTOOL_GLINK };
-			edata.data =
-				(armiiread(dev, np->phy, MII_BMSR) & BMSR_LSTATUS) ? 1 : 0;
-			if (copy_to_user(useraddr, &edata, sizeof(edata)))
-				return -EFAULT;
-			return 0;
-		}
-	}
-
-	return -EOPNOTSUPP;
-}
-
 static int ar2313_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
 	struct mii_ioctl_data *data = (struct mii_ioctl_data *) &ifr->ifr_data;
-
+	struct ar2313_private *sp = dev->priv;
+	int ret;
+	
 	switch (cmd) {
 
 	case SIOCETHTOOL:
-		return netdev_ethtool_ioctl(dev, (void *) ifr->ifr_data);
-
-	case SIOCGMIIPHY:			/* Get address of MII PHY in use. */
-		data->phy_id = 1;
-		/* Fall Through */
-
-	case SIOCGMIIREG:			/* Read MII PHY register. */
-		data->val_out = armiiread(dev, data->phy_id & 0x1f,
-								  data->reg_num & 0x1f);
-		return 0;
-	case SIOCSMIIREG:			/* Write MII PHY register. */
-		if (!capable(CAP_NET_ADMIN))
-			return -EPERM;
-		armiiwrite(dev, data->phy_id & 0x1f,
-				   data->reg_num & 0x1f, data->val_in);
-		return 0;
+		spin_lock_irq(&sp->lock);
+		ret = phy_ethtool_ioctl(sp->phy_dev, (void *) ifr->ifr_data);
+		spin_unlock_irq(&sp->lock);
+		return ret;
 
 	case SIOCSIFHWADDR:
 		if (copy_from_user
@@ -1417,7 +1266,12 @@ static int ar2313_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 			(ifr->ifr_data, dev->dev_addr, sizeof(dev->dev_addr)))
 			return -EFAULT;
 		return 0;
-
+	
+	case SIOCGMIIPHY:
+	case SIOCGMIIREG:
+	case SIOCSMIIREG:
+		return phy_mii_ioctl(sp->phy_dev, data, cmd);
+	
 	default:
 		break;
 	}
@@ -1432,26 +1286,101 @@ static struct net_device_stats *ar2313_get_stats(struct net_device *dev)
 }
 
 
+static void ar2313_adjust_link(struct net_device *dev)
+{
+	printk(KERN_ERR " ar2313_adjust_link implementation missing\n");
+}
+
 #define MII_ADDR(phy, reg) \
 	((reg << MII_ADDR_REG_SHIFT) | (phy << MII_ADDR_PHY_SHIFT))
 
-static short armiiread(struct net_device *dev, short phy, short reg)
+static int 
+mdiobus_read(struct mii_bus *bus, int phy_addr, int regnum)
 {
+	struct net_device *const dev = bus->priv;
 	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
 	volatile ETHERNET_STRUCT *ethernet = sp->phy_regs;
 
-	ethernet->mii_addr = MII_ADDR(phy, reg);
+	ethernet->mii_addr = MII_ADDR(phy_addr, regnum);
 	while (ethernet->mii_addr & MII_ADDR_BUSY);
 	return (ethernet->mii_data >> MII_DATA_SHIFT);
 }
 
-static void
-armiiwrite(struct net_device *dev, short phy, short reg, short data)
+static int 
+mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum,
+             u16 value)
 {
+	struct net_device *const dev = bus->priv;
 	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
 	volatile ETHERNET_STRUCT *ethernet = sp->phy_regs;
 
 	while (ethernet->mii_addr & MII_ADDR_BUSY);
-	ethernet->mii_data = data << MII_DATA_SHIFT;
-	ethernet->mii_addr = MII_ADDR(phy, reg) | MII_ADDR_WRITE;
+	ethernet->mii_data = value << MII_DATA_SHIFT;
+	ethernet->mii_addr = MII_ADDR(phy_addr, regnum) | MII_ADDR_WRITE;
+
+	return 0;
 }
+
+static int mdiobus_reset(struct mii_bus *bus)
+{
+	struct net_device *const dev = bus->priv;
+
+	ar2313_reset_reg(dev);
+	
+	return 0;
+}
+
+static int mdiobus_probe (struct net_device *dev)
+{
+	struct ar2313_private *const sp = (struct ar2313_private *) dev->priv;
+	struct phy_device *phydev = NULL;
+	int phy_addr;
+
+	/* find the first (lowest address) PHY on the current MAC's MII bus */
+	for (phy_addr = 0; phy_addr < PHY_MAX_ADDR; phy_addr++)
+		if (sp->mii_bus.phy_map[phy_addr]) {
+			phydev = sp->mii_bus.phy_map[phy_addr];
+			break; /* break out with first one found */
+		}
+	
+	if (!phydev) {
+		printk (KERN_ERR "ar2313:%s: no PHY found\n", dev->name);
+		return -1;
+	}
+	
+	/* now we are supposed to have a proper phydev, to attach to... */
+	BUG_ON(!phydev);
+	BUG_ON(phydev->attached_dev);
+	
+	phydev = phy_connect(dev, phydev->dev.bus_id, &ar2313_adjust_link, 0,
+		PHY_INTERFACE_MODE_MII);
+	
+	if (IS_ERR(phydev)) {
+		printk(KERN_ERR "%s: Could not attach to PHY\n", dev->name);
+		return PTR_ERR(phydev);
+	}
+
+	/* mask with MAC supported features */
+	phydev->supported &= (SUPPORTED_10baseT_Half
+		| SUPPORTED_10baseT_Full
+		| SUPPORTED_100baseT_Half
+		| SUPPORTED_100baseT_Full
+		| SUPPORTED_Autoneg
+		/* | SUPPORTED_Pause | SUPPORTED_Asym_Pause */
+		| SUPPORTED_MII
+		| SUPPORTED_TP);
+	
+	phydev->advertising = phydev->supported;
+	
+	//sp->old_link = 0;
+	//sp->old_speed = 0;
+	//sp->old_duplex = -1;
+	sp->phy_dev = phydev;
+	
+	printk(KERN_INFO "%s: attached PHY driver [%s] "
+		"(mii_bus:phy_addr=%s)\n",
+		dev->name, phydev->drv->name, phydev->dev.bus_id);
+	
+	return 0;
+}
+
