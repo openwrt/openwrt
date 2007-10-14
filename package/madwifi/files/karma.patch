@@ -1,0 +1,94 @@
+diff -urN madwifi-ng-r2568-20070710/net80211/ieee80211_input.c madwifi-ng-r2568-20070710.new/net80211/ieee80211_input.c
+--- madwifi-ng-r2568-20070710/net80211/ieee80211_input.c	2007-10-14 12:52:10.000000000 +0200
++++ madwifi-ng-r2568-20070710.new/net80211/ieee80211_input.c	2007-10-14 12:57:27.000000000 +0200
+@@ -1625,7 +1625,8 @@
+ } while (0)
+ 
+ #ifdef IEEE80211_DEBUG
+-static void
++/* Not used by karma
++ * static void
+ ieee80211_ssid_mismatch(struct ieee80211vap *vap, const char *tag,
+ 	u_int8_t mac[IEEE80211_ADDR_LEN], u_int8_t *ssid)
+ {
+@@ -1634,7 +1635,7 @@
+ 	ieee80211_print_essid(ssid + 2, ssid[1]);
+ 	printf("\n");
+ }
+-
++*/
+ #define	IEEE80211_VERIFY_SSID(_ni, _ssid) do {				\
+ 	if ((_ssid)[1] != 0 &&						\
+ 	    ((_ssid)[1] != (_ni)->ni_esslen ||				\
+@@ -2993,7 +2994,8 @@
+ 			return;
+ 		IEEE80211_VERIFY_ELEMENT(rates, IEEE80211_RATE_MAXSIZE);
+ 		IEEE80211_VERIFY_ELEMENT(ssid, IEEE80211_NWID_LEN);
+-		IEEE80211_VERIFY_SSID(vap->iv_bss, ssid);
++		// KARMA: Don't verify SSID on Probe Requests
++		//IEEE80211_VERIFY_SSID(vap->iv_bss, ssid);
+ 		if ((vap->iv_flags & IEEE80211_F_HIDESSID) && ssid[1] == 0) {
+ 			IEEE80211_DISCARD(vap, IEEE80211_MSG_INPUT,
+ 				wh, ieee80211_mgt_subtype_name[subtype >>
+@@ -3041,6 +3043,12 @@
+ 					IEEE80211_FC0_SUBTYPE_SHIFT],
+ 				"%s", "recv'd rate set invalid");
+ 		} else {
++			// KARMA: Print the probe response if in adhoc mode
++			if (vap->iv_opmode == IEEE80211_M_IBSS) {
++				printf ("KARMA: Probe response for [");
++				ieee80211_print_essid(ssid + 2, ssid[1]);
++				printf ("]\n");
++			}
+ 			IEEE80211_SEND_MGMT(ni,
+ 				IEEE80211_FC0_SUBTYPE_PROBE_RESP, 0);
+ 		}
+@@ -3229,7 +3237,8 @@
+ 			return;
+ 		IEEE80211_VERIFY_ELEMENT(rates, IEEE80211_RATE_MAXSIZE);
+ 		IEEE80211_VERIFY_ELEMENT(ssid, IEEE80211_NWID_LEN);
+-		IEEE80211_VERIFY_SSID(vap->iv_bss, ssid);
++		// KARMA: Don't verify SSID on Association Requests
++		//IEEE80211_VERIFY_SSID(vap->iv_bss, ssid);
+ 
+ 		if (ni == vap->iv_bss) {
+ 			IEEE80211_NOTE_MAC(vap, IEEE80211_MSG_ANY, wh->i_addr2,
+@@ -3408,6 +3417,13 @@
+ 
+ 		/* Send TGf L2UF frame on behalf of newly associated station */
+ 		ieee80211_deliver_l2uf(ni);
++
++		// KARMA: Log SSID that client thinks they are associating to
++		printf("KARMA: Node [%s] associating to ssid [",
++			ether_sprintf(wh->i_addr2)); 
++		ieee80211_print_essid(ssid + 2, ssid[1]);
++		printf("]\n");
++
+ 		ieee80211_node_join(ni, resp);
+ #ifdef ATH_SUPERG_XR
+ 		if (ni->ni_prev_vap &&
+diff -urN madwifi-ng-r2568-20070710/net80211/ieee80211_output.c madwifi-ng-r2568-20070710.new/net80211/ieee80211_output.c
+--- madwifi-ng-r2568-20070710/net80211/ieee80211_output.c	2007-10-14 12:52:10.000000000 +0200
++++ madwifi-ng-r2568-20070710.new/net80211/ieee80211_output.c	2007-10-14 12:58:53.000000000 +0200
+@@ -1876,10 +1876,17 @@
+ 		*(__le16 *)frm = htole16(capinfo);
+ 		frm += 2;
+ 
+-		/* ssid */
+-		frm = ieee80211_add_ssid(frm, vap->iv_bss->ni_essid,
+-			vap->iv_bss->ni_esslen);
+-
++		// KARMA: If argument is specified, on PROBE_RESP, it is
++		// the SSID to use in the response which is the same SSID
++		// has the client sent).
++		if (arg) {
++			u_int8_t* ssid = (u_int8_t*)arg;
++			frm = ieee80211_add_ssid(frm, ssid + 2, ssid[1]);
++		} else {
++			/* ssid */
++			frm = ieee80211_add_ssid(frm, vap->iv_bss->ni_essid,
++				vap->iv_bss->ni_esslen);
++		}
+ 		/* supported rates */
+ 		frm = ieee80211_add_rates(frm, &ni->ni_rates);
+ 
