@@ -23,8 +23,11 @@ define Package/wpa-supplicant
   CATEGORY:=Network
   DEPENDS:=+libopenssl
   TITLE:=WPA Supplicant
-  DESCRIPTION:=WPA Supplicant
   URL:=http://hostap.epitest.fi/wpa_supplicant/
+endef
+
+define Package/wpa-supplicant/Description
+ WPA Supplicant
 endef
 
 define Package/wpa-cli
@@ -32,7 +35,10 @@ define Package/wpa-cli
   CATEGORY:=Network
   DEPENDS:=wpa-supplicant
   TITLE:=WPA Supplicant command line interface
-  DESCRIPTION:=
+endef
+
+define Package/wpa-cli/Description
+ 
 endef
 
 define Package/wpa-passphrase
@@ -40,7 +46,10 @@ define Package/wpa-passphrase
   CATEGORY:=Network
   DEPENDS:=wpa-supplicant
   TITLE:=Set WPA passphrase for a SSID
-  DESCRIPTION:=
+endef
+
+define Package/wpa-passphrase/Description
+ 
 endef
 
 define Build/Configure
