@@ -25,12 +25,14 @@ define KernelPackage/broadcom-mmc
   SUBMENU:=Other modules
   DEPENDS:=@TARGET_brcm_2_4
   TITLE:=Kernel driver for the Linksys WRT54G MM/SD-Card Mod
-  DESCRIPTION:=\
-	Kernel driver for the Linksys WRT54G MM/SD-Card Mod
   URL:=http://kiel.kool.dk/
   FILES:=$(PKG_BUILD_DIR)/mmc.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,80,mmc)
 endef 
+
+define KernelPackage/broadcom-mmc/description
+	Kernel driver for the Linksys WRT54G MM/SD-Card Mod
+endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
