@@ -80,14 +80,15 @@ define BuildPackage
   $(eval $(Package/Default))
   $(eval $(Package/$(1)))
 
-# <HACK> Support obsolete DESCRIPTION field
+ifdef DESCRIPTION
+$$(error DESCRIPTION:= is obselete, use Package/PKG_NAME/description)
+endif
+
 ifndef Package/$(1)/description
 define Package/$(1)/description
-$(TITLE)$(subst \,
-,\ $(DESCRIPTION))
+	$(TITLE)
 endef
 endif
-# </HACK>
 
   $(foreach FIELD, TITLE CATEGORY PRIORITY SECTION VERSION,
     ifeq ($($(FIELD)),)
