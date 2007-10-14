@@ -14,6 +14,8 @@
 #define LKC_DIRECT_LINK
 #include "lkc.h"
 
+#define LOCAL_BUILD_SETTINGS "/.openwrt/defconfig"
+
 static void conf_warning(const char *fmt, ...)
 	__attribute__ ((format (printf, 1, 2)));
 
@@ -87,7 +89,7 @@ void conf_reset(void)
 {
 	struct symbol *sym;
 	int i;
-	
+
 	for_all_symbols(i, sym) {
 		sym->flags |= SYMBOL_NEW | SYMBOL_CHANGED;
 		if (sym_is_choice(sym))
@@ -104,55 +106,12 @@ void conf_reset(void)
 			sym->user.tri = no;
 		}
 	}
+	conf_read_simple(NULL, 0);
 }
 
-int conf_read_simple(const char *name)
-{
-	FILE *in = NULL;
+int conf_read_file(FILE *in, struct symbol *sym){
 	char line[1024];
 	char *p, *p2;
-	struct symbol *sym;
-	int i;
-
-	if (name) {
-		in = zconf_fopen(name);
-	} else {
-		const char **names = conf_confnames;
-		while ((name = *names++)) {
-			name = conf_expand_value(name);
-			in = zconf_fopen(name);
-			if (in) {
-				printf(_("#\n"
-				         "# using defaults found in %s\n"
-				         "#\n"), name);
-				break;
-			}
-		}
-	}
-	if (!in)
-		return 1;
-
-	conf_filename = name;
-	conf_lineno = 0;
-	conf_warnings = 0;
-	conf_unsaved = 0;
-
-	for_all_symbols(i, sym) {
-		sym->flags |= SYMBOL_NEW | SYMBOL_CHANGED;
-		if (sym_is_choice(sym))
-			sym->flags &= ~SYMBOL_NEW;
-		sym->flags &= ~SYMBOL_VALID;
-		switch (sym->type) {
-		case S_INT:
-		case S_HEX:
-		case S_STRING:
-			if (sym->user.val)
-				free(sym->user.val);
-		default:
-			sym->user.val = NULL;
-			sym->user.tri = no;
-		}
-	}
 
 	while (fgets(line, sizeof(line), in)) {
 		conf_lineno++;
@@ -169,12 +128,12 @@ int conf_read_simple(const char *name)
 				continue;
 			sym = sym_find(line + 9);
 			if (!sym) {
-				conf_warning("trying to assign nonexistent symbol %s", line + 9);
+				//conf_warning("trying to assign nonexistent symbol %s", line + 9);
 				break;
-			} else if (!(sym->flags & SYMBOL_NEW)) {
-				conf_warning("trying to reassign symbol %s", sym->name);
+			} /*else if (!(sym->flags & SYMBOL_NEW)) {
+				//conf_warning("trying to reassign symbol %s", sym->name);
 				break;
-			}
+			}*/
 			switch (sym->type) {
 			case S_BOOLEAN:
 			case S_TRISTATE:
@@ -199,12 +158,12 @@ int conf_read_simple(const char *name)
 				*p2 = 0;
 			sym = sym_find(line + 7);
 			if (!sym) {
-				conf_warning("trying to assign nonexistent symbol %s", line + 7);
+				//conf_warning("trying to assign nonexistent symbol %s", line + 7);
 				break;
-			} else if (!(sym->flags & SYMBOL_NEW)) {
+			} /*else if (!(sym->flags & SYMBOL_NEW)) {
 				conf_warning("trying to reassign symbol %s", sym->name);
 				break;
-			}
+			}*/
 			switch (sym->type) {
 			case S_TRISTATE:
 				if (p[0] == 'm') {
@@ -283,9 +242,80 @@ int conf_read_simple(const char *name)
 	}
 	fclose(in);
 
+	return 0;
+}
+
+int conf_read_simple(const char *name, int load_config)
+{
+	FILE *in = NULL;
+	FILE *defaults = NULL;
+	struct symbol *sym;
+	int i;
+	char *home_dir = getenv("HOME");
+	char *default_config_path = NULL;
+	
+	if(home_dir){
+			default_config_path = malloc(strlen(home_dir) + sizeof(LOCAL_BUILD_SETTINGS) + 1);
+			sprintf(default_config_path, "%s%s", home_dir, LOCAL_BUILD_SETTINGS);
+			defaults = zconf_fopen(default_config_path);
+			if(defaults)
+					printf("# using buildsystem predefines from %s\n", default_config_path);
+			free(default_config_path);
+	}
+	
+	if(load_config){
+		if (name) {
+			in = zconf_fopen(name);
+		} else {
+			const char **names = conf_confnames;
+			while ((name = *names++)) {
+				name = conf_expand_value(name);
+				in = zconf_fopen(name);
+				if (in) {
+					printf(_("#\n"
+					         "# using defaults found in %s\n"
+					         "#\n"), name);
+					break;
+				}
+			}
+		}
+	}
+
+	if (!in && !defaults)
+		return 1;
+
+	conf_filename = name;
+	conf_lineno = 0;
+	conf_warnings = 0;
+	conf_unsaved = 0;
+	
+	for_all_symbols(i, sym) {
+		sym->flags |= SYMBOL_NEW | SYMBOL_CHANGED;
+		if (sym_is_choice(sym))
+			sym->flags &= ~SYMBOL_NEW;
+		sym->flags &= ~SYMBOL_VALID;
+		switch (sym->type) {
+		case S_INT:
+		case S_HEX:
+		case S_STRING:
+			if (sym->user.val)
+				free(sym->user.val);
+		default:
+			sym->user.val = NULL;
+			sym->user.tri = no;
+		}
+	}
+
+	if(defaults)
+		conf_read_file(defaults, sym);
+	
+	if(in)
+		conf_read_file(in, sym);
+	
 	if (modules_sym)
 		sym_calc_value(modules_sym);
-	return 0;
+
+	return 0;	
 }
 
 int conf_read(const char *name)
@@ -295,7 +325,7 @@ int conf_read(const char *name)
 	struct expr *e;
 	int i;
 
-	if (conf_read_simple(name))
+	if (conf_read_simple(name, 1))
 		return 1;
 
 	for_all_symbols(i, sym) {

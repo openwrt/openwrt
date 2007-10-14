@@ -27,13 +27,13 @@ lxdialog/lxdialog:
 	$(MAKE) -C lxdialog
 
 conf: $(conf-objs)
-mconf: $(mconf-objs)
+mconf: $(mconf-objs) 
 
 clean:
 	rm -f *.o $(clean-files) conf mconf
 	$(MAKE) -C lxdialog clean
 
-zconf.tab.o: lex.zconf.c zconf.hash.c
+zconf.tab.o: lex.zconf.c zconf.hash.c confdata.c
 
 kconfig_load.o: lkc_defs.h
 
