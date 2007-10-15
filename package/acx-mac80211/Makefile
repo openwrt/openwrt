@@ -50,7 +50,6 @@ $(DL_DIR)/$(PKG_FW_NAME):
 	CONFIG_ACX_MAC80211_PCI=m \
 
   PKG_EXTRA_CFLAGS:= \
-	-I$(STAGING_DIR)/usr/include/mac80211 \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=m,%,$(filter %=m,$(PKG_EXTRA_KCONFIG)))) \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=y,%,$(filter %=y,$(PKG_EXTRA_KCONFIG)))) \
 
@@ -61,6 +60,8 @@ $(DL_DIR)/$(PKG_FW_NAME):
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		$(PKG_EXTRA_KCONFIG) \
 		EXTRA_CFLAGS="$(PKG_EXTRA_CFLAGS)" \
+		LINUXINCLUDE="-I$(STAGING_DIR)/usr/include/mac80211 -I$(LINUX_DIR)/include \
+			-include linux/autoconf.h" \
 		V="$(V)" \
 		modules
   endef
