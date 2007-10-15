@@ -1002,8 +1002,7 @@ enum {
 };
 
 static struct pci_device_id r6040_pci_tbl[] = {
-	{0x17F3, 0x6040, PCI_ANY_ID, PCI_ANY_ID, 0, 0, RDC_6040},
-	/* {PCI_VENDOR_ID_RDC, PCI_DEVICE_ID_R6040, PCI_ANY_ID, PCI_ANY_ID, 0, 0, RDC_6040},*/
+	{PCI_VENDOR_ID_RDC, PCI_DEVICE_ID_RDC_R6040, PCI_ANY_ID, PCI_ANY_ID, 0, 0, RDC_6040},
 	/*{0x1106, 0x3065, PCI_ANY_ID, PCI_ANY_ID, 0, 0, RDC_6040},*/
 	{0,}
 };
