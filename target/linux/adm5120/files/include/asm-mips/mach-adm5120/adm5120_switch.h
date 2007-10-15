@@ -141,6 +141,9 @@
 #define CPUP_CONF_DCPUP		BIT(0)	/* Disable CPU port */
 #define CPUP_CONF_CRCP		BIT(1)	/* CRC padding from CPU */
 #define CPUP_CONF_BTM		BIT(2)	/* Bridge Testing Mode */
+#define CPUP_CONF_DUNP_SHIFT	9	/* Disable Unknown Packets for portX */
+#define CPUP_CONF_DMCP_SHIFT	16	/* Disable Mcast Packets form portX */
+#define CPUP_CONF_DBCP_SHIFT	24	/* Disable Bcast Packets form portX */
 
 /* PORT_CONF0 register bits */
 #define PORT_CONF0_DP_SHIFT	0	/* Disable Port */
@@ -155,6 +158,26 @@
 /* SEND_TRIG register bits */
 #define SEND_TRIG_STL		BIT(0)	/* Send Trigger Low */
 #define SEND_TRIG_STH		BIT(1)	/* Send Trigger High */
+
+/* MAC_WT0 register bits */
+#define MAC_WT0_MAWC		BIT(0)	/* MAC address write command */
+#define MAC_WT0_MWD_SHIFT	1
+#define MAC_WT0_MWD		BIT(1)	/* MAC write done */
+#define MAC_WT0_WFB		BIT(2)	/* Write Filter Bit */
+#define MAC_WT0_WVN_SHIFT	3
+#define MAC_WT0_WVE		BIT(6)	/* Write VLAN enable */
+#define MAC_WT0_WPMN_SHIFT	7
+#define MAC_WT0_WAF_SHIFT	13	/* Write Age Field shift */
+#define MAC_WT0_WAF_EMPTY	0
+#define MAC_WT0_WAF_STATIC	7
+#define MAC_WT0_MAC0_SHIFT	16
+#define MAC_WT0_MAC1_SHIFT	24
+
+/* MAC_WT1 register bits */
+#define MAC_WT1_MAC2_SHIFT	0
+#define MAC_WT1_MAC3_SHIFT	8
+#define MAC_WT1_MAC4_SHIFT	16
+#define MAC_WT1_MAC5_SHIFT	24
 
 /* BW_CNTL0/BW_CNTL1 register bits */
 #define BW_CNTL_DISABLE		0x00
@@ -197,6 +220,9 @@
 #define PHY_CNTL2_AMDIX_SHIFT	25	/* Auto MDIX enable */
 /* PHY_CNTL2_RMAE is bad in datasheet */
 #define PHY_CNTL2_RMAE		BIT(31)	/* Recommended MCC Average enable */
+
+/* PHY_CNTL3 register bits */
+#define PHY_CNTL3_RNT		BIT(10) /* Recommend Normal Threshold */
 
 /* PORT_TH register bits */
 #define PORT_TH_PPT_MASK	BITMASK(8)	/* Per Port Threshold */
