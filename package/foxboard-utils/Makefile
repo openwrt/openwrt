@@ -34,7 +34,7 @@ define Package/foxboard-utils/description
 endef
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) CFLAGS=$(TARTGET_CFLAGS) CC=$(TARGET_CC) 
+	$(MAKE) -C $(PKG_BUILD_DIR) CFLAGS="$(TARGET_CFLAGS)" CC="$(TARGET_CC)"
 	$(MAKE) -C $(PKG_BUILD_DIR) PREFIX="$(PKG_INSTALL_DIR)" install
 endef
 
