@@ -163,7 +163,6 @@ static spinlock_t sw_lock = SPIN_LOCK_UNLOCKED;
 static spinlock_t poll_lock = SPIN_LOCK_UNLOCKED;
 
 static struct net_device sw_dev;
-static struct net_device *poll_dev;
 
 /* ------------------------------------------------------------------------ */
 
@@ -458,31 +457,6 @@ static int adm5120_switch_rx(int limit)
 }
 
 
-static int adm5120_switch_poll(struct net_device *dev, int *budget)
-{
-	int limit = min(dev->quota, *budget);
-	int done;
-	u32 status;
-
-	done = adm5120_switch_rx(limit);
-
-	*budget -= done;
-	dev->quota -= done;
-
-	status = sw_int_status() & SWITCH_INTS_POLL;
-	if ((done < limit) && (!status)) {
-		spin_lock_irq(&poll_lock);
-		SW_DBG("disable polling mode for %s\n", poll_dev->name);
-		netif_rx_complete(poll_dev);
-		sw_int_unmask(SWITCH_INTS_POLL);
-		poll_dev = NULL;
-		spin_unlock_irq(&poll_lock);
-		return 0;
-	}
-
-	return 1;
-}
-
 static void adm5120_switch_tx(void)
 {
 	unsigned int entry;
@@ -517,6 +491,28 @@ static void adm5120_switch_tx(void)
 	}
 }
 
+static int adm5120_if_poll(struct net_device *dev, int *budget)
+{
+	int limit = min(dev->quota, *budget);
+	int done;
+	u32 status;
+
+	done = adm5120_switch_rx(limit);
+
+	*budget -= done;
+	dev->quota -= done;
+
+	status = sw_int_status() & SWITCH_INTS_POLL;
+	if ((done < limit) && (!status)) {
+		SW_DBG("disable polling mode for %s\n", poll_dev->name);
+		netif_rx_complete(dev);
+		sw_int_unmask(SWITCH_INTS_POLL);
+		return 0;
+	}
+
+	return 1;
+}
+
 static irqreturn_t adm5120_poll_irq(int irq, void *dev_id)
 {
 	struct net_device *dev = dev_id;
@@ -529,19 +525,9 @@ static irqreturn_t adm5120_poll_irq(int irq, void *dev_id)
 
 	sw_dump_intr_mask("poll ints", status);
 
-	if (!netif_running(dev)) {
-		SW_DBG("device %s is not running\n", dev->name);
-		return IRQ_NONE;
-	}
-
-	spin_lock(&poll_lock);
-	if (!poll_dev) {
-		SW_DBG("enable polling mode for %s\n", dev->name);
-		poll_dev = dev;
-		sw_int_mask(SWITCH_INTS_POLL);
-		netif_rx_schedule(poll_dev);
-	}
-	spin_unlock(&poll_lock);
+	SW_DBG("enable polling mode for %s\n", dev->name);
+	sw_int_mask(SWITCH_INTS_POLL);
+	netif_rx_schedule(dev);
 
 	return IRQ_HANDLED;
 }
@@ -605,12 +591,143 @@ static void adm5120_set_bw(char *matrix)
 		sw_read_reg(SWITCH_REG_BW_CNTL1));
 }
 
-static int adm5120_switch_open(struct net_device *dev)
+static void adm5120_switch_tx_ring_reset(struct dma_desc *desc,
+		struct sk_buff **skbl, int num)
 {
-	u32 t;
+	memset(desc, 0, num * sizeof(*desc));
+	desc[num-1].buf1 |= DESC_EOR;
+	memset(skbl, 0, sizeof(struct skb*)*num);
+
+	cur_txl = 0;
+	dirty_txl = 0;
+}
+
+static void adm5120_switch_rx_ring_reset(struct dma_desc *desc,
+		struct sk_buff **skbl, int num)
+{
 	int i;
 
-	netif_start_queue(dev);
+	memset(desc, 0, num * sizeof(*desc));
+	for (i = 0; i < num; i++) {
+		skbl[i] = dev_alloc_skb(SKB_ALLOC_LEN);
+		if (!skbl[i]) {
+			i = num;
+			break;
+		}
+		skb_reserve(skbl[i], SKB_RESERVE_LEN);
+		adm5120_rx_dma_update(&desc[i], skbl[i], (num-1==i));
+	}
+
+	cur_rxl = 0;
+	dirty_rxl = 0;
+}
+
+static int adm5120_switch_tx_ring_alloc(void)
+{
+	int err;
+
+	txl_descs = dma_alloc_coherent(NULL, TX_DESCS_SIZE, &txl_descs_dma,
+					GFP_ATOMIC);
+	if (!txl_descs) {
+		err = -ENOMEM;
+		goto err;
+	}
+
+	txl_skbuff = kzalloc(TX_SKBS_SIZE, GFP_KERNEL);
+	if (!txl_skbuff) {
+		err = -ENOMEM;
+		goto err;
+	}
+
+	return 0;
+
+err:
+	return err;
+}
+
+static void adm5120_switch_tx_ring_free(void)
+{
+	int i;
+
+	if (txl_skbuff) {
+		for (i = 0; i < TX_RING_SIZE; i++)
+			if (txl_skbuff[i])
+				kfree_skb(txl_skbuff[i]);
+		kfree(txl_skbuff);
+	}
+
+	if (txl_descs)
+		dma_free_coherent(NULL, TX_DESCS_SIZE, txl_descs,
+			txl_descs_dma);
+}
+
+static int adm5120_switch_rx_ring_alloc(void)
+{
+	int err;
+	int i;
+
+	/* init RX ring */
+	rxl_descs = dma_alloc_coherent(NULL, RX_DESCS_SIZE, &rxl_descs_dma,
+					GFP_ATOMIC);
+	if (!rxl_descs) {
+		err = -ENOMEM;
+		goto err;
+	}
+
+	rxl_skbuff = kzalloc(RX_SKBS_SIZE, GFP_KERNEL);
+	if (!rxl_skbuff) {
+		err = -ENOMEM;
+		goto err;
+	}
+
+	for (i = 0; i < RX_RING_SIZE; i++) {
+		struct sk_buff *skb;
+		skb = alloc_skb(SKB_ALLOC_LEN, GFP_ATOMIC);
+		if (!skb) {
+			err = -ENOMEM;
+			goto err;
+		}
+		rxl_skbuff[i] = skb;
+		skb_reserve(skb, SKB_RESERVE_LEN);
+	}
+
+	return 0;
+
+err:
+	return err;
+}
+
+static void adm5120_switch_rx_ring_free(void)
+{
+	int i;
+
+	if (rxl_skbuff) {
+		for (i = 0; i < RX_RING_SIZE; i++)
+			if (rxl_skbuff[i])
+				kfree_skb(rxl_skbuff[i]);
+		kfree(rxl_skbuff);
+	}
+
+	if (rxl_descs)
+		dma_free_coherent(NULL, RX_DESCS_SIZE, rxl_descs,
+			rxl_descs_dma);
+}
+
+/* ------------------------------------------------------------------------ */
+
+static int adm5120_if_open(struct net_device *dev)
+{
+	u32 t;
+	int err;
+	int i;
+
+	err = request_irq(dev->irq, adm5120_poll_irq,
+		(IRQF_SHARED | IRQF_DISABLED), dev->name, dev);
+	if (err) {
+		SW_ERR("unable to get irq for %s\n", dev->name);
+		goto err;
+	}
+
 	if (!sw_used++)
 		/* enable interrupts on first open */
 		sw_int_unmask(SWITCH_INTS_USED);
@@ -623,16 +740,20 @@ static int adm5120_switch_open(struct net_device *dev)
 	}
 	sw_write_reg(SWITCH_REG_PORT_CONF0, t);
 
+	netif_start_queue(dev);
+
 	return 0;
+
+err:
+	return err;
 }
 
-static int adm5120_switch_stop(struct net_device *dev)
+static int adm5120_if_stop(struct net_device *dev)
 {
 	u32 t;
 	int i;
 
-	if (!--sw_used)
-		sw_int_mask(SWITCH_INTS_USED);
+	netif_stop_queue(dev);
 
 	/* disable port if not assigned to other devices */
 	t = sw_read_reg(SWITCH_REG_PORT_CONF0);
@@ -643,11 +764,16 @@ static int adm5120_switch_stop(struct net_device *dev)
 	}
 	sw_write_reg(SWITCH_REG_PORT_CONF0, t);
 
-	netif_stop_queue(dev);
+	if (!--sw_used)
+		sw_int_mask(SWITCH_INTS_USED);
+
+	free_irq(dev->irq, dev);
+
 	return 0;
 }
 
-static int adm5120_sw_start_xmit(struct sk_buff *skb, struct net_device *dev)
+static int adm5120_if_hard_start_xmit(struct sk_buff *skb,
+		struct net_device *dev)
 {
 	struct dma_desc *desc;
 	struct adm5120_sw *priv = netdev_priv(dev);
@@ -695,7 +821,7 @@ static int adm5120_sw_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	return 0;
 }
 
-static void adm5120_tx_timeout(struct net_device *dev)
+static void adm5120_if_tx_timeout(struct net_device *dev)
 {
 	SW_INFO("TX timeout on %s\n",dev->name);
 }
@@ -769,7 +895,7 @@ static void adm5120_write_mac(struct net_device *dev)
 	while (!(sw_read_reg(SWITCH_REG_MAC_WT0) & MAC_WT0_MWD));
 }
 
-static int adm5120_sw_set_mac_address(struct net_device *dev, void *p)
+static int adm5120_if_set_mac_address(struct net_device *dev, void *p)
 {
 	struct sockaddr *addr = p;
 
@@ -778,7 +904,7 @@ static int adm5120_sw_set_mac_address(struct net_device *dev, void *p)
 	return 0;
 }
 
-static int adm5120_do_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+static int adm5120_if_do_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 {
 	int err;
 	struct adm5120_sw_info info;
@@ -827,29 +953,30 @@ static int adm5120_do_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 	return 0;
 }
 
-static void adm5120_dma_tx_init(struct dma_desc *desc, struct sk_buff **skbl,
-		int num)
+static struct net_device *adm5120_if_alloc(void)
 {
-	memset(desc, 0, num * sizeof(*desc));
-	desc[num-1].buf1 |= DESC_EOR;
-	memset(skbl, 0, sizeof(struct skb*)*num);
-}
+	struct net_device *dev;
+	struct adm5120_sw *priv;
 
-static void adm5120_dma_rx_init(struct dma_desc *desc, struct sk_buff **skbl,
-		int num)
-{
-	int i;
+	dev = alloc_etherdev(sizeof(*priv));
+	if (!dev)
+		return NULL;
 
-	memset(desc, 0, num * sizeof(*desc));
-	for (i=0; i<num; i++) {
-		skbl[i] = dev_alloc_skb(SKB_ALLOC_LEN);
-		if (!skbl[i]) {
-			i=num;
-			break;
-		}
-		skb_reserve(skbl[i], SKB_RESERVE_LEN);
-		adm5120_rx_dma_update(&desc[i], skbl[i], (num-1==i));
-	}
+	dev->irq		= ADM5120_IRQ_SWITCH;
+	dev->open		= adm5120_if_open;
+	dev->hard_start_xmit 	= adm5120_if_hard_start_xmit;
+	dev->stop		= adm5120_if_stop;
+	dev->set_multicast_list	= adm5120_set_multicast_list;
+	dev->do_ioctl		= adm5120_if_do_ioctl;
+	dev->tx_timeout		= adm5120_if_tx_timeout;
+	dev->watchdog_timeo 	= TX_TIMEOUT;
+	dev->set_mac_address 	= adm5120_if_set_mac_address;
+	dev->poll		= adm5120_if_poll;
+	dev->weight		= 64;
+
+	SET_MODULE_OWNER(dev);
+
+	return dev;
 }
 
 static void adm5120_switch_cleanup(void)
@@ -863,41 +990,18 @@ static void adm5120_switch_cleanup(void)
 		struct net_device *dev = adm5120_devs[i];
 		if (dev) {
 			unregister_netdev(dev);
-			free_irq(ADM5120_IRQ_SWITCH, dev);
 			free_netdev(dev);
 		}
 	}
 
-	/* cleanup TX ring */
-	if (txl_skbuff) {
-		for (i = 0; i < TX_RING_SIZE; i++)
-			if (txl_skbuff[i])
-				kfree_skb(txl_skbuff[i]);
-		kfree(txl_skbuff);
-	}
-
-	if (txl_descs)
-		dma_free_coherent(NULL, TX_DESCS_SIZE, txl_descs,
-			txl_descs_dma);
-
-	/* cleanup RX ring */
-	if (rxl_skbuff) {
-		for (i = 0; i < RX_RING_SIZE; i++)
-			if (rxl_skbuff[i])
-				kfree_skb(rxl_skbuff[i]);
-		kfree(rxl_skbuff);
-	}
-
-	if (rxl_descs)
-		dma_free_coherent(NULL, RX_DESCS_SIZE, rxl_descs,
-			rxl_descs_dma);
+	adm5120_switch_tx_ring_free();
+	adm5120_switch_rx_ring_free();
 
 	free_irq(ADM5120_IRQ_SWITCH, &sw_dev);
 }
 
 static int __init adm5120_switch_init(void)
 {
-	struct net_device *dev;
 	u32 t;
 	int i, err;
 
@@ -939,49 +1043,16 @@ static int __init adm5120_switch_init(void)
 	sw_int_mask(SWITCH_INTS_ALL);
 	sw_int_ack(SWITCH_INTS_ALL);
 
-	/* init RX ring */
-	cur_rxl = dirty_rxl = 0;
-	rxl_descs = dma_alloc_coherent(NULL, RX_DESCS_SIZE, &rxl_descs_dma,
-					GFP_ATOMIC);
-	if (!rxl_descs) {
-		err = -ENOMEM;
+	err = adm5120_switch_rx_ring_alloc();
+	if (err)
 		goto err;
-	}
 
-	rxl_skbuff = kzalloc(RX_SKBS_SIZE, GFP_KERNEL);
-	if (!rxl_skbuff) {
-		err = -ENOMEM;
+	err = adm5120_switch_tx_ring_alloc();
+	if (err)
 		goto err;
-	}
 
-	for (i = 0; i < RX_RING_SIZE; i++) {
-		struct sk_buff *skb;
-		skb = alloc_skb(SKB_ALLOC_LEN, GFP_ATOMIC);
-		if (!skb) {
-			err = -ENOMEM;
-			goto err;
-		}
-		rxl_skbuff[i] = skb;
-		skb_reserve(skb, SKB_RESERVE_LEN);
-	}
-
-	/* init TX ring */
-	cur_txl = dirty_txl = 0;
-	txl_descs = dma_alloc_coherent(NULL, TX_DESCS_SIZE, &txl_descs_dma,
-					GFP_ATOMIC);
-	if (!txl_descs) {
-		err = -ENOMEM;
-		goto err;
-	}
-
-	txl_skbuff = kzalloc(TX_SKBS_SIZE, GFP_KERNEL);
-	if (!txl_skbuff) {
-		err = -ENOMEM;
-		goto err;
-	}
-
-	adm5120_dma_tx_init(txl_descs, txl_skbuff, TX_RING_SIZE);
-	adm5120_dma_rx_init(rxl_descs, rxl_skbuff, RX_RING_SIZE);
+	adm5120_switch_tx_ring_reset(txl_descs, txl_skbuff, TX_RING_SIZE);
+	adm5120_switch_rx_ring_reset(rxl_descs, rxl_skbuff, RX_RING_SIZE);
 
 	sw_write_reg(SWITCH_REG_SHDA, 0);
 	sw_write_reg(SWITCH_REG_SLDA, KSEG1ADDR(txl_descs));
@@ -989,35 +1060,19 @@ static int __init adm5120_switch_init(void)
 	sw_write_reg(SWITCH_REG_RLDA, KSEG1ADDR(rxl_descs));
 
 	for (i = 0; i < SWITCH_NUM_PORTS; i++) {
-		adm5120_devs[i] = alloc_etherdev(sizeof(struct adm5120_sw));
-		if (!adm5120_devs[i]) {
+		struct net_device *dev;
+		struct adm5120_sw *priv;
+
+		dev = adm5120_if_alloc();
+		if (!dev) {
 			err = -ENOMEM;
 			goto err;
 		}
 
-		dev = adm5120_devs[i];
-		err = request_irq(ADM5120_IRQ_SWITCH, adm5120_poll_irq,
-			(IRQF_SHARED | IRQF_DISABLED), dev->name, dev);
-		if (err) {
-			SW_ERR("unable to get irq for %s\n", dev->name);
-			goto err;
-		}
+		adm5120_devs[i] = dev;
+		priv = netdev_priv(dev);
 
-		SET_MODULE_OWNER(dev);
-		memset(netdev_priv(dev), 0, sizeof(struct adm5120_sw));
-		((struct adm5120_sw*)netdev_priv(dev))->port = i;
-		dev->base_addr = ADM5120_SWITCH_BASE;
-		dev->irq = ADM5120_IRQ_SWITCH;
-		dev->open = adm5120_switch_open;
-		dev->hard_start_xmit = adm5120_sw_start_xmit;
-		dev->stop = adm5120_switch_stop;
-		dev->set_multicast_list = adm5120_set_multicast_list;
-		dev->do_ioctl = adm5120_do_ioctl;
-		dev->tx_timeout = adm5120_tx_timeout;
-		dev->watchdog_timeo = TX_TIMEOUT;
-		dev->set_mac_address = adm5120_sw_set_mac_address;
-		dev->poll = adm5120_switch_poll;
-		dev->weight = 64;
+		priv->port = i;
 
 		memcpy(dev->dev_addr, adm5120_eth_macs[i], 6);
 		adm5120_write_mac(dev);
@@ -1028,7 +1083,6 @@ static int __init adm5120_switch_init(void)
 					dev->name, err);
 			goto err;
 		}
-		SW_INFO("%s created for switch port%d\n", dev->name, i);
 	}
 
 	/* setup vlan/port mapping after devs are filled up */
