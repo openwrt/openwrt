@@ -1,7 +1,7 @@
 Index: acx-mac80211-20071003/common.c
 ===================================================================
 --- acx-mac80211-20071003.orig/common.c	2007-10-15 21:33:40.000000000 +0800
-+++ acx-mac80211-20071003/common.c	2007-10-15 21:39:55.000000000 +0800
++++ acx-mac80211-20071003/common.c	2007-10-16 10:01:58.000000000 +0800
 @@ -1683,7 +1683,9 @@
  */
  void
@@ -17,12 +17,12 @@ Index: acx-mac80211-20071003/common.c
  
          acx_lock(adev, flags);
  
++        *total_flags &= (FIF_PROMISC_IN_BSS | FIF_ALLMULTI);
 +        if ((changed_flags & (FIF_PROMISC_IN_BSS | FIF_ALLMULTI)) == 0)
 +                return;
          /* firmwares don't have allmulti capability,
           * so just use promiscuous mode instead in this case. */
 -        if (netflags & (IFF_PROMISC | IFF_ALLMULTI)) {
-+        *total_flags &= (FIF_PROMISC_IN_BSS | FIF_ALLMULTI);
 +        if (*total_flags) {
                  SET_BIT(adev->rx_config_1, RX_CFG1_RCV_PROMISCUOUS);
                  CLEAR_BIT(adev->rx_config_1, RX_CFG1_FILTER_ALL_MULTI);
