@@ -114,6 +114,7 @@ define Package/iptables-mod-ipsec/description
  Includes: 
  - libipt_ah
  - libipt_esp
+ - libipt_policy
 endef
 
 define Package/iptables-mod-nat
