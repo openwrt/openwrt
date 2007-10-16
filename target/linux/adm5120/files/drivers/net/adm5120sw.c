@@ -45,7 +45,7 @@ MODULE_LICENSE("GPL");
 
 /* ------------------------------------------------------------------------ */
 
-#if 1 /*def ADM5120_SWITCH_DEBUG*/
+#if 0 /*def ADM5120_SWITCH_DEBUG*/
 #define SW_DBG(f, a...)		printk(KERN_DEBUG "%s: " f, DRV_NAME , ## a)
 #else
 #define SW_DBG(f, a...)		do {} while (0)
@@ -62,6 +62,11 @@ MODULE_LICENSE("GPL");
 #define TX_RING_SIZE	32
 #define TX_QUEUE_LEN	28	/* Limit ring entries actually used. */
 #define TX_TIMEOUT	HZ*400
+
+#define RX_DESCS_SIZE	(RX_RING_SIZE * sizeof(struct dma_desc *))
+#define RX_SKBS_SIZE	(RX_RING_SIZE * sizeof(struct sk_buff *))
+#define TX_DESCS_SIZE	(TX_RING_SIZE * sizeof(struct dma_desc *))
+#define TX_SKBS_SIZE	(TX_RING_SIZE * sizeof(struct sk_buff *))
 
 #define SKB_ALLOC_LEN		(RX_MAX_PKTLEN + 32)
 #define SKB_RESERVE_LEN		(NET_IP_ALIGN + NET_SKB_PAD)
@@ -140,19 +145,14 @@ static struct net_device *adm5120_devs[SWITCH_NUM_PORTS];
 /* Lookup table port -> device */
 static struct net_device *adm5120_port[SWITCH_NUM_PORTS];
 
-static struct dma_desc txh_descs_v[TX_RING_SIZE] __attribute__((aligned(16)));
-static struct dma_desc txl_descs_v[TX_RING_SIZE] __attribute__((aligned(16)));
-static struct dma_desc rxh_descs_v[RX_RING_SIZE] __attribute__((aligned(16)));
-static struct dma_desc rxl_descs_v[RX_RING_SIZE] __attribute__((aligned(16)));
-static struct dma_desc *txh_descs;
 static struct dma_desc *txl_descs;
-static struct dma_desc *rxh_descs;
 static struct dma_desc *rxl_descs;
 
-static struct sk_buff *rxl_skbuff[RX_RING_SIZE];
-static struct sk_buff *rxh_skbuff[RX_RING_SIZE];
-static struct sk_buff *txl_skbuff[TX_RING_SIZE];
-static struct sk_buff *txh_skbuff[TX_RING_SIZE];
+static dma_addr_t txl_descs_dma;
+static dma_addr_t rxl_descs_dma;
+
+static struct sk_buff **txl_skbuff;
+static struct sk_buff **rxl_skbuff;
 
 static unsigned int cur_rxl, dirty_rxl; /* producer/consumer ring indices */
 static unsigned int cur_txl, dirty_txl;
@@ -160,8 +160,10 @@ static unsigned int cur_txl, dirty_txl;
 static unsigned int sw_used;
 
 static spinlock_t sw_lock = SPIN_LOCK_UNLOCKED;
+static spinlock_t poll_lock = SPIN_LOCK_UNLOCKED;
 
 static struct net_device sw_dev;
+static struct net_device *poll_dev;
 
 /* ------------------------------------------------------------------------ */
 
@@ -175,7 +177,7 @@ static inline void sw_write_reg(u32 reg, u32 val)
 	__raw_writel(val, (void __iomem *)KSEG1ADDR(ADM5120_SWITCH_BASE)+reg);
 }
 
-static inline void sw_int_disable(u32 mask)
+static inline void sw_int_mask(u32 mask)
 {
 	u32	t;
 
@@ -184,7 +186,7 @@ static inline void sw_int_disable(u32 mask)
 	sw_write_reg(SWITCH_REG_INT_MASK, t);
 }
 
-static inline void sw_int_enable(u32 mask)
+static inline void sw_int_unmask(u32 mask)
 {
 	u32	t;
 
@@ -196,6 +198,15 @@ static inline void sw_int_enable(u32 mask)
 static inline void sw_int_ack(u32 mask)
 {
 	sw_write_reg(SWITCH_REG_INT_STATUS, mask);
+}
+
+static inline u32 sw_int_status(void)
+{
+	u32	t;
+
+	t = sw_read_reg(SWITCH_REG_INT_STATUS);
+	t &= ~sw_read_reg(SWITCH_REG_INT_MASK);
+	return t;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -264,6 +275,64 @@ static void sw_dump_intr_mask(char *label, u32 mask)
 		(mask & SWITCH_INT_CPUH) ? " CPUH" : "");
 }
 
+static void sw_dump_regs(void)
+{
+	u32 t;
+
+	t = SW_READ_REG(PHY_STATUS);
+	SW_DBG("phy_status: %08X\n", t);
+
+	t = SW_READ_REG(CPUP_CONF);
+	SW_DBG("cpup_conf: %08X%s%s%s\n", t,
+		(t & CPUP_CONF_DCPUP) ? " DCPUP" : "",
+		(t & CPUP_CONF_CRCP) ? " CRCP" : "",
+		(t & CPUP_CONF_BTM) ? " BTM" : "");
+
+	t = SW_READ_REG(PORT_CONF0);
+	SW_DBG("port_conf0: %08X\n", t);
+	t = SW_READ_REG(PORT_CONF1);
+	SW_DBG("port_conf1: %08X\n", t);
+	t = SW_READ_REG(PORT_CONF2);
+	SW_DBG("port_conf2: %08X\n", t);
+
+	t = SW_READ_REG(VLAN_G1);
+	SW_DBG("vlan g1: %08X\n", t);
+	t = SW_READ_REG(VLAN_G2);
+	SW_DBG("vlan g2: %08X\n", t);
+
+	t = SW_READ_REG(BW_CNTL0);
+	SW_DBG("bw_cntl0: %08X\n", t);
+	t = SW_READ_REG(BW_CNTL1);
+	SW_DBG("bw_cntl1: %08X\n", t);
+
+	t = SW_READ_REG(PHY_CNTL0);
+	SW_DBG("phy_cntl0: %08X\n", t);
+	t = SW_READ_REG(PHY_CNTL1);
+	SW_DBG("phy_cntl1: %08X\n", t);
+	t = SW_READ_REG(PHY_CNTL2);
+	SW_DBG("phy_cntl2: %08X\n", t);
+	t = SW_READ_REG(PHY_CNTL3);
+	SW_DBG("phy_cntl3: %08X\n", t);
+	t = SW_READ_REG(PHY_CNTL4);
+	SW_DBG("phy_cntl4: %08X\n", t);
+
+	t = SW_READ_REG(INT_STATUS);
+	sw_dump_intr_mask("int_status: ", t);
+
+	t = SW_READ_REG(INT_MASK);
+	sw_dump_intr_mask("int_mask: ", t);
+
+	t = SW_READ_REG(SHDA);
+	SW_DBG("shda: %08X\n", t);
+	t = SW_READ_REG(SLDA);
+	SW_DBG("slda: %08X\n", t);
+	t = SW_READ_REG(RHDA);
+	SW_DBG("rhda: %08X\n", t);
+	t = SW_READ_REG(RLDA);
+	SW_DBG("rlda: %08X\n", t);
+}
+
+
 /* ------------------------------------------------------------------------ */
 
 static inline void adm5120_rx_dma_update(struct dma_desc *desc,
@@ -276,82 +345,141 @@ static inline void adm5120_rx_dma_update(struct dma_desc *desc,
 		DESC_OWN | (end ? DESC_EOR : 0);
 }
 
-static int adm5120_switch_rx(struct net_device *dev, int *budget)
+static void adm5120_switch_rx_refill(void)
 {
-	struct sk_buff *skb, *skbn;
-	struct adm5120_sw *priv;
-	struct net_device *cdev;
-	struct dma_desc *desc;
-	int len, quota;
+	unsigned int entry;
 
-	quota = min(dev->quota, *budget);
-	SW_DBG("%s polling, quota=%d\n", dev->name, quota);
+	for (; cur_rxl - dirty_rxl > 0; dirty_rxl++) {
+		struct dma_desc *desc;
+		struct sk_buff *skb;
+
+		entry = dirty_rxl % RX_RING_SIZE;
+		desc = &rxl_descs[entry];
+
+		skb = rxl_skbuff[entry];
+		if (skb == NULL) {
+			skb = alloc_skb(SKB_ALLOC_LEN, GFP_ATOMIC);
+			if (skb) {
+				skb_reserve(skb, SKB_RESERVE_LEN);
+				rxl_skbuff[entry] = skb;
+			} else {
+				SW_ERR("no memory for skb\n");
+				desc->buflen = 0;
+				desc->buf2 = 0;
+				desc->misc = 0;
+				desc->buf1 = (desc->buf1 & DESC_EOR) | DESC_OWN;
+				break;
+			}
+		}
+
+		desc->buf2 = 0;
+		desc->buflen = RX_MAX_PKTLEN;
+		desc->misc = 0;
+		desc->buf1 = (desc->buf1 & DESC_EOR) | DESC_OWN |
+				DESC_ADDR(skb->data);
+	}
+}
+
+static int adm5120_switch_rx(int limit)
+{
+	unsigned int done = 0;
+
+	SW_DBG("rx start, limit=%d, cur_rxl=%u, dirty_rxl=%u\n",
+				limit, cur_rxl, dirty_rxl);
 
 	sw_int_ack(SWITCH_INTS_POLL);
 
-	desc = &rxl_descs[cur_rxl];
-	while (!(desc->buf1 & DESC_OWN) && quota) {
-		u32 port = desc_get_srcport(desc);
-		cdev = adm5120_port[port];
-		if (cdev != dev) {      /* The current packet belongs to a different device */
-			if ((cdev==NULL) || !netif_running(cdev)) {
-				/* discard (update with old skb) */
-				skb = skbn = NULL;
-				goto rx_skip;
-			}
-			else {
-				netif_rx_schedule(cdev);/* Start polling next device */
-				return 1;       /* return 1 -> More packets to process */
-			}
+	while (done < limit) {
+		int entry = cur_rxl % RX_RING_SIZE;
+		struct dma_desc *desc = &rxl_descs[entry];
+		struct net_device *rdev;
+		unsigned int port;
 
-		}
-		skb = rxl_skbuff[cur_rxl];
-		len = desc_get_pktlen(desc);
-		len -= ETH_CSUM_LEN;
+		if (desc->buf1 & DESC_OWN)
+			break;
 
-		priv = netdev_priv(dev);
-		if (len <= 0 || len > RX_MAX_PKTLEN ||
-			desc_ipcsum_fail(desc)) {
-			dev->stats.rx_errors++;
-			skbn = NULL;
-		} else {
-			skbn = dev_alloc_skb(SKB_ALLOC_LEN);
-			if (skbn) {
-				skb_put(skb, len);
-				skb->dev = dev;
-				skb->protocol = eth_type_trans(skb, dev);
-				skb->ip_summed = CHECKSUM_UNNECESSARY;
-				dev->last_rx = jiffies;
-				dev->stats.rx_packets++;
-				dev->stats.rx_bytes += len;
-				skb_reserve(skbn, SKB_RESERVE_LEN);
-				rxl_skbuff[cur_rxl] = skbn;
+		if (dirty_rxl + RX_RING_SIZE == cur_rxl)
+			break;
+
+		port = desc_get_srcport(desc);
+		rdev = adm5120_port[port];
+
+		SW_DBG("rx descriptor %u, desc=%p, skb=%p\n", entry, desc,
+				rxl_skbuff[entry]);
+
+		if ((rdev) && netif_running(rdev)) {
+			struct sk_buff *skb = rxl_skbuff[entry];
+			int pktlen;
+
+			pktlen = desc_get_pktlen(desc);
+			pktlen -= ETH_CSUM_LEN;
+
+			if ((pktlen == 0) || desc_ipcsum_fail(desc)) {
+				rdev->stats.rx_errors++;
+				if (pktlen == 0)
+					rdev->stats.rx_length_errors++;
+				if (desc_ipcsum_fail(desc))
+					rdev->stats.rx_crc_errors++;
+				SW_DBG("rx error, recycling skb %u\n", entry);
 			} else {
-				SW_INFO("%s recycling!\n", dev->name);
-			}
-		}
-rx_skip:
-		adm5120_rx_dma_update(&rxl_descs[cur_rxl],
-			rxl_skbuff[cur_rxl],
-			(RX_RING_SIZE-1==cur_rxl));
-		if (RX_RING_SIZE == ++cur_rxl)
-			cur_rxl = 0;
-		desc = &rxl_descs[cur_rxl];
-		if (skbn){
-			netif_receive_skb(skb);
-			dev->quota--;
-			(*budget)--;
-			quota--;
-		}
-	} /* while */
+				skb_put(skb, pktlen);
 
-	if (quota) {
-		netif_rx_complete(dev);
-		sw_int_enable(SWITCH_INTS_POLL);
+				skb->dev = rdev;
+				skb->protocol = eth_type_trans(skb, rdev);
+				skb->ip_summed = CHECKSUM_UNNECESSARY;
+
+				dma_cache_wback_inv((unsigned long)skb->data,
+					skb->len);
+
+				netif_receive_skb(skb);
+
+				rdev->last_rx = jiffies;
+				rdev->stats.rx_packets++;
+				rdev->stats.rx_bytes += pktlen;
+
+				rxl_skbuff[entry] = NULL;
+				done++;
+			}
+		} else {
+			SW_DBG("no rx device, recycling skb %u\n", entry);
+		}
+
+		cur_rxl++;
+		if (cur_rxl - dirty_rxl > RX_RING_SIZE / 4)
+			adm5120_switch_rx_refill();
+	}
+
+	adm5120_switch_rx_refill();
+
+	SW_DBG("rx finished, cur_rxl=%u, dirty_rxl=%u, processed %d\n",
+				cur_rxl, dirty_rxl, done);
+
+	return done;
+}
+
+
+static int adm5120_switch_poll(struct net_device *dev, int *budget)
+{
+	int limit = min(dev->quota, *budget);
+	int done;
+	u32 status;
+
+	done = adm5120_switch_rx(limit);
+
+	*budget -= done;
+	dev->quota -= done;
+
+	status = sw_int_status() & SWITCH_INTS_POLL;
+	if ((done < limit) && (!status)) {
+		spin_lock_irq(&poll_lock);
+		SW_DBG("disable polling mode for %s\n", poll_dev->name);
+		netif_rx_complete(poll_dev);
+		sw_int_unmask(SWITCH_INTS_POLL);
+		poll_dev = NULL;
+		spin_unlock_irq(&poll_lock);
 		return 0;
 	}
 
-	/* If there are still packets to process, return 1 */
 	return 1;
 }
 
@@ -368,7 +496,6 @@ static void adm5120_switch_tx(void)
 		if (desc->buf1 & DESC_OWN)
 			break;
 
-		sw_dump_desc("tx done", desc, 1);
 		if (netif_running(skb->dev)) {
 			skb->dev->stats.tx_bytes += skb->len;
 			skb->dev->stats.tx_packets++;
@@ -395,30 +522,35 @@ static irqreturn_t adm5120_poll_irq(int irq, void *dev_id)
 	struct net_device *dev = dev_id;
 	u32 status;
 
-	status = sw_read_reg(SWITCH_REG_INT_STATUS);
-	status &= ~(sw_read_reg(SWITCH_REG_INT_MASK));
-
+	status = sw_int_status();
 	status &= SWITCH_INTS_POLL;
 	if (!status)
 		return IRQ_NONE;
 
-	sw_int_disable(SWITCH_INTS_POLL);
-	netif_rx_schedule(dev);
+	sw_dump_intr_mask("poll ints", status);
 
-	SW_DBG("%s handling IRQ%d\n", dev->name, irq);
+	if (!netif_running(dev)) {
+		SW_DBG("device %s is not running\n", dev->name);
+		return IRQ_NONE;
+	}
+
+	spin_lock(&poll_lock);
+	if (!poll_dev) {
+		SW_DBG("enable polling mode for %s\n", dev->name);
+		poll_dev = dev;
+		sw_int_mask(SWITCH_INTS_POLL);
+		netif_rx_schedule(poll_dev);
+	}
+	spin_unlock(&poll_lock);
+
 	return IRQ_HANDLED;
 }
 
 static irqreturn_t adm5120_switch_irq(int irq, void *dev_id)
 {
-	irqreturn_t ret;
 	u32 status;
 
-	status = sw_read_reg(SWITCH_REG_INT_STATUS);
-	status &= ~(sw_read_reg(SWITCH_REG_INT_MASK));
-
-	sw_dump_intr_mask("sw irq", status);
-
+	status = sw_int_status();
 	status &= SWITCH_INTS_ALL & ~SWITCH_INTS_POLL;
 	if (!status)
 		return IRQ_NONE;
@@ -481,7 +613,7 @@ static int adm5120_switch_open(struct net_device *dev)
 	netif_start_queue(dev);
 	if (!sw_used++)
 		/* enable interrupts on first open */
-		sw_int_enable(SWITCH_INTS_USED);
+		sw_int_unmask(SWITCH_INTS_USED);
 
 	/* enable (additional) port */
 	t = sw_read_reg(SWITCH_REG_PORT_CONF0);
@@ -500,7 +632,7 @@ static int adm5120_switch_stop(struct net_device *dev)
 	int i;
 
 	if (!--sw_used)
-		sw_int_disable(SWITCH_INTS_USED);
+		sw_int_mask(SWITCH_INTS_USED);
 
 	/* disable port if not assigned to other devices */
 	t = sw_read_reg(SWITCH_REG_PORT_CONF0);
@@ -521,6 +653,9 @@ static int adm5120_sw_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct adm5120_sw *priv = netdev_priv(dev);
 	unsigned int entry;
 	unsigned long data;
+
+	/* lock switch irq */
+	spin_lock_irq(&sw_lock);
 
 	/* calculate the next TX descriptor entry. */
 	entry = cur_txl % TX_RING_SIZE;
@@ -543,9 +678,6 @@ static int adm5120_sw_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	    (0x1 << priv->port);
 
 	desc->buflen = skb->len < ETH_ZLEN ? ETH_ZLEN : skb->len;
-
-	/* lock switch irq */
-	spin_lock_irq(&sw_lock);
 
 	desc->buf1 = data | DESC_OWN;
 	sw_write_reg(SWITCH_REG_SEND_TRIG, SEND_TRIG_STL);
@@ -720,7 +852,50 @@ static void adm5120_dma_rx_init(struct dma_desc *desc, struct sk_buff **skbl,
 	}
 }
 
-static int __init adm5120_sw_init(void)
+static void adm5120_switch_cleanup(void)
+{
+	int i;
+
+	/* disable interrupts */
+	sw_int_mask(SWITCH_INTS_ALL);
+
+	for (i = 0; i < SWITCH_NUM_PORTS; i++) {
+		struct net_device *dev = adm5120_devs[i];
+		if (dev) {
+			unregister_netdev(dev);
+			free_irq(ADM5120_IRQ_SWITCH, dev);
+			free_netdev(dev);
+		}
+	}
+
+	/* cleanup TX ring */
+	if (txl_skbuff) {
+		for (i = 0; i < TX_RING_SIZE; i++)
+			if (txl_skbuff[i])
+				kfree_skb(txl_skbuff[i]);
+		kfree(txl_skbuff);
+	}
+
+	if (txl_descs)
+		dma_free_coherent(NULL, TX_DESCS_SIZE, txl_descs,
+			txl_descs_dma);
+
+	/* cleanup RX ring */
+	if (rxl_skbuff) {
+		for (i = 0; i < RX_RING_SIZE; i++)
+			if (rxl_skbuff[i])
+				kfree_skb(rxl_skbuff[i]);
+		kfree(rxl_skbuff);
+	}
+
+	if (rxl_descs)
+		dma_free_coherent(NULL, RX_DESCS_SIZE, rxl_descs,
+			rxl_descs_dma);
+
+	free_irq(ADM5120_IRQ_SWITCH, &sw_dev);
+}
+
+static int __init adm5120_switch_init(void)
 {
 	struct net_device *dev;
 	u32 t;
@@ -728,8 +903,10 @@ static int __init adm5120_sw_init(void)
 
 	err = request_irq(ADM5120_IRQ_SWITCH, adm5120_switch_irq,
 		(IRQF_SHARED | IRQF_DISABLED), "switch", &sw_dev);
-	if (err)
-		goto out;
+	if (err) {
+		SW_ERR("request_irq failed with error %d\n", err);
+		goto err;
+	}
 
 	adm5120_nrdevs = adm5120_eth_num_ports;
 
@@ -759,31 +936,63 @@ static int __init adm5120_sw_init(void)
 	/* Force all the packets from all ports are low priority */
 	sw_write_reg(SWITCH_REG_PRI_CNTL, 0);
 
-	sw_int_disable(SWITCH_INTS_ALL);
+	sw_int_mask(SWITCH_INTS_ALL);
 	sw_int_ack(SWITCH_INTS_ALL);
 
-	cur_txl = dirty_txl = 0;
+	/* init RX ring */
 	cur_rxl = dirty_rxl = 0;
+	rxl_descs = dma_alloc_coherent(NULL, RX_DESCS_SIZE, &rxl_descs_dma,
+					GFP_ATOMIC);
+	if (!rxl_descs) {
+		err = -ENOMEM;
+		goto err;
+	}
 
-	txh_descs = (void *)KSEG1ADDR((u32)txh_descs_v);
-	txl_descs = (void *)KSEG1ADDR((u32)txl_descs_v);
-	rxh_descs = (void *)KSEG1ADDR((u32)rxh_descs_v);
-	rxl_descs = (void *)KSEG1ADDR((u32)rxl_descs_v);
+	rxl_skbuff = kzalloc(RX_SKBS_SIZE, GFP_KERNEL);
+	if (!rxl_skbuff) {
+		err = -ENOMEM;
+		goto err;
+	}
 
-	adm5120_dma_tx_init(txh_descs, txh_skbuff, TX_RING_SIZE);
+	for (i = 0; i < RX_RING_SIZE; i++) {
+		struct sk_buff *skb;
+		skb = alloc_skb(SKB_ALLOC_LEN, GFP_ATOMIC);
+		if (!skb) {
+			err = -ENOMEM;
+			goto err;
+		}
+		rxl_skbuff[i] = skb;
+		skb_reserve(skb, SKB_RESERVE_LEN);
+	}
+
+	/* init TX ring */
+	cur_txl = dirty_txl = 0;
+	txl_descs = dma_alloc_coherent(NULL, TX_DESCS_SIZE, &txl_descs_dma,
+					GFP_ATOMIC);
+	if (!txl_descs) {
+		err = -ENOMEM;
+		goto err;
+	}
+
+	txl_skbuff = kzalloc(TX_SKBS_SIZE, GFP_KERNEL);
+	if (!txl_skbuff) {
+		err = -ENOMEM;
+		goto err;
+	}
+
 	adm5120_dma_tx_init(txl_descs, txl_skbuff, TX_RING_SIZE);
-	adm5120_dma_rx_init(rxh_descs, rxh_skbuff, RX_RING_SIZE);
 	adm5120_dma_rx_init(rxl_descs, rxl_skbuff, RX_RING_SIZE);
-	sw_write_reg(SWITCH_REG_SHDA, KSEG1ADDR(txh_descs));
+
+	sw_write_reg(SWITCH_REG_SHDA, 0);
 	sw_write_reg(SWITCH_REG_SLDA, KSEG1ADDR(txl_descs));
-	sw_write_reg(SWITCH_REG_RHDA, KSEG1ADDR(rxh_descs));
+	sw_write_reg(SWITCH_REG_RHDA, 0);
 	sw_write_reg(SWITCH_REG_RLDA, KSEG1ADDR(rxl_descs));
 
 	for (i = 0; i < SWITCH_NUM_PORTS; i++) {
 		adm5120_devs[i] = alloc_etherdev(sizeof(struct adm5120_sw));
 		if (!adm5120_devs[i]) {
 			err = -ENOMEM;
-			goto out_int;
+			goto err;
 		}
 
 		dev = adm5120_devs[i];
@@ -791,7 +1000,7 @@ static int __init adm5120_sw_init(void)
 			(IRQF_SHARED | IRQF_DISABLED), dev->name, dev);
 		if (err) {
 			SW_ERR("unable to get irq for %s\n", dev->name);
-			goto out_int;
+			goto err;
 		}
 
 		SET_MODULE_OWNER(dev);
@@ -807,19 +1016,21 @@ static int __init adm5120_sw_init(void)
 		dev->tx_timeout = adm5120_tx_timeout;
 		dev->watchdog_timeo = TX_TIMEOUT;
 		dev->set_mac_address = adm5120_sw_set_mac_address;
-		dev->poll = adm5120_switch_rx;
+		dev->poll = adm5120_switch_poll;
 		dev->weight = 64;
 
 		memcpy(dev->dev_addr, adm5120_eth_macs[i], 6);
 		adm5120_write_mac(dev);
 
-		if ((err = register_netdev(dev))) {
-			free_irq(ADM5120_IRQ_SWITCH, dev);
-			free_netdev(dev);
-			goto out_int;
+		err = register_netdev(dev);
+		if (err) {
+			SW_INFO("%s register failed, error=%d\n",
+					dev->name, err);
+			goto err;
 		}
 		SW_INFO("%s created for switch port%d\n", dev->name, i);
 	}
+
 	/* setup vlan/port mapping after devs are filled up */
 	adm5120_set_vlan(adm5120_eth_vlans);
 
@@ -830,43 +1041,17 @@ static int __init adm5120_sw_init(void)
 
 	return 0;
 
-out_int:
-	/* Undo everything that did succeed */
-	for (; i; i--) {
-		unregister_netdev(adm5120_devs[i-1]);
-		free_netdev(adm5120_devs[i-1]);
-	}
-	free_irq(ADM5120_IRQ_SWITCH, NULL);
-out:
+err:
+	adm5120_switch_cleanup();
+
 	SW_ERR("init failed\n");
 	return err;
 }
 
-static void __exit adm5120_sw_exit(void)
+static void __exit adm5120_switch_exit(void)
 {
-	int i;
-
-	for (i = 0; i < SWITCH_NUM_PORTS; i++) {
-		struct net_device *dev = adm5120_devs[i];
-		unregister_netdev(dev);
-		free_irq(ADM5120_IRQ_SWITCH, dev);
-		free_netdev(dev);
-	}
-
-	free_irq(ADM5120_IRQ_SWITCH, &sw_dev);
-
-	for (i = 0; i < RX_RING_SIZE; i++) {
-		if (!rxh_skbuff[i])
-			break;
-		kfree_skb(rxh_skbuff[i]);
-	}
-
-	for (i = 0; i < RX_RING_SIZE; i++) {
-		if (!rxl_skbuff[i])
-			break;
-		kfree_skb(rxl_skbuff[i]);
-	}
+	adm5120_switch_cleanup();
 }
 
-module_init(adm5120_sw_init);
-module_exit(adm5120_sw_exit);
+module_init(adm5120_switch_init);
+module_exit(adm5120_switch_exit);
