@@ -164,12 +164,12 @@
 #define MAC_WT0_MWD_SHIFT	1
 #define MAC_WT0_MWD		BIT(1)	/* MAC write done */
 #define MAC_WT0_WFB		BIT(2)	/* Write Filter Bit */
-#define MAC_WT0_WVN_SHIFT	3
+#define MAC_WT0_WVN_SHIFT	3	/* Write Vlan Number shift */
 #define MAC_WT0_WVE		BIT(6)	/* Write VLAN enable */
 #define MAC_WT0_WPMN_SHIFT	7
 #define MAC_WT0_WAF_SHIFT	13	/* Write Age Field shift */
 #define MAC_WT0_WAF_EMPTY	0
-#define MAC_WT0_WAF_STATIC	7
+#define MAC_WT0_WAF_STATIC	7	/* age: static */
 #define MAC_WT0_MAC0_SHIFT	16
 #define MAC_WT0_MAC1_SHIFT	24
 

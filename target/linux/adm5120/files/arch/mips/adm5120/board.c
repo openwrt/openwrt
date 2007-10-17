@@ -98,6 +98,9 @@ static int __init adm5120_board_setup(void)
 	amba_device_register(&adm5120_uart0_device, &iomem_resource);
 	amba_device_register(&adm5120_uart1_device, &iomem_resource);
 
+	/* register built-in ethernet switch */
+	platform_device_register(&adm5120_switch_device);
+
 	/* setup PCI irq map */
 	adm5120_pci_set_irq_map(board->pci_nr_irqs, board->pci_irq_map);
 
