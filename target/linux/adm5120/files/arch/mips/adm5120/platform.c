@@ -61,16 +61,30 @@ unsigned char adm5120_eth_vlans[6] = {
 	0x41, 0x42, 0x44, 0x48, 0x50, 0x60
 };
 EXPORT_SYMBOL_GPL(adm5120_eth_vlans);
+#endif
 
-#else
 /* Built-in ethernet switch */
+struct resource adm5120_switch_resources[] = {
+	[0] = {
+		.start	= ADM5120_SWITCH_BASE,
+		.end	= ADM5120_SWITCH_BASE+ADM5120_SWITCH_SIZE-1,
+		.flags	= IORESOURCE_MEM,
+	},
+	[1] = {
+		.start	= ADM5120_IRQ_SWITCH,
+		.end	= ADM5120_IRQ_SWITCH,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
 struct adm5120_switch_platform_data adm5120_switch_data;
 struct platform_device adm5120_switch_device = {
 	.name	= "adm5120-switch",
 	.id	= -1,
+	.num_resources	= ARRAY_SIZE(adm5120_switch_resources),
+	.resource	= adm5120_switch_resources,
 	.dev.platform_data = &adm5120_switch_data,
 };
-#endif
 
 /* USB Host Controller */
 struct resource adm5120_hcd_resources[] = {

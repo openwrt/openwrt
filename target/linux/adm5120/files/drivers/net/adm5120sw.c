@@ -1,23 +1,29 @@
 /*
- *	ADM5120 built in ethernet switch driver
+ *  ADM5120 built-in ethernet switch driver
  *
- *	Copyright Jeroen Vreeken (pe1rxq@amsat.org), 2005
+ *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
  *
- *	Inspiration for this driver came from the original ADMtek 2.4
- *	driver, Copyright ADMtek Inc.
+ *  This code was based on a driver for Linux 2.6.xx by Jeroen Vreeken.
+ *    Copyright Jeroen Vreeken (pe1rxq@amsat.org), 2005
+ *  NAPI extension for the Jeroen's driver
+ *    Copyright Thomas Langer (Thomas.Langer@infineon.com), 2007
+ *    Copyright Friedrich Beckmann (Friedrich.Beckmann@infineon.com), 2007
+ *  Inspiration for the Jeroen's driver came from the ADMtek 2.4 driver.
+ *    Copyright ADMtek Inc.
  *
- *	NAPI extensions by Thomas Langer (Thomas.Langer@infineon.com)
- *	and Friedrich Beckmann (Friedrich.Beckmann@infineon.com), 2007
- *
- *	TODO: Add support of high prio queues (currently disabled)
+ *  This program is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License version 2  as published
+ *  by the Free Software Foundation.
  *
  */
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/errno.h>
 #include <linux/interrupt.h>
 #include <linux/ioport.h>
 #include <linux/spinlock.h>
+#include <linux/platform_device.h>
 
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
@@ -39,14 +45,13 @@
 #define DRV_DESC	"ADM5120 built-in ethernet switch driver"
 #define DRV_VERSION	"0.1.0"
 
-MODULE_AUTHOR("Jeroen Vreeken (pe1rxq@amsat.org)");
-MODULE_DESCRIPTION("ADM5120 ethernet switch driver");
-MODULE_LICENSE("GPL");
+#define CONFIG_ADM5120_SWITCH_NAPI	1
+#undef CONFIG_ADM5120_SWITCH_DEBUG
 
 /* ------------------------------------------------------------------------ */
 
-#if 0 /*def ADM5120_SWITCH_DEBUG*/
-#define SW_DBG(f, a...)		printk(KERN_DEBUG "%s: " f, DRV_NAME , ## a)
+#ifdef CONFIG_ADM5120_SWITCH_DEBUG
+#define SW_DBG(f, a...)		printk(KERN_DBG "%s: " f, DRV_NAME , ## a)
 #else
 #define SW_DBG(f, a...)		do {} while (0)
 #endif
@@ -83,9 +88,14 @@ MODULE_LICENSE("GPL");
 			SWITCH_INT_MD | SWITCH_INT_PSC)
 
 #define SWITCH_INTS_USED (SWITCH_INTS_LOW | SWITCH_INT_PSC)
-#define SWITCH_INTS_POLL (SWITCH_INT_RLD | SWITCH_INT_LDF)
+#define SWITCH_INTS_POLL (SWITCH_INT_RLD | SWITCH_INT_LDF | SWITCH_INT_SLD)
 
 /* ------------------------------------------------------------------------ */
+
+struct adm5120_if_priv {
+	unsigned int	vlan_no;
+	unsigned int	port_mask;
+};
 
 struct dma_desc {
 	__u32			buf1;
@@ -117,27 +127,7 @@ struct dma_desc {
 #define DESC_TYPE_PPPoE		0x1		/* PPPoE packet */
 } __attribute__ ((aligned(16)));
 
-static inline u32 desc_get_srcport(struct dma_desc *desc)
-{
-	return (desc->misc >> DESC_SRCPORT_SHIFT) & DESC_SRCPORT_MASK;
-}
-
-static inline u32 desc_get_pktlen(struct dma_desc *desc)
-{
-	return (desc->misc >> DESC_PKTLEN_SHIFT) & DESC_PKTLEN_MASK;
-}
-
-static inline int desc_ipcsum_fail(struct dma_desc *desc)
-{
-	return ((desc->misc & DESC_IPCSUM_FAIL) != 0);
-}
-
 /* ------------------------------------------------------------------------ */
-
-/* default settings - unlimited TX and RX on all ports, default shaper mode */
-static unsigned char bw_matrix[SWITCH_NUM_PORTS] = {
-	0, 0, 0, 0, 0, 0
-};
 
 static int adm5120_nrdevs;
 
@@ -159,10 +149,7 @@ static unsigned int cur_txl, dirty_txl;
 
 static unsigned int sw_used;
 
-static spinlock_t sw_lock = SPIN_LOCK_UNLOCKED;
-static spinlock_t poll_lock = SPIN_LOCK_UNLOCKED;
-
-static struct net_device sw_dev;
+static spinlock_t tx_lock = SPIN_LOCK_UNLOCKED;
 
 /* ------------------------------------------------------------------------ */
 
@@ -206,6 +193,21 @@ static inline u32 sw_int_status(void)
 	t = sw_read_reg(SWITCH_REG_INT_STATUS);
 	t &= ~sw_read_reg(SWITCH_REG_INT_MASK);
 	return t;
+}
+
+static inline u32 desc_get_srcport(struct dma_desc *desc)
+{
+	return (desc->misc >> DESC_SRCPORT_SHIFT) & DESC_SRCPORT_MASK;
+}
+
+static inline u32 desc_get_pktlen(struct dma_desc *desc)
+{
+	return (desc->misc >> DESC_PKTLEN_SHIFT) & DESC_PKTLEN_MASK;
+}
+
+static inline int desc_ipcsum_fail(struct dma_desc *desc)
+{
+	return ((desc->misc & DESC_IPCSUM_FAIL) != 0);
 }
 
 /* ------------------------------------------------------------------------ */
@@ -386,8 +388,6 @@ static int adm5120_switch_rx(int limit)
 	SW_DBG("rx start, limit=%d, cur_rxl=%u, dirty_rxl=%u\n",
 				limit, cur_rxl, dirty_rxl);
 
-	sw_int_ack(SWITCH_INTS_POLL);
-
 	while (done < limit) {
 		int entry = cur_rxl % RX_RING_SIZE;
 		struct dma_desc *desc = &rxl_descs[entry];
@@ -430,7 +430,11 @@ static int adm5120_switch_rx(int limit)
 				dma_cache_wback_inv((unsigned long)skb->data,
 					skb->len);
 
+#ifdef CONFIG_ADM5120_SWITCH_USE_NAPI
 				netif_receive_skb(skb);
+#else
+				netif_rx(skb);
+#endif
 
 				rdev->last_rx = jiffies;
 				rdev->stats.rx_packets++;
@@ -456,12 +460,11 @@ static int adm5120_switch_rx(int limit)
 	return done;
 }
 
-
 static void adm5120_switch_tx(void)
 {
 	unsigned int entry;
 
-	/* find and cleanup dirty tx descriptors */
+	spin_lock(&tx_lock);
 	entry = dirty_txl % TX_RING_SIZE;
 	while (dirty_txl != cur_txl) {
 		struct dma_desc *desc = &txl_descs[entry];
@@ -481,7 +484,6 @@ static void adm5120_switch_tx(void)
 	}
 
 	if ((cur_txl - dirty_txl) < TX_QUEUE_LEN - 4) {
-		/* wake up queue of all devices */
 		int i;
 		for (i = 0; i < SWITCH_NUM_PORTS; i++) {
 			if (!adm5120_devs[i])
@@ -489,14 +491,22 @@ static void adm5120_switch_tx(void)
 			netif_wake_queue(adm5120_devs[i]);
 		}
 	}
+	spin_unlock(&tx_lock);
 }
 
+#ifdef CONFIG_ADM5120_SWITCH_NAPI
 static int adm5120_if_poll(struct net_device *dev, int *budget)
 {
 	int limit = min(dev->quota, *budget);
 	int done;
 	u32 status;
 
+	sw_int_ack(SWITCH_INTS_POLL);
+
+	SW_DBG("%s: processing TX ring\n", dev->name);
+	adm5120_switch_tx();
+
+	SW_DBG("%s: processing RX ring\n", dev->name);
 	done = adm5120_switch_rx(limit);
 
 	*budget -= done;
@@ -504,72 +514,51 @@ static int adm5120_if_poll(struct net_device *dev, int *budget)
 
 	status = sw_int_status() & SWITCH_INTS_POLL;
 	if ((done < limit) && (!status)) {
-		SW_DBG("disable polling mode for %s\n", poll_dev->name);
+		SW_DBG("disable polling mode for %s\n", dev->name);
 		netif_rx_complete(dev);
 		sw_int_unmask(SWITCH_INTS_POLL);
 		return 0;
 	}
 
+	SW_DBG("%s still in polling mode, done=%d, status=%x\n",
+			dev->name, done, status);
 	return 1;
 }
+#endif /* CONFIG_ADM5120_SWITCH_USE_NAPI */
 
-static irqreturn_t adm5120_poll_irq(int irq, void *dev_id)
-{
-	struct net_device *dev = dev_id;
-	u32 status;
-
-	status = sw_int_status();
-	status &= SWITCH_INTS_POLL;
-	if (!status)
-		return IRQ_NONE;
-
-	sw_dump_intr_mask("poll ints", status);
-
-	SW_DBG("enable polling mode for %s\n", dev->name);
-	sw_int_mask(SWITCH_INTS_POLL);
-	netif_rx_schedule(dev);
-
-	return IRQ_HANDLED;
-}
 
 static irqreturn_t adm5120_switch_irq(int irq, void *dev_id)
 {
 	u32 status;
 
 	status = sw_int_status();
-	status &= SWITCH_INTS_ALL & ~SWITCH_INTS_POLL;
+	status &= SWITCH_INTS_ALL;
 	if (!status)
 		return IRQ_NONE;
 
+#ifdef CONFIG_ADM5120_SWITCH_NAPI
+	sw_int_ack(status & ~SWITCH_INTS_POLL);
+
+	if (status & SWITCH_INTS_POLL) {
+		struct net_device *dev = dev_id;
+		sw_dump_intr_mask("poll ints", status);
+		SW_DBG("enable polling mode for %s\n", dev->name);
+		sw_int_mask(SWITCH_INTS_POLL);
+		netif_rx_schedule(dev);
+	}
+#else
 	sw_int_ack(status);
 
-	if (status & SWITCH_INT_SLD) {
-		spin_lock(&sw_lock);
-		adm5120_switch_tx();
-		spin_unlock(&sw_lock);
+	if (status & (SWITCH_INT_RLD | SWITCH_INT_LDF)) {
+		adm5120_switch_rx(RX_RING_SIZE);
 	}
+
+	if (status & SWITCH_INT_SLD) {
+		adm5120_switch_tx();
+	}
+#endif
 
 	return IRQ_HANDLED;
-}
-
-static void adm5120_set_vlan(char *matrix)
-{
-	unsigned long val;
-	int vlan_port, port;
-
-	val = matrix[0] + (matrix[1]<<8) + (matrix[2]<<16) + (matrix[3]<<24);
-	sw_write_reg(SWITCH_REG_VLAN_G1, val);
-	val = matrix[4] + (matrix[5]<<8);
-	sw_write_reg(SWITCH_REG_VLAN_G2, val);
-
-	/* Now set/update the port vs. device lookup table */
-	for (port=0; port<SWITCH_NUM_PORTS; port++) {
-		for (vlan_port=0; vlan_port<SWITCH_NUM_PORTS && !(matrix[vlan_port] & (0x00000001 << port)); vlan_port++);
-		if (vlan_port <SWITCH_NUM_PORTS)
-			adm5120_port[port] = adm5120_devs[vlan_port];
-		else
-			adm5120_port[port] = NULL;
-	}
 }
 
 static void adm5120_set_bw(char *matrix)
@@ -713,6 +702,81 @@ static void adm5120_switch_rx_ring_free(void)
 			rxl_descs_dma);
 }
 
+static void adm5120_write_mac(struct net_device *dev)
+{
+	struct adm5120_if_priv *priv = netdev_priv(dev);
+	unsigned char *mac = dev->dev_addr;
+	u32 t;
+
+	t = mac[2] | (mac[3] << MAC_WT1_MAC3_SHIFT) |
+		(mac[4] << MAC_WT1_MAC4_SHIFT) | (mac[5] << MAC_WT1_MAC4_SHIFT);
+	sw_write_reg(SWITCH_REG_MAC_WT1, t);
+
+	t = (mac[0] << MAC_WT0_MAC0_SHIFT) | (mac[1] << MAC_WT0_MAC1_SHIFT) |
+		MAC_WT0_MAWC | MAC_WT0_WVE | (priv->vlan_no<<3);
+
+	sw_write_reg(SWITCH_REG_MAC_WT0, t);
+
+	while (!(sw_read_reg(SWITCH_REG_MAC_WT0) & MAC_WT0_MWD));
+}
+
+static void adm5120_set_vlan(char *matrix)
+{
+	unsigned long val;
+	int vlan_port, port;
+
+	val = matrix[0] + (matrix[1]<<8) + (matrix[2]<<16) + (matrix[3]<<24);
+	sw_write_reg(SWITCH_REG_VLAN_G1, val);
+	val = matrix[4] + (matrix[5]<<8);
+	sw_write_reg(SWITCH_REG_VLAN_G2, val);
+
+	/* Now set/update the port vs. device lookup table */
+	for (port=0; port<SWITCH_NUM_PORTS; port++) {
+		for (vlan_port=0; vlan_port<SWITCH_NUM_PORTS && !(matrix[vlan_port] & (0x00000001 << port)); vlan_port++);
+		if (vlan_port <SWITCH_NUM_PORTS)
+			adm5120_port[port] = adm5120_devs[vlan_port];
+		else
+			adm5120_port[port] = NULL;
+	}
+}
+
+static void adm5120_switch_set_vlan_mac(unsigned int vlan, unsigned char *mac)
+{
+	u32 t;
+
+	t = mac[2] | (mac[3] << MAC_WT1_MAC3_SHIFT)
+		| (mac[4] << MAC_WT1_MAC4_SHIFT)
+		| (mac[5] << MAC_WT1_MAC4_SHIFT);
+	sw_write_reg(SWITCH_REG_MAC_WT1, t);
+
+	t = (mac[0] << MAC_WT0_MAC0_SHIFT) | (mac[1] << MAC_WT0_MAC1_SHIFT) |
+		MAC_WT0_MAWC | MAC_WT0_WVE | (vlan << MAC_WT0_WVN_SHIFT) |
+		(MAC_WT0_WAF_STATIC << MAC_WT0_WAF_SHIFT);
+	sw_write_reg(SWITCH_REG_MAC_WT0, t);
+
+	do {
+		t = sw_read_reg(SWITCH_REG_MAC_WT0);
+	} while ((t & MAC_WT0_MWD) == 0);
+}
+
+static void adm5120_switch_set_vlan_ports(unsigned int vlan, u32 ports)
+{
+	unsigned int reg;
+	u32 t;
+
+	if (vlan < 4)
+		reg = SWITCH_REG_VLAN_G1;
+	else {
+		vlan -= 4;
+		reg = SWITCH_REG_VLAN_G2;
+	}
+
+	t = sw_read_reg(reg);
+	t &= ~(0xFF << (vlan*8));
+	t |= (ports << (vlan*8));
+	sw_write_reg(reg, t);
+}
+
 /* ------------------------------------------------------------------------ */
 
 static int adm5120_if_open(struct net_device *dev)
@@ -721,7 +785,7 @@ static int adm5120_if_open(struct net_device *dev)
 	int err;
 	int i;
 
-	err = request_irq(dev->irq, adm5120_poll_irq,
+	err = request_irq(dev->irq, adm5120_switch_irq,
 		(IRQF_SHARED | IRQF_DISABLED), dev->name, dev);
 	if (err) {
 		SW_ERR("unable to get irq for %s\n", dev->name);
@@ -776,12 +840,12 @@ static int adm5120_if_hard_start_xmit(struct sk_buff *skb,
 		struct net_device *dev)
 {
 	struct dma_desc *desc;
-	struct adm5120_sw *priv = netdev_priv(dev);
+	struct adm5120_if_priv *priv = netdev_priv(dev);
 	unsigned int entry;
 	unsigned long data;
 
 	/* lock switch irq */
-	spin_lock_irq(&sw_lock);
+	spin_lock_irq(&tx_lock);
 
 	/* calculate the next TX descriptor entry. */
 	entry = cur_txl % TX_RING_SIZE;
@@ -790,6 +854,7 @@ static int adm5120_if_hard_start_xmit(struct sk_buff *skb,
 	if (desc->buf1 & DESC_OWN) {
 		/* We want to write a packet but the TX queue is still
 		 * occupied by the DMA. We are faster than the DMA... */
+		SW_DBG("%s unable to transmit, packet dopped\n", dev->name);
 		dev_kfree_skb(skb);
 		dev->stats.tx_dropped++;
 		return 0;
@@ -801,7 +866,7 @@ static int adm5120_if_hard_start_xmit(struct sk_buff *skb,
 
 	desc->misc =
 	    ((skb->len<ETH_ZLEN?ETH_ZLEN:skb->len) << DESC_PKTLEN_SHIFT) |
-	    (0x1 << priv->port);
+	    (0x1 << priv->vlan_no);
 
 	desc->buflen = skb->len < ETH_ZLEN ? ETH_ZLEN : skb->len;
 
@@ -816,7 +881,7 @@ static int adm5120_if_hard_start_xmit(struct sk_buff *skb,
 
 	dev->trans_start = jiffies;
 
-	spin_unlock_irq(&sw_lock);
+	spin_unlock_irq(&tx_lock);
 
 	return 0;
 }
@@ -826,13 +891,13 @@ static void adm5120_if_tx_timeout(struct net_device *dev)
 	SW_INFO("TX timeout on %s\n",dev->name);
 }
 
-static void adm5120_set_multicast_list(struct net_device *dev)
+static void adm5120_if_set_multicast_list(struct net_device *dev)
 {
-	struct adm5120_sw *priv = netdev_priv(dev);
+	struct adm5120_if_priv *priv = netdev_priv(dev);
 	u32 ports;
 	u32 t;
 
-	ports = adm5120_eth_vlans[priv->port] & SWITCH_PORTS_NOCPU;
+	ports = adm5120_eth_vlans[priv->vlan_no] & SWITCH_PORTS_NOCPU;
 
 	t = sw_read_reg(SWITCH_REG_CPUP_CONF);
 	if (dev->flags & IFF_PROMISC)
@@ -877,24 +942,6 @@ static void adm5120_set_multicast_list(struct net_device *dev)
 
 }
 
-static void adm5120_write_mac(struct net_device *dev)
-{
-	struct adm5120_sw *priv = netdev_priv(dev);
-	unsigned char *mac = dev->dev_addr;
-	u32 t;
-
-	t = mac[2] | (mac[3] << MAC_WT1_MAC3_SHIFT) |
-		(mac[4] << MAC_WT1_MAC4_SHIFT) | (mac[5] << MAC_WT1_MAC4_SHIFT);
-	sw_write_reg(SWITCH_REG_MAC_WT1, t);
-
-	t = (mac[0] << MAC_WT0_MAC0_SHIFT) | (mac[1] << MAC_WT0_MAC1_SHIFT) |
-		MAC_WT0_MAWC | MAC_WT0_WVE | (priv->port<<3);
-
-	sw_write_reg(SWITCH_REG_MAC_WT0, t);
-
-	while (!(sw_read_reg(SWITCH_REG_MAC_WT0) & MAC_WT0_MWD));
-}
-
 static int adm5120_if_set_mac_address(struct net_device *dev, void *p)
 {
 	struct sockaddr *addr = p;
@@ -904,17 +951,18 @@ static int adm5120_if_set_mac_address(struct net_device *dev, void *p)
 	return 0;
 }
 
-static int adm5120_if_do_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+static int adm5120_if_do_ioctl(struct net_device *dev, struct ifreq *rq,
+		int cmd)
 {
 	int err;
 	struct adm5120_sw_info info;
-	struct adm5120_sw *priv = netdev_priv(dev);
+	struct adm5120_if_priv *priv = netdev_priv(dev);
 
 	switch(cmd) {
 	case SIOCGADMINFO:
 		info.magic = 0x5120;
 		info.ports = adm5120_nrdevs;
-		info.vlan = priv->port;
+		info.vlan = priv->vlan_no;
 		err = copy_to_user(rq->ifr_data, &info, sizeof(info));
 		if (err)
 			return -EFAULT;
@@ -934,19 +982,6 @@ static int adm5120_if_do_ioctl(struct net_device *dev, struct ifreq *rq, int cmd
 		if (err)
 			return -EFAULT;
 		break;
-	case SIOCGETBW:
-		err = copy_to_user(rq->ifr_data, bw_matrix, sizeof(bw_matrix));
-		if (err)
-			return -EFAULT;
-		break;
-	case SIOCSETBW:
-		if (!capable(CAP_NET_ADMIN))
-			return -EPERM;
-		err = copy_from_user(bw_matrix, rq->ifr_data, sizeof(bw_matrix));
-		if (err)
-			return -EFAULT;
-		adm5120_set_bw(bw_matrix);
-		break;
 	default:
 		return -EOPNOTSUPP;
 	}
@@ -956,7 +991,7 @@ static int adm5120_if_do_ioctl(struct net_device *dev, struct ifreq *rq, int cmd
 static struct net_device *adm5120_if_alloc(void)
 {
 	struct net_device *dev;
-	struct adm5120_sw *priv;
+	struct adm5120_if_priv *priv;
 
 	dev = alloc_etherdev(sizeof(*priv));
 	if (!dev)
@@ -966,18 +1001,22 @@ static struct net_device *adm5120_if_alloc(void)
 	dev->open		= adm5120_if_open;
 	dev->hard_start_xmit 	= adm5120_if_hard_start_xmit;
 	dev->stop		= adm5120_if_stop;
-	dev->set_multicast_list	= adm5120_set_multicast_list;
+	dev->set_multicast_list	= adm5120_if_set_multicast_list;
 	dev->do_ioctl		= adm5120_if_do_ioctl;
 	dev->tx_timeout		= adm5120_if_tx_timeout;
 	dev->watchdog_timeo 	= TX_TIMEOUT;
 	dev->set_mac_address 	= adm5120_if_set_mac_address;
+#ifdef CONFIG_ADM5120_SWITCH_NAPI
 	dev->poll		= adm5120_if_poll;
 	dev->weight		= 64;
+#endif
 
 	SET_MODULE_OWNER(dev);
 
 	return dev;
 }
+
+/* ------------------------------------------------------------------------ */
 
 static void adm5120_switch_cleanup(void)
 {
@@ -996,21 +1035,12 @@ static void adm5120_switch_cleanup(void)
 
 	adm5120_switch_tx_ring_free();
 	adm5120_switch_rx_ring_free();
-
-	free_irq(ADM5120_IRQ_SWITCH, &sw_dev);
 }
 
-static int __init adm5120_switch_init(void)
+static int __init adm5120_switch_probe(struct platform_device *pdev)
 {
 	u32 t;
 	int i, err;
-
-	err = request_irq(ADM5120_IRQ_SWITCH, adm5120_switch_irq,
-		(IRQF_SHARED | IRQF_DISABLED), "switch", &sw_dev);
-	if (err) {
-		SW_ERR("request_irq failed with error %d\n", err);
-		goto err;
-	}
 
 	adm5120_nrdevs = adm5120_eth_num_ports;
 
@@ -1061,7 +1091,7 @@ static int __init adm5120_switch_init(void)
 
 	for (i = 0; i < SWITCH_NUM_PORTS; i++) {
 		struct net_device *dev;
-		struct adm5120_sw *priv;
+		struct adm5120_if_priv *priv;
 
 		dev = adm5120_if_alloc();
 		if (!dev) {
@@ -1072,7 +1102,8 @@ static int __init adm5120_switch_init(void)
 		adm5120_devs[i] = dev;
 		priv = netdev_priv(dev);
 
-		priv->port = i;
+		priv->vlan_no = i;
+		priv->port_mask = adm5120_eth_vlans[i];
 
 		memcpy(dev->dev_addr, adm5120_eth_macs[i], 6);
 		adm5120_write_mac(dev);
@@ -1102,10 +1133,41 @@ err:
 	return err;
 }
 
-static void __exit adm5120_switch_exit(void)
+static int adm5120_switch_remove(struct platform_device *dev)
 {
 	adm5120_switch_cleanup();
+	return 0;
 }
 
-module_init(adm5120_switch_init);
-module_exit(adm5120_switch_exit);
+static struct platform_driver adm5120_switch_driver = {
+	.probe		= adm5120_switch_probe,
+	.remove		= adm5120_switch_remove,
+	.driver		= {
+		.name	= DRV_NAME,
+	},
+};
+
+/* -------------------------------------------------------------------------- */
+
+static int __init adm5120_switch_mod_init(void)
+{
+	int err;
+
+	pr_info(DRV_DESC " version " DRV_VERSION "\n");
+	err = platform_driver_register(&adm5120_switch_driver);
+
+	return err;
+}
+
+static void __exit adm5120_switch_mod_exit(void)
+{
+	platform_driver_unregister(&adm5120_switch_driver);
+}
+
+module_init(adm5120_switch_mod_init);
+module_exit(adm5120_switch_mod_exit);
+
+MODULE_LICENSE("GPL v2");
+MODULE_AUTHOR("Gabor Juhos <juhosg at openwrt.org>");
+MODULE_DESCRIPTION(DRV_DESC);
+MODULE_VERSION(DRV_VERSION);
