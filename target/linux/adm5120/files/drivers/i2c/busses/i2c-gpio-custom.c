@@ -144,7 +144,7 @@ err:
 	return err;
 }
 
-static int __init i2c_gpio_custom_init(void)
+static int __init i2c_gpio_custom_probe(void)
 {
 	int err;
 
@@ -174,6 +174,12 @@ err:
 	i2c_gpio_custom_cleanup();
 	return err;
 }
+
+#ifdef MODULE
+static int __init i2c_gpio_custom_init(void)
+{
+	return i2c_gpio_custom_probe();
+}
 module_init(i2c_gpio_custom_init);
 
 static void __exit i2c_gpio_custom_exit(void)
@@ -181,10 +187,11 @@ static void __exit i2c_gpio_custom_exit(void)
 	i2c_gpio_custom_cleanup();
 }
 module_exit(i2c_gpio_custom_exit);
-
+#else
+subsys_initcall(i2c_gpio_custom_probe);
+#endif /* MODULE*/
 
 MODULE_LICENSE("GPL v2");
 MODULE_AUTHOR("Gabor Juhos <juhosg at openwrt.org >");
 MODULE_DESCRIPTION(DRV_DESC);
 MODULE_VERSION(DRV_VERSION);
-
