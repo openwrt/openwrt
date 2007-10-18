@@ -28,6 +28,7 @@ endef
 define Package/fdisk
 $(call Package/util-linux/Default)
   TITLE:=Partition table manipulation utility
+  SUBMENU=disc
 endef
 
 define Package/fdisk/description
@@ -38,6 +39,7 @@ define Package/cfdisk
 $(call Package/util-linux/Default)
   TITLE:=Partition table manipulation utility
   DEPENDS:= +libncurses
+  SUBMENU:=disc
 endef
 
 define Package/cfdisk/description
@@ -56,6 +58,7 @@ endef
 define Package/swap-utils
 $(call Package/util-linux/Default)
   TITLE:=Swap space management utilities
+  SUBMENU:=disc
 endef
 
 define Package/swap-utils/description
