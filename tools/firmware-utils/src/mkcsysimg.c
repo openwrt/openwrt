@@ -152,6 +152,7 @@ static struct board_info boards[] = {
 	/* The original Edimax products */
 	BOARD_ADM("BR-6104K", "Edimax BR-6104K", 2, SIG_BR6104K),
 	BOARD_ADM("BR-6104KP", "Edimax BR-6104KP", 2, SIG_BR6104KP),
+	BOARD_ADM("BR-6104Wg", "Edimax BR-6104Wg", 2, SIG_BR6104Wg),
 	BOARD_ADM("BR-6114WG", "Edimax BR-6114WG", 2, SIG_BR6114WG),
 	BOARD_ADM("BR-6524K", "Edimax BR-6524K", 2, SIG_BR6524K),
 	BOARD_ADM("BR-6524KP", "Edimax BR-6524KP", 2, SIG_BR6524KP),

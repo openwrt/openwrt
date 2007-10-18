@@ -3,7 +3,7 @@
  *
  *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
  *
- *  This program was based on the code found in various Linux 
+ *  This program was based on the code found in various Linux
  *  source tarballs released by Edimax for it's devices.
  *  Original author: David Hsu <davidhsu@realtek.com.tw>
  *
@@ -33,18 +33,19 @@
 #define ADM_BOOT_SIG	"\x00\x60\x1A\x40"
 
 
-/* 
+/*
  * Generic signatures
  */
 #define SIG_CSYS	"CSYS"
 #define SIG_CONF	"HS\x00\x00"
 #define SIG_BOOT_RTL	"\x00\x00\x40\x21"
 
-/* 
+/*
  * Web page signatures
  */
 #define SIG_BR6104K	"WB4K"
 #define SIG_BR6104KP	"WBKP"
+#define SIG_BR6104Wg	"WBGW"
 #define SIG_BR6104IPC	"WBIP"
 #define SIG_BR6114WG	SIG_BR6104IPC
 #define SIG_BR6524K	"2-K-"
@@ -66,8 +67,8 @@
 #define SIG_XRT401D	SIG_BR6104K
 #define SIG_XRT402D	SIG_BR6524K
 
-/* 
- * CSYS image file header 
+/*
+ * CSYS image file header
  */
 struct csys_header {
 	unsigned char sig[SIG_LEN];

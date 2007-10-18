@@ -69,6 +69,11 @@
 #  define CONFIG_FLASH_SIZE	FLASH_2M
 #endif
 
+#if defined(CONFIG_BOARD_BR6104WG)
+#  define CONFIG_BOARD_NAME	"BR-6104WG"
+#  define CONFIG_FLASH_SIZE	FLASH_2M
+#endif
+
 /*
  * Infineon boards
  */
