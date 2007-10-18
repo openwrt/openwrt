@@ -62,8 +62,6 @@ asmlinkage void ar5312_irq_dispatch(void)
 	} else if (pending & CAUSEF_IP7) {
 		do_IRQ(AR531X_IRQ_CPU_CLOCK);
 	}
-	else
-		do_IRQ(AR531X_IRQ_NONE);
 }
 
 
