@@ -41,17 +41,6 @@ define Package/wpa-cli/Description
  
 endef
 
-define Package/wpa-passphrase
-  SECTION:=net
-  CATEGORY:=Network
-  DEPENDS:=wpa-supplicant
-  TITLE:=Set WPA passphrase for a SSID
-endef
-
-define Package/wpa-passphrase/Description
- 
-endef
-
 define Build/Configure
 	cp ./files/config.$(ARCH) $(PKG_BUILD_DIR)/.config
 endef
@@ -72,7 +61,7 @@ endef
 
 define Package/wpa-supplicant/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant $(1)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/wpa_{supplicant,passphrase} $(1)/usr/sbin/
 endef
 
 define Package/wpa-cli/install
@@ -80,11 +69,5 @@ define Package/wpa-cli/install
 	$(CP) $(PKG_BUILD_DIR)/wpa_cli $(1)/usr/sbin/
 endef
 
-define Package/wpa-passphrase/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wpa_passphrase $(1)/usr/sbin/
-endef
-
 $(eval $(call BuildPackage,wpa-supplicant))
 $(eval $(call BuildPackage,wpa-cli))
-$(eval $(call BuildPackage,wpa-passphrase))
