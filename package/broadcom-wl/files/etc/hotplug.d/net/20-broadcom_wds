@@ -33,9 +33,6 @@ setup_broadcom_wds() {
 				sleep 1
 				nas4not lan "$iface" up auto aes "$encryption" "$key" "$ssid" 
 			}
-
-			brctl stp br-lan on
-			
 		}
 	}
 
