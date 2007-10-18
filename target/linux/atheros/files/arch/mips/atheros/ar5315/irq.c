@@ -76,8 +76,6 @@ asmlinkage void ar5315_irq_dispatch(void)
 			do_IRQ(AR531X_MISC_IRQ_NONE);
 	} else if (pending & CAUSEF_IP7)
 		do_IRQ(AR531X_IRQ_CPU_CLOCK);
-	else
-		do_IRQ(AR531X_IRQ_NONE);
 }
 
 static void ar5315_gpio_intr_enable(unsigned int irq)
