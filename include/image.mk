@@ -50,7 +50,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 		$(foreach SZ,$(JFFS2_BLOCKSIZE),$(call Image/mkfs/jffs2/sub,$(SZ)))
     endef
   endif
-    
+
   ifeq ($(CONFIG_TARGET_ROOTFS_SQUASHFS),y)
     define Image/mkfs/squashfs
 		@mkdir -p $(TARGET_DIR)/jffs
@@ -58,7 +58,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 		$(call Image/Build,squashfs)
     endef
   endif
-    
+
   ifeq ($(CONFIG_TARGET_ROOTFS_TGZ),y)
     define Image/mkfs/tgz
 		$(TAR) -zcf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-rootfs.tgz --owner=root --group=root -C $(TARGET_DIR)/ .
@@ -74,18 +74,18 @@ endif
 
 ifeq ($(CONFIG_TARGET_ROOTFS_EXT2FS),y)
   E2SIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_FSPART)*1024)))
-  
+
   define Image/mkfs/ext2
 		$(STAGING_DIR_HOST)/bin/genext2fs -U -b $(E2SIZE) -I $(CONFIG_TARGET_ROOTFS_MAXINODE) -d $(TARGET_DIR)/ $(KDIR)/root.ext2
 		$(call Image/Build,ext2)
   endef
 endif
 
-ifeq ($(CONFIG_TARGET_ROOTFS_ISO),y) 
+ifeq ($(CONFIG_TARGET_ROOTFS_ISO),y)
   define Image/mkfs/iso 
 		$(call Image/Build,iso) 
   endef 
-endif 
+endif
 
 
 define Image/mkfs/prepare/default
