@@ -225,10 +225,15 @@ enable_atheros() {
 					PSK|psk|PSK2|psk2)
 						case "$enc" in
 							PSK|psk)
-								proto='proto=WPA';;
+								proto='proto=WPA'
+								passphrase="${key}"
+								;;
 							PSK2|psk2)
-								proto='proto=RSN';;
+								proto='proto=RSN'
+								passphrase=`wpa_passphrase ${ssid} "${key}" | grep psk | grep -v \#| cut -d= -f2`
+								;;
 						esac
+						
 						cat > /var/run/wpa_supplicant-$ifname.conf <<EOF
 ctrl_interface=/var/run/wpa_supplicant
 network={
@@ -236,7 +241,7 @@ network={
 	ssid="$ssid"
 	key_mgmt=WPA-PSK
 	$proto
-	psk="$key"
+	psk="$passphrase"
 }
 EOF
 					;;
