@@ -204,6 +204,21 @@ define Image/Build/Board/BR6104K/Initramfs
 endef
 
 #
+# Edimax BR-6104WG
+#
+define Image/Build/Board/BR6104WG
+	$(call Image/Build/Edimax,$(1),br-6104wg)
+endef
+
+define Image/Build/Board/BR6104WG/squashfs
+	$(call Image/Build/Board/BR6104WG,squashfs)
+endef
+
+define Image/Build/Board/BR6104WG/Initramfs
+	$(call Image/Build/LZMAKernel/Admboot,br-6104wg,gz)
+endef
+
+#
 # Infineon EASY 83000
 #
 define Image/Build/Board/EASY83000
@@ -254,6 +269,7 @@ endef
 
 define Image/Build/Group/Edimax
 	$(call Image/Build/Board/BR6104K/$(1))
+	$(call Image/Build/Board/BR6104WG/$(1))
 endef
 
 define Image/Build/Group/Infineon
