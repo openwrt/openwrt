@@ -31,6 +31,7 @@
 #include <linux/version.h>
 #include <linux/vlynq.h>
 #include <linux/leds.h>
+#include <linux/string.h>
 
 #include <asm/addrspace.h>
 #include <asm/ar7/ar7.h>
@@ -322,7 +323,7 @@ static struct gpio_led default_leds[] = {
 	{ .name = "status", .gpio = 8, .active_low = 1, },
 };
 
-static struct gpio_led fb_leds[] = {
+static struct gpio_led fb_sl_leds[] = {
 	{ .name = "1", .gpio = 7, },
 	{ .name = "2", .gpio = 13, .active_low = 1, },
 	{ .name = "3", .gpio = 10, .active_low = 1, },
@@ -387,6 +388,30 @@ static void cpmac_get_mac(int instance, unsigned char *dev_addr)
 	for (i = 0; i < 6; i++)
 		dev_addr[i] = (char2hex(mac[i * 3]) << 4) +
 			char2hex(mac[i * 3 + 1]);
+}
+
+static void __init detect_leds(void)
+{
+	char *prId;
+
+	/* Default LEDs	*/
+	ar7_led_data.num_leds = ARRAY_SIZE(default_leds);
+	ar7_led_data.leds = default_leds;
+
+	/* FIXME: the whole thing is unreliable */
+	prId = prom_getenv("ProductID");
+	
+	/* If we can't get the product id from PROM, use the default LEDs */
+	if (!prId)
+		return;
+
+	if (strstr(prId, "Fritz_Box_FON")) {
+		ar7_led_data.num_leds = ARRAY_SIZE(fb_fon_leds);
+		ar7_led_data.leds = fb_fon_leds;
+	} else if (strstr(prId, "Fritz_Box_")) {
+		ar7_led_data.num_leds = ARRAY_SIZE(fb_sl_leds);
+		ar7_led_data.leds = fb_sl_leds;
+	}
 }
 
 static int __init ar7_register_devices(void)
@@ -472,9 +497,7 @@ static int __init ar7_register_devices(void)
 	if (res)
 		return res;
 
-#warning FIXME: add model detection
-	ar7_led_data.num_leds = ARRAY_SIZE(default_leds);
-	ar7_led_data.leds = default_leds;
+	detect_leds();
 	res = platform_device_register(&ar7_gpio_leds);
 	if (res)
 		return res;
