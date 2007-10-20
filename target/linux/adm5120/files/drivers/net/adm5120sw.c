@@ -709,7 +709,7 @@ static void adm5120_write_mac(struct net_device *dev)
 	u32 t;
 
 	t = mac[2] | (mac[3] << MAC_WT1_MAC3_SHIFT) |
-		(mac[4] << MAC_WT1_MAC4_SHIFT) | (mac[5] << MAC_WT1_MAC4_SHIFT);
+		(mac[4] << MAC_WT1_MAC4_SHIFT) | (mac[5] << MAC_WT1_MAC5_SHIFT);
 	sw_write_reg(SWITCH_REG_MAC_WT1, t);
 
 	t = (mac[0] << MAC_WT0_MAC0_SHIFT) | (mac[1] << MAC_WT0_MAC1_SHIFT) |
@@ -746,7 +746,7 @@ static void adm5120_switch_set_vlan_mac(unsigned int vlan, unsigned char *mac)
 
 	t = mac[2] | (mac[3] << MAC_WT1_MAC3_SHIFT)
 		| (mac[4] << MAC_WT1_MAC4_SHIFT)
-		| (mac[5] << MAC_WT1_MAC4_SHIFT);
+		| (mac[5] << MAC_WT1_MAC5_SHIFT);
 	sw_write_reg(SWITCH_REG_MAC_WT1, t);
 
 	t = (mac[0] << MAC_WT0_MAC0_SHIFT) | (mac[1] << MAC_WT0_MAC1_SHIFT) |
