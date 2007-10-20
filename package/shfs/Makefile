@@ -34,6 +34,7 @@ endef
 define KernelPackage/shfs
 $(call Package/shfs/Default)
   TITLE+= (kernel module)
+  DEPENDS:=@LINUX_2_4
   FILES:=$(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/shfs/shfs.$(LINUX_KMOD_SUFFIX)
   SUBMENU:=Filesystems
   AUTOLOAD:=$(call AutoLoad,40,shfs)
