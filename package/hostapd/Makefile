@@ -16,7 +16,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_MD5SUM:=40416b48cae9c78e5a2452caf214aff3
 
-PKG_BUILD_DEPENDS:= mac80211 madwifi
+PKG_BUILD_DEPENDS:=madwifi
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -74,16 +74,13 @@ define Build/ConfigureTarget
 ifneq ($(CONFIG_PACKAGE_kmod-madwifi),)
 	echo "CONFIG_DRIVER_MADWIFI=y" >> $(PKG_BUILD_DIR)_$(1)/.config
 endif
-ifneq ($(CONFIG_PACKAGE_kmod-mac80211),)
-	echo "CONFIG_DRIVER_DEVICESCAPE=y" >> $(PKG_BUILD_DIR)_$(1)/.config
-endif
 endef
 
 define Build/CompileTarget
 	$(MAKE) -C $(PKG_BUILD_DIR)_$(1) \
 		$(TARGET_CONFIGURE_OPTS) \
 		OPTFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="$(TARGET_CPPFLAGS) -I$(STAGING_DIR)/usr/include/madwifi -I$(STAGING_DIR)/usr/include/mac80211" \
+		CPPFLAGS="$(TARGET_CPPFLAGS) -I$(STAGING_DIR)/usr/include/madwifi" \
 		LDFLAGS="$(TARGET_LDFLAGS)" \
 		hostapd hostapd_cli
 	$(CP) $(PKG_BUILD_DIR)_$(1)/hostapd_cli $(PKG_BUILD_DIR)/
