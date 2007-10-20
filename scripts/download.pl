@@ -86,7 +86,7 @@ sub download
 	$sum = $1;
 	
 	if (($md5sum =~ /\w{32}/) and ($sum ne $md5sum)) {
-		print STDERR "MD5 sum of the downloaded file does not match - deleting download.\n";
+		print STDERR "MD5 sum of the downloaded file does not match (file: $sum, requested: $md5sum) - deleting download.\n";
 		cleanup();
 		return;
 	}
