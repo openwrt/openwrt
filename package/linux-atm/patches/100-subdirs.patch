@@ -1,7 +1,7 @@
 Index: linux-atm-2.4.1/configure.in
 ===================================================================
---- linux-atm-2.4.1.orig/configure.in	2007-06-04 13:23:53.853546912 +0200
-+++ linux-atm-2.4.1/configure.in	2007-06-04 13:23:55.937230144 +0200
+--- linux-atm-2.4.1.orig/configure.in	2007-10-20 19:19:10.594232210 +0200
++++ linux-atm-2.4.1/configure.in	2007-10-20 19:19:16.214552491 +0200
 @@ -153,26 +153,5 @@
  		src/Makefile \
  		src/include/Makefile \
@@ -31,8 +31,8 @@ Index: linux-atm-2.4.1/configure.in
  
 Index: linux-atm-2.4.1/src/Makefile.am
 ===================================================================
---- linux-atm-2.4.1.orig/src/Makefile.am	2007-06-04 13:23:53.858546152 +0200
-+++ linux-atm-2.4.1/src/Makefile.am	2007-06-04 13:23:55.937230144 +0200
+--- linux-atm-2.4.1.orig/src/Makefile.am	2007-10-20 19:19:10.602232664 +0200
++++ linux-atm-2.4.1/src/Makefile.am	2007-10-20 19:19:16.218552720 +0200
 @@ -1,3 +1,2 @@
 -SUBDIRS = include lib test debug qgen saal sigd maint arpd ilmid man led lane \
 -		mpoad switch config extra
@@ -41,7 +41,7 @@ Index: linux-atm-2.4.1/src/Makefile.am
 Index: linux-atm-2.4.1/src/include/linux/atmbr2684.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-atm-2.4.1/src/include/linux/atmbr2684.h	2007-06-04 13:23:55.938229992 +0200
++++ linux-atm-2.4.1/src/include/linux/atmbr2684.h	2007-10-20 19:19:16.230553402 +0200
 @@ -0,0 +1,117 @@
 +#ifndef _LINUX_ATMBR2684_H
 +#define _LINUX_ATMBR2684_H

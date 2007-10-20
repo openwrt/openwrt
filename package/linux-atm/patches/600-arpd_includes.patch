@@ -1,18 +1,7 @@
-diff -Nru linux-atm-2.4.1.orig/src/arpd/io.c linux-atm-2.4.1/src/arpd/io.c
---- linux-atm-2.4.1.orig/src/arpd/io.c  2001-09-03 21:41:05.000000000 +0300
-+++ linux-atm-2.4.1/src/arpd/io.c       2007-04-14 18:30:54.000000000 +0300
-@@ -16,7 +16,7 @@
- #include <sys/types.h>
- #include <sys/socket.h>
- #include <sys/ioctl.h>
--#include <net/if.h>
-+#include <linux/if.h>
- #include <netinet/in.h>
- #include <atm.h>
- #include <linux/atmclip.h> /* for CLIP_DEFAULT_IDLETIMER */
-diff -urN linux-atm-2.4.1/src/arpd/arp.c linux-atm-2.4.1.new/src/arpd/arp.c
---- linux-atm-2.4.1/src/arpd/arp.c	2001-09-03 20:41:05.000000000 +0200
-+++ linux-atm-2.4.1.new/src/arpd/arp.c	2007-09-15 22:15:05.000000000 +0200
+Index: linux-atm-2.4.1/src/arpd/arp.c
+===================================================================
+--- linux-atm-2.4.1.orig/src/arpd/arp.c	2007-10-20 19:19:10.002198470 +0200
++++ linux-atm-2.4.1/src/arpd/arp.c	2007-10-20 19:19:19.138719139 +0200
 @@ -15,7 +15,6 @@
  #include <sys/types.h>
  #include <sys/socket.h> /* for linux/if_arp.h */
@@ -21,10 +10,17 @@ diff -urN linux-atm-2.4.1/src/arpd/arp.c linux-atm-2.4.1.new/src/arpd/arp.c
  #include <linux/if_arp.h>
  #include <linux/if_ether.h>
  #include <atm.h>
-diff -urN linux-atm-2.4.1/src/arpd/io.c linux-atm-2.4.1.new/src/arpd/io.c
---- linux-atm-2.4.1/src/arpd/io.c	2001-09-03 20:41:05.000000000 +0200
-+++ linux-atm-2.4.1.new/src/arpd/io.c	2007-09-15 22:15:05.000000000 +0200
-@@ -21,7 +21,6 @@
+Index: linux-atm-2.4.1/src/arpd/io.c
+===================================================================
+--- linux-atm-2.4.1.orig/src/arpd/io.c	2007-10-20 19:19:09.994198016 +0200
++++ linux-atm-2.4.1/src/arpd/io.c	2007-10-20 19:19:19.154720039 +0200
+@@ -16,12 +16,11 @@
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <sys/ioctl.h>
+-#include <net/if.h>
++#include <linux/if.h>
+ #include <netinet/in.h>
  #include <atm.h>
  #include <linux/atmclip.h> /* for CLIP_DEFAULT_IDLETIMER */
  #include <linux/atmarp.h>
@@ -32,9 +28,10 @@ diff -urN linux-atm-2.4.1/src/arpd/io.c linux-atm-2.4.1.new/src/arpd/io.c
  #include <linux/if_arp.h>
  
  #include "atmd.h"
-diff -urN linux-atm-2.4.1/src/arpd/itf.c linux-atm-2.4.1.new/src/arpd/itf.c
---- linux-atm-2.4.1/src/arpd/itf.c	2001-09-03 20:41:05.000000000 +0200
-+++ linux-atm-2.4.1.new/src/arpd/itf.c	2007-09-15 22:15:05.000000000 +0200
+Index: linux-atm-2.4.1/src/arpd/itf.c
+===================================================================
+--- linux-atm-2.4.1.orig/src/arpd/itf.c	2007-10-20 19:19:10.010198930 +0200
++++ linux-atm-2.4.1/src/arpd/itf.c	2007-10-20 19:19:19.186721859 +0200
 @@ -12,7 +12,6 @@
  #include <sys/types.h>
  #include <linux/atmclip.h>
