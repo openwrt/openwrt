@@ -41,6 +41,11 @@ define Package/atm-tools/description
   This package contains the Linux ATM tools.
 endef
 
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(INSTALL_BIN) $(SCRIPT_DIR)/config.sub $(SCRIPT_DIR)/config.guess $(PKG_BUILD_DIR)/
+endef
+
 define Build/Configure
 	$(call Build/Configure/Default)
 	# prevent autoheader invocation
