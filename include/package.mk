@@ -123,7 +123,11 @@ define libtool_fixup_libdir
 endef
 
 define pkg_install_files
-	$(foreach install_file,$(3),$(INSTALL_DIR) $(2)/`dirname $(install_file)`; $(CP) $(1)/$(install_file) $(2)/`dirname $(install_file)`;)
+	$(foreach install_file,$(1),$(INSTALL_DIR) $(3)/`dirname $(install_file)`; $(INSTALL_DATA) $(2)/$(install_file) $(3)/`dirname $(install_file)`;)
+endef
+
+define pkg_install_bin
+	$(foreach install_apps,$(1),$(INSTALL_DIR) $(3)/`dirname $(install_file)`; $(INSTALL_BIN) $(2)/$(install_file) $(3)/`dirname $(install_file)`;)
 endef
 
 define Build/Prepare

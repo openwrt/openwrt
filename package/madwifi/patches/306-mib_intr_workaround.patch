@@ -1,7 +1,7 @@
 Index: madwifi-ng-r2568-20070710/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-08-01 11:07:47.882943145 +0200
-+++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-08-01 11:41:11.781138794 +0200
+--- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-10-20 20:52:09.000000000 +0200
++++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-10-20 20:52:34.000000000 +0200
 @@ -203,6 +203,7 @@
  static void ath_flushrecv(struct ath_softc *);
  static void ath_chan_change(struct ath_softc *, struct ieee80211_channel *);
@@ -71,8 +71,8 @@ Index: madwifi-ng-r2568-20070710/ath/if_ath.c
   */
 Index: madwifi-ng-r2568-20070710/ath/if_athvar.h
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/ath/if_athvar.h	2007-08-01 11:33:50.800008711 +0200
-+++ madwifi-ng-r2568-20070710/ath/if_athvar.h	2007-08-01 11:34:33.202425088 +0200
+--- madwifi-ng-r2568-20070710.orig/ath/if_athvar.h	2007-10-20 20:52:09.000000000 +0200
++++ madwifi-ng-r2568-20070710/ath/if_athvar.h	2007-10-20 20:52:09.000000000 +0200
 @@ -687,6 +687,7 @@
  	struct ctl_table *sc_sysctls;
  
