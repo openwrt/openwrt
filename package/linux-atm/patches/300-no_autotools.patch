@@ -1,7 +1,7 @@
 Index: linux-atm-2.4.1/aclocal.m4
 ===================================================================
---- linux-atm-2.4.1.orig/aclocal.m4	2007-06-04 13:23:54.462454344 +0200
-+++ linux-atm-2.4.1/aclocal.m4	2007-06-04 13:23:56.488146392 +0200
+--- linux-atm-2.4.1.orig/aclocal.m4	2007-10-20 19:19:11.710295812 +0200
++++ linux-atm-2.4.1/aclocal.m4	2007-10-20 19:19:17.570629771 +0200
 @@ -10,6 +10,825 @@
  dnl even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  dnl PARTICULAR PURPOSE.
@@ -9197,8 +9197,8 @@ Index: linux-atm-2.4.1/aclocal.m4
  
 Index: linux-atm-2.4.1/configure
 ===================================================================
---- linux-atm-2.4.1.orig/configure	2007-06-04 13:23:54.473452672 +0200
-+++ linux-atm-2.4.1/configure	2007-06-04 13:23:56.494145480 +0200
+--- linux-atm-2.4.1.orig/configure	2007-10-20 19:19:11.746297861 +0200
++++ linux-atm-2.4.1/configure	2007-10-20 19:19:17.578630228 +0200
 @@ -1,9 +1,8 @@
  #! /bin/sh
  # Guess values for system-dependent variables and create Makefiles.
@@ -11741,8 +11741,8 @@ Index: linux-atm-2.4.1/configure
    { echo "$as_me:$LINENO: executing $ac_dest commands" >&5
 Index: linux-atm-2.4.1/doc/Makefile.in
 ===================================================================
---- linux-atm-2.4.1.orig/doc/Makefile.in	2007-06-04 13:23:54.509447200 +0200
-+++ linux-atm-2.4.1/doc/Makefile.in	2007-06-04 13:23:56.494145480 +0200
+--- linux-atm-2.4.1.orig/doc/Makefile.in	2007-10-20 19:19:12.494340491 +0200
++++ linux-atm-2.4.1/doc/Makefile.in	2007-10-20 19:19:17.606631822 +0200
 @@ -63,24 +63,35 @@
  host_triplet = @host@
  target_alias = @target_alias@
@@ -11781,8 +11781,8 @@ Index: linux-atm-2.4.1/doc/Makefile.in
  YACC = @YACC@
 Index: linux-atm-2.4.1/m4/Makefile.in
 ===================================================================
---- linux-atm-2.4.1.orig/m4/Makefile.in	2007-06-04 13:23:54.480451608 +0200
-+++ linux-atm-2.4.1/m4/Makefile.in	2007-06-04 13:23:56.494145480 +0200
+--- linux-atm-2.4.1.orig/m4/Makefile.in	2007-10-20 19:19:11.778299683 +0200
++++ linux-atm-2.4.1/m4/Makefile.in	2007-10-20 19:19:17.606631822 +0200
 @@ -63,24 +63,35 @@
  host_triplet = @host@
  target_alias = @target_alias@
@@ -11821,8 +11821,8 @@ Index: linux-atm-2.4.1/m4/Makefile.in
  YACC = @YACC@
 Index: linux-atm-2.4.1/Makefile.in
 ===================================================================
---- linux-atm-2.4.1.orig/Makefile.in	2007-06-04 13:23:54.459454800 +0200
-+++ linux-atm-2.4.1/Makefile.in	2007-06-04 13:23:56.495145328 +0200
+--- linux-atm-2.4.1.orig/Makefile.in	2007-10-20 19:19:11.698295124 +0200
++++ linux-atm-2.4.1/Makefile.in	2007-10-20 19:19:17.614632281 +0200
 @@ -63,24 +63,35 @@
  host_triplet = @host@
  target_alias = @target_alias@
@@ -11861,8 +11861,8 @@ Index: linux-atm-2.4.1/Makefile.in
  YACC = @YACC@
 Index: linux-atm-2.4.1/src/include/Makefile.in
 ===================================================================
---- linux-atm-2.4.1.orig/src/include/Makefile.in	2007-06-04 13:23:54.481451456 +0200
-+++ linux-atm-2.4.1/src/include/Makefile.in	2007-06-04 13:23:56.495145328 +0200
+--- linux-atm-2.4.1.orig/src/include/Makefile.in	2007-10-20 19:19:11.798300823 +0200
++++ linux-atm-2.4.1/src/include/Makefile.in	2007-10-20 19:19:17.626632961 +0200
 @@ -63,24 +63,35 @@
  host_triplet = @host@
  target_alias = @target_alias@
@@ -11901,8 +11901,8 @@ Index: linux-atm-2.4.1/src/include/Makefile.in
  YACC = @YACC@
 Index: linux-atm-2.4.1/src/lib/Makefile.in
 ===================================================================
---- linux-atm-2.4.1.orig/src/lib/Makefile.in	2007-06-04 13:23:54.481451456 +0200
-+++ linux-atm-2.4.1/src/lib/Makefile.in	2007-06-04 13:23:56.496145176 +0200
+--- linux-atm-2.4.1.orig/src/lib/Makefile.in	2007-10-20 19:19:11.806301281 +0200
++++ linux-atm-2.4.1/src/lib/Makefile.in	2007-10-20 19:19:17.642633872 +0200
 @@ -65,24 +65,35 @@
  host_triplet = @host@
  target_alias = @target_alias@
@@ -11941,8 +11941,8 @@ Index: linux-atm-2.4.1/src/lib/Makefile.in
  YACC = @YACC@
 Index: linux-atm-2.4.1/src/Makefile.in
 ===================================================================
---- linux-atm-2.4.1.orig/src/Makefile.in	2007-06-04 13:23:54.480451608 +0200
-+++ linux-atm-2.4.1/src/Makefile.in	2007-06-04 13:23:56.496145176 +0200
+--- linux-atm-2.4.1.orig/src/Makefile.in	2007-10-20 19:19:11.790300372 +0200
++++ linux-atm-2.4.1/src/Makefile.in	2007-10-20 19:19:17.650634330 +0200
 @@ -63,30 +63,40 @@
  host_triplet = @host@
  target_alias = @target_alias@
@@ -11986,9 +11986,10 @@ Index: linux-atm-2.4.1/src/Makefile.in
  mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
  CONFIG_HEADER = ../config.h
  CONFIG_CLEAN_FILES = 
-diff -urN linux-atm-2.4.1/src/arpd/Makefile.in linux-atm-2.4.1.new/src/arpd/Makefile.in
---- linux-atm-2.4.1/src/arpd/Makefile.in	2003-04-30 16:44:05.000000000 +0200
-+++ linux-atm-2.4.1.new/src/arpd/Makefile.in	2007-09-20 20:16:13.000000000 +0200
+Index: linux-atm-2.4.1/src/arpd/Makefile.in
+===================================================================
+--- linux-atm-2.4.1.orig/src/arpd/Makefile.in	2007-10-20 19:19:12.126319517 +0200
++++ linux-atm-2.4.1/src/arpd/Makefile.in	2007-10-20 19:19:17.654634561 +0200
 @@ -63,24 +63,35 @@
  host_triplet = @host@
  target_alias = @target_alias@

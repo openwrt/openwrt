@@ -1,6 +1,7 @@
-diff -urN linux-atm-2.4.1/configure linux-atm-2.4.1.new/configure
---- linux-atm-2.4.1/configure	2007-09-15 21:07:25.000000000 +0200
-+++ linux-atm-2.4.1.new/configure	2007-09-15 22:07:22.000000000 +0200
+Index: linux-atm-2.4.1/configure
+===================================================================
+--- linux-atm-2.4.1.orig/configure	2007-10-20 19:19:17.578630228 +0200
++++ linux-atm-2.4.1/configure	2007-10-20 19:19:18.630690180 +0200
 @@ -8825,7 +8825,7 @@
  fi;
  
@@ -18,9 +19,10 @@ diff -urN linux-atm-2.4.1/configure linux-atm-2.4.1.new/configure
    "default-1" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
    "config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
    *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
-diff -urN linux-atm-2.4.1/configure.in linux-atm-2.4.1.new/configure.in
---- linux-atm-2.4.1/configure.in	2007-09-15 21:07:13.000000000 +0200
-+++ linux-atm-2.4.1.new/configure.in	2007-09-15 21:08:16.000000000 +0200
+Index: linux-atm-2.4.1/configure.in
+===================================================================
+--- linux-atm-2.4.1.orig/configure.in	2007-10-20 19:19:16.214552491 +0200
++++ linux-atm-2.4.1/configure.in	2007-10-20 19:19:18.642690862 +0200
 @@ -153,5 +153,6 @@
  		src/Makefile \
  		src/include/Makefile \
@@ -28,16 +30,18 @@ diff -urN linux-atm-2.4.1/configure.in linux-atm-2.4.1.new/configure.in
 +		src/arpd/Makefile \
  		)
  
-diff -urN linux-atm-2.4.1/src/Makefile.am linux-atm-2.4.1.new/src/Makefile.am
---- linux-atm-2.4.1/src/Makefile.am	2007-09-15 21:07:13.000000000 +0200
-+++ linux-atm-2.4.1.new/src/Makefile.am	2007-09-15 21:08:27.000000000 +0200
+Index: linux-atm-2.4.1/src/Makefile.am
+===================================================================
+--- linux-atm-2.4.1.orig/src/Makefile.am	2007-10-20 19:19:16.218552720 +0200
++++ linux-atm-2.4.1/src/Makefile.am	2007-10-20 19:19:18.650691320 +0200
 @@ -1,2 +1,2 @@
 -SUBDIRS = include lib
 +SUBDIRS = include lib arpd
  
-diff -urN linux-atm-2.4.1/src/Makefile.in linux-atm-2.4.1.new/src/Makefile.in
---- linux-atm-2.4.1/src/Makefile.in	2007-09-15 21:07:25.000000000 +0200
-+++ linux-atm-2.4.1.new/src/Makefile.in	2007-09-15 22:10:03.000000000 +0200
+Index: linux-atm-2.4.1/src/Makefile.in
+===================================================================
+--- linux-atm-2.4.1.orig/src/Makefile.in	2007-10-20 19:19:17.650634330 +0200
++++ linux-atm-2.4.1/src/Makefile.in	2007-10-20 19:19:18.678692917 +0200
 @@ -96,7 +96,7 @@
  VERSION = @VERSION@
  YACC = @YACC@
