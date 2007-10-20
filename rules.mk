@@ -65,6 +65,10 @@ export PATH:=$(TARGET_PATH)
 export STAGING_DIR
 export GCC_HONOUR_COPTS:=0
 
+PKG_CONFIG:=$(STAGING_DIR_HOST)/bin/pkg-config
+
+export PKG_CONFIG
+
 LINUX_HEADERS_DIR:=$(BUILD_DIR_TOOLCHAIN)/linux
 
 HOSTCC:=gcc

@@ -1,5 +1,7 @@
---- madwifi-ng-r2568-20070710/net80211/ieee80211_wireless.c	2007-10-19 08:04:23.000000000 +0200
-+++ madwifi-ng-r2568-20070710.new/net80211/ieee80211_wireless.c	2007-10-19 07:52:40.000000000 +0200
+Index: madwifi-ng-r2568-20070710/net80211/ieee80211_wireless.c
+===================================================================
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_wireless.c	2007-10-20 20:52:09.000000000 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_wireless.c	2007-10-20 20:52:10.000000000 +0200
 @@ -72,6 +72,8 @@
  	 (_vap)->iv_ic->ic_roaming == IEEE80211_ROAMING_AUTO)
  #define	RESCAN	1
@@ -43,8 +45,10 @@
  };
  
  #define set_handler(x,f) [x - SIOCIWFIRST] = (iw_handler) f
---- madwifi-ng-r2568-20070710/net80211/ieee80211_input.c	2007-10-19 08:04:23.000000000 +0200
-+++ madwifi-ng-r2568-20070710.new/net80211/ieee80211_input.c	2007-10-19 07:58:08.000000000 +0200
+Index: madwifi-ng-r2568-20070710/net80211/ieee80211_input.c
+===================================================================
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_input.c	2007-10-20 20:52:09.000000000 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_input.c	2007-10-20 20:52:10.000000000 +0200
 @@ -59,6 +59,8 @@
  
  #include <net80211/ieee80211_var.h>
@@ -123,8 +127,10 @@
  		ieee80211_node_join(ni, resp);
  #ifdef ATH_SUPERG_XR
  		if (ni->ni_prev_vap &&
---- madwifi-ng-r2568-20070710/net80211/ieee80211_output.c	2007-10-19 08:04:23.000000000 +0200
-+++ madwifi-ng-r2568-20070710.new/net80211/ieee80211_output.c	2007-10-19 07:59:13.000000000 +0200
+Index: madwifi-ng-r2568-20070710/net80211/ieee80211_output.c
+===================================================================
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_output.c	2007-10-20 20:52:09.000000000 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_output.c	2007-10-20 20:52:10.000000000 +0200
 @@ -57,6 +57,8 @@
  #include <net80211/ieee80211_monitor.h>
  #include <net80211/if_athproto.h>
@@ -156,8 +162,10 @@
  		/* supported rates */
  		frm = ieee80211_add_rates(frm, &ni->ni_rates);
  
---- madwifi-ng-r2568-20070710/net80211/ieee80211_ioctl.h	2007-06-25 05:48:07.000000000 +0200
-+++ madwifi-ng-r2568-20070710.new/net80211/ieee80211_ioctl.h	2007-10-19 07:43:12.000000000 +0200
+Index: madwifi-ng-r2568-20070710/net80211/ieee80211_ioctl.h
+===================================================================
+--- madwifi-ng-r2568-20070710.orig/net80211/ieee80211_ioctl.h	2007-10-20 20:51:36.000000000 +0200
++++ madwifi-ng-r2568-20070710/net80211/ieee80211_ioctl.h	2007-10-20 20:52:10.000000000 +0200
 @@ -603,6 +603,7 @@
  	IEEE80211_PARAM_DROPUNENC_EAPOL		= 60,	/* drop unencrypted eapol frames */
   	IEEE80211_PARAM_SHPREAMBLE		= 61,	/* Short Preamble */
