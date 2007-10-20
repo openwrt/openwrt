@@ -279,10 +279,27 @@ define KernelPackage/leds-adm5120
 endef
 
 define KernelPackage/leds-adm5120/description
- Kernel module for LEDs on ADM5120 based boards
+ Kernel module for LEDs on ADM5120 based boards.
 endef
 
 $(eval $(call KernelPackage,leds-adm5120))
+
+
+define KernelPackage/ledtrig-adm5120-switch
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=LED ADM5120 Switch Port Status Trigger
+  DEPENDS:=@TARGET_adm5120
+  KCONFIG:=CONFIG_LEDS_TRIGGER_ADM5120_SWITCH
+  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-adm5120-switch.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-adm5120-switch)
+endef
+
+define KernelPackage/ledtrig-adm5120-switch/description
+ Kernel module to allow LEDs to be controlled by the port states
+ of the ADM5120 built-in ethernet switch.
+endef
+
+$(eval $(call KernelPackage,ledtrig-adm5120-switch))
 
 
 define KernelPackage/leds-net48xx
