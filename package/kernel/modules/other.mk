@@ -334,6 +334,21 @@ endef
 $(eval $(call KernelPackage,leds-wrap))
 
 
+define KernelPackage/ledtrig-morse
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=LED Morse Trigger
+  KCONFIG:=CONFIG_LEDS_TRIGGER_MORSE
+  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-morse.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-morse)
+endef
+
+define KernelPackage/ledtrig-morse/description
+ Kernel module to show morse coded messages on LEDs.
+endef
+
+$(eval $(call KernelPackage,ledtrig-morse))
+
+
 define KernelPackage/nsc-gpio
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Natsemi GPIO support
