@@ -12,9 +12,6 @@ endif
 ifneq ($(__target_inc),1)
 __target_inc=1
 
-TARGET_BUILD?=0
-
-
 target_conf=$(subst .,_,$(subst -,_,$(subst /,_,$(1))))
 ifeq ($(DUMP),)
   PLATFORM_DIR:=$(TOPDIR)/target/linux/$(BOARD)
