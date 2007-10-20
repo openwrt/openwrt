@@ -61,7 +61,9 @@ define KernelPackage/ide-core
 	CONFIG_IDE_GENERIC \
 	CONFIG_BLK_DEV_IDE \
 	CONFIG_IDE_GENERIC \
-	CONFIG_BLK_DEV_IDEDISK
+	CONFIG_BLK_DEV_IDEDISK \
+	CONFIG_BLK_DEV_IDEDMA_PCI=y \
+	CONFIG_BLK_DEV_IDEPCI=y
   FILES:= \
 	$(LINUX_DIR)/drivers/ide/ide-core.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/ide/ide-disk.$(LINUX_KMOD_SUFFIX)
@@ -74,7 +76,6 @@ define KernelPackage/ide-core/2.4
 endef
 
 define KernelPackage/ide-core/2.6
-#  KCONFIG+=CONFIG_IDE_GENERIC
   FILES+=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD+=$(call AutoLoad,30,ide-generic)
 endef
@@ -93,8 +94,8 @@ $(eval $(call KernelPackage,ide-core))
 define KernelPackage/ide-aec62xx
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Acard AEC62xx IDE driver
-  DEPENDS:=@PCI_SUPPORT
-  KCONFIG:=CONFIG_BLK_DEV_AEC62XX
+  DEPENDS:=@PCI_SUPPORT +kmod-ide-core
+  KCONFIG:=CONFIG_BLK_DEV_AEC62XX 
   FILES:=$(LINUX_DIR)/drivers/ide/pci/aec62xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,aec62xx)
 endef
@@ -109,7 +110,7 @@ $(eval $(call KernelPackage,ide-aec62xx))
 define KernelPackage/ide-pdc202xx
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Promise PDC202xx IDE driver
-  DEPENDS:=@LINUX_2_4
+  DEPENDS:=@LINUX_2_4 +kmod-ide-core
   KCONFIG:=CONFIG_BLK_DEV_PDC202XX_OLD
   FILES:=$(LINUX_DIR)/drivers/ide/pci/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,pdc202xx_old)
