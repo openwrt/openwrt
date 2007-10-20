@@ -15,6 +15,8 @@ sub confstr($) {
 sub parse_target_metadata() {
 	my $file = shift @ARGV;
 	my ($target, @target, $profile);
+	my %target;
+
 	open FILE, "<$file" or do {
 		warn "Can't open file '$file': $!\n";
 		return;
@@ -22,18 +24,26 @@ sub parse_target_metadata() {
 	while (<FILE>) {
 		chomp;
 		/^Target:\s*(.+)\s*$/ and do {
+			my $name = $1;
 			$target = {
-				id => $1,
-				conf => confstr($1),
+				id => $name,
+				board => $name,
+				boardconf => confstr($name),
+				conf => confstr($name),
 				profiles => [],
 				features => [],
-				depends => []
+				depends => [],
+				subtargets => []
 			};
 			push @target, $target;
-		};
-		/^Target-Board:\s*(.+)\s*$/ and do {
-			$target->{board} = $1;
-			$target->{boardconf} = confstr($1);
+			$target{$name} = $target;
+			if ($name =~ /([^\/]+)\/([^\/]+)/) {
+				push @{$target{$1}->{subtargets}}, $2;
+				$target->{board} = $1;
+				$target->{boardconf} = confstr($1);
+				$target->{subtarget} = 1;
+				$target->{parent} = $target{$1};
+			}
 		};
 		/^Target-Kernel:\s*(\d+\.\d+)\s*$/ and $target->{kernel} = $1;
 		/^Target-Name:\s*(.+)\s*$/ and $target->{name} = $1;
@@ -151,47 +161,45 @@ sub target_config_features(@) {
 	return $ret;
 }
 
+sub target_name($) {
+	my $target = shift;
+	my $parent = $target->{parent};
+	if ($parent) {
+		return $target->{parent}->{name}." - ".$target->{name};
+	} else {
+		return $target->{name};
+	}
+}
 
-sub gen_target_config() {
-	my @target = parse_target_metadata();
+sub print_target($) {
+	my $target = shift;
+	my $features = target_config_features(@{$target->{features}});
+	my $help = $target->{desc};
+	my $kernel = $target->{kernel};
+	my $confstr;
+	$kernel =~ tr/./_/;
 
-	@target = sort {
-		$a->{name} cmp $b->{name}
-	} @target;
-	
-	
-	print <<EOF;
-choice
-	prompt "Target System"
-	default TARGET_brcm_2_4
-	reset if !DEVEL
-	
-EOF
+	chomp $features;
+	$features .= "\n";
+	if ($help =~ /\w+/) {
+		$help =~ s/^\s*/\t  /mg;
+		$help = "\thelp\n$help";
+	} else {
+		undef $help;
+	}
 
-	foreach my $target (@target) {
-		my $features = target_config_features(@{$target->{features}});
-		my $help = $target->{desc};
-		my $kernel = $target->{kernel};
-		$kernel =~ tr/./_/;
-
-		chomp $features;
-		$features .= "\n";
-		if ($help =~ /\w+/) {
-			$help =~ s/^\s*/\t  /mg;
-			$help = "\thelp\n$help";
-		} else {
-			undef $help;
-		}
-	
-		print <<EOF;
+	$confstr = <<EOF;
 config TARGET_$target->{conf}
 	bool "$target->{name}"
-	select $target->{arch}
 	select LINUX_$kernel
 EOF
-		if ($target->{id} ne $target->{board}) {
-			print "\tselect TARGET_".$target->{boardconf}."\n";
-		}
+	if ($target->{subtarget}) {
+		$confstr .= "\tdepends TARGET_$target->{boardconf}\n";
+	}
+	if (@{$target->{subtargets}} > 0) {
+		$confstr .= "\tselect HAS_SUBTARGETS\n";
+	} else {
+		$confstr .= "\tselect $target->{arch}\n";
 		foreach my $dep (@{$target->{depends}}) {
 			my $mode = "depends";
 			my $flags;
@@ -203,40 +211,59 @@ EOF
 
 			$flags =~ /-/ and $mode = "deselect";
 			$flags =~ /\+/ and $mode = "select";
-			$flags =~ /@/ and print "\t$mode $name\n";
+			$flags =~ /@/ and $confstr .= "\t$mode $name\n";
 		}
-		
-		print "$features$help\n\n"
+		$confstr .= $features;
+	}
+
+	$confstr .= "$help\n\n";
+	print $confstr;
+}
+
+sub gen_target_config() {
+	my @target = parse_target_metadata();
+
+	my @target_sort = sort {
+		target_name($a) cmp target_name($b);
+	} @target;
+
+
+	print <<EOF;
+choice
+	prompt "Target System"
+	default TARGET_brcm_2_4
+	reset if !DEVEL
+	
+EOF
+
+	foreach my $target (@target_sort) {
+		next if $target->{subtarget};
+		print_target($target);
 	}
 
 	print <<EOF;
 endchoice
 
-config TARGET_BOARD
-	string
+choice
+	prompt "Subtarget" if HAS_SUBTARGETS
+
 EOF
 	foreach my $target (@target) {
-		print "\t\tdefault \"".$target->{board}."\" if TARGET_".$target->{conf}."\n";
+		next unless $target->{subtarget};
+		print_target($target);
 	}
 
-	# add hidden target config options 
-	foreach my $target (@target) {
-		next if $board{$target->{board}};
-		if ($target->{id} ne $target->{board}) {
-			print "\nconfig TARGET_".$target->{boardconf}."\n\tbool\n";
-			$board{$target->{board}} = 1;
-		}
-	}
-	print <<EOF;
+print <<EOF;
+endchoice
 
 choice
 	prompt "Target Profile"
 
 EOF
-	
+
 	foreach my $target (@target) {
 		my $profiles = $target->{profiles};
-		
+
 		foreach my $profile (@$profiles) {
 			print <<EOF;
 config TARGET_$target->{conf}_$profile->{id}
@@ -253,7 +280,20 @@ EOF
 		}
 	}
 
-	print "endchoice\n";
+	print <<EOF;
+endchoice
+
+config HAS_SUBTARGETS
+	bool
+
+config TARGET_BOARD
+	string
+
+EOF
+	foreach my $target (@target) {
+		$target->{subtarget} or	print "\t\tdefault \"".$target->{board}."\" if TARGET_".$target->{conf}."\n";
+	}
+
 }
 
 my %dep_check;
@@ -311,7 +351,7 @@ sub mconf_depends($$) {
 		$depend =~ s/^([@\+]+)//;
 		my $flags = $1;
 		my $vdep;
-	
+
 		if ($vdep = $package{$depend}->{vdepends}) {
 			$depend = join("||", map { "PACKAGE_".$_ } @$vdep);
 		} else {
@@ -340,12 +380,12 @@ sub print_package_config_category($) {
 	my $cat = shift;
 	my %menus;
 	my %menu_dep;
-	
+
 	return unless $category{$cat};
-	
+
 	print "menu \"$cat\"\n\n";
 	my %spkg = %{$category{$cat}};
-	
+
 	foreach my $spkg (sort {uc($a) cmp uc($b)} keys %spkg) {
 		foreach my $pkg (@{$spkg{$spkg}}) {
 			my $menu = $pkg->{submenu};
@@ -402,7 +442,7 @@ sub print_package_config_category($) {
 		}
 	}
 	print "endmenu\n\n";
-	
+
 	undef $category{$cat};
 }
 
@@ -437,7 +477,7 @@ sub gen_package_mk() {
 	foreach my $name (sort {uc($a) cmp uc($b)} keys %package) {
 		my $config;
 		my $pkg = $package{$name};
-		
+
 		next if defined $pkg->{vdepends};
 		if ($ENV{SDK}) {
 			$conf{$pkg->{src}} or do {
@@ -451,7 +491,7 @@ sub gen_package_mk() {
 			print "package-$config += $pkg->{subdir}$pkg->{src}\n";
 			$pkg->{prereq} and print "prereq-$config += $pkg->{subdir}$pkg->{src}\n";
 		}
-	
+
 		my $hasdeps = 0;
 		my $depline = "";
 		foreach my $dep (@{$pkg->{depends}}, @{$pkg->{builddepends}}) {
@@ -477,7 +517,7 @@ sub gen_package_mk() {
 			$line .= "\$(curdir)/".$pkg->{subdir}."$pkg->{src}/compile += $depline\n";
 		}
 	}
-	
+
 	if ($line ne "") {
 		print "\n$line";
 	}

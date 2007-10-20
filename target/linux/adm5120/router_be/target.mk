@@ -1,6 +1,6 @@
 ARCH:=mips
 SUBTARGET:=router_be
-BOARDNAME:=ADM5120 Boards (Big Endian)
+BOARDNAME:=Big Endian
 
 define Target/Description
 	Build firmware images for Infineon/ADMTek ADM5120 based boards running in big-endian mode

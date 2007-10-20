@@ -10,15 +10,15 @@ ARCH=i386
 BOARD:=x86
 BOARDNAME:=x86
 FEATURES:=squashfs jffs2 ext2
+SUBTARGETS=generic mediacenter
 
 LINUX_VERSION:=2.6.23
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += kmod-natsemi kmod-ne2k-pci
 
-$(eval $(call Target,generic))
-$(eval $(call Target,mediacenter))
 $(eval $(call BuildTarget))
+
 $(eval $(call $(if $(CONFIG_TARGET_ROOTFS_ISO),RequireCommand,Ignore),mkisofs, \
    	Please install mkisofs. \
 ))

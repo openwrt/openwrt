@@ -1,4 +1,4 @@
-SUBTARGET:=generic
+BOARDNAME:=Generic
 
 define Target/Description
 	Build firmware images for x86 based boards 
