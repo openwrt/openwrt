@@ -1,7 +1,7 @@
-Index: fuse-2.6.5/include/fuse_common_compat.h
+Index: fuse-2.7.1/include/fuse_common_compat.h
 ===================================================================
---- fuse-2.6.5.orig/include/fuse_common_compat.h	2007-06-23 13:03:50.000000000 +0200
-+++ fuse-2.6.5/include/fuse_common_compat.h	2007-06-23 13:03:51.000000000 +0200
+--- fuse-2.7.1.orig/include/fuse_common_compat.h	2007-10-20 17:13:51.409738304 +0200
++++ fuse-2.7.1/include/fuse_common_compat.h	2007-10-20 17:14:26.323727941 +0200
 @@ -17,6 +17,7 @@
      unsigned int keep_cache : 1;
  };
@@ -16,191 +16,594 @@ Index: fuse-2.6.5/include/fuse_common_compat.h
  void fuse_unmount_compat22(const char *mountpoint);
 -
 +#endif
-Index: fuse-2.6.5/lib/fuse.c
+Index: fuse-2.7.1/lib/fuse.c
 ===================================================================
---- fuse-2.6.5.orig/lib/fuse.c	2007-06-23 13:03:50.000000000 +0200
-+++ fuse-2.6.5/lib/fuse.c	2007-06-23 13:03:51.000000000 +0200
-@@ -128,6 +128,7 @@
- static pthread_mutex_t fuse_context_lock = PTHREAD_MUTEX_INITIALIZER;
- static int fuse_context_ref;
+--- fuse-2.7.1.orig/lib/fuse.c	2007-10-20 17:13:51.417738760 +0200
++++ fuse-2.7.1/lib/fuse.c	2007-10-20 17:26:30.657005340 +0200
+@@ -14,8 +14,6 @@
+ #include "fuse_lowlevel.h"
+ #include "fuse_opt.h"
+ #include "fuse_misc.h"
+-#include "fuse_common_compat.h"
+-#include "fuse_compat.h"
  
-+#ifndef DISABLE_COMPAT
- static int fuse_compat_open(struct fuse *, fuse_req_t, char *,
-                             struct fuse_file_info *);
- static void fuse_compat_release(struct fuse *, fuse_req_t, char *,
-@@ -135,6 +136,7 @@
- static int fuse_compat_opendir(struct fuse *, fuse_req_t, char *,
-                                struct fuse_file_info *);
- static int fuse_compat_statfs(struct fuse *, fuse_req_t, struct statvfs *);
-+#endif
+ #include <stdio.h>
+ #include <string.h>
+@@ -621,127 +619,6 @@
+         fuse_do_prepare_interrupt(req, d);
+ }
  
- static struct node *get_node_nocheck(struct fuse *f, fuse_ino_t nodeid)
- {
-@@ -1509,10 +1511,12 @@
-     pthread_rwlock_rdlock(&f->tree_lock);
-     if (f->op.open) {
-         err = -ENOENT;
-+#ifndef DISABLE_COMPAT
-         path = get_path(f, ino);
-         if (path != NULL)
-             err = fuse_compat_open(f, req, path, fi);
--    }
-+#endif
-+	}
-     if (!err) {
-         if (f->conf.debug) {
-             printf("OPEN[%llu] flags: 0x%x\n", (unsigned long long) fi->fh,
-@@ -1535,9 +1539,11 @@
-         if (fuse_reply_open(req, fi) == -ENOENT) {
-             /* The open syscall was interrupted, so it must be cancelled */
-             pthread_mutex_unlock(&f->lock);
-+#ifndef DISABLE_COMPAT
-             if(f->op.release && path != NULL)
-                 fuse_compat_release(f, req, path, fi);
--        } else {
-+#endif
-+		} else {
-             get_node(f, ino)->open_count++;
-             pthread_mutex_unlock(&f->lock);
-         }
-@@ -1661,8 +1667,10 @@
-     }
-     if (fi->flush && path && f->op.flush)
-         err = fuse_do_flush(f, req, path, fi);
-+#ifndef DISABLE_COMPAT
-     if (f->op.release)
-         fuse_compat_release(f, req, path, fi);
-+#endif
- 
-     pthread_mutex_lock(&f->lock);
-     node = get_node(f, ino);
-@@ -1753,12 +1761,14 @@
- 
-         err = -ENOENT;
-         pthread_rwlock_rdlock(&f->tree_lock);
-+#ifndef DISABLE_COMPAT
-         path = get_path(f, ino);
-         if (path != NULL) {
-             err = fuse_compat_opendir(f, req, path, &fi);
-             dh->fh = fi.fh;
-         }
--        if (!err) {
-+#endif
-+		if (!err) {
-             if (fuse_reply_open(req, llfi) == -ENOENT) {
-                 /* The opendir syscall was interrupted, so it must be
-                    cancelled */
-@@ -2011,9 +2021,12 @@
-                 free(path);
-             }
-             pthread_rwlock_unlock(&f->tree_lock);
--        } else
-+        }
-+#ifndef DISABLE_COMPAT
-+		else
-             err = fuse_compat_statfs(f, req, &buf);
+-#ifndef __FreeBSD__
+-
+-static int fuse_compat_open(struct fuse_fs *fs, const char *path,
+-                            struct fuse_file_info *fi)
+-{
+-    int err;
+-    if (!fs->compat || fs->compat >= 25)
+-        err = fs->op.open(path, fi);
+-    else if (fs->compat == 22) {
+-        struct fuse_file_info_compat tmp;
+-        memcpy(&tmp, fi, sizeof(tmp));
+-        err = ((struct fuse_operations_compat22 *) &fs->op)->open(path, &tmp);
+-        memcpy(fi, &tmp, sizeof(tmp));
+-        fi->fh = tmp.fh;
 -    } else
-+#endif
-+	} else
-         err = default_statfs(&buf);
+-        err = ((struct fuse_operations_compat2 *) &fs->op)
+-            ->open(path, fi->flags);
+-    return err;
+-}
+-
+-static int fuse_compat_release(struct fuse_fs *fs, const char *path,
+-                               struct fuse_file_info *fi)
+-{
+-    if (!fs->compat || fs->compat >= 22)
+-        return fs->op.release(path, fi);
+-    else
+-        return ((struct fuse_operations_compat2 *) &fs->op)
+-            ->release(path, fi->flags);
+-}
+-
+-static int fuse_compat_opendir(struct fuse_fs *fs, const char *path,
+-                               struct fuse_file_info *fi)
+-{
+-    if (!fs->compat || fs->compat >= 25)
+-        return fs->op.opendir(path, fi);
+-    else {
+-        int err;
+-        struct fuse_file_info_compat tmp;
+-        memcpy(&tmp, fi, sizeof(tmp));
+-        err = ((struct fuse_operations_compat22 *) &fs->op)
+-            ->opendir(path, &tmp);
+-        memcpy(fi, &tmp, sizeof(tmp));
+-        fi->fh = tmp.fh;
+-        return err;
+-    }
+-}
+-
+-static void convert_statfs_compat(struct fuse_statfs_compat1 *compatbuf,
+-                                  struct statvfs *stbuf)
+-{
+-    stbuf->f_bsize   = compatbuf->block_size;
+-    stbuf->f_blocks  = compatbuf->blocks;
+-    stbuf->f_bfree   = compatbuf->blocks_free;
+-    stbuf->f_bavail  = compatbuf->blocks_free;
+-    stbuf->f_files   = compatbuf->files;
+-    stbuf->f_ffree   = compatbuf->files_free;
+-    stbuf->f_namemax = compatbuf->namelen;
+-}
+-
+-static void convert_statfs_old(struct statfs *oldbuf, struct statvfs *stbuf)
+-{
+-    stbuf->f_bsize   = oldbuf->f_bsize;
+-    stbuf->f_blocks  = oldbuf->f_blocks;
+-    stbuf->f_bfree   = oldbuf->f_bfree;
+-    stbuf->f_bavail  = oldbuf->f_bavail;
+-    stbuf->f_files   = oldbuf->f_files;
+-    stbuf->f_ffree   = oldbuf->f_ffree;
+-    stbuf->f_namemax = oldbuf->f_namelen;
+-}
+-
+-static int fuse_compat_statfs(struct fuse_fs *fs, const char *path,
+-                              struct statvfs *buf)
+-{
+-    int err;
+-
+-    if (!fs->compat || fs->compat >= 25) {
+-        err = fs->op.statfs(fs->compat == 25 ? "/" : path, buf);
+-    } else if (fs->compat > 11) {
+-        struct statfs oldbuf;
+-        err = ((struct fuse_operations_compat22 *) &fs->op)
+-            ->statfs("/", &oldbuf);
+-        if (!err)
+-            convert_statfs_old(&oldbuf, buf);
+-    } else {
+-        struct fuse_statfs_compat1 compatbuf;
+-        memset(&compatbuf, 0, sizeof(struct fuse_statfs_compat1));
+-        err = ((struct fuse_operations_compat1 *) &fs->op)->statfs(&compatbuf);
+-        if (!err)
+-            convert_statfs_compat(&compatbuf, buf);
+-    }
+-    return err;
+-}
+-
+-#else /* __FreeBSD__ */
+-
+-static inline int fuse_compat_open(struct fuse_fs *fs, char *path,
+-                                   struct fuse_file_info *fi)
+-{
+-    return fs->op.open(path, fi);
+-}
+-
+-static inline int fuse_compat_release(struct fuse_fs *fs, const char *path,
+-                                      struct fuse_file_info *fi)
+-{
+-    return fs->op.release(path, fi);
+-}
+-
+-static inline int fuse_compat_opendir(struct fuse_fs *fs, const char *path,
+-                                      struct fuse_file_info *fi)
+-{
+-    return fs->op.opendir(path, fi);
+-}
+-
+-static inline int fuse_compat_statfs(struct fuse_fs *fs, const char *path,
+-                                     struct statvfs *buf)
+-{
+-    return fs->op.statfs(fs->compat == 25 ? "/" : path, buf);
+-}
+-
+-#endif /* __FreeBSD__ */
+-
+ int fuse_fs_getattr(struct fuse_fs *fs, const char *path, struct stat *buf)
+ {
+     fuse_get_context()->private_data = fs->user_data;
+@@ -814,7 +691,7 @@
+ {
+     fuse_get_context()->private_data = fs->user_data;
+     if (fs->op.release)
+-        return fuse_compat_release(fs, path, fi);
++        return fs->op.release(path, fi);
+     else
+         return 0;
+ }
+@@ -824,7 +701,7 @@
+ {
+     fuse_get_context()->private_data = fs->user_data;
+     if (fs->op.opendir)
+-        return fuse_compat_opendir(fs, path, fi);
++        return fs->op.opendir(path, fi);
+     else
+         return 0;
+ }
+@@ -834,7 +711,7 @@
+ {
+     fuse_get_context()->private_data = fs->user_data;
+     if (fs->op.open)
+-        return fuse_compat_open(fs, path, fi);
++        return fs->op.open(path, fi);
+     else
+         return 0;
+ }
+@@ -893,7 +770,7 @@
+ {
+     fuse_get_context()->private_data = fs->user_data;
+     if (fs->op.statfs)
+-        return fuse_compat_statfs(fs, path, buf);
++        return fs->op.statfs(path, buf);
+     else {
+         buf->f_namemax = 255;
+         buf->f_bsize = 512;
+@@ -3037,7 +2914,6 @@
+     if (!fs)
+         goto out_free;
  
-     if (!err)
-@@ -2691,10 +2704,12 @@
+-    fs->compat = compat;
+     f->fs = fs;
+ 
+     /* Oh f**k, this is ugly! */
+@@ -3079,11 +2955,6 @@
      f->conf.readdir_ino = 1;
  #endif
  
-+#ifndef DISABLE_COMPAT
-     if (compat && compat <= 25) {
-         if (fuse_sync_compat_args(args) == -1)
-             goto out_free;
-     }
-+#endif
- 
-     memcpy(&f->op, op, op_size);
-     if (!f->op.lock) {
-@@ -2824,6 +2839,7 @@
+-    if (compat && compat <= 25) {
+-        if (fuse_sync_compat_args(args) == -1)
+-            goto out_free_fs;
+-    }
+-
+     f->se = fuse_lowlevel_new_common(args, &llop, sizeof(llop), f);
+     if (f->se == NULL) {
+         if (f->conf.help)
+@@ -3217,19 +3088,6 @@
      fuse_delete_context_key();
  }
  
-+#ifndef DISABLE_COMPAT
- #include "fuse_common_compat.h"
- #include "fuse_compat.h"
- 
-@@ -3037,3 +3053,5 @@
+-static struct fuse *fuse_new_common_compat25(int fd, struct fuse_args *args,
+-                                             const struct fuse_operations *op,
+-                                             size_t op_size, int compat)
+-{
+-    struct fuse *f = NULL;
+-    struct fuse_chan *ch = fuse_kern_chan_new(fd);
+-
+-    if (ch)
+-        f = fuse_new_common(ch, args, op, op_size, NULL, compat);
+-
+-    return f;
+-}
+-
+ /* called with fuse_context_lock held or during initialization (before
+    main() has been called) */
+ void fuse_register_module(struct fuse_module *mod)
+@@ -3242,69 +3100,3 @@
+     fuse_modules = mod;
  }
  
- __asm__(".symver fuse_new_compat25,fuse_new@FUSE_2.5");
-+
-+#endif
-Index: fuse-2.6.5/lib/fuse_lowlevel.c
+-#ifndef __FreeBSD__
+-
+-static struct fuse *fuse_new_common_compat(int fd, const char *opts,
+-                                           const struct fuse_operations *op,
+-                                           size_t op_size, int compat)
+-{
+-    struct fuse *f;
+-    struct fuse_args args = FUSE_ARGS_INIT(0, NULL);
+-
+-    if (fuse_opt_add_arg(&args, "") == -1)
+-	return NULL;
+-    if (opts &&
+-        (fuse_opt_add_arg(&args, "-o") == -1 ||
+-         fuse_opt_add_arg(&args, opts) == -1)) {
+-        fuse_opt_free_args(&args);
+-        return NULL;
+-    }
+-    f = fuse_new_common_compat25(fd, &args, op, op_size, compat);
+-    fuse_opt_free_args(&args);
+-
+-    return f;
+-}
+-
+-struct fuse *fuse_new_compat22(int fd, const char *opts,
+-                               const struct fuse_operations_compat22 *op,
+-                               size_t op_size)
+-{
+-    return fuse_new_common_compat(fd, opts, (struct fuse_operations *) op,
+-                                  op_size, 22);
+-}
+-
+-struct fuse *fuse_new_compat2(int fd, const char *opts,
+-                              const struct fuse_operations_compat2 *op)
+-{
+-    return fuse_new_common_compat(fd, opts, (struct fuse_operations *) op,
+-                                  sizeof(struct fuse_operations_compat2), 21);
+-}
+-
+-struct fuse *fuse_new_compat1(int fd, int flags,
+-                              const struct fuse_operations_compat1 *op)
+-{
+-    const char *opts = NULL;
+-    if (flags & FUSE_DEBUG_COMPAT1)
+-        opts = "debug";
+-    return fuse_new_common_compat(fd, opts, (struct fuse_operations *) op,
+-                                  sizeof(struct fuse_operations_compat1), 11);
+-}
+-
+-__asm__(".symver fuse_exited,__fuse_exited@");
+-__asm__(".symver fuse_process_cmd,__fuse_process_cmd@");
+-__asm__(".symver fuse_read_cmd,__fuse_read_cmd@");
+-__asm__(".symver fuse_set_getcontext_func,__fuse_set_getcontext_func@");
+-__asm__(".symver fuse_new_compat2,fuse_new@");
+-__asm__(".symver fuse_new_compat22,fuse_new@FUSE_2.2");
+-
+-#endif /* __FreeBSD__ */
+-
+-struct fuse *fuse_new_compat25(int fd, struct fuse_args *args,
+-                               const struct fuse_operations_compat25 *op,
+-                               size_t op_size)
+-{
+-    return fuse_new_common_compat25(fd, args, (struct fuse_operations *) op,
+-                                    op_size, 25);
+-}
+-
+-__asm__(".symver fuse_new_compat25,fuse_new@FUSE_2.5");
+Index: fuse-2.7.1/lib/fuse_lowlevel.c
 ===================================================================
---- fuse-2.6.5.orig/lib/fuse_lowlevel.c	2007-06-23 13:03:50.000000000 +0200
-+++ fuse-2.6.5/lib/fuse_lowlevel.c	2007-06-23 13:03:51.000000000 +0200
-@@ -1297,6 +1297,7 @@
+--- fuse-2.7.1.orig/lib/fuse_lowlevel.c	2007-10-20 17:13:51.425739218 +0200
++++ fuse-2.7.1/lib/fuse_lowlevel.c	2007-10-20 17:22:46.396225455 +0200
+@@ -11,8 +11,6 @@
+ #include "fuse_opt.h"
+ #include "fuse_i.h"
+ #include "fuse_misc.h"
+-#include "fuse_common_compat.h"
+-#include "fuse_lowlevel_compat.h"
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -1310,129 +1308,3 @@
+     return fuse_lowlevel_new_common(args, op, op_size, userdata);
  }
  
- 
-+#ifndef DISABLE_COMPAT
- #ifndef __FreeBSD__
- 
- static void fill_open_compat(struct fuse_open_out *arg,
-@@ -1422,3 +1423,4 @@
- }
- 
- __asm__(".symver fuse_lowlevel_new_compat25,fuse_lowlevel_new@FUSE_2.5");
-+#endif
-Index: fuse-2.6.5/lib/helper.c
+-
+-#ifndef __FreeBSD__
+-
+-static void fill_open_compat(struct fuse_open_out *arg,
+-                      const struct fuse_file_info_compat *f)
+-{
+-    arg->fh = f->fh;
+-    if (f->direct_io)
+-        arg->open_flags |= FOPEN_DIRECT_IO;
+-    if (f->keep_cache)
+-        arg->open_flags |= FOPEN_KEEP_CACHE;
+-}
+-
+-static void convert_statfs_compat(const struct statfs *compatbuf,
+-                                  struct statvfs *buf)
+-{
+-    buf->f_bsize	= compatbuf->f_bsize;
+-    buf->f_blocks	= compatbuf->f_blocks;
+-    buf->f_bfree	= compatbuf->f_bfree;
+-    buf->f_bavail	= compatbuf->f_bavail;
+-    buf->f_files	= compatbuf->f_files;
+-    buf->f_ffree	= compatbuf->f_ffree;
+-    buf->f_namemax	= compatbuf->f_namelen;
+-}
+-
+-int fuse_reply_open_compat(fuse_req_t req,
+-                           const struct fuse_file_info_compat *f)
+-{
+-    struct fuse_open_out arg;
+-
+-    memset(&arg, 0, sizeof(arg));
+-    fill_open_compat(&arg, f);
+-    return send_reply_ok(req, &arg, sizeof(arg));
+-}
+-
+-int fuse_reply_statfs_compat(fuse_req_t req, const struct statfs *stbuf)
+-{
+-    struct statvfs newbuf;
+-
+-    memset(&newbuf, 0, sizeof(newbuf));
+-    convert_statfs_compat(stbuf, &newbuf);
+-
+-    return fuse_reply_statfs(req, &newbuf);
+-}
+-
+-struct fuse_session *fuse_lowlevel_new_compat(const char *opts,
+-                            const struct fuse_lowlevel_ops_compat *op,
+-                            size_t op_size, void *userdata)
+-{
+-    struct fuse_session *se;
+-    struct fuse_args args = FUSE_ARGS_INIT(0, NULL);
+-
+-    if (opts &&
+-        (fuse_opt_add_arg(&args, "") == -1 ||
+-         fuse_opt_add_arg(&args, "-o") == -1 ||
+-         fuse_opt_add_arg(&args, opts) == -1)) {
+-        fuse_opt_free_args(&args);
+-        return NULL;
+-    }
+-    se = fuse_lowlevel_new(&args, (const struct fuse_lowlevel_ops *) op,
+-                           op_size, userdata);
+-    fuse_opt_free_args(&args);
+-
+-    return se;
+-}
+-
+-struct fuse_ll_compat_conf {
+-    unsigned max_read;
+-    int set_max_read;
+-};
+-
+-static const struct fuse_opt fuse_ll_opts_compat[] = {
+-    { "max_read=", offsetof(struct fuse_ll_compat_conf, set_max_read), 1 },
+-    { "max_read=%u", offsetof(struct fuse_ll_compat_conf, max_read), 0 },
+-    FUSE_OPT_KEY("max_read=", FUSE_OPT_KEY_KEEP),
+-    FUSE_OPT_END
+-};
+-
+-int fuse_sync_compat_args(struct fuse_args *args)
+-{
+-    struct fuse_ll_compat_conf conf;
+-
+-    memset(&conf, 0, sizeof(conf));
+-    if (fuse_opt_parse(args, &conf, fuse_ll_opts_compat, NULL) == -1)
+-        return -1;
+-
+-    if (fuse_opt_insert_arg(args, 1, "-osync_read"))
+-        return -1;
+-
+-    if (conf.set_max_read) {
+-        char tmpbuf[64];
+-
+-        sprintf(tmpbuf, "-omax_readahead=%u", conf.max_read);
+-        if (fuse_opt_insert_arg(args, 1, tmpbuf) == -1)
+-            return -1;
+-    }
+-    return 0;
+-}
+-
+-__asm__(".symver fuse_reply_statfs_compat,fuse_reply_statfs@FUSE_2.4");
+-__asm__(".symver fuse_reply_open_compat,fuse_reply_open@FUSE_2.4");
+-__asm__(".symver fuse_lowlevel_new_compat,fuse_lowlevel_new@FUSE_2.4");
+-
+-#else /* __FreeBSD__ */
+-
+-int fuse_sync_compat_args(struct fuse_args *args)
+-{
+-    (void) args;
+-    return 0;
+-}
+-
+-#endif /* __FreeBSD__ */
+-
+-struct fuse_session *fuse_lowlevel_new_compat25(struct fuse_args *args,
+-                        const struct fuse_lowlevel_ops_compat25 *op,
+-                        size_t op_size, void *userdata)
+-{
+-    if (fuse_sync_compat_args(args) == -1)
+-        return NULL;
+-
+-    return fuse_lowlevel_new_common(args,
+-                                    (const struct fuse_lowlevel_ops *) op,
+-                                    op_size, userdata);
+-}
+-
+-__asm__(".symver fuse_lowlevel_new_compat25,fuse_lowlevel_new@FUSE_2.5");
+Index: fuse-2.7.1/lib/helper.c
 ===================================================================
---- fuse-2.6.5.orig/lib/helper.c	2007-06-23 13:03:50.000000000 +0200
-+++ fuse-2.6.5/lib/helper.c	2007-06-23 13:03:51.000000000 +0200
-@@ -195,7 +195,7 @@
-                                            struct fuse_args *args)
- {
-     struct fuse_chan *ch;
--    int fd = fuse_mount_compat25(mountpoint, args);
-+    int fd = fuse_kern_mount(mountpoint, args);
+--- fuse-2.7.1.orig/lib/helper.c	2007-10-20 17:13:51.433739673 +0200
++++ fuse-2.7.1/lib/helper.c	2007-10-20 17:21:32.508014797 +0200
+@@ -10,7 +10,6 @@
+ #include "fuse_i.h"
+ #include "fuse_opt.h"
+ #include "fuse_lowlevel.h"
+-#include "fuse_common_compat.h"
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -202,7 +201,7 @@
+             close(fd);
+     } while (fd >= 0 && fd <= 2);
+ 
+-    fd = fuse_mount_compat25(mountpoint, args);
++    fd = fuse_kern_mount(mountpoint, args);
      if (fd == -1)
          return NULL;
  
-@@ -338,6 +338,7 @@
-     return -1;
+@@ -349,97 +348,3 @@
+ {
+     return FUSE_VERSION;
  }
- 
-+#ifndef DISABLE_COMPAT
- #include "fuse_compat.h"
- 
- #ifndef __FreeBSD__
-@@ -431,3 +432,4 @@
- __asm__(".symver fuse_teardown_compat22,fuse_teardown@FUSE_2.2");
- __asm__(".symver fuse_main_real_compat25,fuse_main_real@FUSE_2.5");
- __asm__(".symver fuse_mount_compat25,fuse_mount@FUSE_2.5");
-+#endif
-Index: fuse-2.6.5/lib/mount.c
+-
+-#include "fuse_compat.h"
+-
+-#ifndef __FreeBSD__
+-
+-struct fuse *fuse_setup_compat22(int argc, char *argv[],
+-                                 const struct fuse_operations_compat22 *op,
+-                                 size_t op_size, char **mountpoint,
+-                                 int *multithreaded, int *fd)
+-{
+-    return fuse_setup_common(argc, argv, (struct fuse_operations *) op,
+-                             op_size, mountpoint, multithreaded, fd, NULL, 22);
+-}
+-
+-struct fuse *fuse_setup_compat2(int argc, char *argv[],
+-                                 const struct fuse_operations_compat2 *op,
+-                                 char **mountpoint, int *multithreaded,
+-                                 int *fd)
+-{
+-    return fuse_setup_common(argc, argv, (struct fuse_operations *) op,
+-                             sizeof(struct fuse_operations_compat2),
+-                             mountpoint, multithreaded, fd, NULL, 21);
+-}
+-
+-int fuse_main_real_compat22(int argc, char *argv[],
+-                            const struct fuse_operations_compat22 *op,
+-                            size_t op_size)
+-{
+-    return fuse_main_common(argc, argv, (struct fuse_operations *) op, op_size,
+-                            NULL, 22);
+-}
+-
+-void fuse_main_compat1(int argc, char *argv[],
+-                      const struct fuse_operations_compat1 *op)
+-{
+-    fuse_main_common(argc, argv, (struct fuse_operations *) op,
+-                     sizeof(struct fuse_operations_compat1), NULL, 11);
+-}
+-
+-int fuse_main_compat2(int argc, char *argv[],
+-                      const struct fuse_operations_compat2 *op)
+-{
+-    return fuse_main_common(argc, argv, (struct fuse_operations *) op,
+-                            sizeof(struct fuse_operations_compat2), NULL, 21);
+-}
+-
+-int fuse_mount_compat1(const char *mountpoint, const char *args[])
+-{
+-    /* just ignore mount args for now */
+-    (void) args;
+-    return fuse_mount_compat22(mountpoint, NULL);
+-}
+-
+-__asm__(".symver fuse_setup_compat2,__fuse_setup@");
+-__asm__(".symver fuse_setup_compat22,fuse_setup@FUSE_2.2");
+-__asm__(".symver fuse_teardown,__fuse_teardown@");
+-__asm__(".symver fuse_main_compat2,fuse_main@");
+-__asm__(".symver fuse_main_real_compat22,fuse_main_real@FUSE_2.2");
+-
+-#endif /* __FreeBSD__ */
+-
+-
+-struct fuse *fuse_setup_compat25(int argc, char *argv[],
+-                                 const struct fuse_operations_compat25 *op,
+-                                 size_t op_size, char **mountpoint,
+-                                 int *multithreaded, int *fd)
+-{
+-    return fuse_setup_common(argc, argv, (struct fuse_operations *) op,
+-                             op_size, mountpoint, multithreaded, fd, NULL, 25);
+-}
+-
+-int fuse_main_real_compat25(int argc, char *argv[],
+-                            const struct fuse_operations_compat25 *op,
+-                            size_t op_size)
+-{
+-    return fuse_main_common(argc, argv, (struct fuse_operations *) op, op_size,
+-                            NULL, 25);
+-}
+-
+-void fuse_teardown_compat22(struct fuse *fuse, int fd, char *mountpoint)
+-{
+-    (void) fd;
+-    fuse_teardown_common(fuse, mountpoint);
+-}
+-
+-int fuse_mount_compat25(const char *mountpoint, struct fuse_args *args)
+-{
+-    return fuse_kern_mount(mountpoint, args);
+-}
+-
+-__asm__(".symver fuse_setup_compat25,fuse_setup@FUSE_2.5");
+-__asm__(".symver fuse_teardown_compat22,fuse_teardown@FUSE_2.2");
+-__asm__(".symver fuse_main_real_compat25,fuse_main_real@FUSE_2.5");
+-__asm__(".symver fuse_mount_compat25,fuse_mount@FUSE_2.5");
+Index: fuse-2.7.1/lib/mount.c
 ===================================================================
---- fuse-2.6.5.orig/lib/mount.c	2007-06-23 13:03:50.000000000 +0200
-+++ fuse-2.6.5/lib/mount.c	2007-06-23 13:03:51.000000000 +0200
-@@ -219,11 +219,16 @@
+--- fuse-2.7.1.orig/lib/mount.c	2007-10-20 17:13:51.441740129 +0200
++++ fuse-2.7.1/lib/mount.c	2007-10-20 17:22:07.209992349 +0200
+@@ -9,7 +9,6 @@
+ #include "config.h"
+ #include "fuse_i.h"
+ #include "fuse_opt.h"
+-#include "fuse_common_compat.h"
+ #include "mount_util.h"
+ 
+ #include <stdio.h>
+@@ -308,11 +307,6 @@
      waitpid(pid, NULL, 0);
  }
  
-+#ifndef DISABLE_COMPAT
- void fuse_unmount_compat22(const char *mountpoint)
+-void fuse_unmount_compat22(const char *mountpoint)
+-{
+-    fuse_kern_unmount(mountpoint, -1);
+-}
+-
+ static int fuse_mount_fusermount(const char *mountpoint, const char *opts,
+                                  int quiet)
  {
-     fuse_kern_unmount(mountpoint, -1);
+@@ -376,11 +370,6 @@
+     return rv;
  }
-+#endif
  
-+#ifdef DISABLE_COMPAT
-+static
-+#endif
- int fuse_mount_compat22(const char *mountpoint, const char *opts)
+-int fuse_mount_compat22(const char *mountpoint, const char *opts)
+-{
+-    return fuse_mount_fusermount(mountpoint, opts, 0);
+-}
+-
+ static int fuse_mount_sys(const char *mnt, struct mount_opts *mo,
+                           const char *mnt_opts)
  {
-     int fds[2], pid;
-@@ -304,5 +309,7 @@
+@@ -579,5 +568,3 @@
      return res;
  }
  
-+#ifndef DISABLE_COMPAT
- __asm__(".symver fuse_mount_compat22,fuse_mount@FUSE_2.2");
- __asm__(".symver fuse_unmount_compat22,fuse_unmount@FUSE_2.2");
-+#endif
+-__asm__(".symver fuse_mount_compat22,fuse_mount@FUSE_2.2");
+-__asm__(".symver fuse_unmount_compat22,fuse_unmount@FUSE_2.2");
