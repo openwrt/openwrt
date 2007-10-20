@@ -18,9 +18,10 @@
  *
  */
 
+#include <linux/kernel.h>
+#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/jiffies.h>
-#include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/list.h>
 #include <linux/spinlock.h>
@@ -88,7 +89,7 @@ static inline unsigned long space_len(struct morse_trig_data *morse_data)
 
 static void morse_timer_function(unsigned long data)
 {
-	struct led_classdev *led_cdev = (struct led_classdev *) data;
+	struct led_classdev *led_cdev = (struct led_classdev *)data;
 	struct morse_trig_data *morse_data = led_cdev->trigger_data;
 	unsigned long brightness = LED_OFF;
 	unsigned long delay = 0;
@@ -144,9 +145,8 @@ set_led:
 	led_set_brightness(led_cdev, brightness);
 }
 
-static ssize_t morse_delay_show(struct class_device *dev, char *buf)
+static ssize_t _morse_delay_show(struct led_classdev *led_cdev, char *buf)
 {
-	struct led_classdev *led_cdev = class_get_devdata(dev);
 	struct morse_trig_data *morse_data = led_cdev->trigger_data;
 
 	sprintf(buf, "%lu\n", morse_data->delay);
@@ -154,10 +154,9 @@ static ssize_t morse_delay_show(struct class_device *dev, char *buf)
 	return strlen(buf) + 1;
 }
 
-static ssize_t morse_delay_store(struct class_device *dev, const char *buf,
-		size_t size)
+static ssize_t _morse_delay_store(struct led_classdev *led_cdev,
+		const char *buf, size_t size)
 {
-	struct led_classdev *led_cdev = class_get_devdata(dev);
 	struct morse_trig_data *morse_data = led_cdev->trigger_data;
 	char *after;
 	unsigned long state = simple_strtoul(buf, &after, 10);
@@ -176,9 +175,8 @@ static ssize_t morse_delay_store(struct class_device *dev, const char *buf,
 	return ret;
 }
 
-static ssize_t morse_msg_show(struct class_device *dev, char *buf)
+static ssize_t _morse_msg_show(struct led_classdev *led_cdev, char *buf)
 {
-	struct led_classdev *led_cdev = class_get_devdata(dev);
 	struct morse_trig_data *morse_data = led_cdev->trigger_data;
 
 	if (!morse_data->msg)
@@ -189,10 +187,9 @@ static ssize_t morse_msg_show(struct class_device *dev, char *buf)
 	return strlen(buf) + 1;
 }
 
-static ssize_t morse_msg_store(struct class_device *dev, const char *buf,
-				size_t size)
+static ssize_t _morse_msg_store(struct led_classdev *led_cdev,
+		const char *buf, size_t size)
 {
-	struct led_classdev *led_cdev = class_get_devdata(dev);
 	struct morse_trig_data *morse_data = led_cdev->trigger_data;
 	char *m;
 
@@ -215,8 +212,87 @@ static ssize_t morse_msg_store(struct class_device *dev, const char *buf,
 	return size;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
+static ssize_t morse_delay_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+
+	return _morse_delay_show(led_cdev, buf);
+}
+
+static ssize_t morse_delay_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t size)
+{
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+
+	return _morse_delay_store(led_cdev, buf, size);
+}
+
+static ssize_t morse_msg_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+
+	return _morse_msg_show(led_cdev, buf);
+}
+
+static ssize_t morse_msg_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t size)
+{
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+
+	return _morse_msg_store(led_cdev, buf, size);
+}
+
+static DEVICE_ATTR(delay, 0644, morse_delay_show, morse_delay_store);
+static DEVICE_ATTR(message, 0644, morse_msg_show, morse_msg_store);
+
+#define led_device_create_file(leddev, attr) \
+	device_create_file(leddev->dev, &dev_attr_ ## attr)
+#define led_device_remove_file(leddev, attr) \
+	device_remove_file(leddev->dev, &dev_attr_ ## attr)
+
+#else
+static ssize_t morse_delay_show(struct class_device *dev, char *buf)
+{
+	struct led_classdev *led_cdev = class_get_devdata(dev);
+
+	return _morse_delay_show(led_cdev, buf);
+}
+
+static ssize_t morse_delay_store(struct class_device *dev, const char *buf,
+		size_t size)
+{
+	struct led_classdev *led_cdev = class_get_devdata(dev);
+
+	return _morse_delay_store(led_cdev, buf, size);
+}
+
+static ssize_t morse_msg_show(struct class_device *dev, char *buf)
+{
+	struct led_classdev *led_cdev = class_get_devdata(dev);
+
+	return _morse_msg_show(led_cdev, buf);
+}
+
+static ssize_t morse_msg_store(struct class_device *dev, const char *buf,
+				size_t size)
+{
+	struct led_classdev *led_cdev = class_get_devdata(dev);
+
+	return _morse_msg_store(led_cdev, buf, size);
+}
+
 static CLASS_DEVICE_ATTR(delay, 0644, morse_delay_show, morse_delay_store);
 static CLASS_DEVICE_ATTR(message, 0644, morse_msg_show, morse_msg_store);
+
+#define led_device_create_file(leddev, attr) \
+	class_device_create_file(leddev->class_dev, &class_device_attr_ ## attr)
+#define led_device_remove_file(leddev, attr) \
+	class_device_remove_file(leddev->class_dev, &class_device_attr_ ## attr)
+
+#endif
 
 static void morse_trig_activate(struct led_classdev *led_cdev)
 {
@@ -232,12 +308,10 @@ static void morse_trig_activate(struct led_classdev *led_cdev)
 	morse_data->timer.function = morse_timer_function;
 	morse_data->timer.data = (unsigned long)led_cdev;
 
-	rc = class_device_create_file(led_cdev->class_dev,
-				&class_device_attr_delay);
+	rc = led_device_create_file(led_cdev, delay);
 	if (rc) goto err;
 
-	rc = class_device_create_file(led_cdev->class_dev,
-				&class_device_attr_message);
+	rc = led_device_create_file(led_cdev, message);
 	if (rc) goto err_delay;
 
 	led_cdev->trigger_data = morse_data;
@@ -245,8 +319,7 @@ static void morse_trig_activate(struct led_classdev *led_cdev)
 	return;
 
 err_delay:
-	class_device_remove_file(led_cdev->class_dev,
-				&class_device_attr_delay);
+	led_device_remove_file(led_cdev, delay);
 err:
 	kfree(morse_data);
 }
@@ -258,10 +331,8 @@ static void morse_trig_deactivate(struct led_classdev *led_cdev)
 	if (!morse_data)
 		return;
 
-	class_device_remove_file(led_cdev->class_dev,
-		&class_device_attr_message);
-	class_device_remove_file(led_cdev->class_dev,
-		&class_device_attr_delay);
+	led_device_remove_file(led_cdev, message);
+	led_device_remove_file(led_cdev, delay);
 
 	del_timer_sync(&morse_data->timer);
 	if (morse_data->msg)
