@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 BOARD:=adm5120
+BOARDNAME:=Infineon ADM5120
 LINUX_VERSION:=2.6.23
 FEATURES:=squashfs jffs2 tgz broken
+SUBTARGETS:=router_le router_be
 
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += admswconfig
 
-$(eval $(call Target,router_be))
-$(eval $(call Target,router_le))
 $(eval $(call BuildTarget))

@@ -23,15 +23,6 @@ endif
 TARGETID:=$(BOARD)$(if $(SUBTARGET),/$(SUBTARGET))
 PLATFORM_SUBDIR:=$(PLATFORM_DIR)$(if $(SUBTARGET),/$(SUBTARGET))
 
-define Target
-  KERNEL_TARGETS+=$(1)
-  ifeq ($(DUMP),1)
-    ifeq ($(SUBTARGET),)
-      BuildTarget=$$(BuildTargets/DumpAll)
-    endif
-  endif
-endef
-
 ifneq ($(TARGET_BUILD),1)
   include $(PLATFORM_DIR)/Makefile
   ifneq ($(PLATFORM_DIR),$(PLATFORM_SUBDIR))
@@ -132,18 +123,13 @@ ifeq ($(DUMP),1)
   endif
 endif
 
-define BuildTargets/DumpAll
-  dumpinfo:
-	@$(foreach SUBTARGET,$(KERNEL_TARGETS),$(SUBMAKE) -s DUMP=1 SUBTARGET=$(SUBTARGET); )
-endef
-
 define BuildTargets/DumpCurrent
-
+  .PHONY: dumpinfo
   dumpinfo:
 	@echo 'Target: $(TARGETID)'; \
 	 echo 'Target-Board: $(BOARD)'; \
 	 echo 'Target-Kernel: $(KERNEL)'; \
-	 echo 'Target-Name: $(BOARDNAME) [$(KERNEL)]'; \
+	 echo 'Target-Name: $(BOARDNAME)$(if $(SUBTARGET),, [$(KERNEL)])'; \
 	 echo 'Target-Path: $(subst $(TOPDIR)/,,$(PWD))'; \
 	 echo 'Target-Arch: $(ARCH)'; \
 	 echo 'Target-Features: $(FEATURES)'; \
@@ -156,6 +142,7 @@ define BuildTargets/DumpCurrent
 	 echo '@@'; \
 	 echo 'Default-Packages: $(DEFAULT_PACKAGES)'; \
 	 $(DUMPINFO)
+	$(if $(SUBTARGET),,@$(foreach SUBTARGET,$(SUBTARGETS),$(SUBMAKE) -s DUMP=1 SUBTARGET=$(SUBTARGET); ))
 endef
 
 include $(INCLUDE_DIR)/kernel.mk

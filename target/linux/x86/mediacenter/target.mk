@@ -1,6 +1,5 @@
 ARCH:=i686
-SUBTARGET:=Mediacenter
-BOARDNAME:=X86 (Mediacenter)
+BOARDNAME:=Mediacenter
 
 define Target/Description
 	Build firmware images for i686 based Mediacenters
