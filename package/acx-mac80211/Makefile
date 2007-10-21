@@ -22,9 +22,6 @@ PKG_FW_URL:=http://teknoraver.campuslife.it/software/acx-mac80211/
 PKG_FW_MD5SUM:=7026826460376f6b174f9225bd7781b9
 
 include $(INCLUDE_DIR)/package.mk
-ifeq ($(DUMP),)
-  include $(LINUX_DIR)/.config
-endif
 
 # XXX: remove @!TARGET_* later when we have PCI support properly detected on all targets
 define KernelPackage/acx-mac80211
