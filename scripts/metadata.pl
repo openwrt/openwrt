@@ -72,6 +72,7 @@ sub parse_target_metadata() {
 	}
 	close FILE;
 	foreach my $target (@target) {
+		next if @{$target->{subtargets}} > 0;
 		@{$target->{profiles}} > 0 or $target->{profiles} = [
 			{
 				id => 'Default',
