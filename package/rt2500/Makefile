@@ -14,7 +14,7 @@ PKG_VERSION:=cvs-2007061115
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=@openwrt/
+PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
 PKG_MD5SUM:=67a158b24ec46e37edc4545f51338bb9
 
 include $(INCLUDE_DIR)/package.mk

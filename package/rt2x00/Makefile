@@ -21,9 +21,6 @@ PKG_FW7X_URL:=http://www.ralinktech.com.tw/data/
 PKG_FW7X_MD5SUM:=1e7a5dc574e0268574fcda3fd5cf52f7
 
 include $(INCLUDE_DIR)/package.mk
-ifeq ($(DUMP),)
-  include $(LINUX_DIR)/.config
-endif
 
 # XXX: remove @!TARGET_* later when we have PCI & USB support properly detected on all targets
 define KernelPackage/rt2x00/Default
