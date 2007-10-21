@@ -13,9 +13,6 @@ PKG_NAME:=mac80211
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
-ifeq ($(DUMP),)
-  include $(LINUX_DIR)/.config
-endif
 
 define KernelPackage/mac80211
   SUBMENU:=Wireless Drivers
