@@ -49,6 +49,12 @@
 #define MPMC_REG_SC0	0x0200  /* for F_CS1_N */
 #define MPMC_REG_SC1	0x0220  /* for F_CS0_N */
 #define MPMC_REG_SC2    0x0240
+#define MPMC_REG_WEN2	0x0244
+#define MPMC_REG_OEN2	0x0248
+#define MPMC_REG_RD2	0x024C
+#define MPMC_REG_PG2	0x0250
+#define MPMC_REG_WR2	0x0254
+#define MPMC_REG_TN2	0x0258
 #define MPMC_REG_SC3    0x0260
 
 /* Control register bits */
