@@ -42,6 +42,7 @@
 #include <adm5120_nand.h>
 #include <adm5120_board.h>
 #include <adm5120_platform.h>
+#include <adm5120_cf.h>
 
 #define RB1XX_NAND_CHIP_DELAY	25
 
@@ -178,6 +179,35 @@ static void rb150_nand_cmd_ctrl(struct mtd_info *mtd, int cmd,
 }
 
 /*--------------------------------------------------------------------------*/
+static struct resource cf_slot0_res[] = {
+        {
+                .name = "cf_membase",
+                .flags = IORESOURCE_MEM
+        }, {
+                .name = "cf_irq",
+                .start = INTC_IRQ_GPIO4, /* 5 */
+                .end = INTC_IRQ_GPIO4,
+                .flags = IORESOURCE_IRQ
+        }
+};
+
+static struct cf_device cf_slot0_data = {
+        .gpio_pin = 4
+};
+
+static struct platform_device cf_slot0 = {
+        .id = 0,
+        .name = "rb153-cf",
+        .dev.platform_data = &cf_slot0_data,
+        .resource = cf_slot0_res,
+        .num_resources = ARRAY_SIZE(cf_slot0_res),
+};
+
+static struct platform_device *rb153_devices[] __initdata = {
+        &adm5120_flash0_device,
+        &adm5120_nand_device,
+	&cf_slot0,
+};
 
 static void __init rb1xx_mac_setup(void)
 {
@@ -299,8 +329,8 @@ static struct adm5120_board rb153_board __initdata = {
 	.board_setup	= rb1xx_setup,
 	.eth_num_ports	= 5,
 	.eth_vlans	= rb15x_vlans,
-	.num_devices	= ARRAY_SIZE(rb1xx_devices),
-	.devices	= rb1xx_devices,
+	.num_devices	= ARRAY_SIZE(rb153_devices),
+	.devices	= rb153_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(rb1xx_pci_irqs),
 	.pci_irq_map	= rb1xx_pci_irqs,
 };
