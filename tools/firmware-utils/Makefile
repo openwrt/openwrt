@@ -11,7 +11,7 @@ PKG_NAME := firmware-utils
 include $(INCLUDE_DIR)/host-build.mk
 
 define cc
-	$(CC) $(HOST_CFLAGS) -include endian.h -o $(PKG_BUILD_DIR)/bin/$(1) src/$(1).c
+	$(CC) $(HOST_CFLAGS) -include endian.h -o $(PKG_BUILD_DIR)/bin/$(1) src/$(1).c $(2)
 endef
 
 define Build/Compile
@@ -27,6 +27,7 @@ define Build/Compile
 	$(call cc,mkmylofw)
 	$(call cc,mkcsysimg)
 	$(call cc,mkzynfw)
+	$(call cc,lzma2eva,-lz)
 endef
 
 define Build/Install
