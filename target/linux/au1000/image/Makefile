@@ -58,6 +58,8 @@ define Image/Build
 	grep -v S0 $(KDIR)/kernel.flash.srec >> $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
 	$(CP) $(KDIR)/kernel.flash.bin $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.bin
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).fs
+	$(CP) $(KDIR)/kernel.flash.srec $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux-flash.srec
+	$(CP) $(KDIR)/kernel.ram.srec $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux-ram.srec
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	$(call Image/Build/Initramfs)
 endif
