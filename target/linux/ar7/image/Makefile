@@ -64,6 +64,12 @@ endef
 #	rm -f "$(KDIR)/dgfw.tmp"
 #endef
 
+define Image/Build/EVA
+	$(STAGING_DIR_HOST)/bin/lzma2eva $(KERNEL_ENTRY) $(KERNEL_ENTRY) $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin
+	cat $(KDIR)/root.$(1) >> $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin
+	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin)
+endef
+
 define Image/Build
 	dd if=$(KDIR)/loader.bin $(call align/$(1)) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin
 	cat $(KDIR)/root.$(1) >> $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin
@@ -78,6 +84,7 @@ define Image/Build
 	$(call Image/Build/CyberTAN,$(1),WA7B,WA7B -b,$(1))
 #	$(call Image/Build/sErCoMm,$(1),dg834,$(1))
 #	$(call Image/Build/sErCoMm,$(1),jdr454wb,$(1))
+	$(call Image/Build/EVA,$(1),EVA)
 endef
 
 $(eval $(call BuildImage))
