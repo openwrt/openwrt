@@ -1,0 +1,34 @@
+#
+# Copyright (C) 2007 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+include $(TOPDIR)/rules.mk
+
+ARCH:=powerpc
+BOARD:=ps3
+BOARDNAME:=Sony PlayStation 3
+LINUX_VERSION:=2.6.23
+KERNEL_CC:=
+
+include $(INCLUDE_DIR)/target.mk
+
+define Target/Description
+	Build bootloader images for the Playstation 3
+endef
+
+# no patches required
+define Kernel/Prepare/ps3
+	bzcat $(DL_DIR)/$(LINUX_SOURCE) | $(TAR) -C $(KERNEL_BUILD_DIR) $(TAR_OPTIONS)
+endef
+
+define Kernel/Prepare
+	$(call Kernel/Prepare/ps3)
+endef
+
+# include the profiles
+#-include profiles/*.mk
+
+KERNELNAME:="zImage"
+$(eval $(call BuildTarget))

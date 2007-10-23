@@ -1,0 +1,29 @@
+OpenWRT on PS3
+
+To install the built image, you'll need to copy bin/otheros-ps3-2.6.bld
+to a USB device, MMC card or CD image. The image will need to be placed
+on your media, at the path:
+
+  /ps3/otheros/otheros.bld
+
+Then insert the media into the ps3, and navigate to 'Install Other OS'
+in the PS3's menu.
+
+Depending on your monitor, you may need to alter the kernel command
+line options. The default is to autodetect, which should work on most
+monitors. However, if you get a blank screen on boot, try changing
+(through make kernel_menuconfig) "video=ps3fb:mode:0" to
+"video=ps3fb:mode:1" for 480i, or "video=ps3fb:mode:3" for 720p. The
+possible modes are:
+
+Video mode ID:
+ 0:auto mode
+ YUV 60Hz  1:480i  2:480p  3:720p  4:1080i  5:1080p
+ YUV 50Hz  6:576i  7:576p  8:720p  9:1080i 10:1080p
+ RGB 60Hz 33:480i 34:480p 35:720p 36:1080i 37:1080p
+ RGB 50Hz 38:576i 39:576p 40:720p 41:1080i 42:1080p
+ VESA     11:WXGA 12:SXGA 13:WUXGA
+
+ full screen mode: <video mode ID> + 128
+ dither ON mode  : <video mode ID> + 2048
+
