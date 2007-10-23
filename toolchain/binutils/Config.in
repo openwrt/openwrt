@@ -14,6 +14,13 @@ choice
 
 endchoice
 
+config EXTRA_BINUTILS_CONFIG_OPTIONS
+	string
+	prompt "Additional binutils options" if TOOLCHAINOPTS
+	default ""
+	help
+	    Any additional binutils options you may want to include....
+
 config BINUTILS_VERSION
 	string
 	prompt "Binutils Version" if (TOOLCHAINOPTS && NULL)
