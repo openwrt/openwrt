@@ -65,7 +65,7 @@ endef
 #endef
 
 define Image/Build/EVA
-	$(STAGING_DIR_HOST)/bin/lzma2eva $(KERNEL_ENTRY) $(KERNEL_ENTRY) $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin
+	$(STAGING_DIR_HOST)/bin/lzma2eva $(KERNEL_ENTRY) $(KERNEL_ENTRY) $(KDIR)/vmlinux.lzma $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin
 	cat $(KDIR)/root.$(1) >> $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin
 	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin)
 endef
