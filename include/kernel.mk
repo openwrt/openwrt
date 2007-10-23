@@ -23,11 +23,11 @@ else
   endif
 
   ifneq (,$(findstring uml,$(BOARD)))
-    KERNEL_CC:=$(HOSTCC)
-    KERNEL_CROSS:=
+    KERNEL_CC?=$(HOSTCC)
+    KERNEL_CROSS?=
   else
-    KERNEL_CC:=$(TARGET_CC)
-    KERNEL_CROSS:=$(TARGET_CROSS)
+    KERNEL_CC?=$(TARGET_CC)
+    KERNEL_CROSS?=$(TARGET_CROSS)
   endif
 
   PATCH_DIR ?= ./patches$(shell [ -d "./patches-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
