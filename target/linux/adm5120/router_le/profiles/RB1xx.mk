@@ -7,7 +7,7 @@
 
 define Profile/RouterBoard
 	NAME:=Mikrotik RouterBoard 1xx family
-	PACKAGES:=kmod-madwifi
+	PACKAGES:=kmod-madwifi kmod-rb153-cf
 endef
 
 define Profile/RouterBoard/Description

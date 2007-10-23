@@ -182,3 +182,18 @@ define KernelPackage/nbd/description
 endef
 
 $(eval $(call KernelPackage,nbd))
+
+
+define KernelPackage/rb153-cf
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=RouterBoard 153 CF Slot
+  KCONFIG:=CONFIG_BLK_DEV_CF_MIPS
+  FILES:=$(LINUX_DIR)/drivers/block/rb1xx/rb153-cf.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,rb153-cf)
+endef
+
+define KernelPackage/rb153-cf/description
+  Kernel module for the RouterBoard 153 CF slot
+endef
+
+$(eval $(call KernelPackage,rb153-cf))

@@ -1,2 +1,3 @@
 ## Makefile for the RB1xx CF port
-obj-y		+= bdev.o ata.o
+obj-$(CONFIG_BLK_DEV_CF_MIPS) += rb153-cf.o
+rb153-cf-objs := bdev.o ata.o
