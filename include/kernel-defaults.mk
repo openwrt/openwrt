@@ -40,6 +40,8 @@ KERNEL_MAKEOPTS := -C $(LINUX_DIR) \
 	ARCH="$(LINUX_KARCH)" \
 	CONFIG_SHELL="$(BASH)"
 
+INITRAMFS_EXTRA_FILES ?= $(GENERIC_PLATFORM_DIR)/image/initramfs-base-files.txt
+
 ifneq (,$(KERNEL_CC))
   KERNEL_MAKEOPTS += CC="$(KERNEL_CC)"
 endif
@@ -78,7 +80,7 @@ ifeq ($(KERNEL),2.6)
     define Kernel/SetInitramfs
 		mv $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
 		grep -v INITRAMFS $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
-		echo 'CONFIG_INITRAMFS_SOURCE="$(TARGET_DIR)"' >> $(LINUX_DIR)/.config
+		echo 'CONFIG_INITRAMFS_SOURCE="$(strip $(TARGET_DIR) $(INITRAMFS_EXTRA_FILES))"' >> $(LINUX_DIR)/.config
 		echo 'CONFIG_INITRAMFS_ROOT_UID=$(shell id -u)' >> $(LINUX_DIR)/.config
 		echo 'CONFIG_INITRAMFS_ROOT_GID=$(shell id -g)' >> $(LINUX_DIR)/.config
     endef
