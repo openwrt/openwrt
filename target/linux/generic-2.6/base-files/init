@@ -14,6 +14,20 @@ elif [ -x /sbin/hotplug2 ]; then
 	mkdir /dev/pts
 	mkdir /dev/shm
 	/sbin/hotplug2 --no-persistent --coldplug --max_children 1
+
+elif [ -x /sbin/udevd ]; then
+	mount -n -t tmpfs -o mode=0755 udev /dev
+	mkdir /dev/pts
+	mkdir /dev/shm
+
+	if [ -e /proc/sys/kernel/hotplug ]; then
+		echo "" > /proc/sys/kernel/hotplug
+	fi
+
+	/sbin/udevd --daemon
+	/sbin/udevtrigger
+	/sbin/udevsettle
+
 fi
 
 mount none /dev/pts -t devpts

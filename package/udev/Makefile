@@ -54,6 +54,7 @@ define Package/udev/install
 	install -d -m0775 $(1)/sbin/
 	$(CP) $(PKG_INSTALL_DIR)/sbin/udevcontrol $(1)/sbin/
 	$(CP) $(PKG_INSTALL_DIR)/sbin/udevd $(1)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/udevsettle $(1)/sbin/
 	install -d -m0775 $(1)/usr/bin/
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/udevinfo $(1)/usr/bin/
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/udevtest $(1)/usr/bin/
