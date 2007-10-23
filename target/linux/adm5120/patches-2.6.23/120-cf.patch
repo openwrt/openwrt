@@ -7,7 +7,7 @@ Index: linux-2.6.23/drivers/block/Kconfig
  	  module will be called z2ram.
  
 +config BLK_DEV_CF_MIPS
-+	bool "CF slot of RB153 board"
++	tristate "CF slot of RB153 board"
 +	depends on MIPS_ADM5120
 +	default y
 +	help
@@ -29,3 +29,15 @@ Index: linux-2.6.23/drivers/block/Makefile
  obj-$(CONFIG_AMIGA_FLOPPY)	+= amiflop.o
  obj-$(CONFIG_PS3_DISK)		+= ps3disk.o
  obj-$(CONFIG_ATARI_FLOPPY)	+= ataflop.o
+diff --git a/fs/partitions/check.c b/fs/partitions/check.c
+index 722e12e..60af038 100644
+--- a/fs/partitions/check.c
++++ b/fs/partitions/check.c
+@@ -526,6 +526,7 @@ exit:
+                kobject_uevent(&p->kobj, KOBJ_ADD);
+        }
+ }
++EXPORT_SYMBOL(register_disk);
+
+ int rescan_partitions(struct gendisk *disk, struct block_device *bdev)
+ {

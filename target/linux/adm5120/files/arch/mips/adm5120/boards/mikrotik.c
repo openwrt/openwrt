@@ -182,11 +182,13 @@ static void rb150_nand_cmd_ctrl(struct mtd_info *mtd, int cmd,
 static struct resource cf_slot0_res[] = {
         {
                 .name = "cf_membase",
+		.start = ADM5120_EXTIO0_BASE, 
+		.end = ADM5120_EXTIO0_BASE + ADM5120_MPMC_SIZE-1 ,
                 .flags = IORESOURCE_MEM
         }, {
                 .name = "cf_irq",
-                .start = INTC_IRQ_GPIO4, /* 5 */
-                .end = INTC_IRQ_GPIO4,
+                .start = ADM5120_IRQ_GPIO4, /* 5 */
+                .end = ADM5120_IRQ_GPIO4,
                 .flags = IORESOURCE_IRQ
         }
 };
