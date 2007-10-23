@@ -33,6 +33,7 @@ define Build/Configure
 		--target=$(REAL_GNU_TARGET_NAME) \
 		--disable-werror \
 		--disable-nls \
+		$(call qstrip,$(CONFIG_EXTRA_BINUTILS_CONFIG_OPTIONS)) \
 	);
 endef
 
