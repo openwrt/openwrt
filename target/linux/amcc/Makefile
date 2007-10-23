@@ -12,6 +12,7 @@ BOARDNAME:=AMCC Taishan
 FEATURES:=jffs2
 
 LINUX_VERSION:=2.6.21.5
+LINUX_KARCH:=ppc
 
 include $(INCLUDE_DIR)/target.mk
 

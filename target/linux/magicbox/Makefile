@@ -12,6 +12,7 @@ BOARDNAME:=Magicbox
 FEATURES:=squashfs jffs2
 
 LINUX_VERSION:=2.6.22.4
+LINUX_KARCH:=ppc
 
 include $(INCLUDE_DIR)/target.mk
 
