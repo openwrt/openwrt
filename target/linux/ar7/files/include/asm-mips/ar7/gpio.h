@@ -31,20 +31,14 @@ static inline int gpio_get_value(unsigned gpio)
 	void __iomem *gpio_in =
 		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_INPUT);
 
-	if (gpio >= AR7_GPIO_MAX)
-		return -EINVAL;
-
-	return ((readl(gpio_in) & (1 << gpio)) != 0);
+	return readl(gpio_in) & (1 << gpio);
 }
 
 static inline void gpio_set_value(unsigned gpio, int value)
 {
 	void __iomem *gpio_out =
 		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_OUTPUT);
-	volatile unsigned tmp;
-
-	if (gpio >= AR7_GPIO_MAX)
-		return;
+	unsigned tmp;
 
 	tmp = readl(gpio_out) & ~(1 << gpio);
 	if (value)
@@ -95,9 +89,6 @@ static inline int ar7_gpio_enable(unsigned gpio)
 	void __iomem *gpio_en =
 		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_ENABLE);
 
-	if (gpio >= AR7_GPIO_MAX)
-		return -EINVAL;
-
 	writel(readl(gpio_en) | (1 << gpio), gpio_en);
 
 	return 0;
@@ -107,9 +98,6 @@ static inline int ar7_gpio_disable(unsigned gpio)
 {
 	void __iomem *gpio_en =
 		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_ENABLE);
-
-	if (gpio >= AR7_GPIO_MAX)
-		return -EINVAL;
 
 	writel(readl(gpio_en) & ~(1 << gpio), gpio_en);
 
