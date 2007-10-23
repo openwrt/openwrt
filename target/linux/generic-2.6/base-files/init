@@ -3,11 +3,12 @@
 
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 mount none /proc -t proc
+mount none /sys -t sysfs
 
 if grep devfs /proc/filesystems > /dev/null; then
 	mount none /dev -t devfs
-else
-	mount -t sysfs none /sys
+
+elif [ -x /sbin/hotplug2 ]; then
 	mount -t tmpfs tmpfs /dev -o size=512K
 	mknod /dev/console c 5 1
 	mkdir /dev/pts
