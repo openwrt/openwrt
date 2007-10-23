@@ -40,6 +40,10 @@ KERNEL_MAKEOPTS := -C $(LINUX_DIR) \
 	ARCH="$(LINUX_KARCH)" \
 	CONFIG_SHELL="$(BASH)"
 
+ifneq (,$(KERNEL_CC))
+  KERNEL_MAKEOPTS += CC="$(KERNEL_CC)"
+endif
+
 # defined in quilt.mk
 Kernel/Patch:=$(Kernel/Patch/Default)
 define Kernel/Prepare/Default
@@ -50,11 +54,11 @@ endef
 
 define Kernel/Configure/2.4
 	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile
-	$(MAKE) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" oldconfig include/linux/compile.h include/linux/version.h
+	$(MAKE) $(KERNEL_MAKEOPTS) oldconfig include/linux/compile.h include/linux/version.h
 	$(MAKE) $(KERNEL_MAKEOPTS) dep
 endef
 define Kernel/Configure/2.6
-	-$(MAKE) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" oldconfig prepare scripts
+	-$(MAKE) $(KERNEL_MAKEOPTS) oldconfig prepare scripts
 endef
 define Kernel/Configure/Default
 	$(LINUX_CONFCMD) > $(LINUX_DIR)/.config.target
@@ -66,7 +70,7 @@ endef
 
 define Kernel/CompileModules/Default
 	rm -f $(LINUX_DIR)/vmlinux $(LINUX_DIR)/System.map
-	$(MAKE) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" modules
+	$(MAKE) $(KERNEL_MAKEOPTS) modules
 endef
 
 ifeq ($(KERNEL),2.6)
@@ -89,7 +93,7 @@ ifeq ($(KERNEL),2.6)
 endif
 define Kernel/CompileImage/Default
 	$(call Kernel/SetInitramfs)
-	$(MAKE) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" $(KERNELNAME)
+	$(MAKE) $(KERNEL_MAKEOPTS) $(KERNELNAME)
 	$(KERNEL_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)
 	$(KERNEL_CROSS)objcopy -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux.elf
 endef
