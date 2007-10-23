@@ -244,7 +244,7 @@ static int adm5120_flash_initinfo(struct adm5120_flash_info *info,
 	struct map_info *map = &info->amap.map;
 	struct adm5120_flash_platform_data *pdata = dev->dev.platform_data;
 	struct flash_desc *fdesc;
-	u32 t;
+	u32 t = 0;
 
 	map->name = dev->dev.bus_id;
 
@@ -255,12 +255,18 @@ static int adm5120_flash_initinfo(struct adm5120_flash_info *info,
 
 	fdesc = &flash_descs[dev->id];
 
-	/* get memory window size */
-	t = SW_READ_REG(MEMCTRL) >> fdesc->srs_shift;
-	t &= MEMCTRL_SRS_MASK;
-	info->amap.window_size = flash_sizes[t];
+	if (pdata)
+		info->amap.window_size = pdata->window_size;
+
 	if (info->amap.window_size == 0) {
-		MAP_ERR(map, "invalid flash size detected\n");
+		/* get memory window size */
+		t = SW_READ_REG(MEMCTRL) >> fdesc->srs_shift;
+		t &= MEMCTRL_SRS_MASK;
+		info->amap.window_size = flash_sizes[t];
+	}
+
+	if (info->amap.window_size == 0) {
+		MAP_ERR(map, "unable to determine window size\n");
 		goto err_out;
 	}
 

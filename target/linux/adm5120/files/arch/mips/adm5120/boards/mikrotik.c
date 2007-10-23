@@ -140,6 +140,7 @@ static unsigned char rb133c_vlans[6] __initdata = {
 static unsigned char rb15x_vlans[6] __initdata = {
 	/* FIXME: untested */
 	0x41, 0x42, 0x44, 0x48, 0x50, 0x00
+};
 
 static unsigned char rb192_vlans[6] __initdata = {
 	/* FIXME: untested */
@@ -260,6 +261,8 @@ static void __init rb150_setup(void)
 	adm5120_nand_device.resource = rb150_nand_resource;
 	adm5120_nand_data.ctrl.cmd_ctrl = rb150_nand_cmd_ctrl;
 	adm5120_nand_data.ctrl.dev_ready = rb150_nand_ready;
+
+	adm5120_flash0_data.window_size = 512*1024;
 
 	rb1xx_flash_setup();
 	rb1xx_mac_setup();

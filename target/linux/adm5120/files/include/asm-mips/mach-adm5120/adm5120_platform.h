@@ -39,6 +39,7 @@
 struct adm5120_flash_platform_data {
 	void			(*set_vpp)(struct map_info *, int);
 	void			(*switch_bank)(unsigned);
+	u32			window_size;
 #ifdef CONFIG_MTD_PARTITIONS
 	unsigned int		nr_parts;
 	struct mtd_partition	*parts;
