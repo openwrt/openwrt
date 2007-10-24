@@ -1,8 +1,8 @@
 Index: busybox-1.7.2/modutils/insmod.c
 ===================================================================
---- busybox-1.7.2.orig/modutils/insmod.c	2007-10-08 22:22:17.132454529 +0200
-+++ busybox-1.7.2/modutils/insmod.c	2007-10-08 22:29:04.267655851 +0200
-@@ -61,19 +61,110 @@
+--- busybox-1.7.2.orig/modutils/insmod.c	2007-10-24 18:20:56.857757117 +0200
++++ busybox-1.7.2/modutils/insmod.c	2007-10-24 18:38:27.701641299 +0200
+@@ -61,19 +61,114 @@
  #include "libbb.h"
  #include <libgen.h>
  #include <sys/utsname.h>
@@ -81,8 +81,12 @@ Index: busybox-1.7.2/modutils/insmod.c
 +		filename = xasprintf("%s%s", filename, suffix);
 +	} else {
 +		filename = strdup(filename);
-+		if ((stat(filename, &st) == 0) && S_ISREG(st.st_mode))
++		if ((stat(filename, &st) == 0) && S_ISREG(st.st_mode)) {
++			g_filename = filename;
 +			return 0;
++		}
++		free(filename);
++		return ENOENT;
 +	}
 +
 +	/* next: scan /lib/modules/<release> */
@@ -117,7 +121,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  
  
  #if ENABLE_FEATURE_2_4_MODULES
-@@ -677,7 +768,6 @@
+@@ -677,7 +772,6 @@
  #endif
  
  
@@ -125,7 +129,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  enum { STRVERSIONLEN = 64 };
  
  /*======================================================================*/
-@@ -790,37 +880,6 @@
+@@ -790,37 +884,6 @@
  static int n_ext_modules_used;
  extern int delete_module(const char *);
  
@@ -163,7 +167,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  static struct obj_file *arch_new_file(void)
  {
  	struct arch_file *f;
-@@ -3952,145 +4011,57 @@
+@@ -3952,145 +4015,57 @@
  void print_load_map(struct obj_file *f);
  #endif
  
@@ -332,7 +336,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  
  	f = obj_load(fp, LOADBITS);
  	if (f == NULL)
-@@ -4120,7 +4091,7 @@
+@@ -4120,7 +4095,7 @@
  				"\t%s was compiled for kernel version %s\n"
  				"\twhile this kernel is version %s",
  				flag_force_load ? "warning: " : "",
@@ -341,7 +345,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  			if (!flag_force_load)
  				goto out;
  		}
-@@ -4173,7 +4144,7 @@
+@@ -4173,7 +4148,7 @@
  	hide_special_symbols(f);
  
  #if ENABLE_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
@@ -350,7 +354,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  #endif /* FEATURE_INSMOD_KSYMOOPS_SYMBOLS */
  
  	new_create_module_ksymtab(f);
-@@ -4220,30 +4191,22 @@
+@@ -4220,30 +4195,22 @@
  	if (flag_print_load_map)
  		print_load_map(f);
  
@@ -387,7 +391,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  /* We use error numbers in a loose translation... */
  static const char *moderror(int err)
  {
-@@ -4261,19 +4224,32 @@
+@@ -4261,19 +4228,32 @@
  	}
  }
  
@@ -425,7 +429,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  	/* Rest is options */
  	options = xzalloc(1);
  	optlen = 0;
-@@ -4283,36 +4259,47 @@
+@@ -4283,36 +4263,47 @@
  		optlen += sprintf(options + optlen, (strchr(*argv,' ') ? "\"%s\" " : "%s "), *argv);
  	}
  
