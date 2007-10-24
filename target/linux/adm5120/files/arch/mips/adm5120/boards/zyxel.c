@@ -102,9 +102,7 @@ unsigned char p33x_vlans[6] __initdata = {
 	0x50, 0x48, 0x44, 0x42, 0x41, 0x00
 };
 
-static struct adm5120_board p334wt_board __initdata = {
-	.mach_type	= MACH_ADM5120_P334WT,
-	.name		= "ZyXEL Prestige 334WT",
+ADM5120_BOARD_START(P334WT, "ZyXEL Prestige 334WT")
 	.board_setup	= p33x_setup,
 	.eth_num_ports	= 5,
 	.eth_vlans	= p33x_vlans,
@@ -112,11 +110,9 @@ static struct adm5120_board p334wt_board __initdata = {
 	.devices	= p334_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(p33x_pci_irqs),
 	.pci_irq_map	= p33x_pci_irqs,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board p335_board __initdata = {
-	.mach_type	= MACH_ADM5120_P335,
-	.name		= "ZyXEL Prestige 335/335WT",
+ADM5120_BOARD_START(P335, "ZyXEL Prestige 335/335WT")
 	.board_setup	= p33x_setup,
 	.eth_num_ports	= 5,
 	.eth_vlans	= p33x_vlans,
@@ -124,13 +120,4 @@ static struct adm5120_board p335_board __initdata = {
 	.devices	= p335_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(p33x_pci_irqs),
 	.pci_irq_map	= p33x_pci_irqs,
-};
-
-static int __init register_boards(void)
-{
-	adm5120_board_register(&p334wt_board);
-	adm5120_board_register(&p335_board);
-	return 0;
-}
-
-pure_initcall(register_boards);
+ADM5120_BOARD_END
