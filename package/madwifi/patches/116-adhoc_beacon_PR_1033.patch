@@ -1,8 +1,8 @@
-Index: madwifi-ng-r2568-20070710/ath/if_ath.c
+Index: madwifi-ng-r2756-20071018/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/ath/if_ath.c	2007-10-20 20:52:09.000000000 +0200
-+++ madwifi-ng-r2568-20070710/ath/if_ath.c	2007-10-20 20:53:06.000000000 +0200
-@@ -4426,16 +4426,31 @@
+--- madwifi-ng-r2756-20071018.orig/ath/if_ath.c	2007-10-24 06:20:18.429739529 +0200
++++ madwifi-ng-r2756-20071018/ath/if_ath.c	2007-10-24 06:20:18.881765287 +0200
+@@ -4559,16 +4559,31 @@
  	struct ieee80211com *ic = &sc->sc_ic;
  	struct ath_hal *ah = sc->sc_ah;
  	struct ieee80211_node *ni;
@@ -38,7 +38,7 @@ Index: madwifi-ng-r2568-20070710/ath/if_ath.c
  	/* XXX conditionalize multi-bss support? */
  	if (ic->ic_opmode == IEEE80211_M_HOSTAP) {
  		/*
-@@ -4449,20 +4464,61 @@
+@@ -4582,20 +4597,61 @@
  		if (sc->sc_stagbeacons)
  			intval /= ATH_BCBUF;	/* for staggered beacons */
  		if ((sc->sc_nostabeacons) &&
@@ -109,7 +109,7 @@ Index: madwifi-ng-r2568-20070710/ath/if_ath.c
  		int dtimperiod, dtimcount;
  		int cfpperiod, cfpcount;
  
-@@ -4478,13 +4534,13 @@
+@@ -4611,13 +4667,13 @@
  			dtimcount = 0;		/* XXX? */
  		cfpperiod = 1;			/* NB: no PCF support yet */
  		cfpcount = 0;
@@ -126,7 +126,7 @@ Index: madwifi-ng-r2568-20070710/ath/if_ath.c
  		do {
  			nexttbtt += intval;
  			if (--dtimcount < 0) {
-@@ -4492,7 +4548,7 @@
+@@ -4625,7 +4681,7 @@
  				if (--cfpcount < 0)
  					cfpcount = cfpperiod - 1;
  			}
@@ -135,7 +135,7 @@ Index: madwifi-ng-r2568-20070710/ath/if_ath.c
  #undef FUDGE
  		memset(&bs, 0, sizeof(bs));
  		bs.bs_intval = intval;
-@@ -4544,7 +4600,7 @@
+@@ -4677,7 +4733,7 @@
  		DPRINTF(sc, ATH_DEBUG_BEACON,
  			"%s: tsf %llu tsf:tu %u intval %u nexttbtt %u dtim %u nextdtim %u bmiss %u sleep %u cfp:period %u maxdur %u next %u timoffset %u\n",
  			__func__,
@@ -144,7 +144,7 @@ Index: madwifi-ng-r2568-20070710/ath/if_ath.c
  			bs.bs_intval,
  			bs.bs_nexttbtt,
  			bs.bs_dtimperiod,
-@@ -4566,7 +4622,7 @@
+@@ -4699,7 +4755,7 @@
  		ath_hal_intrset(ah, sc->sc_imask);
  	} else {
  		ath_hal_intrset(ah, 0);
@@ -153,7 +153,7 @@ Index: madwifi-ng-r2568-20070710/ath/if_ath.c
  			intval |= HAL_BEACON_RESET_TSF;
  		if (ic->ic_opmode == IEEE80211_M_IBSS) {
  			/*
-@@ -4603,8 +4659,40 @@
+@@ -4736,8 +4792,40 @@
  		if (ic->ic_opmode == IEEE80211_M_IBSS && sc->sc_hasveol)
  			ath_beacon_start_adhoc(sc, vap);
  	}

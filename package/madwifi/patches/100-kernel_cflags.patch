@@ -1,7 +1,7 @@
-Index: madwifi-ng-r2568-20070710/hal/public/mips-be-elf.inc
+Index: madwifi-ng-r2756-20071018/hal/public/mips-be-elf.inc
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/hal/public/mips-be-elf.inc	2007-10-20 20:51:37.000000000 +0200
-+++ madwifi-ng-r2568-20070710/hal/public/mips-be-elf.inc	2007-10-20 20:52:09.000000000 +0200
+--- madwifi-ng-r2756-20071018.orig/hal/public/mips-be-elf.inc	2007-10-24 06:20:16.897652218 +0200
++++ madwifi-ng-r2756-20071018/hal/public/mips-be-elf.inc	2007-10-24 06:20:16.989657465 +0200
 @@ -71,5 +71,5 @@
  
  LDOPTS=	-EB
@@ -9,10 +9,10 @@ Index: madwifi-ng-r2568-20070710/hal/public/mips-be-elf.inc
 -COPTS+=	-G 0 -EB -mno-abicalls -fno-pic -mips2 -Wa,--trap \
 +COPTS+=	-G 0 -mno-abicalls -fno-pic -mips32 -Wa,--trap \
  	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
-Index: madwifi-ng-r2568-20070710/hal/public/mips-le-elf.inc
+Index: madwifi-ng-r2756-20071018/hal/public/mips-le-elf.inc
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/hal/public/mips-le-elf.inc	2007-10-20 20:51:37.000000000 +0200
-+++ madwifi-ng-r2568-20070710/hal/public/mips-le-elf.inc	2007-10-20 20:52:09.000000000 +0200
+--- madwifi-ng-r2756-20071018.orig/hal/public/mips-le-elf.inc	2007-10-24 06:20:16.901652447 +0200
++++ madwifi-ng-r2756-20071018/hal/public/mips-le-elf.inc	2007-10-24 06:20:17.001658146 +0200
 @@ -68,5 +68,5 @@
  
  LDOPTS=	-EL
@@ -20,10 +20,10 @@ Index: madwifi-ng-r2568-20070710/hal/public/mips-le-elf.inc
 -COPTS+=	-G 0 -EL -mno-abicalls -fno-pic -mips2 -Wa,--trap \
 +COPTS+=	-G 0 -mno-abicalls -fno-pic -mips32 -Wa,--trap \
  	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
-Index: madwifi-ng-r2568-20070710/hal/public/xscale-be-elf.inc
+Index: madwifi-ng-r2756-20071018/hal/public/xscale-be-elf.inc
 ===================================================================
---- madwifi-ng-r2568-20070710.orig/hal/public/xscale-be-elf.inc	2007-10-20 20:51:37.000000000 +0200
-+++ madwifi-ng-r2568-20070710/hal/public/xscale-be-elf.inc	2007-10-20 20:52:09.000000000 +0200
+--- madwifi-ng-r2756-20071018.orig/hal/public/xscale-be-elf.inc	2007-10-24 06:20:16.913653133 +0200
++++ madwifi-ng-r2756-20071018/hal/public/xscale-be-elf.inc	2007-10-24 06:20:17.005658375 +0200
 @@ -77,5 +77,5 @@
  
  LDOPTS=	-EB
