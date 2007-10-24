@@ -681,22 +681,6 @@ endef
 $(eval $(call KernelPackage,e1000))
 
 
-define KernelPackage/r8169
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Realtek 8169 gigabit ethernet support
-  DEPENDS:=@TARGET_x86
-  KCONFIG:=CONFIG_R8169
-  FILES:=$(LINUX_DIR)/drivers/net/r8169.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,r8169)
-endef
-
-define KernelPackage/r8169/description
- Kernel modules for Realtek 8169 gigabit ethernet support.
-endef
-
-$(eval $(call KernelPackage,r8169))
-
-
 define KernelPackage/3c59x
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=3Com 3c590/3c900 series (592/595/597) Vortex/Boomerang
