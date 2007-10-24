@@ -1,2 +1,2 @@
 mount -t proc none /proc
-grep 'failsafe=' /proc/cmdline && export FAILSAFE=true
+grep 'failsafe=' /proc/cmdline > /dev/null && export FAILSAFE=true
