@@ -50,17 +50,19 @@ dnsmasq() {
 	append_bool "$cfg" localise_queries "-y"
 	append_bool "$cfg" readethers "-Z"
 	append_bool "$cfg" dbus "-l"
+	append_bool "$cfg" boguspriv "-b"
+	append_bool "$cfg" expandhosts "-E"
 
 	append_parm "$cfg" dnsforwardmax "-0"
 	append_parm "$cfg" port "-p"
 	append_parm "$cfg" ednspacket_max "-P"
 	append_parm "$cfg" dhcpleasemax "-X"
-
-	config_get addnhosts "$cfg" addnhosts
-	config_get interface "$cfg" interface
-	config_get exceptinterface "$cfg" exceptinterface
-	config_get queryport "$cfg" queryport
-	config_get domain "$cfg" domain
+	append_parm "$cfg" "addnhosts" "-H"
+	append_parm "$cfg" "queryport" "-Q"
+	append_parm "$cfg" "domain" "-s"
+	append_parm "$cfg" "local" "-S"
+	append_parm "$cfg" "leasefile" "-l"
+	append_parm "$cfg" "resolvfile" "-r"
 }
 
 dhcp_subscrid_add() {
