@@ -118,49 +118,32 @@ static void __init easy_setup_bga(void)
 	/* TODO: setup mac addresses */
 }
 
-static struct adm5120_board easy5120pata_board __initdata = {
-	.mach_type	= MACH_ADM5120_EASY5120PATA,
-	.name		= "Infineon EASY 5120P-ATA Reference Board",
+/*--------------------------------------------------------------------------*/
+
+ADM5120_BOARD_START(EASY5120PATA, "Infineon EASY 5120P-ATA Reference Board")
 	.board_setup	= easy_setup_pqfp,
 	.eth_num_ports	= 6,
 	.num_devices	= ARRAY_SIZE(easy5120pata_devices),
 	.devices	= easy5120pata_devices,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board easy5120rt_board __initdata = {
-	.mach_type	= MACH_ADM5120_EASY5120RT,
-	.name		= "Infineon EASY 5120-RT Reference Board",
+ADM5120_BOARD_START(EASY5120RT, "Infineon EASY 5120-RT Reference Board")
 	.board_setup	= easy_setup_bga,
 	.eth_num_ports	= 5,
 	.num_devices	= ARRAY_SIZE(easy5120rt_devices),
 	.devices	= easy5120rt_devices,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board easy5120wvoip_board __initdata = {
-	.mach_type	= MACH_ADM5120_EASY5120WVOIP,
-	.name		= "Infineon EASY 5120-WVoIP Reference Board",
+ADM5120_BOARD_START(EASY5120WVOIP, "Infineon EASY 5120-WVoIP Reference Board")
 	.board_setup	= easy_setup_bga,
 	.eth_num_ports	= 6,
 	.num_devices	= ARRAY_SIZE(easy5120wvoip_devices),
 	.devices	= easy5120wvoip_devices,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board easy83000_board __initdata = {
-	.mach_type	= MACH_ADM5120_EASY83000,
-	.name		= "Infineon EASY 83000 Reference Board",
+ADM5120_BOARD_START(EASY83000, "Infineon EASY 83000 Reference Board")
 	.board_setup	= easy_setup_pqfp,
 	.eth_num_ports	= 6,
 	.num_devices	= ARRAY_SIZE(easy83000_devices),
 	.devices	= easy83000_devices,
-};
-
-static int __init register_boards(void)
-{
-	adm5120_board_register(&easy5120pata_board);
-	adm5120_board_register(&easy5120rt_board);
-	adm5120_board_register(&easy5120wvoip_board);
-	adm5120_board_register(&easy83000_board);
-	return 0;
-}
-
-pure_initcall(register_boards);
+ADM5120_BOARD_END

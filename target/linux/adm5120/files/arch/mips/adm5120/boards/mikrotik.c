@@ -117,6 +117,38 @@ static struct resource rb150_nand_resource[] = {
 	},
 };
 
+static struct resource rb153_cf_resources[] = {
+	{
+		.name	= "cf_membase",
+		.start	= ADM5120_EXTIO0_BASE,
+		.end	= ADM5120_EXTIO0_BASE + ADM5120_MPMC_SIZE-1 ,
+		.flags	= IORESOURCE_MEM
+	}, {
+		.name	= "cf_irq",
+		.start	= ADM5120_IRQ_GPIO4,
+		.end	= ADM5120_IRQ_GPIO4,
+		.flags	= IORESOURCE_IRQ
+	}
+};
+
+static struct cf_device rb153_cf_data = {
+	.gpio_pin = ADM5120_GPIO_PIN4
+};
+
+static struct platform_device rb153_cf_device = {
+	.name		= "rb153-cf",
+	.id		= -1,
+	.resource	= rb153_cf_resources,
+	.num_resources	= ARRAY_SIZE(rb153_cf_resources),
+	.dev.platform_data = &rb153_cf_data,
+};
+
+static struct platform_device *rb153_devices[] __initdata = {
+	&adm5120_flash0_device,
+	&adm5120_nand_device,
+	&rb153_cf_device,
+};
+
 #if 0
 /*
  * RB1xx boards have bad network performance with the default VLAN matrixes.
@@ -180,37 +212,6 @@ static void rb150_nand_cmd_ctrl(struct mtd_info *mtd, int cmd,
 }
 
 /*--------------------------------------------------------------------------*/
-static struct resource cf_slot0_res[] = {
-        {
-                .name = "cf_membase",
-		.start = ADM5120_EXTIO0_BASE, 
-		.end = ADM5120_EXTIO0_BASE + ADM5120_MPMC_SIZE-1 ,
-                .flags = IORESOURCE_MEM
-        }, {
-                .name = "cf_irq",
-                .start = ADM5120_IRQ_GPIO4, /* 5 */
-                .end = ADM5120_IRQ_GPIO4,
-                .flags = IORESOURCE_IRQ
-        }
-};
-
-static struct cf_device cf_slot0_data = {
-        .gpio_pin = 4
-};
-
-static struct platform_device cf_slot0 = {
-        .id = 0,
-        .name = "rb153-cf",
-        .dev.platform_data = &cf_slot0_data,
-        .resource = cf_slot0_res,
-        .num_resources = ARRAY_SIZE(cf_slot0_res),
-};
-
-static struct platform_device *rb153_devices[] __initdata = {
-        &adm5120_flash0_device,
-        &adm5120_nand_device,
-	&cf_slot0,
-};
 
 static void __init rb1xx_mac_setup(void)
 {
@@ -270,9 +271,7 @@ static void __init rb150_setup(void)
 
 /*--------------------------------------------------------------------------*/
 
-static struct adm5120_board rb111_board __initdata = {
-	.mach_type	= MACH_ADM5120_RB_111,
-	.name		= "Mikrotik RouterBOARD 111",
+ADM5120_BOARD_START(RB_111, "Mikrotik RouterBOARD 111")
 	.board_setup	= rb1xx_setup,
 	.eth_num_ports	= 1,
 	.eth_vlans	= rb11x_vlans,
@@ -280,11 +279,9 @@ static struct adm5120_board rb111_board __initdata = {
 	.devices	= rb1xx_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(rb1xx_pci_irqs),
 	.pci_irq_map	= rb1xx_pci_irqs,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board rb112_board __initdata = {
-	.mach_type	= MACH_ADM5120_RB_112,
-	.name		= "Mikrotik RouterBOARD 112",
+ADM5120_BOARD_START(RB_112, "Mikrotik RouterBOARD 112")
 	.board_setup	= rb1xx_setup,
 	.eth_num_ports	= 1,
 	.eth_vlans	= rb11x_vlans,
@@ -292,11 +289,9 @@ static struct adm5120_board rb112_board __initdata = {
 	.devices	= rb1xx_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(rb1xx_pci_irqs),
 	.pci_irq_map	= rb1xx_pci_irqs,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board rb133_board __initdata = {
-	.mach_type	= MACH_ADM5120_RB_133,
-	.name		= "Mikrotik RouterBOARD 133",
+ADM5120_BOARD_START(RB_133, "Mikrotik RouterBOARD 133")
 	.board_setup	= rb1xx_setup,
 	.eth_num_ports	= 3,
 	.eth_vlans	= rb133_vlans,
@@ -304,11 +299,9 @@ static struct adm5120_board rb133_board __initdata = {
 	.devices	= rb1xx_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(rb1xx_pci_irqs),
 	.pci_irq_map	= rb1xx_pci_irqs,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board rb133c_board __initdata = {
-	.mach_type	= MACH_ADM5120_RB_133C,
-	.name		= "Mikrotik RouterBOARD 133C",
+ADM5120_BOARD_START(RB_133C, "Mikrotik RouterBOARD 133C")
 	.board_setup	= rb1xx_setup,
 	.eth_num_ports	= 1,
 	.eth_vlans	= rb133c_vlans,
@@ -316,21 +309,17 @@ static struct adm5120_board rb133c_board __initdata = {
 	.devices	= rb1xx_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(rb1xx_pci_irqs),
 	.pci_irq_map	= rb1xx_pci_irqs,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board rb150_board __initdata = {
-	.mach_type	= MACH_ADM5120_RB_150,
-	.name		= "Mikrotik RouterBOARD 150",
+ADM5120_BOARD_START(RB_150, "Mikrotik RouterBOARD 150")
 	.board_setup	= rb150_setup,
 	.eth_num_ports	= 5,
 	.eth_vlans	= rb15x_vlans,
 	.num_devices	= ARRAY_SIZE(rb1xx_devices),
 	.devices	= rb1xx_devices,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board rb153_board __initdata = {
-	.mach_type	= MACH_ADM5120_RB_153,
-	.name		= "Mikrotik RouterBOARD 153",
+ADM5120_BOARD_START(RB_153, "Mikrotik RouterBOARD 153")
 	.board_setup	= rb1xx_setup,
 	.eth_num_ports	= 5,
 	.eth_vlans	= rb15x_vlans,
@@ -338,11 +327,9 @@ static struct adm5120_board rb153_board __initdata = {
 	.devices	= rb153_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(rb1xx_pci_irqs),
 	.pci_irq_map	= rb1xx_pci_irqs,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board rb192_board __initdata = {
-	.mach_type	= MACH_ADM5120_RB_192,
-	.name		= "Mikrotik RouterBOARD 192",
+ADM5120_BOARD_START(RB_192, "Mikrotik RouterBOARD 192")
 	.board_setup	= rb1xx_setup,
 	.eth_num_ports	= 5,
 	.eth_vlans	= rb192_vlans,
@@ -350,18 +337,4 @@ static struct adm5120_board rb192_board __initdata = {
 	.devices	= rb1xx_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(rb1xx_pci_irqs),
 	.pci_irq_map	= rb1xx_pci_irqs,
-};
-
-static int __init register_boards(void)
-{
-	adm5120_board_register(&rb111_board);
-	adm5120_board_register(&rb112_board);
-	adm5120_board_register(&rb133_board);
-	adm5120_board_register(&rb133c_board);
-	adm5120_board_register(&rb150_board);
-	adm5120_board_register(&rb153_board);
-	adm5120_board_register(&rb192_board);
-	return 0;
-}
-
-pure_initcall(register_boards);
+ADM5120_BOARD_END

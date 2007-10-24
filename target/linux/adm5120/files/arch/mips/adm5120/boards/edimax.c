@@ -75,19 +75,17 @@ unsigned char br61xx_vlans[6] = {
 	0x41, 0x42, 0x44, 0x48, 0x50, 0x00
 };
 
-static struct adm5120_board br6104k_board __initdata = {
-	.mach_type	= MACH_ADM5120_BR6104K,
-	.name		= "Edimax BR-6104K/6104KP",
+/*--------------------------------------------------------------------------*/
+
+ADM5120_BOARD_START(BR6104K, "Edimax BR-6104K/6104KP")
 	.board_setup	= br61xx_setup,
 	.eth_num_ports	= 5,
 	.eth_vlans	= br61xx_vlans,
 	.num_devices	= ARRAY_SIZE(br6104k_devices),
 	.devices	= br6104k_devices,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board br61x4wg_board __initdata = {
-	.mach_type	= MACH_ADM5120_BR61x4WG,
-	.name		= "Edimax BR-6104WG/6114WG",
+ADM5120_BOARD_START(BR61x4WG, "Edimax BR-6104WG/6114WG")
 	.board_setup	= br61xx_setup,
 	.eth_num_ports	= 5,
 	.eth_vlans	= br61xx_vlans,
@@ -95,13 +93,4 @@ static struct adm5120_board br61x4wg_board __initdata = {
 	.devices	= br61x4wg_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(br61xx_pci_irqs),
 	.pci_irq_map	= br61xx_pci_irqs,
-};
-
-static int __init register_boards(void)
-{
-	adm5120_board_register(&br6104k_board);
-	adm5120_board_register(&br61x4wg_board);
-	return 0;
-}
-
-pure_initcall(register_boards);
+ADM5120_BOARD_END

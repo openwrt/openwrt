@@ -33,23 +33,6 @@
 #include <adm5120_platform.h>
 #include <adm5120_irq.h>
 
-static void switch_bank_gpio5(unsigned bank)
-{
-	switch (bank) {
-	case 0:
-		gpio_set_value(ADM5120_GPIO_PIN5, 0);
-		break;
-	case 1:
-		gpio_set_value(ADM5120_GPIO_PIN5, 1);
-		break;
-	}
-}
-
-static void wp54_reset(void)
-{
-	gpio_set_value(ADM5120_GPIO_PIN3, 0);
-}
-
 static struct adm5120_pci_irq wp54_pci_irqs[] __initdata = {
 	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI0),
 };
@@ -86,6 +69,38 @@ static struct platform_device *np2xg_devices[] __initdata = {
 static struct platform_device *wp54_devices[] __initdata = {
 	&adm5120_flash0_device,
 };
+
+unsigned char np27g_vlans[6] __initdata = {
+	/* FIXME: untested */
+	0x41, 0x42, 0x44, 0x48, 0x50, 0x00
+};
+
+unsigned char np28g_vlans[6] __initdata = {
+	0x50, 0x42, 0x44, 0x48, 0x00, 0x00
+};
+
+unsigned char wp54_vlans[6] __initdata = {
+	0x41, 0x42, 0x00, 0x00, 0x00, 0x00
+};
+
+/*--------------------------------------------------------------------------*/
+
+static void switch_bank_gpio5(unsigned bank)
+{
+	switch (bank) {
+	case 0:
+		gpio_set_value(ADM5120_GPIO_PIN5, 0);
+		break;
+	case 1:
+		gpio_set_value(ADM5120_GPIO_PIN5, 1);
+		break;
+	}
+}
+
+static void wp54_reset(void)
+{
+	gpio_set_value(ADM5120_GPIO_PIN3, 0);
+}
 
 static void __init np2xg_setup(void)
 {
@@ -129,32 +144,17 @@ static void __init wp54_wrt_setup(void)
 	/* TODO: setup mac address */
 }
 
-unsigned char np27g_vlans[6] __initdata = {
-	/* FIXME: untested */
-	0x41, 0x42, 0x44, 0x48, 0x50, 0x00
-};
+/*--------------------------------------------------------------------------*/
 
-unsigned char np28g_vlans[6] __initdata = {
-	0x50, 0x42, 0x44, 0x48, 0x00, 0x00
-};
-
-unsigned char wp54_vlans[6] __initdata = {
-	0x41, 0x42, 0x00, 0x00, 0x00, 0x00
-};
-
-static struct adm5120_board np27g_board __initdata = {
-	.mach_type	= MACH_ADM5120_NP27G,
-	.name		= "Compex NetPassage 27G",
+ADM5120_BOARD_START(NP27G, "Compex NetPassage 27G")
 	.board_setup	= np2xg_setup,
 	.eth_num_ports	= 5,
 	.eth_vlans	= np27g_vlans,
 	.num_devices	= ARRAY_SIZE(np2xg_devices),
 	.devices	= np2xg_devices,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board np28g_board __initdata = {
-	.mach_type	= MACH_ADM5120_NP28G,
-	.name		= "Compex NetPassage 28G",
+ADM5120_BOARD_START(NP28G, "Compex NetPassage 28G")
 	.board_setup	= np2xg_setup,
 	.eth_num_ports	= 4,
 	.eth_vlans	= np28g_vlans,
@@ -162,11 +162,9 @@ static struct adm5120_board np28g_board __initdata = {
 	.devices	= np2xg_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(np28g_pci_irqs),
 	.pci_irq_map	= np28g_pci_irqs,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board wp54ag_board __initdata = {
-	.mach_type	= MACH_ADM5120_WP54AG,
-	.name		= "Compex WP54AG",
+ADM5120_BOARD_START(WP54AG, "Compex WP54AG")
 	.board_setup	= wp54_setup,
 	.board_reset	= wp54_reset,
 	.eth_num_ports	= 2,
@@ -175,11 +173,9 @@ static struct adm5120_board wp54ag_board __initdata = {
 	.devices	= wp54_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(wp54_pci_irqs),
 	.pci_irq_map	= wp54_pci_irqs,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board wp54g_board __initdata = {
-	.mach_type	= MACH_ADM5120_WP54G,
-	.name		= "Compex WP54G",
+ADM5120_BOARD_START(WP54G, "Compex WP54G")
 	.board_setup	= wp54_setup,
 	.board_reset	= wp54_reset,
 	.eth_num_ports	= 2,
@@ -188,11 +184,9 @@ static struct adm5120_board wp54g_board __initdata = {
 	.devices	= wp54_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(wp54_pci_irqs),
 	.pci_irq_map	= wp54_pci_irqs,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board wp54g_wrt_board __initdata = {
-	.mach_type	= MACH_ADM5120_WP54G_WRT,
-	.name		= "Compex WP54G-WRT",
+ADM5120_BOARD_START(WP54G_WRT, "Compex WP54G-WRT")
 	.board_setup	= wp54_wrt_setup,
 	.board_reset	= wp54_reset,
 	.eth_num_ports	= 2,
@@ -201,11 +195,9 @@ static struct adm5120_board wp54g_wrt_board __initdata = {
 	.devices	= wp54_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(wp54_pci_irqs),
 	.pci_irq_map	= wp54_pci_irqs,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board wpp54ag_board __initdata = {
-	.mach_type	= MACH_ADM5120_WPP54AG,
-	.name		= "Compex WPP54AG",
+ADM5120_BOARD_START(WPP54AG, "Compex WPP54AG")
 	.board_setup	= wp54_setup,
 	.board_reset	= wp54_reset,
 	.eth_num_ports	= 2,
@@ -214,11 +206,9 @@ static struct adm5120_board wpp54ag_board __initdata = {
 	.devices	= wp54_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(wp54_pci_irqs),
 	.pci_irq_map	= wp54_pci_irqs,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board wpp54g_board __initdata = {
-	.mach_type	= MACH_ADM5120_WPP54G,
-	.name		= "Compex WPP54G",
+ADM5120_BOARD_START(WPP54G, "Compex WPP54G")
 	.board_setup	= wp54_setup,
 	.board_reset	= wp54_reset,
 	.eth_num_ports	= 2,
@@ -227,18 +217,4 @@ static struct adm5120_board wpp54g_board __initdata = {
 	.devices	= wp54_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(wp54_pci_irqs),
 	.pci_irq_map	= wp54_pci_irqs,
-};
-
-static int __init register_boards(void)
-{
-	adm5120_board_register(&np27g_board);
-	adm5120_board_register(&np28g_board);
-	adm5120_board_register(&wp54ag_board);
-	adm5120_board_register(&wp54g_board);
-	adm5120_board_register(&wp54g_wrt_board);
-	adm5120_board_register(&wpp54ag_board);
-	adm5120_board_register(&wpp54g_board);
-	return 0;
-}
-
-pure_initcall(register_boards);
+ADM5120_BOARD_END

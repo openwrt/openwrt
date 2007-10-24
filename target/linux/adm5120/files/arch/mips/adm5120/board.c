@@ -117,16 +117,6 @@ arch_initcall(adm5120_board_setup);
 
 void __init adm5120_board_register(struct adm5120_board *board)
 {
-	list_add(&board->list, &adm5120_boards);
+	list_add_tail(&board->list, &adm5120_boards);
 	printk(KERN_INFO PFX "registered board '%s'\n", board->name);
 }
-
-void __init adm5120_register_boards(struct adm5120_board **boards,
-		int num)
-{
-	int i;
-
-	for (i = 0; i < num; i++)
-		adm5120_board_register(boards[i]);
-}
-

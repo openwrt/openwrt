@@ -49,4 +49,21 @@ struct adm5120_board {
 
 extern void adm5120_board_register(struct adm5120_board *) __init;
 
+#define ADM5120_BOARD_START(_type, _name)				\
+static struct adm5120_board adm5120_board_##_type __initdata;		\
+									\
+static __init int adm5120_board_##_type##_register(void)		\
+{									\
+	adm5120_board_register(&adm5120_board_##_type);			\
+	return 0;							\
+}									\
+pure_initcall(adm5120_board_##_type##_register);			\
+									\
+static struct adm5120_board adm5120_board_##_type __initdata = {	\
+	.mach_type	= MACH_ADM5120_##_type,				\
+	.name		= _name,
+
+#define ADM5120_BOARD_END						\
+};
+
 #endif /* _ADM5120_BOARD_H_ */
