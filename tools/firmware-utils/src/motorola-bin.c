@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2005-2006 Mike Baker,
  *                         Imre Kaloz <kaloz@openwrt.org>
+ *                         D. Hugh Redelmeier
  *                         OpenWrt.org
  *
  * $Id$
@@ -24,6 +25,19 @@
  */
 
 /*
+ * Motorola's firmware flashing code requires an extra header.
+ * The header is eight bytes (see struct motorola below).
+ * This program will take a firmware file and create a new one
+ * with this header:
+ *	motorola-bin --wr850g WR850G_V403.stripped.trx WR850G_V403.trx
+ *
+ * Note: Motorola's firmware is distributed with this header.
+ * If you need to flash Motorola firmware on a router running OpenWRT,
+ * you will to remove this header.  Use the --strip flag:
+ *	motorola-bin --strip WR850G_V403.trx WR850G_V403.stripped.trx
+ */
+
+/*
  * February 1, 2006
  *
  * Add support for for creating WA840G and WE800G images
@@ -31,116 +45,184 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <unistd.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <string.h>
 #include <netinet/in.h>
+#include <inttypes.h>
 
-unsigned long *crc32;
+#define BPB 8 /* bits/byte */
 
-void init_crc32()
+static uint32_t crc32[1<<BPB];
+
+static void init_crc32()
 {
-    unsigned long crc;
-    unsigned long poly = ntohl(0x2083b8ed);
-    int n, bit;
-    if ((crc32 = (unsigned long *) malloc(256 * sizeof(unsigned long))) == (void *)-1) {
-       perror("malloc");
-       exit(1);
-    }
-    for (n = 0; n < 256; n++) {
-        crc = (unsigned long) n;
-        for (bit = 0; bit < 8; bit++)
-            crc = (crc & 1) ? (poly ^ (crc >> 1)) : (crc >> 1);
-        crc32[n] = crc;
-    }
+	const uint32_t poly = ntohl(0x2083b8ed);
+	int n;
+
+	for (n = 0; n < 1<<BPB; n++) {
+		uint32_t crc = n;
+		int bit;
+
+		for (bit = 0; bit < BPB; bit++)
+			crc = (crc & 1) ? (poly ^ (crc >> 1)) : (crc >> 1);
+		crc32[n] = crc;
+	}
 }
 
-unsigned int crc32buf(char *buf, size_t len)
+static uint32_t crc32buf(unsigned char *buf, size_t len)
 {
-    unsigned int crc = 0xFFFFFFFF;
-    for (; len; len--, buf++)
-        crc = crc32[(crc ^ *buf) & 0xff] ^ (crc >> 8);
-    return crc;
+	uint32_t crc = 0xFFFFFFFF;
+
+	for (; len; len--, buf++)
+		crc = crc32[(uint8_t)crc ^ *buf] ^ (crc >> BPB);
+	return crc;
 }
 
 struct motorola {
-	unsigned int crc;	// crc32 of the remainder
-	unsigned int flags;	// unknown, 105770*
-	char *trx;		// standard trx
+	uint32_t crc;	// crc32 of the remainder
+	uint32_t flags;	// unknown, 105770*
 };
 
-void usage(void) __attribute__ (( __noreturn__ ));
+static const struct model {
+	char digit;	/* a digit signifying model (historical) */
+	const char *name;
+	uint32_t flags;
+} models[] = {
+	{ '1', "WR850G", 0x10577050LU },
+	{ '2', "WA840G", 0x10577040LU },
+	{ '3', "WE800G", 0x10577000LU },
+	{ '\0', NULL, 0 }
+};
 
-void usage(void)
+static void usage(const char *) __attribute__ (( __noreturn__ ));
+
+static void usage(const char *mess)
 {
-	printf("Usage: motorola-bin [-device] [trxfile] [binfile]\n\n");
-	printf("Known devices: 1 - WR850G | 2 - WA840G | 3 - WE800G\n");
+	const struct model *m;
+
+	fprintf(stderr, "Error: %s\n", mess);
+	fprintf(stderr, "Usage: motorola-bin -device|--strip infile outfile\n");
+	fprintf(stderr, "Known devices: ");
+
+	for (m = models; m->digit != '\0'; m++)
+		fprintf(stderr, " %c - %s", m->digit, m->name);
+
+	fprintf(stderr, "\n");
 	exit(1);
 }
 
 int main(int argc, char **argv)
 {
-	unsigned int len;
+	off_t len;	// of original firmware
 	int fd;
-	int c;
-	void *trx;
-	struct motorola *firmware;
+	void *trx;	// pointer to original firmware (mmmapped)
+	struct motorola *firmware;	// pionter to prefix + copy of original firmware
+	uint32_t flags;
 
 	// verify parameters
 
-	if (argc!=4)
-	{
-	usage();
-	}
+	if (argc != 4)
+		usage("wrong number of arguments");
 
 	// mmap trx file
-	if (((fd = open(argv[2], O_RDONLY))  < 0)
-	|| ((len = lseek(fd, 0, SEEK_END)) < 0)
-	|| ((trx = mmap(0, len, PROT_READ, MAP_SHARED, fd, 0)) == (void *) (-1))
-	|| (close(fd) < 0)) {
-		perror("open/malloc");
+	if ((fd = open(argv[2], O_RDONLY))  < 0
+	|| (len = lseek(fd, 0, SEEK_END)) < 0
+	|| (trx = mmap(0, len, PROT_READ, MAP_SHARED, fd, 0)) == (void *) (-1)
+	|| close(fd) < 0)
+	{
+		fprintf(stderr, "Error loading file %s: %s\n", argv[2], strerror(errno));
 		exit(1);
 	}
-	
-	// create a firmware image in memory
-	// and copy the trx to it
-	firmware = malloc(len+8);
-	memcpy(&firmware->trx,trx,len);
-	munmap(trx,len);
 
-	// setup the motorola headers
 	init_crc32();
 
-	// setup the firmware magic
+	if (strcmp(argv[1], "--strip") == 0)
+	{
+		const char *ugh = NULL;
 
-	while ((c = getopt(argc, argv, "123")) !=-1) {
-		switch (c) {
-			case '1':
-				firmware->flags = ntohl(0x10577050); // Motorola WR850G
-				break;
-			case '2':
-				firmware->flags = ntohl(0x10577040); // Motorola WA840G
-				break;
-			case '3':
-				firmware->flags = ntohl(0x10577000); // Motorola WE800G
-				break;
-			default:
-				usage();
+		if (len < sizeof(struct motorola)) {
+			ugh = "input file too short";
+		} else {
+			const struct model *m;
+
+			firmware = trx;
+			if (htonl(crc32buf(trx + offsetof(struct motorola, flags), len - offsetof(struct motorola, flags))) != firmware->crc)
+				ugh = "Invalid CRC";
+			for (m = models; ; m++) {
+				if (m->digit == '\0') {
+					if (ugh == NULL)
+						ugh = "unrecognized flags field";
+					break;
+				}
+				if (firmware->flags == htonl(m->flags)) {
+					fprintf(stderr, "Firmware for Motorola %s\n", m->name);
+					break;
+				}
+			}
 		}
+
+		if (ugh != NULL) {
+			fprintf(stderr, "%s\n", ugh);
+			exit(3);
+		} else {
+			// all is well, write the file without the prefix
+			if ((fd = open(argv[3], O_CREAT|O_WRONLY,0644)) < 0
+			|| write(fd, trx + sizeof(struct motorola), len - sizeof(struct motorola)) !=  len - sizeof(struct motorola)
+			|| close(fd) < 0)
+			{
+				fprintf(stderr, "Error storing file %s: %s\n", argv[3], strerror(errno));
+				exit(2);
+			}
+		}
+		
+	} else {
+		// setup the firmware flags magic number
+		const struct model *m;
+		const char *df = argv[1];
+
+		if (*df != '-')
+			usage("first argument must start with -");
+		if (*++df == '-')
+			++df;	/* allow but don't require second - */
+
+		for (m = models; ; m++) {
+			if (m->digit == '\0')
+				usage("unrecognized device specified");
+			if ((df[0] == m->digit && df[1] == '\0') || strcasecmp(df, m->name) == 0) {
+				flags = m->flags;
+				break;
+			}
+		}
+
+
+		// create a firmware image in memory
+		// and copy the trx to it
+		firmware = malloc(sizeof(struct motorola) + len);
+		memcpy(&firmware[1], trx, len);
+
+		// setup the motorola headers
+		firmware->flags = htonl(flags);
+
+		// CRC of flags + firmware
+		firmware->crc = htonl(crc32buf((unsigned char *)&firmware->flags, sizeof(firmware->flags) + len));
+
+		// write the firmware
+		if ((fd = open(argv[3], O_CREAT|O_WRONLY,0644)) < 0
+		|| write(fd, firmware, sizeof(struct motorola) + len) != sizeof(struct motorola) + len
+		|| close(fd) < 0)
+		{
+			fprintf(stderr, "Error storing file %s: %s\n", argv[3], strerror(errno));
+			exit(2);
+		}
+
+		free(firmware);
 	}
 
-	firmware->crc   = htonl(crc32buf((char *)&firmware->flags,len+4));
-
-	// write the firmware
-	if (((fd = open(argv[3], O_CREAT|O_WRONLY,0644)) < 0)
-	|| (write(fd,firmware,len+8) != len+8)
-	|| (close(fd) < 0)) {
-		perror("write");
-		exit(-1);
-	}
-
-	free(firmware);
+	munmap(trx,len);
 
 	return 0;
 }
