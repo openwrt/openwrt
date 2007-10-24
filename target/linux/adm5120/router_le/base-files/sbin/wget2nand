@@ -43,9 +43,13 @@ mkdir /tmp/wget2nand-boot
 mount -t yaffs2 "$main" /tmp/wget2nand/
 mount -t yaffs2 "$boot" /tmp/wget2nand-boot
 
+echo "Erasing existing files."
+rm -rf /tmp/wget2nand/*
+
 echo "Copying filesystem..."
 ( wget -O - $url/openwrt-adm5120-2.6-rootfs.tgz) | ( cd /tmp/wget2nand/; tar xvz )
-wget -O /tmp/wget2nand-boot/kernel $url/openwrt-adm5120-2.6-rb1xx-vmlinux
+# RouterBOOT is looking for a kernel named "kernel"
+wget -O /tmp/wget2nand-boot/kernel $url/openwrt-adm5120-2.6-rb1xx-kernel
 
 chmod +x /tmp/wget2nand-boot/kernel
 
