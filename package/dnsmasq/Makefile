@@ -25,10 +25,6 @@ define Package/dnsmasq
   URL:=http://www.thekelleys.org.uk/dnsmasq/
 endef
 
-define Package/dnsmasq/conffiles
-/etc/dnsmasq.conf
-endef
-
 define Package/dnsmasq/description
  It is intended to provide coupled DNS and DHCP service to a LAN.
 endef
