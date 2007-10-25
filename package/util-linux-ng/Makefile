@@ -1,20 +1,21 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2007 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-# $Id$
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=util-linux
-PKG_VERSION:=2.12r
-PKG_RELEASE:=2
+PKG_NAME:=util-linux-ng
+PKG_VERSION:=2.13.0.1
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/
-PKG_MD5SUM:=c261230b27fc0fbcc287c76884caf2d3
+PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.13
+PKG_MD5SUM:=c841dc8743905c8f0db20c9db5094f57
+
+PKG_BUILD_DEPENDS=libblkid libuuid
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -22,7 +23,7 @@ define Package/util-linux/Default
   SECTION:=utils
   CATEGORY:=Utilities
   DEPENDS:=@!TARGET_etrax
-  URL:=http://www.kernel.org/pub/linux/utils/util-linux/
+  URL:=http://www.kernel.org/pub/linux/utils/util-linux-ng/
 endef
 
 define Package/fdisk
@@ -77,53 +78,38 @@ define Package/hwclock/description
  This package contains a utility for managing the hardware clock.
 endef
 
-define Build/Configure
-	# this is NOT GNU configure!
-	( cd $(PKG_BUILD_DIR); \
-		CC="$(TARGET_CC)" \
-		CFLAGS="$(TARGET_CPPFLAGS)" \
-		LDFLAGS="$(TARGET_LDFLAGS)" \
-		./configure \
-	);
-endef
-
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		OPT="$(TARGET_CFLAGS)" \
-		INSTALLSUID="install -m 4755" \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
-
-define Package/Template
-	@if [ \! -f "$(PKG_INSTALL_DIR)/$(1)" ]; then \
-		rm -f $(PKG_BUILD_DIR)/.built; \
-		$(MAKE) $(PKG_BUILD_DIR)/.built; \
-	fi
-	$(INSTALL_DIR) $(2)
-	$(CP) $(PKG_INSTALL_DIR)/$(1) $(2)/
+	$(MAKE) -C $(PKG_BUILD_DIR)/disk-utils mkswap
+	$(MAKE) -C $(PKG_BUILD_DIR)/mount swapon losetup
+	$(MAKE) -C $(PKG_BUILD_DIR)/fdisk fdisk cfdisk
+	$(MAKE) -C $(PKG_BUILD_DIR)/hwclock hwclock
 endef
 
 define Package/fdisk/install
-	$(call Package/Template,sbin/fdisk,$(1)/usr/sbin)
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fdisk/fdisk $(1)/usr/sbin/
 endef
 
 define Package/cfdisk/install
-	$(call Package/Template,sbin/cfdisk,$(1)/usr/sbin)
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fdisk/cfdisk $(1)/usr/sbin/
 endef
 
 define Package/losetup/install
-	$(call Package/Template,sbin/losetup,$(1)/usr/sbin)
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mount/losetup $(1)/usr/sbin/
 endef
 
 define Package/swap-utils/install
-	$(call Package/Template,sbin/mkswap,$(1)/usr/sbin)
-	$(call Package/Template,sbin/swapon,$(1)/usr/sbin)
-	$(call Package/Template,sbin/swapoff,$(1)/usr/sbin)
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/disk-utils/mkswap $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mount/swapon $(1)/usr/sbin/
+	ln -sf swapon $(1)/usr/sbin/swapoff
 endef
 
 define Package/hwclock/install
-	$(call Package/Template,sbin/hwclock,$(1)/usr/sbin)
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hwclock/hwclock $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,fdisk))
