@@ -1,0 +1,11 @@
+--- gcc-4.0.0/libstdc++-v3/include/c_std/std_cstdio.h-orig	2005-04-29 00:08:41.000000000 -0500
++++ gcc-4.0.0/libstdc++-v3/include/c_std/std_cstdio.h	2005-04-29 00:08:45.000000000 -0500
+@@ -142,7 +142,7 @@
+   using ::vsprintf;
+ }
+ 
+-#if _GLIBCXX_USE_C99
++#if _GLIBCXX_USE_C99 || defined(__UCLIBC__)
+ 
+ #undef snprintf
+ #undef vfscanf
