@@ -117,6 +117,9 @@ ifeq ($(DUMP),1)
     ifneq ($(CONFIG_PCMCIA)$(CONFIG_PCCARD),)
       FEATURES += pcmcia
     endif
+    ifneq ($(CONFIG_VGA_CONSOLE)$(CONFIG_FB),)
+      FEATURES += display
+    endif
 
     # remove duplicates
     FEATURES:=$(sort $(FEATURES))
