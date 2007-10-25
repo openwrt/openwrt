@@ -69,7 +69,7 @@ static inline u8 rareg(unsigned reg, struct cf_mips_dev* dev)
 
 static inline int cfrdy(struct cf_mips_dev *dev)
 {
-	return (SW_READ_REG(GPIO_CONF0) & (1 << ADM5120_GPIO_PIN4));
+	return (SW_READ_REG(GPIO_CONF0) & (1 << 12));
 }
 
 static inline void prepare_cf_irq(struct cf_mips_dev *dev)
