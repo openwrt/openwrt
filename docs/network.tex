@@ -114,3 +114,49 @@ config switch       "eth0"
     option vlan1    "0 5"
     option vlan2    "4 5"
 \end{Verbatim}
+
+\subsubsection{Setting up IPv6 connectivity}
+
+OpenWrt supports IPv6 connectivity using PPP, Tunnel brokers or static
+assignment.
+
+If you use PPP, IPv6 will be setup using IP6CP and there is nothing to
+configure.
+
+To setup an IPv6 tunnel to a tunnel broker, you have to edit the
+\texttt{/etc/config/6tunnel} file and change the settings accordingly :
+
+\begin{Verbatim}
+config 6tunnel
+        option tnlifname     'sixbone'
+        option remoteip4        '1.0.0.1'
+        option localip4         '1.0.0.2'
+        option localip6         '2001::DEAD::BEEF::1'
+        option prefix           '/64'
+\end{Verbatim}
+
+\begin{itemize}
+    \item{\texttt{'tnlifname'}:}
+        Set the interface name of the IPv6 in IPv4 tunnel
+    \item{\texttt{'remoteip4'}:}
+        IP address of the remote end to establish the 6in4 tunnel.
+	This address is given by the tunnel broker
+    \item{\texttt{'localip4'}:}
+	IP address of your router to establish the 6in4 tunnel.
+	It will usually match your WAN IP address.
+    \item{\texttt{'localip6'}:}
+	IPv6 address to setup on your tunnel side
+	This address is given by the tunnel broker
+    \item{\texttt{'prefix'}:}
+	IPv6 prefix to setup on the LAN.
+\end{itemize}
+
+IPv6 static addressing is also supported using a similar setup as
+IPv4 but with the \texttt{ip6} prefixing (when applicable).
+
+\begin{Verbatim}
+config interface     "lan"
+    option ifname    "eth0"
+    option proto     "static"
+    option ip6addr    "fe80::200:ff:fe00:0/64"
+\end{Verbatim}
