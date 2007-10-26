@@ -14,13 +14,14 @@ define Image/Build/Edimax
 	$(call Image/Build/Loader,$(2),gz,0x80500000,0x6D8,y,$(2))
 	$(call Image/Build/TRXNoloader,$(call imgname,$(1),$(2)).trx,$(1))
 	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(2) -d -w \
-		-r $(KDIR)/loader-$(2).gz \
+		-r $(KDIR)/loader-$(2).gz::8192 \
 		-x $(call imgname,$(1),$(2)).trx \
 		$(call imgname,$(1),$(2))-webui.bin
 	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(2) -d \
-		-r $(KDIR)/loader-$(2).gz \
+		-r $(KDIR)/loader-$(2).gz::8192 \
 		-x $(call imgname,$(1),$(2)).trx \
 		$(call imgname,$(1),$(2))-xmodem.bin
+	rm -f $(call imgname,$(1),$(2)).trx
 endef
 
 define Image/Build/Infineon

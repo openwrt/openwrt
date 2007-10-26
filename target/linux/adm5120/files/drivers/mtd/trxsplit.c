@@ -51,7 +51,7 @@ struct trx_header {
 	u32 offsets[TRX_MAX_OFFSET]; /* Offsets of partitions */
 };
 
-#define BLOCK_LEN_MIN		0x10000
+#define TRX_ALIGN	0x1000
 
 static int trx_nr_parts;
 static unsigned long trx_offset;
@@ -104,17 +104,12 @@ err_out:
 static void trxsplit_findtrx(struct mtd_info *mtd)
 {
 	unsigned long offset;
-	unsigned long blocklen;
 	int err;
-
-	blocklen = mtd->erasesize;
-	if (blocklen < BLOCK_LEN_MIN)
-		blocklen = BLOCK_LEN_MIN;
 
 	printk(KERN_INFO PFX "searching TRX header in '%s'\n", mtd->name);
 
 	err = 0;
-	for (offset = 0; offset < mtd->size; offset += blocklen) {
+	for (offset = 0; offset < mtd->size; offset += TRX_ALIGN) {
 		err = trxsplit_checktrx(mtd, offset);
 		if (err == 0)
 			break;
