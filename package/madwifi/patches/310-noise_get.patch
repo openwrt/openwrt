@@ -1,0 +1,44 @@
+Index: madwifi-ng-r2756-20071018/ath/if_ath.c
+===================================================================
+--- madwifi-ng-r2756-20071018.orig/ath/if_ath.c	2007-10-27 19:20:14.495461544 +0200
++++ madwifi-ng-r2756-20071018/ath/if_ath.c	2007-10-27 19:22:02.865637202 +0200
+@@ -1417,7 +1417,6 @@
+ 	 * Wireshark and Kismet.
+ 	 */
+ 	hw_tsf = ath_hal_gettsf64(ah);
+-	ic->ic_channoise = ath_hal_get_channel_noise(ah, &(sc->sc_curchan));
+ 
+ 	ATH_RXBUF_LOCK_IRQ(sc);
+ 	if (sc->sc_rxbufcur == NULL)
+@@ -8174,6 +8173,7 @@
+ 	struct net_device *dev = (struct net_device *) arg;
+ 	struct ath_softc *sc = dev->priv;
+ 	struct ath_hal *ah = sc->sc_ah;
++	struct ieee80211com *ic = &sc->sc_ic;
+ 	/* u_int32_t nchans; */
+ 	HAL_BOOL isIQdone = AH_FALSE;
+ 
+@@ -8202,6 +8202,7 @@
+ 		ath_calinterval = ATH_LONG_CALINTERVAL;
+ 	else
+ 		ath_calinterval = ATH_SHORT_CALINTERVAL;
++	ic->ic_channoise = ath_hal_get_channel_noise(ah, &(sc->sc_curchan));
+ 
+ 	sc->sc_cal_ch.expires = jiffies + (ath_calinterval * HZ);
+ 	add_timer(&sc->sc_cal_ch);
+@@ -8252,6 +8253,7 @@
+ 	struct ath_softc *sc = dev->priv;
+ 
+ 	(void) ath_chan_set(sc, ic->ic_curchan);
++	ic->ic_channoise = ath_hal_get_channel_noise(ah, &(sc->sc_curchan));
+ 	/*
+ 	 * If we are returning to our bss channel then mark state
+ 	 * so the next recv'd beacon's TSF will be used to sync the
+@@ -8466,6 +8468,7 @@
+ 		}
+ 
+ 		ath_hal_process_noisefloor(ah);
++		ic->ic_channoise = ath_hal_get_channel_noise(ah, &(sc->sc_curchan));
+ 		/*
+ 		 * Configure the beacon and sleep timers.
+ 		 */
