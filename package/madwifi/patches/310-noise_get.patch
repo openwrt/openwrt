@@ -1,7 +1,7 @@
 Index: madwifi-ng-r2756-20071018/ath/if_ath.c
 ===================================================================
 --- madwifi-ng-r2756-20071018.orig/ath/if_ath.c	2007-10-27 19:20:14.495461544 +0200
-+++ madwifi-ng-r2756-20071018/ath/if_ath.c	2007-10-27 19:22:02.865637202 +0200
++++ madwifi-ng-r2756-20071018/ath/if_ath.c	2007-10-27 19:23:13.621669358 +0200
 @@ -1417,7 +1417,6 @@
  	 * Wireshark and Kismet.
  	 */
@@ -30,7 +30,7 @@ Index: madwifi-ng-r2756-20071018/ath/if_ath.c
  	struct ath_softc *sc = dev->priv;
  
  	(void) ath_chan_set(sc, ic->ic_curchan);
-+	ic->ic_channoise = ath_hal_get_channel_noise(ah, &(sc->sc_curchan));
++	ic->ic_channoise = ath_hal_get_channel_noise(sc->sc_ah, &(sc->sc_curchan));
  	/*
  	 * If we are returning to our bss channel then mark state
  	 * so the next recv'd beacon's TSF will be used to sync the
