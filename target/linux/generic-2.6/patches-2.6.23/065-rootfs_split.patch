@@ -232,7 +232,7 @@ Index: linux-2.6.23-rc6/drivers/mtd/mtdpart.c
 +	}
 +
 +	if (*((u32 *) buf) != SQUASHFS_MAGIC) {
-+		printk(KERN_ALERT "split_squasfs: no squashfs found in \"%s\"\n",
++		printk(KERN_ALERT "split_squashfs: no squashfs found in \"%s\"\n",
 +			master->name);
 +		*split_offset = 0;
 +		return 0;
