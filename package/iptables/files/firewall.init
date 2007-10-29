@@ -105,7 +105,10 @@ start() {
 	iptables -t nat -A PREROUTING -j prerouting_rule
 	[ -z "$WAN" ] || iptables -t nat -A PREROUTING -i "$WAN" -j prerouting_wan
 	iptables -t nat -A POSTROUTING -j postrouting_rule
-	[ -z "$WAN" ] || iptables -t nat -A POSTROUTING -o $WAN -j MASQUERADE
+	### Only RFC1918 addresses
+	[ -z "$WAN" ] || iptables -t nat -A POSTROUTING --src 192.168.0.0/16 -o $WAN -j MASQUERADE
+	[ -z "$WAN" ] || iptables -t nat -A POSTROUTING --src 172.16.0.0/12 -o $WAN -j MASQUERADE
+	[ -z "$WAN" ] || iptables -t nat -A POSTROUTING --src 10.0.0.0/8 -o $WAN -j MASQUERADE
 
 	iptables -t nat -A NEW -m limit --limit 50 --limit-burst 100 -j RETURN && \
 		iptables -t nat -A NEW -j DROP
