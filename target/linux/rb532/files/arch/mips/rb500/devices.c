@@ -184,11 +184,16 @@ static struct mtd_partition rb500_partition_info[] = {
 	}
 };
 
+static struct platform_device rb500_led = {
+	.name = "rb500-led",
+	.id = 0,
+};
 
 static struct platform_device *rb500_devs[] = {
 	&korina_dev0,
 	&nand_slot0,
-	&cf_slot0
+	&cf_slot0,
+	&rb500_led
 };
 
 static void __init parse_mac_addr(char *macstr)
