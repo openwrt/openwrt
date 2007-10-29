@@ -32,7 +32,7 @@ SUBDIR:=$(patsubst $(TOPDIR)/%,%,${CURDIR})
 
 OPTIMIZE_FOR_CPU:=$(ARCH)
 
-DL_DIR:=$(call qstrip,$(if $(CONFIG_DOWNLOAD_FOLDER), $(CONFIG_DOWNLOAD_FOLDER),$(TOPDIR)/dl))
+DL_DIR:=$(if $(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(TOPDIR)/dl)
 BIN_DIR:=$(TOPDIR)/bin
 INCLUDE_DIR:=$(TOPDIR)/include
 SCRIPT_DIR:=$(TOPDIR)/scripts
