@@ -1,0 +1,56 @@
+Index: busybox-1.7.2/archival/libipkg/ipkg_conf.c
+===================================================================
+--- busybox-1.7.2.orig/archival/libipkg/ipkg_conf.c	2007-10-30 15:38:45.000000000 -0500
++++ busybox-1.7.2/archival/libipkg/ipkg_conf.c	2007-10-30 15:38:47.000000000 -0500
+@@ -66,6 +66,8 @@
+ 	  { "offline_root_pre_script_cmd", IPKG_OPT_TYPE_STRING, &conf->offline_root_pre_script_cmd },
+ 	  { "proxy_passwd", IPKG_OPT_TYPE_STRING, &conf->proxy_passwd },
+ 	  { "proxy_user", IPKG_OPT_TYPE_STRING, &conf->proxy_user },
++	  { "http_user", IPKG_OPT_TYPE_STRING, &conf->http_user },
++	  { "http_passwd", IPKG_OPT_TYPE_STRING, &conf->http_passwd },
+ 	  { "query-all", IPKG_OPT_TYPE_BOOL, &conf->query_all },
+ 	  { "verbose-wget", IPKG_OPT_TYPE_BOOL, &conf->verbose_wget },
+ 	  { "verbosity", IPKG_OPT_TYPE_BOOL, &conf->verbosity },
+@@ -160,6 +162,9 @@
+      conf->proxy_user = NULL;
+      conf->proxy_passwd = NULL;
+ 
++     conf->http_user = NULL;
++     conf->http_passwd = NULL;
++
+      pkg_hash_init("pkg-hash", &conf->pkg_hash, IPKG_CONF_DEFAULT_HASH_LEN);
+      hash_table_init("file-hash", &conf->file_hash, IPKG_CONF_DEFAULT_HASH_LEN);
+      hash_table_init("obs-file-hash", &conf->obs_file_hash, IPKG_CONF_DEFAULT_HASH_LEN);
+Index: busybox-1.7.2/archival/libipkg/ipkg_conf.h
+===================================================================
+--- busybox-1.7.2.orig/archival/libipkg/ipkg_conf.h	2007-10-30 15:38:45.000000000 -0500
++++ busybox-1.7.2/archival/libipkg/ipkg_conf.h	2007-10-30 15:38:47.000000000 -0500
+@@ -79,6 +79,10 @@
+      char *proxy_user;
+      char *proxy_passwd;
+ 
++     /* http user/pass */
++     char *http_user;
++     char *http_passwd;
++
+      hash_table_t pkg_hash;
+      hash_table_t file_hash;
+      hash_table_t obs_file_hash;
+Index: busybox-1.7.2/archival/libipkg/ipkg_download.c
+===================================================================
+--- busybox-1.7.2.orig/archival/libipkg/ipkg_download.c	2007-10-30 15:38:45.000000000 -0500
++++ busybox-1.7.2/archival/libipkg/ipkg_download.c	2007-10-30 15:38:47.000000000 -0500
+@@ -69,8 +69,12 @@
+     }
+ 
+     /* XXX: BUG rewrite to use execvp or else busybox's internal wget -Jamey 7/23/2002 */ 
+-    sprintf_alloc(&cmd, "wget --passive-ftp %s %s%s %s%s %s -P %s %s",
++    sprintf_alloc(&cmd, "wget --passive-ftp %s %s%s %s%s %s%s %s%s %s -P %s %s",
+ 		  (conf->http_proxy || conf->ftp_proxy) ? "--proxy=on" : "",
++          conf->http_user ? "--http-user=" : "",
++          conf->http_user ? conf->http_user : "",
++          conf->http_passwd ? "--http-password=" : "",
++          conf->http_passwd ? conf->http_passwd : "",
+ 		  conf->proxy_user ? "--proxy-user=" : "",
+ 		  conf->proxy_user ? conf->proxy_user : "",
+ 		  conf->proxy_passwd ? "--proxy-passwd=" : "",
