@@ -1,8 +1,8 @@
 Index: busybox-1.7.2/networking/httpd.c
 ===================================================================
---- busybox-1.7.2.orig/networking/httpd.c	2007-10-04 15:06:51.993046080 +0200
-+++ busybox-1.7.2/networking/httpd.c	2007-10-04 15:25:10.815664410 +0200
-@@ -1314,10 +1314,10 @@
+--- busybox-1.7.2.orig/networking/httpd.c	2007-10-30 15:35:03.000000000 -0500
++++ busybox-1.7.2/networking/httpd.c	2007-10-30 15:35:04.000000000 -0500
+@@ -1316,10 +1316,10 @@
  						if (full_write(1, HTTP_200, sizeof(HTTP_200)-1) != sizeof(HTTP_200)-1)
  							break;
  					}

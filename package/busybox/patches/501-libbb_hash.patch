@@ -1,7 +1,7 @@
 Index: busybox-1.7.2/coreutils/md5_sha1_sum.c
 ===================================================================
---- busybox-1.7.2.orig/coreutils/md5_sha1_sum.c	2007-09-03 13:48:39.000000000 +0200
-+++ busybox-1.7.2/coreutils/md5_sha1_sum.c	2007-10-04 15:45:02.423570273 +0200
+--- busybox-1.7.2.orig/coreutils/md5_sha1_sum.c	2007-10-30 15:34:59.000000000 -0500
++++ busybox-1.7.2/coreutils/md5_sha1_sum.c	2007-10-30 15:35:06.000000000 -0500
 @@ -8,75 +8,10 @@
  
  #include "libbb.h"
@@ -80,8 +80,8 @@ Index: busybox-1.7.2/coreutils/md5_sha1_sum.c
  {
 Index: busybox-1.7.2/include/libbb.h
 ===================================================================
---- busybox-1.7.2.orig/include/libbb.h	2007-10-04 15:20:22.275221430 +0200
-+++ busybox-1.7.2/include/libbb.h	2007-10-04 15:42:10.585777803 +0200
+--- busybox-1.7.2.orig/include/libbb.h	2007-10-30 15:35:04.000000000 -0500
++++ busybox-1.7.2/include/libbb.h	2007-10-30 15:35:06.000000000 -0500
 @@ -947,6 +947,7 @@
  extern const char bb_uuenc_tbl_std[];
  void bb_uuencode(char *store, const void *s, int length, const char *tbl);
@@ -101,8 +101,8 @@ Index: busybox-1.7.2/include/libbb.h
  
 Index: busybox-1.7.2/libbb/Kbuild
 ===================================================================
---- busybox-1.7.2.orig/libbb/Kbuild	2007-09-03 13:48:41.000000000 +0200
-+++ busybox-1.7.2/libbb/Kbuild	2007-10-04 15:42:10.613779401 +0200
+--- busybox-1.7.2.orig/libbb/Kbuild	2007-10-30 15:34:59.000000000 -0500
++++ busybox-1.7.2/libbb/Kbuild	2007-10-30 15:35:06.000000000 -0500
 @@ -38,6 +38,7 @@
  lib-y += get_last_path_component.o
  lib-y += get_line_from_file.o
@@ -114,7 +114,7 @@ Index: busybox-1.7.2/libbb/Kbuild
 Index: busybox-1.7.2/libbb/hash.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/libbb/hash.c	2007-10-04 15:45:08.279904000 +0200
++++ busybox-1.7.2/libbb/hash.c	2007-10-30 15:35:06.000000000 -0500
 @@ -0,0 +1,81 @@
 +/*
 + *  Copyright (C) 2003 Glenn L. McGrath

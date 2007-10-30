@@ -1,7 +1,7 @@
 Index: busybox-1.7.2/editors/awk.c
 ===================================================================
---- busybox-1.7.2.orig/editors/awk.c	2007-10-05 01:39:50.073293533 +0200
-+++ busybox-1.7.2/editors/awk.c	2007-10-05 02:16:42.539374788 +0200
+--- busybox-1.7.2.orig/editors/awk.c	2007-10-30 15:35:03.000000000 -0500
++++ busybox-1.7.2/editors/awk.c	2007-10-30 15:35:06.000000000 -0500
 @@ -33,6 +33,11 @@
  /* these flags are static, don't change them when value is changed */
  #define	VF_DONTTOUCH    (VF_ARRAY | VF_SPECIAL | VF_WALK | VF_CHILD | VF_DIRTY)
@@ -100,7 +100,7 @@ Index: busybox-1.7.2/editors/awk.c
 Index: busybox-1.7.2/editors/awx.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/editors/awx.c	2007-10-05 02:10:16.393369582 +0200
++++ busybox-1.7.2/editors/awx.c	2007-10-30 15:35:06.000000000 -0500
 @@ -0,0 +1,636 @@
 +/*
 + * awk web extension
@@ -741,7 +741,7 @@ Index: busybox-1.7.2/editors/awx.c
 Index: busybox-1.7.2/editors/awx_parser.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/editors/awx_parser.h	2007-10-05 01:43:59.487506840 +0200
++++ busybox-1.7.2/editors/awx_parser.h	2007-10-30 15:35:06.000000000 -0500
 @@ -0,0 +1,38 @@
 +#ifndef __TEMPLATE_PARSER_H
 +#define __TEMPLATE_PARSER_H
@@ -784,7 +784,7 @@ Index: busybox-1.7.2/editors/awx_parser.h
 Index: busybox-1.7.2/editors/awx_parser.l
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/editors/awx_parser.l	2007-10-05 01:43:59.547510259 +0200
++++ busybox-1.7.2/editors/awx_parser.l	2007-10-30 15:35:06.000000000 -0500
 @@ -0,0 +1,302 @@
 +%{
 +#include <stdio.h>
@@ -1090,8 +1090,8 @@ Index: busybox-1.7.2/editors/awx_parser.l
 +}
 Index: busybox-1.7.2/editors/Config.in
 ===================================================================
---- busybox-1.7.2.orig/editors/Config.in	2007-10-05 01:39:50.097294897 +0200
-+++ busybox-1.7.2/editors/Config.in	2007-10-05 01:43:59.583512308 +0200
+--- busybox-1.7.2.orig/editors/Config.in	2007-10-30 15:34:59.000000000 -0500
++++ busybox-1.7.2/editors/Config.in	2007-10-30 15:35:06.000000000 -0500
 @@ -12,6 +12,13 @@
  	  Awk is used as a pattern scanning and processing language.  This is
  	  the BusyBox implementation of that programming language.
@@ -1108,8 +1108,8 @@ Index: busybox-1.7.2/editors/Config.in
  	default y
 Index: busybox-1.7.2/editors/Kbuild
 ===================================================================
---- busybox-1.7.2.orig/editors/Kbuild	2007-10-05 01:39:50.105295361 +0200
-+++ busybox-1.7.2/editors/Kbuild	2007-10-05 01:43:59.627514818 +0200
+--- busybox-1.7.2.orig/editors/Kbuild	2007-10-30 15:34:59.000000000 -0500
++++ busybox-1.7.2/editors/Kbuild	2007-10-30 15:35:06.000000000 -0500
 @@ -12,3 +12,12 @@
  lib-$(CONFIG_PATCH)     += patch.o
  lib-$(CONFIG_SED)       += sed.o
@@ -1125,8 +1125,8 @@ Index: busybox-1.7.2/editors/Kbuild
 +	$(call if_changed_rule,cc_o_c)
 Index: busybox-1.7.2/include/applets.h
 ===================================================================
---- busybox-1.7.2.orig/include/applets.h	2007-10-05 01:43:59.203490652 +0200
-+++ busybox-1.7.2/include/applets.h	2007-10-05 01:43:59.647515958 +0200
+--- busybox-1.7.2.orig/include/applets.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.7.2/include/applets.h	2007-10-30 15:35:06.000000000 -0500
 @@ -76,6 +76,7 @@
  USE_ARPING(APPLET(arping, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
  USE_ASH(APPLET_NOUSAGE(ash, ash, _BB_DIR_BIN, _BB_SUID_NEVER))
@@ -1138,7 +1138,7 @@ Index: busybox-1.7.2/include/applets.h
 Index: busybox-1.7.2/include/cgi.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/include/cgi.h	2007-10-05 01:43:59.667517098 +0200
++++ busybox-1.7.2/include/cgi.h	2007-10-30 15:35:06.000000000 -0500
 @@ -0,0 +1,8 @@
 +#ifndef CGI_H
 +#define CGI_H
@@ -1151,7 +1151,7 @@ Index: busybox-1.7.2/include/cgi.h
 Index: busybox-1.7.2/libbb/cgi.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/libbb/cgi.c	2007-10-05 01:43:59.707519378 +0200
++++ busybox-1.7.2/libbb/cgi.c	2007-10-30 15:35:06.000000000 -0500
 @@ -0,0 +1,457 @@
 +/* --------------------------------------------------------------------------
 + * functions for processing cgi form data
@@ -1612,8 +1612,8 @@ Index: busybox-1.7.2/libbb/cgi.c
 +} 
 Index: busybox-1.7.2/libbb/Kbuild
 ===================================================================
---- busybox-1.7.2.orig/libbb/Kbuild	2007-10-05 01:43:59.387501141 +0200
-+++ busybox-1.7.2/libbb/Kbuild	2007-10-05 01:43:59.751521884 +0200
+--- busybox-1.7.2.orig/libbb/Kbuild	2007-10-30 15:35:06.000000000 -0500
++++ busybox-1.7.2/libbb/Kbuild	2007-10-30 15:35:06.000000000 -0500
 @@ -99,6 +99,7 @@
  lib-y += xreadlink.o
  

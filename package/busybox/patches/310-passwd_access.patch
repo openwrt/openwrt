@@ -3,8 +3,8 @@
 
 Index: busybox-1.7.2/networking/httpd.c
 ===================================================================
---- busybox-1.7.2.orig/networking/httpd.c	2007-09-30 01:54:12.000000000 +0200
-+++ busybox-1.7.2/networking/httpd.c	2007-10-04 14:59:20.287304836 +0200
+--- busybox-1.7.2.orig/networking/httpd.c	2007-10-30 15:34:59.000000000 -0500
++++ busybox-1.7.2/networking/httpd.c	2007-10-30 15:35:03.000000000 -0500
 @@ -1527,12 +1527,26 @@
  			if (ENABLE_FEATURE_HTTPD_AUTH_MD5) {
  				char *cipher;
