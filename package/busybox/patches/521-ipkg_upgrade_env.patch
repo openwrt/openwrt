@@ -1,0 +1,41 @@
+Index: busybox-1.7.2/archival/libipkg/ipkg_install.c
+===================================================================
+--- busybox-1.7.2.orig/archival/libipkg/ipkg_install.c	2007-10-30 17:15:31.000000000 -0500
++++ busybox-1.7.2/archival/libipkg/ipkg_install.c	2007-10-30 17:15:33.000000000 -0500
+@@ -136,6 +136,7 @@
+ ipkg_error_t ipkg_install_by_name(ipkg_conf_t *conf, const char *pkg_name)
+ {
+      int cmp;
++     int u = 0;
+      pkg_t *old, *new;
+      char *old_version, *new_version;
+ 
+@@ -201,6 +202,7 @@
+ 	  } else if (cmp < 0) {
+ 	       new->dest = old->dest;
+ 	       old->state_want = SW_DEINSTALL;    /* Here probably the problem for bug 1277 */
++           u = 1;
+ 	  }
+      }
+ 
+@@ -211,7 +213,7 @@
+ 	anyone ever wants to make a nice libipkg. */
+ 
+      ipkg_message(conf, IPKG_DEBUG2,"Function: %s calling ipkg_install_pkg \n",__FUNCTION__);
+-     return ipkg_install_pkg(conf, new,0);
++     return ipkg_install_pkg(conf, new,u);
+ }
+ 
+ ipkg_error_t ipkg_install_multi_by_name(ipkg_conf_t *conf, const char *pkg_name)
+@@ -750,8 +752,10 @@
+      char* file_md5;
+ 
+     
+-     if ( from_upgrade ) 
++     if ( from_upgrade ) {
+         message = 1;            /* Coming from an upgrade, and should change the output message */
++        setenv("IPKG_UPGRADE", "yes", 1);
++     }
+ 
+      if (!pkg) {
+ 	  ipkg_message(conf, IPKG_ERROR,
