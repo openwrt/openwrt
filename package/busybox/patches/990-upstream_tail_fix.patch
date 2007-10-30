@@ -1,6 +1,7 @@
-diff -urN busybox-1.7.2/coreutils/tail.c busybox-1.7.2-tail/coreutils/tail.c
---- busybox-1.7.2/coreutils/tail.c	2007-09-03 12:48:40.000000000 +0100
-+++ busybox-1.7.2-tail/coreutils/tail.c	2007-10-02 11:16:28.000000000 +0100
+Index: busybox-1.7.2/coreutils/tail.c
+===================================================================
+--- busybox-1.7.2.orig/coreutils/tail.c	2007-10-30 15:34:59.000000000 -0500
++++ busybox-1.7.2/coreutils/tail.c	2007-10-30 15:35:06.000000000 -0500
 @@ -47,13 +47,16 @@
  static ssize_t tail_read(int fd, char *buf, size_t count)
  {

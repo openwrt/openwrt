@@ -1,8 +1,8 @@
-Index: busybox-1.4.2/networking/udhcp/packet.c
+Index: busybox-1.7.2/networking/udhcp/packet.c
 ===================================================================
---- busybox-1.4.2.orig/networking/udhcp/packet.c	2007-06-04 13:21:32.289067984 +0200
-+++ busybox-1.4.2/networking/udhcp/packet.c	2007-06-04 13:21:33.619865672 +0200
-@@ -107,6 +107,10 @@
+--- busybox-1.7.2.orig/networking/udhcp/packet.c	2007-10-30 15:35:00.000000000 -0500
++++ busybox-1.7.2/networking/udhcp/packet.c	2007-10-30 15:35:01.000000000 -0500
+@@ -121,6 +121,10 @@
  	return ~sum;
  }
  
@@ -13,7 +13,7 @@ Index: busybox-1.4.2/networking/udhcp/packet.c
  
  /* Construct a ip/udp header for a packet, and specify the source and dest hardware address */
  void BUG_sizeof_struct_udp_dhcp_packet_must_be_576(void);
-@@ -118,6 +122,7 @@
+@@ -132,6 +136,7 @@
  	int result;
  	struct sockaddr_ll dest;
  	struct udp_dhcp_packet packet;
@@ -21,7 +21,7 @@ Index: busybox-1.4.2/networking/udhcp/packet.c
  
  	fd = socket(PF_PACKET, SOCK_DGRAM, htons(ETH_P_IP));
  	if (fd < 0) {
-@@ -127,6 +132,7 @@
+@@ -141,6 +146,7 @@
  
  	memset(&dest, 0, sizeof(dest));
  	memset(&packet, 0, sizeof(packet));
@@ -29,7 +29,7 @@ Index: busybox-1.4.2/networking/udhcp/packet.c
  
  	dest.sll_family = AF_PACKET;
  	dest.sll_protocol = htons(ETH_P_IP);
-@@ -144,12 +150,13 @@
+@@ -158,12 +164,13 @@
  	packet.ip.daddr = dest_ip;
  	packet.udp.source = htons(source_port);
  	packet.udp.dest = htons(dest_port);
@@ -47,7 +47,7 @@ Index: busybox-1.4.2/networking/udhcp/packet.c
  	packet.ip.ihl = sizeof(packet.ip) >> 2;
  	packet.ip.version = IPVERSION;
  	packet.ip.ttl = IPDEFTTL;
-@@ -158,7 +165,7 @@
+@@ -172,7 +179,7 @@
  	if (sizeof(struct udp_dhcp_packet) != 576)
  		BUG_sizeof_struct_udp_dhcp_packet_must_be_576();
  
@@ -56,7 +56,7 @@ Index: busybox-1.4.2/networking/udhcp/packet.c
  			(struct sockaddr *) &dest, sizeof(dest));
  	if (result <= 0) {
  		bb_perror_msg("sendto");
-@@ -205,7 +212,7 @@
+@@ -216,7 +223,7 @@
  		return -1;
  	}
  
@@ -65,11 +65,11 @@ Index: busybox-1.4.2/networking/udhcp/packet.c
  	close(fd);
  	return result;
  }
-Index: busybox-1.4.2/networking/udhcp/common.h
+Index: busybox-1.7.2/networking/udhcp/common.h
 ===================================================================
---- busybox-1.4.2.orig/networking/udhcp/common.h	2007-06-04 13:21:32.297066768 +0200
-+++ busybox-1.4.2/networking/udhcp/common.h	2007-06-04 13:21:33.620865520 +0200
-@@ -22,6 +22,8 @@
+--- busybox-1.7.2.orig/networking/udhcp/common.h	2007-10-30 15:35:00.000000000 -0500
++++ busybox-1.7.2/networking/udhcp/common.h	2007-10-30 15:35:01.000000000 -0500
+@@ -21,6 +21,8 @@
  #include <netinet/udp.h>
  #include <netinet/ip.h>
  
@@ -78,7 +78,7 @@ Index: busybox-1.4.2/networking/udhcp/common.h
  struct dhcpMessage {
  	uint8_t op;
  	uint8_t htype;
-@@ -38,7 +40,7 @@
+@@ -37,7 +39,7 @@
  	uint8_t sname[64];
  	uint8_t file[128];
  	uint32_t cookie;

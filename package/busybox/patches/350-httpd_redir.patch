@@ -1,7 +1,7 @@
 Index: busybox-1.7.2/include/usage.h
 ===================================================================
---- busybox-1.7.2.orig/include/usage.h	2007-10-04 17:12:35.230910708 +0200
-+++ busybox-1.7.2/include/usage.h	2007-10-04 17:32:12.994027602 +0200
+--- busybox-1.7.2.orig/include/usage.h	2007-10-30 15:34:59.000000000 -0500
++++ busybox-1.7.2/include/usage.h	2007-10-30 15:35:03.000000000 -0500
 @@ -1350,7 +1350,8 @@
  	USE_FEATURE_HTTPD_BASIC_AUTH(" [-r realm]") \
  	USE_FEATURE_HTTPD_AUTH_MD5(" [-m pass]") \
@@ -23,8 +23,8 @@ Index: busybox-1.7.2/include/usage.h
         "[-r|--show] [-s|--hctosys] [-w|--systohc]" \
 Index: busybox-1.7.2/networking/httpd.c
 ===================================================================
---- busybox-1.7.2.orig/networking/httpd.c	2007-10-04 17:13:12.509035065 +0200
-+++ busybox-1.7.2/networking/httpd.c	2007-10-04 17:32:33.711208213 +0200
+--- busybox-1.7.2.orig/networking/httpd.c	2007-10-30 15:35:03.000000000 -0500
++++ busybox-1.7.2/networking/httpd.c	2007-10-30 15:35:03.000000000 -0500
 @@ -230,6 +230,8 @@
  
  	const char *found_mime_type;

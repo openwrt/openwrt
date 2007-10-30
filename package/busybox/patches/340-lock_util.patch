@@ -1,20 +1,20 @@
-Index: busybox-1.4.2/include/applets.h
+Index: busybox-1.7.2/include/applets.h
 ===================================================================
---- busybox-1.4.2.orig/include/applets.h	2007-06-04 13:21:34.188779184 +0200
-+++ busybox-1.4.2/include/applets.h	2007-06-04 13:21:34.786688288 +0200
-@@ -178,6 +178,7 @@
- USE_LN(APPLET(ln, _BB_DIR_BIN, _BB_SUID_NEVER))
+--- busybox-1.7.2.orig/include/applets.h	2007-10-30 15:35:03.000000000 -0500
++++ busybox-1.7.2/include/applets.h	2007-10-30 15:35:03.000000000 -0500
+@@ -209,6 +209,7 @@
+ USE_LOAD_POLICY(APPLET(load_policy, _BB_DIR_USR_SBIN, _BB_SUID_NEVER))
  USE_LOADFONT(APPLET(loadfont, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
  USE_LOADKMAP(APPLET(loadkmap, _BB_DIR_SBIN, _BB_SUID_NEVER))
 +USE_LOCK(APPLET_NOUSAGE(lock, lock, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_LOGGER(APPLET(logger, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
  USE_LOGIN(APPLET(login, _BB_DIR_BIN, _BB_SUID_ALWAYS))
- USE_LOGNAME(APPLET(logname, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
-Index: busybox-1.4.2/miscutils/Config.in
+ USE_LOGNAME(APPLET_NOFORK(logname, logname, _BB_DIR_USR_BIN, _BB_SUID_NEVER, logname))
+Index: busybox-1.7.2/miscutils/Config.in
 ===================================================================
---- busybox-1.4.2.orig/miscutils/Config.in	2007-06-04 13:21:32.136091240 +0200
-+++ busybox-1.4.2/miscutils/Config.in	2007-06-04 13:21:34.786688288 +0200
-@@ -237,6 +237,12 @@
+--- busybox-1.7.2.orig/miscutils/Config.in	2007-10-30 15:34:59.000000000 -0500
++++ busybox-1.7.2/miscutils/Config.in	2007-10-30 15:35:03.000000000 -0500
+@@ -244,6 +244,12 @@
  	  Enables the 'hdparm -d' option to get/set using_dma flag.
  	  This is dangerous stuff, so you should probably say N.
  
@@ -27,11 +27,11 @@ Index: busybox-1.4.2/miscutils/Config.in
  config MAKEDEVS
  	bool "makedevs"
  	default n
-Index: busybox-1.4.2/miscutils/Kbuild
+Index: busybox-1.7.2/miscutils/Kbuild
 ===================================================================
---- busybox-1.4.2.orig/miscutils/Kbuild	2007-06-04 13:21:32.142090328 +0200
-+++ busybox-1.4.2/miscutils/Kbuild	2007-06-04 13:21:34.786688288 +0200
-@@ -15,6 +15,7 @@
+--- busybox-1.7.2.orig/miscutils/Kbuild	2007-10-30 15:34:59.000000000 -0500
++++ busybox-1.7.2/miscutils/Kbuild	2007-10-30 15:35:03.000000000 -0500
+@@ -16,6 +16,7 @@
  lib-$(CONFIG_HDPARM)      += hdparm.o
  lib-$(CONFIG_LAST)        += last.o
  lib-$(CONFIG_LESS)        += less.o
@@ -39,10 +39,10 @@ Index: busybox-1.4.2/miscutils/Kbuild
  lib-$(CONFIG_MAKEDEVS)    += makedevs.o
  lib-$(CONFIG_MOUNTPOINT)  += mountpoint.o
  lib-$(CONFIG_MT)          += mt.o
-Index: busybox-1.4.2/miscutils/lock.c
+Index: busybox-1.7.2/miscutils/lock.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.4.2/miscutils/lock.c	2007-06-04 13:21:34.787688136 +0200
++++ busybox-1.7.2/miscutils/lock.c	2007-10-30 15:35:03.000000000 -0500
 @@ -0,0 +1,135 @@
 +/*
 + * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>

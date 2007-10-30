@@ -1,8 +1,8 @@
-Index: busybox-1.4.2/include/applets.h
+Index: busybox-1.7.2/include/applets.h
 ===================================================================
---- busybox-1.4.2.orig/include/applets.h	2007-06-04 13:21:32.210079992 +0200
-+++ busybox-1.4.2/include/applets.h	2007-06-04 13:21:34.188779184 +0200
-@@ -209,6 +209,7 @@
+--- busybox-1.7.2.orig/include/applets.h	2007-10-30 15:34:59.000000000 -0500
++++ busybox-1.7.2/include/applets.h	2007-10-30 15:35:03.000000000 -0500
+@@ -241,6 +241,7 @@
  USE_MV(APPLET(mv, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_NAMEIF(APPLET(nameif, _BB_DIR_SBIN, _BB_SUID_NEVER))
  USE_NC(APPLET(nc, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
@@ -10,11 +10,11 @@ Index: busybox-1.4.2/include/applets.h
  USE_NETSTAT(APPLET(netstat, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_NICE(APPLET(nice, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_NMETER(APPLET(nmeter, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
-Index: busybox-1.4.2/networking/Config.in
+Index: busybox-1.7.2/networking/Config.in
 ===================================================================
---- busybox-1.4.2.orig/networking/Config.in	2007-06-04 13:21:32.216079080 +0200
-+++ busybox-1.4.2/networking/Config.in	2007-06-04 13:21:34.188779184 +0200
-@@ -458,6 +458,12 @@
+--- busybox-1.7.2.orig/networking/Config.in	2007-10-30 15:34:59.000000000 -0500
++++ busybox-1.7.2/networking/Config.in	2007-10-30 15:35:03.000000000 -0500
+@@ -508,6 +508,12 @@
  	help
  	  A simple Unix utility which reads and writes data across network
  	  connections.
@@ -26,23 +26,23 @@ Index: busybox-1.4.2/networking/Config.in
 +	  simple program for sending udp broadcast messages
  
  config NC_SERVER
- 	bool "Netcat server options (-lp)"
-Index: busybox-1.4.2/networking/Kbuild
+ 	bool "Netcat server options (-l)"
+Index: busybox-1.7.2/networking/Kbuild
 ===================================================================
---- busybox-1.4.2.orig/networking/Kbuild	2007-06-04 13:21:32.221078320 +0200
-+++ busybox-1.4.2/networking/Kbuild	2007-06-04 13:21:34.188779184 +0200
-@@ -27,6 +27,7 @@
- lib-$(CONFIG_IPTUNNEL)     += iptunnel.o
+--- busybox-1.7.2.orig/networking/Kbuild	2007-10-30 15:34:59.000000000 -0500
++++ busybox-1.7.2/networking/Kbuild	2007-10-30 15:35:03.000000000 -0500
+@@ -21,6 +21,7 @@
+ lib-$(CONFIG_IPCALC)       += ipcalc.o
  lib-$(CONFIG_NAMEIF)       += nameif.o
  lib-$(CONFIG_NC)           += nc.o
 +lib-$(CONFIG_NETMSG)       += netmsg.o
  lib-$(CONFIG_NETSTAT)      += netstat.o
  lib-$(CONFIG_NSLOOKUP)     += nslookup.o
  lib-$(CONFIG_PING)         += ping.o
-Index: busybox-1.4.2/networking/netmsg.c
+Index: busybox-1.7.2/networking/netmsg.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.4.2/networking/netmsg.c	2007-06-04 13:21:34.188779184 +0200
++++ busybox-1.7.2/networking/netmsg.c	2007-10-30 15:35:03.000000000 -0500
 @@ -0,0 +1,63 @@
 +/*
 + * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
