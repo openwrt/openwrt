@@ -1,7 +1,7 @@
-Index: madwifi-ng-r2756-20071018/ath/if_ath.c
+Index: madwifi-ng-r2799-20071030/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2756-20071018.orig/ath/if_ath.c	2007-10-24 06:20:20.749871745 +0200
-+++ madwifi-ng-r2756-20071018/ath/if_ath.c	2007-10-24 06:20:20.997885880 +0200
+--- madwifi-ng-r2799-20071030.orig/ath/if_ath.c	2007-10-31 14:04:51.313545672 +0100
++++ madwifi-ng-r2799-20071030/ath/if_ath.c	2007-10-31 14:04:51.569560260 +0100
 @@ -2693,7 +2693,7 @@
  	/* NB: use this lock to protect an->an_tx_ffbuf (and txq->axq_stageq)
  	 *	in athff_can_aggregate() call too.
@@ -62,10 +62,10 @@ Index: madwifi-ng-r2756-20071018/ath/if_ath.c
  
  ff_flush_done:
  ff_bypass:
-Index: madwifi-ng-r2756-20071018/ath/if_athvar.h
+Index: madwifi-ng-r2799-20071030/ath/if_athvar.h
 ===================================================================
---- madwifi-ng-r2756-20071018.orig/ath/if_athvar.h	2007-10-24 06:20:20.749871745 +0200
-+++ madwifi-ng-r2756-20071018/ath/if_athvar.h	2007-10-24 06:20:21.001886105 +0200
+--- madwifi-ng-r2799-20071030.orig/ath/if_athvar.h	2007-10-31 14:04:51.317545898 +0100
++++ madwifi-ng-r2799-20071030/ath/if_athvar.h	2007-10-31 14:04:51.569560260 +0100
 @@ -504,6 +504,8 @@
  #define ATH_TXQ_INTR_PERIOD		5  /* axq_intrcnt period for intr gen */
  #define	ATH_TXQ_LOCK_INIT(_tq)		spin_lock_init(&(_tq)->axq_lock)
