@@ -1,7 +1,7 @@
-Index: madwifi-ng-r2756-20071018/ath/if_ath.c
+Index: madwifi-ng-r2799-20071030/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2756-20071018.orig/ath/if_ath.c	2007-10-24 06:20:18.005715364 +0200
-+++ madwifi-ng-r2756-20071018/ath/if_ath.c	2007-10-24 06:20:18.429739529 +0200
+--- madwifi-ng-r2799-20071030.orig/ath/if_ath.c	2007-10-31 14:04:48.321375158 +0100
++++ madwifi-ng-r2799-20071030/ath/if_ath.c	2007-10-31 14:04:48.749399549 +0100
 @@ -5853,7 +5853,8 @@
  		 * frame; it'll be dropped where it's not wanted.
  		 */
@@ -12,11 +12,11 @@ Index: madwifi-ng-r2756-20071018/ath/if_ath.c
  			struct ath_node *an;
  			/*
  			 * Fast path: node is present in the key map;
-Index: madwifi-ng-r2756-20071018/net80211/ieee80211_node.c
+Index: madwifi-ng-r2799-20071030/net80211/ieee80211_node.c
 ===================================================================
---- madwifi-ng-r2756-20071018.orig/net80211/ieee80211_node.c	2007-10-24 06:20:16.625636718 +0200
-+++ madwifi-ng-r2756-20071018/net80211/ieee80211_node.c	2007-10-24 06:20:18.437739986 +0200
-@@ -1271,8 +1271,6 @@
+--- madwifi-ng-r2799-20071030.orig/net80211/ieee80211_node.c	2007-10-31 14:04:46.757286024 +0100
++++ madwifi-ng-r2799-20071030/net80211/ieee80211_node.c	2007-10-31 14:04:48.753399778 +0100
+@@ -1275,8 +1275,6 @@
  	IEEE80211_NODE_TABLE_UNLOCK_IRQ(nt);
  
  	return ni;
@@ -25,7 +25,7 @@ Index: madwifi-ng-r2756-20071018/net80211/ieee80211_node.c
  }
  #ifdef IEEE80211_DEBUG_REFCNT
  EXPORT_SYMBOL(ieee80211_find_rxnode_debug);
-@@ -1280,6 +1278,20 @@
+@@ -1284,6 +1282,20 @@
  EXPORT_SYMBOL(ieee80211_find_rxnode);
  #endif
  
@@ -46,10 +46,10 @@ Index: madwifi-ng-r2756-20071018/net80211/ieee80211_node.c
  /*
   * Return a reference to the appropriate node for sending
   * a data frame.  This handles node discovery in adhoc networks.
-Index: madwifi-ng-r2756-20071018/net80211/ieee80211_node.h
+Index: madwifi-ng-r2799-20071030/net80211/ieee80211_node.h
 ===================================================================
---- madwifi-ng-r2756-20071018.orig/net80211/ieee80211_node.h	2007-10-24 06:20:16.633637175 +0200
-+++ madwifi-ng-r2756-20071018/net80211/ieee80211_node.h	2007-10-24 06:20:18.441740211 +0200
+--- madwifi-ng-r2799-20071030.orig/net80211/ieee80211_node.h	2007-10-31 14:04:46.765286480 +0100
++++ madwifi-ng-r2799-20071030/net80211/ieee80211_node.h	2007-10-31 14:04:48.761400233 +0100
 @@ -328,6 +328,8 @@
  	*pni = NULL;			/* guard against use */
  }

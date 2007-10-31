@@ -1,7 +1,7 @@
-Index: madwifi-ng-r2756-20071018/ath/if_ath.c
+Index: madwifi-ng-r2799-20071030/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2756-20071018.orig/ath/if_ath.c	2007-10-24 06:20:18.881765287 +0200
-+++ madwifi-ng-r2756-20071018/ath/if_ath.c	2007-10-24 06:20:19.097777599 +0200
+--- madwifi-ng-r2799-20071030.orig/ath/if_ath.c	2007-10-31 14:04:49.201425309 +0100
++++ madwifi-ng-r2799-20071030/ath/if_ath.c	2007-10-31 14:04:49.421437847 +0100
 @@ -409,7 +409,6 @@
   * and use the next two bits as the index of the VAP.
   */
@@ -149,10 +149,10 @@ Index: madwifi-ng-r2756-20071018/ath/if_ath.c
  			if (ni != NULL) {
  				struct ath_node *an = ATH_NODE(ni);
  				ieee80211_keyix_t keyix;
-Index: madwifi-ng-r2756-20071018/ath/if_athvar.h
+Index: madwifi-ng-r2799-20071030/ath/if_athvar.h
 ===================================================================
---- madwifi-ng-r2756-20071018.orig/ath/if_athvar.h	2007-10-24 06:20:16.501629651 +0200
-+++ madwifi-ng-r2756-20071018/ath/if_athvar.h	2007-10-24 06:20:19.101777824 +0200
+--- madwifi-ng-r2799-20071030.orig/ath/if_athvar.h	2007-10-31 14:04:46.633278957 +0100
++++ madwifi-ng-r2799-20071030/ath/if_athvar.h	2007-10-31 14:04:49.429438302 +0100
 @@ -209,7 +209,7 @@
  #define	ATH_RXBUF	40		/* number of RX buffers */
  #define	ATH_TXBUF	200		/* number of TX buffers */
@@ -170,10 +170,10 @@ Index: madwifi-ng-r2756-20071018/ath/if_athvar.h
  	u_int8_t sc_nbcnvaps;			/* # of vaps sending beacons */
  	u_int sc_fftxqmin;			/* aggregation threshold */
  	HAL_INT sc_imask;			/* interrupt mask copy */
-Index: madwifi-ng-r2756-20071018/net80211/ieee80211_beacon.c
+Index: madwifi-ng-r2799-20071030/net80211/ieee80211_beacon.c
 ===================================================================
---- madwifi-ng-r2756-20071018.orig/net80211/ieee80211_beacon.c	2007-10-24 06:20:16.505629880 +0200
-+++ madwifi-ng-r2756-20071018/net80211/ieee80211_beacon.c	2007-10-24 06:20:19.109778282 +0200
+--- madwifi-ng-r2799-20071030.orig/net80211/ieee80211_beacon.c	2007-10-31 14:04:46.637279186 +0100
++++ madwifi-ng-r2799-20071030/net80211/ieee80211_beacon.c	2007-10-31 14:04:49.433438531 +0100
 @@ -111,7 +111,7 @@
  	bo->bo_tim = frm;
  
@@ -183,10 +183,10 @@ Index: madwifi-ng-r2756-20071018/net80211/ieee80211_beacon.c
  		*frm++ = IEEE80211_ELEMID_IBSSPARMS;
  		*frm++ = 2;
  		*frm++ = 0; *frm++ = 0;		/* TODO: ATIM window */
-Index: madwifi-ng-r2756-20071018/net80211/ieee80211_input.c
+Index: madwifi-ng-r2799-20071030/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-ng-r2756-20071018.orig/net80211/ieee80211_input.c	2007-10-24 06:20:16.513630337 +0200
-+++ madwifi-ng-r2756-20071018/net80211/ieee80211_input.c	2007-10-24 06:20:19.113778513 +0200
+--- madwifi-ng-r2799-20071030.orig/net80211/ieee80211_input.c	2007-10-31 14:04:46.645279641 +0100
++++ madwifi-ng-r2799-20071030/net80211/ieee80211_input.c	2007-10-31 14:04:49.437438757 +0100
 @@ -2990,7 +2990,13 @@
  			return;
  		}
@@ -217,11 +217,11 @@ Index: madwifi-ng-r2756-20071018/net80211/ieee80211_input.c
  		}
  
  		IEEE80211_NOTE_MAC(vap, IEEE80211_MSG_INPUT, wh->i_addr2,
-Index: madwifi-ng-r2756-20071018/net80211/ieee80211_node.c
+Index: madwifi-ng-r2799-20071030/net80211/ieee80211_node.c
 ===================================================================
---- madwifi-ng-r2756-20071018.orig/net80211/ieee80211_node.c	2007-10-24 06:20:18.437739986 +0200
-+++ madwifi-ng-r2756-20071018/net80211/ieee80211_node.c	2007-10-24 06:20:19.113778513 +0200
-@@ -1084,8 +1084,25 @@
+--- madwifi-ng-r2799-20071030.orig/net80211/ieee80211_node.c	2007-10-31 14:04:48.753399778 +0100
++++ madwifi-ng-r2799-20071030/net80211/ieee80211_node.c	2007-10-31 14:04:49.441438986 +0100
+@@ -1088,8 +1088,25 @@
  	IEEE80211_NODE_TABLE_LOCK_ASSERT(nt);
  
  	hash = IEEE80211_NODE_HASH(macaddr);
