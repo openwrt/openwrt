@@ -97,8 +97,10 @@ define Package/iptables-mod-ipopt/description
  - libipt_ecn/ECN
  - libipt_length
  - libipt_mac
- - libipt_tos/TOS
+ - libipt_mark/MARK
+ - libipt_statistic
  - libipt_tcpmms
+ - libipt_tos/TOS
  - libipt_ttl/TTL
  - libipt_unclean 
 endef
