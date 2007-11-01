@@ -16,8 +16,9 @@
 #include <linux/pci.h>
 #include <linux/ioport.h>	/* request_mem_region() */
 
-#include <asm/unaligned.h>		/* ioremap() */
-#include <asm/io.h>		/* ioremap() */
+#include <asm/unaligned.h>
+#include <asm/io.h>
+#include <asm/gpio.h>
 
 #include <gpio.h>
 #include <adm5120_defs.h>
@@ -69,7 +70,7 @@ static inline u8 rareg(unsigned reg, struct cf_mips_dev* dev)
 
 static inline int cfrdy(struct cf_mips_dev *dev)
 {
-	return (SW_READ_REG(GPIO_CONF0) & (1 << 12));
+	return gpio_get_value(12);
 }
 
 static inline void prepare_cf_irq(struct cf_mips_dev *dev)
@@ -92,7 +93,7 @@ static inline int cf_present(struct cf_mips_dev* dev)
 	int i;
 
 	/* on RB100 WAIT is LOW all the time => read will hang */
-	if (SW_READ_REG(GPIO_CONF0) & (1 << 8))
+	if (gpio_read_value(8))
 		cmd |= EXTIO_WAIT_EN;
 
 	SW_WRITE_REG(GPIO_CONF2, cmd);
