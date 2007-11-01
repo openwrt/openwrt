@@ -56,7 +56,8 @@ struct ed {
 	dma_addr_t		dma;		/* addr of ED */
 	struct td		*dummy;		/* next TD to activate */
 
-	struct list_head	urb_list;	/* list of our URBs */
+	struct urb_priv		*urb_active;	/* active URB */
+	struct list_head	urb_pending;	/* pending URBs */
 
 	struct list_head	ed_list;	/* list of all EDs*/
 	struct list_head	rm_list;	/* for remove list */
@@ -65,16 +66,15 @@ struct ed {
 	struct ed		*ed_next;	/* on schedule list */
 	struct ed		*ed_prev;	/* for non-interrupt EDs */
 	struct ed		*ed_rm_next;	/* on rm list */
-	struct ed		*ed_soft_list;	/* on software int list */
-	struct list_head	td_list;	/* "shadow list" of our TDs */
 
 	/* create --> IDLE --> OPER --> ... --> IDLE --> destroy
 	 * usually:  OPER --> UNLINK --> (IDLE | OPER) --> ...
 	 */
-	u8			state;		/* ED_{IDLE,UNLINK,OPER} */
-#define ED_IDLE		0x00		/* NOT linked to HC */
-#define ED_UNLINK	0x01		/* being unlinked from hc */
-#define ED_OPER		0x02		/* IS linked to hc */
+	u8			state;
+#define ED_NEW		0x00		/* just allocated */
+#define ED_IDLE		0x01		/* linked into HC, but not running */
+#define ED_OPER		0x02		/* linked into HC and running */
+#define ED_UNLINK	0x03		/* being unlinked from HC */
 
 	u8			type;		/* PIPE_{BULK,...} */
 
@@ -115,16 +115,17 @@ struct td {
 #define TD_T_SHIFT	23			/* data toggle state */
 #define TD_T_MASK	0x3
 #define TD_T		(TD_T_MASK << TD_T_SHIFT)
-#define TD_T_DATA0	(0x2 << TD_T_SHIFT)		/* DATA0 */
-#define TD_T_DATA1	(0x3 << TD_T_SHIFT)		/* DATA1 */
-#define TD_T_CARRY	(0x0 << TD_T_SHIFT)		/* uses ED_C */
+#define TD_T_DATA0	(0x2 << TD_T_SHIFT)	/* DATA0 */
+#define TD_T_DATA1	(0x3 << TD_T_SHIFT)	/* DATA1 */
+#define TD_T_CARRY	(0x0 << TD_T_SHIFT)	/* uses ED_C */
 #define TD_T_GET(x)	(((x) >> TD_T_SHIFT) & TD_T_MASK)
 #define TD_DP_SHIFT	21			/* direction/pid */
 #define TD_DP_MASK	0x3
 #define TD_DP		(TD_DP_MASK << TD_DP_SHIFT)
-#define TD_DP_SETUP	(0x0 << TD_DP_SHIFT)		/* SETUP pid */
-#define TD_DP_OUT	(0x1 << TD_DP_SHIFT)		/* OUT pid */
-#define TD_DP_IN	(0x2 << TD_DP_SHIFT)		/* IN pid */
+#define TD_DP_SETUP	(0x0 << TD_DP_SHIFT)	/* SETUP pid */
+#define TD_DP_OUT	(0x1 << TD_DP_SHIFT)	/* OUT pid */
+#define TD_DP_IN	(0x2 << TD_DP_SHIFT)	/* IN pid */
+#define TD_DP_GET(x)	(((x) >> TD_DP_SHIFT) & TD_DP_MASK)
 #define TD_ISI_SHIFT	8			/* Interrupt Service Interval */
 #define TD_ISI_MASK	0x3f
 #define TD_ISI_GET(x)	(((x) >> TD_ISI_SHIFT) & TD_ISI_MASK)
@@ -142,19 +143,12 @@ struct td {
 
 	/* rest are purely for the driver's use */
 	__u8		index;
-	struct ed	*ed;
-	struct td	*td_hash;	/* dma-->td hashtable */
-	struct td	*next_dl_td;
+/*	struct ed	*ed;*/
 	struct urb	*urb;
 
 	dma_addr_t	td_dma;		/* addr of this TD */
 	dma_addr_t	data_dma;	/* addr of data it points to */
 
-	struct list_head td_list;	/* "shadow list", TDs on same ED */
-
-	u32		flags;
-#define TD_FLAG_DONE	(1 << 17)	/* retired to done list */
-#define TD_FLAG_ISO	(1 << 16)	/* copy of ED_ISO */
 } __attribute__ ((aligned(TD_ALIGN)));	/* c/b/i need 16; only iso needs 32 */
 
 /*
@@ -354,6 +348,7 @@ struct admhcd_regs {
 /* hcd-private per-urb state */
 struct urb_priv {
 	struct ed		*ed;
+	struct urb		*urb;
 	struct list_head	pending;	/* URBs on the same ED */
 
 	u32			td_cnt;		/* # tds in this request */
@@ -374,6 +369,8 @@ struct urb_priv {
 
 struct admhcd {
 	spinlock_t		lock;
+	spinlock_t		dma_lock;
+	u32			dma_state;
 
 	/*
 	 * I/O memory used to communicate with the HC (dma-consistent)
@@ -384,14 +381,10 @@ struct admhcd {
 	 * hcd adds to schedule for a live hc any time, but removals finish
 	 * only at the start of the next frame.
 	 */
-
 	struct ed		*ed_head;
 	struct ed		*ed_tails[4];
 
 	struct ed		*ed_rm_list;	/* to be removed */
-	struct ed		*ed_halt_list;	/* halted due to an error */
-	struct ed		*ed_soft_list;	/* for software interrupt processing */
-
 	struct ed		*periodic[NUM_INTS];	/* shadow int_table */
 
 #if 0	/* TODO: remove? */
@@ -408,7 +401,6 @@ struct admhcd {
 	struct dma_pool		*td_cache;
 	struct dma_pool		*ed_cache;
 	struct td		*td_hash[TD_HASH_SIZE];
-	struct list_head	pending;
 
 	/*
 	 * driver state
@@ -446,6 +438,7 @@ static inline struct usb_hcd *admhcd_to_hcd(const struct admhcd *ahcd)
 #define STUB_DEBUG_FILES
 #endif	/* DEBUG */
 
+#if 0
 #define admhc_dbg(ahcd, fmt, args...) \
 	dev_dbg(admhcd_to_hcd(ahcd)->self.controller , fmt , ## args )
 #define admhc_err(ahcd, fmt, args...) \
@@ -459,6 +452,22 @@ static inline struct usb_hcd *admhcd_to_hcd(const struct admhcd *ahcd)
 #	define admhc_vdbg admhc_dbg
 #else
 #	define admhc_vdbg(ahcd, fmt, args...) do { } while (0)
+#endif
+#else
+#define admhc_dbg(ahcd, fmt, args...) \
+	printk(KERN_DEBUG "adm5120-hcd: " fmt , ## args )
+#define admhc_err(ahcd, fmt, args...) \
+	printk(KERN_ERR "adm5120-hcd: " fmt , ## args )
+#define ahcd_info(ahcd, fmt, args...) \
+	printk(KERN_INFO "adm5120-hcd: " fmt , ## args )
+#define admhc_warn(ahcd, fmt, args...) \
+	printk(KERN_WARNING "adm5120-hcd: " fmt , ## args )
+
+#ifdef ADMHC_VERBOSE_DEBUG
+#	define admhc_vdbg admhc_dbg
+#else
+#	define admhc_vdbg(ahcd, fmt, args...) do { } while (0)
+#endif
 #endif
 
 /*-------------------------------------------------------------------------*/
@@ -633,6 +642,15 @@ static inline u16 admhc_frame_no(const struct admhcd *ahcd)
 	return (u16)t;
 }
 
+static inline u16 admhc_frame_remain(const struct admhcd *ahcd)
+{
+	u32	t;
+
+	t = admhc_readl(ahcd, &ahcd->regs->fmnumber) >> ADMHC_SFN_FR_SHIFT;
+	t &= ADMHC_SFN_FR_MASK;
+	return (u16)t;
+}
+
 /*-------------------------------------------------------------------------*/
 
 static inline void admhc_disable(struct admhcd *ahcd)
@@ -652,7 +670,7 @@ static inline void periodic_reinit(struct admhcd *ahcd)
 
 	/* TODO: adjust FSLargestDataPacket value too? */
 	admhc_writel(ahcd, (fit ^ FIT) | ahcd->fminterval,
-						&ahcd->regs->fminterval);
+					&ahcd->regs->fminterval);
 }
 
 static inline u32 admhc_get_rhdesc(struct admhcd *ahcd)
@@ -698,17 +716,45 @@ static inline void admhc_intr_ack(struct admhcd *ahcd, u32 ints)
 
 static inline void admhc_dma_enable(struct admhcd *ahcd)
 {
-	ahcd->host_control = admhc_readl(ahcd, &ahcd->regs->host_control);
-	if (ahcd->host_control & ADMHC_HC_DMAE)
+	u32 t;
+
+	t = admhc_readl(ahcd, &ahcd->regs->host_control);
+	if (t & ADMHC_HC_DMAE)
 		return;
 
-	ahcd->host_control |= ADMHC_HC_DMAE;
-	admhc_writel(ahcd, ahcd->host_control, &ahcd->regs->host_control);
+	t |= ADMHC_HC_DMAE;
+	admhc_writel(ahcd, t, &ahcd->regs->host_control);
+	admhc_dbg(ahcd,"DMA enabled\n");
 }
 
 static inline void admhc_dma_disable(struct admhcd *ahcd)
 {
-	ahcd->host_control = admhc_readl(ahcd, &ahcd->regs->host_control);
-	ahcd->host_control &= ~ADMHC_HC_DMAE;
-	admhc_writel(ahcd, ahcd->host_control, &ahcd->regs->host_control);
+	u32 t;
+
+	t = admhc_readl(ahcd, &ahcd->regs->host_control);
+	if (!(t & ADMHC_HC_DMAE))
+		return;
+
+	t &= ~ADMHC_HC_DMAE;
+	admhc_writel(ahcd, t, &ahcd->regs->host_control);
+	admhc_dbg(ahcd,"DMA disabled\n");
+}
+
+static inline void admhc_dma_lock(struct admhcd *ahcd)
+{
+	spin_lock(ahcd->dma_lock);
+
+	ahcd->dma_state = admhc_readl(ahcd, &ahcd->regs->host_control);
+	admhc_writel(ahcd, 0, &ahcd->regs->hosthead);
+	admhc_writel(ahcd, ahcd->dma_state & ~ADMHC_HC_DMAE,
+				&ahcd->regs->host_control);
+	admhc_dbg(ahcd,"DMA locked\n");
+}
+
+static inline void admhc_dma_unlock(struct admhcd *ahcd)
+{
+	admhc_writel(ahcd, (u32)ahcd->ed_head->dma, &ahcd->regs->hosthead);
+	admhc_writel(ahcd, ahcd->dma_state, &ahcd->regs->host_control);
+	admhc_dbg(ahcd,"DMA unlocked\n");
+	spin_unlock(ahcd->dma_lock);
 }

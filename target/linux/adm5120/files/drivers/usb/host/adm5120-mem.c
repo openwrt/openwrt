@@ -27,7 +27,7 @@ static void admhc_hcd_init(struct admhcd *ahcd)
 {
 	ahcd->next_statechange = jiffies;
 	spin_lock_init(&ahcd->lock);
-	INIT_LIST_HEAD(&ahcd->pending);
+	spin_lock_init(&ahcd->dma_lock);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -76,19 +76,6 @@ static void admhc_mem_cleanup(struct admhcd *ahcd)
 
 /*-------------------------------------------------------------------------*/
 
-/* ahcd "done list" processing needs this mapping */
-static inline struct td *dma_to_td(struct admhcd *ahcd, dma_addr_t td_dma)
-{
-	struct td *td;
-
-	td_dma &= TD_MASK;
-	td = ahcd->td_hash[TD_HASH_FUNC(td_dma)];
-	while (td && td->td_dma != td_dma)
-		td = td->td_hash;
-
-	return td;
-}
-
 /* TDs ... */
 static struct td *td_alloc(struct admhcd *ahcd, gfp_t mem_flags)
 {
@@ -101,29 +88,13 @@ static struct td *td_alloc(struct admhcd *ahcd, gfp_t mem_flags)
 
 	/* in case ahcd fetches it, make it look dead */
 	memset(td, 0, sizeof *td);
-	td->hwNextTD = cpu_to_hc32(ahcd, dma);
 	td->td_dma = dma;
-	/* hashed in td_fill */
 
 	return td;
 }
 
 static void td_free(struct admhcd *ahcd, struct td *td)
 {
-	struct td **prev = &ahcd->td_hash[TD_HASH_FUNC(td->td_dma)];
-
-	while (*prev && *prev != td)
-		prev = &(*prev)->td_hash;
-	if (*prev)
-		*prev = td->td_hash;
-#if 0
-	/* TODO: remove */
-	else if ((td->hwINFO & cpu_to_hc32(ahcd, TD_DONE)) != 0)
-		admhc_dbg (ahcd, "no hash for td %p\n", td);
-#else
-	else if ((td->flags & TD_FLAG_DONE) != 0)
-		admhc_dbg (ahcd, "no hash for td %p\n", td);
-#endif
 	dma_pool_free(ahcd->td_cache, td, td->td_dma);
 }
 
@@ -142,8 +113,7 @@ static struct ed *ed_alloc(struct admhcd *ahcd, gfp_t mem_flags)
 	memset(ed, 0, sizeof(*ed));
 	ed->dma = dma;
 
-	INIT_LIST_HEAD(&ed->td_list);
-	INIT_LIST_HEAD(&ed->urb_list);
+	INIT_LIST_HEAD(&ed->urb_pending);
 
 	return ed;
 }
@@ -164,7 +134,6 @@ static void urb_priv_free(struct admhcd *ahcd, struct urb_priv *urb_priv)
 		if (urb_priv->td[i])
 			td_free(ahcd, urb_priv->td[i]);
 
-	list_del(&urb_priv->pending);
 	kfree(urb_priv);
 }
 
@@ -172,6 +141,7 @@ static struct urb_priv *urb_priv_alloc(struct admhcd *ahcd, int num_tds,
 		gfp_t mem_flags)
 {
 	struct urb_priv	*priv;
+	int i;
 
 	/* allocate the private part of the URB */
 	priv = kzalloc(sizeof(*priv) + sizeof(struct td) * num_tds, mem_flags);
@@ -179,13 +149,15 @@ static struct urb_priv *urb_priv_alloc(struct admhcd *ahcd, int num_tds,
 		goto err;
 
 	/* allocate the TDs (deferring hash chain updates) */
-	for (priv->td_cnt = 0; priv->td_cnt < num_tds; priv->td_cnt++) {
-		priv->td[priv->td_cnt] = td_alloc(ahcd, mem_flags);
-		if (priv->td[priv->td_cnt] == NULL)
+	for (i = 0; i < num_tds; i++) {
+		priv->td[i] = td_alloc(ahcd, mem_flags);
+		if (priv->td[i] == NULL)
 			goto err_free;
+		priv->td[i]->index = i;
 	}
 
 	INIT_LIST_HEAD(&priv->pending);
+	priv->td_cnt = num_tds;
 
 	return priv;
 
