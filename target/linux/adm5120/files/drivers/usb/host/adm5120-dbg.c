@@ -11,55 +11,108 @@
 
 #ifdef DEBUG
 
-#define edstring(ed_type) ({ char *temp; \
-	switch (ed_type) { \
-	case PIPE_CONTROL:	temp = "ctrl"; break; \
-	case PIPE_BULK:		temp = "bulk"; break; \
-	case PIPE_INTERRUPT:	temp = "intr"; break; \
-	default:		temp = "isoc"; break; \
-	}; temp;})
-#define pipestring(pipe) edstring(usb_pipetype(pipe))
+static inline char *ed_typestring(int ed_type)
+{
+	switch (ed_type) {
+	case PIPE_CONTROL:
+		return "ctrl";
+	case PIPE_BULK:
+		return "bulk";
+	case PIPE_INTERRUPT:
+		return "intr";
+	case PIPE_ISOCHRONOUS:
+		return "isoc";
+	}
+	return "(bad ed_type)";
+}
+
+static inline char *ed_statestring(int state)
+{
+	switch (state) {
+	case ED_IDLE:
+		return "IDLE";
+	case ED_UNLINK:
+		return "UNLINK";
+	case ED_OPER:
+		return "OPER";
+	case ED_NEW:
+		return "NEW";
+	}
+	return "?STATE";
+}
+
+static inline char *pipestring(int pipe)
+{
+	return ed_typestring(usb_pipetype(pipe));
+}
+
+static inline char *td_pidstring(u32 info)
+{
+	switch (info & TD_DP) {
+	case TD_DP_SETUP:
+		return "SETUP";
+	case TD_DP_IN:
+		return "IN";
+	case TD_DP_OUT:
+		return "OUT";
+	}
+	return "?PID";
+}
+
+static inline char *td_togglestring(u32 info)
+{
+	switch (info & TD_T) {
+	case TD_T_DATA0:
+		return "DATA0";
+	case TD_T_DATA1:
+		return "DATA1";
+	case TD_T_CARRY:
+		return "CARRY";
+	}
+	return "?TOGGLE";
+}
 
 /* debug| print the main components of an URB
  * small: 0) header + data packets 1) just header
  */
 static void __attribute__((unused))
-urb_print(struct urb * urb, char * str, int small)
+urb_print(struct admhcd *ahcd, struct urb * urb, char * str, int small)
 {
-	unsigned int pipe= urb->pipe;
+	unsigned int pipe = urb->pipe;
 
 	if (!urb->dev || !urb->dev->bus) {
-		dbg("%s URB: no dev", str);
+		admhc_dbg(ahcd, "%s URB: no dev", str);
 		return;
 	}
 
 #ifndef	ADMHC_VERBOSE_DEBUG
 	if (urb->status != 0)
 #endif
-	dbg("%s %p dev=%d ep=%d%s-%s flags=%x len=%d/%d stat=%d",
-		    str,
-		    urb,
-		    usb_pipedevice (pipe),
-		    usb_pipeendpoint (pipe),
-		    usb_pipeout(pipe)? "out" : "in",
-		    pipestring(pipe),
-		    urb->transfer_flags,
-		    urb->actual_length,
-		    urb->transfer_buffer_length,
-		    urb->status);
+	admhc_dbg(ahcd, "URB-%s %p dev=%d ep=%d%s-%s flags=%x len=%d/%d "
+			"stat=%d\n",
+			str,
+			urb,
+			usb_pipedevice(pipe),
+			usb_pipeendpoint(pipe),
+			usb_pipeout(pipe)? "out" : "in",
+			pipestring(pipe),
+			urb->transfer_flags,
+			urb->actual_length,
+			urb->transfer_buffer_length,
+			urb->status);
 
 #ifdef	ADMHC_VERBOSE_DEBUG
 	if (!small) {
 		int i, len;
 
 		if (usb_pipecontrol(pipe)) {
-			printk(KERN_DEBUG __FILE__ ": setup(8):");
+			admhc_dbg(admhc, "setup(8): ");
 			for (i = 0; i < 8 ; i++)
 				printk (" %02x", ((__u8 *) urb->setup_packet) [i]);
 			printk ("\n");
 		}
 		if (urb->transfer_buffer_length > 0 && urb->transfer_buffer) {
-			printk(KERN_DEBUG __FILE__ ": data(%d/%d):",
+			admhc_dbg(admhc, "data(%d/%d): ",
 				urb->actual_length,
 				urb->transfer_buffer_length);
 			len = usb_pipeout(pipe)?
@@ -83,12 +136,8 @@ urb_print(struct urb * urb, char * str, int small)
 	} while (0);
 
 
-static void admhc_dump_intr_mask (
-	struct admhcd *ahcd,
-	char *label,
-	u32 mask,
-	char **next,
-	unsigned *size)
+static void admhc_dump_intr_mask(struct admhcd *ahcd, char *label, u32 mask,
+		char **next, unsigned *size)
 {
 	admhc_dbg_sw(ahcd, next, size, "%s 0x%08x%s%s%s%s%s%s%s%s%s%s\n",
 		label,
@@ -106,12 +155,8 @@ static void admhc_dump_intr_mask (
 		);
 }
 
-static void maybe_print_eds (
-	struct admhcd *ahcd,
-	char *label,
-	u32 value,
-	char **next,
-	unsigned *size)
+static void maybe_print_eds(struct admhcd *ahcd, char *label, u32 value,
+		char **next, unsigned *size)
 {
 	if (value)
 		admhc_dbg_sw(ahcd, next, size, "%s %08x\n", label, value);
@@ -129,7 +174,7 @@ static char *buss2string (int state)
 	case ADMHC_BUSS_SUSPEND:
 		return "suspend";
 	}
-	return "(bad state)";
+	return "?state";
 }
 
 static void
@@ -152,7 +197,7 @@ admhc_dump_status(struct admhcd *ahcd, char **next, unsigned *size)
 	admhc_dbg_sw(ahcd, next, size,
 		"host_control 0x%08x BUSS=%s%s\n",
 		temp,
-		buss2string (temp & ADMHC_HC_BUSS),
+		buss2string(temp & ADMHC_HC_BUSS),
 		(temp & ADMHC_HC_DMAE) ? " DMAE" : ""
 		);
 
@@ -245,59 +290,42 @@ static const char data1[] = "DATA1";
 static void admhc_dump_td(const struct admhcd *ahcd, const char *label,
 		const struct td *td)
 {
-	u32	tmp = hc32_to_cpup(ahcd, &td->hwINFO);
+	u32	tmp;
 
 	admhc_dbg(ahcd, "%s td %p; urb %p index %d; hwNextTD %08x\n",
 		label, td,
 		td->urb, td->index,
 		hc32_to_cpup(ahcd, &td->hwNextTD));
 
-	if ((td->flags & TD_FLAG_ISO) == 0) {
-		const char	*toggle, *pid;
-
-		switch (tmp & TD_T) {
-		case TD_T_DATA0: toggle = data0; break;
-		case TD_T_DATA1: toggle = data1; break;
-		case TD_T_CARRY: toggle = "CARRY"; break;
-		default: toggle = "(bad toggle)"; break;
-		}
-		switch (tmp & TD_DP) {
-		case TD_DP_SETUP: pid = "SETUP"; break;
-		case TD_DP_IN: pid = "IN"; break;
-		case TD_DP_OUT: pid = "OUT"; break;
-		default: pid = "(bad pid)"; break;
-		}
-		admhc_dbg(ahcd,
-			"     status %08x%s CC=%x EC=%d %s %s ISI=%x FN=%x\n",
-			tmp,
-			(tmp & TD_OWN) ? " OWN" : "",
-			TD_CC_GET(tmp),
-			TD_EC_GET(tmp),
-			toggle,
-			pid,
-			TD_ISI_GET(tmp),
-			TD_FN_GET(tmp));
-	} else {
-#if 0		/* TODO: remove */
-		unsigned	i;
-		admhc_dbg(ahcd, "  info %08x CC=%x FC=%d DI=%d SF=%04x\n", tmp,
-			TD_CC_GET(tmp),
-			(tmp >> 24) & 0x07,
-			(tmp & TD_DI) >> 21,
-			tmp & 0x0000ffff);
-		admhc_dbg(ahcd, "  bp0 %08x be %08x\n",
-			hc32_to_cpup (ahcd, &td->hwCBP) & ~0x0fff,
-			hc32_to_cpup (ahcd, &td->hwBE));
-#endif
-	}
+	tmp = hc32_to_cpup(ahcd, &td->hwINFO);
+	admhc_dbg(ahcd, "     status %08x%s CC=%x EC=%d %s %s ISI=%x FN=%x\n",
+		tmp,
+		(tmp & TD_OWN) ? " OWN" : "",
+		TD_CC_GET(tmp),
+		TD_EC_GET(tmp),
+		td_togglestring(tmp),
+		td_pidstring(tmp),
+		TD_ISI_GET(tmp),
+		TD_FN_GET(tmp));
 
 	tmp = hc32_to_cpup(ahcd, &td->hwCBL);
 	admhc_dbg(ahcd, "     dbp %08x; cbl %08x; LEN=%d%s\n",
-		hc32_to_cpup (ahcd, &td->hwDBP),
+		hc32_to_cpup(ahcd, &td->hwDBP),
 		tmp,
 		TD_BL_GET(tmp),
-		(tmp & TD_IE) ? " IE" : ""
-	);
+		(tmp & TD_IE) ? " IE" : "");
+}
+
+static void admhc_dump_up(const struct admhcd *ahcd, const char *label,
+		const struct urb_priv *up)
+{
+	int i;
+
+	admhc_dbg(ahcd, "%s urb/%p:\n", label, up->urb);
+	for (i = 0; i < up->td_cnt; i++) {
+		struct td *td = up->td[i];
+		admhc_dump_td(ahcd, "    ->", td);
+	}
 }
 
 /* caller MUST own hcd spinlock if verbose is set! */
@@ -307,10 +335,10 @@ admhc_dump_ed(const struct admhcd *ahcd, const char *label,
 {
 	u32 tmp = hc32_to_cpu(ahcd, ed->hwINFO);
 
-	admhc_dbg(ahcd, "%s ed %p state 0x%x type %s; next ed %08x\n",
+	admhc_dbg(ahcd, "%s ed %p %s type %s; next ed %08x\n",
 		label,
-		ed, ed->state, edstring (ed->type),
-		hc32_to_cpup (ahcd, &ed->hwNextED));
+		ed, ed_statestring(ed->state), ed_typestring(ed->type),
+		hc32_to_cpup(ahcd, &ed->hwNextED));
 
 	admhc_dbg(ahcd, "  info %08x MAX=%d%s%s%s%s EP=%d DEV=%d\n", tmp,
 		ED_MPS_GET(tmp),
@@ -322,23 +350,22 @@ admhc_dump_ed(const struct admhcd *ahcd, const char *label,
 		ED_FA_GET(tmp));
 
 	tmp = hc32_to_cpup(ahcd, &ed->hwHeadP);
-	admhc_dbg(ahcd, "  tds: head %08x tail %08x %s%s%s\n",
+	admhc_dbg(ahcd, "  tds: head %08x tail %08x %s%s\n",
 		tmp & TD_MASK,
-		hc32_to_cpup (ahcd, &ed->hwTailP),
+		hc32_to_cpup(ahcd, &ed->hwTailP),
 		(tmp & ED_C) ? data1 : data0,
-		(tmp & ED_H) ? " HALT" : "",
-		verbose ? " td list follows" : " (not listing)");
+		(tmp & ED_H) ? " HALT" : "");
 
-	if (verbose) {
-		struct list_head	*tmp;
+	if (ed->urb_active)
+		admhc_dump_up(ahcd, "  active ", ed->urb_active);
 
-		/* use ed->td_list because HC concurrently modifies
-		 * hwNextTD as it accumulates ed_donelist.
-		 */
-		list_for_each(tmp, &ed->td_list) {
-			struct td		*td;
-			td = list_entry(tmp, struct td, td_list);
-			admhc_dump_td (ahcd, "  ->", td);
+	if ((verbose) && (!list_empty(&ed->urb_pending))) {
+		struct list_head *entry;
+		/* dump pending URBs */
+		list_for_each(entry, &ed->urb_pending) {
+			struct urb_priv *up;
+			up = list_entry(entry, struct urb_priv, pending);
+			admhc_dump_up(ahcd, "  pending ", up);
 		}
 	}
 }
@@ -346,6 +373,8 @@ admhc_dump_ed(const struct admhcd *ahcd, const char *label,
 #else /* ifdef DEBUG */
 
 static inline void urb_print(struct urb * urb, char * str, int small) {}
+static inline void admhc_dump_up(const struct admhcd *ahcd, const char *label,
+	const struct urb_priv *up) {}
 static inline void admhc_dump_ed(const struct admhcd *ahcd, const char *label,
 	const struct ed *ed, int verbose) {}
 static inline void admhc_dump(struct admhcd *ahcd, int verbose) {}
@@ -364,6 +393,44 @@ static inline void remove_debug_files(struct admhcd *bus) { }
 #else
 
 static ssize_t
+show_urb_priv(struct admhcd *ahcd, char *buf, size_t count,
+		struct urb_priv *up)
+{
+	unsigned temp, size = count;
+	int i;
+
+	if (!up)
+		return 0;
+
+	temp = scnprintf(buf, size,"\n\turb %p ", up->urb);
+	size -= temp;
+	buf += temp;
+
+	for (i = 0; i< up->td_cnt; i++) {
+		struct td *td;
+		u32 dbp, cbl, info;
+
+		td = up->td[i];
+		info = hc32_to_cpup(ahcd, &td->hwINFO);
+		dbp = hc32_to_cpup(ahcd, &td->hwDBP);
+		cbl = hc32_to_cpup(ahcd, &td->hwCBL);
+
+		temp = scnprintf(buf, size,
+			"\n\t\ttd %p %s %d %s%scc=%x (%08x,%08x)",
+			td,
+			td_pidstring(info),
+			TD_BL_GET(cbl),
+			(info & TD_OWN) ? "WORK " : "DONE ",
+			(cbl & TD_IE) ? "IE " : "",
+			TD_CC_GET(info), info, cbl);
+		size -= temp;
+		buf += temp;
+	}
+
+	return count - size;
+}
+
+static ssize_t
 show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 {
 	unsigned		temp, size = count;
@@ -371,23 +438,15 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 	if (!ed)
 		return 0;
 
-#if 0
-	/* print first --> last */
-	while (ed->ed_prev)
-		ed = ed->ed_prev;
-#endif
-
 	/* dump a snapshot of the bulk or control schedule */
 	while (ed) {
 		u32 info = hc32_to_cpu(ahcd, ed->hwINFO);
 		u32 headp = hc32_to_cpu(ahcd, ed->hwHeadP);
-		struct list_head *entry;
-		struct td	*td;
 
 		temp = scnprintf(buf, size,
 			"ed/%p %s %cs dev%d ep%d %s%smax %d %08x%s%s %s",
 			ed,
-			edstring (ed->type),
+			ed_typestring (ed->type),
 			(info & ED_SPEED_FULL) ? 'f' : 'l',
 			info & ED_FA_MASK,
 			(info >> ED_EN_SHIFT) & ED_EN_MASK,
@@ -397,34 +456,36 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 			info,
 			(info & ED_SKIP) ? " S" : "",
 			(headp & ED_H) ? " H" : "",
-			(headp & ED_C) ? data1 : data0);
+			(headp & ED_C) ? "DATA1" : "DATA0");
 		size -= temp;
 		buf += temp;
 
-		list_for_each(entry, &ed->td_list) {
-			u32		dbp, cbl;
-
-			td = list_entry(entry, struct td, td_list);
-			info = hc32_to_cpup (ahcd, &td->hwINFO);
-			dbp = hc32_to_cpup (ahcd, &td->hwDBP);
-			cbl = hc32_to_cpup (ahcd, &td->hwCBL);
-
-			temp = scnprintf(buf, size,
-				"\n\ttd %p %s %d %s%scc=%x urb %p (%08x,%08x)",
-				td,
-				({ char *pid;
-				switch (info & TD_DP) {
-				case TD_DP_SETUP: pid = "setup"; break;
-				case TD_DP_IN: pid = "in"; break;
-				case TD_DP_OUT: pid = "out"; break;
-				default: pid = "(bad pid)"; break;
-				 } pid;}),
-				TD_BL_GET(cbl),
-				(info & TD_OWN) ? "" : "DONE ",
-				(cbl & TD_IE) ? "IE " : "",
-				TD_CC_GET (info), td->urb, info, cbl);
+		if (ed->urb_active) {
+			temp = scnprintf(buf, size, "\nactive urb:");
 			size -= temp;
 			buf += temp;
+
+			temp = show_urb_priv(ahcd, buf, size, ed->urb_active);
+			size -= temp;
+			buf += temp;
+		}
+
+		if (!list_empty(&ed->urb_pending)) {
+			struct list_head *entry;
+
+			temp = scnprintf(buf, size, "\npending urbs:");
+			size -= temp;
+			buf += temp;
+
+			list_for_each(entry, &ed->urb_pending) {
+				struct urb_priv *up;
+				up = list_entry(entry, struct urb_priv,
+					pending);
+
+				temp = show_urb_priv(ahcd, buf, size, up);
+				size -= temp;
+				buf += temp;
+			}
 		}
 
 		temp = scnprintf(buf, size, "\n");
@@ -433,6 +494,7 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 
 		ed = ed->ed_next;
 	}
+
 	return count - size;
 }
 
@@ -451,17 +513,7 @@ show_async(struct class_device *class_dev, char *buf)
 
 	/* display control and bulk lists together, for simplicity */
 	spin_lock_irqsave(&ahcd->lock, flags);
-#if 0
-	temp = show_list (ahcd, buf, PAGE_SIZE, ahcd->ed_tails[ED_TAIL_CONTROL]);
-	temp += show_list (ahcd, buf + temp, PAGE_SIZE - temp,
-		ahcd->ed_tails[ED_TAIL_BULK]);
-#else
-#ifdef ED_TAIL_ARRAY
 	temp = show_list(ahcd, buf, PAGE_SIZE, ahcd->ed_head);
-#else
-	temp = show_list(ahcd, buf, PAGE_SIZE, ahcd->ed_head);
-#endif
-#endif
 	spin_unlock_irqrestore(&ahcd->lock, flags);
 
 	return temp;
@@ -474,6 +526,7 @@ static CLASS_DEVICE_ATTR(async, S_IRUGO, show_async, NULL);
 static ssize_t
 show_periodic(struct class_device *class_dev, char *buf)
 {
+#if 0
 	struct usb_bus		*bus;
 	struct usb_hcd		*hcd;
 	struct admhcd		*ahcd;
@@ -564,6 +617,9 @@ show_periodic(struct class_device *class_dev, char *buf)
 	kfree (seen);
 
 	return PAGE_SIZE - size;
+#else
+	return 0;
+#endif
 }
 static CLASS_DEVICE_ATTR(periodic, S_IRUGO, show_periodic, NULL);
 
