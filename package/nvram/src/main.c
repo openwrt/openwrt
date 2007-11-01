@@ -22,7 +22,7 @@
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: nvram [get name] [set name=value] [unset name] [show]\n");
+	fprintf(stderr, "usage: nvram [get name] [set name=value] [unset name] [commit] [show]\n");
 	exit(0);
 }
 
