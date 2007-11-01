@@ -93,10 +93,10 @@ int cf_mips_probe(struct platform_device *pdev)
 		return reg_result;
 	}
 
-	dev = (struct cf_mips_dev *)kmalloc(sizeof(struct cf_mips_dev),GFP_KERNEL);
+	dev = (struct cf_mips_dev *)kzalloc(sizeof(struct cf_mips_dev),GFP_KERNEL);
 	if (!dev)
 		goto out_err;
-	memset(dev, 0, sizeof(struct cf_mips_dev));
+
 	cdev->dev = dev;
 	
 	dev->pin = cdev->gpio_pin;
@@ -104,8 +104,9 @@ int cf_mips_probe(struct platform_device *pdev)
 	r = platform_get_resource_byname(pdev, IORESOURCE_MEM, "cf_membase");
 	dev->base = (void *) r->start;
 	
-	if (cf_init(dev)) goto out_err;
-	printk("init done");
+	if (cf_init(dev))
+		goto out_err;
+	printk(KERN_INFO "cf-mips: init done");
 	
 	spin_lock_init(&dev->lock);
 	dev->queue = blk_init_queue(cf_request,&dev->lock);
@@ -125,7 +126,9 @@ int cf_mips_probe(struct platform_device *pdev)
 	dev->gd = alloc_disk(CF_MAX_PART);
 	cf_gendisk = dev->gd;
 	cdev->gd = dev->gd;
-	if (!cf_gendisk) goto out_err; /* Last of these goto's */
+
+	if (!cf_gendisk)
+		goto out_err; /* Last of these goto's */
 	
 	cf_gendisk->major = MAJOR_NR;
 	cf_gendisk->first_minor = 0;
