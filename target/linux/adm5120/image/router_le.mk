@@ -190,7 +190,7 @@ define Image/Build/Board/WP54GWRT/Initramfs
 endef
 
 #
-# Edimax BR-6104K/KP
+# Edimax BR-6104K
 #
 define Image/Build/Board/BR6104K
 	$(call Image/Build/Edimax,$(1),br-6104k)
@@ -202,6 +202,21 @@ endef
 
 define Image/Build/Board/BR6104K/Initramfs
 	$(call Image/Build/LZMAKernel/Admboot,br-6104k,gz)
+endef
+
+#
+# Edimax BR-6104KP
+#
+define Image/Build/Board/BR6104KP
+	$(call Image/Build/Edimax,$(1),br-6104kp)
+endef
+
+define Image/Build/Board/BR6104KP/squashfs
+	$(call Image/Build/Board/BR6104KP,squashfs)
+endef
+
+define Image/Build/Board/BR6104KP/Initramfs
+	$(call Image/Build/LZMAKernel/Admboot,br-6104kp,gz)
 endef
 
 #
@@ -264,12 +279,12 @@ endef
 define Image/Build/Group/Compex
 	$(call Image/Build/Board/NP27G/$(1))
 	$(call Image/Build/Board/NP28G/$(1))
-
 	$(call Image/Build/Group/WP54G,$(1))
 endef
 
 define Image/Build/Group/Edimax
 	$(call Image/Build/Board/BR6104K/$(1))
+	$(call Image/Build/Board/BR6104KP/$(1))
 	$(call Image/Build/Board/BR6104WG/$(1))
 endef
 
@@ -326,7 +341,7 @@ define Image/Build/Profile/CAS771W
 endef
 
 define Image/Build/Profile/BR6104KP
-	$(call Image/Build/Board/BR6104K/$(1))
+	$(call Image/Build/Board/BR6104KP/$(1))
 endef
 
 define Image/Build/Profile/RouterBoard
