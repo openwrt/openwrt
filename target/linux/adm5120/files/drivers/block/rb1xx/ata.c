@@ -93,7 +93,7 @@ static inline int cf_present(struct cf_mips_dev* dev)
 	int i;
 
 	/* on RB100 WAIT is LOW all the time => read will hang */
-	if (gpio_read_value(8))
+	if (gpio_get_value(8))
 		cmd |= EXTIO_WAIT_EN;
 
 	SW_WRITE_REG(GPIO_CONF2, cmd);
