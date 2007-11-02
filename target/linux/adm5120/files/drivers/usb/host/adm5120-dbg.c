@@ -9,8 +9,6 @@
 
 /*-------------------------------------------------------------------------*/
 
-#ifdef DEBUG
-
 static inline char *ed_typestring(int ed_type)
 {
 	switch (ed_type) {
@@ -71,6 +69,8 @@ static inline char *td_togglestring(u32 info)
 	}
 	return "?TOGGLE";
 }
+
+#ifdef DEBUG
 
 /* debug| print the main components of an URB
  * small: 0) header + data packets 1) just header
@@ -377,6 +377,8 @@ static inline void admhc_dump_up(const struct admhcd *ahcd, const char *label,
 	const struct urb_priv *up) {}
 static inline void admhc_dump_ed(const struct admhcd *ahcd, const char *label,
 	const struct ed *ed, int verbose) {}
+static inline void admhc_dump_td(const struct admhcd *ahcd, const char *label,
+	const struct td *td) {}
 static inline void admhc_dump(struct admhcd *ahcd, int verbose) {}
 
 #undef ADMHC_VERBOSE_DEBUG
