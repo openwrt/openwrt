@@ -5,6 +5,23 @@
 # See /LICENSE for more information.
 #
 
+define trxedimax/jffs2-128k
+-a 0x20000 -f $(KDIR)/root.jffs2-128k
+endef
+
+define trxedimax/jffs2-64k
+-a 0x10000 -f $(KDIR)/root.jffs2-64k
+endef
+
+define trxedimax/squashfs
+-a 1024 -f $(KDIR)/root.squashfs
+endef
+
+define Image/Build/TRXEdimax
+	$(STAGING_DIR_HOST)/bin/trx -o $(1) -f $(KDIR)/vmlinux.lzma \
+		$(call trxedimax/$(2))
+endef
+
 define Image/Build/Compex
 	$(call Image/Build/Loader,$(2),gz,0x80500000,0,y,$(2))
 	$(call Image/Build/TRX,$(call imgname,$(1),$(2)).trx,$(1),$(KDIR)/loader-$(2).gz)
@@ -12,14 +29,16 @@ endef
 
 define Image/Build/Edimax
 	$(call Image/Build/Loader,$(2),gz,0x80500000,0x6D8,y,$(2))
-	$(call Image/Build/TRXNoloader,$(call imgname,$(1),$(2)).trx,$(1))
-	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(2) -d -w \
-		-r $(KDIR)/loader-$(2).gz::8192 \
-		-x $(call imgname,$(1),$(2)).trx \
+	$(call Image/Build/TRXEdimax,$(call imgname,$(1),$(2)).trx,$(1))
+	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(2) -v -v -d -w \
+		-r $(KDIR)/loader-$(2).gz::0x1000 \
+		-x $(call imgname,$(1),$(2)).trx:0x10000 \
+		-x $(JFFS2MARK):0x10000 \
 		$(call imgname,$(1),$(2))-webui.bin
-	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(2) -d \
-		-r $(KDIR)/loader-$(2).gz::8192 \
-		-x $(call imgname,$(1),$(2)).trx \
+	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(2) -v -v -d \
+		-r $(KDIR)/loader-$(2).gz::0x1000 \
+		-x $(call imgname,$(1),$(2)).trx:0x10000 \
+		-x $(JFFS2MARK):0x10000 \
 		$(call imgname,$(1),$(2))-xmodem.bin
 	rm -f $(call imgname,$(1),$(2)).trx
 endef
@@ -338,6 +357,10 @@ endef
 
 define Image/Build/Profile/CAS771W
 	$(call Image/Build/Board/CAS771W/$(1))
+endef
+
+define Image/Build/Profile/BR6104K
+	$(call Image/Build/Board/BR6104K/$(1))
 endef
 
 define Image/Build/Profile/BR6104KP
