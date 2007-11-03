@@ -4,8 +4,8 @@
  *  Copyright (C) 2007 OpenWrt.org
  *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
  *
- *  This code was based on the information of the ZyXEL's firmware 
- *  image format written by Kolja Waschk, can be found at: 
+ *  This code was based on the information of the ZyXEL's firmware
+ *  image format written by Kolja Waschk, can be found at:
  *  http://www.ixo.de/info/zyxel_uclinux
  *
  *  This program is free software; you can redistribute it and/or
@@ -143,8 +143,8 @@ int num_blocks = 0;
 	AR7_FLASH_BASE, fs, AR7_CODE_START, 0x8000)
 
 static struct board_info boards[] = {
-	/* 
-	 * Infineon/ADMtek ADM5120 based boards 
+	/*
+	 * Infineon/ADMtek ADM5120 based boards
 	 */
 	ADMBOARD2("ES-2024A",	"ZyXEL ES-2024A", ZYNOS_MODEL_ES_2024A, 4),
 	ADMBOARD2("ES-2024PWR",	"ZyXEL ES-2024PWR", ZYNOS_MODEL_ES_2024PWR, 4),
@@ -166,7 +166,7 @@ static struct board_info boards[] = {
 	ADMBOARD1("P-335U",	"ZyXEL Prestige 335U", ZYNOS_MODEL_P_335U, 4),
 	ADMBOARD1("P-335WT",	"ZyXEL Prestige 335WT", ZYNOS_MODEL_P_335WT, 4),
 #if 0
-	/* 
+	/*
 	 * Texas Instruments AR7 based boards
 	 */
 	AR7BOARD1("P-660H-61",  "ZyXEL P-660H-61", ZYNOS_MODEL_P_660H_61, 2),
@@ -259,7 +259,7 @@ str2u32(char *arg, uint32_t *val)
 {
 	char *err = NULL;
 	uint32_t t;
-	
+
 	errno=0;
 	t = strtoul(arg, &err, 0);
 	if (errno || (err==arg) || ((err != NULL) && *err)) {
@@ -282,7 +282,7 @@ str2u16(char *arg, uint16_t *val)
 	if (errno || (err==arg) || ((err != NULL) && *err) || (t >= 0x10000)) {
 		return -1;
 	}
-	
+
 	*val = t & 0xFFFF;
 	return 0;
 }
@@ -298,7 +298,7 @@ str2u8(char *arg, uint8_t *val)
 	if (errno || (err==arg) || ((err != NULL) && *err) || (t >= 0x100)) {
 		return -1;
 	}
-	
+
 	*val = t & 0xFF;
 	return 0;
 }
@@ -310,7 +310,7 @@ str2sig(char *arg, uint32_t *sig)
 		return -1;
 
 	*sig = arg[0] | (arg[1] << 8) | (arg[2] << 16) | (arg[3] << 24);
-	
+
 	return 0;
 }
 
@@ -483,7 +483,7 @@ write_out_padding(FILE *outfile, size_t len, uint8_t padc,
 
 		if (write_out_data(outfile, buf, buflen, css))
 			return -1;
-			
+
 		len -= buflen;
 	}
 
@@ -551,7 +551,7 @@ write_out_mmap(FILE *outfile, struct fw_mmap *mmap, struct csum_state *css)
 
 	/* TODO: needs to recreate the memory map too? */
 	mh->count=0;
-	
+
 	/* Build user data section */
 	data = buf+sizeof(*mh);
 	data += sprintf(data,"Model 1 %d", BE16_TO_HOST(board->model));
@@ -566,7 +566,7 @@ write_out_mmap(FILE *outfile, struct fw_mmap *mmap, struct csum_state *css)
 	mh->csum = HOST_TO_BE16(csum_buf(buf+sizeof(*mh), user_size));
 
 	res = write_out_data(outfile, buf, sizeof(buf), css);
-	
+
 	return res;
 }
 
@@ -638,7 +638,7 @@ int
 write_out_block(FILE *outfile, struct fw_block *block, struct csum_state *css)
 {
 	int res;
-	
+
 	if (block == NULL)
 		return 0;
 
@@ -648,7 +648,7 @@ write_out_block(FILE *outfile, struct fw_block *block, struct csum_state *css)
 	if (block->file_size == 0)
 		return 0;
 
-	res = write_out_file(outfile, block->file_name, 
+	res = write_out_file(outfile, block->file_name,
 			block->file_size, css);
 	return res;
 }
@@ -668,7 +668,7 @@ write_out_image(FILE *outfile)
 	/* setup header fields */
 	hdr.addr = board->code_start;
 	hdr.type = OBJECT_TYPE_BOOTEXT;
-	hdr.flags = ROMBIN_FLAG_40;
+	hdr.flags = ROMBIN_FLAG_OCSUM;
 
 	res = write_out_header(outfile, &hdr);
 	if (res)
@@ -775,7 +775,7 @@ parse_opt_ofname(char ch, char *arg)
 		return -1;
 	}
 
-	if (required_arg(ch, arg)) 
+	if (required_arg(ch, arg))
 		return -1;
 
 	ofname = arg;
@@ -800,7 +800,7 @@ parse_opt_block(char ch, char *arg)
 	}
 
 	block = &blocks[num_blocks++];
-	
+
 	/* setup default field values */
 	block->padc = 0xFF;
 
@@ -870,9 +870,9 @@ calc_block_offsets(int type, uint32_t *offset)
 		avail = board->flash_size - board->fw_offs - next_offs;
 		if (next_offs + block->file_size > avail) {
 			ERR("file %s is too big, offset = %u, size=%u,"
-				" align = %u", block->file_name, 
-				(unsigned)next_offs, 
-				(unsigned)block->file_size, 
+				" align = %u", block->file_name,
+				(unsigned)next_offs,
+				(unsigned)block->file_size,
 				(unsigned)block->align);
 			res = -1;
 			break;
@@ -881,7 +881,7 @@ calc_block_offsets(int type, uint32_t *offset)
 		block->padlen = next_offs - *offset;
 		*offset += block->file_size;
 	}
-	
+
 	return res;
 }
 
@@ -916,13 +916,13 @@ main(int argc, char *argv[])
 	int res = EXIT_FAILURE;
 
 	FILE *outfile;
-	
+
 	progname=basename(argv[0]);
 
 	opterr = 0;  /* could not print standard getopt error messages */
 	while ( 1 ) {
 		optinvalid = 0;
-		
+
 		c = getopt(argc, argv, "b:B:ho:r:v");
 		if (c == -1)
 			break;
@@ -968,7 +968,7 @@ main(int argc, char *argv[])
 		ERR("invalid option: %s", argv[optind]);
 		goto out;
 	}
-	
+
 
 	if (process_blocks() != 0) {
 		goto out;

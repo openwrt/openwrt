@@ -4,8 +4,8 @@
  *  Copyright (C) 2007 OpenWrt.org
  *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
  *
- *  This code was based on the information of the ZyXEL's firmware 
- *  image format written by Kolja Waschk, can be found at: 
+ *  This code was based on the information of the ZyXEL's firmware
+ *  image format written by Kolja Waschk, can be found at:
  *  http://www.ixo.de/info/zyxel_uclinux
  *
  *  This program is free software; you can redistribute it and/or
@@ -36,11 +36,13 @@ struct zyn_bootbase_info {
 	char		vendor[BOOTBASE_NAME_LEN]; /* Vendor name */
 	char		model[BOOTBASE_NAME_LEN]; /* Model name */
 	uint32_t	bootext_addr;	/* absolute address of the Boot Extension */
-	uint32_t	res0;
+	uint16_t	res0;		/* reserved */
+	uint8_t		sys_type;	/* system type */
+	uint8_t		res1;		/* reserved */
 	uint16_t	model_id;	/* model id */
 	uint8_t		feat_other[BOOTBASE_FEAT_LEN]; /* other feature bits */
 	uint8_t		feat_main;	/* main feature bits */
-	uint8_t		res1;		/* unknown/unused */
+	uint8_t		res2;		/* reserved */
 	uint8_t		mac[BOOTBASE_MAC_LEN]; /* mac address */
 	uint8_t		country;	/* default country code */
 	uint8_t		dbgflag;	/* debug flag */
@@ -74,8 +76,8 @@ struct zyn_rombin_hdr {
 #define ROMBIN_FLAG_04		0x04
 #define ROMBIN_FLAG_08		0x08
 #define ROMBIN_FLAG_10		0x10
-#define ROMBIN_FLAG_20		0x20
-#define ROMBIN_FLAG_40		0x40
+#define ROMBIN_FLAG_CCSUM	0x20	/* compressed checksum is valid */
+#define ROMBIN_FLAG_OCSUM	0x40	/* original checksum is valid */
 #define ROMBIN_FLAG_COMPRESSED	0x80	/* the binary is compressed */
 
 /* Object types */
@@ -118,8 +120,8 @@ struct zyn_mmt_item {
  */
 #define MID(x)	(((x) & 0xFF) << 8) | (((x) & 0xFF00) >> 8)
 
-/* 
- * Infineon/ADMtek ADM5120 based models 
+/*
+ * Infineon/ADMtek ADM5120 based models
  */
 #define ZYNOS_MODEL_ES_2024A		MID(  221)
 #define ZYNOS_MODEL_ES_2024PWR		MID( 4097)
@@ -141,8 +143,8 @@ struct zyn_mmt_item {
 #define ZYNOS_MODEL_P_335U		MID(56479)
 #define ZYNOS_MODEL_P_335WT		ZYNOS_MODEL_P_335
 
-/* 
- * Texas Instruments AR7 based models 
+/*
+ * Texas Instruments AR7 based models
  */
 #define ZYNOS_MODEL_P_2602H_61C		MID( 3229)
 #define ZYNOS_MODEL_P_2602H_63C		MID( 3485)
