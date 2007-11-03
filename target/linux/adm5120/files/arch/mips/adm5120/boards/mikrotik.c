@@ -283,8 +283,8 @@ static void __init rb150_setup(void)
 
 static void __init rb153_setup(void)
 {
-	rb150_setup();
 	rb153_cf_setup();
+	rb1xx_setup();
 }
 
 /*--------------------------------------------------------------------------*/
