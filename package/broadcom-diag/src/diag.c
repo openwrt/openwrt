@@ -713,7 +713,8 @@ static struct platform_t __init *platform_detect(void)
 			return &platforms[BUFFALO_UNKNOWN];
 	}
 
-	if (!strcmp(getvar("CFEver"), "MotoWRv203") ||
+	if (!strncmp(getvar("CFEver"), "MotoWRv2", 8) ||
+		!strncmp(getvar("CFEver"), "MotoWRv3", 8) ||
 		!strcmp(getvar("MOTO_BOARD_TYPE"), "WR_FEM1")) {
 
 		return &platforms[WR850GV2V3];
