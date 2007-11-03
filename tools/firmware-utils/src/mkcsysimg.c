@@ -52,8 +52,6 @@
 #  define LE32_TO_HOST(x)	bswap_32(x)
 #endif
 
-#define ALIGN(x,y)	((x)+((y)-1)) & ~((y)-1)
-
 #define MAX_NUM_BLOCKS	8
 #define MAX_ARG_COUNT	32
 #define MAX_ARG_LEN	1024
@@ -65,6 +63,12 @@
 #define BLOCK_TYPE_WEBP	2
 #define BLOCK_TYPE_CODE	3
 #define BLOCK_TYPE_XTRA	4
+
+#define DEFAULT_BLOCK_ALIGN	0x10000U
+
+#define CSUM_SIZE_NONE	0
+#define CSUM_SIZE_8	1
+#define CSUM_SIZE_16	2
 
 
 struct csum_state{
@@ -82,17 +86,18 @@ struct csys_block {
 	char		*file_name;	/* name of the file */
 	uint32_t	file_size;	/* length of the file */
 
-	uint32_t	size;
-	int		size_set;
+	unsigned char	sig[SIG_LEN];
+	uint32_t	addr;
+	int		addr_set;
+	uint32_t	align;
+	int		align_set;
 	uint8_t		padc;
 
+	uint32_t	size;
 	uint32_t	size_hdr;
 	uint32_t	size_csum;
 	uint32_t	size_avail;
 
-	unsigned char	sig[SIG_LEN];
-	uint32_t	addr;
-	int		addr_set;
 	struct csum_state *css;
 };
 
@@ -226,15 +231,15 @@ usage(int status)
 	fprintf(stream,
 "  -d              don't throw error on invalid images\n"
 "  -k              keep invalid images\n"
-"  -b <file>[:<len>[:<padc>]]\n"
+"  -b <file>[:<align>[:<padc>]]\n"
 "                  add boot code to the image\n"
-"  -c <file>[:<len>[:<padc>]]\n"
+"  -c <file>[:<align>[:<padc>]]\n"
 "                  add configuration settings to the image\n"
-"  -r <file>:[<addr>][:<len>[:<padc>]]\n"
+"  -r <file>:[<addr>][:<align>[:<padc>]]\n"
 "                  add runtime code to the image\n"
-"  -w [<file>:[<addr>][:<len>[:<padc>]]]\n"
+"  -w [<file>:[<addr>][:<align>[:<padc>]]]\n"
 "                  add webpages to the image\n"
-"  -x <file>[:<len>[:<padc>]]\n"
+"  -x <file>[:<align>[:<padc>]]\n"
 "                  add extra data at the end of the image\n"
 "  -h              show this screen\n"
 "Parameters:\n"
@@ -244,6 +249,19 @@ usage(int status)
 	exit(status);
 }
 
+static inline uint32_t align(uint32_t base, uint32_t alignment)
+{
+	uint32_t ret;
+
+	if (alignment) {
+		ret = (base + alignment - 1);
+		ret &= ~(alignment-1);
+	} else {
+		ret = base;
+	}
+
+	return ret;
+}
 
 /*
  * argument parsing
@@ -447,10 +465,10 @@ void
 csum_update(uint8_t *p, uint32_t len, struct csum_state *css)
 {
 	switch (css->size) {
-	case 1:
+	case CSUM_SIZE_8:
 		csum8_update(p,len,css);
 		break;
-	case 2:
+	case CSUM_SIZE_16:
 		csum16_update(p,len,css);
 		break;
 	}
@@ -463,10 +481,10 @@ csum_get(struct csum_state *css)
 	uint16_t ret;
 
 	switch (css->size) {
-	case 1:
+	case CSUM_SIZE_8:
 		ret = csum8_get(css);
 		break;
-	case 2:
+	case CSUM_SIZE_16:
 		ret = csum16_get(css);
 		break;
 	}
@@ -554,7 +572,7 @@ block_writeout_hdr(FILE *outfile, struct csys_block *block)
 	/* setup header fields */
 	memcpy(hdr.sig, block->sig, 4);
 	hdr.addr = HOST_TO_LE32(block->addr);
-	hdr.size = HOST_TO_LE32(block->size-block->size_hdr);
+	hdr.size = HOST_TO_LE32(block->align-block->size_hdr);
 
 	DBG(1,"writing header for block");
 	res = write_out_data(outfile, (uint8_t *)&hdr, sizeof(hdr),NULL);
@@ -808,7 +826,7 @@ parse_opt_block(char ch, char *arg)
 		}
 		block->type = BLOCK_TYPE_WEBP;
 		block->size_hdr = sizeof(struct csys_header);
-		block->size_csum = 1;
+		block->size_csum = CSUM_SIZE_8;
 		block->need_file = 0;
 		webp_block = block;
 		break;
@@ -819,7 +837,7 @@ parse_opt_block(char ch, char *arg)
 		}
 		block->type = BLOCK_TYPE_CODE;
 		block->size_hdr = sizeof(struct csys_header);
-		block->size_csum = 2;
+		block->size_csum = CSUM_SIZE_16;
 		code_block = block;
 		break;
 	case 'x':
@@ -858,11 +876,11 @@ parse_opt_block(char ch, char *arg)
 
 	p = argv[i++];
 	if (!is_empty_arg(p)) {
-		if (str2u32(p, &block->size) != 0) {
-			ERR("invalid block size in %s", arg);
+		if (str2u32(p, &block->align) != 0) {
+			ERR("invalid alignment value in %s", arg);
 			return ERR_FATAL;
 		}
-		block->size_set = 1;
+		block->align_set = 1;
 	}
 
 	p = argv[i++];
@@ -881,7 +899,7 @@ int
 process_blocks(void)
 {
 	struct csys_block *block;
-	uint32_t size_avail;
+	uint32_t offs = 0;
 	int i;
 	int res;
 
@@ -894,72 +912,82 @@ process_blocks(void)
 			return res;
 	}
 
-	size_avail = board->flash_size;
-
 	/* bootloader */
 	block = boot_block;
 	if (block) {
-		if (block->size_set) {
-			board->boot_size= block->size;
-		} else {
-			block->size = board->boot_size;
-		}
-		if (block->size > size_avail) {
+		block->size = board->boot_size;
+		if (block->file_size > board->boot_size) {
 			WARN("boot block is too big");
 			res = ERR_INVALID_IMAGE;
 		}
 	}
-	size_avail -= board->boot_size;
+	offs += board->boot_size;
 
 	/* configuration data */
 	block = conf_block;
 	if (block) {
-		if (block->size_set) {
-			board->conf_size = block->size;
-		} else {
-			block->size = board->conf_size;
-		}
-		if (block->size > size_avail) {
+		block->size = board->conf_size;
+		if (block->file_size > board->conf_size) {
 			WARN("config block is too big");
 			res = ERR_INVALID_IMAGE;
 		}
-
 	}
-	size_avail -= board->conf_size;
+	offs += board->conf_size;
 
 	/* webpages */
 	block = webp_block;
 	if (block) {
-		if (block->size_set == 0)
-			block->size = board->webp_size;
-		board->webp_size = block->size;
+
+		memcpy(block->sig, board->sig_webp, 4);
+
+		if (block->addr_set == 0)
+			block->addr = board->addr_webp;
+
+		if (block->align_set == 0)
+			block->align = DEFAULT_BLOCK_ALIGN;
+
+		block->size = align(offs + block->file_size + block->size_hdr +
+				block->size_csum, block->align) - offs;
+
 		if (block->size > board->webp_size_max) {
 			WARN("webpages block is too big");
 			res = ERR_INVALID_IMAGE;
 		}
-		memcpy(block->sig, board->sig_webp, 4);
-		if (block->addr_set == 0)
-			block->addr = board->addr_webp;
+
+		DBG(2,"webpages start at %08x, size=%08x", offs,
+				block->size);
+
+		offs += block->size;
+		if (offs > board->flash_size) {
+			WARN("webp block is too big");
+			res = ERR_INVALID_IMAGE;
+		}
 	}
-	size_avail -= board->webp_size;
 
 	/* runtime code */
 	block = code_block;
 	if (block) {
-		if (block->size_set == 0) {
-			block->size =ALIGN(block->file_size+ block->size_hdr +
-				block->size_csum, 0x10000);
-		}
-		board->code_size = block->size;
-		if (board->code_size > size_avail) {
+		memcpy(code_block->sig, SIG_CSYS, 4);
+
+		if (block->addr_set == 0)
+			block->addr = board->addr_code;
+
+		if (block->align_set == 0)
+			block->align = DEFAULT_BLOCK_ALIGN;
+
+		block->size = align(offs + block->file_size +
+				block->size_hdr + block->size_csum,
+				block->align) - offs;
+
+		DBG(2,"code block start at %08x, size=%08x", offs,
+				block->size);
+
+		offs += block->size;
+		if (offs > board->flash_size) {
 			WARN("code block is too big");
 			res = ERR_INVALID_IMAGE;
 		}
-		memcpy(code_block->sig, SIG_CSYS, 4);
-		if (code_block->addr_set == 0)
-			code_block->addr = board->addr_code;
 	}
-	size_avail -= board->code_size;
 
 	for (i = 0; i < num_blocks; i++) {
 		block = &blocks[i];
@@ -967,17 +995,22 @@ process_blocks(void)
 		if (block->type != BLOCK_TYPE_XTRA)
 			continue;
 
-		if (block->size_set == 0)
-			block->size = ALIGN(block->file_size, 0x10000);
+		if (block->align_set == 0)
+			block->align = DEFAULT_BLOCK_ALIGN;
 
-		if (block->size > size_avail) {
+		block->size = align(offs + block->file_size,
+				block->align) - offs;
+
+		DBG(2,"file %s start at %08x, size=%08x, align=%08x",
+			block->file_name, offs, block->size, block->align);
+
+		offs += block->size;
+		if (offs > board->flash_size) {
 			WARN("file %s is too big, size=%d, avail=%d",
 				block->file_name, block->file_size,
-				size_avail);
+				board->flash_size - offs);
 			res = ERR_INVALID_IMAGE;
 		}
-
-		size_avail -= block->size;
 	}
 
 	for (i = 0; i < num_blocks; i++) {
