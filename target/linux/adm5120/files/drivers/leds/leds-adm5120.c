@@ -303,7 +303,7 @@ adm5120_leds_init(void)
 
 	mach = adm5120_leds_findmach(mips_machtype);
 	if (mach == NULL) {
-		/* the board is not yet supported */
+		printk(KERN_ERR "leds-adm5120: unsupported board\n");
 		ret = -EINVAL;
 		goto err;
 	}
