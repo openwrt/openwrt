@@ -9,8 +9,7 @@
 TOPDIR:=${CURDIR}
 LC_ALL:=C
 LANG:=C
-IS_TTY:=${shell tty -s && echo 1 || echo 0}
-export TOPDIR LC_ALL LANG IS_TTY
+export TOPDIR LC_ALL LANG
 
 world:
 
@@ -31,10 +30,13 @@ else
   include tools/Makefile
   include toolchain/Makefile
 
-$(toolchain/stamp-compile): $(tools/stamp-compile)
+$(toolchain/stamp-install): $(tools/stamp-install)
 $(target/stamp-compile): $(toolchain/stamp-install) $(tools/stamp-install) $(BUILD_DIR)/.prepared
-$(package/stamp-compile): $(target/stamp-compile)
-$(target/stamp-install): $(package/stamp-compile) $(package/stamp-install)
+$(package/stamp-cleanup): $(target/stamp-compile)
+$(package/stamp-compile): $(target/stamp-compile) $(package/stamp-cleanup)
+$(package/stamp-install): $(package/stamp-compile)
+$(package/stamp-rootfs-prepare): $(package/stamp-install)
+$(target/stamp-install): $(package/stamp-compile) $(package/stamp-install) $(package/stamp-rootfs-prepare)
 
 $(BUILD_DIR)/.prepared: Makefile
 	@mkdir -p $$(dirname $@)

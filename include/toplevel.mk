@@ -22,6 +22,7 @@ else
   endif
 endif
 export OPENWRTVERSION
+export IS_TTY=$(shell tty -s && echo 1 || echo 0)
 
 ifeq ($(FORCE),)
   .config scripts/config/conf scripts/config/mconf: tmp/.prereq-build
