@@ -220,14 +220,15 @@ static int adm5120_flash_initres(struct adm5120_flash_info *info)
 	struct map_info *map = &info->amap.map;
 	int err = 0;
 
-	info->res = request_mem_region(map->phys, map->size, map->name);
+	info->res = request_mem_region(map->phys, info->amap.window_size,
+			map->name);
 	if (info->res == NULL) {
 		MAP_ERR(map, "could not reserve memory region\n");
 		err = -ENOMEM;
 		goto out;
 	}
 
-	map->virt = ioremap_nocache(map->phys, map->size);
+	map->virt = ioremap_nocache(map->phys, info->amap.window_size);
 	if (map->virt == NULL) {
 		MAP_ERR(map, "failed to ioremap flash region\n");
 		err = -ENOMEM;
