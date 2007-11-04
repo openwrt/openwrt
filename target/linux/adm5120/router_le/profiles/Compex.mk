@@ -16,7 +16,7 @@ endef
 
 define Profile/NP28G
 	NAME:=Compex NP28G
-	PACKAGES:=kmod-madwifi
+	PACKAGES:=kmod-madwifi kmod-usb-core kmod-usb-uhci kmod-usb2
 endef
 
 define Profile/NP28G/Description
