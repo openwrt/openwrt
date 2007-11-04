@@ -187,6 +187,12 @@ err:
 
 static void __init trxsplit_add_mtd(struct mtd_info *mtd)
 {
+	if (mtd->type != MTD_NORFLASH) {
+		printk(KERN_INFO PFX "'%s' is not a NOR flash, skipped\n",
+				mtd->name);
+		return;
+	}
+
 	if (!trx_mtd)
 		trxsplit_findtrx(mtd);
 }
