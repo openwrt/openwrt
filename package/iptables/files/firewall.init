@@ -11,9 +11,13 @@ start() {
 	config_get WAN wan ifname
 	config_get WANDEV wan device
 	config_get LAN lan ifname
-	config_get LAN_MASK lan netmask
-	config_get LAN_IP lan ipaddr
-	LAN_NET=$(/bin/ipcalc.sh $LAN_IP $LAN_MASK | grep NETWORK | cut -d= -f2)
+	config_get_bool NAT_LAN lan nat 1
+	if [ $NAT_LAN -ne 0 ]
+	then
+		config_get LAN_MASK lan netmask
+		config_get LAN_IP lan ipaddr
+		LAN_NET=$(/bin/ipcalc.sh $LAN_IP $LAN_MASK | grep NETWORK | cut -d= -f2)
+	fi
 	
 	## CLEAR TABLES
 	for T in filter nat; do
@@ -108,8 +112,11 @@ start() {
 	iptables -t nat -A PREROUTING -j prerouting_rule
 	[ -z "$WAN" ] || iptables -t nat -A PREROUTING -i "$WAN" -j prerouting_wan
 	iptables -t nat -A POSTROUTING -j postrouting_rule
-	### Only LAN
-	[ -z "$WAN" ] || iptables -t nat -A POSTROUTING --src $LAN_NET/$LAN_MASK -o $WAN -j MASQUERADE
+	### Only LAN, unless told not to
+	if [ $NAT_LAN -ne 0 ]
+	then
+		[ -z "$WAN" ] || iptables -t nat -A POSTROUTING --src $LAN_NET/$LAN_MASK -o $WAN -j MASQUERADE
+	fi
 
 	iptables -t nat -A NEW -m limit --limit 50 --limit-burst 100 -j RETURN && \
 		iptables -t nat -A NEW -j DROP
