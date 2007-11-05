@@ -144,6 +144,8 @@ dhcp_host_add() {
 	config_get mac "$cfg" mac
 	[ -n "$mac" ] || return 0
 
+	config_get ip "$cfg" ip
+	[ -n "$ip" ] || return 0
 
 	append args "--dhcp-host=$mac,$ip"
 
