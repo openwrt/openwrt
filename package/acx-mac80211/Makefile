@@ -42,6 +42,7 @@ $(STAMP_BUILT): $(DL_DIR)/$(PKG_FW_NAME)
 $(DL_DIR)/$(PKG_FW_NAME):
 	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_FW_NAME)" "$(PKG_FW_MD5SUM)" $(PKG_FW_URL)
 
+ifneq ($(findstring 2.6.23,$(LINUX_VERSION)),)
   PKG_EXTRA_KCONFIG:= \
 	CONFIG_ACX_MAC80211=m \
 	CONFIG_ACX_MAC80211_PCI=m \
@@ -50,7 +51,7 @@ $(DL_DIR)/$(PKG_FW_NAME):
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=m,%,$(filter %=m,$(PKG_EXTRA_KCONFIG)))) \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=y,%,$(filter %=y,$(PKG_EXTRA_KCONFIG)))) \
 
-  define Build/Compile/it
+  define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" \
 		ARCH="$(LINUX_KARCH)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -62,12 +63,11 @@ $(DL_DIR)/$(PKG_FW_NAME):
 		V="$(V)" \
 		modules
   endef
+else
+  override CONFIG_PACKAGE_kmod-acx-mac80211=
+endif
 
 define Build/Configure
-endef
-
-define Build/Compile
-$(call Build/Compile/it)
 endef
 
 define KernelPackage/acx-mac80211/install
