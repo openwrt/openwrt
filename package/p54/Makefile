@@ -95,7 +95,9 @@ ifneq ($(findstring 2.6.23,$(LINUX_VERSION)),)
 		modules
   endef
 else
-  override CONFIG_kmod-p54=
+  override CONFIG_PACKAGE_kmod-p54-common=
+  override CONFIG_PACKAGE_kmod-p54-pci=
+  override CONFIG_PACKAGE_kmod-p54-usb=
 endif
 
 define KernelPackage/p54-pci/install
