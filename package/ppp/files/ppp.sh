@@ -37,6 +37,10 @@ start_pppd() {
 	
 	config_get demand "$cfg" demand
 	[ -n "$demand" ] && echo "nameserver 1.1.1.1" > /tmp/resolv.conf.auto
+
+	config_get_bool ipv6 "$cfg" ipv6 0
+	[ "$ipv6" -eq 1 ] && ipv6="+ipv6" || ipv6=""
+
 	/usr/sbin/pppd "$@" \
 		${keepalive:+lcp-echo-interval $interval lcp-echo-failure ${keepalive%%[, ]*}} \
 		${demand:+precompiled-active-filter /etc/ppp/filter demand idle }${demand:-persist} \
@@ -48,6 +52,7 @@ start_pppd() {
 		ipparam "$cfg" \
 		${connect:+connect "$connect"} \
 		${disconnect:+disconnect "$disconnect"} \
+		${ipv6} \
 		${pppd_options}
 
 	lock -u "/var/lock/ppp-${cfg}"
