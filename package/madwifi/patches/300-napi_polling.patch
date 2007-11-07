@@ -1,7 +1,7 @@
-Index: madwifi-ng-r2799-20071030/ath/if_ath.c
+Index: madwifi-ng-r2834-20071106/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2799-20071030.orig/ath/if_ath.c	2007-10-31 14:04:50.997527661 +0100
-+++ madwifi-ng-r2799-20071030/ath/if_ath.c	2007-10-31 14:04:51.313545672 +0100
+--- madwifi-ng-r2834-20071106.orig/ath/if_ath.c	2007-11-07 14:02:04.537629461 +0100
++++ madwifi-ng-r2834-20071106/ath/if_ath.c	2007-11-07 14:02:04.865648150 +0100
 @@ -170,7 +170,7 @@
  	int, u_int64_t);
  static void ath_setdefantenna(struct ath_softc *, u_int);
@@ -252,7 +252,7 @@ Index: madwifi-ng-r2799-20071030/ath/if_ath.c
  	unsigned int i;
  
  	/* XXX return value */
-@@ -9336,9 +9417,9 @@
+@@ -9343,9 +9424,9 @@
  	dev->mtu = mtu;
  	if ((dev->flags & IFF_RUNNING) && !sc->sc_invalid) {
  		/* NB: the rx buffers may need to be reallocated */
@@ -264,10 +264,10 @@ Index: madwifi-ng-r2799-20071030/ath/if_ath.c
  	}
  	ATH_UNLOCK(sc);
  
-Index: madwifi-ng-r2799-20071030/ath/if_athvar.h
+Index: madwifi-ng-r2834-20071106/ath/if_athvar.h
 ===================================================================
---- madwifi-ng-r2799-20071030.orig/ath/if_athvar.h	2007-10-31 14:04:50.117477510 +0100
-+++ madwifi-ng-r2799-20071030/ath/if_athvar.h	2007-10-31 14:04:51.317545898 +0100
+--- madwifi-ng-r2834-20071106.orig/ath/if_athvar.h	2007-11-07 14:02:03.557573608 +0100
++++ madwifi-ng-r2834-20071106/ath/if_athvar.h	2007-11-07 14:02:04.865648150 +0100
 @@ -50,6 +50,10 @@
  #include <asm/io.h>
  #include <linux/list.h>
@@ -304,10 +304,10 @@ Index: madwifi-ng-r2799-20071030/ath/if_athvar.h
  
  #define	ATH_RXBUF_LOCK_INIT(_sc)	spin_lock_init(&(_sc)->sc_rxbuflock)
  #define	ATH_RXBUF_LOCK_DESTROY(_sc)
-Index: madwifi-ng-r2799-20071030/net80211/ieee80211_input.c
+Index: madwifi-ng-r2834-20071106/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-ng-r2799-20071030.orig/net80211/ieee80211_input.c	2007-10-31 14:04:49.437438757 +0100
-+++ madwifi-ng-r2799-20071030/net80211/ieee80211_input.c	2007-10-31 14:04:51.325546356 +0100
+--- madwifi-ng-r2834-20071106.orig/net80211/ieee80211_input.c	2007-11-07 14:02:02.873534629 +0100
++++ madwifi-ng-r2834-20071106/net80211/ieee80211_input.c	2007-11-07 14:02:04.873648608 +0100
 @@ -1128,8 +1128,9 @@
  		if (ni->ni_vlan != 0 && vap->iv_vlgrp != NULL) {
  			/* attach vlan tag */

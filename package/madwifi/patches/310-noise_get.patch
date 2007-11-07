@@ -1,7 +1,7 @@
-Index: madwifi-ng-r2799-20071030/ath/if_ath.c
+Index: madwifi-ng-r2834-20071106/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2799-20071030.orig/ath/if_ath.c	2007-10-31 14:04:52.073588984 +0100
-+++ madwifi-ng-r2799-20071030/ath/if_ath.c	2007-10-31 14:04:52.417608587 +0100
+--- madwifi-ng-r2834-20071106.orig/ath/if_ath.c	2007-11-07 14:02:05.625691466 +0100
++++ madwifi-ng-r2834-20071106/ath/if_ath.c	2007-11-07 14:02:06.001712892 +0100
 @@ -1417,7 +1417,6 @@
  	 * Wireshark and Kismet.
  	 */
@@ -10,7 +10,7 @@ Index: madwifi-ng-r2799-20071030/ath/if_ath.c
  
  	ATH_RXBUF_LOCK_IRQ(sc);
  	if (sc->sc_rxbufcur == NULL)
-@@ -8174,6 +8173,7 @@
+@@ -8182,6 +8181,7 @@
  	struct net_device *dev = (struct net_device *) arg;
  	struct ath_softc *sc = dev->priv;
  	struct ath_hal *ah = sc->sc_ah;
@@ -18,7 +18,7 @@ Index: madwifi-ng-r2799-20071030/ath/if_ath.c
  	/* u_int32_t nchans; */
  	HAL_BOOL isIQdone = AH_FALSE;
  
-@@ -8202,6 +8202,7 @@
+@@ -8210,6 +8210,7 @@
  		ath_calinterval = ATH_LONG_CALINTERVAL;
  	else
  		ath_calinterval = ATH_SHORT_CALINTERVAL;
@@ -26,7 +26,7 @@ Index: madwifi-ng-r2799-20071030/ath/if_ath.c
  
  	sc->sc_cal_ch.expires = jiffies + (ath_calinterval * HZ);
  	add_timer(&sc->sc_cal_ch);
-@@ -8252,6 +8253,7 @@
+@@ -8260,6 +8261,7 @@
  	struct ath_softc *sc = dev->priv;
  
  	(void) ath_chan_set(sc, ic->ic_curchan);
@@ -34,7 +34,7 @@ Index: madwifi-ng-r2799-20071030/ath/if_ath.c
  	/*
  	 * If we are returning to our bss channel then mark state
  	 * so the next recv'd beacon's TSF will be used to sync the
-@@ -8466,6 +8468,7 @@
+@@ -8474,6 +8476,7 @@
  		}
  
  		ath_hal_process_noisefloor(ah);
