@@ -163,14 +163,14 @@ static const struct hc_driver adm5120_hc_driver = {
 	/*
 	 * scheduling support
 	 */
-	.get_frame_number =	admhc_get_frame,
+	.get_frame_number =	admhc_get_frame_number,
 
 	/*
 	 * root hub support
 	 */
 	.hub_status_data =	admhc_hub_status_data,
 	.hub_control =		admhc_hub_control,
-	.hub_irq_enable =	admhc_rhsc_enable,
+	.hub_irq_enable =	admhc_hub_irq_enable,
 #ifdef	CONFIG_PM
 	.bus_suspend =		admhc_bus_suspend,
 	.bus_resume =		admhc_bus_resume,
@@ -201,8 +201,7 @@ static int usb_hcd_adm5120_remove(struct platform_device *pdev)
 	return 0;
 }
 
-#if 0
-/* TODO */
+#ifdef CONFIG_PM
 static int usb_hcd_adm5120_suspend(struct platform_device *dev)
 {
 	struct usb_hcd *hcd = platform_get_drvdata(dev);
@@ -216,17 +215,17 @@ static int usb_hcd_adm5120_resume(struct platform_device *dev)
 
 	return 0;
 }
-#endif
+#else
+#define usb_hcd_adm5120_suspend	NULL
+#define usb_hcd_adm5120_resume	NULL
+#endif /* CONFIG_PM */
 
 static struct platform_driver usb_hcd_adm5120_driver = {
 	.probe		= usb_hcd_adm5120_probe,
 	.remove		= usb_hcd_adm5120_remove,
 	.shutdown	= usb_hcd_platform_shutdown,
-#if 0
-	/* TODO */
 	.suspend	= usb_hcd_adm5120_suspend,
 	.resume		= usb_hcd_adm5120_resume,
-#endif
 	.driver		= {
 		.name	= "adm5120-hcd",
 		.owner	= THIS_MODULE,

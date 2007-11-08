@@ -369,8 +369,6 @@ struct urb_priv {
 
 struct admhcd {
 	spinlock_t		lock;
-	spinlock_t		dma_lock;
-	u32			dma_state;
 
 	/*
 	 * I/O memory used to communicate with the HC (dma-consistent)
@@ -438,22 +436,6 @@ static inline struct usb_hcd *admhcd_to_hcd(const struct admhcd *ahcd)
 #define STUB_DEBUG_FILES
 #endif	/* DEBUG */
 
-#if 0
-#define admhc_dbg(ahcd, fmt, args...) \
-	dev_dbg(admhcd_to_hcd(ahcd)->self.controller , fmt , ## args )
-#define admhc_err(ahcd, fmt, args...) \
-	dev_err(admhcd_to_hcd(ahcd)->self.controller , fmt , ## args )
-#define ahcd_info(ahcd, fmt, args...) \
-	dev_info(admhcd_to_hcd(ahcd)->self.controller , fmt , ## args )
-#define admhc_warn(ahcd, fmt, args...) \
-	dev_warn(admhcd_to_hcd(ahcd)->self.controller , fmt , ## args )
-
-#ifdef ADMHC_VERBOSE_DEBUG
-#	define admhc_vdbg admhc_dbg
-#else
-#	define admhc_vdbg(ahcd, fmt, args...) do { } while (0)
-#endif
-#else
 #define admhc_dbg(ahcd, fmt, args...) \
 	printk(KERN_DEBUG "adm5120-hcd: " fmt , ## args )
 #define admhc_err(ahcd, fmt, args...) \
@@ -467,7 +449,6 @@ static inline struct usb_hcd *admhcd_to_hcd(const struct admhcd *ahcd)
 #	define admhc_vdbg admhc_dbg
 #else
 #	define admhc_vdbg(ahcd, fmt, args...) do { } while (0)
-#endif
 #endif
 
 /*-------------------------------------------------------------------------*/
@@ -564,14 +545,6 @@ static inline void admhc_writel(const struct admhcd *ahcd,
 #endif
 }
 
-static inline void admhc_writel_flush(const struct admhcd *ahcd)
-{
-#if 0	/* TODO: needed? */
-	(void) admhc_readl(ahcd, &ahcd->regs->control);
-#endif
-}
-
-
 /*-------------------------------------------------------------------------*/
 
 /* cpu to ahcd */
@@ -659,13 +632,12 @@ static inline void admhc_disable(struct admhcd *ahcd)
 }
 
 #define	FI			0x2edf		/* 12000 bits per frame (-1) */
-#define	FSLDP(fi)		(0x7fff & ((6 * ((fi) - 210)) / 7))
+#define	FSLDP(fi)		(0x7fff & ((6 * ((fi) - 1200)) / 7))
 #define	FIT			ADMHC_SFI_FIT
 #define LSTHRESH		0x628		/* lowspeed bit threshold */
 
 static inline void periodic_reinit(struct admhcd *ahcd)
 {
-	u32	fi = ahcd->fminterval & ADMHC_SFI_FI_MASK;
 	u32	fit = admhc_readl(ahcd, &ahcd->regs->fminterval) & FIT;
 
 	/* TODO: adjust FSLargestDataPacket value too? */
@@ -724,7 +696,7 @@ static inline void admhc_dma_enable(struct admhcd *ahcd)
 
 	t |= ADMHC_HC_DMAE;
 	admhc_writel(ahcd, t, &ahcd->regs->host_control);
-	admhc_dbg(ahcd,"DMA enabled\n");
+	admhc_vdbg(ahcd,"DMA enabled\n");
 }
 
 static inline void admhc_dma_disable(struct admhcd *ahcd)
@@ -737,24 +709,5 @@ static inline void admhc_dma_disable(struct admhcd *ahcd)
 
 	t &= ~ADMHC_HC_DMAE;
 	admhc_writel(ahcd, t, &ahcd->regs->host_control);
-	admhc_dbg(ahcd,"DMA disabled\n");
-}
-
-static inline void admhc_dma_lock(struct admhcd *ahcd)
-{
-	spin_lock(ahcd->dma_lock);
-
-	ahcd->dma_state = admhc_readl(ahcd, &ahcd->regs->host_control);
-	admhc_writel(ahcd, 0, &ahcd->regs->hosthead);
-	admhc_writel(ahcd, ahcd->dma_state & ~ADMHC_HC_DMAE,
-				&ahcd->regs->host_control);
-	admhc_dbg(ahcd,"DMA locked\n");
-}
-
-static inline void admhc_dma_unlock(struct admhcd *ahcd)
-{
-	admhc_writel(ahcd, (u32)ahcd->ed_head->dma, &ahcd->regs->hosthead);
-	admhc_writel(ahcd, ahcd->dma_state, &ahcd->regs->host_control);
-	admhc_dbg(ahcd,"DMA unlocked\n");
-	spin_unlock(ahcd->dma_lock);
+	admhc_vdbg(ahcd,"DMA disabled\n");
 }

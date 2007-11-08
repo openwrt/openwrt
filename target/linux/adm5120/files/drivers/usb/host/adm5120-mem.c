@@ -27,7 +27,6 @@ static void admhc_hcd_init(struct admhcd *ahcd)
 {
 	ahcd->next_statechange = jiffies;
 	spin_lock_init(&ahcd->lock);
-	spin_lock_init(&ahcd->dma_lock);
 }
 
 /*-------------------------------------------------------------------------*/
