@@ -153,7 +153,6 @@ static int ed_schedule(struct admhcd *ahcd, struct ed *ed)
 
 	ed->state = ED_IDLE;
 
-	admhc_dma_lock(ahcd);
 	ed->hwINFO &= ~cpu_to_hc32(ahcd, ED_SKIP);
 
 	old_tail = ahcd->ed_tails[ed->type];
@@ -169,7 +168,6 @@ static int ed_schedule(struct admhcd *ahcd, struct ed *ed)
 	old_tail->hwNextED = cpu_to_hc32(ahcd, ed->dma);
 
 	ahcd->ed_tails[ed->type] = ed;
-	admhc_dma_unlock(ahcd);
 
 	admhc_intr_enable(ahcd, ADMHC_INTR_SOFI);
 
@@ -181,9 +179,7 @@ static void ed_deschedule(struct admhcd *ahcd, struct ed *ed)
 	admhc_dump_ed(ahcd, "ED-DESCHED", ed, 0);
 
 	/* remove this ED from the HC list */
-	admhc_dma_lock(ahcd);
 	ed->ed_prev->hwNextED = ed->hwNextED;
-	admhc_dma_unlock(ahcd);
 
 	/* and remove it from our list */
 	ed->ed_prev->ed_next = ed->ed_next;
@@ -203,9 +199,7 @@ static void ed_start_deschedule(struct admhcd *ahcd, struct ed *ed)
 {
 	admhc_dump_ed(ahcd, "ED-UNLINK", ed, 0);
 
-	admhc_dma_lock(ahcd);
 	ed->hwINFO |= cpu_to_hc32(ahcd, ED_SKIP);
-	admhc_dma_unlock(ahcd);
 
 	ed->state = ED_UNLINK;
 
@@ -573,11 +567,9 @@ static int ed_next_urb(struct admhcd *ahcd, struct ed *ed)
 
 	up->td[up->td_cnt-1]->hwNextTD = cpu_to_hc32(ahcd, ed->dummy->td_dma);
 
-	admhc_dma_lock(ahcd);
 	carry = hc32_to_cpup(ahcd, &ed->hwHeadP) & ED_C;
 	ed->hwHeadP = cpu_to_hc32(ahcd, up->td[0]->td_dma | carry);
 	ed->hwINFO &= ~cpu_to_hc32(ahcd, ED_SKIP);
-	admhc_dma_unlock(ahcd);
 
 	return 1;
 }
