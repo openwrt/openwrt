@@ -70,9 +70,16 @@ define Package/wlc/description
  wl driver.
 endef
 
+define Package/brcm-compat-ldso
+  TITLE:=Broadcom wl/nas binary compatibility libraries
+  SECTION:=libs
+  CATEGORY:=Libraries
+endef
+
 define Package/wl
 $(call Package/broadcom-wl/Default)
   TITLE:=Proprietary Broadcom wl driver config utility
+  DEPENDS+=+brcm-compat-ldso
 endef
 
 define Package/wl/description
@@ -82,7 +89,7 @@ endef
 
 define Package/nas
 $(call Package/broadcom-wl/Default)
-  DEPENDS+= +nvram
+  DEPENDS+= +nvram +brcm-compat-ldso
   TITLE:=Proprietary Broadcom WPA/WPA2 authenticator
 endef
 
@@ -128,6 +135,15 @@ define Build/Compile
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="-I$(PKG_BUILD_DIR)/wlc/include $(TARGET_CFLAGS)" \
 		all
+	$(NO_TRACE_MAKE) -C compat-ldso -f build.mk PKG_INSTALL_DIR="$(PKG_BUILD_DIR)"
+	$(SED) 's,ld-uClibc.so.0,ld-uClibc.brcm,' \
+		$(PKG_BUILD_DIR)/wl \
+		$(PKG_BUILD_DIR)/nas
+endef
+
+define Package/brcm-compat-ldso/install
+	$(INSTALL_DIR) $(1)/lib
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ld-uClibc.brcm $(1)/lib/
 endef
 
 define Package/wlc/install
@@ -152,6 +168,7 @@ endef
 
 $(eval $(call KernelPackage,brcm-wl))
 $(eval $(call KernelPackage,brcm-wl-mimo))
+$(eval $(call BuildPackage,brcm-compat-ldso))
 $(eval $(call BuildPackage,wlc))
 $(eval $(call BuildPackage,wl))
 $(eval $(call BuildPackage,nas))
