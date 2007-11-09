@@ -135,10 +135,10 @@ define Build/Compile
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="-I$(PKG_BUILD_DIR)/wlc/include $(TARGET_CFLAGS)" \
 		all
-	$(NO_TRACE_MAKE) -C compat-ldso -f build.mk PKG_INSTALL_DIR="$(PKG_BUILD_DIR)"
-	$(SED) 's,ld-uClibc.so.0,ld-uClibc.brcm,' \
-		$(PKG_BUILD_DIR)/wl \
-		$(PKG_BUILD_DIR)/nas
+#	$(NO_TRACE_MAKE) -C compat-ldso -f build.mk PKG_INSTALL_DIR="$(PKG_BUILD_DIR)"
+#	$(SED) 's,ld-uClibc.so.0,ld-uClibc.brcm,' \
+#		$(PKG_BUILD_DIR)/wl \
+#		$(PKG_BUILD_DIR)/nas
 endef
 
 define Package/brcm-compat-ldso/install
@@ -168,7 +168,7 @@ endef
 
 $(eval $(call KernelPackage,brcm-wl))
 $(eval $(call KernelPackage,brcm-wl-mimo))
-$(eval $(call BuildPackage,brcm-compat-ldso))
+#$(eval $(call BuildPackage,brcm-compat-ldso))
 $(eval $(call BuildPackage,wlc))
 $(eval $(call BuildPackage,wl))
 $(eval $(call BuildPackage,nas))
