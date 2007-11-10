@@ -147,7 +147,7 @@ static struct urb_priv *urb_priv_alloc(struct admhcd *ahcd, int num_tds,
 	if (!priv)
 		goto err;
 
-	/* allocate the TDs (deferring hash chain updates) */
+	/* allocate the TDs */
 	for (i = 0; i < num_tds; i++) {
 		priv->td[i] = td_alloc(ahcd, mem_flags);
 		if (priv->td[i] == NULL)

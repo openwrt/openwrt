@@ -45,13 +45,14 @@
 #include "../core/hcd.h"
 #include "../core/hub.h"
 
-#define DRIVER_VERSION	"v0.03"
+#define DRIVER_VERSION	"v0.04"
 #define DRIVER_AUTHOR	"Gabor Juhos <juhosg at openwrt.org>"
 #define DRIVER_DESC	"ADMtek USB 1.1 Host Controller Driver"
 
 /*-------------------------------------------------------------------------*/
 
 #define ADMHC_VERBOSE_DEBUG	/* not always helpful */
+#define ADMHC_POLL_RH
 #undef ADMHC_LOCK_DMA
 
 /* For initializing controller (mask in an HCFS mode too) */
@@ -349,7 +350,7 @@ static int admhc_get_frame_number(struct usb_hcd *hcd)
 static void admhc_usb_reset(struct admhcd *ahcd)
 {
 	ahcd->host_control = ADMHC_BUSS_RESET;
-	admhc_writel(ahcd, ahcd->host_control ,&ahcd->regs->host_control);
+	admhc_writel(ahcd, ahcd->host_control, &ahcd->regs->host_control);
 }
 
 /* admhc_shutdown forcibly disables IRQs and DMA, helping kexec and
@@ -466,7 +467,7 @@ static int admhc_init(struct admhcd *ahcd)
 
 	/* Read the number of ports unless overridden */
 	if (ahcd->num_ports == 0)
-		ahcd->num_ports = admhc_get_rhdesc(ahcd) & ADMHC_RH_NUMP;
+		ahcd->num_ports = admhc_read_rhdesc(ahcd) & ADMHC_RH_NUMP;
 
 	ret = admhc_mem_init(ahcd);
 	if (ret)
@@ -531,18 +532,16 @@ static int admhc_run(struct admhcd *ahcd)
 	admhc_writel(ahcd, ahcd->host_control, &ahcd->regs->host_control);
 
 	msleep(temp);
-	temp = admhc_get_rhdesc(ahcd);
+	temp = admhc_read_rhdesc(ahcd);
 	if (!(temp & ADMHC_RH_NPS)) {
 		/* power down each port */
 		for (temp = 0; temp < ahcd->num_ports; temp++)
-			admhc_writel(ahcd, ADMHC_PS_CPP,
-				&ahcd->regs->portstatus[temp]);
+			admhc_write_portstatus(ahcd, temp, ADMHC_PS_CPP);
 	}
 
 	/* 2msec timelimit here means no irqs/preempt */
 	spin_lock_irq(&ahcd->lock);
 
-retry:
 	admhc_writel(ahcd, ADMHC_CTRL_SR,  &ahcd->regs->gencontrol);
 	temp = 30;	/* ... allow extra time */
 	while ((admhc_readl(ahcd, &ahcd->regs->gencontrol) & ADMHC_CTRL_SR) != 0) {
@@ -615,25 +614,23 @@ static irqreturn_t admhc_irq(struct usb_hcd *hcd)
  	u32 ints;
 
 	ints = admhc_readl(ahcd, &regs->int_status);
-	if ((ints & ADMHC_INTR_INTA) == 0) {
+	if (!(ints & ADMHC_INTR_INTA))
 		/* no unmasked interrupt status is set */
 		return IRQ_NONE;
-	}
 
 	ints &= admhc_readl(ahcd, &regs->int_enable);
+	if (!ints)
+		return IRQ_NONE;
 
 	if (ints & ADMHC_INTR_FATI) {
-		/* e.g. due to PCI Master/Target Abort */
 		admhc_disable(ahcd);
 		admhc_err(ahcd, "Fatal Error, controller disabled\n");
-		admhc_dump(ahcd, 1);
 		admhc_usb_reset(ahcd);
 	}
 
 	if (ints & ADMHC_INTR_BABI) {
-		admhc_intr_disable(ahcd, ADMHC_INTR_MIE);
-		admhc_err(ahcd, "Babble Detected\n");
 		admhc_disable(ahcd);
+		admhc_err(ahcd, "Babble Detected\n");
 		admhc_usb_reset(ahcd);
 	}
 
@@ -711,7 +708,7 @@ static void admhc_stop(struct usb_hcd *hcd)
 	flush_scheduled_work();
 
 	admhc_usb_reset(ahcd);
-	admhc_intr_disable(ahcd, ADMHC_INTR_MIE);
+	admhc_intr_disable(ahcd, ~0);
 
 	free_irq(hcd->irq, hcd);
 	hcd->irq = -1;

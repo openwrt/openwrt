@@ -17,42 +17,42 @@
 	admhc_dbg(hc, \
 		"%s port%d " \
 		"= 0x%08x%s%s%s%s%s%s%s%s%s%s%s%s\n", \
-		label, num, temp, \
-		(temp & ADMHC_PS_PRSC) ? " PRSC" : "", \
-		(temp & ADMHC_PS_OCIC) ? " OCIC" : "", \
-		(temp & ADMHC_PS_PSSC) ? " PSSC" : "", \
-		(temp & ADMHC_PS_PESC) ? " PESC" : "", \
-		(temp & ADMHC_PS_CSC) ? " CSC" : "", \
+		label, num, value, \
+		(value & ADMHC_PS_PRSC) ? " PRSC" : "", \
+		(value & ADMHC_PS_OCIC) ? " OCIC" : "", \
+		(value & ADMHC_PS_PSSC) ? " PSSC" : "", \
+		(value & ADMHC_PS_PESC) ? " PESC" : "", \
+		(value & ADMHC_PS_CSC) ? " CSC" : "", \
 		\
-		(temp & ADMHC_PS_LSDA) ? " LSDA" : "", \
-		(temp & ADMHC_PS_PPS) ? " PPS" : "", \
-		(temp & ADMHC_PS_PRS) ? " PRS" : "", \
-		(temp & ADMHC_PS_POCI) ? " POCI" : "", \
-		(temp & ADMHC_PS_PSS) ? " PSS" : "", \
+		(value & ADMHC_PS_LSDA) ? " LSDA" : "", \
+		(value & ADMHC_PS_PPS) ? " PPS" : "", \
+		(value & ADMHC_PS_PRS) ? " PRS" : "", \
+		(value & ADMHC_PS_POCI) ? " POCI" : "", \
+		(value & ADMHC_PS_PSS) ? " PSS" : "", \
 		\
-		(temp & ADMHC_PS_PES) ? " PES" : "", \
-		(temp & ADMHC_PS_CCS) ? " CCS" : "" \
+		(value & ADMHC_PS_PES) ? " PES" : "", \
+		(value & ADMHC_PS_CCS) ? " CCS" : "" \
 		);
 
 #define dbg_port_write(hc,label,num,value) \
 	admhc_dbg(hc, \
 		"%s port%d " \
 		"= 0x%08x%s%s%s%s%s%s%s%s%s%s%s%s\n", \
-		label, num, temp, \
-		(temp & ADMHC_PS_PRSC) ? " PRSC" : "", \
-		(temp & ADMHC_PS_OCIC) ? " OCIC" : "", \
-		(temp & ADMHC_PS_PSSC) ? " PSSC" : "", \
-		(temp & ADMHC_PS_PESC) ? " PESC" : "", \
-		(temp & ADMHC_PS_CSC) ? " CSC" : "", \
+		label, num, value, \
+		(value & ADMHC_PS_PRSC) ? " PRSC" : "", \
+		(value & ADMHC_PS_OCIC) ? " OCIC" : "", \
+		(value & ADMHC_PS_PSSC) ? " PSSC" : "", \
+		(value & ADMHC_PS_PESC) ? " PESC" : "", \
+		(value & ADMHC_PS_CSC) ? " CSC" : "", \
 		\
-		(temp & ADMHC_PS_CPP) ? " CPP" : "", \
-		(temp & ADMHC_PS_SPP) ? " SPP" : "", \
-		(temp & ADMHC_PS_SPR) ? " SPR" : "", \
-		(temp & ADMHC_PS_CPS) ? " CPS" : "", \
-		(temp & ADMHC_PS_SPS) ? " SPS" : "", \
+		(value & ADMHC_PS_CPP) ? " CPP" : "", \
+		(value & ADMHC_PS_SPP) ? " SPP" : "", \
+		(value & ADMHC_PS_SPR) ? " SPR" : "", \
+		(value & ADMHC_PS_CPS) ? " CPS" : "", \
+		(value & ADMHC_PS_SPS) ? " SPS" : "", \
 		\
-		(temp & ADMHC_PS_SPE) ? " SPE" : "", \
-		(temp & ADMHC_PS_CPE) ? " CPE" : "" \
+		(value & ADMHC_PS_SPE) ? " SPE" : "", \
+		(value & ADMHC_PS_CPE) ? " CPE" : "" \
 		);
 
 /*-------------------------------------------------------------------------*/
@@ -87,7 +87,7 @@ admhc_hub_status_data(struct usb_hcd *hcd, char *buf)
 		goto done;
 
 	/* init status */
-	status = admhc_get_rhdesc(ahcd);
+	status = admhc_read_rhdesc(ahcd);
 	if (status & (ADMHC_RH_LPSC | ADMHC_RH_OCIC))
 		buf [0] = changed = 1;
 	else
@@ -99,7 +99,7 @@ admhc_hub_status_data(struct usb_hcd *hcd, char *buf)
 
 	/* look at each port */
 	for (i = 0; i < ahcd->num_ports; i++) {
-		status = admhc_get_portstatus(ahcd, i);
+		status = admhc_read_portstatus(ahcd, i);
 
 		/* can't autostop if ports are connected */
 		any_connected |= (status & ADMHC_PS_CCS);
@@ -125,15 +125,15 @@ done:
 
 /*-------------------------------------------------------------------------*/
 
-static void admhc_hub_descriptor(struct admhcd *ahcd,
-		struct usb_hub_descriptor *desc)
+static int admhc_get_hub_descriptor(struct admhcd *ahcd, char *buf)
 {
-	u32		rh = admhc_get_rhdesc(ahcd);
-	u16		temp;
+	struct usb_hub_descriptor *desc = (struct usb_hub_descriptor *)buf;
+	u32 rh = admhc_read_rhdesc(ahcd);
+	u16 temp;
 
 	desc->bDescriptorType = USB_DT_HUB;	/* Hub-descriptor */
 	desc->bPwrOn2PwrGood = ADMHC_POTPGT/2;	/* use default value */
-	desc->bHubContrCurrent = 0x00;	/* 0mA */
+	desc->bHubContrCurrent = 0x00;		/* 0mA */
 
 	desc->bNbrPorts = ahcd->num_ports;
 	temp = 1 + (ahcd->num_ports / 8);
@@ -152,8 +152,58 @@ static void admhc_hub_descriptor(struct admhcd *ahcd,
 	desc->wHubCharacteristics = (__force __u16)cpu_to_hc16(ahcd, temp);
 
 	/* two bitmaps:  ports removable, and usb 1.0 legacy PortPwrCtrlMask */
-	desc->bitmap [0] = 0;
-	desc->bitmap [0] = ~0;
+	desc->bitmap[0] = 0;
+	desc->bitmap[0] = ~0;
+
+	return 0;
+}
+
+static int admhc_get_hub_status(struct admhcd *ahcd, char *buf)
+{
+	struct usb_hub_status *hs = (struct usb_hub_status *)buf;
+	u32 t = admhc_read_rhdesc(ahcd);
+	u16 status, change;
+
+	status = 0;
+	status |= (t & ADMHC_RH_LPS) ? HUB_STATUS_LOCAL_POWER : 0;
+	status |= (t & ADMHC_RH_OCI) ? HUB_STATUS_OVERCURRENT : 0;
+
+	change = 0;
+	change |= (t & ADMHC_RH_LPSC) ? HUB_CHANGE_LOCAL_POWER : 0;
+	change |= (t & ADMHC_RH_OCIC) ? HUB_CHANGE_OVERCURRENT : 0;
+
+	hs->wHubStatus = (__force __u16)cpu_to_hc16(ahcd, status);
+	hs->wHubChange = (__force __u16)cpu_to_hc16(ahcd, change);
+
+	return 0;
+}
+
+static int admhc_get_port_status(struct admhcd *ahcd, unsigned port, char *buf)
+{
+	struct usb_port_status *ps = (struct usb_port_status *)buf;
+	u32 t = admhc_read_portstatus(ahcd, port);
+	u16 status, change;
+
+	status = 0;
+	status |= (t & ADMHC_PS_CCS) ? USB_PORT_STAT_CONNECTION : 0;
+	status |= (t & ADMHC_PS_PES) ? USB_PORT_STAT_ENABLE : 0;
+	status |= (t & ADMHC_PS_PSS) ? USB_PORT_STAT_SUSPEND : 0;
+	status |= (t & ADMHC_PS_POCI) ? USB_PORT_STAT_OVERCURRENT : 0;
+	status |= (t & ADMHC_PS_PRS) ? USB_PORT_STAT_RESET : 0;
+	status |= (t & ADMHC_PS_PPS) ? USB_PORT_STAT_POWER : 0;
+	status |= (t & ADMHC_PS_LSDA) ? USB_PORT_STAT_LOW_SPEED : 0;
+
+	change = 0;
+	change |= (t & ADMHC_PS_CSC) ? USB_PORT_STAT_C_CONNECTION : 0;
+	change |= (t & ADMHC_PS_PESC) ? USB_PORT_STAT_C_ENABLE : 0;
+	change |= (t & ADMHC_PS_PSSC) ? USB_PORT_STAT_C_SUSPEND : 0;
+	change |= (t & ADMHC_PS_OCIC) ? USB_PORT_STAT_C_OVERCURRENT : 0;
+	change |= (t & ADMHC_PS_PRSC) ? USB_PORT_STAT_C_RESET : 0;
+
+	ps->wPortStatus = (__force __u16)cpu_to_hc16(ahcd, status);
+	ps->wPortChange = (__force __u16)cpu_to_hc16(ahcd, change);
+
+	return 0;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -170,12 +220,12 @@ static int admhc_start_port_reset(struct usb_hcd *hcd, unsigned port)
 	port--;
 
 	/* start port reset before HNP protocol times out */
-	status = admhc_readl(ahcd, &ahcd->regs->portstatus[port]);
+	status = admhc_read_portstatus(ahcd, port);
 	if (!(status & ADMHC_PS_CCS))
 		return -ENODEV;
 
 	/* khubd will finish the reset later */
-	admhc_writel(ahcd, ADMHC_PS_PRS, &ahcd->regs->portstatus[port]);
+	admhc_write_portstatus(ahcd, port, ADMHC_PS_PRS);
 	return 0;
 }
 
@@ -208,91 +258,107 @@ static void start_hnp(struct admhcd *ahcd);
 #define tick_before(t1,t2) ((s16)(((s16)(t1))-((s16)(t2))) < 0)
 
 /* called from some task, normally khubd */
-static inline int root_port_reset(struct admhcd *ahcd, unsigned port)
+static inline int admhc_port_reset(struct admhcd *ahcd, unsigned port)
 {
-#if 0
-	/* FIXME: revert to this when frame numbers are updated */
-	__hc32 __iomem *portstat = &ahcd->regs->portstatus[port];
-	u32	temp;
-	u16	now = admhc_readl(ahcd, &ahcd->regs->fmnumber);
-	u16	reset_done = now + PORT_RESET_MSEC;
+	u32 t;
+	int c;
 
-	/* build a "continuous enough" reset signal, with up to
-	 * 3msec gap between pulses.  scheduler HZ==100 must work;
-	 * this might need to be deadline-scheduled.
-	 */
+	admhc_vdbg(ahcd, "reset port%d\n", port);
+
+	t = admhc_read_portstatus(ahcd, port);
+	if (!(t & ADMHC_PS_CCS))
+		return -ENODEV;
+
+	if ((t & ADMHC_PS_PRS))
+		return 0;
+
+	admhc_write_portstatus(ahcd, port, ADMHC_PS_PRS);
+	c = 0;
 	do {
-		/* spin until any current reset finishes */
-		for (;;) {
-			temp = admhc_readl(ahcd, portstat);
-			/* handle e.g. CardBus eject */
-			if (temp == ~(u32)0)
-				return -ESHUTDOWN;
-			if (!(temp & ADMHC_PS_PRS))
-				break;
-			udelay (500);
-		}
-
-		if (!(temp & ADMHC_PS_CCS))
-			break;
-		if (temp & ADMHC_PS_PRSC)
-			admhc_writel(ahcd, ADMHC_PS_PRSC, portstat);
-
-		/* start the next reset, sleep till it's probably done */
-		admhc_writel(ahcd, ADMHC_PS_PRS, portstat);
-		msleep(PORT_RESET_HW_MSEC);
-		now = admhc_readl(ahcd, &ahcd->regs->fmnumber);
-	} while (tick_before(now, reset_done));
-	/* caller synchronizes using PRSC */
-#else
-	__hc32 __iomem *portstat = &ahcd->regs->portstatus[port];
-	u32	temp;
-	unsigned long	reset_done = jiffies + msecs_to_jiffies(PORT_RESET_MSEC);
-
-	/* build a "continuous enough" reset signal, with up to
-	 * 3msec gap between pulses.  scheduler HZ==100 must work;
-	 * this might need to be deadline-scheduled.
-	 */
-	do {
-		/* spin until any current reset finishes */
-		for (;;) {
-			temp = admhc_readl(ahcd, portstat);
-			/* handle e.g. CardBus eject */
-			if (temp == ~(u32)0)
-				return -ESHUTDOWN;
-			if (!(temp & ADMHC_PS_PRS))
-				break;
-			udelay (500);
-		}
-
-		if (!(temp & ADMHC_PS_CCS))
+		t = admhc_read_portstatus(ahcd, port);
+		if (t & ADMHC_PS_PRSC)
 			break;
 
-		if (temp & ADMHC_PS_PRSC)
-			admhc_writel(ahcd, ADMHC_PS_PRSC, portstat);
+		if (++c > 20) {
+			admhc_err(ahcd, "port%d reset timed out\n",port);
+			return -EPIPE;
+		}
 
-		/* start the next reset, sleep till it's probably done */
-		admhc_writel(ahcd, ADMHC_PS_PRS, portstat);
-		msleep(PORT_RESET_HW_MSEC);
-	} while (time_before(jiffies, reset_done));
+		mdelay(PORT_RESET_HW_MSEC);
+	} while (1);
+	admhc_vdbg(ahcd, "port%d reset completed within %dms\n", port,
+			c * PORT_RESET_HW_MSEC);
 
-	admhc_writel(ahcd, ADMHC_PS_SPE | ADMHC_PS_CSC, portstat);
-	msleep(100);
-#endif
+	t = admhc_read_portstatus(ahcd, port);
+	if (!(t & ADMHC_PS_CCS)) {
+		admhc_err(ahcd, "port%d is not connected after reset\n",port);
+		return -ENODEV;
+	}
+
+	admhc_write_portstatus(ahcd, port, ADMHC_PS_SPE);
+	c = 0;
+	do {
+		t = admhc_read_portstatus(ahcd, port);
+		if (t & ADMHC_PS_PESC)
+			break;
+
+		if (++c > 20) {
+			admhc_err(ahcd, "port%d enable timed out\n",port);
+			return -EPIPE;
+		}
+
+		mdelay(PORT_RESET_HW_MSEC);
+	} while (1);
+	admhc_vdbg(ahcd, "port%d enable completed within %dms\n", port,
+			c * PORT_RESET_HW_MSEC);
+
+	admhc_write_portstatus(ahcd, port, ADMHC_PS_CSC);
+
 	return 0;
 }
 
-static int admhc_hub_control (
-	struct usb_hcd	*hcd,
-	u16		typeReq,
-	u16		wValue,
-	u16		wIndex,
-	char		*buf,
-	u16		wLength
-) {
+static inline int admhc_port_enable(struct admhcd *ahcd, unsigned port)
+{
+	u32 t;
+
+	admhc_vdbg(ahcd, "enable port%d\n", port);
+	t = admhc_read_portstatus(ahcd, port);
+	if (!(t & ADMHC_PS_CCS))
+		return -ENODEV;
+
+	admhc_write_portstatus(ahcd, port, ADMHC_PS_SPE);
+
+	return 0;
+}
+
+static inline int admhc_port_disable(struct admhcd *ahcd, unsigned port)
+{
+	u32 t;
+
+	admhc_vdbg(ahcd, "disable port%d\n", port);
+	t = admhc_read_portstatus(ahcd, port);
+	if (!(t & ADMHC_PS_CCS))
+		return -ENODEV;
+
+	admhc_write_portstatus(ahcd, ADMHC_PS_CPE, port);
+
+	return 0;
+}
+
+static inline int admhc_port_write(struct admhcd *ahcd, unsigned port,
+		u32 val)
+{
+	dbg_port_write(ahcd, "write", port, val);
+	admhc_write_portstatus(ahcd, port, val);
+
+	return 0;
+}
+
+static int admhc_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
+		u16 wIndex, char *buf, u16 wLength)
+{
 	struct admhcd	*ahcd = hcd_to_admhcd(hcd);
-	int		ports = hcd_to_bus (hcd)->root_hub->maxchild;
-	u32		temp;
+	int		ports = hcd_to_bus(hcd)->root_hub->maxchild;
 	int		ret = 0;
 
 	if (unlikely(!test_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags)))
@@ -319,55 +385,50 @@ static int admhc_hub_control (
 
 		switch (wValue) {
 		case USB_PORT_FEAT_ENABLE:
-			temp = ADMHC_PS_CPE;
+			ret = admhc_port_disable(ahcd, wIndex);
 			break;
 		case USB_PORT_FEAT_SUSPEND:
-			temp = ADMHC_PS_CPS;
+			ret = admhc_port_write(ahcd, wIndex, ADMHC_PS_CPS);
 			break;
 		case USB_PORT_FEAT_POWER:
-			temp = ADMHC_PS_CPP;
+			ret = admhc_port_write(ahcd, wIndex, ADMHC_PS_CPP);
 			break;
 		case USB_PORT_FEAT_C_CONNECTION:
-			temp = ADMHC_PS_CSC;
+			ret = admhc_port_write(ahcd, wIndex, ADMHC_PS_CSC);
 			break;
 		case USB_PORT_FEAT_C_ENABLE:
-			temp = ADMHC_PS_PESC;
+			ret = admhc_port_write(ahcd, wIndex, ADMHC_PS_PESC);
 			break;
 		case USB_PORT_FEAT_C_SUSPEND:
-			temp = ADMHC_PS_PSSC;
+			ret = admhc_port_write(ahcd, wIndex, ADMHC_PS_PSSC);
 			break;
 		case USB_PORT_FEAT_C_OVER_CURRENT:
-			temp = ADMHC_PS_OCIC;
+			ret = admhc_port_write(ahcd, wIndex, ADMHC_PS_OCIC);
 			break;
 		case USB_PORT_FEAT_C_RESET:
-			temp = ADMHC_PS_PRSC;
+			ret = admhc_port_write(ahcd, wIndex, ADMHC_PS_PRSC);
 			break;
 		default:
 			goto error;
 		}
-		admhc_writel(ahcd, temp, &ahcd->regs->portstatus[wIndex]);
 		break;
 	case GetHubDescriptor:
-		admhc_hub_descriptor(ahcd, (struct usb_hub_descriptor *) buf);
+		ret = admhc_get_hub_descriptor(ahcd, buf);
 		break;
 	case GetHubStatus:
-		temp = admhc_get_rhdesc(ahcd);
-		temp &= ~(ADMHC_RH_CRWE | ADMHC_RH_DRWE);
-		put_unaligned(cpu_to_le32 (temp), (__le32 *) buf);
+		ret = admhc_get_hub_status(ahcd, buf);
 		break;
 	case GetPortStatus:
 		if (!wIndex || wIndex > ports)
 			goto error;
 		wIndex--;
-		temp = admhc_get_portstatus(ahcd, wIndex);
-		put_unaligned(cpu_to_le32 (temp), (__le32 *) buf);
 
-		dbg_port(ahcd, "GetPortStatus", wIndex, temp);
+		ret = admhc_get_port_status(ahcd, wIndex, buf);
 		break;
 	case SetHubFeature:
 		switch (wValue) {
 		case C_HUB_OVER_CURRENT:
-			// FIXME:  this can be cleared, yes?
+			/* FIXME:  this can be cleared, yes? */
 		case C_HUB_LOCAL_POWER:
 			break;
 		default:
@@ -381,8 +442,10 @@ static int admhc_hub_control (
 
 		switch (wValue) {
 		case USB_PORT_FEAT_ENABLE:
-			admhc_writel(ahcd, ADMHC_PS_SPE,
-				&ahcd->regs->portstatus[wIndex]);
+			ret = admhc_port_enable(ahcd, wIndex);
+			break;
+		case USB_PORT_FEAT_RESET:
+			ret = admhc_port_reset(ahcd, wIndex);
 			break;
 		case USB_PORT_FEAT_SUSPEND:
 #ifdef	CONFIG_USB_OTG
@@ -391,15 +454,10 @@ static int admhc_hub_control (
 				start_hnp(ahcd);
 			else
 #endif
-			admhc_writel(ahcd, ADMHC_PS_SPS,
-				&ahcd->regs->portstatus[wIndex]);
+			ret = admhc_port_write(ahcd, wIndex, ADMHC_PS_SPS);
 			break;
 		case USB_PORT_FEAT_POWER:
-			admhc_writel(ahcd, ADMHC_PS_SPP,
-				&ahcd->regs->portstatus[wIndex]);
-			break;
-		case USB_PORT_FEAT_RESET:
-			ret = root_port_reset(ahcd, wIndex);
+			ret = admhc_port_write(ahcd, wIndex, ADMHC_PS_SPP);
 			break;
 		default:
 			goto error;
@@ -411,6 +469,7 @@ error:
 		/* "protocol stall" on error */
 		ret = -EPIPE;
 	}
+
 	return ret;
 }
 
