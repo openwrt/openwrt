@@ -56,7 +56,6 @@ ifneq ($(QUILT),)
   STAMP_PATCHED:=$(PKG_BUILD_DIR)/.quilt_patched
   STAMP_CHECKED:=$(PKG_BUILD_DIR)/.quilt_checked
   override CONFIG_AUTOREBUILD=
-  $(STAMP_CONFIGURED): $(STAMP_CHECKED) FORCE
   prepare: $(STAMP_PATCHED)
   quilt-check: $(STAMP_CHECKED)
 endif
@@ -101,32 +100,33 @@ define Quilt/Refresh
 $(if $(TARGET_BUILD),$(Quilt/Refresh/Kernel),$(Quilt/Refresh/Package))
 endef
 
-$(STAMP_PATCHED): $(STAMP_PREPARED)
+define Build/Quilt
+  $(STAMP_PATCHED): $(STAMP_PREPARED)
 	@( \
 		cd $(PKG_BUILD_DIR)/patches; \
 		quilt pop -a -f >/dev/null 2>/dev/null; \
 		if [ -s ".subdirs" ]; then \
 			rm -f series; \
-			for file in $$(cat .subdirs); do \
-				if [ -f $$file/series ]; then \
+			for file in $$$$(cat .subdirs); do \
+				if [ -f $$$$file/series ]; then \
 					echo "Converting $$file/series"; \
-					$(call filter_series,$$file/series) | awk -v file="$$file/" '$$0 !~ /^#/ { print file $$0 }' | sed -e s,//,/,g >> series; \
+					$$(call filter_series,$$$$file/series) | awk -v file="$$$$file/" '$$$$0 !~ /^#/ { print file $$$$0 }' | sed -e s,//,/,g >> series; \
 				else \
-					echo "Sorting patches in $$file"; \
-					find $$file/* -type f \! -name series | sed -e s,//,/,g | sort >> series; \
+					echo "Sorting patches in $$$$file"; \
+					find $$$$file/* -type f \! -name series | sed -e s,//,/,g | sort >> series; \
 				fi; \
 			done; \
 		else \
 			find * -type f \! -name series | sort > series; \
 		fi; \
 	)
-	touch $@
+	touch $$@
 
-$(STAMP_CHECKED): $(STAMP_PATCHED)
+  $(STAMP_CONFIGURED): $(STAMP_CHECKED) FORCE
+  $(STAMP_CHECKED): $(STAMP_PATCHED)
 	if [ -s "$(PKG_BUILD_DIR)/patches/series" ]; then (cd $(PKG_BUILD_DIR); quilt next >/dev/null 2>&1 && quilt push -a || quilt top >/dev/null 2>&1); fi
-	touch $@
+	touch $$@
 
-define Build/Quilt
   quilt-check: $(STAMP_PREPARED) FORCE
 	@[ -f "$(PKG_BUILD_DIR)/.quilt_used" ] || { \
 		echo "The source directory was not unpacked using quilt. Please rebuild with QUILT=1"; \
