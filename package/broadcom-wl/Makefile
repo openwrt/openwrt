@@ -33,7 +33,7 @@ define KernelPackage/brcm-wl/Default
   SECTION:=kernel
   DEPENDS:=@TARGET_brcm_2_4
   TITLE:=Kernel driver for BCM43xx chipsets
-  FILES:=$(PKG_BUILD_DIR)/kmod/wl$(1).o
+  FILES:=$(PKG_BUILD_DIR)/driver/wl$(1).o
   AUTOLOAD:=$(call AutoLoad,30,wl$(1))
 endef
 
@@ -58,6 +58,33 @@ endef
 
 define KernelPackage/brcm-wl-mimo/description
 $(call KernelPackage/brcm-wl/Default/description)
+endef
+
+define KernelPackage/wlcompat/Default
+  $(call KernelPackage/brcm-wl/Default,)
+  TITLE:=Kernel driver for BCM43xx chipsets
+  FILES:=$(PKG_BUILD_DIR)/wlcompat/wlcompat$(1).o
+endef
+
+define KernelPackage/wlcompat
+$(call KernelPackage/wlcompat/Default,)
+  AUTOLOAD:=$(call AutoLoad,50,wlcompat)
+endef
+
+define KernelPackage/wlcompat/description
+ This package contains a wrapper module, that provides Wireless Extension 
+ support for the proprietary Broadcom wl module.
+endef
+
+define KernelPackage/wlcompat-debug
+$(call KernelPackage/wlcompat/Default,-debug)
+  TITLE+= (debug)
+  AUTOLOAD:=
+endef
+
+define KernelPackage/wlcompat-debug/description
+$(call KernelPackage/wlcompat/description)
+ This is the debugging version.
 endef
 
 define Package/wlc
@@ -101,7 +128,7 @@ endef
 
 define install_template
 	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/kmod/wl$(2).o.patch $(1)/lib/modules/$(LINUX_VERSION)/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/driver/wl$(2).o.patch $(1)/lib/modules/$(LINUX_VERSION)/
 endef
 
 define KernelPackage/brcm-wl/install
@@ -112,7 +139,7 @@ define KernelPackage/brcm-wl_mimo/install
 	$(call install_template,$(1),_mimo)
 endef
 
-MAKEFLAGS_KMOD:= -C "$(LINUX_DIR)" \
+MAKE_KMOD := $(MAKE) -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		PATH="$(TARGET_PATH)" \
@@ -120,20 +147,31 @@ MAKEFLAGS_KMOD:= -C "$(LINUX_DIR)" \
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
+	mv $(PKG_BUILD_DIR)/kmod $(PKG_BUILD_DIR)/driver
 	$(CP) src/* $(PKG_BUILD_DIR)/
 endef
 
 define Build/Compile
 	# Compile the kernel part
-	$(MAKE) $(MAKEFLAGS_KMOD) \
+	$(MAKE_KMOD) \
+		SUBDIRS="$(PKG_BUILD_DIR)/driver" \
 		modules
-	$(MAKE) $(MAKEFLAGS_KMOD) MOD_NAME="_mimo" \
+	$(MAKE_KMOD) \
+		SUBDIRS="$(PKG_BUILD_DIR)/driver" \
+		MOD_NAME="_mimo" \
+		modules
+	$(MAKE_KMOD) \
+		SUBDIRS="$(PKG_BUILD_DIR)/wlcompat" \
+		modules
+	$(MAKE_KMOD) \
+		SUBDIRS="$(PKG_BUILD_DIR)/wlcompat" \
+		DEBUG=1 \
 		modules
 
 	# Compile wlc
 	$(MAKE) -C $(PKG_BUILD_DIR)/wlc \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="-I$(PKG_BUILD_DIR)/wlc/include $(TARGET_CFLAGS)" \
+		CFLAGS="$(TARGET_CFLAGS)" \
 		all
 #	$(NO_TRACE_MAKE) -C compat-ldso -f build.mk PKG_INSTALL_DIR="$(PKG_BUILD_DIR)"
 #	$(SED) 's,ld-uClibc.so.0,ld-uClibc.brcm,' \
@@ -169,6 +207,8 @@ endef
 $(eval $(call KernelPackage,brcm-wl))
 $(eval $(call KernelPackage,brcm-wl-mimo))
 #$(eval $(call BuildPackage,brcm-compat-ldso))
+$(eval $(call KernelPackage,wlcompat))
+$(eval $(call KernelPackage,wlcompat-debug))
 $(eval $(call BuildPackage,wlc))
 $(eval $(call BuildPackage,wl))
 $(eval $(call BuildPackage,nas))

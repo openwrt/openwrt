@@ -12,8 +12,8 @@
  * $Id: ethernet.h,v 1.1.1.14 2006/02/27 03:43:16 honor Exp $
  */
 
-#ifndef _NET_ETHERNET_H_	    /* use native BSD ethernet.h when available */
-#define _NET_ETHERNET_H_
+#ifndef __NET_ETHERNET_H
+#define __NET_ETHERNET_H
 
 #ifndef _TYPEDEFS_H_
 #include "typedefs.h"
@@ -162,4 +162,4 @@ static const struct ether_addr ether_bcast = {{255, 255, 255, 255, 255, 255}};
 #pragma pack()
 #endif
 
-#endif /* _NET_ETHERNET_H_ */
+#endif /* __NET_ETHERNET_H */

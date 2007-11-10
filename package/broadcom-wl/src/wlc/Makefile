@@ -4,6 +4,6 @@ clean:
 
 wlc: wlc.o ioctl.o
 %.o: %.c
-	$(CC) $(CFLAGS) -Wall -c -o $@ $<
+	$(CC) $(CFLAGS) -I../include -Wall -c -o $@ $<
 
 .PHONY: all clean
