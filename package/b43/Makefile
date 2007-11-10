@@ -44,22 +44,18 @@ MAKE_OPTS:= \
 	LINUXINCLUDE="-I$(STAGING_DIR)/usr/include/mac80211 -I$(LINUX_DIR)/include -include linux/autoconf.h" \
 	$(EXTRA_KCONFIG)
 
-ifneq ($(findstring 2.6.23,$(LINUX_VERSION)),)
-  define Build/Prepare
+define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
-  endef
+endef
 
-  define Build/Configure
-  endef
+define Build/Configure
+endef
 
-  define Build/Compile
+define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" \
 		$(MAKE_OPTS) \
 		modules
-  endef
-else
-  override CONFIG_PACKAGE_kmod-b43=
-endif
+endef
 
 $(eval $(call KernelPackage,b43))
