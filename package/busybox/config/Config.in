@@ -185,10 +185,10 @@ config BUSYBOX_CONFIG_FEATURE_SUID_CONFIG
 
 	  The file has to be owned by user root, group root and has to be
 	  writeable only by root:
-	  	(chown 0.0 /etc/busybox.conf; chmod 600 /etc/busybox.conf)
+	        (chown 0.0 /etc/busybox.conf; chmod 600 /etc/busybox.conf)
 	  The busybox executable has to be owned by user root, group
 	  root and has to be setuid root for this to work:
-	  	(chown 0.0 /bin/busybox; chmod 4755 /bin/busybox)
+	        (chown 0.0 /bin/busybox; chmod 4755 /bin/busybox)
 
 	  Robert 'sandman' Griebl has more information here:
 	  <url: http://www.softforge.de/bb/suid.html >.
@@ -282,41 +282,80 @@ config BUSYBOX_CONFIG_STATIC
 config BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
 	bool "Build shared libbusybox"
 	default n
+	depends on !BUSYBOX_CONFIG_FEATURE_PREFER_APPLETS
 	help
-	  Build a shared library libbusybox.so which contains all
-	  libraries used inside busybox.
+	  Build a shared library libbusybox.so.N.N.N which contains all
+	  busybox code.
 
-	  This is an experimental feature intended to support the upcoming
-	  "make standalone" mode.  Enabling it against the one big busybox
-	  binary serves no purpose (and increases the size).  You should
-	  almost certainly say "no" to this right now.
+	  This feature allows every applet to be built as a tiny
+	  separate executable.  Enabling it for "one big busybox binary"
+	  approach serves no purpose and increases code size.
+	  You should almost certainly say "no" to this.
 
-config BUSYBOX_CONFIG_FEATURE_FULL_LIBBUSYBOX
-	bool "Feature-complete libbusybox"
-	default n if !BUSYBOX_CONFIG_FEATURE_SHARED_BUSYBOX
-	depends on BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
-	help
-	  Build a libbusybox with the complete feature-set, disregarding
-	  the actually selected config.
+### config FEATURE_FULL_LIBBUSYBOX
+###	bool "Feature-complete libbusybox"
+###	default n if !FEATURE_SHARED_BUSYBOX
+###	depends on BUILD_LIBBUSYBOX
+###	help
+###	  Build a libbusybox with the complete feature-set, disregarding
+###	  the actually selected config.
+###
+###	  Normally, libbusybox will only contain the features which are
+###	  used by busybox itself. If you plan to write a separate
+###	  standalone application which uses libbusybox say 'Y'.
+###
+###	  Note: libbusybox is GPL, not LGPL, and exports no stable API that
+###	  might act as a copyright barrier.  We can and will modify the
+###	  exported function set between releases (even minor version number
+###	  changes), and happily break out-of-tree features.
+###
+###	  Say 'N' if in doubt.
 
-	  Normally, libbusybox will only contain the features which are
-	  used by busybox itself. If you plan to write a separate
-	  standalone application which uses libbusybox say 'Y'.
-
-	  Note: libbusybox is GPL, not LGPL, and exports no stable API that
-	  might act as a copyright barrier.  We can and will modify the
-	  exported function set between releases (even minor version number
-	  changes), and happily break out-of-tree features.
-
-	  Say 'N' if in doubt.
-
-config BUSYBOX_CONFIG_FEATURE_SHARED_BUSYBOX
-	bool "Use shared libbusybox for busybox"
-	default n if BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
+config BUSYBOX_CONFIG_FEATURE_INDIVIDUAL
+	bool "Produce a binary for each applet, linked against libbusybox"
+	default n
 	depends on !BUSYBOX_CONFIG_STATIC && BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
 	help
-	  Use libbusybox.so also for busybox itself.
-	  You need to have a working dynamic linker to use this variant.
+	  If your CPU architecture doesn't allow for sharing text/rodata
+	  sections of running binaries, but allows for runtime dynamic
+	  libraries, this option will allow you to reduce memory footprint
+	  when you have many different applets running at once.
+
+	  If your CPU architecture allows for sharing text/rodata,
+	  having single binary is more optimal.
+
+	  Each applet will be a tiny program, dynamically linked
+	  against libbusybox.so.N.N.N.
+
+	  You need to have a working dynamic linker.
+
+config BUSYBOX_CONFIG_FEATURE_SHARED_BUSYBOX
+	bool "Produce additional busybox binary linked against libbusybox"
+	default n
+	depends on !BUSYBOX_CONFIG_STATIC && BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
+	help
+	  Build busybox, dynamically linked against libbusybox.so.N.N.N.
+
+	  You need to have a working dynamic linker.
+
+### config BUILD_AT_ONCE
+###	bool "Compile all sources at once"
+###	default n
+###	help
+###	  Normally each source-file is compiled with one invocation of
+###	  the compiler.
+###	  If you set this option, all sources are compiled at once.
+###	  This gives the compiler more opportunities to optimize which can
+###	  result in smaller and/or faster binaries.
+###
+###	  Setting this option will consume alot of memory, e.g. if you
+###	  enable all applets with all features, gcc uses more than 300MB
+###	  RAM during compilation of busybox.
+###
+###	  This option is most likely only beneficial for newer compilers
+###	  such as gcc-4.1 and above.
+###
+###	  Say 'N' unless you know what you are doing.
 
 config BUSYBOX_CONFIG_LFS
 	bool
@@ -329,25 +368,6 @@ config BUSYBOX_CONFIG_LFS
 	  programs that can benefit from large file support include dd, gzip,
 	  cp, mount, tar, and many others.  If you want to access files larger
 	  than 2 Gigabytes, enable this option.  Otherwise, leave it set to 'N'.
-
-config BUSYBOX_CONFIG_BUILD_AT_ONCE
-	bool "Compile all sources at once"
-	default n
-	help
-	  Normally each source-file is compiled with one invocation of
-	  the compiler.
-	  If you set this option, all sources are compiled at once.
-	  This gives the compiler more opportunities to optimize which can
-	  result in smaller and/or faster binaries.
-
-	  Setting this option will consume alot of memory, e.g. if you
-	  enable all applets with all features, gcc uses more than 300MB
-	  RAM during compilation of busybox.
-
-	  This option is most likely only beneficial for newer compilers
-	  such as gcc-4.1 and above.
-
-	  Say 'N' unless you know what you are doing.
 
 endmenu
 
@@ -464,12 +484,41 @@ config BUSYBOX_CONFIG_INSTALL_APPLET_HARDLINKS
 	  Install applets as hard-links to the busybox binary. This might count
 	  on a filesystem with few inodes.
 
+config BUSYBOX_CONFIG_INSTALL_APPLET_SCRIPT_WRAPPERS
+	bool "as script wrappers"
+	help
+	  Install applets as script wrappers that call the busybox binary.
+
 config BUSYBOX_CONFIG_INSTALL_APPLET_DONT
 	bool "not installed"
 	depends on BUSYBOX_CONFIG_FEATURE_INSTALLER || BUSYBOX_CONFIG_FEATURE_SH_STANDALONE || BUSYBOX_CONFIG_FEATURE_PREFER_APPLETS
 	help
 	  Do not install applet links. Useful when using the -install feature
 	  or a standalone shell for rescue purposes.
+
+endchoice
+
+choice
+	prompt "/bin/sh applet link"
+	default BUSYBOX_CONFIG_INSTALL_SH_APPLET_SYMLINK
+	depends on BUSYBOX_CONFIG_INSTALL_APPLET_SCRIPT_WRAPPERS
+	help
+	  Choose how you install /bin/sh applet link.
+
+config BUSYBOX_CONFIG_INSTALL_SH_APPLET_SYMLINK
+	bool "as soft-link"
+	help
+	  Install /bin/sh applet as soft-link to the busybox binary.
+
+config BUSYBOX_CONFIG_INSTALL_SH_APPLET_HARDLINK
+	bool "as hard-link"
+	help
+	  Install /bin/sh applet as hard-link to the busybox binary.
+
+config BUSYBOX_CONFIG_INSTALL_SH_APPLET_SCRIPT_WRAPPER
+	bool "as script wrapper"
+	help
+	  Install /bin/sh applet as script wrapper that call the busybox binary.
 
 endchoice
 

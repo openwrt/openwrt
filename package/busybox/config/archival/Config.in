@@ -48,10 +48,20 @@ config BUSYBOX_CONFIG_BUNZIP2
 	  conventional LZ77/LZ78-based compressors, and approaches the
 	  performance of the PPM family of statistical compressors.
 
-	  The BusyBox bunzip2 applet is limited to de-compression only.
-	  On an x86 system, this applet adds about 11K.
-
 	  Unless you have a specific application which requires bunzip2, you
+	  should probably say N here.
+
+config BUSYBOX_CONFIG_BZIP2
+	bool "bzip2"
+	default n
+	help
+	  bzip2 is a compression utility using the Burrows-Wheeler block
+	  sorting text compression algorithm, and Huffman coding.  Compression
+	  is generally considerably better than that achieved by more
+	  conventional LZ77/LZ78-based compressors, and approaches the
+	  performance of the PPM family of statistical compressors.
+
+	  Unless you have a specific application which requires bzip2, you
 	  should probably say N here.
 
 config BUSYBOX_CONFIG_CPIO

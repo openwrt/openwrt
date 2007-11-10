@@ -104,5 +104,13 @@ config BUSYBOX_CONFIG_FEATURE_SETFILES_CHECK_OPTION
 	  Support "-c" option (check the validity of the contexts against
 	  the specified binary policy) for setfiles. Requires libsepol.
 
+config BUSYBOX_CONFIG_SETSEBOOL
+	bool "setsebool"
+	default n
+	depends on BUSYBOX_CONFIG_SELINUX
+	help
+	  Enable support for change boolean.
+	  semanage and -P option is not supported yet.
+
 endmenu
 

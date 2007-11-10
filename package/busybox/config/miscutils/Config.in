@@ -282,6 +282,12 @@ config BUSYBOX_CONFIG_FEATURE_MAKEDEVS_TABLE
 
 endchoice
 
+config BUSYBOX_CONFIG_MICROCOM
+	bool "microcom"
+	default n
+	help
+	  The poor man's minicom utility for chatting with serial port devices.
+
 config BUSYBOX_CONFIG_MOUNTPOINT
 	bool "mountpoint"
 	default n

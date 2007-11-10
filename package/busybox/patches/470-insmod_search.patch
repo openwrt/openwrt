@@ -1,8 +1,8 @@
-Index: busybox-1.7.2/modutils/insmod.c
+Index: busybox-1.8.1/modutils/insmod.c
 ===================================================================
---- busybox-1.7.2.orig/modutils/insmod.c	2007-10-30 15:34:59.000000000 -0500
-+++ busybox-1.7.2/modutils/insmod.c	2007-10-30 15:35:05.000000000 -0500
-@@ -61,19 +61,114 @@
+--- busybox-1.8.1.orig/modutils/insmod.c	2007-11-10 02:40:49.000000000 +0100
++++ busybox-1.8.1/modutils/insmod.c	2007-11-10 17:28:44.391223047 +0100
+@@ -61,21 +61,117 @@
  #include "libbb.h"
  #include <libgen.h>
  #include <sys/utsname.h>
@@ -17,17 +17,18 @@ Index: busybox-1.7.2/modutils/insmod.c
  #define ENABLE_FEATURE_2_4_MODULES 1
  #endif
  
--#if !ENABLE_FEATURE_2_4_MODULES
--#define insmod_ng_main insmod_main
-+#if ENABLE_FEATURE_2_4_MODULES
-+int insmod_main_24(int argc, char **argv);
- #endif
+-/*
+- * Big piece of 2.4-specific code
+- */
+ #if ENABLE_FEATURE_2_4_MODULES
 -
++int insmod_main_24(int argc, char **argv);
++#endif
  #if ENABLE_FEATURE_2_6_MODULES
--extern int insmod_ng_main( int argc, char **argv);
+-static int insmod_ng_main(int argc, char **argv);
 +int insmod_main_26(int argc, char **argv);
- #endif
-+int insmod_main(int argc, char **argv);
++#endif
++int insmod_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 +
 +static char *g_filename = NULL;
 +#define _PATH_MODULES	"/lib/modules"
@@ -36,20 +37,18 @@ Index: busybox-1.7.2/modutils/insmod.c
 +				   void *userdata, int depth)
 +{
 +	char *fullname = (char *) userdata;
++	char *tmp;
 +
 +	if (fullname[0] == '\0')
 +		return FALSE;
-+	else {
-+		char *tmp, *tmp1 = xstrdup(filename);
-+		tmp = bb_get_last_path_component(tmp1);
-+		if (strcmp(tmp, fullname) == 0) {
-+			free(tmp1);
-+			/* Stop searching if we find a match */
-+			g_filename = xstrdup(filename);
-+			return FALSE;
-+		}
-+		free(tmp1);
++
++	tmp = bb_get_last_path_component_nostrip(filename);
++	if (strcmp(tmp, fullname) == 0) {
++		/* Stop searching if we find a match */
++		g_filename = xstrdup(filename);
++		return FALSE;
 +	}
++
 +	return TRUE;
 +}
 +
@@ -70,7 +69,7 @@ Index: busybox-1.7.2/modutils/insmod.c
 +	if (k_version <= 4)
 +		suffix = ".o";
 +	else
-+#endif
+ #endif
 +		suffix = ".ko";
 +
 +	len = strlen(filename);
@@ -112,16 +111,21 @@ Index: busybox-1.7.2/modutils/insmod.c
 +		ret = 0;
 +	else
 +		free(g_filename);
-+
+ 
 +done:
 +	free(filename);
 +
 +	return ret;
 +}
- 
- 
- #if ENABLE_FEATURE_2_4_MODULES
-@@ -677,7 +772,6 @@
++
++/*
++ * Big piece of 2.4-specific code
++ */
++#if ENABLE_FEATURE_2_4_MODULES
+ #if ENABLE_FEATURE_INSMOD_LOADINKMEM
+ #define LOADBITS 0
+ #else
+@@ -673,7 +769,6 @@
  #endif
  
  
@@ -129,14 +133,10 @@ Index: busybox-1.7.2/modutils/insmod.c
  enum { STRVERSIONLEN = 64 };
  
  /*======================================================================*/
-@@ -790,37 +884,6 @@
- static int n_ext_modules_used;
- extern int delete_module(const char *);
+@@ -789,27 +884,6 @@
+ static char *m_fullName;
  
--static char *m_filename;
--static char *m_fullName;
--
--
+ 
 -/*======================================================================*/
 -
 -
@@ -144,35 +144,29 @@ Index: busybox-1.7.2/modutils/insmod.c
 -				void *userdata, int depth)
 -{
 -	char *fullname = (char *) userdata;
+-	char *tmp;
 -
 -	if (fullname[0] == '\0')
 -		return FALSE;
--	else {
--		char *tmp, *tmp1 = xstrdup(filename);
--		tmp = bb_get_last_path_component(tmp1);
--		if (strcmp(tmp, fullname) == 0) {
--			free(tmp1);
--			/* Stop searching if we find a match */
--			m_filename = xstrdup(filename);
--			return FALSE;
--		}
--		free(tmp1);
+-
+-	tmp = bb_get_last_path_component_nostrip(filename);
+-	if (strcmp(tmp, fullname) == 0) {
+-		/* Stop searching if we find a match */
+-		m_filename = xstrdup(filename);
+-		return FALSE;
 -	}
 -	return TRUE;
 -}
 -
--
--/*======================================================================*/
--
- static struct obj_file *arch_new_file(void)
- {
- 	struct arch_file *f;
-@@ -3952,145 +4015,57 @@
+ 
+ /*======================================================================*/
+ 
+@@ -3897,145 +3971,57 @@
  void print_load_map(struct obj_file *f);
  #endif
  
--int insmod_main( int argc, char **argv);
--int insmod_main( int argc, char **argv)
+-int insmod_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
+-int insmod_main(int argc, char **argv)
 +int insmod_main_24( int argc, char **argv)
  {
  	char *opt_o, *arg1;
@@ -183,7 +177,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  	ElfW(Addr) m_addr;
  	struct obj_file *f;
 -	struct stat st;
--	char *m_name = 0;
+-	char *m_name = NULL;
 -	int exit_status = EXIT_FAILURE;
 +	char *tmp = NULL, *m_name = NULL;
 +	int ret = EINVAL;
@@ -194,12 +188,11 @@ Index: busybox-1.7.2/modutils/insmod.c
  	int m_version, m_crcs;
  #endif
 -#if ENABLE_FEATURE_CLEAN_UP
--	FILE *fp = 0;
+ 	FILE *fp = NULL;
 -#else
 -	FILE *fp;
 -#endif
 -	int k_version = 0;
-+	FILE *fp = NULL;
 +	int k_version;
  	struct utsname myuname;
  
@@ -247,8 +240,8 @@ Index: busybox-1.7.2/modutils/insmod.c
 -			len -= 2;
 -			tmp[len] = '\0';
 -		}
--
  
+-
 -#if ENABLE_FEATURE_2_6_MODULES
 -	if (k_version > 4)
 -		m_fullName = xasprintf("%s.ko", tmp);
@@ -263,12 +256,12 @@ Index: busybox-1.7.2/modutils/insmod.c
 -		m_name = tmp;
 -	} else {
 -		free(tmp1);
--		tmp1 = 0;       /* flag for free(m_name) before exit() */
+-		tmp1 = NULL;       /* flag for free(m_name) before exit() */
 +		tmp = xstrdup(arg1);
 +		m_name = basename(tmp);
  	}
  
--	/* Get a filedesc for the module.  Check we we have a complete path */
+-	/* Get a filedesc for the module.  Check that we have a complete path */
 -	if (stat(arg1, &st) < 0 || !S_ISREG(st.st_mode)
 -	 || (fp = fopen(arg1, "r")) == NULL
 -	) {
@@ -277,7 +270,6 @@ Index: busybox-1.7.2/modutils/insmod.c
 -		if (k_version) {	/* uname succeedd */
 -			char *module_dir;
 -			char *tmdn;
--			char real_module_dir[FILENAME_MAX];
 -
 -			tmdn = concat_path_file(_PATH_MODULES, myuname.release);
 -			/* Jump through hoops in case /lib/modules/`uname -r`
@@ -285,36 +277,37 @@ Index: busybox-1.7.2/modutils/insmod.c
 -			 * follow symlinks, but we do want to follow the
 -			 * /lib/modules/`uname -r` dir, So resolve it ourselves
 -			 * if it is a link... */
--			if (realpath(tmdn, real_module_dir) == NULL)
--				module_dir = tmdn;
--			else
--				module_dir = real_module_dir;
+-			module_dir = xmalloc_readlink(tmdn);
+-			if (!module_dir)
+-				module_dir = xstrdup(tmdn);
 -			recursive_action(module_dir, ACTION_RECURSE,
--					check_module_name_match, 0, m_fullName, 0);
+-					check_module_name_match, NULL, m_fullName, 0);
+-			free(module_dir);
 -			free(tmdn);
 -		}
 -
 -		/* Check if we have found anything yet */
--		if (m_filename == 0 || ((fp = fopen(m_filename, "r")) == NULL)) {
--			char module_dir[FILENAME_MAX];
+-		if (!m_filename || ((fp = fopen(m_filename, "r")) == NULL)) {
+-			int r;
+-			char *module_dir;
 -
 -			free(m_filename);
--			m_filename = 0;
--			if (realpath (_PATH_MODULES, module_dir) == NULL)
--				strcpy(module_dir, _PATH_MODULES);
+-			m_filename = NULL;
+-			module_dir = xmalloc_readlink(_PATH_MODULES);
+-			if (!module_dir)
+-				module_dir = xstrdup(_PATH_MODULES);
 -			/* No module found under /lib/modules/`uname -r`, this
 -			 * time cast the net a bit wider.  Search /lib/modules/ */
--			if (!recursive_action(module_dir, ACTION_RECURSE,
--						    check_module_name_match, 0, m_fullName, 0)
+-			r = recursive_action(module_dir, ACTION_RECURSE,
+-					check_module_name_match, NULL, m_fullName, 0);
+-			if (r)
+-				bb_error_msg_and_die("%s: module not found", m_fullName);
+-			free(module_dir);
+-			if (m_filename == NULL
+-			 || ((fp = fopen(m_filename, "r")) == NULL)
 -			) {
--				if (m_filename == 0
--				 || ((fp = fopen(m_filename, "r")) == NULL)
--				) {
--					bb_error_msg("%s: no module by that name found", m_fullName);
--					goto out;
--				}
--			} else
--				bb_error_msg_and_die("%s: no module by that name found", m_fullName);
+-				bb_error_msg_and_die("%s: module not found", m_fullName);
+-			}
 -		}
 -	} else
 -		m_filename = xstrdup(arg1);
@@ -335,8 +328,8 @@ Index: busybox-1.7.2/modutils/insmod.c
 -#endif
  
  	f = obj_load(fp, LOADBITS);
- 	if (f == NULL)
-@@ -4120,7 +4095,7 @@
+ 
+@@ -4062,7 +4048,7 @@
  				"\t%s was compiled for kernel version %s\n"
  				"\twhile this kernel is version %s",
  				flag_force_load ? "warning: " : "",
@@ -345,7 +338,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  			if (!flag_force_load)
  				goto out;
  		}
-@@ -4173,7 +4148,7 @@
+@@ -4104,7 +4090,7 @@
  	hide_special_symbols(f);
  
  #if ENABLE_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
@@ -354,14 +347,14 @@ Index: busybox-1.7.2/modutils/insmod.c
  #endif /* FEATURE_INSMOD_KSYMOOPS_SYMBOLS */
  
  	new_create_module_ksymtab(f);
-@@ -4220,30 +4195,22 @@
+@@ -4147,18 +4133,19 @@
  	if (flag_print_load_map)
  		print_load_map(f);
  
 -	exit_status = EXIT_SUCCESS;
--
-+	ret = 0;
- out:
++	ret = EXIT_SUCCESS;
+ 
+  out:
  #if ENABLE_FEATURE_CLEAN_UP
  	if (fp)
  		fclose(fp);
@@ -377,26 +370,18 @@ Index: busybox-1.7.2/modutils/insmod.c
 -	return exit_status;
 +	return ret;
  }
--
--
- #endif
  
--
- #if ENABLE_FEATURE_2_6_MODULES
--
--#include <sys/mman.h>
--#include <asm/unistd.h>
--#include <sys/syscall.h>
--
- /* We use error numbers in a loose translation... */
- static const char *moderror(int err)
- {
-@@ -4261,19 +4228,32 @@
+ #endif /* ENABLE_FEATURE_2_4_MODULES */
+@@ -4190,23 +4177,32 @@
  	}
  }
  
--int insmod_ng_main(int argc, char **argv);
--int insmod_ng_main(int argc, char **argv)
+-#if !ENABLE_FEATURE_2_4_MODULES
+-int insmod_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
+-int insmod_main(int argc, char **argv)
+-#else
+-static int insmod_ng_main(int argc, char **argv)
+-#endif
 +int insmod_main_26(int argc, char **argv)
  {
 -	long ret;
@@ -429,7 +414,7 @@ Index: busybox-1.7.2/modutils/insmod.c
  	/* Rest is options */
  	options = xzalloc(1);
  	optlen = 0;
-@@ -4283,36 +4263,47 @@
+@@ -4216,36 +4212,47 @@
  		optlen += sprintf(options + optlen, (strchr(*argv,' ') ? "\"%s\" " : "%s "), *argv);
  	}
  

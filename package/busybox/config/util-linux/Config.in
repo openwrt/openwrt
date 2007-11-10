@@ -360,6 +360,16 @@ config BUSYBOX_CONFIG_MOUNT
 	  NFS filesystems.  Most people using BusyBox will also want to enable
 	  the 'mount' utility.
 
+config BUSYBOX_CONFIG_FEATURE_MOUNT_HELPERS
+	bool "Support mount helpers"
+	default n
+	depends on BUSYBOX_CONFIG_MOUNT
+	help
+	  Enable mounting of virtual file systems via external helpers.
+	  E.g. mount obexfs#-b00.11.22.33.44.55 /mnt will in effect call
+	  obexfs -b00.11.22.33.44.55 /mnt
+	  The idea is to use such virtual filesystems in /etc/fstab
+
 config BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
 	bool "Support mounting NFS file systems"
 	default y
