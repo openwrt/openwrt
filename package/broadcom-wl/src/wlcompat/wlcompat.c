@@ -778,7 +778,8 @@ static int wlcompat_ioctl(struct net_device *dev,
 		case SIOCSIWMODE:
 		{
 			int ap = -1, infra = -1, passive = 0, wet = 0;
-			
+
+			wl_ioctl(dev, WLC_GET_WET, &wet, sizeof(wet));
 			switch (wrqu->mode) {
 				case IW_MODE_MONITOR:
 					passive = 1;
@@ -794,27 +795,27 @@ static int wlcompat_ioctl(struct net_device *dev,
 				case IW_MODE_INFRA:
 					infra = 1;
 					ap = 0;
+					wet = 0;
 					break;
 				case IW_MODE_REPEAT:
 					infra = 1;
 					ap = 0;
 					wet = 1;
 					break;
-					
 				default:
 					return -EINVAL;
 			}
-			
+
 			wl_ioctl(dev, WLC_SET_PASSIVE, &passive, sizeof(passive));
 			wl_ioctl(dev, WLC_SET_MONITOR, &passive, sizeof(passive));
-			wl_ioctl(dev, WLC_SET_WET, &wet, sizeof(wet));
-			if (ap >= 0) 
+			if ((ap == 0) && (infra == 1))
+				wl_ioctl(dev, WLC_SET_WET, &wet, sizeof(wet));
+			if (ap >= 0)
 				wl_ioctl(dev, WLC_SET_AP, &ap, sizeof(ap));
 			if (infra >= 0)
 				wl_ioctl(dev, WLC_SET_INFRA, &infra, sizeof(infra));
 
 			break;
-						
 		}
 		case SIOCGIWMODE:
 		{
@@ -826,8 +827,6 @@ static int wlcompat_ioctl(struct net_device *dev,
 				return -EINVAL;
 			if (wl_ioctl(dev, WLC_GET_PASSIVE, &passive, sizeof(passive)) < 0)
 				return -EINVAL;
-			if (wl_ioctl(dev, WLC_GET_WET, &wet, sizeof(wet)) < 0)
-				return -EINVAL;
 
 			if (passive) {
 				wrqu->mode = IW_MODE_MONITOR;
@@ -837,11 +836,7 @@ static int wlcompat_ioctl(struct net_device *dev,
 				if (ap) {
 					wrqu->mode = IW_MODE_MASTER;
 				} else {
-					if (wet) {
-						wrqu->mode = IW_MODE_REPEAT;
-					} else {
-						wrqu->mode = IW_MODE_INFRA;
-					}
+					wrqu->mode = IW_MODE_INFRA;
 				}
 			}
 			break;
