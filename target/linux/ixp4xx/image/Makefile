@@ -22,14 +22,14 @@ ifneq ($(CONFIG_IXP4XX_INCLUDE_UCODE),)
   define Image/Build/slug
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
 		-L $(KDIR)/apex-nslu2-armeb.bin -m $(KDIR)/NPE-B \
-		-k $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-zImage \
-		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img \
-		-p -o $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-$(1).bin
+		-k $(BIN_DIR)/openwrt-nslu2-zImage \
+		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(1).img \
+		-p -o $(BIN_DIR)/openwrt-nslu2-$(1).bin
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
 		-F -L $(KDIR)/apex-nslu2-armeb.bin -m $(KDIR)/NPE-B \
-		-k $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-zImage \
-		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img \
-		-p -o $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-$(1)-16mb.bin
+		-k $(BIN_DIR)/openwrt-nslu2-zImage \
+		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(1).img \
+		-p -o $(BIN_DIR)/openwrt-nslu2-$(1)-16mb.bin
   endef
 endif
 
@@ -51,7 +51,7 @@ define Image/Prepare
 endef
 
 define Image/BuildKernel
-	cp $(KDIR)/zImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-zImage
+	cp $(KDIR)/zImage $(BIN_DIR)/openwrt-$(BOARD)-zImage
 #	$(shell BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/arm-magic.sh)
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/arm-magic.sh
 endef
@@ -61,17 +61,17 @@ define Image/Build
 endef
 
 define Image/Build/jffs2-64k
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img bs=65536 conv=sync
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(1).img bs=65536 conv=sync
 endef
 
 define Image/Build/jffs2-128k
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img bs=131072 conv=sync
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(1).img bs=131072 conv=sync
 	$(call Image/Build/slug,$(1))
 endef
 
 define Image/Build/squashfs
     $(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img bs=131072 conv=sync
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(1).img bs=131072 conv=sync
 	$(call Image/Build/slug,$(1))
 endef
 

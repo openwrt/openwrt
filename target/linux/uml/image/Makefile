@@ -12,8 +12,8 @@ define Image/Prepare
 endef
 
 define Image/Build
-	cp $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
-	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux
+	cp $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1).img
+	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-vmlinux
 endef
 
 $(eval $(call BuildImage))

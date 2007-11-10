@@ -30,7 +30,7 @@ define Image/Prepare
 endef
 
 define Image/BuildKernel
-	$(CP) $(KDIR)/loader.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux
+	$(CP) $(KDIR)/loader.elf $(BIN_DIR)/openwrt-$(BOARD)-vmlinux
 endef
 
 define Image/cmdline/jffs2-64k
@@ -55,7 +55,7 @@ endef
 
 define Image/Build
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux.elf '$(strip $(call Image/cmdline/$(1))) '
-	./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin 4 $(KDIR)/vmlinux.elf $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
+	./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(1).bin 4 $(KDIR)/vmlinux.elf $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
 endef
 
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
@@ -65,7 +65,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader $(LOADER_MAKEOPTS) clean compile	
   endef
   define Image/BuildKernel
-	$(CP) $(KDIR)/loader.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux
+	$(CP) $(KDIR)/loader.elf $(BIN_DIR)/openwrt-$(BOARD)-vmlinux
   endef
 endif
 

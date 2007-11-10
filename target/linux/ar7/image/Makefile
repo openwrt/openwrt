@@ -53,27 +53,27 @@ bs=131072 conv=sync
 endef
 
 define Image/Build/CyberTAN
-	(dd if=/dev/zero bs=16 count=1; cat $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin) | \
-		$(STAGING_DIR_HOST)/bin/addpattern -p $(3) -o $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(4).bin
+	(dd if=/dev/zero bs=16 count=1; cat $(BIN_DIR)/openwrt-$(BOARD)-$(1).bin) | \
+		$(STAGING_DIR_HOST)/bin/addpattern -p $(3) -o $(BIN_DIR)/openwrt-$(2)-$(4).bin
 endef
 
 #define Image/Build/sErCoMm
-#	cat sercomm/adam2.bin "$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin" > "$(KDIR)/dgfw.tmp"
+#	cat sercomm/adam2.bin "$(BIN_DIR)/openwrt-$(BOARD)-$(1).bin" > "$(KDIR)/dgfw.tmp"
 #	dd if=sercomm/$(2) of="$(KDIR)/dgfw.tmp" bs=$$$$((0x3e0000 - 80)) seek=1 conv=notrunc
-#	$(STAGING_DIR_HOST)/bin/dgfirmware -f -w "$(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(3).img" "$(KDIR)/dgfw.tmp"
+#	$(STAGING_DIR_HOST)/bin/dgfirmware -f -w "$(BIN_DIR)/openwrt-$(2)-$(3).img" "$(KDIR)/dgfw.tmp"
 #	rm -f "$(KDIR)/dgfw.tmp"
 #endef
 
 define Image/Build/EVA
-	$(STAGING_DIR_HOST)/bin/lzma2eva $(KERNEL_ENTRY) $(KERNEL_ENTRY) $(KDIR)/vmlinux.lzma $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin
-	cat $(KDIR)/root.$(1) >> $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin
-	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin)
+	$(STAGING_DIR_HOST)/bin/lzma2eva $(KERNEL_ENTRY) $(KERNEL_ENTRY) $(KDIR)/vmlinux.lzma $(BIN_DIR)/openwrt-$(2)-$(1).bin
+	cat $(KDIR)/root.$(1) >> $(BIN_DIR)/openwrt-$(2)-$(1).bin
+	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(2)-$(1).bin)
 endef
 
 define Image/Build
-	dd if=$(KDIR)/loader.bin $(call align/$(1)) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin
-	cat $(KDIR)/root.$(1) >> $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin
-	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin)
+	dd if=$(KDIR)/loader.bin $(call align/$(1)) > $(BIN_DIR)/openwrt-$(BOARD)-$(1).bin
+	cat $(KDIR)/root.$(1) >> $(BIN_DIR)/openwrt-$(BOARD)-$(1).bin
+	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(BOARD)-$(1).bin)
 	$(call Image/Build/CyberTAN,$(1),AG1B,AG1B,$(1))
 	$(call Image/Build/CyberTAN,$(1),WA21,WA21,$(1))
 	$(call Image/Build/CyberTAN,$(1),WA22,WA22,$(1))

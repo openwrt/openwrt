@@ -14,7 +14,7 @@ FOXBOARD_8MB:=custom 816 832
 
 define Image/BuildKernel
 	for f in $(FOXBOARD); do \
-		cp $(KDIR)/vmlinuz_$$$$f $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-zImage_$$$$f; \
+		cp $(KDIR)/vmlinuz_$$$$f $(BIN_DIR)/openwrt-$(BOARD)-zImage_$$$$f; \
 	done
 endef
 
@@ -32,7 +32,7 @@ define Image/Build/generic
 		mkfimage $(KDIR)/vmlinuz_$$$$f $(KDIR)/vmlinuz_$$$$f.tmp ; \
 		cat $(KDIR)/vmlinuz_$$$$f.tmp $(KDIR)/root.$(1) > $(KDIR)/fimage.$(1)_$$$$f.tmp; \
 		dd if=$(KDIR)/fimage.$(1)_$$$$f.tmp of=$(KDIR)/fimage.$(1)_$$$$f bs=$(3) conv=sync; \
-		cp $(KDIR)/fimage.$(1)_$$$$f $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1)-fimage_$$$$f; \
+		cp $(KDIR)/fimage.$(1)_$$$$f $(BIN_DIR)/openwrt-$(BOARD)-$(1)-fimage_$$$$f; \
 	done	
 endef
 
