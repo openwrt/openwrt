@@ -22,7 +22,7 @@
 #include <linux/signal.h>
 
 #include <asm/bootinfo.h>
-#include <asm/mach-adm5120/adm5120_defs.h>
+#include <adm5120_defs.h>
 
 #ifdef DEBUG
 #define HCD_DBG(f, a...)	printk(KERN_DEBUG "%s: " f, hcd_name, ## a)

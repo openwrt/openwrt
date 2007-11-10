@@ -436,8 +436,13 @@ static inline struct usb_hcd *admhcd_to_hcd(const struct admhcd *ahcd)
 #define STUB_DEBUG_FILES
 #endif	/* DEBUG */
 
-#define admhc_dbg(ahcd, fmt, args...) \
-	printk(KERN_DEBUG "adm5120-hcd: " fmt , ## args )
+#ifdef DEBUG
+#	define admhc_dbg(ahcd, fmt, args...) \
+		printk(KERN_DEBUG "adm5120-hcd: " fmt , ## args )
+#else
+#	define admhc_dbg(ahcd, fmt, args...) do { } while (0)
+#endif
+
 #define admhc_err(ahcd, fmt, args...) \
 	printk(KERN_ERR "adm5120-hcd: " fmt , ## args )
 #define ahcd_info(ahcd, fmt, args...) \
@@ -645,14 +650,20 @@ static inline void periodic_reinit(struct admhcd *ahcd)
 					&ahcd->regs->fminterval);
 }
 
-static inline u32 admhc_get_rhdesc(struct admhcd *ahcd)
+static inline u32 admhc_read_rhdesc(struct admhcd *ahcd)
 {
 	return admhc_readl(ahcd, &ahcd->regs->rhdesc);
 }
 
-static inline u32 admhc_get_portstatus(struct admhcd *ahcd, int port)
+static inline u32 admhc_read_portstatus(struct admhcd *ahcd, int port)
 {
 	return admhc_readl(ahcd, &ahcd->regs->portstatus[port]);
+}
+
+static inline void admhc_write_portstatus(struct admhcd *ahcd, int port,
+		u32 value)
+{
+	admhc_writel(ahcd, value, &ahcd->regs->portstatus[port]);
 }
 
 static inline void roothub_write_status(struct admhcd *ahcd, u32 value)

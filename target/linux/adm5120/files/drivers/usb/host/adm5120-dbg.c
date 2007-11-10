@@ -243,7 +243,7 @@ admhc_dump_roothub(
 {
 	u32			temp, i;
 
-	temp = admhc_get_rhdesc(ahcd);
+	temp = admhc_read_rhdesc(ahcd);
 	if (temp == ~(u32)0)
 		return;
 
@@ -267,7 +267,7 @@ admhc_dump_roothub(
 	}
 
 	for (i = 0; i < ahcd->num_ports; i++) {
-		temp = admhc_get_portstatus(ahcd, i);
+		temp = admhc_read_portstatus(ahcd, i);
 		dbg_port_sw(ahcd, i, temp, next, size);
 	}
 }
