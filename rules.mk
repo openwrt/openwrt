@@ -138,6 +138,10 @@ $(call shvar,$(1))=$$(call $(1))
 export $(call shvar,$(1))
 endef
 
+define confvar
+$(foreach v,$(1),$(if $($(v)),y,n))
+endef
+
 # file extension
 ext=$(word $(words $(subst ., ,$(1))),$(subst ., ,$(1)))
 

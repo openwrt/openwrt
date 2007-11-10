@@ -173,6 +173,13 @@ sub target_name($) {
 	}
 }
 
+sub kver($) {
+	my $v = shift;
+	$v =~ tr/\./_/;
+	$v =~ /(\d+_\d+_\d+)(_\d+)?/ and $v = $1;
+	return $v;
+}
+
 sub print_target($) {
 	my $target = shift;
 	my $features = target_config_features(@{$target->{features}});
@@ -190,10 +197,12 @@ sub print_target($) {
 		undef $help;
 	}
 
+	my $v = kver($target->{version});
 	$confstr = <<EOF;
 config TARGET_$target->{conf}
 	bool "$target->{name}"
 	select LINUX_$kernel
+	select LINUX_$v
 EOF
 	if ($target->{subtarget}) {
 		$confstr .= "\tdepends TARGET_$target->{boardconf}\n";
@@ -296,6 +305,16 @@ EOF
 		$target->{subtarget} or	print "\t\tdefault \"".$target->{board}."\" if TARGET_".$target->{conf}."\n";
 	}
 
+	my %kver;
+	foreach my $target (@target) {
+		my $v = kver($target->{version});
+		next if $kver{$v};
+		$kver{$v} = 1;
+		print <<EOF;
+config LINUX_$v
+	bool
+EOF
+	}
 }
 
 my %dep_check;
