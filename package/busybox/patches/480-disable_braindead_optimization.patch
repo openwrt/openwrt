@@ -1,0 +1,40 @@
+Index: busybox-1.8.1/editors/awk.c
+===================================================================
+--- busybox-1.8.1.orig/editors/awk.c	2007-11-10 23:53:16.950053243 +0100
++++ busybox-1.8.1/editors/awk.c	2007-11-10 23:53:23.422422084 +0100
+@@ -446,7 +446,7 @@
+ 	tsplitter fsplitter, rsplitter;
+ };
+ #define G1 (ptr_to_globals[-1])
+-#define G (*(struct globals2 *const)ptr_to_globals)
++#define G (*(struct globals2 *)ptr_to_globals)
+ /* For debug. nm --size-sort awk.o | grep -vi ' [tr] ' */
+ /* char G1size[sizeof(G1)]; - 0x6c */
+ /* char Gsize[sizeof(G)]; - 0x1cc */
+Index: busybox-1.8.1/include/libbb.h
+===================================================================
+--- busybox-1.8.1.orig/include/libbb.h	2007-11-10 23:53:38.135260518 +0100
++++ busybox-1.8.1/include/libbb.h	2007-11-10 23:54:15.773405393 +0100
+@@ -1111,8 +1111,10 @@
+ struct globals;
+ /* '*const' ptr makes gcc optimize code much better.
+  * Magic prevents ptr_to_globals from going into rodata.
+- * If you want to assign a value, use PTR_TO_GLOBALS = xxx */
+-extern struct globals *const ptr_to_globals;
++ * If you want to assign a value, use PTR_TO_GLOBALS = xxx 
++ * unfortunately the above hack doesn't work properly :P
++ */
++extern struct globals *ptr_to_globals;
+ #define PTR_TO_GLOBALS (*(struct globals**)&ptr_to_globals)
+ 
+ 
+Index: busybox-1.8.1/libbb/messages.c
+===================================================================
+--- busybox-1.8.1.orig/libbb/messages.c	2007-11-10 23:52:47.116353117 +0100
++++ busybox-1.8.1/libbb/messages.c	2007-11-10 23:52:57.752959269 +0100
+@@ -74,4 +74,4 @@
+ 
+ struct globals;
+ /* Make it reside in R/W memory: */
+-struct globals *const ptr_to_globals __attribute__ ((section (".data")));
++struct globals *ptr_to_globals __attribute__ ((section (".data")));
