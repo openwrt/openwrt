@@ -1,8 +1,8 @@
-Index: busybox-1.7.2/include/applets.h
+Index: busybox-1.8.1/include/applets.h
 ===================================================================
---- busybox-1.7.2.orig/include/applets.h	2007-10-30 15:35:03.000000000 -0500
-+++ busybox-1.7.2/include/applets.h	2007-10-30 15:35:03.000000000 -0500
-@@ -209,6 +209,7 @@
+--- busybox-1.8.1.orig/include/applets.h	2007-11-10 16:54:28.318054115 +0100
++++ busybox-1.8.1/include/applets.h	2007-11-10 17:39:21.487529096 +0100
+@@ -218,6 +218,7 @@
  USE_LOAD_POLICY(APPLET(load_policy, _BB_DIR_USR_SBIN, _BB_SUID_NEVER))
  USE_LOADFONT(APPLET(loadfont, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
  USE_LOADKMAP(APPLET(loadkmap, _BB_DIR_SBIN, _BB_SUID_NEVER))
@@ -10,10 +10,10 @@ Index: busybox-1.7.2/include/applets.h
  USE_LOGGER(APPLET(logger, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
  USE_LOGIN(APPLET(login, _BB_DIR_BIN, _BB_SUID_ALWAYS))
  USE_LOGNAME(APPLET_NOFORK(logname, logname, _BB_DIR_USR_BIN, _BB_SUID_NEVER, logname))
-Index: busybox-1.7.2/miscutils/Config.in
+Index: busybox-1.8.1/miscutils/Config.in
 ===================================================================
---- busybox-1.7.2.orig/miscutils/Config.in	2007-10-30 15:34:59.000000000 -0500
-+++ busybox-1.7.2/miscutils/Config.in	2007-10-30 15:35:03.000000000 -0500
+--- busybox-1.8.1.orig/miscutils/Config.in	2007-11-10 16:54:16.477379354 +0100
++++ busybox-1.8.1/miscutils/Config.in	2007-11-10 16:54:28.366056851 +0100
 @@ -244,6 +244,12 @@
  	  Enables the 'hdparm -d' option to get/set using_dma flag.
  	  This is dangerous stuff, so you should probably say N.
@@ -27,23 +27,23 @@ Index: busybox-1.7.2/miscutils/Config.in
  config MAKEDEVS
  	bool "makedevs"
  	default n
-Index: busybox-1.7.2/miscutils/Kbuild
+Index: busybox-1.8.1/miscutils/Kbuild
 ===================================================================
---- busybox-1.7.2.orig/miscutils/Kbuild	2007-10-30 15:34:59.000000000 -0500
-+++ busybox-1.7.2/miscutils/Kbuild	2007-10-30 15:35:03.000000000 -0500
+--- busybox-1.8.1.orig/miscutils/Kbuild	2007-11-10 16:54:16.481379580 +0100
++++ busybox-1.8.1/miscutils/Kbuild	2007-11-10 16:54:28.370057076 +0100
 @@ -16,6 +16,7 @@
  lib-$(CONFIG_HDPARM)      += hdparm.o
  lib-$(CONFIG_LAST)        += last.o
  lib-$(CONFIG_LESS)        += less.o
 +lib-$(CONFIG_LOCK)        += lock.o
  lib-$(CONFIG_MAKEDEVS)    += makedevs.o
+ lib-$(CONFIG_MICROCOM)    += microcom.o
  lib-$(CONFIG_MOUNTPOINT)  += mountpoint.o
- lib-$(CONFIG_MT)          += mt.o
-Index: busybox-1.7.2/miscutils/lock.c
+Index: busybox-1.8.1/miscutils/lock.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/miscutils/lock.c	2007-10-30 15:35:03.000000000 -0500
-@@ -0,0 +1,135 @@
++++ busybox-1.8.1/miscutils/lock.c	2007-11-10 17:40:37.203843924 +0100
+@@ -0,0 +1,132 @@
 +/*
 + * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
 + *
@@ -56,7 +56,7 @@ Index: busybox-1.7.2/miscutils/lock.c
 +#include <fcntl.h>
 +#include <unistd.h>
 +#include <stdio.h>
-+#include "busybox.h" 
++#include "busybox.h"
 +
 +static int unlock = 0;
 +static int shared = 0;
@@ -84,19 +84,19 @@ Index: busybox-1.7.2/miscutils/lock.c
 +{
 +	FILE *f;
 +	int i;
-+	
++
 +	if ((f = fopen(file, "r")) == NULL)
 +		return 0;
-+	
++
 +	fscanf(f, "%d", &i);
 +	if (i > 0)
 +		kill(i, SIGTERM);
-+	
++
 +	fclose(f);
 +
 +	return 0;
 +}
-+		
++
 +static int do_lock(void)
 +{
 +	int pid;
@@ -118,7 +118,7 @@ Index: busybox-1.7.2/miscutils/lock.c
 +
 +	if (pid < 0)
 +		return -1;
-+	
++
 +	if (pid == 0) {
 +		signal(SIGKILL, exit_unlock);
 +		signal(SIGTERM, exit_unlock);
@@ -142,11 +142,8 @@ Index: busybox-1.7.2/miscutils/lock.c
 +	return 0;
 +}
 +
-+#ifndef CONFIG_LOCK
-+int main(int argc, char **argv)
-+#else
++int lock_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 +int lock_main(int argc, char **argv)
-+#endif
 +{
 +	char **args = &argv[1];
 +	int c = argc - 1;

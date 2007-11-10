@@ -1,8 +1,8 @@
-Index: busybox-1.7.2/archival/Config.in
+Index: busybox-1.8.1/archival/Config.in
 ===================================================================
---- busybox-1.7.2.orig/archival/Config.in	2007-10-30 15:34:59.000000000 -0500
-+++ busybox-1.7.2/archival/Config.in	2007-10-30 15:35:05.000000000 -0500
-@@ -121,6 +121,15 @@
+--- busybox-1.8.1.orig/archival/Config.in	2007-11-10 17:39:21.063504932 +0100
++++ busybox-1.8.1/archival/Config.in	2007-11-10 17:40:53.320762376 +0100
+@@ -131,6 +131,15 @@
  	  gzip is used to compress files.
  	  It's probably the most widely used UNIX compression program.
  
@@ -18,10 +18,10 @@ Index: busybox-1.7.2/archival/Config.in
  config RPM2CPIO
  	bool "rpm2cpio"
  	default n
-Index: busybox-1.7.2/archival/dpkg.c
+Index: busybox-1.8.1/archival/dpkg.c
 ===================================================================
---- busybox-1.7.2.orig/archival/dpkg.c	2007-10-30 15:34:59.000000000 -0500
-+++ busybox-1.7.2/archival/dpkg.c	2007-10-30 15:35:05.000000000 -0500
+--- busybox-1.8.1.orig/archival/dpkg.c	2007-11-10 17:39:21.071505389 +0100
++++ busybox-1.8.1/archival/dpkg.c	2007-11-10 17:40:53.320762376 +0100
 @@ -1455,6 +1455,10 @@
  	return ar_handle->sub_archive->buffer;
  }
@@ -42,11 +42,11 @@ Index: busybox-1.7.2/archival/dpkg.c
  static void unpack_package(deb_file_t *deb_file)
  {
  	const char *package_name = name_hashtable[package_hashtable[deb_file->package]->name];
-Index: busybox-1.7.2/archival/ipkg.c
+Index: busybox-1.8.1/archival/ipkg.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/ipkg.c	2007-10-30 15:35:05.000000000 -0500
-@@ -0,0 +1,26 @@
++++ busybox-1.8.1/archival/ipkg.c	2007-11-10 17:41:16.866104145 +0100
+@@ -0,0 +1,27 @@
 +/* ipkg.c - the itsy package management system
 +
 +   Florina Boor
@@ -66,18 +66,19 @@ Index: busybox-1.7.2/archival/ipkg.c
 +   ipkg command line frontend using libipkg
 +   
 +*/
-+
 +#include "libipkg/libipkg.h"
++#include "busybox.h"
 +
++int ipkg_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 +int ipkg_main(int argc, char **argv)
 +{
 +	return ipkg_op(argc, argv);
 +}
-Index: busybox-1.7.2/archival/Kbuild
+Index: busybox-1.8.1/archival/Kbuild
 ===================================================================
---- busybox-1.7.2.orig/archival/Kbuild	2007-10-30 15:34:59.000000000 -0500
-+++ busybox-1.7.2/archival/Kbuild	2007-10-30 15:35:05.000000000 -0500
-@@ -15,6 +15,7 @@
+--- busybox-1.8.1.orig/archival/Kbuild	2007-11-10 17:39:21.083506071 +0100
++++ busybox-1.8.1/archival/Kbuild	2007-11-10 17:40:53.332763058 +0100
+@@ -16,6 +16,7 @@
  lib-$(CONFIG_DPKG_DEB)		+= dpkg_deb.o
  lib-$(CONFIG_GUNZIP)		+= bbunzip.o
  lib-$(CONFIG_GZIP)		+= gzip.o bbunzip.o
@@ -85,10 +86,10 @@ Index: busybox-1.7.2/archival/Kbuild
  lib-$(CONFIG_RPM2CPIO)		+= rpm2cpio.o
  lib-$(CONFIG_RPM)		+= rpm.o
  lib-$(CONFIG_TAR)		+= tar.o
-Index: busybox-1.7.2/archival/libipkg/args.c
+Index: busybox-1.8.1/archival/libipkg/args.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/args.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/args.c	2007-11-10 17:40:53.336763287 +0100
 @@ -0,0 +1,242 @@
 +/* args.c - parse command-line args
 + 
@@ -332,10 +333,10 @@ Index: busybox-1.7.2/archival/libipkg/args.c
 +{
 +	bb_error_msg("version %s\n", IPKG_VERSION);
 +}
-Index: busybox-1.7.2/archival/libipkg/args.h
+Index: busybox-1.8.1/archival/libipkg/args.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/args.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/args.h	2007-11-10 17:40:53.340763516 +0100
 @@ -0,0 +1,72 @@
 +/* args.h - parse command-line args
 +
@@ -409,10 +410,10 @@ Index: busybox-1.7.2/archival/libipkg/args.h
 +void args_usage(char *complaint);
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/conffile.c
+Index: busybox-1.8.1/archival/libipkg/conffile.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/conffile.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/conffile.c	2007-11-10 17:40:53.340763516 +0100
 @@ -0,0 +1,64 @@
 +/* conffile.c - the itsy package management system
 +
@@ -478,10 +479,10 @@ Index: busybox-1.7.2/archival/libipkg/conffile.c
 +
 +    return ret;
 +}
-Index: busybox-1.7.2/archival/libipkg/conffile.h
+Index: busybox-1.8.1/archival/libipkg/conffile.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/conffile.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/conffile.h	2007-11-10 17:40:53.340763516 +0100
 @@ -0,0 +1,30 @@
 +/* conffile.h - the itsy package management system
 +
@@ -513,10 +514,10 @@ Index: busybox-1.7.2/archival/libipkg/conffile.h
 +
 +#endif
 +
-Index: busybox-1.7.2/archival/libipkg/conffile_list.c
+Index: busybox-1.8.1/archival/libipkg/conffile_list.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/conffile_list.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/conffile_list.c	2007-11-10 17:40:53.340763516 +0100
 @@ -0,0 +1,47 @@
 +/* conffile_list.c - the itsy package management system
 +
@@ -565,10 +566,10 @@ Index: busybox-1.7.2/archival/libipkg/conffile_list.c
 +    return nv_pair_list_pop(list);
 +}
 +
-Index: busybox-1.7.2/archival/libipkg/conffile_list.h
+Index: busybox-1.8.1/archival/libipkg/conffile_list.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/conffile_list.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/conffile_list.h	2007-11-10 17:40:53.340763516 +0100
 @@ -0,0 +1,36 @@
 +/* conffile_list.h - the itsy package management system
 +
@@ -606,10 +607,10 @@ Index: busybox-1.7.2/archival/libipkg/conffile_list.h
 +
 +#endif
 +
-Index: busybox-1.7.2/archival/libipkg/file_util.c
+Index: busybox-1.8.1/archival/libipkg/file_util.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/file_util.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/file_util.c	2007-11-10 17:40:53.340763516 +0100
 @@ -0,0 +1,132 @@
 +/* file_util.c - convenience routines for common stat operations
 +
@@ -743,10 +744,10 @@ Index: busybox-1.7.2/archival/libipkg/file_util.c
 +	return hash_file(file_name, HASH_MD5);
 +}
 +
-Index: busybox-1.7.2/archival/libipkg/file_util.h
+Index: busybox-1.8.1/archival/libipkg/file_util.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/file_util.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/file_util.h	2007-11-10 17:40:53.344763742 +0100
 @@ -0,0 +1,29 @@
 +/* file_util.h - convenience routines for common file operations
 +
@@ -777,10 +778,10 @@ Index: busybox-1.7.2/archival/libipkg/file_util.h
 +char *file_md5sum_alloc(const char *file_name);
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/hash_table.c
+Index: busybox-1.8.1/archival/libipkg/hash_table.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/hash_table.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/hash_table.c	2007-11-10 17:40:53.344763742 +0100
 @@ -0,0 +1,155 @@
 +/* hash.c - hash tables for ipkg
 +
@@ -937,10 +938,10 @@ Index: busybox-1.7.2/archival/libipkg/hash_table.c
 +    }
 +}
 +
-Index: busybox-1.7.2/archival/libipkg/hash_table.h
+Index: busybox-1.8.1/archival/libipkg/hash_table.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/hash_table.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/hash_table.h	2007-11-10 17:40:53.344763742 +0100
 @@ -0,0 +1,44 @@
 +/* hash.h - hash tables for ipkg
 +
@@ -986,10 +987,10 @@ Index: busybox-1.7.2/archival/libipkg/hash_table.h
 +void hash_table_foreach(hash_table_t *hash, void (*f)(const char *key, void *entry, void *data), void *data);
 +
 +#endif /* _HASH_TABLE_H_ */
-Index: busybox-1.7.2/archival/libipkg/ipkg_cmd.c
+Index: busybox-1.8.1/archival/libipkg/ipkg_cmd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_cmd.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_cmd.c	2007-11-10 17:40:53.344763742 +0100
 @@ -0,0 +1,1431 @@
 +/* ipkg_cmd.c - the itsy package management system
 +
@@ -2422,10 +2423,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_cmd.c
 +}
 +
 +
-Index: busybox-1.7.2/archival/libipkg/ipkg_cmd.h
+Index: busybox-1.8.1/archival/libipkg/ipkg_cmd.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_cmd.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_cmd.h	2007-11-10 17:40:53.348763971 +0100
 @@ -0,0 +1,46 @@
 +/* ipkg_cmd.h - the itsy package management system
 +
@@ -2473,10 +2474,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_cmd.h
 +int pkg_mark_provides(pkg_t *pkg);
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/ipkg_conf.c
+Index: busybox-1.8.1/archival/libipkg/ipkg_conf.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_conf.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_conf.c	2007-11-10 17:40:53.348763971 +0100
 @@ -0,0 +1,711 @@
 +/* ipkg_conf.c - the itsy package management system
 +
@@ -3189,10 +3190,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_conf.c
 +     sprintf_alloc(&root_filename, "%s%s", (conf->offline_root ? conf->offline_root : ""), filename);
 +     return root_filename;
 +}
-Index: busybox-1.7.2/archival/libipkg/ipkg_conf.h
+Index: busybox-1.8.1/archival/libipkg/ipkg_conf.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_conf.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_conf.h	2007-11-10 17:40:53.348763971 +0100
 @@ -0,0 +1,107 @@
 +/* ipkg_conf.h - the itsy package management system
 +
@@ -3301,10 +3302,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_conf.h
 +char *root_filename_alloc(ipkg_conf_t *conf, char *filename);
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/ipkg_configure.c
+Index: busybox-1.8.1/archival/libipkg/ipkg_configure.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_configure.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_configure.c	2007-11-10 17:40:53.348763971 +0100
 @@ -0,0 +1,40 @@
 +/* ipkg_configure.c - the itsy package management system
 +
@@ -3346,10 +3347,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_configure.c
 +    return 0;
 +}
 +
-Index: busybox-1.7.2/archival/libipkg/ipkg_configure.h
+Index: busybox-1.8.1/archival/libipkg/ipkg_configure.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_configure.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_configure.h	2007-11-10 17:40:53.348763971 +0100
 @@ -0,0 +1,25 @@
 +/* ipkg_configure.h - the itsy package management system
 +
@@ -3376,10 +3377,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_configure.h
 +int ipkg_configure(ipkg_conf_t *ipkg_conf, pkg_t *pkg);
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/ipkg_download.c
+Index: busybox-1.8.1/archival/libipkg/ipkg_download.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_download.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_download.c	2007-11-10 17:40:53.352764197 +0100
 @@ -0,0 +1,195 @@
 +/* ipkg_download.c - the itsy package management system
 +
@@ -3576,10 +3577,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_download.c
 +     }
 +     return 0;
 +}
-Index: busybox-1.7.2/archival/libipkg/ipkg_download.h
+Index: busybox-1.8.1/archival/libipkg/ipkg_download.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_download.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_download.h	2007-11-10 17:40:53.352764197 +0100
 @@ -0,0 +1,30 @@
 +/* ipkg_download.h - the itsy package management system
 +
@@ -3611,10 +3612,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_download.h
 +int ipkg_prepare_url_for_install(ipkg_conf_t *conf, const char *url, char **namep);
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/ipkg.h
+Index: busybox-1.8.1/archival/libipkg/ipkg.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg.h	2007-11-10 17:40:53.352764197 +0100
 @@ -0,0 +1,74 @@
 +/* ipkg.h - the itsy package management system
 +
@@ -3690,10 +3691,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg.h
 +extern ipkg_conf_t *global_conf;
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/ipkg_includes.h
+Index: busybox-1.8.1/archival/libipkg/ipkg_includes.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_includes.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_includes.h	2007-11-10 17:40:53.352764197 +0100
 @@ -0,0 +1,79 @@
 +#ifndef IPKG_INCLUDES_H
 +#define IPKG_INCLUDES_H
@@ -3774,10 +3775,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_includes.h
 +#endif
 +
 +#endif /* IPKG_INCLUDES_H */
-Index: busybox-1.7.2/archival/libipkg/ipkg_install.c
+Index: busybox-1.8.1/archival/libipkg/ipkg_install.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_install.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_install.c	2007-11-10 17:40:53.356764426 +0100
 @@ -0,0 +1,1942 @@
 +/* ipkg_install.c - the itsy package management system
 +
@@ -5721,10 +5722,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_install.c
 +}
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/ipkg_install.h
+Index: busybox-1.8.1/archival/libipkg/ipkg_install.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_install.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_install.h	2007-11-10 17:40:53.356764426 +0100
 @@ -0,0 +1,35 @@
 +/* ipkg_install.h - the itsy package management system
 +
@@ -5761,10 +5762,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_install.h
 +int name_mark_dependencies_for_installation(ipkg_conf_t *conf, const char *pkg_name, pkg_vec_t *pkgs_needed);
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/ipkg_message.c
+Index: busybox-1.8.1/archival/libipkg/ipkg_message.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_message.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_message.c	2007-11-10 17:40:53.356764426 +0100
 @@ -0,0 +1,61 @@
 +/* ipkg_message.c - the itsy package management system
 +
@@ -5827,10 +5828,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_message.c
 +	}
 +}
 +#endif
-Index: busybox-1.7.2/archival/libipkg/ipkg_message.h
+Index: busybox-1.8.1/archival/libipkg/ipkg_message.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_message.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_message.h	2007-11-10 17:40:53.356764426 +0100
 @@ -0,0 +1,32 @@
 +/* ipkg_message.h - the itsy package management system
 +
@@ -5864,10 +5865,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_message.h
 +extern void ipkg_message(ipkg_conf_t *conf, message_level_t level, const char *fmt, ...);
 +
 +#endif /* _IPKG_MESSAGE_H_ */
-Index: busybox-1.7.2/archival/libipkg/ipkg_remove.c
+Index: busybox-1.8.1/archival/libipkg/ipkg_remove.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_remove.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_remove.c	2007-11-10 17:40:53.360764656 +0100
 @@ -0,0 +1,383 @@
 +/* ipkg_remove.c - the itsy package management system
 +
@@ -6252,10 +6253,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_remove.c
 +
 +    return 0;
 +}
-Index: busybox-1.7.2/archival/libipkg/ipkg_remove.h
+Index: busybox-1.8.1/archival/libipkg/ipkg_remove.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_remove.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_remove.h	2007-11-10 17:40:53.360764656 +0100
 @@ -0,0 +1,33 @@
 +/* ipkg_remove.h - the itsy package management system
 +
@@ -6290,10 +6291,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_remove.h
 +
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/ipkg_upgrade.c
+Index: busybox-1.8.1/archival/libipkg/ipkg_upgrade.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_upgrade.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_upgrade.c	2007-11-10 17:40:53.360764656 +0100
 @@ -0,0 +1,77 @@
 +/* ipkg_upgrade.c - the itsy package management system
 +
@@ -6372,10 +6373,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_upgrade.c
 +     new->state_flag |= SF_USER;
 +     return ipkg_install_pkg(conf, new,1);
 +}
-Index: busybox-1.7.2/archival/libipkg/ipkg_upgrade.h
+Index: busybox-1.8.1/archival/libipkg/ipkg_upgrade.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_upgrade.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_upgrade.h	2007-11-10 17:40:53.360764656 +0100
 @@ -0,0 +1,18 @@
 +/* ipkg_upgrade.c - the itsy package management system
 +
@@ -6395,10 +6396,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_upgrade.h
 +#include "ipkg.h"
 +
 +int ipkg_upgrade_pkg(ipkg_conf_t *conf, pkg_t *old);
-Index: busybox-1.7.2/archival/libipkg/ipkg_utils.c
+Index: busybox-1.8.1/archival/libipkg/ipkg_utils.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_utils.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_utils.c	2007-11-10 17:40:53.360764656 +0100
 @@ -0,0 +1,181 @@
 +/* ipkg_utils.c - the itsy package management system
 +
@@ -6581,10 +6582,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_utils.c
 +}
 +
 +       
-Index: busybox-1.7.2/archival/libipkg/ipkg_utils.h
+Index: busybox-1.8.1/archival/libipkg/ipkg_utils.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/ipkg_utils.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/ipkg_utils.h	2007-11-10 17:40:53.360764656 +0100
 @@ -0,0 +1,29 @@
 +/* ipkg_utils.h - the itsy package management system
 +
@@ -6615,10 +6616,10 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_utils.h
 +int line_is_blank(const char *line);
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/Kbuild
+Index: busybox-1.8.1/archival/libipkg/Kbuild
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/Kbuild	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/Kbuild	2007-11-10 17:40:53.364764882 +0100
 @@ -0,0 +1,60 @@
 +# Makefile for busybox
 +#
@@ -6680,10 +6681,10 @@ Index: busybox-1.7.2/archival/libipkg/Kbuild
 +IPKG_ARCH:=$(TARGET_ARCH)
 +endif
 +CFLAGS += -DIPKG_LIB -DIPKGLIBDIR="\"/usr/lib\"" -DHOST_CPU_STR="\"$(IPKG_ARCH)\""
-Index: busybox-1.7.2/archival/libipkg/libipkg.c
+Index: busybox-1.8.1/archival/libipkg/libipkg.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/libipkg.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/libipkg.c	2007-11-10 17:40:53.364764882 +0100
 @@ -0,0 +1,527 @@
 +/* ipkglib.c - the itsy package management system
 +
@@ -7212,10 +7213,10 @@ Index: busybox-1.7.2/archival/libipkg/libipkg.c
 +}
 +
 +#endif /* IPKG_LIB */
-Index: busybox-1.7.2/archival/libipkg/libipkg.h
+Index: busybox-1.8.1/archival/libipkg/libipkg.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/libipkg.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/libipkg.h	2007-11-10 17:40:53.364764882 +0100
 @@ -0,0 +1,88 @@
 +/* ipkglib.h - the itsy package management system
 +
@@ -7305,10 +7306,10 @@ Index: busybox-1.7.2/archival/libipkg/libipkg.h
 +
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/nv_pair.c
+Index: busybox-1.8.1/archival/libipkg/nv_pair.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/nv_pair.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/nv_pair.c	2007-11-10 17:40:53.364764882 +0100
 @@ -0,0 +1,40 @@
 +/* nv_pair.c - the itsy package management system
 +
@@ -7350,10 +7351,10 @@ Index: busybox-1.7.2/archival/libipkg/nv_pair.c
 +}
 +
 +
-Index: busybox-1.7.2/archival/libipkg/nv_pair.h
+Index: busybox-1.8.1/archival/libipkg/nv_pair.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/nv_pair.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/nv_pair.h	2007-11-10 17:40:53.372765337 +0100
 @@ -0,0 +1,32 @@
 +/* nv_pair.h - the itsy package management system
 +
@@ -7387,10 +7388,10 @@ Index: busybox-1.7.2/archival/libipkg/nv_pair.h
 +
 +#endif
 +
-Index: busybox-1.7.2/archival/libipkg/nv_pair_list.c
+Index: busybox-1.8.1/archival/libipkg/nv_pair_list.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/nv_pair_list.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/nv_pair_list.c	2007-11-10 17:40:53.372765337 +0100
 @@ -0,0 +1,98 @@
 +/* nv_pair_list.c - the itsy package management system
 +
@@ -7490,10 +7491,10 @@ Index: busybox-1.7.2/archival/libipkg/nv_pair_list.c
 +     }    
 +     return NULL;
 +}
-Index: busybox-1.7.2/archival/libipkg/nv_pair_list.h
+Index: busybox-1.8.1/archival/libipkg/nv_pair_list.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/nv_pair_list.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/nv_pair_list.h	2007-11-10 17:40:53.372765337 +0100
 @@ -0,0 +1,60 @@
 +/* nv_pair_list.h - the itsy package management system
 +
@@ -7555,10 +7556,10 @@ Index: busybox-1.7.2/archival/libipkg/nv_pair_list.h
 +
 +#endif
 +
-Index: busybox-1.7.2/archival/libipkg/pkg.c
+Index: busybox-1.8.1/archival/libipkg/pkg.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg.c	2007-11-10 17:40:53.376765566 +0100
 @@ -0,0 +1,1747 @@
 +/* pkg.c - the itsy package management system
 +
@@ -9307,10 +9308,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg.c
 +     }
 +     return 0;
 +}
-Index: busybox-1.7.2/archival/libipkg/pkg_depends.c
+Index: busybox-1.8.1/archival/libipkg/pkg_depends.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_depends.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_depends.c	2007-11-10 17:40:53.376765566 +0100
 @@ -0,0 +1,1031 @@
 +/* pkg_depends.c - the itsy package management system
 +
@@ -10343,10 +10344,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_depends.c
 +
 +     return 0;
 +}
-Index: busybox-1.7.2/archival/libipkg/pkg_depends.h
+Index: busybox-1.8.1/archival/libipkg/pkg_depends.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_depends.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_depends.h	2007-11-10 17:40:53.376765566 +0100
 @@ -0,0 +1,105 @@
 +/* pkg_depends.h - the itsy package management system
 +
@@ -10453,10 +10454,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_depends.h
 +int pkg_dependence_satisfied(ipkg_conf_t *conf, depend_t *depend);
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/pkg_dest.c
+Index: busybox-1.8.1/archival/libipkg/pkg_dest.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_dest.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_dest.c	2007-11-10 17:40:53.376765566 +0100
 @@ -0,0 +1,92 @@
 +/* pkg_dest.c - the itsy package management system
 +
@@ -10550,10 +10551,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_dest.c
 +
 +    dest->root_dir = NULL;
 +}
-Index: busybox-1.7.2/archival/libipkg/pkg_dest.h
+Index: busybox-1.8.1/archival/libipkg/pkg_dest.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_dest.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_dest.h	2007-11-10 17:40:53.380765796 +0100
 @@ -0,0 +1,38 @@
 +/* pkg_dest.h - the itsy package management system
 +
@@ -10593,10 +10594,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_dest.h
 +
 +#endif
 +
-Index: busybox-1.7.2/archival/libipkg/pkg_dest_list.c
+Index: busybox-1.8.1/archival/libipkg/pkg_dest_list.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_dest_list.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_dest_list.c	2007-11-10 17:40:53.380765796 +0100
 @@ -0,0 +1,85 @@
 +/* pkg_dest_list.c - the itsy package management system
 +
@@ -10683,10 +10684,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_dest_list.c
 +{
 +    return (pkg_dest_list_elt_t *) void_list_pop((void_list_t *) list);
 +}
-Index: busybox-1.7.2/archival/libipkg/pkg_dest_list.h
+Index: busybox-1.8.1/archival/libipkg/pkg_dest_list.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_dest_list.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_dest_list.h	2007-11-10 17:40:53.380765796 +0100
 @@ -0,0 +1,50 @@
 +/* pkg_dest_list.h - the itsy package management system
 +
@@ -10738,10 +10739,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_dest_list.h
 +
 +#endif
 +
-Index: busybox-1.7.2/archival/libipkg/pkg_extract.c
+Index: busybox-1.8.1/archival/libipkg/pkg_extract.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_extract.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_extract.c	2007-11-10 17:40:53.380765796 +0100
 @@ -0,0 +1,224 @@
 +/* pkg_extract.c - the itsy package management system
 +
@@ -10967,10 +10968,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_extract.c
 +	
 +	return 0;
 +}
-Index: busybox-1.7.2/archival/libipkg/pkg_extract.h
+Index: busybox-1.8.1/archival/libipkg/pkg_extract.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_extract.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_extract.h	2007-11-10 17:40:53.380765796 +0100
 @@ -0,0 +1,32 @@
 +/* pkg_extract.c - the itsy package management system
 +
@@ -11004,10 +11005,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_extract.h
 +int pkg_extract_data_file_names_to_stream(pkg_t *pkg, FILE *file);
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/pkg.h
+Index: busybox-1.8.1/archival/libipkg/pkg.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg.h	2007-11-10 17:40:53.384766022 +0100
 @@ -0,0 +1,229 @@
 +/* pkg.h - the itsy package management system
 +
@@ -11238,10 +11239,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg.h
 +int pkg_write_changed_filelists(ipkg_conf_t *conf);
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/pkg_hash.c
+Index: busybox-1.8.1/archival/libipkg/pkg_hash.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_hash.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_hash.c	2007-11-10 17:40:53.388766251 +0100
 @@ -0,0 +1,616 @@
 +/* ipkg_hash.c - the itsy package management system
 +
@@ -11859,10 +11860,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_hash.c
 +}
 +
 +
-Index: busybox-1.7.2/archival/libipkg/pkg_hash.h
+Index: busybox-1.8.1/archival/libipkg/pkg_hash.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_hash.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_hash.h	2007-11-10 17:40:53.388766251 +0100
 @@ -0,0 +1,61 @@
 +/* pkg_hash.h - the itsy package management system
 +
@@ -11925,10 +11926,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_hash.h
 +
 +#endif
 +
-Index: busybox-1.7.2/archival/libipkg/pkg_parse.c
+Index: busybox-1.8.1/archival/libipkg/pkg_parse.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_parse.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_parse.c	2007-11-10 17:40:53.388766251 +0100
 @@ -0,0 +1,366 @@
 +/* pkg_parse.c - the itsy package management system
 +
@@ -12296,10 +12297,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_parse.c
 +
 +    return 0;
 +}
-Index: busybox-1.7.2/archival/libipkg/pkg_parse.h
+Index: busybox-1.8.1/archival/libipkg/pkg_parse.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_parse.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_parse.h	2007-11-10 17:40:53.392766477 +0100
 @@ -0,0 +1,31 @@
 +/* pkg_parse.h - the itsy package management system
 +
@@ -12332,10 +12333,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_parse.h
 +int pkg_valorize_other_field(pkg_t *pkg, char ***raw);
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/pkg_src.c
+Index: busybox-1.8.1/archival/libipkg/pkg_src.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_src.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_src.c	2007-11-10 17:40:53.392766477 +0100
 @@ -0,0 +1,43 @@
 +/* pkg_src.c - the itsy package management system
 +
@@ -12380,10 +12381,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_src.c
 +}
 +
 +
-Index: busybox-1.7.2/archival/libipkg/pkg_src.h
+Index: busybox-1.8.1/archival/libipkg/pkg_src.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_src.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_src.h	2007-11-10 17:40:53.392766477 +0100
 @@ -0,0 +1,34 @@
 +/* pkg_src.h - the itsy package management system
 +
@@ -12419,10 +12420,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_src.h
 +void pkg_src_deinit(pkg_src_t *src);
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/pkg_src_list.c
+Index: busybox-1.8.1/archival/libipkg/pkg_src_list.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_src_list.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_src_list.c	2007-11-10 17:40:53.392766477 +0100
 @@ -0,0 +1,75 @@
 +/* pkg_src_list.c - the itsy package management system
 +
@@ -12499,10 +12500,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_src_list.c
 +{
 +    return (pkg_src_list_elt_t *) void_list_pop((void_list_t *) list);
 +}
-Index: busybox-1.7.2/archival/libipkg/pkg_src_list.h
+Index: busybox-1.8.1/archival/libipkg/pkg_src_list.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_src_list.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_src_list.h	2007-11-10 17:40:53.396766706 +0100
 @@ -0,0 +1,57 @@
 +/* pkg_src_list.h - the itsy package management system
 +
@@ -12561,10 +12562,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_src_list.h
 +
 +#endif
 +
-Index: busybox-1.7.2/archival/libipkg/pkg_vec.c
+Index: busybox-1.8.1/archival/libipkg/pkg_vec.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_vec.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_vec.c	2007-11-10 17:40:53.396766706 +0100
 @@ -0,0 +1,230 @@
 +/* pkg_vec.c - the itsy package management system
 +
@@ -12796,10 +12797,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_vec.c
 +     qsort(vec->pkgs, vec->len, sizeof(pkg_t *), (compare_fcn_t)compar);
 +}
 +
-Index: busybox-1.7.2/archival/libipkg/pkg_vec.h
+Index: busybox-1.8.1/archival/libipkg/pkg_vec.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/pkg_vec.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/pkg_vec.h	2007-11-10 17:40:53.396766706 +0100
 @@ -0,0 +1,64 @@
 +/* pkg_vec.h - the itsy package management system
 +
@@ -12865,10 +12866,10 @@ Index: busybox-1.7.2/archival/libipkg/pkg_vec.h
 +void abstract_pkg_vec_sort(pkg_vec_t *vec, int (*compar)(abstract_pkg_t *, abstract_pkg_t *));
 +#endif
 +
-Index: busybox-1.7.2/archival/libipkg/sprintf_alloc.h
+Index: busybox-1.8.1/archival/libipkg/sprintf_alloc.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/sprintf_alloc.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/sprintf_alloc.h	2007-11-10 17:40:53.396766706 +0100
 @@ -0,0 +1,25 @@
 +/* sprintf_alloca.c -- like sprintf with memory allocation
 +
@@ -12895,10 +12896,10 @@ Index: busybox-1.7.2/archival/libipkg/sprintf_alloc.h
 +#define sprintf_alloc(str, fmt, args...)  *str = xasprintf(fmt, ## args)
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/str_list.c
+Index: busybox-1.8.1/archival/libipkg/str_list.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/str_list.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/str_list.c	2007-11-10 17:40:53.396766706 +0100
 @@ -0,0 +1,76 @@
 +/* str_list.c - the itsy package management system
 +
@@ -12976,10 +12977,10 @@ Index: busybox-1.7.2/archival/libipkg/str_list.c
 +					 (void *)target_str,
 +					 (void_list_cmp_t)strcmp);
 +}
-Index: busybox-1.7.2/archival/libipkg/str_list.h
+Index: busybox-1.8.1/archival/libipkg/str_list.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/str_list.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/str_list.h	2007-11-10 17:40:53.400766935 +0100
 @@ -0,0 +1,51 @@
 +/* str_list.h - the itsy package management system
 +
@@ -13032,10 +13033,10 @@ Index: busybox-1.7.2/archival/libipkg/str_list.h
 +char *str_list_remove_elt(str_list_t *list, const char *target_str);
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/str_util.c
+Index: busybox-1.8.1/archival/libipkg/str_util.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/str_util.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/str_util.c	2007-11-10 17:40:53.400766935 +0100
 @@ -0,0 +1,63 @@
 +/* str_utils.c - the itsy package management system
 +
@@ -13100,10 +13101,10 @@ Index: busybox-1.7.2/archival/libipkg/str_util.c
 +    return str ? strdup(str) : NULL;
 +}
 +
-Index: busybox-1.7.2/archival/libipkg/str_util.h
+Index: busybox-1.8.1/archival/libipkg/str_util.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/str_util.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/str_util.h	2007-11-10 17:40:53.400766935 +0100
 @@ -0,0 +1,27 @@
 +/* str_utils.h - the itsy package management system
 +
@@ -13132,10 +13133,10 @@ Index: busybox-1.7.2/archival/libipkg/str_util.h
 +char *str_dup_safe(const char *str);
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/user.c
+Index: busybox-1.8.1/archival/libipkg/user.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/user.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/user.c	2007-11-10 17:40:53.400766935 +0100
 @@ -0,0 +1,58 @@
 +/* user.c - the itsy package management system
 +
@@ -13195,10 +13196,10 @@ Index: busybox-1.7.2/archival/libipkg/user.c
 +
 +     return response;
 +}
-Index: busybox-1.7.2/archival/libipkg/user.h
+Index: busybox-1.8.1/archival/libipkg/user.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/user.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/user.h	2007-11-10 17:40:53.400766935 +0100
 @@ -0,0 +1,23 @@
 +/* user.c - the itsy package management system
 +
@@ -13223,10 +13224,10 @@ Index: busybox-1.7.2/archival/libipkg/user.h
 +
 +char *get_user_response(const char *format, ...);
 +
-Index: busybox-1.7.2/archival/libipkg/void_list.c
+Index: busybox-1.8.1/archival/libipkg/void_list.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/void_list.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/void_list.c	2007-11-10 17:40:53.404767161 +0100
 @@ -0,0 +1,194 @@
 +/* void_list.c - the itsy package management system
 +
@@ -13422,10 +13423,10 @@ Index: busybox-1.7.2/archival/libipkg/void_list.c
 +     else
 +	  return NULL;
 +}
-Index: busybox-1.7.2/archival/libipkg/void_list.h
+Index: busybox-1.8.1/archival/libipkg/void_list.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/void_list.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/void_list.h	2007-11-10 17:40:53.404767161 +0100
 @@ -0,0 +1,59 @@
 +/* void_list.h - the itsy package management system
 +
@@ -13486,10 +13487,10 @@ Index: busybox-1.7.2/archival/libipkg/void_list.h
 +void *void_list_remove_elt(void_list_t *list, const void *target_data, void_list_cmp_t cmp);
 +
 +#endif
-Index: busybox-1.7.2/archival/libipkg/xsystem.c
+Index: busybox-1.8.1/archival/libipkg/xsystem.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/xsystem.c	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/xsystem.c	2007-11-10 17:40:53.404767161 +0100
 @@ -0,0 +1,64 @@
 +/* xsystem.c - system(3) with error messages
 +
@@ -13555,10 +13556,10 @@ Index: busybox-1.7.2/archival/libipkg/xsystem.c
 +    return -1;
 +}
 +	 
-Index: busybox-1.7.2/archival/libipkg/xsystem.h
+Index: busybox-1.8.1/archival/libipkg/xsystem.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/archival/libipkg/xsystem.h	2007-10-30 15:35:05.000000000 -0500
++++ busybox-1.8.1/archival/libipkg/xsystem.h	2007-11-10 17:40:53.404767161 +0100
 @@ -0,0 +1,34 @@
 +/* xsystem.h - system(3) with error messages
 +
@@ -13594,10 +13595,10 @@ Index: busybox-1.7.2/archival/libipkg/xsystem.h
 +
 +#endif
 +	 
-Index: busybox-1.7.2/archival/libunarchive/data_extract_all.c
+Index: busybox-1.8.1/archival/libunarchive/data_extract_all.c
 ===================================================================
---- busybox-1.7.2.orig/archival/libunarchive/data_extract_all.c	2007-10-30 15:34:59.000000000 -0500
-+++ busybox-1.7.2/archival/libunarchive/data_extract_all.c	2007-10-30 15:35:05.000000000 -0500
+--- busybox-1.8.1.orig/archival/libunarchive/data_extract_all.c	2007-11-10 17:39:21.471528185 +0100
++++ busybox-1.8.1/archival/libunarchive/data_extract_all.c	2007-11-10 17:40:53.404767161 +0100
 @@ -129,3 +129,17 @@
  		}
  	}
@@ -13616,23 +13617,23 @@ Index: busybox-1.7.2/archival/libunarchive/data_extract_all.c
 +	}
 +}
 +
-Index: busybox-1.7.2/archival/libunarchive/Kbuild
+Index: busybox-1.8.1/archival/libunarchive/Kbuild
 ===================================================================
---- busybox-1.7.2.orig/archival/libunarchive/Kbuild	2007-10-30 15:34:59.000000000 -0500
-+++ busybox-1.7.2/archival/libunarchive/Kbuild	2007-10-30 15:35:05.000000000 -0500
-@@ -55,6 +55,7 @@
+--- busybox-1.8.1.orig/archival/libunarchive/Kbuild	2007-11-10 17:39:21.479528641 +0100
++++ busybox-1.8.1/archival/libunarchive/Kbuild	2007-11-10 17:40:53.408767391 +0100
+@@ -54,6 +54,7 @@
  lib-$(CONFIG_FEATURE_DEB_TAR_LZMA)      += decompress_unlzma.o get_header_tar_lzma.o
- lib-$(CONFIG_GUNZIP)                    += $(GUNZIP_FILES)
+ lib-$(CONFIG_GUNZIP)                    += decompress_unzip.o
  lib-$(CONFIG_FEATURE_GUNZIP_UNCOMPRESS) += decompress_uncompress.o
 +lib-$(CONFIG_IPKG)			+= $(GUNZIP_FILES) get_header_tar.o get_header_tar_gz.o
- lib-$(CONFIG_RPM2CPIO)                  += $(GUNZIP_FILES) get_header_cpio.o
- lib-$(CONFIG_RPM)                       += $(GUNZIP_FILES) get_header_cpio.o
+ lib-$(CONFIG_RPM2CPIO)                  += decompress_unzip.o get_header_cpio.o
+ lib-$(CONFIG_RPM)                       += decompress_unzip.o get_header_cpio.o
  lib-$(CONFIG_FEATURE_RPM_BZ2)           += decompress_bunzip2.o
-Index: busybox-1.7.2/include/applets.h
+Index: busybox-1.8.1/include/applets.h
 ===================================================================
---- busybox-1.7.2.orig/include/applets.h	2007-10-30 15:35:03.000000000 -0500
-+++ busybox-1.7.2/include/applets.h	2007-10-30 15:35:05.000000000 -0500
-@@ -190,6 +190,7 @@
+--- busybox-1.8.1.orig/include/applets.h	2007-11-10 17:39:21.487529096 +0100
++++ busybox-1.8.1/include/applets.h	2007-11-10 17:40:53.408767391 +0100
+@@ -198,6 +198,7 @@
  USE_IPCALC(APPLET(ipcalc, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_IPCRM(APPLET(ipcrm, _BB_DIR_USR_BIN, _BB_SUID_ALWAYS))
  USE_IPCS(APPLET(ipcs, _BB_DIR_USR_BIN, _BB_SUID_ALWAYS))
@@ -13640,10 +13641,10 @@ Index: busybox-1.7.2/include/applets.h
  USE_IPLINK(APPLET(iplink, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_IPROUTE(APPLET(iproute, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_IPRULE(APPLET(iprule, _BB_DIR_BIN, _BB_SUID_NEVER))
-Index: busybox-1.7.2/include/unarchive.h
+Index: busybox-1.8.1/include/unarchive.h
 ===================================================================
---- busybox-1.7.2.orig/include/unarchive.h	2007-10-30 15:34:59.000000000 -0500
-+++ busybox-1.7.2/include/unarchive.h	2007-10-30 15:35:05.000000000 -0500
+--- busybox-1.8.1.orig/include/unarchive.h	2007-11-10 17:39:21.495529554 +0100
++++ busybox-1.8.1/include/unarchive.h	2007-11-10 17:40:53.408767391 +0100
 @@ -74,6 +74,7 @@
  
  extern void data_skip(archive_handle_t *archive_handle);
@@ -13652,11 +13653,11 @@ Index: busybox-1.7.2/include/unarchive.h
  extern void data_extract_to_stdout(archive_handle_t *archive_handle);
  extern void data_extract_to_buffer(archive_handle_t *archive_handle);
  
-Index: busybox-1.7.2/include/usage.h
+Index: busybox-1.8.1/include/usage.h
 ===================================================================
---- busybox-1.7.2.orig/include/usage.h	2007-10-30 15:35:03.000000000 -0500
-+++ busybox-1.7.2/include/usage.h	2007-10-30 15:35:05.000000000 -0500
-@@ -1226,6 +1226,82 @@
+--- busybox-1.8.1.orig/include/usage.h	2007-11-10 17:40:53.208755993 +0100
++++ busybox-1.8.1/include/usage.h	2007-11-10 17:40:53.412767617 +0100
+@@ -1294,6 +1294,82 @@
         "$ ls -la /tmp/busybox*\n" \
         "-rw-rw-r--    1 andersen andersen   554058 Apr 14 17:49 /tmp/busybox.tar.gz\n"
  
@@ -13739,10 +13740,10 @@ Index: busybox-1.7.2/include/usage.h
  #define halt_trivial_usage \
         "[-d delay] [-n] [-f]"
  #define halt_full_usage \
-Index: busybox-1.7.2/Makefile
+Index: busybox-1.8.1/Makefile
 ===================================================================
---- busybox-1.7.2.orig/Makefile	2007-10-30 15:34:59.000000000 -0500
-+++ busybox-1.7.2/Makefile	2007-10-30 15:35:05.000000000 -0500
+--- busybox-1.8.1.orig/Makefile	2007-11-10 17:39:21.511530465 +0100
++++ busybox-1.8.1/Makefile	2007-11-10 17:40:53.412767617 +0100
 @@ -428,6 +428,7 @@
  
  libs-y		:= \

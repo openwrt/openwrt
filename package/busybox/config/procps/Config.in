@@ -49,6 +49,12 @@ config BUSYBOX_CONFIG_NMETER
 	help
 	  Prints selected system stats continuously, one line per update.
 
+config BUSYBOX_CONFIG_PGREP
+	bool "pgrep"
+	default y
+	help
+	  Look for processes by name.
+
 config BUSYBOX_CONFIG_PIDOF
 	bool "pidof"
 	default y
@@ -71,6 +77,12 @@ config BUSYBOX_CONFIG_FEATURE_PIDOF_OMIT
 	  Support argument '-o' for omitting the given pids in output.
 	  The special pid %PPID can be used to name the parent process
 	  of the pidof, in other words the calling shell or shell script.
+
+config BUSYBOX_CONFIG_PKILL
+	bool "pkill"
+	default y
+	help
+	  Send signals to processes by name.
 
 config BUSYBOX_CONFIG_PS
 	bool "ps"
@@ -127,6 +139,13 @@ config BUSYBOX_CONFIG_FEATURE_TOP_DECIMALS
 	depends on BUSYBOX_CONFIG_FEATURE_TOP_CPU_USAGE_PERCENTAGE
 	help
 	  Show 1/10th of a percent in CPU/mem statistics.
+
+config BUSYBOX_CONFIG_FEATURE_TOPMEM
+	bool "topmem"
+	default n
+	depends on BUSYBOX_CONFIG_TOP
+	help
+	  Enable 's' in top (gives lots of memory info)
 
 config BUSYBOX_CONFIG_UPTIME
 	bool "uptime"
