@@ -12,15 +12,25 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=rt2x00
 PKG_VERSION:=cvs-20070712
 
-PKG_FW6X_NAME:=RT61_Firmware_V1.2.zip
-PKG_FW6X_URL:=http://www.ralinktech.com.tw/data/
-PKG_FW6X_MD5SUM:=d4c690c93b470bc9a681297c2adc6281
-
-PKG_FW7X_NAME:=RT71W_Firmware_V1.8.zip
-PKG_FW7X_URL:=http://www.ralinktech.com.tw/data/
-PKG_FW7X_MD5SUM:=1e7a5dc574e0268574fcda3fd5cf52f7
-
 include $(INCLUDE_DIR)/package.mk
+
+
+RT61FW:=RT61_Firmware_V1.2.zip
+RT71FW:=RT71W_Firmware_V1.8.zip
+
+define Download/rt61
+  FILE:=$(RT61FW)
+  URL:=http://www.ralinktech.com.tw/data/
+  MD5SUM:=d4c690c93b470bc9a681297c2adc6281
+endef
+$(eval $(call Download,rt61))
+
+define Download/rt71w
+  FILE:=$(RT71FW)
+  URL:=http://www.ralinktech.com.tw/data/
+  MD5SUM:=1e7a5dc574e0268574fcda3fd5cf52f7
+endef
+$(eval $(call Download,rt71w))
 
 # XXX: remove @!TARGET_* later when we have PCI & USB support properly detected on all targets
 define KernelPackage/rt2x00/Default
@@ -95,13 +105,8 @@ endef
 
 $(STAMP_PREPARED): $(DL_DIR)/$(PKG_FW6X_NAME) $(DL_DIR)/$(PKG_FW7X_NAME)
 
-$(DL_DIR)/$(PKG_FW6X_NAME):
-	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_FW6X_NAME)" "$(PKG_FW6X_MD5SUM)" $(PKG_FW6X_URL)
-
-$(DL_DIR)/$(PKG_FW7X_NAME):
-	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_FW7X_NAME)" "$(PKG_FW7X_MD5SUM)" $(PKG_FW7X_URL)
-
 PKG_EXTRA_KCONFIG:= \
+	CONFIG_MAC80211=y \
 	CONFIG_RT2X00=y \
 	CONFIG_RT2X00_DEBUG=y \
 
@@ -135,8 +140,8 @@ PKG_EXTRA_CFLAGS:= \
 define Build/Prepare
 	$(call Build/Prepare/Default)
 	$(CP) -r src/* $(PKG_BUILD_DIR)/
-	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(PKG_FW6X_NAME)
-	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(PKG_FW7X_NAME)
+	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT61FW)
+	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT71FW)
 endef
 
 define Build/Configure
