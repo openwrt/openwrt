@@ -11,7 +11,7 @@ BLOCK_MENU:=Block Devices
 define KernelPackage/ata-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Serial and Parallel ATA support
-  DEPENDS:=@PCI_SUPPORT @LINUX_2_6
+  DEPENDS:=@PCI_SUPPORT @LINUX_2_6 +kmod-scsi-core
   KCONFIG:=CONFIG_ATA
   FILES:=$(LINUX_DIR)/drivers/ata/libata.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,21,libata)
@@ -23,7 +23,7 @@ $(eval $(call KernelPackage,ata-core))
 define KernelPackage/ata-artop
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=ARTOP 6210/6260 PATA support
-  DEPENDS:=kmod-ata-core +kmod-scsi-core
+  DEPENDS:=kmod-ata-core
   KCONFIG:=CONFIG_PATA_ARTOP
   FILES:=$(LINUX_DIR)/drivers/ata/pata_artop.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,41,pata_artop)
@@ -39,7 +39,7 @@ $(eval $(call KernelPackage,ata-artop))
 define KernelPackage/ata-piix
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Intel PIIX PATA/SATA support
-  DEPENDS:=kmod-ata-core +kmod-ide-core +kmod-scsi-core
+  DEPENDS:=kmod-ata-core +kmod-ide-core
   KCONFIG:=CONFIG_ATA_PIIX
   FILES:=$(LINUX_DIR)/drivers/ata/ata_piix.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,41,ata_piix)
