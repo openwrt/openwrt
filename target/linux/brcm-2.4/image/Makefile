@@ -63,7 +63,8 @@ define Image/Build/jffs2-128k
 endef
 
 define Image/Build/jffs2-64k
-	$(call Image/Build/CyberTAN,$(1),wrt54g3g,W54F,2.01.1,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),wrt54g3g,W54F,2.20.1,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),wrt54g3g-em,W3GN,2.20.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt54g,W54G,4.60.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt54gs_v4,W54s,1.09.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt150n,N150,1.00.5,$(patsubst jffs2-%,jffs2,$(1)))
