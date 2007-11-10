@@ -27,7 +27,6 @@ define KernelPackage/rt2x00/Default
   SUBMENU:=Wireless Drivers
   TITLE:=Ralink Drivers for RT2x00 cards
   DEPENDS:=@LINUX_2_6 @!TARGET_atheros @!TARGET_uml
-  KCONFIG:=CONFIG_MAC80211
 endef
 
 define KernelPackage/rt2x00-lib
@@ -102,52 +101,36 @@ $(DL_DIR)/$(PKG_FW6X_NAME):
 $(DL_DIR)/$(PKG_FW7X_NAME):
 	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_FW7X_NAME)" "$(PKG_FW7X_MD5SUM)" $(PKG_FW7X_URL)
 
-# only try to build if the kernel is recent enough (has in-kernel mac80211)
-ifndef ($(CONFIG_MAC80211),)
-
-  PKG_EXTRA_KCONFIG:= \
+PKG_EXTRA_KCONFIG:= \
 	CONFIG_RT2X00=y \
 	CONFIG_RT2X00_DEBUG=y \
 
-  ifneq ($(CONFIG_PACKAGE_kmod-rt2x00-pci),)
-    PKG_EXTRA_KCONFIG+= CONFIG_RT2X00PCI=y
-  endif
-  ifneq ($(CONFIG_PACKAGE_kmod-rt2x00-usb),)
-    PKG_EXTRA_KCONFIG+= CONFIG_RT2X00USB=y
-  endif
-  ifneq ($(CONFIG_PACKAGE_kmod-rt2400-pci),)
-    PKG_EXTRA_KCONFIG+= CONFIG_RT2400PCI=y
-  endif
-  ifneq ($(CONFIG_PACKAGE_kmod-rt2500-pci),)
-    PKG_EXTRA_KCONFIG+= CONFIG_RT2500PCI=y
-  endif
-  ifneq ($(CONFIG_PACKAGE_kmod-rt2500-usb),)
-    PKG_EXTRA_KCONFIG+= CONFIG_RT2500USB=y
-  endif
-  ifneq ($(CONFIG_PACKAGE_kmod-rt61-pci),)
-    PKG_EXTRA_KCONFIG+= CONFIG_RT61PCI=y
-  endif
-  ifneq ($(CONFIG_PACKAGE_kmod-rt73-usb),)
-    PKG_EXTRA_KCONFIG+= CONFIG_RT73USB=y
-  endif
+ifneq ($(CONFIG_PACKAGE_kmod-rt2x00-pci),)
+  PKG_EXTRA_KCONFIG+= CONFIG_RT2X00PCI=y
+endif
+ifneq ($(CONFIG_PACKAGE_kmod-rt2x00-usb),)
+  PKG_EXTRA_KCONFIG+= CONFIG_RT2X00USB=y
+endif
+ifneq ($(CONFIG_PACKAGE_kmod-rt2400-pci),)
+  PKG_EXTRA_KCONFIG+= CONFIG_RT2400PCI=y
+endif
+ifneq ($(CONFIG_PACKAGE_kmod-rt2500-pci),)
+  PKG_EXTRA_KCONFIG+= CONFIG_RT2500PCI=y
+endif
+ifneq ($(CONFIG_PACKAGE_kmod-rt2500-usb),)
+  PKG_EXTRA_KCONFIG+= CONFIG_RT2500USB=y
+endif
+ifneq ($(CONFIG_PACKAGE_kmod-rt61-pci),)
+  PKG_EXTRA_KCONFIG+= CONFIG_RT61PCI=y
+endif
+ifneq ($(CONFIG_PACKAGE_kmod-rt73-usb),)
+  PKG_EXTRA_KCONFIG+= CONFIG_RT73USB=y
+endif
 
-  PKG_EXTRA_CFLAGS:= \
+PKG_EXTRA_CFLAGS:= \
 	-I$(STAGING_DIR)/usr/include/mac80211 \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=m,%,$(filter %=m,$(PKG_EXTRA_KCONFIG)))) \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=y,%,$(filter %=y,$(PKG_EXTRA_KCONFIG)))) \
-
-  define Build/Compile/it
-	$(MAKE) -C "$(LINUX_DIR)" \
-		ARCH="$(LINUX_KARCH)" \
-		CROSS_COMPILE="$(TARGET_CROSS)" \
-		SUBDIRS="$(PKG_BUILD_DIR)" \
-		$(PKG_EXTRA_KCONFIG) \
-		EXTRA_CFLAGS="$(PKG_EXTRA_CFLAGS)" \
-		V="$(V)" \
-		modules
-  endef
-
-endif
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
@@ -161,7 +144,14 @@ define Build/Configure
 endef
 
 define Build/Compile
-$(call Build/Compile/it)
+	$(MAKE) -C "$(LINUX_DIR)" \
+		ARCH="$(LINUX_KARCH)" \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
+		SUBDIRS="$(PKG_BUILD_DIR)" \
+		$(PKG_EXTRA_KCONFIG) \
+		EXTRA_CFLAGS="$(PKG_EXTRA_CFLAGS)" \
+		V="$(V)" \
+		modules
 endef
 
 define KernelPackage/rt61-pci/install
