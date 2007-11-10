@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
-IMGNAME := $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)
+IMGNAME := $(BIN_DIR)/openwrt-$(BOARD)
 JFFS2BLOCK := $(KDIR)/jffs2.block
 JFFS2MARK := $(KDIR)/jffs2.mark
 
@@ -39,7 +39,7 @@ endef
 
 define Image/Build/LZMAKernel
 	$(LOADER_MAKE) TARGET_DIR=$(BIN_DIR) \
-		LOADER=openwrt-$(BOARD)-$(KERNEL)-$(1)-ramfs.$(2) \
+		LOADER=openwrt-$(BOARD)-$(1)-ramfs.$(2) \
 		LOADER_DATA=$(KDIR)/vmlinux.lzma \
 		LZMA_TEXT_START=$(3) LZMA_STARTUP_ORG=$(4) \
 		CONFIG_PASS_KARGS=$(5) CONFIG_BOARD=$(6) \

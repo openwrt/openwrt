@@ -49,17 +49,17 @@ define Image/Prepare
 endef
 
 define Image/Build/Initramfs
-	$(OBJCOPY_SREC) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.srec
+	$(OBJCOPY_SREC) $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.srec
 endef
 
 define Image/Build
 	$(TARGET_CROSS)objcopy -O srec -I binary --adjust-vma $(FLASH_FS) $(KDIR)/root.$(1) $(KDIR)/root.$(1).srec
-	grep -v S7 $(KDIR)/root.$(1).srec > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
-	grep -v S0 $(KDIR)/kernel.flash.srec >> $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
-	$(CP) $(KDIR)/kernel.flash.bin $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.bin
-	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).fs
-	$(CP) $(KDIR)/kernel.flash.srec $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux-flash.srec
-	$(CP) $(KDIR)/kernel.ram.srec $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux-ram.srec
+	grep -v S7 $(KDIR)/root.$(1).srec > $(BIN_DIR)/openwrt-$(BOARD)-$(1).img
+	grep -v S0 $(KDIR)/kernel.flash.srec >> $(BIN_DIR)/openwrt-$(BOARD)-$(1).img
+	$(CP) $(KDIR)/kernel.flash.bin $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.bin
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1).fs
+	$(CP) $(KDIR)/kernel.flash.srec $(BIN_DIR)/openwrt-$(BOARD)-vmlinux-flash.srec
+	$(CP) $(KDIR)/kernel.ram.srec $(BIN_DIR)/openwrt-$(BOARD)-vmlinux-ram.srec
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	$(call Image/Build/Initramfs)
 endif
