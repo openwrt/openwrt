@@ -28,11 +28,11 @@ do
   hexid=$(printf %x\\n $2)
   if [ "$2" -lt "256" ]; then
     # we have a low machtypeid, we just need a "mov" (e3a)
-    printf "\xe3\xa0\x10\x$hexid" > $BIN_DIR/openwrt-$1-2.6-zImage
+    printf "\xe3\xa0\x10\x$hexid" > $BIN_DIR/openwrt-$1-zImage
   else
     # we have a high machtypeid, we need a "mov" (e3a) and an "orr" (e38)
-    printf "\xe3\xa0\x10\x$(echo $hexid|cut -b "2 3")\xe3\x81\x1c\x$(echo $hexid|cut -b 1)" > $BIN_DIR/openwrt-$1-2.6-zImage
+    printf "\xe3\xa0\x10\x$(echo $hexid|cut -b "2 3")\xe3\x81\x1c\x$(echo $hexid|cut -b 1)" > $BIN_DIR/openwrt-$1-zImage
   fi
     # generate the image
-    cat $BIN_DIR/openwrt-ixp4xx-2.6-zImage >> $BIN_DIR/openwrt-$1-2.6-zImage
+    cat $BIN_DIR/openwrt-ixp4xx-zImage >> $BIN_DIR/openwrt-$1-zImage
 done
