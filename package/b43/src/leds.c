@@ -29,6 +29,7 @@
 #include "b43.h"
 #include "leds.h"
 
+
 static void b43_led_turn_on(struct b43_wldev *dev, u8 led_index,
 			    bool activelow)
 {
