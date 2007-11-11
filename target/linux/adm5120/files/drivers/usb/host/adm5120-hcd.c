@@ -682,9 +682,9 @@ static irqreturn_t admhc_irq(struct usb_hcd *hcd)
 
 	if (ints & ADMHC_INTR_SOFI) {
 		admhc_intr_ack(ahcd, ADMHC_INTR_SOFI);
+		spin_lock(&ahcd->lock);
 		/* handle any pending ED removes */
 		admhc_finish_unlinks(ahcd, admhc_frame_no(ahcd));
-		spin_lock(&ahcd->lock);
 		admhc_sof_refill(ahcd);
 		spin_unlock(&ahcd->lock);
 	}
