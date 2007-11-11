@@ -23,7 +23,6 @@ struct b43_led {
 	/* The unique name string for this LED device. */
 	char name[B43_LED_MAX_NAME_LEN + 1];
 };
-#define b43_led_index(led)	((int)((led) - (led)->dev->leds))
 
 #define B43_LED_BEHAVIOUR		0x7F
 #define B43_LED_ACTIVELOW		0x80

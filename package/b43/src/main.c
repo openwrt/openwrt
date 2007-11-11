@@ -49,7 +49,6 @@
 #include "pio.h"
 #include "sysfs.h"
 #include "xmit.h"
-#include "sysfs.h"
 #include "lo.h"
 #include "pcmcia.h"
 
@@ -107,6 +106,23 @@ static const struct ssb_device_id b43_ssb_tbl[] = {
 
 MODULE_DEVICE_TABLE(ssb, b43_ssb_tbl);
 
+static const struct pci_device_id b43_pci_bridge_tbl[] = {
+	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4311) },
+	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4312) },
+	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4318) },
+	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4319) },
+	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4320) },
+	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4321) },
+	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4324) },
+	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4325) },
+	{ 0, },
+};
+MODULE_DEVICE_TABLE(pci, b43_pci_bridge_tbl);
+
+static struct pci_driver b43_pci_bridge_driver = {
+	.name = "b43-pci-bridge",
+	.id_table = b43_pci_bridge_tbl,
+};
 /* Channel and ratetables are shared for all devices.
  * They can't be const, because ieee80211 puts some precalculated
  * data in there. This data is the same for all devices, so we don't
@@ -1045,7 +1061,7 @@ static void handle_irq_noise(struct b43_wldev *dev)
 	B43_WARN_ON(!dev->noisecalc.calculation_running);
 	if (dev->noisecalc.channel_at_start != phy->channel)
 		goto drop_calculation;
-	*((u32 *) noise) = cpu_to_le32(b43_jssi_read(dev));
+	*((__le32 *)noise) = cpu_to_le32(b43_jssi_read(dev));
 	if (noise[0] == 0x7F || noise[1] == 0x7F ||
 	    noise[2] == 0x7F || noise[3] == 0x7F)
 		goto generate_new;
@@ -1575,8 +1591,7 @@ static int do_request_fw(struct b43_wldev *dev,
 			 const char *name,
 			 const struct firmware **fw)
 {
-	const size_t plen = sizeof(modparam_fwpostfix) + 32;
-	char path[plen];
+	char path[sizeof(modparam_fwpostfix) + 32];
 	struct b43_fw_header *hdr;
 	u32 size;
 	int err;
@@ -2393,7 +2408,7 @@ out_requeue:
 	if (b43_debug(dev, B43_DBG_PWORK_FAST))
 		delay = msecs_to_jiffies(50);
 	else
-		delay = round_jiffies(HZ * 15);
+		delay = round_jiffies_relative(HZ * 15);
 	queue_delayed_work(wl->hw->workqueue, &dev->periodic_work, delay);
 out:
 	mutex_unlock(&wl->mutex);
@@ -3495,7 +3510,7 @@ static int b43_start(struct ieee80211_hw *hw)
 	struct b43_wl *wl = hw_to_b43_wl(hw);
 	struct b43_wldev *dev = wl->current_dev;
 	int did_init = 0;
-	int err;
+	int err = 0;
 
 	mutex_lock(&wl->mutex);
 
@@ -3521,7 +3536,7 @@ static int b43_start(struct ieee80211_hw *hw)
 	return err;
 }
 
-void b43_stop(struct ieee80211_hw *hw)
+static void b43_stop(struct ieee80211_hw *hw)
 {
 	struct b43_wl *wl = hw_to_b43_wl(hw);
 	struct b43_wldev *dev = wl->current_dev;
@@ -4038,6 +4053,16 @@ static struct ssb_driver b43_ssb_driver = {
 	.resume		= b43_resume,
 };
 
+inline int b43_pci_ssb_bridge_init(void)
+{
+	return ssb_pcihost_register(&b43_pci_bridge_driver);
+}
+
+inline void b43_pci_ssb_bridge_exit(void)
+{
+	ssb_pcihost_unregister(&b43_pci_bridge_driver);
+}
+
 static int __init b43_init(void)
 {
 	int err;
@@ -4046,12 +4071,19 @@ static int __init b43_init(void)
 	err = b43_pcmcia_init();
 	if (err)
 		goto err_dfs_exit;
-	err = ssb_driver_register(&b43_ssb_driver);
+
+	err = b43_pci_ssb_bridge_init();
 	if (err)
 		goto err_pcmcia_exit;
 
+	err = ssb_driver_register(&b43_ssb_driver);
+	if (err)
+		goto err_pci_exit;
+
 	return err;
 
+err_pci_exit:
+	b43_pci_ssb_bridge_exit();
 err_pcmcia_exit:
 	b43_pcmcia_exit();
 err_dfs_exit:
@@ -4062,6 +4094,7 @@ err_dfs_exit:
 static void __exit b43_exit(void)
 {
 	ssb_driver_unregister(&b43_ssb_driver);
+	b43_pci_ssb_bridge_exit();
 	b43_pcmcia_exit();
 	b43_debugfs_exit();
 }
