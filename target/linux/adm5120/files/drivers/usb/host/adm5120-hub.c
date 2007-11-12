@@ -261,58 +261,16 @@ static void start_hnp(struct admhcd *ahcd);
 static inline int admhc_port_reset(struct admhcd *ahcd, unsigned port)
 {
 	u32 t;
-	int c;
 
 	admhc_vdbg(ahcd, "reset port%d\n", port);
-
 	t = admhc_read_portstatus(ahcd, port);
 	if (!(t & ADMHC_PS_CCS))
 		return -ENODEV;
 
-	if ((t & ADMHC_PS_PRS))
-		return 0;
-
-	admhc_write_portstatus(ahcd, port, ADMHC_PS_PRS);
-	c = 0;
-	do {
-		t = admhc_read_portstatus(ahcd, port);
-		if (t & ADMHC_PS_PRSC)
-			break;
-
-		if (++c > 20) {
-			admhc_err(ahcd, "port%d reset timed out\n",port);
-			return -EPIPE;
-		}
-
-		mdelay(PORT_RESET_HW_MSEC);
-	} while (1);
-	admhc_vdbg(ahcd, "port%d reset completed within %dms\n", port,
-			c * PORT_RESET_HW_MSEC);
-
-	t = admhc_read_portstatus(ahcd, port);
-	if (!(t & ADMHC_PS_CCS)) {
-		admhc_err(ahcd, "port%d is not connected after reset\n",port);
-		return -ENODEV;
-	}
-
-	admhc_write_portstatus(ahcd, port, ADMHC_PS_SPE);
-	c = 0;
-	do {
-		t = admhc_read_portstatus(ahcd, port);
-		if (t & ADMHC_PS_PESC)
-			break;
-
-		if (++c > 20) {
-			admhc_err(ahcd, "port%d enable timed out\n",port);
-			return -EPIPE;
-		}
-
-		mdelay(PORT_RESET_HW_MSEC);
-	} while (1);
-	admhc_vdbg(ahcd, "port%d enable completed within %dms\n", port,
-			c * PORT_RESET_HW_MSEC);
-
-	admhc_write_portstatus(ahcd, port, ADMHC_PS_CSC);
+	admhc_write_portstatus(ahcd, port, ADMHC_PS_SPR);
+	mdelay(10);
+	admhc_write_portstatus(ahcd, port, (ADMHC_PS_SPE | ADMHC_PS_CSC));
+	mdelay(100);
 
 	return 0;
 }
@@ -340,7 +298,7 @@ static inline int admhc_port_disable(struct admhcd *ahcd, unsigned port)
 	if (!(t & ADMHC_PS_CCS))
 		return -ENODEV;
 
-	admhc_write_portstatus(ahcd, ADMHC_PS_CPE, port);
+	admhc_write_portstatus(ahcd, port, ADMHC_PS_CPE);
 
 	return 0;
 }
@@ -348,7 +306,9 @@ static inline int admhc_port_disable(struct admhcd *ahcd, unsigned port)
 static inline int admhc_port_write(struct admhcd *ahcd, unsigned port,
 		u32 val)
 {
+#ifdef ADMHC_VERBOSE_DEBUG
 	dbg_port_write(ahcd, "write", port, val);
+#endif
 	admhc_write_portstatus(ahcd, port, val);
 
 	return 0;

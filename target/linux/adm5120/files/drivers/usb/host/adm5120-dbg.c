@@ -522,112 +522,6 @@ show_async(struct class_device *class_dev, char *buf)
 }
 static CLASS_DEVICE_ATTR(async, S_IRUGO, show_async, NULL);
 
-
-#define DBG_SCHED_LIMIT 64
-
-static ssize_t
-show_periodic(struct class_device *class_dev, char *buf)
-{
-#if 0
-	struct usb_bus		*bus;
-	struct usb_hcd		*hcd;
-	struct admhcd		*ahcd;
-	struct ed		**seen, *ed;
-	unsigned long		flags;
-	unsigned		temp, size, seen_count;
-	char			*next;
-	unsigned		i;
-
-	if (!(seen = kmalloc(DBG_SCHED_LIMIT * sizeof *seen, GFP_ATOMIC)))
-		return 0;
-	seen_count = 0;
-
-	bus = class_get_devdata(class_dev);
-	hcd = bus_to_hcd(bus);
-	ahcd = hcd_to_admhcd(hcd);
-	next = buf;
-	size = PAGE_SIZE;
-
-	temp = scnprintf(next, size, "size = %d\n", NUM_INTS);
-	size -= temp;
-	next += temp;
-
-	/* dump a snapshot of the periodic schedule (and load) */
-	spin_lock_irqsave(&ahcd->lock, flags);
-	for (i = 0; i < NUM_INTS; i++) {
-		if (!(ed = ahcd->periodic [i]))
-			continue;
-
-		temp = scnprintf(next, size, "%2d [%3d]:", i, ahcd->load [i]);
-		size -= temp;
-		next += temp;
-
-		do {
-			temp = scnprintf(next, size, " ed%d/%p",
-				ed->interval, ed);
-			size -= temp;
-			next += temp;
-			for (temp = 0; temp < seen_count; temp++) {
-				if (seen [temp] == ed)
-					break;
-			}
-
-			/* show more info the first time around */
-			if (temp == seen_count) {
-				u32	info = hc32_to_cpu (ahcd, ed->hwINFO);
-				struct list_head	*entry;
-				unsigned		qlen = 0;
-
-				/* qlen measured here in TDs, not urbs */
-				list_for_each (entry, &ed->td_list)
-					qlen++;
-				temp = scnprintf(next, size,
-					" (%cs dev%d ep%d%s qlen %u"
-					" max %d %08x%s%s)",
-					(info & ED_SPEED_FULL) ? 'f' : 'l',
-					ED_FA_GET(info),
-					ED_EN_GET(info),
-					(info & ED_ISO) ? "iso" : "int",
-					qlen,
-					ED_MPS_GET(info),
-					info,
-					(info & ED_SKIP) ? " K" : "",
-					(ed->hwHeadP &
-						cpu_to_hc32(ahcd, ED_H)) ?
-							" H" : "");
-				size -= temp;
-				next += temp;
-
-				if (seen_count < DBG_SCHED_LIMIT)
-					seen [seen_count++] = ed;
-
-				ed = ed->ed_next;
-
-			} else {
-				/* we've seen it and what's after */
-				temp = 0;
-				ed = NULL;
-			}
-
-		} while (ed);
-
-		temp = scnprintf(next, size, "\n");
-		size -= temp;
-		next += temp;
-	}
-	spin_unlock_irqrestore(&ahcd->lock, flags);
-	kfree (seen);
-
-	return PAGE_SIZE - size;
-#else
-	return 0;
-#endif
-}
-static CLASS_DEVICE_ATTR(periodic, S_IRUGO, show_periodic, NULL);
-
-
-#undef DBG_SCHED_LIMIT
-
 static ssize_t
 show_registers(struct class_device *class_dev, char *buf)
 {
@@ -714,7 +608,6 @@ static inline void create_debug_files (struct admhcd *ahcd)
 	int retval;
 
 	retval = class_device_create_file(cldev, &class_device_attr_async);
-	retval = class_device_create_file(cldev, &class_device_attr_periodic);
 	retval = class_device_create_file(cldev, &class_device_attr_registers);
 	admhc_dbg(ahcd, "created debug files\n");
 }
@@ -724,7 +617,6 @@ static inline void remove_debug_files (struct admhcd *ahcd)
 	struct class_device *cldev = admhcd_to_hcd(ahcd)->self.class_dev;
 
 	class_device_remove_file(cldev, &class_device_attr_async);
-	class_device_remove_file(cldev, &class_device_attr_periodic);
 	class_device_remove_file(cldev, &class_device_attr_registers);
 }
 
