@@ -146,9 +146,9 @@ setup_interface() {
 		static)
 			config_get ipaddr "$config" ipaddr
 			config_get netmask "$config" netmask
-			[ -z "$ipaddr" -o -z "$netmask" ] && return 1
-			
 			config_get ip6addr "$config" ip6addr
+			[ -z "$ipaddr" -o -z "$netmask" ] && [ -z "$ip6addr" ] && return 1
+			
 			config_get gateway "$config" gateway
 			config_get dns "$config" dns
 			config_get bcast "$config" broadcast
