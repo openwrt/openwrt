@@ -45,15 +45,13 @@
 #include "../core/hcd.h"
 #include "../core/hub.h"
 
-#define DRIVER_VERSION	"v0.04"
+#define DRIVER_VERSION	"v0.05"
 #define DRIVER_AUTHOR	"Gabor Juhos <juhosg at openwrt.org>"
 #define DRIVER_DESC	"ADMtek USB 1.1 Host Controller Driver"
 
 /*-------------------------------------------------------------------------*/
 
 #define ADMHC_VERBOSE_DEBUG	/* not always helpful */
-#define ADMHC_POLL_RH
-#undef ADMHC_LOCK_DMA
 
 /* For initializing controller (mask in an HCFS mode too) */
 #define	OHCI_CONTROL_INIT	OHCI_CTRL_CBSR
@@ -206,7 +204,6 @@ static int admhc_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
 	/* schedule the ED */
 	ret = ed_schedule(ahcd, ed);
 
-fail0:
 	spin_unlock(&urb->lock);
 fail:
 	if (ret) {

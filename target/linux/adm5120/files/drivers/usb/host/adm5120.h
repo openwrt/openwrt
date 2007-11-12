@@ -143,7 +143,6 @@ struct td {
 
 	/* rest are purely for the driver's use */
 	__u8		index;
-/*	struct ed	*ed;*/
 	struct urb	*urb;
 
 	dma_addr_t	td_dma;		/* addr of this TD */
@@ -445,7 +444,7 @@ static inline struct usb_hcd *admhcd_to_hcd(const struct admhcd *ahcd)
 
 #define admhc_err(ahcd, fmt, args...) \
 	printk(KERN_ERR "adm5120-hcd: " fmt , ## args )
-#define ahcd_info(ahcd, fmt, args...) \
+#define admhc_info(ahcd, fmt, args...) \
 	printk(KERN_INFO "adm5120-hcd: " fmt , ## args )
 #define admhc_warn(ahcd, fmt, args...) \
 	printk(KERN_WARNING "adm5120-hcd: " fmt , ## args )
