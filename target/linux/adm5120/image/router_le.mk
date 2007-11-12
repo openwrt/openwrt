@@ -30,12 +30,12 @@ endef
 define Image/Build/Edimax
 	$(call Image/Build/Loader,$(2),gz,0x80500000,0x6D8,y,$(2))
 	$(call Image/Build/TRXEdimax,$(call imgname,$(1),$(2)).trx,$(1))
-	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(2) -v -v -d -w \
+	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(2) -d -w \
 		-r $(KDIR)/loader-$(2).gz::0x1000 \
 		-x $(call imgname,$(1),$(2)).trx:0x10000 \
 		-x $(JFFS2MARK):0x10000 \
 		$(call imgname,$(1),$(2))-webui.bin
-	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(2) -v -v -d \
+	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(2) -d \
 		-r $(KDIR)/loader-$(2).gz::0x1000 \
 		-x $(call imgname,$(1),$(2)).trx:0x10000 \
 		-x $(JFFS2MARK):0x10000 \
