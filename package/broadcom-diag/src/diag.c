@@ -74,6 +74,7 @@ enum {
 	WBR2_G54,
 	WHR_G54S,
 	WHR_HP_G54,
+	WHR_G125,
 	WHR2_A54G54,
 	WLA2_G54L,
 	WZR_G300N,
@@ -330,6 +331,21 @@ static struct platform_t __initdata platforms[] = {
 	},
 	[WHR_HP_G54] = {
 		.name		= "Buffalo WHR-HP-G54",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 4 },
+			{ .name = "bridge",	.gpio = 1 << 5 },
+			{ .name = "ses",	.gpio = 1 << 0 },
+		},
+		.leds		= {
+			{ .name = "diag",	.gpio = 1 << 7, .polarity = REVERSE },
+			{ .name = "internal",	.gpio = 1 << 3, .polarity = REVERSE },
+			{ .name = "bridge",	.gpio = 1 << 1, .polarity = REVERSE },
+			{ .name = "ses",	.gpio = 1 << 6, .polarity = REVERSE },
+			{ .name = "wlan",	.gpio = 1 << 2, .polarity = REVERSE },
+		},
+	},
+	[WHR_G125] = {
+		.name		= "Buffalo WHR-G125",
 		.buttons	= {
 			{ .name = "reset",	.gpio = 1 << 4 },
 			{ .name = "bridge",	.gpio = 1 << 5 },
@@ -634,6 +650,8 @@ static struct platform_t __init *platform_detect(void)
 			return &platforms[WLA2_G54L];
 		if (!strcmp(buf, "30189"))
 			return &platforms[WHR_HP_G54];
+		if (!strcmp(buf, "32093"))
+			return &platforms[WHR_G125];
 		if (!strcmp(buf, "30182"))
 			return &platforms[WHR_G54S];
 		if (!strcmp(buf, "290441dd"))
