@@ -1,0 +1,58 @@
+--- files/drivers/ssb/driver_chipcommon.c	2007-10-24 16:57:38.000000000 -0700
++++ linux-2.6.23.1/drivers/ssb/driver_chipcommon.c	2007-10-27 13:27:06.000000000 -0700
+@@ -268,6 +268,8 @@
+ void ssb_chipco_get_clockcpu(struct ssb_chipcommon *cc,
+                              u32 *plltype, u32 *n, u32 *m)
+ {
++	if ((chipco_read32(cc, SSB_CHIPCO_CHIPID) & SSB_CHIPCO_IDMASK) == 0x5354)
++		return;
+ 	*n = chipco_read32(cc, SSB_CHIPCO_CLOCK_N);
+ 	*plltype = (cc->capabilities & SSB_CHIPCO_CAP_PLLT);
+ 	switch (*plltype) {
+@@ -291,6 +293,8 @@
+ void ssb_chipco_get_clockcontrol(struct ssb_chipcommon *cc,
+ 				 u32 *plltype, u32 *n, u32 *m)
+ {
++	if ((chipco_read32(cc, SSB_CHIPCO_CHIPID) & SSB_CHIPCO_IDMASK) == 0x5354)
++		return;
+ 	*n = chipco_read32(cc, SSB_CHIPCO_CLOCK_N);
+ 	*plltype = (cc->capabilities & SSB_CHIPCO_CAP_PLLT);
+ 	switch (*plltype) {
+@@ -387,7 +376,14 @@
+ 						chipco_read32(cc, SSB_CHIPCO_CLOCK_M2));
+ 		div = 1;
+ 	} else {
+-		if (cc->dev->id.revision >= 11) {
++		if (cc->dev->id.revision == 20) {
++			/* BCM5354 uses constant 25MHz clock */
++			baud_base = 25000000;
++			div = 48;
++			/* Set the override bit so we don't divide it */
++			chipco_write32(cc, SSB_CHIPCO_CORECTL,
++				       SSB_CHIPCO_CORECTL_UARTCLK0);
++		} else if (cc->dev->id.revision >= 11) {
+ 			/* Fixed ALP clock */
+ 			baud_base = 20000000;
+ 			div = 1;
+--- files/drivers/ssb/driver_mipscore.c	2007-10-24 16:57:38.000000000 -0700
++++ linux-2.6.23.1/drivers/ssb/driver_mipscore.c	2007-10-27 13:29:36.000000000 -0700
+@@ -160,6 +160,8 @@
+ 
+ 	if ((pll_type == SSB_PLLTYPE_5) || (bus->chip_id == 0x5365)) {
+ 		rate = 200000000;
++	} else if (bus->chip_id == 0x5354) {
++		rate = 240000000;
+ 	} else {
+ 		rate = ssb_calc_clock_rate(pll_type, n, m);
+ 	}
+--- files/drivers/ssb/main.c	2007-10-24 16:57:38.000000000 -0700
++++ linux-2.6.23.1/drivers/ssb/main.c	2007-10-27 13:30:59.000000000 -0700
+@@ -864,6 +864,8 @@
+ 
+ 	if (bus->chip_id == 0x5365) {
+ 		rate = 100000000;
++	} else if (bus->chip_id == 0x5354) {
++		rate = 120000000;
+ 	} else {
+ 		rate = ssb_calc_clock_rate(plltype, clkctl_n, clkctl_m);
+ 		if (plltype == SSB_PLLTYPE_3) /* 25Mhz, 2 dividers */
