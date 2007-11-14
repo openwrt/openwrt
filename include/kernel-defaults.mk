@@ -5,22 +5,6 @@
 # See /LICENSE for more information.
 #
 
-# default device type
-DEVICE_TYPE?=router
-
-# Default packages - the really basic set
-DEFAULT_PACKAGES:=base-files libgcc uclibc busybox dropbear mtd mtd
-# For router targets
-DEFAULT_PACKAGES.router:=dnsmasq iptables ppp ppp-mod-pppoe iptables kmod-ipt-nathelper bridge
-
-# Additional packages for Linux 2.6
-ifneq ($(KERNEL),2.4)
-  DEFAULT_PACKAGES += udevtrigger hotplug2
-endif
-
-# Add device specific packages
-DEFAULT_PACKAGES += $(DEFAULT_PACKAGES.$(DEVICE_TYPE))
-
 KERNELNAME=
 ifneq (,$(findstring x86,$(BOARD)))
   KERNELNAME="bzImage"

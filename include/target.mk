@@ -5,12 +5,28 @@
 # See /LICENSE for more information.
 #
 
+ifneq ($(__target_inc),1)
+__target_inc=1
+
+# default device type
+DEVICE_TYPE?=router
+
+# Default packages - the really basic set
+DEFAULT_PACKAGES:=base-files libgcc uclibc busybox dropbear mtd mtd
+# For router targets
+DEFAULT_PACKAGES.router:=dnsmasq iptables ppp ppp-mod-pppoe iptables kmod-ipt-nathelper bridge
+
+# Additional packages for Linux 2.6
+ifneq ($(KERNEL),2.4)
+  DEFAULT_PACKAGES += udevtrigger hotplug2
+endif
+
+# Add device specific packages
+DEFAULT_PACKAGES += $(DEFAULT_PACKAGES.$(DEVICE_TYPE))
+
 ifneq ($(DUMP),)
   all: dumpinfo
 endif
-
-ifneq ($(__target_inc),1)
-__target_inc=1
 
 target_conf=$(subst .,_,$(subst -,_,$(subst /,_,$(1))))
 ifeq ($(DUMP),)
@@ -39,6 +55,7 @@ define Profile/Default
   PACKAGES:=
 endef
 
+ifndef Profile
 define Profile
   $(eval $(call Profile/Default))
   $(eval $(call Profile/$(1)))
@@ -62,6 +79,7 @@ define Profile
     PROFILE=$(1)
   endif
 endef
+endif
 
 ifneq ($(PLATFORM_DIR),$(PLATFORM_SUBDIR))
   define IncludeProfiles
