@@ -14,30 +14,32 @@ PKG_OS:=$(shell uname -s)
 PKG_CPU:=$(shell uname -m | sed "s/ //g")
 
 IB_NAME:=OpenWrt-ImageBuilder-$(BOARD)-$(KERNEL)-for-$(PKG_OS)-$(PKG_CPU)
-IB_BUILD_DIR:=$(BUILD_DIR)/$(IB_NAME)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(IB_NAME)
+IB_KDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(KERNEL_BUILD_DIR))
 
 all: compile
 
 $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
-	rm -rf $(IB_BUILD_DIR)
-	mkdir -p $(IB_BUILD_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD) $(IB_BUILD_DIR)/staging_dir_$(ARCH)/bin $(IB_BUILD_DIR)/target/linux
+	rm -rf $(PKG_BUILD_DIR)
+	mkdir -p $(IB_KDIR) $(PKG_BUILD_DIR)/staging_dir/host $(PKG_BUILD_DIR)/target
 	$(CP) \
 		$(INCLUDE_DIR) $(SCRIPT_DIR) $(PACKAGE_DIR) \
 		$(TOPDIR)/rules.mk $(TOPDIR)/.config \
-		$(INCLUDE_DIR)/target.mk \
-		$(TMP_DIR)/.packageinfo \
-		$(TMP_DIR)/.targetinfo \
 		./files/Makefile \
-		$(IB_BUILD_DIR)/
-	$(CP) $(TOOLCHAIN_DIR)/bin/* $(IB_BUILD_DIR)/staging_dir_$(ARCH)/bin
-	$(CP) $(TOPDIR)/target/linux/* $(IB_BUILD_DIR)/target/linux
-	rm -rf $(IB_BUILD_DIR)/target/linux/*/patches
-	-cp $(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)/* $(IB_BUILD_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD) # don't copy subdirectories here
-	find $(IB_BUILD_DIR) -name .svn | $(XARGS) rm -rf
-	find $(IB_BUILD_DIR) -name CVS | $(XARGS) rm -rf
-	(cd $(BUILD_DIR); \
-		tar cfj $@ $(IB_NAME); \
-	)
+		$(TMP_DIR)/.targetinfo \
+		$(TMP_DIR)/.packageinfo \
+		$(PKG_BUILD_DIR)/
+	$(CP) $(TOOLCHAIN_DIR)/bin $(PKG_BUILD_DIR)/staging_dir/host/
+	$(CP) $(STAGING_DIR_HOST)/bin/* $(PKG_BUILD_DIR)/staging_dir/host/bin/
+	$(CP) $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
+	rm -rf \
+		$(PKG_BUILD_DIR)/target/linux/*/patches \
+		$(PKG_BUILD_DIR)/target/linux/*/*/patches
+	-cp $(KERNEL_BUILD_DIR)/* $(IB_KDIR)/ # don't copy subdirectories here
+	find $(PKG_BUILD_DIR) -name .svn | $(XARGS) rm -rf
+	find $(PKG_BUILD_DIR) -name CVS | $(XARGS) rm -rf
+	find $(PKG_BUILD_DIR) -name .git | $(XARGS) rm -rf
+	$(TAR) c -C $(BUILD_DIR) $(IB_NAME) | bzip2 -c > $@
 
 download:
 prepare:
@@ -45,4 +47,4 @@ compile: $(BIN_DIR)/$(IB_NAME).tar.bz2
 install: compile
 
 clean: FORCE
-	rm -rf $(IB_BUILD_DIR) $(BIN_DIR)/$(IB_NAME).tar.bz2
+	rm -rf $(PKG_BUILD_DIR) $(BIN_DIR)/$(IB_NAME).tar.bz2
