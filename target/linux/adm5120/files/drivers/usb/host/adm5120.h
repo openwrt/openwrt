@@ -65,7 +65,6 @@ struct ed {
 	/* host's view of schedule */
 	struct ed		*ed_next;	/* on schedule list */
 	struct ed		*ed_prev;	/* for non-interrupt EDs */
-	struct ed		*ed_rm_next;	/* on rm list */
 
 	/* create --> IDLE --> OPER --> ... --> IDLE --> destroy
 	 * usually:  OPER --> UNLINK --> (IDLE | OPER) --> ...
@@ -262,6 +261,8 @@ struct admhcd_regs {
  */
 #define ADMHC_INTR_SOFI	(1 << 4)	/* start of frame */
 #define ADMHC_INTR_RESI	(1 << 5)	/* resume detected */
+#define ADMHC_INTR_6	(1 << 6)	/* unknown */
+#define ADMHC_INTR_7	(1 << 7)	/* unknown */
 #define ADMHC_INTR_BABI	(1 << 8)	/* babble detected */
 #define ADMHC_INTR_INSM	(1 << 9)	/* root hub status change */
 #define ADMHC_INTR_SO	(1 << 10)	/* scheduling overrun */
@@ -381,8 +382,7 @@ struct admhcd {
 	struct ed		*ed_head;
 	struct ed		*ed_tails[4];
 
-	struct ed		*ed_rm_list;	/* to be removed */
-	struct ed		*periodic[NUM_INTS];	/* shadow int_table */
+//	struct ed		*periodic[NUM_INTS];	/* shadow int_table */
 
 #if 0	/* TODO: remove? */
 	/*
