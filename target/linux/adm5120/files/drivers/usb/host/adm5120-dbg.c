@@ -139,7 +139,7 @@ urb_print(struct admhcd *ahcd, struct urb * urb, char * str, int small)
 static void admhc_dump_intr_mask(struct admhcd *ahcd, char *label, u32 mask,
 		char **next, unsigned *size)
 {
-	admhc_dbg_sw(ahcd, next, size, "%s 0x%08x%s%s%s%s%s%s%s%s%s%s\n",
+	admhc_dbg_sw(ahcd, next, size, "%s 0x%08x%s%s%s%s%s%s%s%s%s%s%s%s\n",
 		label,
 		mask,
 		(mask & ADMHC_INTR_INTA) ? " INTA" : "",
@@ -150,6 +150,8 @@ static void admhc_dump_intr_mask(struct admhcd *ahcd, char *label, u32 mask,
 		(mask & ADMHC_INTR_SO) ? " SO" : "",
 		(mask & ADMHC_INTR_INSM) ? " INSM" : "",
 		(mask & ADMHC_INTR_BABI) ? " BABI" : "",
+		(mask & ADMHC_INTR_7) ? " !7!" : "",
+		(mask & ADMHC_INTR_6) ? " !6!" : "",
 		(mask & ADMHC_INTR_RESI) ? " RESI" : "",
 		(mask & ADMHC_INTR_SOFI) ? " SOFI" : ""
 		);

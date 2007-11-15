@@ -45,20 +45,21 @@
 #include "../core/hcd.h"
 #include "../core/hub.h"
 
-#define DRIVER_VERSION	"v0.05"
+#define DRIVER_VERSION	"v0.06"
 #define DRIVER_AUTHOR	"Gabor Juhos <juhosg at openwrt.org>"
 #define DRIVER_DESC	"ADMtek USB 1.1 Host Controller Driver"
 
 /*-------------------------------------------------------------------------*/
 
-#define ADMHC_VERBOSE_DEBUG	/* not always helpful */
+#undef ADMHC_VERBOSE_DEBUG	/* not always helpful */
 
 /* For initializing controller (mask in an HCFS mode too) */
 #define	OHCI_CONTROL_INIT	OHCI_CTRL_CBSR
 
 #define	ADMHC_INTR_INIT \
 		( ADMHC_INTR_MIE | ADMHC_INTR_INSM | ADMHC_INTR_FATI \
-		| ADMHC_INTR_RESI | ADMHC_INTR_TDC | ADMHC_INTR_BABI )
+		| ADMHC_INTR_RESI | ADMHC_INTR_TDC | ADMHC_INTR_BABI \
+		| ADMHC_INTR_7 | ADMHC_INTR_6 )
 
 /*-------------------------------------------------------------------------*/
 
@@ -346,6 +347,7 @@ static int admhc_get_frame_number(struct usb_hcd *hcd)
 
 static void admhc_usb_reset(struct admhcd *ahcd)
 {
+	admhc_dbg(ahcd, "usb reset\n");
 	ahcd->host_control = ADMHC_BUSS_RESET;
 	admhc_writel(ahcd, ahcd->host_control, &ahcd->regs->host_control);
 }
@@ -358,6 +360,8 @@ static void
 admhc_shutdown(struct usb_hcd *hcd)
 {
 	struct admhcd *ahcd;
+
+	admhc_dbg(ahcd, "shutdown\n");
 
 	ahcd = hcd_to_admhcd(hcd);
 	admhc_intr_disable(ahcd, ADMHC_INTR_MIE);
@@ -394,7 +398,7 @@ static void admhc_eds_cleanup(struct admhcd *ahcd)
 	ahcd->ed_head = NULL;
 }
 
-#define ED_DUMMY_INFO	(ED_SPEED_FULL | ED_SKIP)
+#define ED_DUMMY_INFO	0
 
 static int admhc_eds_init(struct admhcd *ahcd)
 {
@@ -527,8 +531,8 @@ static int admhc_run(struct admhcd *ahcd)
 		break;
 	}
 	admhc_writel(ahcd, ahcd->host_control, &ahcd->regs->host_control);
-
 	msleep(temp);
+
 	temp = admhc_read_rhdesc(ahcd);
 	if (!(temp & ADMHC_RH_NPS)) {
 		/* power down each port */
@@ -547,7 +551,7 @@ static int admhc_run(struct admhcd *ahcd)
 			admhc_err(ahcd, "USB HC reset timed out!\n");
 			return -1;
 		}
-		udelay (1);
+		udelay(1);
 	}
 
 	/* enable HOST mode, before access any host specific register */
@@ -562,22 +566,10 @@ static int admhc_run(struct admhcd *ahcd)
 	hcd->poll_rh = 1;
 	hcd->uses_new_polling = 1;
 
-#if 0
-	/* wake on ConnectStatusChange, matching external hubs */
-	admhc_writel(ahcd, RH_HS_DRWE, &ahcd->regs->roothub.status);
-#else
-	/* FIXME roothub_write_status (ahcd, ADMHC_RH_DRWE); */
-#endif
-
-	/* Choose the interrupts we care about now, others later on demand */
-	admhc_intr_ack(ahcd, ~0);
-	admhc_intr_enable(ahcd, ADMHC_INTR_INIT);
-
-	admhc_writel(ahcd, ADMHC_RH_NPS | ADMHC_RH_LPSC, &ahcd->regs->rhdesc);
-
 	/* start controller operations */
 	ahcd->host_control = ADMHC_BUSS_OPER;
 	admhc_writel(ahcd, ahcd->host_control, &ahcd->regs->host_control);
+	hcd->state = HC_STATE_RUNNING;
 
 	temp = 20;
 	while ((admhc_readl(ahcd, &ahcd->regs->host_control)
@@ -590,12 +582,24 @@ static int admhc_run(struct admhcd *ahcd)
 		mdelay(1);
 	}
 
-	hcd->state = HC_STATE_RUNNING;
-	ahcd->next_statechange = jiffies + STATECHANGE_DELAY;
+#if 0
+	/* FIXME */
+	/* wake on ConnectStatusChange, matching external hubs */
+	admhc_writel(ahcd, ADMHC_RH_DRWE, &ahcd->regs->rhdesc);
+#endif
 
+	/* Choose the interrupts we care about now, others later on demand */
+	temp = ADMHC_INTR_INIT;
+	admhc_intr_ack(ahcd, ~0);
+	admhc_intr_enable(ahcd, temp);
+
+	admhc_writel(ahcd, ADMHC_RH_NPS | ADMHC_RH_LPSC, &ahcd->regs->rhdesc);
+
+	ahcd->next_statechange = jiffies + STATECHANGE_DELAY;
 	spin_unlock_irq(&ahcd->lock);
 
 	mdelay(ADMHC_POTPGT);
+	hcd->state = HC_STATE_RUNNING;
 
 	return 0;
 }
@@ -611,13 +615,27 @@ static irqreturn_t admhc_irq(struct usb_hcd *hcd)
  	u32 ints;
 
 	ints = admhc_readl(ahcd, &regs->int_status);
-	if (!(ints & ADMHC_INTR_INTA))
+	if (!(ints & ADMHC_INTR_INTA)) {
 		/* no unmasked interrupt status is set */
+		admhc_err(ahcd, "spurious interrupt %08x\n", ints);
 		return IRQ_NONE;
+	}
 
 	ints &= admhc_readl(ahcd, &regs->int_enable);
-	if (!ints)
+	if (!ints) {
+		admhc_err(ahcd, "hardware irq problems?\n");
 		return IRQ_NONE;
+	}
+
+	if (ints & ADMHC_INTR_6) {
+		admhc_err(ahcd, "unknown interrupt 6\n");
+		admhc_dump(ahcd, 0);
+	}
+
+	if (ints & ADMHC_INTR_7) {
+		admhc_err(ahcd, "unknown interrupt 7\n");
+		admhc_dump(ahcd, 0);
+	}
 
 	if (ints & ADMHC_INTR_FATI) {
 		admhc_disable(ahcd);
@@ -655,16 +673,17 @@ static irqreturn_t admhc_irq(struct usb_hcd *hcd)
 		admhc_intr_ack(ahcd, ADMHC_INTR_RESI);
 		hcd->poll_rh = 1;
 		if (ahcd->autostop) {
+			spin_lock(&ahcd->lock);
 			admhc_rh_resume(ahcd);
+			spin_unlock(&ahcd->lock);
 		} else
 			usb_hcd_resume_root_hub(hcd);
 	}
 
 	if (ints & ADMHC_INTR_TDC) {
-		admhc_intr_ack(ahcd, ADMHC_INTR_TDC);
+		admhc_vdbg(ahcd, "Transfer Descriptor Complete\n");
 		if (HC_IS_RUNNING(hcd->state))
 			admhc_intr_disable(ahcd, ADMHC_INTR_TDC);
-		admhc_vdbg(ahcd, "Transfer Descriptor Complete\n");
 		spin_lock(&ahcd->lock);
 		admhc_td_complete(ahcd);
 		spin_unlock(&ahcd->lock);
@@ -674,15 +693,13 @@ static irqreturn_t admhc_irq(struct usb_hcd *hcd)
 
 	if (ints & ADMHC_INTR_SO) {
 		/* could track INTR_SO to reduce available PCI/... bandwidth */
-		admhc_vdbg(ahcd, "Schedule Overrun\n");
+		admhc_err(ahcd, "Schedule Overrun\n");
 	}
 
 	if (ints & ADMHC_INTR_SOFI) {
-		admhc_intr_ack(ahcd, ADMHC_INTR_SOFI);
 		spin_lock(&ahcd->lock);
 		/* handle any pending ED removes */
 		admhc_finish_unlinks(ahcd, admhc_frame_no(ahcd));
-		admhc_sof_refill(ahcd);
 		spin_unlock(&ahcd->lock);
 	}
 

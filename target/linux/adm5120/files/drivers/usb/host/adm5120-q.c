@@ -90,6 +90,8 @@ static struct ed *ed_create(struct admhcd *ahcd, unsigned int type, u32 info)
 		break;
 	}
 
+	info |= ED_SKIP;
+
 	ed->dummy = td;
 	ed->state = ED_NEW;
 	ed->type = type;
@@ -112,10 +114,8 @@ err:
 static struct ed *ed_get(struct admhcd *ahcd,	struct usb_host_endpoint *ep,
 	struct usb_device *udev, unsigned int pipe, int interval)
 {
-	struct ed		*ed;
-	unsigned long		flags;
+	struct ed *ed;
 
-	spin_lock_irqsave(&ahcd->lock, flags);
 	ed = ep->hcpriv;
 	if (!ed) {
 		u32		info;
@@ -133,9 +133,31 @@ static struct ed *ed_get(struct admhcd *ahcd,	struct usb_host_endpoint *ep,
 		if (ed)
 			ep->hcpriv = ed;
 	}
-	spin_unlock_irqrestore(&ahcd->lock, flags);
 
 	return ed;
+}
+
+static void ed_next_urb(struct admhcd *ahcd, struct ed *ed)
+{
+	struct urb_priv *up;
+	u32 carry;
+
+	up = list_entry(ed->urb_pending.next, struct urb_priv, pending);
+	list_del(&up->pending);
+
+	ed->urb_active = up;
+	ed->state = ED_OPER;
+
+#ifdef ADMHC_VERBOSE_DEBUG
+	urb_print(ahcd, up->urb, "NEXT", 0);
+	admhc_dump_ed(ahcd, " ", ed, 0);
+#endif
+
+	up->td[up->td_cnt-1]->hwNextTD = cpu_to_hc32(ahcd, ed->dummy->td_dma);
+
+	carry = hc32_to_cpup(ahcd, &ed->hwHeadP) & ED_C;
+	ed->hwHeadP = cpu_to_hc32(ahcd, up->td[0]->td_dma | carry);
+	ed->hwINFO &= ~cpu_to_hc32(ahcd, ED_SKIP);
 }
 
 /* link an ed into the HC chain */
@@ -146,37 +168,43 @@ static int ed_schedule(struct admhcd *ahcd, struct ed *ed)
 	if (admhcd_to_hcd(ahcd)->state == HC_STATE_QUIESCING)
 		return -EAGAIN;
 
-	if (ed->state != ED_NEW)
-		return 0;
+	if (ed->state == ED_NEW) {
+		ed->state = ED_IDLE;
 
-	admhc_dump_ed(ahcd, "ED-SCHED", ed, 0);
+		old_tail = ahcd->ed_tails[ed->type];
 
-	ed->state = ED_IDLE;
+		ed->ed_next = old_tail->ed_next;
+		if (ed->ed_next) {
+			ed->ed_next->ed_prev = ed;
+			ed->hwNextED = cpu_to_hc32(ahcd, ed->ed_next->dma);
+		}
+		ed->ed_prev = old_tail;
 
-	ed->hwINFO &= ~cpu_to_hc32(ahcd, ED_SKIP);
+		old_tail->ed_next = ed;
+		old_tail->hwNextED = cpu_to_hc32(ahcd, ed->dma);
 
-	old_tail = ahcd->ed_tails[ed->type];
-
-	ed->ed_next = old_tail->ed_next;
-	if (ed->ed_next) {
-		ed->ed_next->ed_prev = ed;
-		ed->hwNextED = cpu_to_hc32(ahcd, ed->ed_next->dma);
+		ahcd->ed_tails[ed->type] = ed;
+		ed->hwINFO &= ~cpu_to_hc32(ahcd, ED_SKIP);
 	}
-	ed->ed_prev = old_tail;
 
-	old_tail->ed_next = ed;
-	old_tail->hwNextED = cpu_to_hc32(ahcd, ed->dma);
+#ifdef ADMHC_VERBOSE_DEBUG
+	admhc_dump_ed(ahcd, "ED-SCHED", ed, 0);
+#endif
 
-	ahcd->ed_tails[ed->type] = ed;
-
-	admhc_intr_enable(ahcd, ADMHC_INTR_SOFI);
+	if (!ed->urb_active) {
+		ed_next_urb(ahcd, ed);
+		admhc_dma_enable(ahcd);
+	}
 
 	return 0;
 }
 
 static void ed_deschedule(struct admhcd *ahcd, struct ed *ed)
 {
+
+#ifdef ADMHC_VERBOSE_DEBUG
 	admhc_dump_ed(ahcd, "ED-DESCHED", ed, 0);
+#endif
 
 	/* remove this ED from the HC list */
 	ed->ed_prev->hwNextED = ed->hwNextED;
@@ -197,15 +225,13 @@ static void ed_deschedule(struct admhcd *ahcd, struct ed *ed)
 
 static void ed_start_deschedule(struct admhcd *ahcd, struct ed *ed)
 {
+
+#ifdef ADMHC_VERBOSE_DEBUG
 	admhc_dump_ed(ahcd, "ED-UNLINK", ed, 0);
+#endif
 
 	ed->hwINFO |= cpu_to_hc32(ahcd, ED_SKIP);
-
 	ed->state = ED_UNLINK;
-
-	/* add this ED into the remove list */
-	ed->ed_rm_next = ahcd->ed_rm_list;
-	ahcd->ed_rm_list = ed;
 
 	/* SOF interrupt might get delayed; record the frame counter value that
 	 * indicates when the HC isn't looking at it, so concurrent unlinks
@@ -214,7 +240,6 @@ static void ed_start_deschedule(struct admhcd *ahcd, struct ed *ed)
 	 */
 	ed->tick = admhc_frame_no(ahcd) + 1;
 
-	/* enable SOF interrupt */
 	admhc_intr_enable(ahcd, ADMHC_INTR_SOFI);
 }
 
@@ -229,9 +254,9 @@ static void td_fill(struct admhcd *ahcd, u32 info, dma_addr_t data, int len,
 	u32 cbl = 0;
 
 	if (up->td_idx >= up->td_cnt) {
-		admhc_dbg(ahcd, "td_fill error, idx=%d, cnt=%d\n", up->td_idx,
+		admhc_err(ahcd, "td_fill error, idx=%d, cnt=%d\n", up->td_idx,
 				up->td_cnt);
-		return;
+		BUG();
 	}
 
 	td = up->td[up->td_idx];
@@ -239,9 +264,7 @@ static void td_fill(struct admhcd *ahcd, u32 info, dma_addr_t data, int len,
 	if (!len)
 		data = 0;
 
-#if 1
 	if (up->td_idx == up->td_cnt-1)
-#endif
 		cbl |= TD_IE;
 
 	if (data)
@@ -446,7 +469,10 @@ static int td_done(struct admhcd *ahcd, struct urb *urb, struct td *td)
 	 * might not be reported as errors.
 	 */
 	} else {
+
+#ifdef ADMHC_VERBOSE_DEBUG
 		admhc_dump_td(ahcd, "td_done", td);
+#endif
 
 		/* count all non-empty packets except control SETUP packet */
 		if ((type != PIPE_CONTROL || td->index != 0) && dbp != 0) {
@@ -459,122 +485,7 @@ static int td_done(struct admhcd *ahcd, struct urb *urb, struct td *td)
 
 /*-------------------------------------------------------------------------*/
 
-static inline struct td *
-ed_halted(struct admhcd *ahcd, struct td *td, int cc, struct td *rev)
-{
-#if 0
-	struct urb		*urb = td->urb;
-	struct ed		*ed = td->ed;
-	struct list_head	*tmp = td->td_list.next;
-	__hc32			toggle = ed->hwHeadP & cpu_to_hc32 (ahcd, ED_C);
-
-	admhc_dump_ed(ahcd, "ed halted", td->ed, 1);
-	/* clear ed halt; this is the td that caused it, but keep it inactive
-	 * until its urb->complete() has a chance to clean up.
-	 */
-	ed->hwINFO |= cpu_to_hc32 (ahcd, ED_SKIP);
-	wmb ();
-	ed->hwHeadP &= ~cpu_to_hc32 (ahcd, ED_H);
-
-	/* put any later tds from this urb onto the donelist, after 'td',
-	 * order won't matter here: no errors, and nothing was transferred.
-	 * also patch the ed so it looks as if those tds completed normally.
-	 */
-	while (tmp != &ed->td_list) {
-		struct td	*next;
-		__hc32		info;
-
-		next = list_entry(tmp, struct td, td_list);
-		tmp = next->td_list.next;
-
-		if (next->urb != urb)
-			break;
-
-		/* NOTE: if multi-td control DATA segments get supported,
-		 * this urb had one of them, this td wasn't the last td
-		 * in that segment (TD_R clear), this ed halted because
-		 * of a short read, _and_ URB_SHORT_NOT_OK is clear ...
-		 * then we need to leave the control STATUS packet queued
-		 * and clear ED_SKIP.
-		 */
-		info = next->hwINFO;
-#if 0		/* FIXME */
-		info |= cpu_to_hc32 (ahcd, TD_DONE);
-		info &= ~cpu_to_hc32 (ahcd, TD_CC);
-#endif
-		next->hwINFO = info;
-
-		next->next_dl_td = rev;
-		rev = next;
-
-		ed->hwHeadP = next->hwNextTD | toggle;
-	}
-
-	/* help for troubleshooting:  report anything that
-	 * looks odd ... that doesn't include protocol stalls
-	 * (or maybe some other things)
-	 */
-	switch (cc) {
-	case TD_CC_DATAUNDERRUN:
-		if ((urb->transfer_flags & URB_SHORT_NOT_OK) == 0)
-			break;
-		/* fallthrough */
-	case TD_CC_STALL:
-		if (usb_pipecontrol (urb->pipe))
-			break;
-		/* fallthrough */
-	default:
-		admhc_dbg (ahcd,
-			"urb %p path %s ep%d%s %08x cc %d --> status %d\n",
-			urb, urb->dev->devpath,
-			usb_pipeendpoint (urb->pipe),
-			usb_pipein (urb->pipe) ? "in" : "out",
-			hc32_to_cpu(ahcd, td->hwINFO),
-			cc, cc_to_error [cc]);
-	}
-
-	return rev;
-#else
-	return NULL;
-#endif
-}
-
-/*-------------------------------------------------------------------------*/
-
-static int ed_next_urb(struct admhcd *ahcd, struct ed *ed)
-{
-	struct urb_priv *up;
-	u32 carry;
-
-	if (ed->state != ED_IDLE)
-		return 1;
-
-	if (ed->urb_active)
-		return 1;
-
-	if (list_empty(&ed->urb_pending))
-		return 0;
-
-	up = list_entry(ed->urb_pending.next, struct urb_priv, pending);
-	list_del(&up->pending);
-	ed->urb_active = up;
-	ed->state = ED_OPER;
-
-#ifdef ADMHC_VERBOSE_DEBUG
-	urb_print(ahcd, up->urb, "NEXT", 0);
-	admhc_dump_ed(ahcd, " ", ed, 0);
-#endif
-
-	up->td[up->td_cnt-1]->hwNextTD = cpu_to_hc32(ahcd, ed->dummy->td_dma);
-
-	carry = hc32_to_cpup(ahcd, &ed->hwHeadP) & ED_C;
-	ed->hwHeadP = cpu_to_hc32(ahcd, up->td[0]->td_dma | carry);
-	ed->hwINFO &= ~cpu_to_hc32(ahcd, ED_SKIP);
-
-	return 1;
-}
-
-static void ed_update(struct admhcd *ahcd, struct ed *ed, int partial)
+static void ed_update(struct admhcd *ahcd, struct ed *ed, int force)
 {
 	struct urb_priv *up;
 	struct urb *urb;
@@ -588,8 +499,8 @@ static void ed_update(struct admhcd *ahcd, struct ed *ed, int partial)
 
 #ifdef ADMHC_VERBOSE_DEBUG
 	urb_print(ahcd, urb, "UPDATE", 0);
-#endif
 	admhc_dump_ed(ahcd, "ED-UPDATE", ed, 1);
+#endif
 
 	cc = TD_CC_NOERROR;
 	for (; up->td_idx < up->td_cnt; up->td_idx++) {
@@ -611,7 +522,7 @@ static void ed_update(struct admhcd *ahcd, struct ed *ed, int partial)
 		}
 	}
 
-	if ((up->td_idx != up->td_cnt) && (!partial))
+	if ((up->td_idx != up->td_cnt) && (!force))
 		/* the URB is not completed yet */
 		return;
 
@@ -637,68 +548,65 @@ static void ed_update(struct admhcd *ahcd, struct ed *ed, int partial)
 static void admhc_td_complete(struct admhcd *ahcd)
 {
 	struct ed *ed;
+	int more = 0;
 
 	for (ed = ahcd->ed_head; ed; ed = ed->ed_next) {
 		if (ed->state != ED_OPER)
 			continue;
 
-		if (hc32_to_cpup(ahcd, &ed->hwINFO) & ED_SKIP)
-			continue;
-
 		if (hc32_to_cpup(ahcd, &ed->hwHeadP) & ED_H) {
-			/* TODO */
+			admhc_dump_ed(ahcd, "ed halted", ed, 1);
+			ed_update(ahcd, ed, 1);
+			ed->hwHeadP &= ~cpu_to_hc32(ahcd, ED_H);
+		} else
+			ed_update(ahcd, ed, 0);
+
+		if (ed->urb_active) {
+			more = 1;
 			continue;
 		}
 
-		ed_update(ahcd, ed, 0);
+		if (!(list_empty(&ed->urb_pending))) {
+			more = 1;
+			ed_next_urb(ahcd, ed);
+			continue;
+		}
+
+		ed_start_deschedule(ahcd, ed);
 	}
+
+	if (!more)
+		admhc_dma_disable(ahcd);
+
 }
 
 /* there are some urbs/eds to unlink; called in_irq(), with HCD locked */
 static void admhc_finish_unlinks(struct admhcd *ahcd, u16 tick)
 {
 	struct ed *ed;
+	int more = 0;
 
 	for (ed = ahcd->ed_head; ed; ed = ed->ed_next) {
 		if (ed->state != ED_UNLINK)
 			continue;
 
 		if (likely(HC_IS_RUNNING(admhcd_to_hcd(ahcd)->state)))
-			if (tick_before(tick, ed->tick))
+			if (tick_before(tick, ed->tick)) {
+				more = 1;
 				continue;
+			}
 
 		/* process partial status */
-		ed_update(ahcd, ed, 1);
-	}
-}
-
-static void admhc_sof_refill(struct admhcd *ahcd)
-{
-	struct ed *ed;
-	int disable_dma = 1;
-
-	for (ed = ahcd->ed_head; ed; ed = ed->ed_next) {
-
-		if (hc32_to_cpup(ahcd, &ed->hwHeadP) & ED_H) {
+		if (ed->urb_active)
 			ed_update(ahcd, ed, 1);
-			ed->hwHeadP &= ~cpu_to_hc32 (ahcd, ED_H);
-		}
 
-		if (ed_next_urb(ahcd, ed)) {
-			disable_dma = 0;
-		} else {
-			struct ed *tmp;
-			tmp = ed->ed_prev;
+		if (list_empty(&ed->urb_pending))
 			ed_deschedule(ahcd, ed);
-			ed = tmp;
-		}
+		else
+			ed_schedule(ahcd, ed);
 	}
 
-	if (disable_dma) {
-		admhc_intr_disable(ahcd, ADMHC_INTR_SOFI);
-		admhc_dma_disable(ahcd);
-	} else {
-		admhc_intr_enable(ahcd, ADMHC_INTR_SOFI);
-		admhc_dma_enable(ahcd);
-	}
+	if (!more)
+		if (likely(HC_IS_RUNNING(admhcd_to_hcd(ahcd)->state)))
+			admhc_intr_disable(ahcd, ADMHC_INTR_SOFI);
 }
