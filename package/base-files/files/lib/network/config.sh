@@ -150,12 +150,14 @@ setup_interface() {
 			[ -z "$ipaddr" -o -z "$netmask" ] && [ -z "$ip6addr" ] && return 1
 			
 			config_get gateway "$config" gateway
+			config_get ip6gw "$config" ip6gw
 			config_get dns "$config" dns
 			config_get bcast "$config" broadcast
 			
 			[ -z "$ipaddr" ] || $DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask" broadcast "${bcast:-+}"
 			[ -z "$ip6addr" ] || $DEBUG ifconfig "$iface" add "$ip6addr"
 			[ -z "$gateway" ] || $DEBUG route add default gw "$gateway"
+			[ -z "$ip6gw" ] || $DEBUG route -A inet6 add default gw "$ip6gw"
 			[ -z "$dns" ] || {
 				for ns in $dns; do
 					grep "$ns" /tmp/resolv.conf.auto 2>/dev/null >/dev/null || {
