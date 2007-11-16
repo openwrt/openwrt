@@ -36,16 +36,19 @@ define Build/Compile
 		install
 endef
 
-define Build/InstallDev
+ifneq ($(CONFIG_LINUX_2_6_23),)
+  define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
-endef
+	$(CP) $(PKG_BUILD_DIR)/include/linux $(1)/usr/include/
+  endef
 
-define Build/UninstallDev
-endef
+  define Build/UninstallDev
+  endef
 
-define Package/libnl/install
+  define Package/libnl/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/libnl.so.1 $(1)/usr/lib/
-endef
+  endef
+endif
 
 $(eval $(call BuildPackage,libnl))

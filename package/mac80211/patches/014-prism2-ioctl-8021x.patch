@@ -1,0 +1,26 @@
+---
+ net/mac80211/ieee80211_ioctl.c |    6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- everything.orig/net/mac80211/ieee80211_ioctl.c	2007-11-07 13:19:30.781513182 +0100
++++ everything/net/mac80211/ieee80211_ioctl.c	2007-11-07 13:19:32.281514919 +0100
+@@ -882,6 +882,9 @@ static int ieee80211_ioctl_prism2_param(
+ 	local = sdata->local;
+ 
+ 	switch (param) {
++	case PRISM2_PARAM_IEEE_802_1X:
++		sdata->ieee802_1x = value;
++		break;
+ 	case PRISM2_PARAM_AP_BRIDGE_PACKETS:
+ 		local->bridge_packets = value;
+ 		break;
+@@ -917,6 +920,9 @@ static int ieee80211_ioctl_get_prism2_pa
+ 	local = sdata->local;
+ 
+ 	switch (*param) {
++	case PRISM2_PARAM_IEEE_802_1X:
++		*param = sdata->ieee802_1x;
++		break;
+ 	case PRISM2_PARAM_AP_BRIDGE_PACKETS:
+ 		*param = local->bridge_packets;
+ 		break;

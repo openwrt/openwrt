@@ -1,0 +1,116 @@
+---
+ hostapd/driver_devicescape.c |   96 ++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 76 insertions(+), 20 deletions(-)
+
+--- hostap.orig/hostapd/driver_devicescape.c	2007-11-09 13:41:13.000000000 +0100
++++ hostap/hostapd/driver_devicescape.c	2007-11-09 13:41:14.000000000 +0100
+@@ -228,33 +228,89 @@ static int i802_set_encryption(const cha
+ 	return ret;
+ }
+ 
++static inline int min_int(int a, int b)
++{
++	if (a<b)
++		return a;
++	return b;
++}
++
++static int get_key_handler(struct nl_msg *msg, void *arg)
++{
++	struct nlattr *tb[NL80211_ATTR_MAX];
++	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
++
++	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
++		  genlmsg_attrlen(gnlh, 0), NULL);
++
++	/*
++	 * TODO: validate the key index and mac address!
++	 * Otherwise, there's a race condition as soon as
++	 * the kernel starts sending key notifications.
++	 */
++
++	if (tb[NL80211_ATTR_KEY_SEQ])
++		memcpy(arg, nla_data(tb[NL80211_ATTR_KEY_SEQ]),
++		       min_int(nla_len(tb[NL80211_ATTR_KEY_SEQ]), 6));
++	return NL_SKIP;
++}
++
++static int ack_wait_handler(struct nl_msg *msg, void *arg)
++{
++	int *finished = arg;
++
++	*finished = 1;
++	return NL_STOP;
++}
+ 
+ static int i802_get_seqnum(const char *iface, void *priv, const u8 *addr,
+ 			   int idx, u8 *seq)
+ {
+ 	struct i802_driver_data *drv = priv;
+-	struct prism2_hostapd_param *param;
+-	size_t param_len;
+-	int ret;
++	struct nl_msg *msg;
++	struct nl_cb *cb = NULL;
++	int ret = -1;
++	int err = 0;
++	int finished = 0;
+ 
+-	param_len = sizeof(struct prism2_hostapd_param) + 32;
+-	param = os_zalloc(param_len);
+-	if (param == NULL)
+-		return -1;
++	msg = nlmsg_alloc();
++	if (!msg)
++		goto out;
+ 
+-	param->cmd = PRISM2_GET_ENCRYPTION;
+-	if (addr == NULL)
+-		memset(param->sta_addr, 0xff, ETH_ALEN);
+-	else
+-		memcpy(param->sta_addr, addr, ETH_ALEN);
+-	param->u.crypt.idx = idx;
+-
+-	ret = hostapd_ioctl_iface(iface, drv, param, param_len);
+-	if (ret == 0) {
+-		memcpy(seq, param->u.crypt.seq_counter,
+-		       HOSTAP_SEQ_COUNTER_SIZE);
+-	}
+-	free(param);
++	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
++		    0, NL80211_CMD_GET_KEY, 0);
++
++	if (addr)
++		NLA_PUT(msg, NL80211_ATTR_MAC, ETH_ALEN, addr);
++	NLA_PUT_U8(msg, NL80211_ATTR_KEY_IDX, idx);
++	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(iface));
++
++	cb = nl_cb_alloc(NL_CB_CUSTOM);
++	if (!cb)
++		goto out;
++
++	memset(seq, 0, 6);
++
++	if (nl_send_auto_complete(drv->nl_handle, msg) < 0)
++		goto out;
++
++	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, get_key_handler, seq);
++	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_wait_handler, &finished);
++
++	err = nl_recvmsgs(drv->nl_handle, cb);
++
++	if (!finished)
++		err = nl_wait_for_ack(drv->nl_handle);
++
++	if (err < 0)
++		goto out;
++
++	ret = 0;
++
++ out:
++	nl_cb_put(cb);
++ nla_put_failure:
++	nlmsg_free(msg);
+ 	return ret;
+ }
+ 

@@ -1,0 +1,37 @@
+Subject: mac80211: allow AP and VLAN modes
+
+This adds AP/VLAN modes to the list of modes that a mac80211
+interface can be created in/switched into.
+
+Signed-off-by: Johannes Berg <johannes@sipsolutions.net>
+
+---
+ net/mac80211/cfg.c             |    4 ++++
+ net/mac80211/ieee80211_ioctl.c |    3 +++
+ 2 files changed, 7 insertions(+)
+
+--- everything.orig/net/mac80211/cfg.c	2007-10-30 15:33:43.227379286 +0100
++++ everything/net/mac80211/cfg.c	2007-11-07 13:19:27.981515569 +0100
+@@ -25,6 +25,10 @@ nl80211_type_to_mac80211_type(enum nl802
+ 		return IEEE80211_IF_TYPE_STA;
+ 	case NL80211_IFTYPE_MONITOR:
+ 		return IEEE80211_IF_TYPE_MNTR;
++	case NL80211_IFTYPE_AP:
++		return IEEE80211_IF_TYPE_AP;
++	case NL80211_IFTYPE_AP_VLAN:
++		return IEEE80211_IF_TYPE_VLAN;
+ 	default:
+ 		return IEEE80211_IF_TYPE_INVALID;
+ 	}
+--- everything.orig/net/mac80211/ieee80211_ioctl.c	2007-11-07 13:19:25.851524684 +0100
++++ everything/net/mac80211/ieee80211_ioctl.c	2007-11-07 13:19:27.981515569 +0100
+@@ -284,6 +284,9 @@ static int ieee80211_ioctl_siwmode(struc
+ 	case IW_MODE_MONITOR:
+ 		type = IEEE80211_IF_TYPE_MNTR;
+ 		break;
++	case IW_MODE_MASTER:
++		type = IEEE80211_IF_TYPE_AP;
++		break;
+ 	default:
+ 		return -EINVAL;
+ 	}
