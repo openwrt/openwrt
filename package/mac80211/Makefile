@@ -19,10 +19,9 @@ define KernelPackage/mac80211
   TITLE:=Linux 802.11 Wireless Networking Stack
   DEPENDS:=@LINUX_2_6_23 +kmod-crypto-arc4 +kmod-crypto-aes +wireless-tools
   FILES:= \
-	$(PKG_BUILD_DIR)/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/mac80211/rc80211_simple.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/wireless/cfg80211.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,20,cfg80211 mac80211 rc80211_simple)
+	$(PKG_BUILD_DIR)/net/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/net/wireless/cfg80211.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,cfg80211 mac80211)
 endef
 
 define KernelPackage/mac80211/description
@@ -32,7 +31,7 @@ endef
 CONFOPTS:=MAC80211 CFG80211 NL80211
 
 BUILDFLAGS:= \
-	$(foreach opt,$(CONFOPTS),-DCONFIG_$(opt) ) \
+	$(foreach opt,$(CONFOPTS),-DCONFIG_$(opt) -DCONFIG_MAC80211_RCSIMPLE=1) \
 	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS)
 
 MAKE_OPTS:= \
@@ -41,24 +40,26 @@ MAKE_OPTS:= \
 	EXTRA_CFLAGS="$(BUILDFLAGS)" \
 	$(foreach opt,$(CONFOPTS),CONFIG_$(opt)=m) \
 	CONFIG_NL80211=y \
+	CONFIG_MAC80211_RCSIMPLE=y \
 	CONFIG_MAC80211_LEDS=$(CONFIG_LEDS_TRIGGERS) \
-	LINUXINCLUDE="-I${CURDIR}/src/include -I$(LINUX_DIR)/include -include linux/autoconf.h" \
+	LINUXINCLUDE="-I$(PKG_BUILD_DIR)/include -I$(LINUX_DIR)/include -include linux/autoconf.h" \
 
 define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)/mac80211
-	$(CP) ./src/mac80211/* $(PKG_BUILD_DIR)/mac80211/
-	mkdir -p $(PKG_BUILD_DIR)/wireless
-	$(CP) ./src/wireless/* $(PKG_BUILD_DIR)/wireless/
+	rm -rf $(PKG_BUILD_DIR)
+	mkdir -p $(PKG_BUILD_DIR)
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
+	$(Build/Patch)
+	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
 endef
 
 define Build/Compile
-	$(MAKE) -C "$(LINUX_DIR)" $(MAKE_OPTS) SUBDIRS="$(PKG_BUILD_DIR)/wireless" modules
-	$(MAKE) -C "$(LINUX_DIR)" $(MAKE_OPTS) SUBDIRS="$(PKG_BUILD_DIR)/mac80211" modules
+	$(MAKE) -C "$(LINUX_DIR)" $(MAKE_OPTS) SUBDIRS="$(PKG_BUILD_DIR)/net/wireless" modules
+	$(MAKE) -C "$(LINUX_DIR)" $(MAKE_OPTS) SUBDIRS="$(PKG_BUILD_DIR)/net/mac80211" modules
 endef
 
 define Build/InstallDev
 	mkdir -p $(1)/usr/include/mac80211
-	$(CP) ./src/include/* $(1)/usr/include/mac80211/
+	$(CP) $(PKG_BUILD_DIR)/net/mac80211/*.h $(PKG_BUILD_DIR)/include/* $(1)/usr/include/mac80211/
 endef
 
 define Build/UninstallDev
