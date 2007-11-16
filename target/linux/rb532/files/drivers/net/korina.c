@@ -910,6 +910,7 @@ static void rc32434_tx_tasklet(unsigned long tx_data_dev)
 		}
 		else if (IS_TX_TOK(devcs)) {
 			lp->stats.tx_packets++;
+			lp->stats.tx_bytes+=lp->tx_skb[lp->tx_next_done]->len;
 		}
 		else {
 			lp->stats.tx_errors++;
