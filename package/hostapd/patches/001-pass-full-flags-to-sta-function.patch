@@ -10,8 +10,8 @@
  hostapd/wme.c                |    6 ++++--
  9 files changed, 23 insertions(+), 18 deletions(-)
 
---- hostap.orig/hostapd/driver.h	2007-11-09 13:41:07.000000000 +0100
-+++ hostap/hostapd/driver.h	2007-11-09 13:41:15.000000000 +0100
+--- hostap.orig/hostapd/driver.h	2007-11-14 17:30:38.000000000 +0100
++++ hostap/hostapd/driver.h	2007-11-14 17:30:47.000000000 +0100
 @@ -92,7 +92,7 @@ struct wpa_driver_ops {
  	int (*get_retry)(void *priv, int *short_retry, int *long_retry);
  
@@ -37,8 +37,8 @@
  }
  
  static inline int
---- hostap.orig/hostapd/driver_bsd.c	2007-11-09 13:41:07.000000000 +0100
-+++ hostap/hostapd/driver_bsd.c	2007-11-09 13:41:15.000000000 +0100
+--- hostap.orig/hostapd/driver_bsd.c	2007-11-14 17:30:38.000000000 +0100
++++ hostap/hostapd/driver_bsd.c	2007-11-14 17:30:47.000000000 +0100
 @@ -322,7 +322,8 @@ bsd_set_sta_authorized(void *priv, const
  }
  
@@ -49,9 +49,9 @@
  {
  	/* For now, only support setting Authorized flag */
  	if (flags_or & WLAN_STA_AUTHORIZED)
---- hostap.orig/hostapd/driver_devicescape.c	2007-11-09 13:41:14.000000000 +0100
-+++ hostap/hostapd/driver_devicescape.c	2007-11-09 13:41:15.000000000 +0100
-@@ -76,7 +76,7 @@ struct i802_driver_data {
+--- hostap.orig/hostapd/driver_devicescape.c	2007-11-14 17:30:39.000000000 +0100
++++ hostap/hostapd/driver_devicescape.c	2007-11-14 17:30:47.000000000 +0100
+@@ -74,7 +74,7 @@ struct i802_driver_data {
  #define HAPD_DECL	struct hostapd_data *hapd = iface->bss[0]
  
  static int i802_sta_set_flags(void *priv, const u8 *addr,
@@ -60,7 +60,7 @@
  
  
  static int hostapd_set_iface_flags(struct i802_driver_data *drv, int dev_up)
-@@ -765,7 +765,7 @@ static int i802_sta_remove(void *priv, c
+@@ -666,7 +666,7 @@ static int i802_sta_remove(void *priv, c
  	struct i802_driver_data *drv = priv;
  	struct prism2_hostapd_param param;
  
@@ -69,7 +69,7 @@
  
  	memset(&param, 0, sizeof(param));
  	param.cmd = PRISM2_HOSTAPD_REMOVE_STA;
-@@ -777,7 +777,7 @@ static int i802_sta_remove(void *priv, c
+@@ -678,7 +678,7 @@ static int i802_sta_remove(void *priv, c
  
  
  static int i802_sta_set_flags(void *priv, const u8 *addr,
@@ -78,8 +78,8 @@
  {
  	struct i802_driver_data *drv = priv;
  	struct prism2_hostapd_param param;
---- hostap.orig/hostapd/driver_hostap.c	2007-11-09 13:41:07.000000000 +0100
-+++ hostap/hostapd/driver_hostap.c	2007-11-09 13:41:15.000000000 +0100
+--- hostap.orig/hostapd/driver_hostap.c	2007-11-14 17:30:38.000000000 +0100
++++ hostap/hostapd/driver_hostap.c	2007-11-14 17:30:47.000000000 +0100
 @@ -374,7 +374,7 @@ static int hostap_send_eapol(void *priv,
  
  
@@ -98,8 +98,8 @@
  
  	memset(&param, 0, sizeof(param));
  	param.cmd = PRISM2_HOSTAPD_REMOVE_STA;
---- hostap.orig/hostapd/driver_madwifi.c	2007-11-09 13:41:07.000000000 +0100
-+++ hostap/hostapd/driver_madwifi.c	2007-11-09 13:41:15.000000000 +0100
+--- hostap.orig/hostapd/driver_madwifi.c	2007-11-14 17:30:38.000000000 +0100
++++ hostap/hostapd/driver_madwifi.c	2007-11-14 17:30:47.000000000 +0100
 @@ -410,7 +410,8 @@ madwifi_set_sta_authorized(void *priv, c
  }
  
@@ -110,8 +110,8 @@
  {
  	/* For now, only support setting Authorized flag */
  	if (flags_or & WLAN_STA_AUTHORIZED)
---- hostap.orig/hostapd/driver_prism54.c	2007-11-09 13:41:07.000000000 +0100
-+++ hostap/hostapd/driver_prism54.c	2007-11-09 13:41:15.000000000 +0100
+--- hostap.orig/hostapd/driver_prism54.c	2007-11-14 17:30:38.000000000 +0100
++++ hostap/hostapd/driver_prism54.c	2007-11-14 17:30:47.000000000 +0100
 @@ -187,7 +187,8 @@ static int prism54_set_sta_authorized(vo
  
  
@@ -122,8 +122,8 @@
  {
  	/* For now, only support setting Authorized flag */
  	if (flags_or & WLAN_STA_AUTHORIZED)
---- hostap.orig/hostapd/ieee802_11.c	2007-11-09 13:41:07.000000000 +0100
-+++ hostap/hostapd/ieee802_11.c	2007-11-09 13:41:15.000000000 +0100
+--- hostap.orig/hostapd/ieee802_11.c	2007-11-14 17:30:37.000000000 +0100
++++ hostap/hostapd/ieee802_11.c	2007-11-14 17:30:47.000000000 +0100
 @@ -1625,10 +1625,10 @@ static void handle_assoc_cb(struct hosta
  		ap_sta_bind_vlan(hapd, sta, 0);
  	}
@@ -137,8 +137,8 @@
  				      0, ~WLAN_STA_SHORT_PREAMBLE);
  	}
  
---- hostap.orig/hostapd/ieee802_1x.c	2007-11-09 13:41:07.000000000 +0100
-+++ hostap/hostapd/ieee802_1x.c	2007-11-09 13:41:15.000000000 +0100
+--- hostap.orig/hostapd/ieee802_1x.c	2007-11-14 17:30:37.000000000 +0100
++++ hostap/hostapd/ieee802_1x.c	2007-11-14 17:30:47.000000000 +0100
 @@ -94,13 +94,13 @@ void ieee802_1x_set_sta_authorized(struc
  
  	if (authorized) {
@@ -155,8 +155,8 @@
  					    0, ~WLAN_STA_AUTHORIZED);
  		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE8021X,
  			       HOSTAPD_LEVEL_DEBUG, "unauthorizing port");
---- hostap.orig/hostapd/wme.c	2007-11-09 13:41:07.000000000 +0100
-+++ hostap/hostapd/wme.c	2007-11-09 13:41:15.000000000 +0100
+--- hostap.orig/hostapd/wme.c	2007-11-14 17:30:38.000000000 +0100
++++ hostap/hostapd/wme.c	2007-11-14 17:30:47.000000000 +0100
 @@ -110,9 +110,11 @@ int hostapd_wme_sta_config(struct hostap
  {
  	/* update kernel STA data for WME related items (WLAN_STA_WPA flag) */

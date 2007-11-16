@@ -1,0 +1,34 @@
+---
+ hostapd/driver_devicescape.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- hostap.orig/hostapd/driver_devicescape.c	2007-11-14 17:30:47.000000000 +0100
++++ hostap/hostapd/driver_devicescape.c	2007-11-14 17:31:07.000000000 +0100
+@@ -1264,6 +1264,7 @@ static void dump_frame_info(struct ieee8
+ }
+ 
+ 
++/*
+ static void hostapd_michael_mic_failure(struct hostapd_data *hapd, u8 *buf,
+ 					size_t len)
+ {
+@@ -1278,6 +1279,7 @@ static void hostapd_michael_mic_failure(
+ 
+ 	mlme_michaelmicfailure_indication(hapd, hdr->addr2);
+ }
++*/
+ 
+ 
+ static void handle_frame(struct hostapd_iface *iface, u8 *buf, size_t len,
+@@ -1386,10 +1388,10 @@ static void handle_frame(struct hostapd_
+ 	case ieee80211_msg_wep_frame_unknown_key:
+ 		ieee802_11_rx_unknown_key(hapd, buf, data_len);
+ 		return;
+- */
+ 	case ieee80211_msg_michael_mic_failure:
+ 		hostapd_michael_mic_failure(hapd, buf, data_len);
+ 		return;
++ */
+ /*
+  * TODO
+  * We should be telling them to go away. But we don't support that now.
