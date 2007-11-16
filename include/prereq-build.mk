@@ -119,6 +119,18 @@ $(eval $(call Require,gnutar, \
 	Please install GNU tar. \
 ))
 
+define Require/git
+	which git-clone
+endef
+
+$(eval $(call Require,git, \
+	Please install git. \
+))
+
+$(eval $(call RequireCommand,svn, \
+	Please install the subversion client. \
+))
+
 $(eval $(call RequireCommand,autoconf, \
 	Please install GNU autoconf. \
 ))

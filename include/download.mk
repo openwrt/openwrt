@@ -46,7 +46,7 @@ endef
 
 define DownloadMethod/svn
 	$(call wrap_mirror, \
-		echo "Checking out files from svn repository..."; \
+		echo "Checking out files from the svn repository..."; \
 		mkdir -p $(TMP_DIR)/dl && \
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
@@ -59,8 +59,24 @@ define DownloadMethod/svn
 	)
 endef
 
+define DownloadMethod/git
+	$(call wrap_mirror, \
+		echo "Checking out files from the git repository..."; \
+		mkdir -p $(TMP_DIR)/dl && \
+		cd $(TMP_DIR)/dl && \
+		rm -rf $(SUBDIR) && \
+		[ \! -d $(SUBDIR) ] && \
+		git-clone $(URL) $(SUBDIR) && \
+		(cd $(SUBDIR) && git-checkout $(VERSION)) && \
+		echo "Packing checkout..." && \
+		rm -rf $(SUBDIR)/.git && \
+		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
+		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/; \
+	)
+endef
+
 Validate/svn=VERSION SUBDIR
-#Validate/git=VERSION SUBDIR
+Validate/git=VERSION SUBDIR
 
 define Download/Defaults
   URL:=
