@@ -574,3 +574,17 @@ define KernelPackage/usb-yealink/description
 endef
 
 $(eval $(call KernelPackage,usb-yealink))
+
+define KernelPackage/usb-test
+  $(call usbdep,@LINUX_2_6 @DEVEL)
+  TITLE:=USB Testing Driver
+  KCONFIG:=CONFIG_USB_TEST
+  FILES:=$(LINUX_DIR)/drivers/usb/misc/usbtest.ko
+endef
+
+define KernelPackage/usb-test/description
+ Kernel support for testing USB Host Controller software.
+endef
+
+$(eval $(call KernelPackage,usb-test))
+
