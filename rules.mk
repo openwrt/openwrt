@@ -139,7 +139,10 @@ export $(call shvar,$(1))
 endef
 
 define confvar
-$(foreach v,$(1),$(if $($(v)),y,n))
+$(1):=$$(strip $$($(1)))_
+$(foreach v,$(2),
+  $(1):=$$(strip $$($(1)))$(if $($(v)),y,n)
+)
 endef
 
 # file extension
