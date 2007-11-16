@@ -78,6 +78,10 @@ define Image/Build/squashfs
 	$(call Image/Build/jffs2-128k,$(1))
 endef
 
+define Image/Build/Initramfs
+	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-initramfs.trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma
+endef
+
 define Image/Build
 	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1),$(1))
 	$(call Image/Build/$(1),$(1))
