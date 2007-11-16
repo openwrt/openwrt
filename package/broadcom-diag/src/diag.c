@@ -738,7 +738,7 @@ static struct platform_t __init *platform_detect(void)
 		return &platforms[WR850GV2V3];
 	}
 
-	if (!strcmp(boardnum, "44")) {  /* Trendware TEW-411BRP+ */
+	if (!strcmp(boardnum, "44") && !strcmp(getvar("boardflags"),"0x0388")) {  /* Trendware TEW-411BRP+ */
 		return &platforms[TEW411BRPP];
 	}
 
