@@ -1,0 +1,46 @@
+Index: libnl-1.0-pre7/lib/Makefile
+===================================================================
+--- libnl-1.0-pre7.orig/lib/Makefile	2007-11-16 03:19:22.404997365 +0100
++++ libnl-1.0-pre7/lib/Makefile	2007-11-16 03:22:22.903283376 +0100
+@@ -34,6 +34,7 @@
+ OUT_SLIB := $(PACKAGE_NAME).so.$(PACKAGE_VERSION)
+ LN_SLIB  := $(PACKAGE_NAME).so
+ LN1_SLIB := $(LN_SLIB).1
++OUT_ALIB := $(PACKAGE_NAME).a
+ 
+ export
+ 
+@@ -42,7 +43,7 @@
+ 
+ all:
+ 	@echo "  MAKE $(OUT_SLIB)"; \
+-	$(MAKE) $(OUT_SLIB)
++	$(MAKE) $(OUT_SLIB) $(OUT_ALIB)
+ 
+ $(OUT_SLIB): ../Makefile.opts $(OBJ)
+ 	@echo "  LD $(OUT_SLIB)"; \
+@@ -52,10 +53,15 @@
+ 	@echo "  LN $(LN1_SLIB) $(LN_SLIB)"; \
+ 	rm -f $(LN_SLIB) ; $(LN) -s $(LN1_SLIB) $(LN_SLIB)
+ 
++$(OUT_ALIB): ../Makefile.opts $(OBJ)
++	@echo "  AR $@"; \
++	$(AR) rcu $@ $(OBJ); \
++	$(RANLIB) $@
++
+ clean:
+ 	@echo "  CLEAN lib"; \
+ 	$(RM) -f $(OBJ) $(OUT_SLIB) $(LN_SLIB) $(LN1_SLIB); \
+-	$(RM) -f $(DEPS) $(OUT_SLIB) $(LN_SLIB) $(LN1_SLIB)
++	$(RM) -f $(DEPS) $(OUT_ALIB) $(LN_SLIB) $(LN1_SLIB)
+ 
+ distclean:
+ 	@echo "  DISTCLEAN lib"; \
+@@ -64,6 +70,7 @@
+ install:
+ 	mkdir -p $(DESTDIR)$(libdir)/
+ 	install -m 0644 $(OUT_SLIB) $(DESTDIR)$(libdir)
++	install -m 0644 $(OUT_ALIB) $(DESTDIR)$(libdir)
+ 	rm -f $(DESTDIR)$(libdir)/$(LN1_SLIB)
+ 	$(LN) -s $(OUT_SLIB) $(DESTDIR)$(libdir)/$(LN1_SLIB)
+ 	rm -f $(DESTDIR)$(libdir)/$(LN_SLIB)
