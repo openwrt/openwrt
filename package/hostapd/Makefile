@@ -20,7 +20,7 @@ PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_BUILD_DEPENDS:=madwifi mac80211
 
 include $(INCLUDE_DIR)/package.mk
-STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(call confvar,PACKAGE_kmod-mac80211 PACKAGE_kmod-madwifi)
+$(eval $(call confvar,STAMP_CONFIGURED,CONFIG_PACKAGE_kmod-mac80211 CONFIG_PACKAGE_kmod-madwifi))
 
 define Package/hostapd/Default
   SECTION:=net
