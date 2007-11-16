@@ -20,6 +20,7 @@ PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_BUILD_DEPENDS:=madwifi mac80211
 
 include $(INCLUDE_DIR)/package.mk
+STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(call confvar,PACKAGE_kmod-mac80211 PACKAGE_kmod-madwifi)
 
 define Package/hostapd/Default
   SECTION:=net
@@ -73,8 +74,8 @@ define Build/ConfigureTarget
 	rm -rf $(PKG_BUILD_DIR)/hostapd.$(1)
 	$(CP) $(PKG_BUILD_DIR)/hostapd $(PKG_BUILD_DIR)/hostapd.$(1)
 	$(CP) ./files/$(1).config $(PKG_BUILD_DIR)/hostapd.$(1)/.config
-	[ -d $(STAGING_DIR)/usr/include/mac80211 ] || $(SED) 's,^CONFIG_DRIVER_DEVICESCAPE,#CONFIG_DRIVER_DEVICESCAPE,g' $(PKG_BUILD_DIR)/hostapd.$(1)/.config
-	[ -d $(STAGING_DIR)/usr/include/madwifi ] || $(SED) 's,^CONFIG_DRIVER_MADWIFI,#CONFIG_DRIVER_MADWIFI,g' $(PKG_BUILD_DIR)/hostapd.$(1)/.config
+	$(if $(CONFIG_PACKAGE_kmod-mac80211),,$(SED) 's,^CONFIG_DRIVER_DEVICESCAPE,#CONFIG_DRIVER_DEVICESCAPE,g' $(PKG_BUILD_DIR)/hostapd.$(1)/.config)
+	$(if $(CONFIG_PACKAGE_kmod-madwifi),,$(SED) 's,^CONFIG_DRIVER_MADWIFI,#CONFIG_DRIVER_MADWIFI,g' $(PKG_BUILD_DIR)/hostapd.$(1)/.config)
 endef
 
 define Build/CompileTarget
@@ -82,7 +83,7 @@ define Build/CompileTarget
 	$(MAKE) -C $(PKG_BUILD_DIR)/hostapd.$(1) \
 		$(TARGET_CONFIGURE_OPTS) \
 		LIBS="$(TARGET_LDFLAGS) -L$(STAGING_DIR)/usr/lib \
-			$(if $(wildcard $(STAGING_DIR)/usr/include/mac80211/*),-lm $(STAGING_DIR)/usr/lib/libnl.a)" \
+			$(if $(CONFIG_PACKAGE_kmod-mac80211),-lm $(STAGING_DIR)/usr/lib/libnl.a)" \
 		hostapd hostapd_cli
 	$(CP) $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd_cli $(PKG_BUILD_DIR)/
 endef
