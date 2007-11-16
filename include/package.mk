@@ -75,6 +75,9 @@ define Build/DefaultTargets
 
   define Build/DefaultTargets
   endef
+
+  prepare: $(STAMP_PREPARED)
+  configure: $(STAMP_CONFIGURED)
 endef
 
 define BuildPackage
@@ -148,8 +151,8 @@ $(PACKAGE_DIR):
 		
 dumpinfo:
 download:
-prepare: $(STAMP_PREPARED)
-configure: $(STAMP_CONFIGURED)
+prepare:
+configure:
 compile:
 install:
 clean: FORCE
