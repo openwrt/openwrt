@@ -39,9 +39,7 @@ define DownloadMethod/default
 endef
 
 define wrap_mirror
-	@$(if $(CONFIG_LOCALMIRROR),$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "x" || ) \
-	( $(1) ) \
-	$(if $(CONFIG_LOCALMIRROR),, || $(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "x")
+	@$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "x" || ( $(1) )
 endef
 
 define DownloadMethod/svn
