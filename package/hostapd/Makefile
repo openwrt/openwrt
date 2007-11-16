@@ -17,7 +17,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=git://w1.fi/srv/git/hostap.git
 PKG_SOURCE_SUBDIR:=hostapd-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_REV)
-PKG_BUILD_DEPENDS:=madwifi mac80211 libnl
+PKG_BUILD_DEPENDS:=madwifi mac80211 libnl openssl
 
 include $(INCLUDE_DIR)/package.mk
 $(eval $(call confvar,STAMP_CONFIGURED,CONFIG_PACKAGE_kmod-mac80211 CONFIG_PACKAGE_kmod-madwifi))
@@ -83,7 +83,8 @@ define Build/CompileTarget
 	$(MAKE) -C $(PKG_BUILD_DIR)/hostapd.$(1) \
 		$(TARGET_CONFIGURE_OPTS) \
 		LIBS="$(TARGET_LDFLAGS) -L$(STAGING_DIR)/usr/lib \
-			$(if $(CONFIG_PACKAGE_kmod-mac80211),-lm $(STAGING_DIR)/usr/lib/libnl.a)" \
+			$(if $(CONFIG_PACKAGE_kmod-mac80211),-lm $(STAGING_DIR)/usr/lib/libnl.a) \
+			$(if $(findstring default,$(1)),-lssl -lcrypto)" \
 		hostapd hostapd_cli
 	$(CP) $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd_cli $(PKG_BUILD_DIR)/
 endef
