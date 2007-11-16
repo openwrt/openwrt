@@ -1,9 +1,12 @@
 #!/bin/sh
 # Copyright (C) 2006 OpenWrt.org
 
+. /etc/diag.sh
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 mount none /proc -t proc
 mount none /sys -t sysfs
+size=$(awk '/MemTotal:/ {l=5242880;mt=($2*1024);print((s=mt/2)<l)?mt-l:s}' /proc/meminfo)
+mount none /tmp -t tmpfs -o size=$size,nosuid,nodev,mode=1777
 
 if grep devfs /proc/filesystems > /dev/null; then
 	mount none /dev -t devfs
@@ -34,7 +37,12 @@ mount none /dev/pts -t devpts
 
 # the root mount point can come from the kernel command line
 # or it can be overridden in the preinit.arch file
-[ -f /etc/preinit.arch ] && . /etc/preinit.arch
+trap 'FAILSAFE=true' USR1
+[ -e /etc/preinit.arch ] && . /etc/preinit.arch
+set_state preinit
+echo "$HOTPLUG" > /proc/sys/kernel/hotplug
+eval ${FAILSAFE:+failsafe}
+lock -w /tmp/.failsafe
 
 # if we have no root parameter, just go to running from ramfs
 [ -z $rootfs ] && {
