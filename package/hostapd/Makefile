@@ -17,7 +17,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=git://w1.fi/srv/git/hostap.git
 PKG_SOURCE_SUBDIR:=hostapd-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_REV)
-PKG_BUILD_DEPENDS:=madwifi mac80211
+PKG_BUILD_DEPENDS:=madwifi mac80211 libnl
 
 include $(INCLUDE_DIR)/package.mk
 $(eval $(call confvar,STAMP_CONFIGURED,CONFIG_PACKAGE_kmod-mac80211 CONFIG_PACKAGE_kmod-madwifi))
@@ -27,7 +27,7 @@ define Package/hostapd/Default
   CATEGORY:=Network
   TITLE:=IEEE 802.1x Authenticator
   URL:=http://hostap.epitest.fi/
-  DEPENDS:=@!TARGET_avr32 @!TARGET_etrax $(if $(DUMP)$(CONFIG_LINUX_2_6_23),+libnl)
+  DEPENDS:=@!TARGET_avr32 @!TARGET_etrax
 endef
 
 define Package/hostapd
