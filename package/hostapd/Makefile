@@ -82,7 +82,7 @@ define Build/CompileTarget
 	$(MAKE) -C $(PKG_BUILD_DIR)/hostapd.$(1) \
 		$(TARGET_CONFIGURE_OPTS) \
 		LIBS="$(TARGET_LDFLAGS) -L$(STAGING_DIR)/usr/lib \
-			$(if $(wildcard $(STAGING_DIR)/usr/include/mac80211/*),-lnl)" \
+			$(if $(wildcard $(STAGING_DIR)/usr/include/mac80211/*),-lm $(STAGING_DIR)/usr/lib/libnl.a)" \
 		hostapd hostapd_cli
 	$(CP) $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd_cli $(PKG_BUILD_DIR)/
 endef
