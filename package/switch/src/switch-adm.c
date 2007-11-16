@@ -500,13 +500,13 @@ static int detect_adm(void)
 	int boardflags = atoi(nvram_get("boardflags"));
         int boardnum = atoi(nvram_get("boardnum"));
 
-        if (boardnum == 44) {   /* Trendware TEW-411BRP+ */
-                ret = 1;
+	if ((boardnum == 44) && (boardflags == 0x0388)) {  /* Trendware TEW-411BRP+ */
+		ret = 1;
 
-                eecs = get_gpiopin("adm_eecs", 2);
-                eesk = get_gpiopin("adm_eesk", 3);
-                eedi = get_gpiopin("adm_eedi", 4);
-                eerc = get_gpiopin("adm_rc", 5);
+		eecs = get_gpiopin("adm_eecs", 2);
+		eesk = get_gpiopin("adm_eesk", 3);
+		eedi = get_gpiopin("adm_eedi", 4);
+		eerc = get_gpiopin("adm_rc", 5);
 
 	} else if ((boardflags & 0x80) || force) {
 		ret = 1;
