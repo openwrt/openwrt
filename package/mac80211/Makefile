@@ -57,18 +57,20 @@ define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" $(MAKE_OPTS) SUBDIRS="$(PKG_BUILD_DIR)/net/mac80211" modules
 endef
 
-define Build/InstallDev
+ifeq ($(CONFIG_LINUX_2_6_23),y)
+  define Build/InstallDev
 	mkdir -p $(1)/usr/include/mac80211
 	$(CP) $(PKG_BUILD_DIR)/net/mac80211/*.h $(PKG_BUILD_DIR)/include/* $(1)/usr/include/mac80211/
-endef
+  endef
 
-define Build/UninstallDev
+  define Build/UninstallDev
 	rm -rf	$(1)/usr/include/mac80211
-endef
+  endef
 
-define KernelPackage/mac80211/install
+  define KernelPackage/mac80211/install
 	$(INSTALL_DIR) $(1)/lib/wifi
 	$(INSTALL_DATA) ./files/lib/wifi/mac80211.sh $(1)/lib/wifi
-endef
+  endef
+endif
 
 $(eval $(call KernelPackage,mac80211))
