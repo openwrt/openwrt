@@ -118,6 +118,7 @@ define Package/Template
 endef
 
 define Build/Configure
+	rm -f $(PKG_BUILD_DIR)/.configured*
 	$(call Build/Configure/default)
 	$(call Build/Configure/mini)
 endef
