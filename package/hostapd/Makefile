@@ -20,7 +20,7 @@ PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_BUILD_DEPENDS:=madwifi mac80211 libnl openssl
 
 include $(INCLUDE_DIR)/package.mk
-$(eval $(call confvar,STAMP_CONFIGURED,CONFIG_PACKAGE_kmod-mac80211 CONFIG_PACKAGE_kmod-madwifi))
+STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(call confvar,CONFIG_PACKAGE_kmod-mac80211 CONFIG_PACKAGE_kmod-madwifi CONFIG_PACKAGE_hostapd CONFIG_PACKAGE_hostapd-mini)
 
 define Package/hostapd/Default
   SECTION:=net
@@ -72,31 +72,35 @@ endef
 
 define Build/ConfigureTarget
 	rm -rf $(PKG_BUILD_DIR)/hostapd.$(1)
-	$(CP) $(PKG_BUILD_DIR)/hostapd $(PKG_BUILD_DIR)/hostapd.$(1)
-	$(CP) ./files/$(1).config $(PKG_BUILD_DIR)/hostapd.$(1)/.config
+	mkdir -p $(PKG_BUILD_DIR)/hostapd.$(1)
+	$(CP) \
+		$(PKG_BUILD_DIR)/hostapd \
+		$(PKG_BUILD_DIR)/src \
+		$(PKG_BUILD_DIR)/hostapd.$(1)/
+	$(CP) ./files/$(1).config $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd/.config
 	$(if $(CONFIG_PACKAGE_kmod-mac80211),,$(SED) 's,^CONFIG_DRIVER_DEVICESCAPE,#CONFIG_DRIVER_DEVICESCAPE,g' $(PKG_BUILD_DIR)/hostapd.$(1)/.config)
 	$(if $(CONFIG_PACKAGE_kmod-madwifi),,$(SED) 's,^CONFIG_DRIVER_MADWIFI,#CONFIG_DRIVER_MADWIFI,g' $(PKG_BUILD_DIR)/hostapd.$(1)/.config)
 endef
 
 define Build/CompileTarget
 	CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include/madwifi -I$(STAGING_DIR)/usr/include/mac80211 -I$(STAGING_DIR)/usr/include" \
-	$(MAKE) -C $(PKG_BUILD_DIR)/hostapd.$(1) \
+	$(MAKE) -C $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd \
 		$(TARGET_CONFIGURE_OPTS) \
 		LIBS="$(TARGET_LDFLAGS) -L$(STAGING_DIR)/usr/lib \
 			$(if $(CONFIG_PACKAGE_kmod-mac80211),-lm $(STAGING_DIR)/usr/lib/libnl.a) \
 			$(if $(findstring default,$(1)),-lssl -lcrypto)" \
 		hostapd hostapd_cli
-	$(CP) $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd_cli $(PKG_BUILD_DIR)/
+	$(CP) $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd/hostapd_cli $(PKG_BUILD_DIR)/
 endef
 
 define Package/InstallTemplate
 	$(INSTALL_DIR) $$(1)/lib/wifi
 	$(INSTALL_DATA) ./files/hostapd.sh $$(1)/lib/wifi/hostapd.sh
+	$(INSTALL_DIR) $$(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd.$(2)/hostapd/hostapd $$(1)/usr/sbin/
 # config is managed through uci
 #	$(INSTALL_DIR) $$(1)/etc
-#	$(INSTALL_CONF) $(PKG_BUILD_DIR)/hostapd.$(2)/hostapd.conf $$(1)/etc/hostapd.conf 
-	$(INSTALL_DIR) $$(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd.$(2)/hostapd $$(1)/usr/sbin/
+#	$(INSTALL_CONF) $(PKG_BUILD_DIR)/hostapd.$(2)/hostapd/hostapd.conf $$(1)/etc/hostapd.conf 
 endef
 
 define Package/Template

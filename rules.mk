@@ -138,12 +138,10 @@ $(call shvar,$(1))=$$(call $(1))
 export $(call shvar,$(1))
 endef
 
-define confvar
-$(1):=$$(strip $$($(1)))_
-$(foreach v,$(2),
-  $(1):=$$(strip $$($(1)))$(if $($(v)),y,n)
-)
-endef
+empty:=
+space:= $(empty) $(empty)
+merge=$(subst $(space),,$(1))
+confvar=$(call merge,$(foreach v,$(1),$(if $($(v)),y,n)))
 
 # file extension
 ext=$(word $(words $(subst ., ,$(1))),$(subst ., ,$(1)))
