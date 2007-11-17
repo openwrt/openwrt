@@ -106,7 +106,7 @@ endef
 define Package/wl
 $(call Package/broadcom-wl/Default)
   TITLE:=Proprietary Broadcom wl driver config utility
-  DEPENDS+=+brcm-compat-ldso
+#  DEPENDS+=+brcm-compat-ldso
 endef
 
 define Package/wl/description
@@ -116,7 +116,8 @@ endef
 
 define Package/nas
 $(call Package/broadcom-wl/Default)
-  DEPENDS+= +nvram +brcm-compat-ldso
+  DEPENDS+= +nvram
+#  DEPENDS+= +brcm-compat-ldso
   TITLE:=Proprietary Broadcom WPA/WPA2 authenticator
 endef
 
