@@ -83,7 +83,7 @@ define Build/ConfigureTarget
 endef
 
 define Build/CompileTarget
-	CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include/madwifi -I$(STAGING_DIR)/usr/include/mac80211 -I$(STAGING_DIR)/usr/include" \
+	CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include/madwifi -I$(STAGING_DIR)/usr/include/mac80211 -I$(STAGING_DIR)/usr/include/libnl -I$(STAGING_DIR)/usr/include" \
 	$(MAKE) -C $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd \
 		$(TARGET_CONFIGURE_OPTS) \
 		LIBS="$(TARGET_LDFLAGS) -L$(STAGING_DIR)/usr/lib \
