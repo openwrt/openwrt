@@ -1,11 +1,10 @@
-# Jabber (XMPP) - an open instant messenger protocol - http://jabber.org
-# Pattern quality: good fast
+# Jabber (XMPP) - open instant messenger protocol - RFC 3920 - http://jabber.org
+# Pattern attributes: good notsofast notsofast
+# Protocol groups: chat ietf_proposed_standard
+# Wiki: http://www.protocolinfo.org/wiki/Jabber
 #
 # This pattern has been tested with Gaim and Gabber.  It is only tested 
-# with non-SSL mode Jabber with no proxies.  If it does not
-# work for you, or you believe it could be improved, please post to 
-# l7-filter-developers@lists.sf.net .  This list may be subscribed to at
-# http://lists.sourceforge.net/lists/listinfo/l7-filter-developers
+# with non-SSL mode Jabber with no proxies.
 
 # Thanks to Jan Hudec for some improvements.
 
