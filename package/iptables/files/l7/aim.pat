@@ -1,16 +1,16 @@
 # AIM - AOL instant messenger (OSCAR and TOC)
-# Pattern quality: good notsofast
+# Pattern attributes: good slow notsofast
+# Protocol groups: chat proprietary
+# Wiki: http://www.protocolinfo.org/wiki/AIM
+#
 # Usually runs on port 5190
 #
 # This may also match ICQ traffic.
 # 
-# This pattern has been tested and is believed to work well.  If it does not
-# work for you, or you believe it could be improved, please post to 
-# l7-filter-developers@lists.sf.net .  This list may be subscribed to at
-# http://lists.sourceforge.net/lists/listinfo/l7-filter-developers
+# This pattern has been tested and is believed to work well.
 
 aim
-# See http://gridley.acns.carleton.edu/~straitm/final (and various other places)
+# See http://gridley.res.carleton.edu/~straitm/final (and various other places)
 # The first bit matches OSCAR signon and data commands, but not sure what
 # \x03\x0b matches, but it works apparently.
 # The next three bits match various parts of the TOC signon process.

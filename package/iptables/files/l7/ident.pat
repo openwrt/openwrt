@@ -1,11 +1,11 @@
 # Ident - Identification Protocol - RFC 1413
-# Pattern quality: good veryfast
+# Pattern attributes: good fast fast
+# Protocol groups: networking ietf_proposed_standard
+# Wiki: http://www.protocolinfo.org/wiki/Ident
+#
 # Usually runs on port 113
 #
-# This pattern is believed to work.  If it does not
-# work for you, or you believe it could be improved, please post to 
-# l7-filter-developers@lists.sf.net .  This list may be subscribed to at
-# http://lists.sourceforge.net/lists/listinfo/l7-filter-developers
+# This pattern is believed to work.
 
 ident
 # "number , numberCRLF" possibly without the CR and/or LF.
