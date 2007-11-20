@@ -32,11 +32,21 @@ endif
 
 # defined in quilt.mk
 Kernel/Patch:=$(Kernel/Patch/Default)
+ifeq ($(strip $(CONFIG_EXTERNAL_KERNEL_TREE)),"")
 define Kernel/Prepare/Default
 	bzcat $(DL_DIR)/$(LINUX_SOURCE) | $(TAR) -C $(KERNEL_BUILD_DIR) $(TAR_OPTIONS)
 	$(Kernel/Patch)
 	$(if $(QUILT),touch $(LINUX_DIR)/.quilt_used)
 endef
+else
+define Kernel/Prepare/Default
+	mkdir -p $(KERNEL_BUILD_DIR)
+	if [ -d $(LINUX_DIR) ]; then \
+		rmdir $(LINUX_DIR); \
+	fi
+	ln -s $(CONFIG_EXTERNAL_KERNEL_TREE) $(LINUX_DIR)
+endef
+endif
 
 define Kernel/Configure/2.4
 	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile

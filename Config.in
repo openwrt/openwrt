@@ -142,6 +142,11 @@ config SOURCE_FEEDS_REV
 	prompt "Revision for the source feed svn checkout" if BUILDOPTS
 	default ""
 
+config EXTERNAL_KERNEL_TREE
+	string
+	prompt "Use external kernel tree" if DEVEL
+	default ""
+
 
 source "toolchain/Config.in"
 menuconfig BUILDSYSTEM_SETTINGS
