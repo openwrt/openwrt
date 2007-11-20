@@ -19,6 +19,7 @@ include $(INCLUDE_DIR)/depends.mk
 STAMP_PREPARED=$(PKG_BUILD_DIR)/.prepared$(if $(QUILT)$(DUMP),,_$(shell $(call find_md5,${CURDIR} $(PKG_FILE_DEPEND),)))
 STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/.configured
 STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
+STAMP_INSTALLED:=$(STAGING_DIR)/stamp/.$(PKG_NAME)_installed
 
 include $(INCLUDE_DIR)/download.mk
 include $(INCLUDE_DIR)/quilt.mk
@@ -66,11 +67,14 @@ define Build/DefaultTargets
 
   $(STAMP_BUILT): $(STAMP_CONFIGURED)
 	$(Build/Compile)
+	touch $$@
+
+  $(STAMP_INSTALLED): $(STAMP_BUILT)
 	$(call Build/InstallDev,$(STAGING_DIR))
 	touch $$@
 
   ifdef Build/InstallDev
-    compile: $(STAMP_BUILT)
+    compile: $(STAMP_INSTALLED)
   endif
 
   define Build/DefaultTargets
