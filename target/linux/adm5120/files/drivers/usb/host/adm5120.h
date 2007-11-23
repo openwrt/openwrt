@@ -56,24 +56,21 @@ struct ed {
 	dma_addr_t		dma;		/* addr of ED */
 	struct td		*dummy;		/* next TD to activate */
 
-	struct urb_priv		*urb_active;	/* active URB */
-	struct list_head	urb_pending;	/* pending URBs */
-
-	struct list_head	ed_list;	/* list of all EDs*/
-	struct list_head	rm_list;	/* for remove list */
+	struct list_head	urb_list;	/* list of our URBs */
 
 	/* host's view of schedule */
 	struct ed		*ed_next;	/* on schedule list */
 	struct ed		*ed_prev;	/* for non-interrupt EDs */
+	struct ed		*ed_rm_next;	/* on rm list */
+	struct list_head	td_list;	/* "shadow list" of our TDs */
 
 	/* create --> IDLE --> OPER --> ... --> IDLE --> destroy
 	 * usually:  OPER --> UNLINK --> (IDLE | OPER) --> ...
 	 */
-	u8			state;
-#define ED_NEW		0x00		/* just allocated */
-#define ED_IDLE		0x01		/* linked into HC, but not running */
-#define ED_OPER		0x02		/* linked into HC and running */
-#define ED_UNLINK	0x03		/* being unlinked from HC */
+	u8			state;		/* ED_{IDLE,UNLINK,OPER} */
+#define ED_IDLE		0x00		/* NOT linked to HC */
+#define ED_UNLINK	0x01		/* being unlinked from hc */
+#define ED_OPER		0x02		/* IS linked to hc */
 
 	u8			type;		/* PIPE_{BULK,...} */
 
@@ -121,10 +118,10 @@ struct td {
 #define TD_DP_SHIFT	21			/* direction/pid */
 #define TD_DP_MASK	0x3
 #define TD_DP		(TD_DP_MASK << TD_DP_SHIFT)
+#define TD_DP_GET	(((x) >> TD_DP_SHIFT) & TD_DP_MASK)
 #define TD_DP_SETUP	(0x0 << TD_DP_SHIFT)	/* SETUP pid */
 #define TD_DP_OUT	(0x1 << TD_DP_SHIFT)	/* OUT pid */
 #define TD_DP_IN	(0x2 << TD_DP_SHIFT)	/* IN pid */
-#define TD_DP_GET(x)	(((x) >> TD_DP_SHIFT) & TD_DP_MASK)
 #define TD_ISI_SHIFT	8			/* Interrupt Service Interval */
 #define TD_ISI_MASK	0x3f
 #define TD_ISI_GET(x)	(((x) >> TD_ISI_SHIFT) & TD_ISI_MASK)
@@ -142,11 +139,19 @@ struct td {
 
 	/* rest are purely for the driver's use */
 	__u8		index;
+	struct ed	*ed;
+	struct td	*td_hash;	/* dma-->td hashtable */
+	struct td	*next_dl_td;
 	struct urb	*urb;
 
 	dma_addr_t	td_dma;		/* addr of this TD */
 	dma_addr_t	data_dma;	/* addr of data it points to */
 
+	struct list_head td_list;	/* "shadow list", TDs on same ED */
+
+	u32		flags;
+#define TD_FLAG_DONE	(1 << 17)	/* retired to done list */
+#define TD_FLAG_ISO	(1 << 16)	/* copy of ED_ISO */
 } __attribute__ ((aligned(TD_ALIGN)));	/* c/b/i need 16; only iso needs 32 */
 
 /*
@@ -348,7 +353,6 @@ struct admhcd_regs {
 /* hcd-private per-urb state */
 struct urb_priv {
 	struct ed		*ed;
-	struct urb		*urb;
 	struct list_head	pending;	/* URBs on the same ED */
 
 	u32			td_cnt;		/* # tds in this request */
@@ -379,10 +383,13 @@ struct admhcd {
 	 * hcd adds to schedule for a live hc any time, but removals finish
 	 * only at the start of the next frame.
 	 */
+
 	struct ed		*ed_head;
 	struct ed		*ed_tails[4];
 
-//	struct ed		*periodic[NUM_INTS];	/* shadow int_table */
+	struct ed		*ed_rm_list;	/* to be removed */
+
+	struct ed		*periodic[NUM_INTS];	/* shadow int_table */
 
 #if 0	/* TODO: remove? */
 	/*
@@ -398,6 +405,7 @@ struct admhcd {
 	struct dma_pool		*td_cache;
 	struct dma_pool		*ed_cache;
 	struct td		*td_hash[TD_HASH_SIZE];
+	struct list_head	pending;
 
 	/*
 	 * driver state
@@ -549,6 +557,15 @@ static inline void admhc_writel(const struct admhcd *ahcd,
 #endif
 }
 
+static inline void admhc_writel_flush(const struct admhcd *ahcd)
+{
+#if 0
+	/* TODO: remove? */
+	(void) admhc_readl(ahcd, &ahcd->regs->gencontrol);
+#endif
+}
+
+
 /*-------------------------------------------------------------------------*/
 
 /* cpu to ahcd */
@@ -635,18 +652,27 @@ static inline void admhc_disable(struct admhcd *ahcd)
 	admhcd_to_hcd(ahcd)->state = HC_STATE_HALT;
 }
 
-#define	FI			0x2edf		/* 12000 bits per frame (-1) */
-#define	FSLDP(fi)		(0x7fff & ((6 * ((fi) - 1200)) / 7))
-#define	FIT			ADMHC_SFI_FIT
-#define LSTHRESH		0x628		/* lowspeed bit threshold */
+#define	FI		0x2edf		/* 12000 bits per frame (-1) */
+#define	FSLDP(fi)	(0x7fff & ((6 * ((fi) - 1200)) / 7))
+#define	FIT		ADMHC_SFI_FIT
+#define LSTHRESH	0x628		/* lowspeed bit threshold */
 
 static inline void periodic_reinit(struct admhcd *ahcd)
 {
+#if 0
+	u32	fi = ahcd->fminterval & ADMHC_SFI_FI_MASK;
 	u32	fit = admhc_readl(ahcd, &ahcd->regs->fminterval) & FIT;
 
 	/* TODO: adjust FSLargestDataPacket value too? */
 	admhc_writel(ahcd, (fit ^ FIT) | ahcd->fminterval,
 					&ahcd->regs->fminterval);
+#else
+	u32	fit = admhc_readl(ahcd, &ahcd->regs->fminterval) & FIT;
+
+	/* TODO: adjust FSLargestDataPacket value too? */
+	admhc_writel(ahcd, (fit ^ FIT) | ahcd->fminterval,
+					&ahcd->regs->fminterval);
+#endif
 }
 
 static inline u32 admhc_read_rhdesc(struct admhcd *ahcd)

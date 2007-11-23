@@ -45,7 +45,7 @@
 #include "../core/hcd.h"
 #include "../core/hub.h"
 
-#define DRIVER_VERSION	"v0.06"
+#define DRIVER_VERSION	"v0.10"
 #define DRIVER_AUTHOR	"Gabor Juhos <juhosg at openwrt.org>"
 #define DRIVER_DESC	"ADMtek USB 1.1 Host Controller Driver"
 
@@ -58,8 +58,7 @@
 
 #define	ADMHC_INTR_INIT \
 		( ADMHC_INTR_MIE | ADMHC_INTR_INSM | ADMHC_INTR_FATI \
-		| ADMHC_INTR_RESI | ADMHC_INTR_TDC | ADMHC_INTR_BABI \
-		| ADMHC_INTR_7 | ADMHC_INTR_6 )
+		| ADMHC_INTR_RESI | ADMHC_INTR_TDC | ADMHC_INTR_BABI )
 
 /*-------------------------------------------------------------------------*/
 
@@ -115,12 +114,10 @@ static int admhc_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
 
 		/* 1 TD for setup, 1 for ACK, plus ... */
 		td_cnt = 2;
-		if (urb->transfer_buffer_length)
-			td_cnt++;
-		break;
+		/* FALLTHROUGH */
 	case PIPE_BULK:
 		/* one TD for every 4096 Bytes (can be upto 8K) */
-		td_cnt = urb->transfer_buffer_length / TD_DATALEN_MAX;
+		td_cnt += urb->transfer_buffer_length / TD_DATALEN_MAX;
 		/* ... and for any remaining bytes ... */
 		if ((urb->transfer_buffer_length % TD_DATALEN_MAX) != 0)
 			td_cnt++;
@@ -156,7 +153,6 @@ static int admhc_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
 		return -ENOMEM;
 
 	urb_priv->ed = ed;
-	urb_priv->urb = urb;
 
 	spin_lock_irqsave(&ahcd->lock, flags);
 	/* don't submit to a dead HC */
@@ -179,8 +175,13 @@ static int admhc_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
 		goto fail;
 	}
 
-	if (ed->type == PIPE_ISOCHRONOUS) {
-		if (ed->state == ED_NEW) {
+	/* schedule the ed if needed */
+	if (ed->state == ED_IDLE) {
+		ret = ed_schedule(ahcd, ed);
+		if (ret < 0)
+			goto fail0;
+
+		if (ed->type == PIPE_ISOCHRONOUS) {
 			u16	frame = admhc_frame_no(ahcd);
 
 			/* delay a few frames before the first TD */
@@ -192,25 +193,25 @@ static int admhc_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
 			/* yes, only URB_ISO_ASAP is supported, and
 			 * urb->start_frame is never used as input.
 			 */
-		} else
-			urb->start_frame = ed->last_iso + ed->interval;
-	}
+		}
+	} else if (ed->type == PIPE_ISOCHRONOUS)
+		urb->start_frame = ed->last_iso + ed->interval;
 
+	/* fill the TDs and link them to the ed; and
+	 * enable that part of the schedule, if needed
+	 * and update count of queued periodic urbs
+	 */
 	urb->hcpriv = urb_priv;
-	td_submit_urb(ahcd, urb_priv->urb);
+	td_submit_urb(ahcd, urb);
 
-	/* append it to the ED's queue */
-	list_add_tail(&urb_priv->pending, &ed->urb_pending);
-
-	/* schedule the ED */
-	ret = ed_schedule(ahcd, ed);
-
+#ifdef ADMHC_VERBOSE_DEBUG
+	admhc_dump_ed(ahcd, "admhc_urb_enqueue", urb_priv->ed, 1);
+#endif
+fail0:
 	spin_unlock(&urb->lock);
 fail:
-	if (ret) {
-		urb_priv = urb->hcpriv;
+	if (ret)
 		urb_priv_free(ahcd, urb_priv);
-	}
 
 	spin_unlock_irqrestore(&ahcd->lock, flags);
 	return ret;
@@ -225,43 +226,32 @@ fail:
 static int admhc_urb_dequeue(struct usb_hcd *hcd, struct urb *urb)
 {
 	struct admhcd *ahcd = hcd_to_admhcd(hcd);
-	struct urb_priv *up;
 	unsigned long flags;
 
-	up = urb->hcpriv;
-	if (!up)
-		return 0;
-
-	spin_lock_irqsave(&ahcd->lock, flags);
-
 #ifdef ADMHC_VERBOSE_DEBUG
-	urb_print(ahcd, urb, "DEQEUE", 1);
+	urb_print(ahcd, urb, "DEQUEUE", 1);
 #endif
 
+	spin_lock_irqsave(&ahcd->lock, flags);
 	if (HC_IS_RUNNING(hcd->state)) {
+		struct urb_priv *urb_priv;
+
 		/* Unless an IRQ completed the unlink while it was being
 		 * handed to us, flag it for unlink and giveback, and force
 		 * some upcoming INTR_SF to call finish_unlinks()
 		 */
-		if (up->ed->urb_active != up) {
-			list_del(&up->pending);
-			finish_urb(ahcd, urb);
-		} else {
-			ed_start_deschedule(ahcd, up->ed);
+		urb_priv = urb->hcpriv;
+		if (urb_priv) {
+			if (urb_priv->ed->state == ED_OPER)
+				start_ed_unlink(ahcd, urb_priv->ed);
 		}
 	} else {
 		/*
 		 * with HC dead, we won't respect hc queue pointers
 		 * any more ... just clean up every urb's memory.
 		 */
-		if (up->ed->urb_active != up) {
-			list_del(&up->pending);
+		if (urb->hcpriv)
 			finish_urb(ahcd, urb);
-		} else {
-			finish_urb(ahcd, urb);
-			up->ed->urb_active = NULL;
-			up->ed->state = ED_IDLE;
-		}
 	}
 	spin_unlock_irqrestore(&ahcd->lock, flags);
 
@@ -273,6 +263,7 @@ static int admhc_urb_dequeue(struct usb_hcd *hcd, struct urb *urb)
 /* frees config/altsetting state for endpoints,
  * including ED memory, dummy TD, and bulk/intr data toggle
  */
+
 static void admhc_endpoint_disable(struct usb_hcd *hcd,
 		struct usb_host_endpoint *ep)
 {
@@ -298,8 +289,8 @@ rescan:
 
 	if (!HC_IS_RUNNING(hcd->state)) {
 sanitize:
-		ed->state = ED_UNLINK;
-		admhc_finish_unlinks(ahcd, 0);
+		ed->state = ED_IDLE;
+		finish_unlinks(ahcd, 0);
 	}
 
 	switch (ed->state) {
@@ -312,11 +303,10 @@ sanitize:
 		spin_unlock_irqrestore(&ahcd->lock, flags);
 		schedule_timeout_uninterruptible(1);
 		goto rescan;
-	case ED_IDLE:
-	case ED_NEW:		/* fully unlinked */
-		if (list_empty(&ed->urb_pending)) {
-			td_free(ahcd, ed->dummy);
-			ed_free(ahcd, ed);
+	case ED_IDLE:		/* fully unlinked */
+		if (list_empty(&ed->td_list)) {
+			td_free (ahcd, ed->dummy);
+			ed_free (ahcd, ed);
 			break;
 		}
 		/* else FALL THROUGH */
@@ -324,11 +314,10 @@ sanitize:
 		/* caller was supposed to have unlinked any requests;
 		 * that's not our job.  can't recover; must leak ed.
 		 */
-		admhc_err(ahcd, "leak ed %p (#%02x) %s act %p%s\n",
-			ed, ep->desc.bEndpointAddress,
-			ed_statestring(ed->state),
-			ed->urb_active,
-			list_empty(&ed->urb_pending) ? "" : " (has urbs)");
+		admhc_err(ahcd, "leak ed %p (#%02x) state %d%s\n",
+			ed, ep->desc.bEndpointAddress, ed->state,
+			list_empty(&ed->td_list) ? "" : " (has tds)");
+		td_free(ahcd, ed->dummy);
 		break;
 	}
 
@@ -347,9 +336,15 @@ static int admhc_get_frame_number(struct usb_hcd *hcd)
 
 static void admhc_usb_reset(struct admhcd *ahcd)
 {
-	admhc_dbg(ahcd, "usb reset\n");
+#if 0
+	ahcd->hc_control = admhc_readl(ahcd, &ahcd->regs->control);
+	ahcd->hc_control &= OHCI_CTRL_RWC;
+	admhc_writel(ahcd, ahcd->hc_control, &ahcd->regs->control);
+#else
+	/* FIXME */
 	ahcd->host_control = ADMHC_BUSS_RESET;
-	admhc_writel(ahcd, ahcd->host_control, &ahcd->regs->host_control);
+	admhc_writel(ahcd, ahcd->host_control ,&ahcd->regs->host_control);
+#endif
 }
 
 /* admhc_shutdown forcibly disables IRQs and DMA, helping kexec and
@@ -361,12 +356,12 @@ admhc_shutdown(struct usb_hcd *hcd)
 {
 	struct admhcd *ahcd;
 
-	admhc_dbg(ahcd, "shutdown\n");
-
 	ahcd = hcd_to_admhcd(hcd);
 	admhc_intr_disable(ahcd, ADMHC_INTR_MIE);
 	admhc_dma_disable(ahcd);
 	admhc_usb_reset(ahcd);
+	/* flush the writes */
+	admhc_writel_flush(ahcd);
 }
 
 /*-------------------------------------------------------------------------*
@@ -398,7 +393,7 @@ static void admhc_eds_cleanup(struct admhcd *ahcd)
 	ahcd->ed_head = NULL;
 }
 
-#define ED_DUMMY_INFO	0
+#define ED_DUMMY_INFO	(ED_SPEED_FULL | ED_SKIP)
 
 static int admhc_eds_init(struct admhcd *ahcd)
 {
@@ -514,6 +509,17 @@ static int admhc_run(struct admhcd *ahcd)
 		/* also: power/overcurrent flags in rhdesc */
 	}
 
+#if 0	/* TODO: not applicable */
+	/* Reset USB nearly "by the book".  RemoteWakeupConnected was
+	 * saved if boot firmware (BIOS/SMM/...) told us it's connected,
+	 * or if bus glue did the same (e.g. for PCI add-in cards with
+	 * PCI PM support).
+	 */
+	if ((ahcd->hc_control & OHCI_CTRL_RWC) != 0
+			&& !device_may_wakeup(hcd->self.controller))
+		device_init_wakeup(hcd->self.controller, 1);
+#endif
+
 	switch (ahcd->host_control & ADMHC_HC_BUSS) {
 	case ADMHC_BUSS_OPER:
 		temp = 0;
@@ -531,14 +537,19 @@ static int admhc_run(struct admhcd *ahcd)
 		break;
 	}
 	admhc_writel(ahcd, ahcd->host_control, &ahcd->regs->host_control);
-	msleep(temp);
 
+	/* flush the writes */
+	admhc_writel_flush(ahcd);
+
+	msleep(temp);
 	temp = admhc_read_rhdesc(ahcd);
 	if (!(temp & ADMHC_RH_NPS)) {
 		/* power down each port */
 		for (temp = 0; temp < ahcd->num_ports; temp++)
 			admhc_write_portstatus(ahcd, temp, ADMHC_PS_CPP);
 	}
+	/* flush those writes */
+	admhc_writel_flush(ahcd);
 
 	/* 2msec timelimit here means no irqs/preempt */
 	spin_lock_irq(&ahcd->lock);
@@ -566,10 +577,25 @@ static int admhc_run(struct admhcd *ahcd)
 	hcd->poll_rh = 1;
 	hcd->uses_new_polling = 1;
 
+#if 0
+	/* wake on ConnectStatusChange, matching external hubs */
+	admhc_writel(ahcd, RH_HS_DRWE, &ahcd->regs->roothub.status);
+#else
+	/* FIXME roothub_write_status (ahcd, ADMHC_RH_DRWE); */
+#endif
+
+	/* Choose the interrupts we care about now, others later on demand */
+	admhc_intr_ack(ahcd, ~0);
+	admhc_intr_enable(ahcd, ADMHC_INTR_INIT);
+
+	admhc_writel(ahcd, ADMHC_RH_NPS | ADMHC_RH_LPSC, &ahcd->regs->rhdesc);
+
+	/* flush those writes */
+	admhc_writel_flush(ahcd);
+
 	/* start controller operations */
 	ahcd->host_control = ADMHC_BUSS_OPER;
 	admhc_writel(ahcd, ahcd->host_control, &ahcd->regs->host_control);
-	hcd->state = HC_STATE_RUNNING;
 
 	temp = 20;
 	while ((admhc_readl(ahcd, &ahcd->regs->host_control)
@@ -582,24 +608,31 @@ static int admhc_run(struct admhcd *ahcd)
 		mdelay(1);
 	}
 
-#if 0
-	/* FIXME */
-	/* wake on ConnectStatusChange, matching external hubs */
-	admhc_writel(ahcd, ADMHC_RH_DRWE, &ahcd->regs->rhdesc);
-#endif
-
-	/* Choose the interrupts we care about now, others later on demand */
-	temp = ADMHC_INTR_INIT;
-	admhc_intr_ack(ahcd, ~0);
-	admhc_intr_enable(ahcd, temp);
-
-	admhc_writel(ahcd, ADMHC_RH_NPS | ADMHC_RH_LPSC, &ahcd->regs->rhdesc);
+	hcd->state = HC_STATE_RUNNING;
 
 	ahcd->next_statechange = jiffies + STATECHANGE_DELAY;
+
+#if 0
+	/* FIXME: enabling DMA is always failed here for an unknown reason */
+	admhc_dma_enable(ahcd);
+
+	temp = 200;
+	while ((admhc_readl(ahcd, &ahcd->regs->host_control)
+			& ADMHC_HC_DMAE) != ADMHC_HC_DMAE) {
+		if (--temp == 0) {
+			spin_unlock_irq(&ahcd->lock);
+			admhc_err(ahcd, "unable to enable DMA!\n");
+			admhc_dump(ahcd, 1);
+			return -1;
+		}
+		mdelay(1);
+	}
+
+#endif
+
 	spin_unlock_irq(&ahcd->lock);
 
 	mdelay(ADMHC_POTPGT);
-	hcd->state = HC_STATE_RUNNING;
 
 	return 0;
 }
@@ -615,38 +648,25 @@ static irqreturn_t admhc_irq(struct usb_hcd *hcd)
  	u32 ints;
 
 	ints = admhc_readl(ahcd, &regs->int_status);
-	if (!(ints & ADMHC_INTR_INTA)) {
+	if ((ints & ADMHC_INTR_INTA) == 0) {
 		/* no unmasked interrupt status is set */
-		admhc_err(ahcd, "spurious interrupt %08x\n", ints);
 		return IRQ_NONE;
 	}
 
 	ints &= admhc_readl(ahcd, &regs->int_enable);
-	if (!ints) {
-		admhc_err(ahcd, "hardware irq problems?\n");
-		return IRQ_NONE;
-	}
-
-	if (ints & ADMHC_INTR_6) {
-		admhc_err(ahcd, "unknown interrupt 6\n");
-		admhc_dump(ahcd, 0);
-	}
-
-	if (ints & ADMHC_INTR_7) {
-		admhc_err(ahcd, "unknown interrupt 7\n");
-		admhc_dump(ahcd, 0);
-	}
 
 	if (ints & ADMHC_INTR_FATI) {
+		/* e.g. due to PCI Master/Target Abort */
 		admhc_disable(ahcd);
 		admhc_err(ahcd, "Fatal Error, controller disabled\n");
+		admhc_dump(ahcd, 1);
 		admhc_usb_reset(ahcd);
 	}
 
 	if (ints & ADMHC_INTR_BABI) {
-		admhc_disable(ahcd);
+		admhc_intr_disable(ahcd, ADMHC_INTR_BABI);
+		admhc_intr_ack(ahcd, ADMHC_INTR_BABI);
 		admhc_err(ahcd, "Babble Detected\n");
-		admhc_usb_reset(ahcd);
 	}
 
 	if (ints & ADMHC_INTR_INSM) {
@@ -682,6 +702,7 @@ static irqreturn_t admhc_irq(struct usb_hcd *hcd)
 
 	if (ints & ADMHC_INTR_TDC) {
 		admhc_vdbg(ahcd, "Transfer Descriptor Complete\n");
+		admhc_intr_ack(ahcd, ADMHC_INTR_TDC);
 		if (HC_IS_RUNNING(hcd->state))
 			admhc_intr_disable(ahcd, ADMHC_INTR_TDC);
 		spin_lock(&ahcd->lock);
@@ -693,19 +714,45 @@ static irqreturn_t admhc_irq(struct usb_hcd *hcd)
 
 	if (ints & ADMHC_INTR_SO) {
 		/* could track INTR_SO to reduce available PCI/... bandwidth */
-		admhc_err(ahcd, "Schedule Overrun\n");
+		admhc_vdbg(ahcd, "Schedule Overrun\n");
 	}
 
+#if 1
+	spin_lock(&ahcd->lock);
+	if (ahcd->ed_rm_list)
+		finish_unlinks(ahcd, admhc_frame_no(ahcd));
+
+	if ((ints & ADMHC_INTR_SOFI) != 0 && !ahcd->ed_rm_list
+			&& HC_IS_RUNNING(hcd->state))
+		admhc_intr_disable(ahcd, ADMHC_INTR_SOFI);
+	spin_unlock(&ahcd->lock);
+#else
 	if (ints & ADMHC_INTR_SOFI) {
+		admhc_vdbg(ahcd, "Start Of Frame\n");
 		spin_lock(&ahcd->lock);
+
 		/* handle any pending ED removes */
-		admhc_finish_unlinks(ahcd, admhc_frame_no(ahcd));
+		finish_unlinks(ahcd, admhc_frameno(ahcd));
+
+		/* leaving INTR_SOFI enabled when there's still unlinking
+		 * to be done in the (next frame).
+		 */
+		if ((ahcd->ed_rm_list == NULL) ||
+			HC_IS_RUNNING(hcd->state) == 0)
+			/*
+			 * disable INTR_SOFI if there are no unlinking to be
+			 * done (in the next frame)
+			 */
+			admhc_intr_disable(ahcd, ADMHC_INTR_SOFI);
+
 		spin_unlock(&ahcd->lock);
 	}
+#endif
 
 	if (HC_IS_RUNNING(hcd->state)) {
 		admhc_intr_ack(ahcd, ints);
 		admhc_intr_enable(ahcd, ADMHC_INTR_MIE);
+		admhc_writel_flush(ahcd);
 	}
 
 	return IRQ_HANDLED;
@@ -722,7 +769,7 @@ static void admhc_stop(struct usb_hcd *hcd)
 	flush_scheduled_work();
 
 	admhc_usb_reset(ahcd);
-	admhc_intr_disable(ahcd, ~0);
+	admhc_intr_disable(ahcd, ADMHC_INTR_MIE);
 
 	free_irq(hcd->irq, hcd);
 	hcd->irq = -1;
