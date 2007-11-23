@@ -38,7 +38,7 @@ __acquires(ahcd->lock)
 			&& urb->status == 0) {
 		urb->status = -EREMOTEIO;
 #ifdef ADMHC_VERBOSE_DEBUG
-		urb_print(urb, "SHORT", usb_pipeout (urb->pipe));
+		urb_print(ahcd, urb, "SHORT", usb_pipeout(urb->pipe));
 #endif
 	}
 	spin_unlock(&urb->lock);
@@ -53,7 +53,7 @@ __acquires(ahcd->lock)
 	}
 
 #ifdef ADMHC_VERBOSE_DEBUG
-	urb_print(urb, "RET", usb_pipeout (urb->pipe));
+	urb_print(ahcd, urb, "RET", usb_pipeout (urb->pipe));
 #endif
 
 	/* urb->complete() can reenter this HCD */
@@ -112,7 +112,7 @@ static void periodic_link (struct admhcd *ahcd, struct ed *ed)
 	unsigned	i;
 
 	admhc_vdbg (ahcd, "link %sed %p branch %d [%dus.], interval %d\n",
-		(ed->hwINFO & cpu_to_hc32 (ahcd, ED_ISO)) ? "iso " : "",
+		(ed->hwINFO & cpu_to_hc32(ahcd, ED_ISO)) ? "iso " : "",
 		ed, ed->branch, ed->load, ed->interval);
 
 	for (i = ed->branch; i < NUM_INTS; i += ed->interval) {
@@ -202,7 +202,7 @@ static void periodic_unlink (struct admhcd *ahcd, struct ed *ed)
 
 	admhcd_to_hcd(ahcd)->self.bandwidth_allocated -= ed->load / ed->interval;
 	admhc_vdbg (ahcd, "unlink %sed %p branch %d [%dus.], interval %d\n",
-		(ed->hwINFO & cpu_to_hc32 (ahcd, ED_ISO)) ? "iso " : "",
+		(ed->hwINFO & cpu_to_hc32(ahcd, ED_ISO)) ? "iso " : "",
 		ed, ed->branch, ed->load, ed->interval);
 }
 #endif
@@ -333,7 +333,7 @@ static struct ed *ed_get(struct admhcd *ahcd,	struct usb_host_endpoint *ep,
  */
 static void start_ed_unlink(struct admhcd *ahcd, struct ed *ed)
 {
-	ed->hwINFO |= cpu_to_hc32 (ahcd, ED_DEQUEUE);
+	ed->hwINFO |= cpu_to_hc32(ahcd, ED_DEQUEUE);
 	ed_deschedule(ahcd, ed);
 
 	/* add this ED into the remove list */
@@ -432,9 +432,7 @@ static void td_submit_urb(struct admhcd *ahcd, struct urb *urb)
 	int		cnt = 0;
 	u32		info = 0;
 	int		is_out = usb_pipeout(urb->pipe);
-	int		periodic = 0;
 	u32		toggle = 0;
-	struct td	*td;
 
 	/* OHCI handles the bulk/interrupt data toggles itself.  We just
 	 * use the device toggle bits for resetting, and rely on the fact
@@ -644,15 +642,15 @@ ed_halted(struct admhcd *ahcd, struct td *td, int cc, struct td *rev)
 	struct urb		*urb = td->urb;
 	struct ed		*ed = td->ed;
 	struct list_head	*tmp = td->td_list.next;
-	__hc32			toggle = ed->hwHeadP & cpu_to_hc32 (ahcd, ED_C);
+	__hc32			toggle = ed->hwHeadP & cpu_to_hc32(ahcd, ED_C);
 
 	admhc_dump_ed(ahcd, "ed halted", td->ed, 1);
 	/* clear ed halt; this is the td that caused it, but keep it inactive
 	 * until its urb->complete() has a chance to clean up.
 	 */
-	ed->hwINFO |= cpu_to_hc32 (ahcd, ED_SKIP);
+	ed->hwINFO |= cpu_to_hc32(ahcd, ED_SKIP);
 	wmb();
-	ed->hwHeadP &= ~cpu_to_hc32 (ahcd, ED_H);
+	ed->hwHeadP &= ~cpu_to_hc32(ahcd, ED_H);
 
 	/* put any later tds from this urb onto the donelist, after 'td',
 	 * order won't matter here: no errors, and nothing was transferred.
@@ -677,9 +675,9 @@ ed_halted(struct admhcd *ahcd, struct td *td, int cc, struct td *rev)
 		 */
 		info = next->hwINFO;
 #if 0		/* FIXME */
-		info |= cpu_to_hc32 (ahcd, TD_DONE);
+		info |= cpu_to_hc32(ahcd, TD_DONE);
 #endif
-		info &= ~cpu_to_hc32 (ahcd, TD_CC);
+		info &= ~cpu_to_hc32(ahcd, TD_CC);
 		next->hwINFO = info;
 
 		next->next_dl_td = rev;
@@ -738,7 +736,7 @@ skip_ed:
 				continue;
 			}
 
-			if (!list_empty (&ed->td_list)) {
+			if (!list_empty(&ed->td_list)) {
 				struct td	*td;
 				u32		head;
 
@@ -772,7 +770,7 @@ skip_ed:
 rescan_this:
 		completed = 0;
 		prev = &ed->hwHeadP;
-		list_for_each_safe (entry, tmp, &ed->td_list) {
+		list_for_each_safe(entry, tmp, &ed->td_list) {
 			struct td	*td;
 			struct urb	*urb;
 			struct urb_priv	*urb_priv;
@@ -795,7 +793,7 @@ rescan_this:
 			*prev = td->hwNextTD | savebits;
 
 			/* HC may have partly processed this TD */
-			urb_print(urb, "PARTIAL", 1);
+			urb_print(ahcd, urb, "PARTIAL", 1);
 			td_done(ahcd, urb, td);
 
 			/* if URB is done, clean up */
@@ -804,7 +802,7 @@ rescan_this:
 				finish_urb(ahcd, urb);
 			}
 		}
-		if (completed && !list_empty (&ed->td_list))
+		if (completed && !list_empty(&ed->td_list))
 			goto rescan_this;
 
 		/* ED's now officially unlinked, hc doesn't see */
@@ -812,10 +810,10 @@ rescan_this:
 		ed->hwHeadP &= ~cpu_to_hc32(ahcd, ED_H);
 		ed->hwNextED = 0;
 		wmb ();
-		ed->hwINFO &= ~cpu_to_hc32 (ahcd, ED_SKIP | ED_DEQUEUE);
+		ed->hwINFO &= ~cpu_to_hc32(ahcd, ED_SKIP | ED_DEQUEUE);
 
 		/* but if there's work queued, reschedule */
-		if (!list_empty (&ed->td_list)) {
+		if (!list_empty(&ed->td_list)) {
 			if (HC_IS_RUNNING(admhcd_to_hcd(ahcd)->state))
 				ed_schedule(ahcd, ed);
 		}
@@ -838,9 +836,7 @@ rescan_this:
 static void ed_unhalt(struct admhcd *ahcd, struct ed *ed, struct urb *urb)
 {
 	struct list_head *entry,*tmp;
-	struct urb_priv *urb_priv = urb->hcpriv;
-	__hc32 toggle = ed->hwHeadP & cpu_to_hc32 (ahcd, ED_C);
-
+	__hc32 toggle = ed->hwHeadP & cpu_to_hc32(ahcd, ED_C);
 
 #ifdef ADMHC_VERBOSE_DEBUG
 	admhc_dump_ed(ahcd, "UNHALT", ed, 0);
@@ -848,9 +844,9 @@ static void ed_unhalt(struct admhcd *ahcd, struct ed *ed, struct urb *urb)
 	/* clear ed halt; this is the td that caused it, but keep it inactive
 	 * until its urb->complete() has a chance to clean up.
 	 */
-	ed->hwINFO |= cpu_to_hc32 (ahcd, ED_SKIP);
+	ed->hwINFO |= cpu_to_hc32(ahcd, ED_SKIP);
 	wmb();
-	ed->hwHeadP &= ~cpu_to_hc32 (ahcd, ED_H);
+	ed->hwHeadP &= ~cpu_to_hc32(ahcd, ED_H);
 
 	list_for_each_safe(entry, tmp, &ed->td_list) {
 		struct td *td = list_entry(entry, struct td, td_list);
@@ -913,13 +909,13 @@ static void ed_update(struct admhcd *ahcd, struct ed *ed)
 				start_ed_unlink(ahcd, ed);
 
 		/* ... reenabling halted EDs only after fault cleanup */
-		} else if ((ed->hwINFO & cpu_to_hc32 (ahcd,
+		} else if ((ed->hwINFO & cpu_to_hc32(ahcd,
 						ED_SKIP | ED_DEQUEUE))
-					== cpu_to_hc32 (ahcd, ED_SKIP)) {
+					== cpu_to_hc32(ahcd, ED_SKIP)) {
 			td = list_entry(ed->td_list.next, struct td, td_list);
 #if 0
-			if (!(td->hwINFO & cpu_to_hc32 (ahcd, TD_DONE))) {
-				ed->hwINFO &= ~cpu_to_hc32 (ahcd, ED_SKIP);
+			if (!(td->hwINFO & cpu_to_hc32(ahcd, TD_DONE))) {
+				ed->hwINFO &= ~cpu_to_hc32(ahcd, ED_SKIP);
 				/* ... hc may need waking-up */
 				switch (ed->type) {
 				case PIPE_CONTROL:

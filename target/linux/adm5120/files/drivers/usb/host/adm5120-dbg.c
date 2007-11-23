@@ -76,12 +76,12 @@ static inline char *td_togglestring(u32 info)
  * small: 0) header + data packets 1) just header
  */
 static void __attribute__((unused))
-urb_print(struct admhcd *ahcd, struct urb *urb, char * str, int small)
+urb_print(struct admhcd *ahcd, struct urb *urb, char *str, int small)
 {
 	unsigned int pipe = urb->pipe;
 
 	if (!urb->dev || !urb->dev->bus) {
-		admhc_dbg("%s URB: no dev", str);
+		admhc_dbg(ahcd, "%s URB: no dev", str);
 		return;
 	}
 
@@ -89,7 +89,7 @@ urb_print(struct admhcd *ahcd, struct urb *urb, char * str, int small)
 	if (urb->status != 0)
 #endif
 	admhc_dbg(ahcd, "URB-%s %p dev=%d ep=%d%s-%s flags=%x len=%d/%d "
-			"stat=%d",
+			"stat=%d\n",
 			str,
 			urb,
 			usb_pipedevice (pipe),
@@ -112,14 +112,14 @@ urb_print(struct admhcd *ahcd, struct urb *urb, char * str, int small)
 			printk ("\n");
 		}
 		if (urb->transfer_buffer_length > 0 && urb->transfer_buffer) {
-			printk(KERN_DEBUG __FILE__ ": data(%d/%d):",
+			admhc_dbg(ahcd, "data(%d/%d):",
 				urb->actual_length,
 				urb->transfer_buffer_length);
 			len = usb_pipeout(pipe)?
 						urb->transfer_buffer_length: urb->actual_length;
 			for (i = 0; i < 16 && i < len; i++)
-				printk (" %02x", ((__u8 *) urb->transfer_buffer) [i]);
-			admhc_dbg("%s stat:%d\n", i < len? "...": "", urb->status);
+				printk(" %02x", ((__u8 *)urb->transfer_buffer)[i]);
+			printk("%s stat:%d\n", i < len? "...": "", urb->status);
 		}
 	}
 #endif /* ADMHC_VERBOSE_DEBUG */
@@ -363,7 +363,8 @@ admhc_dump_ed(const struct admhcd *ahcd, const char *label,
 
 #else /* ifdef DEBUG */
 
-static inline void urb_print(struct urb * urb, char * str, int small) {}
+static inline void urb_print(struct admhcd *ahcd, struct urb * urb, char * str,
+	int small) {}
 static inline void admhc_dump_ed(const struct admhcd *ahcd, const char *label,
 	const struct ed *ed, int verbose) {}
 static inline void admhc_dump_td(const struct admhcd *ahcd, const char *label,

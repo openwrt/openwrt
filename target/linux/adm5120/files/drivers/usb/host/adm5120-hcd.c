@@ -45,7 +45,7 @@
 #include "../core/hcd.h"
 #include "../core/hub.h"
 
-#define DRIVER_VERSION	"v0.10"
+#define DRIVER_VERSION	"v0.10.1"
 #define DRIVER_AUTHOR	"Gabor Juhos <juhosg at openwrt.org>"
 #define DRIVER_DESC	"ADMtek USB 1.1 Host Controller Driver"
 
@@ -228,11 +228,12 @@ static int admhc_urb_dequeue(struct usb_hcd *hcd, struct urb *urb)
 	struct admhcd *ahcd = hcd_to_admhcd(hcd);
 	unsigned long flags;
 
+	spin_lock_irqsave(&ahcd->lock, flags);
+
 #ifdef ADMHC_VERBOSE_DEBUG
 	urb_print(ahcd, urb, "DEQUEUE", 1);
 #endif
 
-	spin_lock_irqsave(&ahcd->lock, flags);
 	if (HC_IS_RUNNING(hcd->state)) {
 		struct urb_priv *urb_priv;
 
