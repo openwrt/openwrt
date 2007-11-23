@@ -12,6 +12,7 @@ BOARDNAME:=Infineon ADM5120
 LINUX_VERSION:=2.6.23.1
 FEATURES:=squashfs jffs2 tgz broken
 SUBTARGETS:=router_le router_be
+INITRAMFS_EXTRA_FILES:=
 
 include $(INCLUDE_DIR)/target.mk
 
