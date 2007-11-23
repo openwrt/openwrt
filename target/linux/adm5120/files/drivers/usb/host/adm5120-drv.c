@@ -171,7 +171,7 @@ static const struct hc_driver adm5120_hc_driver = {
 	.hub_status_data =	admhc_hub_status_data,
 	.hub_control =		admhc_hub_control,
 	.hub_irq_enable =	admhc_hub_irq_enable,
-#ifdef	CONFIG_PM
+#ifdef CONFIG_PM
 	.bus_suspend =		admhc_bus_suspend,
 	.bus_resume =		admhc_bus_resume,
 #endif
@@ -202,6 +202,7 @@ static int usb_hcd_adm5120_remove(struct platform_device *pdev)
 }
 
 #ifdef CONFIG_PM
+/* TODO */
 static int usb_hcd_adm5120_suspend(struct platform_device *dev)
 {
 	struct usb_hcd *hcd = platform_get_drvdata(dev);

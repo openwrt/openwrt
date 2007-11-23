@@ -33,8 +33,6 @@ static inline char *ed_statestring(int state)
 		return "UNLINK";
 	case ED_OPER:
 		return "OPER";
-	case ED_NEW:
-		return "NEW";
 	}
 	return "?STATE";
 }
@@ -70,18 +68,20 @@ static inline char *td_togglestring(u32 info)
 	return "?TOGGLE";
 }
 
+/*-------------------------------------------------------------------------*/
+
 #ifdef DEBUG
 
 /* debug| print the main components of an URB
  * small: 0) header + data packets 1) just header
  */
 static void __attribute__((unused))
-urb_print(struct admhcd *ahcd, struct urb * urb, char * str, int small)
+urb_print(struct admhcd *ahcd, struct urb *urb, char * str, int small)
 {
 	unsigned int pipe = urb->pipe;
 
 	if (!urb->dev || !urb->dev->bus) {
-		admhc_dbg(ahcd, "%s URB: no dev", str);
+		admhc_dbg("%s URB: no dev", str);
 		return;
 	}
 
@@ -89,11 +89,11 @@ urb_print(struct admhcd *ahcd, struct urb * urb, char * str, int small)
 	if (urb->status != 0)
 #endif
 	admhc_dbg(ahcd, "URB-%s %p dev=%d ep=%d%s-%s flags=%x len=%d/%d "
-			"stat=%d\n",
+			"stat=%d",
 			str,
 			urb,
-			usb_pipedevice(pipe),
-			usb_pipeendpoint(pipe),
+			usb_pipedevice (pipe),
+			usb_pipeendpoint (pipe),
 			usb_pipeout(pipe)? "out" : "in",
 			pipestring(pipe),
 			urb->transfer_flags,
@@ -106,20 +106,20 @@ urb_print(struct admhcd *ahcd, struct urb * urb, char * str, int small)
 		int i, len;
 
 		if (usb_pipecontrol(pipe)) {
-			admhc_dbg(admhc, "setup(8): ");
+			admhc_dbg(ahcd, "setup(8):");
 			for (i = 0; i < 8 ; i++)
 				printk (" %02x", ((__u8 *) urb->setup_packet) [i]);
 			printk ("\n");
 		}
 		if (urb->transfer_buffer_length > 0 && urb->transfer_buffer) {
-			admhc_dbg(admhc, "data(%d/%d): ",
+			printk(KERN_DEBUG __FILE__ ": data(%d/%d):",
 				urb->actual_length,
 				urb->transfer_buffer_length);
 			len = usb_pipeout(pipe)?
 						urb->transfer_buffer_length: urb->actual_length;
 			for (i = 0; i < 16 && i < len; i++)
 				printk (" %02x", ((__u8 *) urb->transfer_buffer) [i]);
-			printk ("%s stat:%d\n", i < len? "...": "", urb->status);
+			admhc_dbg("%s stat:%d\n", i < len? "...": "", urb->status);
 		}
 	}
 #endif /* ADMHC_VERBOSE_DEBUG */
@@ -318,18 +318,6 @@ static void admhc_dump_td(const struct admhcd *ahcd, const char *label,
 		(tmp & TD_IE) ? " IE" : "");
 }
 
-static void admhc_dump_up(const struct admhcd *ahcd, const char *label,
-		const struct urb_priv *up)
-{
-	int i;
-
-	admhc_dbg(ahcd, "%s urb/%p:\n", label, up->urb);
-	for (i = 0; i < up->td_cnt; i++) {
-		struct td *td = up->td[i];
-		admhc_dump_td(ahcd, "    ->", td);
-	}
-}
-
 /* caller MUST own hcd spinlock if verbose is set! */
 static void __attribute__((unused))
 admhc_dump_ed(const struct admhcd *ahcd, const char *label,
@@ -352,22 +340,23 @@ admhc_dump_ed(const struct admhcd *ahcd, const char *label,
 		ED_FA_GET(tmp));
 
 	tmp = hc32_to_cpup(ahcd, &ed->hwHeadP);
-	admhc_dbg(ahcd, "  tds: head %08x tail %08x %s%s\n",
+	admhc_dbg(ahcd, "  tds: head %08x tail %08x %s%s%s\n",
 		tmp & TD_MASK,
-		hc32_to_cpup(ahcd, &ed->hwTailP),
+		hc32_to_cpup (ahcd, &ed->hwTailP),
 		(tmp & ED_C) ? data1 : data0,
-		(tmp & ED_H) ? " HALT" : "");
+		(tmp & ED_H) ? " HALT" : "",
+		verbose ? " td list follows" : " (not listing)");
 
-	if (ed->urb_active)
-		admhc_dump_up(ahcd, "  active ", ed->urb_active);
+	if (verbose) {
+		struct list_head	*tmp;
 
-	if ((verbose) && (!list_empty(&ed->urb_pending))) {
-		struct list_head *entry;
-		/* dump pending URBs */
-		list_for_each(entry, &ed->urb_pending) {
-			struct urb_priv *up;
-			up = list_entry(entry, struct urb_priv, pending);
-			admhc_dump_up(ahcd, "  pending ", up);
+		/* use ed->td_list because HC concurrently modifies
+		 * hwNextTD as it accumulates ed_donelist.
+		 */
+		list_for_each(tmp, &ed->td_list) {
+			struct td		*td;
+			td = list_entry(tmp, struct td, td_list);
+			admhc_dump_td (ahcd, "  ->", td);
 		}
 	}
 }
@@ -375,8 +364,6 @@ admhc_dump_ed(const struct admhcd *ahcd, const char *label,
 #else /* ifdef DEBUG */
 
 static inline void urb_print(struct urb * urb, char * str, int small) {}
-static inline void admhc_dump_up(const struct admhcd *ahcd, const char *label,
-	const struct urb_priv *up) {}
 static inline void admhc_dump_ed(const struct admhcd *ahcd, const char *label,
 	const struct ed *ed, int verbose) {}
 static inline void admhc_dump_td(const struct admhcd *ahcd, const char *label,
@@ -397,44 +384,6 @@ static inline void remove_debug_files(struct admhcd *bus) { }
 #else
 
 static ssize_t
-show_urb_priv(struct admhcd *ahcd, char *buf, size_t count,
-		struct urb_priv *up)
-{
-	unsigned temp, size = count;
-	int i;
-
-	if (!up)
-		return 0;
-
-	temp = scnprintf(buf, size,"\n\turb %p ", up->urb);
-	size -= temp;
-	buf += temp;
-
-	for (i = 0; i< up->td_cnt; i++) {
-		struct td *td;
-		u32 dbp, cbl, info;
-
-		td = up->td[i];
-		info = hc32_to_cpup(ahcd, &td->hwINFO);
-		dbp = hc32_to_cpup(ahcd, &td->hwDBP);
-		cbl = hc32_to_cpup(ahcd, &td->hwCBL);
-
-		temp = scnprintf(buf, size,
-			"\n\t\ttd %p %s %d %s%scc=%x (%08x,%08x)",
-			td,
-			td_pidstring(info),
-			TD_BL_GET(cbl),
-			(info & TD_OWN) ? "WORK " : "DONE ",
-			(cbl & TD_IE) ? "IE " : "",
-			TD_CC_GET(info), info, cbl);
-		size -= temp;
-		buf += temp;
-	}
-
-	return count - size;
-}
-
-static ssize_t
 show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 {
 	unsigned		temp, size = count;
@@ -446,10 +395,15 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 	while (ed) {
 		u32 info = hc32_to_cpu(ahcd, ed->hwINFO);
 		u32 headp = hc32_to_cpu(ahcd, ed->hwHeadP);
+		u32 tailp = hc32_to_cpu(ahcd, ed->hwTailP);
+		struct list_head *entry;
+		struct td	*td;
 
 		temp = scnprintf(buf, size,
-			"ed/%p %s %cs dev%d ep%d %s%smax %d %08x%s%s %s",
+			"ed/%p %s %s %cs dev%d ep%d %s%smax %d %08x%s%s %s"
+			" h:%08x t:%08x",
 			ed,
+			ed_statestring(ed->state),
 			ed_typestring (ed->type),
 			(info & ED_SPEED_FULL) ? 'f' : 'l',
 			info & ED_FA_MASK,
@@ -460,36 +414,29 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 			info,
 			(info & ED_SKIP) ? " S" : "",
 			(headp & ED_H) ? " H" : "",
-			(headp & ED_C) ? "DATA1" : "DATA0");
+			(headp & ED_C) ? data1 : data0,
+			headp & ED_MASK,tailp);
 		size -= temp;
 		buf += temp;
 
-		if (ed->urb_active) {
-			temp = scnprintf(buf, size, "\nactive urb:");
+		list_for_each(entry, &ed->td_list) {
+			u32		dbp, cbl;
+
+			td = list_entry(entry, struct td, td_list);
+			info = hc32_to_cpup (ahcd, &td->hwINFO);
+			dbp = hc32_to_cpup (ahcd, &td->hwDBP);
+			cbl = hc32_to_cpup (ahcd, &td->hwCBL);
+
+			temp = scnprintf(buf, size,
+				"\n\ttd/%p %s %d %s%scc=%x urb %p (%08x,%08x)",
+				td,
+				td_pidstring(info),
+				TD_BL_GET(cbl),
+				(info & TD_OWN) ? "" : "DONE ",
+				(cbl & TD_IE) ? "IE " : "",
+				TD_CC_GET (info), td->urb, info, cbl);
 			size -= temp;
 			buf += temp;
-
-			temp = show_urb_priv(ahcd, buf, size, ed->urb_active);
-			size -= temp;
-			buf += temp;
-		}
-
-		if (!list_empty(&ed->urb_pending)) {
-			struct list_head *entry;
-
-			temp = scnprintf(buf, size, "\npending urbs:");
-			size -= temp;
-			buf += temp;
-
-			list_for_each(entry, &ed->urb_pending) {
-				struct urb_priv *up;
-				up = list_entry(entry, struct urb_priv,
-					pending);
-
-				temp = show_urb_priv(ahcd, buf, size, up);
-				size -= temp;
-				buf += temp;
-			}
 		}
 
 		temp = scnprintf(buf, size, "\n");
@@ -498,7 +445,6 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 
 		ed = ed->ed_next;
 	}
-
 	return count - size;
 }
 
@@ -523,6 +469,108 @@ show_async(struct class_device *class_dev, char *buf)
 	return temp;
 }
 static CLASS_DEVICE_ATTR(async, S_IRUGO, show_async, NULL);
+
+
+#define DBG_SCHED_LIMIT 64
+
+static ssize_t
+show_periodic(struct class_device *class_dev, char *buf)
+{
+	struct usb_bus		*bus;
+	struct usb_hcd		*hcd;
+	struct admhcd		*ahcd;
+	struct ed		**seen, *ed;
+	unsigned long		flags;
+	unsigned		temp, size, seen_count;
+	char			*next;
+	unsigned		i;
+
+	if (!(seen = kmalloc(DBG_SCHED_LIMIT * sizeof *seen, GFP_ATOMIC)))
+		return 0;
+	seen_count = 0;
+
+	bus = class_get_devdata(class_dev);
+	hcd = bus_to_hcd(bus);
+	ahcd = hcd_to_admhcd(hcd);
+	next = buf;
+	size = PAGE_SIZE;
+
+	temp = scnprintf(next, size, "size = %d\n", NUM_INTS);
+	size -= temp;
+	next += temp;
+
+	/* dump a snapshot of the periodic schedule (and load) */
+	spin_lock_irqsave(&ahcd->lock, flags);
+	for (i = 0; i < NUM_INTS; i++) {
+		if (!(ed = ahcd->periodic [i]))
+			continue;
+
+		temp = scnprintf(next, size, "%2d [%3d]:", i, ahcd->load [i]);
+		size -= temp;
+		next += temp;
+
+		do {
+			temp = scnprintf(next, size, " ed%d/%p",
+				ed->interval, ed);
+			size -= temp;
+			next += temp;
+			for (temp = 0; temp < seen_count; temp++) {
+				if (seen [temp] == ed)
+					break;
+			}
+
+			/* show more info the first time around */
+			if (temp == seen_count) {
+				u32	info = hc32_to_cpu (ahcd, ed->hwINFO);
+				struct list_head	*entry;
+				unsigned		qlen = 0;
+
+				/* qlen measured here in TDs, not urbs */
+				list_for_each (entry, &ed->td_list)
+					qlen++;
+				temp = scnprintf(next, size,
+					" (%cs dev%d ep%d%s qlen %u"
+					" max %d %08x%s%s)",
+					(info & ED_SPEED_FULL) ? 'f' : 'l',
+					ED_FA_GET(info),
+					ED_EN_GET(info),
+					(info & ED_ISO) ? "iso" : "int",
+					qlen,
+					ED_MPS_GET(info),
+					info,
+					(info & ED_SKIP) ? " K" : "",
+					(ed->hwHeadP &
+						cpu_to_hc32(ahcd, ED_H)) ?
+							" H" : "");
+				size -= temp;
+				next += temp;
+
+				if (seen_count < DBG_SCHED_LIMIT)
+					seen [seen_count++] = ed;
+
+				ed = ed->ed_next;
+
+			} else {
+				/* we've seen it and what's after */
+				temp = 0;
+				ed = NULL;
+			}
+
+		} while (ed);
+
+		temp = scnprintf(next, size, "\n");
+		size -= temp;
+		next += temp;
+	}
+	spin_unlock_irqrestore(&ahcd->lock, flags);
+	kfree (seen);
+
+	return PAGE_SIZE - size;
+}
+static CLASS_DEVICE_ATTR(periodic, S_IRUGO, show_periodic, NULL);
+
+
+#undef DBG_SCHED_LIMIT
 
 static ssize_t
 show_registers(struct class_device *class_dev, char *buf)
@@ -610,6 +658,7 @@ static inline void create_debug_files (struct admhcd *ahcd)
 	int retval;
 
 	retval = class_device_create_file(cldev, &class_device_attr_async);
+	retval = class_device_create_file(cldev, &class_device_attr_periodic);
 	retval = class_device_create_file(cldev, &class_device_attr_registers);
 	admhc_dbg(ahcd, "created debug files\n");
 }
@@ -619,6 +668,7 @@ static inline void remove_debug_files (struct admhcd *ahcd)
 	struct class_device *cldev = admhcd_to_hcd(ahcd)->self.class_dev;
 
 	class_device_remove_file(cldev, &class_device_attr_async);
+	class_device_remove_file(cldev, &class_device_attr_periodic);
 	class_device_remove_file(cldev, &class_device_attr_registers);
 }
 
