@@ -83,6 +83,7 @@ $(eval $(call KernelPackage,capi))
 define KernelPackage/ipip
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IP-in-IP encapsulation
+  DEPENDS:=+kmod-iptunnel4
   KCONFIG:=CONFIG_NET_IPIP
   FILES:=$(LINUX_DIR)/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,ipip)
