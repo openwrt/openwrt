@@ -1,0 +1,13 @@
+Index: linux-2.6.23.1/sound/core/Kconfig
+===================================================================
+--- linux-2.6.23.1.orig/sound/core/Kconfig	2007-11-25 18:14:23.486146184 +0100
++++ linux-2.6.23.1/sound/core/Kconfig	2007-11-25 18:14:26.474316473 +0100
+@@ -9,7 +9,7 @@
+ 	depends on SND
+ 
+ config SND_HWDEP
+-	tristate
++	tristate "Sound hardware support"
+ 	depends on SND
+ 
+ config SND_RAWMIDI
