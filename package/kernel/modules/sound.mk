@@ -12,7 +12,7 @@ SOUND_MENU:=Sound Support
 define KernelPackage/sound-core
   SUBMENU:=$(SOUND_MENU)
   TITLE:=Sound support
-  DEPENDS:=@USB_SUPPORT @!TARGET_atheros
+  DEPENDS:=@USB_SUPPORT||PCI_SUPPORT @!TARGET_atheros
   KCONFIG:= \
 	CONFIG_SOUND \
 	CONFIG_SND \
@@ -20,6 +20,10 @@ define KernelPackage/sound-core
 	CONFIG_SND_RAWMIDI \
 	CONFIG_SND_TIMER \
 	CONFIG_SND_PCM \
+	CONFIG_SND_SEQUENCER \
+	CONFIG_SND_VIRMIDI \
+	CONFIG_SND_SEQ_DUMMY \
+	CONFIG_SND_SEQUENCER_OSS=y \
 	CONFIG_HOSTAUDIO
 endef
 
@@ -29,12 +33,6 @@ define KernelPackage/sound-core/2.4
 endef
 
 define KernelPackage/sound-core/2.6
-#  KCONFIG+= \
-#	CONFIG_SND \
-#	CONFIG_SND_HWDEP \
-#	CONFIG_SND_RAWMIDI \
-#	CONFIG_SND_TIMER \
-#	CONFIG_SND_PCM
   FILES:= \
 	$(LINUX_DIR)/sound/soundcore.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/sound/core/snd.$(LINUX_KMOD_SUFFIX) \
@@ -59,8 +57,6 @@ define KernelPackage/sound-core/2.6
 endef
 
 define KernelPackage/sound-core/uml-2.6
-#  KCONFIG+= \
-#	CONFIG_HOSTAUDIO
   FILES:= \
 	$(LINUX_DIR)/sound/soundcore.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/arch/um/drivers/hostaudio.$(LINUX_KMOD_SUFFIX)
