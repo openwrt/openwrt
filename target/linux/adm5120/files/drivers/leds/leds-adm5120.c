@@ -130,6 +130,21 @@ LED_ARRAY(br6104k) {
 	LED_INV(ADM5120_GPIO_P4L0, "lan4_lnkact",	NULL),
 };
 
+LED_ARRAY(br61x4wg) {
+	LED_STD(ADM5120_GPIO_PIN0, "power",		NULL),
+	LED_STD(ADM5120_GPIO_PIN5, "wlan",		NULL),
+	LED_INV(ADM5120_GPIO_P0L1, "wan_speed",		NULL),
+	LED_INV(ADM5120_GPIO_P0L0, "wan_lnkact",	NULL),
+	LED_INV(ADM5120_GPIO_P1L1, "lan1_speed",	NULL),
+	LED_INV(ADM5120_GPIO_P1L0, "lan1_lnkact",	NULL),
+	LED_INV(ADM5120_GPIO_P2L1, "lan2_speed",	NULL),
+	LED_INV(ADM5120_GPIO_P2L0, "lan2_lnkact",	NULL),
+	LED_INV(ADM5120_GPIO_P3L1, "lan3_speed",	NULL),
+	LED_INV(ADM5120_GPIO_P3L0, "lan3_lnkact",	NULL),
+	LED_INV(ADM5120_GPIO_P4L1, "lan4_speed",	NULL),
+	LED_INV(ADM5120_GPIO_P4L0, "lan4_lnkact",	NULL),
+};
+
 /*
  * Mikrotik boards
  */
@@ -232,6 +247,7 @@ static struct mach_data machines[] __initdata = {
 	MACH_DATA(MACH_ADM5120_WPP54G,	wp54g),
 	/* Edimax */
 	MACH_DATA(MACH_ADM5120_BR6104K,	br6104k),
+	MACH_DATA(MACH_ADM5120_BR61x4WG, br61x4wg),
 	/* Mikrotik */
 	MACH_DATA(MACH_ADM5120_RB_133,	rb133),
 	MACH_DATA(MACH_ADM5120_RB_133C,	rb133),
