@@ -45,7 +45,7 @@
 #include "../core/hcd.h"
 #include "../core/hub.h"
 
-#define DRIVER_VERSION	"v0.10.1"
+#define DRIVER_VERSION	"v0.14.0"
 #define DRIVER_AUTHOR	"Gabor Juhos <juhosg at openwrt.org>"
 #define DRIVER_DESC	"ADMtek USB 1.1 Host Controller Driver"
 
@@ -142,10 +142,6 @@ static int admhc_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
 		/* number of packets from URB */
 		td_cnt = urb->number_of_packets;
 		break;
-	default:
-		/* paranoia */
-		admhc_err(ahcd, "bad EP type %d", ed->type);
-		return -EINVAL;
 	}
 
 	urb_priv = urb_priv_alloc(ahcd, td_cnt, mem_flags);
@@ -207,6 +203,7 @@ static int admhc_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
 #ifdef ADMHC_VERBOSE_DEBUG
 	admhc_dump_ed(ahcd, "admhc_urb_enqueue", urb_priv->ed, 1);
 #endif
+
 fail0:
 	spin_unlock(&urb->lock);
 fail:
