@@ -231,6 +231,11 @@ static void periodic_unlink (struct admhcd *ahcd, struct ed *ed)
  */
 static void ed_deschedule(struct admhcd *ahcd, struct ed *ed)
 {
+
+#ifdef ADMHC_VERBOSE_DEBUG
+	admhc_dump_ed(ahcd, "ED-DESCHED", ed, 1);
+#endif
+
 	ed->hwINFO |= cpu_to_hc32(ahcd, ED_SKIP);
 	wmb();
 	ed->state = ED_UNLINK;
@@ -333,6 +338,11 @@ static struct ed *ed_get(struct admhcd *ahcd,	struct usb_host_endpoint *ep,
  */
 static void start_ed_unlink(struct admhcd *ahcd, struct ed *ed)
 {
+
+#ifdef ADMHC_VERBOSE_DEBUG
+	admhc_dump_ed(ahcd, "ED-UNLINK", ed, 1);
+#endif
+
 	ed->hwINFO |= cpu_to_hc32(ahcd, ED_DEQUEUE);
 	ed_deschedule(ahcd, ed);
 
@@ -735,7 +745,7 @@ skip_ed:
 				last = &ed->ed_rm_next;
 				continue;
 			}
-
+#if 0
 			if (!list_empty(&ed->td_list)) {
 				struct td	*td;
 				u32		head;
@@ -749,6 +759,7 @@ skip_ed:
 				if (td->td_dma != head)
 					goto skip_ed;
 			}
+#endif
 		}
 
 		/* reentrancy:  if we drop the schedule lock, someone might
@@ -793,7 +804,9 @@ rescan_this:
 			*prev = td->hwNextTD | savebits;
 
 			/* HC may have partly processed this TD */
-			urb_print(ahcd, urb, "PARTIAL", 1);
+#ifdef ADMHC_VERBOSE_DEBUG
+			urb_print(ahcd, urb, "PARTIAL", 0);
+#endif
 			td_done(ahcd, urb, td);
 
 			/* if URB is done, clean up */
@@ -809,7 +822,7 @@ rescan_this:
 		ed->state = ED_IDLE;
 		ed->hwHeadP &= ~cpu_to_hc32(ahcd, ED_H);
 		ed->hwNextED = 0;
-		wmb ();
+		wmb();
 		ed->hwINFO &= ~cpu_to_hc32(ahcd, ED_SKIP | ED_DEQUEUE);
 
 		/* but if there's work queued, reschedule */
@@ -865,6 +878,14 @@ static void ed_unhalt(struct admhcd *ahcd, struct ed *ed, struct urb *urb)
 
 }
 
+static void ed_intr_refill(struct admhcd *ahcd, struct ed *ed)
+{
+	__hc32 toggle = ed->hwHeadP & cpu_to_hc32(ahcd, ED_C);
+
+	ed->hwHeadP = ed->hwTailP | toggle;
+}
+
+
 static inline int is_ed_halted(struct admhcd *ahcd, struct ed *ed)
 {
 	return ((hc32_to_cpup(ahcd, &ed->hwHeadP) & ED_H) == ED_H);
@@ -882,7 +903,7 @@ static void ed_update(struct admhcd *ahcd, struct ed *ed)
 	struct list_head *entry,*tmp;
 
 #ifdef ADMHC_VERBOSE_DEBUG
-	admhc_dump_ed(ahcd, "UPDATE", ed, 0);
+	admhc_dump_ed(ahcd, "UPDATE", ed, 1);
 #endif
 
 	list_for_each_safe(entry, tmp, &ed->td_list) {
@@ -898,6 +919,9 @@ static void ed_update(struct admhcd *ahcd, struct ed *ed)
 		cc = td_done(ahcd, urb, td);
 		if (is_ed_halted(ahcd, ed) && is_td_halted(ahcd, ed, td))
 			ed_unhalt(ahcd, ed, urb);
+
+		if (ed->type == PIPE_INTERRUPT)
+			ed_intr_refill(ahcd,ed);
 
 		/* If all this urb's TDs are done, call complete() */
 		if (urb_priv->td_idx == urb_priv->td_cnt)
