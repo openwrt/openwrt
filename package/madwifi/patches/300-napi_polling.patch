@@ -1,7 +1,7 @@
 Index: madwifi-ng-r2834-20071106/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/ath/if_ath.c	2007-11-07 14:02:04.537629461 +0100
-+++ madwifi-ng-r2834-20071106/ath/if_ath.c	2007-11-07 14:02:04.865648150 +0100
+--- madwifi-ng-r2834-20071106.orig/ath/if_ath.c	2007-11-26 12:29:04.313083193 +0100
++++ madwifi-ng-r2834-20071106/ath/if_ath.c	2007-11-26 12:29:04.341084793 +0100
 @@ -170,7 +170,7 @@
  	int, u_int64_t);
  static void ath_setdefantenna(struct ath_softc *, u_int);
@@ -266,8 +266,8 @@ Index: madwifi-ng-r2834-20071106/ath/if_ath.c
  
 Index: madwifi-ng-r2834-20071106/ath/if_athvar.h
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/ath/if_athvar.h	2007-11-07 14:02:03.557573608 +0100
-+++ madwifi-ng-r2834-20071106/ath/if_athvar.h	2007-11-07 14:02:04.865648150 +0100
+--- madwifi-ng-r2834-20071106.orig/ath/if_athvar.h	2007-11-26 12:29:04.233078645 +0100
++++ madwifi-ng-r2834-20071106/ath/if_athvar.h	2007-11-26 12:29:04.341084793 +0100
 @@ -50,6 +50,10 @@
  #include <asm/io.h>
  #include <linux/list.h>
@@ -306,8 +306,8 @@ Index: madwifi-ng-r2834-20071106/ath/if_athvar.h
  #define	ATH_RXBUF_LOCK_DESTROY(_sc)
 Index: madwifi-ng-r2834-20071106/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/net80211/ieee80211_input.c	2007-11-07 14:02:02.873534629 +0100
-+++ madwifi-ng-r2834-20071106/net80211/ieee80211_input.c	2007-11-07 14:02:04.873648608 +0100
+--- madwifi-ng-r2834-20071106.orig/net80211/ieee80211_input.c	2007-11-26 12:29:04.197076583 +0100
++++ madwifi-ng-r2834-20071106/net80211/ieee80211_input.c	2007-11-26 12:29:54.727956181 +0100
 @@ -1128,8 +1128,9 @@
  		if (ni->ni_vlan != 0 && vap->iv_vlgrp != NULL) {
  			/* attach vlan tag */
@@ -320,3 +320,25 @@ Index: madwifi-ng-r2834-20071106/net80211/ieee80211_input.c
  		dev->last_rx = jiffies;
  	}
  }
+@@ -2235,7 +2236,7 @@
+ 		skb1->pkt_type = PACKET_OTHERHOST;
+ 		skb1->protocol = __constant_htons(0x0019);  /* ETH_P_80211_RAW */
+ 
+-		netif_rx(skb1);
++		netif_receive_skb(skb1);
+ 	}
+ }
+ 
+Index: madwifi-ng-r2834-20071106/net80211/ieee80211_monitor.c
+===================================================================
+--- madwifi-ng-r2834-20071106.orig/net80211/ieee80211_monitor.c	2007-11-26 12:29:24.998261983 +0100
++++ madwifi-ng-r2834-20071106/net80211/ieee80211_monitor.c	2007-11-26 12:29:32.962715851 +0100
+@@ -567,7 +567,7 @@
+ 			skb1->pkt_type = pkttype;
+ 			skb1->protocol = __constant_htons(0x0019); /* ETH_P_80211_RAW */
+ 
+-			netif_rx(skb1);
++			netif_receive_skb(skb1);
+ 
+ 			vap->iv_devstats.rx_packets++;
+ 			vap->iv_devstats.rx_bytes += skb1->len;
