@@ -1,20 +1,71 @@
-Index: madwifi-ng-r2834-20071106/ath/if_ath.c
+Index: madwifi-ng-r2978-20071127/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/ath/if_ath.c	2007-11-07 14:02:04.077603246 +0100
-+++ madwifi-ng-r2834-20071106/ath/if_ath.c	2007-11-07 14:02:04.537629461 +0100
-@@ -75,7 +75,7 @@
- #include <net80211/if_llc.h>
- #endif
+--- madwifi-ng-r2978-20071127.orig/ath/if_ath.c	2007-11-27 21:43:39.632991016 +0100
++++ madwifi-ng-r2978-20071127/ath/if_ath.c	2007-11-27 22:09:32.889506059 +0100
+@@ -67,7 +67,7 @@
+ #include "if_media.h"
+ #include "if_llc.h"
  
 -#define	AR_DEBUG
 +#undef	AR_DEBUG
  
- #include "net80211/if_athproto.h"
- #include "if_athvar.h"
-Index: madwifi-ng-r2834-20071106/ath_rate/amrr/amrr.c
+ #include <net80211/ieee80211_var.h>
+ #include <net80211/ieee80211_radiotap.h>
+@@ -535,9 +535,11 @@
+ 	u_int8_t csz;
+ 
+ 	sc->devid = devid;
++#ifdef AR_DEBUG
+ 	ath_debug_global = (ath_debug & ATH_DEBUG_GLOBAL);
+ 	sc->sc_debug 	 = (ath_debug & ~ATH_DEBUG_GLOBAL);
+ 	DPRINTF(sc, ATH_DEBUG_ANY, "%s: devid 0x%x\n", __func__, devid);
++#endif
+ 
+ 	/*
+ 	 * Cache line size is used to size and align various
+@@ -1268,12 +1270,14 @@
+ 		/* If no default VAP debug flags are passed, allow a few to
+ 		 * transfer down from the driver to new VAPs so we can have load
+ 		 * time debugging for VAPs too. */
++#ifdef AR_DEBUG
+ 		vap->iv_debug = 0 |
+ 			((sc->sc_debug & ATH_DEBUG_RATE) ? IEEE80211_MSG_XRATE  : 0) | 
+ 			((sc->sc_debug & ATH_DEBUG_XMIT) ? IEEE80211_MSG_OUTPUT : 0) | 
+ 			((sc->sc_debug & ATH_DEBUG_RECV) ? IEEE80211_MSG_INPUT  : 0) |
+ 			0
+ 			;
++#endif
+ 	}
+ 	ic->ic_debug = (sc->sc_default_ieee80211_debug & IEEE80211_MSG_IC);
+ 
+@@ -9872,9 +9876,11 @@
+ 				/* XXX validate? */
+ 				sc->sc_ledpin = val;
+ 				break;
++#ifdef AR_DEBUG
+ 			case ATH_DEBUG:
+ 				sc->sc_debug 	 = (val & ~ATH_DEBUG_GLOBAL);
+ 				ath_debug_global = (val &  ATH_DEBUG_GLOBAL);
++#endif
+ 				break;
+ 			case ATH_TXANTENNA:
+ 				/*
+@@ -10183,9 +10189,11 @@
+ 	}
+ 
+ 	/* initialize values */
++#ifdef AR_DEBUG
+ 	ath_debug_global = (ath_debug & ATH_DEBUG_GLOBAL);
+ 	sc->sc_debug 	 = (ath_debug & ~ATH_DEBUG_GLOBAL);
+ 	sc->sc_default_ieee80211_debug = ieee80211_debug;
++#endif
+ 	sc->sc_txantenna = 0;		/* default to auto-selection */
+ 	sc->sc_txintrperiod = ATH_TXQ_INTR_PERIOD;
+ }
+Index: madwifi-ng-r2978-20071127/ath_rate/amrr/amrr.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/ath_rate/amrr/amrr.c	2007-11-07 14:01:59.177323993 +0100
-+++ madwifi-ng-r2834-20071106/ath_rate/amrr/amrr.c	2007-11-07 14:02:04.545629914 +0100
+--- madwifi-ng-r2978-20071127.orig/ath_rate/amrr/amrr.c	2007-10-31 06:39:41.000000000 +0100
++++ madwifi-ng-r2978-20071127/ath_rate/amrr/amrr.c	2007-11-27 21:47:06.136758995 +0100
 @@ -70,7 +70,7 @@
  
  #include "amrr.h"
@@ -24,10 +75,10 @@ Index: madwifi-ng-r2834-20071106/ath_rate/amrr/amrr.c
  #ifdef AMRR_DEBUG
  #define	DPRINTF(sc, _fmt, ...) do {					\
  	if (sc->sc_debug & 0x10)					\
-Index: madwifi-ng-r2834-20071106/ath_rate/minstrel/minstrel.c
+Index: madwifi-ng-r2978-20071127/ath_rate/minstrel/minstrel.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/ath_rate/minstrel/minstrel.c	2007-11-07 14:02:01.169437517 +0100
-+++ madwifi-ng-r2834-20071106/ath_rate/minstrel/minstrel.c	2007-11-07 14:02:04.549630142 +0100
+--- madwifi-ng-r2978-20071127.orig/ath_rate/minstrel/minstrel.c	2007-11-27 21:18:24.882670317 +0100
++++ madwifi-ng-r2978-20071127/ath_rate/minstrel/minstrel.c	2007-11-27 21:47:06.140759225 +0100
 @@ -117,7 +117,7 @@
  
  #include "minstrel.h"
@@ -37,10 +88,10 @@ Index: madwifi-ng-r2834-20071106/ath_rate/minstrel/minstrel.c
  #ifdef MINSTREL_DEBUG
  enum {
  		ATH_DEBUG_RATE		= 0x00000010	/* rate control */
-Index: madwifi-ng-r2834-20071106/ath_rate/onoe/onoe.c
+Index: madwifi-ng-r2978-20071127/ath_rate/onoe/onoe.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/ath_rate/onoe/onoe.c	2007-11-07 14:01:59.193324906 +0100
-+++ madwifi-ng-r2834-20071106/ath_rate/onoe/onoe.c	2007-11-07 14:02:04.553630371 +0100
+--- madwifi-ng-r2978-20071127.orig/ath_rate/onoe/onoe.c	2007-10-31 06:39:41.000000000 +0100
++++ madwifi-ng-r2978-20071127/ath_rate/onoe/onoe.c	2007-11-27 21:47:06.144759451 +0100
 @@ -66,7 +66,7 @@
  
  #include "onoe.h"
@@ -50,10 +101,10 @@ Index: madwifi-ng-r2834-20071106/ath_rate/onoe/onoe.c
  #ifdef ONOE_DEBUG
  enum {
  	ATH_DEBUG_RATE	= 0x00000010,	/* rate control */
-Index: madwifi-ng-r2834-20071106/ath_rate/sample/sample.c
+Index: madwifi-ng-r2978-20071127/ath_rate/sample/sample.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/ath_rate/sample/sample.c	2007-11-07 14:01:59.201325359 +0100
-+++ madwifi-ng-r2834-20071106/ath_rate/sample/sample.c	2007-11-07 14:02:04.557630601 +0100
+--- madwifi-ng-r2978-20071127.orig/ath_rate/sample/sample.c	2007-11-21 09:23:20.000000000 +0100
++++ madwifi-ng-r2978-20071127/ath_rate/sample/sample.c	2007-11-27 21:47:06.148759680 +0100
 @@ -68,7 +68,7 @@
  
  #include "sample.h"
@@ -62,26 +113,11 @@ Index: madwifi-ng-r2834-20071106/ath_rate/sample/sample.c
 +#undef	SAMPLE_DEBUG
  #ifdef SAMPLE_DEBUG
  enum {
- 	ATH_DEBUG_NODE		= 0x00080000,	/* node management */
-Index: madwifi-ng-r2834-20071106/net80211/ieee80211_var.h
+ 	ATH_DEBUG_RATE		= 0x00000010,	/* rate control */
+Index: madwifi-ng-r2978-20071127/tools/do_multi.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/net80211/ieee80211_var.h	2007-11-07 14:01:59.209325817 +0100
-+++ madwifi-ng-r2834-20071106/net80211/ieee80211_var.h	2007-11-07 14:02:04.561630827 +0100
-@@ -35,8 +35,8 @@
- #ifndef _NET80211_IEEE80211_VAR_H_
- #define _NET80211_IEEE80211_VAR_H_
- 
--#define	IEEE80211_DEBUG
--#define	IEEE80211_DEBUG_REFCNT			/* Node reference count debugging */
-+#undef	IEEE80211_DEBUG
-+#undef	IEEE80211_DEBUG_REFCNT			/* Node reference count debugging */
- 
- /* Definitions for IEEE 802.11 drivers. */
- #include <net80211/ieee80211_linux.h>
-Index: madwifi-ng-r2834-20071106/tools/do_multi.c
-===================================================================
---- madwifi-ng-r2834-20071106.orig/tools/do_multi.c	2007-11-07 14:02:00.197382122 +0100
-+++ madwifi-ng-r2834-20071106/tools/do_multi.c	2007-11-07 14:02:04.565631053 +0100
+--- madwifi-ng-r2978-20071127.orig/tools/do_multi.c	2007-11-27 21:18:24.826667124 +0100
++++ madwifi-ng-r2978-20071127/tools/do_multi.c	2007-11-27 21:47:06.152759909 +0100
 @@ -9,16 +9,20 @@
  
      progname = basename(argv[0]);
@@ -103,10 +139,10 @@ Index: madwifi-ng-r2834-20071106/tools/do_multi.c
      if(strcmp(progname, "athkey") == 0)
  	ret =  athkey_init(argc, argv);
      if(strcmp(progname, "athstats") == 0)
-Index: madwifi-ng-r2834-20071106/tools/Makefile
+Index: madwifi-ng-r2978-20071127/tools/Makefile
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/tools/Makefile	2007-11-07 14:02:00.197382122 +0100
-+++ madwifi-ng-r2834-20071106/tools/Makefile	2007-11-07 14:02:04.565631053 +0100
+--- madwifi-ng-r2978-20071127.orig/tools/Makefile	2007-11-27 21:18:24.826667124 +0100
++++ madwifi-ng-r2978-20071127/tools/Makefile	2007-11-27 21:47:06.152759909 +0100
 @@ -48,7 +48,7 @@
  
  
@@ -125,3 +161,18 @@ Index: madwifi-ng-r2834-20071106/tools/Makefile
  	ln -s -f madwifi_multi $$i; \
  	done
  
+Index: madwifi-ng-r2978-20071127/net80211/ieee80211_linux.h
+===================================================================
+--- madwifi-ng-r2978-20071127.orig/net80211/ieee80211_linux.h	2007-11-27 21:47:46.371051817 +0100
++++ madwifi-ng-r2978-20071127/net80211/ieee80211_linux.h	2007-11-27 21:47:56.199611915 +0100
+@@ -29,8 +29,8 @@
+ #ifndef _NET80211_IEEE80211_LINUX_H_
+ #define _NET80211_IEEE80211_LINUX_H_
+ 
+-#define	IEEE80211_DEBUG
+-#define	IEEE80211_DEBUG_REFCNT			/* Node reference count debugging */
++#undef	IEEE80211_DEBUG
++#undef	IEEE80211_DEBUG_REFCNT			/* Node reference count debugging */
+ /* #define ATH_DEBUG_SPINLOCKS */		/* announce before spinlocking */
+ 
+ #include <linux/wireless.h>
