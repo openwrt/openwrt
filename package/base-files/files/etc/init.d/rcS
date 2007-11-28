@@ -3,6 +3,6 @@
 
 {
 	for i in /etc/rc.d/$1*; do
-		$i $2 2>&1
+		[ -x $i ] && $i $2 2>&1
 	done 
 } | logger -s -p 6 -t '' &
