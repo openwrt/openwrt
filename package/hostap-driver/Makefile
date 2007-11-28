@@ -46,7 +46,7 @@ endef
 define KernelPackage/hostap
 $(call KernelPackage/hostap/Default)
   TITLE:=Host AP support for Prism2/2.5/3
-  DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT +kmod-ieee80211
+  DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT +kmod-ieee80211 +wireless-tools
   KCONFIG:=CONFIG_HOSTAP
 endef
 
@@ -174,6 +174,15 @@ else
   endef
 endif
 
+define KernelPackage/hostap-pci/install
+	$(INSTALL_DIR) $(1)/lib/wifi
+	$(INSTALL_DATA) ./files/lib/wifi/hostap.sh $(1)/lib/wifi
+endef
+
+define KernelPackage/hostap-plx/install
+	$(INSTALL_DIR) $(1)/lib/wifi
+	$(INSTALL_DATA) ./files/lib/wifi/hostap.sh $(1)/lib/wifi
+endef
 
 $(eval $(call KernelPackage,hostap))
 $(eval $(call KernelPackage,hostap-cs))
