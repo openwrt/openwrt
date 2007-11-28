@@ -11,10 +11,13 @@ in the PS3's menu.
 
 Depending on your monitor, you may need to alter the kernel command
 line options. The default is to autodetect, which should work on most
-monitors. However, if you get a blank screen on boot, try changing
-(through make kernel_menuconfig) "video=ps3fb:mode:0" to
-"video=ps3fb:mode:1" for 480i, or "video=ps3fb:mode:3" for 720p. The
-possible modes are:
+monitors. However, if you get a blank screen on boot, or you'd like to
+use a different resolution, you can specify a different video mode.
+
+To do this, 'make kernel_menuconfig' and go to 'Kernel Options' ->
+'Initial kernel command string', and add a video= parameter - for
+example "video=720p". You can also specify a vide mode explicitly,
+for example "video=9" for 1080i at 50Hz. Possible mode ids are:
 
 Video mode ID:
  0:auto mode
