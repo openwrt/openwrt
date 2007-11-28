@@ -177,11 +177,49 @@ enable_atheros() {
 		config_get txpwr "$vif" txpower
 		[ -n "$txpwr" ] && iwconfig "$ifname" txpower "${txpwr%%.*}"
 
+		config_get rate "$vif" rate
+		[ -n "$rate" ] && iwconfig "$ifname" rate "${rate%%.*}"
+
 		config_get frag "$vif" frag
 		[ -n "$frag" ] && iwconfig "$ifname" frag "${frag%%.*}"
 
 		config_get rts "$vif" rts
 		[ -n "$rts" ] && iwconfig "$ifname" rts "${rts%%.*}"
+
+		config_get_bool doth "$vif" 80211h
+		[ -n "$doth" ] && iwpriv "$ifname" doth "$doth"
+
+		config_get_bool comp "$vif" compression
+		[ -n "$comp" ] && iwpriv "$ifname" compression "$comp"
+
+		config_get_bool burst "$vif" bursting
+		[ -n "$burst" ] && iwpriv "$ifname" burst "$burst"
+
+		config_get_bool wmm "$vif" wmm
+		[ -n "$wmm" ] && iwpriv "$ifname" wmm "$wmm"
+
+		config_get maclist "$vif" maclist
+		[ -n "$maclist" ] && {
+			# flush MAC list
+			iwpriv "$ifname" maccmd 3
+			for mac in $maclist; do
+				iwpriv "$ifname" addmac "$mac"
+			done
+		}
+
+		config_get macpolicy "$vif" macpolicy
+		case "$macpolicy" in
+			allow)
+				iwpriv "$ifname" maccmd 1
+			;;
+			deny)
+				iwpriv "$ifname" maccmd 2
+			;;
+			*)
+				# default deny policy if mac list exists
+				[ -n "$maclist" ] && iwpriv "$ifname" maccmd 2
+			;;
+		esac
 
 		ifconfig "$ifname" up
 		iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
