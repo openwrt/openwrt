@@ -114,8 +114,10 @@ enable_atheros() {
 		config_get_bool hidden "$vif" hidden 0
 		iwpriv "$ifname" hide_ssid "$hidden"
 
-		config_get_bool ff "$vif" ff 0
-		iwpriv "$ifname" ff "$ff"
+		config_get ff "$vif" ff
+		if [ -n "$ff" ]; then
+			iwpriv "$ifname" ff "$ff"
+		fi
 
 		config_get wds "$vif" wds
 		case "$wds" in
