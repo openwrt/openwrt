@@ -159,41 +159,29 @@ enable_atheros() {
 		esac
 		config_get ssid "$vif" ssid
 
-		config_get_bool bgscan "$vif" bgscan 0
-		iwpriv "$ifname" bgscan "$bgscan"
+		config_get_bool bgscan "$vif" bgscan
+		[ -n "$bgscan" ] && iwpriv "$ifname" bgscan "$bgscan"
 
-		config_get_bool antdiv "$device" diversity 1
-		sysctl -w dev."$device".diversity="$antdiv" >&-
+		config_get_bool antdiv "$device" diversity
+		[ -n "$antdiv" ] && sysctl -w dev."$device".diversity="$antdiv" >&-
 
 		config_get antrx "$device" rxantenna
-		if [ -n "$antrx" ]; then
-			sysctl -w dev."$device".rxantenna="$antrx" >&-
-		fi
+		[ -n "$antrx" ] && sysctl -w dev."$device".rxantenna="$antrx" >&-
 
 		config_get anttx "$device" txantenna
-		if [ -n "$anttx" ]; then
-			sysctl -w dev."$device".txantenna="$anttx" >&-
-		fi
+		[ -n "$anttx" ] && sysctl -w dev."$device".txantenna="$anttx" >&-
 
 		config_get distance "$device" distance
-		if [ -n "$distance" ]; then
-			athctrl -i "$device" -d "$distance" >&-
-		fi
+		[ -n "$distance" ] && athctrl -i "$device" -d "$distance" >&-
 
 		config_get txpwr "$vif" txpower
-		if [ -n "$txpwr" ]; then
-			iwconfig "$ifname" txpower "${txpwr%%.*}"
-		fi
+		[ -n "$txpwr" ] && iwconfig "$ifname" txpower "${txpwr%%.*}"
 
 		config_get frag "$vif" frag
-		if [ -n "$frag" ]; then
-			iwconfig "$ifname" frag "${frag%%.*}"
-		fi
+		[ -n "$frag" ] && iwconfig "$ifname" frag "${frag%%.*}"
 
 		config_get rts "$vif" rts
-		if [ -n "$rts" ]; then
-			iwconfig "$ifname" rts "${rts%%.*}"
-		fi
+		[ -n "$rts" ] && iwconfig "$ifname" rts "${rts%%.*}"
 
 		ifconfig "$ifname" up
 		iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
