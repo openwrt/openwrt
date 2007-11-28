@@ -129,7 +129,7 @@ config_get_bool() {
 	case "$_tmp" in
 		1|on|true|enabled) export ${NO_EXPORT:+-n} "$1=1";;
 		0|off|false|disabled) export ${NO_EXPORT:+-n} "$1=0";;
-		*) eval "$1=${4:-0}";;
+		*) eval "$1=$4";;
 	esac
 }
 
