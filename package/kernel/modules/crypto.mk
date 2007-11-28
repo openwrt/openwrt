@@ -86,8 +86,8 @@ define KernelPackage/crypto-des
   SUBMENU:=$(CRYPTO_MENU)
   TITLE:=DES/3DES cipher CryptoAPI module
   DEPENDS:=+kmod-crypto-core
-  KCONFIG:=CONFIG_CRYPTO_AES
-  FILES:=$(LINUX_DIR)/crypto/aes.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=CONFIG_CRYPTO_DES
+  FILES:=$(LINUX_DIR)/crypto/des.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,des)
 endef
 
