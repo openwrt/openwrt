@@ -200,11 +200,13 @@ dhcp_add() {
 	config_get limit "$cfg" limit
 	config_get leasetime "$cfg" leasetime
 	config_get options "$cfg" options
+	config_get_bool dynamicdhcp "$cfg" dynamicdhcp 1
 
 	leasetime="${leasetime:-12h}"
 	start="$(dhcp_calc "${start:-100}")"
 	limit="$((${limit:-150} + 1))"
 	eval "$(ipcalc.sh $ipaddr $netmask $start $limit)"
+	if [ "$dynamicdhcp" = "0" ]; then END="static"; fi
 	append args "--dhcp-range=$name,$START,$END,$NETMASK,$leasetime${options:+ $options}"
 
 	dhcp_option_add "$cfg" "$name"
