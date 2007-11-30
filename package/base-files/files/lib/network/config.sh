@@ -74,7 +74,7 @@ prepare_interface() {
 	# if we're called for the bridge interface itself, don't bother trying
 	# to create any interfaces here. The scripts have already done that, otherwise
 	# the bridge interface wouldn't exist.
-	[ "br-$config" = "$iface" -o -f "$iface" ] && return 0;
+	[ "br-$config" = "$iface" -o -e "$iface" ] && return 0;
 	
 	ifconfig "$iface" 2>/dev/null >/dev/null && {
 		# make sure the interface is removed from any existing bridge and brought down
@@ -138,7 +138,8 @@ setup_interface() {
 	# Interface settings
 	config_get mtu "$config" mtu
 	config_get macaddr "$config" macaddr
-	$DEBUG ifconfig "$iface" ${macaddr:+hw ether "$macaddr"} ${mtu:+mtu $mtu} up
+	grep "$iface:" /proc/net/dev > /dev/null && \
+		$DEBUG ifconfig "$iface" ${macaddr:+hw ether "$macaddr"} ${mtu:+mtu $mtu} up
 	uci set "/var/state/network.$config.ifname=$iface"
 
 	pidfile="/var/run/$iface.pid"
