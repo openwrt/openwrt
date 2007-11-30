@@ -131,6 +131,14 @@ static void __init bcm4780_init(void) {
 		schedule_timeout(HZ * 5);
 }
 
+static void __init bcm57xx_init(void) {
+	int pin = 1 << 2;
+
+	gpio_outen(pin, pin);
+	gpio_control(pin, 0);
+	gpio_out(pin, pin);
+}
+
 static struct platform_t __initdata platforms[] = {
 	/* Linksys */
 	[WAP54GV1] = {
@@ -138,7 +146,7 @@ static struct platform_t __initdata platforms[] = {
 		.buttons	= {
 			{ .name = "reset",	.gpio = 1 << 0 },
 		},
-		.leds		= { 
+		.leds		= {
 			{ .name = "diag",	.gpio = 1 << 3 },
 			{ .name = "wlan",	.gpio = 1 << 4 },
 		},
@@ -219,6 +227,7 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "usb_blink",	.gpio = 1 << 10, .polarity = REVERSE },
 			{ .name = "usb",	.gpio = 1 << 11, .polarity = REVERSE },
 		},
+		.platform_init = bcm57xx_init,
 	},
 	/* Asus */
 	[WLHDD] = {
