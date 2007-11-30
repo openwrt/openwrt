@@ -22,7 +22,7 @@ define Package/libnl
   SECTION:=net
   CATEGORY:=Base system
   TITLE:=netlink socket library
-  URL:=http://www.suug.ch/~tgr/libnl/
+  URL:=http://people.suug.ch/~tgr/libnl/
 endef
 
 define Package/libnl/description
