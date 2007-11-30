@@ -214,7 +214,10 @@ static struct platform_t __initdata platforms[] = {
 		},
 		.leds		= {
 			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
-			{ .name = "ses",	.gpio = 1 << 3, .polarity = REVERSE },
+			{ .name = "ses_amber",	.gpio = 1 << 3, .polarity = REVERSE },
+			{ .name = "ses_green",	.gpio = 1 << 9, .polarity = REVERSE },
+			{ .name = "usb_blink",	.gpio = 1 << 10, .polarity = REVERSE },
+			{ .name = "usb",	.gpio = 1 << 11, .polarity = REVERSE },
 		},
 	},
 	/* Asus */
