@@ -9,12 +9,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnl
-PKG_VERSION:=1.0-pre7
+PKG_VERSION:=1.0-pre8
 PKG_RELEASE:=1
 
-PKG_SOURCE:=libnl-1.0-pre7.tar.gz
-PKG_SOURCE_URL:=http://www.suug.ch/~tgr/libnl/files/
-PKG_MD5SUM:=db9f6265c370f09defd2d2fa3540758e
+PKG_SOURCE:=libnl-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=http://people.suug.ch/~tgr/libnl/files/
+PKG_MD5SUM:=cc54b3ed25ba45d45a966b9355030810
 
 include $(INCLUDE_DIR)/package.mk
 
