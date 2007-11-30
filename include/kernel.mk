@@ -88,7 +88,10 @@ define ModuleAutoLoad
 		chmod 0755 $(2)/CONTROL/postinst; \
 	fi
 endef
- 
+
+ifeq ($(DUMP),)
+  -include $(LINUX_DIR)/.config
+endif
 
 define KernelPackage
   NAME:=$(1)
