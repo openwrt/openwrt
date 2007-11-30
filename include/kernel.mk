@@ -89,7 +89,7 @@ define ModuleAutoLoad
 	fi
 endef
 
-ifeq ($(DUMP),)
+ifeq ($(DUMP)$(TARGET_BUILD),)
   -include $(LINUX_DIR)/.config
 endif
 
