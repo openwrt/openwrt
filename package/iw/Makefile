@@ -38,9 +38,11 @@ MAKE_FLAGS += \
 	CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include/mac80211 -I$(STAGING_DIR)/usr/include/libnl -I$(STAGING_DIR)/usr/include" \
 	LDFLAGS="-L$(STAGING_DIR)/usr/lib -lnl"
 
-define Package/iw/install
+ifneq ($(CONFIG_LINUX_2_6_23),)
+  define Package/iw/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/iw $(1)/usr/sbin/
-endef
+  endef
+endif
 
 $(eval $(call BuildPackage,iw))
