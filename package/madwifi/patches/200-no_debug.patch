@@ -1,17 +1,17 @@
-Index: madwifi-ng-r2978-20071127/ath/if_ath.c
+Index: madwifi-dfs-r2996/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2978-20071127.orig/ath/if_ath.c	2007-11-27 21:43:39.632991016 +0100
-+++ madwifi-ng-r2978-20071127/ath/if_ath.c	2007-11-27 22:09:32.889506059 +0100
-@@ -67,7 +67,7 @@
- #include "if_media.h"
- #include "if_llc.h"
- 
+--- madwifi-dfs-r2996.orig/ath/if_ath.c	2007-12-01 18:53:03.204271791 +0100
++++ madwifi-dfs-r2996/ath/if_ath.c	2007-12-01 18:53:28.557716602 +0100
+@@ -42,7 +42,7 @@
+  * This software is derived from work of Atsushi Onoe; his contribution
+  * is greatly appreciated.
+  */
 -#define	AR_DEBUG
 +#undef	AR_DEBUG
+ #include "if_ath_debug.h"
+ #include "opt_ah.h"
  
- #include <net80211/ieee80211_var.h>
- #include <net80211/ieee80211_radiotap.h>
-@@ -535,9 +535,11 @@
+@@ -515,9 +515,11 @@
  	u_int8_t csz;
  
  	sc->devid = devid;
@@ -23,7 +23,7 @@ Index: madwifi-ng-r2978-20071127/ath/if_ath.c
  
  	/*
  	 * Cache line size is used to size and align various
-@@ -1268,12 +1270,14 @@
+@@ -1283,12 +1285,14 @@
  		/* If no default VAP debug flags are passed, allow a few to
  		 * transfer down from the driver to new VAPs so we can have load
  		 * time debugging for VAPs too. */
@@ -38,7 +38,7 @@ Index: madwifi-ng-r2978-20071127/ath/if_ath.c
  	}
  	ic->ic_debug = (sc->sc_default_ieee80211_debug & IEEE80211_MSG_IC);
  
-@@ -9872,9 +9876,11 @@
+@@ -10290,9 +10294,11 @@
  				/* XXX validate? */
  				sc->sc_ledpin = val;
  				break;
@@ -50,7 +50,7 @@ Index: madwifi-ng-r2978-20071127/ath/if_ath.c
  				break;
  			case ATH_TXANTENNA:
  				/*
-@@ -10183,9 +10189,11 @@
+@@ -10703,9 +10709,11 @@
  	}
  
  	/* initialize values */
@@ -62,10 +62,10 @@ Index: madwifi-ng-r2978-20071127/ath/if_ath.c
  	sc->sc_txantenna = 0;		/* default to auto-selection */
  	sc->sc_txintrperiod = ATH_TXQ_INTR_PERIOD;
  }
-Index: madwifi-ng-r2978-20071127/ath_rate/amrr/amrr.c
+Index: madwifi-dfs-r2996/ath_rate/amrr/amrr.c
 ===================================================================
---- madwifi-ng-r2978-20071127.orig/ath_rate/amrr/amrr.c	2007-10-31 06:39:41.000000000 +0100
-+++ madwifi-ng-r2978-20071127/ath_rate/amrr/amrr.c	2007-11-27 21:47:06.136758995 +0100
+--- madwifi-dfs-r2996.orig/ath_rate/amrr/amrr.c	2007-12-01 18:45:14.000000000 +0100
++++ madwifi-dfs-r2996/ath_rate/amrr/amrr.c	2007-12-01 18:53:06.076435466 +0100
 @@ -70,7 +70,7 @@
  
  #include "amrr.h"
@@ -75,10 +75,10 @@ Index: madwifi-ng-r2978-20071127/ath_rate/amrr/amrr.c
  #ifdef AMRR_DEBUG
  #define	DPRINTF(sc, _fmt, ...) do {					\
  	if (sc->sc_debug & 0x10)					\
-Index: madwifi-ng-r2978-20071127/ath_rate/minstrel/minstrel.c
+Index: madwifi-dfs-r2996/ath_rate/minstrel/minstrel.c
 ===================================================================
---- madwifi-ng-r2978-20071127.orig/ath_rate/minstrel/minstrel.c	2007-11-27 21:18:24.882670317 +0100
-+++ madwifi-ng-r2978-20071127/ath_rate/minstrel/minstrel.c	2007-11-27 21:47:06.140759225 +0100
+--- madwifi-dfs-r2996.orig/ath_rate/minstrel/minstrel.c	2007-12-01 18:47:14.336390946 +0100
++++ madwifi-dfs-r2996/ath_rate/minstrel/minstrel.c	2007-12-01 18:53:06.080435695 +0100
 @@ -117,7 +117,7 @@
  
  #include "minstrel.h"
@@ -88,10 +88,10 @@ Index: madwifi-ng-r2978-20071127/ath_rate/minstrel/minstrel.c
  #ifdef MINSTREL_DEBUG
  enum {
  		ATH_DEBUG_RATE		= 0x00000010	/* rate control */
-Index: madwifi-ng-r2978-20071127/ath_rate/onoe/onoe.c
+Index: madwifi-dfs-r2996/ath_rate/onoe/onoe.c
 ===================================================================
---- madwifi-ng-r2978-20071127.orig/ath_rate/onoe/onoe.c	2007-10-31 06:39:41.000000000 +0100
-+++ madwifi-ng-r2978-20071127/ath_rate/onoe/onoe.c	2007-11-27 21:47:06.144759451 +0100
+--- madwifi-dfs-r2996.orig/ath_rate/onoe/onoe.c	2007-12-01 18:45:14.000000000 +0100
++++ madwifi-dfs-r2996/ath_rate/onoe/onoe.c	2007-12-01 18:53:06.080435695 +0100
 @@ -66,7 +66,7 @@
  
  #include "onoe.h"
@@ -101,10 +101,10 @@ Index: madwifi-ng-r2978-20071127/ath_rate/onoe/onoe.c
  #ifdef ONOE_DEBUG
  enum {
  	ATH_DEBUG_RATE	= 0x00000010,	/* rate control */
-Index: madwifi-ng-r2978-20071127/ath_rate/sample/sample.c
+Index: madwifi-dfs-r2996/ath_rate/sample/sample.c
 ===================================================================
---- madwifi-ng-r2978-20071127.orig/ath_rate/sample/sample.c	2007-11-21 09:23:20.000000000 +0100
-+++ madwifi-ng-r2978-20071127/ath_rate/sample/sample.c	2007-11-27 21:47:06.148759680 +0100
+--- madwifi-dfs-r2996.orig/ath_rate/sample/sample.c	2007-12-01 18:45:14.000000000 +0100
++++ madwifi-dfs-r2996/ath_rate/sample/sample.c	2007-12-01 18:53:06.080435695 +0100
 @@ -68,7 +68,7 @@
  
  #include "sample.h"
@@ -114,10 +114,10 @@ Index: madwifi-ng-r2978-20071127/ath_rate/sample/sample.c
  #ifdef SAMPLE_DEBUG
  enum {
  	ATH_DEBUG_RATE		= 0x00000010,	/* rate control */
-Index: madwifi-ng-r2978-20071127/tools/do_multi.c
+Index: madwifi-dfs-r2996/tools/do_multi.c
 ===================================================================
---- madwifi-ng-r2978-20071127.orig/tools/do_multi.c	2007-11-27 21:18:24.826667124 +0100
-+++ madwifi-ng-r2978-20071127/tools/do_multi.c	2007-11-27 21:47:06.152759909 +0100
+--- madwifi-dfs-r2996.orig/tools/do_multi.c	2007-12-01 18:45:51.063645501 +0100
++++ madwifi-dfs-r2996/tools/do_multi.c	2007-12-01 18:53:06.080435695 +0100
 @@ -9,16 +9,20 @@
  
      progname = basename(argv[0]);
@@ -139,10 +139,10 @@ Index: madwifi-ng-r2978-20071127/tools/do_multi.c
      if(strcmp(progname, "athkey") == 0)
  	ret =  athkey_init(argc, argv);
      if(strcmp(progname, "athstats") == 0)
-Index: madwifi-ng-r2978-20071127/tools/Makefile
+Index: madwifi-dfs-r2996/tools/Makefile
 ===================================================================
---- madwifi-ng-r2978-20071127.orig/tools/Makefile	2007-11-27 21:18:24.826667124 +0100
-+++ madwifi-ng-r2978-20071127/tools/Makefile	2007-11-27 21:47:06.152759909 +0100
+--- madwifi-dfs-r2996.orig/tools/Makefile	2007-12-01 18:45:51.067645730 +0100
++++ madwifi-dfs-r2996/tools/Makefile	2007-12-01 18:53:06.084435926 +0100
 @@ -48,7 +48,7 @@
  
  
@@ -161,10 +161,10 @@ Index: madwifi-ng-r2978-20071127/tools/Makefile
  	ln -s -f madwifi_multi $$i; \
  	done
  
-Index: madwifi-ng-r2978-20071127/net80211/ieee80211_linux.h
+Index: madwifi-dfs-r2996/net80211/ieee80211_linux.h
 ===================================================================
---- madwifi-ng-r2978-20071127.orig/net80211/ieee80211_linux.h	2007-11-27 21:47:46.371051817 +0100
-+++ madwifi-ng-r2978-20071127/net80211/ieee80211_linux.h	2007-11-27 21:47:56.199611915 +0100
+--- madwifi-dfs-r2996.orig/net80211/ieee80211_linux.h	2007-12-01 18:45:14.000000000 +0100
++++ madwifi-dfs-r2996/net80211/ieee80211_linux.h	2007-12-01 18:53:06.084435926 +0100
 @@ -29,8 +29,8 @@
  #ifndef _NET80211_IEEE80211_LINUX_H_
  #define _NET80211_IEEE80211_LINUX_H_
