@@ -1,8 +1,8 @@
-Index: madwifi-ng-r2834-20071106/ath/if_ath.c
+Index: madwifi-dfs-r2996/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/ath/if_ath.c	2007-11-07 14:02:05.117662515 +0100
-+++ madwifi-ng-r2834-20071106/ath/if_ath.c	2007-11-07 14:02:05.345675505 +0100
-@@ -3519,7 +3519,9 @@
+--- madwifi-dfs-r2996.orig/ath/if_ath.c	2007-12-01 18:54:22.276777879 +0100
++++ madwifi-dfs-r2996/ath/if_ath.c	2007-12-01 18:54:45.982128761 +0100
+@@ -3998,7 +3998,9 @@
  		rfilt |= HAL_RX_FILTER_PROM;
  	if (ic->ic_opmode == IEEE80211_M_STA ||
  	    sc->sc_opmode == HAL_M_IBSS ||	/* NB: AHDEMO too */
@@ -13,11 +13,11 @@ Index: madwifi-ng-r2834-20071106/ath/if_ath.c
  		rfilt |= HAL_RX_FILTER_BEACON;
  	if ((sc->sc_nmonvaps > 0) || ((sc->sc_nvaps > 0) && (sc->sc_nibssvaps > 0)))
  		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON |
-Index: madwifi-ng-r2834-20071106/net80211/ieee80211_input.c
+Index: madwifi-dfs-r2996/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/net80211/ieee80211_input.c	2007-11-07 14:02:04.873648608 +0100
-+++ madwifi-ng-r2834-20071106/net80211/ieee80211_input.c	2007-11-07 14:02:05.349675734 +0100
-@@ -321,11 +321,12 @@
+--- madwifi-dfs-r2996.orig/net80211/ieee80211_input.c	2007-12-01 18:53:44.638633004 +0100
++++ madwifi-dfs-r2996/net80211/ieee80211_input.c	2007-12-01 18:54:45.986128992 +0100
+@@ -329,11 +329,12 @@
  				bssid = wh->i_addr3;
  			}
  			/*
@@ -32,7 +32,7 @@ Index: madwifi-ng-r2834-20071106/net80211/ieee80211_input.c
  				/*
  				 * allow MGT frames to vap->iv_xrvap.
  				 * this will allow roaming between  XR and normal vaps
-@@ -344,7 +345,8 @@
+@@ -352,7 +353,8 @@
  			}
  #else
  			if (!IEEE80211_ADDR_EQ(bssid, vap->iv_bss->ni_bssid) &&
@@ -42,16 +42,16 @@ Index: madwifi-ng-r2834-20071106/net80211/ieee80211_input.c
  				/* not interested in */
  				IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
  					bssid, NULL, "%s", "not to bss");
-@@ -2550,7 +2552,7 @@
+@@ -2971,7 +2973,7 @@
  	u_int8_t *frm, *efrm;
- 	u_int8_t *ssid, *rates, *xrates, *wpa, *rsn, *wme, *ath;
+ 	u_int8_t *ssid, *rates, *xrates, *suppchan, *wpa, *rsn, *wme, *ath;
  	u_int8_t rate;
 -	int reassoc, resp, allocbs = 0;
 +	int reassoc, resp, allocbs = 0, has_erp = 0;
  	u_int8_t qosinfo;
  
- 	wh = (struct ieee80211_frame *) skb->data;
-@@ -2572,11 +2574,15 @@
+ 	if (ni_or_null == NULL)
+@@ -2996,11 +2998,15 @@
  		 *    o station mode when associated (to collect state
  		 *      updates such as 802.11g slot time), or
  		 *    o adhoc mode (to discover neighbors)
@@ -68,7 +68,7 @@ Index: madwifi-ng-r2834-20071106/net80211/ieee80211_input.c
  			vap->iv_stats.is_rx_mgtdiscard++;
  			return;
  		}
-@@ -2659,6 +2665,7 @@
+@@ -3083,6 +3089,7 @@
  					break;
  				}
  				scan.erp = frm[2];
@@ -76,7 +76,7 @@ Index: madwifi-ng-r2834-20071106/net80211/ieee80211_input.c
  				break;
  			case IEEE80211_ELEMID_RSN:
  				scan.rsn = frm;
-@@ -2876,6 +2883,20 @@
+@@ -3300,6 +3307,20 @@
  				ieee80211_bg_scan(vap);
  			return;
  		}
@@ -97,11 +97,11 @@ Index: madwifi-ng-r2834-20071106/net80211/ieee80211_input.c
  		/*
  		 * If scanning, just pass information to the scan module.
  		 */
-Index: madwifi-ng-r2834-20071106/net80211/ieee80211_node.c
+Index: madwifi-dfs-r2996/net80211/ieee80211_node.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/net80211/ieee80211_node.c	2007-11-07 14:02:02.873534629 +0100
-+++ madwifi-ng-r2834-20071106/net80211/ieee80211_node.c	2007-11-07 14:02:05.357676193 +0100
-@@ -332,10 +332,16 @@
+--- madwifi-dfs-r2996.orig/net80211/ieee80211_node.c	2007-12-01 18:47:16.968540943 +0100
++++ madwifi-dfs-r2996/net80211/ieee80211_node.c	2007-12-01 18:54:45.998129686 +0100
+@@ -380,10 +380,16 @@
  	/* Update country ie information */
  	ieee80211_build_countryie(ic);
  
@@ -120,10 +120,10 @@ Index: madwifi-ng-r2834-20071106/net80211/ieee80211_node.c
  
  	(void) ieee80211_sta_join1(PASS_NODE(ni));
  }
-Index: madwifi-ng-r2834-20071106/net80211/ieee80211_proto.c
+Index: madwifi-dfs-r2996/net80211/ieee80211_proto.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/net80211/ieee80211_proto.c	2007-11-07 14:01:59.041316241 +0100
-+++ madwifi-ng-r2834-20071106/net80211/ieee80211_proto.c	2007-11-07 14:02:05.357676193 +0100
+--- madwifi-dfs-r2996.orig/net80211/ieee80211_proto.c	2007-12-01 18:45:14.000000000 +0100
++++ madwifi-dfs-r2996/net80211/ieee80211_proto.c	2007-12-01 18:54:46.002129908 +0100
 @@ -586,6 +586,28 @@
  	{ 4, { 2, 4, 11, 22 } },	/* IEEE80211_MODE_TURBO_G (mixed b/g) */
  };
@@ -153,16 +153,15 @@ Index: madwifi-ng-r2834-20071106/net80211/ieee80211_proto.c
  /*
   * Mark the basic rates for the 11g rate table based on the
   * specified mode.  For 11b compatibility we mark only 11b
-Index: madwifi-ng-r2834-20071106/net80211/ieee80211_var.h
+Index: madwifi-dfs-r2996/net80211/ieee80211_var.h
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/net80211/ieee80211_var.h	2007-11-07 14:02:04.561630827 +0100
-+++ madwifi-ng-r2834-20071106/net80211/ieee80211_var.h	2007-11-07 14:02:05.361676419 +0100
-@@ -592,6 +592,8 @@
- void ieee80211_build_countryie(struct ieee80211com *);
- int ieee80211_media_setup(struct ieee80211com *, struct ifmedia *, u_int32_t,
- 	ifm_change_cb_t, ifm_stat_cb_t);
+--- madwifi-dfs-r2996.orig/net80211/ieee80211_var.h	2007-12-01 18:45:14.000000000 +0100
++++ madwifi-dfs-r2996/net80211/ieee80211_var.h	2007-12-01 18:55:00.502956262 +0100
+@@ -668,6 +668,7 @@
+ void ieee80211_build_sc_ie(struct ieee80211com *);
+ void ieee80211_dfs_action(struct ieee80211com *);
+ void ieee80211_expire_channel_non_occupancy_restrictions(struct ieee80211com *);
 +void ieee80211_setpuregbasicrates(struct ieee80211_rateset *rs);
-+
  
- /* Key update synchronization methods.  XXX should not be visible. */
- static __inline void
+ /*
+  * Iterate through ic_channels to enumerate all distinct ic_ieee channel numbers.
