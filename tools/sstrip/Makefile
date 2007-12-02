@@ -11,7 +11,7 @@ PKG_NAME:=sstrip
 include $(INCLUDE_DIR)/host-build.mk
 
 define Build/Compile
-	$(CC) $(HOST_CFLAGS) -include endian.h -o $(PKG_BUILD_DIR)/sstrip src/sstrip.c
+	$(CC) $(HOST_CFLAGS) -I./include -include endian.h -o $(PKG_BUILD_DIR)/sstrip src/sstrip.c
 endef
 
 define Build/Install
