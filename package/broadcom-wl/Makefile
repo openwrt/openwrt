@@ -31,7 +31,7 @@ endef
 define KernelPackage/brcm-wl/Default
   $(call Package/broadcom-wl/Default)
   SECTION:=kernel
-  DEPENDS:=@TARGET_brcm_2_4
+  DEPENDS:=@TARGET_brcm_2_4 +wireless-tools
   TITLE:=Kernel driver for BCM43xx chipsets
   FILES:=$(PKG_BUILD_DIR)/driver/wl$(1).o
   AUTOLOAD:=$(call AutoLoad,30,wl$(1))
