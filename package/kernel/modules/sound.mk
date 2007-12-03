@@ -69,3 +69,20 @@ endef
 
 $(eval $(call KernelPackage,sound-core))
 
+define KernelPackage/sound-i8x0
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=Intel/SiS/nVidia/AMD/ALi AC97 Controller
+  DEPENDS:=kmod-sound-core
+  KCONFIG:=CONFIG_SND_INTEL8X0
+  FILES:=$(LINUX_DIR)/sound/pci/snd-intel8x0.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,35,snd-i8x0)
+endef
+
+define KernelPackage/sound-i8x0/description
+ support for the integrated AC97 sound device on motherboards
+ with Intel/SiS/nVidia/AMD chipsets, or ALi chipsets using 
+ the M5455 Audio Controller.
+endef
+
+$(eval $(call KernelPackage,sound-i8x0))
+
