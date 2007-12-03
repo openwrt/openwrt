@@ -10,12 +10,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=openswan
-PKG_VERSION:=2.4.8
+PKG_VERSION:=2.4.10
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.openswan.org/download
-PKG_MD5SUM:=918cc56ccf8e5d14cd2047e47450b34a
+PKG_MD5SUM:=2b36785342c74d524d8d86bde89a445f
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -32,7 +32,7 @@ define Package/openswan
 $(call Package/openswan/Default)
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=@LINUX_2_4 +kmod-openswan +libgmp +ip
+  DEPENDS:=+kmod-openswan +libgmp +ip
   TITLE+= (daemon)
   URL:=http://www.openswan.org/
 endef
@@ -45,7 +45,6 @@ endef
 define KernelPackage/openswan
 $(call Package/openswan/Default)
   SUBMENU:=Network Support
-  DEPENDS:=@LINUX_2_4 
   TITLE+= (kernel module)
   FILES:=$(PKG_BUILD_DIR)/modobj*/ipsec.$(LINUX_KMOD_SUFFIX)
 endef
@@ -55,22 +54,29 @@ $(call Package/openswan/Default/description)
  This package contains the Openswan kernel module.
 endef
 
+TARGET_CPPFLAGS = \
+	-I$(STAGING_DIR)/usr/include \
+	-I$(LINUX_DIR)/include
 
-PKG_MAKE_OPTS:= \
-		LINUX_RELEASE="$(LINUX_RELEASE)" \
-		KERNELSRC="$(LINUX_DIR)" \
-		ARCH="$(LINUX_KARCH)" \
-		CROSS_COMPILE="$(TARGET_CROSS)" \
-		USERCOMPILE="$(TARGET_CFLAGS) -I./linux/include $(TARGET_CPPFLAGS) $(TARGET_LDFLAGS)" \
-		IPSECDIR="/usr/lib/ipsec" \
-		INC_USRLOCAL="/usr" \
+TARGET_LDFLAGS = \
+	-L$(STAGING_DIR)/usr/lib
+
+OPENSWAN_MAKE := $(MAKE) -C $(PKG_BUILD_DIR) \
+	$(TARGET_CONFIGURE_OPTS) \
+	LINUX_RELEASE="$(LINUX_RELEASE)" \
+	KERNELSRC="$(LINUX_DIR)" \
+	ARCH="$(LINUX_KARCH)" \
+	CROSS_COMPILE="$(TARGET_CROSS)" \
+	USERCOMPILE="$(TARGET_CFLAGS) -I$(PKG_BUILD_DIR)/linux/include $(TARGET_CPPFLAGS) $(TARGET_LDFLAGS)" \
+	IPSECDIR="/usr/lib/ipsec" \
+	INC_USRLOCAL="/usr" \
+	INC_RCDEFAULT="/etc/init.d" \
+	MODPROBE="/sbin/insmod" \
+	LDFLAGS="$(TARGET_LDFLAGS)" \
+	DESTDIR="$(PKG_INSTALL_DIR)"
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) \
-		$(PKG_MAKE_OPTS) \
-		LDFLAGS="$(TARGET_LDFLAGS)" \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
+	$(OPENSWAN_MAKE) \
 		programs module install
 endef
 
