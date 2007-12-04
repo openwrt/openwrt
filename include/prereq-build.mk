@@ -20,11 +20,7 @@ $(eval $(call Require,non-root, \
 
 # Required for the toolchain
 define Require/working-make
-	echo 'all: test' > $(TMP_DIR)/check.mk
-	echo 'e0 = $$$$(foreach s,foobar,$$$$(eval $$$$s:))' >> $(TMP_DIR)/check.mk
-	echo 'e1 = $$$$(foreach s,foobar, $$$$(eval $$$$s:))' >> $(TMP_DIR)/check.mk
-	echo 'test: $$$$(strip $$$$(e0)) $$$$(strip $$$$(e1))' >> $(TMP_DIR)/check.mk
-	$(NO_TRACE_MAKE) -f $(TMP_DIR)/check.mk
+	$(MAKE) -v | awk '($$$$1 == "GNU") && ($$$$2 = "Make") && ($$$$3 >= "3.81") { print "ok" }' | grep ok > /dev/null
 endef
 
 $(eval $(call Require,working-make, \
