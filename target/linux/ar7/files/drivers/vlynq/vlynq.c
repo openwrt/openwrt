@@ -373,7 +373,7 @@ static int __vlynq_enable_device(struct vlynq_device *dev)
 	case vlynq_div_auto:
 		/* Only try locally supplied clock, others cause problems */
 		vlynq_reg_write(dev->remote->control, 0);
-		for (i = vlynq_ldiv1; i <= vlynq_ldiv8; i++) {
+		for (i = vlynq_ldiv2; i <= vlynq_ldiv8; i++) {
 			vlynq_reg_write(dev->local->control,
 					VLYNQ_CTRL_CLOCK_INT |
 					VLYNQ_CTRL_CLOCK_DIV(i - vlynq_ldiv1));
