@@ -98,7 +98,7 @@ download: .config FORCE
 	$(MAKE) -j1 package/download
 	$(MAKE) -j1 target/download
 
-clean dirclean:
+clean dirclean: .config
 	@$(MAKE) $@ 
 
 prereq:: .config

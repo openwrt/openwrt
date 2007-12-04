@@ -45,10 +45,10 @@ $(BUILD_DIR)/.prepared: Makefile
 clean: FORCE
 	rm -rf $(BUILD_DIR) $(BIN_DIR)
 	$(MAKE) target/linux/clean
-	rm -rf $(TMP_DIR)
 
 dirclean: clean
 	rm -rf $(STAGING_DIR) $(STAGING_DIR_HOST) $(STAGING_DIR_TOOLCHAIN) $(TOOLCHAIN_DIR) $(BUILD_DIR_HOST)
+	rm -rf $(TMP_DIR)
 
 # check prerequisites before starting to build
 prereq: $(package/stamp-prereq) $(target/stamp-prereq) ;
