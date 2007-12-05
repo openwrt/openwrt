@@ -38,8 +38,8 @@
 
 #if defined(__BEOS__) || defined(__NetBSD__) || defined(__APPLE__)
 #include <inttypes.h>
+#include <sys/types.h>
 #endif
-
 #ifdef __WIN32__
 typedef unsigned int __u32;
 
