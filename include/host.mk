@@ -30,6 +30,9 @@ $(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
 		TAR=`which gtar 2>/dev/null`; \
 		[ -n "$$TAR" -a -x "$$TAR" ] || TAR=`which tar 2>/dev/null`; \
 		echo "TAR:=$$TAR" >> $@; \
+		FIND=`which gfind 2>/dev/null`; \
+		[ -n "$$FIND" -a -x "$$FIND" ] || FIND=`which find 2>/dev/null`; \
+		echo "FIND:=$$FIND" >> $@; \
 		echo "BASH:=$(shell which bash)" >> $@; \
 		if find -L /tmp -maxdepth 0 >/dev/null 2>/dev/null; then \
 			echo 'FIND_L=find -L $$(1)' >>$@; \
