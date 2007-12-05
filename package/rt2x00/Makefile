@@ -139,7 +139,7 @@ PKG_EXTRA_CFLAGS:= \
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
-	$(CP) -r src/* $(PKG_BUILD_DIR)/
+	$(CP) src/* $(PKG_BUILD_DIR)/
 	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT61FW)
 	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT71FW)
 endef
