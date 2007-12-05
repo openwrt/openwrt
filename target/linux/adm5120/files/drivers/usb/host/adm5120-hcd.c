@@ -1,19 +1,16 @@
 /*
- * OHCI HCD (Host Controller Driver) for USB.
+ * ADM5120 HCD (Host Controller Driver) for USB
  *
- * (C) Copyright 1999 Roman Weissgaerber <weissg@vienna.at>
- * (C) Copyright 2000-2004 David Brownell <dbrownell@users.sourceforge.net>
+ * Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
  *
- * [ Initialisation is based on Linus'  ]
- * [ uhci code and gregs ahcd fragments ]
- * [ (C) Copyright 1999 Linus Torvalds  ]
- * [ (C) Copyright 1999 Gregory P. Smith]
+ * This file was derived from: drivers/usb/host/ohci-hcd.c
+ *   (C) Copyright 1999 Roman Weissgaerber <weissg@vienna.at>
+ *   (C) Copyright 2000-2004 David Brownell <dbrownell@users.sourceforge.net>
  *
- *
- * OHCI is the main "non-Intel/VIA" standard for USB 1.1 host controller
- * interfaces (though some non-x86 Intel chips use it).  It supports
- * smarter hardware than UHCI.  A download link for the spec available
- * through the http://www.usb.org website.
+ *   [ Initialisation is based on Linus'  ]
+ *   [ uhci code and gregs ahcd fragments ]
+ *   [ (C) Copyright 1999 Linus Torvalds  ]
+ *   [ (C) Copyright 1999 Gregory P. Smith]
  *
  * This file is licenced under the GPL.
  */
@@ -45,7 +42,7 @@
 #include "../core/hcd.h"
 #include "../core/hub.h"
 
-#define DRIVER_VERSION	"v0.14.0"
+#define DRIVER_VERSION	"0.14.1"
 #define DRIVER_AUTHOR	"Gabor Juhos <juhosg at openwrt.org>"
 #define DRIVER_DESC	"ADMtek USB 1.1 Host Controller Driver"
 
@@ -788,7 +785,7 @@ static void admhc_stop(struct usb_hcd *hcd)
 #error "missing bus glue for admhc-hcd"
 #endif
 
-#define DRIVER_INFO DRIVER_DESC " " DRIVER_VERSION
+#define DRIVER_INFO DRIVER_DESC " version " DRIVER_VERSION
 
 static int __init admhc_hcd_mod_init(void)
 {
@@ -825,4 +822,5 @@ module_exit(admhc_hcd_mod_exit);
 
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_INFO);
+MODULE_VERSION(DRIVER_VERSION);
 MODULE_LICENSE("GPL");

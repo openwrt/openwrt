@@ -1,19 +1,20 @@
 /*
- * OHCI HCD (Host Controller Driver) for USB.
+ * ADM5120 HCD (Host Controller Driver) for USB
  *
- * (C) Copyright 1999 Roman Weissgaerber <weissg@vienna.at>
- * (C) Copyright 2000-2002 David Brownell <dbrownell@users.sourceforge.net>
- * (C) Copyright 2002 Hewlett-Packard Company
+ * Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
  *
- * Bus Glue for AMD Alchemy Au1xxx
+ * This file was derived from: drivers/usb/host/ohci-au1xxx.c
+ *   (C) Copyright 1999 Roman Weissgaerber <weissg@vienna.at>
+ *   (C) Copyright 2000-2002 David Brownell <dbrownell@users.sourceforge.net>
+ *   (C) Copyright 2002 Hewlett-Packard Company
  *
- * Written by Christopher Hoover <ch@hpl.hp.com>
- * Based on fragments of previous driver by Rusell King et al.
+ *   Written by Christopher Hoover <ch@hpl.hp.com>
+ *   Based on fragments of previous driver by Rusell King et al.
  *
- * Modified for LH7A404 from ahcd-sa1111.c
- *  by Durgesh Pattamatta <pattamattad@sharpsec.com>
- * Modified for AMD Alchemy Au1xxx
- *  by Matt Porter <mporter@kernel.crashing.org>
+ *   Modified for LH7A404 from ahcd-sa1111.c
+ *    by Durgesh Pattamatta <pattamattad@sharpsec.com>
+ *   Modified for AMD Alchemy Au1xxx
+ *    by Matt Porter <mporter@kernel.crashing.org>
  *
  * This file is licenced under the GPL.
  */

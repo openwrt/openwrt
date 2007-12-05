@@ -1,10 +1,13 @@
 /*
- * OHCI HCD (Host Controller Driver) for USB.
+ * ADM5120 HCD (Host Controller Driver) for USB
  *
- * (C) Copyright 1999 Roman Weissgaerber <weissg@vienna.at>
- * (C) Copyright 2000-2004 David Brownell <dbrownell@users.sourceforge.net>
+ * Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
  *
- * This file is licenced under GPL
+ * This file was derived from fragments of the OHCI driver.
+ *   (C) Copyright 1999 Roman Weissgaerber <weissg@vienna.at>
+ *   (C) Copyright 2000-2004 David Brownell <dbrownell@users.sourceforge.net>
+ *
+ * This file is licenced under the GPL.
  */
 
 #define OHCI_SCHED_ENABLES \
