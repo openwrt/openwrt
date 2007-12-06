@@ -56,7 +56,6 @@ define Build/Configure
 		CC="$(TARGET_CC)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(ARCH)" \
-		HOST_LOADLIBES=-lintl \
 		oldconfig
 endef
 
