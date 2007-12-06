@@ -55,6 +55,7 @@ define Build/Configure
 	yes '' | $(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
+		KBUILD_HAVE_NLS=no \
 		ARCH="$(ARCH)" \
 		oldconfig
 endef
@@ -63,6 +64,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
+		KBUILD_HAVE_NLS=no \
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
 		ARCH="$(ARCH)" \
 		IPKG_ARCH="$(ARCH)" \
