@@ -37,6 +37,7 @@
 #include <linux/platform_device.h>
 #include <linux/dma-mapping.h>
 #include <asm/gpio.h>
+#include <asm/atomic.h>
 
 MODULE_AUTHOR("Eugene Konev <ejka@imfi.kspu.ru>");
 MODULE_DESCRIPTION("TI AR7 ethernet driver (CPMAC)");
@@ -211,6 +212,7 @@ struct cpmac_priv {
 	struct net_device *dev;
 	struct work_struct reset_work;
 	struct platform_device *pdev;
+	atomic_t reset_pending;
 };
 
 static irqreturn_t cpmac_irq(int, void *);
@@ -460,6 +462,9 @@ static int cpmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct cpmac_desc *desc;
 	struct cpmac_priv *priv = netdev_priv(dev);
 
+	if (unlikely(atomic_read(&priv->reset_pending)))
+		return NETDEV_TX_BUSY;
+
 	if (unlikely(skb_padto(skb, ETH_ZLEN)))
 		return NETDEV_TX_OK;
 
@@ -639,14 +644,14 @@ static void cpmac_clear_tx(struct net_device *dev)
 		priv->desc_ring[i].dataflags = 0;
 		if (priv->desc_ring[i].skb) {
 			dev_kfree_skb_any(priv->desc_ring[i].skb);
-			if (netif_subqueue_stopped(dev, i))
-			    netif_wake_subqueue(dev, i);
+			priv->desc_ring[i].skb = NULL;
 		}
 	}
 }
 
 static void cpmac_hw_error(struct work_struct *work)
 {
+	int i;
 	struct cpmac_priv *priv =
 		container_of(work, struct cpmac_priv, reset_work);
 
@@ -655,7 +660,45 @@ static void cpmac_hw_error(struct work_struct *work)
 	spin_unlock(&priv->rx_lock);
 	cpmac_clear_tx(priv->dev);
 	cpmac_hw_start(priv->dev);
-	netif_start_queue(priv->dev);
+	barrier();
+	atomic_dec(&priv->reset_pending);
+	
+	for (i = 0; i < CPMAC_QUEUES; i++) {
+		netif_wake_subqueue(priv->dev, i);
+	}
+	netif_wake_queue(priv->dev);
+}
+
+static void cpmac_check_status(struct net_device *dev)
+{
+	struct cpmac_priv *priv = netdev_priv(dev);
+
+	u32 macstatus = cpmac_read(priv->regs, CPMAC_MAC_STATUS);
+	int rx_channel = (macstatus >> 8) & 7;
+	int rx_code = (macstatus >> 12) & 15;
+	int tx_channel = (macstatus >> 16) & 7;
+	int tx_code = (macstatus >> 20) & 15;
+
+	if (rx_code || tx_code) {
+		if (netif_msg_drv(priv) && net_ratelimit()) {
+			/* Can't find any documentation on what these error codes actually are.
+			 * So just log them and hope..
+			 */
+			if (rx_code)
+				printk(KERN_WARNING "%s: host error %d on rx channel %d (macstatus %08x), resetting\n",
+				       dev->name, rx_code, rx_channel, macstatus);
+			if (tx_code)
+				printk(KERN_WARNING "%s: host error %d on tx channel %d (macstatus %08x), resetting\n",
+				       dev->name, tx_code, tx_channel, macstatus);
+		}
+		
+		netif_stop_queue(dev);
+		cpmac_hw_stop(dev);
+		if (schedule_work(&priv->reset_work))
+			atomic_inc(&priv->reset_pending);			
+		if (unlikely(netif_msg_hw(priv)))
+			cpmac_dump_regs(dev);
+	}
 }
 
 static irqreturn_t cpmac_irq(int irq, void *dev_id)
@@ -687,48 +730,33 @@ static irqreturn_t cpmac_irq(int irq, void *dev_id)
 
 	cpmac_write(priv->regs, CPMAC_MAC_EOI_VECTOR, 0);
 
-	if (unlikely(status & (MAC_INT_HOST | MAC_INT_STATUS))) {
-		if (netif_msg_drv(priv) && net_ratelimit())
-			printk(KERN_ERR "%s: hw error, resetting...\n",
-			       dev->name);
-		netif_stop_queue(dev);
-		cpmac_hw_stop(dev);
-		schedule_work(&priv->reset_work);
-		if (unlikely(netif_msg_hw(priv)))
-			cpmac_dump_regs(dev);
-	}
+	if (unlikely(status & (MAC_INT_HOST | MAC_INT_STATUS)))
+		cpmac_check_status(dev);
 
 	return IRQ_HANDLED;
 }
 
 static void cpmac_tx_timeout(struct net_device *dev)
 {
-	struct cpmac_priv *priv = netdev_priv(dev);
 	int i;
+	struct cpmac_priv *priv = netdev_priv(dev);
 
 	spin_lock(&priv->lock);
 	dev->stats.tx_errors++;
 	spin_unlock(&priv->lock);
 	if (netif_msg_tx_err(priv) && net_ratelimit())
 		printk(KERN_WARNING "%s: transmit timeout\n", dev->name);
-	/* 
-	 * FIXME: waking up random queue is not the best thing to
-	 * do... on the other hand why we got here at all?
-	 */
-#ifdef CONFIG_NETDEVICES_MULTIQUEUE
-	for (i = 0; i < CPMAC_QUEUES; i++)
-		if (priv->desc_ring[i].skb) {
-			priv->desc_ring[i].dataflags = 0;
-			dev_kfree_skb_any(priv->desc_ring[i].skb);
-			netif_wake_subqueue(dev, i);
-			break;
-		}
-#else
-	priv->desc_ring[0].dataflags = 0;
-	if (priv->desc_ring[0].skb)
-		dev_kfree_skb_any(priv->desc_ring[0].skb);
-	netif_wake_queue(dev);
-#endif
+
+	atomic_inc(&priv->reset_pending);
+	barrier();
+	cpmac_clear_tx(dev);
+	barrier();
+	atomic_dec(&priv->reset_pending);
+
+	netif_wake_queue(priv->dev);
+	for (i = 0; i < CPMAC_QUEUES; i++) {
+		netif_wake_subqueue(dev, i);
+	}
 }
 
 static int cpmac_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
@@ -924,6 +952,7 @@ static int cpmac_open(struct net_device *dev)
 		goto fail_irq;
 	}
 
+	atomic_set(&priv->reset_pending, 0);
 	INIT_WORK(&priv->reset_work, cpmac_hw_error);
 	cpmac_hw_start(dev);
 
