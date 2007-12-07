@@ -10,7 +10,7 @@ ARCH:=armeb
 BOARD:=ixp4xx
 BOARDNAME:=Intel XScale IXP4xx
 FEATURES:=squashfs
-SUBTARGETS=generic fsg3
+SUBTARGETS=generic harddisk
 
 LINUX_VERSION:=2.6.21.6
 
