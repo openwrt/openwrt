@@ -192,6 +192,7 @@ struct cpmac_desc {
 #define CPMAC_EOQ			0x1000
 	struct sk_buff *skb;
 	struct cpmac_desc *next;
+	struct cpmac_desc *prev;
 	dma_addr_t mapping;
 	dma_addr_t data_mapping;
 };
@@ -244,6 +245,16 @@ static void cpmac_dump_desc(struct net_device *dev, struct cpmac_desc *desc)
 	for (i = 0; i < sizeof(*desc) / 4; i++)
 		printk(" %08x", ((u32 *)desc)[i]);
 	printk("\n");
+}
+
+static void cpmac_dump_all_desc(struct net_device *dev)
+{
+	struct cpmac_priv *priv = netdev_priv(dev);
+	struct cpmac_desc *dump = priv->rx_head;
+	do {
+		cpmac_dump_desc(dev, dump);
+		dump = dump->next;
+	} while (dump != priv->rx_head);
 }
 
 static void cpmac_dump_skb(struct net_device *dev, struct sk_buff *skb)
@@ -416,8 +427,8 @@ static struct sk_buff *cpmac_rx_one(struct net_device *dev,
 static int cpmac_poll(struct net_device *dev, int *budget)
 {
 	struct sk_buff *skb;
-	struct cpmac_desc *desc;
-	int received = 0, quota = min(dev->quota, *budget);
+	struct cpmac_desc *desc, *restart;
+	int received = 0, processed = 0, quota = min(dev->quota, *budget);
 	struct cpmac_priv *priv = netdev_priv(dev);
 
 	spin_lock(&priv->rx_lock);
@@ -425,18 +436,75 @@ static int cpmac_poll(struct net_device *dev, int *budget)
 		if (netif_msg_rx_err(priv) && net_ratelimit())
 			printk(KERN_WARNING "%s: rx: polling, but no queue\n",
 			       dev->name);
+		spin_unlock(&priv->rx_lock);
 		netif_rx_complete(dev);
 		return 0;
 	}
 
 	desc = priv->rx_head;
+	restart = NULL;
 	while ((received < quota) && ((desc->dataflags & CPMAC_OWN) == 0)) {
+		processed++;
+
+		if ((desc->dataflags & CPMAC_EOQ) != 0) {
+			/* The last update to eoq->hw_next didn't happen soon enough, and the
+			 * receiver stopped here. Remember this descriptor so we can restart
+			 * the receiver after freeing some space.
+			 */
+			if (unlikely(restart)) {
+				if (netif_msg_rx_err(priv))
+					printk(KERN_ERR "%s: poll found a duplicate EOQ: %p and %p\n",
+					       dev->name, restart, desc);
+				goto fatal_error;
+			}
+
+			restart = desc->next;
+		}
+			
 		skb = cpmac_rx_one(dev, priv, desc);
 		if (likely(skb)) {
 			netif_receive_skb(skb);
 			received++;
 		}
 		desc = desc->next;
+	}
+	
+	if (desc != priv->rx_head) {
+		/* We freed some buffers, but not the whole ring, add what we did free to the rx list */
+		desc->prev->hw_next = (u32)0;
+		priv->rx_head->prev->hw_next = priv->rx_head->mapping;
+	}
+	
+	/* Optimization: If we did not actually process an EOQ (perhaps because of
+	 * quota limits), check to see if the tail of the queue has EOQ set. We
+	 * should immediately restart in that case so that the receiver can restart
+	 * and run in parallel with more packet processing. This lets us handle slightly
+	 * larger bursts before running out of ring space (assuming dev->weight < ring_size)
+	 */
+	if (!restart && 
+	    (priv->rx_head->prev->dataflags & (CPMAC_OWN|CPMAC_EOQ)) == CPMAC_EOQ &&
+	    (priv->rx_head->dataflags & CPMAC_OWN) != 0) {
+		/* reset EOQ so the poll loop (above) doesn't try to restart this when it
+		 * eventually gets to this descriptor.
+		 */
+		priv->rx_head->prev->dataflags &= ~CPMAC_EOQ;
+		restart = priv->rx_head;
+	}
+
+	if (restart) {
+		dev->stats.rx_errors++;
+		dev->stats.rx_fifo_errors++;
+		if (netif_msg_rx_err(priv) && net_ratelimit())
+			printk(KERN_WARNING "%s: rx dma ring overrun\n", dev->name);
+		
+		if (unlikely((restart->dataflags & CPMAC_OWN) == 0)) {
+			if (netif_msg_drv(priv))
+				printk(KERN_ERR "%s: cpmac_poll is trying to restart rx from a descriptor that's not free: %p\n",
+				       dev->name, restart);
+			goto fatal_error;
+		}
+
+		cpmac_write(priv->regs, CPMAC_RX_PTR(0), restart->mapping);
 	}
 
 	priv->rx_head = desc;
@@ -446,14 +514,37 @@ static int cpmac_poll(struct net_device *dev, int *budget)
 	if (unlikely(netif_msg_rx_status(priv)))
 		printk(KERN_DEBUG "%s: poll processed %d packets\n", dev->name,
 		       received);
-	if (desc->dataflags & CPMAC_OWN) {
+	
+	if (processed == 0) {
+		/* we ran out of packets to read, revert to interrupt-driven mode */
 		netif_rx_complete(dev);
-		cpmac_write(priv->regs, CPMAC_RX_PTR(0), (u32)desc->mapping);
 		cpmac_write(priv->regs, CPMAC_RX_INT_ENABLE, 1);
 		return 0;
 	}
 
 	return 1;
+
+fatal_error:
+	/* Something went horribly wrong. Reset hardware to try to recover rather than wedging. */
+
+	if (netif_msg_drv(priv)) {
+		printk(KERN_ERR "%s: cpmac_poll is confused. Resetting hardware\n", dev->name);
+		cpmac_dump_all_desc(dev);
+		printk(KERN_DEBUG "%s: RX_PTR(0)=0x%08x RX_ACK(0)=0x%08x\n",
+		       dev->name,
+		       cpmac_read(priv->regs, CPMAC_RX_PTR(0)),
+		       cpmac_read(priv->regs, CPMAC_RX_ACK(0)));
+	}
+
+	spin_unlock(&priv->rx_lock);
+	netif_rx_complete(dev);
+	netif_stop_queue(dev);
+
+	atomic_inc(&priv->reset_pending);
+	cpmac_hw_stop(dev);
+	if (!schedule_work(&priv->reset_work))
+		atomic_dec(&priv->reset_pending);
+	return 0;
 }
 
 static int cpmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
@@ -630,8 +721,11 @@ static void cpmac_clear_rx(struct net_device *dev)
 			desc->dataflags = CPMAC_OWN;
 			dev->stats.rx_dropped++;
 		}
+		desc->hw_next = desc->next->mapping;
 		desc = desc->next;
 	}
+
+	priv->rx_head->prev->hw_next = 0;
 }
 
 static void cpmac_clear_tx(struct net_device *dev)
@@ -941,8 +1035,11 @@ static int cpmac_open(struct net_device *dev)
 		desc->buflen = CPMAC_SKB_SIZE;
 		desc->dataflags = CPMAC_OWN;
 		desc->next = &priv->rx_head[(i + 1) % priv->ring_size];
+		desc->next->prev = desc;
 		desc->hw_next = (u32)desc->next->mapping;
 	}
+
+	priv->rx_head->prev->hw_next = (u32)0;
 
 	if ((res = request_irq(dev->irq, cpmac_irq, IRQF_SHARED,
 			       dev->name, dev))) {
@@ -1083,13 +1180,13 @@ static int __devinit cpmac_probe(struct platform_device *pdev)
 	dev->tx_timeout         = cpmac_tx_timeout;
 	dev->ethtool_ops        = &cpmac_ethtool_ops;
 	dev->poll = cpmac_poll;
-	dev->weight = 64;
 	dev->features |= NETIF_F_MULTI_QUEUE;
 
 	spin_lock_init(&priv->lock);
 	spin_lock_init(&priv->rx_lock);
 	priv->dev = dev;
 	priv->ring_size = 64;
+	dev->weight = max(4, priv->ring_size/4);
 	priv->msg_enable = netif_msg_init(debug_level, 0xff);
 	memcpy(dev->dev_addr, pdata->dev_addr, sizeof(dev->dev_addr));
 	if (phy_id == 31) {
