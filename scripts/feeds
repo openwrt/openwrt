@@ -85,7 +85,7 @@ sub search_feed {
 		foreach my $substr (@substr) {
 			my $match;
 			foreach my $key (qw(name title description)) {
-				$substr and $pkg->{$key} =~ m/$substr/i and $match = 1;
+				$pkg->{$key} and $substr and $pkg->{$key} =~ m/$substr/i and $match = 1;
 			}
 			$match or undef $pkgmatch;
 		};
