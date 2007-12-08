@@ -12,7 +12,7 @@ BOARDNAME:=x86
 FEATURES:=squashfs jffs2 ext2
 SUBTARGETS=generic mediacenter
 
-LINUX_VERSION:=2.6.23.1
+LINUX_VERSION:=2.6.23.9
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += kmod-natsemi kmod-ne2k-pci
