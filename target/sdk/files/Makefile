@@ -74,9 +74,9 @@ world: FORCE
 	$(MAKE) package/compile
 	-( \
 		cd package; \
-		find . -maxdepth 2 -name Config.in | \
-			sed -e 's,/Config.in,,g' | \
-			xargs -n1 $(MAKE) compile -C; \
+		for configfile in `find . -maxdepth 2 -name Config.in` ; do \
+			$(MAKE) compile -C `dirname $$configfile` ; \
+		done \
 	)
 
 clean: FORCE
