@@ -43,6 +43,8 @@
 #include <adm5120_board.h>
 #include <adm5120_platform.h>
 #include <adm5120_cf.h>
+#include <adm5120_info.h>
+#include <prom/routerboot.h>
 
 #define RB1XX_NAND_CHIP_DELAY	25
 
@@ -61,6 +63,8 @@
 
 #define RB153_GPIO_CF_RDY	ADM5120_GPIO_P1L1
 #define RB153_GPIO_CF_WT	ADM5120_GPIO_P0L0
+
+extern struct rb_hard_settings rb_hs;
 
 /*--------------------------------------------------------------------------*/
 
@@ -218,7 +222,12 @@ static void rb150_nand_cmd_ctrl(struct mtd_info *mtd, int cmd,
 
 static void __init rb1xx_mac_setup(void)
 {
-	/* TODO */
+	int i, j;
+	
+	for (i = 0; i < rb_hs.mac_count; i++) {
+		for (j = 0; j < RB_MAC_SIZE; j++)
+			adm5120_eth_macs[i][j] = rb_hs.macs[i][j];
+	}
 }
 
 static void __init rb1xx_flash_setup(void)
