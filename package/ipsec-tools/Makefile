@@ -38,7 +38,8 @@ CONFIGURE_ARGS += \
 	--enable-dpd \
 	--enable-hybrid \
 	--enable-security-context=no \
-	--enable-natt
+	--enable-natt \
+	--enable-adminport
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); touch \
