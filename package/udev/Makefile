@@ -52,14 +52,14 @@ define Package/udev/install
 	$(CP) $(PKG_INSTALL_DIR)/etc/udev/* $(1)/etc/udev/
 	install -d -m0775 $(1)/lib/udev
 	install -d -m0775 $(1)/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/sbin/udevcontrol $(1)/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/sbin/udevd $(1)/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/sbin/udevsettle $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/udevcontrol $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/udevd $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/udevsettle $(1)/sbin/
 	install -d -m0775 $(1)/usr/bin/
-	$(CP) $(PKG_INSTALL_DIR)/usr/bin/udevinfo $(1)/usr/bin/
-	$(CP) $(PKG_INSTALL_DIR)/usr/bin/udevtest $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/udevinfo $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/udevtest $(1)/usr/bin/
 	install -d -m0775 $(1)/usr/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/udevmonitor $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/udevmonitor $(1)/usr/sbin/
 endef
 
 define Package/udevtrigger/install

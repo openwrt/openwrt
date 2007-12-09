@@ -112,8 +112,8 @@ endef
 
 define Package/e2fsprogs/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/e2fsck $(1)/usr/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/mke2fs $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/e2fsck $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/mke2fs $(1)/usr/sbin/
 	ln -sf mke2fs $(1)/usr/sbin/mkfs.ext2
 	ln -sf mke2fs $(1)/usr/sbin/mkfs.ext3
 	$(INSTALL_DIR) $(1)/usr/lib
@@ -132,12 +132,12 @@ endef
 
 define Package/tune2fs/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/tune2fs $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/tune2fs $(1)/usr/sbin/
 endef
 
 define Package/resize2fs/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/resize2fs $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/resize2fs $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,e2fsprogs))
