@@ -31,7 +31,7 @@ define Build/Compile
 endef
 
 define Build/Install
-	$(CP) $(PKG_BUILD_DIR)/bin/* $(STAGING_DIR_HOST)/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bin/* $(STAGING_DIR_HOST)/bin/
 endef
 
 $(eval $(call HostBuild))

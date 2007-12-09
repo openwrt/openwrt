@@ -126,7 +126,7 @@ endef
 
 define Package/fuse-utils/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(CP) $(PKG_INSTALL_DIR)/usr/bin/fusermount $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/fusermount $(1)/usr/bin/
 endef
 
 define Package/libfuse/install

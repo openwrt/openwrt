@@ -62,8 +62,8 @@ define Package/pcmcia-cs/install
 	$(INSTALL_DIR) $(1)/etc
 	$(CP) $(PKG_INSTALL_DIR)/etc/pcmcia $(1)/etc/
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/sbin/cardctl $(1)/usr/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/sbin/cardmgr $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/cardctl $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/cardmgr $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,pcmcia-cs))
