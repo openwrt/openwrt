@@ -38,6 +38,7 @@ define KernelPackage/sound-core/2.6
 	$(LINUX_DIR)/sound/core/snd.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/sound/core/snd-page-alloc.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/sound/core/snd-hwdep.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/sound/core/seq/snd-seq-device.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/sound/core/snd-rawmidi.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/sound/core/snd-timer.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/sound/core/snd-pcm.$(LINUX_KMOD_SUFFIX) \
@@ -48,6 +49,7 @@ define KernelPackage/sound-core/2.6
 	snd \
 	snd-page-alloc \
 	snd-hwdep \
+	snd-seq-device \
 	snd-rawmidi \
 	snd-timer \
 	snd-pcm \
