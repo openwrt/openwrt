@@ -39,7 +39,8 @@ CONFIGURE_ARGS += \
 	--enable-hybrid \
 	--enable-security-context=no \
 	--enable-natt \
-	--enable-adminport
+	--enable-adminport \
+	--enable-ipv6
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); touch \
