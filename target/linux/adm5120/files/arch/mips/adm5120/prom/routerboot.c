@@ -27,6 +27,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/string.h>
+#include <linux/module.h>
 
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
@@ -35,7 +36,8 @@
 #include <prom/routerboot.h>
 #include "prom_read.h"
 
-static struct rb_hard_settings rb_hs;
+struct rb_hard_settings rb_hs;
+EXPORT_SYMBOL(rb_hs);
 static int rb_found;
 
 static int __init routerboot_load_hs(u8 *buf, u16 buflen)
