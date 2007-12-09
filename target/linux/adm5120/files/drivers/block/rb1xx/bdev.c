@@ -106,7 +106,7 @@ int cf_mips_probe(struct platform_device *pdev)
 	
 	if (cf_init(dev))
 		goto out_err;
-	printk(KERN_INFO "cf-mips: init done");
+	printk(KERN_INFO "cf-mips: init done\n");
 	
 	spin_lock_init(&dev->lock);
 	dev->queue = blk_init_queue(cf_request,&dev->lock);
