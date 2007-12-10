@@ -1,0 +1,16 @@
+# copyright 2007 john crispin <blogic@openwrt.org>
+
+menu "Danube built-in"
+
+config DANUBE_ASC_UART
+	bool "Danube asc uart"
+	select SERIAL_CORE
+	select SERIAL_CORE_CONSOLE
+	default y
+
+config MTD_DANUBE
+	bool "Danube flash map"
+	default y
+
+endmenu
+
