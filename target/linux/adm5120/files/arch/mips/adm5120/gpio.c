@@ -37,7 +37,7 @@
 #include <adm5120_defs.h>
 #include <adm5120_info.h>
 #include <adm5120_switch.h>
-
+#include <adm5120_irq.h>
 
 #define GPIO_READ(r)		readl((r))
 #define GPIO_WRITE(v, r)	writel((v), (r))
@@ -46,6 +46,7 @@
 struct adm5120_gpio_line {
 	u32 flags;
 	const char *label;
+	int irq;
 };
 
 #define GPIO_FLAG_VALID		0x01
@@ -71,36 +72,25 @@ static struct led_desc led_table[15] = {
 	LED_DESC(4, 0), LED_DESC(4, 1), LED_DESC(4, 2)
 };
 
-static struct adm5120_gpio_line adm5120_gpio_map[ADM5120_GPIO_COUNT] = {
-	[ADM5120_GPIO_PIN0] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_PIN1] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_PIN2] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_PIN3] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_PIN4] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_PIN5] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_PIN6] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_PIN7] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_P0L0] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_P0L1] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_P0L2] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_P1L0] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_P1L1] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_P1L2] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_P2L0] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_P2L1] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_P2L2] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_P3L0] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_P3L1] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_P3L2] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_P4L0] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_P4L1] = {.flags = GPIO_FLAG_VALID},
-	[ADM5120_GPIO_P4L2] = {.flags = GPIO_FLAG_VALID}
-};
+static struct adm5120_gpio_line adm5120_gpio_map[ADM5120_GPIO_COUNT];
 
-#define gpio_is_invalid(g) ((g) > ADM5120_GPIO_MAX || \
-		((adm5120_gpio_map[(g)].flags & GPIO_FLAG_VALID) == 0))
+/*-------------------------------------------------------------------------*/
 
-#define gpio_is_used(g)	((adm5120_gpio_map[(g)].flags & GPIO_FLAG_USED) != 0)
+static inline int gpio_is_invalid(unsigned gpio)
+{
+	if ((gpio > ADM5120_GPIO_MAX) ||
+		(adm5120_gpio_map[gpio].flags & GPIO_FLAG_VALID) == 0);
+		return 0;
+
+	return 1;
+}
+
+static inline int gpio_is_used(unsigned gpio)
+{
+	return ((adm5120_gpio_map[gpio].flags & GPIO_FLAG_USED) != 0);
+}
+
+/*-------------------------------------------------------------------------*/
 
 /*
  * Helpers for GPIO lines in GPIO_CONF0 register
@@ -247,6 +237,8 @@ static inline int leds_get_value(unsigned led)
 	return 1;
 }
 
+/*-------------------------------------------------------------------------*/
+
 /*
  * Main GPIO support routines
  */
@@ -325,29 +317,74 @@ EXPORT_SYMBOL(adm5120_gpio_free);
 
 int adm5120_gpio_to_irq(unsigned gpio)
 {
-	/* FIXME: not yet implemented */
-	return -EINVAL;
+	if (gpio > ADM5120_GPIO_MAX)
+		return -EINVAL;
+
+	return adm5120_gpio_map[gpio].irq;
 }
 EXPORT_SYMBOL(adm5120_gpio_to_irq);
 
 int adm5120_irq_to_gpio(unsigned irq)
 {
-	/* FIXME: not yet implemented */
+	int i;
+
+	for (i = 0; i < ADM5120_GPIO_COUNT; i++)
+		if (adm5120_gpio_map[i].irq == irq)
+			return i;
+
 	return -EINVAL;
 }
 EXPORT_SYMBOL(adm5120_irq_to_gpio);
 
-static int __init adm5120_gpio_init(void)
+/*-------------------------------------------------------------------------*/
+
+void __init adm5120_gpio_csx0_enable(void)
+{
+	u32 t;
+
+	t = SW_READ_REG(GPIO_CONF2);
+	t |= GPIO_CONF2_CSX0;
+	SW_WRITE_REG(GPIO_CONF2, t);
+
+	adm5120_gpio_map[ADM5120_GPIO_PIN1].flags &= ~GPIO_FLAG_VALID;
+	adm5120_gpio_map[ADM5120_GPIO_PIN2].irq = ADM5120_IRQ_GPIO2;
+}
+
+void __init adm5120_gpio_csx1_enable(void)
+{
+	u32 t;
+
+	t = SW_READ_REG(GPIO_CONF2);
+	t |= GPIO_CONF2_CSX1;
+	SW_WRITE_REG(GPIO_CONF2, t);
+
+	adm5120_gpio_map[ADM5120_GPIO_PIN3].flags &= ~GPIO_FLAG_VALID;
+	if (adm5120_package_bga())
+		adm5120_gpio_map[ADM5120_GPIO_PIN4].irq = ADM5120_IRQ_GPIO4;
+}
+
+void __init adm5120_gpio_ew_enable(void)
+{
+	u32 t;
+
+	t = SW_READ_REG(GPIO_CONF2);
+	t |= GPIO_CONF2_EW;
+	SW_WRITE_REG(GPIO_CONF2, t);
+}
+
+void __init adm5120_gpio_init(void)
 {
 	int i;
 
+	SW_WRITE_REG(GPIO_CONF2, 0);
+
+	for (i = 0; i < ADM5120_GPIO_COUNT; i++)
+		adm5120_gpio_map[i].flags = GPIO_FLAG_VALID;
+
 	if (adm5120_package_pqfp()) {
-		/* GPIO pins 4-7 are unavailable in ADM5120P */
-		for (i = ADM5120_GPIO_PIN4; i <= ADM5120_GPIO_PIN7; i++)
-			adm5120_gpio_map[i].flags &= ~GPIO_FLAG_VALID;
+		adm5120_gpio_map[ADM5120_GPIO_PIN4].flags &= ~GPIO_FLAG_VALID;
+		adm5120_gpio_map[ADM5120_GPIO_PIN5].flags &= ~GPIO_FLAG_VALID;
+		adm5120_gpio_map[ADM5120_GPIO_PIN6].flags &= ~GPIO_FLAG_VALID;
+		adm5120_gpio_map[ADM5120_GPIO_PIN7].flags &= ~GPIO_FLAG_VALID;
 	}
-
-	return 0;
 }
-
-pure_initcall(adm5120_gpio_init);

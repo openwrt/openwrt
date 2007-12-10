@@ -76,7 +76,7 @@ static void adm5120_intc_irq_mask(unsigned int irq)
 static int adm5120_intc_irq_set_type(unsigned int irq, unsigned int flow_type)
 {
 	/* TODO: not yet tested */
-#if 1
+
 	unsigned int sense;
 	unsigned long mode;
 	int err = 0;
@@ -114,13 +114,13 @@ static int adm5120_intc_irq_set_type(unsigned int irq, unsigned int flow_type)
 			mode &= (1 << (irq-ADM5120_INTC_IRQ_BASE));
 
 		INTC_WRITE(INTC_REG_INT_MODE, mode);
-		/* fallthrogh */
+		/* fallthrough */
 	default:
 		irq_desc[irq].status &= ~IRQ_TYPE_SENSE_MASK;
 		irq_desc[irq].status |= sense;
 		break;
 	}
-#endif
+
 	return 0;
 }
 
@@ -161,10 +161,13 @@ static void __init adm5120_intc_irq_init(int base)
 
 	/* disable all interrupts */
 	INTC_WRITE(INTC_REG_IRQ_DISABLE, INTC_INT_ALL);
+
 	/* setup all interrupts to generate IRQ instead of FIQ */
 	INTC_WRITE(INTC_REG_INT_MODE, 0);
+
 	/* set active level for all external interrupts to HIGH */
 	INTC_WRITE(INTC_REG_INT_LEVEL, 0);
+
 	/* disable usage of the TEST_SOURCE register */
 	INTC_WRITE(INTC_REG_IRQ_SOURCE_SELECT, 0);
 
