@@ -247,6 +247,11 @@
 #define GPIO_CONF0_OE_MASK	(0xFF << GPIO_CONF0_OE_SHIFT)
 #define GPIO_CONF0_OV_MASK	(0xFF << GPIO_CONF0_OV_SHIFT)
 
+/* GPIO_CONF2 register bits */
+#define GPIO_CONF2_CSX0		BIT(4)	/* enable CSX0:INTX0 on GPIO 1:2 */
+#define GPIO_CONF2_CSX1		BIT(5)	/* enable CSX1:INTX1 on GPIO 3:4 */
+#define GPIO_CONF2_EW		BIT(6)	/* enable wait state pin for CSX0/1 */
+
 /* INT_STATUS/INT_MASK register bits */
 #define SWITCH_INT_SHD		BIT(0)	/* Send High Done */
 #define SWITCH_INT_SLD		BIT(1)	/* Send Low Done */

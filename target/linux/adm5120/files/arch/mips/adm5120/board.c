@@ -83,6 +83,8 @@ static int __init adm5120_board_setup(void)
 
 	memcpy(&adm5120_board_name, board->name, ADM5120_BOARD_NAMELEN);
 
+	adm5120_gpio_init();
+
 	adm5120_board_reset = board->board_reset;
 	if (board->eth_num_ports > 0)
 		adm5120_eth_num_ports = board->eth_num_ports;

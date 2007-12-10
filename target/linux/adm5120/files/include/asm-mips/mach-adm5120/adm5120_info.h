@@ -68,6 +68,11 @@ extern void adm5120_halt(void);
 
 extern void (*adm5120_board_reset)(void);
 
+extern void adm5120_gpio_init(void) __init;
+extern void adm5120_gpio_csx0_enable(void) __init;
+extern void adm5120_gpio_csx1_enable(void) __init;
+extern void adm5120_gpio_ew_enable(void) __init;
+
 static inline int adm5120_package_pqfp(void)
 {
 	return (adm5120_package == ADM5120_PACKAGE_PQFP);
