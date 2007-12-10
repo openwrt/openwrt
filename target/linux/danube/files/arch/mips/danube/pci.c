@@ -77,15 +77,25 @@ danube_pci_config_access(unsigned char access_type,
 	/* Perform access */
 	if (access_type == PCI_ACCESS_WRITE)
 	{
+#ifdef CONFIG_DANUBE_PCI_HW_SWAP
+		writel(swab32(*data), ((u32*)cfg_base));
+#else
 		writel(*data, ((u32*)cfg_base));
+#endif
 	} else {
 		*data = readl(((u32*)(cfg_base)));
+#ifdef CONFIG_DANUBE_PCI_HW_SWAP
+		*data = swab32(*data);
+#endif
 	}
 	wmb();
 
 	/* clean possible Master abort */
 	cfg_base = (danube_pci_mapped_cfg | (0x0 << DANUBE_PCI_CFG_FUNNUM_SHF)) + 4;
 	temp = readl(((u32*)(cfg_base)));
+#ifdef CONFIG_DANUBE_PCI_HW_SWAP
+	temp = swab32 (temp);
+#endif
 	cfg_base = (danube_pci_mapped_cfg | (0x68 << DANUBE_PCI_CFG_FUNNUM_SHF)) + 4;
 	writel(temp, ((u32*)cfg_base));
 
@@ -250,9 +260,14 @@ static void __init danube_pci_startup (void){
 	writel(0x0e000008, PCI_CR_BAR11MASK);
 	writel(0, PCI_CR_PCI_ADDR_MAP11);
 	writel(0, PCI_CS_BASE_ADDR1);
+#ifdef CONFIG_DANUBE_PCI_HW_SWAP
+	/* both TX and RX endian swap are enabled */
+	DANUBE_PCI_REG32 (PCI_CR_PCI_EOI_REG) |= 3;
+	wmb ();
+#endif
 	/*TODO: disable BAR2 & BAR3 - why was this in the origianl infineon code */
-	//	writel(readl(PCI_CR_BAR12MASK) | 0x80000000, PCI_CR_BAR12MASK);
-	//	writel(readl(PCI_CR_BAR13MASK) | 0x80000000, PCI_CR_BAR13MASK);
+	writel(readl(PCI_CR_BAR12MASK) | 0x80000000, PCI_CR_BAR12MASK);
+	writel(readl(PCI_CR_BAR13MASK) | 0x80000000, PCI_CR_BAR13MASK);
 	/*use 8 dw burse length */
 	writel(0x303, PCI_CR_FCI_BURST_LENGTH);
 
