@@ -32,7 +32,7 @@
 #include <asm/gpio.h>
 
 #define DRV_NAME	"pata-rb153-cf"
-#define DRV_VERSION	"0.1"
+#define DRV_VERSION	"0.2"
 #define DRV_DESC	"PATA driver for RouterBOARD 153 Compact Flash"
 
 #define RB153_CF_MAXPORTS	1
@@ -45,7 +45,7 @@
 struct rb153_cf_info {
 	void __iomem	*iobase;
 	unsigned int	gpio_line;
-	int		error;
+	int		frozen;
 };
 
 /* ------------------------------------------------------------------------ */
@@ -70,25 +70,31 @@ static void rb153_pata_exec_command(struct ata_port *ap,
 static void rb153_pata_data_xfer(struct ata_device *adev, unsigned char *buf,
 				unsigned int buflen, int write_data)
 {
-	struct ata_port *ap = adev->ap;
-	unsigned int i;
+	void __iomem *ioaddr = adev->ap->ioaddr.data_addr;
 
 	if (write_data) {
-		for (i = 0; i < buflen; i++)
-			writeb(buf[i], ap->ioaddr.data_addr);
+		for (; buflen > 0; buflen--, buf++)
+			writeb(*buf, ioaddr);
 	} else {
-		for (; buflen > 0; buflen--)
-			buf[i] = readb(ap->ioaddr.data_addr);
+		for (; buflen > 0; buflen--, buf++)
+			*buf = readb(ioaddr);
 	}
 
-	rb153_pata_finish_io(ap);
+	rb153_pata_finish_io(adev->ap);
+}
+
+static void rb153_pata_freeze(struct ata_port *ap)
+{
+	struct rb153_cf_info *info = ap->host->private_data;
+
+	info->frozen = 1;
 }
 
 static void rb153_pata_thaw(struct ata_port *ap)
 {
 	struct rb153_cf_info *info = ap->host->private_data;
 
-	info->error = 0;
+	info->frozen = 0;
 }
 
 static irqreturn_t rb153_pata_irq_handler(int irq, void *dev_instance)
@@ -98,7 +104,7 @@ static irqreturn_t rb153_pata_irq_handler(int irq, void *dev_instance)
 
 	if (gpio_get_value(info->gpio_line)) {
 		set_irq_type(ah->irq, IRQ_TYPE_LEVEL_LOW);
-		if (!info->error)
+		if (!info->frozen)
 			ata_interrupt(irq, dev_instance);
 	} else {
 		set_irq_type(ah->irq, IRQ_TYPE_LEVEL_HIGH);
@@ -131,6 +137,7 @@ static struct ata_port_operations rb153_pata_port_ops = {
 	.qc_prep 		= ata_qc_prep,
 	.qc_issue		= ata_qc_issue_prot,
 
+	.freeze			= rb153_pata_freeze,
 	.thaw			= rb153_pata_thaw,
 	.error_handler		= ata_bmdma_error_handler,
 
