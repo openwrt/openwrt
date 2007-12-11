@@ -242,8 +242,10 @@ static void __init rb1xx_flash_setup(void)
 
 static void __init rb153_cf_setup(void)
 {
-	/* enable CSX1:INTX1 on GPIO 3:4 for the CF slot */
+	/* enable CSX1:INTX1 on GPIO[3:4] for the CF slot */
 	adm5120_gpio_csx1_enable();
+	/* enable the wait state pin GPIO[0] for external I/O control */
+	adm5120_gpio_ew_enable();
 
 	gpio_request(RB153_GPIO_CF_RDY, "cf-ready");
 	gpio_direction_input(RB153_GPIO_CF_RDY);

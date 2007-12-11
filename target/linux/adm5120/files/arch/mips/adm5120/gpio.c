@@ -370,6 +370,8 @@ void __init adm5120_gpio_ew_enable(void)
 	t = SW_READ_REG(GPIO_CONF2);
 	t |= GPIO_CONF2_EW;
 	SW_WRITE_REG(GPIO_CONF2, t);
+
+	adm5120_gpio_map[ADM5120_GPIO_PIN0].flags &= ~GPIO_FLAG_VALID;
 }
 
 void __init adm5120_gpio_init(void)
