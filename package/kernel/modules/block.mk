@@ -46,7 +46,7 @@ define KernelPackage/ata-piix
 endef
 
 define KernelPackage/ata-piix/description
- SATA support for Intel ICH5/6/7/8 series host controllers and 
+ SATA support for Intel ICH5/6/7/8 series host controllers and
  PATA support for Intel ESB/ICH/PIIX3/PIIX4 series host controllers.
 endef
 
@@ -95,7 +95,7 @@ define KernelPackage/ide-aec62xx
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Acard AEC62xx IDE driver
   DEPENDS:=@PCI_SUPPORT +kmod-ide-core
-  KCONFIG:=CONFIG_BLK_DEV_AEC62XX 
+  KCONFIG:=CONFIG_BLK_DEV_AEC62XX
   FILES:=$(LINUX_DIR)/drivers/ide/pci/aec62xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,aec62xx)
 endef
@@ -117,7 +117,7 @@ define KernelPackage/ide-pdc202xx
 endef
 
 define KernelPackage/ide-pdc202xx/description
- Support for the Promise Ultra 33/66/100 (PDC202{46|62|65|67|68}) IDE 
+ Support for the Promise Ultra 33/66/100 (PDC202{46|62|65|67|68}) IDE
  controllers.
 endef
 
@@ -184,16 +184,17 @@ endef
 $(eval $(call KernelPackage,nbd))
 
 
-define KernelPackage/rb153-cf
+define KernelPackage/pata-rb153-cf
   SUBMENU:=$(BLOCK_MENU)
-  TITLE:=RouterBoard 153 CF Slot
-  KCONFIG:=CONFIG_BLK_DEV_CF_MIPS
-  FILES:=$(LINUX_DIR)/drivers/block/rb1xx/rb153-cf.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,rb153-cf)
+  DEPENDS:=kmod-ata-core @TARGET_adm5120_router_le
+  TITLE:=RouterBOARD 153 CF Slot support
+  KCONFIG:=CONFIG_PATA_RB153_CF
+  FILES:=$(LINUX_DIR)/drivers/ata/pata_rb153_cf.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,pata_rb153_cf)
 endef
 
-define KernelPackage/rb153-cf/description
-  Kernel module for the RouterBoard 153 CF slot
+define KernelPackage/pata-rb153-cf/description
+  Kernel support for the RouterBoard 153 CF slot.
 endef
 
-$(eval $(call KernelPackage,rb153-cf))
+$(eval $(call KernelPackage,pata-rb153-cf))

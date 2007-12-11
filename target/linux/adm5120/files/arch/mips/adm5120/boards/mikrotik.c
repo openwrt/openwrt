@@ -42,8 +42,8 @@
 #include <adm5120_nand.h>
 #include <adm5120_board.h>
 #include <adm5120_platform.h>
-#include <adm5120_cf.h>
 #include <adm5120_info.h>
+
 #include <prom/routerboot.h>
 
 #define RB1XX_NAND_CHIP_DELAY	25
@@ -127,8 +127,8 @@ static struct resource rb150_nand_resource[] = {
 static struct resource rb153_cf_resources[] = {
 	{
 		.name	= "cf_membase",
-		.start	= ADM5120_EXTIO0_BASE,
-		.end	= ADM5120_EXTIO0_BASE + ADM5120_MPMC_SIZE-1 ,
+		.start	= ADM5120_EXTIO1_BASE,
+		.end	= ADM5120_EXTIO1_BASE + ADM5120_EXTIO1_SIZE-1 ,
 		.flags	= IORESOURCE_MEM
 	}, {
 		.name	= "cf_irq",
@@ -138,16 +138,11 @@ static struct resource rb153_cf_resources[] = {
 	}
 };
 
-static struct cf_device rb153_cf_data = {
-	.gpio_pin = ADM5120_GPIO_PIN4
-};
-
 static struct platform_device rb153_cf_device = {
-	.name		= "rb153-cf",
+	.name		= "pata-rb153-cf",
 	.id		= -1,
 	.resource	= rb153_cf_resources,
 	.num_resources	= ARRAY_SIZE(rb153_cf_resources),
-	.dev.platform_data = &rb153_cf_data,
 };
 
 static struct platform_device *rb153_devices[] __initdata = {
@@ -223,7 +218,7 @@ static void rb150_nand_cmd_ctrl(struct mtd_info *mtd, int cmd,
 static void __init rb1xx_mac_setup(void)
 {
 	int i, j;
-	
+
 	for (i = 0; i < rb_hs.mac_count; i++) {
 		for (j = 0; j < RB_MAC_SIZE; j++)
 			adm5120_eth_macs[i][j] = rb_hs.macs[i][j];
@@ -247,6 +242,9 @@ static void __init rb1xx_flash_setup(void)
 
 static void __init rb153_cf_setup(void)
 {
+	/* enable CSX1:INTX1 on GPIO 3:4 for the CF slot */
+	adm5120_gpio_csx1_enable();
+
 	gpio_request(RB153_GPIO_CF_RDY, "cf-ready");
 	gpio_direction_input(RB153_GPIO_CF_RDY);
 	gpio_request(RB153_GPIO_CF_WT, "cf-wait");
