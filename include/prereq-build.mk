@@ -123,3 +123,10 @@ $(eval $(call RequireCommand,autoconf, \
 	Please install GNU autoconf. \
 ))
 
+define Require/gnu-find
+	$(FIND) $(TMP_DIR) -lname foo
+endef
+
+$(eval $(call Require,gnu-find, \
+	Please install GNU find \
+))
