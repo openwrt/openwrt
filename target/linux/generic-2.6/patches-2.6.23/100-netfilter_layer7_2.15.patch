@@ -1543,7 +1543,7 @@
 +
 +DEFINE_SPINLOCK(l7_lock);
 +
-+#ifdef CONFIG_IP_NF_MATCH_LAYER7_DEBUG
++#ifdef CONFIG_NETFILTER_XT_MATCH_LAYER7_DEBUG
 +/* Converts an unfriendly string into a friendly one by
 +replacing unprintables with periods and all whitespace with " ". */
 +static char * friendly_print(unsigned char * s)
@@ -1722,7 +1722,7 @@
 +	/* If we're in here, throw the app data away */
 +	if(master_conntrack->layer7.app_data != NULL) {
 +
-+	#ifdef CONFIG_IP_NF_MATCH_LAYER7_DEBUG
++	#ifdef CONFIG_NETFILTER_XT_MATCH_LAYER7_DEBUG
 +		if(!master_conntrack->layer7.app_proto) {
 +			char * f = 
 +			  friendly_print(master_conntrack->layer7.app_data);
