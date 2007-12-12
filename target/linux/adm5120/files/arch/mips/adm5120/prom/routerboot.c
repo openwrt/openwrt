@@ -37,7 +37,6 @@
 #include "prom_read.h"
 
 struct rb_hard_settings rb_hs;
-EXPORT_SYMBOL(rb_hs);
 static int rb_found;
 
 static int __init routerboot_load_hs(u8 *buf, u16 buflen)
@@ -86,15 +85,8 @@ static int __init routerboot_load_hs(u8 *buf, u16 buflen)
 			rb_hs.mac_count = prom_read_le32(buf);
 			break;
 		case RB_ID_MAC_ADDRESS_PACK:
-			rb_hs.mac_count = len/RB_MAC_SIZE;
-			if (rb_hs.mac_count > RB_MAX_MAC_COUNT)
-				rb_hs.mac_count = RB_MAX_MAC_COUNT;
-			mac = buf;
-			for (i = 0; i < rb_hs.mac_count; i++) {
-				for (j = 0; j < RB_MAC_SIZE; j++)
-					rb_hs.macs[i][j] = mac[j];
-				mac += RB_MAC_SIZE;
-			}
+			if ((len / RB_MAC_SIZE) > 0)
+				rb_hs.mac_base = buf;
 			break;
 		}
 

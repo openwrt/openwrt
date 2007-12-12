@@ -64,8 +64,6 @@
 #define RB153_GPIO_CF_RDY	ADM5120_GPIO_P1L1
 #define RB153_GPIO_CF_WT	ADM5120_GPIO_P0L0
 
-extern struct rb_hard_settings rb_hs;
-
 /*--------------------------------------------------------------------------*/
 
 static struct adm5120_pci_irq rb1xx_pci_irqs[] __initdata = {
@@ -219,9 +217,13 @@ static void __init rb1xx_mac_setup(void)
 {
 	int i, j;
 
-	for (i = 0; i < rb_hs.mac_count; i++) {
-		for (j = 0; j < RB_MAC_SIZE; j++)
-			adm5120_eth_macs[i][j] = rb_hs.macs[i][j];
+	if (!rb_hs.mac_base)
+		return;
+
+	for (i = 0; i < 6; i++) {
+		for (j = 0; j < 5; j++)
+			adm5120_eth_macs[i][j] = rb_hs.mac_base[j];
+		adm5120_eth_macs[i][5] = rb_hs.mac_base[5]+i;
 	}
 }
 

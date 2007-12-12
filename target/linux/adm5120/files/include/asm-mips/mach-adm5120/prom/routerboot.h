@@ -26,7 +26,6 @@
 #define _ROUTERBOOT_H
 
 #define RB_MAC_SIZE		6
-#define RB_MAX_MAC_COUNT	6
 
 struct rb_bios_settings {
 	u32	hs_offs; /* hard settings offset */
@@ -41,7 +40,7 @@ struct rb_hard_settings {
 	char	*bios_ver;	/* BIOS version */
 	u32	mem_size;	/* memory size in bytes */
 	u32	mac_count;	/* number of mac addresses */
-	u8	macs[RB_MAC_SIZE][RB_MAX_MAC_COUNT]; /* mac addresses */
+	u8	*mac_base;	/* mac address base */
 };
 
 /*
@@ -133,5 +132,7 @@ struct rb_hard_settings {
 
 extern int routerboot_present(void) __init;
 extern char *routerboot_get_boardname(void);
+
+extern struct rb_hard_settings rb_hs;
 
 #endif /* _ROUTERBOOT_H */
