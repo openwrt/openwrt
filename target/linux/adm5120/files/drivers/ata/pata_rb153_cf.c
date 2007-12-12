@@ -252,8 +252,8 @@ static __devinit int rb153_pata_driver_probe(struct platform_device *pdev)
 
 	rb153_pata_setup_ports(ah);
 
-	ret = ata_host_activate(ah, irq, ata_interrupt, IRQF_TRIGGER_HIGH,
-				&rb153_pata_sht);
+	ret = ata_host_activate(ah, irq, rb153_pata_irq_handler,
+				IRQF_TRIGGER_HIGH, &rb153_pata_sht);
 	if (ret)
 		goto err_free_gpio;
 
