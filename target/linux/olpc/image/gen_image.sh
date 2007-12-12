@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006 - 2007 OpenWrt.org
 set -x 
 [ $# == 5 ] || {
     echo "SYNTAX: $0 <file> <kernel size> <kernel directory> <rootfs size> <rootfs image>"
@@ -33,13 +33,3 @@ dd if="$OUTPUT.kernel" of="$OUTPUT" bs=512 seek="$KERNELOFFSET" conv=notrunc
 [ -n "$PADDING" ] && dd if=/dev/zero of="$OUTPUT" bs=512 seek="$ROOTFSOFFSET" conv=notrunc count="$ROOTFSSIZE"
 dd if="$ROOTFSIMAGE" of="$OUTPUT" bs=512 seek="$ROOTFSOFFSET" conv=notrunc
 #rm -f "$OUTPUT.kernel"
-
-which chpax >/dev/null && chpax -zp $(which grub)
-grub --batch --no-curses --no-floppy --device-map=/dev/null <<EOF
-device (hd0) $OUTPUT
-geometry (hd0) $cyl $head $sect
-root (hd0,0)
-setup (hd0)
-quit
-EOF
-

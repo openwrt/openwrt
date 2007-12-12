@@ -1,35 +1,23 @@
-config OLPC_GRUB_IMAGES
-    bool "Build GRUB images"
+config OLPC_BOOTSCRIPT_IMAGES
+    bool "Build images with bootscript"
     depends TARGET_olpc
     depends TARGET_ROOTFS_EXT2FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS || TARGET_ROOTFS_ISO
-	select PACKAGE_grub
     default y
 
-config OLPC_GRUB_IMAGES_PAD
-	bool "Pad GRUB images to filesystem size (for JFFS2)"
-	depends OLPC_GRUB_IMAGES
+config OLPC_BOOTSCRIPT_IMAGES_PAD
+	bool "Pad bootscript images to filesystem size (for JFFS2)"
+	depends OLPC_BOOTSCRIPT_IMAGES
 
-config OLPC_GRUB_BAUDRATE
-    int "Serial port baud rate"
-    depends OLPC_GRUB_IMAGES
-    default 38400
-
-config OLPC_GRUB_KERNELPART
+config OLPC_BOOTSCRIPT_KERNELPART
     int "Kernel partition size (in MB)"
-    depends OLPC_GRUB_IMAGES
+    depends OLPC_BOOTSCRIPT_IMAGES
     default 4
 
-config OLPC_GRUB_ROOTPART
+config OLPC_BOOTSCRIPT_ROOTPART
     string
-    prompt "Root partition on target device" if OLPC_GRUB_IMAGES
+    prompt "Root partition on target device" if OLPC_BOOTSCRIPT_IMAGES
     default "/dev/hda2"
     help
         The root partition on the final device.  If you don't know,
         you probably want the default (/dev/hda2).
 
-config OLPC_GRUB_BOOTOPTS
-    string
-    prompt "Extra kernel boot options" if OLPC_GRUB_IMAGES
-    default ""
-    help
-        If you don't know, just leave it blank.
