@@ -1,16 +1,17 @@
 Index: linux-2.6.23/drivers/mtd/devices/block2mtd.c
 ===================================================================
---- linux-2.6.23.orig/drivers/mtd/devices/block2mtd.c	2007-10-25 21:43:40.854599193 +0200
-+++ linux-2.6.23/drivers/mtd/devices/block2mtd.c	2007-10-25 22:23:19.066125745 +0200
-@@ -20,6 +20,7 @@
+--- linux-2.6.23.orig/drivers/mtd/devices/block2mtd.c	2007-12-06 23:30:31.583285849 +0100
++++ linux-2.6.23/drivers/mtd/devices/block2mtd.c	2007-12-06 23:31:29.970613152 +0100
+@@ -20,6 +20,8 @@
  #include <linux/buffer_head.h>
  #include <linux/mutex.h>
  #include <linux/mount.h>
 +#include <linux/list.h>
++#include <linux/delay.h>
  
  #define VERSION "$Revision: 1.30 $"
  
-@@ -27,6 +28,12 @@
+@@ -27,6 +29,12 @@
  #define ERROR(fmt, args...) printk(KERN_ERR "block2mtd: " fmt "\n" , ## args)
  #define INFO(fmt, args...) printk(KERN_INFO "block2mtd: " fmt "\n" , ## args)
  
@@ -23,7 +24,7 @@ Index: linux-2.6.23/drivers/mtd/devices/block2mtd.c
  
  /* Info for the block device */
  struct block2mtd_dev {
-@@ -38,10 +45,36 @@
+@@ -38,10 +46,36 @@
  	char devname[0];
  };
  
@@ -60,7 +61,7 @@ Index: linux-2.6.23/drivers/mtd/devices/block2mtd.c
  
  static struct page *page_read(struct address_space *mapping, int index)
  {
-@@ -518,7 +551,10 @@
+@@ -518,7 +552,10 @@
  	if (token[2] && (strlen(token[2]) + 1 > 80))
  		parse_err("mtd device name too long");
  
@@ -72,7 +73,7 @@ Index: linux-2.6.23/drivers/mtd/devices/block2mtd.c
  
  	return 0;
  }
-@@ -534,8 +570,11 @@
+@@ -534,8 +571,11 @@
  	   and block2mtd_init() has already been called,
  	   we can parse the argument now. */
  
@@ -87,8 +88,8 @@ Index: linux-2.6.23/drivers/mtd/devices/block2mtd.c
  	   here. We must parse them later: if the param passed
 Index: linux-2.6.23/init/do_mounts.c
 ===================================================================
---- linux-2.6.23.orig/init/do_mounts.c	2007-10-25 21:39:41.824977672 +0200
-+++ linux-2.6.23/init/do_mounts.c	2007-10-25 21:41:22.466712918 +0200
+--- linux-2.6.23.orig/init/do_mounts.c	2007-12-06 23:30:28.019082737 +0100
++++ linux-2.6.23/init/do_mounts.c	2007-12-06 23:30:32.459335774 +0100
 @@ -241,16 +241,8 @@
  	return 1;
  }
@@ -127,8 +128,8 @@ Index: linux-2.6.23/init/do_mounts.c
  		if (!strncmp(root_device_name, "mtd", 3)) {
 Index: linux-2.6.23/init/main.c
 ===================================================================
---- linux-2.6.23.orig/init/main.c	2007-10-25 21:35:50.567799083 +0200
-+++ linux-2.6.23/init/main.c	2007-10-25 21:56:43.279187031 +0200
+--- linux-2.6.23.orig/init/main.c	2007-12-06 23:30:28.023082962 +0100
++++ linux-2.6.23/init/main.c	2007-12-06 23:30:32.463336000 +0100
 @@ -65,6 +65,7 @@
  #ifdef CONFIG_X86_LOCAL_APIC
  #include <asm/smp.h>
@@ -198,8 +199,8 @@ Index: linux-2.6.23/init/main.c
  
 Index: linux-2.6.23/arch/i386/kernel/vmlinux.lds.S
 ===================================================================
---- linux-2.6.23.orig/arch/i386/kernel/vmlinux.lds.S	2007-10-26 00:07:08.465118962 +0200
-+++ linux-2.6.23/arch/i386/kernel/vmlinux.lds.S	2007-10-26 00:10:15.259763782 +0200
+--- linux-2.6.23.orig/arch/i386/kernel/vmlinux.lds.S	2007-12-06 23:30:28.035083650 +0100
++++ linux-2.6.23/arch/i386/kernel/vmlinux.lds.S	2007-12-06 23:30:32.467336225 +0100
 @@ -146,6 +146,11 @@
  	INITCALLS
    	__initcall_end = .;
@@ -214,8 +215,8 @@ Index: linux-2.6.23/arch/i386/kernel/vmlinux.lds.S
  	*(.con_initcall.init)
 Index: linux-2.6.23/include/asm-generic/vmlinux.lds.h
 ===================================================================
---- linux-2.6.23.orig/include/asm-generic/vmlinux.lds.h	2007-10-26 00:08:46.558708993 +0200
-+++ linux-2.6.23/include/asm-generic/vmlinux.lds.h	2007-10-26 00:09:24.296859571 +0200
+--- linux-2.6.23.orig/include/asm-generic/vmlinux.lds.h	2007-12-06 23:30:28.043084102 +0100
++++ linux-2.6.23/include/asm-generic/vmlinux.lds.h	2007-12-06 23:30:32.467336225 +0100
 @@ -243,12 +243,14 @@
    	*(.initcall4s.init)						\
    	*(.initcall5.init)						\
