@@ -20,6 +20,10 @@ start_pppd() {
 		return 0
 	}
 
+	# Workaround: sometimes hotplug2 doesn't deliver the hotplug event for creating
+	# /dev/ppp fast enough to be used here
+	[ -e /dev/ppp ] || mknod /dev/ppp c 108 0
+
 	config_get device "$cfg" device
 	config_get unit "$cfg" unit
 	config_get username "$cfg" username
