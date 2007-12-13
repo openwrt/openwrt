@@ -7,7 +7,7 @@ Index: ipkg-utils-1.7/ipkg-build
  	[ "$?" -ne 0 ] && PKG_ERROR=1
  
 -	if echo $pkg | grep '[^a-z0-9.+-]'; then
-+	if echo $pkg | grep '[^a-zA-Z0-9.+-]'; then
++	if echo $pkg | grep '[^a-zA-Z0-9_.+-]'; then
  		echo "*** Error: Package name $name contains illegal characters, (other than [a-z0-9.+-])" >&2
  		PKG_ERROR=1;
  	fi
