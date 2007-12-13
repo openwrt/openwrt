@@ -29,8 +29,7 @@
 #include <asm/unistd.h>
 #include <linux/errno.h>
 #include <asm/danube/danube.h>
-#include <asm/danube/port.h>
-#include <asm/danube/danube_led.h>
+#include <asm/danube/danube_gpio.h>
 #include <asm/danube/danube_gptu.h>
 
 #define LED_CONFIG                      0x01
@@ -79,17 +78,6 @@ extern int danube_led_config(struct led_config_param *);
 #define RISING_EDGE                     0
 #define FALLING_EDGE                    1
 
-#define port_reserve_pin                danube_port_reserve_pin
-#define port_free_pin                   danube_port_free_pin
-#define port_set_altsel0                danube_port_set_altsel0
-#define port_clear_altsel0              danube_port_clear_altsel0
-#define port_set_altsel1                danube_port_set_altsel1
-#define port_clear_altsel1              danube_port_clear_altsel1
-#define port_set_dir_out                danube_port_set_dir_out
-#define port_clear_dir_out              danube_port_clear_dir_out
-#define port_set_open_drain             danube_port_set_open_drain
-#define port_clear_open_drain           danube_port_clear_open_drain
-
 #define LED_SH_PORT                     0
 #define LED_SH_PIN                      4
 #define LED_SH_DIR                      1
@@ -134,137 +122,111 @@ extern int danube_led_config(struct led_config_param *);
 #endif
 
 #if LED_SH_DIR
-  #define LED_SH_DIR_SETUP              port_set_dir_out
+  #define LED_SH_DIR_SETUP              danube_port_set_dir_out
 #else
-  #define LED_SH_DIR_SETUP              port_clear_dir_out
+  #define LED_SH_DIR_SETUP              danube_port_clear_dir_out
 #endif
 #if LED_SH_ALTSEL0
-  #define LED_SH_ALTSEL0_SETUP          port_set_altsel0
+  #define LED_SH_ALTSEL0_SETUP          danube_port_set_altsel0
 #else
-  #define LED_SH_ALTSEL0_SETUP          port_clear_altsel0
+  #define LED_SH_ALTSEL0_SETUP          danube_port_clear_altsel0
 #endif
 #if LED_SH_ALTSEL1
-  #define LED_SH_ALTSEL1_SETUP          port_set_altsel1
+  #define LED_SH_ALTSEL1_SETUP          danube_port_set_altsel1
 #else
-  #define LED_SH_ALTSEL1_SETUP          port_clear_altsel1
+  #define LED_SH_ALTSEL1_SETUP          danube_port_clear_altsel1
 #endif
 #if LED_SH_OPENDRAIN
-  #define LED_SH_OPENDRAIN_SETUP        port_set_open_drain
+  #define LED_SH_OPENDRAIN_SETUP        danube_port_set_open_drain
 #else
-  #define LED_SH_OPENDRAIN_SETUP        port_clear_open_drain
+  #define LED_SH_OPENDRAIN_SETUP        danube_port_clear_open_drain
 #endif
 
 #if LED_D_DIR
-  #define LED_D_DIR_SETUP               port_set_dir_out
+  #define LED_D_DIR_SETUP               danube_port_set_dir_out
 #else
-  #define LED_D_DIR_SETUP               port_clear_dir_out
+  #define LED_D_DIR_SETUP               danube_port_clear_dir_out
 #endif
 #if LED_D_ALTSEL0
-  #define LED_D_ALTSEL0_SETUP           port_set_altsel0
+  #define LED_D_ALTSEL0_SETUP           danube_port_set_altsel0
 #else
-  #define LED_D_ALTSEL0_SETUP           port_clear_altsel0
+  #define LED_D_ALTSEL0_SETUP           danube_port_clear_altsel0
 #endif
 #if LED_D_ALTSEL1
-  #define LED_D_ALTSEL1_SETUP           port_set_altsel1
+  #define LED_D_ALTSEL1_SETUP           danube_port_set_altsel1
 #else
-  #define LED_D_ALTSEL1_SETUP           port_clear_altsel1
+  #define LED_D_ALTSEL1_SETUP           danube_port_clear_altsel1
 #endif
 #if LED_D_OPENDRAIN
-  #define LED_D_OPENDRAIN_SETUP         port_set_open_drain
+  #define LED_D_OPENDRAIN_SETUP         danube_port_set_open_drain
 #else
-  #define LED_D_OPENDRAIN_SETUP         port_clear_open_drain
+  #define LED_D_OPENDRAIN_SETUP         danube_port_clear_open_drain
 #endif
 
 #if LED_ST_DIR
-  #define LED_ST_DIR_SETUP              port_set_dir_out
+  #define LED_ST_DIR_SETUP              danube_port_set_dir_out
 #else
-  #define LED_ST_DIR_SETUP              port_clear_dir_out
+  #define LED_ST_DIR_SETUP              danube_port_clear_dir_out
 #endif
 #if LED_ST_ALTSEL0
-  #define LED_ST_ALTSEL0_SETUP          port_set_altsel0
+  #define LED_ST_ALTSEL0_SETUP          danube_port_set_altsel0
 #else
-  #define LED_ST_ALTSEL0_SETUP          port_clear_altsel0
+  #define LED_ST_ALTSEL0_SETUP          danube_port_clear_altsel0
 #endif
 #if LED_ST_ALTSEL1
-  #define LED_ST_ALTSEL1_SETUP          port_set_altsel1
+  #define LED_ST_ALTSEL1_SETUP          danube_port_set_altsel1
 #else
-  #define LED_ST_ALTSEL1_SETUP          port_clear_altsel1
+  #define LED_ST_ALTSEL1_SETUP          danube_port_clear_altsel1
 #endif
 #if LED_ST_OPENDRAIN
-  #define LED_ST_OPENDRAIN_SETUP        port_set_open_drain
+  #define LED_ST_OPENDRAIN_SETUP        danube_port_set_open_drain
 #else
-  #define LED_ST_OPENDRAIN_SETUP        port_clear_open_drain
+  #define LED_ST_OPENDRAIN_SETUP        danube_port_clear_open_drain
 #endif
 
 #if LED_ADSL0_DIR
-  #define LED_ADSL0_DIR_SETUP           port_set_dir_out
+  #define LED_ADSL0_DIR_SETUP           danube_port_set_dir_out
 #else
-  #define LED_ADSL0_DIR_SETUP           port_clear_dir_out
+  #define LED_ADSL0_DIR_SETUP           danube_port_clear_dir_out
 #endif
 #if LED_ADSL0_ALTSEL0
-  #define LED_ADSL0_ALTSEL0_SETUP       port_set_altsel0
+  #define LED_ADSL0_ALTSEL0_SETUP       danube_port_set_altsel0
 #else
-  #define LED_ADSL0_ALTSEL0_SETUP       port_clear_altsel0
+  #define LED_ADSL0_ALTSEL0_SETUP       danube_port_clear_altsel0
 #endif
 #if LED_ADSL0_ALTSEL1
-  #define LED_ADSL0_ALTSEL1_SETUP       port_set_altsel1
+  #define LED_ADSL0_ALTSEL1_SETUP       danube_port_set_altsel1
 #else
-  #define LED_ADSL0_ALTSEL1_SETUP       port_clear_altsel1
+  #define LED_ADSL0_ALTSEL1_SETUP       danube_port_clear_altsel1
 #endif
 #if LED_ADSL0_OPENDRAIN
-  #define LED_ADSL0_OPENDRAIN_SETUP     port_set_open_drain
+  #define LED_ADSL0_OPENDRAIN_SETUP     danube_port_set_open_drain
 #else
-  #define LED_ADSL0_OPENDRAIN_SETUP     port_clear_open_drain
+  #define LED_ADSL0_OPENDRAIN_SETUP     danube_port_clear_open_drain
 #endif
 
 #if LED_ADSL1_DIR
-  #define LED_ADSL1_DIR_SETUP           port_set_dir_out
+  #define LED_ADSL1_DIR_SETUP           danube_port_set_dir_out
 #else
-  #define LED_ADSL1_DIR_SETUP           port_clear_dir_out
+  #define LED_ADSL1_DIR_SETUP           danube_port_clear_dir_out
 #endif
 #if LED_ADSL1_ALTSEL0
-  #define LED_ADSL1_ALTSEL0_SETUP       port_set_altsel0
+  #define LED_ADSL1_ALTSEL0_SETUP       danube_port_set_altsel0
 #else
-  #define LED_ADSL1_ALTSEL0_SETUP       port_clear_altsel0
+  #define LED_ADSL1_ALTSEL0_SETUP       danube_port_clear_altsel0
 #endif
 #if LED_ADSL1_ALTSEL1
-  #define LED_ADSL1_ALTSEL1_SETUP       port_set_altsel1
+  #define LED_ADSL1_ALTSEL1_SETUP       danube_port_set_altsel1
 #else
-  #define LED_ADSL1_ALTSEL1_SETUP       port_clear_altsel1
+  #define LED_ADSL1_ALTSEL1_SETUP       danube_port_clear_altsel1
 #endif
 #if LED_ADSL1_OPENDRAIN
-  #define LED_ADSL1_OPENDRAIN_SETUP     port_set_open_drain
+  #define LED_ADSL1_OPENDRAIN_SETUP     danube_port_set_open_drain
 #else
-  #define LED_ADSL1_OPENDRAIN_SETUP     port_clear_open_drain
+  #define LED_ADSL1_OPENDRAIN_SETUP     danube_port_clear_open_drain
 #endif
 
 #define SET_BITS(x, msb, lsb, value)    (((x) & ~(((1 << ((msb) + 1)) - 1) ^ ((1 << (lsb)) - 1))) | (((value) & ((1 << (1 + (msb) - (lsb))) - 1)) << (lsb)))
-
-static inline int update_led(void);
-
-static inline unsigned int set_update_source(unsigned int, unsigned long, unsigned long);
-static inline unsigned int set_blink_in_batch(unsigned int, unsigned long, unsigned long);
-static inline unsigned int set_data_clock_edge(unsigned int, unsigned long);
-static inline unsigned int set_update_clock(unsigned int, unsigned long, unsigned long);
-static inline unsigned int set_store_mode(unsigned int, unsigned long);
-static inline unsigned int set_shift_clock(unsigned int, unsigned long);
-static inline unsigned int set_data_offset(unsigned int, unsigned long);
-static inline unsigned int set_number_of_enabled_led(unsigned int, unsigned long);
-static inline unsigned int set_data_in_batch(unsigned int, unsigned long, unsigned long);
-static inline unsigned int set_access_right(unsigned int, unsigned long, unsigned long);
-
-static inline void enable_led(void);
-static inline void disable_led(void);
-
-static inline int setup_gpio_port(unsigned long);
-static inline void release_gpio_port(unsigned long);
-
-static inline int setup_gpt(int, unsigned long);
-static inline void release_gpt(int);
-
-static inline int turn_on_led(unsigned long);
-static inline void turn_off_led(unsigned long);
-
 
 static struct semaphore led_sem;
 
@@ -273,9 +235,6 @@ static unsigned long gpt_freq = 0;
 
 static unsigned long adsl_on = 0;
 static unsigned long f_led_on = 0;
-
-static int module_id;
-
 
 static inline int
 update_led (void)
@@ -331,11 +290,20 @@ set_update_clock (unsigned int reg, unsigned long clock, unsigned long fpid)
 {
     switch ( clock )
     {
-    case 0: reg &= ~0xC0000000; break;
-    case 1: reg = (reg & ~0xC0000000) | 0x40000000; break;
-    case 2: reg = (reg & ~0xCF800000) | 0x80000000 | ((fpid & 0x1F) << 23); break;
+    case 0:
+		reg &= ~0xC0000000;
+		break;
+
+    case 1:
+		reg = (reg & ~0xC0000000) | 0x40000000;
+		break;
+
+    case 2:
+		reg = (reg & ~0xCF800000) | 0x80000000 | ((fpid & 0x1F) << 23);
+		break;
     }
-    return reg;
+
+	return reg;
 }
 
 static inline unsigned int
@@ -383,16 +351,33 @@ enable_led (void)
     /*  Activate LED module in PMU. */
     int i = 1000000;
 
-    *(unsigned long *)0xBF10201C &= ~(1 << 11);
-    while ( --i && (*(unsigned long *)0xBF102020 & (1 << 11)) );
-    if ( !i )
+    writel(readl(DANUBE_PMU_PWDCR) & ~DANUBE_PMU_PWDCR_LED, DANUBE_PMU_PWDCR);
+    while (--i && (readl(DANUBE_PMU_PWDSR) & DANUBE_PMU_PWDCR_LED)) {}
+
+	if (!i)
         panic("Activating LED in PMU failed!");
 }
 
 static inline void
 disable_led (void)
 {
-    *(unsigned long *)0xBF10201C |= 1 << 11;
+    writel(readl(DANUBE_PMU_PWDCR) | DANUBE_PMU_PWDCR_LED, DANUBE_PMU_PWDCR);
+}
+
+static inline void
+release_gpio_port (unsigned long adsl)
+{
+    if ( adsl )
+    {
+        danube_port_free_pin(LED_ADSL0_PORT, LED_ADSL0_PIN);
+        danube_port_free_pin(LED_ADSL1_PORT, LED_ADSL1_PIN);
+    }
+    else
+    {
+        danube_port_free_pin(LED_ST_PORT, LED_ST_PIN);
+        danube_port_free_pin(LED_D_PORT, LED_D_PIN);
+        danube_port_free_pin(LED_SH_PORT, LED_SH_PIN);
+    }
 }
 
 static inline int
@@ -405,14 +390,14 @@ setup_gpio_port (unsigned long adsl)
      */
     if ( adsl )
     {
-        ret |= port_reserve_pin(LED_ADSL0_PORT, LED_ADSL0_PIN, module_id);
-        ret |= port_reserve_pin(LED_ADSL1_PORT, LED_ADSL1_PIN, module_id);
+        ret |= danube_port_reserve_pin(LED_ADSL0_PORT, LED_ADSL0_PIN);
+        ret |= danube_port_reserve_pin(LED_ADSL1_PORT, LED_ADSL1_PIN);
     }
     else
     {
-        ret |= port_reserve_pin(LED_ST_PORT, LED_ST_PIN, module_id);
-        ret |= port_reserve_pin(LED_D_PORT, LED_D_PIN, module_id);
-        ret |= port_reserve_pin(LED_SH_PORT, LED_SH_PIN, module_id);
+        ret |= danube_port_reserve_pin(LED_ST_PORT, LED_ST_PIN);
+        ret |= danube_port_reserve_pin(LED_D_PORT, LED_D_PIN);
+        ret |= danube_port_reserve_pin(LED_SH_PORT, LED_SH_PIN);
     }
     if ( ret )
     {
@@ -422,15 +407,15 @@ setup_gpio_port (unsigned long adsl)
 
     if ( adsl )
     {
-        LED_ADSL0_ALTSEL0_SETUP(LED_ADSL0_PORT, LED_ADSL0_PIN, module_id);
-        LED_ADSL0_ALTSEL1_SETUP(LED_ADSL0_PORT, LED_ADSL0_PIN, module_id);
-        LED_ADSL0_DIR_SETUP(LED_ADSL0_PORT, LED_ADSL0_PIN, module_id);
-        LED_ADSL0_OPENDRAIN_SETUP(LED_ADSL0_PORT, LED_ADSL0_PIN, module_id);
+        LED_ADSL0_ALTSEL0_SETUP(LED_ADSL0_PORT, LED_ADSL0_PIN);
+        LED_ADSL0_ALTSEL1_SETUP(LED_ADSL0_PORT, LED_ADSL0_PIN);
+        LED_ADSL0_DIR_SETUP(LED_ADSL0_PORT, LED_ADSL0_PIN);
+        LED_ADSL0_OPENDRAIN_SETUP(LED_ADSL0_PORT, LED_ADSL0_PIN);
 
-        LED_ADSL1_ALTSEL0_SETUP(LED_ADSL1_PORT, LED_ADSL1_PIN, module_id);
-        LED_ADSL1_ALTSEL1_SETUP(LED_ADSL1_PORT, LED_ADSL1_PIN, module_id);
-        LED_ADSL1_DIR_SETUP(LED_ADSL1_PORT, LED_ADSL1_PIN, module_id);
-        LED_ADSL1_OPENDRAIN_SETUP(LED_ADSL1_PORT, LED_ADSL1_PIN, module_id);
+        LED_ADSL1_ALTSEL0_SETUP(LED_ADSL1_PORT, LED_ADSL1_PIN);
+        LED_ADSL1_ALTSEL1_SETUP(LED_ADSL1_PORT, LED_ADSL1_PIN);
+        LED_ADSL1_DIR_SETUP(LED_ADSL1_PORT, LED_ADSL1_PIN);
+        LED_ADSL1_OPENDRAIN_SETUP(LED_ADSL1_PORT, LED_ADSL1_PIN);
     }
     else
     {
@@ -439,45 +424,29 @@ setup_gpio_port (unsigned long adsl)
          *    I don't check the return value, because I'm sure the value is valid
          *    and the pins are reserved already.
          */
-        LED_ST_ALTSEL0_SETUP(LED_ST_PORT, LED_ST_PIN, module_id);
-        LED_ST_ALTSEL1_SETUP(LED_ST_PORT, LED_ST_PIN, module_id);
-        LED_ST_DIR_SETUP(LED_ST_PORT, LED_ST_PIN, module_id);
-        LED_ST_OPENDRAIN_SETUP(LED_ST_PORT, LED_ST_PIN, module_id);
+        LED_ST_ALTSEL0_SETUP(LED_ST_PORT, LED_ST_PIN);
+        LED_ST_ALTSEL1_SETUP(LED_ST_PORT, LED_ST_PIN);
+        LED_ST_DIR_SETUP(LED_ST_PORT, LED_ST_PIN);
+        LED_ST_OPENDRAIN_SETUP(LED_ST_PORT, LED_ST_PIN);
 
         /*
          *  Set LED_D
          */
-        LED_D_ALTSEL0_SETUP(LED_D_PORT, LED_D_PIN, module_id);
-        LED_D_ALTSEL1_SETUP(LED_D_PORT, LED_D_PIN, module_id);
-        LED_D_DIR_SETUP(LED_D_PORT, LED_D_PIN, module_id);
-        LED_D_OPENDRAIN_SETUP(LED_D_PORT, LED_D_PIN, module_id);
+        LED_D_ALTSEL0_SETUP(LED_D_PORT, LED_D_PIN);
+        LED_D_ALTSEL1_SETUP(LED_D_PORT, LED_D_PIN);
+        LED_D_DIR_SETUP(LED_D_PORT, LED_D_PIN);
+        LED_D_OPENDRAIN_SETUP(LED_D_PORT, LED_D_PIN);
 
         /*
          *  Set LED_SH
          */
-        LED_SH_ALTSEL0_SETUP(LED_SH_PORT, LED_SH_PIN, module_id);
-        LED_SH_ALTSEL1_SETUP(LED_SH_PORT, LED_SH_PIN, module_id);
-        LED_SH_DIR_SETUP(LED_SH_PORT, LED_SH_PIN, module_id);
-        LED_SH_OPENDRAIN_SETUP(LED_SH_PORT, LED_SH_PIN, module_id);
+        LED_SH_ALTSEL0_SETUP(LED_SH_PORT, LED_SH_PIN);
+        LED_SH_ALTSEL1_SETUP(LED_SH_PORT, LED_SH_PIN);
+        LED_SH_DIR_SETUP(LED_SH_PORT, LED_SH_PIN);
+        LED_SH_OPENDRAIN_SETUP(LED_SH_PORT, LED_SH_PIN);
     }
 
     return 0;
-}
-
-static inline void
-release_gpio_port (unsigned long adsl)
-{
-    if ( adsl )
-    {
-        port_free_pin(LED_ADSL0_PORT, LED_ADSL0_PIN, module_id);
-        port_free_pin(LED_ADSL1_PORT, LED_ADSL1_PIN, module_id);
-    }
-    else
-    {
-        port_free_pin(LED_ST_PORT, LED_ST_PIN, module_id);
-        port_free_pin(LED_D_PORT, LED_D_PIN, module_id);
-        port_free_pin(LED_SH_PORT, LED_SH_PIN, module_id);
-    }
 }
 
 static inline int
@@ -879,8 +848,6 @@ danube_led_init (void)
     } else {
         printk(KERN_INFO "led: misc_register on minor = %d\n", led_miscdev.minor);
 	}
-
-    module_id = THIS_MODULE ? (int)THIS_MODULE : ((MISC_MAJOR << 8) | led_miscdev.minor);
 
     up(&led_sem);
 
