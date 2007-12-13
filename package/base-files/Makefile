@@ -14,14 +14,10 @@ PKG_RELEASE:=12
 
 PKG_FILE_DEPEND:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
 
-REV:=$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' )
-ifeq ($(REV),)
-  REV:=0
-endif
 include $(INCLUDE_DIR)/package.mk
 
 ifneq ($(DUMP),1)
-  TARGET:=-$(BOARD)-$(KERNEL)
+  TARGET:=-$(BOARD)
   LIBGCC_VERSION:=$(GCC_VERSION)
 else
   UCLIBC_VERSION:=<UCLIBC_VERSION>
@@ -35,7 +31,7 @@ define Package/base-files$(TARGET)
   CATEGORY:=Base system
   TITLE:=Base filesystem for OpenWrt
   URL:=http://openwrt.org/
-  VERSION:=$(PKG_RELEASE)-$(REV)
+  VERSION:=$(PKG_RELEASE)-$(REVISION)
   $(call Config,network.lan.proto,string,static,LAN Protocol)
   $(call Config,network.lan.ipaddr,ip,192.168.1.1,LAN IP Address)
   $(call Config,network.lan.netmask,netmask,255.255.255.0,LAN Network Mask)
@@ -138,7 +134,7 @@ define Package/base-files$(TARGET)/install
 			$(CP) $(PLATFORM_SUBDIR)/base-files/* $(1)/; \
 		fi \
 	)
-	$(SED) 's,$$$$R,r$(REV),g' $(1)/etc/banner
+	$(SED) 's,$$$$R,r$(REVISION),g' $(1)/etc/banner
 	$(SED) 's,$$$$S,$(BOARD),g' -e 's,$$$$A,$(ARCH),g' $(1)/etc/ipkg.conf
 	mkdir -p $(1)/dev
 	mkdir -p $(1)/etc/crontabs
