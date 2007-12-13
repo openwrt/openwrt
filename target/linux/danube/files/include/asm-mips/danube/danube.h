@@ -285,4 +285,23 @@
 #define DANUBE_GPIO_P1_ALTSEL1	((u32*)(DANUBE_GPIO_BASE_ADDR + 0x0050))
 #define DANUBE_GPIO_P1_DIR		((u32*)(DANUBE_GPIO_BASE_ADDR + 0x0048))
 
+
+/*------------ WDT */
+
+#define DANUBE_WDT_BASE_ADDR	(KSEG1 + 0x1F880000)
+
+#define DANUBE_BIU_WDT_CR		((u32*)(DANUBE_WDT_BASE_ADDR + 0x03F0))
+#define DANUBE_BIU_WDT_SR		((u32*)(DANUBE_WDT_BASE_ADDR + 0x03F8))
+
+#define DANUBE_BIU_WDT_CR_GEN				(1 << 31)
+#define DANUBE_BIU_WDT_CR_DSEN				(1 << 30)
+#define DANUBE_BIU_WDT_CR_LPEN				(1 << 29)
+
+#define DANUBE_BIU_WDT_CR_CLKDIV_GET(value) (((value) >> 24) & ((1 << 2) - 1))
+#define DANUBE_BIU_WDT_CR_PWL_GET(value)	(((value) >> 26) & ((1 << 2) - 1))
+#define DANUBE_BIU_WDT_CR_PWL_SET(value)	((((1 << 2) - 1) & (value)) << 26)
+#define DANUBE_BIU_WDT_CR_PW_SET(value)		(((( 1 << 8) - 1) & (value)) << 16)
+#define DANUBE_BIU_WDT_CR_CLKDIV_SET(value)	(((( 1 << 2) - 1) & (value)) << 24)
+#define DANUBE_BIU_WDT_CR_RELOAD_SET(value)	(((( 1 << 16) - 1) & (value)) << 0)
+
 #endif
