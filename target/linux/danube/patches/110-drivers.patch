@@ -1,7 +1,7 @@
 Index: linux-2.6.23/drivers/serial/Kconfig
 ===================================================================
---- linux-2.6.23.orig/drivers/serial/Kconfig	2007-12-10 21:38:39.000000000 +0100
-+++ linux-2.6.23/drivers/serial/Kconfig	2007-12-10 21:38:42.000000000 +0100
+--- linux-2.6.23.orig/drivers/serial/Kconfig	2007-12-13 20:41:42.000000000 +0100
++++ linux-2.6.23/drivers/serial/Kconfig	2007-12-13 20:41:57.000000000 +0100
 @@ -1259,4 +1259,10 @@
  	  Currently, only 8250 compatible ports are supported, but
  	  others can easily be added.
@@ -15,8 +15,8 @@ Index: linux-2.6.23/drivers/serial/Kconfig
  endmenu
 Index: linux-2.6.23/drivers/serial/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/serial/Makefile	2007-12-10 21:38:39.000000000 +0100
-+++ linux-2.6.23/drivers/serial/Makefile	2007-12-10 21:38:42.000000000 +0100
+--- linux-2.6.23.orig/drivers/serial/Makefile	2007-12-13 20:41:42.000000000 +0100
++++ linux-2.6.23/drivers/serial/Makefile	2007-12-13 20:41:57.000000000 +0100
 @@ -64,3 +64,4 @@
  obj-$(CONFIG_SERIAL_NETX) += netx-serial.o
  obj-$(CONFIG_SERIAL_OF_PLATFORM) += of_serial.o
@@ -24,8 +24,8 @@ Index: linux-2.6.23/drivers/serial/Makefile
 +obj-$(CONFIG_SERIAL_DANUBE) += danube_asc.o
 Index: linux-2.6.23/drivers/mtd/maps/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/mtd/maps/Makefile	2007-12-10 21:38:39.000000000 +0100
-+++ linux-2.6.23/drivers/mtd/maps/Makefile	2007-12-10 21:38:42.000000000 +0100
+--- linux-2.6.23.orig/drivers/mtd/maps/Makefile	2007-12-13 20:41:42.000000000 +0100
++++ linux-2.6.23/drivers/mtd/maps/Makefile	2007-12-13 20:41:57.000000000 +0100
 @@ -71,3 +71,4 @@
  obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
  obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o
@@ -33,8 +33,8 @@ Index: linux-2.6.23/drivers/mtd/maps/Makefile
 +obj-$(CONFIG_MTD_DANUBE)	+= danube.o
 Index: linux-2.6.23/drivers/net/Kconfig
 ===================================================================
---- linux-2.6.23.orig/drivers/net/Kconfig	2007-12-10 21:38:42.000000000 +0100
-+++ linux-2.6.23/drivers/net/Kconfig	2007-12-10 21:38:42.000000000 +0100
+--- linux-2.6.23.orig/drivers/net/Kconfig	2007-12-13 20:41:42.000000000 +0100
++++ linux-2.6.23/drivers/net/Kconfig	2007-12-13 20:41:57.000000000 +0100
 @@ -339,6 +339,18 @@
  
  source "drivers/net/arm/Kconfig"
@@ -56,8 +56,8 @@ Index: linux-2.6.23/drivers/net/Kconfig
  	depends on ARM || MIPS
 Index: linux-2.6.23/drivers/net/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/net/Makefile	2007-12-10 21:38:42.000000000 +0100
-+++ linux-2.6.23/drivers/net/Makefile	2007-12-10 21:38:42.000000000 +0100
+--- linux-2.6.23.orig/drivers/net/Makefile	2007-12-13 20:41:42.000000000 +0100
++++ linux-2.6.23/drivers/net/Makefile	2007-12-13 20:41:57.000000000 +0100
 @@ -208,6 +208,7 @@
  obj-$(CONFIG_FEC_8XX) += fec_8xx/
  obj-$(CONFIG_PASEMI_MAC) += pasemi_mac.o
@@ -68,8 +68,8 @@ Index: linux-2.6.23/drivers/net/Makefile
  
 Index: linux-2.6.23/drivers/char/watchdog/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/char/watchdog/Makefile	2007-12-10 21:41:51.000000000 +0100
-+++ linux-2.6.23/drivers/char/watchdog/Makefile	2007-12-10 21:42:30.000000000 +0100
+--- linux-2.6.23.orig/drivers/char/watchdog/Makefile	2007-12-13 20:41:42.000000000 +0100
++++ linux-2.6.23/drivers/char/watchdog/Makefile	2007-12-13 20:41:57.000000000 +0100
 @@ -90,6 +90,7 @@
  obj-$(CONFIG_INDYDOG) += indydog.o
  obj-$(CONFIG_WDT_MTX1)	+= mtx-1_wdt.o
@@ -78,3 +78,14 @@ Index: linux-2.6.23/drivers/char/watchdog/Makefile
  
  # PARISC Architecture
  
+Index: linux-2.6.23/drivers/char/Makefile
+===================================================================
+--- linux-2.6.23.orig/drivers/char/Makefile	2007-12-13 20:41:42.000000000 +0100
++++ linux-2.6.23/drivers/char/Makefile	2007-12-13 21:38:15.000000000 +0100
+@@ -135,3 +135,6 @@
+ 	rm $@.tmp
+ 
+ endif
++
++obj-$(CONFIG_DANUBE_LED)	+= danube_led.o
++obj-$(CONFIG_DANUBE_GPIO)	+= danube_gpio.o
