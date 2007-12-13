@@ -110,7 +110,7 @@ danube_wdt_disable (void)
 
 /* passed LPEN or DSEN */
 void
-danube_wdt_low_power_or_debug (int en, int type)
+danube_wdt_enable_feature (int en, int type)
 {
 	unsigned int wdt_cr = 0;
 
@@ -168,28 +168,27 @@ danube_wdt_ioctl (struct inode *inode, struct file *file, unsigned int cmd,
 	   unsigned long arg)
 {
 	int result = 0;
-	int en = 0;
-	int istatus;
-	int pwl, clkdiv;
 	static int timeout = -1;
+	unsigned int user_arg;
+
+	if ((cmd != DANUBE_WDT_IOC_STOP) && (cmd != DANUBE_WDT_IOC_PING) && (cmd != DANUBE_WDT_IOC_GET_STATUS))
+	{
+		if (copy_from_user((void *) &user_arg, (void *) arg, sizeof (int)))
+			result = -EINVAL;
+	}
 
 	switch (cmd)
 	{
 	case DANUBE_WDT_IOC_START:
 		printk("enable watch dog timer!\n");
-		if (copy_from_user((void *) &timeout, (void *) arg, sizeof (int)))
-		{
-			printk ("invalid argument\n");
-			result = -EINVAL;
-		} else {
-			if ((result = danube_wdt_enable (timeout)) < 0)
-				timeout = -1;
-		}
+		if ((result = danube_wdt_enable(user_arg)) < 0)
+			timeout = -1;
+		else
+			timeout = user_arg;
 		break;
 
 	case DANUBE_WDT_IOC_STOP:
 		printk("disable watch dog timer\n");
-		timeout = -1;
 		danube_wdt_disable();
 		break;
 
@@ -201,32 +200,24 @@ danube_wdt_ioctl (struct inode *inode, struct file *file, unsigned int cmd,
 		break;
 
 	case DANUBE_WDT_IOC_GET_STATUS:
-		istatus = readl(DANUBE_BIU_WDT_SR);
-		copy_to_user((int *) arg, (int *) &istatus, sizeof (int));
+		user_arg = readl(DANUBE_BIU_WDT_SR);
+		copy_to_user((int*)arg, (int*)&user_arg, sizeof(int));
 		break;
 
 	case DANUBE_WDT_IOC_SET_PWL:
-		if (copy_from_user((void *) &pwl, (void *) arg, sizeof (int)))
-			result = -EINVAL;
-		danube_wdt_prewarning_limit(pwl);
+		danube_wdt_prewarning_limit(user_arg);
 		break;
 
 	case DANUBE_WDT_IOC_SET_DSEN:
-		if (copy_from_user((void *) &en, (void *) arg, sizeof (int)))
-			result = -EINVAL;
-		danube_wdt_low_power_or_debug(en, DANUBE_BIU_WDT_CR_DSEN);
+		danube_wdt_enable_feature(user_arg, DANUBE_BIU_WDT_CR_DSEN);
 		break;
 
 	case DANUBE_WDT_IOC_SET_LPEN:
-		if (copy_from_user((void *) &en, (void *) arg, sizeof (int)))
-			result = -EINVAL;
-		danube_wdt_low_power_or_debug(en, DANUBE_BIU_WDT_CR_LPEN);
+		danube_wdt_enable_feature(user_arg, DANUBE_BIU_WDT_CR_LPEN);
 		break;
 
 	case DANUBE_WDT_IOC_SET_CLKDIV:
-		if (copy_from_user((void *) &clkdiv, (void *) arg, sizeof (int)))
-			result = -EINVAL;
-		danube_wdt_set_clkdiv(clkdiv);
+		danube_wdt_set_clkdiv(user_arg);
 		break;
 	}
 
