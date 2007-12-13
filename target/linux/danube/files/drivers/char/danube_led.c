@@ -18,7 +18,6 @@
  *
  */
 
-#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/version.h>
@@ -29,39 +28,15 @@
 #include <asm/uaccess.h>
 #include <asm/unistd.h>
 #include <linux/errno.h>
-
-/*
- *  Chip Specific Head File
- */
+#include <asm/danube/danube.h>
 #include <asm/danube/port.h>
-
 #include <asm/danube/danube_led.h>
 #include <asm/danube/danube_gptu.h>
 
-
-/*
- * ####################################
- *              Definition
- * ####################################
- */
-
-#define DEBUG_ON_AMAZON                 0
-
 #define DATA_CLOCKING_EDGE              FALLING_EDGE
-
-#define BOARD_TYPE                      REFERENCE_BOARD
-
-#define DEBUG_WRITE_REGISTER            0
-
 #define RISING_EDGE                     0
 #define FALLING_EDGE                    1
 
-#define EVALUATION_BOARD                0
-#define REFERENCE_BOARD                 1
-
-/*
- *  GPIO Driver Function Wrapping
- */
 #define port_reserve_pin                danube_port_reserve_pin
 #define port_free_pin                   danube_port_free_pin
 #define port_set_altsel0                danube_port_set_altsel0
@@ -73,9 +48,6 @@
 #define port_set_open_drain             danube_port_set_open_drain
 #define port_clear_open_drain           danube_port_clear_open_drain
 
-/*
- *  GPIO Port Used By LED
- */
 #define LED_SH_PORT                     0
 #define LED_SH_PIN                      4
 #define LED_SH_DIR                      1
@@ -119,9 +91,6 @@
   #define ADSL_LED_IS_EXCLUSIVE         0
 #endif
 
-/*
- *  Define GPIO Functions
- */
 #if LED_SH_DIR
   #define LED_SH_DIR_SETUP              port_set_dir_out
 #else
@@ -227,115 +196,10 @@
   #define LED_ADSL1_OPENDRAIN_SETUP     port_clear_open_drain
 #endif
 
-/*
- *  LED Device Minor Number
- */
-#if !defined(LED_MINOR)
-    #define LED_MINOR                   151 //  This number is written in Linux kernel document "devices.txt"
-#endif  //  !defined(LED_MINOR)
-
-/*
- *  Bits Operation
- */
-#define GET_BITS(x, msb, lsb)           (((x) & ((1 << ((msb) + 1)) - 1)) >> (lsb))
 #define SET_BITS(x, msb, lsb, value)    (((x) & ~(((1 << ((msb) + 1)) - 1) ^ ((1 << (lsb)) - 1))) | (((value) & ((1 << (1 + (msb) - (lsb))) - 1)) << (lsb)))
 
-/*
- *  LED Registers Mapping
- */
-#define DANUBE_LED                      (KSEG1 + 0x1E100BB0)
-#define DANUBE_LED_CON0                 ((volatile unsigned int*)(DANUBE_LED + 0x0000))
-#define DANUBE_LED_CON1                 ((volatile unsigned int*)(DANUBE_LED + 0x0004))
-#define DANUBE_LED_CPU0                 ((volatile unsigned int*)(DANUBE_LED + 0x0008))
-#define DANUBE_LED_CPU1                 ((volatile unsigned int*)(DANUBE_LED + 0x000C))
-#define DANUBE_LED_AR                   ((volatile unsigned int*)(DANUBE_LED + 0x0010))
-
-/*
- *  LED Control 0 Register
- */
-#define LED_CON0_SWU                    (*DANUBE_LED_CON0 & (1 << 31))
-#define LED_CON0_FALLING_EDGE           (*DANUBE_LED_CON0 & (1 << 26))
-#define LED_CON0_AD1                    (*DANUBE_LED_CON0 & (1 << 25))
-#define LED_CON0_AD0                    (*DANUBE_LED_CON0 & (1 << 24))
-#define LED_CON0_LBn(n)                 (*DANUBE_LED_CON0 & (1 << n))
-#define LED_CON0_DEFAULT_VALUE          (0x80000000 | (DATA_CLOCKING_EDGE << 26))
-
-/*
- *  LED Control 1 Register
- */
-#define LED_CON1_US                     (*DANUBE_LED_CON1 >> 30)
-#define LED_CON1_SCS                    (*DANUBE_LED_CON1 & (1 << 28))
-#define LED_CON1_FPID                   GET_BITS(*DANUBE_LED_CON1, 27, 23)
-#define LED_CON1_FPIS                   GET_BITS(*DANUBE_LED_CON1, 21, 20)
-#define LED_CON1_DO                     GET_BITS(*DANUBE_LED_CON1, 19, 18)
-#define LED_CON1_G2                     (*DANUBE_LED_CON1 & (1 << 2))
-#define LED_CON1_G1                     (*DANUBE_LED_CON1 & (1 << 1))
-#define LED_CON1_G0                     (*DANUBE_LED_CON1 & 0x01)
-#define LED_CON1_G                      (*DANUBE_LED_CON1 & 0x07)
-#define LED_CON1_DEFAULT_VALUE          0x00000000
-
-/*
- *  LED Data Output CPU 0 Register
- */
-#define LED_CPU0_Ln(n)                  (*DANUBE_LED_CPU0 & (1 << n))
-#define LED_LED_CPU0_DEFAULT_VALUE      0x00000000
-
-/*
- *  LED Data Output CPU 1 Register
- */
-#define LED_CPU1_Ln(n)                  (*DANUBE_LED_CPU1 & (1 << n))
-#define LED_LED_CPU1_DEFAULT_VALUE      0x00000000
-
-/*
- *  LED Data Output Access Rights Register
- */
-#define LED_AR_Ln(n)                    (*DANUBE_LED_AR & (1 << n))
-#define LED_AR_DEFAULT_VALUE            0x00000000
-
-/*
- *  If try module on Amazon chip, prepare some tricks to prevent invalid memory write.
- */
-#if defined(DEBUG_ON_AMAZON) && DEBUG_ON_AMAZON
-    char g_pFakeRegisters[0x50];
-
-    #undef  DEBUG_WRITE_REGISTER
-
-    #undef  DANUBE_LED
-    #define DANUBE_LED                  g_pFakeRegisters
-
-    #undef  port_reserve_pin
-    #undef  port_free_pin
-    #undef  port_set_altsel0
-    #undef  port_clear_altsel0
-    #undef  port_set_altsel1
-    #undef  port_clear_altsel1
-    #undef  port_set_dir_out
-
-    #define port_reserve_pin            amazon_port_reserve_pin
-    #define port_free_pin               amazon_port_free_pin
-    #define port_set_altsel0            amazon_port_set_altsel0
-    #define port_clear_altsel0          amazon_port_clear_altsel0
-    #define port_set_altsel1            amazon_port_set_altsel1
-    #define port_clear_altsel1          amazon_port_clear_altsel1
-    #define port_set_dir_out            amazon_port_set_dir_out
-#endif  //  defined(DEBUG_ON_AMAZON) && DEBUG_ON_AMAZON
-
-
-/*
- *  File Operations
- */
-static int led_ioctl(struct inode *, struct file *, unsigned int, unsigned long);
-static int led_open(struct inode *, struct file *);
-static int led_release(struct inode *, struct file *);
-
-/*
- *  Software Update LED
- */
 static inline int update_led(void);
 
-/*
- *  LED Configuration Functions
- */
 static inline unsigned int set_update_source(unsigned int, unsigned long, unsigned long);
 static inline unsigned int set_blink_in_batch(unsigned int, unsigned long, unsigned long);
 static inline unsigned int set_data_clock_edge(unsigned int, unsigned long);
@@ -347,48 +211,20 @@ static inline unsigned int set_number_of_enabled_led(unsigned int, unsigned long
 static inline unsigned int set_data_in_batch(unsigned int, unsigned long, unsigned long);
 static inline unsigned int set_access_right(unsigned int, unsigned long, unsigned long);
 
-/*
- *  PMU Operation
- */
 static inline void enable_led(void);
 static inline void disable_led(void);
 
-/*
- *  GPIO Setup & Release
- */
 static inline int setup_gpio_port(unsigned long);
 static inline void release_gpio_port(unsigned long);
 
-/*
- *  GPT Setup & Release
- */
 static inline int setup_gpt(int, unsigned long);
 static inline void release_gpt(int);
 
-/*
- *  Turn On/Off LED
- */
 static inline int turn_on_led(unsigned long);
 static inline void turn_off_led(unsigned long);
 
 
 static struct semaphore led_sem;
-
-static struct file_operations led_fops = {
-    owner:      THIS_MODULE,
-    ioctl:      led_ioctl,
-    open:       led_open,
-    release:    led_release
-};
-
-static struct miscdevice led_miscdev = {
-    LED_MINOR,
-    "led",
-    &led_fops,
-    NULL,
-    NULL,
-    NULL
-};
 
 static unsigned long gpt_on = 0;
 static unsigned long gpt_freq = 0;
@@ -399,35 +235,6 @@ static unsigned long f_led_on = 0;
 static int module_id;
 
 
-static int
-led_ioctl (struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
-{
-    int ret = -EINVAL;
-    struct led_config_param param;
-
-    switch ( cmd )
-    {
-    case LED_CONFIG:
-        copy_from_user(&param, (char*)arg, sizeof(param));
-        ret = danube_led_config(&param);
-        break;
-    }
-
-    return ret;
-}
-
-static int
-led_open (struct inode *inode, struct file *file)
-{
-    return 0;
-}
-
-static int
-led_release (struct inode *inode, struct file *file)
-{
-    return 0;
-}
-
 static inline int
 update_led (void)
 {
@@ -436,7 +243,7 @@ update_led (void)
     /*
      *  GPT2 or FPID is the clock to update LEDs automatically.
      */
-    if ( LED_CON1_US != 0 )
+    if (readl(DANUBE_LED_CON1) >> 30)
         return 0;
 
     /*
@@ -445,7 +252,7 @@ update_led (void)
     for ( i = 100000; i != 0; i -= j / 16 )
     {
         down(&led_sem);
-        if ( !LED_CON0_SWU )
+        if (!(readl(DANUBE_LED_CON0) & LED_CON0_SWU))
         {
             *DANUBE_LED_CON0 |= 1 << 31;
             up(&led_sem);
@@ -531,7 +338,6 @@ set_access_right (unsigned int reg, unsigned long mask, unsigned long ar)
 static inline void
 enable_led (void)
 {
-#if !defined(DEBUG_ON_AMAZON) || !DEBUG_ON_AMAZON
     /*  Activate LED module in PMU. */
     int i = 1000000;
 
@@ -539,41 +345,18 @@ enable_led (void)
     while ( --i && (*(unsigned long *)0xBF102020 & (1 << 11)) );
     if ( !i )
         panic("Activating LED in PMU failed!");
-#endif
 }
 
 static inline void
 disable_led (void)
 {
-#if !defined(DEBUG_ON_AMAZON) || !DEBUG_ON_AMAZON
-    /*  Inactivating LED module in PMU.    */
     *(unsigned long *)0xBF10201C |= 1 << 11;
-#endif
 }
 
 static inline int
 setup_gpio_port (unsigned long adsl)
 {
-#if !defined(DEBUG_ON_AMAZON) || !DEBUG_ON_AMAZON
     int ret = 0;
-
-  #if defined(DEBUG_WRITE_REGISTER) && DEBUG_WRITE_REGISTER
-    if ( adsl )
-    {
-        *(unsigned long *)0xBE100B18 |=  0x30;
-        *(unsigned long *)0xBE100B1C |=  0x20;
-        *(unsigned long *)0xBE100B1C &= ~0x10;
-        *(unsigned long *)0xBE100B20 |=  0x30;
-        *(unsigned long *)0xBE100B24 |=  0x30;
-    }
-    else
-    {
-        *(unsigned long *)0xBE100B18 |=  0x70;
-        *(unsigned long *)0xBE100B1C |=  0x70;
-        *(unsigned long *)0xBE100B20 &= ~0x70;
-        *(unsigned long *)0xBE100B24 |=  0x70;
-    }
-  #else
 
     /*
      *  Reserve all pins before config them.
@@ -635,8 +418,6 @@ setup_gpio_port (unsigned long adsl)
         LED_SH_DIR_SETUP(LED_SH_PORT, LED_SH_PIN, module_id);
         LED_SH_OPENDRAIN_SETUP(LED_SH_PORT, LED_SH_PIN, module_id);
     }
-  #endif
-#endif
 
     return 0;
 }
@@ -644,8 +425,6 @@ setup_gpio_port (unsigned long adsl)
 static inline void
 release_gpio_port (unsigned long adsl)
 {
-#if !defined(DEBUG_ON_AMAZON) || !DEBUG_ON_AMAZON
-  #if !defined(DEBUG_WRITE_REGISTER) || !DEBUG_WRITE_REGISTER
     if ( adsl )
     {
         port_free_pin(LED_ADSL0_PORT, LED_ADSL0_PIN, module_id);
@@ -657,8 +436,6 @@ release_gpio_port (unsigned long adsl)
         port_free_pin(LED_D_PORT, LED_D_PIN, module_id);
         port_free_pin(LED_SH_PORT, LED_SH_PIN, module_id);
     }
-  #endif
-#endif
 }
 
 static inline int
@@ -735,7 +512,7 @@ danube_led_set_blink (unsigned int led, unsigned int blink)
         *DANUBE_LED_CON0 &= ~bit_mask;
     up(&led_sem);
 
-    return (led == 0 && LED_CON0_AD0) || (led == 1 && LED_CON0_AD1) ? -EINVAL : 0;
+    return (led == 0 && (readl(DANUBE_LED_CON0) & LED_CON0_AD0)) || (led == 1 && (readl(DANUBE_LED_CON0) & LED_CON0_AD1)) ? -EINVAL : 0;
 }
 
 int
@@ -786,7 +563,7 @@ danube_led_config (struct led_config_param* param)
 
     f_setup_gpt2 = 0;
 
-    f_software_update = LED_CON0_SWU ? 0 : 1;
+    f_software_update = (readl(DANUBE_LED_CON0) & LED_CON0_SWU) ? 0 : 1;
 
     new_led_on = f_led_on;
     new_adsl_on = adsl_on;
@@ -968,10 +745,6 @@ danube_led_config (struct led_config_param* param)
     if ( !f_led_on )
         disable_led();
 
-#if defined(DEBUG_ON_AMAZON) && DEBUG_ON_AMAZON
-    *DANUBE_LED_CON0 &= 0x7FFFFFFF;
-#endif
-
     up(&led_sem);
     return 0;
 
@@ -987,6 +760,50 @@ INVALID_PARAM:
     return -EINVAL;
 }
 
+static int
+led_ioctl (struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
+{
+    int ret = -EINVAL;
+    struct led_config_param param;
+
+    switch ( cmd )
+    {
+    case LED_CONFIG:
+        copy_from_user(&param, (char*)arg, sizeof(param));
+        ret = danube_led_config(&param);
+        break;
+    }
+
+    return ret;
+}
+
+static int
+led_open (struct inode *inode, struct file *file)
+{
+    return 0;
+}
+
+static int
+led_release (struct inode *inode, struct file *file)
+{
+    return 0;
+}
+
+static struct file_operations led_fops = {
+    owner:      THIS_MODULE,
+    ioctl:      led_ioctl,
+    open:       led_open,
+    release:    led_release
+};
+
+static struct miscdevice led_miscdev = {
+    151,
+    "led",
+    &led_fops,
+    NULL,
+    NULL,
+    NULL
+};
 
 int __init
 danube_led_init (void)
@@ -999,15 +816,11 @@ danube_led_init (void)
     /*
      *  Set default value to registers to turn off all LED light.
      */
-    *DANUBE_LED_AR   = LED_AR_DEFAULT_VALUE;
-    *DANUBE_LED_CPU0 = LED_LED_CPU0_DEFAULT_VALUE;
-    *DANUBE_LED_CPU1 = LED_LED_CPU1_DEFAULT_VALUE;
-    *DANUBE_LED_CON1 = LED_CON1_DEFAULT_VALUE;
-    *DANUBE_LED_CON0 = LED_CON0_DEFAULT_VALUE;
-
-#if defined(DEBUG_ON_AMAZON) && DEBUG_ON_AMAZON
-    *DANUBE_LED_CON0 &= 0x7FFFFFFF;
-#endif
+    *DANUBE_LED_AR   = 0x0;
+    *DANUBE_LED_CPU0 = 0x0;
+    *DANUBE_LED_CPU1 = 0x0;
+    *DANUBE_LED_CON1 = 0x0;
+    *DANUBE_LED_CON0 = (0x80000000 | (DATA_CLOCKING_EDGE << 26));
 
     disable_led();
 
@@ -1031,7 +844,6 @@ danube_led_init (void)
 
     up(&led_sem);
 
-#if BOARD_TYPE == REFERENCE_BOARD
     /*  Add to enable hardware relay    */
         /*  Map for LED on reference board
               WLAN_READ     LED11   OUT1    15
@@ -1055,7 +867,6 @@ danube_led_init (void)
     param.data_mask = 1 << 4;
     param.data = 1 << 4;
     danube_led_config(&param);
-#endif
 
     //  by default, update by FSC clock (FPID)
     param.operation_mask = CONFIG_OPERATION_UPDATE_CLOCK;
