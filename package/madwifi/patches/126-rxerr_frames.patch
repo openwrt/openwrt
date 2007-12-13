@@ -1,10 +1,10 @@
-Index: madwifi-ng-r2834-20071106/ath/if_ath.c
+Index: madwifi-dfs-r3053/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/ath/if_ath.c	2007-11-07 14:02:02.861533944 +0100
-+++ madwifi-ng-r2834-20071106/ath/if_ath.c	2007-11-07 14:02:03.853590479 +0100
-@@ -5834,8 +5834,9 @@
+--- madwifi-dfs-r3053.orig/ath/if_ath.c	2007-12-13 05:25:12.854357994 +0100
++++ madwifi-dfs-r3053/ath/if_ath.c	2007-12-13 05:25:13.122373270 +0100
+@@ -6410,8 +6410,9 @@
  			/*
- 			 * Reject error frames if we have no vaps that 
+ 			 * Reject error frames if we have no vaps that
  			 * are operating in monitor mode.
 +			 * Reject empty frames as well
  			 */

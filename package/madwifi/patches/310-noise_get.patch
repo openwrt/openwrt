@@ -1,16 +1,16 @@
-Index: madwifi-ng-r2978-20071127/ath/if_ath.c
+Index: madwifi-dfs-r3053/ath/if_ath.c
 ===================================================================
---- madwifi-ng-r2978-20071127.orig/ath/if_ath.c	2007-11-27 21:59:09.565984878 +0100
-+++ madwifi-ng-r2978-20071127/ath/if_ath.c	2007-11-27 22:01:09.964846018 +0100
-@@ -1597,7 +1597,6 @@
- 	 * Wireshark and Kismet.
- 	 */
+--- madwifi-dfs-r3053.orig/ath/if_ath.c	2007-12-13 05:25:14.210435274 +0100
++++ madwifi-dfs-r3053/ath/if_ath.c	2007-12-13 05:25:14.558455106 +0100
+@@ -1648,7 +1648,6 @@
+ 	/* XXXAPSD: build in check against max triggers we could see
+ 	 *          based on ic->ic_uapsdmaxtriggers. */
  	hw_tsf = ath_hal_gettsf64(ah);
 -	ic->ic_channoise = ath_hal_get_channel_noise(ah, &(sc->sc_curchan));
  
  	ATH_RXBUF_LOCK_IRQ(sc);
  	if (sc->sc_rxbufcur == NULL)
-@@ -8536,6 +8535,7 @@
+@@ -8815,6 +8814,7 @@
  		if (ath_calinterval == ATH_LONG_CALINTERVAL)
  			ath_calinterval = ATH_SHORT_CALINTERVAL;
  	}
@@ -18,7 +18,7 @@ Index: madwifi-ng-r2978-20071127/ath/if_ath.c
  
  	DPRINTF(sc, ATH_DEBUG_CALIBRATE, "%s: channel %u/%x -- IQ %s.\n",
  		__func__, sc->sc_curchan.channel, sc->sc_curchan.channelFlags,
-@@ -8590,6 +8590,7 @@
+@@ -8869,6 +8869,7 @@
  	struct ath_softc *sc = dev->priv;
  
  	(void) ath_chan_set(sc, ic->ic_curchan);
@@ -26,11 +26,11 @@ Index: madwifi-ng-r2978-20071127/ath/if_ath.c
  	/*
  	 * If we are returning to our bss channel then mark state
  	 * so the next recv'd beacon's TSF will be used to sync the
-@@ -8812,6 +8813,7 @@
+@@ -9095,6 +9096,7 @@
  		}
  
  		ath_hal_process_noisefloor(ah);
 +		ic->ic_channoise = ath_hal_get_channel_noise(ah, &(sc->sc_curchan));
  		/*
- 		 * Configure the beacon and sleep timers.
+ 		 * Reset rssi stats; maybe not the best place...
  		 */
