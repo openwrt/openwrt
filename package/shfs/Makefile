@@ -82,7 +82,7 @@ define Package/shfs-utils/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/shfs{,u}mount $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/mount.shfs $(1)/sbin/
+	ln -sf /usr/bin/shfsmount $(1)/sbin/mount.shfs
 endef
 
 $(eval $(call KernelPackage,shfs))
