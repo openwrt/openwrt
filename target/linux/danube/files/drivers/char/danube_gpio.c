@@ -60,9 +60,7 @@
 static int port_major = 0;
 static int danube_port_pin_usage[MAX_PORTS][PINS_PER_PORT];	// Map for pin usage
 static u32 danube_port_bases[MAX_PORTS]
-	= { DANUBE_GPIO,
-	DANUBE_GPIO + 0x00000030
-};				// Base addresses for ports
+	= { DANUBE_GPIO_BASE_ADDR, DANUBE_GPIO_P0_PUDEN };
 
 static struct semaphore port_sem;
 
@@ -827,8 +825,6 @@ danube_port_init (void)
 	int t = 0;
 	int i = 0;
 	int err = 0;
-	u32 pins = 0;
-
 	printk ("Danube Port Initialization\n");
 
 	sema_init (&port_sem, 1);
