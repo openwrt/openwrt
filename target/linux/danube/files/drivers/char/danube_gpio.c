@@ -29,13 +29,6 @@
 #include <asm/danube/danube.h>
 #include <asm/danube/danube_ioctl.h>
 
-
-#define PORT_IOC_CALL(ret,port,pin,func)    \
-		ret=danube_port_reserve_pin(port,pin,PORT_MODULE_ID); \
-		if (ret == 0) ret=func(port,pin,PORT_MODULE_ID); \
-		if (ret == 0) ret=danube_port_free_pin(port,pin,PORT_MODULE_ID);
-
-
 #define MAX_PORTS			2
 #define PINS_PER_PORT		16
 
@@ -310,7 +303,7 @@ danube_port_release (struct inode *inode, struct file *filelp)
 
 static int
 danube_port_ioctl (struct inode *inode, struct file *filp,
-		   unsigned int cmd, unsigned long arg)
+			unsigned int cmd, unsigned long arg)
 {
 	int ret = 0;
 	volatile struct danube_port_ioctl_parm parm;
@@ -338,97 +331,67 @@ danube_port_ioctl (struct inode *inode, struct file *filp,
 
 	switch (cmd) {
 	case DANUBE_PORT_IOCOD:
-		if (parm.value == 0x00) {
-			PORT_IOC_CALL (ret, parm.port, parm.pin,
-				       danube_port_clear_open_drain);
-		}
-		else {
-			PORT_IOC_CALL (ret, parm.port, parm.pin,
-				       danube_port_set_open_drain);
-		}
+		if (parm.value == 0x00)
+			danube_port_clear_open_drain(parm.port, parm.pin);
+		else
+			danube_port_set_open_drain(parm.port, parm.pin);
 		break;
+
 	case DANUBE_PORT_IOCPUDSEL:
-		if (parm.value == 0x00) {
-			PORT_IOC_CALL (ret, parm.port, parm.pin,
-				       danube_port_clear_pudsel);
-		}
-		else {
-			PORT_IOC_CALL (ret, parm.port, parm.pin,
-				       danube_port_set_pudsel);
-		}
+		if (parm.value == 0x00)
+			danube_port_clear_pudsel(parm.port, parm.pin);
+		else
+			danube_port_set_pudsel(parm.port, parm.pin);
 		break;
+
 	case DANUBE_PORT_IOCPUDEN:
-		if (parm.value == 0x00) {
-			PORT_IOC_CALL (ret, parm.port, parm.pin,
-				       danube_port_clear_puden);
-		}
-		else {
-			PORT_IOC_CALL (ret, parm.port, parm.pin,
-				       danube_port_set_puden);
-		}
+		if (parm.value == 0x00)
+			danube_port_clear_puden(parm.port, parm.pin);
+		else
+			danube_port_set_puden(parm.port, parm.pin);
 		break;
+
 	case DANUBE_PORT_IOCSTOFF:
-		if (parm.value == 0x00) {
-			PORT_IOC_CALL (ret, parm.port, parm.pin,
-				       danube_port_clear_stoff);
-		}
-		else {
-			PORT_IOC_CALL (ret, parm.port, parm.pin,
-				       danube_port_set_stoff);
-		}
+		if (parm.value == 0x00)
+			danube_port_clear_stoff(parm.port, parm.pin);
+		else
+			danube_port_set_stoff(parm.port, parm.pin);
 		break;
+
 	case DANUBE_PORT_IOCDIR:
-		if (parm.value == 0x00) {
-			PORT_IOC_CALL (ret, parm.port, parm.pin,
-				       danube_port_set_dir_in);
-		}
-		else {
-			PORT_IOC_CALL (ret, parm.port, parm.pin,
-				       danube_port_set_dir_out);
-		}
+		if (parm.value == 0x00)
+			danube_port_set_dir_in(parm.port, parm.pin);
+		else
+			danube_port_set_dir_out(parm.port, parm.pin);
 		break;
+
 	case DANUBE_PORT_IOCOUTPUT:
-		if (parm.value == 0x00) {
-			PORT_IOC_CALL (ret, parm.port, parm.pin,
-				       danube_port_clear_output);
-		}
-		else {
-			PORT_IOC_CALL (ret, parm.port, parm.pin,
-				       danube_port_set_output);
-		}
+		if (parm.value == 0x00)
+			danube_port_clear_output(parm.port, parm.pin);
+		else
+			danube_port_set_output(parm.port, parm.pin);
 		break;
+
 	case DANUBE_PORT_IOCALTSEL0:
-		if (parm.value == 0x00) {
-			PORT_IOC_CALL (ret, parm.port, parm.pin,
-				       danube_port_clear_altsel0);
-		}
-		else {
-			PORT_IOC_CALL (ret, parm.port, parm.pin,
-				       danube_port_set_altsel0);
-		}
+		if (parm.value == 0x00)
+			danube_port_clear_altsel0(parm.port, parm.pin);
+		else
+			danube_port_set_altsel0(parm.port, parm.pin);
 		break;
+
 	case DANUBE_PORT_IOCALTSEL1:
-		if (parm.value == 0x00) {
-			PORT_IOC_CALL (ret, parm.port, parm.pin,
-				       danube_port_clear_altsel1);
-		}
-		else {
-			PORT_IOC_CALL (ret, parm.port, parm.pin,
-				       danube_port_set_altsel1);
-		}
+		if (parm.value == 0x00)
+			danube_port_clear_altsel1(parm.port, parm.pin);
+		else
+			danube_port_set_altsel1(parm.port, parm.pin);
 		break;
+
 	case DANUBE_PORT_IOCINPUT:
-		ret = danube_port_reserve_pin (parm.port, parm.pin,
-					       PORT_MODULE_ID);
-		if (ret == 0)
-			parm.value =
-				danube_port_get_input (parm.port, parm.pin,
-						       PORT_MODULE_ID);
-		ret = danube_port_free_pin (parm.port, parm.pin,
-					    PORT_MODULE_ID);
-		copy_to_user ((void *) arg, (void *) &parm,
-			      sizeof (struct danube_port_ioctl_parm));
+		parm.value = danube_port_get_input(parm.port, parm.pin);
+		copy_to_user((void*)arg, (void*)&parm,
+			sizeof(struct danube_port_ioctl_parm));
 		break;
+
 	default:
 		ret = -EINVAL;
 	}
