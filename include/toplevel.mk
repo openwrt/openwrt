@@ -7,20 +7,15 @@
 #
 
 RELEASE:=Kamikaze
-#VERSION:=2.0 # uncomment for final release
-
 SHELL:=/usr/bin/env bash
-OPENWRTVERSION:=$(RELEASE)
 PREP_MK= OPENWRT_BUILD= QUIET=0
+
 include $(TOPDIR)/include/verbose.mk
-ifneq ($(VERSION),)
-  OPENWRTVERSION:=$(VERSION) ($(OPENWRTVERSION))
-else
-  REV:=$(if $(wildcard .svn/entries),$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' ))
-  ifneq ($(REV),)
-    OPENWRTVERSION:=$(OPENWRTVERSION)/r$(REV)
-  endif
-endif
+
+REVISION:=$(shell $(TOPDIR)/scripts/getver.sh)
+OPENWRTVERSION:=$(RELEASE)$(if $(REVISION), ($(REVISION)))
+export RELEASE
+export REVISION
 export OPENWRTVERSION
 export IS_TTY=$(shell tty -s && echo 1 || echo 0)
 
