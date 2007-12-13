@@ -30,7 +30,7 @@ BUILD_SUFFIX:=$(call qstrip,$(CONFIG_BUILD_SUFFIX))
 GCCV:=$(call qstrip,$(CONFIG_GCC_VERSION))
 SUBDIR:=$(patsubst $(TOPDIR)/%,%,${CURDIR})
 
-OPTIMIZE_FOR_CPU:=$(ARCH)
+OPTIMIZE_FOR_CPU=$(ARCH)
 
 DL_DIR:=$(if $(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(TOPDIR)/dl)
 BIN_DIR:=$(TOPDIR)/bin
@@ -53,7 +53,7 @@ ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
   -include $(TOOLCHAIN_DIR)/info.mk
   REAL_GNU_TARGET_NAME=$(OPTIMIZE_FOR_CPU)-linux-uclibc
   GNU_TARGET_NAME=$(OPTIMIZE_FOR_CPU)-linux
-  TARGET_CROSS?=$(OPTIMIZE_FOR_CPU)-linux-uclibc-
+  TARGET_CROSS:=$(if $(TARGET_CROSS),$(TARGET_CROSS),$(OPTIMIZE_FOR_CPU)-linux-uclibc-)
 endif
 
 TARGET_PATH:=$(TOOLCHAIN_DIR)/bin:$(STAGING_DIR_HOST)/bin:$(STAGING_DIR)/usr/bin:$(PATH)
