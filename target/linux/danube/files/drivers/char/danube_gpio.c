@@ -27,8 +27,32 @@
 #include <asm/semaphore.h>
 #include <asm/uaccess.h>
 #include <asm/danube/danube.h>
-#include <asm/danube/port.h>
-#include "port_defs.h"
+#include <asm/danube/danube_ioctl.h>
+
+
+#define DANUBE_PORT_OUT_REG				0x00000010
+#define DANUBE_PORT_IN_REG				0x00000014
+#define DANUBE_PORT_DIR_REG				0x00000018
+#define DANUBE_PORT_ALTSEL0_REG			0x0000001C
+#define DANUBE_PORT_ALTSEL1_REG			0x00000020
+#define DANUBE_PORT_OD_REG				0x00000024
+#define DANUBE_PORT_STOFF_REG			0x00000028
+#define DANUBE_PORT_PUDSEL_REG			0x0000002C
+#define DANUBE_PORT_PUDEN_REG			0x00000030
+
+#define PORT_MODULE_ID  0xff
+
+#define PORT_WRITE_REG(reg, value)   \
+		*((volatile u32*)(reg)) = (u32)value;
+
+#define PORT_READ_REG(reg, value)    \
+		value = (u32)*((volatile u32*)(reg));
+
+#define PORT_IOC_CALL(ret,port,pin,func)    \
+		ret=danube_port_reserve_pin(port,pin,PORT_MODULE_ID); \
+		if (ret == 0) ret=func(port,pin,PORT_MODULE_ID); \
+		if (ret == 0) ret=danube_port_free_pin(port,pin,PORT_MODULE_ID);
+
 
 #define MAX_PORTS	2	// Number of ports in system
 #define PINS_PER_PORT	16	// Number of available pins per port
@@ -57,7 +81,7 @@ danube_port_reserve_pin (int port, int pin, int module_id)
 		return -EBUSY;
 	}
 
-	return OK;
+	return 0;
 }
 
 int
@@ -73,7 +97,7 @@ danube_port_free_pin (int port, int pin, int module_id)
 		return -EBUSY;
 	danube_port_pin_usage[port][pin] = 0;
 
-	return OK;
+	return 0;
 }
 
 int
@@ -93,7 +117,7 @@ danube_port_set_open_drain (int port, int pin, int module_id)
 	reg |= (1 << pin);
 	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_OD_REG, reg);
 
-	return OK;
+	return 0;
 }
 
 int
@@ -113,7 +137,7 @@ danube_port_clear_open_drain (int port, int pin, int module_id)
 	reg &= ~(1 << pin);
 	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_OD_REG, reg);
 
-	return OK;
+	return 0;
 }
 
 int
@@ -134,7 +158,7 @@ danube_port_set_pudsel (int port, int pin, int module_id)
 	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_PUDSEL_REG,
 			reg);
 
-	return OK;
+	return 0;
 }
 
 int
@@ -155,7 +179,7 @@ danube_port_clear_pudsel (int port, int pin, int module_id)
 	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_PUDSEL_REG,
 			reg);
 
-	return OK;
+	return 0;
 }
 
 int
@@ -175,7 +199,7 @@ danube_port_set_puden (int port, int pin, int module_id)
 	reg |= (1 << pin);
 	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_PUDEN_REG, reg);
 
-	return OK;
+	return 0;
 }
 
 int
@@ -195,7 +219,7 @@ danube_port_clear_puden (int port, int pin, int module_id)
 	reg &= ~(1 << pin);
 	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_PUDEN_REG, reg);
 
-	return OK;
+	return 0;
 }
 
 int
@@ -215,7 +239,7 @@ danube_port_set_stoff (int port, int pin, int module_id)
 	reg |= (1 << pin);
 	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_STOFF_REG, reg);
 
-	return OK;
+	return 0;
 }
 
 int
@@ -235,7 +259,7 @@ danube_port_clear_stoff (int port, int pin, int module_id)
 	reg &= ~(1 << pin);
 	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_STOFF_REG, reg);
 
-	return OK;
+	return 0;
 }
 
 int
@@ -255,7 +279,7 @@ danube_port_set_dir_out (int port, int pin, int module_id)
 	reg |= (1 << pin);
 	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_DIR_REG, reg);
 
-	return OK;
+	return 0;
 }
 
 int
@@ -275,7 +299,7 @@ danube_port_set_dir_in (int port, int pin, int module_id)
 	reg &= ~(1 << pin);
 	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_DIR_REG, reg);
 
-	return OK;
+	return 0;
 }
 
 int
@@ -295,7 +319,7 @@ danube_port_set_output (int port, int pin, int module_id)
 	reg |= (1 << pin);
 	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_OUT_REG, reg);
 
-	return OK;
+	return 0;
 }
 
 int
@@ -315,7 +339,7 @@ danube_port_clear_output (int port, int pin, int module_id)
 	reg &= ~(1 << pin);
 	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_OUT_REG, reg);
 
-	return OK;
+	return 0;
 }
 
 int
@@ -358,7 +382,7 @@ danube_port_set_altsel0 (int port, int pin, int module_id)
 	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_ALTSEL0_REG,
 			reg);
 
-	return OK;
+	return 0;
 }
 
 int
@@ -380,7 +404,7 @@ danube_port_clear_altsel0 (int port, int pin, int module_id)
 	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_ALTSEL0_REG,
 			reg);
 
-	return OK;
+	return 0;
 }
 
 int
@@ -402,7 +426,7 @@ danube_port_set_altsel1 (int port, int pin, int module_id)
 	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_ALTSEL1_REG,
 			reg);
 
-	return OK;
+	return 0;
 }
 
 int
@@ -424,7 +448,7 @@ danube_port_clear_altsel1 (int port, int pin, int module_id)
 	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_ALTSEL1_REG,
 			reg);
 
-	return OK;
+	return 0;
 }
 
 int
@@ -652,13 +676,13 @@ danube_port_read_procmem (char *buf, char **start, off_t offset, int count,
 static int
 danube_port_open (struct inode *inode, struct file *filep)
 {
-	return OK;
+	return 0;
 }
 
 static int
 danube_port_release (struct inode *inode, struct file *filelp)
 {
-	return OK;
+	return 0;
 }
 
 static int
@@ -828,7 +852,7 @@ danube_port_init (void)
 	create_proc_read_entry ("driver/danube_port", 0, NULL,
 				danube_port_read_procmem, NULL);
 
-	return OK;
+	return 0;
 }
 
 module_init (danube_port_init);
