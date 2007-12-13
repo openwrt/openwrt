@@ -15,14 +15,14 @@
 struct event_t {
 	struct work_struct wq;
 	int set;
-	long int jiffies;
+	unsigned long jiffies;
 };
 
 static struct ar531x_boarddata *bcfg;
 
 extern struct sock *uevent_sock;
 extern u64 uevent_next_seqnum(void);
-static int seen;
+static unsigned long seen;
 
 static inline void add_msg(struct sk_buff *skb, char *msg)
 {
