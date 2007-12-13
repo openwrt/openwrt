@@ -18,27 +18,16 @@
  *
  */
 
-#include <linux/module.h>
-#include <linux/init.h>
-#include <linux/sched.h>
-#include <linux/kernel.h>
-#include <linux/slab.h>
-#include <linux/string.h>
-#include <linux/timer.h>
-#include <linux/fs.h>
+#include <asm/uaccess.h>
 #include <linux/errno.h>
 #include <linux/proc_fs.h>
-#include <linux/stat.h>
-#include <linux/tty.h>
-#include <linux/selection.h>
-#include <linux/kmod.h>
-#include <linux/vmalloc.h>
-#include <linux/kdev_t.h>
 #include <linux/ioctl.h>
-#include <asm/uaccess.h>
-#include <asm/system.h>
+#include <linux/module.h>
 #include <asm-mips/danube/danube_wdt.h>
 #include <asm-mips/danube/danube.h>
+
+
+// TODO remove magic numbers and weirdo macros
 
 extern unsigned int danube_get_fpi_hz (void);
 
@@ -90,8 +79,8 @@ danube_wdt_enable (unsigned int timeout)
 		   DANUBE_BIU_WDT_CR_RELOAD_SET(wdt_reload) |
 		   DANUBE_BIU_WDT_CR_GEN);
 
-	/* Set reload value in second password access */
 	writel(wdt_cr, DANUBE_BIU_WDT_CR);
+
 	printk("watchdog enabled\n");
 
 out:
@@ -101,11 +90,10 @@ out:
 void
 danube_wdt_disable (void)
 {
-	/* Write first part of password access */
 	writel(DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW1), DANUBE_BIU_WDT_CR);
-
-	/* Disable the watchdog in second password access (GEN=0) */
 	writel(DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW2), DANUBE_BIU_WDT_CR);
+
+	printk("watchdog disabled\n");
 }
 
 /* passed LPEN or DSEN */
@@ -127,7 +115,6 @@ danube_wdt_enable_feature (int en, int type)
 		wdt_cr |= DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW2);
 	}
 
-	/* Set reload value in second password access */
 	writel(wdt_cr, DANUBE_BIU_WDT_CR);
 }
 
@@ -140,8 +127,7 @@ danube_wdt_prewarning_limit (int pwl)
 	writel(DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW1), DANUBE_BIU_WDT_CR);
 
 	wdt_cr &= 0xf300ffff;
-	wdt_cr |= (DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW2) |
-		   DANUBE_BIU_WDT_CR_PWL_SET(pwl));
+	wdt_cr |= (DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW2) | DANUBE_BIU_WDT_CR_PWL_SET(pwl));
 
 	/* Set reload value in second password access */
 	writel(wdt_cr, DANUBE_BIU_WDT_CR);
@@ -156,8 +142,7 @@ danube_wdt_set_clkdiv (int clkdiv)
 	writel(DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW1), DANUBE_BIU_WDT_CR);
 
 	wdt_cr &= 0xfc00ffff;
-	wdt_cr |= (DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW2) |
-		   DANUBE_BIU_WDT_CR_CLKDIV_SET(clkdiv));
+	wdt_cr |= (DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW2) | DANUBE_BIU_WDT_CR_CLKDIV_SET(clkdiv));
 
 	/* Set reload value in second password access */
 	writel(wdt_cr, DANUBE_BIU_WDT_CR);
@@ -173,14 +158,15 @@ danube_wdt_ioctl (struct inode *inode, struct file *file, unsigned int cmd,
 
 	if ((cmd != DANUBE_WDT_IOC_STOP) && (cmd != DANUBE_WDT_IOC_PING) && (cmd != DANUBE_WDT_IOC_GET_STATUS))
 	{
-		if (copy_from_user((void *) &user_arg, (void *) arg, sizeof (int)))
+		if (copy_from_user((void *) &user_arg, (void *) arg, sizeof (int))){
 			result = -EINVAL;
+			goto out;
+		}
 	}
 
 	switch (cmd)
 	{
 	case DANUBE_WDT_IOC_START:
-		printk("enable watch dog timer!\n");
 		if ((result = danube_wdt_enable(user_arg)) < 0)
 			timeout = -1;
 		else
@@ -219,8 +205,12 @@ danube_wdt_ioctl (struct inode *inode, struct file *file, unsigned int cmd,
 	case DANUBE_WDT_IOC_SET_CLKDIV:
 		danube_wdt_set_clkdiv(user_arg);
 		break;
+
+	default:
+		printk("unknown watchdog iotcl\n");
 	}
 
+out:
 	return result;
 }
 
