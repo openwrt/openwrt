@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=madwifi
-PKG_REV:=2996
+PKG_REV:=3053
 PKG_VERSION:=r$(PKG_REV)
 PKG_BRANCH:=madwifi-dfs
 PKG_RELEASE:=1
