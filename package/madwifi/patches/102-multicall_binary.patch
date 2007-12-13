@@ -1,7 +1,7 @@
-Index: madwifi-ng-r2834-20071106/tools/80211debug.c
+Index: madwifi-dfs-r3012/tools/80211debug.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/tools/80211debug.c	2007-11-07 14:01:59.745356362 +0100
-+++ madwifi-ng-r2834-20071106/tools/80211debug.c	2007-11-07 14:02:00.181381212 +0100
+--- madwifi-dfs-r3012.orig/tools/80211debug.c	2007-12-12 23:38:16.916125282 +0100
++++ madwifi-dfs-r3012/tools/80211debug.c	2007-12-12 23:39:07.114985947 +0100
 @@ -49,6 +49,10 @@
  #include <getopt.h>
  #include <err.h>
@@ -10,10 +10,10 @@ Index: madwifi-ng-r2834-20071106/tools/80211debug.c
 +#include "do_multi.h"
 +#endif
 +
- #define	N(a)	(sizeof(a)/sizeof(a[0]))
+ #undef ARRAY_SIZE
+ #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
  
- static const char *progname;
-@@ -180,9 +184,19 @@
+@@ -184,9 +188,19 @@
  }
  #endif /* __linux__ */
  
@@ -33,10 +33,10 @@ Index: madwifi-ng-r2834-20071106/tools/80211debug.c
  	const char *ifname = "ath0";
  	const char *cp, *tp;
  	const char *sep;
-Index: madwifi-ng-r2834-20071106/tools/80211stats.c
+Index: madwifi-dfs-r3012/tools/80211stats.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/tools/80211stats.c	2007-11-07 14:01:59.753356821 +0100
-+++ madwifi-ng-r2834-20071106/tools/80211stats.c	2007-11-07 14:02:00.181381212 +0100
+--- madwifi-dfs-r3012.orig/tools/80211stats.c	2007-12-12 23:38:16.924125726 +0100
++++ madwifi-dfs-r3012/tools/80211stats.c	2007-12-12 23:38:32.068988792 +0100
 @@ -60,6 +60,10 @@
  #include "net80211/ieee80211_crypto.h"
  #include "net80211/ieee80211_ioctl.h"
@@ -48,7 +48,7 @@ Index: madwifi-ng-r2834-20071106/tools/80211stats.c
  #ifndef SIOCG80211STATS
  #define	SIOCG80211STATS	(SIOCDEVPRIVATE + 2)
  #endif
-@@ -241,9 +245,19 @@
+@@ -239,9 +243,19 @@
  #undef STAT
  }
  
@@ -68,10 +68,10 @@ Index: madwifi-ng-r2834-20071106/tools/80211stats.c
  	int c, len;
  	struct ieee80211req_sta_info *si;
  	u_int8_t buf[24*1024], *cp;
-Index: madwifi-ng-r2834-20071106/tools/athchans.c
+Index: madwifi-dfs-r3012/tools/athchans.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/tools/athchans.c	2007-11-07 14:01:59.757357047 +0100
-+++ madwifi-ng-r2834-20071106/tools/athchans.c	2007-11-07 14:02:00.189381667 +0100
+--- madwifi-dfs-r3012.orig/tools/athchans.c	2007-12-12 23:38:16.932126191 +0100
++++ madwifi-dfs-r3012/tools/athchans.c	2007-12-12 23:38:32.072989019 +0100
 @@ -59,6 +59,10 @@
  #include "net80211/ieee80211_crypto.h"
  #include "net80211/ieee80211_ioctl.h"
@@ -104,10 +104,10 @@ Index: madwifi-ng-r2834-20071106/tools/athchans.c
  	const char *ifname = "wifi0";
  	struct ieee80211req_chanlist chanlist;
  	int c;
-Index: madwifi-ng-r2834-20071106/tools/athctrl.c
+Index: madwifi-dfs-r3012/tools/athctrl.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/tools/athctrl.c	2007-11-07 14:01:59.765357502 +0100
-+++ madwifi-ng-r2834-20071106/tools/athctrl.c	2007-11-07 14:02:00.193381896 +0100
+--- madwifi-dfs-r3012.orig/tools/athctrl.c	2007-12-12 23:38:16.940126655 +0100
++++ madwifi-dfs-r3012/tools/athctrl.c	2007-12-12 23:38:32.076989248 +0100
 @@ -53,6 +53,10 @@
  
  #include <net/if.h>
@@ -139,10 +139,10 @@ Index: madwifi-ng-r2834-20071106/tools/athctrl.c
  	char device[IFNAMSIZ + 1];
  	int distance = -1;
  	int c;
-Index: madwifi-ng-r2834-20071106/tools/athdebug.c
+Index: madwifi-dfs-r3012/tools/athdebug.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/tools/athdebug.c	2007-11-07 14:01:59.773357960 +0100
-+++ madwifi-ng-r2834-20071106/tools/athdebug.c	2007-11-07 14:02:00.193381896 +0100
+--- madwifi-dfs-r3012.orig/tools/athdebug.c	2007-12-12 23:38:16.944126879 +0100
++++ madwifi-dfs-r3012/tools/athdebug.c	2007-12-12 23:39:24.779992618 +0100
 @@ -52,6 +52,10 @@
  #include <getopt.h>
  #include <err.h>
@@ -151,10 +151,10 @@ Index: madwifi-ng-r2834-20071106/tools/athdebug.c
 +#include "do_multi.h"
 +#endif
 +
- #define	N(a)	(sizeof(a)/sizeof(a[0]))
+ #undef ARRAY_SIZE
+ #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
  
- static const char *progname;
-@@ -187,9 +191,20 @@
+@@ -193,9 +197,20 @@
  }
  #endif /* __linux__ */
  
@@ -175,10 +175,10 @@ Index: madwifi-ng-r2834-20071106/tools/athdebug.c
  #ifdef __linux__
  	const char *ifname = "wifi0";
  #else
-Index: madwifi-ng-r2834-20071106/tools/athkey.c
+Index: madwifi-dfs-r3012/tools/athkey.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/tools/athkey.c	2007-11-07 14:01:59.777358186 +0100
-+++ madwifi-ng-r2834-20071106/tools/athkey.c	2007-11-07 14:02:00.193381896 +0100
+--- madwifi-dfs-r3012.orig/tools/athkey.c	2007-12-12 23:38:16.952127326 +0100
++++ madwifi-dfs-r3012/tools/athkey.c	2007-12-12 23:38:32.080989474 +0100
 @@ -59,6 +59,10 @@
  #include "net80211/ieee80211_crypto.h"
  #include "net80211/ieee80211_ioctl.h"
@@ -210,13 +210,13 @@ Index: madwifi-ng-r2834-20071106/tools/athkey.c
  	const char *ifname = "wifi0";
  	struct ieee80211req_key setkey;
  	struct ieee80211req_del_key delkey;
-Index: madwifi-ng-r2834-20071106/tools/athstats.c
+Index: madwifi-dfs-r3012/tools/athstats.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/tools/athstats.c	2007-11-07 14:01:59.785358642 +0100
-+++ madwifi-ng-r2834-20071106/tools/athstats.c	2007-11-07 14:02:00.193381896 +0100
-@@ -63,6 +63,10 @@
- #include "wireless_copy.h"
- #include "if_athioctl.h"
+--- madwifi-dfs-r3012.orig/tools/athstats.c	2007-12-12 23:38:16.960127784 +0100
++++ madwifi-dfs-r3012/tools/athstats.c	2007-12-12 23:38:32.080989474 +0100
+@@ -66,6 +66,10 @@
+ #undef ARRAY_SIZE
+ #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
  
 +#ifdef DOMULTI
 +#include "do_multi.h"
@@ -225,7 +225,7 @@ Index: madwifi-ng-r2834-20071106/tools/athstats.c
  static const struct {
  	u_int		phyerr;
  	const char*	desc;
-@@ -226,9 +230,20 @@
+@@ -227,9 +231,20 @@
  	signalled = 1;
  }
  
@@ -246,10 +246,10 @@ Index: madwifi-ng-r2834-20071106/tools/athstats.c
  #ifdef __linux__
  	const char *ifname = "wifi0";
  #else
-Index: madwifi-ng-r2834-20071106/tools/do_multi.c
+Index: madwifi-dfs-r3012/tools/do_multi.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ madwifi-ng-r2834-20071106/tools/do_multi.c	2007-11-07 14:02:00.197382122 +0100
++++ madwifi-dfs-r3012/tools/do_multi.c	2007-12-12 23:38:32.080989474 +0100
 @@ -0,0 +1,32 @@
 +#include <string.h>
 +#include "do_multi.h"
@@ -283,10 +283,10 @@ Index: madwifi-ng-r2834-20071106/tools/do_multi.c
 +
 +    return ret;
 +}
-Index: madwifi-ng-r2834-20071106/tools/do_multi.h
+Index: madwifi-dfs-r3012/tools/do_multi.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ madwifi-ng-r2834-20071106/tools/do_multi.h	2007-11-07 14:02:00.197382122 +0100
++++ madwifi-dfs-r3012/tools/do_multi.h	2007-12-12 23:38:32.084989703 +0100
 @@ -0,0 +1,10 @@
 +
 +int a80211debug_init(int argc, char *argv[]);
@@ -298,10 +298,10 @@ Index: madwifi-ng-r2834-20071106/tools/do_multi.h
 +int athstats_init(int argc, char *argv[]);
 +int wlanconfig_init(int argc, char *argv[]);
 +int athinfo_init(int argc, char *argv[]);
-Index: madwifi-ng-r2834-20071106/tools/Makefile
+Index: madwifi-dfs-r3012/tools/Makefile
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/tools/Makefile	2007-11-07 14:01:59.801359556 +0100
-+++ madwifi-ng-r2834-20071106/tools/Makefile	2007-11-07 14:02:00.197382122 +0100
+--- madwifi-dfs-r3012.orig/tools/Makefile	2007-12-12 23:38:16.976128701 +0100
++++ madwifi-dfs-r3012/tools/Makefile	2007-12-12 23:38:32.084989703 +0100
 @@ -47,9 +47,12 @@
  endif
  
@@ -367,10 +367,10 @@ Index: madwifi-ng-r2834-20071106/tools/Makefile
  
  install: $(ALL) 
  	install -d $(DESTDIR)$(BINDIR)
-Index: madwifi-ng-r2834-20071106/tools/wlanconfig.c
+Index: madwifi-dfs-r3012/tools/wlanconfig.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/tools/wlanconfig.c	2007-11-07 14:01:59.809360011 +0100
-+++ madwifi-ng-r2834-20071106/tools/wlanconfig.c	2007-11-07 14:02:00.197382122 +0100
+--- madwifi-dfs-r3012.orig/tools/wlanconfig.c	2007-12-12 23:38:16.984129146 +0100
++++ madwifi-dfs-r3012/tools/wlanconfig.c	2007-12-12 23:38:32.084989703 +0100
 @@ -62,6 +62,10 @@
  #include "net80211/ieee80211_crypto.h"
  #include "net80211/ieee80211_ioctl.h"
@@ -382,7 +382,7 @@ Index: madwifi-ng-r2834-20071106/tools/wlanconfig.c
  /*
   * These are taken from ieee80211_node.h
   */
-@@ -96,9 +100,19 @@
+@@ -99,9 +103,19 @@
  
  static int verbose = 0;
  
@@ -402,11 +402,11 @@ Index: madwifi-ng-r2834-20071106/tools/wlanconfig.c
  	const char *ifname, *cmd;
  	unsigned char bnounit = 0;
  	char *if_base = NULL;
-Index: madwifi-ng-r2834-20071106/tools/ath_info.c
+Index: madwifi-dfs-r3012/tools/ath_info.c
 ===================================================================
---- madwifi-ng-r2834-20071106.orig/tools/ath_info.c	2007-11-07 14:01:59.817360466 +0100
-+++ madwifi-ng-r2834-20071106/tools/ath_info.c	2007-11-07 14:02:00.201382352 +0100
-@@ -736,7 +736,12 @@
+--- madwifi-dfs-r3012.orig/tools/ath_info.c	2007-12-12 23:38:16.992129610 +0100
++++ madwifi-dfs-r3012/tools/ath_info.c	2007-12-12 23:38:32.084989703 +0100
+@@ -738,7 +738,12 @@
  		"unlawful radio transmissions!\n\n");
  }
  
