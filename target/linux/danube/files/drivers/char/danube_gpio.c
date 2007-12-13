@@ -30,644 +30,269 @@
 #include <asm/danube/danube_ioctl.h>
 
 
-#define DANUBE_PORT_OUT_REG				0x00000010
-#define DANUBE_PORT_IN_REG				0x00000014
-#define DANUBE_PORT_DIR_REG				0x00000018
-#define DANUBE_PORT_ALTSEL0_REG			0x0000001C
-#define DANUBE_PORT_ALTSEL1_REG			0x00000020
-#define DANUBE_PORT_OD_REG				0x00000024
-#define DANUBE_PORT_STOFF_REG			0x00000028
-#define DANUBE_PORT_PUDSEL_REG			0x0000002C
-#define DANUBE_PORT_PUDEN_REG			0x00000030
-
-#define PORT_MODULE_ID  0xff
-
-#define PORT_WRITE_REG(reg, value)   \
-		*((volatile u32*)(reg)) = (u32)value;
-
-#define PORT_READ_REG(reg, value)    \
-		value = (u32)*((volatile u32*)(reg));
-
 #define PORT_IOC_CALL(ret,port,pin,func)    \
 		ret=danube_port_reserve_pin(port,pin,PORT_MODULE_ID); \
 		if (ret == 0) ret=func(port,pin,PORT_MODULE_ID); \
 		if (ret == 0) ret=danube_port_free_pin(port,pin,PORT_MODULE_ID);
 
 
-#define MAX_PORTS	2	// Number of ports in system
-#define PINS_PER_PORT	16	// Number of available pins per port
+#define MAX_PORTS			2
+#define PINS_PER_PORT		16
 
-static int port_major = 0;
-static int danube_port_pin_usage[MAX_PORTS][PINS_PER_PORT];	// Map for pin usage
-static u32 danube_port_bases[MAX_PORTS]
-	= { DANUBE_GPIO_BASE_ADDR, DANUBE_GPIO_P0_PUDEN };
+static unsigned int danube_gpio_major = 0;
 
+/* TODO do we need this ? */
 static struct semaphore port_sem;
 
-int
-danube_port_reserve_pin (int port, int pin, int module_id)
-{
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
+/* TODO do we really need this ? return in a define is forbidden by coding style */
+#define DANUBE_GPIO_SANITY		{if (port > MAX_PORTS || pin > PINS_PER_PORT) return -EINVAL; }
 
-	if (danube_port_pin_usage[port][pin] == 0) {
-		danube_port_pin_usage[port][pin] = module_id;
-	}
-	else {
-		return -EBUSY;
-	}
+int
+danube_port_reserve_pin (unsigned int port, unsigned int pin)
+{
+	DANUBE_GPIO_SANITY;
+	printk("%s : call to obseleted function\n", __func__);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_reserve_pin);
 
 int
-danube_port_free_pin (int port, int pin, int module_id)
+danube_port_free_pin (unsigned int port, unsigned int pin)
 {
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-	danube_port_pin_usage[port][pin] = 0;
+	DANUBE_GPIO_SANITY;
+	printk("%s : call to obseleted function\n", __func__);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_free_pin);
 
 int
-danube_port_set_open_drain (int port, int pin, int module_id)
+danube_port_set_open_drain (unsigned int port, unsigned int pin)
 {
-	u32 reg;
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_OD_REG, reg);
-	reg |= (1 << pin);
-	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_OD_REG, reg);
+	DANUBE_GPIO_SANITY;
+	writel(readl(DANUBE_GPIO_P0_OD + (port * 0x30)) | (1 << pin), DANUBE_GPIO_P0_OD);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_set_open_drain);
 
 int
-danube_port_clear_open_drain (int port, int pin, int module_id)
+danube_port_clear_open_drain (unsigned int port, unsigned int pin)
 {
-	u32 reg;
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_OD_REG, reg);
-	reg &= ~(1 << pin);
-	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_OD_REG, reg);
+	DANUBE_GPIO_SANITY;
+	writel(readl(DANUBE_GPIO_P0_OD + (port * 0x30)) & ~(1 << pin), DANUBE_GPIO_P0_OD);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_clear_open_drain);
 
 int
-danube_port_set_pudsel (int port, int pin, int module_id)
+danube_port_set_pudsel (unsigned int port, unsigned int pin)
 {
-	u32 reg;
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_PUDSEL_REG, reg);
-	reg |= (1 << pin);
-	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_PUDSEL_REG,
-			reg);
+    DANUBE_GPIO_SANITY;
+	writel(readl(DANUBE_GPIO_P0_PUDSEL + (port * 0x30)) | (1 << pin), DANUBE_GPIO_P0_PUDSEL);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_set_pudsel);
 
 int
-danube_port_clear_pudsel (int port, int pin, int module_id)
+danube_port_clear_pudsel (unsigned int port, unsigned int pin)
 {
-	u32 reg;
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_PUDSEL_REG, reg);
-	reg &= ~(1 << pin);
-	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_PUDSEL_REG,
-			reg);
+    DANUBE_GPIO_SANITY;
+	writel(readl(DANUBE_GPIO_P0_PUDSEL + (port * 0x30)) & ~(1 << pin), DANUBE_GPIO_P0_PUDSEL);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_clear_pudsel);
 
 int
-danube_port_set_puden (int port, int pin, int module_id)
+danube_port_set_puden (unsigned int port, unsigned int pin)
 {
-	u32 reg;
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_PUDEN_REG, reg);
-	reg |= (1 << pin);
-	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_PUDEN_REG, reg);
+    DANUBE_GPIO_SANITY;
+	writel(readl(DANUBE_GPIO_P0_PUDEN + (port * 0x30)) | (1 << pin), DANUBE_GPIO_P0_PUDEN);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_set_puden);
 
 int
-danube_port_clear_puden (int port, int pin, int module_id)
+danube_port_clear_puden (unsigned int port, unsigned int pin)
 {
-	u32 reg;
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_PUDEN_REG, reg);
-	reg &= ~(1 << pin);
-	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_PUDEN_REG, reg);
+    DANUBE_GPIO_SANITY;
+	writel(readl(DANUBE_GPIO_P0_PUDEN + (port * 0x30)) & ~(1 << pin), DANUBE_GPIO_P0_PUDEN);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_clear_puden);
 
 int
-danube_port_set_stoff (int port, int pin, int module_id)
+danube_port_set_stoff (unsigned int port, unsigned int pin)
 {
-	u32 reg;
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_STOFF_REG, reg);
-	reg |= (1 << pin);
-	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_STOFF_REG, reg);
+    DANUBE_GPIO_SANITY;
+	writel(readl(DANUBE_GPIO_P0_STOFF + (port * 0x30)) | (1 << pin), DANUBE_GPIO_P0_STOFF);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_set_stoff);
 
 int
-danube_port_clear_stoff (int port, int pin, int module_id)
+danube_port_clear_stoff (unsigned int port, unsigned int pin)
 {
-	u32 reg;
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_STOFF_REG, reg);
-	reg &= ~(1 << pin);
-	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_STOFF_REG, reg);
+    DANUBE_GPIO_SANITY;
+	writel(readl(DANUBE_GPIO_P0_STOFF + (port * 0x30)) & ~(1 << pin), DANUBE_GPIO_P0_STOFF);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_clear_stoff);
 
 int
-danube_port_set_dir_out (int port, int pin, int module_id)
+danube_port_set_dir_out (unsigned int port, unsigned int pin)
 {
-	u32 reg;
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_DIR_REG, reg);
-	reg |= (1 << pin);
-	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_DIR_REG, reg);
+    DANUBE_GPIO_SANITY;
+	writel(readl(DANUBE_GPIO_P0_DIR + (port * 0x30)) | (1 << pin), DANUBE_GPIO_P0_DIR);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_set_dir_out);
 
 int
-danube_port_set_dir_in (int port, int pin, int module_id)
+danube_port_set_dir_in (unsigned int port, unsigned int pin)
 {
-	u32 reg;
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_DIR_REG, reg);
-	reg &= ~(1 << pin);
-	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_DIR_REG, reg);
+    DANUBE_GPIO_SANITY;
+	writel(readl(DANUBE_GPIO_P0_DIR + (port * 0x30)) & ~(1 << pin), DANUBE_GPIO_P0_DIR);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_set_dir_in);
 
 int
-danube_port_set_output (int port, int pin, int module_id)
+danube_port_set_output (unsigned int port, unsigned int pin)
 {
-	u32 reg;
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_OUT_REG, reg);
-	reg |= (1 << pin);
-	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_OUT_REG, reg);
+    DANUBE_GPIO_SANITY;
+	writel(readl(DANUBE_GPIO_P0_OUT + (port * 0x30)) | (1 << pin), DANUBE_GPIO_P0_OUT);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_set_output);
 
 int
-danube_port_clear_output (int port, int pin, int module_id)
+danube_port_clear_output (unsigned int port, unsigned int pin)
 {
-	u32 reg;
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_OUT_REG, reg);
-	reg &= ~(1 << pin);
-	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_OUT_REG, reg);
+    DANUBE_GPIO_SANITY;
+	writel(readl(DANUBE_GPIO_P0_OUT + (port * 0x30)) & ~(1 << pin), DANUBE_GPIO_P0_OUT);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_clear_output);
 
 int
-danube_port_get_input (int port, int pin, int module_id)
+danube_port_get_input (unsigned int port, unsigned int pin)
 {
-	u32 reg;
+    DANUBE_GPIO_SANITY;
 
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_IN_REG, reg);
-	reg &= (1 << pin);
-	if (reg == 0x00)
+	if (readl(DANUBE_GPIO_P0_IN + (port * 0x30)) & (1 << pin))
 		return 0;
 	else
 		return 1;
 }
+EXPORT_SYMBOL(danube_port_get_input);
 
 int
-danube_port_set_altsel0 (int port, int pin, int module_id)
+danube_port_set_altsel0 (unsigned int port, unsigned int pin)
 {
-	u32 reg;
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_ALTSEL0_REG,
-		       reg);
-	reg |= (1 << pin);
-	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_ALTSEL0_REG,
-			reg);
+    DANUBE_GPIO_SANITY;
+	writel(readl(DANUBE_GPIO_P0_ALTSEL0 + (port * 0x30)) | (1 << pin), DANUBE_GPIO_P0_ALTSEL0);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_set_altsel0);
 
 int
-danube_port_clear_altsel0 (int port, int pin, int module_id)
+danube_port_clear_altsel0 (unsigned int port, unsigned int pin)
 {
-	u32 reg;
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_ALTSEL0_REG,
-		       reg);
-	reg &= ~(1 << pin);
-	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_ALTSEL0_REG,
-			reg);
+    DANUBE_GPIO_SANITY;
+	writel(readl(DANUBE_GPIO_P0_ALTSEL0 + (port * 0x30)) & ~(1 << pin), DANUBE_GPIO_P0_ALTSEL0);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_clear_altsel0);
 
 int
-danube_port_set_altsel1 (int port, int pin, int module_id)
+danube_port_set_altsel1 (unsigned int port, unsigned int pin)
 {
-	u32 reg;
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_ALTSEL1_REG,
-		       reg);
-	reg |= (1 << pin);
-	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_ALTSEL1_REG,
-			reg);
+    DANUBE_GPIO_SANITY;
+	writel(readl(DANUBE_GPIO_P0_ALTSEL1 + (port * 0x30)) | (1 << pin), DANUBE_GPIO_P0_ALTSEL1);
 
 	return 0;
 }
+EXPORT_SYMBOL(danube_port_set_altsel1);
 
 int
-danube_port_clear_altsel1 (int port, int pin, int module_id)
+danube_port_clear_altsel1 (unsigned int port, unsigned int pin)
 {
-	u32 reg;
-
-	if (port < 0 || pin < 0)
-		return -EINVAL;
-	if (port > MAX_PORTS || pin > PINS_PER_PORT)
-		return -EINVAL;
-
-	if (danube_port_pin_usage[port][pin] != module_id)
-		return -EBUSY;
-
-	PORT_READ_REG (danube_port_bases[port] + DANUBE_PORT_ALTSEL1_REG,
-		       reg);
-	reg &= ~(1 << pin);
-	PORT_WRITE_REG (danube_port_bases[port] + DANUBE_PORT_ALTSEL1_REG,
-			reg);
+    DANUBE_GPIO_SANITY;
+	writel(readl(DANUBE_GPIO_P0_ALTSEL1 + (port * 0x30)) & ~(1 << pin), DANUBE_GPIO_P0_ALTSEL1);
 
 	return 0;
+}
+EXPORT_SYMBOL(danube_port_clear_altsel1);
+
+long danube_port_read_procmem_helper(char* tag, u32* in_reg, char *buf)
+{
+	u32 reg, bit = 0;
+	unsigned int len, t;
+
+	len = sprintf(buf, "\n%s: ", tag);
+	reg = readl(in_reg);
+	bit = 0x80000000;
+	for (t = 0; t < 32; t++) {
+		if ((reg & bit) > 0)
+			len = len + sprintf(buf + len, "X");
+		else
+			len = len + sprintf(buf + len, " ");
+		bit = bit >> 1;
+	}
+
+	return len;
 }
 
 int
 danube_port_read_procmem (char *buf, char **start, off_t offset, int count,
 			  int *eof, void *data)
 {
-	long len = 0;
-	int t = 0;
-	u32 bit = 0;
-	u32 reg = 0;
+	long len = sprintf (buf, "\nDanube Port Settings\n");
 
-	len = sprintf (buf, "\nDanube Port Settings\n");
+	len += sprintf (buf + len,
+			"         3         2         1         0\n");
+	len += sprintf (buf + len,
+			"        10987654321098765432109876543210\n");
+	len += sprintf (buf + len,
+			"----------------------------------------\n");
 
-	len = len + sprintf (buf + len,
-			     "         3         2         1         0\n");
-	len = len + sprintf (buf + len,
-			     "        10987654321098765432109876543210\n");
-	len = len + sprintf (buf + len,
-			     "----------------------------------------\n");
-
-	len = len + sprintf (buf + len, "\nP0-OUT: ");
-	PORT_READ_REG (DANUBE_GPIO_P0_OUT, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP1-OUT: ");
-	PORT_READ_REG (DANUBE_GPIO_P1_OUT, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP0-IN:  ");
-	PORT_READ_REG (DANUBE_GPIO_P0_IN, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP1-IN:  ");
-	PORT_READ_REG (DANUBE_GPIO_P1_IN, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP0-DIR: ");
-	PORT_READ_REG (DANUBE_GPIO_P0_DIR, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP1-DIR: ");
-	PORT_READ_REG (DANUBE_GPIO_P1_DIR, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP0-STO: ");
-	PORT_READ_REG (DANUBE_GPIO_P0_STOFF, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP1-STO: ");
-	PORT_READ_REG (DANUBE_GPIO_P1_STOFF, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP0-PUDE:");
-	PORT_READ_REG (DANUBE_GPIO_P0_PUDEN, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP1-PUDE:");
-	PORT_READ_REG (DANUBE_GPIO_P1_PUDEN, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP0-OD:  ");
-	PORT_READ_REG (DANUBE_GPIO_P0_OD, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP1-OD:  ");
-	PORT_READ_REG (DANUBE_GPIO_P1_OD, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP0-PUDS:");
-	PORT_READ_REG (DANUBE_GPIO_P0_PUDSEL, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP1-PUDS:");
-	PORT_READ_REG (DANUBE_GPIO_P1_PUDSEL, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP0_ALT0:");
-	PORT_READ_REG (DANUBE_GPIO_P0_ALTSEL0, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP0_ALT1:");
-	PORT_READ_REG (DANUBE_GPIO_P0_ALTSEL1, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP1_ALT0:");
-	PORT_READ_REG (DANUBE_GPIO_P1_ALTSEL0, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	len = len + sprintf (buf + len, "\nP1_ALT1:");
-	PORT_READ_REG (DANUBE_GPIO_P1_ALTSEL1, reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf (buf + len, "X");
-		else
-			len = len + sprintf (buf + len, " ");
-		bit = bit >> 1;
-	}
-
+	len += danube_port_read_procmem_helper("P0-OUT", DANUBE_GPIO_P0_OUT, &buf[len]);
+	len += danube_port_read_procmem_helper("P1-OUT", DANUBE_GPIO_P1_OUT, &buf[len]);
+	len += danube_port_read_procmem_helper("P0-IN ", DANUBE_GPIO_P0_IN, &buf[len]);
+	len += danube_port_read_procmem_helper("P1-IN ", DANUBE_GPIO_P1_IN, &buf[len]);
+	len += danube_port_read_procmem_helper("P0-DIR", DANUBE_GPIO_P0_DIR, &buf[len]);
+	len += danube_port_read_procmem_helper("P1-DIR", DANUBE_GPIO_P1_DIR, &buf[len]);
+	len += danube_port_read_procmem_helper("P0-STO ", DANUBE_GPIO_P0_STOFF, &buf[len]);
+	len += danube_port_read_procmem_helper("P1-STO ", DANUBE_GPIO_P1_STOFF, &buf[len]);
+	len += danube_port_read_procmem_helper("P0-PUDE", DANUBE_GPIO_P0_PUDEN, &buf[len]);
+	len += danube_port_read_procmem_helper("P1-PUDE", DANUBE_GPIO_P1_PUDEN, &buf[len]);
+	len += danube_port_read_procmem_helper("P0-OD  ", DANUBE_GPIO_P0_OD, &buf[len]);
+	len += danube_port_read_procmem_helper("P1-OD  ", DANUBE_GPIO_P1_OD, &buf[len]);
+	len += danube_port_read_procmem_helper("P0-PUDS", DANUBE_GPIO_P0_PUDSEL, &buf[len]);
+	len += danube_port_read_procmem_helper("P1-PUDS", DANUBE_GPIO_P1_PUDSEL, &buf[len]);
+	len += danube_port_read_procmem_helper("P0-ALT0", DANUBE_GPIO_P0_ALTSEL0, &buf[len]);
+	len += danube_port_read_procmem_helper("P1-ALT0", DANUBE_GPIO_P1_ALTSEL0, &buf[len]);
+	len += danube_port_read_procmem_helper("P0-ALT1", DANUBE_GPIO_P0_ALTSEL1, &buf[len]);
+	len += danube_port_read_procmem_helper("P1-ALT1", DANUBE_GPIO_P1_ALTSEL1, &buf[len]);
 	len = len + sprintf (buf + len, "\n\n");
 
-	*eof = 1;		// No more data available
+	*eof = 1;
+
 	return len;
 }
 
@@ -814,62 +439,41 @@ danube_port_ioctl (struct inode *inode, struct file *filp,
 }
 
 static struct file_operations port_fops = {
-      open:danube_port_open,
-      release:danube_port_release,
-      ioctl:danube_port_ioctl
+      .open = danube_port_open,
+      .release = danube_port_release,
+      .ioctl = danube_port_ioctl
 };
 
 int __init
-danube_port_init (void)
+danube_gpio_init (void)
 {
-	int t = 0;
-	int i = 0;
-	int err = 0;
-	printk ("Danube Port Initialization\n");
+	int retval = 0;
 
 	sema_init (&port_sem, 1);
 
-	/* Check ports for available pins */
-	for (t = 0; t < MAX_PORTS; t++) {
-		for (i = 0; i < PINS_PER_PORT; i++)
-			danube_port_pin_usage[t][i] = 0;
+	danube_gpio_major = register_chrdev(0, "danube_gpio", &port_fops);
+	if (!danube_gpio_major)
+	{
+		printk("danube-port: Error! Could not register port device. #%d\n", danube_gpio_major);
+		retval = -EINVAL;
+		goto out;
 	}
 
-	/* register port device */
-	err = register_chrdev (0, "danube-port", &port_fops);
-	if (err > 0)
-		port_major = err;
-	else {
-		printk ("danube-port: Error! Could not register port device. #%d\n", err);
-		return err;
-	}
-
-	/* Create proc file */
-	create_proc_read_entry ("driver/danube_port", 0, NULL,
+	create_proc_read_entry("driver/danube_port", 0, NULL,
 				danube_port_read_procmem, NULL);
 
-	return 0;
+	printk("registered danube gpio driver\n");
+
+out:
+	return retval;
 }
 
-module_init (danube_port_init);
+void __exit
+danube_gpio_exit (void)
+{
+	unregister_chrdev(danube_gpio_major, "danube_gpio");
+	remove_proc_entry("danube_wdt", NULL);
+}
 
-EXPORT_SYMBOL (danube_port_reserve_pin);
-EXPORT_SYMBOL (danube_port_free_pin);
-EXPORT_SYMBOL (danube_port_set_open_drain);
-EXPORT_SYMBOL (danube_port_clear_open_drain);
-EXPORT_SYMBOL (danube_port_set_pudsel);
-EXPORT_SYMBOL (danube_port_clear_pudsel);
-EXPORT_SYMBOL (danube_port_set_puden);
-EXPORT_SYMBOL (danube_port_clear_puden);
-EXPORT_SYMBOL (danube_port_set_stoff);
-EXPORT_SYMBOL (danube_port_clear_stoff);
-EXPORT_SYMBOL (danube_port_set_dir_out);
-EXPORT_SYMBOL (danube_port_set_dir_in);
-EXPORT_SYMBOL (danube_port_set_output);
-EXPORT_SYMBOL (danube_port_clear_output);
-EXPORT_SYMBOL (danube_port_get_input);
-
-EXPORT_SYMBOL (danube_port_set_altsel0);
-EXPORT_SYMBOL (danube_port_clear_altsel0);
-EXPORT_SYMBOL (danube_port_set_altsel1);
-EXPORT_SYMBOL (danube_port_clear_altsel1);
+module_init(danube_gpio_init);
+module_exit(danube_gpio_exit);
