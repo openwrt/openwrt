@@ -422,7 +422,7 @@ danube_gpio_init (void)
 		goto out;
 	}
 
-	create_proc_read_entry("driver/danube_port", 0, NULL,
+	create_proc_read_entry("danube_gpio", 0, NULL,
 				danube_port_read_procmem, NULL);
 
 	printk("registered danube gpio driver\n");
@@ -435,7 +435,7 @@ void __exit
 danube_gpio_exit (void)
 {
 	unregister_chrdev(danube_gpio_major, "danube_gpio");
-	remove_proc_entry("danube_wdt", NULL);
+	remove_proc_entry("danube_gpio", NULL);
 }
 
 module_init(danube_gpio_init);
