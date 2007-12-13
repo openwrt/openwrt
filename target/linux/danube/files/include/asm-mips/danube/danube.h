@@ -304,4 +304,19 @@
 #define DANUBE_BIU_WDT_CR_CLKDIV_SET(value)	(((( 1 << 2) - 1) & (value)) << 24)
 #define DANUBE_BIU_WDT_CR_RELOAD_SET(value)	(((( 1 << 16) - 1) & (value)) << 0)
 
+
+/*------------ LED */
+
+#define DANUBE_LED_BASE_ADDR	(KSEG1 + 0x1E100BB0)
+#define DANUBE_LED_CON0			((u32*)(DANUBE_LED_BASE_ADDR + 0x0000))
+#define DANUBE_LED_CON1			((u32*)(DANUBE_LED_BASE_ADDR + 0x0004))
+#define DANUBE_LED_CPU0			((u32*)(DANUBE_LED_BASE_ADDR + 0x0008))
+#define DANUBE_LED_CPU1			((u32*)(DANUBE_LED_BASE_ADDR + 0x000C))
+#define DANUBE_LED_AR			((u32*)(DANUBE_LED_BASE_ADDR + 0x0010))
+
+
+#define LED_CON0_SWU			(1 << 31)
+#define LED_CON0_AD1			(1 << 25)
+#define LED_CON0_AD0			(1 << 24)
+
 #endif
