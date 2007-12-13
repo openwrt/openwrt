@@ -244,11 +244,11 @@
  *  LED Registers Mapping
  */
 #define DANUBE_LED                      (KSEG1 + 0x1E100BB0)
-#define DANUBE_LED_CON0                 ((volatile u32*)(DANUBE_LED + 0x0000))
-#define DANUBE_LED_CON1                 ((volatile u32*)(DANUBE_LED + 0x0004))
-#define DANUBE_LED_CPU0                 ((volatile u32*)(DANUBE_LED + 0x0008))
-#define DANUBE_LED_CPU1                 ((volatile u32*)(DANUBE_LED + 0x000C))
-#define DANUBE_LED_AR                   ((volatile u32*)(DANUBE_LED + 0x0010))
+#define DANUBE_LED_CON0                 ((volatile unsigned int*)(DANUBE_LED + 0x0000))
+#define DANUBE_LED_CON1                 ((volatile unsigned int*)(DANUBE_LED + 0x0004))
+#define DANUBE_LED_CPU0                 ((volatile unsigned int*)(DANUBE_LED + 0x0008))
+#define DANUBE_LED_CPU1                 ((volatile unsigned int*)(DANUBE_LED + 0x000C))
+#define DANUBE_LED_AR                   ((volatile unsigned int*)(DANUBE_LED + 0x0010))
 
 /*
  *  LED Control 0 Register
@@ -292,13 +292,6 @@
 #define LED_AR_Ln(n)                    (*DANUBE_LED_AR & (1 << n))
 #define LED_AR_DEFAULT_VALUE            0x00000000
 
-
-/*
- * ####################################
- * Preparation of Debug on Amazon Chip
- * ####################################
- */
-
 /*
  *  If try module on Amazon chip, prepare some tricks to prevent invalid memory write.
  */
@@ -329,12 +322,6 @@
 
 
 /*
- * ####################################
- *             Declaration
- * ####################################
- */
-
-/*
  *  File Operations
  */
 static int led_ioctl(struct inode *, struct file *, unsigned int, unsigned long);
@@ -349,16 +336,16 @@ static inline int update_led(void);
 /*
  *  LED Configuration Functions
  */
-static inline u32 set_update_source(u32, unsigned long, unsigned long);
-static inline u32 set_blink_in_batch(u32, unsigned long, unsigned long);
-static inline u32 set_data_clock_edge(u32, unsigned long);
-static inline u32 set_update_clock(u32, unsigned long, unsigned long);
-static inline u32 set_store_mode(u32, unsigned long);
-static inline u32 set_shift_clock(u32, unsigned long);
-static inline u32 set_data_offset(u32, unsigned long);
-static inline u32 set_number_of_enabled_led(u32, unsigned long);
-static inline u32 set_data_in_batch(u32, unsigned long, unsigned long);
-static inline u32 set_access_right(u32, unsigned long, unsigned long);
+static inline unsigned int set_update_source(unsigned int, unsigned long, unsigned long);
+static inline unsigned int set_blink_in_batch(unsigned int, unsigned long, unsigned long);
+static inline unsigned int set_data_clock_edge(unsigned int, unsigned long);
+static inline unsigned int set_update_clock(unsigned int, unsigned long, unsigned long);
+static inline unsigned int set_store_mode(unsigned int, unsigned long);
+static inline unsigned int set_shift_clock(unsigned int, unsigned long);
+static inline unsigned int set_data_offset(unsigned int, unsigned long);
+static inline unsigned int set_number_of_enabled_led(unsigned int, unsigned long);
+static inline unsigned int set_data_in_batch(unsigned int, unsigned long, unsigned long);
+static inline unsigned int set_access_right(unsigned int, unsigned long, unsigned long);
 
 /*
  *  PMU Operation
@@ -384,12 +371,6 @@ static inline void release_gpt(int);
 static inline int turn_on_led(unsigned long);
 static inline void turn_off_led(unsigned long);
 
-
-/*
- * ####################################
- *            Local Variable
- * ####################################
- */
 
 static struct semaphore led_sem;
 
@@ -418,20 +399,8 @@ static unsigned long f_led_on = 0;
 static int module_id;
 
 
-/*
- * ####################################
- *           Global Variable
- * ####################################
- */
-
-
-/*
- * ####################################
- *            Local Function
- * ####################################
- */
-
-static int led_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
+static int
+led_ioctl (struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
     int ret = -EINVAL;
     struct led_config_param param;
@@ -447,26 +416,20 @@ static int led_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
     return ret;
 }
 
-static int led_open(struct inode *inode, struct file *file)
+static int
+led_open (struct inode *inode, struct file *file)
 {
     return 0;
 }
 
-static int led_release(struct inode *inode, struct file *file)
+static int
+led_release (struct inode *inode, struct file *file)
 {
     return 0;
 }
 
-/*
- *  Description:
- *    Update LEDs with data stored in register.
- *  Input:
- *    none
- *  Output:
- *    int --- 0:    Success
- *            else: Error Code
- */
-static inline int update_led(void)
+static inline int
+update_led (void)
 {
     int i, j;
 
@@ -496,63 +459,26 @@ static inline int update_led(void)
     return -EBUSY;
 }
 
-/*
- *  Description:
- *    Select update source for LED bit 0 and bit 1.
- *  Input:
- *    reg    --- u32, the original register value going to be modified.
- *    led    --- unsigned long, bit 0 stands for LED 0, and bit 1 stands for
- *               LED 1. If the bit is set, the source value is valid, else
- *               the source value is invalid.
- *    source --- unsigned long, bit 0 stands for LED 0, and bit 1 stands for
- *               LED 1. If the corresponding is cleared, LED is updated with
- *               value in data register, else LED is updated with ARC module.
- *  Output:
- *    u32    --- The updated register value.
- */
-static inline u32 set_update_source(u32 reg, unsigned long led, unsigned long source)
+static inline unsigned int
+set_update_source (unsigned int reg, unsigned long led, unsigned long source)
 {
     return (reg & ~((led & 0x03) << 24)) | ((source & 0x03) << 24);
 }
 
-/*
- *  Description:
- *    Define which of the LEDs should change their value based on the US pulse.
- *  Input:
- *    reg    --- u32, the original register value going to be modified.
- *    mask   --- unsigned long, if the corresponding bit is set, the blink value
- *               is valid, else the blink value is invalid.
- *    blink  --- unsigned long, if the corresponding bit is set, the LED should
- *               change its value based on the US pulse.
- *  Output:
- *    u32    --- The updated register value.
- */
-static inline u32 set_blink_in_batch(u32 reg, unsigned long mask, unsigned long blink)
+static inline unsigned int
+set_blink_in_batch (unsigned int reg, unsigned long mask, unsigned long blink)
 {
     return (reg & (~(mask & 0x00FFFFFF) & 0x87FFFFFF)) | (blink & 0x00FFFFFF);
 }
 
-static inline u32 set_data_clock_edge(u32 reg, unsigned long f_on_rising_edge)
+static inline unsigned int
+set_data_clock_edge (unsigned int reg, unsigned long f_on_rising_edge)
 {
     return f_on_rising_edge ? (reg & ~(1 << 26)) : (reg | (1 << 26));
 }
 
-/*
- *  Description:
- *    Select the clock source for US pulse.
- *  Input:
- *    reg    --- u32, the original register value going to be modified.
- *    clock  --- unsigned long, there 3 available values:
- *               0x00 - use software update bit (SWU) as source.
- *               0x01 - use GPT2 as clock source.
- *               0x02 - use FPI as clock source.
- *    fpid   --- unsigned long, if FPI is selected as clock source, this field
- *               specify the divider. Please refer to specification for detail
- *               description.
- *  Output:
- *    u32    --- The updated register value.
- */
-static inline u32 set_update_clock(u32 reg, unsigned long clock, unsigned long fpid)
+static inline unsigned int
+set_update_clock (unsigned int reg, unsigned long clock, unsigned long fpid)
 {
     switch ( clock )
     {
@@ -563,103 +489,47 @@ static inline u32 set_update_clock(u32 reg, unsigned long clock, unsigned long f
     return reg;
 }
 
-/*
- *  Description:
- *    Set the behavior of the LED_ST (shift register) signal.
- *  Input:
- *    reg    --- u32, the original register value going to be modified.
- *    mode   --- unsigned long, there 2 available values:
- *               zero     - LED controller generate single pulse.
- *               non-zero - LED controller generate inverted shift clock.
- *  Output:
- *    u32    --- The updated register value.
- */
-static inline u32 set_store_mode(u32 reg, unsigned long mode)
+static inline unsigned int
+set_store_mode (unsigned int reg, unsigned long mode)
 {
     return mode ? (reg | (1 << 28)) : (reg & ~(1 << 28));
 }
 
-/*
- *  Description:
- *    Select the clock source for shift clock LED_SH.
- *  Input:
- *    reg    --- u32, the original register value going to be modified.
- *    fpis   --- unsigned long, if FPI is selected as clock source, this field
- *               specify the divider. Please refer to specification for detail
- *               description.
- *  Output:
- *    u32    --- The updated register value.
- */
-static inline u32 set_shift_clock(u32 reg, unsigned long fpis)
+static inline
+unsigned int set_shift_clock (unsigned int reg, unsigned long fpis)
 {
     return SET_BITS(reg, 21, 20, fpis);
 }
 
-/*
- *  Description:
- *    Set the clock cycle offset before data is transmitted to LED_D pin.
- *  Input:
- *    reg    --- u32, the original register value going to be modified.
- *    offset --- unsigned long, the number of clock cycles would be inserted
- *               before data is transmitted to LED_D pin. Zero means no cycle
- *               inserted.
- *  Output:
- *    u32    --- The updated register value.
- */
-static inline u32 set_data_offset(u32 reg, unsigned long offset)
+static inline
+unsigned int set_data_offset (unsigned int reg, unsigned long offset)
 {
     return SET_BITS(reg, 19, 18, offset);
 }
 
-/*
- *  Description:
- *    Enable or disable LEDs.
- *  Input:
- *    reg    --- u32, the original register value going to be modified.
- *    number --- unsigned long, the number of LED to be enabled. This field
- *               could 0, 8, 16 or 24. Zero means disable all LEDs.
- *  Output:
- *    u32    --- The updated register value.
- */
-static inline u32 set_number_of_enabled_led(u32 reg, unsigned long number)
+static inline
+unsigned int set_number_of_enabled_led (unsigned int reg, unsigned long number)
 {
-    u32 bit_mask;
+    unsigned int bit_mask;
 
     bit_mask = number > 16 ? 0x07 : (number > 8 ? 0x03 : (number ? 0x01 : 0x00));
     return (reg & ~0x07) | bit_mask;
 }
 
-/*
- *  Description:
- *    Turn on/off LEDs.
- *  Input:
- *    reg    --- u32, the original register value going to be modified.
- *    mask   --- unsigned long, if the corresponding bit is set, the data value
- *               is valid, else the data value is invalid.
- *    data   --- unsigned long, if the corresponding bit is set, the LED should
- *               be on, else be off.
- *  Output:
- *    u32    --- The updated register value.
- */
-static inline u32 set_data_in_batch(u32 reg, unsigned long mask, unsigned long data)
+static inline unsigned int
+set_data_in_batch (unsigned int reg, unsigned long mask, unsigned long data)
 {
     return (reg & ~(mask & 0x00FFFFFF)) | (data & 0x00FFFFFF);
 }
 
-static inline u32 set_access_right(u32 reg, unsigned long mask, unsigned long ar)
+static inline unsigned int
+set_access_right (unsigned int reg, unsigned long mask, unsigned long ar)
 {
     return (reg & ~(mask & 0x00FFFFFF)) | (~ar & mask);
 }
 
-/*
- *  Description:
- *    Enable LED control module.
- *  Input:
- *    none
- *  Output:
- *    none
- */
-static inline void enable_led(void)
+static inline void
+enable_led (void)
 {
 #if !defined(DEBUG_ON_AMAZON) || !DEBUG_ON_AMAZON
     /*  Activate LED module in PMU. */
@@ -672,15 +542,8 @@ static inline void enable_led(void)
 #endif
 }
 
-/*
- *  Description:
- *    Disable LED control module.
- *  Input:
- *    none
- *  Output:
- *    none
- */
-static inline void disable_led(void)
+static inline void
+disable_led (void)
 {
 #if !defined(DEBUG_ON_AMAZON) || !DEBUG_ON_AMAZON
     /*  Inactivating LED module in PMU.    */
@@ -688,16 +551,8 @@ static inline void disable_led(void)
 #endif
 }
 
-/*
- *  Description:
- *    If LEDs are enabled, GPIO must be setup to enable LED pins.
- *  Input:
- *    none
- *  Output:
- *    int --- 0:    Success
- *            else: Error Code
- */
-static inline int setup_gpio_port(unsigned long adsl)
+static inline int
+setup_gpio_port (unsigned long adsl)
 {
 #if !defined(DEBUG_ON_AMAZON) || !DEBUG_ON_AMAZON
     int ret = 0;
@@ -786,16 +641,8 @@ static inline int setup_gpio_port(unsigned long adsl)
     return 0;
 }
 
-/*
- *  Description:
- *    If LEDs are all disabled, GPIO must be released so that other application
- *    could reuse it.
- *  Input:
- *    none
- *  Output:
- *    none
- */
-static inline void release_gpio_port(unsigned long adsl)
+static inline void
+release_gpio_port (unsigned long adsl)
 {
 #if !defined(DEBUG_ON_AMAZON) || !DEBUG_ON_AMAZON
   #if !defined(DEBUG_WRITE_REGISTER) || !DEBUG_WRITE_REGISTER
@@ -814,33 +661,13 @@ static inline void release_gpio_port(unsigned long adsl)
 #endif
 }
 
-/*
- *  Description:
- *    If shifter or update select GPT as clock source, this function would be
- *    invoked to setup corresponding GPT module.
- *    Attention please, this function is not working since the GPTU driver is
- *    not ready.
- *  Input:
- *    timer  --- int, index of timer.
- *    freq   --- unsigned long, frequency of timer (0.001Hz). This value will be
- *               rounded off to nearest possible value.
- *  Output:
- *    int --- 0:    Success
- *            else: Error Code
- */
-static inline int setup_gpt(int timer, unsigned long freq)
+static inline int
+setup_gpt (int timer, unsigned long freq)
 {
     int ret;
 
-#if 0
-    timer = TIMER(timer, 0);
-#else
-    timer = TIMER(timer, 1);    //  2B
-#endif
+    timer = TIMER(timer, 1);
 
-#if 0
-    ret  = set_timer(timer, freq, 1, 0, TIMER_FLAG_NO_HANDLE, 0, 0);
-#else
     ret  = request_timer(timer,
                            TIMER_FLAG_SYNC
                          | TIMER_FLAG_16BIT
@@ -852,8 +679,6 @@ static inline int setup_gpt(int timer, unsigned long freq)
                          0,
                          0);
 
-#endif
-//    printk("setup_gpt: timer = %d, freq = %d, return = %d\n", timer, freq, ret);
     if ( !ret )
     {
         ret = start_timer(timer, 0);
@@ -864,29 +689,16 @@ static inline int setup_gpt(int timer, unsigned long freq)
     return ret;
 }
 
-/*
- *  Description:
- *    If shifter or update select other clock source, allocated GPT must be
- *    released so that other application can use it.
- *    Attention please, this function is not working since the GPTU driver is
- *    not ready.
- *  Input:
- *    none
- *  Output:
- *    none
- */
-static inline void release_gpt(int timer)
+static inline void
+release_gpt (int timer)
 {
-#if 0
-    timer = TIMER(timer, 0);
-#else
     timer = TIMER(timer, 1);
-#endif
     stop_timer(timer);
     free_timer(timer);
 }
 
-static inline int turn_on_led(unsigned long adsl)
+static inline int
+turn_on_led (unsigned long adsl)
 {
     int ret;
 
@@ -899,33 +711,18 @@ static inline int turn_on_led(unsigned long adsl)
     return 0;
 }
 
-static inline void turn_off_led(unsigned long adsl)
+static inline void
+turn_off_led (unsigned long adsl)
 {
     release_gpio_port(adsl);
     disable_led();
 }
 
 
-/*
- * ####################################
- *           Global Function
- * ####################################
- */
-
-/*
- *  Description:
- *    Define which of the LEDs should change its value based on the US pulse.
- *  Input:
- *    led    --- unsigned int, index of the LED to be set.
- *    blink  --- unsigned int, zero means normal mode, and non-zero means blink
- *               mode.
- *  Output:
- *    int    --- 0:    Success
- *               else: Error Code
- */
-int danube_led_set_blink(unsigned int led, unsigned int blink)
+int
+danube_led_set_blink (unsigned int led, unsigned int blink)
 {
-    u32 bit_mask;
+    unsigned int bit_mask;
 
     if ( led > 23 )
         return -EINVAL;
@@ -941,20 +738,11 @@ int danube_led_set_blink(unsigned int led, unsigned int blink)
     return (led == 0 && LED_CON0_AD0) || (led == 1 && LED_CON0_AD1) ? -EINVAL : 0;
 }
 
-/*
- *  Description:
- *    Turn on/off LED.
- *  Input:
- *    led    --- unsigned int, index of the LED to be set.
- *    data   --- unsigned int, zero means off, and non-zero means on.
- *  Output:
- *    int    --- 0:    Success
- *               else: Error Code
- */
-int danube_led_set_data(unsigned int led, unsigned int data)
+int
+danube_led_set_data (unsigned int led, unsigned int data)
 {
     unsigned long f_update;
-    u32 bit_mask;
+    unsigned int bit_mask;
 
     if ( led > 23 )
         return -EINVAL;
@@ -971,39 +759,15 @@ int danube_led_set_data(unsigned int led, unsigned int data)
     return f_update ? update_led() : 0;
 }
 
-/*
- *  Description:
- *    Config LED controller.
- *  Input:
- *    param   --- struct led_config_param*, the members are listed below:
- *                  operation_mask         - Select operations to be performed
- *                  led                    - LED to change update source
- *                  source                 - Corresponding update source
- *                  blink_mask             - LEDs to set blink mode
- *                  blink                  - Set to blink mode or normal mode
- *                  update_clock           - Select the source of update clock
- *                  fpid                   - If FPI is the source of update clock, set the divider
- *                  store_mode             - Set clock mode or single pulse mode for store signal
- *                  fpis                   - If FPI is the source of shift clock, set the divider
- *                  data_offset            - Set cycles to be inserted before data is transmitted
- *                  number_of_enabled_led  - Total number of LED to be enabled
- *                  data_mask              - LEDs to set value
- *                  data                   - Corresponding value
- *                  mips0_access_mask      - LEDs to set access right
- *                  mips0_access;          - 1: the corresponding data is output from MIPS0, 0: MIPS1
- *                  f_data_clock_on_rising - 1: data clock on rising edge, 0: data clock on falling edge
- *  Output:
- *    int    --- 0:    Success
- *               else: Error Code
- */
-int danube_led_config(struct led_config_param* param)
+int
+danube_led_config (struct led_config_param* param)
 {
     int ret;
-    u32 reg_con0, reg_con1, reg_cpu0, reg_ar;
-    u32 clean_reg_con0, clean_reg_con1, clean_reg_cpu0, clean_reg_ar;
-    u32 f_setup_gpt2;
-    u32 f_software_update;
-    u32 new_led_on, new_adsl_on;
+    unsigned int reg_con0, reg_con1, reg_cpu0, reg_ar;
+    unsigned int clean_reg_con0, clean_reg_con1, clean_reg_cpu0, clean_reg_ar;
+    unsigned int f_setup_gpt2;
+    unsigned int f_software_update;
+    unsigned int new_led_on, new_adsl_on;
 
     if ( !param )
         return -EINVAL;
@@ -1183,19 +947,12 @@ int danube_led_config(struct led_config_param* param)
         ret = turn_on_led(new_adsl_on);
         if ( ret )
         {
-#if 1
             printk("Setup GPIO error!\n");
-#endif
             goto SETUP_GPIO_ERROR;
         }
         adsl_on = new_adsl_on;
         f_led_on = 1;
     }
-
-#if 0
-    if ( (reg_con0 & 0x80000000) )
-        printk("software update\n");
-#endif
 
     /*  Write Register  */
     if ( !f_led_on )
@@ -1215,21 +972,6 @@ int danube_led_config(struct led_config_param* param)
     *DANUBE_LED_CON0 &= 0x7FFFFFFF;
 #endif
 
-#if 0
-  #if !defined(DEBUG_ON_AMAZON) || !DEBUG_ON_AMAZON
-    printk("*0xBF10201C      = 0x%08lX\n", *(unsigned long *)0xBF10201C);
-    printk("*0xBE100B18      = 0x%08lX\n", *(unsigned long *)0xBE100B18);
-    printk("*0xBE100B1C      = 0x%08lX\n", *(unsigned long *)0xBE100B1C);
-    printk("*0xBE100B20      = 0x%08lX\n", *(unsigned long *)0xBE100B20);
-    printk("*0xBE100B24      = 0x%08lX\n", *(unsigned long *)0xBE100B24);
-  #endif
-    printk("*DANUBE_LED_CON0 = 0x%08X\n", *DANUBE_LED_CON0);
-    printk("*DANUBE_LED_CON1 = 0x%08X\n", *DANUBE_LED_CON1);
-    printk("*DANUBE_LED_CPU0 = 0x%08X\n", *DANUBE_LED_CPU0);
-    printk("*DANUBE_LED_CPU1 = 0x%08X\n", *DANUBE_LED_CPU1);
-    printk("*DANUBE_LED_AR   = 0x%08X\n", *DANUBE_LED_AR);
-#endif
-
     up(&led_sem);
     return 0;
 
@@ -1246,22 +988,8 @@ INVALID_PARAM:
 }
 
 
-/*
- * ####################################
- *           Init/Cleanup API
- * ####################################
- */
-
-/*
- *  Description:
- *    register device
- *  Input:
- *    none
- *  Output:
- *    0    --- successful
- *    else --- failure, usually it is negative value of error code
- */
-int __init danube_led_init(void)
+int __init
+danube_led_init (void)
 {
     int ret;
     struct led_config_param param = {0};
@@ -1350,15 +1078,8 @@ int __init danube_led_init(void)
     return 0;
 }
 
-/*
- *  Description:
- *    deregister device
- *  Input:
- *    none
- *  Output:
- *    none
- */
-void __exit danube_led_exit(void)
+void __exit
+danube_led_exit (void)
 {
     int ret;
 
