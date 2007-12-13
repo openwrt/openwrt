@@ -29,8 +29,8 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 		$(TMP_DIR)/.targetinfo \
 		$(TMP_DIR)/.packageinfo \
 		$(PKG_BUILD_DIR)/
-	$(INSTALL_BIN) $(TOOLCHAIN_DIR)/bin $(PKG_BUILD_DIR)/staging_dir/host/
-	$(INSTALL_BIN) $(STAGING_DIR_HOST)/bin/* $(PKG_BUILD_DIR)/staging_dir/host/bin/
+	$(CP) $(TOOLCHAIN_DIR)/bin $(PKG_BUILD_DIR)/staging_dir/host/
+	$(CP) $(STAGING_DIR_HOST)/bin/* $(PKG_BUILD_DIR)/staging_dir/host/bin/
 	$(CP) $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
 	rm -rf \
 		$(PKG_BUILD_DIR)/target/linux/*/patches \
