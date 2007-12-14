@@ -40,7 +40,7 @@ CFLAGS		= -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
 		  -ffunction-sections -pipe -mlong-calls -fno-common \
 		  -ffreestanding \
 		  -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap
-CFLAGS		+= -DLOADADDR=$(LOADADDR)
+CFLAGS		+= -DLOADADDR=$(LOADADDR) -D_LZMA_PROB32
 
 ASFLAGS		= $(CFLAGS) -D__ASSEMBLY__ -DLZMA_STARTUP_ORG=$(LZMA_STARTUP_ORG)
 

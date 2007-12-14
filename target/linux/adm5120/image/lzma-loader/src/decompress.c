@@ -118,12 +118,13 @@ struct env_var {
 extern unsigned char workspace[];
 extern void board_init(void);
 
+static CLzmaDecoderState lzma_state;
+
 typedef void (*kernel_entry)(unsigned long reg_a0, unsigned long reg_a1,
 	unsigned long reg_a2, unsigned long reg_a3);
 
-static int decompress_data(unsigned char *buffer, UInt32 bufferSize,
-	int lc, int lp, int pb, unsigned char *outStream, UInt32 outSize,
-	UInt32 *outSizeProcessed);
+static int decompress_data(CLzmaDecoderState *vs, unsigned char *outStream,
+			UInt32 outSize);
 
 #ifdef CONFIG_PASS_KARGS
 #define ENVV(n,v)	{.name = (n), .value = (v)}
@@ -139,7 +140,7 @@ static void halt(void)
 	for(;;);
 }
 
-#if LZMA_WRAPPER
+#if (LZMA_WRAPPER)
 extern unsigned char _lzma_data_start[];
 extern unsigned char _lzma_data_end[];
 
@@ -158,12 +159,12 @@ static void decompress_init(void)
 	datalen = _lzma_data_end - _lzma_data_start;
 }
 
-static int decompress_data(unsigned char *buffer, UInt32 bufferSize,
-	int lc, int lp, int pb, unsigned char *outStream, UInt32 outSize,
-	UInt32 *outSizeProcessed)
+static int decompress_data(CLzmaDecoderState *vs, unsigned char *outStream,
+			SizeT outSize)
 {
-	return LzmaDecode(buffer, bufferSize, lc, lp, pb, data, datalen,
-		outStream, outSize, outSizeProcessed);
+	SizeT ip, op;
+
+	return LzmaDecode(vs, data, datalen, &ip, outStream, outSize, &op);
 }
 #endif /* LZMA_WRAPPER */
 
@@ -181,7 +182,8 @@ static __inline__ unsigned char get_byte(void)
 	return *(flash_base+flash_ofs++);
 }
 
-static int lzma_read_byte(void *object, unsigned char **buffer, UInt32 *bufferSize)
+static int lzma_read_byte(void *object, const unsigned char **buffer,
+				SizeT *bufferSize)
 {
 	unsigned long len;
 
@@ -263,12 +265,17 @@ static void decompress_init(void)
 	flash_max = flash_ofs+klen;
 }
 
-static int decompress_data(unsigned char *buffer, UInt32 bufferSize,
-	int lc, int lp, int pb, unsigned char *outStream, UInt32 outSize,
-	UInt32 *outSizeProcessed)
+static int decompress_data(CLzmaDecoderState *vs, unsigned char *outStream,
+			SizeT outSize)
 {
-	return LzmaDecode(buffer, bufferSize, lc, lp, pb, &lzma_callback,
-		outStream, outSize, outSizeProcessed);
+	SizeT op;
+
+#if 0
+	vs->Buffer = data;
+	vs->BufferLim = datalen;
+#endif
+
+	return LzmaDecode(vs, &lzma_callback, outStream, outSize, &op);
 }
 #endif /* !(LZMA_WRAPPER) */
 
@@ -278,11 +285,9 @@ void decompress_entry(unsigned long reg_a0, unsigned long reg_a1,
 	unsigned long icache_size, unsigned long icache_lsize,
 	unsigned long dcache_size, unsigned long dcache_lsize)
 {
+	unsigned char props[LZMA_PROPERTIES_SIZE];
 	unsigned int i;  /* temp value */
-	unsigned int lc; /* literal context bits */
-	unsigned int lp; /* literal pos state bits */
-	unsigned int pb; /* pos state bits */
-	unsigned int osize; /* uncompressed size */
+	SizeT osize; /* uncompressed size */
 	int res;
 
 	board_init();
@@ -293,38 +298,37 @@ void decompress_entry(unsigned long reg_a0, unsigned long reg_a1,
 	decompress_init();
 
 	/* lzma args */
-	i = get_byte();
-	lc = i % 9, i = i / 9;
-	lp = i % 5, pb = i / 5;
+	for (i = 0; i < LZMA_PROPERTIES_SIZE; i++)
+		props[i] = get_byte();
 
 	/* skip rest of the LZMA coder property */
-	for (i = 0; i < 4; i++)
-		get_byte();
-
 	/* read the lower half of uncompressed size in the header */
-	osize = ((unsigned int)get_byte()) +
-		((unsigned int)get_byte() << 8) +
-		((unsigned int)get_byte() << 16) +
-		((unsigned int)get_byte() << 24);
+	osize = ((SizeT)get_byte()) +
+		((SizeT)get_byte() << 8) +
+		((SizeT)get_byte() << 16) +
+		((SizeT)get_byte() << 24);
 
 	/* skip rest of the header (upper half of uncompressed size) */
 	for (i = 0; i < 4; i++)
 		get_byte();
 
+	res = LzmaDecodeProperties(&lzma_state.Properties, props,
+					LZMA_PROPERTIES_SIZE);
+	if (res != LZMA_RESULT_OK) {
+		printf("Incorrect LZMA stream properties!\n");
+		halt();
+	}
+
 	printf("decompressing kernel... ");
 
-	/* decompress kernel */
-	res = decompress_data(workspace, ~0, lc, lp, pb,
-		(unsigned char *)LOADADDR, osize, &i);
+	lzma_state.Probs = (CProb *)workspace;
+	res = decompress_data(&lzma_state, (unsigned char *)LOADADDR, osize);
 
 	if (res != LZMA_RESULT_OK) {
 		printf("failed, ");
 		switch (res) {
 		case LZMA_RESULT_DATA_ERROR:
 			printf("data error!\n");
-			break;
-		case LZMA_RESULT_NOT_ENOUGH_MEM:
-			printf("not enough memory!\n");
 			break;
 		default:
 			printf("unknown error %d!\n", res);
