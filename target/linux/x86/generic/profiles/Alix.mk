@@ -7,10 +7,10 @@
 
 define Profile/Alix
   NAME:=PCEngines Alix
-  PACKAGES:=kmod-via-rhine
+  PACKAGES:=kmod-via-rhine kmod-leds-alix
 endef
 
 define Profile/Alix/Description
-        Package set compatible with the PCEngines Alix. Contains VIA Rhine III VT6105M support
+        Package set compatible with the PCEngines Alix. Contains VIA Rhine III VT6105M and LED support
 endef
 $(eval $(call Profile,Alix))

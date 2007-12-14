@@ -334,6 +334,22 @@ endef
 $(eval $(call KernelPackage,leds-wrap))
 
 
+define KernelPackage/leds-alix
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=PCengines ALIX LED support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_LEDS_ALIX
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-alix.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,leds-alix)
+endef
+
+define KernelPackage/leds-alix/description
+ Kernel module for PCengines ALIX LEDs
+endef
+
+$(eval $(call KernelPackage,leds-alix))
+
+
 define KernelPackage/ledtrig-morse
   SUBMENU:=$(OTHER_MENU)
   TITLE:=LED Morse Trigger
