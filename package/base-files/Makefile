@@ -134,7 +134,7 @@ define Package/base-files$(TARGET)/install
 			$(CP) $(PLATFORM_SUBDIR)/base-files/* $(1)/; \
 		fi \
 	)
-	$(SED) 's,$$$$R,r$(REVISION),g' $(1)/etc/banner
+	$(SED) 's,$$$$R,$(REVISION),g' $(1)/etc/banner
 	$(SED) 's,$$$$S,$(BOARD),g' -e 's,$$$$A,$(ARCH),g' $(1)/etc/ipkg.conf
 	mkdir -p $(1)/dev
 	mkdir -p $(1)/etc/crontabs
