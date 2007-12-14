@@ -322,7 +322,6 @@
 #define DANUBE_LED_EDGE_MASK	(1 << 26)
 
 
-
 /*------------ GPIO */
 
 #define DANUBE_GPIO_BASE_ADDR	(0xBE100B00)
@@ -345,5 +344,15 @@
 #define DANUBE_GPIO_P1_PUDSEL	((u32*)(DANUBE_GPIO_BASE_ADDR + 0x005C))
 #define DANUBE_GPIO_P0_PUDEN	((u32*)(DANUBE_GPIO_BASE_ADDR + 0x0030))
 #define DANUBE_GPIO_P1_PUDEN	((u32*)(DANUBE_GPIO_BASE_ADDR + 0x0060))
+
+
+/*------------ SSC */
+
+#define DANUBE_SSC1_BASE_ADDR	(KSEG1 + 0x1e100800)
+
+
+
+
+
 
 #endif
