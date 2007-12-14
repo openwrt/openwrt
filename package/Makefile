@@ -10,9 +10,13 @@ curdir:=package
 
 -include $(TMP_DIR)/.packagedeps
 $(curdir)/builddirs:=$(sort $(package-) $(package-y) $(package-m))
-$(curdir)/builddirs-default:=. $(sort $(package-y) $(package-m))
-$(curdir)/builddirs-prereq:=. $(sort $(prereq-y) $(prereq-m))
-$(curdir)/builddirs-install:=. $(sort $(package-y))
+ifeq ($(SDK),1)
+  $(curdir)/builddirs-install:=.
+else
+  $(curdir)/builddirs-default:=. $(sort $(package-y) $(package-m))
+  $(curdir)/builddirs-prereq:=. $(sort $(prereq-y) $(prereq-m))
+  $(curdir)/builddirs-install:=. $(sort $(package-y))
+endif
 
 $(curdir)/install:=$(curdir)/install-cleanup
 

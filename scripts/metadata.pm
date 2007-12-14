@@ -115,7 +115,7 @@ sub parse_package_metadata($) {
 		/^Preconfig-Default:\s*(.*?)\s*$/ and $preconfig->{default} = $1;
 	}
 	close FILE;
-	return %category;
+	return 1;
 }
 
 1;

@@ -49,7 +49,7 @@ $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
 
 -include $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk
 
-$(TARGET_STAMP):
+$(TARGET_STAMP)::
 	( \
 		$(NO_TRACE_MAKE) $(FILELIST); \
 		MD5SUM=$$(cat $(FILELIST) | (md5sum || md5) | awk '{print $$1}'); \
