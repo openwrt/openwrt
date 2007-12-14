@@ -32,6 +32,7 @@
 #include <asm/irq.h>
 #include <asm/danube/danube.h>
 #include <asm/danube/danube_irq.h>
+#include <asm/danube/danube_pmu.h>
 
 static unsigned int r4k_offset; /* Amount to increment compare reg each time */
 static unsigned int r4k_cur;    /* What counter should be at next timer irq */
@@ -138,7 +139,7 @@ plat_timer_setup (struct irqaction *irq)
 	r4k_cur = (read_c0_count() + r4k_offset);
 	write_c0_compare(r4k_cur);
 
-	writel(readl(DANUBE_PMU_PWDCR) & ~(DANUBE_PMU_PWDCR_GPT|DANUBE_PMU_PWDCR_FPI), DANUBE_PMU_PWDCR);
+	danube_pmu_enable(DANUBE_PMU_PWDCR_GPT | DANUBE_PMU_PWDCR_FPI);
 
 	writel(0x100, DANUBE_GPTU_GPT_CLC);
 

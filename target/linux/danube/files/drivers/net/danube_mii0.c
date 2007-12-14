@@ -44,6 +44,7 @@
 #include <asm/danube/danube.h>
 #include <asm/danube/danube_mii0.h>
 #include <asm/danube/danube_dma.h>
+#include <asm/danube/danube_pmu.h>
 
 static struct net_device danube_mii0_dev;
 static unsigned char u_boot_ethaddr[MAX_ADDR_LEN];
@@ -372,9 +373,8 @@ switch_init (struct net_device *dev)
 static void
 danube_sw_chip_init (int mode)
 {
-	writel(readl(DANUBE_PMU_PWDCR) & ~DANUBE_PMU_PWDCR_DMA, DANUBE_PMU_PWDCR);
-	writel(readl(DANUBE_PMU_PWDCR) & ~DANUBE_PMU_PWDCR_PPE, DANUBE_PMU_PWDCR);
-	wmb();
+	danube_pmu_enable(DANUBE_PMU_PWDCR_DMA);
+	danube_pmu_enable(DANUBE_PMU_PWDCR_PPE);
 
 	if(mode == REV_MII_MODE)
 		writel((readl(DANUBE_PPE32_CFG) & PPE32_MII_MASK) | PPE32_MII_REVERSE, DANUBE_PPE32_CFG);

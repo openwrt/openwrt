@@ -22,6 +22,7 @@
 #include <asm/danube/danube.h>
 #include <asm/danube/danube_irq.h>
 #include <asm/danube/danube_dma.h>
+#include <asm/danube/danube_pmu.h>
 
 /*25 descriptors for each dma channel,4096/8/20=25.xx*/
 #define DANUBE_DMA_DESCRIPTOR_OFFSET 25
@@ -684,7 +685,7 @@ dma_chip_init(void)
 	int i;
 
 	// enable DMA from PMU
-	writel(readl(DANUBE_PMU_PWDCR) & ~DANUBE_PMU_PWDCR_DMA, DANUBE_PMU_PWDCR);
+	danube_pmu_enable(DANUBE_PMU_PWDCR_DMA);
 
 	// reset DMA
 	writel(readl(DANUBE_DMA_CTRL) | 1, DANUBE_DMA_CTRL);

@@ -29,7 +29,7 @@
 #include <linux/errno.h>
 #include <asm/danube/danube.h>
 #include <asm/danube/danube_gpio.h>
-#include <asm/delay.h>
+#include <asm/danube/danube_pmu.h>
 
 #define DANUBE_LED_CLK_EDGE				DANUBE_LED_FALLING
 //#define DANUBE_LED_CLK_EDGE			DANUBE_LED_RISING
@@ -85,24 +85,6 @@ danube_led_setup_gpio (void)
 		danube_port_set_dir_out(DANUBE_LED_GPIO_PORT, i);
 		danube_port_set_open_drain(DANUBE_LED_GPIO_PORT, i);
 	}
-}
-
-static void
-danube_led_enable (void)
-{
-	int err = 1000000;
-
-	writel(readl(DANUBE_PMU_PWDCR) & ~DANUBE_PMU_PWDCR_LED, DANUBE_PMU_PWDCR);
-	while (--err && (readl(DANUBE_PMU_PWDSR) & DANUBE_PMU_PWDCR_LED)) {}
-
-	if (!err)
-		panic("Activating LED in PMU failed!");
-}
-
-static inline void
-danube_led_disable (void)
-{
-	writel(readl(DANUBE_PMU_PWDCR) | DANUBE_PMU_PWDCR_LED, DANUBE_PMU_PWDCR);
 }
 
 static int
@@ -187,7 +169,7 @@ danube_led_init (void)
 	writel(readl(DANUBE_LED_CON0) | DANUBE_LED_ADSL_SRC, DANUBE_LED_CON0);
 
 	/* per default, the leds are turned on */
-	danube_led_enable();
+	danube_pmu_enable(DANUBE_PMU_PWDCR_LED);
 
 	danube_led_major = register_chrdev(0, "danube_led", &danube_led_fops);
 
