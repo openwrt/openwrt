@@ -309,6 +309,25 @@
 #define LED_CON0_AD1			(1 << 25)
 #define LED_CON0_AD0			(1 << 24)
 
+#define DANUBE_LED_2HZ          (0)
+#define DANUBE_LED_4HZ          (1 << 23)
+#define DANUBE_LED_8HZ          (2 << 23)
+#define DANUBE_LED_10HZ         (3 << 23)
+#define DANUBE_LED_MASK         (0xf << 23)
+
+#define DANUBE_LED_UPD_SRC_FPI  (1 << 31)
+#define DANUBE_LED_UPD_MASK     (3 << 30)
+#define DANUBE_LED_ADSL_SRC		(3 << 24)
+
+#define DANUBE_LED_GROUP0		(1 << 0)
+#define DANUBE_LED_GROUP1		(1 << 1)
+#define DANUBE_LED_GROUP2		(1 << 2)
+
+#define DANUBE_LED_RISING		0
+#define DANUBE_LED_FALLING		(1 << 26)
+#define DANUBE_LED_EDGE_MASK	(1 << 26)
+
+
 
 /*------------ GPIO */
 
