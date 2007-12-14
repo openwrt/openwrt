@@ -1,89 +1,54 @@
 # Makefile for OpenWrt
 #
-# Copyright (C) 2006 by Felix Fietkau <openwrt@nbd.name>
+# Copyright (C) 2007 OpenWrt.org
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
 #
 
-RELEASE:=Kamikaze
-#VERSION:=2.0 # uncomment for final release
+TOPDIR:=${CURDIR}
+LC_ALL:=C
+LANG:=C
+SDK:=1
+export TOPDIR LC_ALL LANG SDK
 
-#--------------------------------------------------------------
-# Just run 'make menuconfig', configure stuff, then run 'make'.
-# You shouldn't need to mess with anything beyond this point...
-#--------------------------------------------------------------
-TOPDIR=${shell pwd}
-export TOPDIR
+world:
 
-DEVELOPER=1
-export DEVELOPER
+include $(TOPDIR)/include/host.mk
 
-SDK=1
-export SDK
+ifneq ($(OPENWRT_BUILD),1)
+  override OPENWRT_BUILD=1
+  export OPENWRT_BUILD
+  include $(TOPDIR)/include/debug.mk
+  include $(TOPDIR)/include/depends.mk
+  include $(TOPDIR)/include/toplevel.mk
+else
+  include rules.mk
+  include $(INCLUDE_DIR)/depends.mk
+  include $(INCLUDE_DIR)/subdir.mk
+  include package/Makefile
 
-export IS_TTY=$(shell tty -s && echo 1 || echo 0)
-include $(TOPDIR)/include/verbose.mk
-
-all: world
-
-define stamp
-tmp/info/.stamp-$(1)-$(shell ls $(2)/*/Makefile $(5) | (md5sum || md5) 2>/dev/null | cut -d' ' -f1)
-endef
-
-STAMP=$(call stamp,packageinfo,package)
-
-$(STAMP):
-	@mkdir -p tmp/info
-	@rm -f tmp/info/.stamp-packageinfo*
+$(package/stamp-compile): $(BUILD_DIR)/.prepared
+$(BUILD_DIR)/.prepared: Makefile
+	@mkdir -p $$(dirname $@)
+	@mkdir -p bin/packages
 	@touch $@
 
-define filedep
-$(foreach FILE,$(shell ls package/*/Makefile),
-tmp/.packageinfo: $(FILE)
-$(FILE):
-	@true
-)
-endef
-
-$(eval $(filedep))
-
-tmp/.packageinfo: $(STAMP)
-	@echo -n Collecting package info... 
-	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS=""
-
-package/%: FORCE
-	@$(NO_TRACE_MAKE) -s tmp/.packageinfo
-	$(MAKE) -C package $(patsubst package/%,%,$@) SDK=1
-
-download: FORCE
-	$(MAKE) package/download
-
-world: FORCE
-	$(MAKE) package/compile
-	-( \
-		cd package; \
-		for configfile in `find . -maxdepth 2 -name Config.in` ; do \
-			$(MAKE) compile -C `dirname $$configfile` ; \
-		done \
-	)
-
 clean: FORCE
-	rm -rf build_* bin
+	rm -rf $(BUILD_DIR) $(BIN_DIR)
 
-distclean: clean
-	rm -rf dl .pkg*
+dirclean: clean
+	rm -rf $(TMP_DIR)
 
-.PHONY: FORCE
-FORCE:
+# check prerequisites before starting to build
+prereq: $(package/stamp-prereq) ;
+
+world: prepare $(package/stamp-compile) FORCE
+	@for configfile in `find package -maxdepth 2 -name Config.in` ; do \
+		$(MAKE) compile -C `dirname $$configfile`; \
+	done
+	@$(MAKE) package/index
+
+.PHONY: clean dirclean prereq prepare world
+
+endif

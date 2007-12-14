@@ -1,6 +1,12 @@
 # invoke ipkg with configuration in $(STAGING_DIR)/etc/ipkg.conf 
-IPKG := IPKG_INSTROOT=$(TARGET_DIR) IPKG_CONF_DIR=$(IPKG_CONF) $(SCRIPT_DIR)/ipkg -force-defaults -force-depends
+IPKG := IPKG_INSTROOT=$(TARGET_DIR) IPKG_CONF_DIR=$(STAGING_DIR)/etc $(SCRIPT_DIR)/ipkg -force-defaults -force-depends
 IPKG_STATE_DIR := $(TARGET_DIR)/usr/lib/ipkg
+
+# invoke ipkg-build with some default options
+IPKG_BUILD := PATH="$(TARGET_PATH)" ipkg-build -c -o root -g root
+
+# where to build (and put) .ipk packages
+IPKG_TARGET_DIR := $(PACKAGE_DIR)
 
 ifneq ($(DUMP),)
 dump:
@@ -15,7 +21,7 @@ INFO_$(1):=$(IPKG_STATE_DIR)/info/$(2).list
 ifneq ($(BR2_PACKAGE_$(1)),)
 compile-targets: $$(IPKG_$(1))
 endif
-ifneq ($(DEVELOPER),)
+ifneq ($(DEVELOPER)$(SDK),)
 compile-targets: $$(IPKG_$(1))
 endif
 ifeq ($(BR2_PACKAGE_$(1)),y)
