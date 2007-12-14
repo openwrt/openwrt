@@ -81,11 +81,12 @@ Index: linux-2.6.23/drivers/char/watchdog/Makefile
 Index: linux-2.6.23/drivers/char/Makefile
 ===================================================================
 --- linux-2.6.23.orig/drivers/char/Makefile	2007-12-13 20:41:42.000000000 +0100
-+++ linux-2.6.23/drivers/char/Makefile	2007-12-13 21:38:15.000000000 +0100
-@@ -135,3 +135,6 @@
++++ linux-2.6.23/drivers/char/Makefile	2007-12-14 22:30:59.000000000 +0100
+@@ -135,3 +135,7 @@
  	rm $@.tmp
  
  endif
 +
 +obj-$(CONFIG_DANUBE_LED)	+= danube_led.o
 +obj-$(CONFIG_DANUBE_GPIO)	+= danube_gpio.o
++obj-$(CONFIG_DANUBE_EEPROM)	+= danube_eeprom.o
