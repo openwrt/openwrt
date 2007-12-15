@@ -107,17 +107,16 @@ static struct file_operations ifx_ssc_fops = {
 
 static inline unsigned int
 ifx_ssc_get_kernel_clk (struct ifx_ssc_port *info)
-{				// ATTENTION: This function assumes that the CLC register is set with the 
-	// appropriate value for RMC.
+{
 	unsigned int rmc;
 
-	rmc = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_CLC) &
-	       IFX_CLC_RUN_DIVIDER_MASK) >> IFX_CLC_RUN_DIVIDER_OFFSET;
-	if (rmc == 0) {
+	rmc = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_CLC) & IFX_CLC_RUN_DIVIDER_MASK) >> IFX_CLC_RUN_DIVIDER_OFFSET;
+	if (rmc == 0)
+	{
 		printk ("ifx_ssc_get_kernel_clk rmc==0 \n");
-		return (0);
+		return 0;
 	}
-	return (danube_get_fpi_hz () / rmc);
+	return danube_get_fpi_hz () / rmc;
 }
 
 #ifndef not_yet
@@ -141,27 +140,27 @@ do_softint (void *private_)
 {
 	struct ifx_ssc_port *info = (struct ifx_ssc_port *) private_;
 
-	if (test_and_clear_bit (Cy_EVENT_HANGUP, &info->event)) {
+	if (test_and_clear_bit (Cy_EVENT_HANGUP, &info->event))
+	{
 		wake_up_interruptible (&info->open_wait);
 		info->flags &= ~(ASYNC_NORMAL_ACTIVE | ASYNC_CALLOUT_ACTIVE);
 	}
-	if (test_and_clear_bit (Cy_EVENT_OPEN_WAKEUP, &info->event)) {
+
+	if (test_and_clear_bit (Cy_EVENT_OPEN_WAKEUP, &info->event))
 		wake_up_interruptible (&info->open_wait);
-	}
-	if (test_and_clear_bit (Cy_EVENT_DELTA_WAKEUP, &info->event)) {
+
+	if (test_and_clear_bit (Cy_EVENT_DELTA_WAKEUP, &info->event))
 		wake_up_interruptible (&info->delta_msr_wait);
-	}
-	if (test_and_clear_bit (Cy_EVENT_WRITE_WAKEUP, &info->event)) {
+
+	if (test_and_clear_bit (Cy_EVENT_WRITE_WAKEUP, &info->event))
 		wake_up_interruptible (&tty->write_wait);
-	}
 #ifdef Z_WAKE
-	if (test_and_clear_bit (Cy_EVENT_SHUTDOWN_WAKEUP, &info->event)) {
+	if (test_and_clear_bit (Cy_EVENT_SHUTDOWN_WAKEUP, &info->event))
 		wake_up_interruptible (&info->shutdown_wait);
-	}
 #endif
-}				/* do_softint */
-#endif /* IFX_SSC_INT_USE_BH */
-#endif // not_yet
+}
+#endif
+#endif
 
 inline static void
 rx_int (struct ifx_ssc_port *info)
@@ -171,10 +170,7 @@ rx_int (struct ifx_ssc_port *info)
 	unsigned long *tmp_ptr;
 	unsigned int rx_valid_cnt;
 	/* number of words waiting in the RX FIFO */
-	fifo_fill_lev = (READ_PERIPHERAL_REGISTER (info->mapbase +
-						   IFX_SSC_FSTAT) &
-			 IFX_SSC_FSTAT_RECEIVED_WORDS_MASK) >>
-		IFX_SSC_FSTAT_RECEIVED_WORDS_OFFSET;
+	fifo_fill_lev = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_FSTAT) & IFX_SSC_FSTAT_RECEIVED_WORDS_MASK) >> IFX_SSC_FSTAT_RECEIVED_WORDS_OFFSET;
 	// Note: There are always 32 bits in a fifo-entry except for the last 
 	// word of a contigous transfer block and except for not in rx-only 
 	// mode and CON.ENBV set. But for this case it should be a convention 
@@ -191,73 +187,44 @@ rx_int (struct ifx_ssc_port *info)
 	// transfer with 32 bits per entry
 	while ((bytes_in_buf >= 4) && (fifo_fill_lev > 0)) {
 		tmp_ptr = (unsigned long *) info->rxbuf_ptr;
-		*tmp_ptr =
-			READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RB);
+		*tmp_ptr = READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RB);
 		info->rxbuf_ptr += 4;
 		info->stats.rxBytes += 4;
 		fifo_fill_lev--;
 		bytes_in_buf -= 4;
-	}			// while ((bytes_in_buf >= 4) && (fifo_fill_lev > 0))
+	}
+
 	// now do the rest as mentioned in STATE.RXBV
 	while ((bytes_in_buf > 0) && (fifo_fill_lev > 0)) {
-		rx_valid_cnt =
-			(READ_PERIPHERAL_REGISTER
-			 (info->mapbase +
-			  IFX_SSC_STATE) & IFX_SSC_STATE_RX_BYTE_VALID_MASK)
-			>> IFX_SSC_STATE_RX_BYTE_VALID_OFFSET;
+		rx_valid_cnt = (READ_PERIPHERAL_REGISTER(info->mapbase + IFX_SSC_STATE) & IFX_SSC_STATE_RX_BYTE_VALID_MASK) >> IFX_SSC_STATE_RX_BYTE_VALID_OFFSET;
 		if (rx_valid_cnt == 0)
 			break;
-		if (rx_valid_cnt > bytes_in_buf) {
-			// ### TO DO: warning message: not block aligned data, other data 
-			//                             in this entry will be lost
+
+		if (rx_valid_cnt > bytes_in_buf)
 			rx_valid_cnt = bytes_in_buf;
-		}
-		tmp_val =
-			READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RB);
 
-		for (i = 0; i < rx_valid_cnt; i++) {
-			*info->rxbuf_ptr =
-				(tmp_val >> (8 * (rx_valid_cnt - i - 1))) &
-				0xff;
-/*			
-                        *info->rxbuf_ptr = tmp_val & 0xff;
-                        tmp_val >>= 8;
-*/
+		tmp_val = READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RB);
+
+		for (i = 0; i < rx_valid_cnt; i++)
+		{
+			*info->rxbuf_ptr = (tmp_val >> (8 * (rx_valid_cnt - i - 1))) & 0xff;
 			bytes_in_buf--;
-
 			info->rxbuf_ptr++;
 		}
 		info->stats.rxBytes += rx_valid_cnt;
-	}			// while ((bytes_in_buf > 0) && (fifo_fill_lev > 0))
+	}
 
 	// check if transfer is complete
-	if (info->rxbuf_ptr >= info->rxbuf_end) {
+	if (info->rxbuf_ptr >= info->rxbuf_end)
+	{
 		disable_irq(info->rxirq);
-		/* wakeup any processes waiting in read() */
 		wake_up_interruptible (&info->rwait);
-		/* and in poll() */
-		//wake_up_interruptible(&info->pwait);
-	}
-	else if ((info->opts.modeRxTx == IFX_SSC_MODE_RX) &&
-		 (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RXCNT) ==
-		  0)) {
-		// if buffer not filled completely and rx request done initiate new transfer
-/*
-		if  (info->rxbuf_end - info->rxbuf_ptr < 65536)
-*/
-		if (info->rxbuf_end - info->rxbuf_ptr <
-		    IFX_SSC_RXREQ_BLOCK_SIZE)
-			WRITE_PERIPHERAL_REGISTER ((info->rxbuf_end -
-						    info->
-						    rxbuf_ptr) <<
-						   IFX_SSC_RXREQ_RXCOUNT_OFFSET,
-						   info->mapbase +
-						   IFX_SSC_RXREQ);
+	} else if ((info->opts.modeRxTx == IFX_SSC_MODE_RX) && (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RXCNT) == 0))
+	{
+		if (info->rxbuf_end - info->rxbuf_ptr < IFX_SSC_RXREQ_BLOCK_SIZE)
+			WRITE_PERIPHERAL_REGISTER ((info->rxbuf_end - info->rxbuf_ptr) << IFX_SSC_RXREQ_RXCOUNT_OFFSET, info->mapbase + IFX_SSC_RXREQ);
 		else
-			WRITE_PERIPHERAL_REGISTER (IFX_SSC_RXREQ_BLOCK_SIZE <<
-						   IFX_SSC_RXREQ_RXCOUNT_OFFSET,
-						   info->mapbase +
-						   IFX_SSC_RXREQ);
+			WRITE_PERIPHERAL_REGISTER (IFX_SSC_RXREQ_BLOCK_SIZE << IFX_SSC_RXREQ_RXCOUNT_OFFSET,  info->mapbase + IFX_SSC_RXREQ);
 	}
 }
 
@@ -266,12 +233,8 @@ tx_int (struct ifx_ssc_port *info)
 {
 
 	int fifo_space, fill, i;
-	fifo_space = ((READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_ID) &
-		       IFX_SSC_PERID_TXFS_MASK) >> IFX_SSC_PERID_TXFS_OFFSET)
-		-
-		((READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_FSTAT) &
-		  IFX_SSC_FSTAT_TRANSMIT_WORDS_MASK) >>
-		 IFX_SSC_FSTAT_TRANSMIT_WORDS_OFFSET);
+	fifo_space = ((READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_ID) & IFX_SSC_PERID_TXFS_MASK) >> IFX_SSC_PERID_TXFS_OFFSET)
+		- ((READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_FSTAT) & IFX_SSC_FSTAT_TRANSMIT_WORDS_MASK) >> IFX_SSC_FSTAT_TRANSMIT_WORDS_OFFSET);
 
 	if (fifo_space == 0)
 		return;
@@ -281,44 +244,40 @@ tx_int (struct ifx_ssc_port *info)
 	if (fill > fifo_space * 4)
 		fill = fifo_space * 4;
 
-	for (i = 0; i < fill / 4; i++) {
+	for (i = 0; i < fill / 4; i++)
+	{
 		// at first 32 bit access
-		WRITE_PERIPHERAL_REGISTER (*(UINT32 *) info->txbuf_ptr,
-					   info->mapbase + IFX_SSC_TB);
+		WRITE_PERIPHERAL_REGISTER (*(UINT32 *) info->txbuf_ptr, info->mapbase + IFX_SSC_TB);
 		info->txbuf_ptr += 4;
 	}
 
 	fifo_space -= fill / 4;
 	info->stats.txBytes += fill & ~0x3;
 	fill &= 0x3;
-	if ((fifo_space > 0) & (fill > 1)) {
+	if ((fifo_space > 0) & (fill > 1))
+	{
 		// trailing 16 bit access
-		WRITE_PERIPHERAL_REGISTER_16 (*(UINT16 *) info->txbuf_ptr,
-					      info->mapbase + IFX_SSC_TB);
+		WRITE_PERIPHERAL_REGISTER_16 (*(UINT16 *) info->txbuf_ptr, info->mapbase + IFX_SSC_TB);
 		info->txbuf_ptr += 2;
 		info->stats.txBytes += 2;
 		fifo_space--;
-/* added by bingtao */
 		fill -= 2;
 	}
-	if ((fifo_space > 0) & (fill > 0)) {
+
+	if ((fifo_space > 0) & (fill > 0))
+	{
 		// trailing 8 bit access
-		WRITE_PERIPHERAL_REGISTER_8 (*(UINT8 *) info->txbuf_ptr,
-					     info->mapbase + IFX_SSC_TB);
+		WRITE_PERIPHERAL_REGISTER_8 (*(UINT8 *) info->txbuf_ptr, info->mapbase + IFX_SSC_TB);
 		info->txbuf_ptr++;
 		info->stats.txBytes++;
-/*
-                fifo_space --;
-*/
 	}
 
 	// check if transmission complete
-	if (info->txbuf_ptr >= info->txbuf_end) {
+	if (info->txbuf_ptr >= info->txbuf_end)
+	{
 		disable_irq(info->txirq);
 		kfree (info->txbuf);
 		info->txbuf = NULL;
-		/* wake up any process waiting in poll() */
-		//wake_up_interruptible(&info->pwait);
 	}
 
 }
@@ -356,30 +315,29 @@ ifx_ssc_err_int (int irq, void *dev_id)
 		info->stats.rxUnErr++;
 		write_back |= IFX_SSC_WHBSTATE_CLR_RX_UFL_ERROR;
 	}
+
 	if ((state & IFX_SSC_STATE_RX_OFL) != 0) {
 		info->stats.rxOvErr++;
 		write_back |= IFX_SSC_WHBSTATE_CLR_RX_OFL_ERROR;
 	}
+
 	if ((state & IFX_SSC_STATE_TX_OFL) != 0) {
 		info->stats.txOvErr++;
 		write_back |= IFX_SSC_WHBSTATE_CLR_TX_OFL_ERROR;
 	}
+
 	if ((state & IFX_SSC_STATE_TX_UFL) != 0) {
 		info->stats.txUnErr++;
 		write_back |= IFX_SSC_WHBSTATE_CLR_TX_UFL_ERROR;
 	}
-//      if ((state & IFX_SSC_STATE_ABORT_ERR) != 0) {
-//              info->stats.abortErr++;
-//              write_back |= IFX_SSC_WHBSTATE_CLR_ABORT_ERROR;
-//      }
+
 	if ((state & IFX_SSC_STATE_MODE_ERR) != 0) {
 		info->stats.modeErr++;
 		write_back |= IFX_SSC_WHBSTATE_CLR_MODE_ERROR;
 	}
 
 	if (write_back)
-		WRITE_PERIPHERAL_REGISTER (write_back,
-					   info->mapbase + IFX_SSC_WHBSTATE);
+		WRITE_PERIPHERAL_REGISTER (write_back, info->mapbase + IFX_SSC_WHBSTATE);
 
 	local_irq_restore (flags);
 
@@ -405,19 +363,16 @@ ifx_ssc_abort (struct ifx_ssc_port *info)
 	// complete word. The disable cuts the transmission immediatly and 
 	// releases the chip selects. This could result in unpredictable 
 	// behavior of connected external devices!
-	enabled = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE)
-		   & IFX_SSC_STATE_IS_ENABLED) != 0;
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ENABLE,
-				   info->mapbase + IFX_SSC_WHBSTATE);
+	enabled = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE) & IFX_SSC_STATE_IS_ENABLED) != 0;
+	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
 
 	// flush fifos
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_XFCON_FIFO_FLUSH,
-				   info->mapbase + IFX_SSC_TXFCON);
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_XFCON_FIFO_FLUSH,
-				   info->mapbase + IFX_SSC_RXFCON);
+	WRITE_PERIPHERAL_REGISTER (IFX_SSC_XFCON_FIFO_FLUSH, info->mapbase + IFX_SSC_TXFCON);
+	WRITE_PERIPHERAL_REGISTER (IFX_SSC_XFCON_FIFO_FLUSH, info->mapbase + IFX_SSC_RXFCON);
 
 	// free txbuf
-	if (info->txbuf != NULL) {
+	if (info->txbuf != NULL)
+	{
 		kfree (info->txbuf);
 		info->txbuf = NULL;
 	}
@@ -432,12 +387,10 @@ ifx_ssc_abort (struct ifx_ssc_port *info)
 	mask_and_ack_danube_irq(info->errirq);
 
 	// clear error flags
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ALL_ERROR,
-				   info->mapbase + IFX_SSC_WHBSTATE);
+	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ALL_ERROR, info->mapbase + IFX_SSC_WHBSTATE);
 
 	if (enabled)
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_ENABLE,
-					   info->mapbase + IFX_SSC_WHBSTATE);
+		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
 
 }
 
@@ -455,8 +408,7 @@ ifx_ssc_open (struct inode *inode, struct file *filp)
 	if ((inode == (struct inode *) 0) || (inode == (struct inode *) 1)) {
 		from_kernel = 1;
 		line = (int) inode;
-	}
-	else {
+	} else {
 		line = MINOR (filp->f_dentry->d_inode->i_rdev);
 		filp->f_op = &ifx_ssc_fops;
 	}
@@ -477,40 +429,27 @@ ifx_ssc_open (struct inode *inode, struct file *filp)
 	disable_irq(info->errirq);
 
 	/* Flush and enable TX/RX FIFO */
-	WRITE_PERIPHERAL_REGISTER ((IFX_SSC_DEF_TXFIFO_FL <<
-				    IFX_SSC_XFCON_ITL_OFFSET) |
-				   IFX_SSC_XFCON_FIFO_FLUSH |
-				   IFX_SSC_XFCON_FIFO_ENABLE,
-				   info->mapbase + IFX_SSC_TXFCON);
-	WRITE_PERIPHERAL_REGISTER ((IFX_SSC_DEF_RXFIFO_FL <<
-				    IFX_SSC_XFCON_ITL_OFFSET) |
-				   IFX_SSC_XFCON_FIFO_FLUSH |
-				   IFX_SSC_XFCON_FIFO_ENABLE,
-				   info->mapbase + IFX_SSC_RXFCON);
+	WRITE_PERIPHERAL_REGISTER ((IFX_SSC_DEF_TXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_FLUSH | IFX_SSC_XFCON_FIFO_ENABLE, info->mapbase + IFX_SSC_TXFCON);
+	WRITE_PERIPHERAL_REGISTER ((IFX_SSC_DEF_RXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_FLUSH | IFX_SSC_XFCON_FIFO_ENABLE, info->mapbase + IFX_SSC_RXFCON);
 
 	/* logically flush the software FIFOs */
 	info->rxbuf_ptr = 0;
 	info->txbuf_ptr = 0;
 
 	/* clear all error bits */
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ALL_ERROR,
-				   info->mapbase + IFX_SSC_WHBSTATE);
+	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ALL_ERROR, info->mapbase + IFX_SSC_WHBSTATE);
 
 	// clear pending interrupts
 	mask_and_ack_danube_irq(info->rxirq);
 	mask_and_ack_danube_irq(info->txirq);
 	mask_and_ack_danube_irq(info->errirq);
 
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_ENABLE,
-				   info->mapbase + IFX_SSC_WHBSTATE);
+	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
 
 	return 0;
 }
-EXPORT_SYMBOL (ifx_ssc_open);
+EXPORT_SYMBOL(ifx_ssc_open);
 
-/*
- * This routine is called when a particular device is closed.
- */
 int
 ifx_ssc_close (struct inode *inode, struct file *filp)
 {
@@ -529,26 +468,18 @@ ifx_ssc_close (struct inode *inode, struct file *filp)
 	if (!info)
 		return -ENXIO;
 
-	// disable SSC
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ENABLE,
-				   info->mapbase + IFX_SSC_WHBSTATE);
+	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
 
-	// call abort function to disable int's, flush fifos...
-	ifx_ssc_abort (info);
+	ifx_ssc_abort(info);
 
 	info->port_is_open--;
 
 	return 0;
 }
-EXPORT_SYMBOL (ifx_ssc_close);
+EXPORT_SYMBOL(ifx_ssc_close);
 
-/* added by bingtao */
-/* helper routine to handle reads from the kernel or user-space */
-/* info->rxbuf : never kfree and contains valid data */
-/* should be points to NULL after copying data !!! */
 static ssize_t
-ifx_ssc_read_helper_poll (struct ifx_ssc_port *info, char *buf, size_t len,
-			  int from_kernel)
+ifx_ssc_read_helper_poll (struct ifx_ssc_port *info, char *buf, size_t len, int from_kernel)
 {
 	ssize_t ret_val;
 	unsigned long flags;
@@ -561,29 +492,21 @@ ifx_ssc_read_helper_poll (struct ifx_ssc_port *info, char *buf, size_t len,
 	local_irq_restore (flags);
 	/* Vinetic driver always works in IFX_SSC_MODE_RXTX */
 	/* TXRX in poll mode */
-	while (info->rxbuf_ptr < info->rxbuf_end) {
-		/* This is the key point, if you don't check this condition 
-		   kfree (NULL) will happen 
-		   because tx only need write into FIFO, it's much fast than rx
-		   So when rx still waiting , tx already finish and release buf     
-		 */
-		if (info->txbuf_ptr < info->txbuf_end) {
+	while (info->rxbuf_ptr < info->rxbuf_end)
+	{
+		if (info->txbuf_ptr < info->txbuf_end)
 			tx_int (info);
-		}
 
 		rx_int (info);
 	};
 
 	ret_val = info->rxbuf_ptr - info->rxbuf;
-	return (ret_val);
+
+	return ret_val;
 }
 
-/* helper routine to handle reads from the kernel or user-space */
-/* info->rx_buf : never kfree and contains valid data */
-/* should be points to NULL after copying data !!! */
 static ssize_t
-ifx_ssc_read_helper (struct ifx_ssc_port *info, char *buf, size_t len,
-		     int from_kernel)
+ifx_ssc_read_helper (struct ifx_ssc_port *info, char *buf, size_t len, int from_kernel)
 {
 	ssize_t ret_val;
 	unsigned long flags;
@@ -591,104 +514,87 @@ ifx_ssc_read_helper (struct ifx_ssc_port *info, char *buf, size_t len,
 
 	if (info->opts.modeRxTx == IFX_SSC_MODE_TX)
 		return -EFAULT;
+
 	local_irq_save (flags);
 	info->rxbuf_ptr = info->rxbuf;
 	info->rxbuf_end = info->rxbuf + len;
-	if (info->opts.modeRxTx == IFX_SSC_MODE_RXTX) {
-		if ((info->txbuf == NULL) ||
-		    (info->txbuf != info->txbuf_ptr) ||
-		    (info->txbuf_end != len + info->txbuf)) {
+
+	if (info->opts.modeRxTx == IFX_SSC_MODE_RXTX)
+	{
+		if ((info->txbuf == NULL) || (info->txbuf != info->txbuf_ptr) || (info->txbuf_end != len + info->txbuf))
+		{
 			local_irq_restore (flags);
 			printk ("IFX SSC - %s: write must be called before calling " "read in combined RX/TX!\n", __func__);
 			return -EFAULT;
 		}
-		local_irq_restore (flags);
-		/* should enable tx, right? */
+
+		local_irq_restore(flags);
 		tx_int (info);
+
 		if (info->txbuf_ptr < info->txbuf_end)
 			enable_irq(info->txirq);
 
 		enable_irq(info->rxirq);
-	}
-	else {			// rx mode
-		local_irq_restore (flags);
-		if (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RXCNT) &
-		    IFX_SSC_RXCNT_TODO_MASK)
+	} else {
+		local_irq_restore(flags);
+		if (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RXCNT) & IFX_SSC_RXCNT_TODO_MASK)
 			return -EBUSY;
 		enable_irq(info->rxirq);
-		// rx request limited to ' bytes
-/*
-                if (len < 65536)
-*/
 		if (len < IFX_SSC_RXREQ_BLOCK_SIZE)
-			WRITE_PERIPHERAL_REGISTER (len <<
-						   IFX_SSC_RXREQ_RXCOUNT_OFFSET,
-						   info->mapbase +
-						   IFX_SSC_RXREQ);
+			WRITE_PERIPHERAL_REGISTER (len << IFX_SSC_RXREQ_RXCOUNT_OFFSET, info->mapbase + IFX_SSC_RXREQ);
 		else
-			WRITE_PERIPHERAL_REGISTER (IFX_SSC_RXREQ_BLOCK_SIZE <<
-						   IFX_SSC_RXREQ_RXCOUNT_OFFSET,
-						   info->mapbase +
-						   IFX_SSC_RXREQ);
+			WRITE_PERIPHERAL_REGISTER (IFX_SSC_RXREQ_BLOCK_SIZE << IFX_SSC_RXREQ_RXCOUNT_OFFSET, info->mapbase + IFX_SSC_RXREQ);
 	}
 
 	__add_wait_queue (&info->rwait, &wait);
 	set_current_state (TASK_INTERRUPTIBLE);
-	// wakeup done in rx_int
 
 	do {
 		local_irq_save (flags);
 		if (info->rxbuf_ptr >= info->rxbuf_end)
 			break;
+
 		local_irq_restore (flags);
 
-		if (signal_pending (current)) {
+		if (signal_pending (current))
+		{
 			ret_val = -ERESTARTSYS;
 			goto out;
 		}
-		schedule ();
+		schedule();
 	} while (1);
 
 	ret_val = info->rxbuf_ptr - info->rxbuf;
 	local_irq_restore (flags);
 
-      out:
+out:
 	current->state = TASK_RUNNING;
 	__remove_wait_queue (&info->rwait, &wait);
+
 	return (ret_val);
 }
 
-
-/* helper routine to handle writes to the kernel or user-space */
-/* info->txbuf has two cases:
- *	1) return value < 0 (-EFAULT), not touched at all
- *	2) kfree and points to NULL in interrupt routine (but maybe later )
- */
 static ssize_t
 ifx_ssc_write_helper (struct ifx_ssc_port *info, const char *buf,
 		      size_t len, int from_kernel)
 {
-	// check if in tx or tx/rx mode
 	if (info->opts.modeRxTx == IFX_SSC_MODE_RX)
 		return -EFAULT;
 
 	info->txbuf_ptr = info->txbuf;
 	info->txbuf_end = len + info->txbuf;
-	/* start the transmission (not in rx/tx, see read helper) */
-	if (info->opts.modeRxTx == IFX_SSC_MODE_TX) {
+	if (info->opts.modeRxTx == IFX_SSC_MODE_TX)
+	{
 		tx_int (info);
-		if (info->txbuf_ptr < info->txbuf_end) {
+		if (info->txbuf_ptr < info->txbuf_end)
+		{
 			enable_irq(info->txirq);
 		}
 	}
-	//local_irq_restore(flags);
+
 	return len;
 }
 
-/*
- * kernel interfaces for read and write.
- * The caller must set port to: n for SSC<m> with n=m-1 (e.g. n=0 for SSC1)
- */
 ssize_t
 ifx_ssc_kread (int port, char *kbuf, size_t len)
 {
@@ -703,36 +609,27 @@ ifx_ssc_kread (int port, char *kbuf, size_t len)
 
 	info = &isp[port];
 
-	// check if reception in progress
-	if (info->rxbuf != NULL) {
+	if (info->rxbuf != NULL)
+	{
 		printk ("SSC device busy\n");
 		return -EBUSY;
 	}
 
 	info->rxbuf = kbuf;
-	if (info->rxbuf == NULL) {
+	if (info->rxbuf == NULL)
+	{
 		printk ("SSC device error\n");
 		return -EINVAL;
 	}
 
-/* changed by bingtao */
-	/* change by TaiCheng */
-	//if (!in_irq()){
-	if (0) {
-		ret_val = ifx_ssc_read_helper (info, kbuf, len, 1);
-	}
-	else {
-		ret_val = ifx_ssc_read_helper_poll (info, kbuf, len, 1);
-	};
+	ret_val = ifx_ssc_read_helper_poll (info, kbuf, len, 1);
 	info->rxbuf = NULL;
 
-	// ### TO DO: perhaps warn if ret_val != len
 	disable_irq(info->rxirq);
 
-	return (ret_val);
-}				// ifx_ssc_kread
-
-EXPORT_SYMBOL (ifx_ssc_kread);
+	return ret_val;
+}
+EXPORT_SYMBOL(ifx_ssc_kread);
 
 ssize_t
 ifx_ssc_kwrite (int port, const char *kbuf, size_t len)
@@ -751,20 +648,18 @@ ifx_ssc_kwrite (int port, const char *kbuf, size_t len)
 	// check if transmission in progress
 	if (info->txbuf != NULL)
 		return -EBUSY;
+
 	info->txbuf = (char *) kbuf;
 
 	ret_val = ifx_ssc_write_helper (info, info->txbuf, len, 1);
-	if (ret_val < 0) {
+
+	if (ret_val < 0)
 		info->txbuf = NULL;
-	}
+
 	return ret_val;
 }
+EXPORT_SYMBOL(ifx_ssc_kwrite);
 
-EXPORT_SYMBOL (ifx_ssc_kwrite);
-
-/* 
- * user interfaces to read and write
- */
 static ssize_t
 ifx_ssc_read (struct file *filp, char *ubuf, size_t len, loff_t * off)
 {
@@ -775,7 +670,6 @@ ifx_ssc_read (struct file *filp, char *ubuf, size_t len, loff_t * off)
 	idx = MINOR (filp->f_dentry->d_inode->i_rdev);
 	info = &isp[idx];
 
-	// check if reception in progress
 	if (info->rxbuf != NULL)
 		return -EBUSY;
 
@@ -784,7 +678,6 @@ ifx_ssc_read (struct file *filp, char *ubuf, size_t len, loff_t * off)
 		return -ENOMEM;
 
 	ret_val = ifx_ssc_read_helper (info, info->rxbuf, len, 0);
-	// ### TO DO: perhaps warn if ret_val != len
 	if (copy_to_user ((void *) ubuf, info->rxbuf, ret_val) != 0)
 		ret_val = -EFAULT;
 
@@ -792,14 +685,10 @@ ifx_ssc_read (struct file *filp, char *ubuf, size_t len, loff_t * off)
 
 	kfree (info->rxbuf);
 	info->rxbuf = NULL;
+
 	return (ret_val);
 }
 
-/*
- * As many bytes as we have free space for are copied from the user
- * into txbuf and the actual byte count is returned. The transmission is
- * always kicked off by calling the appropriate TX routine.
- */
 static ssize_t
 ifx_ssc_write (struct file *filp, const char *ubuf, size_t len, loff_t * off)
 {
@@ -813,7 +702,6 @@ ifx_ssc_write (struct file *filp, const char *ubuf, size_t len, loff_t * off)
 	idx = MINOR (filp->f_dentry->d_inode->i_rdev);
 	info = &isp[idx];
 
-	// check if transmission in progress
 	if (info->txbuf != NULL)
 		return -EBUSY;
 
@@ -826,10 +714,13 @@ ifx_ssc_write (struct file *filp, const char *ubuf, size_t len, loff_t * off)
 		ret_val = ifx_ssc_write_helper (info, info->txbuf, len, 0);
 	else
 		ret_val = -EFAULT;
-	if (ret_val < 0) {
-		kfree (info->txbuf);	// otherwise will be done in ISR
+
+	if (ret_val < 0)
+	{
+		kfree (info->txbuf);
 		info->txbuf = NULL;
 	}
+
 	return (ret_val);
 }
 
@@ -841,16 +732,13 @@ ifx_ssc_frm_status_get (struct ifx_ssc_port *info)
 	tmp = READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_SFSTAT);
 	info->frm_status.DataBusy = (tmp & IFX_SSC_SFSTAT_IN_DATA) > 0;
 	info->frm_status.PauseBusy = (tmp & IFX_SSC_SFSTAT_IN_PAUSE) > 0;
-	info->frm_status.DataCount = (tmp & IFX_SSC_SFSTAT_DATA_COUNT_MASK)
-		>> IFX_SSC_SFSTAT_DATA_COUNT_OFFSET;
-	info->frm_status.PauseCount = (tmp & IFX_SSC_SFSTAT_PAUSE_COUNT_MASK)
-		>> IFX_SSC_SFSTAT_PAUSE_COUNT_OFFSET;
+	info->frm_status.DataCount = (tmp & IFX_SSC_SFSTAT_DATA_COUNT_MASK) >> IFX_SSC_SFSTAT_DATA_COUNT_OFFSET;
+	info->frm_status.PauseCount = (tmp & IFX_SSC_SFSTAT_PAUSE_COUNT_MASK) >> IFX_SSC_SFSTAT_PAUSE_COUNT_OFFSET;
 	tmp = READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_SFCON);
-	info->frm_status.EnIntAfterData =
-		(tmp & IFX_SSC_SFCON_FIR_ENABLE_BEFORE_PAUSE) > 0;
-	info->frm_status.EnIntAfterPause =
-		(tmp & IFX_SSC_SFCON_FIR_ENABLE_AFTER_PAUSE) > 0;
-	return (&info->frm_status);
+	info->frm_status.EnIntAfterData = (tmp & IFX_SSC_SFCON_FIR_ENABLE_BEFORE_PAUSE) > 0;
+	info->frm_status.EnIntAfterPause = (tmp & IFX_SSC_SFCON_FIR_ENABLE_AFTER_PAUSE) > 0;
+
+	return &info->frm_status;
 }
 
 
@@ -861,17 +749,13 @@ ifx_ssc_frm_control_get (struct ifx_ssc_port *info)
 
 	tmp = READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_SFCON);
 	info->frm_opts.FrameEnable = (tmp & IFX_SSC_SFCON_SF_ENABLE) > 0;
-	info->frm_opts.DataLength = (tmp & IFX_SSC_SFCON_DATA_LENGTH_MASK)
-		>> IFX_SSC_SFCON_DATA_LENGTH_OFFSET;
-	info->frm_opts.PauseLength = (tmp & IFX_SSC_SFCON_PAUSE_LENGTH_MASK)
-		>> IFX_SSC_SFCON_PAUSE_LENGTH_OFFSET;
-	info->frm_opts.IdleData = (tmp & IFX_SSC_SFCON_PAUSE_DATA_MASK)
-		>> IFX_SSC_SFCON_PAUSE_DATA_OFFSET;
-	info->frm_opts.IdleClock = (tmp & IFX_SSC_SFCON_PAUSE_CLOCK_MASK)
-		>> IFX_SSC_SFCON_PAUSE_CLOCK_OFFSET;
-	info->frm_opts.StopAfterPause =
-		(tmp & IFX_SSC_SFCON_STOP_AFTER_PAUSE) > 0;
-	return (&info->frm_opts);
+	info->frm_opts.DataLength = (tmp & IFX_SSC_SFCON_DATA_LENGTH_MASK) >> IFX_SSC_SFCON_DATA_LENGTH_OFFSET;
+	info->frm_opts.PauseLength = (tmp & IFX_SSC_SFCON_PAUSE_LENGTH_MASK) >> IFX_SSC_SFCON_PAUSE_LENGTH_OFFSET;
+	info->frm_opts.IdleData = (tmp & IFX_SSC_SFCON_PAUSE_DATA_MASK) >> IFX_SSC_SFCON_PAUSE_DATA_OFFSET;
+	info->frm_opts.IdleClock = (tmp & IFX_SSC_SFCON_PAUSE_CLOCK_MASK) >> IFX_SSC_SFCON_PAUSE_CLOCK_OFFSET;
+	info->frm_opts.StopAfterPause = (tmp & IFX_SSC_SFCON_STOP_AFTER_PAUSE) > 0;
+
+	return &info->frm_opts;
 }
 
 static int
@@ -1297,47 +1181,33 @@ ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 
 	return ret_val;
 }
-
-EXPORT_SYMBOL (ifx_ssc_ioctl);
+EXPORT_SYMBOL(ifx_ssc_ioctl);
 
 static int
-ifx_ssc1_read_proc (char *page, char **start, off_t offset, int count,
-		    int *eof, void *data)
+ifx_ssc1_read_proc (char *page, char **start, off_t offset, int count, int *eof, void *data)
 {
 	int off = 0;
 	unsigned long flags;
 
-	/* don't want any interrupts here */
 	local_save_flags(flags);
 	local_irq_disable();
 
-	/* print statistics */
-	off += sprintf (page + off,
-			"Statistics for Infineon Synchronous Serial Controller SSC1\n");
-	off += sprintf (page + off, "RX overflow errors %d\n",
-			isp[0].stats.rxOvErr);
-	off += sprintf (page + off, "RX underflow errors %d\n",
-			isp[0].stats.rxUnErr);
-	off += sprintf (page + off, "TX overflow errors %d\n",
-			isp[0].stats.txOvErr);
-	off += sprintf (page + off, "TX underflow errors %d\n",
-			isp[0].stats.txUnErr);
-	off += sprintf (page + off, "Abort errors %d\n",
-			isp[0].stats.abortErr);
+	off += sprintf (page + off, "Statistics for Infineon Synchronous Serial Controller SSC1\n");
+	off += sprintf (page + off, "RX overflow errors %d\n", isp[0].stats.rxOvErr);
+	off += sprintf (page + off, "RX underflow errors %d\n", isp[0].stats.rxUnErr);
+	off += sprintf (page + off, "TX overflow errors %d\n", isp[0].stats.txOvErr);
+	off += sprintf (page + off, "TX underflow errors %d\n", isp[0].stats.txUnErr);
+	off += sprintf (page + off, "Abort errors %d\n", isp[0].stats.abortErr);
 	off += sprintf (page + off, "Mode errors %d\n", isp[0].stats.modeErr);
 	off += sprintf (page + off, "RX Bytes %d\n", isp[0].stats.rxBytes);
 	off += sprintf (page + off, "TX Bytes %d\n", isp[0].stats.txBytes);
 
 	local_irq_restore(flags);
 	*eof = 1;
-	return (off);
+
+	return off;
 }
 
-/*
- * Due to the fact that a port can be dynamically switched between slave
- * and master mode using an IOCTL the hardware is not initialized here,
- * but in ifx_ssc_hwinit() as a result of an IOCTL.
- */
 int __init
 ifx_ssc_init (void)
 {
@@ -1346,41 +1216,36 @@ ifx_ssc_init (void)
 	unsigned long flags;
 	int ret_val;
 
-	// ### TO DO: dynamic port count evaluation due to pin multiplexing
-
 	ret_val = -ENOMEM;
-	nbytes = PORT_CNT * sizeof (struct ifx_ssc_port);
-	isp = (struct ifx_ssc_port *) kmalloc (nbytes, GFP_KERNEL);
-	if (isp == NULL) {
-		printk ("%s: no memory for isp\n", __func__);
+	nbytes = PORT_CNT * sizeof(struct ifx_ssc_port);
+	isp = (struct ifx_ssc_port*)kmalloc(nbytes, GFP_KERNEL);
+
+	if (isp == NULL)
+	{
+		printk("%s: no memory for isp\n", __func__);
 		return (ret_val);
 	}
-	memset (isp, 0, nbytes);
+	memset(isp, 0, nbytes);
 
-	/* register the device */
 	ret_val = -ENXIO;
-/*
-	i = maj;
-*/
-	if ((i = register_chrdev (maj, "ssc", &ifx_ssc_fops)) < 0) {
-		printk ("Unable to register major %d for the Infineon SSC\n",
-			maj);
-		if (maj == 0) {
+	if ((i = register_chrdev (maj, "ssc", &ifx_ssc_fops)) < 0)
+	{
+		printk ("Unable to register major %d for the Infineon SSC\n", maj);
+		if (maj == 0)
+		{
 			goto errout;
-		}
-		else {
+		} else {
 			maj = 0;
-			if ((i =
-			     register_chrdev (maj, "ssc",
-					      &ifx_ssc_fops)) < 0) {
+			if ((i = register_chrdev (maj, "ssc", &ifx_ssc_fops)) < 0)
+			{
 				printk ("Unable to register major %d for the Infineon SSC\n", maj);
 				goto errout;
 			}
 		}
 	}
+
 	if (maj == 0)
 		maj = i;
-	//printk("registered major %d for Infineon SSC\n", maj);
 
 	/* set default values in ifx_ssc_port */
 	for (i = 0; i < PORT_CNT; i++) {
@@ -1409,61 +1274,45 @@ ifx_ssc_init (void)
 		/* values specific to SSC1 */
 		if (i == 0) {
 			info->mapbase = DANUBE_SSC1_BASE_ADDR;
-			// ### TO DO: power management
-
-			// setting interrupt vectors
 			info->txirq = DANUBE_SSC_TIR;
 			info->rxirq = DANUBE_SSC_RIR;
 			info->errirq = DANUBE_SSC_EIR;
-/*
-			info->frmirq = IFX_SSC_FIR;
-*/
 		}
-		/* activate SSC */
-		/* CLC.DISS = 0 */
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_DEF_RMC <<
-					   IFX_CLC_RUN_DIVIDER_OFFSET,
-					   info->mapbase + IFX_SSC_CLC);
 
-// ### TO DO: multiple instances
+		WRITE_PERIPHERAL_REGISTER (IFX_SSC_DEF_RMC << IFX_CLC_RUN_DIVIDER_OFFSET, info->mapbase + IFX_SSC_CLC);
 
 		init_waitqueue_head (&info->rwait);
-		//init_waitqueue_head(&info->pwait);
 
 		local_irq_save (flags);
 
 		// init serial framing register
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_DEF_SFCON,
-					   info->mapbase + IFX_SSC_SFCON);
+		WRITE_PERIPHERAL_REGISTER (IFX_SSC_DEF_SFCON, info->mapbase + IFX_SSC_SFCON);
 
-		/* try to get the interrupts */
-		// ### TO DO: interrupt handling with multiple instances
-		ret_val =
-			request_irq(info->txirq, ifx_ssc_tx_int, SA_INTERRUPT, "ifx_ssc_tx", info);
-		if (ret_val) {
-			printk ("%s: unable to get irq %d\n", __func__,
-				info->txirq);
-			local_irq_restore (flags);
+		ret_val = request_irq(info->txirq, ifx_ssc_tx_int, SA_INTERRUPT, "ifx_ssc_tx", info);
+		if (ret_val)
+		{
+			printk("%s: unable to get irq %d\n", __func__, info->txirq);
+			local_irq_restore(flags);
 			goto errout;
 		}
-		ret_val =
-			request_irq(info->rxirq, ifx_ssc_rx_int, SA_INTERRUPT, "ifx_ssc_rx", info);
-		if (ret_val) {
-			printk ("%s: unable to get irq %d\n", __func__,
-				info->rxirq);
+
+		ret_val = request_irq(info->rxirq, ifx_ssc_rx_int, SA_INTERRUPT, "ifx_ssc_rx", info);
+		if (ret_val)
+		{
+			printk ("%s: unable to get irq %d\n", __func__, info->rxirq);
 			local_irq_restore (flags);
 			goto irqerr;
 		}
-		ret_val =
-			request_irq(info->errirq, ifx_ssc_err_int, SA_INTERRUPT,"ifx_ssc_err", info);
-		if (ret_val) {
-			printk ("%s: unable to get irq %d\n", __func__,
-				info->errirq);
+
+		ret_val = request_irq(info->errirq, ifx_ssc_err_int, SA_INTERRUPT,"ifx_ssc_err", info);
+		if (ret_val)
+		{
+			printk ("%s: unable to get irq %d\n", __func__, info->errirq);
 			local_irq_restore (flags);
 			goto irqerr;
 		}
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_DEF_IRNEN,
-					   info->mapbase + IFX_SSC_IRN_EN);
+		WRITE_PERIPHERAL_REGISTER (IFX_SSC_DEF_IRNEN, info->mapbase + IFX_SSC_IRN_EN);
+
 		enable_irq(info->txirq);
 		enable_irq(info->rxirq);
 		enable_irq(info->errirq);
@@ -1471,53 +1320,41 @@ ifx_ssc_init (void)
 		local_irq_restore (flags);
 	}
 
-	/* init the SSCs with default values */
 	for (i = 0; i < PORT_CNT; i++) {
 		info = &isp[i];
-		if (ifx_ssc_hwinit (info) < 0) {
-			printk ("%s: hardware init failed for port %d\n",
-				__func__, i);
+		if (ifx_ssc_hwinit (info) < 0)
+		{
+			printk ("%s: hardware init failed for port %d\n", __func__, i);
 			goto irqerr;
 		}
 	}
 
-	/* register /proc read handler */
-	// ### TO DO: multiple instances
-	/* for SSC1, which is always present */
-	create_proc_read_entry ("driver/ssc1", 0, NULL, ifx_ssc1_read_proc,
-				NULL);
+	create_proc_read_entry ("driver/ssc1", 0, NULL, ifx_ssc1_read_proc, NULL);
+
 	return 0;
 
 irqerr:
-	// ### TO DO: multiple instances
 	free_irq(isp[0].txirq, &isp[0]);
 	free_irq(isp[0].rxirq, &isp[0]);
 	free_irq(isp[0].errirq, &isp[0]);
 errout:
-	/* free up any allocated memory in the error case */
 	kfree (isp);
 	return (ret_val);
-}				/* ifx_ssc_init */
+}
 
 void
 ifx_ssc_cleanup_module (void)
 {
 	int i;
 
-	/* free up any allocated memory */
 	for (i = 0; i < PORT_CNT; i++) {
-		/* disable the SSC */
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ENABLE,
-					   isp[i].mapbase + IFX_SSC_WHBSTATE);
-		/* free the interrupts */
+		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ENABLE, isp[i].mapbase + IFX_SSC_WHBSTATE);
 		free_irq(isp[i].txirq, &isp[i]);
 		free_irq(isp[i].rxirq, &isp[i]);
 		free_irq(isp[i].errirq, &isp[i]);
 	}
 	kfree (isp);
-	/* delete /proc read handler */
 	remove_proc_entry ("driver/ssc1", NULL);
-	remove_proc_entry ("driver/ssc2", NULL);
 }
 
 module_init(ifx_ssc_init);
