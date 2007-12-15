@@ -61,15 +61,6 @@
 /* allow the user to set the major device number */
 static int danube_eeprom_maj = 0;
 
-static ssize_t danube_eeprom_fops_read (struct file *, char *, size_t, loff_t *);
-static ssize_t danube_eeprom_fops_write (struct file *, const char *, size_t,
-				    loff_t *);
-static int danube_eeprom_ioctl (struct inode *, struct file *, unsigned int,
-				unsigned long);
-static int danube_eeprom_open (struct inode *, struct file *);
-static int danube_eeprom_close (struct inode *, struct file *);
-
-//ifx_ssc.c
 extern int ifx_ssc_init (void);
 extern int ifx_ssc_open (struct inode *inode, struct file *filp);
 extern int ifx_ssc_close (struct inode *inode, struct file *filp);
@@ -98,63 +89,30 @@ extern int ifx_ssc_rx (char *rx_buf, unsigned int rx_len);
 #define EEPROM_SIZE			512
 
 static int
-eeprom_rdsr (char *status)
+eeprom_rdsr (void)
 {
 	int ret = 0;
 	unsigned char cmd = EEPROM_RDSR;
 	unsigned long flag;
+	char status;
 
 	local_irq_save(flag);
 
-	if ((ret = ifx_ssc_cs_low (EEPROM_CS)))
-	{
-		local_irq_restore(flag);
-		goto out;
-	}
+	if ((ret = ifx_ssc_cs_low(EEPROM_CS)) == 0)
+		if ((ret = ifx_ssc_txrx(&cmd, 1, &status, 1)) >= 0)
+			ret = status & 1;
 
-	if ((ret = ifx_ssc_txrx (&cmd, 1, status, 1)) < 0)
-	{
-		ifx_ssc_cs_high(EEPROM_CS);
-		local_irq_restore(flag);
-		goto out;
-	}
-
-	if ((ret = ifx_ssc_cs_high(EEPROM_CS)))
-	{
-		local_irq_restore(flag);
-		goto out;
-	}
-
+	ifx_ssc_cs_high(EEPROM_CS);
 	local_irq_restore(flag);
 
-out:
 	return ret;
 }
 
-static inline int
+void
 eeprom_wip_over (void)
 {
-	int ret = 0;
-	unsigned char status;
-
-	while (1)
-	{
-		ret = eeprom_rdsr(&status);
-		printk("status %x \n", status);
-
-		if (ret)
-		{
-			printk("read back status fails %d\n", ret);
-			break;
-		}
-
-		if (((status) & 1) != 0)
-			printk("read back status not zero %x\n", status);
-		else
-			break;
-	}
-
-	return ret;
+	while (eeprom_rdsr())
+		printk("waiting for eeprom\n");
 }
 
 static int
@@ -165,29 +123,16 @@ eeprom_wren (void)
 	unsigned long flag;
 
 	local_irq_save(flag);
-	if ((ret = ifx_ssc_cs_low(EEPROM_CS)))
-	{
-		local_irq_restore(flag);
-		goto out;
-	}
+	if ((ret = ifx_ssc_cs_low(EEPROM_CS)) == 0)
+		if ((ret = ifx_ssc_tx(&cmd, 1)) >= 0)
+			ret = 0;
 
-	if ((ret = ifx_ssc_tx(&cmd, 1)) < 0)
-	{
-		ifx_ssc_cs_high(EEPROM_CS);
-		local_irq_restore(flag);
-		goto out;
-	}
-
-	if ((ret = ifx_ssc_cs_high(EEPROM_CS)))
-	{
-		local_irq_restore(flag);
-		goto out;
-	}
-
+	ifx_ssc_cs_high(EEPROM_CS);
 	local_irq_restore(flag);
-	eeprom_wip_over();
 
-out:
+	if (!ret)
+		eeprom_wip_over();
+
 	return ret;
 }
 
@@ -388,7 +333,7 @@ danube_eeprom_read (char *buf, size_t len, unsigned int addr)
 		len = EEPROM_SIZE / 2;
 	}
 
-	if ((ret = ifx_ssc_open ((struct inode *) 0, NULL)))
+	if ((ret = ifx_ssc_open((struct inode *) 0, NULL)))
 	{
 		printk("danube_eeprom_open fails\n");
 		goto out;
@@ -396,26 +341,26 @@ danube_eeprom_read (char *buf, size_t len, unsigned int addr)
 
 	data = (unsigned int)IFX_SSC_MODE_RXTX;
 
-	if ((ret = ifx_ssc_ioctl ((struct inode *) 0, NULL, IFX_SSC_RXTX_MODE_SET, (unsigned long) &data)))
+	if ((ret = ifx_ssc_ioctl((struct inode *) 0, NULL, IFX_SSC_RXTX_MODE_SET, (unsigned long) &data)))
 	{
 		printk("set RXTX mode fails\n");
 		goto out;
 	}
 
-	if ((ret = eeprom_wrsr ()))
+	if ((ret = eeprom_wrsr()))
 	{
 		printk("EEPROM reset fails\n");
 		goto out;
 	}
 
-	if ((ret = eeprom_read (addr, buf, len)))
+	if ((ret = eeprom_read(addr, buf, len)))
 	{
 		printk("eeprom read fails\n");
 		goto out;
 	}
 
 out:
-	if (ifx_ssc_close ((struct inode *) 0, NULL))
+	if (ifx_ssc_close((struct inode *) 0, NULL))
 		printk("danube_eeprom_close fails\n");
 
 	return len;
