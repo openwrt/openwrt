@@ -90,9 +90,6 @@ int ifx_ssc_close (struct inode *, struct file *);
 
 /* other forward declarations */
 static unsigned int ifx_ssc_get_kernel_clk (struct ifx_ssc_port *info);
-static void ifx_ssc_rx_int (int, void *, struct pt_regs *);
-static void ifx_ssc_tx_int (int, void *, struct pt_regs *);
-static void ifx_ssc_err_int (int, void *, struct pt_regs *);
 #ifdef SSC_FRAME_INT_ENABLE
 static void ifx_ssc_frm_int (int, void *, struct pt_regs *);
 #endif
@@ -384,24 +381,26 @@ tx_int (struct ifx_ssc_port *info)
 
 }				// tx_int
 
-static void
-ifx_ssc_rx_int (int irq, void *dev_id, struct pt_regs *regs)
+irqreturn_t
+ifx_ssc_rx_int (int irq, void *dev_id)
 {
 	struct ifx_ssc_port *info = (struct ifx_ssc_port *) dev_id;
-	//WRITE_PERIPHERAL_REGISTER(IFX_SSC_R_BIT, info->mapbase + IFX_SSC_IRN_CR);
 	rx_int (info);
+
+	return IRQ_HANDLED;
 }
 
-static void
-ifx_ssc_tx_int (int irq, void *dev_id, struct pt_regs *regs)
+irqreturn_t
+ifx_ssc_tx_int (int irq, void *dev_id)
 {
 	struct ifx_ssc_port *info = (struct ifx_ssc_port *) dev_id;
-	//WRITE_PERIPHERAL_REGISTER(IFX_SSC_T_BIT, info->mapbase + IFX_SSC_IRN_CR);
 	tx_int (info);
+
+	return IRQ_HANDLED;
 }
 
-static void
-ifx_ssc_err_int (int irq, void *dev_id, struct pt_regs *regs)
+irqreturn_t
+ifx_ssc_err_int (int irq, void *dev_id)
 {
 	struct ifx_ssc_port *info = (struct ifx_ssc_port *) dev_id;
 	unsigned int state;
@@ -441,6 +440,8 @@ ifx_ssc_err_int (int irq, void *dev_id, struct pt_regs *regs)
 					   info->mapbase + IFX_SSC_WHBSTATE);
 
 	local_irq_restore (flags);
+
+	return IRQ_HANDLED;
 }
 
 #ifdef SSC_FRAME_INT_ENABLE
@@ -746,100 +747,6 @@ ifx_ssc_read_helper (struct ifx_ssc_port *info, char *buf, size_t len,
 	return (ret_val);
 }				// ifx_ssc_read_helper
 
-#if 0
-/* helper routine to handle reads from the kernel or user-space */
-/* appropriate in interrupt context */
-static ssize_t
-ifx_ssc_read_helper (struct ifx_ssc_port *info, char *buf, size_t len,
-		     int from_kernel)
-{
-	ssize_t ret_val;
-	unsigned long flags;
-	DECLARE_WAITQUEUE (wait, current);
-
-	if (info->opts.modeRxTx == IFX_SSC_MODE_TX)
-		return -EFAULT;
-	local_irq_save (flags);
-	info->rxbuf_ptr = info->rxbuf;
-	info->rxbuf_end = info->rxbuf + len;
-	if (info->opts.modeRxTx == IFX_SSC_MODE_RXTX) {
-		if ((info->txbuf == NULL) ||
-		    (info->txbuf != info->txbuf_ptr) ||
-		    (info->txbuf_end != len + info->txbuf)) {
-			local_irq_restore (flags);
-			printk ("IFX SSC - %s: write must be called before calling " "read in combined RX/TX!\n", __FUNCTION__);
-			return -EFAULT;
-		}
-		local_irq_restore (flags);
-		/* should enable tx, right? */
-		tx_int (info);
-		if (!in_irq ()) {
-			if (info->txbuf_ptr < info->txbuf_end) {
-				ifx_int_wrapper.enable (info->txirq);
-			}
-			ifx_int_wrapper.enable (info->rxirq);
-		}
-	}
-	else {			// rx mode
-		local_irq_restore (flags);
-		if (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RXCNT) &
-		    IFX_SSC_RXCNT_TODO_MASK)
-			return -EBUSY;
-		if (!in_irq ()) {
-			ifx_int_wrapper.enable (info->rxirq);
-		}
-
-		if (len < IFX_SSC_RXREQ_BLOCK_SIZE)
-			WRITE_PERIPHERAL_REGISTER (len <<
-						   IFX_SSC_RXREQ_RXCOUNT_OFFSET,
-						   info->mapbase +
-						   IFX_SSC_RXREQ);
-		else
-			WRITE_PERIPHERAL_REGISTER (IFX_SSC_RXREQ_BLOCK_SIZE <<
-						   IFX_SSC_RXREQ_RXCOUNT_OFFSET,
-						   info->mapbase +
-						   IFX_SSC_RXREQ);
-	}
-	if (in_irq ()) {
-		do {
-			rx_int (info);
-			if (info->opts.modeRxTx == IFX_SSC_MODE_RXTX) {
-				tx_int (info);
-			}
-
-			if (info->rxbuf_ptr >= info->rxbuf_end)
-				break;
-		} while (1);
-		ret_val = info->rxbuf_ptr - info->rxbuf;
-	}
-	else {
-		__add_wait_queue (&info->rwait, &wait);
-		set_current_state (TASK_INTERRUPTIBLE);
-		// wakeup done in rx_int
-
-		do {
-			local_irq_save (flags);
-			if (info->rxbuf_ptr >= info->rxbuf_end)
-				break;
-			local_irq_restore (flags);
-
-			if (signal_pending (current)) {
-				ret_val = -ERESTARTSYS;
-				goto out;
-			}
-			schedule ();
-		} while (1);
-
-		ret_val = info->rxbuf_ptr - info->rxbuf;	// should be equal to len
-		local_irq_restore (flags);
-
-	      out:
-		current->state = TASK_RUNNING;
-		__remove_wait_queue (&info->rwait, &wait);
-	}
-	return (ret_val);
-}				// ifx_ssc_read_helper
-#endif
 
 /* helper routine to handle writes to the kernel or user-space */
 /* info->txbuf has two cases:
