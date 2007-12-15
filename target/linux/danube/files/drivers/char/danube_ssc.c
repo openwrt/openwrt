@@ -92,7 +92,6 @@ int ifx_ssc_close (struct inode *, struct file *);
 static unsigned int ifx_ssc_get_kernel_clk (struct ifx_ssc_port *info);
 static void tx_int (struct ifx_ssc_port *);
 static int ifx_ssc1_read_proc (char *, char **, off_t, int, int *, void *);
-static void ifx_gpio_init (void);
 
 extern unsigned int danube_get_fpi_hz (void);
 extern void mask_and_ack_danube_irq (unsigned int irq_nr);
@@ -600,7 +599,7 @@ ifx_ssc_read_helper (struct ifx_ssc_port *info, char *buf, size_t len,
 		    (info->txbuf != info->txbuf_ptr) ||
 		    (info->txbuf_end != len + info->txbuf)) {
 			local_irq_restore (flags);
-			printk ("IFX SSC - %s: write must be called before calling " "read in combined RX/TX!\n", __FUNCTION__);
+			printk ("IFX SSC - %s: write must be called before calling " "read in combined RX/TX!\n", __func__);
 			return -EFAULT;
 		}
 		local_irq_restore (flags);
@@ -773,10 +772,6 @@ ifx_ssc_read (struct file *filp, char *ubuf, size_t len, loff_t * off)
 	int idx;
 	struct ifx_ssc_port *info;
 
-/*
-        if (len == 0)
-                return (0);
-*/
 	idx = MINOR (filp->f_dentry->d_inode->i_rdev);
 	info = &isp[idx];
 
@@ -885,36 +880,28 @@ ifx_ssc_frm_control_set (struct ifx_ssc_port *info)
 	unsigned long tmp;
 
 	// check parameters
-	if ((info->frm_opts.DataLength > IFX_SSC_SFCON_DATA_LENGTH_MAX) ||
-	    (info->frm_opts.DataLength < 1) ||
-	    (info->frm_opts.PauseLength > IFX_SSC_SFCON_PAUSE_LENGTH_MAX) ||
-	    (info->frm_opts.PauseLength < 1) ||
-	    ((info->frm_opts.IdleData & ~(IFX_SSC_SFCON_PAUSE_DATA_MASK >>
-					  IFX_SSC_SFCON_PAUSE_DATA_OFFSET)) !=
-	     0)
-	    ||
-	    ((info->frm_opts.
-	      IdleClock & ~(IFX_SSC_SFCON_PAUSE_CLOCK_MASK >>
-			    IFX_SSC_SFCON_PAUSE_CLOCK_OFFSET)) != 0))
+	if ((info->frm_opts.DataLength > IFX_SSC_SFCON_DATA_LENGTH_MAX)
+	    || (info->frm_opts.DataLength < 1)
+	    || (info->frm_opts.PauseLength > IFX_SSC_SFCON_PAUSE_LENGTH_MAX)
+	    || (info->frm_opts.PauseLength < 1)
+	    || (info->frm_opts.IdleData & ~(IFX_SSC_SFCON_PAUSE_DATA_MASK >> IFX_SSC_SFCON_PAUSE_DATA_OFFSET))
+	    || (info->frm_opts.IdleClock & ~(IFX_SSC_SFCON_PAUSE_CLOCK_MASK >> IFX_SSC_SFCON_PAUSE_CLOCK_OFFSET)))
 		return -EINVAL;
 
 	// read interrupt bits (they're not changed here)
 	tmp = READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_SFCON) &
-		(IFX_SSC_SFCON_FIR_ENABLE_BEFORE_PAUSE |
-		 IFX_SSC_SFCON_FIR_ENABLE_AFTER_PAUSE);
+		(IFX_SSC_SFCON_FIR_ENABLE_BEFORE_PAUSE | IFX_SSC_SFCON_FIR_ENABLE_AFTER_PAUSE);
 
 	// set all values with respect to it's bit position (for data and pause 
 	// length set N-1)
-	tmp = (info->frm_opts.DataLength -
-	       1) << IFX_SSC_SFCON_DATA_LENGTH_OFFSET;
-	tmp |= (info->frm_opts.PauseLength -
-		1) << IFX_SSC_SFCON_PAUSE_LENGTH_OFFSET;
+	tmp = (info->frm_opts.DataLength - 1) << IFX_SSC_SFCON_DATA_LENGTH_OFFSET;
+	tmp |= (info->frm_opts.PauseLength - 1) << IFX_SSC_SFCON_PAUSE_LENGTH_OFFSET;
 	tmp |= info->frm_opts.IdleData << IFX_SSC_SFCON_PAUSE_DATA_OFFSET;
 	tmp |= info->frm_opts.IdleClock << IFX_SSC_SFCON_PAUSE_CLOCK_OFFSET;
 	tmp |= info->frm_opts.FrameEnable * IFX_SSC_SFCON_SF_ENABLE;
 	tmp |= info->frm_opts.StopAfterPause * IFX_SSC_SFCON_STOP_AFTER_PAUSE;
 
-	WRITE_PERIPHERAL_REGISTER (tmp, info->mapbase + IFX_SSC_SFCON);
+	WRITE_PERIPHERAL_REGISTER(tmp, info->mapbase + IFX_SSC_SFCON);
 
 	return 0;
 }
@@ -924,47 +911,18 @@ ifx_ssc_rxtx_mode_set (struct ifx_ssc_port *info, unsigned int val)
 {
 	unsigned long tmp;
 
-	// check parameters
 	if (!(info) || (val & ~(IFX_SSC_MODE_MASK)))
 		return -EINVAL;
-	/*check BUSY and RXCNT */
-	if (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE) &
-	    IFX_SSC_STATE_BUSY
-	    || READ_PERIPHERAL_REGISTER (info->mapbase +
-					 IFX_SSC_RXCNT) &
-	    IFX_SSC_RXCNT_TODO_MASK)
+
+	if ((READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE) & IFX_SSC_STATE_BUSY)
+	    || (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RXCNT) & IFX_SSC_RXCNT_TODO_MASK))
 		return -EBUSY;
-	// modify 
-	tmp = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_CON) &
-	       ~(IFX_SSC_CON_RX_OFF | IFX_SSC_CON_TX_OFF)) | (val);
+
+	tmp = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_CON) & ~(IFX_SSC_CON_RX_OFF | IFX_SSC_CON_TX_OFF)) | (val);
 	WRITE_PERIPHERAL_REGISTER (tmp, info->mapbase + IFX_SSC_CON);
 	info->opts.modeRxTx = val;
+
 	return 0;
-}
-
-void
-ifx_gpio_init (void)
-{
-	/* TODO: P0.9 SPI_CS4, P0.10 SPI_CS5, P 0.11 SPI_CS6, because of ASC0 */
-	/* p0.15 SPI_CS1(EEPROM), P0.13 SPI_CS3, */
-	/* Set p0.15 to alternative 01, others to 00 (In/OUT) */
-	*(DANUBE_GPIO_P0_DIR) = (*DANUBE_GPIO_P0_DIR) | (0xA000);
-	*(DANUBE_GPIO_P0_ALTSEL0) =
-		(((*DANUBE_GPIO_P0_ALTSEL0) | (0x8000)) & (~(0x2000)));
-	*(DANUBE_GPIO_P0_ALTSEL1) =
-		(((*DANUBE_GPIO_P0_ALTSEL1) & (~0x8000)) & (~(0x2000)));
-	*(DANUBE_GPIO_P0_OD) = (*DANUBE_GPIO_P0_OD) | 0xA000;
-
-	/* p1.6 SPI_CS2(SFLASH), p1.0 SPI_DIN, p1.1 SPI_DOUT, p1.2 SPI_CLK */
-	*(DANUBE_GPIO_P1_DIR) = ((*DANUBE_GPIO_P1_DIR) | (0x46)) & (~1);
-	*(DANUBE_GPIO_P1_ALTSEL0) = ((*DANUBE_GPIO_P1_ALTSEL0) | (0x47));
-	*(DANUBE_GPIO_P1_ALTSEL1) = (*DANUBE_GPIO_P1_ALTSEL1) & (~0x47);
-	*(DANUBE_GPIO_P1_OD) = (*DANUBE_GPIO_P1_OD) | 0x0046;
-
-	/*CS3 */
-	/*TODO: CS4 CS5 CS6 */
-	*DANUBE_GPIO_P0_OUT = ((*DANUBE_GPIO_P0_OUT) | 0x2000);
-
 }
 
 static int
@@ -973,16 +931,13 @@ ifx_ssc_sethwopts (struct ifx_ssc_port *info)
 	unsigned long flags, bits;
 	struct ifx_ssc_hwopts *opts = &info->opts;
 
-	/* sanity checks */
-	if ((opts->dataWidth < IFX_SSC_MIN_DATA_WIDTH) ||
-	    (opts->dataWidth > IFX_SSC_MAX_DATA_WIDTH)) {
-		printk ("%s: sanity check failed\n", __FUNCTION__);
+	if ((opts->dataWidth < IFX_SSC_MIN_DATA_WIDTH)
+	    || (opts->dataWidth > IFX_SSC_MAX_DATA_WIDTH))
 		return -EINVAL;
-	}
+
 	bits = (opts->dataWidth - 1) << IFX_SSC_CON_DATA_WIDTH_OFFSET;
 	bits |= IFX_SSC_CON_ENABLE_BYTE_VALID;
-	//    if (opts->abortErrDetect)
-	//            bits |= IFX_SSC_CON_ABORT_ERR_CHECK;
+
 	if (opts->rxOvErrDetect)
 		bits |= IFX_SSC_CON_RX_OFL_CHECK;
 	if (opts->rxUndErrDetect)
@@ -1001,40 +956,53 @@ ifx_ssc_sethwopts (struct ifx_ssc_port *info)
 		bits |= IFX_SSC_CON_LATCH_THEN_SHIFT;
 	if (opts->clockPolarity)
 		bits |= IFX_SSC_CON_CLOCK_FALL;
-	switch (opts->modeRxTx) {
+
+	switch (opts->modeRxTx)
+	{
 	case IFX_SSC_MODE_TX:
 		bits |= IFX_SSC_CON_RX_OFF;
 		break;
 	case IFX_SSC_MODE_RX:
 		bits |= IFX_SSC_CON_TX_OFF;
 		break;
-	}			// switch (opts->modeRxT)
+	}
+
 	local_irq_save (flags);
+
 	WRITE_PERIPHERAL_REGISTER (bits, info->mapbase + IFX_SSC_CON);
-	WRITE_PERIPHERAL_REGISTER ((info->opts.
-				    gpoCs << IFX_SSC_GPOCON_ISCSB0_POS) |
-				   (info->opts.
-				    gpoInv << IFX_SSC_GPOCON_INVOUT0_POS),
-				   info->mapbase + IFX_SSC_GPOCON);
-	/*TODO: disable cs */
-	WRITE_PERIPHERAL_REGISTER (info->opts.
-				   gpoCs << IFX_SSC_WHBGPOSTAT_SETOUT0_POS,
-				   info->mapbase + IFX_SSC_WHBGPOSTAT);
+	WRITE_PERIPHERAL_REGISTER ((info->opts.gpoCs << IFX_SSC_GPOCON_ISCSB0_POS) |
+				   (info->opts.gpoInv << IFX_SSC_GPOCON_INVOUT0_POS), info->mapbase + IFX_SSC_GPOCON);
+
+	WRITE_PERIPHERAL_REGISTER (info->opts.gpoCs << IFX_SSC_WHBGPOSTAT_SETOUT0_POS, info->mapbase + IFX_SSC_WHBGPOSTAT);
 
 	//master mode
-	if (opts->masterSelect) {
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_MASTER_SELECT,
-					   info->mapbase + IFX_SSC_WHBSTATE);
-	}
-	else {
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_MASTER_SELECT,
-					   info->mapbase + IFX_SSC_WHBSTATE);
-	}
+	if (opts->masterSelect)
+		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_MASTER_SELECT, info->mapbase + IFX_SSC_WHBSTATE);
+	else
+		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_MASTER_SELECT, info->mapbase + IFX_SSC_WHBSTATE);
+
 	// init serial framing
 	WRITE_PERIPHERAL_REGISTER (0, info->mapbase + IFX_SSC_SFCON);
 	/* set up the port pins */
 	//check for general requirements to switch (external) pad/pin characteristics
-	ifx_gpio_init ();
+	/* TODO: P0.9 SPI_CS4, P0.10 SPI_CS5, P 0.11 SPI_CS6, because of ASC0 */
+	/* p0.15 SPI_CS1(EEPROM), P0.13 SPI_CS3, */
+	/* Set p0.15 to alternative 01, others to 00 (In/OUT) */
+	*(DANUBE_GPIO_P0_DIR) = (*DANUBE_GPIO_P0_DIR) | (0xA000);
+	*(DANUBE_GPIO_P0_ALTSEL0) = (((*DANUBE_GPIO_P0_ALTSEL0) | (0x8000)) & (~(0x2000)));
+	*(DANUBE_GPIO_P0_ALTSEL1) = (((*DANUBE_GPIO_P0_ALTSEL1) & (~0x8000)) & (~(0x2000)));
+	*(DANUBE_GPIO_P0_OD) = (*DANUBE_GPIO_P0_OD) | 0xA000;
+
+	/* p1.6 SPI_CS2(SFLASH), p1.0 SPI_DIN, p1.1 SPI_DOUT, p1.2 SPI_CLK */
+	*(DANUBE_GPIO_P1_DIR) = ((*DANUBE_GPIO_P1_DIR) | (0x46)) & (~1);
+	*(DANUBE_GPIO_P1_ALTSEL0) = ((*DANUBE_GPIO_P1_ALTSEL0) | (0x47));
+	*(DANUBE_GPIO_P1_ALTSEL1) = (*DANUBE_GPIO_P1_ALTSEL1) & (~0x47);
+	*(DANUBE_GPIO_P1_OD) = (*DANUBE_GPIO_P1_OD) | 0x0046;
+
+	/*CS3 */
+	/*TODO: CS4 CS5 CS6 */
+	*DANUBE_GPIO_P0_OUT = ((*DANUBE_GPIO_P0_OUT) | 0x2000);
+
 	local_irq_restore (flags);
 
 	return 0;
@@ -1047,35 +1015,39 @@ ifx_ssc_set_baud (struct ifx_ssc_port *info, unsigned int baud)
 	unsigned int br;
 	unsigned long flags;
 	bool enabled;
+	int retval = 0;
 
-	ifx_ssc_clock = ifx_ssc_get_kernel_clk (info);
+	ifx_ssc_clock = ifx_ssc_get_kernel_clk(info);
 	if (ifx_ssc_clock == 0)
-		return -EINVAL;
-	local_irq_save (flags);
-	/* have to disable the SSC to set the baudrate */
-	enabled = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE)
-		   & IFX_SSC_STATE_IS_ENABLED) != 0;
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ENABLE,
-				   info->mapbase + IFX_SSC_WHBSTATE);
+	{
+		retval = -EINVAL;
+		goto out;
+	}
 
-	// compute divider
+	local_irq_save (flags);
+
+	enabled = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE) & IFX_SSC_STATE_IS_ENABLED);
+	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
+
 	br = (((ifx_ssc_clock >> 1) + baud / 2) / baud) - 1;
 	wmb();
-	if (br > 0xffff ||
-	    ((br == 0) &&
-	     ((READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE) &
-	       IFX_SSC_STATE_IS_MASTER) == 0))) {
+
+	if (br > 0xffff || ((br == 0) &&
+			((READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE) & IFX_SSC_STATE_IS_MASTER) == 0))) {
 		local_irq_restore (flags);
-		printk ("%s: illegal baudrate %u\n", __FUNCTION__, baud);
+		printk ("%s: invalid baudrate %u\n", __func__, baud);
 		return -EINVAL;
 	}
-	WRITE_PERIPHERAL_REGISTER (br, info->mapbase + IFX_SSC_BR);
-	if (enabled)
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_ENABLE,
-					   info->mapbase + IFX_SSC_WHBSTATE);
 
-	local_irq_restore (flags);
-	return 0;
+	WRITE_PERIPHERAL_REGISTER (br, info->mapbase + IFX_SSC_BR);
+
+	if (enabled)
+		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
+
+	local_irq_restore(flags);
+
+out:
+	return retval;
 }
 
 static int
@@ -1084,43 +1056,40 @@ ifx_ssc_hwinit (struct ifx_ssc_port *info)
 	unsigned long flags;
 	bool enabled;
 
-	/* have to disable the SSC */
-	enabled = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE)
-		   & IFX_SSC_STATE_IS_ENABLED) != 0;
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ENABLE,
-				   info->mapbase + IFX_SSC_WHBSTATE);
+	enabled = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE) & IFX_SSC_STATE_IS_ENABLED);
+	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
 
-	if (ifx_ssc_sethwopts (info) < 0) {
-		printk ("%s: setting the hardware options failed\n",
-			__FUNCTION__);
+	if (ifx_ssc_sethwopts (info) < 0)
+	{
+		printk ("%s: setting the hardware options failed\n", __func__);
 		return -EINVAL;
 	}
 
-	if (ifx_ssc_set_baud (info, info->baud) < 0) {
-		printk ("%s: setting the baud rate failed\n", __FUNCTION__);
+	if (ifx_ssc_set_baud (info, info->baud) < 0)
+	{
+		printk ("%s: setting the baud rate failed\n", __func__);
 		return -EINVAL;
 	}
+
 	local_irq_save (flags);
+
 	/* TX FIFO */
-	WRITE_PERIPHERAL_REGISTER ((IFX_SSC_DEF_TXFIFO_FL <<
-				    IFX_SSC_XFCON_ITL_OFFSET) |
-				   IFX_SSC_XFCON_FIFO_ENABLE,
+	WRITE_PERIPHERAL_REGISTER ((IFX_SSC_DEF_TXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_ENABLE,
 				   info->mapbase + IFX_SSC_TXFCON);
 	/* RX FIFO */
-	WRITE_PERIPHERAL_REGISTER ((IFX_SSC_DEF_RXFIFO_FL <<
-				    IFX_SSC_XFCON_ITL_OFFSET) |
-				   IFX_SSC_XFCON_FIFO_ENABLE,
+	WRITE_PERIPHERAL_REGISTER ((IFX_SSC_DEF_RXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_ENABLE, 
 				   info->mapbase + IFX_SSC_RXFCON);
+
 	local_irq_restore (flags);
+
 	if (enabled)
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_ENABLE,
-					   info->mapbase + IFX_SSC_WHBSTATE);
+		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
+
 	return 0;
 }
 
 int
-ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd,
-	       unsigned long data)
+ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigned long data)
 {
 	struct ifx_ssc_port *info;
 	int line, ret_val = 0;
@@ -1128,20 +1097,21 @@ ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd,
 	unsigned long tmp;
 	int from_kernel = 0;
 
-	if ((inode == (struct inode *) 0) || (inode == (struct inode *) 1)) {
+	if ((inode == (struct inode *) 0) || (inode == (struct inode *) 1))
+	{
 		from_kernel = 1;
 		line = (int) inode;
-	}
-	else
+	} else {
 		line = MINOR (filp->f_dentry->d_inode->i_rdev);
+	}
 
-	/* don't use more minor devices than we can support */
 	if (line < 0 || line >= PORT_CNT)
 		return -ENXIO;
 
 	info = &isp[line];
 
-	switch (cmd) {
+	switch (cmd)
+	{
 	case IFX_SSC_STATS_READ:
 		/* data must be a pointer to a struct ifx_ssc_statistics */
 		if (from_kernel)
@@ -1382,7 +1352,7 @@ ifx_ssc_init (void)
 	nbytes = PORT_CNT * sizeof (struct ifx_ssc_port);
 	isp = (struct ifx_ssc_port *) kmalloc (nbytes, GFP_KERNEL);
 	if (isp == NULL) {
-		printk ("%s: no memory for isp\n", __FUNCTION__);
+		printk ("%s: no memory for isp\n", __func__);
 		return (ret_val);
 	}
 	memset (isp, 0, nbytes);
@@ -1471,7 +1441,7 @@ ifx_ssc_init (void)
 		ret_val =
 			request_irq(info->txirq, ifx_ssc_tx_int, SA_INTERRUPT, "ifx_ssc_tx", info);
 		if (ret_val) {
-			printk ("%s: unable to get irq %d\n", __FUNCTION__,
+			printk ("%s: unable to get irq %d\n", __func__,
 				info->txirq);
 			local_irq_restore (flags);
 			goto errout;
@@ -1479,7 +1449,7 @@ ifx_ssc_init (void)
 		ret_val =
 			request_irq(info->rxirq, ifx_ssc_rx_int, SA_INTERRUPT, "ifx_ssc_rx", info);
 		if (ret_val) {
-			printk ("%s: unable to get irq %d\n", __FUNCTION__,
+			printk ("%s: unable to get irq %d\n", __func__,
 				info->rxirq);
 			local_irq_restore (flags);
 			goto irqerr;
@@ -1487,7 +1457,7 @@ ifx_ssc_init (void)
 		ret_val =
 			request_irq(info->errirq, ifx_ssc_err_int, SA_INTERRUPT,"ifx_ssc_err", info);
 		if (ret_val) {
-			printk ("%s: unable to get irq %d\n", __FUNCTION__,
+			printk ("%s: unable to get irq %d\n", __func__,
 				info->errirq);
 			local_irq_restore (flags);
 			goto irqerr;
@@ -1506,7 +1476,7 @@ ifx_ssc_init (void)
 		info = &isp[i];
 		if (ifx_ssc_hwinit (info) < 0) {
 			printk ("%s: hardware init failed for port %d\n",
-				__FUNCTION__, i);
+				__func__, i);
 			goto irqerr;
 		}
 	}
@@ -1550,71 +1520,34 @@ ifx_ssc_cleanup_module (void)
 	remove_proc_entry ("driver/ssc2", NULL);
 }
 
-module_exit (ifx_ssc_cleanup_module);
+module_init(ifx_ssc_init);
+module_exit(ifx_ssc_cleanup_module);
 
-/* Module entry-points */
-module_init (ifx_ssc_init);
 
-#ifndef MODULE
-static int __init
-ifx_ssc_set_maj (char *str)
-{
-	maj = simple_strtol (str, NULL, 0);
-	return 1;
-}
-
-__setup ("ssc_maj=", ifx_ssc_set_maj);
-#endif /* !MODULE */
-
-#define DANUBE_SSC_EMSG(fmt,arg...) printk("%s: "fmt,__FUNCTION__, ##arg)
-/* Brief:	chip select enable
- */
 inline int
 ifx_ssc_cs_low (u32 pin)
 {
 	int ret = 0;
-	if ((ret =
-	     ifx_ssc_ioctl ((struct inode *) 0, NULL, IFX_SSC_GPO_OUT_CLR,
-			    (unsigned long) &pin))) {
-		DANUBE_SSC_EMSG ("clear CS %d fails\n", pin);
-	}
+	if ((ret = ifx_ssc_ioctl ((struct inode *) 0, NULL, IFX_SSC_GPO_OUT_CLR, (unsigned long) &pin)))
+		printk ("clear CS %d fails\n", pin);
 	wmb ();
+
 	return ret;
 }
+EXPORT_SYMBOL(ifx_ssc_cs_low);
 
-EXPORT_SYMBOL (ifx_ssc_cs_low);
-/* Brief:	chip select disable
- */
 inline int
 ifx_ssc_cs_high (u32 pin)
 {
 	int ret = 0;
-	if ((ret =
-	     ifx_ssc_ioctl ((struct inode *) 0, NULL, IFX_SSC_GPO_OUT_SET,
-			    (unsigned long) &pin))) {
-		DANUBE_SSC_EMSG ("set CS %d fails\n", pin);
-	}
+	if ((ret = ifx_ssc_ioctl((struct inode *) 0, NULL, IFX_SSC_GPO_OUT_SET, (unsigned long) &pin)))
+		printk ("set CS %d fails\n", pin);
 	wmb ();
+
 	return ret;
 }
+EXPORT_SYMBOL(ifx_ssc_cs_high);
 
-EXPORT_SYMBOL (ifx_ssc_cs_high);
-/* Brief:	one SSC session
- * Parameter:	
- *	tx_buf
- *	tx_len
- *	rx_buf
- *	rx_len
- *	session_mode: IFX_SSC_MODE_RXTX or IFX_SSC_MODE_TX
- * Return:	>=0 number of bytes received (if rx_buf != 0) or transmitted
- *		<0 error code
- * Description:
- *	0. copy data to internal buffer 
- *	1. Write command
- *	2a. If SSC_SESSION_MODE_TXONLY, read tx_len data
- *	2b. If not Read back (tx_len + rx_len) data
- *	3. copy internal buffer to rx buf if necessary
- */
 static int
 ssc_session (char *tx_buf, u32 tx_len, char *rx_buf, u32 rx_len)
 {
@@ -1622,15 +1555,11 @@ ssc_session (char *tx_buf, u32 tx_len, char *rx_buf, u32 rx_len)
 
 	char *ssc_tx_buf = NULL;
 	char *ssc_rx_buf = NULL;
-
-//      volatile char ssc_tx_buf[128]={0};
-//      volatile char ssc_rx_buf[128]={0};
-
 	int eff_size = 0;
 	u8 mode = 0;
 
 	if (tx_buf == NULL && tx_len == 0 && rx_buf == NULL && rx_len == 0) {
-		DANUBE_SSC_EMSG ("invalid parameters\n");
+		printk ("invalid parameters\n");
 		ret = -EINVAL;
 		goto ssc_session_exit;
 	}
@@ -1639,7 +1568,7 @@ ssc_session (char *tx_buf, u32 tx_len, char *rx_buf, u32 rx_len)
 			mode = IFX_SSC_MODE_RX;
 		}
 		else {
-			DANUBE_SSC_EMSG ("invalid parameters\n");
+			printk ("invalid parameters\n");
 			ret = -EINVAL;
 			goto ssc_session_exit;
 		}
@@ -1649,7 +1578,7 @@ ssc_session (char *tx_buf, u32 tx_len, char *rx_buf, u32 rx_len)
 			mode = IFX_SSC_MODE_TX;
 		}
 		else {
-			DANUBE_SSC_EMSG ("invalid parameters\n");
+			printk ("invalid parameters\n");
 			ret = -EINVAL;
 			goto ssc_session_exit;
 		}
@@ -1692,7 +1621,7 @@ ssc_session (char *tx_buf, u32 tx_len, char *rx_buf, u32 rx_len)
 					  GFP_KERNEL);
 	}
 	if (ssc_tx_buf == NULL || ssc_rx_buf == NULL) {
-		DANUBE_SSC_EMSG ("no memory for size of %d\n", eff_size);
+		printk ("no memory for size of %d\n", eff_size);
 		ret = -ENOMEM;
 		goto ssc_session_exit;
 	}
@@ -1710,12 +1639,12 @@ ssc_session (char *tx_buf, u32 tx_len, char *rx_buf, u32 rx_len)
 	}
 
 	if (ret != eff_size) {
-		DANUBE_SSC_EMSG ("ifx_ssc_write return %d\n", ret);
+		printk ("ifx_ssc_write return %d\n", ret);
 		goto ssc_session_exit;
 	}
 	ret = ifx_ssc_kread (0, ssc_rx_buf, eff_size);
 	if (ret != eff_size) {
-		DANUBE_SSC_EMSG ("ifx_ssc_read return %d\n", ret);
+		printk ("ifx_ssc_read return %d\n", ret);
 		goto ssc_session_exit;
 	}
 
@@ -1740,53 +1669,26 @@ ssc_session (char *tx_buf, u32 tx_len, char *rx_buf, u32 rx_len)
 	return ret;
 }
 
-/* Brief:	TX-RX session
- * Parameter:	
- *	tx_buf
- *	tx_len
- *	rx_buf
- *	rx_len
- * Return:	>=0 number of bytes received
- *		<0 error code
- * Description: 
- *	1. TX session
- *	2. RX session
- */
 int
 ifx_ssc_txrx (char *tx_buf, u32 tx_len, char *rx_buf, u32 rx_len)
 {
-	return ssc_session (tx_buf, tx_len, rx_buf, rx_len);
+	return ssc_session(tx_buf, tx_len, rx_buf, rx_len);
 }
+EXPORT_SYMBOL(ifx_ssc_txrx);
 
-EXPORT_SYMBOL (ifx_ssc_txrx);
-/* Brief:	TX only session
- * Parameter:
- *	tx_buf
- *	tx_len
- * Return:	>=0 number of bytes transmitted
- *		<0 error code
- */
 int
 ifx_ssc_tx (char *tx_buf, u32 tx_len)
 {
-	return ssc_session (tx_buf, tx_len, NULL, 0);
+	return ssc_session(tx_buf, tx_len, NULL, 0);
 }
+EXPORT_SYMBOL(ifx_ssc_tx);
 
-EXPORT_SYMBOL (ifx_ssc_tx);
-/* Brief:	RX only session
- * Parameter:
- *	rx_buf
- *	rx_len
- * Return:	>=0 number of bytes received
- *		<0 error code
- */
 int
 ifx_ssc_rx (char *rx_buf, u32 rx_len)
 {
-	return ssc_session (NULL, 0, rx_buf, rx_len);
+	return ssc_session(NULL, 0, rx_buf, rx_len);
 }
-
-EXPORT_SYMBOL (ifx_ssc_rx);
+EXPORT_SYMBOL(ifx_ssc_rx);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
