@@ -90,49 +90,20 @@ int ifx_ssc_close (struct inode *, struct file *);
 
 /* other forward declarations */
 static unsigned int ifx_ssc_get_kernel_clk (struct ifx_ssc_port *info);
-#ifdef SSC_FRAME_INT_ENABLE
-static void ifx_ssc_frm_int (int, void *, struct pt_regs *);
-#endif
 static void tx_int (struct ifx_ssc_port *);
 static int ifx_ssc1_read_proc (char *, char **, off_t, int, int *, void *);
 static void ifx_gpio_init (void);
-/************************************************************************
- *  Function declaration
- ************************************************************************/
-//interrupt.c
+
 extern unsigned int danube_get_fpi_hz (void);
-extern void disable_danube_irq (unsigned int irq_nr);
-extern void enable_danube_irq (unsigned int irq_nr);
 extern void mask_and_ack_danube_irq (unsigned int irq_nr);
 
-/*****************************************************************/
-typedef struct {
-	int (*request) (unsigned int, irq_handler_t handler,
-		unsigned long, const char *, void *);
-	void (*free) (unsigned int irq, void *dev_id);
-	void (*enable) (unsigned int irq);
-	void (*disable) (unsigned int irq);
-	void (*clear) (unsigned int irq);
-} ifx_int_wrapper_t;
-
-static ifx_int_wrapper_t ifx_int_wrapper = {
-      request:request_irq,	// IM action: enable int
-      free:free_irq,		// IM action: disable int
-      enable:enable_danube_irq,
-      disable:disable_danube_irq,
-      clear:mask_and_ack_danube_irq,
-	//end:          
-};
-
-/* Fops-struct */
 static struct file_operations ifx_ssc_fops = {
-      owner:THIS_MODULE,
-      read:ifx_ssc_read,	/* read */
-      write:ifx_ssc_write,	/* write */
-//        poll:         ifx_ssc_poll,    /* poll */
-      ioctl:ifx_ssc_ioctl,	/* ioctl */
-      open:ifx_ssc_open,	/* open */
-      release:ifx_ssc_close,	/* release */
+      .owner = THIS_MODULE,
+      .read = ifx_ssc_read,
+      .write = ifx_ssc_write,
+      .ioctl = ifx_ssc_ioctl,
+      .open = ifx_ssc_open,
+      .release = ifx_ssc_close,
 };
 
 static inline unsigned int
@@ -164,35 +135,7 @@ ifx_ssc_sched_event (struct ifx_ssc_port *info, int event)
 	info->event |= 1 << event;	/* remember what kind of event and who */
 	queue_task (&info->tqueue, &tq_cyclades);	/* it belongs to */
 	mark_bh (CYCLADES_BH);	/* then trigger event */
-}				/* ifx_ssc_sched_event */
-
-/*
- * This routine is used to handle the "bottom half" processing for the
- * serial driver, known also the "software interrupt" processing.
- * This processing is done at the kernel interrupt level, after the
- * cy#/_interrupt() has returned, BUT WITH INTERRUPTS TURNED ON.  This
- * is where time-consuming activities which can not be done in the
- * interrupt driver proper are done; the interrupt driver schedules
- * them using ifx_ssc_sched_event(), and they get done here.
- *
- * This is done through one level of indirection--the task queue.
- * When a hardware interrupt service routine wants service by the
- * driver's bottom half, it enqueues the appropriate tq_struct (one
- * per port) to the tq_cyclades work queue and sets a request flag
- * via mark_bh for processing that queue.  When the time is right,
- * do_ifx_ssc_bh is called (because of the mark_bh) and it requests
- * that the work queue be processed.
- *
- * Although this may seem unwieldy, it gives the system a way to
- * pass an argument (in this case the pointer to the ifx_ssc_port
- * structure) to the bottom half of the driver.  Previous kernels
- * had to poll every port to see if that port needed servicing.
- */
-static void
-do_ifx_ssc_bh (void)
-{
-	run_task_queue (&tq_cyclades);
-}				/* do_ifx_ssc_bh */
+}
 
 static void
 do_softint (void *private_)
@@ -290,7 +233,7 @@ rx_int (struct ifx_ssc_port *info)
 
 	// check if transfer is complete
 	if (info->rxbuf_ptr >= info->rxbuf_end) {
-		ifx_int_wrapper.disable (info->rxirq);
+		disable_irq(info->rxirq);
 		/* wakeup any processes waiting in read() */
 		wake_up_interruptible (&info->rwait);
 		/* and in poll() */
@@ -317,7 +260,7 @@ rx_int (struct ifx_ssc_port *info)
 						   info->mapbase +
 						   IFX_SSC_RXREQ);
 	}
-}				// rx_int
+}
 
 inline static void
 tx_int (struct ifx_ssc_port *info)
@@ -372,14 +315,14 @@ tx_int (struct ifx_ssc_port *info)
 
 	// check if transmission complete
 	if (info->txbuf_ptr >= info->txbuf_end) {
-		ifx_int_wrapper.disable (info->txirq);
+		disable_irq(info->txirq);
 		kfree (info->txbuf);
 		info->txbuf = NULL;
 		/* wake up any process waiting in poll() */
 		//wake_up_interruptible(&info->pwait);
 	}
 
-}				// tx_int
+}
 
 irqreturn_t
 ifx_ssc_rx_int (int irq, void *dev_id)
@@ -444,14 +387,6 @@ ifx_ssc_err_int (int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-#ifdef SSC_FRAME_INT_ENABLE
-static void
-ifx_ssc_frm_int (int irq, void *dev_id, struct pt_regs *regs)
-{
-	// ### TO DO: wake up framing wait-queue in conjunction with batch execution
-}
-#endif
-
 static void
 ifx_ssc_abort (struct ifx_ssc_port *info)
 {
@@ -460,13 +395,10 @@ ifx_ssc_abort (struct ifx_ssc_port *info)
 
 	local_irq_save (flags);
 
-	// disable all int's
-	ifx_int_wrapper.disable (info->rxirq);
-	ifx_int_wrapper.disable (info->txirq);
-	ifx_int_wrapper.disable (info->errirq);
-/*
-	ifx_int_wrapper.disable(info->frmirq);
-*/
+	disable_irq(info->rxirq);
+	disable_irq(info->txirq);
+	disable_irq(info->errirq);
+
 	local_irq_restore (flags);
 
 	// disable SSC (also aborts a receive request!)
@@ -496,24 +428,19 @@ ifx_ssc_abort (struct ifx_ssc_port *info)
 		wake_up_interruptible (&info->rwait);
 
 	// clear pending int's 
-	ifx_int_wrapper.clear (info->rxirq);
-	ifx_int_wrapper.clear (info->txirq);
-	ifx_int_wrapper.clear (info->errirq);
-/*
-	ifx_int_wrapper.clear(info->frmirq);
-*/
+	mask_and_ack_danube_irq(info->rxirq);
+	mask_and_ack_danube_irq(info->txirq);
+	mask_and_ack_danube_irq(info->errirq);
 
 	// clear error flags
 	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ALL_ERROR,
 				   info->mapbase + IFX_SSC_WHBSTATE);
 
-	//printk("IFX SSC%d: Transmission aborted\n", info->port_nr);
-	// enable SSC
 	if (enabled)
 		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_ENABLE,
 					   info->mapbase + IFX_SSC_WHBSTATE);
 
-}				// ifx_ssc_abort
+}
 
 /*
  * This routine is called whenever a port is opened.  It enforces
@@ -546,12 +473,9 @@ ifx_ssc_open (struct inode *inode, struct file *filp)
 		return -EBUSY;
 	info->port_is_open++;
 
-	ifx_int_wrapper.disable (info->rxirq);
-	ifx_int_wrapper.disable (info->txirq);
-	ifx_int_wrapper.disable (info->errirq);
-/*
-	ifx_int_wrapper.disable(info->frmirq);
-*/
+	disable_irq(info->rxirq);
+	disable_irq(info->txirq);
+	disable_irq(info->errirq);
 
 	/* Flush and enable TX/RX FIFO */
 	WRITE_PERIPHERAL_REGISTER ((IFX_SSC_DEF_TXFIFO_FL <<
@@ -574,20 +498,15 @@ ifx_ssc_open (struct inode *inode, struct file *filp)
 				   info->mapbase + IFX_SSC_WHBSTATE);
 
 	// clear pending interrupts
-	ifx_int_wrapper.clear (info->rxirq);
-	ifx_int_wrapper.clear (info->txirq);
-	ifx_int_wrapper.clear (info->errirq);
-/*
-	ifx_int_wrapper.clear(info->frmirq);
-*/
+	mask_and_ack_danube_irq(info->rxirq);
+	mask_and_ack_danube_irq(info->txirq);
+	mask_and_ack_danube_irq(info->errirq);
 
-	// enable SSC
 	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_ENABLE,
 				   info->mapbase + IFX_SSC_WHBSTATE);
 
 	return 0;
-}				/* ifx_ssc_open */
-
+}
 EXPORT_SYMBOL (ifx_ssc_open);
 
 /*
@@ -621,8 +540,7 @@ ifx_ssc_close (struct inode *inode, struct file *filp)
 	info->port_is_open--;
 
 	return 0;
-}				/* ifx_ssc_close */
-
+}
 EXPORT_SYMBOL (ifx_ssc_close);
 
 /* added by bingtao */
@@ -659,7 +577,7 @@ ifx_ssc_read_helper_poll (struct ifx_ssc_port *info, char *buf, size_t len,
 
 	ret_val = info->rxbuf_ptr - info->rxbuf;
 	return (ret_val);
-}				// ifx_ssc_read_helper_poll
+}
 
 /* helper routine to handle reads from the kernel or user-space */
 /* info->rx_buf : never kfree and contains valid data */
@@ -688,18 +606,17 @@ ifx_ssc_read_helper (struct ifx_ssc_port *info, char *buf, size_t len,
 		local_irq_restore (flags);
 		/* should enable tx, right? */
 		tx_int (info);
-		if (info->txbuf_ptr < info->txbuf_end) {
-			ifx_int_wrapper.enable (info->txirq);
-		}
+		if (info->txbuf_ptr < info->txbuf_end)
+			enable_irq(info->txirq);
 
-		ifx_int_wrapper.enable (info->rxirq);
+		enable_irq(info->rxirq);
 	}
 	else {			// rx mode
 		local_irq_restore (flags);
 		if (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RXCNT) &
 		    IFX_SSC_RXCNT_TODO_MASK)
 			return -EBUSY;
-		ifx_int_wrapper.enable (info->rxirq);
+		enable_irq(info->rxirq);
 		// rx request limited to ' bytes
 /*
                 if (len < 65536)
@@ -726,11 +643,6 @@ ifx_ssc_read_helper (struct ifx_ssc_port *info, char *buf, size_t len,
 			break;
 		local_irq_restore (flags);
 
-//                if (filp->f_flags & O_NONBLOCK)
-//                {
-//                        N = -EAGAIN;
-//                        goto out;
-//                }
 		if (signal_pending (current)) {
 			ret_val = -ERESTARTSYS;
 			goto out;
@@ -738,14 +650,14 @@ ifx_ssc_read_helper (struct ifx_ssc_port *info, char *buf, size_t len,
 		schedule ();
 	} while (1);
 
-	ret_val = info->rxbuf_ptr - info->rxbuf;	// should be equal to len
+	ret_val = info->rxbuf_ptr - info->rxbuf;
 	local_irq_restore (flags);
 
       out:
 	current->state = TASK_RUNNING;
 	__remove_wait_queue (&info->rwait, &wait);
 	return (ret_val);
-}				// ifx_ssc_read_helper
+}
 
 
 /* helper routine to handle writes to the kernel or user-space */
@@ -767,7 +679,7 @@ ifx_ssc_write_helper (struct ifx_ssc_port *info, const char *buf,
 	if (info->opts.modeRxTx == IFX_SSC_MODE_TX) {
 		tx_int (info);
 		if (info->txbuf_ptr < info->txbuf_end) {
-			ifx_int_wrapper.enable (info->txirq);
+			enable_irq(info->txirq);
 		}
 	}
 	//local_irq_restore(flags);
@@ -816,7 +728,7 @@ ifx_ssc_kread (int port, char *kbuf, size_t len)
 	info->rxbuf = NULL;
 
 	// ### TO DO: perhaps warn if ret_val != len
-	ifx_int_wrapper.disable (info->rxirq);
+	disable_irq(info->rxirq);
 
 	return (ret_val);
 }				// ifx_ssc_kread
@@ -881,12 +793,12 @@ ifx_ssc_read (struct file *filp, char *ubuf, size_t len, loff_t * off)
 	if (copy_to_user ((void *) ubuf, info->rxbuf, ret_val) != 0)
 		ret_val = -EFAULT;
 
-	ifx_int_wrapper.disable (info->rxirq);
+	disable_irq(info->rxirq);
 
 	kfree (info->rxbuf);
 	info->rxbuf = NULL;
 	return (ret_val);
-}				// ifx_ssc_read
+}
 
 /*
  * As many bytes as we have free space for are copied from the user
@@ -924,28 +836,8 @@ ifx_ssc_write (struct file *filp, const char *ubuf, size_t len, loff_t * off)
 		info->txbuf = NULL;
 	}
 	return (ret_val);
-}				/* ifx_ssc_write */
+}
 
-/*
- * ------------------------------------------------------------
- * ifx_ssc_ioctl() and friends
- * ------------------------------------------------------------
- */
-
-/*-----------------------------------------------------------------------------
- FUNC-NAME  : ifx_ssc_frm_status_get
- LONG-NAME  : framing status get
- PURPOSE    : Get the actual status of the framing.
-
- PARAMETER  : *info	pointer to the port-specific structure ifx_ssc_port.
-
- RESULT     : pointer to a structure ifx_ssc_frm_status which holds busy and 
-	      count values.
-
- REMARKS    : Returns a register value independent of framing is enabled or 
-	      not! Changes structure inside of info, so the return value isn't 
-	      needed at all, but could be used for simple access.
------------------------------------------------------------------------------*/
 static struct ifx_ssc_frm_status *
 ifx_ssc_frm_status_get (struct ifx_ssc_port *info)
 {
@@ -964,21 +856,9 @@ ifx_ssc_frm_status_get (struct ifx_ssc_port *info)
 	info->frm_status.EnIntAfterPause =
 		(tmp & IFX_SSC_SFCON_FIR_ENABLE_AFTER_PAUSE) > 0;
 	return (&info->frm_status);
-}				// ifx_ssc_frm_status_get
+}
 
-/*-----------------------------------------------------------------------------
- FUNC-NAME  : ifx_ssc_frm_control_get
- LONG-NAME  : framing control get
- PURPOSE    : Get the actual control values of the framing.
 
- PARAMETER  : *info	pointer to the port-specific structure ifx_ssc_port.
-
- RESULT     : pointer to a structure ifx_ssc_frm_opts which holds control bits  
-	      and count reload values.
-
- REMARKS    : Changes structure inside of info, so the return value isn't 
-	      needed at all, but could be used for simple access.
------------------------------------------------------------------------------*/
 static struct ifx_ssc_frm_opts *
 ifx_ssc_frm_control_get (struct ifx_ssc_port *info)
 {
@@ -997,20 +877,8 @@ ifx_ssc_frm_control_get (struct ifx_ssc_port *info)
 	info->frm_opts.StopAfterPause =
 		(tmp & IFX_SSC_SFCON_STOP_AFTER_PAUSE) > 0;
 	return (&info->frm_opts);
-}				// ifx_ssc_frm_control_get
+}
 
-/*-----------------------------------------------------------------------------
- FUNC-NAME  : ifx_ssc_frm_control_set
- LONG-NAME  : framing control set
- PURPOSE    : Set the actual control values of the framing.
-
- PARAMETER  : *info	pointer to the port-specific structure ifx_ssc_port.
-
- RESULT     : pointer to a structure ifx_ssc_frm_opts which holds control bits  
-	      and count reload values.
-
- REMARKS    : 
------------------------------------------------------------------------------*/
 static int
 ifx_ssc_frm_control_set (struct ifx_ssc_port *info)
 {
@@ -1049,20 +917,8 @@ ifx_ssc_frm_control_set (struct ifx_ssc_port *info)
 	WRITE_PERIPHERAL_REGISTER (tmp, info->mapbase + IFX_SSC_SFCON);
 
 	return 0;
-}				// ifx_ssc_frm_control_set
+}
 
-/*-----------------------------------------------------------------------------
- FUNC-NAME  : ifx_ssc_rxtx_mode_set
- LONG-NAME  : rxtx mode set
- PURPOSE    : Set the transmission mode.
-
- PARAMETER  : *info	pointer to the port-specific structure ifx_ssc_port.
-
- RESULT     : Returns error code
-
- REMARKS    : Assumes that SSC not used (SSC disabled, device not opened yet 
-	      or just closed) 
------------------------------------------------------------------------------*/
 static int
 ifx_ssc_rxtx_mode_set (struct ifx_ssc_port *info, unsigned int val)
 {
@@ -1083,14 +939,8 @@ ifx_ssc_rxtx_mode_set (struct ifx_ssc_port *info, unsigned int val)
 	       ~(IFX_SSC_CON_RX_OFF | IFX_SSC_CON_TX_OFF)) | (val);
 	WRITE_PERIPHERAL_REGISTER (tmp, info->mapbase + IFX_SSC_CON);
 	info->opts.modeRxTx = val;
-/*	
-	printk(KERN_DEBUG "IFX SSC%d: Setting mode to %s%s\n", 
-	       info->port_nr,
-	       ((val & IFX_SSC_CON_RX_OFF) == 0) ? "rx ":"", 
-	       ((val & IFX_SSC_CON_TX_OFF) == 0) ? "tx":"");
-*/
 	return 0;
-}				// ifx_ssc_rxtx_mode_set
+}
 
 void
 ifx_gpio_init (void)
@@ -1117,12 +967,6 @@ ifx_gpio_init (void)
 
 }
 
-/*
- * This routine intializes the SSC appropriately depending
- * on slave/master and full-/half-duplex mode.
- * It assumes that the SSC is disabled and the fifo's and buffers 
- * are flushes later on.
- */
 static int
 ifx_ssc_sethwopts (struct ifx_ssc_port *info)
 {
@@ -1194,7 +1038,7 @@ ifx_ssc_sethwopts (struct ifx_ssc_port *info)
 	local_irq_restore (flags);
 
 	return 0;
-}				// ifx_ssc_sethwopts
+}
 
 static int
 ifx_ssc_set_baud (struct ifx_ssc_port *info, unsigned int baud)
@@ -1216,7 +1060,7 @@ ifx_ssc_set_baud (struct ifx_ssc_port *info, unsigned int baud)
 
 	// compute divider
 	br = (((ifx_ssc_clock >> 1) + baud / 2) / baud) - 1;
-	asm ("SYNC");
+	wmb();
 	if (br > 0xffff ||
 	    ((br == 0) &&
 	     ((READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE) &
@@ -1232,7 +1076,7 @@ ifx_ssc_set_baud (struct ifx_ssc_port *info, unsigned int baud)
 
 	local_irq_restore (flags);
 	return 0;
-}				// ifx_ssc_set_baud
+}
 
 static int
 ifx_ssc_hwinit (struct ifx_ssc_port *info)
@@ -1272,36 +1116,8 @@ ifx_ssc_hwinit (struct ifx_ssc_port *info)
 		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_ENABLE,
 					   info->mapbase + IFX_SSC_WHBSTATE);
 	return 0;
-}				// ifx_ssc_hwinit
+}
 
-/*-----------------------------------------------------------------------------
- FUNC-NAME  : ifx_ssc_batch_exec
- LONG-NAME  : 
- PURPOSE    : 
-
- PARAMETER  : *info	pointer to the port-specific structure ifx_ssc_port.
-
- RESULT     : Returns error code
-
- REMARKS    : 
------------------------------------------------------------------------------*/
-static int
-ifx_ssc_batch_exec (struct ifx_ssc_port *info,
-		    struct ifx_ssc_batch_list *batch_anchor)
-{
-	// ### TO DO: implement user space batch execution
-	// first, copy the whole linked list from user to kernel space
-	// save some hardware options
-	// execute list
-	// restore hardware options if selected
-	return -EFAULT;
-}				// ifx_ssc_batch_exec
-
-/*
- * This routine allows the driver to implement device-
- * specific ioctl's.  If the ioctl number passed in cmd is
- * not recognized by the driver, it should return ENOIOCTLCMD.
- */
 int
 ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd,
 	       unsigned long data)
@@ -1510,44 +1326,9 @@ ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd,
 	}
 
 	return ret_val;
-}				/* ifx_ssc_ioctl */
+}
 
 EXPORT_SYMBOL (ifx_ssc_ioctl);
-
-///* the poll routine */
-//static unsigned int
-//ifx_ssc_poll(struct file *filp, struct poll_table_struct *pts)
-//{
-//        int unit = MINOR(filp->f_dentry->d_inode->i_rdev);
-//      struct ifx_ssc_port *info;
-//        unsigned int mask = 0; 
-//      int spc;
-//
-//      info = &isp[unit];
-//
-//        /* add event to the wait queues */
-//        /* DO NOT FORGET TO DO A WAKEUP ON THESE !!!! */
-//        poll_wait(filp, &info->pwait, pts);
-//
-//      /* are there bytes in the RX SW-FIFO? */
-//        if (info->rxrp != info->rxwp)
-//                mask |= POLLIN | POLLRDNORM;
-//
-//      /* free space in the TX SW-FIFO */
-//      spc = info->txrp - info->txwp - 1;
-//      if (spc < 0)
-//              spc += TX_BUFSIZE;
-//#ifdef IFX_SSC_USEDMA
-//      /* writing always works, except in the DMA case when all descriptors */
-//      /* are used up */
-//      if (unit == 1 && info->dma_freecnt == 0)
-//              spc = 0;
-//#endif
-//      if (spc > 0)
-//              mask |= POLLOUT | POLLWRNORM;
-//
-//        return (mask);
-//}
 
 static int
 ifx_ssc1_read_proc (char *page, char **start, off_t offset, int count,
@@ -1577,21 +1358,10 @@ ifx_ssc1_read_proc (char *page, char **start, off_t offset, int count,
 	off += sprintf (page + off, "RX Bytes %d\n", isp[0].stats.rxBytes);
 	off += sprintf (page + off, "TX Bytes %d\n", isp[0].stats.txBytes);
 
-	local_irq_restore(flags);	/* XXXXX */
+	local_irq_restore(flags);
 	*eof = 1;
 	return (off);
 }
-
-/*
- * This routine prints out the appropriate serial driver version number
- */
-static inline void
-show_version (void)
-{
-#if 0
-	printk ("Infineon Technologies Synchronous Serial Controller (SSC) driver\n" "  version %s - built %s %s\n", IFX_SSC_DRV_VERSION, __DATE__, __TIME__);
-#endif
-}				/* show_version */
 
 /*
  * Due to the fact that a port can be dynamically switched between slave
@@ -1616,8 +1386,6 @@ ifx_ssc_init (void)
 		return (ret_val);
 	}
 	memset (isp, 0, nbytes);
-
-	show_version ();
 
 	/* register the device */
 	ret_val = -ENXIO;
@@ -1701,7 +1469,7 @@ ifx_ssc_init (void)
 		/* try to get the interrupts */
 		// ### TO DO: interrupt handling with multiple instances
 		ret_val =
-			ifx_int_wrapper.request (info->txirq, ifx_ssc_tx_int, SA_INTERRUPT, "ifx_ssc_tx", info);
+			request_irq(info->txirq, ifx_ssc_tx_int, SA_INTERRUPT, "ifx_ssc_tx", info);
 		if (ret_val) {
 			printk ("%s: unable to get irq %d\n", __FUNCTION__,
 				info->txirq);
@@ -1709,7 +1477,7 @@ ifx_ssc_init (void)
 			goto errout;
 		}
 		ret_val =
-			ifx_int_wrapper.request (info->rxirq, ifx_ssc_rx_int, SA_INTERRUPT, "ifx_ssc_rx", info);
+			request_irq(info->rxirq, ifx_ssc_rx_int, SA_INTERRUPT, "ifx_ssc_rx", info);
 		if (ret_val) {
 			printk ("%s: unable to get irq %d\n", __FUNCTION__,
 				info->rxirq);
@@ -1717,32 +1485,21 @@ ifx_ssc_init (void)
 			goto irqerr;
 		}
 		ret_val =
-			ifx_int_wrapper.request (info->errirq, ifx_ssc_err_int, SA_INTERRUPT,"ifx_ssc_err", info);
+			request_irq(info->errirq, ifx_ssc_err_int, SA_INTERRUPT,"ifx_ssc_err", info);
 		if (ret_val) {
 			printk ("%s: unable to get irq %d\n", __FUNCTION__,
 				info->errirq);
 			local_irq_restore (flags);
 			goto irqerr;
 		}
-/*
-		ret_val = ifx_int_wrapper.request(info->frmirq, ifx_ssc_frm_int, 
-						  0, "ifx_ssc_frm", info);
-		if (ret_val){
-			printk("%s: unable to get irq %d\n", __FUNCTION__,
-					info->frmirq);
-			local_irq_restore(flags);
-			goto irqerr;
-		}
-
-*/
 		WRITE_PERIPHERAL_REGISTER (IFX_SSC_DEF_IRNEN,
 					   info->mapbase + IFX_SSC_IRN_EN);
-		ifx_int_wrapper.enable (info->txirq);
-		ifx_int_wrapper.enable (info->rxirq);
-		ifx_int_wrapper.enable (info->errirq);
+		enable_irq(info->txirq);
+		enable_irq(info->rxirq);
+		enable_irq(info->errirq);
 
 		local_irq_restore (flags);
-	}			// for (i = 0; i < PORT_CNT; i++)
+	}
 
 	/* init the SSCs with default values */
 	for (i = 0; i < PORT_CNT; i++) {
@@ -1761,15 +1518,12 @@ ifx_ssc_init (void)
 				NULL);
 	return 0;
 
-      irqerr:
+irqerr:
 	// ### TO DO: multiple instances
-	ifx_int_wrapper.free (isp[0].txirq, &isp[0]);
-	ifx_int_wrapper.free (isp[0].rxirq, &isp[0]);
-	ifx_int_wrapper.free (isp[0].errirq, &isp[0]);
-/*
-	ifx_int_wrapper.free(isp[0].frmirq, &isp[0]);
-*/
-      errout:
+	free_irq(isp[0].txirq, &isp[0]);
+	free_irq(isp[0].rxirq, &isp[0]);
+	free_irq(isp[0].errirq, &isp[0]);
+errout:
 	/* free up any allocated memory in the error case */
 	kfree (isp);
 	return (ret_val);
@@ -1786,27 +1540,15 @@ ifx_ssc_cleanup_module (void)
 		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ENABLE,
 					   isp[i].mapbase + IFX_SSC_WHBSTATE);
 		/* free the interrupts */
-		ifx_int_wrapper.free (isp[i].txirq, &isp[i]);
-		ifx_int_wrapper.free (isp[i].rxirq, &isp[i]);
-		ifx_int_wrapper.free (isp[i].errirq, &isp[i]);
-/*
-		ifx_int_wrapper.free(isp[i].frmirq, &isp[i]);
-
-		if (isp[i].rxbuf != NULL)
-			kfree(isp[i].rxbuf);
-		if (isp[i].txbuf != NULL)
-			kfree(isp[i].txbuf);
-*/
+		free_irq(isp[i].txirq, &isp[i]);
+		free_irq(isp[i].rxirq, &isp[i]);
+		free_irq(isp[i].errirq, &isp[i]);
 	}
 	kfree (isp);
-	/* unregister the device */
-//	if (unregister_chrdev (maj, "ssc")) {
-//		printk ("Unable to unregister major %d for the SSC\n", maj);
-//	}
 	/* delete /proc read handler */
 	remove_proc_entry ("driver/ssc1", NULL);
 	remove_proc_entry ("driver/ssc2", NULL);
-}				/* ifx_ssc_cleanup_module */
+}
 
 module_exit (ifx_ssc_cleanup_module);
 
