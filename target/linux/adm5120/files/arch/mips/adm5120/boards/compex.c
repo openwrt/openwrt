@@ -102,10 +102,29 @@ static void wp54_reset(void)
 	gpio_set_value(ADM5120_GPIO_PIN3, 0);
 }
 
-static void __init np2xg_setup(void)
+static void np28g_reset(void)
+{
+	gpio_set_value(ADM5120_GPIO_PIN4, 0);
+}
+
+static void __init np27g_setup(void)
 {
 	gpio_request(ADM5120_GPIO_PIN5, NULL); /* for flash A20 line */
 	gpio_direction_output(ADM5120_GPIO_PIN5, 0);
+
+	/* setup data for flash0 device */
+	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
+
+	/* TODO: setup mac address */
+}
+
+static void __init np28g_setup(void)
+{
+	gpio_request(ADM5120_GPIO_PIN5, NULL); /* for flash A20 line */
+	gpio_direction_output(ADM5120_GPIO_PIN5, 0);
+
+	gpio_request(ADM5120_GPIO_PIN4, NULL); /* for system reset */
+	gpio_direction_output(ADM5120_GPIO_PIN4, 1);
 
 	/* setup data for flash0 device */
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
@@ -120,7 +139,6 @@ static void __init wp54_setup(void)
 
 	gpio_request(ADM5120_GPIO_PIN3, NULL); /* for system reset */
 	gpio_direction_output(ADM5120_GPIO_PIN3, 1);
-
 
 	/* setup data for flash0 device */
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
@@ -147,15 +165,16 @@ static void __init wp54_wrt_setup(void)
 /*--------------------------------------------------------------------------*/
 
 ADM5120_BOARD_START(NP27G, "Compex NetPassage 27G")
-	.board_setup	= np2xg_setup,
+	.board_setup	= np27g_setup,
 	.eth_num_ports	= 5,
 	.eth_vlans	= np27g_vlans,
 	.num_devices	= ARRAY_SIZE(np2xg_devices),
 	.devices	= np2xg_devices,
+	/* TODO: add PCI IRQ map */
 ADM5120_BOARD_END
 
 ADM5120_BOARD_START(NP28G, "Compex NetPassage 28G")
-	.board_setup	= np2xg_setup,
+	.board_setup	= np28g_setup,
 	.eth_num_ports	= 4,
 	.eth_vlans	= np28g_vlans,
 	.num_devices	= ARRAY_SIZE(np2xg_devices),
