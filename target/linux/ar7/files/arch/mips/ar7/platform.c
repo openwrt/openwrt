@@ -323,6 +323,12 @@ static struct gpio_led default_leds[] = {
 	{ .name = "status", .gpio = 8, .active_low = 1, },
 };
 
+static struct gpio_led dsl502t_leds[] = {
+	{ .name = "status", .gpio = 9, .active_low = 1, },
+	{ .name = "ethernet", .gpio = 7, .active_low = 1, },
+	{ .name = "usb", .gpio = 12, .active_low = 1, },
+};
+
 static struct gpio_led fb_sl_leds[] = {
 	{ .name = "1", .gpio = 7, },
 	{ .name = "2", .gpio = 13, .active_low = 1, },
@@ -392,7 +398,7 @@ static void cpmac_get_mac(int instance, unsigned char *dev_addr)
 
 static void __init detect_leds(void)
 {
-	char *prId;
+	char *prId, *usb_prod;
 
 	/* Default LEDs	*/
 	ar7_led_data.num_leds = ARRAY_SIZE(default_leds);
@@ -400,6 +406,7 @@ static void __init detect_leds(void)
 
 	/* FIXME: the whole thing is unreliable */
 	prId = prom_getenv("ProductID");
+	usb_prod = prom_getenv("usb_prod");
 	
 	/* If we can't get the product id from PROM, use the default LEDs */
 	if (!prId)
@@ -411,6 +418,9 @@ static void __init detect_leds(void)
 	} else if (strstr(prId, "Fritz_Box_")) {
 		ar7_led_data.num_leds = ARRAY_SIZE(fb_sl_leds);
 		ar7_led_data.leds = fb_sl_leds;
+	} else if (!strcmp(prId, "AR7RD") && usb_prod != NULL && strstr(usb_prod, "DSL-502T")) {
+		ar7_led_data.num_leds = ARRAY_SIZE(dsl502t_leds);
+		ar7_led_data.leds = dsl502t_leds;
 	}
 }
 
