@@ -32,7 +32,7 @@
 #include <asm/gpio.h>
 
 #define DRV_NAME	"pata-rb153-cf"
-#define DRV_VERSION	"0.2"
+#define DRV_VERSION	"0.2.1"
 #define DRV_DESC	"PATA driver for RouterBOARD 153 Compact Flash"
 
 #define RB153_CF_MAXPORTS	1
@@ -175,21 +175,20 @@ static void rb153_pata_setup_ports(struct ata_host *ah)
 {
 	struct rb153_cf_info *info = ah->private_data;
 	struct ata_port *ap;
-	struct ata_ioports *iop;
 
 	ap = ah->ports[0];
-	iop = &ap->ioaddr;
 
 	ap->ops		= &rb153_pata_port_ops;
 	ap->pio_mask	= 0x1f; /* PIO4 */
-	ap->flags	|= ATA_FLAG_MMIO | ATA_FLAG_NO_LEGACY;
+	ap->flags	= ATA_FLAG_NO_LEGACY | ATA_FLAG_MMIO;
 
-	iop->cmd_addr		= info->iobase + RB153_CF_REG_CMD;
-	iop->ctl_addr		= info->iobase + RB153_CF_REG_CTRL;
-	iop->altstatus_addr	= info->iobase + RB153_CF_REG_CTRL;
-	iop->data_addr		= info->iobase + RB153_CF_REG_DATA;
+	ap->ioaddr.cmd_addr	= info->iobase + RB153_CF_REG_CMD;
+	ap->ioaddr.ctl_addr	= info->iobase + RB153_CF_REG_CTRL;
+	ap->ioaddr.altstatus_addr = info->iobase + RB153_CF_REG_CTRL;
 
-	ata_std_ports(iop);
+	ata_std_ports(&ap->ioaddr);
+
+	ap->ioaddr.data_addr	= info->iobase + RB153_CF_REG_DATA;
 }
 
 static __devinit int rb153_pata_driver_probe(struct platform_device *pdev)
