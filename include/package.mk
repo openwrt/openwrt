@@ -135,7 +135,7 @@ define pkg_install_files
 endef
 
 define pkg_install_bin
-	$(foreach install_apps,$(1),$(INSTALL_DIR) $(3)/`dirname $(install_file)`; $(INSTALL_BIN) $(2)/$(install_file) $(3)/`dirname $(install_file)`;)
+	$(foreach install_apps,$(1),$(INSTALL_DIR) $(3)/`dirname $(install_apps)`; $(INSTALL_BIN) $(2)/$(install_apps) $(3)/`dirname $(install_apps)`;)
 endef
 
 define Build/Prepare
