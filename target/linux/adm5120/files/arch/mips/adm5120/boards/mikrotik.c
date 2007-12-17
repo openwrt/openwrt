@@ -61,9 +61,6 @@
 #define RB150_NAND_WRITE(v) \
 	writeb((v), (void __iomem *)KSEG1ADDR(RB150_NAND_BASE))
 
-#define RB153_GPIO_CF_RDY	ADM5120_GPIO_P1L1
-#define RB153_GPIO_CF_WT	ADM5120_GPIO_P0L0
-
 /*--------------------------------------------------------------------------*/
 
 static struct adm5120_pci_irq rb1xx_pci_irqs[] __initdata = {
@@ -242,20 +239,6 @@ static void __init rb1xx_flash_setup(void)
 	adm5120_nand_data.chip.options = NAND_NO_AUTOINCR;
 }
 
-static void __init rb153_cf_setup(void)
-{
-	/* enable CSX1:INTX1 on GPIO[3:4] for the CF slot */
-	adm5120_gpio_csx1_enable();
-	/* enable the wait state pin GPIO[0] for external I/O control */
-	adm5120_gpio_ew_enable();
-
-	gpio_request(RB153_GPIO_CF_RDY, "cf-ready");
-	gpio_direction_input(RB153_GPIO_CF_RDY);
-	gpio_request(RB153_GPIO_CF_WT, "cf-wait");
-	gpio_direction_output(RB153_GPIO_CF_WT, 1);
-	gpio_direction_input(RB153_GPIO_CF_WT);
-}
-
 static void __init rb1xx_setup(void)
 {
 	/* enable NAND flash interface */
@@ -294,7 +277,11 @@ static void __init rb150_setup(void)
 
 static void __init rb153_setup(void)
 {
-	rb153_cf_setup();
+	/* enable CSX1:INTX1 on GPIO[3:4] for the CF slot */
+	adm5120_gpio_csx1_enable();
+	/* enable the wait state pin GPIO[0] for external I/O control */
+	adm5120_gpio_ew_enable();
+
 	rb1xx_setup();
 }
 
