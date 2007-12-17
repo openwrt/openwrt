@@ -75,8 +75,6 @@ static void adm5120_intc_irq_mask(unsigned int irq)
 
 static int adm5120_intc_irq_set_type(unsigned int irq, unsigned int flow_type)
 {
-	/* TODO: not yet tested */
-
 	unsigned int sense;
 	unsigned long mode;
 	int err = 0;
@@ -109,9 +107,9 @@ static int adm5120_intc_irq_set_type(unsigned int irq, unsigned int flow_type)
 	case ADM5120_IRQ_GPIO4:
 		mode = INTC_READ(INTC_REG_INT_MODE);
 		if (sense == IRQ_TYPE_LEVEL_LOW)
-			mode |= (1 << (3 + irq - ADM5120_IRQ_GPIO2));
+			mode |= (1 << (irq - ADM5120_INTC_IRQ_BASE));
 		else
-			mode &= (1 << (3 + irq - ADM5120_IRQ_GPIO2));
+			mode &= ~(1 << (irq - ADM5120_INTC_IRQ_BASE));
 
 		INTC_WRITE(INTC_REG_INT_MODE, mode);
 		/* fallthrough */
