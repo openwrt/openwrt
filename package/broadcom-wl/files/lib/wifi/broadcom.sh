@@ -5,7 +5,6 @@ scan_broadcom() {
 	local wds
 	local adhoc sta apmode
 	local adhoc_if sta_if ap_if
-	local macfilter
 
 	config_get vifs "$device" vifs
 	for vif in $vifs; do
@@ -69,18 +68,6 @@ scan_broadcom() {
 			radio=0
 		;;
 	esac
-	macfilter=0
-	case "$macfilter" in
-		allow|2)
-			macfilter=2;
-		;;
-		deny|1)
-			macfilter=1;
-		;;
-		disable|0)
-			macfilter=0;
-		;;
-	esac
 }
 
 disable_broadcom() {
@@ -127,6 +114,18 @@ enable_broadcom() {
 	} || {
 		slottime="${slottime:--1}"
 	}
+	
+	case "$macfilter" in
+		allow|2)
+			macfilter=2;
+		;;
+		deny|1)
+			macfilter=1;
+		;;
+		disable|none|0)
+			macfilter=0;
+		;;
+	esac
 
 	for vif in $vifs; do
 		config_get mode "$vif" mode
