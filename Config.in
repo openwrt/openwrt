@@ -61,7 +61,7 @@ source "target/linux/*/image/Config.in"
 
     config TARGET_ROOTFS_FSPART
         int "Filesystem part size (in MB)"
-        depends X86_GRUB_IMAGES || TARGET_ROOTFS_EXT2FS || LINUX_2_6_RB532
+        depends X86_GRUB_IMAGES || TARGET_ROOTFS_EXT2FS || TARGET_rb532 || TARGET_olpc
         default 16
         help
             Allows you to change the filesystem partition size
