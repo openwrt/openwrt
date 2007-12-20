@@ -1,0 +1,36 @@
+# copyright 2007 john crispin <blogic@openwrt.org>
+
+menu "Danube built-in"
+
+config DANUBE_ASC_UART
+	bool "Danube asc uart"
+	select SERIAL_CORE
+	select SERIAL_CORE_CONSOLE
+	default y
+
+config MTD_DANUBE
+	bool "Danube flash map"
+	default y
+
+config DANUBE_WDT
+	bool "Danube watchdog"
+	default y
+
+config DANUBE_LED
+	bool "Danube led"
+	default y
+
+config DANUBE_GPIO
+	bool "Danube gpio"
+	default y
+
+config DANUBE_SSC
+	bool "Danube ssc"
+	default y
+
+config DANUBE_EEPROM
+	bool "Danube eeprom"
+	default y
+
+endmenu
+
