@@ -56,8 +56,8 @@ endef
 
 define Image/Build
 	$(TARGET_CROSS)objcopy -O srec -I binary --adjust-vma $(FLASH_FS) $(KDIR)/root.$(1) $(KDIR)/root.$(1).srec
-	grep -v S7 $(KDIR)/root.$(1).srec > $(BIN_DIR)/openwrt-$(BOARD)-$(1).img
-	grep -v S0 $(KDIR)/kernel.flash.srec >> $(BIN_DIR)/openwrt-$(BOARD)-$(1).img
+	grep -v S7 $(KDIR)/root.$(1).srec > $(BIN_DIR)/openwrt-$(BOARD)-$(1).srec
+	grep -v S0 $(KDIR)/kernel.flash.srec >> $(BIN_DIR)/openwrt-$(BOARD)-$(1).srec
 	$(INSTALL_BIN) $(KDIR)/kernel.flash.bin $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.bin
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1).fs
 	$(CP) $(KDIR)/kernel.flash.srec $(BIN_DIR)/openwrt-$(BOARD)-vmlinux-flash.srec
