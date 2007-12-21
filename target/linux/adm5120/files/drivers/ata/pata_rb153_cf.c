@@ -236,6 +236,7 @@ static __devinit int rb153_pata_driver_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	ah->private_data = info;
+	info->gpio_line = gpio;
 
 	info->iobase = devm_ioremap_nocache(&pdev->dev, res->start,
 				res->end - res->start + 1);
