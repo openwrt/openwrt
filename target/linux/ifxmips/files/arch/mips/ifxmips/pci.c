@@ -21,6 +21,8 @@
 #define PCI_ACCESS_READ  0
 #define PCI_ACCESS_WRITE 1
 
+//#define CONFIG_IFXMIPS_PCI_HW_SWAP 1
+
 static int ifxmips_pci_read_config_dword(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 *val);
 static int ifxmips_pci_write_config_dword(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 val);
 
@@ -251,7 +253,7 @@ static void __init ifxmips_pci_startup (void){
 	/* FPI ==> PCI IO address mapping */
 	/* base: 0xbAE00000 == > 0xbAE00000 */
 	/* size: 2M */
-	writel(0xbae00000, PCI_CR_FCI_ADDR_MAP11hg);
+	writel(0x1ae00000, PCI_CR_FCI_ADDR_MAP11hg);
 
 	/* PCI ==> FPI address mapping */
 	/* base: 0x0 ==> 0x0 */
@@ -262,7 +264,7 @@ static void __init ifxmips_pci_startup (void){
 	writel(0, PCI_CS_BASE_ADDR1);
 #ifdef CONFIG_IFXMIPS_PCI_HW_SWAP
 	/* both TX and RX endian swap are enabled */
-	IFXMIPS_PCI_REG32 (PCI_CR_PCI_EOI_REG) |= 3;
+	writel(readl(PCI_CR_PCI_EOI) | 3, PCI_CR_PCI_EOI);
 	wmb ();
 #endif
 	/*TODO: disable BAR2 & BAR3 - why was this in the origianl infineon code */
@@ -280,7 +282,6 @@ static void __init ifxmips_pci_startup (void){
 }
 
 int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin){
-	printk("\n\n\n%s:%s[%d] %d %d\n", __FILE__, __func__, __LINE__, slot, pin);
 	switch (slot) {
 		case 13:
 			/* IDSEL = AD29 --> USB Host Controller */
