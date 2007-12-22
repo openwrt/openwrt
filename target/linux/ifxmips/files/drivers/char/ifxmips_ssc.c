@@ -205,7 +205,7 @@ rx_int (struct ifx_ssc_port *info)
 	{
 		disable_irq(info->rxirq);
 		wake_up_interruptible (&info->rwait);
-	} else if ((info->opts.modeRxTx == IFX_SSC_MODE_RX) && (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RXCNT) == 0))
+	} else if ((info->opts.modeRxTx == IFX_SSC_MODE_RX) && (readl(IFXMIPS_SSC_RXCNT) == 0))
 	{
 		if (info->rxbuf_end - info->rxbuf_ptr < IFX_SSC_RXREQ_BLOCK_SIZE)
 			writel((info->rxbuf_end - info->rxbuf_ptr) << IFX_SSC_RXREQ_RXCOUNT_OFFSET, IFXMIPS_SSC_RXREQ);
@@ -523,13 +523,13 @@ ifx_ssc_read_helper (struct ifx_ssc_port *info, char *buf, size_t len, int from_
 		enable_irq(info->rxirq);
 	} else {
 		local_irq_restore(flags);
-		if (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RXCNT) & IFX_SSC_RXCNT_TODO_MASK)
+		if (readl(IFXMIPS_SSC_RXCNT) & IFX_SSC_RXCNT_TODO_MASK)
 			return -EBUSY;
 		enable_irq(info->rxirq);
 		if (len < IFX_SSC_RXREQ_BLOCK_SIZE)
-			WRITE_PERIPHERAL_REGISTER (len << IFX_SSC_RXREQ_RXCOUNT_OFFSET, info->mapbase + IFX_SSC_RXREQ);
+			writel(len << IFX_SSC_RXREQ_RXCOUNT_OFFSET, IFXMIPS_SSC_RXREQ);
 		else
-			WRITE_PERIPHERAL_REGISTER (IFX_SSC_RXREQ_BLOCK_SIZE << IFX_SSC_RXREQ_RXCOUNT_OFFSET, info->mapbase + IFX_SSC_RXREQ);
+			writel(IFX_SSC_RXREQ_BLOCK_SIZE << IFX_SSC_RXREQ_RXCOUNT_OFFSET, IFXMIPS_SSC_RXREQ);
 	}
 
 	__add_wait_queue (&info->rwait, &wait);
@@ -720,7 +720,7 @@ ifx_ssc_frm_status_get (struct ifx_ssc_port *info)
 	info->frm_status.PauseBusy = (tmp & IFX_SSC_SFSTAT_IN_PAUSE) > 0;
 	info->frm_status.DataCount = (tmp & IFX_SSC_SFSTAT_DATA_COUNT_MASK) >> IFX_SSC_SFSTAT_DATA_COUNT_OFFSET;
 	info->frm_status.PauseCount = (tmp & IFX_SSC_SFSTAT_PAUSE_COUNT_MASK) >> IFX_SSC_SFSTAT_PAUSE_COUNT_OFFSET;
-	tmp = READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_SFCON);
+	tmp = readl(IFXMIPS_SSC_SFCON);
 	info->frm_status.EnIntAfterData = (tmp & IFX_SSC_SFCON_FIR_ENABLE_BEFORE_PAUSE) > 0;
 	info->frm_status.EnIntAfterPause = (tmp & IFX_SSC_SFCON_FIR_ENABLE_AFTER_PAUSE) > 0;
 
@@ -733,7 +733,7 @@ ifx_ssc_frm_control_get (struct ifx_ssc_port *info)
 {
 	unsigned long tmp;
 
-	tmp = READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_SFCON);
+	tmp = readl(IFXMIPS_SSC_SFCON);
 	info->frm_opts.FrameEnable = (tmp & IFX_SSC_SFCON_SF_ENABLE) > 0;
 	info->frm_opts.DataLength = (tmp & IFX_SSC_SFCON_DATA_LENGTH_MASK) >> IFX_SSC_SFCON_DATA_LENGTH_OFFSET;
 	info->frm_opts.PauseLength = (tmp & IFX_SSC_SFCON_PAUSE_LENGTH_MASK) >> IFX_SSC_SFCON_PAUSE_LENGTH_OFFSET;
@@ -759,7 +759,7 @@ ifx_ssc_frm_control_set (struct ifx_ssc_port *info)
 		return -EINVAL;
 
 	// read interrupt bits (they're not changed here)
-	tmp = READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_SFCON) &
+	tmp = readl(IFXMIPS_SSC_SFCON) &
 		(IFX_SSC_SFCON_FIR_ENABLE_BEFORE_PAUSE | IFX_SSC_SFCON_FIR_ENABLE_AFTER_PAUSE);
 
 	// set all values with respect to it's bit position (for data and pause 
@@ -771,7 +771,7 @@ ifx_ssc_frm_control_set (struct ifx_ssc_port *info)
 	tmp |= info->frm_opts.FrameEnable * IFX_SSC_SFCON_SF_ENABLE;
 	tmp |= info->frm_opts.StopAfterPause * IFX_SSC_SFCON_STOP_AFTER_PAUSE;
 
-	WRITE_PERIPHERAL_REGISTER(tmp, info->mapbase + IFX_SSC_SFCON);
+	writel(tmp, IFXMIPS_SSC_SFCON);
 
 	return 0;
 }
@@ -784,12 +784,12 @@ ifx_ssc_rxtx_mode_set (struct ifx_ssc_port *info, unsigned int val)
 	if (!(info) || (val & ~(IFX_SSC_MODE_MASK)))
 		return -EINVAL;
 
-	if ((READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE) & IFX_SSC_STATE_BUSY)
-	    || (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RXCNT) & IFX_SSC_RXCNT_TODO_MASK))
+	if ((readl(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_BUSY)
+	    || (readl(IFXMIPS_SSC_RXCNT) & IFX_SSC_RXCNT_TODO_MASK))
 		return -EBUSY;
 
-	tmp = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_CON) & ~(IFX_SSC_CON_RX_OFF | IFX_SSC_CON_TX_OFF)) | (val);
-	WRITE_PERIPHERAL_REGISTER (tmp, info->mapbase + IFX_SSC_CON);
+	tmp = (readl(IFXMIPS_SSC_CON) & ~(IFX_SSC_CON_RX_OFF | IFX_SSC_CON_TX_OFF)) | (val);
+	writel(tmp, IFXMIPS_SSC_SFCON);
 	info->opts.modeRxTx = val;
 
 	return 0;
@@ -839,20 +839,20 @@ ifx_ssc_sethwopts (struct ifx_ssc_port *info)
 
 	local_irq_save (flags);
 
-	WRITE_PERIPHERAL_REGISTER (bits, info->mapbase + IFX_SSC_CON);
-	WRITE_PERIPHERAL_REGISTER ((info->opts.gpoCs << IFX_SSC_GPOCON_ISCSB0_POS) |
-				   (info->opts.gpoInv << IFX_SSC_GPOCON_INVOUT0_POS), info->mapbase + IFX_SSC_GPOCON);
+	writel(bits, IFXMIPS_SSC_CON);
+	writel((info->opts.gpoCs << IFX_SSC_GPOCON_ISCSB0_POS) |
+				   (info->opts.gpoInv << IFX_SSC_GPOCON_INVOUT0_POS), IFXMIPS_SSC_GPOCON);
 
-	WRITE_PERIPHERAL_REGISTER (info->opts.gpoCs << IFX_SSC_WHBGPOSTAT_SETOUT0_POS, info->mapbase + IFX_SSC_WHBGPOSTAT);
+	writel(info->opts.gpoCs << IFX_SSC_WHBGPOSTAT_SETOUT0_POS, IFXMIPS_SSC_WHBGPOSTAT);
 
 	//master mode
 	if (opts->masterSelect)
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_MASTER_SELECT, info->mapbase + IFX_SSC_WHBSTATE);
+		writel(IFX_SSC_WHBSTATE_SET_MASTER_SELECT, IFXMIPS_SSC_WHBSTATE);
 	else
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_MASTER_SELECT, info->mapbase + IFX_SSC_WHBSTATE);
+		writel(IFX_SSC_WHBSTATE_CLR_MASTER_SELECT, IFXMIPS_SSC_WHBSTATE);
 
 	// init serial framing
-	WRITE_PERIPHERAL_REGISTER (0, info->mapbase + IFX_SSC_SFCON);
+	writel(0, IFXMIPS_SSC_SFCON);
 	/* set up the port pins */
 	//check for general requirements to switch (external) pad/pin characteristics
 	/* TODO: P0.9 SPI_CS4, P0.10 SPI_CS5, P 0.11 SPI_CS6, because of ASC0 */
@@ -896,23 +896,23 @@ ifx_ssc_set_baud (struct ifx_ssc_port *info, unsigned int baud)
 
 	local_irq_save (flags);
 
-	enabled = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE) & IFX_SSC_STATE_IS_ENABLED);
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
+	enabled = (readl(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_IS_ENABLED);
+	writel(IFX_SSC_WHBSTATE_CLR_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
 	br = (((ifx_ssc_clock >> 1) + baud / 2) / baud) - 1;
 	wmb();
 
 	if (br > 0xffff || ((br == 0) &&
-			((READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE) & IFX_SSC_STATE_IS_MASTER) == 0))) {
+			((readl(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_IS_MASTER) == 0))) {
 		local_irq_restore (flags);
 		printk ("%s: invalid baudrate %u\n", __func__, baud);
 		return -EINVAL;
 	}
 
-	WRITE_PERIPHERAL_REGISTER (br, info->mapbase + IFX_SSC_BR);
+	writel(br, IFXMIPS_SSC_BR);
 
 	if (enabled)
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
+		writel(IFX_SSC_WHBSTATE_SET_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
 	local_irq_restore(flags);
 
@@ -926,8 +926,8 @@ ifx_ssc_hwinit (struct ifx_ssc_port *info)
 	unsigned long flags;
 	bool enabled;
 
-	enabled = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE) & IFX_SSC_STATE_IS_ENABLED);
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
+	enabled = (readl(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_IS_ENABLED);
+	writel(IFX_SSC_WHBSTATE_CLR_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
 	if (ifx_ssc_sethwopts (info) < 0)
 	{
@@ -944,16 +944,14 @@ ifx_ssc_hwinit (struct ifx_ssc_port *info)
 	local_irq_save (flags);
 
 	/* TX FIFO */
-	WRITE_PERIPHERAL_REGISTER ((IFX_SSC_DEF_TXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_ENABLE,
-				   info->mapbase + IFX_SSC_TXFCON);
+	writel((IFX_SSC_DEF_TXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_ENABLE, IFXMIPS_SSC_TXFCON);
 	/* RX FIFO */
-	WRITE_PERIPHERAL_REGISTER ((IFX_SSC_DEF_RXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_ENABLE, 
-				   info->mapbase + IFX_SSC_RXFCON);
+	writel((IFX_SSC_DEF_RXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_ENABLE, IFXMIPS_SSC_RXFCON);
 
 	local_irq_restore (flags);
 
 	if (enabled)
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
+		writel(IFX_SSC_WHBSTATE_SET_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
 	return 0;
 }
@@ -1001,8 +999,7 @@ ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 		/* if the buffers are not empty then the port is */
 		/* busy and we shouldn't change things on-the-fly! */
 		if (!info->txbuf || !info->rxbuf ||
-		    (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE)
-		     & IFX_SSC_STATE_BUSY)) {
+		    (readl(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_BUSY)) {
 			ret_val = -EBUSY;
 			break;
 		}
@@ -1043,7 +1040,7 @@ ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 		ret_val = ifx_ssc_rxtx_mode_set (info, tmp);
 		break;
 	case IFX_SSC_RXTX_MODE_GET:
-		tmp = READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_CON) &
+		tmp = readl(IFXMIPS_SSC_CON) &
 			(~(IFX_SSC_CON_RX_OFF | IFX_SSC_CON_TX_OFF));
 		if (from_kernel)
 			*((unsigned int *) data) = tmp;
@@ -1067,29 +1064,25 @@ ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 		if (tmp > IFX_SSC_MAX_GPO_OUT)
 			ret_val = -EINVAL;
 		else
-			WRITE_PERIPHERAL_REGISTER
-				(1 << (tmp + IFX_SSC_WHBGPOSTAT_SETOUT0_POS),
-				 info->mapbase + IFX_SSC_WHBGPOSTAT);
+			writel(1 << (tmp + IFX_SSC_WHBGPOSTAT_SETOUT0_POS),
+				 IFXMIPS_SSC_WHBGPOSTAT);
 		break;
 	case IFX_SSC_GPO_OUT_CLR:
 		if (from_kernel)
 			tmp = *((unsigned long *) data);
-		else if (copy_from_user ((void *) &tmp,
-					 (void *) data, sizeof (tmp))) {
+		else if (copy_from_user ((void *) &tmp, (void *) data, sizeof (tmp))) {
 			ret_val = -EFAULT;
 			break;
 		}
 		if (tmp > IFX_SSC_MAX_GPO_OUT)
 			ret_val = -EINVAL;
 		else {
-			WRITE_PERIPHERAL_REGISTER
-				(1 << (tmp + IFX_SSC_WHBGPOSTAT_CLROUT0_POS),
-				 info->mapbase + IFX_SSC_WHBGPOSTAT);
+			writel(1 << (tmp + IFX_SSC_WHBGPOSTAT_CLROUT0_POS),
+				 IFXMIPS_SSC_WHBGPOSTAT);
 		}
 		break;
 	case IFX_SSC_GPO_OUT_GET:
-		tmp = READ_PERIPHERAL_REGISTER
-			(info->mapbase + IFX_SSC_GPOSTAT);
+		tmp = readl(IFXMIPS_SSC_GPOSTAT);
 		if (from_kernel)
 			*((unsigned int *) data) = tmp;
 		else if (copy_to_user ((void *) data,
@@ -1133,7 +1126,7 @@ ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 		/* if the buffers are not empty then the port is */
 		/* busy and we shouldn't change things on-the-fly! */
 		if (!info->txbuf || !info->rxbuf ||
-		    (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE)
+		    (readl(IFXMIPS_SSC_STATE)
 		     & IFX_SSC_STATE_BUSY)) {
 			ret_val = -EBUSY;
 			break;
@@ -1142,8 +1135,7 @@ ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 			memcpy ((void *) &info->opts, (void *) data,
 				sizeof (struct ifx_ssc_hwopts));
 		else if (copy_from_user ((void *) &info->opts,
-					 (void *) data,
-					 sizeof (struct ifx_ssc_hwopts))) {
+					 (void *) data, sizeof(struct ifx_ssc_hwopts))) {
 			ret_val = -EFAULT;
 			break;
 		}
@@ -1240,14 +1232,14 @@ ifx_ssc_init (void)
 			info->errirq = IFXMIPS_SSC_EIR;
 		}
 
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_DEF_RMC << IFX_CLC_RUN_DIVIDER_OFFSET, info->mapbase + IFX_SSC_CLC);
+		writel(IFX_SSC_DEF_RMC << IFX_CLC_RUN_DIVIDER_OFFSET, IFXMIPS_SSC_CLC);
 
 		init_waitqueue_head (&info->rwait);
 
 		local_irq_save (flags);
 
 		// init serial framing register
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_DEF_SFCON, info->mapbase + IFX_SSC_SFCON);
+		writel(IFX_SSC_DEF_SFCON, IFXMIPS_SSC_SFCON);
 
 		ret_val = request_irq(info->txirq, ifx_ssc_tx_int, SA_INTERRUPT, "ifx_ssc_tx", info);
 		if (ret_val)
@@ -1272,7 +1264,7 @@ ifx_ssc_init (void)
 			local_irq_restore (flags);
 			goto irqerr;
 		}
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_DEF_IRNEN, info->mapbase + IFX_SSC_IRN_EN);
+		writel(IFX_SSC_DEF_IRNEN, IFXMIPS_SSC_IRN);
 
 		enable_irq(info->txirq);
 		enable_irq(info->rxirq);
@@ -1308,7 +1300,7 @@ ifx_ssc_cleanup_module (void)
 	int i;
 
 	for (i = 0; i < PORT_CNT; i++) {
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ENABLE, isp[i].mapbase + IFX_SSC_WHBSTATE);
+		writel(IFX_SSC_WHBSTATE_CLR_ENABLE, IFXMIPS_SSC_WHBSTATE);
 		free_irq(isp[i].txirq, &isp[i]);
 		free_irq(isp[i].rxirq, &isp[i]);
 		free_irq(isp[i].errirq, &isp[i]);
