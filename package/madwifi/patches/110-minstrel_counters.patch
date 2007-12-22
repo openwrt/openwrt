@@ -1,7 +1,8 @@
-diff --exclude '*~' -uNr madwifi-dfs-r3053.orig/ath_rate/minstrel/minstrel.c madwifi-dfs-r3053/ath_rate/minstrel/minstrel.c
---- madwifi-dfs-r3053.orig/ath_rate/minstrel/minstrel.c	2007-12-21 13:34:23.000000000 +0000
-+++ madwifi-dfs-r3053/ath_rate/minstrel/minstrel.c	2007-12-21 14:29:07.000000000 +0000
-@@ -449,7 +449,6 @@
+Index: trunk/ath_rate/minstrel/minstrel.c
+===================================================================
+--- trunk/ath_rate/minstrel/minstrel.c	(revision 3065)
++++ trunk/ath_rate/minstrel/minstrel.c	(working copy)
+@@ -446,7 +446,6 @@
  		const struct ath_desc *ds = &bf->bf_desc[0];
  		int final_rate = 0;
  		int tries = 0;
@@ -9,14 +10,14 @@ diff --exclude '*~' -uNr madwifi-dfs-r3053.orig/ath_rate/minstrel/minstrel.c mad
  		int mrr;
  		int final_ndx;
  		int rate0, tries0, ndx0;
-@@ -488,8 +487,8 @@
+@@ -485,8 +484,8 @@
  		mrr = sc->sc_mrretry && !(ic->ic_flags & IEEE80211_F_USEPROT) && ENABLE_MRR;
  
  		if (!mrr) {
 -			if ((0 <= ndx) && (ndx < sn->num_rates)) {
 -				sn->rs_rateattempts[ndx]++; /* only one rate was used */
 +			if ((0 <= final_ndx) && (final_ndx < sn->num_rates)) {
-+				sn->rs_rateattempts[final_ndx]++; /* only one rate was used */
++				sn->rs_rateattempts[final_ndx] += tries; /* only one rate was used */
  			}
  			return;
  		}
