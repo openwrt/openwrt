@@ -58,16 +58,6 @@
 #include <asm/ifxmips/ifx_ssc_defines.h>
 #include <asm/ifxmips/ifx_ssc.h>
 
-#ifdef SSC_FRAME_INT_ENABLE
-#undef SSC_FRAME_INT_ENABLE
-#endif
-
-#define not_yet
-
-#define SPI_VINETIC
-
-
-
 /* allow the user to set the major device number */
 static int maj = 0;
 
@@ -78,30 +68,12 @@ static int maj = 0;
  */
 static struct ifx_ssc_port *isp;
 
-/* prototypes for fops */
-static ssize_t ifx_ssc_read (struct file *, char *, size_t, loff_t *);
-static ssize_t ifx_ssc_write (struct file *, const char *, size_t, loff_t *);
-//static unsigned int ifx_ssc_poll(struct file *, struct poll_table_struct *);
-int ifx_ssc_ioctl (struct inode *, struct file *, unsigned int,
-		   unsigned long);
-int ifx_ssc_open (struct inode *, struct file *);
-int ifx_ssc_close (struct inode *, struct file *);
-
 /* other forward declarations */
 static unsigned int ifx_ssc_get_kernel_clk (struct ifx_ssc_port *info);
 static void tx_int (struct ifx_ssc_port *);
 
 extern unsigned int ifxmips_get_fpi_hz (void);
 extern void mask_and_ack_ifxmips_irq (unsigned int irq_nr);
-
-static struct file_operations ifx_ssc_fops = {
-      .owner = THIS_MODULE,
-      .read = ifx_ssc_read,
-      .write = ifx_ssc_write,
-      .ioctl = ifx_ssc_ioctl,
-      .open = ifx_ssc_open,
-      .release = ifx_ssc_close,
-};
 
 static inline unsigned int
 ifx_ssc_get_kernel_clk (struct ifx_ssc_port *info)
@@ -203,7 +175,7 @@ rx_int (struct ifx_ssc_port *info)
 	// check if transfer is complete
 	if (info->rxbuf_ptr >= info->rxbuf_end)
 	{
-		disable_irq(info->rxirq);
+		disable_irq(IFXMIPS_SSC_RIR);
 		wake_up_interruptible (&info->rwait);
 	} else if ((info->opts.modeRxTx == IFX_SSC_MODE_RX) && (readl(IFXMIPS_SSC_RXCNT) == 0))
 	{
@@ -261,7 +233,7 @@ tx_int (struct ifx_ssc_port *info)
 	// check if transmission complete
 	if (info->txbuf_ptr >= info->txbuf_end)
 	{
-		disable_irq(info->txirq);
+		disable_irq(IFXMIPS_SSC_TIR);
 		kfree (info->txbuf);
 		info->txbuf = NULL;
 	}
@@ -338,9 +310,9 @@ ifx_ssc_abort (struct ifx_ssc_port *info)
 
 	local_irq_save (flags);
 
-	disable_irq(info->rxirq);
-	disable_irq(info->txirq);
-	disable_irq(info->errirq);
+	disable_irq(IFXMIPS_SSC_RIR);
+	disable_irq(IFXMIPS_SSC_TIR);
+	disable_irq(IFXMIPS_SSC_EIR);
 
 	local_irq_restore (flags);
 
@@ -368,9 +340,9 @@ ifx_ssc_abort (struct ifx_ssc_port *info)
 		wake_up_interruptible (&info->rwait);
 
 	// clear pending int's 
-	mask_and_ack_ifxmips_irq(info->rxirq);
-	mask_and_ack_ifxmips_irq(info->txirq);
-	mask_and_ack_ifxmips_irq(info->errirq);
+	mask_and_ack_ifxmips_irq(IFXMIPS_SSC_RIR);
+	mask_and_ack_ifxmips_irq(IFXMIPS_SSC_TIR);
+	mask_and_ack_ifxmips_irq(IFXMIPS_SSC_EIR);
 
 	// clear error flags
 	writel(IFX_SSC_WHBSTATE_CLR_ALL_ERROR, IFXMIPS_SSC_WHBSTATE);
@@ -396,7 +368,6 @@ ifx_ssc_open (struct inode *inode, struct file *filp)
 		line = (int) inode;
 	} else {
 		line = MINOR (filp->f_dentry->d_inode->i_rdev);
-		filp->f_op = &ifx_ssc_fops;
 	}
 
 	/* don't open more minor devices than we can support */
@@ -410,9 +381,9 @@ ifx_ssc_open (struct inode *inode, struct file *filp)
 		return -EBUSY;
 	info->port_is_open++;
 
-	disable_irq(info->rxirq);
-	disable_irq(info->txirq);
-	disable_irq(info->errirq);
+	disable_irq(IFXMIPS_SSC_RIR);
+	disable_irq(IFXMIPS_SSC_TIR);
+	disable_irq(IFXMIPS_SSC_EIR);
 
 	/* Flush and enable TX/RX FIFO */
 	writel((IFX_SSC_DEF_TXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_FLUSH | IFX_SSC_XFCON_FIFO_ENABLE, IFXMIPS_SSC_TXFCON);
@@ -426,9 +397,9 @@ ifx_ssc_open (struct inode *inode, struct file *filp)
 	writel(IFX_SSC_WHBSTATE_CLR_ALL_ERROR, IFXMIPS_SSC_WHBSTATE);
 
 	// clear pending interrupts
-	mask_and_ack_ifxmips_irq(info->rxirq);
-	mask_and_ack_ifxmips_irq(info->txirq);
-	mask_and_ack_ifxmips_irq(info->errirq);
+	mask_and_ack_ifxmips_irq(IFXMIPS_SSC_RIR);
+	mask_and_ack_ifxmips_irq(IFXMIPS_SSC_TIR);
+	mask_and_ack_ifxmips_irq(IFXMIPS_SSC_EIR);
 
 	writel(IFX_SSC_WHBSTATE_SET_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
@@ -518,14 +489,14 @@ ifx_ssc_read_helper (struct ifx_ssc_port *info, char *buf, size_t len, int from_
 		tx_int (info);
 
 		if (info->txbuf_ptr < info->txbuf_end)
-			enable_irq(info->txirq);
+			enable_irq(IFXMIPS_SSC_TIR);
 
-		enable_irq(info->rxirq);
+		enable_irq(IFXMIPS_SSC_RIR);
 	} else {
 		local_irq_restore(flags);
 		if (readl(IFXMIPS_SSC_RXCNT) & IFX_SSC_RXCNT_TODO_MASK)
 			return -EBUSY;
-		enable_irq(info->rxirq);
+		enable_irq(IFXMIPS_SSC_RIR);
 		if (len < IFX_SSC_RXREQ_BLOCK_SIZE)
 			writel(len << IFX_SSC_RXREQ_RXCOUNT_OFFSET, IFXMIPS_SSC_RXREQ);
 		else
@@ -574,7 +545,7 @@ ifx_ssc_write_helper (struct ifx_ssc_port *info, const char *buf,
 		tx_int (info);
 		if (info->txbuf_ptr < info->txbuf_end)
 		{
-			enable_irq(info->txirq);
+			enable_irq(IFXMIPS_SSC_TIR);
 		}
 	}
 
@@ -611,7 +582,7 @@ ifx_ssc_kread (int port, char *kbuf, size_t len)
 	ret_val = ifx_ssc_read_helper_poll (info, kbuf, len, 1);
 	info->rxbuf = NULL;
 
-	disable_irq(info->rxirq);
+	disable_irq(IFXMIPS_SSC_RIR);
 
 	return ret_val;
 }
@@ -667,7 +638,7 @@ ifx_ssc_read (struct file *filp, char *ubuf, size_t len, loff_t * off)
 	if (copy_to_user ((void *) ubuf, info->rxbuf, ret_val) != 0)
 		ret_val = -EFAULT;
 
-	disable_irq(info->rxirq);
+	disable_irq(IFXMIPS_SSC_RIR);
 
 	kfree (info->rxbuf);
 	info->rxbuf = NULL;
@@ -1161,6 +1132,15 @@ ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 }
 EXPORT_SYMBOL(ifx_ssc_ioctl);
 
+static struct file_operations ifx_ssc_fops = {
+      .owner = THIS_MODULE,
+      .read = ifx_ssc_read,
+      .write = ifx_ssc_write,
+      .ioctl = ifx_ssc_ioctl,
+      .open = ifx_ssc_open,
+      .release = ifx_ssc_close,
+};
+
 int __init
 ifx_ssc_init (void)
 {
@@ -1227,9 +1207,6 @@ ifx_ssc_init (void)
 		/* values specific to SSC1 */
 		if (i == 0) {
 			info->mapbase = IFXMIPS_SSC_BASE_ADDR;
-			info->txirq = IFXMIPS_SSC_TIR;
-			info->rxirq = IFXMIPS_SSC_RIR;
-			info->errirq = IFXMIPS_SSC_EIR;
 		}
 
 		writel(IFX_SSC_DEF_RMC << IFX_CLC_RUN_DIVIDER_OFFSET, IFXMIPS_SSC_CLC);
@@ -1241,34 +1218,34 @@ ifx_ssc_init (void)
 		// init serial framing register
 		writel(IFX_SSC_DEF_SFCON, IFXMIPS_SSC_SFCON);
 
-		ret_val = request_irq(info->txirq, ifx_ssc_tx_int, SA_INTERRUPT, "ifx_ssc_tx", info);
+		ret_val = request_irq(IFXMIPS_SSC_TIR, ifx_ssc_tx_int, IRQF_DISABLED, "ifx_ssc_tx", info);
 		if (ret_val)
 		{
-			printk("%s: unable to get irq %d\n", __func__, info->txirq);
+			printk("%s: unable to get irq %d\n", __func__, IFXMIPS_SSC_TIR);
 			local_irq_restore(flags);
 			goto errout;
 		}
 
-		ret_val = request_irq(info->rxirq, ifx_ssc_rx_int, SA_INTERRUPT, "ifx_ssc_rx", info);
+		ret_val = request_irq(IFXMIPS_SSC_RIR, ifx_ssc_rx_int, IRQF_DISABLED, "ifx_ssc_rx", info);
 		if (ret_val)
 		{
-			printk ("%s: unable to get irq %d\n", __func__, info->rxirq);
+			printk ("%s: unable to get irq %d\n", __func__, IFXMIPS_SSC_RIR);
 			local_irq_restore (flags);
 			goto irqerr;
 		}
 
-		ret_val = request_irq(info->errirq, ifx_ssc_err_int, SA_INTERRUPT,"ifx_ssc_err", info);
+		ret_val = request_irq(IFXMIPS_SSC_EIR, ifx_ssc_err_int, IRQF_DISABLED, "ifx_ssc_err", info);
 		if (ret_val)
 		{
-			printk ("%s: unable to get irq %d\n", __func__, info->errirq);
+			printk ("%s: unable to get irq %d\n", __func__, IFXMIPS_SSC_EIR);
 			local_irq_restore (flags);
 			goto irqerr;
 		}
 		writel(IFX_SSC_DEF_IRNEN, IFXMIPS_SSC_IRN);
 
-		enable_irq(info->txirq);
-		enable_irq(info->rxirq);
-		enable_irq(info->errirq);
+		//enable_irq(IFXMIPS_SSC_TIR);
+		//enable_irq(IFXMIPS_SSC_RIR);
+		//enable_irq(IFXMIPS_SSC_EIR);
 
 		local_irq_restore (flags);
 	}
@@ -1286,9 +1263,9 @@ ifx_ssc_init (void)
 	return 0;
 
 irqerr:
-	free_irq(isp[0].txirq, &isp[0]);
-	free_irq(isp[0].rxirq, &isp[0]);
-	free_irq(isp[0].errirq, &isp[0]);
+	free_irq(IFXMIPS_SSC_TIR, &isp[0]);
+	free_irq(IFXMIPS_SSC_RIR, &isp[0]);
+	free_irq(IFXMIPS_SSC_EIR, &isp[0]);
 errout:
 	kfree (isp);
 	return (ret_val);
@@ -1301,9 +1278,9 @@ ifx_ssc_cleanup_module (void)
 
 	for (i = 0; i < PORT_CNT; i++) {
 		writel(IFX_SSC_WHBSTATE_CLR_ENABLE, IFXMIPS_SSC_WHBSTATE);
-		free_irq(isp[i].txirq, &isp[i]);
-		free_irq(isp[i].rxirq, &isp[i]);
-		free_irq(isp[i].errirq, &isp[i]);
+		free_irq(IFXMIPS_SSC_TIR, &isp[i]);
+		free_irq(IFXMIPS_SSC_RIR, &isp[i]);
+		free_irq(IFXMIPS_SSC_EIR, &isp[i]);
 	}
 	kfree (isp);
 }
