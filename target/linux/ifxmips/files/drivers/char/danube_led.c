@@ -27,9 +27,9 @@
 #include <asm/uaccess.h>
 #include <asm/unistd.h>
 #include <linux/errno.h>
-#include <asm/danube/danube.h>
-#include <asm/danube/danube_gpio.h>
-#include <asm/danube/danube_pmu.h>
+#include <asm/ifxmips/ifxmips.h>
+#include <asm/ifxmips/ifxmips_gpio.h>
+#include <asm/ifxmips/ifxmips_pmu.h>
 
 #define IFXMIPS_LED_CLK_EDGE				IFXMIPS_LED_FALLING
 //#define IFXMIPS_LED_CLK_EDGE			IFXMIPS_LED_RISING
@@ -38,52 +38,52 @@
 
 #define IFXMIPS_LED_GPIO_PORT	0
 
-static int danube_led_major;
+static int ifxmips_led_major;
 
 void
-danube_led_set (unsigned int led)
+ifxmips_led_set (unsigned int led)
 {
 	led &= 0xffffff;
 	writel(readl(IFXMIPS_LED_CPU0) | led, IFXMIPS_LED_CPU0);
 }
-EXPORT_SYMBOL(danube_led_set);
+EXPORT_SYMBOL(ifxmips_led_set);
 
 void
-danube_led_clear (unsigned int led)
+ifxmips_led_clear (unsigned int led)
 {
 	led = ~(led & 0xffffff);
 	writel(readl(IFXMIPS_LED_CPU0) & led, IFXMIPS_LED_CPU0);
 }
-EXPORT_SYMBOL(danube_led_clear);
+EXPORT_SYMBOL(ifxmips_led_clear);
 
 void
-danube_led_blink_set (unsigned int led)
+ifxmips_led_blink_set (unsigned int led)
 {
 	led &= 0xffffff;
 	writel(readl(IFXMIPS_LED_CON0) | led, IFXMIPS_LED_CON0);
 }
-EXPORT_SYMBOL(danube_led_blink_set);
+EXPORT_SYMBOL(ifxmips_led_blink_set);
 
 void
-danube_led_blink_clear (unsigned int led)
+ifxmips_led_blink_clear (unsigned int led)
 {
 	led = ~(led & 0xffffff);
 	writel(readl(IFXMIPS_LED_CON0) & led, IFXMIPS_LED_CON0);
 }
-EXPORT_SYMBOL(danube_led_blink_clear);
+EXPORT_SYMBOL(ifxmips_led_blink_clear);
 
 void
-danube_led_setup_gpio (void)
+ifxmips_led_setup_gpio (void)
 {
 	int i = 0;
 
 	/* we need to setup pins SH,D,ST (4,5,6) */
 	for (i = 4; i < 7; i++)
 	{
-		danube_port_set_altsel0(IFXMIPS_LED_GPIO_PORT, i);
-		danube_port_clear_altsel1(IFXMIPS_LED_GPIO_PORT, i);
-		danube_port_set_dir_out(IFXMIPS_LED_GPIO_PORT, i);
-		danube_port_set_open_drain(IFXMIPS_LED_GPIO_PORT, i);
+		ifxmips_port_set_altsel0(IFXMIPS_LED_GPIO_PORT, i);
+		ifxmips_port_clear_altsel1(IFXMIPS_LED_GPIO_PORT, i);
+		ifxmips_port_set_dir_out(IFXMIPS_LED_GPIO_PORT, i);
+		ifxmips_port_set_open_drain(IFXMIPS_LED_GPIO_PORT, i);
 	}
 }
 
@@ -111,7 +111,7 @@ led_release (struct inode *inode, struct file *file)
 	return 0;
 }
 
-static struct file_operations danube_led_fops = {
+static struct file_operations ifxmips_led_fops = {
 	.owner = THIS_MODULE,
 	.ioctl = led_ioctl,
 	.open = led_open,
@@ -138,11 +138,11 @@ Map for hardware relay on reference board
 
 
 int __init
-danube_led_init (void)
+ifxmips_led_init (void)
 {
 	int ret = 0;
 
-	danube_led_setup_gpio();
+	ifxmips_led_setup_gpio();
 
 	writel(0, IFXMIPS_LED_AR);
 	writel(0, IFXMIPS_LED_CPU0);
@@ -169,29 +169,29 @@ danube_led_init (void)
 	writel(readl(IFXMIPS_LED_CON0) | IFXMIPS_LED_ADSL_SRC, IFXMIPS_LED_CON0);
 
 	/* per default, the leds are turned on */
-	danube_pmu_enable(IFXMIPS_PMU_PWDCR_LED);
+	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_LED);
 
-	danube_led_major = register_chrdev(0, "danube_led", &danube_led_fops);
+	ifxmips_led_major = register_chrdev(0, "ifxmips_led", &ifxmips_led_fops);
 
-	if (!danube_led_major)
+	if (!ifxmips_led_major)
 	{
-		printk("danube_led: Error! Could not register device. %d\n", danube_led_major);
+		printk("ifxmips_led: Error! Could not register device. %d\n", ifxmips_led_major);
 		ret = -EINVAL;
 
 		goto out;
 	}
 
-	printk(KERN_INFO "danube_led : device registered on major %d\n", danube_led_major);
+	printk(KERN_INFO "ifxmips_led : device registered on major %d\n", ifxmips_led_major);
 
 out:
 	return ret;
 }
 
 void __exit
-danube_led_exit (void)
+ifxmips_led_exit (void)
 {
-	unregister_chrdev(danube_led_major, "danube_led");
+	unregister_chrdev(ifxmips_led_major, "ifxmips_led");
 }
 
-module_init(danube_led_init);
-module_exit(danube_led_exit);
+module_init(ifxmips_led_init);
+module_exit(ifxmips_led_exit);

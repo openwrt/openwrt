@@ -1,5 +1,5 @@
 /*
- *   arch/mips/danube/prom.c
+ *   arch/mips/ifxmips/prom.c
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  *
  *   Copyright (C) 2005 infineon
  *
- *   Rewrite of Infineon Danube code, thanks to infineon for the support,
+ *   Rewrite of Infineon IFXMips code, thanks to infineon for the support,
  *   software and hardware
  *
  *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
@@ -29,10 +29,10 @@
 #include <asm/reboot.h>
 #include <asm/system.h>
 #include <asm/io.h>
-#include <asm/danube/danube.h>
+#include <asm/ifxmips/ifxmips.h>
 
 static void
-danube_machine_restart (char *command)
+ifxmips_machine_restart (char *command)
 {
 	printk (KERN_NOTICE "System restart\n");
 	local_irq_disable ();
@@ -42,7 +42,7 @@ danube_machine_restart (char *command)
 }
 
 static void
-danube_machine_halt (void)
+ifxmips_machine_halt (void)
 {
 	printk (KERN_NOTICE "System halted.\n");
 	local_irq_disable ();
@@ -50,7 +50,7 @@ danube_machine_halt (void)
 }
 
 static void
-danube_machine_power_off (void)
+ifxmips_machine_power_off (void)
 {
 	printk (KERN_NOTICE "Please turn off the power now.\n");
 	local_irq_disable ();
@@ -58,9 +58,9 @@ danube_machine_power_off (void)
 }
 
 void
-danube_reboot_setup (void)
+ifxmips_reboot_setup (void)
 {
-	_machine_restart = danube_machine_restart;
-	_machine_halt = danube_machine_halt;
-	pm_power_off = danube_machine_power_off;
+	_machine_restart = ifxmips_machine_restart;
+	_machine_halt = ifxmips_machine_halt;
+	pm_power_off = ifxmips_machine_power_off;
 }

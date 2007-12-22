@@ -1,35 +1,35 @@
 # copyright 2007 john crispin <blogic@openwrt.org>
 
-menu "Danube built-in"
+menu "IFXMips built-in"
 
 config IFXMIPS_ASC_UART
-	bool "Danube asc uart"
+	bool "IFXMips asc uart"
 	select SERIAL_CORE
 	select SERIAL_CORE_CONSOLE
 	default y
 
 config MTD_IFXMIPS
-	bool "Danube flash map"
+	bool "IFXMips flash map"
 	default y
 
 config IFXMIPS_WDT
-	bool "Danube watchdog"
+	bool "IFXMips watchdog"
 	default y
 
 config IFXMIPS_LED
-	bool "Danube led"
+	bool "IFXMips led"
 	default y
 
 config IFXMIPS_GPIO
-	bool "Danube gpio"
+	bool "IFXMips gpio"
 	default y
 
 config IFXMIPS_SSC
-	bool "Danube ssc"
+	bool "IFXMips ssc"
 	default y
 
 config IFXMIPS_EEPROM
-	bool "Danube eeprom"
+	bool "IFXMips eeprom"
 	default y
 
 endmenu

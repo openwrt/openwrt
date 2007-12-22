@@ -48,9 +48,9 @@
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <asm/bitops.h>
-#include <asm/danube/danube.h>
-#include <asm/danube/danube_irq.h>
-#include <asm/danube/danube_serial.h>
+#include <asm/ifxmips/ifxmips.h>
+#include <asm/ifxmips/ifxmips_irq.h>
+#include <asm/ifxmips/ifxmips_serial.h>
 
 #define PORT_IFXMIPSASC  111
 
@@ -58,48 +58,48 @@
 
 #define UART_DUMMY_UER_RX 1
 
-static void danubeasc_tx_chars(struct uart_port *port);
+static void ifxmipsasc_tx_chars(struct uart_port *port);
 extern void prom_printf(const char * fmt, ...);
-static struct uart_port danubeasc_port;
-static struct uart_driver danubeasc_reg;
+static struct uart_port ifxmipsasc_port;
+static struct uart_driver ifxmipsasc_reg;
 static unsigned int uartclk = 0;
-extern unsigned int danube_get_fpi_hz(void);
+extern unsigned int ifxmips_get_fpi_hz(void);
 
 static void
-danubeasc_stop_tx (struct uart_port *port)
+ifxmipsasc_stop_tx (struct uart_port *port)
 {
 	/* fifo underrun shuts up after firing once */
 	return;
 }
 
 static void
-danubeasc_start_tx (struct uart_port *port)
+ifxmipsasc_start_tx (struct uart_port *port)
 {
 	unsigned long flags;
 
 	local_irq_save(flags);
-	danubeasc_tx_chars(port);
+	ifxmipsasc_tx_chars(port);
 	local_irq_restore(flags);
 
 	return;
 }
 
 static void
-danubeasc_stop_rx (struct uart_port *port)
+ifxmipsasc_stop_rx (struct uart_port *port)
 {
 	/* clear the RX enable bit */
 	writel(ASCWHBSTATE_CLRREN, IFXMIPS_ASC1_WHBSTATE);
 }
 
 static void
-danubeasc_enable_ms (struct uart_port *port)
+ifxmipsasc_enable_ms (struct uart_port *port)
 {
 	/* no modem signals */
 	return;
 }
 
 static void
-danubeasc_rx_chars (struct uart_port *port)
+ifxmipsasc_rx_chars (struct uart_port *port)
 {
 	struct tty_struct *tty = port->info->tty;
 	unsigned int ch = 0, rsr = 0, fifocnt;
@@ -157,12 +157,12 @@ danubeasc_rx_chars (struct uart_port *port)
 
 
 static void
-danubeasc_tx_chars (struct uart_port *port)
+ifxmipsasc_tx_chars (struct uart_port *port)
 {
 	struct circ_buf *xmit = &port->info->xmit;
 
 	if (uart_tx_stopped(port)) {
-		danubeasc_stop_tx(port);
+		ifxmipsasc_stop_tx(port);
 		return;
 	}
 
@@ -189,17 +189,17 @@ danubeasc_tx_chars (struct uart_port *port)
 }
 
 static irqreturn_t
-danubeasc_tx_int (int irq, void *port)
+ifxmipsasc_tx_int (int irq, void *port)
 {
 	writel(ASC_IRNCR_TIR, IFXMIPS_ASC1_IRNCR);
-	danubeasc_start_tx(port);
-	mask_and_ack_danube_irq(irq);
+	ifxmipsasc_start_tx(port);
+	mask_and_ack_ifxmips_irq(irq);
 
 	return IRQ_HANDLED;
 }
 
 static irqreturn_t
-danubeasc_er_int (int irq, void *port)
+ifxmipsasc_er_int (int irq, void *port)
 {
 	/* clear any pending interrupts */
 	writel(readl(IFXMIPS_ASC1_WHBSTATE) | ASCWHBSTATE_CLRPE |
@@ -209,17 +209,17 @@ danubeasc_er_int (int irq, void *port)
 }
 
 static irqreturn_t
-danubeasc_rx_int (int irq, void *port)
+ifxmipsasc_rx_int (int irq, void *port)
 {
 	writel(ASC_IRNCR_RIR, IFXMIPS_ASC1_IRNCR);
-	danubeasc_rx_chars((struct uart_port *) port);
-	mask_and_ack_danube_irq(irq);
+	ifxmipsasc_rx_chars((struct uart_port *) port);
+	mask_and_ack_ifxmips_irq(irq);
 
 	return IRQ_HANDLED;
 }
 
 static unsigned int
-danubeasc_tx_empty (struct uart_port *port)
+ifxmipsasc_tx_empty (struct uart_port *port)
 {
 	int status;
 
@@ -229,25 +229,25 @@ danubeasc_tx_empty (struct uart_port *port)
 }
 
 static unsigned int
-danubeasc_get_mctrl (struct uart_port *port)
+ifxmipsasc_get_mctrl (struct uart_port *port)
 {
 	return TIOCM_CTS | TIOCM_CAR | TIOCM_DSR;
 }
 
 static void
-danubeasc_set_mctrl (struct uart_port *port, u_int mctrl)
+ifxmipsasc_set_mctrl (struct uart_port *port, u_int mctrl)
 {
 	return;
 }
 
 static void
-danubeasc_break_ctl (struct uart_port *port, int break_state)
+ifxmipsasc_break_ctl (struct uart_port *port, int break_state)
 {
 	return;
 }
 
 static void
-danubeasc1_hw_init (void)
+ifxmipsasc1_hw_init (void)
 {
 	/* this setup was probably already done in ROM/u-boot  but we do it again*/
 	/* TODO: GPIO pins are multifunction */
@@ -266,36 +266,36 @@ danubeasc1_hw_init (void)
 }
 
 static int
-danubeasc_startup (struct uart_port *port)
+ifxmipsasc_startup (struct uart_port *port)
 {
 	unsigned long flags;
 	int retval;
 
 	/* this assumes: CON.BRS = CON.FDE = 0 */
 	if (uartclk == 0)
-		uartclk = danube_get_fpi_hz();
+		uartclk = ifxmips_get_fpi_hz();
 
-	danubeasc_port.uartclk = uartclk;
+	ifxmipsasc_port.uartclk = uartclk;
 
-	danubeasc1_hw_init();
+	ifxmipsasc1_hw_init();
 
 	local_irq_save(flags);
 
-	retval = request_irq(IFXMIPSASC1_RIR, danubeasc_rx_int, IRQF_DISABLED, "asc_rx", port);
+	retval = request_irq(IFXMIPSASC1_RIR, ifxmipsasc_rx_int, IRQF_DISABLED, "asc_rx", port);
 	if (retval){
-		printk("failed to request danubeasc_rx_int\n");
+		printk("failed to request ifxmipsasc_rx_int\n");
 		return retval;
 	}
 
-	retval = request_irq(IFXMIPSASC1_TIR, danubeasc_tx_int, IRQF_DISABLED, "asc_tx", port);
+	retval = request_irq(IFXMIPSASC1_TIR, ifxmipsasc_tx_int, IRQF_DISABLED, "asc_tx", port);
 	if (retval){
-		printk("failed to request danubeasc_tx_int\n");
+		printk("failed to request ifxmipsasc_tx_int\n");
 		goto err1;
 	}
 
-	retval = request_irq(IFXMIPSASC1_EIR, danubeasc_er_int, IRQF_DISABLED, "asc_er", port);
+	retval = request_irq(IFXMIPSASC1_EIR, ifxmipsasc_er_int, IRQF_DISABLED, "asc_er", port);
 	if (retval){
-		printk("failed to request danubeasc_er_int\n");
+		printk("failed to request ifxmipsasc_er_int\n");
 		goto err2;
 	}
 
@@ -317,7 +317,7 @@ err1:
 }
 
 static void
-danubeasc_shutdown (struct uart_port *port)
+ifxmipsasc_shutdown (struct uart_port *port)
 {
 	free_irq(IFXMIPSASC1_RIR, port);
 	free_irq(IFXMIPSASC1_TIR, port);
@@ -334,7 +334,7 @@ danubeasc_shutdown (struct uart_port *port)
 	writel(readl(IFXMIPS_ASC1_TXFCON) & ~ASCTXFCON_TXFEN, IFXMIPS_ASC1_TXFCON);
 }
 
-static void danubeasc_set_termios(struct uart_port *port, struct ktermios *new, struct ktermios *old)
+static void ifxmipsasc_set_termios(struct uart_port *port, struct ktermios *new, struct ktermios *old)
 {
 	unsigned int cflag;
 	unsigned int iflag;
@@ -424,34 +424,34 @@ static void danubeasc_set_termios(struct uart_port *port, struct ktermios *new, 
 }
 
 static const char*
-danubeasc_type (struct uart_port *port)
+ifxmipsasc_type (struct uart_port *port)
 {
 	return port->type == PORT_IFXMIPSASC ? "IFXMIPSASC" : NULL;
 }
 
 static void
-danubeasc_release_port (struct uart_port *port)
+ifxmipsasc_release_port (struct uart_port *port)
 {
 	return;
 }
 
 static int
-danubeasc_request_port (struct uart_port *port)
+ifxmipsasc_request_port (struct uart_port *port)
 {
 	return 0;
 }
 
 static void
-danubeasc_config_port (struct uart_port *port, int flags)
+ifxmipsasc_config_port (struct uart_port *port, int flags)
 {
 	if (flags & UART_CONFIG_TYPE) {
 		port->type = PORT_IFXMIPSASC;
-		danubeasc_request_port(port);
+		ifxmipsasc_request_port(port);
 	}
 }
 
 static int
-danubeasc_verify_port (struct uart_port *port, struct serial_struct *ser)
+ifxmipsasc_verify_port (struct uart_port *port, struct serial_struct *ser)
 {
 	int ret = 0;
 	if (ser->type != PORT_UNKNOWN && ser->type != PORT_IFXMIPSASC)
@@ -463,26 +463,26 @@ danubeasc_verify_port (struct uart_port *port, struct serial_struct *ser)
 	return ret;
 }
 
-static struct uart_ops danubeasc_pops = {
-	.tx_empty =		danubeasc_tx_empty,
-	.set_mctrl =	danubeasc_set_mctrl,
-	.get_mctrl =	danubeasc_get_mctrl,
-	.stop_tx =		danubeasc_stop_tx,
-	.start_tx =		danubeasc_start_tx,
-	.stop_rx =		danubeasc_stop_rx,
-	.enable_ms =	danubeasc_enable_ms,
-	.break_ctl =	danubeasc_break_ctl,
-	.startup =		danubeasc_startup,
-	.shutdown =		danubeasc_shutdown,
-	.set_termios =	danubeasc_set_termios,
-	.type =			danubeasc_type,
-	.release_port =	danubeasc_release_port,
-	.request_port =	danubeasc_request_port,
-	.config_port =	danubeasc_config_port,
-	.verify_port =	danubeasc_verify_port,
+static struct uart_ops ifxmipsasc_pops = {
+	.tx_empty =		ifxmipsasc_tx_empty,
+	.set_mctrl =	ifxmipsasc_set_mctrl,
+	.get_mctrl =	ifxmipsasc_get_mctrl,
+	.stop_tx =		ifxmipsasc_stop_tx,
+	.start_tx =		ifxmipsasc_start_tx,
+	.stop_rx =		ifxmipsasc_stop_rx,
+	.enable_ms =	ifxmipsasc_enable_ms,
+	.break_ctl =	ifxmipsasc_break_ctl,
+	.startup =		ifxmipsasc_startup,
+	.shutdown =		ifxmipsasc_shutdown,
+	.set_termios =	ifxmipsasc_set_termios,
+	.type =			ifxmipsasc_type,
+	.release_port =	ifxmipsasc_release_port,
+	.request_port =	ifxmipsasc_request_port,
+	.config_port =	ifxmipsasc_config_port,
+	.verify_port =	ifxmipsasc_verify_port,
 };
 
-static struct uart_port danubeasc_port = {
+static struct uart_port ifxmipsasc_port = {
 		membase:	(void *)IFXMIPS_ASC1_BASE_ADDR,
 		mapbase:	IFXMIPS_ASC1_BASE_ADDR,
 		iotype:		SERIAL_IO_MEM,
@@ -491,12 +491,12 @@ static struct uart_port danubeasc_port = {
 		fifosize:	16,
 		unused:		{IFXMIPSASC1_TIR, IFXMIPSASC1_EIR},
 		type:		PORT_IFXMIPSASC,
-		ops:		&danubeasc_pops,
+		ops:		&ifxmipsasc_pops,
 		flags:		ASYNC_BOOT_AUTOCONF,
 };
 
 static void
-danubeasc_console_write (struct console *co, const char *s, u_int count)
+ifxmipsasc_console_write (struct console *co, const char *s, u_int count)
 {
 	int i, fifocnt;
 	unsigned long flags;
@@ -532,7 +532,7 @@ danubeasc_console_write (struct console *co, const char *s, u_int count)
 }
 
 static int __init
-danubeasc_console_setup (struct console *co, char *options)
+ifxmipsasc_console_setup (struct console *co, char *options)
 {
 	struct uart_port *port;
 	int baud = 115200;
@@ -541,11 +541,11 @@ danubeasc_console_setup (struct console *co, char *options)
 	int flow = 'n';
 
 	if (uartclk == 0)
-		uartclk = danube_get_fpi_hz();
+		uartclk = ifxmips_get_fpi_hz();
 	co->index = 0;
-	port = &danubeasc_port;
-	danubeasc_port.uartclk = uartclk;
-	danubeasc_port.type = PORT_IFXMIPSASC;
+	port = &ifxmipsasc_port;
+	ifxmipsasc_port.uartclk = uartclk;
+	ifxmipsasc_port.type = PORT_IFXMIPSASC;
 
 	if (options){
 		uart_parse_options(options, &baud, &parity, &bits, &flow);
@@ -554,55 +554,55 @@ danubeasc_console_setup (struct console *co, char *options)
 	return uart_set_options(port, co, baud, parity, bits, flow);
 }
 
-static struct uart_driver danubeasc_reg;
-static struct console danubeasc_console = {
+static struct uart_driver ifxmipsasc_reg;
+static struct console ifxmipsasc_console = {
 	name:		"ttyS",
-	write:		danubeasc_console_write,
+	write:		ifxmipsasc_console_write,
 	device:		uart_console_device,
-	setup:		danubeasc_console_setup,
+	setup:		ifxmipsasc_console_setup,
 	flags:		CON_PRINTBUFFER,
 	index:		-1,
-	data:		&danubeasc_reg,
+	data:		&ifxmipsasc_reg,
 };
 
 static int __init
-danubeasc_console_init (void)
+ifxmipsasc_console_init (void)
 {
-	register_console(&danubeasc_console);
+	register_console(&ifxmipsasc_console);
 	return 0;
 }
-console_initcall(danubeasc_console_init);
+console_initcall(ifxmipsasc_console_init);
 
-static struct uart_driver danubeasc_reg = {
+static struct uart_driver ifxmipsasc_reg = {
 	.owner =			THIS_MODULE,
 	.driver_name =		"serial",
 	.dev_name =			"ttyS",
 	.major =			TTY_MAJOR,
 	.minor =			64,
 	.nr =				1,
-	.cons =				&danubeasc_console,
+	.cons =				&ifxmipsasc_console,
 };
 
 static int __init
-danubeasc_init (void)
+ifxmipsasc_init (void)
 {
 	unsigned char res;
 
-	uart_register_driver(&danubeasc_reg);
-	res = uart_add_one_port(&danubeasc_reg, &danubeasc_port);
+	uart_register_driver(&ifxmipsasc_reg);
+	res = uart_add_one_port(&ifxmipsasc_reg, &ifxmipsasc_port);
 
 	return res;
 }
 
 static void __exit
-danubeasc_exit (void)
+ifxmipsasc_exit (void)
 {
-	uart_unregister_driver(&danubeasc_reg);
+	uart_unregister_driver(&ifxmipsasc_reg);
 }
 
-module_init(danubeasc_init);
-module_exit(danubeasc_exit);
+module_init(ifxmipsasc_init);
+module_exit(ifxmipsasc_exit);
 
 MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
-MODULE_DESCRIPTION("MIPS Danube serial port driver");
+MODULE_DESCRIPTION("MIPS IFXMips serial port driver");
 MODULE_LICENSE("GPL");

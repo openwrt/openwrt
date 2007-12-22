@@ -25,7 +25,7 @@
 #define IFXMIPS_PMU_PWDCR_PPE    0x2000
 #define IFXMIPS_PMU_PWDCR_FPI    0x4000
 
-void danube_pmu_enable (unsigned int module);
-void danube_pmu_disable (unsigned int module);
+void ifxmips_pmu_enable (unsigned int module);
+void ifxmips_pmu_disable (unsigned int module);
 
 #endif

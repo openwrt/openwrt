@@ -7,7 +7,7 @@ Index: linux-2.6.23/arch/mips/Kconfig
  	select GENERIC_HARDIRQS_NO__DO_IRQ
  
 +config IFXMIPS
-+	bool "Danube support" 
++	bool "IFXMips support" 
 +	select DMA_NONCOHERENT 
 +	select IRQ_CPU 
 +	select SYS_HAS_CPU_MIPS32_R1 
@@ -24,7 +24,7 @@ Index: linux-2.6.23/arch/mips/Kconfig
  source "arch/mips/tx4927/Kconfig"
  source "arch/mips/tx4938/Kconfig"
  source "arch/mips/vr41xx/Kconfig"
-+source "arch/mips/danube/Kconfig"
++source "arch/mips/ifxmips/Kconfig"
  
  endmenu
  
@@ -39,8 +39,8 @@ Index: linux-2.6.23/arch/mips/Makefile
 +# 
 +# Infineon IFXMIPS
 +# 
-+core-$(CONFIG_IFXMIPS)	+= arch/mips/danube/ 
-+cflags-$(CONFIG_IFXMIPS)	+= -Iinclude/asm-mips/mach-danube 
++core-$(CONFIG_IFXMIPS)	+= arch/mips/ifxmips/ 
++cflags-$(CONFIG_IFXMIPS)	+= -Iinclude/asm-mips/mach-ifxmips 
 +load-$(CONFIG_IFXMIPS)	+= 0xffffffff80002000 
 + 
  #

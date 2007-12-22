@@ -23,19 +23,19 @@
 #include <linux/proc_fs.h>
 #include <linux/ioctl.h>
 #include <linux/module.h>
-#include <asm-mips/danube/danube_wdt.h>
-#include <asm-mips/danube/danube.h>
+#include <asm-mips/ifxmips/ifxmips_wdt.h>
+#include <asm-mips/ifxmips/ifxmips.h>
 
 
 // TODO remove magic numbers and weirdo macros
 
-extern unsigned int danube_get_fpi_hz (void);
+extern unsigned int ifxmips_get_fpi_hz (void);
 
-static int danube_wdt_inuse = 0;
-static int danube_wdt_major = 0;
+static int ifxmips_wdt_inuse = 0;
+static int ifxmips_wdt_major = 0;
 
 int
-danube_wdt_enable (unsigned int timeout)
+ifxmips_wdt_enable (unsigned int timeout)
 {
 	unsigned int wdt_cr = 0;
 	unsigned int wdt_reload = 0;
@@ -88,7 +88,7 @@ out:
 }
 
 void
-danube_wdt_disable (void)
+ifxmips_wdt_disable (void)
 {
 	writel(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW1), IFXMIPS_BIU_WDT_CR);
 	writel(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW2), IFXMIPS_BIU_WDT_CR);
@@ -98,7 +98,7 @@ danube_wdt_disable (void)
 
 /* passed LPEN or DSEN */
 void
-danube_wdt_enable_feature (int en, int type)
+ifxmips_wdt_enable_feature (int en, int type)
 {
 	unsigned int wdt_cr = 0;
 
@@ -119,7 +119,7 @@ danube_wdt_enable_feature (int en, int type)
 }
 
 void
-danube_wdt_prewarning_limit (int pwl)
+ifxmips_wdt_prewarning_limit (int pwl)
 {
 	unsigned int wdt_cr = 0;
 
@@ -134,7 +134,7 @@ danube_wdt_prewarning_limit (int pwl)
 }
 
 void
-danube_wdt_set_clkdiv (int clkdiv)
+ifxmips_wdt_set_clkdiv (int clkdiv)
 {
 	unsigned int wdt_cr = 0;
 
@@ -149,7 +149,7 @@ danube_wdt_set_clkdiv (int clkdiv)
 }
 
 static int
-danube_wdt_ioctl (struct inode *inode, struct file *file, unsigned int cmd,
+ifxmips_wdt_ioctl (struct inode *inode, struct file *file, unsigned int cmd,
 	   unsigned long arg)
 {
 	int result = 0;
@@ -167,7 +167,7 @@ danube_wdt_ioctl (struct inode *inode, struct file *file, unsigned int cmd,
 	switch (cmd)
 	{
 	case IFXMIPS_WDT_IOC_START:
-		if ((result = danube_wdt_enable(user_arg)) < 0)
+		if ((result = ifxmips_wdt_enable(user_arg)) < 0)
 			timeout = -1;
 		else
 			timeout = user_arg;
@@ -175,14 +175,14 @@ danube_wdt_ioctl (struct inode *inode, struct file *file, unsigned int cmd,
 
 	case IFXMIPS_WDT_IOC_STOP:
 		printk("disable watch dog timer\n");
-		danube_wdt_disable();
+		ifxmips_wdt_disable();
 		break;
 
 	case IFXMIPS_WDT_IOC_PING:
 		if (timeout < 0)
 			result = -EIO;
 		else
-			result = danube_wdt_enable(timeout);
+			result = ifxmips_wdt_enable(timeout);
 		break;
 
 	case IFXMIPS_WDT_IOC_GET_STATUS:
@@ -191,19 +191,19 @@ danube_wdt_ioctl (struct inode *inode, struct file *file, unsigned int cmd,
 		break;
 
 	case IFXMIPS_WDT_IOC_SET_PWL:
-		danube_wdt_prewarning_limit(user_arg);
+		ifxmips_wdt_prewarning_limit(user_arg);
 		break;
 
 	case IFXMIPS_WDT_IOC_SET_DSEN:
-		danube_wdt_enable_feature(user_arg, IFXMIPS_BIU_WDT_CR_DSEN);
+		ifxmips_wdt_enable_feature(user_arg, IFXMIPS_BIU_WDT_CR_DSEN);
 		break;
 
 	case IFXMIPS_WDT_IOC_SET_LPEN:
-		danube_wdt_enable_feature(user_arg, IFXMIPS_BIU_WDT_CR_LPEN);
+		ifxmips_wdt_enable_feature(user_arg, IFXMIPS_BIU_WDT_CR_LPEN);
 		break;
 
 	case IFXMIPS_WDT_IOC_SET_CLKDIV:
-		danube_wdt_set_clkdiv(user_arg);
+		ifxmips_wdt_set_clkdiv(user_arg);
 		break;
 
 	default:
@@ -215,26 +215,26 @@ out:
 }
 
 static int
-danube_wdt_open (struct inode *inode, struct file *file)
+ifxmips_wdt_open (struct inode *inode, struct file *file)
 {
-	if (danube_wdt_inuse)
+	if (ifxmips_wdt_inuse)
 		return -EBUSY;
 
-	danube_wdt_inuse = 1;
+	ifxmips_wdt_inuse = 1;
 
 	return 0;
 }
 
 static int
-danube_wdt_release (struct inode *inode, struct file *file)
+ifxmips_wdt_release (struct inode *inode, struct file *file)
 {
-	danube_wdt_inuse = 0;
+	ifxmips_wdt_inuse = 0;
 
 	return 0;
 }
 
 int
-danube_wdt_register_proc_read (char *buf, char **start, off_t offset, int count,
+ifxmips_wdt_register_proc_read (char *buf, char **start, off_t offset, int count,
 			int *eof, void *data)
 {
 	int len = 0;
@@ -252,36 +252,36 @@ danube_wdt_register_proc_read (char *buf, char **start, off_t offset, int count,
 
 static struct file_operations wdt_fops = {
       .owner = THIS_MODULE,
-      .ioctl = danube_wdt_ioctl,
-      .open = danube_wdt_open,
-      .release = danube_wdt_release,
+      .ioctl = ifxmips_wdt_ioctl,
+      .open = ifxmips_wdt_open,
+      .release = ifxmips_wdt_release,
 };
 
 int __init
-danube_wdt_init_module (void)
+ifxmips_wdt_init_module (void)
 {
-	danube_wdt_major = register_chrdev(0, "wdt", &wdt_fops);
+	ifxmips_wdt_major = register_chrdev(0, "wdt", &wdt_fops);
 
-	if (danube_wdt_major < 0)
+	if (ifxmips_wdt_major < 0)
 	{
 		printk("cannot register watchdog device\n");
 
 		return -EINVAL;
 	}
 
-	create_proc_read_entry("danube_wdt", 0, NULL, danube_wdt_register_proc_read, NULL);
+	create_proc_read_entry("ifxmips_wdt", 0, NULL, ifxmips_wdt_register_proc_read, NULL);
 
-	printk("danube watchdog loaded\n");
+	printk("ifxmips watchdog loaded\n");
 
 	return 0;
 }
 
 void
-danube_wdt_cleanup_module (void)
+ifxmips_wdt_cleanup_module (void)
 {
-	unregister_chrdev(danube_wdt_major, "wdt");
-	remove_proc_entry("danube_wdt", NULL);
+	unregister_chrdev(ifxmips_wdt_major, "wdt");
+	remove_proc_entry("ifxmips_wdt", NULL);
 }
 
-module_init(danube_wdt_init_module);
-module_exit(danube_wdt_cleanup_module);
+module_init(ifxmips_wdt_init_module);
+module_exit(ifxmips_wdt_cleanup_module);

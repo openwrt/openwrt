@@ -5,8 +5,8 @@
 
 /******************************************************************************
 **
-** FILE NAME    : danube_sw.h
-** PROJECT      : Danube
+** FILE NAME    : ifxmips_sw.h
+** PROJECT      : IFXMips
 ** MODULES     	: ETH Interface (MII0)
 **
 ** DATE         : 11 AUG 2005

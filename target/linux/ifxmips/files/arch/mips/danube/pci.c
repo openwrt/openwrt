@@ -4,8 +4,8 @@
 #include <linux/init.h>
 #include <linux/delay.h>
 #include <linux/mm.h>
-#include <asm/danube/danube.h>
-#include <asm/danube/danube_irq.h>
+#include <asm/ifxmips/ifxmips.h>
+#include <asm/ifxmips/ifxmips_irq.h>
 #include <asm/addrspace.h>
 #include <linux/vmalloc.h>
 
@@ -21,12 +21,12 @@
 #define PCI_ACCESS_READ  0
 #define PCI_ACCESS_WRITE 1
 
-static int danube_pci_read_config_dword(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 *val);
-static int danube_pci_write_config_dword(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 val);
+static int ifxmips_pci_read_config_dword(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 *val);
+static int ifxmips_pci_write_config_dword(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 val);
 
-struct pci_ops danube_pci_ops = {
-	.read = danube_pci_read_config_dword,
-	.write = danube_pci_write_config_dword
+struct pci_ops ifxmips_pci_ops = {
+	.read = ifxmips_pci_read_config_dword,
+	.write = ifxmips_pci_write_config_dword
 };
 
 static struct resource pci_io_resource = {
@@ -43,18 +43,18 @@ static struct resource pci_mem_resource = {
 	.flags = IORESOURCE_MEM
 };
 
-static struct pci_controller danube_pci_controller = {
-	.pci_ops = &danube_pci_ops,
+static struct pci_controller ifxmips_pci_controller = {
+	.pci_ops = &ifxmips_pci_ops,
 	.mem_resource = &pci_mem_resource,
 	.mem_offset	= 0x00000000UL,
 	.io_resource = &pci_io_resource,
 	.io_offset	= 0x00000000UL,
 };
 
-static u32 danube_pci_mapped_cfg;
+static u32 ifxmips_pci_mapped_cfg;
 
 static int
-danube_pci_config_access(unsigned char access_type,
+ifxmips_pci_config_access(unsigned char access_type,
 		struct pci_bus *bus, unsigned int devfn, unsigned int where, u32 *data)
 {
 	unsigned long cfg_base;
@@ -62,15 +62,15 @@ danube_pci_config_access(unsigned char access_type,
 
 	u32 temp;
 
-	/* Danube support slot from 0 to 15 */
-	/* dev_fn 0&0x68 (AD29) is danube itself */
+	/* IFXMips support slot from 0 to 15 */
+	/* dev_fn 0&0x68 (AD29) is ifxmips itself */
 	if ((bus->number != 0) || ((devfn & 0xf8) > 0x78)
 			|| ((devfn & 0xf8) == 0) || ((devfn & 0xf8) == 0x68))
 		return 1;
 
 	local_irq_save(flags);
 
-	cfg_base = danube_pci_mapped_cfg;
+	cfg_base = ifxmips_pci_mapped_cfg;
 	cfg_base |= (bus->number << IFXMIPS_PCI_CFG_BUSNUM_SHF) | (devfn <<
 			IFXMIPS_PCI_CFG_FUNNUM_SHF) | (where & ~0x3);
 
@@ -91,12 +91,12 @@ danube_pci_config_access(unsigned char access_type,
 	wmb();
 
 	/* clean possible Master abort */
-	cfg_base = (danube_pci_mapped_cfg | (0x0 << IFXMIPS_PCI_CFG_FUNNUM_SHF)) + 4;
+	cfg_base = (ifxmips_pci_mapped_cfg | (0x0 << IFXMIPS_PCI_CFG_FUNNUM_SHF)) + 4;
 	temp = readl(((u32*)(cfg_base)));
 #ifdef CONFIG_IFXMIPS_PCI_HW_SWAP
 	temp = swab32 (temp);
 #endif
-	cfg_base = (danube_pci_mapped_cfg | (0x68 << IFXMIPS_PCI_CFG_FUNNUM_SHF)) + 4;
+	cfg_base = (ifxmips_pci_mapped_cfg | (0x68 << IFXMIPS_PCI_CFG_FUNNUM_SHF)) + 4;
 	writel(temp, ((u32*)cfg_base));
 
 	local_irq_restore(flags);
@@ -107,12 +107,12 @@ danube_pci_config_access(unsigned char access_type,
 	return 0;
 }
 
-static int danube_pci_read_config_dword(struct pci_bus *bus, unsigned int devfn,
+static int ifxmips_pci_read_config_dword(struct pci_bus *bus, unsigned int devfn,
 		int where, int size, u32 * val)
 {
 	u32 data = 0;
 
-	if (danube_pci_config_access(PCI_ACCESS_READ, bus, devfn, where, &data))
+	if (ifxmips_pci_config_access(PCI_ACCESS_READ, bus, devfn, where, &data))
 		return PCIBIOS_DEVICE_NOT_FOUND;
 
 	if (size == 1)
@@ -125,7 +125,7 @@ static int danube_pci_read_config_dword(struct pci_bus *bus, unsigned int devfn,
 	return PCIBIOS_SUCCESSFUL;
 }
 
-static int danube_pci_write_config_dword(struct pci_bus *bus, unsigned int devfn,
+static int ifxmips_pci_write_config_dword(struct pci_bus *bus, unsigned int devfn,
 		int where, int size, u32 val)
 {
 	u32 data = 0;
@@ -134,7 +134,7 @@ static int danube_pci_write_config_dword(struct pci_bus *bus, unsigned int devfn
 	{
 		data = val;
 	} else {
-		if (danube_pci_config_access(PCI_ACCESS_READ, bus, devfn, where, &data))
+		if (ifxmips_pci_config_access(PCI_ACCESS_READ, bus, devfn, where, &data))
 			return PCIBIOS_DEVICE_NOT_FOUND;
 
 		if (size == 1)
@@ -145,7 +145,7 @@ static int danube_pci_write_config_dword(struct pci_bus *bus, unsigned int devfn
 				(val << ((where & 3) << 3));
 	}
 
-	if (danube_pci_config_access(PCI_ACCESS_WRITE, bus, devfn, where, &data))
+	if (ifxmips_pci_config_access(PCI_ACCESS_WRITE, bus, devfn, where, &data))
 		return PCIBIOS_DEVICE_NOT_FOUND;
 
 	return PCIBIOS_SUCCESSFUL;
@@ -178,8 +178,8 @@ int pcibios_plat_dev_init(struct pci_dev *dev){
 	return 0;
 }
 
-static void __init danube_pci_startup (void){
-	/*initialize the first PCI device--danube itself */
+static void __init ifxmips_pci_startup (void){
+	/*initialize the first PCI device--ifxmips itself */
 	u32 temp_buffer;
 	/*TODO: trigger reset */
 	writel(readl(IFXMIPS_CGU_IFCCR) & ~0xf00000, IFXMIPS_CGU_IFCCR);
@@ -301,17 +301,17 @@ int pcibios_init(void){
 	pci_probe_only = 0;
 	printk ("PCI: Probing PCI hardware on host bus 0.\n");
 
-	danube_pci_startup ();
+	ifxmips_pci_startup ();
 
 	//	IFXMIPS_PCI_REG32(PCI_CR_CLK_CTRL_REG) &= (~8);
-	danube_pci_mapped_cfg = ioremap_nocache(0x17000000, 0x800 * 16);
-	printk("Danube PCI mapped to 0x%08X\n", (unsigned long)danube_pci_mapped_cfg);
+	ifxmips_pci_mapped_cfg = ioremap_nocache(0x17000000, 0x800 * 16);
+	printk("IFXMips PCI mapped to 0x%08X\n", (unsigned long)ifxmips_pci_mapped_cfg);
 
-	danube_pci_controller.io_map_base = (unsigned long)ioremap(IFXMIPS_PCI_IO_BASE, IFXMIPS_PCI_IO_SIZE - 1);
+	ifxmips_pci_controller.io_map_base = (unsigned long)ioremap(IFXMIPS_PCI_IO_BASE, IFXMIPS_PCI_IO_SIZE - 1);
 
-	printk("Danube PCI I/O mapped to 0x%08X\n", (unsigned long)danube_pci_controller.io_map_base);
+	printk("IFXMips PCI I/O mapped to 0x%08X\n", (unsigned long)ifxmips_pci_controller.io_map_base);
 
-	register_pci_controller(&danube_pci_controller);
+	register_pci_controller(&ifxmips_pci_controller);
 
 	return 0;
 }

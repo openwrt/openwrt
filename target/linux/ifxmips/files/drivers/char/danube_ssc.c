@@ -54,10 +54,10 @@
 #include <linux/kernel.h>
 #include <linux/version.h>
 
-#include <asm/danube/danube.h>
-#include <asm/danube/danube_irq.h>
-#include <asm/danube/ifx_ssc_defines.h>
-#include <asm/danube/ifx_ssc.h>
+#include <asm/ifxmips/ifxmips.h>
+#include <asm/ifxmips/ifxmips_irq.h>
+#include <asm/ifxmips/ifx_ssc_defines.h>
+#include <asm/ifxmips/ifx_ssc.h>
 
 #ifdef SSC_FRAME_INT_ENABLE
 #undef SSC_FRAME_INT_ENABLE
@@ -93,8 +93,8 @@ static unsigned int ifx_ssc_get_kernel_clk (struct ifx_ssc_port *info);
 static void tx_int (struct ifx_ssc_port *);
 static int ifx_ssc1_read_proc (char *, char **, off_t, int, int *, void *);
 
-extern unsigned int danube_get_fpi_hz (void);
-extern void mask_and_ack_danube_irq (unsigned int irq_nr);
+extern unsigned int ifxmips_get_fpi_hz (void);
+extern void mask_and_ack_ifxmips_irq (unsigned int irq_nr);
 
 static struct file_operations ifx_ssc_fops = {
       .owner = THIS_MODULE,
@@ -116,7 +116,7 @@ ifx_ssc_get_kernel_clk (struct ifx_ssc_port *info)
 		printk ("ifx_ssc_get_kernel_clk rmc==0 \n");
 		return 0;
 	}
-	return danube_get_fpi_hz () / rmc;
+	return ifxmips_get_fpi_hz () / rmc;
 }
 
 #ifndef not_yet
@@ -382,9 +382,9 @@ ifx_ssc_abort (struct ifx_ssc_port *info)
 		wake_up_interruptible (&info->rwait);
 
 	// clear pending int's 
-	mask_and_ack_danube_irq(info->rxirq);
-	mask_and_ack_danube_irq(info->txirq);
-	mask_and_ack_danube_irq(info->errirq);
+	mask_and_ack_ifxmips_irq(info->rxirq);
+	mask_and_ack_ifxmips_irq(info->txirq);
+	mask_and_ack_ifxmips_irq(info->errirq);
 
 	// clear error flags
 	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ALL_ERROR, info->mapbase + IFX_SSC_WHBSTATE);
@@ -440,9 +440,9 @@ ifx_ssc_open (struct inode *inode, struct file *filp)
 	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ALL_ERROR, info->mapbase + IFX_SSC_WHBSTATE);
 
 	// clear pending interrupts
-	mask_and_ack_danube_irq(info->rxirq);
-	mask_and_ack_danube_irq(info->txirq);
-	mask_and_ack_danube_irq(info->errirq);
+	mask_and_ack_ifxmips_irq(info->rxirq);
+	mask_and_ack_ifxmips_irq(info->txirq);
+	mask_and_ack_ifxmips_irq(info->errirq);
 
 	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
 
@@ -1529,5 +1529,5 @@ EXPORT_SYMBOL(ifx_ssc_rx);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
-MODULE_DESCRIPTION("danube ssc driver");
+MODULE_DESCRIPTION("ifxmips ssc driver");
 

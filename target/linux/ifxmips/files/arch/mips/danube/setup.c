@@ -1,5 +1,5 @@
 /*
- *   arch/mips/danube/setup.c
+ *   arch/mips/ifxmips/setup.c
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  *
  *   Copyright (C) 2004 peng.liu@infineon.com 
  *
- *   Rewrite of Infineon Danube code, thanks to infineon for the support,
+ *   Rewrite of Infineon IFXMips code, thanks to infineon for the support,
  *   software and hardware
  *
  *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
@@ -30,14 +30,14 @@
 #include <asm/traps.h>
 #include <asm/cpu.h>
 #include <asm/irq.h>
-#include <asm/danube/danube.h>
-#include <asm/danube/danube_irq.h>
-#include <asm/danube/danube_pmu.h>
+#include <asm/ifxmips/ifxmips.h>
+#include <asm/ifxmips/ifxmips_irq.h>
+#include <asm/ifxmips/ifxmips_pmu.h>
 
 static unsigned int r4k_offset; /* Amount to increment compare reg each time */
 static unsigned int r4k_cur;    /* What counter should be at next timer irq */
 
-extern void danube_reboot_setup (void);
+extern void ifxmips_reboot_setup (void);
 void prom_printf (const char * fmt, ...);
 
 void
@@ -47,7 +47,7 @@ __init bus_error_init (void)
 }
 
 unsigned int
-danube_get_ddr_hz (void)
+ifxmips_get_ddr_hz (void)
 {
 	switch (readl(IFXMIPS_CGU_SYS) & 0x3)
 	{
@@ -60,12 +60,12 @@ danube_get_ddr_hz (void)
 	}
 	return CLOCK_83M;
 }
-EXPORT_SYMBOL(danube_get_ddr_hz);
+EXPORT_SYMBOL(ifxmips_get_ddr_hz);
 
 unsigned int
-danube_get_cpu_hz (void)
+ifxmips_get_cpu_hz (void)
 {
-	unsigned int ddr_clock = danube_get_ddr_hz();
+	unsigned int ddr_clock = ifxmips_get_ddr_hz();
 	switch (readl(IFXMIPS_CGU_SYS) & 0xc)
 	{
 	case 0:
@@ -75,38 +75,38 @@ danube_get_cpu_hz (void)
 	}
 	return ddr_clock << 1;
 }
-EXPORT_SYMBOL(danube_get_cpu_hz);
+EXPORT_SYMBOL(ifxmips_get_cpu_hz);
 
 unsigned int
-danube_get_fpi_hz (void)
+ifxmips_get_fpi_hz (void)
 {
-	unsigned int ddr_clock = danube_get_ddr_hz();
+	unsigned int ddr_clock = ifxmips_get_ddr_hz();
 	if (readl(IFXMIPS_CGU_SYS) & 0x40)
 	{
 		return ddr_clock >> 1;
 	}
 	return ddr_clock;
 }
-EXPORT_SYMBOL(danube_get_fpi_hz);
+EXPORT_SYMBOL(ifxmips_get_fpi_hz);
 
 unsigned int
-danube_get_cpu_ver (void)
+ifxmips_get_cpu_ver (void)
 {
 	return readl(IFXMIPS_MCD_CHIPID) & 0xFFFFF000;
 }
-EXPORT_SYMBOL(danube_get_cpu_ver);
+EXPORT_SYMBOL(ifxmips_get_cpu_ver);
 
 void
-danube_time_init (void)
+ifxmips_time_init (void)
 {
-	mips_hpt_frequency = danube_get_cpu_hz() / 2;
+	mips_hpt_frequency = ifxmips_get_cpu_hz() / 2;
 	r4k_offset = mips_hpt_frequency / HZ;
 	printk("mips_hpt_frequency:%d\n", mips_hpt_frequency);
 	printk("r4k_offset: %08x(%d)\n", r4k_offset, r4k_offset);
 }
 
 int
-danube_be_handler(struct pt_regs *regs, int is_fixup)
+ifxmips_be_handler(struct pt_regs *regs, int is_fixup)
 {
 	/*TODO*/
 	printk(KERN_ERR "TODO: BUS error\n");
@@ -116,7 +116,7 @@ danube_be_handler(struct pt_regs *regs, int is_fixup)
 
 /* ISR GPTU Timer 6 for high resolution timer */
 static irqreturn_t
-danube_timer6_interrupt(int irq, void *dev_id)
+ifxmips_timer6_interrupt(int irq, void *dev_id)
 {
 	timer_interrupt(IFXMIPS_TIMER6_INT, NULL);
 
@@ -124,7 +124,7 @@ danube_timer6_interrupt(int irq, void *dev_id)
 }
 
 static struct irqaction hrt_irqaction = {
-	.handler = danube_timer6_interrupt,
+	.handler = ifxmips_timer6_interrupt,
 	.flags = IRQF_DISABLED,
 	.name = "hrt",
 };
@@ -139,7 +139,7 @@ plat_timer_setup (struct irqaction *irq)
 	r4k_cur = (read_c0_count() + r4k_offset);
 	write_c0_compare(r4k_cur);
 
-	danube_pmu_enable(IFXMIPS_PMU_PWDCR_GPT | IFXMIPS_PMU_PWDCR_FPI);
+	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_GPT | IFXMIPS_PMU_PWDCR_FPI);
 
 	writel(0x100, IFXMIPS_GPTU_GPT_CLC);
 
@@ -158,7 +158,7 @@ void __init
 plat_mem_setup (void)
 {
 	u32 status;
-	prom_printf("This %s has a cpu rev of 0x%X\n", BOARD_SYSTEM_TYPE, danube_get_cpu_ver());
+	prom_printf("This %s has a cpu rev of 0x%X\n", BOARD_SYSTEM_TYPE, ifxmips_get_cpu_ver());
 
 	//TODO WHY ???
 	/* clear RE bit*/
@@ -166,9 +166,9 @@ plat_mem_setup (void)
 	status &= (~(1<<25));
 	write_c0_status(status);
 
-	danube_reboot_setup();
-	board_time_init = danube_time_init;
-	board_be_handler = &danube_be_handler;
+	ifxmips_reboot_setup();
+	board_time_init = ifxmips_time_init;
+	board_be_handler = &ifxmips_be_handler;
 
 	ioport_resource.start = IOPORT_RESOURCE_START;
 	ioport_resource.end = IOPORT_RESOURCE_END;

@@ -19,24 +19,24 @@
 #ifndef _IFXMIPS_GPIO_H__
 #define _IFXMIPS_GPIO_H__
 
-extern int danube_port_reserve_pin (unsigned int port, unsigned int pin);
-extern int danube_port_free_pin (unsigned int port, unsigned int pin);
-extern int danube_port_set_open_drain (unsigned int port, unsigned int pin);
-extern int danube_port_clear_open_drain (unsigned int port, unsigned int pin);
-extern int danube_port_set_pudsel (unsigned int port, unsigned int pin);
-extern int danube_port_clear_pudsel (unsigned int port, unsigned int pin);
-extern int danube_port_set_puden (unsigned int port, unsigned int pin);
-extern int danube_port_clear_puden (unsigned int port, unsigned int pin);
-extern int danube_port_set_stoff (unsigned int port, unsigned int pin);
-extern int danube_port_clear_stoff (unsigned int port, unsigned int pin);
-extern int danube_port_set_dir_out (unsigned int port, unsigned int pin);
-extern int danube_port_set_dir_in (unsigned int port, unsigned int pin);
-extern int danube_port_set_output (unsigned int port, unsigned int pin);
-extern int danube_port_clear_output (unsigned int port, unsigned int pin);
-extern int danube_port_get_input (unsigned int port, unsigned int pin);
-extern int danube_port_set_altsel0 (unsigned int port, unsigned int pin);
-extern int danube_port_clear_altsel0 (unsigned int port, unsigned int pin);
-extern int danube_port_set_altsel1 (unsigned int port, unsigned int pin);
-extern int danube_port_clear_altsel1 (unsigned int port, unsigned int pin);
+extern int ifxmips_port_reserve_pin (unsigned int port, unsigned int pin);
+extern int ifxmips_port_free_pin (unsigned int port, unsigned int pin);
+extern int ifxmips_port_set_open_drain (unsigned int port, unsigned int pin);
+extern int ifxmips_port_clear_open_drain (unsigned int port, unsigned int pin);
+extern int ifxmips_port_set_pudsel (unsigned int port, unsigned int pin);
+extern int ifxmips_port_clear_pudsel (unsigned int port, unsigned int pin);
+extern int ifxmips_port_set_puden (unsigned int port, unsigned int pin);
+extern int ifxmips_port_clear_puden (unsigned int port, unsigned int pin);
+extern int ifxmips_port_set_stoff (unsigned int port, unsigned int pin);
+extern int ifxmips_port_clear_stoff (unsigned int port, unsigned int pin);
+extern int ifxmips_port_set_dir_out (unsigned int port, unsigned int pin);
+extern int ifxmips_port_set_dir_in (unsigned int port, unsigned int pin);
+extern int ifxmips_port_set_output (unsigned int port, unsigned int pin);
+extern int ifxmips_port_clear_output (unsigned int port, unsigned int pin);
+extern int ifxmips_port_get_input (unsigned int port, unsigned int pin);
+extern int ifxmips_port_set_altsel0 (unsigned int port, unsigned int pin);
+extern int ifxmips_port_clear_altsel0 (unsigned int port, unsigned int pin);
+extern int ifxmips_port_set_altsel1 (unsigned int port, unsigned int pin);
+extern int ifxmips_port_clear_altsel1 (unsigned int port, unsigned int pin);
 
 #endif

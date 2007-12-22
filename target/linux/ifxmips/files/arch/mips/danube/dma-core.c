@@ -19,10 +19,10 @@
 #include <linux/errno.h>
 #include <asm/io.h>
 
-#include <asm/danube/danube.h>
-#include <asm/danube/danube_irq.h>
-#include <asm/danube/danube_dma.h>
-#include <asm/danube/danube_pmu.h>
+#include <asm/ifxmips/ifxmips.h>
+#include <asm/ifxmips/ifxmips_irq.h>
+#include <asm/ifxmips/ifxmips_dma.h>
+#include <asm/ifxmips/ifxmips_pmu.h>
 
 /*25 descriptors for each dma channel,4096/8/20=25.xx*/
 #define IFXMIPS_DMA_DESCRIPTOR_OFFSET 25
@@ -32,9 +32,9 @@
 #define DMA_INT_BUDGET      100	/*budget for interrupt handling */
 #define DMA_POLL_COUNTER    4	/*fix me, set the correct counter value here! */
 
-extern void mask_and_ack_danube_irq (unsigned int irq_nr);
-extern void enable_danube_irq (unsigned int irq_nr);
-extern void disable_danube_irq (unsigned int irq_nr);
+extern void mask_and_ack_ifxmips_irq (unsigned int irq_nr);
+extern void enable_ifxmips_irq (unsigned int irq_nr);
+extern void disable_ifxmips_irq (unsigned int irq_nr);
 
 u64 *g_desc_list;
 _dma_device_info dma_devs[MAX_DMA_DEVICE_NUM];
@@ -67,8 +67,8 @@ _dma_chan_map default_dma_map[MAX_DMA_CHANNEL_NUM] = {
 };
 
 _dma_chan_map *chan_map = default_dma_map;
-volatile u32 g_danube_dma_int_status = 0;
-volatile int g_danube_dma_in_process = 0;/*0=not in process,1=in process*/
+volatile u32 g_ifxmips_dma_int_status = 0;
+volatile int g_ifxmips_dma_in_process = 0;/*0=not in process,1=in process*/
 
 void do_dma_tasklet (unsigned long);
 DECLARE_TASKLET (dma_tasklet, do_dma_tasklet, 0);
@@ -101,7 +101,7 @@ enable_ch_irq (_dma_channel_info *pCh)
 	writel(0x4a, IFXMIPS_DMA_CIE);
 	writel(readl(IFXMIPS_DMA_IRNEN) | (1 << chan_no), IFXMIPS_DMA_IRNEN);
 	local_irq_restore(flag);
-	enable_danube_irq(pCh->irq);
+	enable_ifxmips_irq(pCh->irq);
 }
 
 void
@@ -111,12 +111,12 @@ disable_ch_irq (_dma_channel_info *pCh)
 	int chan_no = (int) (pCh - dma_chan);
 
 	local_irq_save(flag);
-	g_danube_dma_int_status &= ~(1 << chan_no);
+	g_ifxmips_dma_int_status &= ~(1 << chan_no);
 	writel(chan_no, IFXMIPS_DMA_CS);
 	writel(0, IFXMIPS_DMA_CIE);
 	writel(readl(IFXMIPS_DMA_IRNEN) & ~(1 << chan_no), IFXMIPS_DMA_IRNEN);
 	local_irq_restore(flag);
-	mask_and_ack_danube_irq(pCh->irq);
+	mask_and_ack_ifxmips_irq(pCh->irq);
 }
 
 void
@@ -180,9 +180,9 @@ rx_chan_intr_handler (int chan_no)
 		writel(chan_no, IFXMIPS_DMA_CS);
 		writel(readl(IFXMIPS_DMA_CIS) | 0x7e, IFXMIPS_DMA_CIS);
 		writel(tmp, IFXMIPS_DMA_CS);
-		g_danube_dma_int_status &= ~(1 << chan_no);
+		g_ifxmips_dma_int_status &= ~(1 << chan_no);
 		local_irq_restore(flag);
-		enable_danube_irq(dma_chan[chan_no].irq);
+		enable_ifxmips_irq(dma_chan[chan_no].irq);
 	}
 }
 
@@ -199,7 +199,7 @@ tx_chan_intr_handler (int chan_no)
     writel(chan_no, IFXMIPS_DMA_CS);
     writel(readl(IFXMIPS_DMA_CIS) | 0x7e, IFXMIPS_DMA_CIS);
     writel(tmp, IFXMIPS_DMA_CS);
-    g_danube_dma_int_status &= ~(1 << chan_no);
+    g_ifxmips_dma_int_status &= ~(1 << chan_no);
     local_irq_restore(flag);
 	pDev->current_tx_chan = pCh->rel_chan_no;
 	if (pDev->intr_handler)
@@ -215,7 +215,7 @@ do_dma_tasklet (unsigned long unused)
 	int weight = 0;
     int flag;
 
-	while (g_danube_dma_int_status)
+	while (g_ifxmips_dma_int_status)
 	{
 		if (budget-- < 0)
 		{
@@ -226,7 +226,7 @@ do_dma_tasklet (unsigned long unused)
 		weight = 0;
 		for (i = 0; i < MAX_DMA_CHANNEL_NUM; i++)
 		{
-			if ((g_danube_dma_int_status & (1 << i)) && dma_chan[i].weight > 0)
+			if ((g_ifxmips_dma_int_status & (1 << i)) && dma_chan[i].weight > 0)
 			{
 				if (dma_chan[i].weight > weight)
 				{
@@ -251,10 +251,10 @@ do_dma_tasklet (unsigned long unused)
 	}
 
     local_irq_save(flag);
-	g_danube_dma_in_process = 0;
-    if (g_danube_dma_int_status)
+	g_ifxmips_dma_in_process = 0;
+    if (g_ifxmips_dma_int_status)
 	{
-        g_danube_dma_in_process = 1;
+        g_ifxmips_dma_in_process = 1;
         tasklet_schedule(&dma_tasklet);
     }
     local_irq_restore(flag);
@@ -274,13 +274,13 @@ dma_interrupt (int irq, void *dev_id)
 
 	tmp = readl(IFXMIPS_DMA_IRNEN);
 	writel(0, IFXMIPS_DMA_IRNEN);
-	g_danube_dma_int_status |= 1 << chan_no;
+	g_ifxmips_dma_int_status |= 1 << chan_no;
 	writel(tmp, IFXMIPS_DMA_IRNEN);
-	mask_and_ack_danube_irq(irq);
+	mask_and_ack_ifxmips_irq(irq);
 
-    if (!g_danube_dma_in_process)
+    if (!g_ifxmips_dma_in_process)
 	{
-        g_danube_dma_in_process = 1;
+        g_ifxmips_dma_in_process = 1;
         tasklet_schedule(&dma_tasklet);
     }
 
@@ -387,7 +387,7 @@ dma_device_register(_dma_device_info *dev)
 			writel(readl(IFXMIPS_DMA_IRNEN) | (1 << chan_no), IFXMIPS_DMA_IRNEN);
 			writel(0x30000, IFXMIPS_DMA_CCTRL);
 			local_irq_restore(flag);
-			enable_danube_irq(dma_chan[chan_no].irq);
+			enable_ifxmips_irq(dma_chan[chan_no].irq);
 		}
 	}
 }
@@ -438,10 +438,10 @@ dma_device_unregister (_dma_device_info *dev)
 	{
 		pCh = dev->rx_chan[i];
 		chan_no = (int)(dev->rx_chan[i] - dma_chan);
-		disable_danube_irq(pCh->irq);
+		disable_ifxmips_irq(pCh->irq);
 
 		local_irq_save(flag);
-		g_danube_dma_int_status &= ~(1 << chan_no);
+		g_ifxmips_dma_int_status &= ~(1 << chan_no);
 		pCh->curr_desc = 0;
 		pCh->prev_desc = 0;
 		pCh->control = IFXMIPS_DMA_CH_OFF;
@@ -685,7 +685,7 @@ dma_chip_init(void)
 	int i;
 
 	// enable DMA from PMU
-	danube_pmu_enable(IFXMIPS_PMU_PWDCR_DMA);
+	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_DMA);
 
 	// reset DMA
 	writel(readl(IFXMIPS_DMA_CTRL) | 1, IFXMIPS_DMA_CTRL);
@@ -704,7 +704,7 @@ dma_chip_init(void)
 }
 
 int
-danube_dma_init (void)
+ifxmips_dma_init (void)
 {
 	int i;
 
@@ -736,7 +736,7 @@ danube_dma_init (void)
 	return 0;
 }
 
-arch_initcall(danube_dma_init);
+arch_initcall(ifxmips_dma_init);
 
 void
 dma_cleanup(void)
