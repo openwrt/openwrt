@@ -29,7 +29,7 @@
 #include <linux/mtd/map.h>
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/cfi.h>
-#include <asm/danube/danube.h>
+#include <asm/ifxmips/ifxmips.h>
 #include <linux/magic.h>
 
 static struct map_info
