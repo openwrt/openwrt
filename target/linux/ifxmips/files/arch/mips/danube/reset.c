@@ -37,7 +37,7 @@ danube_machine_restart (char *command)
 	printk (KERN_NOTICE "System restart\n");
 	local_irq_disable ();
 
-	writel(readl(DANUBE_RCU_REQ) | DANUBE_RST_ALL, DANUBE_RCU_REQ);
+	writel(readl(IFXMIPS_RCU_REQ) | IFXMIPS_RST_ALL, IFXMIPS_RCU_REQ);
 	for (;;);
 }
 

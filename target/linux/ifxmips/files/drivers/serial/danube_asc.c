@@ -1,5 +1,5 @@
 /*
- *  Driver for DANUBEASC serial ports
+ *  Driver for IFXMIPSASC serial ports
  *
  *  Based on drivers/char/serial.c, by Linus Torvalds, Theodore Ts'o.
  *
@@ -52,7 +52,7 @@
 #include <asm/danube/danube_irq.h>
 #include <asm/danube/danube_serial.h>
 
-#define PORT_DANUBEASC  111
+#define PORT_IFXMIPSASC  111
 
 #include <linux/serial_core.h>
 
@@ -88,7 +88,7 @@ static void
 danubeasc_stop_rx (struct uart_port *port)
 {
 	/* clear the RX enable bit */
-	writel(ASCWHBSTATE_CLRREN, DANUBE_ASC1_WHBSTATE);
+	writel(ASCWHBSTATE_CLRREN, IFXMIPS_ASC1_WHBSTATE);
 }
 
 static void
@@ -104,12 +104,12 @@ danubeasc_rx_chars (struct uart_port *port)
 	struct tty_struct *tty = port->info->tty;
 	unsigned int ch = 0, rsr = 0, fifocnt;
 
-	fifocnt = readl(DANUBE_ASC1_FSTAT) & ASCFSTAT_RXFFLMASK;
+	fifocnt = readl(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_RXFFLMASK;
 	while (fifocnt--)
 	{
 		u8 flag = TTY_NORMAL;
-		ch = readl(DANUBE_ASC1_RBUF);
-		rsr = (readl(DANUBE_ASC1_STATE) & ASCSTATE_ANY) | UART_DUMMY_UER_RX;
+		ch = readl(IFXMIPS_ASC1_RBUF);
+		rsr = (readl(IFXMIPS_ASC1_STATE) & ASCSTATE_ANY) | UART_DUMMY_UER_RX;
 		tty_flip_buffer_push(tty);
 		port->icount.rx++;
 
@@ -120,14 +120,14 @@ danubeasc_rx_chars (struct uart_port *port)
 		if (rsr & ASCSTATE_ANY) {
 			if (rsr & ASCSTATE_PE) {
 				port->icount.parity++;
-				writel(readl(DANUBE_ASC1_WHBSTATE) | ASCWHBSTATE_CLRPE, DANUBE_ASC1_WHBSTATE);
+				writel(readl(IFXMIPS_ASC1_WHBSTATE) | ASCWHBSTATE_CLRPE, IFXMIPS_ASC1_WHBSTATE);
 			} else if (rsr & ASCSTATE_FE) {
 				port->icount.frame++;
-				writel(readl(DANUBE_ASC1_WHBSTATE) | ASCWHBSTATE_CLRFE, DANUBE_ASC1_WHBSTATE);
+				writel(readl(IFXMIPS_ASC1_WHBSTATE) | ASCWHBSTATE_CLRFE, IFXMIPS_ASC1_WHBSTATE);
 			}
 			if (rsr & ASCSTATE_ROE) {
 				port->icount.overrun++;
-				writel(readl(DANUBE_ASC1_WHBSTATE) | ASCWHBSTATE_CLRROE, DANUBE_ASC1_WHBSTATE);
+				writel(readl(IFXMIPS_ASC1_WHBSTATE) | ASCWHBSTATE_CLRROE, IFXMIPS_ASC1_WHBSTATE);
 			}
 
 			rsr &= port->read_status_mask;
@@ -166,11 +166,11 @@ danubeasc_tx_chars (struct uart_port *port)
 		return;
 	}
 
-	while(((readl(DANUBE_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK)
-			        >> ASCFSTAT_TXFFLOFF) != DANUBEASC_TXFIFO_FULL)
+	while(((readl(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK)
+			        >> ASCFSTAT_TXFFLOFF) != IFXMIPSASC_TXFIFO_FULL)
 	{
 		if (port->x_char) {
-			writel(port->x_char, DANUBE_ASC1_TBUF);
+			writel(port->x_char, IFXMIPS_ASC1_TBUF);
 			port->icount.tx++;
 			port->x_char = 0;
 			continue;
@@ -179,7 +179,7 @@ danubeasc_tx_chars (struct uart_port *port)
 		if (uart_circ_empty(xmit))
 			break;
 
-		writel(port->info->xmit.buf[port->info->xmit.tail], DANUBE_ASC1_TBUF);
+		writel(port->info->xmit.buf[port->info->xmit.tail], IFXMIPS_ASC1_TBUF);
 		xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
 		port->icount.tx++;
 	}
@@ -191,7 +191,7 @@ danubeasc_tx_chars (struct uart_port *port)
 static irqreturn_t
 danubeasc_tx_int (int irq, void *port)
 {
-	writel(ASC_IRNCR_TIR, DANUBE_ASC1_IRNCR);
+	writel(ASC_IRNCR_TIR, IFXMIPS_ASC1_IRNCR);
 	danubeasc_start_tx(port);
 	mask_and_ack_danube_irq(irq);
 
@@ -202,8 +202,8 @@ static irqreturn_t
 danubeasc_er_int (int irq, void *port)
 {
 	/* clear any pending interrupts */
-	writel(readl(DANUBE_ASC1_WHBSTATE) | ASCWHBSTATE_CLRPE |
-			ASCWHBSTATE_CLRFE | ASCWHBSTATE_CLRROE, DANUBE_ASC1_WHBSTATE);
+	writel(readl(IFXMIPS_ASC1_WHBSTATE) | ASCWHBSTATE_CLRPE |
+			ASCWHBSTATE_CLRFE | ASCWHBSTATE_CLRROE, IFXMIPS_ASC1_WHBSTATE);
 
 	return IRQ_HANDLED;
 }
@@ -211,7 +211,7 @@ danubeasc_er_int (int irq, void *port)
 static irqreturn_t
 danubeasc_rx_int (int irq, void *port)
 {
-	writel(ASC_IRNCR_RIR, DANUBE_ASC1_IRNCR);
+	writel(ASC_IRNCR_RIR, IFXMIPS_ASC1_IRNCR);
 	danubeasc_rx_chars((struct uart_port *) port);
 	mask_and_ack_danube_irq(irq);
 
@@ -223,7 +223,7 @@ danubeasc_tx_empty (struct uart_port *port)
 {
 	int status;
 
-	status = readl(DANUBE_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK;
+	status = readl(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK;
 
 	return status ? 0 : TIOCSER_TEMT;
 }
@@ -251,18 +251,18 @@ danubeasc1_hw_init (void)
 {
 	/* this setup was probably already done in ROM/u-boot  but we do it again*/
 	/* TODO: GPIO pins are multifunction */
-	writel(readl(DANUBE_ASC1_CLC) & ~DANUBE_ASC1_CLC_DISS, DANUBE_ASC1_CLC);
-	writel((readl(DANUBE_ASC1_CLC) & ~ASCCLC_RMCMASK) | (1 << ASCCLC_RMCOFFSET), DANUBE_ASC1_CLC);
-	writel(0, DANUBE_ASC1_PISEL);
-	writel(((DANUBEASC_TXFIFO_FL << ASCTXFCON_TXFITLOFF) &
-		ASCTXFCON_TXFITLMASK) | ASCTXFCON_TXFEN | ASCTXFCON_TXFFLU, DANUBE_ASC1_TXFCON);
-	writel(((DANUBEASC_RXFIFO_FL << ASCRXFCON_RXFITLOFF) &
-		ASCRXFCON_RXFITLMASK) | ASCRXFCON_RXFEN | ASCRXFCON_RXFFLU, DANUBE_ASC1_RXFCON);
+	writel(readl(IFXMIPS_ASC1_CLC) & ~IFXMIPS_ASC1_CLC_DISS, IFXMIPS_ASC1_CLC);
+	writel((readl(IFXMIPS_ASC1_CLC) & ~ASCCLC_RMCMASK) | (1 << ASCCLC_RMCOFFSET), IFXMIPS_ASC1_CLC);
+	writel(0, IFXMIPS_ASC1_PISEL);
+	writel(((IFXMIPSASC_TXFIFO_FL << ASCTXFCON_TXFITLOFF) &
+		ASCTXFCON_TXFITLMASK) | ASCTXFCON_TXFEN | ASCTXFCON_TXFFLU, IFXMIPS_ASC1_TXFCON);
+	writel(((IFXMIPSASC_RXFIFO_FL << ASCRXFCON_RXFITLOFF) &
+		ASCRXFCON_RXFITLMASK) | ASCRXFCON_RXFEN | ASCRXFCON_RXFFLU, IFXMIPS_ASC1_RXFCON);
 	wmb ();
 
 	/*framing, overrun, enable */
-	writel(readl(DANUBE_ASC1_CON) | ASCCON_M_8ASYNC | ASCCON_FEN | ASCCON_TOEN | ASCCON_ROEN,
-		DANUBE_ASC1_CON);
+	writel(readl(IFXMIPS_ASC1_CON) | ASCCON_M_8ASYNC | ASCCON_FEN | ASCCON_TOEN | ASCCON_ROEN,
+		IFXMIPS_ASC1_CON);
 }
 
 static int
@@ -281,36 +281,36 @@ danubeasc_startup (struct uart_port *port)
 
 	local_irq_save(flags);
 
-	retval = request_irq(DANUBEASC1_RIR, danubeasc_rx_int, IRQF_DISABLED, "asc_rx", port);
+	retval = request_irq(IFXMIPSASC1_RIR, danubeasc_rx_int, IRQF_DISABLED, "asc_rx", port);
 	if (retval){
 		printk("failed to request danubeasc_rx_int\n");
 		return retval;
 	}
 
-	retval = request_irq(DANUBEASC1_TIR, danubeasc_tx_int, IRQF_DISABLED, "asc_tx", port);
+	retval = request_irq(IFXMIPSASC1_TIR, danubeasc_tx_int, IRQF_DISABLED, "asc_tx", port);
 	if (retval){
 		printk("failed to request danubeasc_tx_int\n");
 		goto err1;
 	}
 
-	retval = request_irq(DANUBEASC1_EIR, danubeasc_er_int, IRQF_DISABLED, "asc_er", port);
+	retval = request_irq(IFXMIPSASC1_EIR, danubeasc_er_int, IRQF_DISABLED, "asc_er", port);
 	if (retval){
 		printk("failed to request danubeasc_er_int\n");
 		goto err2;
 	}
 
 	writel(ASC_IRNREN_RX_BUF | ASC_IRNREN_TX_BUF | ASC_IRNREN_ERR | ASC_IRNREN_TX,
-		DANUBE_ASC1_IRNREN);
+		IFXMIPS_ASC1_IRNREN);
 
 	local_irq_restore(flags);
 
 	return 0;
 
 err2:
-	free_irq(DANUBEASC1_TIR, port);
+	free_irq(IFXMIPSASC1_TIR, port);
 
 err1:
-	free_irq(DANUBEASC1_RIR, port);
+	free_irq(IFXMIPSASC1_RIR, port);
 	local_irq_restore(flags);
 
 	return retval;
@@ -319,19 +319,19 @@ err1:
 static void
 danubeasc_shutdown (struct uart_port *port)
 {
-	free_irq(DANUBEASC1_RIR, port);
-	free_irq(DANUBEASC1_TIR, port);
-	free_irq(DANUBEASC1_EIR, port);
+	free_irq(IFXMIPSASC1_RIR, port);
+	free_irq(IFXMIPSASC1_TIR, port);
+	free_irq(IFXMIPSASC1_EIR, port);
 	/*
 	 * disable the baudrate generator to disable the ASC
 	 */
-	writel(0, DANUBE_ASC1_CON);
+	writel(0, IFXMIPS_ASC1_CON);
 
 	/* flush and then disable the fifos */
-	writel(readl(DANUBE_ASC1_RXFCON) | ASCRXFCON_RXFFLU, DANUBE_ASC1_RXFCON);
-	writel(readl(DANUBE_ASC1_RXFCON) & ~ASCRXFCON_RXFEN, DANUBE_ASC1_RXFCON);
-	writel(readl(DANUBE_ASC1_TXFCON) | ASCTXFCON_TXFFLU, DANUBE_ASC1_TXFCON);
-	writel(readl(DANUBE_ASC1_TXFCON) & ~ASCTXFCON_TXFEN, DANUBE_ASC1_TXFCON);
+	writel(readl(IFXMIPS_ASC1_RXFCON) | ASCRXFCON_RXFFLU, IFXMIPS_ASC1_RXFCON);
+	writel(readl(IFXMIPS_ASC1_RXFCON) & ~ASCRXFCON_RXFEN, IFXMIPS_ASC1_RXFCON);
+	writel(readl(IFXMIPS_ASC1_TXFCON) | ASCTXFCON_TXFFLU, IFXMIPS_ASC1_TXFCON);
+	writel(readl(IFXMIPS_ASC1_TXFCON) & ~ASCTXFCON_TXFEN, IFXMIPS_ASC1_TXFCON);
 }
 
 static void danubeasc_set_termios(struct uart_port *port, struct ktermios *new, struct ktermios *old)
@@ -395,7 +395,7 @@ static void danubeasc_set_termios(struct uart_port *port, struct ktermios *new, 
 	local_irq_save(flags);
 
 	/* set up CON */
-	writel(readl(DANUBE_ASC1_CON) | con, DANUBE_ASC1_CON);
+	writel(readl(IFXMIPS_ASC1_CON) | con, IFXMIPS_ASC1_CON);
 
 	/* Set baud rate - take a divider of 2 into account */
     baud = uart_get_baud_rate(port, new, old, 0, port->uartclk / 16);
@@ -403,22 +403,22 @@ static void danubeasc_set_termios(struct uart_port *port, struct ktermios *new, 
 	quot = quot / 2 - 1;
 
 	/* disable the baudrate generator */
-	writel(readl(DANUBE_ASC1_CON) & ~ASCCON_R, DANUBE_ASC1_CON);
+	writel(readl(IFXMIPS_ASC1_CON) & ~ASCCON_R, IFXMIPS_ASC1_CON);
 
 	/* make sure the fractional divider is off */
-	writel(readl(DANUBE_ASC1_CON) & ~ASCCON_FDE, DANUBE_ASC1_CON);
+	writel(readl(IFXMIPS_ASC1_CON) & ~ASCCON_FDE, IFXMIPS_ASC1_CON);
 
 	/* set up to use divisor of 2 */
-	writel(readl(DANUBE_ASC1_CON) & ~ASCCON_BRS, DANUBE_ASC1_CON);
+	writel(readl(IFXMIPS_ASC1_CON) & ~ASCCON_BRS, IFXMIPS_ASC1_CON);
 
 	/* now we can write the new baudrate into the register */
-	writel(quot, DANUBE_ASC1_BG);
+	writel(quot, IFXMIPS_ASC1_BG);
 
 	/* turn the baudrate generator back on */
-	writel(readl(DANUBE_ASC1_CON) | ASCCON_R, DANUBE_ASC1_CON);
+	writel(readl(IFXMIPS_ASC1_CON) | ASCCON_R, IFXMIPS_ASC1_CON);
 
 	/* enable rx */
-	writel(ASCWHBSTATE_SETREN, DANUBE_ASC1_WHBSTATE);
+	writel(ASCWHBSTATE_SETREN, IFXMIPS_ASC1_WHBSTATE);
 
 	local_irq_restore(flags);
 }
@@ -426,7 +426,7 @@ static void danubeasc_set_termios(struct uart_port *port, struct ktermios *new, 
 static const char*
 danubeasc_type (struct uart_port *port)
 {
-	return port->type == PORT_DANUBEASC ? "DANUBEASC" : NULL;
+	return port->type == PORT_IFXMIPSASC ? "IFXMIPSASC" : NULL;
 }
 
 static void
@@ -445,7 +445,7 @@ static void
 danubeasc_config_port (struct uart_port *port, int flags)
 {
 	if (flags & UART_CONFIG_TYPE) {
-		port->type = PORT_DANUBEASC;
+		port->type = PORT_IFXMIPSASC;
 		danubeasc_request_port(port);
 	}
 }
@@ -454,7 +454,7 @@ static int
 danubeasc_verify_port (struct uart_port *port, struct serial_struct *ser)
 {
 	int ret = 0;
-	if (ser->type != PORT_UNKNOWN && ser->type != PORT_DANUBEASC)
+	if (ser->type != PORT_UNKNOWN && ser->type != PORT_IFXMIPSASC)
 		ret = -EINVAL;
 	if (ser->irq < 0 || ser->irq >= NR_IRQS)
 		ret = -EINVAL;
@@ -483,14 +483,14 @@ static struct uart_ops danubeasc_pops = {
 };
 
 static struct uart_port danubeasc_port = {
-		membase:	(void *)DANUBE_ASC1_BASE_ADDR,
-		mapbase:	DANUBE_ASC1_BASE_ADDR,
+		membase:	(void *)IFXMIPS_ASC1_BASE_ADDR,
+		mapbase:	IFXMIPS_ASC1_BASE_ADDR,
 		iotype:		SERIAL_IO_MEM,
-		irq:		DANUBEASC1_RIR,
+		irq:		IFXMIPSASC1_RIR,
 		uartclk:	0,
 		fifosize:	16,
-		unused:		{DANUBEASC1_TIR, DANUBEASC1_EIR},
-		type:		PORT_DANUBEASC,
+		unused:		{IFXMIPSASC1_TIR, IFXMIPSASC1_EIR},
+		type:		PORT_IFXMIPSASC,
 		ops:		&danubeasc_pops,
 		flags:		ASYNC_BOOT_AUTOCONF,
 };
@@ -507,9 +507,9 @@ danubeasc_console_write (struct console *co, const char *s, u_int count)
 		/* wait until the FIFO is not full */
 		do
 		{
-			fifocnt = (readl(DANUBE_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK)
+			fifocnt = (readl(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK)
 			                >> ASCFSTAT_TXFFLOFF;
-		} while (fifocnt == DANUBEASC_TXFIFO_FULL);
+		} while (fifocnt == IFXMIPSASC_TXFIFO_FULL);
 
 		if (s[i] == '\0')
 		{
@@ -518,14 +518,14 @@ danubeasc_console_write (struct console *co, const char *s, u_int count)
 
 		if (s[i] == '\n')
 		{
-			writel('\r', DANUBE_ASC1_TBUF);
+			writel('\r', IFXMIPS_ASC1_TBUF);
 			do
 			{
-				fifocnt = (readl(DANUBE_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK)
+				fifocnt = (readl(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK)
 					>> ASCFSTAT_TXFFLOFF;
-			} while (fifocnt == DANUBEASC_TXFIFO_FULL);
+			} while (fifocnt == IFXMIPSASC_TXFIFO_FULL);
 		}
-		writel(s[i], DANUBE_ASC1_TBUF);
+		writel(s[i], IFXMIPS_ASC1_TBUF);
 	}
 
 	local_irq_restore(flags);
@@ -545,7 +545,7 @@ danubeasc_console_setup (struct console *co, char *options)
 	co->index = 0;
 	port = &danubeasc_port;
 	danubeasc_port.uartclk = uartclk;
-	danubeasc_port.type = PORT_DANUBEASC;
+	danubeasc_port.type = PORT_IFXMIPSASC;
 
 	if (options){
 		uart_parse_options(options, &baud, &parity, &bits, &flow);

@@ -9,14 +9,14 @@
 #include <asm/addrspace.h>
 #include <linux/vmalloc.h>
 
-#define DANUBE_PCI_MEM_BASE    0x18000000
-#define DANUBE_PCI_MEM_SIZE    0x02000000
-#define DANUBE_PCI_IO_BASE     0x1AE00000
-#define DANUBE_PCI_IO_SIZE     0x00200000
+#define IFXMIPS_PCI_MEM_BASE    0x18000000
+#define IFXMIPS_PCI_MEM_SIZE    0x02000000
+#define IFXMIPS_PCI_IO_BASE     0x1AE00000
+#define IFXMIPS_PCI_IO_SIZE     0x00200000
 
-#define DANUBE_PCI_CFG_BUSNUM_SHF 16
-#define DANUBE_PCI_CFG_DEVNUM_SHF 11
-#define DANUBE_PCI_CFG_FUNNUM_SHF 8
+#define IFXMIPS_PCI_CFG_BUSNUM_SHF 16
+#define IFXMIPS_PCI_CFG_DEVNUM_SHF 11
+#define IFXMIPS_PCI_CFG_FUNNUM_SHF 8
 
 #define PCI_ACCESS_READ  0
 #define PCI_ACCESS_WRITE 1
@@ -31,15 +31,15 @@ struct pci_ops danube_pci_ops = {
 
 static struct resource pci_io_resource = {
 	.name = "io pci IO space",
-	.start = DANUBE_PCI_IO_BASE,
-	.end = DANUBE_PCI_IO_BASE + DANUBE_PCI_IO_SIZE - 1,
+	.start = IFXMIPS_PCI_IO_BASE,
+	.end = IFXMIPS_PCI_IO_BASE + IFXMIPS_PCI_IO_SIZE - 1,
 	.flags = IORESOURCE_IO
 };
 
 static struct resource pci_mem_resource = {
 	.name = "ext pci memory space",
-	.start = DANUBE_PCI_MEM_BASE,
-	.end = DANUBE_PCI_MEM_BASE + DANUBE_PCI_MEM_SIZE - 1,
+	.start = IFXMIPS_PCI_MEM_BASE,
+	.end = IFXMIPS_PCI_MEM_BASE + IFXMIPS_PCI_MEM_SIZE - 1,
 	.flags = IORESOURCE_MEM
 };
 
@@ -71,32 +71,32 @@ danube_pci_config_access(unsigned char access_type,
 	local_irq_save(flags);
 
 	cfg_base = danube_pci_mapped_cfg;
-	cfg_base |= (bus->number << DANUBE_PCI_CFG_BUSNUM_SHF) | (devfn <<
-			DANUBE_PCI_CFG_FUNNUM_SHF) | (where & ~0x3);
+	cfg_base |= (bus->number << IFXMIPS_PCI_CFG_BUSNUM_SHF) | (devfn <<
+			IFXMIPS_PCI_CFG_FUNNUM_SHF) | (where & ~0x3);
 
 	/* Perform access */
 	if (access_type == PCI_ACCESS_WRITE)
 	{
-#ifdef CONFIG_DANUBE_PCI_HW_SWAP
+#ifdef CONFIG_IFXMIPS_PCI_HW_SWAP
 		writel(swab32(*data), ((u32*)cfg_base));
 #else
 		writel(*data, ((u32*)cfg_base));
 #endif
 	} else {
 		*data = readl(((u32*)(cfg_base)));
-#ifdef CONFIG_DANUBE_PCI_HW_SWAP
+#ifdef CONFIG_IFXMIPS_PCI_HW_SWAP
 		*data = swab32(*data);
 #endif
 	}
 	wmb();
 
 	/* clean possible Master abort */
-	cfg_base = (danube_pci_mapped_cfg | (0x0 << DANUBE_PCI_CFG_FUNNUM_SHF)) + 4;
+	cfg_base = (danube_pci_mapped_cfg | (0x0 << IFXMIPS_PCI_CFG_FUNNUM_SHF)) + 4;
 	temp = readl(((u32*)(cfg_base)));
-#ifdef CONFIG_DANUBE_PCI_HW_SWAP
+#ifdef CONFIG_IFXMIPS_PCI_HW_SWAP
 	temp = swab32 (temp);
 #endif
-	cfg_base = (danube_pci_mapped_cfg | (0x68 << DANUBE_PCI_CFG_FUNNUM_SHF)) + 4;
+	cfg_base = (danube_pci_mapped_cfg | (0x68 << IFXMIPS_PCI_CFG_FUNNUM_SHF)) + 4;
 	writel(temp, ((u32*)cfg_base));
 
 	local_irq_restore(flags);
@@ -163,8 +163,8 @@ int pcibios_plat_dev_init(struct pci_dev *dev){
 		case 1:
 			//falling edge level triggered:0x4, low level:0xc, rising edge:0x2
 			printk("%s:%s[%d] %08X \n", __FILE__, __func__, __LINE__, dev->irq);
-			writel(readl(DANUBE_EBU_PCC_CON) | 0xc, DANUBE_EBU_PCC_CON);
-			writel(readl(DANUBE_EBU_PCC_IEN) | 0x10, DANUBE_EBU_PCC_IEN);
+			writel(readl(IFXMIPS_EBU_PCC_CON) | 0xc, IFXMIPS_EBU_PCC_CON);
+			writel(readl(IFXMIPS_EBU_PCC_IEN) | 0x10, IFXMIPS_EBU_PCC_IEN);
 			break;
 		case 2:
 		case 3:
@@ -182,31 +182,31 @@ static void __init danube_pci_startup (void){
 	/*initialize the first PCI device--danube itself */
 	u32 temp_buffer;
 	/*TODO: trigger reset */
-	writel(readl(DANUBE_CGU_IFCCR) & ~0xf00000, DANUBE_CGU_IFCCR);
-	writel(readl(DANUBE_CGU_IFCCR) | 0x800000, DANUBE_CGU_IFCCR);
+	writel(readl(IFXMIPS_CGU_IFCCR) & ~0xf00000, IFXMIPS_CGU_IFCCR);
+	writel(readl(IFXMIPS_CGU_IFCCR) | 0x800000, IFXMIPS_CGU_IFCCR);
 	/* PCIS of IF_CLK of CGU   : 1 =>PCI Clock output
 	   0 =>clock input
 	   PADsel of PCI_CR of CGU : 1 =>From CGU
 	   : 0 =>From pad
 	 */
-	writel(readl(DANUBE_CGU_IFCCR) | (1 << 16), DANUBE_CGU_IFCCR);
-	writel((1 << 31) | (1 << 30), DANUBE_CGU_PCICR);
+	writel(readl(IFXMIPS_CGU_IFCCR) | (1 << 16), IFXMIPS_CGU_IFCCR);
+	writel((1 << 31) | (1 << 30), IFXMIPS_CGU_PCICR);
 
 	/* prepare GPIO */
 	/* PCI_RST: P1.5 ALT 01 */
 	//pliu20060613: start
-	writel(readl(DANUBE_GPIO_P1_OUT) | (1 << 5), DANUBE_GPIO_P1_OUT);
-	writel(readl(DANUBE_GPIO_P1_OD) | (1 << 5), DANUBE_GPIO_P1_OD);
-	writel(readl(DANUBE_GPIO_P1_DIR) | (1 << 5), DANUBE_GPIO_P1_DIR);
-	writel(readl(DANUBE_GPIO_P1_ALTSEL1) & ~(1 << 5), DANUBE_GPIO_P1_ALTSEL1);
-	writel(readl(DANUBE_GPIO_P1_ALTSEL0) & ~(1 << 5), DANUBE_GPIO_P1_ALTSEL0);
+	writel(readl(IFXMIPS_GPIO_P1_OUT) | (1 << 5), IFXMIPS_GPIO_P1_OUT);
+	writel(readl(IFXMIPS_GPIO_P1_OD) | (1 << 5), IFXMIPS_GPIO_P1_OD);
+	writel(readl(IFXMIPS_GPIO_P1_DIR) | (1 << 5), IFXMIPS_GPIO_P1_DIR);
+	writel(readl(IFXMIPS_GPIO_P1_ALTSEL1) & ~(1 << 5), IFXMIPS_GPIO_P1_ALTSEL1);
+	writel(readl(IFXMIPS_GPIO_P1_ALTSEL0) & ~(1 << 5), IFXMIPS_GPIO_P1_ALTSEL0);
 	//pliu20060613: end
 	/* PCI_REQ1: P1.13 ALT 01 */
 	/* PCI_GNT1: P1.14 ALT 01 */
-	writel(readl(DANUBE_GPIO_P1_DIR) & ~0x2000, DANUBE_GPIO_P1_DIR);
-	writel(readl(DANUBE_GPIO_P1_DIR) | 0x4000, DANUBE_GPIO_P1_DIR);
-	writel(readl(DANUBE_GPIO_P1_ALTSEL1) & ~0x6000, DANUBE_GPIO_P1_ALTSEL1);
-	writel(readl(DANUBE_GPIO_P1_ALTSEL0) | 0x6000, DANUBE_GPIO_P1_ALTSEL0);
+	writel(readl(IFXMIPS_GPIO_P1_DIR) & ~0x2000, IFXMIPS_GPIO_P1_DIR);
+	writel(readl(IFXMIPS_GPIO_P1_DIR) | 0x4000, IFXMIPS_GPIO_P1_DIR);
+	writel(readl(IFXMIPS_GPIO_P1_ALTSEL1) & ~0x6000, IFXMIPS_GPIO_P1_ALTSEL1);
+	writel(readl(IFXMIPS_GPIO_P1_ALTSEL0) | 0x6000, IFXMIPS_GPIO_P1_ALTSEL0);
 	/* PCI_REQ2: P1.15 ALT 10 */
 	/* PCI_GNT2: P1.7 ALT 10 */
 
@@ -260,9 +260,9 @@ static void __init danube_pci_startup (void){
 	writel(0x0e000008, PCI_CR_BAR11MASK);
 	writel(0, PCI_CR_PCI_ADDR_MAP11);
 	writel(0, PCI_CS_BASE_ADDR1);
-#ifdef CONFIG_DANUBE_PCI_HW_SWAP
+#ifdef CONFIG_IFXMIPS_PCI_HW_SWAP
 	/* both TX and RX endian swap are enabled */
-	DANUBE_PCI_REG32 (PCI_CR_PCI_EOI_REG) |= 3;
+	IFXMIPS_PCI_REG32 (PCI_CR_PCI_EOI_REG) |= 3;
 	wmb ();
 #endif
 	/*TODO: disable BAR2 & BAR3 - why was this in the origianl infineon code */
@@ -273,10 +273,10 @@ static void __init danube_pci_startup (void){
 
 	writel(readl(PCI_CR_PCI_MOD) | (1 << 24), PCI_CR_PCI_MOD);
 	wmb();
-	writel(readl(DANUBE_GPIO_P1_OUT) & ~(1 << 5), DANUBE_GPIO_P1_OUT);
+	writel(readl(IFXMIPS_GPIO_P1_OUT) & ~(1 << 5), IFXMIPS_GPIO_P1_OUT);
 	wmb();
 	mdelay (1);
-	writel(readl(DANUBE_GPIO_P1_OUT) | (1 << 5), DANUBE_GPIO_P1_OUT);
+	writel(readl(IFXMIPS_GPIO_P1_OUT) | (1 << 5), IFXMIPS_GPIO_P1_OUT);
 }
 
 int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin){
@@ -303,11 +303,11 @@ int pcibios_init(void){
 
 	danube_pci_startup ();
 
-	//	DANUBE_PCI_REG32(PCI_CR_CLK_CTRL_REG) &= (~8);
+	//	IFXMIPS_PCI_REG32(PCI_CR_CLK_CTRL_REG) &= (~8);
 	danube_pci_mapped_cfg = ioremap_nocache(0x17000000, 0x800 * 16);
 	printk("Danube PCI mapped to 0x%08X\n", (unsigned long)danube_pci_mapped_cfg);
 
-	danube_pci_controller.io_map_base = (unsigned long)ioremap(DANUBE_PCI_IO_BASE, DANUBE_PCI_IO_SIZE - 1);
+	danube_pci_controller.io_map_base = (unsigned long)ioremap(IFXMIPS_PCI_IO_BASE, IFXMIPS_PCI_IO_SIZE - 1);
 
 	printk("Danube PCI I/O mapped to 0x%08X\n", (unsigned long)danube_pci_controller.io_map_base);
 

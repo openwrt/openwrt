@@ -45,11 +45,11 @@ get_system_type (void)
 void
 prom_putchar (char c)
 {
-	while ((readl(DANUBE_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK) >> ASCFSTAT_TXFFLOFF);
+	while ((readl(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK) >> ASCFSTAT_TXFFLOFF);
 
 	if (c == '\n')
-		writel('\r', DANUBE_ASC1_TBUF);
-	writel(c, DANUBE_ASC1_TBUF);
+		writel('\r', IFXMIPS_ASC1_TBUF);
+	writel(c, IFXMIPS_ASC1_TBUF);
 }
 
 void
@@ -73,8 +73,8 @@ prom_printf (const char * fmt, ...)
 void __init
 prom_init(void)
 {
-	mips_machgroup = MACH_GROUP_DANUBE;
-	mips_machtype = MACH_INFINEON_DANUBE;
+	mips_machgroup = MACH_GROUP_IFXMIPS;
+	mips_machtype = MACH_INFINEON_IFXMIPS;
 
 	strcpy(&(arcs_cmdline[0]), "console=ttyS0,115200 rootfstype=squashfs,jffs2 init=/etc/preinit");
 	add_memory_region (0x00000000, 0x2000000, BOOT_MEM_RAM);

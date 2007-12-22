@@ -42,7 +42,7 @@ void
 disable_danube_irq (unsigned int irq_nr)
 {
 	int i;
-	u32 *danube_ier = DANUBE_ICU_IM0_IER;
+	u32 *danube_ier = IFXMIPS_ICU_IM0_IER;
 
 	irq_nr -= INT_NUM_IRQ0;
 	for (i = 0; i <= 4; i++)
@@ -51,7 +51,7 @@ disable_danube_irq (unsigned int irq_nr)
 			writel(readl(danube_ier) & ~(1 << irq_nr ), danube_ier);
 			return;
 		}
-		danube_ier += DANUBE_ICU_OFFSET;
+		danube_ier += IFXMIPS_ICU_OFFSET;
 		irq_nr -= INT_NUM_IM_OFFSET;
 	}
 }
@@ -61,8 +61,8 @@ void
 mask_and_ack_danube_irq (unsigned int irq_nr)
 {
 	int i;
-	u32 *danube_ier = DANUBE_ICU_IM0_IER;
-	u32 *danube_isr = DANUBE_ICU_IM0_ISR;
+	u32 *danube_ier = IFXMIPS_ICU_IM0_IER;
+	u32 *danube_isr = IFXMIPS_ICU_IM0_ISR;
 
 	irq_nr -= INT_NUM_IRQ0;
 	for (i = 0; i <= 4; i++)
@@ -73,8 +73,8 @@ mask_and_ack_danube_irq (unsigned int irq_nr)
 			writel((1 << irq_nr ), danube_isr);
 			return;
 		}
-		danube_ier += DANUBE_ICU_OFFSET;
-		danube_isr += DANUBE_ICU_OFFSET;
+		danube_ier += IFXMIPS_ICU_OFFSET;
+		danube_isr += IFXMIPS_ICU_OFFSET;
 		irq_nr -= INT_NUM_IM_OFFSET;
 	}
 }
@@ -84,7 +84,7 @@ void
 enable_danube_irq (unsigned int irq_nr)
 {
 	int i;
-	u32 *danube_ier = DANUBE_ICU_IM0_IER;
+	u32 *danube_ier = IFXMIPS_ICU_IM0_IER;
 
 	irq_nr -= INT_NUM_IRQ0;
 	for (i = 0; i <= 4; i++)
@@ -94,7 +94,7 @@ enable_danube_irq (unsigned int irq_nr)
 			writel(readl(danube_ier) | (1 << irq_nr ), danube_ier);
 			return;
 		}
-		danube_ier += DANUBE_ICU_OFFSET;
+		danube_ier += IFXMIPS_ICU_OFFSET;
 		irq_nr -= INT_NUM_IM_OFFSET;
 	}
 }
@@ -115,7 +115,7 @@ end_danube_irq (unsigned int irq)
 }
 
 static struct hw_interrupt_type danube_irq_type = {
-	"DANUBE",
+	"IFXMIPS",
 	.startup = startup_danube_irq,
 	.enable = enable_danube_irq,
 	.disable = disable_danube_irq,
@@ -145,7 +145,7 @@ danube_hw_irqdispatch (int module)
 {
 	u32 irq;
 
-	irq = readl(DANUBE_ICU_IM0_IOSR + (module * DANUBE_ICU_OFFSET));
+	irq = readl(IFXMIPS_ICU_IM0_IOSR + (module * IFXMIPS_ICU_OFFSET));
 	if (irq == 0)
 		return;
 
@@ -153,7 +153,7 @@ danube_hw_irqdispatch (int module)
 	do_IRQ ((int) irq + INT_NUM_IM0_IRL0 + (INT_NUM_IM_OFFSET * module));
 
 	if ((irq == 22) && (module == 0)){
-		writel(readl(DANUBE_EBU_PCC_ISTAT) | 0x10, DANUBE_EBU_PCC_ISTAT);
+		writel(readl(IFXMIPS_EBU_PCC_ISTAT) | 0x10, IFXMIPS_EBU_PCC_ISTAT);
 	}
 }
 
@@ -195,7 +195,7 @@ arch_init_irq(void)
 
 	for (i = 0; i < 5; i++)
 	{
-		writel(0, DANUBE_ICU_IM0_IER + (i * DANUBE_ICU_OFFSET));
+		writel(0, IFXMIPS_ICU_IM0_IER + (i * IFXMIPS_ICU_OFFSET));
 	}
 
 	mips_cpu_irq_init();

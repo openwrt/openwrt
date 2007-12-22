@@ -43,8 +43,8 @@ danube_wdt_enable (unsigned int timeout)
 	int retval = 0;
 
 	/* clock divider & prewarning limit */
-	wdt_clkdiv = 1 << (7 * DANUBE_BIU_WDT_CR_CLKDIV_GET(readl(DANUBE_BIU_WDT_CR)));
-	wdt_pwl = 0x8000 >> DANUBE_BIU_WDT_CR_PWL_GET(readl(DANUBE_BIU_WDT_CR));
+	wdt_clkdiv = 1 << (7 * IFXMIPS_BIU_WDT_CR_CLKDIV_GET(readl(IFXMIPS_BIU_WDT_CR)));
+	wdt_pwl = 0x8000 >> IFXMIPS_BIU_WDT_CR_PWL_GET(readl(IFXMIPS_BIU_WDT_CR));
 
 	//TODO
 	printk("WARNING FUNCTION CALL MISSING!!!");
@@ -65,21 +65,21 @@ danube_wdt_enable (unsigned int timeout)
 	}
 
 	/* Write first part of password access */
-	writel(DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW1), DANUBE_BIU_WDT_CR);
+	writel(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW1), IFXMIPS_BIU_WDT_CR);
 
-	wdt_cr = readl(DANUBE_BIU_WDT_CR);
-	wdt_cr &= (!DANUBE_BIU_WDT_CR_PW_SET(0xff) &
-		   !DANUBE_BIU_WDT_CR_PWL_SET(0x3) &
-		   !DANUBE_BIU_WDT_CR_CLKDIV_SET(0x3) &
-		   !DANUBE_BIU_WDT_CR_RELOAD_SET(0xffff));
+	wdt_cr = readl(IFXMIPS_BIU_WDT_CR);
+	wdt_cr &= (!IFXMIPS_BIU_WDT_CR_PW_SET(0xff) &
+		   !IFXMIPS_BIU_WDT_CR_PWL_SET(0x3) &
+		   !IFXMIPS_BIU_WDT_CR_CLKDIV_SET(0x3) &
+		   !IFXMIPS_BIU_WDT_CR_RELOAD_SET(0xffff));
 
-	wdt_cr |= (DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW2) |
-		   DANUBE_BIU_WDT_CR_PWL_SET(DANUBE_BIU_WDT_CR_PWL_GET(readl(DANUBE_BIU_WDT_CR))) |
-		   DANUBE_BIU_WDT_CR_CLKDIV_SET(DANUBE_BIU_WDT_CR_CLKDIV_GET(readl(DANUBE_BIU_WDT_CR))) |
-		   DANUBE_BIU_WDT_CR_RELOAD_SET(wdt_reload) |
-		   DANUBE_BIU_WDT_CR_GEN);
+	wdt_cr |= (IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW2) |
+		   IFXMIPS_BIU_WDT_CR_PWL_SET(IFXMIPS_BIU_WDT_CR_PWL_GET(readl(IFXMIPS_BIU_WDT_CR))) |
+		   IFXMIPS_BIU_WDT_CR_CLKDIV_SET(IFXMIPS_BIU_WDT_CR_CLKDIV_GET(readl(IFXMIPS_BIU_WDT_CR))) |
+		   IFXMIPS_BIU_WDT_CR_RELOAD_SET(wdt_reload) |
+		   IFXMIPS_BIU_WDT_CR_GEN);
 
-	writel(wdt_cr, DANUBE_BIU_WDT_CR);
+	writel(wdt_cr, IFXMIPS_BIU_WDT_CR);
 
 	printk("watchdog enabled\n");
 
@@ -90,8 +90,8 @@ out:
 void
 danube_wdt_disable (void)
 {
-	writel(DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW1), DANUBE_BIU_WDT_CR);
-	writel(DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW2), DANUBE_BIU_WDT_CR);
+	writel(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW1), IFXMIPS_BIU_WDT_CR);
+	writel(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW2), IFXMIPS_BIU_WDT_CR);
 
 	printk("watchdog disabled\n");
 }
@@ -102,20 +102,20 @@ danube_wdt_enable_feature (int en, int type)
 {
 	unsigned int wdt_cr = 0;
 
-	writel(DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW1), DANUBE_BIU_WDT_CR);
+	writel(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW1), IFXMIPS_BIU_WDT_CR);
 
-	wdt_cr = readl(DANUBE_BIU_WDT_CR);
+	wdt_cr = readl(IFXMIPS_BIU_WDT_CR);
 
 	if (en)
 	{
-		wdt_cr &= (~DANUBE_BIU_WDT_CR_PW_SET(0xff));
-		wdt_cr |= (DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW2) | type);
+		wdt_cr &= (~IFXMIPS_BIU_WDT_CR_PW_SET(0xff));
+		wdt_cr |= (IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW2) | type);
 	} else {
-		wdt_cr &= (~DANUBE_BIU_WDT_CR_PW_SET(0xff) & ~type);
-		wdt_cr |= DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW2);
+		wdt_cr &= (~IFXMIPS_BIU_WDT_CR_PW_SET(0xff) & ~type);
+		wdt_cr |= IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW2);
 	}
 
-	writel(wdt_cr, DANUBE_BIU_WDT_CR);
+	writel(wdt_cr, IFXMIPS_BIU_WDT_CR);
 }
 
 void
@@ -123,14 +123,14 @@ danube_wdt_prewarning_limit (int pwl)
 {
 	unsigned int wdt_cr = 0;
 
-	wdt_cr = readl(DANUBE_BIU_WDT_CR);
-	writel(DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW1), DANUBE_BIU_WDT_CR);
+	wdt_cr = readl(IFXMIPS_BIU_WDT_CR);
+	writel(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW1), IFXMIPS_BIU_WDT_CR);
 
 	wdt_cr &= 0xf300ffff;
-	wdt_cr |= (DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW2) | DANUBE_BIU_WDT_CR_PWL_SET(pwl));
+	wdt_cr |= (IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW2) | IFXMIPS_BIU_WDT_CR_PWL_SET(pwl));
 
 	/* Set reload value in second password access */
-	writel(wdt_cr, DANUBE_BIU_WDT_CR);
+	writel(wdt_cr, IFXMIPS_BIU_WDT_CR);
 }
 
 void
@@ -138,14 +138,14 @@ danube_wdt_set_clkdiv (int clkdiv)
 {
 	unsigned int wdt_cr = 0;
 
-	wdt_cr = readl(DANUBE_BIU_WDT_CR);
-	writel(DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW1), DANUBE_BIU_WDT_CR);
+	wdt_cr = readl(IFXMIPS_BIU_WDT_CR);
+	writel(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW1), IFXMIPS_BIU_WDT_CR);
 
 	wdt_cr &= 0xfc00ffff;
-	wdt_cr |= (DANUBE_BIU_WDT_CR_PW_SET(DANUBE_WDT_PW2) | DANUBE_BIU_WDT_CR_CLKDIV_SET(clkdiv));
+	wdt_cr |= (IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW2) | IFXMIPS_BIU_WDT_CR_CLKDIV_SET(clkdiv));
 
 	/* Set reload value in second password access */
-	writel(wdt_cr, DANUBE_BIU_WDT_CR);
+	writel(wdt_cr, IFXMIPS_BIU_WDT_CR);
 }
 
 static int
@@ -156,7 +156,7 @@ danube_wdt_ioctl (struct inode *inode, struct file *file, unsigned int cmd,
 	static int timeout = -1;
 	unsigned int user_arg;
 
-	if ((cmd != DANUBE_WDT_IOC_STOP) && (cmd != DANUBE_WDT_IOC_PING) && (cmd != DANUBE_WDT_IOC_GET_STATUS))
+	if ((cmd != IFXMIPS_WDT_IOC_STOP) && (cmd != IFXMIPS_WDT_IOC_PING) && (cmd != IFXMIPS_WDT_IOC_GET_STATUS))
 	{
 		if (copy_from_user((void *) &user_arg, (void *) arg, sizeof (int))){
 			result = -EINVAL;
@@ -166,43 +166,43 @@ danube_wdt_ioctl (struct inode *inode, struct file *file, unsigned int cmd,
 
 	switch (cmd)
 	{
-	case DANUBE_WDT_IOC_START:
+	case IFXMIPS_WDT_IOC_START:
 		if ((result = danube_wdt_enable(user_arg)) < 0)
 			timeout = -1;
 		else
 			timeout = user_arg;
 		break;
 
-	case DANUBE_WDT_IOC_STOP:
+	case IFXMIPS_WDT_IOC_STOP:
 		printk("disable watch dog timer\n");
 		danube_wdt_disable();
 		break;
 
-	case DANUBE_WDT_IOC_PING:
+	case IFXMIPS_WDT_IOC_PING:
 		if (timeout < 0)
 			result = -EIO;
 		else
 			result = danube_wdt_enable(timeout);
 		break;
 
-	case DANUBE_WDT_IOC_GET_STATUS:
-		user_arg = readl(DANUBE_BIU_WDT_SR);
+	case IFXMIPS_WDT_IOC_GET_STATUS:
+		user_arg = readl(IFXMIPS_BIU_WDT_SR);
 		copy_to_user((int*)arg, (int*)&user_arg, sizeof(int));
 		break;
 
-	case DANUBE_WDT_IOC_SET_PWL:
+	case IFXMIPS_WDT_IOC_SET_PWL:
 		danube_wdt_prewarning_limit(user_arg);
 		break;
 
-	case DANUBE_WDT_IOC_SET_DSEN:
-		danube_wdt_enable_feature(user_arg, DANUBE_BIU_WDT_CR_DSEN);
+	case IFXMIPS_WDT_IOC_SET_DSEN:
+		danube_wdt_enable_feature(user_arg, IFXMIPS_BIU_WDT_CR_DSEN);
 		break;
 
-	case DANUBE_WDT_IOC_SET_LPEN:
-		danube_wdt_enable_feature(user_arg, DANUBE_BIU_WDT_CR_LPEN);
+	case IFXMIPS_WDT_IOC_SET_LPEN:
+		danube_wdt_enable_feature(user_arg, IFXMIPS_BIU_WDT_CR_LPEN);
 		break;
 
-	case DANUBE_WDT_IOC_SET_CLKDIV:
+	case IFXMIPS_WDT_IOC_SET_CLKDIV:
 		danube_wdt_set_clkdiv(user_arg);
 		break;
 
@@ -239,11 +239,11 @@ danube_wdt_register_proc_read (char *buf, char **start, off_t offset, int count,
 {
 	int len = 0;
 
-	len += sprintf (buf + len, "DANUBE_BIU_WDT_PROC_READ\n");
-	len += sprintf (buf + len, "DANUBE_BIU_WDT_CR(0x%08x)	: 0x%08x\n",
-			(unsigned int)DANUBE_BIU_WDT_CR, readl(DANUBE_BIU_WDT_CR));
-	len += sprintf (buf + len, "DANUBE_BIU_WDT_SR(0x%08x)	: 0x%08x\n",
-			(unsigned int)DANUBE_BIU_WDT_SR, readl(DANUBE_BIU_WDT_SR));
+	len += sprintf (buf + len, "IFXMIPS_BIU_WDT_PROC_READ\n");
+	len += sprintf (buf + len, "IFXMIPS_BIU_WDT_CR(0x%08x)	: 0x%08x\n",
+			(unsigned int)IFXMIPS_BIU_WDT_CR, readl(IFXMIPS_BIU_WDT_CR));
+	len += sprintf (buf + len, "IFXMIPS_BIU_WDT_SR(0x%08x)	: 0x%08x\n",
+			(unsigned int)IFXMIPS_BIU_WDT_SR, readl(IFXMIPS_BIU_WDT_SR));
 
 	*eof = 1;
 

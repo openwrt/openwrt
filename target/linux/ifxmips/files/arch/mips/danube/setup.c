@@ -49,7 +49,7 @@ __init bus_error_init (void)
 unsigned int
 danube_get_ddr_hz (void)
 {
-	switch (readl(DANUBE_CGU_SYS) & 0x3)
+	switch (readl(IFXMIPS_CGU_SYS) & 0x3)
 	{
 	case 0:
 		return CLOCK_167M;
@@ -66,7 +66,7 @@ unsigned int
 danube_get_cpu_hz (void)
 {
 	unsigned int ddr_clock = danube_get_ddr_hz();
-	switch (readl(DANUBE_CGU_SYS) & 0xc)
+	switch (readl(IFXMIPS_CGU_SYS) & 0xc)
 	{
 	case 0:
 		return CLOCK_333M;
@@ -81,7 +81,7 @@ unsigned int
 danube_get_fpi_hz (void)
 {
 	unsigned int ddr_clock = danube_get_ddr_hz();
-	if (readl(DANUBE_CGU_SYS) & 0x40)
+	if (readl(IFXMIPS_CGU_SYS) & 0x40)
 	{
 		return ddr_clock >> 1;
 	}
@@ -92,7 +92,7 @@ EXPORT_SYMBOL(danube_get_fpi_hz);
 unsigned int
 danube_get_cpu_ver (void)
 {
-	return readl(DANUBE_MCD_CHIPID) & 0xFFFFF000;
+	return readl(IFXMIPS_MCD_CHIPID) & 0xFFFFF000;
 }
 EXPORT_SYMBOL(danube_get_cpu_ver);
 
@@ -118,7 +118,7 @@ danube_be_handler(struct pt_regs *regs, int is_fixup)
 static irqreturn_t
 danube_timer6_interrupt(int irq, void *dev_id)
 {
-	timer_interrupt(DANUBE_TIMER6_INT, NULL);
+	timer_interrupt(IFXMIPS_TIMER6_INT, NULL);
 
 	return IRQ_HANDLED;
 }
@@ -139,18 +139,18 @@ plat_timer_setup (struct irqaction *irq)
 	r4k_cur = (read_c0_count() + r4k_offset);
 	write_c0_compare(r4k_cur);
 
-	danube_pmu_enable(DANUBE_PMU_PWDCR_GPT | DANUBE_PMU_PWDCR_FPI);
+	danube_pmu_enable(IFXMIPS_PMU_PWDCR_GPT | IFXMIPS_PMU_PWDCR_FPI);
 
-	writel(0x100, DANUBE_GPTU_GPT_CLC);
+	writel(0x100, IFXMIPS_GPTU_GPT_CLC);
 
-	writel(0xffff, DANUBE_GPTU_GPT_CAPREL);
-	writel(0x80C0, DANUBE_GPTU_GPT_T6CON);
+	writel(0xffff, IFXMIPS_GPTU_GPT_CAPREL);
+	writel(0x80C0, IFXMIPS_GPTU_GPT_T6CON);
 
-	retval = setup_irq(DANUBE_TIMER6_INT, &hrt_irqaction);
+	retval = setup_irq(IFXMIPS_TIMER6_INT, &hrt_irqaction);
 
 	if (retval)
 	{
-		prom_printf("reqeust_irq failed %d. HIGH_RES_TIMER is diabled\n", DANUBE_TIMER6_INT);
+		prom_printf("reqeust_irq failed %d. HIGH_RES_TIMER is diabled\n", IFXMIPS_TIMER6_INT);
 	}
 }
 

@@ -1,5 +1,5 @@
 /*
- *  Driver for DANUBE flashmap 
+ *  Driver for IFXMIPS flashmap 
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@
 
 static struct map_info
 danube_map = {
-	.name = "DANUBE_FLASH",
+	.name = "IFXMIPS_FLASH",
 	.bankwidth = 2,
 	.size = 0x400000,
 };
@@ -108,8 +108,8 @@ danube_partitions[4] = {
 	},
 };
 
-#define DANUBE_FLASH_START		0x10000000
-#define DANUBE_FLASH_MAX		0x2000000
+#define IFXMIPS_FLASH_START		0x10000000
+#define IFXMIPS_FLASH_MAX		0x2000000
 
 int
 find_uImage_size (unsigned long start_offset){
@@ -136,16 +136,16 @@ init_danube_mtd (void)
 	struct mtd_partition *parts = NULL;
 	unsigned long uimage_size;
 
-	writel(0x1d7ff, DANUBE_EBU_BUSCON0);
+	writel(0x1d7ff, IFXMIPS_EBU_BUSCON0);
 
 	danube_map.read = danube_read16;
 	danube_map.write = danube_write16;
 	danube_map.copy_from = danube_copy_from;
 	danube_map.copy_to = danube_copy_to;
 
-	danube_map.phys = DANUBE_FLASH_START;
-	danube_map.virt = ioremap_nocache(DANUBE_FLASH_START, DANUBE_FLASH_MAX);
-	danube_map.size = DANUBE_FLASH_MAX;
+	danube_map.phys = IFXMIPS_FLASH_START;
+	danube_map.virt = ioremap_nocache(IFXMIPS_FLASH_START, IFXMIPS_FLASH_MAX);
+	danube_map.size = IFXMIPS_FLASH_MAX;
 	if (!danube_map.virt) {
 		printk(KERN_WARNING "Failed to ioremap!\n");
 		return -EIO;
@@ -191,4 +191,4 @@ module_exit (cleanup_danube_mtd);
 
 MODULE_LICENSE ("GPL");
 MODULE_AUTHOR ("John Crispin <blogic@openwrt.org>");
-MODULE_DESCRIPTION ("MTD map driver for DANUBE boards");
+MODULE_DESCRIPTION ("MTD map driver for IFXMIPS boards");
