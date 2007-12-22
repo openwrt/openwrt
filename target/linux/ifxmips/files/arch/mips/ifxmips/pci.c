@@ -164,7 +164,6 @@ int pcibios_plat_dev_init(struct pci_dev *dev){
 			break;
 		case 1:
 			//falling edge level triggered:0x4, low level:0xc, rising edge:0x2
-			printk("%s:%s[%d] %08X \n", __FILE__, __func__, __LINE__, dev->irq);
 			writel(readl(IFXMIPS_EBU_PCC_CON) | 0xc, IFXMIPS_EBU_PCC_CON);
 			writel(readl(IFXMIPS_EBU_PCC_IEN) | 0x10, IFXMIPS_EBU_PCC_IEN);
 			break;
