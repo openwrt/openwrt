@@ -34,7 +34,6 @@
 #include <linux/major.h>
 #include <linux/string.h>
 #include <linux/fs.h>
-#include <linux/proc_fs.h>
 #include <linux/fcntl.h>
 #include <linux/ptrace.h>
 #include <linux/mm.h>
@@ -91,7 +90,6 @@ int ifx_ssc_close (struct inode *, struct file *);
 /* other forward declarations */
 static unsigned int ifx_ssc_get_kernel_clk (struct ifx_ssc_port *info);
 static void tx_int (struct ifx_ssc_port *);
-static int ifx_ssc1_read_proc (char *, char **, off_t, int, int *, void *);
 
 extern unsigned int ifxmips_get_fpi_hz (void);
 extern void mask_and_ack_ifxmips_irq (unsigned int irq_nr);
@@ -1183,31 +1181,6 @@ ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 }
 EXPORT_SYMBOL(ifx_ssc_ioctl);
 
-static int
-ifx_ssc1_read_proc (char *page, char **start, off_t offset, int count, int *eof, void *data)
-{
-	int off = 0;
-	unsigned long flags;
-
-	local_save_flags(flags);
-	local_irq_disable();
-
-	off += sprintf (page + off, "Statistics for Infineon Synchronous Serial Controller SSC1\n");
-	off += sprintf (page + off, "RX overflow errors %d\n", isp[0].stats.rxOvErr);
-	off += sprintf (page + off, "RX underflow errors %d\n", isp[0].stats.rxUnErr);
-	off += sprintf (page + off, "TX overflow errors %d\n", isp[0].stats.txOvErr);
-	off += sprintf (page + off, "TX underflow errors %d\n", isp[0].stats.txUnErr);
-	off += sprintf (page + off, "Abort errors %d\n", isp[0].stats.abortErr);
-	off += sprintf (page + off, "Mode errors %d\n", isp[0].stats.modeErr);
-	off += sprintf (page + off, "RX Bytes %d\n", isp[0].stats.rxBytes);
-	off += sprintf (page + off, "TX Bytes %d\n", isp[0].stats.txBytes);
-
-	local_irq_restore(flags);
-	*eof = 1;
-
-	return off;
-}
-
 int __init
 ifx_ssc_init (void)
 {
@@ -1329,7 +1302,6 @@ ifx_ssc_init (void)
 		}
 	}
 
-	create_proc_read_entry ("driver/ssc1", 0, NULL, ifx_ssc1_read_proc, NULL);
 
 	return 0;
 
@@ -1354,7 +1326,6 @@ ifx_ssc_cleanup_module (void)
 		free_irq(isp[i].errirq, &isp[i]);
 	}
 	kfree (isp);
-	remove_proc_entry ("driver/ssc1", NULL);
 }
 
 module_init(ifx_ssc_init);
