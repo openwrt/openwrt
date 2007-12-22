@@ -32,7 +32,7 @@
 #include <asm/gpio.h>
 
 #define DRV_NAME	"pata-rb153-cf"
-#define DRV_VERSION	"0.2.1"
+#define DRV_VERSION	"0.2.2"
 #define DRV_DESC	"PATA driver for RouterBOARD 153 Compact Flash"
 
 #define RB153_CF_MAXPORTS	1
@@ -253,7 +253,7 @@ static __devinit int rb153_pata_driver_probe(struct platform_device *pdev)
 	rb153_pata_setup_ports(ah);
 
 	ret = ata_host_activate(ah, irq, rb153_pata_irq_handler,
-				IRQF_TRIGGER_HIGH, &rb153_pata_sht);
+				IRQF_TRIGGER_LOW, &rb153_pata_sht);
 	if (ret)
 		goto err_free_gpio;
 
