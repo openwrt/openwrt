@@ -108,7 +108,7 @@ ifx_ssc_get_kernel_clk (struct ifx_ssc_port *info)
 {
 	unsigned int rmc;
 
-	rmc = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_CLC) & IFX_CLC_RUN_DIVIDER_MASK) >> IFX_CLC_RUN_DIVIDER_OFFSET;
+	rmc = (readl(IFXMIPS_SSC_CLC) & IFX_CLC_RUN_DIVIDER_MASK) >> IFX_CLC_RUN_DIVIDER_OFFSET;
 	if (rmc == 0)
 	{
 		printk ("ifx_ssc_get_kernel_clk rmc==0 \n");
@@ -168,24 +168,12 @@ rx_int (struct ifx_ssc_port *info)
 	unsigned long *tmp_ptr;
 	unsigned int rx_valid_cnt;
 	/* number of words waiting in the RX FIFO */
-	fifo_fill_lev = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_FSTAT) & IFX_SSC_FSTAT_RECEIVED_WORDS_MASK) >> IFX_SSC_FSTAT_RECEIVED_WORDS_OFFSET;
-	// Note: There are always 32 bits in a fifo-entry except for the last 
-	// word of a contigous transfer block and except for not in rx-only 
-	// mode and CON.ENBV set. But for this case it should be a convention 
-	// in software which helps:
-	// In tx or rx/tx mode all transfers from the buffer to the FIFO are 
-	// 32-bit wide, except for the last three bytes, which could be a 
-	// combination of 16- and 8-bit access.
-	// => The whole block is received as 32-bit words as a contigous stream, 
-	// even if there was a gap in tx which has the fifo run out of data! 
-	// Just the last fifo entry *may* be partially filled (0, 1, 2 or 3 bytes)!
-
-	/* free space in the RX buffer */
+	fifo_fill_lev = (readl(IFXMIPS_SSC_FSTAT) & IFX_SSC_FSTAT_RECEIVED_WORDS_MASK) >> IFX_SSC_FSTAT_RECEIVED_WORDS_OFFSET;
 	bytes_in_buf = info->rxbuf_end - info->rxbuf_ptr;
 	// transfer with 32 bits per entry
 	while ((bytes_in_buf >= 4) && (fifo_fill_lev > 0)) {
 		tmp_ptr = (unsigned long *) info->rxbuf_ptr;
-		*tmp_ptr = READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RB);
+		*tmp_ptr = readl(IFXMIPS_SSC_RB);
 		info->rxbuf_ptr += 4;
 		info->stats.rxBytes += 4;
 		fifo_fill_lev--;
@@ -194,14 +182,14 @@ rx_int (struct ifx_ssc_port *info)
 
 	// now do the rest as mentioned in STATE.RXBV
 	while ((bytes_in_buf > 0) && (fifo_fill_lev > 0)) {
-		rx_valid_cnt = (READ_PERIPHERAL_REGISTER(info->mapbase + IFX_SSC_STATE) & IFX_SSC_STATE_RX_BYTE_VALID_MASK) >> IFX_SSC_STATE_RX_BYTE_VALID_OFFSET;
+		rx_valid_cnt = (readl(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_RX_BYTE_VALID_MASK) >> IFX_SSC_STATE_RX_BYTE_VALID_OFFSET;
 		if (rx_valid_cnt == 0)
 			break;
 
 		if (rx_valid_cnt > bytes_in_buf)
 			rx_valid_cnt = bytes_in_buf;
 
-		tmp_val = READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RB);
+		tmp_val = readl(IFXMIPS_SSC_RB);
 
 		for (i = 0; i < rx_valid_cnt; i++)
 		{
@@ -220,9 +208,9 @@ rx_int (struct ifx_ssc_port *info)
 	} else if ((info->opts.modeRxTx == IFX_SSC_MODE_RX) && (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_RXCNT) == 0))
 	{
 		if (info->rxbuf_end - info->rxbuf_ptr < IFX_SSC_RXREQ_BLOCK_SIZE)
-			WRITE_PERIPHERAL_REGISTER ((info->rxbuf_end - info->rxbuf_ptr) << IFX_SSC_RXREQ_RXCOUNT_OFFSET, info->mapbase + IFX_SSC_RXREQ);
+			writel((info->rxbuf_end - info->rxbuf_ptr) << IFX_SSC_RXREQ_RXCOUNT_OFFSET, IFXMIPS_SSC_RXREQ);
 		else
-			WRITE_PERIPHERAL_REGISTER (IFX_SSC_RXREQ_BLOCK_SIZE << IFX_SSC_RXREQ_RXCOUNT_OFFSET,  info->mapbase + IFX_SSC_RXREQ);
+			writel(IFX_SSC_RXREQ_BLOCK_SIZE << IFX_SSC_RXREQ_RXCOUNT_OFFSET,  IFXMIPS_SSC_RXREQ);
 	}
 }
 
@@ -231,8 +219,8 @@ tx_int (struct ifx_ssc_port *info)
 {
 
 	int fifo_space, fill, i;
-	fifo_space = ((READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_ID) & IFX_SSC_PERID_TXFS_MASK) >> IFX_SSC_PERID_TXFS_OFFSET)
-		- ((READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_FSTAT) & IFX_SSC_FSTAT_TRANSMIT_WORDS_MASK) >> IFX_SSC_FSTAT_TRANSMIT_WORDS_OFFSET);
+	fifo_space = ((readl(IFXMIPS_SSC_ID) & IFX_SSC_PERID_TXFS_MASK) >> IFX_SSC_PERID_TXFS_OFFSET)
+		- ((readl(IFXMIPS_SSC_FSTAT) & IFX_SSC_FSTAT_TRANSMIT_WORDS_MASK) >> IFX_SSC_FSTAT_TRANSMIT_WORDS_OFFSET);
 
 	if (fifo_space == 0)
 		return;
@@ -245,7 +233,7 @@ tx_int (struct ifx_ssc_port *info)
 	for (i = 0; i < fill / 4; i++)
 	{
 		// at first 32 bit access
-		WRITE_PERIPHERAL_REGISTER (*(UINT32 *) info->txbuf_ptr, info->mapbase + IFX_SSC_TB);
+		writel(*(UINT32 *) info->txbuf_ptr, IFXMIPS_SSC_TB);
 		info->txbuf_ptr += 4;
 	}
 
@@ -307,7 +295,7 @@ ifx_ssc_err_int (int irq, void *dev_id)
 	unsigned long flags;
 
 	local_irq_save (flags);
-	state = READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE);
+	state = readl(IFXMIPS_SSC_STATE);
 
 	if ((state & IFX_SSC_STATE_RX_UFL) != 0) {
 		info->stats.rxUnErr++;
@@ -335,7 +323,7 @@ ifx_ssc_err_int (int irq, void *dev_id)
 	}
 
 	if (write_back)
-		WRITE_PERIPHERAL_REGISTER (write_back, info->mapbase + IFX_SSC_WHBSTATE);
+		writel(write_back, IFXMIPS_SSC_WHBSTATE);
 
 	local_irq_restore (flags);
 
@@ -361,12 +349,12 @@ ifx_ssc_abort (struct ifx_ssc_port *info)
 	// complete word. The disable cuts the transmission immediatly and 
 	// releases the chip selects. This could result in unpredictable 
 	// behavior of connected external devices!
-	enabled = (READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_STATE) & IFX_SSC_STATE_IS_ENABLED) != 0;
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
+	enabled = (readl(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_IS_ENABLED) != 0;
+	writel(IFX_SSC_WHBSTATE_CLR_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
 	// flush fifos
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_XFCON_FIFO_FLUSH, info->mapbase + IFX_SSC_TXFCON);
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_XFCON_FIFO_FLUSH, info->mapbase + IFX_SSC_RXFCON);
+	writel(IFX_SSC_XFCON_FIFO_FLUSH, IFXMIPS_SSC_TXFCON);
+	writel(IFX_SSC_XFCON_FIFO_FLUSH, IFXMIPS_SSC_RXFCON);
 
 	// free txbuf
 	if (info->txbuf != NULL)
@@ -385,10 +373,10 @@ ifx_ssc_abort (struct ifx_ssc_port *info)
 	mask_and_ack_ifxmips_irq(info->errirq);
 
 	// clear error flags
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ALL_ERROR, info->mapbase + IFX_SSC_WHBSTATE);
+	writel(IFX_SSC_WHBSTATE_CLR_ALL_ERROR, IFXMIPS_SSC_WHBSTATE);
 
 	if (enabled)
-		WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
+		writel(IFX_SSC_WHBSTATE_SET_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
 }
 
@@ -427,22 +415,22 @@ ifx_ssc_open (struct inode *inode, struct file *filp)
 	disable_irq(info->errirq);
 
 	/* Flush and enable TX/RX FIFO */
-	WRITE_PERIPHERAL_REGISTER ((IFX_SSC_DEF_TXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_FLUSH | IFX_SSC_XFCON_FIFO_ENABLE, info->mapbase + IFX_SSC_TXFCON);
-	WRITE_PERIPHERAL_REGISTER ((IFX_SSC_DEF_RXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_FLUSH | IFX_SSC_XFCON_FIFO_ENABLE, info->mapbase + IFX_SSC_RXFCON);
+	writel((IFX_SSC_DEF_TXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_FLUSH | IFX_SSC_XFCON_FIFO_ENABLE, IFXMIPS_SSC_TXFCON);
+	writel((IFX_SSC_DEF_RXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_FLUSH | IFX_SSC_XFCON_FIFO_ENABLE, IFXMIPS_SSC_RXFCON);
 
 	/* logically flush the software FIFOs */
 	info->rxbuf_ptr = 0;
 	info->txbuf_ptr = 0;
 
 	/* clear all error bits */
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ALL_ERROR, info->mapbase + IFX_SSC_WHBSTATE);
+	writel(IFX_SSC_WHBSTATE_CLR_ALL_ERROR, IFXMIPS_SSC_WHBSTATE);
 
 	// clear pending interrupts
 	mask_and_ack_ifxmips_irq(info->rxirq);
 	mask_and_ack_ifxmips_irq(info->txirq);
 	mask_and_ack_ifxmips_irq(info->errirq);
 
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_SET_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
+	writel(IFX_SSC_WHBSTATE_SET_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
 	return 0;
 }
@@ -466,7 +454,7 @@ ifx_ssc_close (struct inode *inode, struct file *filp)
 	if (!info)
 		return -ENXIO;
 
-	WRITE_PERIPHERAL_REGISTER (IFX_SSC_WHBSTATE_CLR_ENABLE, info->mapbase + IFX_SSC_WHBSTATE);
+	writel(IFX_SSC_WHBSTATE_CLR_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
 	ifx_ssc_abort(info);
 
@@ -727,7 +715,7 @@ ifx_ssc_frm_status_get (struct ifx_ssc_port *info)
 {
 	unsigned long tmp;
 
-	tmp = READ_PERIPHERAL_REGISTER (info->mapbase + IFX_SSC_SFSTAT);
+	tmp = readl(IFXMIPS_SSC_SFSTAT);
 	info->frm_status.DataBusy = (tmp & IFX_SSC_SFSTAT_IN_DATA) > 0;
 	info->frm_status.PauseBusy = (tmp & IFX_SSC_SFSTAT_IN_PAUSE) > 0;
 	info->frm_status.DataCount = (tmp & IFX_SSC_SFSTAT_DATA_COUNT_MASK) >> IFX_SSC_SFSTAT_DATA_COUNT_OFFSET;
@@ -1246,7 +1234,7 @@ ifx_ssc_init (void)
 		info->txbuf = NULL;
 		/* values specific to SSC1 */
 		if (i == 0) {
-			info->mapbase = IFXMIPS_SSC1_BASE_ADDR;
+			info->mapbase = IFXMIPS_SSC_BASE_ADDR;
 			info->txirq = IFXMIPS_SSC_TIR;
 			info->rxirq = IFXMIPS_SSC_RIR;
 			info->errirq = IFXMIPS_SSC_EIR;
