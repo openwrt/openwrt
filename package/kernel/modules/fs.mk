@@ -85,8 +85,9 @@ define KernelPackage/fs-ext3
 	CONFIG_JBD
   FILES:= \
 	$(LINUX_DIR)/fs/ext3/ext3.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/fs/mbcache.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/fs/jbd/jbd.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,jbd ext3)
+  AUTOLOAD:=$(call AutoLoad,30,mbcache jbd ext3)
 endef
 
 define KernelPackage/fs-ext3/description
