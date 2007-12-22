@@ -89,49 +89,6 @@ ifx_ssc_get_kernel_clk (struct ifx_ssc_port *info)
 	return ifxmips_get_fpi_hz () / rmc;
 }
 
-#ifndef not_yet
-#ifdef IFX_SSC_INT_USE_BH
-/*
- * This routine is used by the interrupt handler to schedule
- * processing in the software interrupt portion of the driver
- * (also known as the "bottom half").  This can be called any
- * number of times for any channel without harm.
- */
-static inline void
-ifx_ssc_sched_event (struct ifx_ssc_port *info, int event)
-{
-	info->event |= 1 << event;	/* remember what kind of event and who */
-	queue_task (&info->tqueue, &tq_cyclades);	/* it belongs to */
-	mark_bh (CYCLADES_BH);	/* then trigger event */
-}
-
-static void
-do_softint (void *private_)
-{
-	struct ifx_ssc_port *info = (struct ifx_ssc_port *) private_;
-
-	if (test_and_clear_bit (Cy_EVENT_HANGUP, &info->event))
-	{
-		wake_up_interruptible (&info->open_wait);
-		info->flags &= ~(ASYNC_NORMAL_ACTIVE | ASYNC_CALLOUT_ACTIVE);
-	}
-
-	if (test_and_clear_bit (Cy_EVENT_OPEN_WAKEUP, &info->event))
-		wake_up_interruptible (&info->open_wait);
-
-	if (test_and_clear_bit (Cy_EVENT_DELTA_WAKEUP, &info->event))
-		wake_up_interruptible (&info->delta_msr_wait);
-
-	if (test_and_clear_bit (Cy_EVENT_WRITE_WAKEUP, &info->event))
-		wake_up_interruptible (&tty->write_wait);
-#ifdef Z_WAKE
-	if (test_and_clear_bit (Cy_EVENT_SHUTDOWN_WAKEUP, &info->event))
-		wake_up_interruptible (&info->shutdown_wait);
-#endif
-}
-#endif
-#endif
-
 inline static void
 rx_int (struct ifx_ssc_port *info)
 {
@@ -720,7 +677,6 @@ ifx_ssc_frm_control_set (struct ifx_ssc_port *info)
 {
 	unsigned long tmp;
 
-	// check parameters
 	if ((info->frm_opts.DataLength > IFX_SSC_SFCON_DATA_LENGTH_MAX)
 	    || (info->frm_opts.DataLength < 1)
 	    || (info->frm_opts.PauseLength > IFX_SSC_SFCON_PAUSE_LENGTH_MAX)
