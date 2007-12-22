@@ -25,7 +25,7 @@
 #include <asm/danube/danube_pmu.h>
 
 /*25 descriptors for each dma channel,4096/8/20=25.xx*/
-#define DANUBE_DMA_DESCRIPTOR_OFFSET 25
+#define IFXMIPS_DMA_DESCRIPTOR_OFFSET 25
 
 #define MAX_DMA_DEVICE_NUM  6	/*max ports connecting to dma */
 #define MAX_DMA_CHANNEL_NUM 20	/*max dma channels */
@@ -44,26 +44,26 @@ char global_device_name[MAX_DMA_DEVICE_NUM][20] =
 	{ {"PPE"}, {"DEU"}, {"SPI"}, {"SDIO"}, {"MCTRL0"}, {"MCTRL1"} };
 
 _dma_chan_map default_dma_map[MAX_DMA_CHANNEL_NUM] = {
-	{"PPE", DANUBE_DMA_RX, 0, DANUBE_DMA_CH0_INT, 0},
-	{"PPE", DANUBE_DMA_TX, 0, DANUBE_DMA_CH1_INT, 0},
-	{"PPE", DANUBE_DMA_RX, 1, DANUBE_DMA_CH2_INT, 1},
-	{"PPE", DANUBE_DMA_TX, 1, DANUBE_DMA_CH3_INT, 1},
-	{"PPE", DANUBE_DMA_RX, 2, DANUBE_DMA_CH4_INT, 2},
-	{"PPE", DANUBE_DMA_TX, 2, DANUBE_DMA_CH5_INT, 2},
-	{"PPE", DANUBE_DMA_RX, 3, DANUBE_DMA_CH6_INT, 3},
-	{"PPE", DANUBE_DMA_TX, 3, DANUBE_DMA_CH7_INT, 3},
-	{"DEU", DANUBE_DMA_RX, 0, DANUBE_DMA_CH8_INT, 0},
-	{"DEU", DANUBE_DMA_TX, 0, DANUBE_DMA_CH9_INT, 0},
-	{"DEU", DANUBE_DMA_RX, 1, DANUBE_DMA_CH10_INT, 1},
-	{"DEU", DANUBE_DMA_TX, 1, DANUBE_DMA_CH11_INT, 1},
-	{"SPI", DANUBE_DMA_RX, 0, DANUBE_DMA_CH12_INT, 0},
-	{"SPI", DANUBE_DMA_TX, 0, DANUBE_DMA_CH13_INT, 0},
-	{"SDIO", DANUBE_DMA_RX, 0, DANUBE_DMA_CH14_INT, 0},
-	{"SDIO", DANUBE_DMA_TX, 0, DANUBE_DMA_CH15_INT, 0},
-	{"MCTRL0", DANUBE_DMA_RX, 0, DANUBE_DMA_CH16_INT, 0},
-	{"MCTRL0", DANUBE_DMA_TX, 0, DANUBE_DMA_CH17_INT, 0},
-	{"MCTRL1", DANUBE_DMA_RX, 1, DANUBE_DMA_CH18_INT, 1},
-	{"MCTRL1", DANUBE_DMA_TX, 1, DANUBE_DMA_CH19_INT, 1}
+	{"PPE", IFXMIPS_DMA_RX, 0, IFXMIPS_DMA_CH0_INT, 0},
+	{"PPE", IFXMIPS_DMA_TX, 0, IFXMIPS_DMA_CH1_INT, 0},
+	{"PPE", IFXMIPS_DMA_RX, 1, IFXMIPS_DMA_CH2_INT, 1},
+	{"PPE", IFXMIPS_DMA_TX, 1, IFXMIPS_DMA_CH3_INT, 1},
+	{"PPE", IFXMIPS_DMA_RX, 2, IFXMIPS_DMA_CH4_INT, 2},
+	{"PPE", IFXMIPS_DMA_TX, 2, IFXMIPS_DMA_CH5_INT, 2},
+	{"PPE", IFXMIPS_DMA_RX, 3, IFXMIPS_DMA_CH6_INT, 3},
+	{"PPE", IFXMIPS_DMA_TX, 3, IFXMIPS_DMA_CH7_INT, 3},
+	{"DEU", IFXMIPS_DMA_RX, 0, IFXMIPS_DMA_CH8_INT, 0},
+	{"DEU", IFXMIPS_DMA_TX, 0, IFXMIPS_DMA_CH9_INT, 0},
+	{"DEU", IFXMIPS_DMA_RX, 1, IFXMIPS_DMA_CH10_INT, 1},
+	{"DEU", IFXMIPS_DMA_TX, 1, IFXMIPS_DMA_CH11_INT, 1},
+	{"SPI", IFXMIPS_DMA_RX, 0, IFXMIPS_DMA_CH12_INT, 0},
+	{"SPI", IFXMIPS_DMA_TX, 0, IFXMIPS_DMA_CH13_INT, 0},
+	{"SDIO", IFXMIPS_DMA_RX, 0, IFXMIPS_DMA_CH14_INT, 0},
+	{"SDIO", IFXMIPS_DMA_TX, 0, IFXMIPS_DMA_CH15_INT, 0},
+	{"MCTRL0", IFXMIPS_DMA_RX, 0, IFXMIPS_DMA_CH16_INT, 0},
+	{"MCTRL0", IFXMIPS_DMA_TX, 0, IFXMIPS_DMA_CH17_INT, 0},
+	{"MCTRL1", IFXMIPS_DMA_RX, 1, IFXMIPS_DMA_CH18_INT, 1},
+	{"MCTRL1", IFXMIPS_DMA_TX, 1, IFXMIPS_DMA_CH19_INT, 1}
 };
 
 _dma_chan_map *chan_map = default_dma_map;
@@ -97,9 +97,9 @@ enable_ch_irq (_dma_channel_info *pCh)
 	int flag;
 
 	local_irq_save(flag);
-	writel(chan_no, DANUBE_DMA_CS);
-	writel(0x4a, DANUBE_DMA_CIE);
-	writel(readl(DANUBE_DMA_IRNEN) | (1 << chan_no), DANUBE_DMA_IRNEN);
+	writel(chan_no, IFXMIPS_DMA_CS);
+	writel(0x4a, IFXMIPS_DMA_CIE);
+	writel(readl(IFXMIPS_DMA_IRNEN) | (1 << chan_no), IFXMIPS_DMA_IRNEN);
 	local_irq_restore(flag);
 	enable_danube_irq(pCh->irq);
 }
@@ -112,9 +112,9 @@ disable_ch_irq (_dma_channel_info *pCh)
 
 	local_irq_save(flag);
 	g_danube_dma_int_status &= ~(1 << chan_no);
-	writel(chan_no, DANUBE_DMA_CS);
-	writel(0, DANUBE_DMA_CIE);
-	writel(readl(DANUBE_DMA_IRNEN) & ~(1 << chan_no), DANUBE_DMA_IRNEN);
+	writel(chan_no, IFXMIPS_DMA_CS);
+	writel(0, IFXMIPS_DMA_CIE);
+	writel(readl(IFXMIPS_DMA_IRNEN) & ~(1 << chan_no), IFXMIPS_DMA_IRNEN);
 	local_irq_restore(flag);
 	mask_and_ack_danube_irq(pCh->irq);
 }
@@ -126,9 +126,9 @@ open_chan (_dma_channel_info *pCh)
 	int chan_no = (int)(pCh - dma_chan);
 
 	local_irq_save(flag);
-	writel(chan_no, DANUBE_DMA_CS);
-	writel(readl(DANUBE_DMA_CCTRL) | 1, DANUBE_DMA_CCTRL);
-	if(pCh->dir == DANUBE_DMA_RX)
+	writel(chan_no, IFXMIPS_DMA_CS);
+	writel(readl(IFXMIPS_DMA_CCTRL) | 1, IFXMIPS_DMA_CCTRL);
+	if(pCh->dir == IFXMIPS_DMA_RX)
 		enable_ch_irq(pCh);
 	local_irq_restore(flag);
 }
@@ -140,8 +140,8 @@ close_chan(_dma_channel_info *pCh)
 	int chan_no = (int) (pCh - dma_chan);
 
 	local_irq_save(flag);
-	writel(chan_no, DANUBE_DMA_CS);
-	writel(readl(DANUBE_DMA_CCTRL) & ~1, DANUBE_DMA_CCTRL);
+	writel(chan_no, IFXMIPS_DMA_CS);
+	writel(readl(IFXMIPS_DMA_CCTRL) & ~1, IFXMIPS_DMA_CCTRL);
 	disable_ch_irq(pCh);
 	local_irq_restore(flag);
 }
@@ -151,8 +151,8 @@ reset_chan (_dma_channel_info *pCh)
 {
 	int chan_no = (int) (pCh - dma_chan);
 
-	writel(chan_no, DANUBE_DMA_CS);
-	writel(readl(DANUBE_DMA_CCTRL) | 2, DANUBE_DMA_CCTRL);
+	writel(chan_no, IFXMIPS_DMA_CS);
+	writel(readl(IFXMIPS_DMA_CCTRL) | 2, IFXMIPS_DMA_CCTRL);
 }
 
 void
@@ -176,10 +176,10 @@ rx_chan_intr_handler (int chan_no)
 		pCh->weight--;
 	} else {
 		local_irq_save(flag);
-		tmp = readl(DANUBE_DMA_CS);
-		writel(chan_no, DANUBE_DMA_CS);
-		writel(readl(DANUBE_DMA_CIS) | 0x7e, DANUBE_DMA_CIS);
-		writel(tmp, DANUBE_DMA_CS);
+		tmp = readl(IFXMIPS_DMA_CS);
+		writel(chan_no, IFXMIPS_DMA_CS);
+		writel(readl(IFXMIPS_DMA_CIS) | 0x7e, IFXMIPS_DMA_CIS);
+		writel(tmp, IFXMIPS_DMA_CS);
 		g_danube_dma_int_status &= ~(1 << chan_no);
 		local_irq_restore(flag);
 		enable_danube_irq(dma_chan[chan_no].irq);
@@ -195,10 +195,10 @@ tx_chan_intr_handler (int chan_no)
     int flag;
 
     local_irq_save(flag);
-    tmp = readl(DANUBE_DMA_CS);
-    writel(chan_no, DANUBE_DMA_CS);
-    writel(readl(DANUBE_DMA_CIS) | 0x7e, DANUBE_DMA_CIS);
-    writel(tmp, DANUBE_DMA_CS);
+    tmp = readl(IFXMIPS_DMA_CS);
+    writel(chan_no, IFXMIPS_DMA_CS);
+    writel(readl(IFXMIPS_DMA_CIS) | 0x7e, IFXMIPS_DMA_CIS);
+    writel(tmp, IFXMIPS_DMA_CS);
     g_danube_dma_int_status &= ~(1 << chan_no);
     local_irq_restore(flag);
 	pDev->current_tx_chan = pCh->rel_chan_no;
@@ -238,7 +238,7 @@ do_dma_tasklet (unsigned long unused)
 
 		if (chan_no >= 0)
 		{
-			if (chan_map[chan_no].dir == DANUBE_DMA_RX)
+			if (chan_map[chan_no].dir == IFXMIPS_DMA_RX)
 				rx_chan_intr_handler(chan_no);
 			else
 				tx_chan_intr_handler(chan_no);
@@ -272,10 +272,10 @@ dma_interrupt (int irq, void *dev_id)
 	if (chan_no < 0 || chan_no > 19)
 		BUG();
 
-	tmp = readl(DANUBE_DMA_IRNEN);
-	writel(0, DANUBE_DMA_IRNEN);
+	tmp = readl(IFXMIPS_DMA_IRNEN);
+	writel(0, IFXMIPS_DMA_IRNEN);
 	g_danube_dma_int_status |= 1 << chan_no;
-	writel(tmp, DANUBE_DMA_IRNEN);
+	writel(tmp, IFXMIPS_DMA_IRNEN);
 	mask_and_ack_danube_irq(irq);
 
     if (!g_danube_dma_in_process)
@@ -328,7 +328,7 @@ dma_device_register(_dma_device_info *dev)
 	for (i = 0; i < dev->max_tx_chan_num; i++)
 	{
 		pCh = dev->tx_chan[i];
-		if (pCh->control == DANUBE_DMA_CH_ON)
+		if (pCh->control == IFXMIPS_DMA_CH_ON)
 		{
 			chan_no = (int)(pCh - dma_chan);
 			for (j = 0; j < pCh->desc_len; j++)
@@ -337,16 +337,16 @@ dma_device_register(_dma_device_info *dev)
 				memset(tx_desc_p, 0, sizeof(struct tx_desc));
 			}
 			local_irq_save(flag);
-			writel(chan_no, DANUBE_DMA_CS);
+			writel(chan_no, IFXMIPS_DMA_CS);
 			/*check if the descriptor length is changed */
-			if (readl(DANUBE_DMA_CDLEN) != pCh->desc_len)
-				writel(pCh->desc_len, DANUBE_DMA_CDLEN);
+			if (readl(IFXMIPS_DMA_CDLEN) != pCh->desc_len)
+				writel(pCh->desc_len, IFXMIPS_DMA_CDLEN);
 
-			writel(readl(DANUBE_DMA_CCTRL) & ~1, DANUBE_DMA_CCTRL);
-			writel(readl(DANUBE_DMA_CCTRL) | 2, DANUBE_DMA_CCTRL);
-			while (readl(DANUBE_DMA_CCTRL) & 2){};
-			writel(readl(DANUBE_DMA_IRNEN) | (1 << chan_no), DANUBE_DMA_IRNEN);
-			writel(0x30100, DANUBE_DMA_CCTRL);	/*reset and enable channel,enable channel later */
+			writel(readl(IFXMIPS_DMA_CCTRL) & ~1, IFXMIPS_DMA_CCTRL);
+			writel(readl(IFXMIPS_DMA_CCTRL) | 2, IFXMIPS_DMA_CCTRL);
+			while (readl(IFXMIPS_DMA_CCTRL) & 2){};
+			writel(readl(IFXMIPS_DMA_IRNEN) | (1 << chan_no), IFXMIPS_DMA_IRNEN);
+			writel(0x30100, IFXMIPS_DMA_CCTRL);	/*reset and enable channel,enable channel later */
 			local_irq_restore(flag);
 		}
 	}
@@ -354,7 +354,7 @@ dma_device_register(_dma_device_info *dev)
 	for (i = 0; i < dev->max_rx_chan_num; i++)
 	{
 		pCh = dev->rx_chan[i];
-		if (pCh->control == DANUBE_DMA_CH_ON)
+		if (pCh->control == IFXMIPS_DMA_CH_ON)
 		{
 			chan_no = (int)(pCh - dma_chan);
 
@@ -376,16 +376,16 @@ dma_device_register(_dma_device_info *dev)
 			}
 
 			local_irq_save(flag);
-			writel(chan_no, DANUBE_DMA_CS);
+			writel(chan_no, IFXMIPS_DMA_CS);
 			/*check if the descriptor length is changed */
-			if (readl(DANUBE_DMA_CDLEN) != pCh->desc_len)
-				writel(pCh->desc_len, DANUBE_DMA_CDLEN);
-			writel(readl(DANUBE_DMA_CCTRL) & ~1, DANUBE_DMA_CCTRL);
-			writel(readl(DANUBE_DMA_CCTRL) | 2, DANUBE_DMA_CCTRL);
-			while (readl(DANUBE_DMA_CCTRL) & 2){};
-			writel(0x0a, DANUBE_DMA_CIE);	/*fix me, should enable all the interrupts here? */
-			writel(readl(DANUBE_DMA_IRNEN) | (1 << chan_no), DANUBE_DMA_IRNEN);
-			writel(0x30000, DANUBE_DMA_CCTRL);
+			if (readl(IFXMIPS_DMA_CDLEN) != pCh->desc_len)
+				writel(pCh->desc_len, IFXMIPS_DMA_CDLEN);
+			writel(readl(IFXMIPS_DMA_CCTRL) & ~1, IFXMIPS_DMA_CCTRL);
+			writel(readl(IFXMIPS_DMA_CCTRL) | 2, IFXMIPS_DMA_CCTRL);
+			while (readl(IFXMIPS_DMA_CCTRL) & 2){};
+			writel(0x0a, IFXMIPS_DMA_CIE);	/*fix me, should enable all the interrupts here? */
+			writel(readl(IFXMIPS_DMA_IRNEN) | (1 << chan_no), IFXMIPS_DMA_IRNEN);
+			writel(0x30000, IFXMIPS_DMA_CCTRL);
 			local_irq_restore(flag);
 			enable_danube_irq(dma_chan[chan_no].irq);
 		}
@@ -405,18 +405,18 @@ dma_device_unregister (_dma_device_info *dev)
 	for (i = 0; i < dev->max_tx_chan_num; i++)
 	{
 		pCh = dev->tx_chan[i];
-		if (pCh->control == DANUBE_DMA_CH_ON)
+		if (pCh->control == IFXMIPS_DMA_CH_ON)
 		{
 			chan_no = (int)(dev->tx_chan[i] - dma_chan);
 			local_irq_save (flag);
-			writel(chan_no, DANUBE_DMA_CS);
+			writel(chan_no, IFXMIPS_DMA_CS);
 			pCh->curr_desc = 0;
 			pCh->prev_desc = 0;
-			pCh->control = DANUBE_DMA_CH_OFF;
-			writel(0, DANUBE_DMA_CIE);	/*fix me, should disable all the interrupts here? */
-			writel(readl(DANUBE_DMA_IRNEN) & ~(1 << chan_no), DANUBE_DMA_IRNEN);	/*disable interrupts */
-			writel(readl(DANUBE_DMA_CCTRL) & ~1, DANUBE_DMA_CCTRL);
-			while (readl(DANUBE_DMA_CCTRL) & 1) {};
+			pCh->control = IFXMIPS_DMA_CH_OFF;
+			writel(0, IFXMIPS_DMA_CIE);	/*fix me, should disable all the interrupts here? */
+			writel(readl(IFXMIPS_DMA_IRNEN) & ~(1 << chan_no), IFXMIPS_DMA_IRNEN);	/*disable interrupts */
+			writel(readl(IFXMIPS_DMA_CCTRL) & ~1, IFXMIPS_DMA_CCTRL);
+			while (readl(IFXMIPS_DMA_CCTRL) & 1) {};
 			local_irq_restore (flag);
 
 			for (j = 0; j < pCh->desc_len; j++)
@@ -444,13 +444,13 @@ dma_device_unregister (_dma_device_info *dev)
 		g_danube_dma_int_status &= ~(1 << chan_no);
 		pCh->curr_desc = 0;
 		pCh->prev_desc = 0;
-		pCh->control = DANUBE_DMA_CH_OFF;
+		pCh->control = IFXMIPS_DMA_CH_OFF;
 
-		writel(chan_no, DANUBE_DMA_CS);
-		writel(0, DANUBE_DMA_CIE); /*fix me, should disable all the interrupts here? */
-		writel(readl(DANUBE_DMA_IRNEN) & ~(1 << chan_no), DANUBE_DMA_IRNEN);	/*disable interrupts */
-		writel(readl(DANUBE_DMA_CCTRL) & ~1, DANUBE_DMA_CCTRL);
-		while (readl(DANUBE_DMA_CCTRL) & 1) {};
+		writel(chan_no, IFXMIPS_DMA_CS);
+		writel(0, IFXMIPS_DMA_CIE); /*fix me, should disable all the interrupts here? */
+		writel(readl(IFXMIPS_DMA_IRNEN) & ~(1 << chan_no), IFXMIPS_DMA_IRNEN);	/*disable interrupts */
+		writel(readl(IFXMIPS_DMA_CCTRL) & ~1, IFXMIPS_DMA_CCTRL);
+		while (readl(IFXMIPS_DMA_CCTRL) & 1) {};
 
 		local_irq_restore (flag);
 		for (j = 0; j < pCh->desc_len; j++)
@@ -577,8 +577,8 @@ dma_device_write (struct dma_device_info *dma_dev, u8 * dataptr, int len, void *
 		dma_dev->intr_handler (dma_dev, TX_BUF_FULL_INT);
 	}
 
-	writel(chan_no, DANUBE_DMA_CS);
-	tmp = readl(DANUBE_DMA_CCTRL);
+	writel(chan_no, IFXMIPS_DMA_CS);
+	tmp = readl(IFXMIPS_DMA_CCTRL);
 
 	if (!(tmp & 1))
 		pCh->open (pCh);
@@ -625,14 +625,14 @@ map_dma_chan(_dma_chan_map *map)
 		dma_devs[i].rx_burst_len = 4;
 		if (i == 0)
 		{
-			writel(0, DANUBE_DMA_PS);
-			writel(readl(DANUBE_DMA_PCTRL) | ((0xf << 8) | (1 << 6)), DANUBE_DMA_PCTRL);	/*enable dma drop */
+			writel(0, IFXMIPS_DMA_PS);
+			writel(readl(IFXMIPS_DMA_PCTRL) | ((0xf << 8) | (1 << 6)), IFXMIPS_DMA_PCTRL);	/*enable dma drop */
 		}
 
 		if (i == 1)
 		{
-			writel(1, DANUBE_DMA_PS);
-			writel(0x14, DANUBE_DMA_PCTRL);	/*deu port setting */
+			writel(1, IFXMIPS_DMA_PS);
+			writel(0x14, IFXMIPS_DMA_PCTRL);	/*deu port setting */
 		}
 
 		for (j = 0; j < MAX_DMA_CHANNEL_NUM; j++)
@@ -644,8 +644,8 @@ map_dma_chan(_dma_chan_map *map)
 			dma_chan[j].enable_irq = &enable_ch_irq;
 			dma_chan[j].disable_irq = &disable_ch_irq;
 			dma_chan[j].rel_chan_no = map[j].rel_chan_no;
-			dma_chan[j].control = DANUBE_DMA_CH_OFF;
-			dma_chan[j].default_weight = DANUBE_DMA_CH_DEFAULT_WEIGHT;
+			dma_chan[j].control = IFXMIPS_DMA_CH_OFF;
+			dma_chan[j].default_weight = IFXMIPS_DMA_CH_DEFAULT_WEIGHT;
 			dma_chan[j].weight = dma_chan[j].default_weight;
 			dma_chan[j].curr_desc = 0;
 			dma_chan[j].prev_desc = 0;
@@ -655,16 +655,16 @@ map_dma_chan(_dma_chan_map *map)
 		{
 			if (strcmp(dma_devs[i].device_name, map[j].dev_name) == 0)
 			{
-				if (map[j].dir == DANUBE_DMA_RX)
+				if (map[j].dir == IFXMIPS_DMA_RX)
 				{
-					dma_chan[j].dir = DANUBE_DMA_RX;
+					dma_chan[j].dir = IFXMIPS_DMA_RX;
 					dma_devs[i].max_rx_chan_num++;
 					dma_devs[i].rx_chan[dma_devs[i].max_rx_chan_num - 1] = &dma_chan[j];
 					dma_devs[i].rx_chan[dma_devs[i].max_rx_chan_num - 1]->pri = map[j].pri;
 					dma_chan[j].dma_dev = (void*)&dma_devs[i];
-				} else if(map[j].dir == DANUBE_DMA_TX)
+				} else if(map[j].dir == IFXMIPS_DMA_TX)
 				{ /*TX direction */
-					dma_chan[j].dir = DANUBE_DMA_TX;
+					dma_chan[j].dir = IFXMIPS_DMA_TX;
 					dma_devs[i].max_tx_chan_num++;
 					dma_devs[i].tx_chan[dma_devs[i].max_tx_chan_num - 1] = &dma_chan[j];
 					dma_devs[i].tx_chan[dma_devs[i].max_tx_chan_num - 1]->pri = map[j].pri;
@@ -685,20 +685,20 @@ dma_chip_init(void)
 	int i;
 
 	// enable DMA from PMU
-	danube_pmu_enable(DANUBE_PMU_PWDCR_DMA);
+	danube_pmu_enable(IFXMIPS_PMU_PWDCR_DMA);
 
 	// reset DMA
-	writel(readl(DANUBE_DMA_CTRL) | 1, DANUBE_DMA_CTRL);
+	writel(readl(IFXMIPS_DMA_CTRL) | 1, IFXMIPS_DMA_CTRL);
 
 	// diable all interrupts
-	writel(0, DANUBE_DMA_IRNEN);
+	writel(0, IFXMIPS_DMA_IRNEN);
 
 	for (i = 0; i < MAX_DMA_CHANNEL_NUM; i++)
 	{
-		writel(i, DANUBE_DMA_CS);
-		writel(0x2, DANUBE_DMA_CCTRL);
-		writel(0x80000040, DANUBE_DMA_CPOLL);
-		writel(readl(DANUBE_DMA_CCTRL) & ~0x1, DANUBE_DMA_CCTRL);
+		writel(i, IFXMIPS_DMA_CS);
+		writel(0x2, IFXMIPS_DMA_CCTRL);
+		writel(0x80000040, IFXMIPS_DMA_CPOLL);
+		writel(readl(IFXMIPS_DMA_CCTRL) & ~0x1, IFXMIPS_DMA_CCTRL);
 
 	}
 }
@@ -724,13 +724,13 @@ danube_dma_init (void)
 
 	for (i = 0; i < MAX_DMA_CHANNEL_NUM; i++)
 	{
-		dma_chan[i].desc_base = (u32)g_desc_list + i * DANUBE_DMA_DESCRIPTOR_OFFSET * 8;
+		dma_chan[i].desc_base = (u32)g_desc_list + i * IFXMIPS_DMA_DESCRIPTOR_OFFSET * 8;
 		dma_chan[i].curr_desc = 0;
-		dma_chan[i].desc_len = DANUBE_DMA_DESCRIPTOR_OFFSET;
+		dma_chan[i].desc_len = IFXMIPS_DMA_DESCRIPTOR_OFFSET;
 
-		writel(i, DANUBE_DMA_CS);
-		writel((u32)CPHYSADDR(dma_chan[i].desc_base), DANUBE_DMA_CDBA);
-		writel(dma_chan[i].desc_len, DANUBE_DMA_CDLEN);
+		writel(i, IFXMIPS_DMA_CS);
+		writel((u32)CPHYSADDR(dma_chan[i].desc_base), IFXMIPS_DMA_CDBA);
+		writel(dma_chan[i].desc_len, IFXMIPS_DMA_CDLEN);
 	}
 
 	return 0;

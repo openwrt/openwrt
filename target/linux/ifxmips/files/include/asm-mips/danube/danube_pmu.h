@@ -16,14 +16,14 @@
  *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
  *
  */
-#ifndef _DANUBE_PMU_H__
-#define _DANUBE_PMU_H__
+#ifndef _IFXMIPS_PMU_H__
+#define _IFXMIPS_PMU_H__
 
-#define DANUBE_PMU_PWDCR_DMA    0x20
-#define DANUBE_PMU_PWDCR_LED    0x800
-#define DANUBE_PMU_PWDCR_GPT    0x1000
-#define DANUBE_PMU_PWDCR_PPE    0x2000
-#define DANUBE_PMU_PWDCR_FPI    0x4000
+#define IFXMIPS_PMU_PWDCR_DMA    0x20
+#define IFXMIPS_PMU_PWDCR_LED    0x800
+#define IFXMIPS_PMU_PWDCR_GPT    0x1000
+#define IFXMIPS_PMU_PWDCR_PPE    0x2000
+#define IFXMIPS_PMU_PWDCR_FPI    0x4000
 
 void danube_pmu_enable (unsigned int module);
 void danube_pmu_disable (unsigned int module);

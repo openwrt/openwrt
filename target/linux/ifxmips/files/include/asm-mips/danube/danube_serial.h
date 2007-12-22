@@ -1,7 +1,7 @@
-/* incaAscSio.h - (DANUBE) ASC UART tty driver header */
+/* incaAscSio.h - (IFXMIPS) ASC UART tty driver header */
 
-#ifndef __DANUBE_ASC_H
-#define __DANUBE_ASC_H
+#ifndef __IFXMIPS_ASC_H
+#define __IFXMIPS_ASC_H
 
 /******************************************************************************
 **
@@ -41,29 +41,29 @@
 /* ASC input select (0 or 1) */
 #define CONSOLE_TTY	0
 
-#define DANUBEASC_TXFIFO_FL       1
-#define DANUBEASC_RXFIFO_FL       1
-#define DANUBEASC_TXFIFO_FULL     16
+#define IFXMIPSASC_TXFIFO_FL       1
+#define IFXMIPSASC_RXFIFO_FL       1
+#define IFXMIPSASC_TXFIFO_FULL     16
 
 /* interrupt lines masks for the ASC device interrupts*/
 /* change these macroses if it's necessary */
-#define DANUBEASC_IRQ_LINE_ALL        0x0000007f	/* all IRQs */
+#define IFXMIPSASC_IRQ_LINE_ALL        0x0000007f	/* all IRQs */
 
-#define DANUBEASC_IRQ_LINE_TIR            0x00000001	/* Tx Int */
-#define DANUBEASC_IRQ_LINE_TBIR           0x00000002	/* Tx Buffer Int */
-#define DANUBEASC_IRQ_LINE_RIR            0x00000004	/* Rx Int */
-#define DANUBEASC_IRQ_LINE_EIR            0x00000008	/* Error Int */
-#define DANUBEASC_IRQ_LINE_ABSTIR         0x00000010	/* Autobaud Start Int */
-#define DANUBEASC_IRQ_LINE_ABDETIP        0x00000020	/* Autobaud Detection Int */
-#define DANUBEASC_IRQ_LINE_SFCIR          0x00000040	/* Software Flow Control Int */
+#define IFXMIPSASC_IRQ_LINE_TIR            0x00000001	/* Tx Int */
+#define IFXMIPSASC_IRQ_LINE_TBIR           0x00000002	/* Tx Buffer Int */
+#define IFXMIPSASC_IRQ_LINE_RIR            0x00000004	/* Rx Int */
+#define IFXMIPSASC_IRQ_LINE_EIR            0x00000008	/* Error Int */
+#define IFXMIPSASC_IRQ_LINE_ABSTIR         0x00000010	/* Autobaud Start Int */
+#define IFXMIPSASC_IRQ_LINE_ABDETIP        0x00000020	/* Autobaud Detection Int */
+#define IFXMIPSASC_IRQ_LINE_SFCIR          0x00000040	/* Software Flow Control Int */
 
 /* interrupt controller access macros */
 #define ASC_INTERRUPTS_ENABLE(X)  \
-*((volatile unsigned int*) DANUBE_ICU_IM0_IER) |= X;
+*((volatile unsigned int*) IFXMIPS_ICU_IM0_IER) |= X;
 #define ASC_INTERRUPTS_DISABLE(X) \
-*((volatile unsigned int*) DANUBE_ICU_IM0_IER) &= ~X;
+*((volatile unsigned int*) IFXMIPS_ICU_IM0_IER) &= ~X;
 #define ASC_INTERRUPTS_CLEAR(X)   \
-*((volatile unsigned int*) DANUBE_ICU_IM0_ISR) = X;
+*((volatile unsigned int*) IFXMIPS_ICU_IM0_ISR) = X;
 
 /* CLC register's bits and bitfields */
 #define ASCCLC_DISR        0x00000001
@@ -191,4 +191,4 @@
 #define ASCFSTAT_TXFFLMASK      0x3F00
 #define ASCFSTAT_TXFFLOFF       8
 
-#endif /* __DANUBE_ASC_H */
+#endif /* __IFXMIPS_ASC_H */

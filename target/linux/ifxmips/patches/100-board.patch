@@ -6,7 +6,7 @@ Index: linux-2.6.23/arch/mips/Kconfig
  	select SYS_SUPPORTS_LITTLE_ENDIAN
  	select GENERIC_HARDIRQS_NO__DO_IRQ
  
-+config DANUBE
++config IFXMIPS
 +	bool "Danube support" 
 +	select DMA_NONCOHERENT 
 +	select IRQ_CPU 
@@ -37,11 +37,11 @@ Index: linux-2.6.23/arch/mips/Makefile
  load-$(CONFIG_MIPS_COBALT)	+= 0xffffffff80080000
  
 +# 
-+# Infineon DANUBE
++# Infineon IFXMIPS
 +# 
-+core-$(CONFIG_DANUBE)	+= arch/mips/danube/ 
-+cflags-$(CONFIG_DANUBE)	+= -Iinclude/asm-mips/mach-danube 
-+load-$(CONFIG_DANUBE)	+= 0xffffffff80002000 
++core-$(CONFIG_IFXMIPS)	+= arch/mips/danube/ 
++cflags-$(CONFIG_IFXMIPS)	+= -Iinclude/asm-mips/mach-danube 
++load-$(CONFIG_IFXMIPS)	+= 0xffffffff80002000 
 + 
  #
  # DECstation family
@@ -57,8 +57,8 @@ Index: linux-2.6.23/include/asm-mips/bootinfo.h
 +/* 
 + * Valid machtype for group ATHEROS 
 + */ 
-+#define MACH_GROUP_DANUBE		29 
-+#define MACH_INFINEON_DANUBE	0
++#define MACH_GROUP_IFXMIPS		29 
++#define MACH_INFINEON_IFXMIPS	0
 +
 +
  #define CL_SIZE			COMMAND_LINE_SIZE

@@ -7,7 +7,7 @@ Index: linux-2.6.23/drivers/mtd/chips/cfi_cmdset_0002.c
  	map_word oldd;
  	int retry_cnt = 0;
 -
-+#ifdef CONFIG_DANUBE
++#ifdef CONFIG_IFXMIPS
 +	adr ^= 2;
 +#endif
  	adr += chip->start;

@@ -2,33 +2,33 @@
 
 menu "Danube built-in"
 
-config DANUBE_ASC_UART
+config IFXMIPS_ASC_UART
 	bool "Danube asc uart"
 	select SERIAL_CORE
 	select SERIAL_CORE_CONSOLE
 	default y
 
-config MTD_DANUBE
+config MTD_IFXMIPS
 	bool "Danube flash map"
 	default y
 
-config DANUBE_WDT
+config IFXMIPS_WDT
 	bool "Danube watchdog"
 	default y
 
-config DANUBE_LED
+config IFXMIPS_LED
 	bool "Danube led"
 	default y
 
-config DANUBE_GPIO
+config IFXMIPS_GPIO
 	bool "Danube gpio"
 	default y
 
-config DANUBE_SSC
+config IFXMIPS_SSC
 	bool "Danube ssc"
 	default y
 
-config DANUBE_EEPROM
+config IFXMIPS_EEPROM
 	bool "Danube eeprom"
 	default y
 

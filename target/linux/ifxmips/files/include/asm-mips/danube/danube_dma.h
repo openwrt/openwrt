@@ -17,15 +17,15 @@
  *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
  *
  */
-#ifndef _DANUBE_DMA_H__
-#define _DANUBE_DMA_H__
+#ifndef _IFXMIPS_DMA_H__
+#define _IFXMIPS_DMA_H__
 
 #define RCV_INT							1
 #define TX_BUF_FULL_INT					2
 #define TRANSMIT_CPT_INT				4
-#define DANUBE_DMA_CH_ON				1
-#define DANUBE_DMA_CH_OFF				0
-#define DANUBE_DMA_CH_DEFAULT_WEIGHT	100
+#define IFXMIPS_DMA_CH_ON				1
+#define IFXMIPS_DMA_CH_OFF				0
+#define IFXMIPS_DMA_CH_DEFAULT_WEIGHT	100
 
 enum attr_t{
 	TX = 0,
@@ -53,8 +53,8 @@ enum attr_t{
 
 #define DMA_DROP_MASK					(1<<31)
 
-#define DANUBE_DMA_RX					-1
-#define DANUBE_DMA_TX					1
+#define IFXMIPS_DMA_RX					-1
+#define IFXMIPS_DMA_TX					1
 
 typedef struct dma_chan_map {
 	char dev_name[15];
@@ -151,7 +151,7 @@ typedef struct dma_channel_info{
    /*on or off of this channel*/
    int control;
    /**optional information for the upper layer devices*/
-#if defined(CONFIG_DANUBE_ETHERNET_D2) || defined(CONFIG_DANUBE_PPA)
+#if defined(CONFIG_IFXMIPS_ETHERNET_D2) || defined(CONFIG_IFXMIPS_PPA)
    void* opt[64];
 #else
    void* opt[25];

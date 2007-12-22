@@ -31,12 +31,12 @@
 #include <asm/danube/danube_gpio.h>
 #include <asm/danube/danube_pmu.h>
 
-#define DANUBE_LED_CLK_EDGE				DANUBE_LED_FALLING
-//#define DANUBE_LED_CLK_EDGE			DANUBE_LED_RISING
+#define IFXMIPS_LED_CLK_EDGE				IFXMIPS_LED_FALLING
+//#define IFXMIPS_LED_CLK_EDGE			IFXMIPS_LED_RISING
 
-#define DANUBE_LED_SPEED				DANUBE_LED_8HZ
+#define IFXMIPS_LED_SPEED				IFXMIPS_LED_8HZ
 
-#define DANUBE_LED_GPIO_PORT	0
+#define IFXMIPS_LED_GPIO_PORT	0
 
 static int danube_led_major;
 
@@ -44,7 +44,7 @@ void
 danube_led_set (unsigned int led)
 {
 	led &= 0xffffff;
-	writel(readl(DANUBE_LED_CPU0) | led, DANUBE_LED_CPU0);
+	writel(readl(IFXMIPS_LED_CPU0) | led, IFXMIPS_LED_CPU0);
 }
 EXPORT_SYMBOL(danube_led_set);
 
@@ -52,7 +52,7 @@ void
 danube_led_clear (unsigned int led)
 {
 	led = ~(led & 0xffffff);
-	writel(readl(DANUBE_LED_CPU0) & led, DANUBE_LED_CPU0);
+	writel(readl(IFXMIPS_LED_CPU0) & led, IFXMIPS_LED_CPU0);
 }
 EXPORT_SYMBOL(danube_led_clear);
 
@@ -60,7 +60,7 @@ void
 danube_led_blink_set (unsigned int led)
 {
 	led &= 0xffffff;
-	writel(readl(DANUBE_LED_CON0) | led, DANUBE_LED_CON0);
+	writel(readl(IFXMIPS_LED_CON0) | led, IFXMIPS_LED_CON0);
 }
 EXPORT_SYMBOL(danube_led_blink_set);
 
@@ -68,7 +68,7 @@ void
 danube_led_blink_clear (unsigned int led)
 {
 	led = ~(led & 0xffffff);
-	writel(readl(DANUBE_LED_CON0) & led, DANUBE_LED_CON0);
+	writel(readl(IFXMIPS_LED_CON0) & led, IFXMIPS_LED_CON0);
 }
 EXPORT_SYMBOL(danube_led_blink_clear);
 
@@ -80,10 +80,10 @@ danube_led_setup_gpio (void)
 	/* we need to setup pins SH,D,ST (4,5,6) */
 	for (i = 4; i < 7; i++)
 	{
-		danube_port_set_altsel0(DANUBE_LED_GPIO_PORT, i);
-		danube_port_clear_altsel1(DANUBE_LED_GPIO_PORT, i);
-		danube_port_set_dir_out(DANUBE_LED_GPIO_PORT, i);
-		danube_port_set_open_drain(DANUBE_LED_GPIO_PORT, i);
+		danube_port_set_altsel0(IFXMIPS_LED_GPIO_PORT, i);
+		danube_port_clear_altsel1(IFXMIPS_LED_GPIO_PORT, i);
+		danube_port_set_dir_out(IFXMIPS_LED_GPIO_PORT, i);
+		danube_port_set_open_drain(IFXMIPS_LED_GPIO_PORT, i);
 	}
 }
 
@@ -144,32 +144,32 @@ danube_led_init (void)
 
 	danube_led_setup_gpio();
 
-	writel(0, DANUBE_LED_AR);
-	writel(0, DANUBE_LED_CPU0);
-	writel(0, DANUBE_LED_CPU1);
-	writel(LED_CON0_SWU, DANUBE_LED_CON0);
-	writel(0, DANUBE_LED_CON1);
+	writel(0, IFXMIPS_LED_AR);
+	writel(0, IFXMIPS_LED_CPU0);
+	writel(0, IFXMIPS_LED_CPU1);
+	writel(LED_CON0_SWU, IFXMIPS_LED_CON0);
+	writel(0, IFXMIPS_LED_CON1);
 
 	/* setup the clock edge that the shift register is triggered on */
-	writel(readl(DANUBE_LED_CON0) & ~DANUBE_LED_EDGE_MASK, DANUBE_LED_CON0);
-	writel(readl(DANUBE_LED_CON0) | DANUBE_LED_CLK_EDGE, DANUBE_LED_CON0);
+	writel(readl(IFXMIPS_LED_CON0) & ~IFXMIPS_LED_EDGE_MASK, IFXMIPS_LED_CON0);
+	writel(readl(IFXMIPS_LED_CON0) | IFXMIPS_LED_CLK_EDGE, IFXMIPS_LED_CON0);
 
 	/* per default leds 15-0 are set */
-	writel(DANUBE_LED_GROUP1 | DANUBE_LED_GROUP0, DANUBE_LED_CON1);
+	writel(IFXMIPS_LED_GROUP1 | IFXMIPS_LED_GROUP0, IFXMIPS_LED_CON1);
 
 	/* leds are update periodically by the FPID */
-	writel(readl(DANUBE_LED_CON1) & ~DANUBE_LED_UPD_MASK, DANUBE_LED_CON1);
-	writel(readl(DANUBE_LED_CON1) | DANUBE_LED_UPD_SRC_FPI, DANUBE_LED_CON1);
+	writel(readl(IFXMIPS_LED_CON1) & ~IFXMIPS_LED_UPD_MASK, IFXMIPS_LED_CON1);
+	writel(readl(IFXMIPS_LED_CON1) | IFXMIPS_LED_UPD_SRC_FPI, IFXMIPS_LED_CON1);
 
 	/* set led update speed */
-	writel(readl(DANUBE_LED_CON1) & ~DANUBE_LED_MASK, DANUBE_LED_CON1);
-	writel(readl(DANUBE_LED_CON1) | DANUBE_LED_SPEED, DANUBE_LED_CON1);
+	writel(readl(IFXMIPS_LED_CON1) & ~IFXMIPS_LED_MASK, IFXMIPS_LED_CON1);
+	writel(readl(IFXMIPS_LED_CON1) | IFXMIPS_LED_SPEED, IFXMIPS_LED_CON1);
 
 	/* adsl 0 and 1 leds are updated by the arc */
-	writel(readl(DANUBE_LED_CON0) | DANUBE_LED_ADSL_SRC, DANUBE_LED_CON0);
+	writel(readl(IFXMIPS_LED_CON0) | IFXMIPS_LED_ADSL_SRC, IFXMIPS_LED_CON0);
 
 	/* per default, the leds are turned on */
-	danube_pmu_enable(DANUBE_PMU_PWDCR_LED);
+	danube_pmu_enable(IFXMIPS_PMU_PWDCR_LED);
 
 	danube_led_major = register_chrdev(0, "danube_led", &danube_led_fops);
 

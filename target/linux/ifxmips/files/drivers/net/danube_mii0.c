@@ -57,8 +57,8 @@ danube_write_mdio (u32 phy_addr, u32 phy_reg, u16 phy_data)
 		((phy_reg & MDIO_ACC_REG_MASK) << MDIO_ACC_REG_OFFSET) |
 		phy_data;
 
-	while (readl(DANUBE_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST);
-	writel(val, DANUBE_PPE32_MDIO_ACC);
+	while (readl(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST);
+	writel(val, IFXMIPS_PPE32_MDIO_ACC);
 }
 
 unsigned short
@@ -68,9 +68,9 @@ danube_read_mdio (u32 phy_addr, u32 phy_reg)
 		((phy_addr & MDIO_ACC_ADDR_MASK) << MDIO_ACC_ADDR_OFFSET) |
 		((phy_reg & MDIO_ACC_REG_MASK) << MDIO_ACC_REG_OFFSET);
 
-	writel(val, DANUBE_PPE32_MDIO_ACC);
-	while (readl(DANUBE_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST){};
-	val = readl(DANUBE_PPE32_MDIO_ACC) & MDIO_ACC_VAL_MASK;
+	writel(val, IFXMIPS_PPE32_MDIO_ACC);
+	while (readl(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST){};
+	val = readl(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_VAL_MASK;
 
 	return val;
 }
@@ -84,7 +84,7 @@ danube_switch_open (struct net_device *dev)
 
 	for (i = 0; i < dma_dev->max_rx_chan_num; i++)
 	{
-		if ((dma_dev->rx_chan[i])->control == DANUBE_DMA_CH_ON)
+		if ((dma_dev->rx_chan[i])->control == IFXMIPS_DMA_CH_ON)
 			(dma_dev->rx_chan[i])->open(dma_dev->rx_chan[i]);
 	}
 
@@ -238,7 +238,7 @@ dma_intr_handler (struct dma_device_info* dma_dev, int status)
 		netif_stop_queue(&danube_mii0_dev);
 		for (i = 0; i < dma_dev->max_tx_chan_num; i++)
 		{
-			if ((dma_dev->tx_chan[i])->control==DANUBE_DMA_CH_ON)
+			if ((dma_dev->tx_chan[i])->control==IFXMIPS_DMA_CH_ON)
 				dma_dev->tx_chan[i]->enable_irq(dma_dev->tx_chan[i]);
 		}
 		break;
@@ -332,15 +332,15 @@ switch_init (struct net_device *dev)
 	for (i = 0; i < priv->dma_device->max_rx_chan_num; i++)
 	{
 		priv->dma_device->rx_chan[i]->packet_size = ETHERNET_PACKET_DMA_BUFFER_SIZE;
-		priv->dma_device->rx_chan[i]->control = DANUBE_DMA_CH_ON;
+		priv->dma_device->rx_chan[i]->control = IFXMIPS_DMA_CH_ON;
 	}
 
 	for (i = 0; i < priv->dma_device->max_tx_chan_num; i++)
 	{
 		if(i == 0)
-			priv->dma_device->tx_chan[i]->control = DANUBE_DMA_CH_ON;
+			priv->dma_device->tx_chan[i]->control = IFXMIPS_DMA_CH_ON;
 		else
-			priv->dma_device->tx_chan[i]->control = DANUBE_DMA_CH_OFF;
+			priv->dma_device->tx_chan[i]->control = IFXMIPS_DMA_CH_OFF;
 	}
 
 	dma_device_register(priv->dma_device);
@@ -373,17 +373,17 @@ switch_init (struct net_device *dev)
 static void
 danube_sw_chip_init (int mode)
 {
-	danube_pmu_enable(DANUBE_PMU_PWDCR_DMA);
-	danube_pmu_enable(DANUBE_PMU_PWDCR_PPE);
+	danube_pmu_enable(IFXMIPS_PMU_PWDCR_DMA);
+	danube_pmu_enable(IFXMIPS_PMU_PWDCR_PPE);
 
 	if(mode == REV_MII_MODE)
-		writel((readl(DANUBE_PPE32_CFG) & PPE32_MII_MASK) | PPE32_MII_REVERSE, DANUBE_PPE32_CFG);
+		writel((readl(IFXMIPS_PPE32_CFG) & PPE32_MII_MASK) | PPE32_MII_REVERSE, IFXMIPS_PPE32_CFG);
 	else if(mode == MII_MODE)
-		writel((readl(DANUBE_PPE32_CFG) & PPE32_MII_MASK) | PPE32_MII_NORMAL, DANUBE_PPE32_CFG);
+		writel((readl(IFXMIPS_PPE32_CFG) & PPE32_MII_MASK) | PPE32_MII_NORMAL, IFXMIPS_PPE32_CFG);
 
-	writel(PPE32_PLEN_UNDER | PPE32_PLEN_OVER, DANUBE_PPE32_IG_PLEN_CTRL);
+	writel(PPE32_PLEN_UNDER | PPE32_PLEN_OVER, IFXMIPS_PPE32_IG_PLEN_CTRL);
 
-	writel(PPE32_CGEN, DANUBE_PPE32_ENET_MAC_CFG);
+	writel(PPE32_CGEN, IFXMIPS_PPE32_ENET_MAC_CFG);
 
 	wmb();
 }

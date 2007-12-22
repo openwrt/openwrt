@@ -872,20 +872,20 @@ ifx_ssc_sethwopts (struct ifx_ssc_port *info)
 	/* TODO: P0.9 SPI_CS4, P0.10 SPI_CS5, P 0.11 SPI_CS6, because of ASC0 */
 	/* p0.15 SPI_CS1(EEPROM), P0.13 SPI_CS3, */
 	/* Set p0.15 to alternative 01, others to 00 (In/OUT) */
-	*(DANUBE_GPIO_P0_DIR) = (*DANUBE_GPIO_P0_DIR) | (0xA000);
-	*(DANUBE_GPIO_P0_ALTSEL0) = (((*DANUBE_GPIO_P0_ALTSEL0) | (0x8000)) & (~(0x2000)));
-	*(DANUBE_GPIO_P0_ALTSEL1) = (((*DANUBE_GPIO_P0_ALTSEL1) & (~0x8000)) & (~(0x2000)));
-	*(DANUBE_GPIO_P0_OD) = (*DANUBE_GPIO_P0_OD) | 0xA000;
+	*(IFXMIPS_GPIO_P0_DIR) = (*IFXMIPS_GPIO_P0_DIR) | (0xA000);
+	*(IFXMIPS_GPIO_P0_ALTSEL0) = (((*IFXMIPS_GPIO_P0_ALTSEL0) | (0x8000)) & (~(0x2000)));
+	*(IFXMIPS_GPIO_P0_ALTSEL1) = (((*IFXMIPS_GPIO_P0_ALTSEL1) & (~0x8000)) & (~(0x2000)));
+	*(IFXMIPS_GPIO_P0_OD) = (*IFXMIPS_GPIO_P0_OD) | 0xA000;
 
 	/* p1.6 SPI_CS2(SFLASH), p1.0 SPI_DIN, p1.1 SPI_DOUT, p1.2 SPI_CLK */
-	*(DANUBE_GPIO_P1_DIR) = ((*DANUBE_GPIO_P1_DIR) | (0x46)) & (~1);
-	*(DANUBE_GPIO_P1_ALTSEL0) = ((*DANUBE_GPIO_P1_ALTSEL0) | (0x47));
-	*(DANUBE_GPIO_P1_ALTSEL1) = (*DANUBE_GPIO_P1_ALTSEL1) & (~0x47);
-	*(DANUBE_GPIO_P1_OD) = (*DANUBE_GPIO_P1_OD) | 0x0046;
+	*(IFXMIPS_GPIO_P1_DIR) = ((*IFXMIPS_GPIO_P1_DIR) | (0x46)) & (~1);
+	*(IFXMIPS_GPIO_P1_ALTSEL0) = ((*IFXMIPS_GPIO_P1_ALTSEL0) | (0x47));
+	*(IFXMIPS_GPIO_P1_ALTSEL1) = (*IFXMIPS_GPIO_P1_ALTSEL1) & (~0x47);
+	*(IFXMIPS_GPIO_P1_OD) = (*IFXMIPS_GPIO_P1_OD) | 0x0046;
 
 	/*CS3 */
 	/*TODO: CS4 CS5 CS6 */
-	*DANUBE_GPIO_P0_OUT = ((*DANUBE_GPIO_P0_OUT) | 0x2000);
+	*IFXMIPS_GPIO_P0_OUT = ((*IFXMIPS_GPIO_P0_OUT) | 0x2000);
 
 	local_irq_restore (flags);
 
@@ -1273,10 +1273,10 @@ ifx_ssc_init (void)
 		info->txbuf = NULL;
 		/* values specific to SSC1 */
 		if (i == 0) {
-			info->mapbase = DANUBE_SSC1_BASE_ADDR;
-			info->txirq = DANUBE_SSC_TIR;
-			info->rxirq = DANUBE_SSC_RIR;
-			info->errirq = DANUBE_SSC_EIR;
+			info->mapbase = IFXMIPS_SSC1_BASE_ADDR;
+			info->txirq = IFXMIPS_SSC_TIR;
+			info->rxirq = IFXMIPS_SSC_RIR;
+			info->errirq = IFXMIPS_SSC_EIR;
 		}
 
 		WRITE_PERIPHERAL_REGISTER (IFX_SSC_DEF_RMC << IFX_CLC_RUN_DIVIDER_OFFSET, info->mapbase + IFX_SSC_CLC);

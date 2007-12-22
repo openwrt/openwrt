@@ -1,5 +1,5 @@
-#ifndef DANUBE_SW_H
-#define DANUBE_SW_H
+#ifndef IFXMIPS_SW_H
+#define IFXMIPS_SW_H
 
 
 
@@ -138,7 +138,7 @@
 #define PHY1_ADDR    1
 #define P1M          0
 
-#define DANUBE_SW_REG32(reg_num) *((volatile u32*)(reg_num))
+#define IFXMIPS_SW_REG32(reg_num) *((volatile u32*)(reg_num))
 
 #define OK 0;
 
@@ -251,4 +251,4 @@ struct switch_priv {
     enum duplex current_duplex;
 };
 
-#endif //DANUBE_SW_H
+#endif //IFXMIPS_SW_H

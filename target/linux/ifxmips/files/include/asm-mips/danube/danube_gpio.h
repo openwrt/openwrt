@@ -16,8 +16,8 @@
  *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
  *
  */
-#ifndef _DANUBE_GPIO_H__
-#define _DANUBE_GPIO_H__
+#ifndef _IFXMIPS_GPIO_H__
+#define _IFXMIPS_GPIO_H__
 
 extern int danube_port_reserve_pin (unsigned int port, unsigned int pin);
 extern int danube_port_free_pin (unsigned int port, unsigned int pin);

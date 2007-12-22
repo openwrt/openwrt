@@ -29,8 +29,8 @@ danube_pmu_enable (unsigned int module)
 {
 	int err = 1000000;
 
-	writel(readl(DANUBE_PMU_PWDCR) & ~module, DANUBE_PMU_PWDCR);
-	while (--err && (readl(DANUBE_PMU_PWDSR) & module)) {}
+	writel(readl(IFXMIPS_PMU_PWDCR) & ~module, IFXMIPS_PMU_PWDCR);
+	while (--err && (readl(IFXMIPS_PMU_PWDSR) & module)) {}
 
 	if (!err)
 		panic("activating PMU module failed!");
@@ -40,6 +40,6 @@ EXPORT_SYMBOL(danube_pmu_enable);
 void
 danube_pmu_disable (unsigned int module)
 {
-	writel(readl(DANUBE_PMU_PWDCR) | module, DANUBE_PMU_PWDCR);
+	writel(readl(IFXMIPS_PMU_PWDCR) | module, IFXMIPS_PMU_PWDCR);
 }
 EXPORT_SYMBOL(danube_pmu_disable);
