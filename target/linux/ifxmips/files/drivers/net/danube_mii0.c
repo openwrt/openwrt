@@ -1,5 +1,5 @@
 /*
- *   drivers/net/danube_mii0.c
+ *   drivers/net/ifxmips_mii0.c
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  *
  *   Copyright (C) 2005 Infineon
  *
- *   Rewrite of Infineon Danube code, thanks to infineon for the support,
+ *   Rewrite of Infineon IFXMips code, thanks to infineon for the support,
  *   software and hardware
  *
  *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
@@ -41,16 +41,16 @@
 #include <asm/checksum.h>
 #include <linux/init.h>
 #include <asm/delay.h>
-#include <asm/danube/danube.h>
-#include <asm/danube/danube_mii0.h>
-#include <asm/danube/danube_dma.h>
-#include <asm/danube/danube_pmu.h>
+#include <asm/ifxmips/ifxmips.h>
+#include <asm/ifxmips/ifxmips_mii0.h>
+#include <asm/ifxmips/ifxmips_dma.h>
+#include <asm/ifxmips/ifxmips_pmu.h>
 
-static struct net_device danube_mii0_dev;
+static struct net_device ifxmips_mii0_dev;
 static unsigned char u_boot_ethaddr[MAX_ADDR_LEN];
 
 void
-danube_write_mdio (u32 phy_addr, u32 phy_reg, u16 phy_data)
+ifxmips_write_mdio (u32 phy_addr, u32 phy_reg, u16 phy_data)
 {
 	u32 val = MDIO_ACC_REQUEST |
 		((phy_addr & MDIO_ACC_ADDR_MASK) << MDIO_ACC_ADDR_OFFSET) |
@@ -62,7 +62,7 @@ danube_write_mdio (u32 phy_addr, u32 phy_reg, u16 phy_data)
 }
 
 unsigned short
-danube_read_mdio (u32 phy_addr, u32 phy_reg)
+ifxmips_read_mdio (u32 phy_addr, u32 phy_reg)
 {
 	u32 val = MDIO_ACC_REQUEST | MDIO_ACC_READ |
 		((phy_addr & MDIO_ACC_ADDR_MASK) << MDIO_ACC_ADDR_OFFSET) |
@@ -76,7 +76,7 @@ danube_read_mdio (u32 phy_addr, u32 phy_reg)
 }
 
 int
-danube_switch_open (struct net_device *dev)
+ifxmips_switch_open (struct net_device *dev)
 {
 	struct switch_priv* priv = (struct switch_priv*)dev->priv;
 	struct dma_device_info* dma_dev = priv->dma_device;
@@ -230,12 +230,12 @@ dma_intr_handler (struct dma_device_info* dma_dev, int status)
 	switch (status)
 	{
 	case RCV_INT:
-		switch_hw_receive(&danube_mii0_dev, dma_dev);
+		switch_hw_receive(&ifxmips_mii0_dev, dma_dev);
 		break;
 
 	case TX_BUF_FULL_INT:
 		printk("tx buffer full\n");
-		netif_stop_queue(&danube_mii0_dev);
+		netif_stop_queue(&ifxmips_mii0_dev);
 		for (i = 0; i < dma_dev->max_tx_chan_num; i++)
 		{
 			if ((dma_dev->tx_chan[i])->control==IFXMIPS_DMA_CH_ON)
@@ -247,7 +247,7 @@ dma_intr_handler (struct dma_device_info* dma_dev, int status)
 		for (i = 0; i < dma_dev->max_tx_chan_num; i++)
 			dma_dev->tx_chan[i]->disable_irq(dma_dev->tx_chan[i]);
 
-		netif_wake_queue(&danube_mii0_dev);
+		netif_wake_queue(&ifxmips_mii0_dev);
 		break;
 	}
 
@@ -255,7 +255,7 @@ dma_intr_handler (struct dma_device_info* dma_dev, int status)
 }
 
 unsigned char*
-danube_etop_dma_buffer_alloc (int len, int *byte_offset, void **opt)
+ifxmips_etop_dma_buffer_alloc (int len, int *byte_offset, void **opt)
 {
 	unsigned char *buffer = NULL;
 	struct sk_buff *skb = NULL;
@@ -273,7 +273,7 @@ danube_etop_dma_buffer_alloc (int len, int *byte_offset, void **opt)
 }
 
 void
-danube_etop_dma_buffer_free (unsigned char *dataptr, void *opt)
+ifxmips_etop_dma_buffer_free (unsigned char *dataptr, void *opt)
 {
 	struct sk_buff *skb = NULL;
 
@@ -287,7 +287,7 @@ danube_etop_dma_buffer_free (unsigned char *dataptr, void *opt)
 }
 
 static struct net_device_stats*
-danube_get_stats (struct net_device *dev)
+ifxmips_get_stats (struct net_device *dev)
 {
 	return (struct net_device_stats *)dev->priv;
 }
@@ -303,10 +303,10 @@ switch_init (struct net_device *dev)
 
 	printk("%s up\n", dev->name);
 
-	dev->open = danube_switch_open;
+	dev->open = ifxmips_switch_open;
 	dev->stop = switch_release;
 	dev->hard_start_xmit = switch_tx;
-	dev->get_stats = danube_get_stats;
+	dev->get_stats = ifxmips_get_stats;
 	dev->tx_timeout = switch_tx_timeout;
 	dev->watchdog_timeo = 10 * HZ;
 	dev->priv = kmalloc(sizeof(struct switch_priv), GFP_KERNEL);
@@ -324,8 +324,8 @@ switch_init (struct net_device *dev)
 		return -ENODEV;
 	}
 
-	priv->dma_device->buffer_alloc = &danube_etop_dma_buffer_alloc;
-	priv->dma_device->buffer_free = &danube_etop_dma_buffer_free;
+	priv->dma_device->buffer_alloc = &ifxmips_etop_dma_buffer_alloc;
+	priv->dma_device->buffer_free = &ifxmips_etop_dma_buffer_free;
 	priv->dma_device->intr_handler = &dma_intr_handler;
 	priv->dma_device->max_rx_chan_num = 4;
 
@@ -371,10 +371,10 @@ switch_init (struct net_device *dev)
 }
 
 static void
-danube_sw_chip_init (int mode)
+ifxmips_sw_chip_init (int mode)
 {
-	danube_pmu_enable(IFXMIPS_PMU_PWDCR_DMA);
-	danube_pmu_enable(IFXMIPS_PMU_PWDCR_PPE);
+	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_DMA);
+	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_PPE);
 
 	if(mode == REV_MII_MODE)
 		writel((readl(IFXMIPS_PPE32_CFG) & PPE32_MII_MASK) | PPE32_MII_REVERSE, IFXMIPS_PPE32_CFG);
@@ -393,21 +393,21 @@ switch_init_module(void)
 {
 	int result = 0;
 
-	danube_mii0_dev.init = switch_init;
+	ifxmips_mii0_dev.init = switch_init;
 
-	strcpy(danube_mii0_dev.name, "eth%d");
+	strcpy(ifxmips_mii0_dev.name, "eth%d");
 	SET_MODULE_OWNER(dev);
 
-	result = register_netdev(&danube_mii0_dev);
+	result = register_netdev(&ifxmips_mii0_dev);
 	if (result)
 	{
-		printk("error %i registering device \"%s\"\n", result, danube_mii0_dev.name);
+		printk("error %i registering device \"%s\"\n", result, ifxmips_mii0_dev.name);
 		goto out;
 	}
 
-	/* danube eval kit connects the phy/switch in REV mode */
-	danube_sw_chip_init(REV_MII_MODE);
-	printk("danube MAC driver loaded!\n");
+	/* ifxmips eval kit connects the phy/switch in REV mode */
+	ifxmips_sw_chip_init(REV_MII_MODE);
+	printk("ifxmips MAC driver loaded!\n");
 
 out:
 	return result;
@@ -416,15 +416,15 @@ out:
 static void __exit
 switch_cleanup(void)
 {
-	struct switch_priv *priv = (struct switch_priv*)danube_mii0_dev.priv;
+	struct switch_priv *priv = (struct switch_priv*)ifxmips_mii0_dev.priv;
 
-	printk("danube_mii0 cleanup\n");
+	printk("ifxmips_mii0 cleanup\n");
 
 	dma_device_unregister(priv->dma_device);
 	dma_device_release(priv->dma_device);
 	kfree(priv->dma_device);
-	kfree(danube_mii0_dev.priv);
-	unregister_netdev(&danube_mii0_dev);
+	kfree(ifxmips_mii0_dev.priv);
+	unregister_netdev(&ifxmips_mii0_dev);
 
 	return;
 }

@@ -6,7 +6,7 @@
 /******************************************************************************
 **
 ** FILE NAME    : serial.c
-** PROJECT      : Danube
+** PROJECT      : IFXMips
 ** MODULES      : ASC/UART
 **
 ** DATE         : 27 MAR 2006

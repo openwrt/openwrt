@@ -61,6 +61,6 @@
 #define IFXMIPS_DMA_CH18_INT		(INT_NUM_IM2_IRL0 + 16)
 #define IFXMIPS_DMA_CH19_INT		(INT_NUM_IM2_IRL0 + 21)
 
-extern void mask_and_ack_danube_irq (unsigned int irq_nr);
+extern void mask_and_ack_ifxmips_irq (unsigned int irq_nr);
 
 #endif

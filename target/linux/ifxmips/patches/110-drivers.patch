@@ -7,10 +7,10 @@ Index: linux-2.6.23/drivers/serial/Kconfig
  	  others can easily be added.
  
 +config SERIAL_IFXMIPS
-+	bool "Danube serial driver"
++	bool "IFXMips serial driver"
 +	depends on IFXMIPS
 +	help
-+	  Driver for the danubes built in ASC hardware
++	  Driver for the ifxmipss built in ASC hardware
 +
  endmenu
 Index: linux-2.6.23/drivers/serial/Makefile
@@ -21,7 +21,7 @@ Index: linux-2.6.23/drivers/serial/Makefile
  obj-$(CONFIG_SERIAL_NETX) += netx-serial.o
  obj-$(CONFIG_SERIAL_OF_PLATFORM) += of_serial.o
  obj-$(CONFIG_SERIAL_KS8695) += serial_ks8695.o
-+obj-$(CONFIG_SERIAL_IFXMIPS) += danube_asc.o
++obj-$(CONFIG_SERIAL_IFXMIPS) += ifxmips_asc.o
 Index: linux-2.6.23/drivers/mtd/maps/Makefile
 ===================================================================
 --- linux-2.6.23.orig/drivers/mtd/maps/Makefile	2007-12-13 20:41:42.000000000 +0100
@@ -30,7 +30,7 @@ Index: linux-2.6.23/drivers/mtd/maps/Makefile
  obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
  obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o
  obj-$(CONFIG_MTD_TQM834x)	+= tqm834x.o
-+obj-$(CONFIG_MTD_IFXMIPS)	+= danube.o
++obj-$(CONFIG_MTD_IFXMIPS)	+= ifxmips.o
 Index: linux-2.6.23/drivers/net/Kconfig
 ===================================================================
 --- linux-2.6.23.orig/drivers/net/Kconfig	2007-12-13 20:41:42.000000000 +0100
@@ -40,16 +40,16 @@ Index: linux-2.6.23/drivers/net/Kconfig
  source "drivers/net/arm/Kconfig"
  
 +config IFXMIPS_MII0
-+	tristate "Infineon Danube eth0 driver"
++	tristate "Infineon IFXMips eth0 driver"
 +	depends on IFXMIPS
 +	help
-+	  Support for the MII0 inside the Danube SOC
++	  Support for the MII0 inside the IFXMips SOC
 +
 +config IFXMIPS_MII1
-+	tristate "Infineon Danube eth1 driver"
++	tristate "Infineon IFXMips eth1 driver"
 +	depends on IFXMIPS
 +	help
-+	  Support for the MII1 inside the Danube SOC
++	  Support for the MII1 inside the IFXMips SOC
 +
  config AX88796
  	tristate "ASIX AX88796 NE2000 clone support"
@@ -62,7 +62,7 @@ Index: linux-2.6.23/drivers/net/Makefile
  obj-$(CONFIG_FEC_8XX) += fec_8xx/
  obj-$(CONFIG_PASEMI_MAC) += pasemi_mac.o
  obj-$(CONFIG_MLX4_CORE) += mlx4/
-+obj-$(CONFIG_IFXMIPS_MII0) += danube_mii0.o
++obj-$(CONFIG_IFXMIPS_MII0) += ifxmips_mii0.o
  
  obj-$(CONFIG_MACB) += macb.o
  
@@ -74,7 +74,7 @@ Index: linux-2.6.23/drivers/char/watchdog/Makefile
  obj-$(CONFIG_INDYDOG) += indydog.o
  obj-$(CONFIG_WDT_MTX1)	+= mtx-1_wdt.o
  obj-$(CONFIG_WDT_RM9K_GPI) += rm9k_wdt.o
-+obj-$(CONFIG_IFXMIPS_WDT) += danube_wdt.o
++obj-$(CONFIG_IFXMIPS_WDT) += ifxmips_wdt.o
  
  # PARISC Architecture
  
@@ -87,7 +87,7 @@ Index: linux-2.6.23/drivers/char/Makefile
  
  endif
 +
-+obj-$(CONFIG_IFXMIPS_LED)	+= danube_led.o
-+obj-$(CONFIG_IFXMIPS_GPIO)	+= danube_gpio.o
-+obj-$(CONFIG_IFXMIPS_SSC)	+= danube_ssc.o
-+obj-$(CONFIG_IFXMIPS_EEPROM)	+= danube_eeprom.o
++obj-$(CONFIG_IFXMIPS_LED)	+= ifxmips_led.o
++obj-$(CONFIG_IFXMIPS_GPIO)	+= ifxmips_gpio.o
++obj-$(CONFIG_IFXMIPS_SSC)	+= ifxmips_ssc.o
++obj-$(CONFIG_IFXMIPS_EEPROM)	+= ifxmips_eeprom.o

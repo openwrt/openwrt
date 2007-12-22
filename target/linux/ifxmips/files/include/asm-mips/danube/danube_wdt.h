@@ -21,7 +21,7 @@
 #ifndef IFXMIPS_WDT_H
 #define IFXMIPS_WDT_H
 
-/* Danube wdt ioctl control */
+/* IFXMips wdt ioctl control */
 #define IFXMIPS_WDT_IOC_MAGIC			0xc0
 #define IFXMIPS_WDT_IOC_START			_IOW(IFXMIPS_WDT_IOC_MAGIC, 0, int)
 #define IFXMIPS_WDT_IOC_STOP				_IO(IFXMIPS_WDT_IOC_MAGIC, 1)

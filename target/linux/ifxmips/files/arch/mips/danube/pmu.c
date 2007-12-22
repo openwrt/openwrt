@@ -1,5 +1,5 @@
 /*
- *   arch/mips/danube/pmu.c
+ *   arch/mips/ifxmips/pmu.c
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,10 +22,10 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/version.h>
-#include <asm/danube/danube.h>
+#include <asm/ifxmips/ifxmips.h>
 
 void
-danube_pmu_enable (unsigned int module)
+ifxmips_pmu_enable (unsigned int module)
 {
 	int err = 1000000;
 
@@ -35,11 +35,11 @@ danube_pmu_enable (unsigned int module)
 	if (!err)
 		panic("activating PMU module failed!");
 }
-EXPORT_SYMBOL(danube_pmu_enable);
+EXPORT_SYMBOL(ifxmips_pmu_enable);
 
 void
-danube_pmu_disable (unsigned int module)
+ifxmips_pmu_disable (unsigned int module)
 {
 	writel(readl(IFXMIPS_PMU_PWDCR) | module, IFXMIPS_PMU_PWDCR);
 }
-EXPORT_SYMBOL(danube_pmu_disable);
+EXPORT_SYMBOL(ifxmips_pmu_disable);

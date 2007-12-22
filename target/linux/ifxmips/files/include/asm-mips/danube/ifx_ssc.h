@@ -9,7 +9,7 @@
 #ifndef __IFX_SSC_H
 #define __IFX_SSC_H
 #ifdef __KERNEL__
-#include <asm/danube/ifx_ssc_defines.h>
+#include <asm/ifxmips/ifx_ssc_defines.h>
 #endif //__KERNEL__
 
 #define PORT_CNT		1	// assume default value

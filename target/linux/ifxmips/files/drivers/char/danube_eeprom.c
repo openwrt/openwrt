@@ -53,13 +53,13 @@
 #include <linux/kernel.h>
 #include <linux/version.h>
 
-#include <asm/danube/danube.h>
-#include <asm/danube/danube_irq.h>
-#include <asm/danube/ifx_ssc_defines.h>
-#include <asm/danube/ifx_ssc.h>
+#include <asm/ifxmips/ifxmips.h>
+#include <asm/ifxmips/ifxmips_irq.h>
+#include <asm/ifxmips/ifx_ssc_defines.h>
+#include <asm/ifxmips/ifx_ssc.h>
 
 /* allow the user to set the major device number */
-static int danube_eeprom_maj = 0;
+static int ifxmips_eeprom_maj = 0;
 
 extern int ifx_ssc_init (void);
 extern int ifx_ssc_open (struct inode *inode, struct file *filp);
@@ -299,26 +299,26 @@ out:
 }
 
 int
-danube_eeprom_open (struct inode *inode, struct file *filp)
+ifxmips_eeprom_open (struct inode *inode, struct file *filp)
 {
 	filp->f_pos = 0;
 	return 0;
 }
 
 int
-danube_eeprom_close (struct inode *inode, struct file *filp)
+ifxmips_eeprom_close (struct inode *inode, struct file *filp)
 {
 	return 0;
 }
 
 int
-danube_eeprom_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigned long data)
+ifxmips_eeprom_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigned long data)
 {
 	return 0;
 }
 
 ssize_t
-danube_eeprom_read (char *buf, size_t len, unsigned int addr)
+ifxmips_eeprom_read (char *buf, size_t len, unsigned int addr)
 {
 	int ret = 0;
 	unsigned int data;
@@ -335,7 +335,7 @@ danube_eeprom_read (char *buf, size_t len, unsigned int addr)
 
 	if ((ret = ifx_ssc_open((struct inode *) 0, NULL)))
 	{
-		printk("danube_eeprom_open fails\n");
+		printk("ifxmips_eeprom_open fails\n");
 		goto out;
 	}
 
@@ -361,14 +361,14 @@ danube_eeprom_read (char *buf, size_t len, unsigned int addr)
 
 out:
 	if (ifx_ssc_close((struct inode *) 0, NULL))
-		printk("danube_eeprom_close fails\n");
+		printk("ifxmips_eeprom_close fails\n");
 
 	return len;
 }
-EXPORT_SYMBOL(danube_eeprom_read);
+EXPORT_SYMBOL(ifxmips_eeprom_read);
 
 static ssize_t
-danube_eeprom_fops_read (struct file *filp, char *ubuf, size_t len, loff_t * off)
+ifxmips_eeprom_fops_read (struct file *filp, char *ubuf, size_t len, loff_t * off)
 {
 	int ret = 0;
 	unsigned char ssc_rx_buf[EEPROM_SIZE];
@@ -385,7 +385,7 @@ danube_eeprom_fops_read (struct file *filp, char *ubuf, size_t len, loff_t * off
 
 	local_irq_save(flag);
 
-	if ((ret = danube_eeprom_read(ssc_rx_buf, len, *off)) < 0)
+	if ((ret = ifxmips_eeprom_read(ssc_rx_buf, len, *off)) < 0)
 	{
 		printk("read fails, err=%x\n", ret);
 		local_irq_restore(flag);
@@ -405,14 +405,14 @@ danube_eeprom_fops_read (struct file *filp, char *ubuf, size_t len, loff_t * off
 }
 
 ssize_t
-danube_eeprom_write (char *buf, size_t len, unsigned int addr)
+ifxmips_eeprom_write (char *buf, size_t len, unsigned int addr)
 {
 	int ret = 0;
 	unsigned int data;
 
 	if ((ret = ifx_ssc_open ((struct inode *) 0, NULL)))
 	{
-		printk ("danube_eeprom_open fails\n");
+		printk ("ifxmips_eeprom_open fails\n");
 		goto out;
 	}
 
@@ -436,14 +436,14 @@ danube_eeprom_write (char *buf, size_t len, unsigned int addr)
 
 out:
 	if (ifx_ssc_close ((struct inode *) 0, NULL))
-		printk ("danube_eeprom_close fails\n");
+		printk ("ifxmips_eeprom_close fails\n");
 
 	return ret;
 }
-EXPORT_SYMBOL(danube_eeprom_write);
+EXPORT_SYMBOL(ifxmips_eeprom_write);
 
 static ssize_t
-danube_eeprom_fops_write (struct file *filp, const char *ubuf, size_t len, loff_t * off)
+ifxmips_eeprom_fops_write (struct file *filp, const char *ubuf, size_t len, loff_t * off)
 {
 	int ret = 0;
 	unsigned char ssc_tx_buf[EEPROM_SIZE];
@@ -457,7 +457,7 @@ danube_eeprom_fops_write (struct file *filp, const char *ubuf, size_t len, loff_
 	if ((ret = copy_from_user (ssc_tx_buf, ubuf, len)))
 		return EFAULT;
 
-	ret = danube_eeprom_write (ssc_tx_buf, len, *off);
+	ret = ifxmips_eeprom_write (ssc_tx_buf, len, *off);
 
 	if (ret > 0)
 		*off = ret;
@@ -466,7 +466,7 @@ danube_eeprom_fops_write (struct file *filp, const char *ubuf, size_t len, loff_
 }
 
 loff_t
-danube_eeprom_llseek (struct file * filp, loff_t off, int whence)
+ifxmips_eeprom_llseek (struct file * filp, loff_t off, int whence)
 {
 	loff_t newpos;
 	switch (whence) {
@@ -490,24 +490,24 @@ danube_eeprom_llseek (struct file * filp, loff_t off, int whence)
 	return newpos;
 }
 
-static struct file_operations danube_eeprom_fops = {
+static struct file_operations ifxmips_eeprom_fops = {
       owner:THIS_MODULE,
-      llseek:danube_eeprom_llseek,
-      read:danube_eeprom_fops_read,
-      write:danube_eeprom_fops_write,
-      ioctl:danube_eeprom_ioctl,
-      open:danube_eeprom_open,
-      release:danube_eeprom_close,
+      llseek:ifxmips_eeprom_llseek,
+      read:ifxmips_eeprom_fops_read,
+      write:ifxmips_eeprom_fops_write,
+      ioctl:ifxmips_eeprom_ioctl,
+      open:ifxmips_eeprom_open,
+      release:ifxmips_eeprom_close,
 };
 
 int __init
-danube_eeprom_init (void)
+ifxmips_eeprom_init (void)
 {
 	int ret = 0;
 
-	danube_eeprom_maj = register_chrdev(0, "eeprom", &danube_eeprom_fops);
+	ifxmips_eeprom_maj = register_chrdev(0, "eeprom", &ifxmips_eeprom_fops);
 
-	if (danube_eeprom_maj < 0)
+	if (ifxmips_eeprom_maj < 0)
 	{
 		printk("failed to register eeprom device\n");
 		ret = -EINVAL;
@@ -515,27 +515,27 @@ danube_eeprom_init (void)
 		goto out;
 	}
 
-	printk("danube_eeprom : /dev/eeprom mayor %d\n", danube_eeprom_maj);
+	printk("ifxmips_eeprom : /dev/eeprom mayor %d\n", ifxmips_eeprom_maj);
 
 out:
 	return ret;
 }
 
 void __exit
-danube_eeprom_cleanup_module (void)
+ifxmips_eeprom_cleanup_module (void)
 {
-	/*if (unregister_chrdev (danube_eeprom_maj, "eeprom")) {
+	/*if (unregister_chrdev (ifxmips_eeprom_maj, "eeprom")) {
 		printk ("Unable to unregister major %d for the EEPROM\n",
 			maj);
 	}*/
 }
 
-module_exit (danube_eeprom_cleanup_module);
-module_init (danube_eeprom_init);
+module_exit (ifxmips_eeprom_cleanup_module);
+module_init (ifxmips_eeprom_init);
 
 MODULE_LICENSE ("GPL");
 MODULE_AUTHOR ("Peng Liu");
 MODULE_DESCRIPTION ("IFAP EEPROM driver");
-MODULE_SUPPORTED_DEVICE ("danube_eeprom");
+MODULE_SUPPORTED_DEVICE ("ifxmips_eeprom");
 
 

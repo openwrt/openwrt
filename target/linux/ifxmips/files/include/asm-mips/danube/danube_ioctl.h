@@ -21,7 +21,7 @@
 
 /*------------ LED */
 
-struct danube_port_ioctl_parm
+struct ifxmips_port_ioctl_parm
 {
 	int port;
 	int pin;
@@ -29,14 +29,14 @@ struct danube_port_ioctl_parm
 };
 
 #define IFXMIPS_PORT_IOC_MAGIC		0xbf
-#define IFXMIPS_PORT_IOCOD			_IOW(IFXMIPS_PORT_IOC_MAGIC,0,struct danube_port_ioctl_parm)
-#define IFXMIPS_PORT_IOCPUDSEL		_IOW(IFXMIPS_PORT_IOC_MAGIC,1,struct danube_port_ioctl_parm)
-#define IFXMIPS_PORT_IOCPUDEN		_IOW(IFXMIPS_PORT_IOC_MAGIC,2,struct danube_port_ioctl_parm)
-#define IFXMIPS_PORT_IOCSTOFF		_IOW(IFXMIPS_PORT_IOC_MAGIC,3,struct danube_port_ioctl_parm)
-#define IFXMIPS_PORT_IOCDIR			_IOW(IFXMIPS_PORT_IOC_MAGIC,4,struct danube_port_ioctl_parm)
-#define IFXMIPS_PORT_IOCOUTPUT		_IOW(IFXMIPS_PORT_IOC_MAGIC,5,struct danube_port_ioctl_parm)
-#define IFXMIPS_PORT_IOCINPUT		_IOWR(IFXMIPS_PORT_IOC_MAGIC,6,struct danube_port_ioctl_parm)
-#define IFXMIPS_PORT_IOCALTSEL0		_IOW(IFXMIPS_PORT_IOC_MAGIC,7,struct danube_port_ioctl_parm)
-#define IFXMIPS_PORT_IOCALTSEL1		_IOW(IFXMIPS_PORT_IOC_MAGIC,8,struct danube_port_ioctl_parm)
+#define IFXMIPS_PORT_IOCOD			_IOW(IFXMIPS_PORT_IOC_MAGIC,0,struct ifxmips_port_ioctl_parm)
+#define IFXMIPS_PORT_IOCPUDSEL		_IOW(IFXMIPS_PORT_IOC_MAGIC,1,struct ifxmips_port_ioctl_parm)
+#define IFXMIPS_PORT_IOCPUDEN		_IOW(IFXMIPS_PORT_IOC_MAGIC,2,struct ifxmips_port_ioctl_parm)
+#define IFXMIPS_PORT_IOCSTOFF		_IOW(IFXMIPS_PORT_IOC_MAGIC,3,struct ifxmips_port_ioctl_parm)
+#define IFXMIPS_PORT_IOCDIR			_IOW(IFXMIPS_PORT_IOC_MAGIC,4,struct ifxmips_port_ioctl_parm)
+#define IFXMIPS_PORT_IOCOUTPUT		_IOW(IFXMIPS_PORT_IOC_MAGIC,5,struct ifxmips_port_ioctl_parm)
+#define IFXMIPS_PORT_IOCINPUT		_IOWR(IFXMIPS_PORT_IOC_MAGIC,6,struct ifxmips_port_ioctl_parm)
+#define IFXMIPS_PORT_IOCALTSEL0		_IOW(IFXMIPS_PORT_IOC_MAGIC,7,struct ifxmips_port_ioctl_parm)
+#define IFXMIPS_PORT_IOCALTSEL1		_IOW(IFXMIPS_PORT_IOC_MAGIC,8,struct ifxmips_port_ioctl_parm)
 
 #endif

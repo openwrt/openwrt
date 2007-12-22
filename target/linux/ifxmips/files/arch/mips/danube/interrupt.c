@@ -1,5 +1,5 @@
 /*
- *   arch/mips/danube/interrupt.c
+ *   arch/mips/ifxmips/interrupt.c
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  *
  *   Copyright (C) 2005 Wu Qi Ming infineon
  *
- *   Rewrite of Infineon Danube code, thanks to infineon for the support,
+ *   Rewrite of Infineon IFXMips code, thanks to infineon for the support,
  *   software and hardware
  *
  *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
@@ -33,97 +33,97 @@
 
 #include <asm/bootinfo.h>
 #include <asm/irq.h>
-#include <asm/danube/danube.h>
-#include <asm/danube/danube_irq.h>
+#include <asm/ifxmips/ifxmips.h>
+#include <asm/ifxmips/ifxmips_irq.h>
 #include <asm/irq_cpu.h>
 
 
 void
-disable_danube_irq (unsigned int irq_nr)
+disable_ifxmips_irq (unsigned int irq_nr)
 {
 	int i;
-	u32 *danube_ier = IFXMIPS_ICU_IM0_IER;
+	u32 *ifxmips_ier = IFXMIPS_ICU_IM0_IER;
 
 	irq_nr -= INT_NUM_IRQ0;
 	for (i = 0; i <= 4; i++)
 	{
 		if (irq_nr < INT_NUM_IM_OFFSET){
-			writel(readl(danube_ier) & ~(1 << irq_nr ), danube_ier);
+			writel(readl(ifxmips_ier) & ~(1 << irq_nr ), ifxmips_ier);
 			return;
 		}
-		danube_ier += IFXMIPS_ICU_OFFSET;
+		ifxmips_ier += IFXMIPS_ICU_OFFSET;
 		irq_nr -= INT_NUM_IM_OFFSET;
 	}
 }
-EXPORT_SYMBOL (disable_danube_irq);
+EXPORT_SYMBOL (disable_ifxmips_irq);
 
 void
-mask_and_ack_danube_irq (unsigned int irq_nr)
+mask_and_ack_ifxmips_irq (unsigned int irq_nr)
 {
 	int i;
-	u32 *danube_ier = IFXMIPS_ICU_IM0_IER;
-	u32 *danube_isr = IFXMIPS_ICU_IM0_ISR;
+	u32 *ifxmips_ier = IFXMIPS_ICU_IM0_IER;
+	u32 *ifxmips_isr = IFXMIPS_ICU_IM0_ISR;
 
 	irq_nr -= INT_NUM_IRQ0;
 	for (i = 0; i <= 4; i++)
 	{
 		if (irq_nr < INT_NUM_IM_OFFSET)
 		{
-			writel(readl(danube_ier) & ~(1 << irq_nr ), danube_ier);
-			writel((1 << irq_nr ), danube_isr);
+			writel(readl(ifxmips_ier) & ~(1 << irq_nr ), ifxmips_ier);
+			writel((1 << irq_nr ), ifxmips_isr);
 			return;
 		}
-		danube_ier += IFXMIPS_ICU_OFFSET;
-		danube_isr += IFXMIPS_ICU_OFFSET;
+		ifxmips_ier += IFXMIPS_ICU_OFFSET;
+		ifxmips_isr += IFXMIPS_ICU_OFFSET;
 		irq_nr -= INT_NUM_IM_OFFSET;
 	}
 }
-EXPORT_SYMBOL (mask_and_ack_danube_irq);
+EXPORT_SYMBOL (mask_and_ack_ifxmips_irq);
 
 void
-enable_danube_irq (unsigned int irq_nr)
+enable_ifxmips_irq (unsigned int irq_nr)
 {
 	int i;
-	u32 *danube_ier = IFXMIPS_ICU_IM0_IER;
+	u32 *ifxmips_ier = IFXMIPS_ICU_IM0_IER;
 
 	irq_nr -= INT_NUM_IRQ0;
 	for (i = 0; i <= 4; i++)
 	{
 		if (irq_nr < INT_NUM_IM_OFFSET)
 		{
-			writel(readl(danube_ier) | (1 << irq_nr ), danube_ier);
+			writel(readl(ifxmips_ier) | (1 << irq_nr ), ifxmips_ier);
 			return;
 		}
-		danube_ier += IFXMIPS_ICU_OFFSET;
+		ifxmips_ier += IFXMIPS_ICU_OFFSET;
 		irq_nr -= INT_NUM_IM_OFFSET;
 	}
 }
-EXPORT_SYMBOL (enable_danube_irq);
+EXPORT_SYMBOL (enable_ifxmips_irq);
 
 static unsigned int
-startup_danube_irq (unsigned int irq)
+startup_ifxmips_irq (unsigned int irq)
 {
-	enable_danube_irq (irq);
+	enable_ifxmips_irq (irq);
 	return 0;
 }
 
 static void
-end_danube_irq (unsigned int irq)
+end_ifxmips_irq (unsigned int irq)
 {
 	if (!(irq_desc[irq].status & (IRQ_DISABLED | IRQ_INPROGRESS)))
-		enable_danube_irq (irq);
+		enable_ifxmips_irq (irq);
 }
 
-static struct hw_interrupt_type danube_irq_type = {
+static struct hw_interrupt_type ifxmips_irq_type = {
 	"IFXMIPS",
-	.startup = startup_danube_irq,
-	.enable = enable_danube_irq,
-	.disable = disable_danube_irq,
-	.unmask = enable_danube_irq,
-	.ack = end_danube_irq,
-	.mask = disable_danube_irq,
-	.mask_ack = mask_and_ack_danube_irq,
-	.end = end_danube_irq,
+	.startup = startup_ifxmips_irq,
+	.enable = enable_ifxmips_irq,
+	.disable = disable_ifxmips_irq,
+	.unmask = enable_ifxmips_irq,
+	.ack = end_ifxmips_irq,
+	.mask = disable_ifxmips_irq,
+	.mask_ack = mask_and_ack_ifxmips_irq,
+	.end = end_ifxmips_irq,
 };
 
 static inline int
@@ -141,7 +141,7 @@ ls1bit32(unsigned long x)
 }
 
 void
-danube_hw_irqdispatch (int module)
+ifxmips_hw_irqdispatch (int module)
 {
 	u32 irq;
 
@@ -171,7 +171,7 @@ plat_irq_dispatch (void)
 		{
 			if (pending & (CAUSEF_IP2 << i))
 			{
-				danube_hw_irqdispatch(i);
+				ifxmips_hw_irqdispatch(i);
 				goto out;
 			}
 		}
@@ -212,7 +212,7 @@ arch_init_irq(void)
 		irq_desc[i].action = NULL;
 		irq_desc[i].depth = 1;
 #endif
-		set_irq_chip_and_handler(i, &danube_irq_type, handle_level_irq);
+		set_irq_chip_and_handler(i, &ifxmips_irq_type, handle_level_irq);
 	}
 
 	set_c0_status (IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4 | IE_IRQ5);
