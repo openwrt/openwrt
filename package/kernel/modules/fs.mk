@@ -62,10 +62,28 @@ endef
 $(eval $(call KernelPackage,fs-ntfs))
 
 
+define KernelPackage/fs-mbcache
+  SUBMENU:=$(FS_MENU)
+  TITLE:=mbcache (used by ext2/ext3)
+  KCONFIG:=CONFIG_FS_MBCACHE
+  ifneq ($(CONFIG_FS_MBCACHE),)
+    FILES:=$(LINUX_DIR)/fs/mbcache.$(LINUX_KMOD_SUFFIX)
+    AUTOLOAD:=$(call AutoLoad,20,mbcache)
+  endif
+endef
+
+define KernelPackage/fs-ext2/description
+ Meta Block cache used by ext2/ext3
+ This package will only be installed if extended attributes 
+ are enabled for ext2/ext3
+endef
+$(eval $(call KernelPackage,fs-mbcache))
+
 define KernelPackage/fs-ext2
   SUBMENU:=$(FS_MENU)
   TITLE:=EXT2 filesystem support
   KCONFIG:=CONFIG_EXT2_FS
+  DEPENDS:=$(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
   FILES:=$(LINUX_DIR)/fs/ext2/ext2.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,ext2)
 endef
@@ -83,11 +101,11 @@ define KernelPackage/fs-ext3
   KCONFIG:= \
 	CONFIG_EXT3_FS \
 	CONFIG_JBD
+  DEPENDS:=$(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
   FILES:= \
 	$(LINUX_DIR)/fs/ext3/ext3.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/fs/mbcache.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/fs/jbd/jbd.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,mbcache jbd ext3)
+  AUTOLOAD:=$(call AutoLoad,30,jbd ext3)
 endef
 
 define KernelPackage/fs-ext3/description
