@@ -138,7 +138,7 @@ define Package/base-files$(TARGET)/install
 	$(if $(filter-out $(PLATFORM_DIR),$(PLATFORM_SUBDIR)), \
 		if [ -d $(PLATFORM_SUBDIR)/base-files/. ]; then \
 			$(CP) $(PLATFORM_SUBDIR)/base-files/* $(1)/; \
-		fi \
+		fi; \
 		if [ -d $(PLATFORM_SUBDIR)/base-files-$(PROFILE)/. ]; then \
 			$(CP) $(PLATFORM_SUBDIR)/base-files-$(PROFILE)/* $(1)/; \
 		fi \
