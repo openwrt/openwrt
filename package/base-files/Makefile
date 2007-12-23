@@ -18,6 +18,9 @@ include $(INCLUDE_DIR)/package.mk
 
 ifneq ($(DUMP),1)
   TARGET:=-$(BOARD)
+  ifneq ($(wildcard $(PLATFORM_DIR)/base-files-$(PROFILE) $(PLATFORM_SUBDIR)/base-files-$(PROFILE)),)
+    TARGET:=$(TARGET)-$(PROFILE)
+  endif
   LIBGCC_VERSION:=$(GCC_VERSION)
 else
   UCLIBC_VERSION:=<UCLIBC_VERSION>
@@ -129,9 +132,15 @@ define Package/base-files$(TARGET)/install
 	if [ -d $(PLATFORM_DIR)/base-files/. ]; then \
 		$(CP) $(PLATFORM_DIR)/base-files/* $(1)/; \
 	fi
+	if [ -d $(PLATFORM_DIR)/base-files-$(PROFILE)/. ]; then \
+		$(CP) $(PLATFORM_DIR)/base-files-$(PROFILE)/* $(1)/; \
+	fi
 	$(if $(filter-out $(PLATFORM_DIR),$(PLATFORM_SUBDIR)), \
 		if [ -d $(PLATFORM_SUBDIR)/base-files/. ]; then \
 			$(CP) $(PLATFORM_SUBDIR)/base-files/* $(1)/; \
+		fi \
+		if [ -d $(PLATFORM_SUBDIR)/base-files-$(PROFILE)/. ]; then \
+			$(CP) $(PLATFORM_SUBDIR)/base-files-$(PROFILE)/* $(1)/; \
 		fi \
 	)
 	$(SED) 's,$$$$R,$(REVISION),g' $(1)/etc/banner
