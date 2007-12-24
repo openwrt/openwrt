@@ -106,7 +106,7 @@
 #define IFXMIPS_RST_ALL			0x40000000
 
 #define IFXMIPS_RCU_RST_REQ_DFE	(1 << 7)
-#define IFXMIPS_RCU_RST_REQ_DFE	(1 << 7)
+#define IFXMIPS_RCU_RST_REQ_AFE	(1 << 11)
 
 
 /*------------ MCD */
