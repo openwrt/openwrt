@@ -1,7 +1,7 @@
 Index: linux-2.6.23/drivers/serial/Kconfig
 ===================================================================
---- linux-2.6.23.orig/drivers/serial/Kconfig	2007-12-13 20:41:42.000000000 +0100
-+++ linux-2.6.23/drivers/serial/Kconfig	2007-12-13 20:41:57.000000000 +0100
+--- linux-2.6.23.orig/drivers/serial/Kconfig	2007-12-22 20:21:04.563793426 +0100
++++ linux-2.6.23/drivers/serial/Kconfig	2007-12-22 20:21:08.848037572 +0100
 @@ -1259,4 +1259,10 @@
  	  Currently, only 8250 compatible ports are supported, but
  	  others can easily be added.
@@ -15,8 +15,8 @@ Index: linux-2.6.23/drivers/serial/Kconfig
  endmenu
 Index: linux-2.6.23/drivers/serial/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/serial/Makefile	2007-12-13 20:41:42.000000000 +0100
-+++ linux-2.6.23/drivers/serial/Makefile	2007-12-13 20:41:57.000000000 +0100
+--- linux-2.6.23.orig/drivers/serial/Makefile	2007-12-22 20:21:04.571793884 +0100
++++ linux-2.6.23/drivers/serial/Makefile	2007-12-22 20:21:08.852037801 +0100
 @@ -64,3 +64,4 @@
  obj-$(CONFIG_SERIAL_NETX) += netx-serial.o
  obj-$(CONFIG_SERIAL_OF_PLATFORM) += of_serial.o
@@ -24,8 +24,8 @@ Index: linux-2.6.23/drivers/serial/Makefile
 +obj-$(CONFIG_SERIAL_IFXMIPS) += ifxmips_asc.o
 Index: linux-2.6.23/drivers/mtd/maps/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/mtd/maps/Makefile	2007-12-13 20:41:42.000000000 +0100
-+++ linux-2.6.23/drivers/mtd/maps/Makefile	2007-12-13 20:41:57.000000000 +0100
+--- linux-2.6.23.orig/drivers/mtd/maps/Makefile	2007-12-22 20:21:04.579794340 +0100
++++ linux-2.6.23/drivers/mtd/maps/Makefile	2007-12-22 20:21:08.860038256 +0100
 @@ -71,3 +71,4 @@
  obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
  obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o
@@ -33,8 +33,8 @@ Index: linux-2.6.23/drivers/mtd/maps/Makefile
 +obj-$(CONFIG_MTD_IFXMIPS)	+= ifxmips.o
 Index: linux-2.6.23/drivers/net/Kconfig
 ===================================================================
---- linux-2.6.23.orig/drivers/net/Kconfig	2007-12-13 20:41:42.000000000 +0100
-+++ linux-2.6.23/drivers/net/Kconfig	2007-12-13 20:41:57.000000000 +0100
+--- linux-2.6.23.orig/drivers/net/Kconfig	2007-12-22 20:21:08.035991295 +0100
++++ linux-2.6.23/drivers/net/Kconfig	2007-12-22 20:21:08.860038256 +0100
 @@ -339,6 +339,18 @@
  
  source "drivers/net/arm/Kconfig"
@@ -56,8 +56,8 @@ Index: linux-2.6.23/drivers/net/Kconfig
  	depends on ARM || MIPS
 Index: linux-2.6.23/drivers/net/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/net/Makefile	2007-12-13 20:41:42.000000000 +0100
-+++ linux-2.6.23/drivers/net/Makefile	2007-12-13 20:41:57.000000000 +0100
+--- linux-2.6.23.orig/drivers/net/Makefile	2007-12-22 20:21:08.039991524 +0100
++++ linux-2.6.23/drivers/net/Makefile	2007-12-22 20:21:08.860038256 +0100
 @@ -208,6 +208,7 @@
  obj-$(CONFIG_FEC_8XX) += fec_8xx/
  obj-$(CONFIG_PASEMI_MAC) += pasemi_mac.o
@@ -68,8 +68,8 @@ Index: linux-2.6.23/drivers/net/Makefile
  
 Index: linux-2.6.23/drivers/char/watchdog/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/char/watchdog/Makefile	2007-12-13 20:41:42.000000000 +0100
-+++ linux-2.6.23/drivers/char/watchdog/Makefile	2007-12-13 20:41:57.000000000 +0100
+--- linux-2.6.23.orig/drivers/char/watchdog/Makefile	2007-12-22 20:21:04.599795479 +0100
++++ linux-2.6.23/drivers/char/watchdog/Makefile	2007-12-22 20:21:08.880039396 +0100
 @@ -90,6 +90,7 @@
  obj-$(CONFIG_INDYDOG) += indydog.o
  obj-$(CONFIG_WDT_MTX1)	+= mtx-1_wdt.o
@@ -80,9 +80,9 @@ Index: linux-2.6.23/drivers/char/watchdog/Makefile
  
 Index: linux-2.6.23/drivers/char/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/char/Makefile	2007-12-13 20:41:42.000000000 +0100
-+++ linux-2.6.23/drivers/char/Makefile	2007-12-14 22:41:07.000000000 +0100
-@@ -135,3 +135,8 @@
+--- linux-2.6.23.orig/drivers/char/Makefile	2007-12-22 20:21:04.611796164 +0100
++++ linux-2.6.23/drivers/char/Makefile	2007-12-24 15:04:56.849129757 +0100
+@@ -135,3 +135,9 @@
  	rm $@.tmp
  
  endif
@@ -91,3 +91,4 @@ Index: linux-2.6.23/drivers/char/Makefile
 +obj-$(CONFIG_IFXMIPS_GPIO)	+= ifxmips_gpio.o
 +obj-$(CONFIG_IFXMIPS_SSC)	+= ifxmips_ssc.o
 +obj-$(CONFIG_IFXMIPS_EEPROM)	+= ifxmips_eeprom.o
++obj-$(CONFIG_IFXMIPS_MEI)	+= ifxmips_mei_core.o ifxmips_mei_bsp.c ifxmips_mei_mib.c
