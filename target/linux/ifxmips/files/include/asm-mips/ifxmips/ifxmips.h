@@ -105,6 +105,9 @@
 #define IFXMIPS_RCU_REQ			((u32*)(IFXMIPS_RCU_BASE_ADDR + 0x0010))
 #define IFXMIPS_RST_ALL			0x40000000
 
+#define IFXMIPS_RCU_RST_REQ_DFE	(1 << 7)
+#define IFXMIPS_RCU_RST_REQ_DFE	(1 << 7)
+
 
 /*------------ MCD */
 
