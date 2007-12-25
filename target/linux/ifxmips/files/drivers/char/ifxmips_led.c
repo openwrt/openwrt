@@ -24,6 +24,7 @@
 #include <linux/types.h>
 #include <linux/fs.h>
 #include <linux/init.h>
+#include <linux/platform_device.h>
 #include <asm/uaccess.h>
 #include <asm/unistd.h>
 #include <linux/errno.h>
@@ -31,12 +32,14 @@
 #include <asm/ifxmips/ifxmips_gpio.h>
 #include <asm/ifxmips/ifxmips_pmu.h>
 
-#define IFXMIPS_LED_CLK_EDGE				IFXMIPS_LED_FALLING
+#define DRVNAME							"ifxmips_led" 
+
+#define IFXMIPS_LED_CLK_EDGE			IFXMIPS_LED_FALLING
 //#define IFXMIPS_LED_CLK_EDGE			IFXMIPS_LED_RISING
 
 #define IFXMIPS_LED_SPEED				IFXMIPS_LED_8HZ
 
-#define IFXMIPS_LED_GPIO_PORT	0
+#define IFXMIPS_LED_GPIO_PORT			0
 
 static int ifxmips_led_major;
 
@@ -118,27 +121,8 @@ static struct file_operations ifxmips_led_fops = {
 	.release = led_release
 };
 
-
-/*
-Map for LED on reference board
-	WLAN_READ     LED11   OUT1    15
-	WARNING       LED12   OUT2    14
-	FXS1_LINK     LED13   OUT3    13
-	FXS2_LINK     LED14   OUT4    12
-	FXO_ACT       LED15   OUT5    11
-	USB_LINK      LED16   OUT6    10
-	ADSL2_LINK    LED19   OUT7    9
-	BT_LINK       LED17   OUT8    8
-	SD_LINK       LED20   OUT9    7
-	ADSL2_TRAFFIC LED31   OUT16   0
-Map for hardware relay on reference board
-	USB Power On          OUT11   5
-	RELAY                 OUT12   4
-*/
-
-
-int __init
-ifxmips_led_init (void)
+static int
+ifxmips_led_probe(struct platform_device *dev)
 {
 	int ret = 0;
 
@@ -181,16 +165,60 @@ ifxmips_led_init (void)
 		goto out;
 	}
 
-	printk(KERN_INFO "ifxmips_led : device registered on major %d\n", ifxmips_led_major);
+	printk(KERN_INFO "ifxmips_led: device successfully initialized #%d.\n", ifxmips_led_major);
 
 out:
+	return ret;
+}
+
+static int
+ifxmips_led_remove(struct platform_device *pdev)
+{
+	unregister_chrdev(ifxmips_led_major, "ifxmips_led");
+	return 0;
+}
+
+static struct
+platform_driver ifxmips_led_driver = {
+	.probe = ifxmips_led_probe,
+	.remove = ifxmips_led_remove,
+	.driver = {
+		.name = DRVNAME,
+		.owner = THIS_MODULE,
+	},
+};
+
+/*
+Map for LED on reference board
+	WLAN_READ     LED11   OUT1    15
+	WARNING       LED12   OUT2    14
+	FXS1_LINK     LED13   OUT3    13
+	FXS2_LINK     LED14   OUT4    12
+	FXO_ACT       LED15   OUT5    11
+	USB_LINK      LED16   OUT6    10
+	ADSL2_LINK    LED19   OUT7    9
+	BT_LINK       LED17   OUT8    8
+	SD_LINK       LED20   OUT9    7
+	ADSL2_TRAFFIC LED31   OUT16   0
+Map for hardware relay on reference board
+	USB Power On          OUT11   5
+	RELAY                 OUT12   4
+*/
+
+int __init
+ifxmips_led_init (void)
+{
+	int ret = platform_driver_register(&ifxmips_led_driver);
+	if (ret)
+		printk(KERN_INFO "ifxmips_led: Error registering platfom driver!");
+
 	return ret;
 }
 
 void __exit
 ifxmips_led_exit (void)
 {
-	unregister_chrdev(ifxmips_led_major, "ifxmips_led");
+	platform_driver_unregister(&ifxmips_led_driver);
 }
 
 module_init(ifxmips_led_init);
