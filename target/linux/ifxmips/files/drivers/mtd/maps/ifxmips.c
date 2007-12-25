@@ -23,7 +23,6 @@
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <asm/io.h>
-
 #include <linux/init.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/map.h>
@@ -31,16 +30,19 @@
 #include <linux/mtd/cfi.h>
 #include <asm/ifxmips/ifxmips.h>
 #include <linux/magic.h>
+#include <linux/platform_device.h>
+
+#define DRVNAME		"ifxmips_mtd"
 
 static struct map_info
-danube_map = {
-	.name = "IFXMIPS_FLASH",
+ifxmips_map = {
+	.name = DRVNAME,
 	.bankwidth = 2,
 	.size = 0x400000,
 };
 
 static map_word
-danube_read16 (struct map_info * map, unsigned long adr)
+ifxmips_read16 (struct map_info * map, unsigned long adr)
 {
 	map_word temp;
 
@@ -51,14 +53,14 @@ danube_read16 (struct map_info * map, unsigned long adr)
 }
 
 static void
-danube_write16 (struct map_info *map, map_word d, unsigned long adr)
+ifxmips_write16 (struct map_info *map, map_word d, unsigned long adr)
 {
 	adr ^= 2;
 	*((__u16 *) (map->virt + adr)) = d.x[0];
 }
 
 void
-danube_copy_from (struct map_info *map, void *to, unsigned long from, ssize_t len)
+ifxmips_copy_from (struct map_info *map, void *to, unsigned long from, ssize_t len)
 {
 	u8 *p;
 	u8 *to_8;
@@ -72,7 +74,7 @@ danube_copy_from (struct map_info *map, void *to, unsigned long from, ssize_t le
 }
 
 void
-danube_copy_to (struct map_info *map, unsigned long to, const void *from, ssize_t len)
+ifxmips_copy_to (struct map_info *map, unsigned long to, const void *from, ssize_t len)
 {
 	u8 *p =  (u8*) from;
 	u8 *to_8;
@@ -85,7 +87,7 @@ danube_copy_to (struct map_info *map, unsigned long to, const void *from, ssize_
 }
 
 static struct mtd_partition
-danube_partitions[4] = {
+ifxmips_partitions[4] = {
 	{
 		name:"U-Boot",
 		offset:0x00000000,
@@ -108,15 +110,12 @@ danube_partitions[4] = {
 	},
 };
 
-#define IFXMIPS_FLASH_START		0x10000000
-#define IFXMIPS_FLASH_MAX		0x2000000
-
 int
 find_uImage_size (unsigned long start_offset){
 	unsigned long temp;
 
-	danube_copy_from(&danube_map, &temp, start_offset + 12, 4);
-	printk("kernel size is %ld \n", temp + 0x40);
+	ifxmips_copy_from(&ifxmips_map, &temp, start_offset + 12, 4);
+	printk(KERN_INFO DRVNAME ": kernel size is %ld \n", temp + 0x40);
 	return temp + 0x40;
 }
 
@@ -124,70 +123,90 @@ int
 detect_squashfs_partition (unsigned long start_offset){
 	unsigned long temp;
 
-	danube_copy_from(&danube_map, &temp, start_offset, 4);
+	ifxmips_copy_from(&ifxmips_map, &temp, start_offset, 4);
 
 	return (temp == SQUASHFS_MAGIC);
 }
 
-int __init
-init_danube_mtd (void)
+static int
+ifxmips_mtd_probe (void)
 {
-	struct mtd_info *danube_mtd = NULL;
+	struct mtd_info *ifxmips_mtd = NULL;
 	struct mtd_partition *parts = NULL;
 	unsigned long uimage_size;
 
 	writel(0x1d7ff, IFXMIPS_EBU_BUSCON0);
 
-	danube_map.read = danube_read16;
-	danube_map.write = danube_write16;
-	danube_map.copy_from = danube_copy_from;
-	danube_map.copy_to = danube_copy_to;
+	ifxmips_map.read = ifxmips_read16;
+	ifxmips_map.write = ifxmips_write16;
+	ifxmips_map.copy_from = ifxmips_copy_from;
+	ifxmips_map.copy_to = ifxmips_copy_to;
 
-	danube_map.phys = IFXMIPS_FLASH_START;
-	danube_map.virt = ioremap_nocache(IFXMIPS_FLASH_START, IFXMIPS_FLASH_MAX);
-	danube_map.size = IFXMIPS_FLASH_MAX;
-	if (!danube_map.virt) {
-		printk(KERN_WARNING "Failed to ioremap!\n");
+	ifxmips_map.phys = IFXMIPS_FLASH_START;
+	ifxmips_map.virt = ioremap_nocache(IFXMIPS_FLASH_START, IFXMIPS_FLASH_MAX);
+	ifxmips_map.size = IFXMIPS_FLASH_MAX;
+	if (!ifxmips_map.virt) {
+		printk(KERN_WARNING DRVNAME ": failed to ioremap!\n");
 		return -EIO;
 	}
 
-	danube_mtd = (struct mtd_info *) do_map_probe("cfi_probe", &danube_map);
-	if (!danube_mtd) {
-		iounmap(danube_map.virt);
-		printk("probing failed\n");
+	ifxmips_mtd = (struct mtd_info *) do_map_probe("cfi_probe", &ifxmips_map);
+	if (!ifxmips_mtd) {
+		iounmap(ifxmips_map.virt);
+		printk(KERN_WARNING DRVNAME ": probing failed\n");
 		return -ENXIO;
 	}
 
-	danube_mtd->owner = THIS_MODULE;
+	ifxmips_mtd->owner = THIS_MODULE;
 
-	uimage_size = find_uImage_size(danube_partitions[2].offset);
+	uimage_size = find_uImage_size(ifxmips_partitions[2].offset);
 
-	if(detect_squashfs_partition(danube_partitions[2].offset + uimage_size)){
-		printk("Found a squashfs following the uImage\n");
+	if(detect_squashfs_partition(ifxmips_partitions[2].offset + uimage_size)){
+		printk(KERN_INFO DRVNAME ": found a squashfs following the uImage\n");
 	} else {
 		uimage_size &= ~0xffff;
 		uimage_size += 0x10000;
 	}
 
-	danube_partitions[2].size = uimage_size;
-	danube_partitions[3].offset = danube_partitions[2].offset + danube_partitions[2].size;
-	danube_partitions[3].size = ((danube_mtd->size >> 20) * 1024 * 1024) - danube_partitions[3].offset;
+	ifxmips_partitions[2].size = uimage_size;
+	ifxmips_partitions[3].offset = ifxmips_partitions[2].offset + ifxmips_partitions[2].size;
+	ifxmips_partitions[3].size = ((ifxmips_mtd->size >> 20) * 1024 * 1024) - ifxmips_partitions[3].offset;
 
-	parts = &danube_partitions[0];
-	add_mtd_partitions(danube_mtd, parts, 4);
+	parts = &ifxmips_partitions[0];
+	add_mtd_partitions(ifxmips_mtd, parts, 4);
 
-	printk("Added danube flash with %dMB\n", danube_mtd->size >> 20);
+	printk(KERN_INFO DRVNAME ": added ifxmips flash with %dMB\n", ifxmips_mtd->size >> 20);
 	return 0;
+}
+
+static struct 
+platform_driver ifxmips_mtd_driver = { 
+	.probe = ifxmips_mtd_probe, 
+	.driver = { 
+		.name = DRVNAME, 
+		.owner = THIS_MODULE, 
+	}, 
+}; 
+
+int __init
+init_ifxmips_mtd (void)
+{
+	int ret = platform_driver_register(&ifxmips_mtd_driver); 
+	if (ret) 
+		printk(KERN_INFO DRVNAME ": error registering platfom driver!"); 
+
+	return ret; 
 }
 
 static void
 __exit
-cleanup_danube_mtd (void)
+cleanup_ifxmips_mtd (void)
 {
+	platform_driver_unregister(&ifxmips_mtd_driver);
 }
 
-module_init (init_danube_mtd);
-module_exit (cleanup_danube_mtd);
+module_init (init_ifxmips_mtd);
+module_exit (cleanup_ifxmips_mtd);
 
 MODULE_LICENSE ("GPL");
 MODULE_AUTHOR ("John Crispin <blogic@openwrt.org>");

@@ -71,6 +71,29 @@ static struct platform_device ifxmips_mii[] =
 		.name = "ifxmips_mii0",
 	},
 };
+	
+static struct physmap_flash_data ifxmips_mtd_data = {
+	.width    = 2,
+};
+
+static struct resource ifxmips_mtd_resource = {
+	.start  = IFXMIPS_FLASH_START,
+	.end    = IFXMIPS_FLASH_START + IFXMIPS_FLASH_MAX - 1,
+	.flags  = IORESOURCE_MEM,
+};
+
+static struct platform_device ifxmips_mtd[] =
+{
+	{
+		.id = 0,
+		.name = "ifxmips_mtd",
+		.dev = {
+			.platform_data = &ifxmips_mtd_data,
+		},
+		.num_resources  = 1,
+		.resource   = &ifxmips_mtd_resource,
+	},
+};
 
 const char*
 get_system_type (void)
@@ -102,6 +125,7 @@ int __init ifxmips_init_devices(void)
 	ifxmips_devs[dev++] = ifxmips_led;
 	ifxmips_devs[dev++] = ifxmips_gpio;
 	ifxmips_devs[dev++] = ifxmips_mii;
+	ifxmips_devs[dev++] = ifxmips_mtd;
 
 	return platform_add_devices(ifxmips_devs, dev);
 }
