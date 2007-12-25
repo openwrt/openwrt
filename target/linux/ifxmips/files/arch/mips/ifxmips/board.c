@@ -25,9 +25,9 @@
 #include <linux/types.h>
 #include <linux/string.h>
 #include <linux/mtd/physmap.h>
-#include <linux/platform_device.h>
 #include <linux/kernel.h>
 #include <linux/reboot.h>
+#include <linux/platform_device.h> 
 #include <asm/bootinfo.h>
 #include <asm/reboot.h>
 #include <asm/time.h>
@@ -54,6 +54,14 @@ static struct platform_device ifxmips_gpio[] =
 	},
 };
 
+static struct platform_device ifxmips_mii[] =
+{
+	{
+		.id = 0,
+		.name = "ifxmips_mii0",
+	},
+};
+
 int __init ifxmips_init_devices(void)
 {
 	/*
@@ -70,6 +78,7 @@ int __init ifxmips_init_devices(void)
 
 	ifxmips_devs[dev++] = ifxmips_led;
 	ifxmips_devs[dev++] = ifxmips_gpio;
+	ifxmips_devs[dev++] = ifxmips_mii;
 
 	return platform_add_devices(ifxmips_devs, dev);
 }
