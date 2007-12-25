@@ -46,6 +46,14 @@ static struct platform_device ifxmips_led[] =
 	},
 };
 
+static struct platform_device ifxmips_gpio[] =
+{
+	{
+		.id = 0,
+		.name = "ifxmips_gpio",
+	},
+};
+
 int __init ifxmips_init_devices(void)
 {
 	/*
@@ -61,6 +69,7 @@ int __init ifxmips_init_devices(void)
 	/* the following devices are generic for all targets */
 
 	ifxmips_devs[dev++] = ifxmips_led;
+	ifxmips_devs[dev++] = ifxmips_gpio;
 
 	return platform_add_devices(ifxmips_devs, dev);
 }
