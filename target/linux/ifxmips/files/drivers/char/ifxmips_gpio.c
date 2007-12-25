@@ -32,6 +32,7 @@
 #include <linux/workqueue.h>
 #include <linux/skbuff.h>
 #include <linux/netlink.h>
+#include <linux/platform_device.h> 
 #include <net/sock.h>
 #include <asm/uaccess.h>
 #include <asm/semaphore.h>
@@ -41,6 +42,8 @@
 
 #define MAX_PORTS			2
 #define PINS_PER_PORT		16
+
+#define DRVNAME				"ifxmips_gpio"  
 
 static unsigned int ifxmips_gpio_major = 0;
 
@@ -513,23 +516,22 @@ static struct file_operations port_fops = {
       .ioctl = ifxmips_port_ioctl
 };
 
-int __init
-ifxmips_gpio_init (void)
+static int
+ifxmips_gpio_probe (struct platform_device *dev)
 {
 	int retval = 0;
 
 	sema_init (&port_sem, 1);
 
-	ifxmips_gpio_major = register_chrdev(0, "ifxmips_gpio", &port_fops);
+	ifxmips_gpio_major = register_chrdev(0, DRVNAME, &port_fops);
 	if (!ifxmips_gpio_major)
 	{
-		printk("ifxmips-port: Error! Could not register port device. #%d\n", ifxmips_gpio_major);
+		printk(KERN_INFO DRVNAME ": Error! Could not register port device. #%d\n", ifxmips_gpio_major);
 		retval = -EINVAL;
 		goto out;
 	}
 
-	create_proc_read_entry("ifxmips_gpio", 0, NULL,
-				ifxmips_port_read_procmem, NULL);
+	create_proc_read_entry(DRVNAME, 0, NULL, ifxmips_port_read_procmem, NULL);
 
 #ifdef CONFIG_IFXMIPS_GPIO_RST_BTN
 	ifxmips_port_set_open_drain(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN);
@@ -545,20 +547,47 @@ ifxmips_gpio_init (void)
 	add_timer(&rst_button_timer);
 #endif
 
-	printk("registered ifxmips gpio driver\n");
+	printk(KERN_INFO DRVNAME ": device successfully initialized #%d.\n", ifxmips_gpio_major);
 
 out:
 	return retval;
 }
 
-void __exit
-ifxmips_gpio_exit (void)
+static int
+ifxmips_gpio_remove (struct platform_device *pdev)
 {
 #ifdef CONFIG_IFXMIPS_GPIO_RST_BTN
 	del_timer_sync(&rst_button_timer);
 #endif
-	unregister_chrdev(ifxmips_gpio_major, "ifxmips_gpio");
-	remove_proc_entry("ifxmips_gpio", NULL);
+	unregister_chrdev(ifxmips_gpio_major, DRVNAME);
+	remove_proc_entry(DRVNAME, NULL);
+
+	return 0;
+}
+
+static struct 
+platform_driver ifxmips_gpio_driver = { 
+	.probe = ifxmips_gpio_probe, 
+	.remove = ifxmips_gpio_remove, 
+	.driver = { 
+		.name = DRVNAME, 
+		.owner = THIS_MODULE, 
+	}, 
+}; 
+
+int __init
+ifxmips_gpio_init (void)
+{
+	int ret = platform_driver_register(&ifxmips_gpio_driver); 
+	if (ret) 
+		printk(KERN_INFO DRVNAME ": Error registering platfom driver!"); 
+	return ret; 
+}
+
+void __exit
+ifxmips_gpio_exit (void)
+{
+	platform_driver_unregister(&ifxmips_gpio_driver); 
 }
 
 module_init(ifxmips_gpio_init);
