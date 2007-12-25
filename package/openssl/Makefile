@@ -118,12 +118,6 @@ define Build/InstallDev
 	$(SED) 's,$(TARGET_LDFLAGS),,g' $(1)/usr/lib/pkgconfig/{openssl,libcrypto,libssl}.pc
 endef
 
-define Build/UninstallDev
-	rm -rf	$(1)/usr/include/openssl \
-		$(1)/usr/lib/lib{crypto,ssl}.{a,so*} \
-		$(1)/usr/lib/pkgconfig/{openssl,libcrypto,libssl}.pc
-endef
-
 define Package/libopenssl/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{crypto,ssl}.so.* $(1)/usr/lib/

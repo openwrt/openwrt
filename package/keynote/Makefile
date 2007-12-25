@@ -47,11 +47,6 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/libkeynote.a $(1)/usr/lib/
 endef
 
-define Build/UninstallDev
-	rm -rf	$(1)/usr/include/keynote \
-		$(1)/usr/lib/libkeynote.a
-endef
-
 define Package/keynote/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/keynote $(1)/usr/sbin/

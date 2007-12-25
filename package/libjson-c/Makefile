@@ -44,12 +44,6 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/json.pc $(1)/usr/lib/pkgconfig/
 endef
 
-define Build/UninstallDev
-	rm -rf	$(1)/usr/include/json \
-		$(1)/usr/lib/libjson.{a,so*} \
-		$(1)/usr/lib/pkgconfig/json.pc
-endef
-
 define Package/libjson/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libjson.so.* $(1)/usr/lib/

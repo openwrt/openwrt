@@ -34,10 +34,6 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/lib{nvram,shared}*.so $(1)/usr/lib/
 endef
 
-define Build/UninstallDev
-	rm -f $(1)/usr/lib/lib{nvram,shared}*.so
-endef
-
 define Package/nvram/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/nvram.init $(1)/etc/init.d/nvram

@@ -54,11 +54,6 @@ define Build/InstallDev
 		$(1)/usr/lib/
 endef
 
-define Build/UninstallDev
-	rm -rf	$(1)/usr/include/pcap{,-bpf,-namedb}.h \
-		$(1)/usr/lib/libpcap.{a,so*}
-endef
-
 define Package/libpcap/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpcap.so.* $(1)/usr/lib/

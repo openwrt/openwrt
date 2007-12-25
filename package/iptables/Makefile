@@ -235,18 +235,6 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/libiptc/libiptc.a $(1)/usr/lib
 endef
 
-define Build/UninstallDev
-	rm -rf $(1)/usr/include/libipq.h
-	rm -rf $(1)/usr/include/libipulog
-	rm -rf $(1)/usr/include/libipq
-	rm -rf $(1)/usr/include/libiptc
-	rm -rf $(1)/usr/include/linux/netfilter*
-	rm -rf $(1)/usr/include/iptables*
-	rm -rf $(1)/usr/include/ip6tables*
-	rm -rf $(1)/usr/lib/libipq.a
-	rm -rf $(1)/usr/lib/libiptc.a
-endef
-
 define Package/iptables/install
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DATA) ./files/firewall.config $(1)/etc/config/firewall

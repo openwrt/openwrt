@@ -155,10 +155,6 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/net80211/*.h $(1)/usr/include/madwifi/net80211/
 endef
 
-define Build/UninstallDev
-	rm -rf $(1)/usr/include/madwifi
-endef
-
 define KernelPackage/madwifi/install
 	$(INSTALL_DIR) $(1)/lib/wifi
 	$(INSTALL_DATA) ./files/lib/wifi/madwifi.sh $(1)/lib/wifi

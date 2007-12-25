@@ -103,13 +103,6 @@ define Build/InstallDev
 		install-libs
 endef
 
-define Build/UninstallDev
-	-$(MAKE) -C $(PKG_BUILD_DIR) \
-		BUILDCC="$(HOSTCC)" \
-		DESTDIR="$(STAGING_DIR)" \
-		uninstall-libs
-endef
-
 define Package/e2fsprogs/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/e2fsck $(1)/usr/sbin/

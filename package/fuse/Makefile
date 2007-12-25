@@ -117,12 +117,6 @@ define Build/InstallDev
 	$(SED) 's,-I$$$${includedir}/fuse,,g' $(1)/usr/lib/pkgconfig/fuse.pc
 	$(SED) 's,-L$$$${libdir},,g' $(1)/usr/lib/pkgconfig/fuse.pc
 endef
-	
-define Build/UninstallDev
-	rm -rf	$(1)/usr/include/fuse{,.h} \
-		$(1)/usr/lib/libfuse.{a,so*} \
-		$(1)/usr/lib/pkgconfig/fuse.pc
-endef
 
 define Package/fuse-utils/install
 	$(INSTALL_DIR) $(1)/usr/bin

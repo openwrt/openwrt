@@ -43,9 +43,6 @@ ifneq ($(CONFIG_LINUX_2_6_23),)
 	$(CP) $(PKG_BUILD_DIR)/include/linux $(1)/usr/include/libnl/
   endef
 
-  define Build/UninstallDev
-  endef
-
   define Package/libnl/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/libnl.so.1 $(1)/usr/lib/
