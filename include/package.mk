@@ -70,7 +70,18 @@ define Build/DefaultTargets
 	touch $$@
 
   $(STAMP_INSTALLED): $(STAMP_BUILT)
-	$(call Build/InstallDev,$(STAGING_DIR),$(STAGING_DIR_HOST))
+	$(NO_TRACE_MAKE) clean-staging
+	rm -rf $(TMP_DIR)/stage-$(PKG_NAME)
+	mkdir -p $(TMP_DIR)/stage-$(PKG_NAME) $(STAGING_DIR)/packages $(STAGING_DIR_HOST)/packages
+	$(call Build/InstallDev,$(TMP_DIR)/stage-$(PKG_NAME)/target,$(TMP_DIR)/stage-$(PKG_NAME)/host)
+	if [ -d $(TMP_DIR)/stage-$(PKG_NAME)/target ]; then \
+		(cd $(TMP_DIR)/stage-$(PKG_NAME)/target; find > $(STAGING_DIR)/packages/$(PKG_NAME).list); \
+		$(CP) $(TMP_DIR)/stage-$(PKG_NAME)/target/* $(STAGING_DIR)/; \
+	fi
+	if [ -d $(TMP_DIR)/stage-$(PKG_NAME)/host ]; then \
+		(cd $(TMP_DIR)/stage-$(PKG_NAME)/host; find > $(STAGING_DIR_HOST)/packages/$(PKG_NAME).list); \
+		$(CP) $(TMP_DIR)/stage-$(PKG_NAME)/host/* $(STAGING_DIR_HOST)/; \
+	fi
 	touch $$@
 
   ifdef Build/InstallDev
@@ -152,15 +163,24 @@ endef
 
 $(PACKAGE_DIR):
 	mkdir -p $@
-		
+	
 dumpinfo:
 download:
 prepare:
 configure:
 compile:
 install:
-clean: FORCE
+clean-staging: FORCE
+	rm -f $(STAMP_INSTALLED)
+	for dir in "$(STAGING_DIR)" "$(STAGING_DIR_HOST)"; do (\
+		cd $$dir; \
+		if [ -f packages/$(PKG_NAME).list ]; then \
+			cat packages/$(PKG_NAME).list | xargs -r rm -f 2>/dev/null; \
+		fi; \
+	) done;
+
+clean: clean-staging FORCE
 	$(call Build/UninstallDev,$(STAGING_DIR),$(STAGING_DIR_HOST))
 	$(Build/Clean)
-	@rm -f $(STAGING_DIR)/stamp/.$(PKG_NAME)-installed
-	@rm -rf $(PKG_BUILD_DIR)
+	rm -f $(STAGING_DIR)/packages/$(PKG_NAME).list $(STAGING_DIR_HOST)/packages/$(PKG_NAME).list
+	rm -rf $(PKG_BUILD_DIR)
