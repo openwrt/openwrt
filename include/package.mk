@@ -82,6 +82,7 @@ define Build/DefaultTargets
 		(cd $(TMP_DIR)/stage-$(PKG_NAME)/host; find > $(STAGING_DIR_HOST)/packages/$(PKG_NAME).list); \
 		$(CP) $(TMP_DIR)/stage-$(PKG_NAME)/host/* $(STAGING_DIR_HOST)/; \
 	fi
+	rm -rf $(TMP_DIR)/stage-$(PKG_NAME)
 	touch $$@
 
   ifdef Build/InstallDev
