@@ -30,6 +30,9 @@
 #define IOMEM_RESOURCE_START	0x10000000
 #define IOMEM_RESOURCE_END		0xffffffff
 
+#define IFXMIPS_FLASH_START     0x10000000
+#define IFXMIPS_FLASH_MAX       0x2000000
+
 
 /*------------ ASC1 */
 
