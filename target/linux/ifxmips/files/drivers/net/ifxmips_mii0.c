@@ -37,6 +37,7 @@
 #include <linux/tcp.h>
 #include <linux/skbuff.h>
 #include <linux/mm.h>
+#include <linux/platform_device.h>
 #include <linux/ethtool.h>
 #include <asm/checksum.h>
 #include <linux/init.h>
@@ -45,6 +46,8 @@
 #include <asm/ifxmips/ifxmips_mii0.h>
 #include <asm/ifxmips/ifxmips_dma.h>
 #include <asm/ifxmips/ifxmips_pmu.h>
+
+#define DRVNAME		"ifxmips_mii0"
 
 static struct net_device ifxmips_mii0_dev;
 static unsigned char u_boot_ethaddr[MAX_ADDR_LEN];
@@ -119,7 +122,7 @@ switch_hw_receive (struct net_device* dev,struct dma_device_info* dma_dev)
 
 	if (len >= ETHERNET_PACKET_DMA_BUFFER_SIZE)
 	{
-		printk("packet too large %d\n",len);
+		printk(KERN_INFO DRVNAME ": packet too large %d\n",len);
 		goto switch_hw_receive_err_exit;
 	}
 
@@ -127,13 +130,13 @@ switch_hw_receive (struct net_device* dev,struct dma_device_info* dma_dev)
 	len -= 4;
 	if (skb == NULL )
 	{
-		printk("cannot restore pointer\n");
+		printk(KERN_INFO DRVNAME ": cannot restore pointer\n");
 		goto switch_hw_receive_err_exit;
 	}
 
 	if (len > (skb->end - skb->tail))
 	{
-		printk("BUG, len:%d end:%p tail:%p\n", (len+4), skb->end, skb->tail);
+		printk(KERN_INFO DRVNAME ": BUG, len:%d end:%p tail:%p\n", (len+4), skb->end, skb->tail);
 		goto switch_hw_receive_err_exit;
 	}
 
@@ -234,7 +237,7 @@ dma_intr_handler (struct dma_device_info* dma_dev, int status)
 		break;
 
 	case TX_BUF_FULL_INT:
-		printk("tx buffer full\n");
+		printk(KERN_INFO DRVNAME ": tx buffer full\n");
 		netif_stop_queue(&ifxmips_mii0_dev);
 		for (i = 0; i < dma_dev->max_tx_chan_num; i++)
 		{
@@ -301,7 +304,7 @@ switch_init (struct net_device *dev)
 
 	ether_setup(dev);
 
-	printk("%s up\n", dev->name);
+	printk(KERN_INFO DRVNAME ": %s is up\n", dev->name);
 
 	dev->open = ifxmips_switch_open;
 	dev->stop = switch_release;
@@ -347,15 +350,13 @@ switch_init (struct net_device *dev)
 
 	/*read the mac address from the mac table and put them into the mac table.*/
 	for (i = 0; i < 6; i++)
-	{
 		retval += u_boot_ethaddr[i];
-	}
 
 	//TODO
 	/* ethaddr not set in u-boot ? */
 	if (retval == 0)
 	{
-		printk("use default MAC address\n");
+		printk(KERN_INFO DRVNAME ": using default MAC address\n");
 		dev->dev_addr[0] = 0x00;
 		dev->dev_addr[1] = 0x11;
 		dev->dev_addr[2] = 0x22;
@@ -388,8 +389,8 @@ ifxmips_sw_chip_init (int mode)
 	wmb();
 }
 
-int __init
-switch_init_module(void)
+static int
+ifxmips_mii_probe(struct platform_device *dev)
 {
 	int result = 0;
 
@@ -401,24 +402,24 @@ switch_init_module(void)
 	result = register_netdev(&ifxmips_mii0_dev);
 	if (result)
 	{
-		printk("error %i registering device \"%s\"\n", result, ifxmips_mii0_dev.name);
+		printk(KERN_INFO DRVNAME ": error %i registering device \"%s\"\n", result, ifxmips_mii0_dev.name);
 		goto out;
 	}
 
 	/* ifxmips eval kit connects the phy/switch in REV mode */
 	ifxmips_sw_chip_init(REV_MII_MODE);
-	printk("ifxmips MAC driver loaded!\n");
+	printk(KERN_INFO DRVNAME ": driver loaded!\n");
 
 out:
 	return result;
 }
 
-static void __exit
-switch_cleanup(void)
+static int
+ifxmips_mii_remove(struct platform_device *dev)
 {
 	struct switch_priv *priv = (struct switch_priv*)ifxmips_mii0_dev.priv;
 
-	printk("ifxmips_mii0 cleanup\n");
+	printk(KERN_INFO DRVNAME ": ifxmips_mii0 cleanup\n");
 
 	dma_device_unregister(priv->dma_device);
 	dma_device_release(priv->dma_device);
@@ -426,8 +427,34 @@ switch_cleanup(void)
 	kfree(ifxmips_mii0_dev.priv);
 	unregister_netdev(&ifxmips_mii0_dev);
 
-	return;
+	return 0;
 }
 
-module_init(switch_init_module);
-module_exit(switch_cleanup);
+static struct 
+platform_driver ifxmips_mii_driver = { 
+	.probe = ifxmips_mii_probe, 
+	.remove = ifxmips_mii_remove, 
+	.driver = { 
+		.name = DRVNAME, 
+		.owner = THIS_MODULE, 
+	}, 
+};
+
+int __init
+ifxmips_mii_init(void)
+{
+	int ret = platform_driver_register(&ifxmips_mii_driver); 
+	if (ret) 
+		printk(KERN_INFO DRVNAME ": Error registering platfom driver!"); 
+
+	return ret; 
+}
+
+static void __exit
+ifxmips_mii_cleanup(void)
+{
+	platform_driver_unregister(&ifxmips_mii_driver);
+}
+
+module_init(ifxmips_mii_init);
+module_exit(ifxmips_mii_cleanup);
