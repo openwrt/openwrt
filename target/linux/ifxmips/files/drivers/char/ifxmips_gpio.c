@@ -24,6 +24,16 @@
 #include <linux/proc_fs.h>
 #include <linux/init.h>
 #include <linux/ioctl.h>
+#include <linux/timer.h>
+#include <linux/module.h>
+#include <linux/timer.h>
+#include <linux/interrupt.h>
+#include <linux/kobject.h>
+#include <linux/workqueue.h>
+#include <linux/skbuff.h>
+#include <linux/netlink.h>
+#include <net/sock.h>
+#include <asm/uaccess.h>
 #include <asm/semaphore.h>
 #include <asm/uaccess.h>
 #include <asm/ifxmips/ifxmips.h>
@@ -33,6 +43,24 @@
 #define PINS_PER_PORT		16
 
 static unsigned int ifxmips_gpio_major = 0;
+
+#ifdef CONFIG_IFXMIPS_GPIO_RST_BTN
+#define IFXMIPS_RST_PIN 15
+#define IFXMIPS_RST_PORT 1
+
+static struct timer_list rst_button_timer; 
+
+extern struct sock *uevent_sock;
+extern u64 uevent_next_seqnum(void);
+static unsigned long seen;
+static int pressed = 0;
+
+struct event_t {
+	struct work_struct wq;
+	int set;
+	unsigned long jiffies;
+};
+#endif
 
 /* TODO do we need this ? */
 static struct semaphore port_sem;
@@ -64,7 +92,7 @@ int
 ifxmips_port_set_open_drain (unsigned int port, unsigned int pin)
 {
 	IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_OD + (port * 0x30)) | (1 << pin), IFXMIPS_GPIO_P0_OD);
+	writel(readl(IFXMIPS_GPIO_P0_OD + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_OD + (port * 0xC));
 
 	return 0;
 }
@@ -74,7 +102,7 @@ int
 ifxmips_port_clear_open_drain (unsigned int port, unsigned int pin)
 {
 	IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_OD + (port * 0x30)) & ~(1 << pin), IFXMIPS_GPIO_P0_OD);
+	writel(readl(IFXMIPS_GPIO_P0_OD + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_OD + (port * 0xC));
 
 	return 0;
 }
@@ -84,7 +112,7 @@ int
 ifxmips_port_set_pudsel (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_PUDSEL + (port * 0x30)) | (1 << pin), IFXMIPS_GPIO_P0_PUDSEL);
+	writel(readl(IFXMIPS_GPIO_P0_PUDSEL + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_PUDSEL + (port * 0xC));
 
 	return 0;
 }
@@ -94,7 +122,7 @@ int
 ifxmips_port_clear_pudsel (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_PUDSEL + (port * 0x30)) & ~(1 << pin), IFXMIPS_GPIO_P0_PUDSEL);
+	writel(readl(IFXMIPS_GPIO_P0_PUDSEL + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_PUDSEL + (port * 0xC));
 
 	return 0;
 }
@@ -104,7 +132,7 @@ int
 ifxmips_port_set_puden (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_PUDEN + (port * 0x30)) | (1 << pin), IFXMIPS_GPIO_P0_PUDEN);
+	writel(readl(IFXMIPS_GPIO_P0_PUDEN + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_PUDEN + (port * 0xC));
 
 	return 0;
 }
@@ -114,7 +142,7 @@ int
 ifxmips_port_clear_puden (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_PUDEN + (port * 0x30)) & ~(1 << pin), IFXMIPS_GPIO_P0_PUDEN);
+	writel(readl(IFXMIPS_GPIO_P0_PUDEN + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_PUDEN + (port * 0xC));
 
 	return 0;
 }
@@ -124,7 +152,7 @@ int
 ifxmips_port_set_stoff (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_STOFF + (port * 0x30)) | (1 << pin), IFXMIPS_GPIO_P0_STOFF);
+	writel(readl(IFXMIPS_GPIO_P0_STOFF + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_STOFF + (port * 0xC));
 
 	return 0;
 }
@@ -134,7 +162,7 @@ int
 ifxmips_port_clear_stoff (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_STOFF + (port * 0x30)) & ~(1 << pin), IFXMIPS_GPIO_P0_STOFF);
+	writel(readl(IFXMIPS_GPIO_P0_STOFF + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_STOFF + (port * 0xC));
 
 	return 0;
 }
@@ -144,7 +172,7 @@ int
 ifxmips_port_set_dir_out (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_DIR + (port * 0x30)) | (1 << pin), IFXMIPS_GPIO_P0_DIR);
+	writel(readl(IFXMIPS_GPIO_P0_DIR + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_DIR + (port * 0xC));
 
 	return 0;
 }
@@ -154,7 +182,7 @@ int
 ifxmips_port_set_dir_in (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_DIR + (port * 0x30)) & ~(1 << pin), IFXMIPS_GPIO_P0_DIR);
+	writel(readl(IFXMIPS_GPIO_P0_DIR + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_DIR + (port * 0xC));
 
 	return 0;
 }
@@ -164,7 +192,7 @@ int
 ifxmips_port_set_output (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_OUT + (port * 0x30)) | (1 << pin), IFXMIPS_GPIO_P0_OUT);
+	writel(readl(IFXMIPS_GPIO_P0_OUT + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_OUT + (port * 0xC));
 
 	return 0;
 }
@@ -174,7 +202,7 @@ int
 ifxmips_port_clear_output (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_OUT + (port * 0x30)) & ~(1 << pin), IFXMIPS_GPIO_P0_OUT);
+	writel(readl(IFXMIPS_GPIO_P0_OUT + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_OUT + (port * 0xC));
 
 	return 0;
 }
@@ -185,7 +213,7 @@ ifxmips_port_get_input (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
 
-	if (readl(IFXMIPS_GPIO_P0_IN + (port * 0x30)) & (1 << pin))
+	if (readl(IFXMIPS_GPIO_P0_IN + (port * 0xC)) & (1 << pin))
 		return 0;
 	else
 		return 1;
@@ -196,7 +224,7 @@ int
 ifxmips_port_set_altsel0 (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_ALTSEL0 + (port * 0x30)) | (1 << pin), IFXMIPS_GPIO_P0_ALTSEL0);
+	writel(readl(IFXMIPS_GPIO_P0_ALTSEL0 + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_ALTSEL0 + (port * 0xC));
 
 	return 0;
 }
@@ -206,7 +234,7 @@ int
 ifxmips_port_clear_altsel0 (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_ALTSEL0 + (port * 0x30)) & ~(1 << pin), IFXMIPS_GPIO_P0_ALTSEL0);
+	writel(readl(IFXMIPS_GPIO_P0_ALTSEL0 + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_ALTSEL0 + (port * 0xC));
 
 	return 0;
 }
@@ -216,7 +244,7 @@ int
 ifxmips_port_set_altsel1 (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_ALTSEL1 + (port * 0x30)) | (1 << pin), IFXMIPS_GPIO_P0_ALTSEL1);
+	writel(readl(IFXMIPS_GPIO_P0_ALTSEL1 + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_ALTSEL1 + (port * 0xC));
 
 	return 0;
 }
@@ -226,11 +254,89 @@ int
 ifxmips_port_clear_altsel1 (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_ALTSEL1 + (port * 0x30)) & ~(1 << pin), IFXMIPS_GPIO_P0_ALTSEL1);
+	writel(readl(IFXMIPS_GPIO_P0_ALTSEL1 + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_ALTSEL1 + (port * 0xC));
 
 	return 0;
 }
 EXPORT_SYMBOL(ifxmips_port_clear_altsel1);
+
+#ifdef CONFIG_IFXMIPS_GPIO_RST_BTN
+static inline void add_msg(struct sk_buff *skb, char *msg)
+{
+	char *scratch;
+	scratch = skb_put(skb, strlen(msg) + 1);
+	sprintf(scratch, msg);
+}
+
+static void hotplug_button(struct work_struct *wq)
+{
+	struct sk_buff *skb;
+	struct event_t *event;
+	size_t len;
+	char *scratch, *s;
+	char buf[128];
+
+	event = container_of(wq, struct event_t, wq);
+	if (!uevent_sock)
+		goto done;
+
+	/* allocate message with the maximum possible size */
+	s = event->set ? "pressed" : "released";
+	len = strlen(s) + 2;
+	skb = alloc_skb(len + 2048, GFP_KERNEL);
+	if (!skb)
+		goto done;
+
+	/* add header */
+	scratch = skb_put(skb, len);
+	sprintf(scratch, "%s@",s);
+
+	/* copy keys to our continuous event payload buffer */
+	add_msg(skb, "HOME=/");
+	add_msg(skb, "PATH=/sbin:/bin:/usr/sbin:/usr/bin");
+	add_msg(skb, "SUBSYSTEM=button");
+	add_msg(skb, "BUTTON=reset");
+	add_msg(skb, (event->set ? "ACTION=pressed" : "ACTION=released"));
+	sprintf(buf, "SEEN=%ld", (event->jiffies - seen)/HZ);
+	add_msg(skb, buf);
+	snprintf(buf, 128, "SEQNUM=%llu", uevent_next_seqnum());
+	add_msg(skb, buf);
+
+	NETLINK_CB(skb).dst_group = 1;
+	netlink_broadcast(uevent_sock, skb, 0, 1, GFP_KERNEL);
+
+done:
+	kfree(event);
+}
+
+static void reset_button_poll(unsigned long unused)
+{
+	struct event_t *event;
+	
+	rst_button_timer.expires = jiffies + HZ;
+	add_timer(&rst_button_timer);
+	
+	if (pressed != ifxmips_port_get_input(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN))
+	{
+		if(pressed)
+			pressed = 0;
+		else
+			pressed = 1;
+		printk("button was %s\n", (pressed ? "pressed" : "released"));
+		event = (struct event_t *) kzalloc(sizeof(struct event_t), GFP_ATOMIC);
+		if (!event)
+		{
+			printk("Could not alloc hotplug event\n");
+			return;
+		}
+		event->set = pressed;
+		event->jiffies = jiffies;
+		INIT_WORK(&event->wq, (void *)(void *)hotplug_button);
+		schedule_work(&event->wq);
+		seen = jiffies;
+	}
+}
+#endif
 
 long ifxmips_port_read_procmem_helper(char* tag, u32* in_reg, char *buf)
 {
@@ -425,6 +531,20 @@ ifxmips_gpio_init (void)
 	create_proc_read_entry("ifxmips_gpio", 0, NULL,
 				ifxmips_port_read_procmem, NULL);
 
+#ifdef CONFIG_IFXMIPS_GPIO_RST_BTN
+	ifxmips_port_set_open_drain(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN);
+	ifxmips_port_clear_altsel0(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN);
+	ifxmips_port_clear_altsel1(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN);
+	ifxmips_port_set_dir_in(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN);
+	
+	seen = jiffies;
+
+	init_timer(&rst_button_timer);
+	rst_button_timer.function = reset_button_poll;
+	rst_button_timer.expires = jiffies + HZ;
+	add_timer(&rst_button_timer);
+#endif
+
 	printk("registered ifxmips gpio driver\n");
 
 out:
@@ -434,6 +554,9 @@ out:
 void __exit
 ifxmips_gpio_exit (void)
 {
+#ifdef CONFIG_IFXMIPS_GPIO_RST_BTN
+	del_timer_sync(&rst_button_timer);
+#endif
 	unregister_chrdev(ifxmips_gpio_major, "ifxmips_gpio");
 	remove_proc_entry("ifxmips_gpio", NULL);
 }
