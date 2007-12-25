@@ -33,8 +33,18 @@
 #include <asm/time.h>
 #include <asm/irq.h>
 #include <asm/io.h>
+#include <asm/ifxmips/ifxmips.h>
 
 #define MAX_IFXMIPS_DEVS		5
+
+#define BOARD_DANUBE			"Danube"
+#define BOARD_DANUBE_CHIPID		0x10129083
+
+#define BOARD_TWINPASS			"Twinpass"
+
+#define BOARD_DANUBE			"Danube"
+
+static unsigned int chiprev;
 
 static struct platform_device *ifxmips_devs[MAX_IFXMIPS_DEVS];
 
@@ -61,6 +71,19 @@ static struct platform_device ifxmips_mii[] =
 		.name = "ifxmips_mii0",
 	},
 };
+
+const char*
+get_system_type (void)
+{
+	chiprev = readl(IFXMIPS_MPS_CHIPID);
+	switch(chiprev)
+	{
+	case BOARD_DANUBE_CHIPID:
+		return BOARD_DANUBE;
+	}
+
+	return BOARD_SYSTEM_TYPE;
+}
 
 int __init ifxmips_init_devices(void)
 {

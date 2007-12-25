@@ -146,7 +146,7 @@ plat_timer_setup (struct irqaction *irq)
 	writel(0xffff, IFXMIPS_GPTU_GPT_CAPREL);
 	writel(0x80C0, IFXMIPS_GPTU_GPT_T6CON);
 
-	retval = setup_irq(IFXMIPS_TIMER6_INT, &hrt_irqaction);
+	//retval = setup_irq(IFXMIPS_TIMER6_INT, &hrt_irqaction);
 
 	if (retval)
 	{
@@ -154,11 +154,13 @@ plat_timer_setup (struct irqaction *irq)
 	}
 }
 
+extern const char* get_system_type (void);
+
 void __init
 plat_mem_setup (void)
 {
 	u32 status;
-	prom_printf("This %s has a cpu rev of 0x%X\n", BOARD_SYSTEM_TYPE, ifxmips_get_cpu_ver());
+	prom_printf("This %s has a cpu rev of 0x%X\n", get_system_type(), ifxmips_get_cpu_ver());
 
 	//TODO WHY ???
 	/* clear RE bit*/
