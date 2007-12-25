@@ -38,6 +38,7 @@ endef
 
 ifneq ($(CONFIG_LINUX_2_6_23),)
   define Build/InstallDev
+	$(INSTALL_DIR) $(1)
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
 	mkdir -p $(1)/usr/include/libnl
 	$(CP) $(PKG_BUILD_DIR)/include/linux $(1)/usr/include/libnl/
