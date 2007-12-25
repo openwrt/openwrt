@@ -426,4 +426,10 @@
 #define IFXMIPS_FUSE_BASE_ADDR	(KSEG1 + 0x1F107354)
 
 
+/*------------ MPS */
+
+#define IFXMIPS_MPS_BASE_ADDR	(KSEG1 + 0x1F107000)
+
+#define IFXMIPS_MPS_CHIPID		((u32*)(IFXMIPS_MPS_BASE_ADDR + 0x0344))
+
 #endif
