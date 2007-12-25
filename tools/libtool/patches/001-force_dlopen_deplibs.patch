@@ -1,0 +1,14 @@
+diff -urN libtool-1.5.14/libltdl/acinclude.m4 libtool-1.5.14.new/libltdl/acinclude.m4
+--- libtool-1.5.14/libltdl/acinclude.m4	2005-02-12 13:20:02.000000000 +0100
++++ libtool-1.5.14.new/libltdl/acinclude.m4	2006-04-17 23:00:24.000000000 +0200
+@@ -6228,10 +6228,8 @@
+     ;;
+   esac
+   ])
+-if test "$libltdl_cv_sys_dlopen_deplibs" != yes; then
+  AC_DEFINE([LTDL_DLOPEN_DEPLIBS], [1],
+     [Define if the OS needs help to load dependent libraries for dlopen().])
+-fi
+ ])# AC_LTDL_SYS_DLOPEN_DEPLIBS
+ 
+ 
