@@ -9,7 +9,7 @@
 curdir:=tools
 
 # subdirectories to descend into
-$(curdir)/builddirs := sed sstrip ipkg-utils genext2fs squashfs mtd-utils lzma mkimage firmware-utils patch-cmdline pkg-config automake $(if $(CONFIG_CCACHE),ccache)
+$(curdir)/builddirs := sed sstrip ipkg-utils genext2fs squashfs mtd-utils lzma mkimage firmware-utils patch-cmdline pkg-config automake libtool $(if $(CONFIG_CCACHE),ccache)
 
 # builddir dependencies
 $(curdir)/squashfs/compile := $(curdir)/lzma/install
