@@ -55,11 +55,6 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/libiw.so* $(1)/usr/lib/
 	ln -sf libiw.so.$(PKG_VERSION) $(1)/usr/lib/libiw.so
 endef
-	
-define Build/UninstallDev
-	rm -f	$(1)/usr/include/{iwlib,wireless}.h \
-		$(1)/usr/lib/libiw.so*
-endef
 
 define Package/wireless-tools/install
 	$(INSTALL_DIR) $(1)/usr/sbin

@@ -45,11 +45,6 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgmp.{a,so*} $(1)/usr/lib/
 endef
 
-define Build/UninstallDev
-	rm -rf	$(1)/usr/include/gmp* \
-		$(1)/usr/lib/libgmp.{a,so*}
-endef
-
 define Package/libgmp/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgmp.so.* $(1)/usr/lib/

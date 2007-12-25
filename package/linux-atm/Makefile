@@ -67,11 +67,6 @@ ifneq ($(CONFIG_PACKAGE_linux-atm),)
 	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libatm.{a,so*} \
 		$(1)/usr/lib/
   endef
-
-  define Build/UninstallDev
-	rm -rf	$(1)/usr/include/atm{,d,sap}.h \
-		$(1)/usr/lib/libatm.{a,so*}
-  endef
 endif
 
 define Package/linux-atm/install

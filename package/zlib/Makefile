@@ -56,11 +56,6 @@ define Build/InstallDev
 	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libz.{a,so*} \
 		$(1)/usr/lib/
 endef
-	
-define Build/UninstallDev
-	rm -rf	$(1)/usr/include/z{conf,lib}.h \
-		$(1)/usr/lib/libz.{a,so*}
-endef
 
 # libz.so is needed for openssl (zlib-dynamic)
 define Package/zlib/install
