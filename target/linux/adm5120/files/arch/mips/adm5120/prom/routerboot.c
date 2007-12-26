@@ -42,8 +42,6 @@ static int rb_found;
 static int __init routerboot_load_hs(u8 *buf, u16 buflen)
 {
 	u16 id, len;
-	u8 *mac;
-	int i, j;
 
 	memset(&rb_hs, 0, sizeof(rb_hs));
 
