@@ -21,12 +21,12 @@ ifeq ("$(origin V)", "command line")
 endif
 
 ifeq ($(IS_TTY),1)
-  _Y:="\\033[33m" # yellow
-  _N:="\\033[m" #normal
+  _Y:=\\033[33m
+  _N:=\\033[m
 endif
 
 define MESSAGE
-	/bin/echo -e "$(_Y)$(1)$(_N)" >&3
+	printf "$(_Y)%s$(_N)\n" "$(1)" >&3
 endef
 
 ifneq ($(KBUILD_VERBOSE),99)
@@ -37,7 +37,7 @@ ifneq ($(KBUILD_VERBOSE),99)
       _DIR:=
     endif
     _NULL:=$(if $(MAKECMDGOALS),$(shell \
-		$(call MESSAGE, "make[$(MAKELEVEL)]$(if $(_DIR), -C $(_DIR)) $(MAKECMDGOALS)"); \
+		$(call MESSAGE, make[$(MAKELEVEL)]$(if $(_DIR), -C $(_DIR)) $(MAKECMDGOALS)); \
     ))
   else
     ifeq ($(KBUILD_VERBOSE),0)
