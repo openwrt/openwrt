@@ -23,9 +23,11 @@
 #include <linux/proc_fs.h>
 #include <linux/ioctl.h>
 #include <linux/module.h>
+#include <linux/platform_device.h>
+#include <linux/watchdog.h>
+#include <linux/miscdevice.h>
 #include <asm-mips/ifxmips/ifxmips_wdt.h>
 #include <asm-mips/ifxmips/ifxmips.h>
-#include <linux/platform_device.h>
 
 #define DRVNAME			"ifxmips_wdt"
 
@@ -251,28 +253,32 @@ ifxmips_wdt_register_proc_read (char *buf, char **start, off_t offset, int count
 	return len;
 }
 
-static struct file_operations wdt_fops = {
-      .owner = THIS_MODULE,
-      .ioctl = ifxmips_wdt_ioctl,
-      .open = ifxmips_wdt_open,
-      .release = ifxmips_wdt_release,
+static const struct file_operations ifxmips_wdt_fops = {
+	.owner		= THIS_MODULE,
+	.llseek		= no_llseek,
+	.ioctl		= ifxmips_wdt_ioctl,
+	.open		= ifxmips_wdt_open,
+	.release	= ifxmips_wdt_release,
+//	.write		= at91_wdt_write,
 };
+
+static struct miscdevice ifxmips_wdt_miscdev = {
+	.minor		= WATCHDOG_MINOR,
+	.name		= "ifxmips_wdt",
+	.fops		= &ifxmips_wdt_fops,
+};
+
 
 static int
 ifxmips_wdt_probe (struct platform_device *pdev)
 {
-	ifxmips_wdt_major = register_chrdev(0, "wdt", &wdt_fops);
+	int ret = misc_register(&ifxmips_wdt_miscdev);
+	if (ret)
+		return ret;
 
-	if (ifxmips_wdt_major < 0)
-	{
-		printk("cannot register watchdog device\n");
+	create_proc_read_entry(DRVNAME, 0, NULL, ifxmips_wdt_register_proc_read, NULL);
 
-		return -EINVAL;
-	}
-
-	create_proc_read_entry("ifxmips_wdt", 0, NULL, ifxmips_wdt_register_proc_read, NULL);
-
-	printk("ifxmips watchdog loaded\n");
+	printk(KERN_INFO DRVNAME ": ifxmips watchdog loaded\n");
 
 	return 0;
 }
@@ -280,7 +286,7 @@ ifxmips_wdt_probe (struct platform_device *pdev)
 static int
 ifxmips_wdt_remove (struct platform_device *pdev)
 {
-	unregister_chrdev(ifxmips_wdt_major, "wdt");
+	misc_deregister(&ifxmips_wdt_miscdev);
 	remove_proc_entry(DRVNAME, NULL);
 	return 0;
 }
@@ -312,3 +318,8 @@ ifxmips_wdt_cleanup_module (void)
 
 module_init(ifxmips_wdt_init_module);
 module_exit(ifxmips_wdt_cleanup_module);
+
+MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
+MODULE_DESCRIPTION("Watchdog driver for infineon ifxmips family");
+MODULE_LICENSE("GPL");
+MODULE_ALIAS_MISCDEV(WATCHDOG_MINOR);
