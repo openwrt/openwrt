@@ -29,6 +29,13 @@
 #include <asm/bootinfo.h>
 #include <asm/ifxmips/ifxmips.h>
 
+#ifdef CONFIG_IFXMIPS_USE_CONSOLE0
+#define ASC_OFFSET							0
+#elif CONFIG_IFXMIPS_USE_CONSOLE1
+#define ASC_OFFSET							IFXMIPS_ASC1_BASE_OFFSET
+#else
+#error a tty for the console must be selected
+#endif
 static char buf[1024];
 
 void
@@ -39,11 +46,11 @@ prom_free_prom_memory (void)
 void
 prom_putchar (char c)
 {
-	while ((readl(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK) >> ASCFSTAT_TXFFLOFF);
+	while ((readl(IFXMIPS_ASC0_FSTAT + ASC_OFFSET) & ASCFSTAT_TXFFLMASK) >> ASCFSTAT_TXFFLOFF);
 
 	if (c == '\n')
-		writel('\r', IFXMIPS_ASC1_TBUF);
-	writel(c, IFXMIPS_ASC1_TBUF);
+		writel('\r', IFXMIPS_ASC0_TBUF + ASC_OFFSET);
+	writel(c, IFXMIPS_ASC0_TBUF + ASC_OFFSET);
 }
 
 void
