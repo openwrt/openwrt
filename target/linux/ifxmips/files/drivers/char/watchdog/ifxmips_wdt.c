@@ -25,10 +25,11 @@
 #include <linux/module.h>
 #include <asm-mips/ifxmips/ifxmips_wdt.h>
 #include <asm-mips/ifxmips/ifxmips.h>
+#include <linux/platform_device.h>
 
+#define DRVNAME			"ifxmips_wdt"
 
 // TODO remove magic numbers and weirdo macros
-
 extern unsigned int ifxmips_get_fpi_hz (void);
 
 static int ifxmips_wdt_inuse = 0;
@@ -54,12 +55,12 @@ ifxmips_wdt_enable (unsigned int timeout)
 	/* caculate reload value */
 	wdt_reload = (timeout * (ffpi / wdt_clkdiv)) + wdt_pwl;
 
-	printk("wdt_pwl=0x%x, wdt_clkdiv=%d, ffpi=%d, wdt_reload = 0x%x\n",
+	printk(KERN_WARNING DRVNAME ": wdt_pwl=0x%x, wdt_clkdiv=%d, ffpi=%d, wdt_reload = 0x%x\n",
 		wdt_pwl, wdt_clkdiv, ffpi, wdt_reload);
 
 	if (wdt_reload > 0xFFFF)
 	{
-		printk ("timeout too large %d\n", timeout);
+		printk(KERN_WARNING DRVNAME ": timeout too large %d\n", timeout);
 		retval = -EINVAL;
 		goto out;
 	}
@@ -174,7 +175,7 @@ ifxmips_wdt_ioctl (struct inode *inode, struct file *file, unsigned int cmd,
 		break;
 
 	case IFXMIPS_WDT_IOC_STOP:
-		printk("disable watch dog timer\n");
+		printk(KERN_INFO DRVNAME ": disable watch dog timer\n");
 		ifxmips_wdt_disable();
 		break;
 
@@ -207,7 +208,7 @@ ifxmips_wdt_ioctl (struct inode *inode, struct file *file, unsigned int cmd,
 		break;
 
 	default:
-		printk("unknown watchdog iotcl\n");
+		printk(KERN_WARNING DRVNAME ": unknown watchdog iotcl\n");
 	}
 
 out:
@@ -257,8 +258,8 @@ static struct file_operations wdt_fops = {
       .release = ifxmips_wdt_release,
 };
 
-int __init
-ifxmips_wdt_init_module (void)
+static int
+ifxmips_wdt_probe (struct platform_device *pdev)
 {
 	ifxmips_wdt_major = register_chrdev(0, "wdt", &wdt_fops);
 
@@ -276,11 +277,37 @@ ifxmips_wdt_init_module (void)
 	return 0;
 }
 
+static int
+ifxmips_wdt_remove (struct platform_device *pdev)
+{
+	unregister_chrdev(ifxmips_wdt_major, "wdt");
+	remove_proc_entry(DRVNAME, NULL);
+	return 0;
+}
+
+static struct
+platform_driver ifxmips_wdt_driver = {
+	.probe = ifxmips_wdt_probe,
+	.remove = ifxmips_wdt_remove,
+	.driver = {
+		.name = DRVNAME,
+		.owner = THIS_MODULE,
+	},
+};
+
+int __init
+ifxmips_wdt_init_module (void)
+{
+	int ret = platform_driver_register(&ifxmips_wdt_driver);
+	if (ret)
+		printk(KERN_INFO DRVNAME ": Error registering platfom driver!");
+	return ret;
+}
+
 void
 ifxmips_wdt_cleanup_module (void)
 {
-	unregister_chrdev(ifxmips_wdt_major, "wdt");
-	remove_proc_entry("ifxmips_wdt", NULL);
+	platform_driver_unregister(&ifxmips_wdt_driver);
 }
 
 module_init(ifxmips_wdt_init_module);
