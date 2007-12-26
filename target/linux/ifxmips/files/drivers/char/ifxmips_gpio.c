@@ -32,7 +32,7 @@
 #include <linux/workqueue.h>
 #include <linux/skbuff.h>
 #include <linux/netlink.h>
-#include <linux/platform_device.h> 
+#include <linux/platform_device.h>
 #include <net/sock.h>
 #include <asm/uaccess.h>
 #include <asm/semaphore.h>
@@ -538,7 +538,7 @@ ifxmips_gpio_probe (struct platform_device *dev)
 	ifxmips_port_clear_altsel0(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN);
 	ifxmips_port_clear_altsel1(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN);
 	ifxmips_port_set_dir_in(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN);
-	
+
 	seen = jiffies;
 
 	init_timer(&rst_button_timer);
@@ -565,29 +565,29 @@ ifxmips_gpio_remove (struct platform_device *pdev)
 	return 0;
 }
 
-static struct 
-platform_driver ifxmips_gpio_driver = { 
-	.probe = ifxmips_gpio_probe, 
-	.remove = ifxmips_gpio_remove, 
-	.driver = { 
-		.name = DRVNAME, 
-		.owner = THIS_MODULE, 
-	}, 
-}; 
+static struct
+platform_driver ifxmips_gpio_driver = {
+	.probe = ifxmips_gpio_probe,
+	.remove = ifxmips_gpio_remove,
+	.driver = {
+		.name = DRVNAME,
+		.owner = THIS_MODULE,
+	},
+};
 
 int __init
 ifxmips_gpio_init (void)
 {
-	int ret = platform_driver_register(&ifxmips_gpio_driver); 
-	if (ret) 
-		printk(KERN_INFO DRVNAME ": Error registering platfom driver!"); 
-	return ret; 
+	int ret = platform_driver_register(&ifxmips_gpio_driver);
+	if (ret)
+		printk(KERN_INFO DRVNAME ": Error registering platfom driver!");
+	return ret;
 }
 
 void __exit
 ifxmips_gpio_exit (void)
 {
-	platform_driver_unregister(&ifxmips_gpio_driver); 
+	platform_driver_unregister(&ifxmips_gpio_driver);
 }
 
 module_init(ifxmips_gpio_init);

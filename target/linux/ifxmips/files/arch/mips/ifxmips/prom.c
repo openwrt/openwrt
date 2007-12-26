@@ -36,12 +36,6 @@ prom_free_prom_memory (void)
 {
 }
 
-const char *
-get_system_type (void)
-{
-	return BOARD_SYSTEM_TYPE;
-}
-
 void
 prom_putchar (char c)
 {
