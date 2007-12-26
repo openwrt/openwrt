@@ -47,6 +47,7 @@ endif
 
 KMAKE := $(MAKE) -C $(PKG_BUILD_DIR) \
 	ARCH=$(LINUX_KARCH) \
+	KBUILD_HAVE_NLS=no \
 	CONFIG_SHELL=$(BASH)
 
 define Build/Prepare
