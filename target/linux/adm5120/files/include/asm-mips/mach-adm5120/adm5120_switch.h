@@ -32,9 +32,9 @@
 #define BITMASK(len)	((1 << (len))-1)
 
 #define SW_READ_REG(r)		__raw_readl( \
-	(void __iomem *)KSEG1ADDR(ADM5120_SWITCH_BASE) + SWITCH_REG_ ## r)
+	(void __iomem *)KSEG1ADDR(ADM5120_SWITCH_BASE) + r)
 #define SW_WRITE_REG(r, v)	__raw_writel((v), \
-	(void __iomem *)KSEG1ADDR(ADM5120_SWITCH_BASE) + SWITCH_REG_ ## r)
+	(void __iomem *)KSEG1ADDR(ADM5120_SWITCH_BASE) + r)
 
 /* Switch register offsets */
 #define SWITCH_REG_CODE		0x0000

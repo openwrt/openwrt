@@ -261,7 +261,7 @@ static int adm5120_flash_initinfo(struct adm5120_flash_info *info,
 
 	if (info->amap.window_size == 0) {
 		/* get memory window size */
-		t = SW_READ_REG(MEMCTRL) >> fdesc->srs_shift;
+		t = SW_READ_REG(SWITCH_REG_MEMCTRL) >> fdesc->srs_shift;
 		t &= MEMCTRL_SRS_MASK;
 		info->amap.window_size = flash_sizes[t];
 	}

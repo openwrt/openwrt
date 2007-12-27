@@ -1,5 +1,5 @@
 /*
- *	ADM5120_WDT 0.01: Infineon ADM5120 SoC watchdog driver 
+ *	ADM5120_WDT 0.01: Infineon ADM5120 SoC watchdog driver
  *	Copyright (c) Ondrej Zajicek <santiago@crfreenet.org>, 2007
  *
  *	based on
@@ -47,26 +47,26 @@ MODULE_LICENSE("GPL");
 static inline void wdt_set_timeout(void)
 {
 	u32 val = (1 << 31) | (((timeout * 100) & 0x7FFF) << 16);
-	SW_WRITE_REG(WDOG0, val);
+	SW_WRITE_REG(SWITCH_REG_WDOG0, val);
 }
 
-/* 
+/*
    It looks like WDOG0-register-write don't modify counter,
    but WDOG0-register-read resets counter.
 */
 
 static inline void wdt_reset_counter(void)
 {
-	SW_READ_REG(WDOG0);
+	SW_READ_REG(SWITCH_REG_WDOG0);
 }
 
 static inline void wdt_disable(void)
 {
-	SW_WRITE_REG(WDOG0, 0x7FFF0000);
+	SW_WRITE_REG(SWITCH_REG_WDOG0, 0x7FFF0000);
 }
 
 
- 
+
 static int wdt_open(struct inode *inode, struct file *file)
 {
 	/* Allow only one person to hold it open */

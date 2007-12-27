@@ -82,7 +82,7 @@ static void __init adm5120_detect_memsize(void)
 	u32	size, maxsize;
 	u8	*p;
 
-	memctrl = SW_READ_REG(MEMCTRL);
+	memctrl = SW_READ_REG(SWITCH_REG_MEMCTRL);
 	switch (memctrl & MEMCTRL_SDRS_MASK) {
 	case MEMCTRL_SDRS_4M:
 		maxsize = 4 << 20;
@@ -148,7 +148,7 @@ static void __init adm5120_detect_memsize(void)
 			memctrl |= MEMCTRL_SDRS_64M;
 			break;
 		}
-		SW_WRITE_REG(MEMCTRL, memctrl);
+		SW_WRITE_REG(SWITCH_REG_MEMCTRL, memctrl);
 	}
 
 out:

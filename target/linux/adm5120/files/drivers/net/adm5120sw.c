@@ -280,56 +280,56 @@ static void sw_dump_regs(void)
 {
 	u32 t;
 
-	t = SW_READ_REG(PHY_STATUS);
+	t = sw_read_reg(SWITCH_REG_PHY_STATUS);
 	SW_DBG("phy_status: %08X\n", t);
 
-	t = SW_READ_REG(CPUP_CONF);
+	t = sw_read_reg(SWITCH_REG_CPUP_CONF);
 	SW_DBG("cpup_conf: %08X%s%s%s\n", t,
 		(t & CPUP_CONF_DCPUP) ? " DCPUP" : "",
 		(t & CPUP_CONF_CRCP) ? " CRCP" : "",
 		(t & CPUP_CONF_BTM) ? " BTM" : "");
 
-	t = SW_READ_REG(PORT_CONF0);
+	t = sw_read_reg(SWITCH_REG_PORT_CONF0);
 	SW_DBG("port_conf0: %08X\n", t);
-	t = SW_READ_REG(PORT_CONF1);
+	t = sw_read_reg(SWITCH_REG_PORT_CONF1);
 	SW_DBG("port_conf1: %08X\n", t);
-	t = SW_READ_REG(PORT_CONF2);
+	t = sw_read_reg(SWITCH_REG_PORT_CONF2);
 	SW_DBG("port_conf2: %08X\n", t);
 
-	t = SW_READ_REG(VLAN_G1);
+	t = sw_read_reg(SWITCH_REG_VLAN_G1);
 	SW_DBG("vlan g1: %08X\n", t);
-	t = SW_READ_REG(VLAN_G2);
+	t = sw_read_reg(SWITCH_REG_VLAN_G2);
 	SW_DBG("vlan g2: %08X\n", t);
 
-	t = SW_READ_REG(BW_CNTL0);
+	t = sw_read_reg(SWITCH_REG_BW_CNTL0);
 	SW_DBG("bw_cntl0: %08X\n", t);
-	t = SW_READ_REG(BW_CNTL1);
+	t = sw_read_reg(SWITCH_REG_BW_CNTL1);
 	SW_DBG("bw_cntl1: %08X\n", t);
 
-	t = SW_READ_REG(PHY_CNTL0);
+	t = sw_read_reg(SWITCH_REG_PHY_CNTL0);
 	SW_DBG("phy_cntl0: %08X\n", t);
-	t = SW_READ_REG(PHY_CNTL1);
+	t = sw_read_reg(SWITCH_REG_PHY_CNTL1);
 	SW_DBG("phy_cntl1: %08X\n", t);
-	t = SW_READ_REG(PHY_CNTL2);
+	t = sw_read_reg(SWITCH_REG_PHY_CNTL2);
 	SW_DBG("phy_cntl2: %08X\n", t);
-	t = SW_READ_REG(PHY_CNTL3);
+	t = sw_read_reg(SWITCH_REG_PHY_CNTL3);
 	SW_DBG("phy_cntl3: %08X\n", t);
-	t = SW_READ_REG(PHY_CNTL4);
+	t = sw_read_reg(SWITCH_REG_PHY_CNTL4);
 	SW_DBG("phy_cntl4: %08X\n", t);
 
-	t = SW_READ_REG(INT_STATUS);
+	t = sw_read_reg(SWITCH_REG_INT_STATUS);
 	sw_dump_intr_mask("int_status: ", t);
 
-	t = SW_READ_REG(INT_MASK);
+	t = sw_read_reg(SWITCH_REG_INT_MASK);
 	sw_dump_intr_mask("int_mask: ", t);
 
-	t = SW_READ_REG(SHDA);
+	t = sw_read_reg(SWITCH_REG_SHDA);
 	SW_DBG("shda: %08X\n", t);
-	t = SW_READ_REG(SLDA);
+	t = sw_read_reg(SWITCH_REG_SLDA);
 	SW_DBG("slda: %08X\n", t);
-	t = SW_READ_REG(RHDA);
+	t = sw_read_reg(SWITCH_REG_RHDA);
 	SW_DBG("rhda: %08X\n", t);
-	t = SW_READ_REG(RLDA);
+	t = sw_read_reg(SWITCH_REG_RLDA);
 	SW_DBG("rlda: %08X\n", t);
 }
 
@@ -1061,7 +1061,7 @@ static int __init adm5120_switch_probe(struct platform_device *pdev)
 		(SWITCH_PORTS_PHY << PHY_CNTL2_PHYR_SHIFT) |
 		(SWITCH_PORTS_PHY << PHY_CNTL2_AMDIX_SHIFT) |
 		PHY_CNTL2_RMAE;
-	SW_WRITE_REG(PHY_CNTL2, t);
+	sw_write_reg(SWITCH_REG_PHY_CNTL2, t);
 
 	t = sw_read_reg(SWITCH_REG_PHY_CNTL3);
 	t |= PHY_CNTL3_RNT;

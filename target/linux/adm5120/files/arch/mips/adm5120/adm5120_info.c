@@ -52,21 +52,21 @@ void adm5120_ndelay(u32 ns)
 {
 	u32	t;
 
-	SW_WRITE_REG(TIMER, TIMER_PERIOD_DEFAULT);
-	SW_WRITE_REG(TIMER_INT, (TIMER_INT_TOS | TIMER_INT_TOM));
+	SW_WRITE_REG(SWITCH_REG_TIMER, TIMER_PERIOD_DEFAULT);
+	SW_WRITE_REG(SWITCH_REG_TIMER_INT, (TIMER_INT_TOS | TIMER_INT_TOM));
 
 	t = (ns+640) / 640;
 	t &= TIMER_PERIOD_MASK;
-	SW_WRITE_REG(TIMER, t | TIMER_TE);
+	SW_WRITE_REG(SWITCH_REG_TIMER, t | TIMER_TE);
 
 	/* wait until the timer expires */
 	do {
-		t = SW_READ_REG(TIMER_INT);
+		t = SW_READ_REG(SWITCH_REG_TIMER_INT);
 	} while ((t & TIMER_INT_TOS) == 0);
 
 	/* leave the timer disabled */
-	SW_WRITE_REG(TIMER, TIMER_PERIOD_DEFAULT);
-	SW_WRITE_REG(TIMER_INT, (TIMER_INT_TOS | TIMER_INT_TOM));
+	SW_WRITE_REG(SWITCH_REG_TIMER, TIMER_PERIOD_DEFAULT);
+	SW_WRITE_REG(SWITCH_REG_TIMER_INT, (TIMER_INT_TOS | TIMER_INT_TOM));
 }
 
 void __init adm5120_soc_init(void)
@@ -74,7 +74,7 @@ void __init adm5120_soc_init(void)
 	u32 code;
 	u32 clks;
 
-	code = SW_READ_REG(CODE);
+	code = SW_READ_REG(SWITCH_REG_CODE);
 
 	adm5120_product_code = CODE_GET_PC(code);
 	adm5120_revision = CODE_GET_REV(code);

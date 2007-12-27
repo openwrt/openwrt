@@ -343,7 +343,7 @@ EXPORT_SYMBOL(adm5120_irq_to_gpio);
 void __init adm5120_gpio_csx0_enable(void)
 {
 	gpio_conf2 |= GPIO_CONF2_CSX0;
-	SW_WRITE_REG(GPIO_CONF2, gpio_conf2);
+	SW_WRITE_REG(SWITCH_REG_GPIO_CONF2, gpio_conf2);
 
 	adm5120_gpio_map[ADM5120_GPIO_PIN1].flags &= ~GPIO_FLAG_VALID;
 	adm5120_gpio_map[ADM5120_GPIO_PIN2].irq = ADM5120_IRQ_GPIO2;
@@ -352,7 +352,7 @@ void __init adm5120_gpio_csx0_enable(void)
 void __init adm5120_gpio_csx1_enable(void)
 {
 	gpio_conf2 |= GPIO_CONF2_CSX1;
-	SW_WRITE_REG(GPIO_CONF2, gpio_conf2);
+	SW_WRITE_REG(SWITCH_REG_GPIO_CONF2, gpio_conf2);
 
 	adm5120_gpio_map[ADM5120_GPIO_PIN3].flags &= ~GPIO_FLAG_VALID;
 	if (adm5120_package_bga())
@@ -362,7 +362,7 @@ void __init adm5120_gpio_csx1_enable(void)
 void __init adm5120_gpio_ew_enable(void)
 {
 	gpio_conf2 |= GPIO_CONF2_EW;
-	SW_WRITE_REG(GPIO_CONF2, gpio_conf2);
+	SW_WRITE_REG(SWITCH_REG_GPIO_CONF2, gpio_conf2);
 
 	adm5120_gpio_map[ADM5120_GPIO_PIN0].flags &= ~GPIO_FLAG_VALID;
 }
@@ -372,7 +372,7 @@ void __init adm5120_gpio_init(void)
 	int i;
 
 	gpio_conf2 = 0;
-	SW_WRITE_REG(GPIO_CONF2, gpio_conf2);
+	SW_WRITE_REG(SWITCH_REG_GPIO_CONF2, gpio_conf2);
 
 	for (i = 0; i < ADM5120_GPIO_COUNT; i++)
 		adm5120_gpio_map[i].flags = GPIO_FLAG_VALID;
