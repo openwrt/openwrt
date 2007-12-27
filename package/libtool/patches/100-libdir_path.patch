@@ -1,0 +1,34 @@
+Index: libtool-1.5.24/Makefile.in
+===================================================================
+--- libtool-1.5.24.orig/Makefile.in	2007-06-24 04:20:36.000000000 +0200
++++ libtool-1.5.24/Makefile.in	2007-12-26 04:39:04.171194995 +0100
+@@ -789,6 +789,7 @@
+ 	-rm -f ltmain.shT
+ 	date=`$(SHELL) $(srcdir)/mkstamp < $(srcdir)/ChangeLog` && \
+ 	sed -e 's/@''PACKAGE@/@PACKAGE@/' -e 's/@''VERSION@/@VERSION@/' \
++		-e 's#@''GLOBAL_LIBDIR@#$(GLOBAL_LIBDIR)#' \
+ 	    -e "s%@""TIMESTAMP@%$$date%" $(srcdir)/ltmain.in > ltmain.shT
+ 	mv -f ltmain.shT $@ || \
+ 	(rm -f $@ && cp ltmain.shT $@ && rm -f ltmain.shT)
+Index: libtool-1.5.24/ltmain.in
+===================================================================
+--- libtool-1.5.24.orig/ltmain.in	2007-12-26 04:39:09.151478801 +0100
++++ libtool-1.5.24/ltmain.in	2007-12-26 04:43:31.962455550 +0100
+@@ -5675,7 +5675,7 @@
+ 		  $echo "$modename: \`$deplib' is not a valid libtool archive" 1>&2
+ 		  exit $EXIT_FAILURE
+ 		fi
+-		newdependency_libs="$newdependency_libs $libdir/$name"
++		newdependency_libs="$newdependency_libs @GLOBAL_LIBDIR@/$name"
+ 		;;
+ 	      *) newdependency_libs="$newdependency_libs $deplib" ;;
+ 	      esac
+@@ -5700,7 +5700,7 @@
+ 		$echo "$modename: \`$lib' is not a valid libtool archive" 1>&2
+ 		exit $EXIT_FAILURE
+ 	      fi
+-	      newdlprefiles="$newdlprefiles $libdir/$name"
++	      newdlprefiles="$newdlprefiles @GLOBAL_LIBDIR@/$name"
+ 	    done
+ 	    dlprefiles="$newdlprefiles"
+ 	  else

@@ -1,0 +1,19 @@
+--- libtool-1.5.6/ltmain.in~libdir-la	2004-04-01 21:46:15.000000000 -0600
++++ libtool-1.5.6/ltmain.in	2004-05-14 22:53:51.000000000 -0500
+@@ -2147,8 +2147,14 @@
+ 	    absdir="$abs_ladir"
+ 	    libdir="$abs_ladir"
+ 	  else
+-	    dir="$libdir"
+-	    absdir="$libdir"
++            # Adding 'libdir' from the .la file to our library search paths
++            # breaks crosscompilation horribly.  We cheat here and don't add
++            # it, instead adding the path where we found the .la.  -CL
++	    dir="$abs_ladir"
++	    absdir="$abs_ladir"
++	    libdir="$abs_ladir"
++	    #dir="$libdir"
++	    #absdir="$libdir"
+ 	  fi
+ 	else
+ 	  dir="$ladir/$objdir"

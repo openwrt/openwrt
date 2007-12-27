@@ -1,0 +1,32 @@
+Well, brute force to disable rpath.
+
+Only 
+-hardcode_libdir_flag_spec=$lt_[]_LT_AC_TAGVAR(hardcode_libdir_flag_spec, $1)
++#hardcode_libdir_flag_spec=$lt_[]_LT_AC_TAGVAR(hardcode_libdir_flag_spec, $1)
+
+should be necessary....
+
+Index: libtool-1.5.10/libtool.m4
+===================================================================
+--- libtool-1.5.10.orig/libtool.m4	2007-05-27 23:31:51.000000000 +0200
++++ libtool-1.5.10/libtool.m4	2007-05-27 23:50:26.000000000 +0200
+@@ -4244,16 +4244,16 @@
+ hardcode_action=$_LT_AC_TAGVAR(hardcode_action, $1)
+ 
+ # Whether we should hardcode library paths into libraries.
+-hardcode_into_libs=$hardcode_into_libs
++hardcode_into_libs=no
+ 
+ # Flag to hardcode \$libdir into a binary during linking.
+ # This must work even if \$libdir does not exist.
+-hardcode_libdir_flag_spec=$lt_[]_LT_AC_TAGVAR(hardcode_libdir_flag_spec, $1)
++hardcode_libdir_flag_spec=
+ 
+ # If ld is used when linking, flag to hardcode \$libdir into
+ # a binary during linking. This must work even if \$libdir does
+ # not exist.
+-hardcode_libdir_flag_spec_ld=$lt_[]_LT_AC_TAGVAR(hardcode_libdir_flag_spec_ld, $1)
++hardcode_libdir_flag_spec_ld=
+ 
+ # Whether we need a single -rpath flag with a separated argument.
+ hardcode_libdir_separator=$lt_[]_LT_AC_TAGVAR(hardcode_libdir_separator, $1)
