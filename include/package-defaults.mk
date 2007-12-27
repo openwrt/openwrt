@@ -42,22 +42,23 @@ ifneq ($(strip $(PKG_UNPACK)),)
   endef
 endif
 
+CONFIGURE_PREFIX:=/usr
 CONFIGURE_ARGS = \
 		--target=$(GNU_TARGET_NAME) \
 		--host=$(GNU_TARGET_NAME) \
 		--build=$(GNU_HOST_NAME) \
 		--program-prefix="" \
 		--program-suffix="" \
-		--prefix=/usr \
-		--exec-prefix=/usr \
-		--bindir=/usr/bin \
-		--sbindir=/usr/sbin \
-		--libexecdir=/usr/lib \
+		--prefix=$(CONFIGURE_PREFIX) \
+		--exec-prefix=$(CONFIGURE_PREFIX) \
+		--bindir=$(CONFIGURE_PREFIX)/bin \
+		--sbindir=$(CONFIGURE_PREFIX)/sbin \
+		--libexecdir=$(CONFIGURE_PREFIX)/lib \
 		--sysconfdir=/etc \
-		--datadir=/usr/share \
+		--datadir=$(CONFIGURE_PREFIX)/share \
 		--localstatedir=/var \
-		--mandir=/usr/man \
-		--infodir=/usr/info \
+		--mandir=$(CONFIGURE_PREFIX)/man \
+		--infodir=$(CONFIGURE_PREFIX)/info \
 		$(DISABLE_NLS)
 
 CONFIGURE_VARS = \
