@@ -37,12 +37,11 @@ define Build/InstallDev
 		prefix="$(2)" \
 		exec_prefix="$(2)" \
 		install
-	$(INSTALL_DIR) $(1)/lib
+	$(INSTALL_DIR) $(1)/lib $(1)/usr/include
 	mv $(2)/lib/* $(1)/lib/
-#	$(SED) 's,^dlopen_self=unknown,dlopen_self=yes,' \
-#	    -e 's,^dlopen_self_static=unknown,dlopen_self_static=no,' \
-#	    -e 's,^link_all_deplibs=unknown,link_all_deplibs=no,' \
-#		$(2)/bin/libtool
+	mv $(2)/include/* $(1)/usr/include/
+	$(INSTALL_DIR) $(STAGING_DIR_HOST)/share/aclocal
+	mv $(2)/share/aclocal/* $(STAGING_DIR_HOST)/share/aclocal/
 endef
 
 define Package/libltdl/install
