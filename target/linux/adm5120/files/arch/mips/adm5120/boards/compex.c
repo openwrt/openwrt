@@ -175,6 +175,7 @@ ADM5120_BOARD_END
 
 ADM5120_BOARD_START(NP28G, "Compex NetPassage 28G")
 	.board_setup	= np28g_setup,
+	.board_reset	= np28g_reset,
 	.eth_num_ports	= 4,
 	.eth_vlans	= np28g_vlans,
 	.num_devices	= ARRAY_SIZE(np2xg_devices),
