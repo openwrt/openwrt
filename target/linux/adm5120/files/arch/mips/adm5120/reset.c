@@ -48,7 +48,7 @@ void adm5120_restart(char *command)
 	if (adm5120_board_reset)
 		adm5120_board_reset();
 
-	SW_WRITE_REG(SOFT_RESET, 1);
+	SW_WRITE_REG(SWITCH_REG_SOFT_RESET, 1);
 }
 
 void adm5120_halt(void)

@@ -65,8 +65,8 @@
 
 static inline void adm5120_nand_enable(void)
 {
-	SW_WRITE_REG(BW_CNTL1, BW_CNTL1_NAND_ENABLE);
-	SW_WRITE_REG(BOOT_DONE, 1);
+	SW_WRITE_REG(SWITCH_REG_BW_CNTL1, BW_CNTL1_NAND_ENABLE);
+	SW_WRITE_REG(SWITCH_REG_BOOT_DONE, 1);
 }
 
 static inline void adm5120_nand_set_wpn(unsigned int set)
