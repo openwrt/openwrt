@@ -27,6 +27,7 @@ include $(INCLUDE_DIR)/package-defaults.mk
 include $(INCLUDE_DIR)/package-dumpinfo.mk
 include $(INCLUDE_DIR)/package-ipkg.mk
 include $(INCLUDE_DIR)/package-bin.mk
+include $(INCLUDE_DIR)/autotools.mk
 
 override MAKEFLAGS=
 export CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
@@ -50,6 +51,10 @@ define Download/default
   MD5SUM:=$(PKG_MD5SUM)
 endef
 
+define sep
+
+endef
+
 define Build/DefaultTargets
   $(if $(QUILT),$(Build/Quilt))
   $(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
@@ -58,15 +63,21 @@ define Build/DefaultTargets
   $(STAMP_PREPARED):
 	@-rm -rf $(PKG_BUILD_DIR)
 	@mkdir -p $(PKG_BUILD_DIR)
+	$(foreach hook,$(Hooks/Prepare/Pre),$(call $(hook))$(sep))
 	$(Build/Prepare)
+	$(foreach hook,$(Hooks/Prepare/Post),$(call $(hook))$(sep))
 	touch $$@
 
   $(STAMP_CONFIGURED): $(STAMP_PREPARED)
+	$(foreach hook,$(Hooks/Configure/Pre),$(call $(hook))$(sep))
 	$(Build/Configure)
+	$(foreach hook,$(Hooks/Configure/Post),$(call $(hook))$(sep))
 	touch $$@
 
   $(STAMP_BUILT): $(STAMP_CONFIGURED)
+	$(foreach hook,$(Hooks/Compile/Pre),$(call $(hook))$(sep))
 	$(Build/Compile)
+	$(foreach hook,$(Hooks/Compile/Post),$(call $(hook))$(sep))
 	touch $$@
 
   $(STAMP_INSTALLED): $(STAMP_BUILT)
@@ -124,18 +135,6 @@ endif
     ) \
   )
   $(if $(DUMP),,$(call Build/DefaultTargets,$(1)))
-endef
-
-# prevent libtool from setting rpath when linking
-define libtool_disable_rpath
-	find $(PKG_BUILD_DIR) -name 'libtool' | $(XARGS) \
-		$(SED) 's,^hardcode_libdir_flag_spec=.*,hardcode_libdir_flag_spec=" -D__LIBTOOL_IS_A_FOOL__ ",g'
-endef
-
-# prevent libtool from linking against host development libraries
-define libtool_fixup_libdir
-	find $(PKG_BUILD_DIR) -name '*.la' | $(XARGS) \
-		$(SED) "s,^libdir='/usr/lib',libdir='$(strip $(1))/usr/lib',g"
 endef
 
 define pkg_install_files
