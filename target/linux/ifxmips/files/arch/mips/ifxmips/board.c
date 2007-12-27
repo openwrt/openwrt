@@ -27,7 +27,7 @@
 #include <linux/mtd/physmap.h>
 #include <linux/kernel.h>
 #include <linux/reboot.h>
-#include <linux/platform_device.h> 
+#include <linux/platform_device.h>
 #include <asm/bootinfo.h>
 #include <asm/reboot.h>
 #include <asm/time.h>
@@ -41,6 +41,7 @@
 #define BOARD_DANUBE_CHIPID		0x10129083
 
 #define BOARD_TWINPASS			"Twinpass"
+#define BOARD_TWINPASS_CHIPID	0x3012D083
 
 #define BOARD_DANUBE			"Danube"
 
@@ -71,7 +72,7 @@ static struct platform_device ifxmips_mii[] =
 		.name = "ifxmips_mii0",
 	},
 };
-	
+
 static struct physmap_flash_data ifxmips_mtd_data = {
 	.width    = 2,
 };
@@ -103,6 +104,9 @@ get_system_type (void)
 	{
 	case BOARD_DANUBE_CHIPID:
 		return BOARD_DANUBE;
+
+	case BOARD_TWINPASS_CHIPID:
+		return BOARD_TWINPASS;
 	}
 
 	return BOARD_SYSTEM_TYPE;
