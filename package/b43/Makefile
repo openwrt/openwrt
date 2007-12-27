@@ -83,7 +83,8 @@ define Build/Compile
 		$(MAKE_OPTS) \
 		modules
 
-	$(MAKE) -C "$(PKG_BUILD_DIR)/$(PKG_FWCUTTER_NAME)-$(PKG_FWCUTTER_VERSION)"
+	$(MAKE) -C "$(PKG_BUILD_DIR)/$(PKG_FWCUTTER_NAME)-$(PKG_FWCUTTER_VERSION)" \
+		CFLAGS="-I$(STAGING_DIR_HOST)/include -include endian.h"
 endef
 
 define KernelPackage/b43/install
