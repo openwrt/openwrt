@@ -1,0 +1,411 @@
+diff -uprN linux-2.6.23.orig/arch/arm/mach-ixp4xx/fsg-pci.c linux-2.6.23/arch/arm/mach-ixp4xx/fsg-pci.c
+--- linux-2.6.23.orig/arch/arm/mach-ixp4xx/fsg-pci.c	1969-12-31 18:00:00.000000000 -0600
++++ linux-2.6.23/arch/arm/mach-ixp4xx/fsg-pci.c	2007-10-11 00:55:34.000000000 -0500
+@@ -0,0 +1,71 @@
++/*
++ * arch/arch/mach-ixp4xx/fsg-pci.c
++ *
++ * FSG board-level PCI initialization
++ *
++ * Author: Rod Whitby <rod@whitby.id.au>
++ * Maintainer: http://www.nslu2-linux.org/
++ *
++ * based on ixdp425-pci.c:
++ *	Copyright (C) 2002 Intel Corporation.
++ *	Copyright (C) 2003-2004 MontaVista Software, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ */
++
++#include <linux/pci.h>
++#include <linux/init.h>
++#include <linux/irq.h>
++
++#include <asm/mach/pci.h>
++#include <asm/mach-types.h>
++
++void __init fsg_pci_preinit(void)
++{
++	set_irq_type(IRQ_FSG_PCI_INTA, IRQT_LOW);
++	set_irq_type(IRQ_FSG_PCI_INTB, IRQT_LOW);
++	set_irq_type(IRQ_FSG_PCI_INTC, IRQT_LOW);
++
++	ixp4xx_pci_preinit();
++}
++
++static int __init fsg_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
++{
++	static int pci_irq_table[FSG_PCI_IRQ_LINES] = {
++		IRQ_FSG_PCI_INTC,
++		IRQ_FSG_PCI_INTB,
++		IRQ_FSG_PCI_INTA,
++	};
++
++	int irq = -1;
++	slot = slot - 11;
++
++	if (slot >= 1 && slot <= FSG_PCI_MAX_DEV &&
++		pin >= 1 && pin <= FSG_PCI_IRQ_LINES) {
++			irq = pci_irq_table[(slot - 1)];
++	}
++        printk("%s: Mapped slot %d pin %d to IRQ %d\n", __FUNCTION__,slot, pin, irq);
++
++        return irq;
++}
++
++struct hw_pci fsg_pci __initdata = {
++	.nr_controllers = 1,
++	.preinit =        fsg_pci_preinit,
++	.swizzle =        pci_std_swizzle,
++	.setup =          ixp4xx_setup,
++	.scan =           ixp4xx_scan_bus,
++	.map_irq =        fsg_map_irq,
++};
++
++int __init fsg_pci_init(void)
++{
++	if (machine_is_fsg())
++		pci_common_init(&fsg_pci);
++	return 0;
++}
++
++subsys_initcall(fsg_pci_init);
+diff -uprN linux-2.6.23.orig/arch/arm/mach-ixp4xx/fsg-setup.c linux-2.6.23/arch/arm/mach-ixp4xx/fsg-setup.c
+--- linux-2.6.23.orig/arch/arm/mach-ixp4xx/fsg-setup.c	1969-12-31 18:00:00.000000000 -0600
++++ linux-2.6.23/arch/arm/mach-ixp4xx/fsg-setup.c	2007-10-11 00:55:34.000000000 -0500
+@@ -0,0 +1,186 @@
++/*
++ * arch/arm/mach-ixp4xx/fsg-setup.c
++ *
++ * FSG board-setup
++ *
++ * based ixdp425-setup.c:
++ *      Copyright (C) 2003-2004 MontaVista Software, Inc.
++ *
++ * Author: Rod Whitby <rod@whitby.id.au>
++ * Maintainers: http://www.nslu2-linux.org/
++ *
++ */
++
++#include <linux/kernel.h>
++#include <linux/serial.h>
++#include <linux/serial_8250.h>
++#include <linux/leds.h>
++#include <linux/i2c-gpio.h>
++
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++#include <asm/mach/flash.h>
++
++static struct flash_platform_data fsg_flash_data = {
++	.map_name		= "cfi_probe",
++	.width			= 2,
++};
++
++static struct resource fsg_flash_resource = {
++	.flags			= IORESOURCE_MEM,
++};
++
++static struct platform_device fsg_flash = {
++	.name			= "IXP4XX-Flash",
++	.id			= 0,
++	.dev.platform_data	= &fsg_flash_data,
++	.num_resources		= 1,
++	.resource		= &fsg_flash_resource,
++};
++
++static struct i2c_gpio_platform_data fsg_i2c_gpio_data = {
++	.sda_pin		= FSG_SDA_PIN,
++	.scl_pin		= FSG_SCL_PIN,
++};
++
++static struct platform_device fsg_i2c_gpio = {
++	.name			= "i2c-gpio",
++	.id			= 0,
++	.dev	 = {
++		.platform_data	= &fsg_i2c_gpio_data,
++	},
++};
++
++#ifdef CONFIG_LEDS_CLASS
++static struct resource fsg_led_resources[] = {
++	{
++		.name           = "ring",
++		.start          = FSG_LED_RING_GPIO,
++		.end            = FSG_LED_RING_GPIO,
++		.flags          = IXP4XX_GPIO_HIGH,
++	},
++	{
++		.name           = "sync",
++		.start          = FSG_LED_SYNC_GPIO,
++		.end            = FSG_LED_SYNC_GPIO,
++		.flags          = IXP4XX_GPIO_HIGH,
++	},
++	{
++		.name           = "usb",
++		.start          = FSG_LED_USB_GPIO,
++		.end            = FSG_LED_USB_GPIO,
++		.flags          = IXP4XX_GPIO_HIGH,
++	},
++	{
++		.name           = "sata",
++		.start          = FSG_LED_SATA_GPIO,
++		.end            = FSG_LED_SATA_GPIO,
++		.flags          = IXP4XX_GPIO_HIGH,
++	},
++	{
++		.name           = "wan",
++		.start          = FSG_LED_WAN_GPIO,
++		.end            = FSG_LED_WAN_GPIO,
++		.flags          = IXP4XX_GPIO_HIGH,
++	},
++	{
++		.name           = "wlan",
++		.start          = FSG_LED_WLAN_GPIO,
++		.end            = FSG_LED_WLAN_GPIO,
++		.flags          = IXP4XX_GPIO_HIGH,
++	},
++};
++
++static struct platform_device fsg_leds = {
++        .name                   = "IXP4XX-GPIO-LED",
++        .id                     = -1,
++        .num_resources          = ARRAY_SIZE(fsg_led_resources),
++        .resource               = fsg_led_resources,
++};
++#endif
++
++static struct resource fsg_uart_resources[] = {
++	{
++		.start		= IXP4XX_UART1_BASE_PHYS,
++		.end		= IXP4XX_UART1_BASE_PHYS + 0x0fff,
++		.flags		= IORESOURCE_MEM,
++	},
++	{
++		.start		= IXP4XX_UART2_BASE_PHYS,
++		.end		= IXP4XX_UART2_BASE_PHYS + 0x0fff,
++		.flags		= IORESOURCE_MEM,
++	}
++};
++
++static struct plat_serial8250_port fsg_uart_data[] = {
++	{
++		.mapbase	= IXP4XX_UART1_BASE_PHYS,
++		.membase	= (char *)IXP4XX_UART1_BASE_VIRT + REG_OFFSET,
++		.irq		= IRQ_IXP4XX_UART1,
++		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST,
++		.iotype		= UPIO_MEM,
++		.regshift	= 2,
++		.uartclk	= IXP4XX_UART_XTAL,
++	},
++	{
++		.mapbase	= IXP4XX_UART2_BASE_PHYS,
++		.membase	= (char *)IXP4XX_UART2_BASE_VIRT + REG_OFFSET,
++		.irq		= IRQ_IXP4XX_UART2,
++		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST,
++		.iotype		= UPIO_MEM,
++		.regshift	= 2,
++		.uartclk	= IXP4XX_UART_XTAL,
++	},
++	{ }
++};
++
++static struct platform_device fsg_uart = {
++	.name			= "serial8250",
++	.id			= PLAT8250_DEV_PLATFORM,
++	.dev.platform_data	= fsg_uart_data,
++	.num_resources		= ARRAY_SIZE(fsg_uart_resources),
++	.resource		= fsg_uart_resources,
++};
++
++static struct platform_device *fsg_devices[] __initdata = {
++	&fsg_i2c_gpio,
++	&fsg_flash,
++#ifdef CONFIG_LEDS_IXP4XX
++	&fsg_leds,
++#endif
++};
++
++static void __init fsg_init(void)
++{
++	ixp4xx_sys_init();
++
++	fsg_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
++	fsg_flash_resource.end =
++		IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size - 1;
++
++        *IXP4XX_EXP_CS0 |= IXP4XX_FLASH_WRITABLE;
++        *IXP4XX_EXP_CS1 = *IXP4XX_EXP_CS0;
++
++	/* Configure CS2 for operation, 8bit and writable */
++	*IXP4XX_EXP_CS2 = 0xbfff0002;
++
++	/* This is only useful on a modified machine, but it is valuable
++	 * to have it first in order to see debug messages, and so that
++	 * it does *not* get removed if platform_add_devices fails!
++	 */
++	(void)platform_device_register(&fsg_uart);
++
++	platform_add_devices(fsg_devices, ARRAY_SIZE(fsg_devices));
++}
++
++MACHINE_START(FSG, "Freecom FSG-3")
++	/* Maintainer: www.nslu2-linux.org */
++	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
++	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
++	.map_io		= ixp4xx_map_io,
++	.init_irq	= ixp4xx_init_irq,
++	.timer		= &ixp4xx_timer,
++	.boot_params	= 0x0100,
++	.init_machine	= fsg_init,
++MACHINE_END
++
+diff -uprN linux-2.6.23.orig/arch/arm/mach-ixp4xx/Kconfig linux-2.6.23/arch/arm/mach-ixp4xx/Kconfig
+--- linux-2.6.23.orig/arch/arm/mach-ixp4xx/Kconfig	2007-10-09 15:31:38.000000000 -0500
++++ linux-2.6.23/arch/arm/mach-ixp4xx/Kconfig	2007-10-11 00:55:34.000000000 -0500
+@@ -125,6 +125,15 @@ config	ARCH_IXDP4XX
+ 	depends on ARCH_IXDP425 || MACH_IXDP465 || MACH_KIXRP435
+ 	default y
+ 
++config MACH_FSG
++	bool
++	prompt "Freecom FSG-3"
++	select PCI
++	help
++	  Say 'Y' here if you want your kernel to support Freecom's
++	  FSG-3 device. For more information on this platform
++	  see http://www.nslu2-linux.org/wiki/FSG3/HomePage
++
+ #
+ # Certain registers and IRQs are only enabled if supporting IXP465 CPUs
+ #
+diff -uprN linux-2.6.23.orig/arch/arm/mach-ixp4xx/Makefile linux-2.6.23/arch/arm/mach-ixp4xx/Makefile
+--- linux-2.6.23.orig/arch/arm/mach-ixp4xx/Makefile	2007-10-09 15:31:38.000000000 -0500
++++ linux-2.6.23/arch/arm/mach-ixp4xx/Makefile	2007-10-11 00:55:34.000000000 -0500
+@@ -15,6 +15,7 @@ obj-pci-$(CONFIG_MACH_NAS100D)		+= nas10
+ obj-pci-$(CONFIG_MACH_DSMG600)		+= dsmg600-pci.o
+ obj-pci-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-pci.o
+ obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
++obj-pci-$(CONFIG_MACH_FSG)		+= fsg-pci.o
+ 
+ obj-y	+= common.o
+ 
+@@ -28,5 +29,6 @@ obj-$(CONFIG_MACH_NAS100D)	+= nas100d-se
+ obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o dsmg600-power.o
+ obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
+ obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
++obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o
+ 
+ obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
+diff -uprN linux-2.6.23.orig/include/asm-arm/arch-ixp4xx/fsg.h linux-2.6.23/include/asm-arm/arch-ixp4xx/fsg.h
+--- linux-2.6.23.orig/include/asm-arm/arch-ixp4xx/fsg.h	1969-12-31 18:00:00.000000000 -0600
++++ linux-2.6.23/include/asm-arm/arch-ixp4xx/fsg.h	2007-10-11 00:55:34.000000000 -0500
+@@ -0,0 +1,74 @@
++/*
++ * include/asm-arm/arch-ixp4xx/fsg.h
++ *
++ * Freecom FSG-3 platform specific definitions
++ *
++ * Author: Rod Whitby <rod@whitby.id.au>
++ * Author: Tomasz Chmielewski <mangoo@wpkg.org>
++ * Maintainers: http://www.nslu2-linux.org
++ *
++ * Based on coyote.h by
++ * Copyright 2004 (c) MontaVista, Software, Inc.
++ *
++ * This file is licensed under  the terms of the GNU General Public
++ * License version 2. This program is licensed "as is" without any
++ * warranty of any kind, whether express or implied.
++ */
++
++#ifndef __ASM_ARCH_HARDWARE_H__
++#error "Do not include this directly, instead #include <asm/hardware.h>"
++#endif
++
++#define FSG_SDA_PIN		12
++#define FSG_SCL_PIN		13
++
++/*
++ * FSG PCI IRQs
++ */
++#define FSG_PCI_MAX_DEV		3
++#define FSG_PCI_IRQ_LINES	3
++
++
++/* PCI controller GPIO to IRQ pin mappings */
++#define FSG_PCI_INTA_PIN	6
++#define FSG_PCI_INTB_PIN	7
++#define FSG_PCI_INTC_PIN	5
++
++/* Buttons */
++
++#define FSG_SB_GPIO		4
++#define FSG_RB_GPIO		9
++#define FSG_UB_GPIO		10
++
++#define FSG_SB_IRQ		IRQ_IXP4XX_GPIO4
++#define FSG_RB_IRQ		IRQ_IXP4XX_GPIO9
++#define FSG_UB_IRQ		IRQ_IXP4XX_GPIO10
++
++#define FSG_SB_BM		(1L << FSG_SB_GPIO)
++#define FSG_RB_BM		(1L << FSG_RB_GPIO)
++#define FSG_UB_BM		(1L << FSG_UB_GPIO)
++
++/* LEDs */
++
++#define FSG_LED_RING_GPIO	0
++#define FSG_LED_SYNC_GPIO	1
++#define FSG_LED_USB_GPIO	2
++#define FSG_LED_SATA_GPIO	3
++#define FSG_LED_WAN_GPIO	4
++#define FSG_LED_WLAN_GPIO	5
++
++/* %%% REMOVE %%%
++#define FSG_PCI_SLOT0_PIN	6
++#define FSG_PCI_SLOT1_PIN	7
++
++#define	FSG_PCI_SLOT0_DEVID	14
++#define	FSG_PCI_SLOT1_DEVID	15
++
++#define	FSG_IDE_BASE_PHYS	IXP4XX_EXP_BUS_BASE(3)
++#define	FSG_IDE_BASE_VIRT	0xFFFE1000
++#define	FSG_IDE_REGION_SIZE	0x1000
++
++#define	FSG_IDE_DATA_PORT	0xFFFE10E0
++#define	FSG_IDE_CTRL_PORT	0xFFFE10FC
++#define	FSG_IDE_ERROR_PORT	0xFFFE10E2
++*/
+diff -uprN linux-2.6.23.orig/include/asm-arm/arch-ixp4xx/hardware.h linux-2.6.23/include/asm-arm/arch-ixp4xx/hardware.h
+--- linux-2.6.23.orig/include/asm-arm/arch-ixp4xx/hardware.h	2007-10-09 15:31:38.000000000 -0500
++++ linux-2.6.23/include/asm-arm/arch-ixp4xx/hardware.h	2007-10-11 00:55:34.000000000 -0500
+@@ -45,5 +45,6 @@
+ #include "nslu2.h"
+ #include "nas100d.h"
+ #include "dsmg600.h"
++#include "fsg.h"
+ 
+ #endif  /* _ASM_ARCH_HARDWARE_H */
+diff -uprN linux-2.6.23.orig/include/asm-arm/arch-ixp4xx/irqs.h linux-2.6.23/include/asm-arm/arch-ixp4xx/irqs.h
+--- linux-2.6.23.orig/include/asm-arm/arch-ixp4xx/irqs.h	2007-10-09 15:31:38.000000000 -0500
++++ linux-2.6.23/include/asm-arm/arch-ixp4xx/irqs.h	2007-10-11 00:55:34.000000000 -0500
+@@ -128,4 +128,17 @@
+ #define        IRQ_DSMG600_PCI_INTE    IRQ_IXP4XX_GPIO7
+ #define        IRQ_DSMG600_PCI_INTF    IRQ_IXP4XX_GPIO6
+ 
++/*
++ * Freecom FSG-3 Board IRQs
++ */
++#define        IRQ_FSG_PCI_INTA        IRQ_IXP4XX_GPIO6
++#define        IRQ_FSG_PCI_INTB        IRQ_IXP4XX_GPIO7
++#define        IRQ_FSG_PCI_INTC        IRQ_IXP4XX_GPIO5
++
++/* %%% REMOVE %%%
++#define	IRQ_FSG_PCI_SLOT0	IRQ_IXP4XX_GPIO6
++#define	IRQ_FSG_PCI_SLOT1	IRQ_IXP4XX_GPIO7
++#define	IRQ_FSG_IDE		IRQ_IXP4XX_GPIO5
++*/
++
+ #endif

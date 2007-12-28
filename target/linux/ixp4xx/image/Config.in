@@ -1,9 +1,0 @@
-config IXP4XX_INCLUDE_UCODE
-	bool "Build images with Intel IXP4xx Microcode"
-	depends TARGET_ixp4xx
-	default y
-	help
-	  You must manually download IPL_ixp400NpeLibrary-2_4.zip from
-	  http://www.intel.com/design/network/products/npfamily/ixp400_archives.htm
-	  and put it in the dl/ directory of the build system.
-	  You will need to agree to the Intel Public License to do so - please do read it!
