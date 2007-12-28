@@ -61,6 +61,13 @@ TARGET_CFLAGS:=$(TARGET_OPTIMIZATION) -fhonour-copts
 TARGET_CPPFLAGS:=-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include
 TARGET_LDFLAGS:=-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib
 
+ifeq ($(CONFIG_SOFT_FLOAT),y)
+SOFT_FLOAT_CONFIG_OPTION:=--with-float=soft
+TARGET_CFLAGS+=-msoft-float
+else
+SOFT_FLOAT_CONFIG_OPTION:=
+endif
+
 export PATH:=$(TARGET_PATH)
 export STAGING_DIR
 export GCC_HONOUR_COPTS:=0
