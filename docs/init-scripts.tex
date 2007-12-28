@@ -29,8 +29,7 @@ or \texttt{/etc/init.d/\textit{name} disable}. This creates or removes symbolic 
 init script in \texttt{/etc/rc.d}, which is processed by \texttt{/etc/init.d/rcS} at boot time.
 
 The order in which these scripts are run is defined in the variable \texttt{START} in the init
-script, which is optional and defaults to \texttt{50}. Changing it requires running
-\texttt{/etc/init.d/\textit{name} enable} again.
+script. Changing it requires running \texttt{/etc/init.d/\textit{name} enable} again.
 
 You can also override these standard init script functions:
 \begin{itemize}
