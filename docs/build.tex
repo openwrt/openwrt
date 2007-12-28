@@ -355,12 +355,6 @@ directly as the Nth argument to \texttt{BuildPackage}.
 	\texttt{\$(STAGING\_DIR)} and \texttt{\$(STAGING\_DIR\_HOST)}, because the build system behavior
 	when staging libraries might change in the future to include automatic uninstallation.
 
-\textbf{\texttt{Build/UninstallDev} (optional):} \\
-	If your package uses \texttt{Build/InstallDev}, you can use this template to tell the
-	build system how to remove the staged files when \texttt{package/\textit{name}/clean} is run.
-
-	It takes the same parameters as \texttt{Build/InstallDev}
-
 \textbf{\texttt{Package/\textit{<name>}/install}:} \\
    A set of commands to copy files out of the compiled source and into the ipkg
    which is represented by the \texttt{\$(1)} directory. Note that there are currently
