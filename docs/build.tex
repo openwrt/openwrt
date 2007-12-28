@@ -461,8 +461,8 @@ shortcuts you can take. Instead of waiting for make to get to your package, you 
 run one of the following:
 
 \begin{itemize}
-    \item \texttt{make package/\textit{<name>}-clean V=99}
-    \item \texttt{make package/\textit{<name>}-install V=99}
+    \item \texttt{make package/\textit{<name>}/clean V=99}
+    \item \texttt{make package/\textit{<name>}/install V=99}
 \end{itemize}
 
 Another nice trick is that if the source directory under \texttt{build\_\textit{<arch>}}
@@ -476,8 +476,8 @@ it will remove the old sources and unpack a fresh copy.
 Other useful targets include:
 
 \begin{itemize}
-    \item \texttt{make package/\textit{<name>}-prepare V=99}
-    \item \texttt{make package/\textit{<name>}-compile V=99}
-    \item \texttt{make package/\textit{<name>}-configure V=99}
+    \item \texttt{make package/\textit{<name>}/prepare V=99}
+    \item \texttt{make package/\textit{<name>}/compile V=99}
+    \item \texttt{make package/\textit{<name>}/configure V=99}
 \end{itemize}
 
