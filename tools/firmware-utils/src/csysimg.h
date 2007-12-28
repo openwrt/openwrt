@@ -55,6 +55,7 @@
 #define SIG_BR6541K	"4--K"
 #define SIG_BR6541KP	"4-KP"	/* FIXME: valid? */
 #define SIG_BR6541WP	"4-WP"	/* FIXME: valid? */
+#define SIG_C54BSR4	SIG_BR6104IPC
 #define SIG_EW7207APg	"EWAS"
 #define SIG_PS1205UWg	"4000"
 #define SIG_PS3205U	"5010"
