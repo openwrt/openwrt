@@ -1,0 +1,119 @@
+diff -uprN linux-2.6.23.orig/arch/arm/kernel/relocate_kernel.S linux-2.6.23/arch/arm/kernel/relocate_kernel.S
+--- linux-2.6.23.orig/arch/arm/kernel/relocate_kernel.S	2007-10-09 15:31:38.000000000 -0500
++++ linux-2.6.23/arch/arm/kernel/relocate_kernel.S	2007-10-09 22:19:32.000000000 -0500
+@@ -7,6 +7,23 @@
+ 	.globl relocate_new_kernel
+ relocate_new_kernel:
+ 
++	/* Move boot params back to where the kernel expects them */
++
++	ldr	r0,kexec_boot_params_address
++	teq	r0,#0
++	beq	8f
++
++	ldr	r1,kexec_boot_params_copy
++	mov	r6,#KEXEC_BOOT_PARAMS_SIZE/4
++7:
++	ldr	r5,[r1],#4
++	str	r5,[r0],#4
++	subs	r6,r6,#1
++	bne	7b
++
++8:
++	/* Boot params moved, now go on with the kernel */
++
+ 	ldr	r0,kexec_indirection_page
+ 	ldr	r1,kexec_start_address
+ 
+@@ -50,7 +67,7 @@ relocate_new_kernel:
+ 	mov lr,r1
+ 	mov r0,#0
+ 	ldr r1,kexec_mach_type
+-	mov r2,#0
++	ldr r2,kexec_boot_params_address
+ 	mov pc,lr
+ 
+ 	.globl kexec_start_address
+@@ -65,6 +82,16 @@ kexec_indirection_page:
+ kexec_mach_type:
+ 	.long	0x0
+ 
++	/* phy addr where new kernel will expect to find boot params */
++	.globl kexec_boot_params_address
++kexec_boot_params_address:
++	.long	0x0
++
++	/* phy addr where old kernel put a copy of orig boot params */
++	.globl kexec_boot_params_copy
++kexec_boot_params_copy:
++	.long	0x0
++
+ relocate_new_kernel_end:
+ 
+ 	.globl relocate_new_kernel_size
+diff -uprN linux-2.6.23.orig/arch/arm/kernel/setup.c linux-2.6.23/arch/arm/kernel/setup.c
+--- linux-2.6.23.orig/arch/arm/kernel/setup.c	2007-10-09 15:31:38.000000000 -0500
++++ linux-2.6.23/arch/arm/kernel/setup.c	2007-10-09 20:06:10.000000000 -0500
+@@ -24,6 +24,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/smp.h>
+ #include <linux/fs.h>
++#include <linux/kexec.h>
+ 
+ #include <asm/cpu.h>
+ #include <asm/elf.h>
+@@ -770,6 +771,23 @@ static int __init customize_machine(void
+ }
+ arch_initcall(customize_machine);
+ 
++#ifdef CONFIG_KEXEC
++
++/* Physical addr of where the boot params should be for this machine */
++extern unsigned long kexec_boot_params_address;
++
++/* Physical addr of the buffer into which the boot params are copied */
++extern unsigned long kexec_boot_params_copy;
++
++/* Pointer to the boot params buffer, for manipulation and display */
++unsigned long kexec_boot_params;
++EXPORT_SYMBOL(kexec_boot_params);
++
++/* The buffer itself - make sure it is sized correctly */
++static unsigned long kexec_boot_params_buf[(KEXEC_BOOT_PARAMS_SIZE + 3) / 4];
++
++#endif
++
+ void __init setup_arch(char **cmdline_p)
+ {
+ 	struct tag *tags = (struct tag *)&init_tags;
+@@ -788,6 +806,18 @@ void __init setup_arch(char **cmdline_p)
+ 	else if (mdesc->boot_params)
+ 		tags = phys_to_virt(mdesc->boot_params);
+ 
++#ifdef CONFIG_KEXEC
++	kexec_boot_params_copy = virt_to_phys(kexec_boot_params_buf);
++	kexec_boot_params = (unsigned long)kexec_boot_params_buf;
++	if (__atags_pointer) {
++		kexec_boot_params_address = __atags_pointer;
++		memcpy((void *)kexec_boot_params, tags, KEXEC_BOOT_PARAMS_SIZE);
++	} else if (mdesc->boot_params) {
++		kexec_boot_params_address = mdesc->boot_params;
++		memcpy((void *)kexec_boot_params, tags, KEXEC_BOOT_PARAMS_SIZE);
++	}
++#endif
++
+ 	/*
+ 	 * If we have the old style parameters, convert them to
+ 	 * a tag list.
+diff -uprN linux-2.6.23.orig/include/asm-arm/kexec.h linux-2.6.23/include/asm-arm/kexec.h
+--- linux-2.6.23.orig/include/asm-arm/kexec.h	2007-10-09 15:31:38.000000000 -0500
++++ linux-2.6.23/include/asm-arm/kexec.h	2007-10-09 22:19:32.000000000 -0500
+@@ -14,6 +14,8 @@
+ 
+ #define KEXEC_ARCH KEXEC_ARCH_ARM
+ 
++#define KEXEC_BOOT_PARAMS_SIZE 1536
++
+ #ifndef __ASSEMBLY__
+ 
+ struct kimage;

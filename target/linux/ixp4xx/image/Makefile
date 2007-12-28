@@ -7,43 +7,28 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-UCODEFILE:=IPL_ixp400NpeLibrary-2_4.zip
-
-ifneq ($(CONFIG_IXP4XX_INCLUDE_UCODE),)
-  define Require/npe-ucode
-	[ -f $(DL_DIR)/$(UCODEFILE) ]
-  endef
-  define Build/Compile/npe
-	$(MAKE) -C npe-ucode \
-		BUILD_DIR="$(KDIR)" \
-		TARGET="$(KDIR)" \
-		compile
-  endef
-  define Image/Build/slug
+define Image/Build/slug
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
-		-L $(KDIR)/apex-nslu2-armeb.bin -m $(KDIR)/NPE-B \
+		-L $(KDIR)/apex-nslu2-armeb.bin \
 		-k $(BIN_DIR)/openwrt-nslu2-zImage \
 		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(1).img \
 		-p -o $(BIN_DIR)/openwrt-nslu2-$(1).bin
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
-		-F -L $(KDIR)/apex-nslu2-armeb.bin -m $(KDIR)/NPE-B \
+		-F -L $(KDIR)/apex-nslu2-armeb.bin \
 		-k $(BIN_DIR)/openwrt-nslu2-zImage \
 		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(1).img \
 		-p -o $(BIN_DIR)/openwrt-nslu2-$(1)-16mb.bin
-  endef
-endif
+endef
 
 define Build/Compile
 	$(MAKE) -C apex \
 		BUILD_DIR="$(KDIR)" \
 		TARGET="$(KDIR)" \
 		compile	
-	$(call Build/Compile/npe)
 endef
 
 define Build/Clean
 	$(MAKE) -C apex clean
-	$(MAKE) -C npe-ucode clean
 endef
 
 define Image/Prepare
@@ -52,7 +37,6 @@ endef
 
 define Image/BuildKernel
 	cp $(KDIR)/zImage $(BIN_DIR)/openwrt-$(BOARD)-zImage
-#	$(shell BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/arm-magic.sh)
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/arm-magic.sh
 endef
 
@@ -76,10 +60,3 @@ define Image/Build/squashfs
 endef
 
 $(eval $(call BuildImage))
-
-$(eval $(call Require,npe-ucode, \
-	You must manually download $(UCODEFILE) from \\\
-	http://www.intel.com/design/network/products/npfamily/ixp400_archives.htm \\\
-	and put it in $(DL_DIR). \\\
-	You will need to agree to the Intel Public License to do so - please do read it! \
-))

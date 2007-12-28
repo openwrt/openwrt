@@ -1,0 +1,3988 @@
+diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/kernel/setup.c ixp4xx-nep.git/arch/arm/kernel/setup.c
+--- linux-2.6.23/arch/arm/kernel/setup.c	2007-10-09 22:31:38.000000000 +0200
++++ ixp4xx-nep.git/arch/arm/kernel/setup.c	2007-10-22 19:19:41.000000000 +0200
+@@ -61,6 +61,7 @@
+ extern void _stext, _text, _etext, __data_start, _edata, _end;
+ 
+ unsigned int processor_id;
++EXPORT_SYMBOL(processor_id);
+ unsigned int __machine_arch_type;
+ EXPORT_SYMBOL(__machine_arch_type);
+ 
+diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/Kconfig ixp4xx-nep.git/arch/arm/mach-ixp4xx/Kconfig
+--- linux-2.6.23/arch/arm/mach-ixp4xx/Kconfig	2007-10-09 22:31:38.000000000 +0200
++++ ixp4xx-nep.git/arch/arm/mach-ixp4xx/Kconfig	2007-10-22 19:19:41.000000000 +0200
+@@ -189,6 +189,20 @@
+ 	  need to use the indirect method instead. If you don't know
+ 	  what you need, leave this option unselected.
+ 
++config IXP4XX_QMGR
++	tristate "IXP4xx Queue Manager support"
++	help
++	  This driver supports IXP4xx built-in hardware queue manager
++	  and is automatically selected by Ethernet and HSS drivers.
++
++config IXP4XX_NPE
++	tristate "IXP4xx Network Processor Engine support"
++	select HOTPLUG
++	select FW_LOADER
++	help
++	  This driver supports IXP4xx built-in network coprocessors
++	  and is automatically selected by Ethernet and HSS drivers.
++
+ endmenu
+ 
+ endif
+diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/Makefile ixp4xx-nep.git/arch/arm/mach-ixp4xx/Makefile
+--- linux-2.6.23/arch/arm/mach-ixp4xx/Makefile	2007-10-09 22:31:38.000000000 +0200
++++ ixp4xx-nep.git/arch/arm/mach-ixp4xx/Makefile	2007-10-22 19:19:41.000000000 +0200
+@@ -30,3 +30,5 @@
+ obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
+ 
+ obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
++obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
++obj-$(CONFIG_IXP4XX_NPE)	+= ixp4xx_npe.o
+diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixdp425-setup.c ixp4xx-nep.git/arch/arm/mach-ixp4xx/ixdp425-setup.c
+--- linux-2.6.23/arch/arm/mach-ixp4xx/ixdp425-setup.c	2007-10-09 22:31:38.000000000 +0200
++++ ixp4xx-nep.git/arch/arm/mach-ixp4xx/ixdp425-setup.c	2007-10-22 19:19:41.000000000 +0200
+@@ -177,6 +177,31 @@
+ 	.resource		= ixdp425_uart_resources
+ };
+ 
++/* Built-in 10/100 Ethernet MAC interfaces */
++static struct eth_plat_info ixdp425_plat_eth[] = {
++	{
++		.phy		= 0,
++		.rxq		= 3,
++		.txreadyq	= 20,
++	}, {
++		.phy		= 1,
++		.rxq		= 4,
++		.txreadyq	= 21,
++	}
++};
++
++static struct platform_device ixdp425_eth[] = {
++	{
++		.name			= "ixp4xx_eth",
++		.id			= IXP4XX_ETH_NPEB,
++		.dev.platform_data	= ixdp425_plat_eth,
++	}, {
++		.name			= "ixp4xx_eth",
++		.id			= IXP4XX_ETH_NPEC,
++		.dev.platform_data	= ixdp425_plat_eth + 1,
++	}
++};
++
+ static struct platform_device *ixdp425_devices[] __initdata = {
+ 	&ixdp425_i2c_controller,
+ 	&ixdp425_flash,
+@@ -184,7 +209,9 @@
+     defined(CONFIG_MTD_NAND_PLATFORM_MODULE)
+ 	&ixdp425_flash_nand,
+ #endif
+-	&ixdp425_uart
++	&ixdp425_uart,
++	&ixdp425_eth[0],
++	&ixdp425_eth[1],
+ };
+ 
+ static void __init ixdp425_init(void)
+diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_npe.c ixp4xx-nep.git/arch/arm/mach-ixp4xx/ixp4xx_npe.c
+--- linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_npe.c	1970-01-01 01:00:00.000000000 +0100
++++ ixp4xx-nep.git/arch/arm/mach-ixp4xx/ixp4xx_npe.c	2007-10-22 19:19:41.000000000 +0200
+@@ -0,0 +1,737 @@
++/*
++ * Intel IXP4xx Network Processor Engine driver for Linux
++ *
++ * Copyright (C) 2007 Krzysztof Halasa <khc@pm.waw.pl>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of version 2 of the GNU General Public License
++ * as published by the Free Software Foundation.
++ *
++ * The code is based on publicly available information:
++ * - Intel IXP4xx Developer's Manual and other e-papers
++ * - Intel IXP400 Access Library Software (BSD license)
++ * - previous works by Christian Hohnstaedt <chohnstaedt@innominate.com>
++ *   Thanks, Christian.
++ */
++
++#include <linux/dma-mapping.h>
++#include <linux/firmware.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <asm/delay.h>
++#include <asm/io.h>
++#include <asm/arch/npe.h>
++
++#define DEBUG_MSG			0
++#define DEBUG_FW			0
++
++#define NPE_COUNT			3
++#define MAX_RETRIES			1000	/* microseconds */
++#define NPE_42X_DATA_SIZE		0x800	/* in dwords */
++#define NPE_46X_DATA_SIZE		0x1000
++#define NPE_A_42X_INSTR_SIZE		0x1000
++#define NPE_B_AND_C_42X_INSTR_SIZE	0x800
++#define NPE_46X_INSTR_SIZE		0x1000
++#define REGS_SIZE			0x1000
++
++#define NPE_PHYS_REG			32
++
++#define FW_MAGIC			0xFEEDF00D
++#define FW_BLOCK_TYPE_INSTR		0x0
++#define FW_BLOCK_TYPE_DATA		0x1
++#define FW_BLOCK_TYPE_EOF		0xF
++
++/* NPE exec status (read) and command (write) */
++#define CMD_NPE_STEP			0x01
++#define CMD_NPE_START			0x02
++#define CMD_NPE_STOP			0x03
++#define CMD_NPE_CLR_PIPE		0x04
++#define CMD_CLR_PROFILE_CNT		0x0C
++#define CMD_RD_INS_MEM			0x10 /* instruction memory */
++#define CMD_WR_INS_MEM			0x11
++#define CMD_RD_DATA_MEM			0x12 /* data memory */
++#define CMD_WR_DATA_MEM			0x13
++#define CMD_RD_ECS_REG			0x14 /* exec access register */
++#define CMD_WR_ECS_REG			0x15
++
++#define STAT_RUN			0x80000000
++#define STAT_STOP			0x40000000
++#define STAT_CLEAR			0x20000000
++#define STAT_ECS_K			0x00800000 /* pipeline clean */
++
++#define NPE_STEVT			0x1B
++#define NPE_STARTPC			0x1C
++#define NPE_REGMAP			0x1E
++#define NPE_CINDEX			0x1F
++
++#define INSTR_WR_REG_SHORT		0x0000C000
++#define INSTR_WR_REG_BYTE		0x00004000
++#define INSTR_RD_FIFO			0x0F888220
++#define INSTR_RESET_MBOX		0x0FAC8210
++
++#define ECS_BG_CTXT_REG_0		0x00 /* Background Executing Context */
++#define ECS_BG_CTXT_REG_1		0x01 /*		Stack level */
++#define ECS_BG_CTXT_REG_2		0x02
++#define ECS_PRI_1_CTXT_REG_0		0x04 /* Priority 1 Executing Context */
++#define ECS_PRI_1_CTXT_REG_1		0x05 /*		Stack level */
++#define ECS_PRI_1_CTXT_REG_2		0x06
++#define ECS_PRI_2_CTXT_REG_0		0x08 /* Priority 2 Executing Context */
++#define ECS_PRI_2_CTXT_REG_1		0x09 /*		Stack level */
++#define ECS_PRI_2_CTXT_REG_2		0x0A
++#define ECS_DBG_CTXT_REG_0		0x0C /* Debug Executing Context */
++#define ECS_DBG_CTXT_REG_1		0x0D /*		Stack level */
++#define ECS_DBG_CTXT_REG_2		0x0E
++#define ECS_INSTRUCT_REG		0x11 /* NPE Instruction Register */
++
++#define ECS_REG_0_ACTIVE		0x80000000 /* all levels */
++#define ECS_REG_0_NEXTPC_MASK		0x1FFF0000 /* BG/PRI1/PRI2 levels */
++#define ECS_REG_0_LDUR_BITS		8
++#define ECS_REG_0_LDUR_MASK		0x00000700 /* all levels */
++#define ECS_REG_1_CCTXT_BITS		16
++#define ECS_REG_1_CCTXT_MASK		0x000F0000 /* all levels */
++#define ECS_REG_1_SELCTXT_BITS		0
++#define ECS_REG_1_SELCTXT_MASK		0x0000000F /* all levels */
++#define ECS_DBG_REG_2_IF		0x00100000 /* debug level */
++#define ECS_DBG_REG_2_IE		0x00080000 /* debug level */
++
++/* NPE watchpoint_fifo register bit */
++#define WFIFO_VALID			0x80000000
++
++/* NPE messaging_status register bit definitions */
++#define MSGSTAT_OFNE	0x00010000 /* OutFifoNotEmpty */
++#define MSGSTAT_IFNF	0x00020000 /* InFifoNotFull */
++#define MSGSTAT_OFNF	0x00040000 /* OutFifoNotFull */
++#define MSGSTAT_IFNE	0x00080000 /* InFifoNotEmpty */
++#define MSGSTAT_MBINT	0x00100000 /* Mailbox interrupt */
++#define MSGSTAT_IFINT	0x00200000 /* InFifo interrupt */
++#define MSGSTAT_OFINT	0x00400000 /* OutFifo interrupt */
++#define MSGSTAT_WFINT	0x00800000 /* WatchFifo interrupt */
++
++/* NPE messaging_control register bit definitions */
++#define MSGCTL_OUT_FIFO			0x00010000 /* enable output FIFO */
++#define MSGCTL_IN_FIFO			0x00020000 /* enable input FIFO */
++#define MSGCTL_OUT_FIFO_WRITE		0x01000000 /* enable FIFO + WRITE */
++#define MSGCTL_IN_FIFO_WRITE		0x02000000
++
++/* NPE mailbox_status value for reset */
++#define RESET_MBOX_STAT			0x0000F0F0
++
++const char *npe_names[] = { "NPE-A", "NPE-B", "NPE-C" };
++
++#define print_npe(pri, npe, fmt, ...)					\
++	printk(pri "%s: " fmt, npe_name(npe), ## __VA_ARGS__)
++
++#if DEBUG_MSG
++#define debug_msg(npe, fmt, ...)					\
++	print_npe(KERN_DEBUG, npe, fmt, ## __VA_ARGS__)
++#else
++#define debug_msg(npe, fmt, ...)
++#endif
++
++static struct {
++	u32 reg, val;
++}ecs_reset[] = {
++	{ ECS_BG_CTXT_REG_0,	0xA0000000 },
++	{ ECS_BG_CTXT_REG_1,	0x01000000 },
++	{ ECS_BG_CTXT_REG_2,	0x00008000 },
++	{ ECS_PRI_1_CTXT_REG_0,	0x20000080 },
++	{ ECS_PRI_1_CTXT_REG_1,	0x01000000 },
++	{ ECS_PRI_1_CTXT_REG_2,	0x00008000 },
++	{ ECS_PRI_2_CTXT_REG_0,	0x20000080 },
++	{ ECS_PRI_2_CTXT_REG_1,	0x01000000 },
++	{ ECS_PRI_2_CTXT_REG_2,	0x00008000 },
++	{ ECS_DBG_CTXT_REG_0,	0x20000000 },
++	{ ECS_DBG_CTXT_REG_1,	0x00000000 },
++	{ ECS_DBG_CTXT_REG_2,	0x001E0000 },
++	{ ECS_INSTRUCT_REG,	0x1003C00F },
++};
++
++static struct npe npe_tab[NPE_COUNT] = {
++	{
++		.id	= 0,
++		.regs	= (struct npe_regs __iomem *)IXP4XX_NPEA_BASE_VIRT,
++		.regs_phys = IXP4XX_NPEA_BASE_PHYS,
++	}, {
++		.id	= 1,
++		.regs	= (struct npe_regs __iomem *)IXP4XX_NPEB_BASE_VIRT,
++		.regs_phys = IXP4XX_NPEB_BASE_PHYS,
++	}, {
++		.id	= 2,
++		.regs	= (struct npe_regs __iomem *)IXP4XX_NPEC_BASE_VIRT,
++		.regs_phys = IXP4XX_NPEC_BASE_PHYS,
++	}
++};
++
++int npe_running(struct npe *npe)
++{
++	return (__raw_readl(&npe->regs->exec_status_cmd) & STAT_RUN) != 0;
++}
++
++static void npe_cmd_write(struct npe *npe, u32 addr, int cmd, u32 data)
++{
++	__raw_writel(data, &npe->regs->exec_data);
++	__raw_writel(addr, &npe->regs->exec_addr);
++	__raw_writel(cmd, &npe->regs->exec_status_cmd);
++}
++
++static u32 npe_cmd_read(struct npe *npe, u32 addr, int cmd)
++{
++	__raw_writel(addr, &npe->regs->exec_addr);
++	__raw_writel(cmd, &npe->regs->exec_status_cmd);
++	/* Iintroduce extra read cycles after issuing read command to NPE
++	   so that we read the register after the NPE has updated it.
++	   This is to overcome race condition between XScale and NPE */
++	__raw_readl(&npe->regs->exec_data);
++	__raw_readl(&npe->regs->exec_data);
++	return __raw_readl(&npe->regs->exec_data);
++}
++
++static void npe_clear_active(struct npe *npe, u32 reg)
++{
++	u32 val = npe_cmd_read(npe, reg, CMD_RD_ECS_REG);
++	npe_cmd_write(npe, reg, CMD_WR_ECS_REG, val & ~ECS_REG_0_ACTIVE);
++}
++
++static void npe_start(struct npe *npe)
++{
++	/* ensure only Background Context Stack Level is active */
++	npe_clear_active(npe, ECS_PRI_1_CTXT_REG_0);
++	npe_clear_active(npe, ECS_PRI_2_CTXT_REG_0);
++	npe_clear_active(npe, ECS_DBG_CTXT_REG_0);
++
++	__raw_writel(CMD_NPE_CLR_PIPE, &npe->regs->exec_status_cmd);
++	__raw_writel(CMD_NPE_START, &npe->regs->exec_status_cmd);
++}
++
++static void npe_stop(struct npe *npe)
++{
++	__raw_writel(CMD_NPE_STOP, &npe->regs->exec_status_cmd);
++	__raw_writel(CMD_NPE_CLR_PIPE, &npe->regs->exec_status_cmd); /*FIXME?*/
++}
++
++static int __must_check npe_debug_instr(struct npe *npe, u32 instr, u32 ctx,
++					u32 ldur)
++{
++	u32 wc;
++	int i;
++
++	/* set the Active bit, and the LDUR, in the debug level */
++	npe_cmd_write(npe, ECS_DBG_CTXT_REG_0, CMD_WR_ECS_REG,
++		      ECS_REG_0_ACTIVE | (ldur << ECS_REG_0_LDUR_BITS));
++
++	/* set CCTXT at ECS DEBUG L3 to specify in which context to execute
++	   the instruction, and set SELCTXT at ECS DEBUG Level to specify
++	   which context store to access.
++	   Debug ECS Level Reg 1 has form 0x000n000n, where n = context number
++	*/
++	npe_cmd_write(npe, ECS_DBG_CTXT_REG_1, CMD_WR_ECS_REG,
++		      (ctx << ECS_REG_1_CCTXT_BITS) |
++		      (ctx << ECS_REG_1_SELCTXT_BITS));
++
++	/* clear the pipeline */
++	__raw_writel(CMD_NPE_CLR_PIPE, &npe->regs->exec_status_cmd);
++
++	/* load NPE instruction into the instruction register */
++	npe_cmd_write(npe, ECS_INSTRUCT_REG, CMD_WR_ECS_REG, instr);
++
++	/* we need this value later to wait for completion of NPE execution
++	   step */
++	wc = __raw_readl(&npe->regs->watch_count);
++
++	/* issue a Step One command via the Execution Control register */
++	__raw_writel(CMD_NPE_STEP, &npe->regs->exec_status_cmd);
++
++	/* Watch Count register increments when NPE completes an instruction */
++	for (i = 0; i < MAX_RETRIES; i++) {
++		if (wc != __raw_readl(&npe->regs->watch_count))
++			return 0;
++		udelay(1);
++	}
++
++	print_npe(KERN_ERR, npe, "reset: npe_debug_instr(): timeout\n");
++	return -ETIMEDOUT;
++}
++
++static int __must_check npe_logical_reg_write8(struct npe *npe, u32 addr,
++					       u8 val, u32 ctx)
++{
++	/* here we build the NPE assembler instruction: mov8 d0, #0 */
++	u32 instr = INSTR_WR_REG_BYTE |	/* OpCode */
++		addr << 9 |		/* base Operand */
++		(val & 0x1F) << 4 |	/* lower 5 bits to immediate data */
++		(val & ~0x1F) << (18 - 5);/* higher 3 bits to CoProc instr. */
++	return npe_debug_instr(npe, instr, ctx, 1); /* execute it */
++}
++
++static int __must_check npe_logical_reg_write16(struct npe *npe, u32 addr,
++						u16 val, u32 ctx)
++{
++	/* here we build the NPE assembler instruction: mov16 d0, #0 */
++	u32 instr = INSTR_WR_REG_SHORT | /* OpCode */
++		addr << 9 |		/* base Operand */
++		(val & 0x1F) << 4 |	/* lower 5 bits to immediate data */
++		(val & ~0x1F) << (18 - 5);/* higher 11 bits to CoProc instr. */
++	return npe_debug_instr(npe, instr, ctx, 1); /* execute it */
++}
++
++static int __must_check npe_logical_reg_write32(struct npe *npe, u32 addr,
++						u32 val, u32 ctx)
++{
++	/* write in 16 bit steps first the high and then the low value */
++	if (npe_logical_reg_write16(npe, addr, val >> 16, ctx))
++		return -ETIMEDOUT;
++	return npe_logical_reg_write16(npe, addr + 2, val & 0xFFFF, ctx);
++}
++
++static int npe_reset(struct npe *npe)
++{
++	u32 val, ctl, exec_count, ctx_reg2;
++	int i;
++
++	ctl = (__raw_readl(&npe->regs->messaging_control) | 0x3F000000) &
++		0x3F3FFFFF;
++
++	/* disable parity interrupt */
++	__raw_writel(ctl & 0x3F00FFFF, &npe->regs->messaging_control);
++
++	/* pre exec - debug instruction */
++	/* turn off the halt bit by clearing Execution Count register. */
++	exec_count = __raw_readl(&npe->regs->exec_count);
++	__raw_writel(0, &npe->regs->exec_count);
++	/* ensure that IF and IE are on (temporarily), so that we don't end up
++	   stepping forever */
++	ctx_reg2 = npe_cmd_read(npe, ECS_DBG_CTXT_REG_2, CMD_RD_ECS_REG);
++	npe_cmd_write(npe, ECS_DBG_CTXT_REG_2, CMD_WR_ECS_REG, ctx_reg2 |
++		      ECS_DBG_REG_2_IF | ECS_DBG_REG_2_IE);
++
++	/* clear the FIFOs */
++	while (__raw_readl(&npe->regs->watchpoint_fifo) & WFIFO_VALID)
++		;
++	while (__raw_readl(&npe->regs->messaging_status) & MSGSTAT_OFNE)
++		/* read from the outFIFO until empty */
++		print_npe(KERN_DEBUG, npe, "npe_reset: read FIFO = 0x%X\n",
++			  __raw_readl(&npe->regs->in_out_fifo));
++
++	while (__raw_readl(&npe->regs->messaging_status) & MSGSTAT_IFNE)
++		/* step execution of the NPE intruction to read inFIFO using
++		   the Debug Executing Context stack */
++		if (npe_debug_instr(npe, INSTR_RD_FIFO, 0, 0))
++			return -ETIMEDOUT;
++
++	/* reset the mailbox reg from the XScale side */
++	__raw_writel(RESET_MBOX_STAT, &npe->regs->mailbox_status);
++	/* from NPE side */
++	if (npe_debug_instr(npe, INSTR_RESET_MBOX, 0, 0))
++		return -ETIMEDOUT;
++
++	/* Reset the physical registers in the NPE register file */
++	for (val = 0; val < NPE_PHYS_REG; val++) {
++		if (npe_logical_reg_write16(npe, NPE_REGMAP, val >> 1, 0))
++			return -ETIMEDOUT;
++		/* address is either 0 or 4 */
++		if (npe_logical_reg_write32(npe, (val & 1) * 4, 0, 0))
++			return -ETIMEDOUT;
++	}
++
++	/* Reset the context store = each context's Context Store registers */
++
++	/* Context 0 has no STARTPC. Instead, this value is used to set NextPC
++	   for Background ECS, to set where NPE starts executing code */
++	val = npe_cmd_read(npe, ECS_BG_CTXT_REG_0, CMD_RD_ECS_REG);
++	val &= ~ECS_REG_0_NEXTPC_MASK;
++	val |= (0 /* NextPC */ << 16) & ECS_REG_0_NEXTPC_MASK;
++	npe_cmd_write(npe, ECS_BG_CTXT_REG_0, CMD_WR_ECS_REG, val);
++
++	for (i = 0; i < 16; i++) {
++		if (i) {	/* Context 0 has no STEVT nor STARTPC */
++			/* STEVT = off, 0x80 */
++			if (npe_logical_reg_write8(npe, NPE_STEVT, 0x80, i))
++				return -ETIMEDOUT;
++			if (npe_logical_reg_write16(npe, NPE_STARTPC, 0, i))
++				return -ETIMEDOUT;
++		}
++		/* REGMAP = d0->p0, d8->p2, d16->p4 */
++		if (npe_logical_reg_write16(npe, NPE_REGMAP, 0x820, i))
++			return -ETIMEDOUT;
++		if (npe_logical_reg_write8(npe, NPE_CINDEX, 0, i))
++			return -ETIMEDOUT;
++	}
++
++	/* post exec */
++	/* clear active bit in debug level */
++	npe_cmd_write(npe, ECS_DBG_CTXT_REG_0, CMD_WR_ECS_REG, 0);
++	/* clear the pipeline */
++	__raw_writel(CMD_NPE_CLR_PIPE, &npe->regs->exec_status_cmd);
++	/* restore previous values */
++	__raw_writel(exec_count, &npe->regs->exec_count);
++	npe_cmd_write(npe, ECS_DBG_CTXT_REG_2, CMD_WR_ECS_REG, ctx_reg2);
++
++	/* write reset values to Execution Context Stack registers */
++	for (val = 0; val < ARRAY_SIZE(ecs_reset); val++)
++		npe_cmd_write(npe, ecs_reset[val].reg, CMD_WR_ECS_REG,
++			      ecs_reset[val].val);
++
++	/* clear the profile counter */
++	__raw_writel(CMD_CLR_PROFILE_CNT, &npe->regs->exec_status_cmd);
++
++	__raw_writel(0, &npe->regs->exec_count);
++	__raw_writel(0, &npe->regs->action_points[0]);
++	__raw_writel(0, &npe->regs->action_points[1]);
++	__raw_writel(0, &npe->regs->action_points[2]);
++	__raw_writel(0, &npe->regs->action_points[3]);
++	__raw_writel(0, &npe->regs->watch_count);
++
++	val = ixp4xx_read_fuses();
++	/* reset the NPE */
++	ixp4xx_write_fuses(val & ~(IXP4XX_FUSE_RESET_NPEA << npe->id));
++	for (i = 0; i < MAX_RETRIES; i++) {
++		if (!(ixp4xx_read_fuses() &
++		      (IXP4XX_FUSE_RESET_NPEA << npe->id)))
++			break;	/* reset completed */
++		udelay(1);
++	}
++	if (i == MAX_RETRIES)
++		return -ETIMEDOUT;
++
++	/* deassert reset */
++	ixp4xx_write_fuses(val | (IXP4XX_FUSE_RESET_NPEA << npe->id));
++	for (i = 0; i < MAX_RETRIES; i++) {
++		if (ixp4xx_read_fuses() & (IXP4XX_FUSE_RESET_NPEA << npe->id))
++			break;	/* NPE is back alive */
++		udelay(1);
++	}
++	if (i == MAX_RETRIES)
++		return -ETIMEDOUT;
++
++	npe_stop(npe);
++
++	/* restore NPE configuration bus Control Register - parity settings */
++	__raw_writel(ctl, &npe->regs->messaging_control);
++	return 0;
++}
++
++
++int npe_send_message(struct npe *npe, const void *msg, const char *what)
++{
++	const u32 *send = msg;
++	int cycles = 0;
++
++	debug_msg(npe, "Trying to send message %s [%08X:%08X]\n",
++		  what, send[0], send[1]);
++
++	if (__raw_readl(&npe->regs->messaging_status) & MSGSTAT_IFNE) {
++		debug_msg(npe, "NPE input FIFO not empty\n");
++		return -EIO;
++	}
++
++	__raw_writel(send[0], &npe->regs->in_out_fifo);
++
++	if (!(__raw_readl(&npe->regs->messaging_status) & MSGSTAT_IFNF)) {
++		debug_msg(npe, "NPE input FIFO full\n");
++		return -EIO;
++	}
++
++	__raw_writel(send[1], &npe->regs->in_out_fifo);
++
++	while ((cycles < MAX_RETRIES) &&
++	       (__raw_readl(&npe->regs->messaging_status) & MSGSTAT_IFNE)) {
++		udelay(1);
++		cycles++;
++	}
++
++	if (cycles == MAX_RETRIES) {
++		debug_msg(npe, "Timeout sending message\n");
++		return -ETIMEDOUT;
++	}
++
++	debug_msg(npe, "Sending a message took %i cycles\n", cycles);
++	return 0;
++}
++
++int npe_recv_message(struct npe *npe, void *msg, const char *what)
++{
++	u32 *recv = msg;
++	int cycles = 0, cnt = 0;
++
++	debug_msg(npe, "Trying to receive message %s\n", what);
++
++	while (cycles < MAX_RETRIES) {
++		if (__raw_readl(&npe->regs->messaging_status) & MSGSTAT_OFNE) {
++			recv[cnt++] = __raw_readl(&npe->regs->in_out_fifo);
++			if (cnt == 2)
++				break;
++		} else {
++			udelay(1);
++			cycles++;
++		}
++	}
++
++	switch(cnt) {
++	case 1:
++		debug_msg(npe, "Received [%08X]\n", recv[0]);
++		break;
++	case 2:
++		debug_msg(npe, "Received [%08X:%08X]\n", recv[0], recv[1]);
++		break;
++	}
++
++	if (cycles == MAX_RETRIES) {
++		debug_msg(npe, "Timeout waiting for message\n");
++		return -ETIMEDOUT;
++	}
++
++	debug_msg(npe, "Receiving a message took %i cycles\n", cycles);
++	return 0;
++}
++
++int npe_send_recv_message(struct npe *npe, void *msg, const char *what)
++{
++	int result;
++	u32 *send = msg, recv[2];
++
++	if ((result = npe_send_message(npe, msg, what)) != 0)
++		return result;
++	if ((result = npe_recv_message(npe, recv, what)) != 0)
++		return result;
++
++	if ((recv[0] != send[0]) || (recv[1] != send[1])) {
++		debug_msg(npe, "Message %s: unexpected message received\n",
++			  what);
++		return -EIO;
++	}
++	return 0;
++}
++
++
++int npe_load_firmware(struct npe *npe, const char *name, struct device *dev)
++{
++	const struct firmware *fw_entry;
++
++	struct dl_block {
++		u32 type;
++		u32 offset;
++	} *blk;
++
++	struct dl_image {
++		u32 magic;
++		u32 id;
++		u32 size;
++		union {
++			u32 data[0];
++			struct dl_block blocks[0];
++		};
++	} *image;
++
++	struct dl_codeblock {
++		u32 npe_addr;
++		u32 size;
++		u32 data[0];
++	} *cb;
++
++	int i, j, err, data_size, instr_size, blocks, table_end;
++	u32 cmd;
++
++	if ((err = request_firmware(&fw_entry, name, dev)) != 0)
++		return err;
++
++	err = -EINVAL;
++	if (fw_entry->size < sizeof(struct dl_image)) {
++		print_npe(KERN_ERR, npe, "incomplete firmware file\n");
++		goto err;
++	}
++	image = (struct dl_image*)fw_entry->data;
++
++#if DEBUG_FW
++	print_npe(KERN_DEBUG, npe, "firmware: %08X %08X %08X (0x%X bytes)\n",
++		  image->magic, image->id, image->size, image->size * 4);
++#endif
++
++	if (image->magic == swab32(FW_MAGIC)) { /* swapped file */
++		image->id = swab32(image->id);
++		image->size = swab32(image->size);
++	} else if (image->magic != FW_MAGIC) {
++		print_npe(KERN_ERR, npe, "bad firmware file magic: 0x%X\n",
++			  image->magic);
++		goto err;
++	}
++	if ((image->size * 4 + sizeof(struct dl_image)) != fw_entry->size) {
++		print_npe(KERN_ERR, npe,
++			  "inconsistent size of firmware file\n");
++		goto err;
++	}
++	if (((image->id >> 24) & 0xF /* NPE ID */) != npe->id) {
++		print_npe(KERN_ERR, npe, "firmware file NPE ID mismatch\n");
++		goto err;
++	}
++	if (image->magic == swab32(FW_MAGIC))
++		for (i = 0; i < image->size; i++)
++			image->data[i] = swab32(image->data[i]);
++
++	if (!cpu_is_ixp46x() && ((image->id >> 28) & 0xF /* device ID */)) {
++		print_npe(KERN_INFO, npe, "IXP46x firmware ignored on "
++			  "IXP42x\n");
++		goto err;
++	}
++
++	if (npe_running(npe)) {
++		print_npe(KERN_INFO, npe, "unable to load firmware, NPE is "
++			  "already running\n");
++		err = -EBUSY;
++		goto err;
++	}
++#if 0
++	npe_stop(npe);
++	npe_reset(npe);
++#endif
++
++	print_npe(KERN_INFO, npe, "firmware functionality 0x%X, "
++		  "revision 0x%X:%X\n", (image->id >> 16) & 0xFF,
++		  (image->id >> 8) & 0xFF, image->id & 0xFF);
++
++	if (!cpu_is_ixp46x()) {
++		if (!npe->id)
++			instr_size = NPE_A_42X_INSTR_SIZE;
++		else
++			instr_size = NPE_B_AND_C_42X_INSTR_SIZE;
++		data_size = NPE_42X_DATA_SIZE;
++	} else {
++		instr_size = NPE_46X_INSTR_SIZE;
++		data_size = NPE_46X_DATA_SIZE;
++	}
++
++	for (blocks = 0; blocks * sizeof(struct dl_block) / 4 < image->size;
++	     blocks++)
++		if (image->blocks[blocks].type == FW_BLOCK_TYPE_EOF)
++			break;
++	if (blocks * sizeof(struct dl_block) / 4 >= image->size) {
++		print_npe(KERN_INFO, npe, "firmware EOF block marker not "
++			  "found\n");
++		goto err;
++	}
++
++#if DEBUG_FW
++	print_npe(KERN_DEBUG, npe, "%i firmware blocks found\n", blocks);
++#endif
++
++	table_end = blocks * sizeof(struct dl_block) / 4 + 1 /* EOF marker */;
++	for (i = 0, blk = image->blocks; i < blocks; i++, blk++) {
++		if (blk->offset > image->size - sizeof(struct dl_codeblock) / 4
++		    || blk->offset < table_end) {
++			print_npe(KERN_INFO, npe, "invalid offset 0x%X of "
++				  "firmware block #%i\n", blk->offset, i);
++			goto err;
++		}
++
++		cb = (struct dl_codeblock*)&image->data[blk->offset];
++		if (blk->type == FW_BLOCK_TYPE_INSTR) {
++			if (cb->npe_addr + cb->size > instr_size)
++				goto too_big;
++			cmd = CMD_WR_INS_MEM;
++		} else if (blk->type == FW_BLOCK_TYPE_DATA) {
++			if (cb->npe_addr + cb->size > data_size)
++				goto too_big;
++			cmd = CMD_WR_DATA_MEM;
++		} else {
++			print_npe(KERN_INFO, npe, "invalid firmware block #%i "
++				  "type 0x%X\n", i, blk->type);
++			goto err;
++		}
++		if (blk->offset + sizeof(*cb) / 4 + cb->size > image->size) {
++			print_npe(KERN_INFO, npe, "firmware block #%i doesn't "
++				  "fit in firmware image: type %c, start 0x%X,"
++				  " length 0x%X\n", i,
++				  blk->type == FW_BLOCK_TYPE_INSTR ? 'I' : 'D',
++				  cb->npe_addr, cb->size);
++			goto err;
++		}
++
++		for (j = 0; j < cb->size; j++)
++			npe_cmd_write(npe, cb->npe_addr + j, cmd, cb->data[j]);
++	}
++
++	npe_start(npe);
++	if (!npe_running(npe))
++		print_npe(KERN_ERR, npe, "unable to start\n");
++	release_firmware(fw_entry);
++	return 0;
++
++too_big:
++	print_npe(KERN_INFO, npe, "firmware block #%i doesn't fit in NPE "
++		  "memory: type %c, start 0x%X, length 0x%X\n", i,
++		  blk->type == FW_BLOCK_TYPE_INSTR ? 'I' : 'D',
++		  cb->npe_addr, cb->size);
++err:
++	release_firmware(fw_entry);
++	return err;
++}
++
++
++struct npe *npe_request(int id)
++{
++	if (id < NPE_COUNT)
++		if (npe_tab[id].valid)
++			if (try_module_get(THIS_MODULE))
++				return &npe_tab[id];
++	return NULL;
++}
++
++void npe_release(struct npe *npe)
++{
++	module_put(THIS_MODULE);
++}
++
++
++static int __init npe_init_module(void)
++{
++
++	int i, found = 0;
++
++	for (i = 0; i < NPE_COUNT; i++) {
++		struct npe *npe = &npe_tab[i];
++		if (!(ixp4xx_read_fuses() & (IXP4XX_FUSE_RESET_NPEA << i)))
++			continue; /* NPE already disabled or not present */
++		if (!(npe->mem_res = request_mem_region(npe->regs_phys,
++							REGS_SIZE,
++							npe_name(npe)))) {
++			print_npe(KERN_ERR, npe,
++				  "failed to request memory region\n");
++			continue;
++		}
++
++		if (npe_reset(npe))
++			continue;
++		npe->valid = 1;
++		found++;
++	}
++
++	if (!found)
++		return -ENOSYS;
++	return 0;
++}
++
++static void __exit npe_cleanup_module(void)
++{
++	int i;
++
++	for (i = 0; i < NPE_COUNT; i++)
++		if (npe_tab[i].mem_res) {
++			npe_reset(&npe_tab[i]);
++			release_resource(npe_tab[i].mem_res);
++		}
++}
++
++module_init(npe_init_module);
++module_exit(npe_cleanup_module);
++
++MODULE_AUTHOR("Krzysztof Halasa");
++MODULE_LICENSE("GPL v2");
++
++EXPORT_SYMBOL(npe_names);
++EXPORT_SYMBOL(npe_running);
++EXPORT_SYMBOL(npe_request);
++EXPORT_SYMBOL(npe_release);
++EXPORT_SYMBOL(npe_load_firmware);
++EXPORT_SYMBOL(npe_send_message);
++EXPORT_SYMBOL(npe_recv_message);
++EXPORT_SYMBOL(npe_send_recv_message);
+diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c ixp4xx-nep.git/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c
+--- linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c	1970-01-01 01:00:00.000000000 +0100
++++ ixp4xx-nep.git/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c	2007-10-22 19:19:41.000000000 +0200
+@@ -0,0 +1,274 @@
++/*
++ * Intel IXP4xx Queue Manager driver for Linux
++ *
++ * Copyright (C) 2007 Krzysztof Halasa <khc@pm.waw.pl>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of version 2 of the GNU General Public License
++ * as published by the Free Software Foundation.
++ */
++
++#include <linux/ioport.h>
++#include <linux/interrupt.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <asm/arch/qmgr.h>
++
++#define DEBUG		0
++
++struct qmgr_regs __iomem *qmgr_regs;
++static struct resource *mem_res;
++static spinlock_t qmgr_lock;
++static u32 used_sram_bitmap[4]; /* 128 16-dword pages */
++static void (*irq_handlers[HALF_QUEUES])(void *pdev);
++static void *irq_pdevs[HALF_QUEUES];
++
++void qmgr_set_irq(unsigned int queue, int src,
++		  void (*handler)(void *pdev), void *pdev)
++{
++	u32 __iomem *reg = &qmgr_regs->irqsrc[queue / 8]; /* 8 queues / u32 */
++	int bit = (queue % 8) * 4; /* 3 bits + 1 reserved bit per queue */
++	unsigned long flags;
++
++	src &= 7;
++	spin_lock_irqsave(&qmgr_lock, flags);
++	__raw_writel((__raw_readl(reg) & ~(7 << bit)) | (src << bit), reg);
++	irq_handlers[queue] = handler;
++	irq_pdevs[queue] = pdev;
++	spin_unlock_irqrestore(&qmgr_lock, flags);
++}
++
++
++static irqreturn_t qmgr_irq1(int irq, void *pdev)
++{
++	int i;
++	u32 val = __raw_readl(&qmgr_regs->irqstat[0]);
++	__raw_writel(val, &qmgr_regs->irqstat[0]); /* ACK */
++
++	for (i = 0; i < HALF_QUEUES; i++)
++		if (val & (1 << i))
++			irq_handlers[i](irq_pdevs[i]);
++
++	return val ? IRQ_HANDLED : 0;
++}
++
++
++void qmgr_enable_irq(unsigned int queue)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&qmgr_lock, flags);
++	__raw_writel(__raw_readl(&qmgr_regs->irqen[0]) | (1 << queue),
++		     &qmgr_regs->irqen[0]);
++	spin_unlock_irqrestore(&qmgr_lock, flags);
++}
++
++void qmgr_disable_irq(unsigned int queue)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&qmgr_lock, flags);
++	__raw_writel(__raw_readl(&qmgr_regs->irqen[0]) & ~(1 << queue),
++		     &qmgr_regs->irqen[0]);
++	spin_unlock_irqrestore(&qmgr_lock, flags);
++}
++
++static inline void shift_mask(u32 *mask)
++{
++	mask[3] = mask[3] << 1 | mask[2] >> 31;
++	mask[2] = mask[2] << 1 | mask[1] >> 31;
++	mask[1] = mask[1] << 1 | mask[0] >> 31;
++	mask[0] <<= 1;
++}
++
++int qmgr_request_queue(unsigned int queue, unsigned int len /* dwords */,
++		       unsigned int nearly_empty_watermark,
++		       unsigned int nearly_full_watermark)
++{
++	u32 cfg, addr = 0, mask[4]; /* in 16-dwords */
++	int err;
++
++	if (queue >= HALF_QUEUES)
++		return -ERANGE;
++
++	if ((nearly_empty_watermark | nearly_full_watermark) & ~7)
++		return -EINVAL;
++
++	switch (len) {
++	case  16:
++		cfg = 0 << 24;
++		mask[0] = 0x1;
++		break;
++	case  32:
++		cfg = 1 << 24;
++		mask[0] = 0x3;
++		break;
++	case  64:
++		cfg = 2 << 24;
++		mask[0] = 0xF;
++		break;
++	case 128:
++		cfg = 3 << 24;
++		mask[0] = 0xFF;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	cfg |= nearly_empty_watermark << 26;
++	cfg |= nearly_full_watermark << 29;
++	len /= 16;		/* in 16-dwords: 1, 2, 4 or 8 */
++	mask[1] = mask[2] = mask[3] = 0;
++
++	if (!try_module_get(THIS_MODULE))
++		return -ENODEV;
++
++	spin_lock_irq(&qmgr_lock);
++	if (__raw_readl(&qmgr_regs->sram[queue])) {
++		err = -EBUSY;
++		goto err;
++	}
++
++	while (1) {
++		if (!(used_sram_bitmap[0] & mask[0]) &&
++		    !(used_sram_bitmap[1] & mask[1]) &&
++		    !(used_sram_bitmap[2] & mask[2]) &&
++		    !(used_sram_bitmap[3] & mask[3]))
++			break; /* found free space */
++
++		addr++;
++		shift_mask(mask);
++		if (addr + len > ARRAY_SIZE(qmgr_regs->sram)) {
++			printk(KERN_ERR "qmgr: no free SRAM space for"
++			       " queue %i\n", queue);
++			err = -ENOMEM;
++			goto err;
++		}
++	}
++
++	used_sram_bitmap[0] |= mask[0];
++	used_sram_bitmap[1] |= mask[1];
++	used_sram_bitmap[2] |= mask[2];
++	used_sram_bitmap[3] |= mask[3];
++	__raw_writel(cfg | (addr << 14), &qmgr_regs->sram[queue]);
++	spin_unlock_irq(&qmgr_lock);
++
++#if DEBUG
++	printk(KERN_DEBUG "qmgr: requested queue %i, addr = 0x%02X\n",
++	       queue, addr);
++#endif
++	return 0;
++
++err:
++	spin_unlock_irq(&qmgr_lock);
++	module_put(THIS_MODULE);
++	return err;
++}
++
++void qmgr_release_queue(unsigned int queue)
++{
++	u32 cfg, addr, mask[4];
++
++	BUG_ON(queue >= HALF_QUEUES); /* not in valid range */
++
++	spin_lock_irq(&qmgr_lock);
++	cfg = __raw_readl(&qmgr_regs->sram[queue]);
++	addr = (cfg >> 14) & 0xFF;
++
++	BUG_ON(!addr);		/* not requested */
++
++	switch ((cfg >> 24) & 3) {
++	case 0: mask[0] = 0x1; break;
++	case 1: mask[0] = 0x3; break;
++	case 2: mask[0] = 0xF; break;
++	case 3: mask[0] = 0xFF; break;
++	}
++
++	while (addr--)
++		shift_mask(mask);
++
++	__raw_writel(0, &qmgr_regs->sram[queue]);
++
++	used_sram_bitmap[0] &= ~mask[0];
++	used_sram_bitmap[1] &= ~mask[1];
++	used_sram_bitmap[2] &= ~mask[2];
++	used_sram_bitmap[3] &= ~mask[3];
++	irq_handlers[queue] = NULL; /* catch IRQ bugs */
++	spin_unlock_irq(&qmgr_lock);
++
++	module_put(THIS_MODULE);
++#if DEBUG
++	printk(KERN_DEBUG "qmgr: released queue %i\n", queue);
++#endif
++}
++
++static int qmgr_init(void)
++{
++	int i, err;
++	mem_res = request_mem_region(IXP4XX_QMGR_BASE_PHYS,
++				     IXP4XX_QMGR_REGION_SIZE,
++				     "IXP4xx Queue Manager");
++	if (mem_res == NULL)
++		return -EBUSY;
++
++	qmgr_regs = ioremap(IXP4XX_QMGR_BASE_PHYS, IXP4XX_QMGR_REGION_SIZE);
++	if (qmgr_regs == NULL) {
++		err = -ENOMEM;
++		goto error_map;
++	}
++
++	/* reset qmgr registers */
++	for (i = 0; i < 4; i++) {
++		__raw_writel(0x33333333, &qmgr_regs->stat1[i]);
++		__raw_writel(0, &qmgr_regs->irqsrc[i]);
++	}
++	for (i = 0; i < 2; i++) {
++		__raw_writel(0, &qmgr_regs->stat2[i]);
++		__raw_writel(0xFFFFFFFF, &qmgr_regs->irqstat[i]); /* clear */
++		__raw_writel(0, &qmgr_regs->irqen[i]);
++	}
++
++	for (i = 0; i < QUEUES; i++)
++		__raw_writel(0, &qmgr_regs->sram[i]);
++
++	err = request_irq(IRQ_IXP4XX_QM1, qmgr_irq1, 0,
++			  "IXP4xx Queue Manager", NULL);
++	if (err) {
++		printk(KERN_ERR "qmgr: failed to request IRQ%i\n",
++		       IRQ_IXP4XX_QM1);
++		goto error_irq;
++	}
++
++	used_sram_bitmap[0] = 0xF; /* 4 first pages reserved for config */
++	spin_lock_init(&qmgr_lock);
++
++	printk(KERN_INFO "IXP4xx Queue Manager initialized.\n");
++	return 0;
++
++error_irq:
++	iounmap(qmgr_regs);
++error_map:
++	release_resource(mem_res);
++	return err;
++}
++
++static void qmgr_remove(void)
++{
++	free_irq(IRQ_IXP4XX_QM1, NULL);
++	synchronize_irq(IRQ_IXP4XX_QM1);
++	iounmap(qmgr_regs);
++	release_resource(mem_res);
++}
++
++module_init(qmgr_init);
++module_exit(qmgr_remove);
++
++MODULE_LICENSE("GPL v2");
++MODULE_AUTHOR("Krzysztof Halasa");
++
++EXPORT_SYMBOL(qmgr_regs);
++EXPORT_SYMBOL(qmgr_set_irq);
++EXPORT_SYMBOL(qmgr_enable_irq);
++EXPORT_SYMBOL(qmgr_disable_irq);
++EXPORT_SYMBOL(qmgr_request_queue);
++EXPORT_SYMBOL(qmgr_release_queue);
+diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/arm/Kconfig ixp4xx-nep.git/drivers/net/arm/Kconfig
+--- linux-2.6.23/drivers/net/arm/Kconfig	2007-10-09 22:31:38.000000000 +0200
++++ ixp4xx-nep.git/drivers/net/arm/Kconfig	2007-10-22 19:20:02.000000000 +0200
+@@ -47,3 +47,13 @@
+ 	help
+ 	  This is a driver for the ethernet hardware included in EP93xx CPUs.
+ 	  Say Y if you are building a kernel for EP93xx based devices.
++
++config IXP4XX_ETH
++	tristate "IXP4xx Ethernet support"
++	depends on NET_ETHERNET && ARM && ARCH_IXP4XX
++	select IXP4XX_NPE
++	select IXP4XX_QMGR
++	select MII
++	help
++	  Say Y here if you want to use built-in Ethernet ports
++	  on IXP4xx processor.
+diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/arm/Makefile ixp4xx-nep.git/drivers/net/arm/Makefile
+--- linux-2.6.23/drivers/net/arm/Makefile	2007-10-09 22:31:38.000000000 +0200
++++ ixp4xx-nep.git/drivers/net/arm/Makefile	2007-10-22 19:20:02.000000000 +0200
+@@ -9,3 +9,4 @@
+ obj-$(CONFIG_ARM_ETHER1)	+= ether1.o
+ obj-$(CONFIG_ARM_AT91_ETHER)	+= at91_ether.o
+ obj-$(CONFIG_EP93XX_ETH)	+= ep93xx_eth.o
++obj-$(CONFIG_IXP4XX_ETH)	+= ixp4xx_eth.o
+diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/arm/ixp4xx_eth.c ixp4xx-nep.git/drivers/net/arm/ixp4xx_eth.c
+--- linux-2.6.23/drivers/net/arm/ixp4xx_eth.c	1970-01-01 01:00:00.000000000 +0100
++++ ixp4xx-nep.git/drivers/net/arm/ixp4xx_eth.c	2007-10-22 19:20:02.000000000 +0200
+@@ -0,0 +1,1258 @@
++/*
++ * Intel IXP4xx Ethernet driver for Linux
++ *
++ * Copyright (C) 2007 Krzysztof Halasa <khc@pm.waw.pl>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of version 2 of the GNU General Public License
++ * as published by the Free Software Foundation.
++ *
++ * Ethernet port config (0x00 is not present on IXP42X):
++ *
++ * logical port		0x00		0x10		0x20
++ * NPE			0 (NPE-A)	1 (NPE-B)	2 (NPE-C)
++ * physical PortId	2		0		1
++ * TX queue		23		24		25
++ * RX-free queue	26		27		28
++ * TX-done queue is always 31, per-port RX and TX-ready queues are configurable
++ *
++ *
++ * Queue entries:
++ * bits 0 -> 1	- NPE ID (RX and TX-done)
++ * bits 0 -> 2	- priority (TX, per 802.1D)
++ * bits 3 -> 4	- port ID (user-set?)
++ * bits 5 -> 31	- physical descriptor address
++ */
++
++#include <linux/delay.h>
++#include <linux/dma-mapping.h>
++#include <linux/dmapool.h>
++#include <linux/kernel.h>
++#include <linux/mii.h>
++#include <linux/platform_device.h>
++#include <asm/io.h>
++#include <asm/arch/npe.h>
++#include <asm/arch/qmgr.h>
++
++#define DEBUG_QUEUES		0
++#define DEBUG_DESC		0
++#define DEBUG_RX		0
++#define DEBUG_TX		0
++#define DEBUG_PKT_BYTES		0
++#define DEBUG_MDIO		0
++#define DEBUG_CLOSE		0
++
++#define DRV_NAME		"ixp4xx_eth"
++
++#define MAX_NPES		3
++
++#define RX_DESCS		64 /* also length of all RX queues */
++#define TX_DESCS		16 /* also length of all TX queues */
++#define TXDONE_QUEUE_LEN	64 /* dwords */
++
++#define POOL_ALLOC_SIZE		(sizeof(struct desc) * (RX_DESCS + TX_DESCS))
++#define REGS_SIZE		0x1000
++#define MAX_MRU			1536 /* 0x600 */
++
++#define MDIO_INTERVAL		(3 * HZ)
++#define MAX_MDIO_RETRIES	100 /* microseconds, typically 30 cycles */
++#define MAX_MII_RESET_RETRIES	100 /* mdio_read() cycles, typically 4 */
++#define MAX_CLOSE_WAIT		1000 /* microseconds, typically 2-3 cycles */
++
++#define NPE_ID(port_id)		((port_id) >> 4)
++#define PHYSICAL_ID(port_id)	((NPE_ID(port_id) + 2) % 3)
++#define TX_QUEUE(port_id)	(NPE_ID(port_id) + 23)
++#define RXFREE_QUEUE(port_id)	(NPE_ID(port_id) + 26)
++#define TXDONE_QUEUE		31
++
++/* TX Control Registers */
++#define TX_CNTRL0_TX_EN		0x01
++#define TX_CNTRL0_HALFDUPLEX	0x02
++#define TX_CNTRL0_RETRY		0x04
++#define TX_CNTRL0_PAD_EN	0x08
++#define TX_CNTRL0_APPEND_FCS	0x10
++#define TX_CNTRL0_2DEFER	0x20
++#define TX_CNTRL0_RMII		0x40 /* reduced MII */
++#define TX_CNTRL1_RETRIES	0x0F /* 4 bits */
++
++/* RX Control Registers */
++#define RX_CNTRL0_RX_EN		0x01
++#define RX_CNTRL0_PADSTRIP_EN	0x02
++#define RX_CNTRL0_SEND_FCS	0x04
++#define RX_CNTRL0_PAUSE_EN	0x08
++#define RX_CNTRL0_LOOP_EN	0x10
++#define RX_CNTRL0_ADDR_FLTR_EN	0x20
++#define RX_CNTRL0_RX_RUNT_EN	0x40
++#define RX_CNTRL0_BCAST_DIS	0x80
++#define RX_CNTRL1_DEFER_EN	0x01
++
++/* Core Control Register */
++#define CORE_RESET		0x01
++#define CORE_RX_FIFO_FLUSH	0x02
++#define CORE_TX_FIFO_FLUSH	0x04
++#define CORE_SEND_JAM		0x08
++#define CORE_MDC_EN		0x10 /* MDIO using NPE-B ETH-0 only */
++
++#define DEFAULT_TX_CNTRL0	(TX_CNTRL0_TX_EN | TX_CNTRL0_RETRY |	\
++				 TX_CNTRL0_PAD_EN | TX_CNTRL0_APPEND_FCS | \
++				 TX_CNTRL0_2DEFER)
++#define DEFAULT_RX_CNTRL0	RX_CNTRL0_RX_EN
++#define DEFAULT_CORE_CNTRL	CORE_MDC_EN
++
++
++/* NPE message codes */
++#define NPE_GETSTATUS			0x00
++#define NPE_EDB_SETPORTADDRESS		0x01
++#define NPE_EDB_GETMACADDRESSDATABASE	0x02
++#define NPE_EDB_SETMACADDRESSSDATABASE	0x03
++#define NPE_GETSTATS			0x04
++#define NPE_RESETSTATS			0x05
++#define NPE_SETMAXFRAMELENGTHS		0x06
++#define NPE_VLAN_SETRXTAGMODE		0x07
++#define NPE_VLAN_SETDEFAULTRXVID	0x08
++#define NPE_VLAN_SETPORTVLANTABLEENTRY	0x09
++#define NPE_VLAN_SETPORTVLANTABLERANGE	0x0A
++#define NPE_VLAN_SETRXQOSENTRY		0x0B
++#define NPE_VLAN_SETPORTIDEXTRACTIONMODE 0x0C
++#define NPE_STP_SETBLOCKINGSTATE	0x0D
++#define NPE_FW_SETFIREWALLMODE		0x0E
++#define NPE_PC_SETFRAMECONTROLDURATIONID 0x0F
++#define NPE_PC_SETAPMACTABLE		0x11
++#define NPE_SETLOOPBACK_MODE		0x12
++#define NPE_PC_SETBSSIDTABLE		0x13
++#define NPE_ADDRESS_FILTER_CONFIG	0x14
++#define NPE_APPENDFCSCONFIG		0x15
++#define NPE_NOTIFY_MAC_RECOVERY_DONE	0x16
++#define NPE_MAC_RECOVERY_START		0x17
++
++
++#ifdef __ARMEB__
++typedef struct sk_buff buffer_t;
++#define free_buffer dev_kfree_skb
++#define free_buffer_irq dev_kfree_skb_irq
++#else
++typedef void buffer_t;
++#define free_buffer kfree
++#define free_buffer_irq kfree
++#endif
++
++struct eth_regs {
++	u32 tx_control[2], __res1[2];		/* 000 */
++	u32 rx_control[2], __res2[2];		/* 010 */
++	u32 random_seed, __res3[3];		/* 020 */
++	u32 partial_empty_threshold, __res4;	/* 030 */
++	u32 partial_full_threshold, __res5;	/* 038 */
++	u32 tx_start_bytes, __res6[3];		/* 040 */
++	u32 tx_deferral, rx_deferral,__res7[2];	/* 050 */
++	u32 tx_2part_deferral[2], __res8[2];	/* 060 */
++	u32 slot_time, __res9[3];		/* 070 */
++	u32 mdio_command[4];			/* 080 */
++	u32 mdio_status[4];			/* 090 */
++	u32 mcast_mask[6], __res10[2];		/* 0A0 */
++	u32 mcast_addr[6], __res11[2];		/* 0C0 */
++	u32 int_clock_threshold, __res12[3];	/* 0E0 */
++	u32 hw_addr[6], __res13[61];		/* 0F0 */
++	u32 core_control;			/* 1FC */
++};
++
++struct port {
++	struct resource *mem_res;
++	struct eth_regs __iomem *regs;
++	struct npe *npe;
++	struct net_device *netdev;
++	struct net_device_stats stat;
++	struct mii_if_info mii;
++	struct delayed_work mdio_thread;
++	struct eth_plat_info *plat;
++	buffer_t *rx_buff_tab[RX_DESCS], *tx_buff_tab[TX_DESCS];
++	struct desc *desc_tab;	/* coherent */
++	u32 desc_tab_phys;
++	int id;			/* logical port ID */
++	u16 mii_bmcr;
++};
++
++/* NPE message structure */
++struct msg {
++#ifdef __ARMEB__
++	u8 cmd, eth_id, byte2, byte3;
++	u8 byte4, byte5, byte6, byte7;
++#else
++	u8 byte3, byte2, eth_id, cmd;
++	u8 byte7, byte6, byte5, byte4;
++#endif
++};
++
++/* Ethernet packet descriptor */
++struct desc {
++	u32 next;		/* pointer to next buffer, unused */
++
++#ifdef __ARMEB__
++	u16 buf_len;		/* buffer length */
++	u16 pkt_len;		/* packet length */
++	u32 data;		/* pointer to data buffer in RAM */
++	u8 dest_id;
++	u8 src_id;
++	u16 flags;
++	u8 qos;
++	u8 padlen;
++	u16 vlan_tci;
++#else
++	u16 pkt_len;		/* packet length */
++	u16 buf_len;		/* buffer length */
++	u32 data;		/* pointer to data buffer in RAM */
++	u16 flags;
++	u8 src_id;
++	u8 dest_id;
++	u16 vlan_tci;
++	u8 padlen;
++	u8 qos;
++#endif
++
++#ifdef __ARMEB__
++	u8 dst_mac_0, dst_mac_1, dst_mac_2, dst_mac_3;
++	u8 dst_mac_4, dst_mac_5, src_mac_0, src_mac_1;
++	u8 src_mac_2, src_mac_3, src_mac_4, src_mac_5;
++#else
++	u8 dst_mac_3, dst_mac_2, dst_mac_1, dst_mac_0;
++	u8 src_mac_1, src_mac_0, dst_mac_5, dst_mac_4;
++	u8 src_mac_5, src_mac_4, src_mac_3, src_mac_2;
++#endif
++};
++
++
++#define rx_desc_phys(port, n)	((port)->desc_tab_phys +		\
++				 (n) * sizeof(struct desc))
++#define rx_desc_ptr(port, n)	(&(port)->desc_tab[n])
++
++#define tx_desc_phys(port, n)	((port)->desc_tab_phys +		\
++				 ((n) + RX_DESCS) * sizeof(struct desc))
++#define tx_desc_ptr(port, n)	(&(port)->desc_tab[(n) + RX_DESCS])
++
++#ifndef __ARMEB__
++static inline void memcpy_swab32(u32 *dest, u32 *src, int cnt)
++{
++	int i;
++	for (i = 0; i < cnt; i++)
++		dest[i] = swab32(src[i]);
++}
++#endif
++
++static spinlock_t mdio_lock;
++static struct eth_regs __iomem *mdio_regs; /* mdio command and status only */
++static int ports_open;
++static struct port *npe_port_tab[MAX_NPES];
++static struct dma_pool *dma_pool;
++
++
++static u16 mdio_cmd(struct net_device *dev, int phy_id, int location,
++		    int write, u16 cmd)
++{
++	int cycles = 0;
++
++	if (__raw_readl(&mdio_regs->mdio_command[3]) & 0x80) {
++		printk(KERN_ERR "%s: MII not ready to transmit\n", dev->name);
++		return 0;
++	}
++
++	if (write) {
++		__raw_writel(cmd & 0xFF, &mdio_regs->mdio_command[0]);
++		__raw_writel(cmd >> 8, &mdio_regs->mdio_command[1]);
++	}
++	__raw_writel(((phy_id << 5) | location) & 0xFF,
++		     &mdio_regs->mdio_command[2]);
++	__raw_writel((phy_id >> 3) | (write << 2) | 0x80 /* GO */,
++		     &mdio_regs->mdio_command[3]);
++
++	while ((cycles < MAX_MDIO_RETRIES) &&
++	       (__raw_readl(&mdio_regs->mdio_command[3]) & 0x80)) {
++		udelay(1);
++		cycles++;
++	}
++
++	if (cycles == MAX_MDIO_RETRIES) {
++		printk(KERN_ERR "%s: MII write failed\n", dev->name);
++		return 0;
++	}
++
++#if DEBUG_MDIO
++	printk(KERN_DEBUG "%s: mdio_cmd() took %i cycles\n", dev->name,
++	       cycles);
++#endif
++
++	if (write)
++		return 0;
++
++	if (__raw_readl(&mdio_regs->mdio_status[3]) & 0x80) {
++		printk(KERN_ERR "%s: MII read failed\n", dev->name);
++		return 0;
++	}
++
++	return (__raw_readl(&mdio_regs->mdio_status[0]) & 0xFF) |
++		(__raw_readl(&mdio_regs->mdio_status[1]) << 8);
++}
++
++static int mdio_read(struct net_device *dev, int phy_id, int location)
++{
++	unsigned long flags;
++	u16 val;
++
++	spin_lock_irqsave(&mdio_lock, flags);
++	val = mdio_cmd(dev, phy_id, location, 0, 0);
++	spin_unlock_irqrestore(&mdio_lock, flags);
++	return val;
++}
++
++static void mdio_write(struct net_device *dev, int phy_id, int location,
++		       int val)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&mdio_lock, flags);
++	mdio_cmd(dev, phy_id, location, 1, val);
++	spin_unlock_irqrestore(&mdio_lock, flags);
++}
++
++static void phy_reset(struct net_device *dev, int phy_id)
++{
++	struct port *port = netdev_priv(dev);
++	int cycles = 0;
++
++	mdio_write(dev, phy_id, MII_BMCR, port->mii_bmcr | BMCR_RESET);
++	
++	while (cycles < MAX_MII_RESET_RETRIES) {
++		if (!(mdio_read(dev, phy_id, MII_BMCR) & BMCR_RESET)) {
++#if DEBUG_MDIO
++			printk(KERN_DEBUG "%s: phy_reset() took %i cycles\n",
++			       dev->name, cycles);
++#endif
++			return;
++		}
++		udelay(1);
++		cycles++;
++	}
++
++	printk(KERN_ERR "%s: MII reset failed\n", dev->name);
++}
++
++static void eth_set_duplex(struct port *port)
++{
++	if (port->mii.full_duplex)
++		__raw_writel(DEFAULT_TX_CNTRL0 & ~TX_CNTRL0_HALFDUPLEX,
++			     &port->regs->tx_control[0]);
++	else
++		__raw_writel(DEFAULT_TX_CNTRL0 | TX_CNTRL0_HALFDUPLEX,
++			     &port->regs->tx_control[0]);
++}
++
++
++static void phy_check_media(struct port *port, int init)
++{
++	if (mii_check_media(&port->mii, 1, init))
++		eth_set_duplex(port);
++	if (port->mii.force_media) { /* mii_check_media() doesn't work */
++		struct net_device *dev = port->netdev;
++		int cur_link = mii_link_ok(&port->mii);
++		int prev_link = netif_carrier_ok(dev);
++
++		if (!prev_link && cur_link) {
++			printk(KERN_INFO "%s: link up\n", dev->name);
++			netif_carrier_on(dev);
++		} else if (prev_link && !cur_link) {
++			printk(KERN_INFO "%s: link down\n", dev->name);
++			netif_carrier_off(dev);
++		}
++	}
++}
++
++
++static void mdio_thread(struct work_struct *work)
++{
++	struct port *port = container_of(work, struct port, mdio_thread.work);
++
++	phy_check_media(port, 0);
++	schedule_delayed_work(&port->mdio_thread, MDIO_INTERVAL);
++}
++
++
++static inline void debug_pkt(struct net_device *dev, const char *func,
++			     u8 *data, int len)
++{
++#if DEBUG_PKT_BYTES
++	int i;
++
++	printk(KERN_DEBUG "%s: %s(%i) ", dev->name, func, len);
++	for (i = 0; i < len; i++) {
++		if (i >= DEBUG_PKT_BYTES)
++			break;
++		printk("%s%02X",
++		       ((i == 6) || (i == 12) || (i >= 14)) ? " " : "",
++		       data[i]);
++	}
++	printk("\n");
++#endif
++}
++
++
++static inline void debug_desc(u32 phys, struct desc *desc)
++{
++#if DEBUG_DESC
++	printk(KERN_DEBUG "%X: %X %3X %3X %08X %2X < %2X %4X %X"
++	       " %X %X %02X%02X%02X%02X%02X%02X < %02X%02X%02X%02X%02X%02X\n",
++	       phys, desc->next, desc->buf_len, desc->pkt_len,
++	       desc->data, desc->dest_id, desc->src_id, desc->flags,
++	       desc->qos, desc->padlen, desc->vlan_tci,
++	       desc->dst_mac_0, desc->dst_mac_1, desc->dst_mac_2,
++	       desc->dst_mac_3, desc->dst_mac_4, desc->dst_mac_5,
++	       desc->src_mac_0, desc->src_mac_1, desc->src_mac_2,
++	       desc->src_mac_3, desc->src_mac_4, desc->src_mac_5);
++#endif
++}
++
++static inline void debug_queue(unsigned int queue, int is_get, u32 phys)
++{
++#if DEBUG_QUEUES
++	static struct {
++		int queue;
++		char *name;
++	} names[] = {
++		{ TX_QUEUE(0x10), "TX#0 " },
++		{ TX_QUEUE(0x20), "TX#1 " },
++		{ TX_QUEUE(0x00), "TX#2 " },
++		{ RXFREE_QUEUE(0x10), "RX-free#0 " },
++		{ RXFREE_QUEUE(0x20), "RX-free#1 " },
++		{ RXFREE_QUEUE(0x00), "RX-free#2 " },
++		{ TXDONE_QUEUE, "TX-done " },
++	};
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(names); i++)
++		if (names[i].queue == queue)
++			break;
++
++	printk(KERN_DEBUG "Queue %i %s%s %X\n", queue,
++	       i < ARRAY_SIZE(names) ? names[i].name : "",
++	       is_get ? "->" : "<-", phys);
++#endif
++}
++
++static inline u32 queue_get_entry(unsigned int queue)
++{
++	u32 phys = qmgr_get_entry(queue);
++	debug_queue(queue, 1, phys);
++	return phys;
++}
++
++static inline int queue_get_desc(unsigned int queue, struct port *port,
++				 int is_tx)
++{
++	u32 phys, tab_phys, n_desc;
++	struct desc *tab;
++
++	if (!(phys = queue_get_entry(queue)))
++		return -1;
++
++	phys &= ~0x1F; /* mask out non-address bits */
++	tab_phys = is_tx ? tx_desc_phys(port, 0) : rx_desc_phys(port, 0);
++	tab = is_tx ? tx_desc_ptr(port, 0) : rx_desc_ptr(port, 0);
++	n_desc = (phys - tab_phys) / sizeof(struct desc);
++	BUG_ON(n_desc >= (is_tx ? TX_DESCS : RX_DESCS));
++	debug_desc(phys, &tab[n_desc]);
++	BUG_ON(tab[n_desc].next);
++	return n_desc;
++}
++
++static inline void queue_put_desc(unsigned int queue, u32 phys,
++				  struct desc *desc)
++{
++	debug_queue(queue, 0, phys);
++	debug_desc(phys, desc);
++	BUG_ON(phys & 0x1F);
++	qmgr_put_entry(queue, phys);
++	BUG_ON(qmgr_stat_overflow(queue));
++}
++
++
++static inline void dma_unmap_tx(struct port *port, struct desc *desc)
++{
++#ifdef __ARMEB__
++	dma_unmap_single(&port->netdev->dev, desc->data,
++			 desc->buf_len, DMA_TO_DEVICE);
++#else
++	dma_unmap_single(&port->netdev->dev, desc->data & ~3,
++			 ALIGN((desc->data & 3) + desc->buf_len, 4),
++			 DMA_TO_DEVICE);
++#endif
++}
++
++
++static void eth_rx_irq(void *pdev)
++{
++	struct net_device *dev = pdev;
++	struct port *port = netdev_priv(dev);
++
++#if DEBUG_RX
++	printk(KERN_DEBUG "%s: eth_rx_irq\n", dev->name);
++#endif
++	qmgr_disable_irq(port->plat->rxq);
++	netif_rx_schedule(dev);
++}
++
++static int eth_poll(struct net_device *dev, int *budget)
++{
++	struct port *port = netdev_priv(dev);
++	unsigned int rxq = port->plat->rxq, rxfreeq = RXFREE_QUEUE(port->id);
++	int quota = dev->quota, received = 0;
++
++#if DEBUG_RX
++	printk(KERN_DEBUG "%s: eth_poll\n", dev->name);
++#endif
++
++	while (quota) {
++		struct sk_buff *skb;
++		struct desc *desc;
++		int n;
++#ifdef __ARMEB__
++		struct sk_buff *temp;
++		u32 phys;
++#endif
++
++		if ((n = queue_get_desc(rxq, port, 0)) < 0) {
++			dev->quota -= received;	/* No packet received */
++			*budget -= received;
++			received = 0;
++#if DEBUG_RX
++			printk(KERN_DEBUG "%s: eth_poll netif_rx_complete\n",
++			       dev->name);
++#endif
++			netif_rx_complete(dev);
++			qmgr_enable_irq(rxq);
++			if (!qmgr_stat_empty(rxq) &&
++			    netif_rx_reschedule(dev, 0)) {
++#if DEBUG_RX
++				printk(KERN_DEBUG "%s: eth_poll"
++				       " netif_rx_reschedule successed\n",
++				       dev->name);
++#endif
++				qmgr_disable_irq(rxq);
++				continue;
++			}
++#if DEBUG_RX
++			printk(KERN_DEBUG "%s: eth_poll all done\n",
++			       dev->name);
++#endif
++			return 0; /* all work done */
++		}
++
++		desc = rx_desc_ptr(port, n);
++
++#ifdef __ARMEB__
++		if ((skb = netdev_alloc_skb(dev, MAX_MRU)) != NULL) {
++			phys = dma_map_single(&dev->dev, skb->data,
++					      MAX_MRU, DMA_FROM_DEVICE);
++			if (dma_mapping_error(phys)) {
++				dev_kfree_skb(skb);
++				skb = NULL;
++			}
++		}
++#else
++		skb = netdev_alloc_skb(dev, desc->pkt_len);
++#endif
++
++		if (!skb) {
++			port->stat.rx_dropped++;
++			/* put the desc back on RX-ready queue */
++			desc->buf_len = MAX_MRU;
++			desc->pkt_len = 0;
++			queue_put_desc(rxfreeq, rx_desc_phys(port, n), desc);
++			continue;
++		}
++
++		/* process received frame */
++#ifdef __ARMEB__
++		temp = skb;
++		skb = port->rx_buff_tab[n];
++		dma_unmap_single(&dev->dev, desc->data,
++				 MAX_MRU, DMA_FROM_DEVICE);
++#else
++		dma_sync_single(&dev->dev, desc->data,
++				MAX_MRU, DMA_FROM_DEVICE);
++		memcpy_swab32((u32 *)skb->data, (u32 *)port->rx_buff_tab[n],
++			      ALIGN(desc->pkt_len, 4) / 4);
++#endif
++		skb_put(skb, desc->pkt_len);
++
++		debug_pkt(dev, "eth_poll", skb->data, skb->len);
++
++		skb->protocol = eth_type_trans(skb, dev);
++		dev->last_rx = jiffies;
++		port->stat.rx_packets++;
++		port->stat.rx_bytes += skb->len;
++		netif_receive_skb(skb);
++
++		/* put the new buffer on RX-free queue */
++#ifdef __ARMEB__
++		port->rx_buff_tab[n] = temp;
++		desc->data = phys;
++#endif
++		desc->buf_len = MAX_MRU;
++		desc->pkt_len = 0;
++		queue_put_desc(rxfreeq, rx_desc_phys(port, n), desc);
++		quota--;
++		received++;
++	}
++	dev->quota -= received;
++	*budget -= received;
++#if DEBUG_RX
++	printk(KERN_DEBUG "eth_poll(): end, not all work done\n");
++#endif
++	return 1;		/* not all work done */
++}
++
++
++static void eth_txdone_irq(void *unused)
++{
++	u32 phys;
++
++#if DEBUG_TX
++	printk(KERN_DEBUG DRV_NAME ": eth_txdone_irq\n");
++#endif
++	while ((phys = queue_get_entry(TXDONE_QUEUE)) != 0) {
++		u32 npe_id, n_desc;
++		struct port *port;
++		struct desc *desc;
++		int start;
++
++		npe_id = phys & 3;
++		BUG_ON(npe_id >= MAX_NPES);
++		port = npe_port_tab[npe_id];
++		BUG_ON(!port);
++		phys &= ~0x1F; /* mask out non-address bits */
++		n_desc = (phys - tx_desc_phys(port, 0)) / sizeof(struct desc);
++		BUG_ON(n_desc >= TX_DESCS);
++		desc = tx_desc_ptr(port, n_desc);
++		debug_desc(phys, desc);
++
++		if (port->tx_buff_tab[n_desc]) { /* not the draining packet */
++			port->stat.tx_packets++;
++			port->stat.tx_bytes += desc->pkt_len;
++
++			dma_unmap_tx(port, desc);
++#if DEBUG_TX
++			printk(KERN_DEBUG "%s: eth_txdone_irq free %p\n",
++			       port->netdev->name, port->tx_buff_tab[n_desc]);
++#endif
++			free_buffer_irq(port->tx_buff_tab[n_desc]);
++			port->tx_buff_tab[n_desc] = NULL;
++		}
++
++		start = qmgr_stat_empty(port->plat->txreadyq);
++		queue_put_desc(port->plat->txreadyq, phys, desc);
++		if (start) {
++#if DEBUG_TX
++			printk(KERN_DEBUG "%s: eth_txdone_irq xmit ready\n",
++			       port->netdev->name);
++#endif
++			netif_wake_queue(port->netdev);
++		}
++	}
++}
++
++static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
++{
++	struct port *port = netdev_priv(dev);
++	unsigned int txreadyq = port->plat->txreadyq;
++	int len, offset, bytes, n;
++	void *mem;
++	u32 phys;
++	struct desc *desc;
++
++#if DEBUG_TX
++	printk(KERN_DEBUG "%s: eth_xmit\n", dev->name);
++#endif
++
++	if (unlikely(skb->len > MAX_MRU)) {
++		dev_kfree_skb(skb);
++		port->stat.tx_errors++;
++		return NETDEV_TX_OK;
++	}
++
++	debug_pkt(dev, "eth_xmit", skb->data, skb->len);
++
++	len = skb->len;
++#ifdef __ARMEB__
++	offset = 0; /* no need to keep alignment */
++	bytes = len;
++	mem = skb->data;
++#else
++	offset = (int)skb->data & 3; /* keep 32-bit alignment */
++	bytes = ALIGN(offset + len, 4);
++	if (!(mem = kmalloc(bytes, GFP_ATOMIC))) {
++		dev_kfree_skb(skb);
++		port->stat.tx_dropped++;
++		return NETDEV_TX_OK;
++	}
++	memcpy_swab32(mem, (u32 *)((int)skb->data & ~3), bytes / 4);
++	dev_kfree_skb(skb);
++#endif
++
++	phys = dma_map_single(&dev->dev, mem, bytes, DMA_TO_DEVICE);
++	if (dma_mapping_error(phys)) {
++#ifdef __ARMEB__
++		dev_kfree_skb(skb);
++#else
++		kfree(mem);
++#endif
++		port->stat.tx_dropped++;
++		return NETDEV_TX_OK;
++	}
++
++	n = queue_get_desc(txreadyq, port, 1);
++	BUG_ON(n < 0);
++	desc = tx_desc_ptr(port, n);
++
++#ifdef __ARMEB__
++	port->tx_buff_tab[n] = skb;
++#else
++	port->tx_buff_tab[n] = mem;
++#endif
++	desc->data = phys + offset;
++	desc->buf_len = desc->pkt_len = len;
++
++	/* NPE firmware pads short frames with zeros internally */
++	wmb();
++	queue_put_desc(TX_QUEUE(port->id), tx_desc_phys(port, n), desc);
++	dev->trans_start = jiffies;
++
++	if (qmgr_stat_empty(txreadyq)) {
++#if DEBUG_TX
++		printk(KERN_DEBUG "%s: eth_xmit queue full\n", dev->name);
++#endif
++		netif_stop_queue(dev);
++		/* we could miss TX ready interrupt */
++		if (!qmgr_stat_empty(txreadyq)) {
++#if DEBUG_TX
++			printk(KERN_DEBUG "%s: eth_xmit ready again\n",
++			       dev->name);
++#endif
++			netif_wake_queue(dev);
++		}
++	}
++
++#if DEBUG_TX
++	printk(KERN_DEBUG "%s: eth_xmit end\n", dev->name);
++#endif
++	return NETDEV_TX_OK;
++}
++
++
++static struct net_device_stats *eth_stats(struct net_device *dev)
++{
++	struct port *port = netdev_priv(dev);
++	return &port->stat;
++}
++
++static void eth_set_mcast_list(struct net_device *dev)
++{
++	struct port *port = netdev_priv(dev);
++	struct dev_mc_list *mclist = dev->mc_list;
++	u8 diffs[ETH_ALEN], *addr;
++	int cnt = dev->mc_count, i;
++
++	if ((dev->flags & IFF_PROMISC) || !mclist || !cnt) {
++		__raw_writel(DEFAULT_RX_CNTRL0 & ~RX_CNTRL0_ADDR_FLTR_EN,
++			     &port->regs->rx_control[0]);
++		return;
++	}
++
++	memset(diffs, 0, ETH_ALEN);
++	addr = mclist->dmi_addr; /* first MAC address */
++
++	while (--cnt && (mclist = mclist->next))
++		for (i = 0; i < ETH_ALEN; i++)
++			diffs[i] |= addr[i] ^ mclist->dmi_addr[i];
++
++	for (i = 0; i < ETH_ALEN; i++) {
++		__raw_writel(addr[i], &port->regs->mcast_addr[i]);
++		__raw_writel(~diffs[i], &port->regs->mcast_mask[i]);
++	}
++
++	__raw_writel(DEFAULT_RX_CNTRL0 | RX_CNTRL0_ADDR_FLTR_EN,
++		     &port->regs->rx_control[0]);
++}
++
++
++static int eth_ioctl(struct net_device *dev, struct ifreq *req, int cmd)
++{
++	struct port *port = netdev_priv(dev);
++	unsigned int duplex_chg;
++	int err;
++
++	if (!netif_running(dev))
++		return -EINVAL;
++	err = generic_mii_ioctl(&port->mii, if_mii(req), cmd, &duplex_chg);
++	if (duplex_chg)
++		eth_set_duplex(port);
++	return err;
++}
++
++
++static int request_queues(struct port *port)
++{
++	int err;
++
++	err = qmgr_request_queue(RXFREE_QUEUE(port->id), RX_DESCS, 0, 0);
++	if (err)
++		return err;
++
++	err = qmgr_request_queue(port->plat->rxq, RX_DESCS, 0, 0);
++	if (err)
++		goto rel_rxfree;
++
++	err = qmgr_request_queue(TX_QUEUE(port->id), TX_DESCS, 0, 0);
++	if (err)
++		goto rel_rx;
++
++	err = qmgr_request_queue(port->plat->txreadyq, TX_DESCS, 0, 0);
++	if (err)
++		goto rel_tx;
++
++	/* TX-done queue handles skbs sent out by the NPEs */
++	if (!ports_open) {
++		err = qmgr_request_queue(TXDONE_QUEUE, TXDONE_QUEUE_LEN, 0, 0);
++		if (err)
++			goto rel_txready;
++	}
++	return 0;
++
++rel_txready:
++	qmgr_release_queue(port->plat->txreadyq);
++rel_tx:
++	qmgr_release_queue(TX_QUEUE(port->id));
++rel_rx:
++	qmgr_release_queue(port->plat->rxq);
++rel_rxfree:
++	qmgr_release_queue(RXFREE_QUEUE(port->id));
++	printk(KERN_DEBUG "%s: unable to request hardware queues\n",
++	       port->netdev->name);
++	return err;
++}
++
++static void release_queues(struct port *port)
++{
++	qmgr_release_queue(RXFREE_QUEUE(port->id));
++	qmgr_release_queue(port->plat->rxq);
++	qmgr_release_queue(TX_QUEUE(port->id));
++	qmgr_release_queue(port->plat->txreadyq);
++
++	if (!ports_open)
++		qmgr_release_queue(TXDONE_QUEUE);
++}
++
++static int init_queues(struct port *port)
++{
++	int i;
++
++	if (!ports_open)
++		if (!(dma_pool = dma_pool_create(DRV_NAME, NULL,
++						 POOL_ALLOC_SIZE, 32, 0)))
++			return -ENOMEM;
++
++	if (!(port->desc_tab = dma_pool_alloc(dma_pool, GFP_KERNEL,
++					      &port->desc_tab_phys)))
++		return -ENOMEM;
++	memset(port->desc_tab, 0, POOL_ALLOC_SIZE);
++	memset(port->rx_buff_tab, 0, sizeof(port->rx_buff_tab)); /* tables */
++	memset(port->tx_buff_tab, 0, sizeof(port->tx_buff_tab));
++
++	/* Setup RX buffers */
++	for (i = 0; i < RX_DESCS; i++) {
++		struct desc *desc = rx_desc_ptr(port, i);
++		buffer_t *buff;
++		void *data;
++#ifdef __ARMEB__
++		if (!(buff = netdev_alloc_skb(port->netdev, MAX_MRU)))
++			return -ENOMEM;
++		data = buff->data;
++#else
++		if (!(buff = kmalloc(MAX_MRU, GFP_KERNEL)))
++			return -ENOMEM;
++		data = buff;
++#endif
++		desc->buf_len = MAX_MRU;
++		desc->data = dma_map_single(&port->netdev->dev, data,
++					    MAX_MRU, DMA_FROM_DEVICE);
++		if (dma_mapping_error(desc->data)) {
++			free_buffer(buff);
++			return -EIO;
++		}
++		port->rx_buff_tab[i] = buff;
++	}
++
++	return 0;
++}
++
++static void destroy_queues(struct port *port)
++{
++	int i;
++
++	if (port->desc_tab) {
++		for (i = 0; i < RX_DESCS; i++) {
++			struct desc *desc = rx_desc_ptr(port, i);
++			buffer_t *buff = port->rx_buff_tab[i];
++			if (buff) {
++				dma_unmap_single(&port->netdev->dev,
++						 desc->data, MAX_MRU,
++						 DMA_FROM_DEVICE);
++				free_buffer(buff);
++			}
++		}
++		for (i = 0; i < TX_DESCS; i++) {
++			struct desc *desc = tx_desc_ptr(port, i);
++			buffer_t *buff = port->tx_buff_tab[i];
++			if (buff) {
++				dma_unmap_tx(port, desc);
++				free_buffer(buff);
++			}
++		}
++		dma_pool_free(dma_pool, port->desc_tab, port->desc_tab_phys);
++		port->desc_tab = NULL;
++	}
++
++	if (!ports_open && dma_pool) {
++		dma_pool_destroy(dma_pool);
++		dma_pool = NULL;
++	}
++}
++
++static int eth_open(struct net_device *dev)
++{
++	struct port *port = netdev_priv(dev);
++	struct npe *npe = port->npe;
++	struct msg msg;
++	int i, err;
++
++	if (!npe_running(npe)) {
++		err = npe_load_firmware(npe, npe_name(npe), &dev->dev);
++		if (err)
++			return err;
++
++		if (npe_recv_message(npe, &msg, "ETH_GET_STATUS")) {
++			printk(KERN_ERR "%s: %s not responding\n", dev->name,
++			       npe_name(npe));
++			return -EIO;
++		}
++	}
++
++	mdio_write(dev, port->plat->phy, MII_BMCR, port->mii_bmcr);
++
++	memset(&msg, 0, sizeof(msg));
++	msg.cmd = NPE_VLAN_SETRXQOSENTRY;
++	msg.eth_id = port->id;
++	msg.byte5 = port->plat->rxq | 0x80;
++	msg.byte7 = port->plat->rxq << 4;
++	for (i = 0; i < 8; i++) {
++		msg.byte3 = i;
++		if (npe_send_recv_message(port->npe, &msg, "ETH_SET_RXQ"))
++			return -EIO;
++	}
++
++	msg.cmd = NPE_EDB_SETPORTADDRESS;
++	msg.eth_id = PHYSICAL_ID(port->id);
++	msg.byte2 = dev->dev_addr[0];
++	msg.byte3 = dev->dev_addr[1];
++	msg.byte4 = dev->dev_addr[2];
++	msg.byte5 = dev->dev_addr[3];
++	msg.byte6 = dev->dev_addr[4];
++	msg.byte7 = dev->dev_addr[5];
++	if (npe_send_recv_message(port->npe, &msg, "ETH_SET_MAC"))
++		return -EIO;
++
++	memset(&msg, 0, sizeof(msg));
++	msg.cmd = NPE_FW_SETFIREWALLMODE;
++	msg.eth_id = port->id;
++	if (npe_send_recv_message(port->npe, &msg, "ETH_SET_FIREWALL_MODE"))
++		return -EIO;
++
++	if ((err = request_queues(port)) != 0)
++		return err;
++
++	if ((err = init_queues(port)) != 0) {
++		destroy_queues(port);
++		release_queues(port);
++		return err;
++	}
++
++	for (i = 0; i < ETH_ALEN; i++)
++		__raw_writel(dev->dev_addr[i], &port->regs->hw_addr[i]);
++	__raw_writel(0x08, &port->regs->random_seed);
++	__raw_writel(0x12, &port->regs->partial_empty_threshold);
++	__raw_writel(0x30, &port->regs->partial_full_threshold);
++	__raw_writel(0x08, &port->regs->tx_start_bytes);
++	__raw_writel(0x15, &port->regs->tx_deferral);
++	__raw_writel(0x08, &port->regs->tx_2part_deferral[0]);
++	__raw_writel(0x07, &port->regs->tx_2part_deferral[1]);
++	__raw_writel(0x80, &port->regs->slot_time);
++	__raw_writel(0x01, &port->regs->int_clock_threshold);
++
++	/* Populate queues with buffers, no failure after this point */
++	for (i = 0; i < TX_DESCS; i++)
++		queue_put_desc(port->plat->txreadyq,
++			       tx_desc_phys(port, i), tx_desc_ptr(port, i));
++
++	for (i = 0; i < RX_DESCS; i++)
++		queue_put_desc(RXFREE_QUEUE(port->id),
++			       rx_desc_phys(port, i), rx_desc_ptr(port, i));
++
++	__raw_writel(TX_CNTRL1_RETRIES, &port->regs->tx_control[1]);
++	__raw_writel(DEFAULT_TX_CNTRL0, &port->regs->tx_control[0]);
++	__raw_writel(0, &port->regs->rx_control[1]);
++	__raw_writel(DEFAULT_RX_CNTRL0, &port->regs->rx_control[0]);
++
++	phy_check_media(port, 1);
++	eth_set_mcast_list(dev);
++	netif_start_queue(dev);
++	schedule_delayed_work(&port->mdio_thread, MDIO_INTERVAL);
++
++	qmgr_set_irq(port->plat->rxq, QUEUE_IRQ_SRC_NOT_EMPTY,
++		     eth_rx_irq, dev);
++	if (!ports_open) {
++		qmgr_set_irq(TXDONE_QUEUE, QUEUE_IRQ_SRC_NOT_EMPTY,
++			     eth_txdone_irq, NULL);
++		qmgr_enable_irq(TXDONE_QUEUE);
++	}
++	ports_open++;
++	netif_rx_schedule(dev); /* we may already have RX data, enables IRQ */
++	return 0;
++}
++
++static int eth_close(struct net_device *dev)
++{
++	struct port *port = netdev_priv(dev);
++	struct msg msg;
++	int buffs = RX_DESCS; /* allocated RX buffers */
++	int i;
++
++	ports_open--;
++	qmgr_disable_irq(port->plat->rxq);
++	netif_stop_queue(dev);
++
++	while (queue_get_desc(RXFREE_QUEUE(port->id), port, 0) >= 0)
++		buffs--;
++
++	memset(&msg, 0, sizeof(msg));
++	msg.cmd = NPE_SETLOOPBACK_MODE;
++	msg.eth_id = port->id;
++	msg.byte3 = 1;
++	if (npe_send_recv_message(port->npe, &msg, "ETH_ENABLE_LOOPBACK"))
++		printk(KERN_CRIT "%s: unable to enable loopback\n", dev->name);
++
++	i = 0;
++	do {			/* drain RX buffers */
++		while (queue_get_desc(port->plat->rxq, port, 0) >= 0)
++			buffs--;
++		if (!buffs)
++			break;
++		if (qmgr_stat_empty(TX_QUEUE(port->id))) {
++			/* we have to inject some packet */
++			struct desc *desc;
++			u32 phys;
++			int n = queue_get_desc(port->plat->txreadyq, port, 1);
++			BUG_ON(n < 0);
++			desc = tx_desc_ptr(port, n);
++			phys = tx_desc_phys(port, n);
++			desc->buf_len = desc->pkt_len = 1;
++			wmb();
++			queue_put_desc(TX_QUEUE(port->id), phys, desc);
++		}
++		udelay(1);
++	} while (++i < MAX_CLOSE_WAIT);
++
++	if (buffs)
++		printk(KERN_CRIT "%s: unable to drain RX queue, %i buffer(s)"
++		       " left in NPE\n", dev->name, buffs);
++#if DEBUG_CLOSE
++	if (!buffs)
++		printk(KERN_DEBUG "Draining RX queue took %i cycles\n", i);
++#endif
++
++	buffs = TX_DESCS;
++	while (queue_get_desc(TX_QUEUE(port->id), port, 1) >= 0)
++		buffs--; /* cancel TX */
++
++	i = 0;
++	do {
++		while (queue_get_desc(port->plat->txreadyq, port, 1) >= 0)
++			buffs--;
++		if (!buffs)
++			break;
++	} while (++i < MAX_CLOSE_WAIT);
++
++	if (buffs)
++		printk(KERN_CRIT "%s: unable to drain TX queue, %i buffer(s) "
++		       "left in NPE\n", dev->name, buffs);
++#if DEBUG_CLOSE
++	if (!buffs)
++		printk(KERN_DEBUG "Draining TX queues took %i cycles\n", i);
++#endif
++
++	msg.byte3 = 0;
++	if (npe_send_recv_message(port->npe, &msg, "ETH_DISABLE_LOOPBACK"))
++		printk(KERN_CRIT "%s: unable to disable loopback\n",
++		       dev->name);
++
++	port->mii_bmcr = mdio_read(dev, port->plat->phy, MII_BMCR) &
++		~(BMCR_RESET | BMCR_PDOWN); /* may have been altered */
++	mdio_write(dev, port->plat->phy, MII_BMCR,
++		   port->mii_bmcr | BMCR_PDOWN);
++
++	if (!ports_open)
++		qmgr_disable_irq(TXDONE_QUEUE);
++	cancel_rearming_delayed_work(&port->mdio_thread);
++	destroy_queues(port);
++	release_queues(port);
++	return 0;
++}
++
++static int __devinit eth_init_one(struct platform_device *pdev)
++{
++	struct port *port;
++	struct net_device *dev;
++	struct eth_plat_info *plat = pdev->dev.platform_data;
++	u32 regs_phys;
++	int err;
++
++	if (!(dev = alloc_etherdev(sizeof(struct port))))
++		return -ENOMEM;
++
++	SET_MODULE_OWNER(dev);
++	SET_NETDEV_DEV(dev, &pdev->dev);
++	port = netdev_priv(dev);
++	port->netdev = dev;
++	port->id = pdev->id;
++
++	switch (port->id) {
++	case IXP4XX_ETH_NPEA:
++		port->regs = (struct eth_regs __iomem *)IXP4XX_EthA_BASE_VIRT;
++		regs_phys  = IXP4XX_EthA_BASE_PHYS;
++		break;
++	case IXP4XX_ETH_NPEB:
++		port->regs = (struct eth_regs __iomem *)IXP4XX_EthB_BASE_VIRT;
++		regs_phys  = IXP4XX_EthB_BASE_PHYS;
++		break;
++	case IXP4XX_ETH_NPEC:
++		port->regs = (struct eth_regs __iomem *)IXP4XX_EthC_BASE_VIRT;
++		regs_phys  = IXP4XX_EthC_BASE_PHYS;
++		break;
++	default:
++		err = -ENOSYS;
++		goto err_free;
++	}
++
++	dev->open = eth_open;
++	dev->hard_start_xmit = eth_xmit;
++	dev->poll = eth_poll;
++	dev->stop = eth_close;
++	dev->get_stats = eth_stats;
++	dev->do_ioctl = eth_ioctl;
++	dev->set_multicast_list = eth_set_mcast_list;
++	dev->weight = 16;
++	dev->tx_queue_len = 100;
++
++	if (!(port->npe = npe_request(NPE_ID(port->id)))) {
++		err = -EIO;
++		goto err_free;
++	}
++
++	if (register_netdev(dev)) {
++		err = -EIO;
++		goto err_npe_rel;
++	}
++
++	port->mem_res = request_mem_region(regs_phys, REGS_SIZE, dev->name);
++	if (!port->mem_res) {
++		err = -EBUSY;
++		goto err_unreg;
++	}
++
++	port->plat = plat;
++	npe_port_tab[NPE_ID(port->id)] = port;
++	memcpy(dev->dev_addr, plat->hwaddr, ETH_ALEN);
++
++	platform_set_drvdata(pdev, dev);
++
++	__raw_writel(DEFAULT_CORE_CNTRL | CORE_RESET,
++		     &port->regs->core_control);
++	udelay(50);
++	__raw_writel(DEFAULT_CORE_CNTRL, &port->regs->core_control);
++	udelay(50);
++
++	port->mii.dev = dev;
++	port->mii.mdio_read = mdio_read;
++	port->mii.mdio_write = mdio_write;
++	port->mii.phy_id = plat->phy;
++	port->mii.phy_id_mask = 0x1F;
++	port->mii.reg_num_mask = 0x1F;
++
++	printk(KERN_INFO "%s: MII PHY %i on %s\n", dev->name, plat->phy,
++	       npe_name(port->npe));
++
++	phy_reset(dev, plat->phy);
++	port->mii_bmcr = mdio_read(dev, plat->phy, MII_BMCR) &
++		~(BMCR_RESET | BMCR_PDOWN);
++	mdio_write(dev, plat->phy, MII_BMCR, port->mii_bmcr | BMCR_PDOWN);
++
++	INIT_DELAYED_WORK(&port->mdio_thread, mdio_thread);
++	return 0;
++
++err_unreg:
++	unregister_netdev(dev);
++err_npe_rel:
++	npe_release(port->npe);
++err_free:
++	free_netdev(dev);
++	return err;
++}
++
++static int __devexit eth_remove_one(struct platform_device *pdev)
++{
++	struct net_device *dev = platform_get_drvdata(pdev);
++	struct port *port = netdev_priv(dev);
++
++	unregister_netdev(dev);
++	npe_port_tab[NPE_ID(port->id)] = NULL;
++	platform_set_drvdata(pdev, NULL);
++	npe_release(port->npe);
++	release_resource(port->mem_res);
++	free_netdev(dev);
++	return 0;
++}
++
++static struct platform_driver drv = {
++	.driver.name	= DRV_NAME,
++	.probe		= eth_init_one,
++	.remove		= eth_remove_one,
++};
++
++static int __init eth_init_module(void)
++{
++	if (!(ixp4xx_read_fuses() & IXP4XX_FUSE_NPEB_ETH0))
++		return -ENOSYS;
++
++	/* All MII PHY accesses use NPE-B Ethernet registers */
++	spin_lock_init(&mdio_lock);
++	mdio_regs = (struct eth_regs __iomem *)IXP4XX_EthB_BASE_VIRT;
++	__raw_writel(DEFAULT_CORE_CNTRL, &mdio_regs->core_control);
++
++	return platform_driver_register(&drv);
++}
++
++static void __exit eth_cleanup_module(void)
++{
++	platform_driver_unregister(&drv);
++}
++
++MODULE_AUTHOR("Krzysztof Halasa");
++MODULE_DESCRIPTION("Intel IXP4xx Ethernet driver");
++MODULE_LICENSE("GPL v2");
++module_init(eth_init_module);
++module_exit(eth_cleanup_module);
+diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/Kconfig ixp4xx-nep.git/drivers/net/wan/Kconfig
+--- linux-2.6.23/drivers/net/wan/Kconfig	2007-10-09 22:31:38.000000000 +0200
++++ ixp4xx-nep.git/drivers/net/wan/Kconfig	2007-10-22 19:20:05.000000000 +0200
+@@ -334,6 +334,15 @@
+ 
+ 	  Say Y if your card supports this feature.
+ 
++config IXP4XX_HSS
++	tristate "IXP4xx HSS (synchronous serial port) support"
++	depends on HDLC && ARM && ARCH_IXP4XX
++	select IXP4XX_NPE
++	select IXP4XX_QMGR
++	help
++	  Say Y here if you want to use built-in HSS ports
++	  on IXP4xx processor.
++
+ config DLCI
+ 	tristate "Frame Relay DLCI support"
+ 	---help---
+diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/Makefile ixp4xx-nep.git/drivers/net/wan/Makefile
+--- linux-2.6.23/drivers/net/wan/Makefile	2007-10-09 22:31:38.000000000 +0200
++++ ixp4xx-nep.git/drivers/net/wan/Makefile	2007-10-22 19:20:05.000000000 +0200
+@@ -42,6 +42,7 @@
+ obj-$(CONFIG_WANXL)		+= wanxl.o
+ obj-$(CONFIG_PCI200SYN)		+= pci200syn.o
+ obj-$(CONFIG_PC300TOO)		+= pc300too.o
++obj-$(CONFIG_IXP4XX_HSS)	+= ixp4xx_hss.o
+ 
+ clean-files := wanxlfw.inc
+ $(obj)/wanxl.o:	$(obj)/wanxlfw.inc
+diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx-nep.git/drivers/net/wan/ixp4xx_hss.c
+--- linux-2.6.23/drivers/net/wan/ixp4xx_hss.c	1970-01-01 01:00:00.000000000 +0100
++++ ixp4xx-nep.git/drivers/net/wan/ixp4xx_hss.c	2007-10-22 19:20:05.000000000 +0200
+@@ -0,0 +1,1248 @@
++/*
++ * Intel IXP4xx HSS (synchronous serial port) driver for Linux
++ *
++ * Copyright (C) 2007 Krzysztof Halasa <khc@pm.waw.pl>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of version 2 of the GNU General Public License
++ * as published by the Free Software Foundation.
++ */
++
++#include <linux/dma-mapping.h>
++#include <linux/dmapool.h>
++#include <linux/kernel.h>
++#include <linux/hdlc.h>
++#include <linux/platform_device.h>
++#include <asm/io.h>
++#include <asm/arch/npe.h>
++#include <asm/arch/qmgr.h>
++
++#define DEBUG_QUEUES		0
++#define DEBUG_DESC		0
++#define DEBUG_RX		0
++#define DEBUG_TX		0
++#define DEBUG_PKT_BYTES		0
++#define DEBUG_CLOSE		0
++
++#define DRV_NAME		"ixp4xx_hss"
++
++#define PKT_EXTRA_FLAGS		0 /* orig 1 */
++#define FRAME_SYNC_OFFSET	0 /* unused, channelized only */
++#define FRAME_SYNC_SIZE		1024
++#define PKT_NUM_PIPES		1 /* 1, 2 or 4 */
++#define PKT_PIPE_FIFO_SIZEW	4 /* total 4 dwords per HSS */
++
++#define RX_DESCS		16 /* also length of all RX queues */
++#define TX_DESCS		16 /* also length of all TX queues */
++
++#define POOL_ALLOC_SIZE		(sizeof(struct desc) * (RX_DESCS + TX_DESCS))
++#define RX_SIZE			(HDLC_MAX_MRU + 4) /* NPE needs more space */
++#define MAX_CLOSE_WAIT		1000 /* microseconds */
++
++/* Queue IDs */
++#define HSS0_CHL_RXTRIG_QUEUE	12	/* orig size = 32 dwords */
++#define HSS0_PKT_RX_QUEUE	13	/* orig size = 32 dwords */
++#define HSS0_PKT_TX0_QUEUE	14	/* orig size = 16 dwords */
++#define HSS0_PKT_TX1_QUEUE	15
++#define HSS0_PKT_TX2_QUEUE	16
++#define HSS0_PKT_TX3_QUEUE	17
++#define HSS0_PKT_RXFREE0_QUEUE	18	/* orig size = 16 dwords */
++#define HSS0_PKT_RXFREE1_QUEUE	19
++#define HSS0_PKT_RXFREE2_QUEUE	20
++#define HSS0_PKT_RXFREE3_QUEUE	21
++#define HSS0_PKT_TXDONE_QUEUE	22	/* orig size = 64 dwords */
++
++#define HSS1_CHL_RXTRIG_QUEUE	10
++#define HSS1_PKT_RX_QUEUE	0
++#define HSS1_PKT_TX0_QUEUE	5
++#define HSS1_PKT_TX1_QUEUE	6
++#define HSS1_PKT_TX2_QUEUE	7
++#define HSS1_PKT_TX3_QUEUE	8
++#define HSS1_PKT_RXFREE0_QUEUE	1
++#define HSS1_PKT_RXFREE1_QUEUE	2
++#define HSS1_PKT_RXFREE2_QUEUE	3
++#define HSS1_PKT_RXFREE3_QUEUE	4
++#define HSS1_PKT_TXDONE_QUEUE	9
++
++#define NPE_PKT_MODE_HDLC		0
++#define NPE_PKT_MODE_RAW		1
++#define NPE_PKT_MODE_56KMODE		2
++#define NPE_PKT_MODE_56KENDIAN_MSB	4
++
++/* PKT_PIPE_HDLC_CFG_WRITE flags */
++#define PKT_HDLC_IDLE_ONES		0x1 /* default = flags */
++#define PKT_HDLC_CRC_32			0x2 /* default = CRC-16 */
++#define PKT_HDLC_MSB_ENDIAN		0x4 /* default = LE */
++
++
++/* hss_config, PCRs */
++/* Frame sync sampling, default = active low */
++#define PCR_FRM_SYNC_ACTIVE_HIGH	0x40000000
++#define PCR_FRM_SYNC_FALLINGEDGE	0x80000000
++#define PCR_FRM_SYNC_RISINGEDGE		0xC0000000
++
++/* Frame sync pin: input (default) or output generated off a given clk edge */
++#define PCR_FRM_SYNC_OUTPUT_FALLING	0x20000000
++#define PCR_FRM_SYNC_OUTPUT_RISING	0x30000000
++
++/* Frame and data clock sampling on edge, default = falling */
++#define PCR_FCLK_EDGE_RISING		0x08000000
++#define PCR_DCLK_EDGE_RISING		0x04000000
++
++/* Clock direction, default = input */
++#define PCR_SYNC_CLK_DIR_OUTPUT		0x02000000
++
++/* Generate/Receive frame pulses, default = enabled */
++#define PCR_FRM_PULSE_DISABLED		0x01000000
++
++ /* Data rate is full (default) or half the configured clk speed */
++#define PCR_HALF_CLK_RATE		0x00200000
++
++/* Invert data between NPE and HSS FIFOs? (default = no) */
++#define PCR_DATA_POLARITY_INVERT	0x00100000
++
++/* TX/RX endianness, default = LSB */
++#define PCR_MSB_ENDIAN			0x00080000
++
++/* Normal (default) / open drain mode (TX only) */
++#define PCR_TX_PINS_OPEN_DRAIN		0x00040000
++
++/* No framing bit transmitted and expected on RX? (default = framing bit) */
++#define PCR_SOF_NO_FBIT			0x00020000
++
++/* Drive data pins? */
++#define PCR_TX_DATA_ENABLE		0x00010000
++
++/* Voice 56k type: drive the data pins low (default), high, high Z */
++#define PCR_TX_V56K_HIGH		0x00002000
++#define PCR_TX_V56K_HIGH_IMP		0x00004000
++
++/* Unassigned type: drive the data pins low (default), high, high Z */
++#define PCR_TX_UNASS_HIGH		0x00000800
++#define PCR_TX_UNASS_HIGH_IMP		0x00001000
++
++/* T1 @ 1.544MHz only: Fbit dictated in FIFO (default) or high Z */
++#define PCR_TX_FB_HIGH_IMP		0x00000400
++
++/* 56k data endiannes - which bit unused: high (default) or low */
++#define PCR_TX_56KE_BIT_0_UNUSED	0x00000200
++
++/* 56k data transmission type: 32/8 bit data (default) or 56K data */
++#define PCR_TX_56KS_56K_DATA		0x00000100
++
++/* hss_config, cCR */
++/* Number of packetized clients, default = 1 */
++#define CCR_NPE_HFIFO_2_HDLC		0x04000000
++#define CCR_NPE_HFIFO_3_OR_4HDLC	0x08000000
++
++/* default = no loopback */
++#define CCR_LOOPBACK			0x02000000
++
++/* HSS number, default = 0 (first) */
++#define CCR_SECOND_HSS			0x01000000
++
++
++/* hss_config, clkCR: main:10, num:10, denom:12 */
++#define CLK42X_SPEED_EXP	((0x3FF << 22) | (  2 << 12) |   15) /*65 KHz*/
++
++#define CLK42X_SPEED_512KHZ	((  130 << 22) | (  2 << 12) |   15)
++#define CLK42X_SPEED_1536KHZ	((   43 << 22) | ( 18 << 12) |   47)
++#define CLK42X_SPEED_1544KHZ	((   43 << 22) | ( 33 << 12) |  192)
++#define CLK42X_SPEED_2048KHZ	((   32 << 22) | ( 34 << 12) |   63)
++#define CLK42X_SPEED_4096KHZ	((   16 << 22) | ( 34 << 12) |  127)
++#define CLK42X_SPEED_8192KHZ	((    8 << 22) | ( 34 << 12) |  255)
++
++#define CLK46X_SPEED_512KHZ	((  130 << 22) | ( 24 << 12) |  127)
++#define CLK46X_SPEED_1536KHZ	((   43 << 22) | (152 << 12) |  383)
++#define CLK46X_SPEED_1544KHZ	((   43 << 22) | ( 66 << 12) |  385)
++#define CLK46X_SPEED_2048KHZ	((   32 << 22) | (280 << 12) |  511)
++#define CLK46X_SPEED_4096KHZ	((   16 << 22) | (280 << 12) | 1023)
++#define CLK46X_SPEED_8192KHZ	((    8 << 22) | (280 << 12) | 2047)
++
++
++/* hss_config, LUTs: default = unassigned */
++#define TDMMAP_HDLC		1	/* HDLC - packetised */
++#define TDMMAP_VOICE56K		2	/* Voice56K - channelised */
++#define TDMMAP_VOICE64K		3	/* Voice64K - channelised */
++
++
++/* NPE command codes */
++/* writes the ConfigWord value to the location specified by offset */
++#define PORT_CONFIG_WRITE			0x40
++
++/* triggers the NPE to load the contents of the configuration table */
++#define PORT_CONFIG_LOAD			0x41
++
++/* triggers the NPE to return an HssErrorReadResponse message */
++#define PORT_ERROR_READ				0x42
++
++/* reset NPE internal status and enable the HssChannelized operation */
++#define CHAN_FLOW_ENABLE			0x43
++#define CHAN_FLOW_DISABLE			0x44
++#define CHAN_IDLE_PATTERN_WRITE			0x45
++#define CHAN_NUM_CHANS_WRITE			0x46
++#define CHAN_RX_BUF_ADDR_WRITE			0x47
++#define CHAN_RX_BUF_CFG_WRITE			0x48
++#define CHAN_TX_BLK_CFG_WRITE			0x49
++#define CHAN_TX_BUF_ADDR_WRITE			0x4A
++#define CHAN_TX_BUF_SIZE_WRITE			0x4B
++#define CHAN_TSLOTSWITCH_ENABLE			0x4C
++#define CHAN_TSLOTSWITCH_DISABLE		0x4D
++
++/* downloads the gainWord value for a timeslot switching channel associated
++   with bypassNum */
++#define CHAN_TSLOTSWITCH_GCT_DOWNLOAD		0x4E
++
++/* triggers the NPE to reset internal status and enable the HssPacketized
++   operation for the flow specified by pPipe */
++#define PKT_PIPE_FLOW_ENABLE			0x50
++#define PKT_PIPE_FLOW_DISABLE			0x51
++#define PKT_NUM_PIPES_WRITE			0x52
++#define PKT_PIPE_FIFO_SIZEW_WRITE		0x53
++#define PKT_PIPE_HDLC_CFG_WRITE			0x54
++#define PKT_PIPE_IDLE_PATTERN_WRITE		0x55
++#define PKT_PIPE_RX_SIZE_WRITE			0x56
++#define PKT_PIPE_MODE_WRITE			0x57
++
++
++#define HSS_TIMESLOTS		128
++#define HSS_LUT_BITS		2
++
++/* HDLC packet status values - desc->status */
++#define ERR_SHUTDOWN		1 /* stop or shutdown occurrance */
++#define ERR_HDLC_ALIGN		2 /* HDLC alignment error */
++#define ERR_HDLC_FCS		3 /* HDLC Frame Check Sum error */
++#define ERR_RXFREE_Q_EMPTY	4 /* RX-free queue became empty while receiving
++				     this packet (if buf_len < pkt_len) */
++#define ERR_HDLC_TOO_LONG	5 /* HDLC frame size too long */
++#define ERR_HDLC_ABORT		6 /* abort sequence received */
++#define ERR_DISCONNECTING	7 /* disconnect is in progress */
++
++
++#ifdef __ARMEB__
++typedef struct sk_buff buffer_t;
++#define free_buffer dev_kfree_skb
++#define free_buffer_irq dev_kfree_skb_irq
++#else
++typedef void buffer_t;
++#define free_buffer kfree
++#define free_buffer_irq kfree
++#endif
++
++struct port {
++	struct npe *npe;
++	struct net_device *netdev;
++	struct hss_plat_info *plat;
++	buffer_t *rx_buff_tab[RX_DESCS], *tx_buff_tab[TX_DESCS];
++	struct desc *desc_tab;	/* coherent */
++	u32 desc_tab_phys;
++	sync_serial_settings settings;
++	int id;
++	u8 hdlc_cfg;
++};
++
++/* NPE message structure */
++struct msg {
++#ifdef __ARMEB__
++	u8 cmd, unused, hss_port, index;
++	union {
++		struct { u8 data8a, data8b, data8c, data8d; };
++		struct { u16 data16a, data16b; };
++		struct { u32 data32; };
++	};
++#else
++	u8 index, hss_port, unused, cmd;
++	union {
++		struct { u8 data8d, data8c, data8b, data8a; };
++		struct { u16 data16b, data16a; };
++		struct { u32 data32; };
++	};
++#endif
++};
++
++/* HDLC packet descriptor */
++struct desc {
++	u32 next;		/* pointer to next buffer, unused */
++
++#ifdef __ARMEB__
++	u16 buf_len;		/* buffer length */
++	u16 pkt_len;		/* packet length */
++	u32 data;		/* pointer to data buffer in RAM */
++	u8 status;
++	u8 error_count;
++	u16 __reserved;
++#else
++	u16 pkt_len;		/* packet length */
++	u16 buf_len;		/* buffer length */
++	u32 data;		/* pointer to data buffer in RAM */
++	u16 __reserved;
++	u8 error_count;
++	u8 status;
++#endif
++	u32 __reserved1[4];
++};
++
++
++#define rx_desc_phys(port, n)	((port)->desc_tab_phys +		\
++				 (n) * sizeof(struct desc))
++#define rx_desc_ptr(port, n)	(&(port)->desc_tab[n])
++
++#define tx_desc_phys(port, n)	((port)->desc_tab_phys +		\
++				 ((n) + RX_DESCS) * sizeof(struct desc))
++#define tx_desc_ptr(port, n)	(&(port)->desc_tab[(n) + RX_DESCS])
++
++#ifndef __ARMEB__
++static inline void memcpy_swab32(u32 *dest, u32 *src, int cnt)
++{
++	int i;
++	for (i = 0; i < cnt; i++)
++		dest[i] = swab32(src[i]);
++}
++#endif
++
++static int ports_open;
++static struct dma_pool *dma_pool;
++
++static struct {
++	int tx, txdone, rx, rxfree;
++}queue_ids[2] = {{ HSS0_PKT_TX0_QUEUE, HSS0_PKT_TXDONE_QUEUE,
++		   HSS0_PKT_RX_QUEUE, HSS0_PKT_RXFREE0_QUEUE },
++		 { HSS1_PKT_TX0_QUEUE, HSS1_PKT_TXDONE_QUEUE,
++		   HSS1_PKT_RX_QUEUE, HSS1_PKT_RXFREE0_QUEUE },
++};
++
++
++static inline struct port* dev_to_port(struct net_device *dev)
++{
++	return dev_to_hdlc(dev)->priv;
++}
++
++
++static inline void debug_pkt(struct net_device *dev, const char *func,
++			     u8 *data, int len)
++{
++#if DEBUG_PKT_BYTES
++	int i;
++
++	printk(KERN_DEBUG "%s: %s(%i) ", dev->name, func, len);
++	for (i = 0; i < len; i++) {
++		if (i >= DEBUG_PKT_BYTES)
++			break;
++		printk("%s%02X", !(i % 4) ? " " : "", data[i]);
++	}
++	printk("\n");
++#endif
++}
++
++
++static inline void debug_desc(u32 phys, struct desc *desc)
++{
++#if DEBUG_DESC
++	printk(KERN_DEBUG "%X: %X %3X %3X %08X %X %X\n",
++	       phys, desc->next, desc->buf_len, desc->pkt_len,
++	       desc->data, desc->status, desc->error_count);
++#endif
++}
++
++static inline void debug_queue(unsigned int queue, int is_get, u32 phys)
++{
++#if DEBUG_QUEUES
++	static struct {
++		int queue;
++		char *name;
++	} names[] = {
++		{ HSS0_PKT_TX0_QUEUE, "TX#0 " },
++		{ HSS0_PKT_TXDONE_QUEUE, "TX-done#0 " },
++		{ HSS0_PKT_RX_QUEUE, "RX#0 " },
++		{ HSS0_PKT_RXFREE0_QUEUE, "RX-free#0 " },
++		{ HSS1_PKT_TX0_QUEUE, "TX#1 " },
++		{ HSS1_PKT_TXDONE_QUEUE, "TX-done#1 " },
++		{ HSS1_PKT_RX_QUEUE, "RX#1 " },
++		{ HSS1_PKT_RXFREE0_QUEUE, "RX-free#1 " },
++	};
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(names); i++)
++		if (names[i].queue == queue)
++			break;
++
++	printk(KERN_DEBUG "Queue %i %s%s %X\n", queue,
++	       i < ARRAY_SIZE(names) ? names[i].name : "",
++	       is_get ? "->" : "<-", phys);
++#endif
++}
++
++static inline u32 queue_get_entry(unsigned int queue)
++{
++	u32 phys = qmgr_get_entry(queue);
++	debug_queue(queue, 1, phys);
++	return phys;
++}
++
++static inline int queue_get_desc(unsigned int queue, struct port *port,
++				 int is_tx)
++{
++	u32 phys, tab_phys, n_desc;
++	struct desc *tab;
++
++	if (!(phys = queue_get_entry(queue)))
++		return -1;
++
++	BUG_ON(phys & 0x1F);
++	tab_phys = is_tx ? tx_desc_phys(port, 0) : rx_desc_phys(port, 0);
++	tab = is_tx ? tx_desc_ptr(port, 0) : rx_desc_ptr(port, 0);
++	n_desc = (phys - tab_phys) / sizeof(struct desc);
++	BUG_ON(n_desc >= (is_tx ? TX_DESCS : RX_DESCS));
++	debug_desc(phys, &tab[n_desc]);
++	BUG_ON(tab[n_desc].next);
++	return n_desc;
++}
++
++static inline void queue_put_desc(unsigned int queue, u32 phys,
++				  struct desc *desc)
++{
++	debug_queue(queue, 0, phys);
++	debug_desc(phys, desc);
++	BUG_ON(phys & 0x1F);
++	qmgr_put_entry(queue, phys);
++	BUG_ON(qmgr_stat_overflow(queue));
++}
++
++
++static inline void dma_unmap_tx(struct port *port, struct desc *desc)
++{
++#ifdef __ARMEB__
++	dma_unmap_single(&port->netdev->dev, desc->data,
++			 desc->buf_len, DMA_TO_DEVICE);
++#else
++	dma_unmap_single(&port->netdev->dev, desc->data & ~3,
++			 ALIGN((desc->data & 3) + desc->buf_len, 4),
++			 DMA_TO_DEVICE);
++#endif
++}
++
++
++static void hss_set_carrier(void *pdev, int carrier)
++{
++	struct net_device *dev = pdev;
++	if (carrier)
++		netif_carrier_on(dev);
++	else
++		netif_carrier_off(dev);
++}
++
++static void hss_rx_irq(void *pdev)
++{
++	struct net_device *dev = pdev;
++	struct port *port = dev_to_port(dev);
++
++#if DEBUG_RX
++	printk(KERN_DEBUG "%s: hss_rx_irq\n", dev->name);
++#endif
++	qmgr_disable_irq(queue_ids[port->id].rx);
++	netif_rx_schedule(dev);
++}
++
++static int hss_poll(struct net_device *dev, int *budget)
++{
++	struct port *port = dev_to_port(dev);
++	unsigned int rxq = queue_ids[port->id].rx;
++	unsigned int rxfreeq = queue_ids[port->id].rxfree;
++	struct net_device_stats *stats = hdlc_stats(dev);
++	int quota = dev->quota, received = 0;
++
++#if DEBUG_RX
++	printk(KERN_DEBUG "%s: hss_poll\n", dev->name);
++#endif
++
++	while (quota) {
++		struct sk_buff *skb;
++		struct desc *desc;
++		int n;
++#ifdef __ARMEB__
++		struct sk_buff *temp;
++		u32 phys;
++#endif
++
++		if ((n = queue_get_desc(rxq, port, 0)) < 0) {
++			dev->quota -= received;	/* No packet received */
++			*budget -= received;
++			received = 0;
++#if DEBUG_RX
++			printk(KERN_DEBUG "%s: hss_poll netif_rx_complete\n",
++			       dev->name);
++#endif
++			netif_rx_complete(dev);
++			qmgr_enable_irq(rxq);
++			if (!qmgr_stat_empty(rxq) &&
++			    netif_rx_reschedule(dev, 0)) {
++#if DEBUG_RX
++				printk(KERN_DEBUG "%s: hss_poll"
++				       " netif_rx_reschedule successed\n",
++				       dev->name);
++#endif
++				qmgr_disable_irq(rxq);
++				continue;
++			}
++#if DEBUG_RX
++			printk(KERN_DEBUG "%s: hss_poll all done\n",
++			       dev->name);
++#endif
++			return 0; /* all work done */
++		}
++
++		desc = rx_desc_ptr(port, n);
++
++		if (desc->error_count) /* FIXME - remove printk */
++			printk(KERN_DEBUG "%s: hss_poll status 0x%02X errors"
++			       " %u\n", dev->name, desc->status,
++			       desc->error_count);
++
++		skb = NULL;
++		switch (desc->status) {
++		case 0:
++#ifdef __ARMEB__
++			if ((skb = netdev_alloc_skb(dev, RX_SIZE)) != NULL) {
++				phys = dma_map_single(&dev->dev, skb->data,
++						      RX_SIZE,
++						      DMA_FROM_DEVICE);
++				if (dma_mapping_error(phys)) {
++					dev_kfree_skb(skb);
++					skb = NULL;
++				}
++			}
++#else
++			skb = netdev_alloc_skb(dev, desc->pkt_len);
++#endif
++			if (!skb)
++				stats->rx_dropped++;
++			break;
++		case ERR_HDLC_ALIGN:
++		case ERR_HDLC_ABORT:
++			stats->rx_frame_errors++;
++			stats->rx_errors++;
++			break;
++		case ERR_HDLC_FCS:
++			stats->rx_crc_errors++;
++			stats->rx_errors++;
++			break;
++		case ERR_HDLC_TOO_LONG:
++			stats->rx_length_errors++;
++			stats->rx_errors++;
++			break;
++		default:	/* FIXME - remove printk */
++			printk(KERN_ERR "%s: hss_poll(): status 0x%02X errors"
++			       " %u\n", dev->name, desc->status,
++			       desc->error_count);
++			stats->rx_errors++;
++		}
++
++		if (!skb) {
++			/* put the desc back on RX-ready queue */
++			desc->buf_len = RX_SIZE;
++			desc->pkt_len = desc->status = 0;
++			queue_put_desc(rxfreeq, rx_desc_phys(port, n), desc);
++			continue;
++		}
++
++		/* process received frame */
++#ifdef __ARMEB__
++		temp = skb;
++		skb = port->rx_buff_tab[n];
++		dma_unmap_single(&dev->dev, desc->data,
++				 RX_SIZE, DMA_FROM_DEVICE);
++#else
++		dma_sync_single(&dev->dev, desc->data,
++				RX_SIZE, DMA_FROM_DEVICE);
++		memcpy_swab32((u32 *)skb->data, (u32 *)port->rx_buff_tab[n],
++			      ALIGN(desc->pkt_len, 4) / 4);
++#endif
++		skb_put(skb, desc->pkt_len);
++
++		debug_pkt(dev, "hss_poll", skb->data, skb->len);
++
++		skb->protocol = hdlc_type_trans(skb, dev);
++		dev->last_rx = jiffies;
++		stats->rx_packets++;
++		stats->rx_bytes += skb->len;
++		netif_receive_skb(skb);
++
++		/* put the new buffer on RX-free queue */
++#ifdef __ARMEB__
++		port->rx_buff_tab[n] = temp;
++		desc->data = phys;
++#endif
++		desc->buf_len = RX_SIZE;
++		desc->pkt_len = 0;
++		queue_put_desc(rxfreeq, rx_desc_phys(port, n), desc);
++		quota--;
++		received++;
++	}
++	dev->quota -= received;
++	*budget -= received;
++#if DEBUG_RX
++	printk(KERN_DEBUG "hss_poll(): end, not all work done\n");
++#endif
++	return 1;		/* not all work done */
++}
++
++
++static void hss_txdone_irq(void *pdev)
++{
++	struct net_device *dev = pdev;
++	struct port *port = dev_to_port(dev);
++	struct net_device_stats *stats = hdlc_stats(dev);
++	int n_desc;
++
++#if DEBUG_TX
++	printk(KERN_DEBUG DRV_NAME ": hss_txdone_irq\n");
++#endif
++	while ((n_desc = queue_get_desc(queue_ids[port->id].txdone,
++					port, 1)) >= 0) {
++		struct desc *desc;
++		int start;
++
++		desc = tx_desc_ptr(port, n_desc);
++
++		stats->tx_packets++;
++		stats->tx_bytes += desc->pkt_len;
++
++		dma_unmap_tx(port, desc);
++#if DEBUG_TX
++		printk(KERN_DEBUG "%s: hss_txdone_irq free %p\n",
++		       port->netdev->name, port->tx_buff_tab[n_desc]);
++#endif
++		free_buffer_irq(port->tx_buff_tab[n_desc]);
++		port->tx_buff_tab[n_desc] = NULL;
++
++		start = qmgr_stat_empty(port->plat->txreadyq);
++		queue_put_desc(port->plat->txreadyq,
++			       tx_desc_phys(port, n_desc), desc);
++		if (start) {
++#if DEBUG_TX
++			printk(KERN_DEBUG "%s: hss_txdone_irq xmit ready\n",
++			       port->netdev->name);
++#endif
++			netif_wake_queue(port->netdev);
++		}
++	}
++}
++
++static int hss_xmit(struct sk_buff *skb, struct net_device *dev)
++{
++	struct port *port = dev_to_port(dev);
++	struct net_device_stats *stats = hdlc_stats(dev);
++	unsigned int txreadyq = port->plat->txreadyq;
++	int len, offset, bytes, n;
++	void *mem;
++	u32 phys;
++	struct desc *desc;
++
++#if DEBUG_TX
++	printk(KERN_DEBUG "%s: hss_xmit\n", dev->name);
++#endif
++
++	if (unlikely(skb->len > HDLC_MAX_MRU)) {
++		dev_kfree_skb(skb);
++		stats->tx_errors++;
++		return NETDEV_TX_OK;
++	}
++
++	debug_pkt(dev, "hss_xmit", skb->data, skb->len);
++
++	len = skb->len;
++#ifdef __ARMEB__
++	offset = 0; /* no need to keep alignment */
++	bytes = len;
++	mem = skb->data;
++#else
++	offset = (int)skb->data & 3; /* keep 32-bit alignment */
++	bytes = ALIGN(offset + len, 4);
++	if (!(mem = kmalloc(bytes, GFP_ATOMIC))) {
++		dev_kfree_skb(skb);
++		stats->tx_dropped++;
++		return NETDEV_TX_OK;
++	}
++	memcpy_swab32(mem, (u32 *)((int)skb->data & ~3), bytes / 4);
++	dev_kfree_skb(skb);
++#endif
++
++	phys = dma_map_single(&dev->dev, mem, bytes, DMA_TO_DEVICE);
++	if (dma_mapping_error(phys)) {
++#ifdef __ARMEB__
++		dev_kfree_skb(skb);
++#else
++		kfree(mem);
++#endif
++		stats->tx_dropped++;
++		return NETDEV_TX_OK;
++	}
++
++	n = queue_get_desc(txreadyq, port, 1);
++	BUG_ON(n < 0);
++	desc = tx_desc_ptr(port, n);
++
++#ifdef __ARMEB__
++	port->tx_buff_tab[n] = skb;
++#else
++	port->tx_buff_tab[n] = mem;
++#endif
++	desc->data = phys + offset;
++	desc->buf_len = desc->pkt_len = len;
++
++	wmb();
++	queue_put_desc(queue_ids[port->id].tx, tx_desc_phys(port, n), desc);
++	dev->trans_start = jiffies;
++
++	if (qmgr_stat_empty(txreadyq)) {
++#if DEBUG_TX
++		printk(KERN_DEBUG "%s: hss_xmit queue full\n", dev->name);
++#endif
++		netif_stop_queue(dev);
++		/* we could miss TX ready interrupt */
++		if (!qmgr_stat_empty(txreadyq)) {
++#if DEBUG_TX
++			printk(KERN_DEBUG "%s: hss_xmit ready again\n",
++			       dev->name);
++#endif
++			netif_wake_queue(dev);
++		}
++	}
++
++#if DEBUG_TX
++	printk(KERN_DEBUG "%s: hss_xmit end\n", dev->name);
++#endif
++	return NETDEV_TX_OK;
++}
++
++
++static int request_queues(struct port *port)
++{
++	int err;
++
++	err = qmgr_request_queue(queue_ids[port->id].rxfree, RX_DESCS, 0, 0);
++	if (err)
++		return err;
++
++	err = qmgr_request_queue(queue_ids[port->id].rx, RX_DESCS, 0, 0);
++	if (err)
++		goto rel_rxfree;
++
++	err = qmgr_request_queue(queue_ids[port->id].tx, TX_DESCS, 0, 0);
++	if (err)
++		goto rel_rx;
++
++	err = qmgr_request_queue(port->plat->txreadyq, TX_DESCS, 0, 0);
++	if (err)
++		goto rel_tx;
++
++	err = qmgr_request_queue(queue_ids[port->id].txdone, TX_DESCS, 0, 0);
++	if (err)
++		goto rel_txready;
++	return 0;
++
++rel_txready:
++	qmgr_release_queue(port->plat->txreadyq);
++rel_tx:
++	qmgr_release_queue(queue_ids[port->id].tx);
++rel_rx:
++	qmgr_release_queue(queue_ids[port->id].rx);
++rel_rxfree:
++	qmgr_release_queue(queue_ids[port->id].rxfree);
++	printk(KERN_DEBUG "%s: unable to request hardware queues\n",
++	       port->netdev->name);
++	return err;
++}
++
++static void release_queues(struct port *port)
++{
++	qmgr_release_queue(queue_ids[port->id].rxfree);
++	qmgr_release_queue(queue_ids[port->id].rx);
++	qmgr_release_queue(queue_ids[port->id].txdone);
++	qmgr_release_queue(queue_ids[port->id].tx);
++	qmgr_release_queue(port->plat->txreadyq);
++}
++
++static int init_queues(struct port *port)
++{
++	int i;
++
++	if (!ports_open)
++		if (!(dma_pool = dma_pool_create(DRV_NAME, NULL,
++						 POOL_ALLOC_SIZE, 32, 0)))
++			return -ENOMEM;
++
++	if (!(port->desc_tab = dma_pool_alloc(dma_pool, GFP_KERNEL,
++					      &port->desc_tab_phys)))
++		return -ENOMEM;
++	memset(port->desc_tab, 0, POOL_ALLOC_SIZE);
++	memset(port->rx_buff_tab, 0, sizeof(port->rx_buff_tab)); /* tables */
++	memset(port->tx_buff_tab, 0, sizeof(port->tx_buff_tab));
++
++	/* Setup RX buffers */
++	for (i = 0; i < RX_DESCS; i++) {
++		struct desc *desc = rx_desc_ptr(port, i);
++		buffer_t *buff;
++		void *data;
++#ifdef __ARMEB__
++		if (!(buff = netdev_alloc_skb(port->netdev, RX_SIZE)))
++			return -ENOMEM;
++		data = buff->data;
++#else
++		if (!(buff = kmalloc(RX_SIZE, GFP_KERNEL)))
++			return -ENOMEM;
++		data = buff;
++#endif
++		desc->buf_len = RX_SIZE;
++		desc->data = dma_map_single(&port->netdev->dev, data,
++					    RX_SIZE, DMA_FROM_DEVICE);
++		if (dma_mapping_error(desc->data)) {
++			free_buffer(buff);
++			return -EIO;
++		}
++		port->rx_buff_tab[i] = buff;
++	}
++
++	return 0;
++}
++
++static void destroy_queues(struct port *port)
++{
++	int i;
++
++	if (port->desc_tab) {
++		for (i = 0; i < RX_DESCS; i++) {
++			struct desc *desc = rx_desc_ptr(port, i);
++			buffer_t *buff = port->rx_buff_tab[i];
++			if (buff) {
++				dma_unmap_single(&port->netdev->dev,
++						 desc->data, RX_SIZE,
++						 DMA_FROM_DEVICE);
++				free_buffer(buff);
++			}
++		}
++		for (i = 0; i < TX_DESCS; i++) {
++			struct desc *desc = tx_desc_ptr(port, i);
++			buffer_t *buff = port->tx_buff_tab[i];
++			if (buff) {
++				dma_unmap_tx(port, desc);
++				free_buffer(buff);
++			}
++		}
++		dma_pool_free(dma_pool, port->desc_tab, port->desc_tab_phys);
++		port->desc_tab = NULL;
++	}
++
++	if (!ports_open && dma_pool) {
++		dma_pool_destroy(dma_pool);
++		dma_pool = NULL;
++	}
++}
++
++static int hss_open(struct net_device *dev)
++{
++	struct port *port = dev_to_port(dev);
++	struct npe *npe = port->npe;
++	struct msg msg;
++	int i, err;
++
++	if (!npe_running(npe)) {
++		err = npe_load_firmware(npe, npe_name(npe), &dev->dev);
++		if (err)
++			return err;
++	}
++
++	if ((err = hdlc_open(dev)) != 0)
++		return err;
++
++	if (port->plat->open)
++		if ((err = port->plat->open(port->id, port->netdev,
++					    hss_set_carrier)) != 0)
++			goto err_hdlc_close;
++
++	/* HSS main configuration */
++	memset(&msg, 0, sizeof(msg));
++	msg.cmd = PORT_CONFIG_WRITE;
++	msg.hss_port = port->id;
++	msg.index = 0;		/* offset in HSS config */
++
++	msg.data32 = PCR_FRM_PULSE_DISABLED |
++		PCR_SOF_NO_FBIT |
++		PCR_MSB_ENDIAN |
++		PCR_TX_DATA_ENABLE;
++
++	if (port->settings.clock_type == CLOCK_INT)
++		msg.data32 |= PCR_SYNC_CLK_DIR_OUTPUT;
++
++	if ((err = npe_send_message(npe, &msg, "HSS_SET_TX_PCR") != 0))
++		goto err_plat_close; /* 0: TX PCR */
++
++	msg.index = 4;
++	msg.data32 ^= PCR_TX_DATA_ENABLE | PCR_DCLK_EDGE_RISING;
++	if ((err = npe_send_message(npe, &msg, "HSS_SET_RX_PCR") != 0))
++		goto err_plat_close; /* 4: RX PCR */
++
++	msg.index = 8;
++	msg.data32 = (port->settings.loopback ? CCR_LOOPBACK : 0) |
++		(port->id ? CCR_SECOND_HSS : 0);
++	if ((err = npe_send_message(npe, &msg, "HSS_SET_CORE_CR") != 0))
++		goto err_plat_close; /* 8: Core CR */
++
++	msg.index = 12;
++	msg.data32 = CLK42X_SPEED_2048KHZ /* FIXME */;
++	if ((err = npe_send_message(npe, &msg, "HSS_SET_CLK_CR") != 0))
++		goto err_plat_close; /* 12: CLK CR */
++
++	msg.data32 = (FRAME_SYNC_OFFSET << 16) | (FRAME_SYNC_SIZE - 1);
++	msg.index = 16;
++	if ((err = npe_send_message(npe, &msg, "HSS_SET_TX_FCR") != 0))
++		goto err_plat_close; /* 16: TX FCR */
++
++	msg.index = 20;
++	if ((err = npe_send_message(npe, &msg, "HSS_SET_RX_FCR") != 0))
++		goto err_plat_close; /* 20: RX FCR */
++
++	msg.data32 = 0;		/* Fill LUT with HDLC timeslots */
++	for (i = 0; i < 32 / HSS_LUT_BITS; i++)
++		msg.data32 |= TDMMAP_HDLC << (HSS_LUT_BITS * i);
++
++	for (i = 0; i < 2 /* TX and RX */ * HSS_TIMESLOTS * HSS_LUT_BITS / 8;
++	     i += 4) {
++		msg.index = 24 + i; /* 24 - 55: TX LUT, 56 - 87: RX LUT */
++		if ((err = npe_send_message(npe, &msg, "HSS_SET_LUT") != 0))
++			goto err_plat_close;
++	}
++
++	/* HDLC mode configuration */
++	memset(&msg, 0, sizeof(msg));
++	msg.cmd = PKT_NUM_PIPES_WRITE;
++	msg.hss_port = port->id;
++	msg.data8a = PKT_NUM_PIPES;
++	if ((err = npe_send_message(npe, &msg, "HSS_SET_PKT_PIPES") != 0))
++		goto err_plat_close;
++
++	memset(&msg, 0, sizeof(msg));
++	msg.cmd = PKT_PIPE_FIFO_SIZEW_WRITE;
++	msg.hss_port = port->id;
++	msg.data8a = PKT_PIPE_FIFO_SIZEW;
++	if ((err = npe_send_message(npe, &msg, "HSS_SET_PKT_FIFO") != 0))
++		goto err_plat_close;
++
++	memset(&msg, 0, sizeof(msg));
++	msg.cmd = PKT_PIPE_IDLE_PATTERN_WRITE;
++	msg.hss_port = port->id;
++	msg.data32 = 0x7F7F7F7F;
++	if ((err = npe_send_message(npe, &msg, "HSS_SET_PKT_IDLE") != 0))
++		goto err_plat_close;
++
++	memset(&msg, 0, sizeof(msg));
++	msg.cmd = PORT_CONFIG_LOAD;
++	msg.hss_port = port->id;
++	if ((err = npe_send_message(npe, &msg, "HSS_LOAD_CONFIG") != 0))
++		goto err_plat_close;
++	if ((err = npe_recv_message(npe, &msg, "HSS_LOAD_CONFIG") != 0))
++		goto err_plat_close;
++
++	/* HSS_LOAD_CONFIG for port #1 returns port_id = #4 */
++	if (msg.cmd != PORT_CONFIG_LOAD || msg.data32) {
++		printk(KERN_DEBUG "%s: unexpected message received in"
++		       " response to HSS_LOAD_CONFIG\n", npe_name(npe));
++		err = EIO;
++		goto err_plat_close;
++	}
++
++	memset(&msg, 0, sizeof(msg));
++	msg.cmd = PKT_PIPE_HDLC_CFG_WRITE;
++	msg.hss_port = port->id;
++	msg.data8a = port->hdlc_cfg; /* rx_cfg */
++	msg.data8b = port->hdlc_cfg | (PKT_EXTRA_FLAGS << 3); /* tx_cfg */
++	if ((err = npe_send_message(npe, &msg, "HSS_SET_HDLC_CFG") != 0))
++		goto err_plat_close;
++
++	memset(&msg, 0, sizeof(msg));
++	msg.cmd = PKT_PIPE_MODE_WRITE;
++	msg.hss_port = port->id;
++	msg.data8a = NPE_PKT_MODE_HDLC;
++	/* msg.data8b = inv_mask */
++	/* msg.data8c = or_mask */
++	if ((err = npe_send_message(npe, &msg, "HSS_SET_PKT_MODE") != 0))
++		goto err_plat_close;
++
++	memset(&msg, 0, sizeof(msg));
++	msg.cmd = PKT_PIPE_RX_SIZE_WRITE;
++	msg.hss_port = port->id;
++	msg.data16a = HDLC_MAX_MRU;
++	if ((err = npe_send_message(npe, &msg, "HSS_SET_PKT_RX_SIZE") != 0))
++		goto err_plat_close;
++
++	if ((err = request_queues(port)) != 0)
++		goto err_plat_close;
++
++	if ((err = init_queues(port)) != 0)
++		goto err_destroy_queues;
++
++	memset(&msg, 0, sizeof(msg));
++	msg.cmd = PKT_PIPE_FLOW_ENABLE;
++	msg.hss_port = port->id;
++	if ((err = npe_send_message(npe, &msg, "HSS_ENABLE_PKT_PIPE") != 0))
++		goto err_destroy_queues;
++
++	/* Populate queues with buffers, no failure after this point */
++	for (i = 0; i < TX_DESCS; i++)
++		queue_put_desc(port->plat->txreadyq,
++			       tx_desc_phys(port, i), tx_desc_ptr(port, i));
++
++	for (i = 0; i < RX_DESCS; i++)
++		queue_put_desc(queue_ids[port->id].rxfree,
++			       rx_desc_phys(port, i), rx_desc_ptr(port, i));
++
++	netif_start_queue(dev);
++
++	qmgr_set_irq(queue_ids[port->id].rx, QUEUE_IRQ_SRC_NOT_EMPTY,
++		     hss_rx_irq, dev);
++
++	qmgr_set_irq(queue_ids[port->id].txdone, QUEUE_IRQ_SRC_NOT_EMPTY,
++		     hss_txdone_irq, dev);
++	qmgr_enable_irq(queue_ids[port->id].txdone);
++
++	ports_open++;
++	netif_rx_schedule(dev); /* we may already have RX data, enables IRQ */
++	return 0;
++
++err_destroy_queues:
++	destroy_queues(port);
++	release_queues(port);
++err_plat_close:
++	if (port->plat->close)
++		port->plat->close(port->id, port->netdev);
++err_hdlc_close:
++	hdlc_close(dev);
++	return err;
++}
++
++static int hss_close(struct net_device *dev)
++{
++	struct port *port = dev_to_port(dev);
++	struct npe *npe = port->npe;
++	struct msg msg;
++	int buffs = RX_DESCS; /* allocated RX buffers */
++	int i;
++
++	ports_open--;
++	qmgr_disable_irq(queue_ids[port->id].rx);
++	netif_stop_queue(dev);
++
++	memset(&msg, 0, sizeof(msg));
++	msg.cmd = PKT_PIPE_FLOW_DISABLE;
++	msg.hss_port = port->id;
++	if (npe_send_message(npe, &msg, "HSS_DISABLE_PKT_PIPE")) {
++		printk(KERN_CRIT "HSS-%i: unable to stop HDLC flow\n",
++		       port->id);
++		/* The upper level would ignore the error anyway */
++	}
++
++	while (queue_get_desc(queue_ids[port->id].rxfree, port, 0) >= 0)
++		buffs--;
++	while (queue_get_desc(queue_ids[port->id].rx, port, 0) >= 0)
++		buffs--;
++
++	if (buffs)
++		printk(KERN_CRIT "%s: unable to drain RX queue, %i buffer(s)"
++		       " left in NPE\n", dev->name, buffs);
++
++	buffs = TX_DESCS;
++	while (queue_get_desc(queue_ids[port->id].tx, port, 1) >= 0)
++		buffs--; /* cancel TX */
++
++	i = 0;
++	do {
++		while (queue_get_desc(port->plat->txreadyq, port, 1) >= 0)
++			buffs--;
++		if (!buffs)
++			break;
++	} while (++i < MAX_CLOSE_WAIT);
++
++	if (buffs)
++		printk(KERN_CRIT "%s: unable to drain TX queue, %i buffer(s) "
++		       "left in NPE\n", dev->name, buffs);
++#if DEBUG_CLOSE
++	if (!buffs)
++		printk(KERN_DEBUG "Draining TX queues took %i cycles\n", i);
++#endif
++	qmgr_disable_irq(queue_ids[port->id].txdone);
++	destroy_queues(port);
++	release_queues(port);
++
++	if (port->plat->close)
++		port->plat->close(port->id, port->netdev);
++	hdlc_close(dev);
++	return 0;
++}
++
++
++static int hss_attach(struct net_device *dev, unsigned short encoding,
++		      unsigned short parity)
++{
++	struct port *port = dev_to_port(dev);
++
++	if (encoding != ENCODING_NRZ)
++		return -EINVAL;
++
++	switch(parity) {
++	case PARITY_CRC16_PR1_CCITT:
++		port->hdlc_cfg = 0;
++		return 0;
++
++	case PARITY_CRC32_PR1_CCITT:
++		port->hdlc_cfg = PKT_HDLC_CRC_32;
++		return 0;
++
++	default:
++		return -EINVAL;
++	}
++}
++
++
++static int hss_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
++{
++	const size_t size = sizeof(sync_serial_settings);
++	sync_serial_settings new_line;
++	int clk;
++	sync_serial_settings __user *line = ifr->ifr_settings.ifs_ifsu.sync;
++	struct port *port = dev_to_port(dev);
++
++	if (cmd != SIOCWANDEV)
++		return hdlc_ioctl(dev, ifr, cmd);
++
++	switch(ifr->ifr_settings.type) {
++	case IF_GET_IFACE:
++		ifr->ifr_settings.type = IF_IFACE_V35;
++		if (ifr->ifr_settings.size < size) {
++			ifr->ifr_settings.size = size; /* data size wanted */
++			return -ENOBUFS;
++		}
++		if (copy_to_user(line, &port->settings, size))
++			return -EFAULT;
++		return 0;
++
++	case IF_IFACE_SYNC_SERIAL:
++	case IF_IFACE_V35:
++		if(!capable(CAP_NET_ADMIN))
++			return -EPERM;
++		if (dev->flags & IFF_UP)
++			return -EBUSY; /* Cannot change parameters when open */
++
++		if (copy_from_user(&new_line, line, size))
++			return -EFAULT;
++
++		clk = new_line.clock_type;
++		if (port->plat->set_clock)
++			clk = port->plat->set_clock(port->id, clk);
++
++		if (clk != CLOCK_EXT && clk != CLOCK_INT)
++			return -EINVAL;	/* No such clock setting */
++
++		if (new_line.loopback != 0 && new_line.loopback != 1)
++			return -EINVAL;
++
++		memcpy(&port->settings, &new_line, size); /* Update settings */
++		return 0;
++
++	default:
++		return hdlc_ioctl(dev, ifr, cmd);
++	}
++}
++
++
++static int __devinit hss_init_one(struct platform_device *pdev)
++{
++	struct port *port;
++	struct net_device *dev;
++	hdlc_device *hdlc;
++	int err;
++
++	if ((port = kzalloc(sizeof(*port), GFP_KERNEL)) == NULL)
++		return -ENOMEM;
++	platform_set_drvdata(pdev, port);
++	port->id = pdev->id;
++
++	if ((port->npe = npe_request(0)) == NULL) {
++		err = -ENOSYS;
++		goto err_free;
++	}
++
++	port->plat = pdev->dev.platform_data;
++	if ((port->netdev = dev = alloc_hdlcdev(port)) == NULL) {
++		err = -ENOMEM;
++		goto err_plat;
++	}
++
++	SET_MODULE_OWNER(net);
++	SET_NETDEV_DEV(dev, &pdev->dev);
++	hdlc = dev_to_hdlc(dev);
++	hdlc->attach = hss_attach;
++	hdlc->xmit = hss_xmit;
++	dev->open = hss_open;
++	dev->poll = hss_poll;
++	dev->stop = hss_close;
++	dev->do_ioctl = hss_ioctl;
++	dev->weight = 16;
++	dev->tx_queue_len = 100;
++	port->settings.clock_type = CLOCK_EXT;
++	port->settings.clock_rate = 2048000;
++
++	if (register_hdlc_device(dev)) {
++		printk(KERN_ERR "HSS-%i: unable to register HDLC device\n",
++		       port->id);
++		err = -ENOBUFS;
++		goto err_free_netdev;
++	}
++	printk(KERN_INFO "%s: HSS-%i\n", dev->name, port->id);
++	return 0;
++
++err_free_netdev:
++	free_netdev(dev);
++err_plat:
++	npe_release(port->npe);
++	platform_set_drvdata(pdev, NULL);
++err_free:
++	kfree(port);
++	return err;
++}
++
++static int __devexit hss_remove_one(struct platform_device *pdev)
++{
++	struct port *port = platform_get_drvdata(pdev);
++
++	unregister_hdlc_device(port->netdev);
++	free_netdev(port->netdev);
++	npe_release(port->npe);
++	platform_set_drvdata(pdev, NULL);
++	kfree(port);
++	return 0;
++}
++
++static struct platform_driver drv = {
++	.driver.name	= DRV_NAME,
++	.probe		= hss_init_one,
++	.remove		= hss_remove_one,
++};
++
++static int __init hss_init_module(void)
++{
++	if ((ixp4xx_read_fuses() & (IXP4XX_FUSE_HDLC | IXP4XX_FUSE_HSS)) !=
++	    (IXP4XX_FUSE_HDLC | IXP4XX_FUSE_HSS))
++		return -ENOSYS;
++	return platform_driver_register(&drv);
++}
++
++static void __exit hss_cleanup_module(void)
++{
++	platform_driver_unregister(&drv);
++}
++
++MODULE_AUTHOR("Krzysztof Halasa");
++MODULE_DESCRIPTION("Intel IXP4xx HSS driver");
++MODULE_LICENSE("GPL v2");
++module_init(hss_init_module);
++module_exit(hss_cleanup_module);
+diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/cpu.h ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/cpu.h
+--- linux-2.6.23/include/asm-arm/arch-ixp4xx/cpu.h	2007-10-09 22:31:38.000000000 +0200
++++ ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/cpu.h	2007-10-22 19:20:22.000000000 +0200
+@@ -28,4 +28,19 @@
+ #define cpu_is_ixp46x()	((processor_id & IXP4XX_PROCESSOR_ID_MASK) == \
+ 			  IXP465_PROCESSOR_ID_VALUE)
+ 
++static inline u32 ixp4xx_read_fuses(void)
++{
++	unsigned int fuses = ~*IXP4XX_EXP_CFG2;
++	fuses &= ~IXP4XX_FUSE_RESERVED;
++	if (!cpu_is_ixp46x())
++		fuses &= ~IXP4XX_FUSE_IXP46X_ONLY;
++
++	return fuses;
++}
++
++static inline void ixp4xx_write_fuses(u32 value)
++{
++	*IXP4XX_EXP_CFG2 = ~value;
++}
++
+ #endif  /* _ASM_ARCH_CPU_H */
+diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/hardware.h ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/hardware.h
+--- linux-2.6.23/include/asm-arm/arch-ixp4xx/hardware.h	2007-10-09 22:31:38.000000000 +0200
++++ ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/hardware.h	2007-10-22 19:20:22.000000000 +0200
+@@ -27,13 +27,13 @@
+ 
+ #define pcibios_assign_all_busses()	1
+ 
++/* Register locations and bits */
++#include "ixp4xx-regs.h"
++
+ #ifndef __ASSEMBLER__
+ #include <asm/arch/cpu.h>
+ #endif
+ 
+-/* Register locations and bits */
+-#include "ixp4xx-regs.h"
+-
+ /* Platform helper functions and definitions */
+ #include "platform.h"
+ 
+diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h
+--- linux-2.6.23/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h	2007-10-09 22:31:38.000000000 +0200
++++ ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h	2007-10-22 19:20:22.000000000 +0200
+@@ -607,4 +607,36 @@
+ 
+ #define DCMD_LENGTH	0x01fff		/* length mask (max = 8K - 1) */
+ 
++/* Fuse Bits of IXP_EXP_CFG2 */
++#define IXP4XX_FUSE_RCOMP		(1 << 0)
++#define IXP4XX_FUSE_USB_DEVICE		(1 << 1)
++#define IXP4XX_FUSE_HASH		(1 << 2)
++#define IXP4XX_FUSE_AES			(1 << 3)
++#define IXP4XX_FUSE_DES			(1 << 4)
++#define IXP4XX_FUSE_HDLC		(1 << 5)
++#define IXP4XX_FUSE_AAL			(1 << 6)
++#define IXP4XX_FUSE_HSS			(1 << 7)
++#define IXP4XX_FUSE_UTOPIA		(1 << 8)
++#define IXP4XX_FUSE_NPEB_ETH0		(1 << 9)
++#define IXP4XX_FUSE_NPEC_ETH		(1 << 10)
++#define IXP4XX_FUSE_RESET_NPEA		(1 << 11)
++#define IXP4XX_FUSE_RESET_NPEB		(1 << 12)
++#define IXP4XX_FUSE_RESET_NPEC		(1 << 13)
++#define IXP4XX_FUSE_PCI			(1 << 14)
++#define IXP4XX_FUSE_ECC_TIMESYNC	(1 << 15)
++#define IXP4XX_FUSE_UTOPIA_PHY_LIMIT	(3 << 16)
++#define IXP4XX_FUSE_USB_HOST		(1 << 18)
++#define IXP4XX_FUSE_NPEA_ETH		(1 << 19)
++#define IXP4XX_FUSE_NPEB_ETH_1_TO_3	(1 << 20)
++#define IXP4XX_FUSE_RSA			(1 << 21)
++#define IXP4XX_FUSE_XSCALE_MAX_FREQ	(3 << 22)
++#define IXP4XX_FUSE_RESERVED		(0xFF << 24)
++
++#define IXP4XX_FUSE_IXP46X_ONLY (IXP4XX_FUSE_ECC_TIMESYNC |		\
++				 IXP4XX_FUSE_USB_HOST |			\
++				 IXP4XX_FUSE_NPEA_ETH |			\
++				 IXP4XX_FUSE_NPEB_ETH_1_TO_3 |		\
++				 IXP4XX_FUSE_RSA |			\
++				 IXP4XX_FUSE_XSCALE_MAX_FREQ)
++
+ #endif
+diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/npe.h ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/npe.h
+--- linux-2.6.23/include/asm-arm/arch-ixp4xx/npe.h	1970-01-01 01:00:00.000000000 +0100
++++ ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/npe.h	2007-10-22 19:20:22.000000000 +0200
+@@ -0,0 +1,41 @@
++#ifndef __IXP4XX_NPE_H
++#define __IXP4XX_NPE_H
++
++#include <linux/etherdevice.h>
++#include <linux/kernel.h>
++#include <asm/io.h>
++
++extern const char *npe_names[];
++
++struct npe_regs {
++	u32 exec_addr, exec_data, exec_status_cmd, exec_count;
++	u32 action_points[4];
++	u32 watchpoint_fifo, watch_count;
++	u32 profile_count;
++	u32 messaging_status, messaging_control;
++	u32 mailbox_status, /*messaging_*/ in_out_fifo;
++};
++
++struct npe {
++	struct resource *mem_res;
++	struct npe_regs __iomem *regs;
++	u32 regs_phys;
++	int id;
++	int valid;
++};
++
++
++static inline const char *npe_name(struct npe *npe)
++{
++	return npe_names[npe->id];
++}
++
++int npe_running(struct npe *npe);
++int npe_send_message(struct npe *npe, const void *msg, const char *what);
++int npe_recv_message(struct npe *npe, void *msg, const char *what);
++int npe_send_recv_message(struct npe *npe, void *msg, const char *what);
++int npe_load_firmware(struct npe *npe, const char *name, struct device *dev);
++struct npe *npe_request(int id);
++void npe_release(struct npe *npe);
++
++#endif /* __IXP4XX_NPE_H */
+diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/platform.h ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/platform.h
+--- linux-2.6.23/include/asm-arm/arch-ixp4xx/platform.h	2007-10-09 22:31:38.000000000 +0200
++++ ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/platform.h	2007-10-22 19:20:22.000000000 +0200
+@@ -77,8 +77,7 @@
+ 
+ /*
+  * The IXP4xx chips do not have an I2C unit, so GPIO lines are just
+- * used to 
+- * Used as platform_data to provide GPIO pin information to the ixp42x
++ * used as platform_data to provide GPIO pin information to the ixp42x
+  * I2C driver.
+  */
+ struct ixp4xx_i2c_pins {
+@@ -86,6 +85,27 @@
+ 	unsigned long scl_pin;
+ };
+ 
++#define IXP4XX_ETH_NPEA		0x00
++#define IXP4XX_ETH_NPEB		0x10
++#define IXP4XX_ETH_NPEC		0x20
++
++/* Information about built-in Ethernet MAC interfaces */
++struct eth_plat_info {
++	u8 phy;		/* MII PHY ID, 0 - 31 */
++	u8 rxq;		/* configurable, currently 0 - 31 only */
++	u8 txreadyq;
++	u8 hwaddr[6];
++};
++
++/* Information about built-in HSS (synchronous serial) interfaces */
++struct hss_plat_info {
++	int (*set_clock)(int port, unsigned int clock_type);
++	int (*open)(int port, void *pdev,
++		    void (*set_carrier_cb)(void *pdev, int carrier));
++	void (*close)(int port, void *pdev);
++	u8 txreadyq;
++};
++
+ /*
+  * This structure provide a means for the board setup code
+  * to give information to th pata_ixp4xx driver. It is
+diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/qmgr.h ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/qmgr.h
+--- linux-2.6.23/include/asm-arm/arch-ixp4xx/qmgr.h	1970-01-01 01:00:00.000000000 +0100
++++ ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/qmgr.h	2007-10-22 19:20:22.000000000 +0200
+@@ -0,0 +1,124 @@
++/*
++ * Copyright (C) 2007 Krzysztof Halasa <khc@pm.waw.pl>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of version 2 of the GNU General Public License
++ * as published by the Free Software Foundation.
++ */
++
++#ifndef IXP4XX_QMGR_H
++#define IXP4XX_QMGR_H
++
++#include <linux/kernel.h>
++#include <asm/io.h>
++
++#define HALF_QUEUES	32
++#define QUEUES		64	/* only 32 lower queues currently supported */
++#define MAX_QUEUE_LENGTH 4	/* in dwords */
++
++#define QUEUE_STAT1_EMPTY		1 /* queue status bits */
++#define QUEUE_STAT1_NEARLY_EMPTY	2
++#define QUEUE_STAT1_NEARLY_FULL		4
++#define QUEUE_STAT1_FULL		8
++#define QUEUE_STAT2_UNDERFLOW		1
++#define QUEUE_STAT2_OVERFLOW		2
++
++#define QUEUE_WATERMARK_0_ENTRIES	0
++#define QUEUE_WATERMARK_1_ENTRY		1
++#define QUEUE_WATERMARK_2_ENTRIES	2
++#define QUEUE_WATERMARK_4_ENTRIES	3
++#define QUEUE_WATERMARK_8_ENTRIES	4
++#define QUEUE_WATERMARK_16_ENTRIES	5
++#define QUEUE_WATERMARK_32_ENTRIES	6
++#define QUEUE_WATERMARK_64_ENTRIES	7
++
++/* queue interrupt request conditions */
++#define QUEUE_IRQ_SRC_EMPTY		0
++#define QUEUE_IRQ_SRC_NEARLY_EMPTY	1
++#define QUEUE_IRQ_SRC_NEARLY_FULL	2
++#define QUEUE_IRQ_SRC_FULL		3
++#define QUEUE_IRQ_SRC_NOT_EMPTY		4
++#define QUEUE_IRQ_SRC_NOT_NEARLY_EMPTY	5
++#define QUEUE_IRQ_SRC_NOT_NEARLY_FULL	6
++#define QUEUE_IRQ_SRC_NOT_FULL		7
++
++struct qmgr_regs {
++	u32 acc[QUEUES][MAX_QUEUE_LENGTH]; /* 0x000 - 0x3FF */
++	u32 stat1[4];		/* 0x400 - 0x40F */
++	u32 stat2[2];		/* 0x410 - 0x417 */
++	u32 statne_h;		/* 0x418 - queue nearly empty */
++	u32 statf_h;		/* 0x41C - queue full */
++	u32 irqsrc[4];		/* 0x420 - 0x42F IRC source */
++	u32 irqen[2];		/* 0x430 - 0x437 IRQ enabled */
++	u32 irqstat[2];		/* 0x438 - 0x43F - IRQ access only */
++	u32 reserved[1776];
++	u32 sram[2048];		/* 0x2000 - 0x3FFF - config and buffer */
++};
++
++extern struct qmgr_regs __iomem *qmgr_regs;
++
++void qmgr_set_irq(unsigned int queue, int src,
++		  void (*handler)(void *pdev), void *pdev);
++void qmgr_enable_irq(unsigned int queue);
++void qmgr_disable_irq(unsigned int queue);
++
++/* request_ and release_queue() must be called from non-IRQ context */
++int qmgr_request_queue(unsigned int queue, unsigned int len /* dwords */,
++		       unsigned int nearly_empty_watermark,
++		       unsigned int nearly_full_watermark);
++void qmgr_release_queue(unsigned int queue);
++
++
++static inline void qmgr_put_entry(unsigned int queue, u32 val)
++{
++	__raw_writel(val, &qmgr_regs->acc[queue][0]);
++}
++
++static inline u32 qmgr_get_entry(unsigned int queue)
++{
++	return __raw_readl(&qmgr_regs->acc[queue][0]);
++}
++
++static inline int qmgr_get_stat1(unsigned int queue)
++{
++	return (__raw_readl(&qmgr_regs->stat1[queue >> 3])
++		>> ((queue & 7) << 2)) & 0xF;
++}
++
++static inline int qmgr_get_stat2(unsigned int queue)
++{
++	return (__raw_readl(&qmgr_regs->stat2[queue >> 4])
++		>> ((queue & 0xF) << 1)) & 0x3;
++}
++
++static inline int qmgr_stat_empty(unsigned int queue)
++{
++	return !!(qmgr_get_stat1(queue) & QUEUE_STAT1_EMPTY);
++}
++
++static inline int qmgr_stat_nearly_empty(unsigned int queue)
++{
++	return !!(qmgr_get_stat1(queue) & QUEUE_STAT1_NEARLY_EMPTY);
++}
++
++static inline int qmgr_stat_nearly_full(unsigned int queue)
++{
++	return !!(qmgr_get_stat1(queue) & QUEUE_STAT1_NEARLY_FULL);
++}
++
++static inline int qmgr_stat_full(unsigned int queue)
++{
++	return !!(qmgr_get_stat1(queue) & QUEUE_STAT1_FULL);
++}
++
++static inline int qmgr_stat_underflow(unsigned int queue)
++{
++	return !!(qmgr_get_stat2(queue) & QUEUE_STAT2_UNDERFLOW);
++}
++
++static inline int qmgr_stat_overflow(unsigned int queue)
++{
++	return !!(qmgr_get_stat2(queue) & QUEUE_STAT2_OVERFLOW);
++}
++
++#endif
+diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/uncompress.h ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/uncompress.h
+--- linux-2.6.23/include/asm-arm/arch-ixp4xx/uncompress.h	2007-10-09 22:31:38.000000000 +0200
++++ ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/uncompress.h	2007-10-22 19:20:22.000000000 +0200
+@@ -13,7 +13,8 @@
+ #ifndef _ARCH_UNCOMPRESS_H_
+ #define _ARCH_UNCOMPRESS_H_
+ 
+-#include <asm/hardware.h>
++#define __ASM_ARCH_HARDWARE_H__
++#include "ixp4xx-regs.h"
+ #include <asm/mach-types.h>
+ #include <linux/serial_reg.h>
+ 

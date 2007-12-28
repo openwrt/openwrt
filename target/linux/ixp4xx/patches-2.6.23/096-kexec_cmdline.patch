@@ -1,0 +1,178 @@
+diff -uprN linux-2.6.23.orig/kernel/ksysfs.c linux-2.6.23/kernel/ksysfs.c
+--- linux-2.6.23.orig/kernel/ksysfs.c	2007-10-09 15:31:38.000000000 -0500
++++ linux-2.6.23/kernel/ksysfs.c	2007-10-11 01:10:26.000000000 -0500
+@@ -49,6 +49,165 @@ KERNEL_ATTR_RW(uevent_helper);
+ #endif
+ 
+ #ifdef CONFIG_KEXEC
++
++#include <asm/setup.h>
++
++extern unsigned long kexec_boot_params;
++
++char kexec_cmdline[COMMAND_LINE_SIZE] = "";
++
++static void
++replace_cmdline_tag(void)
++{
++	char *t;
++	struct tag *real;
++	struct tag *copy;
++	struct tag *rend;
++	int i;
++
++/* TODO: check the return params */
++	t = kmalloc(KEXEC_BOOT_PARAMS_SIZE + COMMAND_LINE_SIZE, GFP_KERNEL);
++	memset((void *)t, 0, KEXEC_BOOT_PARAMS_SIZE + COMMAND_LINE_SIZE);
++
++/* TODO: validate that the boot params are ATAGS, in fact */
++
++	copy = (struct tag *)t;
++	real = (struct tag *)kexec_boot_params;
++	rend = (struct tag *)(kexec_boot_params + KEXEC_BOOT_PARAMS_SIZE);
++	while ((real->hdr.size) && (real < rend)) {
++		if (real->hdr.tag != ATAG_CMDLINE) {
++			memcpy((void *)copy, (void *)real, real->hdr.size * 4);
++			copy = tag_next(copy);
++		}
++		real = tag_next(real);
++	}
++
++/* TODO: validate that we have enough space in the buffer */
++	
++	i = strlen(kexec_cmdline);
++	if (i) {
++		copy->hdr.tag = ATAG_CMDLINE;
++		copy->hdr.size = (sizeof(struct tag_header) + i + 1 + 4) >> 2;
++		strcpy(copy->u.cmdline.cmdline, kexec_cmdline);
++		copy = tag_next(copy);
++	}
++
++	copy->hdr.tag = ATAG_NONE;            /* Empty tag ends list */
++	copy->hdr.size = 0;                   /* zero length */
++
++/* TODO: validate that the temporary buffer isn't too full */
++
++	memcpy((void *)kexec_boot_params, (void *)t, KEXEC_BOOT_PARAMS_SIZE);
++
++	kfree(t);  /* Don't forget to free the big buffer we used */
++}
++
++static ssize_t kexec_cmdline_show(struct kset *kset, char *page)
++{
++	return sprintf(page, "%s\n", kexec_cmdline);
++}
++
++static ssize_t kexec_cmdline_store(struct kset *kset, const char *page,
++				   size_t count)
++{
++	if ((count + 1) > COMMAND_LINE_SIZE)
++		count = COMMAND_LINE_SIZE;
++	memcpy(kexec_cmdline, page, count);
++	kexec_cmdline[count] = '\0';
++	if (count && (kexec_cmdline[count - 1] == '\n'))
++		kexec_cmdline[count - 1] = '\0';
++	replace_cmdline_tag();
++	return count;
++}
++KERNEL_ATTR_RW(kexec_cmdline);
++
++static ssize_t kexec_boot_params_show(struct kset *kset, char *page)
++{
++	unsigned long *p;
++	char buf[PAGE_SIZE];
++	int keep_doing;
++
++	p = (unsigned long *)kexec_boot_params;
++
++	/* if this doesn't look like atags, just print first few words */
++	if (p[1] != ATAG_CORE)
++		return sprintf(page, "0x%lx 0x%lx 0x%lx 0x%lx\n",
++			       p[0], p[1], p[2], p[3]);
++
++	/* carefully walk the atag list, and print out the structure */
++	keep_doing = 1;
++	do {
++		switch (p[1]) {
++		case ATAG_CORE:
++			/* watch out, core tag is permitted to be empty */
++			if (p[0] == 5)
++				sprintf(buf,
++					"CORE flg=%ld pgsz=%ld rdev=0x%lx\n",
++					p[2], p[3], p[4]);
++			else
++				sprintf(buf,"CORE\n");
++			break;
++		case ATAG_MEM:
++			sprintf(buf,"MEM  %ldM@0x%lx\n", p[2] / (1024 * 1024),
++				p[3]);
++			break;
++		case ATAG_VIDEOTEXT:
++			sprintf(buf,"VIDEOTEXT sz=%ld\n", p[0]);
++			break;
++		case ATAG_RAMDISK:
++			sprintf(buf,"RAMDISK prmpt=%ld %ldK@0x%lx\n",
++				p[2], p[3], p[4]);
++			break;
++		case ATAG_INITRD2:
++			sprintf(buf,"INITRD2 %ldK@0x%lx\n", p[3] / 1024, p[2]);
++			break;
++		case ATAG_SERIAL:
++			sprintf(buf,"SERIAL high=0x%08lx low=0x%08lx\n",
++				p[3], p[2]);
++			break;
++		case ATAG_REVISION:
++			sprintf(buf,"REVISION rev=%ld\n", p[2]);
++			break;
++		case ATAG_VIDEOLFB:
++			sprintf(buf,"VIDEOLFB sz=%ld\n", p[0]);
++			break;
++		case ATAG_CMDLINE:
++			sprintf(buf,"CMD  \"%s\"\n", (char *)&p[2]);
++			break;
++		case ATAG_NONE:
++			sprintf(buf,"NONE\n");
++			keep_doing = 0;
++			break;
++		default:
++			sprintf(buf,"-unknown- sz=%ld\n", p[0]);
++			break;
++		}
++
++		/* carefully add to page */
++		if ((strlen(buf) + strlen(page)) < PAGE_SIZE) {
++			strcat(page, buf);
++		} else {
++			keep_doing = 0;
++		}
++
++		/* stop when we encounter a header length of 0 */
++		if (p[0] == 0)
++			keep_doing = 0;
++
++		/* go to the next tag */
++		p += p[0];
++
++		/* stop if we walked off the end of the buffer */
++		if (p > (unsigned long *)(kexec_boot_params +
++					  KEXEC_BOOT_PARAMS_SIZE))
++			keep_doing = 0;
++
++	} while (keep_doing);
++
++	return (strlen(page));
++}
++KERNEL_ATTR_RO(kexec_boot_params);
++
+ static ssize_t kexec_loaded_show(struct kset *kset, char *page)
+ {
+ 	return sprintf(page, "%d\n", !!kexec_image);
+@@ -95,6 +254,8 @@ static struct attribute * kernel_attrs[]
+ #ifdef CONFIG_KEXEC
+ 	&kexec_loaded_attr.attr,
+ 	&kexec_crash_loaded_attr.attr,
++	&kexec_cmdline_attr.attr,
++	&kexec_boot_params_attr.attr,
+ #endif
+ 	NULL
+ };

@@ -12,8 +12,10 @@ BOARDNAME:=Intel XScale IXP4xx
 FEATURES:=squashfs
 SUBTARGETS=generic harddisk
 
-LINUX_VERSION:=2.6.21.7
+LINUX_VERSION:=2.6.23.12
 
 include $(INCLUDE_DIR)/target.mk
+
+DEFAULT_PACKAGES += ixp4xx-microcode
 
 $(eval $(call BuildTarget))
