@@ -25,6 +25,7 @@ BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
 include $(INCLUDE_DIR)/host-build.mk
 
 define Build/Configure
+	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(PKG_BUILD_DIR)/
 	(cd $(PKG_BUILD_DIR); \
 		./configure \
 		--prefix=$(STAGING_DIR_HOST) \
