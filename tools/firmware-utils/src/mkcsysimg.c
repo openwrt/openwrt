@@ -179,6 +179,9 @@ static struct board_info boards[] = {
 	BOARD_ADM("XRT-401D", "Planet XRT-401D", 2, SIG_XRT401D),
 	BOARD_ADM("XRT-402D", "Planet XRT-402D", 2, SIG_XRT402D),
 
+	/* Conceptronic products */
+	BOARD_ADM("C54BSR4", "Conceptronic C54BSR4", 2, SIG_C54BSR4),
+
 	{.model = NULL}
 };
 

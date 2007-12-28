@@ -254,6 +254,21 @@ define Image/Build/Board/BR6104WG/Initramfs
 endef
 
 #
+# Conceptronic C54BSR4
+#
+define Image/Build/Board/C54BSR4
+	$(call Image/Build/Edimax,$(1),c54bsr4)
+endef
+
+define Image/Build/Board/C54BSR4/squashfs
+	$(call Image/Build/Board/C54BSR4,squashfs)
+endef
+
+define Image/Build/Board/C54BSR4/Initramfs
+	$(call Image/Build/LZMAKernel/Admboot,c54bsr4,gz)
+endef
+
+#
 # Infineon EASY 83000
 #
 define Image/Build/Board/EASY83000
@@ -301,6 +316,10 @@ define Image/Build/Group/Compex
 	$(call Image/Build/Group/WP54G,$(1))
 endef
 
+define Image/Build/Group/Conceptronic
+	$(call Image/Build/Board/C54BSR4/$(1))
+endef
+
 define Image/Build/Group/Edimax
 	$(call Image/Build/Board/BR6104K/$(1))
 	$(call Image/Build/Board/BR6104KP/$(1))
@@ -314,6 +333,7 @@ endef
 define Image/Build/Group/All
 	$(call Image/Build/Group/Cellvision,$(1))
 	$(call Image/Build/Group/Compex,$(1))
+	$(call Image/Build/Group/Conceptronic,$(1))
 	$(call Image/Build/Group/Edimax,$(1))
 	$(call Image/Build/Group/Cellvision,$(1))
 	$(call Image/Build/Group/Infineon,$(1))
@@ -365,6 +385,10 @@ endef
 
 define Image/Build/Profile/BR6104KP
 	$(call Image/Build/Board/BR6104KP/$(1))
+endef
+
+define Image/Build/Profile/C54BSR4
+	$(call Image/Build/Board/C54BSR4/$(1))
 endef
 
 define Image/Build/Profile/RouterBoard
