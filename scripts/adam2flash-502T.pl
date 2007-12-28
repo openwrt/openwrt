@@ -257,7 +257,7 @@ print STDERR "checking hardware.. ";
 my $prd = $ftp->getenv("ProductID");
 my $usb = $ftp->getenv("usb_prod");
 print STDERR "$prd / $usb.\n";
-($prd eq "AR7RD") or die "doesn't look like a DSL-502T?";
+($prd eq "AR7RD" || $prd eq "AR7DB") or die "doesn't look like a DSL-502T?";
 ($usb eq "DSL-502T") or die "doesn't look like a DSL-502T?";
 
 #
