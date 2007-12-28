@@ -8,12 +8,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/target.mk
 
 PKG_NAME:=uClibc
-PKG_VERSION:=0.9.28
-PKG_EXTRAVERSION:=.2
+PKG_VERSION:=0.9.29
+PKG_EXTRAVERSION:=
 
 PKG_SOURCE:=uClibc-$(PKG_VERSION)$(PKG_EXTRAVERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.uclibc.org/downloads
-PKG_MD5SUM:=959f25286e317f0d9e2103445c5a14c2
+PKG_MD5SUM:=61dc55f43b17a38a074f347e74095b20
 PKG_CAT:=bzcat
 
 STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
@@ -43,14 +43,33 @@ UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 define Build/Prepare
 	$(call Build/Prepare/Default)
 	$(CP) config/$(ARCH)$(if $(wildcard config/$(ARCH).$(BOARD)),$(BOARD)) $(PKG_BUILD_DIR)/.config
-	$(SED) 's,^KERNEL_SOURCE=.*,KERNEL_SOURCE=\"$(LINUX_HEADERS_DIR)\",g' \
-		-e 's,.*HAS_FPU.*,HAS_FPU=$(if $(CONFIG_SOFT_FLOAT),n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,y),g' \
+	$(SED) 's,^KERNEL_HEADERS=.*,KERNEL_HEADERS=\"$(LINUX_HEADERS_DIR)/include\",g' \
+		-e 's,.*UCLIBC_HAS_FPU.*,UCLIBC_HAS_FPU=$(if $(CONFIG_SOFT_FLOAT),n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,y),g' \
 		-e 's,^.*UCLIBC_HAS_LFS.*,UCLIBC_HAS_LFS=$(if $(CONFIG_LARGEFILE),y,n),g' \
 		-e 's,.*DO_C99_MATH.*,DO_C99_MATH=$(if $(CONFIG_C99_MATH),y,n),g' \
 		$(PKG_BUILD_DIR)/.config
 	mkdir -p $(BUILD_DIR_HOST)/uClibc_dev/usr/include
 	mkdir -p $(BUILD_DIR_HOST)/uClibc_dev/usr/lib
 	mkdir -p $(BUILD_DIR_HOST)/uClibc_dev/lib
+#	if [ ! -f $(BUILD_DIR_HOST)/uClibc_dev/usr/include/linux/version.h ] ; then \
+#		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/* $(BUILD_DIR_HOST)/uClibc_dev/usr/include/; \
+#		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/* $(TOOLCHAIN_DIR)/include/ ; \
+#		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/* $(PKG_BUILD_DIR)/include/ ; \
+#	fi;
+	if [ ! -f $(BUILD_DIR_HOST)/uClibc_dev/usr/include/linux/version.h ] ; then \
+		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm $(BUILD_DIR_HOST)/uClibc_dev/usr/include/; \
+		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm-$(UCLIBC_TARGET_ARCH) $(BUILD_DIR_HOST)/uClibc_dev/usr/include/; \
+		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm-generic $(BUILD_DIR_HOST)/uClibc_dev/usr/include/; \
+		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/linux $(BUILD_DIR_HOST)/uClibc_dev/usr/include/; \
+		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm $(TOOLCHAIN_DIR)/include/ ; \
+		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm-$(UCLIBC_TARGET_ARCH) $(TOOLCHAIN_DIR)/include/ ; \
+		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm-generic $(TOOLCHAIN_DIR)/include/ ; \
+		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/linux $(TOOLCHAIN_DIR)/include/ ; \
+		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm $(PKG_BUILD_DIR)/include/ ; \
+		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm-$(UCLIBC_TARGET_ARCH) $(PKG_BUILD_DIR)/include/ ; \
+		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm-generic $(PKG_BUILD_DIR)/include/ ; \
+		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/linux $(PKG_BUILD_DIR)/include/ ; \
+	fi;
 	PATH=$(TARGET_PATH) $(MAKE) -C $(PKG_BUILD_DIR) \
 		PREFIX=$(BUILD_DIR_HOST)/uClibc_dev/ \
 		DEVEL_PREFIX=/usr/ \
@@ -76,6 +95,8 @@ define Build/Compile
 	$(UCLIBC_MAKE) PREFIX=$(STAGING_DIR_HOST)/ install_runtime install_dev
 	$(SED) 's,UCLIBC_VERSION=.*,UCLIBC_VERSION=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,UCLIBC_PATCHVER=.*,UCLIBC_PATCHVER=$(PKG_EXTRAVERSION),' $(TOOLCHAIN_DIR)/info.mk
+	rm -rf $(TOOLCHAIN_DIR)/lib/libc.so
+	ln -s $(TOOLCHAIN_DIR)/lib/libc.so.0 $(TOOLCHAIN_DIR)/lib/libc.so
 endef
 
 define Build/Install

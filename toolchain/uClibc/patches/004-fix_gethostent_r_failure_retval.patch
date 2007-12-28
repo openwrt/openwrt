@@ -1,0 +1,12 @@
+diff -ur uClibc-0.9.29/libc/inet/resolv.c uClibc-0.9.29-patched/libc/inet/resolv.c
+--- uClibc-0.9.29/libc/inet/resolv.c	2007-04-23 12:01:05.000000000 -0500
++++ uClibc-0.9.29-patched/libc/inet/resolv.c	2007-05-09 18:05:33.563404419 -0500
+@@ -1700,7 +1700,7 @@
+ int gethostent_r(struct hostent *result_buf, char *buf, size_t buflen,
+ 	struct hostent **result, int *h_errnop)
+ {
+-    int ret;
++    int ret = HOST_NOT_FOUND;
+ 
+     __UCLIBC_MUTEX_LOCK(mylock);
+     if (__gethostent_fp == NULL) {
