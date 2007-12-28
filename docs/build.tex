@@ -342,6 +342,19 @@ directly as the Nth argument to \texttt{BuildPackage}.
 	   Contains all environment variables that are passed to the make command
    \end{itemize}
 
+\textbf{\texttt{Build/InstallDev} (optional):} \\
+	If your package provides a library that needs to be made available to other packages,
+	you can use the \texttt{Build/InstallDev} template to copy it into the staging directory
+	which is used to collect all files that other packages might depend on at build time.
+	When it is called by the build system, two parameters are passed to it. \texttt{\$(1)} points to
+	the regular staging dir, typically \texttt{staging\_dir/\textit{ARCH}}, while \texttt{\$(2)} points
+	to \texttt{staging\_dir/host}. The host staging dir is only used for binaries, which are
+	to be executed or linked against on the host and its \texttt{bin/} subdirectory is included
+	in the \texttt{PATH} which is passed down to the build system processes.
+	Please use \texttt{\$(1)} and \texttt{\$(2)} here instead of the build system variables
+	\texttt{\$(STAGING\_DIR)} and \texttt{\$(STAGING\_DIR\_HOST)}, because the build system behavior
+	when staging libraries might change in the future to include automatic uninstallation.
+
 \textbf{\texttt{Package/\textit{<name>}/install}:} \\
    A set of commands to copy files out of the compiled source and into the ipkg
    which is represented by the \texttt{\$(1)} directory. Note that there are currently
