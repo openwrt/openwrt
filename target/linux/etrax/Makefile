@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=cris
 BOARD:=etrax
 BOARDNAME:=Foxboard (ETRAX 100LX)
-FEATURES:=squashfs jffs2
+FEATURES:=squashfs jffs2 broken
 LINUX_VERSION:=2.6.19.2
 
 include $(INCLUDE_DIR)/target.mk
