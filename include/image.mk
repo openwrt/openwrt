@@ -64,6 +64,12 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 		$(TAR) -zcf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-rootfs.tgz --owner=root --group=root -C $(TARGET_DIR)/ .
     endef
   endif
+
+  ifeq ($(CONFIG_TARGET_ROOTFS_CPIOGZ),y)
+    define Image/mkfs/cpiogz
+		( cd $(BUILD_DIR)/root; find . | cpio -o -H newc | gzip -9 >$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-rootfs.cpio.gz )
+    endef
+  endif
 else
   define Image/BuildKernel
 	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.elf
@@ -118,6 +124,7 @@ ifneq ($(IB),1)
 	$(call Image/mkfs/jffs2)
 	$(call Image/mkfs/squashfs)
 	$(call Image/mkfs/tgz)
+	$(call Image/mkfs/cpiogz)
 	$(call Image/mkfs/ext2)
 	$(call Image/mkfs/iso)
 else
@@ -126,6 +133,7 @@ else
 	$(call Image/mkfs/jffs2)
 	$(call Image/mkfs/squashfs)
 	$(call Image/mkfs/tgz)
+	$(call Image/mkfs/cpiogz)
 	$(call Image/mkfs/ext2)
 	$(call Image/mkfs/iso)
 endif
