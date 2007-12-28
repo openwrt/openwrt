@@ -10,7 +10,7 @@ define Profile/C54BSR4
 	PACKAGES:=kmod-net-ipw2200
 endef
 
-define Profile/BR6104KP/Description
+define Profile/C54BSR4/Description
 	Package set optimized for the C54BSR4
 endef
 
