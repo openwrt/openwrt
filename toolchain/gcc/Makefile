@@ -60,6 +60,7 @@ define Stage1/Configure
 		--disable-nls \
 		--disable-libmudflap \
 		--disable-multilib \
+		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
 	);
 endef
@@ -92,6 +93,7 @@ define Stage2/Configure
 		--disable-nls \
 		--disable-libmudflap \
 		--disable-multilib \
+		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
 	);
 endef
