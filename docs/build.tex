@@ -65,16 +65,16 @@ There are four key directories in the base:
 
 \texttt{tools} and \texttt{toolchain} refer to common tools which will be
 used to build the firmware image, the compiler, and the C library.
-The result of this is three new directories, \texttt{tool\_build}, which is a temporary
-directory for building the target independent tools, \texttt{toolchain\_build\_\textit{<arch>}}
+The result of this is three new directories, \texttt{build\_dir/host}, which is a temporary
+directory for building the target independent tools, \texttt{build\_dir/toolchain-\textit{<arch>}*}
 which is used for building the toolchain for a specific architecture, and
-\texttt{staging\_dir\_\textit{<arch>}} where the resulting toolchain is installed.
+\texttt{staging\_dir/toolchain-\textit{<arch>}*} where the resulting toolchain is installed.
 You will not need to do anything with the toolchain directory unless you intend to
 add a new version of one of the components above.
 
 \begin{itemize}
-    \item \texttt{tool\_build}
-    \item \texttt{toolchain\_build\_\textit{<arch>}}
+    \item \texttt{build\_dir/host}
+    \item \texttt{build\_dir/toolchain-\textit{<arch>}*}
 \end{itemize}
 
 \texttt{package} is for exactly that -- packages. In an OpenWrt firmware, almost everything
@@ -108,12 +108,12 @@ directory which is broken down by platform \textit{<arch>} and contains the patc
 kernel, profile config, for a particular platform. There's also the "\texttt{target/image}" directory
 which describes how to package a firmware for a specific platform.
 
-Both the target and package steps will use the directory "\texttt{build\_\textit{<arch>}}"
+Both the target and package steps will use the directory "\texttt{build\_dir/\textit{<arch>}}"
 as a temporary directory for compiling. Additionally, anything downloaded by the toolchain,
 target or package steps will be placed in the "\texttt{dl}" directory.
 
 \begin{itemize}
-    \item \texttt{build\_\textit{<arch>}}
+    \item \texttt{build\_dir/\textit{<arch>}}
     \item \texttt{dl}
 \end{itemize}
 
@@ -171,7 +171,7 @@ of noise caused by the compile output. To see the full output, run the command
 "\texttt{make V=99}".
 
 During the build process, buildroot will download all sources to the "\texttt{dl}"
-directory and will start patching and compiling them in the "\texttt{build\_\textit{<arch>}}"
+directory and will start patching and compiling them in the "\texttt{build\_dir/\textit{<arch>}}"
 directory. When finished, the resulting firmware will be in the "\texttt{bin}" directory
 and packages will be in the "\texttt{bin/packages}" directory.
 
@@ -465,10 +465,10 @@ run one of the following:
     \item \texttt{make package/\textit{<name>}/install V=99}
 \end{itemize}
 
-Another nice trick is that if the source directory under \texttt{build\_\textit{<arch>}}
+Another nice trick is that if the source directory under \texttt{build\_dir/\textit{<arch>}}
 is newer than the package directory, it won't clobber it by unpacking the sources again.
 If you were working on a patch you could simply edit the sources under the
-\texttt{build\_\textit{<arch>}/\textit{<source>}} directory and run the install command above,
+\texttt{build\_dir/\textit{<arch>}/\textit{<source>}} directory and run the install command above,
 when satisfied, copy the patched sources elsewhere and diff them with the unpatched
 sources. A warning though - if you go modify anything under \texttt{package/\textit{<name>}}
 it will remove the old sources and unpack a fresh copy.
