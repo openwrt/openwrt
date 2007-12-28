@@ -80,10 +80,10 @@ add a new version of one of the components above.
 \texttt{package} is for exactly that -- packages. In an OpenWrt firmware, almost everything
 is an \texttt{.ipk}, a software package which can be added to the firmware to provide new
 features or removed to save space. Note that packages are also maintained outside of the main
-trunk and can be obtained from subversion at the following location:
+trunk and can be obtained from subversion using the package feeds system:
 
 \begin{Verbatim}
-$ svn checkout https://svn.openwrt.org/openwrt/packages packages
+$ ./scripts/feeds update
 \end{Verbatim}
 
 Those packages can be used to extend the functionality of the build system and need to be
@@ -91,15 +91,17 @@ symlinked into the main trunk. Once you do that, the packages will show up in th
 configuration. From kamikaze you would do something like this:
 
 \begin{Verbatim}
-$ ls
-kamikaze  packages
-$ ln -s packages/net/nmap kamikaze/package/nmap
+$ ./scripts/feeds search nmap
+Search results in feed 'packages':
+nmap       Network exploration and/or security auditing utility
+
+$ ./scripts/feeds install nmap
 \end{Verbatim}
 
 To include all packages, issue the following command:
 
 \begin{Verbatim}
-$ ln -s packages/*/* kamikaze/package/
+$ make package/symlinks
 \end{Verbatim}
 
 \texttt{target} refers to the embedded platform, this contains items which are specific to
