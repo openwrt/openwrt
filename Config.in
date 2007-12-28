@@ -137,23 +137,10 @@ config CCACHE
 	help
 		Compiler cache; see http://ccache.samba.org/
 
-config SOURCE_FEEDS
-	string
-	prompt "Enter here external source feeds you want to include" if BUILDOPTS
-	default "https://svn.openwrt.org/openwrt/packages/"
-	help
-		Separate sources with spaces : " "
-
-config SOURCE_FEEDS_REV
-	string
-	prompt "Revision for the source feed svn checkout" if BUILDOPTS
-	default ""
-
 config EXTERNAL_KERNEL_TREE
 	string
 	prompt "Use external kernel tree" if DEVEL
 	default ""
-
 
 source "toolchain/Config.in"
 menuconfig BUILDSYSTEM_SETTINGS
