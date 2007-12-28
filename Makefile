@@ -58,7 +58,8 @@ world: prepare $(target/stamp-compile) $(package/stamp-cleanup) $(package/stamp-
 	$(MAKE) package/index
 
 package/symlinks:
-	$(SCRIPT_DIR)/feeds.sh $(CONFIG_SOURCE_FEEDS) $(CONFIG_SOURCE_FEEDS_REV)	
+	$(SCRIPT_DIR)/feeds update
+	cd package; ln -sf ../feeds/packages openwrt-packages
 
 .PHONY: clean dirclean prereq prepare world package/symlinks
 
