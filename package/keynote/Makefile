@@ -40,6 +40,8 @@ CONFIGURE_ARGS += \
 MAKE_FLAGS += \
 	CFLAGS="$(TARGET_CFLAGS)"
 
+TARGET_CFLAGS += -Dbcopy=memmove -Dindex\(s,c\)=strchr\(s,c\)
+
 define Build/InstallDev
 	mkdir -p $(1)/usr/include/keynote
 	$(CP) $(PKG_BUILD_DIR)/{assertion,header,keynote,signature}.h $(1)/usr/include/keynote/
