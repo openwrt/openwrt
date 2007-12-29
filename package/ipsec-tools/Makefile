@@ -42,6 +42,8 @@ CONFIGURE_ARGS += \
 	--enable-adminport \
 	--enable-ipv6
 
+TARGET_CFLAGS += -Dbcopy=memmove -Dindex\(s,c\)=strchr\(s,c\)
+
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); touch \
 		configure.ac \
