@@ -1,0 +1,22 @@
+Index: uClibc-0.9.29/libc/sysdeps/linux/common/bits/termios.h
+===================================================================
+--- uClibc-0.9.29.orig/libc/sysdeps/linux/common/bits/termios.h	2007-12-29 01:46:19.616052472 +0100
++++ uClibc-0.9.29/libc/sysdeps/linux/common/bits/termios.h	2007-12-29 01:46:30.512673426 +0100
+@@ -156,7 +156,6 @@
+ #endif
+ #define  B57600   0010001
+ #define  B115200  0010002
+-#if 0 /* limited on uClibc, keep in sync w/ cfsetspeed.c */
+ #define  B230400  0010003
+ #define  B460800  0010004
+ #define  B500000  0010005
+@@ -171,9 +170,6 @@
+ #define  B3500000 0010016
+ #define  B4000000 0010017
+ #define __MAX_BAUD B4000000
+-#else
+-#define __MAX_BAUD B115200
+-#endif
+ #ifdef __USE_MISC
+ # define CIBAUD	  002003600000		/* input baud rate (not used) */
+ # define CMSPAR   010000000000		/* mark or space (stick) parity */
