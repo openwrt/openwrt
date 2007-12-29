@@ -46,7 +46,6 @@ define Build/Prepare
 	$(SED) 's,^KERNEL_HEADERS=.*,KERNEL_HEADERS=\"$(LINUX_HEADERS_DIR)/include\",g' \
 		-e 's,.*UCLIBC_HAS_FPU.*,UCLIBC_HAS_FPU=$(if $(CONFIG_SOFT_FLOAT),n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,y),g' \
 		-e 's,^.*UCLIBC_HAS_LFS.*,UCLIBC_HAS_LFS=$(if $(CONFIG_LARGEFILE),y,n),g' \
-		-e 's,.*DO_C99_MATH.*,DO_C99_MATH=$(if $(CONFIG_C99_MATH),y,n),g' \
 		$(PKG_BUILD_DIR)/.config
 	mkdir -p $(BUILD_DIR_HOST)/uClibc_dev/usr/include
 	mkdir -p $(BUILD_DIR_HOST)/uClibc_dev/usr/lib
