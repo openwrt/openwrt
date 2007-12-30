@@ -1,0 +1,91 @@
+Index: uClibc-0.9.29/include/string.h
+===================================================================
+--- uClibc-0.9.29.orig/include/string.h	2007-12-30 00:44:19.638696968 +0100
++++ uClibc-0.9.29/include/string.h	2007-12-30 00:52:36.655020316 +0100
+@@ -326,11 +326,35 @@
+  * They are replaced as proposed by SuSv3. Don't sync this part
+  * with glibc and keep it in sync with strings.h.  */
+ 
+-#  define bcopy(src,dest,n) (memmove((dest), (src), (n)), (void) 0)
+-#  define bzero(s,n) (memset((s), '\0', (n)), (void) 0)
+-#  define bcmp(s1,s2,n) memcmp((s1), (s2), (size_t)(n))
+-#  define index(s,c) strchr((s), (c))
+-#  define rindex(s,c) strrchr((s), (c))
++/* Copy N bytes of SRC to DEST (like memmove, but args reversed).  */
++static inline void bcopy (__const void *__src, void *__dest, size_t __n)
++{
++	memmove(__dest, __src, __n);
++}
++
++/* Set N bytes of S to 0.  */
++static inline void bzero (void *__s, size_t __n)
++{
++	memset(__s, 0, __n);
++}
++
++/* Compare N bytes of S1 and S2 (same as memcmp).  */
++static inline int bcmp (__const void *__s1, __const void *__s2, size_t __n)
++{
++	return memcmp(__s1, __s2, __n);
++}
++
++/* Find the first occurrence of C in S (same as strchr).  */
++static inline char *index (__const char *__s, int __c)
++{
++	return strchr(__s, __c);
++}
++
++/* Find the last occurrence of C in S (same as strrchr).  */
++static inline char *rindex (__const char *__s, int __c)
++{
++	return strrchr(__s, __c);
++}
+ #  endif
+ # endif
+ 
+Index: uClibc-0.9.29/include/strings.h
+===================================================================
+--- uClibc-0.9.29.orig/include/strings.h	2007-12-30 00:49:00.462700217 +0100
++++ uClibc-0.9.29/include/strings.h	2007-12-30 00:52:57.844227820 +0100
+@@ -58,11 +58,36 @@
+  * They are replaced as proposed by SuSv3. Don't sync this part
+  * with glibc and keep it in sync with string.h.  */
+ 
+-#  define bcopy(src,dest,n) (memmove((dest), (src), (n)), (void) 0)
+-#  define bzero(s,n) (memset((s), '\0', (n)), (void) 0)
+-#  define bcmp(s1,s2,n) memcmp((s1), (s2), (size_t)(n))
+-#  define index(s,c) strchr((s), (c))
+-#  define rindex(s,c) strrchr((s), (c))
++
++/* Copy N bytes of SRC to DEST (like memmove, but args reversed).  */
++static inline void bcopy (__const void *__src, void *__dest, size_t __n)
++{
++	memmove(__dest, __src, __n);
++}
++
++/* Set N bytes of S to 0.  */
++static inline void bzero (void *__s, size_t __n)
++{
++	memset(__s, 0, __n);
++}
++
++/* Compare N bytes of S1 and S2 (same as memcmp).  */
++static inline int bcmp (__const void *__s1, __const void *__s2, size_t __n)
++{
++	return memcmp(__s1, __s2, __n);
++}
++
++/* Find the first occurrence of C in S (same as strchr).  */
++static inline char *index (__const char *__s, int __c)
++{
++	return strchr(__s, __c);
++}
++
++/* Find the last occurrence of C in S (same as strrchr).  */
++static inline char *rindex (__const char *__s, int __c)
++{
++	return strrchr(__s, __c);
++}
+ #  endif
+ # endif
+ 
