@@ -20,31 +20,31 @@ Index: uClibc-0.9.29/include/string.h
 -#  define rindex(s,c) strrchr((s), (c))
 -#  endif
 +/* Copy N bytes of SRC to DEST (like memmove, but args reversed).  */
-+static inline void bcopy (__const void *__src, void *__dest, size_t __n)
++static __inline__ void bcopy (__const void *__src, void *__dest, size_t __n)
 +{
 +	memmove(__dest, __src, __n);
 +}
 +
 +/* Set N bytes of S to 0.  */
-+static inline void bzero (void *__s, size_t __n)
++static __inline__ void bzero (void *__s, size_t __n)
 +{
 +	memset(__s, 0, __n);
 +}
 +
 +/* Compare N bytes of S1 and S2 (same as memcmp).  */
-+static inline int bcmp (__const void *__s1, __const void *__s2, size_t __n)
++static __inline__ int bcmp (__const void *__s1, __const void *__s2, size_t __n)
 +{
 +	return memcmp(__s1, __s2, __n);
 +}
 +
 +/* Find the first occurrence of C in S (same as strchr).  */
-+static inline char *index (__const char *__s, int __c)
++static __inline__ char *index (__const char *__s, int __c)
 +{
 +	return strchr(__s, __c);
 +}
 +
 +/* Find the last occurrence of C in S (same as strrchr).  */
-+static inline char *rindex (__const char *__s, int __c)
++static __inline__ char *rindex (__const char *__s, int __c)
 +{
 +	return strrchr(__s, __c);
 +}
@@ -66,31 +66,31 @@ Index: uClibc-0.9.29/include/strings.h
 -#  define rindex(s,c) strrchr((s), (c))
 +
 +/* Copy N bytes of SRC to DEST (like memmove, but args reversed).  */
-+static inline void bcopy (__const void *__src, void *__dest, size_t __n)
++static __inline__ void bcopy (__const void *__src, void *__dest, size_t __n)
 +{
 +	memmove(__dest, __src, __n);
 +}
 +
 +/* Set N bytes of S to 0.  */
-+static inline void bzero (void *__s, size_t __n)
++static __inline__ void bzero (void *__s, size_t __n)
 +{
 +	memset(__s, 0, __n);
 +}
 +
 +/* Compare N bytes of S1 and S2 (same as memcmp).  */
-+static inline int bcmp (__const void *__s1, __const void *__s2, size_t __n)
++static __inline__ int bcmp (__const void *__s1, __const void *__s2, size_t __n)
 +{
 +	return memcmp(__s1, __s2, __n);
 +}
 +
 +/* Find the first occurrence of C in S (same as strchr).  */
-+static inline char *index (__const char *__s, int __c)
++static __inline__ char *index (__const char *__s, int __c)
 +{
 +	return strchr(__s, __c);
 +}
 +
 +/* Find the last occurrence of C in S (same as strrchr).  */
-+static inline char *rindex (__const char *__s, int __c)
++static __inline__ char *rindex (__const char *__s, int __c)
 +{
 +	return strrchr(__s, __c);
 +}
