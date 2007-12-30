@@ -1,0 +1,23 @@
+Index: linux-2.6.23-rc9/drivers/Kconfig
+===================================================================
+--- linux-2.6.23-rc9.orig/drivers/Kconfig	2007-10-05 20:47:14.000000000 +0800
++++ linux-2.6.23-rc9/drivers/Kconfig	2007-10-05 20:47:42.000000000 +0800
+@@ -94,5 +94,7 @@ source "drivers/kvm/Kconfig"
+ 
+ source "drivers/uio/Kconfig"
+ 
++source "drivers/vlynq/Kconfig"
++
+ source "drivers/virtio/Kconfig"
+ endmenu
+Index: linux-2.6.23-rc9/drivers/Makefile
+===================================================================
+--- linux-2.6.23-rc9.orig/drivers/Makefile	2007-10-05 20:47:09.000000000 +0800
++++ linux-2.6.23-rc9/drivers/Makefile	2007-10-05 20:47:30.000000000 +0800
+@@ -89,5 +89,6 @@ obj-$(CONFIG_DCA)		+= dca/
+ obj-$(CONFIG_HID)		+= hid/
+ obj-$(CONFIG_PPC_PS3)		+= ps3/
+ obj-$(CONFIG_OF)		+= of/
++obj-$(CONFIG_VLYNQ)		+= vlynq/
+ obj-$(CONFIG_SSB)		+= ssb/
+ obj-$(CONFIG_VIRTIO)		+= virtio/
