@@ -1,8 +1,15 @@
 Index: uClibc-0.9.29/include/string.h
 ===================================================================
 --- uClibc-0.9.29.orig/include/string.h	2007-12-30 00:44:19.638696968 +0100
-+++ uClibc-0.9.29/include/string.h	2007-12-30 00:52:36.655020316 +0100
-@@ -326,11 +326,35 @@
++++ uClibc-0.9.29/include/string.h	2007-12-30 01:12:52.097715154 +0100
+@@ -320,18 +320,40 @@
+ /* Find the last occurrence of C in S (same as strrchr).  */
+ extern char *rindex (__const char *__s, int __c)
+      __THROW __attribute_pure__ __nonnull ((1));
+-# else
+-#  ifdef __UCLIBC_SUSV3_LEGACY_MACROS__
++# elif defined(__UCLIBC_SUSV3_LEGACY_MACROS__) && !defined(_STRINGS_H)
+ /* bcopy/bzero/bcmp/index/rindex are marked LEGACY in SuSv3.
   * They are replaced as proposed by SuSv3. Don't sync this part
   * with glibc and keep it in sync with strings.h.  */
  
@@ -11,6 +18,7 @@ Index: uClibc-0.9.29/include/string.h
 -#  define bcmp(s1,s2,n) memcmp((s1), (s2), (size_t)(n))
 -#  define index(s,c) strchr((s), (c))
 -#  define rindex(s,c) strrchr((s), (c))
+-#  endif
 +/* Copy N bytes of SRC to DEST (like memmove, but args reversed).  */
 +static inline void bcopy (__const void *__src, void *__dest, size_t __n)
 +{
@@ -40,9 +48,9 @@ Index: uClibc-0.9.29/include/string.h
 +{
 +	return strrchr(__s, __c);
 +}
- #  endif
  # endif
  
+ /* Return the position of the first bit set in I, or 0 if none are set.
 Index: uClibc-0.9.29/include/strings.h
 ===================================================================
 --- uClibc-0.9.29.orig/include/strings.h	2007-12-30 00:49:00.462700217 +0100
