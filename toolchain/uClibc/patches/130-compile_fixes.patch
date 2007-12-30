@@ -1,0 +1,26 @@
+Index: uClibc-0.9.29/libc/string/mips/sysdep.h
+===================================================================
+--- uClibc-0.9.29.orig/libc/string/mips/sysdep.h	2007-12-30 20:10:30.969471579 +0100
++++ uClibc-0.9.29/libc/string/mips/sysdep.h	2007-12-30 20:10:37.717856150 +0100
+@@ -29,7 +29,7 @@
+   .globl name;                                                                \
+   .align 2;                                                                   \
+   .ent name,0;                                                                \
+-  name##:
++  name:
+ 
+ #undef END
+ #define END(function)                                   \
+Index: uClibc-0.9.29/Rules.mak
+===================================================================
+--- uClibc-0.9.29.orig/Rules.mak	2007-12-30 20:22:54.727521234 +0100
++++ uClibc-0.9.29/Rules.mak	2007-12-30 20:23:05.320124876 +0100
+@@ -399,7 +399,7 @@
+ CFLAGS += -DSTATIC
+ endif
+ 
+-CFLAGS += $(call check_gcc,-std=gnu99,)
++# CFLAGS += $(call check_gcc,-std=gnu99,)
+ 
+ LDFLAGS_NOSTRIP:=$(CPU_LDFLAGS-y) -shared --warn-common --warn-once -z combreloc
+ # binutils-2.16.1 warns about ignored sections, 2.16.91.0.3 and newer are ok
