@@ -1,0 +1,12 @@
+diff -urN uClibc-0.9.29/libc/sysdeps/linux/mips/bits/socket.h uClibc-0.9.29.new/libc/sysdeps/linux/mips/bits/socket.h
+--- uClibc-0.9.29/libc/sysdeps/linux/mips/bits/socket.h	2006-12-06 22:46:56.000000000 +0100
++++ uClibc-0.9.29.new/libc/sysdeps/linux/mips/bits/socket.h	2007-12-31 14:25:29.000000000 +0100
+@@ -269,7 +269,7 @@
+ #define CMSG_LEN(len)   (CMSG_ALIGN (sizeof (struct cmsghdr)) + (len))
+ 
+ extern struct cmsghdr * __NTH (__cmsg_nxthdr (struct msghdr *__mhdr,
+-				      struct cmsghdr *__cmsg)) __THROW;
++				      struct cmsghdr *__cmsg));
+ #ifdef __USE_EXTERN_INLINES
+ # ifndef _EXTERN_INLINE
+ #  define _EXTERN_INLINE extern __inline
