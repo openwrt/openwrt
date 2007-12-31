@@ -1,9 +1,10 @@
 ARCH:=mipsel
 SUBTARGET:=router_le
 BOARDNAME:=Little Endian
+FEATURES:=squashfs jffs2 tgz
 
 define Target/Description
 	Build firmware images for Infineon/ADMtek ADM5120 based boards
-	(e.g : RouterBoard RB1xx, Compex WP54G-WRT ...)
+	running in little-endian mode (e.g: RouterBoard RB1xx, Compex WP54x ...)
 endef
 
