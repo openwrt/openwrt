@@ -1,13 +1,16 @@
 /*
  * ADM5120 HCD (Host Controller Driver) for USB
  *
- * Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ * Copyright (C) 2007,2008 Gabor Juhos <juhosg at openwrt.org>
  *
  * This file was derived from: drivers/usb/host/ohci-q.c
  *   (C) Copyright 1999 Roman Weissgaerber <weissg@vienna.at>
  *   (C) Copyright 2000-2002 David Brownell <dbrownell@users.sourceforge.net>
  *
- * This file is licenced under the GPL.
+ *  This program is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License version 2 as published
+ *  by the Free Software Foundation.
+ *
  */
 
 #include <linux/irq.h>
@@ -571,51 +574,52 @@ static void td_submit_urb(struct admhcd *ahcd, struct urb *urb)
 static int td_done(struct admhcd *ahcd, struct urb *urb, struct td *td)
 {
 	struct urb_priv *urb_priv = urb->hcpriv;
-	u32	info = hc32_to_cpup(ahcd, &td->hwINFO);
+	u32	info;
+	u32	bl;
+	u32	tdDBP;
 	int	type = usb_pipetype(urb->pipe);
 	int	cc;
 
+	info = hc32_to_cpup(ahcd, &td->hwINFO);
+	tdDBP = hc32_to_cpup(ahcd, &td->hwDBP);
+	bl = TD_BL_GET(hc32_to_cpup(ahcd, &td->hwCBL));
 	cc = TD_CC_GET(info);
 
 	/* ISO ... drivers see per-TD length/status */
 	if (type == PIPE_ISOCHRONOUS) {
-#if 0
 		/* TODO */
 		int	dlen = 0;
 
 		/* NOTE:  assumes FC in tdINFO == 0, and that
 		 * only the first of 0..MAXPSW psws is used.
 		 */
-
-		cc = TD_CC_GET(td);
+#if 0
 		if (tdINFO & TD_CC)	/* hc didn't touch? */
 			return;
-
-		if (usb_pipeout (urb->pipe))
-			dlen = urb->iso_frame_desc [td->index].length;
+#endif
+		if (usb_pipeout(urb->pipe))
+			dlen = urb->iso_frame_desc[td->index].length;
 		else {
 			/* short reads are always OK for ISO */
-			if (cc == TD_DATAUNDERRUN)
+			if (cc == TD_CC_DATAUNDERRUN)
 				cc = TD_CC_NOERROR;
-			dlen = tdPSW & 0x3ff;
+			dlen = tdDBP - td->data_dma + bl;
 		}
+
 		urb->actual_length += dlen;
-		urb->iso_frame_desc [td->index].actual_length = dlen;
-		urb->iso_frame_desc [td->index].status = cc_to_error [cc];
+		urb->iso_frame_desc[td->index].actual_length = dlen;
+		urb->iso_frame_desc[td->index].status = cc_to_error[cc];
 
 		if (cc != TD_CC_NOERROR)
 			admhc_vdbg (ahcd,
 				"urb %p iso td %p (%d) len %d cc %d\n",
 				urb, td, 1 + td->index, dlen, cc);
-#endif
+
 	/* BULK, INT, CONTROL ... drivers see aggregate length/status,
 	 * except that "setup" bytes aren't counted and "short" transfers
 	 * might not be reported as errors.
 	 */
 	} else {
-		u32	bl = TD_BL_GET(hc32_to_cpup(ahcd, &td->hwCBL));
-		u32	tdDBP = hc32_to_cpup(ahcd, &td->hwDBP);
-
 		/* update packet status if needed (short is normally ok) */
 		if (cc == TD_CC_DATAUNDERRUN
 				&& !(urb->transfer_flags & URB_SHORT_NOT_OK))
