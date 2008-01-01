@@ -843,6 +843,7 @@ static int adm5120_if_hard_start_xmit(struct sk_buff *skb,
 	struct adm5120_if_priv *priv = netdev_priv(dev);
 	unsigned int entry;
 	unsigned long data;
+	int i;
 
 	/* lock switch irq */
 	spin_lock_irq(&tx_lock);
@@ -875,8 +876,11 @@ static int adm5120_if_hard_start_xmit(struct sk_buff *skb,
 
 	cur_txl++;
 	if (cur_txl == dirty_txl + TX_QUEUE_LEN) {
-		/* FIXME: stop queue for all devices */
-		netif_stop_queue(dev);
+		for (i = 0; i < SWITCH_NUM_PORTS; i++) {
+			if (!adm5120_devs[i])
+				continue;
+			netif_stop_queue(dev);
+		}
 	}
 
 	dev->trans_start = jiffies;
