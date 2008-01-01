@@ -93,8 +93,10 @@ define KernelPackage/sound-cs5535audio
   TITLE:=CS5535 PCI Controller
   DEPENDS:=kmod-sound-core
   KCONFIG:=CONFIG_SND_CS5535AUDIO
-  FILES:=$(LINUX_DIR)/sound/pci/cs5535audio/snd-cs5535audio.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,35,snd-cs5535audio)
+  FILES:=$(LINUX_DIR)/sound/pci/cs5535audio/snd-cs5535audio.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/sound/ac97_bus.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/sound/pci/ac97/snd-ac97-codec.$(LINUX_KMOD_SUFFIX) 
+  AUTOLOAD:=$(call AutoLoad,35, ac97_bus snd-ac97-codec snd-cs5535audio)
 endef
 
 define KernelPackage/sound-cs5535audio/description
