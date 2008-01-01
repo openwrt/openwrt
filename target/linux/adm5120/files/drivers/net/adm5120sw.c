@@ -1,7 +1,7 @@
 /*
  *  ADM5120 built-in ethernet switch driver
  *
- *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2007,2008 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This code was based on a driver for Linux 2.6.xx by Jeroen Vreeken.
  *    Copyright Jeroen Vreeken (pe1rxq@amsat.org), 2005
@@ -879,7 +879,7 @@ static int adm5120_if_hard_start_xmit(struct sk_buff *skb,
 		for (i = 0; i < SWITCH_NUM_PORTS; i++) {
 			if (!adm5120_devs[i])
 				continue;
-			netif_stop_queue(dev);
+			netif_stop_queue(adm5120_devs[i]);
 		}
 	}
 
