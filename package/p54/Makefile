@@ -21,7 +21,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/p54/Default
   SUBMENU:=Wireless Drivers
   TITLE:=Prism Wireless Support (mac80211)
-  DEPENDS:=+kmod-mac80211
+  DEPENDS:=+kmod-mac80211 @!TARGET_atheros @!TARGET_uml
 endef
 
 define KernelPackage/p54-common
