@@ -1,0 +1,13 @@
+Index: madwifi-dfs-r3053/ath/if_ath.c
+===================================================================
+--- madwifi-dfs-r3053.orig/ath/if_ath.c	2007-12-20 23:43:22.845925726 +0100
++++ madwifi-dfs-r3053/ath/if_ath.c	2007-12-20 23:43:30.570365916 +0100
+@@ -1320,7 +1320,7 @@
+ 		TAILQ_FOREACH(v, &ic->ic_vaps, iv_next)
+ 			id_mask |= (1 << ATH_GET_VAP_ID(v->iv_myaddr, ic->ic_myaddr));
+ 
+-		for (id = 1; id < ATH_BCBUF; id++) {
++		for (id = 0; id < ATH_BCBUF; id++) {
+ 			/* get the first available slot */
+ 			if ((id_mask & (1 << id)) == 0) {
+ 				ATH_SET_VAP_BSSID(vap->iv_myaddr, ic->ic_myaddr, id);
