@@ -16,6 +16,7 @@ $(strip \
         $(if $(filter svn://%,$(1)),svn, \
           $(if $(filter cvs://%,$(1)),cvs, \
             unknown \
+	  ) \
         ) \
       ) \
     ) \
