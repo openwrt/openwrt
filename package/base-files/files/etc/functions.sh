@@ -217,3 +217,9 @@ jffs2_mark_erase() {
 	}
 	echo -e "\xde\xad\xc0\xde" | mtd -qq write - "$1"
 }
+
+uci_set_default() {
+	local PACKAGE="$1"
+	[ -e "/etc/config/$1" ] && return 0
+	cat > "/etc/config/$1"
+}
