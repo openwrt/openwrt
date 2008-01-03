@@ -1,3 +1,15 @@
+Index: busybox-1.8.2/archival/libipkg/ipkg_install.c
+===================================================================
+--- busybox-1.8.2.orig/archival/libipkg/ipkg_install.c	2007-12-30 00:02:53.577161007 +0100
++++ busybox-1.8.2/archival/libipkg/ipkg_install.c	2007-12-30 00:03:14.042327251 +0100
+@@ -500,6 +500,7 @@
+ 	       }
+ 	  }
+      }
++	 pkg_free_installed_files(new_pkg);
+      return 0;
+ }
+ 
 Index: busybox-1.8.2/archival/libipkg/pkg.c
 ===================================================================
 --- busybox-1.8.2.orig/archival/libipkg/pkg.c	2007-12-30 00:27:32.001919565 +0100
