@@ -99,6 +99,7 @@ endef
 
 define Package/brcm-compat-ldso
   TITLE:=Broadcom wl/nas binary compatibility libraries
+  DEPENDS:=@TARGET_brcm_2_4
   SECTION:=libs
   CATEGORY:=Libraries
 endef
