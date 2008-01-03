@@ -31,6 +31,8 @@ include $(INCLUDE_DIR)/autotools.mk
 
 override MAKEFLAGS=
 export CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
+CUR_MAKEFILE:=$(filter-out Makefile,$(firstword $(MAKEFILE_LIST)))
+SUBMAKE:=$(NO_TRACE_MAKE) $(if $(CUR_MAKEFILE),-f $(CUR_MAKEFILE))
 
 ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
@@ -81,7 +83,7 @@ define Build/DefaultTargets
 	touch $$@
 
   $(STAMP_INSTALLED): $(STAMP_BUILT)
-	$(NO_TRACE_MAKE) clean-staging
+	$(SUBMAKE) clean-staging
 	rm -rf $(TMP_DIR)/stage-$(PKG_NAME)
 	mkdir -p $(TMP_DIR)/stage-$(PKG_NAME)/host $(STAGING_DIR)/packages $(STAGING_DIR_HOST)/packages
 	$(call Build/InstallDev,$(TMP_DIR)/stage-$(PKG_NAME),$(TMP_DIR)/stage-$(PKG_NAME)/host)
