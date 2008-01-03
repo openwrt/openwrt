@@ -82,7 +82,11 @@ $(TOPDIR)/tmp/ipkg.conf: FORCE
 	@echo 'src packages file:$(TOPDIR)/packages' >> $@
 
 BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $(PACKAGES) $($(PROFILE)_PACKAGES) kernel)
+ifeq ($(KERNEL),2.4)
 BUILD_PACKAGES:=$(patsubst base-files,base-files-$(BOARD)-$(KERNEL),$(BUILD_PACKAGES))
+else
+BUILD_PACKAGES:=$(patsubst base-files,base-files-$(BOARD),$(BUILD_PACKAGES))
+endif
 # "-pkgname" in the package list means remove "pkgname" from the package list
 BUILD_PACKAGES:=$(filter-out $(filter -%,$(BUILD_PACKAGES)) $(patsubst -%,%,$(filter -%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES))
 
