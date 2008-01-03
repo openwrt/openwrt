@@ -1,21 +1,68 @@
 Index: busybox-1.8.2/archival/libipkg/pkg.c
 ===================================================================
---- busybox-1.8.2.orig/archival/libipkg/pkg.c	2008-01-02 21:53:12.616453611 +0100
-+++ busybox-1.8.2/archival/libipkg/pkg.c	2008-01-02 21:54:41.462489150 +0100
-@@ -587,13 +587,14 @@
+--- busybox-1.8.2.orig/archival/libipkg/pkg.c	2008-01-03 17:25:55.000000000 +0100
++++ busybox-1.8.2/archival/libipkg/pkg.c	2008-01-03 17:33:57.000000000 +0100
+@@ -575,25 +575,28 @@
+ 		    return temp;
+ 	       }
+ 
+-               len = 14 ;
++               len = sizeof("Conffiles:") ;
+ 	       for (iter = pkg->conffiles.head; iter; iter = iter->next) {
+ 		    if (iter->data->name && iter->data->value) {
+-                       len = len + (strlen(iter->data->name)+strlen(iter->data->value)+5);
+-		    }
++                        /* " <filename> <md5hash>"  */
++		        len += 1+strlen(iter->data->name)+1+strlen(iter->data->value); 
++                    }
+ 	       }
++               len +=2; /* "\n\0" */
+                temp = (char *)realloc(temp,len);
+                if ( temp == NULL ){
+ 	          fprintf(stderr, "%s: out of memory\n", __FUNCTION__);
  	          return NULL;
                 }
                 temp[0]='\0';
 -               strncpy(temp, "Conffiles:\n", 12);
-+               strncpy(temp, "Conffiles: ", 12);
++	       strcpy(temp, "Conffiles:");
  	       for (iter = pkg->conffiles.head; iter; iter = iter->next) {
  		    if (iter->data->name && iter->data->value) {
 -                         snprintf(line_str, LINE_LEN, "%s %s\n", iter->data->name, iter->data->value);
-+                         snprintf(line_str, LINE_LEN, "%s %s", iter->data->name, iter->data->value);
++                         snprintf(line_str, LINE_LEN, " %s %s", iter->data->name, iter->data->value);
                           strncat(temp, line_str, strlen(line_str));           
  		    }
  	       }
-+	       strcat(temp, "\n");
++               strcat(temp, "\n");
  	  } else if (strcasecmp(field, "Conflicts") == 0) {
  	       int i;
  
+Index: busybox-1.8.2/archival/libipkg/pkg_parse.c
+===================================================================
+--- busybox-1.8.2.orig/archival/libipkg/pkg_parse.c	2008-01-03 17:25:55.000000000 +0100
++++ busybox-1.8.2/archival/libipkg/pkg_parse.c	2008-01-03 17:30:14.000000000 +0100
+ -85,20 +85,17 @@
+ {
+     char file_name[1048], md5sum[1048];  /* please tell me there aren't any longer that 1k */
+ 
+-    if(!strncmp(raw, "Conffiles:", 10))
++    if(!strncmp(raw, "Conffiles:",10))
+ 	raw += strlen("Conffiles:");
+ 
++    while(*raw && isspace(*raw)) raw++;
+     while(*raw && (sscanf(raw, "%s%s", file_name, md5sum) == 2)){
+ 	conffile_list_append(&pkg->conffiles, file_name, md5sum);
+ 	/*	fprintf(stderr, "%s %s ", file_name, md5sum);*/
+-	while (*raw && isspace(*raw)) {
+-	    raw++;
+-	}
+-	raw += strlen(file_name);
+-	while (*raw && isspace(*raw)) {
+-	    raw++;
+-	}
+-	raw += strlen(md5sum);
++        raw += strlen(file_name);
++	while(*raw && isspace(*raw)) raw++;
++        raw += strlen(md5sum);
++        while(*raw && isspace(*raw)) raw++;
+     }
+ }
