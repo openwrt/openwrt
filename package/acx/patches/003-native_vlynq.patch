@@ -1,0 +1,557 @@
+Binary files acx-20071003/.pci.c.swp and acx-20071003.new/.pci.c.swp differ
+diff -urN acx-20071003/acx_struct.h acx-20071003.new/acx_struct.h
+--- acx-20071003/acx_struct.h	2007-10-03 17:42:18.000000000 +0200
++++ acx-20071003.new/acx_struct.h	2008-01-04 02:06:43.000000000 +0100
+@@ -1440,7 +1440,13 @@
+ 
+ 	const u16	*io;		/* points to ACX100 or ACX111 PCI I/O register address set */
+ 
++#ifdef CONFIG_PCI
+ 	struct pci_dev	*pdev;
++#endif
++#ifdef CONFIG_VLYNQ
++	struct vlynq_device     *vdev;
++#endif
++	struct device *bus_dev;
+ 
+ 	unsigned long	membase;
+ 	unsigned long	membase2;
+diff -urN acx-20071003/pci.c acx-20071003.new/pci.c
+--- acx-20071003/pci.c	2008-01-04 02:05:00.000000000 +0100
++++ acx-20071003.new/pci.c	2008-01-04 03:10:42.000000000 +0100
+@@ -59,12 +59,17 @@
+ #include <linux/pm.h>
+ #include <linux/vmalloc.h>
+ #include <linux/dma-mapping.h>
++#ifdef CONFIG_VLYNQ
++#include <linux/vlynq.h>
++#endif
++
+ 
+ #include "acx.h"
+ 
+ 
+ /***********************************************************************
+ */
++#ifdef CONFIG_PCI
+ #define PCI_TYPE		(PCI_USES_MEM | PCI_ADDR0 | PCI_NO_ACPI_WAKE)
+ #define PCI_ACX100_REGION1		0x01
+ #define PCI_ACX100_REGION1_SIZE		0x1000	/* Memory size - 4K bytes */
+@@ -102,7 +107,7 @@
+ #define PCI_POWER_ERROR	-1
+ #endif
+ 
+-
++#endif
+ /***********************************************************************
+ */
+ static void acxpci_i_tx_timeout(struct net_device *ndev);
+@@ -653,11 +658,11 @@
+ 	snprintf(filename, sizeof(filename), "tiacx1%02dc%02X",
+ 		IS_ACX111(adev)*11, adev->radio_type);
+ 
+-	fw_image = acx_s_read_fw(&adev->pdev->dev, filename, &file_size);
++	fw_image = acx_s_read_fw(adev->bus_dev, filename, &file_size);
+ 	if (!fw_image) {
+ 		adev->need_radio_fw = 1;
+ 		filename[sizeof("tiacx1NN")-1] = '\0';
+-		fw_image = acx_s_read_fw(&adev->pdev->dev, filename, &file_size);
++		fw_image = acx_s_read_fw(adev->bus_dev, filename, &file_size);
+ 		if (!fw_image) {
+ 			FN_EXIT1(NOT_OK);
+ 			return NOT_OK;
+@@ -716,7 +721,7 @@
+ 	snprintf(filename, sizeof(filename), "tiacx1%02dr%02X",
+ 		IS_ACX111(adev)*11,
+ 		adev->radio_type);
+-	radio_image = acx_s_read_fw(&adev->pdev->dev, filename, &size);
++	radio_image = acx_s_read_fw(adev->bus_dev, filename, &size);
+ 	if (!radio_image) {
+ 		printk("acx: can't load radio module '%s'\n", filename);
+ 		goto fail;
+@@ -933,7 +938,9 @@
+ 
+ 	ecpu_ctrl = read_reg16(adev, IO_ACX_ECPU_CTRL) & 1;
+ 	if (!ecpu_ctrl) {
++#ifdef CONFIG_PCI
+ 		acxpci_l_reset_mac(adev);
++#endif
+ 		ecpu_ctrl = read_reg16(adev, IO_ACX_ECPU_CTRL) & 1;
+ 	}
+ 
+@@ -1473,6 +1480,7 @@
+ static void
+ dummy_netdev_init(struct net_device *ndev) {}
+ 
++#ifdef CONFIG_PCI
+ static int __devinit
+ acxpci_e_probe(struct pci_dev *pdev, const struct pci_device_id *id)
+ {
+@@ -1606,6 +1614,7 @@
+ 	** just _presume_ that we're under sem (instead of actually taking it): */
+ 	/* acx_sem_lock(adev); */
+ 	adev->pdev = pdev;
++	adev->bus_dev = &pdev->dev;
+ 	adev->ndev = ndev;
+ 	adev->dev_type = DEVTYPE_PCI;
+ 	adev->chip_type = chip_type;
+@@ -1956,7 +1965,7 @@
+ 	return OK;
+ }
+ #endif /* CONFIG_PM */
+-
++#endif /* CONFIG_PCI */
+ 
+ /***********************************************************************
+ ** acxpci_s_up
+@@ -2051,7 +2060,7 @@
+ 	/* then wait until interrupts have finished executing on other CPUs */
+ 	acx_lock(adev, flags);
+ 	disable_acx_irq(adev);
+-	synchronize_irq(adev->pdev->irq);
++	synchronize_irq(adev->irq);
+ 	acx_unlock(adev, flags);
+ 
+ 	/* we really don't want to have an asynchronous tasklet disturb us
+@@ -3573,9 +3582,8 @@
+ {
+ 	void *ptr;
+ 
+-	ptr = dma_alloc_coherent(adev->pdev ? &adev->pdev->dev : NULL,
+-			size, phy, GFP_KERNEL);
+-
++	ptr = dma_alloc_coherent(adev->bus_dev, size, phy, GFP_KERNEL);
++	
+ 	if (ptr) {
+ 		log(L_DEBUG, "%s sz=%d adr=0x%p phy=0x%08llx\n",
+ 				msg, (int)size, ptr, (unsigned long long)*phy);
+@@ -4137,6 +4145,379 @@
+ }
+ 
+ 
++#ifdef CONFIG_VLYNQ
++struct vlynq_reg_config {
++       u32 offset;
++       u32 value;
++};
++
++struct vlynq_known {
++       u32 chip_id;
++       char name[32];
++       struct vlynq_mapping rx_mapping[4];
++       int irq;
++       int irq_type;
++       int num_regs;
++       struct vlynq_reg_config regs[10];
++};
++
++#define CHIP_TNETW1130 0x00000009
++#define CHIP_TNETW1350 0x00000029
++static struct vlynq_known known_devices[] = {
++       {
++               .chip_id = CHIP_TNETW1130, .name = "TI TNETW1130",
++               .rx_mapping = {
++                       { .size = 0x22000, .offset = 0xf0000000 },
++                       { .size = 0x40000, .offset = 0xc0000000 },
++                       { .size = 0x0, .offset = 0x0 },
++                       { .size = 0x0, .offset = 0x0 },
++               },
++               .irq = 0,
++               .irq_type = IRQ_TYPE_EDGE_RISING,
++               .num_regs = 5,
++               .regs = {
++                       {
++                               .offset = 0x790,
++                               .value = (0xd0000000 - PHYS_OFFSET)
++                       },
++                       {
++                               .offset = 0x794,
++                               .value = (0xd0000000 - PHYS_OFFSET)
++                       },
++                       { .offset = 0x740, .value = 0 },
++                       { .offset = 0x744, .value = 0x00010000 },
++                       { .offset = 0x764, .value = 0x00010000 },
++               },
++       },
++       {
++               .chip_id = CHIP_TNETW1350, .name = "TI TNETW1350",
++               .rx_mapping = {
++                       { .size = 0x100000, .offset = 0x00300000 },
++                       { .size = 0x80000, .offset = 0x00000000 },
++                       { .size = 0x0, .offset = 0x0 },
++                       { .size = 0x0, .offset = 0x0 },
++               },
++               .irq = 0,
++               .irq_type = IRQ_TYPE_EDGE_RISING,
++               .num_regs = 5,
++               .regs = {
++                       {
++                               .offset = 0x790,
++                               .value = (0x60000000 - PHYS_OFFSET)
++                       },
++                       {
++                               .offset = 0x794,
++                               .value = (0x60000000 - PHYS_OFFSET)
++                       },
++                       { .offset = 0x740, .value = 0 },
++                       { .offset = 0x744, .value = 0x00010000 },
++                       { .offset = 0x764, .value = 0x00010000 },
++               },
++       },
++};
++
++static struct vlynq_device_id acx_vlynq_id[] = {
++       { CHIP_TNETW1130, vlynq_div_auto, 0 },
++       { CHIP_TNETW1350, vlynq_div_auto, 1 },
++       { 0, 0, 0 },
++};
++
++static __devinit int vlynq_probe(struct vlynq_device *vdev,
++                                struct vlynq_device_id *id)
++{
++       int result = -EIO, i;
++       u32 addr;
++       acx_device_t *adev = NULL;
++	struct net_device *ndev = NULL;
++       acx111_ie_configoption_t co;
++       struct vlynq_mapping mapping[4] = { { 0, }, };
++       struct vlynq_known *match = NULL;
++	int err;
++
++       FN_ENTER;
++       result = vlynq_enable_device(vdev);
++       if (result)
++               return result;
++
++       match = &known_devices[id->driver_data];
++
++       if (!match) {
++               result = -ENODEV;
++               goto fail;
++       }
++
++       mapping[0].offset = ARCH_PFN_OFFSET << PAGE_SHIFT;
++       mapping[0].size = 0x02000000;
++       vlynq_set_local_mapping(vdev, vdev->mem_start, mapping);
++       vlynq_set_remote_mapping(vdev, 0, match->rx_mapping);
++
++       set_irq_type(vlynq_virq_to_irq(vdev, match->irq), match->irq_type);
++
++       addr = (u32)ioremap(vdev->mem_start, 0x1000);
++       if (!addr) {
++               printk(KERN_ERR "%s: failed to remap io memory\n",
++                      vdev->dev.bus_id);
++               result = -ENXIO;
++               goto fail;
++       }
++
++       for (i = 0; i < match->num_regs; i++)
++               iowrite32(match->regs[i].value,
++                         (u32 *)(addr + match->regs[i].offset));
++
++       iounmap((void *)addr);
++
++	ndev = alloc_netdev(sizeof(*adev), "wlan%d", dummy_netdev_init);
++	/* (NB: memsets to 0 entire area) */
++	if (!ndev) {
++                printk("acx: no memory for netdevice struct\n");
++                goto fail_alloc_netdev;
++        }
++        ether_setup(ndev);
++        ndev->open = &acxpci_e_open;
++        ndev->stop = &acxpci_e_close;
++        ndev->hard_start_xmit = &acx_i_start_xmit;
++        ndev->get_stats = &acx_e_get_stats;
++#if IW_HANDLER_VERSION <= 5
++        ndev->get_wireless_stats = &acx_e_get_wireless_stats;
++#endif
++        ndev->wireless_handlers = (struct iw_handler_def *)&acx_ioctl_handler_def;
++        ndev->set_multicast_list = &acxpci_i_set_multicast_list;
++        ndev->tx_timeout = &acxpci_i_tx_timeout;
++        ndev->change_mtu = &acx_e_change_mtu;
++        ndev->watchdog_timeo = 4 * HZ;
++
++        adev = ndev2adev(ndev);
++
++       memset(adev, 0, sizeof(*adev));
++       /** Set up our private interface **/
++       spin_lock_init(&adev->lock);    /* initial state: unlocked */
++       /* We do not start with downed sem: we want PARANOID_LOCKING to work */
++	sema_init(&adev->sem, 1);
++       /* since nobody can see new netdev yet, we can as well
++        ** just _presume_ that we're under sem (instead of actually taking it): */
++       /* acx_sem_lock(adev); */
++       	adev->ndev = ndev;
++       	adev->vdev = vdev;
++       	adev->bus_dev = &vdev->dev;
++       	adev->dev_type = DEVTYPE_PCI;
++
++/** Finished with private interface **/
++
++       vlynq_set_drvdata(vdev, ndev);
++       if (!request_mem_region(vdev->mem_start, vdev->mem_end - vdev->mem_start, "acx")) {
++               printk("acx: cannot reserve VLYNQ memory region\n");
++               goto fail_request_mem_region;
++       }
++       adev->iobase = ioremap(vdev->mem_start, vdev->mem_end - vdev->mem_start);
++       if (!adev->iobase) {
++               printk("acx: ioremap() FAILED\n");
++               goto fail_ioremap;
++       }
++       adev->iobase2 = adev->iobase + match->rx_mapping[0].size;
++       adev->chip_type = CHIPTYPE_ACX111;
++       adev->chip_name = match->name;
++       adev->io = IO_ACX111;
++       ndev->irq = vlynq_virq_to_irq(vdev, match->irq);
++       ndev->base_addr = adev->iobase;
++
++       printk("acx: found %s-based wireless network card at %s, irq:%d, "
++              "phymem:0x%x, mem:0x%p\n",
++              match->name, vdev->dev.bus_id, ndev->irq,
++              vdev->mem_start, adev->iobase);
++       log(L_ANY, "initial debug setting is 0x%04X\n", acx_debug);
++
++       if (0 == ndev->irq) {
++               printk("acx: can't use IRQ 0\n");
++               goto fail_irq;
++       }
++
++       /* to find crashes due to weird driver access
++        * to unconfigured interface (ifup) */
++       adev->mgmt_timer.function = (void (*)(unsigned long))0x0000dead;
++#ifdef NONESSENTIAL_FEATURES
++        acx_show_card_eeprom_id(adev);
++#endif /* NONESSENTIAL_FEATURES */
++
++#ifdef SET_MODULE_OWNER
++        SET_MODULE_OWNER(ndev);
++#endif
++        SET_NETDEV_DEV(ndev, adev->bus_dev);
++
++        log(L_IRQ|L_INIT, "using IRQ %d\n", ndev->irq);
++
++
++       /* ok, pci setup is finished, now start initializing the card */
++
++       /* NB: read_reg() reads may return bogus data before reset_dev(),
++        * since the firmware which directly controls large parts of the I/O
++        * registers isn't initialized yet.
++        * acx100 seems to be more affected than acx111 */
++       if (OK != acxpci_s_reset_dev(adev))
++               goto fail_reset;
++
++       if (OK != acx_s_init_mac(adev))
++               goto fail_init_mac;
++
++       acx_s_interrogate(adev, &co, ACX111_IE_CONFIG_OPTIONS);
++/* TODO: merge them into one function, they are called just once and are the same for pci & usb */
++       if (OK != acxpci_read_eeprom_byte(adev, 0x05, &adev->eeprom_version))
++               goto fail_read_eeprom_version;
++
++       acx_s_parse_configoption(adev, &co);
++       acx_s_set_defaults(adev);
++       acx_s_get_firmware_version(adev);       /* needs to be after acx_s_init_mac() */
++       acx_display_hardware_details(adev);
++
++       /* Register the card, AFTER everything else has been set up,
++        * since otherwise an ioctl could step on our feet due to
++        * firmware operations happening in parallel or uninitialized data */
++
++
++       acx_proc_register_entries(ndev);
++
++       /* Now we have our device, so make sure the kernel doesn't try
++        * to send packets even though we're not associated to a network yet */
++        acx_stop_queue(ndev, "on probe");
++        acx_carrier_off(ndev, "on probe");
++
++       /* after register_netdev() userspace may start working with dev
++        * (in particular, on other CPUs), we only need to up the sem */
++       /* acx_sem_unlock(adev); */
++
++       printk("acx " ACX_RELEASE ": net device %s, driver compiled "
++              "against wireless extensions %d and Linux %s\n",
++              ndev->name, WIRELESS_EXT, UTS_RELEASE);
++
++       log(L_IRQ | L_INIT, "using IRQ %d\n", ndev->irq);
++
++/** done with board specific setup **/
++	err = register_netdev(ndev);
++        if (OK != err) {
++                printk("acx: register_netdev() FAILED: %d\n", err);
++                goto fail_register_netdev;
++        }
++
++#if CMD_DISCOVERY
++       great_inquisitor(adev);
++#endif
++
++       result = OK;
++       goto done;
++
++       /* error paths: undo everything in reverse order... */
++
++
++       acxpci_s_delete_dma_regions(adev);
++
++      fail_init_mac:
++      fail_read_eeprom_version:
++      fail_reset:
++	free_netdev(ndev);
++
++      fail_alloc_netdev:
++      fail_irq:
++
++       iounmap(adev->iobase);
++      fail_ioremap:
++
++       release_mem_region(vdev->mem_start, vdev->mem_end - vdev->mem_start);
++      fail_request_mem_region:
++      fail_register_netdev:
++      fail:
++       vlynq_disable_device(vdev);
++      done:
++       FN_EXIT1(result);
++       return result;
++}
++
++static void vlynq_remove(struct vlynq_device *vdev)
++{
++	struct net_device *ndev = vlynq_get_drvdata(vdev);;
++       acx_device_t *adev;
++       unsigned long flags;
++       FN_ENTER;
++
++       if (!ndev) {
++               log(L_DEBUG, "%s: card is unused. Skipping any release code\n",
++                   __func__);
++               goto end;
++       }
++
++       acx_lock(adev, flags);
++	adev = ndev2adev(ndev);
++       acx_unlock(adev, flags);
++
++       /* If device wasn't hot unplugged... */
++       if (adev_present(adev)) {
++
++               acx_sem_lock(adev);
++
++               /* disable both Tx and Rx to shut radio down properly */
++               acx_s_issue_cmd(adev, ACX1xx_CMD_DISABLE_TX, NULL, 0);
++               acx_s_issue_cmd(adev, ACX1xx_CMD_DISABLE_RX, NULL, 0);
++               acx_lock(adev, flags);
++               /* disable power LED to save power :-) */
++               log(L_INIT, "switching off power LED to save power\n");
++               acxpci_l_power_led(adev, 0);
++               /* stop our eCPU */
++               acx_unlock(adev, flags);
++
++               acx_sem_unlock(adev);
++       }
++
++       /* unregister the device to not let the kernel
++        * (e.g. ioctls) access a half-deconfigured device
++        * NB: this will cause acxpci_e_close() to be called,
++        * thus we shouldn't call it under sem! */
++       log(L_INIT, "removing device %s\n", ndev->name);
++       unregister_netdev(ndev);
++
++        /* unregister_netdev ensures that no references to us left.
++	 * For paranoid reasons we continue to follow the rules */
++        acx_sem_lock(adev);
++
++
++       if (adev->dev_state_mask & ACX_STATE_IFACE_UP) {
++               acxpci_s_down(ndev);
++               CLEAR_BIT(adev->dev_state_mask, ACX_STATE_IFACE_UP);
++       }
++
++       acx_proc_unregister_entries(ndev);
++
++       /* finally, clean up PCI bus state */
++       acxpci_s_delete_dma_regions(adev);
++       if (adev->iobase)
++               iounmap(adev->iobase);
++       if (adev->iobase2)
++               iounmap(adev->iobase2);
++       release_mem_region(vdev->mem_start, vdev->mem_end - vdev->mem_start);
++
++       /* remove dev registration */
++
++       acx_sem_unlock(adev);
++       vlynq_disable_device(vdev);
++
++       /* Free netdev (quite late,
++        * since otherwise we might get caught off-guard
++        * by a netdev timeout handler execution
++        * expecting to see a working dev...) */
++	free_netdev(ndev);
++
++      end:
++       FN_EXIT0;
++}
++
++static struct vlynq_driver vlynq_acx = {
++       .name = "acx_vlynq",
++       .id_table = acx_vlynq_id,
++       .probe = vlynq_probe,
++       .remove = __devexit_p(vlynq_remove),
++};
++#endif
++
++
++#ifdef CONFIG_PCI
+ /***********************************************************************
+ ** Data for init_module/cleanup_module
+ */
+@@ -4192,7 +4573,7 @@
+ 	.resume      = acxpci_e_resume
+ #endif /* CONFIG_PM */
+ };
+-
++#endif /* CONFIG_PCI */
+ 
+ /***********************************************************************
+ ** acxpci_e_init_module
+@@ -4202,7 +4583,7 @@
+ int __init
+ acxpci_e_init_module(void)
+ {
+-	int res;
++	int res = 0;
+ 
+ 	FN_ENTER;
+ 
+@@ -4222,11 +4603,15 @@
+ #endif
+ 	log(L_INIT,
+ 		"acx: " ENDIANNESS_STRING
+-		"acx: PCI module " ACX_RELEASE " initialized, "
++		"acx: PCI/VLYNQ module " ACX_RELEASE " initialized, "
+ 		"waiting for cards to probe...\n"
+ 	);
+-
++#ifdef CONFIG_PCI
+ 	res = pci_register_driver(&acxpci_drv_id);
++#endif
++#ifdef CONFIG_VLYNQ
++	res = vlynq_register_driver(&vlynq_acx);
++#endif
+ 	FN_EXIT1(res);
+ 	return res;
+ }
+@@ -4242,8 +4627,13 @@
+ acxpci_e_cleanup_module(void)
+ {
+ 	FN_ENTER;
++#ifdef CONFIG_VLYNQ
++	vlynq_unregister_driver(&vlynq_acx);
++#endif
+ 
++#ifdef CONFIG_PCI
+ 	pci_unregister_driver(&acxpci_drv_id);
++#endif
+ 
+ 	FN_EXIT0;
+ }
