@@ -1,0 +1,68 @@
+Index: linux-2.6.23.11-armeb/arch/arm/mach-ixp4xx/fsg-setup.c
+===================================================================
+--- linux-2.6.23.11-armeb.orig/arch/arm/mach-ixp4xx/fsg-setup.c	2007-12-29 23:10:08.000000000 +1030
++++ linux-2.6.23.11-armeb/arch/arm/mach-ixp4xx/fsg-setup.c	2007-12-29 23:25:24.000000000 +1030
+@@ -20,6 +20,7 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/flash.h>
++#include <asm/io.h>
+ 
+ static struct flash_platform_data fsg_flash_data = {
+ 	.map_name		= "cfi_probe",
+@@ -179,6 +180,9 @@
+ 
+ static void __init fsg_init(void)
+ {
++	uint8_t __iomem *f;
++	int i;
++
+ 	ixp4xx_sys_init();
+ 
+ 	fsg_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
+@@ -198,6 +202,45 @@
+ 	(void)platform_device_register(&fsg_uart);
+ 
+ 	platform_add_devices(fsg_devices, ARRAY_SIZE(fsg_devices));
++
++
++	/*
++	 * Map in a portion of the flash and read the MAC addresses.
++	 * Since it is stored in BE in the flash itself, we need to
++	 * byteswap it if we're in LE mode.
++	 */
++	if ((f = ioremap(IXP4XX_EXP_BUS_BASE(0), 0x400000))) {
++#ifdef __ARMEB__
++		for (i = 0; i < 6; i++) {
++			fsg_plat_eth[0].hwaddr[i] = readb(f + 0x3C0422 + i);
++			fsg_plat_eth[1].hwaddr[i] = readb(f + 0x3C043B + i);
++		}
++#else
++		fsg_plat_eth[0].hwaddr[0] = readb(f + 0x3C0422 + 3);
++		fsg_plat_eth[0].hwaddr[1] = readb(f + 0x3C0422 + 2);
++		fsg_plat_eth[0].hwaddr[2] = readb(f + 0x3C0422 + 1);
++		fsg_plat_eth[0].hwaddr[3] = readb(f + 0x3C0422 + 0);
++		fsg_plat_eth[0].hwaddr[4] = readb(f + 0x3C0422 + 7);
++		fsg_plat_eth[0].hwaddr[5] = readb(f + 0x3C0422 + 6);
++
++		fsg_plat_eth[1].hwaddr[0] = readb(f + 0x3C0422 + 3);
++		fsg_plat_eth[1].hwaddr[1] = readb(f + 0x3C0422 + 2);
++		fsg_plat_eth[1].hwaddr[2] = readb(f + 0x3C0422 + 1);
++		fsg_plat_eth[1].hwaddr[3] = readb(f + 0x3C0422 + 0);
++		fsg_plat_eth[1].hwaddr[4] = readb(f + 0x3C0422 + 7);
++		fsg_plat_eth[1].hwaddr[5] = readb(f + 0x3C0422 + 6);
++#endif
++		iounmap(f);
++	}
++	printk(KERN_INFO "FSG: Using MAC address %.2x:%.2x:%.2x:%.2x:%.2x:%.2x for port 0\n",
++	       fsg_plat_eth[0].hwaddr[0], fsg_plat_eth[0].hwaddr[1],
++	       fsg_plat_eth[0].hwaddr[2], fsg_plat_eth[0].hwaddr[3],
++	       fsg_plat_eth[0].hwaddr[4], fsg_plat_eth[0].hwaddr[5]);
++	printk(KERN_INFO "FSG: Using MAC address %.2x:%.2x:%.2x:%.2x:%.2x:%.2x for port 1\n",
++	       fsg_plat_eth[1].hwaddr[0], fsg_plat_eth[1].hwaddr[1],
++	       fsg_plat_eth[1].hwaddr[2], fsg_plat_eth[1].hwaddr[3],
++	       fsg_plat_eth[1].hwaddr[4], fsg_plat_eth[1].hwaddr[5]);
++
+ }
+ 
+ MACHINE_START(FSG, "Freecom FSG-3")
