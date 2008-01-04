@@ -56,6 +56,15 @@ define Package/losetup/description
  This package contains a utility for managing loopback devices.
 endef
 
+define Package/mount-utils
+$(call Package/util-linux/Default)
+  TITLE:=Devices mount/unmounting utilities
+endef
+
+define Package/mount-utils/description
+ This package contains utilities to mount/unmount devices.
+endef
+
 define Package/swap-utils
 $(call Package/util-linux/Default)
   TITLE:=Swap space management utilities
@@ -80,7 +89,7 @@ endef
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR)/disk-utils mkswap
-	$(MAKE) -C $(PKG_BUILD_DIR)/mount swapon losetup
+	$(MAKE) -C $(PKG_BUILD_DIR)/mount swapon losetup umount mount
 	$(MAKE) -C $(PKG_BUILD_DIR)/fdisk fdisk cfdisk
 	$(MAKE) -C $(PKG_BUILD_DIR)/hwclock hwclock
 endef
@@ -100,6 +109,11 @@ define Package/losetup/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mount/losetup $(1)/usr/sbin/
 endef
 
+define Package/mount-utils/install
+	$(INSTALL_DIR) $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mount/{u,}mount $(1)/usr/sbin
+endef
+
 define Package/swap-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/disk-utils/mkswap $(1)/usr/sbin/
@@ -115,5 +129,6 @@ endef
 $(eval $(call BuildPackage,fdisk))
 $(eval $(call BuildPackage,cfdisk))
 $(eval $(call BuildPackage,losetup))
+$(eval $(call BuildPackage,mount-utils))
 $(eval $(call BuildPackage,swap-utils))
 $(eval $(call BuildPackage,hwclock))
