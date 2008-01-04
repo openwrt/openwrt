@@ -250,8 +250,8 @@ macfilter ${macfilter:-0}
 maclist ${maclist:-none}
 wds none
 ${wds:+wds $wds}
-${channel:+channel $channel}
 country ${country:-IL0}
+${channel:+channel $channel}
 maxassoc ${maxassoc:-128}
 slottime ${slottime:--1}
 
