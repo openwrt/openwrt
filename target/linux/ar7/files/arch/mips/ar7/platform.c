@@ -329,6 +329,14 @@ static struct gpio_led dsl502t_leds[] = {
 	{ .name = "usb", .gpio = 12, .active_low = 1, },
 };
 
+static struct gpio_led dg834g_leds[] = {
+	{ .name = "ppp", .gpio = 6, .active_low = 1, },
+	{ .name = "status", .gpio = 7, .active_low = 1, },
+	{ .name = "adsl", .gpio = 8, .active_low = 1, },
+	{ .name = "wifi", .gpio = 12, .active_low = 1, },
+	{ .name = "power", .gpio = 14, .active_low = 1, },
+};
+
 static struct gpio_led fb_sl_leds[] = {
 	{ .name = "1", .gpio = 7, },
 	{ .name = "2", .gpio = 13, .active_low = 1, },
@@ -421,6 +429,9 @@ static void __init detect_leds(void)
 	} else if (!strcmp(prId, "AR7RD") && usb_prod != NULL && strstr(usb_prod, "DSL-502T")) {
 		ar7_led_data.num_leds = ARRAY_SIZE(dsl502t_leds);
 		ar7_led_data.leds = dsl502t_leds;
+	} else if (strstr(prId, "DG834")) {
+		ar7_led_data.num_leds = ARRAY_SIZE(dg834g_leds);
+		ar7_led_data.leds = dg834g_leds;
 	}
 }
 
