@@ -3,8 +3,8 @@
  *
  *  ADM5120 GPIO LED devices
  *
- *  Copyright (C) 2007 OpenWrt.org
- *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2007,2008 OpenWrt.org
+ *  Copyright (C) 2007,2008 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License
@@ -148,31 +148,42 @@ LED_ARRAY(br61x4wg) {
  * Mikrotik boards
  */
 LED_ARRAY(rb100) {
-	LED_STD(ADM5120_GPIO_PIN3, "user",	NULL),
-        LED_INV(ADM5120_GPIO_P0L1, "lan0_speed", 	NULL),
-        LED_INV(ADM5120_GPIO_P0L0, "lan0_lnkact", 	NULL),
+	LED_STD(ADM5120_GPIO_PIN3, "user",		NULL),
+        LED_INV(ADM5120_GPIO_P0L1, "lan_speed", 	NULL),
+        LED_INV(ADM5120_GPIO_P0L0, "lan_lnkact", 	NULL),
+};
+
+LED_ARRAY(rb133) {
+	LED_STD(ADM5120_GPIO_PIN6, "power",		NULL),
+	LED_STD(ADM5120_GPIO_PIN5, "user",		NULL),
+        LED_INV(ADM5120_GPIO_P2L1, "lan1_speed", 	NULL), /* untested */
+        LED_INV(ADM5120_GPIO_P2L0, "lan1_lnkact", 	NULL), /* untested */
+};
+
+LED_ARRAY(rb133c) {
+	LED_STD(ADM5120_GPIO_PIN6, "power",		NULL),
+	LED_STD(ADM5120_GPIO_PIN5, "user",		NULL),
+        LED_INV(ADM5120_GPIO_P2L1, "lan1_speed", 	NULL), /* untested */
+        LED_INV(ADM5120_GPIO_P2L0, "lan1_lnkact", 	NULL), /* untested */
+        LED_INV(ADM5120_GPIO_P1L1, "lan2_speed", 	NULL), /* untested */
+        LED_INV(ADM5120_GPIO_P1L0, "lan2_lnkact", 	NULL), /* untested */
+        LED_INV(ADM5120_GPIO_P0L1, "lan3_speed", 	NULL), /* untested */
+        LED_INV(ADM5120_GPIO_P0L0, "lan3_lnkact", 	NULL), /* untested */
 };
 
 LED_ARRAY(rb153) {
 	LED_STD(ADM5120_GPIO_PIN5, "user", 		NULL),
-        LED_INV(ADM5120_GPIO_P0L1, "lan0_speed", 	NULL),
-        LED_INV(ADM5120_GPIO_P0L0, "lan0_lnkact", 	NULL),
-        LED_INV(ADM5120_GPIO_P1L1, "lan4_speed", 	NULL),
-        LED_INV(ADM5120_GPIO_P1L0, "lan4_lnkact", 	NULL),
-        LED_INV(ADM5120_GPIO_P2L1, "lan3_speed", 	NULL),
-        LED_INV(ADM5120_GPIO_P2L0, "lan3_lnkact",       NULL),
-        LED_INV(ADM5120_GPIO_P3L1, "lan2_speed",        NULL),
+        LED_INV(ADM5120_GPIO_P0L1, "lan1_speed", 	NULL),
+        LED_INV(ADM5120_GPIO_P0L0, "lan1_lnkact", 	NULL),
+        LED_INV(ADM5120_GPIO_P1L1, "lan5_speed", 	NULL),
+        LED_INV(ADM5120_GPIO_P1L0, "lan5_lnkact", 	NULL),
+        LED_INV(ADM5120_GPIO_P2L1, "lan4_speed", 	NULL),
+        LED_INV(ADM5120_GPIO_P2L0, "lan4_lnkact",       NULL),
+        LED_INV(ADM5120_GPIO_P3L1, "lan3_speed",        NULL),
         LED_INV(ADM5120_GPIO_P3L0, "lan3_lnkact",       NULL),
-        LED_INV(ADM5120_GPIO_P4L1, "lan1_speed",        NULL),
-        LED_INV(ADM5120_GPIO_P4L0, "lan1_lnkact",       NULL),
+        LED_INV(ADM5120_GPIO_P4L1, "lan2_speed",        NULL),
+        LED_INV(ADM5120_GPIO_P4L0, "lan2_lnkact",       NULL),
 };
-
-#ifdef CONFIG_LEDS_ADM5120_EXPERIMENTAL
-LED_ARRAY(rb133) {
-	LED_STD(ADM5120_GPIO_PIN6, "power",	NULL),
-	LED_STD(ADM5120_GPIO_PIN5, "user",	NULL),
-};
-#endif
 
 /*
  * ZyXEL boards
@@ -265,13 +276,13 @@ static struct mach_data machines[] __initdata = {
 	MACH_DATA(MACH_ADM5120_BR6104K,	br6104k),
 	MACH_DATA(MACH_ADM5120_BR61x4WG, br61x4wg),
 	/* Mikrotik */
-	MACH_DATA(MACH_ADM5120_RB_133,	rb133),
-	MACH_DATA(MACH_ADM5120_RB_133C,	rb133),
-	/* ZyXEL */
-	MACH_DATA(MACH_ADM5120_P334WT,	p334wt),
 	MACH_DATA(MACH_ADM5120_RB_111,	rb100),
 	MACH_DATA(MACH_ADM5120_RB_112,	rb100),
+	MACH_DATA(MACH_ADM5120_RB_133,	rb133),
+	MACH_DATA(MACH_ADM5120_RB_133C,	rb133c),
 	MACH_DATA(MACH_ADM5120_RB_153,	rb153),
+	/* ZyXEL */
+	MACH_DATA(MACH_ADM5120_P334WT,	p334wt),
 #if defined(CONFIG_LEDS_ADM5120_EXPERIMENTAL)
 	/* untested */
 	MACH_DATA(MACH_ADM5120_P334,	p334),
