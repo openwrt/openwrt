@@ -1,6 +1,6 @@
-diff -urN sangam_atm-07.02.01.00/cppi_cpaal5.c sangam_atm-07.02.01.00.new/cppi_cpaal5.c
---- sangam_atm-07.02.01.00/cppi_cpaal5.c	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00.new/cppi_cpaal5.c	2007-10-04 16:17:43.000000000 +0200
+diff -urN sangam_atm-D7.03.01.00.orig/cppi_cpaal5.c sangam_atm-D7.03.01.00/cppi_cpaal5.c
+--- sangam_atm-D7.03.01.00.orig/cppi_cpaal5.c	2005-04-08 10:22:04.000000000 +0200
++++ sangam_atm-D7.03.01.00/cppi_cpaal5.c	2008-01-05 03:11:03.000000000 +0100
 @@ -352,7 +352,7 @@
             {
              /* malloc failed, add this RCB to Needs Buffer List */
@@ -10,12 +10,12 @@ diff -urN sangam_atm-07.02.01.00/cppi_cpaal5.c sangam_atm-07.02.01.00.new/cppi_c
  
              if(HalDev->NeedsCount < MAX_NEEDS)                                  /* +MJH 030410 */
                {                                                                 /* +MJH 030410 */
-diff -urN sangam_atm-07.02.01.00/dsl_hal_api.c sangam_atm-07.02.01.00.new/dsl_hal_api.c
---- sangam_atm-07.02.01.00/dsl_hal_api.c	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00.new/dsl_hal_api.c	2007-10-04 16:17:43.000000000 +0200
-@@ -241,15 +241,15 @@
- *  UR8_MERGE_START_END CQ11247_TR69_DS_LATN_SATN  YW
- *  12/18/06   Yan Wang      CQ11247: TR069 range and precision changes for LATNds, SATNds  
+diff -urN sangam_atm-D7.03.01.00.orig/dsl_hal_api.c sangam_atm-D7.03.01.00/dsl_hal_api.c
+--- sangam_atm-D7.03.01.00.orig/dsl_hal_api.c	2007-03-07 04:13:06.000000000 +0100
++++ sangam_atm-D7.03.01.00/dsl_hal_api.c	2008-01-05 03:11:03.000000000 +0100
+@@ -254,15 +254,15 @@
+ *                            of phyEnableDisableWord & phyControlWord to avoid changing API struct
+ *                            which may cause change required to application data structure.
  ******************************************************************************/
 -#include <dev_host_interface.h>
 -#include <dsl_hal_register.h>
@@ -34,9 +34,9 @@ diff -urN sangam_atm-07.02.01.00/dsl_hal_api.c sangam_atm-07.02.01.00.new/dsl_ha
  
  //  UR8_MERGE_START CQ11054   Jack Zhang
  static unsigned int highprecision_selected = 0;  //By default we use low precision for backward compt.
-diff -urN sangam_atm-07.02.01.00/dsl_hal_support.c sangam_atm-07.02.01.00.new/dsl_hal_support.c
---- sangam_atm-07.02.01.00/dsl_hal_support.c	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00.new/dsl_hal_support.c	2007-10-04 16:17:43.000000000 +0200
+diff -urN sangam_atm-D7.03.01.00.orig/dsl_hal_support.c sangam_atm-D7.03.01.00/dsl_hal_support.c
+--- sangam_atm-D7.03.01.00.orig/dsl_hal_support.c	2007-05-18 09:47:33.000000000 +0200
++++ sangam_atm-D7.03.01.00/dsl_hal_support.c	2008-01-05 03:11:03.000000000 +0100
 @@ -140,9 +140,9 @@
  *                                          oamFeature are overriden
  // UR8_MERGE_END CQ10774 Ram
@@ -50,9 +50,9 @@ diff -urN sangam_atm-07.02.01.00/dsl_hal_support.c sangam_atm-07.02.01.00.new/ds
  
  #define NUM_READ_RETRIES 3
  static unsigned int dslhal_support_adsl2ByteSwap32(unsigned int in32Bits);
-diff -urN sangam_atm-07.02.01.00/dsl_hal_support.h sangam_atm-07.02.01.00.new/dsl_hal_support.h
---- sangam_atm-07.02.01.00/dsl_hal_support.h	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00.new/dsl_hal_support.h	2007-10-04 16:17:43.000000000 +0200
+diff -urN sangam_atm-D7.03.01.00.orig/dsl_hal_support.h sangam_atm-D7.03.01.00/dsl_hal_support.h
+--- sangam_atm-D7.03.01.00.orig/dsl_hal_support.h	2005-11-11 09:07:04.000000000 +0100
++++ sangam_atm-D7.03.01.00/dsl_hal_support.h	2008-01-05 03:11:03.000000000 +0100
 @@ -49,7 +49,7 @@
  *    04Nov05     0.11.00            CPH    Fixed T1413 mode got Zero DS/US rate when DSL_BIT_TMODE is set.
  *******************************************************************************/
@@ -62,9 +62,9 @@ diff -urN sangam_atm-07.02.01.00/dsl_hal_support.h sangam_atm-07.02.01.00.new/ds
  
  #define virtual2Physical(a)    (((int)a)&~0xe0000000)
  /* External Function Prototype Declarations */
-diff -urN sangam_atm-07.02.01.00/Makefile sangam_atm-07.02.01.00.new/Makefile
---- sangam_atm-07.02.01.00/Makefile	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00.new/Makefile	2007-10-04 16:17:43.000000000 +0200
+diff -urN sangam_atm-D7.03.01.00.orig/Makefile sangam_atm-D7.03.01.00/Makefile
+--- sangam_atm-D7.03.01.00.orig/Makefile	2005-06-01 05:46:28.000000000 +0200
++++ sangam_atm-D7.03.01.00/Makefile	2008-01-05 03:11:03.000000000 +0100
 @@ -1,18 +1,9 @@
 -# File: drivers/atm/ti_evm3/Makefile
  #
@@ -90,9 +90,9 @@ diff -urN sangam_atm-07.02.01.00/Makefile sangam_atm-07.02.01.00.new/Makefile
 +EXTRA_CFLAGS += -DEL -I$(PWD) -DPOST_SILICON -DCOMMON_NSP -DNO_ACT -D__NO__VOICE_PATCH__ -DEL
 +obj-$(CONFIG_SANGAM_ATM) := tiatm.o
 +tiatm-objs += cpsar.o aal5sar.o tn7sar.o tn7atm.o tn7dsl.o dsl_hal_api.o dsl_hal_support.o
-diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
---- sangam_atm-07.02.01.00/tn7atm.c	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00.new/tn7atm.c	2007-10-04 16:21:50.000000000 +0200
+diff -urN sangam_atm-D7.03.01.00.orig/tn7atm.c sangam_atm-D7.03.01.00/tn7atm.c
+--- sangam_atm-D7.03.01.00.orig/tn7atm.c	2007-05-18 09:45:50.000000000 +0200
++++ sangam_atm-D7.03.01.00/tn7atm.c	2008-01-05 03:11:03.000000000 +0100
 @@ -61,7 +61,6 @@
   *    UR8_MERGE_END   CQ11057*
  *********************************************************************************************/
@@ -163,7 +163,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
  static struct proc_dir_entry *root_proc_dir_entry = NULL;
  #define DRV_PROC_MODE 0644
  static int proc_root_already_exists = TRUE;
-@@ -564,56 +566,6 @@
+@@ -559,56 +561,6 @@
  
  /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   *
@@ -220,7 +220,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
   *  Function: int tn7atm_sar_irq(void)
   *
   *  Description: tnetd73xx SAR interrupt.
-@@ -709,8 +661,8 @@
+@@ -704,8 +656,8 @@
    {
      def_sar_inter_pace = os_atoi (ptr);
    }
@@ -231,7 +231,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
  
    /*
     * Reigster Receive interrupt A
-@@ -880,11 +832,15 @@
+@@ -875,11 +827,15 @@
  #define ATM_VBR_RT     5
  #endif
  
@@ -248,7 +248,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
  
    dgprintf(1, "tn7atm_open()\n");
  
-@@ -896,24 +852,18 @@
+@@ -891,24 +847,18 @@
      return -1;
    }
  
@@ -279,7 +279,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
    {
      /* always use (max_dma_chan+1) for clear eoc */
      tn7atm_activate_vc_parm.chan = EOC_DMA_CHAN;
-@@ -921,7 +871,7 @@
+@@ -916,7 +866,7 @@
      /* check to see whether clear eoc is opened or not */
      if (tn7atm_activate_vc_parm.priv->lut[tn7atm_activate_vc_parm.chan].inuse)
      {
@@ -288,7 +288,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
        printk("tn7atm_open: Clear EOC channel (dmachan=%d) already in use.\n", tn7atm_activate_vc_parm.chan);
        return -EBUSY;
      }
-@@ -930,7 +880,7 @@
+@@ -925,7 +875,7 @@
      if (rc)
      {
        printk("tn7atm_open: failed to setup clear_eoc\n");
@@ -297,7 +297,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
        return -EBUSY;
      }
      tn7atm_set_lut(tn7atm_activate_vc_parm.priv,vcc, tn7atm_activate_vc_parm.chan);
-@@ -939,17 +889,17 @@
+@@ -934,17 +884,17 @@
    }
    else  /* PVC channel setup */
    {
@@ -318,7 +318,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
          printk("PVC already opened. dmachan = %d\n", rc);
          return -EBUSY;
        }
-@@ -981,6 +931,7 @@
+@@ -976,6 +926,7 @@
         tn7atm_activate_vc_parm.priority = 2;
         break;
  
@@ -326,7 +326,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
       case ATM_VBR: /* Variable Bit Rate-Non RealTime*/
         tn7atm_activate_vc_parm.qos = 1;
         tn7atm_activate_vc_parm.priority = 1;
-@@ -1002,6 +953,7 @@
+@@ -997,6 +948,7 @@
             tn7atm_activate_vc_parm.mbs = vcc->qos.txtp.max_pcr;
         tn7atm_activate_vc_parm.cdvt = vcc->qos.txtp.max_cdv;
         break;
@@ -334,7 +334,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
  
       default:
           tn7atm_activate_vc_parm.qos = 2;
-@@ -1029,7 +981,7 @@
+@@ -1024,7 +976,7 @@
     if (rc < 0)
     {
        printk("failed to activate hw channel\n");
@@ -343,7 +343,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
        tn7atm_lut_clear(vcc, tn7atm_activate_vc_parm.chan);
        //spin_unlock_irqrestore(&chan_init_lock, flags);
        return -EBUSY;
-@@ -1119,7 +1071,7 @@
+@@ -1114,7 +1066,7 @@
    tn7atm_lut_clear (vcc, dmachan);
    //spin_unlock_irqrestore (&closeLock, closeFlag);
  
@@ -352,7 +352,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
  
    dgprintf (1, "Leave tn7atm_close\n");
  }
-@@ -1533,8 +1485,7 @@
+@@ -1528,8 +1480,7 @@
                                   * firewall is on */
  
    dgprintf (3, "pushing the skb...\n");
@@ -362,7 +362,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
  
    xdump ((unsigned char *) skb->data, skb->len, 5);
  
-@@ -1730,8 +1681,7 @@
+@@ -1725,8 +1676,7 @@
  
    kfree (dev->dev_data);
  
@@ -372,7 +372,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
  
    /*
     * remove proc entries
-@@ -1890,9 +1840,6 @@
+@@ -1885,9 +1835,6 @@
    /*
     * Set up proc entry for atm stats
     */
@@ -382,7 +382,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
      printk ("Creating new root folder %s in the proc for the driver stats \n",
              drv_proc_root_folder);
      root_proc_dir_entry = proc_mkdir (drv_proc_root_folder, NULL);
-@@ -1902,7 +1849,6 @@
+@@ -1897,7 +1844,6 @@
        return -ENOMEM;
      }
      proc_root_already_exists = FALSE;
@@ -390,7 +390,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
  
    /*
     * AV: Clean-up. Moved all the definitions to the data structure.
-@@ -2484,7 +2430,5 @@
+@@ -2479,7 +2425,5 @@
      return count;
  }
  
@@ -398,9 +398,9 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.new/tn7atm.c
  module_init (tn7atm_detect);
  module_exit (tn7atm_exit);
 -#endif /* MODULE */
-diff -urN sangam_atm-07.02.01.00/tn7atm.h sangam_atm-07.02.01.00.new/tn7atm.h
---- sangam_atm-07.02.01.00/tn7atm.h	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00.new/tn7atm.h	2007-10-04 16:17:43.000000000 +0200
+diff -urN sangam_atm-D7.03.01.00.orig/tn7atm.h sangam_atm-D7.03.01.00/tn7atm.h
+--- sangam_atm-D7.03.01.00.orig/tn7atm.h	2006-04-05 07:33:06.000000000 +0200
++++ sangam_atm-D7.03.01.00/tn7atm.h	2008-01-05 03:11:03.000000000 +0100
 @@ -19,7 +19,8 @@
  //#include  "mips_support.h"
  #include  <linux/list.h>
@@ -411,9 +411,9 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.h sangam_atm-07.02.01.00.new/tn7atm.h
  
  #ifdef CONFIG_MODVERSIONS
  #include <linux/modversions.h>
-diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00.new/tn7dsl.c
---- sangam_atm-07.02.01.00/tn7dsl.c	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00.new/tn7dsl.c	2007-10-04 16:23:53.000000000 +0200
+diff -urN sangam_atm-D7.03.01.00.orig/tn7dsl.c sangam_atm-D7.03.01.00/tn7dsl.c
+--- sangam_atm-D7.03.01.00.orig/tn7dsl.c	2007-01-04 09:04:14.000000000 +0100
++++ sangam_atm-D7.03.01.00/tn7dsl.c	2008-01-05 03:11:03.000000000 +0100
 @@ -94,7 +94,6 @@
  *  1/02/07  JZ     CQ11054: Data Precision and Range Changes for TR-069 Conformance
  *  UR8_MERGE_END   CQ11054*
@@ -691,9 +691,9 @@ diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00.new/tn7dsl.c
  
    /*
     * set the defaults
-diff -urN sangam_atm-07.02.01.00/tn7sar.c sangam_atm-07.02.01.00.new/tn7sar.c
---- sangam_atm-07.02.01.00/tn7sar.c	2007-08-06 18:15:52.000000000 +0200
-+++ sangam_atm-07.02.01.00.new/tn7sar.c	2007-10-04 16:18:26.000000000 +0200
+diff -urN sangam_atm-D7.03.01.00.orig/tn7sar.c sangam_atm-D7.03.01.00/tn7sar.c
+--- sangam_atm-D7.03.01.00.orig/tn7sar.c	2007-05-18 09:46:30.000000000 +0200
++++ sangam_atm-D7.03.01.00/tn7sar.c	2008-01-05 03:11:03.000000000 +0100
 @@ -42,7 +42,6 @@
   * UR8_MERGE_END CQ10700
   *******************************************************************************/

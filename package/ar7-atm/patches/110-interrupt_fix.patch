@@ -1,7 +1,7 @@
-diff -ur atm.old/tn7atm.c atm.dev/tn7atm.c
---- atm.old/tn7atm.c	2007-04-20 21:04:28.479287240 +0200
-+++ atm.dev/tn7atm.c	2007-04-20 21:09:05.288205888 +0200
-@@ -568,7 +568,7 @@
+diff -urN sangam_atm-D7.03.01.00.orig/tn7atm.c sangam_atm-D7.03.01.00/tn7atm.c
+--- sangam_atm-D7.03.01.00.orig/tn7atm.c	2008-01-05 03:11:23.000000000 +0100
++++ sangam_atm-D7.03.01.00/tn7atm.c	2008-01-05 03:11:34.000000000 +0100
+@@ -566,7 +566,7 @@
   *  Description: tnetd73xx SAR interrupt.
   *
   *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
@@ -10,7 +10,7 @@ diff -ur atm.old/tn7atm.c atm.dev/tn7atm.c
  {
    struct atm_dev *atmdev;
    Tn7AtmPrivate *priv;
-@@ -595,6 +595,7 @@
+@@ -593,6 +593,7 @@
  #ifdef TIATM_INST_SUPP
    psp_trace_par (ATM_DRV_SAR_ISR_EXIT, retval);
  #endif
@@ -18,7 +18,7 @@ diff -ur atm.old/tn7atm.c atm.dev/tn7atm.c
  }
  
  /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-@@ -604,7 +604,7 @@
+@@ -602,7 +603,7 @@
   *  Description: tnetd73xx DSL interrupt.
   *
   *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
@@ -27,7 +27,7 @@ diff -ur atm.old/tn7atm.c atm.dev/tn7atm.c
  {
    struct atm_dev *atmdev;
    Tn7AtmPrivate *priv;
-@@ -626,6 +626,8 @@
+@@ -624,6 +625,8 @@
  #ifdef TIATM_INST_SUPP
    psp_trace_par (ATM_DRV_DSL_ISR_EXIT, retval);
  #endif
