@@ -1,8 +1,8 @@
-Index: linux-2.6.23.11-armeb/arch/arm/mach-ixp4xx/fsg-setup.c
+Index: linux-2.6.23.12/arch/arm/mach-ixp4xx/fsg-setup.c
 ===================================================================
---- linux-2.6.23.11-armeb.orig/arch/arm/mach-ixp4xx/fsg-setup.c	2007-12-29 23:10:08.000000000 +1030
-+++ linux-2.6.23.11-armeb/arch/arm/mach-ixp4xx/fsg-setup.c	2007-12-29 23:25:24.000000000 +1030
-@@ -20,6 +20,7 @@
+--- linux-2.6.23.12.orig/arch/arm/mach-ixp4xx/fsg-setup.c	2008-01-05 13:56:28.000000000 +1030
++++ linux-2.6.23.12/arch/arm/mach-ixp4xx/fsg-setup.c	2008-01-05 13:56:43.000000000 +1030
+@@ -21,6 +21,7 @@
  #include <asm/mach-types.h>
  #include <asm/mach/arch.h>
  #include <asm/mach/flash.h>
@@ -10,7 +10,7 @@ Index: linux-2.6.23.11-armeb/arch/arm/mach-ixp4xx/fsg-setup.c
  
  static struct flash_platform_data fsg_flash_data = {
  	.map_name		= "cfi_probe",
-@@ -179,6 +180,9 @@
+@@ -140,6 +141,9 @@
  
  static void __init fsg_init(void)
  {
@@ -20,7 +20,7 @@ Index: linux-2.6.23.11-armeb/arch/arm/mach-ixp4xx/fsg-setup.c
  	ixp4xx_sys_init();
  
  	fsg_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
-@@ -198,6 +202,45 @@
+@@ -161,6 +165,45 @@
  	(void)platform_device_register(&fsg_uart);
  
  	platform_add_devices(fsg_devices, ARRAY_SIZE(fsg_devices));
