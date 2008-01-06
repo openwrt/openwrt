@@ -1,7 +1,7 @@
 /*
  * HND SiliconBackplane PCI core hardware definitions.
  *
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: sbpci.h,v 1.1.1.11 2006/02/27 03:43:16 honor Exp $
+ * $Id$
  */
 
 #ifndef	_sbpci_h_
@@ -68,8 +68,11 @@ typedef struct sbpciregs {
 #define PCI_PARKID_EXT0		0	/* External master 0 */
 #define PCI_PARKID_EXT1		1	/* External master 1 */
 #define PCI_PARKID_EXT2		2	/* External master 2 */
-#define PCI_PARKID_INT		3	/* Internal master */
-#define PCI_PARKID_LAST		4	/* Last active master */
+#define PCI_PARKID_EXT3		3	/* External master 3 (rev >= 11) */
+#define PCI_PARKID_INT		3	/* Internal master (rev < 11) */
+#define PCI11_PARKID_INT	4	/* Internal master (rev >= 11) */
+#define PCI_PARKID_LAST		4	/* Last active master (rev < 11) */
+#define PCI11_PARKID_LAST	5	/* Last active master (rev >= 11) */
 
 /* Interrupt status/mask */
 #define PCI_INTA	0x01	/* PCI INTA# is asserted */

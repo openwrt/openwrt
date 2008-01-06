@@ -1,6 +1,7 @@
-diff -Nur linux-2.4.32/fs/squashfs/Makefile linux-2.4.32-owrt/fs/squashfs/Makefile
---- linux-2.4.32/fs/squashfs/Makefile	2006-03-21 13:47:50.000000000 +0100
-+++ linux-2.4.32-owrt/fs/squashfs/Makefile	2006-03-21 13:48:49.000000000 +0100
+Index: linux-2.4.35.4/fs/squashfs/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/fs/squashfs/Makefile	2007-12-15 05:19:49.031215169 +0100
++++ linux-2.4.35.4/fs/squashfs/Makefile	2007-12-15 05:19:50.759313646 +0100
 @@ -4,7 +4,7 @@
  
  O_TARGET := squashfs.o
@@ -10,9 +11,10 @@ diff -Nur linux-2.4.32/fs/squashfs/Makefile linux-2.4.32-owrt/fs/squashfs/Makefi
  
  obj-m := $(O_TARGET)
  
-diff -Nur linux-2.4.32/fs/squashfs/squashfs.h linux-2.4.32-owrt/fs/squashfs/squashfs.h
---- linux-2.4.32/fs/squashfs/squashfs.h	2006-03-21 13:06:10.000000000 +0100
-+++ linux-2.4.32-owrt/fs/squashfs/squashfs.h	2006-03-21 13:48:36.000000000 +0100
+Index: linux-2.4.35.4/fs/squashfs/squashfs.h
+===================================================================
+--- linux-2.4.35.4.orig/fs/squashfs/squashfs.h	2007-12-15 05:19:48.659193968 +0100
++++ linux-2.4.35.4/fs/squashfs/squashfs.h	2007-12-15 05:19:50.767314102 +0100
 @@ -24,6 +24,9 @@
  #ifdef CONFIG_SQUASHFS_1_0_COMPATIBILITY
  #undef CONFIG_SQUASHFS_1_0_COMPATIBILITY

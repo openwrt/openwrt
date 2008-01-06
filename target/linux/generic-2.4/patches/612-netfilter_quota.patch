@@ -1,6 +1,7 @@
-diff -ruN linux-2.4.30-old/Documentation/Configure.help linux-2.4.30-new/Documentation/Configure.help
---- linux-2.4.30-old/Documentation/Configure.help	2005-11-13 22:30:42.000000000 +0100
-+++ linux-2.4.30-new/Documentation/Configure.help	2005-11-13 22:31:17.000000000 +0100
+Index: linux-2.4.35.4/Documentation/Configure.help
+===================================================================
+--- linux-2.4.35.4.orig/Documentation/Configure.help	2007-12-15 05:20:09.280369103 +0100
++++ linux-2.4.35.4/Documentation/Configure.help	2007-12-15 05:20:09.632389161 +0100
 @@ -2888,6 +2888,13 @@
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
@@ -15,9 +16,10 @@ diff -ruN linux-2.4.30-old/Documentation/Configure.help linux-2.4.30-new/Documen
  skb->pkt_type packet match support
  CONFIG_IP_NF_MATCH_PKTTYPE
    This patch allows you to match packet in accrodance
-diff -ruN linux-2.4.30-old/include/linux/netfilter_ipv4/ipt_quota.h linux-2.4.30-new/include/linux/netfilter_ipv4/ipt_quota.h
---- linux-2.4.30-old/include/linux/netfilter_ipv4/ipt_quota.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30-new/include/linux/netfilter_ipv4/ipt_quota.h	2005-11-13 22:31:17.000000000 +0100
+Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_quota.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_quota.h	2007-12-15 05:20:09.636389390 +0100
 @@ -0,0 +1,12 @@
 +#ifndef _IPT_QUOTA_H
 +#define _IPT_QUOTA_H
@@ -31,9 +33,10 @@ diff -ruN linux-2.4.30-old/include/linux/netfilter_ipv4/ipt_quota.h linux-2.4.30
 +};
 +
 +#endif /*_IPT_QUOTA_H*/
-diff -ruN linux-2.4.30-old/net/ipv4/netfilter/Config.in linux-2.4.30-new/net/ipv4/netfilter/Config.in
---- linux-2.4.30-old/net/ipv4/netfilter/Config.in	2005-11-13 22:30:42.000000000 +0100
-+++ linux-2.4.30-new/net/ipv4/netfilter/Config.in	2005-11-13 22:31:17.000000000 +0100
+Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in	2007-12-15 05:20:09.300370243 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/Config.in	2007-12-15 05:20:09.644389846 +0100
 @@ -24,6 +24,7 @@
  if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; then
  # The simple matches.
@@ -42,9 +45,10 @@ diff -ruN linux-2.4.30-old/net/ipv4/netfilter/Config.in linux-2.4.30-new/net/ipv
  
    dep_tristate '  IP set support' CONFIG_IP_NF_SET $CONFIG_IP_NF_IPTABLES
    if [ "$CONFIG_IP_NF_SET" != "n" ]; then
-diff -ruN linux-2.4.30-old/net/ipv4/netfilter/Makefile linux-2.4.30-new/net/ipv4/netfilter/Makefile
---- linux-2.4.30-old/net/ipv4/netfilter/Makefile	2005-11-13 22:30:42.000000000 +0100
-+++ linux-2.4.30-new/net/ipv4/netfilter/Makefile	2005-11-13 22:31:17.000000000 +0100
+Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile	2007-12-15 05:20:09.300370243 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/Makefile	2007-12-15 05:20:09.644389846 +0100
 @@ -74,6 +74,7 @@
  # matches
  obj-$(CONFIG_IP_NF_MATCH_HELPER) += ipt_helper.o
@@ -53,9 +57,10 @@ diff -ruN linux-2.4.30-old/net/ipv4/netfilter/Makefile linux-2.4.30-new/net/ipv4
  obj-$(CONFIG_IP_NF_MATCH_MARK) += ipt_mark.o
  obj-$(CONFIG_IP_NF_MATCH_SET) += ipt_set.o
  obj-$(CONFIG_IP_NF_TARGET_SET) += ipt_SET.o
-diff -ruN linux-2.4.30-old/net/ipv4/netfilter/ipt_quota.c linux-2.4.30-new/net/ipv4/netfilter/ipt_quota.c
---- linux-2.4.30-old/net/ipv4/netfilter/ipt_quota.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30-new/net/ipv4/netfilter/ipt_quota.c	2005-11-13 22:31:17.000000000 +0100
+Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_quota.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/net/ipv4/netfilter/ipt_quota.c	2007-12-15 05:20:09.644389846 +0100
 @@ -0,0 +1,88 @@
 +/* 
 + * netfilter module to enforce network quotas

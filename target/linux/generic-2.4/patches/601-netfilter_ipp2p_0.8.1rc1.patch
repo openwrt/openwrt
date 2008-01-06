@@ -1,6 +1,7 @@
-diff -urN linux.old/include/linux/netfilter_ipv4/ipt_ipp2p.h linux.dev/include/linux/netfilter_ipv4/ipt_ipp2p.h
---- linux.old/include/linux/netfilter_ipv4/ipt_ipp2p.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/include/linux/netfilter_ipv4/ipt_ipp2p.h	2006-03-23 14:37:56.000000000 +0100
+Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_ipp2p.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_ipp2p.h	2007-12-15 05:20:05.756168270 +0100
 @@ -0,0 +1,31 @@
 +#ifndef __IPT_IPP2P_H
 +#define __IPT_IPP2P_H
@@ -33,10 +34,11 @@ diff -urN linux.old/include/linux/netfilter_ipv4/ipt_ipp2p.h linux.dev/include/l
 +#define IPP2P_MUTE		(1 << 14)
 +#define IPP2P_WASTE		(1 << 15)
 +#define IPP2P_XDCC		(1 << 16)
-diff -urN linux.old/net/ipv4/netfilter/Config.in linux.dev/net/ipv4/netfilter/Config.in
---- linux.old/net/ipv4/netfilter/Config.in	2006-03-23 14:35:20.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/Config.in	2006-03-23 14:35:58.000000000 +0100
-@@ -29,6 +29,7 @@
+Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in	2007-12-15 05:19:38.466613124 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/Config.in	2007-12-15 05:20:05.764168722 +0100
+@@ -26,6 +26,7 @@
    dep_tristate '  TOS match support' CONFIG_IP_NF_MATCH_TOS $CONFIG_IP_NF_IPTABLES
    dep_tristate '  recent match support' CONFIG_IP_NF_MATCH_RECENT $CONFIG_IP_NF_IPTABLES
    dep_tristate '  ECN match support' CONFIG_IP_NF_MATCH_ECN $CONFIG_IP_NF_IPTABLES
@@ -44,10 +46,11 @@ diff -urN linux.old/net/ipv4/netfilter/Config.in linux.dev/net/ipv4/netfilter/Co
   
    dep_tristate '  DSCP match support' CONFIG_IP_NF_MATCH_DSCP $CONFIG_IP_NF_IPTABLES
   
-diff -urN linux.old/net/ipv4/netfilter/Makefile linux.dev/net/ipv4/netfilter/Makefile
---- linux.old/net/ipv4/netfilter/Makefile	2006-03-23 14:35:20.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/Makefile	2006-03-23 14:35:58.000000000 +0100
-@@ -76,6 +76,7 @@
+Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile	2007-12-15 05:19:38.474613582 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/Makefile	2007-12-15 05:20:05.764168722 +0100
+@@ -67,6 +67,7 @@
  obj-$(CONFIG_IP_NF_MATCH_LIMIT) += ipt_limit.o
  obj-$(CONFIG_IP_NF_MATCH_MARK) += ipt_mark.o
  obj-$(CONFIG_IP_NF_MATCH_MAC) += ipt_mac.o
@@ -55,9 +58,10 @@ diff -urN linux.old/net/ipv4/netfilter/Makefile linux.dev/net/ipv4/netfilter/Mak
  
  obj-$(CONFIG_IP_NF_MATCH_PKTTYPE) += ipt_pkttype.o
  obj-$(CONFIG_IP_NF_MATCH_MULTIPORT) += ipt_multiport.o
-diff -urN linux.old/net/ipv4/netfilter/ipt_ipp2p.c linux.dev/net/ipv4/netfilter/ipt_ipp2p.c
---- linux.old/net/ipv4/netfilter/ipt_ipp2p.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/ipt_ipp2p.c	2006-03-23 14:37:18.000000000 +0100
+Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_ipp2p.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/net/ipv4/netfilter/ipt_ipp2p.c	2007-12-15 05:20:05.764168722 +0100
 @@ -0,0 +1,868 @@
 +#if defined(MODVERSIONS)
 +#include <linux/modversions.h>

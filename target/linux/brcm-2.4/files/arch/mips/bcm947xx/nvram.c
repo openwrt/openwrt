@@ -15,7 +15,6 @@
 #include <osl.h>
 #include <bcmendian.h>
 #include <bcmnvram.h>
-#include <bcmutils.h>
 #include <sbsdram.h>
 
 extern struct nvram_tuple * BCMINIT(_nvram_realloc)(struct nvram_tuple *t, const char *name, const char *value);
@@ -244,10 +243,10 @@ BCMINITFN(_nvram_commit)(struct nvram_header *header)
 		header->config_refresh |= SDRAM_REFRESH << 16;
 		header->config_ncdl = 0;
 	} else {
-		header->crc_ver_init |= (bcm_strtoul(init, NULL, 0) & 0xffff) << 16;
-		header->config_refresh = bcm_strtoul(config, NULL, 0) & 0xffff;
-		header->config_refresh |= (bcm_strtoul(refresh, NULL, 0) & 0xffff) << 16;
-		header->config_ncdl = bcm_strtoul(ncdl, NULL, 0);
+		header->crc_ver_init |= (simple_strtoul(init, NULL, 0) & 0xffff) << 16;
+		header->config_refresh = simple_strtoul(config, NULL, 0) & 0xffff;
+		header->config_refresh |= (simple_strtoul(refresh, NULL, 0) & 0xffff) << 16;
+		header->config_ncdl = simple_strtoul(ncdl, NULL, 0);
 	}
 
 	/* Clear data area */
@@ -276,7 +275,7 @@ BCMINITFN(_nvram_commit)(struct nvram_header *header)
 	tmp.crc_ver_init = htol32(header->crc_ver_init);
 	tmp.config_refresh = htol32(header->config_refresh);
 	tmp.config_ncdl = htol32(header->config_ncdl);
-	crc = hndcrc8((char *) &tmp + 9, sizeof(struct nvram_header) - 9, CRC8_INIT_VALUE);
+	crc = hndcrc8((char *) &tmp + 9, sizeof(struct nvram_header) - 9, 0xff);
 
 	/* Continue CRC8 over data bytes */
 	crc = hndcrc8((char *) &header[1], header->len - sizeof(struct nvram_header), crc);
@@ -313,3 +312,46 @@ BCMINITFN(_nvram_exit)(void)
 {
 	BCMINIT(nvram_free)();
 }
+
+/*
+ * Search the name=value vars for a specific one and return its value.
+ * Returns NULL if not found.
+ */
+char*
+getvar(char *vars, const char *name)
+{
+	char *s;
+	int len;
+
+	len = strlen(name);
+
+	/* first look in vars[] */
+	for (s = vars; s && *s;) {
+		/* CSTYLED */
+		if ((memcmp(s, name, len) == 0) && (s[len] == '='))
+			return (&s[len+1]);
+
+		while (*s++)
+			;
+	}
+
+	/* then query nvram */
+	return (nvram_get(name));
+}
+
+/*
+ * Search the vars for a specific one and return its value as
+ * an integer. Returns 0 if not found.
+ */
+int
+getintvar(char *vars, const char *name)
+{
+	char *val;
+
+	if ((val = getvar(vars, name)) == NULL)
+		return (0);
+
+	return (simple_strtoul(val, NULL, 0));
+}
+
+

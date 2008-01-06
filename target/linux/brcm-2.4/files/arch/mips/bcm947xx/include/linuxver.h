@@ -2,7 +2,7 @@
  * Linux-specific abstractions to gain some independence from linux kernel versions.
  * Pave over some 2.2 versus 2.4 versus 2.6 kernel differences.
  *
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -10,14 +10,19 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: linuxver.h,v 1.1.1.10 2006/02/27 03:43:16 honor Exp $
+ * $Id$
  */
 
 #ifndef _linuxver_h_
 #define _linuxver_h_
 
-#include <linux/config.h>
 #include <linux/version.h>
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0))
+#include <linux/config.h>
+#else
+#include <linux/autoconf.h>
+#endif
+#include <linux/module.h>
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0))
 /* __NO_VERSION__ must be defined for all linkables except one in 2.2 */
@@ -27,15 +32,6 @@
 #define __NO_VERSION__
 #endif
 #endif	/* LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0) */
-
-#if defined(MODULE) && defined(MODVERSIONS)
-#include <linux/modversions.h>
-#endif
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 0)
-#include <linux/moduleparam.h>
-#endif
-
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 0)
 #define module_param(_name_, _type_, _perm_)	MODULE_PARM(_name_, "i")
@@ -77,6 +73,13 @@
 #endif
 #endif	/* LINUX_VERSION_CODE > KERNEL_VERSION(2, 5, 41) */
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
+#define	MY_INIT_WORK(_work, _func, _data)	INIT_WORK(_work, _func)
+#else
+#define	MY_INIT_WORK(_work, _func, _data)	INIT_WORK(_work, _func, _data)
+typedef void (*work_func_t)(void *work);
+#endif	/* < 2.6.20 */
+
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0))
 /* Some distributions have their own 2.6.x compatibility layers */
 #ifndef IRQ_NONE
@@ -108,6 +111,12 @@ cs_error(client_handle_t handle, int func, int ret)
 	error_info_t err = { func, ret };
 	CardServices(ReportError, handle, &err);
 }
+#endif
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 15))
+
+typedef	struct pcmcia_device dev_link_t;
+
 #endif
 
 #endif /* CONFIG_PCMCIA */
@@ -412,6 +421,13 @@ pci_restore_state(struct pci_dev *dev, u32 *buffer)
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0))
 /* struct packet_type redefined in 2.6.x */
 #define af_packet_priv			data
+#endif
+
+/* suspend args */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
+#define DRV_SUSPEND_STATE_TYPE pm_message_t
+#else
+#define DRV_SUSPEND_STATE_TYPE uint32
 #endif
 
 #endif /* _linuxver_h_ */

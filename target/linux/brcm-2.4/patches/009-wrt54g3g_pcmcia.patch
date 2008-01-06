@@ -1,6 +1,7 @@
-diff -urN linux.old/drivers/pcmcia/yenta.c linux.dev/drivers/pcmcia/yenta.c
---- linux.old/drivers/pcmcia/yenta.c	2004-11-17 12:54:21.000000000 +0100
-+++ linux.dev/drivers/pcmcia/yenta.c	2006-04-11 17:47:45.000000000 +0200
+Index: linux-2.4.35.4/drivers/pcmcia/yenta.c
+===================================================================
+--- linux-2.4.35.4.orig/drivers/pcmcia/yenta.c	2007-12-15 05:19:36.066476349 +0100
++++ linux-2.4.35.4/drivers/pcmcia/yenta.c	2007-12-15 05:20:16.268767348 +0100
 @@ -543,6 +543,9 @@
  	 * Probe for usable interrupts using the force
  	 * register to generate bogus card status events.

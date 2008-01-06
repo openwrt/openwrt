@@ -1,7 +1,7 @@
 /*
  * HND SiliconBackplane MIPS core software interface.
  *
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: hndmips.h,v 1.1.1.8 2006/02/27 03:43:16 honor Exp $
+ * $Id$
  */
 
 #ifndef _hndmips_h_
@@ -22,6 +22,7 @@ extern uint32 sb_memc_get_ncdl(sb_t *sbh);
 
 #if defined(BCMPERFSTATS)
 /* enable counting - exclusive version. Only one set of counters allowed at a time */
+extern void hndmips_perf_cyclecount_enable(void);
 extern void hndmips_perf_instrcount_enable(void);
 extern void hndmips_perf_icachecount_enable(void);
 extern void hndmips_perf_dcachecount_enable(void);
@@ -40,6 +41,6 @@ extern void hndmips_perf_icache_miss_enable(void);
 extern uint32 hndmips_perf_read_instrcount(void);
 extern uint32 hndmips_perf_read_cache_miss(void);
 extern uint32 hndmips_perf_read_cache_hit(void);
-#endif /*  defined(BCMINTERNAL) || defined (BCMPERFSTATS) */
+#endif 
 
 #endif /* _hndmips_h_ */

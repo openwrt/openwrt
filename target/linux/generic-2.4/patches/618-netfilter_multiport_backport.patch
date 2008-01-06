@@ -1,6 +1,7 @@
-diff -urN linux.old/include/linux/netfilter_ipv4/ipt_multiport.h linux.dev/include/linux/netfilter_ipv4/ipt_multiport.h
---- linux.old/include/linux/netfilter_ipv4/ipt_multiport.h	2000-12-11 22:31:30.000000000 +0100
-+++ linux.dev/include/linux/netfilter_ipv4/ipt_multiport.h	2006-02-04 05:23:54.318518250 +0100
+Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_multiport.h
+===================================================================
+--- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ipt_multiport.h	2007-12-15 05:19:37.022530833 +0100
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_multiport.h	2007-12-15 05:20:11.456493111 +0100
 @@ -11,11 +11,12 @@
  
  #define IPT_MULTI_PORTS	15
@@ -16,9 +17,10 @@ diff -urN linux.old/include/linux/netfilter_ipv4/ipt_multiport.h linux.dev/inclu
 +	u_int8_t invert;			/* Invert flag */
  };
  #endif /*_IPT_MULTIPORT_H*/
-diff -urN linux.old/net/ipv4/netfilter/ipt_multiport.c linux.dev/net/ipv4/netfilter/ipt_multiport.c
---- linux.old/net/ipv4/netfilter/ipt_multiport.c	2003-06-13 16:51:39.000000000 +0200
-+++ linux.dev/net/ipv4/netfilter/ipt_multiport.c	2006-02-04 05:34:27.362081000 +0100
+Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_multiport.c
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ipt_multiport.c	2007-12-15 05:19:37.030531288 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/ipt_multiport.c	2007-12-15 05:20:11.464493568 +0100
 @@ -1,5 +1,14 @@
  /* Kernel module to match one of a list of TCP/UDP ports: ports are in
     the same place so we can treat them as equal. */

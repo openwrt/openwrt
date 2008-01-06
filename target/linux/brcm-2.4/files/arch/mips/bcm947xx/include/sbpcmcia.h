@@ -1,7 +1,7 @@
 /*
  * BCM43XX Sonics SiliconBackplane PCMCIA core hardware definitions.
  *
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: sbpcmcia.h,v 1.1.1.9 2006/02/27 03:43:16 honor Exp $
+ * $Id$
  */
 
 #ifndef	_SBPCMCIA_H
@@ -75,6 +75,8 @@
 #define SROM_DATAH		(0x073a / 2)
 #define SROM_ADDRL		(0x073c / 2)
 #define SROM_ADDRH		(0x073e / 2)
+#define	SROM_INFO2		(0x0772 / 2)	/* Corerev >= 2 && <= 5 */
+#define	SROM_INFO		(0x07be / 2)	/* Corerev >= 6 */
 
 /*  Values for srom_cs: */
 #define SROM_IDLE		0
@@ -84,16 +86,30 @@
 #define SROM_WDS		7
 #define SROM_DONE		8
 
+/* Fields in srom_info: */
+#define	SRI_SZ_MASK		0x03
+#define	SRI_BLANK		0x04
+#define	SRI_OTP			0x80
+
 /* CIS stuff */
 
 /* The CIS stops where the FCRs start */
 #define	CIS_SIZE		PCMCIA_FCR
 
+/* CIS tuple length field max */
+#define CIS_TUPLE_LEN_MAX	0xff
+
 /* Standard tuples we know about */
 
+#define	CISTPL_VERS_1		0x15		/* CIS ver, manf, dev & ver strings */
 #define	CISTPL_MANFID		0x20		/* Manufacturer and device id */
+#define CISTPL_FUNCID		0x21		/* Function identification */
 #define	CISTPL_FUNCE		0x22		/* Function extensions */
 #define	CISTPL_CFTABLE		0x1b		/* Config table entry */
+#define	CISTPL_END		0xff		/* End of the CIS tuple chain */
+
+/* Function identifier provides context for the function extentions tuple */
+
 
 /* Function extensions for LANs */
 
@@ -135,7 +151,29 @@
 #define HNBU_CCKPO		0x0b		/* 2 byte cck power offsets in rev 3 */
 #define HNBU_OFDMPO		0x0c		/* 4 byte 11g ofdm power offsets in rev 3 */
 #define HNBU_GPIOTIMER		0x0d		/* 2 bytes with on/off values in rev 3 */
-
+#define HNBU_PAPARMS5G		0x0e		/* 5G PA params */
+#define HNBU_ANT5G		0x0f		/* 4328 5G antennas available/gain */
+#define HNBU_RDLID		0x10		/* 2 byte USB remote downloader (RDL) product Id */
+#define HNBU_RSSISMBXA2G	0x11		/* 4328 2G RSSI mid pt sel & board switch arch,
+						 * 2 bytes, rev 3.
+						 */
+#define HNBU_RSSISMBXA5G	0x12		/* 4328 5G RSSI mid pt sel & board switch arch,
+						 * 2 bytes, rev 3.
+						 */
+#define HNBU_XTALFREQ		0x13		/* 4 byte Crystal frequency in kilohertz */
+#define HNBU_TRI2G		0x14		/* 4328 2G TR isolation, 1 byte */
+#define HNBU_TRI5G		0x15		/* 4328 5G TR isolation, 3 bytes */
+#define HNBU_RXPO2G		0x16		/* 4328 2G RX power offset, 1 byte */
+#define HNBU_RXPO5G		0x17		/* 4328 5G RX power offset, 1 byte */
+#define HNBU_BOARDNUM	0x18		/* board serial number, independent of mac addr */
+#define HNBU_MACADDR	0x19		/* mac addr override for the standard CIS LAN_NID */
+#define HNBU_RDLSN		0x1a		/* 2 bytes; serial # advertised in USB descriptor */
+#define HNBU_BOARDTYPE		0x1b		/* 2 bytes; boardtype */
+#define HNBU_RDLRNDIS		0x20		/* 1 byte; 1 = RDL advertises RNDIS config */
+#define HNBU_RDLRWU		0x30		/* 1 byte; 1 = RDL advertises Remote Wake-up */
+#define HNBU_SROM3SWRGN		0x80	/* 78 bytes; srom rev 3 s/w region without crc8
+					 * plus extra info appended.
+					 */
 
 /* sbtmstatelow */
 #define SBTML_INT_ACK		0x40000		/* ack the sb interrupt */

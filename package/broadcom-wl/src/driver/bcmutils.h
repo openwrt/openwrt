@@ -1,22 +1,21 @@
 /*
  * Misc useful os-independent macros and functions.
  *
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
  * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- * $Id: bcmutils.h,v 1.1.1.16 2006/04/08 06:13:39 honor Exp $
+ * $Id$
  */
 
 #ifndef	_bcmutils_h_
 #define	_bcmutils_h_
+#include "linux_osl.h"
 
-/* ** driver-only section ** */
-#ifdef BCMDRIVER
-
+/* ctype replacement */
 #define _BCM_U	0x01	/* upper */
 #define _BCM_L	0x02	/* lower */
 #define _BCM_D	0x04	/* digit */
@@ -26,10 +25,8 @@
 #define _BCM_X	0x40	/* hex digit */
 #define _BCM_SP	0x80	/* hard space (0x20) */
 
-#define GPIO_PIN_NOTDEFINED 	0x20	/* Pin not defined */
-
-extern unsigned char bcm_ctype[];
-#define bcm_ismask(x) (bcm_ctype[(int)(unsigned char)(x)])
+extern const unsigned char bcm_ctype[];
+#define bcm_ismask(x)	(bcm_ctype[(int)(unsigned char)(x)])
 
 #define bcm_isalnum(c)	((bcm_ismask(c)&(_BCM_U|_BCM_L|_BCM_D)) != 0)
 #define bcm_isalpha(c)	((bcm_ismask(c)&(_BCM_U|_BCM_L)) != 0)
@@ -42,36 +39,154 @@ extern unsigned char bcm_ctype[];
 #define bcm_isspace(c)	((bcm_ismask(c)&(_BCM_S)) != 0)
 #define bcm_isupper(c)	((bcm_ismask(c)&(_BCM_U)) != 0)
 #define bcm_isxdigit(c)	((bcm_ismask(c)&(_BCM_D|_BCM_X)) != 0)
+#define bcm_tolower(c)	(bcm_isupper((c)) ? ((c) + 'a' - 'A') : (c))
+#define bcm_toupper(c)	(bcm_islower((c)) ? ((c) + 'A' - 'a') : (c))
 
-/*
- * Spin at most 'us' microseconds while 'exp' is true.
- * Caller should explicitly test 'exp' when this completes
- * and take appropriate error action if 'exp' is still true.
- */
-#define SPINWAIT(exp, us) { \
-	uint countdown = (us) + 9; \
-	while ((exp) && (countdown >= 10)) {\
-		OSL_DELAY(10); \
-		countdown -= 10; \
-	} \
-}
+/* Buffer structure for collecting string-formatted data 
+* using bcm_bprintf() API.
+* Use bcm_binit() to initialize before use
+*/
 
-struct  ether_addr {
-	uint8 octet[6];
-} __attribute__((packed));
+struct bcmstrbuf {
+	char *buf;	/* pointer to current position in origbuf */
+	unsigned int size;	/* current (residual) size in bytes */
+	char *origbuf;	/* unmodified pointer to orignal buffer */
+	unsigned int origsize;	/* unmodified orignal buffer size in bytes */
+};
+
+/* ** driver-only section ** */
+#include <osl.h>
+
+#define GPIO_PIN_NOTDEFINED 	0x20	/* Pin not defined */
+
+
+/* osl multi-precedence packet queue */
+#ifndef PKTQ_LEN_DEFAULT
+#define PKTQ_LEN_DEFAULT        128	/* Max 128 packets */
+#endif
+#ifndef PKTQ_MAX_PREC
+#define PKTQ_MAX_PREC           16	/* Maximum precedence levels */
+#endif
+
+typedef struct pktq_prec {
+	void *head;     /* first packet to dequeue */
+	void *tail;     /* last packet to dequeue */
+	uint16 len;     /* number of queued packets */
+	uint16 max;     /* maximum number of queued packets */
+} pktq_prec_t;
+
+
+/* multi-priority pkt queue */
+struct pktq {
+	uint16 num_prec;        /* number of precedences in use */
+	uint16 hi_prec;         /* rapid dequeue hint (>= highest non-empty prec) */
+	uint16 max;             /* total max packets */
+	uint16 len;             /* total number of packets */
+	/* q array must be last since # of elements can be either PKTQ_MAX_PREC or 1 */
+	struct pktq_prec q[PKTQ_MAX_PREC];
+};
+
+/* simple, non-priority pkt queue */
+struct spktq {
+	uint16 num_prec;        /* number of precedences in use (always 1) */
+	uint16 hi_prec;         /* rapid dequeue hint (>= highest non-empty prec) */
+	uint16 max;             /* total max packets */
+	uint16 len;             /* total number of packets */
+	/* q array must be last since # of elements can be either PKTQ_MAX_PREC or 1 */
+	struct pktq_prec q[1];
+};
+
+#define PKTQ_PREC_ITER(pq, prec)        for (prec = (pq)->num_prec - 1; prec >= 0; prec--)
+
+/* forward definition of ether_addr structure used by some function prototypes */
+struct ether_addr;
+
+/* operations on a specific precedence in packet queue */
+
+#define pktq_psetmax(pq, prec, _max)    ((pq)->q[prec].max = (_max))
+#define pktq_plen(pq, prec)             ((pq)->q[prec].len)
+#define pktq_pavail(pq, prec)           ((pq)->q[prec].max - (pq)->q[prec].len)
+#define pktq_pfull(pq, prec)            ((pq)->q[prec].len >= (pq)->q[prec].max)
+#define pktq_pempty(pq, prec)           ((pq)->q[prec].len == 0)
+
+#define pktq_ppeek(pq, prec)            ((pq)->q[prec].head)
+#define pktq_ppeek_tail(pq, prec)       ((pq)->q[prec].tail)
+
+extern void *pktq_penq(struct pktq *pq, int prec, void *p);
+extern void *pktq_penq_head(struct pktq *pq, int prec, void *p);
+extern void *pktq_pdeq(struct pktq *pq, int prec);
+extern void *pktq_pdeq_tail(struct pktq *pq, int prec);
+/* Empty the queue at particular precedence level */
+extern void pktq_pflush(osl_t *osh, struct pktq *pq, int prec, bool dir);
+/* Remove a specified packet from its queue */
+extern bool pktq_pdel(struct pktq *pq, void *p, int prec);
+
+/* operations on a set of precedences in packet queue */
+
+extern int pktq_mlen(struct pktq *pq, uint prec_bmp);
+extern void *pktq_mdeq(struct pktq *pq, uint prec_bmp, int *prec_out);
+
+/* operations on packet queue as a whole */
+
+#define pktq_len(pq)                    ((int)(pq)->len)
+#define pktq_max(pq)                    ((int)(pq)->max)
+#define pktq_avail(pq)                  ((int)((pq)->max - (pq)->len))
+#define pktq_full(pq)                   ((pq)->len >= (pq)->max)
+#define pktq_empty(pq)                  ((pq)->len == 0)
+
+/* operations for single precedence queues */
+#define pktenq(pq, p)		pktq_penq(((struct pktq *)pq), 0, (p))
+#define pktenq_head(pq, p)	pktq_penq_head(((struct pktq *)pq), 0, (p))
+#define pktdeq(pq)		pktq_pdeq(((struct pktq *)pq), 0)
+#define pktdeq_tail(pq)		pktq_pdeq_tail(((struct pktq *)pq), 0)
+#define pktqinit(pq, len) pktq_init(((struct pktq *)pq), 1, len)
+
+extern void pktq_init(struct pktq *pq, int num_prec, int max_len);
+/* prec_out may be NULL if caller is not interested in return value */
+extern void *pktq_deq(struct pktq *pq, int *prec_out);
+extern void *pktq_deq_tail(struct pktq *pq, int *prec_out);
+extern void *pktq_peek(struct pktq *pq, int *prec_out);
+extern void *pktq_peek_tail(struct pktq *pq, int *prec_out);
+extern void pktq_flush(osl_t *osh, struct pktq *pq, bool dir); /* Empty the entire queue */
+extern int pktq_setmax(struct pktq *pq, int max_len);
+
+/* externs */
+/* packet */
+extern uint pktcopy(osl_t *osh, void *p, uint offset, int len, uchar *buf);
+extern uint pkttotlen(osl_t *osh, void *p);
+extern void *pktlast(osl_t *osh, void *p);
+
+/* Get priority from a packet and pass it back in scb (or equiv) */
+extern uint pktsetprio(void *pkt, bool update_vtag);
+#define	PKTPRIO_VDSCP	0x100		/* DSCP prio found after VLAN tag */
+#define	PKTPRIO_VLAN	0x200		/* VLAN prio found */
+#define	PKTPRIO_UPD	0x400		/* DSCP used to update VLAN prio */
+#define	PKTPRIO_DSCP	0x800		/* DSCP prio found */
 
 /* string */
-extern uchar bcm_toupper(uchar c);
-extern ulong bcm_strtoul(char *cp, char **endp, uint base);
-extern char *bcmstrstr(char *haystack, char *needle);
-extern char *bcmstrcat(char *dest, const char *src);
+extern int BCMROMFN(bcm_atoi)(char *s);
+extern ulong BCMROMFN(bcm_strtoul)(char *cp, char **endp, uint base);
+extern char *BCMROMFN(bcmstrstr)(char *haystack, char *needle);
+extern char *BCMROMFN(bcmstrcat)(char *dest, const char *src);
+extern char *BCMROMFN(bcmstrncat)(char *dest, const char *src, uint size);
 extern ulong wchar2ascii(char *abuf, ushort *wbuf, ushort wbuflen, ulong abuflen);
 /* ethernet address */
 extern char *bcm_ether_ntoa(struct ether_addr *ea, char *buf);
+extern int BCMROMFN(bcm_ether_atoe)(char *p, struct ether_addr *ea);
+
+/* ip address */
+struct ipv4_addr;
+extern char *bcm_ip_ntoa(struct ipv4_addr *ia, char *buf);
+
+/* delay */
+extern void bcm_mdelay(uint ms);
 /* variable access */
-extern char *getvar(char *vars, char *name);
-extern int getintvar(char *vars, char *name);
+extern char *getvar(char *vars, const char *name);
+extern int getintvar(char *vars, const char *name);
 extern uint getgpiopin(char *vars, char *pin_name, uint def_pin);
+#ifdef BCMDBG
+extern void prpkt(const char *msg, osl_t *osh, void *p0);
+#endif /* BCMDBG */
 #ifdef BCMPERFSTATS
 extern void bcm_perf_enable(void);
 extern void bcmstats(char *fmt);
@@ -117,6 +232,9 @@ typedef struct bcm_iovar {
 
 /* flags are per-driver based on driver attributes */
 
+extern const bcm_iovar_t *bcm_iovar_lookup(const bcm_iovar_t *table, const char *name);
+extern int bcm_iovar_lencheck(const bcm_iovar_t *table, void *arg, int len, bool set);
+
 /* Base type definitions */
 #define IOVT_VOID	0	/* no value (implictly set only) */
 #define IOVT_BOOL	1	/* any value ok (zero/nonzero) */
@@ -127,11 +245,29 @@ typedef struct bcm_iovar {
 #define IOVT_INT32	6	/* int 32 bits */
 #define IOVT_UINT32	7	/* unsigned int 32 bits */
 #define IOVT_BUFFER	8	/* buffer is size-checked as per minlen */
+#define BCM_IOVT_VALID(type) (((unsigned int)(type)) <= IOVT_BUFFER)
 
-extern const bcm_iovar_t *bcm_iovar_lookup(const bcm_iovar_t *table, const char *name);
-extern int bcm_iovar_lencheck(const bcm_iovar_t *table, void *arg, int len, bool set);
+/* Initializer for IOV type strings */
+#define BCM_IOV_TYPE_INIT { \
+	"void", \
+	"bool", \
+	"int8", \
+	"uint8", \
+	"int16", \
+	"uint16", \
+	"int32", \
+	"uint32", \
+	"buffer", \
+	"" }
 
-#endif	/* #ifdef BCMDRIVER */
+#define BCM_IOVT_IS_INT(type) (\
+	(type == IOVT_BOOL) || \
+	(type == IOVT_INT8) || \
+	(type == IOVT_UINT8) || \
+	(type == IOVT_INT16) || \
+	(type == IOVT_UINT16) || \
+	(type == IOVT_INT32) || \
+	(type == IOVT_UINT32))
 
 /* ** driver/apps-shared section ** */
 
@@ -184,7 +320,8 @@ extern int bcm_iovar_lencheck(const bcm_iovar_t *table, void *arg, int len, bool
 #define BCME_NOT_WME_ASSOCIATION	-34	/* Not WME Association */
 #define BCME_SDIO_ERROR			-35	/* SDIO Bus Error */
 #define BCME_DONGLE_DOWN		-36	/* Dongle Not Accessible */
-#define BCME_LAST			BCME_DONGLE_DOWN
+#define BCME_VERSION			-37 /* Incorrect version */
+#define BCME_LAST			BCME_VERSION
 
 /* These are collection of BCME Error strings */
 #define BCMERRSTRINGTABLE {		\
@@ -224,7 +361,8 @@ extern int bcm_iovar_lencheck(const bcm_iovar_t *table, void *arg, int len, bool
 	"ACM Not Supported",		\
 	"Not WME Association",		\
 	"SDIO Bus Error",		\
-	"Dongle Not Accessible"		\
+	"Dongle Not Accessible",	\
+	"Incorrect version"	\
 }
 
 #ifndef ABS
@@ -244,8 +382,12 @@ extern int bcm_iovar_lencheck(const bcm_iovar_t *table, void *arg, int len, bool
 #define	ISALIGNED(a, x)		(((a) & ((x)-1)) == 0)
 #define	ISPOWEROF2(x)		((((x)-1)&(x)) == 0)
 #define VALID_MASK(mask)	!((mask) & ((mask) + 1))
+#ifndef OFFSETOF
 #define	OFFSETOF(type, member)	((uint)(uintptr)&((type *)0)->member)
+#endif /* OFFSETOF */
+#ifndef ARRAYSIZE
 #define ARRAYSIZE(a)		(sizeof(a)/sizeof(a[0]))
+#endif
 
 /* bit map related macros */
 #ifndef setbit
@@ -254,8 +396,8 @@ extern int bcm_iovar_lencheck(const bcm_iovar_t *table, void *arg, int len, bool
 #endif /* #ifndef NBBY */
 #define	setbit(a, i)	(((uint8 *)a)[(i)/NBBY] |= 1<<((i)%NBBY))
 #define	clrbit(a, i)	(((uint8 *)a)[(i)/NBBY] &= ~(1<<((i)%NBBY)))
-#define	isset(a, i)	(((uint8 *)a)[(i)/NBBY] & (1<<((i)%NBBY)))
-#define	isclr(a, i)	((((uint8 *)a)[(i)/NBBY] & (1<<((i)%NBBY))) == 0)
+#define	isset(a, i)	(((const uint8 *)a)[(i)/NBBY] & (1<<((i)%NBBY)))
+#define	isclr(a, i)	((((const uint8 *)a)[(i)/NBBY] & (1<<((i)%NBBY))) == 0)
 #endif /* setbit */
 
 #define	NBITS(type)	(sizeof(type) * 8)
@@ -296,7 +438,7 @@ extern int bcm_iovar_lencheck(const bcm_iovar_t *table, void *arg, int len, bool
 /* bcm_format_flags() bit description structure */
 typedef struct bcm_bit_desc {
 	uint32	bit;
-	char*	name;
+	const char* name;
 } bcm_bit_desc_t;
 
 /* tag_ID/length/value_buffer tuple */
@@ -342,7 +484,7 @@ store16_ua(uint8 *a, uint16 v)
 	a[1] = v & 0xff;
 }
 
-#else
+#else /* IL_BIGENDIAN */
 
 static INLINE uint32
 load32_ua(uint8 *a)
@@ -376,48 +518,43 @@ store16_ua(uint8 *a, uint16 v)
 
 /* externs */
 /* crc */
-extern uint8 hndcrc8(uint8 *p, uint nbytes, uint8 crc);
-extern uint16 hndcrc16(uint8 *p, uint nbytes, uint16 crc);
-extern uint32 hndcrc32(uint8 *p, uint nbytes, uint32 crc);
+extern uint8 BCMROMFN(hndcrc8)(uint8 *p, uint nbytes, uint8 crc);
+extern uint16 BCMROMFN(hndcrc16)(uint8 *p, uint nbytes, uint16 crc);
+extern uint32 BCMROMFN(hndcrc32)(uint8 *p, uint nbytes, uint32 crc);
 /* format/print */
+#ifdef BCMDBG
+extern int bcm_format_flags(const bcm_bit_desc_t *bd, uint32 flags, char* buf, int len);
+extern int bcm_format_hex(char *str, const void *bytes, int len);
+extern void deadbeef(void *p, uint len);
+extern void prhex(const char *msg, uchar *buf, uint len);
+#endif /* BCMDBG */
+extern char *bcm_brev_str(uint16 brev, char *buf);
 extern void printfbig(char *buf);
 
 /* IE parsing */
-extern bcm_tlv_t *bcm_next_tlv(bcm_tlv_t *elt, int *buflen);
-extern bcm_tlv_t *bcm_parse_tlvs(void *buf, int buflen, uint key);
-extern bcm_tlv_t *bcm_parse_ordered_tlvs(void *buf, int buflen, uint key);
+extern bcm_tlv_t *BCMROMFN(bcm_next_tlv)(bcm_tlv_t *elt, int *buflen);
+extern bcm_tlv_t *BCMROMFN(bcm_parse_tlvs)(void *buf, int buflen, uint key);
+extern bcm_tlv_t *BCMROMFN(bcm_parse_ordered_tlvs)(void *buf, int buflen, uint key);
 
 /* bcmerror */
 extern const char *bcmerrorstr(int bcmerror);
 
 /* multi-bool data type: set of bools, mbool is true if any is set */
 typedef uint32 mbool;
-#define mboolset(mb, bit)		(mb |= bit)		/* set one bool */
-#define mboolclr(mb, bit)		(mb &= ~bit)		/* clear one bool */
-#define mboolisset(mb, bit)		((mb & bit) != 0)	/* TRUE if one bool is set */
+#define mboolset(mb, bit)		((mb) |= (bit))		/* set one bool */
+#define mboolclr(mb, bit)		((mb) &= ~(bit))	/* clear one bool */
+#define mboolisset(mb, bit)		(((mb) & (bit)) != 0)	/* TRUE if one bool is set */
 #define	mboolmaskset(mb, mask, val)	((mb) = (((mb) & ~(mask)) | (val)))
 
 /* power conversion */
-extern uint16 bcm_qdbm_to_mw(uint8 qdbm);
-extern uint8 bcm_mw_to_qdbm(uint16 mw);
+extern uint16 BCMROMFN(bcm_qdbm_to_mw)(uint8 qdbm);
+extern uint8 BCMROMFN(bcm_mw_to_qdbm)(uint16 mw);
 
 /* generic datastruct to help dump routines */
 struct fielddesc {
-	char 	*nameandfmt;
+	const char *nameandfmt;
 	uint32 	offset;
 	uint32 	len;
-};
-
-/* Buffer structure for collecting string-formatted data 
-* using bcm_bprintf() API.
-* Use bcm_binit() to initialize before use
-*/
-struct bcmstrbuf
-{
-	char *buf;	/* pointer to current position in origbuf */
-	uint size;	/* current (residual) size in bytes */
-	char *origbuf;	/* unmodified pointer to orignal buffer */
-	uint origsize;	/* unmodified orignal buffer size in bytes */
 };
 
 extern void bcm_binit(struct bcmstrbuf *b, char *buf, uint size);
@@ -428,6 +565,18 @@ extern uint bcmdumpfields(readreg_rtn func_ptr, void *arg0, void *arg1, struct f
                           char *buf, uint32 bufsize);
 
 extern uint bcm_mkiovar(char *name, char *data, uint datalen, char *buf, uint len);
-extern uint bcm_bitcount(uint8 *bitmap, uint bytelength);
+extern uint BCMROMFN(bcm_bitcount)(uint8 *bitmap, uint bytelength);
+
+#ifdef BCMDBG_PKT      /* pkt logging for debugging */
+#define PKTLIST_SIZE 1000
+typedef struct {
+	void *list[PKTLIST_SIZE]; /* List of pointers to packets */
+	uint count; /* Total count of the packets */
+} pktlist_info_t;
+
+extern void pktlist_add(pktlist_info_t *pktlist, void *p);
+extern void pktlist_remove(pktlist_info_t *pktlist, void *p);
+extern char* pktlist_dump(pktlist_info_t *pktlist, char *buf);
+#endif  /* BCMDBG_PKT */
 
 #endif	/* _bcmutils_h_ */

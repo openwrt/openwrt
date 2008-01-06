@@ -1,12 +1,12 @@
 /*
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
  * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- * $Id: typedefs.h,v 1.1.1.12 2006/04/08 06:13:40 honor Exp $
+ * $Id$
  */
 
 #ifndef _TYPEDEFS_H_
@@ -69,14 +69,21 @@ typedef	unsigned char	bool;			/* consistent w/BOOL */
 #endif	/* ! __cplusplus */
 
 /* use the Windows ULONG_PTR type when compiling for 64 bit */
-#if defined(_WIN64)
+#if defined(_WIN64) && !defined(EFI)
 #include <basetsd.h>
 #define TYPEDEF_UINTPTR
-typedef ULONG_PTR	uintptr;
+typedef ULONG_PTR uintptr;
+#elif defined(__x86_64__)
+#define TYPEDEF_UINTPTR
+typedef unsigned long long int uintptr;
 #endif
 
 
 #if defined(_MINOSL_)
+#define _NEED_SIZE_T_
+#endif
+
+#if defined(EFI) && !defined(_WIN64)
 #define _NEED_SIZE_T_
 #endif
 
@@ -104,14 +111,20 @@ typedef unsigned __int64 uint64;
 #endif
 
 
-#if defined(linux)
+#ifdef	linux
 #define TYPEDEF_UINT
 #define TYPEDEF_USHORT
 #define TYPEDEF_ULONG
-#endif
+#ifdef __KERNEL__
+#include <linux/version.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19))
+#define TYPEDEF_BOOL
+#endif	/* >= 2.6.19 */
+#endif	/* __KERNEL__ */
+#endif	/* linux */
 
 #if !defined(linux) && !defined(_WIN32) && !defined(_CFE_) && \
-	!defined(_HNDRTE_) && !defined(_MINOSL_) && !defined(__DJGPP__)
+	!defined(_HNDRTE_) && !defined(_MINOSL_) && !defined(__DJGPP__) && !defined(__IOPOS__)
 #define TYPEDEF_UINT
 #define TYPEDEF_USHORT
 #endif
@@ -137,7 +150,7 @@ typedef unsigned __int64 uint64;
 #endif /* __ICL */
 
 #if !defined(_WIN32) && !defined(_CFE_) && !defined(_MINOSL_) && \
-	!defined(__DJGPP__)
+	!defined(__DJGPP__) && !defined(__IOPOS__)
 
 /* pick up ushort & uint from standard types.h */
 #if defined(linux) && defined(__KERNEL__)
@@ -150,7 +163,7 @@ typedef unsigned __int64 uint64;
 
 #endif
 
-#endif /* !_WIN32 && !PMON && !_CFE_ && !_HNDRTE_  && !_MINOSL_ && !__DJGPP__ */
+#endif 
 
 #if defined(MACOSX)
 
@@ -320,7 +333,7 @@ typedef float64 float_t;
 
 #define INLINE __inline
 
-#elif __GNUC__
+#elif defined(__GNUC__)
 
 #define INLINE __inline__
 
@@ -353,8 +366,8 @@ typedef float64 float_t;
 #endif /* USE_TYPEDEF_DEFAULTS */
 
 /* 
- * Including the bcmdefs.h here, to make sure everyone including typedefs.h 
- * gets this automatically 
+ * Including the bcmdefs.h here, to make sure everyone including typedefs.h
+ * gets this automatically
 */
 #include "bcmdefs.h"
 

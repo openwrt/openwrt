@@ -48,7 +48,6 @@
 #include <typedefs.h>
 #include <osl.h>
 #include <sbutils.h>
-#include <bcmutils.h>
 #include <bcmnvram.h>
 #include <sbhndmips.h>
 #include <hndmips.h>
@@ -170,7 +169,7 @@ brcm_setup(void)
 	char *value;
 
 	/* Get global SB handle */
-	sbh = sb_kattach();
+	sbh = sb_kattach(SB_OSH);
 
 	/* Initialize clocks and interrupts */
 	sb_mips_init(sbh, SBMIPS_VIRTIRQ_BASE);

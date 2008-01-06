@@ -1,6 +1,7 @@
-diff -urN linux.old/drivers/mtd/chips/cfi_cmdset_0001.c linux.dev/drivers/mtd/chips/cfi_cmdset_0001.c
---- linux.old/drivers/mtd/chips/cfi_cmdset_0001.c	2004-11-17 12:54:21.000000000 +0100
-+++ linux.dev/drivers/mtd/chips/cfi_cmdset_0001.c	2006-03-16 17:25:04.000000000 +0100
+Index: linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0001.c
+===================================================================
+--- linux-2.4.35.4.orig/drivers/mtd/chips/cfi_cmdset_0001.c	2007-12-15 05:19:42.414838122 +0100
++++ linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0001.c	2007-12-15 05:19:50.315288342 +0100
 @@ -28,10 +28,18 @@
  #include <linux/slab.h>
  #include <linux/delay.h>
@@ -38,7 +39,7 @@ diff -urN linux.old/drivers/mtd/chips/cfi_cmdset_0001.c linux.dev/drivers/mtd/ch
  	return mtd;
  
   setup_err:
-@@ -1960,10 +1972,40 @@
+@@ -1961,10 +1973,40 @@
  	}
  }
  
@@ -79,9 +80,10 @@ diff -urN linux.old/drivers/mtd/chips/cfi_cmdset_0001.c linux.dev/drivers/mtd/ch
  	kfree(cfi->cmdset_priv);
  	kfree(cfi->cfiq);
  	kfree(cfi);
-diff -urN linux.old/include/linux/mtd/mtd.h linux.dev/include/linux/mtd/mtd.h
---- linux.old/include/linux/mtd/mtd.h	2003-08-25 13:44:44.000000000 +0200
-+++ linux.dev/include/linux/mtd/mtd.h	2006-03-16 17:00:10.000000000 +0100
+Index: linux-2.4.35.4/include/linux/mtd/mtd.h
+===================================================================
+--- linux-2.4.35.4.orig/include/linux/mtd/mtd.h	2007-12-15 05:19:42.422838578 +0100
++++ linux-2.4.35.4/include/linux/mtd/mtd.h	2007-12-15 05:19:50.315288342 +0100
 @@ -10,6 +10,7 @@
  #include <linux/version.h>
  #include <linux/types.h>

@@ -1,7 +1,7 @@
 /*
  * HND SiliconBackplane MIPS/ARM cores software interface.
  *
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: hndcpu.h,v 1.1.1.1 2006/02/27 03:43:16 honor Exp $
+ * $Id$
  */
 
 #ifndef _hndcpu_h_
@@ -17,12 +17,14 @@
 
 #if defined(mips)
 #include <hndmips.h>
-#elif defined(__ARM_ARCH_4T__)
+#elif defined(__arm__) || defined(__thumb__) || defined(__thumb2__)
 #include <hndarm.h>
 #endif
 
 extern uint sb_irq(sb_t *sbh);
 extern uint32 sb_cpu_clock(sb_t *sbh);
-extern void sb_cpu_wait(void);
+extern void hnd_cpu_wait(sb_t *sbh);
+extern void hnd_cpu_jumpto(void *addr);
+extern void hnd_cpu_reset(sb_t *sbh);
 
 #endif /* _hndcpu_h_ */

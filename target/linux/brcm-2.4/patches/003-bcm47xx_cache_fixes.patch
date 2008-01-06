@@ -1,6 +1,7 @@
-diff -urN linux.old/arch/mips/kernel/entry.S linux.dev/arch/mips/kernel/entry.S
---- linux.old/arch/mips/kernel/entry.S	2005-07-05 16:46:49.000000000 +0200
-+++ linux.dev/arch/mips/kernel/entry.S	2005-07-06 11:23:55.000000000 +0200
+Index: linux-2.4.35.4/arch/mips/kernel/entry.S
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/kernel/entry.S	2007-12-15 05:19:36.266487747 +0100
++++ linux-2.4.35.4/arch/mips/kernel/entry.S	2007-12-15 05:20:14.372659296 +0100
 @@ -100,6 +100,10 @@
  		 * and R4400 SC and MC versions.
  		 */
@@ -12,9 +13,10 @@ diff -urN linux.old/arch/mips/kernel/entry.S linux.dev/arch/mips/kernel/entry.S
  #if R5432_CP0_INTERRUPT_WAR
  		mfc0	k0, CP0_INDEX
  #endif
-diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
---- linux.old/arch/mips/mm/c-r4k.c	2005-07-05 16:46:49.000000000 +0200
-+++ linux.dev/arch/mips/mm/c-r4k.c	2005-07-06 11:23:55.000000000 +0200
+Index: linux-2.4.35.4/arch/mips/mm/c-r4k.c
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/mm/c-r4k.c	2007-12-15 05:20:13.948635130 +0100
++++ linux-2.4.35.4/arch/mips/mm/c-r4k.c	2007-12-15 05:20:14.376659523 +0100
 @@ -14,6 +14,12 @@
  #include <linux/mm.h>
  #include <linux/bitops.h>
@@ -28,16 +30,15 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  #include <asm/bcache.h>
  #include <asm/bootinfo.h>
  #include <asm/cacheops.h>
-@@ -40,6 +46,8 @@
+@@ -40,6 +46,7 @@
  	.bc_inv = (void *)no_sc_noop
  };
  
 +int bcm4710 = 0;
-+EXPORT_SYMBOL(bcm4710);
  struct bcache_ops *bcops = &no_sc_ops;
  
  #define cpu_is_r4600_v1_x()	((read_c0_prid() & 0xfffffff0) == 0x2010)
-@@ -64,8 +72,10 @@
+@@ -64,8 +71,10 @@
  static inline void r4k_blast_dcache_page_setup(void)
  {
  	unsigned long dc_lsize = current_cpu_data.dcache.linesz;
@@ -50,7 +51,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		r4k_blast_dcache_page = blast_dcache16_page;
  	else if (dc_lsize == 32)
  		r4k_blast_dcache_page = r4k_blast_dcache_page_dc32;
-@@ -77,7 +87,9 @@
+@@ -77,7 +86,9 @@
  {
  	unsigned long dc_lsize = current_cpu_data.dcache.linesz;
  
@@ -61,7 +62,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		r4k_blast_dcache_page_indexed = blast_dcache16_page_indexed;
  	else if (dc_lsize == 32)
  		r4k_blast_dcache_page_indexed = blast_dcache32_page_indexed;
-@@ -89,7 +101,9 @@
+@@ -89,7 +100,9 @@
  {
  	unsigned long dc_lsize = current_cpu_data.dcache.linesz;
  
@@ -72,7 +73,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		r4k_blast_dcache = blast_dcache16;
  	else if (dc_lsize == 32)
  		r4k_blast_dcache = blast_dcache32;
-@@ -266,6 +280,7 @@
+@@ -266,6 +279,7 @@
  	r4k_blast_dcache();
  	r4k_blast_icache();
  
@@ -80,7 +81,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  	switch (current_cpu_data.cputype) {
  	case CPU_R4000SC:
  	case CPU_R4000MC:
-@@ -304,10 +319,10 @@
+@@ -304,10 +318,10 @@
  	 * Kludge alert.  For obscure reasons R4000SC and R4400SC go nuts if we
  	 * only flush the primary caches but R10000 and R12000 behave sane ...
  	 */
@@ -93,7 +94,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		r4k_blast_scache();
  }
  
-@@ -383,12 +398,15 @@
+@@ -383,12 +397,15 @@
  	unsigned long ic_lsize = current_cpu_data.icache.linesz;
  	unsigned long addr, aend;
  
@@ -111,7 +112,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  
  			while (1) {
  				/* Hit_Writeback_Inv_D */
-@@ -403,8 +421,6 @@
+@@ -403,8 +420,6 @@
  	if (end - start > icache_size)
  		r4k_blast_icache();
  	else {
@@ -120,7 +121,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		while (1) {
  			/* Hit_Invalidate_I */
  			protected_flush_icache_line(addr);
-@@ -413,6 +429,9 @@
+@@ -413,6 +428,9 @@
  			addr += ic_lsize;
  		}
  	}
@@ -130,7 +131,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  }
  
  /*
-@@ -443,7 +462,8 @@
+@@ -443,7 +461,8 @@
  	if (cpu_has_subset_pcaches) {
  		unsigned long addr = (unsigned long) page_address(page);
  
@@ -140,7 +141,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		ClearPageDcacheDirty(page);
  
  		return;
-@@ -451,6 +471,7 @@
+@@ -451,6 +470,7 @@
  
  	if (!cpu_has_ic_fills_f_dc) {
  		unsigned long addr = (unsigned long) page_address(page);
@@ -148,7 +149,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		r4k_blast_dcache_page(addr);
  		ClearPageDcacheDirty(page);
  	}
-@@ -477,7 +498,7 @@
+@@ -477,7 +497,7 @@
  	/* Catch bad driver code */
  	BUG_ON(size == 0);
  
@@ -157,7 +158,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		unsigned long sc_lsize = current_cpu_data.scache.linesz;
  
  		if (size >= scache_size) {
-@@ -509,6 +530,8 @@
+@@ -509,6 +529,8 @@
  		R4600_HIT_CACHEOP_WAR_IMPL;
  		a = addr & ~(dc_lsize - 1);
  		end = (addr + size - 1) & ~(dc_lsize - 1);
@@ -166,7 +167,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		while (1) {
  			flush_dcache_line(a);	/* Hit_Writeback_Inv_D */
  			if (a == end)
-@@ -527,7 +550,7 @@
+@@ -527,7 +549,7 @@
  	/* Catch bad driver code */
  	BUG_ON(size == 0);
  
@@ -175,7 +176,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		unsigned long sc_lsize = current_cpu_data.scache.linesz;
  
  		if (size >= scache_size) {
-@@ -554,6 +577,8 @@
+@@ -554,6 +576,8 @@
  		R4600_HIT_CACHEOP_WAR_IMPL;
  		a = addr & ~(dc_lsize - 1);
  		end = (addr + size - 1) & ~(dc_lsize - 1);
@@ -184,7 +185,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		while (1) {
  			flush_dcache_line(a);	/* Hit_Writeback_Inv_D */
  			if (a == end)
-@@ -577,6 +602,8 @@
+@@ -577,6 +601,8 @@
  	unsigned long dc_lsize = current_cpu_data.dcache.linesz;
  
  	R4600_HIT_CACHEOP_WAR_IMPL;
@@ -193,7 +194,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  	protected_writeback_dcache_line(addr & ~(dc_lsize - 1));
  	protected_flush_icache_line(addr & ~(ic_lsize - 1));
  	if (MIPS4K_ICACHE_REFILL_WAR) {
-@@ -986,10 +1013,12 @@
+@@ -986,10 +1012,12 @@
  	case CPU_R4000MC:
  	case CPU_R4400SC:
  	case CPU_R4400MC:
@@ -210,7 +211,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		break;
  
  	case CPU_R10000:
-@@ -1041,6 +1070,19 @@
+@@ -1041,6 +1069,19 @@
  static inline void coherency_setup(void)
  {
  	change_c0_config(CONF_CM_CMASK, CONF_CM_DEFAULT);
@@ -230,7 +231,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  
  	/*
  	 * c0_status.cu=0 specifies that updates by the sc instruction use
-@@ -1073,6 +1115,12 @@
+@@ -1073,6 +1114,12 @@
  	memcpy((void *)(KSEG0 + 0x100), &except_vec2_generic, 0x80);
  	memcpy((void *)(KSEG1 + 0x100), &except_vec2_generic, 0x80);
  
@@ -243,9 +244,10 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  	probe_pcache();
  	setup_scache();
  
-diff -urN linux.old/arch/mips/mm/tlbex-mips32.S linux.dev/arch/mips/mm/tlbex-mips32.S
---- linux.old/arch/mips/mm/tlbex-mips32.S	2005-07-05 16:46:49.000000000 +0200
-+++ linux.dev/arch/mips/mm/tlbex-mips32.S	2005-07-06 11:23:56.000000000 +0200
+Index: linux-2.4.35.4/arch/mips/mm/tlbex-mips32.S
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/mm/tlbex-mips32.S	2007-12-15 05:19:44.874978317 +0100
++++ linux-2.4.35.4/arch/mips/mm/tlbex-mips32.S	2007-12-15 05:20:14.380659748 +0100
 @@ -90,6 +90,9 @@
  	.set	noat
  	LEAF(except_vec0_r4000)
@@ -256,9 +258,10 @@ diff -urN linux.old/arch/mips/mm/tlbex-mips32.S linux.dev/arch/mips/mm/tlbex-mip
  #ifdef CONFIG_SMP
  	mfc0	k1, CP0_CONTEXT
  	la	k0, pgd_current
-diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kcache.h
---- linux.old/include/asm-mips/r4kcache.h	2005-07-05 16:46:49.000000000 +0200
-+++ linux.dev/include/asm-mips/r4kcache.h	2005-07-06 12:52:57.000000000 +0200
+Index: linux-2.4.35.4/include/asm-mips/r4kcache.h
+===================================================================
+--- linux-2.4.35.4.orig/include/asm-mips/r4kcache.h	2007-12-15 05:20:13.960635812 +0100
++++ linux-2.4.35.4/include/asm-mips/r4kcache.h	2007-12-15 05:20:14.384659977 +0100
 @@ -15,6 +15,18 @@
  #include <asm/asm.h>
  #include <asm/cacheops.h>
@@ -461,9 +464,10 @@ diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kca
  	do {
  		cache64_unroll32(start,Hit_Invalidate_I);
  		start += 0x800;
-diff -urN linux.old/include/asm-mips/stackframe.h linux.dev/include/asm-mips/stackframe.h
---- linux.old/include/asm-mips/stackframe.h	2005-07-05 16:46:49.000000000 +0200
-+++ linux.dev/include/asm-mips/stackframe.h	2005-07-06 11:23:56.000000000 +0200
+Index: linux-2.4.35.4/include/asm-mips/stackframe.h
+===================================================================
+--- linux-2.4.35.4.orig/include/asm-mips/stackframe.h	2007-12-15 05:19:36.298489571 +0100
++++ linux-2.4.35.4/include/asm-mips/stackframe.h	2007-12-15 05:20:14.388660206 +0100
 @@ -209,6 +209,20 @@
  
  #endif
@@ -485,10 +489,11 @@ diff -urN linux.old/include/asm-mips/stackframe.h linux.dev/include/asm-mips/sta
  #define RESTORE_SP                                       \
  		lw	sp,  PT_R29(sp);                 \
  
-diff -urN linux.old/mm/memory.c linux.dev/mm/memory.c
---- linux.old/mm/memory.c	2005-04-04 03:42:20.000000000 +0200
-+++ linux.dev/mm/memory.c	2005-07-06 11:23:56.000000000 +0200
-@@ -925,6 +925,7 @@
+Index: linux-2.4.35.4/mm/memory.c
+===================================================================
+--- linux-2.4.35.4.orig/mm/memory.c	2007-12-15 05:19:36.306490026 +0100
++++ linux-2.4.35.4/mm/memory.c	2007-12-15 05:20:14.388660206 +0100
+@@ -927,6 +927,7 @@
  	flush_page_to_ram(new_page);
  	flush_cache_page(vma, address);
  	establish_pte(vma, address, page_table, pte_mkwrite(pte_mkdirty(mk_pte(new_page, vma->vm_page_prot))));

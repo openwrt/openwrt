@@ -1,7 +1,7 @@
 /*
  * HND Run Time Environment for standalone MIPS programs.
  *
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: mipsinc.h,v 1.1.1.5 2006/02/27 03:43:16 honor Exp $
+ * $Id$
  */
 
 #ifndef	_MISPINC_H
@@ -69,6 +69,7 @@
 #define C0_CTEXT	$4
 #define C0_PGMASK	$5
 #define C0_WIRED	$6
+#define C0_INFO		$7
 #define C0_BADVADDR	$8
 #define C0_COUNT 	$9
 #define C0_TLBHI	$10
@@ -145,6 +146,7 @@ symbol:		.frame	sp, 0, ra
 #define C0_CTEXT	4		/* CP0: Context */
 #define C0_PGMASK	5		/* CP0: TLB PageMask */
 #define C0_WIRED	6		/* CP0: TLB Wired */
+#define C0_INFO		7		/* CP0: Info */
 #define C0_BADVADDR	8		/* CP0: Bad Virtual Address */
 #define C0_COUNT 	9		/* CP0: Count */
 #define C0_TLBHI	10		/* CP0: TLB EntryHi */

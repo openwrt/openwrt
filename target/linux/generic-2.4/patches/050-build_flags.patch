@@ -1,6 +1,7 @@
-diff -ur linux-2.4.32/arch/mips/Makefile linux-2.4.32-openwrt/arch/mips/Makefile
---- linux-2.4.32/arch/mips/Makefile	2005-12-15 13:53:59.000000000 +0100
-+++ linux-2.4.32-openwrt/arch/mips/Makefile	2005-12-15 14:02:33.000000000 +0100
+Index: linux-2.4.35.4/arch/mips/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/Makefile	2007-12-15 05:19:44.870978088 +0100
++++ linux-2.4.35.4/arch/mips/Makefile	2007-12-15 05:19:50.987326639 +0100
 @@ -44,10 +44,10 @@
  GCCFLAGS	:= -I $(TOPDIR)/include/asm/gcc
  GCCFLAGS	+= -G 0 -mno-abicalls -fno-pic -pipe
@@ -48,9 +49,10 @@ diff -ur linux-2.4.32/arch/mips/Makefile linux-2.4.32-openwrt/arch/mips/Makefile
  CFLAGS		+= $(GCCFLAGS)
  
  LD		+= -m $(ld-emul)
-diff -ur linux-2.4.32/Makefile linux-2.4.32-openwrt/Makefile
---- linux-2.4.32/Makefile	2005-12-15 13:53:59.000000000 +0100
-+++ linux-2.4.32-openwrt/Makefile	2005-12-15 13:59:30.000000000 +0100
+Index: linux-2.4.35.4/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/Makefile	2007-12-15 05:19:45.074989715 +0100
++++ linux-2.4.35.4/Makefile	2007-12-15 05:19:50.995327098 +0100
 @@ -17,7 +17,7 @@
  FINDHPATH	= $(HPATH)/asm $(HPATH)/linux $(HPATH)/scsi $(HPATH)/net $(HPATH)/math-emu
  
@@ -70,9 +72,9 @@ diff -ur linux-2.4.32/Makefile linux-2.4.32-openwrt/Makefile
 -CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -O2 \
 +CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
  	  -fno-strict-aliasing -fno-common
- CFLAGS += -fno-builtin-sprintf
+ CFLAGS += -fno-builtin-strpbrk -fno-builtin-sprintf
  ifndef CONFIG_FRAME_POINTER
-@@ -104,6 +103,8 @@
+@@ -105,6 +104,8 @@
  # disable pointer signedness warnings in gcc 4.0
  CFLAGS += $(call check_gcc,-Wno-pointer-sign,)
  

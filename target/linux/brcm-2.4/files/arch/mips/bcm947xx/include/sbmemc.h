@@ -1,7 +1,7 @@
 /*
  * BCM47XX Sonics SiliconBackplane DDR/SDRAM controller core hardware definitions.
  *
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: sbmemc.h,v 1.6 2006/03/02 12:33:44 honor Exp $
+ * $Id$
  */
 
 #ifndef	_SBMEMC_H

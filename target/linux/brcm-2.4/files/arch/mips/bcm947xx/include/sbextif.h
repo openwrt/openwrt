@@ -161,15 +161,6 @@ typedef volatile struct {
 #define	PA_W3_MASK	0x1f000000		/* waitcount3 */
 #define	PA_W3_SHIFT	24
 
-/* pcmcia_iowait */
-#define	PI_W0_MASK	0x3f			/* waitcount0 */
-#define	PI_W1_MASK	0x1f00			/* waitcount1 */
-#define	PI_W1_SHIFT	8
-#define	PI_W2_MASK	0x1f0000		/* waitcount2 */
-#define	PI_W2_SHIFT	16
-#define	PI_W3_MASK	0x1f000000		/* waitcount3 */
-#define	PI_W3_SHIFT	24
-
 /* prog_waitcount */
 #define	PW_W0_MASK	0x0000001f			/* waitcount0 */
 #define	PW_W1_MASK	0x00001f00			/* waitcount1 */

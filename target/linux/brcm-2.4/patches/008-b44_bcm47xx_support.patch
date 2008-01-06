@@ -1,6 +1,7 @@
-diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
---- linux.old/drivers/net/b44.c	2006-02-12 13:49:59.000000000 +0100
-+++ linux.dev/drivers/net/b44.c	2006-03-06 22:37:14.000000000 +0100
+Index: linux-2.4.35.4/drivers/net/b44.c
+===================================================================
+--- linux-2.4.35.4.orig/drivers/net/b44.c	2007-12-15 05:19:36.094477944 +0100
++++ linux-2.4.35.4/drivers/net/b44.c	2007-12-15 05:20:16.020753214 +0100
 @@ -1,7 +1,9 @@
  /* b44.c: Broadcom 4400 device driver.
   *
@@ -12,15 +13,13 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
   *
   * Distribute under GPL.
   */
-@@ -25,6 +27,41 @@
+@@ -25,6 +27,39 @@
  
  #include "b44.h"
  
 +#include <typedefs.h>
 +#include <bcmdevs.h>
-+#include <bcmutils.h>
 +#include <osl.h>
-+#include <bcmutils.h>
 +#include <bcmnvram.h>
 +#include <sbconfig.h>
 +#include <sbchipc.h>
@@ -400,7 +399,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	bw32(B44_MDIO_CTRL, (MDIO_CTRL_PREAMBLE |
  			     (0x0d & MDIO_CTRL_MAXF_MASK)));
  	br32(B44_MDIO_CTRL);
-@@ -1215,6 +1357,8 @@
+@@ -1216,6 +1358,8 @@
  	struct b44 *bp = dev->priv;
  	int err;
  
@@ -409,7 +408,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	err = b44_alloc_consistent(bp);
  	if (err)
  		return err;
-@@ -1235,9 +1379,10 @@
+@@ -1236,9 +1380,10 @@
  	bp->timer.expires = jiffies + HZ;
  	bp->timer.data = (unsigned long) bp;
  	bp->timer.function = b44_timer;
@@ -421,7 +420,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  
  	return 0;
  
-@@ -1628,7 +1773,7 @@
+@@ -1638,7 +1783,7 @@
  		u32 mii_regval;
  
  		spin_lock_irq(&bp->lock);
@@ -430,7 +429,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  		spin_unlock_irq(&bp->lock);
  
  		data->val_out = mii_regval;
-@@ -1641,7 +1786,7 @@
+@@ -1651,7 +1796,7 @@
  			return -EPERM;
  
  		spin_lock_irq(&bp->lock);
@@ -439,7 +438,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  		spin_unlock_irq(&bp->lock);
  
  		return err;
-@@ -1668,21 +1813,52 @@
+@@ -1678,21 +1823,52 @@
  static int __devinit b44_get_invariants(struct b44 *bp)
  {
  	u8 eeprom[128];
@@ -505,7 +504,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  
  	/* With this, plus the rx_header prepended to the data by the
  	 * hardware, we'll land the ethernet header on a 2-byte boundary.
-@@ -1692,13 +1868,12 @@
+@@ -1702,13 +1878,12 @@
  	bp->imask = IMASK_DEF;
  
  	bp->core_unit = ssb_core_unit(bp);
@@ -521,7 +520,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  }
  
  static int __devinit b44_init_one(struct pci_dev *pdev,
-@@ -1710,6 +1885,10 @@
+@@ -1720,6 +1895,10 @@
  	struct b44 *bp;
  	int err, i;
  
@@ -532,9 +531,9 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	if (b44_version_printed++ == 0)
  		printk(KERN_INFO "%s", version);
  
-@@ -1819,11 +1998,17 @@
- 
- 	pci_save_state(bp->pdev, bp->pci_cfg_state);
+@@ -1834,11 +2013,17 @@
+ 	 */ 
+ 	b44_chip_reset(bp);
  
 -	printk(KERN_INFO "%s: Broadcom 4400 10/100BaseT Ethernet ", dev->name);
 +	printk(KERN_INFO "%s: Broadcom %s 10/100BaseT Ethernet ", dev->name,
@@ -551,9 +550,10 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	return 0;
  
  err_out_iounmap:
-diff -urN linux.old/drivers/net/b44.h linux.dev/drivers/net/b44.h
---- linux.old/drivers/net/b44.h	2006-02-12 13:49:59.000000000 +0100
-+++ linux.dev/drivers/net/b44.h	2006-01-24 20:52:08.000000000 +0100
+Index: linux-2.4.35.4/drivers/net/b44.h
+===================================================================
+--- linux-2.4.35.4.orig/drivers/net/b44.h	2007-12-15 05:19:36.102478402 +0100
++++ linux-2.4.35.4/drivers/net/b44.h	2007-12-15 05:20:16.028753670 +0100
 @@ -229,8 +229,6 @@
  #define  SBIPSFLAG_IMASK4	0x3f000000 /* Which sbflags --> mips interrupt 4 */
  #define  SBIPSFLAG_ISHIFT4	24
@@ -572,10 +572,11 @@ diff -urN linux.old/drivers/net/b44.h linux.dev/drivers/net/b44.h
  
  /* SW copy of device statistics, kept up to date by periodic timer
   * which probes HW values.  Must have same relative layout as HW
-diff -urN linux.old/include/linux/pci_ids.h linux.dev/include/linux/pci_ids.h
---- linux.old/include/linux/pci_ids.h	2006-02-12 13:49:59.000000000 +0100
-+++ linux.dev/include/linux/pci_ids.h	2006-01-24 20:52:08.000000000 +0100
-@@ -1735,6 +1735,7 @@
+Index: linux-2.4.35.4/include/linux/pci_ids.h
+===================================================================
+--- linux-2.4.35.4.orig/include/linux/pci_ids.h	2007-12-15 05:19:36.114479084 +0100
++++ linux-2.4.35.4/include/linux/pci_ids.h	2007-12-15 05:20:16.032753896 +0100
+@@ -1756,6 +1756,7 @@
  #define PCI_DEVICE_ID_TIGON3_5901_2	0x170e
  #define PCI_DEVICE_ID_BCM4401		0x4401
  #define PCI_DEVICE_ID_BCM4401B0		0x4402

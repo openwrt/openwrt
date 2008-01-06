@@ -1,7 +1,7 @@
 /*
  * NVRAM variable manipulation
  *
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: bcmnvram.h,v 1.17 2006/03/02 12:33:44 honor Exp $
+ * $Id$
  */
 
 #ifndef _bcmnvram_h_
@@ -35,10 +35,19 @@ struct nvram_tuple {
 };
 
 /*
- * Initialize NVRAM access. May be unnecessary or undefined on certain
- * platforms.
+ * Get default value for an NVRAM variable
  */
-extern int nvram_init(void *sbh);
+extern char *nvram_default_get(const char *name);
+
+/*
+ * Append a chunk of nvram variables to the global list
+ */
+extern int nvram_append(void *sb, char *vars, uint varsz);
+
+/*
+ * Check for reset button press for restoring factory defaults.
+ */
+extern bool nvram_reset(void *sbh);
 
 /*
  * Disable NVRAM access. May be unnecessary or undefined on certain
@@ -59,8 +68,6 @@ extern char * nvram_get(const char *name);
  * as input
  */
 extern int BCMINITFN(nvram_resetgpio_init)(void *sbh);
-extern int BCMINITFN(nvram_gpio_init)(const char *name, void *sbh);
-extern int BCMINITFN(nvram_gpio_set)(const char *name, void *sbh, int type);
 
 /* 
  * Get the value of an NVRAM variable.
@@ -68,16 +75,6 @@ extern int BCMINITFN(nvram_gpio_set)(const char *name, void *sbh, int type);
  * @return	value of variable or NUL if undefined
  */
 #define nvram_safe_get(name) (nvram_get(name) ? : "")
-
-#define nvram_safe_unset(name) ({ \
-	if(nvram_get(name)) \
-		nvram_unset(name); \
-})
-
-#define nvram_safe_set(name, value) ({ \
-	if(!nvram_get(name) || strcmp(nvram_get(name), value)) \
-		nvram_set(name, value); \
-})
 
 /*
  * Match an NVRAM variable.
@@ -139,15 +136,24 @@ extern int nvram_commit(void);
  * @param	count	size of buffer in bytes
  * @return	0 on success and errno on failure
  */
-extern int nvram_getall(char *buf, int count);
+extern int nvram_getall(char *nvram_buf, int count);
 
-extern int file2nvram(char *filename, char *varname);
-extern int nvram2file(char *varname, char *filename);
+/*
+ * returns the crc value of the nvram
+ * @param	nvh	nvram header pointer
+ */
+extern uint8 nvram_calc_crc(struct nvram_header * nvh);
+
+extern char* getvar(char *vars, const char *name);
+extern int getintvar(char *vars, const char *name);
 
 #endif /* _LANGUAGE_ASSEMBLY */
 
+/* The NVRAM version number stored as an NVRAM variable */
+#define NVRAM_SOFTWARE_VERSION	"1"
+
 #define NVRAM_MAGIC		0x48534C46	/* 'FLSH' */
-#define NVRAM_CLEAR_MAGIC		0x0
+#define NVRAM_CLEAR_MAGIC	0x0
 #define NVRAM_INVALID_MAGIC	0xFFFFFFFF
 #define NVRAM_VERSION		1
 #define NVRAM_HEADER_SIZE	20
@@ -155,5 +161,8 @@ extern int nvram2file(char *varname, char *filename);
 
 #define NVRAM_MAX_VALUE_LEN 255
 #define NVRAM_MAX_PARAM_LEN 64
+
+#define NVRAM_CRC_START_POSITION	9 /* magic, len, crc8 to be skipped */
+#define NVRAM_CRC_VER_MASK	0xffffff00 /* for crc_ver_init */
 
 #endif /* _bcmnvram_h_ */

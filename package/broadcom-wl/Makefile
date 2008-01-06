@@ -10,13 +10,15 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=broadcom-wl
-PKG_VERSION:=4.80.53.0
+PKG_VERSION:=4.150.10.5
 PKG_RELEASE:=1
 WLC_VERSION:=0.1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
-PKG_MD5SUM:=a7d8dde3ce474c361143b83e1d9890b1
+PKG_MD5SUM:=0c6ba9687114c6b598e8019e262d9a60
+
+WL_WEXT=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -107,7 +109,7 @@ endef
 define Package/wl
 $(call Package/broadcom-wl/Default)
   TITLE:=Proprietary Broadcom wl driver config utility
-  DEPENDS+=+brcm-compat-ldso
+#  DEPENDS+=+brcm-compat-ldso
 endef
 
 define Package/wl/description
@@ -118,27 +120,13 @@ endef
 define Package/nas
 $(call Package/broadcom-wl/Default)
   DEPENDS+= +nvram
-  DEPENDS+= +brcm-compat-ldso
+#  DEPENDS+= +brcm-compat-ldso
   TITLE:=Proprietary Broadcom WPA/WPA2 authenticator
 endef
 
 define Package/nas/description
  This package contains the proprietary WPA/WPA2 authenticator (nas) for the 
  proprietary Broadcom wl driver.
-endef
-
-
-define install_template
-	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/driver/wl$(2).o.patch $(1)/lib/modules/$(LINUX_VERSION)/
-endef
-
-define KernelPackage/brcm-wl/install
-	$(call install_template,$(1),)
-endef
-
-define KernelPackage/brcm-wl_mimo/install
-	$(call install_template,$(1),_mimo)
 endef
 
 MAKE_KMOD := $(MAKE) -C "$(LINUX_DIR)" \
@@ -149,7 +137,6 @@ MAKE_KMOD := $(MAKE) -C "$(LINUX_DIR)" \
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
-	mv $(PKG_BUILD_DIR)/kmod $(PKG_BUILD_DIR)/driver
 	$(CP) src/* $(PKG_BUILD_DIR)/
 endef
 
@@ -164,10 +151,12 @@ define Build/Compile
 		modules
 	$(MAKE_KMOD) \
 		SUBDIRS="$(PKG_BUILD_DIR)/wlcompat" \
+		$(if $(WL_WEXT),WL_WEXT=1) \
 		modules
 	$(MAKE_KMOD) \
 		SUBDIRS="$(PKG_BUILD_DIR)/wlcompat" \
 		DEBUG=1 \
+		$(if $(WL_WEXT),WL_WEXT=1) \
 		modules
 
 	# Compile wlc
@@ -175,10 +164,12 @@ define Build/Compile
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		all
-	$(NO_TRACE_MAKE) -C compat-ldso -f build.mk PKG_INSTALL_DIR="$(PKG_BUILD_DIR)" BUILD_DIR="$(PKG_BUILD_DIR)"
-	$(SED) 's,ld-uClibc.so.0,ld-uClibc.brcm,' \
-		$(PKG_BUILD_DIR)/wl \
-		$(PKG_BUILD_DIR)/nas
+	$(TARGET_CC) -o $(PKG_BUILD_DIR)/nas $(PKG_BUILD_DIR)/nas_exe.o -L$(STAGING_DIR)/usr/lib -lnvram
+	$(TARGET_CC) -o $(PKG_BUILD_DIR)/wl $(PKG_BUILD_DIR)/wl_exe.o
+#	$(NO_TRACE_MAKE) -C compat-ldso -f build.mk PKG_INSTALL_DIR="$(PKG_BUILD_DIR)"
+#	$(SED) 's,ld-uClibc.so.0,ld-uClibc.brcm,' \
+#		$(PKG_BUILD_DIR)/wl \
+#		$(PKG_BUILD_DIR)/nas
 endef
 
 define Package/brcm-compat-ldso/install
@@ -198,8 +189,6 @@ define Package/wl/install
 endef
 
 define Package/nas/install
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libbcmcrypto.so $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/nas $(1)/usr/sbin/
 	ln -sf nas $(1)/usr/sbin/nas4not
@@ -208,7 +197,7 @@ endef
 
 $(eval $(call KernelPackage,brcm-wl))
 $(eval $(call KernelPackage,brcm-wl-mimo))
-$(eval $(call BuildPackage,brcm-compat-ldso))
+#$(eval $(call BuildPackage,brcm-compat-ldso))
 $(eval $(call KernelPackage,wlcompat))
 $(eval $(call KernelPackage,wlcompat-debug))
 $(eval $(call BuildPackage,wlc))

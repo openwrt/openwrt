@@ -1,6 +1,7 @@
-diff -Nur linux-2.4.32/fs/squashfs/inode.c linux-2.4.32-owrt/fs/squashfs/inode.c
---- linux-2.4.32/fs/squashfs/inode.c	2006-03-21 13:06:10.000000000 +0100
-+++ linux-2.4.32-owrt/fs/squashfs/inode.c	2006-03-21 13:12:07.000000000 +0100
+Index: linux-2.4.35.4/fs/squashfs/inode.c
+===================================================================
+--- linux-2.4.35.4.orig/fs/squashfs/inode.c	2007-12-15 05:19:48.647193283 +0100
++++ linux-2.4.35.4/fs/squashfs/inode.c	2007-12-15 05:19:49.015214255 +0100
 @@ -4,6 +4,9 @@
   * Copyright (c) 2002, 2003, 2004, 2005, 2006
   * Phillip Lougher <phillip@lougher.org.uk>
@@ -98,9 +99,10 @@ diff -Nur linux-2.4.32/fs/squashfs/inode.c linux-2.4.32-owrt/fs/squashfs/inode.c
  	unregister_filesystem(&squashfs_fs_type);
  }
  
-diff -Nur linux-2.4.32/fs/squashfs/LzmaDecode.c linux-2.4.32-owrt/fs/squashfs/LzmaDecode.c
---- linux-2.4.32/fs/squashfs/LzmaDecode.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.32-owrt/fs/squashfs/LzmaDecode.c	2006-03-21 13:06:33.000000000 +0100
+Index: linux-2.4.35.4/fs/squashfs/LzmaDecode.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/squashfs/LzmaDecode.c	2007-12-15 05:19:49.019214484 +0100
 @@ -0,0 +1,663 @@
 +/*
 +  LzmaDecode.c
@@ -765,9 +767,10 @@ diff -Nur linux-2.4.32/fs/squashfs/LzmaDecode.c linux-2.4.32-owrt/fs/squashfs/Lz
 +  *outSizeProcessed = nowPos;
 +  return LZMA_RESULT_OK;
 +}
-diff -Nur linux-2.4.32/fs/squashfs/LzmaDecode.h linux-2.4.32-owrt/fs/squashfs/LzmaDecode.h
---- linux-2.4.32/fs/squashfs/LzmaDecode.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.32-owrt/fs/squashfs/LzmaDecode.h	2006-03-21 13:06:33.000000000 +0100
+Index: linux-2.4.35.4/fs/squashfs/LzmaDecode.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/squashfs/LzmaDecode.h	2007-12-15 05:19:49.027214939 +0100
 @@ -0,0 +1,100 @@
 +/* 
 +  LzmaDecode.h
@@ -869,9 +872,10 @@ diff -Nur linux-2.4.32/fs/squashfs/LzmaDecode.h linux-2.4.32-owrt/fs/squashfs/Lz
 +    UInt32 *outSizeProcessed);
 +
 +#endif
-diff -Nur linux-2.4.32/fs/squashfs/Makefile linux-2.4.32-owrt/fs/squashfs/Makefile
---- linux-2.4.32/fs/squashfs/Makefile	2006-03-21 13:06:10.000000000 +0100
-+++ linux-2.4.32-owrt/fs/squashfs/Makefile	2006-03-21 13:12:39.000000000 +0100
+Index: linux-2.4.35.4/fs/squashfs/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/fs/squashfs/Makefile	2007-12-15 05:19:48.651193513 +0100
++++ linux-2.4.35.4/fs/squashfs/Makefile	2007-12-15 05:19:49.031215169 +0100
 @@ -4,7 +4,7 @@
  
  O_TARGET := squashfs.o

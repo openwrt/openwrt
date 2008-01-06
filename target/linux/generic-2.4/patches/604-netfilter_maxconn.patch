@@ -1,6 +1,8 @@
---- ../../buildroot-unpacked/build_mipsel/linux/net/ipv4/netfilter/ip_conntrack_core.c	2004-11-28 22:59:36.000000000 -0500
-+++ linux/net/ipv4/netfilter/ip_conntrack_core.c	2004-11-30 05:05:32.000000000 -0500
-@@ -1386,7 +1386,7 @@
+Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_core.c	2007-12-15 05:20:06.404205198 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c	2007-12-15 05:20:06.772226171 +0100
+@@ -1410,7 +1410,7 @@
  	nf_unregister_sockopt(&so_getorigdst);
  }
  
@@ -9,7 +11,7 @@
  MODULE_PARM(hashsize, "i");
  
  int __init ip_conntrack_init(void)
-@@ -1407,7 +1407,7 @@
+@@ -1431,7 +1431,7 @@
  		if (ip_conntrack_htable_size < 16)
  			ip_conntrack_htable_size = 16;
  	}

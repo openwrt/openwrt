@@ -15,6 +15,9 @@ ifneq ($(DEBUG),)
   EXTRA_CFLAGS += -DDEBUG=1
   _D=-debug
 endif
+ifneq ($(WL_WEXT),)
+  EXTRA_CFLAGS += -DWL_WEXT=1
+endif
 
 obj-m := wlcompat$(_D).o
 modules: wlcompat$(_D).o

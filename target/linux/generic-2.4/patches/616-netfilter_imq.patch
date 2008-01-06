@@ -1,7 +1,8 @@
-diff -aurN linux-2.4.28-orig/Documentation/Configure.help linux-2.4.28/Documentation/Configure.help
---- linux-2.4.28-orig/Documentation/Configure.help	2004-11-17 11:54:20.000000000 +0000
-+++ linux-2.4.28/Documentation/Configure.help	2004-12-14 11:43:42.000000000 +0000
-@@ -3147,6 +3147,22 @@
+Index: linux-2.4.35.4/Documentation/Configure.help
+===================================================================
+--- linux-2.4.35.4.orig/Documentation/Configure.help	2007-12-15 05:20:09.632389161 +0100
++++ linux-2.4.35.4/Documentation/Configure.help	2007-12-15 05:20:10.792455269 +0100
+@@ -3160,6 +3160,22 @@
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
  
@@ -24,7 +25,7 @@ diff -aurN linux-2.4.28-orig/Documentation/Configure.help linux-2.4.28/Documenta
  MARK target support
  CONFIG_IP_NF_TARGET_MARK
    This option adds a `MARK' target, which allows you to create rules
-@@ -9799,6 +9815,20 @@
+@@ -9919,6 +9935,20 @@
    say M here and read <file:Documentation/modules.txt>.  The module
    will be called bonding.o.
  
@@ -45,9 +46,10 @@ diff -aurN linux-2.4.28-orig/Documentation/Configure.help linux-2.4.28/Documenta
  SLIP (serial line) support
  CONFIG_SLIP
    Say Y if you intend to use SLIP or CSLIP (compressed SLIP) to
-diff -aurN linux-2.4.28-orig/drivers/net/Config.in linux-2.4.28/drivers/net/Config.in
---- linux-2.4.28-orig/drivers/net/Config.in	2004-08-07 23:26:04.000000000 +0000
-+++ linux-2.4.28/drivers/net/Config.in	2004-12-14 11:43:42.000000000 +0000
+Index: linux-2.4.35.4/drivers/net/Config.in
+===================================================================
+--- linux-2.4.35.4.orig/drivers/net/Config.in	2007-12-15 05:19:54.067502171 +0100
++++ linux-2.4.35.4/drivers/net/Config.in	2007-12-15 05:20:10.796455498 +0100
 @@ -7,6 +7,11 @@
  tristate 'Dummy net driver support' CONFIG_DUMMY
  tristate 'Bonding driver support' CONFIG_BONDING
@@ -58,12 +60,13 @@ diff -aurN linux-2.4.28-orig/drivers/net/Config.in linux-2.4.28/drivers/net/Conf
 +  comment 'IMQ needs CONFIG_NETFILTER enabled'
 +fi
  tristate 'Universal TUN/TAP device driver support' CONFIG_TUN
+ bool 'Allow Net Devices to contribute to /dev/random' CONFIG_NET_RANDOM
  if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
-    tristate 'Ethertap network tap (OBSOLETE)' CONFIG_ETHERTAP
-diff -aurN linux-2.4.28-orig/drivers/net/Makefile linux-2.4.28/drivers/net/Makefile
---- linux-2.4.28-orig/drivers/net/Makefile	2004-08-07 23:26:04.000000000 +0000
-+++ linux-2.4.28/drivers/net/Makefile	2004-12-14 11:43:42.000000000 +0000
-@@ -170,6 +170,7 @@
+Index: linux-2.4.35.4/drivers/net/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/drivers/net/Makefile	2007-12-15 05:19:51.931380439 +0100
++++ linux-2.4.35.4/drivers/net/Makefile	2007-12-15 05:20:10.804455954 +0100
+@@ -176,6 +176,7 @@
  
  obj-$(CONFIG_STRIP) += strip.o
  obj-$(CONFIG_DUMMY) += dummy.o
@@ -71,9 +74,10 @@ diff -aurN linux-2.4.28-orig/drivers/net/Makefile linux-2.4.28/drivers/net/Makef
  obj-$(CONFIG_DE600) += de600.o
  obj-$(CONFIG_DE620) += de620.o
  obj-$(CONFIG_AT1500) += lance.o
-diff -aurN linux-2.4.28-orig/drivers/net/imq.c linux-2.4.28/drivers/net/imq.c
---- linux-2.4.28-orig/drivers/net/imq.c	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.28/drivers/net/imq.c	2004-12-14 11:43:42.000000000 +0000
+Index: linux-2.4.35.4/drivers/net/imq.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/drivers/net/imq.c	2007-12-15 05:20:10.808456180 +0100
 @@ -0,0 +1,321 @@
 +/*
 + *             Pseudo-driver for the intermediate queue device.
@@ -396,9 +400,10 @@ diff -aurN linux-2.4.28-orig/drivers/net/imq.c linux-2.4.28/drivers/net/imq.c
 +module_init(imq_init_module);
 +module_exit(imq_cleanup_module);
 +MODULE_LICENSE("GPL");
-diff -aurN linux-2.4.28-orig/include/linux/imq.h linux-2.4.28/include/linux/imq.h
---- linux-2.4.28-orig/include/linux/imq.h	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.28/include/linux/imq.h	2004-12-14 11:43:42.000000000 +0000
+Index: linux-2.4.35.4/include/linux/imq.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/include/linux/imq.h	2007-12-15 05:20:10.808456180 +0100
 @@ -0,0 +1,9 @@
 +#ifndef _IMQ_H
 +#define _IMQ_H
@@ -409,9 +414,10 @@ diff -aurN linux-2.4.28-orig/include/linux/imq.h linux-2.4.28/include/linux/imq.
 +#define IMQ_F_ENQUEUE	0x80
 +
 +#endif /* _IMQ_H */
-diff -aurN linux-2.4.28-orig/include/linux/netfilter_ipv4/ipt_IMQ.h linux-2.4.28/include/linux/netfilter_ipv4/ipt_IMQ.h
---- linux-2.4.28-orig/include/linux/netfilter_ipv4/ipt_IMQ.h	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.28/include/linux/netfilter_ipv4/ipt_IMQ.h	2004-12-14 11:43:42.000000000 +0000
+Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_IMQ.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_IMQ.h	2007-12-15 05:20:10.808456180 +0100
 @@ -0,0 +1,8 @@
 +#ifndef _IPT_IMQ_H
 +#define _IPT_IMQ_H
@@ -421,9 +427,10 @@ diff -aurN linux-2.4.28-orig/include/linux/netfilter_ipv4/ipt_IMQ.h linux-2.4.28
 +};
 +
 +#endif /* _IPT_IMQ_H */
-diff -aurN linux-2.4.28-orig/include/linux/netfilter_ipv6/ip6t_IMQ.h linux-2.4.28/include/linux/netfilter_ipv6/ip6t_IMQ.h
---- linux-2.4.28-orig/include/linux/netfilter_ipv6/ip6t_IMQ.h	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.28/include/linux/netfilter_ipv6/ip6t_IMQ.h	2004-12-14 11:43:42.000000000 +0000
+Index: linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_IMQ.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_IMQ.h	2007-12-15 05:20:10.808456180 +0100
 @@ -0,0 +1,8 @@
 +#ifndef _IP6T_IMQ_H
 +#define _IP6T_IMQ_H
@@ -433,9 +440,10 @@ diff -aurN linux-2.4.28-orig/include/linux/netfilter_ipv6/ip6t_IMQ.h linux-2.4.2
 +};
 +
 +#endif /* _IP6T_IMQ_H */
-diff -aurN linux-2.4.28-orig/include/linux/skbuff.h linux-2.4.28/include/linux/skbuff.h
---- linux-2.4.28-orig/include/linux/skbuff.h	2004-08-07 23:26:06.000000000 +0000
-+++ linux-2.4.28/include/linux/skbuff.h	2004-12-14 11:43:42.000000000 +0000
+Index: linux-2.4.35.4/include/linux/skbuff.h
+===================================================================
+--- linux-2.4.35.4.orig/include/linux/skbuff.h	2007-12-15 05:20:05.060128604 +0100
++++ linux-2.4.35.4/include/linux/skbuff.h	2007-12-15 05:20:10.808456180 +0100
 @@ -93,6 +93,9 @@
  	struct nf_conntrack *master;
  };
@@ -465,9 +473,10 @@ diff -aurN linux-2.4.28-orig/include/linux/skbuff.h linux-2.4.28/include/linux/s
  };
  
  #ifdef __KERNEL__
-diff -aurN linux-2.4.28-orig/net/core/skbuff.c linux-2.4.28/net/core/skbuff.c
---- linux-2.4.28-orig/net/core/skbuff.c	2003-08-25 11:44:44.000000000 +0000
-+++ linux-2.4.28/net/core/skbuff.c	2004-12-14 11:43:42.000000000 +0000
+Index: linux-2.4.35.4/net/core/skbuff.c
+===================================================================
+--- linux-2.4.35.4.orig/net/core/skbuff.c	2007-12-15 05:19:37.174539496 +0100
++++ linux-2.4.35.4/net/core/skbuff.c	2007-12-15 05:20:10.812456409 +0100
 @@ -202,6 +202,10 @@
  	/* Set up other state */
  	skb->len = 0;
@@ -512,31 +521,34 @@ diff -aurN linux-2.4.28-orig/net/core/skbuff.c linux-2.4.28/net/core/skbuff.c
  }
  
  /**
-diff -aurN linux-2.4.28-orig/net/ipv4/netfilter/Config.in linux-2.4.28/net/ipv4/netfilter/Config.in
---- linux-2.4.28-orig/net/ipv4/netfilter/Config.in	2003-08-25 11:44:44.000000000 +0000
-+++ linux-2.4.28/net/ipv4/netfilter/Config.in	2004-12-14 11:43:43.000000000 +0000
-@@ -104,6 +104,7 @@
+Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in	2007-12-15 05:20:10.504438857 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/Config.in	2007-12-15 05:20:10.812456409 +0100
+@@ -171,6 +171,7 @@
      dep_tristate '    DSCP target support' CONFIG_IP_NF_TARGET_DSCP $CONFIG_IP_NF_MANGLE
   
      dep_tristate '    MARK target support' CONFIG_IP_NF_TARGET_MARK $CONFIG_IP_NF_MANGLE
 +    dep_tristate '    IMQ target support' CONFIG_IP_NF_TARGET_IMQ $CONFIG_IP_NF_MANGLE
    fi
-   dep_tristate '  LOG target support' CONFIG_IP_NF_TARGET_LOG $CONFIG_IP_NF_IPTABLES
-   dep_tristate '  ULOG target support' CONFIG_IP_NF_TARGET_ULOG $CONFIG_IP_NF_IPTABLES
-diff -aurN linux-2.4.28-orig/net/ipv4/netfilter/Makefile linux-2.4.28/net/ipv4/netfilter/Makefile
---- linux-2.4.28-orig/net/ipv4/netfilter/Makefile	2003-08-25 11:44:44.000000000 +0000
-+++ linux-2.4.28/net/ipv4/netfilter/Makefile	2004-12-14 11:43:43.000000000 +0000
-@@ -94,6 +94,7 @@
+   if [ "$CONFIG_IP_NF_CONNTRACK_MARK" != "n" ]; then
+     dep_tristate '  CONNMARK target support' CONFIG_IP_NF_TARGET_CONNMARK $CONFIG_IP_NF_IPTABLES
+Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile	2007-12-15 05:20:10.508439083 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/Makefile	2007-12-15 05:20:10.812456409 +0100
+@@ -138,6 +138,7 @@
  obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_ECN.o
  obj-$(CONFIG_IP_NF_TARGET_DSCP) += ipt_DSCP.o
  obj-$(CONFIG_IP_NF_TARGET_MARK) += ipt_MARK.o
 +obj-$(CONFIG_IP_NF_TARGET_IMQ) += ipt_IMQ.o
  obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
- obj-$(CONFIG_IP_NF_NAT_SNMP_BASIC) += ip_nat_snmp_basic.o
-diff -aurN linux-2.4.28-orig/net/ipv4/netfilter/ipt_IMQ.c linux-2.4.28/net/ipv4/netfilter/ipt_IMQ.c
---- linux-2.4.28-orig/net/ipv4/netfilter/ipt_IMQ.c	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.28/net/ipv4/netfilter/ipt_IMQ.c	2004-12-14 11:43:43.000000000 +0000
+ obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
+Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_IMQ.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/net/ipv4/netfilter/ipt_IMQ.c	2007-12-15 05:20:10.812456409 +0100
 @@ -0,0 +1,78 @@
 +/* This target marks packets to be enqueued to an imq device */
 +#include <linux/module.h>
@@ -616,10 +628,11 @@ diff -aurN linux-2.4.28-orig/net/ipv4/netfilter/ipt_IMQ.c linux-2.4.28/net/ipv4/
 +module_init(init);
 +module_exit(fini);
 +MODULE_LICENSE("GPL");
-diff -aurN linux-2.4.28-orig/net/ipv6/netfilter/Config.in linux-2.4.28/net/ipv6/netfilter/Config.in
---- linux-2.4.28-orig/net/ipv6/netfilter/Config.in	2003-06-13 14:51:39.000000000 +0000
-+++ linux-2.4.28/net/ipv6/netfilter/Config.in	2004-12-14 11:43:43.000000000 +0000
-@@ -71,6 +71,7 @@
+Index: linux-2.4.35.4/net/ipv6/netfilter/Config.in
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv6/netfilter/Config.in	2007-12-15 05:20:09.300370243 +0100
++++ linux-2.4.35.4/net/ipv6/netfilter/Config.in	2007-12-15 05:20:10.816456638 +0100
+@@ -72,6 +72,7 @@
    if [ "$CONFIG_IP6_NF_MANGLE" != "n" ]; then
  #    dep_tristate '    TOS target support' CONFIG_IP6_NF_TARGET_TOS $CONFIG_IP_NF_MANGLE
      dep_tristate '    MARK target support' CONFIG_IP6_NF_TARGET_MARK $CONFIG_IP6_NF_MANGLE
@@ -627,10 +640,11 @@ diff -aurN linux-2.4.28-orig/net/ipv6/netfilter/Config.in linux-2.4.28/net/ipv6/
    fi
    #dep_tristate '  LOG target support' CONFIG_IP6_NF_TARGET_LOG $CONFIG_IP6_NF_IPTABLES
  fi
-diff -aurN linux-2.4.28-orig/net/ipv6/netfilter/Makefile linux-2.4.28/net/ipv6/netfilter/Makefile
---- linux-2.4.28-orig/net/ipv6/netfilter/Makefile	2003-06-13 14:51:39.000000000 +0000
-+++ linux-2.4.28/net/ipv6/netfilter/Makefile	2004-12-14 11:43:43.000000000 +0000
-@@ -28,6 +28,7 @@
+Index: linux-2.4.35.4/net/ipv6/netfilter/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv6/netfilter/Makefile	2007-12-15 05:20:09.304370470 +0100
++++ linux-2.4.35.4/net/ipv6/netfilter/Makefile	2007-12-15 05:20:10.816456638 +0100
+@@ -29,6 +29,7 @@
  obj-$(CONFIG_IP6_NF_FILTER) += ip6table_filter.o
  obj-$(CONFIG_IP6_NF_MANGLE) += ip6table_mangle.o
  obj-$(CONFIG_IP6_NF_TARGET_MARK) += ip6t_MARK.o
@@ -638,9 +652,10 @@ diff -aurN linux-2.4.28-orig/net/ipv6/netfilter/Makefile linux-2.4.28/net/ipv6/n
  obj-$(CONFIG_IP6_NF_QUEUE) += ip6_queue.o
  obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_LOG.o
  obj-$(CONFIG_IP6_NF_MATCH_HL) += ip6t_hl.o
-diff -aurN linux-2.4.28-orig/net/ipv6/netfilter/ip6t_IMQ.c linux-2.4.28/net/ipv6/netfilter/ip6t_IMQ.c
---- linux-2.4.28-orig/net/ipv6/netfilter/ip6t_IMQ.c	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.28/net/ipv6/netfilter/ip6t_IMQ.c	2004-12-14 11:43:43.000000000 +0000
+Index: linux-2.4.35.4/net/ipv6/netfilter/ip6t_IMQ.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/net/ipv6/netfilter/ip6t_IMQ.c	2007-12-15 05:20:10.816456638 +0100
 @@ -0,0 +1,78 @@
 +/* This target marks packets to be enqueued to an imq device */
 +#include <linux/module.h>
@@ -720,9 +735,10 @@ diff -aurN linux-2.4.28-orig/net/ipv6/netfilter/ip6t_IMQ.c linux-2.4.28/net/ipv6
 +module_init(init);
 +module_exit(fini);
 +MODULE_LICENSE("GPL");
-diff -aurN linux-2.4.28-orig/net/sched/sch_generic.c linux-2.4.28/net/sched/sch_generic.c
---- linux-2.4.28-orig/net/sched/sch_generic.c	2004-11-17 11:54:22.000000000 +0000
-+++ linux-2.4.28/net/sched/sch_generic.c	2004-12-14 11:44:27.000000000 +0000
+Index: linux-2.4.35.4/net/sched/sch_generic.c
+===================================================================
+--- linux-2.4.35.4.orig/net/sched/sch_generic.c	2007-12-15 05:19:37.226542457 +0100
++++ linux-2.4.35.4/net/sched/sch_generic.c	2007-12-15 05:20:10.816456638 +0100
 @@ -29,6 +29,9 @@
  #include <linux/skbuff.h>
  #include <linux/rtnetlink.h>

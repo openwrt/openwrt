@@ -1,7 +1,7 @@
 /*
  * pcicfg.h: PCI configuration constants and structures.
  *
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: pcicfg.h,v 1.1.1.11 2006/04/08 06:13:40 honor Exp $
+ * $Id$
  */
 
 #ifndef	_h_pcicfg_
@@ -169,6 +169,14 @@ typedef struct _pci_config_regs {
 #undef	PCI_CLASS_INPUT
 #undef	PCI_CLASS_DOCK
 #endif	/* __NetBSD__ */
+
+#ifdef EFI
+#undef PCI_CLASS_BRIDGE
+#undef PCI_CLASS_OLD
+#undef PCI_CLASS_DISPLAY
+#undef PCI_CLASS_SERIAL
+#undef PCI_CLASS_SATELLITE
+#endif /* EFI */
 
 /* Classes and subclasses */
 
@@ -406,6 +414,11 @@ typedef struct _pciconfig_cap_pwrmgmt {
 	unsigned char data;
 } pciconfig_cap_pwrmgmt;
 
+#define PME_CAP_PM_STATES (0x1f << 27)	/* Bits 31:27 states that can generate PME */
+#define PME_CSR_OFFSET	    0x4		/* 4-bytes offset */
+#define PME_CSR_PME_EN	  (1 << 8)	/* Bit 8 Enable generating of PME */
+#define PME_CSR_PME_STAT  (1 << 15)	/* Bit 15 PME got asserted */
+
 /* Data structure to define the PCIE capability */
 typedef struct _pciconfig_cap_pcie {
 	unsigned char capID;
@@ -463,7 +476,7 @@ typedef struct _pcie_enhanced_caphdr {
 						 * 8KB window, so their address is the "regular"
 						 * address plus 4K
 						 */
-#define PCI_BAR0_WINSZ		8192		/* bar0 window size */
+#define PCI_BAR0_WINSZ		(16 * 1024)	/* bar0 window size Match with corerev 13 */
 
 /* On pci corerev >= 13 and all pcie, the bar0 is now 16KB and it maps: */
 #define	PCI_16KB0_PCIREGS_OFFSET (8 * 1024)	/* bar0 + 8K accesses pci/pcie core registers */

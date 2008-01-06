@@ -101,6 +101,8 @@ extern bool	bcmreclaimed;
  */
 #define BCMDONGLEHDRSZ 8
 
+/* Max. nvram variable table size */
+#define    MAXSZ_NVRAM_VARS    4096
 
 
 #endif /* _bcmdefs_h_ */
