@@ -51,7 +51,16 @@ define Build/Compile
 		EXTRA_CFLAGS="$(BUILDFLAGS)" \
 		modules
 endef
-	
+
+define Build/InstallDev
+	mkdir -p $(1)/usr/include
+	$(CP) ./src/switch-core.h $(1)/usr/include/
+endef
+
+define Build/UninstallDev
+	rm -f $(1)/usr/include/switch-core.h
+endef
+
 define KernelPackage/switch/install
 	$(INSTALL_DIR) $(1)/lib/network/
 	$(INSTALL_BIN) ./files/switch.sh $(1)/lib/network/
