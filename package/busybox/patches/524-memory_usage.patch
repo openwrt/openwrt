@@ -1,0 +1,249 @@
+Index: busybox-1.8.2/archival/libipkg/pkg.c
+===================================================================
+--- busybox-1.8.2.orig/archival/libipkg/pkg.c	2008-01-06 03:14:12.003658206 +0100
++++ busybox-1.8.2/archival/libipkg/pkg.c	2008-01-06 03:24:18.187737063 +0100
+@@ -224,8 +224,7 @@
+      if (err) { return err; }
+ 
+      rewind(control_file);
+-     raw = read_raw_pkgs_from_stream(control_file);
+-     pkg_parse_raw(pkg, &raw, NULL, NULL);
++	 pkg_parse_stream(pkg, control_file, NULL, NULL);
+ 
+      fclose(control_file);
+ 
+Index: busybox-1.8.2/archival/libipkg/pkg_hash.c
+===================================================================
+--- busybox-1.8.2.orig/archival/libipkg/pkg_hash.c	2008-01-06 03:14:12.231671203 +0100
++++ busybox-1.8.2/archival/libipkg/pkg_hash.c	2008-01-06 03:28:38.218555373 +0100
+@@ -89,20 +89,20 @@
+ 			   pkg_src_t *src, pkg_dest_t *dest, int is_status_file)
+ {
+      hash_table_t *hash = &conf->pkg_hash;
+-     char **raw;
+-     char **raw_start;
++     FILE *fp;
+      pkg_t *pkg;
+     
+-     raw = raw_start = read_raw_pkgs_from_file(file_name);
+-     if (!raw)
+-        return -ENOMEM;
++     if(!(fp = fopen(file_name, "r"))){
++	  fprintf(stderr, "can't get %s open for read\n", file_name);
++	  return NULL;
++     }
+ 
+-     while(*raw){         /* don't worry, we'll increment raw in the parsing function */
++     while(!feof(fp)) {         /* don't worry, we'll increment raw in the parsing function */
+ 	  pkg = pkg_new();
+ 	  if (!pkg)
+ 	       return -ENOMEM;
+ 
+-	  if (pkg_parse_raw(pkg, &raw, src, dest) == 0) {
++	  if (pkg_parse_stream(pkg, fp, src, dest) == 0) {
+ 	       if (!pkg->architecture) {
+ 		    char *version_str = pkg_version_str_alloc(pkg);
+ 		    pkg->architecture = pkg_get_default_arch(conf);
+@@ -116,13 +116,6 @@
+ 	  }
+      }
+ 
+-     /* XXX: CLEANUP: I'd like a cleaner interface for cleaning up
+-	memory after read_raw_pkgs_from_file */
+-     raw = raw_start;
+-     while (*raw) {
+-	  free(*raw++);
+-     }
+-     free(raw_start);
+      return 0;
+ }
+ 
+Index: busybox-1.8.2/archival/libipkg/pkg_parse.c
+===================================================================
+--- busybox-1.8.2.orig/archival/libipkg/pkg_parse.c	2008-01-06 03:14:12.283674167 +0100
++++ busybox-1.8.2/archival/libipkg/pkg_parse.c	2008-01-06 03:38:24.111943535 +0100
+@@ -227,6 +227,161 @@
+    Enhances, perhaps we could generalize all of these and save some
+    code duplication.
+ */
++int pkg_parse_stream(pkg_t *pkg, FILE *stream, pkg_src_t *src, pkg_dest_t *dest)
++{
++    int reading_conffiles, reading_description;
++    int pkg_false_provides=1;
++    char ** lines;
++    char *provide=NULL;
++    char *buf, *scout;
++    int count = 0;
++    size_t size = 512;
++
++    buf = malloc (size);
++
++    pkg->src = src;
++    pkg->dest = dest;
++
++    reading_conffiles = reading_description = 0;
++
++    while (fgets(buf, size, stream)) {
++	  while (strlen (buf) == (size - 1)
++		 && buf[size-2] != '\n') {
++	       size_t o = size - 1;
++	       size *= 2;
++	       buf = realloc (buf, size);
++	       if (fgets (buf + o, size - o, stream) == NULL)
++		    break;
++	  }
++
++	  if((scout = strchr(buf, '\n')))
++	       *scout = '\0';
++
++	  lines = &buf;
++	/*	fprintf(stderr, "PARSING %s\n", *lines);*/
++	if(isGenericFieldType("Package:", *lines)) 
++	    pkg->name = parseGenericFieldType("Package", *lines);
++	else if(isGenericFieldType("Architecture:", *lines))
++	    pkg->architecture = parseGenericFieldType("Architecture", *lines);
++	else if(isGenericFieldType("Filename:", *lines))
++	    pkg->filename = parseGenericFieldType("Filename", *lines);
++	else if(isGenericFieldType("Section:", *lines))
++	    pkg->section = parseGenericFieldType("Section", *lines);
++	else if(isGenericFieldType("MD5sum:", *lines))
++	    pkg->md5sum = parseGenericFieldType("MD5sum", *lines);
++	/* The old ipkg wrote out status files with the wrong case for MD5sum,
++	   let's parse it either way */
++	else if(isGenericFieldType("MD5Sum:", *lines))
++	    pkg->md5sum = parseGenericFieldType("MD5Sum", *lines);
++	else if(isGenericFieldType("Size:", *lines))
++	    pkg->size = parseGenericFieldType("Size", *lines);
++	else if(isGenericFieldType("Source:", *lines))
++	    pkg->source = parseGenericFieldType("Source", *lines);
++	else if(isGenericFieldType("Installed-Size:", *lines))
++	    pkg->installed_size = parseGenericFieldType("Installed-Size", *lines);
++	else if(isGenericFieldType("Installed-Time:", *lines)) {
++	     char *time_str = parseGenericFieldType("Installed-Time", *lines);
++	     pkg->installed_time = strtoul(time_str, NULL, 0);
++	} else if(isGenericFieldType("Priority:", *lines))
++	    pkg->priority = parseGenericFieldType("Priority", *lines);
++	else if(isGenericFieldType("Essential:", *lines)) {
++	    char *essential_value;
++	    essential_value = parseGenericFieldType("Essential", *lines);
++	    if (strcmp(essential_value, "yes") == 0) {
++		pkg->essential = 1;
++	    }
++	    free(essential_value);
++	}
++	else if(isGenericFieldType("Status", *lines))
++	    parseStatus(pkg, *lines);
++	else if(isGenericFieldType("Version", *lines))
++	    parseVersion(pkg, *lines);
++	else if(isGenericFieldType("Maintainer", *lines))
++	    pkg->maintainer = parseGenericFieldType("Maintainer", *lines);
++	else if(isGenericFieldType("Conffiles", *lines)){
++	    parseConffiles(pkg, *lines);
++	    reading_conffiles = 1;
++	}
++	else if(isGenericFieldType("Description", *lines)) {
++	    pkg->description = parseGenericFieldType("Description", *lines);
++	    reading_conffiles = 0;
++	    reading_description = 1;
++	}
++
++	else if(isGenericFieldType("Provides", *lines)){
++/* Here we add the internal_use to align the off by one problem between provides_str and provides */
++            provide = (char * ) malloc(strlen(*lines)+ 35 ); /* Preparing the space for the new ipkg_internal_use_only */
++            if ( alterProvidesLine(*lines,provide) ){
++               return EINVAL;
++            }
++	    pkg->provides_str = parseDependsString( provide, &pkg->provides_count);
++/* Let's try to hack a bit here.
++   The idea is that if a package has no Provides, we would add one generic, to permit the check of dependencies
++   in alot of other places. We will remove it before writing down the status database */
++            pkg_false_provides=0;
++            free(provide);
++        } 
++
++	else if(isGenericFieldType("Depends", *lines))
++	    pkg->depends_str = parseDependsString(*lines, &pkg->depends_count);
++	else if(isGenericFieldType("Pre-Depends", *lines))
++	    pkg->pre_depends_str = parseDependsString(*lines, &pkg->pre_depends_count);
++	else if(isGenericFieldType("Recommends", *lines))
++	    pkg->recommends_str = parseDependsString(*lines, &pkg->recommends_count);
++	else if(isGenericFieldType("Suggests", *lines))
++	    pkg->suggests_str = parseDependsString(*lines, &pkg->suggests_count);
++	/* Abhaya: support for conflicts */
++	else if(isGenericFieldType("Conflicts", *lines))
++	    pkg->conflicts_str = parseDependsString(*lines, &pkg->conflicts_count);
++	else if(isGenericFieldType("Replaces", *lines))
++	    pkg->replaces_str = parseDependsString(*lines, &pkg->replaces_count);
++	else if(line_is_blank(*lines)) {
++	    break;
++	}
++	else if(**lines == ' '){
++	    if(reading_description) {
++		/* we already know it's not blank, so the rest of description */      
++		pkg->description = realloc(pkg->description,
++					   strlen(pkg->description)
++					   + 1 + strlen(*lines) + 1);
++		strcat(pkg->description, "\n");
++		strcat(pkg->description, (*lines));
++	    }
++	    else if(reading_conffiles)
++		parseConffiles(pkg, *lines);
++	}
++    }
++/* If the ipk has not a Provides line, we insert our false line */ 
++    if ( pkg_false_provides==1)
++       pkg->provides_str = parseDependsString ((char *)"Provides: ipkg_internal_use_only ", &pkg->provides_count);
++
++    free(buf);
++    if (pkg->name) {
++	return 0;
++    } else {
++	return EINVAL;
++    }
++}
++
++#if 0
++
++/* Some random thoughts from Carl:
++
++   This function could be considerably simplified if we just kept
++   an array of all the generic string-valued field names, and looped
++   through those looking for a match. Also, these fields could perhaps
++   be stored in the package as an array as well, (or, probably better,
++   as an nv_pair_list_t).
++
++   Fields which require special parsing or storage, (such as Depends:
++   and Status:) could be handled as they are now. 
++*/
++/* XXX: FEATURE: The Suggests: field needs to be changed from a string
++   to a dependency list. And, since we already have
++   Depends/Pre-Depends and need to add Conflicts, Recommends, and
++   Enhances, perhaps we could generalize all of these and save some
++   code duplication.
++*/
+ int pkg_parse_raw(pkg_t *pkg, char ***raw, pkg_src_t *src, pkg_dest_t *dest)
+ {
+     int reading_conffiles, reading_description;
+@@ -345,6 +500,7 @@
+ 	return EINVAL;
+     }
+ }
++#endif
+ 
+ int pkg_valorize_other_field(pkg_t *pkg, char ***raw)
+ {
+Index: busybox-1.8.2/archival/libipkg/pkg_parse.h
+===================================================================
+--- busybox-1.8.2.orig/archival/libipkg/pkg_parse.h	2008-01-06 03:14:12.303675307 +0100
++++ busybox-1.8.2/archival/libipkg/pkg_parse.h	2008-01-06 03:39:03.954214018 +0100
+@@ -25,7 +25,10 @@
+ char ** parseDependsString(char * raw, int * depends_count);
+ int parseVersion(pkg_t *pkg, char *raw);
+ void parseConffiles(pkg_t * pkg, char * raw);
++#if 0
+ int pkg_parse_raw(pkg_t *pkg, char ***raw, pkg_src_t *src, pkg_dest_t *dest);
++#endif
++int pkg_parse_stream(pkg_t *pkg, FILE *stream, pkg_src_t *src, pkg_dest_t *dest);
+ int pkg_valorize_other_field(pkg_t *pkg, char ***raw);
+ 
+ #endif
