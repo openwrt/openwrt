@@ -39,7 +39,7 @@ define KernelPackage/video-quickcam
 $(call Package/qc-usb/Default)
   SUBMENU:=Video Support
   TITLE:=QuickCam Express USB webcam support
-  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core kmod-video-core
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core kmod-video-core
   FILES:=$(PKG_BUILD_DIR)/quickcam.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,quickcam)
 endef
@@ -49,13 +49,25 @@ define KernelPackage/video-quickcam/description
  with similar chipsets.
 endef
 
+ifeq ($(KERNEL),2.4)
+  ifeq ($(LINUX_KARCH),i386)
+    KERNEL_C_OPTS:= -Os -mpreferred-stack-boundary=2 -march=i486 -fno-unit-at-a-time
+  endif
+  ifeq ($(LINUX_KARCH),mips)
+    KERNEL_C_OPTS:= -Os -G 0 -mlong-calls -mno-abicalls -fno-pic -finline-limit=100000 -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap
+  endif
+endif
+
 ifneq ($(CONFIG_PACKAGE_kmod-video-quickcam),)
   define Build/Compile/kmod
-	$(MAKE) -C $(LINUX_DIR) \
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		LINUX_DIR="$(LINUX_DIR)" \
 		ARCH="$(LINUX_KARCH)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
-		SUBDIRS="$(PKG_BUILD_DIR)" \
-		modules
+		CC="$(TARGET_CC)" \
+		LD="$(TARGET_CC) -nodefaultlibs -nostartfiles" \
+		USER_OPT="$(KERNEL_C_OPTS)" \
+		quickcam.$(LINUX_KMOD_SUFFIX)
   endef
 endif
 
