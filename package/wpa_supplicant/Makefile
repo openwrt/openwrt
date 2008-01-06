@@ -13,7 +13,7 @@ PKG_VERSION:=0.5.9
 PKG_RELEASE:=1
 PKG_MD5SUM:=390e46066fa96ef9ba8e2dd63fca5aa0
 
-PKG_SOURCE_URL:=http://hostap.epitest.fi/releases
+PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 
 include $(INCLUDE_DIR)/package.mk
