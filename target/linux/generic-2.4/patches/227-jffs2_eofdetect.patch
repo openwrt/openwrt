@@ -1,6 +1,7 @@
-diff -ur linux.old/fs/jffs2/build.c linux.dev/fs/jffs2/build.c
---- linux.old/fs/jffs2/build.c	2003-06-13 16:51:37.000000000 +0200
-+++ linux.dev/fs/jffs2/build.c	2006-06-23 22:15:21.000000000 +0200
+Index: linux-2.4.35.4/fs/jffs2/build.c
+===================================================================
+--- linux-2.4.35.4.orig/fs/jffs2/build.c	2007-12-15 05:19:38.778630906 +0100
++++ linux-2.4.35.4/fs/jffs2/build.c	2007-12-15 05:20:03.936064549 +0100
 @@ -31,6 +31,10 @@
   * provisions above, a recipient may use your version of this file
   * under either the RHEPL or the GPL.
@@ -39,9 +40,10 @@ diff -ur linux.old/fs/jffs2/build.c linux.dev/fs/jffs2/build.c
  	D1(printk(KERN_DEBUG "Scanned flash completely\n"));
  	/* Now build the data map for each inode, marking obsoleted nodes
  	   as such, and also increase nlink of any children. */
-diff -ur linux.old/fs/jffs2/scan.c linux.dev/fs/jffs2/scan.c
---- linux.old/fs/jffs2/scan.c	2006-06-23 21:57:32.000000000 +0200
-+++ linux.dev/fs/jffs2/scan.c	2006-06-23 22:01:35.000000000 +0200
+Index: linux-2.4.35.4/fs/jffs2/scan.c
+===================================================================
+--- linux-2.4.35.4.orig/fs/jffs2/scan.c	2007-12-15 05:19:38.786631361 +0100
++++ linux-2.4.35.4/fs/jffs2/scan.c	2007-12-15 05:20:03.948065230 +0100
 @@ -31,6 +31,10 @@
   * provisions above, a recipient may use your version of this file
   * under either the RHEPL or the GPL.

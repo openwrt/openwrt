@@ -2,14 +2,14 @@
  * Generic Broadcom Home Networking Division (HND) DMA engine SW interface
  * This supports the following chips: BCM42xx, 44xx, 47xx .
  *
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
  * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- * $Id: hnddma.h,v 1.1.1.13 2006/04/08 06:13:39 honor Exp $
+ * $Id$
  */
 
 #ifndef	_hnddma_h_
@@ -39,7 +39,7 @@ typedef void* (*di_rx_t)(hnddma_t *dmah);
 typedef void (*di_rxfill_t)(hnddma_t *dmah);
 typedef void (*di_txreclaim_t)(hnddma_t *dmah, bool forceall);
 typedef void (*di_rxreclaim_t)(hnddma_t *dmah);
-typedef	uintptr	(*di_getvar_t)(hnddma_t *dmah, char *name);
+typedef	uintptr	(*di_getvar_t)(hnddma_t *dmah, const char *name);
 typedef void* (*di_getnexttxp_t)(hnddma_t *dmah, bool forceall);
 typedef void* (*di_getnextrxp_t)(hnddma_t *dmah, bool forceall);
 typedef void* (*di_peeknexttxp_t)(hnddma_t *dmah);
@@ -141,8 +141,12 @@ extern hnddma_t * dma_attach(osl_t *osh, char *name, sb_t *sbh, void *dmaregstx,
 #define dma_txactive(di)                ((di)->di_fn.txactive(di))
 #define dma_txrotate(di)                ((di)->di_fn.txrotate(di))
 #define dma_counterreset(di)            ((di)->di_fn.counterreset(di))
+#ifdef BCMDBG
+#define dma_dump(di, buf, dumpring)	((di)->di_fn.dump(di, buf, dumpring))
+#define dma_dumptx(di, buf, dumpring)	((di)->di_fn.dumptx(di, buf, dumpring))
+#define dma_dumprx(di, buf, dumpring)	((di)->di_fn.dumprx(di, buf, dumpring))
+#endif
 
-#define DMA_DUMP_SIZE 2048
 /* return addresswidth allowed
  * This needs to be done after SB attach but before dma attach.
  * SB attach provides ability to probe backplane and dma core capabilities

@@ -1,7 +1,8 @@
-diff -urN linux.old/fs/Config.in linux.dev/fs/Config.in
---- linux.old/fs/Config.in	2006-10-30 03:44:06.000000000 +0100
-+++ linux.dev/fs/Config.in	2006-10-30 03:42:09.000000000 +0100
-@@ -70,6 +70,7 @@
+Index: linux-2.4.35.4/fs/Config.in
+===================================================================
+--- linux-2.4.35.4.orig/fs/Config.in	2007-12-15 05:19:52.319402550 +0100
++++ linux-2.4.35.4/fs/Config.in	2007-12-15 05:20:05.284141367 +0100
+@@ -77,6 +77,7 @@
  dep_mbool '  JFS statistics' CONFIG_JFS_STATISTICS $CONFIG_JFS_FS
  
  tristate 'Minix fs support' CONFIG_MINIX_FS
@@ -9,9 +10,10 @@ diff -urN linux.old/fs/Config.in linux.dev/fs/Config.in
  
  tristate 'FreeVxFS file system support (VERITAS VxFS(TM) compatible)' CONFIG_VXFS_FS
  tristate 'NTFS file system support (read only)' CONFIG_NTFS_FS
-diff -urN linux.old/fs/Makefile linux.dev/fs/Makefile
---- linux.old/fs/Makefile	2006-10-30 03:44:06.000000000 +0100
-+++ linux.dev/fs/Makefile	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/fs/Makefile	2007-12-15 05:19:52.319402550 +0100
++++ linux-2.4.35.4/fs/Makefile	2007-12-15 05:20:05.288141596 +0100
 @@ -31,6 +31,7 @@
  subdir-$(CONFIG_CODA_FS)	+= coda
  subdir-$(CONFIG_INTERMEZZO_FS)	+= intermezzo
@@ -20,9 +22,10 @@ diff -urN linux.old/fs/Makefile linux.dev/fs/Makefile
  subdir-$(CONFIG_FAT_FS)		+= fat
  subdir-$(CONFIG_UMSDOS_FS)	+= umsdos
  subdir-$(CONFIG_MSDOS_FS)	+= msdos
-diff -urN linux.old/fs/mini_fo/aux.c linux.dev/fs/mini_fo/aux.c
---- linux.old/fs/mini_fo/aux.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/aux.c	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/aux.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/aux.c	2007-12-15 05:20:05.296142055 +0100
 @@ -0,0 +1,580 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -604,9 +607,10 @@ diff -urN linux.old/fs/mini_fo/aux.c linux.dev/fs/mini_fo/aux.c
 +
 +#endif /* unused */
 +
-diff -urN linux.old/fs/mini_fo/ChangeLog linux.dev/fs/mini_fo/ChangeLog
---- linux.old/fs/mini_fo/ChangeLog	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/ChangeLog	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/ChangeLog
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/ChangeLog	2007-12-15 05:20:05.296142055 +0100
 @@ -0,0 +1,281 @@
 +2006-01-24  Markus Klotzbuecher  <mk@mary.denx.de>
 +
@@ -889,9 +893,10 @@ diff -urN linux.old/fs/mini_fo/ChangeLog linux.dev/fs/mini_fo/ChangeLog
 +	* Implementation of mini_fo_mknod and mini_fo_rename, support
 +          for device files.
 +	
-diff -urN linux.old/fs/mini_fo/dentry.c linux.dev/fs/mini_fo/dentry.c
---- linux.old/fs/mini_fo/dentry.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/dentry.c	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/dentry.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/dentry.c	2007-12-15 05:20:05.296142055 +0100
 @@ -0,0 +1,244 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -1137,9 +1142,10 @@ diff -urN linux.old/fs/mini_fo/dentry.c linux.dev/fs/mini_fo/dentry.c
 +	d_delete:		mini_fo_d_delete,
 +	d_iput:		mini_fo_d_iput,
 +};
-diff -urN linux.old/fs/mini_fo/file.c linux.dev/fs/mini_fo/file.c
---- linux.old/fs/mini_fo/file.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/file.c	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/file.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/file.c	2007-12-15 05:20:05.300142281 +0100
 @@ -0,0 +1,717 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -1858,9 +1864,10 @@ diff -urN linux.old/fs/mini_fo/file.c linux.dev/fs/mini_fo/file.c
 +		/* not implemented: sendpage */
 +		/* not implemented: get_unmapped_area */
 +	};
-diff -urN linux.old/fs/mini_fo/fist.h linux.dev/fs/mini_fo/fist.h
---- linux.old/fs/mini_fo/fist.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/fist.h	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/fist.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/fist.h	2007-12-15 05:20:05.300142281 +0100
 @@ -0,0 +1,248 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -2110,9 +2117,10 @@ diff -urN linux.old/fs/mini_fo/fist.h linux.dev/fs/mini_fo/fist.h
 +# define FIST_IOCTL_SET_DEBUG_VALUE	_IOW(0x15, 2, int)
 +
 +#endif /* not __FIST_H_ */
-diff -urN linux.old/fs/mini_fo/inode.c linux.dev/fs/mini_fo/inode.c
---- linux.old/fs/mini_fo/inode.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/inode.c	2006-10-30 03:55:42.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/inode.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/inode.c	2007-12-15 05:20:05.300142281 +0100
 @@ -0,0 +1,1573 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -3687,9 +3695,10 @@ diff -urN linux.old/fs/mini_fo/inode.c linux.dev/fs/mini_fo/inode.c
 +		removexattr:    mini_fo_removexattr
 +# endif /* XATTR && LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,20) */
 +	};
-diff -urN linux.old/fs/mini_fo/main.c linux.dev/fs/mini_fo/main.c
---- linux.old/fs/mini_fo/main.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/main.c	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/main.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/main.c	2007-12-15 05:20:05.300142281 +0100
 @@ -0,0 +1,414 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -4105,9 +4114,10 @@ diff -urN linux.old/fs/mini_fo/main.c linux.dev/fs/mini_fo/main.c
 +
 +module_init(init_mini_fo_fs)
 +module_exit(exit_mini_fo_fs)
-diff -urN linux.old/fs/mini_fo/Makefile linux.dev/fs/mini_fo/Makefile
---- linux.old/fs/mini_fo/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/Makefile	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/Makefile	2007-12-15 05:20:05.304142507 +0100
 @@ -0,0 +1,22 @@
 +#
 +# Makefile for mini_fo 2.4 and 2.6 Linux kernels
@@ -4131,9 +4141,10 @@ diff -urN linux.old/fs/mini_fo/Makefile linux.dev/fs/mini_fo/Makefile
 +# dependencies
 +${mini_fo-objs}: mini_fo.h fist.h
 +
-diff -urN linux.old/fs/mini_fo/meta.c linux.dev/fs/mini_fo/meta.c
---- linux.old/fs/mini_fo/meta.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/meta.c	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/meta.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/meta.c	2007-12-15 05:20:05.304142507 +0100
 @@ -0,0 +1,1000 @@
 +/*
 + * Copyright (C) 2004, 2005 Markus Klotzbuecher <mk@creamnet.de>
@@ -5135,9 +5146,10 @@ diff -urN linux.old/fs/mini_fo/meta.c linux.dev/fs/mini_fo/meta.c
 +	return 0;
 +}
 +
-diff -urN linux.old/fs/mini_fo/mini_fo.h linux.dev/fs/mini_fo/mini_fo.h
---- linux.old/fs/mini_fo/mini_fo.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/mini_fo.h	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/mini_fo.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/mini_fo.h	2007-12-15 05:20:05.304142507 +0100
 @@ -0,0 +1,503 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -5642,9 +5654,10 @@ diff -urN linux.old/fs/mini_fo/mini_fo.h linux.dev/fs/mini_fo/mini_fo.h
 +/* ioctls */
 +
 +#endif	/* not __MINI_FO_H_ */
-diff -urN linux.old/fs/mini_fo/mini_fo-merge linux.dev/fs/mini_fo/mini_fo-merge
---- linux.old/fs/mini_fo/mini_fo-merge	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/mini_fo-merge	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/mini_fo-merge
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/mini_fo-merge	2007-12-15 05:20:05.304142507 +0100
 @@ -0,0 +1,180 @@
 +#!/bin/bash
 +#
@@ -5826,9 +5839,10 @@ diff -urN linux.old/fs/mini_fo/mini_fo-merge linux.dev/fs/mini_fo/mini_fo-merge
 +#rm $TMP/$SKIP_DEL_LIST 
 +
 +echo "Done!"
-diff -urN linux.old/fs/mini_fo/mini_fo-overlay linux.dev/fs/mini_fo/mini_fo-overlay
---- linux.old/fs/mini_fo/mini_fo-overlay	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/mini_fo-overlay	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/mini_fo-overlay
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/mini_fo-overlay	2007-12-15 05:20:05.308142736 +0100
 @@ -0,0 +1,130 @@
 +#!/bin/bash
 +#
@@ -5960,9 +5974,10 @@ diff -urN linux.old/fs/mini_fo/mini_fo-overlay linux.dev/fs/mini_fo/mini_fo-over
 +if [ $? -ne 0 ]; then
 +    echo "Error, mounting failed, maybe no permisson to mount?"
 +fi
-diff -urN linux.old/fs/mini_fo/mmap.c linux.dev/fs/mini_fo/mmap.c
---- linux.old/fs/mini_fo/mmap.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/mmap.c	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/mmap.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/mmap.c	2007-12-15 05:20:05.316143195 +0100
 @@ -0,0 +1,637 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -6601,9 +6616,10 @@ diff -urN linux.old/fs/mini_fo/mmap.c linux.dev/fs/mini_fo/mmap.c
 +	print_exit_status(err);
 +	return err;
 +}
-diff -urN linux.old/fs/mini_fo/README linux.dev/fs/mini_fo/README
---- linux.old/fs/mini_fo/README	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/README	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/README
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/README	2007-12-15 05:20:05.316143195 +0100
 @@ -0,0 +1,163 @@
 +README for the mini_fo overlay file system
 +=========================================
@@ -6768,9 +6784,10 @@ diff -urN linux.old/fs/mini_fo/README linux.dev/fs/mini_fo/README
 +2 of the License, or (at your option) any later version.
 +
 +
-diff -urN linux.old/fs/mini_fo/RELEASE_NOTES linux.dev/fs/mini_fo/RELEASE_NOTES
---- linux.old/fs/mini_fo/RELEASE_NOTES	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/RELEASE_NOTES	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/RELEASE_NOTES
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/RELEASE_NOTES	2007-12-15 05:20:05.316143195 +0100
 @@ -0,0 +1,111 @@
 +Release:	mini_fo-0.6.1 (v0-6-1)
 +Date:		21.09.2005
@@ -6883,9 +6900,10 @@ diff -urN linux.old/fs/mini_fo/RELEASE_NOTES linux.dev/fs/mini_fo/RELEASE_NOTES
 +original state. I hope to fix this someday. Please note that this does
 +not effect the special hard links '.' and '..', that are handled
 +seperately by the lower fs.
-diff -urN linux.old/fs/mini_fo/state.c linux.dev/fs/mini_fo/state.c
---- linux.old/fs/mini_fo/state.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/state.c	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/state.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/state.c	2007-12-15 05:20:05.316143195 +0100
 @@ -0,0 +1,620 @@
 +/*
 + * Copyright (C) 2005 Markus Klotzbuecher <mk@creamnet.de>
@@ -7507,9 +7525,10 @@ diff -urN linux.old/fs/mini_fo/state.c linux.dev/fs/mini_fo/state.c
 +	return err;
 +}
 +
-diff -urN linux.old/fs/mini_fo/super.c linux.dev/fs/mini_fo/super.c
---- linux.old/fs/mini_fo/super.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/super.c	2006-10-30 03:42:09.000000000 +0100
+Index: linux-2.4.35.4/fs/mini_fo/super.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/fs/mini_fo/super.c	2007-12-15 05:20:05.316143195 +0100
 @@ -0,0 +1,259 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok

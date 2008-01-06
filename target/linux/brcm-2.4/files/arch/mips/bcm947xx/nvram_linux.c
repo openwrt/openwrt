@@ -33,7 +33,6 @@
 #include <osl.h>
 #include <bcmendian.h>
 #include <bcmnvram.h>
-#include <bcmutils.h>
 #include <sbconfig.h>
 #include <sbchipc.h>
 #include <sbutils.h>
@@ -52,6 +51,9 @@ static char nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
 /* Global SB handle */
 extern void *bcm947xx_sbh;
 extern spinlock_t bcm947xx_sbh_lock;
+
+static int cfe_env;
+extern char *cfe_env_get(char *nv_buf, const char *name);
 
 /* Convenience */
 #define sbh bcm947xx_sbh
@@ -72,14 +74,14 @@ early_nvram_init(void)
 
 	if ((cc = sb_setcore(sbh, SB_CC, 0)) != NULL) {
 		base = KSEG1ADDR(SB_FLASH2);
-		switch (readl(&cc->capabilities) & CAP_FLASH_MASK) {
+		switch (readl(&cc->capabilities) & CC_CAP_FLASH_MASK) {
 		case PFLASH:
 			lim = SB_FLASH2_SZ;
 			break;
 
 		case SFLASH_ST:
 		case SFLASH_AT:
-			if ((info = sflash_init(cc)) == NULL)
+			if ((info = sflash_init(sbh,cc)) == NULL)
 				return;
 			lim = info->size;
 			break;
@@ -105,6 +107,7 @@ early_nvram_init(void)
 				break;
 			*dst++ = *src++;
 		}
+		cfe_env = 1;
 		return;
 	}
 
@@ -153,6 +156,9 @@ early_nvram_get(const char *name)
 
 	if (!nvram_buf[0])
 		early_nvram_init();
+
+	if (cfe_env)
+		return cfe_env_get(nvram_buf, name);
 
 	/* Look for name=value and return value */
 	var = &nvram_buf[sizeof(struct nvram_header)];

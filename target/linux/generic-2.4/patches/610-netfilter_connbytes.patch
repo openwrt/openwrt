@@ -1,5 +1,7 @@
---- linux/net/ipv4/netfilter/Config.in.org	2005-11-13 15:53:59.457222512 +0100
-+++ linux/net/ipv4/netfilter/Config.in	2005-11-13 15:56:25.241060000 +0100
+Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in	2007-12-15 05:20:08.396318720 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/Config.in	2007-12-15 05:20:08.692335591 +0100
 @@ -11,6 +11,8 @@
    dep_tristate '  Amanda protocol support' CONFIG_IP_NF_AMANDA $CONFIG_IP_NF_CONNTRACK
    dep_tristate '  TFTP protocol support' CONFIG_IP_NF_TFTP $CONFIG_IP_NF_CONNTRACK
@@ -9,18 +11,22 @@
    dep_tristate '  GRE protocol support' CONFIG_IP_NF_CT_PROTO_GRE $CONFIG_IP_NF_CONNTRACK
    dep_tristate '   PPTP protocol support' CONFIG_IP_NF_PPTP $CONFIG_IP_NF_CT_PROTO_GRE
  fi
---- linux/net/ipv4/netfilter/Makefile.org	2005-11-12 16:48:38.000000000 +0100
-+++ linux/net/ipv4/netfilter/Makefile	2005-11-13 15:56:38.663019552 +0100
-@@ -94,6 +94,7 @@
+Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile	2007-12-15 05:20:08.400318949 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/Makefile	2007-12-15 05:20:08.696335817 +0100
+@@ -106,6 +106,7 @@
  obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
  obj-$(CONFIG_IP_NF_MATCH_STATE) += ipt_state.o
  obj-$(CONFIG_IP_NF_MATCH_CONNMARK) += ipt_connmark.o
 +obj-$(CONFIG_IP_NF_MATCH_CONNBYTES) += ipt_connbytes.o
  obj-$(CONFIG_IP_NF_MATCH_CONNTRACK) += ipt_conntrack.o
  obj-$(CONFIG_IP_NF_MATCH_UNCLEAN) += ipt_unclean.o
- obj-$(CONFIG_IP_NF_MATCH_TCPMSS) += ipt_tcpmss.o
---- linux/net/ipv4/netfilter/ip_conntrack_amanda.c.org	2004-02-18 14:36:32.000000000 +0100
-+++ linux/net/ipv4/netfilter/ip_conntrack_amanda.c	2005-11-13 15:40:00.000000000 +0100
+ obj-$(CONFIG_IP_NF_MATCH_STRING) += ipt_string.o
+Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_amanda.c
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_amanda.c	2007-12-15 05:19:37.650566622 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_amanda.c	2007-12-15 05:20:08.700336046 +0100
 @@ -75,7 +75,7 @@
  
  	/* increase the UDP timeout of the master connection as replies from
@@ -30,8 +36,10 @@
  	
  	/* Search for "CONNECT " string */
  	do {
---- linux/net/ipv4/netfilter/ip_conntrack_proto_tcp.c.org	2003-11-28 19:26:21.000000000 +0100
-+++ linux/net/ipv4/netfilter/ip_conntrack_proto_tcp.c	2005-11-13 15:45:41.045992536 +0100
+Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_tcp.c
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_proto_tcp.c	2007-12-15 05:19:37.658567077 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_tcp.c	2007-12-15 05:20:08.700336046 +0100
 @@ -211,7 +211,7 @@
  			set_bit(IPS_ASSURED_BIT, &conntrack->status);
  
@@ -41,8 +49,10 @@
  	}
  
  	return NF_ACCEPT;
---- linux/net/ipv4/netfilter/ip_conntrack_proto_udp.c.org	2003-11-28 19:26:21.000000000 +0100
-+++ linux/net/ipv4/netfilter/ip_conntrack_proto_udp.c	2005-11-13 15:47:38.348159896 +0100
+Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_udp.c
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_proto_udp.c	2007-12-15 05:19:37.666567533 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_udp.c	2007-12-15 05:20:08.700336046 +0100
 @@ -47,16 +47,16 @@
  /* Returns verdict for packet, and may modify conntracktype */
  static int udp_packet(struct ip_conntrack *conntrack,
@@ -63,8 +73,10 @@
  
  	return NF_ACCEPT;
  }
---- linux/net/ipv4/netfilter/ip_conntrack_standalone.c.org	2005-11-12 16:48:38.000000000 +0100
-+++ linux/net/ipv4/netfilter/ip_conntrack_standalone.c	2005-11-13 15:51:07.608347512 +0100
+Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_standalone.c
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_standalone.c	2007-12-15 05:20:07.568271536 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_standalone.c	2007-12-15 05:20:08.700336046 +0100
 @@ -79,6 +79,18 @@
  	return len;
  }
@@ -109,8 +121,10 @@
  EXPORT_SYMBOL(ip_ct_find_proto);
  EXPORT_SYMBOL(__ip_ct_find_proto);
  EXPORT_SYMBOL(ip_ct_find_helper);
---- linux/net/ipv4/netfilter/ip_conntrack_proto_generic.c.org	2003-11-28 19:26:21.000000000 +0100
-+++ linux/net/ipv4/netfilter/ip_conntrack_proto_generic.c	2005-11-13 15:44:20.734201784 +0100
+Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_generic.c
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_proto_generic.c	2007-12-15 05:19:37.682568446 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_generic.c	2007-12-15 05:20:08.700336046 +0100
 @@ -41,9 +41,9 @@
  /* Returns verdict for packet, or -1 for invalid. */
  static int established(struct ip_conntrack *conntrack,
@@ -123,8 +137,10 @@
  	return NF_ACCEPT;
  }
  
---- linux/net/ipv4/netfilter/ip_conntrack_proto_icmp.c.org	2003-11-28 19:26:21.000000000 +0100
-+++ linux/net/ipv4/netfilter/ip_conntrack_proto_icmp.c	2005-11-13 15:44:50.733641176 +0100
+Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_icmp.c
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_proto_icmp.c	2007-12-15 05:19:37.686568672 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_icmp.c	2007-12-15 05:20:08.704336275 +0100
 @@ -82,7 +82,7 @@
  			ct->timeout.function((unsigned long)ct);
  	} else {
@@ -134,8 +150,10 @@
  	}
  
  	return NF_ACCEPT;
---- linux/net/ipv4/netfilter/ip_conntrack_core.c.org	2005-11-12 16:48:38.000000000 +0100
-+++ linux/net/ipv4/netfilter/ip_conntrack_core.c	2005-11-13 15:43:23.882844504 +0100
+Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_core.c	2007-12-15 05:20:07.568271536 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c	2007-12-15 05:20:08.704336275 +0100
 @@ -1196,22 +1196,40 @@
  
  	MOD_DEC_USE_COUNT;
@@ -180,8 +198,10 @@
  	}
  	WRITE_UNLOCK(&ip_conntrack_lock);
  }
---- linux/include/linux/netfilter_ipv4/ip_conntrack.h.org	2005-11-12 16:48:38.000000000 +0100
-+++ linux/include/linux/netfilter_ipv4/ip_conntrack.h	2005-11-13 15:39:04.000000000 +0100
+Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
+===================================================================
+--- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_conntrack.h	2007-12-15 05:20:07.552270623 +0100
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h	2007-12-15 05:20:08.704336275 +0100
 @@ -164,6 +164,12 @@
  	union ip_conntrack_expect_help help;
  };
@@ -221,8 +241,10 @@
  
  /* These are for NAT.  Icky. */
  /* Call me when a conntrack is destroyed. */
---- linux/net/ipv4/netfilter/ipt_connbytes.c.org	1970-01-01 01:00:00.000000000 +0100
-+++ linux/net/ipv4/netfilter/ipt_connbytes.c	2005-11-13 16:22:02.021433872 +0100
+Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_connbytes.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/net/ipv4/netfilter/ipt_connbytes.c	2007-12-15 05:20:08.704336275 +0100
 @@ -0,0 +1,163 @@
 +/* Kernel module to match connection tracking byte counter.
 + * GPL (C) 2002 Martin Devera (devik@cdi.cz).
@@ -387,8 +409,10 @@
 +module_init(init);
 +module_exit(fini);
 +MODULE_LICENSE("GPL");
---- linux/include/linux/netfilter_ipv4/ipt_connbytes.h.org	1970-01-01 01:00:00.000000000 +0100
-+++ linux/include/linux/netfilter_ipv4/ipt_connbytes.h	2005-11-13 16:11:24.567341624 +0100
+Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_connbytes.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_connbytes.h	2007-12-15 05:20:08.708336505 +0100
 @@ -0,0 +1,25 @@
 +#ifndef _IPT_CONNBYTES_H
 +#define _IPT_CONNBYTES_H
@@ -415,8 +439,10 @@
 +};
 +
 +#endif
---- linux-2.4.32/net/ipv4/netfilter/ip_conntrack_proto_gre.c	2006-02-04 19:16:25.000000000 +0100
-+++ /home/florian//openwrt/trunk/openwrt/build_mipsel/linux/net/ipv4/netfilter/ip_conntrack_proto_gre.c	2006-02-04 18:19:08.000000000 +0100
+Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_gre.c
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_proto_gre.c	2007-12-15 05:20:06.404205198 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_gre.c	2007-12-15 05:20:08.708336505 +0100
 @@ -237,16 +237,16 @@
  /* Returns verdict for packet, and may modify conntrack */
  static int gre_packet(struct ip_conntrack *ct,

@@ -1,7 +1,8 @@
-diff -urN linux.old/Makefile linux.dev/Makefile
---- linux.old/Makefile	2005-08-26 13:41:41.689634168 +0200
-+++ linux.dev/Makefile	2005-08-26 13:44:34.233403528 +0200
-@@ -354,7 +354,7 @@
+Index: linux-2.4.35.4/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/Makefile	2007-12-15 05:19:51.427351715 +0100
++++ linux-2.4.35.4/Makefile	2007-12-15 05:20:00.315858242 +0100
+@@ -362,7 +362,7 @@
  	@rm -f .ver1
  
  include/linux/version.h: ./Makefile
@@ -10,7 +11,7 @@ diff -urN linux.old/Makefile linux.dev/Makefile
  	  (echo KERNELRELEASE \"$(KERNELRELEASE)\" exceeds $(uts_len) characters >&2; false)
  	@echo \#define UTS_RELEASE \"$(KERNELRELEASE)\" > .ver
  	@echo \#define LINUX_VERSION_CODE `expr $(VERSION) \\* 65536 + $(PATCHLEVEL) \\* 256 + $(SUBLEVEL)` >> .ver
-@@ -509,7 +509,7 @@
+@@ -500,7 +500,7 @@
  ifdef CONFIG_MODVERSIONS
  	$(MAKE) update-modverfile
  endif
@@ -19,8 +20,10 @@ diff -urN linux.old/Makefile linux.dev/Makefile
  	scripts/mkdep -- init/*.c > .depend
  
  ifdef CONFIG_MODVERSIONS
---- linux.old/Rules.make	2005-08-31 00:37:34.363109288 +0200
-+++ linux.dev/Rules.make	2005-08-31 13:59:20.140676296 +0200
+Index: linux-2.4.35.4/Rules.make
+===================================================================
+--- linux-2.4.35.4.orig/Rules.make	2007-12-15 05:19:39.078648003 +0100
++++ linux-2.4.35.4/Rules.make	2007-12-15 05:20:00.315858242 +0100
 @@ -126,7 +126,7 @@
  # This make dependencies quickly
  #

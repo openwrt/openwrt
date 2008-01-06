@@ -23,9 +23,6 @@ obj-m		:= $(O_TARGET)
 wl_mod$(MOD_NAME).o: wl_apsta$(MOD_NAME).o
 	perl -ne 's,eth%d,wl%d\x00,g,print' < $< > $@
 
-wl$(MOD_NAME).o.patch: wl$(MOD_NAME).o
-	$(OBJDUMP) -d $< | perl patchtable.pl > $@
-
-modules: wl$(MOD_NAME).o.patch
+modules: wl$(MOD_NAME).o
 
 include $(TOPDIR)/Rules.make

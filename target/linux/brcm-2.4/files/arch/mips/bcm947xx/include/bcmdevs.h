@@ -1,22 +1,20 @@
 /*
  * Broadcom device-specific manifest constants.
  *
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
  * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- * $Id: bcmdevs.h,v 1.1.1.17 2006/04/15 01:29:08 michael Exp $
+ * $Id$
  */
 
 #ifndef	_BCMDEVS_H
 #define	_BCMDEVS_H
 
-#include "bcm4710.h"
-
-/* Known PCI vendor Id's */
+/* PCI vendor IDs */
 #define	VENDOR_EPIGRAM		0xfeda
 #define	VENDOR_BROADCOM		0x14e4
 #define	VENDOR_3COM		0x10b7
@@ -25,24 +23,63 @@
 #define	VENDOR_DELL		0x1028
 #define	VENDOR_HP		0x0e11
 #define	VENDOR_APPLE		0x106b
+#define VENDOR_SI_IMAGE		0x1095		/* Silicon Image, used by Arasan SDIO Host */
+#define VENDOR_BUFFALO		0x1154		/* Buffalo vendor id */
+#define VENDOR_TI		0x104c		/* Texas Instruments */
 
-/* PCI Device Id's */
+/* PCMCIA vendor IDs */
+#define	VENDOR_BROADCOM_PCMCIA	0x02d0
+
+/* SDIO vendor IDs */
+#define	VENDOR_BROADCOM_SDIO	0x00BF
+
+/* PCI Device IDs */
 #define	BCM4210_DEVICE_ID	0x1072		/* never used */
-#define	BCM4211_DEVICE_ID	0x4211
 #define	BCM4230_DEVICE_ID	0x1086		/* never used */
-#define	BCM4231_DEVICE_ID	0x4231
-
-#define	BCM4410_DEVICE_ID	0x4410		/* bcm44xx family pci iline */
-#define	BCM4430_DEVICE_ID	0x4430		/* bcm44xx family cardbus iline */
-#define	BCM4412_DEVICE_ID	0x4412		/* bcm44xx family pci enet */
-#define	BCM4432_DEVICE_ID	0x4432		/* bcm44xx family cardbus enet */
-
+#define	BCM4401_ENET_ID		0x170c		/* 4401b0 production enet cards */
 #define	BCM3352_DEVICE_ID	0x3352		/* bcm3352 device id */
 #define	BCM3360_DEVICE_ID	0x3360		/* bcm3360 device id */
-
-#define	EPI41210_DEVICE_ID	0xa0fa		/* bcm4210 */
-#define	EPI41230_DEVICE_ID	0xa10e		/* bcm4230 */
-
+#define	BCM4211_DEVICE_ID	0x4211
+#define	BCM4231_DEVICE_ID	0x4231
+#define	BCM4303_D11B_ID		0x4303		/* 4303 802.11b */
+#define	BCM4311_D11G_ID		0x4311		/* 4311 802.11b/g id */
+#define	BCM4311_D11DUAL_ID	0x4312		/* 4311 802.11a/b/g id */
+#define	BCM4311_D11A_ID		0x4313		/* 4311 802.11a id */
+#define	BCM4328_D11DUAL_ID	0x4314		/* 4328 802.11a/g id */
+#define	BCM4328_D11G_ID		0x4315		/* 4328 802.11g 2.4Ghz band id */
+#define	BCM4328_D11A_ID		0x4316		/* 4328 802.11a 5Ghz band id */
+#define	BCM4318_D11G_ID		0x4318		/* 4318 802.11b/g id */
+#define	BCM4318_D11DUAL_ID	0x4319		/* 4318 802.11a/b/g id */
+#define	BCM4318_D11A_ID		0x431a		/* 4318 802.11a id */
+#define	BCM4325_D11DUAL_ID	0x431b		/* 4325 802.11a/g id */
+#define	BCM4325_D11G_ID		0x431c		/* 4325 802.11g 2.4Ghz band id */
+#define	BCM4325_D11A_ID		0x431d		/* 4325 802.11a 5Ghz band id */
+#define	BCM4306_D11G_ID		0x4320		/* 4306 802.11g */
+#define	BCM4306_D11A_ID		0x4321		/* 4306 802.11a */
+#define	BCM4306_UART_ID		0x4322		/* 4306 uart */
+#define	BCM4306_V90_ID		0x4323		/* 4306 v90 codec */
+#define	BCM4306_D11DUAL_ID	0x4324		/* 4306 dual A+B */
+#define	BCM4306_D11G_ID2	0x4325		
+#define	BCM4321_D11N_ID		0x4328		/* 4321 802.11n dualband id */
+#define	BCM4321_D11N2G_ID	0x4329		/* 4321 802.11n 2.4Ghz band id */
+#define	BCM4321_D11N5G_ID	0x432a		/* 4321 802.11n 5Ghz band id */
+#define	BCMGPRS_UART_ID		0x4333		/* Uart id used by 4306/gprs card */
+#define	BCMGPRS2_UART_ID	0x4344		/* Uart id used by 4306/gprs card */
+#define FPGA_JTAGM_ID		0x43f0		/* FPGA jtagm device id */
+#define BCM_JTAGM_ID		0x43f1		/* BCM jtagm device id */
+#define SDIOH_FPGA_ID		0x43f2		/* sdio host fpga */
+#define BCM_SDIOH_ID		0x43f3		/* BCM sdio host id */
+#define SDIOD_FPGA_ID		0x43f4		/* sdio device fpga */
+#define SPIH_FPGA_ID		0x43f5		/* PCI SPI Host Controller FPGA */
+#define MIMO_FPGA_ID		0x43f8		/* FPGA mimo minimacphy device id */
+#define	BCM4402_ENET_ID		0x4402		/* 4402 enet */
+#define	BCM4402_V90_ID		0x4403		/* 4402 v90 codec */
+#define	BCM4410_DEVICE_ID	0x4410		/* bcm44xx family pci iline */
+#define	BCM4412_DEVICE_ID	0x4412		/* bcm44xx family pci enet */
+#define	BCM4430_DEVICE_ID	0x4430		/* bcm44xx family cardbus iline */
+#define	BCM4432_DEVICE_ID	0x4432		/* bcm44xx family cardbus enet */
+#define	BCM4704_ENET_ID		0x4706		/* 4704 enet (Use 47XX_ENET_ID instead!) */
+#define	BCM4710_DEVICE_ID	0x4710		/* 4710 primary function 0 */
 #define	BCM47XX_ILINE_ID	0x4711		/* 47xx iline20 */
 #define	BCM47XX_V90_ID		0x4712		/* 47xx v90 codec */
 #define	BCM47XX_ENET_ID		0x4713		/* 47xx enet */
@@ -57,114 +94,83 @@
 #define	BCM47XX_ATA100_ID	0x471d		/* 47xx parallel ATA */
 #define	BCM47XX_SATAXOR_ID	0x471e		/* 47xx serial ATA & XOR DMA */
 #define	BCM47XX_GIGETH_ID	0x471f		/* 47xx GbE (5700) */
-
+#define	BCM4712_MIPS_ID		0x4720		/* 4712 base devid */
 #define BCM47XX_SMBUS_EMU_ID	0x47fe		/* 47xx emulated SMBus device */
 #define	BCM47XX_XOR_EMU_ID	0x47ff		/* 47xx emulated XOR engine */
+#define	EPI41210_DEVICE_ID	0xa0fa		/* bcm4210 */
+#define	EPI41230_DEVICE_ID	0xa10e		/* bcm4230 */
+#define JINVANI_SDIOH_ID	0x4743		/* Jinvani SDIO Gold Host */
+#define BCM27XX_SDIOH_ID	0x2702		/* BCM27xx Standard SDIO Host */
+#define PCIXX21_FLASHMEDIA_ID	0x803b		/* TI PCI xx21 Standard Host Controller */
+#define PCIXX21_SDIOH_ID	0x803c		/* TI PCI xx21 Standard Host Controller */
 
+/* Chip IDs */
 #define	BCM4710_CHIP_ID		0x4710		/* 4710 chipid returned by sb_chip() */
-#define	BCM4710_DEVICE_ID	0x4710		/* 4710 primary function 0 */
-
 #define	BCM4402_CHIP_ID		0x4402		/* 4402 chipid */
-#define	BCM4402_ENET_ID		0x4402		/* 4402 enet */
-#define	BCM4402_V90_ID		0x4403		/* 4402 v90 codec */
-#define	BCM4401_ENET_ID		0x170c		/* 4401b0 production enet cards */
-
 #define	BCM4306_CHIP_ID		0x4306		/* 4306 chipcommon chipid */
-#define	BCM4306_D11G_ID		0x4320		/* 4306 802.11g */
-#define	BCM4306_D11G_ID2	0x4325		
-#define	BCM4306_D11A_ID		0x4321		/* 4306 802.11a */
-#define	BCM4306_UART_ID		0x4322		/* 4306 uart */
-#define	BCM4306_V90_ID		0x4323		/* 4306 v90 codec */
-#define	BCM4306_D11DUAL_ID	0x4324		/* 4306 dual A+B */
-
-#define	BCM4309_PKG_ID		1		/* 4309 package id */
-
 #define	BCM4311_CHIP_ID		0x4311		/* 4311 PCIe 802.11a/b/g */
-#define	BCM4311_D11G_ID		0x4311		/* 4311 802.11b/g id */
-#define	BCM4311_D11DUAL_ID	0x4312		/* 4311 802.11a/b/g id */
-#define	BCM4311_D11A_ID		0x4313		/* 4311 802.11a id */
-
-#define	BCM4303_D11B_ID		0x4303		/* 4303 802.11b */
-#define	BCM4303_PKG_ID		2		/* 4303 package id */
-
-#define	BCMGPRS_UART_ID		0x4333		/* Uart id used by 4306/gprs card */
-#define	BCMGPRS2_UART_ID	0x4344		/* Uart id used by 4306/gprs card */
-
 #define	BCM4704_CHIP_ID		0x4704		/* 4704 chipcommon chipid */
-#define	BCM4704_ENET_ID		0x4706		/* 4704 enet (Use 47XX_ENET_ID instead!) */
-
+#define	BCM4312_CHIP_ID		0x4312		/* 4312 chip common chipid */
 #define	BCM4318_CHIP_ID		0x4318		/* 4318 chip common chipid */
-#define	BCM4318_D11G_ID		0x4318		/* 4318 802.11b/g id */
-#define	BCM4318_D11DUAL_ID	0x4319		/* 4318 802.11a/b/g id */
-#define	BCM4318_D11A_ID		0x431a		/* 4318 802.11a id */
-
 #define	BCM4321_CHIP_ID		0x4321		/* 4321 chip common chipid */
-#define	BCM4321_D11N_ID		0x4328		/* 4321 802.11n dualband id */
-#define	BCM4321_D11N2G_ID	0x4329		/* 4321 802.11n 2.4Hgz band id */
-#define	BCM4321_D11N5G_ID	0x432a		/* 4321 802.11n 5Ghz band id */
+#define	BCM4328_CHIP_ID		0x4328		/* 4328 chip common chipid */
+#define	BCM4325_CHIP_ID		0x4325		/* 4325 chip common chipid */
+#define	BCM4712_CHIP_ID		0x4712		/* 4712 chipcommon chipid */
+#define BCM5365_CHIP_ID		0x5365          /* 5365 chipcommon chipid */
+#define	BCM5350_CHIP_ID		0x5350		/* bcm5350 chipcommon chipid */
+#define	BCM5352_CHIP_ID		0x5352		/* bcm5352 chipcommon chipid */
+#define	BCM5354_CHIP_ID		0x5354		/* bcm5354 chipcommon chipid */
+#define	BCM4320_CHIP_ID		0x4320		/* bcm4320 chipcommon chipid */
+#define BCM4785_CHIP_ID		0x4785		/* 4785 chipcommon chipid */
 
-#define BCM4331_CHIP_ID		0x4331		/* 4331 chip common chipid */
-#define BCM4331_D11N2G_ID	0x4330		/* 4331 802.11n 2.4Ghz band id */
-#define BCM4331_D11N_ID		0x4331		/* 4331 802.11n dualband id */
-#define BCM4331_D11N5G_ID	0x4332		/* 4331 802.11n 5Ghz band id */
-
+/* Package IDs */
+#define	BCM4303_PKG_ID		2		/* 4303 package id */
+#define	BCM4309_PKG_ID		1		/* 4309 package id */
+#define	BCM4712LARGE_PKG_ID	0		/* 340pin 4712 package id */
+#define	BCM4712SMALL_PKG_ID	1		/* 200pin 4712 package id */
+#define	BCM4712MID_PKG_ID	2		/* 225pin 4712 package id */
+#define BCM4328USBD11G_PKG_ID	2		/* 4328 802.11g USB package id */
+#define BCM4328USBDUAL_PKG_ID	3		/* 4328 802.11a/g USB package id */
+#define BCM4328SDIOD11G_PKG_ID	4		/* 4328 802.11g SDIO package id */
+#define BCM4328SDIODUAL_PKG_ID	5		/* 4328 802.11a/g SDIO package id */
+#define BCM5354E_PKG_ID		1		/* 5354E package id */
 #define HDLSIM5350_PKG_ID	1		/* HDL simulator package id for a 5350 */
 #define HDLSIM_PKG_ID		14		/* HDL simulator package id */
 #define HWSIM_PKG_ID		15		/* Hardware simulator package id */
 
-#define	BCM4712_CHIP_ID		0x4712		/* 4712 chipcommon chipid */
-#define	BCM4712_MIPS_ID		0x4720		/* 4712 base devid */
-#define	BCM4712LARGE_PKG_ID	0		/* 340pin 4712 package id */
-#define	BCM4712SMALL_PKG_ID	1		/* 200pin 4712 package id */
-#define	BCM4712MID_PKG_ID	2		/* 225pin 4712 package id */
-
-#define BCM5365_CHIP_ID		0x5365          /* 5365 chipcommon chipid */
-#define	BCM5350_CHIP_ID		0x5350		/* bcm5350 chipcommon chipid */
-#define	BCM5352_CHIP_ID		0x5352		/* bcm5352 chipcommon chipid */
-
-#define	BCM4320_CHIP_ID		0x4320		/* bcm4320 chipcommon chipid */
-
-#define BCM4328_CHIP_ID		0x4328		/* bcm4328 chipcommon chipid */
-
-#define FPGA_JTAGM_ID		0x43f0		/* FPGA jtagm device id */
-#define BCM43XX_JTAGM_ID	0x43f1		/* 43xx jtagm device id */
-#define BCM43XXOLD_JTAGM_ID	0x4331		/* 43xx old jtagm device id */
-
-#define SDIOH_FPGA_ID		0x43f2		/* sdio host fpga */
-#define SDIOD_FPGA_ID		0x43f4		/* sdio device fpga */
-
-#define MIMO_FPGA_ID		0x43f8		/* FPGA mimo minimacphy device id */
-
-#define BCM4785_CHIP_ID		0x4785		/* 4785 chipcommon chipid */
-
-/* PCMCIA vendor Id's */
-
-#define	VENDOR_BROADCOM_PCMCIA	0x02d0
-
-/* SDIO vendor Id's */
-#define	VENDOR_BROADCOM_SDIO	0x00BF
-
-
+#define PCIXX21_FLASHMEDIA0_ID	0x8033		/* TI PCI xx21 Standard Host Controller */
+#define PCIXX21_SDIOH0_ID	0x8034		/* TI PCI xx21 Standard Host Controller */
 /* boardflags */
-#define	BFL_BTCOEXIST		0x0001	/* This board implements Bluetooth coexistance */
-#define	BFL_PACTRL		0x0002	/* This board has gpio 9 controlling the PA */
-#define	BFL_AIRLINEMODE		0x0004	/* This board implements gpio13 radio disable indication */
-#define	BFL_ENETROBO		0x0010	/* This board has robo switch or core */
-#define	BFL_CCKHIPWR		0x0040	/* Can do high-power CCK transmission */
-#define	BFL_ENETADM		0x0080	/* This board has ADMtek switch */
-#define	BFL_ENETVLAN		0x0100	/* This board has vlan capability */
-#define	BFL_AFTERBURNER		0x0200	/* This board supports Afterburner mode */
-#define BFL_NOPCI		0x0400	/* This board leaves PCI floating */
-#define BFL_FEM			0x0800  /* This board supports the Front End Module */
-#define BFL_EXTLNA		0x1000	/* This board has an external LNA */
-#define BFL_HGPA		0x2000	/* This board has a high gain PA */
-#define	BFL_BTCMOD		0x4000	/* This board' BTCOEXIST is in the alternate gpios */
-#define	BFL_ALTIQ		0x8000	/* Alternate I/Q settings */
-
+#define	BFL_BTCOEXIST		0x00000001	/* This board implements Bluetooth coexistance */
+#define	BFL_PACTRL		0x00000002	/* This board has gpio 9 controlling the PA */
+#define	BFL_AIRLINEMODE	0x00000004	/* This board implements gpio13 radio disable indication */
+#define	BFL_ADCDIV		0x00000008	/* This board has the rssi ADC divider */
+#define	BFL_ENETROBO		0x00000010	/* This board has robo switch or core */
+#define	BFL_NOPLLDOWN	0x00000020	/* Not ok to power down the chip pll and oscillator */
+#define	BFL_CCKHIPWR		0x00000040	/* Can do high-power CCK transmission */
+#define	BFL_ENETADM		0x00000080	/* This board has ADMtek switch */
+#define	BFL_ENETVLAN		0x00000100	/* This board has vlan capability */
+#define	BFL_AFTERBURNER		0x00000200	/* This board supports Afterburner mode */
+#define BFL_NOPCI		0x00000400	/* This board leaves PCI floating */
+#define BFL_FEM			0x00000800  /* This board supports the Front End Module */
+#define BFL_EXTLNA		0x00001000	/* This board has an external LNA */
+#define BFL_HGPA		0x00002000	/* This board has a high gain PA */
+#define	BFL_BTCMOD	0x00004000	/* This board' BTCOEXIST is in the alternate gpios */
+#define	BFL_ALTIQ		0x00008000	/* Alternate I/Q settings */
+#define BFL_NOPA	0x00010000	/* This board has no PA */
+#define BFL_RSSIINV		0x00020000	/* This board's RSSI uses positive slope */
+#define BFL_PAREF		0x00040000	/* This board uses the PARef LDO */
+#define BFL_3TSWITCH	0x00080000	/* This board uses a triple throw switch shared with BT */
+#define BFL_PHASESHIFTER	0x00100000	/* This board can support phase shifter */
+#define BFL_BUCKBOOST	0x00200000	/* This board has buck/booster */
 /* boardflags2 */
 #define BFL2_RXBB_INT_REG_DIS	0x00000001	/* This board has an external rxbb regulator */
-#define BFL2_SSWITCH_AVAIL	0x00000002	/* This board has a superswitch for > 2 antennas */
-#define BFL2_TXPWRCTRL_EN	0x00000004	/* This board permits TX Power Control to be enabled */
+#define BFL2_DEPRECIATED_STUB	0x00000002	/* This board flag is depreciated */
+#define BFL2_TXPWRCTRL_EN	0x00000004	/* This board permits enabling TX Power Control */
+#define BFL2_2X4_DIV		0x00000008	/* This board supports the 2X4 diversity switch */
+#define BFL2_5G_PWRGAIN		0x00000010	/* This board supports 5G band power gain */
+#define BFL2_PCIEWAR_OVR	0x00000020	/* This board overrides ASPM and Clkreq settings */
+#define BFL2_CAESERS_BRD	0x00000040	/* This board is Dell Caeser's brd (unused by sw) */
 
 /* board specific GPIO assignment, gpio 0-3 are also customer-configurable led */
 #define	BOARD_GPIO_BTCMOD_IN	0x010	/* bit 4 is the alternate BT Coexistance Input */
@@ -172,6 +178,9 @@
 #define	BOARD_GPIO_BTC_IN	0x080	/* bit 7 is BT Coexistance Input */
 #define	BOARD_GPIO_BTC_OUT	0x100	/* bit 8 is BT Coexistance Out */
 #define	BOARD_GPIO_PACTRL	0x200	/* bit 9 controls the PA on new 4306 boards */
+#define BOARD_GPIO_ANT0_SEL	0x100	/* With BFL2_2X4_DIV */
+#define BOARD_GPIO_ANT1_SEL	0x200	/* With BFL2_2X4_DIV */
+
 #define	PCI_CFG_GPIO_SCS	0x10	/* PCI config space bit 4 for 4306c0 slow clock source */
 #define PCI_CFG_GPIO_HWRAD	0x20	/* PCI config space GPIO 13 for hw radio disable */
 #define PCI_CFG_GPIO_XTAL	0x40	/* PCI config space GPIO 14 for Xtal powerup */
@@ -184,7 +193,6 @@
 #define	XTAL_ON_DELAY		1000		/* us crystal power-on delay */
 
 /* Reference Board Types */
-
 #define	BU4710_BOARD		0x0400
 #define	VSIM4710_BOARD		0x0401
 #define	QT4710_BOARD		0x0402
@@ -259,6 +267,7 @@
 /* BCM63XX boards */
 #define BCM96338_BOARD		0x6338
 #define BCM96348_BOARD		0x6348
+#define BCM96358_BOARD		0x6358
 
 /* Another mp4306 with SiGe */
 #define	BCM94306P_BOARD		0x044c
@@ -333,6 +342,18 @@
 #define CB2_4321_BOARD		0x046d
 #define MC4321_BOARD		0x046e
 
+/* 4328 boards */
+#define BU4328_BOARD		0x0481
+#define BCM4328SDG_BOARD	0x0482
+#define BCM4328SDAG_BOARD	0x0483
+#define BCM4328UG_BOARD		0x0484
+#define BCM4328UAG_BOARD	0x0485
+#define BCM4328PC_BOARD		0x0486
+#define BCM4328CF_BOARD		0x0487
+
+/* 4325 boards */
+#define BU4325_BOARD		0x0490
+
 /* # of GPIO pins */
 #define GPIO_NUMPINS		16
 
@@ -357,6 +378,10 @@
 #define BCM2062_ID		0x2062
 #define BCM2062_IDCODE		0x02062000
 #define BCM2062A0_IDCODE	0x0206217f
+
+#define BCM2063_ID		0x2063
+#define BCM2063_IDCODE		0x02063000
+#define BCM2063A0_IDCODE	0x0206317f
 
 /* parts of an idcode: */
 #define	IDCODE_MFG_MASK		0x00000fff

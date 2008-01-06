@@ -1,5 +1,7 @@
---- linux-2.4.34/drivers/ide/pci/aec62xx.c.old  2006-12-23 22:34:20.000000000 +0200
-+++ linux-2.4.34/drivers/ide/pci/aec62xx.c      2007-01-14 12:06:05.000000000 +0200
+Index: linux-2.4.35.4/drivers/ide/pci/aec62xx.c
+===================================================================
+--- linux-2.4.35.4.orig/drivers/ide/pci/aec62xx.c	2007-12-15 05:19:35.958470194 +0100
++++ linux-2.4.35.4/drivers/ide/pci/aec62xx.c	2007-12-15 05:20:16.928804961 +0100
 @@ -3,6 +3,8 @@
   *
   * Copyright (C) 1999-2002	Andre Hedrick <andre@linux-ide.org>
@@ -13,16 +15,15 @@
  	ide_hwif_t *hwif	= HWIF(drive);
  	struct hd_driveid *id	= drive->id;
  
--	if ((id->capability & 1) && drive->autodma) {
 +#ifndef CONFIG_BCM947XX
-+	if ((id->capability & 1) && drive->autodma) {
+ 	if ((id->capability & 1) && drive->autodma) {
 +#else
 +	if (1) {
 +#endif
  		/* Consult the list of known "bad" drives */
  		if (hwif->ide_dma_bad_drive(drive))
  			goto fast_ata_pio;
-@@ -414,10 +416,60 @@
+@@ -414,10 +420,60 @@
  {
  	int bus_speed = system_bus_clock();
  
@@ -83,7 +84,7 @@
  
  #if defined(DISPLAY_AEC62XX_TIMINGS) && defined(CONFIG_PROC_FS)
  	aec_devs[n_aec_devs++] = dev;
-@@ -500,6 +552,7 @@
+@@ -500,6 +556,7 @@
  
  static void __init init_setup_aec6x80 (struct pci_dev *dev, ide_pci_device_t *d)
  {
@@ -91,7 +92,7 @@
  	unsigned long bar4reg = pci_resource_start(dev, 4);
  
  	if (inb(bar4reg+2) & 0x10) {
-@@ -512,6 +565,7 @@
+@@ -512,6 +569,7 @@
  			strcpy(d->name, "AEC6280R");
  	}
  

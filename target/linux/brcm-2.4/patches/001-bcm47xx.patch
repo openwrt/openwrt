@@ -1,6 +1,7 @@
-diff -urN linux.old/arch/mips/config-shared.in linux.dev/arch/mips/config-shared.in
---- linux.old/arch/mips/config-shared.in	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/arch/mips/config-shared.in	2006-10-02 21:19:59.000000000 +0200
+Index: linux-2.4.35.4/arch/mips/config-shared.in
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/config-shared.in	2007-12-15 05:19:53.151449966 +0100
++++ linux-2.4.35.4/arch/mips/config-shared.in	2007-12-15 05:20:13.936634447 +0100
 @@ -208,6 +208,14 @@
     fi
     define_bool CONFIG_MIPS_RTC y
@@ -54,9 +55,10 @@ diff -urN linux.old/arch/mips/config-shared.in linux.dev/arch/mips/config-shared
  dep_bool '  Console output to GDB' CONFIG_GDB_CONSOLE $CONFIG_KGDB
  if [ "$CONFIG_KGDB" = "y" ]; then
     define_bool CONFIG_DEBUG_INFO y
-diff -urN linux.old/arch/mips/kernel/cpu-probe.c linux.dev/arch/mips/kernel/cpu-probe.c
---- linux.old/arch/mips/kernel/cpu-probe.c	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/arch/mips/kernel/cpu-probe.c	2006-10-02 21:19:59.000000000 +0200
+Index: linux-2.4.35.4/arch/mips/kernel/cpu-probe.c
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/kernel/cpu-probe.c	2007-12-15 05:19:44.862977633 +0100
++++ linux-2.4.35.4/arch/mips/kernel/cpu-probe.c	2007-12-15 05:20:13.944634901 +0100
 @@ -162,7 +162,7 @@
  
  static inline void cpu_probe_legacy(struct cpuinfo_mips *c)
@@ -176,9 +178,10 @@ diff -urN linux.old/arch/mips/kernel/cpu-probe.c linux.dev/arch/mips/kernel/cpu-
  	case PRID_COMP_SIBYTE:
  		cpu_probe_sibyte(c);
  		break;
-diff -urN linux.old/arch/mips/kernel/head.S linux.dev/arch/mips/kernel/head.S
---- linux.old/arch/mips/kernel/head.S	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/arch/mips/kernel/head.S	2006-10-02 21:19:59.000000000 +0200
+Index: linux-2.4.35.4/arch/mips/kernel/head.S
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/kernel/head.S	2007-12-15 05:19:44.866977862 +0100
++++ linux-2.4.35.4/arch/mips/kernel/head.S	2007-12-15 05:20:13.944634901 +0100
 @@ -28,12 +28,20 @@
  #include <asm/mipsregs.h>
  #include <asm/stackframe.h>
@@ -201,9 +204,10 @@ diff -urN linux.old/arch/mips/kernel/head.S linux.dev/arch/mips/kernel/head.S
  
  		/* The following two symbols are used for kernel profiling. */
  		EXPORT(stext)
-diff -urN linux.old/arch/mips/kernel/proc.c linux.dev/arch/mips/kernel/proc.c
---- linux.old/arch/mips/kernel/proc.c	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/arch/mips/kernel/proc.c	2006-10-02 21:19:59.000000000 +0200
+Index: linux-2.4.35.4/arch/mips/kernel/proc.c
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/kernel/proc.c	2007-12-15 05:19:36.358492990 +0100
++++ linux-2.4.35.4/arch/mips/kernel/proc.c	2007-12-15 05:20:13.944634901 +0100
 @@ -78,9 +78,10 @@
  	[CPU_AU1550]	"Au1550",
  	[CPU_24K]	"MIPS 24K",
@@ -216,9 +220,10 @@ diff -urN linux.old/arch/mips/kernel/proc.c linux.dev/arch/mips/kernel/proc.c
  static int show_cpuinfo(struct seq_file *m, void *v)
  {
  	unsigned int version = current_cpu_data.processor_id;
-diff -urN linux.old/arch/mips/kernel/setup.c linux.dev/arch/mips/kernel/setup.c
---- linux.old/arch/mips/kernel/setup.c	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/arch/mips/kernel/setup.c	2006-10-02 21:19:59.000000000 +0200
+Index: linux-2.4.35.4/arch/mips/kernel/setup.c
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/kernel/setup.c	2007-12-15 05:19:44.866977862 +0100
++++ linux-2.4.35.4/arch/mips/kernel/setup.c	2007-12-15 05:20:13.944634901 +0100
 @@ -493,6 +493,7 @@
  	void swarm_setup(void);
  	void hp_setup(void);
@@ -239,9 +244,10 @@ diff -urN linux.old/arch/mips/kernel/setup.c linux.dev/arch/mips/kernel/setup.c
  	default:
  		panic("Unsupported architecture");
  	}
-diff -urN linux.old/arch/mips/kernel/traps.c linux.dev/arch/mips/kernel/traps.c
---- linux.old/arch/mips/kernel/traps.c	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/arch/mips/kernel/traps.c	2006-10-02 21:19:59.000000000 +0200
+Index: linux-2.4.35.4/arch/mips/kernel/traps.c
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/kernel/traps.c	2007-12-15 05:19:44.870978088 +0100
++++ linux-2.4.35.4/arch/mips/kernel/traps.c	2007-12-15 05:20:13.944634901 +0100
 @@ -920,6 +920,7 @@
  void __init trap_init(void)
  {
@@ -271,9 +277,10 @@ diff -urN linux.old/arch/mips/kernel/traps.c linux.dev/arch/mips/kernel/traps.c
  	if (cpu_has_fpu && !cpu_has_nofpuex)
  		set_except_vector(15, handle_fpe);
  
-diff -urN linux.old/arch/mips/Makefile linux.dev/arch/mips/Makefile
---- linux.old/arch/mips/Makefile	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/arch/mips/Makefile	2006-10-02 21:19:59.000000000 +0200
+Index: linux-2.4.35.4/arch/mips/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/Makefile	2007-12-15 05:19:51.215339635 +0100
++++ linux-2.4.35.4/arch/mips/Makefile	2007-12-15 05:20:13.948635130 +0100
 @@ -726,6 +726,19 @@
  endif
  
@@ -294,7 +301,7 @@ diff -urN linux.old/arch/mips/Makefile linux.dev/arch/mips/Makefile
  # Choosing incompatible machines durings configuration will result in
  # error messages during linking.  Select a default linkscript if
  # none has been choosen above.
-@@ -778,6 +791,7 @@
+@@ -779,6 +792,7 @@
  	$(MAKE) -C arch/$(ARCH)/tools clean
  	$(MAKE) -C arch/mips/baget clean
  	$(MAKE) -C arch/mips/lasat clean
@@ -302,10 +309,11 @@ diff -urN linux.old/arch/mips/Makefile linux.dev/arch/mips/Makefile
  
  archmrproper:
  	@$(MAKEBOOT) mrproper
-diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
---- linux.old/arch/mips/mm/c-r4k.c	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/arch/mips/mm/c-r4k.c	2006-10-02 21:19:59.000000000 +0200
-@@ -1166,3 +1166,47 @@
+Index: linux-2.4.35.4/arch/mips/mm/c-r4k.c
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/mm/c-r4k.c	2007-12-15 05:19:44.874978317 +0100
++++ linux-2.4.35.4/arch/mips/mm/c-r4k.c	2007-12-15 05:20:13.948635130 +0100
+@@ -1118,3 +1118,47 @@
  	build_clear_page();
  	build_copy_page();
  }
@@ -353,9 +361,10 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
 +}
 +
 +
-diff -urN linux.old/arch/mips/pci/Makefile linux.dev/arch/mips/pci/Makefile
---- linux.old/arch/mips/pci/Makefile	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/arch/mips/pci/Makefile	2006-10-02 21:19:59.000000000 +0200
+Index: linux-2.4.35.4/arch/mips/pci/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/pci/Makefile	2007-12-15 05:19:36.398495270 +0100
++++ linux-2.4.35.4/arch/mips/pci/Makefile	2007-12-15 05:20:13.948635130 +0100
 @@ -13,7 +13,9 @@
  obj-$(CONFIG_MIPS_MSC)		+= ops-msc.o
  obj-$(CONFIG_MIPS_NILE4)	+= ops-nile4.o
@@ -366,9 +375,10 @@ diff -urN linux.old/arch/mips/pci/Makefile linux.dev/arch/mips/pci/Makefile
  obj-$(CONFIG_PCI_AUTO)		+= pci_auto.o
  
  include $(TOPDIR)/Rules.make
-diff -urN linux.old/drivers/char/serial.c linux.dev/drivers/char/serial.c
---- linux.old/drivers/char/serial.c	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/drivers/char/serial.c	2006-10-02 21:19:59.000000000 +0200
+Index: linux-2.4.35.4/drivers/char/serial.c
+===================================================================
+--- linux-2.4.35.4.orig/drivers/char/serial.c	2007-12-15 05:20:00.539871010 +0100
++++ linux-2.4.35.4/drivers/char/serial.c	2007-12-15 05:20:13.952635360 +0100
 @@ -444,6 +444,10 @@
  		return inb(info->port+1);
  #endif
@@ -437,9 +447,10 @@ diff -urN linux.old/drivers/char/serial.c linux.dev/drivers/char/serial.c
  	cval = cflag & (CSIZE | CSTOPB);
  #if defined(__powerpc__) || defined(__alpha__)
  	cval >>= 8;
-diff -urN linux.old/drivers/net/Makefile linux.dev/drivers/net/Makefile
---- linux.old/drivers/net/Makefile	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/drivers/net/Makefile	2006-10-02 21:19:59.000000000 +0200
+Index: linux-2.4.35.4/drivers/net/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/drivers/net/Makefile	2007-12-15 05:20:10.804455954 +0100
++++ linux-2.4.35.4/drivers/net/Makefile	2007-12-15 05:20:13.952635360 +0100
 @@ -3,6 +3,8 @@
  # Makefile for the Linux network (ethercard) device drivers.
  #
@@ -449,9 +460,10 @@ diff -urN linux.old/drivers/net/Makefile linux.dev/drivers/net/Makefile
  obj-y           :=
  obj-m           :=
  obj-n           :=
-diff -urN linux.old/drivers/parport/Config.in linux.dev/drivers/parport/Config.in
---- linux.old/drivers/parport/Config.in	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/drivers/parport/Config.in	2006-10-02 21:19:59.000000000 +0200
+Index: linux-2.4.35.4/drivers/parport/Config.in
+===================================================================
+--- linux-2.4.35.4.orig/drivers/parport/Config.in	2007-12-15 05:19:36.422496639 +0100
++++ linux-2.4.35.4/drivers/parport/Config.in	2007-12-15 05:20:13.956635587 +0100
 @@ -11,6 +11,7 @@
  tristate 'Parallel port support' CONFIG_PARPORT
  if [ "$CONFIG_PARPORT" != "n" ]; then
@@ -460,9 +472,10 @@ diff -urN linux.old/drivers/parport/Config.in linux.dev/drivers/parport/Config.i
     if [ "$CONFIG_PARPORT_PC" != "n" -a "$CONFIG_SERIAL" != "n" ]; then
        if [ "$CONFIG_SERIAL" = "m" ]; then
           define_tristate CONFIG_PARPORT_PC_CML1 m
-diff -urN linux.old/drivers/parport/Makefile linux.dev/drivers/parport/Makefile
---- linux.old/drivers/parport/Makefile	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/drivers/parport/Makefile	2006-10-02 21:19:59.000000000 +0200
+Index: linux-2.4.35.4/drivers/parport/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/drivers/parport/Makefile	2007-12-15 05:19:36.430497094 +0100
++++ linux-2.4.35.4/drivers/parport/Makefile	2007-12-15 05:20:13.956635587 +0100
 @@ -22,6 +22,7 @@
  
  obj-$(CONFIG_PARPORT)		+= parport.o
@@ -471,9 +484,10 @@ diff -urN linux.old/drivers/parport/Makefile linux.dev/drivers/parport/Makefile
  obj-$(CONFIG_PARPORT_PC_PCMCIA)	+= parport_cs.o
  obj-$(CONFIG_PARPORT_AMIGA)	+= parport_amiga.o
  obj-$(CONFIG_PARPORT_MFC3)	+= parport_mfc3.o
-diff -urN linux.old/include/asm-mips/bootinfo.h linux.dev/include/asm-mips/bootinfo.h
---- linux.old/include/asm-mips/bootinfo.h	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/include/asm-mips/bootinfo.h	2006-10-02 21:19:59.000000000 +0200
+Index: linux-2.4.35.4/include/asm-mips/bootinfo.h
+===================================================================
+--- linux-2.4.35.4.orig/include/asm-mips/bootinfo.h	2007-12-15 05:19:45.026986980 +0100
++++ linux-2.4.35.4/include/asm-mips/bootinfo.h	2007-12-15 05:20:13.956635587 +0100
 @@ -37,6 +37,7 @@
  #define MACH_GROUP_HP_LJ       20 /* Hewlett Packard LaserJet               */
  #define MACH_GROUP_LASAT       21
@@ -498,9 +512,10 @@ diff -urN linux.old/include/asm-mips/bootinfo.h linux.dev/include/asm-mips/booti
   * Valid machtype for group TITAN
   */
  #define	MACH_TITAN_YOSEMITE	1 	/* PMC-Sierra Yosemite */
-diff -urN linux.old/include/asm-mips/cpu.h linux.dev/include/asm-mips/cpu.h
---- linux.old/include/asm-mips/cpu.h	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/include/asm-mips/cpu.h	2006-10-02 21:19:59.000000000 +0200
+Index: linux-2.4.35.4/include/asm-mips/cpu.h
+===================================================================
+--- linux-2.4.35.4.orig/include/asm-mips/cpu.h	2007-12-15 05:19:36.442497779 +0100
++++ linux-2.4.35.4/include/asm-mips/cpu.h	2007-12-15 05:20:13.956635587 +0100
 @@ -22,6 +22,11 @@
     spec.
  */
@@ -549,10 +564,11 @@ diff -urN linux.old/include/asm-mips/cpu.h linux.dev/include/asm-mips/cpu.h
  
  /*
   * ISA Level encodings
-diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kcache.h
---- linux.old/include/asm-mips/r4kcache.h	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/include/asm-mips/r4kcache.h	2006-10-02 21:19:59.000000000 +0200
-@@ -658,4 +658,17 @@
+Index: linux-2.4.35.4/include/asm-mips/r4kcache.h
+===================================================================
+--- linux-2.4.35.4.orig/include/asm-mips/r4kcache.h	2007-12-15 05:19:36.450498234 +0100
++++ linux-2.4.35.4/include/asm-mips/r4kcache.h	2007-12-15 05:20:13.960635812 +0100
+@@ -567,4 +567,17 @@
  			cache128_unroll32(addr|ws,Index_Writeback_Inv_SD);
  }
  
@@ -570,9 +586,10 @@ diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kca
 +}      
 +
  #endif /* __ASM_R4KCACHE_H */
-diff -urN linux.old/include/asm-mips/serial.h linux.dev/include/asm-mips/serial.h
---- linux.old/include/asm-mips/serial.h	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/include/asm-mips/serial.h	2006-10-02 21:19:59.000000000 +0200
+Index: linux-2.4.35.4/include/asm-mips/serial.h
+===================================================================
+--- linux-2.4.35.4.orig/include/asm-mips/serial.h	2007-12-15 05:19:36.458498689 +0100
++++ linux-2.4.35.4/include/asm-mips/serial.h	2007-12-15 05:20:13.960635812 +0100
 @@ -223,6 +223,13 @@
  #define TXX927_SERIAL_PORT_DEFNS
  #endif
@@ -595,9 +612,10 @@ diff -urN linux.old/include/asm-mips/serial.h linux.dev/include/asm-mips/serial.
  	COBALT_SERIAL_PORT_DEFNS		\
  	DDB5477_SERIAL_PORT_DEFNS		\
  	EV96100_SERIAL_PORT_DEFNS		\
-diff -urN linux.old/init/do_mounts.c linux.dev/init/do_mounts.c
---- linux.old/init/do_mounts.c	2006-10-02 21:23:10.000000000 +0200
-+++ linux.dev/init/do_mounts.c	2006-10-02 21:19:59.000000000 +0200
+Index: linux-2.4.35.4/init/do_mounts.c
+===================================================================
+--- linux-2.4.35.4.orig/init/do_mounts.c	2007-12-15 05:19:48.667194423 +0100
++++ linux-2.4.35.4/init/do_mounts.c	2007-12-15 05:20:13.960635812 +0100
 @@ -254,7 +254,13 @@
  	{ "ftlb", 0x2c08 },
  	{ "ftlc", 0x2c10 },

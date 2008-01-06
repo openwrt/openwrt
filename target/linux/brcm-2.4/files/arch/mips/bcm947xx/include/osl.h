@@ -4,26 +4,66 @@
 #include <linux/delay.h>
 #include <typedefs.h>
 #include <linuxver.h>
-#include <bcmutils.h>
 #include <pcicfg.h>
 
 #define ASSERT(n)
 
+#ifndef ABS
+#define	ABS(a)			(((a) < 0)?-(a):(a))
+#endif /* ABS */
+
+#ifndef MIN
+#define	MIN(a, b)		(((a) < (b))?(a):(b))
+#endif /* MIN */
+
+#ifndef MAX
+#define	MAX(a, b)		(((a) > (b))?(a):(b))
+#endif /* MAX */
+
+#define CEIL(x, y)		(((x) + ((y)-1)) / (y))
+#define	ROUNDUP(x, y)		((((x)+((y)-1))/(y))*(y))
+#define	ISALIGNED(a, x)		(((a) & ((x)-1)) == 0)
+#define	ISPOWEROF2(x)		((((x)-1)&(x)) == 0)
+#define VALID_MASK(mask)	!((mask) & ((mask) + 1))
+#ifndef OFFSETOF
+#define	OFFSETOF(type, member)	((uint)(uintptr)&((type *)0)->member)
+#endif /* OFFSETOF */
+#ifndef ARRAYSIZE
+#define ARRAYSIZE(a)		(sizeof(a)/sizeof(a[0]))
+#endif
+
+/*
+ * Spin at most 'us' microseconds while 'exp' is true.
+ * Caller should explicitly test 'exp' when this completes
+ * and take appropriate error action if 'exp' is still true.
+ */
+#define SPINWAIT(exp, us) { \
+	uint countdown = (us) + 9; \
+	while ((exp) && (countdown >= 10)) {\
+		OSL_DELAY(10); \
+		countdown -= 10; \
+	} \
+}
+
+
+typedef void (*pktfree_cb_fn_t)(void *ctx, void *pkt, unsigned int status);
 /* Pkttag flag should be part of public information */
 typedef struct {
 	bool pkttag;
-	uint pktalloced; /* Number of allocated packet buffers */
-	void *tx_fn;
-	void *tx_ctx;
+	uint pktalloced; 	/* Number of allocated packet buffers */
+	bool mmbus;		/* Bus supports memory-mapped register accesses */
+	pktfree_cb_fn_t tx_fn;  /* Callback function for PKTFREE */
+	void *tx_ctx;		/* Context to the callback function */
 } osl_pubinfo_t;
 
 struct osl_info {
-	osl_pubinfo_t pub;
-	uint magic;
-	void *pdev;
-	uint malloced;
-	uint failed;
-	void *dbgmem_list;
+  osl_pubinfo_t pub;
+  uint magic;
+  void *pdev;
+  uint malloced;
+  uint failed;
+  uint bustype;
+  void *dbgmem_list;
 };
 
 typedef struct osl_info osl_t;
@@ -101,8 +141,8 @@ typedef struct osl_info osl_t;
 #define	MFREE(osh, addr, size)	kfree((addr))
 #define MALLOCED(osh)	(0)	
 
-#define	osl_delay		OSL_DELAY
-static inline void OSL_DELAY(uint usec)
+#define	OSL_DELAY	_osl_delay
+static inline void _osl_delay(uint usec)
 {
 	uint d;
 
@@ -128,10 +168,10 @@ bcm_mdelay(uint ms)
 #define	OSL_PCMCIA_WRITE_ATTR(osh, offset, buf, size)
 
 #define	OSL_PCI_READ_CONFIG(osh, offset, size) \
-	osl_pci_read_config((osh), (offset), (size))
+	_osl_pci_read_config((osh), (offset), (size))
 
 static inline uint32
-osl_pci_read_config(osl_t *osh, uint offset, uint size)
+_osl_pci_read_config(osl_t *osh, uint offset, uint size)
 {
 	uint val;
 	uint retry = PCI_CFG_RETRY;	 
@@ -146,9 +186,9 @@ osl_pci_read_config(osl_t *osh, uint offset, uint size)
 }
 
 #define	OSL_PCI_WRITE_CONFIG(osh, offset, size, val) \
-	osl_pci_write_config((osh), (offset), (size), (val))
+	_osl_pci_write_config((osh), (offset), (size), (val))
 static inline void
-osl_pci_write_config(osl_t *osh, uint offset, uint size, uint val)
+_osl_pci_write_config(osl_t *osh, uint offset, uint size, uint val)
 {
 	uint retry = PCI_CFG_RETRY;	 
 
@@ -156,24 +196,24 @@ osl_pci_write_config(osl_t *osh, uint offset, uint size, uint val)
 		pci_write_config_dword(osh->pdev, offset, val);
 		if (offset != PCI_BAR0_WIN)
 			break;
-		if (osl_pci_read_config(osh, offset, size) == val)
+		if (_osl_pci_read_config(osh, offset, size) == val)
 			break;
 	} while (retry--);
 }
 
 
 /* return bus # for the pci device pointed by osh->pdev */
-#define OSL_PCI_BUS(osh)	osl_pci_bus(osh)
+#define OSL_PCI_BUS(osh)	_osl_pci_bus(osh)
 static inline uint
-osl_pci_bus(osl_t *osh)
+_osl_pci_bus(osl_t *osh)
 {
 	return ((struct pci_dev *)osh->pdev)->bus->number;
 }
 
 /* return slot # for the pci device pointed by osh->pdev */
-#define OSL_PCI_SLOT(osh)	osl_pci_slot(osh)
+#define OSL_PCI_SLOT(osh)	_osl_pci_slot(osh)
 static inline uint
-osl_pci_slot(osl_t *osh)
+_osl_pci_slot(osl_t *osh)
 {
 	return PCI_SLOT(((struct pci_dev *)osh->pdev)->devfn);
 }

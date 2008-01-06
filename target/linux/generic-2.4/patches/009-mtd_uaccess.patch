@@ -1,6 +1,15 @@
---- linux.old/drivers/mtd/mtdchar.c	2006-11-23 18:48:56.000000000 +0100
-+++ linux.dev/drivers/mtd/mtdchar.c	2006-11-23 18:49:11.000000000 +0100
-@@ -564,7 +564,7 @@
+Index: linux-2.4.35.4/drivers/mtd/mtdchar.c
+===================================================================
+--- linux-2.4.35.4.orig/drivers/mtd/mtdchar.c	2007-12-15 05:19:42.370835614 +0100
++++ linux-2.4.35.4/drivers/mtd/mtdchar.c	2007-12-15 05:19:50.539301109 +0100
+@@ -558,13 +558,13 @@
+ 	sprintf(name, "%d", mtd->index);
+ 	devfs_rw_handle[mtd->index] = devfs_register(devfs_dir_handle, name,
+ 			DEVFS_FL_DEFAULT, MTD_CHAR_MAJOR, mtd->index*2,
+-			S_IFCHR | S_IRUGO | S_IWUGO,
++			S_IFCHR | S_IRUSR | S_IWUSR,
+ 			&mtd_fops, NULL);
+ 
  	sprintf(name, "%dro", mtd->index);
  	devfs_ro_handle[mtd->index] = devfs_register(devfs_dir_handle, name,
  			DEVFS_FL_DEFAULT, MTD_CHAR_MAJOR, mtd->index*2+1,
@@ -9,8 +18,10 @@
  			&mtd_fops, NULL);
  }
  
---- linux-2.4.30/drivers/mtd/mtdblock.c.orig	2006-03-26 06:38:36 -05:00
-+++ linux-2.4.30/drivers/mtd/mtdblock.c	2006-03-26 06:38:54 -05:00
+Index: linux-2.4.35.4/drivers/mtd/mtdblock.c
+===================================================================
+--- linux-2.4.35.4.orig/drivers/mtd/mtdblock.c	2007-12-15 05:19:42.378836072 +0100
++++ linux-2.4.35.4/drivers/mtd/mtdblock.c	2007-12-15 05:19:50.539301109 +0100
 @@ -601,7 +601,7 @@
          sprintf(name, "%d", mtd->index);
          devfs_rw_handle[mtd->index] = devfs_register(devfs_dir_handle, name,
@@ -20,14 +31,3 @@
                          &mtd_fops, NULL);
  }
  
---- linux-2.4.30/drivers/mtd/mtdchar.c.orig	2006-03-26 06:42:23 -05:00
-+++ linux-2.4.30/drivers/mtd/mtdchar.c	2006-03-26 06:42:41 -05:00
-@@ -558,7 +558,7 @@
- 	sprintf(name, "%d", mtd->index);
- 	devfs_rw_handle[mtd->index] = devfs_register(devfs_dir_handle, name,
- 			DEVFS_FL_DEFAULT, MTD_CHAR_MAJOR, mtd->index*2,
--			S_IFCHR | S_IRUGO | S_IWUGO,
-+			S_IFCHR | S_IRUSR | S_IWUSR,
- 			&mtd_fops, NULL);
- 
- 	sprintf(name, "%dro", mtd->index);

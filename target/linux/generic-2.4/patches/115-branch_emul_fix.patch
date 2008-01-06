@@ -1,5 +1,7 @@
---- linux.old/arch/mips/kernel/branch.c	2006-12-23 21:34:20.000000000 +0100
-+++ linux.dev/arch/mips/kernel/branch.c	2007-01-24 18:05:34.000000000 +0100
+Index: linux-2.4.35.4/arch/mips/kernel/branch.c
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/kernel/branch.c	2007-12-15 05:19:41.102763351 +0100
++++ linux-2.4.35.4/arch/mips/kernel/branch.c	2007-12-15 05:19:55.259570100 +0100
 @@ -170,7 +170,7 @@
  		bit = (insn.i_format.rt >> 2);
  		bit += (bit != 0);

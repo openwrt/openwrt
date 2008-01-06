@@ -30,6 +30,7 @@
 #include <linux/wireless.h>
 #include <linux/timer.h>
 #include <linux/delay.h>
+#include <linux/random.h>
 #include <net/iw_handler.h>
 #include <asm/uaccess.h>
 
@@ -37,14 +38,15 @@
 #include <bcmutils.h>
 #include <wlioctl.h>
 
+char buf[WLC_IOCTL_MAXLEN];
 static struct net_device *dev;
-static struct iw_statistics wstats;
 #ifndef DEBUG
 static int random = 1;
 #endif
+#ifndef WL_WEXT
+static struct iw_statistics wstats;
 static int last_mode = -1;
 static int scan_cur = 0;
-char buf[WLC_IOCTL_MAXLEN];
 
 /* The frequency of each channel in MHz */
 const long channel_frequency[] = {
@@ -52,6 +54,7 @@ const long channel_frequency[] = {
 	2447, 2452, 2457, 2462, 2467, 2472, 2484
 };
 #define NUM_CHANNELS ( sizeof(channel_frequency) / sizeof(channel_frequency[0]) )
+#endif
 
 #define SCAN_RETRY_MAX	5
 #define RNG_POLL_FREQ	1
@@ -88,6 +91,7 @@ static int wl_ioctl(struct net_device *dev, int cmd, void *buf, int len)
 	return ret;
 }
 
+#if !defined(DEBUG) || !defined(WL_WEXT)
 static int
 wl_iovar_getbuf(struct net_device *dev, char *iovar, void *param, int paramlen, void *bufptr, int buflen)
 {
@@ -268,6 +272,9 @@ wl_bssiovar_get(struct net_device *dev, char *iovar, int bssidx, void *outbuf, i
 	return err;
 }
 #endif
+#endif
+
+#ifndef WL_WEXT
 
 int get_primary_key(struct net_device *dev)
 {
@@ -903,6 +910,7 @@ static const struct iw_handler_def wlcompat_handler_def =
 	.num_standard	= sizeof(wlcompat_handler)/sizeof(iw_handler),
 };
 
+#endif
 
 #ifdef DEBUG
 void print_buffer(int len, unsigned char *buf) {
@@ -923,8 +931,6 @@ void print_buffer(int len, unsigned char *buf) {
 static int (*old_ioctl)(struct net_device *dev, struct ifreq *ifr, int cmd);
 static int new_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd) {
 	int ret = 0;
-	struct iwreq *iwr = (struct iwreq *) ifr;
-	struct iw_request_info info;
 	
 #ifdef DEBUG
 	printk("dev: %s ioctl: 0x%04x\n",dev->name,cmd);
@@ -975,23 +981,25 @@ static int __init wlcompat_init()
 {
 	int found = 0, i;
 	char devname[4] = "wl0";
-	
+
 	while (!found && (dev = dev_get_by_name(devname))) {
-		if ((dev->wireless_handlers == NULL) && ((wl_ioctl(dev, WLC_GET_MAGIC, &i, sizeof(i)) == 0) && i == WLC_IOCTL_MAGIC))
+		if ((wl_ioctl(dev, WLC_GET_MAGIC, &i, sizeof(i)) == 0) && (i == WLC_IOCTL_MAGIC))
 			found = 1;
 		devname[2]++;
 	}
-	
+
+
 	if (!found) {
 		printk("No Broadcom devices found.\n");
 		return -ENODEV;
 	}
-		
 
 	old_ioctl = dev->do_ioctl;
 	dev->do_ioctl = new_ioctl;
+#ifndef WL_WEXT	
 	dev->wireless_handlers = (struct iw_handler_def *)&wlcompat_handler_def;
 	dev->get_wireless_stats = wlcompat_get_wireless_stats;
+#endif
 
 #ifndef DEBUG
 	if (random) {
@@ -1014,8 +1022,10 @@ static void __exit wlcompat_exit()
 	if (random)
 		del_timer(&rng_timer);
 #endif
+#ifndef WL_WEXT	
 	dev->get_wireless_stats = NULL;
 	dev->wireless_handlers = NULL;
+#endif
 	dev->do_ioctl = old_ioctl;
 	return;
 }

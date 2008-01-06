@@ -20,7 +20,6 @@
 
 #include <typedefs.h>
 #include <osl.h>
-#include <bcmutils.h>
 #include <sbutils.h>
 #include <bcmdevs.h>
 
@@ -122,7 +121,7 @@ gpio_init(void)
 {
 	int i;
 
-	if (!(gpio_sbh = sb_kattach()))
+	if (!(gpio_sbh = sb_kattach(SB_OSH)))
 		return -ENODEV;
 
 	sb_gpiosetcore(gpio_sbh);

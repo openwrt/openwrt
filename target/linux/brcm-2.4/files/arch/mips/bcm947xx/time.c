@@ -23,11 +23,12 @@
 #include <osl.h>
 #include <bcmnvram.h>
 #include <sbconfig.h>
-#include <sbextif.h>
 #include <sbutils.h>
+#include <sbchipc.h>
 #include <hndmips.h>
 #include <mipsinc.h>
 #include <hndcpu.h>
+#include <bcmdevs.h>
 
 /* Global SB handle */
 extern void *bcm947xx_sbh;
@@ -39,13 +40,11 @@ extern spinlock_t bcm947xx_sbh_lock;
 
 extern int panic_timeout;
 static int watchdog = 0;
-static u8 *mcr = NULL;
 
 void __init
 bcm947xx_time_init(void)
 {
 	unsigned int hz;
-	extifregs_t *eir;
 
 	/*
 	 * Use deterministic values for initial counter interrupt
@@ -83,8 +82,13 @@ bcm947xx_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 	timer_interrupt(irq, dev_id, regs);
 
 	/* Set the watchdog timer to reset after the specified number of ms */
-	if (watchdog > 0)
-		sb_watchdog(sbh, WATCHDOG_CLOCK / 1000 * watchdog);
+	if (watchdog > 0) {
+		if (sb_chip(sbh) == BCM5354_CHIP_ID)
+			sb_watchdog(sbh, WATCHDOG_CLOCK_5354 / 1000 * watchdog);
+		else
+			sb_watchdog(sbh, WATCHDOG_CLOCK / 1000 * watchdog);
+	}
+	
 }
 
 static struct irqaction bcm947xx_timer_irqaction = {

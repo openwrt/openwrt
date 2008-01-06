@@ -1,5 +1,7 @@
---- linux.old/net/sched/sch_htb.c	2005-11-15 14:09:41.548066000 +0100
-+++ linux.dev/net/sched/sch_htb.c	2005-11-15 14:08:34.000000000 +0100
+Index: linux-2.4.35.4/net/sched/sch_htb.c
+===================================================================
+--- linux-2.4.35.4.orig/net/sched/sch_htb.c	2007-12-15 05:19:39.010644128 +0100
++++ linux-2.4.35.4/net/sched/sch_htb.c	2007-12-15 05:20:00.751883092 +0100
 @@ -369,7 +369,7 @@
  		struct list_head *l;
  		list_for_each (l,q->hash+i) {

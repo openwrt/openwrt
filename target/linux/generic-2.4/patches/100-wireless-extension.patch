@@ -1,6 +1,7 @@
-diff -Nur linux-2.4.32/include/linux/netdevice.h linux-2.4.32-we/include/linux/netdevice.h
---- linux-2.4.32/include/linux/netdevice.h	2004-11-17 12:54:22.000000000 +0100
-+++ linux-2.4.32-we/include/linux/netdevice.h	2006-03-13 12:10:57.000000000 +0100
+Index: linux-2.4.35.4/include/linux/netdevice.h
+===================================================================
+--- linux-2.4.35.4.orig/include/linux/netdevice.h	2007-12-15 05:19:42.162823760 +0100
++++ linux-2.4.35.4/include/linux/netdevice.h	2007-12-15 05:19:51.635363571 +0100
 @@ -295,7 +295,9 @@
  
  	/* List of functions to handle Wireless Extensions (instead of ioctl).
@@ -12,9 +13,10 @@ diff -Nur linux-2.4.32/include/linux/netdevice.h linux-2.4.32-we/include/linux/n
  
  	struct ethtool_ops *ethtool_ops;
  
-diff -Nur linux-2.4.32/include/linux/wireless.h linux-2.4.32-we/include/linux/wireless.h
---- linux-2.4.32/include/linux/wireless.h	2003-11-28 19:26:21.000000000 +0100
-+++ linux-2.4.32-we/include/linux/wireless.h	2006-03-13 12:11:02.000000000 +0100
+Index: linux-2.4.35.4/include/linux/wireless.h
+===================================================================
+--- linux-2.4.35.4.orig/include/linux/wireless.h	2007-12-15 05:19:42.170824216 +0100
++++ linux-2.4.35.4/include/linux/wireless.h	2007-12-15 05:19:51.643364027 +0100
 @@ -1,10 +1,10 @@
  /*
   * This file define a set of standard wireless extensions
@@ -470,9 +472,10 @@ diff -Nur linux-2.4.32/include/linux/wireless.h linux-2.4.32-we/include/linux/wi
  };
  
  /*
-diff -Nur linux-2.4.32/include/net/iw_handler.h linux-2.4.32-we/include/net/iw_handler.h
---- linux-2.4.32/include/net/iw_handler.h	2003-11-28 19:26:21.000000000 +0100
-+++ linux-2.4.32-we/include/net/iw_handler.h	2006-03-13 12:10:57.000000000 +0100
+Index: linux-2.4.35.4/include/net/iw_handler.h
+===================================================================
+--- linux-2.4.35.4.orig/include/net/iw_handler.h	2007-12-15 05:19:42.178824671 +0100
++++ linux-2.4.35.4/include/net/iw_handler.h	2007-12-15 05:19:51.647364253 +0100
 @@ -1,10 +1,10 @@
  /*
   * This file define the new driver API for Wireless Extensions
@@ -590,9 +593,10 @@ diff -Nur linux-2.4.32/include/net/iw_handler.h linux-2.4.32-we/include/net/iw_h
  };
  
  /**************************** PROTOTYPES ****************************/
-diff -Nur linux-2.4.32/net/core/dev.c linux-2.4.32-we/net/core/dev.c
---- linux-2.4.32/net/core/dev.c	2005-04-04 03:42:20.000000000 +0200
-+++ linux-2.4.32-we/net/core/dev.c	2006-03-13 12:10:57.000000000 +0100
+Index: linux-2.4.35.4/net/core/dev.c
+===================================================================
+--- linux-2.4.35.4.orig/net/core/dev.c	2007-12-15 05:19:42.186825129 +0100
++++ linux-2.4.35.4/net/core/dev.c	2007-12-15 05:19:51.651364482 +0100
 @@ -2426,7 +2426,7 @@
  				/* Follow me in net/core/wireless.c */
  				ret = wireless_process_ioctl(&ifr, cmd);
@@ -602,9 +606,10 @@ diff -Nur linux-2.4.32/net/core/dev.c linux-2.4.32-we/net/core/dev.c
  				    copy_to_user(arg, &ifr, sizeof(struct ifreq)))
  					return -EFAULT;
  				return ret;
-diff -Nur linux-2.4.32/net/core/wireless.c linux-2.4.32-we/net/core/wireless.c
---- linux-2.4.32/net/core/wireless.c	2003-11-28 19:26:21.000000000 +0100
-+++ linux-2.4.32-we/net/core/wireless.c	2006-03-13 12:11:02.000000000 +0100
+Index: linux-2.4.35.4/net/core/wireless.c
+===================================================================
+--- linux-2.4.35.4.orig/net/core/wireless.c	2007-12-15 05:19:42.194825585 +0100
++++ linux-2.4.35.4/net/core/wireless.c	2007-12-15 05:19:51.655364711 +0100
 @@ -2,7 +2,7 @@
   * This file implement the Wireless Extensions APIs.
   *

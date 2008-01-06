@@ -52,7 +52,7 @@ scan_broadcom() {
 	case "$adhoc:$sta:$apmode" in
 		1*)
 			ap=0
-			mssid=0
+			mssid=
 			infra=0
 		;;
 		:1:1)
@@ -62,7 +62,7 @@ scan_broadcom() {
 		:1:)
 			wet=1
 			ap=0
-			mssid=0
+			mssid=
 		;;
 		::)
 			radio=0
@@ -158,11 +158,11 @@ enable_broadcom() {
 							config_get k "$vif" key$knr
 							[ -n "$k" ] || continue
 							[ "$defkey" = "$knr" ] && def="=" || def=""
-							append vif_pre_up "wepkey $def$knr,$k" "$N"
+							append vif_do_up "wepkey $def$knr,$k" "$N"
 						done
 					;;
 					"");;
-					*) append vif_pre_up "wepkey =1,$key" "$N";;
+					*) append vif_do_up "wepkey =1,$key" "$N";;
 				esac
 			;;
 			*psk*|*PSK*)
@@ -191,17 +191,15 @@ enable_broadcom() {
 				nasopts="-r \"\$${vif}_key\" -h $server -p $port"
 			;;
 		esac
-		append vif_post_up "wsec $wsec" "$N"
-		append vif_post_up "wpa_auth $auth" "$N"
-		append vif_post_up "wsec_restrict $wsec_r" "$N"
-		append vif_post_up "eap_restrict $eap_r" "$N"
+		append vif_do_up "wsec $wsec" "$N"
+		append vif_do_up "wpa_auth $auth" "$N"
+		append vif_do_up "wsec_restrict $wsec_r" "$N"
+		append vif_do_up "eap_restrict $eap_r" "$N"
 		
 		config_get ssid "$vif" ssid
 		append vif_post_up "vlan_mode 0" "$N"
 		append vif_post_up "ssid $ssid" "$N"
-		case "$mode" in
-			sta|adhoc) append vif_do_up "ssid $ssid" "$N";;
-		esac
+		append vif_do_up "ssid $ssid" "$N"
 		
 		append vif_post_up "enabled 1" "$N"
 		
@@ -221,8 +219,8 @@ enable_broadcom() {
 			[ "$mode" = "sta" ] && {
 				nas_mode="-S"
 				[ -z "$bridge" ] || {
-					append vif_pre_up "supplicant 1" "$N"
-					append vif_pre_up "passphrase $key" "$N"
+					append vif_post_up "supplicant 1" "$N"
+					append vif_post_up "passphrase $key" "$N"
 					
 					use_nas=0
 				}
@@ -236,7 +234,7 @@ enable_broadcom() {
 $ifdown
 
 ap $ap
-mssid $mssid
+${mssid:+mssid $mssid}
 apsta $apsta
 infra $infra
 ${wet:+wet 1}

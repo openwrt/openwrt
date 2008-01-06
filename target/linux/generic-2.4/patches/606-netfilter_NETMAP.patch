@@ -1,6 +1,7 @@
-diff -urN linux-2.4.30.orig/Documentation/Configure.help linux-2.4.30/Documentation/Configure.help
---- linux-2.4.30.orig/Documentation/Configure.help	2005-07-01 02:06:36.000000000 +0200
-+++ linux-2.4.30/Documentation/Configure.help	2005-07-01 00:41:09.000000000 +0200
+Index: linux-2.4.35.4/Documentation/Configure.help
+===================================================================
+--- linux-2.4.35.4.orig/Documentation/Configure.help	2007-12-15 05:20:06.996238934 +0100
++++ linux-2.4.35.4/Documentation/Configure.help	2007-12-15 05:20:07.284255349 +0100
 @@ -3086,6 +3086,17 @@
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
@@ -19,10 +20,11 @@ diff -urN linux-2.4.30.orig/Documentation/Configure.help linux-2.4.30/Documentat
  Packet mangling
  CONFIG_IP_NF_MANGLE
    This option adds a `mangle' table to iptables: see the man page for
-diff -urN linux-2.4.30.orig/net/ipv4/netfilter/Config.in linux-2.4.30/net/ipv4/netfilter/Config.in
---- linux-2.4.30.orig/net/ipv4/netfilter/Config.in	2005-07-01 02:06:35.000000000 +0200
-+++ linux-2.4.30/net/ipv4/netfilter/Config.in	2005-07-01 00:41:09.000000000 +0200
-@@ -69,6 +69,7 @@
+Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in	2007-12-15 05:20:07.000239163 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/Config.in	2007-12-15 05:20:07.284255349 +0100
+@@ -65,6 +65,7 @@
        define_bool CONFIG_IP_NF_NAT_NEEDED y
        dep_tristate '    MASQUERADE target support' CONFIG_IP_NF_TARGET_MASQUERADE $CONFIG_IP_NF_NAT
        dep_tristate '    REDIRECT target support' CONFIG_IP_NF_TARGET_REDIRECT $CONFIG_IP_NF_NAT
@@ -30,9 +32,10 @@ diff -urN linux-2.4.30.orig/net/ipv4/netfilter/Config.in linux-2.4.30/net/ipv4/n
        if [ "$CONFIG_IP_NF_PPTP" = "m" ]; then
          define_tristate CONFIG_IP_NF_NAT_PPTP m
        else
-diff -urN linux-2.4.30.orig/net/ipv4/netfilter/ipt_NETMAP.c linux-2.4.30/net/ipv4/netfilter/ipt_NETMAP.c
---- linux-2.4.30.orig/net/ipv4/netfilter/ipt_NETMAP.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30/net/ipv4/netfilter/ipt_NETMAP.c	2005-07-01 00:41:09.000000000 +0200
+Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_NETMAP.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/net/ipv4/netfilter/ipt_NETMAP.c	2007-12-15 05:20:07.284255349 +0100
 @@ -0,0 +1,112 @@
 +/* NETMAP - static NAT mapping of IP network addresses (1:1).
 +   The mapping can be applied to source (POSTROUTING),
@@ -146,10 +149,11 @@ diff -urN linux-2.4.30.orig/net/ipv4/netfilter/ipt_NETMAP.c linux-2.4.30/net/ipv
 +
 +module_init(init);
 +module_exit(fini);
-diff -urN linux-2.4.30.orig/net/ipv4/netfilter/Makefile linux-2.4.30/net/ipv4/netfilter/Makefile
---- linux-2.4.30.orig/net/ipv4/netfilter/Makefile	2005-07-01 02:06:35.000000000 +0200
-+++ linux-2.4.30/net/ipv4/netfilter/Makefile	2005-07-01 00:41:09.000000000 +0200
-@@ -110,6 +110,7 @@
+Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile	2007-12-15 05:20:07.000239163 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/Makefile	2007-12-15 05:20:07.288255579 +0100
+@@ -107,6 +107,7 @@
  obj-$(CONFIG_IP_NF_TARGET_MARK) += ipt_MARK.o
  obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o

@@ -1,15 +1,17 @@
---- linux/drivers/usb/serial/usbserial.c.old	2006-05-15 18:16:55.000000000 +0300
-+++ linux/drivers/usb/serial/usbserial.c	2006-05-15 18:19:06.000000000 +0300
-@@ -332,7 +332,7 @@
- static __u16	vendor	= 0x05f9;
+Index: linux-2.4.35.4/drivers/usb/serial/usbserial.c
+===================================================================
+--- linux-2.4.35.4.orig/drivers/usb/serial/usbserial.c	2007-12-15 05:20:13.496609372 +0100
++++ linux-2.4.35.4/drivers/usb/serial/usbserial.c	2007-12-15 05:20:13.708621453 +0100
+@@ -333,7 +333,7 @@
  static __u16	product	= 0xffff;
+ static int	maxSize = 0;
  
 -static struct usb_device_id generic_device_ids[2]; /* Initially all zeroes. */
 +static struct usb_device_id generic_device_ids[10]; /* Initially all zeroes. */
  
  /* All of the device info needed for the Generic Serial Converter */
  static struct usb_serial_device_type generic_device = {
-@@ -1793,6 +1793,34 @@
+@@ -1836,6 +1836,34 @@
  	generic_device_ids[0].idVendor = vendor;
  	generic_device_ids[0].idProduct = product;
  	generic_device_ids[0].match_flags = USB_DEVICE_ID_MATCH_VENDOR | USB_DEVICE_ID_MATCH_PRODUCT;

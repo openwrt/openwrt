@@ -1,6 +1,7 @@
-diff -ur linux.old/drivers/scsi/hosts.c linux.dev/drivers/scsi/hosts.c
---- linux.old/drivers/scsi/hosts.c	2003-06-13 16:51:36.000000000 +0200
-+++ linux.dev/drivers/scsi/hosts.c	2006-07-30 12:34:30.000000000 +0200
+Index: linux-2.4.35.4/drivers/scsi/hosts.c
+===================================================================
+--- linux-2.4.35.4.orig/drivers/scsi/hosts.c	2007-12-15 05:19:38.686625662 +0100
++++ linux-2.4.35.4/drivers/scsi/hosts.c	2007-12-15 05:20:04.720109227 +0100
 @@ -107,8 +107,21 @@
      if (shn) shn->host_registered = 0;
      /* else {} : This should not happen, we should panic here... */
@@ -24,9 +25,10 @@ diff -ur linux.old/drivers/scsi/hosts.c linux.dev/drivers/scsi/hosts.c
      kfree((char *) sh);
  }
  
-diff -ur linux.old/drivers/usb/hcd.c linux.dev/drivers/usb/hcd.c
---- linux.old/drivers/usb/hcd.c	2004-04-14 15:05:32.000000000 +0200
-+++ linux.dev/drivers/usb/hcd.c	2006-07-30 11:49:06.000000000 +0200
+Index: linux-2.4.35.4/drivers/usb/hcd.c
+===================================================================
+--- linux-2.4.35.4.orig/drivers/usb/hcd.c	2007-12-15 05:19:38.694626120 +0100
++++ linux-2.4.35.4/drivers/usb/hcd.c	2007-12-15 05:20:04.724109453 +0100
 @@ -1105,7 +1105,8 @@
  		break;
  	case PIPE_BULK:
@@ -47,9 +49,10 @@ diff -ur linux.old/drivers/usb/hcd.c linux.dev/drivers/usb/hcd.c
  			urb->transfer_dma = pci_map_single (
  					hcd->pdev,
  					urb->transfer_buffer,
-diff -ur linux.old/drivers/usb/host/ehci-hcd.c linux.dev/drivers/usb/host/ehci-hcd.c
---- linux.old/drivers/usb/host/ehci-hcd.c	2006-07-30 11:31:57.000000000 +0200
-+++ linux.dev/drivers/usb/host/ehci-hcd.c	2006-07-30 11:48:14.000000000 +0200
+Index: linux-2.4.35.4/drivers/usb/host/ehci-hcd.c
+===================================================================
+--- linux-2.4.35.4.orig/drivers/usb/host/ehci-hcd.c	2007-12-15 05:19:38.702626576 +0100
++++ linux-2.4.35.4/drivers/usb/host/ehci-hcd.c	2007-12-15 05:20:04.728109682 +0100
 @@ -399,6 +399,27 @@
  		ehci_mem_cleanup (ehci);
  		return retval;
@@ -78,9 +81,10 @@ diff -ur linux.old/drivers/usb/host/ehci-hcd.c linux.dev/drivers/usb/host/ehci-h
  	writel (INTR_MASK, &ehci->regs->intr_enable);
  	writel (ehci->periodic_dma, &ehci->regs->frame_list);
  
-diff -ur linux.old/drivers/usb/host/ehci-q.c linux.dev/drivers/usb/host/ehci-q.c
---- linux.old/drivers/usb/host/ehci-q.c	2006-07-30 11:31:57.000000000 +0200
-+++ linux.dev/drivers/usb/host/ehci-q.c	2006-07-30 12:10:15.000000000 +0200
+Index: linux-2.4.35.4/drivers/usb/host/ehci-q.c
+===================================================================
+--- linux-2.4.35.4.orig/drivers/usb/host/ehci-q.c	2007-12-15 05:20:00.107846389 +0100
++++ linux-2.4.35.4/drivers/usb/host/ehci-q.c	2007-12-15 05:20:04.728109682 +0100
 @@ -791,6 +791,8 @@
  			writel (cmd, &ehci->regs->command);
  			ehci->hcd.state = USB_STATE_RUNNING;
@@ -90,9 +94,10 @@ diff -ur linux.old/drivers/usb/host/ehci-q.c linux.dev/drivers/usb/host/ehci-q.c
  		}
  	}
  
-diff -ur linux.old/drivers/usb/host/usb-uhci.c linux.dev/drivers/usb/host/usb-uhci.c
---- linux.old/drivers/usb/host/usb-uhci.c	2004-11-17 12:54:21.000000000 +0100
-+++ linux.dev/drivers/usb/host/usb-uhci.c	2006-07-30 12:10:16.000000000 +0200
+Index: linux-2.4.35.4/drivers/usb/host/usb-uhci.c
+===================================================================
+--- linux-2.4.35.4.orig/drivers/usb/host/usb-uhci.c	2007-12-15 05:19:38.714627260 +0100
++++ linux-2.4.35.4/drivers/usb/host/usb-uhci.c	2007-12-15 05:20:04.728109682 +0100
 @@ -3034,6 +3034,21 @@
  	
  	pci_set_master(dev);
@@ -115,9 +120,10 @@ diff -ur linux.old/drivers/usb/host/usb-uhci.c linux.dev/drivers/usb/host/usb-uh
  	/* Search for the IO base address.. */
  	for (i = 0; i < 6; i++) {
  
-diff -ur linux.old/drivers/usb/storage/transport.c linux.dev/drivers/usb/storage/transport.c
---- linux.old/drivers/usb/storage/transport.c	2005-04-04 03:42:19.000000000 +0200
-+++ linux.dev/drivers/usb/storage/transport.c	2006-07-30 12:22:56.000000000 +0200
+Index: linux-2.4.35.4/drivers/usb/storage/transport.c
+===================================================================
+--- linux-2.4.35.4.orig/drivers/usb/storage/transport.c	2007-12-15 05:19:38.722627715 +0100
++++ linux-2.4.35.4/drivers/usb/storage/transport.c	2007-12-15 05:20:04.732109911 +0100
 @@ -54,6 +54,22 @@
  #include <linux/sched.h>
  #include <linux/errno.h>
@@ -746,9 +752,10 @@ diff -ur linux.old/drivers/usb/storage/transport.c linux.dev/drivers/usb/storage
  		}
  	}
  	else
-diff -ur linux.old/drivers/usb/storage/transport.h linux.dev/drivers/usb/storage/transport.h
---- linux.old/drivers/usb/storage/transport.h	2003-08-25 13:44:42.000000000 +0200
-+++ linux.dev/drivers/usb/storage/transport.h	2006-07-30 12:10:16.000000000 +0200
+Index: linux-2.4.35.4/drivers/usb/storage/transport.h
+===================================================================
+--- linux-2.4.35.4.orig/drivers/usb/storage/transport.h	2007-12-15 05:19:38.730628171 +0100
++++ linux-2.4.35.4/drivers/usb/storage/transport.h	2007-12-15 05:20:04.732109911 +0100
 @@ -127,6 +127,16 @@
  #define US_BULK_TRANSFER_ABORTED	3  /* transfer canceled             */
  
@@ -766,9 +773,10 @@ diff -ur linux.old/drivers/usb/storage/transport.h linux.dev/drivers/usb/storage
   * Transport return codes
   */
  
-diff -ur linux.old/drivers/usb/storage/usb.h linux.dev/drivers/usb/storage/usb.h
---- linux.old/drivers/usb/storage/usb.h	2005-04-04 03:42:20.000000000 +0200
-+++ linux.dev/drivers/usb/storage/usb.h	2006-07-30 12:11:06.000000000 +0200
+Index: linux-2.4.35.4/drivers/usb/storage/usb.h
+===================================================================
+--- linux-2.4.35.4.orig/drivers/usb/storage/usb.h	2007-12-15 05:19:38.738628626 +0100
++++ linux-2.4.35.4/drivers/usb/storage/usb.h	2007-12-15 05:20:04.736110140 +0100
 @@ -111,6 +111,60 @@
  typedef void (*proto_cmnd)(Scsi_Cmnd*, struct us_data*);
  typedef void (*extra_data_destructor)(void *);	 /* extra data destructor   */
@@ -838,9 +846,10 @@ diff -ur linux.old/drivers/usb/storage/usb.h linux.dev/drivers/usb/storage/usb.h
  
  	/* the semaphore for sleeping the control thread */
  	struct semaphore	sema;		 /* to sleep thread on   */
-diff -ur linux.old/include/linux/usb.h linux.dev/include/linux/usb.h
---- linux.old/include/linux/usb.h	2004-11-17 12:54:22.000000000 +0100
-+++ linux.dev/include/linux/usb.h	2006-07-30 12:19:19.000000000 +0200
+Index: linux-2.4.35.4/include/linux/usb.h
+===================================================================
+--- linux-2.4.35.4.orig/include/linux/usb.h	2007-12-15 05:19:38.750629310 +0100
++++ linux-2.4.35.4/include/linux/usb.h	2007-12-15 05:20:04.740110367 +0100
 @@ -483,6 +483,8 @@
  #define URB_NO_INTERRUPT	0x0080	/* HINT: no non-error interrupt needed */
  					/* ... less overhead for QUEUE_BULK */

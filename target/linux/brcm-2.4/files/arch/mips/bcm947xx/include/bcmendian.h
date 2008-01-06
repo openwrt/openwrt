@@ -1,7 +1,7 @@
 /*
  * local version of endian.h - byte order defines
  *
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- *  $Id: bcmendian.h,v 1.1.1.10 2006/02/27 03:43:16 honor Exp $
+ *  $Id$
 */
 
 #ifndef _BCMENDIAN_H_

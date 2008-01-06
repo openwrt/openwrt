@@ -1,6 +1,7 @@
-diff -Nur linux-2.4.30/drivers/mtd/chips/Config.in linux-2.4.30.openwrt/drivers/mtd/chips/Config.in
---- linux-2.4.30/drivers/mtd/chips/Config.in	2003-06-13 16:51:34.000000000 +0200
-+++ linux-2.4.30.openwrt/drivers/mtd/chips/Config.in	2005-06-28 11:26:26.000000000 +0200
+Index: linux-2.4.35.4/drivers/mtd/chips/Config.in
+===================================================================
+--- linux-2.4.35.4.orig/drivers/mtd/chips/Config.in	2007-12-15 05:19:42.454840402 +0100
++++ linux-2.4.35.4/drivers/mtd/chips/Config.in	2007-12-15 05:19:50.035272385 +0100
 @@ -45,6 +45,7 @@
  dep_tristate '  Support for Intel/Sharp flash chips' CONFIG_MTD_CFI_INTELEXT $CONFIG_MTD_GEN_PROBE
  dep_tristate '  Support for AMD/Fujitsu flash chips' CONFIG_MTD_CFI_AMDSTD $CONFIG_MTD_GEN_PROBE
@@ -9,9 +10,10 @@ diff -Nur linux-2.4.30/drivers/mtd/chips/Config.in linux-2.4.30.openwrt/drivers/
  
  dep_tristate '  Support for RAM chips in bus mapping' CONFIG_MTD_RAM $CONFIG_MTD
  dep_tristate '  Support for ROM chips in bus mapping' CONFIG_MTD_ROM $CONFIG_MTD
-diff -Nur linux-2.4.30/drivers/mtd/chips/Makefile linux-2.4.30.openwrt/drivers/mtd/chips/Makefile
---- linux-2.4.30/drivers/mtd/chips/Makefile	2003-06-13 16:51:34.000000000 +0200
-+++ linux-2.4.30.openwrt/drivers/mtd/chips/Makefile	2005-06-28 11:26:26.000000000 +0200
+Index: linux-2.4.35.4/drivers/mtd/chips/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/drivers/mtd/chips/Makefile	2007-12-15 05:19:42.462840857 +0100
++++ linux-2.4.35.4/drivers/mtd/chips/Makefile	2007-12-15 05:19:50.039272613 +0100
 @@ -18,6 +18,7 @@
  obj-$(CONFIG_MTD_AMDSTD)	+= amd_flash.o 
  obj-$(CONFIG_MTD_CFI)		+= cfi_probe.o
@@ -20,9 +22,10 @@ diff -Nur linux-2.4.30/drivers/mtd/chips/Makefile linux-2.4.30.openwrt/drivers/m
  obj-$(CONFIG_MTD_CFI_AMDSTD)	+= cfi_cmdset_0002.o
  obj-$(CONFIG_MTD_CFI_INTELEXT)	+= cfi_cmdset_0001.o
  obj-$(CONFIG_MTD_GEN_PROBE)	+= gen_probe.o
-diff -Nur linux-2.4.30/drivers/mtd/chips/cfi_cmdset_0701.c linux-2.4.30.openwrt/drivers/mtd/chips/cfi_cmdset_0701.c
---- linux-2.4.30/drivers/mtd/chips/cfi_cmdset_0701.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30.openwrt/drivers/mtd/chips/cfi_cmdset_0701.c	2005-06-28 11:26:26.000000000 +0200
+Index: linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0701.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0701.c	2007-12-15 05:19:50.047273069 +0100
 @@ -0,0 +1,855 @@
 +/*
 + * Common Flash Interface support:
@@ -879,9 +882,10 @@ diff -Nur linux-2.4.30/drivers/mtd/chips/cfi_cmdset_0701.c linux-2.4.30.openwrt/
 +module_init(cfi_sststd_init);
 +module_exit(cfi_sststd_exit);
 +
-diff -Nur linux-2.4.30/drivers/mtd/chips/cfi_probe.c linux-2.4.30.openwrt/drivers/mtd/chips/cfi_probe.c
---- linux-2.4.30/drivers/mtd/chips/cfi_probe.c	2003-06-13 16:51:34.000000000 +0200
-+++ linux-2.4.30.openwrt/drivers/mtd/chips/cfi_probe.c	2005-06-28 11:26:26.000000000 +0200
+Index: linux-2.4.35.4/drivers/mtd/chips/cfi_probe.c
+===================================================================
+--- linux-2.4.35.4.orig/drivers/mtd/chips/cfi_probe.c	2007-12-15 05:19:42.474841541 +0100
++++ linux-2.4.35.4/drivers/mtd/chips/cfi_probe.c	2007-12-15 05:19:50.051273298 +0100
 @@ -67,8 +67,15 @@
  	cfi_send_gen_cmd(0xF0, 0, base, map, cfi, cfi->device_type, NULL);
  	cfi_send_gen_cmd(0x98, 0x55, base, map, cfi, cfi->device_type, NULL);
@@ -900,9 +904,10 @@ diff -Nur linux-2.4.30/drivers/mtd/chips/cfi_probe.c linux-2.4.30.openwrt/driver
  
  	if (!cfi->numchips) {
  		/* This is the first time we're called. Set up the CFI 
-diff -Nur linux-2.4.30/drivers/mtd/chips/gen_probe.c linux-2.4.30.openwrt/drivers/mtd/chips/gen_probe.c
---- linux-2.4.30/drivers/mtd/chips/gen_probe.c	2003-08-25 13:44:42.000000000 +0200
-+++ linux-2.4.30.openwrt/drivers/mtd/chips/gen_probe.c	2005-06-28 11:29:23.000000000 +0200
+Index: linux-2.4.35.4/drivers/mtd/chips/gen_probe.c
+===================================================================
+--- linux-2.4.35.4.orig/drivers/mtd/chips/gen_probe.c	2007-12-15 05:19:42.482841997 +0100
++++ linux-2.4.35.4/drivers/mtd/chips/gen_probe.c	2007-12-15 05:19:50.055273524 +0100
 @@ -328,13 +328,18 @@
  		return cfi_cmdset_0001(map, primary);
  #endif

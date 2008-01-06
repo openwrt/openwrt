@@ -1,6 +1,8 @@
---- linux-2.4.32/arch/mips/Makefile.old	2006-10-18 21:11:18.110720000 +0200
-+++ linux-2.4.32/arch/mips/Makefile	2006-10-18 21:12:32.570720000 +0200
-@@ -752,6 +752,7 @@
+Index: linux-2.4.35.4/arch/mips/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/Makefile	2007-12-15 05:19:50.987326639 +0100
++++ linux-2.4.35.4/arch/mips/Makefile	2007-12-15 05:19:51.215339635 +0100
+@@ -739,6 +739,7 @@
  HEAD := arch/mips/kernel/head.o arch/mips/kernel/init_task.o
  
  SUBDIRS := $(addprefix arch/mips/, tools) $(SUBDIRS) $(addprefix arch/mips/, kernel mm lib)
@@ -8,7 +10,7 @@
  CORE_FILES := arch/mips/kernel/kernel.o arch/mips/mm/mm.o $(CORE_FILES)
  LIBS := arch/mips/lib/lib.a $(LIBS)
  
-@@ -799,7 +800,7 @@
+@@ -785,7 +786,7 @@
  	$(MAKE) -C arch/$(ARCH)/tools mrproper
  
  archdep:

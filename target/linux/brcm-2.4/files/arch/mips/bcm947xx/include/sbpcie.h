@@ -1,7 +1,7 @@
 /*
  * BCM43XX SiliconBackplane PCIE core hardware definitions.
  *
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: sbpcie.h,v 1.1.1.2 2006/02/27 03:43:16 honor Exp $
+ * $Id$
  */
 
 #ifndef	_SBPCIE_H
@@ -38,11 +38,17 @@
 #define PCIE_BAR0_PCIECORE_OFFSET	0x2000
 #define PCIE_BAR0_CCCOREREG_OFFSET	0x3000
 
+/* different register spaces to access thr'u pcie indirect access */
+#define PCIE_CONFIGREGS 	1		/* Access to config space */
+#define PCIE_PCIEREGS 		2		/* Access to pcie registers */
+
 /* SB side: PCIE core and host control registers */
 typedef struct sbpcieregs {
 	uint32 PAD[3];
 	uint32 biststatus;	/* bist Status: 0x00C */
-	uint32 PAD[6];
+	uint32 gpiosel;		/* PCIE gpio sel: 0x010 */
+	uint32 gpioouten;	/* PCIE gpio outen: 0x14 */
+	uint32 PAD[4];
 	uint32 sbtopcimailbox;	/* sb to pcie mailbox: 0x028 */
 	uint32 PAD[54];
 	uint32 sbtopcie0;	/* sb to pcie translation 0: 0x100 */
@@ -58,11 +64,12 @@ typedef struct sbpcieregs {
 	uint32 mdiocontrol;	/* controls the mdio access: 0x128 */
 	uint32 mdiodata;	/* Data to the mdio access: 0x12c */
 
-	/* pcie protocol phy/dllp/tlp register access mechanism */
-	uint32 pcieaddr;	/* address of the internal registeru: 0x130 */
-	uint32 pciedata;	/* Data to/from the internal regsiter: 0x134 */
+	/* pcie protocol phy/dllp/tlp register indirect access mechanism */
+	uint32 pcieindaddr;	/* indirect access to the internal register: 0x130 */
+	uint32 pcieinddata;	/* Data to/from the internal regsiter: 0x134 */
 
-	uint32 PAD[434];
+	uint32 clkreqenctrl;	/* >= rev 6, Clkreq rdma control : 0x138 */
+	uint32 PAD[433];
 	uint16 sprom[36];	/* SPROM shadow Area */
 } sbpcieregs_t;
 
@@ -136,6 +143,7 @@ typedef struct sbpcieregs {
 #define PCIE_DLLP_NAKRXCTRREG		0x148 /* NAK Received Counter */
 #define PCIE_DLLP_TESTREG		0x14C /* Test */
 #define PCIE_DLLP_PKTBIST		0x150 /* Packet BIST */
+#define PCIE_DLLP_PCIE11		0x154 /* DLLP PCIE 1.1 reg */
 
 /* PCIE protocol TLP diagnostic registers */
 #define PCIE_TLP_CONFIGREG		0x000 /* Configuration */
@@ -192,9 +200,38 @@ typedef struct sbpcieregs {
 #define MDIODATA_DEV_TX        		0x1e	/* SERDES TX Dev */
 #define MDIODATA_DEV_RX        		0x1f	/* SERDES RX Dev */
 
-/* SERDES registers */
+/* SERDES RX registers */
+#define SERDES_RX_CTRL			1	/* Rx cntrl */
 #define SERDES_RX_TIMER1		2	/* Rx Timer1 */
 #define SERDES_RX_CDR			6	/* CDR */
 #define SERDES_RX_CDRBW			7	/* CDR BW */
+
+/* SERDES RX control register */
+#define SERDES_RX_CTRL_FORCE		0x80	/* rxpolarity_force */
+#define SERDES_RX_CTRL_POLARITY		0x40	/* rxpolarity_value */
+
+/* SERDES PLL registers */
+#define SERDES_PLL_CTRL                 1       /* PLL control reg */
+#define PLL_CTRL_FREQDET_EN             0x4000  /* bit 14 is FREQDET on */
+
+#define PCIE_L1THRESHOLDTIME_MASK       0xFF00	/* bits 8 - 15 */
+#define PCIE_L1THRESHOLDTIME_SHIFT      8	/* PCIE_L1THRESHOLDTIME_SHIFT */
+#define PCIE_L1THRESHOLD_WARVAL         0x72	/* WAR value */
+
+/* SPROM offsets */
+#define SRSH_ASPM_OFFSET		4	/* word 4 */
+#define SRSH_ASPM_ENB			0x18	/* bit 3, 4 */
+#define SRSH_CLKREQ_OFFSET		20	/* word 20 */
+#define SRSH_CLKREQ_ENB			0x0800	/* bit 11 */
+
+/* Linkcontrol reg offset in PCIE Cap */
+#define PCIE_CAP_LINKCTRL_OFFSET	16	/* linkctrl offset in pcie cap */
+#define PCIE_CAP_LCREG_ASPML0s		0x01	/* ASPM L0s in linkctrl */
+#define PCIE_CAP_LCREG_ASPML1		0x02	/* ASPM L1 in linkctrl */
+#define PCIE_ASPM_ENAB			0x03	/* ASPM L0s & L1 in linkctrl */
+#define PCIE_CLKREQ_ENAB		0x100	/* CLKREQ Enab in linkctrl */
+
+/* Status reg PCIE_PLP_STATUSREG */
+#define PCIE_PLP_POLARITYINV_STAT	0x10
 
 #endif	/* _SBPCIE_H */

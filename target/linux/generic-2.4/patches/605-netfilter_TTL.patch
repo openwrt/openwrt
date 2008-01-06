@@ -1,6 +1,7 @@
-diff -urN linux-2.4.30.old/Documentation/Configure.help linux-2.4.30.dev/Documentation/Configure.help
---- linux-2.4.30.old/Documentation/Configure.help	2005-04-27 11:35:46.000000000 +0200
-+++ linux-2.4.30.dev/Documentation/Configure.help	2005-04-27 11:43:49.000000000 +0200
+Index: linux-2.4.35.4/Documentation/Configure.help
+===================================================================
+--- linux-2.4.35.4.orig/Documentation/Configure.help	2007-12-15 05:20:06.024183543 +0100
++++ linux-2.4.35.4/Documentation/Configure.help	2007-12-15 05:20:06.996238934 +0100
 @@ -3209,6 +3209,15 @@
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
@@ -17,9 +18,10 @@ diff -urN linux-2.4.30.old/Documentation/Configure.help linux-2.4.30.dev/Documen
  ipchains (2.2-style) support
  CONFIG_IP_NF_COMPAT_IPCHAINS
    This option places ipchains (with masquerading and redirection
-diff -urN linux-2.4.30.old/include/linux/netfilter_ipv4/ipt_TTL.h linux-2.4.30.dev/include/linux/netfilter_ipv4/ipt_TTL.h
---- linux-2.4.30.old/include/linux/netfilter_ipv4/ipt_TTL.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30.dev/include/linux/netfilter_ipv4/ipt_TTL.h	2005-04-27 11:43:49.000000000 +0200
+Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_TTL.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_TTL.h	2007-12-15 05:20:07.000239163 +0100
 @@ -0,0 +1,21 @@
 +/* TTL modification module for IP tables
 + * (C) 2000 by Harald Welte <laforge@gnumonks.org> */
@@ -42,10 +44,11 @@ diff -urN linux-2.4.30.old/include/linux/netfilter_ipv4/ipt_TTL.h linux-2.4.30.d
 +
 +
 +#endif
-diff -urN linux-2.4.30.old/net/ipv4/netfilter/Config.in linux-2.4.30.dev/net/ipv4/netfilter/Config.in
---- linux-2.4.30.old/net/ipv4/netfilter/Config.in	2005-04-27 11:35:45.000000000 +0200
-+++ linux-2.4.30.dev/net/ipv4/netfilter/Config.in	2005-04-27 11:43:49.000000000 +0200
-@@ -129,6 +129,7 @@
+Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in	2007-12-15 05:20:06.400204969 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/Config.in	2007-12-15 05:20:07.000239163 +0100
+@@ -125,6 +125,7 @@
      dep_tristate '    MARK target support' CONFIG_IP_NF_TARGET_MARK $CONFIG_IP_NF_MANGLE
    fi
    dep_tristate '  LOG target support' CONFIG_IP_NF_TARGET_LOG $CONFIG_IP_NF_IPTABLES
@@ -53,9 +56,10 @@ diff -urN linux-2.4.30.old/net/ipv4/netfilter/Config.in linux-2.4.30.dev/net/ipv
    dep_tristate '  ULOG target support' CONFIG_IP_NF_TARGET_ULOG $CONFIG_IP_NF_IPTABLES
    dep_tristate '  TCPMSS target support' CONFIG_IP_NF_TARGET_TCPMSS $CONFIG_IP_NF_IPTABLES
  fi
-diff -urN linux-2.4.30.old/net/ipv4/netfilter/ipt_TTL.c linux-2.4.30.dev/net/ipv4/netfilter/ipt_TTL.c
---- linux-2.4.30.old/net/ipv4/netfilter/ipt_TTL.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30.dev/net/ipv4/netfilter/ipt_TTL.c	2005-04-27 11:43:49.000000000 +0200
+Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_TTL.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.35.4/net/ipv4/netfilter/ipt_TTL.c	2007-12-15 05:20:07.000239163 +0100
 @@ -0,0 +1,110 @@
 +/* TTL modification target for IP tables
 + * (C) 2000 by Harald Welte <laforge@gnumonks.org>
@@ -167,10 +171,11 @@ diff -urN linux-2.4.30.old/net/ipv4/netfilter/ipt_TTL.c linux-2.4.30.dev/net/ipv
 +
 +module_init(init);
 +module_exit(fini);
-diff -urN linux-2.4.30.old/net/ipv4/netfilter/Makefile linux-2.4.30.dev/net/ipv4/netfilter/Makefile
---- linux-2.4.30.old/net/ipv4/netfilter/Makefile	2005-04-27 11:35:45.000000000 +0200
-+++ linux-2.4.30.dev/net/ipv4/netfilter/Makefile	2005-04-27 11:43:49.000000000 +0200
-@@ -112,6 +112,7 @@
+Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
+===================================================================
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile	2007-12-15 05:20:06.408205428 +0100
++++ linux-2.4.35.4/net/ipv4/netfilter/Makefile	2007-12-15 05:20:07.000239163 +0100
+@@ -109,6 +109,7 @@
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
  obj-$(CONFIG_IP_NF_NAT_SNMP_BASIC) += ip_nat_snmp_basic.o
  obj-$(CONFIG_IP_NF_TARGET_LOG) += ipt_LOG.o

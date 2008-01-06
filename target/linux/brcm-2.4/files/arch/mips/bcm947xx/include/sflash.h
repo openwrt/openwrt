@@ -1,7 +1,7 @@
 /*
  * Broadcom SiliconBackplane chipcommon serial flash interface
  *
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: sflash.h,v 1.1.1.8 2006/02/27 03:43:16 honor Exp $
+ * $Id$
  */
 
 #ifndef _sflash_h_
@@ -17,6 +17,7 @@
 
 #include <typedefs.h>
 #include <sbchipc.h>
+#include <sbutils.h>
 
 struct sflash {
 	uint blocksize;		/* Block size */
@@ -26,11 +27,14 @@ struct sflash {
 };
 
 /* Utility functions */
-extern int sflash_poll(chipcregs_t *cc, uint offset);
-extern int sflash_read(chipcregs_t *cc, uint offset, uint len, uchar *buf);
-extern int sflash_write(chipcregs_t *cc, uint offset, uint len, const uchar *buf);
-extern int sflash_erase(chipcregs_t *cc, uint offset);
-extern int sflash_commit(chipcregs_t *cc, uint offset, uint len, const uchar *buf);
-extern struct sflash * sflash_init(chipcregs_t *cc);
+extern int sflash_poll(sb_t *sbh, chipcregs_t *cc, uint offset);
+extern int sflash_read(sb_t *sbh, chipcregs_t *cc,
+                       uint offset, uint len, uchar *buf);
+extern int sflash_write(sb_t *sbh, chipcregs_t *cc,
+                        uint offset, uint len, const uchar *buf);
+extern int sflash_erase(sb_t *sbh, chipcregs_t *cc, uint offset);
+extern int sflash_commit(sb_t *sbh, chipcregs_t *cc,
+                         uint offset, uint len, const uchar *buf);
+extern struct sflash *sflash_init(sb_t *sbh, chipcregs_t *cc);
 
 #endif /* _sflash_h_ */

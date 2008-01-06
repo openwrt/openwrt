@@ -1,6 +1,7 @@
-diff -Nur linux-2.4.30/arch/mips/kernel/signal.c linux-2.4.30.openwrt/arch/mips/kernel/signal.c
---- linux-2.4.30/arch/mips/kernel/signal.c	2005-07-02 13:00:13.000000000 +0200
-+++ linux-2.4.30.openwrt/arch/mips/kernel/signal.c	2005-07-02 13:00:49.000000000 +0200
+Index: linux-2.4.35.4/arch/mips/kernel/signal.c
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/kernel/signal.c	2007-12-15 05:19:39.146651877 +0100
++++ linux-2.4.35.4/arch/mips/kernel/signal.c	2007-12-15 05:19:59.787828152 +0100
 @@ -6,8 +6,10 @@
   * Copyright (C) 1991, 1992  Linus Torvalds
   * Copyright (C) 1994 - 1999  Ralf Baechle
@@ -34,9 +35,10 @@ diff -Nur linux-2.4.30/arch/mips/kernel/signal.c linux-2.4.30.openwrt/arch/mips/
  {
  	sigset_t *unewset, saveset, newset;
          size_t sigsetsize;
-diff -Nur linux-2.4.30/arch/mips/kernel/syscall.c linux-2.4.30.openwrt/arch/mips/kernel/syscall.c
---- linux-2.4.30/arch/mips/kernel/syscall.c	2005-07-02 13:00:13.000000000 +0200
-+++ linux-2.4.30.openwrt/arch/mips/kernel/syscall.c	2005-07-02 13:00:49.000000000 +0200
+Index: linux-2.4.35.4/arch/mips/kernel/syscall.c
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/kernel/syscall.c	2007-12-15 05:19:39.154652335 +0100
++++ linux-2.4.35.4/arch/mips/kernel/syscall.c	2007-12-15 05:19:59.795828608 +0100
 @@ -5,6 +5,7 @@
   *
   * Copyright (C) 1995 - 2000 by Ralf Baechle
@@ -67,9 +69,10 @@ diff -Nur linux-2.4.30/arch/mips/kernel/syscall.c linux-2.4.30.openwrt/arch/mips
  {
  	unsigned long clone_flags;
  	unsigned long newsp;
-diff -Nur linux-2.4.30/arch/mips/ld.script.in linux-2.4.30.openwrt/arch/mips/ld.script.in
---- linux-2.4.30/arch/mips/ld.script.in	2005-07-02 13:00:22.000000000 +0200
-+++ linux-2.4.30.openwrt/arch/mips/ld.script.in	2005-07-02 13:00:42.000000000 +0200
+Index: linux-2.4.35.4/arch/mips/ld.script.in
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips/ld.script.in	2007-12-15 05:19:39.162652791 +0100
++++ linux-2.4.35.4/arch/mips/ld.script.in	2007-12-15 05:19:59.799828834 +0100
 @@ -9,6 +9,7 @@
    {
      _ftext = . ;
@@ -78,9 +81,10 @@ diff -Nur linux-2.4.30/arch/mips/ld.script.in linux-2.4.30.openwrt/arch/mips/ld.
      *(.rodata)
      *(.rodata.*)
      *(.rodata1)
-diff -Nur linux-2.4.30/arch/mips64/kernel/signal.c linux-2.4.30.openwrt/arch/mips64/kernel/signal.c
---- linux-2.4.30/arch/mips64/kernel/signal.c	2005-07-02 13:00:13.000000000 +0200
-+++ linux-2.4.30.openwrt/arch/mips64/kernel/signal.c	2005-07-02 13:00:49.000000000 +0200
+Index: linux-2.4.35.4/arch/mips64/kernel/signal.c
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips64/kernel/signal.c	2007-12-15 05:19:39.170653246 +0100
++++ linux-2.4.35.4/arch/mips64/kernel/signal.c	2007-12-15 05:19:59.803829063 +0100
 @@ -6,8 +6,10 @@
   * Copyright (C) 1991, 1992  Linus Torvalds
   * Copyright (C) 1994 - 2000  Ralf Baechle
@@ -103,9 +107,10 @@ diff -Nur linux-2.4.30/arch/mips64/kernel/signal.c linux-2.4.30.openwrt/arch/mip
  {
  	sigset_t *unewset, saveset, newset;
          size_t sigsetsize;
-diff -Nur linux-2.4.30/arch/mips64/kernel/signal32.c linux-2.4.30.openwrt/arch/mips64/kernel/signal32.c
---- linux-2.4.30/arch/mips64/kernel/signal32.c	2005-07-02 13:00:13.000000000 +0200
-+++ linux-2.4.30.openwrt/arch/mips64/kernel/signal32.c	2005-07-02 13:00:49.000000000 +0200
+Index: linux-2.4.35.4/arch/mips64/kernel/signal32.c
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips64/kernel/signal32.c	2007-12-15 05:19:39.174653475 +0100
++++ linux-2.4.35.4/arch/mips64/kernel/signal32.c	2007-12-15 05:19:59.807829292 +0100
 @@ -6,7 +6,9 @@
   * Copyright (C) 1991, 1992  Linus Torvalds
   * Copyright (C) 1994 - 2000  Ralf Baechle
@@ -138,9 +143,10 @@ diff -Nur linux-2.4.30/arch/mips64/kernel/signal32.c linux-2.4.30.openwrt/arch/m
  {
  	sigset32_t *uset;
  	sigset_t newset, saveset;
-diff -Nur linux-2.4.30/arch/mips64/kernel/syscall.c linux-2.4.30.openwrt/arch/mips64/kernel/syscall.c
---- linux-2.4.30/arch/mips64/kernel/syscall.c	2005-07-02 13:00:13.000000000 +0200
-+++ linux-2.4.30.openwrt/arch/mips64/kernel/syscall.c	2005-07-02 13:00:49.000000000 +0200
+Index: linux-2.4.35.4/arch/mips64/kernel/syscall.c
+===================================================================
+--- linux-2.4.35.4.orig/arch/mips64/kernel/syscall.c	2007-12-15 05:19:39.186654157 +0100
++++ linux-2.4.35.4/arch/mips64/kernel/syscall.c	2007-12-15 05:19:59.811829522 +0100
 @@ -6,7 +6,9 @@
   * Copyright (C) 1995 - 2000, 2001 by Ralf Baechle
   * Copyright (C) 1999, 2000 Silicon Graphics, Inc.
@@ -173,9 +179,10 @@ diff -Nur linux-2.4.30/arch/mips64/kernel/syscall.c linux-2.4.30.openwrt/arch/mi
  {
  	unsigned long clone_flags;
  	unsigned long newsp;
-diff -Nur linux-2.4.30/include/asm-mips/ptrace.h linux-2.4.30.openwrt/include/asm-mips/ptrace.h
---- linux-2.4.30/include/asm-mips/ptrace.h	2005-07-02 13:00:13.000000000 +0200
-+++ linux-2.4.30.openwrt/include/asm-mips/ptrace.h	2005-07-02 13:00:49.000000000 +0200
+Index: linux-2.4.35.4/include/asm-mips/ptrace.h
+===================================================================
+--- linux-2.4.35.4.orig/include/asm-mips/ptrace.h	2007-12-15 05:19:39.194654615 +0100
++++ linux-2.4.35.4/include/asm-mips/ptrace.h	2007-12-15 05:19:59.815829748 +0100
 @@ -4,6 +4,7 @@
   * for more details.
   *
@@ -198,9 +205,10 @@ diff -Nur linux-2.4.30/include/asm-mips/ptrace.h linux-2.4.30.openwrt/include/as
  #endif /* !__ASSEMBLY__ */
  
  /* Arbitrarily choose the same ptrace numbers as used by the Sparc code. */
-diff -Nur linux-2.4.30/include/asm-mips64/ptrace.h linux-2.4.30.openwrt/include/asm-mips64/ptrace.h
---- linux-2.4.30/include/asm-mips64/ptrace.h	2005-07-02 13:00:13.000000000 +0200
-+++ linux-2.4.30.openwrt/include/asm-mips64/ptrace.h	2005-07-02 13:00:49.000000000 +0200
+Index: linux-2.4.35.4/include/asm-mips64/ptrace.h
+===================================================================
+--- linux-2.4.35.4.orig/include/asm-mips64/ptrace.h	2007-12-15 05:19:39.202655071 +0100
++++ linux-2.4.35.4/include/asm-mips64/ptrace.h	2007-12-15 05:19:59.815829748 +0100
 @@ -5,6 +5,7 @@
   *
   * Copyright (C) 1994, 95, 96, 97, 98, 99, 2000 by Ralf Baechle
