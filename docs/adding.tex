@@ -15,7 +15,7 @@ when they do, you will most likely not be able to complete the firmware creation
 
 This is one of the reasons why OpenWrt and other firmware exists: providing a 
 version independent, and tools independent firmware, that can be run on various 
-platforms, known to be running Linux originaly.
+platforms, known to be running Linux originally.
 
 \subsection{Which Operating System does this device run?}
 
@@ -135,7 +135,7 @@ OpenWrt target.
 
 By using a serial port and a level shifter, you may reach the console that is being shown by the device
 for debugging or flashing purposes. By analysing the output of this device, you can
-easily notice if the device uses a Linux kenrel or something different.
+easily notice if the device uses a Linux kernel or something different.
 
 \subsection{Finding and using the manufacturer SDK}
 
@@ -238,11 +238,11 @@ your specific device. Of course, the content produced by the \textbf{diff -urN}
 may not always be relevant, so that you have to clean up those patches to only 
 let the "must have" code into them.
 
-The fist patch will contain all the code that is needed by the board to be 
+The first patch will contain all the code that is needed by the board to be 
 initialized at startup, as well as processor detection and other boot time 
 specific fixes.
 
-The second patch will contain all useful definitions for that board: adresses, 
+The second patch will contain all useful definitions for that board: addresses, 
 kernel granularity, redefinitions, processor family and features ...
 
 The third patch may contain drivers for: serial console, ethernet NIC, wireless 
@@ -256,7 +256,7 @@ this hardware.
 The bootloader is the first program that is started right after your device has 
 been powered on. This program, can be more or less sophisticated, some do let you 
 do network booting, USB mass storage booting ... The bootloader is device and 
-architeture specific, some bootloaders were designed to be universal such as 
+architecture specific, some bootloaders were designed to be universal such as 
 RedBoot or U-Boot so that you can meet those loaders on totally different 
 platforms and expect them to behave the same way.
 
@@ -331,10 +331,10 @@ You might want to understand the firmware format, even if you are not yet capabl
 of running a custom firmware on your device, because this is sometimes a blocking
 part of the flashing process.
 
-A firmare format is most of the time composed of the following fields:
+A firmware format is most of the time composed of the following fields:
 
 \begin{itemize}
-\item header, containing a firmare version and additional fields: Vendor, Hardware version ...
+\item header, containing a firmware version and additional fields: Vendor, Hardware version ...
 \item CRC32 checksum on either the whole file or just part of it
 \item Binary and/or compressed kernel image
 \item Binary and/or compressed root filesystem image
@@ -342,7 +342,7 @@ A firmare format is most of the time composed of the following fields:
 \end{itemize}
 
 Once you have figured out how the firmware format is partitioned, you will have 
-to write your own tool that produces valid firmare binaries. One thing to be very
+to write your own tool that produces valid firmware binaries. One thing to be very
 careful here is the endianness of either the machine that produces the binary 
 firmware and the device that will be flashed using this binary firmware.
 
@@ -418,7 +418,7 @@ static int __init device_mtd_init(void)
                return -EIO;
        }
 
-	   // Initlialise the device map
+	   // Initialize the device map
        simple_map_init(&device_map);
 
 	   /* MTD informations are closely linked to the flash map device
@@ -474,7 +474,7 @@ module_init(device_mtd_init);
 module_exit(device_mtd_cleanup);
 
 
-// Macros defining licence and author, parameters can be defined here too.
+// Macros defining license and author, parameters can be defined here too.
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Me, myself and I <memyselfandi@domain.tld");
 \end{verbatim}
