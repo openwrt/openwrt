@@ -17,6 +17,7 @@ compile:
 	$(NO_TRACE_MAKE) cleanup
 
 $(TMP_DIR)/.prereq-docs:
+	mkdir -p $(TMP_DIR)
 	$(NO_TRACE_MAKE) prereq
 	touch $@
 
@@ -25,7 +26,7 @@ openwrt.html: $(DEPS)
 
 openwrt.pdf: $(DEPS)
 	pdflatex $(MAIN)
-	
+
 clean: cleanup
 	rm -f openwrt.pdf openwrt.html openwrt.css
 
