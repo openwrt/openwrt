@@ -115,6 +115,9 @@ enum {
 	DIR130,
 	DIR330,
 	DWL3150,
+
+	/* Sitecom */
+	WL105B,
 };
 
 static void __init bcm4780_init(void) {
@@ -618,6 +621,17 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "status",	.gpio = 1 << 1},
 		},
 	},
+	/* Double check */
+	[WL105B] = {
+		.name	= "Sitecom WL-105b",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 10},
+		},
+		.leds	  = {
+			{ .name = "wlan",	.gpio = 1 << 4},
+			{ .name = "power",	.gpio = 1 << 3},
+		},
+	},
 };
 
 static struct platform_t __init *platform_detect(void)
@@ -730,6 +744,9 @@ static struct platform_t __init *platform_detect(void)
 				(simple_strtoul(getvar("et1phyaddr"), NULL, 0) == 10))
 				return &platforms[WL300G];
 		}
+		/* Sitecom WL-105b */
+		if (!strncmp(boardnum, "2", 1) && simple_strtoul(getvar("GemtekPmonVer"), NULL, 0) == 1)
+			return &platforms[WL105B];
 
 		/* unknown asus stuff, probably bcm4702 */
 		if (!strncmp(boardnum, "asusX", 5))
