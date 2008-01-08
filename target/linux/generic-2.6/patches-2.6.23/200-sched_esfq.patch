@@ -1,13 +1,12 @@
-Index: linux-2.6.23-rc6/include/linux/pkt_sched.h
-===================================================================
---- linux-2.6.23-rc6.orig/include/linux/pkt_sched.h	2007-09-21 16:23:53.000000000 +0800
-+++ linux-2.6.23-rc6/include/linux/pkt_sched.h	2007-09-21 16:24:04.000000000 +0800
-@@ -155,8 +155,40 @@
+diff -Naur linux-2.6.21.5.orig/include/linux/pkt_sched.h linux-2.6.21.5/include/linux/pkt_sched.h
+--- linux-2.6.21.5.orig/include/linux/pkt_sched.h	2007-06-11 11:37:06.000000000 -0700
++++ linux-2.6.21.5/include/linux/pkt_sched.h	2007-06-22 22:53:46.000000000 -0700
+@@ -146,8 +146,37 @@
   *
   *	The only reason for this is efficiency, it is possible
   *	to change these parameters in compile time.
-+ *
-+ *	If you need to play with these values use esfq instead.
++ *	
++ *	If you need to play with these values, use esfq instead.
   */
  
 +/* ESFQ section */
@@ -19,15 +18,12 @@ Index: linux-2.6.23-rc6/include/linux/pkt_sched.h
 +	TCA_SFQ_HASH_DST,
 +	TCA_SFQ_HASH_SRC,
 +	TCA_SFQ_HASH_FWMARK,
-+        /* direct */
-+	TCA_SFQ_HASH_DSTDIR,
-+	TCA_SFQ_HASH_SRCDIR,
-+	TCA_SFQ_HASH_FWMARKDIR,
 +	/* conntrack */
 +	TCA_SFQ_HASH_CTORIGDST,
 +	TCA_SFQ_HASH_CTORIGSRC,
 +	TCA_SFQ_HASH_CTREPLDST,
 +	TCA_SFQ_HASH_CTREPLSRC,
++	TCA_SFQ_HASH_CTNATCHG,
 +};
 +
 +struct tc_esfq_qopt
@@ -43,11 +39,10 @@ Index: linux-2.6.23-rc6/include/linux/pkt_sched.h
  /* RED section */
  
  enum
-Index: linux-2.6.23-rc6/net/sched/Kconfig
-===================================================================
---- linux-2.6.23-rc6.orig/net/sched/Kconfig	2007-09-21 16:23:53.000000000 +0800
-+++ linux-2.6.23-rc6/net/sched/Kconfig	2007-09-21 16:24:04.000000000 +0800
-@@ -144,6 +144,26 @@
+diff -Naur linux-2.6.21.5.orig/net/sched/Kconfig linux-2.6.21.5/net/sched/Kconfig
+--- linux-2.6.21.5.orig/net/sched/Kconfig	2007-06-11 11:37:06.000000000 -0700
++++ linux-2.6.21.5/net/sched/Kconfig	2007-06-23 14:11:02.000000000 -0700
+@@ -189,6 +189,37 @@
  	  To compile this code as a module, choose M here: the
  	  module will be called sch_sfq.
  
@@ -67,18 +62,28 @@ Index: linux-2.6.23-rc6/net/sched/Kconfig
 +	  flows. The original SFQ discipline hashes by connection; ESFQ add
 +	  several other hashing methods, such as by src IP or by dst IP, which
 +	  can be more fair to users in some networking situations.
-+
++	  
 +	  To compile this code as a module, choose M here: the
 +	  module will be called sch_esfq.
++
++config NET_SCH_ESFQ_NFCT
++	bool "Connection Tracking Hash Types"
++	depends on NET_SCH_ESFQ && NF_CONNTRACK
++	---help---
++	  Say Y here to enable support for hashing based on netfilter connection
++	  tracking information. This is useful for a router that is also using
++	  NAT to connect privately-addressed hosts to the Internet. If you want
++	  to provide fair distribution of upstream bandwidth, ESFQ must use
++	  connection tracking information, since all outgoing packets will share
++	  the same source address.
 +
  config NET_SCH_TEQL
  	tristate "True Link Equalizer (TEQL)"
  	---help---
-Index: linux-2.6.23-rc6/net/sched/Makefile
-===================================================================
---- linux-2.6.23-rc6.orig/net/sched/Makefile	2007-09-21 16:23:53.000000000 +0800
-+++ linux-2.6.23-rc6/net/sched/Makefile	2007-09-21 16:24:04.000000000 +0800
-@@ -22,6 +22,7 @@
+diff -Naur linux-2.6.21.5.orig/net/sched/Makefile linux-2.6.21.5/net/sched/Makefile
+--- linux-2.6.21.5.orig/net/sched/Makefile	2007-06-11 11:37:06.000000000 -0700
++++ linux-2.6.21.5/net/sched/Makefile	2007-06-22 22:53:46.000000000 -0700
+@@ -23,6 +23,7 @@
  obj-$(CONFIG_NET_SCH_INGRESS)	+= sch_ingress.o 
  obj-$(CONFIG_NET_SCH_DSMARK)	+= sch_dsmark.o
  obj-$(CONFIG_NET_SCH_SFQ)	+= sch_sfq.o
@@ -86,11 +91,10 @@ Index: linux-2.6.23-rc6/net/sched/Makefile
  obj-$(CONFIG_NET_SCH_TBF)	+= sch_tbf.o
  obj-$(CONFIG_NET_SCH_TEQL)	+= sch_teql.o
  obj-$(CONFIG_NET_SCH_PRIO)	+= sch_prio.o
-Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc6/net/sched/sch_esfq.c	2007-09-21 16:24:04.000000000 +0800
-@@ -0,0 +1,704 @@
+diff -Naur linux-2.6.21.5.orig/net/sched/sch_esfq.c linux-2.6.21.5/net/sched/sch_esfq.c
+--- linux-2.6.21.5.orig/net/sched/sch_esfq.c	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.6.21.5/net/sched/sch_esfq.c	2007-06-23 19:18:00.000000000 -0700
+@@ -0,0 +1,702 @@
 +/*
 + * net/sched/sch_esfq.c	Extended Stochastic Fairness Queueing discipline.
 + *
@@ -111,9 +115,9 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 + * 		Corey Hickey, <bugfood-c@fatooh.org>
 + *		Maintenance of the Linux 2.6 port.
 + *		Added fwmark hash (thanks to Robert Kurjata).
-+ *		Added direct hashing for src, dst, and fwmark.
 + *		Added usage of jhash.
-+ *
++ *		Added conntrack support.
++ *		Added ctnatchg hash (thanks to Ben Pfountz).
 + */
 +
 +#include <linux/module.h>
@@ -143,30 +147,26 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +#include <net/sock.h>
 +#include <net/pkt_sched.h>
 +#include <linux/jhash.h>
-+
-+#ifdef CONFIG_NF_CONNTRACK_ENABLED
 +#include <net/netfilter/nf_conntrack.h>
-+#endif
 +
 +/*	Stochastic Fairness Queuing algorithm.
 +	For more comments look at sch_sfq.c.
 +	The difference is that you can change limit, depth,
 +	hash table size and choose alternate hash types.
-+
++	
 +	classic:	same as in sch_sfq.c
 +	dst:		destination IP address
 +	src:		source IP address
-+	fwmark:         netfilter mark value
-+	dst_direct:
-+	src_direct:
-+	fwmark_direct:  direct hashing of the above sources
++	fwmark:		netfilter mark value
 +	ctorigdst:	original destination IP address
 +	ctorigsrc:	original source IP address
 +	ctrepldst:	reply destination IP address
-+	ctreplsrc:	reply source IP
-+
++	ctreplsrc:	reply source IP 
++	
 +*/
 +
++#define ESFQ_HEAD 0
++#define ESFQ_TAIL 1
 +
 +/* This type should contain at least SFQ_DEPTH*2 values */
 +typedef unsigned int esfq_index;
@@ -198,9 +198,6 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +	unsigned short	*hash;			/* Hash value indexed by slots */
 +	struct sk_buff_head	*qs;		/* Slot queue */
 +	struct esfq_head	*dep;		/* Linked list of slots, indexed by depth */
-+	unsigned	dyn_min;	/* For dynamic divisor adjustment; minimum value seen */
-+	unsigned	dyn_max;	/*                                 maximum value seen */
-+	unsigned	dyn_range;	/*	        		   saved range */
 +};
 +
 +/* This contains the info we will hash. */
@@ -215,31 +212,6 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +	u32	ctrepldst;	/* reply destination from conntrack */
 +	u32	mark;		/* netfilter mark (fwmark) */
 +};
-+
-+/* Hash input values directly into the "nearest" slot, taking into account the
-+ * range of input values seen. This is most useful when the hash table is at
-+ * least as large as the range of possible values.
-+ * Note: this functionality was added before the change to using jhash, and may
-+ * no longer be useful. */
-+static __inline__ unsigned esfq_hash_direct(struct esfq_sched_data *q, u32 h)
-+{
-+	/* adjust minimum and maximum */
-+	if (h < q->dyn_min || h > q->dyn_max) {
-+		q->dyn_min = h < q->dyn_min ? h : q->dyn_min;
-+		q->dyn_max = h > q->dyn_max ? h : q->dyn_max;
-+
-+		/* find new range */
-+		if ((q->dyn_range = q->dyn_max - q->dyn_min) >= q->hash_divisor)
-+			printk(KERN_WARNING "ESFQ: (direct hash) Input range %u is larger than hash "
-+					"table. See ESFQ README for details.\n", q->dyn_range);
-+	}
-+
-+	/* hash input values into slot numbers */
-+	if (q->dyn_min == q->dyn_max)
-+		return 0; /* only one value seen; avoid division by 0 */
-+	else
-+		return (h - q->dyn_min) * (q->hash_divisor - 1) / q->dyn_range;
-+}
 +
 +static __inline__ unsigned esfq_jhash_1word(struct esfq_sched_data *q,u32 a)
 +{
@@ -256,19 +228,18 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +	return jhash_3words(a, b, c, q->perturbation) & (q->hash_divisor-1);
 +}
 +
-+
 +static unsigned esfq_hash(struct esfq_sched_data *q, struct sk_buff *skb)
 +{
 +	struct esfq_packet_info info;
-+#ifdef CONFIG_NF_CONNTRACK_ENABLED
++#ifdef CONFIG_NET_SCH_ESFQ_NFCT
 +	enum ip_conntrack_info ctinfo;
 +	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
 +#endif
-+
++	
 +	switch (skb->protocol) {
 +	case __constant_htons(ETH_P_IP):
 +	{
-+		struct iphdr *iph = ip_hdr(skb);
++		struct iphdr *iph = skb->nh.iph;
 +		info.dst = iph->daddr;
 +		info.src = iph->saddr;
 +		if (!(iph->frag_off&htons(IP_MF|IP_OFFSET)) &&
@@ -284,7 +255,7 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +	}
 +	case __constant_htons(ETH_P_IPV6):
 +	{
-+		struct ipv6hdr *iph = ipv6_hdr(skb);
++		struct ipv6hdr *iph = skb->nh.ipv6h;
 +		/* Hash ipv6 addresses into a u32. This isn't ideal,
 +		 * but the code is simple. */
 +		info.dst = jhash2(iph->daddr.s6_addr32, 4, q->perturbation);
@@ -307,7 +278,7 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +
 +	info.mark = skb->mark;
 +
-+#ifdef CONFIG_NF_CONNTRACK_ENABLED
++#ifdef CONFIG_NET_SCH_ESFQ_NFCT
 +	/* defaults if there is no conntrack info */
 +	info.ctorigsrc = info.src;
 +	info.ctorigdst = info.dst;
@@ -332,23 +303,16 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +	}
 +#endif
 +
-+	switch(q->hash_kind)
-+	{
++	switch(q->hash_kind) {
 +	case TCA_SFQ_HASH_CLASSIC:
 +		return esfq_jhash_3words(q, info.dst, info.src, info.proto);
 +	case TCA_SFQ_HASH_DST:
 +		return esfq_jhash_1word(q, info.dst);
-+	case TCA_SFQ_HASH_DSTDIR:
-+		return esfq_hash_direct(q, ntohl(info.dst));
 +	case TCA_SFQ_HASH_SRC:
 +		return esfq_jhash_1word(q, info.src);
-+	case TCA_SFQ_HASH_SRCDIR:
-+		return esfq_hash_direct(q, ntohl(info.src));
 +	case TCA_SFQ_HASH_FWMARK:
 +		return esfq_jhash_1word(q, info.mark);
-+	case TCA_SFQ_HASH_FWMARKDIR:
-+		return esfq_hash_direct(q, info.mark);
-+#ifdef CONFIG_NF_CONNTRACK_ENABLED
++#ifdef CONFIG_NET_SCH_ESFQ_NFCT
 +	case TCA_SFQ_HASH_CTORIGDST:
 +		return esfq_jhash_1word(q, info.ctorigdst);
 +	case TCA_SFQ_HASH_CTORIGSRC:
@@ -357,6 +321,12 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +		return esfq_jhash_1word(q, info.ctrepldst);
 +	case TCA_SFQ_HASH_CTREPLSRC:
 +		return esfq_jhash_1word(q, info.ctreplsrc);
++	case TCA_SFQ_HASH_CTNATCHG:
++	{
++		if (info.ctorigdst == info.ctreplsrc)
++			return esfq_jhash_1word(q, info.ctorigsrc);
++		return esfq_jhash_1word(q, info.ctreplsrc);
++	}
 +#endif
 +	default:
 +		if (net_ratelimit())
@@ -451,10 +421,8 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +	return 0;
 +}
 +
-+static int
-+esfq_enqueue(struct sk_buff *skb, struct Qdisc* sch)
++static void esfq_q_enqueue(struct sk_buff *skb, struct esfq_sched_data *q, unsigned int end)
 +{
-+	struct esfq_sched_data *q = qdisc_priv(sch);
 +	unsigned hash = esfq_hash(q, skb);
 +	unsigned depth = q->depth;
 +	esfq_index x;
@@ -464,8 +432,12 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +		q->ht[hash] = x = q->dep[depth].next;
 +		q->hash[x] = hash;
 +	}
-+	sch->qstats.backlog += skb->len;
-+	__skb_queue_tail(&q->qs[x], skb);
++
++	if (end == ESFQ_TAIL)
++		__skb_queue_tail(&q->qs[x], skb);
++	else
++		__skb_queue_head(&q->qs[x], skb);
++
 +	esfq_inc(q, x);
 +	if (q->qs[x].qlen == 1) {		/* The flow is new */
 +		if (q->tail == depth) {	/* It is the first flow */
@@ -478,43 +450,30 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +			q->tail = x;
 +		}
 +	}
++}
++
++static int esfq_enqueue(struct sk_buff *skb, struct Qdisc* sch)
++{
++	struct esfq_sched_data *q = qdisc_priv(sch);
++	esfq_q_enqueue(skb, q, ESFQ_TAIL);
++	sch->qstats.backlog += skb->len;
 +	if (++sch->q.qlen < q->limit-1) {
 +		sch->bstats.bytes += skb->len;
 +		sch->bstats.packets++;
 +		return 0;
 +	}
 +
++	sch->qstats.drops++;
 +	esfq_drop(sch);
 +	return NET_XMIT_CN;
 +}
 +
-+static int
-+esfq_requeue(struct sk_buff *skb, struct Qdisc* sch)
++
++static int esfq_requeue(struct sk_buff *skb, struct Qdisc* sch)
 +{
 +	struct esfq_sched_data *q = qdisc_priv(sch);
-+	unsigned hash = esfq_hash(q, skb);
-+	unsigned depth = q->depth;
-+	esfq_index x;
-+
-+	x = q->ht[hash];
-+	if (x == depth) {
-+		q->ht[hash] = x = q->dep[depth].next;
-+		q->hash[x] = hash;
-+	}
++	esfq_q_enqueue(skb, q, ESFQ_HEAD);
 +	sch->qstats.backlog += skb->len;
-+	__skb_queue_head(&q->qs[x], skb);
-+	esfq_inc(q, x);
-+	if (q->qs[x].qlen == 1) {		/* The flow is new */
-+		if (q->tail == depth) {	/* It is the first flow */
-+			q->tail = x;
-+			q->next[x] = x;
-+			q->allot[x] = q->quantum;
-+		} else {
-+			q->next[x] = q->next[q->tail];
-+			q->next[q->tail] = x;
-+			q->tail = x;
-+		}
-+	}
 +	if (++sch->q.qlen < q->limit - 1) {
 +		sch->qstats.requeues++;
 +		return 0;
@@ -525,13 +484,8 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +	return NET_XMIT_CN;
 +}
 +
-+
-+
-+
-+static struct sk_buff *
-+esfq_dequeue(struct Qdisc* sch)
++static struct sk_buff *esfq_q_dequeue(struct esfq_sched_data *q)
 +{
-+	struct esfq_sched_data *q = qdisc_priv(sch);
 +	struct sk_buff *skb;
 +	unsigned depth = q->depth;
 +	esfq_index a, old_a;
@@ -539,15 +493,13 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +	/* No active slots */
 +	if (q->tail == depth)
 +		return NULL;
-+
++	
 +	a = old_a = q->next[q->tail];
-+
++	
 +	/* Grab packet */
 +	skb = __skb_dequeue(&q->qs[a]);
 +	esfq_dec(q, a);
-+	sch->q.qlen--;
-+	sch->qstats.backlog -= skb->len;
-+
++	
 +	/* Is the slot empty? */
 +	if (q->qs[a].qlen == 0) {
 +		q->ht[q->hash[a]] = depth;
@@ -563,12 +515,48 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +		a = q->next[a];
 +		q->allot[a] += q->quantum;
 +	}
-+
++	
 +	return skb;
 +}
 +
-+static void
-+esfq_reset(struct Qdisc* sch)
++static struct sk_buff *esfq_dequeue(struct Qdisc* sch)
++{
++	struct esfq_sched_data *q = qdisc_priv(sch);
++	struct sk_buff *skb;
++
++	skb = esfq_q_dequeue(q);
++	if (skb == NULL)
++		return NULL;
++	sch->q.qlen--;
++	sch->qstats.backlog -= skb->len;
++	return skb;
++}
++
++static void esfq_q_destroy(struct esfq_sched_data *q)
++{
++	del_timer(&q->perturb_timer);
++	if(q->ht)
++		kfree(q->ht);
++	if(q->dep)
++		kfree(q->dep);
++	if(q->next)
++		kfree(q->next);
++	if(q->allot)
++		kfree(q->allot);
++	if(q->hash)
++		kfree(q->hash);
++	if(q->qs)
++		kfree(q->qs);
++}
++
++static void esfq_destroy(struct Qdisc *sch)
++{
++	struct esfq_sched_data *q = qdisc_priv(sch);
++	esfq_q_destroy(q);
++}
++
++
++static void esfq_reset(struct Qdisc* sch)
 +{
 +	struct sk_buff *skb;
 +
@@ -589,36 +577,164 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +	}
 +}
 +
++static unsigned int esfq_check_hash(unsigned int kind)
++{
++	switch (kind) {
++	case TCA_SFQ_HASH_CTORIGDST:
++	case TCA_SFQ_HASH_CTORIGSRC:
++	case TCA_SFQ_HASH_CTREPLDST:
++	case TCA_SFQ_HASH_CTREPLSRC:
++	case TCA_SFQ_HASH_CTNATCHG:
++#ifndef CONFIG_NET_SCH_ESFQ_NFCT
++	{
++		if (net_ratelimit())
++			printk(KERN_WARNING "ESFQ: Conntrack hash types disabled in kernel config. Falling back to classic.\n");
++		return TCA_SFQ_HASH_CLASSIC;
++	}
++#endif
++	case TCA_SFQ_HASH_CLASSIC:
++	case TCA_SFQ_HASH_DST:
++	case TCA_SFQ_HASH_SRC:
++	case TCA_SFQ_HASH_FWMARK:
++		return kind;
++	default:
++	{
++		if (net_ratelimit())
++			printk(KERN_WARNING "ESFQ: Unknown hash type. Falling back to classic.\n");
++		return TCA_SFQ_HASH_CLASSIC;
++	}
++	}
++}
++	
++static int esfq_q_init(struct esfq_sched_data *q, struct rtattr *opt)
++{
++	struct tc_esfq_qopt *ctl = RTA_DATA(opt);
++	esfq_index p = ~0U/2;
++	int i;
++	
++	if (opt && opt->rta_len < RTA_LENGTH(sizeof(*ctl)))
++		return -EINVAL;
++
++	q->perturbation = 0;
++	q->hash_kind = TCA_SFQ_HASH_CLASSIC;
++	q->max_depth = 0;
++	if (opt == NULL) {
++		q->perturb_period = 0;
++		q->hash_divisor = 1024;
++		q->tail = q->limit = q->depth = 128;
++		
++	} else {
++		struct tc_esfq_qopt *ctl = RTA_DATA(opt);
++		if (ctl->quantum)
++			q->quantum = ctl->quantum;
++		q->perturb_period = ctl->perturb_period*HZ;
++		q->hash_divisor = ctl->divisor ? : 1024;
++		q->tail = q->limit = q->depth = ctl->flows ? : 128;
++		
++		if ( q->depth > p - 1 )
++			return -EINVAL;
++		
++		if (ctl->limit)
++			q->limit = min_t(u32, ctl->limit, q->depth);
++		
++		if (ctl->hash_kind) {
++			q->hash_kind = esfq_check_hash(ctl->hash_kind);
++		}
++	}
++	
++	q->ht = kmalloc(q->hash_divisor*sizeof(esfq_index), GFP_KERNEL);
++	if (!q->ht)
++		goto err_case;
++	q->dep = kmalloc((1+q->depth*2)*sizeof(struct esfq_head), GFP_KERNEL);
++	if (!q->dep)
++		goto err_case;
++	q->next = kmalloc(q->depth*sizeof(esfq_index), GFP_KERNEL);
++	if (!q->next)
++		goto err_case;
++	q->allot = kmalloc(q->depth*sizeof(short), GFP_KERNEL);
++	if (!q->allot)
++		goto err_case;
++	q->hash = kmalloc(q->depth*sizeof(unsigned short), GFP_KERNEL);
++	if (!q->hash)
++		goto err_case;
++	q->qs = kmalloc(q->depth*sizeof(struct sk_buff_head), GFP_KERNEL);
++	if (!q->qs)
++		goto err_case;
++	
++	for (i=0; i< q->hash_divisor; i++)
++		q->ht[i] = q->depth;
++	for (i=0; i<q->depth; i++) {
++		skb_queue_head_init(&q->qs[i]);
++		q->dep[i+q->depth].next = i+q->depth;
++		q->dep[i+q->depth].prev = i+q->depth;
++	}
++	
++	for (i=0; i<q->depth; i++)
++		esfq_link(q, i);
++	return 0;
++err_case:
++	esfq_q_destroy(q);
++	return -ENOBUFS;
++}
++
++static int esfq_init(struct Qdisc *sch, struct rtattr *opt)
++{
++	struct esfq_sched_data *q = qdisc_priv(sch);
++	int err;
++	
++	q->quantum = psched_mtu(sch->dev); /* default */
++	if ((err = esfq_q_init(q, opt)))
++		return err;
++
++	init_timer(&q->perturb_timer);
++	q->perturb_timer.data = (unsigned long)sch;
++	q->perturb_timer.function = esfq_perturbation;
++	if (q->perturb_period) {
++		q->perturb_timer.expires = jiffies + q->perturb_period;
++		add_timer(&q->perturb_timer);
++	}
++	
++	return 0;
++}
++
 +static int esfq_change(struct Qdisc *sch, struct rtattr *opt)
 +{
 +	struct esfq_sched_data *q = qdisc_priv(sch);
-+	struct tc_esfq_qopt *ctl = RTA_DATA(opt);
-+	int old_perturb = q->perturb_period;
++	struct esfq_sched_data new;
++	struct sk_buff *skb;
++	int err;
++	
++	/* set up new queue */
++	memset(&new, 0, sizeof(struct esfq_sched_data));
++	new.quantum = psched_mtu(sch->dev); /* default */
++	if ((err = esfq_q_init(&new, opt)))
++		return err;
 +
-+	if (opt->rta_len < RTA_LENGTH(sizeof(*ctl)))
-+		return -EINVAL;
-+
++	/* copy all packets from the old queue to the new queue */
 +	sch_tree_lock(sch);
-+	q->quantum = ctl->quantum ? : psched_mtu(sch->dev);
-+	q->perturb_period = ctl->perturb_period*HZ;
-+//	q->hash_divisor = ctl->divisor;
-+//	q->tail = q->limit = q->depth = ctl->flows;
++	while ((skb = esfq_q_dequeue(q)) != NULL)
++		esfq_q_enqueue(skb, &new, ESFQ_TAIL);
++	
++	/* clean up the old queue */
++	esfq_q_destroy(q);
 +
-+	if (ctl->limit)
-+		q->limit = min_t(u32, ctl->limit, q->depth);
++	/* copy elements of the new queue into the old queue */
++	q->perturb_period = new.perturb_period;
++	q->quantum        = new.quantum;
++	q->limit          = new.limit;
++	q->depth          = new.depth;
++	q->hash_divisor   = new.hash_divisor;
++	q->hash_kind      = new.hash_kind;
++	q->tail           = new.tail;
++	q->max_depth      = new.max_depth;
++	q->ht    = new.ht;
++	q->dep   = new.dep;
++	q->next  = new.next;
++	q->allot = new.allot;
++	q->hash  = new.hash;
++	q->qs    = new.qs;
 +
-+	if (ctl->hash_kind) {
-+		q->hash_kind = ctl->hash_kind;
-+		if (q->hash_kind != TCA_SFQ_HASH_CLASSIC)
-+			q->perturb_period = 0;
-+	}
-+
-+	// is sch_tree_lock enough to do this ?
-+	while (sch->q.qlen >= q->limit-1)
-+		esfq_drop(sch);
-+
-+	if (old_perturb)
-+		del_timer(&q->perturb_timer);
++	/* finish up */
 +	if (q->perturb_period) {
 +		q->perturb_timer.expires = jiffies + q->perturb_period;
 +		add_timer(&q->perturb_timer);
@@ -629,124 +745,10 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +	return 0;
 +}
 +
-+static int esfq_init(struct Qdisc *sch, struct rtattr *opt)
-+{
-+	struct esfq_sched_data *q = qdisc_priv(sch);
-+	struct tc_esfq_qopt *ctl;
-+	esfq_index p = ~0U/2;
-+	int i;
-+
-+	if (opt && opt->rta_len < RTA_LENGTH(sizeof(*ctl)))
-+		return -EINVAL;
-+
-+	init_timer(&q->perturb_timer);
-+	q->perturb_timer.data = (unsigned long)sch;
-+	q->perturb_timer.function = esfq_perturbation;
-+	q->perturbation = 0;
-+	q->hash_kind = TCA_SFQ_HASH_CLASSIC;
-+	q->max_depth = 0;
-+	q->dyn_min = ~0U; /* maximum value for this type */
-+	q->dyn_max = 0;  /* dyn_min/dyn_max will be set properly upon first packet */
-+	if (opt == NULL) {
-+		q->quantum = psched_mtu(sch->dev);
-+		q->perturb_period = 0;
-+		q->hash_divisor = 1024;
-+		q->tail = q->limit = q->depth = 128;
-+
-+	} else {
-+		ctl = RTA_DATA(opt);
-+		q->quantum = ctl->quantum ? : psched_mtu(sch->dev);
-+		q->perturb_period = ctl->perturb_period*HZ;
-+		q->hash_divisor = ctl->divisor ? : 1024;
-+		q->tail = q->limit = q->depth = ctl->flows ? : 128;
-+
-+		if ( q->depth > p - 1 )
-+			return -EINVAL;
-+
-+		if (ctl->limit)
-+			q->limit = min_t(u32, ctl->limit, q->depth);
-+
-+		if (ctl->hash_kind) {
-+			q->hash_kind = ctl->hash_kind;
-+		}
-+
-+		if (q->perturb_period) {
-+			q->perturb_timer.expires = jiffies + q->perturb_period;
-+			add_timer(&q->perturb_timer);
-+		}
-+	}
-+
-+	q->ht = kmalloc(q->hash_divisor*sizeof(esfq_index), GFP_KERNEL);
-+	if (!q->ht)
-+		goto err_case;
-+
-+	q->dep = kmalloc((1+q->depth*2)*sizeof(struct esfq_head), GFP_KERNEL);
-+	if (!q->dep)
-+		goto err_case;
-+	q->next = kmalloc(q->depth*sizeof(esfq_index), GFP_KERNEL);
-+	if (!q->next)
-+		goto err_case;
-+
-+	q->allot = kmalloc(q->depth*sizeof(short), GFP_KERNEL);
-+	if (!q->allot)
-+		goto err_case;
-+	q->hash = kmalloc(q->depth*sizeof(unsigned short), GFP_KERNEL);
-+	if (!q->hash)
-+		goto err_case;
-+	q->qs = kmalloc(q->depth*sizeof(struct sk_buff_head), GFP_KERNEL);
-+	if (!q->qs)
-+		goto err_case;
-+
-+	for (i=0; i< q->hash_divisor; i++)
-+		q->ht[i] = q->depth;
-+	for (i=0; i<q->depth; i++) {
-+		skb_queue_head_init(&q->qs[i]);
-+		q->dep[i+q->depth].next = i+q->depth;
-+		q->dep[i+q->depth].prev = i+q->depth;
-+	}
-+
-+	for (i=0; i<q->depth; i++)
-+		esfq_link(q, i);
-+	return 0;
-+err_case:
-+	del_timer(&q->perturb_timer);
-+	if (q->ht)
-+		kfree(q->ht);
-+	if (q->dep)
-+		kfree(q->dep);
-+	if (q->next)
-+		kfree(q->next);
-+	if (q->allot)
-+		kfree(q->allot);
-+	if (q->hash)
-+		kfree(q->hash);
-+	if (q->qs)
-+		kfree(q->qs);
-+	return -ENOBUFS;
-+}
-+
-+static void esfq_destroy(struct Qdisc *sch)
-+{
-+	struct esfq_sched_data *q = qdisc_priv(sch);
-+	del_timer(&q->perturb_timer);
-+	if(q->ht)
-+		kfree(q->ht);
-+	if(q->dep)
-+		kfree(q->dep);
-+	if(q->next)
-+		kfree(q->next);
-+	if(q->allot)
-+		kfree(q->allot);
-+	if(q->hash)
-+		kfree(q->hash);
-+	if(q->qs)
-+		kfree(q->qs);
-+}
-+
 +static int esfq_dump(struct Qdisc *sch, struct sk_buff *skb)
 +{
 +	struct esfq_sched_data *q = qdisc_priv(sch);
-+	unsigned char	 *b = skb->tail;
++	unsigned char *b = skb->tail;
 +	struct tc_esfq_qopt opt;
 +
 +	opt.quantum = q->quantum;
@@ -779,7 +781,7 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +	.init		=	esfq_init,
 +	.reset		=	esfq_reset,
 +	.destroy	=	esfq_destroy,
-+	.change		=	NULL, /* esfq_change - needs more work */
++	.change		=	esfq_change,
 +	.dump		=	esfq_dump,
 +	.owner		=	THIS_MODULE,
 +};
@@ -788,7 +790,7 @@ Index: linux-2.6.23-rc6/net/sched/sch_esfq.c
 +{
 +	return register_qdisc(&esfq_qdisc_ops);
 +}
-+static void __exit esfq_module_exit(void)
++static void __exit esfq_module_exit(void) 
 +{
 +	unregister_qdisc(&esfq_qdisc_ops);
 +}

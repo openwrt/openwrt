@@ -9,14 +9,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
-PKG_VERSION:=2.6.20-070313
+PKG_VERSION:=2.6.23
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://developer.osdl.org/dev/iproute2/download/
-PKG_MD5SUM:=7bc5883aadf740761fa2dd70b661e8cc
+PKG_MD5SUM:=
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/iproute-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(BUILD_DIR)/iproute2-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 

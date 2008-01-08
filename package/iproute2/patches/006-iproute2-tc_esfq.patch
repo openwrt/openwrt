@@ -1,12 +1,12 @@
-diff -urN --exclude=.svn iproute2-2.6.11-050330/include/linux/pkt_sched.h iproute2-2.6.11-050330/include/linux/pkt_sched.h
---- iproute2-2.6.11-050330/include/linux/pkt_sched.h	2007-05-04 22:21:48.000000000 -0400
-+++ iproute2-2.6.11-050330/include/linux/pkt_sched.h	2007-05-04 22:27:12.000000000 -0400
-@@ -174,8 +174,38 @@
+diff -Naur iproute-2.6.20-070313.orig/include/linux/pkt_sched.h iproute-2.6.20-070313/include/linux/pkt_sched.h
+--- iproute-2.6.20-070313.orig/include/linux/pkt_sched.h	2007-03-13 14:50:56.000000000 -0700
++++ iproute-2.6.20-070313/include/linux/pkt_sched.h	2007-06-09 11:32:22.000000000 -0700
+@@ -146,8 +146,37 @@
   *
   *	The only reason for this is efficiency, it is possible
   *	to change these parameters in compile time.
 + *
-+ *	If you need to play with these values use esfq instead.
++ *	If you need to play with these values, use esfq instead.
   */
  
 +/* ESFQ section */
@@ -17,6 +17,7 @@ diff -urN --exclude=.svn iproute2-2.6.11-050330/include/linux/pkt_sched.h iprout
 +	TCA_SFQ_HASH_CLASSIC,
 +	TCA_SFQ_HASH_DST,
 +	TCA_SFQ_HASH_SRC,
++	TCA_SFQ_HASH_FWMARK,
 +	/* conntrack */
 +	TCA_SFQ_HASH_CTORIGDST,
 +	TCA_SFQ_HASH_CTORIGSRC,
@@ -35,53 +36,13 @@ diff -urN --exclude=.svn iproute2-2.6.11-050330/include/linux/pkt_sched.h iprout
 +	unsigned        hash_kind;      /* Hash function to use for flow identification */
 +};
 +
-+
-+
  /* RED section */
  
  enum
-@@ -551,8 +580,37 @@
-  *
-  *	The only reason for this is efficiency, it is possible
-  *	to change these parameters in compile time.
-+ *
-+ *	If you need to play with these values use esfq instead.
-  */
- 
-+/* ESFQ section */
-+
-+enum
-+{
-+	/* traditional */
-+	TCA_SFQ_HASH_CLASSIC,
-+	TCA_SFQ_HASH_DST,
-+	TCA_SFQ_HASH_SRC,
-+	/* conntrack */
-+	TCA_SFQ_HASH_CTORIGDST,
-+	TCA_SFQ_HASH_CTORIGSRC,
-+	TCA_SFQ_HASH_CTREPLDST,
-+	TCA_SFQ_HASH_CTREPLSRC,
-+	TCA_SFQ_HASH_CTNATCHG,
-+};
-+
-+struct tc_esfq_qopt
-+{
-+	unsigned	quantum;	/* Bytes per round allocated to flow */
-+	int		perturb_period;	/* Period of hash perturbation */
-+	__u32		limit;		/* Maximal packets in queue */
-+	unsigned	divisor;	/* Hash divisor  */
-+	unsigned	flows;		/* Maximal number of flows  */
-+	unsigned        hash_kind;      /* Hash function to use for flow identification */
-+};
-+
-+
- /* RED section */
- 
- enum
-diff -urN --exclude=.svn iproute2-2.6.11-050330/tc/Makefile iproute2-2.6.11-050330/tc/Makefile
---- iproute2-2.6.11-050330/tc/Makefile	2007-05-04 22:21:48.000000000 -0400
-+++ iproute2-2.6.11-050330/tc/Makefile	2007-05-04 22:27:37.000000000 -0400
-@@ -6,6 +6,7 @@
+diff -Naur iproute-2.6.20-070313.orig/tc/Makefile iproute-2.6.20-070313/tc/Makefile
+--- iproute-2.6.20-070313.orig/tc/Makefile	2007-03-13 14:50:56.000000000 -0700
++++ iproute-2.6.20-070313/tc/Makefile	2007-06-09 00:39:44.000000000 -0700
+@@ -7,6 +7,7 @@
  TCMODULES :=
  TCMODULES += q_fifo.o
  TCMODULES += q_sfq.o
@@ -89,10 +50,10 @@ diff -urN --exclude=.svn iproute2-2.6.11-050330/tc/Makefile iproute2-2.6.11-0503
  TCMODULES += q_red.o
  TCMODULES += q_prio.o
  TCMODULES += q_tbf.o
-diff -urN --exclude=.svn iproute2-2.6.11-050330/tc/q_esfq.c iproute2-2.6.11-050330/tc/q_esfq.c
---- iproute2-2.6.11-050330/tc/q_esfq.c	1969-12-31 19:00:00.000000000 -0500
-+++ iproute2-2.6.11-050330/tc/q_esfq.c	2007-05-04 22:37:54.000000000 -0400
-@@ -0,0 +1,200 @@
+diff -Naur iproute-2.6.20-070313.orig/tc/q_esfq.c iproute-2.6.20-070313/tc/q_esfq.c
+--- iproute-2.6.20-070313.orig/tc/q_esfq.c	1969-12-31 16:00:00.000000000 -0800
++++ iproute-2.6.20-070313/tc/q_esfq.c	2007-06-09 11:38:59.000000000 -0700
+@@ -0,0 +1,198 @@
 +/*
 + * q_esfq.c		ESFQ.
 + *
@@ -127,7 +88,7 @@ diff -urN --exclude=.svn iproute2-2.6.11-050330/tc/q_esfq.c iproute2-2.6.11-0503
 +{
 +	fprintf(stderr, "Usage: ... esfq [ perturb SECS ] [ quantum BYTES ] [ depth FLOWS ]\n\t[ divisor HASHBITS ] [ limit PKTS ] [ hash HASHTYPE]\n");
 +	fprintf(stderr,"Where: \n");
-+	fprintf(stderr,"HASHTYPE := { classic | src | dst | ctorigdst | ctorigsrc | ctrepldst | ctreplsrc | ctnatchg }\n");
++	fprintf(stderr,"HASHTYPE := { classic | src | dst | fwmark | ctorigdst | ctorigsrc | ctrepldst | ctreplsrc | ctnatchg}\n");
 +}
 +
 +#define usage() return(-1)
@@ -169,8 +130,8 @@ diff -urN --exclude=.svn iproute2-2.6.11-050330/tc/q_esfq.c iproute2-2.6.11-0503
 +				fprintf(stderr, "Illegal \"divisor\"\n");
 +				return -1;
 +			}
-+			if(opt.divisor >= 14) {
-+				fprintf(stderr, "Illegal \"divisor\": must be < 14\n");
++			if(opt.divisor >= 15) {
++				fprintf(stderr, "Illegal \"divisor\": must be < 15\n");
 +				return -1;
 +			}
 +			opt.divisor=pow(2,opt.divisor);
@@ -184,29 +145,24 @@ diff -urN --exclude=.svn iproute2-2.6.11-050330/tc/q_esfq.c iproute2-2.6.11-0503
 +			ok++;
 +		} else if (strcmp(*argv, "hash") == 0) {
 +			NEXT_ARG();
-+			if(strcmp(*argv, "classic") == 0) {
-+				opt.hash_kind= TCA_SFQ_HASH_CLASSIC;
-+			} else 
-+			if(strcmp(*argv, "dst") == 0) {
-+				opt.hash_kind= TCA_SFQ_HASH_DST;
-+			} else
-+			if(strcmp(*argv, "src") == 0) {
-+				opt.hash_kind= TCA_SFQ_HASH_SRC;
-+			} else
-+			if(strcmp(*argv, "ctorigsrc") == 0) {
-+				opt.hash_kind= TCA_SFQ_HASH_CTORIGSRC;
-+			} else
-+			if(strcmp(*argv, "ctorigdst") == 0) {
-+				opt.hash_kind= TCA_SFQ_HASH_CTORIGDST;
-+			} else
-+			if(strcmp(*argv, "ctreplsrc") == 0) {
-+				opt.hash_kind= TCA_SFQ_HASH_CTREPLSRC;
-+			} else
-+			if(strcmp(*argv, "ctrepldst") == 0) {
-+				opt.hash_kind= TCA_SFQ_HASH_CTREPLDST;
-+			} else
-+			if(strcmp(*argv, "ctnatchg") == 0) {
-+				opt.hash_kind= TCA_SFQ_HASH_CTNATCHG;
++			if (strcmp(*argv, "classic") == 0) {
++				opt.hash_kind = TCA_SFQ_HASH_CLASSIC;
++			} else if (strcmp(*argv, "dst") == 0) {
++				opt.hash_kind = TCA_SFQ_HASH_DST;
++			} else if (strcmp(*argv, "src") == 0) {
++				opt.hash_kind = TCA_SFQ_HASH_SRC;
++			} else if (strcmp(*argv, "fwmark") == 0) {
++				opt.hash_kind = TCA_SFQ_HASH_FWMARK;
++			} else if (strcmp(*argv, "ctorigsrc") == 0) {
++				opt.hash_kind = TCA_SFQ_HASH_CTORIGSRC;
++			} else if (strcmp(*argv, "ctorigdst") == 0) {
++				opt.hash_kind = TCA_SFQ_HASH_CTORIGDST;
++			} else if (strcmp(*argv, "ctreplsrc") == 0) {
++				opt.hash_kind = TCA_SFQ_HASH_CTREPLSRC;
++			} else if (strcmp(*argv, "ctrepldst") == 0) {
++				opt.hash_kind = TCA_SFQ_HASH_CTREPLDST;
++			} else if (strcmp(*argv, "ctnatchg") == 0) {
++				opt.hash_kind = TCA_SFQ_HASH_CTNATCHG;
 +			} else {
 +				fprintf(stderr, "Illegal \"hash\"\n");
 +				explain();
@@ -259,6 +215,9 @@ diff -urN --exclude=.svn iproute2-2.6.11-050330/tc/q_esfq.c iproute2-2.6.11-0503
 +		break;
 +	case TCA_SFQ_HASH_SRC:
 +		fprintf(f,"src");
++		break;
++	case TCA_SFQ_HASH_FWMARK:
++		fprintf(f,"fwmark");
 +		break;
 +	case TCA_SFQ_HASH_CTORIGSRC:
 +		fprintf(f,"ctorigsrc");
