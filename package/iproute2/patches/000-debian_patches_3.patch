@@ -1,7 +1,5 @@
-Index: iproute-2.6.20-070313/doc/ip-cref.tex
-===================================================================
---- iproute-2.6.20-070313.orig/doc/ip-cref.tex	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/doc/ip-cref.tex	2007-06-09 13:53:57.000000000 +0100
+--- iproute-20071016.orig/doc/ip-cref.tex
++++ iproute-20071016/doc/ip-cref.tex
 @@ -1322,6 +1322,19 @@
      If it is not given, Linux uses the value selected with \verb|sysctl|
      variable \verb|net/ipv4/tcp_reordering|.
@@ -32,10 +30,8 @@ Index: iproute-2.6.20-070313/doc/ip-cref.tex
  \end{thebibliography}
  
  
-Index: iproute-2.6.20-070313/doc/Makefile
-===================================================================
---- iproute-2.6.20-070313.orig/doc/Makefile	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/doc/Makefile	2007-06-09 13:53:57.000000000 +0100
+--- iproute-20071016.orig/doc/Makefile
++++ iproute-20071016/doc/Makefile
 @@ -14,6 +14,7 @@
  PAGESPERPAGE=2
  
@@ -44,21 +40,22 @@ Index: iproute-2.6.20-070313/doc/Makefile
  DVIFILES=$(subst .ps,.dvi,$(PSFILES))
  
  
-@@ -23,6 +24,8 @@
+@@ -25,6 +26,8 @@
  
- html: $(HTMLFILES)
+ dvi: $(DVIFILES)
  
 +txt: $(TXTFILES)
 +
- dvi: $(DVIFILES)
- 
  print: $(PSFILES)
-@@ -47,9 +50,12 @@
+ 	$(LPR) $(PSFILES)
+ 
+@@ -47,9 +50,13 @@
  %.html: %.sgml
  	$(SGML2HTML) $<
  
 +%.txt: %.html
 +	lynx -nolist -dump $< > $@
++		
 +
  install:
  	install -m 0644 $(shell echo *.tex) $(DESTDIR)$(DOCDIR)
@@ -67,551 +64,2846 @@ Index: iproute-2.6.20-070313/doc/Makefile
  clean:
 -	rm -f *.aux *.log *.toc $(PSFILES) $(DVIFILES) *.html
 +	rm -f *.aux *.log *.toc $(PSFILES) $(DVIFILES) *.html $(TXTFILES)
-Index: iproute-2.6.20-070313/include/linux/pkt_sched.h
-===================================================================
---- iproute-2.6.20-070313.orig/include/linux/pkt_sched.h	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/include/linux/pkt_sched.h	2007-06-09 13:53:57.000000000 +0100
-@@ -1,3 +1,409 @@
-+#if 0
-+#ifndef __LINUX_PKT_SCHED_H
-+#define __LINUX_PKT_SCHED_H
-+
-+/* Logical priority bands not depending on specific packet scheduler.
-+   Every scheduler will map them to real traffic classes, if it has
-+   no more precise mechanism to classify packets.
-+
-+   These numbers have no special meaning, though their coincidence
-+   with obsolete IPv6 values is not occasional :-). New IPv6 drafts
-+   preferred full anarchy inspired by diffserv group.
-+
-+   Note: TC_PRIO_BESTEFFORT does not mean that it is the most unhappy
-+   class, actually, as rule it will be handled with more care than
-+   filler or even bulk.
-+ */
-+
-+#define TC_PRIO_BESTEFFORT		0
-+#define TC_PRIO_FILLER			1
-+#define TC_PRIO_BULK			2
-+#define TC_PRIO_INTERACTIVE_BULK	4
-+#define TC_PRIO_INTERACTIVE		6
-+#define TC_PRIO_CONTROL			7
-+
-+#define TC_PRIO_MAX			15
-+
-+/* Generic queue statistics, available for all the elements.
-+   Particular schedulers may have also their private records.
-+ */
-+
-+struct tc_stats
-+{
-+	__u64	bytes;			/* NUmber of enqueues bytes */
-+	__u32	packets;		/* Number of enqueued packets	*/
-+	__u32	drops;			/* Packets dropped because of lack of resources */
-+	__u32	overlimits;		/* Number of throttle events when this
-+					 * flow goes out of allocated bandwidth */
-+	__u32	bps;			/* Current flow byte rate */
-+	__u32	pps;			/* Current flow packet rate */
-+	__u32	qlen;
-+	__u32	backlog;
-+#ifdef __KERNEL__
-+	spinlock_t *lock;
-+#endif
-+};
-+
-+struct tc_estimator
-+{
-+	char		interval;
-+	unsigned char	ewma_log;
-+};
-+
-+/* "Handles"
-+   ---------
-+
-+    All the traffic control objects have 32bit identifiers, or "handles".
-+
-+    They can be considered as opaque numbers from user API viewpoint,
-+    but actually they always consist of two fields: major and
-+    minor numbers, which are interpreted by kernel specially,
-+    that may be used by applications, though not recommended.
-+
-+    F.e. qdisc handles always have minor number equal to zero,
-+    classes (or flows) have major equal to parent qdisc major, and
-+    minor uniquely identifying class inside qdisc.
-+
-+    Macros to manipulate handles:
-+ */
-+
-+#define TC_H_MAJ_MASK (0xFFFF0000U)
-+#define TC_H_MIN_MASK (0x0000FFFFU)
-+#define TC_H_MAJ(h) ((h)&TC_H_MAJ_MASK)
-+#define TC_H_MIN(h) ((h)&TC_H_MIN_MASK)
-+#define TC_H_MAKE(maj,min) (((maj)&TC_H_MAJ_MASK)|((min)&TC_H_MIN_MASK))
-+
-+#define TC_H_UNSPEC	(0U)
-+#define TC_H_ROOT	(0xFFFFFFFFU)
-+#define TC_H_INGRESS    (0xFFFFFFF1U)
-+
-+struct tc_ratespec
-+{
-+	unsigned char	cell_log;
-+	unsigned char	__reserved;
-+	unsigned short	feature;
-+	short		addend;
-+	unsigned short	mpu;
-+	__u32		rate;
-+};
-+
-+/* FIFO section */
-+
-+struct tc_fifo_qopt
-+{
-+	__u32	limit;	/* Queue length: bytes for bfifo, packets for pfifo */
-+};
-+
-+/* PRIO section */
-+
-+#define TCQ_PRIO_BANDS	16
-+
-+struct tc_prio_qopt
-+{
-+	int	bands;			/* Number of bands */
-+	__u8	priomap[TC_PRIO_MAX+1];	/* Map: logical priority -> PRIO band */
-+};
-+
-+/* CSZ section */
-+
-+struct tc_csz_qopt
-+{
-+	int		flows;		/* Maximal number of guaranteed flows */
-+	unsigned char	R_log;		/* Fixed point position for round number */
-+	unsigned char	delta_log;	/* Log of maximal managed time interval */
-+	__u8		priomap[TC_PRIO_MAX+1];	/* Map: logical priority -> CSZ band */
-+};
-+
-+struct tc_csz_copt
-+{
-+	struct tc_ratespec slice;
-+	struct tc_ratespec rate;
-+	struct tc_ratespec peakrate;
-+	__u32		limit;
-+	__u32		buffer;
-+	__u32		mtu;
-+};
-+
-+enum
-+{
-+	TCA_CSZ_UNSPEC,
-+	TCA_CSZ_PARMS,
-+	TCA_CSZ_RTAB,
-+	TCA_CSZ_PTAB,
-+};
-+
-+/* TBF section */
-+
-+struct tc_tbf_qopt
-+{
-+	struct tc_ratespec rate;
-+	struct tc_ratespec peakrate;
-+	__u32		limit;
-+	__u32		buffer;
-+	__u32		mtu;
-+};
-+
-+enum
-+{
-+	TCA_TBF_UNSPEC,
-+	TCA_TBF_PARMS,
-+	TCA_TBF_RTAB,
-+	TCA_TBF_PTAB,
-+};
-+
-+
-+/* TEQL section */
-+
-+/* TEQL does not require any parameters */
-+
-+/* SFQ section */
-+
-+struct tc_sfq_qopt
-+{
-+	unsigned	quantum;	/* Bytes per round allocated to flow */
-+	int		perturb_period;	/* Period of hash perturbation */
-+	__u32		limit;		/* Maximal packets in queue */
-+	unsigned	divisor;	/* Hash divisor  */
-+	unsigned	flows;		/* Maximal number of flows  */
-+};
-+
-+/*
-+ *  NOTE: limit, divisor and flows are hardwired to code at the moment.
-+ *
-+ *	limit=flows=128, divisor=1024;
-+ *
-+ *	The only reason for this is efficiency, it is possible
-+ *	to change these parameters in compile time.
-+ */
-+
-+/* RED section */
-+
-+enum
-+{
-+	TCA_RED_UNSPEC,
-+	TCA_RED_PARMS,
-+	TCA_RED_STAB,
-+};
-+
-+struct tc_red_qopt
-+{
-+	__u32		limit;		/* HARD maximal queue length (bytes)	*/
-+	__u32		qth_min;	/* Min average length threshold (bytes) */
-+	__u32		qth_max;	/* Max average length threshold (bytes) */
-+	unsigned char   Wlog;		/* log(W)		*/
-+	unsigned char   Plog;		/* log(P_max/(qth_max-qth_min))	*/
-+	unsigned char   Scell_log;	/* cell size for idle damping */
-+	unsigned char	flags;
-+#define TC_RED_ECN	1
-+};
-+
-+struct tc_red_xstats
-+{
-+	__u32           early;          /* Early drops */
-+	__u32           pdrop;          /* Drops due to queue limits */
-+	__u32           other;          /* Drops due to drop() calls */
-+	__u32           marked;         /* Marked packets */
-+};
-+
-+/* GRED section */
-+
-+#define MAX_DPs 16
-+
-+enum
-+{
-+       TCA_GRED_UNSPEC,
-+       TCA_GRED_PARMS,
-+       TCA_GRED_STAB,
-+       TCA_GRED_DPS,
-+};
-+
-+#define TCA_SET_OFF TCA_GRED_PARMS
-+struct tc_gred_qopt
-+{
-+       __u32           limit;          /* HARD maximal queue length (bytes)    
-+*/
-+       __u32           qth_min;        /* Min average length threshold (bytes) 
-+*/
-+       __u32           qth_max;        /* Max average length threshold (bytes) 
-+*/
-+       __u32           DP;             /* upto 2^32 DPs */
-+       __u32           backlog;        
-+       __u32           qave;   
-+       __u32           forced; 
-+       __u32           early;  
-+       __u32           other;  
-+       __u32           pdrop;  
-+
-+       unsigned char   Wlog;           /* log(W)               */
-+       unsigned char   Plog;           /* log(P_max/(qth_max-qth_min)) */
-+       unsigned char   Scell_log;      /* cell size for idle damping */
-+       __u8            prio;		/* prio of this VQ */
-+       __u32	packets;
-+       __u32	bytesin;
-+};
-+/* gred setup */
-+struct tc_gred_sopt
-+{
-+       __u32           DPs;
-+       __u32           def_DP;
-+       __u8            grio;
-+};
-+
-+/* HTB section */
-+#define TC_HTB_NUMPRIO		8
-+#define TC_HTB_MAXDEPTH		8
-+#define TC_HTB_PROTOVER		3 /* the same as HTB and TC's major */
-+
-+struct tc_htb_opt
-+{
-+	struct tc_ratespec 	rate;
-+	struct tc_ratespec 	ceil;
-+	__u32	buffer;
-+	__u32	cbuffer;
-+	__u32	quantum;
-+	__u32	level;		/* out only */
-+	__u32	prio;
-+};
-+struct tc_htb_glob
-+{
-+	__u32 version;		/* to match HTB/TC */
-+    	__u32 rate2quantum;	/* bps->quantum divisor */
-+    	__u32 defcls;		/* default class number */
-+	__u32 debug;		/* debug flags */
-+
-+	/* stats */
-+	__u32 direct_pkts; /* count of non shapped packets */
-+};
-+enum
-+{
-+	TCA_HTB_UNSPEC,
-+	TCA_HTB_PARMS,
-+	TCA_HTB_INIT,
-+	TCA_HTB_CTAB,
-+	TCA_HTB_RTAB,
-+};
-+struct tc_htb_xstats
-+{
-+	__u32 lends;
-+	__u32 borrows;
-+	__u32 giants;	/* too big packets (rate will not be accurate) */
-+	__u32 tokens;
-+	__u32 ctokens;
-+};
-+
-+/* CBQ section */
-+
-+#define TC_CBQ_MAXPRIO		8
-+#define TC_CBQ_MAXLEVEL		8
-+#define TC_CBQ_DEF_EWMA		5
-+
-+struct tc_cbq_lssopt
-+{
-+	unsigned char	change;
-+	unsigned char	flags;
-+#define TCF_CBQ_LSS_BOUNDED	1
-+#define TCF_CBQ_LSS_ISOLATED	2
-+	unsigned char  	ewma_log;
-+	unsigned char  	level;
-+#define TCF_CBQ_LSS_FLAGS	1
-+#define TCF_CBQ_LSS_EWMA	2
-+#define TCF_CBQ_LSS_MAXIDLE	4
-+#define TCF_CBQ_LSS_MINIDLE	8
-+#define TCF_CBQ_LSS_OFFTIME	0x10
-+#define TCF_CBQ_LSS_AVPKT	0x20
-+	__u32		maxidle;
-+	__u32		minidle;
-+	__u32		offtime;
-+	__u32		avpkt;
-+};
-+
-+struct tc_cbq_wrropt
-+{
-+	unsigned char	flags;
-+	unsigned char	priority;
-+	unsigned char	cpriority;
-+	unsigned char	__reserved;
-+	__u32		allot;
-+	__u32		weight;
-+};
-+
-+struct tc_cbq_ovl
-+{
-+	unsigned char	strategy;
-+#define	TC_CBQ_OVL_CLASSIC	0
-+#define	TC_CBQ_OVL_DELAY	1
-+#define	TC_CBQ_OVL_LOWPRIO	2
-+#define	TC_CBQ_OVL_DROP		3
-+#define	TC_CBQ_OVL_RCLASSIC	4
-+	unsigned char	priority2;
-+	__u32		penalty;
-+};
-+
-+struct tc_cbq_police
-+{
-+	unsigned char	police;
-+	unsigned char	__res1;
-+	unsigned short	__res2;
-+};
-+
-+struct tc_cbq_fopt
-+{
-+	__u32		split;
-+	__u32		defmap;
-+	__u32		defchange;
-+};
-+
-+struct tc_cbq_xstats
-+{
-+	__u32		borrows;
-+	__u32		overactions;
-+	__s32		avgidle;
-+	__s32		undertime;
-+};
-+
-+enum
-+{
-+	TCA_CBQ_UNSPEC,
-+	TCA_CBQ_LSSOPT,
-+	TCA_CBQ_WRROPT,
-+	TCA_CBQ_FOPT,
-+	TCA_CBQ_OVL_STRATEGY,
-+	TCA_CBQ_RATE,
-+	TCA_CBQ_RTAB,
-+	TCA_CBQ_POLICE,
-+};
-+
-+#define TCA_CBQ_MAX	TCA_CBQ_POLICE
-+
-+/* dsmark section */
-+
-+enum {
-+	TCA_DSMARK_UNSPEC,
-+	TCA_DSMARK_INDICES,
-+	TCA_DSMARK_DEFAULT_INDEX,
-+	TCA_DSMARK_SET_TC_INDEX,
-+	TCA_DSMARK_MASK,
-+	TCA_DSMARK_VALUE
-+};
-+
-+#define TCA_DSMARK_MAX TCA_DSMARK_VALUE
-+
-+/* ATM  section */
-+
-+enum {
-+	TCA_ATM_UNSPEC,
-+	TCA_ATM_FD,		/* file/socket descriptor */
-+	TCA_ATM_PTR,		/* pointer to descriptor - later */
-+	TCA_ATM_HDR,		/* LL header */
-+	TCA_ATM_EXCESS,		/* excess traffic class (0 for CLP)  */
-+	TCA_ATM_ADDR,		/* PVC address (for output only) */
-+	TCA_ATM_STATE		/* VC state (ATM_VS_*; for output only) */
-+};
-+
-+#define TCA_ATM_MAX	TCA_ATM_STATE
-+
-+#endif
-+#endif
- #ifndef __LINUX_PKT_SCHED_H
- #define __LINUX_PKT_SCHED_H
+--- iproute-20071016.orig/misc/Makefile
++++ iproute-20071016/misc/Makefile
+@@ -1,7 +1,8 @@
+ SSOBJ=ss.o ssfilter.o
+ LNSTATOBJ=lnstat.o lnstat_util.o
  
-@@ -466,4 +872,116 @@
+-TARGETS=ss nstat ifstat rtacct arpd lnstat
++#TARGETS=ss nstat ifstat rtacct arpd lnstat
++TARGETS=ss nstat rtacct lnstat arpd
  
- #define NETEM_DIST_SCALE	8192
+ include ../Config
  
-+/* WRR section */
+--- iproute-20071016.orig/lib/utils.c
++++ iproute-20071016/lib/utils.c
+@@ -47,6 +47,48 @@
+ 	return 0;
+ }
+ 
++/* a valid netmask must be 2^n - 1 */
++static int is_valid_netmask(const inet_prefix *addr)
++{
++        uint32_t host;
 +
-+/* Other includes */
-+#include <linux/if_ether.h>
++        if (addr->family != AF_INET)
++                return 0;
 +
-+// A sub weight and of a class
-+// All numbers are represented as parts of (2^64-1).
-+struct tc_wrr_class_weight {
-+	__u64 val;	// Current value			(0 is not valid)
-+	__u64 decr;	// Value pr bytes			(2^64-1 is not valid)
-+	__u64 incr;	// Value pr seconds			(2^64-1 is not valid)
-+	__u64 min;	// Minimal value			(0 is not valid)
-+	__u64 max;	// Minimal value			(0 is not valid)
++        host = ~ntohl(addr->data[0]);
 +
-+// The time where the above information was correct:
-+	time_t tim;
-+};
++        return (host & (host + 1)) == 0;
++}
 +
-+// Packet send when modifying a class:
-+struct tc_wrr_class_modf {
-+	// Not-valid values are ignored.
-+	struct tc_wrr_class_weight weight1;
-+	struct tc_wrr_class_weight weight2;
-+};
++static unsigned cidr(const inet_prefix *addr)
++{
++	unsigned bits = 0;
++	u_int32_t mask;
 +
-+// Packet returned when quering a class:
-+struct tc_wrr_class_stats {
-+	char used;	// If this is false the information below is invalid
++	for (mask = ntohl(addr->data[0]); mask; mask <<= 1)
++		++bits;
 +
-+	struct tc_wrr_class_modf class_modf;
++	return bits;
++}
 +
-+	unsigned char addr[ETH_ALEN];
-+	char usemac;    // True if addr is a MAC address, else it is an IP address
-+			// (this value is only for convience, it is always the same
-+			//  value as in the qdisc)
-+	int heappos;	// Current heap position or 0 if not in heap
-+	__u64 penal_ls;	// Penalty value in heap (ls)
-+	__u64 penal_ms;	// Penalty value in heap (ms)
-+};
++static int get_netmask(unsigned *val, const char *arg, int base)
++{
++	inet_prefix addr;
 +
-+// Qdisc-wide penalty information (boolean values - 2 not valid)
-+struct tc_wrr_qdisc_weight {
-+	char weight_mode;	// 0=No automatic change to weight
-+				// 1=Decrease normally
-+				// 2=Also multiply with number of machines
-+				// 3=Instead multiply with priority divided
-+				//   with priority of the other.
-+				// -1=no change
-+};
++	if (!get_unsigned(val, arg, base))
++		return 0;
 +
-+// Packet send when modifing a qdisc:
-+struct tc_wrr_qdisc_modf {
-+	// Not-valid values are ignored:
-+	struct tc_wrr_qdisc_weight weight1;
-+	struct tc_wrr_qdisc_weight weight2;
-+};
++	/* try coverting dotted quad to CIDR */
++	if (!get_addr_1(&addr, arg, AF_INET)) {
++		if (is_valid_netmask(&addr))
++			return 0;
 +
-+// Packet send when creating a qdisc:
-+struct tc_wrr_qdisc_crt {
-+	struct tc_wrr_qdisc_modf qdisc_modf;
++	        *val = cidr(&addr);
++	}
 +
-+	char srcaddr;	// 1=lookup source, 0=lookup destination
-+	char usemac;	// 1=Classify on MAC addresses, 0=classify on IP
-+	char usemasq;	// 1=Classify based on masqgrading - only valid
-+			//   if usemac is zero
-+	int bands_max;	// Maximal number of bands (i.e.: classes)
-+	int proxy_maxconn;// If differnt from 0 then we support proxy remapping
-+			// of packets. And this is the number of maximal
-+			// concurrent proxy connections.
-+};
++	return -1;
++}
 +
-+// Packet returned when quering a qdisc:
-+struct tc_wrr_qdisc_stats {
-+	struct tc_wrr_qdisc_crt qdisc_crt;
-+	int proxy_curconn;
-+	int nodes_in_heap;	// Current number of bands wanting to send something
-+	int bands_cur;		// Current number of bands used (i.e.: MAC/IP addresses seen)
-+	int bands_reused;	// Number of times this band has been reused.
-+	int packets_requed;	// Number of times packets have been requeued.
-+	__u64 priosum;		// Sum of priorities in heap where 1 is 2^32
-+};
+ int get_unsigned(unsigned *val, const char *arg, int base)
+ {
+ 	unsigned long res;
+@@ -304,7 +346,8 @@
+ 				dst->bitlen = 32;
+ 		}
+ 		if (slash) {
+-			if (get_unsigned(&plen, slash+1, 0) || plen > dst->bitlen) {
++			if (get_netmask(&plen, slash+1, 0)
++					|| plen > dst->bitlen) {
+ 				err = -1;
+ 				goto done;
+ 			}
+@@ -642,9 +685,9 @@
+ int cmdlineno;
+ 
+ /* Like glibc getline but handle continuation lines and comments */
+-size_t getcmdline(char **linep, size_t *lenp, FILE *in)
++ssize_t getcmdline(char **linep, size_t *lenp, FILE *in)
+ {
+-	size_t cc;
++	ssize_t cc;
+ 	char *cp;
+ 
+ 	if ((cc = getline(linep, lenp, in)) < 0)
+@@ -672,9 +715,11 @@
+ 		if (cp)
+ 			*cp = '\0';
+ 
+-		*linep = realloc(*linep, strlen(*linep) + strlen(line1) + 1);
++		*lenp = strlen(*linep) + strlen(line1) + 1;
++		*linep = realloc(*linep, *lenp);
+ 		if (!*linep) {
+ 			fprintf(stderr, "Out of memory\n");
++			*lenp = 0;
+ 			return -1;
+ 		}
+ 		cc += cc1 - 2;
+--- iproute-20071016.orig/include/utils.h
++++ iproute-20071016/include/utils.h
+@@ -144,7 +144,7 @@
+ #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+ 
+ extern int cmdlineno;
+-extern size_t getcmdline(char **line, size_t *len, FILE *in);
++extern ssize_t getcmdline(char **line, size_t *len, FILE *in);
+ extern int makeargs(char *line, char *argv[], int maxargs);
+ 
+ #endif /* __UTILS_H__ */
+--- iproute-20071016.orig/tc/m_police.c
++++ iproute-20071016/tc/m_police.c
+@@ -37,7 +37,7 @@
+ 	fprintf(stderr, "Usage: ... police rate BPS burst BYTES[/BYTES] [ mtu BYTES[/BYTES] ]\n");
+ 	fprintf(stderr, "                [ peakrate BPS ] [ avrate BPS ]\n");
+ 	fprintf(stderr, "                [ ACTIONTERM ]\n");
+-	fprintf(stderr, "Old Syntax ACTIONTERM := <EXCEEDACT>[/NOTEXCEEDACT] \n");
++	fprintf(stderr, "Old Syntax ACTIONTERM := action <EXCEEDACT>[/NOTEXCEEDACT] \n");
+ 	fprintf(stderr, "New Syntax ACTIONTERM := conform-exceed <EXCEEDACT>[/NOTEXCEEDACT] \n");
+ 	fprintf(stderr, "Where: *EXCEEDACT := pipe | ok | reclassify | drop | continue \n");
+ 	fprintf(stderr, "Where:  pipe is only valid for new syntax \n");
+@@ -237,8 +237,7 @@
+ 		} else if (strcmp(*argv, "help") == 0) {
+ 			usage();
+ 		} else {
+-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+-			return -1;
++			break;
+ 		}
+ 		ok++;
+ 		argc--; argv++;
+--- iproute-20071016.orig/debian/doc/htb/htbfaq.htm
++++ iproute-20071016/debian/doc/htb/htbfaq.htm
+@@ -0,0 +1,141 @@
++<html><head><title>HTB FAQ</title></head>
++<body>
++<h1><center>HTB FAQ</center></h1>
++<center><address>
++Martin Devera aka devik (devik@cdi.cz)<br>
++Last updated: 7.7.2003
++</address></center>
++<br>
++<b>How to set single HTB up for more interfaces or for incoming packets</b>
++<p>
++You need IMQ for this because all qdisc can handle only outgoing
++traffic on single interface. See 
++<a href="http://www.linuximq.net/">http://www.linuximq.net/</a>.
++<p>
++<b>When HTB is used on machine with Apache (FTP, Samba, ...) server running
++   then downloading from it can't be limited precisely</b>
++<p>
++Try to add PFIFO with limit 10 under HTB classes. When you use default
++(much larger PFIFO) or SFQ then TCP stack will back off itself as it
++see too large memory used for outgoing packets. You can also play
++with /proc/sys/net/ipv4/tcp_wmem.
++<p>
++<b>"HTB: mindelay=500, report it please !" messages in syslog</b>
++<p>
++This means that all indicated that some class should be ready
++soon but when we looked for it we haven't found one which will
++be ready in 5 seconds.
++<br>
++After this message you can see lines like
++<pre>
++kernel: htb*g j=154480191
++kernel: htb*r7 m=0
++kernel: htb*r6 m=0
++kernel: htb*r5 m=0
++kernel: htb*r4 m=0
++kernel: htb*r3 m=0
++kernel: htb*r2 m=0
++kernel: htb*r1 m=0
++kernel: htb*r0 m=0
++kernel: htb*c20110 m=2 t=636487 c=17888 pq=0 df=483328 ql=0 pa=0 f:
++kernel: htb*c20220 m=1 t=-59999999 c=42404 pq=154487461 df=450560 ql=14 pa=40 f:
++kernel: htb*c20001 m=2 t=5131 c=6439 pq=0 df=8192 ql=0 pa=0 f:
++</pre>
++If you decide to treat is as real bug then I'll need all of these. They
++are logged under kernel.debug facility so often you need to add it so
++your syslog.conf. These "htb*" are dump of internal state of all classes.
++c20110 means class 2:110. *r lines are states of row activity bitsmasks.
++*c indicates stet of all classes. You are interested in classes
++with m=1 resp. m=0. These will become ready after time -c resp. -t whatever
++is negative and smaller.
++It is 59999999 us for class 2:110 above which is 59sec. It is way too much
++and HTB will spill that error because it is &gt; 5 sec.
++<p>
++<i>So what is the problem ?</i> Probably you have too small rate or ceil
++for such class - you should use at least 4kbit for realiable operation
++of HTB - it leads to max 3sec of delay for 1500 byte packets which seems
++as reasonable value.
++<br>
++Also try <a href=v3/htb_3.7_delay_bug.patch>this</a> patch against 2.4.20.
++(works against older too with one reject). It increases timeout to
++10secs and makes errors more readable. 
++<i>I'm interested in your experiences (good or bad) with the patch !</i>
++<br>
++If you think it is not the case and you still get weird errors, contact
++me with syslog data above and output of commands
++<pre>
++tc -s -d qdisc
++tc -s -d class show dev your_htb_device1_here
++tc -s -d class show dev your_htb_device2_here
++...
++</pre>
 +
-+struct tc_wrr_qdisc_modf_std {
-+	// This indicates which of the tc_wrr_qdisc_modf structers this is:
-+	char proxy; // 0=This struct
++<p>
++<b>Why HTB sharing setup works with eth0 but on lo (loopback) 
++	it exhibits weird rates ?
++</b>
++<p>Try to execute 
++<pre>
++ifconfig lo mtu 1500
++</pre>
++or use parameter mtu 16400 on "tc qdisc add" line. It is because
++HTB reserves rate table for 1500 bytes long packets and loopback
++uses 16384 as default.
++<p>
++<b>What's difference between kbps and kbit ?
++</b>
++<p>
++1kbps=8kbit. Don't forget it !
++<p>
++<b>What if sum of child rates is smaller than parent rate ?
++</b>
++<p>
++It is like if you create unused child with remaining rate - the
++rate difference is divided between other children.
++<p>
++<b>What if sum of child rates is greater than parent rate ?
++</b>
++<p>
++Then interesting things can happen. Total rate delivered
++by children can be higher that parent's rate (thus its rate
++is not respected). However when sum of actual child rates are
++under parent's rate then borrowing will occur like in regular case.
++<p>
++I use setup with 4 classes, parent has rate=ceil=6kbps, child
++"mail" has rate=1kbps ceil=4kbps, "web" has rate=ceil=15kbps
++and "other" has rate=2kbps ceil=4kbps.
++HTB is attached to an PPP interface with compressed multilink pair
++of modems which can go from 6kbps to cca 16kbps (depends on compresability
++of data). When "web" traffic is present it can go as high as compression
++allows while still allowing mail 1kbps and other 2kbps.
++<br>
++When "web" traffic is smaller than 6kbps then "mail" and "other" 
++can borrow more bw up to 4k each.
++Parent's class it not set to 18k because then "mail" and "other"
++could get as much as 8k which is more that link's minimum and
++would saturate the link. Thus I set parent to 6k so that 
++"mail"+"other" are limited to 6k while "web" can go over.
++<p>
++You can do similar setup by using one more class and deeper hierarchy
++but this is just to show you the possibility.
++<p>
++<b>"RTNETLINK answers: Invalid argument" and tc parameters are correct
++</b>
++<p>
++Probably you use tc tool not suited for HTB in kernel. Reread
++main HTB page section Downloads.
++<p>
++<b>All packets are dropped when "default" is set to nonleaf
++</b>
++<p>
++Yes. Default kwyword must point to leaf or be 0 (so unclassified
++packets go thru directly). If you want to "direct" other packets
++to non-leaf do it by catch all filter with the largest "pref".
++<p>
++<b>What tool was used to create graphs in HTB manual ?
++</b>
++<p>
++It is proprietary tool called ethloop 
++(<a href=http://luxik.cdi.cz/~devik/qos/ethloop/>luxik.cdi.cz/~devik/qos/ethloop/</a>).
 +
-+	// Should we also change a class?
-+	char change_class;
++</body></html>
+--- iproute-20071016.orig/debian/doc/htb/userg.htm
++++ iproute-20071016/debian/doc/htb/userg.htm
+@@ -0,0 +1,449 @@
++<html><head><title>HTB manual - user guide</title></head>
++<body>
++<h1><center>HTB Linux queuing discipline manual - user guide</center></h1>
++<center><address>
++Martin Devera aka devik (devik@cdi.cz)<br>
++Manual: devik and Don Cohen<br>
++Last updated: 5.5.2002
++</address></center>
++<br>
++New text is in red color. Coloring is removed on new text
++after 3 months. Currently they depicts HTB3 changes<p>
++<p>
++<ul>
++<li><a href=#intro>1. Introduction</a>
++<li><a href=#sharing>2. Link sharing</a>
++<li><a href=#hsharing>3. Sharing hierarchy</a>
++<li><a href=#ceiling>4. Rate ceiling</a>
++<li><a href=#burst>5. Burst</a>
++<li><a href=#prio>6. Priorizing bandwidth share</a>
++<li><a href=#stats>7. Understanding statistics</a>
++<li><a href=#err>8. Making, debugging and sending error reports</a>
++</ul>
++<a name=intro><h2>1. Introduction</h2>
 +
-+	// Only valid if change_class is false
-+	struct tc_wrr_qdisc_modf qdisc_modf;
++HTB is meant as a more understandable, intuitive and faster replacement for the
++CBQ qdisc in Linux.  Both CBQ and HTB help you to control the
++use of the outbound bandwidth on a given link.  Both allow you to use
++one physical link to simulate several slower links and to send different 
++kinds of traffic on different simulated links.  In both cases, you have
++to specify how to divide the physical link into simulated links and how
++to decide which simulated link to use for a given packet to be sent.
++<p>
++This document shows you how to use HTB. 
++Most sections have examples, charts (with measured data) and
++discussion of particular problems.
++<p>
++This release of HTB should be also much more scalable. See
++comparison at HTB home page.
++<p>
++<b>Please read:</b> tc tool (not only HTB) uses shortcuts to denote units
++of rate. <b>kbps</b> means kilo<b>bytes</b> and <b>kbit</b> means 
++<b>kilobits</b> ! This is the most FAQ about tc in linux.
++<p>
 +
-+	// Only valid if change_class is true:
-+	unsigned char addr[ETH_ALEN]; // Class to change (non-used bytes should be 0)
-+	struct tc_wrr_class_modf class_modf; // The change
-+};
++<a name=sharing><h2>2. Link sharing</h2>
++<img src=Ag2Leaf3flat.gif align=right>
 +
-+// Used for proxyrempping:
-+struct tc_wrr_qdisc_modf_proxy {
-+	// This indicates which of the tc_wrr_qdisc_modf structers this is:
-+	char proxy;     // 1=This struct
++<i>Problem: We have two customers, A and B, both connected to the
++internet via eth0.  We want to allocate 60 kbps to B and 40 kbps to A.
++Next we want to subdivide A's bandwidth 30kbps for WWW and 10kbps
++for everything else.  Any unused bandwidth can be used by any class 
++which needs it (in proportion of its allocated share).</i>
++<p>
++HTB ensures that <b> the amount of service provided to each class is
++at least the minimum of the amount it requests and the amount assigned
++to it</b>.  When a class requests less than the amount assigned, the 
++remaining (excess) bandwidth is distributed to other classes which request 
++service.<p>
++Also see document about HTB internals - it
++describes goal above in greater details.
++<p>
++<i>Note: In the literature this is called "borrowing" the excess bandwidth.
++We use that term below to conform with the literature.  We mention, however,
++that this seems like a bad term since there is no obligation to repay the
++resource that was "borrowed".
++</i>
++<p>
++The different kinds of traffic above are represented by classes in
++HTB.  The simplest approach is shown in the picture at the right. 
++<br>
++Let's see what commands to use:
++<pre>
++tc qdisc add dev eth0 root handle 1: htb default 12
++</pre>
++This command attaches queue discipline HTB to eth0 and gives it the 
++"handle" <b>1:</b>.
++This is just a name or identifier with which to refer to it below. 
++The <b>default 12</b>
++means that any traffic that is not otherwise classified will be assigned 
++to class 1:12. 
++<p>
++<i>Note: 
++In general (not just for HTB but for all qdiscs and classes in tc),
++handles are written x:y where x is an integer identifying a qdisc and
++y is an integer identifying a class belonging to that qdisc.  The handle 
++for a qdisc must have zero for its y value and the handle for a class
++must have a non-zero value for its y value.  The "1:" above is treated
++as "1:0".
++</i>
++<p>
++<pre>
++tc class add dev eth0 parent 1: classid 1:1 htb rate 100kbps ceil 100kbps 
++tc class add dev eth0 parent 1:1 classid 1:10 htb rate 30kbps ceil 100kbps
++tc class add dev eth0 parent 1:1 classid 1:11 htb rate 10kbps ceil 100kbps
++tc class add dev eth0 parent 1:1 classid 1:12 htb rate 60kbps ceil 100kbps
++</pre>
++<p>
++The first line creates a "root" class, 1:1 under the qdisc 1:. 
++The definition of a root class is one with the htb qdisc as its parent.
++A root class, like other classes under an htb qdisc allows its children
++to borrow from each other, but one root class cannot borrow from another.  
++We could have created the other three classes directly under the htb qdisc, 
++but then the excess bandwidth from one would not be available to the others.
++In this case we do want to allow borrowing, so we have to create an extra
++class to serve as the root and put the classes that will carry the real data
++under that.  These are defined by the next three lines.
++The <b>ceil</b> parameter is described below. 
++<p><i>Note: Sometimes people ask me why they have to repeat <b>dev eth0</b> 
++when they have already used <b>handle</b> or <b>parent</b>.  The reason 
++is that handles are local to an interface, e.g., eth0 and eth1 could each 
++have classes with handle 1:1.</i>
++<p>
++We also have to describe which packets belong in which class.
++This is really not related to the HTB qdisc.  See the tc filter
++documentation for details.  The commands will look something like this:
++<pre>
++tc filter add dev eth0 protocol ip parent 1:0 prio 1 u32 \
++   match ip src 1.2.3.4 match ip dport 80 0xffff flowid 1:10
++tc filter add dev eth0 protocol ip parent 1:0 prio 1 u32 \
++   match ip src 1.2.3.4 flowid 1:11
++</pre>
++(We identify A by its IP address which we imagine here to be 1.2.3.4.)
++<p><i>Note: The U32 classifier has an undocumented design bug which causes 
++duplicate entries to be listed by "tc filter show" when you use U32 
++classifiers with different prio values.</i>
++<img src=flatnp.gif align=right>
++<p>
++You may notice that we didn't create a filter for the 1:12 class. 
++It might be more clear to do so, but this illustrates the use of the default.
++Any packet not classified by the two rules above (any packet
++not from source address 1.2.3.4) will be put in class 1:12.
++<p>
++Now we can optionally attach queuing disciplines to the leaf classes.
++If none is specified the default is pfifo.
++<pre>
++tc qdisc add dev eth0 parent 1:10 handle 20: pfifo limit 5
++tc qdisc add dev eth0 parent 1:11 handle 30: pfifo limit 5
++tc qdisc add dev eth0 parent 1:12 handle 40: sfq perturb 10
++</pre>
++That's all the commands we need.  Let's see what happens if we send
++packets of each class at 90kbps and then stop sending packets of one
++class at a time.  Along the bottom of the graph are annotations 
++like "0:90k".  The horizontal position at the center of the label 
++(in this case near the 9, also marked with a red "1") indicates the
++time at which the rate of some traffic class changes.  
++Before the colon is an identifier for
++the class (0 for class 1:10, 1 for class 1:11, 2 for class 1:12) and
++after the colon is the new rate starting at the time where the 
++annotation appears.  For example, the rate of class 0 is changed to
++90k at time 0, 0 (= 0k) at time 3, and back to 90k at time 6.
++<p>
++Initially all classes generate 90kb.  Since this is higher than any
++of the rates specified, each class is limited to its 
++specified rate.  At time 3 when we stop sending class 0 packets, the
++rate allocated to class 0 is reallocated to the other two
++classes in proportion to their allocations, 1 part class 1 to 6 parts class 2.
++(The increase in class 1 is hard to see because it's only 4 kbps.)
++Similarly at time 9 when class 1 traffic stops its bandwidth is
++reallocated to the other two (and the increase in class 0 is similarly hard
++to see.)  At time 15 it's easier to see that the allocation to class 2 is
++divided 3 parts for class 0 to 1 part for class 1.  At time 18 both class 1 and
++class 2 stop so class 0 gets all 90 kbps it requests.
++<p>
++It might be good time to touch concept of <b>quantums</b> now. In fact when
++more classes want to borrow bandwidth they are each given some number of
++bytes before serving other competing class. This number is called quantum.
++You should see that if several classes are competing for parent's bandwidth
++then they get it in proportion of their quantums. It is important to know
++that for precise operation quantums need to be as small as possible and
++larger than MTU.
++<br>
++Normaly you don't need to specify quantums manualy as HTB chooses precomputed
++values. It computes classe's quantum (when you add or change it) as its
++rate divided by <b>r2q</b> global parameter. Its default value is 10
++and because typical MTU is 1500 the default is good for rates from
++15 kBps (120 kbit). For smaller minimal rates specify r2q 1 when
++creating qdisc - it is good from 12 kbit which should be enough. If
++you will need you can specify quantum manualy when adding or changing
++the class. You can avoid warnings in log if precomputed value would be
++bad. When you specify quantum on command line the r2q is ignored for
++that class.
++<p>
++This might seem like a good solution if A and B were not different
++customers.  However, if A is paying for 40kbps then he would probably
++prefer his unused WWW bandwidth to go to his own other service rather 
++than to B.  This requirement is represented in HTB by the class hierarchy.
 +
-+	// This is 1 if the proxyremap information should be reset
-+	char reset;
++<img src=Ag2Leaf3hier.gif align=right>
++<a name=hsharing><h2>3. Sharing hierarchy</h2>
++The problem from the previous chapter is solved by the class hierarchy
++in this picture.  Customer A is now explicitly represented by its own
++class.  Recall from above that
++<b> the amount of service provided to each class is at least the 
++minimum of the amount it requests and the amount assigned to it</b>.  
++This applies to htb classes that are not parents of other htb classes.
++We call these leaf classes.
++For htb classes that are parents of other htb classes, which we call
++interior classes, the rule is that
++<b> the amount of service is at least the minumum of the amount assigned 
++to it and the sum of the amount requested by its children</b>.
++In this case we assign 40kbps to customer A.  That means that if A 
++requests less than the allocated rate for WWW, the excess will be used 
++for A's other traffic (if there is demand for it), at least until the sum is
++40kbps.
++<p>
++<i>Notes: Packet classification rules can assign to inner nodes too. Then
++you have to attach other filter list to inner node. Finally you should
++reach leaf or special 1:0 class. The rate supplied for a parent should be the sum
++of the rates of its children. </i>
++<p>The commands are now as follows:
++<pre>
++tc class add dev eth0 parent 1: classid 1:1 htb rate 100kbps ceil 100kbps
++tc class add dev eth0 parent 1:1 classid 1:2 htb rate 40kbps ceil 100kbps
++tc class add dev eth0 parent 1:2 classid 1:10 htb rate 30kbps ceil 100kbps
++tc class add dev eth0 parent 1:2 classid 1:11 htb rate 10kbps ceil 100kbps
++tc class add dev eth0 parent 1:1 classid 1:12 htb rate 60kbps ceil 100kbps
++</pre>
++<img src=hiernp.gif align=right>
++<p>
++We now turn to the graph showing the results of the hierarchical solution.
++When A's WWW traffic stops, its assigned bandwidth is reallocated to A's 
++other traffic so that A's total bandwidth is still the assigned 40kbps.<br>
++If A were to request less than 40kbs in total then the excess would be given to B.
 +
-+	// changec is the number of elements in changes.
-+	int changec;
++<a name=ceiling><h2>4. Rate ceiling</h2>
++The <b>ceil</b> argument specifies the maximum bandwidth that a class
++can use.  This limits how much bandwidth that class can borrow.
++The default ceil is the same as the rate.  (That's why we had to specify 
++it in the examples above to show borrowing.)
++We now change the <b>ceil 100kbps</b> for classes 1:2 (A) and 1:11 
++(A's other) from the previous chapter to <b>ceil 60kbps</b> and 
++<b>ceil 20kbps</b>.
++<p>
++The graph at right differs from the previous one at time 3 (when WWW 
++traffic stops) because A/other is limited to 20kbps.  Therefore customer 
++A gets only 20kbps in total and the unused 20kbps is allocated to B.<br>  
++The second difference is at time 15 when B stops.  Without the ceil, 
++all of its bandwidth was given to A, but now A is only allowed to use 
++60kbps, so the remaining 40kbps goes unused.
++<img src=hiernpceil.gif align=right>
++<p>
++This feature should be useful for ISPs because they probably want to
++limit the amount of service a given customer gets even when other 
++customers are not requesting service.  (ISPs probably want customers 
++to pay more money for better service.)
++Note that root classes are not allowed to borrow, so there's really no
++point in specifying a ceil for them.
++<p>
++<i>Notes: The ceil for a class should always be at least as high as the rate. 
++Also, the ceil for a class should always be at least as high as the ceil of
++any of its children.</i>
 +
-+	// This is an array of type ProxyRemapBlock:
-+	long changes[0];
-+};
++<a name=burst><h2>5. Burst</h2>
 +
- #endif
-Index: iproute-2.6.20-070313/ip/iproute.c
-===================================================================
---- iproute-2.6.20-070313.orig/ip/iproute.c	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/ip/iproute.c	2007-06-09 13:53:57.000000000 +0100
-@@ -73,7 +73,7 @@
- 	fprintf(stderr, "OPTIONS := FLAGS [ mtu NUMBER ] [ advmss NUMBER ]\n");
- 	fprintf(stderr, "           [ rtt NUMBER ] [ rttvar NUMBER ]\n");
- 	fprintf(stderr, "           [ window NUMBER] [ cwnd NUMBER ] [ initcwnd NUMBER ]\n");
--	fprintf(stderr, "           [ ssthresh NUMBER ] [ realms REALM ]\n");
-+	fprintf(stderr, "           [ ssthresh NUMBER ] [ realms REALM ] [ hoplimit NUMBER ]\n");
- 	fprintf(stderr, "TYPE := [ unicast | local | broadcast | multicast | throw |\n");
- 	fprintf(stderr, "          unreachable | prohibit | blackhole | nat ]\n");
- 	fprintf(stderr, "TABLE_ID := [ local | main | default | all | NUMBER ]\n");
-@@ -789,6 +789,30 @@
++Networking hardware can only send one packet at a time and only at 
++a hardware dependent rate.  Link sharing software can only use this
++ability to approximate the effects of multiple links running at 
++different (lower) speeds.  Therefore the rate and ceil are not really 
++instantaneous measures but averages over the time that it takes to send 
++many packets.  What really happens is that the traffic from one class
++is sent a few packets at a time at the maximum speed and then other
++classes are served for a while.
++
++The <b>burst</b> and <b>cburst</b> parameters control the amount of data
++that can be sent at the maximum (hardware) speed without trying to serve
++another class.
++<p>
++If <b>cburst</b> is smaller (ideally one packet size) it shapes bursts to not exceed 
++<b>ceil</b> rate in the same way as TBF's peakrate does.<p>
++When you set <b>burst</b> for parent class smaller than for some child
++then you should expect the parent class to get stuck sometimes (because
++child will drain more than parent can handle). HTB will remember these
++negative bursts up to 1 minute.
++<p>
++You can ask <b>why I want bursts</b>. Well it is cheap and simple way
++how to improve response times on congested link. For example www traffic
++is bursty. You ask for page, get it in burst and then read it. During
++that idle period burst will "charge" again. 
++<p>
++<i>Note: The burst and cburst of a class should always be at least
++as high as that of any of it children.</i>
++<p>
++<img src=hiernpburst.gif align=right>
++On graph you can see case from previous chapter where I changed burst
++for red and yellow (agency A) class to 20kb but cburst remained
++default (cca 2 kb).<br>
++Green hill is at time 13 due to burst setting on SMTP class.
++A class. It has underlimit since time 9 and accumulated 20 kb of burst.
++The hill is high up to 20 kbps (limited by ceil because it has cburst
++near packet size).<br>
++Clever reader can think why there is not red and yellow hill at time
++7. It is because yellow is already at ceil limit so it has no space
++for furtner bursts.<br>
++There is at least one unwanted artifact - magenta crater at time 4. It
++is because I intentionaly "forgot" to add burst to root link (1:1) class.
++It remembered hill from time 1 and when at time 4 blue class wanted to 
++borrow yellow's rate it denied it and compensated itself.
++<p>
++<b>Limitation:</b> when you operate with high rates on computer with low
++resolution timer you need some minimal <b>burst</b> and <b>cburst</b> to 
++be set for all classes. Timer resolution on i386 systems is 10ms and
++1ms on Alphas.
++The minimal burst can be computed as max_rate*timer_resolution. So that
++for 10Mbit on plain i386 you needs burst 12kb.<p>
++If you set too small burst you will encounter smaller rate than you set.
++Latest tc tool will compute and set the smallest possible burst when it
++is not specified.
++
++<img src=hierprio.gif align=right>
++<a name=prio><h2>6. Priorizing bandwidth share</h2>
++Priorizing traffic has two sides. First it affects how the excess bandwidth
++is distributed among siblings. Up to now we have seen that excess bandwidth
++was distibuted according to rate ratios. Now I used basic configuration from
++chapter 3 (hierarchy without ceiling and bursts) and changed priority of all
++classes to 1 except SMTP (green) which I set to 0 (higher).<br>
++From sharing view you see that the class got all the excess bandwidth. The
++rule is that <b>classes with higher priority are offered excess bandwidth
++first</b>. But rules about guaranted <b>rate</b> and <b>ceil</b> are still
++met.<p>
++There is also second face of problem. It is total delay of packet. It is relatively
++hard to measure on ethernet which is too fast (delay is so neligible). But
++there is simple help. We can add simple HTB with one class rate limiting to
++less then 100 kbps and add second HTB (the one we are measuring) as child. Then we
++can simulate slower link with larger delays.<br>
++For simplicity sake I use simple two class scenario:
++<pre>
++# qdisc for delay simulation
++tc qdisc add dev eth0 root handle 100: htb
++tc class add dev eth0 parent 100: classid 100:1 htb rate 90kbps
++
++# real measured qdisc
++tc qdisc add dev eth0 parent 100:1 handle 1: htb
++AC="tc class add dev eth0 parent"
++$AC 1: classid 1:1 htb rate 100kbps
++$AC 1:2 classid 1:10 htb rate 50kbps ceil 100kbps prio 1
++$AC 1:2 classid 1:11 htb rate 50kbps ceil 100kbps prio 1
++tc qdisc add dev eth0 parent 1:10 handle 20: pfifo limit 2
++tc qdisc add dev eth0 parent 1:11 handle 21: pfifo limit 2
++</pre>
++<img src=priotime.gif align=right>
++<i>Note: HTB as child of another HTB is NOT the same as class under
++another class within the same HTB. It is because when class in HTB can send
++it will send as soon as hardware equipment can. So that delay of underlimit
++class is limited only by equipment and not by ancestors.<br>
++In HTB under HTB case the outer HTB simulates new hardware equipment with
++all consequences (larger delay)</i>
++<p>
++Simulator is set to generate 50 kbps for both classes and at time 3s it
++executes command:
++<pre>
++tc class change dev eth0 parent 1:2 classid 1:10 htb \
++ rate 50kbps ceil 100kbps burst 2k prio 0
++</pre>
++As you see the delay of WWW class dropped nearly to the zero while
++SMTP's delay increased. When you priorize to get better delay it always
++makes other class delays worse.<br>
++Later (time 7s) the simulator starts to generate WWW at 60 kbps and SMTP at 40 kbps.
++There you can observe next interesting behaviour. When class is overlimit
++(WWW) then HTB priorizes underlimit part of bandwidth first.<p>
++<b>What class should you priorize ?</b> Generaly those classes where
++you really need low delays. The example could be video or audio
++traffic (and you will really need to use correct <b>rate</b> here
++to prevent traffic to kill other ones) or interactive (telnet, SSH)
++traffic which is bursty in nature and will not negatively affect
++other flows.<br>
++Common trick is to priorize ICMP to get nice ping delays even on fully
++utilized links (but from technical point of view it is not what you want when
++measuring connectivity).
++
++<a name=stats><h2>7. Understanding statistics</h2>
++The <b>tc</b> tool allows you to gather statistics of queuing disciplines in Linux.
++Unfortunately statistic results are not explained by authors so that you often can't
++use them. Here I try to help you to understand HTB's stats.<br>
++First whole HTB stats. The snippet bellow is taken during simulation from chapter 3.
++<pre>
++# tc -s -d qdisc show dev eth0
++ qdisc pfifo 22: limit 5p
++ Sent 0 bytes 0 pkts (dropped 0, overlimits 0) 
++
++ qdisc pfifo 21: limit 5p
++ Sent 2891500 bytes 5783 pkts (dropped 820, overlimits 0) 
++
++ qdisc pfifo 20: limit 5p
++ Sent 1760000 bytes 3520 pkts (dropped 3320, overlimits 0) 
++
++ qdisc htb 1: r2q 10 default 1 direct_packets_stat 0
++ Sent 4651500 bytes 9303 pkts (dropped 4140, overlimits 34251) 
++</pre>
++First three disciplines are HTB's children. Let's ignore them as PFIFO
++stats are self explanatory.<br>
++<i>overlimits</i> tells you how many times the discipline delayed a packet.
++<i>direct_packets_stat</i> tells you how many packets was sent thru direct queue.
++Other stats are sefl explanatory. Let's look at class' stats:
++<pre>
++tc -s -d class show dev eth0
++class htb 1:1 root prio 0 rate 800Kbit ceil 800Kbit burst 2Kb/8 mpu 0b 
++    cburst 2Kb/8 mpu 0b quantum 10240 level 3 
++ Sent 5914000 bytes 11828 pkts (dropped 0, overlimits 0) 
++ rate 70196bps 141pps 
++ lended: 6872 borrowed: 0 giants: 0
++
++class htb 1:2 parent 1:1 prio 0 rate 320Kbit ceil 4000Kbit burst 2Kb/8 mpu 0b 
++    cburst 2Kb/8 mpu 0b quantum 4096 level 2 
++ Sent 5914000 bytes 11828 pkts (dropped 0, overlimits 0) 
++ rate 70196bps 141pps 
++ lended: 1017 borrowed: 6872 giants: 0
++
++class htb 1:10 parent 1:2 leaf 20: prio 1 rate 224Kbit ceil 800Kbit burst 2Kb/8 mpu 0b 
++    cburst 2Kb/8 mpu 0b quantum 2867 level 0 
++ Sent 2269000 bytes 4538 pkts (dropped 4400, overlimits 36358) 
++ rate 14635bps 29pps 
++ lended: 2939 borrowed: 1599 giants: 0
++</pre>
++I deleted 1:11 and 1:12 class to make output shorter. As you see there
++are parameters we set. Also there are <i>level</i> and DRR <i>quantum</i>
++informations.<br>
++<i>overlimits</i> shows how many times class was asked to send packet
++but he can't due to rate/ceil constraints (currently counted for leaves only).<br>
++<i>rate, pps</i> tells you actual (10 sec averaged) rate going thru class. It
++is the same rate as used by gating.<br>
++<i>lended</i> is # of packets donated by this class (from its <b>rate</b>) and
++<i>borrowed</i> are packets for whose we borrowed from parent. Lends are always
++computed class-local while borrows are transitive (when 1:10 borrows from 1:2 which
++in turn borrows from 1:1 both 1:10 and 1:2 borrow counters are incremented).<br>
++<i>giants</i> is number of packets larger than mtu set in tc command. HTB will
++work with these but rates will not be accurate at all. Add mtu to your tc (defaults
++to 1600 bytes).<br>
++
++<a name=err><h2>8. Making, debugging and sending error reports</h2>
++<font color=red date=30.12.2002>
++If you have kernel 2.4.20 or newer you don't need to patch it - all
++is in vanilla tarball. The only thing you need is <b>tc</b> tool.
++Download HTB 3.6 tarball and use tc from it.
++</font><p>
++You have to patch to make it work with older kernels. Download kernel source and
++use <b>patch -p1 -i htb3_2.X.X.diff</b> to apply the patch. Then use
++<b>make menuconfig;make bzImage</b> as before. Don't forget to enable QoS and HTB.<br>
++Also you will have to use patched <b>tc</b> tool. The patch is also
++in downloads or you can download precompiled binary.<p>
++If you think that you found an error I will appreciate error report.
++For oopses I need ksymoops output. For weird qdisc behaviour add
++parameter <b>debug 3333333</b> to your <b>tc qdisc add .... htb</b>.
++It will log many megabytes to syslog facility kern level debug. You
++will probably want to add line like:<br>
++<b>kern.debug       -/var/log/debug</b><br>
++to your /etc/syslog.conf. Then bzip and send me the log via email
++(up to 10MB after bzipping) along with description of problem and
++its time.
++</body></html>
+--- iproute-20071016.orig/debian/copyright
++++ iproute-20071016/debian/copyright
+@@ -0,0 +1,44 @@
++This is the Debian GNU/Linux's prepackaged version of the
++Linux Traffic Control engine and related utils, "iproute"
++
++The source code was obtained from
++  http://developer.osdl.org/dev/iproute2
++The former upstream was
++  ftp://ftp.inr.ac.ru/ip-routing/iproute2-2.4.7-now-ss010824.tar.gz
++
++Copyrights
++----------
++Copyright (C) 1996-2001 Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>
++Copyright (C)           Stephen Hemminger <shemminger@osdl.org>
++and others, including, but not limited to
++  Copyright (C) 2004    USAGI/WIDE Project
++  Copyright (C)         J Hadi Salim (hadi@cyberus.ca)
++
++Modifications for Debian:
++  Copyright (C) 1996 Tom Lees <tom@lpsg.demon.co.uk>
++  Copyright (C) 1998 Christoph Lameter <christoph@lameter.com>
++  Copyright (C) 1998-1999 Roberto Lumbreras <rover@debian.org>
++  Copyright (C) 1999-2003 Juan Cespedes <cespedes@debian.org>
++  Copyright (C) 2005- Alexander Wirt <formorer@debian.org>
++
++
++License
++-------
++
++This program is free software; you can redistribute it and/or modify
++it under the terms of the GNU General Public License as published by
++the Free Software Foundation; either version 2, or (at your option)
++any later version.
++
++This program is distributed in the hope that it will be useful, but
++WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++General Public License for more details.
++
++A copy of the GNU General Public License is available as
++`/usr/share/common-licenses/GPL' in the Debian GNU/Linux distribution
++or on the World Wide Web at `http://www.gnu.org/copyleft/gpl.html'.
++You can also obtain it by writing to the Free Software Foundation,
++Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
++MA 02110-1301, USA.
++
+--- iproute-20071016.orig/debian/iproute.links
++++ iproute-20071016/debian/iproute.links
+@@ -0,0 +1,9 @@
++/usr/bin/lnstat usr/bin/rtstat
++/usr/bin/lnstat usr/bin/ctstat
++bin/ip sbin/ip
++/usr/share/man/man8/tc-pfifo.8.gz /usr/share/man/man8/tc-bfifo.8.gz
++/usr/share/man/man8/lnstat.8.gz /usr/share/man/man8/rtstat.8.gz
++/usr/share/man/man8/lnstat.8.gz /usr/share/man/man8/ctstat.8.gz
++/usr/share/man/man8/rtacct.8.gz /usr/share/man/man8/nstat.8.gz
++/usr/share/man/man8/routel.8.gz /usr/share/man/man8/routef.8.gz
++
+--- iproute-20071016.orig/debian/README.Debian
++++ iproute-20071016/debian/README.Debian
+@@ -0,0 +1,6 @@
++iproute for Debian
++------------------
++
++If you want use tc with the atm based queue you have to install libatm1 first. 
++
++ -- Alexander Wirt <formorer@debian.org>  Fri, 28 Dec 2007 11:56:28 +0100
+--- iproute-20071016.orig/debian/changelog
++++ iproute-20071016/debian/changelog
+@@ -0,0 +1,472 @@
++iproute (20071016-3) unstable; urgency=low
++
++  [ Alexander Wirt ]
++  * Prevent q_atm from being scanned by dh_shlibdeps
++  * Bump priority to important (Closes: #414086)
++  * Make iproute-doc architecture all
++
++  [ Andreas Henriksson ]
++  * Revert "fix dotted-quad support patch to work on big-endian",
++    and cherry-pick official upstream fix.
++  * Revert "TC action parsing bug fix" (Closes: #458539)
++  * Add synonyms for ip rule options to ip(8) manpage,
++    and drop ip_rule_usage.dpatch (Closes: #433507)
++  * Add routel and routef man page. (Closes: #325290)
++
++ -- Alexander Wirt <formorer@debian.org>  Fri, 04 Jan 2008 23:04:36 +0100
++
++iproute (20071016-2) unstable; urgency=low
++
++  [ Andreas Henriksson ]
++  * fix incompatibility with older kernels (Closes: #457161)
++    (Cherry picked from upstream)
++
++ -- Alexander Wirt <formorer@debian.org>  Thu, 20 Dec 2007 23:05:25 +0100
++
++iproute (20071016-1) unstable; urgency=low
++
++  [ Andreas Henriksson ]
++  * New upstream release (v2.6.23 aka snapshot 071016) (Closes: #445944)
++    - time2tick overflow patch applied upstream (Closes: #175462)
++    - tc ematch cmp/nbyte help patch applied upstream (Closes: #438653)
++    - mpath support dropped upstream (Closes: #428440, #428442)
++    - new manpages included upstream (Closes: #438994)
++    - linux header files updated to v2.6.23 (Closes: #409047)
++  * Drop patches which has been applied upstream or deprecated by
++    upstream changes.
++    - debian/patches/lartc applied upstream.
++    - debian/patches/netbug_fix deprecated, upstream dropped netbug script.
++    - debian/patches/empty_linkname.dpatch deprecated, fixed upstream.
++  * Add .dpatch suffix to wrr-qdisc patch to make dpatch-edit-patch work.
++  * Update patches to apply:
++    - wrr-qdisc, moo, ip_route_usage
++  * Don't install removed netbug script.
++  * Fix corruption when using batch files with comments and broken
++    lines. (cherry-picked from upstream. Closes: #398912)
++  * Update build-dependencies:
++    - libdb4.3-dev -> libdb-dev. (Closes: #442653)
++    - linux-kernel-headers -> linux-libc-dev.
++  * Drop debian/patches/ip_address_flush_loop.dpatch,
++    instead we'll use Daniel Silverstones patch imported from Ubuntu.
++  * Add Homepage and Vcs-{Browser,Git} fields to debian/control.
++  * Remove dead/leftover code from tc/q_htb.c, include/linux/pkt_sched.h
++  * Remove outdated README.Debian.
++  * Drop our own (buggy) RTAX_INITCWND support, in favor of upstreams.
++  * fix dotted-quad support patch to work on big-endian.
++    (upstream applied a broken patch, which we cherry-picked for #357172)
++
++  [ Ben Finney ]
++  * Add dh_md5sums to generate md5sums control file (Closes: #439439)
++
++  [ Justin Pryzby ]
++  * ss(8) manpage formatting breaks EXAMPLE (Closes: #443071)
++
++  [ Daniel Silverstone ]
++  * Avoid infinite loop in ip addr flush.
++
++  [ Alexander Wirt ]
++  * Add Andreas Henriksson to uploaders
++  * Bump standards version
++  * Support dotted-quad netmasks in iproute (Closes: #357172) (Cherry picked
++    from upstream)
++
++ -- Alexander Wirt <formorer@debian.org>  Sun, 16 Dec 2007 14:30:31 +0100
++
++iproute (20070313-1) unstable; urgency=low
++
++  * New upstream release
++  * Make iproute-doc a suggest (Closes: #424967)
++  * Add tc_cbq_details_typo.dpatch (Closes: #387083)
++  * Add libnetlink_typo.dpatch (Closes: #396124)
++  * Add tcb_htb_typo.dpatch (Closes: #396317)
++  * Remove references to non-existing tc-filters manpage (Closes:
++    #298715)
++  * Fix bad phrased sentence in ss manpage (Closes: #401552)
++
++ -- Alexander Wirt <formorer@debian.org>  Sun, 10 Jun 2007 19:36:48 +0200
++
++iproute (20061002-4) unstable; urgency=low
++
++  * Add distribution tables (used by netem). 
++    (Closes: #408313)
++
++ -- Alexander Wirt <formorer@debian.org>  Wed, 24 Jan 2007 22:55:26 +0100
++
++iproute (20061002-3) unstable; urgency=low
++
++  * Added a patch from Nikolai Kondrashov that fixes unknown
++    symbols in ip_common.h. (Closes: #397584)
++
++ -- Alexander Wirt <formorer@debian.org>  Thu, 14 Dec 2006 20:11:55 +0100
++
++iproute (20061002-2) unstable; urgency=medium
++
++  * Add manpage for ss, rtmon  and lnstat (Thanks to Michael Prokop for that) 
++  * Fix metric output of iproute (backported from git)
++    (http://bugs.archlinux.org/task/5669)
++  * medium as this bug breaks other packages such as vpnc
++
++ -- Alexander Wirt <formorer@debian.org>  Thu, 19 Oct 2006 06:39:05 +0200
++
++iproute (20061002-1) unstable; urgency=low
++
++  * New upstream release
++    - This fixes the xfrm monitor mode (Closes: #383133)
++  * Fix typos in manpages (Closes: #387082, #387083)
++  * Split docs in a seperate package 
++
++ -- Alexander Wirt <formorer@debian.org>  Sun, 15 Oct 2006 16:40:34 +0200
++
++iproute (20060323-1) unstable; urgency=low
++
++  * New upstream release (Closes: #370699)
++  * Removed reenable_short_matches, tc_sample_fix, f_u32 patches (included
++    upstream)
++  * Add manpage for pfifo (Closes: #359971)
++  * Add moo object (Closes: #312843)
++  * Add src option to ip_route usage (Closes: #226142)
++  * Prevent users from renaming an interface to "" (Closes: #241904)
++  * Added timout for ip a f (Closes: #386288)
++  
++ -- Alexander Wirt <formorer@debian.org>  Fri,  8 Sep 2006 16:43:20 +0200
++
++iproute (20051007-4) unstable; urgency=low
++
++  * Moved *stat binaries to /usr/bin/ (Closes: #350703)
++  * Fixed some manpage typos 
++    (Closes: #350671, #350672, #350673, #350674, #350675)
++  * Conflicts with arpd
++  * Fixes u32 bucket hashing calucation. (Closes: #351751)
++    Thanks to Russel Stuart for the patch
++  * Moved to libdb4.3
++  * Fixed ip help output (Closes: #354909)
++  * Fixed hardcoded module paths for tc (Closes: #290315)
++
++ -- Alexander Wirt <formorer@debian.org>  Sun,  5 Feb 2006 09:47:36 +0100
++
++iproute (20051007-3) unstable; urgency=low
++
++  * New upstream release (Closes: #333643)
++  * Added a patch for tc that add u32 get parsed correct
++    Thanks Russell Stuart for the patch (Closes: #347699)
++  * We now have a manpage for tc-bfifo (Closes: #319871)
++  * "get" is no longer mentioned in tc's usage (Closes: #167314)
++  * We now build arpd (Closes: #296200)
++  * Include htb docs (Closes: #204629)
++  * Added flex to build-deps (Closes: #340004, #339119)
++  * Added symlinks for lnstat (Closes: #302589)
++  * Acknowledge heap correction nmu (Closes: #326961)
++  * Acknowledge douple free fix nmu (Closes: #338575)
++  * Fixed allmulticast mention in ip manpage (Closes: #305338)
++  * Add [ prio NUMBER ] to ip_rule.c (Closes: #213673)
++
++ -- Alexander Wirt <formorer@debian.org>  Sun,  5 Feb 2006 09:37:01 +0100
++
++iproute (20051007-2) experimental; urgency=low
++
++  * Added flex to build-deps 
++
++ -- Alexander Wirt <formorer@debian.org>  Sun, 20 Nov 2005 10:46:39 +0100
++
++iproute (20051007-1) experimental; urgency=low
++
++  * The "lets break other peoples networking release"
++    + New upstream release
++    + New maintainer
++    + Fix netbug script
++    + Reenable short iproute commands 
++
++ -- Alexander Wirt <formorer@debian.org>  Tue,  1 Nov 2005 10:22:05 +0100
++
++iproute (20041019-4.1) unstable; urgency=low
++
++  * Non-maintainer upload.
++  * Fix size of table allocation (closes: #326961, #338575)
++
++ -- Blars Blarson <blarson@blars.org>  Sat, 14 Jan 2006 02:07:18 +0000
++
++iproute (20041019-4) unstable; urgency=low
++
++  * New maintainer, closes: #295122.
++  * Included iproute2 homepage in debian/control and updated it in
++    debian/copyright.
++  * Updated FSF mail address in debian/copyright.
++  * Set Standards-Version to 3.6.2 in debian/control.
++  * Fixed "FTBFS: normal.c heap corrution due to table overflow",
++    closes: #326961. Patch by LaMont Jones <lamont@debian.org>.
++  * Fixed "Netbug script gives syntax error", closes: #313540.
++    Patch by Allard Hoeve <allard@byte.nl>.
++  * Fixed "Netbug creates uuencoded file with wrong suffix", closes:
++    #313541. Patch by Allard Hoeve <allard@byte.nl>.
++  * Fixed "Netbug warns about intended stripping of trailing '/'",
++    closes: #313544. Patch by Allard Hoeve <allard@byte.nl>.
++
++ -- Anibal Monsalve Salazar <anibal@debian.org>  Fri, 11 Nov 2005 13:22:15 +1100
++
++iproute (20041019-3) unstable; urgency=medium
++
++  * fix insecure file creation in netbug. Closes: #289541
++  * remove bogus reference to tc-filters from tc's manpage. Closes: #289225
++  * add support for "hoplimit" and "initcwnd" route metrics. Closes: #221893
++  * ikey for GRE works. Closes: #200714
++  * include wrr qdisc. Closes: #198414
++
++ -- Andreas Barth <aba@not.so.argh.org>  Sun,  9 Jan 2005 11:51:09 +0000
++
++iproute (20041019-2) unstable; urgency=low
++
++  * build fails if subdir fails. Closes: #283797
++  * include q_netem.so. Closes: #283968
++  * fix typo in man page. Closes: #285507
++  * removed the 2. and 3. copy of the man pages.
++  * start using dpatch.
++  * add reference to Advanced Routing HOWTO. Closes: #150087
++
++ -- Andreas Barth <aba@not.so.argh.org>  Wed,  5 Jan 2005 21:20:44 +0000
++
++iproute (20041019-1) unstable; urgency=low
++
++  * New maintainer.
++  * packaging changes:
++    + using debhelper
++    + add all manpages. Closes: #57829, #138432, #203797, #246521
++    + add documentation text and html doc, and adding lynx as build-dep.
++      Closes: #121978, #57828
++    + include all tex-files in the doc. Closes: #107117
++  * get straight with the kernel. Closes: #186808
++  * add header files and libnetlink to new development package.
++    Closes: #128162, #139309
++  * build-depend on libatm1-dev | atm-dev instead of atm-dev
++
++ -- Andreas Barth <aba@not.so.argh.org>  Sun, 28 Nov 2004 01:07:30 +0000
++
++iproute (20041019-0.2) unstable; urgency=low
++
++  * NMU, uploading to unstable.
++
++ -- Andreas Barth <aba@not.so.argh.org>  Mon, 22 Nov 2004 19:43:17 +0200
++
++iproute (20041019-0.1) experimental; urgency=low
++
++  * NMU, fixing only most urgent issues.
++  * New upstream package, fixes:
++    + compatibility with 2.6.7 and above. Closes: #262698
++    + no longer with netinet/in.h. Closes: #221877
++
++ -- Andreas Barth <aba@not.so.argh.org>  Mon,  8 Nov 2004 07:50:35 +0100
++
++iproute (20010824-13.1) unstable; urgency=high
++
++  * NMU for a security fix.
++  * [CAN-2003-0856] Fix a local denial of service vulnerability via
++    spoofed messages to the kernel's Netlink interface. (Closes: #242994)
++
++ -- Joshua Kwan <joshk@triplehelix.org>  Sun, 16 May 2004 20:28:43 -0700
++
++iproute (20010824-13) unstable; urgency=low
++
++  * debian/rules: Run dpkg-shlibdeps with all the executables,
++    to fix dependency problem                      (closes: Bug#224063)
++  * Really removed references to obsolete include files
++    (Bug#223165 was not fixed properly)
++
++ -- Juan Cespedes <cespedes@debian.org>  Sun, 25 Jan 2004 23:04:20 +0100
++
++iproute (20010824-12) unstable; urgency=low
++
++  * Updated README.Debian and copyright file
++  * Added two new manpages from http://lartc.org/manpages/:
++    ip(8) and tc-cbq-details(8).
++  * Removed references to obsolete include files which made
++    compilation fail (closes: Bug#223165)
++
++ -- Juan Cespedes <cespedes@debian.org>  Sun, 14 Dec 2003 00:40:10 +0100
++
++iproute (20010824-11) unstable; urgency=low
++
++  * Changed priority to "optional"
++  * Fixed "tc -s qdisc" on sparc (patch by "Nicolas S. Dade"
++    <ndade@nsd.dyndns.org>) (closes: Bug#194128)
++
++ -- Juan Cespedes <cespedes@debian.org>  Sun, 17 Aug 2003 00:22:47 +0200
++
++iproute (20010824-10) unstable; urgency=low
++
++  * Updated manual pages from http://www.lartc.org/manpages/
++                (closes: Bug#156353, Bug#175313, Bug#176989, Bug#189095)
++  * New Standards-Version
++  * Don't "rm -rf /etc/iproute2" on purge (closes: Bug#202862)
++  * Include "iproute2" in the description (closes: Bug#182999)
++
++ -- Juan Cespedes <cespedes@debian.org>  Sat, 16 Aug 2003 18:29:27 +0200
++
++iproute (20010824-9) unstable; urgency=medium
++
++  * Added patch for HTB v3.6 to be able to work with kernel 2.4.20
++    (from http://luxik.cdi.cz/~devik/qos/htb/v3/htb3.6-020525.tgz)
++                (closes: Bug#147550, Bug#167149, Bug#167597, Bug#171277)
++
++ -- Juan Cespedes <cespedes@debian.org>  Thu, 05 Dec 2002 13:44:10 +0100
++
++iproute (20010824-8) unstable; urgency=medium
++
++  * Added support for HTB queuing discipline        (closes: Bug#133381)
++    NOTE: you need a patched kernel in order to use it
++
++ -- Juan Cespedes <cespedes@debian.org>  Tue,  2 Apr 2002 20:29:40 +0200
++
++iproute (20010824-7) unstable; urgency=medium
++
++  * Move `ip' binary to /bin to fix FHS violation   (closes: Bug#134812)
++
++ -- Juan Cespedes <cespedes@debian.org>  Mon,  4 Mar 2002 00:20:30 +0100
++
++iproute (20010824-6) unstable; urgency=low
++
++  * Added a couple of #ifdef's to be able to compile with older
++    kernel headers (needed for arm)                 (closes: Bug#131695)
++
++ -- Juan Cespedes <cespedes@debian.org>  Sat, 16 Feb 2002 19:27:15 +0100
++
++iproute (20010824-5) unstable; urgency=low
++
++  * Really fix Bug#121589 (dead gateway bug); apparently I
++    forgot to include the patch in 20010824-2
++
++ -- Juan Cespedes <cespedes@debian.org>  Tue, 29 Jan 2002 23:22:24 +0100
++
++iproute (20010824-4) unstable; urgency=low
++
++  * Added support for DIFFSERV and ATM in tc
++
++ -- Juan Cespedes <cespedes@debian.org>  Sun, 13 Jan 2002 03:01:47 +0100
++
++iproute (20010824-3) unstable; urgency=low
++
++  * Updated tc* man pages (thanks to bert hubert <ahu@ds9a.nl>)
++  * Fixed spurious space in `tc -s qdisc' output (closes: Bug#128501)
++
++ -- Juan Cespedes <cespedes@debian.org>  Thu, 10 Jan 2002 22:18:25 +0100
++
++iproute (20010824-2) unstable; urgency=low
++
++  * Fixed the following important and serious bugs:
++    + iproute doesn't compile on Alpha (closes: Bug#118113, Bug#123224)
++    + iproute doesn't compile on MIPS (closes: Bug#118424)
++    + iproute doesn't compile on powerpc (closes: Bug#119601)
++  * Added man pages for tc (closes: Bug#124230), tc-cbq, tc-red, tc-tbf,
++    tc-prio and tc-sfq
++  * Removed references to old programs from iproute(7) (closes: Bug#99536)
++  * Fixed bug which presented first hop as dead in equal cost multipath
++                                                      (closes: Bug#121589)
++  * Do not process .ps with through `psnup' (closes: Bug#119820)
++
++ -- Juan Cespedes <cespedes@debian.org>  Tue,  8 Jan 2002 16:07:27 +0100
++
++iproute (20010824-1) unstable; urgency=low
++
++  * New upstream version
++  * Make ingress qdisc work again with tc           (closes: Bug#84444)
++  * Make it compile properly with new include files (closes: Bug#113112)
++
++ -- Juan Cespedes <cespedes@debian.org>  Sun, 28 Oct 2001 16:38:00 +0100
++
++iproute (20001007-1) unstable; urgency=low
++
++  * New upstream version                             (closes: Bug#63701)
++  * Remove /etc/iproute2 on purge                    (closes: Bug#72743)
++  * Fixed Lintian warnings (no-priority-field and no-section-field)
++
++ -- Juan Cespedes <cespedes@debian.org>  Sat, 14 Oct 2000 19:27:12 +0200
++
++iproute (991023-2) unstable; urgency=low
++
++  * New Standards-Version (3.1.1) (closes: Bug#47923)
++  * Modified description of package to show which kernel options are
++    necessary to use the package (closes: Bug#47922)
++  * Updated manual page to point at /usr/share/doc/iproute (closes: Bug#47924)
++
++ -- Juan Cespedes <cespedes@debian.org>  Sun, 19 Dec 1999 04:00:21 +0100
++
++iproute (991023-1) unstable; urgency=low
++
++  * New upstream version (closes: Bug#48733)
++
++ -- Juan Cespedes <cespedes@debian.org>  Tue,  2 Nov 1999 16:29:37 +0100
++
++iproute (990824-1) unstable; urgency=low
++
++  * New maintainer
++  * New upstream version
++  * New Standards-Version: 3.1.0
++  * Minor fix in "ip rule list": mask in "from" address was not shown
++    correctly
++  * Removed obsoleted documentation from "debian/" directory
++
++ -- Juan Cespedes <cespedes@debian.org>  Sun, 24 Oct 1999 19:02:56 +0200
++
++iproute (990630-1) unstable; urgency=low
++
++  * New upstream version.
++  * FHS and standards 3.0.1.0.
++
++ -- Roberto Lumbreras <rover@debian.org>  Tue,  3 Aug 1999 02:49:28 +0200
++
++iproute (990530-1) unstable; urgency=low
++
++  * New upstream version.
++  * Build with 2.2.10 kernel headers.
++  * Install new scripts ip/routef ip/routel, but not ip/ifcfg ip/rtpr by
++    now, I don't know who/what needs rtpr; ifcfg uses arping, and it isn't
++    available in debian for now.
++
++ -- Roberto Lumbreras <rover@debian.org>  Tue, 22 Jun 1999 02:28:53 +0200
++
++iproute (990329-1) unstable; urgency=low
++
++  * New upstream version.
++  * Build with 2.2.5 kernel headers.
++
++ -- Roberto Lumbreras <rover@debian.org>  Sun,  4 Apr 1999 18:50:39 +0200
++
++iproute (980630-1) unstable; urgency=low
++
++  * New upstream version.
++  * Build with 2.1.112 kernel headers.
++  * Rewrote the rules file.
++
++ -- Roberto Lumbreras <rover@debian.org>  Wed, 29 Jul 1998 23:37:52 +0200
++
++iproute (980119-1) unstable; urgency=low
++
++  * Outdated documentation. Upstream docs are scarce.
++  * Non-Maintainer release
++  * This package has no correct copyright file!
++  * Include all the README.* docs from the upstream site.
++  * Modified to build under glibc
++  * Build with 2.1.85 kernel headers.
++  * produce a correct diff.
++  * Reworked the rules file to utilize debmake fully
++  * Newest upstream release
++  * glibc compilation
++
++ -- Christoph Lameter <christoph@lameter.com>  Wed,  4 Feb 1998 13:37:28 -0800
++
++iproute (961225-2) unstable frozen; urgency=low
++
++  * Added a man page for iproute. (Fixes #8080).
++  * Removed out-of-date patches.
++  * Added routing.txt from /usr/src/linux/Documentation/networking/routing.txt
++  * Newer version of debmake.
++
++ -- Tom Lees <tom@lpsg.demon.co.uk>  Mon, 17 Apr 1997 17:00:36 +0100
++
++iproute (961225-1) unstable; urgency=low
++
++  * Initial Release.
++
++ -- Tom Lees <tom@lpsg.demon.co.uk>  Mon, 30 Dec 1996 11:12:23 +0000
++
++Local variables:
++mode: debian-changelog
++End:
+--- iproute-20071016.orig/debian/iproute.install
++++ iproute-20071016/debian/iproute.install
+@@ -0,0 +1,8 @@
++ip/ip /bin
++ip/rtmon tc/tc misc/rtacct misc/ss /sbin
++misc/lnstat misc/nstat /usr/bin/
++ip/routef ip/routel /usr/bin
++etc/* /etc
++tc/*.so /usr/lib/tc
++misc/arpd /usr/sbin
++netem/*.dist /usr/lib/tc
+--- iproute-20071016.orig/debian/patches/fix_ss_typo.dpatch
++++ iproute-20071016/debian/patches/fix_ss_typo.dpatch
+@@ -0,0 +1,19 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## fix_ss_typo.dpatch by  <formorer@lisa.springfield.lan>
++##
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: No description.
++
++@DPATCH@
++diff -urNad iproute-20070313~/man/man8/ss.8 iproute-20070313/man/man8/ss.8
++--- iproute-20070313~/man/man8/ss.8	2007-03-13 22:50:56.000000000 +0100
+++++ iproute-20070313/man/man8/ss.8	2007-06-10 19:36:04.000000000 +0200
++@@ -9,7 +9,7 @@
++ is used to dump socket statistics. It allows showing information similar
++ to
++ .IR netstat .
++-It can display more TCP information than state than other tools.
+++It can display more TCP and state informations than other tools.
++ 
++ .SH OPTIONS
++ These programs follow the usual GNU command line syntax, with long
+--- iproute-20071016.orig/debian/patches/00list
++++ iproute-20071016/debian/patches/00list
+@@ -0,0 +1,12 @@
++ip.8-typo
++wrr-qdisc.dpatch
++manpages-typo.dpatch
++ip_address
++tc_modules.dpatch
++moo.dpatch
++ip_route_usage.dpatch
++tc_cbq_details_typo.dpatch
++libnetlink_typo.dpatch
++tcb_htb_typo.dpatch 
++fix_ss_typo.dpatch
++remove_tc_filters_reference.dpatch
+--- iproute-20071016.orig/debian/patches/libnetlink_typo.dpatch
++++ iproute-20071016/debian/patches/libnetlink_typo.dpatch
+@@ -0,0 +1,19 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## libnetlink_typo.dpatch by  <formorer@lisa.springfield.lan>
++##
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: No description.
++
++@DPATCH@
++diff -urNad iproute-20070313~/man/man3/libnetlink.3 iproute-20070313/man/man3/libnetlink.3
++--- iproute-20070313~/man/man3/libnetlink.3	2007-03-13 22:50:56.000000000 +0100
+++++ iproute-20070313/man/man3/libnetlink.3	2007-06-10 19:28:30.000000000 +0200
++@@ -187,7 +187,7 @@
++ This library should be named librtnetlink.
++ 
++ .SH AUTHORS
++-netlink/rtnetlink was designed and writen by Alexey Kuznetsov.
+++netlink/rtnetlink was designed and written by Alexey Kuznetsov.
++ Andi Kleen wrote the man page.
++ 
++ .SH SEE ALSO
+--- iproute-20071016.orig/debian/patches/add-metrics.diff
++++ iproute-20071016/debian/patches/add-metrics.diff
+@@ -0,0 +1,97 @@
++#! /bin/sh -e
++## 
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: show the \ really, see #285507
++
++[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
++patch_opts="${patch_opts:--f --no-backup-if-mismatch}"
++
++if [ $# -ne 1 ]; then
++    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
++    exit 1
++fi
++case "$1" in
++       -patch) patch $patch_opts -p1 < $0;;
++       -unpatch) patch $patch_opts -p1 -R < $0;;
++        *)
++                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
++                exit 1;;
++esac
++
++exit 0
++@DPATCH@
++--- iproute-20010824/ip/iproute.c
+++++ iproute-20010824/ip/iproute.c
++@@ -57,7 +57,7 @@
++ 	fprintf(stderr, "OPTIONS := FLAGS [ mtu NUMBER ] [ advmss NUMBER ]\n");
++ 	fprintf(stderr, "           [ rtt NUMBER ] [ rttvar NUMBER ]\n");
++ 	fprintf(stderr, "           [ window NUMBER] [ cwnd NUMBER ] [ ssthresh REALM ]\n");
++-	fprintf(stderr, "           [ realms REALM ]\n");
+++	fprintf(stderr, "           [ realms REALM ] [ hoplimit NUMBER ] [ initcwnd NUMBER ]\n");
++ 	fprintf(stderr, "TYPE := [ unicast | local | broadcast | multicast | throw |\n");
++ 	fprintf(stderr, "          unreachable | prohibit | blackhole | nat ]\n");
++ 	fprintf(stderr, "TABLE_ID := [ local | main | default | all | NUMBER ]\n");
++@@ -481,6 +481,8 @@
++ 				"cwnd",
++ 				"advmss",
++ 				"reordering",
+++				"hoplimit",
+++				"initcwnd",
++ 			};
++ 			static int hz;
++ 			if (mxrta[i] == NULL)
++@@ -750,6 +752,30 @@
++ 				invarg("\"reordering\" value is invalid\n", *argv);
++ 			rta_addattr32(mxrta, sizeof(mxbuf), RTAX_REORDERING, reord);
++ #endif
+++#ifdef RTAX_HOPLIMIT
+++		} else if (strcmp(*argv, "hoplimit") == 0) {
+++			unsigned hoplim;
+++			NEXT_ARG();
+++			if (strcmp(*argv, "lock") == 0) {
+++				mxlock |= (1<<RTAX_HOPLIMIT);
+++				NEXT_ARG();
+++			}
+++			if (get_unsigned(&hoplim, *argv, 0))
+++				invarg("\"hoplimit\" value is invalid\n", *argv);
+++			rta_addattr32(mxrta, sizeof(mxbuf), RTAX_HOPLIMIT, hoplim);
+++#endif
+++#ifdef RTAX_INITCWND
+++		} else if (strcmp(*argv, "initcwnd") == 0) {
+++			unsigned initcwnd;
+++			NEXT_ARG();
+++			if (strcmp(*argv, "lock") == 0) {
+++				mxlock |= (1<<RTAX_HOPLIMIT);
+++				NEXT_ARG();
+++			}
+++			if (get_unsigned(&initcwnd, *argv, 0))
+++				invarg("\"initcwnd\" value is invalid\n", *argv);
+++			rta_addattr32(mxrta, sizeof(mxbuf), RTAX_INITCWND, initcwnd);
+++#endif
++ 		} else if (strcmp(*argv, "rtt") == 0) {
++ 			unsigned rtt;
++ 			NEXT_ARG();
++--- iproute-20010824.orig/doc/ip-cref.tex
+++++ iproute-20010824/doc/ip-cref.tex
++@@ -1324,2 +1324,15 @@
++ 
+++\item \verb|hoplimit NUMBER|
+++
+++--- [2.5.74+ only] Hop limit on the path to this destination. If it is not
+++    given, Linux uses the value selected with \verb|sysctl| variable
+++    \verb|net/ipv4/ip_default_ttl|.
+++
+++\item \verb|initcwnd NUMBER|
+++
+++--- [2.5.70+ only] Initial congestion window size when establishing
+++    connections to this destination. This value is multiplied with the
+++    MSS (``Maximal Segment Size'') for the connection to get the actual
+++    window size. If it is not given (or set to zero), Linux uses the
+++    values specified in~\cite{RFC2414}.
++ 
++@@ -2653,2 +2666,5 @@
++ 
+++\bibitem{RFC2414}  M.~Allman, S.~Floyd, C.~Partridge.
+++``Increasing TCP's Initial Window'', RFC-2414.
+++
++ \end{thebibliography}
+--- iproute-20071016.orig/debian/patches/esfq-support.dpatch
++++ iproute-20071016/debian/patches/esfq-support.dpatch
+@@ -0,0 +1,284 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## esfq-support.dpatch by Alexander Wirt <formorer@debian.org>
++##
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: No description.
++
++@DPATCH@
++diff -urNad iproute-20060323~/tc/Makefile iproute-20060323/tc/Makefile
++--- iproute-20060323~/tc/Makefile	2006-09-08 18:57:26.000000000 +0200
+++++ iproute-20060323/tc/Makefile	2006-09-08 18:57:54.000000000 +0200
++@@ -7,6 +7,7 @@
++ TCMODULES :=
++ TCMODULES += q_fifo.o
++ TCMODULES += q_sfq.o
+++TCMODULES += q_esfq.o
++ TCMODULES += q_red.o
++ TCMODULES += q_prio.o
++ TCMODULES += q_tbf.o
++diff -urNad iproute-20060323~/tc/Makefile.orig iproute-20060323/tc/Makefile.orig
++--- iproute-20060323~/tc/Makefile.orig	1970-01-01 01:00:00.000000000 +0100
+++++ iproute-20060323/tc/Makefile.orig	2006-09-08 18:57:26.000000000 +0200
++@@ -0,0 +1,89 @@
+++TCOBJ= tc.o tc_qdisc.o tc_class.o tc_filter.o tc_util.o \
+++       m_police.o m_estimator.o m_action.o m_ematch.o \
+++       emp_ematch.yacc.o emp_ematch.lex.o
+++
+++include ../Config
+++
+++TCMODULES :=
+++TCMODULES += q_fifo.o
+++TCMODULES += q_sfq.o
+++TCMODULES += q_red.o
+++TCMODULES += q_prio.o
+++TCMODULES += q_tbf.o
+++TCMODULES += q_cbq.o
+++TCMODULES += f_rsvp.o
+++TCMODULES += f_u32.o
+++TCMODULES += f_route.o
+++TCMODULES += f_fw.o
+++TCMODULES += f_basic.o
+++TCMODULES += q_dsmark.o
+++TCMODULES += q_gred.o
+++TCMODULES += f_tcindex.o
+++TCMODULES += q_ingress.o
+++TCMODULES += q_hfsc.o
+++TCMODULES += q_htb.o
+++TCMODULES += m_gact.o
+++TCMODULES += m_mirred.o
+++TCMODULES += m_ipt.o
+++TCMODULES += m_pedit.o
+++TCMODULES += p_ip.o
+++TCMODULES += p_icmp.o
+++TCMODULES += p_tcp.o
+++TCMODULES += p_udp.o
+++TCMODULES += em_nbyte.o
+++TCMODULES += em_cmp.o
+++TCMODULES += em_u32.o
+++TCMODULES += em_meta.o
+++
+++TCOBJ += $(TCMODULES)
+++
+++TCLIB := tc_core.o
+++TCLIB += tc_red.o
+++TCLIB += tc_cbq.o
+++TCLIB += tc_estimator.o
+++
+++CFLAGS += -DCONFIG_GACT -DCONFIG_GACT_PROB
+++
+++TCSO :=
+++TCSO += q_netem.so
+++ifeq ($(TC_CONFIG_ATM),y)
+++  TCSO += q_atm.so
+++endif
+++
+++LDLIBS += -L. -ltc -lm -ldl
+++
+++LDFLAGS += -Wl,-export-dynamic
+++
+++YACC := bison
+++LEX := flex
+++
+++%.so: %.c
+++	$(CC) $(CFLAGS) -shared -fpic $< -o $@
+++
+++
+++all: libtc.a tc $(TCSO)
+++
+++tc: $(TCOBJ) $(LIBNETLINK) $(LIBUTIL) $(TCLIB)
+++
+++libtc.a: $(TCLIB)
+++	$(AR) rcs $@ $(TCLIB)
+++
+++install: all
+++	mkdir -p $(DESTDIR)/usr/lib/tc
+++	install -m 0755 -s tc $(DESTDIR)$(SBINDIR)
+++	for i in $(TCSO); \
+++	do install -m 755 -s $$i $(DESTDIR)/usr/lib/tc; \
+++	done
+++
+++clean:
+++	rm -f $(TCOBJ) $(TCLIB) libtc.a tc *.so emp_ematch.yacc.h; \
+++	rm -f emp_ematch.yacc.output
+++
+++q_atm.so: q_atm.c
+++	$(CC) $(CFLAGS) -shared -fpic -o q_atm.so q_atm.c -latm
+++
+++%.yacc.c: %.y
+++	$(YACC) $(YACCFLAGS) -o $@ $<
+++
+++%.lex.c: %.l
+++	$(LEX) $(LEXFLAGS) -o$@ $<
++diff -urNad iproute-20060323~/tc/q_esfq.c iproute-20060323/tc/q_esfq.c
++--- iproute-20060323~/tc/q_esfq.c	1970-01-01 01:00:00.000000000 +0100
+++++ iproute-20060323/tc/q_esfq.c	2006-09-08 18:57:54.000000000 +0200
++@@ -0,0 +1,169 @@
+++/*
+++ * q_esfq.c		ESFQ.
+++ *
+++ *		This program is free software; you can redistribute it and/or
+++ *		modify it under the terms of the GNU General Public License
+++ *		as published by the Free Software Foundation; either version
+++ *		2 of the License, or (at your option) any later version.
+++ *
+++ * Authors:	Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru>
+++ *
+++ * Changes:	Alexander Atanasov, <alex@ssi.bg>
+++ *		Added depth,limit,divisor,hash_kind options.
+++ */
+++
+++#include <stdio.h>
+++#include <stdlib.h>
+++#include <unistd.h>
+++#include <syslog.h>
+++#include <fcntl.h>
+++#include <math.h> 
+++#include <sys/socket.h>
+++#include <netinet/in.h>
+++#include <arpa/inet.h>
+++#include <string.h>
+++
+++#include "utils.h"
+++#include "tc_util.h"
+++
+++static void explain(void)
+++{
+++	fprintf(stderr, "Usage: ... esfq [ perturb SECS ] [ quantum BYTES ] [ depth FLOWS ]\n\t[ divisor HASHBITS ] [ limit PKTS ] [ hash HASHTYPE]\n");
+++	fprintf(stderr,"Where: \n");
+++	fprintf(stderr,"HASHTYPE := { classic | src | dst }\n");
+++}
+++
+++#define usage() return(-1)
+++
+++static int esfq_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nlmsghdr *n)
+++{
+++	int ok=0;
+++	struct tc_sfq_qopt opt;
+++
+++	memset(&opt, 0, sizeof(opt));
+++
+++	opt.hash_kind= TCA_SFQ_HASH_CLASSIC;
+++	
+++	while (argc > 0) {
+++		if (strcmp(*argv, "quantum") == 0) {
+++			NEXT_ARG();
+++			if (get_size(&opt.quantum, *argv)) {
+++				fprintf(stderr, "Illegal \"quantum\"\n");
+++				return -1;
+++			}
+++			ok++;
+++		} else if (strcmp(*argv, "perturb") == 0) {
+++			NEXT_ARG();
+++			if (get_integer(&opt.perturb_period, *argv, 0)) {
+++				fprintf(stderr, "Illegal \"perturb\"\n");
+++				return -1;
+++			}
+++			ok++;
+++		} else if (strcmp(*argv, "depth") == 0) {
+++			NEXT_ARG();
+++			if (get_integer(&opt.flows, *argv, 0)) {
+++				fprintf(stderr, "Illegal \"depth\"\n");
+++				return -1;
+++			}
+++			ok++;
+++		} else if (strcmp(*argv, "divisor") == 0) {
+++			NEXT_ARG();
+++			if (get_integer(&opt.divisor, *argv, 0)) {
+++				fprintf(stderr, "Illegal \"divisor\"\n");
+++				return -1;
+++			}
+++			if(opt.divisor >= 15) {
+++				fprintf(stderr, "Illegal \"divisor\" must be < 15\n");
+++				return -1;
+++			}
+++			opt.divisor=pow(2,opt.divisor);
+++			ok++;
+++		} else if (strcmp(*argv, "limit") == 0) {
+++			NEXT_ARG();
+++			if (get_integer(&opt.limit, *argv, 0)) {
+++				fprintf(stderr, "Illegal \"limit\"\n");
+++				return -1;
+++			}
+++			ok++;
+++		} else if (strcmp(*argv, "hash") == 0) {
+++			NEXT_ARG();
+++			if(strcmp(*argv,"classic") == 0) {
+++				opt.hash_kind= TCA_SFQ_HASH_CLASSIC;
+++			} else 
+++			if(strcmp(*argv,"dst") == 0) {
+++				opt.hash_kind= TCA_SFQ_HASH_DST;
+++			} else
+++			if(strcmp(*argv,"src") == 0) {
+++				opt.hash_kind= TCA_SFQ_HASH_SRC;
+++			} else {
+++				fprintf(stderr, "Illegal \"hash\"\n");
+++				explain();
+++				return -1;
+++			}
+++			ok++;
+++		} else if (strcmp(*argv, "help") == 0) {
+++			explain();
+++			return -1;
+++		} else {
+++			fprintf(stderr, "What is \"%s\"?\n", *argv);
+++			explain();
+++			return -1;
+++		}
+++		argc--; argv++;
+++	}
+++
+++	if (ok)
+++		addattr_l(n, 1024, TCA_OPTIONS, &opt, sizeof(opt));
+++	return 0;
+++}
+++
+++static int esfq_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
+++{
+++	struct tc_sfq_qopt *qopt;
+++	SPRINT_BUF(b1);
+++
+++	if (opt == NULL)
+++		return 0;
+++
+++	if (RTA_PAYLOAD(opt)  < sizeof(*qopt))
+++		return -1;
+++	qopt = RTA_DATA(opt);
+++	fprintf(f, "quantum %s ", sprint_size(qopt->quantum, b1));
+++	if (show_details) {
+++		fprintf(f, "limit %up flows %u/%u ",
+++			qopt->limit, qopt->flows, qopt->divisor);
+++	}
+++	if (qopt->perturb_period)
+++		fprintf(f, "perturb %dsec ", qopt->perturb_period);
+++
+++		fprintf(f,"hash: ");
+++	switch(qopt->hash_kind)
+++	{
+++	case TCA_SFQ_HASH_CLASSIC:
+++		fprintf(f,"classic");
+++		break;
+++	case TCA_SFQ_HASH_DST:
+++		fprintf(f,"dst");
+++		break;
+++	case TCA_SFQ_HASH_SRC:
+++		fprintf(f,"src");
+++		break;
+++	default:
+++		fprintf(f,"Unknown");
+++	}
+++	return 0;
+++}
+++
+++static int esfq_print_xstats(struct qdisc_util *qu, FILE *f, struct rtattr *xstats)
+++{
+++	return 0;
+++}
+++
+++
+++struct qdisc_util esfq_util = {
+++	NULL,
+++	"esfq",
+++	esfq_parse_opt,
+++	esfq_print_opt,
+++	esfq_print_xstats,
+++};
+--- iproute-20071016.orig/debian/patches/wrr-qdisc.dpatch
++++ iproute-20071016/debian/patches/wrr-qdisc.dpatch
+@@ -0,0 +1,479 @@
++#! /bin/sh -e
++## 
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: add the wrr qdisc scheduler, see #198414
++
++[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
++patch_opts="${patch_opts:--f --no-backup-if-mismatch}"
++
++if [ $# -ne 1 ]; then
++    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
++    exit 1
++fi
++case "$1" in
++       -patch) patch $patch_opts -p1 < $0;;
++       -unpatch) patch $patch_opts -p1 -R < $0;;
++        *)
++                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
++                exit 1;;
++esac
++
++exit 0
++@DPATCH@
++diff -urNad pkg-iproute~/include/linux/pkt_sched.h pkg-iproute/include/linux/pkt_sched.h
++--- pkg-iproute~/include/linux/pkt_sched.h	2007-10-24 16:36:41.000000000 +0200
+++++ pkg-iproute/include/linux/pkt_sched.h	2007-10-24 16:36:56.000000000 +0200
++@@ -475,4 +475,116 @@
++ 
++ #define NETEM_DIST_SCALE	8192
++ 
+++/* WRR section */
+++
+++/* Other includes */
+++#include <linux/if_ether.h>
+++
+++// A sub weight and of a class
+++// All numbers are represented as parts of (2^64-1).
+++struct tc_wrr_class_weight {
+++	__u64 val;	// Current value			(0 is not valid)
+++	__u64 decr;	// Value pr bytes			(2^64-1 is not valid)
+++	__u64 incr;	// Value pr seconds			(2^64-1 is not valid)
+++	__u64 min;	// Minimal value			(0 is not valid)
+++	__u64 max;	// Minimal value			(0 is not valid)
+++
+++// The time where the above information was correct:
+++	time_t tim;
+++};
+++
+++// Packet send when modifying a class:
+++struct tc_wrr_class_modf {
+++	// Not-valid values are ignored.
+++	struct tc_wrr_class_weight weight1;
+++	struct tc_wrr_class_weight weight2;
+++};
+++
+++// Packet returned when quering a class:
+++struct tc_wrr_class_stats {
+++	char used;	// If this is false the information below is invalid
+++
+++	struct tc_wrr_class_modf class_modf;
+++
+++	unsigned char addr[ETH_ALEN];
+++	char usemac;    // True if addr is a MAC address, else it is an IP address
+++			// (this value is only for convience, it is always the same
+++			//  value as in the qdisc)
+++	int heappos;	// Current heap position or 0 if not in heap
+++	__u64 penal_ls;	// Penalty value in heap (ls)
+++	__u64 penal_ms;	// Penalty value in heap (ms)
+++};
+++
+++// Qdisc-wide penalty information (boolean values - 2 not valid)
+++struct tc_wrr_qdisc_weight {
+++	char weight_mode;	// 0=No automatic change to weight
+++				// 1=Decrease normally
+++				// 2=Also multiply with number of machines
+++				// 3=Instead multiply with priority divided
+++				//   with priority of the other.
+++				// -1=no change
+++};
+++
+++// Packet send when modifing a qdisc:
+++struct tc_wrr_qdisc_modf {
+++	// Not-valid values are ignored:
+++	struct tc_wrr_qdisc_weight weight1;
+++	struct tc_wrr_qdisc_weight weight2;
+++};
+++
+++// Packet send when creating a qdisc:
+++struct tc_wrr_qdisc_crt {
+++	struct tc_wrr_qdisc_modf qdisc_modf;
+++
+++	char srcaddr;	// 1=lookup source, 0=lookup destination
+++	char usemac;	// 1=Classify on MAC addresses, 0=classify on IP
+++	char usemasq;	// 1=Classify based on masqgrading - only valid
+++			//   if usemac is zero
+++	int bands_max;	// Maximal number of bands (i.e.: classes)
+++	int proxy_maxconn;// If differnt from 0 then we support proxy remapping
+++			// of packets. And this is the number of maximal
+++			// concurrent proxy connections.
+++};
+++
+++// Packet returned when quering a qdisc:
+++struct tc_wrr_qdisc_stats {
+++	struct tc_wrr_qdisc_crt qdisc_crt;
+++	int proxy_curconn;
+++	int nodes_in_heap;	// Current number of bands wanting to send something
+++	int bands_cur;		// Current number of bands used (i.e.: MAC/IP addresses seen)
+++	int bands_reused;	// Number of times this band has been reused.
+++	int packets_requed;	// Number of times packets have been requeued.
+++	__u64 priosum;		// Sum of priorities in heap where 1 is 2^32
+++};
+++
+++struct tc_wrr_qdisc_modf_std {
+++	// This indicates which of the tc_wrr_qdisc_modf structers this is:
+++	char proxy; // 0=This struct
+++
+++	// Should we also change a class?
+++	char change_class;
+++
+++	// Only valid if change_class is false
+++	struct tc_wrr_qdisc_modf qdisc_modf;
+++
+++	// Only valid if change_class is true:
+++	unsigned char addr[ETH_ALEN]; // Class to change (non-used bytes should be 0)
+++	struct tc_wrr_class_modf class_modf; // The change
+++};
+++
+++// Used for proxyrempping:
+++struct tc_wrr_qdisc_modf_proxy {
+++	// This indicates which of the tc_wrr_qdisc_modf structers this is:
+++	char proxy;     // 1=This struct
+++
+++	// This is 1 if the proxyremap information should be reset
+++	char reset;
+++
+++	// changec is the number of elements in changes.
+++	int changec;
+++
+++	// This is an array of type ProxyRemapBlock:
+++	long changes[0];
+++};
+++
++ #endif
++diff -urNad pkg-iproute~/tc/Makefile pkg-iproute/tc/Makefile
++--- pkg-iproute~/tc/Makefile	2007-10-24 16:36:12.000000000 +0200
+++++ pkg-iproute/tc/Makefile	2007-10-24 16:37:24.000000000 +0200
++@@ -11,6 +11,7 @@
++ TCMODULES += q_prio.o
++ TCMODULES += q_tbf.o
++ TCMODULES += q_cbq.o
+++TCMODULES += q_wrr.o
++ TCMODULES += q_rr.o
++ TCMODULES += q_netem.o
++ TCMODULES += f_rsvp.o
++diff -urNad pkg-iproute~/tc/q_wrr.c pkg-iproute/tc/q_wrr.c
++--- pkg-iproute~/tc/q_wrr.c	1970-01-01 01:00:00.000000000 +0100
+++++ pkg-iproute/tc/q_wrr.c	2007-10-24 16:36:56.000000000 +0200
++@@ -0,0 +1,322 @@
+++#include <stdio.h>
+++#include <stdlib.h>
+++#include <unistd.h>
+++#include <syslog.h>
+++#include <fcntl.h>
+++#include <sys/socket.h>
+++#include <netinet/in.h>
+++#include <arpa/inet.h>
+++#include <string.h>
+++#include <math.h>
+++
+++#include "utils.h"
+++#include "tc_util.h"
+++
+++#define usage() return(-1)
+++
+++// Returns -1 on error
+++static int wrr_parse_qdisc_weight(int argc, char** argv, 
+++                              struct tc_wrr_qdisc_modf* opt) {
+++  int i;
+++  
+++  opt->weight1.weight_mode=-1;
+++  opt->weight2.weight_mode=-1;
+++  
+++  for(i=0; i<argc; i++) {  
+++    if(!memcmp(argv[i],"wmode1=",7)) {
+++      opt->weight1.weight_mode=atoi(argv[i]+7);            
+++    } else if(!memcmp(argv[i],"wmode2=",7)) {
+++      opt->weight2.weight_mode=atoi(argv[i]+7);
+++    } else {
+++      printf("Usage: ... [wmode1=0|1|2|3] [wmode2=0|1|2|3]\n");
+++      return -1;
+++    }
+++  }
+++  return 0;
+++}
+++
+++static int wrr_parse_class_modf(int argc, char** argv, 
+++                                struct tc_wrr_class_modf* modf) {
+++  int i;
+++  
+++  if(argc<1) {
+++    fprintf(stderr, "Usage: ... [weight1=val] [decr1=val] [incr1=val] [min1=val] [max1=val] [val2=val] ...\n");
+++    fprintf(stderr, "  The values can be floating point like 0.42 or divisions like 42/100\n");
+++    return -1;
+++  }
+++  
+++  // Set meaningless values:
+++  modf->weight1.val=0;
+++  modf->weight1.decr=(__u64)-1;
+++  modf->weight1.incr=(__u64)-1;
+++  modf->weight1.min=0;
+++  modf->weight1.max=0;
+++  modf->weight2.val=0;
+++  modf->weight2.decr=(__u64)-1;
+++  modf->weight2.incr=(__u64)-1;
+++  modf->weight2.min=0;
+++  modf->weight2.max=0;
+++  
+++  // And read values:
+++  for(i=0; i<argc; i++) {
+++    char arg[80];
+++    char* name,*value1=0,*value2=0;
+++    long double f_val1,f_val2=1,value;
+++    if(strlen(argv[i])>=sizeof(arg)) {
+++      fprintf(stderr,"Argument too long: %s\n",argv[i]);
+++      return -1;
+++    }
+++    strcpy(arg,argv[i]);
+++    
+++    name=strtok(arg,"=");
+++    if(name) value1=strtok(0,"/");
+++    if(value1) value2=strtok(0,"");
+++    
+++    if(!value1) {
+++      fprintf(stderr,"No = found in argument: %s\n",argv[i]);
+++      return -1;
+++    }
+++    
+++    f_val1=atof(value1);
+++    if(value2) f_val2=atof(value2);    
+++    
+++    if(f_val2==0)  {
+++      fprintf(stderr,"Division by 0\n");
+++      return -1;
+++    }
+++        
+++    value=f_val1/f_val2;    
+++    if(value>1) value=1;
+++    if(value<0) value=0;            
+++    value*=((__u64)-1);
+++    
+++    // And find the value set
+++    if(!strcmp(name,"weight1"))    modf->weight1.val=value;
+++    else if(!strcmp(name,"decr1")) modf->weight1.decr=value;
+++    else if(!strcmp(name,"incr1")) modf->weight1.incr=value;
+++    else if(!strcmp(name,"min1"))  modf->weight1.min=value;
+++    else if(!strcmp(name,"max1"))  modf->weight1.max=value;
+++    else if(!strcmp(name,"weight2")) modf->weight2.val=value;
+++    else if(!strcmp(name,"decr2")) modf->weight2.decr=value;
+++    else if(!strcmp(name,"incr2")) modf->weight2.incr=value;
+++    else if(!strcmp(name,"min2"))  modf->weight2.min=value;
+++    else if(!strcmp(name,"max2"))  modf->weight2.max=value;
+++    else {
+++      fprintf(stderr,"illegal value: %s\n",name);
+++      return -1;
+++    }
+++  }    
+++
+++  return 0;
+++}
+++
+++static int wrr_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nlmsghdr *n)
+++{
+++  if(n->nlmsg_flags & NLM_F_CREATE) {
+++    // This is a create request:
+++    struct tc_wrr_qdisc_crt opt;
+++	
+++    int sour,dest,ip,mac,masq;
+++
+++    if(argc<4) {
+++      fprintf(stderr, "Usage: ... wrr sour|dest ip|masq|mac maxclasses proxymaxcon [penalty-setup]\n");
+++      return -1;
+++    }	  
+++  
+++    // Read sour/dest:
+++    memset(&opt,0,sizeof(opt));
+++    sour=!strcmp(argv[0],"sour");
+++    dest=!strcmp(argv[0],"dest");	
+++	
+++    if(!sour && !dest) {
+++      fprintf(stderr,"sour or dest must be specified\n");
+++      return -1;
+++    }	
+++
+++    // Read ip/mac
+++    ip=!strcmp(argv[1],"ip");
+++    mac=!strcmp(argv[1],"mac");	
+++    masq=!strcmp(argv[1],"masq");	
+++
+++    if(!ip && !mac && !masq) {
+++      fprintf(stderr,"ip, masq or mac must be specified\n");
+++      return -1;
+++    }	
+++
+++    opt.srcaddr=sour;		
+++    opt.usemac=mac;
+++    opt.usemasq=masq;		
+++    opt.bands_max=atoi(argv[2]);
+++    
+++    opt.proxy_maxconn=atoi(argv[3]);
+++    
+++    // Read weights:
+++    if(wrr_parse_qdisc_weight(argc-4,argv+4,&opt.qdisc_modf)<0) return -1;
+++    if(opt.qdisc_modf.weight1.weight_mode==-1) opt.qdisc_modf.weight1.weight_mode=0;
+++    if(opt.qdisc_modf.weight2.weight_mode==-1) opt.qdisc_modf.weight2.weight_mode=0;
+++		
+++    addattr_l(n, 1024, TCA_OPTIONS, &opt, sizeof(opt));
+++  } else {
+++    struct tc_wrr_qdisc_modf_std opt;
+++    char qdisc,class;
+++    
+++    // This is a modify request:
+++    if(argc<1) {
+++      fprintf(stderr,"... qdisc ... or ... class ...\n");
+++      return -1;
+++    }
+++            
+++    qdisc=!strcmp(argv[0],"qdisc");
+++    class=!strcmp(argv[0],"class");
+++
+++    if(!qdisc && !class) {
+++      fprintf(stderr,"qdisc or class must be specified\n");
+++      return -1;
+++    }
+++      
+++    argc--;
+++    argv++;
+++      
+++    opt.proxy=0;
+++    
+++    if(qdisc) {
+++      opt.change_class=0;
+++      if(wrr_parse_qdisc_weight(argc, argv, &opt.qdisc_modf)<0) return -1;
+++    } else {
+++      int a0,a1,a2,a3,a4=0,a5=0;      
+++
+++      opt.change_class=1;
+++      
+++      if(argc<1) {
+++        fprintf(stderr,"... <mac>|<ip>|<masq> ...\n");
+++        return -1;
+++      }
+++      memset(opt.addr,0,sizeof(opt.addr));
+++
+++      if((sscanf(argv[0],"%i.%i.%i.%i",&a0,&a1,&a2,&a3)!=4) &&
+++         (sscanf(argv[0],"%x:%x:%x:%x:%x:%x",&a0,&a1,&a2,&a3,&a4,&a5)!=6)) {
+++	fprintf(stderr,"Wrong format of mac or ip address\n");
+++	return -1;
+++      }
+++      
+++      opt.addr[0]=a0; opt.addr[1]=a1; opt.addr[2]=a2;
+++      opt.addr[3]=a3; opt.addr[4]=a4; opt.addr[5]=a5;
+++
+++      if(wrr_parse_class_modf(argc-1, argv+1, &opt.class_modf)<0) return -1;
+++    }  
+++  
+++    addattr_l(n, 1024, TCA_OPTIONS, &opt, sizeof(opt));
+++  }
+++  return 0;
+++}
+++
+++static int wrr_parse_copt(struct qdisc_util *qu, int argc, char **argv, struct nlmsghdr *n) {
+++  struct tc_wrr_class_modf opt;
+++  
+++  memset(&opt,0,sizeof(opt));
+++  if(wrr_parse_class_modf(argc,argv,&opt)<0) return -1;
+++  
+++  addattr_l(n, 1024, TCA_OPTIONS, &opt, sizeof(opt));
+++  return 0;  
+++}  
+++
+++static int wrr_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
+++{
+++	struct tc_wrr_qdisc_stats *qopt;
+++
+++	if (opt == NULL)
+++		return 0;
+++
+++	if (RTA_PAYLOAD(opt)  < sizeof(*qopt))
+++		return -1;
+++	qopt = RTA_DATA(opt);
+++	
+++	fprintf(f,"\n  (%s/%s) (maxclasses %i) (usedclasses %i) (reused classes %i)\n",
+++	  qopt->qdisc_crt.srcaddr ? "sour" : "dest",
+++	  qopt->qdisc_crt.usemac  ? "mac"  : (qopt->qdisc_crt.usemasq ? "masq" : "ip"),	  
+++	  qopt->qdisc_crt.bands_max,	  	  	  
+++	  qopt->bands_cur,
+++	  qopt->bands_reused
+++	  );
+++	  
+++	if(qopt->qdisc_crt.proxy_maxconn) {
+++	  fprintf(f,"  (proxy maxcon %i) (proxy curcon %i)\n",
+++	    qopt->qdisc_crt.proxy_maxconn,qopt->proxy_curconn);
+++	}
+++	
+++	fprintf(f,"  (waiting classes %i) (packets requeued %i) (priosum: %Lg)\n",
+++	  qopt->nodes_in_heap,
+++	  qopt->packets_requed,
+++	  qopt->priosum/((long double)((__u32)-1))
+++	  );
+++
+++	fprintf(f,"  (wmode1 %i) (wmode2 %i) \n",
+++	  qopt->qdisc_crt.qdisc_modf.weight1.weight_mode,
+++	  qopt->qdisc_crt.qdisc_modf.weight2.weight_mode);
+++	  
+++	return 0;
+++}
+++
+++static int wrr_print_copt(struct qdisc_util *qu, FILE *f, struct rtattr *opt) {
+++  struct tc_wrr_class_stats *copt;
+++  long double d=(__u64)-1;
+++
+++  if (opt == NULL) return 0;
+++
+++  if (RTA_PAYLOAD(opt)  < sizeof(*copt))
+++    return -1;
+++  copt = RTA_DATA(opt);
+++
+++  if(!copt->used) {
+++    fprintf(f,"(unused)");
+++    return 0;
+++  }
+++  
+++  if(copt->usemac) {
+++    fprintf(f,"\n  (address: %.2X:%.2X:%.2X:%.2X:%.2X:%.2X)\n",
+++      copt->addr[0],copt->addr[1],copt->addr[2],
+++      copt->addr[3],copt->addr[4],copt->addr[5]);
+++  } else {     
+++    fprintf(f,"\n  (address: %i.%i.%i.%i)\n",copt->addr[0],copt->addr[1],copt->addr[2],copt->addr[3]);
+++  }    
+++  
+++  fprintf(f,"  (total weight: %Lg) (current position: %i) (counters: %u %u : %u %u)\n",
+++    (copt->class_modf.weight1.val/d)*(copt->class_modf.weight2.val/d),
+++    copt->heappos,
+++    (unsigned)(copt->penal_ms>>32),
+++    (unsigned)(copt->penal_ms & 0xffffffffU),
+++    (unsigned)(copt->penal_ls>>32),
+++    (unsigned)(copt->penal_ls & 0xffffffffU)
+++    );
+++    
+++  fprintf(f,"  Pars 1: (weight %Lg) (decr: %Lg) (incr: %Lg) (min: %Lg) (max: %Lg)\n",
+++    copt->class_modf.weight1.val/d,
+++    copt->class_modf.weight1.decr/d,
+++    copt->class_modf.weight1.incr/d,
+++    copt->class_modf.weight1.min/d,
+++    copt->class_modf.weight1.max/d);
+++
+++  fprintf(f,"  Pars 2: (weight %Lg) (decr: %Lg) (incr: %Lg) (min: %Lg) (max: %Lg)",
+++    copt->class_modf.weight2.val/d,
+++    copt->class_modf.weight2.decr/d,
+++    copt->class_modf.weight2.incr/d,
+++    copt->class_modf.weight2.min/d,
+++    copt->class_modf.weight2.max/d);
+++  
+++  return 0;
+++}
+++
+++static int wrr_print_xstats(struct qdisc_util *qu, FILE *f, struct rtattr *xstats)
+++{
+++	return 0;
+++}
+++
+++
+++struct qdisc_util wrr_qdisc_util = {
+++	.id = "wrr",
+++	.parse_qopt = wrr_parse_opt,
+++	.print_qopt = wrr_print_opt,
+++	.print_xstats = wrr_print_xstats,
+++	.parse_copt = wrr_parse_copt,
+++	.print_copt = wrr_print_copt
+++};
+--- iproute-20071016.orig/debian/patches/remove_tc_filters_reference.dpatch
++++ iproute-20071016/debian/patches/remove_tc_filters_reference.dpatch
+@@ -0,0 +1,30 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## remove_tc_filters_reference.dpatch by  <formorer@lisa.springfield.lan>
++##
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: No description.
++
++@DPATCH@
++diff -urNad iproute-20070313~/man/man8/tc.8 iproute-20070313/man/man8/tc.8
++--- iproute-20070313~/man/man8/tc.8	2007-06-10 20:22:40.000000000 +0200
+++++ iproute-20070313/man/man8/tc.8	2007-06-10 20:23:16.000000000 +0200
++@@ -202,8 +202,7 @@
++ tc filters
++ If tc filters are attached to a class, they are consulted first 
++ for relevant instructions. Filters can match on all fields of a packet header, 
++-as well as on the firewall mark applied by ipchains or iptables. See 
++-.BR tc-filters (8).
+++as well as on the firewall mark applied by ipchains or iptables. 
++ .TP
++ Type of Service
++ Some qdiscs have built in rules for classifying packets based on the TOS field.
++@@ -242,8 +241,7 @@
++ .TP 
++ FILTERS
++ Filters have a three part ID, which is only needed when using a hashed
++-filter hierarchy, for which see
++-.BR tc-filters (8).
+++filter hierarchy.
++ .SH UNITS
++ All parameters accept a floating point number, possibly followed by a unit.
++ .P
+--- iproute-20071016.orig/debian/patches/tc_sample_fix
++++ iproute-20071016/debian/patches/tc_sample_fix
+@@ -0,0 +1,33 @@
++#! /bin/sh -e
++## 
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: Fixes #347699 
++
++[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
++patch_opts="${patch_opts:--f --no-backup-if-mismatch}"
++
++if [ $# -ne 1 ]; then
++    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
++    exit 1
++fi
++case "$1" in
++       -patch) patch $patch_opts -p1 < $0;;
++       -unpatch) patch $patch_opts -p1 -R < $0;;
++        *)
++                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
++                exit 1;;
++esac
++
++exit 0
++@DPATCH@
++diff -Nur iproute-20051007.keep/tc/f_u32.c iproute-20051007/tc/f_u32.c
++--- iproute-20051007.keep/tc/f_u32.c	2005-01-19 08:11:58.000000000 +1000
+++++ iproute-20051007/tc/f_u32.c	2006-01-12 17:12:43.000000000 +1000
++@@ -878,6 +878,7 @@
++ 				struct tc_u32_sel sel;
++ 				struct tc_u32_key keys[4];
++ 			} sel2;
+++			memset(&sel2, 0, sizeof(sel2));
++ 			NEXT_ARG();
++ 			if (parse_selector(&argc, &argv, &sel2.sel, n)) {
++ 				fprintf(stderr, "Illegal \"sample\"\n");
+--- iproute-20071016.orig/debian/patches/tcb_htb_typo.dpatch
++++ iproute-20071016/debian/patches/tcb_htb_typo.dpatch
+@@ -0,0 +1,19 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## tcb_htb_typo.dpatch by  <formorer@lisa.springfield.lan>
++##
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: No description.
++
++@DPATCH@
++diff -urNad iproute-20070313~/man/man8/tc-htb.8 iproute-20070313/man/man8/tc-htb.8
++--- iproute-20070313~/man/man8/tc-htb.8	2007-03-13 22:50:56.000000000 +0100
+++++ iproute-20070313/man/man8/tc-htb.8	2007-06-10 19:30:08.000000000 +0200
++@@ -137,7 +137,7 @@
++ .SH NOTES
++ Due to Unix timing constraints, the maximum ceil rate is not infinite and may in fact be quite low. On Intel, 
++ there are 100 timer events per second, the maximum rate is that rate at which 'burst' bytes are sent each timer tick.
++-From this, the mininum burst size for a specified rate can be calculated. For i386, a 10mbit rate requires a 12 kilobyte 
+++From this, the minimum burst size for a specified rate can be calculated. For i386, a 10mbit rate requires a 12 kilobyte 
++ burst as 100*12kb*8 equals 10mbit.
++ 
++ .SH SEE ALSO
+--- iproute-20071016.orig/debian/patches/ip_route_usage.dpatch
++++ iproute-20071016/debian/patches/ip_route_usage.dpatch
+@@ -0,0 +1,19 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## ip_route_usage.dpatch by Alexander Wirt <formorer@debian.org>
++##
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: No description.
++
++@DPATCH@
++diff -urNad pkg-iproute~/ip/iproute.c pkg-iproute/ip/iproute.c
++--- pkg-iproute~/ip/iproute.c	2007-10-18 14:04:18.000000000 +0200
+++++ pkg-iproute/ip/iproute.c	2007-10-18 14:23:11.000000000 +0200
++@@ -72,7 +72,7 @@
++ 	fprintf(stderr, "OPTIONS := FLAGS [ mtu NUMBER ] [ advmss NUMBER ]\n");
++ 	fprintf(stderr, "           [ rtt TIME ] [ rttvar TIME ]\n");
++ 	fprintf(stderr, "           [ window NUMBER] [ cwnd NUMBER ] [ initcwnd NUMBER ]\n");
++-	fprintf(stderr, "           [ ssthresh NUMBER ] [ realms REALM ]\n");
+++	fprintf(stderr, "           [ ssthresh NUMBER ] [ realms REALM ] [ src ADDRESS ]\n");
++ 	fprintf(stderr, "           [ rto_min TIME ]\n");
++ 	fprintf(stderr, "TYPE := [ unicast | local | broadcast | multicast | throw |\n");
++ 	fprintf(stderr, "          unreachable | prohibit | blackhole | nat ]\n");
+--- iproute-20071016.orig/debian/patches/manpages-typo.dpatch
++++ iproute-20071016/debian/patches/manpages-typo.dpatch
+@@ -0,0 +1,44 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## manpages-typo.dpatch by Alexander Wirt <formorer@debian.org>
++##
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: No description.
++
++@DPATCH@
++diff -urNad iproute-20061002~/man/man8/tc-prio.8 iproute-20061002/man/man8/tc-prio.8
++--- iproute-20061002~/man/man8/tc-prio.8	2006-10-15 17:06:41.000000000 +0200
+++++ iproute-20061002/man/man8/tc-prio.8	2006-10-15 17:10:52.000000000 +0200
++@@ -30,7 +30,7 @@
++ On creation with 'tc qdisc add', a fixed number of bands is created. Each
++ band is a class, although is not possible to add classes with 'tc qdisc
++ add', the number of bands to be created must instead be specified on the
++-commandline attaching PRIO to its root.
+++command line attaching PRIO to its root.
++ 
++ When dequeueing, band 0 is tried first and only if it did not deliver a
++ packet does PRIO try band 1, and so onwards. Maximum reliability packets
++@@ -88,7 +88,7 @@
++ The four TOS bits (the 'TOS field') are defined as:
++ 
++ .nf
++-Binary Decimcal  Meaning
+++Binary Decimal  Meaning
++ -----------------------------------------
++ 1000   8         Minimize delay (md)
++ 0100   4         Maximize throughput (mt)
++@@ -125,13 +125,13 @@
++ 
++ The second column contains the value of the relevant
++ four TOS bits, followed by their translated meaning. For example, 15 stands
++-for a packet wanting Minimal Montetary Cost, Maximum Reliability, Maximum
+++for a packet wanting Minimal Monetary Cost, Maximum Reliability, Maximum
++ Throughput AND Minimum Delay. 
++ 
++ The fourth column lists the way the Linux kernel interprets the TOS bits, by
++ showing to which Priority they are mapped.
++ 
++-The last column shows the result of the default priomap. On the commandline,
+++The last column shows the result of the default priomap. On the command line,
++ the default priomap looks like this:
++ 
++     1, 2, 2, 2, 1, 2, 0, 0 , 1, 1, 1, 1, 1, 1, 1, 1
+--- iproute-20071016.orig/debian/patches/tc_modules.dpatch
++++ iproute-20071016/debian/patches/tc_modules.dpatch
+@@ -0,0 +1,19 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## tc_modules.dpatch by  <formorer@lisa.springfield.lan>
++##
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: No description.
++
++@DPATCH@
++diff -urNad iproute-20070313~/include/iptables.h iproute-20070313/include/iptables.h
++--- iproute-20070313~/include/iptables.h	2007-03-13 22:50:56.000000000 +0100
+++++ iproute-20070313/include/iptables.h	2007-06-10 17:56:38.000000000 +0200
++@@ -5,7 +5,7 @@
++ #include "libiptc/libiptc.h"
++ 
++ #ifndef IPT_LIB_DIR
++-#define IPT_LIB_DIR "/usr/local/lib/iptables"
+++#define IPT_LIB_DIR "/lib/iptables"
++ #endif
++ 
++ #ifndef IPPROTO_SCTP
+--- iproute-20071016.orig/debian/patches/ip_address
++++ iproute-20071016/debian/patches/ip_address
+@@ -0,0 +1,34 @@
++#! /bin/sh -e
++## 
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: Removed mentioning of "ip address" in the ip output 
++
++[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
++patch_opts="${patch_opts:--f --no-backup-if-mismatch}"
++
++if [ $# -ne 1 ]; then
++    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
++    exit 1
++fi
++case "$1" in
++       -patch) patch $patch_opts -p1 < $0;;
++       -unpatch) patch $patch_opts -p1 -R < $0;;
++        *)
++                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
++                exit 1;;
++esac
++
++exit 0
++@DPATCH@
++diff -ruN iproute-20051007.orig/ip/ipaddress.c iproute-20051007/ip/ipaddress.c
++--- iproute-20051007.orig/ip/ipaddress.c	2005-09-21 21:33:18.000000000 +0200
+++++ iproute-20051007/ip/ipaddress.c	2006-03-14 07:26:26.830934712 +0100
++@@ -901,7 +901,7 @@
++ 		return ipaddr_list_or_flush(argc-1, argv+1, 1);
++ 	if (matches(*argv, "help") == 0)
++ 		usage();
++-	fprintf(stderr, "Command \"%s\" is unknown, try \"ip address help\".\n", *argv);
+++	fprintf(stderr, "Command \"%s\" is unknown, try \"ip addr help\".\n", *argv);
++ 	exit(-1);
++ }
++ 
+--- iproute-20071016.orig/debian/patches/ip.8-typo
++++ iproute-20071016/debian/patches/ip.8-typo
+@@ -0,0 +1,33 @@
++#! /bin/sh -e
++## 
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: show the \ really, see #285507
++
++[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
++patch_opts="${patch_opts:--f --no-backup-if-mismatch}"
++
++if [ $# -ne 1 ]; then
++    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
++    exit 1
++fi
++case "$1" in
++       -patch) patch $patch_opts -p1 < $0;;
++       -unpatch) patch $patch_opts -p1 -R < $0;;
++        *)
++                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
++                exit 1;;
++esac
++
++exit 0
++@DPATCH@
++--- orig/man/man8/ip.8	2004-10-19 20:49:02.000000000 +0000
+++++ new/man/man8/ip.8	2005-01-05 22:04:12.000000000 +0000
++@@ -374,7 +374,7 @@
++ .BR "\-o" , " \-oneline"
++ output each record on a single line, replacing line feeds
++ with the
++-.B '\'
+++.B '\e\'
++ character. This is convenient when you want to count records 
++ with
++ .BR wc (1)
+--- iproute-20071016.orig/debian/patches/f_u32
++++ iproute-20071016/debian/patches/f_u32
+@@ -0,0 +1,63 @@
++#! /bin/sh -e
++## 
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: Fixes the u32 calculation for 2.6 kernel - by Russell Stuart <russell-debian@stuart.id.au> 
++
++[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
++patch_opts="${patch_opts:--f --no-backup-if-mismatch}"
++
++if [ $# -ne 1 ]; then
++    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
++    exit 1
++fi
++case "$1" in
++       -patch) patch $patch_opts -p1 < $0;;
++       -unpatch) patch $patch_opts -p1 -R < $0;;
++        *)
++                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
++                exit 1;;
++esac
++
++exit 0
++@DPATCH@
++diff -Nur iproute-20051007.keep/tc/f_u32.c iproute-20051007/tc/f_u32.c
++--- iproute-20051007.keep/tc/f_u32.c	2006-01-12 17:34:37.000000000 +1000
+++++ iproute-20051007/tc/f_u32.c	2006-02-07 17:10:29.000000000 +1000
++@@ -17,6 +17,7 @@
++ #include <syslog.h>
++ #include <fcntl.h>
++ #include <sys/socket.h>
+++#include <sys/utsname.h>
++ #include <netinet/in.h>
++ #include <arpa/inet.h>
++ #include <string.h>
++@@ -874,6 +875,7 @@
++ 				htid = (handle&0xFFFFF000);
++ 		} else if (strcmp(*argv, "sample") == 0) {
++ 			__u32 hash;
+++			struct utsname utsname;
++ 			struct {
++ 				struct tc_u32_sel sel;
++ 				struct tc_u32_key keys[4];
++@@ -889,8 +891,19 @@
++ 				return -1;
++ 			}
++ 			hash = sel2.sel.keys[0].val&sel2.sel.keys[0].mask;
++-			hash ^= hash>>16;
++-			hash ^= hash>>8;
+++			uname(&utsname);
+++			if (strncmp(utsname.release, "2.4.", 4) == 0) {
+++				hash ^= hash>>16;
+++				hash ^= hash>>8;
+++			}
+++			else {
+++				__u32 mask = sel2.sel.keys[0].mask;
+++				while (mask && !(mask & 1)) {
+++				  	mask >>= 1;
+++					hash >>= 1;
+++				}
+++				hash &= 0xFF;
+++			}
++ 			htid = ((hash<<12)&0xFF000)|(htid&0xFFF00000);
++ 			sample_ok = 1;
++ 			continue;
+--- iproute-20071016.orig/debian/patches/moo.dpatch
++++ iproute-20071016/debian/patches/moo.dpatch
+@@ -0,0 +1,39 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## moo.dpatch by Alexander Wirt <formorer@debian.org>
++##
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: Add moo feature
++
++@DPATCH@
++diff -urNad pkg-iproute~/ip/ip.c pkg-iproute/ip/ip.c
++--- pkg-iproute~/ip/ip.c	2007-10-18 11:48:11.000000000 +0200
+++++ pkg-iproute/ip/ip.c	2007-10-18 14:14:20.000000000 +0200
++@@ -59,6 +59,20 @@
++ 	usage();
++ }
++ 
+++static int do_moo(int argc, char **argv)
+++{
+++	
+++fprintf(stderr,
+++"\n"
+++" _ __ ___   ___   ___\n"
+++"| '_ ` _ \\ / _ \\ / _ \\\n"
+++"| | | | | | (_) | (_) |\n"
+++"|_| |_| |_|\\___/ \\___/\n"
+++"\n\n"
+++"P.S. no real cows were harmed for this moo\n");
+++	exit(1);
+++}
+++                       
++ static const struct cmd {
++ 	const char *cmd;
++ 	int (*func)(int argc, char **argv);
++@@ -78,6 +92,7 @@
++ 	{ "xfrm",	do_xfrm },
++ 	{ "mroute",	do_multiroute },
++ 	{ "help",	do_help },
+++	{ "moo",	do_moo }, 
++ 	{ 0 }
++ };
++ 
+--- iproute-20071016.orig/debian/patches/heap_corruptionfix
++++ iproute-20071016/debian/patches/heap_corruptionfix
+@@ -0,0 +1,47 @@
++#! /bin/sh -e
++## 
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: add references to lartc
++## DP: also drop bogus reference to tc-filters
++
++[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
++patch_opts="${patch_opts:--f --no-backup-if-mismatch}"
++
++if [ $# -ne 1 ]; then
++    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
++    exit 1
++fi
++case "$1" in
++       -patch) patch $patch_opts -p1 < $0;;
++       -unpatch) patch $patch_opts -p1 -R < $0;;
++        *)
++                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
++                exit 1;;
++esac
++
++exit 0
++@DPATCH@
++diff -urNad iproute-20041019/tc/normal.c /tmp/dpep.9YHbob/iproute-20041019/tc/normal.c
++--- iproute-20041019/tc/normal.c	2004-10-19 14:49:02.000000000 -0600
+++++ /tmp/dpep.9YHbob/iproute-20041019/tc/normal.c	2005-09-06 15:48:45.000000000 -0600
++@@ -26,7 +26,7 @@
++ 	double x, *table;
++ 	int i, n;
++ 
++-	table = calloc(sizeof(double), TABLESIZE);
+++	table = calloc(TABLESIZE+1, sizeof(double));
++ 	if (!table) {
++ 		fprintf(stderr, "Not enough memory\n");
++ 		return 1;
++diff -urNad iproute-20041019/tc/paretonormal.c /tmp/dpep.9YHbob/iproute-20041019/tc/paretonormal.c
++--- iproute-20041019/tc/paretonormal.c	2004-10-19 14:49:02.000000000 -0600
+++++ /tmp/dpep.9YHbob/iproute-20041019/tc/paretonormal.c	2005-09-06 15:49:01.000000000 -0600
++@@ -54,7 +54,7 @@
++ 	double *table;
++ 	int i,n;
++ 
++-	table = calloc(TABLESIZE, sizeof(double));
+++	table = calloc(TABLESIZE+1, sizeof(double));
++ 	if (!table) {
++ 		fprintf(stderr, "Out of memory!\n");
++ 		exit(1);
+--- iproute-20071016.orig/debian/patches/tc_cbq_details_typo.dpatch
++++ iproute-20071016/debian/patches/tc_cbq_details_typo.dpatch
+@@ -0,0 +1,19 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## tc_cbq_details_typo.dpatch by  <formorer@lisa.springfield.lan>
++##
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: No description.
++
++@DPATCH@
++diff -urNad iproute-20070313~/man/man8/tc-cbq-details.8 iproute-20070313/man/man8/tc-cbq-details.8
++--- iproute-20070313~/man/man8/tc-cbq-details.8	2007-06-10 19:25:18.000000000 +0200
+++++ iproute-20070313/man/man8/tc-cbq-details.8	2007-06-10 19:25:58.000000000 +0200
++@@ -210,7 +210,7 @@
++ priority. If found, choose it, and terminate.
++ .TP
++ (iii)
++-Choose the class at which break out to the fallback algorithm occured. Terminate.
+++Choose the class at which break out to the fallback algorithm occurred. Terminate.
++ .P
++ The packet is enqueued to the class which was chosen when either algorithm 
++ terminated. It is therefore possible for a packet to be enqueued *not* at a
+--- iproute-20071016.orig/debian/iproute.manpages
++++ iproute-20071016/debian/iproute.manpages
+@@ -0,0 +1,2 @@
++man/*/*
++debian/man/*
+--- iproute-20071016.orig/debian/iproute-doc.install
++++ iproute-20071016/debian/iproute-doc.install
+@@ -0,0 +1 @@
++debian/doc/htb/* /usr/share/doc/iproute-doc/htb
+--- iproute-20071016.orig/debian/compat
++++ iproute-20071016/debian/compat
+@@ -0,0 +1 @@
++5
+--- iproute-20071016.orig/debian/iproute-dev.install
++++ iproute-20071016/debian/iproute-dev.install
+@@ -0,0 +1,2 @@
++*/*.h /usr/include/iproute/
++lib/libnetlink.a /usr/lib
+--- iproute-20071016.orig/debian/man/rtmon.8
++++ iproute-20071016/debian/man/rtmon.8
+@@ -0,0 +1,58 @@
++.TH RTMON 8
++.SH NAME
++rtmon \- listens to and monitors RTnetlink
++.SH SYNOPSIS
++.B rtmon
++.RI "[ options ] file FILE [ all | LISTofOBJECTS ]"
++.SH DESCRIPTION
++This manual page documents briefly the
++.B rtmon
++command.
++.PP
++\fBrtmon\fP is a RTnetlink listener. RTnetlink allows the kernel's routing tables to be read and altered.
++
++rtmon should be started before the first network configuration command is issued. For example if you insert:
++
++ rtmon file /var/log/rtmon.log
++
++in a startup script, you will be able to view the full history later.
++Certainly, it is possible to start rtmon at any time. It prepends the history with the state snapshot dumped at the moment of starting.
++.SH OPTIONS
++rtmon supports the following options:
++.TP
++.B \-Version
++Print version and exit.
++.TP
++.B help
++Show summary of options.
++.TP
++.B file FILE [ all | LISTofOBJECTS ]
++Log output to FILE. LISTofOBJECTS is the list of object types that we want to monitor.
++It may contain 'link', 'address', 'route' and 'all'. 'link' specifies the network device, 'address'
++the protocol (IP or IPv6) address on a device, 'route' the routing table entry and 'all' does what the name says.
++.TP
++.B \-family [ inet | inet6 | link | help ]
++Specify protocol family. 'inet' is IPv4, 'inet6' is IPv6, 'link' means that no networking protocol is involved and 'help' prints usage information.
++.TP
++.B \-4
++Use IPv4. Shortcut for -family inet.
++.TP
++.B \-6
++Use IPv6. Shortcut for -family inet6.
++.TP
++.B \-0
++Use a special family identifier meaning that no networking protocol is involved. Shortcut for -family link.
++.SH USAGE EXAMPLES
++.TP
++.B # rtmon file /var/log/rtmon.log
++Log to file /var/log/rtmon.log, then run:
++.TP
++.B # ip monitor file /var/log/rtmon.log
++to display logged output from file.
++.SH SEE ALSO
++.BR ip (8)
++.SH AUTHOR
++rtmon was written by Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>.
++.PP
++This manual page was written by Michael Prokop <mika@grml.org>,
++for the Debian project (but may be used by others).
+--- iproute-20071016.orig/debian/rules
++++ iproute-20071016/debian/rules
+@@ -0,0 +1,45 @@
++#!/usr/bin/make -f
++
++# created by Andreas Barth <aba@not.so.argh.org> 2004
++
++build: build-arch
++
++include /usr/share/dpatch/dpatch.make
++
++clean: clean-patched unpatch
++clean-patched:
++	-rm stamp-build
++	dh_testdir
++	dh_testroot
++	dh_clean
++	make clean
++
++binary: binary-indep binary-arch
++
++binary-indep build-indep:
++
++binary-arch: build-arch
++	dh_testdir
++	dh_testroot
++	dh_install --fail-missing
++	dh_link
++	dh_installexamples -p iproute-doc examples/*
++	dh_installman
++	dh_installdocs
++	dh_installchangelogs
++	dh_compress
++	dh_strip
++	dh_fixperms
++	dh_installdeb
++	dh_shlibdeps -Xq_atm.so
++	dh_gencontrol
++	dh_md5sums
++	dh_builddeb
++
++build-arch: stamp-build
++stamp-build: patch
++	$(MAKE) KERNEL_INCLUDE=./include
++	$(MAKE) -C doc all txt
++	touch stamp-build
++
++.PHONY: build binary binary-arch binary-indep clean
+--- iproute-20071016.orig/debian/control
++++ iproute-20071016/debian/control
+@@ -0,0 +1,46 @@
++Source: iproute
++Section: net
++Priority: optional
++Maintainer: Alexander Wirt <formorer@debian.org>
++Uploaders: Andreas Barth <aba@not.so.argh.org>, Andreas Henriksson <andreas@fatal.se>
++Homepage: http://www.linux-foundation.org/en/Net:Iproute2
++Vcs-Browser: http://git.debian.org/?p=collab-maint/pkg-iproute.git
++Vcs-Git: git://git.debian.org/git/collab-maint/pkg-iproute.git
++Standards-Version: 3.7.3
++Build-Depends: texlive-latex-base, texlive-latex-recommended, libatm1-dev, bison, libdb-dev, linuxdoc-tools, linux-libc-dev, debhelper (>= 5), lynx, dpatch, flex
++
++Package: iproute
++Architecture: any
++Provides: arpd
++Conflicts: arpd
++Depends: ${shlibs:Depends}
++Recommends: libatm1
++Suggests: iproute-doc
++Description: Professional tools to control the networking in Linux kernels
++ This is `iproute', the professional set of tools to control the
++ networking behavior in kernels 2.2.x and later.
++ .
++ At least, the options CONFIG_NETLINK and CONFIG_NETLINK_DEV (or
++ CONFIG_RTNETLINK) must be compiled into the running kernel.
++ .
++ This package is also known as iproute2 upstream and in some
++ documentation.
++
++Package: iproute-doc
++Section: doc
++Architecture: all
++Description: Professional tools to control the networking in Linux kernels
++ This package contains the documentation for the iproute package. 
++ .
++ iproute is the professional set of tools to control the
++ networking behavior in kernels 2.2.x and late
++
++Package: iproute-dev
++Section: libdevel
++Architecture: any
++Description: Development package for iproute
++ This package contains the header files and static libs for developing
++ iproute additions. iproute is the professional set of tools to control the
++ networking behavior in kernels 2.2.x and later.
++ .
++ You don't need this package unless doing development.
+--- iproute-20071016.orig/debian/iproute-doc.docs
++++ iproute-20071016/debian/iproute-doc.docs
+@@ -0,0 +1,4 @@
++README* doc/Plan RELNOTES
++doc/*.tex doc/*.dvi doc/*.ps doc/*.sty
++doc/*.txt doc/*.html
++debian/htb/* 
+--- iproute-20071016.orig/ip/iptunnel.c
++++ iproute-20071016/ip/iptunnel.c
+@@ -113,7 +113,7 @@
+ 			NEXT_ARG();
+ 			p->i_flags |= GRE_KEY;
+ 			if (strchr(*argv, '.'))
+-				p->o_key = get_addr32(*argv);
++				p->i_key = get_addr32(*argv);
+ 			else {
+ 				if (get_unsigned(&uval, *argv, 0)<0) {
+ 					fprintf(stderr, "invalid value of \"ikey\"\n");
+--- iproute-20071016.orig/ip/iproute.c
++++ iproute-20071016/ip/iproute.c
+@@ -780,6 +780,18 @@
  				invarg("\"reordering\" value is invalid\n", *argv);
  			rta_addattr32(mxrta, sizeof(mxbuf), RTAX_REORDERING, reord);
  #endif
@@ -627,794 +2919,143 @@ Index: iproute-2.6.20-070313/ip/iproute.c
 +				invarg("\"hoplimit\" value is invalid\n", *argv);
 +			rta_addattr32(mxrta, sizeof(mxbuf), RTAX_HOPLIMIT, hoplim);
 +#endif
-+#ifdef RTAX_INITCWND
-+		} else if (strcmp(*argv, "initcwnd") == 0) {
-+			unsigned initcwnd;
-+			NEXT_ARG();
-+			if (strcmp(*argv, "lock") == 0) {
-+				mxlock |= (1<<RTAX_HOPLIMIT);
-+				NEXT_ARG();
-+			}
-+			if (get_unsigned(&initcwnd, *argv, 0))
-+				invarg("\"initcwnd\" value is invalid\n", *argv);
-+			rta_addattr32(mxrta, sizeof(mxbuf), RTAX_INITCWND, initcwnd);
-+#endif
  		} else if (strcmp(*argv, "rtt") == 0) {
  			unsigned rtt;
  			NEXT_ARG();
-Index: iproute-2.6.20-070313/ip/iptunnel.c
-===================================================================
---- iproute-2.6.20-070313.orig/ip/iptunnel.c	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/ip/iptunnel.c	2007-06-09 13:53:57.000000000 +0100
-@@ -113,7 +113,7 @@
- 			NEXT_ARG();
- 			p->i_flags |= GRE_KEY;
- 			if (strchr(*argv, '.'))
--				p->o_key = get_addr32(*argv);
-+				p->i_key = get_addr32(*argv);
- 			else {
- 				if (get_unsigned(&uval, *argv, 0)<0) {
- 					fprintf(stderr, "invalid value of \"ikey\"\n");
-Index: iproute-2.6.20-070313/Makefile
-===================================================================
---- iproute-2.6.20-070313.orig/Makefile	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/Makefile	2007-06-09 13:53:57.000000000 +0100
-@@ -48,7 +48,7 @@
- 		$(DESTDIR)$(DOCDIR)/examples
- 	install -m 0644 $(shell find examples/diffserv -maxdepth 1 -type f) \
- 		$(DESTDIR)$(DOCDIR)/examples/diffserv
--	@for i in $(SUBDIRS) doc; do $(MAKE) -C $$i install; done
-+	@set -e; for i in $(SUBDIRS) doc; do $(MAKE) -C $$i install; done
- 	install -m 0644 $(shell find etc/iproute2 -maxdepth 1 -type f) $(DESTDIR)$(CONFDIR)
- 	install -m 0755 -d $(DESTDIR)$(MANDIR)/man8
- 	install -m 0644 $(shell find man/man8 -maxdepth 1 -type f) $(DESTDIR)$(MANDIR)/man8
-@@ -59,7 +59,7 @@
+--- iproute-20071016.orig/ip/ipaddress.c
++++ iproute-20071016/ip/ipaddress.c
+@@ -34,6 +34,8 @@
+ #include "ll_map.h"
+ #include "ip_common.h"
  
- clean:
- 	rm -f cscope.*
--	@for i in $(SUBDIRS) doc; \
-+	@set -e; for i in $(SUBDIRS) doc; \
- 	do $(MAKE) $(MFLAGS) -C $$i clean; done
++#define MAX_ROUNDS 10
++
+ static struct
+ {
+ 	int ifindex;
+@@ -667,7 +669,7 @@
+ 		filter.flushp = 0;
+ 		filter.flushe = sizeof(flushb);
  
- clobber: clean
-Index: iproute-2.6.20-070313/man/man8/ip.8
-===================================================================
---- iproute-2.6.20-070313.orig/man/man8/ip.8	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/man/man8/ip.8	2007-06-09 13:53:57.000000000 +0100
-@@ -1808,6 +1808,8 @@
- .RB "IP Command reference " ip-cref.ps
+-		for (;;) {
++		while (round < MAX_ROUNDS) {
+ 			if (rtnl_wilddump_request(&rth, filter.family, RTM_GETADDR) < 0) {
+ 				perror("Cannot send dump request");
+ 				exit(1);
+@@ -694,6 +696,8 @@
+ 				fflush(stdout);
+ 			}
+ 		}
++		fprintf(stderr, "*** Flush remains incomplete after %d rounds. ***\n", MAX_ROUNDS); fflush(stderr);
++		return 1;
+ 	}
+ 
+ 	if (filter.family != AF_PACKET) {
+--- iproute-20071016.orig/ip/iplink.c
++++ iproute-20071016/ip/iplink.c
+@@ -107,7 +107,8 @@
+ {
+ 	struct nlmsgerr *err = (struct nlmsgerr *)NLMSG_DATA(n);
+ 
+-	if (n->nlmsg_type == NLMSG_ERROR && err->error == -EOPNOTSUPP)
++	if (n->nlmsg_type == NLMSG_ERROR &&
++	    (err->error == -EOPNOTSUPP || err->error == -EINVAL))
+ 		have_rtnl_newlink = 0;
+ 	else
+ 		have_rtnl_newlink = 1;
+--- iproute-20071016.orig/Makefile
++++ iproute-20071016/Makefile
+@@ -56,6 +56,7 @@
+ 	ln -sf lnstat.8  $(DESTDIR)$(MANDIR)/man8/rtstat.8
+ 	ln -sf lnstat.8  $(DESTDIR)$(MANDIR)/man8/ctstat.8
+ 	ln -sf rtacct.8  $(DESTDIR)$(MANDIR)/man8/nstat.8
++	ln -sf routel.8  $(DESTDIR)$(MANDIR)/man8/routef.8
+ 	install -m 0755 -d $(DESTDIR)$(MANDIR)/man3
+ 	install -m 0644 $(shell find man/man3 -maxdepth 1 -type f) $(DESTDIR)$(MANDIR)/man3
+ 
+--- iproute-20071016.orig/man/man8/ip.8
++++ iproute-20071016/man/man8/ip.8
+@@ -32,7 +32,7 @@
  .br
- .RB "IP tunnels " ip-cref.ps
+ .BR promisc " { " on " | " off " } |"
+ .br
+-.BR allmulti " { " on " | " off " } |"
++.BR allmulticast " { " on " | " off " } |"
+ .br
+ .BR dynamic " { " on " | " off " } |"
+ .br
+@@ -1568,10 +1568,12 @@
+ set
+ .I unique
+ priority value.
++The options preference and order are synonyms with priority.
+ 
+ .TP
+ .BI table " TABLEID"
+ the routing table identifier to lookup if the rule selector matches.
++It is also possible to use lookup instead of table.
+ 
+ .TP
+ .BI realms " FROM/TO"
+@@ -1589,6 +1591,7 @@
+ routes) or a local host address (or even zero).
+ In the last case the router does not translate the packets, but
+ masquerades them to this address.
++Using map-to instead of nat means the same thing.
+ 
+ .B Warning:
+ Changes to the RPDB made with these commands do not become active
+@@ -1601,6 +1604,7 @@
+ 
+ .SS ip rule show - list rules
+ This command has no arguments.
++The options list or lst are synonyms with show.
+ 
+ .SH ip maddress - multicast addresses management
+ 
+--- iproute-20071016.orig/man/man8/ss.8
++++ iproute-20071016/man/man8/ss.8
+@@ -107,7 +107,7 @@
+ .B ss -o state established '( dport = :ssh or sport = :ssh )'
+ Display all established ssh connections.
+ .TP
+-.B ss -x src \"/tmp/.X11-unix/*\"
++.B ss -x src /tmp/.X11-unix/*
+ Find all local processes connected to X server.
+ .TP
+ .B ss -o state fin-wait-1 '( sport = :http or sport = :https )' dst 193.233.7/24
+--- iproute-20071016.orig/man/man8/routel.8
++++ iproute-20071016/man/man8/routel.8
+@@ -0,0 +1,32 @@
++.TH "ROUTEL" "8" "3 Jan, 2008" "iproute2" "Linux"
++.SH "NAME"
++.LP 
++routel \- list routes with pretty output format
 +.br
-+.RB http://lartc.org/
- 
- .SH AUTHOR
- Original Manpage  by Michail Litvak <mci@owl.openwall.com>
-Index: iproute-2.6.20-070313/man/man8/tc.8
-===================================================================
---- iproute-2.6.20-070313.orig/man/man8/tc.8	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/man/man8/tc.8	2007-06-09 13:53:57.000000000 +0100
-@@ -341,7 +341,7 @@
- .BR tc-pfifo (8),
- .BR tc-bfifo (8),
- .BR tc-pfifo_fast (8),
--.BR tc-filters (8)
-+.BR http://lartc.org/
- 
- .SH AUTHOR
- Manpage maintained by bert hubert (ahu@ds9a.nl)
-Index: iproute-2.6.20-070313/misc/Makefile
-===================================================================
---- iproute-2.6.20-070313.orig/misc/Makefile	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/misc/Makefile	2007-06-09 13:53:57.000000000 +0100
-@@ -1,7 +1,8 @@
- SSOBJ=ss.o ssfilter.o
- LNSTATOBJ=lnstat.o lnstat_util.o
- 
--TARGETS=ss nstat ifstat rtacct arpd lnstat
-+#TARGETS=ss nstat ifstat rtacct arpd lnstat
-+TARGETS=ss nstat rtacct lnstat
- 
- include ../Config
- 
-Index: iproute-2.6.20-070313/misc/netbug
-===================================================================
---- iproute-2.6.20-070313.orig/misc/netbug	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/misc/netbug	2007-06-09 13:53:57.000000000 +0100
-@@ -1,23 +1,16 @@
- #! /bin/bash
- 
-+set -e
++routef \- flush routes
++.SH "SYNTAX"
++.LP 
++routel [\fItablenr\fP [\fIraw ip args...\fP]]
++.br 
++routef
++.SH "DESCRIPTION"
++.LP 
++These programs are a set of helper scripts you can use instead of raw iproute2 commands.
++.br
++The routel script will list routes in a format that some might consider easier to interpret then the ip route list equivalent.
++.br
++The routef script does not take any arguments and will simply flush the routing table down the drain. Beware! This means deleting all routes which will make your network unusable!
 +
- echo -n "Send network configuration summary to [ENTER means kuznet@ms2.inr.ac.ru] "
- IFS="" read mail || exit 1
- [ -z "$mail" ] && mail=kuznet@ms2.inr.ac.ru
- 
-+netbug=`mktemp -d -t netbug.XXXXXX` || {echo "$0: Cannot create temporary directory" >&2; exit 1;  }
-+netbugtar=`tempfile -d $netbug --suffix=tar.gz` || {echo "$0: Cannot create temporary file" >&2; exit 1;  }
-+tmppath=$netbug
-+trap "/bin/rm -rf $netbug $netbugtar" 0 1 2 3 13 15
- 
--netbug=""
--while [ "$netbug" = "" ]; do
--	netbug=`echo netbug.$$.$RANDOM`
--	if [ -e /tmp/$netbug ]; then
--		netbug=""
--	fi
--done
--
--tmppath=/tmp/$netbug
--
--trap "rm -rf $tmppath $tmppath.tar.gz" 0 SIGINT
--
--mkdir $tmppath
- mkdir $tmppath/net
- 
- cat /proc/slabinfo > $tmppath/slabinfo
-@@ -44,9 +37,8 @@
- fi
- 
- cd /tmp
--tar c $netbug | gzip -9c > $netbug.tar.gz
--
--uuencode $netbug.tar.gz $netbug.tar.gz | mail -s $netbug "$mail"
-+tar c $tmppath | gzip -9c > $netbugtar
-+uuencode $netbugtar $netbugtar | mail -s $netbug "$mail"
- 
- echo "Sending to <$mail>; subject is $netbug"
- 
-Index: iproute-2.6.20-070313/tc/Makefile
-===================================================================
---- iproute-2.6.20-070313.orig/tc/Makefile	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/tc/Makefile	2007-06-09 13:53:57.000000000 +0100
-@@ -11,6 +11,7 @@
- TCMODULES += q_prio.o
- TCMODULES += q_tbf.o
- TCMODULES += q_cbq.o
-+TCMODULES += q_wrr.o
- TCMODULES += f_rsvp.o
- TCMODULES += f_u32.o
- TCMODULES += f_route.o
-Index: iproute-2.6.20-070313/tc/q_htb.c
-===================================================================
---- iproute-2.6.20-070313.orig/tc/q_htb.c	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/tc/q_htb.c	2007-06-09 13:53:57.000000000 +0100
-@@ -1,3 +1,311 @@
-+#if 0
-+/*
-+ * q_htb.c		HTB.
-+ *
-+ *		This program is free software; you can redistribute it and/or
-+ *		modify it under the terms of the GNU General Public License
-+ *		as published by the Free Software Foundation; either version
-+ *		2 of the License, or (at your option) any later version.
-+ *
-+ * Authors:	Martin Devera, devik@cdi.cz
-+ *
-+ */
-+
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <unistd.h>
-+#include <syslog.h>
-+#include <fcntl.h>
-+#include <sys/socket.h>
-+#include <netinet/in.h>
-+#include <arpa/inet.h>
-+#include <string.h>
-+
-+#include "utils.h"
-+#include "tc_util.h"
-+
-+#define HTB_TC_VER 0x30003
-+#if HTB_TC_VER >> 16 != TC_HTB_PROTOVER
-+#error "Different kernel and TC HTB versions"
-+#endif
-+
-+static void explain(void)
-+{
-+	fprintf(stderr, "Usage: ... qdisc add ... htb [default N] [r2q N]\n"
-+		" default  minor id of class to which unclassified packets are sent {0}\n"
-+		" r2q      DRR quantums are computed as rate in Bps/r2q {10}\n"
-+		" debug    string of 16 numbers each 0-3 {0}\n\n"
-+		"... class add ... htb rate R1 burst B1 [prio P] [slot S] [pslot PS]\n"
-+		"                      [ceil R2] [cburst B2] [mtu MTU] [quantum Q]\n"
-+		" rate     rate allocated to this class (class can still borrow)\n"
-+		" burst    max bytes burst which can be accumulated during idle period {computed}\n"
-+		" ceil     definite upper class rate (no borrows) {rate}\n"
-+		" cburst   burst but for ceil {computed}\n"
-+		" mtu      max packet size we create rate map for {1600}\n"
-+		" prio     priority of leaf; lower are served first {0}\n"
-+		" quantum  how much bytes to serve from leaf at once {use r2q}\n"
-+		"\nTC HTB version %d.%d\n",HTB_TC_VER>>16,HTB_TC_VER&0xffff
-+		);
-+}
-+
-+static void explain1(char *arg)
-+{
-+    fprintf(stderr, "Illegal \"%s\"\n", arg);
-+    explain();
-+}
-+
-+
-+#define usage() return(-1)
-+
-+static int htb_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nlmsghdr *n)
-+{
-+	struct tc_htb_glob opt;
-+	struct rtattr *tail;
-+	unsigned i; char *p;
-+	memset(&opt,0,sizeof(opt));
-+	opt.rate2quantum = 10;
-+	opt.version = 3;
-+
-+	while (argc > 0) {
-+		if (matches(*argv, "r2q") == 0) {
-+		    NEXT_ARG();
-+		    if (get_u32(&opt.rate2quantum, *argv, 10)) {
-+			explain1("r2q"); return -1;
-+		    }
-+		} else if (matches(*argv, "default") == 0) {
-+		    NEXT_ARG();
-+		    if (get_u32(&opt.defcls, *argv, 16)) {
-+			explain1("default"); return -1;
-+		    }
-+		} else if (matches(*argv, "debug") == 0) {
-+		    NEXT_ARG(); p = *argv;
-+		    for (i=0; i<16; i++,p++) {
-+			if (*p<'0' || *p>'3') break;
-+			opt.debug |= (*p-'0')<<(2*i);
-+		    }
-+		} else {
-+			fprintf(stderr, "What is \"%s\"?\n", *argv);
-+			explain();
-+			return -1;
-+		}
-+		argc--; argv++;
-+	}
-+	tail = (struct rtattr*)(((void*)n)+NLMSG_ALIGN(n->nlmsg_len));
-+	addattr_l(n, 1024, TCA_OPTIONS, NULL, 0);
-+	addattr_l(n, 2024, TCA_HTB_INIT, &opt, NLMSG_ALIGN(sizeof(opt)));
-+	tail->rta_len = (((void*)n)+NLMSG_ALIGN(n->nlmsg_len)) - (void*)tail;
-+	return 0;
-+}
-+
-+static int htb_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, struct nlmsghdr *n)
-+{
-+	int ok=0;
-+	struct tc_htb_opt opt;
-+	__u32 rtab[256],ctab[256];
-+	unsigned buffer=0,cbuffer=0;
-+	int cell_log=-1,ccell_log = -1,mtu;
-+	struct rtattr *tail;
-+
-+	memset(&opt, 0, sizeof(opt)); mtu = 1600; /* eth packet len */
-+
-+	while (argc > 0) {
-+		if (matches(*argv, "prio") == 0) {
-+			NEXT_ARG();
-+			if (get_u32(&opt.prio, *argv, 10)) {
-+				explain1("prio"); return -1;
-+			}
-+			ok++;
-+		} else if (matches(*argv, "mtu") == 0) {
-+			NEXT_ARG();
-+			if (get_u32(&mtu, *argv, 10)) {
-+				explain1("mtu"); return -1;
-+			}
-+		} else if (matches(*argv, "quantum") == 0) {
-+			NEXT_ARG();
-+			if (get_u32(&opt.quantum, *argv, 10)) {
-+				explain1("quantum"); return -1;
-+			}
-+		} else if (matches(*argv, "burst") == 0 ||
-+			strcmp(*argv, "buffer") == 0 ||
-+			strcmp(*argv, "maxburst") == 0) {
-+			NEXT_ARG();
-+			if (get_size_and_cell(&buffer, &cell_log, *argv) < 0) {
-+				explain1("buffer");
-+				return -1;
-+			}
-+			ok++;
-+		} else if (matches(*argv, "cburst") == 0 ||
-+			strcmp(*argv, "cbuffer") == 0 ||
-+			strcmp(*argv, "cmaxburst") == 0) {
-+			NEXT_ARG();
-+			if (get_size_and_cell(&cbuffer, &ccell_log, *argv) < 0) {
-+				explain1("cbuffer");
-+				return -1;
-+			}
-+			ok++;
-+		} else if (strcmp(*argv, "ceil") == 0) {
-+			NEXT_ARG();
-+			if (opt.ceil.rate) {
-+				fprintf(stderr, "Double \"ceil\" spec\n");
-+				return -1;
-+			}
-+			if (get_rate(&opt.ceil.rate, *argv)) {
-+				explain1("ceil");
-+				return -1;
-+			}
-+			ok++;
-+		} else if (strcmp(*argv, "rate") == 0) {
-+			NEXT_ARG();
-+			if (opt.rate.rate) {
-+				fprintf(stderr, "Double \"rate\" spec\n");
-+				return -1;
-+			}
-+			if (get_rate(&opt.rate.rate, *argv)) {
-+				explain1("rate");
-+				return -1;
-+			}
-+			ok++;
-+		} else if (strcmp(*argv, "help") == 0) {
-+			explain();
-+			return -1;
-+		} else {
-+			fprintf(stderr, "What is \"%s\"?\n", *argv);
-+			explain();
-+			return -1;
-+		}
-+		argc--; argv++;
-+	}
-+
-+/*	if (!ok)
-+		return 0;*/
-+
-+	if (opt.rate.rate == 0) {
-+		fprintf(stderr, "\"rate\" is required.\n");
-+		return -1;
-+	}
-+	/* if ceil params are missing, use the same as rate */
-+	if (!opt.ceil.rate) opt.ceil = opt.rate;
-+
-+	/* compute minimal allowed burst from rate; mtu is added here to make
-+	   sute that buffer is larger than mtu and to have some safeguard space */
-+	if (!buffer) buffer = opt.rate.rate / HZ + mtu;
-+	if (!cbuffer) cbuffer = opt.ceil.rate / HZ + mtu;
-+
-+	if ((cell_log = tc_calc_rtable(opt.rate.rate, rtab, cell_log, mtu, 0)) < 0) {
-+		fprintf(stderr, "htb: failed to calculate rate table.\n");
-+		return -1;
-+	}
-+	opt.buffer = tc_calc_xmittime(opt.rate.rate, buffer);
-+	opt.rate.cell_log = cell_log;
-+	
-+	if ((ccell_log = tc_calc_rtable(opt.ceil.rate, ctab, cell_log, mtu, 0)) < 0) {
-+		fprintf(stderr, "htb: failed to calculate ceil rate table.\n");
-+		return -1;
-+	}
-+	opt.cbuffer = tc_calc_xmittime(opt.ceil.rate, cbuffer);
-+	opt.ceil.cell_log = ccell_log;
-+
-+	tail = (struct rtattr*)(((void*)n)+NLMSG_ALIGN(n->nlmsg_len));
-+	addattr_l(n, 1024, TCA_OPTIONS, NULL, 0);
-+	addattr_l(n, 2024, TCA_HTB_PARMS, &opt, sizeof(opt));
-+	addattr_l(n, 3024, TCA_HTB_RTAB, rtab, 1024);
-+	addattr_l(n, 4024, TCA_HTB_CTAB, ctab, 1024);
-+	tail->rta_len = (((void*)n)+NLMSG_ALIGN(n->nlmsg_len)) - (void*)tail;
-+	return 0;
-+}
-+
-+static int htb_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
-+{
-+	struct rtattr *tb[TCA_HTB_RTAB+1];
-+	struct tc_htb_opt *hopt;
-+	struct tc_htb_glob *gopt;
-+	double buffer,cbuffer;
-+	SPRINT_BUF(b1);
-+	SPRINT_BUF(b2);
-+
-+	if (opt == NULL)
-+		return 0;
-+
-+	memset(tb, 0, sizeof(tb));
-+	parse_rtattr(tb, TCA_HTB_RTAB, RTA_DATA(opt), RTA_PAYLOAD(opt));
-+
-+	if (tb[TCA_HTB_PARMS]) {
-+
-+	    hopt = RTA_DATA(tb[TCA_HTB_PARMS]);
-+	    if (RTA_PAYLOAD(tb[TCA_HTB_PARMS])  < sizeof(*hopt)) return -1;
-+
-+		if (!hopt->level) {
-+			fprintf(f, "prio %d ", (int)hopt->prio);
-+			if (show_details)
-+				fprintf(f, "quantum %d ", (int)hopt->quantum);
-+		}
-+	    fprintf(f, "rate %s ", sprint_rate(hopt->rate.rate, b1));
-+	    buffer = ((double)hopt->rate.rate*tc_core_tick2usec(hopt->buffer))/1000000;
-+	    fprintf(f, "ceil %s ", sprint_rate(hopt->ceil.rate, b1));
-+	    cbuffer = ((double)hopt->ceil.rate*tc_core_tick2usec(hopt->cbuffer))/1000000;
-+	    if (show_details) {
-+		fprintf(f, "burst %s/%u mpu %s ", sprint_size(buffer, b1),
-+			1<<hopt->rate.cell_log, sprint_size(hopt->rate.mpu, b2));
-+		fprintf(f, "cburst %s/%u mpu %s ", sprint_size(cbuffer, b1),
-+			1<<hopt->ceil.cell_log, sprint_size(hopt->ceil.mpu, b2));
-+		fprintf(f, "level %d ", (int)hopt->level);
-+	    } else {
-+		fprintf(f, "burst %s ", sprint_size(buffer, b1));
-+		fprintf(f, "cburst %s ", sprint_size(cbuffer, b1));
-+	    }
-+	    if (show_raw)
-+		fprintf(f, "buffer [%08x] cbuffer [%08x] ", 
-+			hopt->buffer,hopt->cbuffer);
-+	}
-+	if (tb[TCA_HTB_INIT]) {
-+	    gopt = RTA_DATA(tb[TCA_HTB_INIT]);
-+	    if (RTA_PAYLOAD(tb[TCA_HTB_INIT])  < sizeof(*gopt)) return -1;
-+
-+	    fprintf(f, "r2q %d default %x direct_packets_stat %u", 
-+		    gopt->rate2quantum,gopt->defcls,gopt->direct_pkts);
-+		if (show_details)
-+			fprintf(f," ver %d.%d",gopt->version >> 16,gopt->version & 0xffff);
-+	}
-+	return 0;
-+}
-+
-+static int htb_print_xstats(struct qdisc_util *qu, FILE *f, struct rtattr *xstats)
-+{
-+	struct tc_htb_xstats *st;
-+	if (xstats == NULL)
-+		return 0;
-+
-+	if (RTA_PAYLOAD(xstats) < sizeof(*st))
-+		return -1;
-+
-+	st = RTA_DATA(xstats);
-+	fprintf(f, " lended: %u borrowed: %u giants: %u\n", 
-+		st->lends,st->borrows,st->giants);
-+	fprintf(f, " tokens: %d ctokens: %d\n", st->tokens,st->ctokens);
-+	return 0;
-+}
-+
-+struct qdisc_util htb_util = {
-+	NULL,
-+	"htb",
-+	htb_parse_opt,
-+	htb_print_opt,
-+	htb_print_xstats,
-+	htb_parse_class_opt,
-+	htb_print_opt,
-+};
-+
-+/* for testing of old one */
-+struct qdisc_util htb2_util = {
-+	NULL,
-+	"htb2",
-+	htb_parse_opt,
-+	htb_print_opt,
-+	htb_print_xstats,
-+	htb_parse_class_opt,
-+	htb_print_opt,
-+};
-+#endif
- /*
-  * q_htb.c		HTB.
-  *
-Index: iproute-2.6.20-070313/tc/q_wrr.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ iproute-2.6.20-070313/tc/q_wrr.c	2007-06-09 13:53:57.000000000 +0100
-@@ -0,0 +1,322 @@
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <unistd.h>
-+#include <syslog.h>
-+#include <fcntl.h>
-+#include <sys/socket.h>
-+#include <netinet/in.h>
-+#include <arpa/inet.h>
-+#include <string.h>
-+#include <math.h>
-+
-+#include "utils.h"
-+#include "tc_util.h"
-+
-+#define usage() return(-1)
-+
-+// Returns -1 on error
-+static int wrr_parse_qdisc_weight(int argc, char** argv, 
-+                              struct tc_wrr_qdisc_modf* opt) {
-+  int i;
-+  
-+  opt->weight1.weight_mode=-1;
-+  opt->weight2.weight_mode=-1;
-+  
-+  for(i=0; i<argc; i++) {  
-+    if(!memcmp(argv[i],"wmode1=",7)) {
-+      opt->weight1.weight_mode=atoi(argv[i]+7);            
-+    } else if(!memcmp(argv[i],"wmode2=",7)) {
-+      opt->weight2.weight_mode=atoi(argv[i]+7);
-+    } else {
-+      printf("Usage: ... [wmode1=0|1|2|3] [wmode2=0|1|2|3]\n");
-+      return -1;
-+    }
-+  }
-+  return 0;
-+}
-+
-+static int wrr_parse_class_modf(int argc, char** argv, 
-+                                struct tc_wrr_class_modf* modf) {
-+  int i;
-+  
-+  if(argc<1) {
-+    fprintf(stderr, "Usage: ... [weight1=val] [decr1=val] [incr1=val] [min1=val] [max1=val] [val2=val] ...\n");
-+    fprintf(stderr, "  The values can be floating point like 0.42 or divisions like 42/100\n");
-+    return -1;
-+  }
-+  
-+  // Set meaningless values:
-+  modf->weight1.val=0;
-+  modf->weight1.decr=(__u64)-1;
-+  modf->weight1.incr=(__u64)-1;
-+  modf->weight1.min=0;
-+  modf->weight1.max=0;
-+  modf->weight2.val=0;
-+  modf->weight2.decr=(__u64)-1;
-+  modf->weight2.incr=(__u64)-1;
-+  modf->weight2.min=0;
-+  modf->weight2.max=0;
-+  
-+  // And read values:
-+  for(i=0; i<argc; i++) {
-+    char arg[80];
-+    char* name,*value1=0,*value2=0;
-+    long double f_val1,f_val2=1,value;
-+    if(strlen(argv[i])>=sizeof(arg)) {
-+      fprintf(stderr,"Argument too long: %s\n",argv[i]);
-+      return -1;
-+    }
-+    strcpy(arg,argv[i]);
-+    
-+    name=strtok(arg,"=");
-+    if(name) value1=strtok(0,"/");
-+    if(value1) value2=strtok(0,"");
-+    
-+    if(!value1) {
-+      fprintf(stderr,"No = found in argument: %s\n",argv[i]);
-+      return -1;
-+    }
-+    
-+    f_val1=atof(value1);
-+    if(value2) f_val2=atof(value2);    
-+    
-+    if(f_val2==0)  {
-+      fprintf(stderr,"Division by 0\n");
-+      return -1;
-+    }
-+        
-+    value=f_val1/f_val2;    
-+    if(value>1) value=1;
-+    if(value<0) value=0;            
-+    value*=((__u64)-1);
-+    
-+    // And find the value set
-+    if(!strcmp(name,"weight1"))    modf->weight1.val=value;
-+    else if(!strcmp(name,"decr1")) modf->weight1.decr=value;
-+    else if(!strcmp(name,"incr1")) modf->weight1.incr=value;
-+    else if(!strcmp(name,"min1"))  modf->weight1.min=value;
-+    else if(!strcmp(name,"max1"))  modf->weight1.max=value;
-+    else if(!strcmp(name,"weight2")) modf->weight2.val=value;
-+    else if(!strcmp(name,"decr2")) modf->weight2.decr=value;
-+    else if(!strcmp(name,"incr2")) modf->weight2.incr=value;
-+    else if(!strcmp(name,"min2"))  modf->weight2.min=value;
-+    else if(!strcmp(name,"max2"))  modf->weight2.max=value;
-+    else {
-+      fprintf(stderr,"illegal value: %s\n",name);
-+      return -1;
-+    }
-+  }    
-+
-+  return 0;
-+}
-+
-+static int wrr_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nlmsghdr *n)
-+{
-+  if(n->nlmsg_flags & NLM_F_CREATE) {
-+    // This is a create request:
-+    struct tc_wrr_qdisc_crt opt;
-+	
-+    int sour,dest,ip,mac,masq;
-+
-+    if(argc<4) {
-+      fprintf(stderr, "Usage: ... wrr sour|dest ip|masq|mac maxclasses proxymaxcon [penalty-setup]\n");
-+      return -1;
-+    }	  
-+  
-+    // Read sour/dest:
-+    memset(&opt,0,sizeof(opt));
-+    sour=!strcmp(argv[0],"sour");
-+    dest=!strcmp(argv[0],"dest");	
-+	
-+    if(!sour && !dest) {
-+      fprintf(stderr,"sour or dest must be specified\n");
-+      return -1;
-+    }	
-+
-+    // Read ip/mac
-+    ip=!strcmp(argv[1],"ip");
-+    mac=!strcmp(argv[1],"mac");	
-+    masq=!strcmp(argv[1],"masq");	
-+
-+    if(!ip && !mac && !masq) {
-+      fprintf(stderr,"ip, masq or mac must be specified\n");
-+      return -1;
-+    }	
-+
-+    opt.srcaddr=sour;		
-+    opt.usemac=mac;
-+    opt.usemasq=masq;		
-+    opt.bands_max=atoi(argv[2]);
-+    
-+    opt.proxy_maxconn=atoi(argv[3]);
-+    
-+    // Read weights:
-+    if(wrr_parse_qdisc_weight(argc-4,argv+4,&opt.qdisc_modf)<0) return -1;
-+    if(opt.qdisc_modf.weight1.weight_mode==-1) opt.qdisc_modf.weight1.weight_mode=0;
-+    if(opt.qdisc_modf.weight2.weight_mode==-1) opt.qdisc_modf.weight2.weight_mode=0;
-+		
-+    addattr_l(n, 1024, TCA_OPTIONS, &opt, sizeof(opt));
-+  } else {
-+    struct tc_wrr_qdisc_modf_std opt;
-+    char qdisc,class;
-+    
-+    // This is a modify request:
-+    if(argc<1) {
-+      fprintf(stderr,"... qdisc ... or ... class ...\n");
-+      return -1;
-+    }
-+            
-+    qdisc=!strcmp(argv[0],"qdisc");
-+    class=!strcmp(argv[0],"class");
-+
-+    if(!qdisc && !class) {
-+      fprintf(stderr,"qdisc or class must be specified\n");
-+      return -1;
-+    }
-+      
-+    argc--;
-+    argv++;
-+      
-+    opt.proxy=0;
-+    
-+    if(qdisc) {
-+      opt.change_class=0;
-+      if(wrr_parse_qdisc_weight(argc, argv, &opt.qdisc_modf)<0) return -1;
-+    } else {
-+      int a0,a1,a2,a3,a4=0,a5=0;      
-+
-+      opt.change_class=1;
-+      
-+      if(argc<1) {
-+        fprintf(stderr,"... <mac>|<ip>|<masq> ...\n");
-+        return -1;
-+      }
-+      memset(opt.addr,0,sizeof(opt.addr));
-+
-+      if((sscanf(argv[0],"%i.%i.%i.%i",&a0,&a1,&a2,&a3)!=4) &&
-+         (sscanf(argv[0],"%x:%x:%x:%x:%x:%x",&a0,&a1,&a2,&a3,&a4,&a5)!=6)) {
-+	fprintf(stderr,"Wrong format of mac or ip address\n");
-+	return -1;
-+      }
-+      
-+      opt.addr[0]=a0; opt.addr[1]=a1; opt.addr[2]=a2;
-+      opt.addr[3]=a3; opt.addr[4]=a4; opt.addr[5]=a5;
-+
-+      if(wrr_parse_class_modf(argc-1, argv+1, &opt.class_modf)<0) return -1;
-+    }  
-+  
-+    addattr_l(n, 1024, TCA_OPTIONS, &opt, sizeof(opt));
-+  }
-+  return 0;
-+}
-+
-+static int wrr_parse_copt(struct qdisc_util *qu, int argc, char **argv, struct nlmsghdr *n) {
-+  struct tc_wrr_class_modf opt;
-+  
-+  memset(&opt,0,sizeof(opt));
-+  if(wrr_parse_class_modf(argc,argv,&opt)<0) return -1;
-+  
-+  addattr_l(n, 1024, TCA_OPTIONS, &opt, sizeof(opt));
-+  return 0;  
-+}  
-+
-+static int wrr_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
-+{
-+	struct tc_wrr_qdisc_stats *qopt;
-+
-+	if (opt == NULL)
-+		return 0;
-+
-+	if (RTA_PAYLOAD(opt)  < sizeof(*qopt))
-+		return -1;
-+	qopt = RTA_DATA(opt);
-+	
-+	fprintf(f,"\n  (%s/%s) (maxclasses %i) (usedclasses %i) (reused classes %i)\n",
-+	  qopt->qdisc_crt.srcaddr ? "sour" : "dest",
-+	  qopt->qdisc_crt.usemac  ? "mac"  : (qopt->qdisc_crt.usemasq ? "masq" : "ip"),	  
-+	  qopt->qdisc_crt.bands_max,	  	  	  
-+	  qopt->bands_cur,
-+	  qopt->bands_reused
-+	  );
-+	  
-+	if(qopt->qdisc_crt.proxy_maxconn) {
-+	  fprintf(f,"  (proxy maxcon %i) (proxy curcon %i)\n",
-+	    qopt->qdisc_crt.proxy_maxconn,qopt->proxy_curconn);
-+	}
-+	
-+	fprintf(f,"  (waiting classes %i) (packets requeued %i) (priosum: %Lg)\n",
-+	  qopt->nodes_in_heap,
-+	  qopt->packets_requed,
-+	  qopt->priosum/((long double)((__u32)-1))
-+	  );
-+
-+	fprintf(f,"  (wmode1 %i) (wmode2 %i) \n",
-+	  qopt->qdisc_crt.qdisc_modf.weight1.weight_mode,
-+	  qopt->qdisc_crt.qdisc_modf.weight2.weight_mode);
-+	  
-+	return 0;
-+}
-+
-+static int wrr_print_copt(struct qdisc_util *qu, FILE *f, struct rtattr *opt) {
-+  struct tc_wrr_class_stats *copt;
-+  long double d=(__u64)-1;
-+
-+  if (opt == NULL) return 0;
-+
-+  if (RTA_PAYLOAD(opt)  < sizeof(*copt))
-+    return -1;
-+  copt = RTA_DATA(opt);
-+
-+  if(!copt->used) {
-+    fprintf(f,"(unused)");
-+    return 0;
-+  }
-+  
-+  if(copt->usemac) {
-+    fprintf(f,"\n  (address: %.2X:%.2X:%.2X:%.2X:%.2X:%.2X)\n",
-+      copt->addr[0],copt->addr[1],copt->addr[2],
-+      copt->addr[3],copt->addr[4],copt->addr[5]);
-+  } else {     
-+    fprintf(f,"\n  (address: %i.%i.%i.%i)\n",copt->addr[0],copt->addr[1],copt->addr[2],copt->addr[3]);
-+  }    
-+  
-+  fprintf(f,"  (total weight: %Lg) (current position: %i) (counters: %u %u : %u %u)\n",
-+    (copt->class_modf.weight1.val/d)*(copt->class_modf.weight2.val/d),
-+    copt->heappos,
-+    (unsigned)(copt->penal_ms>>32),
-+    (unsigned)(copt->penal_ms & 0xffffffffU),
-+    (unsigned)(copt->penal_ls>>32),
-+    (unsigned)(copt->penal_ls & 0xffffffffU)
-+    );
-+    
-+  fprintf(f,"  Pars 1: (weight %Lg) (decr: %Lg) (incr: %Lg) (min: %Lg) (max: %Lg)\n",
-+    copt->class_modf.weight1.val/d,
-+    copt->class_modf.weight1.decr/d,
-+    copt->class_modf.weight1.incr/d,
-+    copt->class_modf.weight1.min/d,
-+    copt->class_modf.weight1.max/d);
-+
-+  fprintf(f,"  Pars 2: (weight %Lg) (decr: %Lg) (incr: %Lg) (min: %Lg) (max: %Lg)",
-+    copt->class_modf.weight2.val/d,
-+    copt->class_modf.weight2.decr/d,
-+    copt->class_modf.weight2.incr/d,
-+    copt->class_modf.weight2.min/d,
-+    copt->class_modf.weight2.max/d);
-+  
-+  return 0;
-+}
-+
-+static int wrr_print_xstats(struct qdisc_util *qu, FILE *f, struct rtattr *xstats)
-+{
-+	return 0;
-+}
-+
-+
-+struct qdisc_util wrr_qdisc_util = {
-+	.id = "wrr",
-+	.parse_qopt = wrr_parse_opt,
-+	.print_qopt = wrr_print_opt,
-+	.print_xstats = wrr_print_xstats,
-+	.parse_copt = wrr_parse_copt,
-+	.print_copt = wrr_print_copt
-+};
++.SH "FILES"
++.LP 
++\fI/usr/bin/routef\fP 
++.br 
++\fI/usr/bin/routel\fP 
++.SH "AUTHORS"
++.LP 
++The routel script was written by Stephen R. van den Berg <srb@cuci.nl>, 1999/04/18 and donated to the public domain.
++.br
++This manual page was written by Andreas Henriksson  <andreas@fatal.se>, for the Debian GNU/Linux system.
++.SH "SEE ALSO"
++.LP 
++ip(8)
