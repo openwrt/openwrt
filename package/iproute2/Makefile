@@ -14,7 +14,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://developer.osdl.org/dev/iproute2/download/
-PKG_MD5SUM:=
+PKG_MD5SUM:=2e59da739ef19990408cf0a5cb0cae3e
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/iproute2-$(PKG_VERSION)
 
