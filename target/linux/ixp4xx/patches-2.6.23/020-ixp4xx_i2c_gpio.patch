@@ -1,0 +1,232 @@
+Migrate all ixp4xx devices to the bitbanging I2C bus driver utilizing
+the arch-neutral GPIO API (linux/i2c-gpio.h).
+
+Tested by the nslu2-linux and openwrt projects in public firmware releases.
+
+Acked-by: Rod Whitby <rod@whitby.id.au>
+Signed-off-by: Michael-Luke Jones <mlj28@cam.ac.uk>
+
+Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/nslu2-setup.c
+===================================================================
+--- linux-2.6.24-rc6-armeb.orig/arch/arm/mach-ixp4xx/nslu2-setup.c	2008-01-05 18:10:05.000000000 +1030
++++ linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/nslu2-setup.c	2008-01-05 18:10:10.000000000 +1030
+@@ -18,6 +18,7 @@
+ #include <linux/serial.h>
+ #include <linux/serial_8250.h>
+ #include <linux/leds.h>
++#include <linux/i2c-gpio.h>
+ 
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -41,7 +42,7 @@
+ 	.resource		= &nslu2_flash_resource,
+ };
+ 
+-static struct ixp4xx_i2c_pins nslu2_i2c_gpio_pins = {
++static struct i2c_gpio_platform_data nslu2_i2c_gpio_data = {
+ 	.sda_pin		= NSLU2_SDA_PIN,
+ 	.scl_pin		= NSLU2_SCL_PIN,
+ };
+@@ -82,11 +83,12 @@
+ };
+ #endif
+ 
+-static struct platform_device nslu2_i2c_controller = {
+-	.name			= "IXP4XX-I2C",
++static struct platform_device nslu2_i2c_gpio = {
++	.name			= "i2c-gpio",
+ 	.id			= 0,
+-	.dev.platform_data	= &nslu2_i2c_gpio_pins,
+-	.num_resources		= 0,
++	.dev	 = {
++		.platform_data	= &nslu2_i2c_gpio_data,
++	},
+ };
+ 
+ static struct platform_device nslu2_beeper = {
+@@ -139,7 +141,7 @@
+ };
+ 
+ static struct platform_device *nslu2_devices[] __initdata = {
+-	&nslu2_i2c_controller,
++	&nslu2_i2c_gpio,
+ 	&nslu2_flash,
+ 	&nslu2_beeper,
+ #ifdef CONFIG_LEDS_IXP4XX
+Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c
+===================================================================
+--- linux-2.6.24-rc6-armeb.orig/arch/arm/mach-ixp4xx/nas100d-setup.c	2008-01-05 18:10:05.000000000 +1030
++++ linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c	2008-01-05 18:10:10.000000000 +1030
+@@ -16,6 +16,7 @@
+ #include <linux/serial.h>
+ #include <linux/serial_8250.h>
+ #include <linux/leds.h>
++#include <linux/i2c-gpio.h>
+ 
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -68,16 +69,17 @@
+ };
+ #endif
+ 
+-static struct ixp4xx_i2c_pins nas100d_i2c_gpio_pins = {
++static struct i2c_gpio_platform_data nas100d_i2c_gpio_data = {
+ 	.sda_pin		= NAS100D_SDA_PIN,
+ 	.scl_pin		= NAS100D_SCL_PIN,
+ };
+ 
+-static struct platform_device nas100d_i2c_controller = {
+-	.name			= "IXP4XX-I2C",
++static struct platform_device nas100d_i2c_gpio = {
++	.name			= "i2c-gpio",
+ 	.id			= 0,
+-	.dev.platform_data	= &nas100d_i2c_gpio_pins,
+-	.num_resources		= 0,
++	.dev	 = {
++		.platform_data	= &nas100d_i2c_gpio_data,
++	},
+ };
+ 
+ static struct resource nas100d_uart_resources[] = {
+@@ -124,7 +126,7 @@
+ };
+ 
+ static struct platform_device *nas100d_devices[] __initdata = {
+-	&nas100d_i2c_controller,
++	&nas100d_i2c_gpio,
+ 	&nas100d_flash,
+ #ifdef CONFIG_LEDS_IXP4XX
+ 	&nas100d_leds,
+Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/avila-setup.c
+===================================================================
+--- linux-2.6.24-rc6-armeb.orig/arch/arm/mach-ixp4xx/avila-setup.c	2008-01-05 18:10:05.000000000 +1030
++++ linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/avila-setup.c	2008-01-05 18:10:10.000000000 +1030
+@@ -18,6 +18,7 @@
+ #include <linux/tty.h>
+ #include <linux/serial_8250.h>
+ #include <linux/slab.h>
++#include <linux/i2c-gpio.h>
+ 
+ #include <asm/types.h>
+ #include <asm/setup.h>
+@@ -47,18 +48,17 @@
+ 	.resource	= &avila_flash_resource,
+ };
+ 
+-static struct ixp4xx_i2c_pins avila_i2c_gpio_pins = {
++static struct i2c_gpio_platform_data avila_i2c_gpio_data = {
+ 	.sda_pin	= AVILA_SDA_PIN,
+ 	.scl_pin	= AVILA_SCL_PIN,
+ };
+ 
+-static struct platform_device avila_i2c_controller = {
+-	.name		= "IXP4XX-I2C",
++static struct platform_device avila_i2c_gpio = {
++	.name		= "i2c-gpio",
+ 	.id		= 0,
+-	.dev		= {
+-		.platform_data = &avila_i2c_gpio_pins,
++	.dev	 = {
++		.platform_data	= &avila_i2c_gpio_data,
+ 	},
+-	.num_resources	= 0
+ };
+ 
+ static struct resource avila_uart_resources[] = {
+@@ -133,7 +133,7 @@
+ };
+ 
+ static struct platform_device *avila_devices[] __initdata = {
+-	&avila_i2c_controller,
++	&avila_i2c_gpio,
+ 	&avila_flash,
+ 	&avila_uart
+ };
+Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/dsmg600-setup.c
+===================================================================
+--- linux-2.6.24-rc6-armeb.orig/arch/arm/mach-ixp4xx/dsmg600-setup.c	2008-01-05 18:10:05.000000000 +1030
++++ linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/dsmg600-setup.c	2008-01-05 18:10:10.000000000 +1030
+@@ -14,6 +14,7 @@
+ #include <linux/kernel.h>
+ #include <linux/serial.h>
+ #include <linux/serial_8250.h>
++#include <linux/i2c-gpio.h>
+ 
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -37,15 +38,17 @@
+ 	.resource		= &dsmg600_flash_resource,
+ };
+ 
+-static struct ixp4xx_i2c_pins dsmg600_i2c_gpio_pins = {
++static struct i2c_gpio_platform_data dsmg600_i2c_gpio_data = {
+ 	.sda_pin		= DSMG600_SDA_PIN,
+ 	.scl_pin		= DSMG600_SCL_PIN,
+ };
+ 
+-static struct platform_device dsmg600_i2c_controller = {
+-	.name			= "IXP4XX-I2C",
++static struct platform_device dsmg600_i2c_gpio = {
++	.name			= "i2c-gpio",
+ 	.id			= 0,
+-	.dev.platform_data	= &dsmg600_i2c_gpio_pins,
++	.dev	 = {
++		.platform_data	= &dsmg600_i2c_gpio_data,
++	},
+ };
+ 
+ #ifdef CONFIG_LEDS_CLASS
+@@ -116,7 +119,7 @@
+ };
+ 
+ static struct platform_device *dsmg600_devices[] __initdata = {
+-	&dsmg600_i2c_controller,
++	&dsmg600_i2c_gpio,
+ 	&dsmg600_flash,
+ };
+ 
+Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/ixdp425-setup.c
+===================================================================
+--- linux-2.6.24-rc6-armeb.orig/arch/arm/mach-ixp4xx/ixdp425-setup.c	2008-01-05 18:10:05.000000000 +1030
++++ linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/ixdp425-setup.c	2008-01-05 18:10:10.000000000 +1030
+@@ -15,6 +15,7 @@
+ #include <linux/tty.h>
+ #include <linux/serial_8250.h>
+ #include <linux/slab.h>
++#include <linux/i2c-gpio.h>
+ #include <linux/io.h>
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/nand.h>
+@@ -120,18 +121,17 @@
+ };
+ #endif	/* CONFIG_MTD_NAND_PLATFORM */
+ 
+-static struct ixp4xx_i2c_pins ixdp425_i2c_gpio_pins = {
++static struct i2c_gpio_platform_data ixdp425_i2c_gpio_data = {
+ 	.sda_pin	= IXDP425_SDA_PIN,
+ 	.scl_pin	= IXDP425_SCL_PIN,
+ };
+ 
+-static struct platform_device ixdp425_i2c_controller = {
+-	.name		= "IXP4XX-I2C",
++static struct platform_device ixdp425_i2c_gpio = {
++	.name		= "i2c-gpio",
+ 	.id		= 0,
+-	.dev		= {
+-		.platform_data = &ixdp425_i2c_gpio_pins,
++	.dev	 = {
++		.platform_data	= &ixdp425_i2c_gpio_data,
+ 	},
+-	.num_resources	= 0
+ };
+ 
+ static struct resource ixdp425_uart_resources[] = {
+@@ -178,7 +178,7 @@
+ };
+ 
+ static struct platform_device *ixdp425_devices[] __initdata = {
+-	&ixdp425_i2c_controller,
++	&ixdp425_i2c_gpio,
+ 	&ixdp425_flash,
+ #if defined(CONFIG_MTD_NAND_PLATFORM) || \
+     defined(CONFIG_MTD_NAND_PLATFORM_MODULE)
