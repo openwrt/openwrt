@@ -25,7 +25,7 @@ define KernelPackage/video-spca5xx-le
   SUBMENU:=Video Support
   TITLE:=SPCA5xx based USB webcam support (Light Edition)
   URL:=http://mxhaard.free.fr/
-  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core kmod-video-core
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT @BROKEN +kmod-usb-core kmod-video-core
   FILES:=$(PKG_BUILD_DIR)/spca5xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,spca5xx)
 endef
