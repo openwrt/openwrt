@@ -1,0 +1,21 @@
+diff -Naur spca5xx-le/spca_core.c spca5xx-le-new/spca_core.c
+--- spca5xx-le/spca_core.c	2007-06-03 21:30:29.000000000 +0100
++++ spca5xx-le-new/spca_core.c	2008-01-06 12:48:08.000000000 +0000
+@@ -535,7 +535,7 @@
+ 
+   if (!pgd_none (*pgd))
+     {
+-#if PUD_SHIFT
++#ifdef PUD_SHIFT
+       pud_t *pud = pud_offset (pgd, adr);
+       if (!pud_none (*pud))
+ 	{
+@@ -552,7 +552,7 @@
+ 	      ret = (unsigned long) page_address (pte_page (pte));
+ 	      ret |= (adr & (PAGE_SIZE - 1));
+ 	    }
+-#if PUD_SHIFT
++#ifdef PUD_SHIFT
+ 	}
+ #endif
+     }
