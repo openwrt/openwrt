@@ -681,6 +681,19 @@ endef
 
 $(eval $(call KernelPackage,e1000))
 
+define KernelPackage/b44
+  TITLE:=Broadcom 44xx driver
+  FILES:=$(LINUX_DIR)/drivers/net/b44.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=CONFIG_B44
+  DEPENDS:=@TARGET_x86
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  AUTOLOAD:=$(call AutoLoad,50,b44)
+endef
+
+define KernelPackage/b44/description
+ Kernel modules for Broadcom 44xx Ethernet adapters.
+endef
+$(eval $(call KernelPackage,b44))
 
 define KernelPackage/3c59x
   SUBMENU:=$(NETWORK_DEVICES_MENU)
