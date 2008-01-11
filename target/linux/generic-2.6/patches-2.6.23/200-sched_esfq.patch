@@ -239,7 +239,7 @@ diff -Naur linux-2.6.21.5.orig/net/sched/sch_esfq.c linux-2.6.21.5/net/sched/sch
 +	switch (skb->protocol) {
 +	case __constant_htons(ETH_P_IP):
 +	{
-+		struct iphdr *iph = skb->nh.iph;
++		struct iphdr *iph = ip_hdr(skb);
 +		info.dst = iph->daddr;
 +		info.src = iph->saddr;
 +		if (!(iph->frag_off&htons(IP_MF|IP_OFFSET)) &&
@@ -255,7 +255,7 @@ diff -Naur linux-2.6.21.5.orig/net/sched/sch_esfq.c linux-2.6.21.5/net/sched/sch
 +	}
 +	case __constant_htons(ETH_P_IPV6):
 +	{
-+		struct ipv6hdr *iph = skb->nh.ipv6h;
++		struct ipv6hdr *iph = ipv6_hdr(skb);
 +		/* Hash ipv6 addresses into a u32. This isn't ideal,
 +		 * but the code is simple. */
 +		info.dst = jhash2(iph->daddr.s6_addr32, 4, q->perturbation);
