@@ -30,6 +30,8 @@
 #include <linux/platform_device.h>
 #include <linux/version.h>
 #include <linux/leds.h>
+#include <linux/gpio_keys.h>
+#include <linux/input.h>
 
 #include <asm/gpio.h>
 
@@ -74,10 +76,34 @@ static struct platform_device rdc321x_wdt = {
 	.num_resources = 0,
 };
 
+/* Button */
+static struct gpio_keys_button rdc321x_gpio_btn[] = {
+	{
+		.gpio = 0,
+		.code = BTN_0,
+		.desc = "Reset",
+		.active_low = 1,
+	}
+};
+
+static struct gpio_keys_platform_data rdc321x_gpio_btn_data = {
+	.buttons = rdc321x_gpio_btn,
+	.nbuttons = ARRAY_SIZE(rdc321x_gpio_btn),
+};
+
+static struct platform_device rdc321x_button = {
+	.name = "gpio-keys",
+	.id = -1,
+	.dev = {
+		.platform_data = &rdc321x_gpio_btn_data,
+	}
+};
+
 static struct platform_device *rdc321x_devs[] = {
 	&rdc_flash_device,
 	&rdc321x_leds,
-	&rdc321x_wdt
+	&rdc321x_wdt,
+	&rdc321x_button
 };
 
 static int __init rdc_board_setup(void)
