@@ -22,6 +22,8 @@
 #include <linux/mtd/nand.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
+#include <linux/gpio_keys.h>
+#include <linux/input.h>
 
 #include <asm/bootinfo.h>
 
@@ -189,11 +191,34 @@ static struct platform_device rb500_led = {
 	.id = 0,
 };
 
+static struct gpio_keys_button rb500_gpio_btn[] = {
+	{
+		.gpio = 1,
+		.code = BTN_0,
+		.desc = "S1",
+		.active_low = 1,
+	}
+};
+
+static struct gpio_keys_platform_data rb500_gpio_btn_data = {
+	.buttons = rb500_gpio_btn,
+	.nbuttons = ARRAY_SIZE(rb500_gpio_btn),
+};
+
+static struct platform_device rb500_button = {
+	.name 	= "gpio-keys",
+	.id	= -1,
+	.dev	= {
+		.platform_data = &rb500_gpio_btn_data,
+	}
+};
+
 static struct platform_device *rb500_devs[] = {
 	&korina_dev0,
 	&nand_slot0,
 	&cf_slot0,
-	&rb500_led
+	&rb500_led,
+	&rb500_button
 };
 
 static void __init parse_mac_addr(char *macstr)
