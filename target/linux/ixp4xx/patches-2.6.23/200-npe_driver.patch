@@ -1,7 +1,8 @@
-diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/kernel/setup.c ixp4xx-nep.git/arch/arm/kernel/setup.c
---- linux-2.6.23/arch/arm/kernel/setup.c	2007-10-09 22:31:38.000000000 +0200
-+++ ixp4xx-nep.git/arch/arm/kernel/setup.c	2007-10-22 19:19:41.000000000 +0200
-@@ -61,6 +61,7 @@
+diff --git a/arch/arm/kernel/setup.c b/arch/arm/kernel/setup.c
+index 4de432e..c4c810b 100644
+--- a/arch/arm/kernel/setup.c
++++ b/arch/arm/kernel/setup.c
+@@ -61,6 +61,7 @@ extern int root_mountflags;
  extern void _stext, _text, _etext, __data_start, _edata, _end;
  
  unsigned int processor_id;
@@ -9,10 +10,11 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/kernel/setup.c ixp4xx-nep.
  unsigned int __machine_arch_type;
  EXPORT_SYMBOL(__machine_arch_type);
  
-diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/Kconfig ixp4xx-nep.git/arch/arm/mach-ixp4xx/Kconfig
---- linux-2.6.23/arch/arm/mach-ixp4xx/Kconfig	2007-10-09 22:31:38.000000000 +0200
-+++ ixp4xx-nep.git/arch/arm/mach-ixp4xx/Kconfig	2007-10-22 19:19:41.000000000 +0200
-@@ -189,6 +189,20 @@
+diff --git a/arch/arm/mach-ixp4xx/Kconfig b/arch/arm/mach-ixp4xx/Kconfig
+index 61b2dfc..e774447 100644
+--- a/arch/arm/mach-ixp4xx/Kconfig
++++ b/arch/arm/mach-ixp4xx/Kconfig
+@@ -189,6 +189,20 @@ config IXP4XX_INDIRECT_PCI
  	  need to use the indirect method instead. If you don't know
  	  what you need, leave this option unselected.
  
@@ -33,19 +35,21 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/Kconfig ixp4xx
  endmenu
  
  endif
-diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/Makefile ixp4xx-nep.git/arch/arm/mach-ixp4xx/Makefile
---- linux-2.6.23/arch/arm/mach-ixp4xx/Makefile	2007-10-09 22:31:38.000000000 +0200
-+++ ixp4xx-nep.git/arch/arm/mach-ixp4xx/Makefile	2007-10-22 19:19:41.000000000 +0200
-@@ -30,3 +30,5 @@
+diff --git a/arch/arm/mach-ixp4xx/Makefile b/arch/arm/mach-ixp4xx/Makefile
+index 77e00ad..4bb97e1 100644
+--- a/arch/arm/mach-ixp4xx/Makefile
++++ b/arch/arm/mach-ixp4xx/Makefile
+@@ -30,3 +30,5 @@ obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
  obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
 +obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
 +obj-$(CONFIG_IXP4XX_NPE)	+= ixp4xx_npe.o
-diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixdp425-setup.c ixp4xx-nep.git/arch/arm/mach-ixp4xx/ixdp425-setup.c
---- linux-2.6.23/arch/arm/mach-ixp4xx/ixdp425-setup.c	2007-10-09 22:31:38.000000000 +0200
-+++ ixp4xx-nep.git/arch/arm/mach-ixp4xx/ixdp425-setup.c	2007-10-22 19:19:41.000000000 +0200
-@@ -177,6 +177,31 @@
+diff --git a/arch/arm/mach-ixp4xx/ixdp425-setup.c b/arch/arm/mach-ixp4xx/ixdp425-setup.c
+index d5008d8..10b41c6 100644
+--- a/arch/arm/mach-ixp4xx/ixdp425-setup.c
++++ b/arch/arm/mach-ixp4xx/ixdp425-setup.c
+@@ -177,6 +177,31 @@ static struct platform_device ixdp425_uart = {
  	.resource		= ixdp425_uart_resources
  };
  
@@ -77,7 +81,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixdp425-setup.
  static struct platform_device *ixdp425_devices[] __initdata = {
  	&ixdp425_i2c_controller,
  	&ixdp425_flash,
-@@ -184,7 +209,9 @@
+@@ -184,7 +209,9 @@ static struct platform_device *ixdp425_devices[] __initdata = {
      defined(CONFIG_MTD_NAND_PLATFORM_MODULE)
  	&ixdp425_flash_nand,
  #endif
@@ -88,10 +92,12 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixdp425-setup.
  };
  
  static void __init ixdp425_init(void)
-diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_npe.c ixp4xx-nep.git/arch/arm/mach-ixp4xx/ixp4xx_npe.c
---- linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_npe.c	1970-01-01 01:00:00.000000000 +0100
-+++ ixp4xx-nep.git/arch/arm/mach-ixp4xx/ixp4xx_npe.c	2007-10-22 19:19:41.000000000 +0200
-@@ -0,0 +1,737 @@
+diff --git a/arch/arm/mach-ixp4xx/ixp4xx_npe.c b/arch/arm/mach-ixp4xx/ixp4xx_npe.c
+new file mode 100644
+index 0000000..83c137e
+--- /dev/null
++++ b/arch/arm/mach-ixp4xx/ixp4xx_npe.c
+@@ -0,0 +1,741 @@
 +/*
 + * Intel IXP4xx Network Processor Engine driver for Linux
 + *
@@ -108,13 +114,13 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_npe.c i
 + *   Thanks, Christian.
 + */
 +
++#include <linux/delay.h>
 +#include <linux/dma-mapping.h>
 +#include <linux/firmware.h>
++#include <linux/io.h>
 +#include <linux/kernel.h>
 +#include <linux/module.h>
 +#include <linux/slab.h>
-+#include <asm/delay.h>
-+#include <asm/io.h>
 +#include <asm/arch/npe.h>
 +
 +#define DEBUG_MSG			0
@@ -225,7 +231,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_npe.c i
 +
 +static struct {
 +	u32 reg, val;
-+}ecs_reset[] = {
++} ecs_reset[] = {
 +	{ ECS_BG_CTXT_REG_0,	0xA0000000 },
 +	{ ECS_BG_CTXT_REG_1,	0x01000000 },
 +	{ ECS_BG_CTXT_REG_2,	0x00008000 },
@@ -476,12 +482,13 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_npe.c i
 +	__raw_writel(0, &npe->regs->action_points[3]);
 +	__raw_writel(0, &npe->regs->watch_count);
 +
-+	val = ixp4xx_read_fuses();
++	val = ixp4xx_read_feature_bits();
 +	/* reset the NPE */
-+	ixp4xx_write_fuses(val & ~(IXP4XX_FUSE_RESET_NPEA << npe->id));
++	ixp4xx_write_feature_bits(val &
++				  ~(IXP4XX_FEATURE_RESET_NPEA << npe->id));
 +	for (i = 0; i < MAX_RETRIES; i++) {
-+		if (!(ixp4xx_read_fuses() &
-+		      (IXP4XX_FUSE_RESET_NPEA << npe->id)))
++		if (!(ixp4xx_read_feature_bits() &
++		      (IXP4XX_FEATURE_RESET_NPEA << npe->id)))
 +			break;	/* reset completed */
 +		udelay(1);
 +	}
@@ -489,9 +496,11 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_npe.c i
 +		return -ETIMEDOUT;
 +
 +	/* deassert reset */
-+	ixp4xx_write_fuses(val | (IXP4XX_FUSE_RESET_NPEA << npe->id));
++	ixp4xx_write_feature_bits(val |
++				  (IXP4XX_FEATURE_RESET_NPEA << npe->id));
 +	for (i = 0; i < MAX_RETRIES; i++) {
-+		if (ixp4xx_read_fuses() & (IXP4XX_FUSE_RESET_NPEA << npe->id))
++		if (ixp4xx_read_feature_bits() &
++		    (IXP4XX_FEATURE_RESET_NPEA << npe->id))
 +			break;	/* NPE is back alive */
 +		udelay(1);
 +	}
@@ -783,7 +792,8 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_npe.c i
 +
 +	for (i = 0; i < NPE_COUNT; i++) {
 +		struct npe *npe = &npe_tab[i];
-+		if (!(ixp4xx_read_fuses() & (IXP4XX_FUSE_RESET_NPEA << i)))
++		if (!(ixp4xx_read_feature_bits() &
++		      (IXP4XX_FEATURE_RESET_NPEA << i)))
 +			continue; /* NPE already disabled or not present */
 +		if (!(npe->mem_res = request_mem_region(npe->regs_phys,
 +							REGS_SIZE,
@@ -829,9 +839,11 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_npe.c i
 +EXPORT_SYMBOL(npe_send_message);
 +EXPORT_SYMBOL(npe_recv_message);
 +EXPORT_SYMBOL(npe_send_recv_message);
-diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c ixp4xx-nep.git/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c
---- linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c	1970-01-01 01:00:00.000000000 +0100
-+++ ixp4xx-nep.git/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c	2007-10-22 19:19:41.000000000 +0200
+diff --git a/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c b/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c
+new file mode 100644
+index 0000000..e833013
+--- /dev/null
++++ b/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c
 @@ -0,0 +1,274 @@
 +/*
 + * Intel IXP4xx Queue Manager driver for Linux
@@ -1083,7 +1095,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c 
 +error_irq:
 +	iounmap(qmgr_regs);
 +error_map:
-+	release_resource(mem_res);
++	release_mem_region(IXP4XX_QMGR_BASE_PHYS, IXP4XX_QMGR_REGION_SIZE);
 +	return err;
 +}
 +
@@ -1092,7 +1104,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c 
 +	free_irq(IRQ_IXP4XX_QM1, NULL);
 +	synchronize_irq(IRQ_IXP4XX_QM1);
 +	iounmap(qmgr_regs);
-+	release_resource(mem_res);
++	release_mem_region(IXP4XX_QMGR_BASE_PHYS, IXP4XX_QMGR_REGION_SIZE);
 +}
 +
 +module_init(qmgr_init);
@@ -1107,10 +1119,11 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c 
 +EXPORT_SYMBOL(qmgr_disable_irq);
 +EXPORT_SYMBOL(qmgr_request_queue);
 +EXPORT_SYMBOL(qmgr_release_queue);
-diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/arm/Kconfig ixp4xx-nep.git/drivers/net/arm/Kconfig
---- linux-2.6.23/drivers/net/arm/Kconfig	2007-10-09 22:31:38.000000000 +0200
-+++ ixp4xx-nep.git/drivers/net/arm/Kconfig	2007-10-22 19:20:02.000000000 +0200
-@@ -47,3 +47,13 @@
+diff --git a/drivers/net/arm/Kconfig b/drivers/net/arm/Kconfig
+index f9cc2b6..9274d3f 100644
+--- a/drivers/net/arm/Kconfig
++++ b/drivers/net/arm/Kconfig
+@@ -47,3 +47,13 @@ config EP93XX_ETH
  	help
  	  This is a driver for the ethernet hardware included in EP93xx CPUs.
  	  Say Y if you are building a kernel for EP93xx based devices.
@@ -1124,18 +1137,21 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/arm/Kconfig ixp4xx-nep.
 +	help
 +	  Say Y here if you want to use built-in Ethernet ports
 +	  on IXP4xx processor.
-diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/arm/Makefile ixp4xx-nep.git/drivers/net/arm/Makefile
---- linux-2.6.23/drivers/net/arm/Makefile	2007-10-09 22:31:38.000000000 +0200
-+++ ixp4xx-nep.git/drivers/net/arm/Makefile	2007-10-22 19:20:02.000000000 +0200
-@@ -9,3 +9,4 @@
+diff --git a/drivers/net/arm/Makefile b/drivers/net/arm/Makefile
+index a4c8682..7c812ac 100644
+--- a/drivers/net/arm/Makefile
++++ b/drivers/net/arm/Makefile
+@@ -9,3 +9,4 @@ obj-$(CONFIG_ARM_ETHER3)	+= ether3.o
  obj-$(CONFIG_ARM_ETHER1)	+= ether1.o
  obj-$(CONFIG_ARM_AT91_ETHER)	+= at91_ether.o
  obj-$(CONFIG_EP93XX_ETH)	+= ep93xx_eth.o
 +obj-$(CONFIG_IXP4XX_ETH)	+= ixp4xx_eth.o
-diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/arm/ixp4xx_eth.c ixp4xx-nep.git/drivers/net/arm/ixp4xx_eth.c
---- linux-2.6.23/drivers/net/arm/ixp4xx_eth.c	1970-01-01 01:00:00.000000000 +0100
-+++ ixp4xx-nep.git/drivers/net/arm/ixp4xx_eth.c	2007-10-22 19:20:02.000000000 +0200
-@@ -0,0 +1,1258 @@
+diff --git a/drivers/net/arm/ixp4xx_eth.c b/drivers/net/arm/ixp4xx_eth.c
+new file mode 100644
+index 0000000..2c23f50
+--- /dev/null
++++ b/drivers/net/arm/ixp4xx_eth.c
+@@ -0,0 +1,1259 @@
 +/*
 + * Intel IXP4xx Ethernet driver for Linux
 + *
@@ -1165,10 +1181,11 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/arm/ixp4xx_eth.c ixp4xx
 +#include <linux/delay.h>
 +#include <linux/dma-mapping.h>
 +#include <linux/dmapool.h>
++#include <linux/etherdevice.h>
++#include <linux/io.h>
 +#include <linux/kernel.h>
 +#include <linux/mii.h>
 +#include <linux/platform_device.h>
-+#include <asm/io.h>
 +#include <asm/arch/npe.h>
 +#include <asm/arch/qmgr.h>
 +
@@ -2373,7 +2390,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/arm/ixp4xx_eth.c ixp4xx
 +
 +static int __init eth_init_module(void)
 +{
-+	if (!(ixp4xx_read_fuses() & IXP4XX_FUSE_NPEB_ETH0))
++	if (!(ixp4xx_read_feature_bits() & IXP4XX_FEATURE_NPEB_ETH0))
 +		return -ENOSYS;
 +
 +	/* All MII PHY accesses use NPE-B Ethernet registers */
@@ -2394,10 +2411,11 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/arm/ixp4xx_eth.c ixp4xx
 +MODULE_LICENSE("GPL v2");
 +module_init(eth_init_module);
 +module_exit(eth_cleanup_module);
-diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/Kconfig ixp4xx-nep.git/drivers/net/wan/Kconfig
---- linux-2.6.23/drivers/net/wan/Kconfig	2007-10-09 22:31:38.000000000 +0200
-+++ ixp4xx-nep.git/drivers/net/wan/Kconfig	2007-10-22 19:20:05.000000000 +0200
-@@ -334,6 +334,15 @@
+diff --git a/drivers/net/wan/Kconfig b/drivers/net/wan/Kconfig
+index a3df09e..94e7aa7 100644
+--- a/drivers/net/wan/Kconfig
++++ b/drivers/net/wan/Kconfig
+@@ -334,6 +334,15 @@ config DSCC4_PCI_RST
  
  	  Say Y if your card supports this feature.
  
@@ -2413,10 +2431,11 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/Kconfig ixp4xx-nep.
  config DLCI
  	tristate "Frame Relay DLCI support"
  	---help---
-diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/Makefile ixp4xx-nep.git/drivers/net/wan/Makefile
---- linux-2.6.23/drivers/net/wan/Makefile	2007-10-09 22:31:38.000000000 +0200
-+++ ixp4xx-nep.git/drivers/net/wan/Makefile	2007-10-22 19:20:05.000000000 +0200
-@@ -42,6 +42,7 @@
+diff --git a/drivers/net/wan/Makefile b/drivers/net/wan/Makefile
+index d61fef3..1b1d116 100644
+--- a/drivers/net/wan/Makefile
++++ b/drivers/net/wan/Makefile
+@@ -42,6 +42,7 @@ obj-$(CONFIG_C101)		+= c101.o
  obj-$(CONFIG_WANXL)		+= wanxl.o
  obj-$(CONFIG_PCI200SYN)		+= pci200syn.o
  obj-$(CONFIG_PC300TOO)		+= pc300too.o
@@ -2424,10 +2443,12 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/Makefile ixp4xx-nep
  
  clean-files := wanxlfw.inc
  $(obj)/wanxl.o:	$(obj)/wanxlfw.inc
-diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx-nep.git/drivers/net/wan/ixp4xx_hss.c
---- linux-2.6.23/drivers/net/wan/ixp4xx_hss.c	1970-01-01 01:00:00.000000000 +0100
-+++ ixp4xx-nep.git/drivers/net/wan/ixp4xx_hss.c	2007-10-22 19:20:05.000000000 +0200
-@@ -0,0 +1,1248 @@
+diff --git a/drivers/net/wan/ixp4xx_hss.c b/drivers/net/wan/ixp4xx_hss.c
+new file mode 100644
+index 0000000..c4cdace
+--- /dev/null
++++ b/drivers/net/wan/ixp4xx_hss.c
+@@ -0,0 +1,1270 @@
 +/*
 + * Intel IXP4xx HSS (synchronous serial port) driver for Linux
 + *
@@ -2440,10 +2461,10 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +
 +#include <linux/dma-mapping.h>
 +#include <linux/dmapool.h>
++#include <linux/io.h>
 +#include <linux/kernel.h>
 +#include <linux/hdlc.h>
 +#include <linux/platform_device.h>
-+#include <asm/io.h>
 +#include <asm/arch/npe.h>
 +#include <asm/arch/qmgr.h>
 +
@@ -2590,10 +2611,24 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +#define CLK46X_SPEED_8192KHZ	((    8 << 22) | (280 << 12) | 2047)
 +
 +
-+/* hss_config, LUTs: default = unassigned */
-+#define TDMMAP_HDLC		1	/* HDLC - packetised */
-+#define TDMMAP_VOICE56K		2	/* Voice56K - channelised */
-+#define TDMMAP_VOICE64K		3	/* Voice64K - channelised */
++/* hss_config, LUT entries */
++#define TDMMAP_UNASSIGNED	0
++#define TDMMAP_HDLC		1	/* HDLC - packetized */
++#define TDMMAP_VOICE56K		2	/* Voice56K - 7-bit channelized */
++#define TDMMAP_VOICE64K		3	/* Voice64K - 8-bit channelized */
++
++#define TIMESLOTS		128
++#define LUT_BITS		2
++
++/* offsets into HSS config */
++#define HSS_CONFIG_TX_PCR	0x00
++#define HSS_CONFIG_RX_PCR	0x04
++#define HSS_CONFIG_CORE_CR	0x08
++#define HSS_CONFIG_CLOCK_CR	0x0C
++#define HSS_CONFIG_TX_FCR	0x10
++#define HSS_CONFIG_RX_FCR	0x14
++#define HSS_CONFIG_TX_LUT	0x18
++#define HSS_CONFIG_RX_LUT	0x38
 +
 +
 +/* NPE command codes */
@@ -2634,10 +2669,6 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +#define PKT_PIPE_RX_SIZE_WRITE			0x56
 +#define PKT_PIPE_MODE_WRITE			0x57
 +
-+
-+#define HSS_TIMESLOTS		128
-+#define HSS_LUT_BITS		2
-+
 +/* HDLC packet status values - desc->status */
 +#define ERR_SHUTDOWN		1 /* stop or shutdown occurrance */
 +#define ERR_HDLC_ALIGN		2 /* HDLC alignment error */
@@ -2666,8 +2697,8 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +	buffer_t *rx_buff_tab[RX_DESCS], *tx_buff_tab[TX_DESCS];
 +	struct desc *desc_tab;	/* coherent */
 +	u32 desc_tab_phys;
-+	sync_serial_settings settings;
 +	int id;
++	unsigned int clock_type, clock_rate, loopback;
 +	u8 hdlc_cfg;
 +};
 +
@@ -2721,6 +2752,30 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +				 ((n) + RX_DESCS) * sizeof(struct desc))
 +#define tx_desc_ptr(port, n)	(&(port)->desc_tab[(n) + RX_DESCS])
 +
++/*****************************************************************************
++ * global variables
++ ****************************************************************************/
++
++static int ports_open;
++static struct dma_pool *dma_pool;
++
++static const struct {
++	int tx, txdone, rx, rxfree;
++}queue_ids[2] = {{ HSS0_PKT_TX0_QUEUE, HSS0_PKT_TXDONE_QUEUE,
++		   HSS0_PKT_RX_QUEUE, HSS0_PKT_RXFREE0_QUEUE },
++		 { HSS1_PKT_TX0_QUEUE, HSS1_PKT_TXDONE_QUEUE,
++		   HSS1_PKT_RX_QUEUE, HSS1_PKT_RXFREE0_QUEUE },
++};
++
++/*****************************************************************************
++ * utility functions
++ ****************************************************************************/
++
++static inline struct port* dev_to_port(struct net_device *dev)
++{
++	return dev_to_hdlc(dev)->priv;
++}
++
 +#ifndef __ARMEB__
 +static inline void memcpy_swab32(u32 *dest, u32 *src, int cnt)
 +{
@@ -2729,24 +2784,6 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +		dest[i] = swab32(src[i]);
 +}
 +#endif
-+
-+static int ports_open;
-+static struct dma_pool *dma_pool;
-+
-+static struct {
-+	int tx, txdone, rx, rxfree;
-+}queue_ids[2] = {{ HSS0_PKT_TX0_QUEUE, HSS0_PKT_TXDONE_QUEUE,
-+		   HSS0_PKT_RX_QUEUE, HSS0_PKT_RXFREE0_QUEUE },
-+		 { HSS1_PKT_TX0_QUEUE, HSS1_PKT_TXDONE_QUEUE,
-+		   HSS1_PKT_RX_QUEUE, HSS1_PKT_RXFREE0_QUEUE },
-+};
-+
-+
-+static inline struct port* dev_to_port(struct net_device *dev)
-+{
-+	return dev_to_hdlc(dev)->priv;
-+}
-+
 +
 +static inline void debug_pkt(struct net_device *dev, const char *func,
 +			     u8 *data, int len)
@@ -2852,7 +2889,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +}
 +
 +
-+static void hss_set_carrier(void *pdev, int carrier)
++static void hss_hdlc_set_carrier(void *pdev, int carrier)
 +{
 +	struct net_device *dev = pdev;
 +	if (carrier)
@@ -2861,19 +2898,19 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +		netif_carrier_off(dev);
 +}
 +
-+static void hss_rx_irq(void *pdev)
++static void hss_hdlc_rx_irq(void *pdev)
 +{
 +	struct net_device *dev = pdev;
 +	struct port *port = dev_to_port(dev);
 +
 +#if DEBUG_RX
-+	printk(KERN_DEBUG "%s: hss_rx_irq\n", dev->name);
++	printk(KERN_DEBUG "%s: hss_hdlc_rx_irq\n", dev->name);
 +#endif
 +	qmgr_disable_irq(queue_ids[port->id].rx);
 +	netif_rx_schedule(dev);
 +}
 +
-+static int hss_poll(struct net_device *dev, int *budget)
++static int hss_hdlc_poll(struct net_device *dev, int *budget)
 +{
 +	struct port *port = dev_to_port(dev);
 +	unsigned int rxq = queue_ids[port->id].rx;
@@ -2882,7 +2919,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +	int quota = dev->quota, received = 0;
 +
 +#if DEBUG_RX
-+	printk(KERN_DEBUG "%s: hss_poll\n", dev->name);
++	printk(KERN_DEBUG "%s: hss_hdlc_poll\n", dev->name);
 +#endif
 +
 +	while (quota) {
@@ -2899,15 +2936,15 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +			*budget -= received;
 +			received = 0;
 +#if DEBUG_RX
-+			printk(KERN_DEBUG "%s: hss_poll netif_rx_complete\n",
-+			       dev->name);
++			printk(KERN_DEBUG "%s: hss_hdlc_poll"
++			       " netif_rx_complete\n", dev->name);
 +#endif
 +			netif_rx_complete(dev);
 +			qmgr_enable_irq(rxq);
 +			if (!qmgr_stat_empty(rxq) &&
 +			    netif_rx_reschedule(dev, 0)) {
 +#if DEBUG_RX
-+				printk(KERN_DEBUG "%s: hss_poll"
++				printk(KERN_DEBUG "%s: hss_hdlc_poll"
 +				       " netif_rx_reschedule successed\n",
 +				       dev->name);
 +#endif
@@ -2915,7 +2952,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +				continue;
 +			}
 +#if DEBUG_RX
-+			printk(KERN_DEBUG "%s: hss_poll all done\n",
++			printk(KERN_DEBUG "%s: hss_hdlc_poll all done\n",
 +			       dev->name);
 +#endif
 +			return 0; /* all work done */
@@ -2924,8 +2961,8 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +		desc = rx_desc_ptr(port, n);
 +
 +		if (desc->error_count) /* FIXME - remove printk */
-+			printk(KERN_DEBUG "%s: hss_poll status 0x%02X errors"
-+			       " %u\n", dev->name, desc->status,
++			printk(KERN_DEBUG "%s: hss_hdlc_poll status 0x%02X"
++			       " errors %u\n", dev->name, desc->status,
 +			       desc->error_count);
 +
 +		skb = NULL;
@@ -2961,8 +2998,8 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +			stats->rx_errors++;
 +			break;
 +		default:	/* FIXME - remove printk */
-+			printk(KERN_ERR "%s: hss_poll(): status 0x%02X errors"
-+			       " %u\n", dev->name, desc->status,
++			printk(KERN_ERR "%s: hss_hdlc_poll: status 0x%02X"
++			       " errors %u\n", dev->name, desc->status,
 +			       desc->error_count);
 +			stats->rx_errors++;
 +		}
@@ -2989,7 +3026,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +#endif
 +		skb_put(skb, desc->pkt_len);
 +
-+		debug_pkt(dev, "hss_poll", skb->data, skb->len);
++		debug_pkt(dev, "hss_hdlc_poll", skb->data, skb->len);
 +
 +		skb->protocol = hdlc_type_trans(skb, dev);
 +		dev->last_rx = jiffies;
@@ -3011,13 +3048,13 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +	dev->quota -= received;
 +	*budget -= received;
 +#if DEBUG_RX
-+	printk(KERN_DEBUG "hss_poll(): end, not all work done\n");
++	printk(KERN_DEBUG "hss_hdlc_poll: end, not all work done\n");
 +#endif
 +	return 1;		/* not all work done */
 +}
 +
 +
-+static void hss_txdone_irq(void *pdev)
++static void hss_hdlc_txdone_irq(void *pdev)
 +{
 +	struct net_device *dev = pdev;
 +	struct port *port = dev_to_port(dev);
@@ -3025,7 +3062,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +	int n_desc;
 +
 +#if DEBUG_TX
-+	printk(KERN_DEBUG DRV_NAME ": hss_txdone_irq\n");
++	printk(KERN_DEBUG DRV_NAME ": hss_hdlc_txdone_irq\n");
 +#endif
 +	while ((n_desc = queue_get_desc(queue_ids[port->id].txdone,
 +					port, 1)) >= 0) {
@@ -3039,7 +3076,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +
 +		dma_unmap_tx(port, desc);
 +#if DEBUG_TX
-+		printk(KERN_DEBUG "%s: hss_txdone_irq free %p\n",
++		printk(KERN_DEBUG "%s: hss_hdlc_txdone_irq free %p\n",
 +		       port->netdev->name, port->tx_buff_tab[n_desc]);
 +#endif
 +		free_buffer_irq(port->tx_buff_tab[n_desc]);
@@ -3050,15 +3087,15 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +			       tx_desc_phys(port, n_desc), desc);
 +		if (start) {
 +#if DEBUG_TX
-+			printk(KERN_DEBUG "%s: hss_txdone_irq xmit ready\n",
-+			       port->netdev->name);
++			printk(KERN_DEBUG "%s: hss_hdlc_txdone_irq xmit"
++			       " ready\n", port->netdev->name);
 +#endif
 +			netif_wake_queue(port->netdev);
 +		}
 +	}
 +}
 +
-+static int hss_xmit(struct sk_buff *skb, struct net_device *dev)
++static int hss_hdlc_xmit(struct sk_buff *skb, struct net_device *dev)
 +{
 +	struct port *port = dev_to_port(dev);
 +	struct net_device_stats *stats = hdlc_stats(dev);
@@ -3069,7 +3106,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +	struct desc *desc;
 +
 +#if DEBUG_TX
-+	printk(KERN_DEBUG "%s: hss_xmit\n", dev->name);
++	printk(KERN_DEBUG "%s: hss_hdlc_xmit\n", dev->name);
 +#endif
 +
 +	if (unlikely(skb->len > HDLC_MAX_MRU)) {
@@ -3078,7 +3115,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +		return NETDEV_TX_OK;
 +	}
 +
-+	debug_pkt(dev, "hss_xmit", skb->data, skb->len);
++	debug_pkt(dev, "hss_hdlc_xmit", skb->data, skb->len);
 +
 +	len = skb->len;
 +#ifdef __ARMEB__
@@ -3126,13 +3163,13 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +
 +	if (qmgr_stat_empty(txreadyq)) {
 +#if DEBUG_TX
-+		printk(KERN_DEBUG "%s: hss_xmit queue full\n", dev->name);
++		printk(KERN_DEBUG "%s: hss_hdlc_xmit queue full\n", dev->name);
 +#endif
 +		netif_stop_queue(dev);
 +		/* we could miss TX ready interrupt */
 +		if (!qmgr_stat_empty(txreadyq)) {
 +#if DEBUG_TX
-+			printk(KERN_DEBUG "%s: hss_xmit ready again\n",
++			printk(KERN_DEBUG "%s: hss_hdlc_xmit ready again\n",
 +			       dev->name);
 +#endif
 +			netif_wake_queue(dev);
@@ -3140,13 +3177,13 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +	}
 +
 +#if DEBUG_TX
-+	printk(KERN_DEBUG "%s: hss_xmit end\n", dev->name);
++	printk(KERN_DEBUG "%s: hss_hdlc_xmit end\n", dev->name);
 +#endif
 +	return NETDEV_TX_OK;
 +}
 +
 +
-+static int request_queues(struct port *port)
++static int request_hdlc_queues(struct port *port)
 +{
 +	int err;
 +
@@ -3184,7 +3221,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +	return err;
 +}
 +
-+static void release_queues(struct port *port)
++static void release_hdlc_queues(struct port *port)
 +{
 +	qmgr_release_queue(queue_ids[port->id].rxfree);
 +	qmgr_release_queue(queue_ids[port->id].rx);
@@ -3193,7 +3230,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +	qmgr_release_queue(port->plat->txreadyq);
 +}
 +
-+static int init_queues(struct port *port)
++static int init_hdlc_queues(struct port *port)
 +{
 +	int i;
 +
@@ -3236,7 +3273,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +	return 0;
 +}
 +
-+static void destroy_queues(struct port *port)
++static void destroy_hdlc_queues(struct port *port)
 +{
 +	int i;
 +
@@ -3269,7 +3306,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +	}
 +}
 +
-+static int hss_open(struct net_device *dev)
++static int hss_hdlc_open(struct net_device *dev)
 +{
 +	struct port *port = dev_to_port(dev);
 +	struct npe *npe = port->npe;
@@ -3287,7 +3324,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +
 +	if (port->plat->open)
 +		if ((err = port->plat->open(port->id, port->netdev,
-+					    hss_set_carrier)) != 0)
++					    hss_hdlc_set_carrier)) != 0)
 +			goto err_hdlc_close;
 +
 +	/* HSS main configuration */
@@ -3301,7 +3338,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +		PCR_MSB_ENDIAN |
 +		PCR_TX_DATA_ENABLE;
 +
-+	if (port->settings.clock_type == CLOCK_INT)
++	if (port->clock_type == CLOCK_INT)
 +		msg.data32 |= PCR_SYNC_CLK_DIR_OUTPUT;
 +
 +	if ((err = npe_send_message(npe, &msg, "HSS_SET_TX_PCR") != 0))
@@ -3313,7 +3350,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +		goto err_plat_close; /* 4: RX PCR */
 +
 +	msg.index = 8;
-+	msg.data32 = (port->settings.loopback ? CCR_LOOPBACK : 0) |
++	msg.data32 = (port->loopback ? CCR_LOOPBACK : 0) |
 +		(port->id ? CCR_SECOND_HSS : 0);
 +	if ((err = npe_send_message(npe, &msg, "HSS_SET_CORE_CR") != 0))
 +		goto err_plat_close; /* 8: Core CR */
@@ -3333,11 +3370,10 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +		goto err_plat_close; /* 20: RX FCR */
 +
 +	msg.data32 = 0;		/* Fill LUT with HDLC timeslots */
-+	for (i = 0; i < 32 / HSS_LUT_BITS; i++)
-+		msg.data32 |= TDMMAP_HDLC << (HSS_LUT_BITS * i);
++	for (i = 0; i < 32 / LUT_BITS; i++)
++		msg.data32 |= TDMMAP_HDLC << (LUT_BITS * i);
 +
-+	for (i = 0; i < 2 /* TX and RX */ * HSS_TIMESLOTS * HSS_LUT_BITS / 8;
-+	     i += 4) {
++	for (i = 0; i < 2 /* TX and RX */ * TIMESLOTS * LUT_BITS / 8; i += 4) {
 +		msg.index = 24 + i; /* 24 - 55: TX LUT, 56 - 87: RX LUT */
 +		if ((err = npe_send_message(npe, &msg, "HSS_SET_LUT") != 0))
 +			goto err_plat_close;
@@ -3405,10 +3441,10 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +	if ((err = npe_send_message(npe, &msg, "HSS_SET_PKT_RX_SIZE") != 0))
 +		goto err_plat_close;
 +
-+	if ((err = request_queues(port)) != 0)
++	if ((err = request_hdlc_queues(port)) != 0)
 +		goto err_plat_close;
 +
-+	if ((err = init_queues(port)) != 0)
++	if ((err = init_hdlc_queues(port)) != 0)
 +		goto err_destroy_queues;
 +
 +	memset(&msg, 0, sizeof(msg));
@@ -3429,10 +3465,10 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +	netif_start_queue(dev);
 +
 +	qmgr_set_irq(queue_ids[port->id].rx, QUEUE_IRQ_SRC_NOT_EMPTY,
-+		     hss_rx_irq, dev);
++		     hss_hdlc_rx_irq, dev);
 +
 +	qmgr_set_irq(queue_ids[port->id].txdone, QUEUE_IRQ_SRC_NOT_EMPTY,
-+		     hss_txdone_irq, dev);
++		     hss_hdlc_txdone_irq, dev);
 +	qmgr_enable_irq(queue_ids[port->id].txdone);
 +
 +	ports_open++;
@@ -3440,8 +3476,8 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +	return 0;
 +
 +err_destroy_queues:
-+	destroy_queues(port);
-+	release_queues(port);
++	destroy_hdlc_queues(port);
++	release_hdlc_queues(port);
 +err_plat_close:
 +	if (port->plat->close)
 +		port->plat->close(port->id, port->netdev);
@@ -3450,7 +3486,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +	return err;
 +}
 +
-+static int hss_close(struct net_device *dev)
++static int hss_hdlc_close(struct net_device *dev)
 +{
 +	struct port *port = dev_to_port(dev);
 +	struct npe *npe = port->npe;
@@ -3500,8 +3536,8 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +		printk(KERN_DEBUG "Draining TX queues took %i cycles\n", i);
 +#endif
 +	qmgr_disable_irq(queue_ids[port->id].txdone);
-+	destroy_queues(port);
-+	release_queues(port);
++	destroy_hdlc_queues(port);
++	release_hdlc_queues(port);
 +
 +	if (port->plat->close)
 +		port->plat->close(port->id, port->netdev);
@@ -3510,8 +3546,8 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +}
 +
 +
-+static int hss_attach(struct net_device *dev, unsigned short encoding,
-+		      unsigned short parity)
++static int hss_hdlc_attach(struct net_device *dev, unsigned short encoding,
++			   unsigned short parity)
 +{
 +	struct port *port = dev_to_port(dev);
 +
@@ -3533,7 +3569,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +}
 +
 +
-+static int hss_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
++static int hss_hdlc_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 +{
 +	const size_t size = sizeof(sync_serial_settings);
 +	sync_serial_settings new_line;
@@ -3551,7 +3587,11 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +			ifr->ifr_settings.size = size; /* data size wanted */
 +			return -ENOBUFS;
 +		}
-+		if (copy_to_user(line, &port->settings, size))
++		memset(&new_line, 0, sizeof(new_line));
++		new_line.clock_type = port->clock_type;
++		new_line.clock_rate = port->clock_rate;
++		new_line.loopback = port->loopback;
++		if (copy_to_user(line, &new_line, size))
 +			return -EFAULT;
 +		return 0;
 +
@@ -3575,7 +3615,9 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +		if (new_line.loopback != 0 && new_line.loopback != 1)
 +			return -EINVAL;
 +
-+		memcpy(&port->settings, &new_line, size); /* Update settings */
++		port->clock_type = clk; /* Update settings */
++		port->clock_rate = new_line.clock_rate;
++		port->loopback = new_line.loopback;
 +		return 0;
 +
 +	default:
@@ -3610,16 +3652,16 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +	SET_MODULE_OWNER(net);
 +	SET_NETDEV_DEV(dev, &pdev->dev);
 +	hdlc = dev_to_hdlc(dev);
-+	hdlc->attach = hss_attach;
-+	hdlc->xmit = hss_xmit;
-+	dev->open = hss_open;
-+	dev->poll = hss_poll;
-+	dev->stop = hss_close;
-+	dev->do_ioctl = hss_ioctl;
++	hdlc->attach = hss_hdlc_attach;
++	hdlc->xmit = hss_hdlc_xmit;
++	dev->open = hss_hdlc_open;
++	dev->poll = hss_hdlc_poll;
++	dev->stop = hss_hdlc_close;
++	dev->do_ioctl = hss_hdlc_ioctl;
 +	dev->weight = 16;
 +	dev->tx_queue_len = 100;
-+	port->settings.clock_type = CLOCK_EXT;
-+	port->settings.clock_rate = 2048000;
++	port->clock_type = CLOCK_EXT;
++	port->clock_rate = 2048000;
 +
 +	if (register_hdlc_device(dev)) {
 +		printk(KERN_ERR "HSS-%i: unable to register HDLC device\n",
@@ -3660,8 +3702,9 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +
 +static int __init hss_init_module(void)
 +{
-+	if ((ixp4xx_read_fuses() & (IXP4XX_FUSE_HDLC | IXP4XX_FUSE_HSS)) !=
-+	    (IXP4XX_FUSE_HDLC | IXP4XX_FUSE_HSS))
++	if ((ixp4xx_read_feature_bits() &
++	     (IXP4XX_FEATURE_HDLC | IXP4XX_FEATURE_HSS)) !=
++	    (IXP4XX_FEATURE_HDLC | IXP4XX_FEATURE_HSS))
 +		return -ENOSYS;
 +	return platform_driver_register(&drv);
 +}
@@ -3676,32 +3719,34 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/drivers/net/wan/ixp4xx_hss.c ixp4xx
 +MODULE_LICENSE("GPL v2");
 +module_init(hss_init_module);
 +module_exit(hss_cleanup_module);
-diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/cpu.h ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/cpu.h
---- linux-2.6.23/include/asm-arm/arch-ixp4xx/cpu.h	2007-10-09 22:31:38.000000000 +0200
-+++ ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/cpu.h	2007-10-22 19:20:22.000000000 +0200
-@@ -28,4 +28,19 @@
+diff --git a/include/asm-arm/arch-ixp4xx/cpu.h b/include/asm-arm/arch-ixp4xx/cpu.h
+index d2523b3..2fa3d6b 100644
+--- a/include/asm-arm/arch-ixp4xx/cpu.h
++++ b/include/asm-arm/arch-ixp4xx/cpu.h
+@@ -28,4 +28,19 @@ extern unsigned int processor_id;
  #define cpu_is_ixp46x()	((processor_id & IXP4XX_PROCESSOR_ID_MASK) == \
  			  IXP465_PROCESSOR_ID_VALUE)
  
-+static inline u32 ixp4xx_read_fuses(void)
++static inline u32 ixp4xx_read_feature_bits(void)
 +{
-+	unsigned int fuses = ~*IXP4XX_EXP_CFG2;
-+	fuses &= ~IXP4XX_FUSE_RESERVED;
++	unsigned int val = ~*IXP4XX_EXP_CFG2;
++	val &= ~IXP4XX_FEATURE_RESERVED;
 +	if (!cpu_is_ixp46x())
-+		fuses &= ~IXP4XX_FUSE_IXP46X_ONLY;
++		val &= ~IXP4XX_FEATURE_IXP46X_ONLY;
 +
-+	return fuses;
++	return val;
 +}
 +
-+static inline void ixp4xx_write_fuses(u32 value)
++static inline void ixp4xx_write_feature_bits(u32 value)
 +{
 +	*IXP4XX_EXP_CFG2 = ~value;
 +}
 +
  #endif  /* _ASM_ARCH_CPU_H */
-diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/hardware.h ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/hardware.h
---- linux-2.6.23/include/asm-arm/arch-ixp4xx/hardware.h	2007-10-09 22:31:38.000000000 +0200
-+++ ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/hardware.h	2007-10-22 19:20:22.000000000 +0200
+diff --git a/include/asm-arm/arch-ixp4xx/hardware.h b/include/asm-arm/arch-ixp4xx/hardware.h
+index 297ceda..73e8dc3 100644
+--- a/include/asm-arm/arch-ixp4xx/hardware.h
++++ b/include/asm-arm/arch-ixp4xx/hardware.h
 @@ -27,13 +27,13 @@
  
  #define pcibios_assign_all_busses()	1
@@ -3719,56 +3764,68 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/hardwar
  /* Platform helper functions and definitions */
  #include "platform.h"
  
-diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h
---- linux-2.6.23/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h	2007-10-09 22:31:38.000000000 +0200
-+++ ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h	2007-10-22 19:20:22.000000000 +0200
-@@ -607,4 +607,36 @@
+diff --git a/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h b/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h
+index 5d949d7..c704fe8 100644
+--- a/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h
++++ b/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h
+@@ -15,10 +15,6 @@
+  *
+  */
+ 
+-#ifndef __ASM_ARCH_HARDWARE_H__
+-#error "Do not include this directly, instead #include <asm/hardware.h>"
+-#endif
+-
+ #ifndef _ASM_ARM_IXP4XX_H_
+ #define _ASM_ARM_IXP4XX_H_
+ 
+@@ -607,4 +603,36 @@
  
  #define DCMD_LENGTH	0x01fff		/* length mask (max = 8K - 1) */
  
-+/* Fuse Bits of IXP_EXP_CFG2 */
-+#define IXP4XX_FUSE_RCOMP		(1 << 0)
-+#define IXP4XX_FUSE_USB_DEVICE		(1 << 1)
-+#define IXP4XX_FUSE_HASH		(1 << 2)
-+#define IXP4XX_FUSE_AES			(1 << 3)
-+#define IXP4XX_FUSE_DES			(1 << 4)
-+#define IXP4XX_FUSE_HDLC		(1 << 5)
-+#define IXP4XX_FUSE_AAL			(1 << 6)
-+#define IXP4XX_FUSE_HSS			(1 << 7)
-+#define IXP4XX_FUSE_UTOPIA		(1 << 8)
-+#define IXP4XX_FUSE_NPEB_ETH0		(1 << 9)
-+#define IXP4XX_FUSE_NPEC_ETH		(1 << 10)
-+#define IXP4XX_FUSE_RESET_NPEA		(1 << 11)
-+#define IXP4XX_FUSE_RESET_NPEB		(1 << 12)
-+#define IXP4XX_FUSE_RESET_NPEC		(1 << 13)
-+#define IXP4XX_FUSE_PCI			(1 << 14)
-+#define IXP4XX_FUSE_ECC_TIMESYNC	(1 << 15)
-+#define IXP4XX_FUSE_UTOPIA_PHY_LIMIT	(3 << 16)
-+#define IXP4XX_FUSE_USB_HOST		(1 << 18)
-+#define IXP4XX_FUSE_NPEA_ETH		(1 << 19)
-+#define IXP4XX_FUSE_NPEB_ETH_1_TO_3	(1 << 20)
-+#define IXP4XX_FUSE_RSA			(1 << 21)
-+#define IXP4XX_FUSE_XSCALE_MAX_FREQ	(3 << 22)
-+#define IXP4XX_FUSE_RESERVED		(0xFF << 24)
++/* "fuse" bits of IXP_EXP_CFG2 */
++#define IXP4XX_FEATURE_RCOMP		(1 << 0)
++#define IXP4XX_FEATURE_USB_DEVICE	(1 << 1)
++#define IXP4XX_FEATURE_HASH		(1 << 2)
++#define IXP4XX_FEATURE_AES		(1 << 3)
++#define IXP4XX_FEATURE_DES		(1 << 4)
++#define IXP4XX_FEATURE_HDLC		(1 << 5)
++#define IXP4XX_FEATURE_AAL		(1 << 6)
++#define IXP4XX_FEATURE_HSS		(1 << 7)
++#define IXP4XX_FEATURE_UTOPIA		(1 << 8)
++#define IXP4XX_FEATURE_NPEB_ETH0	(1 << 9)
++#define IXP4XX_FEATURE_NPEC_ETH		(1 << 10)
++#define IXP4XX_FEATURE_RESET_NPEA	(1 << 11)
++#define IXP4XX_FEATURE_RESET_NPEB	(1 << 12)
++#define IXP4XX_FEATURE_RESET_NPEC	(1 << 13)
++#define IXP4XX_FEATURE_PCI		(1 << 14)
++#define IXP4XX_FEATURE_ECC_TIMESYNC	(1 << 15)
++#define IXP4XX_FEATURE_UTOPIA_PHY_LIMIT	(3 << 16)
++#define IXP4XX_FEATURE_USB_HOST		(1 << 18)
++#define IXP4XX_FEATURE_NPEA_ETH		(1 << 19)
++#define IXP4XX_FEATURE_NPEB_ETH_1_TO_3	(1 << 20)
++#define IXP4XX_FEATURE_RSA		(1 << 21)
++#define IXP4XX_FEATURE_XSCALE_MAX_FREQ	(3 << 22)
++#define IXP4XX_FEATURE_RESERVED		(0xFF << 24)
 +
-+#define IXP4XX_FUSE_IXP46X_ONLY (IXP4XX_FUSE_ECC_TIMESYNC |		\
-+				 IXP4XX_FUSE_USB_HOST |			\
-+				 IXP4XX_FUSE_NPEA_ETH |			\
-+				 IXP4XX_FUSE_NPEB_ETH_1_TO_3 |		\
-+				 IXP4XX_FUSE_RSA |			\
-+				 IXP4XX_FUSE_XSCALE_MAX_FREQ)
++#define IXP4XX_FEATURE_IXP46X_ONLY (IXP4XX_FEATURE_ECC_TIMESYNC |	\
++				    IXP4XX_FEATURE_USB_HOST |		\
++				    IXP4XX_FEATURE_NPEA_ETH |		\
++				    IXP4XX_FEATURE_NPEB_ETH_1_TO_3 |	\
++				    IXP4XX_FEATURE_RSA |		\
++				    IXP4XX_FEATURE_XSCALE_MAX_FREQ)
 +
  #endif
-diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/npe.h ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/npe.h
---- linux-2.6.23/include/asm-arm/arch-ixp4xx/npe.h	1970-01-01 01:00:00.000000000 +0100
-+++ ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/npe.h	2007-10-22 19:20:22.000000000 +0200
-@@ -0,0 +1,41 @@
+diff --git a/include/asm-arm/arch-ixp4xx/npe.h b/include/asm-arm/arch-ixp4xx/npe.h
+new file mode 100644
+index 0000000..37d0511
+--- /dev/null
++++ b/include/asm-arm/arch-ixp4xx/npe.h
+@@ -0,0 +1,39 @@
 +#ifndef __IXP4XX_NPE_H
 +#define __IXP4XX_NPE_H
 +
-+#include <linux/etherdevice.h>
 +#include <linux/kernel.h>
-+#include <asm/io.h>
 +
 +extern const char *npe_names[];
 +
@@ -3804,10 +3861,11 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/npe.h i
 +void npe_release(struct npe *npe);
 +
 +#endif /* __IXP4XX_NPE_H */
-diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/platform.h ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/platform.h
---- linux-2.6.23/include/asm-arm/arch-ixp4xx/platform.h	2007-10-09 22:31:38.000000000 +0200
-+++ ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/platform.h	2007-10-22 19:20:22.000000000 +0200
-@@ -77,8 +77,7 @@
+diff --git a/include/asm-arm/arch-ixp4xx/platform.h b/include/asm-arm/arch-ixp4xx/platform.h
+index 2a44d3d..695b9c4 100644
+--- a/include/asm-arm/arch-ixp4xx/platform.h
++++ b/include/asm-arm/arch-ixp4xx/platform.h
+@@ -77,8 +77,7 @@ extern unsigned long ixp4xx_exp_bus_size;
  
  /*
   * The IXP4xx chips do not have an I2C unit, so GPIO lines are just
@@ -3817,7 +3875,7 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/platfor
   * I2C driver.
   */
  struct ixp4xx_i2c_pins {
-@@ -86,6 +85,27 @@
+@@ -86,6 +85,27 @@ struct ixp4xx_i2c_pins {
  	unsigned long scl_pin;
  };
  
@@ -3845,10 +3903,12 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/platfor
  /*
   * This structure provide a means for the board setup code
   * to give information to th pata_ixp4xx driver. It is
-diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/qmgr.h ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/qmgr.h
---- linux-2.6.23/include/asm-arm/arch-ixp4xx/qmgr.h	1970-01-01 01:00:00.000000000 +0100
-+++ ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/qmgr.h	2007-10-22 19:20:22.000000000 +0200
-@@ -0,0 +1,124 @@
+diff --git a/include/asm-arm/arch-ixp4xx/qmgr.h b/include/asm-arm/arch-ixp4xx/qmgr.h
+new file mode 100644
+index 0000000..1e52b95
+--- /dev/null
++++ b/include/asm-arm/arch-ixp4xx/qmgr.h
+@@ -0,0 +1,126 @@
 +/*
 + * Copyright (C) 2007 Krzysztof Halasa <khc@pm.waw.pl>
 + *
@@ -3860,8 +3920,8 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/qmgr.h 
 +#ifndef IXP4XX_QMGR_H
 +#define IXP4XX_QMGR_H
 +
++#include <linux/io.h>
 +#include <linux/kernel.h>
-+#include <asm/io.h>
 +
 +#define HALF_QUEUES	32
 +#define QUEUES		64	/* only 32 lower queues currently supported */
@@ -3906,8 +3966,6 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/qmgr.h 
 +	u32 sram[2048];		/* 0x2000 - 0x3FFF - config and buffer */
 +};
 +
-+extern struct qmgr_regs __iomem *qmgr_regs;
-+
 +void qmgr_set_irq(unsigned int queue, int src,
 +		  void (*handler)(void *pdev), void *pdev);
 +void qmgr_enable_irq(unsigned int queue);
@@ -3922,22 +3980,26 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/qmgr.h 
 +
 +static inline void qmgr_put_entry(unsigned int queue, u32 val)
 +{
++	extern struct qmgr_regs __iomem *qmgr_regs;
 +	__raw_writel(val, &qmgr_regs->acc[queue][0]);
 +}
 +
 +static inline u32 qmgr_get_entry(unsigned int queue)
 +{
++	extern struct qmgr_regs __iomem *qmgr_regs;
 +	return __raw_readl(&qmgr_regs->acc[queue][0]);
 +}
 +
 +static inline int qmgr_get_stat1(unsigned int queue)
 +{
++	extern struct qmgr_regs __iomem *qmgr_regs;
 +	return (__raw_readl(&qmgr_regs->stat1[queue >> 3])
 +		>> ((queue & 7) << 2)) & 0xF;
 +}
 +
 +static inline int qmgr_get_stat2(unsigned int queue)
 +{
++	extern struct qmgr_regs __iomem *qmgr_regs;
 +	return (__raw_readl(&qmgr_regs->stat2[queue >> 4])
 +		>> ((queue & 0xF) << 1)) & 0x3;
 +}
@@ -3973,15 +4035,15 @@ diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/qmgr.h 
 +}
 +
 +#endif
-diff -Nur -x .git -x .gitignore linux-2.6.23/include/asm-arm/arch-ixp4xx/uncompress.h ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/uncompress.h
---- linux-2.6.23/include/asm-arm/arch-ixp4xx/uncompress.h	2007-10-09 22:31:38.000000000 +0200
-+++ ixp4xx-nep.git/include/asm-arm/arch-ixp4xx/uncompress.h	2007-10-22 19:20:22.000000000 +0200
-@@ -13,7 +13,8 @@
+diff --git a/include/asm-arm/arch-ixp4xx/uncompress.h b/include/asm-arm/arch-ixp4xx/uncompress.h
+index f7a35b7..34ef48f 100644
+--- a/include/asm-arm/arch-ixp4xx/uncompress.h
++++ b/include/asm-arm/arch-ixp4xx/uncompress.h
+@@ -13,7 +13,7 @@
  #ifndef _ARCH_UNCOMPRESS_H_
  #define _ARCH_UNCOMPRESS_H_
  
 -#include <asm/hardware.h>
-+#define __ASM_ARCH_HARDWARE_H__
 +#include "ixp4xx-regs.h"
  #include <asm/mach-types.h>
  #include <linux/serial_reg.h>
