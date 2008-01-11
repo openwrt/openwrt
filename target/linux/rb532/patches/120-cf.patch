@@ -1,26 +1,29 @@
-diff -urN linux.old/drivers/block/Kconfig linux.dev/drivers/block/Kconfig
---- linux.old/drivers/block/Kconfig	2006-10-26 02:43:39.000000000 +0200
-+++ linux.dev/drivers/block/Kconfig	2006-10-26 00:11:14.000000000 +0200
-@@ -456,4 +456,12 @@
- 	This driver provides Support for ATA over Ethernet block
- 	devices like the Coraid EtherDrive (R) Storage Blade.
+diff -urN linux-2.6.23.12/drivers/block/Kconfig linux-2.6.23.12.new/drivers/block/Kconfig
+--- linux-2.6.23.12/drivers/block/Kconfig	2007-12-18 22:55:57.000000000 +0100
++++ linux-2.6.23.12.new/drivers/block/Kconfig	2008-01-11 08:53:32.000000000 +0100
+@@ -426,6 +426,14 @@
+ 	  Support for virtual disk devices as a client under Sun
+ 	  Logical Domains.
  
 +config BLK_DEV_CF_MIPS
 +	bool "CF slot of RB532 board"
 +	depends on MIKROTIK_RB500
 +	default y
 +	help
-+	  The Routerboard 532 has a CF slot on it. Enable the special block
-+	  device driver for it.
++	 The Routerboard 532 has a CF slot on it. Enable the special block
++	 device driver for it.
 +
- endmenu
-diff -urN linux.old/drivers/block/Makefile linux.dev/drivers/block/Makefile
---- linux.old/drivers/block/Makefile	2006-06-18 03:49:35.000000000 +0200
-+++ linux.dev/drivers/block/Makefile	2006-10-26 02:44:10.000000000 +0200
-@@ -29,4 +29,5 @@
- obj-$(CONFIG_VIODASD)		+= viodasd.o
- obj-$(CONFIG_BLK_DEV_SX8)	+= sx8.o
- obj-$(CONFIG_BLK_DEV_UB)	+= ub.o
+ source "drivers/s390/block/Kconfig"
+ 
+ config XILINX_SYSACE
+diff -urN linux-2.6.23.12/drivers/block/Makefile linux-2.6.23.12.new/drivers/block/Makefile
+--- linux-2.6.23.12/drivers/block/Makefile	2007-12-18 22:55:57.000000000 +0100
++++ linux-2.6.23.12.new/drivers/block/Makefile	2008-01-11 08:54:04.000000000 +0100
+@@ -21,6 +21,7 @@
+ obj-$(CONFIG_XILINX_SYSACE)	+= xsysace.o
+ obj-$(CONFIG_CDROM_PKTCDVD)	+= pktcdvd.o
+ obj-$(CONFIG_SUNVDC)		+= sunvdc.o
 +obj-$(CONFIG_BLK_DEV_CF_MIPS)	+= rb500/
  
-
+ obj-$(CONFIG_BLK_DEV_UMEM)	+= umem.o
+ obj-$(CONFIG_BLK_DEV_NBD)	+= nbd.o

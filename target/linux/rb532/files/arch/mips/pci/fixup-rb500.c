@@ -24,11 +24,13 @@
  *  675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <linux/autoconf.h>
 #include <linux/types.h>
 #include <linux/pci.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
+
+#include <asm/pci.h>
+#include <asm/io.h>
 
 #include <asm/rc32434/rc32434.h>
 
@@ -37,7 +39,7 @@ static int __devinitdata irq_map[2][12] = {
 	{ 0, 0, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3 }
 };
 
-int __devinit pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	int irq = 0;
 

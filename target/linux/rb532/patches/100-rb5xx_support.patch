@@ -1,9 +1,9 @@
-diff -urN linux.old/arch/mips/Kconfig linux.dev/arch/mips/Kconfig
---- linux.old/arch/mips/Kconfig	2006-11-29 22:57:37.000000000 +0100
-+++ linux.dev/arch/mips/Kconfig	2006-12-14 04:09:50.000000000 +0100
-@@ -780,6 +780,19 @@
- 	select SYS_SUPPORTS_BIG_ENDIAN
- 	select TOSHIBA_BOARDS
+diff -urN linux-2.6.23.12/arch/mips/Kconfig linux-2.6.23.12.new/arch/mips/Kconfig
+--- linux-2.6.23.12/arch/mips/Kconfig	2007-12-18 22:55:57.000000000 +0100
++++ linux-2.6.23.12.new/arch/mips/Kconfig	2008-01-11 08:46:20.000000000 +0100
+@@ -595,6 +595,20 @@
+ 	  This enables support for the Wind River MIPS32 4KC PPMC evaluation
+ 	  board, which is based on GT64120 bridge chip.
  
 +config MIKROTIK_RB500
 +	bool "Support for RB5xx boards"
@@ -14,83 +14,84 @@ diff -urN linux.old/arch/mips/Kconfig linux.dev/arch/mips/Kconfig
 +	select SYS_SUPPORTS_32BIT_KERNEL
 +	select SWAP_IO_SPACE
 +	select DMA_NONCOHERENT
++	select GENERIC_GPIO
 +	help
-+	  Support the Mikrotik(tm) Routerboard 500 series,
-+	  such as the RB532.
++	 Support the Mikrotik(tm) Routerboard 500 series,
++	 such as the RB532.
 +
- config TOSHIBA_RBTX4927
- 	bool "Toshiba TBTX49[23]7 board"
- 	select DMA_NONCOHERENT
-@@ -1106,7 +1119,7 @@
+ endchoice
  
- config MIPS_L1_CACHE_SHIFT
- 	int
--	default "4" if MACH_DECSTATION || SNI_RM
-+	default "4" if MACH_DECSTATION || SNI_RM || MIKROTIK_RB500
- 	default "7" if SGI_IP27
+ source "arch/mips/au1000/Kconfig"
+@@ -829,6 +843,7 @@
+ 	default "4" if MACH_DECSTATION
+ 	default "7" if SGI_IP27 || SNI_RM
+ 	default "4" if PMC_MSP4200_EVAL
++	default "4" if MIKROTIK_RB500
  	default "5"
  
-diff -urN linux.old/arch/mips/Makefile linux.dev/arch/mips/Makefile
---- linux.old/arch/mips/Makefile	2006-12-14 03:13:55.000000000 +0100
-+++ linux.dev/arch/mips/Makefile	2006-12-14 04:09:50.000000000 +0100
-@@ -586,6 +586,13 @@
- load-$(CONFIG_TOSHIBA_JMR3927)	+= 0xffffffff80050000
+ config HAVE_STD_PC_SERIAL_PORT
+diff -urN linux-2.6.23.12/arch/mips/Makefile linux-2.6.23.12.new/arch/mips/Makefile
+--- linux-2.6.23.12/arch/mips/Makefile	2007-12-18 22:55:57.000000000 +0100
++++ linux-2.6.23.12.new/arch/mips/Makefile	2008-01-11 08:47:04.000000000 +0100
+@@ -300,6 +300,13 @@
+ cflags-$(CONFIG_LEMOTE_FULONG) += -Iinclude/asm-mips/mach-lemote
  
  #
 +# Routerboard 532 board
 +#
 +core-$(CONFIG_MIKROTIK_RB500)	+= arch/mips/rb500/
-+cflags-$(CONFIG_MIKROTIK_RB500) += -Iinclude/asm-mips/rc32434
++cflags-$(CONFIG_MIKROTIK_RB500)	+= -Iinclude/asm-mips/rc32434
 +load-$(CONFIG_MIKROTIK_RB500)	+= 0xffffffff80101000
 +
 +#
- # Toshiba RBTX4927 board or
- # Toshiba RBTX4937 board
+ # For all MIPS, Inc. eval boards
  #
-diff -urN linux.old/arch/mips/pci/Makefile linux.dev/arch/mips/pci/Makefile
---- linux.old/arch/mips/pci/Makefile	2006-11-29 22:57:37.000000000 +0100
-+++ linux.dev/arch/mips/pci/Makefile	2006-12-14 04:09:50.000000000 +0100
-@@ -53,3 +53,4 @@
+ core-$(CONFIG_MIPS_BOARDS_GEN)	+= arch/mips/mips-boards/generic/
+diff -urN linux-2.6.23.12/arch/mips/pci/Makefile linux-2.6.23.12.new/arch/mips/pci/Makefile
+--- linux-2.6.23.12/arch/mips/pci/Makefile	2007-12-18 22:55:57.000000000 +0100
++++ linux-2.6.23.12.new/arch/mips/pci/Makefile	2008-01-11 08:47:30.000000000 +0100
+@@ -46,3 +46,4 @@
  obj-$(CONFIG_VICTOR_MPC30X)	+= fixup-mpc30x.o
  obj-$(CONFIG_ZAO_CAPCELLA)	+= fixup-capcella.o
  obj-$(CONFIG_WR_PPMC)		+= fixup-wrppmc.o
 +obj-$(CONFIG_MIKROTIK_RB500)	+= pci-rc32434.o ops-rc32434.o fixup-rb500.o
-diff -urN linux.old/drivers/pci/Makefile linux.dev/drivers/pci/Makefile
---- linux.old/drivers/pci/Makefile	2006-11-29 22:57:37.000000000 +0100
-+++ linux.dev/drivers/pci/Makefile	2006-12-14 04:09:50.000000000 +0100
-@@ -16,6 +16,7 @@
- 
- # Build the PCI MSI interrupt support
- obj-$(CONFIG_PCI_MSI) += msi.o
+diff -urN linux-2.6.23.12/drivers/pci/Makefile linux-2.6.23.12.new/drivers/pci/Makefile
+--- linux-2.6.23.12/drivers/pci/Makefile	2007-12-18 22:55:57.000000000 +0100
++++ linux-2.6.23.12.new/drivers/pci/Makefile	2008-01-11 08:48:10.000000000 +0100
+@@ -32,6 +32,7 @@
+ obj-$(CONFIG_PPC64) += setup-bus.o
+ obj-$(CONFIG_MIPS) += setup-bus.o setup-irq.o
+ obj-$(CONFIG_X86_VISWS) += setup-irq.o
 +obj-$(CONFIG_MIKROTIK_RB500) += setup-irq.o
  
- # Build the Hypertransport interrupt support
- obj-$(CONFIG_HT_IRQ) += htirq.o
-diff -urN linux.old/include/asm-mips/bootinfo.h linux.dev/include/asm-mips/bootinfo.h
---- linux.old/include/asm-mips/bootinfo.h	2006-11-29 22:57:37.000000000 +0100
-+++ linux.dev/include/asm-mips/bootinfo.h	2006-12-14 04:09:50.000000000 +0100
-@@ -212,6 +212,10 @@
- #define MACH_GROUP_NEC_EMMA2RH 25	/* NEC EMMA2RH (was 23)		*/
- #define  MACH_NEC_MARKEINS	0	/* NEC EMMA2RH Mark-eins	*/
+ #
+ # ACPI Related PCI FW Functions
+diff -urN linux-2.6.23.12/include/asm-mips/bootinfo.h linux-2.6.23.12.new/include/asm-mips/bootinfo.h
+--- linux-2.6.23.12/include/asm-mips/bootinfo.h	2007-12-18 22:55:57.000000000 +0100
++++ linux-2.6.23.12.new/include/asm-mips/bootinfo.h	2008-01-11 08:48:48.000000000 +0100
+@@ -208,6 +208,11 @@
+ #define MACH_GROUP_WINDRIVER   28	/* Windriver boards */
+ #define MACH_WRPPMC             1
  
-+#define MACH_GROUP_MIKROTIK    26 /* Mikrotik Boards			    */
++
++#define MACH_GROUP_MIKROTIK	29 	/* Mikrotik Boards                       */
 +#define  MACH_MIKROTIK_RB532	0	/* Mikrotik RouterBoard 532 */
 +#define  MACH_MIKROTIK_RB532A	1	/* Mikrotik RouterBoard 532A */
 +
  #define CL_SIZE			COMMAND_LINE_SIZE
  
  const char *get_system_type(void);
-diff -urN linux.old/include/asm-mips/cpu.h linux.dev/include/asm-mips/cpu.h
---- linux.old/include/asm-mips/cpu.h	2006-11-29 22:57:37.000000000 +0100
-+++ linux.dev/include/asm-mips/cpu.h	2006-12-14 04:09:50.000000000 +0100
-@@ -200,7 +200,8 @@
- #define CPU_SB1A		62
- #define CPU_74K			63
+diff -urN linux-2.6.23.12/include/asm-mips/cpu.h linux-2.6.23.12.new/include/asm-mips/cpu.h
+--- linux-2.6.23.12/include/asm-mips/cpu.h	2007-12-18 22:55:57.000000000 +0100
++++ linux-2.6.23.12.new/include/asm-mips/cpu.h	2008-01-11 08:49:34.000000000 +0100
+@@ -217,8 +217,9 @@
  #define CPU_R14000		64
--#define CPU_LAST		64
-+#define CPU_RC32300		65
-+#define CPU_LAST		65
+ #define CPU_LOONGSON1           65
+ #define CPU_LOONGSON2           66
++#define CPU_RC32300            	67
+ 
+-#define CPU_LAST		66
++#define CPU_LAST		67
  
  /*
   * ISA Level encodings
-

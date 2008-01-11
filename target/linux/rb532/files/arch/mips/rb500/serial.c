@@ -45,6 +45,7 @@
 #include <linux/tty.h>
 #include <linux/serial.h>
 #include <linux/serial_core.h>
+#include <linux/serial_8250.h>
 
 #include <asm/time.h>
 #include <asm/cpu.h>
@@ -59,7 +60,7 @@ static struct uart_port serial_req = {
 	.type = PORT_16550A,
 	.line = 0,
 	.irq = RC32434_UART0_IRQ,
-	.flags = STD_COM_FLAGS,
+	//.flags = STD_COM_FLAGS,
 	.iotype = UPIO_MEM,
 	.membase = (char *) KSEG1ADDR(RC32434_UART0_BASE),
 //	.fifosize = 14
