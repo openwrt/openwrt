@@ -1,7 +1,7 @@
-Index: linux-2.6.23.11-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c
+Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c
 ===================================================================
---- linux-2.6.23.11-armeb.orig/arch/arm/mach-ixp4xx/nas100d-setup.c	2007-12-29 23:19:07.000000000 +1030
-+++ linux-2.6.23.11-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c	2007-12-29 23:24:06.000000000 +1030
+--- linux-2.6.23.12-armeb.orig/arch/arm/mach-ixp4xx/nas100d-setup.c	2008-01-08 15:22:07.000000000 +1030
++++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c	2008-01-08 15:32:32.000000000 +1030
 @@ -21,6 +21,7 @@
  #include <asm/mach-types.h>
  #include <asm/mach/arch.h>
@@ -10,7 +10,38 @@ Index: linux-2.6.23.11-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c
  
  static struct flash_platform_data nas100d_flash_data = {
  	.map_name		= "cfi_probe",
-@@ -164,6 +165,9 @@
+@@ -125,12 +126,30 @@
+ 	.resource		= nas100d_uart_resources,
+ };
+ 
++/* Built-in 10/100 Ethernet MAC interfaces */
++static struct eth_plat_info nas100d_plat_eth[] = {
++        {
++                .phy            = 0,
++                .rxq            = 3,
++		.txreadyq	= 20,
++        }
++};
++
++static struct platform_device nas100d_eth[] = {
++        {
++                .name                   = "ixp4xx_eth",
++                .id                     = IXP4XX_ETH_NPEB,
++                .dev.platform_data      = nas100d_plat_eth,
++        }
++};
++
+ static struct platform_device *nas100d_devices[] __initdata = {
+ 	&nas100d_i2c_gpio,
+ 	&nas100d_flash,
+ #ifdef CONFIG_LEDS_IXP4XX
+ 	&nas100d_leds,
+ #endif
++	&nas100d_eth[0],
+ };
+ 
+ static void nas100d_power_off(void)
+@@ -146,6 +165,9 @@
  
  static void __init nas100d_init(void)
  {
@@ -20,7 +51,7 @@ Index: linux-2.6.23.11-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c
  	ixp4xx_sys_init();
  
  	/* gpio 14 and 15 are _not_ clocks */
-@@ -183,6 +187,33 @@
+@@ -165,6 +187,33 @@
  	(void)platform_device_register(&nas100d_uart);
  
  	platform_add_devices(nas100d_devices, ARRAY_SIZE(nas100d_devices));
