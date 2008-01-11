@@ -1,19 +1,27 @@
----
- arch/arm/mach-ixp4xx/nas100d-power.c  |   68 ++++++++++++++++++++++++++++++++--
- include/asm-arm/arch-ixp4xx/nas100d.h |   18 +++++----
- 2 files changed, 75 insertions(+), 11 deletions(-)
+Upgrade the power and reset button handling for the NAS100D:
+ * Convert GPIO and IRQ handling to use the <asm/gpio.h> api.
+ * Perform the reset only after the power button has been held down
+   for at least two seconds.  Do the reset on the release of the power
+   button, so that NAS devices which have been set to auto-power-on (by
+   bridging the power button) do not continuously power cycle.
+ * Remove all superflous constants from nas100d.h
+ * Add LED constants to nas100d.h while we're there.
+Also, update the board LED setup code to use constants.
 
-Index: linux-2.6.22-rc5-armeb/arch/arm/mach-ixp4xx/nas100d-power.c
+Signed-off-by: Rod Whitby <rod@whitby.id.au>
+
+Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/nas100d-power.c
 ===================================================================
---- linux-2.6.22-rc5-armeb.orig/arch/arm/mach-ixp4xx/nas100d-power.c
-+++ linux-2.6.22-rc5-armeb/arch/arm/mach-ixp4xx/nas100d-power.c
-@@ -21,15 +21,60 @@
+--- linux-2.6.23.12-armeb.orig/arch/arm/mach-ixp4xx/nas100d-power.c	2008-01-11 16:59:20.000000000 +1030
++++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/nas100d-power.c	2008-01-11 17:03:23.000000000 +1030
+@@ -21,15 +21,61 @@
  #include <linux/irq.h>
  #include <linux/module.h>
  #include <linux/reboot.h>
 +#include <linux/jiffies.h>
 +#include <linux/timer.h>
  
++#include <asm/gpio.h>
  #include <asm/mach-types.h>
  
 -static irqreturn_t nas100d_reset_handler(int irq, void *dev_id)
@@ -39,7 +47,7 @@ Index: linux-2.6.22-rc5-armeb/arch/arm/mach-ixp4xx/nas100d-power.c
  	 */
 -	ctrl_alt_del();
 +
-+	if (*IXP4XX_GPIO_GPINR & NAS100D_PB_BM) {
++	if (gpio_get_value(NAS100D_PB_GPIO)) {
 +
 +		/* IO Pin is 1 (button pushed) */
 +		if (power_button_countdown > 0) {
@@ -72,7 +80,21 @@ Index: linux-2.6.22-rc5-armeb/arch/arm/mach-ixp4xx/nas100d-power.c
  
  	return IRQ_HANDLED;
  }
-@@ -50,6 +95,19 @@
+@@ -39,17 +85,30 @@
+ 	if (!(machine_is_nas100d()))
+ 		return 0;
+ 
+-	set_irq_type(NAS100D_RB_IRQ, IRQT_LOW);
++	set_irq_type(gpio_to_irq(NAS100D_RB_GPIO), IRQT_LOW);
+ 
+-	if (request_irq(NAS100D_RB_IRQ, &nas100d_reset_handler,
++	if (request_irq(gpio_to_irq(NAS100D_RB_GPIO), &nas100d_reset_handler,
+ 		IRQF_DISABLED, "NAS100D reset button", NULL) < 0) {
+ 
+ 		printk(KERN_DEBUG "Reset Button IRQ %d not available\n",
+-			NAS100D_RB_IRQ);
++			gpio_to_irq(NAS100D_RB_GPIO));
+ 
  		return -EIO;
  	}
  
@@ -92,42 +114,75 @@ Index: linux-2.6.22-rc5-armeb/arch/arm/mach-ixp4xx/nas100d-power.c
  	return 0;
  }
  
-@@ -58,6 +116,8 @@
+@@ -58,7 +117,9 @@
  	if (!(machine_is_nas100d()))
  		return;
  
+-	free_irq(NAS100D_RB_IRQ, NULL);
 +	del_timer_sync(&nas100d_power_timer);
 +
- 	free_irq(NAS100D_RB_IRQ, NULL);
++	free_irq(gpio_to_irq(NAS100D_RB_GPIO), NULL);
  }
  
-Index: linux-2.6.22-rc5-armeb/include/asm-arm/arch-ixp4xx/nas100d.h
+ module_init(nas100d_power_init);
+Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/nas100d.h
 ===================================================================
---- linux-2.6.22-rc5-armeb.orig/include/asm-arm/arch-ixp4xx/nas100d.h
-+++ linux-2.6.22-rc5-armeb/include/asm-arm/arch-ixp4xx/nas100d.h
-@@ -39,14 +39,18 @@
+--- linux-2.6.23.12-armeb.orig/include/asm-arm/arch-ixp4xx/nas100d.h	2008-01-11 16:59:20.000000000 +1030
++++ linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/nas100d.h	2008-01-11 17:03:23.000000000 +1030
+@@ -38,15 +38,15 @@
+ 
  /* Buttons */
  
- #define NAS100D_PB_GPIO         14
-+#define NAS100D_PB_BM           (1L << NAS100D_PB_GPIO)
+-#define NAS100D_PB_GPIO         14
+-#define NAS100D_RB_GPIO         4
++#define NAS100D_PB_GPIO         14   /* power button */
++#define NAS100D_RB_GPIO         4    /* reset button */
 +
- #define NAS100D_RB_GPIO         4
--#define NAS100D_PO_GPIO         12   /* power off */
++/* Power control */
++
+ #define NAS100D_PO_GPIO         12   /* power off */
  
 -#define NAS100D_PB_IRQ          IRQ_IXP4XX_GPIO14
- #define NAS100D_RB_IRQ          IRQ_IXP4XX_GPIO4
+-#define NAS100D_RB_IRQ          IRQ_IXP4XX_GPIO4
++/* LEDs */
  
 -/*
 -#define NAS100D_PB_BM           (1L << NAS100D_PB_GPIO)
 -#define NAS100D_PO_BM           (1L << NAS100D_PO_GPIO)
 -#define NAS100D_RB_BM           (1L << NAS100D_RB_GPIO)
 -*/
-+#define NAS100D_PO_GPIO         12   /* power off */
-+
-+/* LEDs */
-+
-+#define NAS100D_LED_PWR_GPIO	15
-+#define NAS100D_LED_PWR_BM	(1L << NAS100D_LED_PWR_GPIO)
-+
 +#define NAS100D_LED_WLAN_GPIO	0
-+#define NAS100D_LED_WLAN_BM	(1L << NAS100D_LED_WLAN_GPIO)
++#define NAS100D_LED_DISK_GPIO	3
++#define NAS100D_LED_PWR_GPIO	15
+Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c
+===================================================================
+--- linux-2.6.23.12-armeb.orig/arch/arm/mach-ixp4xx/nas100d-setup.c	2008-01-11 17:03:23.000000000 +1030
++++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c	2008-01-11 17:06:15.000000000 +1030
+@@ -44,20 +44,20 @@
+ static struct resource nas100d_led_resources[] = {
+ 	{
+ 		.name		= "wlan",   /* green led */
+-		.start		= 0,
+-		.end		= 0,
++		.start		= NAS100D_LED_WLAN_GPIO,
++		.end		= NAS100D_LED_WLAN_GPIO,
+ 		.flags		= IXP4XX_GPIO_LOW,
+ 	},
+ 	{
+-		.name		= "ready",  /* blue power led (off is flashing!) */
+-		.start		= 15,
+-		.end		= 15,
++		.name		= "power",  /* blue power led (off is flashing!) */
++		.start		= NAS100D_LED_PWR_GPIO,
++		.end		= NAS100D_LED_PWR_GPIO,
+ 		.flags		= IXP4XX_GPIO_LOW,
+ 	},
+ 	{
+ 		.name		= "disk",   /* yellow led */
+-		.start		= 3,
+-		.end		= 3,
++		.start		= NAS100D_LED_DISK_GPIO,
++		.end		= NAS100D_LED_DISK_GPIO,
+ 		.flags		= IXP4XX_GPIO_LOW,
+ 	},
+ };
