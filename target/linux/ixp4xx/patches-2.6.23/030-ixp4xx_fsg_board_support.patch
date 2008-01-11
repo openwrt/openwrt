@@ -1,7 +1,7 @@
 Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-pci.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-pci.c	2008-01-09 12:49:07.000000000 +1030
++++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-pci.c	2008-01-11 17:06:33.000000000 +1030
 @@ -0,0 +1,71 @@
 +/*
 + * arch/arch/mach-ixp4xx/fsg-pci.c
@@ -77,7 +77,7 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-pci.c
 Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-setup.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-setup.c	2008-01-09 12:49:07.000000000 +1030
++++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-setup.c	2008-01-11 17:06:33.000000000 +1030
 @@ -0,0 +1,220 @@
 +/*
 + * arch/arm/mach-ixp4xx/fsg-setup.c
@@ -301,8 +301,8 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-setup.c
 +
 Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/Kconfig
 ===================================================================
---- linux-2.6.23.12-armeb.orig/arch/arm/mach-ixp4xx/Kconfig	2008-01-09 12:49:04.000000000 +1030
-+++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/Kconfig	2008-01-11 13:24:01.000000000 +1030
+--- linux-2.6.23.12-armeb.orig/arch/arm/mach-ixp4xx/Kconfig	2008-01-11 17:05:08.000000000 +1030
++++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/Kconfig	2008-01-11 17:06:33.000000000 +1030
 @@ -125,6 +125,15 @@
  	depends on ARCH_IXDP425 || MACH_IXDP465 || MACH_KIXRP435
  	default y
@@ -321,8 +321,8 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/Kconfig
  #
 Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/Makefile
 ===================================================================
---- linux-2.6.23.12-armeb.orig/arch/arm/mach-ixp4xx/Makefile	2008-01-09 12:49:04.000000000 +1030
-+++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/Makefile	2008-01-09 12:49:07.000000000 +1030
+--- linux-2.6.23.12-armeb.orig/arch/arm/mach-ixp4xx/Makefile	2008-01-11 17:05:08.000000000 +1030
++++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/Makefile	2008-01-11 17:06:33.000000000 +1030
 @@ -15,6 +15,7 @@
  obj-pci-$(CONFIG_MACH_DSMG600)		+= dsmg600-pci.o
  obj-pci-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-pci.o
@@ -342,8 +342,8 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/Makefile
 Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/fsg.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/fsg.h	2008-01-11 13:29:42.000000000 +1030
-@@ -0,0 +1,58 @@
++++ linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/fsg.h	2008-01-11 17:06:33.000000000 +1030
+@@ -0,0 +1,50 @@
 +/*
 + * include/asm-arm/arch-ixp4xx/fsg.h
 + *
@@ -382,17 +382,9 @@ Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/fsg.h
 +
 +/* Buttons */
 +
-+#define FSG_SB_GPIO		4
-+#define FSG_RB_GPIO		9
-+#define FSG_UB_GPIO		10
-+
-+#define FSG_SB_IRQ		IRQ_IXP4XX_GPIO4
-+#define FSG_RB_IRQ		IRQ_IXP4XX_GPIO9
-+#define FSG_UB_IRQ		IRQ_IXP4XX_GPIO10
-+
-+#define FSG_SB_BM		(1L << FSG_SB_GPIO)
-+#define FSG_RB_BM		(1L << FSG_RB_GPIO)
-+#define FSG_UB_BM		(1L << FSG_UB_GPIO)
++#define FSG_SB_GPIO		4	/* sync button */
++#define FSG_RB_GPIO		9	/* reset button */
++#define FSG_UB_GPIO		10	/* usb button */
 +
 +/* LEDs */
 +
@@ -404,8 +396,8 @@ Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/fsg.h
 +#define FSG_LED_SYNC_BIT	7
 Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/hardware.h
 ===================================================================
---- linux-2.6.23.12-armeb.orig/include/asm-arm/arch-ixp4xx/hardware.h	2008-01-09 12:49:04.000000000 +1030
-+++ linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/hardware.h	2008-01-09 12:49:07.000000000 +1030
+--- linux-2.6.23.12-armeb.orig/include/asm-arm/arch-ixp4xx/hardware.h	2008-01-11 17:05:08.000000000 +1030
++++ linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/hardware.h	2008-01-11 17:06:33.000000000 +1030
 @@ -45,5 +45,6 @@
  #include "nslu2.h"
  #include "nas100d.h"
@@ -415,8 +407,8 @@ Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/hardware.h
  #endif  /* _ASM_ARCH_HARDWARE_H */
 Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/irqs.h
 ===================================================================
---- linux-2.6.23.12-armeb.orig/include/asm-arm/arch-ixp4xx/irqs.h	2008-01-09 12:49:04.000000000 +1030
-+++ linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/irqs.h	2008-01-11 13:30:09.000000000 +1030
+--- linux-2.6.23.12-armeb.orig/include/asm-arm/arch-ixp4xx/irqs.h	2008-01-11 17:05:08.000000000 +1030
++++ linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/irqs.h	2008-01-11 17:06:33.000000000 +1030
 @@ -128,4 +128,11 @@
  #define        IRQ_DSMG600_PCI_INTE    IRQ_IXP4XX_GPIO7
  #define        IRQ_DSMG600_PCI_INTF    IRQ_IXP4XX_GPIO6
@@ -432,8 +424,8 @@ Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/irqs.h
 Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-power.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-power.c	2008-01-11 12:47:50.000000000 +1030
-@@ -0,0 +1,88 @@
++++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-power.c	2008-01-11 17:06:33.000000000 +1030
+@@ -0,0 +1,89 @@
 +/*
 + * arch/arm/mach-ixp4xx/fsg-power.c
 + *
@@ -457,6 +449,7 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-power.c
 +#include <linux/jiffies.h>
 +#include <linux/timer.h>
 +
++#include <asm/gpio.h>
 +#include <asm/mach-types.h>
 +
 +static irqreturn_t fsg_power_handler(int irq, void *dev_id)
@@ -483,23 +476,23 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-power.c
 +	if (!(machine_is_fsg()))
 +		return 0;
 +
-+	set_irq_type(FSG_RB_IRQ, IRQT_LOW);
-+	set_irq_type(FSG_SB_IRQ, IRQT_LOW);
++	set_irq_type(gpio_to_irq(FSG_RB_GPIO), IRQT_LOW);
++	set_irq_type(gpio_to_irq(FSG_SB_GPIO), IRQT_LOW);
 +
-+	if (request_irq(FSG_RB_IRQ, &fsg_reset_handler,
++	if (request_irq(gpio_to_irq(FSG_RB_GPIO), &fsg_reset_handler,
 +		IRQF_DISABLED, "FSG reset button", NULL) < 0) {
 +
 +		printk(KERN_DEBUG "Reset Button IRQ %d not available\n",
-+			FSG_RB_IRQ);
++			gpio_to_irq(FSG_RB_GPIO));
 +
 +		return -EIO;
 +	}
 +
-+	if (request_irq(FSG_SB_IRQ, &fsg_power_handler,
++	if (request_irq(gpio_to_irq(FSG_SB_GPIO), &fsg_power_handler,
 +		IRQF_DISABLED, "FSG power button", NULL) < 0) {
 +
 +		printk(KERN_DEBUG "Power Button IRQ %d not available\n",
-+			FSG_SB_IRQ);
++			gpio_to_irq(FSG_SB_GPIO));
 +
 +		return -EIO;
 +	}
@@ -512,8 +505,8 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-power.c
 +	if (!(machine_is_fsg()))
 +		return;
 +
-+	free_irq(FSG_SB_IRQ, NULL);
-+	free_irq(FSG_RB_IRQ, NULL);
++	free_irq(gpio_to_irq(FSG_SB_GPIO), NULL);
++	free_irq(gpio_to_irq(FSG_RB_GPIO), NULL);
 +}
 +
 +module_init(fsg_power_init);
@@ -524,8 +517,8 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-power.c
 +MODULE_LICENSE("GPL");
 Index: linux-2.6.23.12-armeb/drivers/leds/Kconfig
 ===================================================================
---- linux-2.6.23.12-armeb.orig/drivers/leds/Kconfig	2008-01-11 13:30:47.000000000 +1030
-+++ linux-2.6.23.12-armeb/drivers/leds/Kconfig	2008-01-11 13:34:34.000000000 +1030
+--- linux-2.6.23.12-armeb.orig/drivers/leds/Kconfig	2008-01-11 17:05:08.000000000 +1030
++++ linux-2.6.23.12-armeb/drivers/leds/Kconfig	2008-01-11 17:06:33.000000000 +1030
 @@ -48,6 +48,12 @@
  	  particular board must have LEDs and they must be connected
  	  to the GPIO lines.  If unsure, say Y.
@@ -541,8 +534,8 @@ Index: linux-2.6.23.12-armeb/drivers/leds/Kconfig
  	depends on LEDS_CLASS && PXA_SHARPSL
 Index: linux-2.6.23.12-armeb/drivers/leds/Makefile
 ===================================================================
---- linux-2.6.23.12-armeb.orig/drivers/leds/Makefile	2008-01-11 13:30:50.000000000 +1030
-+++ linux-2.6.23.12-armeb/drivers/leds/Makefile	2008-01-11 13:34:34.000000000 +1030
+--- linux-2.6.23.12-armeb.orig/drivers/leds/Makefile	2008-01-11 17:05:08.000000000 +1030
++++ linux-2.6.23.12-armeb/drivers/leds/Makefile	2008-01-11 17:06:33.000000000 +1030
 @@ -9,6 +9,7 @@
  obj-$(CONFIG_LEDS_LOCOMO)		+= leds-locomo.o
  obj-$(CONFIG_LEDS_SPITZ)		+= leds-spitz.o
@@ -554,7 +547,7 @@ Index: linux-2.6.23.12-armeb/drivers/leds/Makefile
 Index: linux-2.6.23.12-armeb/drivers/leds/leds-fsg.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.12-armeb/drivers/leds/leds-fsg.c	2008-01-11 13:34:34.000000000 +1030
++++ linux-2.6.23.12-armeb/drivers/leds/leds-fsg.c	2008-01-11 17:06:33.000000000 +1030
 @@ -0,0 +1,243 @@
 +/*
 + * LED Driver for the Freecom FSG-3
