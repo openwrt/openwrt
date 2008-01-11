@@ -1,22 +1,9 @@
-Index: linux-2.6.21.1/drivers/leds/Makefile
-===================================================================
---- linux-2.6.21.1.orig/drivers/leds/Makefile    2007-07-10 20:56:30.000000000 +0200
-+++ linux-2.6.21.1/drivers/leds/Makefile       2007-07-19 16:43:07.000000000 +0200
-@@ -16,6 +16,7 @@
- obj-$(CONFIG_LEDS_WRAP)			+= leds-wrap.o
- obj-$(CONFIG_LEDS_H1940)		+= leds-h1940.o
- obj-$(CONFIG_LEDS_COBALT)		+= leds-cobalt.o
-+obj-$(CONFIG_LEDS_RB500)                += leds-rb500.o
- 
- # LED Triggers
- obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledtrig-timer.o
-Index: linux-2.6.21.1/drivers/leds/Kconfig
-===================================================================
---- linux-2.6.21.1.orig/drivers/leds/Kconfig     2007-07-10 20:56:30.000000000 +0200
-+++ linux-2.6.21.1/drivers/leds/Kconfig 2007-07-19 16:42:55.000000000 +0200
-@@ -95,6 +95,12 @@
- 	help
- 	  This option enables support for the front LED on Cobalt Server
+diff -urN linux-2.6.23.12/drivers/leds/Kconfig linux-2.6.23.12.new/drivers/leds/Kconfig
+--- linux-2.6.23.12/drivers/leds/Kconfig	2007-12-18 22:55:57.000000000 +0100
++++ linux-2.6.23.12.new/drivers/leds/Kconfig	2008-01-11 09:01:19.000000000 +0100
+@@ -101,6 +101,12 @@
+ 	  outputs. To be useful the particular board must have LEDs
+ 	  and they must be connected to the GPIO lines.
  
 +config LEDS_RB500
 +	tristate "LED Support for RB5xx boards"
@@ -27,3 +14,14 @@ Index: linux-2.6.21.1/drivers/leds/Kconfig
  comment "LED Triggers"
  
  config LEDS_TRIGGERS
+diff -urN linux-2.6.23.12/drivers/leds/Makefile linux-2.6.23.12.new/drivers/leds/Makefile
+--- linux-2.6.23.12/drivers/leds/Makefile	2007-12-18 22:55:57.000000000 +0100
++++ linux-2.6.23.12.new/drivers/leds/Makefile	2008-01-11 09:00:49.000000000 +0100
+@@ -17,6 +17,7 @@
+ obj-$(CONFIG_LEDS_H1940)		+= leds-h1940.o
+ obj-$(CONFIG_LEDS_COBALT)		+= leds-cobalt.o
+ obj-$(CONFIG_LEDS_GPIO)			+= leds-gpio.o
++obj-$(CONFIG_LEDS_RB500)		+= leds-rb500.o
+ 
+ # LED Triggers
+ obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledtrig-timer.o

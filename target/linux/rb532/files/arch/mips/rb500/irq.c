@@ -63,6 +63,7 @@ static void rb500_enable_irq(unsigned int irq_nr);
 static void rb500_disable_irq(unsigned int irq_nr);
 
 extern void __init init_generic_irq(void);
+extern struct rb500_gpio_reg __iomem *rb500_gpio_reg0;
 
 typedef struct {
   u32 mask;       /* mask of valid bits in pending/mask registers */
@@ -205,7 +206,7 @@ static void rb500_end_irq(unsigned int irq_nr)
 		intr_bit = 1 << ip;
 	
 		if (irq_nr >= GROUP4_IRQ_BASE && irq_nr <= (GROUP4_IRQ_BASE + 13)) {
-			gpio->gpioistat = gpio->gpioistat & ~intr_bit;
+			rb500_gpio_reg0->gpioistat = rb500_gpio_reg0->gpioistat & ~intr_bit;
 		}
 	
 		enable_local_irq(group_to_ip(group));

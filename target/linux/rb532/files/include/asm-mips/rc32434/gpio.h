@@ -1,39 +1,21 @@
-#ifndef __IDT_GPIO_H__
-#define __IDT_GPIO_H__
-
-/*******************************************************************************
- *
+/*
  * Copyright 2002 Integrated Device Technology, Inc.
- *		All rights reserved.
+ *	All rights reserved.
  *
  * GPIO register definition.
  *
- * File   : $Id: gpio.h,v 1.2 2002/06/06 18:34:04 astichte Exp $
- *
  * Author : ryan.holmQVist@idt.com
  * Date   : 20011005
- * Update :
- *	    $Log: gpio.h,v $
- *	    Revision 1.2  2002/06/06 18:34:04  astichte
- *	    Added XXX_PhysicalAddress and XXX_VirtualAddress
- *	
- *	    Revision 1.1  2002/05/29 17:33:22  sysarch
- *	    jba File moved from vcode/include/idt/acacia
- *	
- *
- ******************************************************************************/
+ * Copyright (C) 2001, 2002 Ryan Holm <ryan.holmQVist@idt.com>
+ * Copyright (C) 2008 Florian Fainelli <florian@openwrt.org>
+ */
 
-enum
-{
-	GPIO0_PhysicalAddress	= 0x18050000,
-	GPIO_PhysicalAddress	= GPIO0_PhysicalAddress,	// Default
+#ifndef _RC32434_GPIO_H_
+#define _RC32434_GPIO_H_
 
-	GPIO0_VirtualAddress	= 0xb8050000,
-	GPIO_VirtualAddress	= GPIO0_VirtualAddress,		// Default
-} ;
+#include <linux/types.h>
 
-typedef struct
-{
+struct rb500_gpio_reg {
 	u32   gpiofunc;   /* GPIO Function Register
 			   * gpiofunc[x]==0 bit = gpio
 			   * func[x]==1  bit = altfunc
@@ -53,9 +35,9 @@ typedef struct
 			   * cleared in ISR (STICKY bits)
 			   */
 	u32   gpionmien;  /* GPIO Non-maskable Interrupt Enable Register */
-} volatile * GPIO_t ;
+};
 
-typedef enum
+enum gpio_regs
 {
 	GPIO_gpio_v		= 0,		// gpiofunc use pin as GPIO.
 	GPIO_alt_v		= 1,		// gpiofunc use pin as alt.
@@ -175,7 +157,58 @@ typedef enum
 	GPIO_pcimuintn_m	= GPIO_pin13_m,
 		GPIO_pcimuintn_cfg_v	= GPIO_output_v,
 
-} GPIO_DEFS_t;
+};
 
-#endif	// __IDT_GPIO_H__
+extern int rb500_gpio_get_value(unsigned gpio);
+extern void rb500_gpio_set_value(unsigned gpio, int value);
+extern int rb500_gpio_direction_input(unsigned gpio);
+extern int rb500_gpio_direction_output(unsigned gpio, int value);
 
+
+/* Wrappers for the arch-neutral GPIO API */
+
+static inline int gpio_request(unsigned gpio, const char *label)
+{
+	/* Not yet implemented */
+	return 0;
+}
+
+static inline void gpio_free(unsigned gpio)
+{
+	/* Not yet implemented */
+}
+
+static inline int gpio_direction_input(unsigned gpio)
+{
+	return rb500_gpio_direction_input(gpio);
+}
+
+static inline int gpio_direction_output(unsigned gpio, int value)
+{
+	return rb500_gpio_direction_output(gpio, value);
+}
+
+static inline int gpio_get_value(unsigned gpio)
+{
+	return rb500_gpio_get_value(gpio);
+}
+
+static inline void gpio_set_value(unsigned gpio, int value)
+{
+	rb500_gpio_set_value(gpio, value);
+}
+
+static inline int gpio_to_irq(unsigned gpio)
+{
+	return gpio;
+}
+
+static inline int irq_to_gpio(unsigned irq)
+{
+	return irq;
+}
+
+/* For cansleep */
+#include <asm-generic/gpio.h>
+
+#endif /* _RC32434_GPIO_H_ */

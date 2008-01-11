@@ -32,7 +32,6 @@
 #define RC32434_REG_BASE   0x18000000
 
 #define interrupt ((volatile INT_t ) INT0_VirtualAddress)
-#define gpio	  ((volatile GPIO_t) GPIO0_VirtualAddress)
 
 
 #define IDT_CLOCK_MULT 2

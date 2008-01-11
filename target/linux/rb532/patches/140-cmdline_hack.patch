@@ -1,14 +1,14 @@
-Index: linux-2.6.21.1/arch/mips/kernel/head.S
-===================================================================
---- linux-2.6.21.1.orig/arch/mips/kernel/head.S	2007-06-07 01:26:11.862575128 +0200
-+++ linux-2.6.21.1/arch/mips/kernel/head.S	2007-06-07 01:31:06.499783464 +0200
-@@ -133,6 +133,9 @@
+diff -urN linux-2.6.23.12/arch/mips/kernel/head.S linux-2.6.23.12.new/arch/mips/kernel/head.S
+--- linux-2.6.23.12/arch/mips/kernel/head.S	2008-01-11 11:27:08.000000000 +0100
++++ linux-2.6.23.12.new/arch/mips/kernel/head.S	2008-01-11 11:27:35.000000000 +0100
+@@ -132,6 +132,10 @@
+ 
  	j kernel_entry
  	nop
- 
-+EXPORT(_image_cmdline)
-+ 	.ascii "CMDLINE:"
 +
++EXPORT(_image_cmdline)
++       .ascii "CMDLINE:"
++
+ #ifndef CONFIG_NO_EXCEPT_FILL
  	/*
  	 * Reserved space for exception handlers.
- 	 * Necessary for machines which link their kernels at KSEG0.
