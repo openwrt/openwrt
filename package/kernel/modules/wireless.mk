@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,7 +8,7 @@
 
 WIRELESS_MENU:=Wireless Drivers
 
-# NOTE: dependency on 2.6 was removed since it was inherited by kmod-hostap 
+# NOTE: dependency on 2.6 was removed since it was inherited by kmod-hostap
 #       and prevented it from even showing up in menuconfig on 2.4
 define KernelPackage/ieee80211
   SUBMENU:=$(WIRELESS_MENU)
@@ -36,11 +36,11 @@ endef
 
 define KernelPackage/ieee80211/description
  Kernel modules for 802.11 Networking stack
- Includes:  
- - ieee80211_crypt  
- - ieee80211  
- - ieee80211_crypt_wep  
- - ieee80211_crypt_tkip  
+ Includes:
+ - ieee80211_crypt
+ - ieee80211
+ - ieee80211_crypt_wep
+ - ieee80211_crypt_tkip
  - ieee80211_crytp_ccmp
 endef
 
@@ -50,7 +50,7 @@ $(eval $(call KernelPackage,ieee80211))
 define KernelPackage/ieee80211-softmac
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=ieee80211 SoftMAC support
-  DEPENDS:=kmod-ieee80211
+  DEPENDS:=+kmod-ieee80211
   KCONFIG:=CONFIG_IEEE80211_SOFTMAC
   FILES:=$(LINUX_DIR)/net/ieee80211/softmac/ieee80211softmac.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,ieee80211softmac)
@@ -74,7 +74,7 @@ endef
 
 define KernelPackage/net-bcm43xx/description
  Kernel support for Broadcom BCM43xx
- Includes:  
+ Includes:
  - bcm43xx
 endef
 
@@ -92,7 +92,7 @@ endef
 
 define KernelPackage/net-ipw2100/description
  Kernel support for Intel IPW2100
- Includes:  
+ Includes:
  - ipw2100
 endef
 
@@ -110,7 +110,7 @@ endef
 
 define KernelPackage/net-ipw2200/description
  Kernel support for Intel IPW2200
- Includes:  
+ Includes:
  - ipw2200
 endef
 
@@ -202,7 +202,7 @@ $(eval $(call KernelPackage,net-prism54))
 define KernelPackage/net-zd1211rw
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Zydas ZD1211 support
-  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-ieee80211 +zd1211-firmware
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-ieee80211-softmac +zd1211-firmware
   KCONFIG:=CONFIG_ZD1211RW
   FILES:=$(LINUX_DIR)/drivers/net/wireless/zd1211rw/zd1211rw.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,zd1211rw)
