@@ -28,19 +28,28 @@ extern void gpio_free(unsigned gpio);
 /* Common GPIO layer */
 static inline int gpio_get_value(unsigned gpio)
 {
-	void __iomem *gpio_in =
-		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_INPUT);
+	static unsigned addr;
 
-	return readl(gpio_in) & (1 << gpio);
+	if (!addr) {
+		void __iomem *gpio_in = (void __iomem *)
+				KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_INPUT);
+		addr = readl(gpio_in);
+	}
+
+	return addr & (1 << gpio);
 }
 
 static inline void gpio_set_value(unsigned gpio, int value)
 {
-	void __iomem *gpio_out =
-		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_OUTPUT);
+	static unsigned addr;
 	unsigned tmp;
 
-	tmp = readl(gpio_out) & ~(1 << gpio);
+	void __iomem *gpio_out =
+		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_OUTPUT);
+	if (!addr)
+		addr = readl(gpio_out);
+
+	tmp = addr & ~(1 << gpio);
 	if (value)
 		tmp |= 1 << gpio;
 	writel(tmp, gpio_out);
