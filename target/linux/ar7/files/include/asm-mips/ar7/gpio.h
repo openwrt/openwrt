@@ -41,15 +41,14 @@ static inline int gpio_get_value(unsigned gpio)
 
 static inline void gpio_set_value(unsigned gpio, int value)
 {
-	static unsigned addr;
+	static void __iomem *gpio_out;
 	unsigned tmp;
 
-	void __iomem *gpio_out =
-		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_OUTPUT);
-	if (!addr)
-		addr = readl(gpio_out);
+	if (!gpio_out)
+		gpio_out = (void __iomem *)
+				KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_OUTPUT);
 
-	tmp = addr & ~(1 << gpio);
+	tmp = readl(gpio_out) & ~(1 << gpio);
 	if (value)
 		tmp |= 1 << gpio;
 	writel(tmp, gpio_out);
