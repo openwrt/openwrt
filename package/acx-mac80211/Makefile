@@ -10,12 +10,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=acx-mac80211
-PKG_VERSION:=20071003
+PKG_VERSION:=20080112
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/acx100
-PKG_MD5SUM:=dff7b396299001724e522d3ccf79c883
+PKG_MD5SUM:=3d2253c3a639ebccf06113be888118fb
 
 PKG_FW_NAME:=tiacx111c16
 PKG_FW_URL:=http://teknoraver.campuslife.it/software/acx-mac80211/
