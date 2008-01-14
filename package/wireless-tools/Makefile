@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -11,7 +11,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=wireless-tools
 PKG_VERSION:=29
 PKG_MINOR:=.pre21
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=wireless_tools.$(PKG_VERSION)$(PKG_MINOR).tar.gz
 PKG_SOURCE_URL:=http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux
@@ -30,7 +30,7 @@ define Package/wireless-tools
 endef
 
 define Package/wireless-tools/description
- This package contains a collection of tools for configuring wireless 
+ This package contains a collection of tools for configuring wireless
  adapters implementing the "Linux Wireless Extensions".
 endef
 
@@ -58,7 +58,11 @@ endef
 
 define Package/wireless-tools/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/iw{config,getid,list,priv,spy} $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/iwconfig $(1)/usr/sbin/
+	ln -sf iwconfig $(1)/usr/sbin/iwgetid
+	ln -sf iwconfig $(1)/usr/sbin/iwlist
+	ln -sf iwconfig $(1)/usr/sbin/iwpriv
+	ln -sf iwconfig $(1)/usr/sbin/iwspy
 endef
 
 $(eval $(call BuildPackage,wireless-tools))
