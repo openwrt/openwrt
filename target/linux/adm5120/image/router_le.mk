@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007,2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -50,6 +50,16 @@ define Image/Build/Infineon
 	cat $(call imgname,$(1),$(2)).trx >> $(call imgname,$(1),$(2)).img
 endef
 
+define Image/Build/Cellvision2
+	# only for CAS-700/771/790/861
+	$(call Image/Build/Loader,$(2),gz,0x80500000,0x6D8,y,$(2))
+	$(call Image/Build/TRXNoloader,$(call imgname,$(1),$(2)).trx,$(1))
+	dd if=$(KDIR)/loader-$(2).gz of=$(call imgname,$(1),$(2)).bin bs=64k conv=sync
+	cat $(call imgname,$(1),$(2)).trx >> $(call imgname,$(1),$(2)).bin
+	echo -ne '\x14\x07\x24\x06$(2)' | dd bs=14 count=1 conv=sync >> $(call imgname,$(1),$(2)).bin
+	echo -ne 'OpenWrt\x00\x00\x00' >> $(call imgname,$(1),$(2)).bin
+endef
+
 define Image/Build/MyLoader
 	$(call Image/Build/Loader,$(2),gz,0x80500000,0)
 	$(call Image/Build/TRXNoloader,$(call imgname,$(1),$(2)).trx,$(1))
@@ -62,8 +72,58 @@ define Image/Build/MyLoader
 endef
 
 #
+# Cellvision CAS-700
+#
+define Image/Build/Board/CAS700
+	$(call Image/Build/Cellvision2,$(1),cas-700)
+endef
+
+define Image/Build/Board/CAS700/squashfs
+	$(call Image/Build/Board/CAS700,squashfs)
+endef
+
+define Image/Build/Board/CAS700/jffs2-64k
+	$(call Image/Build/Board/CAS700,jffs2-64k)
+endef
+
+define Image/Build/Board/CAS700/Initramfs
+	$(call Image/Build/LZMAKernel/Admboot,cas-700,gz)
+endef
+
+#
+# Cellvision CAS-700W
+#
+define Image/Build/Board/CAS700W
+	$(call Image/Build/Cellvision2,$(1),cas-700w)
+endef
+
+define Image/Build/Board/CAS700W/squashfs
+	$(call Image/Build/Board/CAS700W,squashfs)
+endef
+
+define Image/Build/Board/CAS700W/jffs2-64k
+	$(call Image/Build/Board/CAS700W,jffs2-64k)
+endef
+
+define Image/Build/Board/CAS700W/Initramfs
+	$(call Image/Build/LZMAKernel/Admboot,cas-700w,gz)
+endef
+
+#
 # Cellvision CAS-771
 #
+define Image/Build/Board/CAS771
+	$(call Image/Build/Cellvision2,$(1),cas-771)
+endef
+
+define Image/Build/Board/CAS771/squashfs
+	$(call Image/Build/Board/CAS771,squashfs)
+endef
+
+define Image/Build/Board/CAS771/jffs2-64k
+	$(call Image/Build/Board/CAS771,jffs2-64k)
+endef
+
 define Image/Build/Board/CAS771/Initramfs
 	$(call Image/Build/LZMAKernel/Admboot,cas-771,gz)
 endef
@@ -71,8 +131,77 @@ endef
 #
 # Cellvision CAS-771W
 #
+define Image/Build/Board/CAS771W
+	$(call Image/Build/Cellvision2,$(1),cas-771w)
+endef
+
+define Image/Build/Board/CAS771W/squashfs
+	$(call Image/Build/Board/CAS771W,squashfs)
+endef
+
+define Image/Build/Board/CAS771W/jffs2-64k
+	$(call Image/Build/Board/CAS771W,jffs2-64k)
+endef
+
 define Image/Build/Board/CAS771W/Initramfs
 	$(call Image/Build/LZMAKernel/Admboot,cas-771w,gz)
+endef
+
+#
+# Cellvision CAS-790
+#
+define Image/Build/Board/CAS790
+	$(call Image/Build/Cellvision2,$(1),cas-790)
+endef
+
+define Image/Build/Board/CAS790/squashfs
+	$(call Image/Build/Board/CAS790,squashfs)
+endef
+
+define Image/Build/Board/CAS790/jffs2-64k
+	$(call Image/Build/Board/CAS790,jffs2-64k)
+endef
+
+define Image/Build/Board/CAS790/Initramfs
+	$(call Image/Build/LZMAKernel/Admboot,cas-790,gz)
+endef
+
+#
+# Cellvision CAS-861
+#
+define Image/Build/Board/CAS861
+	$(call Image/Build/Cellvision2,$(1),cas-861)
+endef
+
+define Image/Build/Board/CAS861/squashfs
+	$(call Image/Build/Board/CAS861,squashfs)
+endef
+
+define Image/Build/Board/CAS861/jffs2-64k
+	$(call Image/Build/Board/CAS861,jffs2-64k)
+endef
+
+define Image/Build/Board/CAS861/Initramfs
+	$(call Image/Build/LZMAKernel/Admboot,cas-861,gz)
+endef
+
+#
+# Cellvision CAS-861W
+#
+define Image/Build/Board/CAS861W
+	$(call Image/Build/Cellvision2,$(1),cas-861w)
+endef
+
+define Image/Build/Board/CAS861W/squashfs
+	$(call Image/Build/Board/CAS861W,squashfs)
+endef
+
+define Image/Build/Board/CAS861W/jffs2-64k
+	$(call Image/Build/Board/CAS861W,jffs2-64k)
+endef
+
+define Image/Build/Board/CAS861W/Initramfs
+	$(call Image/Build/LZMAKernel/Admboot,cas-861w,gz)
 endef
 
 #
@@ -298,8 +427,13 @@ endef
 # Groups
 #
 define Image/Build/Group/Cellvision
+	$(call Image/Build/Board/CAS700/$(1))
+	$(call Image/Build/Board/CAS700W/$(1))
 	$(call Image/Build/Board/CAS771/$(1))
 	$(call Image/Build/Board/CAS771W/$(1))
+	$(call Image/Build/Board/CAS790/$(1))
+	$(call Image/Build/Board/CAS861/$(1))
+	$(call Image/Build/Board/CAS861W/$(1))
 endef
 
 define Image/Build/Group/WP54G
@@ -371,12 +505,32 @@ define Image/Build/Profile/NP28G
 	$(call Image/Build/Board/NP28G/$(1))
 endef
 
+define Image/Build/Profile/CAS700
+	$(call Image/Build/Board/CAS700/$(1))
+endef
+
+define Image/Build/Profile/CAS700W
+	$(call Image/Build/Board/CAS700W/$(1))
+endef
+
 define Image/Build/Profile/CAS771
 	$(call Image/Build/Board/CAS771/$(1))
 endef
 
 define Image/Build/Profile/CAS771W
 	$(call Image/Build/Board/CAS771W/$(1))
+endef
+
+define Image/Build/Profile/CAS790
+	$(call Image/Build/Board/CAS790/$(1))
+endef
+
+define Image/Build/Profile/CAS861
+	$(call Image/Build/Board/CAS861/$(1))
+endef
+
+define Image/Build/Profile/CAS861W
+	$(call Image/Build/Board/CAS861W/$(1))
 endef
 
 define Image/Build/Profile/BR6104K
