@@ -31,3 +31,15 @@ Index: madwifi-dfs-r3053/hal/public/xscale-be-elf.inc
 -COPTS+= -march=armv4 -mbig-endian -fno-strict-aliasing -fno-common -mapcs-32 \
 +COPTS+= -march=armv5te -mbig-endian -fno-strict-aliasing -fno-common  \
  	-mtune=xscale  -mshort-load-bytes
+Index: madwifi-dfs-r3053/hal/public/xscale-le-elf.inc
+===================================================================
+--- madwifi-dfs-r3053.orig/hal/public/xscale-le-elf.inc	2007-12-12 22:20:33.000000000 -0600
++++ madwifi-dfs-r3053/hal/public/xscale-le-elf.inc	2008-01-14 17:24:29.000000000 -0600
+@@ -78,5 +78,5 @@
+ 
+ LDOPTS=	-EL
+ COPTS+=	-DAH_BYTE_ORDER=AH_LITTLE_ENDIAN
+-COPTS+= -march=armv4 -mlittle-endian -fno-strict-aliasing -fno-common \
+-	-mapcs-32 -mtune=xscale  -mshort-load-bytes
++COPTS+= -march=armv4 -mlittle-endian -fno-strict-aliasing -fno-common \
++	-mtune=xscale  -mshort-load-bytes
