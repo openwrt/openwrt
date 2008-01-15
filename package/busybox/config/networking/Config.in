@@ -94,7 +94,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_RANGES
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_USE_SENDFILE
 	bool "Use sendfile system call"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
 	  When enabled, httpd will use the kernel sendfile() function
