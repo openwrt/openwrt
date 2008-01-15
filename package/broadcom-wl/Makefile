@@ -16,7 +16,7 @@ WLC_VERSION:=0.1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
-PKG_MD5SUM:=0c6ba9687114c6b598e8019e262d9a60
+PKG_MD5SUM:=a86fc00ddd24f9dce568b0b42b9739c5
 
 WL_WEXT=1
 
