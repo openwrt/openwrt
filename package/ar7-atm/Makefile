@@ -14,7 +14,7 @@ PKG_VERSION:=D7.03.01.00
 PKG_RELEASE:=R2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_RELEASE).tar.bz2
-PKG_SOURCE_URL:=http://teknoraver.campuslife.it/software
+PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_MD5SUM:=bc6e9c6adb1be25820c7ee661de8ca7d
 
 include $(INCLUDE_DIR)/package.mk
