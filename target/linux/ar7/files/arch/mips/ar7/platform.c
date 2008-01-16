@@ -426,7 +426,7 @@ static void __init detect_leds(void)
 	} else if (strstr(prId, "Fritz_Box_")) {
 		ar7_led_data.num_leds = ARRAY_SIZE(fb_sl_leds);
 		ar7_led_data.leds = fb_sl_leds;
-	} else if (!strcmp(prId, "AR7RD") && usb_prod != NULL && strstr(usb_prod, "DSL-502T")) {
+	} else if ((!strcmp(prId, "AR7RD") || !strcmp(prId, "AR7DB")) && usb_prod != NULL && strstr(usb_prod, "DSL-502T")) {
 		ar7_led_data.num_leds = ARRAY_SIZE(dsl502t_leds);
 		ar7_led_data.leds = dsl502t_leds;
 	} else if (strstr(prId, "DG834")) {
