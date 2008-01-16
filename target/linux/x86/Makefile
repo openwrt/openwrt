@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,7 +12,7 @@ BOARDNAME:=x86
 FEATURES:=squashfs jffs2 ext2
 SUBTARGETS=generic mediacenter
 
-LINUX_VERSION:=2.6.23.12
+LINUX_VERSION:=2.6.23.14
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += kmod-natsemi kmod-ne2k-pci
