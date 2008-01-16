@@ -561,7 +561,7 @@ static const struct wlc_call wlc_calls[] = {
 		.name = "mssid",
 		.param = INT,
 		.handler = wlc_iovar,
-		.data.str = "mssid",
+		.data.str = "mbss",
 		.desc = "Multi-ssid mode"
 	},
 	{
