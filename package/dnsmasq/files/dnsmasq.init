@@ -188,7 +188,8 @@ dhcp_add() {
 	[ static = "$proto" ] || return 0
 
 	config_get ipaddr "$net" ipaddr
-	config_get netmask "$net" netmask
+	config_get netmask "$cfg" netmask
+	[ -n "$netmask" ] || config_get netmask "$net" netmask
 
 	#check for an already active dhcp server on the interface, unless 'force' is set
 	config_get_bool force "$cfg" force 0
