@@ -546,7 +546,10 @@ static void td_submit_urb(struct admhcd *ahcd, struct urb *urb)
 	 * we could often reduce the number of TDs here.
 	 */
 	case PIPE_ISOCHRONOUS:
-		info = TD_SCC_NOTACCESSED;
+		info = is_out
+			? TD_T_CARRY | TD_SCC_NOTACCESSED | TD_DP_OUT
+			: TD_T_CARRY | TD_SCC_NOTACCESSED | TD_DP_IN;
+
 		for (cnt = 0; cnt < urb->number_of_packets; cnt++) {
 			int frame = urb->start_frame;
 
