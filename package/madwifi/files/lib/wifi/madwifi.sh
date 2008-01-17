@@ -180,6 +180,9 @@ enable_atheros() {
 		config_get rate "$vif" rate
 		[ -n "$rate" ] && iwconfig "$ifname" rate "${rate%%.*}"
 
+		config_get mcast_rate "$vif" mcast_rate
+		[ -n "$mcast_rate" ] && iwpriv "$ifname" mcast_rate "${mcast_rate%%.*}"
+
 		config_get frag "$vif" frag
 		[ -n "$frag" ] && iwconfig "$ifname" frag "${frag%%.*}"
 
@@ -197,6 +200,15 @@ enable_atheros() {
 
 		config_get_bool wmm "$vif" wmm
 		[ -n "$wmm" ] && iwpriv "$ifname" wmm "$wmm"
+
+		config_get_bool xr "$vif" xr
+		[ -n "$xr" ] && iwpriv "$ifname" xr "$xr"
+
+		config_get_bool ar "$vif" ar
+		[ -n "$ar" ] && iwpriv "$ifname" ar "$ar"
+
+		config_get_bool turbo "$vif" turbo
+		[ -n "$turbo" ] && iwpriv "$ifname" turbo "$turbo"
 
 		config_get maclist "$vif" maclist
 		[ -n "$maclist" ] && {
