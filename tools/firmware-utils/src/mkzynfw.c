@@ -794,7 +794,7 @@ parse_opt_block(char ch, char *arg)
 	struct fw_block *block;
 	int i;
 
-	if ( num_blocks > MAX_NUM_BLOCKS ) {
+	if ( num_blocks >= MAX_NUM_BLOCKS ) {
 		ERR("too many blocks specified");
 		return -1;
 	}
