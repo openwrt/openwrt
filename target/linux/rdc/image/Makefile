@@ -23,10 +23,12 @@ endef
 
 define Image/Build/ar525w
 	touch $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
+	touch $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2)-web.img
 	mv $(KDIR)/root.$(1) $(KDIR)/root.tmp
 	dd of=$(KDIR)/root.$(1) if=$(KDIR)/root.tmp $(call trxalign/$(1)) conv=sync
 	$(RM) $(KDIR)/root.tmp
 	$(STAGING_DIR_HOST)/bin/airlink -b 1 -j $(shell bash -c 'echo $$[$(3)]') $(KDIR)/bzImage $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
+	$(STAGING_DIR_HOST)/bin/airlink -e -b 1 -j $(shell bash -c 'echo $$[$(3)]') $(KDIR)/bzImage $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2)-web.img
 endef
 
 define Image/Build/wl153
