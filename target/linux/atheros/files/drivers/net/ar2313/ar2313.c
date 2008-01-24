@@ -134,7 +134,13 @@
 #define CRC_LEN                 4
 #define RX_OFFSET               2
 
-#define AR2313_BUFSIZE		(AR2313_MTU + ETH_HLEN + CRC_LEN + RX_OFFSET)
+#if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE) 
+#define VLAN_HDR                4
+#else
+#define VLAN_HDR                0
+#endif
+
+#define AR2313_BUFSIZE		(AR2313_MTU + VLAN_HDR + ETH_HLEN + CRC_LEN + RX_OFFSET)
 
 #ifdef MODULE
 MODULE_LICENSE("GPL");
