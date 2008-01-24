@@ -13,11 +13,10 @@
 #include "wext.h"
 #include "cmd.h"
 
-static void cleanup_cmdnode(struct cmd_ctrl_node *ptempnode);
 static struct cmd_ctrl_node *lbs_get_cmd_ctrl_node(struct lbs_private *priv);
 static void lbs_set_cmd_ctrl_node(struct lbs_private *priv,
 		    struct cmd_ctrl_node *ptempnode,
-		    u16 wait_option, void *pdata_buf);
+		    void *pdata_buf);
 
 
 /**
@@ -56,7 +55,7 @@ int lbs_update_hw_spec(struct lbs_private *priv)
 	memset(&cmd, 0, sizeof(cmd));
 	cmd.hdr.size = cpu_to_le16(sizeof(cmd));
 	memcpy(cmd.permanentaddr, priv->current_addr, ETH_ALEN);
-	ret = lbs_cmd_with_response(priv, CMD_GET_HW_SPEC, cmd);
+	ret = lbs_cmd_with_response(priv, CMD_GET_HW_SPEC, &cmd);
 	if (ret)
 		goto out;
 
@@ -111,6 +110,28 @@ out:
 	return ret;
 }
 
+int lbs_host_sleep_cfg(struct lbs_private *priv, uint32_t criteria)
+{
+	struct cmd_ds_host_sleep cmd_config;
+	int ret;
+
+	cmd_config.hdr.size = cpu_to_le16(sizeof(cmd_config));
+	cmd_config.criteria = cpu_to_le32(criteria);
+	cmd_config.gpio = priv->wol_gpio;
+	cmd_config.gap = priv->wol_gap;
+
+	ret = lbs_cmd_with_response(priv, CMD_802_11_HOST_SLEEP_CFG, &cmd_config);
+	if (!ret) {
+		lbs_deb_cmd("Set WOL criteria to %x\n", criteria);
+		priv->wol_criteria = criteria;
+	} else {
+		lbs_pr_info("HOST_SLEEP_CFG failed %d\n", ret);
+	}
+
+	return ret;
+}
+EXPORT_SYMBOL_GPL(lbs_host_sleep_cfg);
+
 static int lbs_cmd_802_11_ps_mode(struct lbs_private *priv,
 				   struct cmd_ds_command *cmd,
 				   u16 cmd_action)
@@ -150,204 +171,160 @@ static int lbs_cmd_802_11_ps_mode(struct lbs_private *priv,
 	return 0;
 }
 
-static int lbs_cmd_802_11_inactivity_timeout(struct lbs_private *priv,
-					      struct cmd_ds_command *cmd,
-					      u16 cmd_action, void *pdata_buf)
+int lbs_cmd_802_11_inactivity_timeout(struct lbs_private *priv,
+				      uint16_t cmd_action, uint16_t *timeout)
 {
-	u16 *timeout = pdata_buf;
+	struct cmd_ds_802_11_inactivity_timeout cmd;
+	int ret;
 
 	lbs_deb_enter(LBS_DEB_CMD);
 
-	cmd->command = cpu_to_le16(CMD_802_11_INACTIVITY_TIMEOUT);
-	cmd->size =
-	    cpu_to_le16(sizeof(struct cmd_ds_802_11_inactivity_timeout)
-			     + S_DS_GEN);
+	cmd.hdr.command = cpu_to_le16(CMD_802_11_INACTIVITY_TIMEOUT);
+	cmd.hdr.size = cpu_to_le16(sizeof(cmd));
 
-	cmd->params.inactivity_timeout.action = cpu_to_le16(cmd_action);
+	cmd.action = cpu_to_le16(cmd_action);
 
-	if (cmd_action)
-		cmd->params.inactivity_timeout.timeout = cpu_to_le16(*timeout);
+	if (cmd_action == CMD_ACT_SET)
+		cmd.timeout = cpu_to_le16(*timeout);
 	else
-		cmd->params.inactivity_timeout.timeout = 0;
+		cmd.timeout = 0;
 
-	lbs_deb_leave(LBS_DEB_CMD);
+	ret = lbs_cmd_with_response(priv, CMD_802_11_INACTIVITY_TIMEOUT, &cmd);
+
+	if (!ret)
+		*timeout = le16_to_cpu(cmd.timeout);
+
+	lbs_deb_leave_args(LBS_DEB_CMD, "ret %d", ret);
 	return 0;
 }
 
-static int lbs_cmd_802_11_sleep_params(struct lbs_private *priv,
-					struct cmd_ds_command *cmd,
-					u16 cmd_action)
+int lbs_cmd_802_11_sleep_params(struct lbs_private *priv, uint16_t cmd_action,
+				struct sleep_params *sp)
 {
-	struct cmd_ds_802_11_sleep_params *sp = &cmd->params.sleep_params;
+	struct cmd_ds_802_11_sleep_params cmd;
+	int ret;
 
 	lbs_deb_enter(LBS_DEB_CMD);
-
-	cmd->size = cpu_to_le16((sizeof(struct cmd_ds_802_11_sleep_params)) +
-				S_DS_GEN);
-	cmd->command = cpu_to_le16(CMD_802_11_SLEEP_PARAMS);
 
 	if (cmd_action == CMD_ACT_GET) {
-		memset(&priv->sp, 0, sizeof(struct sleep_params));
-		memset(sp, 0, sizeof(struct cmd_ds_802_11_sleep_params));
-		sp->action = cpu_to_le16(cmd_action);
-	} else if (cmd_action == CMD_ACT_SET) {
-		sp->action = cpu_to_le16(cmd_action);
-		sp->error = cpu_to_le16(priv->sp.sp_error);
-		sp->offset = cpu_to_le16(priv->sp.sp_offset);
-		sp->stabletime = cpu_to_le16(priv->sp.sp_stabletime);
-		sp->calcontrol = (u8) priv->sp.sp_calcontrol;
-		sp->externalsleepclk = (u8) priv->sp.sp_extsleepclk;
-		sp->reserved = cpu_to_le16(priv->sp.sp_reserved);
+		memset(&cmd, 0, sizeof(cmd));
+	} else {
+		cmd.error = cpu_to_le16(sp->sp_error);
+		cmd.offset = cpu_to_le16(sp->sp_offset);
+		cmd.stabletime = cpu_to_le16(sp->sp_stabletime);
+		cmd.calcontrol = sp->sp_calcontrol;
+		cmd.externalsleepclk = sp->sp_extsleepclk;
+		cmd.reserved = cpu_to_le16(sp->sp_reserved);
+	}
+	cmd.hdr.size = cpu_to_le16(sizeof(cmd));
+	cmd.action = cpu_to_le16(cmd_action);
+
+	ret = lbs_cmd_with_response(priv, CMD_802_11_SLEEP_PARAMS, &cmd);
+
+	if (!ret) {
+		lbs_deb_cmd("error 0x%x, offset 0x%x, stabletime 0x%x, "
+			    "calcontrol 0x%x extsleepclk 0x%x\n",
+			    le16_to_cpu(cmd.error), le16_to_cpu(cmd.offset),
+			    le16_to_cpu(cmd.stabletime), cmd.calcontrol,
+			    cmd.externalsleepclk);
+
+		sp->sp_error = le16_to_cpu(cmd.error);
+		sp->sp_offset = le16_to_cpu(cmd.offset);
+		sp->sp_stabletime = le16_to_cpu(cmd.stabletime);
+		sp->sp_calcontrol = cmd.calcontrol;
+		sp->sp_extsleepclk = cmd.externalsleepclk;
+		sp->sp_reserved = le16_to_cpu(cmd.reserved);
 	}
 
-	lbs_deb_leave(LBS_DEB_CMD);
+	lbs_deb_leave_args(LBS_DEB_CMD, "ret %d", ret);
 	return 0;
 }
 
-static int lbs_cmd_802_11_set_wep(struct lbs_private *priv,
-                                   struct cmd_ds_command *cmd,
-                                   u32 cmd_act,
-                                   void * pdata_buf)
+int lbs_cmd_802_11_set_wep(struct lbs_private *priv, uint16_t cmd_action,
+			   struct assoc_request *assoc)
 {
-	struct cmd_ds_802_11_set_wep *wep = &cmd->params.wep;
+	struct cmd_ds_802_11_set_wep cmd;
 	int ret = 0;
-	struct assoc_request * assoc_req = pdata_buf;
 
 	lbs_deb_enter(LBS_DEB_CMD);
 
-	cmd->command = cpu_to_le16(CMD_802_11_SET_WEP);
-	cmd->size = cpu_to_le16(sizeof(*wep) + S_DS_GEN);
+	cmd.hdr.command = cpu_to_le16(CMD_802_11_SET_WEP);
+	cmd.hdr.size = cpu_to_le16(sizeof(cmd));
 
-	if (cmd_act == CMD_ACT_ADD) {
+	cmd.action = cpu_to_le16(cmd_action);
+
+	if (cmd_action == CMD_ACT_ADD) {
 		int i;
 
-		if (!assoc_req) {
-			lbs_deb_cmd("Invalid association request!");
-			ret = -1;
-			goto done;
-		}
-
-		wep->action = cpu_to_le16(CMD_ACT_ADD);
-
 		/* default tx key index */
-		wep->keyindex = cpu_to_le16((u16)(assoc_req->wep_tx_keyidx &
-						  (u32)CMD_WEP_KEY_INDEX_MASK));
+		cmd.keyindex = cpu_to_le16(assoc->wep_tx_keyidx &
+					   CMD_WEP_KEY_INDEX_MASK);
 
 		/* Copy key types and material to host command structure */
 		for (i = 0; i < 4; i++) {
-			struct enc_key * pkey = &assoc_req->wep_keys[i];
+			struct enc_key *pkey = &assoc->wep_keys[i];
 
 			switch (pkey->len) {
 			case KEY_LEN_WEP_40:
-				wep->keytype[i] = CMD_TYPE_WEP_40_BIT;
-				memmove(&wep->keymaterial[i], pkey->key,
-				        pkey->len);
+				cmd.keytype[i] = CMD_TYPE_WEP_40_BIT;
+				memmove(cmd.keymaterial[i], pkey->key, pkey->len);
 				lbs_deb_cmd("SET_WEP: add key %d (40 bit)\n", i);
 				break;
 			case KEY_LEN_WEP_104:
-				wep->keytype[i] = CMD_TYPE_WEP_104_BIT;
-				memmove(&wep->keymaterial[i], pkey->key,
-				        pkey->len);
+				cmd.keytype[i] = CMD_TYPE_WEP_104_BIT;
+				memmove(cmd.keymaterial[i], pkey->key, pkey->len);
 				lbs_deb_cmd("SET_WEP: add key %d (104 bit)\n", i);
 				break;
 			case 0:
 				break;
 			default:
 				lbs_deb_cmd("SET_WEP: invalid key %d, length %d\n",
-				       i, pkey->len);
+					    i, pkey->len);
 				ret = -1;
 				goto done;
 				break;
 			}
 		}
-	} else if (cmd_act == CMD_ACT_REMOVE) {
+	} else if (cmd_action == CMD_ACT_REMOVE) {
 		/* ACT_REMOVE clears _all_ WEP keys */
-		wep->action = cpu_to_le16(CMD_ACT_REMOVE);
 
 		/* default tx key index */
-		wep->keyindex = cpu_to_le16((u16)(priv->wep_tx_keyidx &
-						  (u32)CMD_WEP_KEY_INDEX_MASK));
+		cmd.keyindex = cpu_to_le16(priv->wep_tx_keyidx &
+					   CMD_WEP_KEY_INDEX_MASK);
 		lbs_deb_cmd("SET_WEP: remove key %d\n", priv->wep_tx_keyidx);
 	}
 
-	ret = 0;
-
+	ret = lbs_cmd_with_response(priv, CMD_802_11_SET_WEP, &cmd);
 done:
 	lbs_deb_leave_args(LBS_DEB_CMD, "ret %d", ret);
 	return ret;
 }
 
-static int lbs_cmd_802_11_enable_rsn(struct lbs_private *priv,
-				      struct cmd_ds_command *cmd,
-				      u16 cmd_action,
-				      void * pdata_buf)
+int lbs_cmd_802_11_enable_rsn(struct lbs_private *priv, uint16_t cmd_action,
+			      uint16_t *enable)
 {
-	struct cmd_ds_802_11_enable_rsn *penableRSN = &cmd->params.enbrsn;
-	u32 * enable = pdata_buf;
+	struct cmd_ds_802_11_enable_rsn cmd;
+	int ret;
 
 	lbs_deb_enter(LBS_DEB_CMD);
 
-	cmd->command = cpu_to_le16(CMD_802_11_ENABLE_RSN);
-	cmd->size = cpu_to_le16(sizeof(*penableRSN) + S_DS_GEN);
-	penableRSN->action = cpu_to_le16(cmd_action);
+	cmd.hdr.size = cpu_to_le16(sizeof(cmd));
+	cmd.action = cpu_to_le16(cmd_action);
 
 	if (cmd_action == CMD_ACT_SET) {
 		if (*enable)
-			penableRSN->enable = cpu_to_le16(CMD_ENABLE_RSN);
+			cmd.enable = cpu_to_le16(CMD_ENABLE_RSN);
 		else
-			penableRSN->enable = cpu_to_le16(CMD_DISABLE_RSN);
+			cmd.enable = cpu_to_le16(CMD_DISABLE_RSN);
 		lbs_deb_cmd("ENABLE_RSN: %d\n", *enable);
 	}
 
-	lbs_deb_leave(LBS_DEB_CMD);
-	return 0;
-}
+	ret = lbs_cmd_with_response(priv, CMD_802_11_ENABLE_RSN, &cmd);
+	if (!ret && cmd_action == CMD_ACT_GET)
+		*enable = le16_to_cpu(cmd.enable);
 
-
-static ssize_t lbs_tlv_size(const u8 *tlv, u16 size)
-{
-	ssize_t pos = 0;
-	struct mrvlietypesheader *tlv_h;
-	while (pos < size) {
-		u16 length;
-		tlv_h = (struct mrvlietypesheader *) tlv;
-		if (tlv_h->len == 0)
-			return pos;
-		length = le16_to_cpu(tlv_h->len) +
-			sizeof(struct mrvlietypesheader);
-		pos += length;
-		tlv += length;
-	}
-	return pos;
-}
-
-
-static void lbs_cmd_802_11_subscribe_event(struct lbs_private *priv,
-	struct cmd_ds_command *cmd, u16 cmd_action,
-	void *pdata_buf)
-{
-	struct cmd_ds_802_11_subscribe_event *events =
-		(struct cmd_ds_802_11_subscribe_event *) pdata_buf;
-
-	/* pdata_buf points to a struct cmd_ds_802_11_subscribe_event and room
-	 * for various Marvell TLVs */
-
-	lbs_deb_enter(LBS_DEB_CMD);
-
-	cmd->size = cpu_to_le16(sizeof(*events)
-			- sizeof(events->tlv)
-			+ S_DS_GEN);
-	cmd->params.subscribe_event.action = cpu_to_le16(cmd_action);
-	if (cmd_action == CMD_ACT_GET) {
-		cmd->params.subscribe_event.events = 0;
-	} else {
-		ssize_t sz = lbs_tlv_size(events->tlv, sizeof(events->tlv));
-		cmd->size = cpu_to_le16(le16_to_cpu(cmd->size) + sz);
-		cmd->params.subscribe_event.events = events->events;
-		memcpy(cmd->params.subscribe_event.tlv, events->tlv, sz);
-	}
-
-	lbs_deb_leave(LBS_DEB_CMD);
+	lbs_deb_leave_args(LBS_DEB_CMD, "ret %d", ret);
+	return ret;
 }
 
 static void set_one_wpa_key(struct MrvlIEtype_keyParamSet * pkeyparamset,
@@ -582,45 +559,6 @@ static int lbs_cmd_802_11_snmp_mib(struct lbs_private *priv,
 	return 0;
 }
 
-static int lbs_cmd_802_11_radio_control(struct lbs_private *priv,
-					 struct cmd_ds_command *cmd,
-					 int cmd_action)
-{
-	struct cmd_ds_802_11_radio_control *pradiocontrol = &cmd->params.radio;
-
-	lbs_deb_enter(LBS_DEB_CMD);
-
-	cmd->size =
-	    cpu_to_le16((sizeof(struct cmd_ds_802_11_radio_control)) +
-			     S_DS_GEN);
-	cmd->command = cpu_to_le16(CMD_802_11_RADIO_CONTROL);
-
-	pradiocontrol->action = cpu_to_le16(cmd_action);
-
-	switch (priv->preamble) {
-	case CMD_TYPE_SHORT_PREAMBLE:
-		pradiocontrol->control = cpu_to_le16(SET_SHORT_PREAMBLE);
-		break;
-
-	case CMD_TYPE_LONG_PREAMBLE:
-		pradiocontrol->control = cpu_to_le16(SET_LONG_PREAMBLE);
-		break;
-
-	case CMD_TYPE_AUTO_PREAMBLE:
-	default:
-		pradiocontrol->control = cpu_to_le16(SET_AUTO_PREAMBLE);
-		break;
-	}
-
-	if (priv->radioon)
-		pradiocontrol->control |= cpu_to_le16(TURN_ON_RF);
-	else
-		pradiocontrol->control &= cpu_to_le16(~TURN_ON_RF);
-
-	lbs_deb_leave(LBS_DEB_CMD);
-	return 0;
-}
-
 static int lbs_cmd_802_11_rf_tx_power(struct lbs_private *priv,
 				       struct cmd_ds_command *cmd,
 				       u16 cmd_action, void *pdata_buf)
@@ -724,7 +662,7 @@ int lbs_get_data_rate(struct lbs_private *priv)
 	cmd.hdr.size = cpu_to_le16(sizeof(cmd));
 	cmd.action = cpu_to_le16(CMD_ACT_GET_TX_RATE);
 
-	ret = lbs_cmd_with_response(priv, CMD_802_11_DATA_RATE, cmd);
+	ret = lbs_cmd_with_response(priv, CMD_802_11_DATA_RATE, &cmd);
 	if (ret)
 		goto out;
 
@@ -771,7 +709,7 @@ int lbs_set_data_rate(struct lbs_private *priv, u8 rate)
 		lbs_deb_cmd("DATA_RATE: setting auto\n");
 	}
 
-	ret = lbs_cmd_with_response(priv, CMD_802_11_DATA_RATE, cmd);
+	ret = lbs_cmd_with_response(priv, CMD_802_11_DATA_RATE, &cmd);
 	if (ret)
 		goto out;
 
@@ -827,7 +765,7 @@ int lbs_get_channel(struct lbs_private *priv)
 	cmd.hdr.size = cpu_to_le16(sizeof(cmd));
 	cmd.action = cpu_to_le16(CMD_OPT_802_11_RF_CHANNEL_GET);
 
-	ret = lbs_cmd_with_response(priv, CMD_802_11_RF_CHANNEL, cmd);
+	ret = lbs_cmd_with_response(priv, CMD_802_11_RF_CHANNEL, &cmd);
 	if (ret)
 		goto out;
 
@@ -859,7 +797,7 @@ int lbs_set_channel(struct lbs_private *priv, u8 channel)
 	cmd.action = cpu_to_le16(CMD_OPT_802_11_RF_CHANNEL_SET);
 	cmd.channel = cpu_to_le16(channel);
 
-	ret = lbs_cmd_with_response(priv, CMD_802_11_RF_CHANNEL, cmd);
+	ret = lbs_cmd_with_response(priv, CMD_802_11_RF_CHANNEL, &cmd);
 	if (ret)
 		goto out;
 
@@ -1081,33 +1019,36 @@ int lbs_mesh_access(struct lbs_private *priv, uint16_t cmd_action,
 	lbs_deb_enter_args(LBS_DEB_CMD, "action %d", cmd_action);
 
 	cmd->hdr.command = cpu_to_le16(CMD_MESH_ACCESS);
-	cmd->hdr.size = cpu_to_le16(sizeof(struct cmd_ds_mesh_access) + S_DS_GEN);
+	cmd->hdr.size = cpu_to_le16(sizeof(*cmd));
 	cmd->hdr.result = 0;
 
 	cmd->action = cpu_to_le16(cmd_action);
 
-	ret = lbs_cmd_with_response(priv, CMD_MESH_ACCESS, (*cmd));
+	ret = lbs_cmd_with_response(priv, CMD_MESH_ACCESS, cmd);
 
 	lbs_deb_leave(LBS_DEB_CMD);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(lbs_mesh_access);
 
-int lbs_mesh_config(struct lbs_private *priv, int enable)
+int lbs_mesh_config(struct lbs_private *priv, uint16_t enable, uint16_t chan)
 {
 	struct cmd_ds_mesh_config cmd;
 
 	memset(&cmd, 0, sizeof(cmd));
 	cmd.action = cpu_to_le16(enable);
-	cmd.channel = cpu_to_le16(priv->curbssparams.channel);
-	cmd.type = cpu_to_le16(0x100 + 37);
-	
+	cmd.channel = cpu_to_le16(chan);
+	cmd.type = cpu_to_le16(priv->mesh_tlv);
+	cmd.hdr.size = cpu_to_le16(sizeof(cmd));
+
 	if (enable) {
 		cmd.length = cpu_to_le16(priv->mesh_ssid_len);
 		memcpy(cmd.data, priv->mesh_ssid, priv->mesh_ssid_len);
 	}
-
-	return lbs_cmd_with_response(priv, CMD_MESH_CONFIG, cmd);
+	lbs_deb_cmd("mesh config enable %d TLV %x channel %d SSID %s\n",
+		    enable, priv->mesh_tlv, chan,
+		    escape_essid(priv->mesh_ssid, priv->mesh_ssid_len));
+	return lbs_cmd_with_response(priv, CMD_MESH_CONFIG, &cmd);
 }
 
 static int lbs_cmd_bcn_ctrl(struct lbs_private * priv,
@@ -1131,26 +1072,27 @@ static int lbs_cmd_bcn_ctrl(struct lbs_private * priv,
 	return 0;
 }
 
-/*
- * Note: NEVER use lbs_queue_cmd() with addtail==0 other than for
- * the command timer, because it does not account for queued commands.
- */
-void lbs_queue_cmd(struct lbs_private *priv,
-	struct cmd_ctrl_node *cmdnode,
-	u8 addtail)
+static void lbs_queue_cmd(struct lbs_private *priv,
+			  struct cmd_ctrl_node *cmdnode)
 {
 	unsigned long flags;
+	int addtail = 1;
 
 	lbs_deb_enter(LBS_DEB_HOST);
 
-	if (!cmdnode || !cmdnode->cmdbuf) {
-		lbs_deb_host("QUEUE_CMD: cmdnode or cmdbuf is NULL\n");
+	if (!cmdnode) {
+		lbs_deb_host("QUEUE_CMD: cmdnode is NULL\n");
 		goto done;
 	}
+	if (!cmdnode->cmdbuf->size) {
+		lbs_deb_host("DNLD_CMD: cmd size is zero\n");
+		goto done;
+	}
+	cmdnode->result = 0;
 
 	/* Exit_PS command needs to be queued in the header always. */
 	if (le16_to_cpu(cmdnode->cmdbuf->command) == CMD_802_11_PS_MODE) {
-		struct cmd_ds_802_11_ps_mode *psm = (void *) cmdnode->cmdbuf;
+		struct cmd_ds_802_11_ps_mode *psm = (void *) &cmdnode->cmdbuf[1];
 
 		if (psm->action == cpu_to_le16(CMD_SUBCMD_EXIT_PS)) {
 			if (priv->psstate != PS_STATE_FULL_POWER)
@@ -1168,45 +1110,27 @@ void lbs_queue_cmd(struct lbs_private *priv,
 	spin_unlock_irqrestore(&priv->driver_lock, flags);
 
 	lbs_deb_host("QUEUE_CMD: inserted command 0x%04x into cmdpendingq\n",
-	       le16_to_cpu(cmdnode->cmdbuf->command));
+		     le16_to_cpu(cmdnode->cmdbuf->command));
 
 done:
 	lbs_deb_leave(LBS_DEB_HOST);
 }
 
-/*
- * TODO: Fix the issue when DownloadcommandToStation is being called the
- * second time when the command times out. All the cmdptr->xxx are in little
- * endian and therefore all the comparissions will fail.
- * For now - we are not performing the endian conversion the second time - but
- * for PS and DEEP_SLEEP we need to worry
- */
-static int DownloadcommandToStation(struct lbs_private *priv,
-				    struct cmd_ctrl_node *cmdnode)
+static void lbs_submit_command(struct lbs_private *priv,
+			       struct cmd_ctrl_node *cmdnode)
 {
 	unsigned long flags;
 	struct cmd_header *cmd;
-	int ret = -1;
-	u16 cmdsize;
-	u16 command;
+	uint16_t cmdsize;
+	uint16_t command;
+	int timeo = 5 * HZ;
+	int ret;
 
 	lbs_deb_enter(LBS_DEB_HOST);
-
-	if (!priv || !cmdnode) {
-		lbs_deb_host("DNLD_CMD: priv or cmdmode is NULL\n");
-		goto done;
-	}
 
 	cmd = cmdnode->cmdbuf;
 
 	spin_lock_irqsave(&priv->driver_lock, flags);
-	if (!cmd || !cmd->size) {
-		lbs_deb_host("DNLD_CMD: cmdptr is NULL or zero\n");
-		__lbs_cleanup_and_insert_cmd(priv, cmdnode);
-		spin_unlock_irqrestore(&priv->driver_lock, flags);
-		goto done;
-	}
-
 	priv->cur_cmd = cmdnode;
 	priv->cur_cmd_retcode = 0;
 	spin_unlock_irqrestore(&priv->driver_lock, flags);
@@ -1214,38 +1138,30 @@ static int DownloadcommandToStation(struct lbs_private *priv,
 	cmdsize = le16_to_cpu(cmd->size);
 	command = le16_to_cpu(cmd->command);
 
-	lbs_deb_host("DNLD_CMD: command 0x%04x, size %d, jiffies %lu\n",
-		    command, cmdsize, jiffies);
-	lbs_deb_hex(LBS_DEB_HOST, "DNLD_CMD", (void *) cmdnode->cmdbuf, cmdsize);
+	/* These commands take longer */
+	if (command == CMD_802_11_SCAN || command == CMD_802_11_ASSOCIATE ||
+	    command == CMD_802_11_AUTHENTICATE)
+		timeo = 10 * HZ;
 
-	cmdnode->cmdwaitqwoken = 0;
+	lbs_deb_host("DNLD_CMD: command 0x%04x, seq %d, size %d, jiffies %lu\n",
+		     command, le16_to_cpu(cmd->seqnum), cmdsize, jiffies);
+	lbs_deb_hex(LBS_DEB_HOST, "DNLD_CMD", (void *) cmdnode->cmdbuf, cmdsize);
 
 	ret = priv->hw_host_to_card(priv, MVMS_CMD, (u8 *) cmd, cmdsize);
 
-	if (ret != 0) {
-		lbs_deb_host("DNLD_CMD: hw_host_to_card failed\n");
-		spin_lock_irqsave(&priv->driver_lock, flags);
-		priv->cur_cmd_retcode = ret;
-		__lbs_cleanup_and_insert_cmd(priv, priv->cur_cmd);
-		priv->cur_cmd = NULL;
-		spin_unlock_irqrestore(&priv->driver_lock, flags);
-		goto done;
-	}
-
-	lbs_deb_cmd("DNLD_CMD: sent command 0x%04x, jiffies %lu\n", command, jiffies);
+	if (ret) {
+		lbs_pr_info("DNLD_CMD: hw_host_to_card failed: %d\n", ret);
+		/* Let the timer kick in and retry, and potentially reset
+		   the whole thing if the condition persists */
+		timeo = HZ;
+	} else
+		lbs_deb_cmd("DNLD_CMD: sent command 0x%04x, jiffies %lu\n",
+			    command, jiffies);
 
 	/* Setup the timer after transmit command */
-	if (command == CMD_802_11_SCAN || command == CMD_802_11_AUTHENTICATE
-	    || command == CMD_802_11_ASSOCIATE)
-		mod_timer(&priv->command_timer, jiffies + (10*HZ));
-	else
-		mod_timer(&priv->command_timer, jiffies + (5*HZ));
+	mod_timer(&priv->command_timer, jiffies + timeo);
 
-	ret = 0;
-
-done:
-	lbs_deb_leave_args(LBS_DEB_HOST, "ret %d", ret);
-	return ret;
+	lbs_deb_leave(LBS_DEB_HOST);
 }
 
 static int lbs_cmd_mac_control(struct lbs_private *priv,
@@ -1270,15 +1186,22 @@ static int lbs_cmd_mac_control(struct lbs_private *priv,
  *  This function inserts command node to cmdfreeq
  *  after cleans it. Requires priv->driver_lock held.
  */
-void __lbs_cleanup_and_insert_cmd(struct lbs_private *priv,
-	struct cmd_ctrl_node *ptempcmd)
+static void __lbs_cleanup_and_insert_cmd(struct lbs_private *priv,
+					 struct cmd_ctrl_node *cmdnode)
 {
+	lbs_deb_enter(LBS_DEB_HOST);
 
-	if (!ptempcmd)
-		return;
+	if (!cmdnode)
+		goto out;
 
-	cleanup_cmdnode(ptempcmd);
-	list_add_tail(&ptempcmd->list, &priv->cmdfreeq);
+	cmdnode->callback = NULL;
+	cmdnode->callback_arg = 0;
+
+	memset(cmdnode->cmdbuf, 0, LBS_CMD_BUFFER_SIZE);
+
+	list_add_tail(&cmdnode->list, &priv->cmdfreeq);
+ out:
+	lbs_deb_leave(LBS_DEB_HOST);
 }
 
 static void lbs_cleanup_and_insert_cmd(struct lbs_private *priv,
@@ -1291,19 +1214,55 @@ static void lbs_cleanup_and_insert_cmd(struct lbs_private *priv,
 	spin_unlock_irqrestore(&priv->driver_lock, flags);
 }
 
+void lbs_complete_command(struct lbs_private *priv, struct cmd_ctrl_node *cmd,
+			  int result)
+{
+	if (cmd == priv->cur_cmd)
+		priv->cur_cmd_retcode = result;
+
+	cmd->result = result;
+	cmd->cmdwaitqwoken = 1;
+	wake_up_interruptible(&cmd->cmdwait_q);
+
+	if (!cmd->callback)
+		__lbs_cleanup_and_insert_cmd(priv, cmd);
+	priv->cur_cmd = NULL;
+}
+
 int lbs_set_radio_control(struct lbs_private *priv)
 {
 	int ret = 0;
+	struct cmd_ds_802_11_radio_control cmd;
 
 	lbs_deb_enter(LBS_DEB_CMD);
 
-	ret = lbs_prepare_and_send_command(priv,
-				    CMD_802_11_RADIO_CONTROL,
-				    CMD_ACT_SET,
-				    CMD_OPTION_WAITFORRSP, 0, NULL);
+	cmd.hdr.size = cpu_to_le16(sizeof(cmd));
+	cmd.action = cpu_to_le16(CMD_ACT_SET);
 
-	lbs_deb_cmd("RADIO_SET: radio %d, preamble %d\n",
-	       priv->radioon, priv->preamble);
+	switch (priv->preamble) {
+	case CMD_TYPE_SHORT_PREAMBLE:
+		cmd.control = cpu_to_le16(SET_SHORT_PREAMBLE);
+		break;
+
+	case CMD_TYPE_LONG_PREAMBLE:
+		cmd.control = cpu_to_le16(SET_LONG_PREAMBLE);
+		break;
+
+	case CMD_TYPE_AUTO_PREAMBLE:
+	default:
+		cmd.control = cpu_to_le16(SET_AUTO_PREAMBLE);
+		break;
+	}
+
+	if (priv->radioon)
+		cmd.control |= cpu_to_le16(TURN_ON_RF);
+	else
+		cmd.control &= cpu_to_le16(~TURN_ON_RF);
+
+	lbs_deb_cmd("RADIO_SET: radio %d, preamble %d\n", priv->radioon,
+		    priv->preamble);
+
+	ret = lbs_cmd_with_response(priv, CMD_802_11_RADIO_CONTROL, &cmd);
 
 	lbs_deb_leave_args(LBS_DEB_CMD, "ret %d", ret);
 	return ret;
@@ -1369,18 +1328,11 @@ int lbs_prepare_and_send_command(struct lbs_private *priv,
 		goto done;
 	}
 
-	lbs_set_cmd_ctrl_node(priv, cmdnode, wait_option, pdata_buf);
+	lbs_set_cmd_ctrl_node(priv, cmdnode, pdata_buf);
 
 	cmdptr = (struct cmd_ds_command *)cmdnode->cmdbuf;
 
 	lbs_deb_host("PREP_CMD: command 0x%04x\n", cmd_no);
-
-	if (!cmdptr) {
-		lbs_deb_host("PREP_CMD: cmdptr is NULL\n");
-		lbs_cleanup_and_insert_cmd(priv, cmdnode);
-		ret = -1;
-		goto done;
-	}
 
 	/* Set sequence number, command and INT option */
 	priv->seqnum++;
@@ -1409,10 +1361,6 @@ int lbs_prepare_and_send_command(struct lbs_private *priv,
 
 	case CMD_802_11_DEAUTHENTICATE:
 		ret = lbs_cmd_80211_deauthenticate(priv, cmdptr);
-		break;
-
-	case CMD_802_11_SET_WEP:
-		ret = lbs_cmd_802_11_set_wep(priv, cmdptr, cmd_action, pdata_buf);
 		break;
 
 	case CMD_802_11_AD_HOC_START:
@@ -1453,10 +1401,6 @@ int lbs_prepare_and_send_command(struct lbs_private *priv,
 						  cmd_action, pdata_buf);
 		break;
 
-	case CMD_802_11_RADIO_CONTROL:
-		ret = lbs_cmd_802_11_radio_control(priv, cmdptr, cmd_action);
-		break;
-
 	case CMD_802_11_RATE_ADAPT_RATESET:
 		ret = lbs_cmd_802_11_rate_adapt_rateset(priv,
 							 cmdptr, cmd_action);
@@ -1481,11 +1425,6 @@ int lbs_prepare_and_send_command(struct lbs_private *priv,
 
 	case CMD_802_11_AD_HOC_STOP:
 		ret = lbs_cmd_80211_ad_hoc_stop(priv, cmdptr);
-		break;
-
-	case CMD_802_11_ENABLE_RSN:
-		ret = lbs_cmd_802_11_enable_rsn(priv, cmdptr, cmd_action,
-				pdata_buf);
 		break;
 
 	case CMD_802_11_KEY_MATERIAL:
@@ -1525,15 +1464,6 @@ int lbs_prepare_and_send_command(struct lbs_private *priv,
 						   cmd_no, cmd_action);
 		break;
 
-	case CMD_802_11_SLEEP_PARAMS:
-		ret = lbs_cmd_802_11_sleep_params(priv, cmdptr, cmd_action);
-		break;
-	case CMD_802_11_INACTIVITY_TIMEOUT:
-		ret = lbs_cmd_802_11_inactivity_timeout(priv, cmdptr,
-							 cmd_action, pdata_buf);
-		lbs_set_cmd_ctrl_node(priv, cmdnode, 0, pdata_buf);
-		break;
-
 	case CMD_802_11_TPC_CFG:
 		cmdptr->command = cpu_to_le16(CMD_802_11_TPC_CFG);
 		cmdptr->size =
@@ -1568,10 +1498,7 @@ int lbs_prepare_and_send_command(struct lbs_private *priv,
 			ret = 0;
 			break;
 		}
-	case CMD_802_11_SUBSCRIBE_EVENT:
-		lbs_cmd_802_11_subscribe_event(priv, cmdptr,
-			cmd_action, pdata_buf);
-		break;
+
 	case CMD_802_11_PWR_CFG:
 		cmdptr->command = cpu_to_le16(CMD_802_11_PWR_CFG);
 		cmdptr->size =
@@ -1615,7 +1542,7 @@ int lbs_prepare_and_send_command(struct lbs_private *priv,
 
 	cmdnode->cmdwaitqwoken = 0;
 
-	lbs_queue_cmd(priv, cmdnode, 1);
+	lbs_queue_cmd(priv, cmdnode);
 	wake_up_interruptible(&priv->waitq);
 
 	if (wait_option & CMD_OPTION_WAITFORRSP) {
@@ -1756,9 +1683,6 @@ static struct cmd_ctrl_node *lbs_get_cmd_ctrl_node(struct lbs_private *priv)
 
 	spin_unlock_irqrestore(&priv->driver_lock, flags);
 
-	if (tempnode)
-		cleanup_cmdnode(tempnode);
-
 	lbs_deb_leave(LBS_DEB_HOST);
 	return tempnode;
 }
@@ -1769,47 +1693,26 @@ static struct cmd_ctrl_node *lbs_get_cmd_ctrl_node(struct lbs_private *priv)
  *  @param ptempnode	A pointer to cmdCtrlNode structure
  *  @return 		n/a
  */
-static void cleanup_cmdnode(struct cmd_ctrl_node *cmdnode)
-{
-	lbs_deb_enter(LBS_DEB_HOST);
-
-	if (!cmdnode)
-		return;
-	cmdnode->cmdwaitqwoken = 1;
-	wake_up_interruptible(&cmdnode->cmdwait_q);
-	cmdnode->wait_option = 0;
-	cmdnode->pdata_buf = NULL;
-	cmdnode->callback = NULL;
-	cmdnode->callback_arg = 0;
-
-	if (cmdnode->cmdbuf != NULL)
-		memset(cmdnode->cmdbuf, 0, LBS_CMD_BUFFER_SIZE);
-
-	lbs_deb_leave(LBS_DEB_HOST);
-}
 
 /**
  *  @brief This function initializes the command node.
  *
  *  @param priv		A pointer to struct lbs_private structure
  *  @param ptempnode	A pointer to cmd_ctrl_node structure
- *  @param wait_option	wait option: wait response or not
  *  @param pdata_buf	A pointer to informaion buffer
  *  @return 		0 or -1
  */
 static void lbs_set_cmd_ctrl_node(struct lbs_private *priv,
 				  struct cmd_ctrl_node *ptempnode,
-				  u16 wait_option, void *pdata_buf)
+				  void *pdata_buf)
 {
 	lbs_deb_enter(LBS_DEB_HOST);
 
 	if (!ptempnode)
 		return;
 
-	ptempnode->wait_option = wait_option;
-	ptempnode->pdata_buf = pdata_buf;
 	ptempnode->callback = NULL;
-	ptempnode->callback_arg = 0;
+	ptempnode->callback_arg = (unsigned long)pdata_buf;
 
 	lbs_deb_leave(LBS_DEB_HOST);
 }
@@ -1897,7 +1800,7 @@ int lbs_execute_next_command(struct lbs_private *priv)
 				 * PS command. Ignore it if it is not Exit_PS.
 				 * otherwise send it down immediately.
 				 */
-				struct cmd_ds_802_11_ps_mode *psm = (void *)cmd;
+				struct cmd_ds_802_11_ps_mode *psm = (void *)&cmd[1];
 
 				lbs_deb_host(
 				       "EXEC_NEXT_CMD: PS cmd, action 0x%02x\n",
@@ -1907,7 +1810,9 @@ int lbs_execute_next_command(struct lbs_private *priv)
 					lbs_deb_host(
 					       "EXEC_NEXT_CMD: ignore ENTER_PS cmd\n");
 					list_del(&cmdnode->list);
-					lbs_cleanup_and_insert_cmd(priv, cmdnode);
+					spin_lock_irqsave(&priv->driver_lock, flags);
+					lbs_complete_command(priv, cmdnode, 0);
+					spin_unlock_irqrestore(&priv->driver_lock, flags);
 
 					ret = 0;
 					goto done;
@@ -1918,7 +1823,9 @@ int lbs_execute_next_command(struct lbs_private *priv)
 					lbs_deb_host(
 					       "EXEC_NEXT_CMD: ignore EXIT_PS cmd in sleep\n");
 					list_del(&cmdnode->list);
-					lbs_cleanup_and_insert_cmd(priv, cmdnode);
+					spin_lock_irqsave(&priv->driver_lock, flags);
+					lbs_complete_command(priv, cmdnode, 0);
+					spin_unlock_irqrestore(&priv->driver_lock, flags);
 					priv->needtowakeup = 1;
 
 					ret = 0;
@@ -1932,7 +1839,7 @@ int lbs_execute_next_command(struct lbs_private *priv)
 		list_del(&cmdnode->list);
 		lbs_deb_host("EXEC_NEXT_CMD: sending command 0x%04x\n",
 			    le16_to_cpu(cmd->command));
-		DownloadcommandToStation(priv, cmdnode);
+		lbs_submit_command(priv, cmdnode);
 	} else {
 		/*
 		 * check if in power save mode, if yes, put the device back
@@ -2004,7 +1911,6 @@ static int sendconfirmsleep(struct lbs_private *priv, u8 *cmdptr, u16 size)
 	lbs_deb_hex(LBS_DEB_HOST, "sleep confirm command", cmdptr, size);
 
 	ret = priv->hw_host_to_card(priv, MVMS_CMD, cmdptr, size);
-	priv->dnld_sent = DNLD_RES_RECEIVED;
 
 	spin_lock_irqsave(&priv->driver_lock, flags);
 	if (priv->intcounter || priv->currenttxskb)
@@ -2086,17 +1992,17 @@ void lbs_ps_confirm_sleep(struct lbs_private *priv, u16 psmode)
 
 	if (priv->dnld_sent) {
 		allowed = 0;
-		lbs_deb_host("dnld_sent was set");
+		lbs_deb_host("dnld_sent was set\n");
 	}
 
 	spin_lock_irqsave(&priv->driver_lock, flags);
 	if (priv->cur_cmd) {
 		allowed = 0;
-		lbs_deb_host("cur_cmd was set");
+		lbs_deb_host("cur_cmd was set\n");
 	}
 	if (priv->intcounter > 0) {
 		allowed = 0;
-		lbs_deb_host("intcounter %d", priv->intcounter);
+		lbs_deb_host("intcounter %d\n", priv->intcounter);
 	}
 	spin_unlock_irqrestore(&priv->driver_lock, flags);
 
@@ -2139,43 +2045,20 @@ int lbs_cmd_copyback(struct lbs_private *priv, unsigned long extra,
 	lbs_deb_leave(LBS_DEB_CMD);
 	return 0;
 }
+EXPORT_SYMBOL_GPL(lbs_cmd_copyback);
 
-/**
- *  @brief Simple way to call firmware functions
- *
- *  @param priv    	A pointer to struct lbs_private structure
- *  @param psmode  	one of the many CMD_802_11_xxxx
- *  @param cmd          pointer to the parameters structure for above command
- *                      (this should not include the command, size, sequence
- *                      and result fields from struct cmd_ds_gen)
- *  @param cmd_size     size structure pointed to by cmd
- *  @param rsp          pointer to an area where the result should be placed
- *  @param rsp_size     pointer to the size of the rsp area. If the firmware
- *                      returns fewer bytes, then this *rsp_size will be
- *                      changed to the actual size.
- *  @return 	   	-1 in case of a higher level error, otherwise
- *                      the result code from the firmware
- */
-int __lbs_cmd(struct lbs_private *priv, uint16_t command,
-	      struct cmd_header *in_cmd, int in_cmd_size,
-	      int (*callback)(struct lbs_private *, unsigned long, struct cmd_header *),
-	      unsigned long callback_arg)
+struct cmd_ctrl_node *__lbs_cmd_async(struct lbs_private *priv, uint16_t command,
+				      struct cmd_header *in_cmd, int in_cmd_size,
+				      int (*callback)(struct lbs_private *, unsigned long, struct cmd_header *),
+				      unsigned long callback_arg)
 {
 	struct cmd_ctrl_node *cmdnode;
-	unsigned long flags;
-	int ret = 0;
 
 	lbs_deb_enter(LBS_DEB_HOST);
 
-	if (!priv) {
-		lbs_deb_host("PREP_CMD: priv is NULL\n");
-		ret = -1;
-		goto done;
-	}
-
 	if (priv->surpriseremoved) {
 		lbs_deb_host("PREP_CMD: card removed\n");
-		ret = -1;
+		cmdnode = ERR_PTR(-ENOENT);
 		goto done;
 	}
 
@@ -2185,11 +2068,10 @@ int __lbs_cmd(struct lbs_private *priv, uint16_t command,
 
 		/* Wake up main thread to execute next command */
 		wake_up_interruptible(&priv->waitq);
-		ret = -1;
+		cmdnode = ERR_PTR(-ENOBUFS);
 		goto done;
 	}
 
-	cmdnode->wait_option = CMD_OPTION_WAITFORRSP;
 	cmdnode->callback = callback;
 	cmdnode->callback_arg = callback_arg;
 
@@ -2209,19 +2091,42 @@ int __lbs_cmd(struct lbs_private *priv, uint16_t command,
 	 * because the caller of lbs_cmd() sets up all of *cmd for us. */
 
 	cmdnode->cmdwaitqwoken = 0;
-	lbs_queue_cmd(priv, cmdnode, 1);
+	lbs_queue_cmd(priv, cmdnode);
 	wake_up_interruptible(&priv->waitq);
+
+ done:
+	lbs_deb_leave_args(LBS_DEB_HOST, "ret %p", cmdnode);
+	return cmdnode;
+}
+
+int __lbs_cmd(struct lbs_private *priv, uint16_t command,
+	      struct cmd_header *in_cmd, int in_cmd_size,
+	      int (*callback)(struct lbs_private *, unsigned long, struct cmd_header *),
+	      unsigned long callback_arg)
+{
+	struct cmd_ctrl_node *cmdnode;
+	unsigned long flags;
+	int ret = 0;
+
+	lbs_deb_enter(LBS_DEB_HOST);
+
+	cmdnode = __lbs_cmd_async(priv, command, in_cmd, in_cmd_size,
+				  callback, callback_arg);
+	if (IS_ERR(cmdnode)) {
+		ret = PTR_ERR(cmdnode);
+		goto done;
+	}
 
 	might_sleep();
 	wait_event_interruptible(cmdnode->cmdwait_q, cmdnode->cmdwaitqwoken);
 
 	spin_lock_irqsave(&priv->driver_lock, flags);
-	if (priv->cur_cmd_retcode) {
-		lbs_deb_host("PREP_CMD: command failed with return code %d\n",
-		       priv->cur_cmd_retcode);
-		priv->cur_cmd_retcode = 0;
-		ret = -1;
-	}
+	ret = cmdnode->result;
+	if (ret)
+		lbs_pr_info("PREP_CMD: command 0x%04x failed: %d\n",
+			    command, ret);
+
+	__lbs_cleanup_and_insert_cmd(priv, cmdnode);
 	spin_unlock_irqrestore(&priv->driver_lock, flags);
 
 done:

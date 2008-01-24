@@ -163,17 +163,18 @@ done:
 }
 
 
-static int update_channel(struct lbs_private *priv)
+int lbs_update_channel(struct lbs_private *priv)
 {
 	int ret;
 
-	/* the channel in f/w could be out of sync, get the current channel */
+	/* the channel in f/w could be out of sync; get the current channel */
 	lbs_deb_enter(LBS_DEB_ASSOC);
 
 	ret = lbs_get_channel(priv);
-	if (ret > 0)
-		priv->curbssparams.channel = (u8) ret;
-
+	if (ret > 0) {
+		priv->curbssparams.channel = ret;
+		ret = 0;
+	}
 	lbs_deb_leave_args(LBS_DEB_ASSOC, "ret %d", ret);
 	return ret;
 }
@@ -184,7 +185,7 @@ void lbs_sync_channel(struct work_struct *work)
 		sync_channel);
 
 	lbs_deb_enter(LBS_DEB_ASSOC);
-	if (update_channel(priv) != 0)
+	if (lbs_update_channel(priv))
 		lbs_pr_info("Channel synchronization failed.");
 	lbs_deb_leave(LBS_DEB_ASSOC);
 }
@@ -196,33 +197,37 @@ static int assoc_helper_channel(struct lbs_private *priv,
 
 	lbs_deb_enter(LBS_DEB_ASSOC);
 
-	ret = update_channel(priv);
-	if (ret < 0) {
-		lbs_deb_assoc("ASSOC: channel: error getting channel.");
+	ret = lbs_update_channel(priv);
+	if (ret) {
+		lbs_deb_assoc("ASSOC: channel: error getting channel.\n");
+		goto done;
 	}
 
 	if (assoc_req->channel == priv->curbssparams.channel)
 		goto done;
 
 	if (priv->mesh_dev) {
-		/* Disconnect mesh while associating -- otherwise it
-		   won't let us change channels */
-		lbs_mesh_config(priv, 0);
+		/* Change mesh channel first; 21.p21 firmware won't let
+		   you change channel otherwise (even though it'll return
+		   an error to this */
+		lbs_mesh_config(priv, 0, assoc_req->channel);
 	}
 
 	lbs_deb_assoc("ASSOC: channel: %d -> %d\n",
-	       priv->curbssparams.channel, assoc_req->channel);
+		      priv->curbssparams.channel, assoc_req->channel);
 
 	ret = lbs_set_channel(priv, assoc_req->channel);
 	if (ret < 0)
-		lbs_deb_assoc("ASSOC: channel: error setting channel.");
+		lbs_deb_assoc("ASSOC: channel: error setting channel.\n");
 
 	/* FIXME: shouldn't need to grab the channel _again_ after setting
 	 * it since the firmware is supposed to return the new channel, but
 	 * whatever... */
-	ret = update_channel(priv);
-	if (ret < 0)
-		lbs_deb_assoc("ASSOC: channel: error getting channel.");
+	ret = lbs_update_channel(priv);
+	if (ret) {
+		lbs_deb_assoc("ASSOC: channel: error getting channel.\n");
+		goto done;
+	}
 
 	if (assoc_req->channel != priv->curbssparams.channel) {
 		lbs_deb_assoc("ASSOC: channel: failed to update channel to %d\n",
@@ -240,11 +245,11 @@ static int assoc_helper_channel(struct lbs_private *priv,
 	}
 
 	/* Must restart/rejoin adhoc networks after channel change */
-	set_bit(ASSOC_FLAG_SSID, &assoc_req->flags);
+ 	set_bit(ASSOC_FLAG_SSID, &assoc_req->flags);
 
  restore_mesh:
 	if (priv->mesh_dev)
-		lbs_mesh_config(priv, 1);
+		lbs_mesh_config(priv, 1, priv->curbssparams.channel);
 
  done:
 	lbs_deb_leave_args(LBS_DEB_ASSOC, "ret %d", ret);
@@ -253,7 +258,7 @@ static int assoc_helper_channel(struct lbs_private *priv,
 
 
 static int assoc_helper_wep_keys(struct lbs_private *priv,
-                                 struct assoc_request * assoc_req)
+				 struct assoc_request *assoc_req)
 {
 	int i;
 	int ret = 0;
@@ -261,22 +266,11 @@ static int assoc_helper_wep_keys(struct lbs_private *priv,
 	lbs_deb_enter(LBS_DEB_ASSOC);
 
 	/* Set or remove WEP keys */
-	if (   assoc_req->wep_keys[0].len
-	    || assoc_req->wep_keys[1].len
-	    || assoc_req->wep_keys[2].len
-	    || assoc_req->wep_keys[3].len) {
-		ret = lbs_prepare_and_send_command(priv,
-					    CMD_802_11_SET_WEP,
-					    CMD_ACT_ADD,
-					    CMD_OPTION_WAITFORRSP,
-					    0, assoc_req);
-	} else {
-		ret = lbs_prepare_and_send_command(priv,
-					    CMD_802_11_SET_WEP,
-					    CMD_ACT_REMOVE,
-					    CMD_OPTION_WAITFORRSP,
-					    0, NULL);
-	}
+	if (assoc_req->wep_keys[0].len || assoc_req->wep_keys[1].len ||
+	    assoc_req->wep_keys[2].len || assoc_req->wep_keys[3].len)
+		ret = lbs_cmd_802_11_set_wep(priv, CMD_ACT_ADD, assoc_req);
+	else
+		ret = lbs_cmd_802_11_set_wep(priv, CMD_ACT_REMOVE, assoc_req);
 
 	if (ret)
 		goto out;
@@ -286,6 +280,7 @@ static int assoc_helper_wep_keys(struct lbs_private *priv,
 		priv->currentpacketfilter |= CMD_ACT_MAC_WEP_ENABLE;
 	else
 		priv->currentpacketfilter &= ~CMD_ACT_MAC_WEP_ENABLE;
+
 	ret = lbs_set_mac_packet_filter(priv);
 	if (ret)
 		goto out;
@@ -295,7 +290,7 @@ static int assoc_helper_wep_keys(struct lbs_private *priv,
 	/* Copy WEP keys into priv wep key fields */
 	for (i = 0; i < 4; i++) {
 		memcpy(&priv->wep_keys[i], &assoc_req->wep_keys[i],
-			sizeof(struct enc_key));
+		       sizeof(struct enc_key));
 	}
 	priv->wep_tx_keyidx = assoc_req->wep_tx_keyidx;
 
@@ -310,8 +305,8 @@ static int assoc_helper_secinfo(struct lbs_private *priv,
                                 struct assoc_request * assoc_req)
 {
 	int ret = 0;
-	u32 do_wpa;
-	u32 rsn = 0;
+	uint16_t do_wpa;
+	uint16_t rsn = 0;
 
 	lbs_deb_enter(LBS_DEB_ASSOC);
 
@@ -328,28 +323,19 @@ static int assoc_helper_secinfo(struct lbs_private *priv,
 	 */
 
 	/* Get RSN enabled/disabled */
-	ret = lbs_prepare_and_send_command(priv,
-				    CMD_802_11_ENABLE_RSN,
-				    CMD_ACT_GET,
-				    CMD_OPTION_WAITFORRSP,
-				    0, &rsn);
+	ret = lbs_cmd_802_11_enable_rsn(priv, CMD_ACT_GET, &rsn);
 	if (ret) {
-		lbs_deb_assoc("Failed to get RSN status: %d", ret);
+		lbs_deb_assoc("Failed to get RSN status: %d\n", ret);
 		goto out;
 	}
 
 	/* Don't re-enable RSN if it's already enabled */
-	do_wpa = (assoc_req->secinfo.WPAenabled || assoc_req->secinfo.WPA2enabled);
+	do_wpa = assoc_req->secinfo.WPAenabled || assoc_req->secinfo.WPA2enabled;
 	if (do_wpa == rsn)
 		goto out;
 
 	/* Set RSN enabled/disabled */
-	rsn = do_wpa;
-	ret = lbs_prepare_and_send_command(priv,
-				    CMD_802_11_ENABLE_RSN,
-				    CMD_ACT_SET,
-				    CMD_OPTION_WAITFORRSP,
-				    0, &rsn);
+	ret = lbs_cmd_802_11_enable_rsn(priv, CMD_ACT_SET, &do_wpa);
 
 out:
 	lbs_deb_leave_args(LBS_DEB_ASSOC, "ret %d", ret);

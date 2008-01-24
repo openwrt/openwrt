@@ -28,10 +28,6 @@ int lbs_prepare_and_send_command(struct lbs_private *priv,
 	u16 cmd_action,
 	u16 wait_option, u32 cmd_oid, void *pdata_buf);
 
-void lbs_queue_cmd(struct lbs_private *priv,
-	struct cmd_ctrl_node *cmdnode,
-	u8 addtail);
-
 int lbs_allocate_cmd_buffer(struct lbs_private *priv);
 int lbs_execute_next_command(struct lbs_private *priv);
 int lbs_process_event(struct lbs_private *priv);
@@ -45,9 +41,8 @@ void lbs_get_fwversion(struct lbs_private *priv,
 
 /** The proc fs interface */
 int lbs_process_rx_command(struct lbs_private *priv);
-void __lbs_cleanup_and_insert_cmd(struct lbs_private *priv,
-	struct cmd_ctrl_node *ptempcmd);
-
+void lbs_complete_command(struct lbs_private *priv, struct cmd_ctrl_node *cmd,
+			  int result);
 int lbs_hard_start_xmit(struct sk_buff *skb, struct net_device *dev);
 int lbs_set_regiontable(struct lbs_private *priv, u8 region, u8 band);
 
@@ -77,4 +72,5 @@ int lbs_stop_card(struct lbs_private *priv);
 int lbs_reset_device(struct lbs_private *priv);
 void lbs_host_to_card_done(struct lbs_private *priv);
 
+int lbs_update_channel(struct lbs_private *priv);
 #endif

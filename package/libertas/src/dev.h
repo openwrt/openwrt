@@ -77,12 +77,12 @@ struct current_bss_params {
 
 /** sleep_params */
 struct sleep_params {
-	u16 sp_error;
-	u16 sp_offset;
-	u16 sp_stabletime;
-	u8 sp_calcontrol;
-	u8 sp_extsleepclk;
-	u16 sp_reserved;
+	uint16_t sp_error;
+	uint16_t sp_offset;
+	uint16_t sp_stabletime;
+	uint8_t  sp_calcontrol;
+	uint8_t  sp_extsleepclk;
+	uint16_t sp_reserved;
 };
 
 /* Mesh statistics */
@@ -153,6 +153,11 @@ struct lbs_private {
 	int (*hw_get_int_status) (struct lbs_private *priv, u8 *);
 	int (*hw_read_event_cause) (struct lbs_private *);
 
+	/* Wake On LAN */
+	uint32_t wol_criteria;
+	uint8_t wol_gpio;
+	uint8_t wol_gap;
+
 	/* was struct lbs_adapter from here... */
 
 	/** Wlan adapter data structure*/
@@ -196,11 +201,15 @@ struct lbs_private {
 
 	/** Timers */
 	struct timer_list command_timer;
+	int nr_retries;
+	int cmd_timed_out;
 
 	u8 hisregcpy;
 
 	/** current ssid/bssid related parameters*/
 	struct current_bss_params curbssparams;
+
+	uint16_t mesh_tlv;
 	u8 mesh_ssid[IW_ESSID_MAX_SIZE + 1];
 	u8 mesh_ssid_len;
 
@@ -251,9 +260,11 @@ struct lbs_private {
 	u16 psmode;		/* Wlan802_11PowermodeCAM=disable
 				   Wlan802_11PowermodeMAX_PSP=enable */
 	u32 psstate;
+	char ps_supported;
 	u8 needtowakeup;
 
 	struct PS_CMD_ConfirmSleep lbs_ps_confirm_sleep;
+	struct cmd_header lbs_ps_confirm_wake;
 
 	struct assoc_request * pending_assoc_req;
 	struct assoc_request * in_progress_assoc_req;
@@ -288,9 +299,6 @@ struct lbs_private {
 	/** data rate stuff */
 	u8 cur_rate;
 	u8 auto_rate;
-
-	/** sleep_params */
-	struct sleep_params sp;
 
 	/** RF calibration data */
 

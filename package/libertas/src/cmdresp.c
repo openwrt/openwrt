@@ -43,13 +43,14 @@ void lbs_mac_event_disconnected(struct lbs_private *priv)
 	msleep_interruptible(1000);
 	wireless_send_event(priv->dev, SIOCGIWAP, &wrqu, NULL);
 
-	/* Free Tx and Rx packets */
-	kfree_skb(priv->currenttxskb);
-	priv->currenttxskb = NULL;
-
 	/* report disconnect to upper layer */
 	netif_stop_queue(priv->dev);
 	netif_carrier_off(priv->dev);
+
+	/* Free Tx and Rx packets */
+	kfree_skb(priv->currenttxskb);
+	priv->currenttxskb = NULL;
+	priv->tx_pending_len = 0;
 
 	/* reset SNR/NF/RSSI values */
 	memset(priv->SNR, 0x00, sizeof(priv->SNR));
@@ -143,29 +144,6 @@ static int lbs_ret_reg_access(struct lbs_private *priv,
 
 	lbs_deb_leave_args(LBS_DEB_CMD, "ret %d", ret);
 	return ret;
-}
-
-static int lbs_ret_802_11_sleep_params(struct lbs_private *priv,
-					struct cmd_ds_command *resp)
-{
-	struct cmd_ds_802_11_sleep_params *sp = &resp->params.sleep_params;
-
-	lbs_deb_enter(LBS_DEB_CMD);
-
-	lbs_deb_cmd("error 0x%x, offset 0x%x, stabletime 0x%x, calcontrol 0x%x "
-		    "extsleepclk 0x%x\n", le16_to_cpu(sp->error),
-		    le16_to_cpu(sp->offset), le16_to_cpu(sp->stabletime),
-		    sp->calcontrol, sp->externalsleepclk);
-
-	priv->sp.sp_error = le16_to_cpu(sp->error);
-	priv->sp.sp_offset = le16_to_cpu(sp->offset);
-	priv->sp.sp_stabletime = le16_to_cpu(sp->stabletime);
-	priv->sp.sp_calcontrol = sp->calcontrol;
-	priv->sp.sp_extsleepclk = sp->externalsleepclk;
-	priv->sp.sp_reserved = le16_to_cpu(sp->reserved);
-
-	lbs_deb_enter(LBS_DEB_CMD);
-	return 0;
 }
 
 static int lbs_ret_802_11_stat(struct lbs_private *priv,
@@ -394,23 +372,6 @@ static int lbs_ret_get_log(struct lbs_private *priv,
 	return 0;
 }
 
-static int lbs_ret_802_11_enable_rsn(struct lbs_private *priv,
-                                          struct cmd_ds_command *resp)
-{
-	struct cmd_ds_802_11_enable_rsn *enable_rsn = &resp->params.enbrsn;
-	u32 * pdata_buf = priv->cur_cmd->pdata_buf;
-
-	lbs_deb_enter(LBS_DEB_CMD);
-
-	if (enable_rsn->action == cpu_to_le16(CMD_ACT_GET)) {
-		if (pdata_buf)
-			*pdata_buf = (u32) le16_to_cpu(enable_rsn->enable);
-	}
-
-	lbs_deb_leave(LBS_DEB_CMD);
-	return 0;
-}
-
 static int lbs_ret_802_11_bcn_ctrl(struct lbs_private * priv,
 					struct cmd_ds_command *resp)
 {
@@ -425,25 +386,6 @@ static int lbs_ret_802_11_bcn_ctrl(struct lbs_private * priv,
 	}
 
 	lbs_deb_enter(LBS_DEB_CMD);
-	return 0;
-}
-
-static int lbs_ret_802_11_subscribe_event(struct lbs_private *priv,
-	struct cmd_ds_command *resp)
-{
-	struct cmd_ds_802_11_subscribe_event *cmd_event =
-		&resp->params.subscribe_event;
-	struct cmd_ds_802_11_subscribe_event *dst_event =
-		priv->cur_cmd->pdata_buf;
-
-	lbs_deb_enter(LBS_DEB_CMD);
-
-	if (dst_event->action == cpu_to_le16(CMD_ACT_GET)) {
-		dst_event->events = cmd_event->events;
-		memcpy(dst_event->tlv, cmd_event->tlv, sizeof(dst_event->tlv));
-	}
-
-	lbs_deb_leave(LBS_DEB_CMD);
 	return 0;
 }
 
@@ -504,7 +446,7 @@ static inline int handle_cmd_response(struct lbs_private *priv,
 	case CMD_RET(CMD_802_11_SET_AFC):
 	case CMD_RET(CMD_802_11_GET_AFC):
 		spin_lock_irqsave(&priv->driver_lock, flags);
-		memmove(priv->cur_cmd->pdata_buf, &resp->params.afc,
+		memmove((void *)priv->cur_cmd->callback_arg, &resp->params.afc,
 			sizeof(struct cmd_ds_802_11_afc));
 		spin_unlock_irqrestore(&priv->driver_lock, flags);
 
@@ -512,15 +454,9 @@ static inline int handle_cmd_response(struct lbs_private *priv,
 
 	case CMD_RET(CMD_MAC_MULTICAST_ADR):
 	case CMD_RET(CMD_MAC_CONTROL):
-	case CMD_RET(CMD_802_11_SET_WEP):
 	case CMD_RET(CMD_802_11_RESET):
 	case CMD_RET(CMD_802_11_AUTHENTICATE):
-	case CMD_RET(CMD_802_11_RADIO_CONTROL):
 	case CMD_RET(CMD_802_11_BEACON_STOP):
-		break;
-
-	case CMD_RET(CMD_802_11_ENABLE_RSN):
-		ret = lbs_ret_802_11_enable_rsn(priv, resp);
 		break;
 
 	case CMD_RET(CMD_802_11_RATE_ADAPT_RATESET):
@@ -551,35 +487,22 @@ static inline int handle_cmd_response(struct lbs_private *priv,
 		ret = lbs_ret_802_11d_domain_info(priv, resp);
 		break;
 
-	case CMD_RET(CMD_802_11_SLEEP_PARAMS):
-		ret = lbs_ret_802_11_sleep_params(priv, resp);
-		break;
-	case CMD_RET(CMD_802_11_INACTIVITY_TIMEOUT):
-		spin_lock_irqsave(&priv->driver_lock, flags);
-		*((u16 *) priv->cur_cmd->pdata_buf) =
-		    le16_to_cpu(resp->params.inactivity_timeout.timeout);
-		spin_unlock_irqrestore(&priv->driver_lock, flags);
-		break;
-
 	case CMD_RET(CMD_802_11_TPC_CFG):
 		spin_lock_irqsave(&priv->driver_lock, flags);
-		memmove(priv->cur_cmd->pdata_buf, &resp->params.tpccfg,
+		memmove((void *)priv->cur_cmd->callback_arg, &resp->params.tpccfg,
 			sizeof(struct cmd_ds_802_11_tpc_cfg));
 		spin_unlock_irqrestore(&priv->driver_lock, flags);
 		break;
 	case CMD_RET(CMD_802_11_LED_GPIO_CTRL):
 		spin_lock_irqsave(&priv->driver_lock, flags);
-		memmove(priv->cur_cmd->pdata_buf, &resp->params.ledgpio,
+		memmove((void *)priv->cur_cmd->callback_arg, &resp->params.ledgpio,
 			sizeof(struct cmd_ds_802_11_led_ctrl));
 		spin_unlock_irqrestore(&priv->driver_lock, flags);
-		break;
-	case CMD_RET(CMD_802_11_SUBSCRIBE_EVENT):
-		ret = lbs_ret_802_11_subscribe_event(priv, resp);
 		break;
 
 	case CMD_RET(CMD_802_11_PWR_CFG):
 		spin_lock_irqsave(&priv->driver_lock, flags);
-		memmove(priv->cur_cmd->pdata_buf, &resp->params.pwrcfg,
+		memmove((void *)priv->cur_cmd->callback_arg, &resp->params.pwrcfg,
 			sizeof(struct cmd_ds_802_11_pwr_cfg));
 		spin_unlock_irqrestore(&priv->driver_lock, flags);
 
@@ -587,21 +510,21 @@ static inline int handle_cmd_response(struct lbs_private *priv,
 
 	case CMD_RET(CMD_GET_TSF):
 		spin_lock_irqsave(&priv->driver_lock, flags);
-		memcpy(priv->cur_cmd->pdata_buf,
+		memcpy((void *)priv->cur_cmd->callback_arg,
 		       &resp->params.gettsf.tsfvalue, sizeof(u64));
 		spin_unlock_irqrestore(&priv->driver_lock, flags);
 		break;
 	case CMD_RET(CMD_BT_ACCESS):
 		spin_lock_irqsave(&priv->driver_lock, flags);
-		if (priv->cur_cmd->pdata_buf)
-			memcpy(priv->cur_cmd->pdata_buf,
+		if (priv->cur_cmd->callback_arg)
+			memcpy((void *)priv->cur_cmd->callback_arg,
 			       &resp->params.bt.addr1, 2 * ETH_ALEN);
 		spin_unlock_irqrestore(&priv->driver_lock, flags);
 		break;
 	case CMD_RET(CMD_FWT_ACCESS):
 		spin_lock_irqsave(&priv->driver_lock, flags);
-		if (priv->cur_cmd->pdata_buf)
-			memcpy(priv->cur_cmd->pdata_buf, &resp->params.fwt,
+		if (priv->cur_cmd->callback_arg)
+			memcpy((void *)priv->cur_cmd->callback_arg, &resp->params.fwt,
 			       sizeof(resp->params.fwt));
 		spin_unlock_irqrestore(&priv->driver_lock, flags);
 		break;
@@ -611,7 +534,7 @@ static inline int handle_cmd_response(struct lbs_private *priv,
 
 	default:
 		lbs_deb_host("CMD_RESP: unknown cmd response 0x%04x\n",
-			    resp->command);
+			     le16_to_cpu(resp->command));
 		break;
 	}
 	lbs_deb_leave(LBS_DEB_HOST);
@@ -620,16 +543,13 @@ static inline int handle_cmd_response(struct lbs_private *priv,
 
 int lbs_process_rx_command(struct lbs_private *priv)
 {
-	u16 respcmd;
+	uint16_t respcmd, curcmd;
 	struct cmd_header *resp;
 	int ret = 0;
-	ulong flags;
-	u16 result;
+	unsigned long flags;
+	uint16_t result;
 
 	lbs_deb_enter(LBS_DEB_HOST);
-
-	/* Now we got response from FW, cancel the command timer */
-	del_timer(&priv->command_timer);
 
 	mutex_lock(&priv->lock);
 	spin_lock_irqsave(&priv->driver_lock, flags);
@@ -640,30 +560,57 @@ int lbs_process_rx_command(struct lbs_private *priv)
 		spin_unlock_irqrestore(&priv->driver_lock, flags);
 		goto done;
 	}
-	resp = priv->cur_cmd->cmdbuf;
+
+	resp = (void *)priv->upld_buf;
+
+	curcmd = le16_to_cpu(resp->command);
 
 	respcmd = le16_to_cpu(resp->command);
 	result = le16_to_cpu(resp->result);
 
-	lbs_deb_host("CMD_RESP: response 0x%04x, size %d, jiffies %lu\n",
-		respcmd, priv->upld_len, jiffies);
+	lbs_deb_host("CMD_RESP: response 0x%04x, seq %d, size %d, jiffies %lu\n",
+		     respcmd, le16_to_cpu(resp->seqnum), priv->upld_len, jiffies);
 	lbs_deb_hex(LBS_DEB_HOST, "CMD_RESP", (void *) resp, priv->upld_len);
 
-	if (!(respcmd & 0x8000)) {
-		lbs_deb_host("invalid response!\n");
-		priv->cur_cmd_retcode = -1;
-		__lbs_cleanup_and_insert_cmd(priv, priv->cur_cmd);
-		priv->cur_cmd = NULL;
+	if (resp->seqnum != resp->seqnum) {
+		lbs_pr_info("Received CMD_RESP with invalid sequence %d (expected %d)\n",
+			    le16_to_cpu(resp->seqnum), le16_to_cpu(resp->seqnum));
 		spin_unlock_irqrestore(&priv->driver_lock, flags);
 		ret = -1;
 		goto done;
+	}
+	if (respcmd != CMD_RET(curcmd) &&
+	    respcmd != CMD_802_11_ASSOCIATE && curcmd != CMD_RET_802_11_ASSOCIATE) {
+		lbs_pr_info("Invalid CMD_RESP %x to command %x!\n", respcmd, curcmd);
+		spin_unlock_irqrestore(&priv->driver_lock, flags);
+		ret = -1;
+		goto done;
+	}
+
+	if (resp->result == cpu_to_le16(0x0004)) {
+		/* 0x0004 means -EAGAIN. Drop the response, let it time out
+		   and be resubmitted */
+		lbs_pr_info("Firmware returns DEFER to command %x. Will let it time out...\n",
+			    le16_to_cpu(resp->command));
+		spin_unlock_irqrestore(&priv->driver_lock, flags);
+		ret = -1;
+		goto done;
+	}
+
+	/* Now we got response from FW, cancel the command timer */
+	del_timer(&priv->command_timer);
+	priv->cmd_timed_out = 0;
+	if (priv->nr_retries) {
+		lbs_pr_info("Received result %x to command %x after %d retries\n",
+			    result, curcmd, priv->nr_retries);
+		priv->nr_retries = 0;
 	}
 
 	/* Store the response code to cur_cmd_retcode. */
 	priv->cur_cmd_retcode = result;
 
 	if (respcmd == CMD_RET(CMD_802_11_PS_MODE)) {
-		struct cmd_ds_802_11_ps_mode *psmode = (void *) resp;
+		struct cmd_ds_802_11_ps_mode *psmode = (void *) &resp[1];
 		u16 action = le16_to_cpu(psmode->action);
 
 		lbs_deb_host(
@@ -708,8 +655,7 @@ int lbs_process_rx_command(struct lbs_private *priv)
 			lbs_deb_host("CMD_RESP: PS action 0x%X\n", action);
 		}
 
-		__lbs_cleanup_and_insert_cmd(priv, priv->cur_cmd);
-		priv->cur_cmd = NULL;
+		lbs_complete_command(priv, priv->cur_cmd, result);
 		spin_unlock_irqrestore(&priv->driver_lock, flags);
 
 		ret = 0;
@@ -730,9 +676,7 @@ int lbs_process_rx_command(struct lbs_private *priv)
 			break;
 
 		}
-
-		__lbs_cleanup_and_insert_cmd(priv, priv->cur_cmd);
-		priv->cur_cmd = NULL;
+		lbs_complete_command(priv, priv->cur_cmd, result);
 		spin_unlock_irqrestore(&priv->driver_lock, flags);
 
 		ret = -1;
@@ -751,13 +695,36 @@ int lbs_process_rx_command(struct lbs_private *priv)
 
 	if (priv->cur_cmd) {
 		/* Clean up and Put current command back to cmdfreeq */
-		__lbs_cleanup_and_insert_cmd(priv, priv->cur_cmd);
-		priv->cur_cmd = NULL;
+		lbs_complete_command(priv, priv->cur_cmd, result);
 	}
 	spin_unlock_irqrestore(&priv->driver_lock, flags);
 
 done:
 	mutex_unlock(&priv->lock);
+	lbs_deb_leave_args(LBS_DEB_HOST, "ret %d", ret);
+	return ret;
+}
+
+static int lbs_send_confirmwake(struct lbs_private *priv)
+{
+	struct cmd_header *cmd = &priv->lbs_ps_confirm_wake;
+	int ret = 0;
+
+	lbs_deb_enter(LBS_DEB_HOST);
+
+	cmd->command = cpu_to_le16(CMD_802_11_WAKEUP_CONFIRM);
+	cmd->size = cpu_to_le16(sizeof(*cmd));
+	cmd->seqnum = cpu_to_le16(++priv->seqnum);
+	cmd->result = 0;
+
+	lbs_deb_host("SEND_WAKEC_CMD: before download\n");
+
+	lbs_deb_hex(LBS_DEB_HOST, "wake confirm command", (void *)cmd, sizeof(*cmd));
+
+	ret = priv->hw_host_to_card(priv, MVMS_CMD, (void *)cmd, sizeof(*cmd));
+	if (ret)
+		lbs_pr_alert("SEND_WAKEC_CMD: Host to Card failed for Confirm Wake\n");
+
 	lbs_deb_leave_args(LBS_DEB_HOST, "ret %d", ret);
 	return ret;
 }
@@ -810,9 +777,13 @@ int lbs_process_event(struct lbs_private *priv)
 
 		break;
 
+	case MACREG_INT_CODE_HOST_AWAKE:
+		lbs_deb_cmd("EVENT: HOST_AWAKE\n");
+		lbs_send_confirmwake(priv);
+		break;
+
 	case MACREG_INT_CODE_PS_AWAKE:
 		lbs_deb_cmd("EVENT: awake\n");
-
 		/* handle unexpected PS AWAKE event */
 		if (priv->psstate == PS_STATE_FULL_POWER) {
 			lbs_deb_cmd(
@@ -875,9 +846,10 @@ int lbs_process_event(struct lbs_private *priv)
 		}
 		lbs_pr_info("EVENT: MESH_AUTO_STARTED\n");
 		priv->mesh_connect_status = LBS_CONNECTED;
-		if (priv->mesh_open == 1) {
-			netif_wake_queue(priv->mesh_dev);
+		if (priv->mesh_open) {
 			netif_carrier_on(priv->mesh_dev);
+			if (!priv->tx_pending_len)
+				netif_wake_queue(priv->mesh_dev);
 		}
 		priv->mode = IW_MODE_ADHOC;
 		schedule_work(&priv->sync_channel);
