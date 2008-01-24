@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007 - 2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -33,6 +33,8 @@ endef
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
+	$(Build/Patch)
+	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
 endef
 
 define Build/Compile
@@ -42,7 +44,7 @@ define Build/Compile
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		CONFIG_LIBERTAS=m \
 		CONFIG_LIBERTAS_USB=m \
-		EXTRA_CFLAGS="-I$(PKG_BUILD_DIR) -include compat.h -I$(STAGING_DIR)/usr/include/mac80211" \
+		EXTRA_CFLAGS="-I$(PKG_BUILD_DIR) -DCONFIG_LIBERTAS_DEBUG -include compat.h -I$(STAGING_DIR)/usr/include/mac80211" \
 		modules 
 endef
 

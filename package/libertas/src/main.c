@@ -6,7 +6,6 @@
 
 #include <linux/moduleparam.h>
 #include <linux/delay.h>
-#include <linux/freezer.h>
 #include <linux/etherdevice.h>
 #include <linux/netdevice.h>
 #include <linux/if_arp.h>
@@ -256,7 +255,7 @@ static int lbs_add_rtap(struct lbs_private *priv);
 static void lbs_remove_rtap(struct lbs_private *priv);
 static int lbs_add_mesh(struct lbs_private *priv);
 static void lbs_remove_mesh(struct lbs_private *priv);
-  
+
 
 /**
  * Get function for sysfs attribute rtap
@@ -345,10 +344,10 @@ static ssize_t lbs_mesh_set(struct device *dev,
 	if (enable == !!priv->mesh_dev)
 		return count;
 
-	ret = lbs_mesh_config(priv, enable);
+	ret = lbs_mesh_config(priv, enable, priv->curbssparams.channel);
 	if (ret)
 		return ret;
-		
+
 	if (enable)
 		lbs_add_mesh(priv);
 	else
@@ -402,7 +401,7 @@ static int lbs_dev_open(struct net_device *dev)
 		netif_carrier_on(dev);
 	} else {
 		priv->infra_open = 1;
-		
+
 		if (priv->connect_status == LBS_CONNECTED)
 			netif_carrier_on(dev);
 		else
@@ -434,7 +433,7 @@ static int lbs_mesh_stop(struct net_device *dev)
 
 	netif_stop_queue(dev);
 	netif_carrier_off(dev);
-	
+
 	spin_unlock_irq(&priv->driver_lock);
 	return 0;
 }
@@ -454,7 +453,7 @@ static int lbs_eth_stop(struct net_device *dev)
 	priv->infra_open = 0;
 
 	netif_stop_queue(dev);
-	
+
 	spin_unlock_irq(&priv->driver_lock);
 	return 0;
 }
@@ -477,6 +476,13 @@ static void lbs_tx_timeout(struct net_device *dev)
 	   to kick it somehow? */
 	lbs_host_to_card_done(priv);
 
+	/* More often than not, this actually happens because the
+	   firmware has crapped itself -- rather than just a very
+	   busy medium. So send a harmless command, and if/when
+	   _that_ times out, we'll kick it in the head. */
+	lbs_prepare_and_send_command(priv, CMD_802_11_RSSI, 0,
+				     0, 0, NULL);
+
 	lbs_deb_leave(LBS_DEB_TX);
 }
 
@@ -489,19 +495,9 @@ void lbs_host_to_card_done(struct lbs_private *priv)
 	priv->dnld_sent = DNLD_RES_RECEIVED;
 
 	/* Wake main thread if commands are pending */
-	if (!priv->cur_cmd)
+	if (!priv->cur_cmd || priv->tx_pending_len > 0)
 		wake_up_interruptible(&priv->waitq);
 
-	/* Don't wake netif queues if we're in monitor mode and
-	   a TX packet is already pending, or if there are commands
-	   queued to be sent. */
-	if (!priv->currenttxskb && list_empty(&priv->cmdpendingq)) {
-		if (priv->dev && priv->connect_status == LBS_CONNECTED)
-			netif_wake_queue(priv->dev);
-
-		if (priv->mesh_dev && priv->mesh_connect_status == LBS_CONNECTED)
-			netif_wake_queue(priv->mesh_dev);
-	}
 	spin_unlock_irqrestore(&priv->driver_lock, flags);
 }
 EXPORT_SYMBOL_GPL(lbs_host_to_card_done);
@@ -663,8 +659,6 @@ static int lbs_thread(void *data)
 
 	init_waitqueue_entry(&wait, current);
 
-	set_freezable();
-
 	for (;;) {
 		int shouldsleep;
 
@@ -675,12 +669,16 @@ static int lbs_thread(void *data)
 		set_current_state(TASK_INTERRUPTIBLE);
 		spin_lock_irq(&priv->driver_lock);
 
-		if (priv->surpriseremoved)
+		if (kthread_should_stop())
 			shouldsleep = 0;	/* Bye */
+		else if (priv->surpriseremoved)
+			shouldsleep = 1;	/* We need to wait until we're _told_ to die */
 		else if (priv->psstate == PS_STATE_SLEEP)
 			shouldsleep = 1;	/* Sleep mode. Nothing we can do till it wakes */
 		else if (priv->intcounter)
 			shouldsleep = 0;	/* Interrupt pending. Deal with it now */
+		else if (priv->cmd_timed_out)
+			shouldsleep = 0;	/* Command timed out. Recover */
 		else if (!priv->fw_ready)
 			shouldsleep = 1;	/* Firmware not ready. We're waiting for it */
 		else if (priv->dnld_sent)
@@ -708,17 +706,19 @@ static int lbs_thread(void *data)
 
 		set_current_state(TASK_RUNNING);
 		remove_wait_queue(&priv->waitq, &wait);
-		try_to_freeze();
 
 		lbs_deb_thread("main-thread 333: intcounter=%d currenttxskb=%p dnld_sent=%d\n",
 			       priv->intcounter, priv->currenttxskb, priv->dnld_sent);
 
-		if (kthread_should_stop() || priv->surpriseremoved) {
-			lbs_deb_thread("main-thread: break from main thread: surpriseremoved=0x%x\n",
-				       priv->surpriseremoved);
+		if (kthread_should_stop()) {
+			lbs_deb_thread("main-thread: break from main thread\n");
 			break;
 		}
 
+		if (priv->surpriseremoved) {
+			lbs_deb_thread("adapter removed; waiting to die...\n");
+			continue;
+		}
 
 		spin_lock_irq(&priv->driver_lock);
 
@@ -748,6 +748,26 @@ static int lbs_thread(void *data)
 			lbs_process_rx_command(priv);
 			spin_lock_irq(&priv->driver_lock);
 		}
+
+		if (priv->cmd_timed_out && priv->cur_cmd) {
+			struct cmd_ctrl_node *cmdnode = priv->cur_cmd;
+
+			if (++priv->nr_retries > 10) {
+				lbs_pr_info("Excessive timeouts submitting command %x\n",
+					    le16_to_cpu(cmdnode->cmdbuf->command));
+				lbs_complete_command(priv, cmdnode, -ETIMEDOUT);
+				priv->nr_retries = 0;
+			} else {
+				priv->cur_cmd = NULL;
+				lbs_pr_info("requeueing command %x due to timeout (#%d)\n",
+					    le16_to_cpu(cmdnode->cmdbuf->command), priv->nr_retries);
+
+				/* Stick it back at the _top_ of the pending queue
+				   for immediate resubmission */
+				list_add(&cmdnode->list, &priv->cmdpendingq);
+			}
+		}
+		priv->cmd_timed_out = 0;
 
 		/* Any Card Event */
 		if (priv->hisregcpy & MRVDRV_CARDEVENT) {
@@ -834,6 +854,58 @@ static int lbs_thread(void *data)
 	return 0;
 }
 
+static int lbs_suspend_callback(struct lbs_private *priv, unsigned long dummy,
+				struct cmd_header *cmd)
+{
+	lbs_deb_fw("HOST_SLEEP_ACTIVATE succeeded\n");
+
+	netif_device_detach(priv->dev);
+	if (priv->mesh_dev)
+		netif_device_detach(priv->mesh_dev);
+
+	priv->fw_ready = 0;
+	return 0;
+}
+
+
+int lbs_suspend(struct lbs_private *priv)
+{
+	struct cmd_header cmd;
+	int ret;
+
+	if (priv->wol_criteria == 0xffffffff) {
+		lbs_pr_info("Suspend attempt without configuring wake params!\n");
+		return -EINVAL;
+	}
+
+	memset(&cmd, 0, sizeof(cmd));
+
+	ret = __lbs_cmd(priv, CMD_802_11_HOST_SLEEP_ACTIVATE, &cmd,
+			sizeof(cmd), lbs_suspend_callback, 0);
+	if (ret)
+		lbs_pr_info("HOST_SLEEP_ACTIVATE failed: %d\n", ret);
+
+	return ret;
+}
+EXPORT_SYMBOL_GPL(lbs_suspend);
+
+int lbs_resume(struct lbs_private *priv)
+{
+	priv->fw_ready = 1;
+
+	/* Firmware doesn't seem to give us RX packets any more
+	   until we send it some command. Might as well update */
+	lbs_prepare_and_send_command(priv, CMD_802_11_RSSI, 0,
+				     0, 0, NULL);
+
+	netif_device_attach(priv->dev);
+	if (priv->mesh_dev)
+		netif_device_attach(priv->mesh_dev);
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(lbs_resume);
+
 /**
  *  @brief This function downloads firmware image, gets
  *  HW spec from firmware and set basic parameters to
@@ -879,35 +951,21 @@ done:
 static void command_timer_fn(unsigned long data)
 {
 	struct lbs_private *priv = (struct lbs_private *)data;
-	struct cmd_ctrl_node *node;
 	unsigned long flags;
 
-	node = priv->cur_cmd;
-	if (node == NULL) {
-		lbs_deb_fw("ptempnode empty\n");
-		return;
-	}
-
-	if (!node->cmdbuf) {
-		lbs_deb_fw("cmd is NULL\n");
-		return;
-	}
-
-	lbs_deb_fw("command_timer_fn fired, cmd %x\n", node->cmdbuf->command);
-
-	if (!priv->fw_ready)
-		return;
-
 	spin_lock_irqsave(&priv->driver_lock, flags);
-	priv->cur_cmd = NULL;
-	spin_unlock_irqrestore(&priv->driver_lock, flags);
 
-	lbs_deb_fw("re-sending same command because of timeout\n");
-	lbs_queue_cmd(priv, node, 0);
+	if (!priv->cur_cmd) {
+		lbs_pr_info("Command timer expired; no pending command\n");
+		goto out;
+	}
 
+	lbs_pr_info("Command %x timed out\n", le16_to_cpu(priv->cur_cmd->cmdbuf->command));
+
+	priv->cmd_timed_out = 1;
 	wake_up_interruptible(&priv->waitq);
-
-	return;
+ out:
+	spin_unlock_irqrestore(&priv->driver_lock, flags);
 }
 
 static int lbs_init_adapter(struct lbs_private *priv)
@@ -1055,6 +1113,9 @@ struct lbs_private *lbs_add_card(void *card, struct device *dmdev)
 	sprintf(priv->mesh_ssid, "mesh");
 	priv->mesh_ssid_len = 4;
 
+	priv->wol_criteria = 0xffffffff;
+	priv->wol_gpio = 0xff;
+
 	goto done;
 
 err_init_adapter:
@@ -1130,8 +1191,33 @@ int lbs_start_card(struct lbs_private *priv)
 	}
 	if (device_create_file(&dev->dev, &dev_attr_lbs_rtap))
 		lbs_pr_err("cannot register lbs_rtap attribute\n");
-	if (device_create_file(&dev->dev, &dev_attr_lbs_mesh))
-		lbs_pr_err("cannot register lbs_mesh attribute\n");
+
+	/* Enable mesh, if supported, and work out which TLV it uses.
+	   0x100 + 291 is an unofficial value used in 5.110.20.pXX
+	   0x100 + 37 is the official value used in 5.110.21.pXX
+	   but we check them in that order because 20.pXX doesn't
+	   give an error -- it just silently fails. */
+
+	/* 5.110.20.pXX firmware will fail the command if the channel
+	   doesn't match the existing channel. But only if the TLV
+	   is correct. If the channel is wrong, _BOTH_ versions will
+	   give an error to 0x100+291, and allow 0x100+37 to succeed.
+	   It's just that 5.110.20.pXX will not have done anything
+	   useful */
+
+	lbs_update_channel(priv);
+	priv->mesh_tlv = 0x100 + 291;
+	if (lbs_mesh_config(priv, 1, priv->curbssparams.channel)) {
+		priv->mesh_tlv = 0x100 + 37;
+		if (lbs_mesh_config(priv, 1, priv->curbssparams.channel))
+			priv->mesh_tlv = 0;
+	}
+	if (priv->mesh_tlv) {
+		lbs_add_mesh(priv);
+
+		if (device_create_file(&dev->dev, &dev_attr_lbs_mesh))
+			lbs_pr_err("cannot register lbs_mesh attribute\n");
+	}
 
 	lbs_debugfs_init_one(priv, dev);
 
@@ -1160,11 +1246,13 @@ int lbs_stop_card(struct lbs_private *priv)
 
 	lbs_debugfs_remove_one(priv);
 	device_remove_file(&dev->dev, &dev_attr_lbs_rtap);
-	device_remove_file(&dev->dev, &dev_attr_lbs_mesh);
+	if (priv->mesh_tlv)
+		device_remove_file(&dev->dev, &dev_attr_lbs_mesh);
 
 	/* Flush pending command nodes */
 	spin_lock_irqsave(&priv->driver_lock, flags);
 	list_for_each_entry(cmdnode, &priv->cmdpendingq, list) {
+		cmdnode->result = -ENOENT;
 		cmdnode->cmdwaitqwoken = 1;
 		wake_up_interruptible(&cmdnode->cmdwait_q);
 	}
@@ -1346,12 +1434,6 @@ void lbs_interrupt(struct lbs_private *priv)
 	lbs_deb_enter(LBS_DEB_THREAD);
 
 	lbs_deb_thread("lbs_interrupt: intcounter=%d\n", priv->intcounter);
-
-	if (!spin_trylock(&priv->driver_lock)) {
-		spin_unlock(&priv->driver_lock);
-		printk(KERN_CRIT "%s called without driver_lock held\n", __func__);
-		WARN_ON(1);
-	}
 
 	priv->intcounter++;
 

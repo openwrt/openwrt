@@ -734,6 +734,13 @@ static int lbs_set_power(struct net_device *dev, struct iw_request_info *info,
 
 	lbs_deb_enter(LBS_DEB_WEXT);
 
+	if (!priv->ps_supported) {
+		if (vwrq->disabled)
+			return 0;
+		else
+			return -EINVAL;
+	}
+
 	/* PS is currently supported only in Infrastructure mode
 	 * Remove this check if it is to be supported in IBSS mode also
 	 */
@@ -1000,9 +1007,8 @@ static int lbs_mesh_set_freq(struct net_device *dev,
 		else if (priv->mode == IW_MODE_ADHOC)
 			lbs_stop_adhoc_network(priv);
 	}
-	priv->curbssparams.channel = fwrq->m;
-	lbs_mesh_config(priv, 0);
-	lbs_mesh_config(priv, 1);
+	lbs_mesh_config(priv, 1, fwrq->m);
+	lbs_update_channel(priv);
 	ret = 0;
 
 out:
@@ -2010,7 +2016,7 @@ static int lbs_mesh_set_essid(struct net_device *dev,
 		priv->mesh_ssid_len = dwrq->length;
 	}
 
-	lbs_mesh_config(priv, 1);
+	lbs_mesh_config(priv, 1, priv->curbssparams.channel);
  out:
 	lbs_deb_leave_args(LBS_DEB_WEXT, "ret %d", ret);
 	return ret;
