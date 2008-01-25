@@ -1,0 +1,13 @@
+Index: madwifi-dfs-r3053/net80211/ieee80211_output.c
+===================================================================
+--- madwifi-dfs-r3053.orig/net80211/ieee80211_output.c	2008-01-10 15:40:39.777239675 +0100
++++ madwifi-dfs-r3053/net80211/ieee80211_output.c	2008-01-10 15:41:05.214689275 +0100
+@@ -1297,7 +1297,7 @@
+ 		erp |= IEEE80211_ERP_NON_ERP_PRESENT;
+ 	if (ic->ic_flags & IEEE80211_F_USEPROT)
+ 		erp |= IEEE80211_ERP_USE_PROTECTION;
+-	if (ic->ic_flags & IEEE80211_F_USEBARKER)
++	if ((ic->ic_flags & IEEE80211_F_USEBARKER) || (ic->ic_nonerpsta > 0))
+ 		erp |= IEEE80211_ERP_LONG_PREAMBLE;
+ 	*frm++ = erp;
+ 	return frm;
