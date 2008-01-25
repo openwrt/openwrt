@@ -1,0 +1,35 @@
+diff -urN busybox-1.8.2.old/archival/libipkg/pkg_extract.c busybox-1.8.2.dev/archival/libipkg/pkg_extract.c
+--- busybox-1.8.2.old/archival/libipkg/pkg_extract.c	2008-01-23 22:18:44.000000000 +0100
++++ busybox-1.8.2.dev/archival/libipkg/pkg_extract.c	2008-01-23 22:20:31.000000000 +0100
+@@ -85,6 +85,7 @@
+ 	free(archive->buffer);
+ 	free(archive->accept);
+ 	free(archive);
++	unlink(name);
+ 	free(name);
+ 
+ 	return 0;
+@@ -114,6 +115,7 @@
+ 	close(archive->src_fd);
+ 	free(archive);
+ 	free(path);
++	unlink(name);
+ 	free(name);
+ 
+ 	return 0;
+@@ -138,6 +140,7 @@
+ 	close(archive->src_fd);
+ 	free(archive);
+ 	free(path);
++	unlink(name);
+ 	free(name);
+ 
+ 	return 0;
+@@ -218,6 +221,7 @@
+ 	fputs(archive->buffer, file);
+ 	free(archive->buffer);
+ 	free(archive);
++	unlink(name);
+ 	free(name);
+ 	
+ 	return 0;
