@@ -1,0 +1,15 @@
+Index: madwifi-dfs-r3252/net80211/ieee80211_input.c
+===================================================================
+--- madwifi-dfs-r3252.orig/net80211/ieee80211_input.c	2008-01-26 00:03:20.203760157 +0100
++++ madwifi-dfs-r3252/net80211/ieee80211_input.c	2008-01-26 00:08:08.773799701 +0100
+@@ -1133,8 +1133,8 @@
+ 
+ 		if (ETHER_IS_MULTICAST(eh->ether_dhost)) {
+ 			skb1 = skb_copy(skb, GFP_ATOMIC);
+-			/* We duplicate the reference after skb_copy */
+-			ieee80211_skb_copy_noderef(skb, skb1);
++			/* Use the BSS node for retransmitting this multicast frame */
++			SKB_CB(skb1)->ni = ieee80211_ref_node(vap->iv_bss);
+ 		}
+ 		else {
+ 			/*
