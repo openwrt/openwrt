@@ -8,33 +8,23 @@
  *  image format written by Kolja Waschk, can be found at:
  *  http://www.ixo.de/info/zyxel_uclinux
  *
- *  This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public License
- *  as published by the Free Software Foundation; either version 2
- *  of the License, or (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License version 2 as published
+ *  by the Free Software Foundation.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the
- *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- *  Boston, MA  02110-1301, USA.
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <unistd.h>     /* for unlink() */
+#include <unistd.h>	/* for unlink() */
 #include <libgen.h>
-#include <getopt.h>     /* for getopt() */
+#include <getopt.h>	/* for getopt() */
 #include <stdarg.h>
 #include <errno.h>
 #include <sys/stat.h>
-#include <endian.h>     /* for __BYTE_ORDER */
+#include <endian.h>	/* for __BYTE_ORDER */
 #if defined(__CYGWIN__)
 #  include <byteswap.h>
 #endif
@@ -100,6 +90,7 @@ struct fw_mmap {
 struct board_info {
 	char *name;		/* model name */
 	char *desc;		/* description */
+	uint16_t vendor;	/* vendor id */
 	uint16_t model;		/* model id */
 	uint32_t flash_base;	/* flash base address */
 	uint32_t flash_size;	/* board flash size */
@@ -127,19 +118,20 @@ int num_blocks = 0;
 #define AR7_FLASH_BASE		0xB0000000
 #define AR7_CODE_START		0x94008000
 
-#define BOARD(n, d, m, fb, fs, cs, fo) { \
-	.name = (n), .desc=(d), .model = (m), \
+#define BOARD(n, d, v, m, fb, fs, cs, fo) { \
+	.name = (n), .desc=(d), \
+	.vendor = (v), .model = (m), \
 	.flash_base = (fb), .flash_size = (fs)<<20, \
 	.code_start = (cs), .fw_offs = (fo) \
 	}
 
-#define ADMBOARD1(n, d, m, fs) BOARD(n, d, m, \
+#define ADMBOARD1(n, d, m, fs) BOARD(n, d, ZYNOS_VENDOR_ID_ZYXEL, m, \
 	ADM5120_FLASH_BASE, fs, ADM5120_CODE_START, 0x8000)
 
-#define ADMBOARD2(n, d, m, fs) BOARD(n, d, m, \
+#define ADMBOARD2(n, d, m, fs) BOARD(n, d, ZYNOS_VENDOR_ID_ZYXEL, m, \
 	ADM5120_FLASH_BASE, fs, ADM5120_CODE_START, 0x10000)
 
-#define AR7BOARD1(n, d, m, fs) BOARD(n, d, m, \
+#define AR7BOARD1(n, d, m, fs) BOARD(n, d, ZYNOS_VENDOR_ID_ZYXEL, m, \
 	AR7_FLASH_BASE, fs, AR7_CODE_START, 0x8000)
 
 static struct board_info boards[] = {
@@ -165,6 +157,7 @@ static struct board_info boards[] = {
 	ADMBOARD1("P-335Plus",	"ZyXEL Prestige 335Plus", ZYNOS_MODEL_P_335PLUS, 4),
 	ADMBOARD1("P-335U",	"ZyXEL Prestige 335U", ZYNOS_MODEL_P_335U, 4),
 	ADMBOARD1("P-335WT",	"ZyXEL Prestige 335WT", ZYNOS_MODEL_P_335WT, 4),
+
 #if 0
 	/*
 	 * Texas Instruments AR7 based boards
@@ -186,6 +179,17 @@ static struct board_info boards[] = {
 	AR7BOARD1("P-660R-D1",  "ZyXEL P-660R-D1", ZYNOS_MODEL_P_660R_D1, 2),
 	AR7BOARD1("P-660R-D3",  "ZyXEL P-660R-D3", ZYNOS_MODEL_P_660R_D3, 2),
 #endif
+	{
+		.name		= "O2SURF",
+		.desc		= "O2 DSL Surf & Phone",
+		.vendor		= ZYNOS_VENDOR_ID_O2,
+		.model		= ZYNOS_MODEL_O2SURF,
+		.flash_base	= AR7_FLASH_BASE,
+		.flash_size	= 8*1024*1024,
+		.code_start	= 0x94014000,
+		.fw_offs	= 0x40000,
+	},
+
 	{.name = NULL}
 };
 
@@ -194,18 +198,20 @@ static struct board_info boards[] = {
  */
 #define ERR(fmt, ...) do { \
 	fflush(0); \
-	fprintf(stderr, "[%s] *** error: " fmt "\n", progname, ## __VA_ARGS__ ); \
+	fprintf(stderr, "[%s] *** error: " fmt "\n", \
+			progname, ## __VA_ARGS__ ); \
 } while (0)
 
 #define ERRS(fmt, ...) do { \
 	int save = errno; \
 	fflush(0); \
-	fprintf(stderr, "[%s] *** error: " fmt ", %s\n", progname, ## __VA_ARGS__ \
-		, strerror(save)); \
+	fprintf(stderr, "[%s] *** error: " fmt ", %s\n", \
+			progname, ## __VA_ARGS__, strerror(save)); \
 } while (0)
 
 #define WARN(fmt, ...) do { \
-	fprintf(stderr, "[%s] *** warning: " fmt "\n", progname, ## __VA_ARGS__ ); \
+	fprintf(stderr, "[%s] *** warning: " fmt "\n", \
+			progname, ## __VA_ARGS__ ); \
 } while (0)
 
 #define DBG(lev, fmt, ...) do { \
@@ -521,7 +527,7 @@ write_out_header(FILE *outfile, struct zyn_rombin_hdr *hdr)
 	}
 
 	/* setup temporary header fields */
-	memset(&t,0, sizeof(t));
+	memset(&t, 0, sizeof(t));
 	t.addr = HOST_TO_BE32(hdr->addr);
 	memcpy(&t.sig, ROMBIN_SIGNATURE, ROMBIN_SIG_LEN);
 	t.type = hdr->type;
@@ -545,7 +551,7 @@ write_out_mmap(FILE *outfile, struct fw_mmap *mmap, struct csum_state *css)
 	char *data;
 	int res;
 
-	memset(buf,0,sizeof(buf));
+	memset(buf, 0, sizeof(buf));
 
 	mh = (struct zyn_mmt_hdr *)buf;
 
@@ -554,10 +560,12 @@ write_out_mmap(FILE *outfile, struct fw_mmap *mmap, struct csum_state *css)
 
 	/* Build user data section */
 	data = buf+sizeof(*mh);
-	data += sprintf(data,"Model 1 %d", BE16_TO_HOST(board->model));
+	data += sprintf(data, "Vendor 1 %d", board->vendor);
+	*data++ = '\0';
+	data += sprintf(data, "Model 1 %d", BE16_TO_HOST(board->model));
 	*data++ = '\0';
 	/* TODO: make hardware version configurable? */
-	data += sprintf(data,"HwVerRange 2 %d %d", 0, 0);
+	data += sprintf(data, "HwVerRange 2 %d %d", 0, 0);
 	*data++ = '\0';
 
 	user_size = (uint8_t *)data - buf;
@@ -666,6 +674,7 @@ write_out_image(FILE *outfile)
 	uint32_t padlen;
 
 	/* setup header fields */
+	memset(&hdr, 0, sizeof(hdr));
 	hdr.addr = board->code_start;
 	hdr.type = OBJECT_TYPE_BOOTEXT;
 	hdr.flags = ROMBIN_FLAG_OCSUM;
