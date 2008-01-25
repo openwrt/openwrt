@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=madwifi
-PKG_REV:=3053
+PKG_REV:=3252
 PKG_VERSION:=r$(PKG_REV)
 PKG_BRANCH:=madwifi-dfs
 PKG_RELEASE:=1
@@ -24,6 +24,8 @@ PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_BRANCH)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
+
+# MADWIFI_DEBUG=1
 
 ifeq ($(ARCH),mips)
   HAL_TARGET:=mips-be-elf
@@ -88,13 +90,19 @@ MADWIFI_AUTOLOAD:= \
 	wlan_xauth \
 
 ifeq ($(findstring AHB,$(BUS)),AHB)
-	MADWIFI_FILES+= $(PKG_BUILD_DIR)/ath/ath_ahb.$(LINUX_KMOD_SUFFIX)
-	MADWIFI_AUTOLOAD+= ath_ahb
+  MADWIFI_FILES+= $(PKG_BUILD_DIR)/ath/ath_ahb.$(LINUX_KMOD_SUFFIX)
+  MADWIFI_AUTOLOAD+= ath_ahb
 endif
 ifeq ($(findstring PCI,$(BUS)),PCI)
-	MADWIFI_FILES+= $(PKG_BUILD_DIR)/ath/ath_pci.$(LINUX_KMOD_SUFFIX)
-	MADWIFI_AUTOLOAD+= ath_pci
+  MADWIFI_FILES+= $(PKG_BUILD_DIR)/ath/ath_pci.$(LINUX_KMOD_SUFFIX)
+  MADWIFI_AUTOLOAD+= ath_pci
 endif
+
+MADWIFI_APPLETS:=80211stats,athchans,athctrl,athkey,athstats,wlanconfig
+ifneq ($(MADWIFI_DEBUG),)
+  MADWIFI_APPLETS:=$(strip $(MADWIFI_APPLETS)),athdebug,80211debug
+endif
+
 
 define KernelPackage/madwifi
   SUBMENU:=Wireless Drivers
@@ -119,7 +127,8 @@ MAKE_ARGS:= \
 	KERNELPATH="$(LINUX_DIR)" \
 	LDOPTS="--no-warn-mismatch " \
 	ATH_RATE="ath_rate/$(RATE_CONTROL)" \
-	WARNINGS="" \
+	WARNINGS="-Wno-unused" \
+	$(if $(MADWIFI_DEBUG),,DEBUG="") \
 	DOMULTI=1
 
 MAKE_VARS:= \
@@ -159,7 +168,7 @@ define KernelPackage/madwifi/install
 	$(INSTALL_DIR) $(1)/lib/wifi
 	$(INSTALL_DATA) ./files/lib/wifi/madwifi.sh $(1)/lib/wifi
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/tools/{madwifi_multi,80211stats,athchans,athctrl,athkey,athstats,wlanconfig} $(1)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/tools/{madwifi_multi,$(MADWIFI_APPLETS)} $(1)/usr/sbin/
 endef
 
 $(eval $(call KernelPackage,madwifi))

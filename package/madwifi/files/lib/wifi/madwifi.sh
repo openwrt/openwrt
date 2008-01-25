@@ -74,7 +74,9 @@ enable_atheros() {
 	local device="$1"
 	config_get channel "$device" channel
 	config_get vifs "$device" vifs
-	
+
+	[ auto = "$channel" ] && channel=0
+
 	local first=1
 	for vif in $vifs; do
 		nosbeacon=
@@ -306,7 +308,7 @@ detect_atheros() {
 		cat <<EOF
 config wifi-device  $dev
 	option type     atheros
-	option channel  5
+	option channel  auto
 
 	# REMOVE THIS LINE TO ENABLE WIFI:
 	option disabled 1
