@@ -1,8 +1,8 @@
-Index: madwifi-dfs-r3053/ath/if_ath.c
+Index: madwifi-dfs-r3246/ath/if_ath.c
 ===================================================================
---- madwifi-dfs-r3053.orig/ath/if_ath.c	2007-12-13 05:25:13.662404044 +0100
-+++ madwifi-dfs-r3053/ath/if_ath.c	2007-12-13 05:25:13.934419543 +0100
-@@ -3973,7 +3973,9 @@
+--- madwifi-dfs-r3246.orig/ath/if_ath.c	2008-01-25 16:30:04.921659489 +0100
++++ madwifi-dfs-r3246/ath/if_ath.c	2008-01-25 16:33:11.528293596 +0100
+@@ -4086,7 +4086,9 @@
  		rfilt |= HAL_RX_FILTER_PROM;
  	if (ic->ic_opmode == IEEE80211_M_STA ||
  	    sc->sc_opmode == HAL_M_IBSS ||	/* NB: AHDEMO too */
@@ -13,36 +13,47 @@ Index: madwifi-dfs-r3053/ath/if_ath.c
  		rfilt |= HAL_RX_FILTER_BEACON;
  	if (sc->sc_nmonvaps > 0)
  		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON |
-Index: madwifi-dfs-r3053/net80211/ieee80211_input.c
+Index: madwifi-dfs-r3246/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-dfs-r3053.orig/net80211/ieee80211_input.c	2007-12-13 05:25:13.674404726 +0100
-+++ madwifi-dfs-r3053/net80211/ieee80211_input.c	2007-12-13 05:25:13.938419772 +0100
-@@ -329,11 +329,12 @@
+--- madwifi-dfs-r3246.orig/net80211/ieee80211_input.c	2008-01-25 16:32:53.171247487 +0100
++++ madwifi-dfs-r3246/net80211/ieee80211_input.c	2008-01-25 16:35:46.341115878 +0100
+@@ -346,11 +346,12 @@
  				bssid = wh->i_addr3;
  			}
  			/*
 -			 * Validate the bssid.
 +			 * Validate the bssid. Let beacons get through though for 11g protection mode.
  			 */
- #ifdef ATH_SUPERG_XR
- 			if (!IEEE80211_ADDR_EQ(bssid, vap->iv_bss->ni_bssid) &&
+-#ifdef ATH_SUPERG_XR
+ 			if (!IEEE80211_ADDR_EQ(bssid, vap->iv_bssid) &&
 -			    !IEEE80211_ADDR_EQ(bssid, dev->broadcast)) {
 +			    !IEEE80211_ADDR_EQ(bssid, dev->broadcast) &&
 +				(subtype != IEEE80211_FC0_SUBTYPE_BEACON)) {
++#ifdef ATH_SUPERG_XR
  				/*
  				 * allow MGT frames to vap->iv_xrvap.
  				 * this will allow roaming between  XR and normal vaps
-@@ -352,7 +353,8 @@
- 			}
+@@ -366,18 +367,14 @@
+ 					vap->iv_stats.is_rx_wrongbss++;
+ 					goto out;
+ 				}
+-			}
  #else
- 			if (!IEEE80211_ADDR_EQ(bssid, vap->iv_bss->ni_bssid) &&
+-			if (!IEEE80211_ADDR_EQ(bssid, vap->iv_bssid) &&
 -			    !IEEE80211_ADDR_EQ(bssid, dev->broadcast)) {
-+			    !IEEE80211_ADDR_EQ(bssid, dev->broadcast) &&
-+				(subtype != IEEE80211_FC0_SUBTYPE_BEACON)) {
  				/* not interested in */
  				IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
  					bssid, NULL, "%s", "not to bss");
-@@ -2971,7 +2973,7 @@
+ 				vap->iv_stats.is_rx_wrongbss++;
+ 				goto out;
+-			}
+-
+ #endif
++			}
+ 			break;
+ 		case IEEE80211_M_WDS:
+ 			if (skb->len < sizeof(struct ieee80211_frame_addr4)) {
+@@ -3023,7 +3020,7 @@
  	u_int8_t *frm, *efrm;
  	u_int8_t *ssid, *rates, *xrates, *suppchan, *wpa, *rsn, *wme, *ath;
  	u_int8_t rate;
@@ -51,7 +62,7 @@ Index: madwifi-dfs-r3053/net80211/ieee80211_input.c
  	u_int8_t qosinfo;
  
  	if (ni_or_null == NULL)
-@@ -2996,11 +2998,15 @@
+@@ -3053,11 +3050,15 @@
  		 *    o station mode when associated (to collect state
  		 *      updates such as 802.11g slot time), or
  		 *    o adhoc mode (to discover neighbors)
@@ -68,7 +79,7 @@ Index: madwifi-dfs-r3053/net80211/ieee80211_input.c
  			vap->iv_stats.is_rx_mgtdiscard++;
  			return;
  		}
-@@ -3083,6 +3089,7 @@
+@@ -3140,6 +3141,7 @@
  					break;
  				}
  				scan.erp = frm[2];
@@ -76,7 +87,7 @@ Index: madwifi-dfs-r3053/net80211/ieee80211_input.c
  				break;
  			case IEEE80211_ELEMID_RSN:
  				scan.rsn = frm;
-@@ -3300,6 +3307,20 @@
+@@ -3357,6 +3359,20 @@
  				ieee80211_bg_scan(vap);
  			return;
  		}
@@ -97,11 +108,11 @@ Index: madwifi-dfs-r3053/net80211/ieee80211_input.c
  		/*
  		 * If scanning, just pass information to the scan module.
  		 */
-Index: madwifi-dfs-r3053/net80211/ieee80211_node.c
+Index: madwifi-dfs-r3246/net80211/ieee80211_node.c
 ===================================================================
---- madwifi-dfs-r3053.orig/net80211/ieee80211_node.c	2007-12-13 05:25:10.314213240 +0100
-+++ madwifi-dfs-r3053/net80211/ieee80211_node.c	2007-12-13 05:25:13.938419772 +0100
-@@ -380,10 +380,16 @@
+--- madwifi-dfs-r3246.orig/net80211/ieee80211_node.c	2008-01-25 16:27:28.000000000 +0100
++++ madwifi-dfs-r3246/net80211/ieee80211_node.c	2008-01-25 16:33:11.540294282 +0100
+@@ -383,10 +383,16 @@
  	/* Update country ie information */
  	ieee80211_build_countryie(ic);
  
@@ -120,11 +131,11 @@ Index: madwifi-dfs-r3053/net80211/ieee80211_node.c
  
  	(void) ieee80211_sta_join1(PASS_NODE(ni));
  }
-Index: madwifi-dfs-r3053/net80211/ieee80211_proto.c
+Index: madwifi-dfs-r3246/net80211/ieee80211_proto.c
 ===================================================================
---- madwifi-dfs-r3053.orig/net80211/ieee80211_proto.c	2007-12-13 05:25:10.322213696 +0100
-+++ madwifi-dfs-r3053/net80211/ieee80211_proto.c	2007-12-13 05:25:13.942420001 +0100
-@@ -584,6 +584,28 @@
+--- madwifi-dfs-r3246.orig/net80211/ieee80211_proto.c	2008-01-25 16:27:28.000000000 +0100
++++ madwifi-dfs-r3246/net80211/ieee80211_proto.c	2008-01-25 16:33:11.544294507 +0100
+@@ -595,6 +595,28 @@
  	{ 4, { 2, 4, 11, 22 } },	/* IEEE80211_MODE_TURBO_G (mixed b/g) */
  };
  
@@ -153,11 +164,11 @@ Index: madwifi-dfs-r3053/net80211/ieee80211_proto.c
  /*
   * Mark the basic rates for the 11g rate table based on the
   * specified mode.  For 11b compatibility we mark only 11b
-Index: madwifi-dfs-r3053/net80211/ieee80211_var.h
+Index: madwifi-dfs-r3246/net80211/ieee80211_var.h
 ===================================================================
---- madwifi-dfs-r3053.orig/net80211/ieee80211_var.h	2007-12-13 05:25:10.330214154 +0100
-+++ madwifi-dfs-r3053/net80211/ieee80211_var.h	2007-12-13 05:25:13.942420001 +0100
-@@ -668,6 +668,7 @@
+--- madwifi-dfs-r3246.orig/net80211/ieee80211_var.h	2008-01-25 16:27:28.000000000 +0100
++++ madwifi-dfs-r3246/net80211/ieee80211_var.h	2008-01-25 16:33:11.548294736 +0100
+@@ -688,6 +688,7 @@
  void ieee80211_build_sc_ie(struct ieee80211com *);
  void ieee80211_dfs_action(struct ieee80211com *);
  void ieee80211_expire_channel_non_occupancy_restrictions(struct ieee80211com *);

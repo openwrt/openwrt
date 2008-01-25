@@ -1,0 +1,12 @@
+Index: madwifi-dfs-r3246/net80211/ieee80211_debug.h
+===================================================================
+--- madwifi-dfs-r3246.orig/net80211/ieee80211_debug.h	2008-01-25 16:39:52.407138381 +0100
++++ madwifi-dfs-r3246/net80211/ieee80211_debug.h	2008-01-25 16:43:40.104114090 +0100
+@@ -119,6 +119,7 @@
+ #define	ieee80211_msg_assoc(_vap) \
+ 	ieee80211_msg_is_reported(_vap, IEEE80211_MSG_ASSOC)
+ #else /* IEEE80211_DEBUG */
++#define	ieee80211_msg_is_reported(_vap, m) (0)
+ #define	IEEE80211_DPRINTF(_vap, _m, _fmt, ...)
+ #define	IEEE80211_NOTE(_vap, _m, _wh, _fmt, ...)
+ #define	IEEE80211_NOTE_FRAME(_vap, _m, _wh, _fmt, ...)
