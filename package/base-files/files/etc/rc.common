@@ -17,12 +17,12 @@ reload() {
 
 restart() {
 	trap '' TERM
-	stop
-	start
+	stop "$@"
+	start "$@"
 }
 
 boot() {
-	start
+	start "$@"
 }
 
 shutdown() {
