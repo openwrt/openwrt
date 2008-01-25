@@ -131,71 +131,53 @@ static void __init cas7xx_setup(void)
 	/* TODO: setup mac address */
 }
 
-static struct adm5120_board cas630_board __initdata = {
-	.mach_type	= MACH_ADM5120_CAS630,
-	.name		= "Cellvision CAS-630/630W",
+/*--------------------------------------------------------------------------*/
+
+ADM5120_BOARD_START(CAS630, "Cellvision CAS-630/630W")
 	.board_setup	= cas6xx_setup,
 	.eth_num_ports	= 1,
 	.num_devices	= ARRAY_SIZE(cas6xx_devices),
 	.devices	= cas6xx_devices,
-};
+	/* TODO: PCI IRQ map */
+ADM5120_BOARD_END
 
-static struct adm5120_board cas670_board __initdata = {
-	.mach_type	= MACH_ADM5120_CAS670,
-	.name		= "Cellvision CAS-670/670W",
+ADM5120_BOARD_START(CAS670, "Cellvision CAS-670/670W")
 	.board_setup	= cas6xx_setup,
 	.eth_num_ports	= 1,
 	.num_devices	= ARRAY_SIZE(cas6xx_devices),
 	.devices	= cas6xx_devices,
-};
+	/* TODO: PCI IRQ map */
+ADM5120_BOARD_END
 
-static struct adm5120_board cas700_board __initdata = {
-	.mach_type	= MACH_ADM5120_CAS700,
-	.name		= "Cellvision CAS-700/700W",
+ADM5120_BOARD_START(CAS700, "Cellvision CAS-700/700W")
 	.board_setup	= cas7xx_setup,
 	.eth_num_ports	= 1,
 	.num_devices	= ARRAY_SIZE(cas7xx_devices),
 	.devices	= cas7xx_devices,
-};
+	/* TODO: PCI IRQ map */
+ADM5120_BOARD_END
 
-static struct adm5120_board cas771_board __initdata = {
-	.mach_type	= MACH_ADM5120_CAS771,
-	.name		= "Cellvision CAS-771/771W",
+ADM5120_BOARD_START(CAS771, "Cellvision CAS-771/771W")
 	.board_setup	= cas7xx_setup,
 	.eth_num_ports	= 1,
 	.num_devices	= ARRAY_SIZE(cas7xx_devices),
 	.devices	= cas7xx_devices,
 	.pci_nr_irqs	= ARRAY_SIZE(cas771_pci_irqs),
 	.pci_irq_map	= cas771_pci_irqs,
-};
+ADM5120_BOARD_END
 
-static struct adm5120_board cas790_board __initdata = {
-	.mach_type	= MACH_ADM5120_CAS790,
-	.name		= "Cellvision CAS-790",
+ADM5120_BOARD_START(CAS790, "Cellvision CAS-790")
 	.board_setup	= cas7xx_setup,
 	.eth_num_ports	= 1,
 	.num_devices	= ARRAY_SIZE(cas7xx_devices),
 	.devices	= cas7xx_devices,
-};
+	/* TODO: PCI IRQ map */
+ADM5120_BOARD_END
 
-static struct adm5120_board cas861_board __initdata = {
-	.mach_type	= MACH_ADM5120_CAS861,
-	.name		= "Cellvision CAS-861/861W",
+ADM5120_BOARD_START(CAS861, "Cellvision CAS-861/861W")
 	.board_setup	= cas7xx_setup,
 	.eth_num_ports	= 1,
 	.num_devices	= ARRAY_SIZE(cas7xx_devices),
 	.devices	= cas7xx_devices,
-};
-
-static int __init register_boards(void)
-{
-	adm5120_board_register(&cas630_board);
-	adm5120_board_register(&cas670_board);
-	adm5120_board_register(&cas700_board);
-	adm5120_board_register(&cas771_board);
-	adm5120_board_register(&cas790_board);
-	adm5120_board_register(&cas861_board);
-	return 0;
-}
-
-pure_initcall(register_boards);
+	/* TODO: PCI IRQ map */
+ADM5120_BOARD_END
