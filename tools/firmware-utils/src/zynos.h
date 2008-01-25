@@ -8,25 +8,14 @@
  *  image format written by Kolja Waschk, can be found at:
  *  http://www.ixo.de/info/zyxel_uclinux
  *
- *  This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public License
- *  as published by the Free Software Foundation; either version 2
- *  of the License, or (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License version 2 as published
+ *  by the Free Software Foundation.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the
- *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- *  Boston, MA  02110-1301, USA.
  */
 
 #ifndef _ZYNOS_H
 #define _ZYNOS_H
-
 
 #define BOOTBASE_NAME_LEN	32
 #define BOOTBASE_MAC_LEN	6
@@ -36,13 +25,13 @@ struct zyn_bootbase_info {
 	char		vendor[BOOTBASE_NAME_LEN]; /* Vendor name */
 	char		model[BOOTBASE_NAME_LEN]; /* Model name */
 	uint32_t	bootext_addr;	/* absolute address of the Boot Extension */
-	uint16_t	res0;		/* reserved */
+	uint16_t	res0;		/* reserved/unknown */
 	uint8_t		sys_type;	/* system type */
-	uint8_t		res1;		/* reserved */
+	uint8_t		res1;		/* reserved/unknown */
 	uint16_t	model_id;	/* model id */
 	uint8_t		feat_other[BOOTBASE_FEAT_LEN]; /* other feature bits */
 	uint8_t		feat_main;	/* main feature bits */
-	uint8_t		res2;		/* reserved */
+	uint8_t		res2;		/* reserved/unknown */
 	uint8_t		mac[BOOTBASE_MAC_LEN]; /* mac address */
 	uint8_t		country;	/* default country code */
 	uint8_t		dbgflag;	/* debug flag */
@@ -116,7 +105,17 @@ struct zyn_mmt_item {
 } __attribute__((packed));
 
 /*
- * Board IDs (in big-endian format)
+ * Vendor IDs
+ */
+#define ZYNOS_VENDOR_ID_ZYXEL	0
+#define ZYNOS_VENDOR_ID_NETGEAR	1
+#define ZYNOS_VENDOR_ID_DLINK	2
+#define ZYNOS_VENDOR_ID_03	3
+#define ZYNOS_VENDOR_ID_LUCENT	4
+#define ZYNOS_VENDOR_ID_O2	10
+
+/*
+ * Model IDs (in big-endian format)
  */
 #define MID(x)	(((x) & 0xFF) << 8) | (((x) & 0xFF00) >> 8)
 
@@ -160,6 +159,7 @@ struct zyn_mmt_item {
 #define ZYNOS_MODEL_P_2602HWL_63C	ZYNOS_MODEL_P_2602H_63C
 #define ZYNOS_MODEL_P_2602HWL_D1A	MID( 6301)
 #define ZYNOS_MODEL_P_2602HWL_D3A	MID( 7581)
+#define ZYNOS_MODEL_P_2602HWN_D7A	MID(30464)
 #define ZYNOS_MODEL_P_2602HWNLI_D7A	MID( 6813)
 
 #define ZYNOS_MODEL_P_2602R_61		MID( 2205)
@@ -211,5 +211,8 @@ struct zyn_mmt_item {
 #define ZYNOS_MODEL_P_662HW_67		/* n.a. */
 #define ZYNOS_MODEL_P_662HW_D1		MID(10394)
 #define ZYNOS_MODEL_P_662HW_D3		MID(12954)
+
+/* OEM boards */
+#define ZYNOS_MODEL_O2SURF		ZYNOS_MODEL_P_2602HWN_D7A
 
 #endif /* _ZYNOS_H */
