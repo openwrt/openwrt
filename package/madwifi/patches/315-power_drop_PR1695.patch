@@ -1,0 +1,39 @@
+The attached patch fixes the problem of very weak packets being send out
+after periodic calibration
+
+Signed-off-by: Karol Kowalik <karol.kowalik@cnri.dit.ie>
+Index: madwifi-dfs-r3252/ath/if_ath.c
+===================================================================
+--- madwifi-dfs-r3252.orig/ath/if_ath.c	2008-01-26 03:56:26.461576124 +0100
++++ madwifi-dfs-r3252/ath/if_ath.c	2008-01-26 03:58:50.628969172 +0100
+@@ -8875,6 +8875,9 @@
+ 	struct ieee80211com *ic = &sc->sc_ic;
+ 	/* u_int32_t nchans; */
+ 	HAL_BOOL isIQdone = AH_FALSE;
++	u_int8_t papd_probe_power;
++	u_int8_t papd_probe_power_max = 63;
++	u_int16_t crnt_power_hdBm = sc->sc_curtxpow;
+ 
+ 	sc->sc_stats.ast_per_cal++;
+ 	DPRINTF(sc, ATH_DEBUG_CALIBRATE, 
+@@ -8912,6 +8915,20 @@
+ 		sc->sc_stats.ast_per_calfail++;
+ 	}
+ 
++	/*
++	* After calibration is done we need to update AR5K_PHY_PAPD_PROBE
++	* register with the probe_tx_power equal to current tx_power
++	* otherwise a power drop may be observed
++	*/
++	crnt_power_hdBm = crnt_power_hdBm <= ic->ic_txpowlimit ? crnt_power_hdBm : ic->ic_txpowlimit;
++	papd_probe_power = papd_probe_power_max - (ic->ic_txpowlimit - crnt_power_hdBm);
++#define AR5K_PHY_PAPD_PROBE_TX_NEXT 0x00008000
++#define AR5K_PHY_PAPD_PROBE 0x9930
++	OS_REG_WRITE(ah, AR5K_PHY_PAPD_PROBE,
++	AR5K_PHY_PAPD_PROBE_TX_NEXT | (papd_probe_power << 9));
++#undef AR5K_PHY_PAPD_PROBE_TX_NEXT
++#undef AR5K_PHY_PAPD_PROBE
++
+ 	ath_hal_process_noisefloor(ah);
+ 	if (isIQdone == AH_TRUE) {
+ 		/* Unless user has overridden calibration interval,
