@@ -27,6 +27,13 @@ config LARGEFILE
 	help
 		Enable large file (files > 2 GB) support
 
+config SHADOW_PASSWORDS
+	bool
+	prompt "Enable shadow password support?" if TOOLCHAINOPTS
+	default y
+	help
+		Enable shadow password support.
+
 config SOFT_FLOAT
 	bool
 	prompt "Use software floating point by default" if TOOLCHAINOPTS
