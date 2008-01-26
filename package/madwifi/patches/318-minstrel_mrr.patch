@@ -1,0 +1,22 @@
+Index: madwifi-dfs-r3252/ath_rate/minstrel/minstrel.c
+===================================================================
+--- madwifi-dfs-r3252.orig/ath_rate/minstrel/minstrel.c	2008-01-26 03:42:00.155571408 +0100
++++ madwifi-dfs-r3252/ath_rate/minstrel/minstrel.c	2008-01-26 05:55:24.107535577 +0100
+@@ -328,7 +328,7 @@
+ 			    return;
+ 		}
+ 
+-		mrr = sc->sc_mrretry && !(ic->ic_flags & IEEE80211_F_USEPROT) && ENABLE_MRR;
++		mrr = sc->sc_mrretry && ENABLE_MRR;
+ 
+ 		if (sn->static_rate_ndx >= 0) {
+ 			    ndx = sn->static_rate_ndx;
+@@ -486,7 +486,7 @@
+ 		if (!ts->ts_status)  /* Success when sending a packet*/
+ 			sn->rs_ratesuccess[final_ndx]++;
+ 
+-		mrr = sc->sc_mrretry && !(ic->ic_flags & IEEE80211_F_USEPROT) && ENABLE_MRR;
++		mrr = sc->sc_mrretry && ENABLE_MRR;
+ 
+ 		if (!mrr) {
+ 			if ((0 <= final_ndx) && (final_ndx < sn->num_rates)) {
