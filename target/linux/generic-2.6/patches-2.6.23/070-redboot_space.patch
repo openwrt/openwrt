@@ -1,0 +1,32 @@
+Index: linux-2.6.23.1/drivers/mtd/redboot.c
+===================================================================
+--- linux-2.6.23.1.orig/drivers/mtd/redboot.c	2008-01-26 01:43:10.742362738 +0100
++++ linux-2.6.23.1/drivers/mtd/redboot.c	2008-01-26 01:47:24.432819736 +0100
+@@ -236,14 +236,21 @@
+ #endif
+ 		names += strlen(names)+1;
+ 
+-#ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
+ 		if(fl->next && fl->img->flash_base + fl->img->size + master->erasesize <= fl->next->img->flash_base) {
+-			i++;
+-			parts[i].offset = parts[i-1].size + parts[i-1].offset;
+-			parts[i].size = fl->next->img->flash_base - parts[i].offset;
+-			parts[i].name = nullname;
+-		}
++			if (!strcmp(parts[i].name, "rootfs")) {
++				parts[i].size = fl->next->img->flash_base;
++				parts[i].size &= ~(master->erasesize - 1);
++				parts[i].size -= parts[i].offset;
++			}
++#ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
++			else {
++				i++;
++				parts[i].offset = parts[i-1].size + parts[i-1].offset;
++				parts[i].size = fl->next->img->flash_base - parts[i].offset;
++				parts[i].name = nullname;
++			}
+ #endif
++		}
+ 		tmp_fl = fl;
+ 		fl = fl->next;
+ 		kfree(tmp_fl);
