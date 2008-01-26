@@ -17,7 +17,7 @@ ifeq ($(IS_TTY),1)
   endef
 else
   define progress
-	:
+	:;
   endef
 endif
 
