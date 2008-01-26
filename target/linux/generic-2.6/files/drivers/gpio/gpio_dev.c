@@ -44,7 +44,7 @@ gpio_ioctl(struct inode * inode, struct file * file, unsigned int cmd, unsigned 
 {
 	int retval = 0;
 
-	if ((arg & gpio_access_mask) != arg)
+	if (((1 << arg) & gpio_access_mask) != (1 << arg))
 	{
 		retval = -EINVAL;
 		goto out;
@@ -57,7 +57,7 @@ gpio_ioctl(struct inode * inode, struct file * file, unsigned int cmd, unsigned 
 		break;
 
 	case GPIO_SET:
-		gpio_set_value(arg, 0);
+		gpio_set_value(arg, 1);
 		break;
 
 	case GPIO_CLEAR:
