@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -46,6 +46,7 @@ define Build/Prepare
 	$(SED) 's,^KERNEL_HEADERS=.*,KERNEL_HEADERS=\"$(LINUX_HEADERS_DIR)/include\",g' \
 		-e 's,.*UCLIBC_HAS_FPU.*,UCLIBC_HAS_FPU=$(if $(CONFIG_SOFT_FLOAT),n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,y),g' \
 		-e 's,^.*UCLIBC_HAS_LFS.*,UCLIBC_HAS_LFS=$(if $(CONFIG_LARGEFILE),y,n),g' \
+		-e 's,^.*UCLIBC_HAS_SHADOW.*,UCLIBC_HAS_SHADOW=$(if $(CONFIG_SHADOW_PASSWORDS),y,n),g' \
 		$(PKG_BUILD_DIR)/.config
 	mkdir -p $(BUILD_DIR_HOST)/uClibc_dev/usr/include
 	mkdir -p $(BUILD_DIR_HOST)/uClibc_dev/usr/lib
@@ -90,7 +91,7 @@ UCLIBC_MAKE := PATH=$(TARGET_PATH) $(MAKE) -C $(PKG_BUILD_DIR) \
 
 define Build/Compile
 	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(PKG_BUILD_DIR)/Rules.mak
-	$(UCLIBC_MAKE) PREFIX= all 
+	$(UCLIBC_MAKE) PREFIX= all
 	$(UCLIBC_MAKE) PREFIX=$(STAGING_DIR_HOST)/ install_runtime install_dev
 	$(SED) 's,UCLIBC_VERSION=.*,UCLIBC_VERSION=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,UCLIBC_PATCHVER=.*,UCLIBC_PATCHVER=$(PKG_EXTRAVERSION),' $(TOOLCHAIN_DIR)/info.mk
