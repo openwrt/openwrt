@@ -1,0 +1,32 @@
+Index: madwifi-dfs-r3252/ath/if_ath.c
+===================================================================
+--- madwifi-dfs-r3252.orig/ath/if_ath.c	2008-01-26 11:12:45.731030258 +0100
++++ madwifi-dfs-r3252/ath/if_ath.c	2008-01-26 11:14:38.985484262 +0100
+@@ -529,7 +529,8 @@
+ 
+ 	/* Allocate space for dynamically determined maximum VAP count */
+ 	sc->sc_bslot = 
+-		kzalloc(ath_maxvaps * sizeof(struct ieee80211vap), GFP_KERNEL);
++		kmalloc(ath_maxvaps * sizeof(struct ieee80211vap), GFP_KERNEL);
++	memset(sc->sc_bslot, 0, ath_maxvaps * sizeof(struct ieee80211vap));
+ 
+ 	/*
+ 	 * Cache line size is used to size and align various
+Index: madwifi-dfs-r3252/ath/if_ath_radar.c
+===================================================================
+--- madwifi-dfs-r3252.orig/ath/if_ath_radar.c	2008-01-26 11:14:48.638034327 +0100
++++ madwifi-dfs-r3252/ath/if_ath_radar.c	2008-01-26 11:15:36.740775546 +0100
+@@ -1556,9 +1556,11 @@
+ 
+ 	ath_rp_clear(sc);
+ 
+-	sc->sc_rp = (struct ath_rp *)kzalloc(
+-			sizeof(struct ath_rp) * 
++	sc->sc_rp = (struct ath_rp *)kmalloc(
++			sizeof(struct ath_rp) *
+ 			ATH_RADAR_PULSE_NR, GFP_KERNEL);
++	memset(sc->sc_rp, 0, sizeof(struct ath_rp) *
++			ATH_RADAR_PULSE_NR);
+ 
+ 	if (sc->sc_rp == NULL)
+ 		return;
