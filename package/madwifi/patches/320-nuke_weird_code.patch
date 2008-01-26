@@ -1,0 +1,15 @@
+Index: madwifi-dfs-r3252/ath/if_ath.c
+===================================================================
+--- madwifi-dfs-r3252.orig/ath/if_ath.c	2008-01-26 14:30:48.458906072 +0100
++++ madwifi-dfs-r3252/ath/if_ath.c	2008-01-26 14:30:57.135400518 +0100
+@@ -3288,10 +3288,6 @@
+ 		/* If the clone works, bump the reference count for our copy. */
+ 		SKB_CB(skb)->ni = ieee80211_ref_node(SKB_CB(skb_orig)->ni);
+ 		ieee80211_dev_kfree_skb(&skb_orig);
+-	} else {
+-		if (SKB_CB(skb)->ni != NULL) 
+-			ieee80211_unref_node(&SKB_CB(skb)->ni);
+-		skb_orphan(skb);
+ 	}
+ 
+ 	eh = (struct ether_header *)skb->data;
