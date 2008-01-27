@@ -86,6 +86,26 @@ sub update_link($$) {
 	return 0;
 }
 
+sub update_git($$) {
+	my $name = shift;
+	my $src = shift;
+
+    if ( ! -d "./feeds/$name" ) {
+        system("git clone $src ./feeds/$name") == 0 or return 1;
+    } else {
+        system("GIT_DIR=./feeds/$name/.git git pull") == 0 or return 1;
+    }
+
+	-d "./feeds/$name.tmp" or mkdir "./feeds/$name.tmp" or return 1;
+	-d "./feeds/$name.tmp/info" or mkdir "./feeds/$name.tmp/info" or return 1;
+
+	system("make -s prepare-mk TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
+	system("make -s -f include/scan.mk IS_TTY=1 SCAN_TARGET=\"packageinfo\" SCAN_DIR=\"feeds/$name\" SCAN_NAME=\"package\" SCAN_DEPS=\"$ENV{TOPDIR}/include/package*.mk\" SCAN_DEPTH=4 SCAN_EXTRA=\"\" TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
+	system("ln -sf $name.tmp/.packageinfo ./feeds/$name.index");
+
+	return 0;
+}
+
 sub get_feed($) {
 	my $feed = shift;
 
@@ -344,7 +364,8 @@ EOF
 my %update_method = (
 	'src-svn' => \&update_svn,
 	'src-cpy' => \&update_cpy,
-	'src-link' => \&update_link
+	'src-link' => \&update_link,
+	'src-git' => \&update_git
 );
 
 my %commands = (
