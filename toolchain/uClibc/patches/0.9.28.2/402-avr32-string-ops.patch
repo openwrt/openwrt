@@ -1,0 +1,1139 @@
+Subject: [PATCH] AVR32-optimized string operations
+
+Add hand-optimized AVR32-specific string operations. Some of them
+need a bit more testing, though.
+
+---
+
+ libc/string/avr32/Makefile      |   40 +++++++++++
+ libc/string/avr32/bcopy.S       |   15 ++++
+ libc/string/avr32/bzero.S       |   12 +++
+ libc/string/avr32/memchr.S      |   62 +++++++++++++++++
+ libc/string/avr32/memcmp.S      |   50 +++++++++++++
+ libc/string/avr32/memcpy.S      |  110 ++++++++++++++++++++++++++++++
+ libc/string/avr32/memmove.S     |  114 +++++++++++++++++++++++++++++++
+ libc/string/avr32/memset.S      |   60 ++++++++++++++++
+ libc/string/avr32/strcat.S      |   95 ++++++++++++++++++++++++++
+ libc/string/avr32/strcmp.S      |   80 ++++++++++++++++++++++
+ libc/string/avr32/strcpy.S      |   63 +++++++++++++++++
+ libc/string/avr32/stringtest.c  |  144 ++++++++++++++++++++++++++++++++++++++++
+ libc/string/avr32/strlen.S      |   52 ++++++++++++++
+ libc/string/avr32/strncpy.S     |   77 +++++++++++++++++++++
+ libc/string/avr32/test_memcpy.c |   66 ++++++++++++++++++
+ 15 files changed, 1040 insertions(+)
+
+Index: uClibc-0.9.28-avr32/libc/string/avr32/bcopy.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28-avr32/libc/string/avr32/bcopy.S	2006-10-19 15:05:52.000000000 +0200
+@@ -0,0 +1,15 @@
++/*
++ * Copyright (C) 2004 Atmel Norway
++ */
++
++	.text
++	.global bcopy
++	.type	bcopy, @function
++	.align	1
++bcopy:
++	/* Swap the first two arguments */
++	eor	r11, r12
++	eor	r12, r11
++	eor	r11, r12
++	rjmp	__memmove
++	.size	bcopy, . - bcopy
+Index: uClibc-0.9.28-avr32/libc/string/avr32/bzero.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28-avr32/libc/string/avr32/bzero.S	2006-10-19 15:05:52.000000000 +0200
+@@ -0,0 +1,12 @@
++/*
++ * Copyright (C) 2004 Atmel Norway
++ */
++
++	.text
++	.global bzero
++	.type	bzero, @function
++	.align	1
++bzero:
++	mov	r10, r11
++	mov	r11, 0
++	rjmp	__memset
+Index: uClibc-0.9.28-avr32/libc/string/avr32/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28-avr32/libc/string/avr32/Makefile	2006-10-19 15:05:52.000000000 +0200
+@@ -0,0 +1,40 @@
++# Makefile for uClibc
++#
++# Copyright (C) 2000-2003 Erik Andersen <andersen@uclibc.org>
++#
++# This program is free software; you can redistribute it and/or modify it under
++# the terms of the GNU Library General Public License as published by the Free
++# Software Foundation; either version 2 of the License, or (at your option) any
++# later version.
++#
++# This program is distributed in the hope that it will be useful, but WITHOUT
++# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++# FOR A PARTICULAR PURPOSE. See the GNU Library General Public License for more
++# details.
++#
++# You should have received a copy of the GNU Library General Public License
++# along with this program; if not, write to the Free Software Foundation, Inc.,
++# 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++
++TOPDIR=../../../
++include $(TOPDIR)Rules.mak
++
++SSRC	:= bcopy.S bzero.S memcmp.S memcpy.S memmove.S
++SSRC	+= memset.S strcmp.S strlen.S
++# memchr.S, strcat.S, strcpy.S, strncpy.S is broken
++SOBJS	:= $(patsubst %.S,%.o, $(SSRC))
++OBJS	:= $(SOBJS)
++
++OBJ_LIST:= ../../obj.string.$(TARGET_ARCH)
++
++all: $(OBJ_LIST)
++
++$(OBJ_LIST): $(OBJS)
++	echo $(addprefix string/$(TARGET_ARCH)/, $(OBJS)) > $@
++
++$(SOBJS): %.o: %.S
++	$(CC) $(ASFLAGS) -c $< -o $@
++	$(STRIPTOOL) -x -R .note -R .comment $@
++
++clean:
++	$(RM) *.[oa] *~ core
+Index: uClibc-0.9.28-avr32/libc/string/avr32/memchr.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28-avr32/libc/string/avr32/memchr.S	2006-10-19 15:05:52.000000000 +0200
+@@ -0,0 +1,62 @@
++/*
++ * Copyright (C) 2004 Atmel Norway
++ */
++
++#define str r12
++#define chr r11
++#define len r10
++
++	.text
++	.global memchr
++	.type	memchr, @function
++memchr:
++	or	chr, chr, chr << 8
++	or	chr, chr, chr << 16
++
++	mov	r9, str
++	andl	r9, 3, COH
++	brne	.Lunaligned_str
++
++1:	sub	len, 4
++	brlt	2f
++	ld.w	r8, str++
++	psub.b	r9, r8, r11
++	tnbz	r9
++	brne	1b
++
++	sub	str, 4
++	bfextu	r9, r8, 24, 8
++	cp.b	r9, r11
++	reteq	str
++	sub	str, -1
++	bfextu	r9, r8, 16, 8
++	cp.b	r9, r11
++	reteq	str
++	sub	str, -1
++	bfextu	r9, r8, 8, 8
++	cp.b	r9, r11
++	reteq	str
++	sub	str, -1
++	retal	str
++
++2:	sub	len, -4
++	reteq	0
++
++3:	ld.ub	r8, str++
++	cp.w	r8, 0
++	reteq	str
++	sub	len, 1
++	brne	3b
++
++	retal	0
++
++.Lunaligned_str:
++1:	sub	len, 1
++	retlt	0
++	ld.ub	r8, str++
++	cp.b	r8, r11
++	reteq	str
++	sub	r9, 1
++	brge	1b
++
++	rjmp	.Laligned_search
+Index: uClibc-0.9.28-avr32/libc/string/avr32/memcmp.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28-avr32/libc/string/avr32/memcmp.S	2006-10-20 10:42:09.000000000 +0200
+@@ -0,0 +1,50 @@
++/*
++ * Copyright (C) 2004 Atmel Norway.
++ */
++
++#define s1 r12
++#define s2 r11
++#define len r10
++
++	.text
++	.global memcmp
++	.type	memcmp, @function
++	.align	1
++memcmp:
++	sub	len, 4
++	brlt	.Lless_than_4
++
++1:	ld.w	r8, s1++
++	ld.w	r9, s2++
++	cp.w	r8, r9
++	brne	.Lfound_word
++	sub	len, 4
++	brge	1b
++
++.Lless_than_4:
++	sub	len, -4
++	reteq	0
++
++1:	ld.ub	r8, s1++
++	ld.ub	r9, s2++
++	sub	r8, r9
++	retne	r8
++	sub	len, 1
++	brgt	1b
++
++	retal	0
++
++.Lfound_word:
++	psub.b	r9, r8, r9
++	bfextu	r8, r9, 24, 8
++	retne	r8
++	bfextu	r8, r9, 16, 8
++	retne	r8
++	bfextu	r8, r9, 8, 8
++	retne	r8
++	retal	r9
++
++	.size	memcmp, . - memcmp
++
++	.weak	bcmp
++	bcmp = memcmp
+Index: uClibc-0.9.28-avr32/libc/string/avr32/memcpy.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28-avr32/libc/string/avr32/memcpy.S	2006-10-19 15:05:52.000000000 +0200
+@@ -0,0 +1,110 @@
++/*
++ * Copyright (C) 2004 Atmel Norway
++ */
++
++/* Don't use r12 as dst since we must return it unmodified */
++#define dst r9
++#define src r11
++#define len r10
++
++	.text
++	.global	memcpy
++	.type	memcpy, @function
++
++	.global	__memcpy
++	.hidden	__memcpy
++	.type	__memcpy, @function
++memcpy:
++__memcpy:
++	pref	src[0]
++	mov	dst, r12
++
++	/* If we have less than 32 bytes, don't do anything fancy */
++	cp.w	len, 32
++	brge	.Lmore_than_31
++
++	sub	len, 1
++	retlt	r12
++1:	ld.ub	r8, src++
++	st.b	dst++, r8
++	sub	len, 1
++	brge	1b
++	retal	r12
++
++.Lmore_than_31:
++	pushm	r0-r7, lr
++
++	/* Check alignment */
++	mov	r8, src
++	andl	r8, 31, COH
++	brne	.Lunaligned_src
++	mov	r8, dst
++	andl	r8, 3, COH
++	brne	.Lunaligned_dst
++
++.Laligned_copy:
++	sub	len, 32
++	brlt	.Lless_than_32
++
++1:	/* Copy 32 bytes at a time */
++	ldm	src, r0-r7
++	sub	src, -32
++	stm	dst, r0-r7
++	sub	dst, -32
++	sub	len, 32
++	brge	1b
++
++.Lless_than_32:
++	/* Copy 16 more bytes if possible */
++	sub	len, -16
++	brlt	.Lless_than_16
++	ldm	src, r0-r3
++	sub	src, -16
++	sub	len, 16
++	stm	dst, r0-r3
++	sub	dst, -16
++
++.Lless_than_16:
++	/* Do the remaining as byte copies */
++	neg	len
++	add	pc, pc, len << 2
++	.rept	15
++	ld.ub	r0, src++
++	st.b	dst++, r0
++	.endr
++
++	popm	r0-r7, pc
++
++.Lunaligned_src:
++	/* Make src cacheline-aligned. r8 = (src & 31) */
++	rsub	r8, r8, 32
++	sub	len, r8
++1:	ld.ub	r0, src++
++	st.b	dst++, r0
++	sub	r8, 1
++	brne	1b
++
++	/* If dst is word-aligned, we're ready to go */
++	pref	src[0]
++	mov	r8, 3
++	tst	dst, r8
++	breq	.Laligned_copy
++
++.Lunaligned_dst:
++	/* src is aligned, but dst is not. Expect bad performance */
++	sub	len, 4
++	brlt	2f
++1:	ld.w	r0, src++
++	st.w	dst++, r0
++	sub	len, 4
++	brge	1b
++
++2:	neg	len
++	add	pc, pc, len << 2
++	.rept	3
++	ld.ub	r0, src++
++	st.b	dst++, r0
++	.endr
++
++	popm	r0-r7, pc
++	.size	memcpy, . - memcpy
+Index: uClibc-0.9.28-avr32/libc/string/avr32/memmove.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28-avr32/libc/string/avr32/memmove.S	2006-10-19 15:05:52.000000000 +0200
+@@ -0,0 +1,114 @@
++/*
++ * Copyright (C) 2004 Atmel Norway
++ */
++
++#define dst r12
++#define src r11
++#define len r10
++
++	.text
++	.global memmove
++	.type	memmove, @function
++
++	.global	__memmove
++	.hidden	__memmove
++	.type	__memmove, @function
++memmove:
++__memmove:
++	cp.w	src, dst
++	brge	__memcpy
++
++	add	dst, len
++	add	src, len
++	pref	src[-1]
++
++	/*
++	 * The rest is basically the same as in memcpy.S except that
++	 * the direction is reversed.
++	 */
++	cp.w	len, 32
++	brge	.Lmore_than_31
++
++	sub	len, 1
++	retlt	r12
++1:	ld.ub	r8, --src
++	st.b	--dst, r8
++	sub	len, 1
++	brge	1b
++	retal	r12
++
++.Lmore_than_31:
++	pushm	r0-r7, lr
++
++	/* Check alignment */
++	mov	r8, src
++	andl	r8, 31, COH
++	brne	.Lunaligned_src
++	mov	r8, r12
++	andl	r8, 3, COH
++	brne	.Lunaligned_dst
++
++.Laligned_copy:
++	sub	len, 32
++	brlt	.Lless_than_32
++
++1:	/* Copy 32 bytes at a time */
++	sub	src, 32
++	ldm	src, r0-r7
++	sub	dst, 32
++	sub	len, 32
++	stm	dst, r0-r7
++	brge	1b
++
++.Lless_than_32:
++	/* Copy 16 more bytes if possible */
++	sub	len, -16
++	brlt	.Lless_than_16
++	sub	src, 16
++	ldm	src, r0-r3
++	sub	dst, 16
++	sub	len, 16
++	stm	dst, r0-r3
++
++.Lless_than_16:
++	/* Do the remaining as byte copies */
++	sub	len, -16
++	breq	2f
++1:	ld.ub	r0, --src
++	st.b	--dst, r0
++	sub	len, 1
++	brne	1b
++
++2:	popm	r0-r7, pc
++
++.Lunaligned_src:
++	/* Make src cacheline-aligned. r8 = (src & 31) */
++	sub	len, r8
++1:	ld.ub	r0, --src
++	st.b	--dst, r0
++	sub	r8, 1
++	brne	1b
++
++	/* If dst is word-aligned, we're ready to go */
++	pref	src[-4]
++	mov	r8, 3
++	tst	dst, r8
++	breq	.Laligned_copy
++
++.Lunaligned_dst:
++	/* src is aligned, but dst is not. Expect bad performance */
++	sub	len, 4
++	brlt	2f
++1:	ld.w	r0, --src
++	st.w	--dst, r0
++	sub	len, 4
++	brge	1b
++
++2:	neg	len
++	add	pc, pc, len << 2
++	.rept	3
++	ld.ub	r0, --src
++	st.b	--dst, r0
++	.endr
++
++	popm	r0-r7, pc
+Index: uClibc-0.9.28-avr32/libc/string/avr32/memset.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28-avr32/libc/string/avr32/memset.S	2006-10-20 10:42:15.000000000 +0200
+@@ -0,0 +1,60 @@
++/*
++ * Copyright (C) 2004 Atmel Norway.
++ */
++
++#define s r12
++#define c r11
++#define n r10
++
++	.text
++	.global memset
++	.type	memset, @function
++
++	.global	__memset
++	.hidden	__memset
++	.type	__memset, @function
++
++	.align	1
++memset:
++__memset:
++	cp.w	n, 32
++	mov	r9, s
++	brge	.Llarge_memset
++
++	sub	n, 1
++	retlt	s
++1:	st.b	s++, c
++	sub	n, 1
++	brge	1b
++
++	retal	r9
++
++.Llarge_memset:
++	mov	r8, r11
++	mov	r11, 3
++	bfins	r8, r8, 8, 8
++	bfins	r8, r8, 16, 16
++	tst	s, r11
++	breq	2f
++
++1:	st.b	s++, r8
++	sub	n, 1
++	tst	s, r11
++	brne	1b
++
++2:	mov	r11, r9
++	mov	r9, r8
++	sub	n, 8
++
++3:	st.d	s++, r8
++	sub	n, 8
++	brge	3b
++
++	/* If we are done, n == -8 and we'll skip all st.b insns below */
++	neg	n
++	lsl	n, 1
++	add	pc, n
++	.rept	7
++	st.b	s++, r8
++	.endr
++	retal	r11
+Index: uClibc-0.9.28-avr32/libc/string/avr32/strcat.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28-avr32/libc/string/avr32/strcat.S	2006-10-19 15:05:52.000000000 +0200
+@@ -0,0 +1,95 @@
++/*
++ * Copyright (C) 2004 Atmel Norway
++ */
++
++#define s1 r9
++#define s2 r11
++
++	.text
++	.global strcat
++	.type	strcat, @function
++	.align	1
++strcat:
++	mov	s1, r12
++
++	/* Make sure s1 is word-aligned */
++	mov	r10, s1
++	andl	r10, 3, COH
++	breq	2f
++
++	add	pc, pc, r10 << 3
++	sub	r0, r0, 0	/* 4-byte nop */
++	ld.ub	r8, s1++
++	sub	r8, r8, 0
++	breq	2f
++	ld.ub	r8, s1++
++	sub	r8, r8, 0
++	breq	3f
++	ld.ub	r8, s1++
++	sub	r8, r8, 0
++	breq	4f
++
++	/* Find the end of the first string */
++5:	ld.w	r8, s1++
++	tnbz	r8
++	brne	5b
++
++	sub	s1, 4
++
++	bfextu	r10, r8, 24, 8
++	cp.w	r10, 0
++	breq	1f
++	sub	s1, -1
++	bfextu	r10, r8, 16, 8
++	cp.w	r10, 0
++	breq	2f
++	sub	s1, -1
++	bfextu	r10, r8, 8, 8
++	cp.w	r10, 0
++	breq	3f
++	sub	s1, -1
++	rjmp	4f
++
++	/* Now, append s2 */
++1:	ld.ub	r8, s2++
++	st.b	s1++, r8
++	cp.w	r8, 0
++	reteq	r12
++2:	ld.ub	r8, s2++
++	st.b	s1++, r8
++	cp.w	r8, 0
++	reteq	r12
++3:	ld.ub	r8, s2++
++	st.b	s1++, r8
++	cp.w	r8, 0
++	reteq	r12
++4:	ld.ub	r8, s2++
++	st.b	s1++, r8
++	cp.w	r8, 0
++	reteq	r12
++
++	/* Copy one word at a time */
++	ld.w	r8, s2++
++	tnbz	r8
++	breq	2f
++1:	st.w	r8, s2++
++	ld.w	r8, s2++
++	tnbz	r8
++	brne	1b
++
++	/* Copy the remaining bytes */
++	bfextu	r10, r8, 24, 8
++	st.b	s1++, r10
++	cp.w	r10, 0
++	reteq	r12
++	bfextu	r10, r8, 16, 8
++	st.b	s1++, r10
++	cp.w	r10, 0
++	reteq	r12
++	bfextu	r10, r8, 8, 8
++	st.b	s1++, r10
++	cp.w	r10, 0
++	reteq	r12
++	st.b	s1++, r8
++	retal	r12
++	.size	strcat, . - strcat
+Index: uClibc-0.9.28-avr32/libc/string/avr32/strcmp.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28-avr32/libc/string/avr32/strcmp.S	2006-10-19 15:05:52.000000000 +0200
+@@ -0,0 +1,80 @@
++/*
++ * Copyright (C) 2004 Atmel Norway.
++ */
++
++#define s1 r12
++#define s2 r11
++#define len r10
++
++	.text
++	.global strcmp
++	.type	strcmp, @function
++	.align	1
++strcmp:
++	mov	r8, 3
++	tst	s1, r8
++	brne	.Lunaligned_s1
++	tst	s2, r8
++	brne	.Lunaligned_s2
++
++1:	ld.w	r8, s1++
++	ld.w	r9, s2++
++	cp.w	r8, r9
++	brne	2f
++	tnbz	r8
++	brne	1b
++	retal	0
++
++2:	bfextu	r12, r8, 24, 8
++	bfextu	r11, r9, 24, 8
++	sub	r12, r11
++	retne	r12
++	cp.w	r11, 0
++	reteq	0
++	bfextu	r12, r8, 16, 8
++	bfextu	r11, r9, 16, 8
++	sub	r12, r11
++	retne	r12
++	cp.w	r11, 0
++	reteq	0
++	bfextu	r12, r8, 8, 8
++	bfextu	r11, r9, 8, 8
++	sub	r12, r11
++	retne	r12
++	cp.w	r11, 0
++	reteq	0
++	bfextu	r12, r8, 0, 8
++	bfextu	r11, r9, 0, 8
++	sub	r12, r11
++	retal	r12
++
++.Lunaligned_s1:
++3:	tst	s1, r8
++	breq	4f
++	ld.ub	r10, s1++
++	ld.ub	r9, s2++
++	sub	r10, r9
++	retne	r10
++	cp.w	r9, 0
++	brne	3b
++	retal	r10
++
++4:	tst	s2, r8
++	breq	1b
++
++.Lunaligned_s2:
++	/*
++	 * s1 and s2 can't both be aligned, and unaligned word loads
++	 * can trigger spurious exceptions if we cross a page boundary.
++	 * Do it the slow way...
++	 */
++1:	ld.ub	r8, s1++
++	ld.ub	r9, s2++
++	sub	r8, r9
++	retne	r8
++	cp.w	r9, 0
++	brne	1b
++	retal	0
++
++	.weak	strcoll
++	strcoll	= strcmp
+Index: uClibc-0.9.28-avr32/libc/string/avr32/strcpy.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28-avr32/libc/string/avr32/strcpy.S	2006-10-19 15:05:52.000000000 +0200
+@@ -0,0 +1,63 @@
++/*
++ * Copyright (C) 2004 Atmel Norway
++ *
++ * To reduce the size, this one might simply call strncpy with len = -1.
++ */
++
++#define dst r9
++#define src r11
++
++	.text
++	.global strcpy
++	.type	strcpy, @function
++strcpy:
++	mov	dst, r12
++
++	pref	src[0]
++
++	/*
++	 * Check alignment. If src is aligned but dst isn't, we can't
++	 * do much about it...
++	 */
++	mov	r8, src
++	andl	r8, 3 COH
++	brne	.Lunaligned_src
++
++.Laligned_copy:
++1:	ld.w	r8, src++
++	tnbz	r8
++	breq	2f
++	st.w	dst++, r8
++	rjmp	1b
++
++2:	/*
++	 * Ok, r8 now contains the terminating '\0'. Copy the
++	 * remaining bytes individually.
++	 */
++	bfextu	r10, r8, 24, 8
++	st.b	dst++, r10
++	cp.w	r10, 0
++	reteq	r12
++	bfextu	r10, r8, 16, 8
++	st.b	dst++, r10
++	cp.w	r10, 0
++	reteq	r12
++	bfextu	r10, r8, 8, 8
++	st.b	dst++, r10
++	cp.w	r10, 0
++	reteq	r12
++	st.b	dst++, r8
++	retal	r12
++
++.Lunaligned_src:
++	/* Copy bytes until we're aligned */
++	rsub	r8, r8, 4
++	add	pc, pc, r8 << 3
++	nop
++	nop
++	ld.ub	r10, src++
++	st.b	dst++, r10
++	cp.w	r10, 0
++	reteq	r12
++
++	rjmp	.Laligned_copy
+Index: uClibc-0.9.28-avr32/libc/string/avr32/stringtest.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28-avr32/libc/string/avr32/stringtest.c	2006-10-19 15:05:52.000000000 +0200
+@@ -0,0 +1,144 @@
++
++#include <stdio.h>
++#include <string.h>
++#include <time.h>
++#include <sys/mman.h>
++
++#define BUF_SIZE (8 * 1024)
++
++static char *buf1;
++static char *buf1_ref;
++static char *buf2;
++
++extern void *optimized_memcpy(void *dest, void *src, size_t len);
++extern void *optimized_memmove(void *dest, void *src, size_t len);
++extern char *optimized_strcpy(char *dest, char *src);
++extern char *optimized_strncpy(char *dest, char *src, size_t len);
++
++void dump_mismatch(char *buf, char *ref, size_t len)
++{
++	int i, j;
++
++	for (i = 0; i < len; i += 16) {
++		if (memcmp(buf + i, ref + i, 16) == 0)
++			continue;
++
++		printf("%4x buf:", i);
++		for (j = i; j < (i + 16); j++)
++			printf(" %02x", buf[j]);
++		printf("\n     ref:");
++		for (j = i; j < (i + 16); j++)
++			printf(" %02x", ref[j]);
++		printf("\n");
++	}
++}
++
++static void test_memcpy(int src_offset, int dst_offset, int len)
++{
++	clock_t start, old, new;
++	int i;
++
++	memset(buf1, 0x55, BUF_SIZE);
++	memset(buf1_ref, 0x55, BUF_SIZE);
++	memset(buf2, 0xaa, BUF_SIZE);
++
++	printf("Testing memcpy with offsets %d => %d and len %d...",
++	       src_offset, dst_offset, len);
++
++	start = clock();
++	for (i = 0; i < 8192; i++)
++		optimized_memcpy(buf1 + dst_offset, buf2 + src_offset, len);
++	new = clock() - start;
++	start = clock();
++	for ( i = 0; i < 8192; i++)
++		memcpy(buf1_ref + dst_offset, buf2 + src_offset, len);
++	old = clock() - start;
++
++	if (memcmp(buf1, buf1_ref, BUF_SIZE) == 0)
++		printf("OK\n");
++	else {
++		printf("FAILED\n");
++		dump_mismatch(buf1, buf1_ref, BUF_SIZE);
++	}
++	printf("CPU time used: %d vs. %d\n", new, old);
++}
++
++static void test_memmove(int src_offset, int dst_offset, int len)
++{
++	clock_t start, old, new;
++
++	memset(buf1, 0x55, BUF_SIZE);
++	memset(buf1_ref, 0x55, BUF_SIZE);
++	memset(buf2, 0xaa, BUF_SIZE);
++
++	printf("Testing memmove with offsets %d => %d and len %d...",
++	       src_offset, dst_offset, len);
++
++	start = clock();
++	optimized_memmove(buf1 + dst_offset, buf2 + src_offset, len);
++	new = clock() - start;
++	start = clock();
++	memmove(buf1_ref + dst_offset, buf2 + src_offset, len);
++	old = clock() - start;
++
++	if (memcmp(buf1, buf1_ref, BUF_SIZE) == 0)
++		printf("OK\n");
++	else {
++		printf("FAILED\n");
++		dump_mismatch(buf1, buf1_ref, BUF_SIZE);
++	}
++	printf("CPU time used: %d vs. %d\n", new, old);
++}
++
++int main(int argc, char *argv[])
++{
++	buf2 = mmap(NULL, BUF_SIZE, PROT_READ | PROT_WRITE,
++		    MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
++	if (buf2 == MAP_FAILED) {
++		perror("Failed to allocate memory for buf2");
++		return 1;
++	}
++	buf1 = mmap(NULL, BUF_SIZE, PROT_READ | PROT_WRITE,
++		    MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
++	if (buf1 == MAP_FAILED) {
++		perror("Failed to allocate memory for buf1");
++		return 1;
++	}
++	buf1_ref = mmap(NULL, BUF_SIZE, PROT_READ | PROT_WRITE,
++			MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
++	if (buf1_ref == MAP_FAILED) {
++		perror("Failed to allocate memory for buf1_ref");
++		return 1;
++	}
++	printf("\n === MEMCPY ===\n\n");
++
++	test_memcpy(0, 0, BUF_SIZE - 32);
++	test_memcpy(0, 0, 1);
++	test_memcpy(0, 0, 31);
++	test_memcpy(0, 0, 32);
++	test_memcpy(0, 0, 127);
++	test_memcpy(0, 0, 128);
++	test_memcpy(4, 4, BUF_SIZE - 32 - 4);
++	test_memcpy(1, 1, BUF_SIZE - 32 - 1);
++	test_memcpy(1, 1, 126);
++	test_memcpy(0, 3, 128);
++	test_memcpy(1, 4, 128);
++	test_memcpy(0, 0, 0);
++
++	printf("\n === MEMMOVE ===\n\n");
++
++	test_memmove(0, 0, BUF_SIZE - 32);
++	test_memmove(0, 0, 1);
++	test_memmove(0, 0, 31);
++	test_memmove(0, 0, 32);
++	test_memmove(0, 0, BUF_SIZE - 33);
++	test_memmove(0, 0, 128);
++	test_memmove(4, 4, BUF_SIZE - 32 - 4);
++	test_memmove(1, 1, BUF_SIZE - 32 - 1);
++	test_memmove(1, 1, BUF_SIZE - 130);
++	test_memmove(0, 3, BUF_SIZE - 128);
++	test_memmove(1, 4, BUF_SIZE - 128);
++	test_memmove(0, 0, 0);
++
++	return 0;
++}
+Index: uClibc-0.9.28-avr32/libc/string/avr32/strlen.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28-avr32/libc/string/avr32/strlen.S	2006-10-19 15:05:52.000000000 +0200
+@@ -0,0 +1,52 @@
++/*
++ * Copyright (C) 2004 Atmel Norway
++ */
++
++#define str r12
++
++	.text
++	.global strlen
++	.type	strlen, @function
++strlen:
++	mov	r11, r12
++
++	mov	r9, str
++	andl	r9, 3, COH
++	brne	.Lunaligned_str
++
++1:	ld.w	r8, str++
++	tnbz	r8
++	brne	1b
++
++	sub	r12, r11
++	bfextu	r9, r8, 24, 8
++	cp.w	r9, 0
++	subeq	r12, 4
++	reteq	r12
++	bfextu	r9, r8, 16, 8
++	cp.w	r9, 0
++	subeq	r12, 3
++	reteq	r12
++	bfextu	r9, r8, 8, 8
++	cp.w	r9, 0
++	subeq	r12, 2
++	reteq	r12
++	sub	r12, 1
++	retal	r12
++
++.Lunaligned_str:
++	add	pc, pc, r9 << 3
++	sub	r0, r0, 0	/* 4-byte nop */
++	ld.ub	r8, str++
++	sub	r8, r8, 0
++	breq	1f
++	ld.ub	r8, str++
++	sub	r8, r8, 0
++	breq	1f
++	ld.ub	r8, str++
++	sub	r8, r8, 0
++	brne	1b
++
++1:	sub	r12, 1
++	sub	r12, r11
++	retal	r12
+Index: uClibc-0.9.28-avr32/libc/string/avr32/strncpy.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28-avr32/libc/string/avr32/strncpy.S	2006-10-19 15:05:52.000000000 +0200
+@@ -0,0 +1,77 @@
++/*
++ * Copyright (C) 2004 Atmel Norway
++ */
++
++#define dst r9
++#define src r11
++
++	.text
++	.global strcpy
++	.type	strncpy, @function
++strncpy:
++	mov	dst, r12
++
++	pref	src[0]
++	mov	dst, r12
++
++	/*
++	 * Check alignment. If src is aligned but dst isn't, we can't
++	 * do much about it...
++	 */
++	mov	r8, src
++	andl	r8, 3 COH
++	brne	.Lunaligned_src
++
++.Laligned_copy:
++	sub	r10, 4
++	brlt	3f
++1:	ld.w	r8, src++
++	tnbz	r8
++	breq	2f
++	st.w	dst++, r8
++	sub	r10, 4
++	brne	1b
++
++3:	sub	r10, -4
++	reteq	r12
++
++	/* This is safe as long as src is word-aligned and r10 > 0 */
++	ld.w	r8, src++
++
++2:	/*
++	 * Ok, r8 now contains the terminating '\0'. Copy the
++	 * remaining bytes individually.
++	 */
++	bfextu	r11, r8, 24, 8
++	st.b	dst++, r11
++	cp.w	r11, 0
++	reteq	r12
++	sub	r10, 1
++	reteq	r12
++	bfextu	r11, r8, 16, 8
++	st.b	dst++, r11
++	cp.w	r11, 0
++	reteq	r12
++	sub	r10, 1
++	reteq	r12
++	bfextu	r11, r8, 8, 8
++	st.b	dst++, r11
++	cp.w	r11, 0
++	reteq	r12
++	sub	r10, 1
++	reteq	r12
++	st.b	dst++, r8
++	retal	r12
++
++.Lunaligned_src:
++	/* Copy bytes until we're aligned */
++	min	r8, r8, r10
++	sub	r10, r8
++	sub	r8, 1
++	retlt	r12
++1:	ld.ub	r10, src++
++	st.b	dst++, r10
++	sub	r8, 1
++	brge	1b
++
++	rjmp	.Laligned_copy
+Index: uClibc-0.9.28-avr32/libc/string/avr32/test_memcpy.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28-avr32/libc/string/avr32/test_memcpy.c	2006-10-19 15:05:52.000000000 +0200
+@@ -0,0 +1,66 @@
++
++#include <stdio.h>
++#include <string.h>
++
++#define BUF_SIZE 32768
++
++static char buf1[BUF_SIZE] __attribute__((aligned(32)));
++static char buf1_ref[BUF_SIZE] __attribute__((aligned(32)));
++static char buf2[BUF_SIZE] __attribute__((aligned(32)));
++
++extern void *new_memcpy(void *dest, void *src, size_t len);
++
++void dump_mismatch(char *buf, char *ref, size_t len)
++{
++	int i, j;
++
++	for (i = 0; i < len; i += 16) {
++		if (memcmp(buf + i, ref + i, 16) == 0)
++			continue;
++
++		printf("% 4x buf:", i);
++		for (j = i; j < (i + 16); j++)
++			printf(" %02x", buf[j]);
++		printf("\n     ref:");
++		for (j = i; j < (i + 16); j++)
++			printf(" %02x", ref[j]);
++		printf("\n");
++	}
++}
++
++void test(int src_offset, int dst_offset, int len)
++{
++	memset(buf1, 0x55, sizeof(buf1));
++	memset(buf1_ref, 0x55, sizeof(buf1_ref));
++	memset(buf2, 0xaa, sizeof(buf2));
++
++	printf("Testing with offsets %d => %d and len %d...",
++	       src_offset, dst_offset, len);
++
++	new_memcpy(buf1 + dst_offset, buf2 + src_offset, len);
++	memcpy(buf1_ref + dst_offset, buf2 + src_offset, len);
++
++	if (memcmp(buf1, buf1_ref, sizeof(buf1)) == 0)
++		printf("OK\n");
++	else {
++		printf("FAILED\n");
++		dump_mismatch(buf1, buf1_ref, sizeof(buf1));
++	}
++}
++
++int main(int argc, char *argv[])
++{
++	test(0, 0, BUF_SIZE);
++	test(0, 0, 1);
++	test(0, 0, 31);
++	test(0, 0, 32);
++	test(0, 0, 127);
++	test(0, 0, 128);
++	test(4, 4, BUF_SIZE - 4);
++	test(1, 1, BUF_SIZE - 1);
++	test(1, 1, 126);
++	test(0, 3, 128);
++	test(1, 4, 128);
++
++	return 0;
++}

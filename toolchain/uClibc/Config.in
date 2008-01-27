@@ -1,0 +1,31 @@
+# Choose uclibc version.
+
+choice
+	prompt "uClibc Version" if TOOLCHAINOPTS
+	default UCLIBC_VERSION_0_9_28 if LINUX_2_4
+	default UCLIBC_VERSION_0_9_29
+	help
+	  Select the version of uClibc you wish to use.
+	  Default for kernel 2.6 is 0.9.29, for kernel 2.4 it is 0.9.28 .
+
+	config UCLIBC_VERSION_SNAPSHOT
+		bool "uClibc snapshot"
+
+	config UCLIBC_VERSION_0_9_28
+		bool "uClibc 0.9.28"
+
+	config UCLIBC_VERSION_0_9_29
+		depends !LINUX_2_4
+		bool "uClibc 0.9.29"
+
+endchoice
+
+config UCLIBC_EXTRA_VERSION
+	string
+	prompt "Extra uClibc version" if TOOLCHAINOPTS
+	default "snapshot"   if UCLIBC_VERSION_SNAPSHOT
+	default ".2"         if UCLIBC_VERSION_0_9_28
+	default ""
+	help
+	    Default for version 0.9.28 is ".02", for daily snapshot it's just "snapshot"
+	    For all other versions the default string is empty.

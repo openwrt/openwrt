@@ -1,0 +1,2135 @@
+Subject: [PATCH] AVR32 Architecture support
+
+Add support for the AVR32 architecture in the core libc and build system.
+This also adds AVR32-ELF definitions to elf.h
+
+---
+
+ Rules.mak                                      |    4 
+ extra/Configs/Config.avr32                     |   38 +++++
+ extra/Configs/Config.in                        |    7 +
+ include/elf.h                                  |   51 +++++++
+ libc/sysdeps/linux/avr32/Makefile              |   93 +++++++++++++
+ libc/sysdeps/linux/avr32/__longjmp.S           |   17 ++
+ libc/sysdeps/linux/avr32/_mmap.c               |   33 ++++
+ libc/sysdeps/linux/avr32/bits/atomicity.h      |   86 ++++++++++++
+ libc/sysdeps/linux/avr32/bits/byteswap.h       |   80 +++++++++++
+ libc/sysdeps/linux/avr32/bits/endian.h         |    7 +
+ libc/sysdeps/linux/avr32/bits/fcntl.h          |  167 +++++++++++++++++++++++++
+ libc/sysdeps/linux/avr32/bits/kernel_stat.h    |   63 +++++++++
+ libc/sysdeps/linux/avr32/bits/kernel_types.h   |   56 ++++++++
+ libc/sysdeps/linux/avr32/bits/machine-gmon.h   |   69 ++++++++++
+ libc/sysdeps/linux/avr32/bits/mman.h           |   95 ++++++++++++++
+ libc/sysdeps/linux/avr32/bits/profil-counter.h |   26 +++
+ libc/sysdeps/linux/avr32/bits/setjmp.h         |   21 +++
+ libc/sysdeps/linux/avr32/bits/syscalls.h       |  143 +++++++++++++++++++++
+ libc/sysdeps/linux/avr32/bits/wordsize.h       |    1 
+ libc/sysdeps/linux/avr32/brk.c                 |   23 +++
+ libc/sysdeps/linux/avr32/bsd-_setjmp.S         |   12 +
+ libc/sysdeps/linux/avr32/bsd-setjmp.S          |   12 +
+ libc/sysdeps/linux/avr32/clone.c               |   37 +++++
+ libc/sysdeps/linux/avr32/crt1.S                |   93 +++++++++++++
+ libc/sysdeps/linux/avr32/crti.S                |   17 ++
+ libc/sysdeps/linux/avr32/crtn.S                |   14 ++
+ libc/sysdeps/linux/avr32/mmap.c                |   31 ++++
+ libc/sysdeps/linux/avr32/setjmp.S              |   43 ++++++
+ libc/sysdeps/linux/avr32/sigaction.c           |   49 +++++++
+ libc/sysdeps/linux/avr32/sigrestorer.S         |   11 +
+ libc/sysdeps/linux/avr32/sys/elf.h             |   26 +++
+ libc/sysdeps/linux/avr32/sys/io.h              |   48 +++++++
+ libc/sysdeps/linux/avr32/sys/procfs.h          |  123 ++++++++++++++++++
+ libc/sysdeps/linux/avr32/sys/ucontext.h        |   94 ++++++++++++++
+ libc/sysdeps/linux/avr32/sys/user.h            |   46 ++++++
+ libc/sysdeps/linux/avr32/syscall.S             |   81 ++++++++++++
+ libc/sysdeps/linux/avr32/vfork.S               |   55 ++++++++
+ 37 files changed, 1872 insertions(+)
+
+Index: uClibc-0.9.28/extra/Configs/Config.avr32
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/extra/Configs/Config.avr32	2006-05-05 09:27:17.000000000 +0200
+@@ -0,0 +1,38 @@
++#
++# For a description of the syntax of this configuration file,
++# see extra/config/Kconfig-language.txt
++#
++
++config HAVE_ELF
++	bool
++	default y
++
++config TARGET_ARCH
++	default "avr32"
++
++config ARCH_CFLAGS
++	string
++
++config ARCH_LDFLAGS
++	string
++
++config LIBGCC_CFLAGS
++	string
++
++config ARCH_SUPPORTS_BIG_ENDIAN
++	bool
++	default y
++
++config UCLIBC_COMPLETELY_PIC
++	select FORCE_SHAREABLE_TEXT_SEGMENTS
++	bool
++	default y
++
++choice
++	prompt "Target CPU Type"
++	default CONFIG_AP7000
++
++config CONFIG_AP7000
++	bool "AP7000"
++
++endchoice
+Index: uClibc-0.9.28/extra/Configs/Config.in
+===================================================================
+--- uClibc-0.9.28.orig/extra/Configs/Config.in	2006-04-19 12:47:48.000000000 +0200
++++ uClibc-0.9.28/extra/Configs/Config.in	2006-04-19 12:48:33.000000000 +0200
+@@ -16,6 +16,9 @@ config TARGET_alpha
+ config TARGET_arm
+ 	bool "arm"
+ 
++config TARGET_avr32
++	bool "avr32"
++
+ config TARGET_bfin
+ 	bool "bfin"
+ 
+@@ -83,6 +86,10 @@ if TARGET_arm
+ source "extra/Configs/Config.arm"
+ endif
+ 
++if TARGET_avr32
++source "extra/Configs/Config.avr32"
++endif
++
+ if TARGET_bfin
+ source "extra/Configs/Config.bfin"
+ endif
+Index: uClibc-0.9.28/include/elf.h
+===================================================================
+--- uClibc-0.9.28.orig/include/elf.h	2006-04-19 12:47:48.000000000 +0200
++++ uClibc-0.9.28/include/elf.h	2006-05-05 09:28:38.000000000 +0200
+@@ -261,6 +261,8 @@ typedef struct
+ #define EM_NIOS32	0xfebb		/* Altera Nios 32 */
+ #define EM_ALTERA_NIOS2  0x9ee5	/* Altera Nios II */
+ 
++#define EM_AVR32	0x18ad
++
+ /* V850 backend magic number.  Written in the absense of an ABI.  */
+ #define EM_CYGNUS_V850 0x9080
+ 
+@@ -2687,6 +2689,55 @@ typedef Elf32_Addr Elf32_Conflict;
+ /* Keep this the last entry.  */
+ #define R_V850_NUM		25
+ 
++/* Atmel AVR32 relocations.  */
++#define R_AVR32_NONE		0
++#define R_AVR32_32		1
++#define R_AVR32_16		2
++#define R_AVR32_8		3
++#define R_AVR32_32_PCREL	4
++#define R_AVR32_16_PCREL	5
++#define R_AVR32_8_PCREL		6
++#define R_AVR32_DIFF32		7
++#define R_AVR32_DIFF16		8
++#define R_AVR32_DIFF8		9
++#define R_AVR32_GOT32		10
++#define R_AVR32_GOT16		11
++#define R_AVR32_GOT8		12
++#define R_AVR32_21S		13
++#define R_AVR32_16U		14
++#define R_AVR32_16S		15
++#define R_AVR32_8S		16
++#define R_AVR32_8S_EXT		17
++#define R_AVR32_22H_PCREL	18
++#define R_AVR32_18W_PCREL	19
++#define R_AVR32_16B_PCREL	20
++#define R_AVR32_16N_PCREL	21
++#define R_AVR32_14UW_PCREL	22
++#define R_AVR32_11H_PCREL	23
++#define R_AVR32_10UW_PCREL	24
++#define R_AVR32_9H_PCREL	25
++#define R_AVR32_9UW_PCREL	26
++#define R_AVR32_HI16		27
++#define R_AVR32_LO16		28
++#define R_AVR32_GOTPC		29
++#define R_AVR32_GOTCALL		30
++#define R_AVR32_LDA_GOT		31
++#define R_AVR32_GOT21S		32
++#define R_AVR32_GOT18SW		33
++#define R_AVR32_GOT16S		34
++#define R_AVR32_GOT7UW		35
++#define R_AVR32_32_CPENT	36
++#define R_AVR32_CPCALL		37
++#define R_AVR32_16_CP		38
++#define R_AVR32_9W_CP		39
++#define R_AVR32_RELATIVE	40
++#define R_AVR32_GLOB_DAT	41
++#define R_AVR32_JMP_SLOT	42
++#define R_AVR32_ALIGN		43
++#define R_AVR32_NUM		44
++
++/* AVR32 dynamic tags */
++#define DT_AVR32_GOTSZ		0x70000001 /* Total size of GOT in bytes */
+ 
+ #define R_H8_NONE       0
+ #define R_H8_DIR32      1
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/Makefile	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,93 @@
++# Makefile for uClibc
++#
++# Copyright (C) 2000-2003 Erik Andersen <andersen@uclibc.org>
++#
++# This program is free software; you can redistribute it and/or modify it under
++# the terms of the GNU Library General Public License as published by the Free
++# Software Foundation; either version 2 of the License, or (at your option) any
++# later version.
++#
++# This program is distributed in the hope that it will be useful, but WITHOUT
++# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++# FOR A PARTICULAR PURPOSE. See the GNU Library General Public License for more
++# details.
++#
++# You should have received a copy of the GNU Library General Public License
++# along with this program; if not, write to the Free Software Foundation, Inc.,
++# 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++
++TOPDIR=../../../../
++include $(TOPDIR)Rules.mak
++ASFLAGS=$(CFLAGS)
++
++CRT_SRC	= crt1.S
++CRT_OBJ = crt1.o
++SCRT_OBJ = $(patsubst %,S%, $(CRT_OBJ))
++CTOR_TARGETS=$(TOPDIR)lib/crti.o $(TOPDIR)lib/crtn.o
++
++SSRC=__longjmp.S setjmp.S bsd-setjmp.S vfork.S \
++	bsd-_setjmp.S sigrestorer.S syscall.S
++SOBJS=$(patsubst %.S,%.o, $(SSRC))
++
++CSRC=clone.c brk.c sigaction.c mmap.c
++COBJS=$(patsubst %.c,%.o, $(CSRC))
++
++OBJS=$(SOBJS) $(COBJS)
++
++OBJ_LIST=../../../obj.sysdeps.$(TARGET_ARCH)
++
++all: $(OBJ_LIST)
++
++$(OBJ_LIST): $(OBJS) $(CRT_OBJ) $(SCRT_OBJ) $(CTOR_TARGETS)
++	echo $(patsubst %, sysdeps/linux/$(TARGET_ARCH)/%, $(OBJS)) > $(OBJ_LIST)
++	$(INSTALL) -d $(TOPDIR)lib/
++	cp $(CRT_OBJ) $(SCRT_OBJ) $(TOPDIR)lib/
++
++$(CRT_OBJ): $(CRT_SRC)
++	$(CC) $(ASFLAGS) -DL_$* $< -c -o $*.o
++	$(STRIPTOOL) -x -R .note -R .comment $*.o
++
++$(SCRT_OBJ): $(CRT_SRC)
++	$(CC) $(ASFLAGS) $(PIEFLAG) -DL_$* $< -c -o $*.o
++	$(STRIPTOOL) -x -R .note -R .comment $*.o
++
++$(SOBJS): %.o : %.S
++	$(CC) $(ASFLAGS) -c $< -o $@
++	$(STRIPTOOL) -x -R .note -R .comment $*.o
++
++$(COBJS): %.o : %.c
++	$(CC) $(CFLAGS) -c $< -o $@
++	$(STRIPTOOL) -x -R .note -R .comment $*.o
++
++ifeq ($(strip $(UCLIBC_CTOR_DTOR)),y)
++crti.o: crti.S
++	$(CC) $(ASFLAGS) -c crti.S -o crti.o
++
++$(TOPDIR)lib/crti.o: crti.o
++	$(INSTALL) -d $(TOPDIR)lib/
++	cp crti.o $(TOPDIR)lib/
++
++crtn.o: crtn.S
++	$(CC) $(ASFLAGS) -c crtn.S -o crtn.o
++
++$(TOPDIR)lib/crtn.o: crtn.o
++	$(INSTALL) -d $(TOPDIR)lib/
++	cp crtn.o $(TOPDIR)lib/
++else
++$(TOPDIR)lib/crti.o:
++	$(INSTALL) -d $(TOPDIR)lib/
++	$(AR) $(ARFLAGS) $(TOPDIR)lib/crti.o
++$(TOPDIR)lib/crtn.o:
++	$(INSTALL) -d $(TOPDIR)lib/
++	$(AR) $(ARFLAGS) $(TOPDIR)lib/crtn.o
++endif
++
++
++headers:
++#	$(LN) -fs ../libc/sysdeps/linux/avr32/fpu_control.h $(TOPDIR)/include/
++
++clean:
++	$(RM) *.[oa] *~ core
++	$(RM) bits/sysnum.h
++	$(RM) gmon-start.S
++
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/__longjmp.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/__longjmp.S	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,17 @@
++/* longjmp for AVR32
++ *
++ * Copyright (C) 2004 Atmel Norway AS
++ */
++
++	.global	__longjmp
++	.type	__longjmp,"function"
++	.align	1
++__longjmp:
++	ldm	r12++, r0,r1,r2,r3,r4,r5,r6,r7,r8,sp,lr
++	mov	r12, r11	/* get the return value right */
++	mustr	r8		/* restore status register (lower half) */
++	cp	r12, 0		/* can't return zero */
++	frs
++	moveq	r12, 1
++	mov	pc,lr
++	.size	__longjmp, . - __longjmp
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/_mmap.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/_mmap.c	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,33 @@
++/* Copyright (C) 2005 Atmel Norway
++
++   This program is free software; you can redistribute it and/or modify it under
++   the terms of the GNU Library General Public License as published by the Free
++   Software Foundation; either version 2 of the License, or (at your option) any
++   later version.
++
++   This program is distributed in the hope that it will be useful, but WITHOUT
++   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++   FOR A PARTICULAR PURPOSE. See the GNU Library General Public License for more
++   details.
++
++   You should have received a copy of the GNU Library General Public License
++   along with this program; if not, write to the Free Software Foundation, Inc.,
++   59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++
++   Derived in part from the Linux-8086 C library, the GNU C Library, and several
++   other sundry sources.  Files within this library are copyright by their
++   respective copyright holders.
++ */
++
++#include <errno.h>
++#include <sys/mman.h>
++#include <sys/syscall.h>
++
++#define __NR_mmap2 __NR_mmap
++
++static _syscall6(__ptr_t, mmap2, __ptr_t, addr, size_t, len, int, prot, int, flags, int, fd, __off_t, pgoff);
++
++__ptr_t mmap(__ptr_t addr, size_t len, int prot, int flags, int fd, __off_t offset)
++{
++	return mmap2(addr, len, prot, flags, fd, offset >> 12);
++}
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/atomicity.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/atomicity.h	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,86 @@
++/* Low-level functions for atomic operations.  AVR32 version.
++   Copyright (C) 1997, 1998, 1999, 2000 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++#ifndef _ATOMICITY_H
++#define _ATOMICITY_H 1
++
++#include <inttypes.h>
++
++static inline int
++__attribute__((unused))
++exchange_and_add (volatile uint32_t *mem, int val)
++{
++	int tmp, result;
++
++	__asm__ __volatile__(
++		"/* Inline exchange and add */\n"
++		"1:	ssrf	5\n"
++		"	ld.w	%0, %3\n"
++		"	add	%1, %0, %4\n"
++		"	stcond	%2, %1\n"
++		"	brne	1b"
++		: "=&r"(result), "=&r"(tmp), "=m"(*mem)
++		: "m"(*mem), "r"(val)
++		: "cc", "memory");
++
++	return result;
++}
++
++static inline void
++__attribute__((unused))
++atomic_add (volatile uin32_t *mem, int val)
++{
++	int result;
++
++	__asm__ __volatile__(
++		"/* Inline atomic add */\n"
++		"1:	ssrf	5\n"
++		"	ld.w	%0, %2\n"
++		"	add	%0, %3\n"
++		"	stcond	%2, %0\n"
++		"	brne	1b"
++		: "=&r"(result), "=m"(*mem)
++		: "m"(*mem), "r"(val)
++		: "cc", "memory");
++}
++
++static inline int
++__attribute__((unused))
++compare_and_swap(volatile long int *p, long int oldval, long int newval)
++{
++	long int result, tmp;
++
++	__asm__ __volatile__(
++		"/* Inline compare and swap */\n"
++		"1:	ssrf	5\n"
++		"	ld.w	%1, %3\n"
++		"	cp.w	%1, %5\n"
++		"	sreq	%0\n"
++		"	brne	2f\n"
++		"	stcond	%2, %4\n"
++		"	brne	1b\n"
++		"2:"
++		: "=&r"(result), "=&r"(tmp), "=m"(*p)
++		: "m"(*p), "r"(newval), "r"(oldval)
++		: "cc", "memory");
++
++	return result;
++}
++
++#endif /* atomicity.h */
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/byteswap.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/byteswap.h	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,80 @@
++/* Macros to swap the order of bytes in integer values.
++   Copyright (C) 2005 Atmel Norway.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++#if !defined _BYTESWAP_H && !defined _NETINET_IN_H
++# error "Never use <bits/byteswap.h> directly; include <byteswap.h> instead."
++#endif
++
++#ifndef _BITS_BYTESWAP_H
++#define _BITS_BYTESWAP_H 1
++
++/* Swap bytes in 16 bit value.  */
++#if defined __GNUC__
++# define __bswap_16(x) (__extension__ __builtin_bswap_16(x))
++#else
++/* This is better than nothing.  */
++static __inline unsigned short int
++__bswap_16 (unsigned short int __bsx)
++{
++	return ((((__bsx) >> 8) & 0xff) | (((__bsx) & 0xff) << 8));
++}
++#endif
++
++/* Swap bytes in 32 bit value.  */
++#if defined __GNUC__
++# define __bswap_32(x) (__extension__ __builtin_bswap_32(x))
++#else
++static __inline unsigned int
++__bswap_32 (unsigned int __bsx)
++{
++  return ((((__bsx) & 0xff000000) >> 24) | (((__bsx) & 0x00ff0000) >>  8) |
++	  (((__bsx) & 0x0000ff00) <<  8) | (((__bsx) & 0x000000ff) << 24));
++}
++#endif
++
++#if defined __GNUC__
++/* Swap bytes in 64 bit value.  */
++# define __bswap_constant_64(x)				\
++	((((x) & 0xff00000000000000ull) >> 56)		\
++	 | (((x) & 0x00ff000000000000ull) >> 40)	\
++	 | (((x) & 0x0000ff0000000000ull) >> 24)	\
++	 | (((x) & 0x000000ff00000000ull) >> 8)		\
++	 | (((x) & 0x00000000ff000000ull) << 8)		\
++	 | (((x) & 0x0000000000ff0000ull) << 24)	\
++	 | (((x) & 0x000000000000ff00ull) << 40)	\
++	 | (((x) & 0x00000000000000ffull) << 56))
++
++# define __bswap_64(x)							\
++	(__extension__							\
++	 ({								\
++		 union {						\
++			 __extension__ unsigned long long int __ll;	\
++			 unsigned int __l[2];				\
++		 } __w, __r;						\
++		 if (__builtin_constant_p(x))				\
++			 __r.__ll = __bswap_constant_64(x);		\
++		 else {							\
++			 __w.__ll = (x);				\
++			 __r.__l[0] = __bswap_32(__w.__l[1]);		\
++			 __r.__l[1] = __bswap_32(__w.__l[0]);		\
++		 }							\
++		 __r.__ll;						\
++	 }))
++#endif
++
++#endif /* _BITS_BYTESWAP_H */
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/endian.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/endian.h	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,7 @@
++/* AVR32 is big-endian */
++
++#ifndef _ENDIAN_H
++# error "Never use <bits/endian.h> directly; include <endian.h> instead."
++#endif
++
++#define __BYTE_ORDER __BIG_ENDIAN
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/fcntl.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/fcntl.h	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,167 @@
++/*
++ * Copyright (C) 2004 Atmel Norway AS
++ *
++ * This file is part of the Linux kernel
++ */
++#ifndef _FCNTL_H
++# error "Never use <bits/fcntl.h> directly; include <fcntl.h> instead."
++#endif
++
++#include <sys/types.h>
++
++/* open/fcntl - O_SYNC is only implemented on blocks devices and on files
++   located on an ext2 file system */
++#define O_ACCMODE	  0003
++#define O_RDONLY	    00
++#define O_WRONLY	    01
++#define O_RDWR		    02
++#define O_CREAT		  0100	/* not fcntl */
++#define O_EXCL		  0200	/* not fcntl */
++#define O_NOCTTY	  0400	/* not fcntl */
++#define O_TRUNC		 01000	/* not fcntl */
++#define O_APPEND	 02000
++#define O_NONBLOCK	 04000
++#define O_NDELAY	O_NONBLOCK
++#define O_SYNC		010000
++#define O_ASYNC		020000
++
++#ifdef __USE_GNU
++# define O_DIRECTORY	040000	/* must be a directory */
++# define O_NOFOLLOW	0100000	/* don't follow links */
++# define O_DIRECT	0200000	/* direct disk access */
++#endif
++
++#ifdef __USE_LARGEFILE64
++# define O_LARGEFILE	0400000
++#endif
++
++/* For now Linux has synchronisity options for data and read operations.
++   We define the symbols here but let them do the same as O_SYNC since
++   this is a superset.	*/
++#if defined __USE_POSIX199309 || defined __USE_UNIX98
++# define O_DSYNC	O_SYNC	/* Synchronize data.  */
++# define O_RSYNC	O_SYNC	/* Synchronize read operations.	 */
++#endif
++
++#define F_DUPFD		0	/* dup */
++#define F_GETFD		1	/* get close_on_exec */
++#define F_SETFD		2	/* set/clear close_on_exec */
++#define F_GETFL		3	/* get file->f_flags */
++#define F_SETFL		4	/* set file->f_flags */
++
++#ifndef __USE_FILE_OFFSET64
++# define F_GETLK	5
++# define F_SETLK	6
++# define F_SETLKW	7
++#else
++# define F_GETLK	F_GETLK64
++# define F_SETLK	F_SETLK64
++# define F_SETLKW	F_SETLKW64
++#endif
++#define F_GETLK64	12	/*  using 'struct flock64' */
++#define F_SETLK64	13
++#define F_SETLKW64	14
++
++#if defined __USE_BSD || defined __USE_XOPEN2K
++# define F_SETOWN	8	/*  for sockets. */
++# define F_GETOWN	9	/*  for sockets. */
++#endif
++
++#ifdef __USE_GNU
++# define F_SETSIG	10	/*  for sockets. */
++# define F_GETSIG	11	/*  for sockets. */
++#endif
++
++#ifdef __USE_GNU
++# define F_SETLEASE	1024	/* Set a lease.	 */
++# define F_GETLEASE	1025	/* Enquire what lease is active.  */
++# define F_NOTIFY	1026	/* Request notfications on a directory.	 */
++#endif
++
++/* for F_[GET|SET]FL */
++#define FD_CLOEXEC	1	/* actually anything with low bit set goes */
++
++/* for posix fcntl() and lockf() */
++#define F_RDLCK		0
++#define F_WRLCK		1
++#define F_UNLCK		2
++
++/* for old implementation of bsd flock () */
++#define F_EXLCK		4	/* or 3 */
++#define F_SHLCK		8	/* or 4 */
++
++/* for leases */
++#define F_INPROGRESS	16
++
++#ifdef __USE_BSD
++/* operations for bsd flock(), also used by the kernel implementation */
++# define LOCK_SH	1	/* shared lock */
++# define LOCK_EX	2	/* exclusive lock */
++# define LOCK_NB	4	/* or'd with one of the above to prevent
++				   blocking */
++# define LOCK_UN	8	/* remove lock */
++#endif
++
++#ifdef __USE_GNU
++# define LOCK_MAND	32	/* This is a mandatory flock */
++# define LOCK_READ	64	/* ... Which allows concurrent
++				       read operations */
++# define LOCK_WRITE	128	/* ... Which allows concurrent
++				       write operations */
++# define LOCK_RW	192	/* ... Which allows concurrent
++				       read & write ops */
++#endif
++
++#ifdef __USE_GNU
++/* Types of directory notifications that may be requested with F_NOTIFY.  */
++# define DN_ACCESS	0x00000001	/* File accessed.  */
++# define DN_MODIFY	0x00000002	/* File modified.  */
++# define DN_CREATE	0x00000004	/* File created.  */
++# define DN_DELETE	0x00000008	/* File removed.  */
++# define DN_RENAME	0x00000010	/* File renamed.  */
++# define DN_ATTRIB	0x00000020	/* File changed attibutes.  */
++# define DN_MULTISHOT	0x80000000	/* Don't remove notifier.  */
++#endif
++
++struct flock {
++	short l_type;
++	short l_whence;
++#ifndef __USE_FILE_OFFSET64
++	__off_t l_start;
++	__off_t l_len;
++#else
++	__off64_t l_start;
++	__off64_t l_len;
++#endif
++	__pid_t l_pid;
++};
++
++#ifdef __USE_LARGEFILE64
++struct flock64 {
++	short  l_type;
++	short  l_whence;
++	__off64_t l_start;
++	__off64_t l_len;
++	__pid_t  l_pid;
++};
++#endif
++
++/* Define some more compatibility macros to be backward compatible with
++ *    BSD systems which did not managed to hide these kernel macros.  */
++#ifdef  __USE_BSD
++# define FAPPEND        O_APPEND
++# define FFSYNC         O_FSYNC
++# define FASYNC         O_ASYNC
++# define FNONBLOCK      O_NONBLOCK
++# define FNDELAY        O_NDELAY
++#endif /* Use BSD.  */
++
++/* Advise to `posix_fadvise'.  */
++#ifdef __USE_XOPEN2K
++# define POSIX_FADV_NORMAL      0 /* No further special treatment.  */
++# define POSIX_FADV_RANDOM      1 /* Expect random page references.  */
++# define POSIX_FADV_SEQUENTIAL  2 /* Expect sequential page references.  */
++# define POSIX_FADV_WILLNEED    3 /* Will need these pages.  */
++# define POSIX_FADV_DONTNEED    4 /* Don't need these pages.  */
++# define POSIX_FADV_NOREUSE     5 /* Data will be accessed once.  */
++#endif
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/kernel_stat.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/kernel_stat.h	2006-05-05 09:28:32.000000000 +0200
+@@ -0,0 +1,63 @@
++#ifndef _BITS_STAT_STRUCT_H
++#define _BITS_STAT_STRUCT_H
++
++/*
++ * This file provides struct stat, taken from kernel 2.6.4
++ * (include/asm-avr32/stat.h revision 1.1).
++ */
++
++struct kernel_stat {
++        unsigned long st_dev;
++        unsigned long st_ino;
++        unsigned short st_mode;
++        unsigned short st_nlink;
++        unsigned short st_uid;
++        unsigned short st_gid;
++        unsigned long  st_rdev;
++        unsigned long  st_size;
++        unsigned long  st_blksize;
++        unsigned long  st_blocks;
++        unsigned long  st_atime;
++        unsigned long  st_atime_nsec;
++        unsigned long  st_mtime;
++        unsigned long  st_mtime_nsec;
++        unsigned long  st_ctime;
++        unsigned long  st_ctime_nsec;
++        unsigned long  __unused4;
++        unsigned long  __unused5;
++};
++
++#define STAT_HAVE_NSEC 1
++
++struct kernel_stat64 {
++	unsigned long long st_dev;
++
++	unsigned long long st_ino;
++	unsigned int	st_mode;
++	unsigned int	st_nlink;
++
++	unsigned long	st_uid;
++	unsigned long	st_gid;
++
++	unsigned long long st_rdev;
++
++	long long	st_size;
++	unsigned long	__pad1;
++	unsigned long	st_blksize;
++
++	unsigned long long st_blocks;
++
++	unsigned long	st_atime;
++	unsigned long	st_atime_nsec;
++
++	unsigned long	st_mtime;
++	unsigned long	st_mtime_nsec;
++
++	unsigned long	st_ctime;
++	unsigned long	st_ctime_nsec;
++
++	unsigned long	__unused1;
++	unsigned long	__unused2;
++};
++
++#endif /* _BITS_STAT_STRUCT_H */
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/kernel_types.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/kernel_types.h	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,56 @@
++/* Note that we use the exact same include guard #define names
++ * as asm/posix_types.h.  This will avoid gratuitous conflicts
++ * with the posix_types.h kernel header, and will ensure that
++ * our private content, and not the kernel header, will win.
++ *  -Erik
++ */
++#ifndef __ASM_AVR32_POSIX_TYPES_H
++#define __ASM_AVR32_POSIX_TYPES_H
++
++/*
++ * This file is generally used by user-level software, so you need to
++ * be a little careful about namespace pollution etc.  Also, we cannot
++ * assume GCC is being used.
++ */
++
++typedef unsigned long	__kernel_dev_t;
++typedef unsigned long   __kernel_ino_t;
++typedef unsigned short  __kernel_mode_t;
++typedef unsigned short  __kernel_nlink_t;
++typedef long            __kernel_off_t;
++typedef int             __kernel_pid_t;
++typedef unsigned short  __kernel_ipc_pid_t;
++typedef unsigned int	__kernel_uid_t;
++typedef unsigned int	__kernel_gid_t;
++typedef unsigned long	__kernel_size_t;
++typedef int             __kernel_ssize_t;
++typedef int             __kernel_ptrdiff_t;
++typedef long            __kernel_time_t;
++typedef long            __kernel_suseconds_t;
++typedef long            __kernel_clock_t;
++typedef int             __kernel_timer_t;
++typedef int             __kernel_clockid_t;
++typedef int             __kernel_daddr_t;
++typedef char *          __kernel_caddr_t;
++typedef unsigned short  __kernel_uid16_t;
++typedef unsigned short  __kernel_gid16_t;
++typedef unsigned int    __kernel_uid32_t;
++typedef unsigned int    __kernel_gid32_t;
++
++typedef unsigned short  __kernel_old_uid_t;
++typedef unsigned short  __kernel_old_gid_t;
++typedef unsigned short  __kernel_old_dev_t;
++
++#ifdef __GNUC__
++typedef long long       __kernel_loff_t;
++#endif
++
++typedef struct {
++#if defined(__USE_ALL)
++    int     val[2];
++#else
++    int     __val[2];
++#endif
++} __kernel_fsid_t;
++
++#endif /* __ASM_AVR32_POSIX_TYPES_H */
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/machine-gmon.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/machine-gmon.h	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,69 @@
++/* Machine-dependent definitions for profiling support.  AVR32 version.
++   Copyright (C) 1996, 1997, 1998 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++#define mcount_internal __mcount_internal
++
++#define _MCOUNT_DECL(frompc, selfpc) \
++static void __attribute((used)) mcount_internal(unsigned long frompc, unsigned long selfpc)
++
++/*
++ * This mcount implementation expects to get called after the prologue
++ * has been run. It also expects that r7 contains a valid frame
++ * pointer.
++ *
++ * When profiling, the compiler should generate something like this at
++ * each function entry:
++ *
++ *	pushm	r0-r7,lr	// lr mandatory, others optional
++ *	mov	r7, sp
++ *	// rest of prologue goes here
++ *	mcall	pc[.LC1 - .]
++ *      // rest of function goes here
++ * .LC1:
++ *	.long	mcount
++ *
++ * or for PIC:
++ *
++ *	pushm	r0-r7,lr
++ *	mov	r7, sp
++ *	// rest of prologue goes here
++ *	lddpc	r0, .LC1
++ * .L1: rsub	r0, pc
++ *	mcall	r0[mcount@GOT]
++ *	// rest of function goes here
++ * .LC1:
++ *	.long	.L1 - _GLOBAL_OFFSET_TABLE_
++ *
++ * This way, when mcount() is called, r7 points to the calling
++ * function's return address. It is guaranteed that calling mcount
++ * will clobber no registers except LR, which is unavoidable.
++ */
++#define MCOUNT asm(				\
++	"	.align	4\n"			\
++	"	.global	_mcount\n"		\
++	"	.type	_mcount,@function\n"	\
++	"_mcount:\n"				\
++	"	pushm	r8-r12,lr\n"		\
++	"	mov	r11, lr\n"		\
++	"	ld.w	r12, r7[0]\n"		\
++	"	rcall	__mcount_internal\n"	\
++	"	popm	r8-r12,pc\n"		\
++	"	.size	_mcount, . - _mcount\n"	\
++	"	.weak	mcount\n"		\
++	"	mcount = _mcount");
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/mman.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/mman.h	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,95 @@
++/* Definitions for POSIX memory map interface.  Linux/AVR32 version.
++   Copyright (C) 1997, 2000 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++#ifndef _SYS_MMAN_H
++# error "Never include this file directly.  Use <sys/mman.h> instead"
++#endif
++
++/* The following definitions basically come from the kernel headers.
++   But the kernel header is not namespace clean.  */
++
++
++/* Protections are chosen from these bits, OR'd together.  The
++   implementation does not necessarily support PROT_EXEC or PROT_WRITE
++   without PROT_READ.  The only guarantees are that no writing will be
++   allowed without PROT_WRITE and no access will be allowed for PROT_NONE. */
++
++#define PROT_READ	0x1		/* Page can be read.  */
++#define PROT_WRITE	0x2		/* Page can be written.  */
++#define PROT_EXEC	0x4		/* Page can be executed.  */
++#define PROT_NONE	0x0		/* Page can not be accessed.  */
++
++/* Sharing types (must choose one and only one of these).  */
++#define MAP_SHARED	0x01		/* Share changes.  */
++#define MAP_PRIVATE	0x02		/* Changes are private.  */
++#ifdef __USE_MISC
++# define MAP_TYPE	0x0f		/* Mask for type of mapping.  */
++#endif
++
++/* Other flags.  */
++#define MAP_FIXED	0x10		/* Interpret addr exactly.  */
++#ifdef __USE_MISC
++# define MAP_FILE	0
++# define MAP_ANONYMOUS	0x20		/* Don't use a file.  */
++# define MAP_ANON	MAP_ANONYMOUS
++#endif
++
++/* These are Linux-specific.  */
++#ifdef __USE_MISC
++# define MAP_GROWSDOWN	0x0100		/* Stack-like segment.  */
++# define MAP_DENYWRITE	0x0800		/* ETXTBSY */
++# define MAP_EXECUTABLE	0x1000		/* Mark it as an executable.  */
++# define MAP_LOCKED	0x2000		/* Lock the mapping.  */
++# define MAP_NORESERVE	0x4000		/* Don't check for reservations.  */
++# define MAP_POPULATE	0x8000		/* populate (prefault) pagetables */
++# define MAP_NONBLOCK	0x10000		/* do not block on IO */
++#endif
++
++/* Flags to `msync'.  */
++#define MS_ASYNC	1		/* Sync memory asynchronously.  */
++#define MS_SYNC		4		/* Synchronous memory sync.  */
++#define MS_INVALIDATE	2		/* Invalidate the caches.  */
++
++/* Flags for `mlockall'.  */
++#define MCL_CURRENT	1		/* Lock all currently mapped pages.  */
++#define MCL_FUTURE	2		/* Lock all additions to address
++					   space.  */
++
++/* Flags for `mremap'.  */
++#ifdef __USE_GNU
++# define MREMAP_MAYMOVE	1
++#endif
++
++/* Advise to `madvise'.  */
++#ifdef __USE_BSD
++# define MADV_NORMAL	 0	/* No further special treatment.  */
++# define MADV_RANDOM	 1	/* Expect random page references.  */
++# define MADV_SEQUENTIAL 2	/* Expect sequential page references.  */
++# define MADV_WILLNEED	 3	/* Will need these pages.  */
++# define MADV_DONTNEED	 4	/* Don't need these pages.  */
++#endif
++
++/* The POSIX people had to invent similar names for the same things.  */
++#ifdef __USE_XOPEN2K
++# define POSIX_MADV_NORMAL	0 /* No further special treatment.  */
++# define POSIX_MADV_RANDOM	1 /* Expect random page references.  */
++# define POSIX_MADV_SEQUENTIAL	2 /* Expect sequential page references.  */
++# define POSIX_MADV_WILLNEED	3 /* Will need these pages.  */
++# define POSIX_MADV_DONTNEED	4 /* Don't need these pages.  */
++#endif
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/profil-counter.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/profil-counter.h	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,26 @@
++/* Low-level statistical profiling support function.  Linux/AVR32 version.
++   Copyright (C) 1996, 1997, 1998, 2002 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++#include <signal.h>
++
++void
++profil_counter(int signo, siginfo_t *si, struct sigcontext *sc)
++{
++	profil_count((void *)sc->pc);
++}
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/setjmp.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/setjmp.h	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,21 @@
++/*
++ * Copyright (C) 2004-2005 Atmel Norway
++ */
++#ifndef _SETJMP_H
++# error "Never include <bits/setjmp.h> directly; use <setjmp.h> instead."
++#endif
++
++#ifndef _ASM
++/*
++ * The jump buffer contains r0-r7, sr, sp and lr. Other registers are
++ * not saved.
++ */
++typedef int __jmp_buf[11];
++#endif
++
++#define __JMP_BUF_SP	4
++
++/* Test if longjmp to JMPBUF would unwind the frame containing a local
++   variable at ADDRESS.  */
++#define _JMPBUF_UNWINDS(jmpbuf, address) \
++  ((void *)(address) < (void *)(jmpbuf[__JMP_BUF_SP]))
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/syscalls.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/syscalls.h	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,143 @@
++#ifndef _SYSCALL_H
++# error "Never use <bits/syscalls.h> directly; include <sys/syscall.h> instead."
++#endif
++
++/*
++ * This includes the `__NR_<name>' syscall numbers taken from the
++ * Linux kernel header files. It also defines the traditional
++ * `SYS_<name>' macros for older programs.
++ */
++#include <bits/sysnum.h>
++
++#ifndef __set_errno
++# define __set_errno(val) (*__errno_location()) = (val)
++#endif
++#ifndef SYS_ify
++# define SYS_ify(syscall_name) (__NR_##syscall_name)
++#endif
++
++#ifndef __ASSEMBLER__
++
++#undef _syscall0
++#define _syscall0(type,name)				\
++	type name(void)					\
++	{						\
++		return (type)(INLINE_SYSCALL(name, 0));	\
++	}
++
++#undef _syscall1
++#define _syscall1(type,name,type1,arg1)				\
++	type name(type1 arg1)					\
++	{							\
++		return (type)(INLINE_SYSCALL(name, 1, arg1));	\
++	}
++
++#undef _syscall2
++#define _syscall2(type,name,type1,arg1,type2,arg2)			\
++	type name(type1 arg1, type2 arg2)				\
++	{								\
++		return (type)(INLINE_SYSCALL(name, 2, arg1, arg2));	\
++	}
++
++#undef _syscall3
++#define _syscall3(type,name,type1,arg1,type2,arg2,type3,arg3)		\
++	type name(type1 arg1, type2 arg2, type3 arg3)			\
++	{								\
++		return (type)(INLINE_SYSCALL(name, 3, arg1,		\
++					     arg2, arg3));		\
++	}
++
++#undef _syscall4
++#define _syscall4(type,name,type1,arg1,type2,arg2,type3,arg3,		\
++		  type4,arg4)						\
++	type name(type1 arg1, type2 arg2, type3 arg3, type4 arg4)	\
++	{								\
++		return (type)(INLINE_SYSCALL(name, 4, arg1, arg2,	\
++					     arg3, arg4));		\
++	}
++
++#undef _syscall5
++#define _syscall5(type,name,type1,arg1,type2,arg2,type3,arg3,		\
++		  type4,arg4,type5,arg5)				\
++	type name(type1 arg1, type2 arg2, type3 arg3, type4 arg4,	\
++		  type5 arg5)						\
++	{								\
++		return (type)(INLINE_SYSCALL(name, 5, arg1, arg2,	\
++					     arg3, arg4, arg5));	\
++	}
++
++#undef _syscall6
++#define _syscall6(type,name,type1,arg1,type2,arg2,type3,arg3,		\
++		  type4,arg4,type5,arg5,type6,arg6)			\
++	type name(type1 arg1, type2 arg2, type3 arg3, type4 arg4,	\
++		  type5 arg5, type6 arg6)				\
++	{								\
++		return (type)(INLINE_SYSCALL(name, 6, arg1, arg2, arg3,	\
++					     arg4, arg5, arg6));	\
++	}
++
++#undef unlikely
++#define unlikely(x) __builtin_expect((x), 0)
++
++#undef INLINE_SYSCALL
++#define INLINE_SYSCALL(name, nr, args...)				\
++	({								\
++		unsigned _sys_result = INTERNAL_SYSCALL(name, , nr, args); \
++		if (unlikely(INTERNAL_SYSCALL_ERROR_P(_sys_result, ))) { \
++			__set_errno(INTERNAL_SYSCALL_ERRNO(_sys_result, )); \
++			_sys_result = (unsigned int) -1;		\
++		}							\
++		(int) _sys_result;					\
++	})
++
++#undef INTERNAL_SYSCALL_DECL
++#define INTERNAL_SYSCALL_DECL(err) do { } while(0)
++
++#undef INTERNAL_SYSCALL
++#define INTERNAL_SYSCALL(name, err, nr, args...)			\
++	({								\
++		register int _a1 asm ("r12");				\
++		register int _scno asm("r8") = SYS_ify(name);		\
++		LOAD_ARGS_##nr (args);					\
++		asm volatile ("scall	/* syscall " #name " */"	\
++			      : "=r" (_a1)				\
++			      : "r"(_scno) ASM_ARGS_##nr		\
++			      : "lr", "cc", "memory");			\
++		_a1;							\
++	})
++
++#undef INTERNAL_SYSCALL_ERROR_P
++#define INTERNAL_SYSCALL_ERROR_P(val, err)		\
++	((unsigned int)(val) >= 0xfffff001U)
++
++#undef INTERNAL_SYSCALL_ERRNO
++#define INTERNAL_SYSCALL_ERRNO(val, errr) (-(val))
++
++#define LOAD_ARGS_0() do { } while(0)
++#define ASM_ARGS_0
++#define LOAD_ARGS_1(a1)					\
++	_a1 = (int) (a1);				\
++	LOAD_ARGS_0()
++#define ASM_ARGS_1	ASM_ARGS_0, "r"(_a1)
++#define LOAD_ARGS_2(a1, a2)				\
++	register int _a2 asm("r11") = (int)(a2);	\
++	LOAD_ARGS_1(a1)
++#define ASM_ARGS_2	ASM_ARGS_1, "r"(_a2)
++#define LOAD_ARGS_3(a1, a2, a3)				\
++	register int _a3 asm("r10") = (int)(a3);	\
++	LOAD_ARGS_2(a1, a2)
++#define ASM_ARGS_3	ASM_ARGS_2, "r"(_a3)
++#define LOAD_ARGS_4(a1, a2, a3, a4)			\
++	register int _a4 asm("r9") = (int)(a4);		\
++	LOAD_ARGS_3(a1, a2, a3)
++#define ASM_ARGS_4	ASM_ARGS_3, "r"(_a4)
++#define LOAD_ARGS_5(a1, a2, a3, a4, a5)			\
++	register int _a5 asm("r5") = (int)(a5);		\
++	LOAD_ARGS_4(a1, a2, a3, a4)
++#define ASM_ARGS_5	ASM_ARGS_4, "r"(_a5)
++#define LOAD_ARGS_6(a1, a2, a3, a4, a5, a6)		\
++	register int _a6 asm("r3") = (int)(a6);		\
++	LOAD_ARGS_5(a1, a2, a3, a4, a5)
++#define ASM_ARGS_6	ASM_ARGS_5, "r"(_a6)
++
++#endif /* __ASSEMBLER__ */
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/wordsize.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/bits/wordsize.h	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1 @@
++#define __WORDSIZE	32
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/brk.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/brk.c	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,23 @@
++/*
++ * Copyright (C) 2004 Atmel Norway AS
++ */
++#include <errno.h>
++#include <sys/syscall.h>
++
++void *__curbrk = 0;
++
++int brk (void *addr)
++{
++	void *newbrk;
++
++	newbrk = INLINE_SYSCALL(brk, 1, addr);
++
++	__curbrk = newbrk;
++
++	if (newbrk < addr) {
++		__set_errno (ENOMEM);
++		return -1;
++	}
++
++	return 0;
++}
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/bsd-_setjmp.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/bsd-_setjmp.S	2006-05-05 09:26:42.000000000 +0200
+@@ -0,0 +1,12 @@
++/*
++ * Copyright (C) 2004 Atmel Norway AS
++ */
++
++	/* This just does a tail-call to __sigsetjmp(env, 0) */
++	.global	_setjmp
++	.type	_setjmp,"function"
++	.align	1
++_setjmp:
++	mov	r11, 0
++	bral	__sigsetjmp_internal
++	.size	_setjmp, . - _setjmp
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/bsd-setjmp.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/bsd-setjmp.S	2006-05-05 09:26:42.000000000 +0200
+@@ -0,0 +1,12 @@
++/*
++ * Copyright (C) 2004 Atmel Norway AS
++ */
++
++	/* This just does a tail-call to __sigsetjmp(env, 1) */
++	.global	setjmp
++	.type	setjmp,"function"
++	.align	1
++setjmp:
++	mov	r11, 1
++	bral	__sigsetjmp_internal
++	.size	setjmp, . - setjmp
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/clone.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/clone.c	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,37 @@
++/*
++ * Copyright (C) 2004 Atmel Norway AS
++ */
++#include <errno.h>
++#include <sys/syscall.h>
++#include <unistd.h>
++
++/*
++ * I don't know if we can be absolutely certain that the fn and arg
++ * parameters are preserved when returning as the child. If the
++ * compiler stores them in registers (r0-r7), they should be.
++ */
++int clone(int (*fn)(void *arg), void *child_stack, int flags, void *arg)
++{
++	register int (*_fn)(void *arg) = fn;
++	register void *_arg = arg;
++	int err;
++
++	/* Sanity check the arguments */
++	err = -EINVAL;
++	if (!fn)
++		goto syscall_error;
++	if (!child_stack)
++		goto syscall_error;
++
++	err = INLINE_SYSCALL(clone, 2, flags, child_stack);
++	if (err < 0)
++		goto syscall_error;
++	else if (err != 0)
++		return err;
++
++	_exit(_fn(_arg));
++
++syscall_error:
++	__set_errno (-err);
++	return -1;
++}
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/crt1.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/crt1.S	2006-05-05 09:28:23.000000000 +0200
+@@ -0,0 +1,93 @@
++/*
++ * Copyright (C) 2004 Atmel Norway AS
++ *
++ * When we enter _start, the stack looks like this:
++ *	argc		argument counter
++ *	argv[0]		pointer to program name
++ *	argv[1..argc-1]	pointers to program args
++ *	NULL
++ *	env[0..N]	pointers to environment variables
++ *	NULL
++ *
++ * r12 contains a function pointer to be registered with `atexit'.
++ * This is how the dynamic linker arranges to have DT_FINI functions
++ * called for shared libraries that have been loaded before this
++ * code runs.
++ *
++ * We're going to call the following function:
++ * __uClibc_main(int (*main)(int, char **, char **), int argc,
++ *		 char **argv, void (*app_init)(void), void (*app_fini)(void),
++ *		 void (*rtld_fini)(void), void *stack_end)
++ *
++ * So we need to set up things as follows:
++ *	r12 = address of main
++ *	r11 = argc
++ *	r10 = &argv[0]
++ *	r9  = address of _init
++ *	r8  = address of _fini
++ *	sp[0] = whatever we got passed in r12
++ */
++
++#include <features.h>
++
++	.text
++	.global _start
++	.type	_start, @function
++_start:
++	/* Clear the frame pointer and link register since this is the outermost frame.  */
++	mov	r7, 0
++	mov	lr, 0
++
++	ld.w	r11, sp++		/* argc		*/
++	mov	r10, sp			/* &argv[0]	*/
++
++	st.w	--sp, r10		/* stack_end */
++	st.w	--sp, r12		/* rtld_fini */
++
++#ifdef __PIC__
++	lddpc	r6, .L_GOT
++.L_RGOT:
++	rsub	r6, pc
++	lda.w	r9, _init
++	lda.w	r8, _fini
++	lda.w	r12, main
++
++	/* Ok, now run uClibc's main() -- should not return */
++	call	__uClibc_main
++
++	.align	2
++.L_GOT:
++	.long	.L_RGOT - _GLOBAL_OFFSET_TABLE_
++#else
++	lddpc	r9, __init_addr		/* app_init */
++	lddpc	r8, __fini_addr		/* app_fini */
++	lddpc	r12, __main_addr	/* main */
++
++	/* Ok, now run uClibc's main() -- should not return */
++	lddpc	pc, ___uClibc_main_addr
++
++	.align	2
++__init_addr:
++	.long	_init
++__fini_addr:
++	.long	_fini
++__main_addr:
++	.long	main
++___uClibc_main_addr:
++	.long	__uClibc_main
++#endif
++	.size	_start, . - _start
++
++	/*
++	 * The LSB says we need this.
++	 */
++	.section ".note.ABI-tag", "a"
++	.align	4
++	.long	2f - 1f		/* namesz */
++	.long	4f - 3f		/* descsz */
++	.long	1		/* type   */
++1:	.asciz	"GNU"		/* name */
++2:	.align	4
++3:	.long	0		/* Linux executable */
++	.long	2,6,0		/* Earliest compatible kernel */
++4:	.align	4
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/crti.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/crti.S	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,17 @@
++
++	.section .init
++	.align	2
++	.global	_init
++	.type	_init, @function
++_init:
++	/* Use a four-byte instruction to avoid NOPs */
++	stm	--sp, r0-r7,lr
++	.align	2
++
++	.section .fini
++	.align	2
++	.global	_fini
++	.type	_fini, @function
++_fini:
++	stm	--sp, r0-r7,lr
++	.align	2
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/crtn.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/crtn.S	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,14 @@
++
++	.section .init
++	.align	2
++	.global	_init
++	.type	_init, @function
++	ldm	sp++, r0-r7,pc
++	.size	_init, . - _init
++
++	.section .fini
++	.align	2
++	.global _fini
++	.type	_fini, @function
++	ldm	sp++, r0-r7,pc
++	.size	_fini, . - _fini
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/mmap.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/mmap.c	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,31 @@
++/* Copyright (C) 2005 Atmel Norway
++
++   This program is free software; you can redistribute it and/or modify it under
++   the terms of the GNU Library General Public License as published by the Free
++   Software Foundation; either version 2 of the License, or (at your option) any
++   later version.
++
++   This program is distributed in the hope that it will be useful, but WITHOUT
++   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++   FOR A PARTICULAR PURPOSE. See the GNU Library General Public License for more
++   details.
++
++   You should have received a copy of the GNU Library General Public License
++   along with this program; if not, write to the Free Software Foundation, Inc.,
++   59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++
++   Derived in part from the Linux-8086 C library, the GNU C Library, and several
++   other sundry sources.  Files within this library are copyright by their
++   respective copyright holders.
++ */
++
++#include <errno.h>
++#include <sys/mman.h>
++#include <sys/syscall.h>
++
++static _syscall6(__ptr_t, mmap2, __ptr_t, addr, size_t, len, int, prot, int, flags, int, fd, __off_t, pgoff);
++
++__ptr_t mmap(__ptr_t addr, size_t len, int prot, int flags, int fd, __off_t offset)
++{
++	return mmap2(addr, len, prot, flags, fd, offset >> 12);
++}
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/setjmp.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/setjmp.S	2006-05-05 09:28:28.000000000 +0200
+@@ -0,0 +1,43 @@
++/*
++ * Copyright (C) 2004 Atmel Norway AS
++ */
++#define _SETJMP_H
++#define _ASM
++#include <bits/setjmp.h>
++
++	.text
++
++	.global	__sigsetjmp
++	.type	__sigsetjmp,"function"
++
++	/* Create a global, hidden symbol for use by setjmp() and _setjmp().
++	   If it's not hidden, the linker will complain about a relative
++	   jump to a dynamic symbol when building a shared library.
++
++	   Also, if a user overrides the __sigsetjmp function, he might not
++	   expect the setjmp() and _setjmp() function to effectively be
++	   overridden as well.  */
++	.global	__sigsetjmp_internal
++	.hidden	__sigsetjmp_internal
++	.type	__sigsetjmp_internal,"function"
++	.align	1
++__sigsetjmp:
++__sigsetjmp_internal:
++	mustr	r8
++	stm	r12, r0,r1,r2,r3,r4,r5,r6,r7,r8,sp,lr
++
++	/* Make a tail call to __sigjmp_save; it takes the same args.  */
++#ifdef __PIC__
++	mov	r9, r6
++	lddpc	r6, .LG
++.L1:	rsub	r6, pc
++	ld.w	r8, r6[__sigjmp_save@got]
++	mov	r6, r9
++	mov	pc, r8
++
++	.align	2
++.LG:	.long	.L1 - _GLOBAL_OFFSET_TABLE_
++#else
++	rjmp	__sigjmp_save
++#endif
++	.size	__sigsetjmp, . - __sigsetjmp
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/sigaction.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/sigaction.c	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,49 @@
++/*
++ * Copyright (C) 2004 Atmel Norway AS
++ */
++#include <errno.h>
++#include <signal.h>
++#include <string.h>
++#include <sys/syscall.h>
++#include <bits/kernel_sigaction.h>
++
++#define SA_RESTORER	0x04000000
++extern void __default_rt_sa_restorer(void);
++
++/*
++ * If act is not NULL, change the action for sig to *act.
++ * If oact is not NULL, put the old action for sig in *oact.
++ */
++int __libc_sigaction(int signum, const struct sigaction *act,
++		     struct sigaction *oldact)
++{
++	struct kernel_sigaction kact, koact;
++	int result;
++
++	if (act) {
++		kact.k_sa_handler = act->sa_handler;
++		memcpy(&kact.sa_mask, &act->sa_mask, sizeof (kact.sa_mask));
++		kact.sa_flags = act->sa_flags;
++		if (kact.sa_flags & (SA_RESTORER | SA_ONSTACK))
++			kact.sa_restorer = act->sa_restorer;
++		else
++			kact.sa_restorer = __default_rt_sa_restorer;
++		kact.sa_flags |= SA_RESTORER;
++	}
++
++	result = __syscall_rt_sigaction(signum, act ? __ptrvalue(&kact) : NULL,
++					oldact ? __ptrvalue(&koact) : NULL,
++					_NSIG / 8);
++
++	if (oldact && result >= 0) {
++		oldact->sa_handler = koact.k_sa_handler;
++		memcpy(&oldact->sa_mask, &koact.sa_mask,
++		       sizeof(oldact->sa_mask));
++		oldact->sa_flags = koact.sa_flags;
++		oldact->sa_restorer = koact.sa_restorer;
++	}
++
++	return result;
++}
++
++weak_alias(__libc_sigaction, sigaction)
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/sigrestorer.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/sigrestorer.S	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,11 @@
++/*
++ * Copyright (C) 2004 Atmel Norway AS
++ */
++#include <sys/syscall.h>
++
++	.global	__default_rt_sa_restorer
++	.type	__default_rt_sa_restorer,"function"
++	.align	1
++__default_rt_sa_restorer:
++	mov	r8, __NR_rt_sigreturn
++	scall
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/sys/elf.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/sys/elf.h	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,26 @@
++/* Copyright (C) 1996, 1997, 1999, 2001 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++#ifndef _SYS_ELF_H
++#define _SYS_ELF_H	1
++
++#warning "This header is obsolete; use <sys/procfs.h> instead."
++
++#include <sys/procfs.h>
++
++#endif	/* sys/elf.h */
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/sys/io.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/sys/io.h	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,48 @@
++/* Copyright (C) 1996, 1998, 1999 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++#ifndef	_SYS_IO_H
++
++#define	_SYS_IO_H	1
++#include <features.h>
++
++__BEGIN_DECLS
++
++/* If TURN_ON is TRUE, request for permission to do direct i/o on the
++   port numbers in the range [FROM,FROM+NUM-1].  Otherwise, turn I/O
++   permission off for that range.  This call requires root privileges.  */
++extern int ioperm (unsigned long int __from, unsigned long int __num,
++		   int __turn_on) __THROW;
++
++/* Set the I/O privilege level to LEVEL.  If LEVEL is nonzero,
++   permission to access any I/O port is granted.  This call requires
++   root privileges. */
++extern int iopl (int __level) __THROW;
++
++/* The functions that actually perform reads and writes.  */
++extern unsigned char inb (unsigned long int port) __THROW;
++extern unsigned short int inw (unsigned long int port) __THROW;
++extern unsigned long int inl (unsigned long int port) __THROW;
++
++extern void outb (unsigned char value, unsigned long int port) __THROW;
++extern void outw (unsigned short value, unsigned long int port) __THROW;
++extern void outl (unsigned long value, unsigned long int port) __THROW;
++
++__END_DECLS
++
++#endif /* _SYS_IO_H */
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/sys/procfs.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/sys/procfs.h	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,123 @@
++/* Copyright (C) 1996, 1997, 1999, 2001 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++#ifndef _SYS_PROCFS_H
++#define _SYS_PROCFS_H	1
++
++/* This is somewhat modelled after the file of the same name on SVR4
++   systems.  It provides a definition of the core file format for ELF
++   used on Linux.  It doesn't have anything to do with the /proc file
++   system, even though Linux has one.
++
++   Anyway, the whole purpose of this file is for GDB and GDB only.
++   Don't read too much into it.  Don't use it for anything other than
++   GDB unless you know what you are doing.  */
++
++#include <features.h>
++#include <sys/time.h>
++#include <sys/types.h>
++#include <sys/user.h>
++
++__BEGIN_DECLS
++
++/* Type for a general-purpose register.  */
++typedef unsigned long elf_greg_t;
++
++/* And the whole bunch of them.  We could have used `struct
++   user_regs' directly in the typedef, but tradition says that
++   the register set is an array, which does have some peculiar
++   semantics, so leave it that way.  */
++#define ELF_NGREG (sizeof (struct user_regs) / sizeof(elf_greg_t))
++typedef elf_greg_t elf_gregset_t[ELF_NGREG];
++
++/* Register set for the floating-point registers.  */
++typedef struct user_fpregs elf_fpregset_t;
++
++/* Signal info.  */
++struct elf_siginfo
++  {
++    int si_signo;			/* Signal number.  */
++    int si_code;			/* Extra code.  */
++    int si_errno;			/* Errno.  */
++  };
++
++/* Definitions to generate Intel SVR4-like core files.  These mostly
++   have the same names as the SVR4 types with "elf_" tacked on the
++   front to prevent clashes with Linux definitions, and the typedef
++   forms have been avoided.  This is mostly like the SVR4 structure,
++   but more Linuxy, with things that Linux does not support and which
++   GDB doesn't really use excluded.  */
++
++struct elf_prstatus
++  {
++    struct elf_siginfo pr_info;		/* Info associated with signal.  */
++    short int pr_cursig;		/* Current signal.  */
++    unsigned long int pr_sigpend;	/* Set of pending signals.  */
++    unsigned long int pr_sighold;	/* Set of held signals.  */
++    __pid_t pr_pid;
++    __pid_t pr_ppid;
++    __pid_t pr_pgrp;
++    __pid_t pr_sid;
++    struct timeval pr_utime;		/* User time.  */
++    struct timeval pr_stime;		/* System time.  */
++    struct timeval pr_cutime;		/* Cumulative user time.  */
++    struct timeval pr_cstime;		/* Cumulative system time.  */
++    elf_gregset_t pr_reg;		/* GP registers.  */
++    int pr_fpvalid;			/* True if math copro being used.  */
++  };
++
++
++#define ELF_PRARGSZ     (80)    /* Number of chars for args.  */
++
++struct elf_prpsinfo
++  {
++    char pr_state;			/* Numeric process state.  */
++    char pr_sname;			/* Char for pr_state.  */
++    char pr_zomb;			/* Zombie.  */
++    char pr_nice;			/* Nice val.  */
++    unsigned long int pr_flag;		/* Flags.  */
++    unsigned short int pr_uid;
++    unsigned short int pr_gid;
++    int pr_pid, pr_ppid, pr_pgrp, pr_sid;
++    /* Lots missing */
++    char pr_fname[16];			/* Filename of executable.  */
++    char pr_psargs[ELF_PRARGSZ];	/* Initial part of arg list.  */
++  };
++
++/* The rest of this file provides the types for emulation of the
++   Solaris <proc_service.h> interfaces that should be implemented by
++   users of libthread_db.  */
++
++/* Addresses.  */
++typedef void *psaddr_t;
++
++/* Register sets.  Linux has different names.  */
++typedef elf_gregset_t prgregset_t;
++typedef elf_fpregset_t prfpregset_t;
++
++/* We don't have any differences between processes and threads,
++   therefore have only one PID type.  */
++typedef __pid_t lwpid_t;
++
++/* Process status and info.  In the end we do provide typedefs for them.  */
++typedef struct elf_prstatus prstatus_t;
++typedef struct elf_prpsinfo prpsinfo_t;
++
++__END_DECLS
++
++#endif	/* sys/procfs.h */
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/sys/ucontext.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/sys/ucontext.h	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,94 @@
++/* Copyright (C) 1998, 1999, 2001 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++/* Linux/AVR32 ABI compliant context switching support.  */
++
++#ifndef _SYS_UCONTEXT_H
++#define _SYS_UCONTEXT_H	1
++
++#include <features.h>
++#include <signal.h>
++#include <sys/procfs.h>
++#include <bits/sigcontext.h>
++
++typedef int greg_t;
++
++/* Number of general registers.  */
++#define NGREG	16
++
++/* Container for all general registers.  */
++typedef elf_gregset_t gregset_t;
++
++/* Number of each register is the `gregset_t' array.  */
++enum
++{
++  R0 = 0,
++#define R0	R0
++  R1 = 1,
++#define R1	R1
++  R2 = 2,
++#define R2	R2
++  R3 = 3,
++#define R3	R3
++  R4 = 4,
++#define R4	R4
++  R5 = 5,
++#define R5	R5
++  R6 = 6,
++#define R6	R6
++  R7 = 7,
++#define R7	R7
++  R8 = 8,
++#define R8	R8
++  R9 = 9,
++#define R9	R9
++  R10 = 10,
++#define R10	R10
++  R11 = 11,
++#define R11	R11
++  R12 = 12,
++#define R12	R12
++  R13 = 13,
++#define R13	R13
++  R14 = 14,
++#define R14	R14
++  R15 = 15
++#define R15	R15
++};
++
++/* Structure to describe FPU registers.  */
++typedef elf_fpregset_t	fpregset_t;
++
++/* Context to describe whole processor state.  */
++typedef struct
++  {
++    gregset_t gregs;
++    fpregset_t fpregs;
++  } mcontext_t;
++
++/* Userlevel context.  */
++typedef struct ucontext
++{
++    unsigned long     uc_flags;
++    struct ucontext  *uc_link;
++    stack_t           uc_stack;
++    struct sigcontext uc_mcontext;
++    sigset_t          uc_sigmask;   /* mask last for extensibility */
++} ucontext_t;
++
++#endif /* sys/ucontext.h */
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/sys/user.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/sys/user.h	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,46 @@
++#ifndef _SYS_USER_H
++#define _SYS_USER_H
++
++struct user_fpregs
++{
++
++};
++
++struct user_regs
++{
++	unsigned long sr;
++	unsigned long pc;
++	unsigned long lr;
++	unsigned long sp;
++	unsigned long r12;
++	unsigned long r11;
++	unsigned long r10;
++	unsigned long r9;
++	unsigned long r8;
++	unsigned long r7;
++	unsigned long r6;
++	unsigned long r5;
++	unsigned long r4;
++	unsigned long r3;
++	unsigned long r2;
++	unsigned long r1;
++	unsigned long r0;
++	unsigned long r12_orig;
++};
++
++struct user
++{
++	struct user_regs	regs;		/* general registers */
++	size_t			u_tsize;	/* text size (pages) */
++	size_t			u_dsize;	/* data size (pages) */
++	size_t			u_ssize;	/* stack size (pages) */
++	unsigned long		start_code;	/* text starting address */
++	unsigned long		start_data;	/* data starting address */
++	unsigned long		start_stack;	/* stack starting address */
++	long int		signal;		/* signal causing core dump */
++	struct user_regs *	u_ar0;		/* help gdb find registers */
++	unsigned long		magic;		/* identifies a core file */
++	char			u_comm[32];	/* user command name */
++};
++
++#endif /* _SYS_USER_H */
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/syscall.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/syscall.S	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,81 @@
++/*
++ * syscall for AVR32/uClibc
++ *
++ * Copyright (C) 2004 Atmel Norway
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU Library General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or (at your
++ * option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Library General Public License
++ * for more details.
++ *
++ * You should have received a copy of the GNU Library General Public License
++ * along with this program; if not, write to the Free Software Foundation,
++ * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++ */
++#include <features.h>
++
++	.text
++
++	/*
++	 * long int syscall(long int sysno, ...)
++	 */
++	.global	syscall
++	.type	syscall, @function
++	.align	2
++syscall:
++	stm	--sp, r3,r5,lr
++	sub	lr, sp, -12
++	mov	r8, r12
++	ldm	lr, r3,r5,r9-r12
++	scall
++	cp.w	r12, -4095
++	brlo	.Ldone
++
++#ifdef __PIC__
++	lddpc	r5, .Lgot
++.Lgotcalc:
++	rsub	r5, pc
++# ifdef __UCLIBC_HAS_THREADS__
++	mov	r3, r12
++	mcall	r5[__errno_location@got]
++	st.w	r12[0], r3
++# else
++	ld.w	r3, r5[errno@got]
++	st.w	r3[0], r12
++# endif
++#else
++# ifdef __UCLIBC_HAS_THREADS__
++	mov	r3, r12
++	mcall	.Lerrno_location
++	st.w	r12[0], r3
++# else
++	lddpc	r3, .Lerrno
++	st.w	r3[0], r12
++# endif
++#endif
++	mov	r12, -1
++
++.Ldone:
++	ldm	sp++, r3,r5,pc
++
++	.align	2
++#ifdef __PIC__
++.Lgot:
++	.long	.Lgotcalc - _GLOBAL_OFFSET_TABLE_
++#else
++# ifdef __UCLIBC_HAS_THREADS__
++.Lerrno_location:
++	.long	__errno_location
++# else
++.Lerrno:
++	.long	errno
++# endif
++#endif
++
++
++	.size	syscall, . - syscall
+Index: uClibc-0.9.28/libc/sysdeps/linux/avr32/vfork.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/libc/sysdeps/linux/avr32/vfork.S	2006-04-19 12:48:33.000000000 +0200
+@@ -0,0 +1,55 @@
++	/*
++	 * vfork for uClibc
++	 *
++	 * Copyright (C) 2005 Atmel Norway
++	 */
++
++	/*
++	 * Clone the process without copying the address space.  The
++	 * calling process is suspended until the child either exits
++	 * or calls execve.
++	 *
++	 * This all means that we cannot rely on the stack to store
++	 * away registers, since they will be overwritten by the child
++	 * as soon as it makes another function call (e.g. execve()).
++	 * Fortunately, the Linux kernel preserves LR across system calls.
++	 */
++#include <features.h>
++#include <sys/syscall.h>
++
++	.global	__vfork
++	.type	__vfork,@function
++	.align	1
++__vfork:
++	mov	r8, __NR_vfork
++	scall
++	cp.w	r12, -4096
++	retls	r12
++
++	/* vfork failed, so we may use the stack freely */
++	pushm	r4-r7,lr
++#ifdef __PIC__
++	lddpc	r6, .L_GOT
++	rsub	r4, r12, 0
++.L_RGOT:
++	rsub	r6, pc
++	mcall	r6[__errno_location@got]
++#else
++	rsub	r4, r12, 0
++	mcall	.L__errno_location
++#endif
++	st.w	r12[0], r4
++	popm	r4-r7,pc,r12=-1
++
++	.align	2
++#ifdef __PIC__
++.L_GOT:
++	.long	.L_RGOT - _GLOBAL_OFFSET_TABLE_
++#else
++.L__errno_location:
++	.long	__errno_location
++#endif
++	.size	__vfork, . - __vfork
++
++	.weak	vfork
++	vfork	= __vfork
+Index: uClibc-0.9.28/Rules.mak
+===================================================================
+--- uClibc-0.9.28.orig/Rules.mak	2006-05-05 09:26:01.000000000 +0200
++++ uClibc-0.9.28/Rules.mak	2006-05-05 09:27:17.000000000 +0200
+@@ -231,6 +231,10 @@ ifeq ($(strip $(TARGET_ARCH)),frv)
+ 	UCLIBC_LDSO=ld.so.1
+ endif
+ 
++ifeq ($(strip $(TARGET_ARCH)),avr32)
++	CPU_CFLAGS-$(CONFIG_AP7000)	+= -mcpu=ap7000
++endif
++
+ # Keep the check_gcc from being needlessly executed
+ ifndef PIEFLAG
+ ifneq ($(UCLIBC_BUILD_PIE),y)

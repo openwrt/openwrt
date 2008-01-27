@@ -1,0 +1,40 @@
+From nobody Mon Sep 17 00:00:00 2001
+Subject: [PATCH] Make linkrelax configurable
+From: Håvard Skinnemoen <hskinnemoen@atmel.com>
+Date: 1133951618 +0100
+
+Add a linkrelax option to the configure system which will give
+appropriate options to the compiler, assembler and linker to enable
+link-time optimizations.
+
+---
+
+ Rules.mak                  |    2 ++
+ extra/Configs/Config.avr32 |    4 ++++
+ 2 files changed, 6 insertions(+)
+
+Index: uClibc-0.9.28/Rules.mak
+===================================================================
+--- uClibc-0.9.28.orig/Rules.mak	2006-02-08 17:58:53.000000000 +0100
++++ uClibc-0.9.28/Rules.mak	2006-02-08 17:59:07.000000000 +0100
+@@ -233,6 +233,8 @@ endif
+ 
+ ifeq ($(strip $(TARGET_ARCH)),avr32)
+ 	CPU_CFLAGS-$(CONFIG_AP7000)	+= -mcpu=ap7000
++	CPU_CFLAGS-$(LINKRELAX)		+= -masm-addr-pseudos -Wa,--pic,--linkrelax
++	CPU_LDFLAGS-$(LINKRELAX)	+= --relax
+ endif
+ 
+ # Keep the check_gcc from being needlessly executed
+Index: uClibc-0.9.28/extra/Configs/Config.avr32
+===================================================================
+--- uClibc-0.9.28.orig/extra/Configs/Config.avr32	2006-02-08 17:58:53.000000000 +0100
++++ uClibc-0.9.28/extra/Configs/Config.avr32	2006-02-08 17:59:07.000000000 +0100
+@@ -36,3 +36,7 @@ config CONFIG_AP7000
+ 	bool "AP7000"
+ 
+ endchoice
++
++config LINKRELAX
++	bool "Enable linker optimizations"
++	default n

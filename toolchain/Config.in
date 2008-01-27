@@ -12,6 +12,7 @@ menuconfig TOOLCHAINOPTS
 
 source "toolchain/binutils/Config.in"
 source "toolchain/gcc/Config.in"
+source "toolchain/uClibc/Config.in"
 
 config GDB
 	bool
@@ -60,3 +61,4 @@ config TARGET_OPTIMIZATION
 	  Optimizations to use when building for the target host.
 
 source "toolchain/gcc/Config.version"
+source "toolchain/uClibc/Config.version"

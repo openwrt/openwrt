@@ -1,0 +1,27 @@
+Subject: [PATCH] Don't include create_module() for AVR32
+
+The create_module() system call is obsolete in Linux 2.6, so the
+AVR32 kernel doesn't even have it.
+
+Come to think about it, this should be completely unnecessary as the
+create_module function is only a stub when __NR_create_module is
+undefined.
+---
+
+ libc/sysdeps/linux/common/create_module.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+Index: uClibc-0.9.28/libc/sysdeps/linux/common/create_module.c
+===================================================================
+--- uClibc-0.9.28.orig/libc/sysdeps/linux/common/create_module.c	2006-02-07 16:48:38.000000000 +0100
++++ uClibc-0.9.28/libc/sysdeps/linux/common/create_module.c	2006-02-07 17:17:14.000000000 +0100
+@@ -61,7 +61,8 @@ unsigned long create_module(const char *
+ {
+   return __create_module(name, size, 0, 0);
+ }
+-#else
++/* create_module is obsolete in Linux 2.6, so AVR32 doesn't have it */
++#elif !defined(__avr32__)
+ /* Sparc, MIPS, etc don't mistake return values for errors. */ 
+ _syscall2(unsigned long, create_module, const char *, name, size_t, size);
+ #endif
