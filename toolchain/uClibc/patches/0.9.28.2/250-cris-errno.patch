@@ -1,0 +1,11 @@
+--- uClibc-0.9.28.2.orig/libc/sysdeps/linux/cris/sysdep.S	2007-06-10 23:00:19.000000000 +0200
++++ uClibc-0.9.28.2/libc/sysdeps/linux/cris/sysdep.S	2007-06-10 23:01:23.000000000 +0200
+@@ -25,7 +25,7 @@
+ 	.type	C_SYMBOL_NAME(errno),@object
+ 	.lcomm	C_SYMBOL_NAME(errno),4
+ 
+-	errno = _errno
++	//errno = _errno
+ 
+ 	/* weak_alias (errno, _errno) */
+ 

@@ -1,0 +1,29 @@
+Fix portability of build infrastructure
+* cp -d -> cp -P
+* tar --exclude is a GNU tar feature
+
+--- uClibc-0.9.28/Makefile.orig	Sun Jun 11 19:08:56 2006
++++ uClibc-0.9.28/Makefile	Sun Jun 11 19:12:05 2006
+@@ -158,12 +158,7 @@ install_dev:
+ 	$(INSTALL) -d $(PREFIX)$(DEVEL_PREFIX)lib
+ 	$(INSTALL) -d $(PREFIX)$(DEVEL_PREFIX)include
+ 	-$(INSTALL) -m 644 lib/*.[ao] $(PREFIX)$(DEVEL_PREFIX)lib/
+-	if [ "$(KERNEL_SOURCE)" = "$(DEVEL_PREFIX)" ] ; then \
+-		extra_exclude="--exclude include/linux --exclude include/asm'*'" ; \
+-	else \
+-		extra_exclude="" ; \
+-	fi ; \
+-	tar -chf - include --exclude .svn --exclude CVS $$extra_exclude \
++	tar -chf - include \
+ 		| tar -xf - -C $(PREFIX)$(DEVEL_PREFIX)
+ ifneq ($(strip $(UCLIBC_HAS_FLOATS)),y)
+ 	# Remove floating point related headers since float support is disabled.
+@@ -253,7 +248,7 @@ ifeq ($(strip $(HAVE_SHARED)),y)
+ 	$(INSTALL) -d $(PREFIX)$(RUNTIME_PREFIX)lib
+ 	$(INSTALL) -m 644 lib/lib*-$(MAJOR_VERSION).$(MINOR_VERSION).$(SUBLEVEL).so \
+ 		$(PREFIX)$(RUNTIME_PREFIX)lib
+-	cp -dRf lib/*.so.* $(PREFIX)$(RUNTIME_PREFIX)lib
++	cp -pRf lib/*.so.* $(PREFIX)$(RUNTIME_PREFIX)lib
+ 	@if [ -x lib/ld-uClibc-$(MAJOR_VERSION).$(MINOR_VERSION).$(SUBLEVEL).so ] ; then \
+ 	    set -e; \
+ 		$(SHELL_SET_X); \

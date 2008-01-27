@@ -1,0 +1,31 @@
+diff -urN uClibc-0.9.28.2.orig/libc/sysdeps/linux/cris/crt0.c uClibc-0.9.28.2/libc/sysdeps/linux/cris/crt0.c
+--- uClibc-0.9.28.2.orig/libc/sysdeps/linux/cris/crt0.c	2007-05-18 00:27:56.000000000 +0200
++++ uClibc-0.9.28.2/libc/sysdeps/linux/cris/crt0.c	2007-05-18 00:32:08.000000000 +0200
+@@ -31,11 +31,10 @@
+ 
+ #include <features.h>
+ 
+-extern void __uClibc_main(int argc, char **argv, char **envp)
+-         __attribute__ ((__noreturn__));
+-extern void __uClibc_start_main(int argc, char **argv, char **envp, 
+-	void (*app_init)(void), void (*app_fini)(void))
+-         __attribute__ ((__noreturn__));
++extern void __uClibc_main(int (*main)(int, char **, char **), int argc,
++		    char **argv, void (*app_init)(void), void (*app_fini)(void),
++		    void (*rtld_fini)(void), void *stack_end) __attribute__ ((__noreturn__)); 
++
+ extern void weak_function _init(void);
+ extern void weak_function _fini(void);
+ 
+@@ -64,10 +63,5 @@
+ 		 */
+ 		--environ;
+ 	
+-#if defined L_crt0 || ! defined __UCLIBC_CTOR_DTOR__
+-	/* Leave control to the libc */
+-	__uClibc_main(argc, argv, environ);
+-#else
+-	__uClibc_start_main(argc, argv, environ, _init, _fini);
+-#endif
++	__uClibc_main(__mainp, argc, argv, 0, 0, 0, 0);
+ }

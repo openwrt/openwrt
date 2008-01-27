@@ -1,0 +1,19 @@
+Subject: [PATCH] Fix getrusage argument type
+
+The first argument to getrusage is of type __rusage_who_t, not int.
+This patch fixes that.
+---
+
+ libc/sysdeps/linux/common/getrusage.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Index: uClibc-0.9.28/libc/sysdeps/linux/common/getrusage.c
+===================================================================
+--- uClibc-0.9.28.orig/libc/sysdeps/linux/common/getrusage.c	2006-02-07 17:18:22.000000000 +0100
++++ uClibc-0.9.28/libc/sysdeps/linux/common/getrusage.c	2006-02-07 17:18:31.000000000 +0100
+@@ -10,4 +10,4 @@
+ #include "syscalls.h"
+ #include <unistd.h>
+ #include <wait.h>
+-_syscall2(int, getrusage, int, who, struct rusage *, usage);
++_syscall2(int, getrusage, __rusage_who_t, who, struct rusage *, usage);

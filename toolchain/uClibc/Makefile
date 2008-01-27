@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,36 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/target.mk
 
 PKG_NAME:=uClibc
-PKG_VERSION:=0.9.29
-PKG_EXTRAVERSION:=
+PKG_VERSION:=$(strip $(subst ",, $(CONFIG_UCLIBC_VERSION)))#"))
+PKG_EXTRAVERSION:=$(strip $(subst ",, $(CONFIG_UCLIBC_EXTRA_VERSION)))#"))
+PKG_VERSION_SNAPSHOT:=$(strip $(subst ",, $(CONFIG_UCLIBC_VERSION_SNAPSHOT)))#"))
+ifeq ($(PKG_VERSION_SNAPSHOT),y)
+PKG_SOURCE_URL:=http://www.uclibc.org/downloads/snapshots
+else
+PKG_SOURCE_URL:=http://www.uclibc.org/downloads
+endif
+PATCH_DIR:=./patches/$(PKG_VERSION)$(PKG_EXTRAVERSION)
+CONFIG_DIR:=./config/$(PKG_VERSION)$(PKG_EXTRAVERSION)
+
+ifeq ($(PKG_VERSION),0.9.28)
+ifeq ($(PKG_EXTRAVERSION),.2)
+PKG_MD5SUM:=7a20a58ee1e2532f4610933515ea8998
+endif
+ifeq ($(PKG_EXTRAVERSION),.3)
+PKG_MD5SUM:=428405a36b4662980d9343b32089b5a6
+endif
+endif
+
+ifeq ($(PKG_VERSION),0.9.29)
+ifeq ($(PKG_EXTRAVERSION),)
+# currently the default version, no special sub-directory needed
+PATCH_DIR:=./patches
+CONFIG_DIR:=./config
+PKG_MD5SUM:=61dc55f43b17a38a074f347e74095b20
+endif
+endif
 
 PKG_SOURCE:=uClibc-$(PKG_VERSION)$(PKG_EXTRAVERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.uclibc.org/downloads
-PKG_MD5SUM:=61dc55f43b17a38a074f347e74095b20
 PKG_CAT:=bzcat
 
 STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
@@ -40,9 +64,36 @@ UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 		-e 's/cris.*/cris/' \
 )
 
+define Build/Prepare/Snapshot
+	$(PKG_UNPACK)
+	rm -Rf $(PKG_BUILD_DIR)
+	ln -snf $(BUILD_DIR_TOOLCHAIN)/uClibc $(PKG_BUILD_DIR)
+	$(Build/Patch)
+	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
+endef
+
+define Build/Prepare/V_0_9_28
+	$(SED) 's,^KERNEL_SOURCE=.*,KERNEL_SOURCE=\"$(LINUX_HEADERS_DIR)\",g' \
+		$(PKG_BUILD_DIR)/.config
+ifeq ($(CONFIG_SOFT_FLOAT),y)
+	$(SED) 's,.*HAS_FPU.*,HAS_FPU=n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,g' $(PKG_BUILD_DIR)/.config
+endif
+ifeq ($(CONFIG_C99_MATH),y)
+	$(SED) 's,.*DO_C99_MATH.*,DO_C99_MATH=y,g' $(PKG_BUILD_DIR)/.config
+endif
+endef
+
 define Build/Prepare
+	@echo prepare uClibc version $(PKG_VERSION)$(PKG_EXTRAVERSION)  
+ifeq ($(PKG_VERSION_SNAPSHOT),y)
+	$(call Build/Prepare/Snapshot)
+else
 	$(call Build/Prepare/Default)
-	$(CP) config/$(ARCH)$(if $(wildcard config/$(ARCH).$(BOARD)),$(BOARD)) $(PKG_BUILD_DIR)/.config
+endif
+	$(CP) ./$(CONFIG_DIR)/$(ARCH)$(if $(wildcard $(CONFIG_DIR)/$(ARCH).$(BOARD)),$(BOARD)) $(PKG_BUILD_DIR)/.config
+ifeq ($(PKG_VERSION),0.9.28)
+	$(call Build/Prepare/V_0_9_28)
+endif
 	$(SED) 's,^KERNEL_HEADERS=.*,KERNEL_HEADERS=\"$(LINUX_HEADERS_DIR)/include\",g' \
 		-e 's,.*UCLIBC_HAS_FPU.*,UCLIBC_HAS_FPU=$(if $(CONFIG_SOFT_FLOAT),n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,y),g' \
 		-e 's,^.*UCLIBC_HAS_LFS.*,UCLIBC_HAS_LFS=$(if $(CONFIG_LARGEFILE),y,n),g' \

@@ -1,0 +1,28 @@
+From 7b2f125425cf777e7937b533217588e27952b87d Mon Sep 17 00:00:00 2001
+From: Haavard Skinnemoen <hskinnemoen@atmel.com>
+Date: Mon, 7 Aug 2006 11:12:50 +0200
+Subject: [PATCH] Let optimized stringops override default ones
+
+The default, slow stringops must be archived _before_ the optimized
+stringops if there is to be any point doing the optimizations in the
+first place.
+---
+ libc/Makefile |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/libc/Makefile b/libc/Makefile
+index 31e4bab..687eac5 100644
+--- a/libc/Makefile
++++ b/libc/Makefile
+@@ -59,7 +59,7 @@ # will evaluate to no files :(.
+ 	$(AR) dN 2 $(LIBNAME) $$objs && \
+ 	$(AR) dN 2 $(LIBNAME) $$objs
+ 	@for objfile in obj.signal \
+-	                obj.string.generic obj.string.$(TARGET_ARCH) obj.string \
++	                obj.string obj.string.generic obj.string.$(TARGET_ARCH) \
+ 	                obj.sysdeps.common obj.sysdeps.$(TARGET_ARCH) ; do \
+ 		if [ -e $$objfile ] ; then \
+ 			if [ "$(MAKE_IS_SILENT)" = "n" ] ; then \
+-- 
+1.4.1.1
+

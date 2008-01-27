@@ -1,0 +1,526 @@
+Subject: [PATCH] ldso: AVR32 support
+
+This implements the AVR32-specific parts of the dynamic linker.
+
+---
+
+ ldso/ldso/avr32/dl-debug.h    |   45 +++++++++
+ ldso/ldso/avr32/dl-startup.h  |  110 ++++++++++++++++++++++++
+ ldso/ldso/avr32/dl-syscalls.h |    5 +
+ ldso/ldso/avr32/dl-sysdep.h   |  103 ++++++++++++++++++++++
+ ldso/ldso/avr32/elfinterp.c   |  191 ++++++++++++++++++++++++++++++++++++++++++
+ ldso/ldso/avr32/resolve.S     |   28 ++++++
+ 6 files changed, 482 insertions(+)
+
+Index: uClibc-0.9.28/ldso/ldso/avr32/dl-debug.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/ldso/ldso/avr32/dl-debug.h	2006-05-05 09:30:43.000000000 +0200
+@@ -0,0 +1,45 @@
++/*
++ * AVR32 ELF shared libary loader support
++ *
++ * Copyright (C) 2005 Atmel Norway
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. The name of the above contributors may not be
++ *    used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++
++static const char *_dl_reltypes_tab[] = {
++    "R_AVR32_NONE",
++    "R_AVR32_32", "R_AVR32_16", "R_AVR32_8",
++    "R_AVR32_32_PCREL", "R_AVR32_16_PCREL", "R_AVR32_8_PCREL",
++    "R_AVR32_DIFF32", "R_AVR32_DIFF16", "R_AVR32_DIFF8",
++    "R_AVR32_GOT32", "R_AVR32_GOT16", "R_AVR32_GOT8",
++    "R_AVR32_21S", "R_AVR32_16U", "R_AVR32_16S", "R_AVR32_8S", "R_AVR32_8S_EXT",
++    "R_AVR32_22H_PCREL", "R_AVR32_18W_PCREL", "R_AVR32_16B_PCREL",
++    "R_AVR32_16N_PCREL", "R_AVR32_14UW_PCREL", "R_AVR32_11H_PCREL",
++    "R_AVR32_10UW_PCREL", "R_AVR32_9H_PCREL", "R_AVR32_9UW_PCREL",
++    "R_AVR32_HI16", "R_AVR32_LO16",
++    "R_AVR32_GOTPC", "R_AVR32_GOTCALL", "R_AVR32_LDA_GOT",
++    "R_AVR32_GOT21S", "R_AVR32_GOT18SW", "R_AVR32_GOT16S", "R_AVR32_GOT7UW",
++    "R_AVR32_32_CPENT", "R_AVR32_CPCALL", "R_AVR32_16_CP", "R_AVR32_9W_CP",
++    "R_AVR32_RELATIVE", "R_AVR32_GLOB_DAT", "R_AVR32_JMP_SLOT",
++    "R_AVR32_ALIGN",
++};
+Index: uClibc-0.9.28/ldso/ldso/avr32/dl-startup.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/ldso/ldso/avr32/dl-startup.h	2006-05-05 09:29:45.000000000 +0200
+@@ -0,0 +1,110 @@
++/* vi: set sw=4 ts=4: */
++/*
++ * Architecture specific code used by dl-startup.c
++ * Copyright (C) 2005 Atmel Norway
++ */
++
++/* This is the library loader's main entry point. Let _dl_boot2 do its
++ * initializations and jump to the application's entry point
++ * afterwards. */
++asm(	"	.text\n"
++	"	.global	_start\n"
++	"	.type	_start,@function\n"
++	"_start:\n"
++	/* All arguments are on the stack initially */
++	"	mov	r12, sp\n"
++	"	rcall	_dl_start\n"
++	/* Returns user entry point in r12. Save it. */
++	"	mov	r0, r12\n"
++	/* We're PIC, so get the Global Offset Table */
++	"	lddpc	r6, .L_GOT\n"
++	".L_RGOT:\n"
++	"	rsub	r6, pc\n"
++	/* Adjust argc and argv according to _dl_skip_args */
++	"	ld.w	r1, r6[_dl_skip_args@got]\n"
++	"	ld.w	r1, r1[0]\n"
++	"	ld.w	r2, sp++\n"
++	"	sub	r2, r1\n"
++	"	add	sp, sp, r1 << 2\n"
++	"	st.w	--sp, r2\n"
++	/* Load the finalizer function */
++	"	ld.w	r12, r6[_dl_fini@got]\n"
++	/* Jump to the user's entry point */
++	"	mov	pc, r0\n\n"
++
++	"	.align	2\n"
++	".L_GOT:"
++	"	.long	.L_RGOT - _GLOBAL_OFFSET_TABLE_\n"
++	"	.size	_start, . - _start\n"
++	"	.previous\n");
++
++/* Get a pointer to the argv array.  On many platforms this can be just
++ * the address if the first argument, on other platforms we need to
++ * do something a little more subtle here. */
++#define GET_ARGV(ARGVP, ARGS) ARGVP = ((unsigned long *)ARGS + 1)
++
++
++/* We can't call functions before the GOT has been initialized */
++#define NO_FUNCS_BEFORE_BOOTSTRAP
++
++/*
++ * Relocate the GOT during dynamic loader bootstrap.  This will add
++ * the load address to all entries in the GOT, which is necessary
++ * because the linker doesn't generate R_AVR32_RELATIVE relocs for the
++ * GOT.
++ */
++static __always_inline
++void PERFORM_BOOTSTRAP_GOT(struct elf_resolve *tpnt)
++{
++	Elf32_Addr i, nr_got;
++	register Elf32_Addr *__r6 __asm__("r6");
++	Elf32_Addr *got = __r6;
++
++	nr_got = tpnt->dynamic_info[DT_AVR32_GOTSZ_IDX] / sizeof(*got);
++	for (i = 2; i < nr_got; i++)
++		got[i] += tpnt->loadaddr;
++}
++
++#define PERFORM_BOOTSTRAP_GOT(tpnt) PERFORM_BOOTSTRAP_GOT(tpnt)
++
++/* Handle relocation of the symbols in the dynamic loader. */
++static __always_inline
++void PERFORM_BOOTSTRAP_RELOC(ELF_RELOC *rpnt, unsigned long *reloc_addr,
++			     unsigned long symbol_addr,
++			     unsigned long load_addr, Elf32_Sym *symtab)
++{
++	switch(ELF32_R_TYPE(rpnt->r_info)) {
++	case R_AVR32_NONE:
++		break;
++	case R_AVR32_GLOB_DAT:
++	case R_AVR32_JMP_SLOT:
++		*reloc_addr = symbol_addr;
++		break;
++	case R_AVR32_RELATIVE:
++		SEND_STDERR_DEBUG("Applying RELATIVE relocation: ");
++		SEND_ADDRESS_STDERR_DEBUG(load_addr, 0);
++		SEND_STDERR_DEBUG(" + ");
++		SEND_ADDRESS_STDERR_DEBUG(rpnt->r_addend, 1);
++		*reloc_addr = load_addr + rpnt->r_addend;
++		break;
++	default:
++		SEND_STDERR("BOOTSTRAP_RELOC: unhandled reloc_type ");
++		SEND_NUMBER_STDERR(ELF32_R_TYPE(rpnt->r_info), 1);
++		SEND_STDERR("REL, SYMBOL, LOAD: ");
++		SEND_ADDRESS_STDERR(reloc_addr, 0);
++		SEND_STDERR(", ");
++		SEND_ADDRESS_STDERR(symbol_addr, 0);
++		SEND_STDERR(", ");
++		SEND_ADDRESS_STDERR(load_addr, 1);
++		_dl_exit(1);
++	}
++}
++
++/* Transfer control to the user's application, once the dynamic loader
++ * is done. This routine has to exit the current function, then call
++ * the _dl_elf_main function.
++ *
++ * Since our _dl_boot will simply call whatever is returned by
++ * _dl_boot2, we can just return the address we're supposed to
++ * call.  */
++#define START()	return _dl_elf_main;
+Index: uClibc-0.9.28/ldso/ldso/avr32/dl-syscalls.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/ldso/ldso/avr32/dl-syscalls.h	2006-05-05 09:29:25.000000000 +0200
+@@ -0,0 +1,5 @@
++/* We can't use the real errno in ldso, since it has not yet
++ * been dynamicly linked in yet. */
++extern int _dl_errno;
++#define __set_errno(X) {(_dl_errno) = (X);}
++#include "sys/syscall.h"
+Index: uClibc-0.9.28/ldso/ldso/avr32/dl-sysdep.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/ldso/ldso/avr32/dl-sysdep.h	2006-05-05 09:30:43.000000000 +0200
+@@ -0,0 +1,103 @@
++/* vi: set sw=4 ts=4: */
++/*
++ * Various assembly language/system dependent hacks that are required
++ * so that we can minimize the amount of platform specific code.
++ * Copyright (C) 2004-2005 Atmel Norway
++ */
++
++/* Define this if the system uses RELOCA. */
++#define ELF_USES_RELOCA
++
++#include <elf.h>
++
++#define ARCH_NUM 1
++#define DT_AVR32_GOTSZ_IDX	(DT_NUM + OS_NUM)
++
++#define ARCH_DYNAMIC_INFO(dpnt, dynamic, debug_addr)			\
++	do {								\
++		if (dpnt->d_tag == DT_AVR32_GOTSZ)			\
++			dynamic[DT_AVR32_GOTSZ_IDX] = dpnt->d_un.d_val;	\
++	} while (0)
++
++/* Initialization sequence for the application/library GOT. */
++#define INIT_GOT(GOT_BASE,MODULE)					\
++	do {								\
++		unsigned long i, nr_got;				\
++									\
++		GOT_BASE[0] = (unsigned long) _dl_linux_resolve;	\
++		GOT_BASE[1] = (unsigned long) MODULE;			\
++									\
++		/* Add load address displacement to all GOT entries */	\
++		nr_got = MODULE->dynamic_info[DT_AVR32_GOTSZ_IDX] / 4;	\
++		for (i = 2; i < nr_got; i++)				\
++			GOT_BASE[i] += (unsigned long)MODULE->loadaddr;	\
++	} while (0)
++
++#define do_rem(result, n, base)	((result) = (n) % (base))
++
++/* Here we define the magic numbers that this dynamic loader should accept */
++#define MAGIC1 EM_AVR32
++#undef MAGIC2
++
++/* Used for error messages */
++#define ELF_TARGET "AVR32"
++
++unsigned long _dl_linux_resolver(unsigned long got_offset, unsigned long *got);
++
++/* 4096 bytes alignment */
++#define PAGE_ALIGN 0xfffff000
++#define ADDR_ALIGN 0xfff
++#define OFFS_ALIGN 0x7ffff000
++
++#define elf_machine_type_class(type)				\
++	((type == R_AVR32_JMP_SLOT) * ELF_RTYPE_CLASS_PLT)
++
++/* AVR32 doesn't need any COPY relocs */
++#define DL_NO_COPY_RELOCS
++
++/* Return the link-time address of _DYNAMIC.  Conveniently, this is the
++   first element of the GOT.  This must be inlined in a function which
++   uses global data.  */
++static inline Elf32_Addr
++elf_machine_dynamic (void)
++{
++	register Elf32_Addr *got asm ("r6");
++	return *got;
++}
++
++/* Return the run-time load address of the shared object.  */
++static inline Elf32_Addr
++elf_machine_load_address (void)
++{
++	extern void __dl_start asm("_dl_start");
++	Elf32_Addr got_addr = (Elf32_Addr) &__dl_start;
++	Elf32_Addr pcrel_addr;
++
++	asm   ("	lddpc	%0, 2f\n"
++	       "1:	add	%0, pc\n"
++	       "	rjmp	3f\n"
++	       "	.align	2\n"
++	       "2:	.long	_dl_start - 1b\n"
++	       "3:\n"
++	       : "=r"(pcrel_addr) : : "cc");
++
++	return pcrel_addr - got_addr;
++}
++
++/*
++ * Perform any RELATIVE relocations specified by DT_RELCOUNT.
++ * Currently, we don't use that tag, but we might in the future as
++ * this would reduce the startup time somewhat (although probably not by much).
++ */
++static inline void
++elf_machine_relative (Elf32_Addr load_off, const Elf32_Addr rel_addr,
++		      Elf32_Word relative_count)
++{
++	Elf32_Rela *rpnt = (void *)rel_addr;
++
++	do {
++		Elf32_Addr *reloc_addr;
++		reloc_addr = (void *)(load_off + (rpnt++)->r_offset);
++		*reloc_addr = load_off + rpnt->r_addend;
++	} while (--relative_count);
++}
+Index: uClibc-0.9.28/ldso/ldso/avr32/elfinterp.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/ldso/ldso/avr32/elfinterp.c	2006-05-05 09:30:43.000000000 +0200
+@@ -0,0 +1,191 @@
++/*
++ * AVR32 ELF shared library loader suppport
++ *
++ * Copyright (C) 2004-2006 Atmel Corporation
++ *
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. The name of the above contributors may not be
++ *    used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++
++unsigned long _dl_linux_resolver(unsigned long got_offset, unsigned long *got)
++{
++	struct elf_resolve *tpnt = (struct elf_resolve *)got[1];
++	Elf32_Sym *sym;
++	unsigned long local_gotno;
++	unsigned long gotsym;
++	unsigned long new_addr;
++	char *strtab, *symname;
++	unsigned long *entry;
++	unsigned long sym_index = got_offset / 4;
++
++#if 0
++	local_gotno = tpnt->dynamic_info[DT_AVR32_LOCAL_GOTNO];
++	gotsym = tpnt->dynamic_info[DT_AVR32_GOTSYM];
++
++	sym = ((Elf32_Sym *)(tpnt->dynamic_info[DT_SYMTAB] + tpnt->loadaddr))
++		+ sym_index;
++	strtab = (char *)(tpnt->dynamic_info[DT_STRTAB] + tpnt->loadaddr);
++	symname = strtab + sym->st_name;
++
++#if 0
++	new_addr = (unsigned long) _dl_find_hash(strtab + sym->st_name,
++						 tpnt->symbol_scope, tpnt,
++						 resolver);
++#endif
++
++	entry = (unsigned long *)(got + local_gotno + sym_index - gotsym);
++	*entry = new_addr;
++#endif
++
++	return new_addr;
++}
++
++static int
++_dl_parse(struct elf_resolve *tpnt, struct dyn_elf *scope,
++	  unsigned long rel_addr, unsigned long rel_size,
++	  int (*reloc_func)(struct elf_resolve *tpnt, struct dyn_elf *scope,
++			    Elf32_Rela *rpnt, Elf32_Sym *symtab, char *strtab))
++{
++	Elf32_Sym *symtab;
++	Elf32_Rela *rpnt;
++	char *strtab;
++	int i;
++
++	rpnt = (Elf32_Rela *)rel_addr;
++	rel_size /= sizeof(Elf32_Rela);
++	symtab = (Elf32_Sym *)tpnt->dynamic_info[DT_SYMTAB];
++	strtab = (char *)tpnt->dynamic_info[DT_STRTAB];
++
++	for (i = 0; i < rel_size; i++, rpnt++) {
++		int symtab_index, res;
++
++		symtab_index = ELF32_R_SYM(rpnt->r_info);
++
++		debug_sym(symtab, strtab, symtab_index);
++		debug_reloc(symtab, strtab, rpnt);
++
++		res = reloc_func(tpnt, scope, rpnt, symtab, strtab);
++
++		if (res == 0)
++			continue;
++
++		_dl_dprintf(2, "\n%s: ", _dl_progname);
++
++		if (symtab_index)
++			_dl_dprintf(2, "symbol '%s': ",
++				    strtab + symtab[symtab_index].st_name);
++
++		if (res < 0) {
++			int reloc_type = ELF32_R_TYPE(rpnt->r_info);
++#if defined(__SUPPORT_LD_DEBUG__)
++			_dl_dprintf(2, "can't handle reloc type %s\n",
++				    _dl_reltypes(reloc_type));
++#else
++			_dl_dprintf(2, "can't handle reloc type %x\n",
++				    reloc_type);
++#endif
++			_dl_exit(-res);
++		} else {
++			_dl_dprintf(2, "can't resolve symbol\n");
++			return res;
++		}
++	}
++
++	return 0;
++}
++
++static int _dl_do_reloc(struct elf_resolve *tpnt, struct dyn_elf *scope,
++			Elf32_Rela *rpnt, Elf32_Sym *symtab, char *strtab)
++{
++	int reloc_type;
++	int symtab_index;
++	char *symname;
++	unsigned long *reloc_addr;
++	unsigned long symbol_addr;
++#if defined(__SUPPORT_LD_DEBUG__)
++	unsigned long old_val;
++#endif
++
++	reloc_addr = (unsigned long *)(tpnt->loadaddr + rpnt->r_offset);
++	reloc_type = ELF32_R_TYPE(rpnt->r_info);
++	symtab_index = ELF32_R_SYM(rpnt->r_info);
++	symbol_addr = 0;
++	symname = strtab + symtab[symtab_index].st_name;
++
++	if (symtab_index) {
++		symbol_addr = (unsigned long)
++			_dl_find_hash(strtab + symtab[symtab_index].st_name,
++				      tpnt->symbol_scope, tpnt,
++				      elf_machine_type_class(reloc_type));
++
++		/* Allow undefined references to weak symbols */
++		if (!symbol_addr &&
++		    ELF32_ST_BIND(symtab[symtab_index].st_info) != STB_WEAK) {
++			_dl_dprintf(2, "%s: can't resolve symbol '%s'\n",
++				    _dl_progname, symname);
++			return 0;
++		}
++	}
++
++#if defined(__SUPPORT_LD_DEBUG__)
++	old_val = *reloc_addr;
++#endif
++	switch (reloc_type) {
++	case R_AVR32_NONE:
++		break;
++	case R_AVR32_GLOB_DAT:
++	case R_AVR32_JMP_SLOT:
++		*reloc_addr = symbol_addr + rpnt->r_addend;
++		break;
++	case R_AVR32_RELATIVE:
++		*reloc_addr = (unsigned long)tpnt->loadaddr
++			+ rpnt->r_addend;
++		break;
++	default:
++		return -1;
++	}
++
++#if defined(__SUPPORT_LD_DEBUG__)
++	if (_dl_debug_reloc && _dl_debug_detail)
++		_dl_dprintf(_dl_debug_file, "\tpatched: %x ==> %x @ %x\n",
++			    old_val, *reloc_addr);
++#endif
++
++	return 0;
++}
++
++void _dl_parse_lazy_relocation_information(struct dyn_elf *rpnt,
++					   unsigned long rel_addr,
++					   unsigned long rel_size)
++{
++	/* TODO: Might want to support this in order to get faster
++	 * startup times... */
++}
++
++int _dl_parse_relocation_information(struct dyn_elf *rpnt,
++				     unsigned long rel_addr,
++				     unsigned long rel_size)
++{
++	return _dl_parse(rpnt->dyn, rpnt->dyn->symbol_scope, rel_addr, rel_size,
++			 _dl_do_reloc);
++}
+Index: uClibc-0.9.28/ldso/ldso/avr32/resolve.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ uClibc-0.9.28/ldso/ldso/avr32/resolve.S	2006-05-05 09:29:25.000000000 +0200
+@@ -0,0 +1,28 @@
++/*
++ * Linux dynamic resolving code for AVR32. Fixes up the GOT entry as
++ * indicated in register r12 and jumps to the resolved address.
++ *
++ * This file is subject to the terms and conditions of the GNU Lesser General
++ * Public License.  See the file "COPYING.LIB" in the main directory of this
++ * archive for more details.
++ *
++ * Copyright (C) 2004 Atmel Norway
++ */
++
++#define ip r5
++
++	.text
++	.global	_dl_linux_resolve
++	.type	_dl_linux_resolve,@function
++_dl_linux_resolve:
++	/* The PLT code pushed r8 for us. It contains the address of this
++	   function's GOT entry, that is entry 0. ip contains the address
++	   of the GOT entry of the function we wanted to call. */
++	stm	--sp, r9-r12, lr
++	mov	r11, r8
++	sub	r12, ip, r8
++	rcall	_dl_linux_resolver
++	mov	ip, r12
++	popm	r8-r12,lr
++	mov	pc, ip
++	.size	_dl_linux_resolve, . - _dl_linux_resolve
