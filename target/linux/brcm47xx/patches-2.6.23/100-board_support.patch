@@ -142,15 +142,6 @@ Index: linux-2.6.23/drivers/Kconfig
  source "drivers/mfd/Kconfig"
  
  source "drivers/media/Kconfig"
-Index: linux-2.6.23/drivers/Makefile
-===================================================================
---- linux-2.6.23.orig/drivers/Makefile	2007-10-13 02:23:06.710510659 +0200
-+++ linux-2.6.23/drivers/Makefile	2007-10-13 02:27:08.120267817 +0200
-@@ -88,3 +88,4 @@
- obj-$(CONFIG_HID)		+= hid/
- obj-$(CONFIG_PPC_PS3)		+= ps3/
- obj-$(CONFIG_OF)		+= of/
-+obj-$(CONFIG_SSB)		+= ssb/
 Index: linux-2.6.23/include/asm-mips/bootinfo.h
 ===================================================================
 --- linux-2.6.23.orig/include/asm-mips/bootinfo.h	2007-10-13 02:23:06.718511119 +0200
@@ -198,10 +189,19 @@ Index: linux-2.6.23/include/asm-mips/cpu.h
  
  /*
   * ISA Level encodings
-Index: linux-2.6.23/include/linux/pci_ids.h
+Index: linux-2.6.23.1/drivers/Makefile
 ===================================================================
---- linux-2.6.23.orig/include/linux/pci_ids.h	2007-10-13 02:23:06.734512028 +0200
-+++ linux-2.6.23/include/linux/pci_ids.h	2007-10-13 02:23:11.218767569 +0200
+--- linux-2.6.23.1.orig/drivers/Makefile	2008-01-27 04:34:31.000000000 +0100
++++ linux-2.6.23.1/drivers/Makefile		2008-01-27 04:39:57.000000000 +0100
+@@ -89,3 +89,4 @@
+ obj-$(CONFIG_PPC_PS3)		+= ps3/
+ obj-$(CONFIG_OF)		+= of/
+ obj-$(CONFIG_GPIO_DEVICE)	+= gpio/
++obj-$(CONFIG_SSB)		+= ssb/
+Index: linux-2.6.23.1/include/linux/pci_ids.h
+===================================================================
+--- linux-2.6.23.1.orig/include/linux/pci_ids.h	2008-01-27 04:55:18.000000000 +0100
++++ linux-2.6.23.1/include/linux/pci_ids.h	2008-01-27 04:55:22.000000000 +0100
 @@ -1972,6 +1972,7 @@
  #define PCI_DEVICE_ID_TIGON3_5906M	0x1713
  #define PCI_DEVICE_ID_BCM4401		0x4401
