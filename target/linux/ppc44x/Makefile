@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 ARCH:=powerpc
-BOARD:=amcc
+BOARD:=ppc44x
 BOARDNAME:=AMCC Taishan
 FEATURES:=jffs2
 
