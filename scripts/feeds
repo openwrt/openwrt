@@ -41,11 +41,10 @@ sub parse_config() {
 	close FEEDS;
 }
 
-sub update_svn($$) {
+sub update_index($$)
+{
 	my $name = shift;
 	my $src = shift;
-
-	system("svn co $src ./feeds/$name") == 0 or return 1;
 	-d "./feeds/$name.tmp" or mkdir "./feeds/$name.tmp" or return 1;
 	-d "./feeds/$name.tmp/info" or mkdir "./feeds/$name.tmp/info" or return 1;
 
@@ -54,6 +53,19 @@ sub update_svn($$) {
 	system("ln -sf $name.tmp/.packageinfo ./feeds/$name.index");
 
 	return 0;
+}
+
+sub update_svn($$) {
+	my $name = shift;
+	my $src = shift;
+
+	if (-d "./feeds/$name/.svn" ) {
+		system("(cd \"./feeds/$name\"; svn up)") == 0 or return 1;
+	} else {
+		system("rm -rf \"./feeds/$name\"");
+		system("svn co $src \"./feeds/$name\"") == 0 or return 1;
+	}
+	return update_index($name, $src);
 }
 
 sub update_cpy($$) {
@@ -61,14 +73,7 @@ sub update_cpy($$) {
 	my $src = shift;
 
 	system("cp -Rf $src ./feeds/$name");
-	-d "./feeds/$name.tmp" or mkdir "./feeds/$name.tmp" or return 1;
-	-d "./feeds/$name.tmp/info" or mkdir "./feeds/$name.tmp/info" or return 1;
-
-	system("make -s prepare-mk TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
-	system("make -s -f include/scan.mk IS_TTY=1 SCAN_TARGET=\"packageinfo\" SCAN_DIR=\"feeds/$name\" SCAN_NAME=\"package\" SCAN_DEPS=\"$ENV{TOPDIR}/include/package*.mk\" SCAN_DEPTH=4 SCAN_EXTRA=\"\" TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
-	system("ln -sf $name.tmp/.packageinfo ./feeds/$name.index");
-
-	return 0;
+	return update_index($name, $src);
 }
 
 sub update_link($$) {
@@ -76,34 +81,20 @@ sub update_link($$) {
 	my $src = abs_path(shift);
 
 	system("ln -sf $src ./feeds/$name");
-	-d "./feeds/$name.tmp" or mkdir "./feeds/$name.tmp" or return 1;
-	-d "./feeds/$name.tmp/info" or mkdir "./feeds/$name.tmp/info" or return 1;
-
-	system("make -s prepare-mk TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
-	system("make -s -f include/scan.mk IS_TTY=1 SCAN_TARGET=\"packageinfo\" SCAN_DIR=\"feeds/$name\" SCAN_NAME=\"package\" SCAN_DEPS=\"$ENV{TOPDIR}/include/package*.mk\" SCAN_DEPTH=4 SCAN_EXTRA=\"\" TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
-	system("ln -sf $name.tmp/.packageinfo ./feeds/$name.index");
-
-	return 0;
+	return update_index($name, $src);
 }
 
 sub update_git($$) {
 	my $name = shift;
 	my $src = shift;
 
-    if ( ! -d "./feeds/$name" ) {
-        system("git clone $src ./feeds/$name") == 0 or return 1;
-    } else {
-        system("GIT_DIR=./feeds/$name/.git git pull") == 0 or return 1;
-    }
-
-	-d "./feeds/$name.tmp" or mkdir "./feeds/$name.tmp" or return 1;
-	-d "./feeds/$name.tmp/info" or mkdir "./feeds/$name.tmp/info" or return 1;
-
-	system("make -s prepare-mk TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
-	system("make -s -f include/scan.mk IS_TTY=1 SCAN_TARGET=\"packageinfo\" SCAN_DIR=\"feeds/$name\" SCAN_NAME=\"package\" SCAN_DEPS=\"$ENV{TOPDIR}/include/package*.mk\" SCAN_DEPTH=4 SCAN_EXTRA=\"\" TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
-	system("ln -sf $name.tmp/.packageinfo ./feeds/$name.index");
-
-	return 0;
+	if (-d "./feeds/$name/.git" ) {
+		system("GIT_DIR=./feeds/$name/.git git pull") == 0 or return 1;
+	} else {
+		system("rm -rf \"./feeds/$name\"");
+		system("git-clone --depth 1 $src ./feeds/$name") == 0 or return 1;
+	}
+	return update_index($name, $src);
 }
 
 sub get_feed($) {
@@ -165,26 +156,26 @@ sub install_generic() {
 	my $feed = shift;
 	my $pkg = shift;
 	my $path = $pkg->{makefile};
-	
+
 	if($path) {
-	
 		$path =~ s/\/Makefile$//;
 
 		-d "./package/feeds" or mkdir "./package/feeds";
 		-d "./package/feeds/$feed->[1]" or mkdir "./package/feeds/$feed->[1]";
 		system("ln -sf ../../../$path ./package/feeds/$feed->[1]/");
-
 	} else {
 		warn "Package is not valid\n";
 		return 1;
 	}
+
 	return 0;
 }
 
 my %install_method = (
 	'src-svn' => \&install_generic,
 	'src-cpy' => \&install_generic,
-	'src-link' => \&install_generic
+	'src-link' => \&install_generic,
+	'src-git' => \&install_generic,
 );
 
 my %feed;
