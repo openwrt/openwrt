@@ -1,0 +1,78 @@
+--- uclibc-0.9.29.orig/libc/sysdeps/linux/powerpc/syscall.S	2005-06-10 20:25:35.000000000 +0200
++++ uclibc-0.9.29/libc/sysdeps/linux/powerpc/syscall.S	2008-01-27 20:57:15.000000000 +0100
+@@ -33,6 +33,6 @@
+ 	sc
+ 	bnslr;
+ 
+-	b __syscall_error
++	b __syscall_error@local
+ 
+ 	.size syscall,.-syscall
+--- uclibc-0.9.29.orig/libc/sysdeps/linux/powerpc/clone.S	2006-01-14 02:57:45.000000000 +0100
++++ uclibc-0.9.29/libc/sysdeps/linux/powerpc/clone.S	2008-01-27 20:58:43.000000000 +0100
+@@ -79,7 +79,7 @@
+ 	mr	r3,r31
+ 	bctrl
+ 	/* Call _exit with result from procedure.  */
+-	b	HIDDEN_JUMPTARGET(_exit)
++	b	HIDDEN_JUMPTARGET(_exit@local)
+ 
+ .Lparent:
+ 	/* Parent.  Restore registers & return.  */
+@@ -87,12 +87,12 @@
+ 	addi	r1,r1,32
+ 	bnslr+
+ 
+-	b	__syscall_error
++	b	__syscall_error@local
+ 
+ .Lbadargs:
+ 	li	r3,EINVAL
+ 
+-	b	__syscall_error
++	b	__syscall_error@local
+ 
+ 	.size clone,.-clone
+ #endif
+--- uclibc-0.9.29.orig/libc/sysdeps/linux/powerpc/brk.S	2007-01-05 11:20:37.000000000 +0100
++++ uclibc-0.9.29/libc/sysdeps/linux/powerpc/brk.S	2008-01-27 20:59:25.000000000 +0100
+@@ -72,7 +72,7 @@
+ 	blelr+
+ 	li      r3,ENOMEM
+ 
+-	b	__syscall_error
++	b	__syscall_error@local
+ 
+ 	.size brk,.-brk
+ 
+--- uclibc-0.9.29.orig/libc/sysdeps/linux/powerpc/vfork.S	2006-02-13 09:44:48.000000000 +0100
++++ uclibc-0.9.29/libc/sysdeps/linux/powerpc/vfork.S	2008-01-27 20:42:08.000000000 +0100
+@@ -15,7 +15,6 @@
+ .global __vfork
+ .hidden __vfork
+ .type   __vfork,@function
+-.type   __syscall_error,@function
+ 
+ __vfork:
+ 	li	0, __NR_vfork
+--- uclibc-0.9.29.orig/libc/sysdeps/linux/powerpc/vfork.S	2006-02-13 09:44:48.000000000 +0100
++++ uclibc-0.9.29/libc/sysdeps/linux/powerpc/vfork.S	2008-01-27 20:42:08.000000000 +0100
+@@ -20,7 +20,7 @@
+ 	li	0, __NR_vfork
+ 	sc
+ 	bnslr+
+-	b	__syscall_error
++	b	__syscall_error@local
+ 
+ .size __vfork,.-__vfork
+ 
+--- uclibc-0.9.29.orig/libc/sysdeps/linux/powerpc/__uClibc_syscall.S	2005-06-10 20:25:35.000000000 +0200
++++ uclibc-0.9.29/libc/sysdeps/linux/powerpc/__uClibc_syscall.S	2008-01-27 21:09:33.000000000 +0100
+@@ -7,6 +7,6 @@
+ 	sc
+ 	bnslr
+ 
+-	b	__syscall_error
++	b	__syscall_error@local
+ 
+ 	.size	__uClibc_syscall,.Lsize-__uClibc_syscall
