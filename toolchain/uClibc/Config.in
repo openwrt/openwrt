@@ -2,7 +2,6 @@
 
 choice
 	prompt "uClibc Version" if TOOLCHAINOPTS
-	default UCLIBC_VERSION_0_9_28 if LINUX_2_4
 	default UCLIBC_VERSION_0_9_29
 	help
 	  Select the version of uClibc you wish to use.
@@ -15,7 +14,6 @@ choice
 		bool "uClibc 0.9.28"
 
 	config UCLIBC_VERSION_0_9_29
-		depends !LINUX_2_4
 		bool "uClibc 0.9.29"
 
 endchoice
