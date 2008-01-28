@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3280/ath/if_ath_ahb.c
 ===================================================================
---- madwifi-trunk-r3280.orig/ath/if_ath_ahb.c	2008-01-28 19:12:37.022826852 +0100
-+++ madwifi-trunk-r3280/ath/if_ath_ahb.c	2008-01-28 19:31:09.184472483 +0100
+--- madwifi-trunk-r3280.orig/ath/if_ath_ahb.c	2008-01-28 20:00:18.552163264 +0100
++++ madwifi-trunk-r3280/ath/if_ath_ahb.c	2008-01-28 20:00:18.612166683 +0100
 @@ -69,27 +69,13 @@
  void *
  bus_alloc_consistent(void *hwdev, size_t size, dma_addr_t *dma_handle)
@@ -34,9 +34,17 @@ Index: madwifi-trunk-r3280/ath/if_ath_ahb.c
  static int
 Index: madwifi-trunk-r3280/ath/if_ath_ahb.h
 ===================================================================
---- madwifi-trunk-r3280.orig/ath/if_ath_ahb.h	2008-01-28 19:20:06.016413537 +0100
-+++ madwifi-trunk-r3280/ath/if_ath_ahb.h	2008-01-28 19:30:40.978865135 +0100
-@@ -89,8 +89,8 @@
+--- madwifi-trunk-r3280.orig/ath/if_ath_ahb.h	2008-01-28 19:52:49.442569967 +0100
++++ madwifi-trunk-r3280/ath/if_ath_ahb.h	2008-01-28 21:55:51.325773888 +0100
+@@ -8,6 +8,7 @@
+ #ifndef _DEV_ATH_AHB_H_
+ #define _DEV_ATH_AHB_H_
+ 
++#include <linux/dma-mapping.h>
+ #include <asm/io.h>
+ #include <asm/uaccess.h>
+ 
+@@ -89,8 +90,8 @@
  #define AR531X_RADIO1_MASK	0x000c
  #define AR531X_RADIO1_S		2
  
@@ -47,7 +55,7 @@ Index: madwifi-trunk-r3280/ath/if_ath_ahb.h
  
  #define AR531X_APBBASE		0xbc000000
  #define AR531X_RESETTMR		(AR531X_APBBASE  + 0x3000)
-@@ -115,29 +115,19 @@
+@@ -115,29 +116,19 @@
  static __inline void bus_dma_sync_single(void *hwdev, dma_addr_t dma_handle,
  	size_t size, int direction)
  {
