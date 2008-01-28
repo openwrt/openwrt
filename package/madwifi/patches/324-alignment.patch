@@ -1,0 +1,24 @@
+Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
+===================================================================
+--- madwifi-trunk-r3280.orig/net80211/ieee80211_input.c	2008-01-28 18:38:05.794780412 +0100
++++ madwifi-trunk-r3280/net80211/ieee80211_input.c	2008-01-28 18:38:21.835694529 +0100
+@@ -1279,17 +1279,8 @@
+ 		eh->ether_type = ether_type;
+ 
+ 	if (!ALIGNED_POINTER(skb->data + sizeof(*eh), u_int32_t)) {
+-		struct sk_buff *tskb;
+-
+-		/* XXX: does this always work? */
+-		tskb = skb_copy(skb, GFP_ATOMIC);
+-		if (!tskb)
+-			return skb;
+-
+-		/* We duplicate the reference after skb_copy */
+-		ieee80211_skb_copy_noderef(skb, tskb);
+-		ieee80211_dev_kfree_skb(&skb);
+-		skb = tskb;
++		memmove(skb->data - 2, skb->data, skb->len);
++		skb->data -= 2;
+ 	}
+ 	return skb;
+ }
