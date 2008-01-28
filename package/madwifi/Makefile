@@ -10,18 +10,18 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=madwifi
-PKG_REV:=3252
+PKG_REV:=3280
 PKG_VERSION:=r$(PKG_REV)
-PKG_BRANCH:=madwifi-dfs
+# PKG_BRANCH:=madwifi-dfs
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=svn
 PKG_SOURCE_VERSION:=$(PKG_REV)
-PKG_SOURCE_SUBDIR:=$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi)-$(PKG_VERSION)
+PKG_SOURCE_SUBDIR:=$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trunk)-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://svn.madwifi.org/madwifi/$(if $(PKG_BRANCH),branches/$(PKG_BRANCH),trunk)
 PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_BRANCH)-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trunk)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 

@@ -1,0 +1,42 @@
+Index: madwifi-trunk-r3280/ath/if_ath.c
+===================================================================
+--- madwifi-trunk-r3280.orig/ath/if_ath.c	2008-01-28 18:17:03.786862678 +0100
++++ madwifi-trunk-r3280/ath/if_ath.c	2008-01-28 18:21:43.162783406 +0100
+@@ -1754,17 +1754,14 @@
+ 			 * may have occurred in the intervening timeframe. */
+ 			bf->bf_channoise = ic->ic_channoise;
+ 
+-			if (rs->rs_status) {
+-				if ((HAL_RXERR_PHY == rs->rs_status) &&
+-				    (HAL_PHYERR_RADAR ==
+-				     (rs->rs_phyerr & 0x1f)) &&
+-				    (0 == (bf->bf_status &
+-					   ATH_BUFSTATUS_RADAR_DONE))) {
+-					check_for_radar = 1;
+-				}
+-				/* Skip past the error now */
++			if ((HAL_RXERR_PHY == rs->rs_status) &&
++			    (HAL_PHYERR_RADAR == (rs->rs_phyerr & 0x1f)) &&
++			    (0 == (bf->bf_status & ATH_BUFSTATUS_RADAR_DONE)) &&
++			    (ic->ic_flags & IEEE80211_F_DOTH))
++				check_for_radar = 1;
++
++			if (rs->rs_status) /* Skip past the error now */
+ 				continue;
+-			}
+ 
+ 			/* Prepare wireless header for examination */
+ 			bus_dma_sync_single(sc->sc_bdev, bf->bf_skbaddr,
+Index: madwifi-trunk-r3280/ath/if_ath_radar.c
+===================================================================
+--- madwifi-trunk-r3280.orig/ath/if_ath_radar.c	2008-01-28 18:20:47.859631857 +0100
++++ madwifi-trunk-r3280/ath/if_ath_radar.c	2008-01-28 18:20:50.915806019 +0100
+@@ -265,7 +265,7 @@
+ 		unsigned int new_rxfilt = old_rxfilt;
+ 
+ 		ath_hal_intrset(ah, old_ier & ~HAL_INT_GLOBAL);
+-		if (required) {
++		if ((required) && (ic->ic_flags & IEEE80211_F_DOTH)) {
+ 			new_radar |= AR5K_PHY_RADAR_ENABLE;
+ 			new_filter |= AR5K_AR5212_PHY_ERR_FIL_RADAR;
+ 			new_rxfilt |= (HAL_RX_FILTER_PHYERR | 

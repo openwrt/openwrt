@@ -1,7 +1,7 @@
-Index: madwifi-dfs-r3252/net80211/ieee80211_input.c
+Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-dfs-r3252.orig/net80211/ieee80211_input.c	2008-01-26 05:14:46.815962139 +0100
-+++ madwifi-dfs-r3252/net80211/ieee80211_input.c	2008-01-26 05:18:37.005079863 +0100
+--- madwifi-trunk-r3280.orig/net80211/ieee80211_input.c	2008-01-28 17:36:55.186089457 +0100
++++ madwifi-trunk-r3280/net80211/ieee80211_input.c	2008-01-28 17:38:42.816222949 +0100
 @@ -740,8 +740,10 @@
  
  			skb1 = skb_copy(skb, GFP_ATOMIC);
@@ -15,7 +15,7 @@ Index: madwifi-dfs-r3252/net80211/ieee80211_input.c
  
  			/* we now have 802.3 MAC hdr followed by 802.2 LLC/SNAP; convert to EthernetII.
  			 * Note that the frame is at least IEEE80211_MIN_LEN, due to the driver code. */
-@@ -1055,9 +1057,11 @@
+@@ -1056,9 +1058,11 @@
  				 * assemble fragments
  				 */
  				ni->ni_rxfrag = skb_copy(skb, GFP_ATOMIC);
@@ -30,7 +30,7 @@ Index: madwifi-dfs-r3252/net80211/ieee80211_input.c
  			}
  			/*
  			 * Check that we have enough space to hold
-@@ -1071,7 +1075,7 @@
+@@ -1072,7 +1076,7 @@
  					(skb_end_pointer(skb) - skb->head),
  					GFP_ATOMIC);
  				/* We duplicate the reference after skb_copy */
@@ -39,17 +39,17 @@ Index: madwifi-dfs-r3252/net80211/ieee80211_input.c
  					ieee80211_skb_copy_noderef(skb, ni->ni_rxfrag);
  				ieee80211_dev_kfree_skb(&skb);
  			}
-@@ -1134,7 +1138,8 @@
+@@ -1135,7 +1139,8 @@
  		if (ETHER_IS_MULTICAST(eh->ether_dhost)) {
+ 			/* Create a SKB for the BSS to send out. */
  			skb1 = skb_copy(skb, GFP_ATOMIC);
- 			/* Use the BSS node for retransmitting this multicast frame */
 -			SKB_CB(skb1)->ni = ieee80211_ref_node(vap->iv_bss);
 +			if (skb1)
 +				SKB_CB(skb1)->ni = ieee80211_ref_node(vap->iv_bss);
  		}
  		else {
  			/*
-@@ -1277,6 +1282,9 @@
+@@ -1278,6 +1283,9 @@
  
  		/* XXX: does this always work? */
  		tskb = skb_copy(skb, GFP_ATOMIC);
