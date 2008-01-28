@@ -1,0 +1,19 @@
+--- linux-2.6.24/fs/squashfs/inode.c	2008-01-28 23:38:13.000000000 +0100
++++ linux-2.6.24-owrt/fs/squashfs/inode.c	2008-01-28 23:43:18.000000000 +0100
+@@ -29,6 +29,7 @@
+ #include <linux/fs.h>
+ #include <linux/smp_lock.h>
+ #include <linux/slab.h>
++#include <linux/exportfs.h>
+ #include <linux/squashfs_fs_sb.h>
+ #include <linux/squashfs_fs_i.h>
+ #include <linux/buffer_head.h>
+@@ -2089,7 +2090,7 @@
+ }
+ 
+ 
+-static void init_once(void * foo, struct kmem_cache * cachep, unsigned long flags)
++static void init_once(struct kmem_cache * cachep, void *foo)
+ {
+ 	struct squashfs_inode_info *ei = foo;
+ 
