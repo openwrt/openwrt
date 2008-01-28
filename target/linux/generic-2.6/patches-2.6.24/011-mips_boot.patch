@@ -1,0 +1,13 @@
+Index: linux-2.6.23-rc6/arch/mips/kernel/head.S
+===================================================================
+--- linux-2.6.23-rc6.orig/arch/mips/kernel/head.S	2007-09-21 16:23:54.000000000 +0800
++++ linux-2.6.23-rc6/arch/mips/kernel/head.S	2007-09-21 16:23:58.000000000 +0800
+@@ -130,6 +130,8 @@
+ #endif
+ 	.endm
+ 
++	j kernel_entry
++	nop
+ #ifndef CONFIG_NO_EXCEPT_FILL
+ 	/*
+ 	 * Reserved space for exception handlers.

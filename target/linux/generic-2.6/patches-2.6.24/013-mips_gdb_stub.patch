@@ -1,0 +1,20 @@
+Index: linux-2.6.23/arch/mips/kernel/gdb-stub.c
+===================================================================
+--- linux-2.6.23.orig/arch/mips/kernel/gdb-stubc.c	2007-10-12 18:43:44.000000000 +0200
++++ linux-2.6.23/arch/mips/kernel/gdb-stub.c   2007-11-16 08:35:51.000000000 +0100
+@@ -656,6 +656,7 @@
+        *epc = (unsigned long)async_breakpoint;
+ }
+
++#ifdef CONFIG_SMP
+ static void kgdb_wait(void *arg)
+ {
+        unsigned flags;
+@@ -668,6 +669,7 @@
+
+        local_irq_restore(flags);
+ }
++#endif
+
+ /*
+  * GDB stub needs to call kgdb_wait on all processor with interrupts

@@ -1,0 +1,14 @@
+Index: linux-2.6.23-rc6/arch/mips/Makefile
+===================================================================
+--- linux-2.6.23-rc6.orig/arch/mips/Makefile	2007-09-21 16:23:53.000000000 +0800
++++ linux-2.6.23-rc6/arch/mips/Makefile	2007-09-21 16:24:05.000000000 +0800
+@@ -565,6 +565,9 @@
+ cflags-$(CONFIG_TOSHIBA_RBTX4938) += -Iinclude/asm-mips/mach-tx49xx
+ load-$(CONFIG_TOSHIBA_RBTX4938) += 0xffffffff80100000
+ 
++# temporary until string.h is fixed
++cflags-y += -ffreestanding
++
+ cflags-y			+= -Iinclude/asm-mips/mach-generic
+ drivers-$(CONFIG_PCI)		+= arch/mips/pci/
+ 
