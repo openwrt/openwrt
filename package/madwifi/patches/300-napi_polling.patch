@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3280/ath/if_ath.c
 ===================================================================
 --- madwifi-trunk-r3280.orig/ath/if_ath.c	2008-01-28 17:29:22.989895792 +0100
-+++ madwifi-trunk-r3280/ath/if_ath.c	2008-01-28 17:46:59.249785581 +0100
++++ madwifi-trunk-r3280/ath/if_ath.c	2008-01-28 20:00:09.319637124 +0100
 @@ -184,7 +184,7 @@
  	struct sk_buff *, int, int, u_int64_t);
  static void ath_setdefantenna(struct ath_softc *, u_int);
@@ -172,9 +172,11 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  #undef PA2DESC
  }
  
-@@ -8268,11 +8318,22 @@
+@@ -8267,12 +8317,24 @@
+ {
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
++	unsigned long flags;
  
 +process_tx_again:
  	if (txqactive(sc->sc_ah, 0))
@@ -182,45 +184,51 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  	if (txqactive(sc->sc_ah, sc->sc_cabq->axq_qnum))
  		ath_tx_processq(sc, sc->sc_cabq);
  
-+	ATH_DISABLE_INTR();
++	local_irq_save(flags);
 +	if (sc->sc_isr & HAL_INT_TX) {
 +		sc->sc_isr &= ~HAL_INT_TX;
-+		ATH_ENABLE_INTR();
++		local_irq_restore(flags);
 +		goto process_tx_again;
 +	}
 +	sc->sc_imask |= HAL_INT_TX;
 +	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
-+	ATH_ENABLE_INTR();
++	local_irq_restore(flags);
 +
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -8289,6 +8350,7 @@
+@@ -8288,7 +8350,9 @@
+ {
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
++	unsigned long flags;
  
 +process_tx_again:
  	/*
  	 * Process each active queue.
  	 */
-@@ -8309,6 +8371,16 @@
+@@ -8309,6 +8373,16 @@
  	if (sc->sc_uapsdq && txqactive(sc->sc_ah, sc->sc_uapsdq->axq_qnum))
  		ath_tx_processq(sc, sc->sc_uapsdq);
  
-+	ATH_DISABLE_INTR();
++	local_irq_save(flags);
 +	if (sc->sc_isr & HAL_INT_TX) {
 +		sc->sc_isr &= ~HAL_INT_TX;
-+		ATH_ENABLE_INTR();
++		local_irq_restore(flags);
 +		goto process_tx_again;
 +	}
 +	sc->sc_imask |= HAL_INT_TX;
 +	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
-+	ATH_ENABLE_INTR();
++	local_irq_restore(flags);
 +
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -8327,10 +8399,21 @@
+@@ -8324,13 +8398,25 @@
+ 	struct net_device *dev = (struct net_device *)data;
+ 	struct ath_softc *sc = dev->priv;
+ 	unsigned int i;
++	unsigned long flags;
  
  	/* Process each active queue. This includes sc_cabq, sc_xrtq and
  	 * sc_uapsdq */
@@ -229,20 +237,20 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  		if (ATH_TXQ_SETUP(sc, i) && txqactive(sc->sc_ah, i))
  			ath_tx_processq(sc, &sc->sc_txq[i]);
  
-+	ATH_DISABLE_INTR();
++	local_irq_save(flags);
 +	if (sc->sc_isr & HAL_INT_TX) {
 +		sc->sc_isr &= ~HAL_INT_TX;
-+		ATH_ENABLE_INTR();
++		local_irq_restore(flags);
 +		goto process_tx_again;
 +	}
 +	sc->sc_imask |= HAL_INT_TX;
 +	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
-+	ATH_ENABLE_INTR();
++	local_irq_restore(flags);
 +
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -8405,6 +8488,7 @@
+@@ -8405,6 +8491,7 @@
  ath_draintxq(struct ath_softc *sc)
  {
  	struct ath_hal *ah = sc->sc_ah;
@@ -250,7 +258,7 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  	unsigned int i;
  
  	/* XXX return value */
-@@ -10261,9 +10345,9 @@
+@@ -10261,9 +10348,9 @@
  	dev->mtu = mtu;
  	if ((dev->flags & IFF_RUNNING) && !sc->sc_invalid) {
  		/* NB: the rx buffers may need to be reallocated */
@@ -305,7 +313,7 @@ Index: madwifi-trunk-r3280/ath/if_athvar.h
 Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
 ===================================================================
 --- madwifi-trunk-r3280.orig/net80211/ieee80211_input.c	2008-01-28 17:29:23.005896702 +0100
-+++ madwifi-trunk-r3280/net80211/ieee80211_input.c	2008-01-28 17:46:28.108010900 +0100
++++ madwifi-trunk-r3280/net80211/ieee80211_input.c	2008-01-28 19:52:50.586635164 +0100
 @@ -1197,7 +1197,7 @@
  			/* attach vlan tag */
  			struct ieee80211_node *ni_tmp = SKB_CB(skb)->ni;

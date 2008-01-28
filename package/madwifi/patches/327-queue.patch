@@ -1,0 +1,31 @@
+Index: madwifi-trunk-r3280/ath/if_ath.c
+===================================================================
+--- madwifi-trunk-r3280.orig/ath/if_ath.c	2008-01-28 20:01:09.051041030 +0100
++++ madwifi-trunk-r3280/ath/if_ath.c	2008-01-28 20:01:55.057662800 +0100
+@@ -8336,8 +8336,6 @@
+ 	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
+ 	local_irq_restore(flags);
+ 
+-	netif_wake_queue(dev);
+-
+ 	if (sc->sc_softled)
+ 		ath_led_event(sc, ATH_LED_TX);
+ }
+@@ -8384,8 +8382,6 @@
+ 	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
+ 	local_irq_restore(flags);
+ 
+-	netif_wake_queue(dev);
+-
+ 	if (sc->sc_softled)
+ 		ath_led_event(sc, ATH_LED_TX);
+ }
+@@ -8418,8 +8414,6 @@
+ 	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
+ 	local_irq_restore(flags);
+ 
+-	netif_wake_queue(dev);
+-
+ 	if (sc->sc_softled)
+ 		ath_led_event(sc, ATH_LED_TX);
+ }
