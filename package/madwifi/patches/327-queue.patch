@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3280/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3280.orig/ath/if_ath.c	2008-01-28 20:01:09.051041030 +0100
-+++ madwifi-trunk-r3280/ath/if_ath.c	2008-01-28 20:01:55.057662800 +0100
+--- madwifi-trunk-r3280.orig/ath/if_ath.c	2008-01-29 17:57:02.738327980 +0100
++++ madwifi-trunk-r3280/ath/if_ath.c	2008-01-29 17:57:02.770329801 +0100
 @@ -8336,8 +8336,6 @@
  	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
  	local_irq_restore(flags);
@@ -29,3 +29,16 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  	if (sc->sc_softled)
  		ath_led_event(sc, ATH_LED_TX);
  }
+Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
+===================================================================
+--- madwifi-trunk-r3280.orig/net80211/ieee80211_input.c	2008-01-29 17:57:29.147832972 +0100
++++ madwifi-trunk-r3280/net80211/ieee80211_input.c	2008-01-29 17:58:27.315147737 +0100
+@@ -1136,7 +1136,7 @@
+ 	    (vap->iv_flags & IEEE80211_F_NOBRIDGE) == 0) {
+ 		struct sk_buff *skb1 = NULL;
+ 
+-		if (ETHER_IS_MULTICAST(eh->ether_dhost)) {
++		if (ETHER_IS_MULTICAST(eh->ether_dhost) && !netif_queue_stopped(dev)) {
+ 			/* Create a SKB for the BSS to send out. */
+ 			skb1 = skb_copy(skb, GFP_ATOMIC);
+ 			if (skb1)
