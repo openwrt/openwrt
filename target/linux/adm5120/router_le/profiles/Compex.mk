@@ -23,15 +23,15 @@ define Profile/NP28G/Description
 	Package set optimized for the Compex NP28G.
 endef
 
-define Profile/WP54G
-	NAME:=Compex WP54G family
+define Profile/WP54
+	NAME:=Compex WP54 family
 	PACKAGES:=kmod-madwifi
 endef
 
-define Profile/WP54G/Description
-	Package set optimized for the Compex WP54G family.
+define Profile/WP54/Description
+	Package set optimized for the Compex WP54 family.
 endef
 
 $(eval $(call Profile,NP27G))
 $(eval $(call Profile,NP28G))
-$(eval $(call Profile,WP54G))
+$(eval $(call Profile,WP54))

@@ -50,6 +50,20 @@ define Image/Build/Infineon
 	cat $(call imgname,$(1),$(2)).trx >> $(call imgname,$(1),$(2)).img
 endef
 
+define Image/Build/Cellvision
+	$(call Image/Build/Loader,$(2),bin,0x80500000,0x6D8,y,$(3))
+	mkdir -p $(BIN_DIR)/tmp
+	cp $(KDIR)/loader-$(2).bin $(BIN_DIR)/tmp/vmlinux.bin
+	gzip -9 $(BIN_DIR)/tmp/vmlinux.bin
+	dd if=$(BIN_DIR)/tmp/vmlinux.bin.gz of=$(call imgname,$(1),$(2))-xmodem.bin bs=64k conv=sync
+	rm -rf $(BIN_DIR)/tmp
+	$(call Image/Build/TRXNoloader,$(call imgname,$(1),$(2)).trx,$(1))
+	cat $(call imgname,$(1),$(2)).trx >> $(call imgname,$(1),$(2))-xmodem.bin
+	$(STAGING_DIR_HOST)/bin/mkcasfw -B $(2) -d \
+		-K $(call imgname,$(1),$(2))-xmodem.bin \
+		$(call imgname,$(1),$(2))-webui.bin
+endef
+
 define Image/Build/Cellvision2
 	# only for CAS-700/771/790/861
 	$(call Image/Build/Loader,$(2),gz,0x80500000,0x6D8,y,$(2))
@@ -72,481 +86,251 @@ define Image/Build/MyLoader
 endef
 
 #
-# Cellvision CAS-700
+# Cellvision CAS-630/630W, CAS-670/670W, NFS-101U/101WU, NFS-202U/202WU
 #
-define Image/Build/Board/CAS700
-	$(call Image/Build/Cellvision2,$(1),cas-700)
+define Image/Build/Template/Cellvision
+	$(call Image/Build/Cellvision,$(1),$(2),$(3))
 endef
 
-define Image/Build/Board/CAS700/squashfs
-	$(call Image/Build/Board/CAS700,squashfs)
+define Image/Build/Template/Cellvision/squashfs
+	$(call Image/Build/Template/Cellvision,squashfs,$(1),$(2))
 endef
 
-define Image/Build/Board/CAS700/jffs2-64k
-	$(call Image/Build/Board/CAS700,jffs2-64k)
-endef
-
-define Image/Build/Board/CAS700/Initramfs
-	$(call Image/Build/LZMAKernel/Admboot,cas-700,gz)
+define Image/Build/Template/Cellvision/jffs2-64k
+	$(call Image/Build/Template/Cellvision,jffs2-64k,$(1),$(2))
 endef
 
 #
-# Cellvision CAS-700W
+# Cellvision CAS-700/700W, CAS-771/771W, CAS-790, CAS-861/861W
 #
-define Image/Build/Board/CAS700W
-	$(call Image/Build/Cellvision2,$(1),cas-700w)
+define Image/Build/Template/Cellvision2
+	$(call Image/Build/Cellvision2,$(1),$(2))
 endef
 
-define Image/Build/Board/CAS700W/squashfs
-	$(call Image/Build/Board/CAS700W,squashfs)
+define Image/Build/Template/Cellvision2/squashfs
+	$(call Image/Build/Template/Cellvision2,squashfs,$(1))
 endef
 
-define Image/Build/Board/CAS700W/jffs2-64k
-	$(call Image/Build/Board/CAS700W,jffs2-64k)
+define Image/Build/Template/Cellvision2/jffs2-64k
+	$(call Image/Build/Template/Cellvision2,jffs2-64k,$(1))
 endef
 
-define Image/Build/Board/CAS700W/Initramfs
-	$(call Image/Build/LZMAKernel/Admboot,cas-700w,gz)
-endef
-
-#
-# Cellvision CAS-771
-#
-define Image/Build/Board/CAS771
-	$(call Image/Build/Cellvision2,$(1),cas-771)
-endef
-
-define Image/Build/Board/CAS771/squashfs
-	$(call Image/Build/Board/CAS771,squashfs)
-endef
-
-define Image/Build/Board/CAS771/jffs2-64k
-	$(call Image/Build/Board/CAS771,jffs2-64k)
-endef
-
-define Image/Build/Board/CAS771/Initramfs
-	$(call Image/Build/LZMAKernel/Admboot,cas-771,gz)
+define Image/Build/Template/Cellvision2/Initramfs
+	$(call Image/Build/LZMAKernel/Admboot,$(1),gz)
 endef
 
 #
-# Cellvision CAS-771W
+# Compex NP27G, NP28G, WP54G, WP54AG, WPP54G, WPP54AG
 #
-define Image/Build/Board/CAS771W
-	$(call Image/Build/Cellvision2,$(1),cas-771w)
+define Image/Build/Template/Compex
+	$(call Image/Build/MyLoader,$(1),$(2))
 endef
 
-define Image/Build/Board/CAS771W/squashfs
-	$(call Image/Build/Board/CAS771W,squashfs)
+define Image/Build/Template/Compex/squashfs
+	$(call Image/Build/Template/Compex,squashfs,$(1))
 endef
 
-define Image/Build/Board/CAS771W/jffs2-64k
-	$(call Image/Build/Board/CAS771W,jffs2-64k)
+define Image/Build/Template/Compex/jffs2-64k
+	$(call Image/Build/Template/Compex,jffs2-64k,$(1))
 endef
 
-define Image/Build/Board/CAS771W/Initramfs
-	$(call Image/Build/LZMAKernel/Admboot,cas-771w,gz)
-endef
-
-#
-# Cellvision CAS-790
-#
-define Image/Build/Board/CAS790
-	$(call Image/Build/Cellvision2,$(1),cas-790)
-endef
-
-define Image/Build/Board/CAS790/squashfs
-	$(call Image/Build/Board/CAS790,squashfs)
-endef
-
-define Image/Build/Board/CAS790/jffs2-64k
-	$(call Image/Build/Board/CAS790,jffs2-64k)
-endef
-
-define Image/Build/Board/CAS790/Initramfs
-	$(call Image/Build/LZMAKernel/Admboot,cas-790,gz)
-endef
-
-#
-# Cellvision CAS-861
-#
-define Image/Build/Board/CAS861
-	$(call Image/Build/Cellvision2,$(1),cas-861)
-endef
-
-define Image/Build/Board/CAS861/squashfs
-	$(call Image/Build/Board/CAS861,squashfs)
-endef
-
-define Image/Build/Board/CAS861/jffs2-64k
-	$(call Image/Build/Board/CAS861,jffs2-64k)
-endef
-
-define Image/Build/Board/CAS861/Initramfs
-	$(call Image/Build/LZMAKernel/Admboot,cas-861,gz)
-endef
-
-#
-# Cellvision CAS-861W
-#
-define Image/Build/Board/CAS861W
-	$(call Image/Build/Cellvision2,$(1),cas-861w)
-endef
-
-define Image/Build/Board/CAS861W/squashfs
-	$(call Image/Build/Board/CAS861W,squashfs)
-endef
-
-define Image/Build/Board/CAS861W/jffs2-64k
-	$(call Image/Build/Board/CAS861W,jffs2-64k)
-endef
-
-define Image/Build/Board/CAS861W/Initramfs
-	$(call Image/Build/LZMAKernel/Admboot,cas-861w,gz)
-endef
-
-#
-# Compex NP27G
-#
-define Image/Build/Board/NP27G
-	$(call Image/Build/MyLoader,$(1),np27g)
-endef
-
-define Image/Build/Board/NP27G/squashfs
-	$(call Image/Build/Board/NP27G,squashfs)
-endef
-
-define Image/Build/Board/NP27G/jffs2-64k
-	$(call Image/Build/Board/NP27G,jffs2-64k)
-endef
-
-define Image/Build/Board/NP27G/Initramfs
-	$(call Image/Build/LZMAKernel/Generic,np27g,bin)
-endef
-
-#
-# Compex NP28G
-#
-define Image/Build/Board/NP28G
-	$(call Image/Build/MyLoader,$(1),np28g)
-endef
-
-define Image/Build/Board/NP28G/squashfs
-	$(call Image/Build/Board/NP28G,squashfs)
-endef
-
-define Image/Build/Board/NP28G/jffs2-64k
-	$(call Image/Build/Board/NP28G,jffs2-64k)
-endef
-
-define Image/Build/Board/NP28G/Initramfs
-	$(call Image/Build/LZMAKernel/Generic,np28g,bin)
-endef
-
-#
-# Compex WP54G
-#
-define Image/Build/Board/WP54G
-	$(call Image/Build/MyLoader,$(1),wp54g)
-endef
-
-define Image/Build/Board/WP54G/squashfs
-	$(call Image/Build/Board/WP54G,squashfs)
-endef
-
-define Image/Build/Board/WP54G/jffs2-64k
-	$(call Image/Build/Board/WP54G,jffs2-64k)
-endef
-
-define Image/Build/Board/WP54G/Initramfs
-	$(call Image/Build/LZMAKernel/Generic,wp54g,bin)
-endef
-
-#
-# Compex WP54AG
-#
-define Image/Build/Board/WP54AG
-	$(call Image/Build/MyLoader,$(1),wp54ag)
-endef
-
-define Image/Build/Board/WP54AG/squashfs
-	$(call Image/Build/Board/WP54AG,squashfs)
-endef
-
-define Image/Build/Board/WP54AG/jffs2-64k
-	$(call Image/Build/Board/WP54AG,jffs2-64k)
-endef
-
-define Image/Build/Board/WP54AG/Initramfs
-	$(call Image/Build/LZMAKernel/Generic,wp54ag,bin)
-endef
-
-#
-# Compex WPP54G
-#
-define Image/Build/Board/WPP54G
-	$(call Image/Build/MyLoader,$(1),wpp54g)
-endef
-
-define Image/Build/Board/WPP54G/squashfs
-	$(call Image/Build/Board/WPP54G,squashfs)
-endef
-
-define Image/Build/Board/WPP54G/jffs2-64k
-	$(call Image/Build/Board/WPP54G,jffs2-64k)
-endef
-
-define Image/Build/Board/WPP54G/Initramfs
-	$(call Image/Build/LZMAKernel/Generic,wpp54g,bin)
-endef
-
-#
-# Compex WPP54AG
-#
-define Image/Build/Board/WPP54AG
-	$(call Image/Build/MyLoader,$(1),wpp54ag)
-endef
-
-define Image/Build/Board/WPP54AG/squashfs
-	$(call Image/Build/Board/WPP54AG,squashfs)
-endef
-
-define Image/Build/Board/WPP54AG/jffs2-64k
-	$(call Image/Build/Board/WPP54AG,jffs2-64k)
-endef
-
-define Image/Build/Board/WPP54AG/Initramfs
-	$(call Image/Build/LZMAKernel/Generic,wpp54ag,bin)
+define Image/Build/Template/Compex/Initramfs
+	$(call Image/Build/LZMAKernel/Generic,$(1),bin)
 endef
 
 #
 # Compex WP54G-WRT
 #
-define Image/Build/Board/WP54GWRT
+define Image/Build/Template/WP54GWRT
 	$(call Image/Build/Compex,$(1),wp54g-wrt)
 endef
 
-define Image/Build/Board/WP54GWRT/squashfs
-	$(call Image/Build/Board/WP54GWRT,squashfs)
+define Image/Build/Template/WP54GWRT/squashfs
+	$(call Image/Build/Template/WP54GWRT,squashfs)
 endef
 
-define Image/Build/Board/WP54GWRT/jffs2-64k
-	$(call Image/Build/Board/WP54GWRT,jffs2-64k)
+define Image/Build/Template/WP54GWRT/jffs2-64k
+	$(call Image/Build/Template/WP54GWRT,jffs2-64k)
 endef
 
-define Image/Build/Board/WP54GWRT/Initramfs
+define Image/Build/Template/WP54GWRT/Initramfs
 	$(call Image/Build/LZMAKernel/KArgs,wp54g-wrt,bin)
 endef
 
 #
-# Edimax BR-6104K
+# Edimax BR-6104K, BR-6104KP, BR-6104Wg, BR-6114WG
 #
-define Image/Build/Board/BR6104K
-	$(call Image/Build/Edimax,$(1),br-6104k)
+define Image/Build/Template/Edimax
+	$(call Image/Build/Edimax,$(1),$(2))
 endef
 
-define Image/Build/Board/BR6104K/squashfs
-	$(call Image/Build/Board/BR6104K,squashfs)
+define Image/Build/Template/Edimax/squashfs
+	$(call Image/Build/Template/Edimax,squashfs,$(1))
 endef
 
-define Image/Build/Board/BR6104K/Initramfs
-	$(call Image/Build/LZMAKernel/Admboot,br-6104k,gz)
-endef
-
-#
-# Edimax BR-6104KP
-#
-define Image/Build/Board/BR6104KP
-	$(call Image/Build/Edimax,$(1),br-6104kp)
-endef
-
-define Image/Build/Board/BR6104KP/squashfs
-	$(call Image/Build/Board/BR6104KP,squashfs)
-endef
-
-define Image/Build/Board/BR6104KP/Initramfs
-	$(call Image/Build/LZMAKernel/Admboot,br-6104kp,gz)
+define Image/Build/Template/Edimax/Initramfs
+	$(call Image/Build/LZMAKernel/Admboot,$(1),gz)
 endef
 
 #
-# Edimax BR-6104WG
+# Infineon EASY 5120, EASY 83000
 #
-define Image/Build/Board/BR6104WG
-	$(call Image/Build/Edimax,$(1),br-6104wg)
+define Image/Build/Template/Infineon
+	$(call Image/Build/Infineon,$(1),$(2))
 endef
 
-define Image/Build/Board/BR6104WG/squashfs
-	$(call Image/Build/Board/BR6104WG,squashfs)
+define Image/Build/Template/Infineon/squashfs
+	$(call Image/Build/Template/Infineon,squashfs,$(1))
 endef
 
-define Image/Build/Board/BR6104WG/Initramfs
-	$(call Image/Build/LZMAKernel/Admboot,br-6104wg,gz)
+define Image/Build/Template/Infineon/jffs2-64k
+	$(call Image/Build/Template/Infineon,jffs2-64k,$(1))
 endef
 
-#
-# Conceptronic C54BSR4
-#
-define Image/Build/Board/C54BSR4
-	$(call Image/Build/Edimax,$(1),c54bsr4)
-endef
-
-define Image/Build/Board/C54BSR4/squashfs
-	$(call Image/Build/Board/C54BSR4,squashfs)
-endef
-
-define Image/Build/Board/C54BSR4/Initramfs
-	$(call Image/Build/LZMAKernel/Admboot,c54bsr4,gz)
+define Image/Build/Template/Infineon/Initramfs
+	$(call Image/Build/LZMAKernel/Admboot,$(1),gz)
 endef
 
 #
-# Infineon EASY 83000
+# Mikrotik RouterBOARD 1xx
 #
-define Image/Build/Board/EASY83000
-	$(call Image/Build/Infineon,$(1),easy-83000)
-endef
-
-define Image/Build/Board/EASY83000/squashfs
-	$(call Image/Build/Board/EASY83000,squashfs)
-endef
-
-define Image/Build/Board/EASY83000/jffs2-64k
-	$(call Image/Build/Board/EASY83000,jffs2-64k)
-endef
-
-define Image/Build/Board/EASY83000/Initramfs
-	$(call Image/Build/LZMAKernel/Admboot,easy-83000,gz)
-endef
-
-#
-# Mikrotik RB-1xx
-#
-define Image/Build/Board/RB1xx/Initramfs
+define Image/Build/Template/Mikrotik/Initramfs
 	$(CP) $(KDIR)/vmlinux.elf $(call imgname,netboot,rb1xx)
-endef
-
-#
-# Groups
-#
-define Image/Build/Group/Cellvision
-	$(call Image/Build/Board/CAS700/$(1))
-	$(call Image/Build/Board/CAS700W/$(1))
-	$(call Image/Build/Board/CAS771/$(1))
-	$(call Image/Build/Board/CAS771W/$(1))
-	$(call Image/Build/Board/CAS790/$(1))
-	$(call Image/Build/Board/CAS861/$(1))
-	$(call Image/Build/Board/CAS861W/$(1))
-endef
-
-define Image/Build/Group/WP54G
-	$(call Image/Build/Board/WP54G/$(1))
-	$(call Image/Build/Board/WP54AG/$(1))
-	$(call Image/Build/Board/WPP54G/$(1))
-	$(call Image/Build/Board/WPP54AG/$(1))
-	$(call Image/Build/Board/WP54GWRT/$(1))
-endef
-
-define Image/Build/Group/Compex
-	$(call Image/Build/Board/NP27G/$(1))
-	$(call Image/Build/Board/NP28G/$(1))
-	$(call Image/Build/Group/WP54G,$(1))
-endef
-
-define Image/Build/Group/Conceptronic
-	$(call Image/Build/Board/C54BSR4/$(1))
-endef
-
-define Image/Build/Group/Edimax
-	$(call Image/Build/Board/BR6104K/$(1))
-	$(call Image/Build/Board/BR6104KP/$(1))
-	$(call Image/Build/Board/BR6104WG/$(1))
-endef
-
-define Image/Build/Group/Infineon
-	$(call Image/Build/Board/EASY83000/$(1))
-endef
-
-define Image/Build/Group/All
-	$(call Image/Build/Group/Cellvision,$(1))
-	$(call Image/Build/Group/Compex,$(1))
-	$(call Image/Build/Group/Conceptronic,$(1))
-	$(call Image/Build/Group/Edimax,$(1))
-	$(call Image/Build/Group/Cellvision,$(1))
-	$(call Image/Build/Group/Infineon,$(1))
-	$(call Image/Build/Board/RB1xx/$(1))
 endef
 
 #
 # Profiles
 #
-define Image/Build/Profile/Generic
-	$(call Image/Build/Group/All,$(1))
+define Image/Build/Profile/CAS630
+	$(call Image/Build/Template/Cellvision/$(1),cas-630,cas-630)
 endef
 
-define Image/Build/Profile/Atheros
-	$(call Image/Build/AllBoards,$(1))
+define Image/Build/Profile/CAS630W
+	$(call Image/Build/Template/Cellvision/$(1),cas-630,cas-630w)
 endef
 
-define Image/Build/Profile/Texas
-	$(call Image/Build/AllBoards,$(1))
+define Image/Build/Profile/CAS670
+	$(call Image/Build/Template/Cellvision/$(1),cas-670,cas-670)
 endef
 
-define Image/Build/Profile/Ralink
-	$(call Image/Build/AllBoards,$(1))
+define Image/Build/Profile/CAS670W
+	$(call Image/Build/Template/Cellvision/$(1),cas-670,cas-670w)
 endef
 
-define Image/Build/Profile/WP54G
-	$(call Image/Build/Group/WP54G,$(1))
+define Image/Build/Profile/NFS101U
+	$(call Image/Build/Template/Cellvision/$(1),nfs-101u,nfs-101u)
+	$(call Image/Build/Template/Cellvision/$(1),dn-7013,nfs-101u)
+	$(call Image/Build/Template/Cellvision/$(1),dns-120,nfs-101u)
+	$(call Image/Build/Template/Cellvision/$(1),mu-5000fs,nfs-101u)
+	$(call Image/Build/Template/Cellvision/$(1),tn-u100,nfs-101u)
 endef
 
-define Image/Build/Profile/NP27G
-	$(call Image/Build/Board/NP27G/$(1))
-endef
-
-define Image/Build/Profile/NP28G
-	$(call Image/Build/Board/NP28G/$(1))
+define Image/Build/Profile/NFS101WU
+	$(call Image/Build/Template/Cellvision/$(1),nfs-101wu,nfs-101u)
+	$(call Image/Build/Template/Cellvision/$(1),dns-g120,nfs-101u)
 endef
 
 define Image/Build/Profile/CAS700
-	$(call Image/Build/Board/CAS700/$(1))
+	$(call Image/Build/Template/Cellvision2/$(1),cas-700)
 endef
 
 define Image/Build/Profile/CAS700W
-	$(call Image/Build/Board/CAS700W/$(1))
+	$(call Image/Build/Template/Cellvision2/$(1),cas-700w)
 endef
 
 define Image/Build/Profile/CAS771
-	$(call Image/Build/Board/CAS771/$(1))
+	$(call Image/Build/Template/Cellvision2/$(1),cas-771)
 endef
 
 define Image/Build/Profile/CAS771W
-	$(call Image/Build/Board/CAS771W/$(1))
+	$(call Image/Build/Template/Cellvision2/$(1),cas-771w)
 endef
 
 define Image/Build/Profile/CAS790
-	$(call Image/Build/Board/CAS790/$(1))
+	$(call Image/Build/Template/Cellvision2/$(1),cas-790)
 endef
 
 define Image/Build/Profile/CAS861
-	$(call Image/Build/Board/CAS861/$(1))
+	$(call Image/Build/Template/Cellvision2/$(1),cas-861)
 endef
 
 define Image/Build/Profile/CAS861W
-	$(call Image/Build/Board/CAS861W/$(1))
+	$(call Image/Build/Template/Cellvision2/$(1),cas-861w)
+endef
+
+define Image/Build/Profile/NP27G
+	$(call Image/Build/Template/Compex/$(1),np27g)
+endef
+
+define Image/Build/Profile/NP28G
+	$(call Image/Build/Template/Compex/$(1),np28g)
+endef
+
+define Image/Build/Profile/WP54
+	$(call Image/Build/Template/Compex/$(1),wp54g)
+	$(call Image/Build/Template/Compex/$(1),wp54ag)
+	$(call Image/Build/Template/Compex/$(1),wpp54g)
+	$(call Image/Build/Template/Compex/$(1),wpp54ag)
+	$(call Image/Build/Template/WP54GWRT/$(1))
 endef
 
 define Image/Build/Profile/BR6104K
-	$(call Image/Build/Board/BR6104K/$(1))
+	$(call Image/Build/Template/Edimax/$(1),br-6104k)
 endef
 
 define Image/Build/Profile/BR6104KP
-	$(call Image/Build/Board/BR6104KP/$(1))
+	$(call Image/Build/Template/Edimax/$(1),br-6104kp)
 endef
 
-define Image/Build/Profile/C54BSR4
-	$(call Image/Build/Board/C54BSR4/$(1))
+define Image/Build/Profile/BR6104WG
+	$(call Image/Build/Template/Edimax/$(1),br-6104wg)
+endef
+
+define Image/Build/Profile/BR6114WG
+	$(call Image/Build/Template/Edimax/$(1),br-6114wg)
+endef
+
+define Image/Build/Profile/EASY83000
+	$(call Image/Build/Template/Infineon/$(1),easy-83000)
 endef
 
 define Image/Build/Profile/RouterBoard
-	$(call Image/Build/Board/RB1xx/$(1))
+	$(call Image/Build/Template/Mikrotik/$(1))
+endef
+
+ifeq ($(CONFIG_BROKEN),y)
+define Image/Build/Experimental
+	# Cellvison
+	$(call Image/Build/Profile/CAS630,$(1))
+	$(call Image/Build/Profile/CAS630W,$(1))
+	$(call Image/Build/Profile/CAS670,$(1))
+	$(call Image/Build/Profile/CAS670W,$(1))
+	$(call Image/Build/Profile/CAS700,$(1))
+	$(call Image/Build/Profile/CAS700W,$(1))
+	$(call Image/Build/Profile/CAS771,$(1))
+	$(call Image/Build/Profile/CAS771W,$(1))
+	$(call Image/Build/Profile/CAS861,$(1))
+	$(call Image/Build/Profile/CAS861W,$(1))
+	$(call Image/Build/Profile/NFS101U,$(1))
+	$(call Image/Build/Profile/NFS101WU,$(1))
+endef
+endif
+
+define Image/Build/Profile/Generic
+	# Compex
+	$(call Image/Build/Profile/WP54,$(1))
+	$(call Image/Build/Profile/NP27G,$(1))
+	$(call Image/Build/Profile/NP28G,$(1))
+	# Edimax
+	$(call Image/Build/Profile/BR6104K,$(1))
+	$(call Image/Build/Profile/BR6104KP,$(1))
+	$(call Image/Build/Profile/BR6104WG,$(1))
+	$(call Image/Build/Profile/BR6114WG,$(1))
+	# Infineon
+	$(call Image/Build/Profile/EASY83000,$(1))
+	# Mikrotik
+	$(call Image/Build/Profile/RB1xx/$(1))
+	$(call Image/Build/Experimental)
 endef
 
 ifeq ($(PROFILE),RouterBoard)

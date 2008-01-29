@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007,2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -22,5 +22,23 @@ define Profile/BR6104KP/Description
 	Package set optimized for the Edimax BR-6104KP
 endef
 
+define Profile/BR6104WG
+	NAME:=Edimax BR-6104Wg (Unofficial, No WiFi)
+endef
+
+define Profile/BR6104WG/Description
+	Package set optimized for the Edimax BR-6104Wg
+endef
+
+define Profile/BR6114WG
+	NAME:=Edimax BR-6114WG (Unofficial, No WiFi)
+endef
+
+define Profile/BR6114WG/Description
+	Package set optimized for the Edimax BR-6114WG
+endef
+
 $(eval $(call Profile,BR6104K))
 $(eval $(call Profile,BR6104KP))
+$(eval $(call Profile,BR6104WG))
+$(eval $(call Profile,BR6114WG))
