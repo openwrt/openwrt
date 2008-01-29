@@ -159,6 +159,7 @@ sub target_config_features(@) {
 		/jffs2/ and $ret .= "\tselect USES_JFFS2\n";
 		/ext2/ and $ret .= "\tselect USES_EXT2\n";
 		/tgz/ and $ret .= "\tselect USES_TGZ\n";
+		/cpiogz/ and $ret .= "\tselect USES_CPIOGZ\n";
 	}
 	return $ret;
 }
