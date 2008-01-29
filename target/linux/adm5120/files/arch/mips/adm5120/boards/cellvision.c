@@ -120,6 +120,23 @@ static void __init cas7xx_setup(void)
 	/* TODO: setup mac address */
 }
 
+static void __init nfs_setup(void)
+{
+	gpio_request(ADM5120_GPIO_PIN5, NULL);	/* for flash A20 line */
+	gpio_direction_output(ADM5120_GPIO_PIN5, 0);
+
+	/* setup data for flash0 device */
+	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
+	adm5120_flash0_data.nr_parts = ARRAY_SIZE(cas6xx_partitions);
+	adm5120_flash0_data.parts = cas6xx_partitions;
+
+	/* TODO: setup mac address */
+}
+
+unsigned char nfs_vlans[6] = { /* TODO: not tested */
+	0x41, 0x42, 0x44, 0x48, 0x50, 0x00
+};
+
 /*--------------------------------------------------------------------------*/
 
 ADM5120_BOARD_START(CAS630, "Cellvision CAS-630/630W")
@@ -168,5 +185,14 @@ ADM5120_BOARD_START(CAS861, "Cellvision CAS-861/861W")
 	.eth_num_ports	= 1,
 	.num_devices	= ARRAY_SIZE(cas7xx_devices),
 	.devices	= cas7xx_devices,
+	/* TODO: PCI IRQ map */
+ADM5120_BOARD_END
+
+ADM5120_BOARD_START(NFS101U, "Cellvision NFS-101U/101WU")
+	.board_setup	= nfs_setup,
+	.eth_num_ports	= 5,
+	.eth_vlans	= nfs_vlans,
+	.num_devices	= ARRAY_SIZE(cas6xx_devices),
+	.devices	= cas6xx_devices,
 	/* TODO: PCI IRQ map */
 ADM5120_BOARD_END
