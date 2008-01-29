@@ -1,0 +1,26 @@
+diff -Nur linux-2.6.24/arch/powerpc/boot/dts/kilauea.dts linux-2.6.24-owrt/arch/powerpc/boot/dts/kilauea.dts
+--- linux-2.6.24/arch/powerpc/boot/dts/kilauea.dts	2008-01-29 01:34:30.000000000 +0100
++++ linux-2.6.24-owrt/arch/powerpc/boot/dts/kilauea.dts	2008-01-29 01:35:01.000000000 +0100
+@@ -138,15 +130,15 @@
+ 					#size-cells = <1>;
+ 					partition@0 {
+ 						label = "kernel";
+-						reg = <0 200000>;
++						reg = <0 1e0000>;
+ 					};
+-					partition@200000 {
+-						label = "root";
+-						reg = <200000 200000>;
++					partition@1e0000 {
++						label = "device-tree";
++						reg = <1e0000 20000>;
+ 					};
+-					partition@400000 {
+-						label = "user";
+-						reg = <400000 3b60000>;
++					partition@200000 {
++						label = "rootfs";
++						reg = <200000 3d60000>;
+ 					};
+ 					partition@3f60000 {
+ 						label = "env";
