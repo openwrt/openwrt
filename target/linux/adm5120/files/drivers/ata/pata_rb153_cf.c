@@ -12,9 +12,9 @@
  *  their RouterBoard 1xx and 5xx series devices. The original Mikrotik code
  *  seems not to have a license.
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License version 2 as
- *  published by the Free Software Foundation.
+ *  This program is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License version 2 as published
+ *  by the Free Software Foundation.
  *
  */
 
@@ -32,7 +32,7 @@
 #include <asm/gpio.h>
 
 #define DRV_NAME	"pata-rb153-cf"
-#define DRV_VERSION	"0.2.2"
+#define DRV_VERSION	"0.3.0"
 #define DRV_DESC	"PATA driver for RouterBOARD 153 Compact Flash"
 
 #define RB153_CF_MAXPORTS	1
@@ -304,7 +304,7 @@ static void __exit rb153_pata_module_exit(void)
 MODULE_AUTHOR("Gabor Juhos <juhosg at openwrt.org>");
 MODULE_DESCRIPTION(DRV_DESC);
 MODULE_VERSION(DRV_VERSION);
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("GPL v2");
 
 module_init(rb153_pata_module_init);
 module_exit(rb153_pata_module_exit);

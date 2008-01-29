@@ -146,4 +146,4 @@ module_exit(adm5120_switch_trig_exit);
 MODULE_AUTHOR("Bernhard Held <bernhard at bernhardheld.de>, "
 		"Gabor Juhos <juhosg at openwrt.org>");
 MODULE_DESCRIPTION(DRV_DESC);
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("GPL v2");
