@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -67,7 +67,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 
   ifeq ($(CONFIG_TARGET_ROOTFS_CPIOGZ),y)
     define Image/mkfs/cpiogz
-		( cd $(BUILD_DIR)/root; find . | cpio -o -H newc | gzip -9 >$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-rootfs.cpio.gz )
+		( cd $(TARGET_DIR); find . | cpio -o -H newc | gzip -9 >$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-rootfs.cpio.gz )
     endef
   endif
 else
@@ -88,9 +88,9 @@ ifeq ($(CONFIG_TARGET_ROOTFS_EXT2FS),y)
 endif
 
 ifeq ($(CONFIG_TARGET_ROOTFS_ISO),y)
-  define Image/mkfs/iso 
-		$(call Image/Build,iso) 
-  endef 
+  define Image/mkfs/iso
+		$(call Image/Build,iso)
+  endef
 endif
 
 
@@ -137,7 +137,7 @@ else
 	$(call Image/mkfs/ext2)
 	$(call Image/mkfs/iso)
 endif
-	
+
 ifneq ($(IB),1)
   clean: clean-targets
 	$(call Build/Clean)
