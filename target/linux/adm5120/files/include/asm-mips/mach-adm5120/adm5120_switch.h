@@ -18,8 +18,10 @@
 #ifndef _ADM5120_SWITCH_H_
 #define _ADM5120_SWITCH_H_
 
-#define BIT(at)		(1 << (at))
-#define BITMASK(len)	((1 << (len))-1)
+#ifndef BIT
+#  define BIT(at)	(1 << (at))
+#endif
+#define BITMASK(len)	(BIT(len)-1)
 
 #define SW_READ_REG(r)		__raw_readl( \
 	(void __iomem *)KSEG1ADDR(ADM5120_SWITCH_BASE) + r)

@@ -21,6 +21,7 @@
 #include <linux/init.h>
 #include <linux/interrupt.h>
 #include <linux/timex.h>
+#include <linux/version.h>
 
 #include <asm/irq.h>
 #include <asm/cpu.h>
@@ -29,11 +30,12 @@
 #include <adm5120_info.h>
 #include <adm5120_irq.h>
 
-void __init adm5120_time_init(void)
+void __init plat_time_init(void)
 {
 	mips_hpt_frequency = adm5120_speed / 2;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24))
 void __init plat_timer_setup(struct irqaction *irq)
 {
 	clear_c0_status(ST0_BEV);
@@ -41,3 +43,4 @@ void __init plat_timer_setup(struct irqaction *irq)
 	/* Install ISR for CPU Counter interrupt */
 	setup_irq(ADM5120_IRQ_COUNTER, irq);
 }
+#endif

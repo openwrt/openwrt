@@ -1,0 +1,34 @@
+Index: linux-2.6.24/drivers/i2c/busses/Kconfig
+===================================================================
+--- linux-2.6.24.orig/drivers/i2c/busses/Kconfig
++++ linux-2.6.24/drivers/i2c/busses/Kconfig
+@@ -146,6 +146,17 @@ config I2C_GPIO
+ 	  This is a very simple bitbanging I2C driver utilizing the
+ 	  arch-neutral GPIO API to control the SCL and SDA lines.
+ 
++config I2C_GPIO_CUSTOM
++	tristate "Custom GPIO-based I2C driver"
++	depends on GENERIC_GPIO
++	select I2C_GPIO
++	help
++	  This is an I2C driver to register 1 to 4 custom I2C buses using 
++	  GPIO lines.
++
++	  This support is also available as a module.  If so, the module
++	  will be called i2c-gpio-custom.
++
+ config I2C_HYDRA
+ 	tristate "CHRP Apple Hydra Mac I/O I2C interface"
+ 	depends on PCI && PPC_CHRP && EXPERIMENTAL
+Index: linux-2.6.24/drivers/i2c/busses/Makefile
+===================================================================
+--- linux-2.6.24.orig/drivers/i2c/busses/Makefile
++++ linux-2.6.24/drivers/i2c/busses/Makefile
+@@ -14,6 +14,7 @@ obj-$(CONFIG_I2C_BLACKFIN_TWI)	+= i2c-bf
+ obj-$(CONFIG_I2C_DAVINCI)	+= i2c-davinci.o
+ obj-$(CONFIG_I2C_ELEKTOR)	+= i2c-elektor.o
+ obj-$(CONFIG_I2C_GPIO)		+= i2c-gpio.o
++obj-$(CONFIG_I2C_GPIO_CUSTOM)	+= i2c-gpio-custom.o
+ obj-$(CONFIG_I2C_HYDRA)		+= i2c-hydra.o
+ obj-$(CONFIG_I2C_I801)		+= i2c-i801.o
+ obj-$(CONFIG_I2C_I810)		+= i2c-i810.o
