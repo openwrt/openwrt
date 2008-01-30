@@ -264,7 +264,6 @@ void __init prom_putchar(char ch)
 
 void __init prom_init(void)
 {
-	mips_machgroup = MACH_GROUP_ADM5120;
 	prom_detect_machtype();
 
 	prom_init_cmdline();
