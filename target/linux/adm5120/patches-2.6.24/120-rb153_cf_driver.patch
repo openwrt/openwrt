@@ -1,0 +1,30 @@
+Index: linux-2.6.24/drivers/ata/Makefile
+===================================================================
+--- linux-2.6.24.orig/drivers/ata/Makefile
++++ linux-2.6.24/drivers/ata/Makefile
+@@ -69,6 +69,7 @@ obj-$(CONFIG_PATA_BF54X)	+= pata_bf54x.o
+ obj-$(CONFIG_PATA_PLATFORM)	+= pata_platform.o
+ obj-$(CONFIG_PATA_OF_PLATFORM)	+= pata_of_platform.o
+ obj-$(CONFIG_PATA_ICSIDE)	+= pata_icside.o
++obj-$(CONFIG_PATA_RB153_CF)	+= pata_rb153_cf.o
+ # Should be last but two libata driver
+ obj-$(CONFIG_PATA_ACPI)		+= pata_acpi.o
+ # Should be last but one libata driver
+Index: linux-2.6.24/drivers/ata/Kconfig
+===================================================================
+--- linux-2.6.24.orig/drivers/ata/Kconfig
++++ linux-2.6.24/drivers/ata/Kconfig
+@@ -660,4 +660,13 @@ config PATA_BF54X
+ 
+ 	  If unsure, say N.
+ 
++config PATA_RB153_CF
++	tristate "RouterBOARD 153 Compact Flash support"
++	depends on MIPS_ADM5120
++	help
++	  This option enables support for a Compact Flash connected on
++	  the RouterBOARD 153.
++
++	  If unsure, say N.
++
+ endif # ATA

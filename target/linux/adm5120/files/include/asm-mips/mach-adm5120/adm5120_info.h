@@ -50,7 +50,6 @@ extern unsigned char adm5120_eth_vlans[6];
 
 extern void adm5120_soc_init(void) __init;
 extern void adm5120_mem_init(void) __init;
-extern void adm5120_time_init(void) __init;
 extern void adm5120_ndelay(u32 ns);
 
 extern void adm5120_restart(char *command);
