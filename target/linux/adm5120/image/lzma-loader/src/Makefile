@@ -37,8 +37,8 @@ BIN_FLAGS	:= -O binary -R .reginfo -R .note -R .comment -R .mdebug -S
 
 CFLAGS		= -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
 		  -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic \
-		  -ffunction-sections -pipe -mlong-calls -fno-common \
-		  -ffreestanding \
+		  -ffunction-sections -pipe -mlong-calls -fno-common -ffreestanding \
+		  -fhonour-copts \
 		  -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap
 CFLAGS		+= -DLOADADDR=$(LOADADDR) -D_LZMA_PROB32
 
