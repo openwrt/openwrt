@@ -19,6 +19,7 @@ define Package/gpioctl
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Tool for controlling gpio pins
+  DEPENDS:=@LINUX_2_6
 endef
 
 define Package/gpioctl/description
@@ -32,7 +33,7 @@ endef
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) CFLAGS="$(TARGET_CFLAGS) -I$(LINUX_DIR)/include" 
+		$(TARGET_CONFIGURE_OPTS) CFLAGS="$(TARGET_CFLAGS) -I$(LINUX_DIR)/include"
 endef
 
 define Package/gpioctl/install
