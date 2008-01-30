@@ -438,7 +438,7 @@
 +	return count;
 +}
 +
-+static int
++static bool
 +match(const struct sk_buff *skbin,
 +      const struct net_device *in,
 +      const struct net_device *out,
@@ -446,7 +446,7 @@
 +      const void *matchinfo,
 +      int offset,
 +      unsigned int protoff,
-+      int *hotdrop)
++      bool *hotdrop)
 +{
 +	/* sidestep const without getting a compiler warning... */
 +	struct sk_buff * skb = (struct sk_buff *)skbin; 
@@ -590,7 +590,7 @@
 +	return (pattern_result ^ info->invert);
 +}
 +
-+static int check(const char *tablename,
++static bool check(const char *tablename,
 +		 const void *inf,
 +		 const struct xt_match *match,
 +		 void *matchinfo,
@@ -601,9 +601,9 @@
 +        if (nf_ct_l3proto_try_module_get(match->family) < 0) {
 +                printk(KERN_WARNING "can't load conntrack support for "
 +                                    "proto=%d\n", match->family);
-+                return 0;
++                return false;
 +        }
-+	return 1;
++	return true;
 +}
 +
 +static void
