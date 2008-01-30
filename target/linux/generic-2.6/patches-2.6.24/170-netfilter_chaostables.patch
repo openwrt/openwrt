@@ -222,30 +222,30 @@ Index: linux-2.6.23/net/netfilter/xt_CHAOS.c
 +
 +/* CHAOS functions */
 +static void xt_chaos_total(const struct xt_chaos_info *info,
-+    struct sk_buff **pskb, const struct net_device *in,
++    struct sk_buff *skb, const struct net_device *in,
 +    const struct net_device *out, unsigned int hooknum)
 +{
-+	const int protoff = ip_hdrlen(*pskb);
-+	const int offset  = ntohs(ip_hdr(*pskb)->frag_off) & IP_OFFSET;
++	const int protoff = ip_hdrlen(skb);
++	const int offset  = ntohs(ip_hdr(skb)->frag_off) & IP_OFFSET;
 +	const struct xt_target *destiny;
 +	bool hotdrop = false;
 +	int ret;
 +
-+	ret = xm_tcp->match(*pskb, in, out, xm_tcp, &tcp_params,
++	ret = xm_tcp->match(skb, in, out, xm_tcp, &tcp_params,
 +	                    offset, protoff, &hotdrop);
 +	if(!ret || hotdrop || (unsigned int)net_random() > delude_percentage)
 +		return;
 +
 +	destiny = (info->variant == XTCHAOS_TARPIT) ? xt_tarpit : xt_delude;
 +#ifdef HAVE_TARGUSERINFO
-+	destiny->target(pskb, in, out, hooknum, destiny, NULL, NULL);
++	destiny->target(skb, in, out, hooknum, destiny, NULL, NULL);
 +#else
-+	destiny->target(pskb, in, out, hooknum, destiny, NULL);
++	destiny->target(skb, in, out, hooknum, destiny, NULL);
 +#endif
 +	return;
 +}
 +
-+static unsigned int xt_chaos_target(struct sk_buff **pskb,
++static unsigned int xt_chaos_target(struct sk_buff *skb,
 +    const struct net_device *in, const struct net_device *out,
 +    unsigned int hooknum, const struct xt_target *target, const void *targinfo
 +#ifdef HAVE_TARGUSERINFO
@@ -265,17 +265,17 @@ Index: linux-2.6.23/net/netfilter/xt_CHAOS.c
 +
 +	if((unsigned int)net_random() <= reject_percentage)
 +#ifdef HAVE_TARGUSERINFO
-+		return xt_reject->target(pskb, in, out, hooknum, target,
++		return xt_reject->target(skb, in, out, hooknum, target,
 +		       &reject_params, userinfo);
 +#else
-+		return xt_reject->target(pskb, in, out, hooknum, target,
++		return xt_reject->target(skb, in, out, hooknum, target,
 +		       &reject_params);
 +#endif
 +
 +	/* TARPIT/DELUDE may not be called from the OUTPUT chain */
-+	if(ip_hdr(*pskb)->protocol == IPPROTO_TCP &&
++	if(ip_hdr(skb)->protocol == IPPROTO_TCP &&
 +	  info->variant != XTCHAOS_NORMAL && hooknum != NF_IP_LOCAL_OUT)
-+		xt_chaos_total(info, pskb, in, out, hooknum);
++		xt_chaos_total(info, skb, in, out, hooknum);
 +
 +	return NF_DROP;
 +}
@@ -587,7 +587,7 @@ Index: linux-2.6.23/net/netfilter/xt_DELUDE.c
 +	   )
 +		addr_type = RTN_LOCAL;
 +
-+	if (ip_route_me_harder(&nskb, addr_type))
++	if (ip_route_me_harder(nskb, addr_type))
 +		goto free_nskb;
 +
 +	nskb->ip_summed = CHECKSUM_NONE;
@@ -614,7 +614,7 @@ Index: linux-2.6.23/net/netfilter/xt_DELUDE.c
 +	kfree_skb(nskb);
 +}
 +
-+static unsigned int xt_delude_target(struct sk_buff **pskb,
++static unsigned int xt_delude_target(struct sk_buff *skb,
 +    const struct net_device *in, const struct net_device *out,
 +    unsigned int hooknum, const struct xt_target *target, const void *targinfo
 +#ifdef HAVE_TARGUSERINFO
@@ -626,7 +626,7 @@ Index: linux-2.6.23/net/netfilter/xt_DELUDE.c
 +	/* WARNING: This code causes reentry within iptables.
 +	   This means that the iptables jump stack is now crap.  We
 +	   must return an absolute verdict. --RR */
-+	send_reset(*pskb, hooknum);
++	send_reset(skb, hooknum);
 +	return NF_DROP;
 +}
 +
@@ -886,7 +886,7 @@ Index: linux-2.6.23/net/netfilter/xt_portscan.c
 +	{
 +		unsigned int n;
 +		n = xt_portscan_full(ctdata->mark & connmark_mask, ctstate,
-+		    in == &loopback_dev, tcph,
++		    (in->flags && IFF_LOOPBACK) == IFF_LOOPBACK, tcph,
 +		    skb->len - protoff - 4 * tcph->doff);
 +
 +		ctdata->mark = (ctdata->mark & ~connmark_mask) | n;
