@@ -42,7 +42,7 @@ Index: linux-2.6.23/net/netfilter/xt_TARPIT.c
 ===================================================================
 --- /dev/null
 +++ linux-2.6.23/net/netfilter/xt_TARPIT.c
-@@ -0,0 +1,280 @@
+@@ -0,0 +1,279 @@
 +/*
 + * Kernel module to capture and hold incoming TCP connections using
 + * no local per-connection resources.
@@ -246,14 +246,13 @@ Index: linux-2.6.23/net/netfilter/xt_TARPIT.c
 +	kfree_skb(nskb);
 +}
 +
-+static unsigned int xt_tarpit_target(struct sk_buff **pskb,
++static unsigned int xt_tarpit_target(struct sk_buff *skb,
 +                                     const struct net_device *in,
 +                                     const struct net_device *out,
 +                                     unsigned int hooknum,
 +                                     const struct xt_target *target,
 +                                     const void *targinfo)
 +{
-+	const struct sk_buff *skb = *pskb;
 +	const struct iphdr *iph   = ip_hdr(skb);
 +	struct rtable *rt         = (void *)skb->dst;
 +
