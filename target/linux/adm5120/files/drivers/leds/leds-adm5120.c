@@ -327,11 +327,6 @@ adm5120_leds_init(void)
 	struct mach_data *mach;
 	int i, ret;
 
-	if (mips_machgroup != MACH_GROUP_ADM5120) {
-		ret = -EINVAL;
-		goto err;
-	}
-
 	mach = adm5120_leds_findmach(mips_machtype);
 	if (mach == NULL) {
 		printk(KERN_ERR "leds-adm5120: unsupported board\n");

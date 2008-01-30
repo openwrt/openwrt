@@ -186,10 +186,6 @@ static int __init watchdog_init(void)
 {
 	int ret;
 
-	/* There should be check for ADM5120 */
-	if (mips_machgroup != MACH_GROUP_ADM5120)
-		return -1;
-
 	ret = misc_register(&wdt_miscdev);
 
 	if (ret)

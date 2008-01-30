@@ -188,9 +188,6 @@ static int usb_hcd_adm5120_probe(struct platform_device *pdev)
 {
 	int ret;
 
-	if (mips_machgroup != MACH_GROUP_ADM5120)
-		return -ENODEV;
-
 	ret = admhc_adm5120_probe(&adm5120_hc_driver, pdev);
 
 	return ret;
