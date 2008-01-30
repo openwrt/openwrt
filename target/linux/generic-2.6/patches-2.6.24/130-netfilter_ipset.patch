@@ -7358,7 +7358,7 @@ diff -Nru linux-2.6.23/net/ipv4/netfilter/ipt_set.c linux-2.6.23.pom2patch.set/n
 diff -Nru linux-2.6.23/net/ipv4/netfilter/ipt_SET.c linux-2.6.23.pom2patch.set/net/ipv4/netfilter/ipt_SET.c
 --- linux-2.6.23/net/ipv4/netfilter/ipt_SET.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.23.pom2patch.set/net/ipv4/netfilter/ipt_SET.c	2007-10-12 11:52:37.000000000 +0200
-@@ -0,0 +1,172 @@
+@@ -0,0 +1,179 @@
 +/* Copyright (C) 2000-2002 Joakim Axelsson <gozem@linux.nu>
 + *                         Patrick Schaaf <bof@bof.de>
 + *                         Martin Josefsson <gandalf@wlug.westbo.se>
@@ -7387,7 +7387,11 @@ diff -Nru linux-2.6.23/net/ipv4/netfilter/ipt_SET.c linux-2.6.23.pom2patch.set/n
 +#include <linux/netfilter_ipv4/ipt_set.h>
 +
 +static unsigned int
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
++target(struct sk_buff *skb,
++#else
 +target(struct sk_buff **pskb,
++#endif
 +       const struct net_device *in,
 +       const struct net_device *out,
 +       unsigned int hooknum,
@@ -7402,14 +7406,17 @@ diff -Nru linux-2.6.23/net/ipv4/netfilter/ipt_SET.c linux-2.6.23.pom2patch.set/n
 +#endif
 +{
 +	const struct ipt_set_info_target *info = targinfo;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
++	struct sk_buff *skb = *pskb;
++#endif
 +	
 +	if (info->add_set.index != IP_SET_INVALID_ID)
 +		ip_set_addip_kernel(info->add_set.index,
-+				    *pskb,
++				    skb,
 +				    info->add_set.flags);
 +	if (info->del_set.index != IP_SET_INVALID_ID)
 +		ip_set_delip_kernel(info->del_set.index,
-+				    *pskb,
++				    skb,
 +				    info->del_set.flags);
 +
 +	return IPT_CONTINUE;
