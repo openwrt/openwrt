@@ -142,7 +142,6 @@ sub search_feed {
 	return 0;
 }
 
-
 sub search {
 	my %opts;
 
@@ -150,6 +149,40 @@ sub search {
 	foreach my $feed (@feeds) {
 		search_feed($feed->[1], @ARGV) if (!defined($opts{r}) or $opts{r} eq $feed->[1]);
 	}
+}
+
+sub list_feed {
+	my $feed = shift;
+
+	get_feed($feed);
+	foreach my $name (sort { lc($a) cmp lc($b) } keys %package) {
+		my $pkg = $package{$name};
+		if($pkg->{name}) {
+			printf "\%-32s\t\%s\n", $pkg->{name}, $pkg->{title};
+		}
+	}
+
+	return 0;
+}
+
+sub list {
+	my %opts;
+
+	getopts('r:sh', \%opts);
+	if ($opts{h}) {
+		usage();
+		return 0;
+	}
+	if ($opts{s}) {
+		foreach my $feed (@feeds) {
+			printf "\%-32s\tURL: %s\n", $feed->[1], $feed->[2];
+		}
+		return 0;
+	}
+	foreach my $feed (@feeds) {
+		list_feed($feed->[1], @ARGV) if (!defined($opts{r}) or $opts{r} eq $feed->[1]);
+	}
+	return 0;
 }
 
 sub install_generic() {
@@ -332,21 +365,27 @@ sub usage() {
 Usage: $0 <command> [options]
 
 Commands:
+	list [options]: List feeds and their content
+	Options:
+	    -s :           List of feed names and their URL.
+	    -r <feedname>: List packages of specified feed.
+
 	install [options] <package>: Install a package
 	Options:
-	    -a installs all packages from all feeds or from the specified feed
-	    -p <feedname>: Prefer this feed when installing packages
-	    -d <y|m|n>:    Set default for newly installed packages
+	    -a :           Install all packages from all feeds or from the specified feed using the -p option.
+	    -p <feedname>: Prefer this feed when installing packages.
+	    -d <y|m|n>:    Set default for newly installed packages.
 
 	search [options] <substring>: Search for a package
 	Options:
 	    -r <feedname>: Only search in this feed
 
 	uninstall -a|<package>: Uninstall a package
-	    -a uninstalls all packages
+	    -a :           Uninstalls all packages.
 
-	update:	Update packages and lists of feeds in feeds.list
-	clean: Remove downloaded/generated files
+	update:            Update packages and lists of feeds in feeds.conf .
+
+	clean:             Remove downloaded/generated files.
 
 EOF
 	exit(1);
@@ -360,6 +399,7 @@ my %update_method = (
 );
 
 my %commands = (
+	'list' => \&list,
 	'update' => sub {
 		-d "feeds" or do {
 			mkdir "feeds" or die "Unable to create the feeds directory";
