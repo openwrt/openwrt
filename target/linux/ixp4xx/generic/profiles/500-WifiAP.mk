@@ -10,7 +10,7 @@ define Profile/WifiAP
   PACKAGES:=kmod-madwifi wireless-tools \
 	kmod-scsi-core \
 	kmod-ata-core kmod-ata-artop \
-	kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-storage \
+	kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-storage kmod-nls-iso8859-1 kmod-nls-cp437 \
 	kmod-fs-ext2 kmod-fs-ext3 kmod-fs-vfat gpioctl openslp hostapd wpa-supplicant
 endef
 
