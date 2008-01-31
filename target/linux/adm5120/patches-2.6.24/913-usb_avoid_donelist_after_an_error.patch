@@ -1,0 +1,62 @@
+Index: linux-2.6.24/drivers/usb/host/adm5120-q.c
+===================================================================
+--- linux-2.6.24.orig/drivers/usb/host/adm5120-q.c
++++ linux-2.6.24/drivers/usb/host/adm5120-q.c
+@@ -641,10 +641,11 @@ static int td_done(struct admhcd *ahcd, 
+ 
+ /*-------------------------------------------------------------------------*/
+ 
+-static inline struct td *
++static inline void
+ ed_halted(struct admhcd *ahcd, struct td *td, int cc, struct td *rev)
+ {
+ 	struct urb		*urb = td->urb;
++	struct urb_priv		*urb_priv = urb->hcpriv;
+ 	struct ed		*ed = td->ed;
+ 	struct list_head	*tmp = td->td_list.next;
+ 	__hc32			toggle = ed->hwHeadP & cpu_to_hc32(ahcd, ED_C);
+@@ -657,13 +658,12 @@ ed_halted(struct admhcd *ahcd, struct td
+ 	wmb();
+ 	ed->hwHeadP &= ~cpu_to_hc32(ahcd, ED_H);
+ 
+-	/* put any later tds from this urb onto the donelist, after 'td',
+-	 * order won't matter here: no errors, and nothing was transferred.
+-	 * also patch the ed so it looks as if those tds completed normally.
++	/* Get rid of all later tds from this urb. We don't have
++	 * to be careful: no errors and nothing was transferred.
++	 * Also patch the ed so it looks as if those tds completed normally.
+ 	 */
+ 	while (tmp != &ed->td_list) {
+ 		struct td	*next;
+-		__hc32		info;
+ 
+ 		next = list_entry(tmp, struct td, td_list);
+ 		tmp = next->td_list.next;
+@@ -678,16 +678,8 @@ ed_halted(struct admhcd *ahcd, struct td
+ 		 * then we need to leave the control STATUS packet queued
+ 		 * and clear ED_SKIP.
+ 		 */
+-		info = next->hwINFO;
+-#if 0		/* FIXME */
+-		info |= cpu_to_hc32(ahcd, TD_DONE);
+-#endif
+-		info &= ~cpu_to_hc32(ahcd, TD_CC);
+-		next->hwINFO = info;
+-
+-		next->next_dl_td = rev;
+-		rev = next;
+-
++		list_del(&next->td_list);
++		urb_priv->td_cnt++;
+ 		ed->hwHeadP = next->hwNextTD | toggle;
+ 	}
+ 
+@@ -713,8 +705,6 @@ ed_halted(struct admhcd *ahcd, struct td
+ 			hc32_to_cpu(ahcd, td->hwINFO),
+ 			cc, cc_to_error [cc]);
+ 	}
+-
+-	return rev;
+ }
+ 
+ /*-------------------------------------------------------------------------*/

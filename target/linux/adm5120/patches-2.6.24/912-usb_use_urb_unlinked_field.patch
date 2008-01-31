@@ -1,0 +1,23 @@
+Index: linux-2.6.24/drivers/usb/host/adm5120-q.c
+===================================================================
+--- linux-2.6.24.orig/drivers/usb/host/adm5120-q.c
++++ linux-2.6.24/drivers/usb/host/adm5120-q.c
+@@ -616,8 +616,7 @@ static int td_done(struct admhcd *ahcd, 
+ 
+ 		if (cc != TD_CC_NOERROR && cc < TD_CC_HCD0) {
+ 			spin_lock(&urb->lock);
+-			if (urb->status == -EINPROGRESS)
+-				urb->status = cc_to_error[cc];
++			urb->status = cc_to_error[cc];
+ 			spin_unlock(&urb->lock);
+ 		}
+ 
+@@ -787,7 +786,7 @@ rescan_this:
+ 			urb = td->urb;
+ 			urb_priv = td->urb->hcpriv;
+ 
+-			if (urb->status == -EINPROGRESS) {
++			if (!urb->unlinked) {
+ 				prev = &td->hwNextTD;
+ 				continue;
+ 			}

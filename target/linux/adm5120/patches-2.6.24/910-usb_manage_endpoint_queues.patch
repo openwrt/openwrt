@@ -1,0 +1,110 @@
+Index: linux-2.6.24/drivers/usb/host/adm5120-hcd.c
+===================================================================
+--- linux-2.6.24.orig/drivers/usb/host/adm5120-hcd.c
++++ linux-2.6.24/drivers/usb/host/adm5120-hcd.c
+@@ -83,8 +83,8 @@ static void admhc_stop(struct usb_hcd *h
+ /*
+  * queue up an urb for anything except the root hub
+  */
+-static int admhc_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
+-	struct urb *urb, gfp_t mem_flags)
++static int admhc_urb_enqueue(struct usb_hcd *hcd, struct urb *urb,
++		gfp_t mem_flags)
+ {
+ 	struct admhcd	*ahcd = hcd_to_admhcd(hcd);
+ 	struct ed	*ed;
+@@ -101,7 +101,7 @@ static int admhc_urb_enqueue(struct usb_
+ #endif
+ 
+ 	/* every endpoint has an ed, locate and maybe (re)initialize it */
+-	ed = ed_get(ahcd, ep, urb->dev, pipe, urb->interval);
++	ed = ed_get(ahcd, urb->ep, urb->dev, pipe, urb->interval);
+ 	if (!ed)
+ 		return -ENOMEM;
+ 
+@@ -161,22 +161,17 @@ static int admhc_urb_enqueue(struct usb_
+ 		goto fail;
+ 	}
+ 
+-	/* in case of unlink-during-submit */
+-	spin_lock(&urb->lock);
+-	if (urb->status != -EINPROGRESS) {
+-		spin_unlock(&urb->lock);
+-		urb->hcpriv = urb_priv;
+-		finish_urb(ahcd, urb);
+-		ret = 0;
++	ret = usb_hcd_link_urb_to_ep(hcd, urb);
++	if (ret)
+ 		goto fail;
+-	}
+ 
+ 	/* schedule the ed if needed */
+ 	if (ed->state == ED_IDLE) {
+ 		ret = ed_schedule(ahcd, ed);
+-		if (ret < 0)
+-			goto fail0;
+-
++		if (ret < 0) {
++			usb_hcd_unlink_urb_from_ep(hcd, urb);
++			goto fail;
++		}
+ 		if (ed->type == PIPE_ISOCHRONOUS) {
+ 			u16	frame = admhc_frame_no(ahcd);
+ 
+@@ -204,8 +199,6 @@ static int admhc_urb_enqueue(struct usb_
+ 	admhc_dump_ed(ahcd, "admhc_urb_enqueue", urb_priv->ed, 1);
+ #endif
+ 
+-fail0:
+-	spin_unlock(&urb->lock);
+ fail:
+ 	if (ret)
+ 		urb_priv_free(ahcd, urb_priv);
+@@ -220,18 +213,23 @@ fail:
+  * asynchronously, and we might be dealing with an urb that's
+  * partially transferred, or an ED with other urbs being unlinked.
+  */
+-static int admhc_urb_dequeue(struct usb_hcd *hcd, struct urb *urb)
++static int admhc_urb_dequeue(struct usb_hcd *hcd, struct urb *urb,
++		int status)
+ {
+ 	struct admhcd *ahcd = hcd_to_admhcd(hcd);
+ 	unsigned long flags;
++	int ret;
+ 
+ 	spin_lock_irqsave(&ahcd->lock, flags);
+ 
+ #ifdef ADMHC_VERBOSE_DEBUG
+ 	urb_print(ahcd, urb, "DEQUEUE", 1);
+ #endif
+-
+-	if (HC_IS_RUNNING(hcd->state)) {
++	ret = usb_hcd_check_unlink_urb(hcd, urb, status);
++	if (ret) {
++		/* Do nothing */
++		;
++	} else if (HC_IS_RUNNING(hcd->state)) {
+ 		struct urb_priv *urb_priv;
+ 
+ 		/* Unless an IRQ completed the unlink while it was being
+@@ -253,7 +251,7 @@ static int admhc_urb_dequeue(struct usb_
+ 	}
+ 	spin_unlock_irqrestore(&ahcd->lock, flags);
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ /*-------------------------------------------------------------------------*/
+Index: linux-2.6.24/drivers/usb/host/adm5120-q.c
+===================================================================
+--- linux-2.6.24.orig/drivers/usb/host/adm5120-q.c
++++ linux-2.6.24/drivers/usb/host/adm5120-q.c
+@@ -63,6 +63,7 @@ __acquires(ahcd->lock)
+ #endif
+ 
+ 	/* urb->complete() can reenter this HCD */
++	usb_hcd_unlink_urb_from_ep(admhcd_to_hcd(ahcd), urb);
+ 	spin_unlock(&ahcd->lock);
+ 	usb_hcd_giveback_urb(admhcd_to_hcd(ahcd), urb);
+ 	spin_lock(&ahcd->lock);
