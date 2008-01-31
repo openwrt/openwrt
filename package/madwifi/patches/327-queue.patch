@@ -1,8 +1,8 @@
-Index: madwifi-trunk-r3280/ath/if_ath.c
+Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3280.orig/ath/if_ath.c	2008-01-29 17:57:02.738327980 +0100
-+++ madwifi-trunk-r3280/ath/if_ath.c	2008-01-29 17:57:02.770329801 +0100
-@@ -8336,8 +8336,6 @@
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-01-31 03:39:02.140426675 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-01-31 03:39:41.360481823 +0100
+@@ -8357,8 +8357,6 @@
  	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
  	local_irq_restore(flags);
  
@@ -11,7 +11,7 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  	if (sc->sc_softled)
  		ath_led_event(sc, ATH_LED_TX);
  }
-@@ -8384,8 +8382,6 @@
+@@ -8405,8 +8403,6 @@
  	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
  	local_irq_restore(flags);
  
@@ -20,7 +20,7 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  	if (sc->sc_softled)
  		ath_led_event(sc, ATH_LED_TX);
  }
-@@ -8418,8 +8414,6 @@
+@@ -8439,8 +8435,6 @@
  	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
  	local_irq_restore(flags);
  
@@ -29,11 +29,11 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  	if (sc->sc_softled)
  		ath_led_event(sc, ATH_LED_TX);
  }
-Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
+Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-trunk-r3280.orig/net80211/ieee80211_input.c	2008-01-29 17:57:29.147832972 +0100
-+++ madwifi-trunk-r3280/net80211/ieee80211_input.c	2008-01-29 17:58:27.315147737 +0100
-@@ -1136,7 +1136,7 @@
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_input.c	2008-01-31 03:38:55.116026377 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_input.c	2008-01-31 03:39:41.364480053 +0100
+@@ -1132,7 +1132,7 @@
  	    (vap->iv_flags & IEEE80211_F_NOBRIDGE) == 0) {
  		struct sk_buff *skb1 = NULL;
  

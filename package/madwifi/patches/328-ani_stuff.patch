@@ -1,0 +1,16 @@
+Index: madwifi-trunk-r3314/ath/if_ath.c
+===================================================================
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-01-31 03:59:25.474330368 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-01-31 04:00:30.254021949 +0100
+@@ -6686,8 +6686,9 @@
+ 
+ 	*budget -= processed;
+ 
+-	/* rx signal state monitoring */
+-	ath_hal_rxmonitor(ah, &sc->sc_halstats, &sc->sc_curchan);
++	/* rx signal state monitoring, only necessary/applicable for sta mode */
++	if (sc->sc_opmode == HAL_M_STA)
++		ath_hal_rxmonitor(ah, &sc->sc_halstats, &sc->sc_curchan);
+ 	return early_stop;
+ #undef PA2DESC
+ }

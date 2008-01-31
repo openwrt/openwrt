@@ -1,9 +1,9 @@
-Index: madwifi-dfs-r3252/ath/if_athvar.h
+Index: madwifi-trunk-r3314/ath/if_athvar.h
 ===================================================================
---- madwifi-dfs-r3252.orig/ath/if_athvar.h	2008-01-25 21:13:50.832747032 +0100
-+++ madwifi-dfs-r3252/ath/if_athvar.h	2008-01-25 21:14:09.785827106 +0100
-@@ -128,6 +128,11 @@
- #define	NETDEV_TX_BUSY	1
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-01-31 03:29:54.077194330 +0100
++++ madwifi-trunk-r3314/ath/if_athvar.h	2008-01-31 03:31:07.693389480 +0100
+@@ -126,6 +126,11 @@
+ #define ATH_GET_NETDEV_DEV(ndev)	((ndev)->class_dev.dev)
  #endif
  
 +#ifndef NETDEV_TX_OK
@@ -14,10 +14,10 @@ Index: madwifi-dfs-r3252/ath/if_athvar.h
  #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,23)
  static inline struct net_device *_alloc_netdev(int sizeof_priv, const char *mask,
  					       void (*setup)(struct net_device *))
-Index: madwifi-dfs-r3252/ath/if_ath_radar.c
+Index: madwifi-trunk-r3314/ath/if_ath_radar.c
 ===================================================================
---- madwifi-dfs-r3252.orig/ath/if_ath_radar.c	2008-01-25 21:13:50.840747487 +0100
-+++ madwifi-dfs-r3252/ath/if_ath_radar.c	2008-01-25 21:14:09.789827335 +0100
+--- madwifi-trunk-r3314.orig/ath/if_ath_radar.c	2008-01-31 03:29:54.081194559 +0100
++++ madwifi-trunk-r3314/ath/if_ath_radar.c	2008-01-31 03:31:07.697389706 +0100
 @@ -92,6 +92,13 @@
  #define nofloat_pct(_value, _pct) \
  	( (_value * (1000 + _pct)) / 1000 )
@@ -32,11 +32,11 @@ Index: madwifi-dfs-r3252/ath/if_ath_radar.c
  struct radar_pattern_specification {
  	/* The name of the rule/specification (i.e. what did we detect) */
  	const char *name;
-Index: madwifi-dfs-r3252/ath/if_ath.c
+Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-dfs-r3252.orig/ath/if_ath.c	2008-01-25 21:13:59.245226430 +0100
-+++ madwifi-dfs-r3252/ath/if_ath.c	2008-01-25 21:14:09.797827791 +0100
-@@ -4698,6 +4698,46 @@
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-01-31 03:30:19.778658973 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-01-31 03:31:07.709390390 +0100
+@@ -4705,6 +4705,46 @@
  #undef USE_SHPREAMBLE
  }
  
@@ -83,27 +83,10 @@ Index: madwifi-dfs-r3252/ath/if_ath.c
  /*
   * Generate beacon frame and queue cab data for a VAP.
   */
-Index: madwifi-dfs-r3252/net80211/ieee80211_scan_ap.c
-===================================================================
---- madwifi-dfs-r3252.orig/net80211/ieee80211_scan_ap.c	2008-01-25 21:13:50.852748172 +0100
-+++ madwifi-dfs-r3252/net80211/ieee80211_scan_ap.c	2008-01-25 21:14:33.343169561 +0100
-@@ -46,7 +46,12 @@
- #include <linux/netdevice.h>
- #include <linux/init.h>
- #include <linux/delay.h>
-+
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
-+#include "sort.c"
-+#else
- #include <linux/sort.h>
-+#endif
- 
- #include "if_media.h"
- 
-Index: madwifi-dfs-r3252/net80211/sort.c
+Index: madwifi-trunk-r3314/net80211/sort.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ madwifi-dfs-r3252/net80211/sort.c	2008-01-25 21:14:09.801828016 +0100
++++ madwifi-trunk-r3314/net80211/sort.c	2008-01-31 03:31:07.717390845 +0100
 @@ -0,0 +1,120 @@
 +/*
 + * A fast, small, non-recursive O(nlog n) sort for the Linux kernel
