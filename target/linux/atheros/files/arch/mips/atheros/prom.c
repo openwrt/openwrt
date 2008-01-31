@@ -29,7 +29,6 @@ void __init prom_init(void)
 {
 	char **argv;
 
-	mips_machgroup = MACH_GROUP_ATHEROS;
 	mips_machtype = -1;
 
 	DO_AR5312(ar5312_prom_init();)

@@ -1,11 +1,15 @@
 #ifndef __AR531X_H
 #define __AR531X_H
 
+#include <linux/version.h>
 #include <asm/cpu-info.h>
 #include <ar531x_platform.h>
 #include "ar5312/ar5312.h"
 #include "ar5315/ar5315.h"
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24))
+extern void (*board_time_init)(void);
+#endif
 
 /*
  * C access to CLZ instruction

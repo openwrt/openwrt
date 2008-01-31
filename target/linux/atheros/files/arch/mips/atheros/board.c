@@ -180,6 +180,7 @@ const char *get_system_type(void)
 	return "Atheros (unknown)";
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24))
 void __init plat_timer_setup(struct irqaction *irq)
 {
 	unsigned int count;
@@ -191,12 +192,20 @@ void __init plat_timer_setup(struct irqaction *irq)
 	count = read_c0_count();
 	write_c0_compare(count + 1000);
 }
+#endif
 
 asmlinkage void plat_irq_dispatch(void)
 {
 	DO_AR5312(ar5312_irq_dispatch();)
 	DO_AR5315(ar5315_irq_dispatch();)
 }
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24))
+void (*board_time_init)(void);
+void __init plat_time_init(void) {
+    board_time_init();
+}
+#endif
 
 void __init arch_init_irq(void)
 {

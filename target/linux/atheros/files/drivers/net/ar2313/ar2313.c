@@ -186,7 +186,6 @@ int __init ar2313_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
-	SET_MODULE_OWNER(dev);
 	platform_set_drvdata(pdev, dev);
 
 	sp = dev->priv;
