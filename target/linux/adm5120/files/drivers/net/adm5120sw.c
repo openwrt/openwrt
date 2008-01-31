@@ -43,7 +43,7 @@
 
 #define DRV_NAME	"adm5120-switch"
 #define DRV_DESC	"ADM5120 built-in ethernet switch driver"
-#define DRV_VERSION	"0.1.0"
+#define DRV_VERSION	"0.1.1"
 
 #define CONFIG_ADM5120_SWITCH_NAPI	1
 #undef CONFIG_ADM5120_SWITCH_DEBUG
@@ -430,7 +430,7 @@ static int adm5120_switch_rx(int limit)
 				dma_cache_wback_inv((unsigned long)skb->data,
 					skb->len);
 
-#ifdef CONFIG_ADM5120_SWITCH_USE_NAPI
+#ifdef CONFIG_ADM5120_SWITCH_NAPI
 				netif_receive_skb(skb);
 #else
 				netif_rx(skb);
@@ -524,7 +524,7 @@ static int adm5120_if_poll(struct net_device *dev, int *budget)
 			dev->name, done, status);
 	return 1;
 }
-#endif /* CONFIG_ADM5120_SWITCH_USE_NAPI */
+#endif /* CONFIG_ADM5120_SWITCH_NAPI */
 
 
 static irqreturn_t adm5120_switch_irq(int irq, void *dev_id)
