@@ -36,6 +36,7 @@ stop_interface_3g() {
 setup_interface_3g() {
 	local iface="$1"
 	local config="$2"
+	local chat="/etc/chatscripts/3g.chat"
 	
 	config_get device "$config" device
 
@@ -51,30 +52,35 @@ setup_interface_3g() {
 	set_3g_led 1 0 1
 
 	# figure out hardware specific commands for the card
-	if gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | grep Novatel 2>/dev/null >/dev/null; then
-		case "$service" in
-			umts_only) CODE=2;;
-			gprs_only) CODE=1;;
-			*) CODE=0;;
-		esac
-		mode="AT\$NWRAT=${CODE},2"
-	else
-		case "$service" in
-			umts_only) CODE=1;;
-			gprs_only) CODE=0;;
-			*) CODE=3;;
-		esac
-		mode="AT_OPSYS=${CODE}"
-	fi
-	
-	PINCODE="$pincode" gcom -d "$device" -s /etc/gcom/setpin.gcom || {
-		echo "$cfg(3g): Failed to set the PIN code."
-		set_3g_led 0 0 0
-		return 1
-	}
-	MODE="$mode" gcom -d "$device" -s /etc/gcom/setmode.gcom
+	case "$service" in
+		cdma|evdo) chat="/etc/chatscripts/evdo.chat";;
+	*)
+		if gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | grep Novatel 2>/dev/null >/dev/null; then
+			case "$service" in
+				umts_only) CODE=2;;
+				gprs_only) CODE=1;;
+				*) CODE=0;;
+			esac
+			mode="AT\$NWRAT=${CODE},2"
+		else
+			case "$service" in
+				umts_only) CODE=1;;
+				gprs_only) CODE=0;;
+				*) CODE=3;;
+			esac
+			mode="AT_OPSYS=${CODE}"
+		fi
+		
+		PINCODE="$pincode" gcom -d "$device" -s /etc/gcom/setpin.gcom || {
+			echo "$cfg(3g): Failed to set the PIN code."
+			set_3g_led 0 0 0
+			return 1
+		}
+		MODE="$mode" gcom -d "$device" -s /etc/gcom/setmode.gcom
+	esac
 	set_3g_led 1 0 0
 
+	config_set "$config" "connect" "${apn:+USE_APN=$apn }/usr/sbin/chat -t5 -f $chat"
 	start_pppd "$config" \
 		noaccomp \
 		nopcomp \
@@ -83,7 +89,6 @@ setup_interface_3g() {
 		noauth \
 		lock \
 		crtscts \
-		connect "USE_APN=\"$apn\" /etc/ppp/3g.connect" \
 		${mtu:+mtu $mtu mru $mtu} \
-		460800 "$device"
+		115200 "$device"
 }
