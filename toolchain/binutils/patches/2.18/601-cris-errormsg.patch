@@ -1,0 +1,23 @@
+Index: binutils-2.18/bfd/elf32-cris.c
+===================================================================
+--- binutils-2.18.orig/bfd/elf32-cris.c	2007-06-28 09:19:34.053059600 +0200
++++ binutils-2.18/bfd/elf32-cris.c	2007-06-28 09:19:39.058298688 +0200
+@@ -2694,12 +2694,12 @@
+ 	      && (sec->flags & SEC_READONLY) != 0)
+ 	    {
+ 	      /* FIXME: How do we make this optionally a warning only?  */
+-	      (*_bfd_error_handler)
+-		(_("%B, section %A:\n  relocation %s should not"
+-		   " be used in a shared object; recompile with -fPIC"),
+-		 abfd,
+-		 sec,
+-		 cris_elf_howto_table[r_type].name);
++	  //    (*_bfd_error_handler)
++		//(_("%B, section %A:\n  relocation %s should not"
++		  // " be used in a shared object; recompile with -fPIC"),
++//		 abfd,
++//		 sec,
++//		 cris_elf_howto_table[r_type].name);
+ 	    }
+ 	  /* Fall through.  */
+

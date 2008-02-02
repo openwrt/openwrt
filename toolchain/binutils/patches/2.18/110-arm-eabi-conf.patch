@@ -1,0 +1,13 @@
+Index: binutils-2.18/configure
+===================================================================
+--- binutils-2.18.orig/configure	2007-06-28 09:19:35.030910944 +0200
++++ binutils-2.18/configure	2007-06-28 09:19:35.592825520 +0200
+@@ -2235,7 +2235,7 @@
+   arm-*-elf* | strongarm-*-elf* | xscale-*-elf* | arm*-*-eabi* )
+     noconfigdirs="$noconfigdirs target-libffi target-qthreads"
+     ;;
+-  arm*-*-linux-gnueabi)
++  arm*-*-linux-gnueabi | arm*-*-linux-uclibcgnueabi)
+     noconfigdirs="$noconfigdirs target-libffi target-qthreads"
+     noconfigdirs="$noconfigdirs target-libjava target-libobjc"
+     case ${with_newlib} in
