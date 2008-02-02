@@ -47,6 +47,19 @@ define Package/libuuid/description
  Library for generating DCE compatible Universally Unique Identifiers.
 endef
 
+define Package/uuidgen
+$(call Package/e2fsprogs)
+  DEPENDS:=libuuid
+  TITLE:=Command line utility to create a new UUID value
+endef
+
+define Package/uuidgen/description
+ uuidgen program creates a new universally unique identifier (UUID) 
+ using the libuuid library. The new UUID can reasonably be considered 
+ unique among all UUIDs created on the local system, and among UUIDs 
+ created on other systems in the past and in the future.
+endef
+
 define Package/libblkid
 $(call Package/e2fsprogs/Default)
   SECTION:=libs
@@ -118,6 +131,11 @@ define Package/libuuid/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libuuid.so.* $(1)/usr/lib/
 endef
 
+define Package/uuidgen/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/uuidgen $(1)/usr/bin/
+endef
+
 define Package/libblkid/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libblkid.so.* $(1)/usr/lib/
@@ -135,6 +153,7 @@ endef
 
 $(eval $(call BuildPackage,e2fsprogs))
 $(eval $(call BuildPackage,libuuid))
+$(eval $(call BuildPackage,uuidgen))
 $(eval $(call BuildPackage,libblkid))
 $(eval $(call BuildPackage,tune2fs))
 $(eval $(call BuildPackage,resize2fs))
