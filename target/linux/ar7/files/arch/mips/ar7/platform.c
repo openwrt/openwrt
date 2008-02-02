@@ -334,7 +334,7 @@ static struct gpio_led dg834g_leds[] = {
 	{ .name = "status", .gpio = 7, .active_low = 1, },
 	{ .name = "adsl", .gpio = 8, .active_low = 1, },
 	{ .name = "wifi", .gpio = 12, .active_low = 1, },
-	{ .name = "power", .gpio = 14, .active_low = 1, },
+	{ .name = "power", .gpio = 14, .active_low = 1, .default_trigger = "default-on", },
 };
 
 static struct gpio_led fb_sl_leds[] = {
