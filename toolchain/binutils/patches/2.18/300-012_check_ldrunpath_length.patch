@@ -1,0 +1,48 @@
+#!/bin/sh -e
+## 012_check_ldrunpath_length.dpatch by Chris Chimelis <chris@debian.org>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Only generate an RPATH entry if LD_RUN_PATH is not empty, for
+## DP: cases where -rpath isn't specified. (#151024)
+
+if [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+
+[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
+patch_opts="${patch_opts:--f --no-backup-if-mismatch}"
+
+case "$1" in
+       -patch) patch $patch_opts -p1 < $0;;
+       -unpatch) patch $patch_opts -p1 -R < $0;;
+        *)
+                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+                exit 1;;
+esac
+
+exit 0
+
+@DPATCH@
+Index: binutils-2.18/ld/emultempl/elf32.em
+===================================================================
+--- binutils-2.18.orig/ld/emultempl/elf32.em	2007-06-28 09:19:34.796946512 +0200
++++ binutils-2.18/ld/emultempl/elf32.em	2007-06-28 09:19:36.178736448 +0200
+@@ -1216,6 +1216,8 @@
+ 	      && command_line.rpath == NULL)
+ 	    {
+ 	      lib_path = (const char *) getenv ("LD_RUN_PATH");
++	      if ((lib_path) && (strlen (lib_path) == 0))
++		  lib_path = NULL;
+ 	      if (gld${EMULATION_NAME}_search_needed (lib_path, &n,
+ 						      force))
+ 		break;
+@@ -1400,6 +1402,8 @@
+   rpath = command_line.rpath;
+   if (rpath == NULL)
+     rpath = (const char *) getenv ("LD_RUN_PATH");
++  if ((rpath) && (strlen (rpath) == 0))
++      rpath = NULL;
+   if (! (bfd_elf_size_dynamic_sections
+ 	 (output_bfd, command_line.soname, rpath,
+ 	  command_line.filter_shlib,

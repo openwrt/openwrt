@@ -1,0 +1,44 @@
+#!/bin/sh -e
+## 006_better_file_error.dpatch by David Kimdon <dwhedon@gordian.com>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Specify which filename is causing an error if the filename is a
+## DP: directory. (#45832)
+
+if [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+
+[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
+patch_opts="${patch_opts:--f --no-backup-if-mismatch}"
+
+case "$1" in
+       -patch) patch $patch_opts -p1 < $0;;
+       -unpatch) patch $patch_opts -p1 -R < $0;;
+        *)
+                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+                exit 1;;
+esac
+
+exit 0
+
+@DPATCH@
+Index: binutils-2.18/bfd/opncls.c
+===================================================================
+--- binutils-2.18.orig/bfd/opncls.c	2007-06-28 09:19:34.818943168 +0200
++++ binutils-2.18/bfd/opncls.c	2007-06-28 09:19:35.993764568 +0200
+@@ -183,6 +183,13 @@
+ {
+   bfd *nbfd;
+   const bfd_target *target_vec;
++  struct stat s;
++
++  if (stat (filename, &s) == 0)
++    if (S_ISDIR(s.st_mode)) {
++      bfd_set_error (bfd_error_file_not_recognized);
++      return NULL;
++    }
+
+   nbfd = _bfd_new_bfd ();
+   if (nbfd == NULL)
