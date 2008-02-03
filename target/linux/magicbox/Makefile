@@ -9,9 +9,9 @@ include $(TOPDIR)/rules.mk
 ARCH:=powerpc
 BOARD:=magicbox
 BOARDNAME:=Magicbox
-FEATURES:=squashfs jffs2 pci
+FEATURES:=squashfs pci
 
-LINUX_VERSION:=2.6.23.14
+LINUX_VERSION:=2.6.24
 LINUX_KARCH:=ppc
 
 include $(INCLUDE_DIR)/target.mk
