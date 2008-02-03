@@ -8,8 +8,8 @@ PPP_IPPARAM="$6"
 export PPP_IFACE PPP_TTY PPP_SPEED PPP_LOCAL PPP_REMOTE PPP_IPPARAM
 [ -z "$PPP_IPPARAM" ] || env -i ACTION="ifup" INTERFACE="$PPP_IPPARAM" DEVICE="$PPP_IFACE" PROTO=ppp /sbin/hotplug-call "iface"
 [ -z "$PPP_IPPARAM" -o -z "$PPP_LOCAL" ] || {
-	uci set "/var/state/network.$PPP_IPPARAM.ipaddr=$PPP_LOCAL"
-	uci set "/var/state/network.$PPP_IPPARAM.gateway=$PPP_REMOTE"
+	uci_set_state network "$PPP_IPPARAM" ipaddr "$PPP_LOCAL"
+	uci_set_state network "$PPP_IPPARAM" gateway "$PPP_REMOTE"
 }
 
 

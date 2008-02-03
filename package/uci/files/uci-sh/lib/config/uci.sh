@@ -18,20 +18,41 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-uci_load() {
-	config_load "$1"
+uci_set_default() {
+	local PACKAGE="$1"
+	[ -e "/etc/config/$1" ] && return 0
+	cat > "/etc/config/$1"
 }
 
-uci_apply_defaults() {(
-	cd /etc/uci-defaults || return 0
-	files="$(ls)"
-	[ -z "$files" ] && return 0
-	mkdir -p /tmp/.uci
-	for file in $files; do
-		( . "./$(basename $file)" ) && rm -f "$file"
-	done
-	uci commit
-)}
+uci_load() {
+	local cfg
+	local uci
+
+	_C=0
+	export ${NO_EXPORT:+-n} CONFIG_SECTIONS=
+	export ${NO_EXPORT:+-n} CONFIG_NUM_SECTIONS=0
+	export ${NO_EXPORT:+-n} CONFIG_SECTION=
+
+	case "$PACKAGE" in
+		/*) cfg="$PACKAGE";;
+		 *) 
+		 	cfg="$UCI_ROOT/etc/config/$PACKAGE"
+			uci="$UCI_ROOT/tmp/.uci/$PACKAGE"
+			state="$UCI_ROOT/var/state/$PACKAGE"
+		;;
+	esac
+
+	# no config?
+	[ -z "$cfg" -o \! -f "$cfg" ] && return 1
+	. "$cfg"
+
+	${CONFIG_SECTION:+config_cb}
+
+	[ -z "$uci" -o \! -f "$uci" ] || . "$uci"
+	[ -z "$LOAD_STATE" -z "$state" -o \! -f "$state" ] || . "$state"
+
+	return 0
+}
 
 uci_call_awk() {
 	local CMD="$*"
@@ -69,6 +90,25 @@ uci_add_update() {
 	# FIXME: add locking?
 	echo "$UPDATE" >> "$UCIFILE"
 }
+
+uci_revert_state() {
+	local PACKAGE="$1"
+	local CONFIG="$2"
+	FILE="/var/state/$PACKAGE.$$"
+	grep -v "^config_set '$CONFIG' " "/var/state/$PAKAGE" > "$FILE"
+	mv "$FILE" "/var/state/$PACKAGE"
+}
+
+uci_set_state() {
+	local PACKAGE="$1"
+	local CONFIG="$2"
+	local OPTION="$3"
+	local VALUE="$4"
+
+	[ -z "$VALUE" ] && return 1
+	uci_set "/var/state/$PACKAGE" "$CONFIG" "$OPTION" "$VALUE"
+}
+
 
 uci_set() {
 	local PACKAGE="$1"

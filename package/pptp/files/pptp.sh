@@ -23,7 +23,7 @@ setup_interface_pptp() {
 	# make sure the network state references the correct ifname
 	scan_ppp "$config"
 	config_get ifname "$config" ifname
-	uci set "/var/state/network.$config.ifname=$ifname"
+	uci_set_state network "$config" ifname "$ifname"
 
 	config_get mtu "$cfg" mtu
 	config_get server "$cfg" server

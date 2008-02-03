@@ -140,7 +140,7 @@ setup_interface() {
 	config_get macaddr "$config" macaddr
 	grep "$iface:" /proc/net/dev > /dev/null && \
 		$DEBUG ifconfig "$iface" ${macaddr:+hw ether "$macaddr"} ${mtu:+mtu $mtu} up
-	uci set "/var/state/network.$config.ifname=$iface"
+	uci_set_state network "$config" ifname "$iface"
 
 	pidfile="/var/run/$iface.pid"
 	case "$proto" in

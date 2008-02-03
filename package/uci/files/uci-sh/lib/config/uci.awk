@@ -80,7 +80,7 @@ function uci_update_config(cfg, update,  \
 		i2 = 1
 		delete l
 		rest = line
-        	while (length(rest)) {
+		while (length(rest)) {
 			if (match(rest, /[ \t\"]+/)) {
 				if (RSTART>1) {
 					l[i2] = substr(rest,1,RSTART-1)
@@ -102,7 +102,7 @@ function uci_update_config(cfg, update,  \
 			}
 		}
 		line = lines[n]
-		
+
 		# when a command wants to set a config value for the current
 		# section and a blank line is encountered before an option with
 		# the same name, insert it here to maintain some coherency between
@@ -128,17 +128,17 @@ function uci_update_config(cfg, update,  \
 					flag=1
 					gsub("^" section ".", "", update)
 					cfg = cfg uci_cmd2option(update) "\n"
-					
+
 					update = "-" section "." update
-				} 
+				}
 				if (flag!=0) cfg = cfg "\n"
 			}
-			
+
 			remove = ""
 			section = l[3]
 			if (!length(section)) {
 				section = "cfg" scnt
-			}	
+			}
 			scnt++
 			if (update == "-" section) {
 				remove = "section"
@@ -147,7 +147,7 @@ function uci_update_config(cfg, update,  \
 				update = ""
 			} else if (update ~ "^&" section "=") {
 				gsub("^&" section "=", "", update)
-				line = uci_cmd2config(l[2],update) 
+				line = uci_cmd2config(l[2],update)
 				update = ""
 			}
 		}
@@ -163,7 +163,7 @@ function uci_update_config(cfg, update,  \
 		}
 		if (remove == "") cfg = cfg line "\n"
 	}
-	
+
 	# any new options for the last section??
 	if (section != "") {
 		if (update ~ "^" section "\\.") {
@@ -171,7 +171,7 @@ function uci_update_config(cfg, update,  \
 			cfg = cfg uci_cmd2option(update) "\n"
 
 			update = "-" section "." update
-		} 
+		}
 	}
 
 	if (update ~ "^@") {

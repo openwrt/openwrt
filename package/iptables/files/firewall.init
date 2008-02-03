@@ -6,7 +6,6 @@ START=45
 start() {
 	include /lib/network
 	scan_interfaces
-	config_load /var/state/network
 	
 	config_get WAN wan ifname
 	config_get WANDEV wan device
