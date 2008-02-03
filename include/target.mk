@@ -12,7 +12,7 @@ __target_inc=1
 DEVICE_TYPE?=router
 
 # Default packages - the really basic set
-DEFAULT_PACKAGES:=base-files libgcc uclibc busybox dropbear mtd
+DEFAULT_PACKAGES:=base-files libgcc uclibc busybox dropbear mtd uci
 # For router targets
 DEFAULT_PACKAGES.router:=dnsmasq iptables ppp ppp-mod-pppoe iptables kmod-ipt-nathelper bridge
 
