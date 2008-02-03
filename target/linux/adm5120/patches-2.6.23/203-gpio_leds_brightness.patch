@@ -1,8 +1,8 @@
-Index: linux-2.6.23/drivers/leds/leds-gpio.c
+Index: linux-2.6.23.14/drivers/leds/leds-gpio.c
 ===================================================================
---- linux-2.6.23.orig/drivers/leds/leds-gpio.c
-+++ linux-2.6.23/drivers/leds/leds-gpio.c
-@@ -41,13 +41,17 @@
+--- linux-2.6.23.14.orig/drivers/leds/leds-gpio.c
++++ linux-2.6.23.14/drivers/leds/leds-gpio.c
+@@ -41,13 +41,17 @@ static void gpio_led_set(struct led_clas
  		container_of(led_cdev, struct gpio_led_data, cdev);
  	int level;
  
