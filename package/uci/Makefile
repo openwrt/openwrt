@@ -24,7 +24,6 @@ DEBUG=
 define Package/libuci
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=+libuci
   TITLE:=C library for the Unified Configuration Interface (UCI)
 endef
 
