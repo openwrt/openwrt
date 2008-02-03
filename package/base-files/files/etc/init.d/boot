@@ -36,6 +36,8 @@ start() {
 	mkdir -p /var/log
 	mkdir -p /var/lock
 	mkdir -p /var/state
+	mkdir -p /tmp/.uci
+	chown 0700 /tmp/.uci
 	touch /var/log/wtmp
 	touch /var/log/lastlog
 	ln -sf /tmp/resolv.conf.auto /tmp/resolv.conf

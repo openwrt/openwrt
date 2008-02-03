@@ -231,7 +231,6 @@ dhcp_option_add() {
 start() {
 	include /lib/network
 	scan_interfaces
-	config_load /var/state/network
 	config_load dhcp
 
 	args=""

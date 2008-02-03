@@ -10,6 +10,7 @@ N="
 
 _C=0
 NO_EXPORT=1
+LOAD_STATE=1
 
 hotplug_dev() {
 	env -i ACTION=$1 INTERFACE=$2 /sbin/hotplug-call net
@@ -23,11 +24,20 @@ append() {
 	eval "export ${NO_EXPORT:+-n} -- \"$var=\${$var:+\${$var}\${value:+\$sep}}\$value\""
 }
 
+config_load() {
+	[ -n "$IPKG_INSTROOT" ] && return 0
+	uci_load "$@"
+}
+
 reset_cb() {
 	config_cb() { return 0; }
 	option_cb() { return 0; }
 }
 reset_cb
+
+package() {
+	return 0
+}
 
 config () {
 	local cfgtype="$1"
@@ -82,37 +92,6 @@ config_clear() {
 		sed -e 's/\(.*\)=.*$/\1/'` ; do 
 		unset $oldvar 
 	done
-}
-
-config_load() {
-	local cfg
-	local uci
-	local PACKAGE="$1"
-
-	case "$PACKAGE" in
-		/*)	cfg="$PACKAGE"
-			uci=""
-		;;
-		*)	cfg="$UCI_ROOT/etc/config/$PACKAGE"
-			uci="/tmp/.uci/${PACKAGE}"
-		;;
-	esac
-
-	[ -e "$cfg" ] || cfg=""
-	[ -e "$uci" ] || uci=""
-
-	# no config
-	[ -z "$cfg" -a -z "$uci" ] && return 1
-
-	_C=0
-	export ${NO_EXPORT:+-n} CONFIG_SECTIONS=
-	export ${NO_EXPORT:+-n} CONFIG_NUM_SECTIONS=0
-	export ${NO_EXPORT:+-n} CONFIG_SECTION=
-
-	${cfg:+. "$cfg"}
-	${uci:+. "$uci"}
-	
-	${CONFIG_SECTION:+config_cb}
 }
 
 config_get() {
@@ -218,8 +197,15 @@ jffs2_mark_erase() {
 	echo -e "\xde\xad\xc0\xde" | mtd -qq write - "$1"
 }
 
-uci_set_default() {
-	local PACKAGE="$1"
-	[ -e "/etc/config/$1" ] && return 0
-	cat > "/etc/config/$1"
-}
+uci_apply_defaults() {(
+	cd /etc/uci-defaults || return 0
+	files="$(ls)"
+	[ -z "$files" ] && return 0
+	mkdir -p /tmp/.uci
+	for file in $files; do
+		( . "./$(basename $file)" ) && rm -f "$file"
+	done
+	uci commit
+)}
+
+[ -z "$IPKG_INSTROOT" ] && . /lib/config/uci.sh
