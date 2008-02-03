@@ -29,8 +29,8 @@ include $(INCLUDE_DIR)/kernel-defaults.mk
 define Build/Prepare/cris
 	mkdir -p $(BUILD_DIR_TOOLCHAIN)
 	bzcat $(DL_DIR)/$(PKG_SOURCE) | $(HOST_TAR) -C $(BUILD_DIR_TOOLCHAIN) $(TAR_OPTIONS)
-	$(PATCH) $(PKG_BUILD_DIR) $(TOPDIR)/target/linux/etrax-2.6/patches/generic_2.6
-	$(PATCH) $(PKG_BUILD_DIR) $(TOPDIR)/target/linux/etrax-2.6/patches/cris
+	$(PATCH) $(PKG_BUILD_DIR) $(TOPDIR)/target/linux/etrax/patches/generic_2.6
+	$(PATCH) $(PKG_BUILD_DIR) $(TOPDIR)/target/linux/etrax/patches/cris
 	ln -sf arch-v10 $(PKG_BUILD_DIR)/include/asm-cris/arch
 	ln -sf arch-v10 $(PKG_BUILD_DIR)/arch/cris/arch
 endef
