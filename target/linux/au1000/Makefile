@@ -11,7 +11,7 @@ BOARD:=au1000
 BOARDNAME:=AMD Alchemy AU1x00
 FEATURES:=jffs2 usb pci
 
-LINUX_VERSION:=2.6.23.1
+LINUX_VERSION:=2.6.24
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += yamonenv
