@@ -1293,7 +1293,22 @@ static struct net_device_stats *ar2313_get_stats(struct net_device *dev)
 
 static void ar2313_adjust_link(struct net_device *dev)
 {
-	printk(KERN_ERR " ar2313_adjust_link implementation missing\n");
+	struct ar2313_private *sp = dev->priv;
+	unsigned int mc;
+
+	if (!sp->phy_dev->link)
+		return;
+
+	if (sp->phy_dev->duplex != sp->oldduplex) {
+		mc = readl(&sp->eth_regs->mac_control);
+		mc &= ~(MAC_CONTROL_F | MAC_CONTROL_DRO);
+		if (sp->phy_dev->duplex)
+			mc |= MAC_CONTROL_F;
+		else
+			mc |= MAC_CONTROL_DRO;
+		writel(mc, &sp->eth_regs->mac_control);
+		sp->oldduplex = sp->phy_dev->duplex;
+	}
 }
 
 #define MII_ADDR(phy, reg) \
@@ -1331,7 +1346,7 @@ static int mdiobus_reset(struct mii_bus *bus)
 	struct net_device *const dev = bus->priv;
 
 	ar2313_reset_reg(dev);
-	
+
 	return 0;
 }
 
@@ -1347,19 +1362,19 @@ static int mdiobus_probe (struct net_device *dev)
 			phydev = sp->mii_bus.phy_map[phy_addr];
 			break; /* break out with first one found */
 		}
-	
+
 	if (!phydev) {
 		printk (KERN_ERR "ar2313:%s: no PHY found\n", dev->name);
 		return -1;
 	}
-	
+
 	/* now we are supposed to have a proper phydev, to attach to... */
 	BUG_ON(!phydev);
 	BUG_ON(phydev->attached_dev);
-	
+
 	phydev = phy_connect(dev, phydev->dev.bus_id, &ar2313_adjust_link, 0,
 		PHY_INTERFACE_MODE_MII);
-	
+
 	if (IS_ERR(phydev)) {
 		printk(KERN_ERR "%s: Could not attach to PHY\n", dev->name);
 		return PTR_ERR(phydev);
@@ -1374,18 +1389,16 @@ static int mdiobus_probe (struct net_device *dev)
 		/* | SUPPORTED_Pause | SUPPORTED_Asym_Pause */
 		| SUPPORTED_MII
 		| SUPPORTED_TP);
-	
+
 	phydev->advertising = phydev->supported;
-	
-	//sp->old_link = 0;
-	//sp->old_speed = 0;
-	//sp->old_duplex = -1;
+
+	sp->oldduplex = -1;
 	sp->phy_dev = phydev;
-	
+
 	printk(KERN_INFO "%s: attached PHY driver [%s] "
 		"(mii_bus:phy_addr=%s)\n",
 		dev->name, phydev->drv->name, phydev->dev.bus_id);
-	
+
 	return 0;
 }
 
