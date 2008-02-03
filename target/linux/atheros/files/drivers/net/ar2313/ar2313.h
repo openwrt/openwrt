@@ -164,6 +164,7 @@ struct ar2313_private {
 
 	struct phy_device *phy_dev;
 	struct mii_bus mii_bus;
+	int oldduplex;
 };
 
 
