@@ -1,0 +1,38 @@
+diff -Nur linux-2.6.24/arch/powerpc/boot/dts/taishan.dts linux-2.6.24-owrt/arch/powerpc/boot/dts/taishan.dts
+--- linux-2.6.24/arch/powerpc/boot/dts/taishan.dts	2008-01-31 18:55:57.000000000 +0100
++++ linux-2.6.24-owrt/arch/powerpc/boot/dts/taishan.dts	2008-02-02 23:04:12.000000000 +0100
+@@ -175,6 +175,34 @@
+ 				interrupt-parent = <&UIC1>;
+ 
+ 				/* TODO: Add other EBC devices */
++				nor_flash@0,0 {
++					compatible = "cfi-flash";
++					bank-width = <4>;
++					device-width = <2>;
++					reg = <0 000000 4000000>;
++					#address-cells = <1>;
++					#size-cells = <1>;
++					partition@0 {
++						label = "kernel";
++						reg = <0 200000>;
++					};
++					partition@200000 {
++						label = "rootfs";
++						reg = <200000 3c00000>;
++					};
++					partition@3e00000 {
++						label = "diagnostics";
++						reg = <3e00000 140000>;
++					};
++					partition@3f40000 {
++						label = "env";
++						reg = <3f40000 80000>;
++					};
++					partition@3fc0000 {
++						label = "u-boot";
++						reg = <3fc0000 40000>;
++					};
++				};
+ 			};
+ 
+ 
