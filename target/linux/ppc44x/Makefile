@@ -9,12 +9,14 @@ include $(TOPDIR)/rules.mk
 ARCH:=powerpc
 BOARD:=ppc44x
 BOARDNAME:=AMCC Taishan
-FEATURES:=jffs2
+FEATURES:=squashfs
 
-LINUX_VERSION:=2.6.23.14
-LINUX_KARCH:=ppc
+LINUX_VERSION:=2.6.24
+LINUX_KARCH:=powerpc
 
 include $(INCLUDE_DIR)/target.mk
+
+KERNELNAME:="zImage"
 
 define Target/Description
 	Build firmware images for the AMCC Taishan evaluation board

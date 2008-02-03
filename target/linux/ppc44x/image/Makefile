@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/image.mk
 JFFS2_BLOCKSIZE=256k
 
 define Image/Prepare
-	cp $(LINUX_DIR)/arch/ppc/boot/images/uImage $(KDIR)/uImage
+	cp $(LINUX_DIR)/arch/powerpc/boot/cuImage.taishan $(KDIR)/uImage
 endef
 
 define Image/BuildKernel
@@ -23,7 +23,7 @@ endef
 
 define Image/Build/jffs2-256k
 	( \
-		dd if=$(LINUX_DIR)/arch/ppc/boot/images/uImage bs=4096k conv=sync; \
+		dd if=$(KDIR)/uImage bs=2048k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=256k conv=sync; \
 	) > $(BIN_DIR)/openwrt-$(BOARD)-jffs2.img
 endef
@@ -31,7 +31,7 @@ endef
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	( \
-		dd if=$(LINUX_DIR)/arch/ppc/boot/images/uImage bs=4096k conv=sync; \
+		dd if=$(KDIR)/uImage bs=2048k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=256k conv=sync; \
 	) > $(BIN_DIR)/openwrt-$(BOARD)-$(1).img
 endef
