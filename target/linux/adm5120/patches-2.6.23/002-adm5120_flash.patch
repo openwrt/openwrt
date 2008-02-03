@@ -1,7 +1,7 @@
-Index: linux-2.6.23/drivers/mtd/maps/Kconfig
+Index: linux-2.6.23.14/drivers/mtd/maps/Kconfig
 ===================================================================
---- linux-2.6.23.orig/drivers/mtd/maps/Kconfig
-+++ linux-2.6.23/drivers/mtd/maps/Kconfig
+--- linux-2.6.23.14.orig/drivers/mtd/maps/Kconfig
++++ linux-2.6.23.14/drivers/mtd/maps/Kconfig
 @@ -614,5 +614,9 @@ config MTD_PLATRAM
  
  	  This selection automatically selects the map_ram driver.
@@ -12,10 +12,10 @@ Index: linux-2.6.23/drivers/mtd/maps/Kconfig
 +
  endmenu
  
-Index: linux-2.6.23/drivers/mtd/maps/Makefile
+Index: linux-2.6.23.14/drivers/mtd/maps/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/mtd/maps/Makefile
-+++ linux-2.6.23/drivers/mtd/maps/Makefile
+--- linux-2.6.23.14.orig/drivers/mtd/maps/Makefile
++++ linux-2.6.23.14/drivers/mtd/maps/Makefile
 @@ -47,6 +47,7 @@ obj-$(CONFIG_MTD_OCELOT)	+= ocelot.o
  obj-$(CONFIG_MTD_SOLUTIONENGINE)+= solutionengine.o
  obj-$(CONFIG_MTD_PCI)		+= pci.o

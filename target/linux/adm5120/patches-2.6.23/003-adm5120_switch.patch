@@ -1,7 +1,7 @@
-Index: linux-2.6.23/drivers/net/Kconfig
+Index: linux-2.6.23.14/drivers/net/Kconfig
 ===================================================================
---- linux-2.6.23.orig/drivers/net/Kconfig
-+++ linux-2.6.23/drivers/net/Kconfig
+--- linux-2.6.23.14.orig/drivers/net/Kconfig
++++ linux-2.6.23.14/drivers/net/Kconfig
 @@ -589,6 +589,10 @@ config MIPS_AU1X00_ENET
  	  If you have an Alchemy Semi AU1X00 based system
  	  say Y.  Otherwise, say N.
@@ -13,10 +13,10 @@ Index: linux-2.6.23/drivers/net/Kconfig
  config NET_SB1250_MAC
  	tristate "SB1250 Ethernet support"
  	depends on SIBYTE_SB1xxx_SOC
-Index: linux-2.6.23/drivers/net/Makefile
+Index: linux-2.6.23.14/drivers/net/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/net/Makefile
-+++ linux-2.6.23/drivers/net/Makefile
+--- linux-2.6.23.14.orig/drivers/net/Makefile
++++ linux-2.6.23.14/drivers/net/Makefile
 @@ -174,6 +174,7 @@ obj-$(CONFIG_SC92031) += sc92031.o
  # This is also a 82596 and should probably be merged
  obj-$(CONFIG_LP486E) += lp486e.o

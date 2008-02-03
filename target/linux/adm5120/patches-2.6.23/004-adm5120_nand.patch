@@ -1,7 +1,7 @@
-Index: linux-2.6.23/drivers/mtd/nand/Kconfig
+Index: linux-2.6.23.14/drivers/mtd/nand/Kconfig
 ===================================================================
---- linux-2.6.23.orig/drivers/mtd/nand/Kconfig
-+++ linux-2.6.23/drivers/mtd/nand/Kconfig
+--- linux-2.6.23.14.orig/drivers/mtd/nand/Kconfig
++++ linux-2.6.23.14/drivers/mtd/nand/Kconfig
 @@ -81,6 +81,16 @@ config MTD_NAND_TS7250
  	help
  	  Support for NAND flash on Technologic Systems TS-7250 platform.
@@ -19,10 +19,10 @@ Index: linux-2.6.23/drivers/mtd/nand/Kconfig
  config MTD_NAND_IDS
  	tristate
  
-Index: linux-2.6.23/drivers/mtd/nand/Makefile
+Index: linux-2.6.23.14/drivers/mtd/nand/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/mtd/nand/Makefile
-+++ linux-2.6.23/drivers/mtd/nand/Makefile
+--- linux-2.6.23.14.orig/drivers/mtd/nand/Makefile
++++ linux-2.6.23.14/drivers/mtd/nand/Makefile
 @@ -10,6 +10,7 @@ obj-$(CONFIG_MTD_NAND_CAFE)		+= cafe_nan
  obj-$(CONFIG_MTD_NAND_SPIA)		+= spia.o
  obj-$(CONFIG_MTD_NAND_AMS_DELTA)	+= ams-delta.o

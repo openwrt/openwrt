@@ -1,7 +1,7 @@
-Index: linux-2.6.23/drivers/serial/amba-pl010.c
+Index: linux-2.6.23.14/drivers/serial/amba-pl010.c
 ===================================================================
---- linux-2.6.23.orig/drivers/serial/amba-pl010.c
-+++ linux-2.6.23/drivers/serial/amba-pl010.c
+--- linux-2.6.23.14.orig/drivers/serial/amba-pl010.c
++++ linux-2.6.23.14/drivers/serial/amba-pl010.c
 @@ -52,11 +52,10 @@
  
  #include <asm/io.h>
@@ -264,10 +264,10 @@ Index: linux-2.6.23/drivers/serial/amba-pl010.c
  	.cons			= AMBA_CONSOLE,
  };
  
-Index: linux-2.6.23/drivers/serial/Kconfig
+Index: linux-2.6.23.14/drivers/serial/Kconfig
 ===================================================================
---- linux-2.6.23.orig/drivers/serial/Kconfig
-+++ linux-2.6.23/drivers/serial/Kconfig
+--- linux-2.6.23.14.orig/drivers/serial/Kconfig
++++ linux-2.6.23.14/drivers/serial/Kconfig
 @@ -303,10 +303,25 @@ config SERIAL_AMBA_PL010
  	help
  	  This selects the ARM(R) AMBA(R) PrimeCell PL010 UART.  If you have

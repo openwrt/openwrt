@@ -1,7 +1,7 @@
-Index: linux-2.6.23/drivers/i2c/busses/Kconfig
+Index: linux-2.6.23.14/drivers/i2c/busses/Kconfig
 ===================================================================
---- linux-2.6.23.orig/drivers/i2c/busses/Kconfig
-+++ linux-2.6.23/drivers/i2c/busses/Kconfig
+--- linux-2.6.23.14.orig/drivers/i2c/busses/Kconfig
++++ linux-2.6.23.14/drivers/i2c/busses/Kconfig
 @@ -125,6 +125,17 @@ config I2C_GPIO
  	  This is a very simple bitbanging I2C driver utilizing the
  	  arch-neutral GPIO API to control the SCL and SDA lines.
@@ -20,10 +20,10 @@ Index: linux-2.6.23/drivers/i2c/busses/Kconfig
  config I2C_HYDRA
  	tristate "CHRP Apple Hydra Mac I/O I2C interface"
  	depends on PCI && PPC_CHRP && EXPERIMENTAL
-Index: linux-2.6.23/drivers/i2c/busses/Makefile
+Index: linux-2.6.23.14/drivers/i2c/busses/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/i2c/busses/Makefile
-+++ linux-2.6.23/drivers/i2c/busses/Makefile
+--- linux-2.6.23.14.orig/drivers/i2c/busses/Makefile
++++ linux-2.6.23.14/drivers/i2c/busses/Makefile
 @@ -13,6 +13,7 @@ obj-$(CONFIG_I2C_AU1550)	+= i2c-au1550.o
  obj-$(CONFIG_I2C_BLACKFIN_TWI)	+= i2c-bfin-twi.o
  obj-$(CONFIG_I2C_ELEKTOR)	+= i2c-elektor.o

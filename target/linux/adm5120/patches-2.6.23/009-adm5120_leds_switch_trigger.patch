@@ -1,10 +1,10 @@
-Index: linux-2.6.23/drivers/leds/Kconfig
+Index: linux-2.6.23.14/drivers/leds/Kconfig
 ===================================================================
---- linux-2.6.23.orig/drivers/leds/Kconfig
-+++ linux-2.6.23/drivers/leds/Kconfig
-@@ -152,4 +152,12 @@ config LEDS_TRIGGER_MORSE
- 	tristate "LED Morse Trigger"
- 	depends on LEDS_TRIGGERS
+--- linux-2.6.23.14.orig/drivers/leds/Kconfig
++++ linux-2.6.23.14/drivers/leds/Kconfig
+@@ -165,4 +165,12 @@ config LEDS_TRIGGER_DEFAULT_ON
+ 	  This allows LEDs to be initialised in the ON state.
+ 	  If unsure, say Y.
  
 +config LEDS_TRIGGER_ADM5120_SWITCH
 +	tristate "LED ADM5120 Switch Port Status Trigger"
@@ -15,12 +15,12 @@ Index: linux-2.6.23/drivers/leds/Kconfig
 +	  If unsure, say N.
 +
  endif # NEW_LEDS
-Index: linux-2.6.23/drivers/leds/Makefile
+Index: linux-2.6.23.14/drivers/leds/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/leds/Makefile
-+++ linux-2.6.23/drivers/leds/Makefile
-@@ -24,3 +24,4 @@ obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledt
- obj-$(CONFIG_LEDS_TRIGGER_IDE_DISK)	+= ledtrig-ide-disk.o
+--- linux-2.6.23.14.orig/drivers/leds/Makefile
++++ linux-2.6.23.14/drivers/leds/Makefile
+@@ -26,3 +26,4 @@ obj-$(CONFIG_LEDS_TRIGGER_IDE_DISK)	+= l
  obj-$(CONFIG_LEDS_TRIGGER_HEARTBEAT)	+= ledtrig-heartbeat.o
  obj-$(CONFIG_LEDS_TRIGGER_MORSE)	+= ledtrig-morse.o
+ obj-$(CONFIG_LEDS_TRIGGER_DEFAULT_ON)	+= ledtrig-default-on.o
 +obj-$(CONFIG_LEDS_TRIGGER_ADM5120_SWITCH) += ledtrig-adm5120-switch.o

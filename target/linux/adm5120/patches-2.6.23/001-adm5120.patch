@@ -1,7 +1,7 @@
-Index: linux-2.6.23/arch/mips/Kconfig
+Index: linux-2.6.23.14/arch/mips/Kconfig
 ===================================================================
---- linux-2.6.23.orig/arch/mips/Kconfig
-+++ linux-2.6.23/arch/mips/Kconfig
+--- linux-2.6.23.14.orig/arch/mips/Kconfig
++++ linux-2.6.23.14/arch/mips/Kconfig
 @@ -15,6 +15,18 @@ choice
  	prompt "System type"
  	default SGI_IP22
@@ -29,10 +29,10 @@ Index: linux-2.6.23/arch/mips/Kconfig
  source "arch/mips/au1000/Kconfig"
  source "arch/mips/jazz/Kconfig"
  source "arch/mips/pmc-sierra/Kconfig"
-Index: linux-2.6.23/arch/mips/Makefile
+Index: linux-2.6.23.14/arch/mips/Makefile
 ===================================================================
---- linux-2.6.23.orig/arch/mips/Makefile
-+++ linux-2.6.23/arch/mips/Makefile
+--- linux-2.6.23.14.orig/arch/mips/Makefile
++++ linux-2.6.23.14/arch/mips/Makefile
 @@ -168,6 +168,16 @@ cflags-$(CONFIG_MACH_JAZZ)	+= -Iinclude/
  load-$(CONFIG_MACH_JAZZ)	+= 0xffffffff80080000
  
@@ -50,10 +50,10 @@ Index: linux-2.6.23/arch/mips/Makefile
  # Common Alchemy Au1x00 stuff
  #
  core-$(CONFIG_SOC_AU1X00)	+= arch/mips/au1000/common/
-Index: linux-2.6.23/include/asm-mips/bootinfo.h
+Index: linux-2.6.23.14/include/asm-mips/bootinfo.h
 ===================================================================
---- linux-2.6.23.orig/include/asm-mips/bootinfo.h
-+++ linux-2.6.23/include/asm-mips/bootinfo.h
+--- linux-2.6.23.14.orig/include/asm-mips/bootinfo.h
++++ linux-2.6.23.14/include/asm-mips/bootinfo.h
 @@ -208,6 +208,58 @@
  #define MACH_GROUP_WINDRIVER   28	/* Windriver boards */
  #define MACH_WRPPMC             1
