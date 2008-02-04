@@ -9,12 +9,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uci
-PKG_VERSION:=0.1
+PKG_VERSION:=0.1.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
-PKG_MD5SUM:=f6340dce09f5f1552c4e03be98e64265
+PKG_MD5SUM:=b26905c6fa0704e57944da33339f9216
+
+LIBVERSION=0.1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -49,7 +51,7 @@ define Build/Compile
 		$(TARGET_CONFIGURE_OPTS) \
 		COPTS="$(TARGET_CFLAGS)" \
 		DEBUG="$(DEBUG)" \
-		VERSION="$(PKG_VERSION)" \
+		VERSION="$(LIBVERSION)" \
 		OS="Linux"
 endef
 
