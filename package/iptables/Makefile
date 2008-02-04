@@ -40,7 +40,7 @@ $(call Package/iptables/Default)
 endef
 
 define Package/iptables/conffiles
-/etc/config/firewall
+/etc/firewall.config
 /etc/firewall.user
 endef
 
@@ -237,7 +237,7 @@ endef
 
 define Package/iptables/install
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_DATA) ./files/firewall.config $(1)/etc/config/firewall
+	$(INSTALL_DATA) ./files/firewall.config $(1)/etc/
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/firewall.init $(1)/etc/init.d/firewall
 	$(INSTALL_BIN) ./files/firewall.user $(1)/etc/
