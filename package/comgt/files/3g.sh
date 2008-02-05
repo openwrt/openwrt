@@ -13,7 +13,7 @@ scan_3g() {
 
 	# try to figure out the device if it's invalid
 	[ -n "$device" -a -e "$device" ] || {
-		for device in /dev/ttyUSB2 /dev/tts/2 /dev/usb/tts/0 /dev/noz0; do
+		for device in /dev/ttyUSB0 /dev/ttyUSB1 /dev/ttyUSB2 /dev/tts/2 /dev/usb/tts/0 /dev/noz0; do
 			[ -e "$device" ] && {
 				config_set "$1" device "$device"
 				break
