@@ -277,13 +277,12 @@ enable_atheros() {
 						esac
 						
 						cat > /var/run/wpa_supplicant-$ifname.conf <<EOF
-ctrl_interface=/var/run/wpa_supplicant
 network={
 	scan_ssid=1
 	ssid="$ssid"
 	key_mgmt=WPA-PSK
 	$proto
-	psk="$passphrase"
+	psk=$passphrase
 }
 EOF
 					;;
