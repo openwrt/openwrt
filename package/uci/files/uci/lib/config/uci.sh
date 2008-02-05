@@ -60,7 +60,7 @@ uci_set() {
 	local OPTION="$3"
 	local VALUE="$4"
 
-	/sbin/uci set "$PACKAGE.$CONFIG.$OPTION=$TYPE"
+	/sbin/uci set "$PACKAGE.$CONFIG.$OPTION=$VALUE"
 }
 
 uci_add() {
