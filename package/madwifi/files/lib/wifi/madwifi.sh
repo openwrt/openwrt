@@ -212,6 +212,9 @@ enable_atheros() {
 		config_get_bool turbo "$vif" turbo
 		[ -n "$turbo" ] && iwpriv "$ifname" turbo "$turbo"
 
+		config_get_bool doth "$vif" doth 0
+		[ -n "$doth" ] && iwpriv "$ifname" doth "$doth"
+
 		config_get maclist "$vif" maclist
 		[ -n "$maclist" ] && {
 			# flush MAC list
