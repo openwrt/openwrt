@@ -208,4 +208,4 @@ uci_apply_defaults() {(
 	uci commit
 )}
 
-[ -z "$IPKG_INSTROOT" ] && . /lib/config/uci.sh
+[ -z "$IPKG_INSTROOT" -a -f /lib/config/uci.sh ] && . /lib/config/uci.sh
