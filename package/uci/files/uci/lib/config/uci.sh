@@ -41,7 +41,7 @@ uci_revert_state() {
 	local CONFIG="$2"
 	local OPTION="$3"
 
-	/bin/uci -P /var/state revert "$PACKAGE${CONFIG:+.$CONFIG}${OPTION:+.$OPTION}"
+	/sbin/uci -P /var/state revert "$PACKAGE${CONFIG:+.$CONFIG}${OPTION:+.$OPTION}"
 }
 
 uci_set_state() {
