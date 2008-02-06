@@ -216,7 +216,7 @@ define KernelPackage/crypto-test
   SUBMENU:=$(CRYPTO_MENU)
   TITLE:=Test CryptoAPI module
   DEPENDS:=+kmod-crypto-core
-  KCONFIG:=CONFIG_CRYPTO_NULL
+  KCONFIG:=CONFIG_CRYPTO_TEST
   FILES:=$(LINUX_DIR)/crypto/tcrypt.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,tcrypt)
 endef
