@@ -230,19 +230,21 @@ endef
 $(eval $(call KernelPackage,mmc))
 
 
+# XXX: added a workaround for watchdog path changes
+ifeq ($(KERNEL),2.4)
+  WATCHDOG_DIR=char
+endif
+ifeq ($(KERNEL_PATCHVER),2.6.24)
+  WATCHDOG_DIR=watchdog
+endif
+WATCHDOG_DIR?=char/watchdog
+
 define KernelPackage/softdog
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Software watchdog driver
   KCONFIG:=CONFIG_SOFT_WATCHDOG
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/softdog.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,softdog)
-endef
-
-define KernelPackage/softdog/2.4
-  FILES:=$(LINUX_DIR)/drivers/char/softdog.o
-endef
-
-define KernelPackage/softdog/2.6
-  FILES:=$(LINUX_DIR)/drivers/char/watchdog/softdog.ko
 endef
 
 define KernelPackage/softdog/description
