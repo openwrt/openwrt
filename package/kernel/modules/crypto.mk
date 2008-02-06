@@ -8,6 +8,16 @@
 
 CRYPTO_MENU:=Cryptographic API modules
 
+# XXX: added CRYPTO_GENERIC as a workaround for modules renamed in 2.6.24:
+#  - aes > aes_generic
+#  - des > des_generic
+#  - sha1 > sha1_generic
+#  - sha256 > sha256_generic
+ifeq ($(KERNEL_PATCHVER),2.6.24)
+  CRYPTO_GENERIC:=_generic
+endif
+
+
 # XXX: added CONFIG_CRYPTO_HMAC to KCONFIG so that CONFIG_CRYPTO_HASH is 
 # always set, even if no hash modules are selected
 define KernelPackage/crypto-core
@@ -57,8 +67,8 @@ define KernelPackage/crypto-aes
   KCONFIG:= \
 	CONFIG_CRYPTO_AES \
 	CONFIG_CRYPTO_AES_586
-  FILES:=$(LINUX_DIR)/crypto/aes.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,09,aes)
+  FILES:=$(LINUX_DIR)/crypto/aes$(CRYPTO_GENERIC).$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,09,aes$(CRYPTO_GENERIC))
 endef
 
 define KernelPackage/crypto-aes/x86-2.6
@@ -87,8 +97,8 @@ define KernelPackage/crypto-des
   TITLE:=DES/3DES cipher CryptoAPI module
   DEPENDS:=+kmod-crypto-core
   KCONFIG:=CONFIG_CRYPTO_DES
-  FILES:=$(LINUX_DIR)/crypto/des.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,09,des)
+  FILES:=$(LINUX_DIR)/crypto/des$(CRYPTO_GENERIC).$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,09,des$(CRYPTO_GENERIC))
 endef
 
 $(eval $(call KernelPackage,crypto-des))
@@ -135,8 +145,8 @@ define KernelPackage/crypto-sha1
   TITLE:=SHA1 digest CryptoAPI module
   DEPENDS:=+kmod-crypto-core
   KCONFIG:=CONFIG_CRYPTO_SHA1
-  FILES:=$(LINUX_DIR)/crypto/sha1.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,09,sha1)
+  FILES:=$(LINUX_DIR)/crypto/sha1$(CRYPTO_GENERIC).$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,09,sha1$(CRYPTO_GENERIC))
 endef
 
 $(eval $(call KernelPackage,crypto-sha1))
@@ -172,7 +182,7 @@ define KernelPackage/crypto-misc
 	$(LINUX_DIR)/crypto/khazad.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/md4.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/serpent.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/sha256.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/crypto/sha256$(CRYPTO_GENERIC).$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/sha512.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/tea.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/twofish.$(LINUX_KMOD_SUFFIX) \
