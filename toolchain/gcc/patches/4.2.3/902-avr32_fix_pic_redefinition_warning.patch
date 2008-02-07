@@ -1,0 +1,16 @@
+Index: gcc/gcc/config/avr32/linux-elf.h
+===================================================================
+--- gcc/gcc/config/avr32/linux-elf.h	(revision 31583)
++++ gcc/gcc/config/avr32/linux-elf.h	(working copy)
+@@ -122,11 +122,6 @@
+ 	builtin_define ("__AVR32_HAS_BRANCH_PRED__");		\
+       if (TARGET_FAST_FLOAT)                                    \
+         builtin_define ("__AVR32_FAST_FLOAT__");                \
+-      if (flag_pic)						\
+-	{							\
+-	  builtin_define ("__PIC__");				\
+-	  builtin_define ("__pic__");				\
+-	}							\
+     }								\
+   while (0)
+ 

@@ -1,0 +1,25 @@
+Index: gcc/gcc/config/avr32/avr32.opt
+===================================================================
+--- gcc/gcc/config/avr32/avr32.opt	(revision 31583)
++++ gcc/gcc/config/avr32/avr32.opt	(working copy)
+@@ -71,3 +71,6 @@
+ Target Report Var(avr32_imm_in_const_pool) Init(-1)
+ Put large immediates in constant pool. This is enabled by default for archs with insn-cache.
+ 
++mno-pic
++Target Report RejectNegative Mask(NO_PIC)
++Do not generate position-independent code.
+Index: gcc/gcc/config/avr32/avr32.c
+===================================================================
+--- gcc/gcc/config/avr32/avr32.c	(revision 31583)
++++ gcc/gcc/config/avr32/avr32.c	(working copy)
+@@ -230,6 +230,9 @@
+           avr32_imm_in_const_pool = 0;
+       }
+     
++    if (TARGET_NO_PIC)
++      flag_pic = 0;
++
+     avr32_add_gc_roots ();
+   }
+ 

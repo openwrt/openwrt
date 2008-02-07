@@ -27,6 +27,10 @@ choice
 		depends !LINUX_2_4
 		bool "gcc 4.2.2"
 
+	config GCC_VERSION_4_2_3
+		depends !LINUX_2_4
+		bool "gcc 4.2.3"
+
 endchoice
 
 config EXTRA_GCC_CONFIG_OPTIONS
