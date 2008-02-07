@@ -1,0 +1,12 @@
+--- gcc-4.2.1.orig/gcc/config/avr32/avr32.c	2007-10-05 07:52:51.000000000 +0200
++++ gcc-4.2.1/gcc/config/avr32/avr32.c	2007-10-05 07:54:49.000000000 +0200
+@@ -1388,7 +1388,8 @@ avr32_expand_builtin (tree exp,
+           op1 = copy_to_mode_reg (mode1, op1);
+         }
+ 
+-      op0 = gen_rtx_MEM (SImode, op0);
++      op0 = force_reg (GET_MODE (op0), op0);
++      op0 = gen_rtx_MEM (GET_MODE (op0), op0);
+       if (!(*insn_data[icode].operand[1].predicate) (op0, mode0))
+         {
+           error

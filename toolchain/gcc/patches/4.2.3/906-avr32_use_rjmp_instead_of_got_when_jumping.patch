@@ -1,0 +1,85 @@
+Index: a/gcc/config/avr32/avr32.c
+===================================================================
+--- a/gcc/config/avr32/avr32.c	(revision 32101)
++++ b/gcc/config/avr32/avr32.c	(working copy)
+@@ -695,8 +695,7 @@
+ 
+ 
+     if (!avr32_const_ok_for_constraint_p (mi_delta, 'I', "Is21")
+-        || vcall_offset
+-        || flag_pic)
++        || vcall_offset)
+       {
+         fputs ("\tpushm\tlr\n", file);
+       }
+@@ -728,47 +727,23 @@
+       }
+ 
+ 
+-    if ( (!avr32_const_ok_for_constraint_p (mi_delta, 'I', "Is21")
+-          || vcall_offset)
+-         && !flag_pic )
++    if (!avr32_const_ok_for_constraint_p (mi_delta, 'I', "Is21")
++        || vcall_offset)
+       {
+         fputs ("\tpopm\tlr\n", file);
+       }
+-
+-    if (flag_pic)
+-      {
+-        /* Load the got into lr and then load the pointer 
+-           to the function from the got and put it on the stack.
+-           We can then call the function and restore lr by issuing
+-           a doubleword load from the stack. We do not use a popm/ldm
+-           since it will be treated as a return and might need a flushing
+-           of the return-stack if available. */
+-        rtx label = gen_label_rtx ();
+-        /* Load the got. */
+-        fputs ("\tlddpc\tlr, 0f\n", file);
+-        (*targetm.asm_out.internal_label) (file, "L",
+-                                           CODE_LABEL_NUMBER (label));
+-        fputs ("\trsub\tlr, pc\n", file);
+-        /* Load the function pointer. */
+-        fputs ("\tld.w\tlr, lr[", file);
+-        assemble_name (file, XSTR (XEXP (DECL_RTL (function), 0), 0));
+-        fputs ("@got]\n", file);
+-        /* Push the function pointer on the stack.*/
+-        fputs ("\tpushm\tlr\n", file);
+-        /* Restore the old lr value and load the function pointer into
+-           pc. */
+-        fputs ("\tld.d\tlr,sp++\n", file);
+-        fprintf (file, "\t.align 2\n");
+-        fprintf (file, "0:\t.long\t.L%d - _GLOBAL_OFFSET_TABLE_\n", CODE_LABEL_NUMBER (label));
+-      }
+-    else
+-      {
+-        fprintf (file, "\tlddpc\tpc, 0f\n");
+-        fprintf (file, "\t.align 2\n");
+-        fputs ("0:\t.long\t", file);
+-        assemble_name (file, XSTR (XEXP (DECL_RTL (function), 0), 0));
+-        fputc ('\n', file);
+-      }
++    
++    /* Jump to the function. We assume that we can use an rjmp since the
++       function to jump to is local and probably not too far away from
++       the thunk. If this assumption proves to be wrong we could implement
++       this jump by calculating the offset between the jump source and destination
++       and put this in the constant pool and then perform an add to pc. 
++       This would also be legitimate PIC code. But for now we hope that an rjmp
++       will be sufficient...
++    */
++    fputs ("\trjmp\t", file);
++    assemble_name (file, XSTR (XEXP (DECL_RTL (function), 0), 0));
++    fputc ('\n', file);
+   }
+ 
+ /* Implements target hook vector_mode_supported.  */
+@@ -1742,7 +1717,7 @@
+         if (TREE_CODE (*node) != FUNCTION_DECL)
+           {
+             warning ("`%s' attribute only applies to functions",
+-                IDENTIFIER_POINTER (name));
++                     IDENTIFIER_POINTER (name));
+             *no_add_attrs = true;
+           }
+         /* FIXME: the argument if any is checked for type attributes; should it

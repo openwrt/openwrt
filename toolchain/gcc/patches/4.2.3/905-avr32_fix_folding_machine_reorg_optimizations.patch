@@ -1,0 +1,48 @@
+Index: a/gcc/config/avr32/avr32.c
+===================================================================
+--- a/gcc/config/avr32/avr32.c	(revision 31997)
++++ b/gcc/config/avr32/avr32.c	(working copy)
+@@ -6323,25 +6323,26 @@
+                 /* If used any other place than as a pointer or as the
+ 	         destination register we failed */
+                 if (!(single_set (scan)
+-                    && GET_CODE (PATTERN (scan)) == SET
+-                    && ((MEM_P (SET_DEST (PATTERN (scan)))
+-                        && REG_P (XEXP (SET_DEST (PATTERN (scan)), 0))
+-                        && REGNO (XEXP (SET_DEST (PATTERN (scan)), 0)) ==
+-                          REGNO (reg)) || (MEM_P (SET_SRC (PATTERN (scan)))
+-                              &&
+-                              REG_P (XEXP
+-                                  (SET_SRC (PATTERN (scan)),
+-                                      0))
+-                                      &&
+-                                      REGNO (XEXP
+-                                          (SET_SRC (PATTERN (scan)),
+-                                              0)) == REGNO (reg))))
+-                                              && !(GET_CODE (PATTERN (scan)) == SET
+-                                                  && REG_P (SET_DEST (PATTERN (scan)))
+-                                                  && !regno_use_in (REGNO (reg),
+-                                                      SET_SRC (PATTERN (scan)))))
++                      && GET_CODE (PATTERN (scan)) == SET
++                      && ((MEM_P (SET_DEST (PATTERN (scan)))
++                           && REG_P (XEXP (SET_DEST (PATTERN (scan)), 0))
++                           && REGNO (XEXP (SET_DEST (PATTERN (scan)), 0)) == REGNO (reg))
++                          || (MEM_P (SET_SRC (PATTERN (scan)))
++                              && REG_P (XEXP (SET_SRC (PATTERN (scan)), 0))
++                              && REGNO (XEXP
++                                        (SET_SRC (PATTERN (scan)), 0)) == REGNO (reg))))
++                    && !(GET_CODE (PATTERN (scan)) == SET
++                         && REG_P (SET_DEST (PATTERN (scan)))
++                         && !regno_use_in (REGNO (reg),
++                                           SET_SRC (PATTERN (scan)))))
+                   break;
+ 
++                /* We cannot replace the pointer in TImode insns
++                   as these has a differene addressing mode than the other
++                   memory insns. */
++                if ( GET_MODE (SET_DEST (PATTERN (scan))) == TImode )
++                  break;
++
+                 /* Check if register is dead or set in this insn */
+                 if (dead_or_set_p (scan, reg))
+                   {
