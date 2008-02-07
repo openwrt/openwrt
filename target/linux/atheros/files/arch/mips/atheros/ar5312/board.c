@@ -150,7 +150,7 @@ static struct physmap_flash_data ar5312_flash_data = {
 
 static struct resource ar5312_flash_resource = {
 	.start	= AR531X_FLASH,
-	.end	= AR531X_FLASH + 0x400000 - 1,
+	.end	= AR531X_FLASH + 0x800000 - 1,
 	.flags	= IORESOURCE_MEM,
 };
 
