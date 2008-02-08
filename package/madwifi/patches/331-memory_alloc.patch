@@ -1,0 +1,44 @@
+Index: madwifi-trunk-r3314/ath/if_ath.c
+===================================================================
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-08 04:11:11.775823441 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-08 05:46:16.761139918 +0100
+@@ -3308,17 +3308,18 @@
+ 	 * without affecting any other bridge ports. */
+ 	if (skb_cloned(skb)) {
+ 		/* Remember the original SKB so we can free up our references */
+-		struct sk_buff *skb_orig = skb;
+-		skb = skb_copy(skb, GFP_ATOMIC);
+-		if (skb == NULL) {
++		struct sk_buff *skb_new;
++		skb_new = skb_copy(skb, GFP_ATOMIC);
++		if (skb_new == NULL) {
+ 			DPRINTF(sc, ATH_DEBUG_XMIT,
+ 				"Dropping; skb_copy failure.\n");
+ 			/* No free RAM, do not requeue! */
+ 			goto hardstart_fail;
+ 		}
+-		ieee80211_skb_copy_noderef(skb_orig, skb);
+-		ieee80211_dev_kfree_skb(&skb_orig);
+-	} 
++		ieee80211_skb_copy_noderef(skb, skb_new);
++		ieee80211_dev_kfree_skb(&skb);
++		skb = skb_new;
++	}
+ 	eh = (struct ether_header *)skb->data;
+ 
+ #ifdef ATH_SUPERG_FF
+@@ -3584,11 +3585,13 @@
+ 	 */
+ 	error = ath_tx_start(dev, SKB_CB(skb)->ni, bf, skb, 0);
+ 	if (error)
+-		goto bad;
++		return error;
+ 
+ 	sc->sc_stats.ast_tx_mgmt++;
+ 	return 0;
+ bad:
++	if (skb)
++		ieee80211_dev_kfree_skb(&skb);
+ 	ath_return_txbuf(sc, &bf);
+ 	return error;
+ }
