@@ -1,4 +1,4 @@
-# 
+ 
 # Copyright (C) 2006 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -11,7 +11,7 @@ BOARD:=ar7
 BOARDNAME:=TI AR7
 FEATURES:=squashfs jffs2 atm
 
-LINUX_VERSION:=2.6.23.1
+LINUX_VERSION:=2.6.24
 
 include $(INCLUDE_DIR)/target.mk
 

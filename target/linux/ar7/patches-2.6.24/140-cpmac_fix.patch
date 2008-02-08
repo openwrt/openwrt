@@ -1,19 +1,16 @@
---- linux-2.6.24/drivers/net/Kconfig	2008-02-07 02:29:04.000000000 +0100
-+++ linux-2.6.24/drivers/net/Kconfig	2008-02-07 02:29:35.000000000 +0100
-@@ -1830,10 +1830,8 @@
- 
- config CPMAC
+--- linux-2.6.24/drivers/net/Kconfig	2008-01-25 02:20:37.000000000 +0100
++++ linux-2.6.24/drivers/net/Kconfig	2008-02-08 18:12:02.000000000 +0100
+@@ -1709,8 +1709,6 @@
  	tristate "TI AR7 CPMAC Ethernet support (EXPERIMENTAL)"
--	depends on NET_ETHERNET && EXPERIMENTAL && AR7
-+	depends on NET_ETHERNET && EXPERIMENTAL && AR7 && BROKEN
+ 	depends on NET_ETHERNET && EXPERIMENTAL && AR7
  	select PHYLIB
 -	select FIXED_PHY
 -	select FIXED_MII_100_FDX
  	help
  	  TI AR7 CPMAC Ethernet support
  
---- linux-2.6.24/drivers/net/cpmac.c	2008-01-24 23:58:37.000000000 +0100
-+++ linux-2.6.24/drivers/net/cpmac.c	2008-02-07 02:32:57.000000000 +0100
+--- linux-2.6.24/drivers/net/cpmac.c	2008-01-25 02:20:37.000000000 +0100
++++ linux-2.6.24/drivers/net/cpmac.c	2008-02-08 18:05:35.000000000 +0100
 @@ -661,9 +661,6 @@
  	int queue;
  	u32 status;
