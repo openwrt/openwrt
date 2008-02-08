@@ -20,15 +20,20 @@
  * Setting up the clock on the MIPS boards.
  */
 
+#include <linux/version.h>
 #include <asm/time.h>
 #include <asm/ar7/ar7.h>
 
-void __init ar7_time_init(void)
-{
-	mips_hpt_frequency = ar7_cpu_freq() / 2;
-}
-
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 24) /* TODO remove when 2.6.24 is stable */
 void __init plat_timer_setup(struct irqaction *irq)
 {
 	setup_irq(7, irq);
+}
+
+void __init ar7_time_init(void)
+#else
+void __init plat_time_init(void)
+#endif
+{
+	mips_hpt_frequency = ar7_cpu_freq() / 2;
 }
