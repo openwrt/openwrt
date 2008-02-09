@@ -19,15 +19,21 @@
 
 uci_load() {
 	local PACKAGE="$1"
+	local DATA
+	local RET
 
 	_C=0
 	export ${NO_EXPORT:+-n} CONFIG_SECTIONS=
 	export ${NO_EXPORT:+-n} CONFIG_NUM_SECTIONS=0
 	export ${NO_EXPORT:+-n} CONFIG_SECTION=
 
-	eval "$(/sbin/uci ${LOAD_STATE:+-P /var/state} -S -n export "$PACKAGE")"
+	DATA="$(/sbin/uci ${LOAD_STATE:+-P /var/state} -S -n export "$PACKAGE" 2>/dev/null)"
+	RET="$?"
+	[ "$RET" != 0 -o -z "$DATA" ] || eval "$DATA"
+	unset DATA
 
 	${CONFIG_SECTION:+config_cb}
+	return "$RET"
 }
 
 uci_set_default() {
