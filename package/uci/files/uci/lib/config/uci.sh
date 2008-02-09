@@ -68,7 +68,12 @@ uci_add() {
 	local TYPE="$2"
 	local CONFIG="$3"
 
-	/sbin/uci set "$PACKAGE.$CONFIG=$TYPE"
+	if [ -z "$CONFIG" ]; then
+		export ${NO_EXPORT:+-n} CONFIG_SECTION="$(/sbin/uci add "$PACKAGE" "$TYPE")"
+	else
+		/sbin/uci set "$PACKAGE.$CONFIG=$TYPE"
+		export ${NO_EXPORT:+-n} CONFIG_SECTION="$CONFIG"
+	fi
 }
 
 uci_rename() {
