@@ -2,7 +2,7 @@
  *  A low-level PATA driver to handle a Compact Flash connected on the
  *  Mikrotik's RouterBoard 153 board.
  *
- *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2007,2008 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This file was based on: drivers/ata/pata_ixp4xx_cf.c
  *	Copyright (C) 2006-07 Tower Technologies
@@ -32,7 +32,7 @@
 #include <asm/gpio.h>
 
 #define DRV_NAME	"pata-rb153-cf"
-#define DRV_VERSION	"0.3.0"
+#define DRV_VERSION	"0.4.0"
 #define DRV_DESC	"PATA driver for RouterBOARD 153 Compact Flash"
 
 #define RB153_CF_MAXPORTS	1
@@ -43,6 +43,7 @@
 #define RB153_CF_REG_DATA	0x0C00
 
 struct rb153_cf_info {
+	unsigned int	irq;
 	void __iomem	*iobase;
 	unsigned int	gpio_line;
 	int		frozen;
@@ -52,12 +53,12 @@ struct rb153_cf_info {
 
 static inline void rb153_pata_finish_io(struct ata_port *ap)
 {
-	struct ata_host *ah = ap->host;
+	struct rb153_cf_info *info = ap->host->private_data;
 
 	ata_altstatus(ap);
 	ndelay(RB153_CF_IO_DELAY);
 
-	set_irq_type(ah->irq, IRQ_TYPE_LEVEL_HIGH);
+	set_irq_type(info->irq, IRQ_TYPE_LEVEL_HIGH);
 }
 
 static void rb153_pata_exec_command(struct ata_port *ap,
@@ -70,7 +71,7 @@ static void rb153_pata_exec_command(struct ata_port *ap,
 static void rb153_pata_data_xfer(struct ata_device *adev, unsigned char *buf,
 				unsigned int buflen, int write_data)
 {
-	void __iomem *ioaddr = adev->ap->ioaddr.data_addr;
+	void __iomem *ioaddr = adev->link->ap->ioaddr.data_addr;
 
 	if (write_data) {
 		for (; buflen > 0; buflen--, buf++)
@@ -80,7 +81,7 @@ static void rb153_pata_data_xfer(struct ata_device *adev, unsigned char *buf,
 			*buf = readb(ioaddr);
 	}
 
-	rb153_pata_finish_io(adev->ap);
+	rb153_pata_finish_io(adev->link->ap);
 }
 
 static void rb153_pata_freeze(struct ata_port *ap)
@@ -103,11 +104,11 @@ static irqreturn_t rb153_pata_irq_handler(int irq, void *dev_instance)
 	struct rb153_cf_info *info = ah->private_data;
 
 	if (gpio_get_value(info->gpio_line)) {
-		set_irq_type(ah->irq, IRQ_TYPE_LEVEL_LOW);
+		set_irq_type(info->irq, IRQ_TYPE_LEVEL_LOW);
 		if (!info->frozen)
 			ata_interrupt(irq, dev_instance);
 	} else {
-		set_irq_type(ah->irq, IRQ_TYPE_LEVEL_HIGH);
+		set_irq_type(info->irq, IRQ_TYPE_LEVEL_HIGH);
 	}
 
 	return IRQ_HANDLED;
@@ -123,8 +124,6 @@ static int rb153_pata_port_start(struct ata_port *ap)
 }
 
 static struct ata_port_operations rb153_pata_port_ops = {
-	.port_disable		= ata_port_disable,
-
 	.tf_load		= ata_tf_load,
 	.tf_read		= ata_tf_read,
 
@@ -140,6 +139,7 @@ static struct ata_port_operations rb153_pata_port_ops = {
 	.freeze			= rb153_pata_freeze,
 	.thaw			= rb153_pata_thaw,
 	.error_handler		= ata_bmdma_error_handler,
+	.cable_detect		= ata_cable_40wire,
 
 	.irq_handler		= rb153_pata_irq_handler,
 	.irq_clear		= rb153_pata_irq_clear,
@@ -171,17 +171,9 @@ static struct scsi_host_template rb153_pata_sht = {
 
 /* ------------------------------------------------------------------------ */
 
-static void rb153_pata_setup_ports(struct ata_host *ah)
+static void rb153_pata_setup_port(struct ata_port *ap,
+			struct rb153_cf_info *info, unsigned long raw_cmd)
 {
-	struct rb153_cf_info *info = ah->private_data;
-	struct ata_port *ap;
-
-	ap = ah->ports[0];
-
-	ap->ops		= &rb153_pata_port_ops;
-	ap->pio_mask	= 0x1f; /* PIO4 */
-	ap->flags	= ATA_FLAG_NO_LEGACY | ATA_FLAG_MMIO;
-
 	ap->ioaddr.cmd_addr	= info->iobase + RB153_CF_REG_CMD;
 	ap->ioaddr.ctl_addr	= info->iobase + RB153_CF_REG_CTRL;
 	ap->ioaddr.altstatus_addr = info->iobase + RB153_CF_REG_CTRL;
@@ -189,6 +181,9 @@ static void rb153_pata_setup_ports(struct ata_host *ah)
 	ata_std_ports(&ap->ioaddr);
 
 	ap->ioaddr.data_addr	= info->iobase + RB153_CF_REG_DATA;
+
+	ata_port_desc(ap, "cmd 0x%lx ctl 0x%lx", raw_cmd,
+				raw_cmd + RB153_CF_REG_CTRL);
 }
 
 static __devinit int rb153_pata_driver_probe(struct platform_device *pdev)
@@ -197,6 +192,7 @@ static __devinit int rb153_pata_driver_probe(struct platform_device *pdev)
 	int gpio;
 	struct resource *res;
 	struct ata_host *ah;
+	struct ata_port *ap;
 	struct rb153_cf_info *info;
 	int ret;
 
@@ -237,6 +233,7 @@ static __devinit int rb153_pata_driver_probe(struct platform_device *pdev)
 
 	ah->private_data = info;
 	info->gpio_line = gpio;
+	info->irq = irq;
 
 	info->iobase = devm_ioremap_nocache(&pdev->dev, res->start,
 				res->end - res->start + 1);
@@ -250,7 +247,13 @@ static __devinit int rb153_pata_driver_probe(struct platform_device *pdev)
 		goto err_free_gpio;
 	}
 
-	rb153_pata_setup_ports(ah);
+	ap = ah->ports[0];
+
+	ap->ops		= &rb153_pata_port_ops;
+	ap->pio_mask	= 0x1f; /* PIO4 */
+	ap->flags	= ATA_FLAG_NO_LEGACY | ATA_FLAG_MMIO;
+
+	rb153_pata_setup_port(ap, info, res->start);
 
 	ret = ata_host_activate(ah, irq, rb153_pata_irq_handler,
 				IRQF_TRIGGER_LOW, &rb153_pata_sht);
