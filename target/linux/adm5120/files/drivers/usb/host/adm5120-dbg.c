@@ -82,7 +82,7 @@ static inline char *td_togglestring(u32 info)
  * small: 0) header + data packets 1) just header
  */
 static void __attribute__((unused))
-urb_print(struct admhcd *ahcd, struct urb *urb, char *str, int small)
+urb_print(struct admhcd *ahcd, struct urb *urb, char *str, int small, int status)
 {
 	unsigned int pipe = urb->pipe;
 
@@ -92,7 +92,7 @@ urb_print(struct admhcd *ahcd, struct urb *urb, char *str, int small)
 	}
 
 #ifndef	ADMHC_VERBOSE_DEBUG
-	if (urb->status != 0)
+	if (status != 0)
 #endif
 	admhc_dbg(ahcd, "URB-%s %p dev=%d ep=%d%s-%s flags=%x len=%d/%d "
 			"stat=%d\n",
@@ -105,7 +105,7 @@ urb_print(struct admhcd *ahcd, struct urb *urb, char *str, int small)
 			urb->transfer_flags,
 			urb->actual_length,
 			urb->transfer_buffer_length,
-			urb->status);
+			status);
 
 #ifdef	ADMHC_VERBOSE_DEBUG
 	if (!small) {
@@ -125,7 +125,7 @@ urb_print(struct admhcd *ahcd, struct urb *urb, char *str, int small)
 						urb->transfer_buffer_length: urb->actual_length;
 			for (i = 0; i < 16 && i < len; i++)
 				printk(" %02x", ((__u8 *)urb->transfer_buffer)[i]);
-			printk("%s stat:%d\n", i < len? "...": "", urb->status);
+			printk("%s stat:%d\n", i < len? "...": "", status);
 		}
 	}
 #endif /* ADMHC_VERBOSE_DEBUG */

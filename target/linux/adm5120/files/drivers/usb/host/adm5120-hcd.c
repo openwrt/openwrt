@@ -45,7 +45,7 @@
 #include "../core/hcd.h"
 #include "../core/hub.h"
 
-#define DRIVER_VERSION	"0.16.3"
+#define DRIVER_VERSION	"0.24.0"
 #define DRIVER_AUTHOR	"Gabor Juhos <juhosg at openwrt.org>"
 #define DRIVER_DESC	"ADMtek USB 1.1 Host Controller Driver"
 
@@ -83,8 +83,8 @@ static void admhc_stop(struct usb_hcd *hcd);
 /*
  * queue up an urb for anything except the root hub
  */
-static int admhc_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
-	struct urb *urb, gfp_t mem_flags)
+static int admhc_urb_enqueue(struct usb_hcd *hcd, struct urb *urb,
+		gfp_t mem_flags)
 {
 	struct admhcd	*ahcd = hcd_to_admhcd(hcd);
 	struct ed	*ed;
@@ -96,12 +96,12 @@ static int admhc_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
 
 #ifdef ADMHC_VERBOSE_DEBUG
 	spin_lock_irqsave(&ahcd->lock, flags);
-	urb_print(ahcd, urb, "ENQEUE", usb_pipein(pipe));
+	urb_print(ahcd, urb, "ENQEUE", usb_pipein(pipe), -EINPROGRESS);
 	spin_unlock_irqrestore(&ahcd->lock, flags);
 #endif
 
 	/* every endpoint has an ed, locate and maybe (re)initialize it */
-	ed = ed_get(ahcd, ep, urb->dev, pipe, urb->interval);
+	ed = ed_get(ahcd, urb->ep, urb->dev, pipe, urb->interval);
 	if (!ed)
 		return -ENOMEM;
 
@@ -161,22 +161,17 @@ static int admhc_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
 		goto fail;
 	}
 
-	/* in case of unlink-during-submit */
-	spin_lock(&urb->lock);
-	if (urb->status != -EINPROGRESS) {
-		spin_unlock(&urb->lock);
-		urb->hcpriv = urb_priv;
-		finish_urb(ahcd, urb);
-		ret = 0;
+	ret = usb_hcd_link_urb_to_ep(hcd, urb);
+	if (ret)
 		goto fail;
-	}
 
 	/* schedule the ed if needed */
 	if (ed->state == ED_IDLE) {
 		ret = ed_schedule(ahcd, ed);
-		if (ret < 0)
-			goto fail0;
-
+		if (ret < 0) {
+			usb_hcd_unlink_urb_from_ep(hcd, urb);
+			goto fail;
+		}
 		if (ed->type == PIPE_ISOCHRONOUS) {
 			u16	frame = admhc_frame_no(ahcd);
 
@@ -204,8 +199,6 @@ static int admhc_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
 	admhc_dump_ed(ahcd, "admhc_urb_enqueue", urb_priv->ed, 1);
 #endif
 
-fail0:
-	spin_unlock(&urb->lock);
 fail:
 	if (ret)
 		urb_priv_free(ahcd, urb_priv);
@@ -215,23 +208,28 @@ fail:
 }
 
 /*
- * decouple the URB from the HC queues (TDs, urb_priv); it's
- * already marked using urb->status.  reporting is always done
+ * decouple the URB from the HC queues (TDs, urb_priv);
+ * reporting is always done
  * asynchronously, and we might be dealing with an urb that's
  * partially transferred, or an ED with other urbs being unlinked.
  */
-static int admhc_urb_dequeue(struct usb_hcd *hcd, struct urb *urb)
+static int admhc_urb_dequeue(struct usb_hcd *hcd, struct urb *urb,
+		int status)
 {
 	struct admhcd *ahcd = hcd_to_admhcd(hcd);
 	unsigned long flags;
+	int ret;
 
 	spin_lock_irqsave(&ahcd->lock, flags);
 
 #ifdef ADMHC_VERBOSE_DEBUG
-	urb_print(ahcd, urb, "DEQUEUE", 1);
+	urb_print(ahcd, urb, "DEQUEUE", 1, status);
 #endif
-
-	if (HC_IS_RUNNING(hcd->state)) {
+	ret = usb_hcd_check_unlink_urb(hcd, urb, status);
+	if (ret) {
+		/* Do nothing */
+		;
+	} else if (HC_IS_RUNNING(hcd->state)) {
 		struct urb_priv *urb_priv;
 
 		/* Unless an IRQ completed the unlink while it was being
@@ -249,11 +247,11 @@ static int admhc_urb_dequeue(struct usb_hcd *hcd, struct urb *urb)
 		 * any more ... just clean up every urb's memory.
 		 */
 		if (urb->hcpriv)
-			finish_urb(ahcd, urb);
+			finish_urb(ahcd, urb, status);
 	}
 	spin_unlock_irqrestore(&ahcd->lock, flags);
 
-	return 0;
+	return ret;
 }
 
 /*-------------------------------------------------------------------------*/

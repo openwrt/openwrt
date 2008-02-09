@@ -23,7 +23,6 @@
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/io.h>
-#include <linux/version.h>
 
 #include <asm/reboot.h>
 #include <asm/time.h>
@@ -59,11 +58,6 @@ void __init plat_mem_setup(void)
 	adm5120_soc_init();
 	adm5120_mem_init();
 	adm5120_report();
-
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24))
-extern void plat_time_init(void) __init;
-	board_time_init = plat_time_init;
-#endif
 
 	_machine_restart = adm5120_restart;
 	_machine_halt = adm5120_halt;
