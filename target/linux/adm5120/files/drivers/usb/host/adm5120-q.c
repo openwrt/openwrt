@@ -23,31 +23,14 @@
  * PRECONDITION:  ahcd lock held, irqs blocked.
  */
 static void
-finish_urb(struct admhcd *ahcd, struct urb *urb)
+finish_urb(struct admhcd *ahcd, struct urb *urb, int status)
 __releases(ahcd->lock)
 __acquires(ahcd->lock)
 {
 	urb_priv_free(ahcd, urb->hcpriv);
-	urb->hcpriv = NULL;
 
-	spin_lock(&urb->lock);
-	if (likely(urb->status == -EINPROGRESS))
-		urb->status = 0;
-
-	/* report short control reads right even though the data TD always
-	 * has TD_R set.  (much simpler, but creates the 1-td limit.)
-	 */
-	if (unlikely(urb->transfer_flags & URB_SHORT_NOT_OK)
-			&& unlikely(usb_pipecontrol(urb->pipe))
-			&& urb->actual_length < urb->transfer_buffer_length
-			&& usb_pipein(urb->pipe)
-			&& urb->status == 0) {
-		urb->status = -EREMOTEIO;
-#ifdef ADMHC_VERBOSE_DEBUG
-		urb_print(ahcd, urb, "SHORT", usb_pipeout(urb->pipe));
-#endif
-	}
-	spin_unlock(&urb->lock);
+	if (likely(status == -EINPROGRESS))
+		status = 0;
 
 	switch (usb_pipetype(urb->pipe)) {
 	case PIPE_ISOCHRONOUS:
@@ -59,12 +42,13 @@ __acquires(ahcd->lock)
 	}
 
 #ifdef ADMHC_VERBOSE_DEBUG
-	urb_print(ahcd, urb, "RET", usb_pipeout (urb->pipe));
+	urb_print(ahcd, urb, "RET", usb_pipeout (urb->pipe), status);
 #endif
 
 	/* urb->complete() can reenter this HCD */
+	usb_hcd_unlink_urb_from_ep(admhcd_to_hcd(ahcd), urb);
 	spin_unlock(&ahcd->lock);
-	usb_hcd_giveback_urb(admhcd_to_hcd(ahcd), urb);
+	usb_hcd_giveback_urb(admhcd_to_hcd(ahcd), urb, status);
 	spin_lock(&ahcd->lock);
 }
 
@@ -571,9 +555,7 @@ static void td_submit_urb(struct admhcd *ahcd, struct urb *urb)
  * Done List handling functions
  *-------------------------------------------------------------------------*/
 
-/* calculate transfer length/status and update the urb
- * PRECONDITION:  irqsafe (only for urb->status locking)
- */
+/* calculate transfer length/status and update the urb */
 static int td_done(struct admhcd *ahcd, struct urb *urb, struct td *td)
 {
 	struct urb_priv *urb_priv = urb->hcpriv;
@@ -582,6 +564,7 @@ static int td_done(struct admhcd *ahcd, struct urb *urb, struct td *td)
 	u32	tdDBP;
 	int	type = usb_pipetype(urb->pipe);
 	int	cc;
+	int	status = -EINPROGRESS;
 
 	info = hc32_to_cpup(ahcd, &td->hwINFO);
 	tdDBP = hc32_to_cpup(ahcd, &td->hwDBP);
@@ -596,10 +579,9 @@ static int td_done(struct admhcd *ahcd, struct urb *urb, struct td *td)
 		/* NOTE:  assumes FC in tdINFO == 0, and that
 		 * only the first of 0..MAXPSW psws is used.
 		 */
-#if 0
-		if (tdINFO & TD_CC)	/* hc didn't touch? */
-			return;
-#endif
+		if (info & TD_CC)	/* hc didn't touch? */
+			return status;
+
 		if (usb_pipeout(urb->pipe))
 			dlen = urb->iso_frame_desc[td->index].length;
 		else {
@@ -628,12 +610,9 @@ static int td_done(struct admhcd *ahcd, struct urb *urb, struct td *td)
 				&& !(urb->transfer_flags & URB_SHORT_NOT_OK))
 			cc = TD_CC_NOERROR;
 
-		if (cc != TD_CC_NOERROR && cc < TD_CC_HCD0) {
-			spin_lock(&urb->lock);
-			if (urb->status == -EINPROGRESS)
-				urb->status = cc_to_error[cc];
-			spin_unlock(&urb->lock);
-		}
+		if (cc != TD_CC_NOERROR && cc < TD_CC_HCD0)
+			status = cc_to_error[cc];
+
 
 		/* count all non-empty packets except control SETUP packet */
 		if ((type != PIPE_CONTROL || td->index != 0) && tdDBP != 0) {
@@ -651,15 +630,16 @@ static int td_done(struct admhcd *ahcd, struct urb *urb, struct td *td)
 	list_del(&td->td_list);
 	urb_priv->td_idx++;
 
-	return cc;
+	return status;
 }
 
 /*-------------------------------------------------------------------------*/
 
-static inline struct td *
+static inline void
 ed_halted(struct admhcd *ahcd, struct td *td, int cc, struct td *rev)
 {
 	struct urb		*urb = td->urb;
+	struct urb_priv		*urb_priv = urb->hcpriv;
 	struct ed		*ed = td->ed;
 	struct list_head	*tmp = td->td_list.next;
 	__hc32			toggle = ed->hwHeadP & cpu_to_hc32(ahcd, ED_C);
@@ -672,13 +652,12 @@ ed_halted(struct admhcd *ahcd, struct td *td, int cc, struct td *rev)
 	wmb();
 	ed->hwHeadP &= ~cpu_to_hc32(ahcd, ED_H);
 
-	/* put any later tds from this urb onto the donelist, after 'td',
-	 * order won't matter here: no errors, and nothing was transferred.
-	 * also patch the ed so it looks as if those tds completed normally.
+	/* Get rid of all later tds from this urb. We don't have
+	 * to be careful: no errors and nothing was transferred.
+	 * Also patch the ed so it looks as if those tds completed normally.
 	 */
 	while (tmp != &ed->td_list) {
 		struct td	*next;
-		__hc32		info;
 
 		next = list_entry(tmp, struct td, td_list);
 		tmp = next->td_list.next;
@@ -693,16 +672,8 @@ ed_halted(struct admhcd *ahcd, struct td *td, int cc, struct td *rev)
 		 * then we need to leave the control STATUS packet queued
 		 * and clear ED_SKIP.
 		 */
-		info = next->hwINFO;
-#if 0		/* FIXME */
-		info |= cpu_to_hc32(ahcd, TD_DONE);
-#endif
-		info &= ~cpu_to_hc32(ahcd, TD_CC);
-		next->hwINFO = info;
-
-		next->next_dl_td = rev;
-		rev = next;
-
+		list_del(&next->td_list);
+		urb_priv->td_cnt++;
 		ed->hwHeadP = next->hwNextTD | toggle;
 	}
 
@@ -728,8 +699,6 @@ ed_halted(struct admhcd *ahcd, struct td *td, int cc, struct td *rev)
 			hc32_to_cpu(ahcd, td->hwINFO),
 			cc, cc_to_error [cc]);
 	}
-
-	return rev;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -796,12 +765,13 @@ rescan_this:
 			struct urb	*urb;
 			struct urb_priv	*urb_priv;
 			__hc32		savebits;
+			int		status;
 
 			td = list_entry(entry, struct td, td_list);
 			urb = td->urb;
 			urb_priv = td->urb->hcpriv;
 
-			if (urb->status == -EINPROGRESS) {
+			if (!urb->unlinked) {
 				prev = &td->hwNextTD;
 				continue;
 			}
@@ -817,12 +787,12 @@ rescan_this:
 #ifdef ADMHC_VERBOSE_DEBUG
 			urb_print(ahcd, urb, "PARTIAL", 0);
 #endif
-			td_done(ahcd, urb, td);
+			status = td_done(ahcd, urb, td);
 
 			/* if URB is done, clean up */
 			if (urb_priv->td_idx == urb_priv->td_cnt) {
 				modified = completed = 1;
-				finish_urb(ahcd, urb);
+				finish_urb(ahcd, urb, status);
 			}
 		}
 		if (completed && !list_empty(&ed->td_list))
@@ -920,13 +890,13 @@ static void ed_update(struct admhcd *ahcd, struct ed *ed)
 		struct td *td = list_entry(entry, struct td, td_list);
 		struct urb *urb = td->urb;
 		struct urb_priv *urb_priv = urb->hcpriv;
-		int cc;
+		int status;
 
 		if (hc32_to_cpup(ahcd, &td->hwINFO) & TD_OWN)
 			break;
 
 		/* update URB's length and status from TD */
-		cc = td_done(ahcd, urb, td);
+		status = td_done(ahcd, urb, td);
 		if (is_ed_halted(ahcd, ed) && is_td_halted(ahcd, ed, td))
 			ed_unhalt(ahcd, ed, urb);
 
@@ -935,7 +905,7 @@ static void ed_update(struct admhcd *ahcd, struct ed *ed)
 
 		/* If all this urb's TDs are done, call complete() */
 		if (urb_priv->td_idx == urb_priv->td_cnt)
-			finish_urb(ahcd, urb);
+			finish_urb(ahcd, urb, status);
 
 		/* clean schedule:  unlink EDs that are no longer busy */
 		if (list_empty(&ed->td_list)) {

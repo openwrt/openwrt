@@ -27,7 +27,6 @@
 #include <linux/irq.h>
 #include <linux/io.h>
 
-#include <asm/bootinfo.h>
 #include <asm/addrspace.h>
 
 #include <adm5120_info.h>
@@ -50,7 +49,6 @@ void adm5120_halt(void)
 {
 	local_irq_disable();
 
-	printk(KERN_NOTICE "\n** You can safely turn off the power\n");
 	while (1) {
 		if (cpu_wait)
 			cpu_wait();

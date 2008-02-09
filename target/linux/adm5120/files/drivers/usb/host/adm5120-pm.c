@@ -383,9 +383,8 @@ static int admhc_restart(struct admhcd *ahcd)
 					ed, ed->state);
 		}
 
-		spin_lock(&urb->lock);
-		urb->status = -ESHUTDOWN;
-		spin_unlock(&urb->lock);
+		if (!urb->unlinked)
+			urb->unlinked = -ESHUTDOWN;
 	}
 	finish_unlinks(ahcd, 0);
 	spin_unlock_irq(&ahcd->lock);
