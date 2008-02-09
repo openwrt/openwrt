@@ -9,7 +9,7 @@
 include $(TOPDIR)/rules.mk
 
 UCI_VERSION=0.2
-UCI_RELEASE=4
+UCI_RELEASE=5
 
 PKG_NAME:=uci
 PKG_VERSION:=$(UCI_VERSION)$(if $(UCI_RELEASE),.$(UCI_RELEASE))
@@ -17,7 +17,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
-PKG_MD5SUM:=fb18e6b1b8bcafbec099a1783e4764ac
+PKG_MD5SUM:=e59b33adbee8212a2fbd855f7b52bcae
 
 
 include $(INCLUDE_DIR)/package.mk
