@@ -40,6 +40,7 @@ uci_set_default() {
 	local PACKAGE="$1"
 	/sbin/uci -q show "$1" > /dev/null && return 0
 	/sbin/uci import "$1"
+	/sbin/uci commit "$1"
 }
 
 uci_revert_state() {
