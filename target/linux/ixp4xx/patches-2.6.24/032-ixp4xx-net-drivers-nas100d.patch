@@ -1,0 +1,87 @@
+Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c
+===================================================================
+--- linux-2.6.23.12-armeb.orig/arch/arm/mach-ixp4xx/nas100d-setup.c	2008-01-08 15:22:07.000000000 +1030
++++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c	2008-01-08 15:32:32.000000000 +1030
+@@ -21,6 +21,7 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/flash.h>
++#include <asm/io.h>
+ 
+ static struct flash_platform_data nas100d_flash_data = {
+ 	.map_name		= "cfi_probe",
+@@ -125,12 +126,30 @@
+ 	.resource		= nas100d_uart_resources,
+ };
+ 
++/* Built-in 10/100 Ethernet MAC interfaces */
++static struct eth_plat_info nas100d_plat_eth[] = {
++        {
++                .phy            = 0,
++                .rxq            = 3,
++		.txreadyq	= 20,
++        }
++};
++
++static struct platform_device nas100d_eth[] = {
++        {
++                .name                   = "ixp4xx_eth",
++                .id                     = IXP4XX_ETH_NPEB,
++                .dev.platform_data      = nas100d_plat_eth,
++        }
++};
++
+ static struct platform_device *nas100d_devices[] __initdata = {
+ 	&nas100d_i2c_gpio,
+ 	&nas100d_flash,
+ #ifdef CONFIG_LEDS_IXP4XX
+ 	&nas100d_leds,
+ #endif
++	&nas100d_eth[0],
+ };
+ 
+ static void nas100d_power_off(void)
+@@ -146,6 +165,9 @@
+ 
+ static void __init nas100d_init(void)
+ {
++	uint8_t __iomem *f;
++	int i;
++
+ 	ixp4xx_sys_init();
+ 
+ 	/* gpio 14 and 15 are _not_ clocks */
+@@ -165,6 +187,33 @@
+ 	(void)platform_device_register(&nas100d_uart);
+ 
+ 	platform_add_devices(nas100d_devices, ARRAY_SIZE(nas100d_devices));
++
++
++	/*
++	 * Map in a portion of the flash and read the MAC address.
++	 * Since it is stored in BE in the flash itself, we need to
++	 * byteswap it if we're in LE mode.
++	 */
++	if ((f = ioremap(IXP4XX_EXP_BUS_BASE(0), 0x1000000))) {
++#ifdef __ARMEB__
++		for (i = 0; i < 6; i++) {
++			nas100d_plat_eth[0].hwaddr[i] = readb(f + 0xFC0FD8 + i);
++		}
++#else
++		nas100d_plat_eth[0].hwaddr[0] = readb(f + 0xFC0FD8 + 3);
++		nas100d_plat_eth[0].hwaddr[1] = readb(f + 0xFC0FD8 + 2);
++		nas100d_plat_eth[0].hwaddr[2] = readb(f + 0xFC0FD8 + 1);
++		nas100d_plat_eth[0].hwaddr[3] = readb(f + 0xFC0FD8 + 0);
++		nas100d_plat_eth[0].hwaddr[4] = readb(f + 0xFC0FD8 + 7);
++		nas100d_plat_eth[0].hwaddr[5] = readb(f + 0xFC0FD8 + 6);
++#endif
++		iounmap(f);
++	}
++	printk(KERN_INFO "NAS100D: Using MAC address %.2x:%.2x:%.2x:%.2x:%.2x:%.2x for port 0\n",
++	       nas100d_plat_eth[0].hwaddr[0], nas100d_plat_eth[0].hwaddr[1],
++	       nas100d_plat_eth[0].hwaddr[2], nas100d_plat_eth[0].hwaddr[3],
++	       nas100d_plat_eth[0].hwaddr[4], nas100d_plat_eth[0].hwaddr[5]);
++
+ }
+ 
+ MACHINE_START(NAS100D, "Iomega NAS 100d")
