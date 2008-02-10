@@ -24,7 +24,7 @@ Index: linux-2.6.23.14/arch/arm/mach-ixp4xx/Kconfig
 +config DMABOUNCE_DEBUG
 +	bool "Enable DMABounce debuging"
 +	default n
-+	depends DMABOUNCE
++	depends on DMABOUNCE
 +
  config IXP4XX_INDIRECT_PCI
  	bool "Use indirect PCI memory access"
