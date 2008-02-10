@@ -1,0 +1,188 @@
+Upgrade the power and reset button handling for the NAS100D:
+ * Convert GPIO and IRQ handling to use the <asm/gpio.h> api.
+ * Perform the reset only after the power button has been held down
+   for at least two seconds.  Do the reset on the release of the power
+   button, so that NAS devices which have been set to auto-power-on (by
+   bridging the power button) do not continuously power cycle.
+ * Remove all superflous constants from nas100d.h
+ * Add LED constants to nas100d.h while we're there.
+Also, update the board LED setup code to use constants.
+
+Signed-off-by: Rod Whitby <rod@whitby.id.au>
+
+Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/nas100d-power.c
+===================================================================
+--- linux-2.6.23.12-armeb.orig/arch/arm/mach-ixp4xx/nas100d-power.c	2008-01-11 16:59:20.000000000 +1030
++++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/nas100d-power.c	2008-01-11 17:03:23.000000000 +1030
+@@ -21,15 +21,61 @@
+ #include <linux/irq.h>
+ #include <linux/module.h>
+ #include <linux/reboot.h>
++#include <linux/jiffies.h>
++#include <linux/timer.h>
+ 
++#include <asm/gpio.h>
+ #include <asm/mach-types.h>
+ 
+-static irqreturn_t nas100d_reset_handler(int irq, void *dev_id)
++extern void ctrl_alt_del(void);
++
++/* This is used to make sure the power-button pusher is serious.  The button
++ * must be held until the value of this counter reaches zero.
++ */
++static volatile int power_button_countdown;
++
++/* Must hold the button down for at least this many counts to be processed */
++#define PBUTTON_HOLDDOWN_COUNT 4 /* 2 secs */
++
++static void nas100d_power_handler(unsigned long data);
++static DEFINE_TIMER(nas100d_power_timer, nas100d_power_handler, 0, 0);
++
++static void nas100d_power_handler(unsigned long data)
+ {
+-	/* Signal init to do the ctrlaltdel action, this will bypass init if
+-	 * it hasn't started and do a kernel_restart.
++	/* This routine is called twice per second to check the
++	 * state of the power button.
+ 	 */
+-	ctrl_alt_del();
++
++	if (gpio_get_value(NAS100D_PB_GPIO)) {
++
++		/* IO Pin is 1 (button pushed) */
++		if (power_button_countdown > 0) {
++			power_button_countdown--;
++		}
++
++	} else {
++
++		/* Done on button release, to allow for auto-power-on mods. */
++		if (power_button_countdown == 0) {
++			/* Signal init to do the ctrlaltdel action, this will bypass
++			 * init if it hasn't started and do a kernel_restart.
++			 */
++			ctrl_alt_del();
++
++			/* Change the state of the power LED to "blink" */
++			gpio_line_set(NAS100D_LED_PWR_GPIO, IXP4XX_GPIO_LOW);
++		} else {
++			power_button_countdown = PBUTTON_HOLDDOWN_COUNT;
++		}
++	}
++
++	mod_timer(&nas100d_power_timer, jiffies + msecs_to_jiffies(500));
++}
++
++static irqreturn_t nas100d_reset_handler(int irq, void *dev_id)
++{
++	/* This is the paper-clip reset, it shuts the machine down directly. */
++	machine_power_off();
+ 
+ 	return IRQ_HANDLED;
+ }
+@@ -39,17 +85,30 @@
+ 	if (!(machine_is_nas100d()))
+ 		return 0;
+ 
+-	set_irq_type(NAS100D_RB_IRQ, IRQT_LOW);
++	set_irq_type(gpio_to_irq(NAS100D_RB_GPIO), IRQT_LOW);
+ 
+-	if (request_irq(NAS100D_RB_IRQ, &nas100d_reset_handler,
++	if (request_irq(gpio_to_irq(NAS100D_RB_GPIO), &nas100d_reset_handler,
+ 		IRQF_DISABLED, "NAS100D reset button", NULL) < 0) {
+ 
+ 		printk(KERN_DEBUG "Reset Button IRQ %d not available\n",
+-			NAS100D_RB_IRQ);
++			gpio_to_irq(NAS100D_RB_GPIO));
+ 
+ 		return -EIO;
+ 	}
+ 
++	/* The power button on the Iomega NAS100d is on GPIO 14, but
++	 * it cannot handle interrupts on that GPIO line.  So we'll
++	 * have to poll it with a kernel timer.
++	 */
++
++	/* Make sure that the power button GPIO is set up as an input */
++	gpio_line_config(NAS100D_PB_GPIO, IXP4XX_GPIO_IN);
++
++	/* Set the initial value for the power button IRQ handler */
++	power_button_countdown = PBUTTON_HOLDDOWN_COUNT;
++
++	mod_timer(&nas100d_power_timer, jiffies + msecs_to_jiffies(500));
++
+ 	return 0;
+ }
+ 
+@@ -58,7 +117,9 @@
+ 	if (!(machine_is_nas100d()))
+ 		return;
+ 
+-	free_irq(NAS100D_RB_IRQ, NULL);
++	del_timer_sync(&nas100d_power_timer);
++
++	free_irq(gpio_to_irq(NAS100D_RB_GPIO), NULL);
+ }
+ 
+ module_init(nas100d_power_init);
+Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/nas100d.h
+===================================================================
+--- linux-2.6.23.12-armeb.orig/include/asm-arm/arch-ixp4xx/nas100d.h	2008-01-11 16:59:20.000000000 +1030
++++ linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/nas100d.h	2008-01-11 17:03:23.000000000 +1030
+@@ -38,15 +38,15 @@
+ 
+ /* Buttons */
+ 
+-#define NAS100D_PB_GPIO         14
+-#define NAS100D_RB_GPIO         4
++#define NAS100D_PB_GPIO         14   /* power button */
++#define NAS100D_RB_GPIO         4    /* reset button */
++
++/* Power control */
++
+ #define NAS100D_PO_GPIO         12   /* power off */
+ 
+-#define NAS100D_PB_IRQ          IRQ_IXP4XX_GPIO14
+-#define NAS100D_RB_IRQ          IRQ_IXP4XX_GPIO4
++/* LEDs */
+ 
+-/*
+-#define NAS100D_PB_BM           (1L << NAS100D_PB_GPIO)
+-#define NAS100D_PO_BM           (1L << NAS100D_PO_GPIO)
+-#define NAS100D_RB_BM           (1L << NAS100D_RB_GPIO)
+-*/
++#define NAS100D_LED_WLAN_GPIO	0
++#define NAS100D_LED_DISK_GPIO	3
++#define NAS100D_LED_PWR_GPIO	15
+Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c
+===================================================================
+--- linux-2.6.23.12-armeb.orig/arch/arm/mach-ixp4xx/nas100d-setup.c	2008-01-11 17:03:23.000000000 +1030
++++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c	2008-01-11 17:06:15.000000000 +1030
+@@ -44,20 +44,20 @@
+ static struct resource nas100d_led_resources[] = {
+ 	{
+ 		.name		= "wlan",   /* green led */
+-		.start		= 0,
+-		.end		= 0,
++		.start		= NAS100D_LED_WLAN_GPIO,
++		.end		= NAS100D_LED_WLAN_GPIO,
+ 		.flags		= IXP4XX_GPIO_LOW,
+ 	},
+ 	{
+-		.name		= "ready",  /* blue power led (off is flashing!) */
+-		.start		= 15,
+-		.end		= 15,
++		.name		= "power",  /* blue power led (off is flashing!) */
++		.start		= NAS100D_LED_PWR_GPIO,
++		.end		= NAS100D_LED_PWR_GPIO,
+ 		.flags		= IXP4XX_GPIO_LOW,
+ 	},
+ 	{
+ 		.name		= "disk",   /* yellow led */
+-		.start		= 3,
+-		.end		= 3,
++		.start		= NAS100D_LED_DISK_GPIO,
++		.end		= NAS100D_LED_DISK_GPIO,
+ 		.flags		= IXP4XX_GPIO_LOW,
+ 	},
+ };
