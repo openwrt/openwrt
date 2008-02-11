@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=powerpc
 BOARD:=ps3
 BOARDNAME:=Sony PlayStation 3
-LINUX_VERSION:=2.6.23
+LINUX_VERSION:=2.6.23.16
 KERNEL_CC:=
 
 include $(INCLUDE_DIR)/target.mk
