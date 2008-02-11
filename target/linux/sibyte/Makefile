@@ -8,10 +8,10 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=mips
 BOARD:=sibyte
-BOARDNAME:=SiByte MIPS
+BOARDNAME:=Broadcom/SiByte SB-1
 FEATURES:=broken
 
-LINUX_VERSION:=2.6.21.5
+LINUX_VERSION:=2.6.24
 
 include $(INCLUDE_DIR)/target.mk
 
