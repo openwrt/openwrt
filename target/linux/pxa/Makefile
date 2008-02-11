@@ -11,7 +11,7 @@ BOARD:=pxa
 BOARDNAME:=PXA
 FEATURES:=jffs2 broken
 
-LINUX_VERSION:=2.6.21.5
+LINUX_VERSION:=2.6.21.7
 
 include $(INCLUDE_DIR)/target.mk
 
