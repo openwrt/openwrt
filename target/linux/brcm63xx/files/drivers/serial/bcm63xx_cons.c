@@ -893,7 +893,7 @@ static int bcm63xx_cons_open(struct tty_struct *tty, struct file *filp)
 
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-	info->pgrp = process_group(current);
+	info->pgrp = task_pgrp(current);
 #else
 	info->session = current->session;
 	info->pgrp = current->pgrp;

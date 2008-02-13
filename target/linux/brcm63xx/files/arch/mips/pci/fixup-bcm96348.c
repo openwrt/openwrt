@@ -36,7 +36,7 @@ static char irq_tab_bcm96348[] __initdata = {
 #endif
 };
 
-int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
     return irq_tab_bcm96348[slot];
 }

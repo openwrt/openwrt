@@ -77,6 +77,7 @@ static inline unsigned long __init cal_r4koff(void)
  * handler floating around.  This one is rather different, but the algorithm
  * is provably more robust.
  */
+#if 0
 irqreturn_t brcm_timer_interrupt(struct pt_regs *regs)
 {
 	int irq = MIPS_TIMER_INT;
@@ -88,9 +89,9 @@ irqreturn_t brcm_timer_interrupt(struct pt_regs *regs)
 	irq_exit();
 	return IRQ_HANDLED;
 }
+#endif
 
-
-void __init brcm_time_init(void)
+void __init plat_time_init(void)
 {
 	unsigned int est_freq, flags;
 	local_irq_save(flags);
@@ -107,10 +108,11 @@ void __init brcm_time_init(void)
 	local_irq_restore(flags);
 }
 
-
+#if 0
 void __init plat_timer_setup(struct irqaction *irq)
 {
 	r4k_cur = (read_c0_count() + r4k_offset);
 	write_c0_compare(r4k_cur);
 	set_c0_status(IE_IRQ5);
 }
+#endif

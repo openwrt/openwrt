@@ -465,7 +465,7 @@ void __init plat_mem_setup(void)
 	_machine_halt = brcm_machine_halt;
 	pm_power_off = brcm_machine_halt;
 
-	board_time_init = brcm_time_init;
+	//board_time_init = brcm_time_init;
 
     	/* mpi initialization */
     	mpi_init();

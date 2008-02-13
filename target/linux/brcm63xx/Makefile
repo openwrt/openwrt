@@ -10,7 +10,7 @@ ARCH:=mips
 BOARD:=brcm63xx
 BOARDNAME:=Broadcom BCM963xx
 FEATURES:=squashfs jffs2 broken usb atm
-LINUX_VERSION:=2.6.22.18
+LINUX_VERSION:=2.6.24.2
 
 include $(INCLUDE_DIR)/target.mk
 

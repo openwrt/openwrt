@@ -56,15 +56,9 @@ void __init prom_init(void)
 	/* Detect the bootloader */
 	detect_bootloader();
 
-	/* Do further initialisations depending on the bootloader */
-	if (boot_loader_type == BOOT_LOADER_CFE || boot_loader_type == BOOT_LOADER_CFE2) {
-		cfe_setup(fw_arg0, fw_arg1, fw_arg2, fw_arg3);
-	}
 	/* Register 16MB RAM minus the ADSL SDRAM by default */
 	add_memory_region(0, (0x01000000 - ADSL_SDRAM_IMAGE_SIZE), BOOT_MEM_RAM);
 
-	mips_machgroup = MACH_GROUP_BRCM;
-	mips_machtype = MACH_BCM;
 }
 
 void __init prom_free_prom_memory(void)
