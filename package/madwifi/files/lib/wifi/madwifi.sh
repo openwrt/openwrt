@@ -266,26 +266,34 @@ enable_atheros() {
 				fi
 			;;
 			wds|sta)
-				case "$enc" in 
+				config_get_bool usepassphrase "$vif" passphrase 1
+				case "$enc" in
 					PSK|psk|PSK2|psk2)
 						case "$enc" in
 							PSK|psk)
 								proto='proto=WPA'
-								passphrase="${key}"
+								if [ "$usepassphrase" = "1" ]; then
+									passphrase="psk=\"${key}\""
+								else
+									passphrase="psk=${key}"
+								fi
 								;;
 							PSK2|psk2)
 								proto='proto=RSN'
-								passphrase=`wpa_passphrase ${ssid} "${key}" | grep psk | grep -v \#| cut -d= -f2`
+                                                                if [ "$usepassphrase" = "1" ]; then
+                                                                        passphrase="psk=\"${key}\""
+                                                                else
+                                                                        passphrase="psk=${key}"
+                                                                fi
 								;;
 						esac
-						
 						cat > /var/run/wpa_supplicant-$ifname.conf <<EOF
 network={
 	scan_ssid=1
 	ssid="$ssid"
 	key_mgmt=WPA-PSK
 	$proto
-	psk=$passphrase
+	$passphrase
 }
 EOF
 					;;
