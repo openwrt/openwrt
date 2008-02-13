@@ -40,7 +40,7 @@
 #include <bcm_map_part.h>
 #include <bcm_intr.h>
 
-static void irq_dispatch_int(struct pt_regs *regs)
+static void irq_dispatch_int(void)
 {
 	unsigned int pendingIrqs;
 	static unsigned int irqBit;
@@ -78,24 +78,25 @@ static void irq_dispatch_ext(uint32 irq)
 }
 
 
-extern void brcm_timer_interrupt(struct pt_regs *regs);
+//extern void brcm_timer_interrupt(struct pt_regs *regs);
 
-asmlinkage void plat_irq_dispatch(struct pt_regs *regs)
+asmlinkage void plat_irq_dispatch(void)
 {
-	u32 cause;
-	while((cause = (read_c0_cause()& CAUSEF_IP))) {
-		if (cause & CAUSEF_IP7)
-			brcm_timer_interrupt(regs);
-		else if (cause & CAUSEF_IP2)
-			irq_dispatch_int(regs);
-		else if (cause & CAUSEF_IP3)
-			irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_0);
-		else if (cause & CAUSEF_IP4)
-			irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_1);
-		else if (cause & CAUSEF_IP5)
-			irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_2);
-		else if (cause & CAUSEF_IP6)
-			irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_3);
+	unsigned long cause;
+
+	cause = read_c0_status() & read_c0_cause() & ST0_IM;
+	if (cause & CAUSEF_IP7)
+		do_IRQ(7);
+	else if (cause & CAUSEF_IP2)
+		irq_dispatch_int();
+	else if (cause & CAUSEF_IP3)
+		irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_0);
+	else if (cause & CAUSEF_IP4)
+		irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_1);
+	else if (cause & CAUSEF_IP5)
+		irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_2);
+	else if (cause & CAUSEF_IP6) {
+		irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_3);
 		local_irq_disable();
 	}
 }
@@ -239,12 +240,12 @@ unsigned int BcmHalMapInterrupt(FN_HANDLER pfunc, unsigned int param,
 	if( interruptId >= INTERNAL_ISR_TABLE_OFFSET )
 	{	
 		printk("BcmHalMapInterrupt : internal IRQ\n");
-		nRet = request_irq( interruptId, pfunc, SA_SAMPLE_RANDOM | SA_INTERRUPT, devname, (void *) param );
+		nRet = request_irq( interruptId, pfunc, IRQF_DISABLED, devname, (void *) param );
 	}
 	else if (interruptId >= INTERRUPT_ID_EXTERNAL_0 && interruptId <= INTERRUPT_ID_EXTERNAL_3)
 	{
 		printk("BcmHalMapInterrupt : external IRQ\n");
-		nRet = request_external_irq( interruptId, pfunc, SA_SAMPLE_RANDOM | SA_INTERRUPT, devname, (void *) param );
+		nRet = request_external_irq( interruptId, pfunc, IRQF_DISABLED, devname, (void *) param );
 	}
 
 	return( nRet );

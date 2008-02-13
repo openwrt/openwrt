@@ -15,14 +15,6 @@ diff -urN linux-2.6.19/drivers/mtd/maps/Kconfig linux-2.6.19.new/drivers/mtd/map
  config MTD_DILNETPC
  	tristate "CFI Flash device mapped on DIL/Net PC"
  	depends on X86 && MTD_CONCAT && MTD_PARTITIONS && MTD_CFI_INTELEXT
-diff -urN linux-2.6.19/drivers/mtd/maps/Makefile linux-2.6.19.new/drivers/mtd/maps/Makefile
---- linux-2.6.19/drivers/mtd/maps/Makefile	2006-11-29 22:57:37.000000000 +0100
-+++ linux-2.6.19.new/drivers/mtd/maps/Makefile	2006-12-18 17:21:07.000000000 +0100
-@@ -72,3 +72,4 @@
- obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
- obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o
- obj-$(CONFIG_MTD_TQM834x)	+= tqm834x.o
-+obj-$(CONFIG_MTD_BCM963XX)      += bcm963xx-flash.o
 diff -urN linux-2.6.19/drivers/mtd/redboot.c linux-2.6.19.new/drivers/mtd/redboot.c
 --- linux-2.6.19/drivers/mtd/redboot.c	2006-12-18 17:09:14.000000000 +0100
 +++ linux-2.6.19.new/drivers/mtd/redboot.c	2006-12-18 17:14:26.000000000 +0100
@@ -61,3 +53,11 @@ diff -urN linux-2.6.19/drivers/mtd/redboot.c linux-2.6.19.new/drivers/mtd/redboo
  
  		/* I'm sure the JFFS2 code has done me permanent damage.
  		 * I now think the following is _normal_
+diff -urN linux-2.6.24/drivers/mtd/maps/Makefile linux-2.6.24.new/drivers/mtd/maps/Makefile
+--- linux-2.6.24/drivers/mtd/maps/Makefile	2008-01-24 23:58:37.000000000 +0100
++++ linux-2.6.24.new/drivers/mtd/maps/Makefile	2008-02-13 16:30:02.000000000 +0100
+@@ -69,3 +69,4 @@
+ obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
+ obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o
+ obj-$(CONFIG_MTD_INTEL_VR_NOR)	+= intel_vr_nor.o
++obj-$(CONFIG_MTD_BCM963XX)	+= bcm963xx-flash.o
