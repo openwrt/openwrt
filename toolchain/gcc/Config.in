@@ -34,6 +34,15 @@ choice
 
 endchoice
 
+config EABI_SUPPORT
+	bool
+	depends arm||armeb
+	depends BROKEN
+	prompt "Enable EABI support" if TOOLCHAINOPTS
+	default n
+	help
+	  Enable ARM EABI support
+
 config EXTRA_GCC_CONFIG_OPTIONS
 	string
 	prompt "Additional gcc options" if TOOLCHAINOPTS
