@@ -63,6 +63,9 @@ dnsmasq() {
 	append_parm "$cfg" "local" "-S"
 	append_parm "$cfg" "leasefile" "-l"
 	append_parm "$cfg" "resolvfile" "-r"
+
+	config_get leasefile $cfg leasefile
+	[ -e "$leasefile" ] || touch "$leasefile"
 }
 
 dhcp_subscrid_add() {
