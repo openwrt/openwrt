@@ -36,14 +36,14 @@ enable_prism2() {
 	config_get ssid "$device" ssid
 	config_get maclist "$device" maclist
 	config_get macpolicy "$device" macpolicy
-	[ -x /usr/sbin/prism2_srec ] && {
+	[ -f "$prifw" ] || [ -f "$stafw" ] && [ -x /usr/sbin/prism2_srec ] && {
 		irqdevs=$(cat /proc/interrupts | grep wifi${device##wlan} | cut -b 37- | tr -d ",")
-		for dev in "$irqdevs"; do
+		for dev in $irqdevs; do
 			[ "$(config_get "$dev" type)" = "atheros" ] && wifi down "$dev"
 		done
 		[ -f "$prifw" ] && prism2_srec -g $device $prifw
 		[ -f "$stafw" ] && prism2_srec -r $device $stafw
-		for dev in "$irqdevs"; do
+		for dev in $irqdevs; do
 			[ "$(config_get "$dev" type)" = "atheros" ] && wifi up "$dev"
 		done
 	}
@@ -51,6 +51,7 @@ enable_prism2() {
 	[ -n "$rate" ] && iwconfig $device rate $rate
 	[ -n "$channel" ] && iwconfig $device channel $channel
 	[ -n "$ssid" ] && iwconfig $device essid $ssid
+	ifconfig "$device" up
 	[ -n "$txpower" ] && iwconfig $device txpower $txpower
 	[ -n "$maclist" ] && {
 		# flush MAC list
@@ -83,7 +84,7 @@ enable_prism2() {
 		config_set "$device" bridge "$bridge"
 		start_net "$device" "$net_cfg"
 	}
-	set_wifi_up "$vif" "$ifname"
+	set_wifi_up "$device" "$device"
 }
 
 
@@ -105,8 +106,10 @@ config wifi-device $dev
 #	option macpolicy deny
 #	option maclist	'12:34:56:78:90:12
 #			 09:87:65:43:21:09'
+
+	# REMOVE THIS LINE TO ENABLE WIFI:
+	option disabled 1
 	
 EOF
 	done
 }
-
