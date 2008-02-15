@@ -69,95 +69,20 @@
  * not do so then mac80211 may add this under certain circumstances.
  */
 
-#define IEEE80211_CHAN_W_SCAN 0x00000001
-#define IEEE80211_CHAN_W_ACTIVE_SCAN 0x00000002
-#define IEEE80211_CHAN_W_IBSS 0x00000004
-
-/* Channel information structure. Low-level driver is expected to fill in chan,
- * freq, and val fields. Other fields will be filled in by 80211.o based on
- * hostapd information and low-level driver does not need to use them. The
- * limits for each channel will be provided in 'struct ieee80211_conf' when
- * configuring the low-level driver with hw->config callback. If a device has
- * a default regulatory domain, IEEE80211_HW_DEFAULT_REG_DOMAIN_CONFIGURED
- * can be set to let the driver configure all fields */
-struct ieee80211_channel {
-	short chan; /* channel number (IEEE 802.11) */
-	short freq; /* frequency in MHz */
-	int val; /* hw specific value for the channel */
-	int flag; /* flag for hostapd use (IEEE80211_CHAN_*) */
-	unsigned char power_level;
-	unsigned char antenna_max;
-};
-
-#define IEEE80211_RATE_ERP 0x00000001
-#define IEEE80211_RATE_BASIC 0x00000002
-#define IEEE80211_RATE_PREAMBLE2 0x00000004
-#define IEEE80211_RATE_SUPPORTED 0x00000010
-#define IEEE80211_RATE_OFDM 0x00000020
-#define IEEE80211_RATE_CCK 0x00000040
-#define IEEE80211_RATE_MANDATORY 0x00000100
-
-#define IEEE80211_RATE_CCK_2 (IEEE80211_RATE_CCK | IEEE80211_RATE_PREAMBLE2)
-#define IEEE80211_RATE_MODULATION(f) \
-	(f & (IEEE80211_RATE_CCK | IEEE80211_RATE_OFDM))
-
-/* Low-level driver should set PREAMBLE2, OFDM and CCK flags.
- * BASIC, SUPPORTED, ERP, and MANDATORY flags are set in 80211.o based on the
- * configuration. */
-struct ieee80211_rate {
-	int rate; /* rate in 100 kbps */
-	int val; /* hw specific value for the rate */
-	int flags; /* IEEE80211_RATE_ flags */
-	int val2; /* hw specific value for the rate when using short preamble
-		   * (only when IEEE80211_RATE_PREAMBLE2 flag is set, i.e., for
-		   * 2, 5.5, and 11 Mbps) */
-	signed char min_rssi_ack;
-	unsigned char min_rssi_ack_delta;
-
-	/* following fields are set by 80211.o and need not be filled by the
-	 * low-level driver */
-	int rate_inv; /* inverse of the rate (LCM(all rates) / rate) for
-		       * optimizing channel utilization estimates */
-};
-
 /**
- * enum ieee80211_phymode - PHY modes
+ * struct ieee80211_ht_bss_info - describing BSS's HT characteristics
  *
- * @MODE_IEEE80211A: 5GHz as defined by 802.11a/802.11h
- * @MODE_IEEE80211B: 2.4 GHz as defined by 802.11b
- * @MODE_IEEE80211G: 2.4 GHz as defined by 802.11g (with OFDM),
- *	backwards compatible with 11b mode
- * @NUM_IEEE80211_MODES: internal
+ * This structure describes most essential parameters needed
+ * to describe 802.11n HT characteristics in a BSS
+ *
+ * @primary_channel: channel number of primery channel
+ * @bss_cap: 802.11n's general BSS capabilities (e.g. channel width)
+ * @bss_op_mode: 802.11n's BSS operation modes (e.g. HT protection)
  */
-enum ieee80211_phymode {
-	MODE_IEEE80211A,
-	MODE_IEEE80211B,
-	MODE_IEEE80211G,
-
-	/* keep last */
-	NUM_IEEE80211_MODES
-};
-
-/**
- * struct ieee80211_hw_mode - PHY mode definition
- *
- * This structure describes the capabilities supported by the device
- * in a single PHY mode.
- *
- * @mode: the PHY mode for this definition
- * @num_channels: number of supported channels
- * @channels: pointer to array of supported channels
- * @num_rates: number of supported bitrates
- * @rates: pointer to array of supported bitrates
- * @list: internal
- */
-struct ieee80211_hw_mode {
-	struct list_head list;
-	struct ieee80211_channel *channels;
-	struct ieee80211_rate *rates;
-	enum ieee80211_phymode mode;
-	int num_channels;
-	int num_rates;
+struct ieee80211_ht_bss_info {
+	u8 primary_channel;
+	u8 bss_cap;  /* use IEEE80211_HT_IE_CHA_ */
+	u8 bss_op_mode; /* use IEEE80211_HT_IE_ */
 };
 
 /**
@@ -208,6 +133,7 @@ struct ieee80211_tx_queue_stats_data {
  * @IEEE80211_TX_QUEUE_AFTER_BEACON: transmit queue for frames to be
  *	sent after a beacon
  * @IEEE80211_TX_QUEUE_BEACON: transmit queue for beacon frames
+ * @NUM_TX_DATA_QUEUES_AMPDU: adding more queues for A-MPDU
  */
 enum ieee80211_tx_queue {
 	IEEE80211_TX_QUEUE_DATA0,
@@ -223,11 +149,12 @@ enum ieee80211_tx_queue {
  * this struct need to have fixed values. As soon as it is removed, we can
  * fix these entries. */
 	IEEE80211_TX_QUEUE_AFTER_BEACON = 6,
-	IEEE80211_TX_QUEUE_BEACON = 7
+	IEEE80211_TX_QUEUE_BEACON = 7,
+	NUM_TX_DATA_QUEUES_AMPDU = 16
 };
 
 struct ieee80211_tx_queue_stats {
-	struct ieee80211_tx_queue_stats_data data[NUM_TX_DATA_QUEUES];
+	struct ieee80211_tx_queue_stats_data data[NUM_TX_DATA_QUEUES_AMPDU];
 };
 
 struct ieee80211_low_level_stats {
@@ -237,16 +164,56 @@ struct ieee80211_low_level_stats {
 	unsigned int dot11RTSSuccessCount;
 };
 
+/**
+ * enum ieee80211_bss_change - BSS change notification flags
+ *
+ * These flags are used with the bss_info_changed() callback
+ * to indicate which BSS parameter changed.
+ *
+ * @BSS_CHANGED_ASSOC: association status changed (associated/disassociated),
+ *	also implies a change in the AID.
+ * @BSS_CHANGED_ERP_CTS_PROT: CTS protection changed
+ * @BSS_CHANGED_ERP_PREAMBLE: preamble changed
+ */
+enum ieee80211_bss_change {
+	BSS_CHANGED_ASSOC		= 1<<0,
+	BSS_CHANGED_ERP_CTS_PROT	= 1<<1,
+	BSS_CHANGED_ERP_PREAMBLE	= 1<<2,
+};
+
+/**
+ * struct ieee80211_bss_conf - holds the BSS's changing parameters
+ *
+ * This structure keeps information about a BSS (and an association
+ * to that BSS) that can change during the lifetime of the BSS.
+ *
+ * @assoc: association status
+ * @aid: association ID number, valid only when @assoc is true
+ * @use_cts_prot: use CTS protection
+ * @use_short_preamble: use 802.11b short preamble
+ */
+struct ieee80211_bss_conf {
+	/* association related data */
+	bool assoc;
+	u16 aid;
+	/* erp related data */
+	bool use_cts_prot;
+	bool use_short_preamble;
+};
+
 /* Transmit control fields. This data structure is passed to low-level driver
  * with each TX frame. The low-level driver is responsible for configuring
  * the hardware to use given values (depending on what is supported). */
 
 struct ieee80211_tx_control {
-	int tx_rate; /* Transmit rate, given as the hw specific value for the
-		      * rate (from struct ieee80211_rate) */
-	int rts_cts_rate; /* Transmit rate for RTS/CTS frame, given as the hw
-			   * specific value for the rate (from
-			   * struct ieee80211_rate) */
+	struct ieee80211_vif *vif;
+	struct ieee80211_rate *tx_rate;
+
+	/* Transmit rate for RTS/CTS frame */
+	struct ieee80211_rate *rts_cts_rate;
+
+	/* retry rate for the last retries */
+	struct ieee80211_rate *alt_retry_rate;
 
 #define IEEE80211_TXCTL_REQ_TX_STATUS	(1<<0)/* request TX status callback for
 						* this frame */
@@ -265,10 +232,16 @@ struct ieee80211_tx_control {
 #define IEEE80211_TXCTL_REQUEUE		(1<<7)
 #define IEEE80211_TXCTL_FIRST_FRAGMENT	(1<<8) /* this is a first fragment of
 						* the frame */
+#define IEEE80211_TXCTL_SHORT_PREAMBLE	(1<<9)
 #define IEEE80211_TXCTL_LONG_RETRY_LIMIT (1<<10) /* this frame should be send
 						  * using the through
 						  * set_retry_limit configured
 						  * long retry value */
+#define IEEE80211_TXCTL_EAPOL_FRAME	(1<<11) /* internal to mac80211 */
+#define IEEE80211_TXCTL_SEND_AFTER_DTIM	(1<<12) /* send this frame after DTIM
+						 * beacon */
+#define IEEE80211_TXCTL_AMPDU		(1<<13) /* this frame should be sent
+						 * as part of an A-MPDU */
 	u32 flags;			       /* tx control flags defined
 						* above */
 	u8 key_idx;		/* keyidx from hw->set_key(), undefined if
@@ -276,22 +249,12 @@ struct ieee80211_tx_control {
 	u8 retry_limit;		/* 1 = only first attempt, 2 = one retry, ..
 				 * This could be used when set_retry_limit
 				 * is not implemented by the driver */
-	u8 power_level;		/* per-packet transmit power level, in dBm */
 	u8 antenna_sel_tx; 	/* 0 = default/diversity, 1 = Ant0, 2 = Ant1 */
 	u8 icv_len;		/* length of the ICV/MIC field in octets */
 	u8 iv_len;		/* length of the IV field in octets */
 	u8 queue;		/* hardware queue to use for this frame;
 				 * 0 = highest, hw->queues-1 = lowest */
-	struct ieee80211_rate *rate;		/* internal 80211.o rate */
-	struct ieee80211_rate *rts_rate;	/* internal 80211.o rate
-						 * for RTS/CTS */
-	int alt_retry_rate; /* retry rate for the last retries, given as the
-			     * hw specific value for the rate (from
-			     * struct ieee80211_rate). To be used to limit
-			     * packet dropping when probing higher rates, if hw
-			     * supports multiple retry rates. -1 = not used */
 	int type;	/* internal */
-	int ifindex;	/* internal */
 };
 
 
@@ -312,6 +275,8 @@ struct ieee80211_tx_control {
  *	the frame.
  * @RX_FLAG_FAILED_PLCP_CRC: Set this flag if the PCLP check failed on
  *	the frame.
+ * @RX_FLAG_TSFT: The timestamp passed in the RX status (@mactime field)
+ *	is valid.
  */
 enum mac80211_rx_flags {
 	RX_FLAG_MMIC_ERROR	= 1<<0,
@@ -321,6 +286,7 @@ enum mac80211_rx_flags {
 	RX_FLAG_IV_STRIPPED	= 1<<4,
 	RX_FLAG_FAILED_FCS_CRC	= 1<<5,
 	RX_FLAG_FAILED_PLCP_CRC = 1<<6,
+	RX_FLAG_TSFT		= 1<<7,
 };
 
 /**
@@ -330,26 +296,24 @@ enum mac80211_rx_flags {
  * supported by hardware) to the 802.11 code with each received
  * frame.
  * @mactime: MAC timestamp as defined by 802.11
+ * @band: the active band when this frame was received
  * @freq: frequency the radio was tuned to when receiving this frame, in MHz
- * @channel: channel the radio was tuned to
- * @phymode: active PHY mode
  * @ssi: signal strength when receiving this frame
  * @signal: used as 'qual' in statistics reporting
  * @noise: PHY noise when receiving this frame
  * @antenna: antenna used
- * @rate: data rate
+ * @rate_idx: index of data rate into band's supported rates
  * @flag: %RX_FLAG_*
  */
 struct ieee80211_rx_status {
 	u64 mactime;
+	enum ieee80211_band band;
 	int freq;
-	int channel;
-	enum ieee80211_phymode phymode;
 	int ssi;
 	int signal;
 	int noise;
 	int antenna;
-	int rate;
+	int rate_idx;
 	int flag;
 };
 
@@ -360,12 +324,14 @@ struct ieee80211_rx_status {
  *
  * @IEEE80211_TX_STATUS_TX_FILTERED: The frame was not transmitted
  *	because the destination STA was in powersave mode.
- *
  * @IEEE80211_TX_STATUS_ACK: Frame was acknowledged
+ * @IEEE80211_TX_STATUS_AMPDU: The frame was aggregated, so status
+ * 	is for the whole aggregation.
  */
 enum ieee80211_tx_status_flags {
 	IEEE80211_TX_STATUS_TX_FILTERED	= 1<<0,
 	IEEE80211_TX_STATUS_ACK		= 1<<1,
+	IEEE80211_TX_STATUS_AMPDU	= 1<<2,
 };
 
 /**
@@ -376,24 +342,25 @@ enum ieee80211_tx_status_flags {
  *
  * @control: a copy of the &struct ieee80211_tx_control passed to the driver
  *	in the tx() callback.
- *
  * @flags: transmit status flags, defined above
- *
- * @ack_signal: signal strength of the ACK frame
- *
+ * @retry_count: number of retries
  * @excessive_retries: set to 1 if the frame was retried many times
  *	but not acknowledged
- *
- * @retry_count: number of retries
- *
+ * @ampdu_ack_len: number of aggregated frames.
+ * 	relevant only if IEEE80211_TX_STATUS_AMPDU was set.
+ * @ampdu_ack_map: block ack bit map for the aggregation.
+ * 	relevant only if IEEE80211_TX_STATUS_AMPDU was set.
+ * @ack_signal: signal strength of the ACK frame
  * @queue_length: ?? REMOVE
  * @queue_number: ?? REMOVE
  */
 struct ieee80211_tx_status {
 	struct ieee80211_tx_control control;
 	u8 flags;
-	bool excessive_retries;
 	u8 retry_count;
+	bool excessive_retries;
+	u8 ampdu_ack_len;
+	u64 ampdu_ack_map;
 	int ack_signal;
 	int queue_length;
 	int queue_number;
@@ -406,11 +373,12 @@ struct ieee80211_tx_status {
  *
  * @IEEE80211_CONF_SHORT_SLOT_TIME: use 802.11g short slot time
  * @IEEE80211_CONF_RADIOTAP: add radiotap header at receive time (if supported)
- *
+ * @IEEE80211_CONF_SUPPORT_HT_MODE: use 802.11n HT capabilities (if supported)
  */
 enum ieee80211_conf_flags {
-	IEEE80211_CONF_SHORT_SLOT_TIME	= 1<<0,
-	IEEE80211_CONF_RADIOTAP		= 1<<1,
+	IEEE80211_CONF_SHORT_SLOT_TIME	= (1<<0),
+	IEEE80211_CONF_RADIOTAP		= (1<<1),
+	IEEE80211_CONF_SUPPORT_HT_MODE	= (1<<2),
 };
 
 /**
@@ -420,38 +388,32 @@ enum ieee80211_conf_flags {
  *
  * @radio_enabled: when zero, driver is required to switch off the radio.
  *	TODO make a flag
- * @channel: IEEE 802.11 channel number
- * @freq: frequency in MHz
- * @channel_val: hardware specific channel value for the channel
- * @phymode: PHY mode to activate (REMOVE)
- * @chan: channel to switch to, pointer to the channel information
- * @mode: pointer to mode definition
- * @regulatory_domain: ??
  * @beacon_int: beacon interval (TODO make interface config)
  * @flags: configuration flags defined above
- * @power_level: transmit power limit for current regulatory domain in dBm
- * @antenna_max: maximum antenna gain
+ * @power_level: requested transmit power (in dBm)
+ * @max_antenna_gain: maximum antenna gain (in dBi)
  * @antenna_sel_tx: transmit antenna selection, 0: default/diversity,
  *	1/2: antenna 0/1
  * @antenna_sel_rx: receive antenna selection, like @antenna_sel_tx
+ * @ht_conf: describes current self configuration of 802.11n HT capabilies
+ * @ht_bss_conf: describes current BSS configuration of 802.11n HT parameters
+ * @channel: the channel to tune to
  */
 struct ieee80211_conf {
-	int channel;			/* IEEE 802.11 channel number */
-	int freq;			/* MHz */
-	int channel_val;		/* hw specific value for the channel */
-
-	enum ieee80211_phymode phymode;
-	struct ieee80211_channel *chan;
-	struct ieee80211_hw_mode *mode;
 	unsigned int regulatory_domain;
 	int radio_enabled;
 
 	int beacon_int;
 	u32 flags;
-	u8 power_level;
-	u8 antenna_max;
+	int power_level;
+	int max_antenna_gain;
 	u8 antenna_sel_tx;
 	u8 antenna_sel_rx;
+
+	struct ieee80211_channel *channel;
+
+	struct ieee80211_ht_info ht_conf;
+	struct ieee80211_ht_bss_info ht_bss_conf;
 };
 
 /**
@@ -480,13 +442,27 @@ enum ieee80211_if_types {
 };
 
 /**
+ * struct ieee80211_vif - per-interface data
+ *
+ * Data in this structure is continually present for driver
+ * use during the life of a virtual interface.
+ *
+ * @type: type of this virtual interface
+ * @drv_priv: data area for driver use, will always be aligned to
+ *	sizeof(void *).
+ */
+struct ieee80211_vif {
+	enum ieee80211_if_types type;
+	/* must be last */
+	u8 drv_priv[0] __attribute__((__aligned__(sizeof(void *))));
+};
+
+/**
  * struct ieee80211_if_init_conf - initial configuration of an interface
  *
- * @if_id: internal interface ID. This number has no particular meaning to
- *	drivers and the only allowed usage is to pass it to
- *	ieee80211_beacon_get() and ieee80211_get_buffered_bc() functions.
- *	This field is not valid for monitor interfaces
- *	(interfaces of %IEEE80211_IF_TYPE_MNTR type).
+ * @vif: pointer to a driver-use per-interface structure. The pointer
+ *	itself is also used for various functions including
+ *	ieee80211_beacon_get() and ieee80211_get_buffered_bc().
  * @type: one of &enum ieee80211_if_types constants. Determines the type of
  *	added/removed interface.
  * @mac_addr: pointer to MAC address of the interface. This pointer is valid
@@ -503,8 +479,8 @@ enum ieee80211_if_types {
  * in pure monitor mode.
  */
 struct ieee80211_if_init_conf {
-	int if_id;
 	enum ieee80211_if_types type;
+	struct ieee80211_vif *vif;
 	void *mac_addr;
 };
 
@@ -597,9 +573,6 @@ struct ieee80211_key_conf {
 	u8 key[0];
 };
 
-#define IEEE80211_SEQ_COUNTER_RX	0
-#define IEEE80211_SEQ_COUNTER_TX	1
-
 /**
  * enum set_key_cmd - key command
  *
@@ -659,15 +632,19 @@ enum sta_notify_cmd {
  *	%IEEE80211_HW_HOST_GEN_BEACON_TEMPLATE is also not set because
  *	otherwise the stack will not know when the DTIM beacon was sent.
  *
- * @IEEE80211_HW_DEFAULT_REG_DOMAIN_CONFIGURED:
- *	Channels are already configured to the default regulatory domain
- *	specified in the device's EEPROM
+ * @IEEE80211_HW_2GHZ_SHORT_SLOT_INCAPABLE:
+ *	Hardware is not capable of short slot operation on the 2.4 GHz band.
+ *
+ * @IEEE80211_HW_2GHZ_SHORT_PREAMBLE_INCAPABLE:
+ *	Hardware is not capable of receiving frames with short preamble on
+ *	the 2.4 GHz band.
  */
 enum ieee80211_hw_flags {
 	IEEE80211_HW_HOST_GEN_BEACON_TEMPLATE		= 1<<0,
 	IEEE80211_HW_RX_INCLUDES_FCS			= 1<<1,
 	IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING	= 1<<2,
-	IEEE80211_HW_DEFAULT_REG_DOMAIN_CONFIGURED	= 1<<3,
+	IEEE80211_HW_2GHZ_SHORT_SLOT_INCAPABLE		= 1<<3,
+	IEEE80211_HW_2GHZ_SHORT_PREAMBLE_INCAPABLE	= 1<<4,
 };
 
 /**
@@ -679,7 +656,8 @@ enum ieee80211_hw_flags {
  * @wiphy: This points to the &struct wiphy allocated for this
  *	802.11 PHY. You must fill in the @perm_addr and @dev
  *	members of this structure using SET_IEEE80211_DEV()
- *	and SET_IEEE80211_PERM_ADDR().
+ *	and SET_IEEE80211_PERM_ADDR(). Additionally, all supported
+ *	bands (with channels, bitrates) are registered here.
  *
  * @conf: &struct ieee80211_conf, device configuration, don't use.
  *
@@ -706,15 +684,24 @@ enum ieee80211_hw_flags {
  *
  * @queues: number of available hardware transmit queues for
  *	data packets. WMM/QoS requires at least four.
+ *
+ * @rate_control_algorithm: rate control algorithm for this hardware.
+ *	If unset (NULL), the default algorithm will be used. Must be
+ *	set before calling ieee80211_register_hw().
+ *
+ * @vif_data_size: size (in bytes) of the drv_priv data area
+ *	within &struct ieee80211_vif.
  */
 struct ieee80211_hw {
 	struct ieee80211_conf conf;
 	struct wiphy *wiphy;
 	struct workqueue_struct *workqueue;
+	const char *rate_control_algorithm;
 	void *priv;
 	u32 flags;
 	unsigned int extra_tx_headroom;
 	int channel_change_time;
+	int vif_data_size;
 	u8 queues;
 	s8 max_rssi;
 	s8 max_signal;
@@ -854,18 +841,21 @@ enum ieee80211_filter_flags {
 };
 
 /**
- * enum ieee80211_erp_change_flags - erp change flags
+ * enum ieee80211_ampdu_mlme_action - A-MPDU actions
  *
- * These flags are used with the erp_ie_changed() callback in
- * &struct ieee80211_ops to indicate which parameter(s) changed.
- * @IEEE80211_ERP_CHANGE_PROTECTION: protection changed
- * @IEEE80211_ERP_CHANGE_PREAMBLE: barker preamble mode changed
+ * These flags are used with the ampdu_action() callback in
+ * &struct ieee80211_ops to indicate which action is needed.
+ * @IEEE80211_AMPDU_RX_START: start Rx aggregation
+ * @IEEE80211_AMPDU_RX_STOP: stop Rx aggregation
+ * @IEEE80211_AMPDU_TX_START: start Tx aggregation
+ * @IEEE80211_AMPDU_TX_STOP: stop Tx aggregation
  */
-enum ieee80211_erp_change_flags {
-	IEEE80211_ERP_CHANGE_PROTECTION	= 1<<0,
-	IEEE80211_ERP_CHANGE_PREAMBLE	= 1<<1,
+enum ieee80211_ampdu_mlme_action {
+	IEEE80211_AMPDU_RX_START,
+	IEEE80211_AMPDU_RX_STOP,
+	IEEE80211_AMPDU_TX_START,
+	IEEE80211_AMPDU_TX_STOP,
 };
-
 
 /**
  * struct ieee80211_ops - callbacks from mac80211 to the driver
@@ -922,6 +912,14 @@ enum ieee80211_erp_change_flags {
  * @config_interface: Handler for configuration requests related to interfaces
  *	(e.g. BSSID changes.)
  *
+ * @bss_info_changed: Handler for configuration requests related to BSS
+ *	parameters that may vary during BSS's lifespan, and may affect low
+ *	level driver (e.g. assoc/disassoc status, erp parameters).
+ *	This function should not be used if no BSS has been set, unless
+ *	for association indication. The @changed parameter indicates which
+ *	of the bss parameters has changed when a call is made. This callback
+ *	has to be atomic.
+ *
  * @configure_filter: Configure the device's RX filter.
  *	See the section "Frame filtering" for more information.
  *	This callback must be implemented and atomic.
@@ -936,30 +934,16 @@ enum ieee80211_erp_change_flags {
  *	and remove_interface calls, i.e. while the interface with the
  *	given local_address is enabled.
  *
- * @set_ieee8021x: Enable/disable IEEE 802.1X. This item requests wlan card
- *	to pass unencrypted EAPOL-Key frames even when encryption is
- *	configured. If the wlan card does not require such a configuration,
- *	this function pointer can be set to NULL.
- *
- * @set_port_auth: Set port authorization state (IEEE 802.1X PAE) to be
- *	authorized (@authorized=1) or unauthorized (=0). This function can be
- *	used if the wlan hardware or low-level driver implements PAE.
- *	mac80211 will filter frames based on authorization state in any case,
- *	so this function pointer can be NULL if low-level driver does not
- *	require event notification about port state changes.
- *
  * @hw_scan: Ask the hardware to service the scan request, no need to start
- *	the scan state machine in stack.
+ *	the scan state machine in stack. The scan must honour the channel
+ *	configuration done by the regulatory agent in the wiphy's registered
+ *	bands.
  *
  * @get_stats: return low-level statistics
  *
- * @set_privacy_invoked: For devices that generate their own beacons and probe
- *	response or association responses this updates the state of privacy_invoked
- *	returns 0 for success or an error number.
- *
- * @get_sequence_counter: For devices that have internal sequence counters this
- *	callback allows mac80211 to access the current value of a counter.
- *	This callback seems not well-defined, tell us if you need it.
+ * @get_tkip_seq: If your device implements TKIP encryption in hardware this
+ *	callback should be provided to read the TKIP transmit IVs (both IV32
+ *	and IV16) for the given key from hardware.
  *
  * @set_rts_threshold: Configuration of RTS threshold (if device needs it)
  *
@@ -971,8 +955,6 @@ enum ieee80211_erp_change_flags {
  *
  * @sta_notify: Notifies low level driver about addition or removal
  *	of assocaited station or AP.
- *
- * @erp_ie_changed: Handle ERP IE change notifications. Must be atomic.
  *
  * @conf_tx: Configure TX queue parameters (EDCF (aifs, cw_min, cw_max),
  *	bursting) for a hardware TX queue. The @queue parameter uses the
@@ -1008,6 +990,15 @@ enum ieee80211_erp_change_flags {
  * @tx_last_beacon: Determine whether the last IBSS beacon was sent by us.
  *	This is needed only for IBSS mode and the result of this function is
  *	used to determine whether to reply to Probe Requests.
+ *
+ * @conf_ht: Configures low level driver with 802.11n HT data. Must be atomic.
+ *
+ * @ampdu_action: Perform a certain A-MPDU action
+ * 	The RA/TID combination determines the destination and TID we want
+ * 	the ampdu action to be performed for. The action is defined through
+ * 	ieee80211_ampdu_mlme_action. Starting sequence number (@ssn)
+ * 	is the first frame we expect to perform the action on. notice
+ * 	that TX/RX_STOP can pass NULL for this parameter.
  */
 struct ieee80211_ops {
 	int (*tx)(struct ieee80211_hw *hw, struct sk_buff *skb,
@@ -1020,7 +1011,12 @@ struct ieee80211_ops {
 				 struct ieee80211_if_init_conf *conf);
 	int (*config)(struct ieee80211_hw *hw, struct ieee80211_conf *conf);
 	int (*config_interface)(struct ieee80211_hw *hw,
-				int if_id, struct ieee80211_if_conf *conf);
+				struct ieee80211_vif *vif,
+				struct ieee80211_if_conf *conf);
+	void (*bss_info_changed)(struct ieee80211_hw *hw,
+				 struct ieee80211_vif *vif,
+				 struct ieee80211_bss_conf *info,
+				 u32 changed);
 	void (*configure_filter)(struct ieee80211_hw *hw,
 				 unsigned int changed_flags,
 				 unsigned int *total_flags,
@@ -1029,25 +1025,17 @@ struct ieee80211_ops {
 	int (*set_key)(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 		       const u8 *local_address, const u8 *address,
 		       struct ieee80211_key_conf *key);
-	int (*set_ieee8021x)(struct ieee80211_hw *hw, int use_ieee8021x);
-	int (*set_port_auth)(struct ieee80211_hw *hw, u8 *addr,
-			     int authorized);
 	int (*hw_scan)(struct ieee80211_hw *hw, u8 *ssid, size_t len);
 	int (*get_stats)(struct ieee80211_hw *hw,
 			 struct ieee80211_low_level_stats *stats);
-	int (*set_privacy_invoked)(struct ieee80211_hw *hw,
-				   int privacy_invoked);
-	int (*get_sequence_counter)(struct ieee80211_hw *hw,
-				    u8* addr, u8 keyidx, u8 txrx,
-				    u32* iv32, u16* iv16);
+	void (*get_tkip_seq)(struct ieee80211_hw *hw, u8 hw_key_idx,
+			     u32 *iv32, u16 *iv16);
 	int (*set_rts_threshold)(struct ieee80211_hw *hw, u32 value);
 	int (*set_frag_threshold)(struct ieee80211_hw *hw, u32 value);
 	int (*set_retry_limit)(struct ieee80211_hw *hw,
 			       u32 short_retry, u32 long_retr);
-	void (*sta_notify)(struct ieee80211_hw *hw, int if_id,
+	void (*sta_notify)(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 			enum sta_notify_cmd, const u8 *addr);
-	void (*erp_ie_changed)(struct ieee80211_hw *hw, u8 changes,
-			       int cts_protection, int preamble);
 	int (*conf_tx)(struct ieee80211_hw *hw, int queue,
 		       const struct ieee80211_tx_queue_params *params);
 	int (*get_tx_stats)(struct ieee80211_hw *hw,
@@ -1058,6 +1046,10 @@ struct ieee80211_ops {
 			     struct sk_buff *skb,
 			     struct ieee80211_tx_control *control);
 	int (*tx_last_beacon)(struct ieee80211_hw *hw);
+	int (*conf_ht)(struct ieee80211_hw *hw, struct ieee80211_conf *conf);
+	int (*ampdu_action)(struct ieee80211_hw *hw,
+			    enum ieee80211_ampdu_mlme_action action,
+			    const u8 *addr, u16 tid, u16 *ssn);
 };
 
 /**
@@ -1089,6 +1081,7 @@ int ieee80211_register_hw(struct ieee80211_hw *hw);
 extern char *__ieee80211_get_tx_led_name(struct ieee80211_hw *hw);
 extern char *__ieee80211_get_rx_led_name(struct ieee80211_hw *hw);
 extern char *__ieee80211_get_assoc_led_name(struct ieee80211_hw *hw);
+extern char *__ieee80211_get_radio_led_name(struct ieee80211_hw *hw);
 #endif
 /**
  * ieee80211_get_tx_led_name - get name of TX LED
@@ -1128,6 +1121,16 @@ static inline char *ieee80211_get_rx_led_name(struct ieee80211_hw *hw)
 #endif
 }
 
+/**
+ * ieee80211_get_assoc_led_name - get name of association LED
+ *
+ * mac80211 creates a association LED trigger for each wireless hardware
+ * that can be used to drive LEDs if your driver registers a LED device.
+ * This function returns the name (or %NULL if not configured for LEDs)
+ * of the trigger so you can automatically link the LED device.
+ *
+ * @hw: the hardware to get the LED trigger name for
+ */
 static inline char *ieee80211_get_assoc_led_name(struct ieee80211_hw *hw)
 {
 #ifdef CONFIG_MAC80211_LEDS
@@ -1137,10 +1140,24 @@ static inline char *ieee80211_get_assoc_led_name(struct ieee80211_hw *hw)
 #endif
 }
 
-
-/* Register a new hardware PHYMODE capability to the stack. */
-int ieee80211_register_hwmode(struct ieee80211_hw *hw,
-			      struct ieee80211_hw_mode *mode);
+/**
+ * ieee80211_get_radio_led_name - get name of radio LED
+ *
+ * mac80211 creates a radio change LED trigger for each wireless hardware
+ * that can be used to drive LEDs if your driver registers a LED device.
+ * This function returns the name (or %NULL if not configured for LEDs)
+ * of the trigger so you can automatically link the LED device.
+ *
+ * @hw: the hardware to get the LED trigger name for
+ */
+static inline char *ieee80211_get_radio_led_name(struct ieee80211_hw *hw)
+{
+#ifdef CONFIG_MAC80211_LEDS
+	return __ieee80211_get_radio_led_name(hw);
+#else
+	return NULL;
+#endif
+}
 
 /**
  * ieee80211_unregister_hw - Unregister a hardware device
@@ -1226,7 +1243,7 @@ void ieee80211_tx_status_irqsafe(struct ieee80211_hw *hw,
 /**
  * ieee80211_beacon_get - beacon generation function
  * @hw: pointer obtained from ieee80211_alloc_hw().
- * @if_id: interface ID from &struct ieee80211_if_init_conf.
+ * @vif: &struct ieee80211_vif pointer from &struct ieee80211_if_init_conf.
  * @control: will be filled with information needed to send this beacon.
  *
  * If the beacon frames are generated by the host system (i.e., not in
@@ -1237,13 +1254,13 @@ void ieee80211_tx_status_irqsafe(struct ieee80211_hw *hw,
  * is responsible of freeing it.
  */
 struct sk_buff *ieee80211_beacon_get(struct ieee80211_hw *hw,
-				     int if_id,
+				     struct ieee80211_vif *vif,
 				     struct ieee80211_tx_control *control);
 
 /**
  * ieee80211_rts_get - RTS frame generation function
  * @hw: pointer obtained from ieee80211_alloc_hw().
- * @if_id: interface ID from &struct ieee80211_if_init_conf.
+ * @vif: &struct ieee80211_vif pointer from &struct ieee80211_if_init_conf.
  * @frame: pointer to the frame that is going to be protected by the RTS.
  * @frame_len: the frame length (in octets).
  * @frame_txctl: &struct ieee80211_tx_control of the frame.
@@ -1254,7 +1271,7 @@ struct sk_buff *ieee80211_beacon_get(struct ieee80211_hw *hw,
  * the next RTS frame from the 802.11 code. The low-level is responsible
  * for calling this function before and RTS frame is needed.
  */
-void ieee80211_rts_get(struct ieee80211_hw *hw, int if_id,
+void ieee80211_rts_get(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 		       const void *frame, size_t frame_len,
 		       const struct ieee80211_tx_control *frame_txctl,
 		       struct ieee80211_rts *rts);
@@ -1262,7 +1279,7 @@ void ieee80211_rts_get(struct ieee80211_hw *hw, int if_id,
 /**
  * ieee80211_rts_duration - Get the duration field for an RTS frame
  * @hw: pointer obtained from ieee80211_alloc_hw().
- * @if_id: interface ID from &struct ieee80211_if_init_conf.
+ * @vif: &struct ieee80211_vif pointer from &struct ieee80211_if_init_conf.
  * @frame_len: the length of the frame that is going to be protected by the RTS.
  * @frame_txctl: &struct ieee80211_tx_control of the frame.
  *
@@ -1270,14 +1287,14 @@ void ieee80211_rts_get(struct ieee80211_hw *hw, int if_id,
  * the duration field, the low-level driver uses this function to receive
  * the duration field value in little-endian byteorder.
  */
-__le16 ieee80211_rts_duration(struct ieee80211_hw *hw, int if_id,
-			      size_t frame_len,
+__le16 ieee80211_rts_duration(struct ieee80211_hw *hw,
+			      struct ieee80211_vif *vif, size_t frame_len,
 			      const struct ieee80211_tx_control *frame_txctl);
 
 /**
  * ieee80211_ctstoself_get - CTS-to-self frame generation function
  * @hw: pointer obtained from ieee80211_alloc_hw().
- * @if_id: interface ID from &struct ieee80211_if_init_conf.
+ * @vif: &struct ieee80211_vif pointer from &struct ieee80211_if_init_conf.
  * @frame: pointer to the frame that is going to be protected by the CTS-to-self.
  * @frame_len: the frame length (in octets).
  * @frame_txctl: &struct ieee80211_tx_control of the frame.
@@ -1288,7 +1305,8 @@ __le16 ieee80211_rts_duration(struct ieee80211_hw *hw, int if_id,
  * the next CTS-to-self frame from the 802.11 code. The low-level is responsible
  * for calling this function before and CTS-to-self frame is needed.
  */
-void ieee80211_ctstoself_get(struct ieee80211_hw *hw, int if_id,
+void ieee80211_ctstoself_get(struct ieee80211_hw *hw,
+			     struct ieee80211_vif *vif,
 			     const void *frame, size_t frame_len,
 			     const struct ieee80211_tx_control *frame_txctl,
 			     struct ieee80211_cts *cts);
@@ -1296,7 +1314,7 @@ void ieee80211_ctstoself_get(struct ieee80211_hw *hw, int if_id,
 /**
  * ieee80211_ctstoself_duration - Get the duration field for a CTS-to-self frame
  * @hw: pointer obtained from ieee80211_alloc_hw().
- * @if_id: interface ID from &struct ieee80211_if_init_conf.
+ * @vif: &struct ieee80211_vif pointer from &struct ieee80211_if_init_conf.
  * @frame_len: the length of the frame that is going to be protected by the CTS-to-self.
  * @frame_txctl: &struct ieee80211_tx_control of the frame.
  *
@@ -1304,28 +1322,30 @@ void ieee80211_ctstoself_get(struct ieee80211_hw *hw, int if_id,
  * the duration field, the low-level driver uses this function to receive
  * the duration field value in little-endian byteorder.
  */
-__le16 ieee80211_ctstoself_duration(struct ieee80211_hw *hw, int if_id,
+__le16 ieee80211_ctstoself_duration(struct ieee80211_hw *hw,
+				    struct ieee80211_vif *vif,
 				    size_t frame_len,
 				    const struct ieee80211_tx_control *frame_txctl);
 
 /**
  * ieee80211_generic_frame_duration - Calculate the duration field for a frame
  * @hw: pointer obtained from ieee80211_alloc_hw().
- * @if_id: interface ID from &struct ieee80211_if_init_conf.
+ * @vif: &struct ieee80211_vif pointer from &struct ieee80211_if_init_conf.
  * @frame_len: the length of the frame.
- * @rate: the rate (in 100kbps) at which the frame is going to be transmitted.
+ * @rate: the rate at which the frame is going to be transmitted.
  *
  * Calculate the duration field of some generic frame, given its
  * length and transmission rate (in 100kbps).
  */
-__le16 ieee80211_generic_frame_duration(struct ieee80211_hw *hw, int if_id,
+__le16 ieee80211_generic_frame_duration(struct ieee80211_hw *hw,
+					struct ieee80211_vif *vif,
 					size_t frame_len,
-					int rate);
+					struct ieee80211_rate *rate);
 
 /**
  * ieee80211_get_buffered_bc - accessing buffered broadcast and multicast frames
  * @hw: pointer as obtained from ieee80211_alloc_hw().
- * @if_id: interface ID from &struct ieee80211_if_init_conf.
+ * @vif: &struct ieee80211_vif pointer from &struct ieee80211_if_init_conf.
  * @control: will be filled with information needed to send returned frame.
  *
  * Function for accessing buffered broadcast and multicast frames. If
@@ -1344,7 +1364,7 @@ __le16 ieee80211_generic_frame_duration(struct ieee80211_hw *hw, int if_id,
  * use common code for all beacons.
  */
 struct sk_buff *
-ieee80211_get_buffered_bc(struct ieee80211_hw *hw, int if_id,
+ieee80211_get_buffered_bc(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 			  struct ieee80211_tx_control *control);
 
 /**
@@ -1422,8 +1442,96 @@ void ieee80211_wake_queues(struct ieee80211_hw *hw);
  */
 void ieee80211_scan_completed(struct ieee80211_hw *hw);
 
-#define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
-#define MAC_ARG(x) ((u8*)(x))[0], ((u8*)(x))[1], ((u8*)(x))[2], \
-		   ((u8*)(x))[3], ((u8*)(x))[4], ((u8*)(x))[5]
+/**
+ * ieee80211_iterate_active_interfaces - iterate active interfaces
+ *
+ * This function iterates over the interfaces associated with a given
+ * hardware that are currently active and calls the callback for them.
+ *
+ * @hw: the hardware struct of which the interfaces should be iterated over
+ * @iterator: the iterator function to call, cannot sleep
+ * @data: first argument of the iterator function
+ */
+void ieee80211_iterate_active_interfaces(struct ieee80211_hw *hw,
+					 void (*iterator)(void *data, u8 *mac,
+						struct ieee80211_vif *vif),
+					 void *data);
+
+/**
+ * ieee80211_start_tx_ba_session - Start a tx Block Ack session.
+ * @hw: pointer as obtained from ieee80211_alloc_hw().
+ * @ra: receiver address of the BA session recipient
+ * @tid: the TID to BA on.
+ * @return: success if addBA request was sent, failure otherwise
+ *
+ * Although mac80211/low level driver/user space application can estimate
+ * the need to start aggregation on a certain RA/TID, the session level
+ * will be managed by the mac80211.
+ */
+int ieee80211_start_tx_ba_session(struct ieee80211_hw *hw, u8 *ra, u16 tid);
+
+/**
+ * ieee80211_start_tx_ba_cb - low level driver ready to aggregate.
+ * @hw: pointer as obtained from ieee80211_alloc_hw().
+ * @ra: receiver address of the BA session recipient.
+ * @tid: the TID to BA on.
+ *
+ * This function must be called by low level driver once it has
+ * finished with preparations for the BA session.
+ */
+void ieee80211_start_tx_ba_cb(struct ieee80211_hw *hw, u8 *ra, u16 tid);
+
+/**
+ * ieee80211_start_tx_ba_cb_irqsafe - low level driver ready to aggregate.
+ * @hw: pointer as obtained from ieee80211_alloc_hw().
+ * @ra: receiver address of the BA session recipient.
+ * @tid: the TID to BA on.
+ *
+ * This function must be called by low level driver once it has
+ * finished with preparations for the BA session.
+ * This version of the function is irq safe.
+ */
+void ieee80211_start_tx_ba_cb_irqsafe(struct ieee80211_hw *hw, const u8 *ra,
+				      u16 tid);
+
+/**
+ * ieee80211_stop_tx_ba_session - Stop a Block Ack session.
+ * @hw: pointer as obtained from ieee80211_alloc_hw().
+ * @ra: receiver address of the BA session recipient
+ * @tid: the TID to stop BA.
+ * @initiator: if indicates initiator DELBA frame will be sent.
+ * @return: error if no sta with matching da found, success otherwise
+ *
+ * Although mac80211/low level driver/user space application can estimate
+ * the need to stop aggregation on a certain RA/TID, the session level
+ * will be managed by the mac80211.
+ */
+int ieee80211_stop_tx_ba_session(struct ieee80211_hw *hw,
+				 u8 *ra, u16 tid,
+				 enum ieee80211_back_parties initiator);
+
+/**
+ * ieee80211_stop_tx_ba_cb - low level driver ready to stop aggregate.
+ * @hw: pointer as obtained from ieee80211_alloc_hw().
+ * @ra: receiver address of the BA session recipient.
+ * @tid: the desired TID to BA on.
+ *
+ * This function must be called by low level driver once it has
+ * finished with preparations for the BA session tear down.
+ */
+void ieee80211_stop_tx_ba_cb(struct ieee80211_hw *hw, u8 *ra, u8 tid);
+
+/**
+ * ieee80211_stop_tx_ba_cb_irqsafe - low level driver ready to stop aggregate.
+ * @hw: pointer as obtained from ieee80211_alloc_hw().
+ * @ra: receiver address of the BA session recipient.
+ * @tid: the desired TID to BA on.
+ *
+ * This function must be called by low level driver once it has
+ * finished with preparations for the BA session tear down.
+ * This version of the function is irq safe.
+ */
+void ieee80211_stop_tx_ba_cb_irqsafe(struct ieee80211_hw *hw, const u8 *ra,
+				     u16 tid);
 
 #endif /* MAC80211_H */
