@@ -1,0 +1,231 @@
+Index: mac80211/net/mac80211/ieee80211.c
+===================================================================
+--- mac80211.orig/net/mac80211/ieee80211.c	2008-02-15 22:20:53.000000000 +0100
++++ mac80211/net/mac80211/ieee80211.c	2008-02-15 22:21:01.000000000 +0100
+@@ -21,7 +21,6 @@
+ #include <linux/wireless.h>
+ #include <linux/rtnetlink.h>
+ #include <linux/bitmap.h>
+-#include <net/net_namespace.h>
+ #include <net/cfg80211.h>
+ 
+ #include "ieee80211_i.h"
+@@ -36,6 +35,15 @@
+ 
+ #define SUPP_MCS_SET_LEN 16
+ 
++
++char *print_mac(char *buf, const u8 *addr)
++{
++	sprintf(buf, MAC_FMT,
++		addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
++	return buf;
++}
++
++
+ /*
+  * For seeing transmitted packets on monitor interfaces
+  * we have a radiotap header too.
+@@ -48,11 +56,13 @@ struct ieee80211_tx_status_rtap_hdr {
+ 
+ /* common interface routines */
+ 
++#if 0
+ static int header_parse_80211(const struct sk_buff *skb, unsigned char *haddr)
+ {
+ 	memcpy(haddr, skb_mac_header(skb) + 10, ETH_ALEN); /* addr2 */
+ 	return ETH_ALEN;
+ }
++#endif
+ 
+ /* must be called under mdev tx lock */
+ static void ieee80211_configure_filter(struct ieee80211_local *local)
+@@ -800,6 +810,7 @@ static void ieee80211_set_multicast_list
+ 	dev_mc_sync(local->mdev, dev);
+ }
+ 
++#if 0
+ static const struct header_ops ieee80211_header_ops = {
+ 	.create		= eth_header,
+ 	.parse		= header_parse_80211,
+@@ -807,6 +818,7 @@ static const struct header_ops ieee80211
+ 	.cache		= eth_header_cache,
+ 	.cache_update	= eth_header_cache_update,
+ };
++#endif
+ 
+ /* Must not be called for mdev */
+ void ieee80211_if_setup(struct net_device *dev)
+@@ -1455,7 +1467,7 @@ struct ieee80211_hw *ieee80211_alloc_hw(
+ 	mdev->open = ieee80211_master_open;
+ 	mdev->stop = ieee80211_master_stop;
+ 	mdev->type = ARPHRD_IEEE80211;
+-	mdev->header_ops = &ieee80211_header_ops;
++//	mdev->header_ops = &ieee80211_header_ops;
+ 	mdev->set_multicast_list = ieee80211_master_set_multicast_list;
+ 
+ 	sdata->vif.type = IEEE80211_IF_TYPE_AP;
+Index: mac80211/net/mac80211/ieee80211_i.h
+===================================================================
+--- mac80211.orig/net/mac80211/ieee80211_i.h	2008-02-15 22:20:53.000000000 +0100
++++ mac80211/net/mac80211/ieee80211_i.h	2008-02-15 22:21:37.000000000 +0100
+@@ -26,6 +26,16 @@
+ #include "ieee80211_key.h"
+ #include "sta_info.h"
+ 
++
++#define BIT(nr)		(1 << (nr))
++
++#define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
++extern char *print_mac(char *buf, const u8 *addr);
++#define DECLARE_MAC_BUF(var) char var[18] __maybe_unused
++
++#define CONFIG_MAC80211_RC_DEFAULT	__stringify(__CONFIG_MAC80211_RC_DEFAULT)
++
++
+ /* ieee80211.o internal definitions, etc. These are not included into
+  * low-level drivers. */
+ 
+Index: mac80211/net/mac80211/ieee80211_ioctl.c
+===================================================================
+--- mac80211.orig/net/mac80211/ieee80211_ioctl.c	2008-02-15 22:20:53.000000000 +0100
++++ mac80211/net/mac80211/ieee80211_ioctl.c	2008-02-15 22:21:01.000000000 +0100
+@@ -207,7 +207,7 @@ static int ieee80211_ioctl_giwrange(stru
+ 	IW_EVENT_CAPA_SET(range->event_capa, SIOCGIWAP);
+ 	IW_EVENT_CAPA_SET(range->event_capa, SIOCGIWSCAN);
+ 
+-	range->scan_capa |= IW_SCAN_CAPA_ESSID;
++//	range->scan_capa |= IW_SCAN_CAPA_ESSID;
+ 
+ 	return 0;
+ }
+Index: mac80211/net/wireless/core.c
+===================================================================
+--- mac80211.orig/net/wireless/core.c	2008-02-15 22:20:53.000000000 +0100
++++ mac80211/net/wireless/core.c	2008-02-15 22:21:01.000000000 +0100
+@@ -69,7 +69,7 @@ __cfg80211_drv_from_info(struct genl_inf
+ 
+ 	if (info->attrs[NL80211_ATTR_IFINDEX]) {
+ 		ifindex = nla_get_u32(info->attrs[NL80211_ATTR_IFINDEX]);
+-		dev = dev_get_by_index(&init_net, ifindex);
++		dev = dev_get_by_index(ifindex);
+ 		if (dev) {
+ 			if (dev->ieee80211_ptr)
+ 				byifidx =
+@@ -120,7 +120,7 @@ cfg80211_get_dev_from_ifindex(int ifinde
+ 	struct net_device *dev;
+ 
+ 	mutex_lock(&cfg80211_drv_mutex);
+-	dev = dev_get_by_index(&init_net, ifindex);
++	dev = dev_get_by_index(ifindex);
+ 	if (!dev)
+ 		goto out;
+ 	if (dev->ieee80211_ptr) {
+Index: mac80211/net/wireless/nl80211.c
+===================================================================
+--- mac80211.orig/net/wireless/nl80211.c	2008-02-15 22:20:53.000000000 +0100
++++ mac80211/net/wireless/nl80211.c	2008-02-15 22:21:01.000000000 +0100
+@@ -39,7 +39,7 @@ static int get_drv_dev_by_info_ifindex(s
+ 		return -EINVAL;
+ 
+ 	ifindex = nla_get_u32(info->attrs[NL80211_ATTR_IFINDEX]);
+-	*dev = dev_get_by_index(&init_net, ifindex);
++	*dev = dev_get_by_index(ifindex);
+ 	if (!*dev)
+ 		return -ENODEV;
+ 
+@@ -959,7 +959,7 @@ static int get_vlan(struct nlattr *vlana
+ 	*vlan = NULL;
+ 
+ 	if (vlanattr) {
+-		*vlan = dev_get_by_index(&init_net, nla_get_u32(vlanattr));
++		*vlan = dev_get_by_index(nla_get_u32(vlanattr));
+ 		if (!*vlan)
+ 			return -ENODEV;
+ 		if (!(*vlan)->ieee80211_ptr)
+Index: mac80211/net/mac80211/cfg.c
+===================================================================
+--- mac80211.orig/net/mac80211/cfg.c	2008-02-15 22:20:53.000000000 +0100
++++ mac80211/net/mac80211/cfg.c	2008-02-15 22:21:01.000000000 +0100
+@@ -9,7 +9,6 @@
+ #include <linux/ieee80211.h>
+ #include <linux/nl80211.h>
+ #include <linux/rtnetlink.h>
+-#include <net/net_namespace.h>
+ #include <linux/rcupdate.h>
+ #include <net/cfg80211.h>
+ #include "ieee80211_i.h"
+@@ -68,7 +67,7 @@ static int ieee80211_del_iface(struct wi
+ 		return -ENODEV;
+ 
+ 	/* we're under RTNL */
+-	dev = __dev_get_by_index(&init_net, ifindex);
++	dev = __dev_get_by_index(ifindex);
+ 	if (!dev)
+ 		return 0;
+ 
+@@ -89,7 +88,7 @@ static int ieee80211_change_iface(struct
+ 		return -ENODEV;
+ 
+ 	/* we're under RTNL */
+-	dev = __dev_get_by_index(&init_net, ifindex);
++	dev = __dev_get_by_index(ifindex);
+ 	if (!dev)
+ 		return -ENODEV;
+ 
+Index: mac80211/net/mac80211/tx.c
+===================================================================
+--- mac80211.orig/net/mac80211/tx.c	2008-02-15 22:20:53.000000000 +0100
++++ mac80211/net/mac80211/tx.c	2008-02-15 22:21:01.000000000 +0100
+@@ -18,7 +18,6 @@
+ #include <linux/etherdevice.h>
+ #include <linux/bitmap.h>
+ #include <linux/rcupdate.h>
+-#include <net/net_namespace.h>
+ #include <net/ieee80211_radiotap.h>
+ #include <net/cfg80211.h>
+ #include <net/mac80211.h>
+@@ -1051,7 +1050,7 @@ static int ieee80211_tx_prepare(struct i
+ 	struct net_device *dev;
+ 
+ 	pkt_data = (struct ieee80211_tx_packet_data *)skb->cb;
+-	dev = dev_get_by_index(&init_net, pkt_data->ifindex);
++	dev = dev_get_by_index(pkt_data->ifindex);
+ 	if (unlikely(dev && !is_ieee80211_device(dev, mdev))) {
+ 		dev_put(dev);
+ 		dev = NULL;
+@@ -1265,7 +1264,7 @@ int ieee80211_master_start_xmit(struct s
+ 	memset(&control, 0, sizeof(struct ieee80211_tx_control));
+ 
+ 	if (pkt_data->ifindex)
+-		odev = dev_get_by_index(&init_net, pkt_data->ifindex);
++		odev = dev_get_by_index(pkt_data->ifindex);
+ 	if (unlikely(odev && !is_ieee80211_device(odev, dev))) {
+ 		dev_put(odev);
+ 		odev = NULL;
+Index: mac80211/net/mac80211/util.c
+===================================================================
+--- mac80211.orig/net/mac80211/util.c	2008-02-15 22:20:53.000000000 +0100
++++ mac80211/net/mac80211/util.c	2008-02-15 22:21:01.000000000 +0100
+@@ -20,7 +20,6 @@
+ #include <linux/if_arp.h>
+ #include <linux/wireless.h>
+ #include <linux/bitmap.h>
+-#include <net/net_namespace.h>
+ #include <net/cfg80211.h>
+ #include <net/rtnetlink.h>
+ 
+Index: mac80211/net/wireless/sysfs.c
+===================================================================
+--- mac80211.orig/net/wireless/sysfs.c	2008-02-15 22:20:53.000000000 +0100
++++ mac80211/net/wireless/sysfs.c	2008-02-15 22:21:01.000000000 +0100
+@@ -53,7 +53,8 @@ static void wiphy_dev_release(struct dev
+ }
+ 
+ #ifdef CONFIG_HOTPLUG
+-static int wiphy_uevent(struct device *dev, struct kobj_uevent_env *env)
++static int wiphy_uevent(struct device *dev, char **envp, int num_envp,
++			char *buffer, int buffer_size)
+ {
+ 	/* TODO, we probably need stuff here */
+ 	return 0;

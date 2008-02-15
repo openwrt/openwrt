@@ -7,10 +7,10 @@
  * published by the Free Software Foundation.
  */
 
+#include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/crypto.h>
 #include <linux/err.h>
-#include <asm/scatterlist.h>
 
 #include <net/mac80211.h>
 #include "ieee80211_key.h"
@@ -63,7 +63,7 @@ void ieee80211_aes_ccm_encrypt(struct crypto_cipher *tfm, u8 *scratch,
 	s_0 = scratch + AES_BLOCK_LEN;
 	e = scratch + 2 * AES_BLOCK_LEN;
 
-	num_blocks = (data_len + AES_BLOCK_LEN - 1) / AES_BLOCK_LEN;
+	num_blocks = DIV_ROUND_UP(data_len, AES_BLOCK_LEN);
 	last_len = data_len % AES_BLOCK_LEN;
 	aes_ccm_prepare(tfm, b_0, aad, b, s_0, b);
 
@@ -102,7 +102,7 @@ int ieee80211_aes_ccm_decrypt(struct crypto_cipher *tfm, u8 *scratch,
 	s_0 = scratch + AES_BLOCK_LEN;
 	a = scratch + 2 * AES_BLOCK_LEN;
 
-	num_blocks = (data_len + AES_BLOCK_LEN - 1) / AES_BLOCK_LEN;
+	num_blocks = DIV_ROUND_UP(data_len, AES_BLOCK_LEN);
 	last_len = data_len % AES_BLOCK_LEN;
 	aes_ccm_prepare(tfm, b_0, aad, b, s_0, a);
 

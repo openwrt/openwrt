@@ -23,11 +23,11 @@ PKG_FWV4_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_FWV4_MD5SUM:=a7d8dde3ce474c361143b83e1d9890b1
 
 PKG_FWCUTTER_NAME:=b43-fwcutter
-PKG_FWCUTTER_VERSION=008
+PKG_FWCUTTER_VERSION=011
 
 PKG_FWCUTTER_SOURCE:=$(PKG_FWCUTTER_NAME)-$(PKG_FWCUTTER_VERSION).tar.bz2
-PKG_FWCUTTER_SOURCE_URL:=http://download.berlios.de/bcm43xx/
-PKG_FWCUTTER_MD5SUM:=3f7fbf4f8dcd296c6d1b0d42eab0f9ac
+PKG_FWCUTTER_SOURCE_URL:=http://bu3sch.de/b43/fwcutter/
+PKG_FWCUTTER_MD5SUM:=3db2f4de85a459451f5b391cf67a8d44
 
 define KernelPackage/b43
   SUBMENU:=Wireless Drivers
@@ -43,7 +43,6 @@ endef
 
 EXTRA_KCONFIG:= \
 	CONFIG_B43=m \
-	CONFIG_B43_DMA=y \
 	$(if $(CONFIG_LEDS_TRIGGERS),CONFIG_B43_LEDS=y) \
 
 
@@ -73,6 +72,8 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 	tar xjf "$(DL_DIR)/$(PKG_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
 	tar xjf "$(DL_DIR)/$(PKG_FWCUTTER_SOURCE)" -C "$(PKG_BUILD_DIR)"
+	$(Build/Patch)
+	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
 endef
 
 define Build/Configure

@@ -14,6 +14,7 @@
 #include <linux/slab.h>
 #include <linux/skbuff.h>
 #include <linux/if_arp.h>
+#include <linux/timer.h>
 
 #include <net/mac80211.h>
 #include "ieee80211_i.h"
@@ -73,36 +74,13 @@ struct sta_info *sta_info_get(struct ieee80211_local *local, u8 *addr)
 }
 EXPORT_SYMBOL(sta_info_get);
 
-int sta_info_min_txrate_get(struct ieee80211_local *local)
-{
-	struct sta_info *sta;
-	struct ieee80211_hw_mode *mode;
-	int min_txrate = 9999999;
-	int i;
-
-	read_lock_bh(&local->sta_lock);
-	mode = local->oper_hw_mode;
-	for (i = 0; i < STA_HASH_SIZE; i++) {
-		sta = local->sta_hash[i];
-		while (sta) {
-			if (sta->txrate < min_txrate)
-				min_txrate = sta->txrate;
-			sta = sta->hnext;
-		}
-	}
-	read_unlock_bh(&local->sta_lock);
-	if (min_txrate == 9999999)
-		min_txrate = 0;
-
-	return mode->rates[min_txrate].rate;
-}
-
 
 static void sta_info_release(struct kref *kref)
 {
 	struct sta_info *sta = container_of(kref, struct sta_info, kref);
 	struct ieee80211_local *local = sta->local;
 	struct sk_buff *skb;
+	int i;
 
 	/* free sta structure; it has already been removed from
 	 * hash table etc. external structures. Make sure that all
@@ -114,6 +92,10 @@ static void sta_info_release(struct kref *kref)
 	}
 	while ((skb = skb_dequeue(&sta->tx_filtered)) != NULL) {
 		dev_kfree_skb_any(skb);
+	}
+	for (i = 0; i <  STA_TID_NUM; i++) {
+		del_timer_sync(&sta->ampdu_mlme.tid_rx[i].session_timer);
+		del_timer_sync(&sta->ampdu_mlme.tid_tx[i].addba_resp_timer);
 	}
 	rate_control_free_sta(sta->rate_ctrl, sta->rate_ctrl_priv);
 	rate_control_put(sta->rate_ctrl);
@@ -132,6 +114,8 @@ struct sta_info * sta_info_add(struct ieee80211_local *local,
 			       struct net_device *dev, u8 *addr, gfp_t gfp)
 {
 	struct sta_info *sta;
+	int i;
+	DECLARE_MAC_BUF(mac);
 
 	sta = kzalloc(sizeof(*sta), gfp);
 	if (!sta)
@@ -150,6 +134,28 @@ struct sta_info * sta_info_add(struct ieee80211_local *local,
 	memcpy(sta->addr, addr, ETH_ALEN);
 	sta->local = local;
 	sta->dev = dev;
+	spin_lock_init(&sta->ampdu_mlme.ampdu_rx);
+	spin_lock_init(&sta->ampdu_mlme.ampdu_tx);
+	for (i = 0; i < STA_TID_NUM; i++) {
+		/* timer_to_tid must be initialized with identity mapping to
+		 * enable session_timer's data differentiation. refer to
+		 * sta_rx_agg_session_timer_expired for useage */
+		sta->timer_to_tid[i] = i;
+		/* tid to tx queue: initialize according to HW (0 is valid) */
+		sta->tid_to_tx_q[i] = local->hw.queues;
+		/* rx timers */
+		sta->ampdu_mlme.tid_rx[i].session_timer.function =
+			sta_rx_agg_session_timer_expired;
+		sta->ampdu_mlme.tid_rx[i].session_timer.data =
+			(unsigned long)&sta->timer_to_tid[i];
+		init_timer(&sta->ampdu_mlme.tid_rx[i].session_timer);
+		/* tx timers */
+		sta->ampdu_mlme.tid_tx[i].addba_resp_timer.function =
+			sta_addba_resp_timer_expired;
+		sta->ampdu_mlme.tid_tx[i].addba_resp_timer.data =
+			(unsigned long)&sta->timer_to_tid[i];
+		init_timer(&sta->ampdu_mlme.tid_tx[i].addba_resp_timer);
+	}
 	skb_queue_head_init(&sta->ps_tx_buf);
 	skb_queue_head_init(&sta->tx_filtered);
 	__sta_info_get(sta);	/* sta used by caller, decremented by
@@ -158,14 +164,21 @@ struct sta_info * sta_info_add(struct ieee80211_local *local,
 	list_add(&sta->list, &local->sta_list);
 	local->num_sta++;
 	sta_info_hash_add(local, sta);
-	if (local->ops->sta_notify)
-		local->ops->sta_notify(local_to_hw(local), dev->ifindex,
-					STA_NOTIFY_ADD, addr);
+	if (local->ops->sta_notify) {
+		struct ieee80211_sub_if_data *sdata;
+
+		sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+		if (sdata->vif.type == IEEE80211_IF_TYPE_VLAN)
+			sdata = sdata->u.vlan.ap;
+
+		local->ops->sta_notify(local_to_hw(local), &sdata->vif,
+				       STA_NOTIFY_ADD, addr);
+	}
 	write_unlock_bh(&local->sta_lock);
 
 #ifdef CONFIG_MAC80211_VERBOSE_DEBUG
-	printk(KERN_DEBUG "%s: Added STA " MAC_FMT "\n",
-	       wiphy_name(local->hw.wiphy), MAC_ARG(addr));
+	printk(KERN_DEBUG "%s: Added STA %s\n",
+	       wiphy_name(local->hw.wiphy), print_mac(mac, addr));
 #endif /* CONFIG_MAC80211_VERBOSE_DEBUG */
 
 #ifdef CONFIG_MAC80211_DEBUGFS
@@ -204,6 +217,7 @@ void sta_info_free(struct sta_info *sta)
 {
 	struct sk_buff *skb;
 	struct ieee80211_local *local = sta->local;
+	DECLARE_MAC_BUF(mac);
 
 	might_sleep();
 
@@ -220,16 +234,24 @@ void sta_info_free(struct sta_info *sta)
 	}
 
 #ifdef CONFIG_MAC80211_VERBOSE_DEBUG
-	printk(KERN_DEBUG "%s: Removed STA " MAC_FMT "\n",
-	       wiphy_name(local->hw.wiphy), MAC_ARG(sta->addr));
+	printk(KERN_DEBUG "%s: Removed STA %s\n",
+	       wiphy_name(local->hw.wiphy), print_mac(mac, sta->addr));
 #endif /* CONFIG_MAC80211_VERBOSE_DEBUG */
 
 	ieee80211_key_free(sta->key);
 	sta->key = NULL;
 
-	if (local->ops->sta_notify)
-		local->ops->sta_notify(local_to_hw(local), sta->dev->ifindex,
-					STA_NOTIFY_REMOVE, sta->addr);
+	if (local->ops->sta_notify) {
+		struct ieee80211_sub_if_data *sdata;
+
+		sdata = IEEE80211_DEV_TO_SUB_IF(sta->dev);
+
+		if (sdata->vif.type == IEEE80211_IF_TYPE_VLAN)
+			sdata = sdata->u.vlan.ap;
+
+		local->ops->sta_notify(local_to_hw(local), &sdata->vif,
+				       STA_NOTIFY_REMOVE, sta->addr);
+	}
 
 	rate_control_remove_sta_debugfs(sta);
 	ieee80211_sta_debugfs_remove(sta);
@@ -264,6 +286,7 @@ static void sta_info_cleanup_expire_buffered(struct ieee80211_local *local,
 {
 	unsigned long flags;
 	struct sk_buff *skb;
+	DECLARE_MAC_BUF(mac);
 
 	if (skb_queue_empty(&sta->ps_tx_buf))
 		return;
@@ -282,7 +305,7 @@ static void sta_info_cleanup_expire_buffered(struct ieee80211_local *local,
 		if (skb) {
 			local->total_ps_buffered--;
 			printk(KERN_DEBUG "Buffered frame expired (STA "
-			       MAC_FMT ")\n", MAC_ARG(sta->addr));
+			       "%s)\n", print_mac(mac, sta->addr));
 			dev_kfree_skb(skb);
 		} else
 			break;
@@ -303,7 +326,8 @@ static void sta_info_cleanup(unsigned long data)
 	}
 	read_unlock_bh(&local->sta_lock);
 
-	local->sta_cleanup.expires = jiffies + STA_INFO_CLEANUP_INTERVAL;
+	local->sta_cleanup.expires =
+		round_jiffies(jiffies + STA_INFO_CLEANUP_INTERVAL);
 	add_timer(&local->sta_cleanup);
 }
 
@@ -342,7 +366,8 @@ void sta_info_init(struct ieee80211_local *local)
 	INIT_LIST_HEAD(&local->sta_list);
 
 	init_timer(&local->sta_cleanup);
-	local->sta_cleanup.expires = jiffies + STA_INFO_CLEANUP_INTERVAL;
+	local->sta_cleanup.expires =
+		round_jiffies(jiffies + STA_INFO_CLEANUP_INTERVAL);
 	local->sta_cleanup.data = (unsigned long) local;
 	local->sta_cleanup.function = sta_info_cleanup;
 

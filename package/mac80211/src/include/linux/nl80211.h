@@ -7,6 +7,18 @@
  */
 
 /**
+ * DOC: Station handling
+ *
+ * Stations are added per interface, but a special case exists with VLAN
+ * interfaces. When a station is bound to an AP interface, it may be moved
+ * into a VLAN identified by a VLAN interface index (%NL80211_ATTR_STA_VLAN).
+ * The station is still assumed to belong to the AP interface it was added
+ * to.
+ *
+ * TODO: need more info?
+ */
+
+/**
  * enum nl80211_commands - supported nl80211 commands
  *
  * @NL80211_CMD_UNSPEC: unspecified command to catch errors
@@ -25,7 +37,7 @@
  *	either a dump request on a %NL80211_ATTR_WIPHY or a specific get
  *	on an %NL80211_ATTR_IFINDEX is supported.
  * @NL80211_CMD_SET_INTERFACE: Set type of a virtual interface, requires
- 	%NL80211_ATTR_IFINDEX and %NL80211_ATTR_IFTYPE.
+ *	%NL80211_ATTR_IFINDEX and %NL80211_ATTR_IFTYPE.
  * @NL80211_CMD_NEW_INTERFACE: Newly created virtual interface or response
  *	to %NL80211_CMD_GET_INTERFACE. Has %NL80211_ATTR_IFINDEX,
  *	%NL80211_ATTR_WIPHY and %NL80211_ATTR_IFTYPE attributes. Can also
@@ -36,6 +48,35 @@
  *	%NL80211_ATTR_IFINDEX and %NL80211_ATTR_WIPHY. Can also be sent from
  *	userspace to request deletion of a virtual interface, then requires
  *	attribute %NL80211_ATTR_IFINDEX.
+ *
+ * @NL80211_CMD_GET_KEY: Get sequence counter information for a key specified
+ *	by %NL80211_ATTR_KEY_IDX and/or %NL80211_ATTR_MAC.
+ * @NL80211_CMD_SET_KEY: Set key attributes %NL80211_ATTR_KEY_DEFAULT or
+ *	%NL80211_ATTR_KEY_THRESHOLD.
+ * @NL80211_CMD_NEW_KEY: add a key with given %NL80211_ATTR_KEY_DATA,
+ *	%NL80211_ATTR_KEY_IDX, %NL80211_ATTR_MAC and %NL80211_ATTR_KEY_CIPHER
+ *	attributes.
+ * @NL80211_CMD_DEL_KEY: delete a key identified by %NL80211_ATTR_KEY_IDX
+ *	or %NL80211_ATTR_MAC.
+ *
+ * @NL80211_CMD_GET_BEACON: retrieve beacon information (returned in a
+ *	%NL80222_CMD_NEW_BEACON message)
+ * @NL80211_CMD_SET_BEACON: set the beacon on an access point interface
+ *	using the %NL80211_ATTR_BEACON_INTERVAL, %NL80211_ATTR_DTIM_PERIOD,
+ *	%NL80211_BEACON_HEAD and %NL80211_BEACON_TAIL attributes.
+ * @NL80211_CMD_NEW_BEACON: add a new beacon to an access point interface,
+ *	parameters are like for %NL80211_CMD_SET_BEACON.
+ * @NL80211_CMD_DEL_BEACON: remove the beacon, stop sending it
+ *
+ * @NL80211_CMD_GET_STATION: Get station attributes for station identified by
+ *	%NL80211_ATTR_MAC on the interface identified by %NL80211_ATTR_IFINDEX.
+ * @NL80211_CMD_SET_STATION: Set station attributes for station identified by
+ *	%NL80211_ATTR_MAC on the interface identified by %NL80211_ATTR_IFINDEX.
+ * @NL80211_CMD_NEW_STATION: Add a station with given attributes to the
+ *	the interface identified by %NL80211_ATTR_IFINDEX.
+ * @NL80211_CMD_DEL_STATION: Remove a station identified by %NL80211_ATTR_MAC
+ *	or, if no MAC address given, all stations, on the interface identified
+ *	by %NL80211_ATTR_IFINDEX.
  *
  * @NL80211_CMD_MAX: highest used command number
  * @__NL80211_CMD_AFTER_LAST: internal use
@@ -53,6 +94,21 @@ enum nl80211_commands {
 	NL80211_CMD_SET_INTERFACE,
 	NL80211_CMD_NEW_INTERFACE,
 	NL80211_CMD_DEL_INTERFACE,
+
+	NL80211_CMD_GET_KEY,
+	NL80211_CMD_SET_KEY,
+	NL80211_CMD_NEW_KEY,
+	NL80211_CMD_DEL_KEY,
+
+	NL80211_CMD_GET_BEACON,
+	NL80211_CMD_SET_BEACON,
+	NL80211_CMD_NEW_BEACON,
+	NL80211_CMD_DEL_BEACON,
+
+	NL80211_CMD_GET_STATION,
+	NL80211_CMD_SET_STATION,
+	NL80211_CMD_NEW_STATION,
+	NL80211_CMD_DEL_STATION,
 
 	/* add commands here */
 
@@ -75,6 +131,42 @@ enum nl80211_commands {
  * @NL80211_ATTR_IFNAME: network interface name
  * @NL80211_ATTR_IFTYPE: type of virtual interface, see &enum nl80211_iftype
  *
+ * @NL80211_ATTR_MAC: MAC address (various uses)
+ *
+ * @NL80211_ATTR_KEY_DATA: (temporal) key data; for TKIP this consists of
+ *	16 bytes encryption key followed by 8 bytes each for TX and RX MIC
+ *	keys
+ * @NL80211_ATTR_KEY_IDX: key ID (u8, 0-3)
+ * @NL80211_ATTR_KEY_CIPHER: key cipher suite (u32, as defined by IEEE 802.11
+ *	section 7.3.2.25.1, e.g. 0x000FAC04)
+ * @NL80211_ATTR_KEY_SEQ: transmit key sequence number (IV/PN) for TKIP and
+ *	CCMP keys, each six bytes in little endian
+ *
+ * @NL80211_ATTR_BEACON_INTERVAL: beacon interval in TU
+ * @NL80211_ATTR_DTIM_PERIOD: DTIM period for beaconing
+ * @NL80211_ATTR_BEACON_HEAD: portion of the beacon before the TIM IE
+ * @NL80211_ATTR_BEACON_TAIL: portion of the beacon after the TIM IE
+ *
+ * @NL80211_ATTR_STA_AID: Association ID for the station (u16)
+ * @NL80211_ATTR_STA_FLAGS: flags, nested element with NLA_FLAG attributes of
+ *	&enum nl80211_sta_flags.
+ * @NL80211_ATTR_STA_LISTEN_INTERVAL: listen interval as defined by
+ *	IEEE 802.11 7.3.1.6 (u16).
+ * @NL80211_ATTR_STA_SUPPORTED_RATES: supported rates, array of supported
+ *	rates as defined by IEEE 802.11 7.3.2.2 but without the length
+ *	restriction (at most %NL80211_MAX_SUPP_RATES).
+ * @NL80211_ATTR_STA_VLAN: interface index of VLAN interface to move station
+ *	to, or the AP interface the station was originally added to to.
+ * @NL80211_ATTR_STA_STATS: statistics for a station, part of station info
+ *	given for %NL80211_CMD_GET_STATION, nested attribute containing
+ *	info as possible, see &enum nl80211_sta_stats.
+ *
+ * @NL80211_ATTR_WIPHY_BANDS: Information about an operating bands,
+ *	consisting of a nested array.
+ *
+ * @NL80211_ATTR_MNTR_FLAGS: flags, nested element with NLA_FLAG attributes of
+ *      &enum nl80211_mntr_flags.
+ *
  * @NL80211_ATTR_MAX: highest attribute number currently defined
  * @__NL80211_ATTR_AFTER_LAST: internal use
  */
@@ -89,11 +181,37 @@ enum nl80211_attrs {
 	NL80211_ATTR_IFNAME,
 	NL80211_ATTR_IFTYPE,
 
+	NL80211_ATTR_MAC,
+
+	NL80211_ATTR_KEY_DATA,
+	NL80211_ATTR_KEY_IDX,
+	NL80211_ATTR_KEY_CIPHER,
+	NL80211_ATTR_KEY_SEQ,
+	NL80211_ATTR_KEY_DEFAULT,
+
+	NL80211_ATTR_BEACON_INTERVAL,
+	NL80211_ATTR_DTIM_PERIOD,
+	NL80211_ATTR_BEACON_HEAD,
+	NL80211_ATTR_BEACON_TAIL,
+
+	NL80211_ATTR_STA_AID,
+	NL80211_ATTR_STA_FLAGS,
+	NL80211_ATTR_STA_LISTEN_INTERVAL,
+	NL80211_ATTR_STA_SUPPORTED_RATES,
+	NL80211_ATTR_STA_VLAN,
+	NL80211_ATTR_STA_STATS,
+
+	NL80211_ATTR_WIPHY_BANDS,
+
+	NL80211_ATTR_MNTR_FLAGS,
+
 	/* add attributes here, update the policy in nl80211.c */
 
 	__NL80211_ATTR_AFTER_LAST,
 	NL80211_ATTR_MAX = __NL80211_ATTR_AFTER_LAST - 1
 };
+
+#define NL80211_MAX_SUPP_RATES	32
 
 /**
  * enum nl80211_iftype - (virtual) interface types
@@ -124,6 +242,141 @@ enum nl80211_iftype {
 	/* keep last */
 	__NL80211_IFTYPE_AFTER_LAST,
 	NL80211_IFTYPE_MAX = __NL80211_IFTYPE_AFTER_LAST - 1
+};
+
+/**
+ * enum nl80211_sta_flags - station flags
+ *
+ * Station flags. When a station is added to an AP interface, it is
+ * assumed to be already associated (and hence authenticated.)
+ *
+ * @NL80211_STA_FLAG_AUTHORIZED: station is authorized (802.1X)
+ * @NL80211_STA_FLAG_SHORT_PREAMBLE: station is capable of receiving frames
+ *	with short barker preamble
+ * @NL80211_STA_FLAG_WME: station is WME/QoS capable
+ */
+enum nl80211_sta_flags {
+	__NL80211_STA_FLAG_INVALID,
+	NL80211_STA_FLAG_AUTHORIZED,
+	NL80211_STA_FLAG_SHORT_PREAMBLE,
+	NL80211_STA_FLAG_WME,
+
+	/* keep last */
+	__NL80211_STA_FLAG_AFTER_LAST,
+	NL80211_STA_FLAG_MAX = __NL80211_STA_FLAG_AFTER_LAST - 1
+};
+
+/**
+ * enum nl80211_sta_stats - station statistics
+ *
+ * These attribute types are used with %NL80211_ATTR_STA_STATS
+ * when getting information about a station.
+ *
+ * @__NL80211_STA_STAT_INVALID: attribute number 0 is reserved
+ * @NL80211_STA_STAT_INACTIVE_TIME: time since last activity (u32, msecs)
+ * @NL80211_STA_STAT_RX_BYTES: total received bytes (u32, from this station)
+ * @NL80211_STA_STAT_TX_BYTES: total transmitted bytes (u32, to this station)
+ * @__NL80211_STA_STAT_AFTER_LAST: internal
+ * @NL80211_STA_STAT_MAX: highest possible station stats attribute
+ */
+enum nl80211_sta_stats {
+	__NL80211_STA_STAT_INVALID,
+	NL80211_STA_STAT_INACTIVE_TIME,
+	NL80211_STA_STAT_RX_BYTES,
+	NL80211_STA_STAT_TX_BYTES,
+
+	/* keep last */
+	__NL80211_STA_STAT_AFTER_LAST,
+	NL80211_STA_STAT_MAX = __NL80211_STA_STAT_AFTER_LAST - 1
+};
+
+/**
+ * enum nl80211_band_attr - band attributes
+ * @__NL80211_BAND_ATTR_INVALID: attribute number 0 is reserved
+ * @NL80211_BAND_ATTR_FREQS: supported frequencies in this band,
+ *	an array of nested frequency attributes
+ * @NL80211_BAND_ATTR_RATES: supported bitrates in this band,
+ *	an array of nested bitrate attributes
+ */
+enum nl80211_band_attr {
+	__NL80211_BAND_ATTR_INVALID,
+	NL80211_BAND_ATTR_FREQS,
+	NL80211_BAND_ATTR_RATES,
+
+	/* keep last */
+	__NL80211_BAND_ATTR_AFTER_LAST,
+	NL80211_BAND_ATTR_MAX = __NL80211_BAND_ATTR_AFTER_LAST - 1
+};
+
+/**
+ * enum nl80211_frequency_attr - frequency attributes
+ * @NL80211_FREQUENCY_ATTR_FREQ: Frequency in MHz
+ * @NL80211_FREQUENCY_ATTR_DISABLED: Channel is disabled in current
+ *	regulatory domain.
+ * @NL80211_FREQUENCY_ATTR_PASSIVE_SCAN: Only passive scanning is
+ *	permitted on this channel in current regulatory domain.
+ * @NL80211_FREQUENCY_ATTR_NO_IBSS: IBSS networks are not permitted
+ *	on this channel in current regulatory domain.
+ * @NL80211_FREQUENCY_ATTR_RADAR: Radar detection is mandatory
+ *	on this channel in current regulatory domain.
+ */
+enum nl80211_frequency_attr {
+	__NL80211_FREQUENCY_ATTR_INVALID,
+	NL80211_FREQUENCY_ATTR_FREQ,
+	NL80211_FREQUENCY_ATTR_DISABLED,
+	NL80211_FREQUENCY_ATTR_PASSIVE_SCAN,
+	NL80211_FREQUENCY_ATTR_NO_IBSS,
+	NL80211_FREQUENCY_ATTR_RADAR,
+
+	/* keep last */
+	__NL80211_FREQUENCY_ATTR_AFTER_LAST,
+	NL80211_FREQUENCY_ATTR_MAX = __NL80211_FREQUENCY_ATTR_AFTER_LAST - 1
+};
+
+/**
+ * enum nl80211_bitrate_attr - bitrate attributes
+ * @NL80211_BITRATE_ATTR_RATE: Bitrate in units of 100 kbps
+ * @NL80211_BITRATE_ATTR_2GHZ_SHORTPREAMBLE: Short preamble supported
+ *	in 2.4 GHz band.
+ */
+enum nl80211_bitrate_attr {
+	__NL80211_BITRATE_ATTR_INVALID,
+	NL80211_BITRATE_ATTR_RATE,
+	NL80211_BITRATE_ATTR_2GHZ_SHORTPREAMBLE,
+
+	/* keep last */
+	__NL80211_BITRATE_ATTR_AFTER_LAST,
+	NL80211_BITRATE_ATTR_MAX = __NL80211_BITRATE_ATTR_AFTER_LAST - 1
+};
+
+/**
+ * enum nl80211_mntr_flags - monitor configuration flags
+ *
+ * Monitor configuration flags.
+ *
+ * @__NL80211_MNTR_FLAG_INVALID: reserved
+ *
+ * @NL80211_MNTR_FLAG_FCSFAIL: pass frames with bad FCS
+ * @NL80211_MNTR_FLAG_PLCPFAIL: pass frames with bad PLCP
+ * @NL80211_MNTR_FLAG_CONTROL: pass control frames
+ * @NL80211_MNTR_FLAG_OTHER_BSS: disable BSSID filtering
+ * @NL80211_MNTR_FLAG_COOK_FRAMES: report frames after processing.
+ *	overrides all other flags.
+ *
+ * @__NL80211_MNTR_FLAG_AFTER_LAST: internal use
+ * @NL80211_MNTR_FLAG_MAX: highest possible monitor flag
+ */
+enum nl80211_mntr_flags {
+	__NL80211_MNTR_FLAG_INVALID,
+	NL80211_MNTR_FLAG_FCSFAIL,
+	NL80211_MNTR_FLAG_PLCPFAIL,
+	NL80211_MNTR_FLAG_CONTROL,
+	NL80211_MNTR_FLAG_OTHER_BSS,
+	NL80211_MNTR_FLAG_COOK_FRAMES,
+
+	/* keep last */
+	__NL80211_MNTR_FLAG_AFTER_LAST,
+	NL80211_MNTR_FLAG_MAX = __NL80211_MNTR_FLAG_AFTER_LAST - 1
 };
 
 #endif /* __LINUX_NL80211_H */

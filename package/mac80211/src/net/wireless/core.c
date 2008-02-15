@@ -69,7 +69,7 @@ __cfg80211_drv_from_info(struct genl_info *info)
 
 	if (info->attrs[NL80211_ATTR_IFINDEX]) {
 		ifindex = nla_get_u32(info->attrs[NL80211_ATTR_IFINDEX]);
-		dev = dev_get_by_index(ifindex);
+		dev = dev_get_by_index(&init_net, ifindex);
 		if (dev) {
 			if (dev->ieee80211_ptr)
 				byifidx =
@@ -120,7 +120,7 @@ cfg80211_get_dev_from_ifindex(int ifindex)
 	struct net_device *dev;
 
 	mutex_lock(&cfg80211_drv_mutex);
-	dev = dev_get_by_index(ifindex);
+	dev = dev_get_by_index(&init_net, ifindex);
 	if (!dev)
 		goto out;
 	if (dev->ieee80211_ptr) {
@@ -184,6 +184,9 @@ struct wiphy *wiphy_new(struct cfg80211_ops *ops, int sizeof_priv)
 	struct cfg80211_registered_device *drv;
 	int alloc_size;
 
+	WARN_ON(!ops->add_key && ops->del_key);
+	WARN_ON(ops->add_key && !ops->del_key);
+
 	alloc_size = sizeof(*drv) + sizeof_priv;
 
 	drv = kzalloc(alloc_size, GFP_KERNEL);
@@ -229,6 +232,47 @@ int wiphy_register(struct wiphy *wiphy)
 {
 	struct cfg80211_registered_device *drv = wiphy_to_dev(wiphy);
 	int res;
+	enum ieee80211_band band;
+	struct ieee80211_supported_band *sband;
+	bool have_band = false;
+	int i;
+
+	/* sanity check supported bands/channels */
+	for (band = 0; band < IEEE80211_NUM_BANDS; band++) {
+		sband = wiphy->bands[band];
+		if (!sband)
+			continue;
+
+		sband->band = band;
+
+		if (!sband->n_channels || !sband->n_bitrates) {
+			WARN_ON(1);
+			return -EINVAL;
+		}
+
+		for (i = 0; i < sband->n_channels; i++) {
+			sband->channels[i].orig_flags =
+				sband->channels[i].flags;
+			sband->channels[i].orig_mag =
+				sband->channels[i].max_antenna_gain;
+			sband->channels[i].orig_mpwr =
+				sband->channels[i].max_power;
+			sband->channels[i].band = band;
+		}
+
+		have_band = true;
+	}
+
+	if (!have_band) {
+		WARN_ON(1);
+		return -EINVAL;
+	}
+
+	/* check and set up bitrates */
+	ieee80211_set_bitrate_flags(wiphy);
+
+	/* set up regulatory info */
+	wiphy_update_regulatory(wiphy);
 
 	mutex_lock(&cfg80211_drv_mutex);
 
