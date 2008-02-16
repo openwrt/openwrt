@@ -1,0 +1,25 @@
+Subject: mac80211: allow AP and VLAN modes
+
+This adds AP/VLAN modes to the list of modes that a mac80211
+interface can be created in/switched into.
+
+Signed-off-by: Johannes Berg <johannes@sipsolutions.net>
+---
+ net/mac80211/cfg.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+Index: mac80211/net/mac80211/cfg.c
+===================================================================
+--- mac80211.orig/net/mac80211/cfg.c	2008-02-16 20:16:09.000000000 +0100
++++ mac80211/net/mac80211/cfg.c	2008-02-16 20:16:39.000000000 +0100
+@@ -27,6 +27,10 @@ nl80211_type_to_mac80211_type(enum nl802
+ 		return IEEE80211_IF_TYPE_STA;
+ 	case NL80211_IFTYPE_MONITOR:
+ 		return IEEE80211_IF_TYPE_MNTR;
++	case NL80211_IFTYPE_AP:
++		return IEEE80211_IF_TYPE_AP;
++	case NL80211_IFTYPE_AP_VLAN:
++		return IEEE80211_IF_TYPE_VLAN;
+ 	default:
+ 		return IEEE80211_IF_TYPE_INVALID;
+ 	}
