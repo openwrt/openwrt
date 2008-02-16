@@ -1,7 +1,7 @@
 Index: hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576/hostapd/Makefile
 ===================================================================
---- hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576.orig/hostapd/Makefile	2007-11-16 05:08:24.000000000 +0100
-+++ hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576/hostapd/Makefile	2008-02-16 19:38:51.000000000 +0100
+--- hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576.orig/hostapd/Makefile	2008-02-16 19:44:22.000000000 +0100
++++ hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576/hostapd/Makefile	2008-02-16 19:44:34.000000000 +0100
 @@ -121,6 +121,12 @@ OBJS += driver_devicescape.o
  LIBS += -lnl
  endif
@@ -15,3 +15,27 @@ Index: hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576/hostapd/Makefil
  ifdef CONFIG_DRIVER_BSD
  CFLAGS += -DCONFIG_DRIVER_BSD
  OBJS += driver_bsd.o
+Index: hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576/hostapd/drivers.c
+===================================================================
+--- hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576.orig/hostapd/drivers.c	2007-11-16 05:08:24.000000000 +0100
++++ hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576/hostapd/drivers.c	2008-02-16 19:56:29.000000000 +0100
+@@ -22,6 +22,9 @@ extern struct wpa_driver_ops wpa_driver_
+ /* driver_devicescape.c */
+ extern struct wpa_driver_ops wpa_driver_devicescape_ops;
+ #endif /* CONFIG_DRIVER_DEVICESCAPE */
++#ifdef CONFIG_DRIVER_NL80211
++extern struct wpa_driver_ops wpa_driver_nl80211_ops; /* driver_nl80211.c */
++#endif /* CONFIG_DRIVER_NL80211 */
+ #ifdef CONFIG_DRIVER_PRISM54
+ extern struct wpa_driver_ops wpa_driver_prism54_ops; /* driver_prism54.c */
+ #endif /* CONFIG_DRIVER_PRISM54 */
+@@ -47,6 +50,9 @@ struct wpa_driver_ops *hostapd_drivers[]
+ #ifdef CONFIG_DRIVER_DEVICESCAPE
+ 	&wpa_driver_devicescape_ops,
+ #endif /* CONFIG_DRIVER_DEVICESCAPE */
++#ifdef CONFIG_DRIVER_NL80211
++	&wpa_driver_nl80211_ops,
++#endif /* CONFIG_DRIVER_NL80211 */
+ #ifdef CONFIG_DRIVER_PRISM54
+ 	&wpa_driver_prism54_ops,
+ #endif /* CONFIG_DRIVER_PRISM54 */
