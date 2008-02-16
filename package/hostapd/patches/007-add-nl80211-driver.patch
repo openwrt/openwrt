@@ -1,0 +1,17 @@
+Index: hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576/hostapd/Makefile
+===================================================================
+--- hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576.orig/hostapd/Makefile	2007-11-16 05:08:24.000000000 +0100
++++ hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576/hostapd/Makefile	2008-02-16 19:38:51.000000000 +0100
+@@ -121,6 +121,12 @@ OBJS += driver_devicescape.o
+ LIBS += -lnl
+ endif
+ 
++ifdef CONFIG_DRIVER_NL80211
++CFLAGS += -DCONFIG_DRIVER_NL80211
++OBJS += driver_nl80211.o radiotap.o
++LIBS += -lnl
++endif
++
+ ifdef CONFIG_DRIVER_BSD
+ CFLAGS += -DCONFIG_DRIVER_BSD
+ OBJS += driver_bsd.o
