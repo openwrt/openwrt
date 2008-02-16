@@ -95,25 +95,60 @@ static void bcm47xx_fill_sprom_nvram(struct ssb_sprom *sprom)
 {
 	char *s;
 
-	memset(sprom, 0, sizeof(struct ssb_sprom));
-	
-	sprom->revision = 3;
+	memset(sprom, 0xFF, sizeof(struct ssb_sprom));
+
+	sprom->revision = 1;
+	if ((s = nvram_get("il0macaddr")))
+		e_aton(s, sprom->r1.il0mac);
 	if ((s = nvram_get("et0macaddr")))
 		e_aton(s, sprom->r1.et0mac);
 	if ((s = nvram_get("et1macaddr")))
 		e_aton(s, sprom->r1.et1mac);
 	if ((s = nvram_get("et0phyaddr")))
-		sprom->r1.et0phyaddr = simple_strtoul(s, NULL, 10);
+		sprom->r1.et0phyaddr = simple_strtoul(s, NULL, 0);
 	if ((s = nvram_get("et1phyaddr")))
-		sprom->r1.et1phyaddr = simple_strtoul(s, NULL, 10);
+		sprom->r1.et1phyaddr = simple_strtoul(s, NULL, 0);
+	if ((s = nvram_get("et0mdcport")))
+		sprom->r1.et0mdcport = !!simple_strtoul(s, NULL, 10);
+	if ((s = nvram_get("et1mdcport")))
+		sprom->r1.et1mdcport = !!simple_strtoul(s, NULL, 10);
+	if ((s = nvram_get("pa0b0")))
+		sprom->r1.pa0b0 = simple_strtoul(s, NULL, 0);
+	if ((s = nvram_get("pa0b1")))
+		sprom->r1.pa0b1 = simple_strtoul(s, NULL, 0);
+	if ((s = nvram_get("pa0b2")))
+		sprom->r1.pa0b2 = simple_strtoul(s, NULL, 0);
+	if ((s = nvram_get("pa1b0")))
+		sprom->r1.pa1b0 = simple_strtoul(s, NULL, 0);
+	if ((s = nvram_get("pa1b1")))
+		sprom->r1.pa1b1 = simple_strtoul(s, NULL, 0);
+	if ((s = nvram_get("pa1b2")))
+		sprom->r1.pa1b2 = simple_strtoul(s, NULL, 0);
+	if ((s = nvram_get("wl0gpio0")))
+		sprom->r1.gpio0 = simple_strtoul(s, NULL, 0);
+	if ((s = nvram_get("wl0gpio1")))
+		sprom->r1.gpio1 = simple_strtoul(s, NULL, 0);
+	if ((s = nvram_get("wl0gpio2")))
+		sprom->r1.gpio2 = simple_strtoul(s, NULL, 0);
+	if ((s = nvram_get("wl0gpio3")))
+		sprom->r1.gpio3 = simple_strtoul(s, NULL, 0);
+	if ((s = nvram_get("pa0maxpwr")))
+		sprom->r1.maxpwr_bg = simple_strtoul(s, NULL, 0);
+	if ((s = nvram_get("pa1maxpwr")))
+		sprom->r1.maxpwr_a = simple_strtoul(s, NULL, 0);
+	if ((s = nvram_get("pa0itssit")))
+		sprom->r1.itssi_bg = simple_strtoul(s, NULL, 0);
+	if ((s = nvram_get("pa1itssit")))
+		sprom->r1.itssi_a = simple_strtoul(s, NULL, 0);
+	if ((s = nvram_get("boardflags")))
+		sprom->r1.boardflags_lo = simple_strtoul(s, NULL, 0);
 }
 
 static int bcm47xx_get_invariants(struct ssb_bus *bus, struct ssb_init_invariants *iv)
 {
 	char *s;
-	
-	// TODO
-	//iv->boardinfo.vendor = 
+
+	iv->boardinfo.vendor = SSB_BOARDVENDOR_BCM;
 	if ((s = nvram_get("boardtype")))
 		iv->boardinfo.type = (u16)simple_strtoul(s, NULL, 0);
 	if ((s = nvram_get("boardrev")))
