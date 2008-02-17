@@ -88,11 +88,6 @@ static void e_aton(char *str, char *dest)
 
 static void bcm47xx_fill_sprom(struct ssb_sprom *sprom)
 {
-	// TODO
-}
-
-static void bcm47xx_fill_sprom_nvram(struct ssb_sprom *sprom)
-{
 	char *s;
 
 	memset(sprom, 0xFF, sizeof(struct ssb_sprom));
@@ -153,7 +148,9 @@ static int bcm47xx_get_invariants(struct ssb_bus *bus, struct ssb_init_invariant
 		iv->boardinfo.type = (u16)simple_strtoul(s, NULL, 0);
 	if ((s = nvram_get("boardrev")))
 		iv->boardinfo.rev = (u16)simple_strtoul(s, NULL, 0);
+
 	bcm47xx_fill_sprom(&iv->sprom);
+
 	return 0;
 }
 
@@ -171,10 +168,6 @@ void __init plat_mem_setup(void)
 	}
 	mcore = &ssb.mipscore;
 
-	/* FIXME: the nvram init depends on the ssb being fully initializes,
-	 * can't use the fill_sprom callback yet! */
-	bcm47xx_fill_sprom_nvram(&ssb.sprom);
-	
 	s = nvram_get("kernel_args");
 	if (s && !strncmp(s, "console=ttyS1", 13)) {
 		struct ssb_serial_port port;
@@ -193,7 +186,7 @@ void __init plat_mem_setup(void)
 		memset(&s, 0, sizeof(s));
 		s.line = i;
 		s.membase = port->regs;
-		s.irq = port->irq + 2;//FIXME?
+		s.irq = port->irq + 2;
 		s.uartclk = port->baud_base;
 		s.flags = UPF_BOOT_AUTOCONF | UPF_SHARE_IRQ;
 		s.iotype = SERIAL_IO_MEM;
