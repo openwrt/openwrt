@@ -15,12 +15,12 @@ PKG_RELEASE:=1
 include $(INCLUDE_DIR)/package.mk
 
 PKG_FWV4_NAME:=broadcom-wl
-PKG_FWV4_VERSION=4.80.53.0
-PKG_FWV4_OBJECT:=kmod/wl_apsta.o
+PKG_FWV4_VERSION=4.150.10.5
+PKG_FWV4_OBJECT:=driver/wl_apsta_mimo.o
 
 PKG_FWV4_SOURCE:=$(PKG_FWV4_NAME)-$(PKG_FWV4_VERSION).tar.bz2
-PKG_FWV4_SOURCE_URL:=http://downloads.openwrt.org/sources/
-PKG_FWV4_MD5SUM:=a7d8dde3ce474c361143b83e1d9890b1
+PKG_FWV4_SOURCE_URL:=http://mirror2.openwrt.org/sources/
+PKG_FWV4_MD5SUM:=0c6ba9687114c6b598e8019e262d9a60
 
 PKG_FWCUTTER_NAME:=b43-fwcutter
 PKG_FWCUTTER_VERSION=011
