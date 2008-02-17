@@ -29,7 +29,7 @@ disable_mac80211() (
 
 	set_wifi_down "$device"
 	# kill all running hostapd and wpa_supplicant processes that
-	# are running on atheros vifs 
+	# are running on atheros/mac80211 vifs 
 	for pid in `pidof hostapd wpa_supplicant`; do
 		grep wlan /proc/$pid/cmdline >/dev/null && \
 			kill $pid
@@ -131,8 +131,8 @@ enable_mac80211() {
 		case "$mode" in
 			ap)
 				if eval "type hostapd_setup_vif" 2>/dev/null >/dev/null; then
-					hostapd_setup_vif "$vif" devicescape || {
-						echo "enable_atheros($device): Failed to set up wpa for interface $ifname" >&2
+					hostapd_setup_vif "$vif" nl80211 || {
+						echo "enable_mac80211($device): Failed to set up wpa for interface $ifname" >&2
 						# make sure this wifi interface won't accidentally stay open without encryption
 						ifconfig "$ifname" down
 						continue
