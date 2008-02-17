@@ -11,7 +11,7 @@ hostapd_setup_vif() {
 
 	# TODO: move this parsing function somewhere generic, so that
 	# later it can be reused by drivers that don't use hostapd
-	
+
 	# crypto defaults: WPA2 vs WPA1
 	case "$enc" in
 		wpa2*|WPA2*|*PSK2*|*psk2*)
@@ -34,11 +34,11 @@ hostapd_setup_vif() {
 		*tkip|*TKIP) crypto="TKIP";;
 		*aes|*AES|*ccmp|*CCMP) crypto="CCMP";;
 	esac
-	
+
 	# use crypto/auth settings for building the hostapd config
 	case "$enc" in
 		*psk*|*PSK*)
-			config_get psk "$vif" key
+			config_get psk "$vif" psk
 			append hostapd_cfg "wpa_passphrase=$psk" "$N"
 		;;
 		*wpa*|*WPA*)
