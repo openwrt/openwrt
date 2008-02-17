@@ -78,7 +78,7 @@ define Build/ConfigureTarget
 		$(PKG_BUILD_DIR)/src \
 		$(PKG_BUILD_DIR)/hostapd.$(1)/
 	$(CP) ./files/$(1).config $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd/.config
-	$(if $(CONFIG_PACKAGE_kmod-mac80211),,$(SED) 's,^CONFIG_DRIVER_DEVICESCAPE,#CONFIG_DRIVER_DEVICESCAPE,g' $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd/.config)
+	$(if $(CONFIG_PACKAGE_kmod-mac80211),,$(SED) 's,^CONFIG_DRIVER_NL80211,#CONFIG_DRIVER_NL80211,g' $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd/.config)
 	$(if $(CONFIG_PACKAGE_kmod-madwifi),,$(SED) 's,^CONFIG_DRIVER_MADWIFI,#CONFIG_DRIVER_MADWIFI,g' $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd/.config)
 endef
 
