@@ -38,7 +38,7 @@ hostapd_setup_vif() {
 	# use crypto/auth settings for building the hostapd config
 	case "$enc" in
 		*psk*|*PSK*)
-			config_get psk "$vif" psk
+			config_get psk "$vif" key
 			append hostapd_cfg "wpa_passphrase=$psk" "$N"
 		;;
 		*wpa*|*WPA*)
