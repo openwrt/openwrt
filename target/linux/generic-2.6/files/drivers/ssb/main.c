@@ -11,6 +11,7 @@
 #include "ssb_private.h"
 
 #include <linux/delay.h>
+#include <linux/io.h>
 #include <linux/ssb/ssb.h>
 #include <linux/ssb/ssb_regs.h>
 #include <linux/dma-mapping.h>
@@ -320,23 +321,17 @@ static int ssb_bus_match(struct device *dev, struct device_driver *drv)
 	return 0;
 }
 
-static int ssb_device_uevent(struct device *dev, char **envp, int num_envp,
-			     char *buffer, int buffer_size)
+static int ssb_device_uevent(struct device *dev, struct kobj_uevent_env *env)
 {
 	struct ssb_device *ssb_dev = dev_to_ssb_dev(dev);
-	int ret, i = 0, length = 0;
 
 	if (!dev)
 		return -ENODEV;
 
-	ret = add_uevent_var(envp, num_envp, &i,
-			     buffer, buffer_size, &length,
+	return add_uevent_var(env,
 			     "MODALIAS=ssb:v%04Xid%04Xrev%02X",
 			     ssb_dev->id.vendor, ssb_dev->id.coreid,
 			     ssb_dev->id.revision);
-	envp[i] = NULL;
-
-	return ret;
 }
 
 static struct bus_type ssb_bustype = {
@@ -445,6 +440,7 @@ static int ssb_devices_register(struct ssb_bus *bus)
 			break;
 		case SSB_BUSTYPE_PCMCIA:
 #ifdef CONFIG_SSB_PCMCIAHOST
+			sdev->irq = bus->host_pcmcia->irq.AssignedIRQ;
 			dev->parent = &bus->host_pcmcia->dev;
 #endif
 			break;
@@ -876,14 +872,22 @@ EXPORT_SYMBOL(ssb_clockspeed);
 
 static u32 ssb_tmslow_reject_bitmask(struct ssb_device *dev)
 {
+	u32 rev = ssb_read32(dev, SSB_IDLOW) & SSB_IDLOW_SSBREV;
+
 	/* The REJECT bit changed position in TMSLOW between
 	 * Backplane revisions. */
-	switch (ssb_read32(dev, SSB_IDLOW) & SSB_IDLOW_SSBREV) {
+	switch (rev) {
 	case SSB_IDLOW_SSBREV_22:
 		return SSB_TMSLOW_REJECT_22;
 	case SSB_IDLOW_SSBREV_23:
 		return SSB_TMSLOW_REJECT_23;
+	case SSB_IDLOW_SSBREV_24:     /* TODO - find the proper REJECT bits */
+	case SSB_IDLOW_SSBREV_25:     /* same here */
+	case SSB_IDLOW_SSBREV_26:     /* same here */
+	case SSB_IDLOW_SSBREV_27:     /* same here */
+		return SSB_TMSLOW_REJECT_23;	/* this is a guess */
 	default:
+		printk(KERN_INFO "ssb: Backplane Revision 0x%.8X\n", rev);
 		WARN_ON(1);
 	}
 	return (SSB_TMSLOW_REJECT_22 | SSB_TMSLOW_REJECT_23);
@@ -1152,7 +1156,10 @@ static int __init ssb_modinit(void)
 
 	return err;
 }
-subsys_initcall(ssb_modinit);
+/* ssb must be initialized after PCI but before the ssb drivers.
+ * That means we must use some initcall between subsys_initcall
+ * and device_initcall. */
+fs_initcall(ssb_modinit);
 
 static void __exit ssb_modexit(void)
 {

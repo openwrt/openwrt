@@ -1,6 +1,8 @@
---- files/drivers/ssb/driver_chipcommon.c	2007-10-24 16:57:38.000000000 -0700
-+++ linux-2.6.23.1/drivers/ssb/driver_chipcommon.c	2007-10-27 13:27:06.000000000 -0700
-@@ -268,6 +268,8 @@
+Index: linux-2.6.23.16/drivers/ssb/driver_chipcommon.c
+===================================================================
+--- linux-2.6.23.16.orig/drivers/ssb/driver_chipcommon.c	2008-02-19 00:42:42.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/driver_chipcommon.c	2008-02-19 00:43:34.000000000 +0100
+@@ -268,6 +268,8 @@ void ssb_chipco_resume(struct ssb_chipco
  void ssb_chipco_get_clockcpu(struct ssb_chipcommon *cc,
                               u32 *plltype, u32 *n, u32 *m)
  {
@@ -9,7 +11,7 @@
  	*n = chipco_read32(cc, SSB_CHIPCO_CLOCK_N);
  	*plltype = (cc->capabilities & SSB_CHIPCO_CAP_PLLT);
  	switch (*plltype) {
-@@ -291,6 +293,8 @@
+@@ -291,6 +293,8 @@ void ssb_chipco_get_clockcpu(struct ssb_
  void ssb_chipco_get_clockcontrol(struct ssb_chipcommon *cc,
  				 u32 *plltype, u32 *n, u32 *m)
  {
@@ -18,9 +20,11 @@
  	*n = chipco_read32(cc, SSB_CHIPCO_CLOCK_N);
  	*plltype = (cc->capabilities & SSB_CHIPCO_CAP_PLLT);
  	switch (*plltype) {
---- files/drivers/ssb/driver_mipscore.c	2007-10-24 16:57:38.000000000 -0700
-+++ linux-2.6.23.1/drivers/ssb/driver_mipscore.c	2007-10-27 13:29:36.000000000 -0700
-@@ -160,6 +160,8 @@
+Index: linux-2.6.23.16/drivers/ssb/driver_mipscore.c
+===================================================================
+--- linux-2.6.23.16.orig/drivers/ssb/driver_mipscore.c	2008-02-19 00:42:42.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/driver_mipscore.c	2008-02-19 00:43:34.000000000 +0100
+@@ -160,6 +160,8 @@ u32 ssb_cpu_clock(struct ssb_mipscore *m
  
  	if ((pll_type == SSB_PLLTYPE_5) || (bus->chip_id == 0x5365)) {
  		rate = 200000000;
@@ -29,9 +33,11 @@
  	} else {
  		rate = ssb_calc_clock_rate(pll_type, n, m);
  	}
---- files/drivers/ssb/main.c	2007-10-24 16:57:38.000000000 -0700
-+++ linux-2.6.23.1/drivers/ssb/main.c	2007-10-27 13:30:59.000000000 -0700
-@@ -864,6 +864,8 @@
+Index: linux-2.6.23.16/drivers/ssb/main.c
+===================================================================
+--- linux-2.6.23.16.orig/drivers/ssb/main.c	2008-02-19 00:42:15.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/main.c	2008-02-19 00:43:34.000000000 +0100
+@@ -860,6 +860,8 @@ u32 ssb_clockspeed(struct ssb_bus *bus)
  
  	if (bus->chip_id == 0x5365) {
  		rate = 100000000;

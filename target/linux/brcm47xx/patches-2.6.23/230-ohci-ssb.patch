@@ -13,10 +13,10 @@ Signed-off-by: David Brownell <dbrownell@users.sourceforge.net>
 Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
 ---
 
-diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
-index 565d6ef..c978d62 100644
---- a/drivers/usb/host/Kconfig
-+++ b/drivers/usb/host/Kconfig
+Index: linux-2.6.23.16/drivers/usb/host/Kconfig
+===================================================================
+--- linux-2.6.23.16.orig/drivers/usb/host/Kconfig	2008-02-19 00:47:29.000000000 +0100
++++ linux-2.6.23.16/drivers/usb/host/Kconfig	2008-02-19 00:47:51.000000000 +0100
 @@ -154,6 +154,19 @@ config USB_OHCI_HCD_PCI
  	  Enables support for PCI-bus plug-in USB controller cards.
  	  If unsure, say Y.
@@ -37,11 +37,11 @@ index 565d6ef..c978d62 100644
  config USB_OHCI_BIG_ENDIAN_DESC
  	bool
  	depends on USB_OHCI_HCD
-diff --git a/drivers/usb/host/ohci-hcd.c b/drivers/usb/host/ohci-hcd.c
-index f7c6ced..240c7f5 100644
---- a/drivers/usb/host/ohci-hcd.c
-+++ b/drivers/usb/host/ohci-hcd.c
-@@ -1033,11 +1033,17 @@ MODULE_LICENSE ("GPL");
+Index: linux-2.6.23.16/drivers/usb/host/ohci-hcd.c
+===================================================================
+--- linux-2.6.23.16.orig/drivers/usb/host/ohci-hcd.c	2008-02-19 00:47:29.000000000 +0100
++++ linux-2.6.23.16/drivers/usb/host/ohci-hcd.c	2008-02-19 00:47:51.000000000 +0100
+@@ -926,11 +926,17 @@ MODULE_LICENSE ("GPL");
  #define PS3_SYSTEM_BUS_DRIVER	ps3_ohci_driver
  #endif
  
@@ -60,7 +60,7 @@ index f7c6ced..240c7f5 100644
  #error "missing bus glue for ohci-hcd"
  #endif
  
-@@ -1082,10 +1088,20 @@ static int __init ohci_hcd_mod_init(void)
+@@ -975,10 +981,20 @@ static int __init ohci_hcd_mod_init(void
  		goto error_pci;
  #endif
  
@@ -81,7 +81,7 @@ index f7c6ced..240c7f5 100644
   error_pci:
  #endif
  #ifdef SA1111_DRIVER
-@@ -1110,6 +1126,9 @@ module_init(ohci_hcd_mod_init);
+@@ -1003,6 +1019,9 @@ module_init(ohci_hcd_mod_init);
  
  static void __exit ohci_hcd_mod_exit(void)
  {
@@ -91,11 +91,10 @@ index f7c6ced..240c7f5 100644
  #ifdef PCI_DRIVER
  	pci_unregister_driver(&PCI_DRIVER);
  #endif
-diff --git a/drivers/usb/host/ohci-ssb.c b/drivers/usb/host/ohci-ssb.c
-new file mode 100644
-index 0000000..bc3e785
---- /dev/null
-+++ b/drivers/usb/host/ohci-ssb.c
+Index: linux-2.6.23.16/drivers/usb/host/ohci-ssb.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.23.16/drivers/usb/host/ohci-ssb.c	2008-02-19 00:47:51.000000000 +0100
 @@ -0,0 +1,247 @@
 +/*
 + * Sonics Silicon Backplane
@@ -344,4 +343,3 @@ index 0000000..bc3e785
 +	.suspend	= ssb_ohci_suspend,
 +	.resume		= ssb_ohci_resume,
 +};
-
