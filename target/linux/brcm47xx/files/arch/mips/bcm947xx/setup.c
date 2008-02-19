@@ -2,7 +2,7 @@
  *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
  *  Copyright (C) 2005 Waldemar Brodkorb <wbx@openwrt.org>
  *  Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
- *  Copyright (C) 2006 Michael Buesch
+ *  Copyright (C) 2006-2008 Michael Buesch <mb@bu3sch.de>
  *
  *  This program is free software; you can redistribute  it and/or modify it
  *  under  the terms of  the GNU General  Public License as published by the
@@ -38,6 +38,7 @@
 #include <asm/cfe.h>
 #include <linux/pm.h>
 #include <linux/ssb/ssb.h>
+#include <linux/ssb/ssb_embedded.h>
 
 #include <nvram.h>
 
@@ -55,7 +56,8 @@ static void bcm47xx_machine_restart(char *command)
 	 */
 
 	/* Set the watchdog timer to reset immediately */
-	ssb_chipco_watchdog_timer_set(&ssb.chipco, 1);
+	if (ssb_watchdog_timer_set(&ssb, 1))
+		printk(KERN_EMERG "SSB watchdog-triggered reboot failed!\n");
 	while (1)
 		cpu_relax();
 }
@@ -64,7 +66,8 @@ static void bcm47xx_machine_halt(void)
 {
 	/* Disable interrupts and watchdog and spin forever */
 	local_irq_disable();
-	ssb_chipco_watchdog_timer_set(&ssb.chipco, 0);
+	if (ssb_watchdog_timer_set(&ssb, 0))
+		printk(KERN_EMERG "Failed to disable SSB watchdog!\n");
 	while (1)
 		cpu_relax();
 }
