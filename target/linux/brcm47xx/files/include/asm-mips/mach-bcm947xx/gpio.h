@@ -1,9 +1,7 @@
 #ifndef __BCM947XX_GPIO_H
 #define __BCM947XX_GPIO_H
 
-#include <linux/ssb/ssb.h>
-#include <linux/ssb/ssb_driver_chipcommon.h>
-#include <linux/ssb/ssb_driver_extif.h>
+#include <linux/ssb/ssb_embedded.h>
 
 extern struct ssb_bus ssb;
 
@@ -18,24 +16,13 @@ static inline void gpio_free(unsigned gpio)
 
 static inline int gpio_direction_input(unsigned gpio)
 {
-	if (ssb.chipco.dev)
-		ssb_chipco_gpio_outen(&ssb.chipco, 1 << gpio, 0);
-	else if (ssb.extif.dev)
-		ssb_extif_gpio_outen(&ssb.extif, 1 << gpio, 0);
-	else
-		return -EINVAL;
+	ssb_gpio_outen(&ssb, 1 << gpio, 0);
 	return 0;
 }
 
 static inline int gpio_direction_output(unsigned gpio, int value)
 {
-	if (ssb.chipco.dev)
-		ssb_chipco_gpio_outen(&ssb.chipco, 1 << gpio, value << gpio);
-	else if (ssb.extif.dev)
-		ssb_extif_gpio_outen(&ssb.extif, 1 << gpio, value << gpio);
-	else
-		return -EINVAL;
-
+	ssb_gpio_outen(&ssb, 1 << gpio, value << gpio);
 	return 0;
 }
 
@@ -43,7 +30,7 @@ static inline int gpio_direction_output(unsigned gpio, int value)
 static inline int gpio_to_irq(unsigned gpio)
 {
 	struct ssb_device *dev;
-	
+
 	dev = ssb.chipco.dev;
 	if (!dev)
 		dev = ssb.extif.dev;
@@ -61,21 +48,12 @@ static inline int irq_to_gpio(unsigned gpio)
 
 static inline int gpio_get_value(unsigned gpio)
 {
-	if (ssb.chipco.dev)
-		return ssb_chipco_gpio_in(&ssb.chipco, 1 << gpio) ? 1 : 0;
-	else if (ssb.extif.dev)
-		return ssb_extif_gpio_in(&ssb.extif, 1 << gpio) ? 1 : 0;
-	else
-		return 0;
+	return !!ssb_gpio_in(&ssb, 1 << gpio);
 }
 
 static inline int gpio_set_value(unsigned gpio, int value)
 {
-	if (ssb.chipco.dev)
-		ssb_chipco_gpio_out(&ssb.chipco, 1 << gpio, (value ? 1 << gpio : 0));
-	else if (ssb.extif.dev)
-		ssb_extif_gpio_out(&ssb.extif, 1 << gpio, (value ? 1 << gpio : 0));
-	
+	ssb_gpio_out(&ssb, 1 << gpio, (value ? 1 << gpio : 0));
 	return 0;
 }
 
