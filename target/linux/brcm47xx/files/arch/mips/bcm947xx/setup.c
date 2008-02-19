@@ -158,6 +158,9 @@ static int bcm47xx_get_invariants(struct ssb_bus *bus, struct ssb_init_invariant
 
 	bcm47xx_fill_sprom(&iv->sprom);
 
+	if ((s = nvram_get("cardbus")))
+		iv->has_cardbus_slot = !!simple_strtoul(s, NULL, 10);
+
 	return 0;
 }
 
