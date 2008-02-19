@@ -53,6 +53,15 @@ static inline u32 gpio_intpolarity(u32 mask, u32 value)
 	gpio_op(polarity, mask, value);
 }
 
+static inline u32 __ssb_write32_masked(struct ssb_device *dev, u16 offset,
+				       u32 mask, u32 value)
+{
+	value &= mask;
+	value |= ssb_read32(dev, offset) & ~mask;
+	ssb_write32(dev, offset, value);
+	return value;
+}
+
 static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *))
 {
 	int irq;
@@ -71,7 +80,7 @@ static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *))
 	}
 
 	if (ssb.chipco.dev)
-		ssb_write32_masked(ssb.chipco.dev, SSB_CHIPCO_IRQMASK, SSB_CHIPCO_IRQ_GPIO, (enabled ? SSB_CHIPCO_IRQ_GPIO : 0));
+		__ssb_write32_masked(ssb.chipco.dev, SSB_CHIPCO_IRQMASK, SSB_CHIPCO_IRQ_GPIO, (enabled ? SSB_CHIPCO_IRQ_GPIO : 0));
 }
 
 #else
