@@ -1,7 +1,7 @@
 Index: linux-2.6.23.16/drivers/ssb/Kconfig
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/Kconfig	2008-02-19 12:38:31.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/Kconfig	2008-02-19 12:43:58.000000000 +0100
+--- linux-2.6.23.16.orig/drivers/ssb/Kconfig	2008-02-19 13:46:05.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/Kconfig	2008-02-19 13:46:33.000000000 +0100
 @@ -105,6 +105,12 @@ config SSB_DRIVER_MIPS
  
  	  If unsure, say N
@@ -17,8 +17,8 @@ Index: linux-2.6.23.16/drivers/ssb/Kconfig
  	depends on SSB_DRIVER_MIPS && EXPERIMENTAL
 Index: linux-2.6.23.16/drivers/ssb/Makefile
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/Makefile	2008-02-19 12:38:31.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/Makefile	2008-02-19 12:43:58.000000000 +0100
+--- linux-2.6.23.16.orig/drivers/ssb/Makefile	2008-02-19 13:46:05.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/Makefile	2008-02-19 13:46:33.000000000 +0100
 @@ -1,5 +1,6 @@
  # core
  ssb-y					+= main.o scan.o
@@ -28,10 +28,10 @@ Index: linux-2.6.23.16/drivers/ssb/Makefile
  ssb-$(CONFIG_SSB_PCIHOST)		+= pci.o pcihost_wrapper.o
 Index: linux-2.6.23.16/drivers/ssb/driver_extif.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/driver_extif.c	2008-02-19 12:38:34.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/driver_extif.c	2008-02-19 12:45:13.000000000 +0100
-@@ -35,6 +35,12 @@ static inline void extif_write32_masked(
- 	extif_write32(extif, offset, value);
+--- linux-2.6.23.16.orig/drivers/ssb/driver_extif.c	2008-02-19 13:46:05.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/driver_extif.c	2008-02-19 13:46:33.000000000 +0100
+@@ -37,6 +37,12 @@ static inline u32 extif_write32_masked(s
+ 	return value;
  }
  
 +void ssb_extif_watchdog_timer_set(struct ssb_extif *extif,
@@ -46,7 +46,7 @@ Index: linux-2.6.23.16/drivers/ssb/driver_extif.c
 Index: linux-2.6.23.16/drivers/ssb/embedded.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/ssb/embedded.c	2008-02-19 12:43:58.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/embedded.c	2008-02-19 13:46:33.000000000 +0100
 @@ -0,0 +1,26 @@
 +/*
 + * Sonics Silicon Backplane
@@ -76,8 +76,8 @@ Index: linux-2.6.23.16/drivers/ssb/embedded.c
 +}
 Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_chipcommon.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/ssb/ssb_driver_chipcommon.h	2008-02-19 12:38:34.000000000 +0100
-+++ linux-2.6.23.16/include/linux/ssb/ssb_driver_chipcommon.h	2008-02-19 12:43:58.000000000 +0100
+--- linux-2.6.23.16.orig/include/linux/ssb/ssb_driver_chipcommon.h	2008-02-19 13:46:29.000000000 +0100
++++ linux-2.6.23.16/include/linux/ssb/ssb_driver_chipcommon.h	2008-02-19 13:46:33.000000000 +0100
 @@ -360,6 +360,11 @@ struct ssb_chipcommon {
  	u16 fast_pwrup_delay;
  };
@@ -92,11 +92,11 @@ Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_chipcommon.h
  #include <linux/pm.h>
 Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_extif.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/ssb/ssb_driver_extif.h	2008-02-19 12:38:34.000000000 +0100
-+++ linux-2.6.23.16/include/linux/ssb/ssb_driver_extif.h	2008-02-19 12:47:03.000000000 +0100
-@@ -170,6 +170,9 @@ extern void ssb_extif_get_clockcontrol(s
- extern void ssb_extif_timing_init(struct ssb_extif *extif,
- 				  unsigned long ns);
+--- linux-2.6.23.16.orig/include/linux/ssb/ssb_driver_extif.h	2008-02-19 13:46:05.000000000 +0100
++++ linux-2.6.23.16/include/linux/ssb/ssb_driver_extif.h	2008-02-19 13:46:33.000000000 +0100
+@@ -178,6 +178,9 @@ u32 ssb_extif_gpio_outen(struct ssb_exti
+ u32 ssb_extif_gpio_polarity(struct ssb_extif *extif, u32 mask, u32 value);
+ u32 ssb_extif_gpio_intmask(struct ssb_extif *extif, u32 mask, u32 value);
  
 +extern void ssb_extif_watchdog_timer_set(struct ssb_extif *extif,
 +					 u32 ticks);
@@ -104,7 +104,7 @@ Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_extif.h
  #ifdef CONFIG_SSB_SERIAL
  extern int ssb_extif_serial_init(struct ssb_extif *extif,
  				 struct ssb_serial_port *ports);
-@@ -224,5 +227,11 @@ void ssb_extif_get_clockcontrol(struct s
+@@ -201,5 +204,11 @@ void ssb_extif_get_clockcontrol(struct s
  {
  }
  
@@ -119,7 +119,7 @@ Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_extif.h
 Index: linux-2.6.23.16/include/linux/ssb/ssb_embedded.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/linux/ssb/ssb_embedded.h	2008-02-19 12:43:58.000000000 +0100
++++ linux-2.6.23.16/include/linux/ssb/ssb_embedded.h	2008-02-19 13:46:33.000000000 +0100
 @@ -0,0 +1,10 @@
 +#ifndef LINUX_SSB_EMBEDDED_H_
 +#define LINUX_SSB_EMBEDDED_H_

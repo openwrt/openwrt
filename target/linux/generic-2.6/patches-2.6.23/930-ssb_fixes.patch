@@ -1,216 +1,19 @@
+This patch ports ssb to the 2.6.23 kernel.
+
 Index: linux-2.6.23.16/drivers/ssb/driver_mipscore.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/driver_mipscore.c	2008-02-19 01:35:53.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/driver_mipscore.c	2008-02-19 02:01:16.000000000 +0100
+--- linux-2.6.23.16.orig/drivers/ssb/driver_mipscore.c	2008-02-19 13:45:04.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/driver_mipscore.c	2008-02-19 13:45:07.000000000 +0100
 @@ -222,3 +222,5 @@ void ssb_mipscore_init(struct ssb_mipsco
  	ssb_mips_serial_init(mcore);
  	ssb_mips_flash_detect(mcore);
  }
 +
 +EXPORT_SYMBOL(ssb_mips_irq);
-Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_chipcommon.h
-===================================================================
---- linux-2.6.23.16.orig/include/linux/ssb/ssb_driver_chipcommon.h	2008-02-19 01:35:53.000000000 +0100
-+++ linux-2.6.23.16/include/linux/ssb/ssb_driver_chipcommon.h	2008-02-19 02:01:10.000000000 +0100
-@@ -382,11 +382,45 @@ extern void ssb_chipco_set_clockmode(str
- extern void ssb_chipco_watchdog_timer_set(struct ssb_chipcommon *cc,
- 					  u32 ticks);
- 
--u32 ssb_chipco_gpio_in(struct ssb_chipcommon *cc, u32 mask);
-+/* GPIO functions */
-+static inline u32 ssb_chipco_gpio_in(struct ssb_chipcommon *cc,
-+                                     u32 mask)
-+{
-+	return ssb_read32(cc->dev, SSB_CHIPCO_GPIOIN) & mask;
-+}
- 
--void ssb_chipco_gpio_out(struct ssb_chipcommon *cc, u32 mask, u32 value);
-+static inline u32 ssb_chipco_gpio_out(struct ssb_chipcommon *cc,
-+                                      u32 mask, u32 value)
-+{
-+	return ssb_write32_masked(cc->dev, SSB_CHIPCO_GPIOOUT, mask, value);
-+}
- 
--void ssb_chipco_gpio_outen(struct ssb_chipcommon *cc, u32 mask, u32 value);
-+static inline u32 ssb_chipco_gpio_outen(struct ssb_chipcommon *cc,
-+                                        u32 mask, u32 value)
-+{
-+	return ssb_write32_masked(cc->dev, SSB_CHIPCO_GPIOOUTEN, mask, value);
-+}
-+
-+static inline u32 ssb_chipco_gpio_control(struct ssb_chipcommon *cc,
-+                                          u32 mask, u32 value)
-+{
-+	return ssb_write32_masked(cc->dev, SSB_CHIPCO_GPIOCTL, mask, value);
-+}
-+
-+static inline u32 ssb_chipco_gpio_intmask(struct ssb_chipcommon *cc,
-+                                          u32 mask, u32 value)
-+{
-+	return ssb_write32_masked(cc->dev, SSB_CHIPCO_GPIOIRQ, mask, value);
-+}
-+
-+static inline u32 ssb_chipco_gpio_polarity(struct ssb_chipcommon *cc,
-+                                           u32 mask, u32 value)
-+{
-+	return ssb_write32_masked(cc->dev, SSB_CHIPCO_GPIOPOL, mask, value);
-+}
-+/* TODO: GPIO reservation */
-+
-+extern int ssb_chipco_watchdog(struct ssb_chipcommon *cc, uint ticks);
- 
- #ifdef CONFIG_SSB_SERIAL
- extern int ssb_chipco_serial_init(struct ssb_chipcommon *cc,
-Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_extif.h
-===================================================================
---- linux-2.6.23.16.orig/include/linux/ssb/ssb_driver_extif.h	2008-02-19 01:35:53.000000000 +0100
-+++ linux-2.6.23.16/include/linux/ssb/ssb_driver_extif.h	2008-02-19 01:39:40.000000000 +0100
-@@ -153,7 +153,6 @@
- #define SSB_EXTIF_WATCHDOG_CLK		48000000	/* Hz */
- 
- 
--
- #ifdef CONFIG_SSB_DRIVER_EXTIF
- 
- struct ssb_extif {
-@@ -171,17 +170,42 @@ extern void ssb_extif_get_clockcontrol(s
- extern void ssb_extif_timing_init(struct ssb_extif *extif,
- 				  unsigned long ns);
- 
--u32 ssb_extif_gpio_in(struct ssb_extif *extif, u32 mask);
--
--void ssb_extif_gpio_out(struct ssb_extif *extif, u32 mask, u32 value);
--
--void ssb_extif_gpio_outen(struct ssb_extif *extif, u32 mask, u32 value);
--
- #ifdef CONFIG_SSB_SERIAL
- extern int ssb_extif_serial_init(struct ssb_extif *extif,
- 				 struct ssb_serial_port *ports);
- #endif /* CONFIG_SSB_SERIAL */
- 
-+/* GPIO functions */
-+static inline u32 ssb_extif_gpio_in(struct ssb_extif *extif,
-+                                    u32 mask)
-+{
-+	return ssb_read32(extif->dev, SSB_EXTIF_GPIO_IN) & mask;
-+}
-+
-+static inline u32 ssb_extif_gpio_out(struct ssb_extif *extif,
-+                                     u32 mask, u32 value)
-+{
-+	return ssb_write32_masked(extif->dev, SSB_EXTIF_GPIO_OUT(0), mask, value);
-+}
-+
-+static inline u32 ssb_extif_gpio_outen(struct ssb_extif *extif,
-+                                       u32 mask, u32 value)
-+{
-+	return ssb_write32_masked(extif->dev, SSB_EXTIF_GPIO_OUTEN(0), mask, value);
-+}
-+
-+static inline u32 ssb_extif_gpio_polarity(struct ssb_extif *extif,
-+                                          u32 mask, u32 value)
-+{
-+	return ssb_write32_masked(extif->dev, SSB_EXTIF_GPIO_INTPOL, mask, value);
-+}
-+
-+static inline u32 ssb_extif_gpio_intmask(struct ssb_extif *extif,
-+                                         u32 mask, u32 value)
-+{
-+	return ssb_write32_masked(extif->dev, SSB_EXTIF_GPIO_INTMASK, mask, value);
-+}
-+
- 
- #else /* CONFIG_SSB_DRIVER_EXTIF */
- /* extif disabled */
-Index: linux-2.6.23.16/include/linux/ssb/ssb.h
-===================================================================
---- linux-2.6.23.16.orig/include/linux/ssb/ssb.h	2008-02-19 01:35:53.000000000 +0100
-+++ linux-2.6.23.16/include/linux/ssb/ssb.h	2008-02-19 01:39:40.000000000 +0100
-@@ -217,6 +217,12 @@ enum ssb_bustype {
- #define SSB_CHIPPACK_BCM4712M	2	/* Medium 225pin 4712 */
- #define SSB_CHIPPACK_BCM4712L	0	/* Large 340pin 4712 */
- 
-+static inline u16 ssb_read16(struct ssb_device *dev, u16 offset);
-+static inline u32 ssb_read32(struct ssb_device *dev, u16 offset);
-+static inline void ssb_write16(struct ssb_device *dev, u16 offset, u16 value);
-+static inline void ssb_write32(struct ssb_device *dev, u16 offset, u32 value);
-+static inline u32 ssb_write32_masked(struct ssb_device *dev, u16 offset, u32 mask, u32 value);
-+
- #include <linux/ssb/ssb_driver_chipcommon.h>
- #include <linux/ssb/ssb_driver_mips.h>
- #include <linux/ssb/ssb_driver_extif.h>
-@@ -349,6 +355,16 @@ static inline void ssb_write32(struct ss
- 	dev->ops->write32(dev, offset, value);
- }
- 
-+static inline u32 ssb_write32_masked(struct ssb_device *dev,
-+                                     u16 offset,
-+                                     u32 mask,
-+                                     u32 value)
-+{
-+	value &= mask;
-+	value |= ssb_read32(dev, offset) & ~mask;
-+	ssb_write32(dev, offset, value);
-+	return value;
-+}
- 
- /* Translation (routing) bits that need to be ORed to DMA
-  * addresses before they are given to a device. */
-Index: linux-2.6.23.16/drivers/ssb/driver_chipcommon.c
-===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/driver_chipcommon.c	2008-02-19 01:35:53.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/driver_chipcommon.c	2008-02-19 02:01:16.000000000 +0100
-@@ -351,21 +351,6 @@ void ssb_chipco_watchdog_timer_set(struc
- 	chipco_write32(cc, SSB_CHIPCO_WATCHDOG, ticks);
- }
- 
--u32 ssb_chipco_gpio_in(struct ssb_chipcommon *cc, u32 mask)
--{
--	return chipco_read32(cc, SSB_CHIPCO_GPIOIN) & mask;
--}
--
--void ssb_chipco_gpio_out(struct ssb_chipcommon *cc, u32 mask, u32 value)
--{
--	chipco_write32_masked(cc, SSB_CHIPCO_GPIOOUT, mask, value);
--}
--
--void ssb_chipco_gpio_outen(struct ssb_chipcommon *cc, u32 mask, u32 value)
--{
--	chipco_write32_masked(cc, SSB_CHIPCO_GPIOOUTEN, mask, value);
--}
--
- #ifdef CONFIG_SSB_SERIAL
- int ssb_chipco_serial_init(struct ssb_chipcommon *cc,
- 			   struct ssb_serial_port *ports)
-Index: linux-2.6.23.16/drivers/ssb/driver_extif.c
-===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/driver_extif.c	2008-02-19 01:35:53.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/driver_extif.c	2008-02-19 01:39:40.000000000 +0100
-@@ -110,20 +110,4 @@ void ssb_extif_get_clockcontrol(struct s
- 	*m = extif_read32(extif, SSB_EXTIF_CLOCK_SB);
- }
- 
--u32 ssb_extif_gpio_in(struct ssb_extif *extif, u32 mask)
--{
--	return extif_read32(extif, SSB_EXTIF_GPIO_IN) & mask;
--}
--
--void ssb_extif_gpio_out(struct ssb_extif *extif, u32 mask, u32 value)
--{
--	return extif_write32_masked(extif, SSB_EXTIF_GPIO_OUT(0),
--				   mask, value);
--}
--
--void ssb_extif_gpio_outen(struct ssb_extif *extif, u32 mask, u32 value)
--{
--	return extif_write32_masked(extif, SSB_EXTIF_GPIO_OUTEN(0),
--				   mask, value);
--}
- 
 Index: linux-2.6.23.16/include/linux/mod_devicetable.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/mod_devicetable.h	2008-02-19 01:35:53.000000000 +0100
-+++ linux-2.6.23.16/include/linux/mod_devicetable.h	2008-02-19 01:39:40.000000000 +0100
+--- linux-2.6.23.16.orig/include/linux/mod_devicetable.h	2008-02-19 13:45:04.000000000 +0100
++++ linux-2.6.23.16/include/linux/mod_devicetable.h	2008-02-19 13:45:07.000000000 +0100
 @@ -340,4 +340,19 @@ struct parisc_device_id {
  #define PA_HVERSION_ANY_ID	0xffff
  #define PA_SVERSION_ANY_ID	0xffffffff
@@ -233,8 +36,8 @@ Index: linux-2.6.23.16/include/linux/mod_devicetable.h
  #endif /* LINUX_MOD_DEVICETABLE_H */
 Index: linux-2.6.23.16/drivers/ssb/main.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/main.c	2008-02-19 01:45:24.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/main.c	2008-02-19 02:01:16.000000000 +0100
+--- linux-2.6.23.16.orig/drivers/ssb/main.c	2008-02-19 13:45:04.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/main.c	2008-02-19 13:45:07.000000000 +0100
 @@ -321,14 +321,16 @@ static int ssb_bus_match(struct device *
  	return 0;
  }
@@ -256,8 +59,8 @@ Index: linux-2.6.23.16/drivers/ssb/main.c
  			     ssb_dev->id.revision);
 Index: linux-2.6.23.16/drivers/ssb/scan.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/scan.c	2008-02-16 19:08:13.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/scan.c	2008-02-19 01:56:02.000000000 +0100
+--- linux-2.6.23.16.orig/drivers/ssb/scan.c	2008-02-19 13:45:04.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/scan.c	2008-02-19 13:45:07.000000000 +0100
 @@ -391,12 +391,14 @@ int ssb_bus_scan(struct ssb_bus *bus,
  			if (bus->bustype == SSB_BUSTYPE_PCI) {
  				/* Ignore PCI cores on PCI-E cards.
@@ -279,8 +82,8 @@ Index: linux-2.6.23.16/drivers/ssb/scan.c
  			if (bus->pcicore.dev) {
 Index: linux-2.6.23.16/drivers/ssb/driver_pcicore.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/driver_pcicore.c	2008-02-19 02:01:11.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/driver_pcicore.c	2008-02-19 02:01:32.000000000 +0100
+--- linux-2.6.23.16.orig/drivers/ssb/driver_pcicore.c	2008-02-19 13:45:04.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/driver_pcicore.c	2008-02-19 13:45:07.000000000 +0100
 @@ -362,7 +362,7 @@ static int pcicore_is_in_hostmode(struct
  	    chipid_top != 0x5300)
  		return 0;
