@@ -1,0 +1,53 @@
+--- a/drivers/ssb/driver_mipscore.c	2007-12-06 08:07:00.000000000 +0100
++++ b/drivers/ssb/driver_mipscore.c	2007-12-06 10:27:43.000000000 +0100
+@@ -31,6 +31,19 @@
+ 	ssb_write32(extif->dev, offset, value);
+ }
+ 
++/* Set chip watchdog reset timer to fire in 'ticks' backplane cycles */
++int
++ssb_watchdog(struct ssb_bus *bus, uint ticks)
++{
++	/* instant NMI */
++	if (bus->chipco.dev)
++		ssb_write32(bus->chipco.dev, SSB_CHIPCO_WATCHDOG, ticks);
++	else if (bus->extif.dev)
++		ssb_write32(bus->extif.dev, SSB_EXTIF_WATCHDOG, ticks);
++	return 0;
++}
++EXPORT_SYMBOL(ssb_watchdog);
++
+ static const u32 ipsflag_irq_mask[] = {
+ 	0,
+ 	SSB_IPSFLAG_IRQ1,
+--- a/include/linux/ssb/ssb_driver_mips.h	2007-12-06 08:07:00.000000000 +0100
++++ b/include/linux/ssb/ssb_driver_mips.h	2007-12-06 10:32:36.000000000 +0100
+@@ -30,6 +30,8 @@
+ 
+ extern unsigned int ssb_mips_irq(struct ssb_device *dev);
+ 
++/* Set watchdog reset timer to fire in 'ticks' backplane cycles */
++extern int ssb_watchdog(struct ssb_bus *bus, uint ticks);
+ 
+ #else /* CONFIG_SSB_DRIVER_MIPS */
+ 
+--- a/arch/mips/bcm947xx/setup.c	2007-12-06 08:07:00.000000000 +0100
++++ b/arch/mips/bcm947xx/setup.c	2007-12-06 10:33:39.000000000 +0100
+@@ -55,7 +55,7 @@
+ 	 */
+ 
+ 	/* Set the watchdog timer to reset immediately */
+-	ssb_chipco_watchdog_timer_set(&ssb.chipco, 1);
++	ssb_watchdog(&ssb, 1);
+ 	while (1)
+ 		cpu_relax();
+ }
+@@ -64,7 +64,7 @@
+ {
+ 	/* Disable interrupts and watchdog and spin forever */
+ 	local_irq_disable();
+-	ssb_chipco_watchdog_timer_set(&ssb.chipco, 0);
++	ssb_watchdog(&ssb, 0);
+ 	while (1)
+ 		cpu_relax();
+ }
