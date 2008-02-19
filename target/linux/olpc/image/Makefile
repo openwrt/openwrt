@@ -39,7 +39,7 @@ ifeq ($(CONFIG_OLPC_BOOTSCRIPT_IMAGES),y)
 endif
 
 define Image/Prepare
-	cp $(LINUX_DIR)/arch/i386/boot/bzImage $(KDIR)/bzImage
+	cp $(LINUX_DIR)/arch/*86/boot/bzImage $(KDIR)/bzImage
 	$(call Image/Prepare/bootscript)
 endef
   
