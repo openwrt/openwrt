@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-01-31 04:25:11.617671781 +0100
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-01-31 05:06:04.606254148 +0100
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-11 19:10:30.010051203 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-11 19:18:00.615729758 +0100
 @@ -184,7 +184,11 @@
  	struct sk_buff *, int, int, u_int64_t);
  static void ath_setdefantenna(struct ath_softc *, u_int);
@@ -60,7 +60,15 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  			}
  		}
  		if (status & HAL_INT_TX) {
-@@ -2557,6 +2577,9 @@
+@@ -2517,6 +2537,7 @@
+ 	if (sc->sc_tx99 != NULL)
+ 		sc->sc_tx99->start(sc->sc_tx99);
+ #endif
++	ath_poll_enable(dev);
+ 
+ done:
+ 	ATH_UNLOCK(sc);
+@@ -2557,6 +2578,9 @@
  		if (sc->sc_tx99 != NULL)
  			sc->sc_tx99->stop(sc->sc_tx99);
  #endif
@@ -70,7 +78,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  		netif_stop_queue(dev);	/* XXX re-enabled by ath_newstate */
  		dev->flags &= ~IFF_RUNNING;	/* NB: avoid recursion */
  		ieee80211_stop_running(ic);	/* stop all VAPs */
-@@ -4015,6 +4038,39 @@
+@@ -4015,6 +4039,39 @@
  	return ath_keyset(sc, k, mac, vap->iv_bss);
  }
  
@@ -110,7 +118,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  /*
   * Block/unblock tx+rx processing while a key change is done.
   * We assume the caller serializes key management operations
-@@ -4032,13 +4088,8 @@
+@@ -4032,13 +4089,8 @@
  	 * When called from the rx tasklet we cannot use
  	 * tasklet_disable because it will block waiting
  	 * for us to complete execution.
@@ -125,7 +133,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	netif_stop_queue(dev);
  }
  
-@@ -4050,8 +4101,7 @@
+@@ -4050,8 +4102,7 @@
  
  	DPRINTF(sc, ATH_DEBUG_KEYCACHE, "End\n");
  	netif_wake_queue(dev);
@@ -135,7 +143,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  }
  
  /*
-@@ -6359,24 +6409,34 @@
+@@ -6359,24 +6410,34 @@
  }
  
  static int
@@ -172,7 +180,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	u_int mic_fail = 0;
  
  	DPRINTF(sc, ATH_DEBUG_RX_PROC, "invoked\n");
-@@ -6405,7 +6465,9 @@
+@@ -6405,7 +6466,9 @@
  			break;
  		}
  
@@ -182,7 +190,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  		if (rx_limit-- < 0) {
  			early_stop = 1;
  			break;
-@@ -6675,8 +6737,6 @@
+@@ -6675,8 +6738,6 @@
  			goto process_rx_again;
  		}
  #endif
@@ -191,7 +199,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  #ifndef ATH_PRECISE_TSF
  		sc->sc_imask |= HAL_INT_RX;
  		ath_hal_intrset(ah, sc->sc_imask);
-@@ -6684,11 +6744,17 @@
+@@ -6684,11 +6745,17 @@
  #endif
  	}
  
@@ -209,7 +217,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	return early_stop;
  #undef PA2DESC
  }
-@@ -10395,9 +10461,9 @@
+@@ -10378,9 +10445,9 @@
  	dev->mtu = mtu;
  	if ((dev->flags & IFF_RUNNING) && !sc->sc_invalid) {
  		/* NB: the rx buffers may need to be reallocated */
@@ -223,8 +231,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  
 Index: madwifi-trunk-r3314/ath/if_athvar.h
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-01-31 04:25:14.001807644 +0100
-+++ madwifi-trunk-r3314/ath/if_athvar.h	2008-01-31 04:32:31.858759693 +0100
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-02-11 19:10:29.758036841 +0100
++++ madwifi-trunk-r3314/ath/if_athvar.h	2008-02-11 19:17:35.042272406 +0100
 @@ -620,6 +620,9 @@
  struct ath_softc {
  	struct ieee80211com sc_ic;		/* NB: must be first */
