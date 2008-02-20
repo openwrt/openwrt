@@ -1,8 +1,8 @@
-Index: madwifi-dfs-r3246/ath/if_ath.c
+Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-dfs-r3246.orig/ath/if_ath.c	2008-01-25 16:37:38.479506279 +0100
-+++ madwifi-dfs-r3246/ath/if_ath.c	2008-01-25 16:38:04.684999652 +0100
-@@ -1345,7 +1345,7 @@
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-20 21:57:55.057877957 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-20 21:57:58.494073773 +0100
+@@ -1351,7 +1351,7 @@
  		TAILQ_FOREACH(v, &ic->ic_vaps, iv_next)
  			id_mask |= (1 << ATH_GET_VAP_ID(v->iv_myaddr));
  

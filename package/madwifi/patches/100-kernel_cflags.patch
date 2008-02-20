@@ -1,7 +1,7 @@
-Index: madwifi-dfs-r3053/hal/public/mips-be-elf.inc
+Index: madwifi-trunk-r3314/hal/public/mips-be-elf.inc
 ===================================================================
---- madwifi-dfs-r3053.orig/hal/public/mips-be-elf.inc	2007-12-13 05:25:10.890246068 +0100
-+++ madwifi-dfs-r3053/hal/public/mips-be-elf.inc	2007-12-13 05:25:10.986251538 +0100
+--- madwifi-trunk-r3314.orig/hal/public/mips-be-elf.inc	2008-02-20 18:10:46.339155111 +0100
++++ madwifi-trunk-r3314/hal/public/mips-be-elf.inc	2008-02-20 18:10:46.439160810 +0100
 @@ -71,5 +71,5 @@
  
  LDOPTS=	-EB
@@ -9,10 +9,10 @@ Index: madwifi-dfs-r3053/hal/public/mips-be-elf.inc
 -COPTS+=	-G 0 -EB -mno-abicalls -fno-pic -mips2 -Wa,--trap \
 +COPTS+=	-G 0 -mno-abicalls -fno-pic -mips32 -Wa,--trap \
  	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
-Index: madwifi-dfs-r3053/hal/public/mips-le-elf.inc
+Index: madwifi-trunk-r3314/hal/public/mips-le-elf.inc
 ===================================================================
---- madwifi-dfs-r3053.orig/hal/public/mips-le-elf.inc	2007-12-13 05:25:10.898246523 +0100
-+++ madwifi-dfs-r3053/hal/public/mips-le-elf.inc	2007-12-13 05:25:10.994251993 +0100
+--- madwifi-trunk-r3314.orig/hal/public/mips-le-elf.inc	2008-02-20 18:10:46.347155567 +0100
++++ madwifi-trunk-r3314/hal/public/mips-le-elf.inc	2008-02-20 18:10:46.443161036 +0100
 @@ -68,5 +68,5 @@
  
  LDOPTS=	-EL
@@ -20,10 +20,10 @@ Index: madwifi-dfs-r3053/hal/public/mips-le-elf.inc
 -COPTS+=	-G 0 -EL -mno-abicalls -fno-pic -mips2 -Wa,--trap \
 +COPTS+=	-G 0 -mno-abicalls -fno-pic -mips32 -Wa,--trap \
  	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
-Index: madwifi-dfs-r3053/hal/public/xscale-be-elf.inc
+Index: madwifi-trunk-r3314/hal/public/xscale-be-elf.inc
 ===================================================================
---- madwifi-dfs-r3053.orig/hal/public/xscale-be-elf.inc	2007-12-13 05:25:10.906246979 +0100
-+++ madwifi-dfs-r3053/hal/public/xscale-be-elf.inc	2007-12-13 05:25:10.998252222 +0100
+--- madwifi-trunk-r3314.orig/hal/public/xscale-be-elf.inc	2008-02-20 18:10:46.351155793 +0100
++++ madwifi-trunk-r3314/hal/public/xscale-be-elf.inc	2008-02-20 18:10:46.451161492 +0100
 @@ -77,5 +77,5 @@
  
  LDOPTS=	-EB
@@ -31,15 +31,13 @@ Index: madwifi-dfs-r3053/hal/public/xscale-be-elf.inc
 -COPTS+= -march=armv4 -mbig-endian -fno-strict-aliasing -fno-common -mapcs-32 \
 +COPTS+= -march=armv5te -mbig-endian -fno-strict-aliasing -fno-common  \
  	-mtune=xscale  -mshort-load-bytes
-Index: madwifi-dfs-r3053/hal/public/xscale-le-elf.inc
+Index: madwifi-trunk-r3314/hal/public/xscale-le-elf.inc
 ===================================================================
---- madwifi-dfs-r3053.orig/hal/public/xscale-le-elf.inc	2007-12-12 22:20:33.000000000 -0600
-+++ madwifi-dfs-r3053/hal/public/xscale-le-elf.inc	2008-01-14 17:24:29.000000000 -0600
-@@ -78,5 +78,5 @@
- 
+--- madwifi-trunk-r3314.orig/hal/public/xscale-le-elf.inc	2008-02-20 18:10:46.363156477 +0100
++++ madwifi-trunk-r3314/hal/public/xscale-le-elf.inc	2008-02-20 18:10:46.455161721 +0100
+@@ -79,4 +79,4 @@
  LDOPTS=	-EL
  COPTS+=	-DAH_BYTE_ORDER=AH_LITTLE_ENDIAN
--COPTS+= -march=armv4 -mlittle-endian -fno-strict-aliasing -fno-common \
+ COPTS+= -march=armv4 -mlittle-endian -fno-strict-aliasing -fno-common \
 -	-mapcs-32 -mtune=xscale  -mshort-load-bytes
-+COPTS+= -march=armv4 -mlittle-endian -fno-strict-aliasing -fno-common \
 +	-mtune=xscale  -mshort-load-bytes

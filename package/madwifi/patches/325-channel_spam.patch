@@ -1,8 +1,8 @@
-Index: madwifi-trunk-r3280/ath/if_ath.c
+Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3280.orig/ath/if_ath.c	2008-01-28 19:00:13.666420256 +0100
-+++ madwifi-trunk-r3280/ath/if_ath.c	2008-01-28 19:01:05.093350913 +0100
-@@ -9701,7 +9701,9 @@
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-20 21:58:53.697219623 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-20 21:58:58.545495909 +0100
+@@ -9776,7 +9776,9 @@
  	/*
  	 * Convert HAL channels to ieee80211 ones.
  	 */
@@ -12,7 +12,7 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  	for (i = 0; i < nchan; i++) {
  		HAL_CHANNEL *c = &chans[i];
  		struct ieee80211_channel *ichan = &ic->ic_channels[i];
-@@ -9728,6 +9730,7 @@
+@@ -9803,6 +9805,7 @@
  		ic->ic_chan_non_occupy[i].tv_sec  = 0;
  		ic->ic_chan_non_occupy[i].tv_usec = 0;
  
@@ -20,7 +20,7 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  		IPRINTF(sc, "Channel %3d (%4d MHz) Max Tx Power %d dBm%s "
  				"[%d hw %d reg] Flags%s%s%s%s%s%s%s%s%s%s%s%s%"
  				"s%s%s%s%s%s%s%s%s%s%s%s\n",
-@@ -9816,6 +9819,7 @@
+@@ -9891,6 +9894,7 @@
  				(c->privFlags & 0x0080 ? 
  				 " PF & (1 << 7)" : "")
  				);

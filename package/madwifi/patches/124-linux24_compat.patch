@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/ath/if_athvar.h
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-01-31 03:29:54.077194330 +0100
-+++ madwifi-trunk-r3314/ath/if_athvar.h	2008-01-31 03:31:07.693389480 +0100
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-02-20 18:10:45.991135277 +0100
++++ madwifi-trunk-r3314/ath/if_athvar.h	2008-02-20 18:10:48.307267266 +0100
 @@ -126,6 +126,11 @@
  #define ATH_GET_NETDEV_DEV(ndev)	((ndev)->class_dev.dev)
  #endif
@@ -16,8 +16,8 @@ Index: madwifi-trunk-r3314/ath/if_athvar.h
  					       void (*setup)(struct net_device *))
 Index: madwifi-trunk-r3314/ath/if_ath_radar.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath_radar.c	2008-01-31 03:29:54.081194559 +0100
-+++ madwifi-trunk-r3314/ath/if_ath_radar.c	2008-01-31 03:31:07.697389706 +0100
+--- madwifi-trunk-r3314.orig/ath/if_ath_radar.c	2008-02-20 18:10:45.999135735 +0100
++++ madwifi-trunk-r3314/ath/if_ath_radar.c	2008-02-20 18:10:48.307267266 +0100
 @@ -92,6 +92,13 @@
  #define nofloat_pct(_value, _pct) \
  	( (_value * (1000 + _pct)) / 1000 )
@@ -34,8 +34,8 @@ Index: madwifi-trunk-r3314/ath/if_ath_radar.c
  	const char *name;
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-01-31 03:30:19.778658973 +0100
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-01-31 03:31:07.709390390 +0100
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-20 18:10:47.047195460 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-20 18:10:48.315267722 +0100
 @@ -4705,6 +4705,46 @@
  #undef USE_SHPREAMBLE
  }
@@ -86,7 +86,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
 Index: madwifi-trunk-r3314/net80211/sort.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ madwifi-trunk-r3314/net80211/sort.c	2008-01-31 03:31:07.717390845 +0100
++++ madwifi-trunk-r3314/net80211/sort.c	2008-02-20 18:10:48.319267951 +0100
 @@ -0,0 +1,120 @@
 +/*
 + * A fast, small, non-recursive O(nlog n) sort for the Linux kernel

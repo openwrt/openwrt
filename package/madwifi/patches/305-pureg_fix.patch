@@ -1,8 +1,8 @@
-Index: madwifi-trunk-r3280/ath/if_ath.c
+Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3280.orig/ath/if_ath.c	2008-01-28 17:29:41.614957171 +0100
-+++ madwifi-trunk-r3280/ath/if_ath.c	2008-01-28 17:29:54.895713998 +0100
-@@ -4080,7 +4080,9 @@
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-20 21:57:41.025078273 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-20 21:57:44.393270217 +0100
+@@ -4146,7 +4146,9 @@
  		rfilt |= HAL_RX_FILTER_PROM;
  	if (ic->ic_opmode == IEEE80211_M_STA ||
  	    sc->sc_opmode == HAL_M_IBSS ||	/* NB: AHDEMO too */
@@ -13,10 +13,10 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  		rfilt |= HAL_RX_FILTER_BEACON;
  	if (sc->sc_nmonvaps > 0)
  		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON |
-Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
+Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-trunk-r3280.orig/net80211/ieee80211_input.c	2008-01-28 17:29:26.378088873 +0100
-+++ madwifi-trunk-r3280/net80211/ieee80211_input.c	2008-01-28 17:29:54.999719926 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_input.c	2008-02-20 21:57:41.037078957 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_input.c	2008-02-20 21:57:44.401270672 +0100
 @@ -346,11 +346,12 @@
  				bssid = wh->i_addr3;
  			}
@@ -53,7 +53,7 @@ Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
  			break;
  		case IEEE80211_M_WDS:
  			if (skb->len < sizeof(struct ieee80211_frame_addr4)) {
-@@ -3058,7 +3055,7 @@
+@@ -3066,7 +3063,7 @@
  	u_int8_t *frm, *efrm;
  	u_int8_t *ssid, *rates, *xrates, *suppchan, *wpa, *rsn, *wme, *ath;
  	u_int8_t rate;
@@ -62,7 +62,7 @@ Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
  	u_int8_t qosinfo;
  
  	if (ni_or_null == NULL)
-@@ -3088,11 +3085,15 @@
+@@ -3096,11 +3093,15 @@
  		 *    o station mode when associated (to collect state
  		 *      updates such as 802.11g slot time), or
  		 *    o adhoc mode (to discover neighbors)
@@ -79,7 +79,7 @@ Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
  			vap->iv_stats.is_rx_mgtdiscard++;
  			return;
  		}
-@@ -3176,6 +3177,7 @@
+@@ -3184,6 +3185,7 @@
  					break;
  				}
  				scan.erp = frm[2];
@@ -87,7 +87,7 @@ Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
  				break;
  			case IEEE80211_ELEMID_RSN:
  				scan.rsn = frm;
-@@ -3413,6 +3415,20 @@
+@@ -3421,6 +3423,20 @@
  				ieee80211_bg_scan(vap);
  			return;
  		}
@@ -108,10 +108,10 @@ Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
  		/*
  		 * If scanning, just pass information to the scan module.
  		 */
-Index: madwifi-trunk-r3280/net80211/ieee80211_node.c
+Index: madwifi-trunk-r3314/net80211/ieee80211_node.c
 ===================================================================
---- madwifi-trunk-r3280.orig/net80211/ieee80211_node.c	2008-01-28 17:27:08.000000000 +0100
-+++ madwifi-trunk-r3280/net80211/ieee80211_node.c	2008-01-28 17:29:55.199731324 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_node.c	2008-02-20 21:56:33.629237604 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_node.c	2008-02-20 21:57:44.409271127 +0100
 @@ -383,10 +383,16 @@
  	/* Update country ie information */
  	ieee80211_build_countryie(ic);
@@ -131,10 +131,10 @@ Index: madwifi-trunk-r3280/net80211/ieee80211_node.c
  
  	(void) ieee80211_sta_join1(PASS_NODE(ni));
  }
-Index: madwifi-trunk-r3280/net80211/ieee80211_proto.c
+Index: madwifi-trunk-r3314/net80211/ieee80211_proto.c
 ===================================================================
---- madwifi-trunk-r3280.orig/net80211/ieee80211_proto.c	2008-01-28 17:27:08.000000000 +0100
-+++ madwifi-trunk-r3280/net80211/ieee80211_proto.c	2008-01-28 17:29:55.299737023 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_proto.c	2008-02-20 21:56:33.633237829 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_proto.c	2008-02-20 21:57:44.413271357 +0100
 @@ -595,6 +595,28 @@
  	{ 4, { 2, 4, 11, 22 } },	/* IEEE80211_MODE_TURBO_G (mixed b/g) */
  };
@@ -164,11 +164,11 @@ Index: madwifi-trunk-r3280/net80211/ieee80211_proto.c
  /*
   * Mark the basic rates for the 11g rate table based on the
   * specified mode.  For 11b compatibility we mark only 11b
-Index: madwifi-trunk-r3280/net80211/ieee80211_var.h
+Index: madwifi-trunk-r3314/net80211/ieee80211_var.h
 ===================================================================
---- madwifi-trunk-r3280.orig/net80211/ieee80211_var.h	2008-01-28 17:27:08.000000000 +0100
-+++ madwifi-trunk-r3280/net80211/ieee80211_var.h	2008-01-28 17:30:20.585177966 +0100
-@@ -694,6 +694,7 @@
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_var.h	2008-02-20 21:56:33.645238517 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_var.h	2008-02-20 21:57:44.417271583 +0100
+@@ -707,6 +707,7 @@
  void ieee80211_build_sc_ie(struct ieee80211com *);
  void ieee80211_dfs_action(struct ieee80211com *);
  void ieee80211_expire_channel_excl_restrictions(struct ieee80211com *);
