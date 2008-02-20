@@ -1,7 +1,7 @@
-diff -Naurw linux-2.6.23/drivers/net/imq.c linux-2.6.23.imq/drivers/net/imq.c
---- linux-2.6.23/drivers/net/imq.c	1969-12-31 21:00:00.000000000 -0300
-+++ linux-2.6.23.imq/drivers/net/imq.c	2007-10-01 09:59:23.000000000 -0300
-@@ -0,0 +1,400 @@
+diff -Naurw 2.6.24/drivers/net/imq.c 2.6.24.imq/drivers/net/imq.c
+--- 2.6.24/drivers/net/imq.c	1969-12-31 21:00:00.000000000 -0300
++++ 2.6.24.imq/drivers/net/imq.c	2008-01-26 14:52:43.000000000 -0300
+@@ -0,0 +1,409 @@
 +/*
 + *             Pseudo-driver for the intermediate queue device.
 + *
@@ -225,12 +225,12 @@ diff -Naurw linux-2.6.23/drivers/net/imq.c linux-2.6.23.imq/drivers/net/imq.c
 +	.outfn = imq_nf_queue,
 +};
 +
-+static unsigned int imq_nf_hook(unsigned int hook, struct sk_buff *skb,
++static unsigned int imq_nf_hook(unsigned int hook, struct sk_buff *pskb,
 +				const struct net_device *indev,
 +				const struct net_device *outdev,
 +				int (*okfn)(struct sk_buff *))
 +{
-+	if (skb->imq_flags & IMQ_F_ENQUEUE)
++	if (pskb->imq_flags & IMQ_F_ENQUEUE)
 +		return NF_QUEUE;
 +
 +	return NF_ACCEPT;
@@ -307,7 +307,7 @@ diff -Naurw linux-2.6.23/drivers/net/imq.c linux-2.6.23.imq/drivers/net/imq.c
 +	kfree(dev->priv);
 +}
 +
-+static int __init imq_init_devs(void)
++static int __init imq_init_devs(struct net *net)
 +{
 +	struct net_device *dev;
 +	int i,j;
@@ -330,7 +330,7 @@ diff -Naurw linux-2.6.23/drivers/net/imq.c linux-2.6.23.imq/drivers/net/imq.c
 +		strcpy(dev->name, "imq%d");
 +		dev->init   = imq_dev_init;
 +		dev->uninit = imq_dev_uninit;
-+		dev->nd_net = &init_net; 
++		dev->nd_net = net;
 +
 +		if (register_netdev(dev) < 0)
 +			goto err_register;
@@ -356,12 +356,12 @@ diff -Naurw linux-2.6.23/drivers/net/imq.c linux-2.6.23.imq/drivers/net/imq.c
 +	kfree(imq_devs);
 +}
 +
-+static int __init imq_init_module(void)
++static __net_init int imq_init_module(struct net *net)
 +{
 +	int err;
 +
-+	if ((err = imq_init_devs())) {
-+		printk(KERN_ERR "IMQ: Error trying imq_init_devs()\n");
++	if ((err = imq_init_devs(net))) {
++		printk(KERN_ERR "IMQ: Error trying imq_init_devs(net)\n");
 +		return err;
 +	}
 +	if ((err = imq_init_hooks())) {
@@ -386,25 +386,34 @@ diff -Naurw linux-2.6.23/drivers/net/imq.c linux-2.6.23.imq/drivers/net/imq.c
 +	return 0;
 +}
 +
-+static void __exit imq_cleanup_module(void)
++static __net_exit void imq_exit_module(struct net *net)
 +{
 +	imq_unhook();
 +	imq_cleanup_devs();
 +	printk(KERN_INFO "IMQ driver unloaded successfully.\n");
 +}
 +
++static struct pernet_operations __net_initdata imq_net_ops = {
++    .init = imq_init_module,
++    .exit = imq_exit_module,
++};
++ 
++static int __init imq_init(void)
++{
++    return register_pernet_device(&imq_net_ops);
++}
 +
-+module_init(imq_init_module);
-+module_exit(imq_cleanup_module);
++module_init(imq_init);
++//module_exit(imq_cleanup_module);
 +
-+module_param(numdevs, int, 16);
++module_param(numdevs, int, 0);
 +MODULE_PARM_DESC(numdevs, "number of IMQ devices (how many imq* devices will be created)");
 +MODULE_AUTHOR("http://www.linuximq.net");
 +MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 +MODULE_LICENSE("GPL");
-diff -Naurw linux-2.6.23/drivers/net/Kconfig linux-2.6.23.imq/drivers/net/Kconfig
---- linux-2.6.23/drivers/net/Kconfig	2007-10-01 09:04:50.000000000 -0300
-+++ linux-2.6.23.imq/drivers/net/Kconfig	2007-10-01 09:55:14.000000000 -0300
+diff -Naurw 2.6.24/drivers/net/Kconfig 2.6.24.imq/drivers/net/Kconfig
+--- 2.6.24/drivers/net/Kconfig	2008-01-24 19:58:37.000000000 -0300
++++ 2.6.24.imq/drivers/net/Kconfig	2008-01-26 15:00:11.000000000 -0300
 @@ -112,6 +112,129 @@
  	  To compile this driver as a module, choose M here: the module
  	  will be called eql.  If unsure, say N.
@@ -428,7 +437,7 @@ diff -Naurw linux-2.6.23/drivers/net/Kconfig linux-2.6.23.imq/drivers/net/Kconfi
 +choice
 +	prompt "IMQ behavior (PRE/POSTROUTING)"
 +	depends on IMQ
-+	default IMQ_BEHAVIOR_AB
++	default IMQ_BEHAVIOR_BB
 +	help
 +
 +		This settings defines how IMQ behaves in respect to its
@@ -535,10 +544,10 @@ diff -Naurw linux-2.6.23/drivers/net/Kconfig linux-2.6.23.imq/drivers/net/Kconfi
  config TUN
  	tristate "Universal TUN/TAP device driver support"
  	select CRC32
-diff -Naurw linux-2.6.23/drivers/net/Makefile linux-2.6.23.imq/drivers/net/Makefile
---- linux-2.6.23/drivers/net/Makefile	2007-10-01 09:04:50.000000000 -0300
-+++ linux-2.6.23.imq/drivers/net/Makefile	2007-10-01 09:55:14.000000000 -0300
-@@ -131,6 +131,7 @@
+diff -Naurw 2.6.24/drivers/net/Makefile 2.6.24.imq/drivers/net/Makefile
+--- 2.6.24/drivers/net/Makefile	2008-01-24 19:58:37.000000000 -0300
++++ 2.6.24.imq/drivers/net/Makefile	2008-01-26 15:00:11.000000000 -0300
+@@ -139,6 +139,7 @@
  obj-$(CONFIG_XEN_NETDEV_FRONTEND) += xen-netfront.o
  
  obj-$(CONFIG_DUMMY) += dummy.o
@@ -546,9 +555,9 @@ diff -Naurw linux-2.6.23/drivers/net/Makefile linux-2.6.23.imq/drivers/net/Makef
  obj-$(CONFIG_IFB) += ifb.o
  obj-$(CONFIG_MACVLAN) += macvlan.o
  obj-$(CONFIG_DE600) += de600.o
-diff -Naurw linux-2.6.23/include/linux/imq.h linux-2.6.23.imq/include/linux/imq.h
---- linux-2.6.23/include/linux/imq.h	1969-12-31 21:00:00.000000000 -0300
-+++ linux-2.6.23.imq/include/linux/imq.h	2007-10-01 09:55:14.000000000 -0300
+diff -Naurw 2.6.24/include/linux/imq.h 2.6.24.imq/include/linux/imq.h
+--- 2.6.24/include/linux/imq.h	1969-12-31 21:00:00.000000000 -0300
++++ 2.6.24.imq/include/linux/imq.h	2008-01-26 15:00:11.000000000 -0300
 @@ -0,0 +1,9 @@
 +#ifndef _IMQ_H
 +#define _IMQ_H
@@ -559,9 +568,9 @@ diff -Naurw linux-2.6.23/include/linux/imq.h linux-2.6.23.imq/include/linux/imq.
 +#define IMQ_F_ENQUEUE  0x80
 +
 +#endif /* _IMQ_H */
-diff -Naurw linux-2.6.23/include/linux/netfilter_ipv4/ipt_IMQ.h linux-2.6.23.imq/include/linux/netfilter_ipv4/ipt_IMQ.h
---- linux-2.6.23/include/linux/netfilter_ipv4/ipt_IMQ.h	1969-12-31 21:00:00.000000000 -0300
-+++ linux-2.6.23.imq/include/linux/netfilter_ipv4/ipt_IMQ.h	2007-10-01 09:55:14.000000000 -0300
+diff -Naurw 2.6.24/include/linux/netfilter_ipv4/ipt_IMQ.h 2.6.24.imq/include/linux/netfilter_ipv4/ipt_IMQ.h
+--- 2.6.24/include/linux/netfilter_ipv4/ipt_IMQ.h	1969-12-31 21:00:00.000000000 -0300
++++ 2.6.24.imq/include/linux/netfilter_ipv4/ipt_IMQ.h	2008-01-26 15:00:11.000000000 -0300
 @@ -0,0 +1,8 @@
 +#ifndef _IPT_IMQ_H
 +#define _IPT_IMQ_H
@@ -571,9 +580,9 @@ diff -Naurw linux-2.6.23/include/linux/netfilter_ipv4/ipt_IMQ.h linux-2.6.23.imq
 +};
 +
 +#endif /* _IPT_IMQ_H */
-diff -Naurw linux-2.6.23/include/linux/netfilter_ipv6/ip6t_IMQ.h linux-2.6.23.imq/include/linux/netfilter_ipv6/ip6t_IMQ.h
---- linux-2.6.23/include/linux/netfilter_ipv6/ip6t_IMQ.h	1969-12-31 21:00:00.000000000 -0300
-+++ linux-2.6.23.imq/include/linux/netfilter_ipv6/ip6t_IMQ.h	2007-10-01 09:55:14.000000000 -0300
+diff -Naurw 2.6.24/include/linux/netfilter_ipv6/ip6t_IMQ.h 2.6.24.imq/include/linux/netfilter_ipv6/ip6t_IMQ.h
+--- 2.6.24/include/linux/netfilter_ipv6/ip6t_IMQ.h	1969-12-31 21:00:00.000000000 -0300
++++ 2.6.24.imq/include/linux/netfilter_ipv6/ip6t_IMQ.h	2008-01-26 15:00:11.000000000 -0300
 @@ -0,0 +1,8 @@
 +#ifndef _IP6T_IMQ_H
 +#define _IP6T_IMQ_H
@@ -583,10 +592,10 @@ diff -Naurw linux-2.6.23/include/linux/netfilter_ipv6/ip6t_IMQ.h linux-2.6.23.im
 +};
 +
 +#endif /* _IP6T_IMQ_H */
-diff -Naurw linux-2.6.23/include/linux/skbuff.h linux-2.6.23.imq/include/linux/skbuff.h
---- linux-2.6.23/include/linux/skbuff.h	2007-10-01 09:05:08.000000000 -0300
-+++ linux-2.6.23.imq/include/linux/skbuff.h	2007-10-01 09:55:14.000000000 -0300
-@@ -296,6 +296,10 @@
+diff -Naurw 2.6.24/include/linux/skbuff.h 2.6.24.imq/include/linux/skbuff.h
+--- 2.6.24/include/linux/skbuff.h	2008-01-24 19:58:37.000000000 -0300
++++ 2.6.24.imq/include/linux/skbuff.h	2008-01-26 15:00:11.000000000 -0300
+@@ -295,6 +295,10 @@
  	struct nf_conntrack	*nfct;
  	struct sk_buff		*nfct_reasm;
  #endif
@@ -597,7 +606,7 @@ diff -Naurw linux-2.6.23/include/linux/skbuff.h linux-2.6.23.imq/include/linux/s
  #ifdef CONFIG_BRIDGE_NETFILTER
  	struct nf_bridge_info	*nf_bridge;
  #endif
-@@ -1726,6 +1730,10 @@
+@@ -1728,6 +1732,10 @@
  	dst->nfct_reasm = src->nfct_reasm;
  	nf_conntrack_get_reasm(src->nfct_reasm);
  #endif
@@ -608,11 +617,11 @@ diff -Naurw linux-2.6.23/include/linux/skbuff.h linux-2.6.23.imq/include/linux/s
  #ifdef CONFIG_BRIDGE_NETFILTER
  	dst->nf_bridge  = src->nf_bridge;
  	nf_bridge_get(src->nf_bridge);
-diff -Naurw linux-2.6.23/net/core/dev.c linux-2.6.23.imq/net/core/dev.c
---- linux-2.6.23/net/core/dev.c	2007-10-01 09:05:10.000000000 -0300
-+++ linux-2.6.23.imq/net/core/dev.c	2007-10-01 09:55:14.000000000 -0300
-@@ -94,6 +94,9 @@
- #include <linux/skbuff.h>
+diff -Naurw 2.6.24/net/core/dev.c 2.6.24.imq/net/core/dev.c
+--- 2.6.24/net/core/dev.c	2008-01-24 19:58:37.000000000 -0300
++++ 2.6.24.imq/net/core/dev.c	2008-01-26 15:00:11.000000000 -0300
+@@ -95,6 +95,9 @@
+ #include <net/net_namespace.h>
  #include <net/sock.h>
  #include <linux/rtnetlink.h>
 +#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
@@ -621,7 +630,7 @@ diff -Naurw linux-2.6.23/net/core/dev.c linux-2.6.23.imq/net/core/dev.c
  #include <linux/proc_fs.h>
  #include <linux/seq_file.h>
  #include <linux/stat.h>
-@@ -1462,7 +1465,11 @@
+@@ -1533,7 +1536,11 @@
  int dev_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
  {
  	if (likely(!skb->next)) {
@@ -634,9 +643,9 @@ diff -Naurw linux-2.6.23/net/core/dev.c linux-2.6.23.imq/net/core/dev.c
  			dev_queue_xmit_nit(skb, dev);
  
  		if (netif_needs_gso(dev, skb)) {
-diff -Naurw linux-2.6.23/net/ipv4/netfilter/ipt_IMQ.c linux-2.6.23.imq/net/ipv4/netfilter/ipt_IMQ.c
---- linux-2.6.23/net/ipv4/netfilter/ipt_IMQ.c	1969-12-31 21:00:00.000000000 -0300
-+++ linux-2.6.23.imq/net/ipv4/netfilter/ipt_IMQ.c	2007-10-01 09:55:14.000000000 -0300
+diff -Naurw 2.6.24/net/ipv4/netfilter/ipt_IMQ.c 2.6.24.imq/net/ipv4/netfilter/ipt_IMQ.c
+--- 2.6.24/net/ipv4/netfilter/ipt_IMQ.c	1969-12-31 21:00:00.000000000 -0300
++++ 2.6.24.imq/net/ipv4/netfilter/ipt_IMQ.c	2008-01-26 15:00:11.000000000 -0300
 @@ -0,0 +1,69 @@
 +/*
 + * This target marks packets to be enqueued to an imq device
@@ -647,7 +656,7 @@ diff -Naurw linux-2.6.23/net/ipv4/netfilter/ipt_IMQ.c linux-2.6.23.imq/net/ipv4/
 +#include <linux/netfilter_ipv4/ipt_IMQ.h>
 +#include <linux/imq.h>
 +
-+static unsigned int imq_target(struct sk_buff *skb,
++static unsigned int imq_target(struct sk_buff *pskb,
 +			       const struct net_device *in,
 +			       const struct net_device *out,
 +			       unsigned int hooknum,
@@ -656,7 +665,7 @@ diff -Naurw linux-2.6.23/net/ipv4/netfilter/ipt_IMQ.c linux-2.6.23.imq/net/ipv4/
 +{
 +	struct ipt_imq_info *mr = (struct ipt_imq_info*)targinfo;
 +
-+	skb->imq_flags = mr->todev | IMQ_F_ENQUEUE;
++	pskb->imq_flags = mr->todev | IMQ_F_ENQUEUE;
 +
 +	return XT_CONTINUE;
 +}
@@ -707,9 +716,9 @@ diff -Naurw linux-2.6.23/net/ipv4/netfilter/ipt_IMQ.c linux-2.6.23.imq/net/ipv4/
 +MODULE_AUTHOR("http://www.linuximq.net");
 +MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 +MODULE_LICENSE("GPL");
-diff -Naurw linux-2.6.23/net/ipv4/netfilter/Kconfig linux-2.6.23.imq/net/ipv4/netfilter/Kconfig
---- linux-2.6.23/net/ipv4/netfilter/Kconfig	2007-10-01 09:05:12.000000000 -0300
-+++ linux-2.6.23.imq/net/ipv4/netfilter/Kconfig	2007-10-01 09:55:14.000000000 -0300
+diff -Naurw 2.6.24/net/ipv4/netfilter/Kconfig 2.6.24.imq/net/ipv4/netfilter/Kconfig
+--- 2.6.24/net/ipv4/netfilter/Kconfig	2008-01-24 19:58:37.000000000 -0300
++++ 2.6.24.imq/net/ipv4/netfilter/Kconfig	2008-01-26 15:00:11.000000000 -0300
 @@ -311,6 +311,17 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
@@ -728,20 +737,20 @@ diff -Naurw linux-2.6.23/net/ipv4/netfilter/Kconfig linux-2.6.23.imq/net/ipv4/ne
  config IP_NF_TARGET_TOS
  	tristate "TOS target support"
  	depends on IP_NF_MANGLE
-diff -Naurw linux-2.6.23/net/ipv4/netfilter/Makefile linux-2.6.23.imq/net/ipv4/netfilter/Makefile
---- linux-2.6.23/net/ipv4/netfilter/Makefile	2007-10-01 09:03:13.000000000 -0300
-+++ linux-2.6.23.imq/net/ipv4/netfilter/Makefile	2007-10-01 09:55:14.000000000 -0300
-@@ -67,6 +67,7 @@
- obj-$(CONFIG_IP_NF_TARGET_TTL) += ipt_TTL.o
- obj-$(CONFIG_IP_NF_TARGET_ULOG) += ipt_ULOG.o
- obj-$(CONFIG_IP_NF_TARGET_SET) += ipt_SET.o
+diff -Naurw 2.6.24/net/ipv4/netfilter/Makefile 2.6.24.imq/net/ipv4/netfilter/Makefile
+--- 2.6.24/net/ipv4/netfilter/Makefile	2008-01-24 19:58:37.000000000 -0300
++++ 2.6.24.imq/net/ipv4/netfilter/Makefile	2008-01-26 15:00:11.000000000 -0300
+@@ -54,6 +54,7 @@
+ obj-$(CONFIG_IP_NF_TARGET_CLUSTERIP) += ipt_CLUSTERIP.o
+ obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_ECN.o
+ obj-$(CONFIG_IP_NF_TARGET_LOG) += ipt_LOG.o
 +obj-$(CONFIG_IP_NF_TARGET_IMQ) += ipt_IMQ.o
- 
- # sets
- obj-$(CONFIG_IP_NF_SET) += ip_set.o
-diff -Naurw linux-2.6.23/net/ipv6/netfilter/ip6t_IMQ.c linux-2.6.23.imq/net/ipv6/netfilter/ip6t_IMQ.c
---- linux-2.6.23/net/ipv6/netfilter/ip6t_IMQ.c	1969-12-31 21:00:00.000000000 -0300
-+++ linux-2.6.23.imq/net/ipv6/netfilter/ip6t_IMQ.c	2007-10-01 09:55:14.000000000 -0300
+ obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
+ obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
+ obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
+diff -Naurw 2.6.24/net/ipv6/netfilter/ip6t_IMQ.c 2.6.24.imq/net/ipv6/netfilter/ip6t_IMQ.c
+--- 2.6.24/net/ipv6/netfilter/ip6t_IMQ.c	1969-12-31 21:00:00.000000000 -0300
++++ 2.6.24.imq/net/ipv6/netfilter/ip6t_IMQ.c	2008-01-26 15:00:11.000000000 -0300
 @@ -0,0 +1,69 @@
 +/*
 + * This target marks packets to be enqueued to an imq device
@@ -752,7 +761,7 @@ diff -Naurw linux-2.6.23/net/ipv6/netfilter/ip6t_IMQ.c linux-2.6.23.imq/net/ipv6
 +#include <linux/netfilter_ipv6/ip6t_IMQ.h>
 +#include <linux/imq.h>
 +
-+static unsigned int imq_target(struct sk_buff *skb,
++static unsigned int imq_target(struct sk_buff *pskb,
 +			       const struct net_device *in,
 +			       const struct net_device *out,
 +			       unsigned int hooknum,
@@ -761,7 +770,7 @@ diff -Naurw linux-2.6.23/net/ipv6/netfilter/ip6t_IMQ.c linux-2.6.23.imq/net/ipv6
 +{
 +	struct ip6t_imq_info *mr = (struct ip6t_imq_info*)targinfo;
 +
-+	skb->imq_flags = mr->todev | IMQ_F_ENQUEUE;
++	pskb->imq_flags = mr->todev | IMQ_F_ENQUEUE;
 +
 +	return XT_CONTINUE;
 +}
@@ -812,9 +821,9 @@ diff -Naurw linux-2.6.23/net/ipv6/netfilter/ip6t_IMQ.c linux-2.6.23.imq/net/ipv6
 +MODULE_AUTHOR("http://www.linuximq.net");
 +MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 +MODULE_LICENSE("GPL");
-diff -Naurw linux-2.6.23/net/ipv6/netfilter/Kconfig linux-2.6.23.imq/net/ipv6/netfilter/Kconfig
---- linux-2.6.23/net/ipv6/netfilter/Kconfig	2007-10-01 09:03:12.000000000 -0300
-+++ linux-2.6.23.imq/net/ipv6/netfilter/Kconfig	2007-10-01 09:55:14.000000000 -0300
+diff -Naurw 2.6.24/net/ipv6/netfilter/Kconfig 2.6.24.imq/net/ipv6/netfilter/Kconfig
+--- 2.6.24/net/ipv6/netfilter/Kconfig	2008-01-24 19:58:37.000000000 -0300
++++ 2.6.24.imq/net/ipv6/netfilter/Kconfig	2008-01-26 15:00:11.000000000 -0300
 @@ -173,6 +173,15 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
@@ -831,18 +840,21 @@ diff -Naurw linux-2.6.23/net/ipv6/netfilter/Kconfig linux-2.6.23.imq/net/ipv6/ne
  config IP6_NF_TARGET_HL
  	tristate  'HL (hoplimit) target support'
  	depends on IP6_NF_MANGLE
-diff -Naurw linux-2.6.23/net/ipv6/netfilter/Makefile linux-2.6.23.imq/net/ipv6/netfilter/Makefile
---- linux-2.6.23/net/ipv6/netfilter/Makefile	2007-10-01 09:03:12.000000000 -0300
-+++ linux-2.6.23.imq/net/ipv6/netfilter/Makefile	2007-10-01 09:55:14.000000000 -0300
-@@ -30,3 +30,4 @@
- obj-$(CONFIG_IP6_NF_TARGET_HL) += ip6t_HL.o
- obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_LOG.o
- obj-$(CONFIG_IP6_NF_TARGET_REJECT) += ip6t_REJECT.o
+diff -Naurw 2.6.24/net/ipv6/netfilter/Makefile 2.6.24.imq/net/ipv6/netfilter/Makefile
+--- 2.6.24/net/ipv6/netfilter/Makefile	2008-01-24 19:58:37.000000000 -0300
++++ 2.6.24.imq/net/ipv6/netfilter/Makefile	2008-01-26 15:00:11.000000000 -0300
+@@ -6,6 +6,7 @@
+ obj-$(CONFIG_IP6_NF_IPTABLES) += ip6_tables.o
+ obj-$(CONFIG_IP6_NF_FILTER) += ip6table_filter.o
+ obj-$(CONFIG_IP6_NF_MANGLE) += ip6table_mangle.o
 +obj-$(CONFIG_IP6_NF_TARGET_IMQ) += ip6t_IMQ.o
-diff -Naurw linux-2.6.23/net/sched/sch_generic.c linux-2.6.23.imq/net/sched/sch_generic.c
---- linux-2.6.23/net/sched/sch_generic.c	2007-10-01 09:05:14.000000000 -0300
-+++ linux-2.6.23.imq/net/sched/sch_generic.c	2007-10-01 09:55:14.000000000 -0300
-@@ -190,6 +190,11 @@
+ obj-$(CONFIG_IP6_NF_QUEUE) += ip6_queue.o
+ obj-$(CONFIG_IP6_NF_RAW) += ip6table_raw.o
+ 
+diff -Naurw 2.6.24/net/sched/sch_generic.c 2.6.24.imq/net/sched/sch_generic.c
+--- 2.6.24/net/sched/sch_generic.c	2008-01-24 19:58:37.000000000 -0300
++++ 2.6.24.imq/net/sched/sch_generic.c	2008-01-26 15:00:11.000000000 -0300
+@@ -176,6 +176,11 @@
  	return ret;
  }
  
@@ -854,7 +866,7 @@ diff -Naurw linux-2.6.23/net/sched/sch_generic.c linux-2.6.23.imq/net/sched/sch_
  void __qdisc_run(struct net_device *dev)
  {
  	do {
-@@ -619,3 +624,4 @@
+@@ -638,3 +643,4 @@
  EXPORT_SYMBOL(qdisc_reset);
  EXPORT_SYMBOL(qdisc_lock_tree);
  EXPORT_SYMBOL(qdisc_unlock_tree);
