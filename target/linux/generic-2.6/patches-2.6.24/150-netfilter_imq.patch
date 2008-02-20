@@ -327,10 +327,10 @@ diff -Naurw linux-2.6.23/drivers/net/imq.c linux-2.6.23.imq/drivers/net/imq.c
 +	numdevs--;
 +
 +	for (i = 0, dev = imq_devs; i <= numdevs; i++, dev++) {
-+//		SET_MODULE_OWNER(dev);
 +		strcpy(dev->name, "imq%d");
 +		dev->init   = imq_dev_init;
 +		dev->uninit = imq_dev_uninit;
++		dev->nd_net = &init_net; 
 +
 +		if (register_netdev(dev) < 0)
 +			goto err_register;
