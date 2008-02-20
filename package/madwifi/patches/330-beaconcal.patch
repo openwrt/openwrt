@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-06 20:27:16.005587752 +0100
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-06 22:06:51.778996341 +0100
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-17 18:37:14.134402305 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-17 22:09:52.078681699 +0100
 @@ -395,6 +395,7 @@
  static int maxvaps = -1;
  static int outdoor = -1;
@@ -26,7 +26,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  module_param(countrycode, int, 0600);
  module_param(maxvaps, int, 0600);
  module_param(outdoor, int, 0600);
-@@ -2594,7 +2597,8 @@
+@@ -2595,7 +2598,8 @@
  		}
  		if (!sc->sc_invalid) {
  			del_timer_sync(&sc->sc_dfs_cac_timer);
@@ -36,7 +36,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  		}
  		ath_draintxq(sc);
  		if (!sc->sc_invalid) {
-@@ -2611,6 +2615,20 @@
+@@ -2612,6 +2616,20 @@
  	return 0;
  }
  
@@ -57,7 +57,20 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  /*
   * Stop the device, grabbing the top-level lock to protect
   * against concurrent entry through ath_init (which can happen
-@@ -5141,6 +5159,8 @@
+@@ -2737,6 +2755,12 @@
+ 	HAL_STATUS status;
+ 
+ 	/*
++	 * XXX: starting the calibration too early seems to lead to
++	 * problems with the beacons.
++	 */
++	sc->sc_lastcal = jiffies;
++
++	/*
+ 	 * Convert to a HAL channel description with the flags
+ 	 * constrained to reflect the current operating mode.
+ 	 */
+@@ -5142,6 +5166,8 @@
  			"Invoking ath_hal_txstart with sc_bhalq: %d\n",
  			sc->sc_bhalq);
  		ath_hal_txstart(ah, sc->sc_bhalq);
@@ -66,7 +79,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  
  		sc->sc_stats.ast_be_xmit++;		/* XXX per-VAP? */
  	}
-@@ -5390,6 +5410,7 @@
+@@ -5391,6 +5417,7 @@
  		ath_hal_beacontimers(ah, &bs);
  		sc->sc_imask |= HAL_INT_BMISS;
  		ath_hal_intrset(ah, sc->sc_imask);
@@ -74,7 +87,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	} else {
  		ath_hal_intrset(ah, 0);
  		if (reset_tsf)
-@@ -5401,8 +5422,11 @@
+@@ -5402,8 +5429,11 @@
  			 */
  			intval |= HAL_BEACON_ENA;
  			sc->sc_imask |= HAL_INT_SWBA;
@@ -87,7 +100,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  #ifdef ATH_SUPERG_DYNTURBO
  		ath_beacon_dturbo_config(vap, intval &
  				~(HAL_BEACON_RESET_TSF | HAL_BEACON_ENA));
-@@ -8864,6 +8888,9 @@
+@@ -8865,6 +8895,9 @@
  			/* Enter DFS wait period */
  			mod_timer(&sc->sc_dfs_cac_timer,
  				jiffies + (sc->sc_dfs_cac_period * HZ));
@@ -97,7 +110,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  		}
  		/*
  		 * re configure beacons when it is a turbo mode switch.
-@@ -8973,8 +9000,11 @@
+@@ -8974,8 +9007,11 @@
  		sc->sc_curchan.channel, sc->sc_curchan.channelFlags,
  		isIQdone ? "done" : "not done");
  
@@ -111,7 +124,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  }
  
  static void
-@@ -9081,7 +9111,8 @@
+@@ -9082,7 +9118,8 @@
  		ieee80211_state_name[vap->iv_state],
  		ieee80211_state_name[nstate]);
  
@@ -121,7 +134,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  
  	ath_hal_setledstate(ah, leds[nstate]);	/* set LED */
  	netif_stop_queue(dev);			/* before we do anything else */
-@@ -9306,7 +9337,8 @@
+@@ -9307,7 +9344,8 @@
  				"VAP -> DFSWAIT_PENDING \n");
  			/* start calibration timer with a really small value 
  			 * 1/10 sec */
@@ -131,7 +144,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  			/* wake the receiver */
  			netif_wake_queue(dev);
  			/* don't do the other usual stuff... */
-@@ -9349,7 +9381,7 @@
+@@ -9350,7 +9388,7 @@
  	error = avp->av_newstate(vap, nstate, arg);
  
  	/* Finally, start any timers. */
@@ -142,8 +155,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	}
 Index: madwifi-trunk-r3314/ath/if_athvar.h
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-02-06 20:27:08.969186784 +0100
-+++ madwifi-trunk-r3314/ath/if_athvar.h	2008-02-06 20:27:24.670081522 +0100
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-02-17 18:37:14.134402305 +0100
++++ madwifi-trunk-r3314/ath/if_athvar.h	2008-02-17 22:08:35.966344301 +0100
 @@ -778,6 +778,8 @@
  	struct ieee80211vap **sc_bslot;		/* beacon xmit slots */
  	int sc_bnext;				/* next slot for beacon xmit */
