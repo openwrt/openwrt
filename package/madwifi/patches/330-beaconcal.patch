@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-17 18:37:14.134402305 +0100
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-17 22:09:52.078681699 +0100
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-20 21:59:04.037808900 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-20 21:59:07.426001981 +0100
 @@ -395,6 +395,7 @@
  static int maxvaps = -1;
  static int outdoor = -1;
@@ -100,7 +100,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  #ifdef ATH_SUPERG_DYNTURBO
  		ath_beacon_dturbo_config(vap, intval &
  				~(HAL_BEACON_RESET_TSF | HAL_BEACON_ENA));
-@@ -8865,6 +8895,9 @@
+@@ -8864,6 +8894,9 @@
  			/* Enter DFS wait period */
  			mod_timer(&sc->sc_dfs_cac_timer,
  				jiffies + (sc->sc_dfs_cac_period * HZ));
@@ -110,7 +110,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  		}
  		/*
  		 * re configure beacons when it is a turbo mode switch.
-@@ -8974,8 +9007,11 @@
+@@ -8973,8 +9006,11 @@
  		sc->sc_curchan.channel, sc->sc_curchan.channelFlags,
  		isIQdone ? "done" : "not done");
  
@@ -124,7 +124,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  }
  
  static void
-@@ -9082,7 +9118,8 @@
+@@ -9081,7 +9117,8 @@
  		ieee80211_state_name[vap->iv_state],
  		ieee80211_state_name[nstate]);
  
@@ -134,7 +134,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  
  	ath_hal_setledstate(ah, leds[nstate]);	/* set LED */
  	netif_stop_queue(dev);			/* before we do anything else */
-@@ -9307,7 +9344,8 @@
+@@ -9306,7 +9343,8 @@
  				"VAP -> DFSWAIT_PENDING \n");
  			/* start calibration timer with a really small value 
  			 * 1/10 sec */
@@ -144,7 +144,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  			/* wake the receiver */
  			netif_wake_queue(dev);
  			/* don't do the other usual stuff... */
-@@ -9350,7 +9388,7 @@
+@@ -9349,7 +9387,7 @@
  	error = avp->av_newstate(vap, nstate, arg);
  
  	/* Finally, start any timers. */
@@ -155,8 +155,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	}
 Index: madwifi-trunk-r3314/ath/if_athvar.h
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-02-17 18:37:14.134402305 +0100
-+++ madwifi-trunk-r3314/ath/if_athvar.h	2008-02-17 22:08:35.966344301 +0100
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-02-20 21:58:38.148333545 +0100
++++ madwifi-trunk-r3314/ath/if_athvar.h	2008-02-20 21:59:07.426001981 +0100
 @@ -778,6 +778,8 @@
  	struct ieee80211vap **sc_bslot;		/* beacon xmit slots */
  	int sc_bnext;				/* next slot for beacon xmit */

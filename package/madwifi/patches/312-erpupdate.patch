@@ -1,7 +1,7 @@
-Index: madwifi-trunk-r3280/net80211/ieee80211_beacon.c
+Index: madwifi-trunk-r3314/net80211/ieee80211_beacon.c
 ===================================================================
---- madwifi-trunk-r3280.orig/net80211/ieee80211_beacon.c	2008-01-28 17:27:08.000000000 +0100
-+++ madwifi-trunk-r3280/net80211/ieee80211_beacon.c	2008-01-28 17:32:30.587778482 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_beacon.c	2008-02-20 18:10:45.515108151 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_beacon.c	2008-02-20 18:10:50.491391734 +0100
 @@ -542,10 +542,10 @@
  			vap->iv_flags &= ~IEEE80211_F_XRUPDATE;
  		}
@@ -15,11 +15,11 @@ Index: madwifi-trunk-r3280/net80211/ieee80211_beacon.c
  		}
  	}
  	/* if it is a mode change beacon for dynamic turbo case */
-Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
+Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-trunk-r3280.orig/net80211/ieee80211_input.c	2008-01-28 17:30:33.905937066 +0100
-+++ madwifi-trunk-r3280/net80211/ieee80211_input.c	2008-01-28 17:31:42.836941957 +0100
-@@ -3423,9 +3423,12 @@
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_input.c	2008-02-20 18:10:49.723347963 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_input.c	2008-02-20 18:10:50.495391960 +0100
+@@ -3431,9 +3431,12 @@
  			/* Assume no ERP IE == 11b AP */
  			if ((!has_erp || (has_erp && (scan.erp & IEEE80211_ERP_NON_ERP_PRESENT))) &&
  				!(ic->ic_flags & IEEE80211_F_USEPROT)) {
@@ -33,11 +33,11 @@ Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
  			}
  		}
  
-Index: madwifi-trunk-r3280/net80211/ieee80211_node.c
+Index: madwifi-trunk-r3314/net80211/ieee80211_node.c
 ===================================================================
---- madwifi-trunk-r3280.orig/net80211/ieee80211_node.c	2008-01-28 17:30:34.525972400 +0100
-+++ madwifi-trunk-r3280/net80211/ieee80211_node.c	2008-01-28 17:31:42.844938410 +0100
-@@ -2021,8 +2021,12 @@
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_node.c	2008-02-20 18:10:49.727348192 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_node.c	2008-02-20 18:10:50.507392644 +0100
+@@ -2022,8 +2022,12 @@
  		}
  
  		/* Update ERP element if this is first non ERP station */
@@ -52,7 +52,7 @@ Index: madwifi-trunk-r3280/net80211/ieee80211_node.c
  	} else
  		ni->ni_flags |= IEEE80211_NODE_ERP;
  }
-@@ -2225,6 +2229,8 @@
+@@ -2226,6 +2230,8 @@
  		IEEE80211_NOTE(vap, IEEE80211_MSG_ASSOC, ni,
  			"non-ERP station leaves, count now %d", ic->ic_nonerpsta);
  		if (ic->ic_nonerpsta == 0) {
@@ -61,7 +61,7 @@ Index: madwifi-trunk-r3280/net80211/ieee80211_node.c
  			IEEE80211_DPRINTF(vap, IEEE80211_MSG_ASSOC,
  				"%s: disable use of protection\n", __func__);
  			ic->ic_flags &= ~IEEE80211_F_USEPROT;
-@@ -2236,7 +2242,9 @@
+@@ -2237,7 +2243,9 @@
  				ic->ic_flags |= IEEE80211_F_SHPREAMBLE;
  				ic->ic_flags &= ~IEEE80211_F_USEBARKER;
  			}

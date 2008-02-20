@@ -1,34 +1,52 @@
-Index: madwifi-trunk-r3280/ath/if_ath.c
+Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3280.orig/ath/if_ath.c	2008-01-28 17:29:22.989895792 +0100
-+++ madwifi-trunk-r3280/ath/if_ath.c	2008-01-28 20:00:09.319637124 +0100
-@@ -184,7 +184,7 @@
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-20 21:56:33.725243076 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-20 21:57:34.912729951 +0100
+@@ -184,7 +184,11 @@
  	struct sk_buff *, int, int, u_int64_t);
  static void ath_setdefantenna(struct ath_softc *, u_int);
  static struct ath_txq *ath_txq_setup(struct ath_softc *, int, int);
 -static void ath_rx_tasklet(TQUEUE_ARG);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
++static int ath_rx_poll(struct napi_struct *napi, int budget);
++#else
 +static int ath_rx_poll(struct net_device *dev, int *budget);
++#endif
  static int ath_hardstart(struct sk_buff *, struct net_device *);
  static int ath_mgtstart(struct ieee80211com *, struct sk_buff *);
  #ifdef ATH_SUPERG_COMP
-@@ -542,7 +542,6 @@
- 	ATH_TXBUF_LOCK_INIT(sc);
- 	ATH_RXBUF_LOCK_INIT(sc);
+@@ -374,6 +378,9 @@
+ 		u_int32_t new_clamped_maxtxpower);
+ static u_int32_t ath_get_real_maxtxpower(struct ath_softc *sc);
+ 
++static void ath_poll_disable(struct net_device *dev);
++static void ath_poll_enable(struct net_device *dev);
++
+ /* calibrate every 30 secs in steady state but check every second at first. */
+ static int ath_calinterval = ATH_SHORT_CALINTERVAL;
+ static int ath_countrycode = CTRY_DEFAULT;	/* country code */
+@@ -545,7 +552,6 @@
+ 
+ 	atomic_set(&sc->sc_txbuf_counter, 0);
  
 -	ATH_INIT_TQUEUE(&sc->sc_rxtq,     ath_rx_tasklet,	dev);
  	ATH_INIT_TQUEUE(&sc->sc_txtq,	  ath_tx_tasklet,	dev);
  	ATH_INIT_TQUEUE(&sc->sc_bmisstq,  ath_bmiss_tasklet,	dev);
  	ATH_INIT_TQUEUE(&sc->sc_bstucktq, ath_bstuck_tasklet,	dev);
-@@ -816,6 +815,8 @@
+@@ -819,6 +825,12 @@
  	dev->set_mac_address = ath_set_mac_address;
  	dev->change_mtu = ath_change_mtu;
  	dev->tx_queue_len = ATH_TXBUF - ATH_TXBUF_MGT_RESERVED;
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
++	netif_napi_add(dev, &sc->sc_napi, ath_rx_poll, 64);
++#else
 +	dev->poll = ath_rx_poll;
 +	dev->weight = 64;
++#endif
  #ifdef USE_HEADERLEN_RESV
  	dev->hard_header_len += sizeof(struct ieee80211_qosframe) +
  				sizeof(struct llc) +
-@@ -2206,6 +2207,7 @@
+@@ -2213,6 +2225,7 @@
  		(status & HAL_INT_GLOBAL)	? " HAL_INT_GLOBAL"	: ""
  		);
  
@@ -36,23 +54,32 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  	status &= sc->sc_imask;			/* discard unasked for bits */
  	/* As soon as we know we have a real interrupt we intend to service, 
  	 * we will check to see if we need an initial hardware TSF reading. 
-@@ -2263,7 +2265,14 @@
+@@ -2270,7 +2283,23 @@
  		}
  		if (status & (HAL_INT_RX | HAL_INT_RXPHY)) {
  			ath_uapsd_processtriggers(sc, hw_tsf);
 -			ATH_SCHEDULE_TQUEUE(&sc->sc_rxtq, &needmark);
 +			sc->sc_isr &= ~HAL_INT_RX;
-+			if (netif_rx_schedule_prep(dev)) {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
++			if (netif_rx_schedule_prep(dev, &sc->sc_napi))
++#else
++			if (netif_rx_schedule_prep(dev))
++#endif
++			{
 +#ifndef ATH_PRECISE_TSF
 +				sc->sc_imask &= ~HAL_INT_RX;
 +				ath_hal_intrset(ah, sc->sc_imask);
 +#endif
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
++				__netif_rx_schedule(dev, &sc->sc_napi);
++#else
 +				__netif_rx_schedule(dev);
++#endif
 +			}
  		}
  		if (status & HAL_INT_TX) {
  #ifdef ATH_SUPERG_DYNTURBO
-@@ -2289,6 +2298,11 @@
+@@ -2296,6 +2325,11 @@
  				}
  			}
  #endif
@@ -64,62 +91,137 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  			ATH_SCHEDULE_TQUEUE(&sc->sc_txtq, &needmark);
  		}
  		if (status & HAL_INT_BMISS) {
-@@ -4011,10 +4025,10 @@
- 	 *
- 	 * XXX Using in_softirq is not right since we might
- 	 * be called from other soft irq contexts than
--	 * ath_rx_tasklet.
+@@ -2508,6 +2542,7 @@
+ 	if (sc->sc_tx99 != NULL)
+ 		sc->sc_tx99->start(sc->sc_tx99);
+ #endif
++	ath_poll_enable(dev);
+ 
+ done:
+ 	ATH_UNLOCK(sc);
+@@ -2548,6 +2583,9 @@
+ 		if (sc->sc_tx99 != NULL)
+ 			sc->sc_tx99->stop(sc->sc_tx99);
+ #endif
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
++		ath_poll_disable(dev);
++#endif
+ 		netif_stop_queue(dev);	/* XXX re-enabled by ath_newstate */
+ 		dev->flags &= ~IFF_RUNNING;	/* NB: avoid recursion */
+ 		ieee80211_stop_running(ic);	/* stop all VAPs */
+@@ -4006,6 +4044,39 @@
+ 	return ath_keyset(sc, k, mac, vap->iv_bss);
+ }
+ 
++static void ath_poll_disable(struct net_device *dev)
++{
++	struct ath_softc *sc = dev->priv;
++
++	/*
++	 * XXX Using in_softirq is not right since we might
++	 * be called from other soft irq contexts than
 +	 * ath_rx_poll
- 	 */
- 	if (!in_softirq())
--		tasklet_disable(&sc->sc_rxtq);
++	 */
++	if (!in_softirq()) {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
++		napi_disable(&sc->sc_napi);
++#else
 +		netif_poll_disable(dev);
++#endif
++	}
++}
++
++static void ath_poll_enable(struct net_device *dev)
++{
++	struct ath_softc *sc = dev->priv;
++
++	/* NB: see above */
++	if (!in_softirq()) {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
++		napi_enable(&sc->sc_napi);
++#else
++		netif_poll_enable(dev);
++#endif
++	}
++}
++
++
+ /*
+  * Block/unblock tx+rx processing while a key change is done.
+  * We assume the caller serializes key management operations
+@@ -4023,13 +4094,7 @@
+ 	 * When called from the rx tasklet we cannot use
+ 	 * tasklet_disable because it will block waiting
+ 	 * for us to complete execution.
+-	 *
+-	 * XXX Using in_softirq is not right since we might
+-	 * be called from other soft irq contexts than
+-	 * ath_rx_tasklet.
+ 	 */
+-	if (!in_softirq())
+-		tasklet_disable(&sc->sc_rxtq);
  	netif_stop_queue(dev);
  }
  
-@@ -4027,7 +4041,7 @@
+@@ -4040,9 +4105,9 @@
+ 	struct ath_softc *sc = dev->priv;
+ 
  	DPRINTF(sc, ATH_DEBUG_KEYCACHE, "End\n");
- 	netif_wake_queue(dev);
- 	if (!in_softirq())		/* NB: see above */
+-	netif_wake_queue(dev);
+-	if (!in_softirq())		/* NB: see above */
 -		tasklet_enable(&sc->sc_rxtq);
-+		netif_poll_enable(dev);
++
++	if (dev->flags&IFF_RUNNING)
++		netif_wake_queue(dev);
  }
  
  /*
-@@ -6329,13 +6343,12 @@
+@@ -6347,13 +6412,23 @@
  	sc->sc_rxotherant = 0;
  }
  
 -static void
 -ath_rx_tasklet(TQUEUE_ARG data)
 +static int
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
++ath_rx_poll(struct napi_struct *napi, int budget)
++#else
 +ath_rx_poll(struct net_device *dev, int *budget)
++#endif
  {
  #define	PA2DESC(_sc, _pa) \
  	((struct ath_desc *)((caddr_t)(_sc)->sc_rxdma.dd_desc + \
  		((_pa) - (_sc)->sc_rxdma.dd_desc_paddr)))
 -	struct net_device *dev = (struct net_device *)data;
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
++	struct ath_softc *sc = container_of(napi, struct ath_softc, sc_napi);
++	struct net_device *dev = sc->sc_dev;
++	u_int rx_limit = budget;
++#else
++	u_int rx_limit = dev->quota;
++#endif
  	struct ath_buf *bf;
  	struct ath_softc *sc = dev->priv;
  	struct ieee80211com *ic = &sc->sc_ic;
-@@ -6347,8 +6360,11 @@
+@@ -6365,8 +6440,10 @@
  	unsigned int len;
  	int type;
  	u_int phyerr;
 +	u_int processed = 0, early_stop = 0;
-+	u_int rx_limit = dev->quota;
  
  	DPRINTF(sc, ATH_DEBUG_RX_PROC, "invoked\n");
 +process_rx_again:
  	do {
  		bf = STAILQ_FIRST(&sc->sc_rxbuf);
  		if (bf == NULL) {		/* XXX ??? can this happen */
-@@ -6372,6 +6388,13 @@
+@@ -6390,6 +6467,15 @@
  			/* NB: never process the self-linked entry at the end */
  			break;
  		}
 +
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 +		processed++;
++#endif
 +		if (rx_limit-- < 0) {
 +			early_stop = 1;
 +			break;
@@ -128,7 +230,7 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  		skb = bf->bf_skb;
  		if (skb == NULL) {
  			EPRINTF(sc, "Dropping; buffer contains NULL skbuff.\n");
-@@ -6419,6 +6442,7 @@
+@@ -6437,6 +6523,7 @@
  				sc->sc_stats.ast_rx_phyerr++;
  				phyerr = rs->rs_phyerr & 0x1f;
  				sc->sc_stats.ast_rx_phy[phyerr]++;
@@ -136,7 +238,7 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  			}
  			if (rs->rs_status & HAL_RXERR_DECRYPT) {
  				/*
-@@ -6614,9 +6638,35 @@
+@@ -6632,9 +6719,38 @@
  		STAILQ_INSERT_TAIL(&sc->sc_rxbuf, bf, bf_list);
  		ATH_RXBUF_UNLOCK_IRQ(sc);
  	} while (ath_rxbuf_init(sc, bf) == 0);
@@ -155,8 +257,6 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
 +			goto process_rx_again;
 +		}
 +#endif
-+		netif_rx_complete(dev);
-+
 +#ifndef ATH_PRECISE_TSF
 +		sc->sc_imask |= HAL_INT_RX;
 +		ath_hal_intrset(ah, sc->sc_imask);
@@ -164,7 +264,12 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
 +#endif
 +	}
 +
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
++	netif_rx_complete(dev, napi);
++#else
++	netif_rx_complete(dev);
 +	*budget -= processed;
++#endif
  
  	/* rx signal state monitoring */
  	ath_hal_rxmonitor(ah, &sc->sc_halstats, &sc->sc_curchan);
@@ -172,7 +277,7 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  #undef PA2DESC
  }
  
-@@ -8267,12 +8317,24 @@
+@@ -8285,12 +8401,24 @@
  {
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
@@ -197,7 +302,7 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -8288,7 +8350,9 @@
+@@ -8306,7 +8434,9 @@
  {
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
@@ -207,7 +312,7 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  	/*
  	 * Process each active queue.
  	 */
-@@ -8309,6 +8373,16 @@
+@@ -8327,6 +8457,16 @@
  	if (sc->sc_uapsdq && txqactive(sc->sc_ah, sc->sc_uapsdq->axq_qnum))
  		ath_tx_processq(sc, sc->sc_uapsdq);
  
@@ -224,7 +329,7 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -8324,13 +8398,25 @@
+@@ -8342,13 +8482,25 @@
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
  	unsigned int i;
@@ -250,7 +355,7 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -8405,6 +8491,7 @@
+@@ -8423,6 +8575,7 @@
  ath_draintxq(struct ath_softc *sc)
  {
  	struct ath_hal *ah = sc->sc_ah;
@@ -258,25 +363,25 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  	unsigned int i;
  
  	/* XXX return value */
-@@ -10261,9 +10348,9 @@
+@@ -10281,9 +10434,9 @@
  	dev->mtu = mtu;
  	if ((dev->flags & IFF_RUNNING) && !sc->sc_invalid) {
  		/* NB: the rx buffers may need to be reallocated */
 -		tasklet_disable(&sc->sc_rxtq);
-+		netif_poll_disable(dev);
++		ath_poll_disable(dev);
  		error = ath_reset(dev);
 -		tasklet_enable(&sc->sc_rxtq);
-+		netif_poll_enable(dev);
++		ath_poll_enable(dev);
  	}
  	ATH_UNLOCK(sc);
  
-Index: madwifi-trunk-r3280/ath/if_athvar.h
+Index: madwifi-trunk-r3314/ath/if_athvar.h
 ===================================================================
---- madwifi-trunk-r3280.orig/ath/if_athvar.h	2008-01-28 17:29:22.997896245 +0100
-+++ madwifi-trunk-r3280/ath/if_athvar.h	2008-01-28 17:45:06.903383316 +0100
-@@ -50,6 +50,10 @@
- #include <asm/io.h>
- #include <linux/list.h>
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-02-20 21:56:33.733243528 +0100
++++ madwifi-trunk-r3314/ath/if_athvar.h	2008-02-20 21:57:34.892728811 +0100
+@@ -53,6 +53,10 @@
+ # include	<asm/bitops.h>
+ #endif
  
 +#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 +#define irqs_disabled()			0
@@ -285,7 +390,17 @@ Index: madwifi-trunk-r3280/ath/if_athvar.h
  /*
   * Deduce if tasklets are available.  If not then
   * fall back to using the immediate work queue.
-@@ -728,7 +732,6 @@
+@@ -616,6 +620,9 @@
+ struct ath_softc {
+ 	struct ieee80211com sc_ic;		/* NB: must be first */
+ 	struct net_device *sc_dev;
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
++	struct napi_struct sc_napi;
++#endif
+ 	void __iomem *sc_iobase;		/* address of the device */
+ 	struct semaphore sc_lock;		/* dev-level lock */
+ 	struct net_device_stats	sc_devstats;	/* device statistics */
+@@ -730,7 +737,6 @@
  	struct ath_buf *sc_rxbufcur;		/* current rx buffer */
  	u_int32_t *sc_rxlink;			/* link ptr in last RX desc */
  	spinlock_t sc_rxbuflock;
@@ -293,7 +408,7 @@ Index: madwifi-trunk-r3280/ath/if_athvar.h
  	struct ATH_TQ_STRUCT sc_rxorntq;	/* rxorn intr tasklet */
  	u_int8_t sc_defant;			/* current default antenna */
  	u_int8_t sc_rxotherant;			/* RXs on non-default antenna */
-@@ -741,6 +744,7 @@
+@@ -745,6 +751,7 @@
  	u_int sc_txintrperiod;			/* tx interrupt batching */
  	struct ath_txq sc_txq[HAL_NUM_TX_QUEUES];
  	struct ath_txq *sc_ac2q[WME_NUM_AC];	/* WME AC -> h/w qnum */
@@ -301,7 +416,7 @@ Index: madwifi-trunk-r3280/ath/if_athvar.h
  	struct ATH_TQ_STRUCT sc_txtq;		/* tx intr tasklet */
  	u_int8_t sc_grppoll_str[GRPPOLL_RATE_STR_LEN];
  	struct ath_descdma sc_bdma;		/* beacon descriptors */
-@@ -854,6 +858,8 @@
+@@ -858,6 +865,8 @@
  #define	ATH_TXBUF_LOCK_CHECK(_sc)
  #endif
  
@@ -310,11 +425,11 @@ Index: madwifi-trunk-r3280/ath/if_athvar.h
  
  #define	ATH_RXBUF_LOCK_INIT(_sc)	spin_lock_init(&(_sc)->sc_rxbuflock)
  #define	ATH_RXBUF_LOCK_DESTROY(_sc)
-Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
+Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-trunk-r3280.orig/net80211/ieee80211_input.c	2008-01-28 17:29:23.005896702 +0100
-+++ madwifi-trunk-r3280/net80211/ieee80211_input.c	2008-01-28 19:52:50.586635164 +0100
-@@ -1197,7 +1197,7 @@
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_input.c	2008-02-20 21:56:33.741243986 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_input.c	2008-02-20 21:57:34.896729040 +0100
+@@ -1198,7 +1198,7 @@
  			/* attach vlan tag */
  			struct ieee80211_node *ni_tmp = SKB_CB(skb)->ni;
  			if (vlan_hwaccel_receive_skb(skb, vap->iv_vlgrp, ni->ni_vlan) == NET_RX_DROP) {
@@ -323,7 +438,7 @@ Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
  				 * device was too busy */
  				if (ni_tmp != NULL) {
  					/* node reference was leaked */
-@@ -1208,8 +1208,8 @@
+@@ -1209,8 +1209,8 @@
  			skb = NULL; /* SKB is no longer ours */
  		} else {
  			struct ieee80211_node *ni_tmp = SKB_CB(skb)->ni;
@@ -334,7 +449,7 @@ Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
  				 * device was too busy */
  				if (ni_tmp != NULL) {
  					/* node reference was leaked */
-@@ -2314,8 +2314,8 @@
+@@ -2322,8 +2322,8 @@
  		skb1->protocol = __constant_htons(0x0019);  /* ETH_P_80211_RAW */
  
  		ni_tmp = SKB_CB(skb1)->ni;
@@ -345,10 +460,10 @@ Index: madwifi-trunk-r3280/net80211/ieee80211_input.c
  			 * device was too busy */
  			if (ni_tmp != NULL) {
  				/* node reference was leaked */
-Index: madwifi-trunk-r3280/net80211/ieee80211_monitor.c
+Index: madwifi-trunk-r3314/net80211/ieee80211_monitor.c
 ===================================================================
---- madwifi-trunk-r3280.orig/net80211/ieee80211_monitor.c	2008-01-28 17:29:23.013897159 +0100
-+++ madwifi-trunk-r3280/net80211/ieee80211_monitor.c	2008-01-28 17:29:26.430091834 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_monitor.c	2008-02-20 21:56:33.749244442 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_monitor.c	2008-02-20 21:57:34.900729266 +0100
 @@ -584,8 +584,8 @@
  			skb1->protocol = 
  				__constant_htons(0x0019); /* ETH_P_80211_RAW */
@@ -360,10 +475,10 @@ Index: madwifi-trunk-r3280/net80211/ieee80211_monitor.c
  				 * device was too busy, reclaim the ref. in 
  				 * the skb. */
  				if (SKB_CB(skb1)->ni != NULL)
-Index: madwifi-trunk-r3280/net80211/ieee80211_skb.c
+Index: madwifi-trunk-r3314/net80211/ieee80211_skb.c
 ===================================================================
---- madwifi-trunk-r3280.orig/net80211/ieee80211_skb.c	2008-01-28 17:29:23.017897384 +0100
-+++ madwifi-trunk-r3280/net80211/ieee80211_skb.c	2008-01-28 17:29:26.446092748 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_skb.c	2008-02-20 21:56:33.757244897 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_skb.c	2008-02-20 21:57:34.904729495 +0100
 @@ -73,7 +73,7 @@
  #undef dev_queue_xmit
  #undef kfree_skb
@@ -393,10 +508,10 @@ Index: madwifi-trunk-r3280/net80211/ieee80211_skb.c
  EXPORT_SYMBOL(alloc_skb_debug);
  EXPORT_SYMBOL(dev_alloc_skb_debug);
  EXPORT_SYMBOL(skb_clone_debug);
-Index: madwifi-trunk-r3280/net80211/ieee80211_skb.h
+Index: madwifi-trunk-r3314/net80211/ieee80211_skb.h
 ===================================================================
---- madwifi-trunk-r3280.orig/net80211/ieee80211_skb.h	2008-01-28 17:29:23.029898072 +0100
-+++ madwifi-trunk-r3280/net80211/ieee80211_skb.h	2008-01-28 17:29:26.458093432 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_skb.h	2008-02-20 21:56:33.765245356 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_skb.h	2008-02-20 21:57:34.908729722 +0100
 @@ -116,7 +116,7 @@
  int  vlan_hwaccel_receive_skb_debug(struct sk_buff *skb, 
  				    struct vlan_group *grp, unsigned short vlan_tag, 

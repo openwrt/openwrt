@@ -1,10 +1,10 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-01-31 03:59:25.474330368 +0100
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-01-31 04:00:30.254021949 +0100
-@@ -6686,8 +6686,9 @@
- 
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-20 21:59:01.609670527 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-20 21:59:04.037808900 +0100
+@@ -6752,8 +6752,9 @@
  	*budget -= processed;
+ #endif
  
 -	/* rx signal state monitoring */
 -	ath_hal_rxmonitor(ah, &sc->sc_halstats, &sc->sc_curchan);

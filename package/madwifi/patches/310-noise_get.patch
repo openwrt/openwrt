@@ -1,8 +1,8 @@
-Index: madwifi-trunk-r3280/ath/if_ath.c
+Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3280.orig/ath/if_ath.c	2008-01-28 17:30:33.325904012 +0100
-+++ madwifi-trunk-r3280/ath/if_ath.c	2008-01-28 17:31:21.850243393 +0100
-@@ -1674,8 +1674,6 @@
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-20 21:58:41.864545316 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-20 21:58:45.732765757 +0100
+@@ -1692,8 +1692,6 @@
  	 * get to reality.  This value is used in monitor mode and by tools like
  	 * Wireshark and Kismet.
  	 */
@@ -11,7 +11,7 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  	ATH_RXBUF_LOCK_IRQ(sc);
  	if (sc->sc_rxbufcur == NULL)
  		sc->sc_rxbufcur = STAILQ_FIRST(&sc->sc_rxbuf);
-@@ -8868,6 +8866,7 @@
+@@ -8959,6 +8957,7 @@
  			sc->sc_curchan.channel);
  		sc->sc_stats.ast_per_calfail++;
  	}
@@ -19,7 +19,7 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  
  	ath_hal_process_noisefloor(ah);
  	if (isIQdone == AH_TRUE) {
-@@ -8936,6 +8935,7 @@
+@@ -9027,6 +9026,7 @@
  	struct ath_softc *sc = dev->priv;
  
  	(void) ath_chan_set(sc, ic->ic_curchan);
@@ -27,7 +27,7 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  	/*
  	 * If we are returning to our bss channel then mark state
  	 * so the next recv'd beacon's TSF will be used to sync the
-@@ -9204,6 +9204,7 @@
+@@ -9295,6 +9295,7 @@
  		}
  
  		ath_hal_process_noisefloor(ah);

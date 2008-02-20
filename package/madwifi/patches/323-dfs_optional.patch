@@ -1,8 +1,8 @@
-Index: madwifi-trunk-r3280/ath/if_ath.c
+Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3280.orig/ath/if_ath.c	2008-01-28 18:17:03.786862678 +0100
-+++ madwifi-trunk-r3280/ath/if_ath.c	2008-01-28 18:21:43.162783406 +0100
-@@ -1754,17 +1754,14 @@
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-20 21:58:51.885116355 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-20 21:58:53.697219623 +0100
+@@ -1771,17 +1771,14 @@
  			 * may have occurred in the intervening timeframe. */
  			bf->bf_channoise = ic->ic_channoise;
  
@@ -27,11 +27,11 @@ Index: madwifi-trunk-r3280/ath/if_ath.c
  
  			/* Prepare wireless header for examination */
  			bus_dma_sync_single(sc->sc_bdev, bf->bf_skbaddr,
-Index: madwifi-trunk-r3280/ath/if_ath_radar.c
+Index: madwifi-trunk-r3314/ath/if_ath_radar.c
 ===================================================================
---- madwifi-trunk-r3280.orig/ath/if_ath_radar.c	2008-01-28 18:20:47.859631857 +0100
-+++ madwifi-trunk-r3280/ath/if_ath_radar.c	2008-01-28 18:20:50.915806019 +0100
-@@ -265,7 +265,7 @@
+--- madwifi-trunk-r3314.orig/ath/if_ath_radar.c	2008-02-20 21:58:35.060157557 +0100
++++ madwifi-trunk-r3314/ath/if_ath_radar.c	2008-02-20 21:58:53.701219858 +0100
+@@ -263,7 +263,7 @@
  		unsigned int new_rxfilt = old_rxfilt;
  
  		ath_hal_intrset(ah, old_ier & ~HAL_INT_GLOBAL);

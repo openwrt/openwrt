@@ -1,14 +1,14 @@
-Index: madwifi-dfs-r3053/net80211/ieee80211_linux.c
+Index: madwifi-trunk-r3314/net80211/ieee80211_linux.c
 ===================================================================
---- madwifi-dfs-r3053.orig/net80211/ieee80211_linux.c	2007-12-13 05:25:10.626231021 +0100
-+++ madwifi-dfs-r3053/net80211/ieee80211_linux.c	2007-12-13 05:25:12.422333377 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_linux.c	2008-02-20 18:10:46.075140065 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_linux.c	2008-02-20 18:10:47.887243331 +0100
 @@ -331,6 +331,9 @@
  		k->wk_cipher->ic_name, k->wk_keyix,
- 		(unsigned long long)rsc );
+ 		(unsigned long long)rsc);
  
 +	/* disabled for now due to bogus events for unknown reasons */
 +	return;
 +
  	/* TODO: needed parameters: count, keyid, key type, src address, TSC */
- 	snprintf(buf, sizeof(buf), "%s(keyid=%d %scast addr=%s)", tag,
+ 	snprintf(buf, sizeof(buf), "%s(keyid=%d %scast addr=" MAC_FMT ")", tag,
  		k->wk_keyix,
