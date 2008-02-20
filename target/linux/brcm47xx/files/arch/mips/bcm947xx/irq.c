@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
+ *  Copyright (C) 2008 Michael Buesch <mb@bu3sch.de>
  *
  *  This program is free software; you can redistribute  it and/or modify it
  *  under  the terms of  the GNU General  Public License as published by the
@@ -29,11 +30,17 @@
 #include <linux/module.h>
 #include <linux/smp.h>
 #include <linux/types.h>
+#include <linux/pci.h>
+#include <linux/ssb/ssb.h>
 
 #include <asm/cpu.h>
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/irq_cpu.h>
+
+
+extern struct ssb_bus ssb;
+
 
 void plat_irq_dispatch(void)
 {
@@ -60,4 +67,20 @@ void plat_irq_dispatch(void)
 void __init arch_init_irq(void)
 {
 	mips_cpu_irq_init();
+}
+
+int pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+{
+	int res;
+
+	res = ssb_pcibios_map_irq(dev, slot, pin);
+	if (res < 0) {
+		printk(KERN_ALERT "PCI: Failed to map IRQ of device %s\n",
+		       pci_name((struct pci_dev *)dev));
+		return 0;
+	}
+	/* IRQ-0 and IRQ-1 are software interrupts. */
+	WARN_ON((res == 0) || (res == 1));
+
+	return res;
 }

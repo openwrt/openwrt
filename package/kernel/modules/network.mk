@@ -715,3 +715,29 @@ define KernelPackage/3c59x/description
 endef
 
 $(eval $(call KernelPackage,3c59x))
+
+define KernelPackage/tg3
+  TITLE:=Broadcom Tigon3 Gigabit Ethernet
+  FILES:=$(LINUX_DIR)/drivers/net/tg3.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=CONFIG_TIGON3
+  DEPENDS:=@LINUX_2_6
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  AUTOLOAD:=$(call AutoLoad,50,tg3)
+endef
+
+define KernelPackage/tg3/description
+ Kernel modules for Broadcom Tigon3 Gigabit Ethernet adapters.
+endef
+$(eval $(call KernelPackage,tg3))
+
+define KernelPackage/ssb-gige
+  TITLE:=Broadcom SSB Gigabit Ethernet
+  KCONFIG:=CONFIG_SSB_DRIVER_GIGE=y
+  DEPENDS:=@TARGET_brcm47xx +kmod-tg3
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+endef
+
+define KernelPackage/ssb-gige/description
+ Kernel modules for Broadcom SSB Gigabit Ethernet adapters.
+endef
+$(eval $(call KernelPackage,ssb-gige))
