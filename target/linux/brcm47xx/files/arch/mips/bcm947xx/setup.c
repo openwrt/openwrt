@@ -47,6 +47,20 @@ extern void bcm47xx_time_init(void);
 
 struct ssb_bus ssb;
 
+
+int pcibios_plat_dev_init(struct pci_dev *dev)
+{
+	int err;
+
+	err = ssb_pcibios_plat_dev_init(dev);
+	if (err) {
+		printk(KERN_ALERT "PCI: Failed to init device %s\n",
+		       pci_name(dev));
+	}
+
+	return err;
+}
+
 static void bcm47xx_machine_restart(char *command)
 {
 	printk(KERN_ALERT "Please stand by while rebooting the system...\n");
