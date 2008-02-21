@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-20 18:10:48.567282084 +0100
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-20 18:10:48.783294393 +0100
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-21 13:27:44.431680171 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-21 14:01:57.532222021 +0100
 @@ -42,7 +42,6 @@
   * This software is derived from work of Atsushi Onoe; his contribution
   * is greatly appreciated.
@@ -63,8 +63,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  }
 Index: madwifi-trunk-r3314/ath_rate/amrr/amrr.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath_rate/amrr/amrr.c	2008-02-20 18:10:45.875128667 +0100
-+++ madwifi-trunk-r3314/ath_rate/amrr/amrr.c	2008-02-20 18:10:48.787294621 +0100
+--- madwifi-trunk-r3314.orig/ath_rate/amrr/amrr.c	2008-02-21 13:26:53.420773224 +0100
++++ madwifi-trunk-r3314/ath_rate/amrr/amrr.c	2008-02-21 13:27:44.515684956 +0100
 @@ -70,7 +70,9 @@
  
  #include "amrr.h"
@@ -77,8 +77,8 @@ Index: madwifi-trunk-r3314/ath_rate/amrr/amrr.c
  	if (sc->sc_debug & 0x10)					\
 Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath_rate/minstrel/minstrel.c	2008-02-20 18:10:47.471219622 +0100
-+++ madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c	2008-02-20 18:10:48.795295077 +0100
+--- madwifi-trunk-r3314.orig/ath_rate/minstrel/minstrel.c	2008-02-21 13:27:43.863647797 +0100
++++ madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c	2008-02-21 14:01:56.344748319 +0100
 @@ -117,7 +117,9 @@
  
  #include "minstrel.h"
@@ -91,8 +91,8 @@ Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
  		ATH_DEBUG_RATE		= 0x00000010	/* rate control */
 Index: madwifi-trunk-r3314/ath_rate/onoe/onoe.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath_rate/onoe/onoe.c	2008-02-20 18:10:45.891129578 +0100
-+++ madwifi-trunk-r3314/ath_rate/onoe/onoe.c	2008-02-20 18:10:48.799295306 +0100
+--- madwifi-trunk-r3314.orig/ath_rate/onoe/onoe.c	2008-02-21 13:26:53.436774134 +0100
++++ madwifi-trunk-r3314/ath_rate/onoe/onoe.c	2008-02-21 13:27:44.807701596 +0100
 @@ -66,7 +66,9 @@
  
  #include "onoe.h"
@@ -105,8 +105,8 @@ Index: madwifi-trunk-r3314/ath_rate/onoe/onoe.c
  	ATH_DEBUG_RATE	= 0x00000010,	/* rate control */
 Index: madwifi-trunk-r3314/ath_rate/sample/sample.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath_rate/sample/sample.c	2008-02-20 18:10:45.899130036 +0100
-+++ madwifi-trunk-r3314/ath_rate/sample/sample.c	2008-02-20 18:10:48.803295532 +0100
+--- madwifi-trunk-r3314.orig/ath_rate/sample/sample.c	2008-02-21 13:26:53.444774590 +0100
++++ madwifi-trunk-r3314/ath_rate/sample/sample.c	2008-02-21 14:01:55.417159430 +0100
 @@ -68,7 +68,9 @@
  
  #include "sample.h"
@@ -120,8 +120,8 @@ Index: madwifi-trunk-r3314/ath_rate/sample/sample.c
  	ATH_DEBUG_RATE		= 0x00000010,	/* rate control */
 Index: madwifi-trunk-r3314/tools/do_multi.c
 ===================================================================
---- madwifi-trunk-r3314.orig/tools/do_multi.c	2008-02-20 18:10:46.711176309 +0100
-+++ madwifi-trunk-r3314/tools/do_multi.c	2008-02-20 18:10:48.807295761 +0100
+--- madwifi-trunk-r3314.orig/tools/do_multi.c	2008-02-21 13:27:43.383620442 +0100
++++ madwifi-trunk-r3314/tools/do_multi.c	2008-02-21 13:27:44.999712536 +0100
 @@ -9,16 +9,20 @@
  
      progname = basename(argv[0]);
@@ -145,8 +145,8 @@ Index: madwifi-trunk-r3314/tools/do_multi.c
      if(strcmp(progname, "athstats") == 0)
 Index: madwifi-trunk-r3314/tools/Makefile
 ===================================================================
---- madwifi-trunk-r3314.orig/tools/Makefile	2008-02-20 18:10:46.715176538 +0100
-+++ madwifi-trunk-r3314/tools/Makefile	2008-02-20 18:10:48.807295761 +0100
+--- madwifi-trunk-r3314.orig/tools/Makefile	2008-02-21 13:27:43.499627052 +0100
++++ madwifi-trunk-r3314/tools/Makefile	2008-02-21 14:01:54.017779646 +0100
 @@ -46,9 +46,10 @@
  HAL=   $(TOP)/hal
  endif
@@ -179,8 +179,8 @@ Index: madwifi-trunk-r3314/tools/Makefile
  
 Index: madwifi-trunk-r3314/net80211/ieee80211_linux.h
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_linux.h	2008-02-20 18:10:45.919131175 +0100
-+++ madwifi-trunk-r3314/net80211/ieee80211_linux.h	2008-02-20 18:10:48.807295761 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_linux.h	2008-02-21 13:26:53.468775958 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_linux.h	2008-02-21 14:01:55.385173608 +0100
 @@ -29,8 +29,6 @@
  #ifndef _NET80211_IEEE80211_LINUX_H_
  #define _NET80211_IEEE80211_LINUX_H_
@@ -192,8 +192,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_linux.h
  #include <linux/wireless.h>
 Index: madwifi-trunk-r3314/Makefile.inc
 ===================================================================
---- madwifi-trunk-r3314.orig/Makefile.inc	2008-02-20 18:10:45.927131631 +0100
-+++ madwifi-trunk-r3314/Makefile.inc	2008-02-20 18:10:48.807295761 +0100
+--- madwifi-trunk-r3314.orig/Makefile.inc	2008-02-21 13:26:53.476776414 +0100
++++ madwifi-trunk-r3314/Makefile.inc	2008-02-21 14:01:55.433152342 +0100
 @@ -148,7 +148,8 @@
  TOOLS=  $(TOP)/tools 
  
@@ -206,8 +206,8 @@ Index: madwifi-trunk-r3314/Makefile.inc
  # TARGET defines the target platform architecture. It must match one of
 Index: madwifi-trunk-r3314/ath/if_ath_radar.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath_radar.c	2008-02-20 18:10:48.307267266 +0100
-+++ madwifi-trunk-r3314/ath/if_ath_radar.c	2008-02-20 18:10:48.811295991 +0100
+--- madwifi-trunk-r3314.orig/ath/if_ath_radar.c	2008-02-21 13:27:44.183666034 +0100
++++ madwifi-trunk-r3314/ath/if_ath_radar.c	2008-02-21 14:02:08.879192972 +0100
 @@ -19,8 +19,6 @@
   * $Id: if_ath_radar.c 2464 2007-06-15 22:51:56Z mtaylor $
   */
@@ -217,3 +217,12 @@ Index: madwifi-trunk-r3314/ath/if_ath_radar.c
  #include "if_ath_debug.h"
  
  #ifndef AUTOCONF_INCLUDED
+@@ -56,8 +54,6 @@
+ #include <net80211/if_llc.h>
+ #endif
+ 
+-#define	AR_DEBUG
+-
+ #include "net80211/if_athproto.h"
+ #include "if_athvar.h"
+ 
