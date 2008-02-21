@@ -1,0 +1,18 @@
+Index: madwifi-trunk-r3314/net80211/ieee80211_scan_ap.c
+===================================================================
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_scan_ap.c	2008-02-21 02:42:12.885287851 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_scan_ap.c	2008-02-21 02:42:34.718532055 +0100
+@@ -781,12 +783,6 @@
+ 				/* break the loop as the subsequent chans won't be 
+ 				 * better */
+ 				break;
+-
+-			if (!IEEE80211_ARE_CHANS_SAME_MODE(c->chan,
+-				ic->ic_bsschan))
+-				/* break the loop as the subsequent chans won't be 
+-				 * better */
+-				break;
+ 		}
+ 
+ 		if (sta_assoc != 0) {
+
