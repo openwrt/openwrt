@@ -1,0 +1,15 @@
+Index: madwifi-trunk-r3314/ath/if_ath.c
+===================================================================
+--- madwifi-trunk-r3314/ath/if_ath.c.orig 2008-02-22 11:10:54.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath.c      2008-02-22 11:12:17.000000000 +0200
+@@ -6468,9 +6468,9 @@
+	u_int rx_limit = budget;
+ #else
+	u_int rx_limit = dev->quota;
++	struct ath_softc *sc = dev->priv;
+ #endif
+	struct ath_buf *bf;
+-	struct ath_softc *sc = dev->priv;
+	struct ieee80211com *ic = &sc->sc_ic;
+	struct ath_hal *ah = sc ? sc->sc_ah : NULL;
+	struct ath_desc *ds;
