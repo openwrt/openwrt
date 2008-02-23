@@ -27,13 +27,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	eh = (struct ether_header *)skb->data;
  
  #ifdef ATH_SUPERG_FF
-@@ -3591,11 +3592,13 @@
- 	 */
- 	error = ath_tx_start(dev, SKB_CB(skb)->ni, bf, skb, 0);
- 	if (error)
--		goto bad;
-+		return error;
- 
+@@ -3596,6 +3597,8 @@
  	sc->sc_stats.ast_tx_mgmt++;
  	return 0;
  bad:
