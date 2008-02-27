@@ -139,18 +139,18 @@ static ssize_t switch_proc_write(struct file *file, const char *buf, size_t coun
 
 static int handle_driver_name(void *driver, char *buf, int nr)
 {
-	char *name = ((switch_driver *) driver)->name;
+	const char *name = ((switch_driver *) driver)->name;
 	return sprintf(buf, "%s\n", name);
 }
 
 static int handle_driver_version(void *driver, char *buf, int nr)
 {
-	char *version = ((switch_driver *) driver)->version;
+	const char *version = ((switch_driver *) driver)->version;
 	strcpy(buf, version);
 	return sprintf(buf, "%s\n", version);
 }
 
-static void add_handler(switch_driver *driver, switch_config *handler, struct proc_dir_entry *parent, int nr)
+static void add_handler(switch_driver *driver, const switch_config *handler, struct proc_dir_entry *parent, int nr)
 {
 	switch_priv *priv = (switch_priv *) driver->data;
 	struct proc_dir_entry *p;
@@ -175,7 +175,7 @@ static void add_handler(switch_driver *driver, switch_config *handler, struct pr
 	}
 }
 
-static inline void add_handlers(switch_driver *driver, switch_config *handlers, struct proc_dir_entry *parent, int nr)
+static inline void add_handlers(switch_driver *driver, const switch_config *handlers, struct proc_dir_entry *parent, int nr)
 {
 	int i;
 	
@@ -408,7 +408,7 @@ int switch_register_driver(switch_driver *driver)
 	memcpy(new, driver, sizeof(switch_driver));
 	new->name = strdup(driver->name);
 	new->interface = strdup(driver->interface);
-	
+
 	if ((ret = do_register(new)) < 0) {
 		kfree(new->name);
 		kfree(new);
