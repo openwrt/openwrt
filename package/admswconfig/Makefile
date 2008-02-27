@@ -43,6 +43,10 @@ endef
 define Package/admswconfig/install
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/admswconfig $(1)/sbin/
+	$(INSTALL_DIR) $(1)/lib/network/
+	$(INSTALL_DATA) ./files/admswswitch.sh $(1)/lib/network/admswswitch.sh
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/admswconfig $(1)/etc/init.d/admswconfig
 endef
 
 $(eval $(call BuildPackage,admswconfig))
