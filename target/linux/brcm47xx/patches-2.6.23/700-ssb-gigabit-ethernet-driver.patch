@@ -31,8 +31,8 @@ Index: linux-2.6.23.16/drivers/ssb/Makefile
 Index: linux-2.6.23.16/drivers/ssb/driver_gige.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/ssb/driver_gige.c	2008-02-22 20:59:46.000000000 +0100
-@@ -0,0 +1,281 @@
++++ linux-2.6.23.16/drivers/ssb/driver_gige.c	2008-02-28 12:26:18.000000000 +0100
+@@ -0,0 +1,286 @@
 +/*
 + * Sonics Silicon Backplane
 + * Broadcom Gigabit Ethernet core driver
@@ -49,16 +49,17 @@ Index: linux-2.6.23.16/drivers/ssb/driver_gige.c
 +#include <linux/ssb/ssb_driver_gige.h>
 +
 +
++/*
 +MODULE_DESCRIPTION("SSB Broadcom Gigabit Ethernet driver");
 +MODULE_AUTHOR("Michael Buesch");
 +MODULE_LICENSE("GPL");
-+
++*/
 +
 +static const struct ssb_device_id ssb_gige_tbl[] = {
 +	SSB_DEVICE(SSB_VENDOR_BROADCOM, SSB_DEV_ETHERNET_GBIT, SSB_ANY_REV),
 +	SSB_DEVTABLE_END
 +};
-+MODULE_DEVICE_TABLE(ssb, ssb_gige_tbl);
++/* MODULE_DEVICE_TABLE(ssb, ssb_gige_tbl); */
 +
 +
 +static inline u8 gige_read8(struct ssb_gige *dev, u16 offset)
@@ -287,6 +288,10 @@ Index: linux-2.6.23.16/drivers/ssb/driver_gige.c
 +	res->name = dev->mem_resource.name;
 +	res->start = dev->mem_resource.start;
 +	res->end = dev->mem_resource.end;
++
++	/* Fixup interrupt lines. */
++	pdev->irq = ssb_mips_irq(sdev) + 2;
++	pci_write_config_byte(pdev, PCI_INTERRUPT_LINE, pdev->irq);
 +
 +	return 0;
 +}
@@ -912,7 +917,7 @@ Index: linux-2.6.23.16/drivers/ssb/ssb_private.h
 Index: linux-2.6.23.16/drivers/net/tg3.c
 ===================================================================
 --- linux-2.6.23.16.orig/drivers/net/tg3.c	2008-02-22 19:40:57.000000000 +0100
-+++ linux-2.6.23.16/drivers/net/tg3.c	2008-02-27 23:18:31.000000000 +0100
++++ linux-2.6.23.16/drivers/net/tg3.c	2008-02-28 12:28:17.000000000 +0100
 @@ -38,6 +38,7 @@
  #include <linux/workqueue.h>
  #include <linux/prefetch.h>
@@ -1229,3 +1234,15 @@ Index: linux-2.6.23.16/drivers/net/tg3.h
  
  	struct tg3_hw_stats		*hw_stats;
  	dma_addr_t			stats_mapping;
+Index: linux-2.6.23.16/drivers/ssb/driver_mipscore.c
+===================================================================
+--- linux-2.6.23.16.orig/drivers/ssb/driver_mipscore.c	2008-02-20 20:02:43.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/driver_mipscore.c	2008-02-28 12:16:12.000000000 +0100
+@@ -211,6 +211,7 @@ void ssb_mipscore_init(struct ssb_mipsco
+ 			/* fallthrough */
+ 		case SSB_DEV_PCI:
+ 		case SSB_DEV_ETHERNET:
++		case SSB_DEV_ETHERNET_GBIT:
+ 		case SSB_DEV_80211:
+ 		case SSB_DEV_USB20_HOST:
+ 			/* These devices get their own IRQ line if available, the rest goes on IRQ0 */
