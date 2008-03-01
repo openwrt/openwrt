@@ -62,6 +62,10 @@
 #define SIOCGETCPHYRD           (SIOCDEVPRIVATE + 9)
 #define SIOCSETCPHYWR           (SIOCDEVPRIVATE + 10)
 
+/* linux 2.4 does not have 'bool' */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,5,0)
+#define bool int
+#endif
 
 /* Data structure for a Roboswitch device. */
 struct robo_switch {
