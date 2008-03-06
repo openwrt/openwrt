@@ -315,6 +315,21 @@ endef
 $(eval $(call KernelPackage,usb-serial-pl2303))
 
 
+define KernelPackage/usb-serial-cp2101
+  $(call usbdep,kmod-usb-serial)
+  TITLE:=Support for Silicon Labs cp2101 devices
+  KCONFIG:=CONFIG_USB_SERIAL_CP2101
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/cp2101.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,65,cp2101)
+endef
+
+define KernelPackage/usb-serial-cp2101/description
+ Kernel support for Silicon Labs cp2101 USB-to-Serial converters
+endef
+
+$(eval $(call KernelPackage,usb-serial-cp2101))
+
+
 define KernelPackage/usb-serial-sierrawireless
   $(call usbdep,kmod-usb-serial @LINUX_2_6)
   TITLE:=Support for Sierra Wireless devices
