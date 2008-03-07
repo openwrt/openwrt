@@ -352,6 +352,21 @@ endef
 $(eval $(call KernelPackage,leds-alix))
 
 
+define KernelPackage/ledtrig-netdev
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=LED NETDEV Trigger
+  KCONFIG:=CONFIG_LEDS_TRIGGER_NETDEV
+  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-netdev.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-netdev)
+endef
+
+define KernelPackage/ledtrig-netdev/description
+ Kernel module to drive LEDs based on network activity.
+endef
+
+$(eval $(call KernelPackage,ledtrig-netdev))
+
+
 define KernelPackage/ledtrig-morse
   SUBMENU:=$(OTHER_MENU)
   TITLE:=LED Morse Trigger
