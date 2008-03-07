@@ -1,0 +1,14 @@
+Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
+===================================================================
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_input.c	2008-02-29 01:31:47.601395974 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_input.c	2008-02-29 01:35:46.545089077 +0100
+@@ -950,6 +950,9 @@
+ 	TAILQ_FOREACH(vap, &ic->ic_vaps, iv_next) {
+ 		struct sk_buff *skb1;
+ 
++		if ((vap->iv_dev->flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING))
++			continue;
++
+ 		if (TAILQ_NEXT(vap, iv_next) != NULL) {
+ 			skb1 = skb_copy(skb, GFP_ATOMIC);
+ 			if (skb1 == NULL) {
