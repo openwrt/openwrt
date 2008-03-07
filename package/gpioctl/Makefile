@@ -19,7 +19,7 @@ define Package/gpioctl
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Tool for controlling gpio pins
-  DEPENDS:=@LINUX_2_6
+  DEPENDS:=@LINUX_2_6 @TARGET_ixp4xx
 endef
 
 define Package/gpioctl/description
