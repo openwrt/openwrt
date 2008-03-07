@@ -1,0 +1,22 @@
+Index: madwifi-trunk-r3314/ath_hal/ah_os.c
+===================================================================
+--- madwifi-trunk-r3314.orig/ath_hal/ah_os.c	2008-02-20 18:10:44.539052527 +0100
++++ madwifi-trunk-r3314/ath_hal/ah_os.c	2008-02-20 18:10:55.159657761 +0100
+@@ -65,7 +65,7 @@
+ #include <ah_os.h>
+ 
+ #ifdef AH_DEBUG
+-static	int ath_hal_debug = 0;
++static	int ath_hal_debug = 99;
+ #endif
+ 
+ int	ath_hal_dma_beacon_response_time = 2;	/* in TUs */
+@@ -327,6 +327,8 @@
+  * useful for debugging and figuring out, which hal function sets which 
+  * registers */
+ char *ath_hal_func = NULL;
++EXPORT_SYMBOL(ath_hal_func);
++
+ #endif
+ 
+ /*
