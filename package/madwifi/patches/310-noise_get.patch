@@ -1,8 +1,8 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-20 21:58:41.864545316 +0100
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-20 21:58:45.732765757 +0100
-@@ -1692,8 +1692,6 @@
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-03-07 01:53:50.021034889 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-03-07 01:54:31.203381737 +0100
+@@ -1695,8 +1695,6 @@
  	 * get to reality.  This value is used in monitor mode and by tools like
  	 * Wireshark and Kismet.
  	 */
@@ -11,7 +11,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	ATH_RXBUF_LOCK_IRQ(sc);
  	if (sc->sc_rxbufcur == NULL)
  		sc->sc_rxbufcur = STAILQ_FIRST(&sc->sc_rxbuf);
-@@ -8959,6 +8957,7 @@
+@@ -8967,6 +8965,7 @@
  			sc->sc_curchan.channel);
  		sc->sc_stats.ast_per_calfail++;
  	}
@@ -19,7 +19,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  
  	ath_hal_process_noisefloor(ah);
  	if (isIQdone == AH_TRUE) {
-@@ -9027,6 +9026,7 @@
+@@ -9035,6 +9034,7 @@
  	struct ath_softc *sc = dev->priv;
  
  	(void) ath_chan_set(sc, ic->ic_curchan);
@@ -27,7 +27,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	/*
  	 * If we are returning to our bss channel then mark state
  	 * so the next recv'd beacon's TSF will be used to sync the
-@@ -9295,6 +9295,7 @@
+@@ -9303,6 +9303,7 @@
  		}
  
  		ath_hal_process_noisefloor(ah);
@@ -35,3 +35,27 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  		/*
  		 * Reset rssi stats; maybe not the best place...
  		 */
+Index: madwifi-trunk-r3314/net80211/ieee80211_wireless.c
+===================================================================
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_wireless.c	2008-03-07 01:53:48.708960118 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_wireless.c	2008-03-07 01:54:31.211382196 +0100
+@@ -4358,6 +4358,7 @@
+ 	si->isi_state = ni->ni_flags;
+ 	si->isi_authmode = ni->ni_authmode;
+ 	si->isi_rssi = ic->ic_node_getrssi(ni);
++	si->isi_noise = ic->ic_channoise;
+ 	si->isi_capinfo = ni->ni_capinfo;
+ 	si->isi_athflags = ni->ni_ath_flags;
+ 	si->isi_erp = ni->ni_erp;
+Index: madwifi-trunk-r3314/net80211/ieee80211_ioctl.h
+===================================================================
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_ioctl.h	2008-03-07 01:53:48.440944845 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_ioctl.h	2008-03-07 01:54:31.211382196 +0100
+@@ -311,6 +311,7 @@
+ 	u_int16_t isi_state;		/* state flags */
+ 	u_int8_t isi_authmode;		/* authentication algorithm */
+ 	u_int8_t isi_rssi;
++	int8_t isi_noise;
+ 	u_int16_t isi_capinfo;		/* capabilities */
+ 	u_int8_t isi_athflags;		/* Atheros capabilities */
+ 	u_int8_t isi_erp;		/* ERP element */
