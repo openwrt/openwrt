@@ -716,6 +716,22 @@ endef
 
 $(eval $(call KernelPackage,3c59x))
 
+define KernelPackage/pcnet32
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=AMD PCnet32 PCI support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_PCNET32
+  FILES:=$(LINUX_DIR)/drivers/net/pcnet32.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,pcnet32)
+endef
+
+define KernelPackage/pcnet32/description
+ Kernel modules for AMD PCnet32 Ethernet adapters.
+endef
+
+$(eval $(call KernelPackage,pcnet32))
+
+
 define KernelPackage/tg3
   TITLE:=Broadcom Tigon3 Gigabit Ethernet
   FILES:=$(LINUX_DIR)/drivers/net/tg3.$(LINUX_KMOD_SUFFIX)
