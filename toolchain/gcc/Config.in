@@ -37,7 +37,6 @@ endchoice
 config EABI_SUPPORT
 	bool
 	depends arm||armeb
-	depends BROKEN
 	prompt "Enable EABI support" if TOOLCHAINOPTS
 	default n
 	help
