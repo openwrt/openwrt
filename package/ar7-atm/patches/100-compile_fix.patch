@@ -1,6 +1,6 @@
-diff -u sangam_atm-D7.03.01.00.orig/cppi_cpaal5.c sangam_atm-D7.03.01.00/cppi_cpaal5.c
---- sangam_atm-D7.03.01.00.orig/cppi_cpaal5.c	2005-04-08 09:22:04.000000000 +0100
-+++ sangam_atm-D7.03.01.00/cppi_cpaal5.c	2008-02-08 19:15:02.000000000 +0100
+diff -urN sangam_atm-D7.03.01.00.old/cppi_cpaal5.c sangam_atm-D7.03.01.00/cppi_cpaal5.c
+--- sangam_atm-D7.03.01.00.old/cppi_cpaal5.c	2008-03-08 14:45:13.000000000 +0100
++++ sangam_atm-D7.03.01.00/cppi_cpaal5.c	2008-03-08 14:45:48.000000000 +0100
 @@ -352,7 +352,7 @@
             {
              /* malloc failed, add this RCB to Needs Buffer List */
@@ -10,9 +10,9 @@ diff -u sangam_atm-D7.03.01.00.orig/cppi_cpaal5.c sangam_atm-D7.03.01.00/cppi_cp
  
              if(HalDev->NeedsCount < MAX_NEEDS)                                  /* +MJH 030410 */
                {                                                                 /* +MJH 030410 */
-diff -u sangam_atm-D7.03.01.00.orig/dsl_hal_api.c sangam_atm-D7.03.01.00/dsl_hal_api.c
---- sangam_atm-D7.03.01.00.orig/dsl_hal_api.c	2007-03-07 04:13:06.000000000 +0100
-+++ sangam_atm-D7.03.01.00/dsl_hal_api.c	2008-02-08 19:15:02.000000000 +0100
+diff -urN sangam_atm-D7.03.01.00.old/dsl_hal_api.c sangam_atm-D7.03.01.00/dsl_hal_api.c
+--- sangam_atm-D7.03.01.00.old/dsl_hal_api.c	2008-03-08 14:45:13.000000000 +0100
++++ sangam_atm-D7.03.01.00/dsl_hal_api.c	2008-03-08 14:45:48.000000000 +0100
 @@ -254,15 +254,15 @@
  *                            of phyEnableDisableWord & phyControlWord to avoid changing API struct
  *                            which may cause change required to application data structure.
@@ -34,9 +34,9 @@ diff -u sangam_atm-D7.03.01.00.orig/dsl_hal_api.c sangam_atm-D7.03.01.00/dsl_hal
  
  //  UR8_MERGE_START CQ11054   Jack Zhang
  static unsigned int highprecision_selected = 0;  //By default we use low precision for backward compt.
-diff -u sangam_atm-D7.03.01.00.orig/dsl_hal_support.c sangam_atm-D7.03.01.00/dsl_hal_support.c
---- sangam_atm-D7.03.01.00.orig/dsl_hal_support.c	2007-05-18 08:47:33.000000000 +0100
-+++ sangam_atm-D7.03.01.00/dsl_hal_support.c	2008-02-08 19:15:02.000000000 +0100
+diff -urN sangam_atm-D7.03.01.00.old/dsl_hal_support.c sangam_atm-D7.03.01.00/dsl_hal_support.c
+--- sangam_atm-D7.03.01.00.old/dsl_hal_support.c	2008-03-08 14:45:13.000000000 +0100
++++ sangam_atm-D7.03.01.00/dsl_hal_support.c	2008-03-08 14:45:48.000000000 +0100
 @@ -140,9 +140,9 @@
  *                                          oamFeature are overriden
  // UR8_MERGE_END CQ10774 Ram
@@ -50,9 +50,9 @@ diff -u sangam_atm-D7.03.01.00.orig/dsl_hal_support.c sangam_atm-D7.03.01.00/dsl
  
  #define NUM_READ_RETRIES 3
  static unsigned int dslhal_support_adsl2ByteSwap32(unsigned int in32Bits);
-diff -u sangam_atm-D7.03.01.00.orig/dsl_hal_support.h sangam_atm-D7.03.01.00/dsl_hal_support.h
---- sangam_atm-D7.03.01.00.orig/dsl_hal_support.h	2005-11-11 09:07:04.000000000 +0100
-+++ sangam_atm-D7.03.01.00/dsl_hal_support.h	2008-02-08 19:15:02.000000000 +0100
+diff -urN sangam_atm-D7.03.01.00.old/dsl_hal_support.h sangam_atm-D7.03.01.00/dsl_hal_support.h
+--- sangam_atm-D7.03.01.00.old/dsl_hal_support.h	2008-03-08 14:45:13.000000000 +0100
++++ sangam_atm-D7.03.01.00/dsl_hal_support.h	2008-03-08 14:45:48.000000000 +0100
 @@ -49,7 +49,7 @@
  *    04Nov05     0.11.00            CPH    Fixed T1413 mode got Zero DS/US rate when DSL_BIT_TMODE is set.
  *******************************************************************************/
@@ -62,9 +62,9 @@ diff -u sangam_atm-D7.03.01.00.orig/dsl_hal_support.h sangam_atm-D7.03.01.00/dsl
  
  #define virtual2Physical(a)    (((int)a)&~0xe0000000)
  /* External Function Prototype Declarations */
-diff -u sangam_atm-D7.03.01.00.orig/Makefile sangam_atm-D7.03.01.00/Makefile
---- sangam_atm-D7.03.01.00.orig/Makefile	2005-06-01 04:46:28.000000000 +0100
-+++ sangam_atm-D7.03.01.00/Makefile	2008-02-08 19:15:02.000000000 +0100
+diff -urN sangam_atm-D7.03.01.00.old/Makefile sangam_atm-D7.03.01.00/Makefile
+--- sangam_atm-D7.03.01.00.old/Makefile	2008-03-08 14:45:13.000000000 +0100
++++ sangam_atm-D7.03.01.00/Makefile	2008-03-08 14:45:48.000000000 +0100
 @@ -1,18 +1,9 @@
 -# File: drivers/atm/ti_evm3/Makefile
  #
@@ -90,9 +90,9 @@ diff -u sangam_atm-D7.03.01.00.orig/Makefile sangam_atm-D7.03.01.00/Makefile
 +EXTRA_CFLAGS += -DEL -I$(PWD) -DPOST_SILICON -DCOMMON_NSP -DNO_ACT -D__NO__VOICE_PATCH__ -DEL
 +obj-$(CONFIG_SANGAM_ATM) := tiatm.o
 +tiatm-objs += cpsar.o aal5sar.o tn7sar.o tn7atm.o tn7dsl.o dsl_hal_api.o dsl_hal_support.o
-diff -u sangam_atm-D7.03.01.00.orig/tn7atm.c sangam_atm-D7.03.01.00/tn7atm.c
---- sangam_atm-D7.03.01.00.orig/tn7atm.c	2007-05-18 08:45:50.000000000 +0100
-+++ sangam_atm-D7.03.01.00/tn7atm.c	2008-02-08 19:15:30.000000000 +0100
+diff -urN sangam_atm-D7.03.01.00.old/tn7atm.c sangam_atm-D7.03.01.00/tn7atm.c
+--- sangam_atm-D7.03.01.00.old/tn7atm.c	2008-03-08 14:45:13.000000000 +0100
++++ sangam_atm-D7.03.01.00/tn7atm.c	2008-03-08 14:45:48.000000000 +0100
 @@ -61,7 +61,6 @@
   *    UR8_MERGE_END   CQ11057*
  *********************************************************************************************/
@@ -414,9 +414,9 @@ diff -u sangam_atm-D7.03.01.00.orig/tn7atm.c sangam_atm-D7.03.01.00/tn7atm.c
  module_init (tn7atm_detect);
  module_exit (tn7atm_exit);
 -#endif /* MODULE */
-diff -u sangam_atm-D7.03.01.00.orig/tn7atm.h sangam_atm-D7.03.01.00/tn7atm.h
---- sangam_atm-D7.03.01.00.orig/tn7atm.h	2006-04-05 06:33:06.000000000 +0100
-+++ sangam_atm-D7.03.01.00/tn7atm.h	2008-02-08 19:15:02.000000000 +0100
+diff -urN sangam_atm-D7.03.01.00.old/tn7atm.h sangam_atm-D7.03.01.00/tn7atm.h
+--- sangam_atm-D7.03.01.00.old/tn7atm.h	2008-03-08 14:45:13.000000000 +0100
++++ sangam_atm-D7.03.01.00/tn7atm.h	2008-03-08 14:45:48.000000000 +0100
 @@ -19,7 +19,8 @@
  //#include  "mips_support.h"
  #include  <linux/list.h>
@@ -427,9 +427,9 @@ diff -u sangam_atm-D7.03.01.00.orig/tn7atm.h sangam_atm-D7.03.01.00/tn7atm.h
  
  #ifdef CONFIG_MODVERSIONS
  #include <linux/modversions.h>
-diff -u sangam_atm-D7.03.01.00.orig/tn7dsl.c sangam_atm-D7.03.01.00/tn7dsl.c
---- sangam_atm-D7.03.01.00.orig/tn7dsl.c	2007-01-04 09:04:14.000000000 +0100
-+++ sangam_atm-D7.03.01.00/tn7dsl.c	2008-02-08 19:16:46.000000000 +0100
+diff -urN sangam_atm-D7.03.01.00.old/tn7dsl.c sangam_atm-D7.03.01.00/tn7dsl.c
+--- sangam_atm-D7.03.01.00.old/tn7dsl.c	2008-03-08 14:45:13.000000000 +0100
++++ sangam_atm-D7.03.01.00/tn7dsl.c	2008-03-08 19:43:20.000000000 +0100
 @@ -94,7 +94,6 @@
  *  1/02/07  JZ     CQ11054: Data Precision and Range Changes for TR-069 Conformance
  *  UR8_MERGE_END   CQ11054*
@@ -705,7 +705,7 @@ diff -u sangam_atm-D7.03.01.00.orig/tn7dsl.c sangam_atm-D7.03.01.00/tn7dsl.c
  
      switch (ctl->ctl_name)
        {
-@@ -3528,7 +3480,7 @@
+@@ -3528,14 +3480,14 @@
    else
      {
      len += sprintf(info+len, mod_req);
@@ -714,6 +714,14 @@ diff -u sangam_atm-D7.03.01.00.orig/tn7dsl.c sangam_atm-D7.03.01.00/tn7dsl.c
      }
    return ret;
  }
+ 
+ 
+ ctl_table dslmod_table[] = {
+-  {DEV_DSLMOD, "dslmod", info, DSL_MOD_SIZE, 0644, NULL, &dslmod_sysctl}
++  {DEV_DSLMOD, "dslmod", info, DSL_MOD_SIZE, 0644, NULL, NULL, &dslmod_sysctl, &sysctl_string}
+   ,
+   {0}
+   };
 @@ -3558,8 +3510,7 @@
    if (initialized == 1)
      return;
@@ -724,9 +732,16 @@ diff -u sangam_atm-D7.03.01.00.orig/tn7dsl.c sangam_atm-D7.03.01.00/tn7dsl.c
  
    /*
     * set the defaults
-diff -u sangam_atm-D7.03.01.00.orig/tn7sar.c sangam_atm-D7.03.01.00/tn7sar.c
---- sangam_atm-D7.03.01.00.orig/tn7sar.c	2007-05-18 08:46:30.000000000 +0100
-+++ sangam_atm-D7.03.01.00/tn7sar.c	2008-02-08 19:15:02.000000000 +0100
+@@ -4821,4 +4772,4 @@
+ }
+ #endif //NO_ADV_STATS
+ #endif //TR69_PMD_IN
+-// *    UR8_MERGE_END   CQ11057 *
+\ Nessun a capo alla fine del file
++// *    UR8_MERGE_END   CQ11057 *
+diff -urN sangam_atm-D7.03.01.00.old/tn7sar.c sangam_atm-D7.03.01.00/tn7sar.c
+--- sangam_atm-D7.03.01.00.old/tn7sar.c	2008-03-08 14:45:13.000000000 +0100
++++ sangam_atm-D7.03.01.00/tn7sar.c	2008-03-08 14:45:48.000000000 +0100
 @@ -42,7 +42,6 @@
   * UR8_MERGE_END CQ10700
   *******************************************************************************/
