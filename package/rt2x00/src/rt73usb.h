@@ -37,9 +37,10 @@
 
 /*
  * Signal information.
+ * Defaul offset is required for RSSI <-> dBm conversion.
  */
+#define MAX_SIGNAL			100
 #define MAX_RX_SSI			-1
-#define MAX_RX_NOISE			-110
 #define DEFAULT_RSSI_OFFSET		120
 
 /*
@@ -50,6 +51,7 @@
 #define EEPROM_BASE			0x0000
 #define EEPROM_SIZE			0x0100
 #define BBP_SIZE			0x0080
+#define RF_SIZE				0x0014
 
 /*
  * USB registers.
@@ -172,7 +174,7 @@ struct hw_pairwise_ta_entry {
  * MAC_CSR6: Maximum frame length register.
  */
 #define MAC_CSR6			0x3018
-#define MAC_CSR6_MAX_FRAME_UNIT		FIELD32(0x000007ff)
+#define MAC_CSR6_MAX_FRAME_UNIT		FIELD32(0x00000fff)
 
 /*
  * MAC_CSR7: Reserved
@@ -288,7 +290,7 @@ struct hw_pairwise_ta_entry {
 #define TXRX_CSR0_DROP_TO_DS		FIELD32(0x00200000)
 #define TXRX_CSR0_DROP_VERSION_ERROR	FIELD32(0x00400000)
 #define TXRX_CSR0_DROP_MULTICAST	FIELD32(0x00800000)
-#define TXRX_CSR0_DROP_BORADCAST	FIELD32(0x01000000)
+#define TXRX_CSR0_DROP_BROADCAST	FIELD32(0x01000000)
 #define TXRX_CSR0_DROP_ACK_CTS		FIELD32(0x02000000)
 #define TXRX_CSR0_TX_WITHOUT_WAITING	FIELD32(0x04000000)
 
@@ -296,16 +298,40 @@ struct hw_pairwise_ta_entry {
  * TXRX_CSR1
  */
 #define TXRX_CSR1			0x3044
+#define TXRX_CSR1_BBP_ID0		FIELD32(0x0000007f)
+#define TXRX_CSR1_BBP_ID0_VALID		FIELD32(0x00000080)
+#define TXRX_CSR1_BBP_ID1		FIELD32(0x00007f00)
+#define TXRX_CSR1_BBP_ID1_VALID		FIELD32(0x00008000)
+#define TXRX_CSR1_BBP_ID2		FIELD32(0x007f0000)
+#define TXRX_CSR1_BBP_ID2_VALID		FIELD32(0x00800000)
+#define TXRX_CSR1_BBP_ID3		FIELD32(0x7f000000)
+#define TXRX_CSR1_BBP_ID3_VALID		FIELD32(0x80000000)
 
 /*
  * TXRX_CSR2
  */
 #define TXRX_CSR2			0x3048
+#define TXRX_CSR2_BBP_ID0		FIELD32(0x0000007f)
+#define TXRX_CSR2_BBP_ID0_VALID		FIELD32(0x00000080)
+#define TXRX_CSR2_BBP_ID1		FIELD32(0x00007f00)
+#define TXRX_CSR2_BBP_ID1_VALID		FIELD32(0x00008000)
+#define TXRX_CSR2_BBP_ID2		FIELD32(0x007f0000)
+#define TXRX_CSR2_BBP_ID2_VALID		FIELD32(0x00800000)
+#define TXRX_CSR2_BBP_ID3		FIELD32(0x7f000000)
+#define TXRX_CSR2_BBP_ID3_VALID		FIELD32(0x80000000)
 
 /*
  * TXRX_CSR3
  */
 #define TXRX_CSR3			0x304c
+#define TXRX_CSR3_BBP_ID0		FIELD32(0x0000007f)
+#define TXRX_CSR3_BBP_ID0_VALID		FIELD32(0x00000080)
+#define TXRX_CSR3_BBP_ID1		FIELD32(0x00007f00)
+#define TXRX_CSR3_BBP_ID1_VALID		FIELD32(0x00008000)
+#define TXRX_CSR3_BBP_ID2		FIELD32(0x007f0000)
+#define TXRX_CSR3_BBP_ID2_VALID		FIELD32(0x00800000)
+#define TXRX_CSR3_BBP_ID3		FIELD32(0x7f000000)
+#define TXRX_CSR3_BBP_ID3_VALID		FIELD32(0x80000000)
 
 /*
  * TXRX_CSR4: Auto-Responder/Tx-retry register.
@@ -332,11 +358,27 @@ struct hw_pairwise_ta_entry {
 #define TXRX_CSR5			0x3054
 
 /*
- * ACK/CTS payload consumed time registers.
+ * TXRX_CSR6: ACK/CTS payload consumed time
  */
 #define TXRX_CSR6			0x3058
+
+/*
+ * TXRX_CSR7: OFDM ACK/CTS payload consumed time for 6/9/12/18 mbps.
+ */
 #define TXRX_CSR7			0x305c
+#define TXRX_CSR7_ACK_CTS_6MBS		FIELD32(0x000000ff)
+#define TXRX_CSR7_ACK_CTS_9MBS		FIELD32(0x0000ff00)
+#define TXRX_CSR7_ACK_CTS_12MBS		FIELD32(0x00ff0000)
+#define TXRX_CSR7_ACK_CTS_18MBS		FIELD32(0xff000000)
+
+/*
+ * TXRX_CSR8: OFDM ACK/CTS payload consumed time for 24/36/48/54 mbps.
+ */
 #define TXRX_CSR8			0x3060
+#define TXRX_CSR8_ACK_CTS_24MBS		FIELD32(0x000000ff)
+#define TXRX_CSR8_ACK_CTS_36MBS		FIELD32(0x0000ff00)
+#define TXRX_CSR8_ACK_CTS_48MBS		FIELD32(0x00ff0000)
+#define TXRX_CSR8_ACK_CTS_54MBS		FIELD32(0xff000000)
 
 /*
  * TXRX_CSR9: Synchronization control register.
@@ -403,7 +445,6 @@ struct hw_pairwise_ta_entry {
 #define PHY_CSR1			0x3084
 #define PHY_CSR1_RF_RPI			FIELD32(0x00010000)
 
-
 /*
  * PHY_CSR2: Pre-TX BBP control.
  */
@@ -441,11 +482,13 @@ struct hw_pairwise_ta_entry {
  * PHY_CSR5: RX to TX signal switch timing control.
  */
 #define PHY_CSR5			0x3094
+#define PHY_CSR5_IQ_FLIP		FIELD32(0x00000004)
 
 /*
  * PHY_CSR6: TX to RX signal timing control.
  */
 #define PHY_CSR6			0x3098
+#define PHY_CSR6_IQ_FLIP		FIELD32(0x00000004)
 
 /*
  * PHY_CSR7: TX DAC switching timing control.
@@ -460,6 +503,22 @@ struct hw_pairwise_ta_entry {
  * SEC_CSR0: Shared key table control.
  */
 #define SEC_CSR0			0x30a0
+#define SEC_CSR0_BSS0_KEY0_VALID	FIELD32(0x00000001)
+#define SEC_CSR0_BSS0_KEY1_VALID	FIELD32(0x00000002)
+#define SEC_CSR0_BSS0_KEY2_VALID	FIELD32(0x00000004)
+#define SEC_CSR0_BSS0_KEY3_VALID	FIELD32(0x00000008)
+#define SEC_CSR0_BSS1_KEY0_VALID	FIELD32(0x00000010)
+#define SEC_CSR0_BSS1_KEY1_VALID	FIELD32(0x00000020)
+#define SEC_CSR0_BSS1_KEY2_VALID	FIELD32(0x00000040)
+#define SEC_CSR0_BSS1_KEY3_VALID	FIELD32(0x00000080)
+#define SEC_CSR0_BSS2_KEY0_VALID	FIELD32(0x00000100)
+#define SEC_CSR0_BSS2_KEY1_VALID	FIELD32(0x00000200)
+#define SEC_CSR0_BSS2_KEY2_VALID	FIELD32(0x00000400)
+#define SEC_CSR0_BSS2_KEY3_VALID	FIELD32(0x00000800)
+#define SEC_CSR0_BSS3_KEY0_VALID	FIELD32(0x00001000)
+#define SEC_CSR0_BSS3_KEY1_VALID	FIELD32(0x00002000)
+#define SEC_CSR0_BSS3_KEY2_VALID	FIELD32(0x00004000)
+#define SEC_CSR0_BSS3_KEY3_VALID	FIELD32(0x00008000)
 
 /*
  * SEC_CSR1: Shared key table security mode register.
@@ -636,9 +695,44 @@ struct hw_pairwise_ta_entry {
 #define AC_TXOP_CSR1_AC3_TX_OP		FIELD32(0xffff0000)
 
 /*
+ * BBP registers.
+ * The wordsize of the BBP is 8 bits.
+ */
+
+/*
+ * R2
+ */
+#define BBP_R2_BG_MODE			FIELD8(0x20)
+
+/*
+ * R3
+ */
+#define BBP_R3_SMART_MODE		FIELD8(0x01)
+
+/*
+ * R4: RX antenna control
+ * FRAME_END: 1 - DPDT, 0 - SPDT (Only valid for 802.11G, RF2527 & RF2529)
+ */
+#define BBP_R4_RX_ANTENNA		FIELD8(0x03)
+#define BBP_R4_RX_FRAME_END		FIELD8(0x20)
+
+/*
+ * R77
+ */
+#define BBP_R77_PAIR			FIELD8(0x03)
+
+/*
  * RF registers
  */
+
+/*
+ * RF 3
+ */
 #define RF3_TXPOWER			FIELD32(0x00003e00)
+
+/*
+ * RF 4
+ */
 #define RF4_FREQ_OFFSET			FIELD32(0x0003f000)
 
 /*
@@ -764,34 +858,6 @@ struct hw_pairwise_ta_entry {
 #define EEPROM_RSSI_OFFSET_A_2		FIELD16(0xff00)
 
 /*
- * BBP content.
- * The wordsize of the BBP is 8 bits.
- */
-
-/*
- * BBP_R2
- */
-#define BBP_R2_BG_MODE			FIELD8(0x20)
-
-/*
- * BBP_R3
- */
-#define BBP_R3_SMART_MODE		FIELD8(0x01)
-
-/*
- * BBP_R4: RX antenna control
- * FRAME_END: 1 - DPDT, 0 - SPDT (Only valid for 802.11G, RF2527 & RF2529)
- */
-#define BBP_R4_RX_ANTENNA		FIELD8(0x03)
-#define BBP_R4_RX_FRAME_END		FIELD8(0x10)
-#define BBP_R4_RX_BG_MODE		FIELD8(0x20)
-
-/*
- * BBP_R77
- */
-#define BBP_R77_PAIR			FIELD8(0x03)
-
-/*
  * DMA descriptor defines.
  */
 #define TXD_DESC_SIZE			( 6 * sizeof(struct data_desc) )
@@ -888,7 +954,7 @@ struct hw_pairwise_ta_entry {
 #define RXD_W0_MULTICAST		FIELD32(0x00000008)
 #define RXD_W0_BROADCAST		FIELD32(0x00000010)
 #define RXD_W0_MY_BSS			FIELD32(0x00000020)
-#define RXD_W0_CRC			FIELD32(0x00000040)
+#define RXD_W0_CRC_ERROR		FIELD32(0x00000040)
 #define RXD_W0_OFDM			FIELD32(0x00000080)
 #define RXD_W0_CIPHER_ERROR		FIELD32(0x00000300)
 #define RXD_W0_KEY_INDEX		FIELD32(0x0000fc00)

@@ -21,11 +21,12 @@
 /*
 	Module: rt2x00pci
 	Abstract: Data structures for the rt2x00pci module.
-	Supported chipsets: rt2460, rt2560, rt2561, rt2561s & rt2661.
  */
 
 #ifndef RT2X00PCI_H
 #define RT2X00PCI_H
+
+#include <linux/io.h>
 
 /*
  * This variable should be used with the
@@ -35,9 +36,9 @@
 
 /*
  * Register defines.
- * When register access attempts should be repeated
- * only REGISTER_BUSY_COUNT attempts with a delay
- * of REGISTER_BUSY_DELAY us should be taken.
+ * Some registers require multiple attempts before success,
+ * in those cases REGISTER_BUSY_COUNT attempts should be
+ * taken with a REGISTER_BUSY_DELAY interval.
  */
 #define REGISTER_BUSY_COUNT	5
 #define REGISTER_BUSY_DELAY	100
@@ -46,6 +47,8 @@
  * Descriptor availability flags.
  * All PCI device descriptors have these 2 flags
  * with the exact same definition.
+ * By storing them here we can use them inside rt2x00pci
+ * for some simple entry availability checking.
  */
 #define TXD_ENTRY_OWNER_NIC	FIELD32(0x00000001)
 #define TXD_ENTRY_VALID		FIELD32(0x00000002)
@@ -55,27 +58,31 @@
  * Register access.
  */
 static inline void rt2x00pci_register_read(const struct rt2x00_dev *rt2x00dev,
-	const unsigned long offset, u32 *value)
+					   const unsigned long offset,
+					   u32 *value)
 {
 	*value = readl(rt2x00dev->csr_addr + offset);
 }
 
-static inline void rt2x00pci_register_multiread(
-	const struct rt2x00_dev *rt2x00dev,
-	const unsigned long offset, void *value, const u16 length)
+static inline void
+rt2x00pci_register_multiread(const struct rt2x00_dev *rt2x00dev,
+			     const unsigned long offset,
+			     void *value, const u16 length)
 {
 	memcpy_fromio(value, rt2x00dev->csr_addr + offset, length);
 }
 
 static inline void rt2x00pci_register_write(const struct rt2x00_dev *rt2x00dev,
-	const unsigned long offset, u32 value)
+					    const unsigned long offset,
+					    u32 value)
 {
 	writel(value, rt2x00dev->csr_addr + offset);
 }
 
-static inline void rt2x00pci_register_multiwrite(
-	const struct rt2x00_dev *rt2x00dev,
-	const unsigned long offset, void *value, const u16 length)
+static inline void
+rt2x00pci_register_multiwrite(const struct rt2x00_dev *rt2x00dev,
+			      const unsigned long offset,
+			      void *value, const u16 length)
 {
 	memcpy_toio(rt2x00dev->csr_addr + offset, value, length);
 }
@@ -84,15 +91,14 @@ static inline void rt2x00pci_register_multiwrite(
  * Beacon handlers.
  */
 int rt2x00pci_beacon_update(struct ieee80211_hw *hw, struct sk_buff *skb,
-	struct ieee80211_tx_control *control);
-void rt2x00pci_beacondone(struct rt2x00_dev *rt2x00dev, const int queue);
+			    struct ieee80211_tx_control *control);
 
 /*
  * TX data handlers.
  */
 int rt2x00pci_write_tx_data(struct rt2x00_dev *rt2x00dev,
-	struct data_ring *ring, struct sk_buff *skb,
-	struct ieee80211_tx_control *control);
+			    struct data_ring *ring, struct sk_buff *skb,
+			    struct ieee80211_tx_control *control);
 
 /*
  * RX data handlers.
@@ -113,6 +119,9 @@ void rt2x00pci_remove(struct pci_dev *pci_dev);
 #ifdef CONFIG_PM
 int rt2x00pci_suspend(struct pci_dev *pci_dev, pm_message_t state);
 int rt2x00pci_resume(struct pci_dev *pci_dev);
+#else
+#define rt2x00pci_suspend	NULL
+#define rt2x00pci_resume	NULL
 #endif /* CONFIG_PM */
 
 #endif /* RT2X00PCI_H */

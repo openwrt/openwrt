@@ -46,9 +46,10 @@
 
 /*
  * Signal information.
+ * Defaul offset is required for RSSI <-> dBm conversion.
  */
+#define MAX_SIGNAL			100
 #define MAX_RX_SSI			-1
-#define MAX_RX_NOISE			-110
 #define DEFAULT_RSSI_OFFSET		120
 
 /*
@@ -59,6 +60,7 @@
 #define EEPROM_BASE			0x0000
 #define EEPROM_SIZE			0x006a
 #define BBP_SIZE			0x0060
+#define RF_SIZE				0x0014
 
 /*
  * Control/Status Registers(CSR).
@@ -72,8 +74,14 @@
 
 /*
  * MAC_CSR1: System control.
+ * SOFT_RESET: Software reset, 1: reset, 0: normal.
+ * BBP_RESET: Hardware reset, 1: reset, 0, release.
+ * HOST_READY: Host ready after initialization.
  */
 #define MAC_CSR1			0x0402
+#define MAC_CSR1_SOFT_RESET		FIELD16(0x00000001)
+#define MAC_CSR1_BBP_RESET		FIELD16(0x00000002)
+#define MAC_CSR1_HOST_READY		FIELD16(0x00000004)
 
 /*
  * MAC_CSR2: STA MAC register 0.
@@ -246,8 +254,8 @@
 #define TXRX_CSR2_DROP_NOT_TO_ME	FIELD16(0x0010)
 #define TXRX_CSR2_DROP_TODS		FIELD16(0x0020)
 #define TXRX_CSR2_DROP_VERSION_ERROR	FIELD16(0x0040)
-#define TXRX_CSR2_DROP_MCAST		FIELD16(0x0200)
-#define TXRX_CSR2_DROP_BCAST		FIELD16(0x0400)
+#define TXRX_CSR2_DROP_MULTICAST	FIELD16(0x0200)
+#define TXRX_CSR2_DROP_BROADCAST	FIELD16(0x0400)
 
 /*
  * RX BBP ID registers
@@ -258,16 +266,40 @@
 #define TXRX_CSR4			0x0448
 
 /*
- * TX BBP ID registers
  * TXRX_CSR5: CCK TX BBP ID0.
- * TXRX_CSR5: CCK TX BBP ID1.
- * TXRX_CSR5: OFDM TX BBP ID0.
- * TXRX_CSR5: OFDM TX BBP ID1.
  */
 #define TXRX_CSR5			0x044a
+#define TXRX_CSR5_BBP_ID0		FIELD16(0x007f)
+#define TXRX_CSR5_BBP_ID0_VALID		FIELD16(0x0080)
+#define TXRX_CSR5_BBP_ID1		FIELD16(0x7f00)
+#define TXRX_CSR5_BBP_ID1_VALID		FIELD16(0x8000)
+
+/*
+ * TXRX_CSR6: CCK TX BBP ID1.
+ */
 #define TXRX_CSR6			0x044c
+#define TXRX_CSR6_BBP_ID0		FIELD16(0x007f)
+#define TXRX_CSR6_BBP_ID0_VALID		FIELD16(0x0080)
+#define TXRX_CSR6_BBP_ID1		FIELD16(0x7f00)
+#define TXRX_CSR6_BBP_ID1_VALID		FIELD16(0x8000)
+
+/*
+ * TXRX_CSR7: OFDM TX BBP ID0.
+ */
 #define TXRX_CSR7			0x044e
+#define TXRX_CSR7_BBP_ID0		FIELD16(0x007f)
+#define TXRX_CSR7_BBP_ID0_VALID		FIELD16(0x0080)
+#define TXRX_CSR7_BBP_ID1		FIELD16(0x7f00)
+#define TXRX_CSR7_BBP_ID1_VALID		FIELD16(0x8000)
+
+/*
+ * TXRX_CSR5: OFDM TX BBP ID1.
+ */
 #define TXRX_CSR8			0x0450
+#define TXRX_CSR8_BBP_ID0		FIELD16(0x007f)
+#define TXRX_CSR8_BBP_ID0_VALID		FIELD16(0x0080)
+#define TXRX_CSR8_BBP_ID1		FIELD16(0x7f00)
+#define TXRX_CSR8_BBP_ID1_VALID		FIELD16(0x8000)
 
 /*
  * TXRX_CSR9: TX ACK time-out.
@@ -408,6 +440,7 @@
  * PHY_CSR4: Interface configuration.
  */
 #define PHY_CSR4			0x04c8
+#define PHY_CSR4_LOW_RF_LE		FIELD16(0x0001)
 
 /*
  * BBP pre-TX registers.
@@ -473,18 +506,35 @@
 #define STA_CSR0_FCS_ERROR		FIELD16(0xffff)
 
 /*
- * Statistic Register.
- * STA_CSR1: PLCP error.
- * STA_CSR2: LONG error.
- * STA_CSR3: CCA false alarm.
- * STA_CSR4: RX FIFO overflow.
- * STA_CSR5: Beacon sent counter.
+ * STA_CSR1: PLCP error count.
  */
 #define STA_CSR1			0x04e2
+
+/*
+ * STA_CSR2: LONG error count.
+ */
 #define STA_CSR2			0x04e4
+
+/*
+ * STA_CSR3: CCA false alarm.
+ * FALSE_CCA_ERROR: False CCA error count, cleared when read.
+ */
 #define STA_CSR3			0x04e6
+#define STA_CSR3_FALSE_CCA_ERROR	FIELD16(0xffff)
+
+/*
+ * STA_CSR4: RX FIFO overflow.
+ */
 #define STA_CSR4			0x04e8
+
+/*
+ * STA_CSR5: Beacon sent counter.
+ */
 #define STA_CSR5			0x04ea
+
+/*
+ *  Statistics registers
+ */
 #define STA_CSR6			0x04ec
 #define STA_CSR7			0x04ee
 #define STA_CSR8			0x04f0
@@ -492,9 +542,34 @@
 #define STA_CSR10			0x04f4
 
 /*
+ * BBP registers.
+ * The wordsize of the BBP is 8 bits.
+ */
+
+/*
+ * R2: TX antenna control
+ */
+#define BBP_R2_TX_ANTENNA		FIELD8(0x03)
+#define BBP_R2_TX_IQ_FLIP		FIELD8(0x04)
+
+/*
+ * R14: RX antenna control
+ */
+#define BBP_R14_RX_ANTENNA		FIELD8(0x03)
+#define BBP_R14_RX_IQ_FLIP		FIELD8(0x04)
+
+/*
  * RF registers.
  */
+
+/*
+ * RF 1
+ */
 #define RF1_TUNER			FIELD32(0x00020000)
+
+/*
+ * RF 3
+ */
 #define RF3_TUNER			FIELD32(0x00000100)
 #define RF3_TXPOWER			FIELD32(0x00003e00)
 
@@ -615,23 +690,6 @@
 #define EEPROM_CALIBRATE_OFFSET_RSSI	FIELD16(0x00ff)
 
 /*
- * BBP content.
- * The wordsize of the BBP is 8 bits.
- */
-
-/*
- * BBP_R2: TX antenna control
- */
-#define BBP_R2_TX_ANTENNA		FIELD8(0x03)
-#define BBP_R2_TX_IQ_FLIP		FIELD8(0x04)
-
-/*
- * BBP_R14: RX antenna control
- */
-#define BBP_R14_RX_ANTENNA		FIELD8(0x03)
-#define BBP_R14_RX_IQ_FLIP		FIELD8(0x04)
-
-/*
  * DMA descriptor defines.
  */
 #define TXD_DESC_SIZE			( 5 * sizeof(struct data_desc) )
@@ -693,11 +751,11 @@
 #define RXD_W0_MULTICAST		FIELD32(0x00000004)
 #define RXD_W0_BROADCAST		FIELD32(0x00000008)
 #define RXD_W0_MY_BSS			FIELD32(0x00000010)
-#define RXD_W0_CRC			FIELD32(0x00000020)
+#define RXD_W0_CRC_ERROR		FIELD32(0x00000020)
 #define RXD_W0_OFDM			FIELD32(0x00000040)
 #define RXD_W0_PHYSICAL_ERROR		FIELD32(0x00000080)
 #define RXD_W0_CIPHER			FIELD32(0x00000100)
-#define RXD_W0_CI_ERROR			FIELD32(0x00000200)
+#define RXD_W0_CIPHER_ERROR		FIELD32(0x00000200)
 #define RXD_W0_DATABYTE_COUNT		FIELD32(0x0fff0000)
 
 /*

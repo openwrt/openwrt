@@ -20,8 +20,7 @@
 
 /*
 	Module: rt2x00lib
-	Abstract: rt2x00 firmware loading specific routines.
-	Supported chipsets: rt2561, rt2561s, rt2661, rt2571W & rt2671.
+	Abstract: rt2x00 firmware loading routines.
  */
 
 /*
@@ -29,24 +28,44 @@
  */
 #define DRV_NAME "rt2x00lib"
 
-#include <linux/delay.h>
 #include <linux/crc-itu-t.h>
-#include <linux/firmware.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 
 #include "rt2x00.h"
 #include "rt2x00lib.h"
-#include "rt2x00firmware.h"
 
-static void rt2x00lib_load_firmware_continued(const struct firmware *fw,
-	void *context)
+static int rt2x00lib_request_firmware(struct rt2x00_dev *rt2x00dev)
 {
-	struct rt2x00_dev *rt2x00dev = context;
+	struct device *device = wiphy_dev(rt2x00dev->hw->wiphy);
+	const struct firmware *fw;
+	char *fw_name;
+	int retval;
 	u16 crc;
 	u16 tmp;
 
+	/*
+	 * Read correct firmware from harddisk.
+	 */
+	fw_name = rt2x00dev->ops->lib->get_firmware_name(rt2x00dev);
+	if (!fw_name) {
+		ERROR(rt2x00dev,
+		      "Invalid firmware filename.\n"
+		      "Please file bug report to %s.\n", DRV_PROJECT);
+		return -EINVAL;
+	}
+
+	INFO(rt2x00dev, "Loading firmware file '%s'.\n", fw_name);
+
+	retval = request_firmware(&fw, fw_name, device);
+	if (retval) {
+		ERROR(rt2x00dev, "Failed to request Firmware.\n");
+		return retval;
+	}
+
 	if (!fw || !fw->size || !fw->data) {
 		ERROR(rt2x00dev, "Failed to read Firmware.\n");
-		goto exit_failed;
+		return -ENOENT;
 	}
 
 	/*
@@ -57,75 +76,49 @@ static void rt2x00lib_load_firmware_continued(const struct firmware *fw,
 	 */
 	tmp = 0;
 	crc = crc_itu_t(0, fw->data, fw->size - 2);
-	crc = crc_itu_t(crc, (u8*)&tmp, 2);
+	crc = crc_itu_t(crc, (u8 *)&tmp, 2);
 
 	if (crc != (fw->data[fw->size - 2] << 8 | fw->data[fw->size - 1])) {
 		ERROR(rt2x00dev, "Firmware CRC error.\n");
-		goto exit_failed;
+		retval = -ENOENT;
+		goto exit;
+	}
+
+	INFO(rt2x00dev, "Firmware detected - version: %d.%d.\n",
+	     fw->data[fw->size - 4], fw->data[fw->size - 3]);
+
+	rt2x00dev->fw = fw;
+
+	return 0;
+
+exit:
+	release_firmware(fw);
+
+	return retval;
+}
+
+int rt2x00lib_load_firmware(struct rt2x00_dev *rt2x00dev)
+{
+	int retval;
+
+	if (!rt2x00dev->fw) {
+		retval = rt2x00lib_request_firmware(rt2x00dev);
+		if (retval)
+			return retval;
 	}
 
 	/*
 	 * Send firmware to the device.
 	 */
-	if (rt2x00dev->ops->lib->load_firmware(rt2x00dev, fw->data, fw->size))
-		goto exit_failed;
-
-	INFO(rt2x00dev, "Firmware detected - version: %d.%d.\n",
-		fw->data[fw->size - 4], fw->data[fw->size - 3]);
-
-	__set_bit(FIRMWARE_LOADED, &rt2x00dev->flags);
-
-	return;
-
-exit_failed:
-	rt2x00debug_deregister(rt2x00dev);
-
-	__set_bit(FIRMWARE_FAILED, &rt2x00dev->flags);
+	retval = rt2x00dev->ops->lib->load_firmware(rt2x00dev,
+						    rt2x00dev->fw->data,
+						    rt2x00dev->fw->size);
+	return retval;
 }
 
-int rt2x00lib_load_firmware(struct rt2x00_dev *rt2x00dev)
+void rt2x00lib_free_firmware(struct rt2x00_dev *rt2x00dev)
 {
-	char *fw_name;
-	int status = -EINVAL;
-
-	/*
-	 * Read correct firmware from harddisk.
-	 */
-	fw_name = rt2x00dev->ops->lib->get_fw_name(rt2x00dev);
-	if (!fw_name) {
-		ERROR(rt2x00dev,
-			"Invalid firmware filename.\n"
-			"Please file bug report to %s.\n", DRV_PROJECT);
-		return -EINVAL;
-	}
-
-	INFO(rt2x00dev, "Loading firmware file '%s'.\n", fw_name);
-
-	status = request_firmware_nowait(THIS_MODULE, FW_ACTION_HOTPLUG,
-		fw_name, wiphy_dev(rt2x00dev->hw->wiphy), rt2x00dev,
-		&rt2x00lib_load_firmware_continued);
-
-	if (status)
-		ERROR(rt2x00dev, "Failed to request Firmware.\n");
-
-	return status;
+	release_firmware(rt2x00dev->fw);
+	rt2x00dev->fw = NULL;
 }
 
-int rt2x00lib_load_firmware_wait(struct rt2x00_dev *rt2x00dev)
-{
-	unsigned int i;
-
-	if (!test_bit(FIRMWARE_REQUIRED, &rt2x00dev->flags))
-		return 0;
-
-	for (i = 0; i < 150; i++) {
-		if (test_bit(FIRMWARE_FAILED, &rt2x00dev->flags))
-			return -EIO;
-		if (test_bit(FIRMWARE_LOADED, &rt2x00dev->flags))
-			return 0;
-		msleep(20);
-	}
-
-	ERROR(rt2x00dev, "Firmware loading timed out.\n");
-	return -ETIMEDOUT;
-}
