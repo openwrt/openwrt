@@ -73,7 +73,7 @@ endef
 
 define KernelPackage/crypto-aes/x86-2.6
   KCONFIG:=CONFIG_CRYPTO_AES_586
-  FILES:=$(LINUX_DIR)/arch/i386/crypto/aes-i586.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/arch/x86/crypto/aes-i586.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,aes-i586)
 endef
 
