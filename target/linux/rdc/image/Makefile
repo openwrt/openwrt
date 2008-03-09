@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Image/Prepare
-	$(CP) $(LINUX_DIR)/arch/i386/boot/bzImage $(KDIR)/bzImage
+	$(CP) $(LINUX_DIR)/arch/x86/boot/bzImage $(KDIR)/bzImage
 endef
 
 define trxalign/jffs2-128k
