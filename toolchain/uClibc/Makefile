@@ -123,6 +123,7 @@ endif
 		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm-generic $(PKG_BUILD_DIR)/include/ ; \
 		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/linux $(PKG_BUILD_DIR)/include/ ; \
 	fi;
+	$(MAKE) -C $(PKG_BUILD_DIR)/extra/config conf KBUILD_HAVE_NLS= HOSTCFLAGS="-DKBUILD_NO_NLS"
 	PATH=$(TARGET_PATH) $(MAKE) -C $(PKG_BUILD_DIR) \
 		PREFIX=$(BUILD_DIR_HOST)/uClibc_dev/ \
 		DEVEL_PREFIX=/usr/ \
