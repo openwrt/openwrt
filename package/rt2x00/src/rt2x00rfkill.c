@@ -19,9 +19,8 @@
  */
 
 /*
-	Module: rt2x00lib
-	Abstract: rt2x00 rfkill specific routines.
-	Supported chipsets: RT2460, RT2560, rt2561, rt2561s, rt2661.
+	Module: rt2x00rfkill
+	Abstract: rt2x00 rfkill routines.
  */
 
 /*
@@ -29,101 +28,119 @@
  */
 #define DRV_NAME "rt2x00lib"
 
+#include <linux/input-polldev.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/rfkill.h>
 
 #include "rt2x00.h"
+#include "rt2x00lib.h"
 
-static int rt2x00lib_toggle_radio(void *data, enum rfkill_state state)
+static int rt2x00rfkill_toggle_radio(void *data, enum rfkill_state state)
 {
-	struct rt2x00_dev* rt2x00dev = data;
+	struct rt2x00_dev *rt2x00dev = data;
 	int retval = 0;
 
 	if (unlikely(!rt2x00dev))
 		return 0;
 
 	/*
-	 * Only continue if we have an active interface,
-	 * either monitor or non-monitor should be present.
+	 * Only continue if there are enabled interfaces.
 	 */
-	if (!is_interface_present(&rt2x00dev->interface) &&
-	    !is_monitor_present(&rt2x00dev->interface))
+	if (!test_bit(DEVICE_STARTED, &rt2x00dev->flags))
 		return 0;
 
 	if (state == RFKILL_STATE_ON) {
 		INFO(rt2x00dev, "Hardware button pressed, enabling radio.\n");
-		__set_bit(DEVICE_ENABLED_RADIO_HW, &rt2x00dev->flags);
+		__clear_bit(DEVICE_DISABLED_RADIO_HW, &rt2x00dev->flags);
 		retval = rt2x00lib_enable_radio(rt2x00dev);
 	} else if (state == RFKILL_STATE_OFF) {
 		INFO(rt2x00dev, "Hardware button pressed, disabling radio.\n");
-		__clear_bit(DEVICE_ENABLED_RADIO_HW, &rt2x00dev->flags);
+		__set_bit(DEVICE_DISABLED_RADIO_HW, &rt2x00dev->flags);
 		rt2x00lib_disable_radio(rt2x00dev);
 	}
 
 	return retval;
 }
 
-static void rt2x00lib_rfkill_poll(struct work_struct *work)
+static void rt2x00rfkill_poll(struct input_polled_dev *poll_dev)
 {
-	struct rt2x00_dev *rt2x00dev =
-		container_of(work, struct rt2x00_dev, rfkill_work.work);
+	struct rt2x00_dev *rt2x00dev = poll_dev->private;
+	int state = rt2x00dev->ops->lib->rfkill_poll(rt2x00dev);
 
-	rfkill_switch_all(rt2x00dev->rfkill->type,
-		rt2x00dev->ops->lib->rfkill_poll(rt2x00dev));
-
-	queue_delayed_work(rt2x00dev->hw->workqueue, &rt2x00dev->rfkill_work,
-		RFKILL_POLL_INTERVAL);
+	if (rt2x00dev->rfkill->state != state)
+		input_report_key(poll_dev->input, KEY_WLAN, 1);
 }
 
-int rt2x00lib_register_rfkill(struct rt2x00_dev *rt2x00dev)
+int rt2x00rfkill_register(struct rt2x00_dev *rt2x00dev)
 {
-	int status = rfkill_register(rt2x00dev->rfkill);
-	if (status) {
-		ERROR(rt2x00dev, "Failed to register rfkill handler.\n");
-		return status;
-	}
+	int retval;
 
-	rt2x00lib_rfkill_poll(&rt2x00dev->rfkill_work.work);
-
-	return !schedule_delayed_work(&rt2x00dev->rfkill_work,
-		RFKILL_POLL_INTERVAL);
-}
-
-void rt2x00lib_unregister_rfkill(struct rt2x00_dev *rt2x00dev)
-{
-	if (delayed_work_pending(&rt2x00dev->rfkill_work))
-		cancel_rearming_delayed_workqueue(
-			rt2x00dev->hw->workqueue, &rt2x00dev->rfkill_work);
-
-	rfkill_unregister(rt2x00dev->rfkill);
-}
-
-int rt2x00lib_allocate_rfkill(struct rt2x00_dev *rt2x00dev)
-{
-	struct rfkill *rfkill;
-
-	if (!test_bit(DEVICE_SUPPORT_HW_BUTTON, &rt2x00dev->flags))
+	if (!test_bit(CONFIG_SUPPORT_HW_BUTTON, &rt2x00dev->flags))
 		return 0;
 
-	rfkill = rfkill_allocate(rt2x00dev->device, RFKILL_TYPE_WLAN);
-	if (!rfkill) {
-		ERROR(rt2x00dev, "Failed to allocate rfkill handler.\n");
-		return -ENOMEM;
+	retval = rfkill_register(rt2x00dev->rfkill);
+	if (retval) {
+		ERROR(rt2x00dev, "Failed to register rfkill handler.\n");
+		return retval;
 	}
 
-	rfkill->name = rt2x00dev->ops->name;
-	rfkill->data = rt2x00dev;
-	rfkill->toggle_radio = rt2x00lib_toggle_radio;
-	rt2x00dev->rfkill = rfkill;
-
-	INIT_DELAYED_WORK(&rt2x00dev->rfkill_work, rt2x00lib_rfkill_poll);
+	retval = input_register_polled_device(rt2x00dev->poll_dev);
+	if (retval) {
+		ERROR(rt2x00dev, "Failed to register polled device.\n");
+		rfkill_unregister(rt2x00dev->rfkill);
+		return retval;
+	}
 
 	return 0;
 }
 
-void rt2x00lib_free_rfkill(struct rt2x00_dev *rt2x00dev)
+void rt2x00rfkill_unregister(struct rt2x00_dev *rt2x00dev)
 {
-	if (!test_bit(DEVICE_SUPPORT_HW_BUTTON, &rt2x00dev->flags))
+	if (!test_bit(CONFIG_SUPPORT_HW_BUTTON, &rt2x00dev->flags))
 		return;
 
+	input_unregister_polled_device(rt2x00dev->poll_dev);
+	rfkill_unregister(rt2x00dev->rfkill);
+}
+
+int rt2x00rfkill_allocate(struct rt2x00_dev *rt2x00dev)
+{
+	struct device *device = wiphy_dev(rt2x00dev->hw->wiphy);
+
+	if (!test_bit(CONFIG_SUPPORT_HW_BUTTON, &rt2x00dev->flags))
+		return 0;
+
+	rt2x00dev->rfkill = rfkill_allocate(device, RFKILL_TYPE_WLAN);
+	if (!rt2x00dev->rfkill) {
+		ERROR(rt2x00dev, "Failed to allocate rfkill handler.\n");
+		return -ENOMEM;
+	}
+
+	rt2x00dev->rfkill->name = rt2x00dev->ops->name;
+	rt2x00dev->rfkill->data = rt2x00dev;
+	rt2x00dev->rfkill->state = rt2x00dev->ops->lib->rfkill_poll(rt2x00dev);
+	rt2x00dev->rfkill->toggle_radio = rt2x00rfkill_toggle_radio;
+
+	rt2x00dev->poll_dev = input_allocate_polled_device();
+	if (!rt2x00dev->poll_dev) {
+		ERROR(rt2x00dev, "Failed to allocate polled device.\n");
+		rfkill_free(rt2x00dev->rfkill);
+		return -ENOMEM;
+	}
+
+	rt2x00dev->poll_dev->private = rt2x00dev;
+	rt2x00dev->poll_dev->poll = rt2x00rfkill_poll;
+	rt2x00dev->poll_dev->poll_interval = RFKILL_POLL_INTERVAL;
+
+	return 0;
+}
+
+void rt2x00rfkill_free(struct rt2x00_dev *rt2x00dev)
+{
+	if (!test_bit(CONFIG_SUPPORT_HW_BUTTON, &rt2x00dev->flags))
+		return;
+
+	input_free_polled_device(rt2x00dev->poll_dev);
 	rfkill_free(rt2x00dev->rfkill);
 }

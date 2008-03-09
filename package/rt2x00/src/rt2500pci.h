@@ -46,9 +46,10 @@
 
 /*
  * Signal information.
+ * Defaul offset is required for RSSI <-> dBm conversion.
  */
+#define MAX_SIGNAL			100
 #define MAX_RX_SSI			-1
-#define MAX_RX_NOISE			-110
 #define DEFAULT_RSSI_OFFSET		121
 
 /*
@@ -59,6 +60,7 @@
 #define EEPROM_BASE			0x0000
 #define EEPROM_SIZE			0x0200
 #define BBP_SIZE			0x0040
+#define RF_SIZE				0x0014
 
 /*
  * Control/Status Registers(CSR).
@@ -438,16 +440,16 @@
 
 /*
  * TXCSR8: CCK Tx BBP register.
- * CCK_SIGNAL: BBP rate field address for CCK.
- * CCK_SERVICE: BBP service field address for CCK.
- * CCK_LENGTH_LOW: BBP length low byte address for CCK.
- * CCK_LENGTH_HIGH: BBP length high byte address for CCK.
  */
 #define TXCSR8				0x0098
-#define TXCSR8_CCK_SIGNAL		FIELD32(0x000000ff)
-#define TXCSR8_CCK_SERVICE		FIELD32(0x0000ff00)
-#define TXCSR8_CCK_LENGTH_LOW		FIELD32(0x00ff0000)
-#define TXCSR8_CCK_LENGTH_HIGH		FIELD32(0xff000000)
+#define TXCSR8_BBP_ID0			FIELD32(0x0000007f)
+#define TXCSR8_BBP_ID0_VALID		FIELD32(0x00000080)
+#define TXCSR8_BBP_ID1			FIELD32(0x00007f00)
+#define TXCSR8_BBP_ID1_VALID		FIELD32(0x00008000)
+#define TXCSR8_BBP_ID2			FIELD32(0x007f0000)
+#define TXCSR8_BBP_ID2_VALID		FIELD32(0x00800000)
+#define TXCSR8_BBP_ID3			FIELD32(0x7f000000)
+#define TXCSR8_BBP_ID3_VALID		FIELD32(0x80000000)
 
 /*
  * TXCSR9: OFDM TX BBP registers
@@ -862,14 +864,32 @@
 #define ARCSR5_LENGTH			FIELD32(0xffff0000)
 
 /*
- * ACK/CTS payload consumed time registers.
  * ARTCSR0: CCK ACK/CTS payload consumed time for 1/2/5.5/11 mbps.
- * ARTCSR1: OFDM ACK/CTS payload consumed time for 6/9/12/18 mbps.
- * ARTCSR2: OFDM ACK/CTS payload consumed time for 24/36/48/54 mbps.
  */
 #define ARTCSR0				0x014c
+#define ARTCSR0_ACK_CTS_11MBS		FIELD32(0x000000ff)
+#define ARTCSR0_ACK_CTS_5_5MBS		FIELD32(0x0000ff00)
+#define ARTCSR0_ACK_CTS_2MBS		FIELD32(0x00ff0000)
+#define ARTCSR0_ACK_CTS_1MBS		FIELD32(0xff000000)
+
+
+/*
+ * ARTCSR1: OFDM ACK/CTS payload consumed time for 6/9/12/18 mbps.
+ */
 #define ARTCSR1				0x0150
+#define ARTCSR1_ACK_CTS_6MBS		FIELD32(0x000000ff)
+#define ARTCSR1_ACK_CTS_9MBS		FIELD32(0x0000ff00)
+#define ARTCSR1_ACK_CTS_12MBS		FIELD32(0x00ff0000)
+#define ARTCSR1_ACK_CTS_18MBS		FIELD32(0xff000000)
+
+/*
+ * ARTCSR2: OFDM ACK/CTS payload consumed time for 24/36/48/54 mbps.
+ */
 #define ARTCSR2				0x0154
+#define ARTCSR2_ACK_CTS_24MBS		FIELD32(0x000000ff)
+#define ARTCSR2_ACK_CTS_36MBS		FIELD32(0x0000ff00)
+#define ARTCSR2_ACK_CTS_48MBS		FIELD32(0x00ff0000)
+#define ARTCSR2_ACK_CTS_54MBS		FIELD32(0xff000000)
 
 /*
  * SECCSR1_RT2509: WEP control register.
@@ -946,9 +966,39 @@
 #define UART2CSR4			0x019c
 
 /*
+ * BBP registers.
+ * The wordsize of the BBP is 8 bits.
+ */
+
+/*
+ * R2: TX antenna control
+ */
+#define BBP_R2_TX_ANTENNA		FIELD8(0x03)
+#define BBP_R2_TX_IQ_FLIP		FIELD8(0x04)
+
+/*
+ * R14: RX antenna control
+ */
+#define BBP_R14_RX_ANTENNA		FIELD8(0x03)
+#define BBP_R14_RX_IQ_FLIP		FIELD8(0x04)
+
+/*
+ * BBP_R70
+ */
+#define BBP_R70_JAPAN_FILTER		FIELD8(0x08)
+
+/*
  * RF registers
  */
+
+/*
+ * RF 1
+ */
 #define RF1_TUNER			FIELD32(0x00020000)
+
+/*
+ * RF 3
+ */
 #define RF3_TUNER			FIELD32(0x00000100)
 #define RF3_TXPOWER			FIELD32(0x00003e00)
 
@@ -1028,28 +1078,6 @@
  */
 #define EEPROM_CALIBRATE_OFFSET		0x3e
 #define EEPROM_CALIBRATE_OFFSET_RSSI	FIELD16(0x00ff)
-
-/*
- * BBP content.
- * The wordsize of the BBP is 8 bits.
- */
-
-/*
- * BBP_R2: TX antenna control
- */
-#define BBP_R2_TX_ANTENNA		FIELD8(0x03)
-#define BBP_R2_TX_IQ_FLIP		FIELD8(0x04)
-
-/*
- * BBP_R14: RX antenna control
- */
-#define BBP_R14_RX_ANTENNA		FIELD8(0x03)
-#define BBP_R14_RX_IQ_FLIP		FIELD8(0x04)
-
-/*
- * BBP_R70
- */
-#define BBP_R70_JAPAN_FILTER		FIELD8(0x08)
 
 /*
  * DMA descriptor defines.
@@ -1135,7 +1163,7 @@
 #define RXD_W0_MULTICAST		FIELD32(0x00000004)
 #define RXD_W0_BROADCAST		FIELD32(0x00000008)
 #define RXD_W0_MY_BSS			FIELD32(0x00000010)
-#define RXD_W0_CRC			FIELD32(0x00000020)
+#define RXD_W0_CRC_ERROR		FIELD32(0x00000020)
 #define RXD_W0_OFDM			FIELD32(0x00000040)
 #define RXD_W0_PHYSICAL_ERROR		FIELD32(0x00000080)
 #define RXD_W0_CIPHER_OWNER		FIELD32(0x00000100)

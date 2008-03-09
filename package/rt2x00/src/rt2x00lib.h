@@ -20,62 +20,100 @@
 
 /*
 	Module: rt2x00lib
-	Abstract: Data structures for the rt2x00lib module.
-	Supported chipsets: RT2460, RT2560, RT2570,
-	rt2561, rt2561s, rt2661, rt2571W & rt2671.
+	Abstract: Data structures and definitions for the rt2x00lib module.
  */
 
 #ifndef RT2X00LIB_H
 #define RT2X00LIB_H
 
 /*
- * Driver allocation handlers.
+ * Interval defines
+ * Both the link tuner as the rfkill will be called once per second.
  */
-int rt2x00lib_probe_dev(struct rt2x00_dev *rt2x00dev);
-void rt2x00lib_remove_dev(struct rt2x00_dev *rt2x00dev);
+#define LINK_TUNE_INTERVAL	( round_jiffies_relative(HZ) )
+#define RFKILL_POLL_INTERVAL	( 1000 )
 
 /*
- * Driver status handlers.
+ * Radio control handlers.
  */
-int rt2x00lib_suspend(struct rt2x00_dev *rt2x00dev, pm_message_t state);
-int rt2x00lib_resume(struct rt2x00_dev *rt2x00dev);
+int rt2x00lib_enable_radio(struct rt2x00_dev *rt2x00dev);
+void rt2x00lib_disable_radio(struct rt2x00_dev *rt2x00dev);
+void rt2x00lib_toggle_rx(struct rt2x00_dev *rt2x00dev, enum dev_state state);
+void rt2x00lib_reset_link_tuner(struct rt2x00_dev *rt2x00dev);
 
 /*
- * Interrupt context handlers.
+ * Initialization handlers.
  */
-void rt2x00lib_txdone(struct data_entry *entry,
-	const int status, const int retry);
-void rt2x00lib_rxdone(struct data_entry *entry, char *data,
-	const int size, const int signal, const int rssi, const int ofdm);
+int rt2x00lib_initialize(struct rt2x00_dev *rt2x00dev);
+void rt2x00lib_uninitialize(struct rt2x00_dev *rt2x00dev);
 
 /*
- * TX descriptor initializer
+ * Configuration handlers.
  */
-void rt2x00lib_write_tx_desc(struct rt2x00_dev *rt2x00dev,
-	struct data_entry *entry, struct data_desc *txd,
-	struct ieee80211_hdr *ieee80211hdr, unsigned int length,
-	struct ieee80211_tx_control *control);
+void rt2x00lib_config_mac_addr(struct rt2x00_dev *rt2x00dev, u8 *mac);
+void rt2x00lib_config_bssid(struct rt2x00_dev *rt2x00dev, u8 *bssid);
+void rt2x00lib_config_type(struct rt2x00_dev *rt2x00dev, const int type);
+void rt2x00lib_config(struct rt2x00_dev *rt2x00dev,
+		      struct ieee80211_conf *conf, const int force_config);
 
 /*
- * mac80211 handlers.
+ * Firmware handlers.
  */
-int rt2x00lib_tx(struct ieee80211_hw *hw, struct sk_buff *skb,
-	struct ieee80211_tx_control *control);
-int rt2x00lib_reset(struct ieee80211_hw *hw);
-int rt2x00lib_add_interface(struct ieee80211_hw *hw,
-	struct ieee80211_if_init_conf *conf);
-void rt2x00lib_remove_interface(struct ieee80211_hw *hw,
-	struct ieee80211_if_init_conf *conf);
-int rt2x00lib_config(struct ieee80211_hw *hw, struct ieee80211_conf *conf);
-int rt2x00lib_config_interface(struct ieee80211_hw *hw, int if_id,
-	struct ieee80211_if_conf *conf);
-void rt2x00lib_set_multicast_list(struct ieee80211_hw *hw,
-	unsigned short flags, int mc_count);
-int rt2x00lib_get_tx_stats(struct ieee80211_hw *hw,
-	struct ieee80211_tx_queue_stats *stats);
-int rt2x00lib_conf_tx(struct ieee80211_hw *hw, int queue,
-	const struct ieee80211_tx_queue_params *params);
+#ifdef CONFIG_RT2X00_LIB_FIRMWARE
+int rt2x00lib_load_firmware(struct rt2x00_dev *rt2x00dev);
+void rt2x00lib_free_firmware(struct rt2x00_dev *rt2x00dev);
+#else
+static inline int rt2x00lib_load_firmware(struct rt2x00_dev *rt2x00dev)
+{
+	return 0;
+}
+static inline void rt2x00lib_free_firmware(struct rt2x00_dev *rt2x00dev)
+{
+}
+#endif /* CONFIG_RT2X00_LIB_FIRMWARE */
 
-#include "rt2x00debug.h"
+/*
+ * Debugfs handlers.
+ */
+#ifdef CONFIG_RT2X00_LIB_DEBUGFS
+void rt2x00debug_register(struct rt2x00_dev *rt2x00dev);
+void rt2x00debug_deregister(struct rt2x00_dev *rt2x00dev);
+#else
+static inline void rt2x00debug_register(struct rt2x00_dev *rt2x00dev)
+{
+}
+
+static inline void rt2x00debug_deregister(struct rt2x00_dev *rt2x00dev)
+{
+}
+#endif /* CONFIG_RT2X00_LIB_DEBUGFS */
+
+/*
+ * RFkill handlers.
+ */
+#ifdef CONFIG_RT2X00_LIB_RFKILL
+int rt2x00rfkill_register(struct rt2x00_dev *rt2x00dev);
+void rt2x00rfkill_unregister(struct rt2x00_dev *rt2x00dev);
+int rt2x00rfkill_allocate(struct rt2x00_dev *rt2x00dev);
+void rt2x00rfkill_free(struct rt2x00_dev *rt2x00dev);
+#else
+static inline int rt2x00rfkill_register(struct rt2x00_dev *rt2x00dev)
+{
+	return 0;
+}
+
+static inline void rt2x00rfkill_unregister(struct rt2x00_dev *rt2x00dev)
+{
+}
+
+static inline int rt2x00rfkill_allocate(struct rt2x00_dev *rt2x00dev)
+{
+	return 0;
+}
+
+static inline void rt2x00rfkill_free(struct rt2x00_dev *rt2x00dev)
+{
+}
+#endif /* CONFIG_RT2X00_LIB_RFKILL */
 
 #endif /* RT2X00LIB_H */

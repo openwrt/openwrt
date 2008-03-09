@@ -62,7 +62,7 @@ ifeq ($(CONFIG_RT2400PCI),y)
 	obj-m += rt2400pci.o
 ifeq ($(CONFIG_RT2400PCI_RFKILL),y)
 	rt2x00lib-objs += rt2x00rfkill.o
-	CFLAGS += -DCONFIG_RT2X00_LIB_RFKILL
+	EXTRA_CFLAGS += -DCONFIG_RT2X00_LIB_RFKILL
 endif
 endif
 
@@ -70,7 +70,7 @@ ifeq ($(CONFIG_RT2500PCI),y)
 	obj-m += rt2500pci.o
 ifeq ($(CONFIG_RT2500PCI_RFKILL),y)
 	rt2x00lib-objs += rt2x00rfkill.o
-	CFLAGS += -DCONFIG_RT2X00_LIB_RFKILL
+	EXTRA_CFLAGS += -DCONFIG_RT2X00_LIB_RFKILL
 endif
 endif
 
@@ -79,17 +79,17 @@ ifeq ($(CONFIG_RT2500USB),y)
 endif
 
 ifeq ($(CONFIG_RT61PCI),y)
-	CFLAGS += -DCONFIG_RT2X00_LIB_FIRMWARE
+	EXTRA_CFLAGS += -DCONFIG_RT2X00_LIB_FIRMWARE
 	rt2x00lib-objs += rt2x00firmware.o
 	obj-m += rt61pci.o
 ifeq ($(CONFIG_RT61PCI_RFKILL),y)
 	rt2x00lib-objs += rt2x00rfkill.o
-	CFLAGS += -DCONFIG_RT2X00_LIB_RFKILL
+	EXTRA_CFLAGS += -DCONFIG_RT2X00_LIB_RFKILL
 endif
 endif
 
 ifeq ($(CONFIG_RT73USB),y)
-	CFLAGS += -DCONFIG_RT2X00_LIB_FIRMWARE
+	EXTRA_CFLAGS += -DCONFIG_RT2X00_LIB_FIRMWARE
 	rt2x00lib-objs += rt2x00firmware.o
 	obj-m += rt73usb.o
 endif
@@ -97,7 +97,7 @@ endif
 endif
 
 MAKEFLAGS += --no-print-directory
-CFLAGS := -include $(SUBDIRS)/rt2x00_compat.h $(CFLAGS)
+EXTRA_CFLAGS := -include $(SUBDIRS)/rt2x00_compat.h $(CFLAGS)
 
 all: default
 

@@ -35,9 +35,10 @@
 
 /*
  * Signal information.
+ * Defaul offset is required for RSSI <-> dBm conversion.
  */
+#define MAX_SIGNAL			100
 #define MAX_RX_SSI			-1
-#define MAX_RX_NOISE			-110
 #define DEFAULT_RSSI_OFFSET		100
 
 /*
@@ -48,6 +49,7 @@
 #define EEPROM_BASE			0x0000
 #define EEPROM_SIZE			0x0100
 #define BBP_SIZE			0x0020
+#define RF_SIZE				0x0010
 
 /*
  * Control/Status Registers(CSR).
@@ -544,7 +546,6 @@
  */
 #define MACCSR0				0x00e0
 
-
 /*
  * MACCSR1: MAC configuration register 1.
  * KICK_RX: Kick one-shot rx in one-shot rx mode.
@@ -717,9 +718,32 @@
 #define ARCSR5_LENGTH			FIELD32(0xffff0000)
 
 /*
+ * BBP registers.
+ * The wordsize of the BBP is 8 bits.
+ */
+
+/*
+ * R1: TX antenna control
+ */
+#define BBP_R1_TX_ANTENNA		FIELD8(0x03)
+
+/*
+ * R4: RX antenna control
+ */
+#define BBP_R4_RX_ANTENNA		FIELD8(0x06)
+
+/*
  * RF registers
  */
+
+/*
+ * RF 1
+ */
 #define RF1_TUNER			FIELD32(0x00020000)
+
+/*
+ * RF 3
+ */
 #define RF3_TUNER			FIELD32(0x00000100)
 #define RF3_TXPOWER			FIELD32(0x00003e00)
 
@@ -775,21 +799,6 @@
 #define EEPROM_TXPOWER_SIZE		7
 #define EEPROM_TXPOWER_1		FIELD16(0x00ff)
 #define EEPROM_TXPOWER_2		FIELD16(0xff00)
-
-/*
- * BBP content.
- * The wordsize of the BBP is 8 bits.
- */
-
-/*
- * BBP_R1: TX antenna control
- */
-#define BBP_R1_TX_ANTENNA		FIELD8(0x03)
-
-/*
- * BBP_R4: RX antenna control
- */
-#define BBP_R4_RX_ANTENNA		FIELD8(0x06)
 
 /*
  * DMA descriptor defines.
@@ -867,7 +876,7 @@
 #define RXD_W0_MULTICAST		FIELD32(0x00000004)
 #define RXD_W0_BROADCAST		FIELD32(0x00000008)
 #define RXD_W0_MY_BSS			FIELD32(0x00000010)
-#define RXD_W0_CRC			FIELD32(0x00000020)
+#define RXD_W0_CRC_ERROR		FIELD32(0x00000020)
 #define RXD_W0_PHYSICAL_ERROR		FIELD32(0x00000080)
 #define RXD_W0_DATABYTE_COUNT		FIELD32(0xffff0000)
 

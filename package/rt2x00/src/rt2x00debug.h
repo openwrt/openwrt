@@ -21,23 +21,23 @@
 /*
 	Module: rt2x00debug
 	Abstract: Data structures for the rt2x00debug.
-	Supported chipsets: RT2460, RT2560, RT2570,
-	rt2561, rt2561s, rt2661, rt2571W & rt2671.
  */
 
 #ifndef RT2X00DEBUG_H
 #define RT2X00DEBUG_H
 
-typedef void (debug_access_t)(struct rt2x00_dev *rt2x00dev,
-	const unsigned long word, void *data);
+struct rt2x00_dev;
 
-struct rt2x00debug_reg {
-	debug_access_t *read;
-	debug_access_t *write;
-
-	unsigned int word_size;
-	unsigned int word_count;
-};
+#define RT2X00DEBUGFS_REGISTER_ENTRY(__name, __type)		\
+struct reg##__name {						\
+	void (*read)(const struct rt2x00_dev *rt2x00dev,	\
+		     const unsigned int word, __type *data);	\
+	void (*write)(const struct rt2x00_dev *rt2x00dev,	\
+		      const unsigned int word, __type data);	\
+								\
+	unsigned int word_size;					\
+	unsigned int word_count;				\
+} __name
 
 struct rt2x00debug {
 	/*
@@ -46,19 +46,12 @@ struct rt2x00debug {
 	struct module *owner;
 
 	/*
-	 * Register access information.
+	 * Register access entries.
 	 */
-	struct rt2x00debug_reg reg_csr;
-	struct rt2x00debug_reg reg_eeprom;
-	struct rt2x00debug_reg reg_bbp;
+	RT2X00DEBUGFS_REGISTER_ENTRY(csr, u32);
+	RT2X00DEBUGFS_REGISTER_ENTRY(eeprom, u16);
+	RT2X00DEBUGFS_REGISTER_ENTRY(bbp, u8);
+	RT2X00DEBUGFS_REGISTER_ENTRY(rf, u32);
 };
-
-#ifdef CONFIG_RT2X00_LIB_DEBUGFS
-void rt2x00debug_register(struct rt2x00_dev *rt2x00dev);
-void rt2x00debug_deregister(struct rt2x00_dev *rt2x00dev);
-#else /* CONFIG_RT2X00_LIB_DEBUGFS */
-static inline void rt2x00debug_register(struct rt2x00_dev *rt2x00dev){}
-static inline void rt2x00debug_deregister(struct rt2x00_dev *rt2x00dev){}
-#endif /* CONFIG_RT2X00_LIB_DEBUGFS */
 
 #endif /* RT2X00DEBUG_H */
