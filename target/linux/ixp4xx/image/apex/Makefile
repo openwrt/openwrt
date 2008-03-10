@@ -19,6 +19,7 @@ PKG_SOURCE_URL:=ftp://ftp.buici.com/pub/apex/ \
 PKG_MD5SUM:=5feb7a05431e5e8a4aa36fb23347de8e
 
 include $(INCLUDE_DIR)/package.mk
+export GCC_HONOUR_COPTS=s
 
 define Build/Configure
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -30,6 +31,7 @@ endef
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
+		KBUILD_HAVE_NLS=no \
 		ARCH=arm \
 		all
 endef
