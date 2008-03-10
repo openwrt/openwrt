@@ -41,7 +41,7 @@ endef
 
 define Build/Compile
 	(cd $(PKG_BUILD_DIR); \
-		$(HOSTCC) -Wall IxNpeMicrocode.c -o IxNpeMicrocode; \
+		$(HOSTCC) -Wall -I$(STAGING_DIR_HOST)/include IxNpeMicrocode.c -o IxNpeMicrocode; \
 		./IxNpeMicrocode -be \
 	)
 endef
