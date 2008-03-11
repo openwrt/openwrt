@@ -164,8 +164,8 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.mod/tn7atm.c
    char esi_addr[ESI_LEN] = { 0x00, 0x00, 0x11, 0x22, 0x33, 0x44 };
    char *esiaddr_str = NULL;
  
--  esiaddr_str = prom_getenv ("macc");
-+  esiaddr_str = mp_macc ? mp_macc : prom_getenv ("macc");
+-  esiaddr_str = prom_getenv ("maca");
++  esiaddr_str = mp_macc ? mp_macc : prom_getenv ("maca");
  
    if (!esiaddr_str)
    {
