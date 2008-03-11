@@ -39,6 +39,22 @@
  *     and adds the new hardware "flags" for the v2.2/v1.1 units
 */
 
+/* January 1, 2007
+ *
+ * Modified by juan.i.gonzalez at subdown dot net
+ * Support added for the AG241v2  and similar
+ *
+ * Extensions:
+ *  -r #.# adds revision hardware flags. AG241v2 and similar.
+ *
+ * AG241V2 firmware sets the hw_ver to 0x44.
+ *
+ * Example: -r 2.0
+ *
+ * Convert 2.0 to 20 to be an integer, and add 0x30 to skip special ASCII
+ * #define HW_Version ((HW_REV * 10) + 0x30)  -> from cyutils.h
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -77,7 +93,7 @@ void usage(void) __attribute__ (( __noreturn__ ));
 
 void usage(void)
 {
-	fprintf(stderr, "Usage: addpattern [-i trxfile] [-o binfile] [-p pattern] [-g] [-b] [-v v#.#.#] [-{0|1|2|4}]\n");
+	fprintf(stderr, "Usage: addpattern [-i trxfile] [-o binfile] [-p pattern] [-g] [-b] [-v v#.#.#] [-r #.#] [-{0|1|2|4}] -h\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -105,7 +121,7 @@ int main(int argc, char **argv)
 	hdr = (struct code_header *) buf;
 	memset(hdr, 0, sizeof(struct code_header));
 
-	while ((c = getopt(argc, argv, "i:o:p:gbv:0124")) != -1) {
+	while ((c = getopt(argc, argv, "i:o:p:gbv:0124hr:")) != -1) {
 		switch (c) {
 			case 'i':
 				ifn = optarg;
@@ -142,13 +158,17 @@ int main(int argc, char **argv)
 				hdr->hw_ver = 0;
 				hdr->flags[0] = 0x1f;
 				break;
+                        case 'r':
+                                hdr->hw_ver = (char)(atof(optarg)*10)+0x30;
+                                break;
 
+                        case 'h':
 			default:
 				usage();
 		}
 	}
 
-	if (optind != argc) {
+    	if (optind != argc || optind == 1) {
 		fprintf(stderr, "illegal arg \"%s\"\n", argv[optind]);
 		usage();
 	}
