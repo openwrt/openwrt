@@ -197,6 +197,12 @@ enable_atheros() {
 		config_get_bool comp "$vif" compression
 		[ -n "$comp" ] && iwpriv "$ifname" compression "$comp"
 
+		config_get_bool minrate "$vif" minrate
+		[ -n "$minrate" ] && iwpriv "$ifname" minrate "$minrate"
+
+		config_get_bool maxrate "$vif" maxrate
+		[ -n "$maxrate" ] && iwpriv "$ifname" maxrate "$maxrate"
+
 		config_get_bool burst "$vif" bursting
 		[ -n "$burst" ] && iwpriv "$ifname" burst "$burst"
 
