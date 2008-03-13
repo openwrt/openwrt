@@ -158,6 +158,8 @@ static void add_handler(switch_driver *driver, const switch_config *handler, str
 
 	switch_proc_handler *tmp;
 	tmp = (switch_proc_handler *) kmalloc(sizeof(switch_proc_handler), GFP_KERNEL);
+	if (!tmp)
+		return;
 	INIT_LIST_HEAD(&tmp->list);
 	tmp->parent = parent;
 	tmp->nr = nr;
@@ -239,10 +241,25 @@ static int do_register(switch_driver *driver)
 	switch_priv *priv;
 	int i;
 	char buf[4];
-	
-	if ((priv = kmalloc(sizeof(switch_priv), GFP_KERNEL)) == NULL)
-		return -ENOBUFS;
+
+	priv = kmalloc(sizeof(switch_priv), GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
 	driver->data = (void *) priv;
+
+	priv->ports = kmalloc((driver->ports + 1) * sizeof(struct proc_dir_entry *),
+			      GFP_KERNEL);
+	if (!priv->ports) {
+		kfree(priv);
+		return -ENOMEM;
+	}
+	priv->vlans = kmalloc((driver->vlans + 1) * sizeof(struct proc_dir_entry *),
+			      GFP_KERNEL);
+	if (!priv->vlans) {
+		kfree(priv->ports);
+		kfree(priv);
+		return -ENOMEM;
+	}
 
 	INIT_LIST_HEAD(&priv->data.list);
 	
@@ -254,7 +271,6 @@ static int do_register(switch_driver *driver)
 	}
 	
 	priv->port_dir = proc_mkdir("port", priv->driver_dir);
-	priv->ports = kmalloc((driver->ports + 1) * sizeof(struct proc_dir_entry *), GFP_KERNEL);
 	for (i = 0; i < driver->ports; i++) {
 		sprintf(buf, "%d", i);
 		priv->ports[i] = proc_mkdir(buf, priv->port_dir);
@@ -264,7 +280,6 @@ static int do_register(switch_driver *driver)
 	priv->ports[i] = NULL;
 	
 	priv->vlan_dir = proc_mkdir("vlan", priv->driver_dir);
-	priv->vlans = kmalloc((driver->vlans + 1) * sizeof(struct proc_dir_entry *), GFP_KERNEL);
 	for (i = 0; i < driver->vlans; i++) {
 		sprintf(buf, "%d", i);
 		priv->vlans[i] = proc_mkdir(buf, priv->vlan_dir);
@@ -339,6 +354,8 @@ switch_vlan_config *switch_parse_vlan(switch_driver *driver, char *buf)
 	int j, u, p, s;
 	
 	c = kmalloc(sizeof(switch_vlan_config), GFP_KERNEL);
+	if (!c)
+		return NULL;
 	memset(c, 0, sizeof(switch_vlan_config));
 
 	while (isspace(*buf)) buf++;
@@ -392,7 +409,7 @@ int switch_register_driver(switch_driver *driver)
 	struct list_head *pos;
 	switch_driver *new;
 	int ret;
-	
+
 	list_for_each(pos, &drivers.list) {
 		if (strcmp(list_entry(pos, switch_driver, list)->name, driver->name) == 0) {
 			printk("Switch driver '%s' already exists in the kernel\n", driver->name);
@@ -405,6 +422,8 @@ int switch_register_driver(switch_driver *driver)
 	}
 
 	new = kmalloc(sizeof(switch_driver), GFP_KERNEL);
+	if (!new)
+		return -ENOMEM;
 	memcpy(new, driver, sizeof(switch_driver));
 	new->name = strdup(driver->name);
 	new->interface = strdup(driver->interface);
