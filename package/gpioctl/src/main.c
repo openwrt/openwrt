@@ -63,7 +63,7 @@ main(int argc, char **argv)
 	} else if (!strcmp(argv[1], "get"))
 	{
 		result = ioctl(fd, GPIO_GET, gpio_pin);
-		printf("Pin %d is %s\n", (result ? "HIGH" : "LOW"));
+		printf("Pin %d is %s\n", gpio_pin, (result ? "HIGH" : "LOW"));
 	} else if (!strcmp(argv[1], "set"))
 	{
 		ioctl(fd, GPIO_SET, gpio_pin);
