@@ -58,7 +58,7 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
 endif
 
 define Image/Prepare
-	$(CP) $(LINUX_DIR)/arch/i386/boot/bzImage $(KDIR)/bzImage
+	$(CP) $(LINUX_DIR)/arch/x86/boot/bzImage $(KDIR)/bzImage
 	$(call Image/Prepare/grub)
 endef
   
