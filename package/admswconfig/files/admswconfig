@@ -8,30 +8,34 @@ start() {
 
 	mkdir -p /etc/config
 
-adm5120_detect() {
 	board_name=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /system type/ {print $2}' /proc/cpuinfo)
 
 	case "$board_name" in
 	"Compex WP54"*)
-		board="WP54";;
+		board="Compex WP54";;
 	*)
 		;;
 	esac
-}
 
-adm5120_detect
+	echo "$board" |awk '
+	board=$1
+
+	function p(cfgname, name) {
+		if (c[name] != "") print "	option " cfgname "	\"" c[name] "\""
+	}
+
 	BEGIN {
 		FS="="
 		c["lan_ifname"]="eth0"
 		c["wan_ifname"]="eth1"
-		c["eth0ports"]="12345"
+		c["eth0ports"]="1 2 3 4 5"
 		c["eth1ports"]="0"
 	}
 
 	END {
-		if (model == "Compex WP54") {
-			c["vlan0ports"]="0"
-			c["vlan1ports"]="1"
+		if (board == "Compex WP54") {
+			c["eth0ports"]="0"
+			c["eth1ports"]="1"
 		}
 
 		print "#### VLAN configuration "
@@ -65,3 +69,4 @@ adm5120_detect
 		print "	option proto	dhcp"
 	}' > /etc/config/network
 }
+
