@@ -14,7 +14,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tgz
 PKG_SOURCE_URL:=http://www.jdl.com/software
 PKG_MD5SUM:=6c84b01f500bc989b0b1ad6138fb93d5
 PKG_CAT:=zcat
-PKG_BUILD_DIR=$(BUILD_DIR)/$(PKG_NAME)
+PKG_BUILD_DIR=$(BUILD_DIR_HOST)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/host-build.mk
 
