@@ -41,10 +41,10 @@ sub parse_config() {
 	close FEEDS;
 }
 
-sub update_index($$)
+sub update_index($)
 {
 	my $name = shift;
-	my $src = shift;
+
 	-d "./feeds/$name.tmp" or mkdir "./feeds/$name.tmp" or return 1;
 	-d "./feeds/$name.tmp/info" or mkdir "./feeds/$name.tmp/info" or return 1;
 
@@ -65,15 +65,18 @@ sub update_svn($$) {
 		system("rm -rf \"./feeds/$name\"");
 		system("svn co $src \"./feeds/$name\"") == 0 or return 1;
 	}
-	return update_index($name, $src);
+
+	return 0;
 }
 
 sub update_cpy($$) {
 	my $name = shift;
 	my $src = shift;
 
-	system("cp -Rf $src ./feeds/$name");
-	return update_index($name, $src);
+	system("mkdir -p ./feeds/$name");
+	system("cp -Rf $src ./feeds");
+
+	return 0;
 }
 
 sub update_link($$) {
@@ -81,7 +84,8 @@ sub update_link($$) {
 	my $src = abs_path(shift);
 
 	system("ln -sf $src ./feeds/$name");
-	return update_index($name, $src);
+
+	return 0;
 }
 
 sub update_git($$) {
@@ -94,7 +98,8 @@ sub update_git($$) {
 		system("rm -rf \"./feeds/$name\"");
 		system("git-clone --depth 1 $src ./feeds/$name") == 0 or return 1;
 	}
-	return update_index($name, $src);
+
+	return 0;
 }
 
 sub get_feed($) {
@@ -278,13 +283,16 @@ sub install_package {
 
 sub refresh_config {
 	my $default = shift;
-	$default or $default = "o";
 
 	# workaround for timestamp check
 	system("rm -f tmp/.packageinfo");
 
 	# refresh the config
-	system("make oldconfig CONFDEFAULT=\"$default\" Config.in >/dev/null 2>/dev/null");
+	if ($default) { 
+		system("make oldconfig CONFDEFAULT=\"$default\" Config.in >/dev/null 2>/dev/null");
+	} else {
+		system("make defconfig Config.in >/dev/null 2>/dev/null");
+	}
 }
 
 sub install {
@@ -293,7 +301,13 @@ sub install {
 	my $feed;
 	my $ret = 0;
 
-	getopts('ap:d:', \%opts);
+	getopts('ap:d:h', \%opts);
+
+	if ($opts{h}) {
+		usage();
+		return 0;
+	}
+
 	get_installed();
 
 	foreach my $f (@feeds) {
@@ -336,13 +350,25 @@ sub install {
 }
 
 sub uninstall {
+	my %opts;
 	my $name;
 	my $uninstall;
 
-	if ($ARGV[0] eq '-a') {
-		system("rm -rf ./package/feeds");
+	getopts('ah', \%opts);
+
+	if ($opts{h}) {
+		usage();
+		return 0;
+	}
+
+	if ($opts{a}) {
+		system("rm -rvf ./package/feeds");
 		$uninstall = 1;
 	} else {
+		if($#ARGV == -1) {
+			warn "WARNING: no package to uninstall\n";
+			return 0;
+		}
 		get_installed();
 		while ($name = shift @ARGV) {
 			my $pkg = $installed{$name};
@@ -357,6 +383,86 @@ sub uninstall {
 		}
 	}
 	$uninstall and refresh_config();
+	return 0;
+}
+
+my %update_method = (
+	'src-svn' => \&update_svn,
+	'src-cpy' => \&update_cpy,
+	'src-link' => \&update_link,
+	'src-git' => \&update_git
+);
+
+sub update_feed($$$$)
+{
+	my $type=shift;
+	my $name=shift;
+	my $src=shift;
+	my $perform_update=shift;
+
+	$update_method{$type} or do {
+		warn "Unknown type '$type' in feed $name\n";
+		return 1;
+	};
+	$perform_update and do {
+		warn "Updating feed '$name' from '$src' ...\n";
+		&{$update_method{$type}}($name, $src) == 0 or do {
+			warn "failed.\n";
+			return 1;
+		};
+	};
+	warn "Create index file './feeds/$name.index' \n";
+	update_index($name) == 0 or do {
+		warn "failed.\n";
+		return 1;
+	};
+	return 0;
+}
+
+sub update {
+	my %opts;
+	my $feed_name;
+	my $perform_update=1;
+
+	$ENV{SCAN_COOKIE} = $$;
+	$ENV{KBUILD_VERBOSE} = 99;
+
+	getopts('ahi', \%opts);
+
+	if ($opts{h}) {
+		usage();
+		return 0;
+	}
+
+	if ($opts{i}) {
+		# don't update from (remote) repository
+		# only re-create index information
+		$perform_update=0;
+	}
+
+	-d "feeds" or do {
+			mkdir "feeds" or die "Unable to create the feeds directory";
+		};
+
+	if ( ($#ARGV == -1) or $opts{a}) {
+		foreach my $feed (@feeds) {
+			my ($type, $name, $src) = @$feed;
+			update_feed($type, $name, $src, $perform_update);
+		}
+	} else {
+		while ($feed_name = shift @ARGV) {
+			foreach my $feed (@feeds) {
+				my ($type, $name, $src) = @$feed;
+				if($feed_name ne $name) {
+					next;
+				}
+				update_feed($type, $name, $src, $perform_update);
+			}
+		}
+	}
+
+	refresh_config();
+
 	return 0;
 }
 
@@ -381,9 +487,13 @@ Commands:
 	    -r <feedname>: Only search in this feed
 
 	uninstall -a|<package>: Uninstall a package
+	Options:
 	    -a :           Uninstalls all packages.
 
-	update:            Update packages and lists of feeds in feeds.conf .
+	update -a|<feedname(s)>: Update packages and lists of feeds in feeds.conf .
+	Options:
+	    -a :           Update all feeds listed within feeds.conf. Otherwise the spezified feeds will be updated.
+	    -i :           Recreate the index only. No feed update from repository is performed.
 
 	clean:             Remove downloaded/generated files.
 
@@ -391,35 +501,9 @@ EOF
 	exit(1);
 }
 
-my %update_method = (
-	'src-svn' => \&update_svn,
-	'src-cpy' => \&update_cpy,
-	'src-link' => \&update_link,
-	'src-git' => \&update_git
-);
-
 my %commands = (
 	'list' => \&list,
-	'update' => sub {
-		-d "feeds" or do {
-			mkdir "feeds" or die "Unable to create the feeds directory";
-		};
-		$ENV{SCAN_COOKIE} = $$;
-		$ENV{KBUILD_VERBOSE} = 99;
-		foreach my $feed (@feeds) {
-			my ($type, $name, $src) = @$feed;
-			$update_method{$type} or do {
-				warn "Unknown type '$type' in feed $name\n";
-				next;
-			};
-			warn "Updating feed '$name'...\n";
-			&{$update_method{$type}}($name, $src) == 0 or do {
-				warn "failed.\n";
-				return 1;
-			};
-		}
-		return 0;
-	},
+	'update' => \&update,
 	'install' => \&install,
 	'search' => \&search,
 	'uninstall' => \&uninstall,
