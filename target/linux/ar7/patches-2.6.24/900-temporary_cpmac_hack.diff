@@ -1,0 +1,27 @@
+--- linux-2.6.24.2/drivers/net/cpmac.c	2008-03-10 22:13:50.000000000 +0100
++++ linux-2.6.24.2/drivers/net/cpmac.c	2008-03-05 15:13:27.000000000 +0100
+@@ -841,7 +841,8 @@
+ 	int new_state = 0;
+ 
+ 	spin_lock(&priv->lock);
+-	if (priv->phy->link) {
++	if (1 /* priv->phy->link */ ) {
++		netif_carrier_on(dev);
+ 		netif_start_queue(dev);
+ 		if (priv->phy->duplex != priv->oldduplex) {
+ 			new_state = 1;
+@@ -853,11 +854,11 @@
+ 			priv->oldspeed = priv->phy->speed;
+ 		}
+ 
+-		if (!priv->oldlink) {
++		/*if (!priv->oldlink) {
+ 			new_state = 1;
+-			priv->oldlink = 1;
++			priv->oldlink = 1;*/
+ 			netif_schedule(dev);
+-		}
++		/*}*/
+ 	} else if (priv->oldlink) {
+ 		netif_stop_queue(dev);
+ 		new_state = 1;
