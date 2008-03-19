@@ -118,10 +118,6 @@ docs docs/compile: FORCE
 docs/clean: FORCE
 	$(MAKE) -C docs clean
 
-symlinkclean:
-	-find package -type l | xargs rm -f
-	rm -rf tmp
-
 distclean:
 	rm -rf tmp build_dir staging_dir dl .config* feeds bin
 
