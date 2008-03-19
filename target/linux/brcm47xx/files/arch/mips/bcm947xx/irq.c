@@ -76,7 +76,7 @@ int pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 	res = ssb_pcibios_map_irq(dev, slot, pin);
 	if (res < 0) {
 		printk(KERN_ALERT "PCI: Failed to map IRQ of device %s\n",
-		       pci_name((struct pci_dev *)dev));
+		       dev->dev.bus_id);
 		return 0;
 	}
 	/* IRQ-0 and IRQ-1 are software interrupts. */
