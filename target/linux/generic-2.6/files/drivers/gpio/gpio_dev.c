@@ -25,6 +25,7 @@
 #include <asm/uaccess.h>
 #include <asm/io.h>
 #include <asm/gpio.h>
+#include <asm/atomic.h>
 #include <linux/init.h>
 #include <linux/genhd.h>
 #include <linux/device.h>
@@ -35,9 +36,11 @@
 #define DEVNAME		"gpio"
 
 static int dev_major;
-static int gpio_is_open = 0;
-unsigned int gpio_access_mask = 0;
+static unsigned int gpio_access_mask;
 static struct class *gpio_class;
+
+/* Counter is 1, if the device is not opened and zero (or less) if opened. */
+static atomic_t gpio_open_cnt = ATOMIC_INIT(1);
 
 static int
 gpio_ioctl(struct inode * inode, struct file * file, unsigned int cmd, unsigned long arg)
@@ -94,14 +97,17 @@ gpio_open(struct inode *inode, struct file *file)
 		goto out;
 	}
 
-	if (gpio_is_open)
-	{
+	/* FIXME: We should really allow multiple applications to open the device
+	 *        at the same time, as long as the apps access different IO pins.
+	 *        The generic gpio-registration functions can be used for that.
+	 *        Two new IOCTLs have to be introduced for that. Need to check userspace
+	 *        compatibility first. --mb */
+	if (!atomic_dec_and_test(&gpio_open_cnt)) {
+		atomic_inc(&gpio_open_cnt);
 		printk(KERN_ERR DRVNAME ": Device with minor ID %d already in use\n", dev_minor);
 		result = -EBUSY;
 		goto out;
 	}
-
-	gpio_is_open = 1;
 
 out:
 	return result;
@@ -110,7 +116,8 @@ out:
 static int
 gpio_close(struct inode * inode, struct file * file)
 {
-	gpio_is_open = 0;
+	smp_mb__before_atomic_inc();
+	atomic_inc(&gpio_open_cnt);
 
 	return 0;
 }
