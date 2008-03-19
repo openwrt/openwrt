@@ -226,4 +226,21 @@ void __init plat_mem_setup(void)
 	board_time_init = bcm47xx_time_init;
 }
 
+static int __init bcm47xx_register_gpiodev(void)
+{
+	static struct resource res = {
+		.start = 0xFFFFFFFF,
+	};
+	struct platform_device *pdev;
+
+	pdev = platform_device_register_simple("GPIODEV", 0, &res, 1);
+	if (!pdev) {
+		printk(KERN_ERR "bcm47xx: GPIODEV init failed\n");
+		return -ENODEV;
+	}
+
+	return 0;
+}
+device_initcall(bcm47xx_register_gpiodev);
+
 EXPORT_SYMBOL(ssb);
