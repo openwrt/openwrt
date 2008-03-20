@@ -57,10 +57,20 @@ prepare: .config $(tools/stamp-install) $(toolchain/stamp-install)
 world: prepare $(target/stamp-compile) $(package/stamp-cleanup) $(package/stamp-compile) $(package/stamp-install) $(package/stamp-rootfs-prepare) $(target/stamp-install) FORCE
 	$(MAKE) package/index
 
+# update all feeds, re-create index files, install symlinks
 package/symlinks:
-	$(SCRIPT_DIR)/feeds update
-	cd package; ln -sf ../feeds/packages openwrt-packages
+	$(SCRIPT_DIR)/feeds update -a
+	$(SCRIPT_DIR)/feeds install -a
 
-.PHONY: clean dirclean prereq prepare world package/symlinks
+# re-create index files, install symlinks
+package/symlinks-install:
+	$(SCRIPT_DIR)/feeds update -i
+	$(SCRIPT_DIR)/feeds install -a
+
+# remove all symlinks, don't touch ./feeds
+package/symlinks-clean:
+	$(SCRIPT_DIR)/feeds uninstall -a
+
+.PHONY: clean dirclean prereq prepare world package/symlinks package/symlinks-install package/symlinks-clean
 
 endif

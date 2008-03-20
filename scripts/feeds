@@ -238,15 +238,17 @@ sub install_package {
 	$feed = lookup_package($feed, $name);
 	$feed or do {
 		$installed{$name} and return 0;
-		warn "WARNING: No feed for package '$name' found.\n";
-		return 1;
+		# TODO: check if it's already installed within ./package directory
+		warn "WARNING: No feed for package '$name' found, maybe it's already part of the standard packages?\n";
+		return 0;
 	};
 
 	my $pkg = $feed{$feed->[1]}->{$name} or return 1;
 	$pkg->{name} or do {
 		$installed{$name} and return 0;
+		# TODO: check if this is an alias package, maybe it's known by another name
 		warn "WARNING: Package '$name' is not available in feed $feed->[1].\n";
-		return 1;
+		return 0;
 	};
 	my $src = $pkg->{src};
 	my $type = $feed->[0];
@@ -327,8 +329,6 @@ sub install {
 					my $p = $package{$name};
 					if( $p->{name} ) {
 						install_package($feed, $p->{name}) == 0 or $ret = 1;
-					} else {
-						warn "WARNING: Package '$name' is not available\n";
 					}
 				}
 			}
