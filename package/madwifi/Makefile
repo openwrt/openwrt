@@ -134,6 +134,18 @@ MAKE_ARGS:= \
 MAKE_VARS:= \
 	COPTS="-DCONFIG_ATHEROS_RATE_DEFAULT='\"$(RATE_CONTROL)\"'" \
 
+HALFILE:=$(lastword $(sort $(wildcard ./ath_hal-*.tgz)))
+ifneq ($(HALFILE),)
+  define Build/Prepare
+	$(call Build/Prepare/Default)
+	rm -rf $(PKG_BUILD_DIR)/tmp
+	mkdir -p $(PKG_BUILD_DIR)/tmp
+	tar xvzf $(HALFILE) -C $(PKG_BUILD_DIR)/tmp
+	$(CP) $(PKG_BUILD_DIR)/tmp/ath_hal*/* $(PKG_BUILD_DIR)/hal/
+	rm -rf $(PKG_BUILD_DIR)/tmp
+  endef
+endif
+
 ifeq ($(findstring AHB,$(BUS)),AHB)
   define Build/Compile/ahb
 	$(MAKE_VARS) $(MAKE) -C $(PKG_BUILD_DIR) $(MAKE_ARGS) BUS="AHB" modules
