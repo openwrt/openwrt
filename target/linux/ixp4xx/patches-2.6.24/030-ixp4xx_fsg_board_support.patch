@@ -1,7 +1,46 @@
-Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-pci.c
+Index: linux-2.6.24/arch/arm/mach-ixp4xx/Kconfig
+===================================================================
+--- linux-2.6.24.orig/arch/arm/mach-ixp4xx/Kconfig	2008-03-20 21:07:50.000000000 +1030
++++ linux-2.6.24/arch/arm/mach-ixp4xx/Kconfig	2008-03-20 21:09:12.000000000 +1030
+@@ -125,6 +125,15 @@
+ 	depends on ARCH_IXDP425 || MACH_IXDP465 || MACH_KIXRP435
+ 	default y
+ 
++config MACH_FSG
++	bool
++	prompt "Freecom FSG-3"
++	select PCI
++	help
++	  Say 'Y' here if you want your kernel to support Freecom's
++	  FSG-3 device. For more information on this platform,
++	  see http://www.nslu2-linux.org/wiki/FSG3/HomePage
++
+ #
+ # Certain registers and IRQs are only enabled if supporting IXP465 CPUs
+ #
+Index: linux-2.6.24/arch/arm/mach-ixp4xx/Makefile
+===================================================================
+--- linux-2.6.24.orig/arch/arm/mach-ixp4xx/Makefile	2008-03-20 21:07:50.000000000 +1030
++++ linux-2.6.24/arch/arm/mach-ixp4xx/Makefile	2008-03-20 21:09:12.000000000 +1030
+@@ -15,6 +15,7 @@
+ obj-pci-$(CONFIG_MACH_DSMG600)		+= dsmg600-pci.o
+ obj-pci-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-pci.o
+ obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
++obj-pci-$(CONFIG_MACH_FSG)		+= fsg-pci.o
+ 
+ obj-y	+= common.o
+ 
+@@ -28,5 +29,6 @@
+ obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o dsmg600-power.o
+ obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
+ obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
++obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o
+ 
+ obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
+Index: linux-2.6.24/arch/arm/mach-ixp4xx/fsg-pci.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-pci.c	2008-01-11 17:06:33.000000000 +1030
++++ linux-2.6.24/arch/arm/mach-ixp4xx/fsg-pci.c	2008-03-20 21:09:12.000000000 +1030
 @@ -0,0 +1,71 @@
 +/*
 + * arch/arch/mach-ixp4xx/fsg-pci.c
@@ -49,21 +88,21 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-pci.c
 +	slot = slot - 11;
 +
 +	if (slot >= 1 && slot <= FSG_PCI_MAX_DEV &&
-+		pin >= 1 && pin <= FSG_PCI_IRQ_LINES) {
-+			irq = pci_irq_table[(slot - 1)];
-+	}
-+        printk("%s: Mapped slot %d pin %d to IRQ %d\n", __FUNCTION__,slot, pin, irq);
++	    pin >= 1 && pin <= FSG_PCI_IRQ_LINES)
++		irq = pci_irq_table[(slot - 1)];
++	printk(KERN_INFO "%s: Mapped slot %d pin %d to IRQ %d\n",
++	       __func__, slot, pin, irq);
 +
-+        return irq;
++	return irq;
 +}
 +
 +struct hw_pci fsg_pci __initdata = {
 +	.nr_controllers = 1,
-+	.preinit =        fsg_pci_preinit,
-+	.swizzle =        pci_std_swizzle,
-+	.setup =          ixp4xx_setup,
-+	.scan =           ixp4xx_scan_bus,
-+	.map_irq =        fsg_map_irq,
++	.preinit =	  fsg_pci_preinit,
++	.swizzle =	  pci_std_swizzle,
++	.setup =	  ixp4xx_setup,
++	.scan =		  ixp4xx_scan_bus,
++	.map_irq =	  fsg_map_irq,
 +};
 +
 +int __init fsg_pci_init(void)
@@ -74,35 +113,42 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-pci.c
 +}
 +
 +subsys_initcall(fsg_pci_init);
-Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-setup.c
+Index: linux-2.6.24/arch/arm/mach-ixp4xx/fsg-setup.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-setup.c	2008-01-11 17:06:33.000000000 +1030
-@@ -0,0 +1,220 @@
++++ linux-2.6.24/arch/arm/mach-ixp4xx/fsg-setup.c	2008-03-20 21:09:12.000000000 +1030
+@@ -0,0 +1,275 @@
 +/*
 + * arch/arm/mach-ixp4xx/fsg-setup.c
 + *
 + * FSG board-setup
 + *
-+ * based ixdp425-setup.c:
-+ *      Copyright (C) 2003-2004 MontaVista Software, Inc.
++ * Copyright (C) 2008 Rod Whitby <rod@whitby.id.au>
++ *
++ * based on ixdp425-setup.c:
++ *	Copyright (C) 2003-2004 MontaVista Software, Inc.
++ * based on nslu2-power.c
++ *	Copyright (C) 2005 Tower Technologies
 + *
 + * Author: Rod Whitby <rod@whitby.id.au>
 + * Maintainers: http://www.nslu2-linux.org/
 + *
 + */
 +
-+#include <linux/kernel.h>
++#include <linux/if_ether.h>
++#include <linux/irq.h>
 +#include <linux/serial.h>
 +#include <linux/serial_8250.h>
 +#include <linux/leds.h>
 +#include <linux/reboot.h>
++#include <linux/i2c.h>
 +#include <linux/i2c-gpio.h>
 +
 +#include <asm/mach-types.h>
 +#include <asm/mach/arch.h>
 +#include <asm/mach/flash.h>
 +#include <asm/io.h>
++#include <asm/gpio.h>
 +
 +static struct flash_platform_data fsg_flash_data = {
 +	.map_name		= "cfi_probe",
@@ -131,6 +177,12 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-setup.c
 +	.id			= 0,
 +	.dev	 = {
 +		.platform_data	= &fsg_i2c_gpio_data,
++	},
++};
++
++static struct i2c_board_info __initdata fsg_i2c_board_info [] = {
++	{
++		I2C_BOARD_INFO("rtc-isl1208", 0x6f),
 +	},
 +};
 +
@@ -184,27 +236,27 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-setup.c
 +
 +/* Built-in 10/100 Ethernet MAC interfaces */
 +static struct eth_plat_info fsg_plat_eth[] = {
-+        {
-+                .phy            = 5,
-+                .rxq            = 3,
++	{
++		.phy		= 5,
++		.rxq		= 3,
 +		.txreadyq	= 20,
-+        }, {
-+                .phy            = 4,
-+                .rxq            = 4,
++	}, {
++		.phy		= 4,
++		.rxq		= 4,
 +		.txreadyq	= 21,
-+        }
++	}
 +};
 +
 +static struct platform_device fsg_eth[] = {
-+        {
-+                .name                   = "ixp4xx_eth",
-+                .id                     = IXP4XX_ETH_NPEB,
-+                .dev.platform_data      = fsg_plat_eth,
-+        }, {
-+                .name                   = "ixp4xx_eth",
-+                .id                     = IXP4XX_ETH_NPEC,
-+                .dev.platform_data      = fsg_plat_eth + 1,
-+        }
++	{
++		.name			= "ixp4xx_eth",
++		.id			= IXP4XX_ETH_NPEB,
++		.dev.platform_data	= fsg_plat_eth,
++	}, {
++		.name			= "ixp4xx_eth",
++		.id			= IXP4XX_ETH_NPEC,
++		.dev.platform_data	= fsg_plat_eth + 1,
++	}
 +};
 +
 +static struct platform_device *fsg_devices[] __initdata = {
@@ -217,28 +269,49 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-setup.c
 +
 +static void fsg_power_off(void)
 +{
-+	printk("Restarting system.\n");
++	printk(KERN_INFO "Restarting system.\n");
 +	machine_restart(NULL);
++}
++
++static irqreturn_t fsg_power_handler(int irq, void *dev_id)
++{
++	/* Signal init to do the ctrlaltdel action, this will bypass init if
++	 * it hasn't started and do a kernel_restart.
++	 */
++	ctrl_alt_del();
++
++	return IRQ_HANDLED;
++}
++
++static irqreturn_t fsg_reset_handler(int irq, void *dev_id)
++{
++	/* This is the paper-clip reset, it shuts the machine down directly.
++	 */
++	machine_power_off();
++
++	return IRQ_HANDLED;
 +}
 +
 +static void __init fsg_init(void)
 +{
++	DECLARE_MAC_BUF(mac_buf);
 +	uint8_t __iomem *f;
 +	int i;
 +
 +	ixp4xx_sys_init();
 +
-+	pm_power_off = fsg_power_off;
-+
 +	fsg_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
 +	fsg_flash_resource.end =
 +		IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size - 1;
 +
-+        *IXP4XX_EXP_CS0 |= IXP4XX_FLASH_WRITABLE;
-+        *IXP4XX_EXP_CS1 = *IXP4XX_EXP_CS0;
++	*IXP4XX_EXP_CS0 |= IXP4XX_FLASH_WRITABLE;
++	*IXP4XX_EXP_CS1 = *IXP4XX_EXP_CS0;
 +
 +	/* Configure CS2 for operation, 8bit and writable */
 +	*IXP4XX_EXP_CS2 = 0xbfff0002;
++
++	i2c_register_board_info(0, fsg_i2c_board_info,
++				ARRAY_SIZE(fsg_i2c_board_info));
 +
 +	/* This is only useful on a modified machine, but it is valuable
 +	 * to have it first in order to see debug messages, and so that
@@ -248,43 +321,64 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-setup.c
 +
 +	platform_add_devices(fsg_devices, ARRAY_SIZE(fsg_devices));
 +
++	pm_power_off = fsg_power_off;
++
++	set_irq_type(gpio_to_irq(FSG_RB_GPIO), IRQT_LOW);
++	if (request_irq(gpio_to_irq(FSG_RB_GPIO), &fsg_reset_handler,
++		IRQF_DISABLED, "FSG reset button", NULL) < 0) {
++
++		printk(KERN_DEBUG "Reset Button IRQ %d not available\n",
++			gpio_to_irq(FSG_RB_GPIO));
++	}
++
++	set_irq_type(gpio_to_irq(FSG_SB_GPIO), IRQT_LOW);
++	if (request_irq(gpio_to_irq(FSG_SB_GPIO), &fsg_power_handler,
++		IRQF_DISABLED, "FSG power button", NULL) < 0) {
++
++		printk(KERN_DEBUG "Power Button IRQ %d not available\n",
++			gpio_to_irq(FSG_SB_GPIO));
++	}
 +
 +	/*
 +	 * Map in a portion of the flash and read the MAC addresses.
 +	 * Since it is stored in BE in the flash itself, we need to
 +	 * byteswap it if we're in LE mode.
 +	 */
-+	if ((f = ioremap(IXP4XX_EXP_BUS_BASE(0), 0x400000))) {
++	f = ioremap(IXP4XX_EXP_BUS_BASE(0), 0x400000);
++	if (f) {
 +#ifdef __ARMEB__
 +		for (i = 0; i < 6; i++) {
 +			fsg_plat_eth[0].hwaddr[i] = readb(f + 0x3C0422 + i);
 +			fsg_plat_eth[1].hwaddr[i] = readb(f + 0x3C043B + i);
 +		}
 +#else
-+		fsg_plat_eth[0].hwaddr[0] = readb(f + 0x3C0422 + 3);
-+		fsg_plat_eth[0].hwaddr[1] = readb(f + 0x3C0422 + 2);
-+		fsg_plat_eth[0].hwaddr[2] = readb(f + 0x3C0422 + 1);
-+		fsg_plat_eth[0].hwaddr[3] = readb(f + 0x3C0422 + 0);
-+		fsg_plat_eth[0].hwaddr[4] = readb(f + 0x3C0422 + 7);
-+		fsg_plat_eth[0].hwaddr[5] = readb(f + 0x3C0422 + 6);
 +
-+		fsg_plat_eth[1].hwaddr[0] = readb(f + 0x3C0422 + 3);
-+		fsg_plat_eth[1].hwaddr[1] = readb(f + 0x3C0422 + 2);
-+		fsg_plat_eth[1].hwaddr[2] = readb(f + 0x3C0422 + 1);
-+		fsg_plat_eth[1].hwaddr[3] = readb(f + 0x3C0422 + 0);
-+		fsg_plat_eth[1].hwaddr[4] = readb(f + 0x3C0422 + 7);
-+		fsg_plat_eth[1].hwaddr[5] = readb(f + 0x3C0422 + 6);
++		/*
++		  Endian-swapped reads from unaligned addresses are
++		  required to extract the two MACs from the big-endian
++		  Redboot config area in flash.
++		*/
++
++		fsg_plat_eth[0].hwaddr[0] = readb(f + 0x3C0421);
++		fsg_plat_eth[0].hwaddr[1] = readb(f + 0x3C0420);
++		fsg_plat_eth[0].hwaddr[2] = readb(f + 0x3C0427);
++		fsg_plat_eth[0].hwaddr[3] = readb(f + 0x3C0426);
++		fsg_plat_eth[0].hwaddr[4] = readb(f + 0x3C0425);
++		fsg_plat_eth[0].hwaddr[5] = readb(f + 0x3C0424);
++
++		fsg_plat_eth[1].hwaddr[0] = readb(f + 0x3C0439);
++		fsg_plat_eth[1].hwaddr[1] = readb(f + 0x3C043F);
++		fsg_plat_eth[1].hwaddr[2] = readb(f + 0x3C043E);
++		fsg_plat_eth[1].hwaddr[3] = readb(f + 0x3C043D);
++		fsg_plat_eth[1].hwaddr[4] = readb(f + 0x3C043C);
++		fsg_plat_eth[1].hwaddr[5] = readb(f + 0x3C0443);
 +#endif
 +		iounmap(f);
 +	}
-+	printk(KERN_INFO "FSG: Using MAC address %.2x:%.2x:%.2x:%.2x:%.2x:%.2x for port 0\n",
-+	       fsg_plat_eth[0].hwaddr[0], fsg_plat_eth[0].hwaddr[1],
-+	       fsg_plat_eth[0].hwaddr[2], fsg_plat_eth[0].hwaddr[3],
-+	       fsg_plat_eth[0].hwaddr[4], fsg_plat_eth[0].hwaddr[5]);
-+	printk(KERN_INFO "FSG: Using MAC address %.2x:%.2x:%.2x:%.2x:%.2x:%.2x for port 1\n",
-+	       fsg_plat_eth[1].hwaddr[0], fsg_plat_eth[1].hwaddr[1],
-+	       fsg_plat_eth[1].hwaddr[2], fsg_plat_eth[1].hwaddr[3],
-+	       fsg_plat_eth[1].hwaddr[4], fsg_plat_eth[1].hwaddr[5]);
++	printk(KERN_INFO "FSG: Using MAC address %s for port 0\n",
++	       print_mac(mac_buf, fsg_plat_eth[0].hwaddr));
++	printk(KERN_INFO "FSG: Using MAC address %s for port 1\n",
++	       print_mac(mac_buf, fsg_plat_eth[1].hwaddr));
 +
 +}
 +
@@ -299,50 +393,10 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-setup.c
 +	.init_machine	= fsg_init,
 +MACHINE_END
 +
-Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/Kconfig
-===================================================================
---- linux-2.6.23.12-armeb.orig/arch/arm/mach-ixp4xx/Kconfig	2008-01-11 17:05:08.000000000 +1030
-+++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/Kconfig	2008-01-11 17:06:33.000000000 +1030
-@@ -125,6 +125,15 @@
- 	depends on ARCH_IXDP425 || MACH_IXDP465 || MACH_KIXRP435
- 	default y
- 
-+config MACH_FSG
-+	bool
-+	prompt "Freecom FSG-3"
-+	select PCI
-+	help
-+	  Say 'Y' here if you want your kernel to support Freecom's
-+	  FSG-3 device. For more information on this platform,
-+	  see http://www.nslu2-linux.org/wiki/FSG3/HomePage
-+
- #
- # Certain registers and IRQs are only enabled if supporting IXP465 CPUs
- #
-Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/Makefile
-===================================================================
---- linux-2.6.23.12-armeb.orig/arch/arm/mach-ixp4xx/Makefile	2008-01-11 17:05:08.000000000 +1030
-+++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/Makefile	2008-01-11 17:06:33.000000000 +1030
-@@ -15,6 +15,7 @@
- obj-pci-$(CONFIG_MACH_DSMG600)		+= dsmg600-pci.o
- obj-pci-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-pci.o
- obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
-+obj-pci-$(CONFIG_MACH_FSG)		+= fsg-pci.o
- 
- obj-y	+= common.o
- 
-@@ -28,6 +29,7 @@
- obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o dsmg600-power.o
- obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
- obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
-+obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o fsg-power.o
- 
- obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
- obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
-Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/fsg.h
+Index: linux-2.6.24/include/asm-arm/arch-ixp4xx/fsg.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/fsg.h	2008-01-11 17:06:33.000000000 +1030
++++ linux-2.6.24/include/asm-arm/arch-ixp4xx/fsg.h	2008-03-20 21:09:12.000000000 +1030
 @@ -0,0 +1,50 @@
 +/*
 + * include/asm-arm/arch-ixp4xx/fsg.h
@@ -394,10 +448,10 @@ Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/fsg.h
 +#define FSG_LED_USB_BIT		4
 +#define FSG_LED_RING_BIT	5
 +#define FSG_LED_SYNC_BIT	7
-Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/hardware.h
+Index: linux-2.6.24/include/asm-arm/arch-ixp4xx/hardware.h
 ===================================================================
---- linux-2.6.23.12-armeb.orig/include/asm-arm/arch-ixp4xx/hardware.h	2008-01-11 17:05:08.000000000 +1030
-+++ linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/hardware.h	2008-01-11 17:06:33.000000000 +1030
+--- linux-2.6.24.orig/include/asm-arm/arch-ixp4xx/hardware.h	2008-03-20 21:07:50.000000000 +1030
++++ linux-2.6.24/include/asm-arm/arch-ixp4xx/hardware.h	2008-03-20 21:09:12.000000000 +1030
 @@ -45,5 +45,6 @@
  #include "nslu2.h"
  #include "nas100d.h"
@@ -405,10 +459,10 @@ Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/hardware.h
 +#include "fsg.h"
  
  #endif  /* _ASM_ARCH_HARDWARE_H */
-Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/irqs.h
+Index: linux-2.6.24/include/asm-arm/arch-ixp4xx/irqs.h
 ===================================================================
---- linux-2.6.23.12-armeb.orig/include/asm-arm/arch-ixp4xx/irqs.h	2008-01-11 17:05:08.000000000 +1030
-+++ linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/irqs.h	2008-01-11 17:06:33.000000000 +1030
+--- linux-2.6.24.orig/include/asm-arm/arch-ixp4xx/irqs.h	2008-03-20 21:07:50.000000000 +1030
++++ linux-2.6.24/include/asm-arm/arch-ixp4xx/irqs.h	2008-03-20 21:09:12.000000000 +1030
 @@ -128,4 +128,11 @@
  #define        IRQ_DSMG600_PCI_INTE    IRQ_IXP4XX_GPIO7
  #define        IRQ_DSMG600_PCI_INTF    IRQ_IXP4XX_GPIO6
@@ -421,104 +475,10 @@ Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/irqs.h
 +#define        IRQ_FSG_PCI_INTC        IRQ_IXP4XX_GPIO5
 +
  #endif
-Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-power.c
+Index: linux-2.6.24/drivers/leds/Kconfig
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/fsg-power.c	2008-01-11 17:06:33.000000000 +1030
-@@ -0,0 +1,89 @@
-+/*
-+ * arch/arm/mach-ixp4xx/fsg-power.c
-+ *
-+ * FSG Power/Reset driver
-+ *
-+ * Copyright (C) 2008 Rod Whitby <rod@whitby.id.au>
-+ *
-+ * based on nslu2-power.c
-+ *  Copyright (C) 2005 Tower Technologies
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ *
-+ */
-+
-+#include <linux/module.h>
-+#include <linux/reboot.h>
-+#include <linux/interrupt.h>
-+#include <linux/irq.h>
-+#include <linux/jiffies.h>
-+#include <linux/timer.h>
-+
-+#include <asm/gpio.h>
-+#include <asm/mach-types.h>
-+
-+static irqreturn_t fsg_power_handler(int irq, void *dev_id)
-+{
-+	/* Signal init to do the ctrlaltdel action, this will bypass init if
-+	 * it hasn't started and do a kernel_restart.
-+	 */
-+	ctrl_alt_del();
-+
-+	return IRQ_HANDLED;
-+}
-+
-+static irqreturn_t fsg_reset_handler(int irq, void *dev_id)
-+{
-+	/* This is the paper-clip reset, it shuts the machine down directly.
-+	 */
-+	machine_power_off();
-+
-+	return IRQ_HANDLED;
-+}
-+
-+static int __init fsg_power_init(void)
-+{
-+	if (!(machine_is_fsg()))
-+		return 0;
-+
-+	set_irq_type(gpio_to_irq(FSG_RB_GPIO), IRQT_LOW);
-+	set_irq_type(gpio_to_irq(FSG_SB_GPIO), IRQT_LOW);
-+
-+	if (request_irq(gpio_to_irq(FSG_RB_GPIO), &fsg_reset_handler,
-+		IRQF_DISABLED, "FSG reset button", NULL) < 0) {
-+
-+		printk(KERN_DEBUG "Reset Button IRQ %d not available\n",
-+			gpio_to_irq(FSG_RB_GPIO));
-+
-+		return -EIO;
-+	}
-+
-+	if (request_irq(gpio_to_irq(FSG_SB_GPIO), &fsg_power_handler,
-+		IRQF_DISABLED, "FSG power button", NULL) < 0) {
-+
-+		printk(KERN_DEBUG "Power Button IRQ %d not available\n",
-+			gpio_to_irq(FSG_SB_GPIO));
-+
-+		return -EIO;
-+	}
-+
-+	return 0;
-+}
-+
-+static void __exit fsg_power_exit(void)
-+{
-+	if (!(machine_is_fsg()))
-+		return;
-+
-+	free_irq(gpio_to_irq(FSG_SB_GPIO), NULL);
-+	free_irq(gpio_to_irq(FSG_RB_GPIO), NULL);
-+}
-+
-+module_init(fsg_power_init);
-+module_exit(fsg_power_exit);
-+
-+MODULE_AUTHOR("Rod Whitby <rod@whitby.id.au>");
-+MODULE_DESCRIPTION("FSG Power/Reset driver");
-+MODULE_LICENSE("GPL");
-Index: linux-2.6.23.12-armeb/drivers/leds/Kconfig
-===================================================================
---- linux-2.6.23.12-armeb.orig/drivers/leds/Kconfig	2008-01-11 17:05:08.000000000 +1030
-+++ linux-2.6.23.12-armeb/drivers/leds/Kconfig	2008-01-11 17:06:33.000000000 +1030
+--- linux-2.6.24.orig/drivers/leds/Kconfig	2008-03-20 21:07:50.000000000 +1030
++++ linux-2.6.24/drivers/leds/Kconfig	2008-03-20 21:09:12.000000000 +1030
 @@ -48,6 +48,12 @@
  	  particular board must have LEDs and they must be connected
  	  to the GPIO lines.  If unsure, say Y.
@@ -532,23 +492,23 @@ Index: linux-2.6.23.12-armeb/drivers/leds/Kconfig
  config LEDS_TOSA
  	tristate "LED Support for the Sharp SL-6000 series"
  	depends on LEDS_CLASS && PXA_SHARPSL
-Index: linux-2.6.23.12-armeb/drivers/leds/Makefile
+Index: linux-2.6.24/drivers/leds/Makefile
 ===================================================================
---- linux-2.6.23.12-armeb.orig/drivers/leds/Makefile	2008-01-11 17:05:08.000000000 +1030
-+++ linux-2.6.23.12-armeb/drivers/leds/Makefile	2008-01-11 17:06:33.000000000 +1030
-@@ -9,6 +9,7 @@
- obj-$(CONFIG_LEDS_LOCOMO)		+= leds-locomo.o
- obj-$(CONFIG_LEDS_SPITZ)		+= leds-spitz.o
- obj-$(CONFIG_LEDS_IXP4XX)		+= leds-ixp4xx-gpio.o
+--- linux-2.6.24.orig/drivers/leds/Makefile	2008-03-20 21:07:50.000000000 +1030
++++ linux-2.6.24/drivers/leds/Makefile	2008-03-20 21:09:56.000000000 +1030
+@@ -20,6 +20,7 @@
+ obj-$(CONFIG_LEDS_COBALT_RAQ)		+= leds-cobalt-raq.o
+ obj-$(CONFIG_LEDS_GPIO)			+= leds-gpio.o
+ obj-$(CONFIG_LEDS_CM_X270)              += leds-cm-x270.o
 +obj-$(CONFIG_LEDS_FSG)			+= leds-fsg.o
- obj-$(CONFIG_LEDS_TOSA)			+= leds-tosa.o
- obj-$(CONFIG_LEDS_S3C24XX)		+= leds-s3c24xx.o
- obj-$(CONFIG_LEDS_AMS_DELTA)		+= leds-ams-delta.o
-Index: linux-2.6.23.12-armeb/drivers/leds/leds-fsg.c
+ 
+ # LED Triggers
+ obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledtrig-timer.o
+Index: linux-2.6.24/drivers/leds/leds-fsg.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.12-armeb/drivers/leds/leds-fsg.c	2008-01-11 17:06:33.000000000 +1030
-@@ -0,0 +1,243 @@
++++ linux-2.6.24/drivers/leds/leds-fsg.c	2008-03-20 21:09:12.000000000 +1030
+@@ -0,0 +1,261 @@
 +/*
 + * LED Driver for the Freecom FSG-3
 + *
@@ -577,73 +537,73 @@ Index: linux-2.6.23.12-armeb/drivers/leds/leds-fsg.c
 +static unsigned short latch_value;
 +
 +
-+static void fsg_led_wlan_set(struct led_classdev *led_cdev, enum led_brightness value)
++static void fsg_led_wlan_set(struct led_classdev *led_cdev,
++			     enum led_brightness value)
 +{
 +	if (value) {
 +		latch_value &= ~(1 << FSG_LED_WLAN_BIT);
 +		*latch_address = latch_value;
-+	}
-+	else {
++	} else {
 +		latch_value |=  (1 << FSG_LED_WLAN_BIT);
 +		*latch_address = latch_value;
 +	}
 +}
 +
-+static void fsg_led_wan_set(struct led_classdev *led_cdev, enum led_brightness value)
++static void fsg_led_wan_set(struct led_classdev *led_cdev,
++			    enum led_brightness value)
 +{
 +	if (value) {
 +		latch_value &= ~(1 << FSG_LED_WAN_BIT);
 +		*latch_address = latch_value;
-+	}
-+	else {
++	} else {
 +		latch_value |=  (1 << FSG_LED_WAN_BIT);
 +		*latch_address = latch_value;
 +	}
 +}
 +
-+static void fsg_led_sata_set(struct led_classdev *led_cdev, enum led_brightness value)
++static void fsg_led_sata_set(struct led_classdev *led_cdev,
++			     enum led_brightness value)
 +{
 +	if (value) {
 +		latch_value &= ~(1 << FSG_LED_SATA_BIT);
 +		*latch_address = latch_value;
-+	}
-+	else {
++	} else {
 +		latch_value |=  (1 << FSG_LED_SATA_BIT);
 +		*latch_address = latch_value;
 +	}
 +}
 +
-+static void fsg_led_usb_set(struct led_classdev *led_cdev, enum led_brightness value)
++static void fsg_led_usb_set(struct led_classdev *led_cdev,
++			    enum led_brightness value)
 +{
 +	if (value) {
 +		latch_value &= ~(1 << FSG_LED_USB_BIT);
 +		*latch_address = latch_value;
-+	}
-+	else {
++	} else {
 +		latch_value |=  (1 << FSG_LED_USB_BIT);
 +		*latch_address = latch_value;
 +	}
 +}
 +
-+static void fsg_led_sync_set(struct led_classdev *led_cdev, enum led_brightness value)
++static void fsg_led_sync_set(struct led_classdev *led_cdev,
++			     enum led_brightness value)
 +{
 +	if (value) {
 +		latch_value &= ~(1 << FSG_LED_SYNC_BIT);
 +		*latch_address = latch_value;
-+	}
-+	else {
++	} else {
 +		latch_value |=  (1 << FSG_LED_SYNC_BIT);
 +		*latch_address = latch_value;
 +	}
 +}
 +
-+static void fsg_led_ring_set(struct led_classdev *led_cdev, enum led_brightness value)
++static void fsg_led_ring_set(struct led_classdev *led_cdev,
++			     enum led_brightness value)
 +{
 +	if (value) {
 +		latch_value &= ~(1 << FSG_LED_RING_BIT);
 +		*latch_address = latch_value;
-+	}
-+	else {
++	} else {
 +		latch_value |=  (1 << FSG_LED_RING_BIT);
 +		*latch_address = latch_value;
 +	}
@@ -652,32 +612,32 @@ Index: linux-2.6.23.12-armeb/drivers/leds/leds-fsg.c
 +
 +
 +static struct led_classdev fsg_wlan_led = {
-+	.name			= "fsg:wlan",
++	.name			= "fsg:blue:wlan",
 +	.brightness_set		= fsg_led_wlan_set,
 +};
 +
 +static struct led_classdev fsg_wan_led = {
-+	.name			= "fsg:wan",
++	.name			= "fsg:blue:wan",
 +	.brightness_set		= fsg_led_wan_set,
 +};
 +
 +static struct led_classdev fsg_sata_led = {
-+	.name			= "fsg:sata",
++	.name			= "fsg:blue:sata",
 +	.brightness_set		= fsg_led_sata_set,
 +};
 +
 +static struct led_classdev fsg_usb_led = {
-+	.name			= "fsg:usb",
++	.name			= "fsg:blue:usb",
 +	.brightness_set		= fsg_led_usb_set,
 +};
 +
 +static struct led_classdev fsg_sync_led = {
-+	.name			= "fsg:sync",
++	.name			= "fsg:blue:sync",
 +	.brightness_set		= fsg_led_sync_set,
 +};
 +
 +static struct led_classdev fsg_ring_led = {
-+	.name			= "fsg:ring",
++	.name			= "fsg:blue:ring",
 +	.brightness_set		= fsg_led_ring_set,
 +};
 +
@@ -712,37 +672,63 @@ Index: linux-2.6.23.12-armeb/drivers/leds/leds-fsg.c
 +{
 +	int ret;
 +
-+	/* FIXME: Need to work out how to handle failure below */
-+
 +	ret = led_classdev_register(&pdev->dev, &fsg_wlan_led);
 +	if (ret < 0)
-+		return ret;
++		goto failwlan;
 +
 +	ret = led_classdev_register(&pdev->dev, &fsg_wan_led);
 +	if (ret < 0)
-+		return ret;
++		goto failwan;
 +
 +	ret = led_classdev_register(&pdev->dev, &fsg_sata_led);
 +	if (ret < 0)
-+		return ret;
++		goto failsata;
 +
 +	ret = led_classdev_register(&pdev->dev, &fsg_usb_led);
 +	if (ret < 0)
-+		return ret;
++		goto failusb;
 +
 +	ret = led_classdev_register(&pdev->dev, &fsg_sync_led);
 +	if (ret < 0)
-+		return ret;
++		goto failsync;
 +
 +	ret = led_classdev_register(&pdev->dev, &fsg_ring_led);
 +	if (ret < 0)
-+		return ret;
++		goto failring;
++
++	/* Map the LED chip select address space */
++	latch_address = (unsigned short *) ioremap(IXP4XX_EXP_BUS_BASE(2), 512);
++	if (!latch_address) {
++		ret = -ENOMEM;
++		goto failremap;
++	}
++
++	latch_value = 0xffff;
++	*latch_address = latch_value;
++
++	return ret;
++
++ failremap:
++	led_classdev_unregister(&fsg_ring_led);
++ failring:
++	led_classdev_unregister(&fsg_sync_led);
++ failsync:
++	led_classdev_unregister(&fsg_usb_led);
++ failusb:
++	led_classdev_unregister(&fsg_sata_led);
++ failsata:
++	led_classdev_unregister(&fsg_wan_led);
++ failwan:
++	led_classdev_unregister(&fsg_wlan_led);
++ failwlan:
 +
 +	return ret;
 +}
 +
 +static int fsg_led_remove(struct platform_device *pdev)
 +{
++	iounmap(latch_address);
++
 +	led_classdev_unregister(&fsg_wlan_led);
 +	led_classdev_unregister(&fsg_wan_led);
 +	led_classdev_unregister(&fsg_sata_led);
@@ -769,20 +755,12 @@ Index: linux-2.6.23.12-armeb/drivers/leds/leds-fsg.c
 +
 +static int __init fsg_led_init(void)
 +{
-+	/* Map the LED chip select address space */
-+	latch_address = (unsigned short *) ioremap(IXP4XX_EXP_BUS_BASE(2), 512);
-+	if (!latch_address)
-+		return -ENOMEM;
-+	latch_value = 0xffff;
-+	*latch_address = latch_value;
-+	/* FIXME: We leak memory if the next line fails */
 +	return platform_driver_register(&fsg_led_driver);
 +}
 +
 +static void __exit fsg_led_exit(void)
 +{
-+ 	platform_driver_unregister(&fsg_led_driver);
-+	iounmap(latch_address);
++	platform_driver_unregister(&fsg_led_driver);
 +}
 +
 +
