@@ -1,0 +1,235 @@
+From af66bd3b3324d51f0c43b7672b7a0563db425377 Mon Sep 17 00:00:00 2001
+From: Rod Whitby <rod@whitby.id.au>
+Date: Tue, 29 Jan 2008 10:03:19 +1030
+Subject: ixp4xx: Ethernet support for the nslu2 and nas100d boards
+
+Enables the new ixp4xx qmgr and npe drivers in ixp4xx_defconfig.
+
+Sets up the corresponding platform data for the nslu2 and nas100d
+boards, and reads the ethernet MAC address from the internal flash.
+
+Tested on both little-endian and big-endian kernels.
+
+Signed-off-by: Rod Whitby <rod@whitby.id.au>
+Signed-off-by: Michael Westerhof <mwester@dls.net>
+Tested-by: Tom King <tom@websb.net>
+
+PATCH FOLLOWS
+KernelVersion: v2.6.24-1916-g3832564
+
+diff --git a/arch/arm/configs/ixp4xx_defconfig b/arch/arm/configs/ixp4xx_defconfig
+index 77fe3b0..efa0485 100644
+--- a/arch/arm/configs/ixp4xx_defconfig
++++ b/arch/arm/configs/ixp4xx_defconfig
+@@ -1,7 +1,7 @@
+ #
+ # Automatically generated make config: don't edit
+-# Linux kernel version: 2.6.24-rc8
+-# Wed Jan 23 17:26:16 2008
++# Linux kernel version: 2.6.24
++# Sun Jan 27 07:33:38 2008
+ #
+ CONFIG_ARM=y
+ CONFIG_SYS_SUPPORTS_APM_EMULATION=y
+@@ -174,6 +174,8 @@ CONFIG_MACH_GTWX5715=y
+ #
+ CONFIG_DMABOUNCE=y
+ # CONFIG_IXP4XX_INDIRECT_PCI is not set
++CONFIG_IXP4XX_QMGR=y
++CONFIG_IXP4XX_NPE=y
+ 
+ #
+ # Boot options
+@@ -832,6 +834,7 @@ CONFIG_DUMMY=y
+ # CONFIG_PHYLIB is not set
+ CONFIG_NET_ETHERNET=y
+ CONFIG_MII=y
++CONFIG_IXP4XX_ETH=y
+ # CONFIG_AX88796 is not set
+ # CONFIG_HAPPYMEAL is not set
+ # CONFIG_SUNGEM is not set
+@@ -925,6 +928,7 @@ CONFIG_HDLC_X25=m
+ # CONFIG_PC300TOO is not set
+ # CONFIG_FARSYNC is not set
+ # CONFIG_DSCC4 is not set
++# CONFIG_IXP4XX_HSS is not set
+ CONFIG_DLCI=m
+ CONFIG_DLCI_MAX=8
+ CONFIG_WAN_ROUTER_DRIVERS=m
+diff --git a/arch/arm/mach-ixp4xx/nas100d-setup.c b/arch/arm/mach-ixp4xx/nas100d-setup.c
+index 5801579..a432226 100644
+--- a/arch/arm/mach-ixp4xx/nas100d-setup.c
++++ b/arch/arm/mach-ixp4xx/nas100d-setup.c
+@@ -12,6 +12,7 @@
+  *
+  */
+ 
++#include <linux/if_ether.h>
+ #include <linux/kernel.h>
+ #include <linux/serial.h>
+ #include <linux/serial_8250.h>
+@@ -22,6 +23,7 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/flash.h>
++#include <asm/io.h>
+ 
+ static struct flash_platform_data nas100d_flash_data = {
+ 	.map_name		= "cfi_probe",
+@@ -131,10 +133,28 @@ static struct platform_device nas100d_uart = {
+ 	.resource		= nas100d_uart_resources,
+ };
+ 
++/* Built-in 10/100 Ethernet MAC interfaces */
++static struct eth_plat_info nas100d_plat_eth[] = {
++	{
++		.phy		= 0,
++		.rxq		= 3,
++		.txreadyq	= 20,
++	}
++};
++
++static struct platform_device nas100d_eth[] = {
++	{
++		.name			= "ixp4xx_eth",
++		.id			= IXP4XX_ETH_NPEB,
++		.dev.platform_data	= nas100d_plat_eth,
++	}
++};
++
+ static struct platform_device *nas100d_devices[] __initdata = {
+ 	&nas100d_i2c_gpio,
+ 	&nas100d_flash,
+ 	&nas100d_leds,
++	&nas100d_eth[0],
+ };
+ 
+ static void nas100d_power_off(void)
+@@ -150,6 +170,10 @@ static void nas100d_power_off(void)
+ 
+ static void __init nas100d_init(void)
+ {
++	DECLARE_MAC_BUF(mac_buf);
++	uint8_t __iomem *f;
++	int i;
++
+ 	ixp4xx_sys_init();
+ 
+ 	/* gpio 14 and 15 are _not_ clocks */
+@@ -172,6 +196,25 @@ static void __init nas100d_init(void)
+ 	(void)platform_device_register(&nas100d_uart);
+ 
+ 	platform_add_devices(nas100d_devices, ARRAY_SIZE(nas100d_devices));
++
++	/*
++	 * Map in a portion of the flash and read the MAC address.
++	 * Since it is stored in BE in the flash itself, we need to
++	 * byteswap it if we're in LE mode.
++	 */
++	f = ioremap(IXP4XX_EXP_BUS_BASE(0), 0x1000000);
++	if (f) {
++		for (i = 0; i < 6; i++)
++#ifdef __ARMEB__
++			nas100d_plat_eth[0].hwaddr[i] = readb(f + 0xFC0FD8 + i);
++#else
++			nas100d_plat_eth[0].hwaddr[i] = readb(f + 0xFC0FD8 + (i^3));
++#endif
++		iounmap(f);
++	}
++	printk(KERN_INFO "NAS100D: Using MAC address %s for port 0\n",
++	       print_mac(mac_buf, nas100d_plat_eth[0].hwaddr));
++
+ }
+ 
+ MACHINE_START(NAS100D, "Iomega NAS 100d")
+diff --git a/arch/arm/mach-ixp4xx/nslu2-setup.c b/arch/arm/mach-ixp4xx/nslu2-setup.c
+index 41d55c8..fd9ec17 100644
+--- a/arch/arm/mach-ixp4xx/nslu2-setup.c
++++ b/arch/arm/mach-ixp4xx/nslu2-setup.c
+@@ -14,6 +14,7 @@
+  * Changed to conform to new style __init ixdp425 kas11 10/22/04
+  */
+ 
++#include <linux/if_ether.h>
+ #include <linux/kernel.h>
+ #include <linux/serial.h>
+ #include <linux/serial_8250.h>
+@@ -25,6 +26,7 @@
+ #include <asm/mach/arch.h>
+ #include <asm/mach/flash.h>
+ #include <asm/mach/time.h>
++#include <asm/io.h>
+ 
+ static struct flash_platform_data nslu2_flash_data = {
+ 	.map_name		= "cfi_probe",
+@@ -143,11 +145,29 @@ static struct platform_device nslu2_uart = {
+ 	.resource		= nslu2_uart_resources,
+ };
+ 
++/* Built-in 10/100 Ethernet MAC interfaces */
++static struct eth_plat_info nslu2_plat_eth[] = {
++	{
++		.phy		= 1,
++		.rxq		= 3,
++		.txreadyq	= 20,
++	}
++};
++
++static struct platform_device nslu2_eth[] = {
++	{
++		.name			= "ixp4xx_eth",
++		.id			= IXP4XX_ETH_NPEB,
++		.dev.platform_data	= nslu2_plat_eth,
++	}
++};
++
+ static struct platform_device *nslu2_devices[] __initdata = {
+ 	&nslu2_i2c_gpio,
+ 	&nslu2_flash,
+ 	&nslu2_beeper,
+ 	&nslu2_leds,
++	&nslu2_eth[0],
+ };
+ 
+ static void nslu2_power_off(void)
+@@ -176,6 +196,10 @@ static struct sys_timer nslu2_timer = {
+ 
+ static void __init nslu2_init(void)
+ {
++	DECLARE_MAC_BUF(mac_buf);
++	uint8_t __iomem *f;
++	int i;
++
+ 	ixp4xx_sys_init();
+ 
+ 	nslu2_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
+@@ -195,6 +219,26 @@ static void __init nslu2_init(void)
+ 	(void)platform_device_register(&nslu2_uart);
+ 
+ 	platform_add_devices(nslu2_devices, ARRAY_SIZE(nslu2_devices));
++
++
++	/*
++	 * Map in a portion of the flash and read the MAC address.
++	 * Since it is stored in BE in the flash itself, we need to
++	 * byteswap it if we're in LE mode.
++	 */
++	f = ioremap(IXP4XX_EXP_BUS_BASE(0), 0x40000);
++	if (f) {
++		for (i = 0; i < 6; i++)
++#ifdef __ARMEB__
++			nslu2_plat_eth[0].hwaddr[i] = readb(f + 0x3FFB0 + i);
++#else
++			nslu2_plat_eth[0].hwaddr[i] = readb(f + 0x3FFB0 + (i^3));
++#endif
++		iounmap(f);
++	}
++	printk(KERN_INFO "NSLU2: Using MAC address %s for port 0\n",
++	       print_mac(mac_buf, nslu2_plat_eth[0].hwaddr));
++
+ }
+ 
+ MACHINE_START(NSLU2, "Linksys NSLU2")
+-- 
+1.5.2.5
+

@@ -1,23 +1,26 @@
-Upgrade the power and reset button handling for the DSMG600:
+From 67e494e3e03ef807255f084800d8658b89ff5fec Mon Sep 17 00:00:00 2001
+From: Rod Whitby <rod@whitby.id.au>
+Date: Tue, 29 Jan 2008 10:00:25 +1030
+Subject: ixp4xx: Button updates for the dsmg600 board (Patch #4769)
+
  * Remove the superfluous declaration of ctrl_alt_del().
  * Convert GPIO and IRQ handling to use the <asm/gpio.h> api.
  * Perform the reset on the release of the power button, so that
-   NAS devices which have been set to auto-power-on (by bridging
-   the power button) do not continuously power cycle.
+   NAS devices which have been set to auto-power-on (by solder
+   bridging the power button) do not continuously power cycle.
  * Remove all superflous constants from dsmg600.h
 
 Signed-off-by: Rod Whitby <rod@whitby.id.au>
+Acked-by: Lennert Buytenhek <buytenh@wantstofly.org>
 
----
- arch/arm/mach-ixp4xx/dsmg600-power.c  |   24 ++++++++++++++----------
- include/asm-arm/arch-ixp4xx/dsmg600.h |    7 +------
- 2 files changed, 15 insertions(+), 16 deletions(-)
+PATCH FOLLOWS
+KernelVersion: 2.6.24-git5
 
-Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/dsmg600-power.c
-===================================================================
---- linux-2.6.23.12-armeb.orig/arch/arm/mach-ixp4xx/dsmg600-power.c	2008-01-11 16:20:26.000000000 +1030
-+++ linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/dsmg600-power.c	2008-01-11 16:20:30.000000000 +1030
-@@ -26,10 +26,9 @@
+diff --git a/arch/arm/mach-ixp4xx/dsmg600-power.c b/arch/arm/mach-ixp4xx/dsmg600-power.c
+index 3471787..db63987 100644
+--- a/arch/arm/mach-ixp4xx/dsmg600-power.c
++++ b/arch/arm/mach-ixp4xx/dsmg600-power.c
+@@ -26,14 +26,13 @@
  #include <linux/jiffies.h>
  #include <linux/timer.h>
  
@@ -29,7 +32,12 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/dsmg600-power.c
  /* This is used to make sure the power-button pusher is serious.  The button
   * must be held until the value of this counter reaches zero.
   */
-@@ -47,9 +46,16 @@
+-static volatile int power_button_countdown;
++static int power_button_countdown;
+ 
+ /* Must hold the button down for at least this many counts to be processed */
+ #define PBUTTON_HOLDDOWN_COUNT 4 /* 2 secs */
+@@ -47,22 +46,27 @@ static void dsmg600_power_handler(unsigned long data)
  	 * state of the power button.
  	 */
  
@@ -37,17 +45,20 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/dsmg600-power.c
 +	if (gpio_get_value(DSMG600_PB_GPIO)) {
  
  		/* IO Pin is 1 (button pushed) */
-+		if (power_button_countdown > 0) {
++		if (power_button_countdown > 0)
 +			power_button_countdown--;
-+		}
 +
 +	} else {
 +
 +		/* Done on button release, to allow for auto-power-on mods. */
  		if (power_button_countdown == 0) {
- 			/* Signal init to do the ctrlaltdel action, this will bypass
- 			 * init if it hasn't started and do a kernel_restart.
-@@ -58,11 +64,9 @@
+-			/* Signal init to do the ctrlaltdel action, this will bypass
+-			 * init if it hasn't started and do a kernel_restart.
++			/* Signal init to do the ctrlaltdel action,
++			 * this will bypass init if it hasn't started
++			 * and do a kernel_restart.
+ 			 */
+ 			ctrl_alt_del();
  
  			/* Change the state of the power LED to "blink" */
  			gpio_line_set(DSMG600_LED_PWR_GPIO, IXP4XX_GPIO_LOW);
@@ -61,7 +72,7 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/dsmg600-power.c
  	}
  
  	mod_timer(&dsmg600_power_timer, jiffies + msecs_to_jiffies(500));
-@@ -81,12 +85,12 @@
+@@ -81,12 +85,12 @@ static int __init dsmg600_power_init(void)
  	if (!(machine_is_dsmg600()))
  		return 0;
  
@@ -76,7 +87,7 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/dsmg600-power.c
  
  		return -EIO;
  	}
-@@ -114,7 +118,7 @@
+@@ -114,7 +118,7 @@ static void __exit dsmg600_power_exit(void)
  
  	del_timer_sync(&dsmg600_power_timer);
  
@@ -85,10 +96,10 @@ Index: linux-2.6.23.12-armeb/arch/arm/mach-ixp4xx/dsmg600-power.c
  }
  
  module_init(dsmg600_power_init);
-Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/dsmg600.h
-===================================================================
---- linux-2.6.23.12-armeb.orig/include/asm-arm/arch-ixp4xx/dsmg600.h	2008-01-11 16:20:26.000000000 +1030
-+++ linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/dsmg600.h	2008-01-11 16:20:30.000000000 +1030
+diff --git a/include/asm-arm/arch-ixp4xx/dsmg600.h b/include/asm-arm/arch-ixp4xx/dsmg600.h
+index a19605a..b7673e1 100644
+--- a/include/asm-arm/arch-ixp4xx/dsmg600.h
++++ b/include/asm-arm/arch-ixp4xx/dsmg600.h
 @@ -40,18 +40,13 @@
  /* Buttons */
  
@@ -109,3 +120,6 @@ Index: linux-2.6.23.12-armeb/include/asm-arm/arch-ixp4xx/dsmg600.h
 -
  #define DSMG600_LED_WLAN_GPIO	14
 -#define DSMG600_LED_WLAN_BM	(1L << DSMG600_LED_WLAN_GPIO)
+-- 
+1.5.2.5
+
