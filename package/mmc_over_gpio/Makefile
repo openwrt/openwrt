@@ -3,8 +3,6 @@
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
-#
-# $Id: Makefile 10138 2008-01-06 19:28:26Z nbd $
 
 #XXX This package will go away once the stuff is merged into the kernel.
 
@@ -42,6 +40,11 @@ define Build/Compile
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		EXTRA_CFLAGS="$(BUILDFLAGS)" \
 		modules
+endef
+
+define KernelPackage/mmc-over-gpio/install
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/mmc_over_gpio.init $(1)/etc/init.d/mmc_over_gpio
 endef
 
 $(eval $(call KernelPackage,mmc-over-gpio))
