@@ -1,0 +1,25 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008 OpenWrt.org
+START=90
+
+SYSFS="/sys"
+SYSFS_DRIVERDIR="$SYSFS/bus/platform/drivers/spi-gpio-mmc"
+
+# add_device(name, DI_pin, DO_pin, CLK_pin, CS_pin, mode)
+add_device() {
+	echo -n "$1" "$2","$3","$4","$5" "$6" > $SYSFS_DRIVERDIR/add
+}
+
+# remove_device(name)
+remove_device() {
+	echo -n "$1" > $SYSFS_DRIVERDIR/remove
+}
+
+start() {
+	#FIXME we should use a config file, but I dunno how that parser works.
+	add_device "default" 5 4 3 7 0
+}
+
+stop() {
+	remove_device "default"
+}
