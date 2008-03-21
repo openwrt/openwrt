@@ -2,8 +2,8 @@ This patch ports ssb to the 2.6.23 kernel.
 
 Index: linux-2.6.23.16/drivers/ssb/driver_mipscore.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/driver_mipscore.c	2008-02-19 13:45:04.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/driver_mipscore.c	2008-02-19 13:45:07.000000000 +0100
+--- linux-2.6.23.16.orig/drivers/ssb/driver_mipscore.c	2008-03-21 17:33:28.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/driver_mipscore.c	2008-03-21 17:33:34.000000000 +0100
 @@ -222,3 +222,5 @@ void ssb_mipscore_init(struct ssb_mipsco
  	ssb_mips_serial_init(mcore);
  	ssb_mips_flash_detect(mcore);
@@ -12,9 +12,9 @@ Index: linux-2.6.23.16/drivers/ssb/driver_mipscore.c
 +EXPORT_SYMBOL(ssb_mips_irq);
 Index: linux-2.6.23.16/include/linux/mod_devicetable.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/mod_devicetable.h	2008-02-19 13:45:04.000000000 +0100
-+++ linux-2.6.23.16/include/linux/mod_devicetable.h	2008-02-19 13:45:07.000000000 +0100
-@@ -340,4 +340,19 @@ struct parisc_device_id {
+--- linux-2.6.23.16.orig/include/linux/mod_devicetable.h	2008-03-21 17:33:28.000000000 +0100
++++ linux-2.6.23.16/include/linux/mod_devicetable.h	2008-03-21 17:33:34.000000000 +0100
+@@ -352,4 +352,19 @@ struct parisc_device_id {
  #define PA_HVERSION_ANY_ID	0xffff
  #define PA_SVERSION_ANY_ID	0xffffffff
  
@@ -36,8 +36,8 @@ Index: linux-2.6.23.16/include/linux/mod_devicetable.h
  #endif /* LINUX_MOD_DEVICETABLE_H */
 Index: linux-2.6.23.16/drivers/ssb/main.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/main.c	2008-02-19 13:45:04.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/main.c	2008-02-19 13:45:07.000000000 +0100
+--- linux-2.6.23.16.orig/drivers/ssb/main.c	2008-03-21 17:33:28.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/main.c	2008-03-21 17:33:34.000000000 +0100
 @@ -321,14 +321,16 @@ static int ssb_bus_match(struct device *
  	return 0;
  }
@@ -59,8 +59,8 @@ Index: linux-2.6.23.16/drivers/ssb/main.c
  			     ssb_dev->id.revision);
 Index: linux-2.6.23.16/drivers/ssb/scan.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/scan.c	2008-02-19 13:45:04.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/scan.c	2008-02-19 13:45:07.000000000 +0100
+--- linux-2.6.23.16.orig/drivers/ssb/scan.c	2008-03-21 17:33:28.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/scan.c	2008-03-21 17:33:34.000000000 +0100
 @@ -391,12 +391,14 @@ int ssb_bus_scan(struct ssb_bus *bus,
  			if (bus->bustype == SSB_BUSTYPE_PCI) {
  				/* Ignore PCI cores on PCI-E cards.
@@ -82,8 +82,8 @@ Index: linux-2.6.23.16/drivers/ssb/scan.c
  			if (bus->pcicore.dev) {
 Index: linux-2.6.23.16/drivers/ssb/driver_pcicore.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/driver_pcicore.c	2008-02-19 13:45:04.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/driver_pcicore.c	2008-02-19 13:45:07.000000000 +0100
+--- linux-2.6.23.16.orig/drivers/ssb/driver_pcicore.c	2008-03-21 17:33:28.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/driver_pcicore.c	2008-03-21 17:33:34.000000000 +0100
 @@ -362,7 +362,7 @@ static int pcicore_is_in_hostmode(struct
  	    chipid_top != 0x5300)
  		return 0;

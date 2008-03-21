@@ -1,0 +1,47 @@
+# 
+# Copyright (C) 2008 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+# $Id: Makefile 10138 2008-01-06 19:28:26Z nbd $
+
+#XXX This package will go away once the stuff is merged into the kernel.
+
+include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
+
+PKG_NAME:=mmc-over-gpio
+PKG_RELEASE:=1
+
+include $(INCLUDE_DIR)/package.mk
+
+
+define KernelPackage/mmc-over-gpio
+  SUBMENU:=Other modules
+  DEPENDS:=@LINUX_2_6 +kmod-spi +kmod-spi-bitbang +kmod-mmc +kmod-mmc-spi
+  TITLE:=MMC/SD card over GPIO support
+  FILES:=$(PKG_BUILD_DIR)/spi_gpio.$(LINUX_KMOD_SUFFIX) \
+         $(PKG_BUILD_DIR)/mmc_over_spigpio.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,90,spi_gpio mmc_over_spigpio)
+endef
+
+define KernelPackage/mmc-over-gpio/description
+ Support for driving an MMC/SD card over GPIO pins via SPI.
+endef
+
+define Build/Prepare
+	mkdir -p $(PKG_BUILD_DIR)
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
+endef
+
+define Build/Compile
+	$(MAKE) -C "$(LINUX_DIR)" \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
+		ARCH="$(LINUX_KARCH)" \
+		SUBDIRS="$(PKG_BUILD_DIR)" \
+		EXTRA_CFLAGS="$(BUILDFLAGS)" \
+		modules
+endef
+
+$(eval $(call KernelPackage,mmc-over-gpio))
