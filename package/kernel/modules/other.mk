@@ -23,6 +23,21 @@ endef
 $(eval $(call KernelPackage,crc-itu-t))
 
 
+define KernelPackage/crc7
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=CRC7 support
+  KCONFIG:=CONFIG_CRC7
+  FILES:=$(LINUX_DIR)/lib/crc7.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,crc7)
+endef
+
+define KernelPackage/crc7/description
+ Kernel module for CRC7 support
+endef
+
+$(eval $(call KernelPackage,crc7))
+
+
 define KernelPackage/eeprom-93cx6
   SUBMENU:=$(OTHER_MENU)
   TITLE:=EEPROM 93CX6 support
@@ -211,16 +226,20 @@ $(eval $(call KernelPackage,bluetooth))
 define KernelPackage/mmc
   SUBMENU:=$(OTHER_MENU)
   TITLE:=MMC/SD Card Support
-  DEPENDS:=@TARGET_at91
+  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
 	CONFIG_MMC \
 	CONFIG_MMC_BLOCK \
-	CONFIG_MMC_AT91
+	CONFIG_MMC_DEBUG=n \
+	CONFIG_MMC_UNSAFE_RESUME=n \
+	CONFIG_MMC_BLOCK_BOUNCE=y \
+	CONFIG_MMC_SDHCI=n \
+	CONFIG_MMC_TIFM_SD=n \
+	CONFIG_SDIO_UART=n
   FILES:= \
-	$(LINUX_DIR)/drivers/mmc/mmc_core.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/mmc/mmc_block.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/mmc/at91_mci.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,mmc_core mmc_block at91_mci)
+	$(LINUX_DIR)/drivers/mmc/core/mmc_core.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/mmc/card/mmc_block.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,90,mmc_core mmc_block)
 endef
 
 define KernelPackage/mmc/description
@@ -228,6 +247,22 @@ define KernelPackage/mmc/description
 endef
 
 $(eval $(call KernelPackage,mmc))
+
+
+define KernelPackage/mmc-at91
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=MMC/SD Card Support on AT91
+  DEPENDS:=@TARGET_at91 +kmod-mmc
+  KCONFIG:=CONFIG_MMC_AT91
+  FILES:=$(LINUX_DIR)/drivers/mmc/at91_mci.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,90,at91_mci)
+endef
+
+define KernelPackage/mmc-at91/description
+ Kernel support for MMC/SD cards on the AT91 target
+endef
+
+$(eval $(call KernelPackage,mmc-at91))
 
 
 # XXX: added a workaround for watchdog path changes
@@ -460,3 +495,50 @@ define KernelPackage/input-evdev/description
 endef
 
 $(eval $(call KernelPackage,input-evdev))
+
+
+define KernelPackage/mmc-spi
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=MMC/SD over SPI Support
+  DEPENDS:=@LINUX_2_6
+  KCONFIG:=CONFIG_MMC_SPI
+  FILES:=$(LINUX_DIR)/drivers/mmc/host/mmc_spi.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,90,mmc_spi)
+endef
+
+define KernelPackage/mmc-spi/description
+ Kernel support for MMC/SD over SPI
+endef
+
+$(eval $(call KernelPackage,mmc-spi))
+
+define KernelPackage/spi
+  SUBMENU:=$(OTHER_MENU)
+  DEPENDS:=@LINUX_2_6 +kmod-crc-itu-t +kmod-crc7
+  TITLE:=Serial Peripheral Interface
+  KCONFIG:=CONFIG_SPI=y \
+  	CONFIG_MTD_DATAFLASH=n \
+	CONFIG_MTD_M25P80=n \
+	CONFIG_SPI_AT25=n \
+	CONFIG_SPI_SPIDEV=n \
+	CONFIG_SPI_TLE62X0=n
+endef
+
+define KernelPackage/spi/description
+ This package contains the Serial Peripheral Interface driver
+endef
+
+$(eval $(call KernelPackage,spi))
+
+define KernelPackage/spi-bitbang
+  SUBMENU:=$(OTHER_MENU)
+  DEPENDS:=@LINUX_2_6
+  TITLE:=Serial Peripheral Interface bitbanging
+  KCONFIG:=CONFIG_SPI_BITBANG=y
+endef
+
+define KernelPackage/spi-bitbang/description
+ This package contains the Serial Peripheral Interface bitbanging library
+endef
+
+$(eval $(call KernelPackage,spi-bitbang))
