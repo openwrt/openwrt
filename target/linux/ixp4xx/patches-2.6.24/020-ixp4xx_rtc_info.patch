@@ -1,0 +1,156 @@
+From 88721db37ead2212a54c1392e2e65bae78d2604b Mon Sep 17 00:00:00 2001
+From: Rod Whitby <rod@whitby.id.au>
+Date: Tue, 29 Jan 2008 10:05:48 +1030
+Subject: ixp4xx: Register nslu2 rtc i2c_board_info (Patch #4772)
+
+Register the i2c board info related to the RTC chip on the nslu2 board
+to allow it to be found automatically on boot.
+
+Signed-off-by: Rod Whitby <rod@whitby.id.au>
+Signed-off-by: Alessandro Zummo <a.zummo@towertech.it>
+
+PATCH FOLLOWS
+KernelVersion: 2.6.24-git5
+
+diff --git a/arch/arm/mach-ixp4xx/nslu2-setup.c b/arch/arm/mach-ixp4xx/nslu2-setup.c
+index 332a066..ebeb566 100644
+--- a/arch/arm/mach-ixp4xx/nslu2-setup.c
++++ b/arch/arm/mach-ixp4xx/nslu2-setup.c
+@@ -19,6 +19,7 @@
+ #include <linux/serial.h>
+ #include <linux/serial_8250.h>
+ #include <linux/leds.h>
++#include <linux/i2c.h>
+ #include <linux/i2c-gpio.h>
+ 
+ #include <asm/mach-types.h>
+@@ -49,6 +50,12 @@ static struct i2c_gpio_platform_data nslu2_i2c_gpio_data = {
+ 	.scl_pin		= NSLU2_SCL_PIN,
+ };
+ 
++static struct i2c_board_info __initdata nslu2_i2c_board_info [] = {
++	{
++		I2C_BOARD_INFO("rtc-x1205", 0x6f),
++	},
++};
++
+ #ifdef CONFIG_LEDS_IXP4XX
+ static struct resource nslu2_led_resources[] = {
+ 	{
+@@ -207,6 +214,9 @@ static void __init nslu2_init(void)
+ 
+ 	pm_power_off = nslu2_power_off;
+ 
++	i2c_register_board_info(0, nslu2_i2c_board_info,
++				ARRAY_SIZE(nslu2_i2c_board_info));
++
+ 	/*
+ 	 * This is only useful on a modified machine, but it is valuable
+ 	 * to have it first in order to see debug messages, and so that
+-- 
+1.5.2.5
+
+From d4ef1ee0daf96e42bf93421960eaded71e189712 Mon Sep 17 00:00:00 2001
+From: Rod Whitby <rod@whitby.id.au>
+Date: Tue, 29 Jan 2008 10:07:29 +1030
+Subject: ixp4xx: Register nas100d rtc i2c_board_info (Patch #4773)
+
+Register the i2c board info related to the RTC chip on the nas100d
+board to allow it to be found automatically on boot.
+
+Signed-off-by: Rod Whitby <rod@whitby.id.au>
+Signed-off-by: Alessandro Zummo <a.zummo@towertech.it>
+
+PATCH FOLLOWS
+KernelVersion: 2.6.24-git5
+
+diff --git a/arch/arm/mach-ixp4xx/nas100d-setup.c b/arch/arm/mach-ixp4xx/nas100d-setup.c
+index b0884c2..09f75b9 100644
+--- a/arch/arm/mach-ixp4xx/nas100d-setup.c
++++ b/arch/arm/mach-ixp4xx/nas100d-setup.c
+@@ -17,6 +17,7 @@
+ #include <linux/serial.h>
+ #include <linux/serial_8250.h>
+ #include <linux/leds.h>
++#include <linux/i2c.h>
+ #include <linux/i2c-gpio.h>
+ 
+ #include <asm/mach-types.h>
+@@ -41,6 +42,12 @@ static struct platform_device nas100d_flash = {
+ 	.resource		= &nas100d_flash_resource,
+ };
+ 
++static struct i2c_board_info __initdata nas100d_i2c_board_info [] = {
++	{
++		I2C_BOARD_INFO("rtc-pcf8563", 0x51),
++	},
++};
++
+ #ifdef CONFIG_LEDS_IXP4XX
+ static struct resource nas100d_led_resources[] = {
+ 	{
+@@ -181,6 +188,9 @@ static void __init nas100d_init(void)
+ 
+ 	pm_power_off = nas100d_power_off;
+ 
++	i2c_register_board_info(0, nas100d_i2c_board_info,
++				ARRAY_SIZE(nas100d_i2c_board_info));
++
+ 	/*
+ 	 * This is only useful on a modified machine, but it is valuable
+ 	 * to have it first in order to see debug messages, and so that
+-- 
+1.5.2.5
+
+From aa9d35dae397402f57f1baa8d53fed75d76aed8d Mon Sep 17 00:00:00 2001
+From: Rod Whitby <rod@whitby.id.au>
+Date: Tue, 29 Jan 2008 10:09:41 +1030
+Subject: ixp4xx: Register dsmg600 rtc i2c_board_info (Patch #4774)
+
+Register the i2c board info related to the RTC chip on the dsmg600
+board to allow it to be found automatically on boot.
+
+Signed-off-by: Rod Whitby <rod@whitby.id.au>
+Signed-off-by: Alessandro Zummo <a.zummo@towertech.it>
+
+PATCH FOLLOWS
+KernelVersion: 2.6.24-git5
+
+diff --git a/arch/arm/mach-ixp4xx/dsmg600-setup.c b/arch/arm/mach-ixp4xx/dsmg600-setup.c
+index c473d40..a1c44ef 100644
+--- a/arch/arm/mach-ixp4xx/dsmg600-setup.c
++++ b/arch/arm/mach-ixp4xx/dsmg600-setup.c
+@@ -14,6 +14,7 @@
+ #include <linux/kernel.h>
+ #include <linux/serial.h>
+ #include <linux/serial_8250.h>
++#include <linux/i2c.h>
+ #include <linux/i2c-gpio.h>
+ 
+ #include <asm/mach-types.h>
+@@ -51,6 +52,12 @@ static struct platform_device dsmg600_i2c_gpio = {
+ 	},
+ };
+ 
++static struct i2c_board_info __initdata dsmg600_i2c_board_info [] = {
++	{
++		I2C_BOARD_INFO("rtc-pcf8563", 0x51),
++	},
++};
++
+ #ifdef CONFIG_LEDS_CLASS
+ static struct resource dsmg600_led_resources[] = {
+ 	{
+@@ -158,6 +165,9 @@ static void __init dsmg600_init(void)
+ 
+ 	pm_power_off = dsmg600_power_off;
+ 
++	i2c_register_board_info(0, dsmg600_i2c_board_info,
++				ARRAY_SIZE(dsmg600_i2c_board_info));
++
+ 	/* The UART is required on the DSM-G600 (Redboot cannot use the
+ 	 * NIC) -- do it here so that it does *not* get removed if
+ 	 * platform_add_devices fails!
+-- 
+1.5.2.5
+
