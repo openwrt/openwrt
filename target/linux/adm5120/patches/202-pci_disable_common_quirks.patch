@@ -1,7 +1,7 @@
-Index: linux-2.6.24/drivers/pci/Kconfig
+Index: linux-2.6.24.2/drivers/pci/Kconfig
 ===================================================================
---- linux-2.6.24.orig/drivers/pci/Kconfig
-+++ linux-2.6.24/drivers/pci/Kconfig
+--- linux-2.6.24.2.orig/drivers/pci/Kconfig
++++ linux-2.6.24.2/drivers/pci/Kconfig
 @@ -42,6 +42,12 @@ config PCI_DEBUG
  
  	  When in doubt, say N.
@@ -15,10 +15,10 @@ Index: linux-2.6.24/drivers/pci/Kconfig
  config HT_IRQ
  	bool "Interrupts on hypertransport devices"
  	default y
-Index: linux-2.6.24/drivers/pci/quirks.c
+Index: linux-2.6.24.2/drivers/pci/quirks.c
 ===================================================================
---- linux-2.6.24.orig/drivers/pci/quirks.c
-+++ linux-2.6.24/drivers/pci/quirks.c
+--- linux-2.6.24.2.orig/drivers/pci/quirks.c
++++ linux-2.6.24.2/drivers/pci/quirks.c
 @@ -23,6 +23,7 @@
  #include <linux/acpi.h>
  #include "pci.h"

@@ -1,16 +1,16 @@
-Index: linux-2.6.24/arch/mips/pci/Makefile
+Index: linux-2.6.24.2/arch/mips/pci/Makefile
 ===================================================================
---- linux-2.6.24.orig/arch/mips/pci/Makefile
-+++ linux-2.6.24/arch/mips/pci/Makefile
+--- linux-2.6.24.2.orig/arch/mips/pci/Makefile
++++ linux-2.6.24.2/arch/mips/pci/Makefile
 @@ -48,3 +48,4 @@ obj-$(CONFIG_TOSHIBA_RBTX4938)	+= fixup-
  obj-$(CONFIG_VICTOR_MPC30X)	+= fixup-mpc30x.o
  obj-$(CONFIG_ZAO_CAPCELLA)	+= fixup-capcella.o
  obj-$(CONFIG_WR_PPMC)		+= fixup-wrppmc.o
 +obj-$(CONFIG_PCI_ADM5120)	+= pci-adm5120.o
-Index: linux-2.6.24/include/linux/pci_ids.h
+Index: linux-2.6.24.2/include/linux/pci_ids.h
 ===================================================================
---- linux-2.6.24.orig/include/linux/pci_ids.h
-+++ linux-2.6.24/include/linux/pci_ids.h
+--- linux-2.6.24.2.orig/include/linux/pci_ids.h
++++ linux-2.6.24.2/include/linux/pci_ids.h
 @@ -1703,6 +1703,9 @@
  #define PCI_VENDOR_ID_ESDGMBH		0x12fe
  #define PCI_DEVICE_ID_ESDGMBH_CPCIASIO4 0x0111
