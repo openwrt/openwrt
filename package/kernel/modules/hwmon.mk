@@ -14,12 +14,10 @@ define KernelPackage/hwmon-core
   DEPENDS:=@LINUX_2_6
   KCONFIG:= \
 	CONFIG_HWMON \
-	CONFIG_HWMON_VID \
 	CONFIG_HWMON_DEBUG_CHIP=n
   FILES:= \
-	$(LINUX_DIR)/drivers/hwmon/hwmon.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/hwmon/hwmon-vid.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,hwmon hwmon-vid)
+	$(LINUX_DIR)/drivers/hwmon/hwmon.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,hwmon)
 endef
 
 define KernelPackage/hwmon-core/description
@@ -49,9 +47,13 @@ define KernelPackage/hwmon-pc87360
   SUBMENU:=$(HWMON_MENU)
   TITLE:=PC87360 monitoring support
   DEPENDS:=kmod-hwmon-core
-  KCONFIG:=CONFIG_SENSORS_PC87360
-  FILES:=$(LINUX_DIR)/drivers/hwmon/pc87360.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,pc87360)
+  KCONFIG:= \
+	CONFIG_SENSORS_PC87360 \
+	CONFIG_HWMON_VID
+  FILES:= \
+	$(LINUX_DIR)/drivers/hwmon/hwmon-vid.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/hwmon/pc87360.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,hwmon-vid pc87360)
 endef
 
 define KernelPackage/hwmon-pc87360/description
