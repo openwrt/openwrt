@@ -14,7 +14,7 @@ define Image/Build/slug
 		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(1).img \
 		-p -o $(BIN_DIR)/openwrt-nslu2-$(1).bin
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
-		-F -L $(KDIR)/apex-nslu2-armeb.bin \
+		-F -L $(KDIR)/apex-nslu2-16mb-armeb.bin \
 		-k $(BIN_DIR)/openwrt-nslu2-zImage \
 		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(1).img \
 		-p -o $(BIN_DIR)/openwrt-nslu2-$(1)-16mb.bin

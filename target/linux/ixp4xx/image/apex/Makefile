@@ -21,23 +21,36 @@ PKG_MD5SUM:=5feb7a05431e5e8a4aa36fb23347de8e
 include $(INCLUDE_DIR)/package.mk
 export GCC_HONOUR_COPTS=s
 
-define Build/Configure
+define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		ARCH=arm \
 		slugos-nslu2-armeb_config
 	$(SED) 's,.*CONFIG_AEABI.*,$(if $(CONFIG_EABI_SUPPORT),CONFIG_AEABI=y,# CONFIG_AEABI is not set),' $(PKG_BUILD_DIR)/.config
-endef
-
-define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		KBUILD_HAVE_NLS=no \
 		ARCH=arm \
 		all
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/apex.bin $(TARGET)/apex-nslu2-armeb.bin
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		$(TARGET_CONFIGURE_OPTS) \
+		KBUILD_HAVE_NLS=no \
+		ARCH=arm \
+		clean
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		ARCH=arm \
+		slugos-nslu2-16mb-armeb_config
+	$(SED) 's,.*CONFIG_AEABI.*,$(if $(CONFIG_EABI_SUPPORT),CONFIG_AEABI=y,# CONFIG_AEABI is not set),' $(PKG_BUILD_DIR)/.config
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		$(TARGET_CONFIGURE_OPTS) \
+		KBUILD_HAVE_NLS=no \
+		ARCH=arm \
+		all
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/apex.bin $(TARGET)/apex-nslu2-16mb-armeb.bin
 endef
 
 define Build/InstallDev
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/apex.bin $(TARGET)/apex-nslu2-armeb.bin
+	true
 endef
 
 $(eval $(call Build/DefaultTargets))
