@@ -118,6 +118,9 @@ int num_blocks = 0;
 #define AR7_FLASH_BASE		0xB0000000
 #define AR7_CODE_START		0x94008000
 
+#define ATHEROS_FLASH_BASE	0xBFC00000
+#define ATHEROS_CODE_START	0x80000800
+
 #define BOARD(n, d, v, m, fb, fs, cs, fo) { \
 	.name = (n), .desc=(d), \
 	.vendor = (v), .model = (m), \
@@ -133,6 +136,9 @@ int num_blocks = 0;
 
 #define AR7BOARD1(n, d, m, fs) BOARD(n, d, ZYNOS_VENDOR_ID_ZYXEL, m, \
 	AR7_FLASH_BASE, fs, AR7_CODE_START, 0x8000)
+
+#define ATHEROSBOARD1(n, d, m, fs) BOARD(n, d, ZYNOS_VENDOR_ID_ZYXEL, m, \
+	ATHEROS_FLASH_BASE, fs, ATHEROS_CODE_START, 0x8000)
 
 static struct board_info boards[] = {
 	/*
@@ -189,6 +195,11 @@ static struct board_info boards[] = {
 		.code_start	= 0x94014000,
 		.fw_offs	= 0x40000,
 	},
+
+	/*
+:x
+	 */
+	ATHEROSBOARD1("NBG-318S", "ZyXEL NBG-318S", ZYNOS_MODEL_NBG_318S, 4),
 
 	{.name = NULL}
 };

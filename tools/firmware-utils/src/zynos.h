@@ -215,4 +215,7 @@ struct zyn_mmt_item {
 /* OEM boards */
 #define ZYNOS_MODEL_O2SURF		ZYNOS_MODEL_P_2602HWN_D7A
 
+/* Atheros AR2318 based boards */
+#define ZYNOS_MODEL_NBG_318S		MID(  232)
+
 #endif /* _ZYNOS_H */
