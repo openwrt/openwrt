@@ -33,11 +33,15 @@ $(PKG_BUILD_DIR)/vmlinux.lzma: $(KDIR)/vmlinux.lzma
 $(KDIR)/loader$(LOADER_TYPE).elf: $(PKG_BUILD_DIR)/lzma.elf
 	$(CP) $< $@
 
+$(KDIR)/loader$(LOADER_TYPE).bin: $(PKG_BUILD_DIR)/lzma.bin
+	$(CP) $< $@
+
 download: 
 prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(KDIR)/loader$(LOADER_TYPE).elf
+compile: $(KDIR)/loader$(LOADER_TYPE).elf $(KDIR)/loader$(LOADER_TYPE).bin
 install:
 
 clean:
 	rm -rf $(PKG_BUILD_DIR)
 	rm -f $(KDIR)/loader.elf
+	rm -f $(KDIR)/loader.bin

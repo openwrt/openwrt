@@ -36,13 +36,16 @@ O_FORMAT = $(shell $(OBJDUMP) -i | head -2 | grep elf32)
 drop-sections   = .reginfo .mdebug .comment
 strip-flags     = $(addprefix --remove-section=,$(drop-sections))
 
-all : lzma.elf
+all : lzma.elf lzma.bin
 
 lzma.lds: lzma.lds.in
 	sed -e 's,@LOADADDR@,$(LOADADDR),g' -e 's,@ENTRY@,_start,g' $< >$@
 
 kernel.o: vmlinux.lzma lzma.lds
 	$(LD) -r -b binary --oformat $(O_FORMAT) -o $@ $<
+
+lzma.bin: lzma.elf
+	$(OBJCOPY) $< $@
 
 ifeq ($(IMAGE_COPY),1)
 LOADER_ENTRY ?= $(KERNEL_ENTRY)
@@ -62,4 +65,4 @@ lzma.elf: start.o decompress.o LzmaDecode.o kernel.o
 endif
 
 clean:
-	rm -f *.o lzma.elf *.tmp *.lds
+	rm -f *.o lzma.elf lzma.bin *.tmp *.lds
