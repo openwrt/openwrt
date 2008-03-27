@@ -72,6 +72,7 @@ $(eval $(call nf_add,IPT_EXTRA,CONFIG_IP_NF_TARGET_REJECT, $(P_V4)ipt_REJECT))
 
 $(eval $(call nf_add,IPT_FILTER,CONFIG_IP_NF_MATCH_IPP2P, $(P_V4)ipt_ipp2p))
 $(eval $(call nf_add,IPT_FILTER,CONFIG_IP_NF_MATCH_LAYER7, $(P_V4)ipt_layer7))
+$(eval $(call nf_add,IPT_FILTER,CONFIG_NETFILTER_XT_MATCH_LAYER7, $(P_XT)xt_layer7))
 $(eval $(call nf_add,IPT_FILTER,CONFIG_IP_NF_MATCH_STRING, $(P_V4)ipt_string))
 $(eval $(call nf_add,IPT_FILTER,CONFIG_NETFILTER_XT_MATCH_STRING, $(P_XT)xt_string))
 
