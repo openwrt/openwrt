@@ -66,10 +66,15 @@ enable_mac80211() {
 
 		[ "$first" = 1 ] && {
 			# only need to change freq band and channel on the first vif
-			iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
+			iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null
+			if [ "$mode" = adhoc ]; then
+				iwlist "$ifname" scan >/dev/null 2>/dev/null
+				sleep 1
+				iwconfig "$ifname" mode ad-hoc >/dev/null 2>/dev/null
+			fi
 			ifconfig "$ifname" up
 			sleep 1
-			iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
+			iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null
 		}
 	
 		wpa=
