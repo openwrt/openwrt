@@ -454,7 +454,7 @@ define KernelPackage/scx200-wdt
   TITLE:=Natsemi SCX200 Watchdog support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_SC1200_WDT
-  FILES:=$(LINUX_DIR)/drivers/char/watchdog/scx200_wdt.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/scx200_wdt.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,scx200_wdt)
 endef
 
