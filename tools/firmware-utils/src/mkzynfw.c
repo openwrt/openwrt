@@ -119,7 +119,7 @@ int num_blocks = 0;
 #define AR7_CODE_START		0x94008000
 
 #define ATHEROS_FLASH_BASE	0xBFC00000
-#define ATHEROS_CODE_START	0x80000800
+#define ATHEROS_CODE_START	0x80e00000
 
 #define BOARD(n, d, v, m, fb, fs, cs, fo) { \
 	.name = (n), .desc=(d), \

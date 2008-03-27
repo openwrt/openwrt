@@ -240,6 +240,15 @@ $(eval $(call KernelPackage,ipv6))
 define KernelPackage/sit
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPv6-in-IPv4 tunnelling
+endef
+
+# sit is compiled in the 2.4 ipv6 stack
+define KernelPackage/sit/2.4
+  DEPENDS:= @LINUX_2_4 +kmod-ipv6
+  KCONFIG:=CONFIG_IPV6
+endef
+
+define KernelPackage/sit/2.6
   DEPENDS:= @LINUX_2_6 +kmod-ipv6 +kmod-iptunnel4
   KCONFIG+=CONFIG_IPV6_SIT
   FILES:=$(LINUX_DIR)/net/ipv6/sit.$(LINUX_KMOD_SUFFIX)
