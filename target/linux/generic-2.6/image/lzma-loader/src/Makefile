@@ -49,7 +49,7 @@ lzma.bin: lzma.elf
 
 ifeq ($(IMAGE_COPY),1)
 LOADER_ENTRY ?= $(KERNEL_ENTRY)
-lzma.o: decompress.o LzmaDecode.o kernel.o print.o printf.o uart16550.o
+lzma.o: decompress.o LzmaDecode.o kernel.o
 	sed -e 's,@LOADADDR@,$(LOADADDR),g' -e 's,@ENTRY@,entry,g' lzma.lds.in >lzma-stage2.lds
 	$(LD) -static --no-warn-mismatch -e entry -Tlzma-stage2.lds -o temp-$@ $^
 	$(OBJCOPY) temp-$@ lzma.tmp
@@ -60,7 +60,7 @@ lzma.elf: start.o lzma.o
 	sed -e 's,@LOADADDR@,$(LOADER_ENTRY),g' lzma-copy.lds.in >lzma-copy.lds
 	$(LD) -s -Tlzma-copy.lds -o $@ $^
 else
-lzma.elf: start.o decompress.o LzmaDecode.o kernel.o print.o printf.o uart16550.o
+lzma.elf: start.o decompress.o LzmaDecode.o kernel.o
 	$(LD) -s -Tlzma.lds -o $@ $^
 endif
 
