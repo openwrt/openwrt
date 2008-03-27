@@ -145,7 +145,6 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 		get_byte();
 
 	/* decompress kernel */
-	printf("Decompressing kernel\n");
 	if ((i = LzmaDecode(&vs, &callback,
 	(unsigned char*)KERNEL_ENTRY, osize, &osize)) == LZMA_RESULT_OK)
 	{
@@ -153,8 +152,6 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 		blast_icache(icache_size, icache_lsize);
 
 		/* Jump to load address */
-		printf("Jumping !\n");
 		((void (*)(int a0, int a1, int a2, int a3)) KERNEL_ENTRY)(arg0, arg1, arg2, arg3);
 	}
-	printf("Failed to decompress !\n");
 }
