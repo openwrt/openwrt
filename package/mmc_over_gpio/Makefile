@@ -21,7 +21,7 @@ define KernelPackage/mmc-over-gpio
   TITLE:=MMC/SD card over GPIO support
   FILES:=$(PKG_BUILD_DIR)/spi_gpio.$(LINUX_KMOD_SUFFIX) \
          $(PKG_BUILD_DIR)/mmc_over_spigpio.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,spi_gpio mmc_over_spigpio)
+  AUTOLOAD:=$(call AutoLoad,92,spi_gpio mmc_over_spigpio)
 endef
 
 define KernelPackage/mmc-over-gpio/description

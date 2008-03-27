@@ -514,14 +514,21 @@ $(eval $(call KernelPackage,mmc-spi))
 
 define KernelPackage/spi
   SUBMENU:=$(OTHER_MENU)
-  DEPENDS:=@LINUX_2_6 +kmod-crc-itu-t +kmod-crc7
   TITLE:=Serial Peripheral Interface
+  DEPENDS:=@LINUX_2_6 +kmod-crc-itu-t +kmod-crc7
   KCONFIG:=CONFIG_SPI=y \
-  	CONFIG_MTD_DATAFLASH=n \
-	CONFIG_MTD_M25P80=n \
-	CONFIG_SPI_AT25=n \
-	CONFIG_SPI_SPIDEV=n \
-	CONFIG_SPI_TLE62X0=n
+	CONFIG_MTD_DATAFLASH \
+	CONFIG_MTD_M25P80 \
+	CONFIG_SPI_AT25 \
+	CONFIG_SPI_SPIDEV \
+	CONFIG_SPI_TLE62X0
+  FILES:= \
+	$(LINUX_DIR)/drivers/spi/at25.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/spi/spidev.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/spi/tle62x0.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/mtd/devices/m25p80.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/mtd/devices/mtd_dataflash.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,90,spi)
 endef
 
 define KernelPackage/spi/description
@@ -532,9 +539,11 @@ $(eval $(call KernelPackage,spi))
 
 define KernelPackage/spi-bitbang
   SUBMENU:=$(OTHER_MENU)
-  DEPENDS:=@LINUX_2_6
   TITLE:=Serial Peripheral Interface bitbanging
-  KCONFIG:=CONFIG_SPI_BITBANG=y
+  DEPENDS:=@LINUX_2_6 +kmod-spi
+  KCONFIG:=CONFIG_SPI_BITBANG
+  FILES:=$(LINUX_DIR)/drivers/spi/spi_bitbang.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,91,spi_bitbang)
 endef
 
 define KernelPackage/spi-bitbang/description
