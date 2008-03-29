@@ -17,9 +17,13 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/acx100
 PKG_MD5SUM:=3d2253c3a639ebccf06113be888118fb
 
-PKG_FW_NAME:=tiacx111c16
-PKG_FW_URL:=http://teknoraver.campuslife.it/software/acx-mac80211/
-PKG_FW_MD5SUM:=7026826460376f6b174f9225bd7781b9
+PKG_FW_C16_NAME:=tiacx111c16
+PKG_FW_C16_URL:=http://teknoraver.campuslife.it/software/acx-mac80211/
+PKG_FW_C16_MD5SUM:=7026826460376f6b174f9225bd7781b9
+
+PKG_FW_C19_NAME:=tiacx111c19
+PKG_FW_C19_URL:=http://ipkg.k1k2.de/files/
+PKG_FW_C19_MD5SUM:=a1fa9681e297b4e36e257090fc12265a
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -36,10 +40,13 @@ define KernelPackage/acx-mac80211/description
 	Driver for acx111 cards (Mac80211 version)
 endef
 
-$(STAMP_BUILT): $(DL_DIR)/$(PKG_FW_NAME)
+$(STAMP_BUILT): $(DL_DIR)/$(PKG_FW_C16_NAME) $(DL_DIR)/$(PKG_FW_C19_NAME)
 
-$(DL_DIR)/$(PKG_FW_NAME):
-	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_FW_NAME)" "$(PKG_FW_MD5SUM)" $(PKG_FW_URL)
+$(DL_DIR)/$(PKG_FW_C16_NAME):
+	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_FW_C16_NAME)" "$(PKG_FW_C16_MD5SUM)" $(PKG_FW_C16_URL)
+
+$(DL_DIR)/$(PKG_FW_C19_NAME):
+	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_FW_C19_NAME)" "$(PKG_FW_C19_MD5SUM)" $(PKG_FW_C19_URL)
 
 PKG_EXTRA_KCONFIG:= \
 	CONFIG_ACX_MAC80211=m \
@@ -67,7 +74,8 @@ endef
 
 define KernelPackage/acx-mac80211/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(DL_DIR)/$(PKG_FW_NAME) $(1)/lib/firmware/
+	$(INSTALL_DATA) $(DL_DIR)/$(PKG_FW_C16_NAME) $(1)/lib/firmware/
+	$(INSTALL_DATA) $(DL_DIR)/$(PKG_FW_C19_NAME) $(1)/lib/firmware/
 endef
 
 $(eval $(call KernelPackage,acx-mac80211))
