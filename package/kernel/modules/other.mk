@@ -521,7 +521,7 @@ define KernelPackage/mmc-atmelmci
   AUTOLOAD:=$(call AutoLoad,90,atmel-mci)
 endef
 
-define KernelPackage/mmc-spi/description
+define KernelPackage/mmc-atmelmci/description
  Kernel support for  Atmel Multimedia Card Interface.
 endef
 
