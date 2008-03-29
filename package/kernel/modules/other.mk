@@ -512,6 +512,21 @@ endef
 
 $(eval $(call KernelPackage,mmc-spi))
 
+define KernelPackage/mmc-atmelmci
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Amtel MMC Support
+  DEPENDS:=@TARGET_avr32 +kmod-mmc
+  KCONFIG:=CONFIG_MMC_ATMELMCI
+  FILES:=$(LINUX_DIR)/drivers/mmc/host/atmel-mci.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,90,atmel-mci)
+endef
+
+define KernelPackage/mmc-spi/description
+ Kernel support for  Atmel Multimedia Card Interface.
+endef
+
+$(eval $(call KernelPackage,mmc-atmelmci))
+
 define KernelPackage/spi
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Serial Peripheral Interface
