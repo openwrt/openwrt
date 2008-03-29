@@ -97,6 +97,7 @@ enable_broadcom() {
 	config_get slottime "$device" slottime
 	config_get rxant "$device" rxant
 	config_get txant "$device" txant
+	config_get_bool frameburst "$device" frameburst
 	config_get macfilter "$device" macfilter
 	config_get maclist "$device" maclist
 	local vif_pre_up vif_post_up vif_do_up
@@ -252,6 +253,7 @@ country ${country:-IL0}
 ${channel:+channel $channel}
 maxassoc ${maxassoc:-128}
 slottime ${slottime:--1}
+${frameburst:+frameburst $frameburst}
 
 $vif_pre_up
 up
