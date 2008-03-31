@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2006 Mike Baker <mbm@openwrt.org>,
  * Copyright (C) 2006-2007 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2008 Andy Boyett <agb@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -46,6 +47,7 @@ extern u64 uevent_next_seqnum(void);
 #include "diag.h"
 #define getvar(str) (nvram_get(str)?:"")
 
+static inline int startswith (char *source, char *cmp) { return !strncmp(source,cmp,strlen(cmp)); }
 static int fill_event(struct event_t *);
 static unsigned int gpiomask = 0;
 module_param(gpiomask, int, 0644);
@@ -59,7 +61,7 @@ enum {
 	WRTSL54GS,
 	WRT54G3G,
 	WRT350N,
-	
+
 	/* ASUS */
 	WLHDD,
 	WL300G,
@@ -69,7 +71,7 @@ enum {
 	WL500W,
 	ASUS_4702,
 	WL700GE,
-	
+
 	/* Buffalo */
 	WBR2_G54,
 	WHR_G54S,
@@ -86,7 +88,7 @@ enum {
 	/* Siemens */
 	SE505V1,
 	SE505V2,
-	
+
 	/* US Robotics */
 	USR5461,
 
@@ -107,7 +109,7 @@ enum {
 
 	/* Trendware */
 	TEW411BRPP,
-	
+
 	/* SimpleTech */
 	STI_NAS,
 
@@ -161,7 +163,7 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "reset",	.gpio = 1 << 7 },
 			{ .name = "ses",	.gpio = 1 << 0 },
 		},
-		.leds		= { 
+		.leds		= {
 			/* FIXME: diag? */
 			{ .name = "ses",	.gpio = 1 << 1 },
 		},
@@ -171,7 +173,7 @@ static struct platform_t __initdata platforms[] = {
 		.buttons	= {
 			{ .name = "reset",	.gpio = 1 << 6 },
 		},
-		.leds		= { 
+		.leds		= {
 			{ .name = "diag",	.gpio = 0x13 | GPIO_TYPE_EXTIF, .polarity = NORMAL },
 			{ .name = "dmz",	.gpio = 0x12 | GPIO_TYPE_EXTIF, .polarity = NORMAL },
 		},
@@ -595,7 +597,7 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "reserved",	.gpio = 1 << 7},
 		},
 		.leds	   = {
-			{ .name = "diag", 	.gpio = 1 << 0},
+			{ .name = "diag",	.gpio = 1 << 0},
 			{ .name = "blue",	.gpio = 1 << 6},
 		},
 	},
@@ -606,8 +608,8 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "reserved",	.gpio = 1 << 7},
 		},
 		.leds	   = {
-			{ .name = "diag", 	.gpio = 1 << 0},
-			{ .name = "usb", 	.gpio = 1 << 4},
+			{ .name = "diag",	.gpio = 1 << 0},
+			{ .name = "usb",	.gpio = 1 << 4},
 			{ .name = "blue",	.gpio = 1 << 6},
 		},
 	},
@@ -653,7 +655,7 @@ static struct platform_t __init *platform_detect(void)
 
 	/* Based on "model_no" */
 	if (buf = nvram_get("model_no")) {
-		if (!strncmp(buf,"WL700", 5)) /* WL700* */
+		if (startswith(buf,"WL700")) /* WL700* */
 			return &platforms[WL700GE];
 	}
 
@@ -663,7 +665,7 @@ static struct platform_t __init *platform_detect(void)
 			return &platforms[WR850GP];
 		if (!strcmp(buf,"WX-5565"))
 			return &platforms[TM2300];
-		if (!strncmp(buf,"WE800G", 6)) /* WE800G* */
+		if (startswith(buf,"WE800G")) /* WE800G* */
 			return &platforms[WE800G];
 	}
 
@@ -694,7 +696,7 @@ static struct platform_t __init *platform_detect(void)
 	boardnum = getvar("boardnum");
 	boardtype = getvar("boardtype");
 
-	if (strncmp(getvar("pmon_ver"), "CFE", 3) == 0) {
+	if (startswith(getvar("pmon_ver"), "CFE")) {
 		/* CFE based - newer hardware */
 		if (!strcmp(boardnum, "42")) { /* Linksys */
 			if (!strcmp(boardtype, "0x478") && !strcmp(getvar("cardbus"), "1"))
@@ -705,11 +707,11 @@ static struct platform_t __init *platform_detect(void)
 
 			if (!strcmp(getvar("et1phyaddr"),"5") && !strcmp(getvar("et1mdcport"), "1"))
 				return &platforms[WRTSL54GS];
-			
+
 			/* default to WRT54G */
 			return &platforms[WRT54G];
 		}
-		
+
 		if (!strcmp(boardnum, "45")) { /* ASUS */
 			if (!strcmp(boardtype,"0x042f"))
 				return &platforms[WL500GP];
@@ -718,7 +720,7 @@ static struct platform_t __init *platform_detect(void)
 			else
 				return &platforms[WL500GD];
 		}
-		
+
 		if (!strcmp(boardnum, "10496"))
 			return &platforms[USR5461];
 
@@ -727,15 +729,15 @@ static struct platform_t __init *platform_detect(void)
 			(simple_strtoul(getvar("et0phyaddr"), NULL, 0) == 30)) {
 			return &platforms[WR850GV1];
 		}
-		if (!strncmp(boardtype, "bcm94710dev", 11)) {
+		if (startswith(boardtype, "bcm94710dev")) {
 			if (!strcmp(boardnum, "42"))
 				return &platforms[WRT54GV1];
 			if (simple_strtoul(boardnum, NULL, 0) == 2)
 				return &platforms[WAP54GV1];
 		}
-		if (!strncmp(getvar("hardware_version"), "WL500-", 6))
+		if (startswith(getvar("hardware_version"), "WL500-"))
 			return &platforms[WL500G];
-		if (!strncmp(getvar("hardware_version"), "WL300-", 6)) {
+		if (startswith(getvar("hardware_version"), "WL300-")) {
 			/* Either WL-300g or WL-HDD, do more extensive checks */
 			if ((simple_strtoul(getvar("et0phyaddr"), NULL, 0) == 0) &&
 				(simple_strtoul(getvar("et1phyaddr"), NULL, 0) == 1))
@@ -745,23 +747,23 @@ static struct platform_t __init *platform_detect(void)
 				return &platforms[WL300G];
 		}
 		/* Sitecom WL-105b */
-		if (!strncmp(boardnum, "2", 1) && simple_strtoul(getvar("GemtekPmonVer"), NULL, 0) == 1)
+		if (startswith(boardnum, "2") && simple_strtoul(getvar("GemtekPmonVer"), NULL, 0) == 1)
 			return &platforms[WL105B];
 
 		/* unknown asus stuff, probably bcm4702 */
-		if (!strncmp(boardnum, "asusX", 5))
+		if (startswith(boardnum, "asusX"))
 			return &platforms[ASUS_4702];
 	}
 
 	if (buf || !strcmp(boardnum, "00")) {/* probably buffalo */
-		if (!strncmp(boardtype, "bcm94710ap", 10))
+		if (startswith(boardtype, "bcm94710ap"))
 			return &platforms[BUFFALO_UNKNOWN_4710];
 		else
 			return &platforms[BUFFALO_UNKNOWN];
 	}
 
-	if (!strncmp(getvar("CFEver"), "MotoWRv2", 8) ||
-		!strncmp(getvar("CFEver"), "MotoWRv3", 8) ||
+	if (startswith(getvar("CFEver"), "MotoWRv2") ||
+		startswith(getvar("CFEver"), "MotoWRv3") ||
 		!strcmp(getvar("MOTO_BOARD_TYPE"), "WR_FEM1")) {
 
 		return &platforms[WR850GV2V3];
@@ -771,7 +773,7 @@ static struct platform_t __init *platform_detect(void)
 		return &platforms[TEW411BRPP];
 	}
 
-	if (!strncmp(boardnum, "04FN52", 6)) /* SimpleTech SimpleShare */
+	if (startswith(boardnum, "04FN52")) /* SimpleTech SimpleShare */
 		return &platforms[STI_NAS];
 
 	if (!strcmp(getvar("boardnum"), "10") && !strcmp(getvar("boardrev"), "0x13")) /* D-Link DWL-3150 */
@@ -945,13 +947,13 @@ static void register_leds(struct led_t *l)
 	u32 val = 0;
 
 	leds = proc_mkdir("led", diag);
-	if (!leds) 
+	if (!leds)
 		return;
 
 	for(; l->name; l++) {
 		if (l->gpio & gpiomask)
 			continue;
-	
+
 		if (l->gpio & GPIO_TYPE_EXTIF) {
 			l->state = 0;
 			set_led_extif(l);
@@ -1029,10 +1031,10 @@ static ssize_t diag_proc_read(struct file *file, char *buf, size_t count, loff_t
 #endif
 	char *page;
 	int len = 0;
-	
+
 	if ((page = kmalloc(1024, GFP_KERNEL)) == NULL)
 		return -ENOBUFS;
-	
+
 	if (dent->data != NULL) {
 		struct prochandler_t *handler = (struct prochandler_t *) dent->data;
 		switch (handler->type) {
@@ -1096,14 +1098,14 @@ static ssize_t diag_proc_write(struct file *file, const char *buf, size_t count,
 		return -EINVAL;
 	}
 	page[count] = 0;
-	
+
 	if (dent->data != NULL) {
 		struct prochandler_t *handler = (struct prochandler_t *) dent->data;
 		switch (handler->type) {
 			case PROC_LED: {
 				struct led_t *led = (struct led_t *) handler->ptr;
 				int p = (led->polarity == NORMAL ? 0 : 1);
-				
+
 				if (page[0] == 'f') {
 					led->flash = 1;
 					led_flash(0);
