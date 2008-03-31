@@ -34,6 +34,7 @@ define Build/Compile
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) -DHAVE_ISC_READER=1" \
 		BINDIR="/usr/sbin" MANDIR="/usr/man" \
+		AWK="awk" \
 		all
 endef
 
