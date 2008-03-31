@@ -284,6 +284,17 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "power",	.gpio = 1 << 1, .polarity = REVERSE },
 		},
 	},
+	[WL500GPV2] = {
+		.name		= "ASUS WL-500g Premium V2",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 2 },
+			{ .name = "ses",	.gpio = 1 << 3 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 0, .polarity = REVERSE },
+			{ .name = "wlan",	.gpio = 1 << 1, .polarity = REVERSE },
+		},
+	},
 	[WL500W] = {
 		.name		= "ASUS WL-500W",
 		.buttons	= {
@@ -674,6 +685,8 @@ static struct platform_t __init *platform_detect(void)
 
 	/* Based on "hardware_version" */
 	if (buf = nvram_get("hardware_version")) {
+		if (startswith(buf,"WL500GPV2-")) /* WL500GPV2-* */
+			return &platforms[WL500GPV2];
 		if (startswith(buf,"WL520GU-")) /* WL520GU-* */
 			return &platforms[WL520GU];
 	}

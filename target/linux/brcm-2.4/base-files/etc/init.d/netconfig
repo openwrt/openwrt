@@ -61,6 +61,11 @@ start() {
 			c["wan_ifname"] = "eth1"
 			c["lan_ifname"] = "eth0"
 		}
+		if (model == "ASUS WL-500g Premium V2") {
+				c["vlan0ports"] = "0 1 2 3 5*"
+				c["vlan1ports"] = "4 5"
+		}
+
 		if (model == "Dell TrueMobile 2300") {
 			c["vlan0ports"] = "0 1 2 3 5*"
 			c["vlan1ports"] = "4 5"
