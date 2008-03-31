@@ -68,7 +68,9 @@ enum {
 	WL500G,
 	WL500GD,
 	WL500GP,
+	WL500GPV2,
 	WL500W,
+	WL520GU,
 	ASUS_4702,
 	WL700GE,
 
@@ -290,6 +292,17 @@ static struct platform_t __initdata platforms[] = {
 		},
 		.leds		= {
 			{ .name = "power",	.gpio = 1 << 5, .polarity = REVERSE },
+		},
+	},
+	[WL520GU] = {
+		.name		= "ASUS WL-520gU",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 2 },
+			{ .name = "ses",	.gpio = 1 << 3 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 0, .polarity = REVERSE },
+			{ .name = "wlan",	.gpio = 1 << 1, .polarity = REVERSE },
 		},
 	},
 	[ASUS_4702] = {
@@ -657,6 +670,12 @@ static struct platform_t __init *platform_detect(void)
 	if (buf = nvram_get("model_no")) {
 		if (startswith(buf,"WL700")) /* WL700* */
 			return &platforms[WL700GE];
+	}
+
+	/* Based on "hardware_version" */
+	if (buf = nvram_get("hardware_version")) {
+		if (startswith(buf,"WL520GU-")) /* WL520GU-* */
+			return &platforms[WL520GU];
 	}
 
 	/* Based on "ModelId" */
