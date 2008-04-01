@@ -37,6 +37,11 @@ $(call Package/udev)
   TITLE:=Small utility to request kernel devices events for coldplug
 endef
 
+define Package/udev-vol-id
+$(call Package/udev)
+ TITLE:=Small utility to read volume ids
+endef
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -44,6 +49,7 @@ define Build/Compile
 		OPTFLAGS="$(TARGET_CFLAGS)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		INSTALL="install -c" \
+		EXTRAS="extras/volume_id" \
 		all install
 endef
 
@@ -66,6 +72,13 @@ define Package/udevtrigger/install
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/udevtrigger $(1)/sbin/
 endef
+define Package/udev-vol-id/install
+	$(INSTALL_DIR) $(1)/sbin
+	$(INSTALL_DIR) $(1)/lib
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/libvolume_id.so* $(1)/lib/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/udev/vol_id $(1)/sbin/
+endef
 
 $(eval $(call BuildPackage,udev))
 $(eval $(call BuildPackage,udevtrigger))
+$(eval $(call BuildPackage,udev-vol-id))
