@@ -39,10 +39,15 @@ define Image/Prepare
 		TARGET="$(KDIR)" \
 		clean install
 	echo -ne "\\x00" >> $(KDIR)/loader.gz
+	rm -f $(KDIR)/fs_mark
+	touch $(KDIR)/fs_mark
+	$(call prepare_generic_squashfs,$(KDIR)/fs_mark)
 endef
 
 define Image/Build
+ifneq($(1),ext2)
 	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1)) -f $(KDIR)/root.$(1)
+endif
 endef
 
 $(eval $(call BuildImage))
