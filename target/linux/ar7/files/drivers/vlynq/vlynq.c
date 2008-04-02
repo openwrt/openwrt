@@ -380,6 +380,7 @@ static int __vlynq_enable_device(struct vlynq_device *dev)
 	switch (dev->divisor) {
 	case vlynq_div_auto:
 		/* Only try locally supplied clock, others cause problems */
+		vlynq_reg_write(dev->local->control, 0);
 		vlynq_reg_write(dev->remote->control, 0);
 		for (i = vlynq_ldiv2; i <= vlynq_ldiv8; i++) {
 			vlynq_reg_write(dev->local->control,
@@ -395,11 +396,11 @@ static int __vlynq_enable_device(struct vlynq_device *dev)
 		}
 	case vlynq_ldiv1: case vlynq_ldiv2: case vlynq_ldiv3: case vlynq_ldiv4:
 	case vlynq_ldiv5: case vlynq_ldiv6: case vlynq_ldiv7: case vlynq_ldiv8:
-		vlynq_reg_write(dev->remote->control, 0);
 		vlynq_reg_write(dev->local->control,
 				VLYNQ_CTRL_CLOCK_INT |
 				VLYNQ_CTRL_CLOCK_DIV(dev->divisor -
 						     vlynq_ldiv1));
+		vlynq_reg_write(dev->remote->control, 0);
 		if (vlynq_linked(dev)) {
 			printk(KERN_DEBUG
 			       "%s: using local clock divisor %d\n",
