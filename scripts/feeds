@@ -83,7 +83,7 @@ sub update_link($$) {
 	my $name = shift;
 	my $src = abs_path(shift);
 
-	system("ln -sf $src ./feeds/$name");
+	system("rm -f ./feeds/$name; ln -s $src ./feeds/$name");
 
 	return 0;
 }
