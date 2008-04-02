@@ -13,7 +13,7 @@ setup_interface_pppoe() {
 	# make sure the network state references the correct ifname
 	scan_ppp "$config"
 	config_get ifname "$config" ifname
-	uci set "/var/state/network.$config.ifname=$ifname"
+	set_interface_ifname "$config" "$ifname"
 
 	config_get mtu "$cfg" mtu
 	mtu=${mtu:-1492}
