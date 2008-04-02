@@ -369,6 +369,14 @@ static int __vlynq_enable_device(struct vlynq_device *dev)
 	if (result)
 		return result;
 
+	vlynq_reg_write(dev->local->control, 0);
+	vlynq_reg_write(dev->remote->control, 0);
+	if (vlynq_linked(dev)) {
+		printk(KERN_DEBUG "%s: using external clock\n",
+			dev->dev.bus_id);
+		return 0;
+	}
+
 	switch (dev->divisor) {
 	case vlynq_div_auto:
 		/* Only try locally supplied clock, others cause problems */
@@ -410,15 +418,6 @@ static int __vlynq_enable_device(struct vlynq_device *dev)
 			printk(KERN_DEBUG
 			       "%s: using remote clock divisor %d\n",
 			       dev->dev.bus_id, dev->divisor - vlynq_rdiv1 + 1);
-			return 0;
-		}
-		break;
-	case vlynq_div_external:
-		vlynq_reg_write(dev->local->control, 0);
-		vlynq_reg_write(dev->remote->control, 0);
-		if (vlynq_linked(dev)) {
-			printk(KERN_DEBUG "%s: using external clock\n",
-			       dev->dev.bus_id);
 			return 0;
 		}
 		break;
