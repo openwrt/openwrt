@@ -40,10 +40,11 @@ scan_interfaces() {
 				append interfaces "$CONFIG_SECTION"
 				config_get iftype "$CONFIG_SECTION" type
 				config_get ifname "$CONFIG_SECTION" ifname
-				config_set "$CONFIG_SECTION" device "$ifname"
+				config_get device "$CONFIG_SECTION" device
+				config_set "$CONFIG_SECTION" device "${device:-$ifname}"
 				case "$iftype" in
 					bridge)
-						config_set "$CONFIG_SECTION" ifnames "$ifname"
+						config_set "$CONFIG_SECTION" ifnames "${device:-$ifname}"
 						config_set "$CONFIG_SECTION" ifname br-"$CONFIG_SECTION"
 					;;
 				esac
@@ -113,6 +114,15 @@ prepare_interface() {
 	return 0
 }
 
+set_interface_ifname() {
+	local config="$1"
+	local ifname="$2"
+
+	config_get device "$1" device
+	uci_set_state "network.$config.ifname=$ifname"
+	uci_set_state "network.$config.device=$device"
+}
+
 setup_interface() {
 	local iface="$1"
 	local config="$2"
@@ -140,7 +150,7 @@ setup_interface() {
 	config_get macaddr "$config" macaddr
 	grep "$iface:" /proc/net/dev > /dev/null && \
 		$DEBUG ifconfig "$iface" ${macaddr:+hw ether "$macaddr"} ${mtu:+mtu $mtu} up
-	uci_set_state network "$config" ifname "$iface"
+	set_interface_ifname "$config" "$iface"
 
 	pidfile="/var/run/$iface.pid"
 	case "$proto" in
