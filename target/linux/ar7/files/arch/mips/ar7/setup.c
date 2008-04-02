@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2006, 2007 OpenWrt.org
- *
  * Carsten Langgaard, carstenl@mips.com
  * Copyright (C) 2000 MIPS Technologies, Inc.  All rights reserved.
  *

@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2007 OpenWrt.org
- *
  * Based on arch/mips/mm/init.c
  * Copyright (C) 1994 - 2000 Ralf Baechle
  * Copyright (C) 1999, 2000 Silicon Graphics, Inc.
