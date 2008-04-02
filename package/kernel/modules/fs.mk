@@ -10,14 +10,13 @@ FS_MENU:=Filesystems
 
 define KernelPackage/nls/Depends
   ifneq ($(KERNEL),2.4)
-    DEPENDS+= +kmod-nls-base $(foreach m,$(1),+kmod-nls-$(m))
+    DEPENDS:= +kmod-nls-base
   endif
 endef
 
 define KernelPackage/fs-cifs
   SUBMENU:=$(FS_MENU)
   TITLE:=CIFS support
-  DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_CIFS
   FILES:=$(LINUX_DIR)/fs/cifs/cifs.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,cifs)
@@ -118,7 +117,6 @@ $(eval $(call KernelPackage,fs-ext3))
 define KernelPackage/fs-hfs
   SUBMENU:=$(FS_MENU)
   TITLE:=HFS+ filesystem support
-  DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_HFS_FS
   FILES:=$(LINUX_DIR)/fs/hfs/hfs.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,hfs)
@@ -135,7 +133,6 @@ $(eval $(call KernelPackage,fs-hfs))
 define KernelPackage/fs-hfsplus
   SUBMENU:=$(FS_MENU)
   TITLE:=HFS+ filesystem support
-  DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_HFSPLUS_FS
   FILES:=$(LINUX_DIR)/fs/hfsplus/hfsplus.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,hfsplus)
@@ -170,7 +167,6 @@ $(eval $(call KernelPackage,fs-isofs))
 define KernelPackage/fs-udf
   SUBMENU:=$(FS_MENU)
   TITLE:=UDF filesystem support
-  DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_UDF_FS
   FILES:=$(LINUX_DIR)/fs/udf/udf.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,udf)
@@ -232,7 +228,6 @@ $(eval $(call KernelPackage,fs-nfsd))
 define KernelPackage/fs-msdos
   SUBMENU:=$(FS_MENU)
   TITLE:=MSDOS filesystem support
-  DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_MSDOS_FS
   FILES:=$(LINUX_DIR)/fs/msdos/msdos.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,msdos)
@@ -316,7 +311,6 @@ $(eval $(call KernelPackage,nls-base))
 define KernelPackage/nls-cp437
   SUBMENU:=$(FS_MENU)
   TITLE:=Codepage 437 (United States, Canada)
-  DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_NLS_CODEPAGE_437
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp437.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_cp437)
@@ -334,7 +328,6 @@ $(eval $(call KernelPackage,nls-cp437))
 define KernelPackage/nls-cp850
   SUBMENU:=$(FS_MENU)
   TITLE:=Codepage 850 (Europe)
-  DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_NLS_CODEPAGE_850
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp850.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_cp850)
@@ -352,7 +345,6 @@ $(eval $(call KernelPackage,nls-cp850))
 define KernelPackage/nls-cp1250
   SUBMENU:=$(FS_MENU)
   TITLE:=Codepage 1250 (Eastern Europe)
-  DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_NLS_CODEPAGE_1250
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp1250.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_cp1250)
@@ -370,7 +362,6 @@ $(eval $(call KernelPackage,nls-cp1250))
 define KernelPackage/nls-iso8859-1
   SUBMENU:=$(FS_MENU)
   TITLE:=ISO 8859-1 (Latin 1; Western European Languages)
-  DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_NLS_ISO8859_1
   FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-1.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_iso8859-1)
@@ -388,7 +379,6 @@ $(eval $(call KernelPackage,nls-iso8859-1))
 define KernelPackage/nls-iso8859-2
   SUBMENU:=$(FS_MENU)
   TITLE:=ISO 8859-2 (Latin 2; Central European Languages)
-  DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_NLS_ISO8859_2
   FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-2.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_iso8859-2)
@@ -406,7 +396,6 @@ $(eval $(call KernelPackage,nls-iso8859-2))
 define KernelPackage/nls-iso8859-15
   SUBMENU:=$(FS_MENU)
   TITLE:=ISO 8859-15 (Latin 9; Western, with Euro symbol)
-  DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_NLS_ISO8859_15
   FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-15.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_iso8859-15)
@@ -424,7 +413,6 @@ $(eval $(call KernelPackage,nls-iso8859-15))
 define KernelPackage/nls-koi8r
   SUBMENU:=$(FS_MENU)
   TITLE:=KOI8-R (Russian)
-  DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_NLS_KOI8_R
   FILES:=$(LINUX_DIR)/fs/nls/nls_koi8-r.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_koi8-r)
@@ -442,7 +430,6 @@ $(eval $(call KernelPackage,nls-koi8r))
 define KernelPackage/nls-utf8
   SUBMENU:=$(FS_MENU)
   TITLE:=UTF-8
-  DEPENDS:=+kmod-nls-base
   KCONFIG:=CONFIG_NLS_UTF8
   FILES:=$(LINUX_DIR)/fs/nls/nls_utf8.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_utf8)
