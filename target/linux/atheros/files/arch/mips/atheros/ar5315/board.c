@@ -28,6 +28,7 @@
 #include <asm/io.h>
 #include <ar531x.h>
 #include <linux/leds.h>
+#include <asm/gpio.h>
 
 static int is_5315 = 0;
 
@@ -265,18 +266,13 @@ static void ar5315_restart(char *command)
 {
 	unsigned int reg;
 	for(;;) {
-		
 		/* reset the system */
 		sysRegWrite(AR5315_COLD_RESET,AR5317_RESET_SYSTEM);
 
 		/* 
 		 * Cold reset does not work on the AR2315/6, use the GPIO reset bits a workaround.
 		 */
-
-		reg = sysRegRead(AR5315_GPIO_DO);
-		reg &= ~(1 << AR5315_RESET_GPIO);
-		sysRegWrite(AR5315_GPIO_DO, reg);
-		(void)sysRegRead(AR5315_GPIO_DO); /* flush write to hardware */
+		gpio_direction_output(AR5315_RESET_GPIO, 0);
 	}
 }
 
