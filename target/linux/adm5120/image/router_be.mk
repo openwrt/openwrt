@@ -10,7 +10,7 @@ define Image/Build/ZyXEL
 endef
 
 define Image/Build/Template/ZyXEL/Initramfs
-	$(call Image/Build/LZMAKernel/Admboot,$(1),gz)
+	$(call Image/Build/LZMAKernel/KArgs,$(1),bin)
 endef
 
 #
