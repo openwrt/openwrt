@@ -90,7 +90,7 @@ ifeq ($(PKG_VERSION_SNAPSHOT),y)
 else
 	$(call Build/Prepare/Default)
 endif
-	$(CP) ./$(CONFIG_DIR)/$(ARCH)$(if $(wildcard $(CONFIG_DIR)/$(ARCH).$(BOARD)),$(BOARD)) $(PKG_BUILD_DIR)/.config
+	$(CP) ./$(CONFIG_DIR)/$(ARCH)$(if $(wildcard $(CONFIG_DIR)/$(ARCH).$(BOARD)),.$(BOARD)) $(PKG_BUILD_DIR)/.config
 ifeq ($(PKG_VERSION),0.9.28)
 	$(call Build/Prepare/V_0_9_28)
 endif
