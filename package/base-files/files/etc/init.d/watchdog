@@ -3,5 +3,5 @@
 
 START=97
 start() {
-        [ -f /dev/watchtog ] && watchdog -t 5 /dev/watchdog
+        [ -c /dev/watchtog ] && watchdog -t 5 /dev/watchdog
 }
