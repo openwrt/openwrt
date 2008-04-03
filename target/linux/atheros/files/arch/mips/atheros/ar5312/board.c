@@ -28,11 +28,12 @@
 #include <asm/irq.h>
 #include <asm/io.h>
 #include <ar531x.h>
+#include <linux/leds.h>
 
 #define NO_PHY 0x1f
 
 static int is_5312 = 0;
-static struct platform_device *ar5312_devs[5];
+static struct platform_device *ar5312_devs[6];
 
 static struct resource ar5312_eth0_res[] = {
 	{
@@ -164,6 +165,24 @@ static struct platform_device ar5312_physmap_flash = {
 	.resource   = &ar5312_flash_resource,
 };
 
+#ifdef CONFIG_LEDS_GPIO
+static struct gpio_led ar5312_leds[] = {
+	{ .name = "wlan", .gpio = 0, .active_low = 1, },
+};
+
+static const struct gpio_led_platform_data ar5312_led_data = {
+	.num_leds = ARRAY_SIZE(ar5312_leds),
+	.leds = (void *) ar5312_leds,
+};
+
+static struct platform_device ar5312_gpio_leds = {
+	.name = "leds-gpio",
+	.id = -1,
+	.dev = {
+		.platform_data = (void *) &ar5312_led_data,
+	}
+};
+#endif
 
 /*
  * NB: This mapping size is larger than the actual flash size,
@@ -268,6 +287,9 @@ int __init ar5312_init_devices(void)
 	}
 
 	ar5312_devs[dev++] = &ar5312_physmap_flash;
+
+	ar5312_leds[0].gpio = bcfg->sysLedGpio;
+	ar5312_devs[dev++] = &ar5312_gpio_leds;
 
 	if (!memcmp(bcfg->enet0Mac, "\xff\xff\xff\xff\xff\xff", 6))
 		memcpy(bcfg->enet0Mac, bcfg->enet1Mac, 6);
