@@ -23,7 +23,9 @@
 #include <asm/time.h>
 #include <asm/irq.h>
 #include <asm/io.h>
-#include "../ar531x.h"
+
+#include <ar531x.h>
+#include <gpio.h>
 
 /*
  * Called when an interrupt is received, this function
@@ -53,6 +55,8 @@ asmlinkage void ar5312_irq_dispatch(void)
 			(void)sysRegRead(AR531X_TIMER);
 		} else if (ar531x_misc_intrs & AR531X_ISR_AHBPROC)
 			do_IRQ(AR531X_MISC_IRQ_AHB_PROC);
+                else if (ar531x_misc_intrs & AR531X_ISR_GPIO)
+			ar5312_gpio_irq_dispatch(); 
 		else if ((ar531x_misc_intrs & AR531X_ISR_UART0))
 			do_IRQ(AR531X_MISC_IRQ_UART0);
 		else if (ar531x_misc_intrs & AR531X_ISR_WD)

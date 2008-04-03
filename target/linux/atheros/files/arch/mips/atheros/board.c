@@ -25,7 +25,7 @@
 #include <asm/bootinfo.h>
 #include <asm/irq_cpu.h>
 #include <asm/io.h>
-#include "ar531x.h"
+#include <ar531x.h>
 
 char *board_config, *radio_config;
 
@@ -216,3 +216,24 @@ void __init arch_init_irq(void)
 	DO_AR5312(ar5312_misc_intr_init(AR531X_MISC_IRQ_BASE);)
 	DO_AR5315(ar5315_misc_intr_init(AR531X_MISC_IRQ_BASE);)
 }
+
+static int __init ar531x_register_gpiodev(void)
+{
+	static struct resource res = {
+		.start = 0xFFFFFFFF,
+	};
+	struct platform_device *pdev;
+
+	printk(KERN_INFO "ar531x: Registering GPIODEV device\n");
+	
+	pdev = platform_device_register_simple("GPIODEV", 0, &res, 1);
+
+	if (!pdev) {
+		printk(KERN_ERR "ar531x: GPIODEV init failed\n");
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+device_initcall(ar531x_register_gpiodev);

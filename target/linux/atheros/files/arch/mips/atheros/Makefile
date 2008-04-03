@@ -8,6 +8,6 @@
 # Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
 #
 
-obj-y += board.o prom.o reset.o
+obj-y += board.o prom.o reset.o gpio.o
 obj-$(CONFIG_ATHEROS_AR5312) += ar5312/
 obj-$(CONFIG_ATHEROS_AR5315) += ar5315/

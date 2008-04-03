@@ -349,6 +349,12 @@
 #define AR5315_GPIO_INT_LVL(x)             ((x) << 6)                  /* interrupt level */
 #define AR5315_GPIO_INT_LVL_M              ((0x3) << 6)                /* mask for int level */
 
+#define AR5315_GPIO_INT_MAX_Y				1   /* Maximum value of Y for AR5313_GPIO_INT_* macros */
+#define AR5315_GPIO_INT_LVL_OFF				0   /* Triggerring off */
+#define AR5315_GPIO_INT_LVL_LOW				1   /* Low Level Triggered */
+#define AR5315_GPIO_INT_LVL_HIGH			2   /* High Level Triggered */
+#define AR5315_GPIO_INT_LVL_EDGE			3   /* Edge Triggered */
+
 #define AR5315_RESET_GPIO       5
 #define AR5315_NUM_GPIO         22
 

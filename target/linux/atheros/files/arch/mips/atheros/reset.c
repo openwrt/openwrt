@@ -7,8 +7,7 @@
 #include <linux/netlink.h>
 #include <net/sock.h>
 #include <asm/uaccess.h>
-#include "ar531x.h"
-#include "ar5315/ar5315.h"
+#include <ar531x.h>
 
 #define AR531X_RESET_GPIO_IRQ	(AR531X_GPIO_IRQ_BASE + bcfg->resetConfigGpio)
 

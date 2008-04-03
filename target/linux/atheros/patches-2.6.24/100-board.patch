@@ -1,7 +1,7 @@
 diff -urN linux.old/arch/mips/Kconfig linux.dev/arch/mips/Kconfig
 --- linux.old/arch/mips/Kconfig	2007-02-02 23:55:52.912446784 +0100
 +++ linux.dev/arch/mips/Kconfig	2007-02-03 21:50:25.262027104 +0100
-@@ -45,6 +45,17 @@
+@@ -45,6 +45,18 @@
  	  note that a kernel built with this option selected will not be
  	  able to run on normal units.
  
@@ -15,6 +15,7 @@ diff -urN linux.old/arch/mips/Kconfig linux.dev/arch/mips/Kconfig
 +	select SYS_HAS_CPU_MIPS32_R1
 +	select SYS_SUPPORTS_BIG_ENDIAN
 +	select SYS_SUPPORTS_32BIT_KERNEL
++	select GENERIC_GPIO
 +
  config MIPS_COBALT
  	bool "Cobalt Server"

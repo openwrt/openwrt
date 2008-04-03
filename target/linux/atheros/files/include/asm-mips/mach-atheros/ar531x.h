@@ -4,8 +4,8 @@
 #include <linux/version.h>
 #include <asm/cpu-info.h>
 #include <ar531x_platform.h>
-#include "ar5312/ar5312.h"
-#include "ar5315/ar5315.h"
+#include <ar5312/ar5312.h>
+#include <ar5315/ar5315.h>
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24))
 extern void (*board_time_init)(void);
@@ -76,8 +76,8 @@ static inline int clz(unsigned long val)
 #define AR531X_MISC_IRQ_COUNT		10
 
 /* GPIO Interrupts [0..7], share AR531X_MISC_IRQ_GPIO */
-#define AR531X_GPIO_IRQ_NONE            AR531X_MISC_IRQ_BASE+0
-#define AR531X_GPIO_IRQ(n)              AR531X_MISC_IRQ_BASE+(n)+1
+#define AR531X_GPIO_IRQ_NONE            AR531X_GPIO_IRQ_BASE+0
+#define AR531X_GPIO_IRQ(n)              AR531X_GPIO_IRQ_BASE+(n)+1
 #define AR531X_GPIO_IRQ_COUNT           22
 
 #define sysRegRead(phys)	\
@@ -166,5 +166,7 @@ static inline u32 sysRegMask(u32 phys, u32 mask, u32 value)
 
 	return reg;
 }
+
+#define AR531X_NUM_GPIO		8
 
 #endif
