@@ -27,6 +27,7 @@
 #include <asm/irq.h>
 #include <asm/io.h>
 #include <ar531x.h>
+#include <linux/leds.h>
 
 static int is_5315 = 0;
 
@@ -90,7 +91,27 @@ static struct platform_device ar5315_spiflash = {
 	.num_resources = ARRAY_SIZE(ar5315_spiflash_res)
 };
 
-static __initdata struct platform_device *ar5315_devs[4];
+#ifdef CONFIG_LEDS_GPIO
+static struct gpio_led ar5315_leds[] = {
+	{ .name = "wlan", .gpio = 0, .active_low = 1, },
+};
+
+static const struct gpio_led_platform_data ar5315_led_data = {
+	.num_leds = ARRAY_SIZE(ar5315_leds),
+	.leds = (void *) ar5315_leds,
+};
+
+static struct platform_device ar5315_gpio_leds = {
+	.name = "leds-gpio",
+	.id = -1,
+	.dev = {
+		.platform_data = (void *) &ar5315_led_data,
+	}
+};
+#endif
+
+
+static __initdata struct platform_device *ar5315_devs[5];
 
 
 
@@ -218,11 +239,13 @@ int __init ar5315_init_devices(void)
 	ar5315_eth_data.board_config = board_config;
 	ar5315_eth_data.macaddr = bcfg->enet0Mac;
 	ar5315_wmac.dev.platform_data = config;
-	
+
+	ar5315_leds[0].gpio = bcfg->sysLedGpio;
+
 	ar5315_devs[dev++] = &ar5315_eth;
 	ar5315_devs[dev++] = &ar5315_wmac;
 	ar5315_devs[dev++] = &ar5315_spiflash;
-			
+	ar5315_devs[dev++] = &ar5315_gpio_leds;
 
 	return platform_add_devices(ar5315_devs, dev);
 }
