@@ -23,7 +23,7 @@
 
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
-#include "ar531x.h"
+#include <ar531x.h>
 
 void __init prom_init(void)
 {

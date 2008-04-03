@@ -26,7 +26,7 @@
 #include <asm/time.h>
 #include <asm/irq.h>
 #include <asm/io.h>
-#include "../ar531x.h"
+#include <ar531x.h>
 
 static int is_5315 = 0;
 
