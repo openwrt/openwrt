@@ -563,7 +563,7 @@ $(eval $(call KernelPackage,usb-net-cdc-ether))
 define KernelPackage/usb-hid
   $(call usbdep,@LINUX_2_6 +kmod-input-core +kmod-input-evdev)
   TITLE:=Support for USB Human Input Devices
-  KCONFIG:=CONFIG_USB_HID
+  KCONFIG:=CONFIG_HID_SUPPORT=y CONFIG_USB_HID
   FILES:=$(LINUX_DIR)/drivers/$(USBHID_DIR)/usbhid.ko
   AUTOLOAD:=$(call AutoLoad,70,usbhid)
 endef
