@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -71,6 +71,13 @@ endef
 define Package/uci-sh/install
 	$(INSTALL_DIR) $(1)
 	$(CP) ./files/uci-sh/* $(1)/
+endef
+
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include
+	$(CP) $(PKG_BUILD_DIR)/uci{,_config}.h $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libuci.so* $(1)/usr/lib
 endef
 
 $(eval $(call BuildPackage,uci))
