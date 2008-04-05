@@ -54,6 +54,10 @@ define Image/Build/LZMAKernel/Admboot
 	$(call Image/Build/LZMAKernel,$(1),$(2),0x80500000,0x6D8,y,$(1))
 endef
 
+define Image/Build/LZMAKernel/Cellvision
+	$(call Image/Build/LZMAKernel,$(1),$(3),0x80500000,0x6D8,y,$(2))
+endef
+
 define Image/Build/LZMAKernel/KArgs
 	$(call Image/Build/LZMAKernel,$(1),$(2),0x80500000,0,y,$(1))
 endef
