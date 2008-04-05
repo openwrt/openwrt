@@ -66,7 +66,7 @@ endef
 
 define Image/Build/Cellvision2
 	# only for CAS-700/771/790/861
-	$(call Image/Build/Loader,$(2),gz,0x80500000,0x6D8,y,$(2))
+	$(call Image/Build/Loader,$(2),gz,0x80500000,0x6D8,y,$(3))
 	$(call Image/Build/TRXNoloader,$(call imgname,$(1),$(2)).trx,$(1))
 	dd if=$(KDIR)/loader-$(2).gz of=$(call imgname,$(1),$(2)).bin bs=64k conv=sync
 	cat $(call imgname,$(1),$(2)).trx >> $(call imgname,$(1),$(2)).bin
@@ -104,19 +104,19 @@ endef
 # Cellvision CAS-700/700W, CAS-771/771W, CAS-790, CAS-861/861W
 #
 define Image/Build/Template/Cellvision2
-	$(call Image/Build/Cellvision2,$(1),$(2))
+	$(call Image/Build/Cellvision2,$(1),$(2),$(3))
 endef
 
 define Image/Build/Template/Cellvision2/squashfs
-	$(call Image/Build/Template/Cellvision2,squashfs,$(1))
+	$(call Image/Build/Template/Cellvision2,squashfs,$(1),$(2))
 endef
 
 define Image/Build/Template/Cellvision2/jffs2-64k
-	$(call Image/Build/Template/Cellvision2,jffs2-64k,$(1))
+	$(call Image/Build/Template/Cellvision2,jffs2-64k,$(1),$(2))
 endef
 
 define Image/Build/Template/Cellvision2/Initramfs
-	$(call Image/Build/LZMAKernel/Admboot,$(1),gz)
+	$(call Image/Build/LZMAKernel/Cellvision,$(1),$(2),gz)
 endef
 
 #
@@ -206,7 +206,7 @@ define Image/Build/Profile/CAS630
 endef
 
 define Image/Build/Profile/CAS630W
-	$(call Image/Build/Template/Cellvision/$(1),cas-630,cas-630w)
+	$(call Image/Build/Template/Cellvision/$(1),cas-630w,cas-630)
 endef
 
 define Image/Build/Profile/CAS670
@@ -214,7 +214,7 @@ define Image/Build/Profile/CAS670
 endef
 
 define Image/Build/Profile/CAS670W
-	$(call Image/Build/Template/Cellvision/$(1),cas-670,cas-670w)
+	$(call Image/Build/Template/Cellvision/$(1),cas-670w,cas-670)
 endef
 
 define Image/Build/Profile/NFS101U
@@ -231,31 +231,31 @@ define Image/Build/Profile/NFS101WU
 endef
 
 define Image/Build/Profile/CAS700
-	$(call Image/Build/Template/Cellvision2/$(1),cas-700)
+	$(call Image/Build/Template/Cellvision2/$(1),cas-700,cas-700)
 endef
 
 define Image/Build/Profile/CAS700W
-	$(call Image/Build/Template/Cellvision2/$(1),cas-700w)
+	$(call Image/Build/Template/Cellvision2/$(1),cas-700w,cas-700)
 endef
 
 define Image/Build/Profile/CAS771
-	$(call Image/Build/Template/Cellvision2/$(1),cas-771)
+	$(call Image/Build/Template/Cellvision2/$(1),cas-771,cas-771)
 endef
 
 define Image/Build/Profile/CAS771W
-	$(call Image/Build/Template/Cellvision2/$(1),cas-771w)
+	$(call Image/Build/Template/Cellvision2/$(1),cas-771w,cas-771)
 endef
 
 define Image/Build/Profile/CAS790
-	$(call Image/Build/Template/Cellvision2/$(1),cas-790)
+	$(call Image/Build/Template/Cellvision2/$(1),cas-790,cas-790)
 endef
 
 define Image/Build/Profile/CAS861
-	$(call Image/Build/Template/Cellvision2/$(1),cas-861)
+	$(call Image/Build/Template/Cellvision2/$(1),cas-861,cas-861)
 endef
 
 define Image/Build/Profile/CAS861W
-	$(call Image/Build/Template/Cellvision2/$(1),cas-861w)
+	$(call Image/Build/Template/Cellvision2/$(1),cas-861w,cas-861)
 endef
 
 define Image/Build/Profile/NP27G
@@ -303,7 +303,7 @@ define Image/Build/Profile/RouterBoard
 endef
 
 ifeq ($(CONFIG_BROKEN),y)
-define Image/Build/Experimental
+  define Image/Build/Experimental
 	# Cellvison
 	$(call Image/Build/Profile/CAS630,$(1))
 	$(call Image/Build/Profile/CAS630W,$(1))
@@ -317,7 +317,7 @@ define Image/Build/Experimental
 	$(call Image/Build/Profile/CAS861W,$(1))
 	$(call Image/Build/Profile/NFS101U,$(1))
 	$(call Image/Build/Profile/NFS101WU,$(1))
-endef
+  endef
 endif
 
 define Image/Build/Profile/Generic
@@ -335,7 +335,7 @@ define Image/Build/Profile/Generic
 	$(call Image/Build/Profile/EASY5120RT,$(1))
 	# Mikrotik
 	$(call Image/Build/Profile/RB1xx/$(1))
-	$(call Image/Build/Experimental)
+	$(call Image/Build/Experimental,$(1))
 endef
 
 ifeq ($(PROFILE),RouterBoard)
