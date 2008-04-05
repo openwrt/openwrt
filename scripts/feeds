@@ -104,9 +104,15 @@ sub update_git($$) {
 
 sub get_feed($) {
 	my $feed = shift;
+	my $file = "./feeds/$feed.index";
 
 	clear_packages();
-	parse_package_metadata("./feeds/$feed.index") or return;
+
+	-f $file or do {
+		print "Ignoring feed '$feed' - index missing\n";
+		return;
+	};
+	parse_package_metadata($file) or return;
 	return { %package };
 }
 
