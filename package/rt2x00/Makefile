@@ -36,7 +36,7 @@ $(eval $(call Download,rt71w))
 define KernelPackage/rt2x00/Default
   SUBMENU:=Wireless Drivers
   TITLE:=Ralink Drivers for RT2x00 cards
-  DEPENDS:=@LINUX_2_6 @!TARGET_atheros @!TARGET_uml
+  DEPENDS:=@LINUX_2_6_24 @!TARGET_atheros @!TARGET_uml
 endef
 
 define KernelPackage/rt2x00-lib
