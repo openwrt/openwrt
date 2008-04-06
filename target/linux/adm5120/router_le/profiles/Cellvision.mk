@@ -70,7 +70,7 @@ endef
 
 define Profile/CAS771W
 	NAME:=Cellvision CAS-771W IP camera (Experimental)
-	PACKAGES:=kmod-video-cpia2 kmod-usb-ohci kmod-usb2 kmod-usb-audio kmod-rt2500
+	PACKAGES:=kmod-video-cpia2 kmod-usb-ohci kmod-usb2 kmod-usb-audio kmod-rt2500-pci
 endef
 
 define Profile/CAS771W/Description
@@ -97,7 +97,7 @@ endef
 
 define Profile/CAS861W
 	NAME:=Cellvision CAS-861W IP camera (Experimental)
-	PACKAGES:=kmod-rt2500
+	PACKAGES:=kmod-rt2500-pci
 endef
 
 define Profile/CAS861W/Description
