@@ -12,12 +12,17 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 PKG_RELEASE:=1
 
+PKG_VERSION:=2008-04-06
+PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:=http://linuxwireless.org/download/compat-wireless-2.6/
+PKG_BUILD_DIR:=$(BUILD_DIR)/compat-wireless-$(PKG_VERSION)
+
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/mac80211
   SUBMENU:=Wireless Drivers
   TITLE:=Linux 802.11 Wireless Networking Stack
-  DEPENDS:=@LINUX_2_6_23 +kmod-crypto-arc4 +kmod-crypto-aes +wireless-tools
+  DEPENDS:=@LINUX_2_6_23||@LINUX_2_6_24 +kmod-crypto-arc4 +kmod-crypto-aes +wireless-tools
   FILES:= \
 	$(PKG_BUILD_DIR)/net/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/net/wireless/cfg80211.$(LINUX_KMOD_SUFFIX)
@@ -44,30 +49,27 @@ MAKE_OPTS:= \
 	CONFIG_MAC80211_RC_PID=y \
 	CONFIG_MAC80211_LEDS=$(CONFIG_LEDS_TRIGGERS) \
 	LINUXINCLUDE="-I$(PKG_BUILD_DIR)/include -I$(LINUX_DIR)/include -include linux/autoconf.h" \
+	KLIB_BUILD="$(LINUX_DIR)" \
 
 define Build/Prepare
 	rm -rf $(PKG_BUILD_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)/
-	$(Build/Patch)
+	$(PKG_UNPACK)
 	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
 endef
 
 define Build/Compile
-	$(MAKE) -C "$(LINUX_DIR)" $(MAKE_OPTS) SUBDIRS="$(PKG_BUILD_DIR)/net/wireless" modules
-	$(MAKE) -C "$(LINUX_DIR)" $(MAKE_OPTS) SUBDIRS="$(PKG_BUILD_DIR)/net/mac80211" modules
+	$(MAKE) -C "$(PKG_BUILD_DIR)" $(MAKE_OPTS) all
 endef
 
-ifeq ($(CONFIG_LINUX_2_6_23),y)
-  define Build/InstallDev
+define Build/InstallDev
 	mkdir -p $(1)/usr/include/mac80211
 	$(CP) $(PKG_BUILD_DIR)/net/mac80211/*.h $(PKG_BUILD_DIR)/include/* $(1)/usr/include/mac80211/
-  endef
+endef
 
-  define KernelPackage/mac80211/install
+define KernelPackage/mac80211/install
 	$(INSTALL_DIR) $(1)/lib/wifi
 	$(INSTALL_DATA) ./files/lib/wifi/mac80211.sh $(1)/lib/wifi
-  endef
-endif
+endef
 
 $(eval $(call KernelPackage,mac80211))
