@@ -41,7 +41,7 @@ endif
 #
 # Determine if and with what options the rt2x00 drivers should be build
 #
-rt2x00lib-objs := rt2x00dev.o rt2x00mac.o
+rt2x00lib-objs := rt2x00dev.o rt2x00mac.o rt2x00config.o rt2x00firmware.o
 
 ifeq ($(CONFIG_RT2X00),y)
 	obj-m += rt2x00lib.o
