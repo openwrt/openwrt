@@ -60,6 +60,18 @@ static struct gpio_led n ## _leds [] __initdata =
 #define LED_INV(g, n, t)	LED_DATA((n), (t), (g), 1)
 
 /*
+ * Cellvision boards
+ */
+
+LED_ARRAY(cas771) {
+	LED_STD(ADM5120_GPIO_PIN0, "cam_flash",	NULL),
+	/* GPIO PIN3 is the reset */
+	LED_STD(ADM5120_GPIO_PIN6, "access", NULL),
+	LED_STD(ADM5120_GPIO_P0L1, "status", NULL),
+	LED_STD(ADM5120_GPIO_P0L2, "diag", NULL),
+};
+
+/*
  * Compex boards
  */
 #if defined(CONFIG_LEDS_ADM5120_EXPERIMENTAL)
@@ -253,6 +265,8 @@ LED_ARRAY(generic) {
 
 static struct mach_data machines[] __initdata = {
 	MACH_DATA(MACH_ADM5120_GENERIC, generic),
+	/* Cellvision */
+	MACH_DATA(MACH_ADM5120_CAS771, cas771),
 	/* Compex */
 	MACH_DATA(MACH_ADM5120_NP28G,	np28g),
 	MACH_DATA(MACH_ADM5120_NP28GHS,	np28g),
