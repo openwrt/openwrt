@@ -1,5 +1,5 @@
---- linux-2.6.24/drivers/net/cpmac.c	2008-01-25 02:20:37.000000000 +0100
-+++ linux-2.6.24/drivers/net/cpmac.c	2008-02-08 20:04:58.000000000 +0100
+--- /usr/src/linux-2.6.24/drivers/net/cpmac.c	2008-01-25 02:20:37.000000000 +0100
++++ cpmac.c	2008-04-06 21:30:03.000000000 +0200
 @@ -38,6 +38,7 @@
  #include <linux/platform_device.h>
  #include <linux/dma-mapping.h>
@@ -43,10 +43,12 @@
  	struct cpmac_priv *priv =
  		container_of(work, struct cpmac_priv, reset_work);
  
-@@ -650,8 +655,46 @@
+@@ -650,8 +655,47 @@
  	spin_unlock(&priv->rx_lock);
  	cpmac_clear_tx(priv->dev);
  	cpmac_hw_start(priv->dev);
+-	napi_enable(&priv->napi);
+-	netif_start_queue(priv->dev);
 +	barrier();
 +	atomic_dec(&priv->reset_pending);
 +	
@@ -54,6 +56,7 @@
 +		netif_wake_subqueue(priv->dev, i);
 +	}
 +	netif_wake_queue(priv->dev);
++	cpmac_write(priv->regs, CPMAC_MAC_INT_ENABLE, 3);
 +}
 +
 +static void cpmac_check_status(struct net_device *dev)
@@ -82,16 +85,15 @@
 +		netif_stop_queue(dev);
 +		cpmac_hw_stop(dev);
 +		if (schedule_work(&priv->reset_work))
-+			atomic_inc(&priv->reset_pending);			
++			atomic_inc(&priv->reset_pending);
 +		if (unlikely(netif_msg_hw(priv)))
 +			cpmac_dump_regs(dev);
 +	}
- 	napi_enable(&priv->napi);
--	netif_start_queue(priv->dev);
++	cpmac_write(priv->regs, CPMAC_MAC_INT_CLEAR, 0xff);
  }
  
  static irqreturn_t cpmac_irq(int irq, void *dev_id)
-@@ -661,9 +704,6 @@
+@@ -661,9 +705,6 @@
  	int queue;
  	u32 status;
  
@@ -101,7 +103,7 @@
  	priv = netdev_priv(dev);
  
  	status = cpmac_read(priv->regs, CPMAC_MAC_INT_VECTOR);
-@@ -685,49 +725,33 @@
+@@ -685,49 +726,33 @@
  
  	cpmac_write(priv->regs, CPMAC_MAC_EOI_VECTOR, 0);
  
@@ -165,7 +167,7 @@
  }
  
  static int cpmac_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
-@@ -848,15 +872,6 @@
+@@ -848,15 +873,6 @@
  	spin_unlock(&priv->lock);
  }
  
@@ -181,7 +183,7 @@
  static int cpmac_open(struct net_device *dev)
  {
  	int i, size, res;
-@@ -923,6 +938,7 @@
+@@ -923,6 +939,7 @@
  		goto fail_irq;
  	}
  
@@ -189,7 +191,7 @@
  	INIT_WORK(&priv->reset_work, cpmac_hw_error);
  	cpmac_hw_start(dev);
  
-@@ -999,11 +1015,11 @@
+@@ -999,11 +1016,11 @@
  static int __devinit cpmac_probe(struct platform_device *pdev)
  {
  	int rc, phy_id, i;
@@ -202,7 +204,7 @@
  	DECLARE_MAC_BUF(mac);
  
  	pdata = pdev->dev.platform_data;
-@@ -1017,9 +1033,23 @@
+@@ -1017,9 +1034,23 @@
  	}
  
  	if (phy_id == PHY_MAX_ADDR) {
@@ -228,7 +230,7 @@
  			printk(KERN_ERR "cpmac: no PHY present\n");
  			return -ENODEV;
  		}
-@@ -1063,32 +1093,8 @@
+@@ -1063,32 +1094,8 @@
  	priv->msg_enable = netif_msg_init(debug_level, 0xff);
  	memcpy(dev->dev_addr, pdata->dev_addr, sizeof(dev->dev_addr));
  
