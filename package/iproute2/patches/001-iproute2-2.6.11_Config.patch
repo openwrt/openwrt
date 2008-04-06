@@ -1,0 +1,9 @@
+Index: iproute-2.6.20-070313/Config
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ iproute-2.6.20-070313/Config	2007-06-09 13:53:58.000000000 +0100
+@@ -0,0 +1,4 @@
++# Fixed config to disable ATM support even if present on host system
++TC_CONFIG_ATM:=n
++TC_CONFIG_ACTION_GACT=y
++TC_CONFIG_ACTION_PROB=y
