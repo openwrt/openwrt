@@ -50,7 +50,7 @@ Index: linux-2.6.23-rc6/arch/mips/kernel/traps.c
 +			*(u32 *)(ebase + 0x20C) = 0x00000000;
 +			flush_icache_range(ebase + 0x200, ebase + 0x210);
 +		} else {
-+			*(volatile u32 *)(ebase + 0x200) =
++			*(u32 *)(ebase + 0x200) =
 +				0x08000000 | (0x03ffffff & (handler >> 2));
 +			flush_icache_range(ebase + 0x200, ebase + 0x204);
 +		}

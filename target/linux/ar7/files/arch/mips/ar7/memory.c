@@ -37,21 +37,24 @@
 static int __init memsize(void)
 {
 	u32 size = (64 << 20);
-	volatile u32 *addr = (u32 *)KSEG1ADDR(0x14000000 + size - 4);
+	u32 *addr = (u32 *)KSEG1ADDR(0x14000000 + size - 4);
 	u32 *kernel_end = (u32 *)KSEG1ADDR(CPHYSADDR((u32)&_end));
+	u32 *tmpaddr = addr;
 
-	while (addr > kernel_end) {
-		*addr = (u32)addr;
+	while (tmpaddr > kernel_end) {
+		*tmpaddr = (u32)tmpaddr;
 		size >>= 1;
-		addr -= size >> 2;
+		tmpaddr -= size >> 2;
 	}
 
 	do {
-		addr += size >> 2;
-		if (*addr != (u32)addr)
+		tmpaddr += size >> 2;
+		if (*tmpaddr != (u32)tmpaddr)
 			break;
 		size <<= 1;
 	} while (size < (64 << 20));
+
+	writel(tmpaddr, &addr);
 
 	return size;
 }
