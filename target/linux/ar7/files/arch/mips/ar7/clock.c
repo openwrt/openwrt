@@ -48,12 +48,12 @@
 #define TNETD7200_DEF_USB_CLK	48000000
 
 struct tnetd7300_clock {
-	u32 ctrl;
+	volatile u32 ctrl;
 #define PREDIV_MASK	0x001f0000
 #define PREDIV_SHIFT	16
 #define POSTDIV_MASK	0x0000001f
 	u32 unused1[3];
-	u32 pll;
+	volatile u32 pll;
 #define MUL_MASK	0x0000f000
 #define MUL_SHIFT	12
 #define PLL_MODE_MASK	0x00000001
@@ -71,17 +71,17 @@ struct tnetd7300_clocks {
 };
 
 struct tnetd7200_clock {
-	u32 ctrl;
+	volatile u32 ctrl;
 	u32 unused1[3];
 #define DIVISOR_ENABLE_MASK 0x00008000
-	u32 mul;
-	u32 prediv;
-	u32 postdiv;
-	u32 postdiv2;
+	volatile u32 mul;
+	volatile u32 prediv;
+	volatile u32 postdiv;
+	volatile u32 postdiv2;
 	u32 unused2[6];
-	u32 cmd;
-	u32 status;
-	u32 cmden;
+	volatile u32 cmd;
+	volatile u32 status;
+	volatile u32 cmden;
 	u32 padding[15];
 };
 
