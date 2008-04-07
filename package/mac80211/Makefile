@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 PKG_RELEASE:=1
 
-PKG_VERSION:=2008-04-06
+PKG_VERSION:=2008-04-07
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://linuxwireless.org/download/compat-wireless-2.6/
 PKG_BUILD_DIR:=$(BUILD_DIR)/compat-wireless-$(PKG_VERSION)
