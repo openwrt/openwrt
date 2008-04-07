@@ -1,0 +1,53 @@
+Index: broadcom-wl-4.150.10.5.2/router/shared/linux_timer.c
+===================================================================
+--- broadcom-wl-4.150.10.5.2.orig/router/shared/linux_timer.c	2008-04-07 00:15:24.914329846 +0200
++++ broadcom-wl-4.150.10.5.2/router/shared/linux_timer.c	2008-04-07 00:14:52.288470602 +0200
+@@ -94,6 +94,7 @@
+ #define TFLAG_NONE	0
+ #define TFLAG_CANCELLED	(1<<0)
+ #define TFLAG_DELETED	(1<<1)
++#define TFLAG_QUEUED	(1<<2)
+ 
+ struct event {
+     struct timeval it_interval;
+@@ -207,6 +208,7 @@
+ 
+ 	event_freelist = event->next;
+ 	event->next = NULL;
++	event->flags &= ~TFLAG_QUEUED;
+ 
+ 	check_event_queue();
+ 
+@@ -387,6 +389,7 @@
+ 	}
+ 
+ 	event->flags &= ~TFLAG_CANCELLED;
++	event->flags |= TFLAG_QUEUED;
+ 
+ 	unblock_timer();
+ 
+@@ -502,7 +505,15 @@
+ 		(*(event->func))((timer_t) event, (int)event->arg);
+ 
+ 		/* If the event has been cancelled, do NOT put it back on the queue. */
+-		if (!(event->flags & TFLAG_CANCELLED)) {
++		/* Check for TFLAG_QUEUED is to avoid pathologic case, when after
++		 * dequeueing event handler deletes its own timer and allocates new one
++		 * which (at least in some cases) gets the same pointer and thus its
++		 * 'flags' will be rewritten, most notably TFLAG_CANCELLED, and, to
++		 * complete the disaster, it will be queued. alarm_handler tries to
++		 * enqueue 'event' (which is on the same memory position as newly
++		 * allocated timer), which results in queueing the same pointer once
++		 * more. And this way, loop in event queue is created. */
++		if ( !(event->flags & TFLAG_CANCELLED) && !(event->flags & TFLAG_QUEUED) ) {
+ 
+ 			/* if the event is a recurring event, reset the timer and
+ 			 * find its correct place in the sorted list of events.
+@@ -545,6 +556,7 @@
+ 				/* link our new event into the pending event queue. */
+ 				event->next = *ppevent;
+ 				*ppevent = event;
++				event->flags |= TFLAG_QUEUED;
+ 			} else {
+ 				/* there is no interval, so recycle the event structure.
+ 				 * timer_delete((timer_t) event);
