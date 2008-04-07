@@ -48,12 +48,12 @@
 #define TNETD7200_DEF_USB_CLK	48000000
 
 struct tnetd7300_clock {
-	volatile u32 ctrl;
+	u32 ctrl;
 #define PREDIV_MASK	0x001f0000
 #define PREDIV_SHIFT	16
 #define POSTDIV_MASK	0x0000001f
 	u32 unused1[3];
-	volatile u32 pll;
+	u32 pll;
 #define MUL_MASK	0x0000f000
 #define MUL_SHIFT	12
 #define PLL_MODE_MASK	0x00000001
@@ -71,17 +71,17 @@ struct tnetd7300_clocks {
 };
 
 struct tnetd7200_clock {
-	volatile u32 ctrl;
+	u32 ctrl;
 	u32 unused1[3];
 #define DIVISOR_ENABLE_MASK 0x00008000
-	volatile u32 mul;
-	volatile u32 prediv;
-	volatile u32 postdiv;
-	volatile u32 postdiv2;
+	u32 mul;
+	u32 prediv;
+	u32 postdiv;
+	u32 postdiv2;
 	u32 unused2[6];
-	volatile u32 cmd;
-	volatile u32 status;
-	volatile u32 cmden;
+	u32 cmd;
+	u32 status;
+	u32 cmden;
 	u32 padding[15];
 };
 
@@ -180,8 +180,8 @@ static int tnetd7300_get_clock(u32 shift, struct tnetd7300_clock *clock,
 {
 	int product;
 	int base_clock = AR7_REF_CLOCK;
-	u32 ctrl = clock->ctrl;
-	u32 pll = clock->pll;
+	u32 ctrl = readl(&clock->ctrl);
+	u32 pll = readl(&clock->pll);
 	int prediv = ((ctrl & PREDIV_MASK) >> PREDIV_SHIFT) + 1;
 	int postdiv = (ctrl & POSTDIV_MASK) + 1;
 	int divisor = prediv * postdiv;
@@ -224,7 +224,6 @@ static int tnetd7300_get_clock(u32 shift, struct tnetd7300_clock *clock,
 static void tnetd7300_set_clock(u32 shift, struct tnetd7300_clock *clock,
 	u32 *bootcr, u32 frequency)
 {
-	u32 status;
 	int prediv, postdiv, mul;
 	int base_clock = ar7_bus_clock;
 
@@ -245,13 +244,11 @@ static void tnetd7300_set_clock(u32 shift, struct tnetd7300_clock *clock,
 
 	calculate(base_clock, frequency, &prediv, &postdiv, &mul);
 
-	clock->ctrl = ((prediv - 1) << PREDIV_SHIFT) | (postdiv - 1);
+	writel(((prediv - 1) << PREDIV_SHIFT) | (postdiv - 1), &clock->ctrl);
 	mdelay(1);
-	clock->pll = 4;
-	do
-		status = clock->pll;
-	while (status & PLL_STATUS);
-	clock->pll = ((mul - 1) << MUL_SHIFT) | (0xff << 3) | 0x0e;
+	writel(4, &clock->pll);
+	while (readl(&clock->pll) & PLL_STATUS);
+	writel(((mul - 1) << MUL_SHIFT) | (0xff << 3) | 0x0e, &clock->pll);
 	mdelay(75);
 }
 
@@ -286,13 +283,13 @@ static void __init tnetd7300_init_clocks(void)
 static int tnetd7200_get_clock(int base, struct tnetd7200_clock *clock,
 	u32 *bootcr, u32 bus_clock)
 {
-	int divisor = ((clock->prediv & 0x1f) + 1) *
-		((clock->postdiv & 0x1f) + 1);
+	int divisor = ((readl(&clock->prediv) & 0x1f) + 1) *
+		((readl(&clock->postdiv) & 0x1f) + 1);
 
 	if (*bootcr & BOOT_PLL_BYPASS)
 		return base / divisor;
 
-	return base * ((clock->mul & 0xf) + 1) / divisor;
+	return base * ((readl(&clock->mul) & 0xf) + 1) / divisor;
 }
 
 
@@ -304,29 +301,29 @@ static void tnetd7200_set_clock(int base, struct tnetd7200_clock *clock,
 		"postdiv = %d, postdiv2 = %d, mul = %d\n",
 		base, frequency, prediv, postdiv, postdiv2, mul);
 
-	clock->ctrl = 0;
-	clock->prediv = DIVISOR_ENABLE_MASK | ((prediv - 1) & 0x1F);
-	clock->mul = ((mul - 1) & 0xF);
+	writel(0, &clock->ctrl);
+	writel(DIVISOR_ENABLE_MASK | ((prediv - 1) & 0x1F), &clock->prediv);
+	writel((mul - 1) & 0xF, &clock->mul);
 
 	for (mul = 0; mul < 2000; mul++) /* nop */;
 
-	while (clock->status & 0x1) /* nop */;
+	while (readl(&clock->status) & 0x1) /* nop */;
 
-	clock->postdiv = DIVISOR_ENABLE_MASK | ((postdiv - 1) & 0x1F);
+	writel(DIVISOR_ENABLE_MASK | ((postdiv - 1) & 0x1F), &clock->postdiv);
 
-	clock->cmden |= 1;
-	clock->cmd |= 1;
+	writel(readl(&clock->cmden) | 1, &clock->cmden);
+	writel(readl(&clock->cmd) | 1, &clock->cmd);
 
-	while (clock->status & 0x1) /* nop */;
+	while (readl(&clock->status) & 0x1) /* nop */;
 
-	clock->postdiv2 = DIVISOR_ENABLE_MASK | ((postdiv2 - 1) & 0x1F);
+	writel(DIVISOR_ENABLE_MASK | ((postdiv2 - 1) & 0x1F), &clock->postdiv2);
 
-	clock->cmden |= 1;
-	clock->cmd |= 1;
+	writel(readl(&clock->cmden) | 1, &clock->cmden);
+	writel(readl(&clock->cmd) | 1, &clock->cmd);
 
-	while (clock->status & 0x1) /* nop */;
+	while (readl(&clock->status) & 0x1) /* nop */;
 
-	clock->ctrl |= 1;
+	writel(readl(&clock->ctrl) | 1, &clock->ctrl);
 }
 
 static int tnetd7200_get_clock_base(int clock_id, u32 *bootcr)
