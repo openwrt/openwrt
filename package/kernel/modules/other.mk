@@ -497,6 +497,40 @@ endef
 $(eval $(call KernelPackage,input-evdev))
 
 
+define KernelPackage/input-polldev
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Polled Input device support
+  DEPENDS:=+kmod-input-core @LINUX_2_6
+  KCONFIG:=CONFIG_INPUT_POLLDEV
+  FILES:=$(LINUX_DIR)/drivers/input/input-polldev.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,61,input-polldev)
+endef
+
+define KernelPackage/input-polldev/description
+ Kernel module for support of polled input devices
+endef
+
+$(eval $(call KernelPackage,input-polldev))
+
+
+define KernelPackage/input-gpio-buttons
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Polled GPIO buttons input device
+  DEPENDS:=+kmod-input-polldev @LINUX_2_6
+  KCONFIG:= \
+	CONFIG_INPUT_GPIO_BUTTONS \
+	CONFIG_INPUT_MISC=y
+  FILES:=$(LINUX_DIR)/drivers/input/misc/gpio_buttons.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,62,gpio_buttons)
+endef
+
+define KernelPackage/input-gpio-buttons/description
+ Kernel module for support polled GPIO buttons input device
+endef
+
+$(eval $(call KernelPackage,input-gpio-buttons))
+
+
 define KernelPackage/mmc-spi
   SUBMENU:=$(OTHER_MENU)
   TITLE:=MMC/SD over SPI Support
