@@ -15,6 +15,8 @@
 #include <linux/sched.h>
 #include <linux/pci.h>
 #include <linux/ioport.h>	/* request_mem_region() */
+
+#include <asm/gpio.h>
 #include <asm/unaligned.h>		/* ioremap() */
 #include <asm/io.h>		/* ioremap() */
 #include <asm/rc32434/rb.h>
@@ -55,25 +57,15 @@ static inline u8 rareg(unsigned reg, struct cf_mips_dev* dev)
 	return readb(dev->baddr + ATA_REG_OFFSET + reg);
 }
 
-static inline int get_gpio_bit(gpio_func ofs, struct cf_mips_dev *dev)
-{
-	return (gpio_get(ofs) >> dev->pin) & 1;
-}
-
-static inline void set_gpio_bit(int bit, gpio_func ofs, struct cf_mips_dev *dev)
-{
-	gpio_set(ofs, (1 << dev->pin), ((bit & 1) << dev->pin));
-}
-
 static inline int cfrdy(struct cf_mips_dev *dev)
 {
-	return get_gpio_bit(DATA, dev);
+	return gpio_get_value(dev->pin);
 }
 
 static inline void prepare_cf_irq(struct cf_mips_dev *dev)
 {
-	set_gpio_bit(1, ILEVEL, dev);	/* interrupt on cf ready (not busy) */
-	set_gpio_bit(0, ISTAT, dev); 	/* clear interrupt status */
+	rb500_gpio_set_int_level(1, dev->pin);	/* interrupt on cf ready (not busy) */
+	rb500_gpio_set_int_status(0, dev->pin); 	/* clear interrupt status */
 }
 
 static inline int cf_present(struct cf_mips_dev* dev)
@@ -85,8 +77,8 @@ static inline int cf_present(struct cf_mips_dev* dev)
 	int i;
 
 	/* setup CFRDY GPIO as input */
-	set_gpio_bit(0, FUNC, dev);
-	set_gpio_bit(0, CFG, dev);
+	rb500_gpio_set_func(dev->pin, 0);
+	gpio_direction_input(dev->pin);
 
 	for (i = 0; i < 0x10; ++i) {
 		if (rareg(i,dev) != 0xff)
@@ -151,9 +143,9 @@ static irqreturn_t cf_irq_handler(int irq, void *dev_id)
 	 * To avoid this, we change ILEVEL to 0.
 	 */
 	struct cf_mips_dev *dev=dev_id;
-	
-	set_gpio_bit(0, ILEVEL, dev);
-	set_gpio_bit(0, ISTAT, dev);
+
+	rb500_gpio_set_int_level(0, dev->pin);
+	rb500_gpio_set_int_status(0, dev->pin);
 	
 	del_timer(&dev->to_timer);
 	tasklet_schedule(&dev->tasklet);
@@ -393,7 +385,7 @@ static int do_identify(struct cf_mips_dev *dev)
 	tstr[16]=0;
 	printk(KERN_INFO "cf-mips: %s detected, C/H/S=%d/%d/%d sectors=%u (%uMB) Serial=%s\n",
 	       (sbuf[0] == 0x848A ? "CF card" : "ATA drive"), dev->cyl, dev->head,
-	       dev->spt, dev->sectors, dev->sectors >> 11,tstr);
+	       dev->spt, dev->sectors, dev->sectors >> 11, tstr);
 	return 1;
 }
 
