@@ -68,7 +68,7 @@ struct vlynq_regs {
 	u32 autonego;
 	u32 unused[6];
 	u32 int_device[8];
-} __attribute__ ((packed));
+};
 
 #define vlynq_reg_read(reg) readl(&(reg))
 #define vlynq_reg_write(reg, val)  writel(val, &(reg))
