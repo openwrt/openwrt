@@ -61,14 +61,14 @@ struct tnetd7300_clock {
 #define PLL_DIV		0x00000002
 #define PLL_STATUS	0x00000001
 	u32 unused2[3];
-} __packed;
+};
 
 struct tnetd7300_clocks {
 	struct tnetd7300_clock bus;
 	struct tnetd7300_clock cpu;
 	struct tnetd7300_clock usb;
 	struct tnetd7300_clock dsp;
-} __packed;
+};
 
 struct tnetd7200_clock {
 	volatile u32 ctrl;
@@ -83,13 +83,13 @@ struct tnetd7200_clock {
 	volatile u32 status;
 	volatile u32 cmden;
 	u32 padding[15];
-} __packed;
+};
 
 struct tnetd7200_clocks {
 	struct tnetd7200_clock cpu;
 	struct tnetd7200_clock dsp;
 	struct tnetd7200_clock usb;
-} __packed;
+};
 
 int ar7_cpu_clock = 150000000;
 EXPORT_SYMBOL(ar7_cpu_clock);

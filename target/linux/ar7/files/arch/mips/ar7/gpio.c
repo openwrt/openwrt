@@ -21,7 +21,7 @@
 
 #include <asm/ar7/gpio.h>
 
-static const char *ar7_gpio_list[AR7_GPIO_MAX] = { 0, };
+static const char *ar7_gpio_list[AR7_GPIO_MAX];
 
 int gpio_request(unsigned gpio, const char *label)
 {
