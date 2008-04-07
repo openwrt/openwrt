@@ -119,8 +119,8 @@ set_interface_ifname() {
 	local ifname="$2"
 
 	config_get device "$1" device
-	uci_set_state "network.$config.ifname=$ifname"
-	uci_set_state "network.$config.device=$device"
+	uci_set_state network "$config" ifname "$ifname"
+	uci_set_state network "$config" device "$device"
 }
 
 setup_interface() {
