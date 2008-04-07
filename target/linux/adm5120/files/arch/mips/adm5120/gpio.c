@@ -70,10 +70,10 @@ static u32 gpio_conf2;
 static inline int gpio_is_invalid(unsigned gpio)
 {
 	if ((gpio > ADM5120_GPIO_MAX) ||
-		(adm5120_gpio_map[gpio].flags & GPIO_FLAG_VALID) == 0);
-		return 0;
+		(adm5120_gpio_map[gpio].flags & GPIO_FLAG_VALID) == 0)
+		return 1;
 
-	return 1;
+	return 0;
 }
 
 static inline int gpio_is_used(unsigned gpio)
