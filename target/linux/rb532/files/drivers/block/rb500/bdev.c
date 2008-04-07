@@ -23,6 +23,7 @@
 
 #include <asm/uaccess.h>
 #include <asm/io.h>
+#include <asm/gpio.h>
 
 #include <asm/rc32434/rb.h>
 
@@ -242,7 +243,7 @@ static int cf_open(struct inode *inode, struct file *filp)
 	
 	/* dirty workaround to set CFRDY GPIO as an input when some other
 	   program sets it as an output */
-	gpio_set(CFG, (1 << dev->pin), 0);
+	gpio_set_value(dev->pin, 0);
 	return 0;		/* success */
 }
 

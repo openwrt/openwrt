@@ -39,11 +39,11 @@
 
 #include <asm/rc32434/rb.h>
 
-#define GPIO_BADDR  0xb8050000
+#define GPIO_BADDR  0x18050000
 
 static volatile unsigned char *devCtl3Base;
 static unsigned char latchU5State;
-static spinlock_t clu5Lock = SPIN_LOCK_UNLOCKED;
+static spinlock_t clu5Lock;
 
 struct rb500_gpio_reg __iomem *rb500_gpio_reg0;
 EXPORT_SYMBOL(rb500_gpio_reg0);
@@ -73,7 +73,6 @@ void set434Reg(unsigned regOffs, unsigned bit, unsigned len, unsigned val)
 	*(volatile unsigned *) (IDT434_REG_BASE + regOffs) = data;
 	spin_unlock_irqrestore(&clu5Lock, flags);
 }
-
 EXPORT_SYMBOL(set434Reg);
 
 void changeLatchU5(unsigned char orMask, unsigned char nandMask)
@@ -89,66 +88,105 @@ void changeLatchU5(unsigned char orMask, unsigned char nandMask)
 	*devCtl3Base = latchU5State;
 	spin_unlock_irqrestore(&clu5Lock, flags);
 }
-
 EXPORT_SYMBOL(changeLatchU5);
 
 unsigned char getLatchU5State(void)
 {
 	return latchU5State;
 }
-
 EXPORT_SYMBOL(getLatchU5State);
 
 int rb500_gpio_get_value(unsigned gpio)
 {
-	u32 reg;
-
-	reg = readl(&rb500_gpio_reg0->gpiod);
-	return (reg & (1 << gpio));
+	return readl(&rb500_gpio_reg0->gpiod) & (1 << gpio);
 }
-
 EXPORT_SYMBOL(rb500_gpio_get_value);
 
 void rb500_gpio_set_value(unsigned gpio, int value)
 {
-	u32 reg;
+	unsigned tmp;
 
-	reg = (u32)&rb500_gpio_reg0->gpiod;
+	tmp = readl(&rb500_gpio_reg0->gpiod) & ~(1 << gpio);
+	if (value)
+		tmp |= 1 << gpio;
 
-	writel(value, (void *)(reg & (1 << gpio)));
+	writel(tmp, (void *)&rb500_gpio_reg0->gpiod);
 }
-
 EXPORT_SYMBOL(rb500_gpio_set_value);
 
 int rb500_gpio_direction_input(unsigned gpio)
 {
-	u32 reg;
-
-	reg = (u32)&rb500_gpio_reg0->gpiocfg;
-	writel(0, (void *)(reg & (1 << gpio)));
+	writel(readl(&rb500_gpio_reg0->gpiocfg) | (1 << gpio), (void *)&rb500_gpio_reg0->gpiocfg);
 
 	return 0;
 }
-
 EXPORT_SYMBOL(rb500_gpio_direction_input);
 
 int rb500_gpio_direction_output(unsigned gpio, int value)
 {
-	u32 reg;
-
-	reg = (u32)&rb500_gpio_reg0->gpiocfg;
-	if (value)
-		writel(1, (void *)(reg & (1 << gpio)));
+	gpio_set_value(gpio, value);
+	writel(readl(&rb500_gpio_reg0->gpiocfg) & ~(1 << gpio), (void *)&rb500_gpio_reg0->gpiocfg);
 
 	return 0;
 }
-
 EXPORT_SYMBOL(rb500_gpio_direction_output);
+
+void rb500_gpio_set_int_level(unsigned gpio, int value)
+{
+	unsigned tmp;
+
+	tmp = readl(&rb500_gpio_reg0->gpioilevel) & ~(1 << gpio);
+	if (value)
+		tmp |= 1 << gpio;
+	writel(tmp, (void *)&rb500_gpio_reg0->gpioilevel);
+}
+EXPORT_SYMBOL(rb500_gpio_set_int_level);
+
+int rb500_gpio_get_int_level(unsigned gpio)
+{
+	return readl(&rb500_gpio_reg0->gpioilevel) & (1 << gpio);
+}
+EXPORT_SYMBOL(rb500_gpio_get_int_level);
+
+void rb500_gpio_set_int_status(unsigned gpio, int value)
+{
+	unsigned tmp;
+
+	tmp = readl(&rb500_gpio_reg0->gpioistat);
+	if (value)
+		tmp |= 1 << gpio;
+	writel(tmp, (void *)&rb500_gpio_reg0->gpioistat);
+}
+EXPORT_SYMBOL(rb500_gpio_set_int_status);
+
+int rb500_gpio_get_int_status(unsigned gpio)
+{
+	return readl(&rb500_gpio_reg0->gpioistat) & (1 << gpio);
+}
+EXPORT_SYMBOL(rb500_gpio_get_int_status);
+
+void rb500_gpio_set_func(unsigned gpio, int value)
+{
+        unsigned tmp;
+
+        tmp = readl(&rb500_gpio_reg0->gpiofunc);
+        if (value)
+                tmp |= 1 << gpio;
+        writel(tmp, (void *)&rb500_gpio_reg0->gpiofunc);
+}
+EXPORT_SYMBOL(rb500_gpio_set_func);
+
+int rb500_gpio_get_func(unsigned gpio)
+{
+        return readl(&rb500_gpio_reg0->gpiofunc) & (1 << gpio);
+}
+EXPORT_SYMBOL(rb500_gpio_get_func);
 
 int __init rb500_gpio_init(void)
 {
 	rb500_gpio_reg0 = ioremap_nocache(rb500_gpio_reg0_res[0].start,
-				rb500_gpio_reg0_res[0].end - rb500_gpio_reg0_res[0].start);
+				rb500_gpio_reg0_res[0].end -
+				rb500_gpio_reg0_res[0].start);
 
 	if (!rb500_gpio_reg0) {
 		printk(KERN_ERR "rb500: cannot remap GPIO register 0\n");
@@ -157,3 +195,4 @@ int __init rb500_gpio_init(void)
 
 	return 0;
 }
+arch_initcall(rb500_gpio_init);
