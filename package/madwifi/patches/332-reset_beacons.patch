@@ -2,52 +2,6 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
 --- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-20 22:22:50.203268987 +0100
 +++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-20 22:23:25.745294410 +0100
-@@ -1592,6 +1592,16 @@
- 	ath_init(dev);
- }
- 
-+static HAL_BOOL ath_hw_reset(struct ath_hal *ah, HAL_OPMODE opmode,
-+				     HAL_CHANNEL *channel, HAL_BOOL bChannelChange,
-+				     HAL_STATUS *status)
-+{
-+	HAL_BOOL ret;
-+	ret = ath_hal_reset(ah, opmode, channel, bChannelChange, status);
-+	mdelay(5); /* extra delay to allow the hw to settle in */
-+	return ret;
-+}
-+
- /* Channel Availability Check is running, or a channel has already found to be 
-  * unavailable. */
- static int
-@@ -2474,7 +2484,7 @@
- 	 */
- 	sc->sc_curchan.channel = ic->ic_curchan->ic_freq;
- 	sc->sc_curchan.channelFlags = ath_chan2flags(ic->ic_curchan);
--	if (!ath_hal_reset(ah, sc->sc_opmode, &sc->sc_curchan, AH_FALSE, &status)) {
-+	if (!ath_hw_reset(ah, sc->sc_opmode, &sc->sc_curchan, AH_FALSE, &status)) {
- 		EPRINTF(sc, "unable to reset hardware: '%s' (HAL status %u) "
- 			"(freq %u flags 0x%x)\n", 
- 			ath_get_hal_status_desc(status), status,
-@@ -2773,7 +2783,7 @@
- 	ath_draintxq(sc);		/* stop xmit side */
- 	ath_stoprecv(sc);		/* stop recv side */
- 	/* NB: indicate channel change so we do a full reset */
--	if (!ath_hal_reset(ah, sc->sc_opmode, &sc->sc_curchan, AH_TRUE, &status))
-+	if (!ath_hw_reset(ah, sc->sc_opmode, &sc->sc_curchan, AH_TRUE, &status))
- 		EPRINTF(sc, "Unable to reset hardware: '%s' (HAL status %u)\n",
- 			ath_get_hal_status_desc(status), status);
- 
-@@ -8848,8 +8858,8 @@
- 		 * needed to do the reset with chanchange = AH_FALSE in order
- 		 * to receive traffic when peforming high velocity channel
- 		 * changes. */
--		if (!ath_hal_reset(ah, sc->sc_opmode, &hchan, AH_TRUE, &status)   ||
--		    !ath_hal_reset(ah, sc->sc_opmode, &hchan, AH_FALSE, &status)) {
-+		if (!ath_hw_reset(ah, sc->sc_opmode, &hchan, AH_TRUE, &status)   ||
-+		    !ath_hw_reset(ah, sc->sc_opmode, &hchan, AH_FALSE, &status)) {
- 			EPRINTF(sc, "Unable to reset channel %u (%u MHz) "
- 				"flags 0x%x '%s' (HAL status %u)\n",
- 				ieee80211_chan2ieee(ic, chan), chan->ic_freq,
 @@ -8905,7 +8915,7 @@
  		 * re configure beacons when it is a turbo mode switch.
  		 * HW seems to turn off beacons during turbo mode switch.
@@ -57,12 +11,4 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  			ath_beacon_config(sc, NULL);
  		/*
  		 * Re-enable interrupts.
-@@ -11455,7 +11465,7 @@
- 		ieee80211_cancel_scan(vap);	/* anything current */
- 		ieee80211_wme_updateparams(vap);
- 		/*  reset the WNIC */
--		if (!ath_hal_reset(ah, sc->sc_opmode, 
-+		if (!ath_hw_reset(ah, sc->sc_opmode,
- 					&sc->sc_curchan, AH_TRUE, &status)) {
- 			EPRINTF(sc, "ath_hal_reset failed: '%s' "
- 					"(HAL status %u).\n",
+
