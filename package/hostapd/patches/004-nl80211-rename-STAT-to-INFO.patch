@@ -1,0 +1,55 @@
+Index: hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576/hostapd/driver_nl80211.c
+===================================================================
+--- hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576.orig/hostapd/driver_nl80211.c.orig	2008-04-09 14:03:17.000000000 +1200
++++ hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576/hostapd/driver_nl80211.c	2008-04-09 14:06:37.000000000 +1200
+@@ -598,11 +598,11 @@
+ 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+ 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+ 	struct hostap_sta_driver_data *data = arg;
+-	struct nlattr *stats[NL80211_STA_STAT_MAX + 1];
+-	static struct nla_policy stats_policy[NL80211_STA_STAT_MAX + 1] = {
+-		[NL80211_STA_STAT_INACTIVE_TIME] = { .type = NLA_U32 },
+-		[NL80211_STA_STAT_RX_BYTES] = { .type = NLA_U32 },
+-		[NL80211_STA_STAT_TX_BYTES] = { .type = NLA_U32 },
++	struct nlattr *stats[NL80211_STA_INFO_MAX + 1];
++	static struct nla_policy stats_policy[NL80211_STA_INFO_MAX + 1] = {
++		[NL80211_STA_INFO_INACTIVE_TIME] = { .type = NLA_U32 },
++		[NL80211_STA_INFO_RX_BYTES] = { .type = NLA_U32 },
++		[NL80211_STA_INFO_TX_BYTES] = { .type = NLA_U32 },
+ 	};
+ 
+ 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+@@ -614,24 +614,24 @@
+ 	 * the kernel starts sending station notifications.
+ 	 */
+ 
+-	if (!tb[NL80211_ATTR_STA_STATS]) {
++	if (!tb[NL80211_ATTR_STA_INFO]) {
+ 		wpa_printf(MSG_DEBUG, "sta stats missing!");
+ 		return NL_SKIP;
+ 	}
+-	if (nla_parse_nested(stats, NL80211_STA_STAT_MAX,
+-			     tb[NL80211_ATTR_STA_STATS],
++	if (nla_parse_nested(stats, NL80211_STA_INFO_MAX,
++			     tb[NL80211_ATTR_STA_INFO],
+ 			     stats_policy)) {
+ 		wpa_printf(MSG_DEBUG, "failed to parse nested attributes!");
+ 		return NL_SKIP;
+ 	}
+ 
+-	if (stats[NL80211_STA_STAT_INACTIVE_TIME])
++	if (stats[NL80211_STA_INFO_INACTIVE_TIME])
+ 		data->inactive_msec =
+-			nla_get_u32(stats[NL80211_STA_STAT_INACTIVE_TIME]);
+-	if (stats[NL80211_STA_STAT_RX_BYTES])
+-		data->rx_bytes = nla_get_u32(stats[NL80211_STA_STAT_RX_BYTES]);
+-	if (stats[NL80211_STA_STAT_TX_BYTES])
+-		data->rx_bytes = nla_get_u32(stats[NL80211_STA_STAT_TX_BYTES]);
++			nla_get_u32(stats[NL80211_STA_INFO_INACTIVE_TIME]);
++	if (stats[NL80211_STA_INFO_RX_BYTES])
++		data->rx_bytes = nla_get_u32(stats[NL80211_STA_INFO_RX_BYTES]);
++	if (stats[NL80211_STA_INFO_TX_BYTES])
++		data->rx_bytes = nla_get_u32(stats[NL80211_STA_INFO_TX_BYTES]);
+ 
+ 	return NL_SKIP;
+ }
