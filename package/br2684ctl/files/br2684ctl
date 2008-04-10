@@ -14,7 +14,7 @@ start_daemon() {
 	config_get vpi "$cfg" vpi
 	config_get vci "$cfg" vci
 	config_get encaps "$cfg" encaps
-	config_get payload "cfg" payload
+	config_get payload "$cfg" payload
 	case "$encaps" in
 		1|vc) encaps=1;;
 		*) encaps=0;;
