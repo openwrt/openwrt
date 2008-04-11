@@ -66,10 +66,12 @@ define KernelPackage/capi
   KCONFIG:= \
 	CONFIG_ISDN \
 	CONFIG_ISDN_CAPI \
-	CONFIG_ISDN_CAPI_CAPI20
+	CONFIG_ISDN_CAPI_CAPI20 \
+	CONFIG_ISDN_CAPIFS
   FILES:= \
 	$(LINUX_DIR)/drivers/isdn/capi/kernelcapi.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/isdn/capi/capi.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/isdn/capi/capi.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/isdn/capi/capifs.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,kernelcapi capi)
 endef
 
