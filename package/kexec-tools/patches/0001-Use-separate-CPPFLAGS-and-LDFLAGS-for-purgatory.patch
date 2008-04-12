@@ -1,0 +1,39 @@
+From ee274ca1ae88bef43da3090d0e1e9155e3b493ad Mon Sep 17 00:00:00 2001
+From: Jeremy Kerr <jk@ozlabs.org>
+Date: Wed, 19 Mar 2008 17:06:24 +1100
+Subject: [PATCH] Use separate CPPFLAGS and LDFLAGS for purgatory
+
+Currently, CPPFLAGS and LDFLAGS can 'leak' into the purgatory build
+from the main kexec/kexec object. Because of this, the purgatory
+is build with -lz, but we may not have a zlib present for the
+architecture of the purgatory object.
+
+This change uses fresh CPPFLAGS and LDFLAGS for the purgatory object.
+
+Signed-off-by: Jeremy Kerr <jk@ozlabs.org>
+---
+ purgatory/Makefile |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/purgatory/Makefile b/purgatory/Makefile
+index 6c747b1..ac58719 100644
+--- a/purgatory/Makefile
++++ b/purgatory/Makefile
+@@ -49,11 +49,12 @@ $(PURGATORY): CFLAGS+=$($(ARCH)_PURGATORY_EXTRA_CFLAGS) \
+ 		      -Os -fno-builtin -ffreestanding \
+ 		      -fno-zero-initialized-in-bss
+ 
+-$(PURGATORY): CPPFLAGS+=$($(ARCH)_PURGATORY_EXTRA_CFLAGS) \
++$(PURGATORY): CPPFLAGS=$($(ARCH)_PURGATORY_EXTRA_CFLAGS) \
+ 			-I$(srcdir)/purgatory/include \
+ 			-I$(srcdir)/purgatory/arch/$(ARCH)/include \
++			-I$(srcdir)/util_lib/include \
+ 			-I$(shell $(CC) -print-file-name=include)
+-$(PURGATORY): LDFLAGS+=$($(ARCH)_PURGATORY_EXTRA_CFLAGS)\
++$(PURGATORY): LDFLAGS=$($(ARCH)_PURGATORY_EXTRA_CFLAGS)\
+ 			--no-undefined -nostartfiles -nostdlib -nodefaultlibs \
+ 			-e purgatory_start -r
+ 
+-- 
+1.5.0.rc4.g85b1
+
