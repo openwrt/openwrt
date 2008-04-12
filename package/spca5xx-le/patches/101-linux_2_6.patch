@@ -1,0 +1,13 @@
+diff -ruN spca5xx-le-orig/spca_core.c spca5xx-le/spca_core.c
+--- spca5xx-le-orig/spca_core.c	2008-04-12 18:09:57.000000000 +0200
++++ spca5xx-le/spca_core.c	2008-04-12 18:16:45.000000000 +0200
+@@ -2799,7 +2799,9 @@
+   .owner = THIS_MODULE,
+   .name = "SPCA5XX USB Camera",
+   .type = VID_TYPE_CAPTURE,
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,23)
+   .hardware = VID_HARDWARE_SPCA5XX,
++#endif
+   .fops = &spca5xx_fops,
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+   .release = video_device_release,
