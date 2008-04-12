@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,12 +10,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=qc-usb
-PKG_VERSION:=0.6.5
+PKG_VERSION:=0.6.6
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/qce-ga
-PKG_MD5SUM:=6f6787e1dda11ca3b936ad434154f426
+PKG_MD5SUM:=9eab8fb3a75326d1565d59b0c7256075
 
 include $(INCLUDE_DIR)/package.mk
 

@@ -1,0 +1,23 @@
+diff -ruN qc-usb-0.6.6-orig/qc-driver.c qc-usb-0.6.6/qc-driver.c
+--- qc-usb-0.6.6-orig/qc-driver.c	2006-10-24 04:06:19.000000000 +0200
++++ qc-usb-0.6.6/qc-driver.c	2008-04-12 18:01:01.000000000 +0200
+@@ -821,7 +821,9 @@
+ 	if (!cr) goto fail2;
+ 	urb->transfer_buffer = kmalloc(qc_i2c_maxbufsize*sizeof(u8), GFP_KERNEL);	/* Allocate maximum ever needed */
+ 	if (!urb->transfer_buffer) goto fail3;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+ 	spin_lock_init(&urb->lock);
++#endif
+ 	urb->complete = qc_i2c_handler;
+ 	urb->context  = qc;
+ #if (LINUX_VERSION_CODE<KERNEL_VERSION(2,6,9) && !defined(CONFIG_SUSE_KERNEL)) || LINUX_VERSION_CODE<KERNEL_VERSION(2,6,8)
+@@ -3006,7 +3008,9 @@
+ static struct video_device qc_v4l_template = {
+ 	name:		"QuickCam USB",
+ 	type:		VID_TYPE_CAPTURE | VID_TYPE_SUBCAPTURE,
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,23)
+ 	hardware:	VID_HARDWARE_QCAM_USB,
++#endif
+ 	minor:		-1,
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+ 	release:	qc_v4l_release,
