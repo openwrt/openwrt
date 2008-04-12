@@ -35,12 +35,23 @@ endef
 define Package/udevtrigger
 $(call Package/udev)
   TITLE:=Small utility to request kernel devices events for coldplug
+  DEPENDS:=udev
 endef
 
-define Package/udev-vol-id
+define Package/udevextras
 $(call Package/udev)
- TITLE:=Small utility to read volume ids
+  TITLE:=Utilities for udev scripts, for general device discovery
+  DEPENDS:=udev
+  MENU:=1
 endef
+
+define Package/udevextras/config
+  source "$(SOURCE)/udevextras-config.in"
+endef
+
+UDEV_ALL_EXTRAS=ata_id cdrom_id dasd_id scsi_id path_id usb_id volume_id
+UDEV_EXTRAS=$(strip $(foreach e, $(UDEV_ALL_EXTRAS), \
+		$(if $(CONFIG_UDEVEXTRAS_$(e)),extras/$(e))))
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -49,7 +60,8 @@ define Build/Compile
 		OPTFLAGS="$(TARGET_CFLAGS)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		INSTALL="install -c" \
-		EXTRAS="extras/volume_id" \
+		EXTRAS="$(UDEV_EXTRAS)" \
+		VOLUME_ID_STATIC=true \
 		all install
 endef
 
@@ -74,13 +86,14 @@ define Package/udevtrigger/install
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/udevtrigger $(1)/sbin/
 endef
-define Package/udev-vol-id/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_DIR) $(1)/lib
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/libvolume_id.so* $(1)/lib/
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/udev/vol_id $(1)/sbin/
+
+define Package/udevextras/install
+	$(INSTALL_DIR) $(1)/lib/udev
+	$(CP) $(PKG_INSTALL_DIR)/lib/udev/* $(1)/lib/udev/
+	$(INSTALL_DIR) $(1)/etc/udev
+	$(CP) $(PKG_BUILD_DIR)/etc/udev/rules.d $(1)/etc/udev/
 endef
 
 $(eval $(call BuildPackage,udev))
 $(eval $(call BuildPackage,udevtrigger))
-$(eval $(call BuildPackage,udev-vol-id))
+$(eval $(call BuildPackage,udevextras))
