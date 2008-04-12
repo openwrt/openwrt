@@ -1,0 +1,9 @@
+# Input devices, group under /dev/input
+SUBSYSTEM!="input", GOTO="input_grouping_end"
+
+KERNEL=="event[0-9]*",		NAME="input/%k"
+KERNEL=="mice",			NAME="input/%k"
+KERNEL=="mouse[0-9]*",		NAME="input/%k"
+KERNEL=="js[0-9]*",		NAME="input/%k"
+
+LABEL="input_grouping_end"
