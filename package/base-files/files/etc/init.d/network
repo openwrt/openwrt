@@ -20,6 +20,7 @@ start() {
 }
 
 restart() {
+	include /lib/network
 	setup_switch
 	ifup -a
 	/sbin/wifi up
