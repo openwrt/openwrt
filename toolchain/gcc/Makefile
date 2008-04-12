@@ -40,6 +40,8 @@ BUILD_DIR2:=$(BUILD_DIR_HOST)/gcc-$(PKG_VERSION)-final
 SEP:=,
 TARGET_LANGUAGES:="c$(if $(CONFIG_INSTALL_LIBSTDCPP),$(SEP)c++)$(if $(CONFIG_INSTALL_LIBGCJ),$(SEP)java)"
 
+EXTRA_TARGET=$(if $(CONFIG_EXTRA_TARGET_ARCH),--enable-biarch --enable-targets=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-linux-uclibc)
+
 define Stage1/Configure
 	$(SED) 's,TARGET_CROSS=.*,TARGET_CROSS=$(REAL_GNU_TARGET_NAME)-,' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,GCC_VERSION=.*,GCC_VERSION=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
@@ -60,6 +62,7 @@ define Stage1/Configure
 		--disable-nls \
 		--disable-libmudflap \
 		--disable-multilib \
+		$(EXTRA_TARGET) \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
 	);
@@ -93,6 +96,7 @@ define Stage2/Configure
 		--disable-nls \
 		--disable-libmudflap \
 		--disable-multilib \
+		$(EXTRA_TARGET) \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
 	);
@@ -100,6 +104,19 @@ endef
 
 define Stage2/Compile
 	export SHELL="\$(BASH)"; \$(MAKE) -C \$(BUILD_DIR2) all
+endef
+
+define SetupExtraArch
+	for app in $(TOOLCHAIN_DIR)/bin/$(OPTIMIZE_FOR_CPU)*-{gcc,gcc-*,g++}; do \
+		[ -e $$$$app ] || continue; \
+		old_base=$$$$(basename $$$$app); \
+		new_base=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-$$$${old_base##$(OPTIMIZE_FOR_CPU)-}; \
+		sed -e "s/@CC_BASE@/$$$$old_base/" \
+			-e 's/@EXTRA_ARCH_OPTS@/$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_OPTS))/' \
+			 ./files/alternate-arch-cc.in > \
+			 $(TOOLCHAIN_DIR)/bin/$$$$new_base; \
+		chmod a+x $(TOOLCHAIN_DIR)/bin/$$$$new_base; \
+	done
 endef
 
 define Stage2/Install
@@ -116,6 +133,7 @@ define Stage2/Install
 		   	$(GNU_TARGET_NAME)$$$${app##$(REAL_GNU_TARGET_NAME)}; \
 		done; \
 	);
+	$(if $(CONFIG_EXTRA_TARGET_ARCH),$(call SetupExtraArch))
 endef
 
 define Build/Prepare

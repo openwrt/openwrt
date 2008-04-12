@@ -10,6 +10,35 @@ menuconfig TOOLCHAINOPTS
 	bool "Toolchain Options" if DEVEL
 	depends !NATIVE_TOOLCHAIN
 
+menuconfig EXTRA_TARGET_ARCH
+	bool
+	prompt "Enable an extra toolchain target architecture" if TOOLCHAINOPTS
+	default n
+	help
+	  Some builds may require a 'biarch' toolchain. This option
+	  allows you to specify an additional target arch.
+
+	  Most people will answer N here.
+
+	config EXTRA_TARGET_ARCH_NAME
+		string
+		prompt "Extra architecture name" if EXTRA_TARGET_ARCH
+		help
+		  Specify the cpu name (eg powerpc64 or x86_64) of the
+		  additional target architecture.
+
+	config EXTRA_TARGET_ARCH_OPTS
+		string
+		prompt "Extra architecture compiler options" if EXTRA_TARGET_ARCH
+		help
+		  If you're specifying an addition target architecture,
+		  you'll probably need to also provide options to make
+		  the compiler use this alternate arch.
+
+		  For example, if you're building a compiler that can build
+		  both powerpc and powerpc64 binaries, you'll need to
+		  specify -m64 here.
+
 source "toolchain/binutils/Config.in"
 source "toolchain/gcc/Config.in"
 source "toolchain/uClibc/Config.in"
