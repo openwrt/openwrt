@@ -235,6 +235,7 @@ define KernelPackage/mmc
 	CONFIG_MMC_BLOCK_BOUNCE=y \
 	CONFIG_MMC_SDHCI=n \
 	CONFIG_MMC_TIFM_SD=n \
+	CONFIG_MMC_WBSD=n \
 	CONFIG_SDIO_UART=n
   FILES:= \
 	$(LINUX_DIR)/drivers/mmc/core/mmc_core.$(LINUX_KMOD_SUFFIX) \
