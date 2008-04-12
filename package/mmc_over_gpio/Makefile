@@ -17,7 +17,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/mmc-over-gpio
   SUBMENU:=Other modules
-  DEPENDS:=@LINUX_2_6 +kmod-spi +kmod-spi-bitbang +kmod-mmc +kmod-mmc-spi
+  DEPENDS:=@LINUX_2_6 +kmod-spi +kmod-spi-bitbang +kmod-mmc +kmod-mmc-spi @!TARGET_x86
   TITLE:=MMC/SD card over GPIO support
   FILES:=$(PKG_BUILD_DIR)/spi_gpio.$(LINUX_KMOD_SUFFIX) \
          $(PKG_BUILD_DIR)/mmc_over_spigpio.$(LINUX_KMOD_SUFFIX)
