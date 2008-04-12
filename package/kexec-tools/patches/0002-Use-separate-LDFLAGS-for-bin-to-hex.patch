@@ -1,0 +1,27 @@
+From 072159b1f4aca88f7d99259fe2bd14a6653ede52 Mon Sep 17 00:00:00 2001
+From: Jeremy Kerr <jk@ozlabs.org>
+Date: Wed, 19 Mar 2008 17:20:39 +1100
+Subject: [PATCH] Use separate LDFLAGS for bin-to-hex
+
+We don't need the general -L and -l flags for the bin-to-hex util.
+
+Signed-off-by: Jeremy Kerr <jk@ozlabs.org>
+---
+ util/Makefile |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/util/Makefile b/util/Makefile
+index 89732a1..11d82fd 100644
+--- a/util/Makefile
++++ b/util/Makefile
+@@ -6,6 +6,7 @@ $(BIN_TO_HEX): $(srcdir)/util/bin-to-hex.c
+ 
+ $(BIN_TO_HEX): CC=$(BUILD_CC)
+ $(BIN_TO_HEX): CFLAGS=$(BUILD_CFLAGS)
++$(BIN_TO_HEX): LDFLAGS=
+ 
+ dist += util/Makefile util/bin-to-hex.c
+ clean += util/bin-to-hex.o $(BIN_TO_HEX)
+-- 
+1.5.0.rc4.g85b1
+
