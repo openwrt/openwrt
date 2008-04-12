@@ -66,6 +66,8 @@ define Package/udev/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/udevtest $(1)/usr/bin/
 	install -d -m0775 $(1)/usr/sbin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/udevmonitor $(1)/usr/sbin/
+	install -d -m0775 $(1)/etc/udev/rules.d
+	$(CP) files/20-input-grouping.rules $(1)/etc/udev/rules.d/
 endef
 
 define Package/udevtrigger/install
