@@ -53,7 +53,7 @@ endef
 
 define Package/lua
 $(call Package/lua/Default)
-  DEPENDS:=+liblua +libreadline +libncurses
+  DEPENDS:=+liblua
   TITLE+= (interpreter)
 endef
 
