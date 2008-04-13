@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -88,10 +88,12 @@ define Package/udevtrigger/install
 endef
 
 define Package/udevextras/install
-	$(INSTALL_DIR) $(1)/lib/udev
-	$(CP) $(PKG_INSTALL_DIR)/lib/udev/* $(1)/lib/udev/
 	$(INSTALL_DIR) $(1)/etc/udev
 	$(CP) $(PKG_BUILD_DIR)/etc/udev/rules.d $(1)/etc/udev/
+	$(INSTALL_DIR) $(1)/lib/udev
+	$$(foreach f, $$(shell $(FIND) $(PKG_INSTALL_DIR)/lib/udev/ -type f), \
+		$(CP) $$(f) $(1)/lib/udev/ ; \
+	)
 endef
 
 $(eval $(call BuildPackage,udev))
