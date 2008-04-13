@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,18 +9,18 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnl
-PKG_VERSION:=1.0-pre8
+PKG_VERSION:=1.1
 PKG_RELEASE:=1
 
-PKG_SOURCE:=libnl-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://people.suug.ch/~tgr/libnl/files/
-PKG_MD5SUM:=cc54b3ed25ba45d45a966b9355030810
+PKG_MD5SUM:=ae970ccd9144e132b68664f98e7ceeb1
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libnl
-  SECTION:=net
-  CATEGORY:=Base system
+  SECTION:=libs
+  CATEGORY:=Libraries
   TITLE:=netlink socket library
   URL:=http://people.suug.ch/~tgr/libnl/
 endef
@@ -36,7 +36,7 @@ define Build/Compile
 		install
 endef
 
-ifneq ($(CONFIG_LINUX_2_6_23),)
+ifneq ($(CONFIG_LINUX_2_6_23)$(CONFIG_LINUX_2_6_24),)
   define Build/InstallDev
 	$(INSTALL_DIR) $(1)
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
@@ -46,7 +46,7 @@ ifneq ($(CONFIG_LINUX_2_6_23),)
 
   define Package/libnl/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/libnl.so.1 $(1)/usr/lib/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/libnl.so.* $(1)/usr/lib/
   endef
 endif
 
