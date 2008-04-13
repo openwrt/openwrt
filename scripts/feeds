@@ -264,13 +264,6 @@ sub install_package {
 	# newly installed packages set the source package
 	$installed{$src} and return 0;
 
-	# install all dependencies
-	foreach my $dep (@{$pkg->{depends}}, @{$pkg->{builddepends}}) {
-		next if $dep =~ /@/;
-		$dep =~ s/^\+//;
-		install_package($feed, $dep) == 0 or $ret = 1;
-	}
-
 	# check previously installed packages
 	$installed{$name} and return 0;
 	$installed{$src} = 1;
@@ -285,6 +278,13 @@ sub install_package {
 		warn "failed.\n";
 		return 1;
 	};
+
+	# install all dependencies
+	foreach my $dep (@{$pkg->{depends}}, @{$pkg->{builddepends}}) {
+		next if $dep =~ /@/;
+		$dep =~ s/^\+//;
+		install_package($feed, $dep) == 0 or $ret = 1;
+	}
 
 	return $ret;
 }
