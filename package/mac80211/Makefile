@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -15,7 +15,7 @@ PKG_RELEASE:=1
 PKG_VERSION:=2008-04-07
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://linuxwireless.org/download/compat-wireless-2.6/
-PKG_BUILD_DIR:=$(BUILD_DIR)/compat-wireless-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -177,8 +177,14 @@ define Build/Prepare
 	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT71FW)
 endef
 
-define Build/Compile
+ifneq ($(CONFIG_PACKAGE_kmod-mac80211),)
+ define Build/Compile/kmod
 	$(MAKE) -C "$(PKG_BUILD_DIR)" $(MAKE_OPTS) all
+ endef
+endif
+
+define Build/Compile
+	$(call Build/Compile/kmod)
 endef
 
 define Build/InstallDev
