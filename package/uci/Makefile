@@ -9,7 +9,7 @@
 include $(TOPDIR)/rules.mk
 
 UCI_VERSION=0.3
-UCI_RELEASE=1
+UCI_RELEASE=3
 
 PKG_NAME:=uci
 PKG_VERSION:=$(UCI_VERSION)$(if $(UCI_RELEASE),.$(UCI_RELEASE))
@@ -17,8 +17,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
-PKG_MD5SUM:=d1c7a1980b25f13f3c415b246051c758
-
+PKG_MD5SUM:=e1d3204629938adb21c6bf84a08ce001
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -45,21 +44,37 @@ define Package/uci-sh
   TITLE:=Old shell/awk implementation of UCI
 endef
 
+define Package/libuci-lua
+  SECTION=libs
+  CATEGORY=Libraries
+  DEPENDS:=+libuci +lua
+  TITLE:=Lua plugin for UCI
+endef
+
 define Build/Configure
 endef
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+UCI_MAKEOPTS = \
 		$(TARGET_CONFIGURE_OPTS) \
 		COPTS="$(TARGET_CFLAGS)" \
 		DEBUG="$(DEBUG)" \
 		VERSION="$(UCI_VERSION)" \
+		CPPFLAGS="-I$(PKG_BUILD_DIR) -I$(STAGING_DIR)/usr/include" \
 		OS="Linux"
+
+define Build/Compile
+	$(MAKE) -C $(PKG_BUILD_DIR) $(UCI_MAKEOPTS)
+	$(MAKE) -C $(PKG_BUILD_DIR)/lua $(UCI_MAKEOPTS)
 endef
 
 define Package/libuci/install
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(PKG_BUILD_DIR)/libuci.so* $(1)/lib/
+endef
+
+define Package/libuci-lua/install
+	$(INSTALL_DIR) $(1)/usr/lib/lua/5.1
+	$(CP) $(PKG_BUILD_DIR)/lua/uci.so $(1)/usr/lib/lua/5.1
 endef
 
 define Package/uci/install
@@ -82,4 +97,5 @@ endef
 
 $(eval $(call BuildPackage,uci))
 $(eval $(call BuildPackage,libuci))
+$(eval $(call BuildPackage,libuci-lua))
 $(eval $(call BuildPackage,uci-sh))
