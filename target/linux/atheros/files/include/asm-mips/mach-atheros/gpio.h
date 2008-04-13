@@ -26,9 +26,8 @@ static inline int gpio_direction_input(unsigned gpio) {
 				return -ENXIO;				\
 			} else {					\
 				sysRegWrite(AR531X_GPIO_CR,		\
-					( sysRegRead(AR531X_GPIO_CR) &	\
-					  ~(AR531X_GPIO_CR_M(gpio)) ) |	\
-					  AR531X_GPIO_CR_I(gpio) );	\
+					sysRegRead(AR531X_GPIO_CR) |	\
+					AR531X_GPIO_CR_I(gpio) );	\
 				return 0;				\
 			}						\
 	)
@@ -42,6 +41,7 @@ static inline int gpio_direction_input(unsigned gpio) {
 				return 0;				\
 			}						\
 	)
+	return -ENXIO;
 }
 
 /* Sets a gpio to output with value, or returns ENXIO for non-existent gpio */
@@ -54,8 +54,8 @@ static inline int gpio_direction_output(unsigned gpio, int value) {
 					  ~(1 << gpio) ) |		\
 					  ((value!=0) << gpio)) );	\
 				sysRegWrite(AR531X_GPIO_CR,		\
-					sysRegRead(AR531X_GPIO_CR) |	\
-					AR531X_GPIO_CR_O(gpio) );	\
+					( sysRegRead(AR531X_GPIO_CR) &	\
+					  ~(AR531X_GPIO_CR_M(gpio)) )); \
 				return 0;				\
 			}						\
 	)
@@ -72,12 +72,14 @@ static inline int gpio_direction_output(unsigned gpio, int value) {
 				return 0;				\
 			}						\
 	)
+	return -ENXIO;
 }
 
 /* Reads the gpio pin.  Unchecked function */
 static inline int gpio_get_value(unsigned gpio) {
 	DO_AR5312(return (sysRegRead(AR531X_GPIO_DI) & (1 << gpio));)
 	DO_AR5315(return (sysRegRead(AR5315_GPIO_DI) & (1 << gpio));)
+	return 0;
 }
 
 /* Writes to the gpio pin.  Unchecked function */
