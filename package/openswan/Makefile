@@ -22,6 +22,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/openswan/Default
   TITLE:=Openswan
   URL:=http://www.openswan.org/
+  DEPENDS:=@BROKEN
 endef
 
 define Package/openswan/Default/description
@@ -32,7 +33,7 @@ define Package/openswan
 $(call Package/openswan/Default)
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+kmod-openswan +libgmp +ip @BROKEN
+  DEPENDS+= +kmod-openswan +libgmp +ip
   TITLE+= (daemon)
   URL:=http://www.openswan.org/
 endef
