@@ -192,7 +192,7 @@ static struct platform_device ar5312_gpio_leds = {
 static char __init *ar5312_flash_limit(void)
 {
 	u32 ctl;
-	/* 
+	/*
 	 * Configure flash bank 0.
 	 * Assume 8M window size. Flash will be aliased if it's smaller
 	 */
@@ -205,7 +205,7 @@ static char __init *ar5312_flash_limit(void)
 		(sysRegRead(AR531X_FLASHCTL0) & FLASHCTL_MW);
 
 	sysRegWrite(AR531X_FLASHCTL0, ctl);
-	
+
 	/* Disable other flash banks */
 	sysRegWrite(AR531X_FLASHCTL1,
 		sysRegRead(AR531X_FLASHCTL1) & ~(FLASHCTL_E | FLASHCTL_AC));
@@ -219,7 +219,7 @@ static char __init *ar5312_flash_limit(void)
 static struct ar531x_config __init *init_wmac(int unit)
 {
 	struct ar531x_config *config;
-	
+
 	config = (struct ar531x_config *) kzalloc(sizeof(struct ar531x_config), GFP_KERNEL);
 	config->board = board_config;
 	config->radio = radio_config;
@@ -228,7 +228,7 @@ static struct ar531x_config __init *init_wmac(int unit)
 
 	return config;
 }
-		
+
 int __init ar5312_init_devices(void)
 {
 	struct ar531x_boarddata *bcfg;
@@ -243,13 +243,13 @@ int __init ar5312_init_devices(void)
 	ar531x_find_config(ar5312_flash_limit());
 	bcfg = (struct ar531x_boarddata *) board_config;
 
-	
+
 	/*
 	 * Chip IDs and hardware detection for some Atheros
 	 * models are really broken!
-	 * 
+	 *
 	 * Atheros uses a disabled WMAC0 and Silicon ID of AR5312
-	 * as indication for AR2312, which is otherwise 
+	 * as indication for AR2312, which is otherwise
 	 * indistinguishable from the real AR5312.
 	 */
 	if (radio_config) {
@@ -262,11 +262,11 @@ int __init ar5312_init_devices(void)
 	/* AR2313 has CPU minor rev. 10 */
 	if ((current_cpu_data.processor_id & 0xff) == 0x0a)
 		mips_machtype = MACH_ATHEROS_AR2313;
-	
+
 	/* AR2312 shares the same Silicon ID as AR5312 */
 	else if (bcfg->config & BD_ISCASPER)
 		mips_machtype = MACH_ATHEROS_AR2312;
-	
+
 	/* Everything else is probably AR5312 or compatible */
 	else
 		mips_machtype = MACH_ATHEROS_AR5312;
@@ -288,8 +288,10 @@ int __init ar5312_init_devices(void)
 
 	ar5312_devs[dev++] = &ar5312_physmap_flash;
 
+#ifdef CONFIG_LEDS_GPIO
 	ar5312_leds[0].gpio = bcfg->sysLedGpio;
 	ar5312_devs[dev++] = &ar5312_gpio_leds;
+#endif
 
 	if (!memcmp(bcfg->enet0Mac, "\xff\xff\xff\xff\xff\xff", 6))
 		memcpy(bcfg->enet0Mac, bcfg->enet1Mac, 6);
@@ -363,7 +365,7 @@ static int __initdata CLOCKCTL1_PREDIVIDE_TABLE[4] = {
 	5
 };
 
-		
+
 static unsigned int __init ar5312_cpu_frequency(void)
 {
 	unsigned int result;
@@ -391,7 +393,7 @@ static unsigned int __init ar5312_cpu_frequency(void)
 		multiplier_shift = AR5312_CLOCKCTL1_MULTIPLIER_SHIFT;
 		doubler_mask = AR5312_CLOCKCTL1_DOUBLER_MASK;
 	}
-	
+
 	/*
 	 * Clocking is derived from a fixed 40MHz input clock.
 	 *
@@ -400,9 +402,9 @@ static unsigned int __init ar5312_cpu_frequency(void)
 	 *							   flash, Timer, Watchdog Timer)
 	 *
 	 *  cntFreq = cpuFreq / 2	   (use for CPU count/compare)
-	 * 
+	 *
 	 * So, for example, with a PLL multiplier of 5, we have
-	 * 
+	 *
 	 *  cpuFreq = 200MHz
 	 *  sysFreq = 50MHz
 	 *  cntFreq = 100MHz
@@ -414,7 +416,7 @@ static unsigned int __init ar5312_cpu_frequency(void)
 	preDivideSelect = (clockCtl1 & predivide_mask) >> predivide_shift;
 	preDivisor = CLOCKCTL1_PREDIVIDE_TABLE[preDivideSelect];
 	multiplier = (clockCtl1 & multiplier_mask) >> multiplier_shift;
-	
+
 	if (clockCtl1 & doubler_mask) {
 		multiplier = multiplier << 1;
 	}
@@ -446,7 +448,7 @@ void __init ar5312_prom_init(void)
 	        + (bank1AC ? (1 << (bank1AC+1)) : 0);
 	memsize <<= 20;
 	add_memory_region(0, memsize, BOOT_MEM_RAM);
-	
+
 	/* Initialize it to AR5312 for now. Real detection will be done
 	 * in ar5312_init_devices() */
 	mips_machtype = MACH_ATHEROS_AR5312;

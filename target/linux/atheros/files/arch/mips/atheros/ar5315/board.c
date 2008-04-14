@@ -150,7 +150,7 @@ static __u8 spiflash_probe(void)
         	(1 << 4) | SPI_CTL_START;
 
 	spiflash_regwrite32(SPI_FLASH_CTL, reg);
- 
+
 	do {
   		reg = spiflash_regread32(SPI_FLASH_CTL);
 	} while (reg & SPI_CTL_BUSY);
@@ -236,17 +236,19 @@ int __init ar5315_init_devices(void)
 	config->radio = radio_config;
 	config->unit = 0;
 	config->tag = (u_int16_t) (sysRegRead(AR5315_SREV) & AR5315_REV_CHIP);
-	
+
 	ar5315_eth_data.board_config = board_config;
 	ar5315_eth_data.macaddr = bcfg->enet0Mac;
 	ar5315_wmac.dev.platform_data = config;
 
-	ar5315_leds[0].gpio = bcfg->sysLedGpio;
-
 	ar5315_devs[dev++] = &ar5315_eth;
 	ar5315_devs[dev++] = &ar5315_wmac;
 	ar5315_devs[dev++] = &ar5315_spiflash;
+
+#ifdef CONFIG_LEDS_GPIO
+	ar5315_leds[0].gpio = bcfg->sysLedGpio;
 	ar5315_devs[dev++] = &ar5315_gpio_leds;
+#endif
 
 	return platform_add_devices(ar5315_devs, dev);
 }
@@ -269,7 +271,7 @@ static void ar5315_restart(char *command)
 		/* reset the system */
 		sysRegWrite(AR5315_COLD_RESET,AR5317_RESET_SYSTEM);
 
-		/* 
+		/*
 		 * Cold reset does not work on the AR2315/6, use the GPIO reset bits a workaround.
 		 */
 		gpio_direction_output(AR5315_RESET_GPIO, 0);
@@ -326,11 +328,11 @@ ar5315_sys_clk(unsigned int clockCtl)
 			clkDiv = 1;
 			break;
 	}
-	cpuDiv = (clockCtl & CPUCLK_CLK_DIV_M) >> CPUCLK_CLK_DIV_S;  
+	cpuDiv = (clockCtl & CPUCLK_CLK_DIV_M) >> CPUCLK_CLK_DIV_S;
 	cpuDiv = cpuDiv * 2 ?: 1;
 	return (pllcOut/(clkDiv * cpuDiv));
 }
-		
+
 static inline unsigned int ar5315_cpu_frequency(void)
 {
     return ar5315_sys_clk(sysRegRead(AR5315_CPUCLK));
