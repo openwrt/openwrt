@@ -39,10 +39,10 @@ endif
 ifeq ($(ARCH),i686)
   HAL_TARGET:=i386-elf
 endif
-ifeq ($(ARCH),armeb)
+ifeq ($(BOARD),ixp4xx)
   HAL_TARGET:=xscale-be-elf
 endif
-ifeq ($(ARCH),arm)
+ifeq ($(BOARD),iop32x)
   HAL_TARGET:=xscale-le-elf
 endif
 ifeq ($(ARCH),powerpc)
