@@ -35,7 +35,6 @@ endef
 define Package/udevtrigger
 $(call Package/udev)
   TITLE:=Small utility to request kernel devices events for coldplug
-  DEPENDS:=udev
 endef
 
 define Package/udevextras
