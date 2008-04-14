@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -21,11 +21,12 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/aodv-uu/Default
   TITLE:=Ad-hoc On-demand Distance Vector Routing
+  DEPENDS:=@BROKEN
   URL:=http://core.it.uu.se/core/index.php/AODV-UU
 endef
 
 define Package/aodv-uu/Default/description
- AODV is the Ad-hoc On-demand Distance Vector routing protocol 
+ AODV is the Ad-hoc On-demand Distance Vector routing protocol
  implementation created at Uppsala University.
 endef
 
