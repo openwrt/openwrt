@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -22,16 +22,32 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/wireless_tools.$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
+define Package/wireless-tools/Default
+  URL:=http://hplabs.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html
+endef
+
 define Package/wireless-tools
+$(call Package/wireless-tools/Default)
   SECTION:=net
   CATEGORY:=Base system
   TITLE:=Tools for manipulating Linux Wireless Extensions
-  URL:=http://hplabs.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html
 endef
 
 define Package/wireless-tools/description
  This package contains a collection of tools for configuring wireless
  adapters implementing the "Linux Wireless Extensions".
+endef
+
+define Package/libiw
+$(call Package/wireless-tools/Default)
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=Library for manipulating Linux Wireless Extensions
+endef
+
+define Package/libiw/description
+ This package contains a library for manipulating
+ "Linux Wireless Extensions".
 endef
 
 define Build/Compile
@@ -65,4 +81,10 @@ define Package/wireless-tools/install
 	ln -sf iwconfig $(1)/usr/sbin/iwspy
 endef
 
+define Package/libiw/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libiw.so.* $(1)/usr/lib/
+endef
+
 $(eval $(call BuildPackage,wireless-tools))
+$(eval $(call BuildPackage,libiw))
