@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2007 OpenWrt.org
+#
+# Copyright (C) 2007-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -31,7 +31,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/acx-mac80211
   SUBMENU:=Wireless Drivers
   TITLE:=ACX111 Mac80211 driver
-  DEPENDS:=+kmod-mac80211 @!TARGET_atheros
+  DEPENDS:=+kmod-mac80211 @!TARGET_atheros @BROKEN
   FILES:=$(PKG_BUILD_DIR)/acx-mac80211.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,acx-mac80211)
 endef

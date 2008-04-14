@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -32,7 +32,7 @@ define Package/openswan
 $(call Package/openswan/Default)
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+kmod-openswan +libgmp +ip
+  DEPENDS:=+kmod-openswan +libgmp +ip @BROKEN
   TITLE+= (daemon)
   URL:=http://www.openswan.org/
 endef
