@@ -1,0 +1,42 @@
+Index: iptables-1.3.8/extensions/libipt_layer7.c
+===================================================================
+--- iptables-1.3.8.orig/extensions/libipt_layer7.c
++++ iptables-1.3.8/extensions/libipt_layer7.c
+@@ -37,7 +37,8 @@ static void help(void)
+ 	"LAYER7 match v%s options:\n"
+ 	"--l7dir <directory>  : Look for patterns here instead of /etc/l7-protocols/\n"
+ 	"                       (--l7dir must be specified before --l7proto if used!)\n"
+-	"--l7proto [!] <name> : Match the protocol defined in /etc/l7-protocols/name.pat\n",
++	"--l7proto [!] <name> : Match the protocol defined in /etc/l7-protocols/name.pat\n"
++	"--l7pkt              : Skip connection tracking and match individual packets\n",
+ 	IPTABLES_VERSION);
+ 	fputc('\n', stdout);
+ }
+@@ -45,6 +46,7 @@ static void help(void)
+ static struct option opts[] = {
+ 	{ .name = "l7proto", .has_arg = 1, .flag = 0, .val = '1' },
+ 	{ .name = "l7dir",   .has_arg = 1, .flag = 0, .val = '2' },
++	{ .name = "l7pkt",   .has_arg = 0, .flag = 0, .val = '3' },
+ 	{ .name = 0 }
+ };
+ 
+@@ -333,6 +335,9 @@ static int parse(int c, char **argv, int
+ 
+ 		*flags = 1;
+ 		break;
++	case '3':
++		layer7info->pkt = 1;
++		break;
+ 
+ 	default:
+ 		return 0;
+@@ -365,6 +370,9 @@ static void print(const struct ipt_ip *i
+ 
+ 	print_protocol(((struct ipt_layer7_info *)match->data)->protocol,
+ 		  ((struct ipt_layer7_info *)match->data)->invert, numeric);
++
++	if (((struct ipt_layer7_info *)match->data)->pkt)
++		printf("l7pkt ");
+ }
+ /* Saves the union ipt_matchinfo in parsable form to stdout. */
+ static void save(const struct ipt_ip *ip, const struct ipt_entry_match *match)

@@ -1,0 +1,393 @@
+Index: iptables-1.4.0/extensions/.CHAOS-testx
+===================================================================
+--- /dev/null
++++ iptables-1.4.0/extensions/.CHAOS-testx
+@@ -0,0 +1,3 @@
++#! /bin/sh
++
++[ -f "$KERNEL_DIR/include/linux/netfilter/xt_CHAOS.h" ] && echo "CHAOS"
+Index: iptables-1.4.0/extensions/libxt_CHAOS.c
+===================================================================
+--- /dev/null
++++ iptables-1.4.0/extensions/libxt_CHAOS.c
+@@ -0,0 +1,114 @@
++/*
++ *	CHAOS target for iptables
++ *	Copyright © CC Computer Consultants GmbH, 2006 - 2007
++ *	Contact: Jan Engelhardt <jengelh@computergmbh.de>
++ *
++ *	This program is free software; you can redistribute it and/or modify
++ *	it under the terms of the GNU General Public License; either version
++ *	2 or 3 as published by the Free Software Foundation.
++ */
++#include <getopt.h>
++#include <stdbool.h>
++#include <stdio.h>
++#include <string.h>
++
++#include <xtables.h>
++#include <linux/netfilter/x_tables.h>
++#include <linux/netfilter/xt_CHAOS.h>
++
++enum {
++	F_DELUDE = 1 << 0,
++	F_TARPIT = 1 << 1,
++};
++
++static const struct option chaos_tg_opts[] = {
++	{.name = "delude", .has_arg = false, .val = 'd'},
++	{.name = "tarpit", .has_arg = false, .val = 't'},
++	{},
++};
++
++static void chaos_tg_help(void)
++{
++	printf(
++		"CHAOS target v%s options:\n"
++		"  --delude     Enable DELUDE processing for TCP\n"
++		"  --tarpit     Enable TARPIT processing for TCP\n",
++		IPTABLES_VERSION);
++	return;
++}
++
++static int chaos_tg_parse(int c, char **argv, int invert, unsigned int *flags,
++    const void *entry, struct xt_entry_target **target)
++{
++	struct xt_chaos_target_info *info = (void *)((*target)->data);
++	switch (c) {
++		case 'd':
++			info->variant = XTCHAOS_DELUDE;
++			*flags |= F_DELUDE;
++			return true;
++		case 't':
++			info->variant = XTCHAOS_TARPIT;
++			*flags |= F_TARPIT;
++			return true;
++	}
++	return false;
++}
++
++static void chaos_tg_check(unsigned int flags)
++{
++	if ((flags & (F_DELUDE | F_TARPIT)) == (F_DELUDE | F_TARPIT))
++		/* If flags == 0x03, both were specified, which should not be. */
++		exit_error(PARAMETER_PROBLEM,
++		           "CHAOS: only one of --tarpit or --delude "
++		           "may be specified");
++	return;
++}
++
++static void chaos_tg_print(const void *ip,
++    const struct xt_entry_target *target, int numeric)
++{
++	const struct xt_chaos_target_info *info = (const void *)target->data;
++	switch (info->variant) {
++		case XTCHAOS_DELUDE:
++			printf("DELUDE ");
++			break;
++		case XTCHAOS_TARPIT:
++			printf("TARPIT ");
++			break;
++	}
++	return;
++}
++
++static void chaos_tg_save(const void *ip, const struct xt_entry_target *target)
++{
++	const struct xt_chaos_target_info *info = (const void *)target->data;
++	switch (info->variant) {
++		case XTCHAOS_DELUDE:
++			printf("--delude ");
++			break;
++		case XTCHAOS_TARPIT:
++			printf("--tarpit ");
++			break;
++	}
++	return;
++}
++
++static struct xtables_target chaos_tg_reg = {
++	.version       = IPTABLES_VERSION,
++	.name          = "CHAOS",
++	.family        = AF_INET,
++	.size          = XT_ALIGN(sizeof(struct xt_chaos_target_info)),
++	.userspacesize = XT_ALIGN(sizeof(struct xt_chaos_target_info)),
++	.help          = chaos_tg_help,
++	.parse         = chaos_tg_parse,
++	.final_check   = chaos_tg_check,
++	.print         = chaos_tg_print,
++	.save          = chaos_tg_save,
++	.extra_opts    = chaos_tg_opts,
++};
++
++void _init(void)
++{
++	xtables_register_target(&chaos_tg_reg);
++	return;
++}
+Index: iptables-1.4.0/extensions/libxt_CHAOS.man
+===================================================================
+--- /dev/null
++++ iptables-1.4.0/extensions/libxt_CHAOS.man
+@@ -0,0 +1,18 @@
++Causes confusion on the other end by doing odd things with incoming packets.
++CHAOS will randomly reply (or not) with one of its configurable subtargets:
++.TP
++\fB--delude\fR
++Use the REJECT and DELUDE targets as a base to do a sudden or deferred
++connection reset, fooling some network scanners to return non-deterministic
++(randomly open/closed) results, and in case it is deemed open, it is actually
++closed/filtered.
++.TP
++\fB--tarpit\fR
++Use the REJECT and TARPIT target as a base to hold the connection until it
++times out. This consumes conntrack entries when connection tracking is loaded
++(which usually is on most machines), and routers inbetween you and the Internet
++may fail to do their connection tracking if they have to handle more
++connections than they can.
++.PP
++The randomness factor of not replying vs. replying can be set during load-time
++of the xt_CHAOS module or during runtime in /sys/modules/xt_CHAOS/parameters.
+Index: iptables-1.4.0/extensions/.DELUDE-testx
+===================================================================
+--- /dev/null
++++ iptables-1.4.0/extensions/.DELUDE-testx
+@@ -0,0 +1,3 @@
++#! /bin/sh
++
++[ -f "$KERNEL_DIR/net/netfilter/xt_DELUDE.c" ] && echo "DELUDE"
+Index: iptables-1.4.0/extensions/libxt_DELUDE.c
+===================================================================
+--- /dev/null
++++ iptables-1.4.0/extensions/libxt_DELUDE.c
+@@ -0,0 +1,49 @@
++/*
++ *	DELUDE target for iptables
++ *	Copyright © CC Computer Consultants GmbH, 2006 - 2007
++ *	Contact: Jan Engelhardt <jengelh@computergmbh.de>
++ *
++ *	This program is free software; you can redistribute it and/or modify
++ *	it under the terms of the GNU General Public License; either version
++ *	2 or 3 as published by the Free Software Foundation.
++ */
++#include <getopt.h>
++#include <stdio.h>
++#include <string.h>
++
++#include <xtables.h>
++#include <linux/netfilter/x_tables.h>
++
++static void delude_tg_help(void)
++{
++	printf("DELUDE takes no options\n");
++	return;
++}
++
++static int delude_tg_parse(int c, char **argv, int invert, unsigned int *flags,
++    const void *entry, struct xt_entry_target **target)
++{
++	return 0;
++}
++
++static void delude_tg_check(unsigned int flags)
++{
++	return;
++}
++
++static struct xtables_target delude_tg_reg = {
++	.version       = IPTABLES_VERSION,
++	.name          = "DELUDE",
++	.family        = AF_INET,
++	.size          = XT_ALIGN(0),
++	.userspacesize = XT_ALIGN(0),
++	.help          = delude_tg_help,
++	.parse         = delude_tg_parse,
++	.final_check   = delude_tg_check,
++};
++
++void _init(void)
++{
++	xtables_register_target(&delude_tg_reg);
++	return;
++}
+Index: iptables-1.4.0/extensions/libxt_DELUDE.man
+===================================================================
+--- /dev/null
++++ iptables-1.4.0/extensions/libxt_DELUDE.man
+@@ -0,0 +1,4 @@
++The DELUDE target will reply to a SYN packet with SYN-ACK, and to all other
++packets with an RST. This will terminate the connection much like REJECT, but
++network scanners doing TCP half-open discovery can be spoofed to make them
++belive the port is open rather than closed/filtered.
+Index: iptables-1.4.0/extensions/.portscan-testx
+===================================================================
+--- /dev/null
++++ iptables-1.4.0/extensions/.portscan-testx
+@@ -0,0 +1,3 @@
++#! /bin/sh
++
++[ -f "$KERNEL_DIR/include/linux/netfilter/xt_portscan.h" ] && echo "portscan"
+Index: iptables-1.4.0/extensions/libxt_portscan.c
+===================================================================
+--- /dev/null
++++ iptables-1.4.0/extensions/libxt_portscan.c
+@@ -0,0 +1,127 @@
++/*
++ *	portscan match for iptables
++ *	Copyright © CC Computer Consultants GmbH, 2006 - 2007
++ *	Contact: Jan Engelhardt <jengelh@computergmbh.de>
++ *
++ *	This program is free software; you can redistribute it and/or modify
++ *	it under the terms of the GNU General Public License; either version
++ *	2 or 3 as published by the Free Software Foundation.
++ */
++#include <stdbool.h>
++#include <stdio.h>
++#include <string.h>
++#include <stdlib.h>
++#include <getopt.h>
++
++#include <xtables.h>
++#include <iptables.h>
++#include <linux/netfilter/x_tables.h>
++#include <linux/netfilter/xt_portscan.h>
++
++static const struct option portscan_mt_opts[] = {
++	{.name = "stealth", .has_arg = false, .val = 'x'},
++	{.name = "synscan", .has_arg = false, .val = 's'},
++	{.name = "cnscan",  .has_arg = false, .val = 'c'},
++	{.name = "grscan",  .has_arg = false, .val = 'g'},
++	{},
++};
++
++static void portscan_mt_help(void)
++{
++	printf(
++		"portscan match v%s options:\n"
++		"(Combining them will make them match by OR-logic)\n"
++		"  --stealth    Match TCP Stealth packets\n"
++		"  --synscan    Match TCP SYN scans\n"
++		"  --cnscan     Match TCP Connect scans\n"
++		"  --grscan     Match Banner Grabbing scans\n",
++		IPTABLES_VERSION);
++	return;
++}
++
++static int portscan_mt_parse(int c, char **argv, int invert,
++    unsigned int *flags, const void *entry, struct xt_entry_match **match)
++{
++	struct xt_portscan_match_info *info = (void *)((*match)->data);
++
++	switch (c) {
++		case 'c':
++			info->match_cn = true;
++			return true;
++		case 'g':
++			info->match_gr = true;
++			return true;
++		case 's':
++			info->match_syn = true;
++			return true;
++		case 'x':
++			info->match_stealth = true;
++			return true;
++	}
++	return false;
++}
++
++static void portscan_mt_check(unsigned int flags)
++{
++	return;
++}
++
++static void portscan_mt_print(const void *ip,
++    const struct xt_entry_match *match, int numeric)
++{
++	const struct xt_portscan_match_info *info = (const void *)(match->data);
++	const char *s = "";
++
++	printf("portscan ");
++	if (info->match_stealth) {
++		printf("STEALTH");
++		s = ",";
++	}
++	if (info->match_syn) {
++		printf("%sSYNSCAN", s);
++		s = ",";
++	}
++	if (info->match_cn) {
++		printf("%sCNSCAN", s);
++		s = ",";
++	}
++	if (info->match_gr)
++		printf("%sGRSCAN", s);
++	printf(" ");
++	return;
++}
++
++static void portscan_mt_save(const void *ip, const struct xt_entry_match *match)
++{
++	const struct xt_portscan_match_info *info = (const void *)(match->data);
++
++	if (info->match_stealth)
++		printf("--stealth ");
++	if (info->match_syn)
++		printf("--synscan ");
++	if (info->match_cn)
++		printf("--cnscan ");
++	if (info->match_gr)
++		printf("--grscan ");
++	return;
++}
++
++static struct xtables_match portscan_mt_reg = {
++	.version       = IPTABLES_VERSION,
++	.name          = "portscan",
++	.family        = AF_INET,
++	.size          = XT_ALIGN(sizeof(struct xt_portscan_match_info)),
++	.userspacesize = XT_ALIGN(sizeof(struct xt_portscan_match_info)),
++	.help          = portscan_mt_help,
++	.parse         = portscan_mt_parse,
++	.final_check   = portscan_mt_check,
++	.print         = portscan_mt_print,
++	.save          = portscan_mt_save,
++	.extra_opts    = portscan_mt_opts,
++};
++
++void _init(void)
++{
++	xtables_register_match(&portscan_mt_reg);
++	return;
++}
+Index: iptables-1.4.0/extensions/libxt_portscan.man
+===================================================================
+--- /dev/null
++++ iptables-1.4.0/extensions/libxt_portscan.man
+@@ -0,0 +1,27 @@
++Detects simple port scan attemps based upon the packet's contents. (This is
++different from other implementations, which also try to match the rate of new
++connections.) Note that an attempt is only discovered after it has been carried
++out, but this information can be used in conjunction with other rules to block
++the remote host's future connections. So this match module will match on the
++(probably) last packet the remote side will send to your machine.
++.TP
++\fB--stealth\fR
++Match if the packet did not belong to any known TCP connection
++(Stealth/FIN/XMAS/NULL scan).
++.TP
++\fB--synscan\fR
++Match if the connection was a TCP half-open discovery (SYN scan), i.e. the
++connection was torn down after the 2nd packet in the 3-way handshake.
++.TP
++\fB--cnscan\fR
++Match if the connection was a TCP full open discovery (connect scan), i.e. the
++connection was torn down after completion of the 3-way handshake.
++.TP
++\fB--grscan\fR
++Match if data in the connection only flew in the direction of the remote side,
++e.g. if the connection was terminated after a locally running daemon sent its
++identification. (e.g. openssh)
++.PP
++NOTE: Some clients (Windows XP for example) may do what looks like a SYN scan,
++so be advised to carefully use xt_portscan in conjunction with blocking rules,
++as it may lock out your very own internal network.

@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -19,9 +19,9 @@ endef
 
 define KernelPackage/ipt-conntrack/description
  Netfilter (IPv4) kernel modules for connection tracking
- Includes: 
- - ipt_conntrack 
- - ipt_helper 
+ Includes:
+ - ipt_conntrack
+ - ipt_helper
  - ipt_connmark/CONNMARK
 endef
 
@@ -37,9 +37,9 @@ define KernelPackage/ipt-filter
 endef
 
 define KernelPackage/ipt-filter/description
- Netfilter (IPv4) kernel modules for packet content inspection 
- Includes: 
- - ipt_ipp2p 
+ Netfilter (IPv4) kernel modules for packet content inspection
+ Includes:
+ - ipt_ipp2p
  - ipt_layer7
 endef
 
@@ -55,16 +55,16 @@ define KernelPackage/ipt-ipopt
 endef
 
 define KernelPackage/ipt-ipopt/description
- Netfilter (IPv4) modules for matching/changing IP packet options 
- Includes: 
- - ipt_CLASSIFY 
- - ipt_dscp/DSCP 
- - ipt_ecn/ECN 
- - ipt_length 
- - ipt_mac 
- - ipt_tos/TOS 
- - ipt_tcpmms 
- - ipt_ttl/TTL 
+ Netfilter (IPv4) modules for matching/changing IP packet options
+ Includes:
+ - ipt_CLASSIFY
+ - ipt_dscp/DSCP
+ - ipt_ecn/ECN
+ - ipt_length
+ - ipt_mac
+ - ipt_tos/TOS
+ - ipt_tcpmms
+ - ipt_ttl/TTL
  - ipt_unclean
 endef
 
@@ -80,9 +80,9 @@ define KernelPackage/ipt-ipsec
 endef
 
 define KernelPackage/ipt-ipsec/description
- Netfilter (IPv4) modules for matching IPSec packets 
- Includes: 
- - ipt_ah 
+ Netfilter (IPv4) modules for matching IPSec packets
+ Includes:
+ - ipt_ah
  - ipt_esp
 endef
 
@@ -98,9 +98,9 @@ define KernelPackage/ipt-nat
 endef
 
 define KernelPackage/ipt-nat/description
- Netfilter (IPv4) modules for extra NAT targets 
- Includes: 
- - ipt_REDIRECT 
+ Netfilter (IPv4) modules for extra NAT targets
+ Includes:
+ - ipt_REDIRECT
  - ipt_NETMAP
 endef
 
@@ -116,12 +116,12 @@ define KernelPackage/ipt-nathelper
 endef
 
 define KernelPackage/ipt-nathelper/description
- Default Netfilter (IPv4) Conntrack and NAT helpers 
- Includes: 
- - ip_conntrack_ftp 
- - ip_nat_ftp 
- - ip_conntrack_irc 
- - ip_nat_irc 
+ Default Netfilter (IPv4) Conntrack and NAT helpers
+ Includes:
+ - ip_conntrack_ftp
+ - ip_nat_ftp
+ - ip_conntrack_irc
+ - ip_nat_irc
  - ip_conntrack_tftp
 endef
 
@@ -137,15 +137,15 @@ define KernelPackage/ipt-nathelper-extra
 endef
 
 define KernelPackage/ipt-nathelper-extra/description
- Extra Netfilter (IPv4) Conntrack and NAT helpers 
- Includes: 
- - ip_conntrack_amanda 
- - ip_conntrack_proto_gre 
- - ip_nat_proto_gre 
- - ip_conntrack_pptp 
- - ip_nat_pptp 
- - ip_conntrack_sip 
- - ip_nat_sip 
+ Extra Netfilter (IPv4) Conntrack and NAT helpers
+ Includes:
+ - ip_conntrack_amanda
+ - ip_conntrack_proto_gre
+ - ip_nat_proto_gre
+ - ip_conntrack_pptp
+ - ip_nat_pptp
+ - ip_conntrack_sip
+ - ip_nat_sip
  - ip_nat_snmp_basic
 endef
 
@@ -176,8 +176,8 @@ define KernelPackage/ipt-queue
 endef
 
 define KernelPackage/ipt-queue/description
- Netfilter (IPv4) module for user-space packet queueing 
- Includes: 
+ Netfilter (IPv4) module for user-space packet queueing
+ Includes:
  - ipt_QUEUE
 endef
 
@@ -193,8 +193,8 @@ define KernelPackage/ipt-ulog
 endef
 
 define KernelPackage/ipt-ulog/description
- Netfilter (IPv4) module for user-space packet logging 
- Includes: 
+ Netfilter (IPv4) module for user-space packet logging
+ Includes:
  - ipt_ULOG
 endef
 
@@ -209,8 +209,8 @@ define KernelPackage/ipt-iprange
 endef
 
 define KernelPackage/ipt-iprange/description
- Netfilter (IPv4) module for matching ip ranges 
- Includes: 
+ Netfilter (IPv4) module for matching ip ranges
+ Includes:
  - ipt_IPRANGE
 endef
 
@@ -227,17 +227,17 @@ endef
 
 define KernelPackage/ipt-ipset/description
  Netfilter kernel modules for ipset
- Includes: 
- - ip_set 
- - ip_set_iphash 
- - ip_set_ipmap 
- - ip_set_ipporthash 
- - ip_set_iptree 
+ Includes:
+ - ip_set
+ - ip_set_iphash
+ - ip_set_ipmap
+ - ip_set_ipporthash
+ - ip_set_iptree
  - ip_set_iptreemap
- - ip_set_macipmap 
- - ip_set_nethash 
- - ip_set_portmap 
- - ipt_set 
+ - ip_set_macipmap
+ - ip_set_nethash
+ - ip_set_portmap
+ - ipt_set
  - ipt_SET
 endef
 
@@ -254,17 +254,17 @@ endef
 
 define KernelPackage/ipt-extra/description
  Other Netfilter (IPv4) kernel modules
- Includes: 
- - ipt_limit 
- - ipt_owner 
- - ipt_physdev 
- - ipt_pkttype 
- - ipt_recent 
- - iptable_raw 
- - xt_NOTRACK 
- - xt_TARPIT 
- - xt_DELUDE 
- - xt_CHAOS 
+ Includes:
+ - ipt_limit
+ - ipt_owner
+ - ipt_physdev
+ - ipt_pkttype
+ - ipt_recent
+ - iptable_raw
+ - xt_NOTRACK
+ - xt_TARPIT
+ - xt_DELUDE
+ - xt_CHAOS
 endef
 
 $(eval $(call KernelPackage,ipt-extra))
@@ -273,6 +273,7 @@ $(eval $(call KernelPackage,ipt-extra))
 define KernelPackage/ip6tables
   SUBMENU:=$(NF_MENU)
   TITLE:=IPv6 modules
+  DEPENDS:=+kmod-ipv6
   KCONFIG:=CONFIG_IP6_NF_IPTABLES
   FILES:=$(foreach mod,$(IPT_IPV6-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_IPV6-m)))

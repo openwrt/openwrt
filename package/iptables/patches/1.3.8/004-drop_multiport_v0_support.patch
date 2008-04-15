@@ -1,7 +1,7 @@
 Index: iptables-1.3.8/extensions/libipt_multiport.c
 ===================================================================
---- iptables-1.3.8.orig/extensions/libipt_multiport.c	2007-07-31 15:27:55.000000000 -0500
-+++ iptables-1.3.8/extensions/libipt_multiport.c	2007-07-31 15:27:56.000000000 -0500
+--- iptables-1.3.8.orig/extensions/libipt_multiport.c
++++ iptables-1.3.8/extensions/libipt_multiport.c
 @@ -8,24 +8,6 @@
  /* To ensure that iptables compiles with an old kernel */
  #include "../include/linux/netfilter_ipv4/ipt_multiport.h"
@@ -27,7 +27,7 @@ Index: iptables-1.3.8/extensions/libipt_multiport.c
  static void
  help_v1(void)
  {
-@@ -70,26 +52,6 @@
+@@ -70,26 +52,6 @@ proto_to_name(u_int8_t proto)
  	}
  }
  
@@ -54,7 +54,7 @@ Index: iptables-1.3.8/extensions/libipt_multiport.c
  static void
  parse_multi_ports_v1(const char *portstring, 
  		     struct ipt_multiport_v1 *multiinfo,
-@@ -156,58 +118,6 @@
+@@ -156,58 +118,6 @@ check_proto(const struct ipt_entry *entr
  			   "multiport only works with TCP, UDP, UDPLITE, SCTP and DCCP");
  }
  
@@ -113,7 +113,7 @@ Index: iptables-1.3.8/extensions/libipt_multiport.c
  static int
  parse_v1(int c, char **argv, int invert, unsigned int *flags,
  	 const struct ipt_entry *entry,
-@@ -284,43 +194,6 @@
+@@ -284,43 +194,6 @@ print_port(u_int16_t port, u_int8_t prot
  		printf("%s", service);
  }
  
@@ -157,7 +157,7 @@ Index: iptables-1.3.8/extensions/libipt_multiport.c
  static void
  print_v1(const struct ipt_ip *ip,
  	 const struct ipt_entry_match *match,
-@@ -364,34 +237,6 @@
+@@ -364,34 +237,6 @@ print_v1(const struct ipt_ip *ip,
  	printf(" ");
  }
  
@@ -192,7 +192,7 @@ Index: iptables-1.3.8/extensions/libipt_multiport.c
  static void save_v1(const struct ipt_ip *ip, 
  		    const struct ipt_entry_match *match)
  {
-@@ -427,19 +272,20 @@
+@@ -427,19 +272,20 @@ static void save_v1(const struct ipt_ip 
  	printf(" ");
  }
  

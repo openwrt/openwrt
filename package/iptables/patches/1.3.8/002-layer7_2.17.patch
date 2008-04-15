@@ -1,48 +1,15 @@
 Index: iptables-1.3.8/extensions/.layer7-test
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ iptables-1.3.8/extensions/.layer7-test	2007-07-31 15:27:56.000000000 -0500
-@@ -0,0 +1,3 @@
+--- /dev/null
++++ iptables-1.3.8/extensions/.layer7-test
+@@ -0,0 +1,2 @@
 +#! /bin/sh
 +[ -f $KERNEL_DIR/include/linux/netfilter_ipv4/ipt_layer7.h ] && echo layer7
-+[ -f $KERNEL_DIR/include/linux/netfilter/xt_layer7.h ] && echo layer7
-Index: iptables-1.3.8/extensions/ipt_layer7.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ iptables-1.3.8/extensions/ipt_layer7.h	2007-07-31 15:27:56.000000000 -0500
-@@ -0,0 +1,27 @@
-+/* 
-+  By Matthew Strait <quadong@users.sf.net>, Dec 2003.
-+  http://l7-filter.sf.net
-+
-+  This program is free software; you can redistribute it and/or
-+  modify it under the terms of the GNU General Public License
-+  as published by the Free Software Foundation; either version
-+  2 of the License, or (at your option) any later version.
-+  http://www.gnu.org/licenses/gpl.txt
-+*/
-+
-+#ifndef _IPT_LAYER7_H
-+#define _IPT_LAYER7_H
-+
-+#define MAX_PATTERN_LEN 8192
-+#define MAX_PROTOCOL_LEN 256
-+
-+typedef char *(*proc_ipt_search) (char *, char, char *);
-+
-+struct ipt_layer7_info {
-+    char protocol[MAX_PROTOCOL_LEN];
-+    char invert:1;
-+    char pattern[MAX_PATTERN_LEN];
-+	char pkt;
-+};
-+
-+#endif /* _IPT_LAYER7_H */
 Index: iptables-1.3.8/extensions/libipt_layer7.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ iptables-1.3.8/extensions/libipt_layer7.c	2007-07-31 15:27:56.000000000 -0500
-@@ -0,0 +1,358 @@
+--- /dev/null
++++ iptables-1.3.8/extensions/libipt_layer7.c
+@@ -0,0 +1,394 @@
 +/* 
 +   Shared library add-on to iptables to add layer 7 matching support. 
 +  
@@ -69,7 +36,7 @@ Index: iptables-1.3.8/extensions/libipt_layer7.c
 +#include <dirent.h>
 +
 +#include <iptables.h>
-+#include "ipt_layer7.h"
++#include <linux/netfilter_ipv4/ipt_layer7.h>
 +
 +#define MAX_FN_LEN 256
 +
@@ -82,8 +49,7 @@ Index: iptables-1.3.8/extensions/libipt_layer7.c
 +	"LAYER7 match v%s options:\n"
 +	"--l7dir <directory>  : Look for patterns here instead of /etc/l7-protocols/\n"
 +	"                       (--l7dir must be specified before --l7proto if used!)\n"
-+	"--l7proto [!] <name> : Match the protocol defined in /etc/l7-protocols/name.pat\n"
-+	"--l7pkt              : Skip connection tracking and match individual packets\n",
++	"--l7proto [!] <name> : Match the protocol defined in /etc/l7-protocols/name.pat\n",
 +	IPTABLES_VERSION);
 +	fputc('\n', stdout);
 +}
@@ -91,7 +57,6 @@ Index: iptables-1.3.8/extensions/libipt_layer7.c
 +static struct option opts[] = {
 +	{ .name = "l7proto", .has_arg = 1, .flag = 0, .val = '1' },
 +	{ .name = "l7dir",   .has_arg = 1, .flag = 0, .val = '2' },
-+	{ .name = "l7pkt",   .has_arg = 0, .flag = 0, .val = '3' },
 +	{ .name = 0 }
 +};
 +
@@ -120,10 +85,25 @@ Index: iptables-1.3.8/extensions/libipt_layer7.c
 +
 +		if(datatype == protocol)
 +		{
++			/* Ignore everything on the line beginning with the 
++			first space or tab . For instance, this allows the 
++			protocol line in http.pat to be "http " (or 
++			"http I am so cool") instead of just "http". */
++			if(strchr(line, ' ')){
++				char * space = strchr(line, ' ');
++				space[0] = '\0';
++			}
++			if(strchr(line, '\t')){
++				char * space = strchr(line, '\t');
++				space[0] = '\0';
++			}
++
++			/* sanity check.  First non-comment non-blank 
++			line must be the same as the file name. */
 +			if(strcmp(line, protoname))
 +				exit_error(OTHER_PROBLEM, 
 +					"Protocol name (%s) doesn't match file name (%s).  Bailing out\n",
-+					protoname, filename);
++					line, filename);
 +
 +			if(strlen(line) >= MAX_PROTOCOL_LEN)
 +				 exit_error(PARAMETER_PROBLEM, 
@@ -191,6 +171,35 @@ Index: iptables-1.3.8/extensions/libipt_layer7.c
 +                        /* carefully remember to call tolower here... */
 +                        result[rindex] = tolower( hex2dec(s[sindex + 2])*16 +
 +                                                  hex2dec(s[sindex + 3] ) );
++
++			switch ( result[rindex] )
++			{
++			case 0x24:
++			case 0x28:
++			case 0x29:
++			case 0x2a:
++			case 0x2b:
++			case 0x2e:
++			case 0x3f:
++			case 0x5b:
++			case 0x5c:
++			case 0x5d:
++			case 0x5e:
++			case 0x7c:
++				fprintf(stderr, 
++					"Warning: layer7 regexp contains a control character, %c, in hex (\\x%c%c).\n"
++					"I recommend that you write this as %c or \\%c, depending on what you meant.\n",
++					result[rindex], s[sindex + 2], s[sindex + 3], result[rindex], result[rindex]);
++				break;
++			case 0x00:
++				fprintf(stderr, 
++					"Warning: null (\\x00) in layer7 regexp.  A null terminates the regexp string!\n");
++				break;
++			default:
++				break;
++			}
++
++
 +                        sindex += 3; /* 4 total */
 +                }
 +                else
@@ -336,9 +345,6 @@ Index: iptables-1.3.8/extensions/libipt_layer7.c
 +
 +		*flags = 1;
 +		break;
-+	case '3':
-+		layer7info->pkt = 1;
-+		break;
 +
 +	default:
 +		return 0;
@@ -347,12 +353,12 @@ Index: iptables-1.3.8/extensions/libipt_layer7.c
 +	return 1;
 +}
 +
-+/* Final check; must have specified --pattern. */
++/* Final check; must have specified --l7proto */
 +static void final_check(unsigned int flags)
 +{
 +	if (!flags)
 +		exit_error(PARAMETER_PROBLEM,
-+			   "LAYER7 match: You must specify `--pattern'");
++			   "LAYER7 match: You must specify `--l7proto'");
 +}
 +
 +static void print_protocol(char s[], int invert, int numeric)
@@ -371,9 +377,6 @@ Index: iptables-1.3.8/extensions/libipt_layer7.c
 +
 +	print_protocol(((struct ipt_layer7_info *)match->data)->protocol,
 +		  ((struct ipt_layer7_info *)match->data)->invert, numeric);
-+
-+	if (((struct ipt_layer7_info *)match->data)->pkt)
-+		printf("l7pkt ");
 +}
 +/* Saves the union ipt_matchinfo in parsable form to stdout. */
 +static void save(const struct ipt_ip *ip, const struct ipt_entry_match *match)
@@ -403,9 +406,9 @@ Index: iptables-1.3.8/extensions/libipt_layer7.c
 +}
 Index: iptables-1.3.8/extensions/libipt_layer7.man
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ iptables-1.3.8/extensions/libipt_layer7.man	2007-07-31 15:27:56.000000000 -0500
-@@ -0,0 +1,13 @@
+--- /dev/null
++++ iptables-1.3.8/extensions/libipt_layer7.man
+@@ -0,0 +1,14 @@
 +This module matches packets based on the application layer data of 
 +their connections.  It uses regular expression matching to compare 
 +the application layer data to regular expressions found it the layer7 
@@ -414,8 +417,9 @@ Index: iptables-1.3.8/extensions/libipt_layer7.man
 +.TP
 +.BI "--l7proto " "\fIprotocol\fP"
 +Match the specified protocol.  The protocol name must match a file 
-+name in /etc/l7-protocols/
++name in /etc/l7-protocols/ or one of its first-level child directories.
 +.TP
 +.BI "--l7dir " "\fIdirectory\fP"
-+Use \fIdirectory\fP instead of /etc/l7-protocols/
++Use \fIdirectory\fP instead of /etc/l7-protocols/.  This option must be 
++specified before --l7proto.
 +

@@ -1,6 +1,7 @@
-diff -urN linux-2.6.21.1.old/include/linux/netfilter_ipv4/ipt_ipp2p.h linux-2.6.21.1.dev/include/linux/netfilter_ipv4/ipt_ipp2p.h
---- linux-2.6.21.1.old/include/linux/netfilter_ipv4/ipt_ipp2p.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1.dev/include/linux/netfilter_ipv4/ipt_ipp2p.h	2007-05-26 20:21:54.586864296 +0200
+Index: linux-2.6.21.7/include/linux/netfilter_ipv4/ipt_ipp2p.h
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/include/linux/netfilter_ipv4/ipt_ipp2p.h
 @@ -0,0 +1,31 @@
 +#ifndef __IPT_IPP2P_H
 +#define __IPT_IPP2P_H
@@ -33,9 +34,10 @@ diff -urN linux-2.6.21.1.old/include/linux/netfilter_ipv4/ipt_ipp2p.h linux-2.6.
 +#define IPP2P_MUTE		(1 << 14)
 +#define IPP2P_WASTE		(1 << 15)
 +#define IPP2P_XDCC		(1 << 16)
-diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/ipt_ipp2p.c linux-2.6.21.1.dev/net/ipv4/netfilter/ipt_ipp2p.c
---- linux-2.6.21.1.old/net/ipv4/netfilter/ipt_ipp2p.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1.dev/net/ipv4/netfilter/ipt_ipp2p.c	2007-05-26 20:21:54.587864144 +0200
+Index: linux-2.6.21.7/net/ipv4/netfilter/ipt_ipp2p.c
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/net/ipv4/netfilter/ipt_ipp2p.c
 @@ -0,0 +1,882 @@
 +#if defined(MODVERSIONS)
 +#include <linux/modversions.h>
@@ -782,7 +784,7 @@ diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/ipt_ipp2p.c linux-2.6.21.1.dev/n
 +{
 +    const struct ipt_p2p_info *info = matchinfo;
 +    unsigned char  *haystack;
-+    struct iphdr *ip = skb->nh.iph;
++    struct iphdr *ip = ip_hdr(skb);
 +    int p2p_result = 0, i = 0;
 +//    int head_len;
 +    int hlen = ntohs(ip->tot_len)-(ip->ihl*4);	/*hlen = packet-data length*/
@@ -919,12 +921,13 @@ diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/ipt_ipp2p.c linux-2.6.21.1.dev/n
 +module_exit(fini);
 +
 +
-diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/Kconfig linux-2.6.21.1.dev/net/ipv4/netfilter/Kconfig
---- linux-2.6.21.1.old/net/ipv4/netfilter/Kconfig	2007-05-26 20:17:47.626407992 +0200
-+++ linux-2.6.21.1.dev/net/ipv4/netfilter/Kconfig	2007-05-26 20:21:54.587864144 +0200
-@@ -263,6 +263,12 @@
- 	help
- 	  Say Y to get lots of debugging output.
+Index: linux-2.6.21.7/net/ipv4/netfilter/Kconfig
+===================================================================
+--- linux-2.6.21.7.orig/net/ipv4/netfilter/Kconfig
++++ linux-2.6.21.7/net/ipv4/netfilter/Kconfig
+@@ -245,6 +245,12 @@ config IP_NF_MATCH_IPRANGE
+ 
+ 	  To compile it as a module, choose M here.  If unsure, say N.
  
 +config IP_NF_MATCH_IPP2P
 +	tristate "IPP2P"
@@ -935,15 +938,15 @@ diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/Kconfig linux-2.6.21.1.dev/net/i
  config IP_NF_MATCH_TOS
  	tristate "TOS match support"
  	depends on IP_NF_IPTABLES
-diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/Makefile linux-2.6.21.1.dev/net/ipv4/netfilter/Makefile
---- linux-2.6.21.1.old/net/ipv4/netfilter/Makefile	2007-05-26 20:17:47.638406168 +0200
-+++ linux-2.6.21.1.dev/net/ipv4/netfilter/Makefile	2007-05-26 20:21:54.588863992 +0200
-@@ -91,7 +91,7 @@
+Index: linux-2.6.21.7/net/ipv4/netfilter/Makefile
+===================================================================
+--- linux-2.6.21.7.orig/net/ipv4/netfilter/Makefile
++++ linux-2.6.21.7/net/ipv4/netfilter/Makefile
+@@ -91,6 +91,7 @@ obj-$(CONFIG_IP_NF_MATCH_ECN) += ipt_ecn
  obj-$(CONFIG_IP_NF_MATCH_AH) += ipt_ah.o
  obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
  obj-$(CONFIG_IP_NF_MATCH_ADDRTYPE) += ipt_addrtype.o
--
 +obj-$(CONFIG_IP_NF_MATCH_IPP2P) += ipt_ipp2p.o
- obj-$(CONFIG_IP_NF_MATCH_LAYER7) += ipt_layer7.o
  
  # targets
+ obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o

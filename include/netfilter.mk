@@ -100,6 +100,7 @@ $(eval $(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_MATCH_STATISTIC, $(P_XT)xt_st
 $(eval $(call nf_add,IPT_IPOPT,CONFIG_IP_NF_MATCH_TCPMSS, $(P_V4)ipt_tcpmss))
 $(eval $(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_MATCH_TCPMSS, $(P_XT)xt_tcpmss))
 $(eval $(call nf_add,IPT_IPOPT,CONFIG_IP_NF_MATCH_TIME, $(P_V4)ipt_time))
+$(eval $(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_MATCH_TIME, $(P_XT)xt_time))
 $(eval $(call nf_add,IPT_IPOPT,CONFIG_IP_NF_MATCH_TOS, $(P_V4)ipt_tos))
 $(eval $(call nf_add,IPT_IPOPT,CONFIG_IP_NF_MATCH_TTL, $(P_V4)ipt_ttl))
 $(eval $(call nf_add,IPT_IPOPT,CONFIG_IP_NF_MATCH_UNCLEAN, $(P_V4)ipt_unclean))
@@ -248,6 +249,9 @@ $(eval $(call nf_add,IPT_ULOG,CONFIG_IP_NF_TARGET_ULOG, $(P_V4)ipt_ULOG))
 # userland only
 IPT_BUILTIN := $(if $(NF_KMOD),,$(P_V4)ipt_standard)
 IPT_BUILTIN += $(if $(NF_KMOD),,$(P_V4)ipt_icmp $(P_V4)ipt_tcp $(P_V4)ipt_udp)
+
+IPT_BUILTIN += $(if $(NF_KMOD),,$(P_XT)xt_standard)
+IPT_BUILTIN += $(if $(NF_KMOD),,$(P_XT)xt_icmp $(P_XT)xt_tcp $(P_XT)xt_udp)
 
 IPT_BUILTIN += $(IPT_CONNTRACK-y)
 IPT_BUILTIN += $(IPT_EXTRA-y)
