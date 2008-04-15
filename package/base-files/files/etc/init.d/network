@@ -20,6 +20,8 @@ start() {
 }
 
 restart() {
+	setup_switch() { return 0; }
+	
 	include /lib/network
 	setup_switch
 	ifup -a
