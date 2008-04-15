@@ -100,8 +100,10 @@ static void __init ide_magicbox_register(unsigned long addr,
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
 	if (ide_register_hw(&hw, &hwif) != -1)
-#else
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
 	if (ide_register_hw(&hw, 1, &hwif) != -1)
+#else
+	if (ide_register_hw(&hw, NULL, 1, &hwif) != -1)
 #endif
 	{
 		printk(KERN_NOTICE "magicbox-ide: Registered IDE-CF driver\n");
