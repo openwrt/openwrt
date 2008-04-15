@@ -19,6 +19,8 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
+# XXX: remove @!TARGET_* later when we have PCI & USB support properly detected on all targets
+
 define KernelPackage/mac80211
   SUBMENU:=Wireless Drivers
   TITLE:=Linux 802.11 Wireless Networking Stack
@@ -54,7 +56,7 @@ $(eval $(call Download,rt71w))
 define KernelPackage/rt2x00/Default
   SUBMENU:=Wireless Drivers
   TITLE:=Ralink Drivers for RT2x00 cards
-  DEPENDS:=@LINUX_2_6_24 @!TARGET_atheros @!TARGET_uml
+  DEPENDS:=@LINUX_2_6_24 @!TARGET_ar7 @!TARGET_atheros @!TARGET_uml
 endef
 
 define KernelPackage/rt2x00-lib
