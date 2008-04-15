@@ -535,7 +535,7 @@ $(eval $(call KernelPackage,input-gpio-buttons))
 define KernelPackage/mmc-spi
   SUBMENU:=$(OTHER_MENU)
   TITLE:=MMC/SD over SPI Support
-  DEPENDS:=@LINUX_2_6
+  DEPENDS:=@LINUX_2_6 +kmod-mmc +kmod-spi +kmod-crc-itu-t +kmod-crc7
   KCONFIG:=CONFIG_MMC_SPI
   FILES:=$(LINUX_DIR)/drivers/mmc/host/mmc_spi.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,mmc_spi)
@@ -564,32 +564,22 @@ $(eval $(call KernelPackage,mmc-atmelmci))
 
 define KernelPackage/spi
   SUBMENU:=$(OTHER_MENU)
-  TITLE:=Serial Peripheral Interface
-  DEPENDS:=@LINUX_2_6 +kmod-crc-itu-t +kmod-crc7
-  KCONFIG:=CONFIG_SPI=y \
-	CONFIG_MTD_DATAFLASH \
-	CONFIG_MTD_M25P80 \
-	CONFIG_SPI_AT25 \
-	CONFIG_SPI_SPIDEV \
-	CONFIG_SPI_TLE62X0
-  FILES:= \
-	$(LINUX_DIR)/drivers/spi/at25.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/spi/spidev.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/spi/tle62x0.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/mtd/devices/m25p80.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/mtd/devices/mtd_dataflash.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,spi)
+  TITLE:=Serial Peripheral Interface support
+  DEPENDS:=@LINUX_2_6
+  KCONFIG:=\
+	CONFIG_SPI=y \
+	CONFIG_SPI_MASTER=y
 endef
 
 define KernelPackage/spi/description
- This package contains the Serial Peripheral Interface driver
+ This package contains the Serial Peripheral Interface Master driver
 endef
 
 $(eval $(call KernelPackage,spi))
 
 define KernelPackage/spi-bitbang
   SUBMENU:=$(OTHER_MENU)
-  TITLE:=Serial Peripheral Interface bitbanging
+  TITLE:=Serial Peripheral Interface bitbanging library
   DEPENDS:=@LINUX_2_6 +kmod-spi
   KCONFIG:=CONFIG_SPI_BITBANG
   FILES:=$(LINUX_DIR)/drivers/spi/spi_bitbang.$(LINUX_KMOD_SUFFIX)
@@ -597,7 +587,38 @@ define KernelPackage/spi-bitbang
 endef
 
 define KernelPackage/spi-bitbang/description
- This package contains the Serial Peripheral Interface bitbanging library
+ This package contains the SPI bitbanging library
 endef
 
 $(eval $(call KernelPackage,spi-bitbang))
+
+define KernelPackage/spi-gpio
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=GPIO based bitbanging SPI controller
+  DEPENDS:=@LINUX_2_6 +kmod-spi-bitbang
+  KCONFIG:=CONFIG_SPI_GPIO
+  FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,92,spi_gpio)
+endef
+
+define KernelPackage/spi-gpio/description
+ This package contains the GPIO based bitbanging SPI controller driver
+endef
+
+$(eval $(call KernelPackage,spi-gpio))
+
+define KernelPackage/spi-dev
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=User mode SPI device driver
+  DEPENDS:=@LINUX_2_6 +kmod-spi
+  KCONFIG:=CONFIG_SPI_SPIDEV
+  FILES:=$(LINUX_DIR)/drivers/spi/spidev.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,91,spidev)
+endef
+
+define KernelPackage/spi-dev/description
+ This package contains the user mode SPI device driver
+endef
+
+$(eval $(call KernelPackage,spi-dev))
+
