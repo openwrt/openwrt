@@ -40,7 +40,6 @@ endef
 define Package/udevextras
 $(call Package/udev)
   TITLE:=Utilities for udev scripts, for general device discovery
-  DEPENDS:=udev
   MENU:=1
 endef
 
