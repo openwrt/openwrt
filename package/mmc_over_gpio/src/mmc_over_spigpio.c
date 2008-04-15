@@ -9,7 +9,7 @@
 #include <linux/platform_device.h>
 #include <linux/list.h>
 #include <linux/mutex.h>
-#include "linux/spi/spi_gpio.h" //XXX
+#include <linux/spi/spi_gpio.h>
 
 
 /* This is the maximum speed in Hz */
