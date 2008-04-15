@@ -1,0 +1,106 @@
+Index: iptables-1.4.0/extensions/libxt_TARPIT.c
+===================================================================
+--- /dev/null
++++ iptables-1.4.0/extensions/libxt_TARPIT.c
+@@ -0,0 +1,55 @@
++/* Shared library add-on to iptables to add TARPIT target support */
++#include <stdio.h>
++#include <getopt.h>
++
++#include <xtables.h>
++#include <linux/netfilter/x_tables.h>
++
++static void TARPIT_help(void)
++{
++	fputs(
++"TARPIT takes no options\n"
++"\n", stdout);
++}
++
++static struct option TARPIT_opts[] = {
++	{ 0 }
++};
++
++static int TARPIT_parse(int c, char **argv, int invert, unsigned int *flags,
++			const void *entry, struct xt_entry_target **target)
++{
++	return 0;
++}
++
++static void TARPIT_final_check(unsigned int flags)
++{
++}
++
++static void TARPIT_print(const void *ip, const struct xt_entry_target *target,
++			int numeric)
++{
++}
++
++static void TARPIT_save(const void *ip, const struct xt_entry_target *target)
++{
++}
++
++static struct xtables_target tarpit_target = {
++	.family		= AF_INET,
++	.name		= "TARPIT",
++	.version	= IPTABLES_VERSION,
++	.size		= XT_ALIGN(0),
++	.userspacesize	= XT_ALIGN(0),
++	.help		= TARPIT_help,
++	.parse		= TARPIT_parse,
++	.final_check	= TARPIT_final_check,
++	.print		= TARPIT_print,
++	.save		= TARPIT_save,
++	.extra_opts	= TARPIT_opts
++};
++
++void _init(void)
++{
++	xtables_register_target(&tarpit_target);
++}
+Index: iptables-1.4.0/extensions/libxt_TARPIT.man
+===================================================================
+--- /dev/null
++++ iptables-1.4.0/extensions/libxt_TARPIT.man
+@@ -0,0 +1,34 @@
++Captures and holds incoming TCP connections using no local
++per-connection resources. Connections are accepted, but immediately
++switched to the persist state (0 byte window), in which the remote
++side stops sending data and asks to continue every 60-240 seconds.
++Attempts to close the connection are ignored, forcing the remote side
++to time out the connection in 12-24 minutes.
++
++This offers similar functionality to LaBrea
++<http://www.hackbusters.net/LaBrea/> but doesn't require dedicated
++hardware or IPs. Any TCP port that you would normally DROP or REJECT
++can instead become a tarpit.
++
++To tarpit connections to TCP port 80 destined for the current machine:
++.IP
++iptables -A INPUT -p tcp -m tcp --dport 80 -j TARPIT
++.P
++To significantly slow down Code Red/Nimda-style scans of unused address
++space, forward unused ip addresses to a Linux box not acting as a router
++(e.g. "ip route 10.0.0.0 255.0.0.0 ip.of.linux.box" on a Cisco), enable IP
++forwarding on the Linux box, and add:
++.IP
++iptables -A FORWARD -p tcp -j TARPIT
++.IP
++iptables -A FORWARD -j DROP
++.TP
++NOTE:
++If you use the conntrack module while you are using TARPIT, you should
++also use the NOTRACK target, or the kernel will unnecessarily allocate
++resources for each TARPITted connection. To TARPIT incoming
++connections to the standard IRC port while using conntrack, you could:
++.IP
++iptables -t raw -A PREROUTING -p tcp --dport 6667 -j NOTRACK
++.IP
++iptables -A INPUT -p tcp --dport 6667 -j TARPIT
+Index: iptables-1.4.0/extensions/.TARPIT-testx
+===================================================================
+--- /dev/null
++++ iptables-1.4.0/extensions/.TARPIT-testx
+@@ -0,0 +1,2 @@
++#! /bin/sh
++[ -f "$KERNEL_DIR/net/netfilter/xt_TARPIT.c" ] && echo "TARPIT"

@@ -1,0 +1,58 @@
+Index: linux-2.6.21.7/include/linux/ip.h
+===================================================================
+--- linux-2.6.21.7.orig/include/linux/ip.h
++++ linux-2.6.21.7/include/linux/ip.h
+@@ -104,6 +104,16 @@ struct iphdr {
+ 	/*The options start here. */
+ };
+ 
++#ifdef __KERNEL__
++#include <linux/skbuff.h>
++
++static inline struct iphdr *ip_hdr(const struct sk_buff *skb)
++{
++	return (struct iphdr *)skb_network_header(skb);
++}
++
++#endif
++
+ struct ip_auth_hdr {
+ 	__u8  nexthdr;
+ 	__u8  hdrlen;		/* This one is measured in 32 bit units! */
+Index: linux-2.6.21.7/include/linux/skbuff.h
+===================================================================
+--- linux-2.6.21.7.orig/include/linux/skbuff.h
++++ linux-2.6.21.7/include/linux/skbuff.h
+@@ -966,6 +966,16 @@ static inline void skb_reserve(struct sk
+ 	skb->tail += len;
+ }
+ 
++static inline unsigned char *skb_network_header(const struct sk_buff *skb)
++{
++	return skb->nh.raw;
++}
++
++static inline unsigned char *skb_tail_pointer(const struct sk_buff *skb)
++{
++	return skb->tail;
++}
++
+ /*
+  * CPUs often take a performance hit when accessing unaligned memory
+  * locations. The actual performance hit varies, it can be small if the
+Index: linux-2.6.21.7/include/net/ip.h
+===================================================================
+--- linux-2.6.21.7.orig/include/net/ip.h
++++ linux-2.6.21.7/include/net/ip.h
+@@ -43,6 +43,11 @@ struct inet_skb_parm
+ #define IPSKB_REROUTED		16
+ };
+ 
++static inline unsigned int ip_hdrlen(const struct sk_buff *skb)
++{
++	return ip_hdr(skb)->ihl * 4;
++}
++
+ struct ipcm_cookie
+ {
+ 	__be32			addr;

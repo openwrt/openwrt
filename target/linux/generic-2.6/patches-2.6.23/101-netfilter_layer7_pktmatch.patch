@@ -1,7 +1,7 @@
-Index: linux-2.6.22.18/include/linux/netfilter/xt_layer7.h
+Index: linux-2.6.23.16/include/linux/netfilter/xt_layer7.h
 ===================================================================
---- linux-2.6.22.18.orig/include/linux/netfilter/xt_layer7.h
-+++ linux-2.6.22.18/include/linux/netfilter/xt_layer7.h
+--- linux-2.6.23.16.orig/include/linux/netfilter/xt_layer7.h
++++ linux-2.6.23.16/include/linux/netfilter/xt_layer7.h
 @@ -8,6 +8,7 @@ struct xt_layer7_info {
      char protocol[MAX_PROTOCOL_LEN];
      char pattern[MAX_PATTERN_LEN];
@@ -10,10 +10,10 @@ Index: linux-2.6.22.18/include/linux/netfilter/xt_layer7.h
  };
  
  #endif /* _XT_LAYER7_H */
-Index: linux-2.6.22.18/net/netfilter/xt_layer7.c
+Index: linux-2.6.23.16/net/netfilter/xt_layer7.c
 ===================================================================
---- linux-2.6.22.18.orig/net/netfilter/xt_layer7.c
-+++ linux-2.6.22.18/net/netfilter/xt_layer7.c
+--- linux-2.6.23.16.orig/net/netfilter/xt_layer7.c
++++ linux-2.6.23.16/net/netfilter/xt_layer7.c
 @@ -297,34 +297,36 @@ static int match_no_append(struct nf_con
  }
  
