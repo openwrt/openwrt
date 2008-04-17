@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-04-17 02:56:31.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-04-17 03:20:28.000000000 +0200
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-04-17 18:17:28.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-04-17 18:17:28.000000000 +0200
 @@ -3237,7 +3237,6 @@
  	struct ath_softc *sc = dev->priv;
  	struct ieee80211_node *ni = NULL;
@@ -48,8 +48,17 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	ATH_TXQ_LOCK_IRQ(txq);
 Index: madwifi-trunk-r3314/net80211/ieee80211_output.c
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_output.c	2008-04-17 02:56:30.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/ieee80211_output.c	2008-04-17 04:29:06.000000000 +0200
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_output.c	2008-04-17 18:17:27.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211_output.c	2008-04-17 18:18:04.000000000 +0200
+@@ -283,7 +283,7 @@
+ 	 * normal vap. */
+ 	if (vap->iv_xrvap && (ni == vap->iv_bss) &&
+ 	    vap->iv_xrvap->iv_sta_assoc) {
+-		struct sk_buff *skb1 = skb_copy(skb, GFP_ATOMIC);
++		struct sk_buff *skb1 = skb_clone(skb, GFP_ATOMIC);
+ 		if (skb1) {
+ 			memset(SKB_CB(skb1), 0, sizeof(struct ieee80211_cb));
+ #ifdef IEEE80211_DEBUG_REFCNT
 @@ -615,100 +615,45 @@
  		skb = skb_unshare(skb, GFP_ATOMIC);
  	}
@@ -176,3 +185,46 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_output.c
  
  	return skb;
  }
+Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
+===================================================================
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_input.c	2008-04-17 18:17:28.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211_input.c	2008-04-17 18:25:48.000000000 +0200
+@@ -244,20 +244,6 @@
+ 		vap->iv_stats.is_rx_tooshort++;
+ 		goto out;
+ 	}
+-	/* Clone the SKB... we assume somewhere in this driver that we 'own'
+-	 * the skbuff passed into hard start and we do a lot of messing with it
+-	 * but bridges under some cases will not clone for the first pass of skb
+-	 * to a bridge port, but will then clone for subsequent ones.  This is 
+-	 * odd behavior but it means that if we have trashed the skb we are given
+-	 * then other ports get clones of the residual garbage.
+-	 */
+-	if ((skb2 = skb_copy(skb, GFP_ATOMIC)) == NULL) {
+-		vap->iv_devstats.tx_dropped++;
+-		goto out;
+-	}
+-	ieee80211_skb_copy_noderef(skb, skb2);
+-	ieee80211_dev_kfree_skb(&skb);
+-	skb = skb2;
+ 
+ 	/*
+ 	 * Bit of a cheat here, we use a pointer for a 3-address
+@@ -738,7 +724,7 @@
+ 			/* ether_type must be length as FF frames are always LLC/SNAP encap'd */ 
+ 			frame_len = ntohs(eh_tmp->ether_type); 
+ 
+-			skb1 = skb_copy(skb, GFP_ATOMIC);
++			skb1 = skb_clone(skb, GFP_ATOMIC);
+ 			if (skb1 == NULL)
+ 				goto err;
+ 			ieee80211_skb_copy_noderef(skb, skb1);
+@@ -1137,7 +1123,7 @@
+ 
+ 		if (ETHER_IS_MULTICAST(eh->ether_dhost) && !netif_queue_stopped(dev)) {
+ 			/* Create a SKB for the BSS to send out. */
+-			skb1 = skb_copy(skb, GFP_ATOMIC);
++			skb1 = skb_clone(skb, GFP_ATOMIC);
+ 			if (skb1)
+ 				SKB_CB(skb1)->ni = ieee80211_ref_node(vap->iv_bss); 
+ 		}
