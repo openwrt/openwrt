@@ -1,15 +1,14 @@
 /*
  * SPI driver for Micrel/Kendin KS8995M ethernet switch
  *
- * Copyright (C) 2008 Gabor Juhos <juhosg at opwnert.org>
+ * Copyright (C) 2008 Gabor Juhos <juhosg at openwrt.org>
  *
  * This file was based on: drivers/spi/at25.c
  *	Copyright (C) 2006 David Brownell
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 as published
+ * by the Free Software Foundation.
  */
 
 #include <linux/types.h>
@@ -21,8 +20,8 @@
 
 #include <linux/spi/spi.h>
 
-#define DRV_VERSION	"0.1.0"
-#define DRV_DESC	"Micrel/Kendin KS8995 Ethernet switch driver"
+#define DRV_VERSION	"0.1.1"
+#define DRV_DESC	"Micrel/Kendin KS8995 Ethernet switch SPI driver"
 
 /*-------------------------------------------------------------------------*/
 
@@ -174,12 +173,12 @@ static int ks8995_write(struct ks8995_switch *ks, char *buf,
 	return err ? err : count;
 }
 
-static int ks8995_read_reg(struct ks8995_switch *ks, u8 addr, u8 *buf)
+static inline int ks8995_read_reg(struct ks8995_switch *ks, u8 addr, u8 *buf)
 {
 	return (ks8995_read(ks, buf, addr, 1) != 1);
 }
 
-static int ks8995_write_reg(struct ks8995_switch *ks, u8 addr, u8 val)
+static inline int ks8995_write_reg(struct ks8995_switch *ks, u8 addr, u8 val)
 {
 	char buf = val;
 
@@ -414,6 +413,7 @@ static void __exit ks8995_exit(void)
 module_exit(ks8995_exit);
 
 MODULE_DESCRIPTION(DRV_DESC);
+MODULE_VERSION(DRV_VERSION);
 MODULE_AUTHOR("Gabor Juhos <juhosg at openwrt.org>");
 MODULE_LICENSE("GPL v2");
 
