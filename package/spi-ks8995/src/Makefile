@@ -1,0 +1,1 @@
+obj-${CONFIG_SPI_KS8995}	+= spi_ks8995.o
