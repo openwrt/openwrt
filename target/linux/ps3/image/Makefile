@@ -12,7 +12,7 @@ define Image/Prepare
 endef
 
 define Image/BuildKernel
-	cp $(KDIR)/image $(BIN_DIR)/otheros-$(BOARD).bld
+	cp $(KDIR)/image $(BIN_DIR)/otheros.bld
 endef
 
 $(eval $(call BuildImage))
