@@ -8,14 +8,16 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=powerpc
 BOARD:=ps3
-BOARDNAME:=Sony PlayStation 3
-LINUX_VERSION:=2.6.23.16
+BOARDNAME:=Sony PS3 Game Console
+
+LINUX_VERSION:=2.6.25
+
 KERNEL_CC:=
 
 include $(INCLUDE_DIR)/target.mk
 
 define Target/Description
-	Build bootloader images for the Playstation 3
+	Build bootloader images for the Sony PS3 Game Console
 endef
 
 # no patches required
@@ -27,8 +29,6 @@ define Kernel/Prepare
 	$(call Kernel/Prepare/ps3)
 endef
 
-# include the profiles
-#-include profiles/*.mk
-
 KERNELNAME:="zImage"
+
 $(eval $(call BuildTarget))
