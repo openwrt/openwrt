@@ -40,11 +40,6 @@ Index: linux-2.6.24.2/arch/arm/mach-ixp4xx/avila-setup.c
 +		.npeb_phy	= 0,
 +		.npec_phy	= 1,
 +	}, {
-+		.model		= "GW2345",
-+		.npes_used	= 2,
-+		.npeb_phy	= 0,
-+		.npec_phy	= 1,
-+	}, {
 +		.model		= "GW2347",
 +		.npes_used	= 1,
 +		.npeb_phy	= 1,
@@ -62,6 +57,11 @@ Index: linux-2.6.24.2/arch/arm/mach-ixp4xx/avila-setup.c
 +		.model		= "GW2353",
 +		.npes_used	= 1,
 +		.npeb_phy	= 1,
++	}, {
++		.model		= "GW2355",
++		.npes_used	= 2,
++		.npeb_phy	= -1,
++		.npec_phy	= 1,
 +	}, {
 +		.model		= "GW2357",
 +		.npes_used	= 1,
