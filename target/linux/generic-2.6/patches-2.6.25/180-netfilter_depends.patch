@@ -1,0 +1,22 @@
+Index: linux-2.6.23-rc6/net/netfilter/Kconfig
+===================================================================
+--- linux-2.6.23-rc6.orig/net/netfilter/Kconfig	2007-09-21 16:24:03.000000000 +0800
++++ linux-2.6.23-rc6/net/netfilter/Kconfig	2007-09-21 16:24:04.000000000 +0800
+@@ -143,7 +143,7 @@
+ 
+ config NF_CONNTRACK_H323
+ 	tristate "H.323 protocol support"
+-	depends on NF_CONNTRACK && (IPV6 || IPV6=n)
++	depends on NF_CONNTRACK
+ 	depends on NETFILTER_ADVANCED
+ 	help
+ 	  H.323 is a VoIP signalling protocol from ITU-T. As one of the most
+@@ -403,7 +403,7 @@
+ 
+ config NETFILTER_XT_TARGET_TCPMSS
+ 	tristate '"TCPMSS" target support'
+-	depends on NETFILTER_XTABLES && (IPV6 || IPV6=n)
++	depends on NETFILTER_XTABLES
+ 	default m if NETFILTER_ADVANCED=n
+ 	---help---
+ 	  This option adds a `TCPMSS' target, which allows you to alter the
