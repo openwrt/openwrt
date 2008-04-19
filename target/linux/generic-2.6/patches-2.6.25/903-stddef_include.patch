@@ -1,0 +1,19 @@
+Index: linux-2.6.23-rc6/include/linux/stddef.h
+===================================================================
+--- linux-2.6.23-rc6.orig/include/linux/stddef.h	2007-09-21 16:23:51.000000000 +0800
++++ linux-2.6.23-rc6/include/linux/stddef.h	2007-09-21 16:24:10.000000000 +0800
+@@ -16,6 +16,7 @@
+ 	false	= 0,
+ 	true	= 1
+ };
++#endif /* __KERNEL__ */
+ 
+ #undef offsetof
+ #ifdef __compiler_offsetof
+@@ -23,6 +24,5 @@
+ #else
+ #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+ #endif
+-#endif /* __KERNEL__ */
+ 
+ #endif

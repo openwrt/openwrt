@@ -1,0 +1,50 @@
+Index: linux-2.6.23-rc6/include/linux/time.h
+===================================================================
+--- linux-2.6.23-rc6.orig/include/linux/time.h	2007-09-21 16:23:52.000000000 +0800
++++ linux-2.6.23-rc6/include/linux/time.h	2007-09-21 16:24:09.000000000 +0800
+@@ -1,6 +1,10 @@
+ #ifndef _LINUX_TIME_H
+ #define _LINUX_TIME_H
+ 
++#ifndef __KERNEL__
++#include <time.h>
++#else
++
+ #include <linux/types.h>
+ 
+ #ifdef __KERNEL__
+@@ -227,4 +231,6 @@
+  */
+ #define TIMER_ABSTIME			0x01
+ 
++#endif /* __KERNEL__ DEBIAN */
++
+ #endif
+Index: linux-2.6.23-rc6/include/linux/types.h
+===================================================================
+--- linux-2.6.23-rc6.orig/include/linux/types.h	2007-09-21 16:23:52.000000000 +0800
++++ linux-2.6.23-rc6/include/linux/types.h	2007-09-21 16:24:09.000000000 +0800
+@@ -1,6 +1,14 @@
+ #ifndef _LINUX_TYPES_H
+ #define _LINUX_TYPES_H
+ 
++/* Debian: Use userland types instead.  */
++#ifndef __KERNEL__
++# include <sys/types.h>
++/* For other kernel headers.  */
++# include <linux/posix_types.h>
++# include <asm/types.h>
++#else
++
+ #ifdef	__KERNEL__
+ 
+ #define BITS_TO_LONGS(bits) \
+@@ -162,6 +170,8 @@
+ 
+ #endif /* __KERNEL_STRICT_NAMES */
+ 
++#endif /* __KERNEL__ DEBIAN */
++
+ /*
+  * Below are truly Linux-specific types that should never collide with
+  * any application/library that wants linux/types.h.

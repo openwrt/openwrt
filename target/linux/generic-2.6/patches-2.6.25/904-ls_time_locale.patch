@@ -1,0 +1,22 @@
+Index: linux-2.6.23-rc6/scripts/gen_initramfs_list.sh
+===================================================================
+--- linux-2.6.23-rc6.orig/scripts/gen_initramfs_list.sh	2007-09-21 16:23:51.000000000 +0800
++++ linux-2.6.23-rc6/scripts/gen_initramfs_list.sh	2007-09-21 16:24:11.000000000 +0800
+@@ -125,7 +125,7 @@
+ 			str="${ftype} ${name} ${location} ${str}"
+ 			;;
+ 		"nod")
+-			local dev=`LC_ALL=C ls -l "${location}"`
++			local dev=`LC_ALL=C ls -l --time-style=locale "${location}"`
+ 			local maj=`field 5 ${dev}`
+ 			local min=`field 6 ${dev}`
+ 			maj=${maj%,}
+@@ -135,7 +135,7 @@
+ 			str="${ftype} ${name} ${str} ${dev} ${maj} ${min}"
+ 			;;
+ 		"slink")
+-			local target=`field 11 $(LC_ALL=C ls -l "${location}")`
++			local target=`field 11 $(LC_ALL=C ls -l --time-style=locale "${location}")`
+ 			str="${ftype} ${name} ${target} ${str}"
+ 			;;
+ 		*)
