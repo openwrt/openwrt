@@ -43,7 +43,7 @@
 
 static volatile unsigned char *devCtl3Base;
 static unsigned char latchU5State;
-static spinlock_t clu5Lock;
+static spinlock_t clu5Lock = SPIN_LOCK_UNLOCKED;
 
 struct rb500_gpio_reg __iomem *rb500_gpio_reg0;
 EXPORT_SYMBOL(rb500_gpio_reg0);
@@ -116,7 +116,7 @@ EXPORT_SYMBOL(rb500_gpio_set_value);
 
 int rb500_gpio_direction_input(unsigned gpio)
 {
-	writel(readl(&rb500_gpio_reg0->gpiocfg) | (1 << gpio), (void *)&rb500_gpio_reg0->gpiocfg);
+	writel(readl(&rb500_gpio_reg0->gpiocfg) & ~(1 << gpio), (void *)&rb500_gpio_reg0->gpiocfg);
 
 	return 0;
 }
@@ -125,7 +125,7 @@ EXPORT_SYMBOL(rb500_gpio_direction_input);
 int rb500_gpio_direction_output(unsigned gpio, int value)
 {
 	gpio_set_value(gpio, value);
-	writel(readl(&rb500_gpio_reg0->gpiocfg) & ~(1 << gpio), (void *)&rb500_gpio_reg0->gpiocfg);
+	writel(readl(&rb500_gpio_reg0->gpiocfg) | (1 << gpio), (void *)&rb500_gpio_reg0->gpiocfg);
 
 	return 0;
 }
