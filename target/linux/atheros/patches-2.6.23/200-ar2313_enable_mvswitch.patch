@@ -1,0 +1,38 @@
+Index: linux-2.6.23.16/drivers/net/ar2313/ar2313.c
+===================================================================
+--- linux-2.6.23.16.orig/drivers/net/ar2313/ar2313.c	2008-04-20 10:26:15.000000000 +0200
++++ linux-2.6.23.16/drivers/net/ar2313/ar2313.c	2008-04-20 10:26:16.000000000 +0200
+@@ -955,7 +955,7 @@
+ 				dev->stats.rx_bytes += skb->len;
+ 				skb->protocol = eth_type_trans(skb, dev);
+ 				/* pass the packet to upper layers */
+-				netif_rx(skb);
++				sp->rx(skb);
+ 
+ 				skb_new->dev = dev;
+ 				/* 16 bit align */
+@@ -1370,6 +1370,11 @@
+ 		return PTR_ERR(phydev);
+ 	}
+ 
++	if (phydev->netif_rx)
++		sp->rx = phydev->netif_rx;
++	else
++		sp->rx = netif_rx;
++
+ 	/* mask with MAC supported features */
+ 	phydev->supported &= (SUPPORTED_10baseT_Half
+ 		| SUPPORTED_10baseT_Full
+Index: linux-2.6.23.16/drivers/net/ar2313/ar2313.h
+===================================================================
+--- linux-2.6.23.16.orig/drivers/net/ar2313/ar2313.h	2008-04-20 10:26:15.000000000 +0200
++++ linux-2.6.23.16/drivers/net/ar2313/ar2313.h	2008-04-20 10:26:16.000000000 +0200
+@@ -107,6 +107,8 @@
+  */
+ struct ar2313_private {
+ 	struct net_device *dev;
++	int (*rx)(struct sk_buff *skb);
++
+ 	int version;
+ 	u32 mb[2];
+ 
