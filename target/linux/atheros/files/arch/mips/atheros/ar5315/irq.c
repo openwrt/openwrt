@@ -20,6 +20,7 @@
 #include <linux/kernel.h>
 #include <linux/reboot.h>
 #include <linux/interrupt.h>
+#include <linux/bitops.h>
 #include <asm/bootinfo.h>
 #include <asm/irq_cpu.h>
 #include <asm/io.h>
@@ -39,7 +40,7 @@ static inline void ar5315_gpio_irq(void)
 	if (!pend)
 		return;
 
-	do_IRQ(AR531X_GPIO_IRQ_BASE + 31 - clz(pend));
+	do_IRQ(AR531X_GPIO_IRQ_BASE + fls(pend) - 1);
 }
 
 
