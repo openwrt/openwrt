@@ -1,0 +1,26 @@
+Index: linux-2.6.23.16/drivers/net/phy/Kconfig
+===================================================================
+--- linux-2.6.23.16.orig/drivers/net/phy/Kconfig	2008-04-20 04:40:22.000000000 +0200
++++ linux-2.6.23.16/drivers/net/phy/Kconfig	2008-04-20 04:40:32.000000000 +0200
+@@ -60,6 +60,11 @@
+ 	---help---
+ 	  Currently supports the IP175C PHY.
+ 
++config ADM6996_PHY
++	tristate "Driver for ADM6996 switches"
++	---help---
++	  Currently supports the ADM6996F switch
++
+ config FIXED_PHY
+ 	tristate "Drivers for PHY emulation on fixed speed/link"
+ 	---help---
+Index: linux-2.6.23.16/drivers/net/phy/Makefile
+===================================================================
+--- linux-2.6.23.16.orig/drivers/net/phy/Makefile	2008-04-20 04:40:22.000000000 +0200
++++ linux-2.6.23.16/drivers/net/phy/Makefile	2008-04-20 04:40:32.000000000 +0200
+@@ -12,4 +12,5 @@
+ obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
+ obj-$(CONFIG_BROADCOM_PHY)	+= broadcom.o
+ obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o
++obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
+ obj-$(CONFIG_FIXED_PHY)		+= fixed.o
