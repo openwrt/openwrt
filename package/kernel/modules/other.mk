@@ -498,6 +498,22 @@ endef
 $(eval $(call KernelPackage,input-evdev))
 
 
+define KernelPackage/hid
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Input even device
+  DEPENDS:=+kmod-input-core +kmod-input-evdev
+  KCONFIG:=CONFIG_HID
+  FILES:=$(LINUX_DIR)/drivers/hid/hid.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,61,hid)
+endef
+
+define KernelPackage/hid/description
+ Kernel modules for HID devices
+endef
+
+$(eval $(call KernelPackage,hid))
+
+
 define KernelPackage/input-polldev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Polled Input device support
