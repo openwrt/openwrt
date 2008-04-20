@@ -12,29 +12,6 @@ extern void (*board_time_init)(void);
 #endif
 
 /*
- * C access to CLZ instruction
- * (count leading zeroes).
- */
-static inline int clz(unsigned long val)
-{
-	int ret;
-
-	__asm__ volatile (
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		".set\tmips32\n\t"
-		"clz\t%0,%1\n\t"
-		".set\tmips0\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		: "=r" (ret)
-		: "r" (val)
-	);
-
-	return ret;
-}
-
-/*
  * Atheros CPUs before the AR2315 are using MIPS 4Kc core, later designs are
  * using MIPS 4KEc R2 core. This makes it easy to determine the board at runtime.
  */
