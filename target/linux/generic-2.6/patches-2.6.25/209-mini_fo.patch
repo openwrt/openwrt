@@ -195,11 +195,11 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 +	err = vfs_path_lookup(mnt->mnt_root, mnt, bpath+1, 0, &nd);
 +
 +	/* validate */
-+	if (err || !nd.dentry || !nd.dentry->d_inode) {
++	if (err || !nd.path.dentry || !nd.path.dentry->d_inode) {
 +		printk(KERN_CRIT "mini_fo: bpath_walk: path_walk failed.\n");
 +		return NULL;
 +	}
-+	return nd.dentry;
++	return nd.path.dentry;
 +}
 +
 +
@@ -3774,7 +3774,7 @@ Index: linux-2.6.23/fs/mini_fo/main.c
 +	/*
 +	 * original: inode = iget(sb, hidden_inode->i_ino);
 +	 */
-+	inode = iget(sb, iunique(sb, 25));
++	inode = iget_locked(sb, iunique(sb, 25));
 +	if (!inode) {
 +		err = -EACCES;		/* should be impossible??? */
 +		goto out;
@@ -3876,9 +3876,9 @@ Index: linux-2.6.23/fs/mini_fo/main.c
 +				hidden_root = ERR_PTR(err);
 +				goto out;
 +			}
-+			hidden_root = nd.dentry;
-+			stopd(sb)->base_dir_dentry = nd.dentry;
-+			stopd(sb)->hidden_mnt = nd.mnt;
++			hidden_root = nd.path.dentry;
++			stopd(sb)->base_dir_dentry = nd.path.dentry;
++			stopd(sb)->hidden_mnt = nd.path.mnt;
 +
 +		} else if(!strncmp("sto=", options, 4)) {
 +			/* parse the storage dir */
@@ -3896,9 +3896,9 @@ Index: linux-2.6.23/fs/mini_fo/main.c
 +				hidden_root2 = ERR_PTR(err);
 +				goto out;
 +			}
-+			hidden_root2 = nd2.dentry;
-+			stopd(sb)->storage_dir_dentry = nd2.dentry;
-+			stopd(sb)->hidden_mnt2 = nd2.mnt;
++			hidden_root2 = nd2.path.dentry;
++			stopd(sb)->storage_dir_dentry = nd2.path.dentry;
++			stopd(sb)->hidden_mnt2 = nd2.path.mnt;
 +			stohs2(sb) = hidden_root2->d_sb;
 +
 +			/* validate storage dir, this is done in 
@@ -7561,7 +7561,7 @@ Index: linux-2.6.23/fs/mini_fo/super.c
 +#include "fist.h"
 +#include "mini_fo.h"
 +
-+
++#if 0
 +STATIC void
 +mini_fo_read_inode(inode_t *inode)
 +{
@@ -7600,7 +7600,7 @@ Index: linux-2.6.23/fs/mini_fo/super.c
 +	/* I don't think ->a_ops is ever allowed to be NULL */
 +	inode->i_mapping->a_ops = &mini_fo_empty_aops;
 +}
-+
++#endif
 +
 +#if defined(FIST_DEBUG) || defined(FIST_FILTER_SCA)
 +/*
@@ -7798,7 +7798,7 @@ Index: linux-2.6.23/fs/mini_fo/super.c
 +
 +struct super_operations mini_fo_sops =
 +{
-+	read_inode:		mini_fo_read_inode,
++//	read_inode:		mini_fo_read_inode,
 +#if defined(FIST_DEBUG) || defined(FIST_FILTER_SCA)
 +	write_inode:	mini_fo_write_inode,
 +#endif /* defined(FIST_DEBUG) || defined(FIST_FILTER_SCA) */
