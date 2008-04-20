@@ -1,0 +1,50 @@
+Index: linux-2.6.24.2/arch/arm/mach-ixp4xx/avila-setup.c
+===================================================================
+--- linux-2.6.24.2.orig/arch/arm/mach-ixp4xx/avila-setup.c
++++ linux-2.6.24.2/arch/arm/mach-ixp4xx/avila-setup.c
+@@ -192,6 +192,24 @@ static struct platform_device avila_leds
+ };
+ #endif
+ 
++#ifdef CONFIG_GPIO_DEVICE
++static struct resource avila_gpio_resources[] = {
++	{
++		.name	= "gpio",
++		.start	= AVILA_GPIO_MASK,
++		.end	= AVILA_GPIO_MASK,
++		.flags	= 0,
++	},
++};
++
++static struct platform_device avila_gpio = {
++	.name			= "GPIODEV",
++	.id			= -1,
++	.num_resources		= ARRAY_SIZE(avila_gpio_resources),
++	.resource		= avila_gpio_resources,
++};
++#endif
++
+ static struct platform_device *avila_devices[] __initdata = {
+ 	&avila_i2c_gpio,
+ 	&avila_flash,
+@@ -199,6 +217,9 @@ static struct platform_device *avila_dev
+ #ifdef CONFIG_LEDS_IXP4XX
+ 	&avila_leds,
+ #endif
++#ifdef CONFIG_GPIO_DEVICE
++	&avila_gpio,
++#endif
+ };
+ 
+ static struct platform_device *avila_eth_devices[] = {
+Index: linux-2.6.24.2/include/asm-arm/arch-ixp4xx/avila.h
+===================================================================
+--- linux-2.6.24.2.orig/include/asm-arm/arch-ixp4xx/avila.h
++++ linux-2.6.24.2/include/asm-arm/arch-ixp4xx/avila.h
+@@ -38,3 +38,6 @@
+ 
+ /* User LED */
+ #define AVILA_LED_USER_GPIO	3
++
++/* gpio mask used by platform device */
++#define AVILA_GPIO_MASK		(1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9)
