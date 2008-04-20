@@ -145,7 +145,6 @@ struct ar2313_private {
 	 */
 	int board_idx;
 	char name[48];
-	struct net_device_stats stats;
 	struct {
 		u32 address;
 		u32 length;
@@ -193,5 +192,4 @@ static void ar2313_init_cleanup(struct net_device *dev);
 static int ar2313_setup_timer(struct net_device *dev);
 static void ar2313_link_timer_fn(unsigned long data);
 static void ar2313_check_link(struct net_device *dev);
-static struct net_device_stats *ar2313_get_stats(struct net_device *dev);
 #endif							/* _AR2313_H_ */
