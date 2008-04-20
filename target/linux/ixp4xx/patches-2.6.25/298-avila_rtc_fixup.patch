@@ -1,0 +1,55 @@
+diff -uprN linux-2.6.23.orig/arch/arm/mach-ixp4xx/avila-setup.c linux-2.6.23/arch/arm/mach-ixp4xx/avila-setup.c
+--- linux-2.6.23.orig/arch/arm/mach-ixp4xx/avila-setup.c	2007-10-09 15:31:38.000000000 -0500
++++ linux-2.6.23/arch/arm/mach-ixp4xx/avila-setup.c	2007-10-11 01:08:21.000000000 -0500
+@@ -138,6 +138,35 @@ static struct platform_device *avila_dev
+ 	&avila_uart
+ };
+ 
++static char avila_rtc_probe[] __initdata = "rtc-ds1672.probe=0,0x68 ";
++
++static void __init avila_fixup(struct machine_desc *desc,
++                struct tag *tags, char **cmdline, struct meminfo *mi)
++{
++    struct tag *t = tags;
++    char *p = *cmdline;
++
++    /* Find the end of the tags table, taking note of any cmdline tag. */
++    for (; t->hdr.size; t = tag_next(t)) {
++        if (t->hdr.tag == ATAG_CMDLINE) {
++            p = t->u.cmdline.cmdline;
++        }
++    }
++
++    /* Overwrite the end of the table with a new cmdline tag. */
++    t->hdr.tag = ATAG_CMDLINE;
++    t->hdr.size = (sizeof (struct tag_header) +
++        strlen(avila_rtc_probe) + strlen(p) + 1 + 4) >> 2;
++    strlcpy(t->u.cmdline.cmdline, avila_rtc_probe, COMMAND_LINE_SIZE);
++    strlcpy(t->u.cmdline.cmdline + strlen(avila_rtc_probe), p,
++        COMMAND_LINE_SIZE - strlen(avila_rtc_probe));
++
++    /* Terminate the table. */
++    t = tag_next(t);
++    t->hdr.tag = ATAG_NONE;
++    t->hdr.size = 0;
++}
++
+ static void __init avila_init(void)
+ {
+ 	ixp4xx_sys_init();
+@@ -165,6 +194,7 @@ MACHINE_START(AVILA, "Gateworks Avila Ne
+ 	/* Maintainer: Deepak Saxena <dsaxena@plexity.net> */
+ 	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
+ 	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
++	.fixup          = avila_fixup,
+ 	.map_io		= ixp4xx_map_io,
+ 	.init_irq	= ixp4xx_init_irq,
+ 	.timer		= &ixp4xx_timer,
+@@ -182,6 +212,7 @@ MACHINE_START(LOFT, "Giant Shoulder Inc 
+ 	/* Maintainer: Tom Billman <kernel@giantshoulderinc.com> */
+ 	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
+ 	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
++	.fixup          = avila_fixup,
+ 	.map_io		= ixp4xx_map_io,
+ 	.init_irq	= ixp4xx_init_irq,
+ 	.timer		= &ixp4xx_timer,
