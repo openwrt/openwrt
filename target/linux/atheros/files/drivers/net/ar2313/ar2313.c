@@ -211,7 +211,6 @@ int __init ar2313_probe(struct platform_device *pdev)
 	dev->stop = &ar2313_close;
 	dev->hard_start_xmit = &ar2313_start_xmit;
 
-	dev->get_stats = &ar2313_get_stats;
 	dev->set_multicast_list = &ar2313_multicast_list;
 #ifdef TX_TIMEOUT
 	dev->tx_timeout = ar2313_tx_timeout;
@@ -781,7 +780,7 @@ static int ar2313_init(struct net_device *dev)
 	/*
 	 * Zero the stats before starting the interface
 	 */
-	memset(&sp->stats, 0, sizeof(sp->stats));
+	memset(&dev->stats, 0, sizeof(dev->stats));
 
 	/*
 	 * We load the ring here as there seem to be no way to tell the
@@ -928,20 +927,20 @@ static int ar2313_rx_int(struct net_device *dev)
 #if DEBUG_RX
 			printk("%s: rx ERROR %08x\n", __FUNCTION__, status);
 #endif
-			sp->stats.rx_errors++;
-			sp->stats.rx_dropped++;
+			dev->stats.rx_errors++;
+			dev->stats.rx_dropped++;
 
 			/* add statistics counters */
 			if (status & DMA_RX_ERR_CRC)
-				sp->stats.rx_crc_errors++;
+				dev->stats.rx_crc_errors++;
 			if (status & DMA_RX_ERR_COL)
-				sp->stats.rx_over_errors++;
+				dev->stats.rx_over_errors++;
 			if (status & DMA_RX_ERR_LENGTH)
-				sp->stats.rx_length_errors++;
+				dev->stats.rx_length_errors++;
 			if (status & DMA_RX_ERR_RUNT)
-				sp->stats.rx_over_errors++;
+				dev->stats.rx_over_errors++;
 			if (status & DMA_RX_ERR_DESC)
-				sp->stats.rx_over_errors++;
+				dev->stats.rx_over_errors++;
 
 		} else {
 			/* alloc new buffer. */
@@ -953,7 +952,7 @@ static int ar2313_rx_int(struct net_device *dev)
 				skb_put(skb,
 						((status >> DMA_RX_LEN_SHIFT) & 0x3fff) - CRC_LEN);
 
-				sp->stats.rx_bytes += skb->len;
+				dev->stats.rx_bytes += skb->len;
 				skb->protocol = eth_type_trans(skb, dev);
 				/* pass the packet to upper layers */
 				netif_rx(skb);
@@ -964,10 +963,10 @@ static int ar2313_rx_int(struct net_device *dev)
 				/* reset descriptor's curr_addr */
 				rxdesc->addr = virt_to_phys(skb_new->data);
 
-				sp->stats.rx_packets++;
+				dev->stats.rx_packets++;
 				sp->rx_skb[idx] = skb_new;
 			} else {
-				sp->stats.rx_dropped++;
+				dev->stats.rx_dropped++;
 			}
 		}
 
@@ -1016,27 +1015,27 @@ static void ar2313_tx_int(struct net_device *dev)
 		txdesc->status = 0;
 
 		if (status & DMA_TX_ERROR) {
-			sp->stats.tx_errors++;
-			sp->stats.tx_dropped++;
+			dev->stats.tx_errors++;
+			dev->stats.tx_dropped++;
 			if (status & DMA_TX_ERR_UNDER)
-				sp->stats.tx_fifo_errors++;
+				dev->stats.tx_fifo_errors++;
 			if (status & DMA_TX_ERR_HB)
-				sp->stats.tx_heartbeat_errors++;
+				dev->stats.tx_heartbeat_errors++;
 			if (status & (DMA_TX_ERR_LOSS | DMA_TX_ERR_LINK))
-				sp->stats.tx_carrier_errors++;
+				dev->stats.tx_carrier_errors++;
 			if (status & (DMA_TX_ERR_LATE |
 						  DMA_TX_ERR_COL |
 						  DMA_TX_ERR_JABBER | DMA_TX_ERR_DEFER))
-				sp->stats.tx_aborted_errors++;
+				dev->stats.tx_aborted_errors++;
 		} else {
 			/* transmit OK */
-			sp->stats.tx_packets++;
+			dev->stats.tx_packets++;
 		}
 
 		skb = sp->tx_skb[idx];
 		sp->tx_skb[idx] = NULL;
 		idx = DSC_NEXT(idx);
-		sp->stats.tx_bytes += skb->len;
+		dev->stats.tx_bytes += skb->len;
 		dev_kfree_skb_irq(skb);
 	}
 
@@ -1214,7 +1213,7 @@ static int ar2313_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		printk("%s: No space left to Tx\n", __FUNCTION__);
 #endif
 		/* free skbuf and lie to the caller that we sent it out */
-		sp->stats.tx_dropped++;
+		dev->stats.tx_dropped++;
 		dev_kfree_skb(skb);
 
 		/* restart transmitter in case locked */
@@ -1283,13 +1282,6 @@ static int ar2313_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 
 	return -EOPNOTSUPP;
 }
-
-static struct net_device_stats *ar2313_get_stats(struct net_device *dev)
-{
-	struct ar2313_private *sp = dev->priv;
-	return &sp->stats;
-}
-
 
 static void ar2313_adjust_link(struct net_device *dev)
 {
