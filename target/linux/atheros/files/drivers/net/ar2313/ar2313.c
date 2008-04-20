@@ -826,7 +826,7 @@ static int ar2313_init(struct net_device *dev)
 static void ar2313_load_rx_ring(struct net_device *dev, int nr_bufs)
 {
 
-	struct ar2313_private *sp = ((struct net_device *) dev)->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	short i, idx;
 
 	idx = sp->rx_skbprd;
