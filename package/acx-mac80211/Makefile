@@ -31,7 +31,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/acx-mac80211
   SUBMENU:=Wireless Drivers
   TITLE:=ACX111 Mac80211 driver
-  DEPENDS:=+kmod-mac80211 @!TARGET_atheros @BROKEN
+  DEPENDS:=+kmod-mac80211 @!TARGET_atheros @!TARGET_uml @BROKEN
   FILES:=$(PKG_BUILD_DIR)/acx-mac80211.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,acx-mac80211)
 endef
