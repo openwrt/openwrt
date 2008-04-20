@@ -188,7 +188,7 @@ int __init ar2313_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, dev);
 
-	sp = dev->priv;
+	sp = netdev_priv(dev);
 	sp->dev = dev;
 	sp->cfg = pdev->dev.platform_data;
 
@@ -315,7 +315,7 @@ int __init ar2313_probe(struct platform_device *pdev)
 static void ar2313_dump_regs(struct net_device *dev)
 {
 	unsigned int *ptr, i;
-	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 
 	ptr = (unsigned int *) sp->eth_regs;
 	for (i = 0; i < (sizeof(ETHERNET_STRUCT) / sizeof(unsigned int));
@@ -344,7 +344,7 @@ static void ar2313_dump_regs(struct net_device *dev)
 #ifdef TX_TIMEOUT
 static void ar2313_tx_timeout(struct net_device *dev)
 {
-	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	unsigned long flags;
 
 #if DEBUG_TX
@@ -382,7 +382,7 @@ static void ar2313_multicast_list(struct net_device *dev)
 	 * Always listen to broadcasts and
 	 * treat IFF bits independently
 	 */
-	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	unsigned int recognise;
 
 	recognise = sp->eth_regs->mac_control;
@@ -417,7 +417,7 @@ static void ar2313_multicast_list(struct net_device *dev)
 
 static void rx_tasklet_cleanup(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 
 	/*
 	 * Tasklet may be scheduled. Need to get it removed from the list
@@ -482,7 +482,7 @@ module_exit(ar2313_module_cleanup);
 
 static void ar2313_free_descriptors(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	if (sp->rx_ring != NULL) {
 		kfree((void *) KSEG0ADDR(sp->rx_ring));
 		sp->rx_ring = NULL;
@@ -493,7 +493,7 @@ static void ar2313_free_descriptors(struct net_device *dev)
 
 static int ar2313_allocate_descriptors(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	int size;
 	int j;
 	ar2313_descr_t *space;
@@ -544,7 +544,7 @@ static int ar2313_allocate_descriptors(struct net_device *dev)
  */
 static void ar2313_init_cleanup(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	struct sk_buff *skb;
 	int j;
 
@@ -582,7 +582,7 @@ static void ar2313_init_cleanup(struct net_device *dev)
 
 static int ar2313_setup_timer(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 
 	init_timer(&sp->link_timer);
 
@@ -598,7 +598,7 @@ static int ar2313_setup_timer(struct net_device *dev)
 static void ar2313_link_timer_fn(unsigned long data)
 {
 	struct net_device *dev = (struct net_device *) data;
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 
 	// see if the link status changed
 	// This was needed to make sure we set the PHY to the
@@ -616,7 +616,7 @@ static void ar2313_link_timer_fn(unsigned long data)
 
 static void ar2313_check_link(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	u16 phyData;
 
 	phyData = mdiobus_read(&sp->mii_bus, sp->phy, MII_BMSR);
@@ -662,7 +662,7 @@ static void ar2313_check_link(struct net_device *dev)
 
 static int ar2313_reset_reg(struct net_device *dev)
 {
-	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	unsigned int ethsal, ethsah;
 	unsigned int flags;
 
@@ -724,7 +724,7 @@ static int ar2313_reset_reg(struct net_device *dev)
 
 static int ar2313_init(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	int ecode = 0;
 
 	/*
@@ -888,7 +888,7 @@ static void ar2313_load_rx_ring(struct net_device *dev, int nr_bufs)
 
 static int ar2313_rx_int(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	struct sk_buff *skb, *skb_new;
 	ar2313_descr_t *rxdesc;
 	unsigned int status;
@@ -985,7 +985,7 @@ static int ar2313_rx_int(struct net_device *dev)
 
 static void ar2313_tx_int(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	u32 idx;
 	struct sk_buff *skb;
 	ar2313_descr_t *txdesc;
@@ -1048,7 +1048,7 @@ static void ar2313_tx_int(struct net_device *dev)
 static void rx_tasklet_func(unsigned long data)
 {
 	struct net_device *dev = (struct net_device *) data;
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 
 	if (sp->unloading) {
 		return;
@@ -1066,7 +1066,7 @@ static void rx_tasklet_func(unsigned long data)
 
 static void rx_schedule(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 
 	sp->dma_regs->intr_ena &= ~DMA_STATUS_RI;
 
@@ -1076,7 +1076,7 @@ static void rx_schedule(struct net_device *dev)
 static irqreturn_t ar2313_interrupt(int irq, void *dev_id)
 {
 	struct net_device *dev = (struct net_device *) dev_id;
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	unsigned int status, enabled;
 
 	/* clear interrupt */
@@ -1119,9 +1119,7 @@ static irqreturn_t ar2313_interrupt(int irq, void *dev_id)
 
 static int ar2313_open(struct net_device *dev)
 {
-	struct ar2313_private *sp;
-
-	sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 
 	dev->mtu = 1500;
 	netif_start_queue(dev);
@@ -1133,7 +1131,7 @@ static int ar2313_open(struct net_device *dev)
 
 static void ar2313_halt(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	int j;
 
 	tasklet_disable(&sp->rx_tasklet);
@@ -1201,7 +1199,7 @@ static int ar2313_close(struct net_device *dev)
 
 static int ar2313_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	ar2313_descr_t *td;
 	u32 idx;
 
@@ -1248,7 +1246,7 @@ static int ar2313_start_xmit(struct sk_buff *skb, struct net_device *dev)
 static int ar2313_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
 	struct mii_ioctl_data *data = (struct mii_ioctl_data *) &ifr->ifr_data;
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	int ret;
 
 	switch (cmd) {
@@ -1285,7 +1283,7 @@ static int ar2313_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 
 static void ar2313_adjust_link(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	unsigned int mc;
 
 	if (!sp->phy_dev->link)
@@ -1310,7 +1308,7 @@ static int
 mdiobus_read(struct mii_bus *bus, int phy_addr, int regnum)
 {
 	struct net_device *const dev = bus->priv;
-	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	volatile ETHERNET_STRUCT *ethernet = sp->phy_regs;
 
 	ethernet->mii_addr = MII_ADDR(phy_addr, regnum);
@@ -1323,7 +1321,7 @@ mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum,
              u16 value)
 {
 	struct net_device *const dev = bus->priv;
-	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	volatile ETHERNET_STRUCT *ethernet = sp->phy_regs;
 
 	while (ethernet->mii_addr & MII_ADDR_BUSY);
@@ -1344,7 +1342,7 @@ static int mdiobus_reset(struct mii_bus *bus)
 
 static int mdiobus_probe (struct net_device *dev)
 {
-	struct ar2313_private *const sp = (struct ar2313_private *) dev->priv;
+	struct ar2313_private *const sp = netdev_priv(dev);
 	struct phy_device *phydev = NULL;
 	int phy_addr;
 
