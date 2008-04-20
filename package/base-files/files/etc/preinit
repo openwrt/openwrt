@@ -59,17 +59,20 @@ set_state preinit
 echo "$HOTPLUG" > /proc/sys/kernel/hotplug
 eval ${FAILSAFE:+failsafe}
 lock -w /tmp/.failsafe
-mount_root
-[ -f /sysupgrade.tgz ] && {
-	echo "- config restore -"
-	cd /
-	mv sysupgrade.tgz /tmp
-	tar xzf /tmp/sysupgrade.tgz
-	rm -f /tmp/sysupgrade.tgz
-	sync
-}
 
-echo "- init -"
+if [ -z "$INITRAMFS" ]; then
+	mount_root
+	[ -f /sysupgrade.tgz ] && {
+		echo "- config restore -"
+		cd /
+		mv sysupgrade.tgz /tmp
+		tar xzf /tmp/sysupgrade.tgz
+		rm -f /tmp/sysupgrade.tgz
+		sync
+	}
+
+	echo "- init -"
 	
-killall hotplug2
-exec /sbin/init
+	killall hotplug2
+	exec /sbin/init
+fi

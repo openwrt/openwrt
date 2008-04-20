@@ -1,48 +1,9 @@
 #!/bin/sh
 # Copyright (C) 2006 OpenWrt.org
 
-. /etc/diag.sh
-export PATH=/bin:/sbin:/usr/bin:/usr/sbin
-mount none /proc -t proc
-mount none /sys -t sysfs
-size=$(awk '/MemTotal:/ {l=5242880;mt=($2*1024);print((s=mt/2)<l)?mt-l:s}' /proc/meminfo)
-mount none /tmp -t tmpfs -o size=$size,nosuid,nodev,mode=1777
+INITRAMFS=1
 
-if grep devfs /proc/filesystems > /dev/null; then
-	mount none /dev -t devfs
-
-elif [ -x /sbin/hotplug2 ]; then
-	mount -t tmpfs tmpfs /dev -o size=512K
-	mknod /dev/console c 5 1
-	mkdir /dev/pts
-	mkdir /dev/shm
-	/sbin/hotplug2 --no-persistent --coldplug --max_children 1
-
-elif [ -x /sbin/udevd ]; then
-	mount -n -t tmpfs -o mode=0755 udev /dev
-	mkdir /dev/pts
-	mkdir /dev/shm
-
-	if [ -e /proc/sys/kernel/hotplug ]; then
-		echo "" > /proc/sys/kernel/hotplug
-	fi
-
-	/sbin/udevd --daemon
-	/sbin/udevtrigger
-	/sbin/udevsettle
-
-fi
-
-mount none /dev/pts -t devpts
-
-# the root mount point can come from the kernel command line
-# or it can be overridden in the preinit.arch file
-trap 'FAILSAFE=true' USR1
-[ -e /etc/preinit.arch ] && . /etc/preinit.arch
-set_state preinit
-echo "$HOTPLUG" > /proc/sys/kernel/hotplug
-eval ${FAILSAFE:+failsafe}
-lock -w /tmp/.failsafe
+. /etc/preinit
 
 # if we have no root parameter, just go to running from ramfs
 [ -z $rootfs ] && {
