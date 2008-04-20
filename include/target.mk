@@ -126,6 +126,9 @@ ifeq ($(DUMP),1)
     .SILENT: $(TMP_CONFIG)
     .PRECIOUS: $(TMP_CONFIG)
 
+    ifneq ($(CONFIG_GENERIC_GPIO),)
+      FEATURES += gpio
+    endif
     ifneq ($(CONFIG_PCI),)
       FEATURES += pci
     endif
