@@ -12,7 +12,7 @@
 #ifndef AR5315_H
 #define AR5315_H
 
-/* 
+/*
  * IRQs
  */
 #define AR5315_IRQ_MISC_INTRS   MIPS_CPU_IRQ_BASE+2 /* C0_CAUSE: 0x0400 */
@@ -106,7 +106,7 @@
 #define AR5315_CONFIG_CPU_DRAM             0x00010000
 #define AR5315_CONFIG_CPU_PCI              0x00020000
 #define AR5315_CONFIG_CPU_MMR              0x00040000
-#define AR5315_CONFIG_BIG                  0x00000400      
+#define AR5315_CONFIG_BIG                  0x00000400
 
 
 /*
@@ -141,13 +141,13 @@
 #define IF_PCI_HOST                 0x00000010
 #define IF_PCI_INTR                 0x00000020
 #define IF_PCI_CLK_MASK             0x00030000
-#define IF_PCI_CLK_INPUT            0 
+#define IF_PCI_CLK_INPUT            0
 #define IF_PCI_CLK_OUTPUT_LOW       1
 #define IF_PCI_CLK_OUTPUT_CLK       2
 #define IF_PCI_CLK_OUTPUT_HIGH      3
-#define IF_PCI_CLK_SHIFT            16 
- 
-                
+#define IF_PCI_CLK_SHIFT            16
+
+
 /* Major revision numbers, bits 7..4 of Revision ID register */
 #define REV_MAJ_AR5311              0x01
 #define REV_MAJ_AR5312              0x04
@@ -170,7 +170,7 @@
 #define AR5315_ISR_GPIO                    0x0040           /* GPIO */
 #define AR5315_ISR_WD                      0x0080           /* watchdog */
 #define AR5315_ISR_IR_RSVD                 0x0100           /* IR */
-                                
+
 #define AR5315_GISR_MISC                   0x0001
 #define AR5315_GISR_WLAN0                  0x0002
 #define AR5315_GISR_MPEGTS_RSVD            0x0004
@@ -215,7 +215,7 @@
 #define PERF_ACTIVE                 0x0010  /* Count Active Processor Cycles */
 #define PERF_WBHIT                  0x0020  /* Count CPU Write Buffer Hits */
 #define PERF_WBMISS                 0x0040  /* Count CPU Write Buffer Misses */
-                                
+
 #define PERF_EB_ARDY                0x0001  /* Count EB_ARdy signal */
 #define PERF_EB_AVALID              0x0002  /* Count EB_AValid signal */
 #define PERF_EB_WDRDY               0x0004  /* Count EB_WDRdy signal */
@@ -246,7 +246,7 @@
 #define PROCERR_HMAST_LOCAL         4
 #define PROCERR_HMAST_CPU           5
 #define PROCERR_HMAST_PCITGT        6
-                                    
+
 #define PROCERR_HMAST_S             0
 #define PROCERR_HWRITE              0x00000010
 #define PROCERR_HSIZE               0x00000060
@@ -325,7 +325,7 @@
  */
 #define ASSOC_STATUS_M              0x00000003
 #define ASSOC_STATUS_NONE           0
-#define ASSOC_STATUS_PENDING        1   
+#define ASSOC_STATUS_PENDING        1
 #define ASSOC_STATUS_ASSOCIATED     2
 #define LED_MODE_M                  0x0000001c
 #define LED_BLINK_THRESHOLD_M       0x000000e0
@@ -358,28 +358,28 @@
 #define AR5315_RESET_GPIO       5
 #define AR5315_NUM_GPIO         22
 
-    
-/* 
+
+/*
  *  PCI Clock Control
- */     
- 
+ */
+
 #define AR5315_PCICLK           (AR5315_DSLBASE + 0x00a4)
 
 #define AR5315_PCICLK_INPUT_M              0x3
 #define AR5315_PCICLK_INPUT_S              0
-                         
+
 #define AR5315_PCICLK_PLLC_CLKM            0
 #define AR5315_PCICLK_PLLC_CLKM1           1
 #define AR5315_PCICLK_PLLC_CLKC            2
-#define AR5315_PCICLK_REF_CLK              3 
+#define AR5315_PCICLK_REF_CLK              3
 
 #define AR5315_PCICLK_DIV_M                0xc
 #define AR5315_PCICLK_DIV_S                2
-                         
+
 #define AR5315_PCICLK_IN_FREQ              0
 #define AR5315_PCICLK_IN_FREQ_DIV_6        1
 #define AR5315_PCICLK_IN_FREQ_DIV_8        2
-#define AR5315_PCICLK_IN_FREQ_DIV_10       3 
+#define AR5315_PCICLK_IN_FREQ_DIV_10       3
 
 /*
  * Observation Control Register
@@ -389,10 +389,10 @@
 #define OCR_GPIO1_IROUT             0x0080
 #define OCR_GPIO3_RXCLR             0x0200
 
-/* 
+/*
  *  General Clock Control
- */     
- 
+ */
+
 #define AR5315_MISCCLK          (AR5315_DSLBASE + 0x00b4)
 #define MISCCLK_PLLBYPASS_EN        0x00000001
 #define MISCCLK_PROCREFCLK          0x00000002
@@ -435,10 +435,10 @@
 #define SPI_CTL_CLK_SEL_MASK    0x03000000
 #define SPI_OPCODE_MASK         0x000000ff
 
-/* 
- * PCI-MAC Configuration registers 
+/*
+ * PCI-MAC Configuration registers
  */
-#define PCI_MAC_RC              (AR5315_PCI + 0x4000) 
+#define PCI_MAC_RC              (AR5315_PCI + 0x4000)
 #define PCI_MAC_SCR             (AR5315_PCI + 0x4004)
 #define PCI_MAC_INTPEND         (AR5315_PCI + 0x4008)
 #define PCI_MAC_SFR             (AR5315_PCI + 0x400C)
@@ -449,16 +449,16 @@
 #define PCI_MAC_RC_BB           0x00000002
 
 #define PCI_MAC_SCR_SLMODE_M    0x00030000
-#define PCI_MAC_SCR_SLMODE_S    16        
-#define PCI_MAC_SCR_SLM_FWAKE   0         
-#define PCI_MAC_SCR_SLM_FSLEEP  1         
-#define PCI_MAC_SCR_SLM_NORMAL  2         
+#define PCI_MAC_SCR_SLMODE_S    16
+#define PCI_MAC_SCR_SLM_FWAKE   0
+#define PCI_MAC_SCR_SLM_FSLEEP  1
+#define PCI_MAC_SCR_SLM_NORMAL  2
 
 #define PCI_MAC_SFR_SLEEP       0x00000001
 
 #define PCI_MAC_PCICFG_SPWR_DN  0x00010000
 
- 
+
 /*
  * PCI Bus Interface Registers
  */
@@ -516,8 +516,8 @@
 #define AR5315_PCI_RXEOL        0x00000080      /* Desc Out EOL */
 #define AR5315_PCI_TXOOD        0x00000200      /* Desc In Out-of-Desc */
 #define AR5315_PCI_MASK         0x0000FFFF      /* Desc Mask */
-#define AR5315_PCI_EXT_INT      0x02000000      
-#define AR5315_PCI_ABORT_INT    0x04000000      
+#define AR5315_PCI_EXT_INT      0x02000000
+#define AR5315_PCI_ABORT_INT    0x04000000
 
 #define AR5315_PCI_INT_MASK     (AR5315_PCI + 0x0504)   /* same as INT_STATUS */
 
@@ -658,10 +658,10 @@
  * sysLib.c/sysTlbInit(), in that it assumes that 2 pages of size
  * PCI_TLB_PAGE_SIZE are set up in the TLB for each PCI memory space.
  */
- 
+
 #define CPU_TO_PCI_MEM_BASE1    0xE0000000
 #define CPU_TO_PCI_MEM_SIZE1    (2*PCI_TLB_PAGE_SIZE)
- 
+
 
 /* TLB attributes for PCI transactions */
 

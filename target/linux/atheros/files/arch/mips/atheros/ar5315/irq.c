@@ -89,7 +89,7 @@ static void ar5315_gpio_intr_enable(unsigned int irq)
 
 	/* reconfigure GPIO line as input */
 	sysRegMask(AR5315_GPIO_CR, AR5315_GPIO_CR_M(gpio), AR5315_GPIO_CR_I(gpio));
-	
+
 	/* Enable interrupt with edge detection */
 	sysRegMask(AR5315_GPIO_INT, AR5315_GPIO_INT_M | AR5315_GPIO_INT_LVL_M, gpio | AR5315_GPIO_INT_LVL(3));
 }
@@ -203,7 +203,7 @@ ar5315_misc_intr_disable(unsigned int irq)
 	   case AR531X_MISC_IRQ_SPI:
 		 imr &= ~AR5315_ISR_SPI;
 		 break;
-		 
+
 	   case AR531X_MISC_IRQ_TIMER:
 	     imr &= (~AR5315_ISR_TIMER);
 	     break;

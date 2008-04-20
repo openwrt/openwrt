@@ -53,7 +53,7 @@
 #define AR531X_RADIO_MASK_OFF  0xc8
 #define AR531X_RADIO0_MASK     0x0003
 #define AR531X_RADIO1_MASK     0x000c
-#define AR531X_RADIO1_S        2 
+#define AR531X_RADIO1_S        2
 
 /*
  * AR531X_NUM_WMAC defines the number of Wireless MACs that\

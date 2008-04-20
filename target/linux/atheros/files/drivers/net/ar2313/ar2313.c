@@ -14,7 +14,7 @@
  * (at your option) any later version.
  *
  * Additional credits:
- * 	This code is taken from John Taylor's Sibyte driver and then 
+ * 	This code is taken from John Taylor's Sibyte driver and then
  * 	modified for the AR2313.
  */
 
@@ -134,7 +134,7 @@
 #define CRC_LEN                 4
 #define RX_OFFSET               2
 
-#if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE) 
+#if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE)
 #define VLAN_HDR                4
 #else
 #define VLAN_HDR                0
@@ -232,8 +232,8 @@ int __init ar2313_probe(struct platform_device *pdev)
 		return (-ENXIO);
 	}
 
-	/* 
-	 * When there's only one MAC, PHY regs are typically on ENET0, 
+	/*
+	 * When there's only one MAC, PHY regs are typically on ENET0,
 	 * even though the MAC might be on ENET1.
 	 * Needto remap PHY regs separately in this case
 	 */
@@ -270,7 +270,7 @@ int __init ar2313_probe(struct platform_device *pdev)
 	sp->board_idx = BOARD_IDX_STATIC;
 
 	if (ar2313_init(dev)) {
-		/* 
+		/*
 		 * ar2313_init() calls ar2313_init_cleanup() on error.
 		 */
 		kfree(dev);
@@ -295,7 +295,7 @@ int __init ar2313_probe(struct platform_device *pdev)
 	sp->mii_bus.id = 0;
 	sp->mii_bus.irq = kmalloc(sizeof(int), GFP_KERNEL);
 	*sp->mii_bus.irq = PHY_POLL;
-	
+
 	mdiobus_register(&sp->mii_bus);
 
 	if (mdiobus_probe(dev) != 0) {
@@ -308,7 +308,7 @@ int __init ar2313_probe(struct platform_device *pdev)
 		/* start link poll timer */
 		ar2313_setup_timer(dev);
 	}
-	
+
 	return 0;
 }
 
@@ -379,9 +379,9 @@ static void printMcList(struct net_device *dev)
  */
 static void ar2313_multicast_list(struct net_device *dev)
 {
-	/* 
-	 * Always listen to broadcasts and 
-	 * treat IFF bits independently 
+	/*
+	 * Always listen to broadcasts and
+	 * treat IFF bits independently
 	 */
 	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
 	unsigned int recognise;
@@ -420,7 +420,7 @@ static void rx_tasklet_cleanup(struct net_device *dev)
 {
 	struct ar2313_private *sp = dev->priv;
 
-	/* 
+	/*
 	 * Tasklet may be scheduled. Need to get it removed from the list
 	 * since we're about to free the struct.
 	 */
@@ -442,7 +442,7 @@ static int __exit ar2313_remove(struct platform_device *pdev)
 
 
 /*
- * Restart the AR2313 ethernet controller. 
+ * Restart the AR2313 ethernet controller.
  */
 static int ar2313_restart(struct net_device *dev)
 {
@@ -606,7 +606,7 @@ static void ar2313_link_timer_fn(unsigned long data)
 	// autonegotiated value of half or full duplex.
 	ar2313_check_link(dev);
 
-	// Loop faster when we don't have link. 
+	// Loop faster when we don't have link.
 	// This was needed to speed up the AP bootstrap time.
 	if (sp->link == 0) {
 		mod_timer(&sp->link_timer, jiffies + HZ / 2);
@@ -728,7 +728,7 @@ static int ar2313_init(struct net_device *dev)
 	struct ar2313_private *sp = dev->priv;
 	int ecode = 0;
 
-	/* 
+	/*
 	 * Allocate descriptors
 	 */
 	if (ar2313_allocate_descriptors(dev)) {
@@ -738,7 +738,7 @@ static int ar2313_init(struct net_device *dev)
 		goto init_error;
 	}
 
-	/* 
+	/*
 	 * Get the memory for the skb rings.
 	 */
 	if (sp->rx_skb == NULL) {
@@ -767,7 +767,7 @@ static int ar2313_init(struct net_device *dev)
 	}
 	memset(sp->tx_skb, 0, sizeof(struct sk_buff *) * AR2313_DESCR_ENTRIES);
 
-	/* 
+	/*
 	 * Set tx_csm before we start receiving interrupts, otherwise
 	 * the interrupt handler might think it is supposed to process
 	 * tx ints before we are up and running, which may cause a null
@@ -778,23 +778,23 @@ static int ar2313_init(struct net_device *dev)
 	sp->tx_prd = 0;
 	sp->tx_csm = 0;
 
-	/* 
+	/*
 	 * Zero the stats before starting the interface
 	 */
 	memset(&sp->stats, 0, sizeof(sp->stats));
 
-	/* 
+	/*
 	 * We load the ring here as there seem to be no way to tell the
 	 * firmware to wipe the ring without re-initializing it.
 	 */
 	ar2313_load_rx_ring(dev, RX_RING_SIZE);
 
-	/* 
+	/*
 	 * Init hardware
 	 */
 	ar2313_reset_reg(dev);
 
-	/* 
+	/*
 	 * Get the IRQ
 	 */
 	ecode =
@@ -852,7 +852,7 @@ static void ar2313_load_rx_ring(struct net_device *dev, int nr_bufs)
 		// partha: create additional room in the front for tx pkt capture
 		skb_reserve(skb, 32);
 
-		/* 
+		/*
 		 * Make sure IP header starts on a fresh cache line.
 		 */
 		skb->dev = dev;
@@ -899,7 +899,7 @@ static int ar2313_rx_int(struct net_device *dev)
 
 	idx = sp->cur_rx;
 
-	/* process at most the entire ring and then wait for another interrupt 
+	/* process at most the entire ring and then wait for another interrupt
 	 */
 	while (1) {
 
@@ -1081,7 +1081,7 @@ static irqreturn_t ar2313_interrupt(int irq, void *dev_id)
 	unsigned int status, enabled;
 
 	/* clear interrupt */
-	/* 
+	/*
 	 * Don't clear RI bit if currently disabled.
 	 */
 	status = sp->dma_regs->status;
@@ -1090,7 +1090,7 @@ static irqreturn_t ar2313_interrupt(int irq, void *dev_id)
 
 	if (status & DMA_STATUS_NIS) {
 		/* normal status */
-		/* 
+		/*
 		 * Don't schedule rx processing if interrupt
 		 * is already disabled.
 		 */
@@ -1178,12 +1178,12 @@ static void ar2313_halt(struct net_device *dev)
 static int ar2313_close(struct net_device *dev)
 {
 #if 0
-	/* 
+	/*
 	 * Disable interrupts
 	 */
 	disable_irq(dev->irq);
 
-	/* 
+	/*
 	 * Without (or before) releasing irq and stopping hardware, this
 	 * is an absolute non-sense, by the way. It will be reset instantly
 	 * by the first irq.
@@ -1251,7 +1251,7 @@ static int ar2313_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 	struct mii_ioctl_data *data = (struct mii_ioctl_data *) &ifr->ifr_data;
 	struct ar2313_private *sp = dev->priv;
 	int ret;
-	
+
 	switch (cmd) {
 
 	case SIOCETHTOOL:
@@ -1271,12 +1271,12 @@ static int ar2313_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 			(ifr->ifr_data, dev->dev_addr, sizeof(dev->dev_addr)))
 			return -EFAULT;
 		return 0;
-	
+
 	case SIOCGMIIPHY:
 	case SIOCGMIIREG:
 	case SIOCSMIIREG:
 		return phy_mii_ioctl(sp->phy_dev, data, cmd);
-	
+
 	default:
 		break;
 	}
@@ -1314,7 +1314,7 @@ static void ar2313_adjust_link(struct net_device *dev)
 #define MII_ADDR(phy, reg) \
 	((reg << MII_ADDR_REG_SHIFT) | (phy << MII_ADDR_PHY_SHIFT))
 
-static int 
+static int
 mdiobus_read(struct mii_bus *bus, int phy_addr, int regnum)
 {
 	struct net_device *const dev = bus->priv;
@@ -1326,7 +1326,7 @@ mdiobus_read(struct mii_bus *bus, int phy_addr, int regnum)
 	return (ethernet->mii_data >> MII_DATA_SHIFT);
 }
 
-static int 
+static int
 mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum,
              u16 value)
 {

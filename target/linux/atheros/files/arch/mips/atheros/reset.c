@@ -37,7 +37,7 @@ static void hotplug_button(struct work_struct *wq)
 	size_t len;
 	char *scratch, *s;
 	char buf[128];
-	
+
 	event = container_of(wq, struct event_t, wq);
 	if (!uevent_sock)
 		goto done;
@@ -48,7 +48,7 @@ static void hotplug_button(struct work_struct *wq)
 	skb = alloc_skb(len + 2048, GFP_KERNEL);
 	if (!skb)
 		goto done;
-	
+
 	/* add header */
 	scratch = skb_put(skb, len);
 	sprintf(scratch, "%s@",s);
@@ -80,7 +80,7 @@ static irqreturn_t button_handler(int irq, void *dev_id)
 	event = (struct event_t *) kzalloc(sizeof(struct event_t), GFP_ATOMIC);
 	if (!event)
 		return IRQ_NONE;
-	
+
 	pressed = !pressed;
 
 	DO_AR5315(gpio = sysRegRead(AR5315_GPIO_DI);)
@@ -99,7 +99,7 @@ static irqreturn_t button_handler(int irq, void *dev_id)
 
 void ar531x_disable_reset_button(void)
 {
-	disable_irq(AR531X_RESET_GPIO_IRQ);	
+	disable_irq(AR531X_RESET_GPIO_IRQ);
 }
 
 EXPORT_SYMBOL(ar531x_disable_reset_button);
@@ -109,7 +109,7 @@ int __init ar531x_init_reset(void)
 	bcfg = (struct ar531x_boarddata *) board_config;
 
 	seen = jiffies;
-	
+
 	request_irq(AR531X_RESET_GPIO_IRQ, &button_handler, IRQF_SAMPLE_RANDOM, "ar531x_reset", NULL);
 
 	return 0;
