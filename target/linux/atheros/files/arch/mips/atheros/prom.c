@@ -35,7 +35,7 @@ void __init prom_init(void)
 	DO_AR5315(ar5315_prom_init();)
 #if 0
 	argv = (char **)fw_arg1;
-	/* RedBoot desired command line is argv[1] */ 
+	/* RedBoot desired command line is argv[1] */
 	strcat(arcs_cmdline, argv[1]);
 #endif
 }

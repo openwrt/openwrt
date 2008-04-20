@@ -64,7 +64,7 @@ typedef struct {
 } ETHERNET_STRUCT;
 
 /********************************************************************
- * Interrupt controller 
+ * Interrupt controller
  ********************************************************************/
 
 typedef struct {
@@ -118,7 +118,7 @@ struct ar2313_private {
 
 	spinlock_t lock;			/* Serialise access to device */
 
-	/* 
+	/*
 	 * RX and TX descriptors, must be adjacent
 	 */
 	ar2313_descr_t *rx_ring;
@@ -128,19 +128,19 @@ struct ar2313_private {
 	struct sk_buff **rx_skb;
 	struct sk_buff **tx_skb;
 
-	/* 
+	/*
 	 * RX elements
 	 */
 	u32 rx_skbprd;
 	u32 cur_rx;
 
-	/* 
+	/*
 	 * TX elements
 	 */
 	u32 tx_prd;
 	u32 tx_csm;
 
-	/* 
+	/*
 	 * Misc elements
 	 */
 	int board_idx;

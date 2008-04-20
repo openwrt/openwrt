@@ -56,7 +56,7 @@ asmlinkage void ar5312_irq_dispatch(void)
 		} else if (ar531x_misc_intrs & AR531X_ISR_AHBPROC)
 			do_IRQ(AR531X_MISC_IRQ_AHB_PROC);
                 else if (ar531x_misc_intrs & AR531X_ISR_GPIO)
-			ar5312_gpio_irq_dispatch(); 
+			ar5312_gpio_irq_dispatch();
 		else if ((ar531x_misc_intrs & AR531X_ISR_UART0))
 			do_IRQ(AR531X_MISC_IRQ_UART0);
 		else if (ar531x_misc_intrs & AR531X_ISR_WD)
@@ -140,7 +140,7 @@ static irqreturn_t ar5312_ahb_proc_handler(int cpl, void *dev_id)
 
 	printk("AHB interrupt: PROCADDR=0x%8.8x  PROC1=0x%8.8x  DMAADDR=0x%8.8x  DMA1=0x%8.8x\n",
 			procAddr, proc1, dmaAddr, dma1);
-		
+
 	machine_restart("AHB error"); /* Catastrophic failure */
 	return IRQ_HANDLED;
 }

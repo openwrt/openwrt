@@ -27,7 +27,7 @@
 #include <asm/irq_cpu.h>
 #include <asm/gpio.h>
 #include "ar531x.h"
-/* 
+/*
    GPIO Interrupt Support
       Make use of request_irq() and the function gpio_to_irq() to trap gpio events
  */
@@ -147,7 +147,7 @@ static void ar5315_gpio_intr_enable(unsigned int irq) {
 	sysRegWrite(AR5315_GPIO_CR, reg);
 	(void)sysRegRead(AR5315_GPIO_CR); /* flush write to hardware */
 
-	/* Locate a free register slot to enable gpio intr 
+	/* Locate a free register slot to enable gpio intr
 	   will fail silently if no more slots are available
 	 */
 	reg = sysRegRead(AR5315_GPIO_INT);

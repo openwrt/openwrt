@@ -51,7 +51,7 @@ static u8 *find_board_config(char *flash_limit)
 		printk("WARNING: No board configuration data found!\n");
 		addr = NULL;
 	}
-	
+
 	return addr;
 }
 
@@ -59,8 +59,8 @@ static u8 *find_radio_config(char *flash_limit, char *board_config)
 {
 	int dataFound;
 	u32 radio_config;
-	
-	/* 
+
+	/*
 	 * Now find the start of Radio Configuration data, using heuristics:
 	 * Search forward from Board Configuration data by 0x1000 bytes
 	 * at a time until we find non-0xffffffff.
@@ -123,14 +123,14 @@ int __init ar531x_find_config(char *flash_limit)
 	printk("Radio config found at offset 0x%x(0x%x)\n", rcfg - bcfg, radio_config - board_config);
 	rcfg_size = BOARD_CONFIG_BUFSZ - ((rcfg - bcfg) & (BOARD_CONFIG_BUFSZ - 1));
 	memcpy(radio_config, rcfg, rcfg_size);
-	
+
 	return 0;
 }
 
 void __init serial_setup(unsigned long mapbase, unsigned int uartclk)
 {
 	struct uart_port s;
-	
+
 	memset(&s, 0, sizeof(s));
 
 	s.flags = UPF_BOOT_AUTOCONF | UPF_SKIP_TEST;
@@ -162,7 +162,7 @@ const char *get_system_type(void)
 
 	case MACH_ATHEROS_AR2312:
 		return "Atheros AR2312";
-		
+
 	case MACH_ATHEROS_AR2313:
 		return "Atheros AR2313";
 #endif
@@ -225,7 +225,7 @@ static int __init ar531x_register_gpiodev(void)
 	struct platform_device *pdev;
 
 	printk(KERN_INFO "ar531x: Registering GPIODEV device\n");
-	
+
 	pdev = platform_device_register_simple("GPIODEV", 0, &res, 1);
 
 	if (!pdev) {

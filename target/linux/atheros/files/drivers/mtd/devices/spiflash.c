@@ -69,7 +69,7 @@
 			spin_lock_bh(&spidata->mutex); \
 		} \
 	} while (0)
-		
+
 
 static __u32 spiflash_regread32(int reg);
 static void spiflash_regwrite32(int reg, __u32 data);
@@ -132,7 +132,7 @@ struct opcodes {
 
 /* Driver private data structure */
 struct spiflash_data {
-	struct 	mtd_info       *mtd;	
+	struct 	mtd_info       *mtd;
 	struct 	mtd_partition  *parsed_parts;     /* parsed partitions */
 	void 	*readaddr; /* memory mapped data for read  */
 	void 	*mmraddr;  /* memory mapped register space */
@@ -161,7 +161,7 @@ spiflash_regread32(int reg)
 	return (*data);
 }
 
-static void 
+static void
 spiflash_regwrite32(int reg, __u32 data)
 {
 	volatile __u32 *addr = (__u32 *)(spidata->mmraddr + reg);
@@ -171,7 +171,7 @@ spiflash_regwrite32(int reg, __u32 data)
 }
 
 
-static __u32 
+static __u32
 spiflash_sendcmd (int op, u32 addr)
 {
 	 u32 reg;
@@ -187,7 +187,7 @@ spiflash_sendcmd (int op, u32 addr)
 
 	spiflash_regwrite32(SPI_FLASH_CTL, reg);
 	busy_wait(spiflash_regread32(SPI_FLASH_CTL) & SPI_CTL_BUSY, 0);
- 
+
 	if (!ptr_opcode->rx_cnt)
 		return 0;
 
@@ -218,12 +218,12 @@ spiflash_sendcmd (int op, u32 addr)
  * Function returns 0 for failure.
  * and flashconfig_tbl array index for success.
  */
-static int 
+static int
 spiflash_probe_chip (void)
 {
 	__u32 sig;
    	int flash_size;
-	
+
    	/* Read the signature on the flash device */
 	spin_lock_bh(&spidata->mutex);
    	sig = spiflash_sendcmd(SPI_RD_SIG, 0);
@@ -267,7 +267,7 @@ retry:
 		spin_unlock_bh(&spidata->mutex);
 		schedule();
 		remove_wait_queue(&spidata->wq, &wait);
-		
+
 		if(signal_pending(current))
 			return 0;
 
@@ -285,7 +285,7 @@ static inline void spiflash_done(void)
 	wake_up(&spidata->wq);
 }
 
-static int 
+static int
 spiflash_erase (struct mtd_info *mtd,struct erase_info *instr)
 {
 	struct opcodes *ptr_opcode;
@@ -312,7 +312,7 @@ spiflash_erase (struct mtd_info *mtd,struct erase_info *instr)
 	spin_unlock_bh(&spidata->mutex);
 	msleep(800);
 	spin_lock_bh(&spidata->mutex);
-	
+
 	busy_wait(spiflash_sendcmd(SPI_RD_STATUS, 0) & SPI_STATUS_WIP, 20);
 	spiflash_done();
 
@@ -322,15 +322,15 @@ spiflash_erase (struct mtd_info *mtd,struct erase_info *instr)
    	return 0;
 }
 
-static int 
+static int
 spiflash_read (struct mtd_info *mtd, loff_t from,size_t len,size_t *retlen,u_char *buf)
 {
 	u8 *read_addr;
-	
+
    	/* sanity checks */
    	if (!len) return (0);
    	if (from + len > mtd->size) return (-EINVAL);
-	
+
    	/* we always read len bytes */
    	*retlen = len;
 
@@ -343,7 +343,7 @@ spiflash_read (struct mtd_info *mtd, loff_t from,size_t len,size_t *retlen,u_cha
    	return 0;
 }
 
-static int 
+static int
 spiflash_write (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,const u_char *buf)
 {
 	u32 opcode, bytes_left;
@@ -353,10 +353,10 @@ spiflash_write (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,const u
    	/* sanity checks */
    	if (!len) return (0);
    	if (to + len > mtd->size) return (-EINVAL);
-	
+
 	opcode = stm_opcodes[SPI_PAGE_PROGRAM].code;
 	bytes_left = len;
-	
+
 	do {
 		u32 xact_len, reg, page_offset, spi_data = 0;
 
@@ -389,7 +389,7 @@ spiflash_write (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,const u
 				spi_data = (buf[2] << 16) | (buf[1] << 8) | buf[0];
 				break;
 			case 4:
-				spi_data = (buf[3] << 24) | (buf[2] << 16) | 
+				spi_data = (buf[3] << 24) | (buf[2] << 16) |
 							(buf[1] << 8) | buf[0];
 				break;
 			default:
@@ -439,7 +439,7 @@ static int spiflash_probe(struct platform_device *pdev)
 	spin_lock_init(&spidata->mutex);
 	init_waitqueue_head(&spidata->wq);
 	spidata->state = FL_READY;
-	
+
 	if (!spidata->mmraddr) {
   		printk (KERN_WARNING SPIFLASH "Failed to map flash device\n");
 		kfree(spidata);
@@ -451,7 +451,7 @@ static int spiflash_probe(struct platform_device *pdev)
 		kfree(spidata);
 		return -ENXIO;
 	}
-	
+
    	if (!(index = spiflash_probe_chip())) {
     	printk (KERN_WARNING SPIFLASH "Found no serial flash device\n");
 		goto error;
@@ -483,9 +483,9 @@ static int spiflash_probe(struct platform_device *pdev)
 
 	result = add_mtd_partitions(mtd, spidata->parsed_parts, num_parts);
 	spidata->mtd = mtd;
-	
+
    	return (result);
-	
+
 error:
 	kfree(mtd);
 	kfree(spidata);
@@ -505,7 +505,7 @@ struct platform_driver spiflash_driver = {
 	.remove = spiflash_remove,
 };
 
-int __init 
+int __init
 spiflash_init (void)
 {
    	spidata = kmalloc(sizeof(struct spiflash_data), GFP_KERNEL);
@@ -518,7 +518,7 @@ spiflash_init (void)
 	return 0;
 }
 
-void __exit 
+void __exit
 spiflash_exit (void)
 {
 	kfree(spidata);

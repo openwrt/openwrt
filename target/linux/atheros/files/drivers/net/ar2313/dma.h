@@ -16,13 +16,13 @@
  *	    $Log: dma.h,v $
  *	    Revision 1.3  2002/06/06 18:34:03  astichte
  *	    Added XXX_PhysicalAddress and XXX_VirtualAddress
- *	
+ *
  *	    Revision 1.2  2002/06/05 18:30:46  astichte
  *	    Removed IDTField
- *	
+ *
  *	    Revision 1.1  2002/05/29 17:33:21  sysarch
  *	    jba File moved from vcode/include/idt/acacia
- *	
+ *
  *
  ******************************************************************************/
 

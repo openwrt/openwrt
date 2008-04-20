@@ -30,11 +30,11 @@ static inline int clz(unsigned long val)
 		: "=r" (ret)
 		: "r" (val)
 	);
-	
+
 	return ret;
 }
 
-/*                                                                             
+/*
  * Atheros CPUs before the AR2315 are using MIPS 4Kc core, later designs are
  * using MIPS 4KEc R2 core. This makes it easy to determine the board at runtime.
  */
@@ -157,7 +157,7 @@ extern void ar5315_pci_irq(int irq);
 static inline u32 sysRegMask(u32 phys, u32 mask, u32 value)
 {
 	u32 reg;
-	
+
 	reg = sysRegRead(phys);
 	reg &= ~mask;
 	reg |= value & mask;
