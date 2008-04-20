@@ -58,7 +58,8 @@ ifeq ($(KERNEL),2.4)
   endif
 endif
 
-define Build/Compile
+ifneq ($(CONFIG_PACKAGE_kmod-video-quickcam),)
+  define Build/Compile/kmod
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		LINUX_DIR="$(LINUX_DIR)" \
 		ARCH="$(LINUX_KARCH)" \
@@ -67,9 +68,18 @@ define Build/Compile
 		LD="$(TARGET_CC) -nodefaultlibs -nostartfiles" \
 		USER_OPT="$(KERNEL_C_OPTS)" \
 		quickcam.$(LINUX_KMOD_SUFFIX)
+  endef
+endif
+
+define Build/Compile/user
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		qcset
+endef
+
+define Build/Compile
+	$(call Build/Compile/kmod)
+	$(call Build/Compile/user)
 endef
 
 define Package/qc-usb-utils/install
