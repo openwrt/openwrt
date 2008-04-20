@@ -1,0 +1,47 @@
+Index: linux-2.6.23.16/drivers/net/phy/phy_device.c
+===================================================================
+--- linux-2.6.23.16.orig/drivers/net/phy/phy_device.c	2008-02-11 07:06:32.000000000 +0100
++++ linux-2.6.23.16/drivers/net/phy/phy_device.c	2008-04-20 05:42:28.000000000 +0200
+@@ -67,6 +67,8 @@
+ 	dev->bus = bus;
+ 
+ 	dev->state = PHY_DOWN;
++	dev->netif_receive_skb = &netif_receive_skb;
++	dev->netif_rx = &netif_rx;
+ 
+ 	spin_lock_init(&dev->lock);
+ 
+Index: linux-2.6.23.16/include/linux/phy.h
+===================================================================
+--- linux-2.6.23.16.orig/include/linux/phy.h	2008-04-20 04:40:31.000000000 +0200
++++ linux-2.6.23.16/include/linux/phy.h	2008-04-20 05:53:21.000000000 +0200
+@@ -289,6 +289,17 @@
+ 	void (*adjust_link)(struct net_device *dev);
+ 
+ 	void (*adjust_state)(struct net_device *dev);
++
++	/*
++	 * By default these point to the original functions
++	 * with the same name. adding them to the phy_device
++	 * allows the phy driver to override them for packet
++	 * mangling if the ethernet driver supports it
++	 * This is required to support some really horrible
++	 * switches such as the Marvell 88E6060
++	 */
++	int (*netif_receive_skb)(struct sk_buff *skb);
++	int (*netif_rx)(struct sk_buff *skb);
+ };
+ #define to_phy_device(d) container_of(d, struct phy_device, dev)
+ 
+Index: linux-2.6.23.16/include/linux/netdevice.h
+===================================================================
+--- linux-2.6.23.16.orig/include/linux/netdevice.h	2008-02-11 07:06:32.000000000 +0100
++++ linux-2.6.23.16/include/linux/netdevice.h	2008-04-20 06:33:25.000000000 +0200
+@@ -426,6 +426,7 @@
+ 	void			*ax25_ptr;	/* AX.25 specific data */
+ 	struct wireless_dev	*ieee80211_ptr;	/* IEEE 802.11 specific data,
+ 						   assign before registering */
++	void			*phy_ptr; /* PHY device specific data */
+ 
+ /*
+  * Cache line mostly used on receive path (including eth_type_trans())
