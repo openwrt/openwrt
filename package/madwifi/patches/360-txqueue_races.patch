@@ -1,0 +1,38 @@
+Merged from madwifi trunk r3551, r3552
+
+Index: madwifi-trunk-r3314/ath/if_ath.c
+===================================================================
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-04-20 23:18:52.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-04-20 23:20:36.000000000 +0200
+@@ -8245,6 +8245,17 @@
+ 			goto bf_fail;
+ 		}
+ 
++		/* We make sure we don't remove the TX descriptor on
++		 * which the HW is pointing since it contains the
++		 * ds_link field, except if this is the last TX
++		 * descriptor in the queue */
++
++		if ((txq->axq_depth > 1) &&
++		    (bf->bf_daddr == ath_hal_gettxbuf(ah, txq->axq_qnum))) {
++			ATH_TXQ_UNLOCK_IRQ_EARLY(txq);
++			goto bf_fail;
++		}
++
+ 		ATH_TXQ_REMOVE_HEAD(txq, bf_list);
+ 		ATH_TXQ_UNLOCK_IRQ(txq);
+ 
+Index: madwifi-trunk-r3314/ath/if_athvar.h
+===================================================================
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-04-20 23:18:48.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_athvar.h	2008-04-20 23:21:12.000000000 +0200
+@@ -586,7 +586,8 @@
+ } while (0)
+ #define ATH_TXQ_REMOVE_HEAD(_tq, _field) do { \
+ 	STAILQ_REMOVE_HEAD(&(_tq)->axq_q, _field); \
+-	(_tq)->axq_depth--; \
++	if (--(_tq)->axq_depth <= 0) \
++		(_tq)->axq_link = NULL; \
+ } while (0)
+ /* move buffers from MCASTQ to CABQ */
+ #define ATH_TXQ_MOVE_MCASTQ(_tqs,_tqd) do { \
