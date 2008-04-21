@@ -1,0 +1,13 @@
+Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
+===================================================================
+--- madwifi-trunk-r3314.orig/ath_rate/minstrel/minstrel.c	2008-04-21 00:51:15.000000000 +0200
++++ madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c	2008-04-21 02:41:27.000000000 +0200
+@@ -475,7 +475,7 @@
+ 		/* 'tries' is the total number of times we have endeavoured to
+ 		 * send this packet, and is a sum of the #attempts at each
+ 		 * level in the multi-rate retry chain */
+-		tries = ts->ts_shortretry + ts->ts_longretry + 1;
++		tries = ts->ts_longretry + 1;
+ 
+ 		if (sn->num_rates <= 0) {
+ 			DPRINTF(sc, "%s: " MAC_FMT " %s no rates yet\n", dev_info,
