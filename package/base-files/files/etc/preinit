@@ -17,14 +17,14 @@ failsafe() {
 	ash --login
 }
 
-mount none /proc -t proc
-mount none /sys  -t sysfs
+mount proc /proc -t proc
+mount sysfs /sys  -t sysfs
 
 size=$(awk '/MemTotal:/ {l=5242880;mt=($2*1024);print((s=mt/2)<l)?mt-l:s}' /proc/meminfo)
-mount none /tmp -t tmpfs -o size=$size,nosuid,nodev,mode=1777
+mount tmpfs /tmp -t tmpfs -o size=$size,nosuid,nodev,mode=1777
 
 if grep devfs /proc/filesystems > /dev/null; then
-	mount none /dev -t devfs
+	mount devfs /dev -t devfs
 	M0=/dev/pty/m0
 	M1=/dev/pty/m1
 	HOTPLUG=/sbin/hotplug-call
@@ -40,7 +40,7 @@ else
 fi
 
 mkdir -p /dev/pts /dev/shm
-mount none /dev/pts -t devpts
+mount devpts /dev/pts -t devpts
 
 # the shell really doesn't like having stdin/out closed
 # that's why we use /dev/pty/m0 and m1 as replacement
