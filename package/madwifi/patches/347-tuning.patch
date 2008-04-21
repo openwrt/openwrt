@@ -1,0 +1,43 @@
+Index: madwifi-trunk-r3314/ath/if_ath.c
+===================================================================
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-04-21 05:41:13.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-04-21 05:41:50.000000000 +0200
+@@ -10267,11 +10267,11 @@
+ 	sc->sc_currates = rt;
+ 	sc->sc_curmode = mode;
+ 	/*
+-	 * All protection frames are transmitted at 2Mb/s for
+-	 * 11g, otherwise at 1Mb/s.
++	 * All protection frames are transmitted at 11Mb/s for
++	 * 11g, otherwise at 2Mb/s.
+ 	 * XXX select protection rate index from rate table.
+ 	 */
+-	sc->sc_protrix = (mode == IEEE80211_MODE_11G ? 1 : 0);
++	sc->sc_protrix = (mode == IEEE80211_MODE_11G ? 3 : 1);
+ 	/* rate index used to send mgt frames */
+ 	sc->sc_minrateix = 0;
+ }
+Index: madwifi-trunk-r3314/ath/if_athvar.h
+===================================================================
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-04-21 05:41:13.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_athvar.h	2008-04-21 05:41:50.000000000 +0200
+@@ -223,8 +223,8 @@
+ #define ATH_MAX_MTU     2290
+ #define ATH_MIN_MTU     32
+ 
+-#define	ATH_RXBUF	40		/* number of RX buffers */
+-#define	ATH_TXBUF	200		/* number of TX buffers */
++#define	ATH_RXBUF	80		/* number of RX buffers */
++#define	ATH_TXBUF	400		/* number of TX buffers */
+ 
+ #define ATH_MAXVAPS_MIN 	2	/* minimum number of beacon buffers */
+ #define ATH_MAXVAPS_MAX 	64	/* maximum number of beacon buffers */
+@@ -235,7 +235,7 @@
+ /* number of TX buffers reserved for mgt frames */
+ #define ATH_TXBUF_MGT_RESERVED	  5 	
+ 
+-#define TAIL_DROP_COUNT 50             /* maximum number of queued frames allowed */
++#define TAIL_DROP_COUNT 80             /* maximum number of queued frames allowed */
+ 
+ /*
+  * dynamic turbo specific macros.
