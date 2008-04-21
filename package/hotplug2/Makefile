@@ -19,8 +19,8 @@ PKG_MD5SUM:=ea2c01d027b4002e4e6b0ff266f51a51
 include $(INCLUDE_DIR)/package.mk
 
 define Package/hotplug2
-  SECTION:=utils
-  CATEGORY:=Utilities
+  SECTION:=base
+  CATEGORY:=Base system
   VERSION:=0.9+r102-$(PKG_RELEASE)
   TITLE:=Dynamic device management subsystem for embedded systems
   URL:=http://isteve.bofh.cz/~isteve/hotplug2/
