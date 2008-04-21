@@ -34,6 +34,8 @@ endef
 
 define Package/udevtrigger
 $(call Package/udev)
+  SECTION:=base
+  CATEGORY:=Base system
   TITLE:=Small utility to request kernel devices events for coldplug
 endef
 
