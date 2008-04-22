@@ -75,7 +75,7 @@ define Stage1/Install
 endef
 
 define Stage2/Configure
-	mkdir -p $(BUILD_DIR2)
+	mkdir -p $(BUILD_DIR2) $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)
 	# Important!  Required for limits.h to be fixed.
 	rm -rf $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
 	ln -sf ../include $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
