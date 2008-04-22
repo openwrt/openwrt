@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-04-21 02:44:23.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-04-21 03:33:02.000000000 +0200
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-04-21 09:13:19.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-04-23 01:15:49.000000000 +0200
 @@ -8095,6 +8095,7 @@
  		ath_hal_setupxtxdesc(sc->sc_ah, ds, mrr.rate1, mrr.retries1,
  				     mrr.rate2, mrr.retries2,
@@ -12,8 +12,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  #ifndef ATH_SUPERG_FF
 Index: madwifi-trunk-r3314/ath/if_athvar.h
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-04-21 00:50:13.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_athvar.h	2008-04-21 03:31:48.000000000 +0200
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-04-21 09:13:19.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_athvar.h	2008-04-23 01:15:49.000000000 +0200
 @@ -446,6 +446,7 @@
  	u_int16_t bf_flags;				/* tx descriptor flags */
  	u_int64_t bf_tsf;
@@ -24,18 +24,30 @@ Index: madwifi-trunk-r3314/ath/if_athvar.h
  	 *      multiple segments.
 Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath_rate/minstrel/minstrel.c	2008-04-21 02:50:31.000000000 +0200
-+++ madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c	2008-04-21 04:08:36.000000000 +0200
-@@ -336,7 +336,7 @@
+--- madwifi-trunk-r3314.orig/ath_rate/minstrel/minstrel.c	2008-04-21 09:13:19.000000000 +0200
++++ madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c	2008-04-23 01:15:50.000000000 +0200
+@@ -333,15 +333,19 @@
+ 		if (sn->static_rate_ndx >= 0) {
+ 			    ndx = sn->static_rate_ndx;
+ 		} else {
++			int delta;
  			sn->packet_count++;
  			sn->random_n = (sn->a * sn->random_n) + sn->b;
  			offset = sn->random_n & 0xf;
 -			if ((((100 * sn->sample_count) / (sn->sample_count + sn->packet_count)) < ath_lookaround_rate) && (offset < 2)) {
-+			if ((((100 * sn->sample_count) / (sn->packet_count ?: 1)) < ath_lookaround_rate) && (offset < 2)) {
++			delta = (sn->packet_count * ath_lookaround_rate / 100) - sn->sample_count;
++			if ((delta > 0) && (offset < 2)) {
  				sn->sample_count++;
  				sn->is_sampling = 1;
  				if (sn->packet_count >= 10000) {
-@@ -398,11 +398,14 @@
+ 					sn->sample_count = 0;
+ 					sn->packet_count = 0;
++				} else if (delta > sn->num_rates * 2) {
++					sn->sample_count += ((delta - sn->num_rates * 2) * ath_lookaround_rate) / 100;
+ 				}
+ 
+ 				/* Don't look for slowest rate (i.e. slowest
+@@ -398,11 +402,14 @@
  		if (sn->num_rates <= 0)
  			return;
  
@@ -52,7 +64,7 @@ Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
  				rc1 = sn->max_tp_rate;
  		} else {
  			rc1 = sn->max_tp_rate2;
-@@ -525,6 +528,9 @@
+@@ -525,6 +532,9 @@
  		if (tries <= tries1)
  			return;
  
@@ -64,8 +76,8 @@ Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
  		tries = tries - tries1;
 Index: madwifi-trunk-r3314/net80211/ieee80211_rate.h
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_rate.h	2008-01-31 03:29:42.000000000 +0100
-+++ madwifi-trunk-r3314/net80211/ieee80211_rate.h	2008-04-21 03:30:25.000000000 +0200
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_rate.h	2008-04-21 09:11:19.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211_rate.h	2008-04-21 09:13:19.000000000 +0200
 @@ -87,6 +87,7 @@
  	int retries2;
  	int rate3;
