@@ -18,7 +18,7 @@ failsafe() {
 }
 
 mount proc /proc -t proc
-mount sysfs /sys  -t sysfs
+mount sysfs /sys -t sysfs
 
 size=$(awk '/MemTotal:/ {l=5242880;mt=($2*1024);print((s=mt/2)<l)?mt-l:s}' /proc/meminfo)
 mount tmpfs /tmp -t tmpfs -o size=$size,nosuid,nodev,mode=1777
@@ -28,14 +28,23 @@ if grep devfs /proc/filesystems > /dev/null; then
 	M0=/dev/pty/m0
 	M1=/dev/pty/m1
 	HOTPLUG=/sbin/hotplug-call
-else
+
+elif [ -x /sbin/hotplug ]; then
 	mount -t tmpfs tmpfs /dev -o size=512K
 	mknod /dev/console c 5 1
-	mkdir /dev/shm
 	/sbin/hotplug2 --coldplug --set-rules-file /etc/hotplug2-init.rules
 	/sbin/hotplug2 --no-coldplug --persistent --set-rules-file /etc/hotplug2-init.rules &
 	M0=/dev/ptmx
 	M1=/dev/ptmx
+	HOTPLUG=
+
+elif [ -x /sbin/udevd ]; then
+	mount -n -t tmpfs -o mode=0755 udev /dev
+	/sbin/udevd --daemon
+	/sbin/udevtrigger
+	/sbin/udevsettle
+	M0=/dev/pty/ptmx
+	M1=/dev/pty/ptmx
 	HOTPLUG=
 fi
 
