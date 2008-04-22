@@ -204,8 +204,8 @@ diff -Nur linux-2.6.23/arch/arm/mach-ixp4xx/sidewinder-setup.c linux-2.6.23-owrt
 +	.dev			= {
 +		.platform_data	= sidewinder_uart_data,
 +	},
-+	.num_resources	= 2,
-+	.resource	= &sidewinder_uart_resources,
++	.num_resources	= ARRAY_SIZE(sidewinder_uart_resources),
++	.resource	= sidewinder_uart_resources,
 +};
 +
 +static struct platform_device *sidewinder_devices[] __initdata = {
