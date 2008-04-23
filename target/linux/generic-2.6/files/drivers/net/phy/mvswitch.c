@@ -235,7 +235,6 @@ mvswitch_config_init(struct phy_device *pdev)
 	/* initialize the cpu port */
 	w16(pdev, MV_PORTREG(CONTROL, MV_CPUPORT),
 		MV_PORTCTRL_ENABLED |
-		MV_PORTCTRL_VLANTUN |
 		MV_PORTCTRL_RXTR |
 		MV_PORTCTRL_TXTR
 	);
