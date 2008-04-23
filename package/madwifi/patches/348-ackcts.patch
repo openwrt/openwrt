@@ -1,0 +1,42 @@
+Index: madwifi-trunk-r3314/ath/if_ath.c
+===================================================================
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-04-23 06:50:24.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-04-23 06:54:03.000000000 +0200
+@@ -2721,6 +2721,9 @@
+ static int
+ ath_set_ack_bitrate(struct ath_softc *sc, int high)
+ {
++	if (!sc->sc_ackrate_override)
++		return 0;
++
+ 	if (ar_device(sc->devid) == 5212 || ar_device(sc->devid) == 5213) {
+ 		/* set ack to be sent at low bit-rate */
+ 		/* registers taken from the OpenBSD 5212 HAL */
+@@ -10782,8 +10785,13 @@
+ 				break;
+ #endif
+ 			case ATH_ACKRATE:
+-				sc->sc_ackrate = val;
+-				ath_set_ack_bitrate(sc, sc->sc_ackrate);
++				if (val == -1)
++					sc->sc_ackrate_override = 0;
++				else {
++					sc->sc_ackrate_override = 1;
++					sc->sc_ackrate = val;
++					ath_set_ack_bitrate(sc, sc->sc_ackrate);
++				}
+ 				break;
+ 			case ATH_RP:
+ 				ath_rp_record(sc,
+Index: madwifi-trunk-r3314/ath/if_athvar.h
+===================================================================
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-04-23 05:41:40.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_athvar.h	2008-04-23 06:53:03.000000000 +0200
+@@ -681,6 +681,7 @@
+ 	unsigned int	sc_devstopped:1;	/* stopped due to of no tx bufs */
+ 	unsigned int	sc_stagbeacons:1;	/* use staggered beacons */
+ 	unsigned int	sc_dfswait:1;		/* waiting on channel for radar detect */
++	unsigned int	sc_ackrate_override:1;	/* override ack rate */
+ 	unsigned int	sc_ackrate:1;		/* send acks at high bitrate */
+ 	unsigned int	sc_dfs_cac:1;		/* waiting on channel for radar detect */
+ 	unsigned int	sc_hasintmit:1;		/* Interference mitigation */
