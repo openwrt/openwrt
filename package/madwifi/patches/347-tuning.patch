@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-04-21 05:41:13.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-04-21 05:41:50.000000000 +0200
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-04-23 03:31:06.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-04-23 03:31:23.000000000 +0200
 @@ -10267,11 +10267,11 @@
  	sc->sc_currates = rt;
  	sc->sc_curmode = mode;
@@ -19,25 +19,93 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  }
 Index: madwifi-trunk-r3314/ath/if_athvar.h
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-04-21 05:41:13.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_athvar.h	2008-04-21 05:41:50.000000000 +0200
-@@ -223,8 +223,8 @@
- #define ATH_MAX_MTU     2290
- #define ATH_MIN_MTU     32
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-04-23 03:31:23.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_athvar.h	2008-04-23 03:31:23.000000000 +0200
+@@ -272,6 +272,10 @@
+ #define AES_ICV_FIELD_SIZE      8       /* AES ICV field size */
+ #define EXT_IV_FIELD_SIZE       4       /* ext IV field size */
  
--#define	ATH_RXBUF	40		/* number of RX buffers */
--#define	ATH_TXBUF	200		/* number of TX buffers */
-+#define	ATH_RXBUF	80		/* number of RX buffers */
-+#define	ATH_TXBUF	400		/* number of TX buffers */
++/* This is what the HAL uses by default for 11a+g */
++#define ATH_DEFAULT_CWMIN	15
++#define ATH_DEFAULT_CWMAX	1023
++
+ /* XR specific macros */
  
- #define ATH_MAXVAPS_MIN 	2	/* minimum number of beacon buffers */
- #define ATH_MAXVAPS_MAX 	64	/* maximum number of beacon buffers */
-@@ -235,7 +235,7 @@
- /* number of TX buffers reserved for mgt frames */
- #define ATH_TXBUF_MGT_RESERVED	  5 	
+ #define XR_DEFAULT_GRPPOLL_RATE_STR 	"0.25 1 1 3 3 6 6 20"
+Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
+===================================================================
+--- madwifi-trunk-r3314.orig/ath_rate/minstrel/minstrel.c	2008-04-23 03:31:01.000000000 +0200
++++ madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c	2008-04-23 03:31:23.000000000 +0200
+@@ -197,7 +197,7 @@
+ 		unsigned int x = 0, tt = 0;
+ 		unsigned int cix = rt->info[rix].controlRate;
+ 		int rts = 0, cts = 0;
+-		int cw = WIFI_CW_MIN;
++		int cw = ATH_DEFAULT_CWMIN;
  
--#define TAIL_DROP_COUNT 50             /* maximum number of queued frames allowed */
-+#define TAIL_DROP_COUNT 80             /* maximum number of queued frames allowed */
+ 		KASSERT(rt != NULL, ("no rate table, mode %u", sc->sc_curmode));
  
+@@ -281,7 +281,7 @@
+ 		tt += (long_retries + 1) * ath_hal_computetxtime(sc->sc_ah, rt, length,
+ 							rix, AH_TRUE);
+ 		for (x = 0; x <= short_retries + long_retries; x++) {
+-			cw = MIN(WIFI_CW_MAX, (cw + 1) * 2);
++			cw = MIN(ATH_DEFAULT_CWMAX, (cw + 1) * 2);
+ 			tt += (t_slot * cw / 2);
+ 		}
+ 		return tt;
+Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.h
+===================================================================
+--- madwifi-trunk-r3314.orig/ath_rate/minstrel/minstrel.h	2008-04-23 03:31:01.000000000 +0200
++++ madwifi-trunk-r3314/ath_rate/minstrel/minstrel.h	2008-04-23 03:31:23.000000000 +0200
+@@ -180,14 +180,6 @@
+ #define MAX(a,b)        ((a) > (b) ? (a) : (b))
+ #endif
+ 
+-#if 0
+-#define WIFI_CW_MIN 31
+-#define WIFI_CW_MAX 1023
+-#else
+-#define WIFI_CW_MIN 3
+-#define WIFI_CW_MAX 10
+-#endif
+-
  /*
-  * dynamic turbo specific macros.
+  * Definitions for pulling the rate and trie counts from
+  * a 5212 h/w descriptor. These Don't belong here; the
+Index: madwifi-trunk-r3314/ath_rate/sample/sample.c
+===================================================================
+--- madwifi-trunk-r3314.orig/ath_rate/sample/sample.c	2008-04-23 03:31:01.000000000 +0200
++++ madwifi-trunk-r3314/ath_rate/sample/sample.c	2008-04-23 03:31:23.000000000 +0200
+@@ -170,7 +170,7 @@
+ 	struct ieee80211com *ic = &sc->sc_ic;
+ 	unsigned int tt = 0;
+ 	unsigned int x;
+-	unsigned int cw = WIFI_CW_MIN;
++	unsigned int cw = ATH_DEFAULT_CWMIN;
+ 	unsigned int cix = rt->info[rix].controlRate;
+ 	KASSERT(rt != NULL, ("no rate table, mode %u", sc->sc_curmode));
+ 
+@@ -254,7 +254,7 @@
+ 	tt += (long_retries+1)*ath_hal_computetxtime(sc->sc_ah, rt, length,
+ 						rix, AH_TRUE);
+ 	for (x = 0; x <= short_retries + long_retries; x++) {
+-		cw = MIN(WIFI_CW_MAX, (cw + 1) * 2);
++		cw = MIN(ATH_DEFAULT_CWMAX, (cw + 1) * 2);
+ 		tt += (t_slot * cw / 2);
+ 	}
+ 	return tt;
+Index: madwifi-trunk-r3314/ath_rate/sample/sample.h
+===================================================================
+--- madwifi-trunk-r3314.orig/ath_rate/sample/sample.h	2008-04-23 03:31:01.000000000 +0200
++++ madwifi-trunk-r3314/ath_rate/sample/sample.h	2008-04-23 03:31:23.000000000 +0200
+@@ -106,9 +106,6 @@
+ #define MAX(a,b)        ((a) > (b) ? (a) : (b))
+ #endif
+ 
+-#define WIFI_CW_MIN 31
+-#define WIFI_CW_MAX 1023
+-
+ /*
+  * Definitions for pulling the rate and trie counts from
+  * a 5212 h/w descriptor. These Don't belong here; the
