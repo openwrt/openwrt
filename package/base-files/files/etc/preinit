@@ -29,7 +29,7 @@ if grep devfs /proc/filesystems > /dev/null; then
 	M1=/dev/pty/m1
 	HOTPLUG=/sbin/hotplug-call
 
-elif [ -x /sbin/hotplug ]; then
+elif [ -x /sbin/hotplug2 ]; then
 	mount -t tmpfs tmpfs /dev -o size=512K
 	mknod /dev/console c 5 1
 	/sbin/hotplug2 --coldplug --set-rules-file /etc/hotplug2-init.rules
