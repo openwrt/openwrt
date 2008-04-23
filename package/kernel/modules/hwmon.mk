@@ -46,7 +46,7 @@ $(eval $(call KernelPackage,hwmon-lm77))
 define KernelPackage/hwmon-pc87360
   SUBMENU:=$(HWMON_MENU)
   TITLE:=PC87360 monitoring support
-  DEPENDS:=kmod-hwmon-core
+  DEPENDS:=kmod-hwmon-core @TARGET_x86
   KCONFIG:= \
 	CONFIG_SENSORS_PC87360 \
 	CONFIG_HWMON_VID
