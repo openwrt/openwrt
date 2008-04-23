@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/net80211/ieee80211.c
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211.c	2008-04-21 05:22:20.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/ieee80211.c	2008-04-21 05:23:46.000000000 +0200
+--- madwifi-trunk-r3314.orig/net80211/ieee80211.c	2008-04-23 04:33:06.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211.c	2008-04-23 04:33:17.000000000 +0200
 @@ -333,7 +333,9 @@
  			IEEE80211_MS_TO_TU(IEEE80211_BMISSTHRESH_DEFAULT_MS), 
  			ic->ic_lintval), ic->ic_lintval);
@@ -15,9 +15,9 @@ Index: madwifi-trunk-r3314/net80211/ieee80211.c
  	TAILQ_INIT(&ic->ic_vaps);
 Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_input.c	2008-04-21 05:22:32.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/ieee80211_input.c	2008-04-21 05:23:46.000000000 +0200
-@@ -3412,16 +3412,32 @@
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_input.c	2008-04-23 04:33:17.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211_input.c	2008-04-23 05:28:00.000000000 +0200
+@@ -3412,14 +3412,18 @@
  			IEEE80211_IS_CHAN_ANYG(ic->ic_curchan)) {
  
  			/* Assume no ERP IE == 11b AP */
@@ -40,25 +40,11 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
 +				ic->ic_protmode_lasttrig = jiffies;
  			}
  		}
-+		if ((ic->ic_flags & IEEE80211_F_USEPROT) &&
-+			(ic->ic_protmode_lasttrig + ic->ic_protmode_timeout * HZ <
-+				jiffies)) {
-+			struct ieee80211vap *tmpvap;
-+
-+			/* expire protection mode */
-+			ic->ic_flags &= ~IEEE80211_F_USEPROT;
-+			TAILQ_FOREACH(tmpvap, &ic->ic_vaps, iv_next) {
-+				tmpvap->iv_flags_ext |= IEEE80211_FEXT_ERPUPDATE;
-+			}
-+		}
-+
  
- 		/*
- 		 * If scanning, just pass information to the scan module.
 Index: madwifi-trunk-r3314/net80211/ieee80211_ioctl.h
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_ioctl.h	2008-04-21 05:22:20.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/ieee80211_ioctl.h	2008-04-21 05:23:46.000000000 +0200
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_ioctl.h	2008-04-23 04:33:17.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211_ioctl.h	2008-04-23 04:33:17.000000000 +0200
 @@ -643,6 +643,8 @@
  	IEEE80211_PARAM_BEACON_MISS_THRESH_MS	= 74,	/* Beacon miss threshold (in ms) */
  	IEEE80211_PARAM_MAXRATE			= 75,	/* Maximum rate (by table index) */
@@ -70,8 +56,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_ioctl.h
  #define	SIOCG80211STATS			(SIOCDEVPRIVATE+2)
 Index: madwifi-trunk-r3314/net80211/ieee80211_var.h
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_var.h	2008-04-21 05:22:20.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/ieee80211_var.h	2008-04-21 05:41:45.000000000 +0200
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_var.h	2008-04-23 04:33:17.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211_var.h	2008-04-23 04:33:17.000000000 +0200
 @@ -128,6 +128,9 @@
  
  #define	IEEE80211_APPIE_MAX	1024
@@ -94,8 +80,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_var.h
  	 *
 Index: madwifi-trunk-r3314/net80211/ieee80211_wireless.c
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_wireless.c	2008-04-21 05:22:20.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/ieee80211_wireless.c	2008-04-21 05:23:46.000000000 +0200
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_wireless.c	2008-04-23 04:33:17.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211_wireless.c	2008-04-23 04:33:17.000000000 +0200
 @@ -2312,6 +2312,12 @@
  		    IEEE80211_IS_CHAN_ANYG(ic->ic_bsschan))
  			retv = ENETRESET;
@@ -137,3 +123,25 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_wireless.c
  	{ IEEE80211_PARAM_MCASTCIPHER,
  	  IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "mcastcipher" },
  	{ IEEE80211_PARAM_MCASTCIPHER,
+Index: madwifi-trunk-r3314/net80211/ieee80211_node.c
+===================================================================
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_node.c	2008-04-23 04:33:16.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211_node.c	2008-04-23 05:28:47.000000000 +0200
+@@ -1877,6 +1877,17 @@
+ 
+ 	ieee80211_scan_timeout(ic);
+ 	ieee80211_timeout_stations(&ic->ic_sta);
++	if ((ic->ic_flags & IEEE80211_F_USEPROT) &&
++		(ic->ic_protmode_lasttrig + ic->ic_protmode_timeout * HZ <
++			jiffies)) {
++		struct ieee80211vap *tmpvap;
++
++		/* expire protection mode */
++		ic->ic_flags &= ~IEEE80211_F_USEPROT;
++		TAILQ_FOREACH(tmpvap, &ic->ic_vaps, iv_next) {
++			tmpvap->iv_flags_ext |= IEEE80211_FEXT_ERPUPDATE;
++		}
++	}
+ 
+ 	ic->ic_inact.expires = jiffies + IEEE80211_INACT_WAIT * HZ;
+ 	add_timer(&ic->ic_inact);
