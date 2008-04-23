@@ -32,8 +32,12 @@ if grep devfs /proc/filesystems > /dev/null; then
 elif [ -x /sbin/hotplug2 ]; then
 	mount -t tmpfs tmpfs /dev -o size=512K
 	mknod /dev/console c 5 1
-	/sbin/hotplug2 --coldplug --set-rules-file /etc/hotplug2-init.rules
-	/sbin/hotplug2 --no-coldplug --persistent --set-rules-file /etc/hotplug2-init.rules &
+	if [ -n "$INITRAMFS" ]; then
+		/sbin/hotplug2 --coldplug --no-persistent --max_children 1 &
+	else
+		/sbin/hotplug2 --coldplug --set-rules-file /etc/hotplug2-init.rules
+		/sbin/hotplug2 --no-coldplug --persistent --set-rules-file /etc/hotplug2-init.rules &
+	fi
 	M0=/dev/ptmx
 	M1=/dev/ptmx
 	HOTPLUG=
