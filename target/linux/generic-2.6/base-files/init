@@ -74,4 +74,5 @@ mount -o move /dev/pts /mnt/dev/pts
 mount -o move /tmp /mnt/tmp
 mount -o move /sys /mnt/sys
 mount none /tmp -t tmpfs
+killall -q hotplug2
 exec switch_root -c /dev/console /mnt /sbin/init
