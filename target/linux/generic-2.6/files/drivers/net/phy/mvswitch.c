@@ -274,8 +274,8 @@ mvswitch_config_init(struct phy_device *pdev)
 	}
 
 	/* build the target list for the cpu port */
-	for (i = 0, vlmap = 0; i < ARRAY_SIZE(priv->vlans); i++)
-		vlmap |= priv->vlans[i];
+	for (i = 0; i < MV_PORTS; i++)
+		vlmap |= (1 << i);
 
 	w16(pdev, MV_PORTREG(VLANMAP, MV_CPUPORT),
 		MV_PORTVLAN_PORTS(vlmap)
