@@ -1,0 +1,14 @@
+--- linux-2.6.23.1/drivers/usb/host/ohci-ssb.c		2007-11-26 14:01:22.000000000 -0500
++++ linux-2.6.23.1.new/drivers/usb/host/ohci-ssb.c	2007-11-26 14:16:08.000000000 -0500
+@@ -195,6 +195,11 @@
+ 	else
+ 		ssb_device_enable(dev, 0);
+ 
++ /*
++  * Set dma mask - 32 bit mask is just an assumption
++  */
++ if (ssb_dma_set_mask(dev, DMA_32BIT_MASK))
++   return -EOPNOTSUPP;
+ 
+ 	hcd = usb_create_hcd(&ssb_ohci_hc_driver, dev->dev,
+ 			dev->dev->bus_id);
