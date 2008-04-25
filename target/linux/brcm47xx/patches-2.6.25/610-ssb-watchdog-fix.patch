@@ -1,0 +1,133 @@
+Index: linux-2.6.23.16/drivers/ssb/Kconfig
+===================================================================
+--- linux-2.6.23.16.orig/drivers/ssb/Kconfig	2008-02-19 13:46:05.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/Kconfig	2008-02-19 13:46:33.000000000 +0100
+@@ -105,6 +105,12 @@ config SSB_DRIVER_MIPS
+ 
+ 	  If unsure, say N
+ 
++# Assumption: We are on embedded, if we compile the MIPS core.
++config SSB_EMBEDDED
++	bool
++	depends on SSB_DRIVER_MIPS
++	default y
++
+ config SSB_DRIVER_EXTIF
+ 	bool "SSB Broadcom EXTIF core driver (EXPERIMENTAL)"
+ 	depends on SSB_DRIVER_MIPS && EXPERIMENTAL
+Index: linux-2.6.23.16/drivers/ssb/Makefile
+===================================================================
+--- linux-2.6.23.16.orig/drivers/ssb/Makefile	2008-02-19 13:46:05.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/Makefile	2008-02-19 13:46:33.000000000 +0100
+@@ -1,5 +1,6 @@
+ # core
+ ssb-y					+= main.o scan.o
++ssb-$(CONFIG_SSB_EMBEDDED)		+= embedded.o
+ 
+ # host support
+ ssb-$(CONFIG_SSB_PCIHOST)		+= pci.o pcihost_wrapper.o
+Index: linux-2.6.23.16/drivers/ssb/driver_extif.c
+===================================================================
+--- linux-2.6.23.16.orig/drivers/ssb/driver_extif.c	2008-02-19 13:46:05.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/driver_extif.c	2008-02-19 13:46:33.000000000 +0100
+@@ -37,6 +37,12 @@ static inline u32 extif_write32_masked(s
+ 	return value;
+ }
+ 
++void ssb_extif_watchdog_timer_set(struct ssb_extif *extif,
++				  u32 ticks)
++{
++	extif_write32(extif, SSB_EXTIF_WATCHDOG, ticks);
++}
++
+ #ifdef CONFIG_SSB_SERIAL
+ static bool serial_exists(u8 *regs)
+ {
+Index: linux-2.6.23.16/drivers/ssb/embedded.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.23.16/drivers/ssb/embedded.c	2008-02-19 13:46:33.000000000 +0100
+@@ -0,0 +1,26 @@
++/*
++ * Sonics Silicon Backplane
++ * Embedded systems support code
++ *
++ * Copyright 2005-2008, Broadcom Corporation
++ * Copyright 2006-2008, Michael Buesch <mb@bu3sch.de>
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#include <linux/ssb/ssb.h>
++#include <linux/ssb/ssb_embedded.h>
++
++
++int ssb_watchdog_timer_set(struct ssb_bus *bus, u32 ticks)
++{
++	if (ssb_chipco_available(&bus->chipco)) {
++		ssb_chipco_watchdog_timer_set(&bus->chipco, ticks);
++		return 0;
++	}
++	if (ssb_extif_available(&bus->extif)) {
++		ssb_extif_watchdog_timer_set(&bus->extif, ticks);
++		return 0;
++	}
++	return -ENODEV;
++}
+Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_chipcommon.h
+===================================================================
+--- linux-2.6.23.16.orig/include/linux/ssb/ssb_driver_chipcommon.h	2008-02-19 13:46:29.000000000 +0100
++++ linux-2.6.23.16/include/linux/ssb/ssb_driver_chipcommon.h	2008-02-19 13:46:33.000000000 +0100
+@@ -360,6 +360,11 @@ struct ssb_chipcommon {
+ 	u16 fast_pwrup_delay;
+ };
+ 
++static inline bool ssb_chipco_available(struct ssb_chipcommon *cc)
++{
++	return (cc->dev != NULL);
++}
++
+ extern void ssb_chipcommon_init(struct ssb_chipcommon *cc);
+ 
+ #include <linux/pm.h>
+Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_extif.h
+===================================================================
+--- linux-2.6.23.16.orig/include/linux/ssb/ssb_driver_extif.h	2008-02-19 13:46:05.000000000 +0100
++++ linux-2.6.23.16/include/linux/ssb/ssb_driver_extif.h	2008-02-19 13:46:33.000000000 +0100
+@@ -178,6 +178,9 @@ u32 ssb_extif_gpio_outen(struct ssb_exti
+ u32 ssb_extif_gpio_polarity(struct ssb_extif *extif, u32 mask, u32 value);
+ u32 ssb_extif_gpio_intmask(struct ssb_extif *extif, u32 mask, u32 value);
+ 
++extern void ssb_extif_watchdog_timer_set(struct ssb_extif *extif,
++					 u32 ticks);
++
+ #ifdef CONFIG_SSB_SERIAL
+ extern int ssb_extif_serial_init(struct ssb_extif *extif,
+ 				 struct ssb_serial_port *ports);
+@@ -201,5 +204,11 @@ void ssb_extif_get_clockcontrol(struct s
+ {
+ }
+ 
++static inline
++void ssb_extif_watchdog_timer_set(struct ssb_extif *extif,
++				  u32 ticks)
++{
++}
++
+ #endif /* CONFIG_SSB_DRIVER_EXTIF */
+ #endif /* LINUX_SSB_EXTIFCORE_H_ */
+Index: linux-2.6.23.16/include/linux/ssb/ssb_embedded.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.23.16/include/linux/ssb/ssb_embedded.h	2008-02-19 13:46:33.000000000 +0100
+@@ -0,0 +1,10 @@
++#ifndef LINUX_SSB_EMBEDDED_H_
++#define LINUX_SSB_EMBEDDED_H_
++
++#include <linux/types.h>
++#include <linux/ssb/ssb.h>
++
++
++extern int ssb_watchdog_timer_set(struct ssb_bus *bus, u32 ticks);
++
++#endif /* LINUX_SSB_EMBEDDED_H_ */

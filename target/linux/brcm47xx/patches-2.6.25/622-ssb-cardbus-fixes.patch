@@ -1,0 +1,116 @@
+Index: linux-2.6.23.16/drivers/ssb/driver_pcicore.c
+===================================================================
+--- linux-2.6.23.16.orig/drivers/ssb/driver_pcicore.c	2008-02-19 16:37:14.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/driver_pcicore.c	2008-02-19 17:25:26.000000000 +0100
+@@ -11,6 +11,7 @@
+ #include <linux/ssb/ssb.h>
+ #include <linux/pci.h>
+ #include <linux/delay.h>
++#include <linux/ssb/ssb_embedded.h>
+ 
+ #include "ssb_private.h"
+ 
+@@ -27,6 +28,18 @@ void pcicore_write32(struct ssb_pcicore 
+ 	ssb_write32(pc->dev, offset, value);
+ }
+ 
++static inline
++u16 pcicore_read16(struct ssb_pcicore *pc, u16 offset)
++{
++	return ssb_read16(pc->dev, offset);
++}
++
++static inline
++void pcicore_write16(struct ssb_pcicore *pc, u16 offset, u16 value)
++{
++	ssb_write16(pc->dev, offset, value);
++}
++
+ /**************************************************
+  * Code for hostmode operation.
+  **************************************************/
+@@ -123,8 +136,10 @@ static u32 get_cfgspace_addr(struct ssb_
+ 	u32 addr = 0;
+ 	u32 tmp;
+ 
+-	if (unlikely(pc->cardbusmode && dev > 1))
++	/* We do only have one cardbus device behind the bridge. */
++	if (pc->cardbusmode && (dev >= 1))
+ 		goto out;
++
+ 	if (bus == 0) {
+ 		/* Type 0 transaction */
+ 		if (unlikely(dev >= SSB_PCI_SLOT_MAX))
+@@ -324,7 +339,16 @@ static void ssb_pcicore_init_hostmode(st
+ 	pcicore_write32(pc, SSB_PCICORE_ARBCTL, val);
+ 	udelay(1); /* Assertion time demanded by the PCI standard */
+ 
+-	/*TODO cardbus mode */
++	if (pc->dev->bus->has_cardbus_slot) {
++		ssb_dprintk(KERN_INFO PFX "CardBus slot detected\n");
++		pc->cardbusmode = 1;
++		/* GPIO 1 resets the bridge */
++		ssb_gpio_out(pc->dev->bus, 1, 1);
++		ssb_gpio_outen(pc->dev->bus, 1, 1);
++		pcicore_write16(pc, SSB_PCICORE_SPROM(0),
++				pcicore_read16(pc, SSB_PCICORE_SPROM(0))
++				| 0x0400);
++	}
+ 
+ 	/* 64MB I/O window */
+ 	pcicore_write32(pc, SSB_PCICORE_SBTOPCI0,
+Index: linux-2.6.23.16/drivers/ssb/main.c
+===================================================================
+--- linux-2.6.23.16.orig/drivers/ssb/main.c	2008-02-19 15:50:44.000000000 +0100
++++ linux-2.6.23.16/drivers/ssb/main.c	2008-02-19 16:38:31.000000000 +0100
+@@ -559,6 +559,7 @@ static int ssb_fetch_invariants(struct s
+ 		goto out;
+ 	memcpy(&bus->boardinfo, &iv.boardinfo, sizeof(iv.boardinfo));
+ 	memcpy(&bus->sprom, &iv.sprom, sizeof(iv.sprom));
++	bus->has_cardbus_slot = iv.has_cardbus_slot;
+ out:
+ 	return err;
+ }
+Index: linux-2.6.23.16/include/linux/ssb/ssb.h
+===================================================================
+--- linux-2.6.23.16.orig/include/linux/ssb/ssb.h	2008-02-19 15:50:44.000000000 +0100
++++ linux-2.6.23.16/include/linux/ssb/ssb.h	2008-02-19 16:38:31.000000000 +0100
+@@ -282,6 +282,8 @@ struct ssb_bus {
+ 	struct ssb_boardinfo boardinfo;
+ 	/* Contents of the SPROM. */
+ 	struct ssb_sprom sprom;
++	/* If the board has a cardbus slot, this is set to true. */
++	bool has_cardbus_slot;
+ 
+ #ifdef CONFIG_SSB_EMBEDDED
+ 	/* Lock for GPIO register access. */
+@@ -299,8 +301,13 @@ struct ssb_bus {
+ 
+ /* The initialization-invariants. */
+ struct ssb_init_invariants {
++	/* Versioning information about the PCB. */
+ 	struct ssb_boardinfo boardinfo;
++	/* The SPROM information. That's either stored in an
++	 * EEPROM or NVRAM on the board. */
+ 	struct ssb_sprom sprom;
++	/* If the board has a cardbus slot, this is set to true. */
++	bool has_cardbus_slot;
+ };
+ /* Type of function to fetch the invariants. */
+ typedef int (*ssb_invariants_func_t)(struct ssb_bus *bus,
+Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_pci.h
+===================================================================
+--- linux-2.6.23.16.orig/include/linux/ssb/ssb_driver_pci.h	2008-02-13 20:27:17.000000000 +0100
++++ linux-2.6.23.16/include/linux/ssb/ssb_driver_pci.h	2008-02-19 17:31:47.000000000 +0100
+@@ -51,6 +51,11 @@
+ #define  SSB_PCICORE_SBTOPCI1_MASK	0xFC000000
+ #define SSB_PCICORE_SBTOPCI2		0x0108	/* Backplane to PCI translation 2 (sbtopci2) */
+ #define  SSB_PCICORE_SBTOPCI2_MASK	0xC0000000
++#define SSB_PCICORE_PCICFG0		0x0400	/* PCI config space 0 (rev >= 8) */
++#define SSB_PCICORE_PCICFG1		0x0500	/* PCI config space 1 (rev >= 8) */
++#define SSB_PCICORE_PCICFG2		0x0600	/* PCI config space 2 (rev >= 8) */
++#define SSB_PCICORE_PCICFG3		0x0700	/* PCI config space 3 (rev >= 8) */
++#define SSB_PCICORE_SPROM(wordoffset)	(0x0800 + ((wordoffset) * 2)) /* SPROM shadow area (72 bytes) */
+ 
+ /* SBtoPCIx */
+ #define SSB_PCICORE_SBTOPCI_MEM		0x00000000
