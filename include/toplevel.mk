@@ -119,7 +119,7 @@ docs/clean: FORCE
 	$(MAKE) -C docs clean
 
 distclean:
-	rm -rf tmp build_dir staging_dir dl .config* feeds package/feeds bin
+	rm -rf tmp build_dir staging_dir dl .config* feeds package/feeds packages/openwrt-packages bin
 	$(MAKE) -C scripts/config clean
 
 ifeq ($(findstring v,$(DEBUG)),)
