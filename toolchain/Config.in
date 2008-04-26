@@ -84,7 +84,7 @@ config TARGET_OPTIMIZATION
 	default "-O2 -pipe -march=i486 -funit-at-a-time" if TARGET_x86
 	default "-Os -pipe -march=i486 -funit-at-a-time" if TARGET_rdc
 	default "-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time" if mipsel || mips
-	default "-Os -pipe -march=armv5te -mtune=xscale -funit-at-a-time" if TARGET_ixp4xx || TARGET_iop32x
+	default "-Os -pipe -march=armv5te -mtune=xscale -funit-at-a-time" if TARGET_ixp4xx || TARGET_iop32x || TARGET_pxa
 	default "-Os -pipe -funit-at-a-time"
 	help
 	  Optimizations to use when building for the target host.
