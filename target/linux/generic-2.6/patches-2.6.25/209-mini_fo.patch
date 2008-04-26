@@ -5,7 +5,7 @@ Index: linux-2.6.23/fs/Kconfig
 @@ -458,6 +458,9 @@
  	  This option will enlarge your kernel, but it allows debugging of
  	  ocfs2 filesystem issues.
- 
+
 +config MINI_FO
 +	tristate "Mini fanout overlay filesystem"
 +
@@ -64,11 +64,11 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 +	check_mini_fo_dentry(dentry);
 +	if(dtost(dentry) == MODIFIED || dtost(dentry) == CREATED || dtost(dentry) == DEL_REWRITTEN)
 +		return 1;
-+	return 0;	
++	return 0;
 +}
 +
 +/* check if dentry is in an existing state */
-+int is_mini_fo_existant(dentry_t *dentry) 
++int is_mini_fo_existant(dentry_t *dentry)
 +{
 +	check_mini_fo_dentry(dentry);
 +
@@ -78,12 +78,12 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 +		return 1;
 +}
 +
-+/* 
-+ * This function will create a negative storage dentry for 
++/*
++ * This function will create a negative storage dentry for
 + * dentry, what is required for many create like options.
 + * It will create the storage structure if necessary.
 + */
-+int get_neg_sto_dentry(dentry_t *dentry) 
++int get_neg_sto_dentry(dentry_t *dentry)
 +{
 +	int err = 0;
 +	unsigned int len;
@@ -106,18 +106,18 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 +	if(dtost(dentry->d_parent) == UNMODIFIED) {
 +		/* build sto struct */
 +		err = build_sto_structure(dentry->d_parent->d_parent, dentry->d_parent);
-+		if(err || 
++		if(err ||
 +		   dtost(dentry->d_parent) != MODIFIED) {
 +			printk(KERN_CRIT "mini_fo: get_neg_sto_dentry: ERROR building sto structure.\n");
 +			err = -1;
 +			goto out;
-+		}		
++		}
 +	}
 +
 +	len = dentry->d_name.len;
 +	name = dentry->d_name.name;
-+	 
-+	dtohd2(dentry) = 
++
++	dtohd2(dentry) =
 +		lookup_one_len(name, dtohd2(dentry->d_parent), len);
 +
 + out:
@@ -129,7 +129,7 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 + 	ASSERT(dentry != NULL);
 +	ASSERT(dtopd(dentry) != NULL);
 +	ASSERT((dtohd(dentry) != NULL) || (dtohd2(dentry) != NULL));
-+	       
++
 +/* 	if(dtost(dentry) == MODIFIED) { */
 +/* 		ASSERT(dentry->d_inode != NULL); */
 +/* 		ASSERT(dtohd(dentry) != NULL); */
@@ -141,7 +141,7 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 +/* 		ASSERT(dentry->d_inode != NULL); */
 +/* 		ASSERT( */
 +/* 	} */
-+	return 0;	       
++	return 0;
 +}
 +
 +int check_mini_fo_file(file_t *file)
@@ -149,8 +149,8 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 +	ASSERT(file != NULL);
 +	ASSERT(ftopd(file) != NULL);
 +	ASSERT(file->f_dentry != NULL);
-+	
-+	/* violent checking, check depending of state and type 
++
++	/* violent checking, check depending of state and type
 +	 *	if(S_ISDIR(file->f_dentry->d_inode->i_mode)) {}
 +	 */
 +	ASSERT((ftohf(file) != NULL) || (ftohf2(file) != NULL));
@@ -165,13 +165,13 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 +	return 0;
 +}
 +
-+/* 
++/*
 + * will walk a base path as provided by get_mini_fo_bpath and return
 + * the (hopefully ;-) ) positive dentry of the renamed base dir.
 + *
 + * This does some work of path_init.
 + */
-+dentry_t *bpath_walk(super_block_t *sb, char *bpath) 
++dentry_t *bpath_walk(super_block_t *sb, char *bpath)
 +{
 +	int err;
 +        struct vfsmount *mnt;
@@ -186,20 +186,20 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 +		printk(KERN_CRIT "mini_fo: bpath_walk: Invalid sb.\n");
 +		return NULL;
 +	}
-+	
-+	/* fix this: how do I reach this lock? 
++
++	/* fix this: how do I reach this lock?
 +	 * read_lock(&current->fs->lock); */
 +	mnt = mntget(stopd(sb)->hidden_mnt);
 +	/* read_unlock(&current->fs->lock); */
-+	
++
 +	err = vfs_path_lookup(mnt->mnt_root, mnt, bpath+1, 0, &nd);
 +
 +	/* validate */
-+	if (err || !nd.path.dentry || !nd.path.dentry->d_inode) {
++	if (err || !nd.dentry || !nd.dentry->d_inode) {
 +		printk(KERN_CRIT "mini_fo: bpath_walk: path_walk failed.\n");
 +		return NULL;
 +	}
-+	return nd.path.dentry;
++	return nd.dentry;
 +}
 +
 +
@@ -209,7 +209,7 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 +	char *buf_walker;
 +	int len = 0;
 +	dentry_t *sky_walker;
-+	
++
 +	if(!dentry || !dtohd(dentry)) {
 +		printk(KERN_CRIT "mini_fo: get_mini_fo_bpath: invalid dentry passed.\n");
 +		return -1;
@@ -230,11 +230,11 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 +	buf_walker = *bpath+len; /* put it on last char */
 +	*buf_walker = '\n';
 +	sky_walker = dtohd(dentry);
-+	
++
 +	do {
 +		buf_walker -= sky_walker->d_name.len;
-+		strncpy(buf_walker, 
-+			sky_walker->d_name.name, 
++		strncpy(buf_walker,
++			sky_walker->d_name.name,
 +			sky_walker->d_name.len);
 +		*(--buf_walker) = '/';
 +		sky_walker = sky_walker->d_parent;
@@ -311,9 +311,9 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 +	 */
 +	bytes = len = PAGE_SIZE;
 +	while(bytes == len) {
-+		bytes = src_file->f_op->read(src_file, buf, len, 
++		bytes = src_file->f_op->read(src_file, buf, len,
 +					     &src_file->f_pos);
-+		tmp = tgt_file->f_op->write(tgt_file, buf, bytes, 
++		tmp = tgt_file->f_op->write(tgt_file, buf, bytes,
 +					    &tgt_file->f_pos);
 +		if(tmp != bytes) {
 +			printk(KERN_CRIT "mini_fo_cp_cont: ERROR writing.\n");
@@ -361,7 +361,7 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 +{
 +	struct ndl_entry *tmp_entry;
 +
-+	tmp_entry = (struct ndl_entry *) 
++	tmp_entry = (struct ndl_entry *)
 +		kmalloc(sizeof(struct ndl_entry), GFP_KERNEL);
 +	if(!tmp_entry) {
 +                printk(KERN_CRIT "mini_fo: ndl_add_entry: out of mem.\n");
@@ -446,9 +446,9 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 +
 +	if(!hidden_sto_dentry) {
 +		/*
-+		 * This is the case after creating the first 
++		 * This is the case after creating the first
 +		 * hidden_sto_dentry.
-+		 * After one negative storage_dentry, all pointers to 
++		 * After one negative storage_dentry, all pointers to
 +		 * hidden_storage dentries are set to NULL. We need to
 +		 * create the negative dentry before we create the storage
 +		 * file.
@@ -496,7 +496,7 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 +		dput(dir);
 +		return err;
 +	}
-+	
++
 +	/* everything ok! */
 +	if(!dtohd2(dentry)->d_inode) {
 +		printk(KERN_CRIT "mini_fo: build_sto_structure: failed to create storage dir [2].\n");
@@ -518,9 +518,9 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 +	itopd(dentry->d_inode)->deleted_list_size = -1;
 +	itopd(dentry->d_inode)->renamed_list_size = -1;
 +	meta_build_lists(dentry);
-+	
++
 +	fist_copy_attr_all(dentry->d_inode, itohi2(dentry->d_inode));
-+	fist_copy_attr_timesizes(dir->d_inode, 
++	fist_copy_attr_timesizes(dir->d_inode,
 +				 hidden_sto_dir_dentry->d_inode);
 +	dir->d_inode->i_nlink++;
 +	/* was: unlock_dir(hidden_sto_dir_dentry); */
@@ -615,7 +615,7 @@ Index: linux-2.6.23/fs/mini_fo/ChangeLog
 +
 +	* Add tons of ugly ifdefs to Ed L. Cashin's mutex patch to
 +          retain backwards compatibility.
-+	
++
 +2006-01-24  Ed L. Cashin <ecashin@coraid.com>
 +
 +	* Support for the new mutex infrastructure
@@ -665,7 +665,7 @@ Index: linux-2.6.23/fs/mini_fo/ChangeLog
 +
 +	* Makefile: clean it up and added make install and make
 +          uninstall.
-+	
++
 +2005-05-06    <mk@mary>
 +
 +	* merged devel branch back to main. [v0-6-0-pre3]
@@ -701,7 +701,7 @@ Index: linux-2.6.23/fs/mini_fo/ChangeLog
 +
 +	* inode.c: rename_reg_file renamed to rename_nondir, as it
 +          doesn't matter as long it't not a dir. Removed all
-+          rename_dev_file etc. 	  
++          rename_dev_file etc.
 +
 +	* tagged as devel-0-0-15
 +
@@ -733,7 +733,7 @@ Index: linux-2.6.23/fs/mini_fo/ChangeLog
 +2005-04-23    <mk@mary>
 +
 +	* state.c, aux.c: more cleaning up and
-+          simplifications. [devel-0-0-13] 
++          simplifications. [devel-0-0-13]
 +
 +	* inode.c: implemented mini_fo_getattr, that was required for
 +          2.6 because inode_revalidate has been remove there, and the
@@ -815,11 +815,11 @@ Index: linux-2.6.23/fs/mini_fo/ChangeLog
 +	* Rewrote mini_fo rename and split it into several
 +          subfunctions, that handle the different types
 +          seperately. Rewrote the regular file function aswell, as it
-+          was implemented somewhat inefficient. 
++          was implemented somewhat inefficient.
 +
 +2005-03-16  Markus Klotzbuecher  <mk@chasey>
 +
-+	* Implemented new META subsystem, removed old WOL stuff in favor 
++	* Implemented new META subsystem, removed old WOL stuff in favor
 +	  if it.
 +
 +	* After some basic testing everything seems ok...
@@ -831,7 +831,7 @@ Index: linux-2.6.23/fs/mini_fo/ChangeLog
 +	  files. mini_fo_rename still isn't implemented properly, renaming
 +	  of device files, symlinks etc. results in a empty regular file
 +	  instead of the proper type.
-+	
++
 +	* Directory renaming suddenly works! What a surprise! I guess
 +          this is because renaming is implemented as making a copy and
 +          removing the original. Still this might not work
@@ -848,7 +848,7 @@ Index: linux-2.6.23/fs/mini_fo/ChangeLog
 +          the state numbers.
 +
 +2005-03-08  Markus Klotzbuecher  <mk@chasey>
-+	
++
 +	* Makefile fix, fist_ioctl was built against wrong sources if ARCH=um
 +
 +	* Fixed a bug in dentry.c, mini_fo_d_hash. In state 4 =
@@ -874,24 +874,24 @@ Index: linux-2.6.23/fs/mini_fo/ChangeLog
 +2004-10-24 Gleb Natapov <gleb@nbase.co.il>
 +
 +	* Fix: owner and group where not correctly copied from base to
-+          storage. 
++          storage.
 +
 +
 +2004-10-05 Gleb Natapov <gleb@nbase.co.il>
 +
 +	* Implementation of fsync, fasync and lock mini_fo functions.
-+	
++
 +
 +2004-09-29 Bob Lee <bob@pantasys.com>
 +
 +	* Fix of a serious pointer bug
-+	
++
 +
 +2004-09-28 Gleb Natapov <gleb@nbase.co.il>
 +
 +	* Implementation of mini_fo_mknod and mini_fo_rename, support
 +          for device files.
-+	
++
 Index: linux-2.6.23/fs/mini_fo/dentry.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
@@ -961,10 +961,10 @@ Index: linux-2.6.23/fs/mini_fo/dentry.c
 +	   hidden_sto_dentry->d_op &&
 +	   hidden_sto_dentry->d_op->d_revalidate) {
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-+		err2 = hidden_sto_dentry->d_op->d_revalidate(hidden_sto_dentry, 
++		err2 = hidden_sto_dentry->d_op->d_revalidate(hidden_sto_dentry,
 +							     nd);
 +#else
-+		err2 = hidden_sto_dentry->d_op->d_revalidate(hidden_sto_dentry, 
++		err2 = hidden_sto_dentry->d_op->d_revalidate(hidden_sto_dentry,
 +							     flags);
 +#endif
 +	}
@@ -1204,8 +1204,8 @@ Index: linux-2.6.23/fs/mini_fo/file.c
 +	hidden_file->f_pos = file->f_pos;
 +
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-+	memcpy(&(hidden_file->f_ra), 
-+	       &(file->f_ra), 
++	memcpy(&(hidden_file->f_ra),
++	       &(file->f_ra),
 +	       sizeof(struct file_ra_state));
 +#else
 +	if (file->f_reada) { /* update readahead information if needed */
@@ -1347,7 +1347,7 @@ Index: linux-2.6.23/fs/mini_fo/file.c
 +	 */
 +	if (err >= 0)
 +		fist_copy_attr_times(inode, hidden_inode);
-+	
++
 +	*ppos = pos;
 +#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 +	/*
@@ -1376,7 +1376,7 @@ Index: linux-2.6.23/fs/mini_fo/file.c
 + *   - be able to call wol functions in order to avoid listing deleted
 + *     base files.
 + *   - if we're reading a directory which is in state 1, we need to
-+ *     maintain a list (in mini_fo_filldir) of which files allready 
++ *     maintain a list (in mini_fo_filldir) of which files allready
 + *     have been copied to userspace,to detect files existing in base
 + *     and storage and not list them twice.
 + */
@@ -1422,7 +1422,7 @@ Index: linux-2.6.23/fs/mini_fo/file.c
 +			/* check if file has been deleted */
 +			if(meta_check_d_entry(file->f_dentry, name, namlen))
 +				return 0;
-+			
++
 +			/* do duplicate checking */
 +			if(ndl_check_entry(&ftopd(file)->rd, name, namlen))
 +				return 0;
@@ -1456,7 +1456,7 @@ Index: linux-2.6.23/fs/mini_fo/file.c
 +	ftopd(file)->rd.sto_done = 0;
 +	do {
 +		if (ftopd(file) != NULL) {
-+			if(ftohf2(file)) { 
++			if(ftohf2(file)) {
 +				hidden_sto_file = ftohf2(file);
 +				err = vfs_readdir(hidden_sto_file, mini_fo_filldir, dirent);
 +				file->f_pos = hidden_sto_file->f_pos;
@@ -1469,7 +1469,7 @@ Index: linux-2.6.23/fs/mini_fo/file.c
 +
 +			ftopd(file)->rd.sto_done = 1;
 +
-+			if(ftohf(file)) { 
++			if(ftohf(file)) {
 +				hidden_file = ftohf(file);
 +				err = vfs_readdir(hidden_file, mini_fo_filldir, dirent);
 +				file->f_pos = hidden_file->f_pos;
@@ -1551,7 +1551,7 @@ Index: linux-2.6.23/fs/mini_fo/file.c
 +mini_fo_open(inode_t *inode, file_t *file)
 +{
 +	int err = 0;
-+ 	int hidden_flags; 
++ 	int hidden_flags;
 +	file_t *hidden_file = NULL;
 +	dentry_t *hidden_dentry = NULL;
 +
@@ -1559,7 +1559,7 @@ Index: linux-2.6.23/fs/mini_fo/file.c
 +	file_t *hidden_sto_file = NULL;
 +	dentry_t *hidden_sto_dentry = NULL;
 +
-+	__ftopd(file) = 
++	__ftopd(file) =
 +		kmalloc(sizeof(struct mini_fo_file_info), GFP_KERNEL);
 +	if (!ftopd(file)) {
 +		err = -ENOMEM;
@@ -1678,7 +1678,7 @@ Index: linux-2.6.23/fs/mini_fo/file.c
 +		goto out;
 +	}
 +	ftohf2(file) = hidden_sto_file; /* link storage file */
-+	
++
 + out:
 +	if (err < 0 && ftopd(file)) {
 +		kfree(ftopd(file));
@@ -1696,7 +1696,7 @@ Index: linux-2.6.23/fs/mini_fo/file.c
 +	int err1 = 0;		/* assume ok (see open.c:close_fp) */
 +	int err2 = 0;
 +	file_t *hidden_file = NULL;
-+	
++
 +	check_mini_fo_file(file);
 +
 +	/* mk: we don't do any state checking here, as its not worth the time.
@@ -1813,7 +1813,7 @@ Index: linux-2.6.23/fs/mini_fo/file.c
 +	if((hidden_file = ftohf2(file)) != NULL) {
 +		err2 = hidden_file->f_op->fasync(fd, hidden_file, flag);
 +	}
-+	
++
 +	return (err1 || err2);
 +}
 +
@@ -2146,7 +2146,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +
 +#ifdef HAVE_CONFIG_H
 +# include <config.h>
-+#endif 
++#endif
 +
 +#include "fist.h"
 +#include "mini_fo.h"
@@ -2187,7 +2187,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +	dentry_t *hidden_sto_dentry = NULL;
 +
 +	/* whiteout flag */
-+	int del_flag = 0; 
++	int del_flag = 0;
 +	char *bpath = NULL;
 +
 +	const char *name;
@@ -2230,27 +2230,27 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +			err= -EINVAL;
 +			goto out;
 +		}
-+		
++
 +		/* this can be set up safely without fear of spaghetti
 +		 * interposing as it is only used for copying times */
 +		hidden_dir_dentry = hidden_dentry->d_parent;
 +		kfree(bpath);
 +	}
 +	else if(hidden_dir_dentry && hidden_dir_dentry->d_inode)
-+		hidden_dentry = 
++		hidden_dentry =
 +			lookup_one_len(name, hidden_dir_dentry, namelen);
 +	else
 +		hidden_dentry = NULL;
 +
 +	if(hidden_sto_dir_dentry && hidden_sto_dir_dentry->d_inode)
-+		hidden_sto_dentry = 
++		hidden_sto_dentry =
 +			lookup_one_len(name, hidden_sto_dir_dentry, namelen);
 +	else
 +		hidden_sto_dentry =  NULL;
 +
 +	/* catch error in lookup */
 +	if (IS_ERR(hidden_dentry) || IS_ERR(hidden_sto_dentry)) {
-+		/* mk: we need to call dput on the dentry, whose 
++		/* mk: we need to call dput on the dentry, whose
 +		 * lookup_one_len operation failed, in order to avoid
 +		 * unmount trouble.
 +		 */
@@ -2272,14 +2272,14 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +	/* allocate dentry private data */
 +	__dtopd(dentry) = (struct mini_fo_dentry_info *)
 +		kmalloc(sizeof(struct mini_fo_dentry_info), GFP_KERNEL);
-+	
++
 +	if (!dtopd(dentry)) {
 +		err = -ENOMEM;
 +		goto out_dput;
 +	}
 +
 +	/* check for different states of the mini_fo file to be looked up. */
-+	
++
 +	/* state 1, file has been modified */
 +	if(hidden_dentry && hidden_sto_dentry &&
 +	   hidden_dentry->d_inode && hidden_sto_dentry->d_inode && !del_flag) {
@@ -2338,7 +2338,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +
 +	/* state 4, file has deleted and created again. */
 +	if(hidden_dentry && hidden_sto_dentry &&
-+	   hidden_dentry->d_inode && 
++	   hidden_dentry->d_inode &&
 +	   hidden_sto_dentry->d_inode && del_flag) {
 +
 +		fist_copy_attr_atime(dir, hidden_sto_dir_dentry->d_inode);
@@ -2360,15 +2360,15 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +	}
 +	/* state 5, file has been deleted in base */
 +	if(hidden_dentry && hidden_sto_dentry &&
-+	   hidden_dentry->d_inode && 
++	   hidden_dentry->d_inode &&
 +	   !hidden_sto_dentry->d_inode && del_flag) {
 +
 +		/* check which parents atime we need for updating */
 +		if(hidden_sto_dir_dentry->d_inode)
-+			fist_copy_attr_atime(dir, 
++			fist_copy_attr_atime(dir,
 +					     hidden_sto_dir_dentry->d_inode);
 +		else
-+			fist_copy_attr_atime(dir, 
++			fist_copy_attr_atime(dir,
 +					     hidden_dir_dentry->d_inode);
 +
 +		dtopd(dentry)->state = DELETED;
@@ -2463,7 +2463,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +		dtohd(old_dentry) = NULL;
 +		dtost(old_dentry) = DEL_REWRITTEN;
 +	}
-+	
++
 +	err = get_neg_sto_dentry(new_dentry);
 +	if(err) {
 +		err = -EINVAL;
@@ -2567,7 +2567,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +#endif
 +
 +	/* Fail if the symlink file exists */
-+	if(!(dtost(dentry) == DELETED || 
++	if(!(dtost(dentry) == DELETED ||
 +	     dtost(dentry) == NON_EXISTANT)) {
 +		err = -EEXIST;
 +		goto out;
@@ -2613,7 +2613,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +                        goto out_lock;
 +        }
 +	fist_copy_attr_timesizes(dir, hidden_sto_dir_dentry->d_inode);
-+	
++
 + out_lock:
 +        /* was: unlock_dir(hidden_sto_dir_dentry); */
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
@@ -2647,7 +2647,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +mini_fo_rmdir(inode_t *dir, dentry_t *dentry)
 +{
 +	int err = 0;
-+	
++
 +	dentry_t *hidden_sto_dentry;
 +	dentry_t *hidden_sto_dir_dentry;
 +	dentry_t *meta_dentry;
@@ -2676,8 +2676,8 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +#endif
 +
 +		/* Delete an old WOL file contained in the storage dir */
-+		meta_dentry = lookup_one_len(META_FILENAME, 
-+					     hidden_sto_dentry, 
++		meta_dentry = lookup_one_len(META_FILENAME,
++					     hidden_sto_dentry,
 +					     strlen(META_FILENAME));
 +		if(meta_dentry->d_inode) {
 +			err = vfs_unlink(hidden_sto_dentry->d_inode, meta_dentry);
@@ -2695,15 +2695,15 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +		dentry->d_inode->i_nlink = itohi2(dentry->d_inode)->i_nlink;
 +
 +		dput(dtohd(dentry));
-+		
++
 +		dtohd(dentry) = NULL;
 +		dtopd(dentry)->state = DELETED;
 +
 +		/* carefull with R files */
-+		if( __meta_is_r_entry(dir, 
-+				      dentry->d_name.name, 
++		if( __meta_is_r_entry(dir,
++				      dentry->d_name.name,
 +				      dentry->d_name.len) == 1) {
-+			err = meta_remove_r_entry(dentry->d_parent, 
++			err = meta_remove_r_entry(dentry->d_parent,
 +						  dentry->d_name.name,
 +						  dentry->d_name.len);
 +			if(err) {
@@ -2712,9 +2712,9 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +			}
 +		}
 +		else {
-+			/* ok, add deleted file to META */		
-+			meta_add_d_entry(dentry->d_parent, 
-+					 dentry->d_name.name, 
++			/* ok, add deleted file to META */
++			meta_add_d_entry(dentry->d_parent,
++					 dentry->d_name.name,
 +					 dentry->d_name.len);
 +		}
 +		/* was: unlock_dir(hidden_sto_dir_dentry); */
@@ -2728,7 +2728,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +	}
 +	else if(dtopd(dentry)->state == UNMODIFIED) {
 +		/* XXX: simply adding it to the delete list here is fscking dangerous!
-+		 * as a temporary hack, i will disable rmdir on unmodified directories 
++		 * as a temporary hack, i will disable rmdir on unmodified directories
 +		 * for now.
 +		 */
 +		err = -EINVAL;
@@ -2739,7 +2739,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +			err = -EINVAL;
 +			goto out;
 +		}
-+		
++
 +		/* dput base dentry, this will relase the inode and free the
 +		 * dentry, as we will never need it again. */
 +		dput(dtohd(dentry));
@@ -2747,8 +2747,8 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +		dtopd(dentry)->state = DELETED;
 +
 +		/* add deleted file to META-file */
-+		meta_add_d_entry(dentry->d_parent, 
-+				 dentry->d_name.name, 
++		meta_add_d_entry(dentry->d_parent,
++				 dentry->d_name.name,
 +				 dentry->d_name.len);
 +		goto out;
 +	}
@@ -2766,12 +2766,12 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +#endif
 +
 +		/* Delete an old WOL file contained in the storage dir */
-+		meta_dentry = lookup_one_len(META_FILENAME, 
-+					     hidden_sto_dentry, 
++		meta_dentry = lookup_one_len(META_FILENAME,
++					     hidden_sto_dentry,
 +					     strlen(META_FILENAME));
 +		if(meta_dentry->d_inode) {
 +			/* is this necessary? dget(meta_dentry); */
-+			err = vfs_unlink(hidden_sto_dentry->d_inode, 
++			err = vfs_unlink(hidden_sto_dentry->d_inode,
 +					 meta_dentry);
 +			dput(meta_dentry);
 +			if(!err)
@@ -2811,8 +2811,8 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +#endif
 +
 +		/* Delete an old WOL file contained in the storage dir */
-+		meta_dentry = lookup_one_len(META_FILENAME, 
-+					     hidden_sto_dentry, 
++		meta_dentry = lookup_one_len(META_FILENAME,
++					     hidden_sto_dentry,
 +					     strlen(META_FILENAME));
 +		if(meta_dentry->d_inode) {
 +			/* is this necessary? dget(meta_dentry); */
@@ -2848,7 +2848,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +	if(!err) {
 +		d_drop(dentry);
 +	}
-+		
++
 +	fist_copy_attr_times(dir, itohi2(dentry->d_parent->d_inode));
 +	dput(dentry);
 +
@@ -2872,7 +2872,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +		printk(KERN_CRIT "mini_fo_mknod: creating sto nod failed.\n");
 +		err = -EINVAL;
 +	}
-+	
++
 +	check_mini_fo_dentry(dentry);
 +	return err;
 +}
@@ -2886,7 +2886,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +	if(S_ISDIR(old_dentry->d_inode->i_mode))
 +		return rename_directory(old_dir, old_dentry, new_dir, new_dentry);
 +	return rename_nondir(old_dir, old_dentry, new_dir, new_dentry);
-+	
++
 +}
 +
 +int rename_directory(inode_t *old_dir, dentry_t *old_dentry,
@@ -2911,17 +2911,17 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +                                  uh, ah, new_dentry not negative.\n");
 +		/* return -1; */
 +	}
-+	
++
 +	/* state = UNMODIFIED */
 +	if(dtopd(old_dentry)->state == UNMODIFIED) {
 +		err = dir_unmod_to_mod(old_dentry);
-+		if (err) 
++		if (err)
 +			goto out;
 +	}
 +
 +	/* state = MODIFIED */
 +	if(dtopd(old_dentry)->state == MODIFIED) {
-+		bpath = meta_check_r_entry(old_dentry->d_parent, 
++		bpath = meta_check_r_entry(old_dentry->d_parent,
 +					   old_dentry->d_name.name,
 +					   old_dentry->d_name.len);
 +		if(bpath) {
@@ -2942,22 +2942,22 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +			kfree(bpath);
 +		}
 +		else {/* wol it */
-+			err = meta_add_d_entry(old_dentry->d_parent, 
++			err = meta_add_d_entry(old_dentry->d_parent,
 +					       old_dentry->d_name.name,
 +					       old_dentry->d_name.len);
-+			if (err) 
++			if (err)
 +				goto out;
 +			/* put it on rename list */
 +			err = get_mini_fo_bpath(old_dentry,
-+						&bpath, 
++						&bpath,
 +						&bpath_len);
-+			if (err) 
++			if (err)
 +				goto out;
 +			err = meta_add_r_entry(new_dentry->d_parent,
 +					       bpath, bpath_len,
 +					       new_dentry->d_name.name,
 +					       new_dentry->d_name.len);
-+			if (err) 
++			if (err)
 +				goto out;
 +		}
 +		/* no state change, MODIFIED stays MODIFIED */
@@ -2967,53 +2967,53 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +	   dtopd(old_dentry)->state == DEL_REWRITTEN) {
 +		if(dtohd(old_dentry))
 +			dput(dtohd(old_dentry));
-+		
++
 +		if(dtopd(new_dentry)->state == DELETED) {
 +			dtopd(old_dentry)->state = DEL_REWRITTEN;
 +			dtohd(old_dentry) = NULL;
-+		} 
++		}
 +		else if(dtopd(new_dentry)->state == NON_EXISTANT) {
 +			dtopd(old_dentry)->state = CREATED;
 +			/* steal new dentry's neg. base dentry */
 +			dtohd(old_dentry) = dtohd(new_dentry);
 +			dtohd(new_dentry) = NULL;
 +		}
-+	}		
++	}
 +	if(dtopd(new_dentry)->state == UNMODIFIED ||
 +	   dtopd(new_dentry)->state == NON_EXISTANT) {
 +		err = get_neg_sto_dentry(new_dentry);
 +		if(err)
 +			goto out;
 +	}
-+			
++
 +	/* now move sto file */
 +	hidden_old_dentry = dtohd2(old_dentry);
 +	hidden_new_dentry = dtohd2(new_dentry);
-+	
++
 +	dget(hidden_old_dentry);
 +	dget(hidden_new_dentry);
-+	
++
 +	hidden_old_dir_dentry = dget(hidden_old_dentry->d_parent);
 +	hidden_new_dir_dentry = dget(hidden_new_dentry->d_parent);
 +	double_lock(hidden_old_dir_dentry, hidden_new_dir_dentry);
-+	
++
 +	err = vfs_rename(hidden_old_dir_dentry->d_inode, hidden_old_dentry,
 +			 hidden_new_dir_dentry->d_inode, hidden_new_dentry);
 +	if(err)
 +		goto out_lock;
-+	
++
 +	fist_copy_attr_all(new_dir, hidden_new_dir_dentry->d_inode);
 +	if (new_dir != old_dir)
-+		fist_copy_attr_all(old_dir, 
++		fist_copy_attr_all(old_dir,
 +				   hidden_old_dir_dentry->d_inode);
-+	
++
 + out_lock:
 +	/* double_unlock will dput the new/old parent dentries
 +	 * whose refcnts were incremented via get_parent above. */
 +	double_unlock(hidden_old_dir_dentry, hidden_new_dir_dentry);
 +	dput(hidden_new_dentry);
 +	dput(hidden_old_dentry);
-+	
++
 + out:
 +	return err;
 +}
@@ -3039,7 +3039,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +
 +	/* the easy states */
 +	if(exists_in_storage(old_dentry)) {
-+		
++
 +		dentry_t *hidden_old_dentry;
 +		dentry_t *hidden_new_dentry;
 +		dentry_t *hidden_old_dir_dentry;
@@ -3103,7 +3103,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +
 +			/* we keep the neg. base dentry (if exists) */
 +			dtohd(old_dentry) = dtohd(new_dentry);
-+			/* ...and set it to Null, or we'll get 
++			/* ...and set it to Null, or we'll get
 +			 * Dr. dcache.c:345 if it gets dput twice... */
 +			dtohd(new_dentry) = NULL;
 +			dtopd(old_dentry)->state = CREATED;
@@ -3115,41 +3115,41 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +			dtopd(old_dentry)->state = DEL_REWRITTEN;
 +		}
 +		else { /* not possible, uhh, ahh */
-+			printk(KERN_CRIT 
++			printk(KERN_CRIT
 +			       "mini_fo: rename_reg_file: invalid state detected [1].\n");
 +			return -1;
 +		}
-+		
++
 +		/* now we definitely have a sto file */
 +		hidden_old_dentry = dtohd2(old_dentry);
 +		hidden_new_dentry = dtohd2(new_dentry);
 +
 +		dget(hidden_old_dentry);
 +		dget(hidden_new_dentry);
-+		
++
 +		hidden_old_dir_dentry = dget(hidden_old_dentry->d_parent);
 +		hidden_new_dir_dentry = dget(hidden_new_dentry->d_parent);
 +		double_lock(hidden_old_dir_dentry, hidden_new_dir_dentry);
 +
-+		err = vfs_rename(hidden_old_dir_dentry->d_inode, 
++		err = vfs_rename(hidden_old_dir_dentry->d_inode,
 +				 hidden_old_dentry,
-+				 hidden_new_dir_dentry->d_inode, 
++				 hidden_new_dir_dentry->d_inode,
 +				 hidden_new_dentry);
-+		if(err) 
++		if(err)
 +			goto out_lock;
 +
 +		fist_copy_attr_all(new_dir, hidden_new_dir_dentry->d_inode);
 +		if (new_dir != old_dir)
 +			fist_copy_attr_all(old_dir, hidden_old_dir_dentry->d_inode);
-+		
++
 +	out_lock:
-+		/* double_unlock will dput the new/old parent dentries 
++		/* double_unlock will dput the new/old parent dentries
 +		 * whose refcnts were incremented via get_parent above.
 +		 */
 +		double_unlock(hidden_old_dir_dentry, hidden_new_dir_dentry);
 +		dput(hidden_new_dentry);
 +		dput(hidden_old_dentry);
-+	out:		
++	out:
 +		return err;
 +	}
 +	else { /* invalid state */
@@ -3273,13 +3273,13 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +	 *	if (err)
 +	 *		goto out;
 +	 */
-+	
++
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 +	err = permission(hidden_inode, mask, nd);
 +#else
 +	err = permission(hidden_inode, mask);
 +#endif
-+	
++
 +	/*  out: */
 +	return err;
 +}
@@ -3323,7 +3323,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +	int err = 0;
 +
 +	check_mini_fo_dentry(dentry);
-+	
++
 +	if(!is_mini_fo_existant(dentry)) {
 +		printk(KERN_CRIT "mini_fo_setattr: ERROR, invalid state detected [1].\n");
 +		goto out;
@@ -3337,7 +3337,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +			err = dir_unmod_to_mod(dentry);
 +		} else {
 +			/* we copy contents if file is not beeing truncated */
-+			if(S_ISREG(dentry->d_inode->i_mode) && 
++			if(S_ISREG(dentry->d_inode->i_mode) &&
 +			   !(ia->ia_size == 0 && (ia->ia_valid & ATTR_SIZE))) {
 +				err = nondir_unmod_to_mod(dentry, 1);
 +			} else
@@ -3358,7 +3358,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +	ASSERT(dtohd2(dentry));
 +	ASSERT(itopd(dentry->d_inode));
 +	ASSERT(itohi2(dentry->d_inode));
-+	
++
 +	err = notify_change(dtohd2(dentry), ia);
 +	fist_copy_attr_all(dentry->d_inode, itohi2(dentry->d_inode));
 + out:
@@ -3454,7 +3454,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +		hidden_dentry = dtohd2(dentry);
 +	else
 +		hidden_dentry = dtohd(dentry);
-+	   
++
 +	ASSERT(hidden_dentry);
 +	ASSERT(hidden_dentry->d_inode);
 +	ASSERT(hidden_dentry->d_inode->i_op);
@@ -3487,10 +3487,10 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +#if ((LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,21) \
 +     && LINUX_VERSION_CODE <= KERNEL_VERSION(2,4,23)) \
 +     || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0))
-+mini_fo_setxattr(struct dentry *dentry, const char *name, 
++mini_fo_setxattr(struct dentry *dentry, const char *name,
 +		 const void *value, size_t size, int flags)
 +#else
-+mini_fo_setxattr(struct dentry *dentry, const char *name, 
++mini_fo_setxattr(struct dentry *dentry, const char *name,
 +		 void *value, size_t size, int flags)
 +#endif
 +
@@ -3508,7 +3508,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +		hidden_dentry = dtohd2(dentry);
 +	else
 +		hidden_dentry = dtohd(dentry);
-+	
++
 +	ASSERT(hidden_dentry);
 +	ASSERT(hidden_dentry->d_inode);
 +	ASSERT(hidden_dentry->d_inode->i_op);
@@ -3549,7 +3549,7 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +		hidden_dentry = dtohd2(dentry);
 +	else
 +		hidden_dentry = dtohd(dentry);
-+	
++
 +	ASSERT(hidden_dentry);
 +	ASSERT(hidden_dentry->d_inode);
 +	ASSERT(hidden_dentry->d_inode->i_op);
@@ -3774,7 +3774,7 @@ Index: linux-2.6.23/fs/mini_fo/main.c
 +	/*
 +	 * original: inode = iget(sb, hidden_inode->i_ino);
 +	 */
-+	inode = iget_locked(sb, iunique(sb, 25));
++	inode = iget(sb, iunique(sb, 25));
 +	if (!inode) {
 +		err = -EACCES;		/* should be impossible??? */
 +		goto out;
@@ -3849,7 +3849,7 @@ Index: linux-2.6.23/fs/mini_fo/main.c
 +{
 +	dentry_t *hidden_root = ERR_PTR(-EINVAL);
 +	dentry_t *hidden_root2 = ERR_PTR(-EINVAL);
-+	struct nameidata nd, nd2; 
++	struct nameidata nd, nd2;
 +	char *name, *tmp, *end;
 +	int err = 0;
 +
@@ -3876,9 +3876,9 @@ Index: linux-2.6.23/fs/mini_fo/main.c
 +				hidden_root = ERR_PTR(err);
 +				goto out;
 +			}
-+			hidden_root = nd.path.dentry;
-+			stopd(sb)->base_dir_dentry = nd.path.dentry;
-+			stopd(sb)->hidden_mnt = nd.path.mnt;
++			hidden_root = nd.dentry;
++			stopd(sb)->base_dir_dentry = nd.dentry;
++			stopd(sb)->hidden_mnt = nd.mnt;
 +
 +		} else if(!strncmp("sto=", options, 4)) {
 +			/* parse the storage dir */
@@ -3896,12 +3896,12 @@ Index: linux-2.6.23/fs/mini_fo/main.c
 +				hidden_root2 = ERR_PTR(err);
 +				goto out;
 +			}
-+			hidden_root2 = nd2.path.dentry;
-+			stopd(sb)->storage_dir_dentry = nd2.path.dentry;
-+			stopd(sb)->hidden_mnt2 = nd2.path.mnt;
++			hidden_root2 = nd2.dentry;
++			stopd(sb)->storage_dir_dentry = nd2.dentry;
++			stopd(sb)->hidden_mnt2 = nd2.mnt;
 +			stohs2(sb) = hidden_root2->d_sb;
 +
-+			/* validate storage dir, this is done in 
++			/* validate storage dir, this is done in
 +			 * mini_fo_read_super for the base directory.
 +			 */
 +			if (IS_ERR(hidden_root2)) {
@@ -4000,7 +4000,7 @@ Index: linux-2.6.23/fs/mini_fo/main.c
 +	sb->s_root->d_parent = sb->s_root;
 +
 +	/* link the upper and lower dentries */
-+	__dtopd(sb->s_root) = (struct mini_fo_dentry_info *) 
++	__dtopd(sb->s_root) = (struct mini_fo_dentry_info *)
 +		kmalloc(sizeof(struct mini_fo_dentry_info), GFP_KERNEL);
 +	if (!dtopd(sb->s_root)) {
 +		err = -ENOMEM;
@@ -4050,14 +4050,14 @@ Index: linux-2.6.23/fs/mini_fo/main.c
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
 +static int mini_fo_get_sb(struct file_system_type *fs_type,
 +					  int flags, const char *dev_name,
-+					  void *raw_data, struct vfsmount *mnt) 
++					  void *raw_data, struct vfsmount *mnt)
 +{
 +	return get_sb_nodev(fs_type, flags, raw_data, mini_fo_read_super, mnt);
 +}
 +#else
 +static struct super_block *mini_fo_get_sb(struct file_system_type *fs_type,
 +					  int flags, const char *dev_name,
-+					  void *raw_data) 
++					  void *raw_data)
 +{
 +	return get_sb_nodev(fs_type, flags, raw_data, mini_fo_read_super);
 +}
@@ -4155,7 +4155,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +#include "fist.h"
 +#include "mini_fo.h"
 +
-+int meta_build_lists(dentry_t *dentry) 
++int meta_build_lists(dentry_t *dentry)
 +{
 +	struct mini_fo_inode_info *inode_info;
 +
@@ -4186,7 +4186,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +  	/* might there be a META-file? */
 +	if(dtohd2(dentry) && dtohd2(dentry)->d_inode) {
 +		meta_dentry = lookup_one_len(META_FILENAME,
-+					     dtohd2(dentry), 
++					     dtohd2(dentry),
 +					     strlen(META_FILENAME));
 +		if(!meta_dentry->d_inode) {
 +			dput(meta_dentry);
@@ -4195,7 +4195,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +		/* $%& err, is this correct? */
 +		meta_mnt = stopd(dentry->d_inode->i_sb)->hidden_mnt2;
 +		mntget(meta_mnt);
-+		
++
 +
 +		/* open META-file for reading */
 +		meta_file = dentry_open(meta_dentry, meta_mnt, 0x0);
@@ -4243,8 +4243,8 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +				switch (*entry) {
 +				case 'D':
 +					/* format: "D filename" */
-+					meta_list_add_d_entry(dentry, 
-+							      entry+2, 
++					meta_list_add_d_entry(dentry,
++							      entry+2,
 +							      len-2);
 +					break;
 +				case 'R':
@@ -4253,10 +4253,10 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +					dir_name = strchr(old_path, ' ') + 1;
 +					old_len =  dir_name - old_path - 1;
 +					new_len = ((int) entry) + len - ((int ) dir_name);
-+					meta_list_add_r_entry(dentry, 
-+							      old_path, 
++					meta_list_add_r_entry(dentry,
++							      old_path,
 +							      old_len,
-+							      dir_name, 
++							      dir_name,
 +							      new_len);
 +					break;
 +				default:
@@ -4281,11 +4281,11 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +	dput(meta_dentry);
 +	return -1;
 + out_ok:
-+	return 1; /* check this!!! inode_info->wol_size; */ 
++	return 1; /* check this!!! inode_info->wol_size; */
 +}
 +
 +/* cleanups up all lists and free's the mem by dentry */
-+int meta_put_lists(dentry_t *dentry) 
++int meta_put_lists(dentry_t *dentry)
 +{
 +	if(!dentry || !dentry->d_inode) {
 +		printk("mini_fo: meta_put_lists: invalid dentry passed.\n");
@@ -4295,7 +4295,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +}
 +
 +/* cleanups up all lists and free's the mem by inode */
-+int __meta_put_lists(inode_t *inode) 
++int __meta_put_lists(inode_t *inode)
 +{
 +	int err = 0;
 +	if(!inode || !itopd(inode)) {
@@ -4322,19 +4322,19 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +
 +
 +/* remove all D entries from the renamed list and free the mem */
-+int __meta_put_d_list(inode_t *inode) 
++int __meta_put_d_list(inode_t *inode)
 +{
 +	struct list_head *tmp;
 +        struct deleted_entry *del_entry;
 +        struct mini_fo_inode_info *inode_info;
-+	
++
 +	if(!inode || !itopd(inode)) {
 +		printk(KERN_CRIT "mini_fo: __meta_put_d_list: \
 +                                  invalid inode passed.\n");
 +		return -1;
 +	}
 +	inode_info = itopd(inode);
-+	
++
 +        /* nuke the DELETED-list */
 +        if(inode_info->deleted_list_size <= 0)
 +		return 0;
@@ -4347,25 +4347,25 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +		kfree(del_entry);
 +	}
 +	inode_info->deleted_list_size = 0;
-+	
++
 +	return 0;
 +}
 +
 +/* remove all R entries from the renamed list and free the mem */
-+int __meta_put_r_list(inode_t *inode) 
++int __meta_put_r_list(inode_t *inode)
 +{
 +	struct list_head *tmp;
 +	struct renamed_entry *ren_entry;
 +        struct mini_fo_inode_info *inode_info;
-+	
++
 +	if(!inode || !itopd(inode)) {
 +		printk(KERN_CRIT "mini_fo: meta_put_r_list: invalid inode.\n");
 +		return -1;
 +	}
 +	inode_info = itopd(inode);
-+	
++
 +        /* nuke the RENAMED-list */
-+        if(inode_info->renamed_list_size <= 0) 
++        if(inode_info->renamed_list_size <= 0)
 +		return 0;
 +
 +	while(!list_empty(&inode_info->renamed_list)) {
@@ -4377,7 +4377,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +		kfree(ren_entry);
 +	}
 +	inode_info->renamed_list_size = 0;
-+	
++
 +	return 0;
 +}
 +
@@ -4386,11 +4386,11 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +	int err = 0;
 +	err = meta_list_add_d_entry(dentry, name, len);
 +	err |= meta_write_d_entry(dentry,name,len);
-+	return err;	
++	return err;
 +}
 +
 +/* add a D entry to the deleted list */
-+int meta_list_add_d_entry(dentry_t *dentry, const char *name, int len) 
++int meta_list_add_d_entry(dentry_t *dentry, const char *name, int len)
 +{
 +        struct deleted_entry *del_entry;
 +        struct mini_fo_inode_info *inode_info;
@@ -4405,7 +4405,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +        if(inode_info->deleted_list_size < 0)
 +                return -1;
 +
-+        del_entry = (struct deleted_entry *) 
++        del_entry = (struct deleted_entry *)
 +		kmalloc(sizeof(struct deleted_entry), GFP_KERNEL);
 +        del_entry->name = (char*) kmalloc(len, GFP_KERNEL);
 +        if(!del_entry || !del_entry->name) {
@@ -4424,12 +4424,12 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +        return 0;
 +}
 +
-+int meta_add_r_entry(dentry_t *dentry, 
-+			  const char *old_name, int old_len, 
++int meta_add_r_entry(dentry_t *dentry,
++			  const char *old_name, int old_len,
 +			  const char *new_name, int new_len)
 +{
 +	int err = 0;
-+	err = meta_list_add_r_entry(dentry, 
++	err = meta_list_add_r_entry(dentry,
 +				    old_name, old_len,
 +				    new_name, new_len);
 +	err |= meta_write_r_entry(dentry,
@@ -4439,8 +4439,8 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +}
 +
 +/* add a R entry to the renamed list */
-+int meta_list_add_r_entry(dentry_t *dentry, 
-+			  const char *old_name, int old_len, 
++int meta_list_add_r_entry(dentry_t *dentry,
++			  const char *old_name, int old_len,
 +			  const char *new_name, int new_len)
 +{
 +        struct renamed_entry *ren_entry;
@@ -4456,7 +4456,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +        if(inode_info->renamed_list_size < 0)
 +                return -1;
 +
-+        ren_entry = (struct renamed_entry *) 
++        ren_entry = (struct renamed_entry *)
 +		kmalloc(sizeof(struct renamed_entry), GFP_KERNEL);
 +        ren_entry->old_name = (char*) kmalloc(old_len, GFP_KERNEL);
 +        ren_entry->new_name = (char*) kmalloc(new_len, GFP_KERNEL);
@@ -4485,7 +4485,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +{
 +	int err = 0;
 +	if(!dentry || !dentry->d_inode) {
-+		printk(KERN_CRIT 
++		printk(KERN_CRIT
 +		       "mini_fo: meta_remove_r_entry: \
 +                        invalid dentry passed.\n");
 +		return -1;
@@ -4499,7 +4499,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +int meta_list_remove_r_entry(dentry_t *dentry, const char *name, int len)
 +{
 +	if(!dentry || !dentry->d_inode) {
-+		printk(KERN_CRIT 
++		printk(KERN_CRIT
 +		       "mini_fo: meta_list_remove_r_entry: \
 +                        invalid dentry passed.\n");
 +		return -1;
@@ -4514,7 +4514,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +        struct mini_fo_inode_info *inode_info;
 +
 +	if(!inode || !itopd(inode))
-+		printk(KERN_CRIT 
++		printk(KERN_CRIT
 +		       "mini_fo: __meta_list_remove_r_entry: \
 +                        invalid inode passed.\n");
 +	inode_info = itopd(inode);
@@ -4523,12 +4523,12 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +                return -1;
 +        if(inode_info->renamed_list_size == 0)
 +                return 1;
-+	
++
 +	list_for_each(tmp, &inode_info->renamed_list) {
 +		ren_entry = list_entry(tmp, struct renamed_entry, list);
 +		if(ren_entry->new_len != len)
 +			continue;
-+		
++
 +		if(!strncmp(ren_entry->new_name, name, len)) {
 +			list_del(tmp);
 +			kfree(ren_entry->new_name);
@@ -4543,7 +4543,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +
 +
 +/* append a single D entry to the meta file */
-+int meta_write_d_entry(dentry_t *dentry, const char *name, int len) 
++int meta_write_d_entry(dentry_t *dentry, const char *name, int len)
 +{
 +	dentry_t *meta_dentry = 0;
 +        file_t *meta_file = 0;
@@ -4568,19 +4568,19 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +			goto out;
 +                }
 +        }
-+	meta_dentry = lookup_one_len(META_FILENAME, 
++	meta_dentry = lookup_one_len(META_FILENAME,
 +				     dtohd2(dentry), strlen (META_FILENAME));
 +
 +	/* We need to create a META-file */
 +        if(!meta_dentry->d_inode) {
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 +		vfs_create(dtohd2(dentry)->d_inode,
-+			   meta_dentry, 
++			   meta_dentry,
 +			   S_IRUSR | S_IWUSR,
 +			   NULL);
 +#else
 +                vfs_create(dtohd2(dentry)->d_inode,
-+			   meta_dentry, 
++			   meta_dentry,
 +			   S_IRUSR | S_IWUSR);
 +#endif
 +	}
@@ -4613,12 +4613,12 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +                                  out of mem.\n");
 +		return -ENOMEM;
 +	}
-+		      
++
 +	buf[0] = 'D';
 +	buf[1] = ' ';
 +	strncpy(buf+2, name, len);
 +	buf[len+2] = '\n';
-+	bytes = meta_file->f_op->write(meta_file, buf, len+3, 
++	bytes = meta_file->f_op->write(meta_file, buf, len+3,
 +				       &meta_file->f_pos);
 +	if(bytes != len+3) {
 +		printk(KERN_CRIT "mini_fo: meta_write_d_entry: \
@@ -4635,9 +4635,9 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +}
 +
 +/* append a single R entry to the meta file */
-+int meta_write_r_entry(dentry_t *dentry, 
-+		       const char *old_name, int old_len, 
-+		       const char *new_name, int new_len) 
++int meta_write_r_entry(dentry_t *dentry,
++		       const char *old_name, int old_len,
++		       const char *new_name, int new_len)
 +{
 +	dentry_t *meta_dentry = 0;
 +        file_t *meta_file = 0;
@@ -4664,16 +4664,16 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +			goto out;
 +                }
 +        }
-+	meta_dentry = lookup_one_len(META_FILENAME, 
-+				     dtohd2(dentry), 
++	meta_dentry = lookup_one_len(META_FILENAME,
++				     dtohd2(dentry),
 +				     strlen (META_FILENAME));
 +        if(!meta_dentry->d_inode) {
 +                /* We need to create a META-file */
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-+                vfs_create(dtohd2(dentry)->d_inode, 
++                vfs_create(dtohd2(dentry)->d_inode,
 +			   meta_dentry, S_IRUSR | S_IWUSR, NULL);
 +#else
-+                vfs_create(dtohd2(dentry)->d_inode, 
++                vfs_create(dtohd2(dentry)->d_inode,
 +			   meta_dentry, S_IRUSR | S_IWUSR);
 +#endif
 +	}
@@ -4706,7 +4706,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +		printk(KERN_CRIT "mini_fo: meta_write_r_entry: out of mem.\n");
 +		return -ENOMEM;
 +	}
-+		      
++
 +	buf[0] = 'R';
 +	buf[1] = ' ';
 +	strncpy(buf + 2, old_name, old_len);
@@ -4718,7 +4718,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +		printk(KERN_CRIT "mini_fo: meta_write_r_entry: ERROR writing.\n");
 +		err = -1;
 +	}
-+	
++
 +	kfree(buf);
 +	set_fs(old_fs);
 +
@@ -4736,7 +4736,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +	dentry_t *meta_dentry;
 +        file_t *meta_file;
 +        mm_segment_t old_fs;
-+	
++
 +        int bytes, err;
 +        struct vfsmount *meta_mnt;
 +        char *buf;
@@ -4748,7 +4748,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +	err = 0;
 +	meta_file=0;
 +	meta_mnt=0;
-+	
++
 +	if(!dentry || !dentry->d_inode) {
 +		printk(KERN_CRIT "mini_fo: meta_sync_d_list: \
 +                                  invalid inode passed.\n");
@@ -4756,12 +4756,12 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +		goto out;
 +	}
 +	inode_info = itopd(dentry->d_inode);
-+	
++
 +        if(inode_info->deleted_list_size < 0) {
 +		err = -1;
 +		goto out;
 +	}
-+	
++
 +	/* ok, there is something to sync */
 +
 +	/* build the storage structure? */
@@ -4773,16 +4773,16 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +			goto out;
 +                }
 +        }
-+	meta_dentry = lookup_one_len(META_FILENAME, 
-+				     dtohd2(dentry), 
++	meta_dentry = lookup_one_len(META_FILENAME,
++				     dtohd2(dentry),
 +				     strlen(META_FILENAME));
 +        if(!meta_dentry->d_inode) {
 +                /* We need to create a META-file */
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-+                vfs_create(dtohd2(dentry)->d_inode, 
++                vfs_create(dtohd2(dentry)->d_inode,
 +			   meta_dentry, S_IRUSR | S_IWUSR, NULL);
 +#else
-+                vfs_create(dtohd2(dentry)->d_inode, 
++                vfs_create(dtohd2(dentry)->d_inode,
 +			   meta_dentry, S_IRUSR | S_IWUSR);
 +#endif
 +		app_flag = 0;
@@ -4819,7 +4819,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +                printk(KERN_CRIT "mini_fo: meta_sync_d_list: \
 +                                  ERROR opening meta file.\n");
 +		/* we don't mntget so we dont't mntput (for now)
-+		 * mntput(meta_mnt); 
++		 * mntput(meta_mnt);
 +		 */
 +		dput(meta_dentry);
 +		err = -1;
@@ -4832,7 +4832,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +                                  ERROR, fs does not support writing.\n");
 +                goto out_err_close;
 +        }
-+	
++
 +	meta_file->f_pos = meta_dentry->d_inode->i_size; /* append */
 +        old_fs = get_fs();
 +        set_fs(KERNEL_DS);
@@ -4840,7 +4840,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +	/* here we go... */
 +        list_for_each(tmp, &inode_info->deleted_list) {
 +		del_entry = list_entry(tmp, struct deleted_entry, list);
-+		
++
 +		/* size: len for name, 1 for \n and 2 for "D " */
 +		buf = (char *) kmalloc(del_entry->len+3, GFP_KERNEL);
 +		if (!buf) {
@@ -4848,13 +4848,13 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +                                          out of mem.\n");
 +			return -ENOMEM;
 +		}
-+		      
++
 +		buf[0] = 'D';
 +		buf[1] = ' ';
 +		strncpy(buf+2, del_entry->name, del_entry->len);
 +		buf[del_entry->len+2] = '\n';
-+		bytes = meta_file->f_op->write(meta_file, buf, 
-+					       del_entry->len+3, 
++		bytes = meta_file->f_op->write(meta_file, buf,
++					       del_entry->len+3,
 +					       &meta_file->f_pos);
 +		if(bytes != del_entry->len+3) {
 +			printk(KERN_CRIT "mini_fo: meta_sync_d_list: \
@@ -4864,7 +4864,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +		kfree(buf);
 +	}
 +	set_fs(old_fs);
-+	
++
 + out_err_close:
 +	fput(meta_file);
 + out:
@@ -4877,19 +4877,19 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +	dentry_t *meta_dentry;
 +        file_t *meta_file;
 +        mm_segment_t old_fs;
-+	
++
 +        int bytes, err, buf_len;
 +        struct vfsmount *meta_mnt;
 +        char *buf;
-+	
++
 +	struct list_head *tmp;
 +        struct renamed_entry *ren_entry;
 +        struct mini_fo_inode_info *inode_info;
-+	
++
 +	err = 0;
 +	meta_file=0;
 +	meta_mnt=0;
-+	
++
 +	if(!dentry || !dentry->d_inode) {
 +		printk(KERN_CRIT "mini_fo: meta_sync_r_list: \
 +                                  invalid dentry passed.\n");
@@ -4897,12 +4897,12 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +		goto out;
 +	}
 +	inode_info = itopd(dentry->d_inode);
-+	
++
 +        if(inode_info->deleted_list_size < 0) {
 +		err = -1;
 +		goto out;
 +	}
-+	
++
 +	/* ok, there is something to sync */
 +
 +	/* build the storage structure? */
@@ -4914,16 +4914,16 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +			goto out;
 +                }
 +        }
-+	meta_dentry = lookup_one_len(META_FILENAME, 
-+				     dtohd2(dentry), 
++	meta_dentry = lookup_one_len(META_FILENAME,
++				     dtohd2(dentry),
 +				     strlen(META_FILENAME));
 +        if(!meta_dentry->d_inode) {
 +                /* We need to create a META-file */
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-+                vfs_create(dtohd2(dentry)->d_inode, 
++                vfs_create(dtohd2(dentry)->d_inode,
 +			   meta_dentry, S_IRUSR | S_IWUSR, NULL);
 +#else
-+                vfs_create(dtohd2(dentry)->d_inode, 
++                vfs_create(dtohd2(dentry)->d_inode,
 +			   meta_dentry, S_IRUSR | S_IWUSR);
 +#endif
 +		app_flag = 0;
@@ -4959,7 +4959,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +                printk(KERN_CRIT "mini_fo: meta_sync_r_list: \
 +                                  ERROR opening meta file.\n");
 +		/* we don't mntget so we dont't mntput (for now)
-+		 * mntput(meta_mnt); 
++		 * mntput(meta_mnt);
 +		 */
 +		dput(meta_dentry);
 +		err = -1;
@@ -4972,7 +4972,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +                                  ERROR, fs does not support writing.\n");
 +                goto out_err_close;
 +        }
-+	
++
 +	meta_file->f_pos = meta_dentry->d_inode->i_size; /* append */
 +        old_fs = get_fs();
 +        set_fs(KERNEL_DS);
@@ -4980,7 +4980,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +	/* here we go... */
 +        list_for_each(tmp, &inode_info->renamed_list) {
 +		ren_entry = list_entry(tmp, struct renamed_entry, list);
-+		/* size: 
++		/* size:
 +		 * 2 for "R ", old_len+new_len for names, 1 blank+1 \n */
 +		buf_len = ren_entry->old_len + ren_entry->new_len + 4;
 +		buf = (char *) kmalloc(buf_len, GFP_KERNEL);
@@ -4993,35 +4993,35 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +		buf[1] = ' ';
 +		strncpy(buf + 2, ren_entry->old_name, ren_entry->old_len);
 +		buf[ren_entry->old_len + 2] = ' ';
-+		strncpy(buf + ren_entry->old_len + 3, 
++		strncpy(buf + ren_entry->old_len + 3,
 +			ren_entry->new_name, ren_entry->new_len);
 +		buf[buf_len - 1] = '\n';
-+		bytes = meta_file->f_op->write(meta_file, buf, 
++		bytes = meta_file->f_op->write(meta_file, buf,
 +					       buf_len, &meta_file->f_pos);
 +		if(bytes != buf_len) {
 +			printk(KERN_CRIT "mini_fo: meta_sync_r_list: \
 +                                          ERROR writing.\n");
 +			err |= -1;
-+		}		
++		}
 +		kfree(buf);
 +	}
 +	set_fs(old_fs);
-+	
++
 + out_err_close:
 +	fput(meta_file);
 + out:
 +	return err;
 +}
 +
-+int meta_check_d_entry(dentry_t *dentry, const char *name, int len) 
++int meta_check_d_entry(dentry_t *dentry, const char *name, int len)
 +{
 +	if(!dentry || !dentry->d_inode)
 +		printk(KERN_CRIT "mini_fo: meta_check_d_dentry: \
 +                                  invalid dentry passed.\n");
-+	return __meta_check_d_entry(dentry->d_inode, name, len);	
++	return __meta_check_d_entry(dentry->d_inode, name, len);
 +}
 +
-+int __meta_check_d_entry(inode_t *inode, const char *name, int len) 
++int __meta_check_d_entry(inode_t *inode, const char *name, int len)
 +{
 +	struct list_head *tmp;
 +        struct deleted_entry *del_entry;
@@ -5032,7 +5032,7 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +                                  invalid inode passed.\n");
 +
 +        inode_info = itopd(inode);
-+	
++
 +        if(inode_info->deleted_list_size <= 0)
 +                return 0;
 +
@@ -5040,26 +5040,26 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +		del_entry = list_entry(tmp, struct deleted_entry, list);
 +		if(del_entry->len != len)
 +			continue;
-+		
++
 +		if(!strncmp(del_entry->name, name, len))
 +			return 1;
 +	}
 +	return 0;
 +}
 +
-+/* 
++/*
 + * check if file has been renamed and return path to orig. base dir.
 + * Implements no error return values so far, what of course sucks.
 + * String is null terminated.'
 + */
-+char* meta_check_r_entry(dentry_t *dentry, const char *name, int len) 
++char* meta_check_r_entry(dentry_t *dentry, const char *name, int len)
 +{
 +	if(!dentry || !dentry->d_inode) {
 +		printk(KERN_CRIT "mini_fo: meta_check_r_dentry: \
 +                                  invalid dentry passed.\n");
 +		return NULL;
 +	}
-+	return __meta_check_r_entry(dentry->d_inode, name, len);	
++	return __meta_check_r_entry(dentry->d_inode, name, len);
 +}
 +
 +char* __meta_check_r_entry(inode_t *inode, const char *name, int len)
@@ -5068,27 +5068,27 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +        struct renamed_entry *ren_entry;
 +        struct mini_fo_inode_info *inode_info;
 +	char *old_path;
-+	
++
 +	if(!inode || !itopd(inode)) {
 +		printk(KERN_CRIT "mini_fo: meta_check_r_dentry: \
 +                                  invalid inode passed.\n");
 +		return NULL;
 +	}
 +	inode_info = itopd(inode);
-+	
++
 +        if(inode_info->renamed_list_size <= 0)
 +                return NULL;
-+	
++
 +        list_for_each(tmp, &inode_info->renamed_list) {
 +		ren_entry = list_entry(tmp, struct renamed_entry, list);
 +		if(ren_entry->new_len != len)
 +			continue;
-+		
++
 +		if(!strncmp(ren_entry->new_name, name, len)) {
-+			old_path = (char *) 
++			old_path = (char *)
 +				kmalloc(ren_entry->old_len+1, GFP_KERNEL);
-+			strncpy(old_path, 
-+				ren_entry->old_name, 
++			strncpy(old_path,
++				ren_entry->old_name,
 +				ren_entry->old_len);
 +			old_path[ren_entry->old_len]='\0';
 +			return old_path;
@@ -5103,14 +5103,14 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 + *     0 if not,
 + *    -1 if error.
 + */
-+int meta_is_r_entry(dentry_t *dentry, const char *name, int len) 
++int meta_is_r_entry(dentry_t *dentry, const char *name, int len)
 +{
 +	if(!dentry || !dentry->d_inode) {
 +		printk(KERN_CRIT "mini_fo: meta_check_r_dentry [2]: \
 +                                  invalid dentry passed.\n");
 +		return -1;
 +	}
-+	return __meta_is_r_entry(dentry->d_inode, name, len);	
++	return __meta_is_r_entry(dentry->d_inode, name, len);
 +}
 +
 +int __meta_is_r_entry(inode_t *inode, const char *name, int len)
@@ -5118,23 +5118,23 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +	struct list_head *tmp;
 +        struct renamed_entry *ren_entry;
 +        struct mini_fo_inode_info *inode_info;
-+	
++
 +	if(!inode || !itopd(inode)) {
 +		printk(KERN_CRIT "mini_fo: meta_check_r_dentry [2]: \
 +                                  invalid inode passed.\n");
 +		return -1;
 +	}
 +	inode_info = itopd(inode);
-+	
++
 +        if(inode_info->renamed_list_size <= 0)
 +                return -1;
-+	
++
 +        list_for_each(tmp, &inode_info->renamed_list) {
 +		ren_entry = list_entry(tmp, struct renamed_entry, list);
 +		if(ren_entry->new_len != len)
 +			continue;
-+		
-+		if(!strncmp(ren_entry->new_name, name, len)) 
++
++		if(!strncmp(ren_entry->new_name, name, len))
 +			return 1;
 +	}
 +	return 0;
@@ -5341,7 +5341,7 @@ Index: linux-2.6.23/fs/mini_fo/mini_fo.h
 +# define __ftopd(file) ((file)->private_data)
 +/* file TO hidden_file */
 +# define ftohf(file) ((ftopd(file))->wfi_file)
-+# define ftohf2(file) ((ftopd(file))->wfi_file2) 
++# define ftohf2(file) ((ftopd(file))->wfi_file2)
 +
 +/* inode TO private_data */
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
@@ -5443,7 +5443,7 @@ Index: linux-2.6.23/fs/mini_fo/mini_fo.h
 +/* misc stuff */
 +extern int mini_fo_tri_interpose(dentry_t *hidden_dentry,
 +				 dentry_t *hidden_sto_dentry,
-+				 dentry_t *dentry, 
++				 dentry_t *dentry,
 +				 super_block_t *sb, int flag);
 +
 +extern int mini_fo_cp_cont(dentry_t *tgt_dentry, struct vfsmount *tgt_mnt,
@@ -5482,8 +5482,8 @@ Index: linux-2.6.23/fs/mini_fo/mini_fo.h
 +extern int __meta_put_lists(inode_t *inode);
 +
 +extern int meta_add_d_entry(dentry_t *dentry, const char *name, int len);
-+extern int meta_add_r_entry(dentry_t *dentry, 
-+			    const char *old_name, int old_len, 
++extern int meta_add_r_entry(dentry_t *dentry,
++			    const char *old_name, int old_len,
 +			    const char *new_name, int new_len);
 +
 +extern int meta_remove_r_entry(dentry_t *dentry, const char *name, int len);
@@ -5500,21 +5500,21 @@ Index: linux-2.6.23/fs/mini_fo/mini_fo.h
 +extern int __meta_put_d_list(inode_t *inode);
 +extern int __meta_put_r_list(inode_t *inode);
 +
-+extern int meta_list_add_d_entry(dentry_t *dentry, 
++extern int meta_list_add_d_entry(dentry_t *dentry,
 +				 const char *name, int len);
-+extern int meta_list_add_r_entry(dentry_t *dentry, 
-+				 const char *old_name, int old_len, 
++extern int meta_list_add_r_entry(dentry_t *dentry,
++				 const char *old_name, int old_len,
 +				 const char *new_name, int new_len);
 +
-+extern int meta_list_remove_r_entry(dentry_t *dentry, 
++extern int meta_list_remove_r_entry(dentry_t *dentry,
 +				    const char *name, int len);
 +
-+extern int __meta_list_remove_r_entry(inode_t *inode, 
++extern int __meta_list_remove_r_entry(inode_t *inode,
 +				      const char *name, int len);
 +
 +extern int meta_write_d_entry(dentry_t *dentry, const char *name, int len);
-+extern int meta_write_r_entry(dentry_t *dentry, 
-+			      const char *old_name, int old_len, 
++extern int meta_write_r_entry(dentry_t *dentry,
++			      const char *old_name, int old_len,
 +			      const char *new_name, int new_len);
 +
 +extern int meta_sync_lists(dentry_t *dentry);
@@ -5524,7 +5524,7 @@ Index: linux-2.6.23/fs/mini_fo/mini_fo.h
 +/* ndl stuff */
 +extern int ndl_add_entry(struct readdir_data *rd, const char *name, int len);
 +extern void ndl_put_list(struct readdir_data *rd);
-+extern int ndl_check_entry(struct readdir_data *rd, 
++extern int ndl_check_entry(struct readdir_data *rd,
 +			   const char *name, int len);
 +
 +
@@ -5762,7 +5762,7 @@ Index: linux-2.6.23/fs/mini_fo/mini_fo-merge
 +# storage dir:    $STO
 +# meta filename:  $META_NAME
 +# dry run:        $DRYRUN
-+# verbose:        $VERBOSE     
++# verbose:        $VERBOSE
 +# tmp files:      $TMP
 +###############################################################################
 +
@@ -5773,7 +5773,7 @@ Index: linux-2.6.23/fs/mini_fo/mini_fo-merge
 +# first process all renamed dirs
 +echo "Merging renamed directories..."
 +pushd $STO &> /dev/null
-+find . -name $META_NAME -type f -print0  | xargs -0 -e grep  -e '^R ' | tr -s ':R' ' ' | while read ENTRY; do 
++find . -name $META_NAME -type f -print0  | xargs -0 -e grep  -e '^R ' | tr -s ':R' ' ' | while read ENTRY; do
 +    echo "entry: $ENTRY"
 +    META_FILE=`echo $ENTRY | cut -d ' ' -f 1`
 +    OLD_B_DIR=`echo $ENTRY | cut -d ' ' -f 2 | sed -e 's/\///'`
@@ -5797,7 +5797,7 @@ Index: linux-2.6.23/fs/mini_fo/mini_fo-merge
 +
 +# delete all whiteouted files from base
 +echo -e "\nDeleting whiteout'ed files from base file system..."
-+find . -name $META_NAME -type f -print0  | xargs -0 -e grep  -e '^D ' | sed -e 's/:D//' | while read ENTRY; do 
++find . -name $META_NAME -type f -print0  | xargs -0 -e grep  -e '^D ' | sed -e 's/:D//' | while read ENTRY; do
 +    META_FILE=`echo $ENTRY | cut -d ' ' -f 1`
 +    DEL_NAME=`echo $ENTRY | cut -d ' ' -f 2`
 +    DEL_FILE=`echo $META_FILE | sed -e "s/$META_NAME/$DEL_NAME/" | sed -e 's/^\.\///'`
@@ -5833,11 +5833,11 @@ Index: linux-2.6.23/fs/mini_fo/mini_fo-merge
 +	pushd $BASE #&> /dev/null
 +	COMMAND="cp -df $STO/$FILE $BASE/$FILE"; exec_command
 +	popd &> /dev/null
-+    done   
++    done
 +done
 +popd &> /dev/null
 +
-+#rm $TMP/$SKIP_DEL_LIST 
++#rm $TMP/$SKIP_DEL_LIST
 +
 +echo "Done!"
 Index: linux-2.6.23/fs/mini_fo/mini_fo-overlay
@@ -5862,7 +5862,7 @@ Index: linux-2.6.23/fs/mini_fo/mini_fo-overlay
 +STO_DIR="/tmp"
 +BASE=
 +
-+usage() 
++usage()
 +{
 +cat <<EOF
 +
@@ -5870,7 +5870,7 @@ Index: linux-2.6.23/fs/mini_fo/mini_fo-overlay
 +Version 0.1
 +
 +This script overlays the given base directory using the mini_fo file
-+system. If only the base directory base_dir is given, $0 
++system. If only the base directory base_dir is given, $0
 +will use a storage directory called "sto-<base_dir_name>" in $STO_DIR,
 +and mount point "mini_fo-<base_dir_dir>" in $MNT_DIR.
 +
@@ -5915,7 +5915,7 @@ Index: linux-2.6.23/fs/mini_fo/mini_fo-overlay
 +    exit -1
 +fi
 +
-+# fix suffix 
++# fix suffix
 +if [ "x$SUFF" != "x" ]; then
 +    SUFF="-$SUFF"
 +fi
@@ -5969,7 +5969,7 @@ Index: linux-2.6.23/fs/mini_fo/mini_fo-overlay
 +    exit -1
 +fi
 +
-+# mount 
++# mount
 +mount -t mini_fo -o base=$BASE,sto=$STO $BASE $MNTP
 +
 +if [ $? -ne 0 ]; then
@@ -6688,9 +6688,9 @@ Index: linux-2.6.23/fs/mini_fo/README
 +on it:
 +
 +load the module (as root)
-+    
++
 +    # insmod mini_fo.o for a 2.4 kernel or
-+ 
++
 +    # insmod mini_fo.ko for a 2.6 kernel
 +
 +
@@ -6854,7 +6854,7 @@ Index: linux-2.6.23/fs/mini_fo/RELEASE_NOTES
 +
 +v0-5-10-pre5:
 +
-+- implemented directory deleting 
++- implemented directory deleting
 +- made parsing of mount options more stable
 +- New format of mount options! (See README)
 +- I can't reproduce the unknown panic with 2.4.25 anymore, so I'll
@@ -6864,10 +6864,10 @@ Index: linux-2.6.23/fs/mini_fo/RELEASE_NOTES
 +Implemented features:
 +---------------------
 +
-+- creating hard links (see BUGS on already existing hard links)	
++- creating hard links (see BUGS on already existing hard links)
 +- lightweight directory renaming
-+- renaming device files, pipes, sockets, etc.	
-+- creating, renaming, deleting of special files 
++- renaming device files, pipes, sockets, etc.
++- creating, renaming, deleting of special files
 +- deleting directorys
 +- general directory reading (simple "ls" )
 +- creating files in existing directorys
@@ -6946,7 +6946,7 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +		printk(KERN_CRIT "mini_fo: create_sto_file: ERROR getting neg. sto dentry.\n");
 +		goto out;
 +	}
-+	
++
 +	dir = dentry->d_parent->d_inode;
 +	hidden_sto_dentry = dtohd2(dentry);
 +
@@ -7006,7 +7006,7 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +                }
 +                itohi2(dentry->d_inode) = igrab(dtohd2(dentry)->d_inode);
 +	}
-+	fist_copy_attr_timesizes(dentry->d_parent->d_inode, 
++	fist_copy_attr_timesizes(dentry->d_parent->d_inode,
 +				 hidden_sto_dir_dentry->d_inode);
 +
 + out_lock:
@@ -7035,7 +7035,7 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +                err = -EINVAL;
 +                goto out;
 +        }
-+	
++
 +	err = get_neg_sto_dentry(dentry);
 +	if(err) {
 +		err = -EINVAL;
@@ -7057,7 +7057,7 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +	err = PTR_ERR(hidden_sto_dir_dentry);
 +	if (IS_ERR(hidden_sto_dir_dentry))
 +		goto out;
-+	
++
 +	err = vfs_mkdir(hidden_sto_dir_dentry->d_inode,
 +			hidden_sto_dentry,
 +			mode);
@@ -7117,9 +7117,9 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +}
 +
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-+int create_sto_nod(dentry_t *dentry, int mode, dev_t dev) 
++int create_sto_nod(dentry_t *dentry, int mode, dev_t dev)
 +#else
-+int create_sto_nod(dentry_t *dentry, int mode, int dev) 
++int create_sto_nod(dentry_t *dentry, int mode, int dev)
 +#endif
 +{
 +	int err = 0;
@@ -7136,11 +7136,11 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +	if (err) {
 +                printk(KERN_CRIT "mini_fo: create_sto_nod: ERROR getting neg. sto dentry.\n");
 +                goto out;
-+        }	
++        }
 +
 +	dir = dentry->d_parent->d_inode;
 +	hidden_sto_dentry = dtohd2(dentry);
-+	
++
 +	/* lock parent */
 +	hidden_sto_dir_dentry = dget(hidden_sto_dentry->d_parent);
 +
@@ -7149,7 +7149,7 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +#else
 +	down(&hidden_sto_dir_dentry->d_inode->i_sem);
 +#endif
-+	
++
 +	err = PTR_ERR(hidden_sto_dir_dentry);
 +	if (IS_ERR(hidden_sto_dir_dentry))
 +		goto out;
@@ -7202,7 +7202,7 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +}
 +
 +
-+/* unimplemented (and possibly not usefull): 
++/* unimplemented (and possibly not usefull):
 +
 +   nondir-del_to_del_rew
 +   nondir-non_exist_to_creat
@@ -7217,7 +7217,7 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +
 +
 +/* bring a file of any type from state UNMODIFIED to MODIFIED */
-+int nondir_unmod_to_mod(dentry_t *dentry, int cp_flag) 
++int nondir_unmod_to_mod(dentry_t *dentry, int cp_flag)
 +{
 +	int err = 0;
 +	struct vfsmount *tgt_mnt;
@@ -7243,7 +7243,7 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +                                  ERROR getting neg. sto dentry.\n");
 +		goto out;
 +	}
-+	
++
 +	/* create sto file */
 +	hidden_sto_dentry = dtohd2(dentry);
 +
@@ -7268,7 +7268,7 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +				dtohd(dentry)->d_inode->i_mode,
 +				dtohd(dentry)->d_inode->i_rdev);
 +	}
-+	
++
 +	else if(S_ISREG(dentry->d_inode->i_mode)) {
 +
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
@@ -7296,8 +7296,8 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +	}
 +
 +	itohi2(dentry->d_inode) = igrab(dtohd2(dentry)->d_inode);
-+        
-+        fist_copy_attr_timesizes(dentry->d_parent->d_inode, 
++
++        fist_copy_attr_timesizes(dentry->d_parent->d_inode,
 +				 hidden_sto_dir_dentry->d_inode);
 +	dtost(dentry) = MODIFIED;
 +
@@ -7317,14 +7317,14 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +		tgt_mnt = stopd(dentry->d_inode->i_sb)->hidden_mnt2;
 +		src_dentry = dtohd(dentry);
 +		src_mnt = stopd(dentry->d_inode->i_sb)->hidden_mnt;
-+		
-+		err = mini_fo_cp_cont(tgt_dentry, tgt_mnt, 
++
++		err = mini_fo_cp_cont(tgt_dentry, tgt_mnt,
 +				      src_dentry, src_mnt);
 +		if(err) {
 +			printk(KERN_CRIT "mini_fo: nondir_unmod_to_mod: \
 +                                          ERROR copying contents.\n");
 +		}
-+		goto out;	
++		goto out;
 +	}
 +
 + out_lock:
@@ -7344,17 +7344,17 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +	return nondir_creat_to_del(dentry);
 +}
 +
-+int nondir_creat_to_del(dentry_t *dentry) 
++int nondir_creat_to_del(dentry_t *dentry)
 +{
 +	int err = 0;
 +
 +	inode_t *hidden_sto_dir_inode;
 +	dentry_t *hidden_sto_dir_dentry;
 +	dentry_t *hidden_sto_dentry;
-+	
++
 +	check_mini_fo_dentry(dentry);
 +
-+	/* for now this function serves for both state DEL_REWRITTEN and 
++	/* for now this function serves for both state DEL_REWRITTEN and
 +	 * CREATED */
 +	if(!(dtost(dentry) == CREATED || (dtost(dentry) == DEL_REWRITTEN)) ||
 +	   S_ISDIR(dentry->d_inode->i_mode)) {
@@ -7363,10 +7363,10 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +		err = -1;
 +		goto out;
 +	}
-+	
++
 +	hidden_sto_dir_inode = itohi2(dentry->d_parent->d_inode);
 +	hidden_sto_dentry = dtohd2(dentry);
-+	
++
 +	/* was: hidden_sto_dir_dentry = lock_parent(hidden_sto_dentry);*/
 +	hidden_sto_dir_dentry = dget(hidden_sto_dentry->d_parent);
 +
@@ -7375,19 +7375,19 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +#else
 +	down(&hidden_sto_dir_dentry->d_inode->i_sem);
 +#endif
-+	
++
 +	/* avoid destroying the hidden inode if the file is in use */
 +	dget(hidden_sto_dentry);
 +	err = vfs_unlink(hidden_sto_dir_inode, hidden_sto_dentry);
 +	dput(hidden_sto_dentry);
 +	if(!err)
 +		d_delete(hidden_sto_dentry);
-+	
++
 +	/* propagate number of hard-links */
 +	dentry->d_inode->i_nlink = itohi2(dentry->d_inode)->i_nlink;
-+	
++
 +	dtost(dentry) = NON_EXISTANT;
-+	
++
 +	/* was: unlock_dir(hidden_sto_dir_dentry); */
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
 +	mutex_unlock(&hidden_sto_dir_dentry->d_inode->i_mutex);
@@ -7395,7 +7395,7 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +	up(&hidden_sto_dir_dentry->d_inode->i_sem);
 +#endif
 +	dput(hidden_sto_dir_dentry);
-+	
++
 + out:
 +	return err;
 +}
@@ -7406,7 +7406,7 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +	dentry_t *hidden_sto_dentry;
 +	inode_t *hidden_sto_dir_inode;
 +	dentry_t *hidden_sto_dir_dentry;
-+	
++
 +	check_mini_fo_dentry(dentry);
 +
 +	if(dtost(dentry) != MODIFIED ||
@@ -7419,7 +7419,7 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +
 +	hidden_sto_dir_inode = itohi2(dentry->d_parent->d_inode);
 +	hidden_sto_dentry = dtohd2(dentry);
-+	
++
 +	/* was hidden_sto_dir_dentry = lock_parent(hidden_sto_dentry); */
 +	hidden_sto_dir_dentry = dget(hidden_sto_dentry->d_parent);
 +
@@ -7428,17 +7428,17 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +#else
 +	down(&hidden_sto_dir_dentry->d_inode->i_sem);
 +#endif
-+	
++
 +	/* avoid destroying the hidden inode if the file is in use */
 +	dget(hidden_sto_dentry);
 +	err = vfs_unlink(hidden_sto_dir_inode, hidden_sto_dentry);
 +	dput(hidden_sto_dentry);
 +	if(!err)
 +		d_delete(hidden_sto_dentry);
-+	
++
 +	/* propagate number of hard-links */
 +	dentry->d_inode->i_nlink = itohi2(dentry->d_inode)->i_nlink;
-+	
++
 +	/* dput base dentry, this will relase the inode and free the
 +	 * dentry, as we will never need it again. */
 +	dput(dtohd(dentry));
@@ -7446,10 +7446,10 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +	dtost(dentry) = DELETED;
 +
 +	/* add deleted file to META-file */
-+	meta_add_d_entry(dentry->d_parent, 
-+			 dentry->d_name.name, 
++	meta_add_d_entry(dentry->d_parent,
++			 dentry->d_name.name,
 +			 dentry->d_name.len);
-+	
++
 +	/* was: unlock_dir(hidden_sto_dir_dentry); */
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
 +	mutex_unlock(&hidden_sto_dir_dentry->d_inode->i_mutex);
@@ -7475,33 +7475,33 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +		err = -1;
 +		goto out;
 +	}
-+	
++
 +	 /* next we have to get a negative dentry for the storage file */
 +	err = get_neg_sto_dentry(dentry);
 +
 +	if(err)
-+		goto out;		
++		goto out;
 +
 +	/* add deleted file to META lists */
-+	err = meta_add_d_entry(dentry->d_parent, 
-+			       dentry->d_name.name, 
++	err = meta_add_d_entry(dentry->d_parent,
++			       dentry->d_name.name,
 +			       dentry->d_name.len);
 +
 +	if(err)
 +		goto out;
-+	
++
 +	/* dput base dentry, this will relase the inode and free the
 +	 * dentry, as we will never need it again. */
 +	dput(dtohd(dentry));
 +	dtohd(dentry) = NULL;
 +	dtost(dentry) = DELETED;
-+	
++
 + out:
 +	return err;
 +}
 +
 +/* bring a dir from state UNMODIFIED to MODIFIED */
-+int dir_unmod_to_mod(dentry_t *dentry) 
++int dir_unmod_to_mod(dentry_t *dentry)
 +{
 +	int err;
 +
@@ -7556,12 +7556,12 @@ Index: linux-2.6.23/fs/mini_fo/super.c
 +
 +#ifdef HAVE_CONFIG_H
 +# include <config.h>
-+#endif 
++#endif
 +
 +#include "fist.h"
 +#include "mini_fo.h"
 +
-+#if 0
++
 +STATIC void
 +mini_fo_read_inode(inode_t *inode)
 +{
@@ -7600,7 +7600,7 @@ Index: linux-2.6.23/fs/mini_fo/super.c
 +	/* I don't think ->a_ops is ever allowed to be NULL */
 +	inode->i_mapping->a_ops = &mini_fo_empty_aops;
 +}
-+#endif
++
 +
 +#if defined(FIST_DEBUG) || defined(FIST_FILTER_SCA)
 +/*
@@ -7664,7 +7664,7 @@ Index: linux-2.6.23/fs/mini_fo/super.c
 +		mntput(stopd(sb)->hidden_mnt);
 +		mntput(stopd(sb)->hidden_mnt2);
 +
-+		/* mk: no! dput(stopd(sb)->base_dir_dentry); 
++		/* mk: no! dput(stopd(sb)->base_dir_dentry);
 +		   dput(stopd(sb)->storage_dir_dentry); */
 +
 +		kfree(stopd(sb));
@@ -7798,7 +7798,7 @@ Index: linux-2.6.23/fs/mini_fo/super.c
 +
 +struct super_operations mini_fo_sops =
 +{
-+//	read_inode:		mini_fo_read_inode,
++	read_inode:		mini_fo_read_inode,
 +#if defined(FIST_DEBUG) || defined(FIST_FILTER_SCA)
 +	write_inode:	mini_fo_write_inode,
 +#endif /* defined(FIST_DEBUG) || defined(FIST_FILTER_SCA) */
