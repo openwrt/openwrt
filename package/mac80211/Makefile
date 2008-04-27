@@ -14,7 +14,7 @@ PKG_RELEASE:=1
 
 PKG_VERSION:=2008-04-07
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://linuxwireless.org/download/compat-wireless-2.6/
+PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
