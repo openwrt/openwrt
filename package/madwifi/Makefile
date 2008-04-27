@@ -48,6 +48,9 @@ endif
 ifeq ($(ARCH),powerpc)
   HAL_TARGET:=powerpc-be-elf
 endif
+ifeq ($(BOARD),storm)
+  HAL_TARGET:=armv4-le-elf
+endif
 
 ifneq ($(CONFIG_TARGET_atheros),)
   BUS:=AHB
