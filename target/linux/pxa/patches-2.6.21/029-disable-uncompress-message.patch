@@ -1,0 +1,32 @@
+Index: linux-2.6.21gum/arch/arm/boot/compressed/misc.c
+===================================================================
+--- linux-2.6.21gum.orig/arch/arm/boot/compressed/misc.c
++++ linux-2.6.21gum/arch/arm/boot/compressed/misc.c
+@@ -322,7 +322,6 @@ void flush_window(void)
+ 	bytes_out += (ulg)outcnt;
+ 	output_ptr += (ulg)outcnt;
+ 	outcnt = 0;
+-	putstr(".");
+ }
+ 
+ #ifndef arch_error
+@@ -354,9 +353,7 @@ decompress_kernel(ulg output_start, ulg 
+ 	arch_decomp_setup();
+ 
+ 	makecrc();
+-	putstr("Uncompressing Linux...");
+ 	gunzip();
+-	putstr(" done, booting the kernel.\n");
+ 	return output_ptr;
+ }
+ #else
+@@ -368,9 +365,7 @@ int main()
+ 	output_data = output_buffer;
+ 
+ 	makecrc();
+-	putstr("Uncompressing Linux...");
+ 	gunzip();
+-	putstr("done.\n");
+ 	return 0;
+ }
+ #endif

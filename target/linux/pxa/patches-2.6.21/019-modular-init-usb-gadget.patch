@@ -1,0 +1,106 @@
+Index: linux-2.6.21gum/drivers/usb/gadget/Kconfig
+===================================================================
+--- linux-2.6.21gum.orig/drivers/usb/gadget/Kconfig
++++ linux-2.6.21gum/drivers/usb/gadget/Kconfig
+@@ -56,6 +56,14 @@ config USB_GADGET_DEBUG_FILES
+ config	USB_GADGET_SELECTED
+ 	boolean
+ 
++config USB_GADGET_GUMSTIX
++	tristate
++	default m if USB_GADGET=m
++	default y if USB_GADGET=y
++	depends on USB_GADGET && ARCH_GUMSTIX
++	help
++	  USB Gadget support for the Gumstix platform
++
+ #
+ # USB Peripheral Controller Support
+ #
+Index: linux-2.6.21gum/drivers/usb/gadget/Makefile
+===================================================================
+--- linux-2.6.21gum.orig/drivers/usb/gadget/Makefile
++++ linux-2.6.21gum/drivers/usb/gadget/Makefile
+@@ -8,6 +8,7 @@ obj-$(CONFIG_USB_GOKU)		+= goku_udc.o
+ obj-$(CONFIG_USB_OMAP)		+= omap_udc.o
+ obj-$(CONFIG_USB_LH7A40X)	+= lh7a40x_udc.o
+ obj-$(CONFIG_USB_AT91)		+= at91_udc.o
++obj-$(CONFIG_USB_GADGET_GUMSTIX)	+= gumstix_gadget.o
+ 
+ #
+ # USB gadget drivers
+Index: linux-2.6.21gum/drivers/usb/gadget/pxa2xx_udc.c
+===================================================================
+--- linux-2.6.21gum.orig/drivers/usb/gadget/pxa2xx_udc.c
++++ linux-2.6.21gum/drivers/usb/gadget/pxa2xx_udc.c
+@@ -2752,8 +2752,16 @@ static struct platform_driver udc_driver
+ 	},
+ };
+ 
++#ifdef CONFIG_ARCH_GUMSTIX
++extern void gumstix_usb_gadget_load(void);
++#endif
++
+ static int __init udc_init(void)
+ {
++#ifdef CONFIG_ARCH_GUMSTIX
++	gumstix_usb_gadget_load();
++#endif
++
+ 	printk(KERN_INFO "%s: version %s\n", driver_name, DRIVER_VERSION);
+ 	return platform_driver_register(&udc_driver);
+ }
+Index: linux-2.6.21gum/drivers/usb/gadget/gumstix_gadget.c
+===================================================================
+--- /dev/null
++++ linux-2.6.21gum/drivers/usb/gadget/gumstix_gadget.c
+@@ -0,0 +1,49 @@
++/*
++ *  Gumstix USB gadget intialization driver
++ *
++ *  Author:     Craig Hughes
++ *  Created:    December 9, 2004
++ *  Copyright:  (C) 2004 Craig Hughes
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ */
++
++#include <linux/module.h>
++
++#include <asm/hardware.h>
++#include <asm/arch/pxa-regs.h>
++#include <asm/delay.h>
++#include <asm/irq.h>
++#include <asm/mach/irq.h>
++
++#include <asm/arch/gumstix.h>
++#include <asm/arch/udc.h>
++
++int __init gumstix_usb_gadget_init(void)
++{
++	pxa_gpio_mode(GPIO_GUMSTIX_USB_GPIOx_DIS_MD);
++	pxa_gpio_mode(GPIO_GUMSTIX_USB_GPIOn_MD);
++
++	set_irq_type(GUMSTIX_USB_INTR_IRQ, IRQT_BOTHEDGE);
++	
++	return 0;
++}
++
++void __exit gumstix_usb_gadget_exit(void)
++{
++}
++
++void gumstix_usb_gadget_load(void) {}
++EXPORT_SYMBOL(gumstix_usb_gadget_load);
++
++module_init(gumstix_usb_gadget_init);
++module_exit(gumstix_usb_gadget_exit);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Craig Hughes <craig@gumstix.com>");
++MODULE_DESCRIPTION("Gumstix board USB gadget initialization driver");
++MODULE_VERSION("1:0.1");

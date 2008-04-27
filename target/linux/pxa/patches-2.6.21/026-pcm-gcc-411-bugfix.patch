@@ -1,0 +1,60 @@
+Index: linux-2.6.21gum/include/sound/pcm_params.h
+===================================================================
+--- linux-2.6.21gum.orig/include/sound/pcm_params.h
++++ linux-2.6.21gum/include/sound/pcm_params.h
+@@ -179,16 +179,8 @@ static inline int snd_mask_single(const 
+ 	return 1;
+ }
+ 
+-static inline int snd_mask_refine(struct snd_mask *mask,
+-				  const struct snd_mask *v)
+-{
+-	struct snd_mask old;
+-	snd_mask_copy(&old, mask);
+-	snd_mask_intersect(mask, v);
+-	if (snd_mask_empty(mask))
+-		return -EINVAL;
+-	return !snd_mask_eq(mask, &old);
+-}
++void snd_mask_print( const struct snd_mask *m1, const struct snd_mask *m2 );
++int snd_mask_refine(struct snd_mask *mask, const struct snd_mask *v);
+ 
+ static inline int snd_mask_refine_first(struct snd_mask *mask)
+ {
+Index: linux-2.6.21gum/sound/core/pcm_lib.c
+===================================================================
+--- linux-2.6.21gum.orig/sound/core/pcm_lib.c
++++ linux-2.6.21gum/sound/core/pcm_lib.c
+@@ -2128,3 +2128,18 @@ snd_pcm_sframes_t snd_pcm_lib_readv(stru
+ }
+ 
+ EXPORT_SYMBOL(snd_pcm_lib_readv);
++
++int snd_mask_refine(struct snd_mask *mask,
++				  const struct snd_mask *v)
++{
++	struct snd_mask old;
++	snd_mask_copy(&old, mask);
++	snd_mask_print(mask, v);
++	snd_mask_intersect(mask, v);
++	snd_mask_print(mask, v);
++	if (snd_mask_empty(mask))
++		return -EINVAL;
++	return !snd_mask_eq(mask, &old);
++}
++
++EXPORT_SYMBOL(snd_mask_refine);
+Index: linux-2.6.21gum/sound/core/pcm_native.c
+===================================================================
+--- linux-2.6.21gum.orig/sound/core/pcm_native.c
++++ linux-2.6.21gum/sound/core/pcm_native.c
+@@ -3450,3 +3450,9 @@ const struct file_operations snd_pcm_f_o
+ 		.fasync =		snd_pcm_fasync,
+ 	}
+ };
++
++void snd_mask_print( const struct snd_mask *m1, const struct snd_mask *m2 )
++{
++//    printk( "0x%08x %08x v: 0x%08x %08x\n", m1->bits[1], m1->bits[0], m2->bits[1], m2->bits[0] );
++}
++

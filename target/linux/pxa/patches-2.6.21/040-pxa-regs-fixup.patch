@@ -1,0 +1,12 @@
+Index: linux-2.6.21gum/include/asm-arm/arch-pxa/udc.h
+===================================================================
+--- linux-2.6.21gum.orig/include/asm-arm/arch-pxa/udc.h
++++ linux-2.6.21gum/include/asm-arm/arch-pxa/udc.h
+@@ -5,6 +5,7 @@
+  * USB Device Controller (UDC) is wired.
+  *
+  */
++#include <asm/arch/pxa-regs.h>
+ #include <asm/mach/udc_pxa2xx.h>
+ 
+ extern void pxa_set_udc_info(struct pxa2xx_udc_mach_info *info);

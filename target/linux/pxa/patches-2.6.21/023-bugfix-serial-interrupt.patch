@@ -1,0 +1,25 @@
+Index: linux-2.6.21gum/drivers/serial/pxa.c
+===================================================================
+--- linux-2.6.21gum.orig/drivers/serial/pxa.c
++++ linux-2.6.21gum/drivers/serial/pxa.c
+@@ -235,15 +235,19 @@ static inline irqreturn_t serial_pxa_irq
+ 	struct uart_pxa_port *up = dev_id;
+ 	unsigned int iir, lsr;
+ 
++	serial_out(up, UART_MCR, serial_in(up, UART_MCR) & ~UART_MCR_RTS); // Clear RTS
+ 	iir = serial_in(up, UART_IIR);
+ 	if (iir & UART_IIR_NO_INT)
+-		return IRQ_NONE;
++	{
++		//printk(KERN_WARNING "serial_pxa_irq: odd -- interrupt triggered, but no interrupt in IIR: %08x\n",iir);
++	}
+ 	lsr = serial_in(up, UART_LSR);
+ 	if (lsr & UART_LSR_DR)
+ 		receive_chars(up, &lsr);
+ 	check_modem_status(up);
+ 	if (lsr & UART_LSR_THRE)
+ 		transmit_chars(up);
++	serial_out(up, UART_MCR, serial_in(up, UART_MCR) | UART_MCR_RTS); // Assert RTS
+ 	return IRQ_HANDLED;
+ }
+ 

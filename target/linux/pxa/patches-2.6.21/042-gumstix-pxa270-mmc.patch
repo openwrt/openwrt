@@ -1,0 +1,33 @@
+Index: linux-2.6.21gum/arch/arm/mach-pxa/gumstix.c
+===================================================================
+--- linux-2.6.21gum.orig/arch/arm/mach-pxa/gumstix.c
++++ linux-2.6.21gum/arch/arm/mach-pxa/gumstix.c
+@@ -33,8 +33,9 @@
+ 
+ static struct pxamci_platform_data gumstix_mci_platform_data;
+ 
+-static int gumstix_mci_init(struct device *dev, irqreturn_t (*gumstix_detect_int)(int, void *, struct pt_regs *), void *data)
++static int gumstix_mci_init(struct device *dev, irq_handler_t gumstix_detect_int, void *data)
+ {
++#ifndef CONFIG_ARCH_GUMSTIX_VERDEX 
+ 	int err;
+ 
+ 	pxa_gpio_mode(GPIO6_MMCCLK_MD);
+@@ -55,6 +56,17 @@ static int gumstix_mci_init(struct devic
+ 	}
+ 
+ 	err = set_irq_type(GUMSTIX_IRQ_GPIO_nSD_DETECT, IRQT_BOTHEDGE);
++#else
++	// Setup GPIOs for MMC on the 120-pin connector
++	// There is no card detect on a uSD connector so no interrupt to register
++	// There is no WP detect GPIO line either
++	pxa_gpio_mode(GPIO92_MMCDAT0_MD);
++	pxa_gpio_mode(GPIO112_MMCCMD_MD);
++	pxa_gpio_mode(GPIO110_MMCDAT2_MD);
++	pxa_gpio_mode(GPIO111_MMCDAT3_MD);
++	pxa_gpio_mode(GPIO109_MMCDAT1_MD);
++	pxa_gpio_mode(GPIO32_MMCCLK_MD);
++#endif
+ 
+ 	return 0;
+ }

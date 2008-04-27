@@ -1,0 +1,108 @@
+Index: linux-2.6.21gum/net/bluetooth/Kconfig
+===================================================================
+--- linux-2.6.21gum.orig/net/bluetooth/Kconfig
++++ linux-2.6.21gum/net/bluetooth/Kconfig
+@@ -30,6 +30,12 @@ menuconfig BT
+ 	  Bluetooth kernel modules are provided in the BlueZ packages.
+ 	  For more information, see <http://www.bluez.org/>.
+ 
++config BT_GUMSTIX
++	tristate
++	default m if BT=m
++	default y if BT=y
++	depends on BT && ARCH_GUMSTIX
++
+ config BT_L2CAP
+ 	tristate "L2CAP protocol support"
+ 	depends on BT
+Index: linux-2.6.21gum/net/bluetooth/Makefile
+===================================================================
+--- linux-2.6.21gum.orig/net/bluetooth/Makefile
++++ linux-2.6.21gum/net/bluetooth/Makefile
+@@ -9,5 +9,6 @@ obj-$(CONFIG_BT_RFCOMM)	+= rfcomm/
+ obj-$(CONFIG_BT_BNEP)	+= bnep/
+ obj-$(CONFIG_BT_CMTP)	+= cmtp/
+ obj-$(CONFIG_BT_HIDP)	+= hidp/
++obj-$(CONFIG_BT_GUMSTIX)+= gumstix_bluetooth.o
+ 
+ bluetooth-objs := af_bluetooth.o hci_core.o hci_conn.o hci_event.o hci_sock.o hci_sysfs.o lib.o
+Index: linux-2.6.21gum/net/bluetooth/af_bluetooth.c
+===================================================================
+--- linux-2.6.21gum.orig/net/bluetooth/af_bluetooth.c
++++ linux-2.6.21gum/net/bluetooth/af_bluetooth.c
+@@ -327,12 +327,20 @@ static struct net_proto_family bt_sock_f
+ 	.create	= bt_sock_create,
+ };
+ 
++#ifdef CONFIG_ARCH_GUMSTIX
++extern void gumstix_bluetooth_load(void);
++#endif
++
+ static int __init bt_init(void)
+ {
+ 	int err;
+ 
+ 	BT_INFO("Core ver %s", VERSION);
+ 
++#ifdef CONFIG_ARCH_GUMSTIX
++	gumstix_bluetooth_load();
++#endif
++
+ 	err = bt_sysfs_init();
+ 	if (err < 0)
+ 		return err;
+Index: linux-2.6.21gum/net/bluetooth/gumstix_bluetooth.c
+===================================================================
+--- /dev/null
++++ linux-2.6.21gum/net/bluetooth/gumstix_bluetooth.c
+@@ -0,0 +1,50 @@
++/*
++ *  Gumstix bluetooth module intialization driver
++ *
++ *  Author:     Craig Hughes
++ *  Created:    December 9, 2004
++ *  Copyright:  (C) 2004 Craig Hughes
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ */
++
++#include <linux/module.h>
++
++#include <asm/hardware.h>
++#include <asm/arch/pxa-regs.h>
++#include <asm/delay.h>
++
++#include <asm/arch/gumstix.h>
++
++static void gumstix_bluetooth_load(void)
++{
++}
++
++EXPORT_SYMBOL(gumstix_bluetooth_load);
++
++int __init gumstix_bluetooth_init(void)
++{
++	/* Set up GPIOs to use the BTUART */
++	pxa_gpio_mode(GPIO42_HWRXD_MD);
++	pxa_gpio_mode(GPIO43_HWTXD_MD);
++	pxa_gpio_mode(GPIO44_HWCTS_MD);
++	pxa_gpio_mode(GPIO45_HWRTS_MD);
++
++	return 0;
++}
++
++void __exit gumstix_bluetooth_exit(void)
++{
++}
++
++module_init(gumstix_bluetooth_init);
++module_exit(gumstix_bluetooth_exit);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Craig Hughes <craig@gumstix.com>");
++MODULE_DESCRIPTION("Gumstix board bluetooth module initialization driver");
++MODULE_VERSION("1:0.1");

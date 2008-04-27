@@ -1,0 +1,366 @@
+Index: linux-2.6.21gum/arch/arm/mach-pxa/gumstix.c
+===================================================================
+--- linux-2.6.21gum.orig/arch/arm/mach-pxa/gumstix.c
++++ linux-2.6.21gum/arch/arm/mach-pxa/gumstix.c
+@@ -22,6 +22,7 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/irq.h>
++#include <asm/arch/ohci.h>
+ #include <asm/arch/udc.h>
+ #include <asm/arch/mmc.h>
+ #include <asm/arch/pxa-regs.h>
+@@ -178,9 +179,34 @@ static struct platform_device *devices[]
+ 	&gum_audio_device,
+ };
+ 
++#ifdef CONFIG_ARCH_GUMSTIX_VERDEX
++static int gumstix_ohci_init(struct device *dev)
++{
++	/* setup Port1 GPIO pin. */
++	//pxa_gpio_mode( 88 | GPIO_ALT_FN_1_IN);	/* USBHPWR1 */
++	//pxa_gpio_mode( 89 | GPIO_ALT_FN_2_OUT);	/* USBHPEN1 */
++
++	// Turn on port 2 in host mode
++	UP2OCR = UP2OCR_HXS | UP2OCR_HXOE | UP2OCR_DPPDE | UP2OCR_DMPDE;
++
++	UHCHR = (UHCHR) &
++		~(UHCHR_SSEP1 | UHCHR_SSEP2 | UHCHR_SSEP3 | UHCHR_SSE);
++
++	return 0;
++}
++
++static struct pxaohci_platform_data gumstix_ohci_platform_data = {
++	.port_mode	= PMM_PERPORT_MODE,
++	.init		= gumstix_ohci_init,
++};
++#endif
++
+ static void __init gumstix_init(void)
+ {
+ 	pxa_set_mci_info(&gumstix_mci_platform_data);
++#ifdef CONFIG_ARCH_GUMSTIX_VERDEX
++	pxa_set_ohci_info(&gumstix_ohci_platform_data);
++#endif
+ 	pxa_set_udc_info(&gumstix_udc_info);
+ #if defined(CONFIG_FB_PXA_ALPS_CDOLLAR) | defined(CONFIG_FB_PXA_SHARP_LQ043_PSP) | defined(CONFIG_FB_PXA_SAMSUNG_LTE430WQ_F0C)
+ 	set_pxa_fb_info(&gumstix_fb_info);
+Index: linux-2.6.21gum/drivers/usb/gadget/ether.c
+===================================================================
+--- linux-2.6.21gum.orig/drivers/usb/gadget/ether.c
++++ linux-2.6.21gum/drivers/usb/gadget/ether.c
+@@ -260,6 +260,8 @@ MODULE_PARM_DESC(host_addr, "Host Ethern
+ 
+ #ifdef CONFIG_USB_GADGET_PXA27X
+ #define DEV_CONFIG_CDC
++extern struct usb_ep* pxa27x_ep_config(struct usb_gadget *gadget,
++	struct usb_endpoint_descriptor *desc,int config,int interface,int alt);
+ #endif
+ 
+ #ifdef CONFIG_USB_GADGET_S3C2410
+@@ -482,15 +484,15 @@ eth_config = {
+ #ifdef	CONFIG_USB_ETH_RNDIS
+ static struct usb_config_descriptor
+ rndis_config = {
+-	.bLength =              sizeof rndis_config,
++	.bLength =	      sizeof rndis_config,
+ 	.bDescriptorType =      USB_DT_CONFIG,
+ 
+ 	/* compute wTotalLength on the fly */
+-	.bNumInterfaces =       2,
++	.bNumInterfaces =	2,
+ 	.bConfigurationValue =  DEV_RNDIS_CONFIG_VALUE,
+-	.iConfiguration =       STRING_RNDIS,
++	.iConfiguration =	STRING_RNDIS,
+ 	.bmAttributes =		USB_CONFIG_ATT_ONE | USB_CONFIG_ATT_SELFPOWER,
+-	.bMaxPower =            50,
++	.bMaxPower =	    50,
+ };
+ #endif
+ 
+@@ -532,15 +534,15 @@ control_intf = {
+ #ifdef	CONFIG_USB_ETH_RNDIS
+ static const struct usb_interface_descriptor
+ rndis_control_intf = {
+-	.bLength =              sizeof rndis_control_intf,
++	.bLength =	      sizeof rndis_control_intf,
+ 	.bDescriptorType =      USB_DT_INTERFACE,
+ 
+ 	.bInterfaceNumber =     0,
+-	.bNumEndpoints =        1,
++	.bNumEndpoints =	1,
+ 	.bInterfaceClass =      USB_CLASS_COMM,
+ 	.bInterfaceSubClass =   USB_CDC_SUBCLASS_ACM,
+ 	.bInterfaceProtocol =   USB_CDC_ACM_PROTO_VENDOR,
+-	.iInterface =           STRING_RNDIS_CONTROL,
++	.iInterface =	   STRING_RNDIS_CONTROL,
+ };
+ #endif
+ 
+@@ -1342,7 +1344,7 @@ static void rndis_response_complete (str
+ 
+ static void rndis_command_complete (struct usb_ep *ep, struct usb_request *req)
+ {
+-	struct eth_dev          *dev = ep->driver_data;
++	struct eth_dev	  *dev = ep->driver_data;
+ 	int			status;
+ 
+ 	/* received RNDIS command from USB_CDC_SEND_ENCAPSULATED_COMMAND */
+@@ -1578,7 +1580,7 @@ done_set_intf:
+ 
+ 			/* return the result */
+ 			buf = rndis_get_next_response (dev->rndis_config,
+-						       &value);
++							&value);
+ 			if (buf) {
+ 				memcpy (req->buf, buf, value);
+ 				req->complete = rndis_response_complete;
+@@ -2064,7 +2066,7 @@ static void eth_req_free (struct usb_ep 
+ static void
+ rndis_control_ack_complete (struct usb_ep *ep, struct usb_request *req)
+ {
+-	struct eth_dev          *dev = ep->driver_data;
++	struct eth_dev	  *dev = ep->driver_data;
+ 
+ 	if (req->status || req->actual != req->length)
+ 		DEBUG (dev,
+@@ -2415,7 +2417,27 @@ eth_bind (struct usb_gadget *gadget)
+ 
+ 	/* all we really need is bulk IN/OUT */
+ 	usb_ep_autoconfig_reset (gadget);
++#ifdef CONFIG_USB_GADGET_PXA27X 
++#ifdef  CONFIG_USB_ETH_RNDIS
++	in_ep = pxa27x_ep_config (gadget, &fs_source_desc,
++			DEV_RNDIS_CONFIG_VALUE,
++			(int)rndis_data_intf.bInterfaceNumber,
++			(int)rndis_data_intf.bAlternateSetting);
++#elif   defined(DEV_CONFIG_CDC) 
++	in_ep = pxa27x_ep_config (gadget, &fs_source_desc,
++			DEV_CONFIG_VALUE,
++			(int)data_intf.bInterfaceNumber,
++			(int)data_intf.bAlternateSetting);
++#elif   defined(DEV_CONFIG_SUBSET)		      
++	in_ep = pxa27x_ep_config (gadget, &fs_source_desc,
++			DEV_CONFIG_VALUE,
++			(int)subset_data_intf.bInterfaceNumber,
++			(int)subset_data_intf.bAlternateSetting);
++
++#endif //CONFIG_USB_ETH_RNDIS
++#else
+ 	in_ep = usb_ep_autoconfig (gadget, &fs_source_desc);
++#endif //CONFIG_USB_GADGET_PXA27X
+ 	if (!in_ep) {
+ autoconf_fail:
+ 		dev_err (&gadget->dev,
+@@ -2425,7 +2447,26 @@ autoconf_fail:
+ 	}
+ 	in_ep->driver_data = in_ep;	/* claim */
+ 
++#ifdef  CONFIG_USB_GADGET_PXA27X	
++#ifdef  CONFIG_USB_ETH_RNDIS
++	out_ep = pxa27x_ep_config (gadget, &fs_sink_desc,
++			DEV_RNDIS_CONFIG_VALUE,
++			(int)rndis_data_intf.bInterfaceNumber,
++			(int)rndis_data_intf.bAlternateSetting);
++#elif   defined(DEV_CONFIG_CDC)
++	out_ep = pxa27x_ep_config (gadget, &fs_sink_desc,
++			DEV_CONFIG_VALUE,
++			(int)data_intf.bInterfaceNumber,
++			(int)data_intf.bAlternateSetting);
++#elif   defined(DEV_CONFIG_SUBSET)		      
++	out_ep = pxa27x_ep_config (gadget, &fs_sink_desc,
++			DEV_CONFIG_VALUE,
++			(int)subset_data_intf.bInterfaceNumber,
++			(int)subset_data_intf.bAlternateSetting);
++#endif //CONFIG_USB_ETH_RNDIS
++#else
+ 	out_ep = usb_ep_autoconfig (gadget, &fs_sink_desc);
++#endif //CONFIG_USB_GADGET_PXA27X
+ 	if (!out_ep)
+ 		goto autoconf_fail;
+ 	out_ep->driver_data = out_ep;	/* claim */
+@@ -2435,7 +2476,22 @@ autoconf_fail:
+ 	 * Since some hosts expect one, try to allocate one anyway.
+ 	 */
+ 	if (cdc || rndis) {
++#ifdef  CONFIG_USB_GADGET_PXA27X	
++#ifdef  CONFIG_USB_ETH_RNDIS
++		status_ep = pxa27x_ep_config (gadget, &fs_status_desc,
++				DEV_RNDIS_CONFIG_VALUE,
++				(int)rndis_control_intf.bInterfaceNumber,
++				(int)rndis_control_intf.bAlternateSetting);
++#elif   defined(DEV_CONFIG_CDC)
++		status_ep = pxa27x_ep_config (gadget, &fs_status_desc,
++				DEV_CONFIG_VALUE,
++				(int)control_intf.bInterfaceNumber,
++				(int)control_intf.bAlternateSetting);
++
++#endif //CONFIG_USB_ETH_RNDIS
++#else
+ 		status_ep = usb_ep_autoconfig (gadget, &fs_status_desc);
++#endif //CONFIG_USB_GADGET_PXA27X
+ 		if (status_ep) {
+ 			status_ep->driver_data = status_ep;	/* claim */
+ 		} else if (rndis) {
+@@ -2444,11 +2500,13 @@ autoconf_fail:
+ 				gadget->name);
+ 			return -ENODEV;
+ #ifdef DEV_CONFIG_CDC
++#ifndef CONFIG_USB_GADGET_PXA27X
+ 		/* pxa25x only does CDC subset; often used with RNDIS */
+ 		} else if (cdc) {
+ 			control_intf.bNumEndpoints = 0;
+ 			/* FIXME remove endpoint from descriptor list */
+ #endif
++#endif
+ 		}
+ 	}
+ #endif
+Index: linux-2.6.21gum/drivers/usb/gadget/file_storage.c
+===================================================================
+--- linux-2.6.21gum.orig/drivers/usb/gadget/file_storage.c
++++ linux-2.6.21gum/drivers/usb/gadget/file_storage.c
+@@ -280,6 +280,12 @@ MODULE_LICENSE("Dual BSD/GPL");
+ #define DRIVER_PRODUCT_ID	0xa4a5	// Linux-USB File-backed Storage Gadget
+ 
+ 
++
++#ifdef CONFIG_USB_GADGET_PXA27X
++extern struct usb_ep* pxa27x_ep_config(struct usb_gadget *gadget,
++	struct usb_endpoint_descriptor *desc,int config,int interface,int alt);
++#endif
++
+ /*
+  * This driver assumes self-powered hardware and has no way for users to
+  * trigger remote wakeup.  It uses autoconfiguration to select endpoints
+@@ -3920,20 +3926,32 @@ static int __init fsg_bind(struct usb_ga
+ 
+ 	/* Find all the endpoints we will use */
+ 	usb_ep_autoconfig_reset(gadget);
++#ifdef CONFIG_USB_GADGET_PXA27X
++	ep = pxa27x_ep_config(gadget, &fs_bulk_in_desc, CONFIG_VALUE, 0, 0);
++#else
+ 	ep = usb_ep_autoconfig(gadget, &fs_bulk_in_desc);
++#endif
+ 	if (!ep)
+ 		goto autoconf_fail;
+ 	ep->driver_data = fsg;		// claim the endpoint
+ 	fsg->bulk_in = ep;
+ 
++#ifdef CONFIG_USB_GADGET_PXA27X
++	ep = pxa27x_ep_config(gadget, &fs_bulk_out_desc, CONFIG_VALUE, 0, 0);
++#else
+ 	ep = usb_ep_autoconfig(gadget, &fs_bulk_out_desc);
++#endif
+ 	if (!ep)
+ 		goto autoconf_fail;
+ 	ep->driver_data = fsg;		// claim the endpoint
+ 	fsg->bulk_out = ep;
+ 
+ 	if (transport_is_cbi()) {
++#ifdef CONFIG_USB_GADGET_PXA27X
++		ep = pxa27x_ep_config(gadget, &fs_intr_in_desc, CONFIG_VALUE, 0, 0);
++#else
+ 		ep = usb_ep_autoconfig(gadget, &fs_intr_in_desc);
++#endif
+ 		if (!ep)
+ 			goto autoconf_fail;
+ 		ep->driver_data = fsg;		// claim the endpoint
+@@ -4063,6 +4081,7 @@ autoconf_fail:
+ 	rc = -ENOTSUPP;
+ 
+ out:
++	ERROR(fsg, "cleaning up on the way out\n");
+ 	fsg->state = FSG_STATE_TERMINATED;	// The thread is dead
+ 	fsg_unbind(gadget);
+ 	close_all_backing_files(fsg);
+Index: linux-2.6.21gum/drivers/usb/gadget/serial.c
+===================================================================
+--- linux-2.6.21gum.orig/drivers/usb/gadget/serial.c
++++ linux-2.6.21gum/drivers/usb/gadget/serial.c
+@@ -126,6 +126,10 @@ static int debug = 1;
+ #define GS_LOG2_NOTIFY_INTERVAL		5	/* 1 << 5 == 32 msec */
+ #define GS_NOTIFY_MAXPACKET		8
+ 
++#ifdef CONFIG_USB_GADGET_PXA27X
++extern struct usb_ep* pxa27x_ep_config(struct usb_gadget *gadget,
++	struct usb_endpoint_descriptor *desc,int config,int interface,int alt);
++#endif
+ 
+ /* Structures */
+ 
+@@ -1378,20 +1382,32 @@ static int __init gs_bind(struct usb_gad
+ 
+ 	usb_ep_autoconfig_reset(gadget);
+ 
++#ifdef CONFIG_USB_GADGET_PXA27X
++	ep = pxa27x_ep_config(gadget, &gs_fullspeed_in_desc, use_acm ? GS_ACM_CONFIG_ID : GS_BULK_CONFIG_ID, gs_bulk_interface_desc.bInterfaceNumber, gs_bulk_interface_desc.bAlternateSetting);
++#else
+ 	ep = usb_ep_autoconfig(gadget, &gs_fullspeed_in_desc);
++#endif
+ 	if (!ep)
+ 		goto autoconf_fail;
+ 	EP_IN_NAME = ep->name;
+ 	ep->driver_data = ep;	/* claim the endpoint */
+ 
++#ifdef CONFIG_USB_GADGET_PXA27X
++	ep = pxa27x_ep_config(gadget, &gs_fullspeed_out_desc, use_acm ? GS_ACM_CONFIG_ID : GS_BULK_CONFIG_ID, gs_bulk_interface_desc.bInterfaceNumber, gs_bulk_interface_desc.bAlternateSetting);
++#else
+ 	ep = usb_ep_autoconfig(gadget, &gs_fullspeed_out_desc);
++#endif
+ 	if (!ep)
+ 		goto autoconf_fail;
+ 	EP_OUT_NAME = ep->name;
+ 	ep->driver_data = ep;	/* claim the endpoint */
+ 
+ 	if (use_acm) {
++#ifdef CONFIG_USB_GADGET_PXA27X
++		ep = pxa27x_ep_config(gadget, &gs_fullspeed_notify_desc, GS_BULK_CONFIG_ID, gs_control_interface_desc.bInterfaceNumber, gs_control_interface_desc.bAlternateSetting);
++#else
+ 		ep = usb_ep_autoconfig(gadget, &gs_fullspeed_notify_desc);
++#endif
+ 		if (!ep) {
+ 			printk(KERN_ERR "gs_bind: cannot run ACM on %s\n", gadget->name);
+ 			goto autoconf_fail;
+Index: linux-2.6.21gum/drivers/usb/gadget/zero.c
+===================================================================
+--- linux-2.6.21gum.orig/drivers/usb/gadget/zero.c
++++ linux-2.6.21gum/drivers/usb/gadget/zero.c
+@@ -212,6 +212,11 @@ module_param (loopdefault, bool, S_IRUGO
+ #define STRING_SOURCE_SINK		250
+ #define STRING_LOOPBACK			251
+ 
++#ifdef CONFIG_USB_GADGET_PXA27X
++extern struct usb_ep* pxa27x_ep_config(struct usb_gadget *gadget,
++	struct usb_endpoint_descriptor *desc,int config,int interface,int alt);
++#endif
++
+ /*
+  * This device advertises two configurations; these numbers work
+  * on a pxa250 as well as more flexible hardware.
+@@ -1155,7 +1160,11 @@ zero_bind (struct usb_gadget *gadget)
+ 	 * but there may also be important quirks to address.
+ 	 */
+ 	usb_ep_autoconfig_reset (gadget);
++#ifdef CONFIG_USB_GADGET_PXA27X
++	ep = pxa27x_ep_config(gadget, &fs_source_desc, CONFIG_SOURCE_SINK, source_sink_intf.bInterfaceNumber, source_sink_intf.bAlternateSetting);
++#else
+ 	ep = usb_ep_autoconfig (gadget, &fs_source_desc);
++#endif
+ 	if (!ep) {
+ autoconf_fail:
+ 		printk (KERN_ERR "%s: can't autoconfigure on %s\n",
+@@ -1164,8 +1173,12 @@ autoconf_fail:
+ 	}
+ 	EP_IN_NAME = ep->name;
+ 	ep->driver_data = ep;	/* claim */
+-	
++
++#ifdef CONFIG_USB_GADGET_PXA27X
++	ep = pxa27x_ep_config(gadget, &fs_sink_desc, CONFIG_SOURCE_SINK, source_sink_intf.bInterfaceNumber, source_sink_intf.bAlternateSetting);
++#else
+ 	ep = usb_ep_autoconfig (gadget, &fs_sink_desc);
++#endif
+ 	if (!ep)
+ 		goto autoconf_fail;
+ 	EP_OUT_NAME = ep->name;
