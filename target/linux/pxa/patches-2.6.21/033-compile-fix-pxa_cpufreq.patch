@@ -1,0 +1,13 @@
+Index: linux-2.6.21gum/arch/arm/mach-pxa/cpu-pxa.c
+===================================================================
+--- linux-2.6.21gum.orig/arch/arm/mach-pxa/cpu-pxa.c
++++ linux-2.6.21gum/arch/arm/mach-pxa/cpu-pxa.c
+@@ -42,7 +42,7 @@
+ 
+ #define DEBUG  0
+ 
+-#ifdef DEBUG
++#if defined (DEBUG) && DEBUG > 0
+   static unsigned int freq_debug = DEBUG;
+   MODULE_PARM(freq_debug, "i");
+   MODULE_PARM_DESC(freq_debug, "Set the debug messages to on=1/off=0");

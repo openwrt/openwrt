@@ -25,4 +25,6 @@ define Kernel/Configure
 	$(if $(CONFIG_EABI_SUPPORT),echo '# CONFIG_OABI_COMPAT is not set' >> $(LINUX_DIR)/.config)
 endef
 
+KERNELNAME:="uImage"
+
 $(eval $(call BuildTarget))

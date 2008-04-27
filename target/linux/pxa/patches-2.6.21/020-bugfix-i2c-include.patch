@@ -1,0 +1,12 @@
+Index: linux-2.6.21gum/drivers/i2c/busses/i2c-pxa.c
+===================================================================
+--- linux-2.6.21gum.orig/drivers/i2c/busses/i2c-pxa.c
++++ linux-2.6.21gum/drivers/i2c/busses/i2c-pxa.c
+@@ -32,6 +32,7 @@
+ #include <linux/i2c-pxa.h>
+ #include <linux/platform_device.h>
+ 
++#include <asm/arch/pxa-regs.h>
+ #include <asm/hardware.h>
+ #include <asm/irq.h>
+ #include <asm/io.h>

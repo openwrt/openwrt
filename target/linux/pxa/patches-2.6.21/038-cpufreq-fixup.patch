@@ -1,0 +1,26 @@
+Index: linux-2.6.21gum/drivers/cpufreq/cpufreq_ondemand.c
+===================================================================
+--- linux-2.6.21gum.orig/drivers/cpufreq/cpufreq_ondemand.c
++++ linux-2.6.21gum/drivers/cpufreq/cpufreq_ondemand.c
+@@ -573,7 +573,7 @@ static int cpufreq_governor_dbs(struct c
+ 	return 0;
+ }
+ 
+-static struct cpufreq_governor cpufreq_gov_dbs = {
++struct cpufreq_governor cpufreq_gov_dbs = {
+ 	.name = "ondemand",
+ 	.governor = cpufreq_governor_dbs,
+ 	.owner = THIS_MODULE,
+Index: linux-2.6.21gum/drivers/cpufreq/cpufreq_conservative.c
+===================================================================
+--- linux-2.6.21gum.orig/drivers/cpufreq/cpufreq_conservative.c
++++ linux-2.6.21gum/drivers/cpufreq/cpufreq_conservative.c
+@@ -551,7 +551,7 @@ static int cpufreq_governor_dbs(struct c
+ 	return 0;
+ }
+ 
+-static struct cpufreq_governor cpufreq_gov_dbs = {
++struct cpufreq_governor cpufreq_gov_dbs = {
+ 	.name		= "conservative",
+ 	.governor	= cpufreq_governor_dbs,
+ 	.owner		= THIS_MODULE,

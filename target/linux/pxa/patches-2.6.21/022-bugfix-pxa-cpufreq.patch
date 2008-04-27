@@ -1,0 +1,64 @@
+Index: linux-2.6.21gum/arch/arm/mach-pxa/cpu-pxa.c
+===================================================================
+--- linux-2.6.21gum.orig/arch/arm/mach-pxa/cpu-pxa.c
++++ linux-2.6.21gum/arch/arm/mach-pxa/cpu-pxa.c
+@@ -60,7 +60,7 @@ typedef struct
+ 
+ /* Define the refresh period in mSec for the SDRAM and the number of rows */
+ #define SDRAM_TREF          64      /* standard 64ms SDRAM */
+-#define SDRAM_ROWS          4096    /* 64MB=8192 32MB=4096 */ 
++#define SDRAM_ROWS          8192    /* 64MB=8192 32MB=4096 */ 
+ #define MDREFR_DRI(x)       ((x*SDRAM_TREF)/(SDRAM_ROWS*32))
+ 
+ #define CCLKCFG_TURBO       0x1
+@@ -136,7 +136,7 @@ static int pxa_set_target(struct cpufreq
+                  unsigned int relation)
+ {
+     int idx;
+-    unsigned long cpus_allowed;
++    cpumask_t cpus_allowed;
+     int cpu = policy->cpu;
+     struct cpufreq_freqs freqs;
+     pxa_freqs_t *pxa_freq_settings;
+@@ -144,6 +144,7 @@ static int pxa_set_target(struct cpufreq
+     unsigned long flags;
+     unsigned int unused;
+     unsigned int preset_mdrefr, postset_mdrefr;
++    void *ramstart;
+ 
+     /*
+      * Save this threads cpus_allowed mask.
+@@ -154,7 +155,7 @@ static int pxa_set_target(struct cpufreq
+      * Bind to the specified CPU.  When this call returns,
+      * we should be running on the right CPU.
+      */
+-    set_cpus_allowed(current, 1 << cpu);
++    set_cpus_allowed(current, cpumask_of_cpu(cpu));
+     BUG_ON(cpu != smp_processor_id());
+ 
+     /* Get the current policy */
+@@ -187,7 +188,7 @@ static int pxa_set_target(struct cpufreq
+             (pxa_freq_settings[idx].membus/1000));
+     }
+ 
+-    void *ramstart = phys_to_virt(0xa0000000);
++    ramstart = phys_to_virt(0xa0000000);
+ 
+     /* 
+      * Tell everyone what we're about to do... 
+@@ -260,13 +261,13 @@ static int pxa_set_target(struct cpufreq
+ 
+ static int pxa_cpufreq_init(struct cpufreq_policy *policy)
+ {
+-    unsigned long cpus_allowed;
++    cpumask_t cpus_allowed;
+     unsigned int cpu = policy->cpu;
+     int i;
+ 
+ 	cpus_allowed = current->cpus_allowed;
+ 
+-	set_cpus_allowed(current, 1 << cpu);
++	set_cpus_allowed(current, cpumask_of_cpu(cpu));
+ 	BUG_ON(cpu != smp_processor_id());
+ 
+     /* set default policy and cpuinfo */

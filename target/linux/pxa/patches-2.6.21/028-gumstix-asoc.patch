@@ -1,0 +1,224 @@
+Index: linux-2.6.21gum/sound/soc/pxa/Kconfig
+===================================================================
+--- linux-2.6.21gum.orig/sound/soc/pxa/Kconfig
++++ linux-2.6.21gum/sound/soc/pxa/Kconfig
+@@ -16,6 +16,7 @@ config SND_PXA2XX_SOC_AC97
+ 	tristate
+ 	select AC97_BUS
+ 	select SND_SOC_AC97_BUS
++	select SND_PXA2XX_AC97
+ 
+ config SND_PXA2XX_SOC_I2S
+ 	tristate
+@@ -56,4 +57,12 @@ config SND_PXA2XX_SOC_TOSA
+ 	  Say Y if you want to add support for SoC audio on Sharp
+ 	  Zaurus SL-C6000x models (Tosa).
+ 
++config SND_PXA2XX_SOC_GUMSTIX
++	tristate "SoC AC97 Audio support for Gumstix"
++	depends on SND_PXA2XX_SOC && ARCH_GUMSTIX
++	select SND_PXA2XX_SOC_AC97
++	select SND_SOC_AC97_CODEC
++	help
++	  Say Y if you want to add support for SoC audio on Gumstix
++
+ endmenu
+Index: linux-2.6.21gum/sound/soc/pxa/Makefile
+===================================================================
+--- linux-2.6.21gum.orig/sound/soc/pxa/Makefile
++++ linux-2.6.21gum/sound/soc/pxa/Makefile
+@@ -12,9 +12,11 @@ snd-soc-corgi-objs := corgi.o
+ snd-soc-poodle-objs := poodle.o
+ snd-soc-tosa-objs := tosa.o
+ snd-soc-spitz-objs := spitz.o
++snd-soc-gumstix-objs := gumstix.o
+ 
+ obj-$(CONFIG_SND_PXA2XX_SOC_CORGI) += snd-soc-corgi.o
+ obj-$(CONFIG_SND_PXA2XX_SOC_POODLE) += snd-soc-poodle.o
+ obj-$(CONFIG_SND_PXA2XX_SOC_TOSA) += snd-soc-tosa.o
+ obj-$(CONFIG_SND_PXA2XX_SOC_SPITZ) += snd-soc-spitz.o
++obj-$(CONFIG_SND_PXA2XX_SOC_GUMSTIX) += snd-soc-gumstix.o
+ 
+Index: linux-2.6.21gum/sound/soc/pxa/gumstix.c
+===================================================================
+--- /dev/null
++++ linux-2.6.21gum/sound/soc/pxa/gumstix.c
+@@ -0,0 +1,109 @@
++/*
++ * gumstix.c  --  SoC audio for Gumstix
++ *
++ * Copyright 2005 Wolfson Microelectronics PLC.
++ * Copyright 2005 Openedhand Ltd.
++ * Copyright 2007 Gumstix Inc.
++ *
++ * Authors: Liam Girdwood <liam.girdwood@wolfsonmicro.com>
++ *          Richard Purdie <richard@openedhand.com>
++ *          Craig Hughes <craig@gumstix.com>
++ *
++ *  This program is free software; you can redistribute  it and/or modify it
++ *  under  the terms of  the GNU General  Public License as published by the
++ *  Free Software Foundation;  either version 2 of the  License, or (at your
++ *  option) any later version.
++ *
++ *  Revision history
++ *    26 April 2007 - Initial revision forked from tosa.c
++ *
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/moduleparam.h>
++#include <linux/device.h>
++
++#include <sound/driver.h>
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/soc.h>
++#include <sound/soc-dapm.h>
++
++#include <asm/mach-types.h>
++#include <asm/arch/pxa-regs.h>
++#include <asm/arch/hardware.h>
++#include <asm/arch/audio.h>
++#include <asm/arch/gumstix.h>
++
++#include "pxa2xx-pcm.h"
++#include "pxa2xx-ac97.h"
++#include "../codecs/ac97.h"
++
++static struct snd_soc_machine gumstix;
++
++static int gumstix_ac97_init(struct snd_soc_codec *codec)
++{
++	// For now, do nothing -- should move the ucb1400 patch stuff here
++	return 0;
++}
++
++/* For right now, just add UCB1400 -- once that's working, we can also add
++ * PCM channels via SPI to bluetooth module, GSM module, or whatnot */
++static struct snd_soc_dai_link gumstix_dai[] = {
++{
++	.name = "ucb1400",
++	.stream_name = "UCB1400",
++	.cpu_dai = &pxa_ac97_dai[PXA2XX_DAI_AC97_HIFI],
++	.codec_dai = &ac97_dai,
++	.init = gumstix_ac97_init,
++},
++};
++
++static struct snd_soc_machine snd_soc_machine_gumstix = {
++	.name = "Gumstix",
++	.dai_link = gumstix_dai,
++	.num_links = ARRAY_SIZE(gumstix_dai),
++};
++
++static struct snd_soc_device gumstix_snd_devdata = {
++	.machine = &snd_soc_machine_gumstix,
++	.platform = &pxa2xx_soc_platform,
++	.codec_dev = &soc_codec_dev_ac97,
++};
++
++static struct platform_device *gumstix_snd_device;
++
++static int __init gumstix_init(void)
++{
++	int ret;
++
++	if (!machine_is_gumstix())
++		return -ENODEV;
++
++	gumstix_snd_device = platform_device_alloc("soc-audio", -1);
++	if (!gumstix_snd_device)
++		return -ENOMEM;
++
++	platform_set_drvdata(gumstix_snd_device, &gumstix_snd_devdata);
++	gumstix_snd_devdata.dev = &gumstix_snd_device->dev;
++	ret = platform_device_add(gumstix_snd_device);
++
++	if (ret)
++		platform_device_put(gumstix_snd_device);
++
++	return ret;
++}
++
++static void __exit gumstix_exit(void)
++{
++	platform_device_unregister(gumstix_snd_device);
++}
++
++module_init(gumstix_init);
++module_exit(gumstix_exit);
++
++/* Module information */
++MODULE_AUTHOR("Craig Hughes <craig@gumstix.com>");
++MODULE_DESCRIPTION("ALSA SoC Gumstix");
++MODULE_LICENSE("GPL");
+Index: linux-2.6.21gum/sound/soc/codecs/ac97.c
+===================================================================
+--- linux-2.6.21gum.orig/sound/soc/codecs/ac97.c
++++ linux-2.6.21gum/sound/soc/codecs/ac97.c
+@@ -43,7 +43,7 @@ static int ac97_prepare(struct snd_pcm_s
+ #define STD_AC97_RATES (SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_11025 |\
+ 		SNDRV_PCM_RATE_22050 | SNDRV_PCM_RATE_44100 | SNDRV_PCM_RATE_48000)
+ 
+-static struct snd_soc_codec_dai ac97_dai = {
++struct snd_soc_codec_dai ac97_dai = {
+ 	.name = "AC97 HiFi",
+ 	.playback = {
+ 		.stream_name = "AC97 Playback",
+@@ -61,6 +61,8 @@ static struct snd_soc_codec_dai ac97_dai
+ 		.prepare = ac97_prepare,},
+ };
+ 
++EXPORT_SYMBOL_GPL(ac97_dai);
++
+ static unsigned int ac97_read(struct snd_soc_codec *codec,
+ 	unsigned int reg)
+ {
+Index: linux-2.6.21gum/sound/soc/codecs/ac97.h
+===================================================================
+--- linux-2.6.21gum.orig/sound/soc/codecs/ac97.h
++++ linux-2.6.21gum/sound/soc/codecs/ac97.h
+@@ -14,5 +14,6 @@
+ #define __LINUX_SND_SOC_AC97_H
+ 
+ extern struct snd_soc_codec_device soc_codec_dev_ac97;
++extern struct snd_soc_codec_dai ac97_dai;
+ 
+ #endif
+Index: linux-2.6.21gum/sound/soc/pxa/pxa2xx-ac97.c
+===================================================================
+--- linux-2.6.21gum.orig/sound/soc/pxa/pxa2xx-ac97.c
++++ linux-2.6.21gum/sound/soc/pxa/pxa2xx-ac97.c
+@@ -154,18 +154,26 @@ static void pxa2xx_ac97_warm_reset(struc
+ 
+ static void pxa2xx_ac97_cold_reset(struct snd_ac97 *ac97)
+ {
+-	GCR &=  GCR_COLD_RST;  /* clear everything but nCRST */
+-	GCR &= ~GCR_COLD_RST;  /* then assert nCRST */
+-
+-	gsr_bits = 0;
+ #ifdef CONFIG_PXA27x
+ 	/* PXA27x Developers Manual section 13.5.2.2.1 */
++	GCR |= GCR_ACLINK_OFF;
++	udelay(5);
++	GCR &= GCR_COLD_RST;	/* Mask all interrupts */
++	GCR &= ~GCR_COLD_RST;	/* cold reset */
++	udelay(5);
+ 	pxa_set_cken(1 << 31, 1);
+ 	udelay(5);
+-	pxa_set_cken(1 << 31, 0);
++	GCR |= GCR_PRIRDY_IEN|GCR_SECRDY_IEN; /* unmask the interrupts */
++	pxa_set_cken(1 << 31, 0); /* clear CKEN31 */
++	udelay(5);
+ 	GCR = GCR_COLD_RST;
+ 	udelay(50);
++	wait_event_timeout(gsr_wq, gsr_bits & (GSR_PCR | GSR_SCR), 1);
+ #else
++	GCR &=  GCR_COLD_RST;  /* clear everything but nCRST */
++	GCR &= ~GCR_COLD_RST;  /* then assert nCRST */
++
++	gsr_bits = 0;
+ 	GCR = GCR_COLD_RST;
+ 	GCR |= GCR_CDONE_IE|GCR_SDONE_IE;
+ 	wait_event_timeout(gsr_wq, gsr_bits & (GSR_PCR | GSR_SCR), 1);

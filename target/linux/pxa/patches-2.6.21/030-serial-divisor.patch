@@ -1,0 +1,31 @@
+Index: linux-2.6.21gum/drivers/serial/pxa.c
+===================================================================
+--- linux-2.6.21gum.orig/drivers/serial/pxa.c
++++ linux-2.6.21gum/drivers/serial/pxa.c
+@@ -41,6 +41,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/tty.h>
+ #include <linux/tty_flip.h>
++#include <linux/serial.h>
+ #include <linux/serial_core.h>
+ 
+ #include <asm/io.h>
+@@ -577,8 +578,16 @@ static void serial_pxa_config_port(struc
+ static int
+ serial_pxa_verify_port(struct uart_port *port, struct serial_struct *ser)
+ {
+-	/* we don't want the core code to modify any port params */
+-	return -EINVAL;
++	struct uart_pxa_port *up = (struct uart_pxa_port *)port;
++	int ret = 0;
++
++	if (up->port.uartclk / 16 != ser->baud_base)
++		ret = -EINVAL;
++	else if (((up->port.line & 1) == 0) && ser->baud_base > 230400) /* Max baud rate for STUART and FFUART */
++		ret = -EINVAL;
++	else if (((up->port.line & 1) != 0) && ser->baud_base > 921600) /* Max baud rate for HWUART and BTUART */
++		ret = -EINVAL;
++	return ret;
+ }
+ 
+ static const char *
