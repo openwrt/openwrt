@@ -11,7 +11,7 @@ BOARD:=ppc40x
 BOARDNAME:=AMCC Kilauea
 FEATURES:=squashfs
 
-LINUX_VERSION:=2.6.24.2
+LINUX_VERSION:=2.6.24.5
 LINUX_KARCH:=powerpc
 
 include $(INCLUDE_DIR)/target.mk
