@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=powerpc
 BOARD:=ppc40x
-BOARDNAME:=AMCC Kilauea
+BOARDNAME:=AMCC/IBM PPC40x
 FEATURES:=squashfs
 
 LINUX_VERSION:=2.6.24.5

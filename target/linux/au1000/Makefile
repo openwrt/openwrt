@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=mipsel
 BOARD:=au1000
-BOARDNAME:=AMD Alchemy AU1x00
+BOARDNAME:=RMI/AMD AU1x00
 FEATURES:=jffs2 usb pci
 
 LINUX_VERSION:=2.6.24.5

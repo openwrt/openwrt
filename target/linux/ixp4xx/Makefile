@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=armeb
 BOARD:=ixp4xx
-BOARDNAME:=Intel XScale IXP4xx
+BOARDNAME:=Intel IXP4xx
 FEATURES:=squashfs
 SUBTARGETS=generic harddisk
 

@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 ARCH=i386
 BOARD:=olpc
-BOARDNAME:=olpc
+BOARDNAME:=OLPC XO-1
 FEATURES:=squashfs ext2
 
 LINUX_VERSION:=2.6.23.16
