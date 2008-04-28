@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=i386
 BOARD:=rdc
-BOARDNAME:=RDC321x x86
+BOARDNAME:=RDC 321x
 FEATURES:=squashfs jffs2 pci
 
 LINUX_VERSION:=2.6.24.5
