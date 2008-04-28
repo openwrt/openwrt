@@ -4,12 +4,12 @@ config AT91_DFBOOT
 	default y
 
 config AT91_UBOOT
-	bool "Build u-boot loader"
+	bool "Build U-Boot bootloader"
 	depends TARGET_at91
 	default y
 
 config UBOOT_TARGET
-	string "U-Boot Board Configuration"
+	string "U-Boot target board"
 	depends TARGET_at91
 	depends AT91_UBOOT
 	default "vlink"
