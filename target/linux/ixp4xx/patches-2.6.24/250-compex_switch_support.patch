@@ -1,0 +1,14 @@
+Index: linux-2.6.24.2/arch/arm/mach-ixp4xx/compex-setup.c
+===================================================================
+--- linux-2.6.24.2.orig/arch/arm/mach-ixp4xx/compex-setup.c
++++ linux-2.6.24.2/arch/arm/mach-ixp4xx/compex-setup.c
+@@ -93,7 +93,8 @@ static struct platform_device compex_uar
+ /* Built-in 10/100 Ethernet MAC interfaces */
+ static struct eth_plat_info compex_plat_eth[] = {
+ 	{
+-		.phy		= -1,
++		.phy		= IXP4XX_ETH_PHY_MAX_ADDR,
++		.phy_mask	= 0xf0000, /* port 0-4 of the Marvell switch */
+ 		.rxq		= 3,
+ 		.txreadyq	= 20,
+ 	}, {
