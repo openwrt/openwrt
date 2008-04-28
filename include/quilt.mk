@@ -12,6 +12,7 @@ ifeq ($(TARGET_BUILD),1)
   PKG_BUILD_DIR:=$(LINUX_DIR)
 endif
 PATCH_DIR?=./patches
+FILES_DIR?=./files
 
 ifeq ($(MAKECMDGOALS),refresh)
   override QUILT=1
@@ -67,9 +68,9 @@ endef
 
 define Kernel/Patch/Default
 	$(if $(QUILT),rm -rf $(PKG_BUILD_DIR)/patches; mkdir -p $(PKG_BUILD_DIR)/patches)
-	if [ -d $(GENERIC_PLATFORM_DIR)/files ]; then $(CP) $(GENERIC_PLATFORM_DIR)/files/* $(LINUX_DIR)/; fi
-	if [ -d ./files ]; then \
-		$(CP) ./files/* $(LINUX_DIR)/; \
+	if [ -d $(GENERIC_FILES_DIR) ]; then $(CP) $(GENERIC_FILES_DIR)/* $(LINUX_DIR)/; fi
+	if [ -d $(FILES_DIR) ]; then \
+		$(CP) $(FILES_DIR)/* $(LINUX_DIR)/; \
 		find $(LINUX_DIR)/ -name \*.rej | xargs rm -f; \
 	fi
 	$(call PatchDir,$(GENERIC_PATCH_DIR),generic/)
