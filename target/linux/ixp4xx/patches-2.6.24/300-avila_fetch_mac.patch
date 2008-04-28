@@ -21,55 +21,104 @@ Index: linux-2.6.24.2/arch/arm/mach-ixp4xx/avila-setup.c
  #include <linux/i2c-gpio.h>
  
  #include <asm/types.h>
-@@ -177,6 +185,118 @@ static struct platform_device *avila_eth
- 	&avila_eth[1]
- };
+@@ -29,6 +37,13 @@
+ #include <asm/mach/arch.h>
+ #include <asm/mach/flash.h>
  
-+#ifdef CONFIG_SENSORS_EEPROM
 +struct avila_board_info {
-+	unsigned char *model;
-+	int	npes_used;
-+	int	npeb_phy;
-+	int	npec_phy;
++	unsigned char	*model;
++	void		(* setup)(void);
 +};
 +
-+static struct avila_board_info avila_boards[] = {
++static struct avila_board_info *avila_info __initdata;
++
+ static struct flash_platform_data avila_flash_data = {
+ 	.map_name	= "cfi_probe",
+ 	.width		= 2,
+@@ -192,10 +207,160 @@ static void __init avila_fixup(struct ma
+ 	t->hdr.size = 0;
+ }
+ 
++static void __init avila_gw23xx_setup(void)
++{
++	platform_device_register(&avila_npeb_device);
++	platform_device_register(&avila_npec_device);
++}
++
++#ifdef CONFIG_SENSORS_EEPROM
++static void __init avila_gw2342_setup(void)
++{
++	platform_device_register(&avila_npeb_device);
++	platform_device_register(&avila_npec_device);
++}
++
++static void __init avila_gw2345_setup(void)
++{
++	avila_npeb_data.phy = IXP4XX_ETH_PHY_MAX_ADDR;
++	avila_npeb_data.phy_mask = 0x1e; /* ports 1-4 of the KS8995 switch */
++	platform_device_register(&avila_npeb_device);
++
++	avila_npec_data.phy = 5; /* port 5 of the KS8995 switch */
++	platform_device_register(&avila_npec_device);
++}
++
++static void __init avila_gw2347_setup(void)
++{
++	platform_device_register(&avila_npeb_device);
++}
++
++static void __init avila_gw2348_setup(void)
++{
++	platform_device_register(&avila_npeb_device);
++	platform_device_register(&avila_npec_device);
++}
++
++static void __init avila_gw2353_setup(void)
++{
++	platform_device_register(&avila_npeb_device);
++}
++
++static void __init avila_gw2355_setup(void)
++{
++	avila_npeb_data.phy = IXP4XX_ETH_PHY_MAX_ADDR;
++	avila_npeb_data.phy_mask = 0x1e; /* ports 1-4 of the KS8995 switch */
++	platform_device_register(&avila_npeb_device);
++
++	avila_npec_data.phy = 5;
++	platform_device_register(&avila_npec_device);
++}
++
++static void __init avila_gw2357_setup(void)
++{
++	platform_device_register(&avila_npeb_device);
++}
++
++static struct avila_board_info avila_boards[] __initdata = {
 +	{
 +		.model		= "GW2342",
-+		.npes_used	= 2,
-+		.npeb_phy	= 0,
-+		.npec_phy	= 1,
++		.setup		= avila_gw2342_setup,
++	}, {
++		.model		= "GW2345",
++		.setup		= avila_gw2345_setup,
 +	}, {
 +		.model		= "GW2347",
-+		.npes_used	= 1,
-+		.npeb_phy	= 1,
++		.setup		= avila_gw2347_setup,
 +	}, {
-+		.model		= "GW2348-2",
-+		.npes_used	= 2,
-+		.npeb_phy	= 0,
-+		.npec_phy	= 1,
-+	}, {
-+		.model		= "GW2348-4",
-+		.npes_used	= 2,
-+		.npeb_phy	= 0,
-+		.npec_phy	= 1,
++		.model		= "GW2348",
++		.setup		= avila_gw2348_setup,
 +	}, {
 +		.model		= "GW2353",
-+		.npes_used	= 1,
-+		.npeb_phy	= 1,
++		.setup		= avila_gw2353_setup,
 +	}, {
 +		.model		= "GW2355",
-+		.npes_used	= 2,
-+		.npeb_phy	= -1,
-+		.npec_phy	= 1,
++		.setup		= avila_gw2355_setup,
 +	}, {
 +		.model		= "GW2357",
-+		.npes_used	= 1,
-+		.npeb_phy	= 1,
++		.setup		= avila_gw2357_setup,
 +	}
 +};
 +
-+static struct avila_board_info *avila_find_board_info(char *model)
++static struct avila_board_info * __init avila_find_board_info(char *model)
 +{
 +	int i;
 +
@@ -91,64 +140,90 @@ Index: linux-2.6.24.2/arch/arm/mach-ixp4xx/avila-setup.c
 +	unsigned char model[16];
 +};
 +
-+static int avila_eeprom_notify(struct notifier_block *self,
++static int __init avila_eeprom_notify(struct notifier_block *self,
 +			unsigned long event, void *t)
 +{
 +	struct eeprom_data *ee = t;
-+	struct avila_board_info *info = NULL;
 +	struct avila_eeprom_header hdr;
++
++	if (avila_info)
++		return NOTIFY_DONE;
 +
 +	/* The eeprom is at address 0x51 */
 +	if (event != EEPROM_REGISTER || ee->client.addr != 0x51)
 +		return NOTIFY_DONE;
 +
 +	ee->attr->read(&ee->client.dev.kobj, ee->attr, (char *)&hdr,
-+		0, sizeof(hdr));
++							0, sizeof(hdr));
 +
 +	if (hdr.magic[0] != 'G' || hdr.magic[1] != 'W')
 +		return NOTIFY_DONE;
 +
-+	memcpy(&avila_plat_eth[0].hwaddr, hdr.mac0, ETH_ALEN);
-+	memcpy(&avila_plat_eth[1].hwaddr, hdr.mac1, ETH_ALEN);
++	memcpy(&avila_npeb_data.hwaddr, hdr.mac0, ETH_ALEN);
++	memcpy(&avila_npec_data.hwaddr, hdr.mac1, ETH_ALEN);
 +
-+	info = avila_find_board_info(hdr.model);
-+
-+	if (info) {
-+		printk(KERN_DEBUG "Running on Gateworks Avila %s\n",
-+							info->model);
-+		avila_plat_eth[0].phy = info->npeb_phy;
-+		avila_plat_eth[1].phy = info->npec_phy;
-+		platform_add_devices(avila_eth_devices,
-+			info->npes_used);
-+	} else {
-+		printk(KERN_INFO "Unknown/missing Avila model number"
-+					" -- defaults will be used\n");
-+		platform_add_devices(avila_eth_devices,
-+			ARRAY_SIZE(avila_eth_devices));
-+	}
-+
-+	unregister_eeprom_notifier(self);
++	avila_info = avila_find_board_info(hdr.model);
 +
 +	return NOTIFY_OK;
 +}
 +
-+static struct notifier_block avila_eeprom_notifier = {
++static struct notifier_block avila_eeprom_notifier __initdata = {
 +       .notifier_call = avila_eeprom_notify
 +};
-+#endif
++
++static void __init avila_register_eeprom_notifier(void)
++{
++	register_eeprom_notifier(&avila_eeprom_notifier);
++}
++
++static void __init avila_unregister_eeprom_notifier(void)
++{
++	unregister_eeprom_notifier(&avila_eeprom_notifier);
++}
++#else /* CONFIG_SENSORS_EEPROM */
++static inline void avila_register_eeprom_notifier(void) {};
++static inline void avila_unregister_eeprom_notifier(void) {};
++#endif /* CONFIG_SENSORS_EEPROM */
 +
  static void __init avila_init(void)
  {
  	ixp4xx_sys_init();
-@@ -201,7 +321,11 @@ static void __init avila_init(void)
+ 
++	/*
++	 * These devices are present on all Avila models and don't need any
++	 * model specific setup.
++	 */
+ 	avila_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
+ 	avila_flash_resource.end =
+ 		IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size - 1;
+@@ -213,9 +378,28 @@ static void __init avila_init(void)
  
  	platform_device_register(&avila_pata);
  
-+#ifdef CONFIG_SENSORS_EEPROM
-+	register_eeprom_notifier(&avila_eeprom_notifier);
-+#else
- 	platform_add_devices(avila_eth_devices, ARRAY_SIZE(avila_eth_devices));
-+#endif
+-	platform_device_register(avila_npeb_device);
+-	platform_device_register(avila_npec_device);
++	avila_register_eeprom_notifier();
++}
++
++static int __init avila_model_setup(void)
++{
++	if (!machine_is_avila())
++		return 0;
++
++	if (avila_info) {
++		printk(KERN_DEBUG "Running on Gateworks Avila %s\n",
++							avila_info->model);
++		avila_info->setup();
++	} else {
++		printk(KERN_INFO "Unknown/missing Avila model number"
++						" -- defaults will be used\n");
++		avila_gw23xx_setup();
++	}
++
++	avila_unregister_eeprom_notifier();
++	return 0;
  }
++late_initcall(avila_model_setup);
  
  MACHINE_START(AVILA, "Gateworks Avila Network Platform")
+ 	/* Maintainer: Deepak Saxena <dsaxena@plexity.net> */
