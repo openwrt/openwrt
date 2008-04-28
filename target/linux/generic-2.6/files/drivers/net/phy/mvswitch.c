@@ -288,6 +288,12 @@ mvswitch_config_init(struct phy_device *pdev)
 		);
 	}
 
+	/* init switch control */
+	w16(pdev, MV_SWITCHREG(CTRL),
+		MV_SWITCHCTL_MSIZE |
+		MV_SWITCHCTL_DROP
+	);
+
 	/* hook into the tx function */
 	priv->hardstart = dev->hard_start_xmit;
 	pdev->netif_receive_skb = mvswitch_netif_receive_skb;
