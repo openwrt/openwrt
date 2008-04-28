@@ -11,7 +11,7 @@ BOARD:=iop32x
 BOARDNAME:=Intel XScale IOP32x
 FEATURES:=squashfs jffs2
 
-LINUX_VERSION:=2.6.24.2
+LINUX_VERSION:=2.6.24.5
 
 include $(INCLUDE_DIR)/target.mk
 

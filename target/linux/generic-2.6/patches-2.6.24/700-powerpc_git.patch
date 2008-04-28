@@ -49955,21 +49955,6 @@ diff -x .git -x .gitignore -Nur linux-2.6.24/arch/powerpc/platforms/chrp/pci.c p
  	/* keep the reference to the root node */
  }
  
-@@ -354,7 +354,7 @@
-  * mode as well. The same fixup must be done to the class-code property in
-  * the IDE node /pci@80000000/ide@C,1
-  */
--static void __devinit chrp_pci_fixup_vt8231_ata(struct pci_dev *viaide)
-+static void chrp_pci_fixup_vt8231_ata(struct pci_dev *viaide)
- {
- 	u8 progif;
- 	struct pci_dev *viaisa;
-@@ -375,4 +375,4 @@
- 
- 	pci_dev_put(viaisa);
- }
--DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_VIA, PCI_DEVICE_ID_VIA_82C586_1, chrp_pci_fixup_vt8231_ata);
-+DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_VIA, PCI_DEVICE_ID_VIA_82C586_1, chrp_pci_fixup_vt8231_ata);
 diff -x .git -x .gitignore -Nur linux-2.6.24/arch/powerpc/platforms/chrp/setup.c powerpc.git/arch/powerpc/platforms/chrp/setup.c
 --- linux-2.6.24/arch/powerpc/platforms/chrp/setup.c	2008-01-24 23:58:37.000000000 +0100
 +++ powerpc.git/arch/powerpc/platforms/chrp/setup.c	2008-01-28 20:25:49.000000000 +0100
@@ -64602,7 +64587,7 @@ diff -x .git -x .gitignore -Nur linux-2.6.24/drivers/macintosh/via-pmu.c powerpc
  EXPORT_SYMBOL(pmu_suspend);
  EXPORT_SYMBOL(pmu_resume);
  EXPORT_SYMBOL(pmu_unlock);
--#if defined(CONFIG_PM_SLEEP) && defined(CONFIG_PPC32)
+-#if defined(CONFIG_PPC32)
 +#if defined(CONFIG_SUSPEND) && defined(CONFIG_PPC32)
  EXPORT_SYMBOL(pmu_enable_irled);
  EXPORT_SYMBOL(pmu_battery_count);

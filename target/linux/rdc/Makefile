@@ -11,7 +11,7 @@ BOARD:=rdc
 BOARDNAME:=RDC321x x86
 FEATURES:=squashfs jffs2 pci
 
-LINUX_VERSION:=2.6.24.2
+LINUX_VERSION:=2.6.24.5
 
 include $(INCLUDE_DIR)/target.mk
 
