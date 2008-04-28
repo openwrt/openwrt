@@ -4,8 +4,17 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
+
+define Build/Clean
+	$(MAKE) -C u-boot clean
+endef
+
+define Build/Compile
+	$(MAKE) -C u-boot compile
+endef
 
 define Image/Prepare
 	cp $(LINUX_DIR)/arch/avr32/boot/images/uImage $(KDIR)/uImage
