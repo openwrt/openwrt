@@ -15689,18 +15689,6 @@ diff -urN linux-2.6.24.3/drivers/mtd/chips/cfi_cmdset_0002.c avr32-2.6/drivers/m
  	{ 0, 0, NULL, NULL }
  };
  static struct cfi_fixup jedec_fixup_table[] = {
-diff -urN linux-2.6.24.3/drivers/net/macb.c avr32-2.6/drivers/net/macb.c
---- linux-2.6.24.3/drivers/net/macb.c	2008-02-26 01:20:20.000000000 +0100
-+++ avr32-2.6/drivers/net/macb.c	2008-04-23 20:12:41.000000000 +0200
-@@ -148,7 +148,7 @@
- 
- 			if (phydev->duplex)
- 				reg |= MACB_BIT(FD);
--			if (phydev->speed)
-+			if (phydev->speed == SPEED_100)
- 				reg |= MACB_BIT(SPD);
- 
- 			macb_writel(bp, NCFGR, reg);
 diff -urN linux-2.6.24.3/drivers/pcmcia/at32_cf.c avr32-2.6/drivers/pcmcia/at32_cf.c
 --- linux-2.6.24.3/drivers/pcmcia/at32_cf.c	1970-01-01 01:00:00.000000000 +0100
 +++ avr32-2.6/drivers/pcmcia/at32_cf.c	2008-04-23 19:33:42.000000000 +0200
