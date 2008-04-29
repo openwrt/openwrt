@@ -9,6 +9,19 @@
 #ifndef __MVSWITCH_H
 #define __MVSWITCH_H
 
+#define MV_HEADER_SIZE	2
+#define MV_HEADER_PORTS_M	0x001f
+#define MV_HEADER_PORTS_S	0
+#define MV_HEADER_VLAN_M	0xf000
+#define MV_HEADER_VLAN_S	12
+
+#define MV_TRAILER_SIZE	4
+#define MV_TRAILER_PORTS_M	0x1f
+#define MV_TRAILER_PORTS_S	16
+#define MV_TRAILER_FLAGS_S	24
+#define MV_TRAILER_OVERRIDE	0x80
+
+
 #define MV_PORTS	5
 #define MV_WANPORT	4
 #define MV_CPUPORT	5
@@ -36,7 +49,7 @@ enum {
 	MV_PHY_INTR_EN      = 0x12,
 	MV_PHY_INTR_STATUS  = 0x13,
 	MV_PHY_INTR_PORT    = 0x14,
-	MV_PHY_RECV_COUNTER = 0x15,
+	MV_PHY_RECV_COUNTER = 0x16,
 	MV_PHY_LED_PARALLEL = 0x16,
 	MV_PHY_LED_STREAM   = 0x17,
 	MV_PHY_LED_CTRL     = 0x18,
@@ -64,6 +77,7 @@ enum {
 	MV_PORTCTRL_ENABLED =  (3 << 0),
 	MV_PORTCTRL_VLANTUN =  (1 << 7),	/* Enforce VLANs on packets */
 	MV_PORTCTRL_RXTR    =  (1 << 8),	/* Enable Marvell packet trailer for ingress */
+	MV_PORTCTRL_HEADER	= (1 << 11),	/* Enable Marvell packet header mode for port */
 	MV_PORTCTRL_TXTR    = (1 << 14),	/* Enable Marvell packet trailer for egress */
 	MV_PORTCTRL_FORCEFL = (1 << 15),	/* force flow control */
 };
@@ -87,6 +101,17 @@ enum {
 	MV_SWITCH_ATU_MAC2  = 0x0f,
 };
 #define MV_SWITCHREG(_type) MV_SWITCHREGS, MV_SWITCH_##_type
+
+enum {
+	MV_SWITCHCTL_EEIE   =  (1 << 0),	/* EEPROM interrupt enable */
+	MV_SWITCHCTL_PHYIE  =  (1 << 1),	/* PHY interrupt enable */
+	MV_SWITCHCTL_ATUDONE=  (1 << 2),	/* ATU done interrupt enable */
+	MV_SWITCHCTL_ATUIE  =  (1 << 3),	/* ATU interrupt enable */
+	MV_SWITCHCTL_CTRMODE=  (1 << 8),	/* statistics for rx and tx errors */
+	MV_SWITCHCTL_RELOAD =  (1 << 9),	/* reload registers from eeprom */
+	MV_SWITCHCTL_MSIZE  = (1 << 10),	/* increase maximum frame size */
+	MV_SWITCHCTL_DROP   = (1 << 13),	/* discard frames with excessive collisions */
+};
 
 enum {
 #define MV_ATUCTL_AGETIME(_n)	((((_n) / 16) & 0xff) << 4)
