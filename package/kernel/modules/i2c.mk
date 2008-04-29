@@ -79,7 +79,7 @@ $(eval $(call KernelPackage,i2c-algo-pcf))
 define KernelPackage/i2c-gpio
   SUBMENU:=$(I2C_MENU)
   TITLE:=GPIO-based bitbanging I2C
-  DEPENDS:=kmod-i2c-core +kmod-i2c-algo-bit
+  DEPENDS:=@GPIO_SUPPORT kmod-i2c-core +kmod-i2c-algo-bit
   KCONFIG:=CONFIG_I2C_GPIO
   FILES:=$(LINUX_DIR)/drivers/i2c/busses/i2c-gpio.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,59,i2c-gpio)
