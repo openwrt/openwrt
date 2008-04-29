@@ -84,7 +84,7 @@ Index: linux-2.6.24.2/arch/arm/mach-ixp4xx/avila-setup.c
 +	avila_npeb_data.phy_mask = 0x1e; /* ports 1-4 of the KS8995 switch */
 +	platform_device_register(&avila_npeb_device);
 +
-+	avila_npec_data.phy = 5;
++	avila_npec_data.phy = 16;
 +	platform_device_register(&avila_npec_device);
 +}
 +
