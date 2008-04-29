@@ -1,0 +1,16 @@
+--- linux-2.6.24.5/drivers/rtc/rtc-ds1672.c	2008-04-19 03:53:39.000000000 +0200
++++ linux-2.6.24.5-owrt/drivers/rtc/rtc-ds1672.c	2008-04-29 22:16:41.000000000 +0200
+@@ -13,10 +13,10 @@
+ #include <linux/i2c.h>
+ #include <linux/rtc.h>
+ 
+-#define DRV_VERSION "0.3"
++#define DRV_VERSION "0.4"
+ 
+-/* Addresses to scan: none. This chip cannot be detected. */
+-static unsigned short normal_i2c[] = { I2C_CLIENT_END };
++/* Addresses to scan: 0x68 */
++static unsigned short normal_i2c[] = { 0x68, I2C_CLIENT_END };
+ 
+ /* Insmod parameters */
+ I2C_CLIENT_INSMOD;
