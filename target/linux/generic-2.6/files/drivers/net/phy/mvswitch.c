@@ -30,6 +30,10 @@
 #include <asm/uaccess.h>
 #include "mvswitch.h"
 
+/* Undefine this to use trailer mode instead.
+ * I don't know if header mode works with all chips */
+#define HEADER_MODE	1
+
 MODULE_DESCRIPTION("Marvell 88E6060 Switch driver");
 MODULE_AUTHOR("Felix Fietkau");
 MODULE_LICENSE("GPL");
@@ -55,11 +59,11 @@ w16(struct phy_device *phydev, int addr, int reg, u16 val)
 	phydev->bus->write(phydev->bus, addr, reg, val);
 }
 
+
 static int
 mvswitch_mangle_tx(struct sk_buff *skb, struct net_device *dev)
 {
 	struct mvswitch_priv *priv;
-	struct vlan_ethhdr *eh;
 	char *buf = NULL;
 	u16 vid;
 
@@ -70,30 +74,34 @@ mvswitch_mangle_tx(struct sk_buff *skb, struct net_device *dev)
 	if (unlikely(skb->len < 16))
 		goto error;
 
-	eh = (struct vlan_ethhdr *) skb->data;
-	if (be16_to_cpu(eh->h_vlan_proto) != 0x8100)
+#ifdef HEADER_MODE
+	if (__vlan_hwaccel_get_tag(skb, &vid))
 		goto error;
 
-	vid = be16_to_cpu(eh->h_vlan_TCI) & VLAN_VID_MASK;
+	if ((skb->len <= 62) || (skb_headroom(skb) < MV_HEADER_SIZE)) {
+		if (pskb_expand_head(skb, MV_HEADER_SIZE, 0, GFP_ATOMIC))
+			goto error_expand;
+		if (skb->len < 62)
+			skb->len = 62;
+	}
+	buf = skb_push(skb, MV_HEADER_SIZE);
+#else
+	if (__vlan_get_tag(skb, &vid))
+		goto error;
+
 	if (unlikely((vid > 15 || !priv->vlans[vid])))
 		goto error;
 
 	if (skb->len <= 64) {
-		if (pskb_expand_head(skb, 0, 68 - skb->len, GFP_ATOMIC)) {
-			if (net_ratelimit())
-				printk("%s: failed to expand/update skb for the switch\n", dev->name);
-			goto error;
-		}
+		if (pskb_expand_head(skb, 0, 64 + MV_TRAILER_SIZE - skb->len, GFP_ATOMIC))
+			goto error_expand;
 
 		buf = skb->data + 64;
-		skb->len = 68;
+		skb->len = 64 + MV_TRAILER_SIZE;
 	} else {
 		if (skb_cloned(skb) || unlikely(skb_tailroom(skb) < 4)) {
-			if (pskb_expand_head(skb, 0, 4, GFP_ATOMIC)) {
-				if (net_ratelimit())
-					printk("%s: failed to expand/update skb for the switch\n", dev->name);
-				goto error;
-			}
+			if (pskb_expand_head(skb, 0, 4, GFP_ATOMIC))
+				goto error_expand;
 		}
 		buf = skb_put(skb, 4);
 	}
@@ -103,17 +111,31 @@ mvswitch_mangle_tx(struct sk_buff *skb, struct net_device *dev)
 	skb->data += 4;
 	skb->len -= 4;
 	skb->mac_header += 4;
+#endif
 
 	if (!buf)
 		goto error;
 
-	/* append the tag */
-	*((u32 *) buf) = (
-		(0x80 << 24) |
-		((priv->vlans[vid] & 0x1f) << 16)
+
+#ifdef HEADER_MODE
+	/* prepend the tag */
+	*((__be16 *) buf) = cpu_to_be16(
+		((vid << MV_HEADER_VLAN_S) & MV_HEADER_VLAN_M) |
+		((priv->vlans[vid] << MV_HEADER_PORTS_S) & MV_HEADER_PORTS_M)
 	);
+#else
+	/* append the tag */
+	*((__be32 *) buf) = cpu_to_be32((
+		(MV_TRAILER_OVERRIDE << MV_TRAILER_FLAGS_S) |
+		((priv->vlans[vid] & MV_TRAILER_PORTS_M) << MV_TRAILER_PORTS_S)
+	));
+#endif
 
 	return priv->hardstart(skb, dev);
+
+error_expand:
+	if (net_ratelimit())
+		printk("%s: failed to expand/update skb for the switch\n", dev->name);
 
 error:
 	/* any errors? drop the packet! */
@@ -141,9 +163,14 @@ mvswitch_mangle_rx(struct sk_buff *skb, int napi)
 	if (!priv->grp)
 		goto error;
 
-	buf = skb->data + skb->len - 4;
+#ifdef HEADER_MODE
+	buf = skb->data;
+	skb_pull(skb, MV_HEADER_SIZE);
+#else
+	buf = skb->data + skb->len - MV_TRAILER_SIZE;
 	if (buf[0] != 0x80)
 		goto error;
+#endif
 
 	/* look for the vlan matching the incoming port */
 	for (i = 0; i < ARRAY_SIZE(priv->vlans); i++) {
@@ -153,6 +180,8 @@ mvswitch_mangle_rx(struct sk_buff *skb, int napi)
 
 	if (vlan == -1)
 		goto error;
+
+	skb->protocol = eth_type_trans(skb, skb->dev);
 
 	if (napi)
 		return vlan_hwaccel_receive_skb(skb, priv->grp, vlan);
@@ -234,9 +263,13 @@ mvswitch_config_init(struct phy_device *pdev)
 
 	/* initialize the cpu port */
 	w16(pdev, MV_PORTREG(CONTROL, MV_CPUPORT),
-		MV_PORTCTRL_ENABLED |
+#ifdef HEADER_MODE
+		MV_PORTCTRL_HEADER |
+#else
 		MV_PORTCTRL_RXTR |
-		MV_PORTCTRL_TXTR
+		MV_PORTCTRL_TXTR |
+#endif
+		MV_PORTCTRL_ENABLED
 	);
 	/* wait for the phy change to settle in */
 	msleep(2);
@@ -300,7 +333,11 @@ mvswitch_config_init(struct phy_device *pdev)
 	pdev->netif_rx = mvswitch_netif_rx;
 	dev->hard_start_xmit = mvswitch_mangle_tx;
 	dev->vlan_rx_register = mvswitch_vlan_rx_register;
+#ifdef HEADER_MODE
+	dev->features |= NETIF_F_HW_VLAN_RX | NETIF_F_HW_VLAN_TX;
+#else
 	dev->features |= NETIF_F_HW_VLAN_RX;
+#endif
 
 	return 0;
 }

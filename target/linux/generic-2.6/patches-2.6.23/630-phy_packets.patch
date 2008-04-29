@@ -1,20 +1,39 @@
 Index: linux-2.6.23.16/drivers/net/phy/phy_device.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/net/phy/phy_device.c	2008-02-11 07:06:32.000000000 +0100
-+++ linux-2.6.23.16/drivers/net/phy/phy_device.c	2008-04-20 05:42:28.000000000 +0200
-@@ -67,6 +67,8 @@
+--- linux-2.6.23.16.orig/drivers/net/phy/phy_device.c	2008-04-20 10:16:21.000000000 +0200
++++ linux-2.6.23.16/drivers/net/phy/phy_device.c	2008-04-29 14:20:03.000000000 +0200
+@@ -44,6 +44,18 @@
+ extern int mdio_bus_init(void);
+ extern void mdio_bus_exit(void);
+ 
++static int generic_receive_skb(struct sk_buff *skb)
++{
++	skb->protocol = eth_type_trans(skb, skb->dev);
++	return netif_receive_skb(skb);
++}
++
++static int generic_rx(struct sk_buff *skb)
++{
++	skb->protocol = eth_type_trans(skb, skb->dev);
++	return netif_rx(skb);
++}
++
+ struct phy_device* phy_device_create(struct mii_bus *bus, int addr, int phy_id)
+ {
+ 	struct phy_device *dev;
+@@ -67,6 +79,8 @@
  	dev->bus = bus;
  
  	dev->state = PHY_DOWN;
-+	dev->netif_receive_skb = &netif_receive_skb;
-+	dev->netif_rx = &netif_rx;
++	dev->netif_receive_skb = &generic_receive_skb;
++	dev->netif_rx = &generic_rx;
  
  	spin_lock_init(&dev->lock);
  
 Index: linux-2.6.23.16/include/linux/phy.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/phy.h	2008-04-20 04:40:31.000000000 +0200
-+++ linux-2.6.23.16/include/linux/phy.h	2008-04-20 05:53:21.000000000 +0200
+--- linux-2.6.23.16.orig/include/linux/phy.h	2008-04-20 10:16:21.000000000 +0200
++++ linux-2.6.23.16/include/linux/phy.h	2008-04-20 10:17:58.000000000 +0200
 @@ -289,6 +289,17 @@
  	void (*adjust_link)(struct net_device *dev);
  
@@ -35,8 +54,8 @@ Index: linux-2.6.23.16/include/linux/phy.h
  
 Index: linux-2.6.23.16/include/linux/netdevice.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/netdevice.h	2008-02-11 07:06:32.000000000 +0100
-+++ linux-2.6.23.16/include/linux/netdevice.h	2008-04-20 06:33:25.000000000 +0200
+--- linux-2.6.23.16.orig/include/linux/netdevice.h	2008-04-20 10:16:21.000000000 +0200
++++ linux-2.6.23.16/include/linux/netdevice.h	2008-04-20 10:17:58.000000000 +0200
 @@ -426,6 +426,7 @@
  	void			*ax25_ptr;	/* AX.25 specific data */
  	struct wireless_dev	*ieee80211_ptr;	/* IEEE 802.11 specific data,
