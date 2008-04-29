@@ -38,7 +38,7 @@ define KernelPackage/w1-master-gpio
   TITLE:=GPIO 1-wire bus master driver
   KCONFIG:=CONFIG_W1_MASTER_GPIO
   FILES:=$(W1_MASTERS_DIR)/w1-gpio.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,51,w1-gpio)
+  AUTOLOAD:=$(call AutoLoad,60,w1-gpio)
 endef
 
 define KernelPackage/w1-master-gpio/description
@@ -51,13 +51,12 @@ $(eval $(call KernelPackage,w1-master-gpio))
 #
 # 1-wire slaves
 #
-ifeq (1,1)
 define KernelPackage/w1-slave-therm
   $(call w1dep,)
   TITLE:=Thermal family implementation
   KCONFIG:=CONFIG_W1_SLAVE_THERM
   FILES:=$(W1_SLAVES_DIR)/w1_therm.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,52,w1_therm)
+  AUTOLOAD:=$(call AutoLoad,70,w1_therm)
 endef
 
 define KernelPackage/w1-slave-therm/description
@@ -72,7 +71,7 @@ define KernelPackage/w1-slave-smem
   TITLE:=Simple 64bit memory family implementation
   KCONFIG:=CONFIG_W1_SLAVE_SMEM
   FILES:=$(W1_SLAVES_DIR)/w1_smem.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,52,w1_smem)
+  AUTOLOAD:=$(call AutoLoad,70,w1_smem)
 endef
 
 define KernelPackage/w1-slave-smem/description
@@ -88,7 +87,7 @@ define KernelPackage/w1-slave-ds2433
 	CONFIG_W1_SLAVE_DS2433 \
 	CONFIG_W1_SLAVE_DS2433_CRC=n
   FILES:=$(W1_SLAVES_DIR)/w1_ds2433.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,52,w1_ds2433)
+  AUTOLOAD:=$(call AutoLoad,70,w1_ds2433)
 endef
 
 define KernelPackage/w1-slave-ds2433/description
@@ -105,7 +104,7 @@ define KernelPackage/w1-slave-ds2760
 	CONFIG_W1_SLAVE_DS2760 \
 	CONFIG_W1_SLAVE_DS2433_CRC=n
   FILES:=$(W1_SLAVES_DIR)/w1_ds2760.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,52,w1_ds2760)
+  AUTOLOAD:=$(call AutoLoad,70,w1_ds2760)
 endef
 
 define KernelPackage/w1-slave-ds2760/description
@@ -113,4 +112,3 @@ define KernelPackage/w1-slave-ds2760/description
 endef
 
 $(eval $(call KernelPackage,w1-slave-ds2760))
-endif
