@@ -294,7 +294,7 @@ $(eval $(call KernelPackage,softdog))
 define KernelPackage/leds-gpio
   SUBMENU:=$(OTHER_MENU)
   TITLE:=GPIO LED support
-  DEPENDS:=@TARGET_adm5120
+  DEPENDS:= @GPIO_SUPPORT
   KCONFIG:=CONFIG_LEDS_GPIO
   FILES:=$(LINUX_DIR)/drivers/leds/leds-gpio.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,leds-gpio)
@@ -533,7 +533,7 @@ $(eval $(call KernelPackage,input-polldev))
 define KernelPackage/input-gpio-buttons
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Polled GPIO buttons input device
-  DEPENDS:=+kmod-input-polldev @LINUX_2_6
+  DEPENDS:=@GPIO_SUPPORT +kmod-input-polldev
   KCONFIG:= \
 	CONFIG_INPUT_GPIO_BUTTONS \
 	CONFIG_INPUT_MISC=y
@@ -611,7 +611,7 @@ $(eval $(call KernelPackage,spi-bitbang))
 define KernelPackage/spi-gpio
   SUBMENU:=$(OTHER_MENU)
   TITLE:=GPIO based bitbanging SPI controller
-  DEPENDS:=@LINUX_2_6 +kmod-spi-bitbang
+  DEPENDS:=@GPIO_SUPPORT +kmod-spi-bitbang
   KCONFIG:=CONFIG_SPI_GPIO
   FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,92,spi_gpio)
