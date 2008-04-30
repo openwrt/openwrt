@@ -271,7 +271,7 @@ Index: linux-2.6.24/net/netfilter/xt_CHAOS.c
 +
 +	/* TARPIT/DELUDE may not be called from the OUTPUT chain */
 +	if (iph->protocol == IPPROTO_TCP &&
-+	    info->variant != XTCHAOS_NORMAL && hooknum != NF_IP_LOCAL_OUT)
++	    info->variant != XTCHAOS_NORMAL && hooknum != NF_INET_LOCAL_OUT)
 +		xt_chaos_total(info, skb, in, out, hooknum);
 +
 +	return NF_DROP;
@@ -300,8 +300,8 @@ Index: linux-2.6.24/net/netfilter/xt_CHAOS.c
 +	.name       = "CHAOS",
 +	.family     = AF_INET,
 +	.table      = "filter",
-+	.hooks      = (1 << NF_IP_LOCAL_IN) | (1 << NF_IP_FORWARD) |
-+	              (1 << NF_IP_LOCAL_OUT),
++	.hooks      = (1 << NF_INET_LOCAL_IN) | (1 << NF_INET_FORWARD) |
++	              (1 << NF_INET_LOCAL_OUT),
 +	.checkentry = chaos_tg_check,
 +	.target     = chaos_tg,
 +	.targetsize = sizeof(struct xt_chaos_target_info),
@@ -507,10 +507,10 @@ Index: linux-2.6.24/net/netfilter/xt_DELUDE.c
 +
 +	addr_type = RTN_UNSPEC;
 +#ifdef CONFIG_BRIDGE_NETFILTER
-+	if (hook != NF_IP_FORWARD || (nskb->nf_bridge != NULL &&
++	if (hook != NF_INET_FORWARD || (nskb->nf_bridge != NULL &&
 +	    nskb->nf_bridge->mask & BRNF_BRIDGED))
 +#else
-+	if (hook != NF_IP_FORWARD)
++	if (hook != NF_INET_FORWARD)
 +#endif
 +		addr_type = RTN_LOCAL;
 +
@@ -532,7 +532,7 @@ Index: linux-2.6.24/net/netfilter/xt_DELUDE.c
 +
 +	nf_ct_attach(nskb, oldskb);
 +
-+	NF_HOOK(PF_INET, NF_IP_LOCAL_OUT, nskb, NULL, nskb->dst->dev,
++	NF_HOOK(PF_INET, NF_INET_LOCAL_OUT, nskb, NULL, nskb->dst->dev,
 +		dst_output);
 +	return;
 +
@@ -555,7 +555,7 @@ Index: linux-2.6.24/net/netfilter/xt_DELUDE.c
 +	.name       = "DELUDE",
 +	.family     = AF_INET,
 +	.table      = "filter",
-+	.hooks      = (1 << NF_IP_LOCAL_IN) | (1 << NF_IP_FORWARD),
++	.hooks      = (1 << NF_INET_LOCAL_IN) | (1 << NF_INET_FORWARD),
 +	.target     = delude_tg,
 +	.proto      = IPPROTO_TCP,
 +	.me         = THIS_MODULE,
