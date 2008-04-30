@@ -12,7 +12,7 @@ BOARDNAME:=Intel IXP4xx
 FEATURES:=squashfs
 SUBTARGETS=generic harddisk
 
-LINUX_VERSION:=2.6.24.5
+LINUX_VERSION:=2.6.25
 
 include $(INCLUDE_DIR)/target.mk
 
