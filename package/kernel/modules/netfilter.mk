@@ -204,7 +204,7 @@ $(eval $(call KernelPackage,ipt-ulog))
 define KernelPackage/ipt-iprange
   SUBMENU:=$(NF_MENU)
   TITLE:=Module for matching ip ranges
-  FILES:=$(LINUX_DIR)/net/ipv4/netfilter/ipt_iprange.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(foreach mod,$(IPT_IPRANGE-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_IPRANGE-m)))
 endef
 
