@@ -218,7 +218,7 @@ Index: linux-2.6.23/net/netfilter/xt_TARPIT.c
 +	fl.nl_u.ip4_u.tos = RT_TOS(niph->tos) | RTO_CONN;
 +	fl.oif = 0;
 +
-+	if (ip_route_output_key(&nrt, &fl))
++	if (ip_route_output_key(&init_net, &nrt, &fl))
 +		goto free_nskb;
 +
 +	dst_release(nskb->dst);
@@ -279,7 +279,7 @@ Index: linux-2.6.23/net/netfilter/xt_TARPIT.c
 +	if (iph->frag_off & htons(IP_OFFSET))
 +		return NF_DROP;
 +
-+	tarpit_tcp(skb, rt, hooknum == NF_IP_LOCAL_IN);
++	tarpit_tcp(skb, rt, hooknum == NF_INET_LOCAL_IN);
 +	return NF_DROP;
 +}
 +
@@ -289,11 +289,11 @@ Index: linux-2.6.23/net/netfilter/xt_TARPIT.c
 +{
 +	bool invalid;
 +
-+	if (strcmp(tablename, "raw") == 0 && hook_mask == NF_IP_PRE_ROUTING)
++	if (strcmp(tablename, "raw") == 0 && hook_mask == NF_INET_PRE_ROUTING)
 +		return true;
 +	if (strcmp(tablename, "filter") != 0)
 +		return false;
-+	invalid = hook_mask & ~((1 << NF_IP_LOCAL_IN) | (1 << NF_IP_FORWARD));
++	invalid = hook_mask & ~((1 << NF_INET_LOCAL_IN) | (1 << NF_INET_FORWARD));
 +	return !invalid;
 +}
 +

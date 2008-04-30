@@ -122,7 +122,7 @@ Index: linux-2.6.23-rc6/net/ipv4/netfilter/ipt_time.c
 +
 +	/* First, check that we are in the correct hooks */
 +	if (hook_mask
-+            & ~((1 << NF_IP_PRE_ROUTING) | (1 << NF_IP_LOCAL_IN) | (1 << NF_IP_FORWARD) | (1 << NF_IP_LOCAL_OUT)))
++            & ~((1 << NF_INET_PRE_ROUTING) | (1 << NF_INET_LOCAL_IN) | (1 << NF_INET_FORWARD) | (1 << NF_INET_LOCAL_OUT)))
 +	{
 +		printk("ipt_time: error, only valid for PRE_ROUTING, LOCAL_IN, FORWARD and OUTPUT)\n");
 +		return 0;
