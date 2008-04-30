@@ -36,6 +36,22 @@ endef
 $(eval $(call KernelPackage,ata-artop))
 
 
+define KernelPackage/ata-ixp4xx-cf
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=IXP4XX Compact Flash support
+  DEPENDS:=kmod-ata-core
+  KCONFIG:=CONFIG_PATA_IXP4XX_CF
+  FILES:=$(LINUX_DIR)/drivers/ata/pata_ixp4xx_cf.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,pata_ixp4xx_cf)
+endef
+
+define KernelPackage/ata-ixp4xx-cf/description
+ IXP4XX Compact Flash support.
+endef
+
+$(eval $(call KernelPackage,ata-ixp4xx-cf))
+
+
 define KernelPackage/ata-piix
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Intel PIIX PATA/SATA support
