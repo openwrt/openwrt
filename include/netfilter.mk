@@ -120,6 +120,7 @@ $(eval $(call nf_add,IPT_IPOPT,CONFIG_IP_NF_TARGET_TOS, $(P_V4)ipt_TOS))
 # iprange
 
 $(eval $(call nf_add,IPT_IPRANGE,CONFIG_IP_NF_MATCH_IPRANGE, $(P_V4)ipt_iprange))
+$(eval $(call nf_add,IPT_IPRANGE,CONFIG_NETFILTER_XT_MATCH_IPRANGE, $(P_XT)xt_iprange))
 
 
 # ipsec
