@@ -146,6 +146,22 @@ LED_ARRAY(br61x4wg) {
 };
 
 /*
+ * Infineon boards
+ */
+LED_ARRAY(easy5120rt) {
+	LED_INV(ADM5120_GPIO_PIN6, "user",		NULL),
+	LED_INV(ADM5120_GPIO_P0L0, "lan0_led1",		NULL),
+	LED_INV(ADM5120_GPIO_P0L1, "lan0_led2",		NULL),
+	LED_INV(ADM5120_GPIO_P1L0, "lan1_led1",		NULL),
+	LED_INV(ADM5120_GPIO_P1L1, "lan1_led2",		NULL),
+	LED_INV(ADM5120_GPIO_P2L0, "lan2_led1",		NULL),
+	LED_INV(ADM5120_GPIO_P2L1, "lan2_led2",		NULL),
+	LED_INV(ADM5120_GPIO_P3L0, "lan3_led1",		NULL),
+	LED_INV(ADM5120_GPIO_P3L1, "lan3_led2",		NULL),
+	LED_INV(ADM5120_GPIO_P4L0, "wan",		NULL),
+};
+
+/*
  * Mikrotik boards
  */
 LED_ARRAY(rb100) {
@@ -173,17 +189,17 @@ LED_ARRAY(rb133c) {
 };
 
 LED_ARRAY(rb153) {
-	LED_STD(ADM5120_GPIO_PIN5, "user", 		NULL),
-        LED_INV(ADM5120_GPIO_P0L1, "lan1_speed", 	NULL),
-        LED_INV(ADM5120_GPIO_P0L0, "lan1_lnkact", 	NULL),
-        LED_INV(ADM5120_GPIO_P1L1, "lan5_speed", 	NULL),
-        LED_INV(ADM5120_GPIO_P1L0, "lan5_lnkact", 	NULL),
-        LED_INV(ADM5120_GPIO_P2L1, "lan4_speed", 	NULL),
-        LED_INV(ADM5120_GPIO_P2L0, "lan4_lnkact",       NULL),
-        LED_INV(ADM5120_GPIO_P3L1, "lan3_speed",        NULL),
-        LED_INV(ADM5120_GPIO_P3L0, "lan3_lnkact",       NULL),
-        LED_INV(ADM5120_GPIO_P4L1, "lan2_speed",        NULL),
-        LED_INV(ADM5120_GPIO_P4L0, "lan2_lnkact",       NULL),
+	LED_STD(ADM5120_GPIO_PIN5, "user",		NULL),
+	LED_INV(ADM5120_GPIO_P0L1, "lan1_speed",	NULL),
+	LED_INV(ADM5120_GPIO_P0L0, "lan1_lnkact",	NULL),
+	LED_INV(ADM5120_GPIO_P1L1, "lan5_speed",	NULL),
+	LED_INV(ADM5120_GPIO_P1L0, "lan5_lnkact",	NULL),
+	LED_INV(ADM5120_GPIO_P2L1, "lan4_speed",	NULL),
+	LED_INV(ADM5120_GPIO_P2L0, "lan4_lnkact",	NULL),
+	LED_INV(ADM5120_GPIO_P3L1, "lan3_speed",	NULL),
+	LED_INV(ADM5120_GPIO_P3L0, "lan3_lnkact",	NULL),
+	LED_INV(ADM5120_GPIO_P4L1, "lan2_speed",	NULL),
+	LED_INV(ADM5120_GPIO_P4L0, "lan2_lnkact",	NULL),
 };
 
 /*
@@ -278,6 +294,8 @@ static struct mach_data machines[] __initdata = {
 	/* Edimax */
 	MACH_DATA(MACH_ADM5120_BR6104K,	br6104k),
 	MACH_DATA(MACH_ADM5120_BR61x4WG, br61x4wg),
+	/* Infineon */
+	MACH_DATA(MACH_ADM5120_EASY5120RT, easy5120rt),
 	/* Mikrotik */
 	MACH_DATA(MACH_ADM5120_RB_111,	rb100),
 	MACH_DATA(MACH_ADM5120_RB_112,	rb100),
