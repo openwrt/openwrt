@@ -1,0 +1,14 @@
+--- acx-20080210/common.c.orig	2008-04-19 17:38:46.000000000 +0100
++++ acx-20080210/common.c	2008-04-19 17:40:10.000000000 +0100
+@@ -4155,6 +4155,11 @@
+ 		/* To_DS = 0, From_DS = 1 */
+ 		hdr->fc = WF_FC_FROMDSi + WF_FTYPE_DATAi;
+ 
++		/* Do we need to encrypt this? */
++		if (adev->wep_enabled) {
++			SET_BIT(hdr->fc, WF_FC_ISWEPi);
++		}
++
+ 		txbuf = acx_l_get_txbuf(adev, tx);
+ 		if (txbuf) {
+ 			len = RXBUF_BYTES_RCVD(adev, rxbuf);
