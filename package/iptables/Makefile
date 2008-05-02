@@ -88,7 +88,7 @@ define Package/iptables-mod-filter/description
 endef
 
 define Package/iptables-mod-imq
-$(call Package/iptables/Module, +kmod-ipt-imq)
+$(call Package/iptables/Module, +kmod-ipt-imq @!LINUX_2_6_25)
   TITLE:=IMQ support
 endef
 
