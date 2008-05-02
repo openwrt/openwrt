@@ -1,7 +1,7 @@
-Index: linux-2.6.24.2/drivers/net/arm/ixp4xx_eth.c
+Index: linux-2.6.25.1/drivers/net/arm/ixp4xx_eth.c
 ===================================================================
---- linux-2.6.24.2.orig/drivers/net/arm/ixp4xx_eth.c
-+++ linux-2.6.24.2/drivers/net/arm/ixp4xx_eth.c
+--- linux-2.6.25.1.orig/drivers/net/arm/ixp4xx_eth.c
++++ linux-2.6.25.1/drivers/net/arm/ixp4xx_eth.c
 @@ -165,14 +165,15 @@ struct port {
  	struct net_device *netdev;
  	struct napi_struct napi;
@@ -20,7 +20,7 @@ Index: linux-2.6.24.2/drivers/net/arm/ixp4xx_eth.c
  };
  
  /* NPE message structure */
-@@ -316,13 +317,14 @@ static void mdio_write(struct net_device
+@@ -316,12 +317,13 @@ static void mdio_write(struct net_device
  	spin_unlock_irqrestore(&mdio_lock, flags);
  }
  
@@ -32,12 +32,10 @@ Index: linux-2.6.24.2/drivers/net/arm/ixp4xx_eth.c
  	int cycles = 0;
  
 -	mdio_write(dev, phy_id, MII_BMCR, port->mii_bmcr | BMCR_RESET);
--
 +	mdio_write(dev, phy_id, MII_BMCR, port->mii_bmcr[idx] | BMCR_RESET);
-+
+ 
  	while (cycles < MAX_MII_RESET_RETRIES) {
  		if (!(mdio_read(dev, phy_id, MII_BMCR) & BMCR_RESET)) {
- #if DEBUG_MDIO
 @@ -335,12 +337,12 @@ static void phy_reset(struct net_device 
  		cycles++;
  	}
@@ -107,7 +105,7 @@ Index: linux-2.6.24.2/drivers/net/arm/ixp4xx_eth.c
 +	}
 +}
 +#endif
- 
++
 +static void phy_power_down(struct net_device *dev, int idx)
 +{
 +	struct port *port = netdev_priv(dev);
@@ -121,13 +119,13 @@ Index: linux-2.6.24.2/drivers/net/arm/ixp4xx_eth.c
 +static void phy_power_up(struct net_device *dev, int idx)
 +{
 +	struct port *port = netdev_priv(dev);
-+
+ 
 +	mdio_write(dev, port->mii[idx].phy_id, MII_BMCR, port->mii_bmcr[idx]);
 +}
  
  static void mdio_thread(struct work_struct *work)
  {
-@@ -790,9 +848,12 @@ static int eth_ioctl(struct net_device *
+@@ -792,9 +850,12 @@ static int eth_ioctl(struct net_device *
  
  	if (!netif_running(dev))
  		return -EINVAL;
@@ -142,7 +140,7 @@ Index: linux-2.6.24.2/drivers/net/arm/ixp4xx_eth.c
  	return err;
  }
  
-@@ -944,7 +1005,8 @@ static int eth_open(struct net_device *d
+@@ -947,7 +1008,8 @@ static int eth_open(struct net_device *d
  		}
  	}
  
@@ -152,7 +150,7 @@ Index: linux-2.6.24.2/drivers/net/arm/ixp4xx_eth.c
  
  	memset(&msg, 0, sizeof(msg));
  	msg.cmd = NPE_VLAN_SETRXQOSENTRY;
-@@ -1103,10 +1165,8 @@ static int eth_close(struct net_device *
+@@ -1107,10 +1169,8 @@ static int eth_close(struct net_device *
  		printk(KERN_CRIT "%s: unable to disable loopback\n",
  		       dev->name);
  
@@ -165,7 +163,7 @@ Index: linux-2.6.24.2/drivers/net/arm/ixp4xx_eth.c
  
  	if (!ports_open)
  		qmgr_disable_irq(TXDONE_QUEUE);
-@@ -1117,6 +1177,42 @@ static int eth_close(struct net_device *
+@@ -1120,6 +1180,42 @@ static int eth_close(struct net_device *
  	return 0;
  }
  
@@ -208,7 +206,7 @@ Index: linux-2.6.24.2/drivers/net/arm/ixp4xx_eth.c
  static int __devinit eth_init_one(struct platform_device *pdev)
  {
  	struct port *port;
-@@ -1189,20 +1285,7 @@ static int __devinit eth_init_one(struct
+@@ -1192,20 +1288,7 @@ static int __devinit eth_init_one(struct
  	__raw_writel(DEFAULT_CORE_CNTRL, &port->regs->core_control);
  	udelay(50);
  
@@ -230,11 +228,11 @@ Index: linux-2.6.24.2/drivers/net/arm/ixp4xx_eth.c
  
  	INIT_DELAYED_WORK(&port->mdio_thread, mdio_thread);
  	return 0;
-Index: linux-2.6.24.2/include/asm-arm/arch-ixp4xx/platform.h
+Index: linux-2.6.25.1/include/asm-arm/arch-ixp4xx/platform.h
 ===================================================================
---- linux-2.6.24.2.orig/include/asm-arm/arch-ixp4xx/platform.h
-+++ linux-2.6.24.2/include/asm-arm/arch-ixp4xx/platform.h
-@@ -106,12 +106,15 @@ struct sys_timer;
+--- linux-2.6.25.1.orig/include/asm-arm/arch-ixp4xx/platform.h
++++ linux-2.6.25.1/include/asm-arm/arch-ixp4xx/platform.h
+@@ -95,12 +95,15 @@ struct sys_timer;
  #define IXP4XX_ETH_NPEB		0x10
  #define IXP4XX_ETH_NPEC		0x20
  

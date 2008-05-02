@@ -1,8 +1,8 @@
-Index: linux-2.6.23.14/arch/arm/common/dmabounce.c
+Index: linux-2.6.25.1/arch/arm/common/dmabounce.c
 ===================================================================
---- linux-2.6.23.14.orig/arch/arm/common/dmabounce.c	2008-01-24 22:03:28.475500801 +0100
-+++ linux-2.6.23.14/arch/arm/common/dmabounce.c	2008-01-24 22:17:36.415822168 +0100
-@@ -116,6 +116,10 @@
+--- linux-2.6.25.1.orig/arch/arm/common/dmabounce.c
++++ linux-2.6.25.1/arch/arm/common/dmabounce.c
+@@ -117,6 +117,10 @@ alloc_safe_buffer(struct dmabounce_devic
  	} else if (size <= device_info->large.size) {
  		pool = &device_info->large;
  	} else {
@@ -13,11 +13,11 @@ Index: linux-2.6.23.14/arch/arm/common/dmabounce.c
  		pool = NULL;
  	}
  
-Index: linux-2.6.23.14/arch/arm/mach-ixp4xx/Kconfig
+Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
 ===================================================================
---- linux-2.6.23.14.orig/arch/arm/mach-ixp4xx/Kconfig	2008-01-24 22:10:29.331484012 +0100
-+++ linux-2.6.23.14/arch/arm/mach-ixp4xx/Kconfig	2008-01-24 22:11:42.891675973 +0100
-@@ -220,6 +220,11 @@
+--- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Kconfig
++++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
+@@ -236,6 +236,11 @@ config DMABOUNCE
  	default y
  	depends on PCI
  

@@ -18,10 +18,10 @@ KernelVersion: v2.6.25-rc6-117-g457fb60
  3 files changed, 268 insertions(+), 0 deletions(-)
  create mode 100644 drivers/leds/leds-fsg.c
 
-diff --git a/drivers/leds/Kconfig b/drivers/leds/Kconfig
-index 859814f..aefbe04 100644
---- a/drivers/leds/Kconfig
-+++ b/drivers/leds/Kconfig
+Index: linux-2.6.25.1/drivers/leds/Kconfig
+===================================================================
+--- linux-2.6.25.1.orig/drivers/leds/Kconfig
++++ linux-2.6.25.1/drivers/leds/Kconfig
 @@ -46,6 +46,12 @@ config LEDS_SPITZ
  	  This option enables support for the LEDs on Sharp Zaurus
  	  SL-Cxx00 series (C1000, C3000, C3100).
@@ -35,11 +35,11 @@ index 859814f..aefbe04 100644
  config LEDS_TOSA
  	tristate "LED Support for the Sharp SL-6000 series"
  	depends on LEDS_CLASS && PXA_SHARPSL
-diff --git a/drivers/leds/Makefile b/drivers/leds/Makefile
-index 84ced3b..b17bd91 100644
---- a/drivers/leds/Makefile
-+++ b/drivers/leds/Makefile
-@@ -21,6 +21,7 @@ obj-$(CONFIG_LEDS_GPIO)			+= leds-gpio.o
+Index: linux-2.6.25.1/drivers/leds/Makefile
+===================================================================
+--- linux-2.6.25.1.orig/drivers/leds/Makefile
++++ linux-2.6.25.1/drivers/leds/Makefile
+@@ -22,6 +22,7 @@ obj-$(CONFIG_LEDS_GPIO)			+= leds-gpio.o
  obj-$(CONFIG_LEDS_CM_X270)              += leds-cm-x270.o
  obj-$(CONFIG_LEDS_CLEVO_MAIL)		+= leds-clevo-mail.o
  obj-$(CONFIG_LEDS_HP6XX)		+= leds-hp6xx.o
@@ -47,11 +47,10 @@ index 84ced3b..b17bd91 100644
  
  # LED Triggers
  obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledtrig-timer.o
-diff --git a/drivers/leds/leds-fsg.c b/drivers/leds/leds-fsg.c
-new file mode 100644
-index 0000000..a7421b8
+Index: linux-2.6.25.1/drivers/leds/leds-fsg.c
+===================================================================
 --- /dev/null
-+++ b/drivers/leds/leds-fsg.c
++++ linux-2.6.25.1/drivers/leds/leds-fsg.c
 @@ -0,0 +1,261 @@
 +/*
 + * LED Driver for the Freecom FSG-3
@@ -314,6 +313,3 @@ index 0000000..a7421b8
 +MODULE_AUTHOR("Rod Whitby <rod@whitby.id.au>");
 +MODULE_DESCRIPTION("Freecom FSG-3 LED driver");
 +MODULE_LICENSE("GPL");
--- 
-1.5.2.5
-

@@ -1,7 +1,7 @@
-Index: linux-2.6.23-rc6/drivers/mtd/chips/cfi_cmdset_0002.c
+Index: linux-2.6.25.1/drivers/mtd/chips/cfi_cmdset_0002.c
 ===================================================================
---- linux-2.6.23-rc6.orig/drivers/mtd/chips/cfi_cmdset_0002.c	2007-09-21 16:23:54.000000000 +0800
-+++ linux-2.6.23-rc6/drivers/mtd/chips/cfi_cmdset_0002.c	2007-09-21 16:23:57.000000000 +0800
+--- linux-2.6.25.1.orig/drivers/mtd/chips/cfi_cmdset_0002.c
++++ linux-2.6.25.1/drivers/mtd/chips/cfi_cmdset_0002.c
 @@ -51,6 +51,7 @@
  #define SST49LF040B	        0x0050
  #define SST49LF008A		0x005a
@@ -10,7 +10,7 @@ Index: linux-2.6.23-rc6/drivers/mtd/chips/cfi_cmdset_0002.c
  
  static int cfi_amdstd_read (struct mtd_info *, loff_t, size_t, size_t *, u_char *);
  static int cfi_amdstd_write_words(struct mtd_info *, loff_t, size_t, size_t *, const u_char *);
-@@ -294,12 +295,19 @@
+@@ -298,12 +299,19 @@ struct mtd_info *cfi_cmdset_0002(struct 
  
  		if (extp->MajorVersion != '1' ||
  		    (extp->MinorVersion < '0' || extp->MinorVersion > '4')) {

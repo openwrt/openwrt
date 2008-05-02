@@ -1,8 +1,8 @@
-Index: linux-2.6.24/arch/arm/mach-ixp4xx/Kconfig
+Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
 ===================================================================
---- linux-2.6.24.orig/arch/arm/mach-ixp4xx/Kconfig	2008-03-12 21:21:28.000000000 +1030
-+++ linux-2.6.24/arch/arm/mach-ixp4xx/Kconfig	2008-03-12 21:21:29.000000000 +1030
-@@ -49,6 +49,14 @@
+--- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Kconfig
++++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
+@@ -49,6 +49,14 @@ config MACH_GATEWAY7001
  	  7001 Access Point. For more information on this platform,
  	  see http://openwrt.org
  
@@ -17,11 +17,11 @@ Index: linux-2.6.24/arch/arm/mach-ixp4xx/Kconfig
  config MACH_WG302V2
  	bool "Netgear WG302 v2 / WAG302 v2"
  	select PCI
-Index: linux-2.6.24/arch/arm/mach-ixp4xx/Makefile
+Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
 ===================================================================
---- linux-2.6.24.orig/arch/arm/mach-ixp4xx/Makefile	2008-03-12 21:21:28.000000000 +1030
-+++ linux-2.6.24/arch/arm/mach-ixp4xx/Makefile	2008-03-12 21:21:29.000000000 +1030
-@@ -14,6 +14,7 @@
+--- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Makefile
++++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
+@@ -14,6 +14,7 @@ obj-pci-$(CONFIG_MACH_NSLU2)		+= nslu2-p
  obj-pci-$(CONFIG_MACH_NAS100D)		+= nas100d-pci.o
  obj-pci-$(CONFIG_MACH_DSMG600)		+= dsmg600-pci.o
  obj-pci-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-pci.o
@@ -29,18 +29,18 @@ Index: linux-2.6.24/arch/arm/mach-ixp4xx/Makefile
  obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
  obj-pci-$(CONFIG_MACH_FSG)		+= fsg-pci.o
  obj-pci-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-pci.o
-@@ -33,6 +34,7 @@
- obj-$(CONFIG_MACH_NAS100D)	+= nas100d-setup.o nas100d-power.o
- obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o dsmg600-power.o
+@@ -33,6 +34,7 @@ obj-$(CONFIG_MACH_NSLU2)	+= nslu2-setup.
+ obj-$(CONFIG_MACH_NAS100D)	+= nas100d-setup.o
+ obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o
  obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
 +obj-$(CONFIG_MACH_WG302V1)	+= wg302v1-setup.o
  obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
  obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o
  obj-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-setup.o
-Index: linux-2.6.24/arch/arm/mach-ixp4xx/wg302v1-pci.c
+Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/wg302v1-pci.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.24/arch/arm/mach-ixp4xx/wg302v1-pci.c	2008-03-12 21:21:29.000000000 +1030
+--- /dev/null
++++ linux-2.6.25.1/arch/arm/mach-ixp4xx/wg302v1-pci.c
 @@ -0,0 +1,63 @@
 +/*
 + * arch/arch/mach-ixp4xx/wg302v1-pci.c
@@ -105,10 +105,10 @@ Index: linux-2.6.24/arch/arm/mach-ixp4xx/wg302v1-pci.c
 +}
 +
 +subsys_initcall(wg302v1_pci_init);
-Index: linux-2.6.24/arch/arm/mach-ixp4xx/wg302v1-setup.c
+Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/wg302v1-setup.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.24/arch/arm/mach-ixp4xx/wg302v1-setup.c	2008-03-12 21:21:29.000000000 +1030
+--- /dev/null
++++ linux-2.6.25.1/arch/arm/mach-ixp4xx/wg302v1-setup.c
 @@ -0,0 +1,109 @@
 +/*
 + * arch/arm/mach-ixp4xx/wg302v1-setup.c

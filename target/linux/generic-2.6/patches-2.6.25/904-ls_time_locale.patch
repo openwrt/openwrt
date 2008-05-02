@@ -1,8 +1,8 @@
-Index: linux-2.6.23-rc6/scripts/gen_initramfs_list.sh
+Index: linux-2.6.25.1/scripts/gen_initramfs_list.sh
 ===================================================================
---- linux-2.6.23-rc6.orig/scripts/gen_initramfs_list.sh	2007-09-21 16:23:51.000000000 +0800
-+++ linux-2.6.23-rc6/scripts/gen_initramfs_list.sh	2007-09-21 16:24:11.000000000 +0800
-@@ -125,7 +125,7 @@
+--- linux-2.6.25.1.orig/scripts/gen_initramfs_list.sh
++++ linux-2.6.25.1/scripts/gen_initramfs_list.sh
+@@ -125,7 +125,7 @@ parse() {
  			str="${ftype} ${name} ${location} ${str}"
  			;;
  		"nod")
@@ -11,7 +11,7 @@ Index: linux-2.6.23-rc6/scripts/gen_initramfs_list.sh
  			local maj=`field 5 ${dev}`
  			local min=`field 6 ${dev}`
  			maj=${maj%,}
-@@ -135,7 +135,7 @@
+@@ -135,7 +135,7 @@ parse() {
  			str="${ftype} ${name} ${str} ${dev} ${maj} ${min}"
  			;;
  		"slink")

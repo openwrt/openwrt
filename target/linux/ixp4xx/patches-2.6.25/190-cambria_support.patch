@@ -1,7 +1,8 @@
-diff -Nur linux-2.6.24.5/arch/arm/mach-ixp4xx/Kconfig linux-2.6.24.5-owrt/arch/arm/mach-ixp4xx/Kconfig
---- linux-2.6.24.5/arch/arm/mach-ixp4xx/Kconfig	2008-04-28 20:22:27.000000000 +0200
-+++ linux-2.6.24.5-owrt/arch/arm/mach-ixp4xx/Kconfig	2008-04-28 20:26:44.000000000 +0200
-@@ -25,6 +25,14 @@
+Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
+===================================================================
+--- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Kconfig
++++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
+@@ -25,6 +25,14 @@ config MACH_AVILA
  	  Avila Network Platform. For more information on this platform,
  	  see <file:Documentation/arm/IXP4xx>.
  
@@ -16,7 +17,7 @@ diff -Nur linux-2.6.24.5/arch/arm/mach-ixp4xx/Kconfig linux-2.6.24.5-owrt/arch/a
  config MACH_LOFT
      bool "Loft"
      depends on MACH_AVILA
-@@ -200,7 +208,7 @@
+@@ -200,7 +208,7 @@ config CPU_IXP46X
  
  config CPU_IXP43X
  	bool
@@ -25,10 +26,11 @@ diff -Nur linux-2.6.24.5/arch/arm/mach-ixp4xx/Kconfig linux-2.6.24.5-owrt/arch/a
  	default y
  
  config MACH_GTWX5715
-diff -Nur linux-2.6.24.5/arch/arm/mach-ixp4xx/Makefile linux-2.6.24.5-owrt/arch/arm/mach-ixp4xx/Makefile
---- linux-2.6.24.5/arch/arm/mach-ixp4xx/Makefile	2008-04-28 20:22:27.000000000 +0200
-+++ linux-2.6.24.5-owrt/arch/arm/mach-ixp4xx/Makefile	2008-04-28 20:26:44.000000000 +0200
-@@ -7,6 +7,7 @@
+Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
+===================================================================
+--- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Makefile
++++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
+@@ -7,6 +7,7 @@ obj-pci-n	:=
  
  obj-pci-$(CONFIG_ARCH_IXDP4XX)		+= ixdp425-pci.o
  obj-pci-$(CONFIG_MACH_AVILA)		+= avila-pci.o
@@ -36,7 +38,7 @@ diff -Nur linux-2.6.24.5/arch/arm/mach-ixp4xx/Makefile linux-2.6.24.5-owrt/arch/
  obj-pci-$(CONFIG_MACH_IXDPG425)		+= ixdpg425-pci.o
  obj-pci-$(CONFIG_ARCH_ADI_COYOTE)	+= coyote-pci.o
  obj-pci-$(CONFIG_MACH_GTWX5715)		+= gtwx5715-pci.o
-@@ -28,6 +29,7 @@
+@@ -28,6 +29,7 @@ obj-y	+= common.o
  
  obj-$(CONFIG_ARCH_IXDP4XX)	+= ixdp425-setup.o
  obj-$(CONFIG_MACH_AVILA)	+= avila-setup.o
@@ -44,9 +46,10 @@ diff -Nur linux-2.6.24.5/arch/arm/mach-ixp4xx/Makefile linux-2.6.24.5-owrt/arch/
  obj-$(CONFIG_MACH_IXDPG425)	+= coyote-setup.o
  obj-$(CONFIG_ARCH_ADI_COYOTE)	+= coyote-setup.o
  obj-$(CONFIG_MACH_GTWX5715)	+= gtwx5715-setup.o
-diff -Nur linux-2.6.24.5/arch/arm/mach-ixp4xx/cambria-pci.c linux-2.6.24.5-owrt/arch/arm/mach-ixp4xx/cambria-pci.c
---- linux-2.6.24.5/arch/arm/mach-ixp4xx/cambria-pci.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.24.5-owrt/arch/arm/mach-ixp4xx/cambria-pci.c	2008-04-28 20:30:35.000000000 +0200
+Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/cambria-pci.c
+===================================================================
+--- /dev/null
++++ linux-2.6.25.1/arch/arm/mach-ixp4xx/cambria-pci.c
 @@ -0,0 +1,74 @@
 +/*
 + * arch/arch/mach-ixp4xx/cambria-pci.c
@@ -122,9 +125,10 @@ diff -Nur linux-2.6.24.5/arch/arm/mach-ixp4xx/cambria-pci.c linux-2.6.24.5-owrt/
 +}
 +
 +subsys_initcall(cambria_pci_init);
-diff -Nur linux-2.6.24.5/arch/arm/mach-ixp4xx/cambria-setup.c linux-2.6.24.5-owrt/arch/arm/mach-ixp4xx/cambria-setup.c
---- linux-2.6.24.5/arch/arm/mach-ixp4xx/cambria-setup.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.24.5-owrt/arch/arm/mach-ixp4xx/cambria-setup.c	2008-04-28 21:07:16.000000000 +0200
+Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/cambria-setup.c
+===================================================================
+--- /dev/null
++++ linux-2.6.25.1/arch/arm/mach-ixp4xx/cambria-setup.c
 @@ -0,0 +1,250 @@
 +/*
 + * arch/arm/mach-ixp4xx/cambria-setup.c
@@ -376,9 +380,10 @@ diff -Nur linux-2.6.24.5/arch/arm/mach-ixp4xx/cambria-setup.c linux-2.6.24.5-owr
 +	.init_machine	= cambria_init,
 +MACHINE_END
 +#endif
-diff -Nur linux-2.6.24.5/include/asm-arm/arch-ixp4xx/hardware.h linux-2.6.24.5-owrt/include/asm-arm/arch-ixp4xx/hardware.h
---- linux-2.6.24.5/include/asm-arm/arch-ixp4xx/hardware.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.24.5-owrt/include/asm-arm/arch-ixp4xx/hardware.h	2008-04-28 21:07:16.000000000 +0200
+Index: linux-2.6.25.1/include/asm-arm/arch-ixp4xx/hardware.h
+===================================================================
+--- linux-2.6.25.1.orig/include/asm-arm/arch-ixp4xx/hardware.h
++++ linux-2.6.25.1/include/asm-arm/arch-ixp4xx/hardware.h
 @@ -18,7 +18,7 @@
  #define __ASM_ARCH_HARDWARE_H__
  

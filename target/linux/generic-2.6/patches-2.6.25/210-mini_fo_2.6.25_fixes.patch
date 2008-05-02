@@ -1,7 +1,7 @@
-Index: linux-2.6.25/fs/mini_fo/main.c
+Index: linux-2.6.25.1/fs/mini_fo/main.c
 ===================================================================
---- linux-2.6.25.orig/fs/mini_fo/main.c
-+++ linux-2.6.25/fs/mini_fo/main.c
+--- linux-2.6.25.1.orig/fs/mini_fo/main.c
++++ linux-2.6.25.1/fs/mini_fo/main.c
 @@ -79,6 +79,7 @@ mini_fo_tri_interpose(dentry_t *hidden_d
  	 * of the new inode's fields
  	 */
@@ -50,10 +50,10 @@ Index: linux-2.6.25/fs/mini_fo/main.c
  			stohs2(sb) = hidden_root2->d_sb;
  
  			/* validate storage dir, this is done in
-Index: linux-2.6.25/fs/mini_fo/mini_fo.h
+Index: linux-2.6.25.1/fs/mini_fo/mini_fo.h
 ===================================================================
---- linux-2.6.25.orig/fs/mini_fo/mini_fo.h
-+++ linux-2.6.25/fs/mini_fo/mini_fo.h
+--- linux-2.6.25.1.orig/fs/mini_fo/mini_fo.h
++++ linux-2.6.25.1/fs/mini_fo/mini_fo.h
 @@ -302,6 +302,10 @@ extern int mini_fo_tri_interpose(dentry_
  extern int mini_fo_cp_cont(dentry_t *tgt_dentry, struct vfsmount *tgt_mnt,
  			   dentry_t *src_dentry, struct vfsmount *src_mnt);
@@ -95,10 +95,10 @@ Index: linux-2.6.25/fs/mini_fo/mini_fo.h
  /*
   * Definitions for user and kernel code
   */
-Index: linux-2.6.25/fs/mini_fo/super.c
+Index: linux-2.6.25.1/fs/mini_fo/super.c
 ===================================================================
---- linux-2.6.25.orig/fs/mini_fo/super.c
-+++ linux-2.6.25/fs/mini_fo/super.c
+--- linux-2.6.25.1.orig/fs/mini_fo/super.c
++++ linux-2.6.25.1/fs/mini_fo/super.c
 @@ -262,10 +262,31 @@ mini_fo_umount_begin(super_block_t *sb)
  }
  #endif
@@ -131,10 +131,10 @@ Index: linux-2.6.25/fs/mini_fo/super.c
  #if defined(FIST_DEBUG) || defined(FIST_FILTER_SCA)
  	write_inode:	mini_fo_write_inode,
  #endif /* defined(FIST_DEBUG) || defined(FIST_FILTER_SCA) */
-Index: linux-2.6.25/fs/mini_fo/aux.c
+Index: linux-2.6.25.1/fs/mini_fo/aux.c
 ===================================================================
---- linux-2.6.25.orig/fs/mini_fo/aux.c
-+++ linux-2.6.25/fs/mini_fo/aux.c
+--- linux-2.6.25.1.orig/fs/mini_fo/aux.c
++++ linux-2.6.25.1/fs/mini_fo/aux.c
 @@ -164,11 +164,11 @@ dentry_t *bpath_walk(super_block_t *sb, 
  	err = vfs_path_lookup(mnt->mnt_root, mnt, bpath+1, 0, &nd);
  
