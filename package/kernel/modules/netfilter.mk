@@ -156,6 +156,7 @@ define KernelPackage/ipt-imq
   SUBMENU:=$(NF_MENU)
   TITLE:=Intermediate Queueing support
   KCONFIG:=CONFIG_IP_NF_TARGET_IMQ
+  DEPENDS:=@!LINUX_2_6_25
   FILES:=$(LINUX_DIR)/net/ipv4/netfilter/*IMQ*.$(LINUX_KMOD_SUFFIX) $(LINUX_DIR)/drivers/net/imq.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(patsubst %.ko,%,$(wildcard $(LINUX_DIR)/net/ipv4/netfilter/*IMQ*.$(LINUX_KMOD_SUFFIX) $(LINUX_DIR)/drivers/net/imq.$(LINUX_KMOD_SUFFIX)))))
 endef
