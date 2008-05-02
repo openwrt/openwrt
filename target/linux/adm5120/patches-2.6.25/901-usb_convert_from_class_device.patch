@@ -1,0 +1,109 @@
+Index: linux-2.6.25/drivers/usb/host/adm5120-dbg.c
+===================================================================
+--- linux-2.6.25.orig/drivers/usb/host/adm5120-dbg.c
++++ linux-2.6.25/drivers/usb/host/adm5120-dbg.c
+@@ -456,7 +456,7 @@ show_list(struct admhcd *ahcd, char *buf
+ }
+ 
+ static ssize_t
+-show_async(struct class_device *class_dev, char *buf)
++show_async(struct device *dev, struct device_attribute *attr, char *buf)
+ {
+ 	struct usb_bus		*bus;
+ 	struct usb_hcd		*hcd;
+@@ -464,7 +464,7 @@ show_async(struct class_device *class_de
+ 	size_t			temp;
+ 	unsigned long		flags;
+ 
+-	bus = class_get_devdata(class_dev);
++	bus = dev_get_drvdata(dev);
+ 	hcd = bus_to_hcd(bus);
+ 	ahcd = hcd_to_admhcd(hcd);
+ 
+@@ -475,13 +475,13 @@ show_async(struct class_device *class_de
+ 
+ 	return temp;
+ }
+-static CLASS_DEVICE_ATTR(async, S_IRUGO, show_async, NULL);
++static DEVICE_ATTR(async, S_IRUGO, show_async, NULL);
+ 
+ 
+ #define DBG_SCHED_LIMIT 64
+ 
+ static ssize_t
+-show_periodic(struct class_device *class_dev, char *buf)
++show_periodic(struct device *dev, struct device_attribute *attr, char *buf)
+ {
+ 	struct usb_bus		*bus;
+ 	struct usb_hcd		*hcd;
+@@ -496,7 +496,7 @@ show_periodic(struct class_device *class
+ 		return 0;
+ 	seen_count = 0;
+ 
+-	bus = class_get_devdata(class_dev);
++	bus = dev_get_drvdata(dev);
+ 	hcd = bus_to_hcd(bus);
+ 	ahcd = hcd_to_admhcd(hcd);
+ 	next = buf;
+@@ -574,13 +574,13 @@ show_periodic(struct class_device *class
+ 
+ 	return PAGE_SIZE - size;
+ }
+-static CLASS_DEVICE_ATTR(periodic, S_IRUGO, show_periodic, NULL);
++static DEVICE_ATTR(periodic, S_IRUGO, show_periodic, NULL);
+ 
+ 
+ #undef DBG_SCHED_LIMIT
+ 
+ static ssize_t
+-show_registers(struct class_device *class_dev, char *buf)
++show_registers(struct device *dev, struct device_attribute *attr, char *buf)
+ {
+ 	struct usb_bus		*bus;
+ 	struct usb_hcd		*hcd;
+@@ -591,7 +591,7 @@ show_registers(struct class_device *clas
+ 	char			*next;
+ 	u32			rdata;
+ 
+-	bus = class_get_devdata(class_dev);
++	bus = dev_get_drvdata(dev);
+ 	hcd = bus_to_hcd(bus);
+ 	ahcd = hcd_to_admhcd(hcd);
+ 	regs = ahcd->regs;
+@@ -656,27 +656,27 @@ done:
+ 	spin_unlock_irqrestore(&ahcd->lock, flags);
+ 	return PAGE_SIZE - size;
+ }
+-static CLASS_DEVICE_ATTR(registers, S_IRUGO, show_registers, NULL);
++static DEVICE_ATTR(registers, S_IRUGO, show_registers, NULL);
+ 
+ 
+ static inline void create_debug_files (struct admhcd *ahcd)
+ {
+-	struct class_device *cldev = admhcd_to_hcd(ahcd)->self.class_dev;
++	struct device *dev = admhcd_to_hcd(ahcd)->self.dev;
+ 	int retval;
+ 
+-	retval = class_device_create_file(cldev, &class_device_attr_async);
+-	retval = class_device_create_file(cldev, &class_device_attr_periodic);
+-	retval = class_device_create_file(cldev, &class_device_attr_registers);
++	retval = device_create_file(dev, &dev_attr_async);
++	retval = device_create_file(dev, &dev_attr_periodic);
++	retval = device_create_file(dev, &dev_attr_registers);
+ 	admhc_dbg(ahcd, "created debug files\n");
+ }
+ 
+ static inline void remove_debug_files (struct admhcd *ahcd)
+ {
+-	struct class_device *cldev = admhcd_to_hcd(ahcd)->self.class_dev;
++	struct device *dev = admhcd_to_hcd(ahcd)->self.dev;
+ 
+-	class_device_remove_file(cldev, &class_device_attr_async);
+-	class_device_remove_file(cldev, &class_device_attr_periodic);
+-	class_device_remove_file(cldev, &class_device_attr_registers);
++	device_remove_file(dev, &dev_attr_async);
++	device_remove_file(dev, &dev_attr_periodic);
++	device_remove_file(dev, &dev_attr_registers);
+ }
+ 
+ #endif
