@@ -1,7 +1,8 @@
-diff -Nur linux-2.6.24/fs/jffs2/erase.c linux-2.6.24-owrt/fs/jffs2/erase.c
---- linux-2.6.24/fs/jffs2/erase.c	2008-01-30 17:30:15.000000000 +0100
-+++ linux-2.6.24-owrt/fs/jffs2/erase.c	2008-01-30 22:20:02.000000000 +0100
-@@ -35,6 +35,8 @@
+Index: linux-2.6.25.1/fs/jffs2/erase.c
+===================================================================
+--- linux-2.6.25.1.orig/fs/jffs2/erase.c
++++ linux-2.6.25.1/fs/jffs2/erase.c
+@@ -35,6 +35,8 @@ static void jffs2_erase_block(struct jff
  {
  	int ret;
  	uint32_t bad_offset;
@@ -10,7 +11,7 @@ diff -Nur linux-2.6.24/fs/jffs2/erase.c linux-2.6.24-owrt/fs/jffs2/erase.c
  #ifdef __ECOS
         ret = jffs2_flash_erase(c, jeb);
         if (!ret) {
-@@ -47,6 +49,11 @@
+@@ -47,6 +49,11 @@ static void jffs2_erase_block(struct jff
  
  	D1(printk(KERN_DEBUG "jffs2_erase_block(): erase block %#08x (range %#08x-%#08x)\n",
  				jeb->offset, jeb->offset, jeb->offset + c->sector_size));

@@ -1,8 +1,8 @@
-Index: linux-2.6.24/arch/arm/mach-ixp4xx/Kconfig
+Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
 ===================================================================
---- linux-2.6.24.orig/arch/arm/mach-ixp4xx/Kconfig	2008-03-12 21:21:26.000000000 +1030
-+++ linux-2.6.24/arch/arm/mach-ixp4xx/Kconfig	2008-03-12 21:21:27.000000000 +1030
-@@ -73,6 +73,14 @@
+--- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Kconfig
++++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
+@@ -73,6 +73,14 @@ config MACH_COMPEX
  	  WP18 or NP18A boards. For more information on this
  	  platform, see http://openwrt.org
  
@@ -17,11 +17,11 @@ Index: linux-2.6.24/arch/arm/mach-ixp4xx/Kconfig
  config ARCH_IXDP425
  	bool "IXDP425"
  	help
-Index: linux-2.6.24/arch/arm/mach-ixp4xx/Makefile
+Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
 ===================================================================
---- linux-2.6.24.orig/arch/arm/mach-ixp4xx/Makefile	2008-03-12 21:21:26.000000000 +1030
-+++ linux-2.6.24/arch/arm/mach-ixp4xx/Makefile	2008-03-12 21:21:27.000000000 +1030
-@@ -18,6 +18,7 @@
+--- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Makefile
++++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
+@@ -18,6 +18,7 @@ obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302
  obj-pci-$(CONFIG_MACH_FSG)		+= fsg-pci.o
  obj-pci-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-pci.o
  obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp425-pci.o
@@ -29,17 +29,18 @@ Index: linux-2.6.24/arch/arm/mach-ixp4xx/Makefile
  
  obj-y	+= common.o
  
-@@ -34,5 +35,6 @@
+@@ -34,6 +35,7 @@ obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-se
  obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o
  obj-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-setup.o
  obj-$(CONFIG_MACH_COMPEX)	+= compex-setup.o
 +obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
-Index: linux-2.6.24/arch/arm/mach-ixp4xx/wrt300nv2-pci.c
+ obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
+Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/wrt300nv2-pci.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.24/arch/arm/mach-ixp4xx/wrt300nv2-pci.c	2008-03-12 21:21:27.000000000 +1030
+--- /dev/null
++++ linux-2.6.25.1/arch/arm/mach-ixp4xx/wrt300nv2-pci.c
 @@ -0,0 +1,65 @@
 +/*
 + * arch/arch/mach-ixp4xx/wrt300nv2-pci.c
@@ -106,10 +107,10 @@ Index: linux-2.6.24/arch/arm/mach-ixp4xx/wrt300nv2-pci.c
 +}
 +
 +subsys_initcall(wrt300nv2_pci_init);
-Index: linux-2.6.24/arch/arm/mach-ixp4xx/wrt300nv2-setup.c
+Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/wrt300nv2-setup.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.24/arch/arm/mach-ixp4xx/wrt300nv2-setup.c	2008-03-12 21:21:27.000000000 +1030
+--- /dev/null
++++ linux-2.6.25.1/arch/arm/mach-ixp4xx/wrt300nv2-setup.c
 @@ -0,0 +1,108 @@
 +/*
 + * arch/arm/mach-ixp4xx/wrt300nv2-setup.c
@@ -219,11 +220,11 @@ Index: linux-2.6.24/arch/arm/mach-ixp4xx/wrt300nv2-setup.c
 +	.init_machine	= wrt300nv2_init,
 +MACHINE_END
 +#endif
-Index: linux-2.6.24/include/asm-arm/arch-ixp4xx/uncompress.h
+Index: linux-2.6.25.1/include/asm-arm/arch-ixp4xx/uncompress.h
 ===================================================================
---- linux-2.6.24.orig/include/asm-arm/arch-ixp4xx/uncompress.h	2008-03-12 21:21:26.000000000 +1030
-+++ linux-2.6.24/include/asm-arm/arch-ixp4xx/uncompress.h	2008-03-12 21:21:27.000000000 +1030
-@@ -42,7 +42,7 @@
+--- linux-2.6.25.1.orig/include/asm-arm/arch-ixp4xx/uncompress.h
++++ linux-2.6.25.1/include/asm-arm/arch-ixp4xx/uncompress.h
+@@ -42,7 +42,7 @@ static __inline__ void __arch_decomp_set
  	 */
  	if (machine_is_adi_coyote() || machine_is_gtwx5715() ||
  			 machine_is_gateway7001() || machine_is_wg302v2() ||

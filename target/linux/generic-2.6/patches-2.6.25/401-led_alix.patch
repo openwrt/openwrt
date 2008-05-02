@@ -1,7 +1,8 @@
-diff -Nur linux-2.6.23.1.orig/drivers/leds/Kconfig linux-2.6.23.1/drivers/leds/Kconfig
---- linux-2.6.23.1.orig/drivers/leds/Kconfig	2007-10-12 12:43:44.000000000 -0400
-+++ linux-2.6.23.1/drivers/leds/Kconfig	2007-10-31 02:36:22.000000000 -0400
-@@ -81,6 +81,12 @@
+Index: linux-2.6.25.1/drivers/leds/Kconfig
+===================================================================
+--- linux-2.6.25.1.orig/drivers/leds/Kconfig
++++ linux-2.6.25.1/drivers/leds/Kconfig
+@@ -79,6 +79,12 @@ config LEDS_WRAP
  	help
  	  This option enables support for the PCEngines WRAP programmable LEDs.
  
@@ -13,15 +14,16 @@ diff -Nur linux-2.6.23.1.orig/drivers/leds/Kconfig linux-2.6.23.1/drivers/leds/K
 +
  config LEDS_H1940
  	tristate "LED Support for iPAQ H1940 device"
- 	depends LEDS_CLASS && ARCH_H1940
-diff -Nur linux-2.6.23.1.orig/drivers/leds/Makefile linux-2.6.23.1/drivers/leds/Makefile
---- linux-2.6.23.1.orig/drivers/leds/Makefile	2007-10-12 12:43:44.000000000 -0400
-+++ linux-2.6.23.1/drivers/leds/Makefile	2007-10-31 02:36:17.000000000 -0400
-@@ -14,6 +14,7 @@
+ 	depends on LEDS_CLASS && ARCH_H1940
+Index: linux-2.6.25.1/drivers/leds/Makefile
+===================================================================
+--- linux-2.6.25.1.orig/drivers/leds/Makefile
++++ linux-2.6.25.1/drivers/leds/Makefile
+@@ -14,6 +14,7 @@ obj-$(CONFIG_LEDS_S3C24XX)		+= leds-s3c2
  obj-$(CONFIG_LEDS_AMS_DELTA)		+= leds-ams-delta.o
  obj-$(CONFIG_LEDS_NET48XX)		+= leds-net48xx.o
  obj-$(CONFIG_LEDS_WRAP)			+= leds-wrap.o
 +obj-$(CONFIG_LEDS_ALIX)			+= leds-alix.o
  obj-$(CONFIG_LEDS_H1940)		+= leds-h1940.o
- obj-$(CONFIG_LEDS_COBALT)		+= leds-cobalt.o
- obj-$(CONFIG_LEDS_GPIO)			+= leds-gpio.o
+ obj-$(CONFIG_LEDS_COBALT_QUBE)		+= leds-cobalt-qube.o
+ obj-$(CONFIG_LEDS_COBALT_RAQ)		+= leds-cobalt-raq.o

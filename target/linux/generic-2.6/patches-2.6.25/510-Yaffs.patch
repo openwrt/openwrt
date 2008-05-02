@@ -1,8 +1,8 @@
-Index: linux-2.6.23-rc6/fs/Kconfig
+Index: linux-2.6.25.1/fs/Kconfig
 ===================================================================
---- linux-2.6.23-rc6.orig/fs/Kconfig	2007-09-21 16:24:06.000000000 +0800
-+++ linux-2.6.23-rc6/fs/Kconfig	2007-09-21 16:24:08.000000000 +0800
-@@ -419,6 +419,7 @@
+--- linux-2.6.25.1.orig/fs/Kconfig
++++ linux-2.6.25.1/fs/Kconfig
+@@ -421,6 +421,7 @@ config FS_POSIX_ACL
  
  source "fs/xfs/Kconfig"
  source "fs/gfs2/Kconfig"
@@ -10,11 +10,11 @@ Index: linux-2.6.23-rc6/fs/Kconfig
  
  config OCFS2_FS
  	tristate "OCFS2 file system support"
-Index: linux-2.6.23-rc6/fs/Makefile
+Index: linux-2.6.25.1/fs/Makefile
 ===================================================================
---- linux-2.6.23-rc6.orig/fs/Makefile	2007-09-21 16:24:06.000000000 +0800
-+++ linux-2.6.23-rc6/fs/Makefile	2007-09-21 16:24:08.000000000 +0800
-@@ -120,3 +120,4 @@
+--- linux-2.6.25.1.orig/fs/Makefile
++++ linux-2.6.25.1/fs/Makefile
+@@ -121,3 +121,4 @@ obj-$(CONFIG_HPPFS)		+= hppfs/
  obj-$(CONFIG_DEBUG_FS)		+= debugfs/
  obj-$(CONFIG_OCFS2_FS)		+= ocfs2/
  obj-$(CONFIG_GFS2_FS)           += gfs2/

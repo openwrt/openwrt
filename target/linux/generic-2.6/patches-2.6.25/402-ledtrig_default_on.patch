@@ -1,7 +1,8 @@
-diff -ur linux-2.6.23.1.orig/drivers/leds/Kconfig linux-2.6.23.1/drivers/leds/Kconfig
---- linux-2.6.23.1.orig/drivers/leds/Kconfig	2007-12-01 00:41:03.000000000 +1300
-+++ linux-2.6.23.1/drivers/leds/Kconfig	2007-12-01 01:26:43.000000000 +1300
-@@ -137,4 +137,11 @@
+Index: linux-2.6.25.1/drivers/leds/Kconfig
+===================================================================
+--- linux-2.6.25.1.orig/drivers/leds/Kconfig
++++ linux-2.6.25.1/drivers/leds/Kconfig
+@@ -191,4 +191,11 @@ config LEDS_TRIGGER_MORSE
  	tristate "LED Morse Trigger"
  	depends on LEDS_TRIGGERS
  
@@ -13,10 +14,11 @@ diff -ur linux-2.6.23.1.orig/drivers/leds/Kconfig linux-2.6.23.1/drivers/leds/Kc
 +	  If unsure, say Y.
 +
  endif # NEW_LEDS
-diff -ur linux-2.6.23.1.orig/drivers/leds/Makefile linux-2.6.23.1/drivers/leds/Makefile
---- linux-2.6.23.1.orig/drivers/leds/Makefile	2007-12-01 00:41:03.000000000 +1300
-+++ linux-2.6.23.1/drivers/leds/Makefile	2007-12-01 01:27:12.000000000 +1300
-@@ -23,3 +23,4 @@
+Index: linux-2.6.25.1/drivers/leds/Makefile
+===================================================================
+--- linux-2.6.25.1.orig/drivers/leds/Makefile
++++ linux-2.6.25.1/drivers/leds/Makefile
+@@ -28,3 +28,4 @@ obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledt
  obj-$(CONFIG_LEDS_TRIGGER_IDE_DISK)	+= ledtrig-ide-disk.o
  obj-$(CONFIG_LEDS_TRIGGER_HEARTBEAT)	+= ledtrig-heartbeat.o
  obj-$(CONFIG_LEDS_TRIGGER_MORSE)	+= ledtrig-morse.o
