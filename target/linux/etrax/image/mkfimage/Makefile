@@ -24,7 +24,7 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mkfimage $(STAGING_DIR)/bin/mkfimage
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mkfimage $(STAGING_DIR_HOST)/bin/mkfimage
 endef
 
 $(eval $(call Build/DefaultTargets))

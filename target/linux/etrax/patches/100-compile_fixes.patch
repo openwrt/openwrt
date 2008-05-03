@@ -1,0 +1,139 @@
+Index: linux-2.6.25/arch/cris/mm/init.c
+===================================================================
+--- linux-2.6.25.orig/arch/cris/mm/init.c	2008-05-03 09:53:53.000000000 +0100
++++ linux-2.6.25/arch/cris/mm/init.c	2008-05-03 09:54:05.000000000 +0100
+@@ -112,3 +112,7 @@
+         printk (KERN_INFO "Freeing unused kernel memory: %luk freed\n",
+ 		(unsigned long)((&__init_end - &__init_begin) >> 10));
+ }
++
++void free_initrd_mem(unsigned long start, unsigned long end)
++{
++}
+Index: linux-2.6.25/arch/cris/boot/compressed/Makefile
+===================================================================
+--- linux-2.6.25.orig/arch/cris/boot/compressed/Makefile	2008-05-03 10:00:53.000000000 +0100
++++ linux-2.6.25/arch/cris/boot/compressed/Makefile	2008-05-03 10:01:12.000000000 +0100
+@@ -7,7 +7,7 @@
+ LD = ld-cris
+ ldflags-y += -T $(obj)/decompress.ld
+ OBJECTS = $(obj)/head.o $(obj)/misc.o
+-OBJCOPY = objcopy-cris
++OBJCOPY = /usr/local/cris/objcopy-cris
+ OBJCOPYFLAGS = -O binary --remove-section=.bss
+ 
+ quiet_cmd_image = BUILD   $@
+Index: linux-2.6.25/arch/cris/boot/Makefile
+===================================================================
+--- linux-2.6.25.orig/arch/cris/boot/Makefile	2008-04-17 03:49:44.000000000 +0100
++++ linux-2.6.25/arch/cris/boot/Makefile	2008-05-03 10:05:56.000000000 +0100
+@@ -2,10 +2,10 @@
+ # arch/cris/arch-v10/boot/Makefile
+ #
+ 
+-OBJCOPY = objcopy-cris
++OBJCOPY = /usr/local/cris/objcopy-cris
+ OBJCOPYFLAGS = -O binary --remove-section=.bss
+ 
+-subdir- := compressed rescue
++subdir- := compressed 
+ targets := Image
+ 
+ $(obj)/Image: vmlinux FORCE
+@@ -14,7 +14,6 @@
+ 
+ $(obj)/compressed/vmlinux: $(obj)/Image FORCE
+ 	$(Q)$(MAKE) $(build)=$(obj)/compressed $@
+-	$(Q)$(MAKE) $(build)=$(obj)/rescue $(obj)/rescue/rescue.bin
+ 
+ $(obj)/zImage:  $(obj)/compressed/vmlinux
+ 	@cp $< $@
+Index: linux-2.6.25/arch/cris/boot/compressed/Makefile
+===================================================================
+--- linux-2.6.25.orig/arch/cris/boot/compressed/Makefile	2008-05-03 10:01:12.000000000 +0100
++++ linux-2.6.25/arch/cris/boot/compressed/Makefile	2008-05-03 16:29:55.000000000 +0100
+@@ -2,9 +2,8 @@
+ # arch/cris/arch-v10/boot/compressed/Makefile
+ #
+ 
+-CC = gcc-cris -melf $(LINUXINCLUDE)
+ ccflags-y += -O2
+-LD = ld-cris
++LD=/usr/local/cris/ld-cris
+ ldflags-y += -T $(obj)/decompress.ld
+ OBJECTS = $(obj)/head.o $(obj)/misc.o
+ OBJCOPY = /usr/local/cris/objcopy-cris
+@@ -22,10 +21,10 @@
+ 	$(call if_changed,objcopy)
+ 
+ $(obj)/head.o: $(obj)/head.S .config
+-	@$(CC) -D__ASSEMBLY__ -traditional -c $< -o $@
++	/usr/local/cris/gcc-cris -melf $(LINUXINCLUDE) -D__ASSEMBLY__ -traditional -c $< -o $@
+ 
+ $(obj)/misc.o: $(obj)/misc.c .config
+-	@$(CC) -D__KERNEL__ -c $< -o $@
++	/usr/local/cris/gcc-cris -melf $(LINUXINCLUDE) -D__KERNEL__ -c $< -o $@ 
+ 
+ $(obj)/vmlinux: $(obj)/piggy.gz $(obj)/decompress.bin FORCE
+ 	$(call if_changed,image)
+Index: linux-2.6.25/arch/cris/boot/compressed/misc.c
+===================================================================
+--- linux-2.6.25.orig/arch/cris/boot/compressed/misc.c	2008-05-03 16:22:44.000000000 +0100
++++ linux-2.6.25/arch/cris/boot/compressed/misc.c	2008-05-03 16:23:26.000000000 +0100
+@@ -5,7 +5,7 @@
+  * adapted for Linux.
+  *
+  * malloc by Hannu Savolainen 1993 and Matthias Urlichs 1994
+- * puts by Nick Holloway 1993, better puts by Martin Mares 1995
++ * putstr by Nick Holloway 1993, better putstr by Martin Mares 1995
+  * adaptation for Linux/CRIS Axis Communications AB, 1999
+  *
+  */
+@@ -99,7 +99,7 @@
+ static void gzip_mark(void **);
+ static void gzip_release(void **);
+  
+-static void puts(const char *);
++static void putstr(const char *);
+ 
+ /* the "heap" is put directly after the BSS ends, at end */
+   
+@@ -139,7 +139,7 @@
+ /* decompressor info and error messages to serial console */
+ 
+ static void
+-puts(const char *s)
++putstr(const char *s)
+ {
+ #ifndef CONFIG_ETRAX_DEBUG_PORT_NULL
+ 	while(*s) {
+@@ -209,9 +209,9 @@
+ static void
+ error(char *x)
+ {
+-	puts("\n\n");
+-	puts(x);
+-	puts("\n\n -- System halted\n");
++	putstr("\n\n");
++	putstr(x);
++	putstr("\n\n -- System halted\n");
+ 
+ 	while(1);	/* Halt */
+ }
+@@ -257,14 +257,7 @@
+ 
+ 	makecrc();
+ 
+-	__asm__ volatile ("move vr,%0" : "=rm" (revision));
+-	if (revision < 10)
+-	{
+-		puts("You need an ETRAX 100LX to run linux 2.6\n");
+-		while(1);
+-	}
+-
+-	puts("Uncompressing Linux...\n");
++	putstr("Uncompressing Linux...\n");
+ 	gunzip();
+-	puts("Done. Now booting the kernel.\n");
++	putstr("Done. Now booting the kernel.\n");
+ }
