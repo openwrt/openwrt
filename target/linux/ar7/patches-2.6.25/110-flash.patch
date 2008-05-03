@@ -1,0 +1,43 @@
+Index: linux-2.6.25.1/drivers/mtd/Kconfig
+===================================================================
+--- linux-2.6.25.1.orig/drivers/mtd/Kconfig	2008-05-01 23:45:25.000000000 +0200
++++ linux-2.6.25.1/drivers/mtd/Kconfig	2008-05-03 16:18:06.000000000 +0200
+@@ -158,6 +158,12 @@
+ 	  the partition map from the children of the flash node,
+ 	  as described in Documentation/powerpc/booting-without-of.txt.
+ 
++config MTD_AR7_PARTS
++	tristate "TI AR7 partitioning support"
++	depends on MTD_PARTITIONS
++	---help---
++	  TI AR7 partitioning support
++
+ comment "User Modules And Translation Layers"
+ 
+ config MTD_CHAR
+Index: linux-2.6.25.1/drivers/mtd/Makefile
+===================================================================
+--- linux-2.6.25.1.orig/drivers/mtd/Makefile	2008-05-01 23:45:25.000000000 +0200
++++ linux-2.6.25.1/drivers/mtd/Makefile	2008-05-03 16:18:06.000000000 +0200
+@@ -12,6 +12,7 @@
+ obj-$(CONFIG_MTD_CMDLINE_PARTS) += cmdlinepart.o
+ obj-$(CONFIG_MTD_AFS_PARTS)	+= afs.o
+ obj-$(CONFIG_MTD_OF_PARTS)      += ofpart.o
++obj-$(CONFIG_MTD_AR7_PARTS)	+= ar7part.o
+ 
+ # 'Users' - code which presents functionality to userspace.
+ obj-$(CONFIG_MTD_CHAR)		+= mtdchar.o
+Index: linux-2.6.25.1/drivers/mtd/maps/physmap.c
+===================================================================
+--- linux-2.6.25.1.orig/drivers/mtd/maps/physmap.c	2008-05-01 23:45:25.000000000 +0200
++++ linux-2.6.25.1/drivers/mtd/maps/physmap.c	2008-05-03 16:18:06.000000000 +0200
+@@ -87,7 +87,8 @@
+ 
+ static const char *rom_probe_types[] = { "cfi_probe", "jedec_probe", "map_rom", NULL };
+ #ifdef CONFIG_MTD_PARTITIONS
+-static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", NULL };
++static const char *part_probe_types[] = {"cmdlinepart", "RedBoot",
++					"ar7part", NULL };
+ #endif
+ 
+ static int physmap_flash_probe(struct platform_device *dev)
