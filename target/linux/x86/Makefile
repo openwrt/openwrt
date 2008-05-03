@@ -10,7 +10,7 @@ ARCH=i386
 BOARD:=x86
 BOARDNAME:=x86
 FEATURES:=squashfs jffs2 ext2
-SUBTARGETS=generic mediacenter
+SUBTARGETS=generic
 
 LINUX_VERSION:=2.6.24.5
 
