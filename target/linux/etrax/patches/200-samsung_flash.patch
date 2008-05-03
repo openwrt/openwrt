@@ -1,0 +1,15 @@
+Index: linux-2.6.25.1/drivers/mtd/chips/cfi_cmdset_0002.c
+===================================================================
+--- linux-2.6.25.1.orig/drivers/mtd/chips/cfi_cmdset_0002.c	2008-05-03 20:09:19.000000000 +0100
++++ linux-2.6.25.1/drivers/mtd/chips/cfi_cmdset_0002.c	2008-05-03 20:10:57.000000000 +0100
+@@ -297,8 +297,8 @@
+ 			return NULL;
+ 		}
+ 
+-		if (extp->MajorVersion != '1' ||
+-		    (extp->MinorVersion < '0' || extp->MinorVersion > '4')) {
++		if (extp->MajorVersion < '0' || extp->MajorVersion > '3' ||
++			(extp->MinorVersion < '0' || extp->MinorVersion > '4')) {
+ 		        if (cfi->mfr == MANUFACTURER_SAMSUNG &&
+ 			    (extp->MajorVersion == '3' && extp->MinorVersion == '3')) {
+ 			    printk(KERN_NOTICE "  Newer Samsung flash detected, "
