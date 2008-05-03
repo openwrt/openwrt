@@ -1,0 +1,22 @@
+Index: linux-2.6.25.1/drivers/usb/Makefile
+===================================================================
+--- linux-2.6.25.1.orig/drivers/usb/Makefile	2008-05-03 21:33:11.000000000 +0100
++++ linux-2.6.25.1/drivers/usb/Makefile	2008-05-03 21:33:17.000000000 +0100
+@@ -16,6 +16,7 @@
+ obj-$(CONFIG_USB_SL811_HCD)	+= host/
+ obj-$(CONFIG_USB_U132_HCD)	+= host/
+ obj-$(CONFIG_USB_R8A66597_HCD)	+= host/
++obj-$(CONFIG_ETRAX_USB_HOST)   += host/
+ 
+ obj-$(CONFIG_USB_ACM)		+= class/
+ obj-$(CONFIG_USB_PRINTER)	+= class/
+Index: linux-2.6.25.1/drivers/usb/host/Makefile
+===================================================================
+--- linux-2.6.25.1.orig/drivers/usb/host/Makefile	2008-05-03 21:33:24.000000000 +0100
++++ linux-2.6.25.1/drivers/usb/host/Makefile	2008-05-03 21:33:47.000000000 +0100
+@@ -16,4 +16,4 @@
+ obj-$(CONFIG_USB_SL811_CS)	+= sl811_cs.o
+ obj-$(CONFIG_USB_U132_HCD)	+= u132-hcd.o
+ obj-$(CONFIG_USB_R8A66597_HCD)	+= r8a66597-hcd.o
+-
++obj-$(CONFIG_ETRAX_ARCH_V10)      += hc_crisv10.o
