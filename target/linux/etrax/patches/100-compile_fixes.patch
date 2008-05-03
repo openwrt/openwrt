@@ -1,7 +1,7 @@
-Index: linux-2.6.25/arch/cris/mm/init.c
+Index: linux-2.6.25.1/arch/cris/mm/init.c
 ===================================================================
---- linux-2.6.25.orig/arch/cris/mm/init.c	2008-05-03 09:53:53.000000000 +0100
-+++ linux-2.6.25/arch/cris/mm/init.c	2008-05-03 09:54:05.000000000 +0100
+--- linux-2.6.25.1.orig/arch/cris/mm/init.c	2008-05-03 09:53:53.000000000 +0100
++++ linux-2.6.25.1/arch/cris/mm/init.c	2008-05-03 09:54:05.000000000 +0100
 @@ -112,3 +112,7 @@
          printk (KERN_INFO "Freeing unused kernel memory: %luk freed\n",
  		(unsigned long)((&__init_end - &__init_begin) >> 10));
@@ -10,10 +10,10 @@ Index: linux-2.6.25/arch/cris/mm/init.c
 +void free_initrd_mem(unsigned long start, unsigned long end)
 +{
 +}
-Index: linux-2.6.25/arch/cris/boot/compressed/Makefile
+Index: linux-2.6.25.1/arch/cris/boot/compressed/Makefile
 ===================================================================
---- linux-2.6.25.orig/arch/cris/boot/compressed/Makefile	2008-05-03 10:00:53.000000000 +0100
-+++ linux-2.6.25/arch/cris/boot/compressed/Makefile	2008-05-03 10:01:12.000000000 +0100
+--- linux-2.6.25.1.orig/arch/cris/boot/compressed/Makefile	2008-05-03 10:00:53.000000000 +0100
++++ linux-2.6.25.1/arch/cris/boot/compressed/Makefile	2008-05-03 10:01:12.000000000 +0100
 @@ -7,7 +7,7 @@
  LD = ld-cris
  ldflags-y += -T $(obj)/decompress.ld
@@ -23,10 +23,10 @@ Index: linux-2.6.25/arch/cris/boot/compressed/Makefile
  OBJCOPYFLAGS = -O binary --remove-section=.bss
  
  quiet_cmd_image = BUILD   $@
-Index: linux-2.6.25/arch/cris/boot/Makefile
+Index: linux-2.6.25.1/arch/cris/boot/Makefile
 ===================================================================
---- linux-2.6.25.orig/arch/cris/boot/Makefile	2008-04-17 03:49:44.000000000 +0100
-+++ linux-2.6.25/arch/cris/boot/Makefile	2008-05-03 10:05:56.000000000 +0100
+--- linux-2.6.25.1.orig/arch/cris/boot/Makefile	2008-04-17 03:49:44.000000000 +0100
++++ linux-2.6.25.1/arch/cris/boot/Makefile	2008-05-03 10:05:56.000000000 +0100
 @@ -2,10 +2,10 @@
  # arch/cris/arch-v10/boot/Makefile
  #
@@ -48,10 +48,10 @@ Index: linux-2.6.25/arch/cris/boot/Makefile
  
  $(obj)/zImage:  $(obj)/compressed/vmlinux
  	@cp $< $@
-Index: linux-2.6.25/arch/cris/boot/compressed/Makefile
+Index: linux-2.6.25.1/arch/cris/boot/compressed/Makefile
 ===================================================================
---- linux-2.6.25.orig/arch/cris/boot/compressed/Makefile	2008-05-03 10:01:12.000000000 +0100
-+++ linux-2.6.25/arch/cris/boot/compressed/Makefile	2008-05-03 16:29:55.000000000 +0100
+--- linux-2.6.25.1.orig/arch/cris/boot/compressed/Makefile	2008-05-03 10:01:12.000000000 +0100
++++ linux-2.6.25.1/arch/cris/boot/compressed/Makefile	2008-05-03 16:29:55.000000000 +0100
 @@ -2,9 +2,8 @@
  # arch/cris/arch-v10/boot/compressed/Makefile
  #
@@ -76,10 +76,10 @@ Index: linux-2.6.25/arch/cris/boot/compressed/Makefile
  
  $(obj)/vmlinux: $(obj)/piggy.gz $(obj)/decompress.bin FORCE
  	$(call if_changed,image)
-Index: linux-2.6.25/arch/cris/boot/compressed/misc.c
+Index: linux-2.6.25.1/arch/cris/boot/compressed/misc.c
 ===================================================================
---- linux-2.6.25.orig/arch/cris/boot/compressed/misc.c	2008-05-03 16:22:44.000000000 +0100
-+++ linux-2.6.25/arch/cris/boot/compressed/misc.c	2008-05-03 16:23:26.000000000 +0100
+--- linux-2.6.25.1.orig/arch/cris/boot/compressed/misc.c	2008-05-03 16:22:44.000000000 +0100
++++ linux-2.6.25.1/arch/cris/boot/compressed/misc.c	2008-05-03 16:23:26.000000000 +0100
 @@ -5,7 +5,7 @@
   * adapted for Linux.
   *
@@ -120,7 +120,7 @@ Index: linux-2.6.25/arch/cris/boot/compressed/misc.c
  
  	while(1);	/* Halt */
  }
-@@ -257,14 +257,7 @@
+@@ -25.17,14 +25.17,7 @@
  
  	makecrc();
  
