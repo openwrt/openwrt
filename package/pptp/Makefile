@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pptp
 PKG_VERSION:=1.6.0
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/pptpclient
@@ -23,6 +23,7 @@ define Package/pptp
   CATEGORY:=Network
   TITLE:=PPTP client
   URL:=http://pptpclient.sourceforge.net/
+  DEPENDS:=+ppp +kmod-gre
 endef
 
 define Package/pptp/daemon
