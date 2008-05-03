@@ -26,13 +26,9 @@ LINUX_DIR := $(PKG_BUILD_DIR)
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/kernel-defaults.mk
 
-define Build/Prepare/cris
-	mkdir -p $(BUILD_DIR_TOOLCHAIN)
-	bzcat $(DL_DIR)/$(PKG_SOURCE) | $(HOST_TAR) -C $(BUILD_DIR_TOOLCHAIN) $(TAR_OPTIONS)
-	$(PATCH) $(PKG_BUILD_DIR) $(TOPDIR)/target/linux/etrax/patches/generic_2.6
-	$(PATCH) $(PKG_BUILD_DIR) $(TOPDIR)/target/linux/etrax/patches/cris
-	ln -sf arch-v10 $(PKG_BUILD_DIR)/include/asm-cris/arch
-	ln -sf arch-v10 $(PKG_BUILD_DIR)/arch/cris/arch
+define Build/Configure/cris
+	ln -sf $(PKG_BUILD_DIR)/include/asm-cris/arch-v10 $(PKG_BUILD_DIR)/include/asm-cris/arch
+	ln -sf $(PKG_BUILD_DIR)/include/asm-cris/arch-v10 $(PKG_BUILD_DIR)/arch/cris/arch
 endef
 
 define Build/Configure/powerpc
@@ -51,7 +47,7 @@ KMAKE := $(MAKE) -C $(PKG_BUILD_DIR) \
 	CONFIG_SHELL=$(BASH)
 
 define Build/Prepare
-	$(if $(Build/Prepare/$(ARCH)),$(Build/Prepare/$(ARCH)),$(call Kernel/Prepare/Default))
+	$(call Kernel/Prepare/Default)
 	$(SED) 's/@expr length/@-expr length/' $(PKG_BUILD_DIR)/Makefile
 	ln -sf linux-$(LINUX_VERSION) $(LINUX_HEADERS_DIR)
 	yes '' | $(KMAKE) oldconfig
