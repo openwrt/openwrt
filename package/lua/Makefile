@@ -87,6 +87,8 @@ endef
 define Build/Configure
 endef
 
+TARGET_CFLAGS += -DLUA_USE_LINUX
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CROSS)gcc" \
