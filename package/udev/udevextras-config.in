@@ -20,6 +20,13 @@ config UDEVEXTRAS_dasd_id
 	help
 	  dasd_id can find unique identifiers for DASD devices
 
+config UDEVEXTRAS_edd_id
+	bool
+	prompt "edd_id" if PACKAGE_udevextras
+	default n
+	help
+	  edd_id can find unique identifiers for EDD devices
+
 config UDEVEXTRAS_path_id
 	bool
 	prompt "path_id" if PACKAGE_udevextras
@@ -35,13 +42,6 @@ config UDEVEXTRAS_scsi_id
 	help
 	  scsi_id can find unique identifiers for SCSI devices
 
-config UDEVEXTRAS_volume_id
-	bool
-	prompt "volume_id" if PACKAGE_udevextras
-	default n
-	help
-	  volume_id can find the volume label of storage devices
-
 config UDEVEXTRAS_usb_id
 	bool
 	prompt "usb_id" if PACKAGE_udevextras
@@ -49,3 +49,9 @@ config UDEVEXTRAS_usb_id
 	help
 	  usb_id can find the unique id of USB devices
 
+config UDEVEXTRAS_volume_id
+	bool
+	prompt "volume_id" if PACKAGE_udevextras
+	default n
+	help
+	  volume_id can find the volume label of storage devices
