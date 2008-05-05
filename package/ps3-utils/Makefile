@@ -40,6 +40,7 @@ define Package/ps3-utils/install
 	$(INSTALL_DIR) $(1)/usr/lib
 
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ps3-boot-game-os $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ps3-dump-bootloader $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ps3-flash-util $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/ps3-video-mode $(1)/usr/bin
 
