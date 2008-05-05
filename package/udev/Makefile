@@ -49,7 +49,7 @@ define Package/udevextras/config
   source "$(SOURCE)/udevextras-config.in"
 endef
 
-UDEV_ALL_EXTRAS=ata_id cdrom_id dasd_id scsi_id path_id usb_id volume_id
+UDEV_ALL_EXTRAS=ata_id cdrom_id dasd_id edd_id scsi_id path_id usb_id volume_id
 UDEV_EXTRAS=$(strip $(foreach e, $(UDEV_ALL_EXTRAS), \
 		$(if $(CONFIG_UDEVEXTRAS_$(e)),extras/$(e))))
 
