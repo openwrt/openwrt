@@ -121,7 +121,7 @@ int __init ar531x_find_config(char *flash_limit)
 
 	radio_config = board_config + 0x100 + ((rcfg - bcfg) & 0xfff);
 	printk("Radio config found at offset 0x%x(0x%x)\n", rcfg - bcfg, radio_config - board_config);
-	rcfg_size = BOARD_CONFIG_BUFSZ - ((rcfg - bcfg) & (BOARD_CONFIG_BUFSZ - 1));
+	rcfg_size = BOARD_CONFIG_BUFSZ - ((0x100 + rcfg - bcfg) & (BOARD_CONFIG_BUFSZ - 1));
 	memcpy(radio_config, rcfg, rcfg_size);
 
 	return 0;
