@@ -25,11 +25,11 @@ ifeq ($(IS_TTY),1)
   _N:=\\033[m
 endif
 
-define MESSAGE
-	printf "$(_Y)%s$(_N)\n" "$(1)" >&3
-endef
-
 ifneq ($(KBUILD_VERBOSE),99)
+  define MESSAGE
+	printf "$(_Y)%s$(_N)\n" "$(1)" >&3
+  endef
+
   ifeq ($(QUIET),1)
     ifneq ($(CURDIR),$(TOPDIR))
       _DIR:=$(patsubst $(TOPDIR)/%,%,${CURDIR})
@@ -48,4 +48,8 @@ ifneq ($(KBUILD_VERBOSE),99)
   endif
 
   .SILENT: $(MAKECMDGOALS)
+else
+  define MESSAGE
+    printf "%s\n" "$(1)"
+  endef
 endif

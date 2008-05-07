@@ -17,6 +17,9 @@ else
   $(curdir)/builddirs-prereq:=. $(sort $(prereq-y) $(prereq-m))
   $(curdir)/builddirs-install:=. $(sort $(package-y))
 endif
+ifneq ($(IGNORE_ERRORS),)
+  $(curdir)/builddirs-ignore-compile:= $(if $(filter m y, $(IGNORE_ERRORS)),$(foreach m,$(IGNORE_ERRORS),$(package-$(m))),$(package-m))
+endif
 
 $(curdir)/install:=$(curdir)/install-cleanup
 
