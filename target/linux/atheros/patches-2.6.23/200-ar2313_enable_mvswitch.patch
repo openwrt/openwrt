@@ -2,15 +2,6 @@ Index: linux-2.6.23.16/drivers/net/ar2313/ar2313.c
 ===================================================================
 --- linux-2.6.23.16.orig/drivers/net/ar2313/ar2313.c	2008-04-29 14:51:39.000000000 +0200
 +++ linux-2.6.23.16/drivers/net/ar2313/ar2313.c	2008-04-29 14:52:14.000000000 +0200
-@@ -219,7 +219,7 @@
- 	dev->do_ioctl = &ar2313_ioctl;
- 
- 	// SAMEER: do we need this?
--	dev->features |= NETIF_F_SG | NETIF_F_HIGHDMA;
-+	dev->features |= NETIF_F_HIGHDMA | NETIF_F_HW_CSUM;
- 
- 	tasklet_init(&sp->rx_tasklet, rx_tasklet_func, (unsigned long) dev);
- 	tasklet_disable(&sp->rx_tasklet);
 @@ -953,9 +953,9 @@
  						((status >> DMA_RX_LEN_SHIFT) & 0x3fff) - CRC_LEN);
  
