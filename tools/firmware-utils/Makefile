@@ -29,6 +29,7 @@ define Build/Compile
 	$(call cc,mkzynfw)
 	$(call cc,lzma2eva,-lz)
 	$(call cc,mkcasfw)
+	$(call cc,mkfwimage,-lz)
 endef
 
 define Build/Install
