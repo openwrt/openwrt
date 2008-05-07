@@ -26,9 +26,10 @@
 
 #include <adm5120_info.h>
 
-#define NUM_LEDS_MAX	23
 #define DRV_DESC	"LED driver for the ADM5120 based boards"
+#define DRV_VERSION	"0.2.0"
 
+#define NUM_LEDS_MAX	23
 #define ADM5120_GPIO_xxxx	0x100	/* an unknown pin */
 
 struct mach_data {
@@ -66,9 +67,9 @@ static struct gpio_led n ## _leds [] __initdata =
 LED_ARRAY(cas771) {
 	LED_STD(ADM5120_GPIO_PIN0, "cam_flash",	NULL),
 	/* GPIO PIN3 is the reset */
-	LED_STD(ADM5120_GPIO_PIN6, "access", NULL),
-	LED_STD(ADM5120_GPIO_P0L1, "status", NULL),
-	LED_STD(ADM5120_GPIO_P0L2, "diag", NULL),
+	LED_STD(ADM5120_GPIO_PIN6, "access",	NULL),
+	LED_STD(ADM5120_GPIO_P0L1, "status",	NULL),
+	LED_STD(ADM5120_GPIO_P0L2, "diag",	NULL),
 };
 
 /*
@@ -188,6 +189,20 @@ LED_ARRAY(rb133c) {
         LED_INV(ADM5120_GPIO_P0L0, "lan3_lnkact", 	NULL), /* untested */
 };
 
+LED_ARRAY(rb150) {
+	LED_STD(ADM5120_GPIO_P0L2, "user",		NULL),
+	LED_INV(ADM5120_GPIO_P0L1, "lan1_led1",		NULL), /* untested */
+	LED_INV(ADM5120_GPIO_P0L0, "lan1_led2",		NULL), /* untested */
+	LED_INV(ADM5120_GPIO_P1L1, "lan5_led1",		NULL), /* untested */
+	LED_INV(ADM5120_GPIO_P1L0, "lan5_led2",		NULL), /* untested */
+	LED_INV(ADM5120_GPIO_P2L1, "lan4_led1",		NULL), /* untested */
+	LED_INV(ADM5120_GPIO_P2L0, "lan4_led2",		NULL), /* untested */
+	LED_INV(ADM5120_GPIO_P3L1, "lan3_led1",		NULL), /* untested */
+	LED_INV(ADM5120_GPIO_P3L0, "lan3_led2",		NULL), /* untested */
+	LED_INV(ADM5120_GPIO_P4L1, "lan2_led1",		NULL), /* untested */
+	LED_INV(ADM5120_GPIO_P4L0, "lan2_led2",		NULL), /* untested */
+};
+
 LED_ARRAY(rb153) {
 	LED_STD(ADM5120_GPIO_PIN5, "user",		NULL),
 	LED_INV(ADM5120_GPIO_P0L1, "lan1_speed",	NULL),
@@ -301,6 +316,7 @@ static struct mach_data machines[] __initdata = {
 	MACH_DATA(MACH_ADM5120_RB_112,	rb100),
 	MACH_DATA(MACH_ADM5120_RB_133,	rb133),
 	MACH_DATA(MACH_ADM5120_RB_133C,	rb133c),
+	MACH_DATA(MACH_ADM5120_RB_150,	rb150),
 	MACH_DATA(MACH_ADM5120_RB_153,	rb153),
 	/* ZyXEL */
 	MACH_DATA(MACH_ADM5120_P334WT,	p334wt),
@@ -411,4 +427,5 @@ module_exit(adm5120_leds_exit);
 MODULE_AUTHOR("Gabor Juhos <juhosg at openwrt.org>");
 MODULE_DESCRIPTION(DRV_DESC);
 MODULE_LICENSE("GPL v2");
+MODULE_VERSION(DRV_VERSION);
 
