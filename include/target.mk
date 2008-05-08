@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -14,7 +14,7 @@ DEVICE_TYPE?=router
 # Default packages - the really basic set
 DEFAULT_PACKAGES:=base-files libgcc uclibc busybox dropbear mtd uci
 # For router targets
-DEFAULT_PACKAGES.router:=dnsmasq iptables ppp ppp-mod-pppoe iptables kmod-ipt-nathelper bridge
+DEFAULT_PACKAGES.router:=dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper bridge
 
 # Additional packages for Linux 2.6
 ifneq ($(KERNEL),2.4)
