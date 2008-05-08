@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -17,8 +17,6 @@ SCAN_DEPS=modules/*.mk
 include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)
   -include $(LINUX_DIR)/.config
-  NF_KMOD:=1
-  include $(INCLUDE_DIR)/netfilter.mk
 endif
 
 define Build/Prepare
