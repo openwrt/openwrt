@@ -39,10 +39,8 @@ define Image/Build
 	echo -en "\t0x$(shell printf "%08X\n" $(shell expr 3866624 - $(shell cat $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma | wc -c) ) )" >> $(BIN_DIR)/ls2-parts
 	echo -e "\t0x00000000\t0x00000000\t$(BIN_DIR)/openwrt-$(BOARD)-root.$(1)" >> $(BIN_DIR)/ls2-parts
 
-	$(STAGING_DIR_HOST)/bin/mkfwimage -i $(BIN_DIR)/ls2-parts -v XS2.ar2316.OpenWRT -o $(BIN_DIR)/openwrt-$(BOARD)-litestation2-$(1).bin
-	$(STAGING_DIR_HOST)/bin/mkfwimage -i $(BIN_DIR)/ls5-parts -v XS5.ar2313.OpenWRT -o $(BIN_DIR)/openwrt-$(BOARD)-litestation5-$(1).bin
-	cp $(BIN_DIR)/openwrt-$(BOARD)-litestation5-$(1).bin $(BIN_DIR)/openwrt-$(BOARD)-nanostation5-$(1).bin
-	cp $(BIN_DIR)/openwrt-$(BOARD)-litestation2-$(1).bin $(BIN_DIR)/openwrt-$(BOARD)-nanostation2-$(1).bin
+	$(STAGING_DIR_HOST)/bin/mkfwimage -i $(BIN_DIR)/ls2-parts -v XS2.ar2316.OpenWRT -o $(BIN_DIR)/openwrt-$(BOARD)-ubnt-$(1).bin
+	$(STAGING_DIR_HOST)/bin/mkfwimage -i $(BIN_DIR)/ls5-parts -v XS5.ar2313.OpenWRT -o $(BIN_DIR)/openwrt-$(BOARD)-ubnt-$(1).bin
 	rm $(BIN_DIR)/ls2-parts $(BIN_DIR)/ls5-parts
 endef
 
