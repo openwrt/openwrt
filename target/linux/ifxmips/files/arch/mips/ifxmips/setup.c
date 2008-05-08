@@ -114,28 +114,9 @@ ifxmips_be_handler(struct pt_regs *regs, int is_fixup)
 	return MIPS_BE_FATAL;
 }
 
-/* ISR GPTU Timer 6 for high resolution timer */
-static irqreturn_t
-ifxmips_timer6_interrupt(int irq, void *dev_id)
-{
-	timer_interrupt(IFXMIPS_TIMER6_INT, NULL);
-
-	return IRQ_HANDLED;
-}
-
-static struct irqaction hrt_irqaction = {
-	.handler = ifxmips_timer6_interrupt,
-	.flags = IRQF_DISABLED,
-	.name = "hrt",
-};
-
 void __init
-plat_timer_setup (struct irqaction *irq)
+plat_time_init (void)
 {
-	unsigned int retval;
-
-	setup_irq(MIPS_CPU_TIMER_IRQ, irq);
-
 	r4k_cur = (read_c0_count() + r4k_offset);
 	write_c0_compare(r4k_cur);
 
@@ -145,17 +126,11 @@ plat_timer_setup (struct irqaction *irq)
 
 	writel(0xffff, IFXMIPS_GPTU_GPT_CAPREL);
 	writel(0x80C0, IFXMIPS_GPTU_GPT_T6CON);
-
-	//retval = setup_irq(IFXMIPS_TIMER6_INT, &hrt_irqaction);
-
-	if (retval)
-	{
-		prom_printf("reqeust_irq failed %d. HIGH_RES_TIMER is diabled\n", IFXMIPS_TIMER6_INT);
-	}
 }
 
 extern const char* get_system_type (void);
 
+void (*board_time_init)(void);
 void __init
 plat_mem_setup (void)
 {

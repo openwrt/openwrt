@@ -1,15 +1,16 @@
-Index: linux-2.6.23/drivers/mtd/chips/cfi_cmdset_0002.c
+Index: linux-2.6.25/drivers/mtd/chips/cfi_cmdset_0002.c
 ===================================================================
---- linux-2.6.23.orig/drivers/mtd/chips/cfi_cmdset_0002.c	2007-11-02 23:02:29.000000000 +0100
-+++ linux-2.6.23/drivers/mtd/chips/cfi_cmdset_0002.c	2007-11-02 23:07:15.000000000 +0100
-@@ -1007,7 +1007,9 @@
- 	int ret = 0;
- 	map_word oldd;
+--- linux-2.6.25.orig/drivers/mtd/chips/cfi_cmdset_0002.c	2008-05-07 18:58:41.000000000 +0100
++++ linux-2.6.25/drivers/mtd/chips/cfi_cmdset_0002.c	2008-05-07 18:58:42.000000000 +0100
+@@ -1015,7 +1015,9 @@
  	int retry_cnt = 0;
+ 
+ 	adr += chip->start;
 -
 +#ifdef CONFIG_IFXMIPS
 +	adr ^= 2;
 +#endif
- 	adr += chip->start;
- 
  	spin_lock(chip->mutex);
+ 	ret = get_chip(map, chip, adr, FL_WRITING);
+ 	if (ret) {
+

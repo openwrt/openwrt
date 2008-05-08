@@ -602,7 +602,7 @@ map_dma_chan(_dma_chan_map *map)
 	for (i = 0; i < MAX_DMA_CHANNEL_NUM; i++)
 	{
 		dma_chan[i].irq = map[i].irq;
-		result = request_irq(dma_chan[i].irq, dma_interrupt, SA_INTERRUPT, "dma-core", (void*)&dma_chan[i]);
+		result = request_irq(dma_chan[i].irq, dma_interrupt, IRQF_DISABLED, "dma-core", (void*)&dma_chan[i]);
 		if (result)
 		{
 			printk("error, cannot get dma_irq!\n");

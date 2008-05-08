@@ -1,41 +1,34 @@
-Index: linux-2.6.23/drivers/serial/Kconfig
+Index: linux-2.6.25/drivers/char/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/serial/Kconfig	2007-12-22 20:21:04.563793426 +0100
-+++ linux-2.6.23/drivers/serial/Kconfig	2007-12-22 20:21:08.848037572 +0100
-@@ -1259,4 +1259,10 @@
- 	  Currently, only 8250 compatible ports are supported, but
- 	  others can easily be added.
+--- linux-2.6.25.orig/drivers/char/Makefile	2008-05-07 18:58:25.000000000 +0100
++++ linux-2.6.25/drivers/char/Makefile	2008-05-07 18:58:42.000000000 +0100
+@@ -112,6 +112,12 @@
+ obj-$(CONFIG_JS_RTC)		+= js-rtc.o
+ js-rtc-y = rtc.o
  
-+config SERIAL_IFXMIPS
-+	bool "IFXMips serial driver"
-+	depends on IFXMIPS
-+	help
-+	  Driver for the ifxmipss built in ASC hardware
++obj-$(CONFIG_IFXMIPS_LED)  += ifxmips_led.o
++obj-$(CONFIG_IFXMIPS_GPIO) += ifxmips_gpio.o
++obj-$(CONFIG_IFXMIPS_SSC)  += ifxmips_ssc.o
++obj-$(CONFIG_IFXMIPS_EEPROM)   += ifxmips_eeprom.o
++obj-$(CONFIG_IFXMIPS_MEI)  += ifxmips_mei_core.o
 +
- endmenu
-Index: linux-2.6.23/drivers/serial/Makefile
+ # Files generated that shall be removed upon make clean
+ clean-files := consolemap_deftbl.c defkeymap.c
+ 
+Index: linux-2.6.25/drivers/mtd/maps/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/serial/Makefile	2007-12-22 20:21:04.571793884 +0100
-+++ linux-2.6.23/drivers/serial/Makefile	2007-12-22 20:21:08.852037801 +0100
-@@ -64,3 +64,4 @@
- obj-$(CONFIG_SERIAL_NETX) += netx-serial.o
- obj-$(CONFIG_SERIAL_OF_PLATFORM) += of_serial.o
- obj-$(CONFIG_SERIAL_KS8695) += serial_ks8695.o
-+obj-$(CONFIG_SERIAL_IFXMIPS) += ifxmips_asc.o
-Index: linux-2.6.23/drivers/mtd/maps/Makefile
-===================================================================
---- linux-2.6.23.orig/drivers/mtd/maps/Makefile	2007-12-22 20:21:04.579794340 +0100
-+++ linux-2.6.23/drivers/mtd/maps/Makefile	2007-12-22 20:21:08.860038256 +0100
-@@ -71,3 +71,4 @@
+--- linux-2.6.25.orig/drivers/mtd/maps/Makefile	2008-05-07 18:58:25.000000000 +0100
++++ linux-2.6.25/drivers/mtd/maps/Makefile	2008-05-07 18:58:42.000000000 +0100
+@@ -68,3 +68,4 @@
  obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
  obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o
- obj-$(CONFIG_MTD_TQM834x)	+= tqm834x.o
-+obj-$(CONFIG_MTD_IFXMIPS)	+= ifxmips.o
-Index: linux-2.6.23/drivers/net/Kconfig
+ obj-$(CONFIG_MTD_INTEL_VR_NOR)	+= intel_vr_nor.o
++obj-$(CONFIG_MTD_IFXMIPS)  += ifxmips.o
+Index: linux-2.6.25/drivers/net/Kconfig
 ===================================================================
---- linux-2.6.23.orig/drivers/net/Kconfig	2007-12-22 20:21:08.035991295 +0100
-+++ linux-2.6.23/drivers/net/Kconfig	2007-12-22 20:21:08.860038256 +0100
-@@ -339,6 +339,18 @@
+--- linux-2.6.25.orig/drivers/net/Kconfig	2008-05-07 18:58:41.000000000 +0100
++++ linux-2.6.25/drivers/net/Kconfig	2008-05-07 18:58:42.000000000 +0100
+@@ -351,6 +351,12 @@
  
  source "drivers/net/arm/Kconfig"
  
@@ -45,50 +38,47 @@ Index: linux-2.6.23/drivers/net/Kconfig
 +	help
 +	  Support for the MII0 inside the IFXMips SOC
 +
-+config IFXMIPS_MII1
-+	tristate "Infineon IFXMips eth1 driver"
-+	depends on IFXMIPS
-+	help
-+	  Support for the MII1 inside the IFXMips SOC
-+
  config AX88796
  	tristate "ASIX AX88796 NE2000 clone support"
- 	depends on ARM || MIPS
-Index: linux-2.6.23/drivers/net/Makefile
+ 	depends on ARM || MIPS || SUPERH
+Index: linux-2.6.25/drivers/serial/Kconfig
 ===================================================================
---- linux-2.6.23.orig/drivers/net/Makefile	2007-12-22 20:21:08.039991524 +0100
-+++ linux-2.6.23/drivers/net/Makefile	2007-12-22 20:21:08.860038256 +0100
-@@ -208,6 +208,7 @@
- obj-$(CONFIG_FEC_8XX) += fec_8xx/
- obj-$(CONFIG_PASEMI_MAC) += pasemi_mac.o
- obj-$(CONFIG_MLX4_CORE) += mlx4/
-+obj-$(CONFIG_IFXMIPS_MII0) += ifxmips_mii0.o
+--- linux-2.6.25.orig/drivers/serial/Kconfig	2008-05-07 18:58:25.000000000 +0100
++++ linux-2.6.25/drivers/serial/Kconfig	2008-05-08 07:53:18.000000000 +0100
+@@ -1327,6 +1327,14 @@
+ 	  Currently, only 8250 compatible ports are supported, but
+ 	  others can easily be added.
  
- obj-$(CONFIG_MACB) += macb.o
- 
-Index: linux-2.6.23/drivers/char/watchdog/Makefile
++config SERIAL_IFXMIPS
++	bool "IFXMips serial driver"
++	depends on IFXMIPS
++	select SERIAL_CORE
++	select SERIAL_CORE_CONSOLE
++	help
++	  Driver for the ifxmipss built in ASC hardware
++
+ config SERIAL_QE
+ 	tristate "Freescale QUICC Engine serial port support"
+ 	depends on QUICC_ENGINE
+Index: linux-2.6.25/drivers/serial/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/char/watchdog/Makefile	2007-12-22 20:21:04.599795479 +0100
-+++ linux-2.6.23/drivers/char/watchdog/Makefile	2007-12-22 20:21:08.880039396 +0100
-@@ -90,6 +90,7 @@
- obj-$(CONFIG_INDYDOG) += indydog.o
- obj-$(CONFIG_WDT_MTX1)	+= mtx-1_wdt.o
- obj-$(CONFIG_WDT_RM9K_GPI) += rm9k_wdt.o
+--- linux-2.6.25.orig/drivers/serial/Makefile	2008-05-07 18:58:25.000000000 +0100
++++ linux-2.6.25/drivers/serial/Makefile	2008-05-07 18:58:42.000000000 +0100
+@@ -66,4 +66,5 @@
+ obj-$(CONFIG_SERIAL_NETX) += netx-serial.o
+ obj-$(CONFIG_SERIAL_OF_PLATFORM) += of_serial.o
+ obj-$(CONFIG_SERIAL_KS8695) += serial_ks8695.o
++obj-$(CONFIG_SERIAL_IFXMIPS) += ifxmips_asc.o
+ obj-$(CONFIG_SERIAL_QE) += ucc_uart.o
+Index: linux-2.6.25/drivers/watchdog/Makefile
+===================================================================
+--- linux-2.6.25.orig/drivers/watchdog/Makefile	2008-05-07 18:58:25.000000000 +0100
++++ linux-2.6.25/drivers/watchdog/Makefile	2008-05-07 18:58:42.000000000 +0100
+@@ -96,6 +96,7 @@
+ obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
+ obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
+ obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
 +obj-$(CONFIG_IFXMIPS_WDT) += ifxmips_wdt.o
  
  # PARISC Architecture
  
-Index: linux-2.6.23/drivers/char/Makefile
-===================================================================
---- linux-2.6.23.orig/drivers/char/Makefile	2007-12-22 20:21:04.611796164 +0100
-+++ linux-2.6.23/drivers/char/Makefile	2007-12-24 15:04:56.849129757 +0100
-@@ -135,3 +135,9 @@
- 	rm $@.tmp
- 
- endif
-+
-+obj-$(CONFIG_IFXMIPS_LED)	+= ifxmips_led.o
-+obj-$(CONFIG_IFXMIPS_GPIO)	+= ifxmips_gpio.o
-+obj-$(CONFIG_IFXMIPS_SSC)	+= ifxmips_ssc.o
-+obj-$(CONFIG_IFXMIPS_EEPROM)	+= ifxmips_eeprom.o
-+obj-$(CONFIG_IFXMIPS_MEI)	+= ifxmips_mei_core.o
