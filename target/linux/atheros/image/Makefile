@@ -29,7 +29,7 @@ define Image/Build
 	echo -en "rootfs\t\t0x02\t0x" >> $(BIN_DIR)/ls5-parts
 	echo -en "$(shell printf "%08X\n" $(shell expr $(shell cat $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma | wc -c) + 3187867648 ) )" >> $(BIN_DIR)/ls5-parts
 	echo -en "\t0x$(shell printf "%08X\n" $(shell expr 3735552 - $(shell cat $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma | wc -c) ) )" >> $(BIN_DIR)/ls5-parts
-	echo -e "\t0x00000000\t0x00000000\t$(BIN_DIR)/openwrt-$(BOARD)-root.jffs2-64k" >> $(BIN_DIR)/ls5-parts
+	echo -e "\t0x00000000\t0x00000000\t$(BIN_DIR)/openwrt-$(BOARD)-root.$(1)" >> $(BIN_DIR)/ls5-parts
 	
 	echo -en "kernel\t\t0x01\t0xBFC30000\t0x" > $(BIN_DIR)/ls2-parts
 	echo -en "$(shell printf "%08X\n" $(shell cat $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma | wc -c))" >> $(BIN_DIR)/ls2-parts
