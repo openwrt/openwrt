@@ -111,9 +111,9 @@ $(eval $(call KernelPackage,ipt-nat))
 define KernelPackage/ipt-nathelper
   SUBMENU:=$(NF_MENU)
   TITLE:=Default Conntrack and NAT helpers
-  KCONFIG:=$(KCONFIG_IPT_NAT_DEFAULT)
-  FILES:=$(foreach mod,$(IPT_NAT_DEFAULT-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_NAT_DEFAULT-m)))
+  KCONFIG:=$(KCONFIG_IPT_NATHELPER)
+  FILES:=$(foreach mod,$(IPT_NAT_NATHELPER-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_NAT_NATHELPER-m)))
 endef
 
 define KernelPackage/ipt-nathelper/description
@@ -132,9 +132,9 @@ $(eval $(call KernelPackage,ipt-nathelper))
 define KernelPackage/ipt-nathelper-extra
   SUBMENU:=$(NF_MENU)
   TITLE:=Extra Conntrack and NAT helpers
-  KCONFIG:=$(KCONFIG_IPT_NAT_EXTRA)
-  FILES:=$(foreach mod,$(IPT_NAT_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_NAT_EXTRA-m)))
+  KCONFIG:=$(KCONFIG_IPT_NATHELPER_EXTRA)
+  FILES:=$(foreach mod,$(IPT_NATHELPER_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_NATHELPER_EXTRA-m)))
 endef
 
 define KernelPackage/ipt-nathelper-extra/description
