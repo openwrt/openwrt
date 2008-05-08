@@ -67,7 +67,6 @@ prom_printf (const char * fmt, ...)
 void __init
 prom_init(void)
 {
-	mips_machgroup = MACH_GROUP_IFXMIPS;
 	mips_machtype = MACH_INFINEON_IFXMIPS;
 
 	strcpy(&(arcs_cmdline[0]), "console=ttyS0,115200 rootfstype=squashfs,jffs2 init=/etc/preinit");

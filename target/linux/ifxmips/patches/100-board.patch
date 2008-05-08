@@ -1,66 +1,57 @@
-Index: linux-2.6.23/arch/mips/Kconfig
+Index: linux-2.6.25/arch/mips/Kconfig
 ===================================================================
---- linux-2.6.23.orig/arch/mips/Kconfig	2007-10-16 22:12:19.000000000 +0200
-+++ linux-2.6.23/arch/mips/Kconfig	2007-10-16 22:12:21.000000000 +0200
-@@ -58,6 +58,17 @@
+--- linux-2.6.25.orig/arch/mips/Kconfig	2008-05-05 08:35:34.000000000 +0100
++++ linux-2.6.25/arch/mips/Kconfig	2008-05-05 08:35:46.000000000 +0100
+@@ -78,6 +78,17 @@
  	select SYS_SUPPORTS_LITTLE_ENDIAN
  	select GENERIC_HARDIRQS_NO__DO_IRQ
  
 +config IFXMIPS
-+	bool "IFXMips support" 
-+	select DMA_NONCOHERENT 
-+	select IRQ_CPU 
-+	select SYS_HAS_CPU_MIPS32_R1 
-+	select HAVE_STD_PC_SERIAL_PORT 
-+	select SYS_SUPPORTS_BIG_ENDIAN 
-+	select SYS_SUPPORTS_32BIT_KERNEL 
-+	select SYS_HAS_EARLY_PRINTK 
-+   select HW_HAS_PCI
++	bool "IFXMips support"
++	select DMA_NONCOHERENT
++	select IRQ_CPU
++	select SYS_HAS_CPU_MIPS32_R1
++	select HAVE_STD_PC_SERIAL_PORT
++	select SYS_SUPPORTS_BIG_ENDIAN
++	select SYS_SUPPORTS_32BIT_KERNEL
++	select SYS_HAS_EARLY_PRINTK
++	select HW_HAS_PCI
 +
  config MACH_DECSTATION
  	bool "DECstations"
  	select BOOT_ELF32
-@@ -605,6 +615,7 @@
- source "arch/mips/tx4927/Kconfig"
- source "arch/mips/tx4938/Kconfig"
- source "arch/mips/vr41xx/Kconfig"
-+source "arch/mips/ifxmips/Kconfig"
- 
- endmenu
- 
-Index: linux-2.6.23/arch/mips/Makefile
+Index: linux-2.6.25/arch/mips/Makefile
 ===================================================================
---- linux-2.6.23.orig/arch/mips/Makefile	2007-10-16 22:12:21.000000000 +0200
-+++ linux-2.6.23/arch/mips/Makefile	2007-10-16 22:12:21.000000000 +0200
-@@ -276,6 +276,13 @@
+--- linux-2.6.25.orig/arch/mips/Makefile	2008-05-05 08:35:35.000000000 +0100
++++ linux-2.6.25/arch/mips/Makefile	2008-05-05 08:35:46.000000000 +0100
+@@ -282,6 +282,13 @@
  cflags-$(CONFIG_MIPS_COBALT)	+= -Iinclude/asm-mips/mach-cobalt
  load-$(CONFIG_MIPS_COBALT)	+= 0xffffffff80080000
  
 +# 
 +# Infineon IFXMIPS
 +# 
-+core-$(CONFIG_IFXMIPS)	+= arch/mips/ifxmips/ 
-+cflags-$(CONFIG_IFXMIPS)	+= -Iinclude/asm-mips/mach-ifxmips 
-+load-$(CONFIG_IFXMIPS)	+= 0xffffffff80002000 
-+ 
++core-$(CONFIG_IFXMIPS) += arch/mips/ifxmips/
++cflags-$(CONFIG_IFXMIPS)   += -Iinclude/asm-mips/mach-ifxmips
++load-$(CONFIG_IFXMIPS) += 0xffffffff80002000
++
  #
  # DECstation family
  #
-Index: linux-2.6.23/include/asm-mips/bootinfo.h
+Index: linux-2.6.25/include/asm-mips/bootinfo.h
 ===================================================================
---- linux-2.6.23.orig/include/asm-mips/bootinfo.h	2007-10-16 22:12:19.000000000 +0200
-+++ linux-2.6.23/include/asm-mips/bootinfo.h	2007-10-16 22:12:21.000000000 +0200
-@@ -208,6 +208,13 @@
- #define MACH_GROUP_WINDRIVER   28	/* Windriver boards */
- #define MACH_WRPPMC             1
+--- linux-2.6.25.orig/include/asm-mips/bootinfo.h	2008-05-05 08:35:35.000000000 +0100
++++ linux-2.6.25/include/asm-mips/bootinfo.h	2008-05-05 08:35:46.000000000 +0100
+@@ -94,6 +94,12 @@
+ #define MACH_MSP7120_FPGA       5	/* PMC-Sierra MSP7120 Emulation */
+ #define MACH_MSP_OTHER        255	/* PMC-Sierra unknown board type */
  
-+/* 
-+ * Valid machtype for group ATHEROS 
-+ */ 
-+#define MACH_GROUP_IFXMIPS		29 
-+#define MACH_INFINEON_IFXMIPS	0
-+
++/*
++ * Valid machtype for group IFXMIPS
++ */
++#define MACH_GROUP_IFXMIPS     29
++#define MACH_INFINEON_IFXMIPS  0
 +
  #define CL_SIZE			COMMAND_LINE_SIZE
  
- const char *get_system_type(void);
+ extern char *system_type;
