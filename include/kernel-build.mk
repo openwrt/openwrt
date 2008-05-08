@@ -82,6 +82,7 @@ define BuildKernel
 
   oldconfig menuconfig: $(STAMP_PREPARED) FORCE
 	$(LINUX_CONFCMD) > $(LINUX_DIR)/.config
+	touch $(LINUX_CONFIG)
 	$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) $$@
 	$(SCRIPT_DIR)/kconfig.pl '>' $(GENERIC_LINUX_CONFIG) $(LINUX_DIR)/.config > $(LINUX_CONFIG)
 	$(Kernel/Configure)
