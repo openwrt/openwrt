@@ -29,7 +29,8 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	dd if=$(PKG_BUILD_DIR)/u-boot.bin of=$(BIN_DIR)/u-boot-$(CONFIG_AVR32_UBOOT_TARGET).bin bs=64k conv=sync
+	mkdir -p $(BIN_DIR)
+	dd if=$(PKG_BUILD_DIR)/u-boot.bin of=$(BIN_DIR)/u-boot-$(UBOOT_CONFIG).bin bs=64k conv=sync
 endef
 
 $(eval $(call Build/DefaultTargets))
