@@ -138,7 +138,7 @@ int num_blocks = 0;
 	AR7_FLASH_BASE, fs, AR7_CODE_START, 0x8000)
 
 #define ATHEROSBOARD1(n, d, m, fs) BOARD(n, d, ZYNOS_VENDOR_ID_ZYXEL, m, \
-	ATHEROS_FLASH_BASE, fs, ATHEROS_CODE_START, 0x8000)
+	ATHEROS_FLASH_BASE, fs, ATHEROS_CODE_START, 0x30000)
 
 static struct board_info boards[] = {
 	/*
