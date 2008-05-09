@@ -112,8 +112,8 @@ define KernelPackage/ipt-nathelper
   SUBMENU:=$(NF_MENU)
   TITLE:=Default Conntrack and NAT helpers
   KCONFIG:=$(KCONFIG_IPT_NATHELPER)
-  FILES:=$(foreach mod,$(IPT_NAT_NATHELPER-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_NAT_NATHELPER-m)))
+  FILES:=$(foreach mod,$(IPT_NATHELPER-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_NATHELPER-m)))
 endef
 
 define KernelPackage/ipt-nathelper/description
