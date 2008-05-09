@@ -1,8 +1,8 @@
 /*
  *  $Id$
  *
- *  Copyright (C) 2007 OpenWrt.org
- *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2007-2008 OpenWrt.org
+ *  Copyright (C) 2007-2008 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This code was based on the information of the ZyXEL's firmware
  *  image format written by Kolja Waschk, can be found at:
@@ -95,7 +95,7 @@ struct board_info {
 	uint32_t flash_base;	/* flash base address */
 	uint32_t flash_size;	/* board flash size */
 	uint32_t code_start;	/* code start address */
-	uint32_t fw_offs;	/* offset of the firmware within the flash */
+	uint32_t romio_offs;	/* offset of the firmware within the flash */
 };
 
 /*
@@ -125,7 +125,7 @@ int num_blocks = 0;
 	.name = (n), .desc=(d), \
 	.vendor = (v), .model = (m), \
 	.flash_base = (fb), .flash_size = (fs)<<20, \
-	.code_start = (cs), .fw_offs = (fo) \
+	.code_start = (cs), .romio_offs = (fo) \
 	}
 
 #define ADMBOARD1(n, d, m, fs) BOARD(n, d, ZYNOS_VENDOR_ID_ZYXEL, m, \
@@ -164,6 +164,17 @@ static struct board_info boards[] = {
 	ADMBOARD1("P-335U",	"ZyXEL Prestige 335U", ZYNOS_MODEL_P_335U, 4),
 	ADMBOARD1("P-335WT",	"ZyXEL Prestige 335WT", ZYNOS_MODEL_P_335WT, 4),
 
+	{
+		.name		= "P-2602HW-D1A",
+		.desc		= "ZyXEL P-2602HW-D1A",
+		.vendor		= ZYNOS_VENDOR_ID_ZYXEL,
+		.model		= ZYNOS_MODEL_P_2602HW_D1A,
+		.flash_base	= AR7_FLASH_BASE,
+		.flash_size	= 4*1024*1024,
+		.code_start	= 0x94008000,
+		.romio_offs	= 0x20000,
+	},
+
 #if 0
 	/*
 	 * Texas Instruments AR7 based boards
@@ -193,7 +204,7 @@ static struct board_info boards[] = {
 		.flash_base	= AR7_FLASH_BASE,
 		.flash_size	= 8*1024*1024,
 		.code_start	= 0x94014000,
-		.fw_offs	= 0x40000,
+		.romio_offs	= 0x40000,
 	},
 
 	/*
@@ -710,7 +721,7 @@ write_out_image(FILE *outfile)
 
 	offset += padlen;
 
-	mmap.addr = board->flash_base + board->fw_offs + offset;
+	mmap.addr = board->flash_base + board->romio_offs + offset;
 	hdr.mmap_addr = mmap.addr;
 	res = write_out_mmap(outfile, &mmap, &css);
 	if (res)
@@ -887,7 +898,7 @@ calc_block_offsets(int type, uint32_t *offset)
 			continue;
 
 		next_offs = ALIGN(*offset, block->align);
-		avail = board->flash_size - board->fw_offs - next_offs;
+		avail = board->flash_size - board->romio_offs - next_offs;
 		if (next_offs + block->file_size > avail) {
 			ERR("file %s is too big, offset = %u, size=%u,"
 				" align = %u", block->file_name,
@@ -921,7 +932,7 @@ process_blocks(void)
 			return res;
 	}
 
-	offset = board->fw_offs + bootext_block->file_size;
+	offset = board->romio_offs + bootext_block->file_size;
 	res = calc_block_offsets(BLOCK_TYPE_RAW, &offset);
 
 	return res;
