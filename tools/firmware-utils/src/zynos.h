@@ -1,8 +1,8 @@
 /*
  *  $Id$
  *
- *  Copyright (C) 2007 OpenWrt.org
- *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2007-2008 OpenWrt.org
+ *  Copyright (C) 2007-2008 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This code was based on the information of the ZyXEL's firmware
  *  image format written by Kolja Waschk, can be found at:
@@ -152,12 +152,12 @@ struct zyn_mmt_item {
 #define ZYNOS_MODEL_P_2602HW_61C	/* n.a. */
 #define ZYNOS_MODEL_P_2602HW_63		/* n.a. */
 #define ZYNOS_MODEL_P_2602HW_63C	ZYNOS_MODEL_P_2602H_63C
-#define ZYNOS_MODEL_P_2602HW_D1A	/* n.a. */
+#define ZYNOS_MODEL_P_2602HW_D1A	MID( 6301)
 #define ZYNOS_MODEL_P_2602HW_D3A	/* n.a. */
 #define ZYNOS_MODEL_P_2602HWL_61	MID( 1181)
 #define ZYNOS_MODEL_P_2602HWL_61C	ZYNOS_MODEL_P_2602H_61C
 #define ZYNOS_MODEL_P_2602HWL_63C	ZYNOS_MODEL_P_2602H_63C
-#define ZYNOS_MODEL_P_2602HWL_D1A	MID( 6301)
+#define ZYNOS_MODEL_P_2602HWL_D1A	ZYNOS_MODEL_P_2602HW_D1A
 #define ZYNOS_MODEL_P_2602HWL_D3A	MID( 7581)
 #define ZYNOS_MODEL_P_2602HWN_D7A	MID(30464)
 #define ZYNOS_MODEL_P_2602HWNLI_D7A	MID( 6813)
