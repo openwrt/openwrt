@@ -96,13 +96,21 @@ ifxmips_get_cpu_ver (void)
 }
 EXPORT_SYMBOL(ifxmips_get_cpu_ver);
 
-void
-ifxmips_time_init (void)
+static __inline__ u32 get_counter_resolution(void)
 {
-	mips_hpt_frequency = ifxmips_get_cpu_hz() / 2;
-	r4k_offset = mips_hpt_frequency / HZ;
-	printk("mips_hpt_frequency:%d\n", mips_hpt_frequency);
-	printk("r4k_offset: %08x(%d)\n", r4k_offset, r4k_offset);
+	u32 res;
+	__asm__ __volatile__(
+		".set   push\n"
+		".set   mips32r2\n"
+		".set   noreorder\n"
+		"rdhwr  %0, $3\n"
+		"ehb\n"
+		".set pop\n"
+		: "=&r" (res)
+		: /* no input */
+		: "memory");
+		instruction_hazard();
+		return res;
 }
 
 int
@@ -117,9 +125,9 @@ ifxmips_be_handler(struct pt_regs *regs, int is_fixup)
 void __init
 plat_time_init (void)
 {
+	mips_hpt_frequency = ifxmips_get_cpu_hz()/get_counter_resolution();
 	r4k_cur = (read_c0_count() + r4k_offset);
 	write_c0_compare(r4k_cur);
-
 	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_GPT | IFXMIPS_PMU_PWDCR_FPI);
 
 	writel(0x100, IFXMIPS_GPTU_GPT_CLC);
@@ -130,7 +138,7 @@ plat_time_init (void)
 
 extern const char* get_system_type (void);
 
-void (*board_time_init)(void);
+//void (*board_time_init)(void);
 void __init
 plat_mem_setup (void)
 {
@@ -144,7 +152,7 @@ plat_mem_setup (void)
 	write_c0_status(status);
 
 	ifxmips_reboot_setup();
-	board_time_init = ifxmips_time_init;
+//	board_time_init = ifxmips_time_init;
 	board_be_handler = &ifxmips_be_handler;
 
 	ioport_resource.start = IOPORT_RESOURCE_START;
