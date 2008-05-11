@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -48,11 +48,12 @@ $(call Package/fuse/Default)
   SUBMENU:=Filesystems
   DEPENDS:=@LINUX_2_6
   TITLE+= (kernel module)
-  FILES:=$(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/fuse/fuse.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:= CONFIG_FUSE_FS
+  FILES:=$(LINUX_DIR)/fs/fuse/fuse.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,80,fuse)
 endef
 
-define Kernel/Package/fuse/description
+define KernelPackage/fuse/description
 $(call Package/fuse/Default/description)
  This package contains the FUSE kernel module.
 endef
@@ -78,13 +79,23 @@ CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-static \
 	--disable-rpath \
-	--enable-kernel-module \
 	--enable-lib \
 	--enable-util \
 	--disable-example \
 	--disable-auto-modprobe \
 	--with-kernel="$(LINUX_DIR)" \
 	--disable-mtab
+
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,2.6.25)),1)
+  define KernelPackage/fuse/2.6
+    KCONFIG:=
+    FILES:=$(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/fuse/fuse.$(LINUX_KMOD_SUFFIX)
+  endef
+
+ CONFIGURE_ARGS += --enable-kernel-module
+else
+ CONFIGURE_ARGS += --disable-kernel-module
+endif
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); rm -f config.cache; \
