@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -84,6 +84,12 @@ $(call Package/e2fsprogs)
   DEPENDS:=e2fsprogs
 endef
 
+define Package/badblocks
+$(call Package/e2fsprogs)
+  TITLE:=Ext2 Filesystem badblocks utility
+  DEPENDS:=e2fsprogs
+endef
+
 CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-static \
@@ -151,9 +157,15 @@ define Package/resize2fs/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/resize2fs $(1)/usr/sbin/
 endef
 
+define Package/badblocks/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/badblocks $(1)/usr/sbin/
+endef
+
 $(eval $(call BuildPackage,e2fsprogs))
 $(eval $(call BuildPackage,libuuid))
 $(eval $(call BuildPackage,uuidgen))
 $(eval $(call BuildPackage,libblkid))
 $(eval $(call BuildPackage,tune2fs))
 $(eval $(call BuildPackage,resize2fs))
+$(eval $(call BuildPackage,badblocks))
