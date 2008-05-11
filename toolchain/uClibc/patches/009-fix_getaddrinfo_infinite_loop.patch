@@ -1,0 +1,14 @@
+diff -ruN uClibc-0.9.29.orig/libc/inet/getaddrinfo.c uClibc-0.9.29/libc/inet/getaddrinfo.c
+--- uClibc-0.9.29.orig/libc/inet/getaddrinfo.c	2006-01-22 20:35:08.000000000 +0100
++++ uClibc-0.9.29/libc/inet/getaddrinfo.c	2008-05-11 03:33:18.000000000 +0200
+@@ -858,7 +858,10 @@
+ 	if (hints->ai_family == g->family || hints->ai_family == AF_UNSPEC)
+ 	{
+ 	    if ((hints->ai_flags & AI_ADDRCONFIG) && !addrconfig(g->family))
++	    {
++		g++;
+ 		continue;
++	    }
+ 	    j++;
+ 	    if (pg == NULL || pg->gaih != g->gaih)
+ 	    {
