@@ -272,10 +272,11 @@ endef
 $(eval $(call KernelPackage,ipt-extra))
 
 
+# XXX: disabled on 2.6.25 due to broken IMQ
 define KernelPackage/ip6tables
   SUBMENU:=$(NF_MENU)
   TITLE:=IPv6 modules
-  DEPENDS:=+kmod-ipv6
+  DEPENDS:=+kmod-ipv6 @!LINUX_2_6_25
   KCONFIG:=CONFIG_IP6_NF_IPTABLES
   FILES:=$(foreach mod,$(IPT_IPV6-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_IPV6-m)))
