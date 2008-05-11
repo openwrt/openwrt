@@ -13,10 +13,15 @@ CRYPTO_MENU:=Cryptographic API modules
 #  - des > des_generic
 #  - sha1 > sha1_generic
 #  - sha256 > sha256_generic
-ifeq ($(KERNEL_PATCHVER),2.6.24)
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.24)),1)
   CRYPTO_GENERIC:=_generic
 endif
 
+# XXX: added CRYPTO_PREFIX as a workaround for modules renamed in 2.6.25:
+#  - blkcipher -> crypto_blkcipher
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.25)),1)
+  CRYPTO_PREFIX:=crypto_
+endif
 
 # XXX: added CONFIG_CRYPTO_HMAC to KCONFIG so that CONFIG_CRYPTO_HASH is 
 # always set, even if no hash modules are selected
@@ -35,7 +40,7 @@ define KernelPackage/crypto-core
 	CONFIG_CRYPTO_MANAGER
   FILES:= \
 	$(LINUX_DIR)/crypto/crypto_algapi.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/blkcipher.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/crypto/$(CRYPTO_PREFIX)blkcipher.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/cbc.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/deflate.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/ecb.$(LINUX_KMOD_SUFFIX) \
@@ -45,7 +50,7 @@ define KernelPackage/crypto-core
 	crypto_algapi \
 	cryptomgr \
 	crypto_hash \
-	blkcipher \
+	$(CRYPTO_PREFIX)blkcipher \
 	cbc \
 	ecb \
 	deflate \

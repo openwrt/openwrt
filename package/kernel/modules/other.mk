@@ -270,7 +270,7 @@ $(eval $(call KernelPackage,mmc-at91))
 ifeq ($(KERNEL),2.4)
   WATCHDOG_DIR=char
 endif
-ifeq ($(KERNEL_PATCHVER),2.6.24)
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.24)),1)
   WATCHDOG_DIR=watchdog
 endif
 WATCHDOG_DIR?=char/watchdog
