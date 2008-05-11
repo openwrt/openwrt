@@ -78,9 +78,10 @@
 	"ethaddr=11:22:33:44:55:66\0" \
 	"serverip=192.168.45.100\0" \
 	"ipaddr=192.168.45.108\0"  \
-	"update_uboot=tftp 0x80500000 u-boot.ifx;era 1:0-10; cp.b 0x80500000 0xb0000000 0x10000\0"
+	"update_uboot=tftp 0x80500000 u-boot.ifx;era 1:0-10; cp.b 0x80500000 0xb0000000 0x10000\0" \
+	"update_openwrt=tftp 0x80500000 openwrt-ifxmips-2.6-squashfs.image; era 1:11-120; cp.b 0x80500000 0xb00030000 0x300000\0"
 
-#define CONFIG_BOOTCOMMAND	"run flash_flash"
+#define CONFIG_BOOTCOMMAND	"bootm 0xb00030000"
 
 #define CONFIG_COMMANDS_YES	(CONFIG_CMD_DFL 	| \
 				 CFG_CMD_ASKENV		| \
