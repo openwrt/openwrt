@@ -145,3 +145,7 @@ define AutoLoad
   add_module $(1) "$(2)";
 endef
 
+define CompareKernelPatchVer
+  $(shell [ $$(echo $(1) | tr . 0) -$(2) $$(echo $(3) | tr . 0) ] && echo 1 || echo 0)
+endef
+
