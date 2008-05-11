@@ -9,3 +9,4 @@
 #
 
 obj-y := board.o irq.o
+obj-$(CONFIG_ATHEROS_AR5315_PCI) += pci.o

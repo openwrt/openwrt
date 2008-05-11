@@ -60,6 +60,10 @@ asmlinkage void ar5315_irq_dispatch(void)
 		do_IRQ(AR5315_IRQ_WLAN0_INTRS);
 	else if (pending & CAUSEF_IP4)
 		do_IRQ(AR5315_IRQ_ENET0_INTRS);
+#ifdef CONFIG_PCI
+	else if (pending & CAUSEF_IP5)
+		ar5315_pci_irq(AR5315_IRQ_LCBUS_PCI);
+#endif
 	else if (pending & CAUSEF_IP2) {
 		unsigned int ar531x_misc_intrs = sysRegRead(AR5315_ISR) & sysRegRead(AR5315_IMR);
 
@@ -80,6 +84,30 @@ asmlinkage void ar5315_irq_dispatch(void)
 	} else if (pending & CAUSEF_IP7)
 		do_IRQ(AR531X_IRQ_CPU_CLOCK);
 }
+
+#ifdef CONFIG_PCI
+static inline void pci_abort_irq(void)
+{
+	sysRegWrite(AR5315_PCI_INT_STATUS, AR5315_PCI_ABORT_INT);
+	(void)sysRegRead(AR5315_PCI_INT_STATUS); /* flush write to hardware */
+}
+
+static inline void pci_ack_irq(void)
+{
+	sysRegWrite(AR5315_PCI_INT_STATUS, AR5315_PCI_EXT_INT);
+	(void)sysRegRead(AR5315_PCI_INT_STATUS); /* flush write to hardware */
+}
+
+void ar5315_pci_irq(int irq)
+{
+	if (sysRegRead(AR5315_PCI_INT_STATUS) == AR5315_PCI_ABORT_INT)
+		pci_abort_irq();
+	else {
+		do_IRQ(irq);
+		pci_ack_irq();
+	}
+}
+#endif
 
 static void ar5315_gpio_intr_enable(unsigned int irq)
 {
