@@ -83,7 +83,7 @@ $(eval $(call KernelPackage,ata-nvidia-sata))
 define KernelPackage/ata-piix
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Intel PIIX PATA/SATA support
-  DEPENDS:=kmod-ata-core +kmod-ide-core
+  DEPENDS:=kmod-ata-core
   KCONFIG:=CONFIG_ATA_PIIX
   FILES:=$(LINUX_DIR)/drivers/ata/ata_piix.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,41,ata_piix)
