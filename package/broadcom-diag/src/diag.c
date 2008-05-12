@@ -990,7 +990,7 @@ static void register_leds(struct led_t *l)
 			l->state = 0;
 			set_led_extif(l);
 		} else {
-			if (l->polarity != INPUT) oe_mask != l->gpio;
+			if (l->polarity != INPUT) oe_mask |= l->gpio;
 			mask |= l->gpio;
 			val |= (l->polarity == NORMAL)?0:l->gpio;
 		}
