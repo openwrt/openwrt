@@ -69,6 +69,22 @@ endef
 $(eval $(call KernelPackage,ata-piix))
 
 
+define KernelPackage/ata-via-sata
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=VIA SATA support
+  DEPENDS:=kmod-ata-core
+  KCONFIG:=CONFIG_SATA_VIA
+  FILES:=$(LINUX_DIR)/drivers/ata/sata_via.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,sata_via)
+endef
+
+define KernelPackage/ata-via-sata/description
+ This option enables support for VIA Serial ATA.
+endef
+
+$(eval $(call KernelPackage,ata-via-sata))
+
+
 define KernelPackage/ide-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=IDE (ATA/ATAPI) device support
