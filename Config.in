@@ -69,14 +69,14 @@ source "target/linux/*/image/Config.in"
     config TARGET_ROOTFS_FSPART
         int "Filesystem part size (in MB)"
         depends X86_GRUB_IMAGES || TARGET_ROOTFS_EXT2FS || TARGET_rb532 || TARGET_olpc
-        default 16
+        default 48
         help
             Allows you to change the filesystem partition size
 
     config TARGET_ROOTFS_MAXINODE
         int "Maximum number of inodes in filesystem"
         depends TARGET_ROOTFS_EXT2FS
-        default 1500
+        default 6000
         help
             Allows you to change the maximum number of inodes in the filesystem
 
