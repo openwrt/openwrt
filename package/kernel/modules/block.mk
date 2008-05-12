@@ -20,6 +20,22 @@ endef
 $(eval $(call KernelPackage,ata-core))
 
 
+define KernelPackage/ata-ahci
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=AHCI Serial ATA support
+  DEPENDS:=kmod-ata-core
+  KCONFIG:=CONFIG_SATA_AHCI
+  FILES:=$(LINUX_DIR)/drivers/ata/ahci.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,ahci)
+endef
+
+define KernelPackage/ata-ahci/description
+ Support for AHCI Serial ATA controllers.
+endef
+
+$(eval $(call KernelPackage,ata-ahci))
+
+
 define KernelPackage/ata-artop
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=ARTOP 6210/6260 PATA support
@@ -50,6 +66,7 @@ define KernelPackage/ata-ixp4xx-cf/description
 endef
 
 $(eval $(call KernelPackage,ata-ixp4xx-cf))
+
 
 
 define KernelPackage/ata-piix
