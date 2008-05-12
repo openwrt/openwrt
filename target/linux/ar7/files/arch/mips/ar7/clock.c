@@ -437,7 +437,7 @@ static void __init tnetd7200_init_clocks(void)
 			printk(KERN_INFO "Clocks: Sync 1:1 mode\n");
 
 			printk(KERN_INFO "Clocks: Setting DSP clock\n");
-			calculate(dsp_base, TNETD7200_DEF_CPU_CLK, &dsp_prediv,
+			calculate(dsp_base, TNETD7200_DEF_DSP_CLK, &dsp_prediv,
 				&dsp_postdiv, &dsp_mul);
 			ar7_bus_clock = ((dsp_base / dsp_prediv) * dsp_mul)
 								/ dsp_postdiv;
