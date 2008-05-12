@@ -68,6 +68,17 @@ endef
 $(eval $(call KernelPackage,ata-ixp4xx-cf))
 
 
+define KernelPackage/ata-nvidia-sata
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Nvidia Serial ATA support
+  DEPENDS:=kmod-ata-core
+  KCONFIG:=CONFIG_SATA_NV
+  FILES:=$(LINUX_DIR)/drivers/ata/sata_nv.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,sata_nv)
+endef
+
+$(eval $(call KernelPackage,ata-nvidia-sata))
+
 
 define KernelPackage/ata-piix
   SUBMENU:=$(BLOCK_MENU)
