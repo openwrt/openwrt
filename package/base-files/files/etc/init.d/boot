@@ -27,7 +27,7 @@ apply_uci_config() {(
 start() {
 	[ -f /proc/mounts ] || /sbin/mount_root
 	[ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
-	vconfig set_name_type DEV_PLUS_VID_NO_PAD
+	[ -f /proc/net/vlan/config ] && vconfig set_name_type DEV_PLUS_VID_NO_PAD
 
 	apply_uci_config
 	config_load system
