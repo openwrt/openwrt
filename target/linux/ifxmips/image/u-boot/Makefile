@@ -26,6 +26,7 @@ define Build/Compile
 endef
 
 define Build/InstallDev
+	mkdir -p $(BIN_DIR)
 	dd if=$(PKG_BUILD_DIR)/u-boot.ifx of=$(BIN_DIR)/u-boot.ifx bs=64k conv=sync
 endef
 
