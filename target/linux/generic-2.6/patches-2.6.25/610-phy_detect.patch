@@ -1,0 +1,30 @@
+Index: linux-2.6.25.1/drivers/net/phy/mdio_bus.c
+===================================================================
+--- linux-2.6.25.1.orig/drivers/net/phy/mdio_bus.c	2008-05-01 23:45:25.000000000 +0200
++++ linux-2.6.25.1/drivers/net/phy/mdio_bus.c	2008-05-12 23:44:21.000000000 +0200
+@@ -132,6 +132,9 @@
+ 	struct phy_device *phydev = to_phy_device(dev);
+ 	struct phy_driver *phydrv = to_phy_driver(drv);
+ 
++	if (phydrv->detect)
++		return (phydrv->detect(phydev->bus, phydev->addr));
++
+ 	return ((phydrv->phy_id & phydrv->phy_id_mask) ==
+ 		(phydev->phy_id & phydrv->phy_id_mask));
+ }
+Index: linux-2.6.25.1/include/linux/phy.h
+===================================================================
+--- linux-2.6.25.1.orig/include/linux/phy.h	2008-05-01 23:45:25.000000000 +0200
++++ linux-2.6.25.1/include/linux/phy.h	2008-05-12 23:44:21.000000000 +0200
+@@ -325,6 +325,11 @@
+ 	u32 features;
+ 	u32 flags;
+ 
++	/* Called during discovery to test if the
++	 * device can attach to the bus, even if
++	 * phy id and mask do not match */
++	bool (*detect)(struct mii_bus *bus, int addr);
++
+ 	/* Called to initialize the PHY,
+ 	 * including after a reset */
+ 	int (*config_init)(struct phy_device *phydev);
