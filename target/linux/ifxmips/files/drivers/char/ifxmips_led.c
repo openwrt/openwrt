@@ -31,8 +31,10 @@
 #include <asm/ifxmips/ifxmips.h>
 #include <asm/ifxmips/ifxmips_gpio.h>
 #include <asm/ifxmips/ifxmips_pmu.h>
+#include <linux/leds.h>
+#include <linux/delay.h>
 
-#define DRVNAME							"ifxmips_led" 
+#define DRVNAME							"ifxmips_led"
 
 #define IFXMIPS_LED_CLK_EDGE			IFXMIPS_LED_FALLING
 //#define IFXMIPS_LED_CLK_EDGE			IFXMIPS_LED_RISING
@@ -41,7 +43,12 @@
 
 #define IFXMIPS_LED_GPIO_PORT			0
 
-static int ifxmips_led_major;
+#define IFXMIPS_MAX_LED					24
+
+struct ifxmips_led {
+	struct led_classdev cdev;
+	u8 bit;
+};
 
 void
 ifxmips_led_set (unsigned int led)
@@ -76,6 +83,17 @@ ifxmips_led_blink_clear (unsigned int led)
 EXPORT_SYMBOL(ifxmips_led_blink_clear);
 
 void
+ifxmips_ledapi_set(struct led_classdev *led_cdev, enum led_brightness value)
+{
+	struct ifxmips_led *led_dev = container_of(led_cdev, struct ifxmips_led, cdev);
+
+	if(value)
+		ifxmips_led_set(1 << led_dev->bit);
+	else
+		ifxmips_led_clear(1 << led_dev->bit);
+}
+
+void
 ifxmips_led_setup_gpio (void)
 {
 	int i = 0;
@@ -91,40 +109,9 @@ ifxmips_led_setup_gpio (void)
 }
 
 static int
-led_ioctl (struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
-{
-	int ret = -EINVAL;
-
-	switch ( cmd )
-	{
-	}
-
-	return ret;
-}
-
-static int
-led_open (struct inode *inode, struct file *file)
-{
-	return 0;
-}
-
-static int
-led_release (struct inode *inode, struct file *file)
-{
-	return 0;
-}
-
-static struct file_operations ifxmips_led_fops = {
-	.owner = THIS_MODULE,
-	.ioctl = led_ioctl,
-	.open = led_open,
-	.release = led_release
-};
-
-static int
 ifxmips_led_probe(struct platform_device *dev)
 {
-	int ret = 0;
+	int i = 0;
 
 	ifxmips_led_setup_gpio();
 
@@ -155,26 +142,23 @@ ifxmips_led_probe(struct platform_device *dev)
 	/* per default, the leds are turned on */
 	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_LED);
 
-	ifxmips_led_major = register_chrdev(0, "ifxmips_led", &ifxmips_led_fops);
-
-	if (!ifxmips_led_major)
+	for(i = 0; i < IFXMIPS_MAX_LED; i++)
 	{
-		printk("ifxmips_led: Error! Could not register device. %d\n", ifxmips_led_major);
-		ret = -EINVAL;
-
-		goto out;
+		struct ifxmips_led *tmp = kzalloc(sizeof(struct ifxmips_led), GFP_KERNEL);
+		tmp->cdev.brightness_set = ifxmips_ledapi_set;
+		tmp->cdev.name = kmalloc(sizeof("ifxmips:led:00"), GFP_KERNEL);
+		sprintf(tmp->cdev.name, "ifxmips:led:%02d", i);
+		tmp->cdev.default_trigger = NULL;
+		tmp->bit = i;
+		led_classdev_register(&dev->dev, &tmp->cdev);
 	}
 
-	printk(KERN_INFO "ifxmips_led: device successfully initialized #%d.\n", ifxmips_led_major);
-
-out:
-	return ret;
+	return 0;
 }
 
 static int
 ifxmips_led_remove(struct platform_device *pdev)
 {
-	unregister_chrdev(ifxmips_led_major, "ifxmips_led");
 	return 0;
 }
 
@@ -187,23 +171,6 @@ platform_driver ifxmips_led_driver = {
 		.owner = THIS_MODULE,
 	},
 };
-
-/*
-Map for LED on reference board
-	WLAN_READ     LED11   OUT1    15
-	WARNING       LED12   OUT2    14
-	FXS1_LINK     LED13   OUT3    13
-	FXS2_LINK     LED14   OUT4    12
-	FXO_ACT       LED15   OUT5    11
-	USB_LINK      LED16   OUT6    10
-	ADSL2_LINK    LED19   OUT7    9
-	BT_LINK       LED17   OUT8    8
-	SD_LINK       LED20   OUT9    7
-	ADSL2_TRAFFIC LED31   OUT16   0
-Map for hardware relay on reference board
-	USB Power On          OUT11   5
-	RELAY                 OUT12   4
-*/
 
 int __init
 ifxmips_led_init (void)
