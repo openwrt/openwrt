@@ -296,7 +296,11 @@ static int robo_probe(char *devname)
 	printk(KERN_INFO PFX "Probing device %s: ", devname);
 	strcpy(robo.ifr.ifr_name, devname);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
 	if ((robo.dev = dev_get_by_name(devname)) == NULL) {
+#else
+	if ((robo.dev = dev_get_by_name(&init_net, devname)) == NULL) {
+#endif
 		printk("No such device\n");
 		return 1;
 	}
