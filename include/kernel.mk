@@ -120,6 +120,12 @@ $(call KernelPackage/$(1)/description)
     endef
   endif
 
+  ifdef KernelPackage/$(1)/config
+    define Package/kmod-$(1)/config
+$(call KernelPackage/$(1)/config)
+    endef
+  endif
+
   ifneq ($(if $(KCONFIG),$(filter m,$(foreach c,$(filter-out %=y %=n %=m,$(KCONFIG)),$($(c)))),.),)
     ifneq ($(strip $(FILES)),)
       define Package/kmod-$(1)/install
