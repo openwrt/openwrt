@@ -1,0 +1,152 @@
+# MadWifi configuration
+
+config MADWIFI_DEBUG
+	bool "Enable compilation of debugging features"
+	depends on EXPERIMENTAL
+	default n
+
+choice
+	prompt "Bus selection"
+	default MADWIFI_BUS_DEFAULT
+	help
+	  This option controls how MadWifi communicates with the hardware.
+
+config MADWIFI_BUS_DEFAULT
+	bool "Use default bus"
+	help
+	  This makes MadWifi determine the needed bus based on the target
+	  hardware. This will generally work most of the time, but there are some
+	  cases where you need to override it.
+
+config MADWIFI_BUS_PCI
+	bool "Use PCI bus"
+	depends on PCI_SUPPORT
+
+config MADWIFI_BUS_AHB
+	bool "Use AHB bus"
+	depends on TARGET_atheros
+
+endchoice
+
+choice
+	prompt "HAL selection"
+	default MADWIFI_HAL_DEFAULT
+	help
+	  This option controls how MadWifi communicates with the hardware.
+
+config MADWIFI_HAL_DEFAULT
+	bool "Use default HAL"
+	help
+	  This makes MadWifi determine the needed HAL based on the target
+	  hardware. This will generally work most of the time, but there are some
+	  cases where you need to override it.
+
+config MADWIFI_HAL_MIPS_BE_ELF
+	bool "Use MIPS big endian ELF HAL"
+	depends on mips
+	depends on BIG_ENDIAN
+
+config MADWIFI_HAL_MIPS_LE_ELF
+	bool "Use MIPS little endian ELF HAL"
+	depends on mips
+	depends on !BIG_ENDIAN
+
+config MADWIFI_HAL_I386_ELF
+	bool "Use i386 ELF HAL"
+	depends on TARGET_x86
+
+config MADWIFI_HAL_XSCALE_BE_ELF
+	bool "Use XScale big endian ELF HAL"
+	depends TARGET_ixp4xx
+	depends on BIG_ENDIAN
+
+config MADWIFI_HAL_XSCALE_LE_ELF
+	bool "Use XScale little endian ELF HAL"
+	depends TARGET_iop32x
+	depends on !BIG_ENDIAN
+
+config MADWIFI_HAL_ARMV4_LE_ELF
+	bool "Use ARMV4 little endian ELF HAL"
+	depends TARGET_storm
+	depends on !BIG_ENDIAN
+
+config MADWIFI_HAL_AP30
+	bool "Use AP30 HAL"
+	depends on TARGET_atheros
+
+config MADWIFI_HAL_AP43
+	bool "Use AP43 HAL"
+	depends on TARGET_atheros
+
+config MADWIFI_HAL_AP51
+	bool "Use AP51 HAL"
+	depends on TARGET_atheros
+
+config MADWIFI_HAL_AP61
+	bool "Use AP61 HAL"
+	depends on TARGET_atheros
+
+endchoice
+
+choice
+	prompt "Rate control algorithm selection"
+	default MADWIFI_RCA_MINSTREL
+	help
+	  This option controls how MadWifi chooses its bitrate.
+
+config MADWIFI_RCA_MINSTREL
+	bool "Use the Minstrel rate control algorithm"
+	help
+	  This code is takes a wandering minstrel approach. Wander around the
+	  different rates, singing wherever you can. And then, look at the
+	  performance, and make a choice. Note that the wandering minstrel will
+	  always wander in directions where he/she feels he/she will get paid
+	  the best for his/her work.
+
+config MADWIFI_RCA_ONOE
+	bool "Use the Onoe rate control algorithm"
+	help
+	  Onoe is a credit based RCA where the value of the credit is determined
+	  by the frequency of successful, erroneous and retransmissions
+	  accumulated during a fixed invocation period of 1000 ms. If less than
+	  10% of the packets need to be retransmitted at a particular rate, Onoe
+	  keeps increasing its credit point till the threshold value of 10 is
+	  reached. At this point, the current transmission rate is increased to
+	  the next available higher rate and the process repeated with credit
+	  score of zero. Similar logic holds for deducting the credit score and
+	  moving to a lower bit-rate for failed packet
+	  transmission/retransmission attempts. However, once a bit-rate has
+	  been marked as failure in the previous attempt, Onoe will not attempt
+	  to select that bit-rate until 10 seconds have elapsed since the last
+	  attempt. Due to the manner in which it operates, Onoe is conservative
+	  in rate selection and is less sensitive to individual packet failure.
+
+config MADWIFI_RCA_AMRR
+	bool "Use the AMRR rate control algorithm"
+	help
+	  AMRR uses Binary Exponential Backoff (BEB) technique to adapt the
+	  length (threshold) of the sampling period used to change the values of
+	  bit-rate and transmission count parameters. It uses probe packets and
+	  depending on their transmission status adaptively changes the threshold
+	  value. The adaptation mechanism ensures fewer failed
+	  transmission/retransmission and higher throughput by not switching to a
+	  higher rate as specified by the backoff mechanism. In addition to this,
+	  the AMRR employs heuristics to capture the short-term variations of the
+	  channel by judiciously setting the rate and transmission count
+	  parameters.
+
+config MADWIFI_RCA_SAMPLERATE
+	bool "Use the SampleRate rate control algorithm"
+	help
+	  SampleRate decides on the transmission bit-rate based on the past
+	  history of performance; it keeps a record of the number of successive
+	  failures, the number of successful transmits and the total transmission
+	  time along with the destination for that bit-rate. Stale samples are
+	  removed based on a EWMA windowing mechanism. If in the sampling
+	  process, no successful acknowledgment is received or the number of
+	  packets sent is multiple of 10 on a specific link, it transmits the
+	  packet with the highest rate which has not failed 4 successive times.
+	  Other than that it transmits packets at the rate which has the lowest
+	  average transmission time.
+
+endchoice
