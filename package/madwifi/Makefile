@@ -25,48 +25,115 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trun
 
 include $(INCLUDE_DIR)/package.mk
 
-# MADWIFI_DEBUG=1
+ifdef CONFIG_MADWIFI_BUS_DEFAULT
+  ifneq ($(CONFIG_TARGET_atheros),)
+    BUS:=AHB
+  else
+    ifneq ($(CONFIG_PCI_SUPPORT),)
+      BUS:=PCI
+    endif
+  endif
 
-ifeq ($(ARCH),mips)
-  HAL_TARGET:=mips-be-elf
-endif
-ifeq ($(ARCH),mipsel)
-  HAL_TARGET:=mips-le-elf
-endif
-ifeq ($(ARCH),i386)
-  HAL_TARGET:=i386-elf
-endif
-ifeq ($(ARCH),i686)
-  HAL_TARGET:=i386-elf
-endif
-ifeq ($(BOARD),ixp4xx)
-  HAL_TARGET:=xscale-be-elf
-endif
-ifeq ($(BOARD),iop32x)
-  HAL_TARGET:=xscale-le-elf
-endif
-ifeq ($(ARCH),powerpc)
-  HAL_TARGET:=powerpc-be-elf
-endif
-ifeq ($(BOARD),storm)
-  HAL_TARGET:=armv4-le-elf
-endif
-
-ifneq ($(CONFIG_TARGET_atheros),)
-  BUS:=AHB
-  HAL_TARGET:=ap51
+  # XXX: remove this check later when we have PCI support properly detected on all targets
+  ifneq ($(CONFIG_TARGET_ar7)$(CONFIG_TARGET_uml),)
+    BUS:=
+  endif
 else
-  ifneq ($(CONFIG_PCI_SUPPORT),)
+  ifdef CONFIG_MADWIFI_BUS_PCI
     BUS:=PCI
+  else
+    ifdef CONFIG_MADWIFI_BUS_AHB
+      BUS:=AHB
+    endif
   endif
 endif
 
-# XXX: remove this check later when we have PCI support properly detected on all targets
-ifneq ($(CONFIG_TARGET_ar7)$(CONFIG_TARGET_uml),)
- BUS:=
+ifdef CONFIG_MADWIFI_HAL_DEFAULT
+  ifeq ($(ARCH),mips)
+    HAL_TARGET:=mips-be-elf
+  endif
+  ifeq ($(ARCH),mipsel)
+    HAL_TARGET:=mips-le-elf
+  endif
+  ifeq ($(ARCH),i386)
+    HAL_TARGET:=i386-elf
+  endif
+  ifeq ($(ARCH),i686)
+    HAL_TARGET:=i386-elf
+  endif
+  ifeq ($(BOARD),ixp4xx)
+    HAL_TARGET:=xscale-be-elf
+  endif
+  ifeq ($(BOARD),iop32x)
+    HAL_TARGET:=xscale-le-elf
+  endif
+  ifeq ($(ARCH),powerpc)
+    HAL_TARGET:=powerpc-be-elf
+  endif
+  ifeq ($(BOARD),storm)
+    HAL_TARGET:=armv4-le-elf
+  endif
+  ifneq ($(CONFIG_TARGET_atheros),)
+    HAL_TARGET:=ap51
+  endif
+else
+  ifdef CONFIG_MADWIFI_HAL_MIPS_BE_ELF
+    HAL_TARGET:=mips-be-elf
+  endif
+
+  ifdef CONFIG_MADWIFI_HAL_MIPS_LE_ELF
+    HAL_TARGET:=mips-le-elf
+  endif
+
+  ifdef CONFIG_MADWIFI_HAL_I386_ELF
+    HAL_TARGET:=i386-elf
+  endif
+
+  ifdef CONFIG_MADWIFI_HAL_XSCALE_BE_ELF
+    HAL_TARGET:=xscale-be-elf
+  endif
+
+  ifdef CONFIG_MADWIFI_HAL_XSCALE_LE_ELF
+    HAL_TARGET:=xscale-le-elf
+  endif
+
+  ifdef CONFIG_MADWIFI_HAL_ARMV4_LE_ELF
+    HAL_TARGET:=armv4-le-elf
+  endif
+
+  ifdef CONFIG_MADWIFI_HAL_AP30
+    HAL_TARGET:=ap30
+  endif
+
+  ifdef CONFIG_MADWIFI_HAL_AP43
+    HAL_TARGET:=ap43
+  endif
+
+  ifdef CONFIG_MADWIFI_HAL_AP51
+    HAL_TARGET:=ap51
+  endif
+
+  ifdef CONFIG_MADWIFI_HAL_AP61
+    HAL_TARGET:=ap61
+  endif
+
 endif
 
-RATE_CONTROL:=minstrel
+ifdef CONFIG_MADWIFI_RCA_MINSTREL
+  RATE_CONTROL:=minstrel
+endif
+
+ifdef CONFIG_MADWIFI_RCA_ONOE
+  RATE_CONTROL:=onoe
+endif
+
+ifdef CONFIG_MADWIFI_RCA_AMRR
+  RATE_CONTROL:=amrr
+endif
+
+ifdef CONFIG_MADWIFI_RCA_SAMPLERATE
+  RATE_CONTROL:=sample
+endif
 
 MADWIFI_FILES:= \
 	$(PKG_BUILD_DIR)/net80211/wlan.$(LINUX_KMOD_SUFFIX) \
@@ -102,7 +169,7 @@ ifeq ($(findstring PCI,$(BUS)),PCI)
 endif
 
 MADWIFI_APPLETS:=80211stats,athchans,athctrl,athkey,athstats,wlanconfig
-ifneq ($(MADWIFI_DEBUG),)
+ifdef CONFIG_MADWIFI_DEBUG
   MADWIFI_APPLETS:=$(strip $(MADWIFI_APPLETS)),athdebug,80211debug
 endif
 
@@ -120,6 +187,13 @@ define KernelPackage/madwifi/description
  This package contains a driver for Atheros 802.11a/b/g chipsets.
 endef
 
+define KernelPackage/madwifi/config
+	menu "MadWifi Configuration"
+		depends on PACKAGE_kmod-madwifi
+		source "$(SOURCE)/Config.in"
+	endmenu
+endef
+
 MAKE_ARGS:= \
 	PATH="$(TARGET_PATH)" \
 	ARCH="$(LINUX_KARCH)" \
@@ -131,7 +205,7 @@ MAKE_ARGS:= \
 	LDOPTS="--no-warn-mismatch " \
 	ATH_RATE="ath_rate/$(RATE_CONTROL)" \
 	WARNINGS="-Wno-unused" \
-	$(if $(MADWIFI_DEBUG),,DEBUG="") \
+	$(ifndef CONFIG_MADWIFI_DEBUG,DEBUG="") \
 	DOMULTI=1
 
 MAKE_VARS:= \
