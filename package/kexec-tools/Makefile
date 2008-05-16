@@ -9,12 +9,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=kexec-tools
-PKG_VERSION:=testing-20080227
+PKG_VERSION:=testing-20080324
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://kernel.org/pub/linux/kernel/people/horms/kexec-tools/
-PKG_MD5SUM:=45455af789545fdfaff2401d1988996a
+PKG_MD5SUM:=9f442520b0e238ae5beb4ebea0867377
 
 include $(INCLUDE_DIR)/package.mk
 
