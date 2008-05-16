@@ -76,11 +76,11 @@ struct trx_header {
 #define BUSWIDTH 2
 
 #ifdef CONFIG_SSB
-extern struct ssb_bus ssb;
+extern struct ssb_bus ssb_bcm47xx;
 #endif
-static struct mtd_info *bcm947xx_mtd;
+static struct mtd_info *bcm47xx_mtd;
 
-static void bcm947xx_map_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
+static void bcm47xx_map_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
 {
 	if (len==1) {
 		memcpy_fromio(to, map->virt + from, len);
@@ -96,7 +96,7 @@ static void bcm947xx_map_copy_from(struct map_info *map, void *to, unsigned long
 	}
 }
 
-static struct map_info bcm947xx_map = {
+static struct map_info bcm47xx_map = {
 	name: "Physically mapped flash",
 	size: WINDOW_SIZE,
 	bankwidth: BUSWIDTH,
@@ -105,7 +105,7 @@ static struct map_info bcm947xx_map = {
 
 #ifdef CONFIG_MTD_PARTITIONS
 
-static struct mtd_partition bcm947xx_parts[] = {
+static struct mtd_partition bcm47xx_parts[] = {
 	{ name: "cfe",	offset: 0, size: 0, mask_flags: MTD_WRITEABLE, },
 	{ name: "linux", offset: 0, size: 0, },
 	{ name: "rootfs", offset: 0, size: 0, },
@@ -323,46 +323,46 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 		return NULL;
 
 	/* boot loader */
-	bcm947xx_parts[0].offset = 0;
-	bcm947xx_parts[0].size   = cfe_size;
+	bcm47xx_parts[0].offset = 0;
+	bcm47xx_parts[0].size   = cfe_size;
 
 	/* nvram */
 	if (cfe_size != 384 * 1024) {
-		bcm947xx_parts[3].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
-		bcm947xx_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		bcm47xx_parts[3].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		bcm47xx_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	} else {
 		/* nvram (old 128kb config partition on netgear wgt634u) */
-		bcm947xx_parts[3].offset = bcm947xx_parts[0].size;
-		bcm947xx_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		bcm47xx_parts[3].offset = bcm47xx_parts[0].size;
+		bcm47xx_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	}
 
 	/* linux (kernel and rootfs) */
 	if (cfe_size != 384 * 1024) {
-		bcm947xx_parts[1].offset = bcm947xx_parts[0].size;
-		bcm947xx_parts[1].size   = bcm947xx_parts[3].offset - 
-			bcm947xx_parts[1].offset;
+		bcm47xx_parts[1].offset = bcm47xx_parts[0].size;
+		bcm47xx_parts[1].size   = bcm47xx_parts[3].offset - 
+			bcm47xx_parts[1].offset;
 	} else {
 		/* do not count the elf loader, which is on one block */
-		bcm947xx_parts[1].offset = bcm947xx_parts[0].size + 
-			bcm947xx_parts[3].size + mtd->erasesize;
-		bcm947xx_parts[1].size   = size - 
-			bcm947xx_parts[0].size - 
-			(2*bcm947xx_parts[3].size) - 
+		bcm47xx_parts[1].offset = bcm47xx_parts[0].size + 
+			bcm47xx_parts[3].size + mtd->erasesize;
+		bcm47xx_parts[1].size   = size - 
+			bcm47xx_parts[0].size - 
+			(2*bcm47xx_parts[3].size) - 
 			mtd->erasesize;
 	}
 
 	/* find and size rootfs */
-	find_root(mtd,size,&bcm947xx_parts[2]);
-	bcm947xx_parts[2].size = size - bcm947xx_parts[2].offset - bcm947xx_parts[3].size;
+	find_root(mtd,size,&bcm47xx_parts[2]);
+	bcm47xx_parts[2].size = size - bcm47xx_parts[2].offset - bcm47xx_parts[3].size;
 
-	return bcm947xx_parts;
+	return bcm47xx_parts;
 }
 #endif
 
-int __init init_bcm947xx_map(void)
+int __init init_bcm47xx_map(void)
 {
 #ifdef CONFIG_SSB
-	struct ssb_mipscore *mcore = &ssb.mipscore;
+	struct ssb_mipscore *mcore = &ssb_bcm47xx.mipscore;
 #endif
 	size_t size;
 	int ret = 0;
@@ -376,40 +376,40 @@ int __init init_bcm947xx_map(void)
 	u32 window_size = mcore->flash_window_size;
 
 	printk("flash init: 0x%08x 0x%08x\n", window, window_size);
-	bcm947xx_map.phys = window;
-	bcm947xx_map.size = window_size;
-	bcm947xx_map.virt = ioremap_nocache(window, window_size);
+	bcm47xx_map.phys = window;
+	bcm47xx_map.size = window_size;
+	bcm47xx_map.virt = ioremap_nocache(window, window_size);
 #else
 	printk("flash init: 0x%08x 0x%08x\n", WINDOW_ADDR, WINDOW_SIZE);
-	bcm947xx_map.virt = ioremap_nocache(WINDOW_ADDR, WINDOW_SIZE);
+	bcm47xx_map.virt = ioremap_nocache(WINDOW_ADDR, WINDOW_SIZE);
 #endif
 
-	if (!bcm947xx_map.virt) {
+	if (!bcm47xx_map.virt) {
 		printk("Failed to ioremap\n");
 		return -EIO;
 	}
 
-	simple_map_init(&bcm947xx_map);
+	simple_map_init(&bcm47xx_map);
 	
-	if (!(bcm947xx_mtd = do_map_probe("cfi_probe", &bcm947xx_map))) {
+	if (!(bcm47xx_mtd = do_map_probe("cfi_probe", &bcm47xx_map))) {
 		printk("Failed to do_map_probe\n");
-		iounmap((void *)bcm947xx_map.virt);
+		iounmap((void *)bcm47xx_map.virt);
 		return -ENXIO;
 	}
 
 	/* override copy_from routine */
- 	bcm947xx_map.copy_from = bcm947xx_map_copy_from;
+ 	bcm47xx_map.copy_from = bcm47xx_map_copy_from;
 
-	bcm947xx_mtd->owner = THIS_MODULE;
+	bcm47xx_mtd->owner = THIS_MODULE;
 
-	size = bcm947xx_mtd->size;
+	size = bcm47xx_mtd->size;
 
 	printk(KERN_NOTICE "Flash device: 0x%x at 0x%x\n", size, WINDOW_ADDR);
 
 #ifdef CONFIG_MTD_PARTITIONS
-	parts = init_mtd_partitions(bcm947xx_mtd, size);
+	parts = init_mtd_partitions(bcm47xx_mtd, size);
 	for (i = 0; parts[i].name; i++);
-	ret = add_mtd_partitions(bcm947xx_mtd, parts, i);
+	ret = add_mtd_partitions(bcm47xx_mtd, parts, i);
 	if (ret) {
 		printk(KERN_ERR "Flash: add_mtd_partitions failed\n");
 		goto fail;
@@ -418,22 +418,22 @@ int __init init_bcm947xx_map(void)
 	return 0;
 
  fail:
-	if (bcm947xx_mtd)
-		map_destroy(bcm947xx_mtd);
-	if (bcm947xx_map.virt)
-		iounmap((void *)bcm947xx_map.virt);
-	bcm947xx_map.virt = 0;
+	if (bcm47xx_mtd)
+		map_destroy(bcm47xx_mtd);
+	if (bcm47xx_map.virt)
+		iounmap((void *)bcm47xx_map.virt);
+	bcm47xx_map.virt = 0;
 	return ret;
 }
 
-void __exit cleanup_bcm947xx_map(void)
+void __exit cleanup_bcm47xx_map(void)
 {
 #ifdef CONFIG_MTD_PARTITIONS
-	del_mtd_partitions(bcm947xx_mtd);
+	del_mtd_partitions(bcm47xx_mtd);
 #endif
-	map_destroy(bcm947xx_mtd);
-	iounmap((void *)bcm947xx_map.virt);
+	map_destroy(bcm47xx_mtd);
+	iounmap((void *)bcm47xx_map.virt);
 }
 
-module_init(init_bcm947xx_map);
-module_exit(cleanup_bcm947xx_map);
+module_init(init_bcm47xx_map);
+module_exit(cleanup_bcm47xx_map);

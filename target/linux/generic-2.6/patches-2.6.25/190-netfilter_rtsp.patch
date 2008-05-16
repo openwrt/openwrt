@@ -484,10 +484,10 @@ Index: linux-2.6.25.1/net/netfilter/nf_conntrack_rtsp.c
 +	uint    entitylen = 0;
 +	uint    lineoff;
 +	uint    linelen;
-+	
++
 +	if (!nf_nextline(ptcp, tcplen, ptcpoff, &lineoff, &linelen))
 +		return 0;
-+	
++
 +	*phdrsoff = *ptcpoff;
 +	while (nf_mime_nextline(ptcp, tcplen, ptcpoff, &lineoff, &linelen)) {
 +		if (linelen == 0) {
@@ -499,17 +499,17 @@ Index: linux-2.6.25.1/net/netfilter/nf_conntrack_rtsp.c
 +			INFOP("!! overrun !!\n");
 +			break;
 +		}
-+		
++
 +		if (nf_strncasecmp(ptcp+lineoff, "CSeq:", 5) == 0) {
 +			*pcseqoff = lineoff;
 +			*pcseqlen = linelen;
-+		} 
++		}
 +
 +		if (nf_strncasecmp(ptcp+lineoff, "Transport:", 10) == 0) {
 +			*transoff = lineoff;
 +			*translen = linelen;
 +		}
-+		
++
 +		if (nf_strncasecmp(ptcp+lineoff, "Content-Length:", 15) == 0) {
 +			uint off = lineoff+15;
 +			SKIP_WSPACE(ptcp+lineoff, linelen, off);
@@ -517,7 +517,7 @@ Index: linux-2.6.25.1/net/netfilter/nf_conntrack_rtsp.c
 +		}
 +	}
 +	*phdrslen = (*ptcpoff) - (*phdrsoff);
-+	
++
 +	return 1;
 +}
 +
@@ -541,37 +541,37 @@ Index: linux-2.6.25.1/net/netfilter/nf_conntrack_rtsp.c
 +{
 +	int     rc = 0;
 +	uint    off = 0;
-+	
++
 +	if (tranlen < 10 || !iseol(ptran[tranlen-1]) ||
 +	    nf_strncasecmp(ptran, "Transport:", 10) != 0) {
 +		INFOP("sanity check failed\n");
 +		return 0;
 +	}
-+	
++
 +	DEBUGP("tran='%.*s'\n", (int)tranlen, ptran);
 +	off += 10;
 +	SKIP_WSPACE(ptran, tranlen, off);
-+	
++
 +	/* Transport: tran;field;field=val,tran;field;field=val,... */
 +	while (off < tranlen) {
 +		const char* pparamend;
 +		uint        nextparamoff;
-+		
++
 +		pparamend = memchr(ptran+off, ',', tranlen-off);
 +		pparamend = (pparamend == NULL) ? ptran+tranlen : pparamend+1;
 +		nextparamoff = pparamend-ptran;
-+		
++
 +		while (off < nextparamoff) {
 +			const char* pfieldend;
 +			uint        nextfieldoff;
-+			
++
 +			pfieldend = memchr(ptran+off, ';', nextparamoff-off);
 +			nextfieldoff = (pfieldend == NULL) ? nextparamoff : pfieldend-ptran+1;
-+		   
++
 +			if (strncmp(ptran+off, "client_port=", 12) == 0) {
 +				u_int16_t   port;
 +				uint        numlen;
-+		    
++
 +				off += 12;
 +				numlen = nf_strtou16(ptran+off, &port);
 +				off += numlen;
@@ -586,7 +586,7 @@ Index: linux-2.6.25.1/net/netfilter/nf_conntrack_rtsp.c
 +						off += numlen;
 +						prtspexp->pbtype = pb_range;
 +						prtspexp->hiport = port;
-+						
++
 +						// If we have a range, assume rtp:
 +						// loport must be even, hiport must be loport+1
 +						if ((prtspexp->loport & 0x0001) != 0 ||
@@ -606,20 +606,20 @@ Index: linux-2.6.25.1/net/netfilter/nf_conntrack_rtsp.c
 +					rc = 1;
 +				}
 +			}
-+			
++
 +			/*
 +			 * Note we don't look for the destination parameter here.
 +			 * If we are using NAT, the NAT module will handle it.  If not,
 +			 * and the client is sending packets elsewhere, the expectation
 +			 * will quietly time out.
 +			 */
-+			
++
 +			off = nextfieldoff;
 +		}
-+		
++
 +		off = nextparamoff;
 +	}
-+	
++
 +	return rc;
 +}
 +
@@ -639,7 +639,7 @@ Index: linux-2.6.25.1/net/netfilter/nf_conntrack_rtsp.c
 +                struct nf_conn *ct, enum ip_conntrack_info ctinfo)
 +{
 +	struct ip_ct_rtsp_expect expinfo;
-+	
++
 +	int dir = CTINFO2DIR(ctinfo);   /* = IP_CT_DIR_ORIGINAL */
 +	//struct  tcphdr* tcph = (void*)iph + iph->ihl * 4;
 +	//uint    tcplen = pktlen - iph->ihl * 4;
@@ -647,13 +647,13 @@ Index: linux-2.6.25.1/net/netfilter/nf_conntrack_rtsp.c
 +	//uint    datalen = tcplen - tcph->doff * 4;
 +	uint    dataoff = 0;
 +	int ret = NF_ACCEPT;
-+	
++
 +	struct nf_conntrack_expect *exp;
-+	
++
 +	__be16 be_loport;
-+	
++
 +	memset(&expinfo, 0, sizeof(expinfo));
-+	
++
 +	while (dataoff < datalen) {
 +		uint    cmdoff = dataoff;
 +		uint    hdrsoff = 0;
@@ -663,13 +663,13 @@ Index: linux-2.6.25.1/net/netfilter/nf_conntrack_rtsp.c
 +		uint    transoff = 0;
 +		uint    translen = 0;
 +		uint    off;
-+		
++
 +		if (!rtsp_parse_message(pdata, datalen, &dataoff,
 +					&hdrsoff, &hdrslen,
 +					&cseqoff, &cseqlen,
 +					&transoff, &translen))
 +			break;      /* not a valid message */
-+		
++
 +		if (strncmp(pdata+cmdoff, "SETUP ", 6) != 0)
 +			continue;   /* not a SETUP message */
 +		DEBUGP("found a setup message\n");
@@ -697,7 +697,7 @@ Index: linux-2.6.25.1/net/netfilter/nf_conntrack_rtsp.c
 +
 +		nf_ct_expect_init(exp, ct->tuplehash[!dir].tuple.src.l3num,
 +			&ct->tuplehash[!dir].tuple.src.u3, &ct->tuplehash[!dir].tuple.dst.u3,
-+			IPPROTO_UDP, NULL, &be_loport); 
++			IPPROTO_UDP, NULL, &be_loport);
 +
 +		exp->master = ct;
 +
@@ -739,7 +739,7 @@ Index: linux-2.6.25.1/net/netfilter/nf_conntrack_rtsp.c
 +}
 +
 +static int help(struct sk_buff *skb, unsigned int protoff,
-+		struct nf_conn *ct, enum ip_conntrack_info ctinfo) 
++		struct nf_conn *ct, enum ip_conntrack_info ctinfo)
 +{
 +	struct tcphdr _tcph, *th;
 +	unsigned int dataoff, datalen;
@@ -747,7 +747,7 @@ Index: linux-2.6.25.1/net/netfilter/nf_conntrack_rtsp.c
 +	int ret = NF_DROP;
 +
 +	/* Until there's been traffic both ways, don't look in packets. */
-+	if (ctinfo != IP_CT_ESTABLISHED && 
++	if (ctinfo != IP_CT_ESTABLISHED &&
 +	    ctinfo != IP_CT_ESTABLISHED + IP_CT_IS_REPLY) {
 +		DEBUGP("conntrackinfo = %u\n", ctinfo);
 +		return NF_ACCEPT;
@@ -758,7 +758,7 @@ Index: linux-2.6.25.1/net/netfilter/nf_conntrack_rtsp.c
 +
 +	if (!th)
 +		return NF_ACCEPT;
-+   
++
 +	/* No data ? */
 +	dataoff = protoff + th->doff*4;
 +	datalen = skb->len - dataoff;
@@ -832,7 +832,7 @@ Index: linux-2.6.25.1/net/netfilter/nf_conntrack_rtsp.c
 +	}
 +
 +	rtsp_buffer = kmalloc(65536, GFP_KERNEL);
-+	if (!rtsp_buffer) 
++	if (!rtsp_buffer)
 +		return -ENOMEM;
 +
 +	/* If no port given, default to standard rtsp port */
@@ -930,7 +930,7 @@ Index: linux-2.6.25.1/net/ipv4/netfilter/nf_nat_rtsp.c
 +#include <linux/netfilter_mime.h>
 +
 +#define INFOP(fmt, args...) printk(KERN_INFO "%s: %s: " fmt, __FILE__, __FUNCTION__ , ## args)
-+#if 0 
++#if 0
 +#define DEBUGP(fmt, args...) printk(KERN_DEBUG "%s: %s: " fmt, __FILE__, __FUNCTION__ , ## args)
 +#else
 +#define DEBUGP(fmt, args...)
@@ -1241,7 +1241,7 @@ Index: linux-2.6.25.1/net/ipv4/netfilter/nf_nat_rtsp.c
 +
 +static uint
 +help_out(struct sk_buff *skb, enum ip_conntrack_info ctinfo,
-+	 unsigned int matchoff, unsigned int matchlen, struct ip_ct_rtsp_expect* prtspexp, 
++	 unsigned int matchoff, unsigned int matchlen, struct ip_ct_rtsp_expect* prtspexp,
 +	 struct nf_conntrack_expect* exp)
 +{
 +    char*   ptcp;
@@ -1296,7 +1296,7 @@ Index: linux-2.6.25.1/net/ipv4/netfilter/nf_nat_rtsp.c
 +}
 +
 +static unsigned int
-+help(struct sk_buff *skb, enum ip_conntrack_info ctinfo, 
++help(struct sk_buff *skb, enum ip_conntrack_info ctinfo,
 +     unsigned int matchoff, unsigned int matchlen, struct ip_ct_rtsp_expect* prtspexp,
 +     struct nf_conntrack_expect* exp)
 +{
@@ -1336,11 +1336,11 @@ Index: linux-2.6.25.1/net/ipv4/netfilter/nf_nat_rtsp.c
 +           NIPQUAD(newsrcip), NIPQUAD(newdstip), NIPQUAD(newip));
 +
 +    mr.rangesize = 1;
-+    // We don't want to manip the per-protocol, just the IPs. 
++    // We don't want to manip the per-protocol, just the IPs.
 +    mr.range[0].flags = IP_NAT_RANGE_MAP_IPS;
 +    mr.range[0].min_ip = mr.range[0].max_ip = newip;
 +
-+    nf_nat_setup_info(ct, &mr.range[0], NF_INET_PRE_ROUTING);
++    nf_nat_setup_info(ct, &mr.range[0], IP_NAT_MANIP_DST);
 +}
 +
 +
