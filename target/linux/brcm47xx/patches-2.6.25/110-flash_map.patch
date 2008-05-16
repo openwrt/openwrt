@@ -1,25 +1,25 @@
-Index: linux-2.6.23/drivers/mtd/maps/Kconfig
+Index: linux-2.6.25/drivers/mtd/maps/Kconfig
 ===================================================================
---- linux-2.6.23.orig/drivers/mtd/maps/Kconfig	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6.23/drivers/mtd/maps/Kconfig	2007-10-13 02:28:13.644001805 +0200
-@@ -352,6 +352,12 @@
+--- linux-2.6.25.orig/drivers/mtd/maps/Kconfig	2008-04-26 21:56:21.000000000 +0100
++++ linux-2.6.25/drivers/mtd/maps/Kconfig	2008-04-26 21:57:12.000000000 +0100
+@@ -337,6 +337,12 @@ config MTD_CFI_FLAGADM
  	  Mapping for the Flaga digital module. If you don't have one, ignore
  	  this setting.
  
 +config MTD_BCM47XX
 +	tristate "BCM47xx flash device"
-+	depends on MIPS && MTD_CFI && BCM947XX
++	depends on MIPS && MTD_CFI && BCM47XX
 +	help
 +	  Support for the flash chips on the BCM947xx board.
 +
  config MTD_WALNUT
  	tristate "Flash device mapped on IBM 405GP Walnut"
- 	depends on MTD_JEDECPROBE && WALNUT
-Index: linux-2.6.23/drivers/mtd/maps/Makefile
+ 	depends on MTD_JEDECPROBE && WALNUT && !PPC_MERGE
+Index: linux-2.6.25/drivers/mtd/maps/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/mtd/maps/Makefile	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6.23/drivers/mtd/maps/Makefile	2007-10-13 02:27:56.727037761 +0200
-@@ -33,6 +33,7 @@
+--- linux-2.6.25.orig/drivers/mtd/maps/Makefile	2008-04-26 21:56:21.000000000 +0100
++++ linux-2.6.25/drivers/mtd/maps/Makefile	2008-04-26 21:57:12.000000000 +0100
+@@ -31,6 +31,7 @@ obj-$(CONFIG_MTD_PMC_MSP_RAMROOT)+= pmcm
  obj-$(CONFIG_MTD_PCMCIA)	+= pcmciamtd.o
  obj-$(CONFIG_MTD_RPXLITE)	+= rpxlite.o
  obj-$(CONFIG_MTD_TQM8XXL)	+= tqm8xxl.o

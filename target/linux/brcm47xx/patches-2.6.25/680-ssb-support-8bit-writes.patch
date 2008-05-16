@@ -1,9 +1,9 @@
 Add support for 8bit reads/writes to SSB.
-Index: linux-2.6.23.16/drivers/ssb/main.c
+Index: linux-2.6.25.1/drivers/ssb/main.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/main.c	2008-02-20 14:10:07.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/main.c	2008-02-20 18:34:48.000000000 +0100
-@@ -507,6 +507,14 @@ error:
+--- linux-2.6.25.1.orig/drivers/ssb/main.c	2008-05-10 09:04:53.000000000 +0100
++++ linux-2.6.25.1/drivers/ssb/main.c	2008-05-10 09:05:38.000000000 +0100
+@@ -508,6 +508,14 @@ error:
  	return err;
  }
  
@@ -18,7 +18,7 @@ Index: linux-2.6.23.16/drivers/ssb/main.c
  static u16 ssb_ssb_read16(struct ssb_device *dev, u16 offset)
  {
  	struct ssb_bus *bus = dev->bus;
-@@ -523,6 +531,14 @@ static u32 ssb_ssb_read32(struct ssb_dev
+@@ -524,6 +532,14 @@ static u32 ssb_ssb_read32(struct ssb_dev
  	return readl(bus->mmio + offset);
  }
  
@@ -33,7 +33,7 @@ Index: linux-2.6.23.16/drivers/ssb/main.c
  static void ssb_ssb_write16(struct ssb_device *dev, u16 offset, u16 value)
  {
  	struct ssb_bus *bus = dev->bus;
-@@ -541,8 +557,10 @@ static void ssb_ssb_write32(struct ssb_d
+@@ -542,8 +558,10 @@ static void ssb_ssb_write32(struct ssb_d
  
  /* Ops for the plain SSB bus without a host-device (no PCI or PCMCIA). */
  static const struct ssb_bus_ops ssb_ssb_ops = {
@@ -44,11 +44,11 @@ Index: linux-2.6.23.16/drivers/ssb/main.c
  	.write16	= ssb_ssb_write16,
  	.write32	= ssb_ssb_write32,
  };
-Index: linux-2.6.23.16/drivers/ssb/pci.c
+Index: linux-2.6.25.1/drivers/ssb/pci.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/pci.c	2008-02-20 14:10:03.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/pci.c	2008-02-20 14:10:07.000000000 +0100
-@@ -572,6 +572,19 @@ static inline int ssb_pci_assert_buspowe
+--- linux-2.6.25.1.orig/drivers/ssb/pci.c	2008-05-10 09:04:53.000000000 +0100
++++ linux-2.6.25.1/drivers/ssb/pci.c	2008-05-10 09:05:38.000000000 +0100
+@@ -577,6 +577,19 @@ static inline int ssb_pci_assert_buspowe
  }
  #endif /* DEBUG */
  
@@ -68,7 +68,7 @@ Index: linux-2.6.23.16/drivers/ssb/pci.c
  static u16 ssb_pci_read16(struct ssb_device *dev, u16 offset)
  {
  	struct ssb_bus *bus = dev->bus;
-@@ -598,6 +611,19 @@ static u32 ssb_pci_read32(struct ssb_dev
+@@ -603,6 +616,19 @@ static u32 ssb_pci_read32(struct ssb_dev
  	return ioread32(bus->mmio + offset);
  }
  
@@ -88,7 +88,7 @@ Index: linux-2.6.23.16/drivers/ssb/pci.c
  static void ssb_pci_write16(struct ssb_device *dev, u16 offset, u16 value)
  {
  	struct ssb_bus *bus = dev->bus;
-@@ -626,8 +652,10 @@ static void ssb_pci_write32(struct ssb_d
+@@ -631,8 +657,10 @@ static void ssb_pci_write32(struct ssb_d
  
  /* Not "static", as it's used in main.c */
  const struct ssb_bus_ops ssb_pci_ops = {
@@ -99,10 +99,10 @@ Index: linux-2.6.23.16/drivers/ssb/pci.c
  	.write16	= ssb_pci_write16,
  	.write32	= ssb_pci_write32,
  };
-Index: linux-2.6.23.16/drivers/ssb/pcmcia.c
+Index: linux-2.6.25.1/drivers/ssb/pcmcia.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/pcmcia.c	2008-02-20 14:10:03.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/pcmcia.c	2008-02-20 14:10:07.000000000 +0100
+--- linux-2.6.25.1.orig/drivers/ssb/pcmcia.c	2008-05-10 09:04:53.000000000 +0100
++++ linux-2.6.25.1/drivers/ssb/pcmcia.c	2008-05-10 09:05:38.000000000 +0100
 @@ -172,6 +172,22 @@ static int select_core_and_segment(struc
  	return 0;
  }
@@ -158,10 +158,10 @@ Index: linux-2.6.23.16/drivers/ssb/pcmcia.c
  	.write16	= ssb_pcmcia_write16,
  	.write32	= ssb_pcmcia_write32,
  };
-Index: linux-2.6.23.16/include/linux/ssb/ssb.h
+Index: linux-2.6.25.1/include/linux/ssb/ssb.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/ssb/ssb.h	2008-02-20 14:10:07.000000000 +0100
-+++ linux-2.6.23.16/include/linux/ssb/ssb.h	2008-02-20 18:33:21.000000000 +0100
+--- linux-2.6.25.1.orig/include/linux/ssb/ssb.h	2008-05-10 09:04:53.000000000 +0100
++++ linux-2.6.25.1/include/linux/ssb/ssb.h	2008-05-10 09:05:38.000000000 +0100
 @@ -72,8 +72,10 @@ struct ssb_device;
  /* Lowlevel read/write operations on the device MMIO.
   * Internal, don't use that outside of ssb. */
@@ -173,7 +173,7 @@ Index: linux-2.6.23.16/include/linux/ssb/ssb.h
  	void (*write16)(struct ssb_device *dev, u16 offset, u16 value);
  	void (*write32)(struct ssb_device *dev, u16 offset, u32 value);
  };
-@@ -344,6 +346,10 @@ void ssb_device_disable(struct ssb_devic
+@@ -348,6 +350,10 @@ void ssb_device_disable(struct ssb_devic
  
  
  /* Device MMIO register read/write functions. */
@@ -184,7 +184,7 @@ Index: linux-2.6.23.16/include/linux/ssb/ssb.h
  static inline u16 ssb_read16(struct ssb_device *dev, u16 offset)
  {
  	return dev->ops->read16(dev, offset);
-@@ -352,6 +358,10 @@ static inline u32 ssb_read32(struct ssb_
+@@ -356,6 +362,10 @@ static inline u32 ssb_read32(struct ssb_
  {
  	return dev->ops->read32(dev, offset);
  }

@@ -1,38 +1,38 @@
-Index: linux-2.6.23/arch/mips/mm/init.c
+Index: linux-2.6.25/arch/mips/mm/init.c
 ===================================================================
---- linux-2.6.23.orig/arch/mips/mm/init.c	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6.23/arch/mips/mm/init.c	2007-10-13 02:57:18.483434538 +0200
-@@ -211,7 +211,7 @@
+--- linux-2.6.25.orig/arch/mips/mm/init.c	2008-04-26 21:56:21.000000000 +0100
++++ linux-2.6.25/arch/mips/mm/init.c	2008-04-26 22:07:48.000000000 +0100
+@@ -211,7 +211,7 @@ void copy_user_highpage(struct page *to,
  	void *vfrom, *vto;
  
  	vto = kmap_atomic(to, KM_USER1);
--	if (cpu_has_dc_aliases && !Page_dcache_dirty(from)) {
-+	if (cpu_has_dc_aliases && cpu_use_kmap_coherent && !Page_dcache_dirty(from)) {
+-	if (cpu_has_dc_aliases &&
++	if (cpu_has_dc_aliases && cpu_use_kmap_coherent &&
+ 	    page_mapped(from) && !Page_dcache_dirty(from)) {
  		vfrom = kmap_coherent(from, vaddr);
  		copy_page(vto, vfrom);
- 		kunmap_coherent();
-@@ -234,7 +234,7 @@
+@@ -235,7 +235,7 @@ void copy_to_user_page(struct vm_area_st
  	struct page *page, unsigned long vaddr, void *dst, const void *src,
  	unsigned long len)
  {
--	if (cpu_has_dc_aliases) {
-+	if (cpu_has_dc_aliases && cpu_use_kmap_coherent) {
+-	if (cpu_has_dc_aliases &&
++	if (cpu_has_dc_aliases && cpu_use_kmap_coherent &&
+ 	    page_mapped(page) && !Page_dcache_dirty(page)) {
  		void *vto = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
  		memcpy(vto, src, len);
- 		kunmap_coherent();
-@@ -250,7 +250,7 @@
+@@ -255,7 +255,7 @@ void copy_from_user_page(struct vm_area_
  	struct page *page, unsigned long vaddr, void *dst, const void *src,
  	unsigned long len)
  {
--	if (cpu_has_dc_aliases) {
-+	if (cpu_has_dc_aliases && cpu_use_kmap_coherent) {
- 		void *vfrom =
- 			kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
+-	if (cpu_has_dc_aliases &&
++	if (cpu_has_dc_aliases && cpu_use_kmap_coherent &&
+ 	    page_mapped(page) && !Page_dcache_dirty(page)) {
+ 		void *vfrom = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
  		memcpy(dst, vfrom, len);
-Index: linux-2.6.23/include/asm-mips/mach-bcm947xx/cpu-feature-overrides.h
+Index: linux-2.6.25/include/asm-mips/mach-bcm47xx/cpu-feature-overrides.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/include/asm-mips/mach-bcm947xx/cpu-feature-overrides.h	2007-10-13 02:56:22.020216880 +0200
++++ linux-2.6.25/include/asm-mips/mach-bcm47xx/cpu-feature-overrides.h	2008-04-26 21:57:15.000000000 +0100
 @@ -0,0 +1,13 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -41,16 +41,16 @@ Index: linux-2.6.23/include/asm-mips/mach-bcm947xx/cpu-feature-overrides.h
 + *
 + * Copyright (C) 2005 Ralf Baechle (ralf@linux-mips.org)
 + */
-+#ifndef __ASM_MACH_BCM947XX_CPU_FEATURE_OVERRIDES_H
-+#define __ASM_MACH_BCM947XX_CPU_FEATURE_OVERRIDES_H
++#ifndef __ASM_MACH_BCM47XX_CPU_FEATURE_OVERRIDES_H
++#define __ASM_MACH_BCM47XX_CPU_FEATURE_OVERRIDES_H
 +
 +#define cpu_use_kmap_coherent	0
 +
-+#endif /* __ASM_MACH_BCM947XX_CPU_FEATURE_OVERRIDES_H */
-Index: linux-2.6.23/include/asm-mips/cpu-features.h
++#endif /* __ASM_MACH_BCM47XX_CPU_FEATURE_OVERRIDES_H */
+Index: linux-2.6.25/include/asm-mips/cpu-features.h
 ===================================================================
---- linux-2.6.23.orig/include/asm-mips/cpu-features.h	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6.23/include/asm-mips/cpu-features.h	2007-10-13 02:56:22.028217337 +0200
+--- linux-2.6.25.orig/include/asm-mips/cpu-features.h	2008-04-26 21:56:21.000000000 +0100
++++ linux-2.6.25/include/asm-mips/cpu-features.h	2008-04-26 21:57:15.000000000 +0100
 @@ -101,6 +101,9 @@
  #ifndef cpu_has_pindexed_dcache
  #define cpu_has_pindexed_dcache	(cpu_data[0].dcache.flags & MIPS_CACHE_PINDEX)
