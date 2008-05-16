@@ -133,7 +133,7 @@ define KernelPackage/pcmcia-serial
   DEPENDS:=kmod-pcmcia-core
   KCONFIG:= \
 	CONFIG_PCMCIA_SERIAL_CS \
-  	CONFIG_SERIAL_8250_CS
+	CONFIG_SERIAL_8250_CS
   AUTOLOAD:=$(call AutoLoad,45,serial_cs)
 endef
 
@@ -158,7 +158,7 @@ $(eval $(call KernelPackage,pcmcia-serial))
 define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
-  DEPENDS:=@USB_SUPPORT @!TARGET_atheros @!TARGET_uml
+  DEPENDS:=@USB_SUPPORT @!TARGET_uml
   KCONFIG:= \
 	CONFIG_BLUEZ \
 	CONFIG_BLUEZ_L2CAP \
