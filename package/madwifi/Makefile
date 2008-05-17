@@ -205,7 +205,7 @@ MAKE_ARGS:= \
 	LDOPTS="--no-warn-mismatch " \
 	ATH_RATE="ath_rate/$(RATE_CONTROL)" \
 	WARNINGS="-Wno-unused" \
-	$(ifndef CONFIG_MADWIFI_DEBUG,DEBUG="") \
+	$(if $(CONFIG_MADWIFI_DEBUG),,DEBUG="") \
 	DOMULTI=1
 
 MAKE_VARS:= \
