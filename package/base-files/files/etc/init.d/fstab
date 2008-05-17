@@ -25,8 +25,8 @@ do_swapon() {
 	config_get device "$cfg" device
 	[ -n "device" ] || return 0
 	config_get_bool enabled "$cfg" "enabled" '1'
-	[ "$enabled" -gt 0 ] && [ -x /sbin/swapon ] && {
-	  /sbin/swapon $device
+	[ "$enabled" -gt 0 ] && [ -x /usr/sbin/swapon ] && {
+	  /usr/sbin/swapon $device
 	}
 }
 
@@ -45,8 +45,8 @@ do_swapoff() {
 	config_get device "$cfg" device
 	[ -n "device" ] || return 0
 	config_get_bool enabled "$cfg" "enabled" '1'
-	[ "$enabled" -gt 0 ] && [ -x /sbin/swapoff ] && {
-	  /sbin/swapoff $device
+	[ "$enabled" -gt 0 ] && [ -x /usr/sbin/swapoff ] && {
+	  /usr/sbin/swapoff $device
 	}
 }
 
