@@ -1,8 +1,8 @@
-Index: linux-2.6.25.1/drivers/net/phy/mdio_bus.c
+Index: linux-2.6.25.4/drivers/net/phy/mdio_bus.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/phy/mdio_bus.c	2008-05-01 23:45:25.000000000 +0200
-+++ linux-2.6.25.1/drivers/net/phy/mdio_bus.c	2008-05-12 23:44:21.000000000 +0200
-@@ -132,6 +132,9 @@
+--- linux-2.6.25.4.orig/drivers/net/phy/mdio_bus.c
++++ linux-2.6.25.4/drivers/net/phy/mdio_bus.c
+@@ -132,6 +132,9 @@ static int mdio_bus_match(struct device 
  	struct phy_device *phydev = to_phy_device(dev);
  	struct phy_driver *phydrv = to_phy_driver(drv);
  
@@ -12,11 +12,11 @@ Index: linux-2.6.25.1/drivers/net/phy/mdio_bus.c
  	return ((phydrv->phy_id & phydrv->phy_id_mask) ==
  		(phydev->phy_id & phydrv->phy_id_mask));
  }
-Index: linux-2.6.25.1/include/linux/phy.h
+Index: linux-2.6.25.4/include/linux/phy.h
 ===================================================================
---- linux-2.6.25.1.orig/include/linux/phy.h	2008-05-01 23:45:25.000000000 +0200
-+++ linux-2.6.25.1/include/linux/phy.h	2008-05-12 23:44:21.000000000 +0200
-@@ -325,6 +325,11 @@
+--- linux-2.6.25.4.orig/include/linux/phy.h
++++ linux-2.6.25.4/include/linux/phy.h
+@@ -325,6 +325,11 @@ struct phy_driver {
  	u32 features;
  	u32 flags;
  

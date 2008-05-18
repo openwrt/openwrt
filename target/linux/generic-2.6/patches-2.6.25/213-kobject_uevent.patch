@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/lib/kobject_uevent.c
+Index: linux-2.6.25.4/lib/kobject_uevent.c
 ===================================================================
---- linux-2.6.25.1.orig/lib/kobject_uevent.c
-+++ linux-2.6.25.1/lib/kobject_uevent.c
+--- linux-2.6.25.4.orig/lib/kobject_uevent.c
++++ linux-2.6.25.4/lib/kobject_uevent.c
 @@ -27,7 +27,8 @@ u64 uevent_seqnum;
  char uevent_helper[UEVENT_HELPER_PATH_LEN] = CONFIG_UEVENT_HELPER_PATH;
  static DEFINE_SPINLOCK(sequence_lock);

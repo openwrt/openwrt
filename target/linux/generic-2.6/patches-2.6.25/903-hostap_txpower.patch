@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/drivers/net/wireless/hostap/hostap_ap.c
+Index: linux-2.6.25.4/drivers/net/wireless/hostap/hostap_ap.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/wireless/hostap/hostap_ap.c
-+++ linux-2.6.25.1/drivers/net/wireless/hostap/hostap_ap.c
+--- linux-2.6.25.4.orig/drivers/net/wireless/hostap/hostap_ap.c
++++ linux-2.6.25.4/drivers/net/wireless/hostap/hostap_ap.c
 @@ -2397,13 +2397,13 @@ int prism2_ap_get_sta_qual(local_info_t 
  		addr[count].sa_family = ARPHRD_ETHER;
  		memcpy(addr[count].sa_data, sta->addr, ETH_ALEN);
@@ -42,10 +42,10 @@ Index: linux-2.6.25.1/drivers/net/wireless/hostap/hostap_ap.c
  		iwe.u.qual.updated = sta->last_rx_updated;
  		iwe.len = IW_EV_QUAL_LEN;
  		current_ev = iwe_stream_add_event(current_ev, end_buf, &iwe,
-Index: linux-2.6.25.1/drivers/net/wireless/hostap/hostap_config.h
+Index: linux-2.6.25.4/drivers/net/wireless/hostap/hostap_config.h
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/wireless/hostap/hostap_config.h
-+++ linux-2.6.25.1/drivers/net/wireless/hostap/hostap_config.h
+--- linux-2.6.25.4.orig/drivers/net/wireless/hostap/hostap_config.h
++++ linux-2.6.25.4/drivers/net/wireless/hostap/hostap_config.h
 @@ -45,4 +45,9 @@
   */
  /* #define PRISM2_NO_STATION_MODES */
@@ -56,10 +56,10 @@ Index: linux-2.6.25.1/drivers/net/wireless/hostap/hostap_config.h
 +#define RAW_TXPOWER_SETTING
 +
  #endif /* HOSTAP_CONFIG_H */
-Index: linux-2.6.25.1/drivers/net/wireless/hostap/hostap.h
+Index: linux-2.6.25.4/drivers/net/wireless/hostap/hostap.h
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/wireless/hostap/hostap.h
-+++ linux-2.6.25.1/drivers/net/wireless/hostap/hostap.h
+--- linux-2.6.25.4.orig/drivers/net/wireless/hostap/hostap.h
++++ linux-2.6.25.4/drivers/net/wireless/hostap/hostap.h
 @@ -89,6 +89,7 @@ extern const struct iw_handler_def hosta
  extern const struct ethtool_ops prism2_ethtool_ops;
  
@@ -68,10 +68,10 @@ Index: linux-2.6.25.1/drivers/net/wireless/hostap/hostap.h
  
  
  #endif /* HOSTAP_H */
-Index: linux-2.6.25.1/drivers/net/wireless/hostap/hostap_hw.c
+Index: linux-2.6.25.4/drivers/net/wireless/hostap/hostap_hw.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/wireless/hostap/hostap_hw.c
-+++ linux-2.6.25.1/drivers/net/wireless/hostap/hostap_hw.c
+--- linux-2.6.25.4.orig/drivers/net/wireless/hostap/hostap_hw.c
++++ linux-2.6.25.4/drivers/net/wireless/hostap/hostap_hw.c
 @@ -933,6 +933,7 @@ static int hfa384x_set_rid(struct net_de
  			prism2_hw_reset(dev);
  	}
@@ -80,10 +80,10 @@ Index: linux-2.6.25.1/drivers/net/wireless/hostap/hostap_hw.c
  	return res;
  }
  
-Index: linux-2.6.25.1/drivers/net/wireless/hostap/hostap_info.c
+Index: linux-2.6.25.4/drivers/net/wireless/hostap/hostap_info.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/wireless/hostap/hostap_info.c
-+++ linux-2.6.25.1/drivers/net/wireless/hostap/hostap_info.c
+--- linux-2.6.25.4.orig/drivers/net/wireless/hostap/hostap_info.c
++++ linux-2.6.25.4/drivers/net/wireless/hostap/hostap_info.c
 @@ -434,6 +434,11 @@ static void handle_info_queue_linkstatus
  	}
  
@@ -96,10 +96,10 @@ Index: linux-2.6.25.1/drivers/net/wireless/hostap/hostap_info.c
  	if (connected) {
  		netif_carrier_on(local->dev);
  		netif_carrier_on(local->ddev);
-Index: linux-2.6.25.1/drivers/net/wireless/hostap/hostap_ioctl.c
+Index: linux-2.6.25.4/drivers/net/wireless/hostap/hostap_ioctl.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/wireless/hostap/hostap_ioctl.c
-+++ linux-2.6.25.1/drivers/net/wireless/hostap/hostap_ioctl.c
+--- linux-2.6.25.4.orig/drivers/net/wireless/hostap/hostap_ioctl.c
++++ linux-2.6.25.4/drivers/net/wireless/hostap/hostap_ioctl.c
 @@ -1500,23 +1500,20 @@ static int prism2_txpower_hfa386x_to_dBm
  		val = 255;
  

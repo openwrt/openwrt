@@ -1,8 +1,8 @@
-Index: linux-2.6.25.1/drivers/net/phy/Kconfig
+Index: linux-2.6.25.4/drivers/net/phy/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/phy/Kconfig	2008-05-01 23:45:25.000000000 +0200
-+++ linux-2.6.25.1/drivers/net/phy/Kconfig	2008-05-12 23:44:33.000000000 +0200
-@@ -65,6 +65,11 @@
+--- linux-2.6.25.4.orig/drivers/net/phy/Kconfig
++++ linux-2.6.25.4/drivers/net/phy/Kconfig
+@@ -65,6 +65,11 @@ config REALTEK_PHY
  	---help---
  	  Supports the Realtek 821x PHY.
  
@@ -14,11 +14,11 @@ Index: linux-2.6.25.1/drivers/net/phy/Kconfig
  config FIXED_PHY
  	bool "Driver for MDIO Bus/PHY emulation with fixed speed/link PHYs"
  	depends on PHYLIB=y
-Index: linux-2.6.25.1/drivers/net/phy/Makefile
+Index: linux-2.6.25.4/drivers/net/phy/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/phy/Makefile	2008-05-01 23:45:25.000000000 +0200
-+++ linux-2.6.25.1/drivers/net/phy/Makefile	2008-05-12 23:44:50.000000000 +0200
-@@ -12,6 +12,7 @@
+--- linux-2.6.25.4.orig/drivers/net/phy/Makefile
++++ linux-2.6.25.4/drivers/net/phy/Makefile
+@@ -12,6 +12,7 @@ obj-$(CONFIG_SMSC_PHY)		+= smsc.o
  obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
  obj-$(CONFIG_BROADCOM_PHY)	+= broadcom.o
  obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o

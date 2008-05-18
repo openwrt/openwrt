@@ -1,7 +1,7 @@
-Index: linux-2.6.25/drivers/gpio/Kconfig
+Index: linux-2.6.25.4/drivers/gpio/Kconfig
 ===================================================================
---- linux-2.6.25.orig/drivers/gpio/Kconfig	2008-04-27 23:35:57.000000000 +0100
-+++ linux-2.6.25/drivers/gpio/Kconfig	2008-04-27 23:42:52.000000000 +0100
+--- linux-2.6.25.4.orig/drivers/gpio/Kconfig
++++ linux-2.6.25.4/drivers/gpio/Kconfig
 @@ -2,6 +2,13 @@
  # GPIO infrastructure and expanders
  #
@@ -16,10 +16,10 @@ Index: linux-2.6.25/drivers/gpio/Kconfig
  config HAVE_GPIO_LIB
  	bool
  	help
-Index: linux-2.6.25/drivers/gpio/Makefile
+Index: linux-2.6.25.4/drivers/gpio/Makefile
 ===================================================================
---- linux-2.6.25.orig/drivers/gpio/Makefile	2008-04-27 23:42:59.000000000 +0100
-+++ linux-2.6.25/drivers/gpio/Makefile	2008-04-27 23:43:41.000000000 +0100
+--- linux-2.6.25.4.orig/drivers/gpio/Makefile
++++ linux-2.6.25.4/drivers/gpio/Makefile
 @@ -7,3 +7,4 @@ obj-$(CONFIG_HAVE_GPIO_LIB)	+= gpiolib.o
  obj-$(CONFIG_GPIO_MCP23S08)	+= mcp23s08.o
  obj-$(CONFIG_GPIO_PCA953X)	+= pca953x.o

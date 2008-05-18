@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/scripts/genksyms/parse.c_shipped
+Index: linux-2.6.25.4/scripts/genksyms/parse.c_shipped
 ===================================================================
---- linux-2.6.25.1.orig/scripts/genksyms/parse.c_shipped
-+++ linux-2.6.25.1/scripts/genksyms/parse.c_shipped
+--- linux-2.6.25.4.orig/scripts/genksyms/parse.c_shipped
++++ linux-2.6.25.4/scripts/genksyms/parse.c_shipped
 @@ -160,7 +160,9 @@
  
  
@@ -12,10 +12,10 @@ Index: linux-2.6.25.1/scripts/genksyms/parse.c_shipped
  #include "genksyms.h"
  
  static int is_typedef;
-Index: linux-2.6.25.1/scripts/genksyms/parse.y
+Index: linux-2.6.25.4/scripts/genksyms/parse.y
 ===================================================================
---- linux-2.6.25.1.orig/scripts/genksyms/parse.y
-+++ linux-2.6.25.1/scripts/genksyms/parse.y
+--- linux-2.6.25.4.orig/scripts/genksyms/parse.y
++++ linux-2.6.25.4/scripts/genksyms/parse.y
 @@ -24,7 +24,9 @@
  %{
  
@@ -26,10 +26,10 @@ Index: linux-2.6.25.1/scripts/genksyms/parse.y
  #include "genksyms.h"
  
  static int is_typedef;
-Index: linux-2.6.25.1/scripts/kallsyms.c
+Index: linux-2.6.25.4/scripts/kallsyms.c
 ===================================================================
---- linux-2.6.25.1.orig/scripts/kallsyms.c
-+++ linux-2.6.25.1/scripts/kallsyms.c
+--- linux-2.6.25.4.orig/scripts/kallsyms.c
++++ linux-2.6.25.4/scripts/kallsyms.c
 @@ -28,6 +28,35 @@
  #include <stdlib.h>
  #include <string.h>
@@ -66,10 +66,10 @@ Index: linux-2.6.25.1/scripts/kallsyms.c
  
  #define KSYM_NAME_LEN		128
  
-Index: linux-2.6.25.1/scripts/kconfig/Makefile
+Index: linux-2.6.25.4/scripts/kconfig/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/scripts/kconfig/Makefile
-+++ linux-2.6.25.1/scripts/kconfig/Makefile
+--- linux-2.6.25.4.orig/scripts/kconfig/Makefile
++++ linux-2.6.25.4/scripts/kconfig/Makefile
 @@ -93,6 +93,9 @@ check-lxdialog  := $(srctree)/$(src)/lxd
  # we really need to do so. (Do not call gcc as part of make mrproper)
  HOST_EXTRACFLAGS = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags)
@@ -80,10 +80,10 @@ Index: linux-2.6.25.1/scripts/kconfig/Makefile
  
  HOST_EXTRACFLAGS += -DLOCALE
  
-Index: linux-2.6.25.1/scripts/mod/mk_elfconfig.c
+Index: linux-2.6.25.4/scripts/mod/mk_elfconfig.c
 ===================================================================
---- linux-2.6.25.1.orig/scripts/mod/mk_elfconfig.c
-+++ linux-2.6.25.1/scripts/mod/mk_elfconfig.c
+--- linux-2.6.25.4.orig/scripts/mod/mk_elfconfig.c
++++ linux-2.6.25.4/scripts/mod/mk_elfconfig.c
 @@ -1,7 +1,11 @@
  #include <stdio.h>
  #include <stdlib.h>
@@ -96,10 +96,10 @@ Index: linux-2.6.25.1/scripts/mod/mk_elfconfig.c
  
  int
  main(int argc, char **argv)
-Index: linux-2.6.25.1/scripts/mod/modpost.h
+Index: linux-2.6.25.4/scripts/mod/modpost.h
 ===================================================================
---- linux-2.6.25.1.orig/scripts/mod/modpost.h
-+++ linux-2.6.25.1/scripts/mod/modpost.h
+--- linux-2.6.25.4.orig/scripts/mod/modpost.h
++++ linux-2.6.25.4/scripts/mod/modpost.h
 @@ -7,7 +7,11 @@
  #include <sys/mman.h>
  #include <fcntl.h>

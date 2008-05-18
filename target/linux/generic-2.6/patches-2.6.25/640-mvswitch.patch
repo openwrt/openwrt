@@ -1,8 +1,8 @@
-Index: linux-2.6.25.1/drivers/net/phy/Kconfig
+Index: linux-2.6.25.4/drivers/net/phy/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/phy/Kconfig	2008-05-12 23:44:33.000000000 +0200
-+++ linux-2.6.25.1/drivers/net/phy/Kconfig	2008-05-12 23:45:33.000000000 +0200
-@@ -70,6 +70,12 @@
+--- linux-2.6.25.4.orig/drivers/net/phy/Kconfig
++++ linux-2.6.25.4/drivers/net/phy/Kconfig
+@@ -70,6 +70,12 @@ config ADM6996_PHY
  	---help---
  	  Currently supports the ADM6996F switch
  
@@ -15,11 +15,11 @@ Index: linux-2.6.25.1/drivers/net/phy/Kconfig
  config FIXED_PHY
  	bool "Driver for MDIO Bus/PHY emulation with fixed speed/link PHYs"
  	depends on PHYLIB=y
-Index: linux-2.6.25.1/drivers/net/phy/Makefile
+Index: linux-2.6.25.4/drivers/net/phy/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/phy/Makefile	2008-05-12 23:44:50.000000000 +0200
-+++ linux-2.6.25.1/drivers/net/phy/Makefile	2008-05-12 23:45:59.000000000 +0200
-@@ -13,6 +13,7 @@
+--- linux-2.6.25.4.orig/drivers/net/phy/Makefile
++++ linux-2.6.25.4/drivers/net/phy/Makefile
+@@ -13,6 +13,7 @@ obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
  obj-$(CONFIG_BROADCOM_PHY)	+= broadcom.o
  obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o
  obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
@@ -27,10 +27,10 @@ Index: linux-2.6.25.1/drivers/net/phy/Makefile
  obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
  obj-$(CONFIG_FIXED_PHY)		+= fixed.o
  obj-$(CONFIG_MDIO_BITBANG)	+= mdio-bitbang.o
-Index: linux-2.6.25.1/drivers/net/phy/mdio_bus.c
+Index: linux-2.6.25.4/drivers/net/phy/mdio_bus.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/phy/mdio_bus.c	2008-05-12 23:44:21.000000000 +0200
-+++ linux-2.6.25.1/drivers/net/phy/mdio_bus.c	2008-05-12 23:45:33.000000000 +0200
+--- linux-2.6.25.4.orig/drivers/net/phy/mdio_bus.c
++++ linux-2.6.25.4/drivers/net/phy/mdio_bus.c
 @@ -35,6 +35,12 @@
  #include <asm/irq.h>
  #include <asm/uaccess.h>
@@ -44,7 +44,7 @@ Index: linux-2.6.25.1/drivers/net/phy/mdio_bus.c
  /**
   * mdiobus_register - bring up all the PHYs on a given bus and attach them to bus
   * @bus: target mii_bus
-@@ -85,6 +91,7 @@
+@@ -85,6 +91,7 @@ int mdiobus_register(struct mii_bus *bus
  
  			phydev->dev.parent = bus->dev;
  			phydev->dev.bus = &mdio_bus_type;

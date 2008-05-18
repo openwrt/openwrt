@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/drivers/leds/Kconfig
+Index: linux-2.6.25.4/drivers/leds/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/drivers/leds/Kconfig
-+++ linux-2.6.25.1/drivers/leds/Kconfig
+--- linux-2.6.25.4.orig/drivers/leds/Kconfig
++++ linux-2.6.25.4/drivers/leds/Kconfig
 @@ -181,4 +181,8 @@ config LEDS_TRIGGER_HEARTBEAT
  	  load average.
  	  If unsure, say Y.
@@ -11,10 +11,10 @@ Index: linux-2.6.25.1/drivers/leds/Kconfig
 +	depends on LEDS_TRIGGERS
 +
  endif # NEW_LEDS
-Index: linux-2.6.25.1/drivers/leds/Makefile
+Index: linux-2.6.25.4/drivers/leds/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/drivers/leds/Makefile
-+++ linux-2.6.25.1/drivers/leds/Makefile
+--- linux-2.6.25.4.orig/drivers/leds/Makefile
++++ linux-2.6.25.4/drivers/leds/Makefile
 @@ -26,3 +26,4 @@ obj-$(CONFIG_LEDS_HP6XX)		+= leds-hp6xx.
  obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledtrig-timer.o
  obj-$(CONFIG_LEDS_TRIGGER_IDE_DISK)	+= ledtrig-ide-disk.o
