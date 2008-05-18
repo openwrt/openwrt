@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/fs/jffs2/build.c
+Index: linux-2.6.25.4/fs/jffs2/build.c
 ===================================================================
---- linux-2.6.25.1.orig/fs/jffs2/build.c
-+++ linux-2.6.25.1/fs/jffs2/build.c
+--- linux-2.6.25.4.orig/fs/jffs2/build.c
++++ linux-2.6.25.4/fs/jffs2/build.c
 @@ -105,6 +105,17 @@ static int jffs2_build_filesystem(struct
  	dbg_fsbuild("scanned flash completely\n");
  	jffs2_dbg_dump_block_lists_nolock(c);
@@ -20,10 +20,10 @@ Index: linux-2.6.25.1/fs/jffs2/build.c
  	dbg_fsbuild("pass 1 starting\n");
  	c->flags |= JFFS2_SB_FLAG_BUILDING;
  	/* Now scan the directory tree, increasing nlink according to every dirent found. */
-Index: linux-2.6.25.1/fs/jffs2/scan.c
+Index: linux-2.6.25.4/fs/jffs2/scan.c
 ===================================================================
---- linux-2.6.25.1.orig/fs/jffs2/scan.c
-+++ linux-2.6.25.1/fs/jffs2/scan.c
+--- linux-2.6.25.4.orig/fs/jffs2/scan.c
++++ linux-2.6.25.4/fs/jffs2/scan.c
 @@ -142,9 +142,12 @@ int jffs2_scan_medium(struct jffs2_sb_in
  
  		/* reset summary info for next eraseblock scan */

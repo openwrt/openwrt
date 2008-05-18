@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/drivers/spi/Kconfig
+Index: linux-2.6.25.4/drivers/spi/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/drivers/spi/Kconfig
-+++ linux-2.6.25.1/drivers/spi/Kconfig
+--- linux-2.6.25.4.orig/drivers/spi/Kconfig
++++ linux-2.6.25.4/drivers/spi/Kconfig
 @@ -100,6 +100,11 @@ config SPI_BUTTERFLY
  	  inexpensive battery powered microcontroller evaluation board.
  	  This same cable can be used to flash new firmware.
@@ -14,10 +14,10 @@ Index: linux-2.6.25.1/drivers/spi/Kconfig
  config SPI_IMX
  	tristate "Freescale iMX SPI controller"
  	depends on SPI_MASTER && ARCH_IMX && EXPERIMENTAL
-Index: linux-2.6.25.1/drivers/spi/Makefile
+Index: linux-2.6.25.4/drivers/spi/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/drivers/spi/Makefile
-+++ linux-2.6.25.1/drivers/spi/Makefile
+--- linux-2.6.25.4.orig/drivers/spi/Makefile
++++ linux-2.6.25.4/drivers/spi/Makefile
 @@ -16,6 +16,7 @@ obj-$(CONFIG_SPI_BFIN)			+= spi_bfin5xx.
  obj-$(CONFIG_SPI_BITBANG)		+= spi_bitbang.o
  obj-$(CONFIG_SPI_AU1550)		+= au1550_spi.o

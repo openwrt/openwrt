@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/drivers/mtd/Kconfig
+Index: linux-2.6.25.4/drivers/mtd/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/drivers/mtd/Kconfig
-+++ linux-2.6.25.1/drivers/mtd/Kconfig
+--- linux-2.6.25.4.orig/drivers/mtd/Kconfig
++++ linux-2.6.25.4/drivers/mtd/Kconfig
 @@ -47,6 +47,16 @@ config MTD_PARTITIONS
  	  devices. Partitioning on NFTL 'devices' is a different - that's the
  	  'normal' form of partitioning used on a block device.
@@ -19,10 +19,10 @@ Index: linux-2.6.25.1/drivers/mtd/Kconfig
  config MTD_REDBOOT_PARTS
  	tristate "RedBoot partition table parsing"
  	depends on MTD_PARTITIONS
-Index: linux-2.6.25.1/drivers/mtd/mtdpart.c
+Index: linux-2.6.25.4/drivers/mtd/mtdpart.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/mtd/mtdpart.c
-+++ linux-2.6.25.1/drivers/mtd/mtdpart.c
+--- linux-2.6.25.4.orig/drivers/mtd/mtdpart.c
++++ linux-2.6.25.4/drivers/mtd/mtdpart.c
 @@ -20,6 +20,8 @@
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
@@ -584,10 +584,10 @@ Index: linux-2.6.25.1/drivers/mtd/mtdpart.c
 +EXPORT_SYMBOL_GPL(refresh_mtd_partitions);
  EXPORT_SYMBOL_GPL(register_mtd_parser);
  EXPORT_SYMBOL_GPL(deregister_mtd_parser);
-Index: linux-2.6.25.1/drivers/mtd/devices/block2mtd.c
+Index: linux-2.6.25.4/drivers/mtd/devices/block2mtd.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/mtd/devices/block2mtd.c
-+++ linux-2.6.25.1/drivers/mtd/devices/block2mtd.c
+--- linux-2.6.25.4.orig/drivers/mtd/devices/block2mtd.c
++++ linux-2.6.25.4/drivers/mtd/devices/block2mtd.c
 @@ -34,6 +34,8 @@ struct block2mtd_dev {
  	struct block_device *blkdev;
  	struct mtd_info mtd;
@@ -875,10 +875,10 @@ Index: linux-2.6.25.1/drivers/mtd/devices/block2mtd.c
  	
  	part = kzalloc(sizeof(struct mtd_partition), GFP_KERNEL);
  	part->name = dev->mtd.name;
-Index: linux-2.6.25.1/drivers/mtd/mtdchar.c
+Index: linux-2.6.25.4/drivers/mtd/mtdchar.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/mtd/mtdchar.c
-+++ linux-2.6.25.1/drivers/mtd/mtdchar.c
+--- linux-2.6.25.4.orig/drivers/mtd/mtdchar.c
++++ linux-2.6.25.4/drivers/mtd/mtdchar.c
 @@ -17,6 +17,7 @@
  
  #include <linux/mtd/mtd.h>
@@ -901,10 +901,10 @@ Index: linux-2.6.25.1/drivers/mtd/mtdchar.c
  
  	default:
  		ret = -ENOTTY;
-Index: linux-2.6.25.1/include/linux/mtd/mtd.h
+Index: linux-2.6.25.4/include/linux/mtd/mtd.h
 ===================================================================
---- linux-2.6.25.1.orig/include/linux/mtd/mtd.h
-+++ linux-2.6.25.1/include/linux/mtd/mtd.h
+--- linux-2.6.25.4.orig/include/linux/mtd/mtd.h
++++ linux-2.6.25.4/include/linux/mtd/mtd.h
 @@ -98,6 +98,7 @@ struct mtd_oob_ops {
  	uint8_t		*oobbuf;
  };
@@ -923,10 +923,10 @@ Index: linux-2.6.25.1/include/linux/mtd/mtd.h
  	/* If the driver is something smart, like UBI, it may need to maintain
  	 * its own reference counting. The below functions are only for driver.
  	 * The driver may register its callbacks. These callbacks are not
-Index: linux-2.6.25.1/include/linux/mtd/partitions.h
+Index: linux-2.6.25.4/include/linux/mtd/partitions.h
 ===================================================================
---- linux-2.6.25.1.orig/include/linux/mtd/partitions.h
-+++ linux-2.6.25.1/include/linux/mtd/partitions.h
+--- linux-2.6.25.4.orig/include/linux/mtd/partitions.h
++++ linux-2.6.25.4/include/linux/mtd/partitions.h
 @@ -36,6 +36,7 @@
   * erasesize aligned (e.g. use MTDPART_OFS_NEXTBLK).
   */
@@ -951,10 +951,10 @@ Index: linux-2.6.25.1/include/linux/mtd/partitions.h
  
  /*
   * Functions dealing with the various ways of partitioning the space
-Index: linux-2.6.25.1/include/mtd/mtd-abi.h
+Index: linux-2.6.25.4/include/mtd/mtd-abi.h
 ===================================================================
---- linux-2.6.25.1.orig/include/mtd/mtd-abi.h
-+++ linux-2.6.25.1/include/mtd/mtd-abi.h
+--- linux-2.6.25.4.orig/include/mtd/mtd-abi.h
++++ linux-2.6.25.4/include/mtd/mtd-abi.h
 @@ -95,6 +95,7 @@ struct otp_info {
  #define ECCGETLAYOUT		_IOR('M', 17, struct nand_ecclayout)
  #define ECCGETSTATS		_IOR('M', 18, struct mtd_ecc_stats)

@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/drivers/leds/Kconfig
+Index: linux-2.6.25.4/drivers/leds/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/drivers/leds/Kconfig
-+++ linux-2.6.25.1/drivers/leds/Kconfig
+--- linux-2.6.25.4.orig/drivers/leds/Kconfig
++++ linux-2.6.25.4/drivers/leds/Kconfig
 @@ -191,4 +191,11 @@ config LEDS_TRIGGER_MORSE
  	tristate "LED Morse Trigger"
  	depends on LEDS_TRIGGERS
@@ -14,10 +14,10 @@ Index: linux-2.6.25.1/drivers/leds/Kconfig
 +	  If unsure, say Y.
 +
  endif # NEW_LEDS
-Index: linux-2.6.25.1/drivers/leds/Makefile
+Index: linux-2.6.25.4/drivers/leds/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/drivers/leds/Makefile
-+++ linux-2.6.25.1/drivers/leds/Makefile
+--- linux-2.6.25.4.orig/drivers/leds/Makefile
++++ linux-2.6.25.4/drivers/leds/Makefile
 @@ -28,3 +28,4 @@ obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledt
  obj-$(CONFIG_LEDS_TRIGGER_IDE_DISK)	+= ledtrig-ide-disk.o
  obj-$(CONFIG_LEDS_TRIGGER_HEARTBEAT)	+= ledtrig-heartbeat.o

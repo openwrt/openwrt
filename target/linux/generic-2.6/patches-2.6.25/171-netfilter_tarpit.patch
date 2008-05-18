@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/net/netfilter/Kconfig
+Index: linux-2.6.25.4/net/netfilter/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/net/netfilter/Kconfig
-+++ linux-2.6.25.1/net/netfilter/Kconfig
+--- linux-2.6.25.4.orig/net/netfilter/Kconfig
++++ linux-2.6.25.4/net/netfilter/Kconfig
 @@ -437,6 +437,23 @@ config NETFILTER_XT_TARGET_CONNSECMARK
  
  	  To compile it as a module, choose M here.  If unsure, say N.
@@ -26,10 +26,10 @@ Index: linux-2.6.25.1/net/netfilter/Kconfig
  config NETFILTER_XT_TARGET_TCPMSS
  	tristate '"TCPMSS" target support'
  	depends on NETFILTER_XTABLES && (IPV6 || IPV6=n)
-Index: linux-2.6.25.1/net/netfilter/Makefile
+Index: linux-2.6.25.4/net/netfilter/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/net/netfilter/Makefile
-+++ linux-2.6.25.1/net/netfilter/Makefile
+--- linux-2.6.25.4.orig/net/netfilter/Makefile
++++ linux-2.6.25.4/net/netfilter/Makefile
 @@ -47,6 +47,7 @@ obj-$(CONFIG_NETFILTER_XT_TARGET_NFQUEUE
  obj-$(CONFIG_NETFILTER_XT_TARGET_NOTRACK) += xt_NOTRACK.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_RATEEST) += xt_RATEEST.o
@@ -38,10 +38,10 @@ Index: linux-2.6.25.1/net/netfilter/Makefile
  obj-$(CONFIG_NETFILTER_XT_TARGET_TCPMSS) += xt_TCPMSS.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_TCPOPTSTRIP) += xt_TCPOPTSTRIP.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_TRACE) += xt_TRACE.o
-Index: linux-2.6.25.1/net/netfilter/xt_TARPIT.c
+Index: linux-2.6.25.4/net/netfilter/xt_TARPIT.c
 ===================================================================
 --- /dev/null
-+++ linux-2.6.25.1/net/netfilter/xt_TARPIT.c
++++ linux-2.6.25.4/net/netfilter/xt_TARPIT.c
 @@ -0,0 +1,279 @@
 +/*
 + * Kernel module to capture and hold incoming TCP connections using

@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/net/netfilter/nf_conntrack_core.c
+Index: linux-2.6.25.4/net/netfilter/nf_conntrack_core.c
 ===================================================================
---- linux-2.6.25.1.orig/net/netfilter/nf_conntrack_core.c
-+++ linux-2.6.25.1/net/netfilter/nf_conntrack_core.c
+--- linux-2.6.25.4.orig/net/netfilter/nf_conntrack_core.c
++++ linux-2.6.25.4/net/netfilter/nf_conntrack_core.c
 @@ -73,19 +73,15 @@ static unsigned int nf_conntrack_hash_rn
  static u_int32_t __hash_conntrack(const struct nf_conntrack_tuple *tuple,
  				  unsigned int size, unsigned int rnd)
