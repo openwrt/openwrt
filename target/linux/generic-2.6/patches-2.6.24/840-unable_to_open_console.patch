@@ -1,8 +1,8 @@
-Index: linux-2.6.23.14/init/main.c
+Index: linux-2.6.24.7/init/main.c
 ===================================================================
---- linux-2.6.23.14.orig/init/main.c	2008-01-25 19:12:45.000000000 +0100
-+++ linux-2.6.23.14/init/main.c	2008-01-25 19:12:52.000000000 +0100
-@@ -780,7 +780,7 @@
+--- linux-2.6.24.7.orig/init/main.c
++++ linux-2.6.24.7/init/main.c
+@@ -773,7 +773,7 @@ static int noinline init_post(void)
  	numa_default_policy();
  
  	if (sys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)

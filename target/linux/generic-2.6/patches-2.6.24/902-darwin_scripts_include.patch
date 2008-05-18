@@ -1,8 +1,8 @@
-Index: linux-2.6.23-rc6/scripts/genksyms/parse.c_shipped
+Index: linux-2.6.24.7/scripts/genksyms/parse.c_shipped
 ===================================================================
---- linux-2.6.23-rc6.orig/scripts/genksyms/parse.c_shipped	2007-09-21 16:23:51.000000000 +0800
-+++ linux-2.6.23-rc6/scripts/genksyms/parse.c_shipped	2007-09-21 16:24:10.000000000 +0800
-@@ -144,7 +144,9 @@
+--- linux-2.6.24.7.orig/scripts/genksyms/parse.c_shipped
++++ linux-2.6.24.7/scripts/genksyms/parse.c_shipped
+@@ -160,7 +160,9 @@
  
  
  #include <assert.h>
@@ -12,10 +12,10 @@ Index: linux-2.6.23-rc6/scripts/genksyms/parse.c_shipped
  #include "genksyms.h"
  
  static int is_typedef;
-Index: linux-2.6.23-rc6/scripts/genksyms/parse.y
+Index: linux-2.6.24.7/scripts/genksyms/parse.y
 ===================================================================
---- linux-2.6.23-rc6.orig/scripts/genksyms/parse.y	2007-09-21 16:23:51.000000000 +0800
-+++ linux-2.6.23-rc6/scripts/genksyms/parse.y	2007-09-21 16:24:10.000000000 +0800
+--- linux-2.6.24.7.orig/scripts/genksyms/parse.y
++++ linux-2.6.24.7/scripts/genksyms/parse.y
 @@ -24,7 +24,9 @@
  %{
  
@@ -26,10 +26,10 @@ Index: linux-2.6.23-rc6/scripts/genksyms/parse.y
  #include "genksyms.h"
  
  static int is_typedef;
-Index: linux-2.6.23-rc6/scripts/kallsyms.c
+Index: linux-2.6.24.7/scripts/kallsyms.c
 ===================================================================
---- linux-2.6.23-rc6.orig/scripts/kallsyms.c	2007-09-21 16:23:51.000000000 +0800
-+++ linux-2.6.23-rc6/scripts/kallsyms.c	2007-09-21 16:24:10.000000000 +0800
+--- linux-2.6.24.7.orig/scripts/kallsyms.c
++++ linux-2.6.24.7/scripts/kallsyms.c
 @@ -28,6 +28,35 @@
  #include <stdlib.h>
  #include <string.h>
@@ -66,11 +66,11 @@ Index: linux-2.6.23-rc6/scripts/kallsyms.c
  
  #define KSYM_NAME_LEN		128
  
-Index: linux-2.6.23-rc6/scripts/kconfig/Makefile
+Index: linux-2.6.24.7/scripts/kconfig/Makefile
 ===================================================================
---- linux-2.6.23-rc6.orig/scripts/kconfig/Makefile	2007-09-21 16:23:51.000000000 +0800
-+++ linux-2.6.23-rc6/scripts/kconfig/Makefile	2007-09-21 16:24:10.000000000 +0800
-@@ -88,6 +88,9 @@
+--- linux-2.6.24.7.orig/scripts/kconfig/Makefile
++++ linux-2.6.24.7/scripts/kconfig/Makefile
+@@ -90,6 +90,9 @@ check-lxdialog  := $(srctree)/$(src)/lxd
  # we really need to do so. (Do not call gcc as part of make mrproper)
  HOST_EXTRACFLAGS = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags)
  HOST_LOADLIBES   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOSTCC))
@@ -80,10 +80,10 @@ Index: linux-2.6.23-rc6/scripts/kconfig/Makefile
  
  HOST_EXTRACFLAGS += -DLOCALE
  
-Index: linux-2.6.23-rc6/scripts/mod/mk_elfconfig.c
+Index: linux-2.6.24.7/scripts/mod/mk_elfconfig.c
 ===================================================================
---- linux-2.6.23-rc6.orig/scripts/mod/mk_elfconfig.c	2007-09-21 16:23:51.000000000 +0800
-+++ linux-2.6.23-rc6/scripts/mod/mk_elfconfig.c	2007-09-21 16:24:10.000000000 +0800
+--- linux-2.6.24.7.orig/scripts/mod/mk_elfconfig.c
++++ linux-2.6.24.7/scripts/mod/mk_elfconfig.c
 @@ -1,7 +1,11 @@
  #include <stdio.h>
  #include <stdlib.h>
@@ -96,10 +96,10 @@ Index: linux-2.6.23-rc6/scripts/mod/mk_elfconfig.c
  
  int
  main(int argc, char **argv)
-Index: linux-2.6.23-rc6/scripts/mod/modpost.h
+Index: linux-2.6.24.7/scripts/mod/modpost.h
 ===================================================================
---- linux-2.6.23-rc6.orig/scripts/mod/modpost.h	2007-09-21 16:23:51.000000000 +0800
-+++ linux-2.6.23-rc6/scripts/mod/modpost.h	2007-09-21 16:24:10.000000000 +0800
+--- linux-2.6.24.7.orig/scripts/mod/modpost.h
++++ linux-2.6.24.7/scripts/mod/modpost.h
 @@ -7,7 +7,11 @@
  #include <sys/mman.h>
  #include <fcntl.h>

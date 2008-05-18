@@ -1,7 +1,7 @@
-Index: linux-2.6.23-rc6/include/linux/netfilter_ipv4/ipt_time.h
+Index: linux-2.6.24.7/include/linux/netfilter_ipv4/ipt_time.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc6/include/linux/netfilter_ipv4/ipt_time.h	2007-09-21 16:24:02.000000000 +0800
+--- /dev/null
++++ linux-2.6.24.7/include/linux/netfilter_ipv4/ipt_time.h
 @@ -0,0 +1,18 @@
 +#ifndef __ipt_time_h_included__
 +#define __ipt_time_h_included__
@@ -21,10 +21,10 @@ Index: linux-2.6.23-rc6/include/linux/netfilter_ipv4/ipt_time.h
 +
 +
 +#endif /* __ipt_time_h_included__ */
-Index: linux-2.6.23-rc6/net/ipv4/netfilter/ipt_time.c
+Index: linux-2.6.24.7/net/ipv4/netfilter/ipt_time.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc6/net/ipv4/netfilter/ipt_time.c	2007-09-21 16:24:02.000000000 +0800
+--- /dev/null
++++ linux-2.6.24.7/net/ipv4/netfilter/ipt_time.c
 @@ -0,0 +1,180 @@
 +/*
 +  This is a module which is used for time matching
@@ -206,11 +206,11 @@ Index: linux-2.6.23-rc6/net/ipv4/netfilter/ipt_time.c
 +	r->tm_mon=i;
 +	r->tm_mday=work-__spm[i]+1;
 +}
-Index: linux-2.6.23-rc6/net/ipv4/netfilter/Kconfig
+Index: linux-2.6.24.7/net/ipv4/netfilter/Kconfig
 ===================================================================
---- linux-2.6.23-rc6.orig/net/ipv4/netfilter/Kconfig	2007-09-21 16:24:01.000000000 +0800
-+++ linux-2.6.23-rc6/net/ipv4/netfilter/Kconfig	2007-09-21 16:24:02.000000000 +0800
-@@ -96,6 +96,22 @@
+--- linux-2.6.24.7.orig/net/ipv4/netfilter/Kconfig
++++ linux-2.6.24.7/net/ipv4/netfilter/Kconfig
+@@ -78,6 +78,22 @@ config IP_NF_MATCH_TOS
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -233,11 +233,11 @@ Index: linux-2.6.23-rc6/net/ipv4/netfilter/Kconfig
  config IP_NF_MATCH_RECENT
  	tristate "recent match support"
  	depends on IP_NF_IPTABLES
-Index: linux-2.6.23-rc6/net/ipv4/netfilter/Makefile
+Index: linux-2.6.24.7/net/ipv4/netfilter/Makefile
 ===================================================================
---- linux-2.6.23-rc6.orig/net/ipv4/netfilter/Makefile	2007-09-21 16:24:01.000000000 +0800
-+++ linux-2.6.23-rc6/net/ipv4/netfilter/Makefile	2007-09-21 16:24:02.000000000 +0800
-@@ -50,6 +50,7 @@
+--- linux-2.6.24.7.orig/net/ipv4/netfilter/Makefile
++++ linux-2.6.24.7/net/ipv4/netfilter/Makefile
+@@ -50,6 +50,7 @@ obj-$(CONFIG_IP_NF_MATCH_RECENT) += ipt_
  obj-$(CONFIG_IP_NF_MATCH_TOS) += ipt_tos.o
  obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
  obj-$(CONFIG_IP_NF_MATCH_SET) += ipt_set.o
