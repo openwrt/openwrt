@@ -6,9 +6,10 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  arch/i386/kernel/cpu/Makefile |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff -puN arch/i386/kernel/cpu/Makefile~git-newsetup-fixup arch/i386/kernel/cpu/Makefile
---- a/arch/i386/kernel/cpu/Makefile~git-newsetup-fixup
-+++ a/arch/i386/kernel/cpu/Makefile
+Index: linux-2.6.22.19/arch/i386/kernel/cpu/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/arch/i386/kernel/cpu/Makefile
++++ linux-2.6.22.19/arch/i386/kernel/cpu/Makefile
 @@ -8,7 +8,7 @@ obj-y	+=	amd.o
  obj-y	+=	cyrix.o
  obj-y	+=	centaur.o
@@ -18,5 +19,3 @@ diff -puN arch/i386/kernel/cpu/Makefile~git-newsetup-fixup arch/i386/kernel/cpu/
  obj-y	+=	rise.o
  obj-y	+=	nexgen.o
  obj-y	+=	umc.o
- 
-_

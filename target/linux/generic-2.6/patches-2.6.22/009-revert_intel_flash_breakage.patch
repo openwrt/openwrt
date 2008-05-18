@@ -1,7 +1,8 @@
-diff -urN linux-2.6.21.1.old/drivers/mtd/chips/cfi_cmdset_0001.c linux-2.6.21.1.dev/drivers/mtd/chips/cfi_cmdset_0001.c
---- linux-2.6.21.1.old/drivers/mtd/chips/cfi_cmdset_0001.c	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/drivers/mtd/chips/cfi_cmdset_0001.c	2007-05-26 19:40:46.809023552 +0200
-@@ -933,7 +933,7 @@
+Index: linux-2.6.22.19/drivers/mtd/chips/cfi_cmdset_0001.c
+===================================================================
+--- linux-2.6.22.19.orig/drivers/mtd/chips/cfi_cmdset_0001.c
++++ linux-2.6.22.19/drivers/mtd/chips/cfi_cmdset_0001.c
+@@ -933,7 +933,7 @@ static void __xipram xip_enable(struct m
  
  static int __xipram xip_wait_for_operation(
  		struct map_info *map, struct flchip *chip,
@@ -10,7 +11,7 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/chips/cfi_cmdset_0001.c linux-2.6.21.1.
  {
  	struct cfi_private *cfi = map->fldrv_priv;
  	struct cfi_pri_intelext *cfip = cfi->cmdset_priv;
-@@ -942,7 +942,7 @@
+@@ -942,7 +942,7 @@ static int __xipram xip_wait_for_operati
  	flstate_t oldstate, newstate;
  
         	start = xip_currtime();
@@ -19,7 +20,7 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/chips/cfi_cmdset_0001.c linux-2.6.21.1.
  	if (usec == 0)
  		usec = 500000;
  	done = 0;
-@@ -1052,8 +1052,8 @@
+@@ -1052,8 +1052,8 @@ static int __xipram xip_wait_for_operati
  #define XIP_INVAL_CACHED_RANGE(map, from, size)  \
  	INVALIDATE_CACHED_RANGE(map, from, size)
  
@@ -30,7 +31,7 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/chips/cfi_cmdset_0001.c linux-2.6.21.1.
  
  #else
  
-@@ -1065,65 +1065,65 @@
+@@ -1065,65 +1065,65 @@ static int __xipram xip_wait_for_operati
  static int inval_cache_and_wait_for_operation(
  		struct map_info *map, struct flchip *chip,
  		unsigned long cmd_adr, unsigned long inval_adr, int inval_len,
@@ -131,7 +132,7 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/chips/cfi_cmdset_0001.c linux-2.6.21.1.
  	/* Done and happy. */
   	chip->state = FL_STATUS;
  	return 0;
-@@ -1132,7 +1132,8 @@
+@@ -1132,7 +1132,8 @@ static int inval_cache_and_wait_for_oper
  #endif
  
  #define WAIT_TIMEOUT(map, chip, adr, udelay) \
@@ -141,7 +142,7 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/chips/cfi_cmdset_0001.c linux-2.6.21.1.
  
  
  static int do_point_onechip (struct map_info *map, struct flchip *chip, loff_t adr, size_t len)
-@@ -1356,7 +1357,7 @@
+@@ -1356,7 +1357,7 @@ static int __xipram do_write_oneword(str
  
  	ret = INVAL_CACHE_AND_WAIT(map, chip, adr,
  				   adr, map_bankwidth(map),
@@ -150,7 +151,7 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/chips/cfi_cmdset_0001.c linux-2.6.21.1.
  	if (ret) {
  		xip_enable(map, chip, adr);
  		printk(KERN_ERR "%s: word write error (status timeout)\n", map->name);
-@@ -1593,7 +1594,7 @@
+@@ -1593,7 +1594,7 @@ static int __xipram do_write_buffer(stru
  
  	ret = INVAL_CACHE_AND_WAIT(map, chip, cmd_adr,
  				   adr, len,
@@ -159,7 +160,7 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/chips/cfi_cmdset_0001.c linux-2.6.21.1.
  	if (ret) {
  		map_write(map, CMD(0x70), cmd_adr);
  		chip->state = FL_STATUS;
-@@ -1728,7 +1729,7 @@
+@@ -1728,7 +1729,7 @@ static int __xipram do_erase_oneblock(st
  
  	ret = INVAL_CACHE_AND_WAIT(map, chip, adr,
  				   adr, len,

@@ -1,7 +1,7 @@
-Index: linux-2.6.22.18/drivers/misc/eeprom_93cx6.c
+Index: linux-2.6.22.19/drivers/misc/eeprom_93cx6.c
 ===================================================================
---- linux-2.6.22.18.orig/drivers/misc/eeprom_93cx6.c
-+++ linux-2.6.22.18/drivers/misc/eeprom_93cx6.c
+--- linux-2.6.22.19.orig/drivers/misc/eeprom_93cx6.c
++++ linux-2.6.22.19/drivers/misc/eeprom_93cx6.c
 @@ -39,14 +39,26 @@ static inline void eeprom_93cx6_pulse_hi
  {
  	eeprom->reg_data_clock = 1;

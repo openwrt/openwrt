@@ -1,6 +1,7 @@
-diff -urN linux-2.6.21.1.old/drivers/mtd/devices/block2mtd.c linux-2.6.21.1.dev/drivers/mtd/devices/block2mtd.c
---- linux-2.6.21.1.old/drivers/mtd/devices/block2mtd.c	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/drivers/mtd/devices/block2mtd.c	2007-05-26 20:06:13.547923960 +0200
+Index: linux-2.6.22.19/drivers/mtd/devices/block2mtd.c
+===================================================================
+--- linux-2.6.22.19.orig/drivers/mtd/devices/block2mtd.c
++++ linux-2.6.22.19/drivers/mtd/devices/block2mtd.c
 @@ -16,6 +16,7 @@
  #include <linux/list.h>
  #include <linux/init.h>
@@ -9,7 +10,7 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/devices/block2mtd.c linux-2.6.21.1.dev/
  #include <linux/buffer_head.h>
  #include <linux/mutex.h>
  #include <linux/mount.h>
-@@ -237,10 +238,11 @@
+@@ -237,10 +238,11 @@ static void block2mtd_free_device(struct
  
  
  /* FIXME: ensure that mtd->size % erase_size == 0 */
@@ -22,7 +23,7 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/devices/block2mtd.c linux-2.6.21.1.dev/
  
  	if (!devname)
  		return NULL;
-@@ -279,14 +281,18 @@
+@@ -279,14 +281,18 @@ static struct block2mtd_dev *add_device(
  
  	/* Setup the MTD structure */
  	/* make the name contain the block device in */
@@ -46,7 +47,7 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/devices/block2mtd.c linux-2.6.21.1.dev/
  	dev->mtd.erasesize = erase_size;
  	dev->mtd.writesize = 1;
  	dev->mtd.type = MTD_RAM;
-@@ -298,15 +304,18 @@
+@@ -298,15 +304,18 @@ static struct block2mtd_dev *add_device(
  	dev->mtd.read = block2mtd_read;
  	dev->mtd.priv = dev;
  	dev->mtd.owner = THIS_MODULE;
@@ -69,7 +70,7 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/devices/block2mtd.c linux-2.6.21.1.dev/
  	return dev;
  
  devinit_err:
-@@ -379,9 +388,9 @@
+@@ -379,9 +388,9 @@ static char block2mtd_paramline[80 + 12]
  
  static int block2mtd_setup2(const char *val)
  {
@@ -81,7 +82,7 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/devices/block2mtd.c linux-2.6.21.1.dev/
  	char *name;
  	size_t erase_size = PAGE_SIZE;
  	int i, ret;
-@@ -392,7 +401,7 @@
+@@ -392,7 +401,7 @@ static int block2mtd_setup2(const char *
  	strcpy(str, val);
  	kill_final_newline(str);
  
@@ -90,7 +91,7 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/devices/block2mtd.c linux-2.6.21.1.dev/
  		token[i] = strsep(&str, ",");
  
  	if (str)
-@@ -412,8 +421,10 @@
+@@ -412,8 +421,10 @@ static int block2mtd_setup2(const char *
  			parse_err("illegal erase size");
  		}
  	}
@@ -102,7 +103,7 @@ diff -urN linux-2.6.21.1.old/drivers/mtd/devices/block2mtd.c linux-2.6.21.1.dev/
  
  	return 0;
  }
-@@ -447,7 +458,7 @@
+@@ -447,7 +458,7 @@ static int block2mtd_setup(const char *v
  
  
  module_param_call(block2mtd, block2mtd_setup, NULL, NULL, 0200);
