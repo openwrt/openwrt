@@ -1,8 +1,8 @@
-Index: linux-2.6.23-rc6/drivers/usb/serial/usb-serial.c
+Index: linux-2.6.24.7/drivers/usb/serial/usb-serial.c
 ===================================================================
---- linux-2.6.23-rc6.orig/drivers/usb/serial/usb-serial.c	2007-09-21 16:23:52.000000000 +0800
-+++ linux-2.6.23-rc6/drivers/usb/serial/usb-serial.c	2007-09-21 16:24:09.000000000 +0800
-@@ -58,6 +58,7 @@
+--- linux-2.6.24.7.orig/drivers/usb/serial/usb-serial.c
++++ linux-2.6.24.7/drivers/usb/serial/usb-serial.c
+@@ -58,6 +58,7 @@ static struct usb_driver usb_serial_driv
     drivers depend on it.
  */
  
@@ -10,7 +10,7 @@ Index: linux-2.6.23-rc6/drivers/usb/serial/usb-serial.c
  static int debug;
  static struct usb_serial *serial_table[SERIAL_TTY_MINORS];	/* initially all NULL */
  static DEFINE_MUTEX(table_lock);
-@@ -866,7 +867,7 @@
+@@ -894,7 +895,7 @@ int usb_serial_probe(struct usb_interfac
  			dev_err(&interface->dev, "No free urbs available\n");
  			goto probe_error;
  		}
@@ -19,7 +19,7 @@ Index: linux-2.6.23-rc6/drivers/usb/serial/usb-serial.c
  		port->bulk_in_size = buffer_size;
  		port->bulk_in_endpointAddress = endpoint->bEndpointAddress;
  		port->bulk_in_buffer = kmalloc (buffer_size, GFP_KERNEL);
-@@ -1276,3 +1277,5 @@
+@@ -1306,3 +1307,5 @@ MODULE_LICENSE("GPL");
  
  module_param(debug, bool, S_IRUGO | S_IWUSR);
  MODULE_PARM_DESC(debug, "Debug enabled or not");

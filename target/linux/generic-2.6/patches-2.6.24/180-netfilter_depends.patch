@@ -1,8 +1,8 @@
-Index: linux-2.6.23-rc6/net/netfilter/Kconfig
+Index: linux-2.6.24.7/net/netfilter/Kconfig
 ===================================================================
---- linux-2.6.23-rc6.orig/net/netfilter/Kconfig	2007-09-21 16:24:03.000000000 +0800
-+++ linux-2.6.23-rc6/net/netfilter/Kconfig	2007-09-21 16:24:04.000000000 +0800
-@@ -143,7 +143,7 @@
+--- linux-2.6.24.7.orig/net/netfilter/Kconfig
++++ linux-2.6.24.7/net/netfilter/Kconfig
+@@ -143,7 +143,7 @@ config NF_CONNTRACK_FTP
  
  config NF_CONNTRACK_H323
  	tristate "H.323 protocol support (EXPERIMENTAL)"
@@ -11,7 +11,7 @@ Index: linux-2.6.23-rc6/net/netfilter/Kconfig
  	help
  	  H.323 is a VoIP signalling protocol from ITU-T. As one of the most
  	  important VoIP protocols, it is widely used by voice hardware and
-@@ -403,7 +403,7 @@
+@@ -420,7 +420,7 @@ config NETFILTER_XT_TARGET_TARPIT
  
  config NETFILTER_XT_TARGET_TCPMSS
  	tristate '"TCPMSS" target support'

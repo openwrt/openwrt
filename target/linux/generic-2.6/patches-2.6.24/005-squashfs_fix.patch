@@ -1,6 +1,8 @@
---- linux-2.6.24/fs/squashfs/inode.c	2008-01-28 23:38:13.000000000 +0100
-+++ linux-2.6.24-owrt/fs/squashfs/inode.c	2008-01-28 23:43:18.000000000 +0100
-@@ -29,6 +29,7 @@
+Index: linux-2.6.24.7/fs/squashfs/inode.c
+===================================================================
+--- linux-2.6.24.7.orig/fs/squashfs/inode.c
++++ linux-2.6.24.7/fs/squashfs/inode.c
+@@ -33,6 +33,7 @@
  #include <linux/fs.h>
  #include <linux/smp_lock.h>
  #include <linux/slab.h>
@@ -8,7 +10,7 @@
  #include <linux/squashfs_fs_sb.h>
  #include <linux/squashfs_fs_i.h>
  #include <linux/buffer_head.h>
-@@ -2089,7 +2090,7 @@
+@@ -2125,7 +2126,7 @@ static void squashfs_destroy_inode(struc
  }
  
  

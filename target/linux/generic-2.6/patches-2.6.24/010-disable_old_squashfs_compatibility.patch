@@ -1,16 +1,16 @@
-Index: linux-2.6.23-rc6/fs/squashfs/Makefile
+Index: linux-2.6.24.7/fs/squashfs/Makefile
 ===================================================================
---- linux-2.6.23-rc6.orig/fs/squashfs/Makefile	2007-09-21 16:23:55.000000000 +0800
-+++ linux-2.6.23-rc6/fs/squashfs/Makefile	2007-09-21 16:23:58.000000000 +0800
+--- linux-2.6.24.7.orig/fs/squashfs/Makefile
++++ linux-2.6.24.7/fs/squashfs/Makefile
 @@ -4,4 +4,3 @@
  
  obj-$(CONFIG_SQUASHFS) += squashfs.o
  squashfs-y += inode.o
 -squashfs-y += squashfs2_0.o
-Index: linux-2.6.23-rc6/fs/squashfs/squashfs.h
+Index: linux-2.6.24.7/fs/squashfs/squashfs.h
 ===================================================================
---- linux-2.6.23-rc6.orig/fs/squashfs/squashfs.h	2007-09-21 16:23:55.000000000 +0800
-+++ linux-2.6.23-rc6/fs/squashfs/squashfs.h	2007-09-21 16:23:58.000000000 +0800
+--- linux-2.6.24.7.orig/fs/squashfs/squashfs.h
++++ linux-2.6.24.7/fs/squashfs/squashfs.h
 @@ -24,6 +24,9 @@
  #ifdef CONFIG_SQUASHFS_1_0_COMPATIBILITY
  #undef CONFIG_SQUASHFS_1_0_COMPATIBILITY

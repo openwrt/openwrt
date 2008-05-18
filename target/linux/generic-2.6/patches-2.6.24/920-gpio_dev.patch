@@ -1,21 +1,21 @@
-Index: linux-2.6.23.14/arch/arm/Kconfig
+Index: linux-2.6.24.7/arch/arm/Kconfig
 ===================================================================
---- linux-2.6.23.14.orig/arch/arm/Kconfig	2008-01-26 02:46:18.000000000 +0100
-+++ linux-2.6.23.14/arch/arm/Kconfig	2008-01-26 02:46:33.000000000 +0100
-@@ -1039,6 +1039,8 @@
+--- linux-2.6.24.7.orig/arch/arm/Kconfig
++++ linux-2.6.24.7/arch/arm/Kconfig
+@@ -1054,6 +1054,8 @@ source "drivers/ssb/Kconfig"
  
- source "drivers/leds/Kconfig"
+ source "drivers/mfd/Kconfig"
  
 +source "drivers/gpio/Kconfig"
 +
  source "drivers/media/Kconfig"
  
  source "drivers/video/Kconfig"
-Index: linux-2.6.23.14/drivers/Kconfig
+Index: linux-2.6.24.7/drivers/Kconfig
 ===================================================================
---- linux-2.6.23.14.orig/drivers/Kconfig	2008-01-26 02:45:44.000000000 +0100
-+++ linux-2.6.23.14/drivers/Kconfig	2008-01-26 02:46:05.000000000 +0100
-@@ -74,6 +74,8 @@
+--- linux-2.6.24.7.orig/drivers/Kconfig
++++ linux-2.6.24.7/drivers/Kconfig
+@@ -78,6 +78,8 @@ source "drivers/mmc/Kconfig"
  
  source "drivers/leds/Kconfig"
  
@@ -24,11 +24,11 @@ Index: linux-2.6.23.14/drivers/Kconfig
  source "drivers/infiniband/Kconfig"
  
  source "drivers/edac/Kconfig"
-Index: linux-2.6.23.14/drivers/Makefile
+Index: linux-2.6.24.7/drivers/Makefile
 ===================================================================
---- linux-2.6.23.14.orig/drivers/Makefile	2008-01-26 02:44:13.000000000 +0100
-+++ linux-2.6.23.14/drivers/Makefile	2008-01-26 02:44:42.000000000 +0100
-@@ -91,3 +91,4 @@
+--- linux-2.6.24.7.orig/drivers/Makefile
++++ linux-2.6.24.7/drivers/Makefile
+@@ -91,3 +91,4 @@ obj-$(CONFIG_PPC_PS3)		+= ps3/
  obj-$(CONFIG_OF)		+= of/
  obj-$(CONFIG_SSB)		+= ssb/
  obj-$(CONFIG_VIRTIO)		+= virtio/

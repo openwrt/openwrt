@@ -1,6 +1,8 @@
---- linux-2.6.24.2/drivers/mtd/chips/cfi_cmdset_0001.c	2008-04-22 12:24:09.000000000 +0200
-+++ linux-2.6.24.2-owrt/drivers/mtd/chips/cfi_cmdset_0001.c	2008-04-22 19:47:38.000000000 +0200
-@@ -277,7 +277,7 @@
+Index: linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0001.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/mtd/chips/cfi_cmdset_0001.c
++++ linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0001.c
+@@ -277,7 +277,7 @@ read_pri_intelext(struct map_info *map, 
  		return NULL;
  
  	if (extp->MajorVersion != '1' ||

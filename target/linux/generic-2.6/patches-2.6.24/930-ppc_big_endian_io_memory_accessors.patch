@@ -30,10 +30,11 @@ and didn't make it with the ppc32 equivalent. Thanks.
 
 
 ---
-diff -uprN a/include/asm-ppc/io.h b/include/asm-ppc/io.h
---- a/include/asm-ppc/io.h	2005-08-21 17:49:44.000000000 -0400
-+++ b/include/asm-ppc/io.h	2005-08-21 20:29:55.000000000 -0400
-@@ -487,11 +487,21 @@ static inline unsigned int ioread16(void
+Index: linux-2.6.24.7/include/asm-ppc/io.h
+===================================================================
+--- linux-2.6.24.7.orig/include/asm-ppc/io.h
++++ linux-2.6.24.7/include/asm-ppc/io.h
+@@ -413,11 +413,21 @@ static inline unsigned int ioread16(void
  	return readw(addr);
  }
  
@@ -55,7 +56,7 @@ diff -uprN a/include/asm-ppc/io.h b/include/asm-ppc/io.h
  static inline void iowrite8(u8 val, void __iomem *addr)
  {
  	writeb(val, addr);
-@@ -502,11 +512,21 @@ static inline void iowrite16(u16 val, vo
+@@ -428,11 +438,21 @@ static inline void iowrite16(u16 val, vo
  	writew(val, addr);
  }
  
@@ -77,4 +78,3 @@ diff -uprN a/include/asm-ppc/io.h b/include/asm-ppc/io.h
  static inline void ioread8_rep(void __iomem *addr, void *dst, unsigned long count)
  {
  	_insb(addr, dst, count);
-
