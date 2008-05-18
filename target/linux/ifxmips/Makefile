@@ -10,7 +10,7 @@ ARCH:=mips
 BOARD:=ifxmips
 BOARDNAME:=Infineon Mips
 FEATURES:=squashfs jffs2
-LINUX_VERSION:=2.6.25.1
+LINUX_VERSION:=2.6.25.4
 
 include $(INCLUDE_DIR)/target.mk
 

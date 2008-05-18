@@ -12,7 +12,7 @@ BOARDNAME:=x86
 FEATURES:=squashfs jffs2 ext2
 SUBTARGETS=generic
 
-LINUX_VERSION:=2.6.25.1
+LINUX_VERSION:=2.6.25.4
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += kmod-natsemi kmod-ne2k-pci
