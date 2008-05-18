@@ -30,6 +30,7 @@ define Build/Compile
 	$(call cc,lzma2eva,-lz)
 	$(call cc,mkcasfw)
 	$(call cc,mkfwimage,-lz)
+	$(call cc,imagetag)
 endef
 
 define Build/Install
