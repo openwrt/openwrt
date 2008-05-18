@@ -275,6 +275,22 @@ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.24)),1)
 endif
 WATCHDOG_DIR?=char/watchdog
 
+define KernelPackage/atmel-wdt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=AT32AP700x watchdog
+  DEPENDS:=@TARGET_avr32
+  KCONFIG:=CONFIG_AT32AP700X_WDT
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/at32ap700x_wdt.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,at32ap700x_wdt)
+endef
+
+define KernelPackage/atmel-wdt/description
+ AT32AP700x watchdog
+endef
+
+$(eval $(call KernelPackage,atmel-wdt))
+
+
 define KernelPackage/softdog
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Software watchdog driver
