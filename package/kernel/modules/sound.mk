@@ -12,7 +12,7 @@ SOUND_MENU:=Sound Support
 define KernelPackage/sound-core
   SUBMENU:=$(SOUND_MENU)
   TITLE:=Sound support
-  DEPENDS:=@USB_SUPPORT||PCI_SUPPORT @!TARGET_atheros
+  DEPENDS:=@USB_SUPPORT||PCI_SUPPORT
   KCONFIG:= \
 	CONFIG_SOUND \
 	CONFIG_SND \
