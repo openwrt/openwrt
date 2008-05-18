@@ -1,7 +1,8 @@
-diff -urN linux-2.6.21.1.old/include/linux/netdevice.h linux-2.6.21.1.dev/include/linux/netdevice.h
---- linux-2.6.21.1.old/include/linux/netdevice.h	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/include/linux/netdevice.h	2007-05-26 21:04:21.537668920 +0200
-@@ -532,6 +532,8 @@
+Index: linux-2.6.21.7/include/linux/netdevice.h
+===================================================================
+--- linux-2.6.21.7.orig/include/linux/netdevice.h
++++ linux-2.6.21.7/include/linux/netdevice.h
+@@ -532,6 +532,8 @@ struct net_device
  	struct device		dev;
  	/* space for optional statistics and wireless sysfs groups */
  	struct attribute_group  *sysfs_groups[3];

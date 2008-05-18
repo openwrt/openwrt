@@ -1,6 +1,7 @@
-diff -urN linux-2.6.21.1.old/include/linux/netfilter_ipv4/ipt_ROUTE.h linux-2.6.21.1.dev/include/linux/netfilter_ipv4/ipt_ROUTE.h
---- linux-2.6.21.1.old/include/linux/netfilter_ipv4/ipt_ROUTE.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1.dev/include/linux/netfilter_ipv4/ipt_ROUTE.h	2007-05-26 20:37:08.971856648 +0200
+Index: linux-2.6.21.7/include/linux/netfilter_ipv4/ipt_ROUTE.h
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/include/linux/netfilter_ipv4/ipt_ROUTE.h
 @@ -0,0 +1,23 @@
 +/* Header file for iptables ipt_ROUTE target
 + *
@@ -25,9 +26,10 @@ diff -urN linux-2.6.21.1.old/include/linux/netfilter_ipv4/ipt_ROUTE.h linux-2.6.
 +#define IPT_ROUTE_TEE             0x02
 +
 +#endif /*_IPT_ROUTE_H_target*/
-diff -urN linux-2.6.21.1.old/include/linux/netfilter_ipv6/ip6t_ROUTE.h linux-2.6.21.1.dev/include/linux/netfilter_ipv6/ip6t_ROUTE.h
---- linux-2.6.21.1.old/include/linux/netfilter_ipv6/ip6t_ROUTE.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1.dev/include/linux/netfilter_ipv6/ip6t_ROUTE.h	2007-05-26 20:37:09.001852088 +0200
+Index: linux-2.6.21.7/include/linux/netfilter_ipv6/ip6t_ROUTE.h
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/include/linux/netfilter_ipv6/ip6t_ROUTE.h
 @@ -0,0 +1,23 @@
 +/* Header file for iptables ip6t_ROUTE target
 + *
@@ -52,9 +54,10 @@ diff -urN linux-2.6.21.1.old/include/linux/netfilter_ipv6/ip6t_ROUTE.h linux-2.6
 +#define IP6T_ROUTE_TEE             0x02
 +
 +#endif /*_IP6T_ROUTE_H_target*/
-diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/ipt_ROUTE.c linux-2.6.21.1.dev/net/ipv4/netfilter/ipt_ROUTE.c
---- linux-2.6.21.1.old/net/ipv4/netfilter/ipt_ROUTE.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1.dev/net/ipv4/netfilter/ipt_ROUTE.c	2007-05-26 20:37:09.001852088 +0200
+Index: linux-2.6.21.7/net/ipv4/netfilter/ipt_ROUTE.c
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/net/ipv4/netfilter/ipt_ROUTE.c
 @@ -0,0 +1,483 @@
 +/*
 + * This implements the ROUTE target, which enables you to setup unusual
@@ -539,10 +542,11 @@ diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/ipt_ROUTE.c linux-2.6.21.1.dev/n
 +
 +module_init(init);
 +module_exit(fini);
-diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/Kconfig linux-2.6.21.1.dev/net/ipv4/netfilter/Kconfig
---- linux-2.6.21.1.old/net/ipv4/netfilter/Kconfig	2007-05-26 20:37:08.734892672 +0200
-+++ linux-2.6.21.1.dev/net/ipv4/netfilter/Kconfig	2007-05-26 20:37:09.002851936 +0200
-@@ -817,5 +817,22 @@
+Index: linux-2.6.21.7/net/ipv4/netfilter/Kconfig
+===================================================================
+--- linux-2.6.21.7.orig/net/ipv4/netfilter/Kconfig
++++ linux-2.6.21.7/net/ipv4/netfilter/Kconfig
+@@ -807,5 +807,22 @@ config IP_NF_TARGET_SET
  	  To compile it as a module, choose M here.  If unsure, say N.
  
  
@@ -565,10 +569,11 @@ diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/Kconfig linux-2.6.21.1.dev/net/i
 +
  endmenu
  
-diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/Makefile linux-2.6.21.1.dev/net/ipv4/netfilter/Makefile
---- linux-2.6.21.1.old/net/ipv4/netfilter/Makefile	2007-05-26 20:37:08.735892520 +0200
-+++ linux-2.6.21.1.dev/net/ipv4/netfilter/Makefile	2007-05-26 20:37:09.002851936 +0200
-@@ -103,6 +103,7 @@
+Index: linux-2.6.21.7/net/ipv4/netfilter/Makefile
+===================================================================
+--- linux-2.6.21.7.orig/net/ipv4/netfilter/Makefile
++++ linux-2.6.21.7/net/ipv4/netfilter/Makefile
+@@ -102,6 +102,7 @@ obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_EC
  obj-$(CONFIG_IP_NF_TARGET_IMQ) += ipt_IMQ.o
  obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
@@ -576,10 +581,11 @@ diff -urN linux-2.6.21.1.old/net/ipv4/netfilter/Makefile linux-2.6.21.1.dev/net/
  obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
  obj-$(CONFIG_IP_NF_TARGET_SAME) += ipt_SAME.o
  obj-$(CONFIG_IP_NF_NAT_SNMP_BASIC) += ip_nat_snmp_basic.o
-diff -urN linux-2.6.21.1.old/net/ipv6/ipv6_syms.c linux-2.6.21.1.dev/net/ipv6/ipv6_syms.c
---- linux-2.6.21.1.old/net/ipv6/ipv6_syms.c	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/net/ipv6/ipv6_syms.c	2007-05-26 20:37:09.002851936 +0200
-@@ -10,6 +10,7 @@
+Index: linux-2.6.21.7/net/ipv6/ipv6_syms.c
+===================================================================
+--- linux-2.6.21.7.orig/net/ipv6/ipv6_syms.c
++++ linux-2.6.21.7/net/ipv6/ipv6_syms.c
+@@ -10,6 +10,7 @@ EXPORT_SYMBOL(icmpv6_send);
  EXPORT_SYMBOL(icmpv6_statistics);
  EXPORT_SYMBOL(icmpv6_err_convert);
  EXPORT_SYMBOL(ndisc_mc_map);
@@ -587,9 +593,10 @@ diff -urN linux-2.6.21.1.old/net/ipv6/ipv6_syms.c linux-2.6.21.1.dev/net/ipv6/ip
  EXPORT_SYMBOL(register_inet6addr_notifier);
  EXPORT_SYMBOL(unregister_inet6addr_notifier);
  EXPORT_SYMBOL(ip6_route_output);
-diff -urN linux-2.6.21.1.old/net/ipv6/netfilter/ip6t_ROUTE.c linux-2.6.21.1.dev/net/ipv6/netfilter/ip6t_ROUTE.c
---- linux-2.6.21.1.old/net/ipv6/netfilter/ip6t_ROUTE.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1.dev/net/ipv6/netfilter/ip6t_ROUTE.c	2007-05-26 20:37:09.003851784 +0200
+Index: linux-2.6.21.7/net/ipv6/netfilter/ip6t_ROUTE.c
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/net/ipv6/netfilter/ip6t_ROUTE.c
 @@ -0,0 +1,330 @@
 +/*
 + * This implements the ROUTE v6 target, which enables you to setup unusual
@@ -921,10 +928,11 @@ diff -urN linux-2.6.21.1.old/net/ipv6/netfilter/ip6t_ROUTE.c linux-2.6.21.1.dev/
 +module_init(init);
 +module_exit(fini);
 +MODULE_LICENSE("GPL");
-diff -urN linux-2.6.21.1.old/net/ipv6/netfilter/Kconfig linux-2.6.21.1.dev/net/ipv6/netfilter/Kconfig
---- linux-2.6.21.1.old/net/ipv6/netfilter/Kconfig	2007-05-26 20:37:08.809881272 +0200
-+++ linux-2.6.21.1.dev/net/ipv6/netfilter/Kconfig	2007-05-26 20:37:09.003851784 +0200
-@@ -209,5 +209,18 @@
+Index: linux-2.6.21.7/net/ipv6/netfilter/Kconfig
+===================================================================
+--- linux-2.6.21.7.orig/net/ipv6/netfilter/Kconfig
++++ linux-2.6.21.7/net/ipv6/netfilter/Kconfig
+@@ -209,5 +209,18 @@ config IP6_NF_RAW
  	  If you want to compile it as a module, say M here and read
  	  <file:Documentation/modules.txt>.  If unsure, say `N'.
  
@@ -943,10 +951,11 @@ diff -urN linux-2.6.21.1.old/net/ipv6/netfilter/Kconfig linux-2.6.21.1.dev/net/i
 +
  endmenu
  
-diff -urN linux-2.6.21.1.old/net/ipv6/netfilter/Makefile linux-2.6.21.1.dev/net/ipv6/netfilter/Makefile
---- linux-2.6.21.1.old/net/ipv6/netfilter/Makefile	2007-05-26 20:37:08.809881272 +0200
-+++ linux-2.6.21.1.dev/net/ipv6/netfilter/Makefile	2007-05-26 20:37:09.003851784 +0200
-@@ -20,6 +20,7 @@
+Index: linux-2.6.21.7/net/ipv6/netfilter/Makefile
+===================================================================
+--- linux-2.6.21.7.orig/net/ipv6/netfilter/Makefile
++++ linux-2.6.21.7/net/ipv6/netfilter/Makefile
+@@ -20,6 +20,7 @@ obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_
  obj-$(CONFIG_IP6_NF_RAW) += ip6table_raw.o
  obj-$(CONFIG_IP6_NF_MATCH_HL) += ip6t_hl.o
  obj-$(CONFIG_IP6_NF_TARGET_REJECT) += ip6t_REJECT.o

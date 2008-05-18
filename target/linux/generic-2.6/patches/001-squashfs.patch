@@ -1,7 +1,8 @@
-diff -urN linux-2.6.21.1.old/fs/Kconfig linux-2.6.21.1.dev/fs/Kconfig
---- linux-2.6.21.1.old/fs/Kconfig	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/fs/Kconfig	2007-05-26 19:00:37.121351760 +0200
-@@ -1371,6 +1371,71 @@
+Index: linux-2.6.21.7/fs/Kconfig
+===================================================================
+--- linux-2.6.21.7.orig/fs/Kconfig
++++ linux-2.6.21.7/fs/Kconfig
+@@ -1371,6 +1371,71 @@ config CRAMFS
  
  	  If unsure, say N.
  
@@ -73,10 +74,11 @@ diff -urN linux-2.6.21.1.old/fs/Kconfig linux-2.6.21.1.dev/fs/Kconfig
  config VXFS_FS
  	tristate "FreeVxFS file system support (VERITAS VxFS(TM) compatible)"
  	depends on BLOCK
-diff -urN linux-2.6.21.1.old/fs/Makefile linux-2.6.21.1.dev/fs/Makefile
---- linux-2.6.21.1.old/fs/Makefile	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/fs/Makefile	2007-05-26 19:00:37.121351760 +0200
-@@ -68,6 +68,7 @@
+Index: linux-2.6.21.7/fs/Makefile
+===================================================================
+--- linux-2.6.21.7.orig/fs/Makefile
++++ linux-2.6.21.7/fs/Makefile
+@@ -68,6 +68,7 @@ obj-$(CONFIG_JBD)		+= jbd/
  obj-$(CONFIG_JBD2)		+= jbd2/
  obj-$(CONFIG_EXT2_FS)		+= ext2/
  obj-$(CONFIG_CRAMFS)		+= cramfs/
@@ -84,9 +86,10 @@ diff -urN linux-2.6.21.1.old/fs/Makefile linux-2.6.21.1.dev/fs/Makefile
  obj-$(CONFIG_RAMFS)		+= ramfs/
  obj-$(CONFIG_HUGETLBFS)		+= hugetlbfs/
  obj-$(CONFIG_CODA_FS)		+= coda/
-diff -urN linux-2.6.21.1.old/fs/squashfs/inode.c linux-2.6.21.1.dev/fs/squashfs/inode.c
---- linux-2.6.21.1.old/fs/squashfs/inode.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1.dev/fs/squashfs/inode.c	2007-05-26 19:00:37.123351456 +0200
+Index: linux-2.6.21.7/fs/squashfs/inode.c
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/fs/squashfs/inode.c
 @@ -0,0 +1,2124 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
@@ -2212,9 +2215,10 @@ diff -urN linux-2.6.21.1.old/fs/squashfs/inode.c linux-2.6.21.1.dev/fs/squashfs/
 +MODULE_DESCRIPTION("squashfs, a compressed read-only filesystem");
 +MODULE_AUTHOR("Phillip Lougher <phillip@lougher.org.uk>");
 +MODULE_LICENSE("GPL");
-diff -urN linux-2.6.21.1.old/fs/squashfs/Makefile linux-2.6.21.1.dev/fs/squashfs/Makefile
---- linux-2.6.21.1.old/fs/squashfs/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1.dev/fs/squashfs/Makefile	2007-05-26 19:00:37.123351456 +0200
+Index: linux-2.6.21.7/fs/squashfs/Makefile
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/fs/squashfs/Makefile
 @@ -0,0 +1,7 @@
 +#
 +# Makefile for the linux squashfs routines.
@@ -2223,9 +2227,10 @@ diff -urN linux-2.6.21.1.old/fs/squashfs/Makefile linux-2.6.21.1.dev/fs/squashfs
 +obj-$(CONFIG_SQUASHFS) += squashfs.o
 +squashfs-y += inode.o
 +squashfs-y += squashfs2_0.o
-diff -urN linux-2.6.21.1.old/fs/squashfs/squashfs2_0.c linux-2.6.21.1.dev/fs/squashfs/squashfs2_0.c
---- linux-2.6.21.1.old/fs/squashfs/squashfs2_0.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1.dev/fs/squashfs/squashfs2_0.c	2007-05-26 19:00:37.125351152 +0200
+Index: linux-2.6.21.7/fs/squashfs/squashfs2_0.c
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/fs/squashfs/squashfs2_0.c
 @@ -0,0 +1,758 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
@@ -2985,9 +2990,10 @@ diff -urN linux-2.6.21.1.old/fs/squashfs/squashfs2_0.c linux-2.6.21.1.dev/fs/squ
 +
 +	return 1;
 +}
-diff -urN linux-2.6.21.1.old/fs/squashfs/squashfs.h linux-2.6.21.1.dev/fs/squashfs/squashfs.h
---- linux-2.6.21.1.old/fs/squashfs/squashfs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1.dev/fs/squashfs/squashfs.h	2007-05-26 19:00:37.125351152 +0200
+Index: linux-2.6.21.7/fs/squashfs/squashfs.h
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/fs/squashfs/squashfs.h
 @@ -0,0 +1,86 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
@@ -3075,9 +3081,10 @@ diff -urN linux-2.6.21.1.old/fs/squashfs/squashfs.h linux-2.6.21.1.dev/fs/squash
 +	return 0;
 +}
 +#endif
-diff -urN linux-2.6.21.1.old/include/linux/squashfs_fs.h linux-2.6.21.1.dev/include/linux/squashfs_fs.h
---- linux-2.6.21.1.old/include/linux/squashfs_fs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1.dev/include/linux/squashfs_fs.h	2007-05-26 19:00:37.143348416 +0200
+Index: linux-2.6.21.7/include/linux/squashfs_fs.h
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/include/linux/squashfs_fs.h
 @@ -0,0 +1,911 @@
 +#ifndef SQUASHFS_FS
 +#define SQUASHFS_FS
@@ -3990,9 +3997,10 @@ diff -urN linux-2.6.21.1.old/include/linux/squashfs_fs.h linux-2.6.21.1.dev/incl
 +
 +#endif
 +#endif
-diff -urN linux-2.6.21.1.old/include/linux/squashfs_fs_i.h linux-2.6.21.1.dev/include/linux/squashfs_fs_i.h
---- linux-2.6.21.1.old/include/linux/squashfs_fs_i.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1.dev/include/linux/squashfs_fs_i.h	2007-05-26 19:00:37.143348416 +0200
+Index: linux-2.6.21.7/include/linux/squashfs_fs_i.h
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/include/linux/squashfs_fs_i.h
 @@ -0,0 +1,45 @@
 +#ifndef SQUASHFS_FS_I
 +#define SQUASHFS_FS_I
@@ -4039,9 +4047,10 @@ diff -urN linux-2.6.21.1.old/include/linux/squashfs_fs_i.h linux-2.6.21.1.dev/in
 +	struct inode	vfs_inode;
 +};
 +#endif
-diff -urN linux-2.6.21.1.old/include/linux/squashfs_fs_sb.h linux-2.6.21.1.dev/include/linux/squashfs_fs_sb.h
---- linux-2.6.21.1.old/include/linux/squashfs_fs_sb.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1.dev/include/linux/squashfs_fs_sb.h	2007-05-26 19:00:37.144348264 +0200
+Index: linux-2.6.21.7/include/linux/squashfs_fs_sb.h
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/include/linux/squashfs_fs_sb.h
 @@ -0,0 +1,74 @@
 +#ifndef SQUASHFS_FS_SB
 +#define SQUASHFS_FS_SB
@@ -4117,9 +4126,10 @@ diff -urN linux-2.6.21.1.old/include/linux/squashfs_fs_sb.h linux-2.6.21.1.dev/i
 +	int			(*read_fragment_index_table)(struct super_block *s);
 +};
 +#endif
-diff -urN linux-2.6.21.1.old/init/do_mounts_rd.c linux-2.6.21.1.dev/init/do_mounts_rd.c
---- linux-2.6.21.1.old/init/do_mounts_rd.c	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/init/do_mounts_rd.c	2007-05-26 19:00:37.144348264 +0200
+Index: linux-2.6.21.7/init/do_mounts_rd.c
+===================================================================
+--- linux-2.6.21.7.orig/init/do_mounts_rd.c
++++ linux-2.6.21.7/init/do_mounts_rd.c
 @@ -5,6 +5,7 @@
  #include <linux/ext2_fs.h>
  #include <linux/romfs_fs.h>
@@ -4128,7 +4138,7 @@ diff -urN linux-2.6.21.1.old/init/do_mounts_rd.c linux-2.6.21.1.dev/init/do_moun
  #include <linux/initrd.h>
  #include <linux/string.h>
  
-@@ -39,6 +40,7 @@
+@@ -39,6 +40,7 @@ static int __init crd_load(int in_fd, in
   * numbers could not be found.
   *
   * We currently check for the following magic numbers:
@@ -4136,7 +4146,7 @@ diff -urN linux-2.6.21.1.old/init/do_mounts_rd.c linux-2.6.21.1.dev/init/do_moun
   * 	minix
   * 	ext2
   *	romfs
-@@ -53,6 +55,7 @@
+@@ -53,6 +55,7 @@ identify_ramdisk_image(int fd, int start
  	struct ext2_super_block *ext2sb;
  	struct romfs_super_block *romfsb;
  	struct cramfs_super *cramfsb;
@@ -4144,7 +4154,7 @@ diff -urN linux-2.6.21.1.old/init/do_mounts_rd.c linux-2.6.21.1.dev/init/do_moun
  	int nblocks = -1;
  	unsigned char *buf;
  
-@@ -64,6 +67,7 @@
+@@ -64,6 +67,7 @@ identify_ramdisk_image(int fd, int start
  	ext2sb = (struct ext2_super_block *) buf;
  	romfsb = (struct romfs_super_block *) buf;
  	cramfsb = (struct cramfs_super *) buf;
@@ -4152,7 +4162,7 @@ diff -urN linux-2.6.21.1.old/init/do_mounts_rd.c linux-2.6.21.1.dev/init/do_moun
  	memset(buf, 0xe5, size);
  
  	/*
-@@ -101,6 +105,15 @@
+@@ -101,6 +105,15 @@ identify_ramdisk_image(int fd, int start
  		goto done;
  	}
  
