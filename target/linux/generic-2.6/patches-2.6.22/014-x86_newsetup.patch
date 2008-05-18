@@ -1362,10 +1362,11 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  include/linux/screen_info.h                 |    9 
  75 files changed, 4594 insertions(+), 5204 deletions(-)
 
-diff -puN MAINTAINERS~git-newsetup MAINTAINERS
---- a/MAINTAINERS~git-newsetup
-+++ a/MAINTAINERS
-@@ -1774,8 +1774,8 @@ T:	http://www.harbaum.org/till/i2c_tiny_
+Index: linux-2.6.22.19/MAINTAINERS
+===================================================================
+--- linux-2.6.22.19.orig/MAINTAINERS
++++ linux-2.6.22.19/MAINTAINERS
+@@ -1750,8 +1750,8 @@ T:	http://www.harbaum.org/till/i2c_tiny_
  S:	Maintained
  
  i386 BOOT CODE
@@ -1376,9 +1377,10 @@ diff -puN MAINTAINERS~git-newsetup MAINTAINERS
  L:	Linux-Kernel@vger.kernel.org
  S:	Maintained
  
-diff -puN arch/i386/Kconfig.cpu~git-newsetup arch/i386/Kconfig.cpu
---- a/arch/i386/Kconfig.cpu~git-newsetup
-+++ a/arch/i386/Kconfig.cpu
+Index: linux-2.6.22.19/arch/i386/Kconfig.cpu
+===================================================================
+--- linux-2.6.22.19.orig/arch/i386/Kconfig.cpu
++++ linux-2.6.22.19/arch/i386/Kconfig.cpu
 @@ -346,6 +346,6 @@ config X86_CMOV
  
  config X86_MINIMUM_CPU_MODEL
@@ -1388,9 +1390,10 @@ diff -puN arch/i386/Kconfig.cpu~git-newsetup arch/i386/Kconfig.cpu
 +	default "4" if X86_XADD || X86_CMPXCHG || X86_BSWAP || X86_WP_WORKS_OK
 +	default "3"
  
-diff -puN arch/i386/boot/Makefile~git-newsetup arch/i386/boot/Makefile
---- a/arch/i386/boot/Makefile~git-newsetup
-+++ a/arch/i386/boot/Makefile
+Index: linux-2.6.22.19/arch/i386/boot/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/arch/i386/boot/Makefile
++++ linux-2.6.22.19/arch/i386/boot/Makefile
 @@ -25,27 +25,53 @@ SVGA_MODE := -DSVGA_MODE=NORMAL_VGA
  
  #RAMDISK := -DRAMDISK=512
@@ -1470,9 +1473,10 @@ diff -puN arch/i386/boot/Makefile~git-newsetup arch/i386/boot/Makefile
  $(obj)/compressed/vmlinux: FORCE
  	$(Q)$(MAKE) $(build)=$(obj)/compressed IMAGE_OFFSET=$(IMAGE_OFFSET) $@
  
-diff -puN /dev/null arch/i386/boot/a20.c
+Index: linux-2.6.22.19/arch/i386/boot/a20.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/a20.c
++++ linux-2.6.22.19/arch/i386/boot/a20.c
 @@ -0,0 +1,161 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -1635,9 +1639,10 @@ diff -puN /dev/null arch/i386/boot/a20.c
 +	return -1;
 +#endif
 +}
-diff -puN /dev/null arch/i386/boot/apm.c
+Index: linux-2.6.22.19/arch/i386/boot/apm.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/apm.c
++++ linux-2.6.22.19/arch/i386/boot/apm.c
 @@ -0,0 +1,97 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -1736,9 +1741,10 @@ diff -puN /dev/null arch/i386/boot/apm.c
 +}
 +
 +#endif
-diff -puN /dev/null arch/i386/boot/bitops.h
+Index: linux-2.6.22.19/arch/i386/boot/bitops.h
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/bitops.h
++++ linux-2.6.22.19/arch/i386/boot/bitops.h
 @@ -0,0 +1,45 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -1785,9 +1791,10 @@ diff -puN /dev/null arch/i386/boot/bitops.h
 +}
 +
 +#endif /* BOOT_BITOPS_H */
-diff -puN /dev/null arch/i386/boot/boot.h
+Index: linux-2.6.22.19/arch/i386/boot/boot.h
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/boot.h
++++ linux-2.6.22.19/arch/i386/boot/boot.h
 @@ -0,0 +1,290 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -2079,8 +2086,9 @@ diff -puN /dev/null arch/i386/boot/boot.h
 +#endif /* __ASSEMBLY__ */
 +
 +#endif /* BOOT_BOOT_H */
-diff -puN arch/i386/boot/bootsect.S~git-newsetup /dev/null
---- a/arch/i386/boot/bootsect.S
+Index: linux-2.6.22.19/arch/i386/boot/bootsect.S
+===================================================================
+--- linux-2.6.22.19.orig/arch/i386/boot/bootsect.S
 +++ /dev/null
 @@ -1,98 +0,0 @@
 -/*
@@ -2181,9 +2189,10 @@ diff -puN arch/i386/boot/bootsect.S~git-newsetup /dev/null
 -vid_mode:	.word SVGA_MODE
 -root_dev:	.word ROOT_DEV
 -boot_flag:	.word 0xAA55
-diff -puN /dev/null arch/i386/boot/cmdline.c
+Index: linux-2.6.22.19/arch/i386/boot/cmdline.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/cmdline.c
++++ linux-2.6.22.19/arch/i386/boot/cmdline.c
 @@ -0,0 +1,97 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -2282,9 +2291,10 @@ diff -puN /dev/null arch/i386/boot/cmdline.c
 +
 +	return len;
 +}
-diff -puN /dev/null arch/i386/boot/code16gcc.h
+Index: linux-2.6.22.19/arch/i386/boot/code16gcc.h
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/code16gcc.h
++++ linux-2.6.22.19/arch/i386/boot/code16gcc.h
 @@ -0,0 +1,9 @@
 +/*
 + * code16gcc.h
@@ -2295,9 +2305,10 @@ diff -puN /dev/null arch/i386/boot/code16gcc.h
 +#ifndef __ASSEMBLY__
 +asm(".code16gcc");
 +#endif
-diff -puN arch/i386/boot/compressed/Makefile~git-newsetup arch/i386/boot/compressed/Makefile
---- a/arch/i386/boot/compressed/Makefile~git-newsetup
-+++ a/arch/i386/boot/compressed/Makefile
+Index: linux-2.6.22.19/arch/i386/boot/compressed/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/arch/i386/boot/compressed/Makefile
++++ linux-2.6.22.19/arch/i386/boot/compressed/Makefile
 @@ -9,9 +9,14 @@ targets		:= vmlinux vmlinux.bin vmlinux.
  EXTRA_AFLAGS	:= -traditional
  
@@ -2314,9 +2325,10 @@ diff -puN arch/i386/boot/compressed/Makefile~git-newsetup arch/i386/boot/compres
  $(obj)/vmlinux: $(src)/vmlinux.lds $(obj)/head.o $(obj)/misc.o $(obj)/piggy.o FORCE
  	$(call if_changed,ld)
  	@:
-diff -puN arch/i386/boot/compressed/head.S~git-newsetup arch/i386/boot/compressed/head.S
---- a/arch/i386/boot/compressed/head.S~git-newsetup
-+++ a/arch/i386/boot/compressed/head.S
+Index: linux-2.6.22.19/arch/i386/boot/compressed/head.S
+===================================================================
+--- linux-2.6.22.19.orig/arch/i386/boot/compressed/head.S
++++ linux-2.6.22.19/arch/i386/boot/compressed/head.S
 @@ -45,10 +45,10 @@ startup_32:
   * at and where we were actually loaded at.  This can only be done
   * with a short local call on x86.  Nothing  else will tell us what
@@ -2331,9 +2343,10 @@ diff -puN arch/i386/boot/compressed/head.S~git-newsetup arch/i386/boot/compresse
  	call 1f
  1:	popl %ebp
  	subl $1b, %ebp
-diff -puN arch/i386/boot/compressed/misc.c~git-newsetup arch/i386/boot/compressed/misc.c
---- a/arch/i386/boot/compressed/misc.c~git-newsetup
-+++ a/arch/i386/boot/compressed/misc.c
+Index: linux-2.6.22.19/arch/i386/boot/compressed/misc.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/i386/boot/compressed/misc.c
++++ linux-2.6.22.19/arch/i386/boot/compressed/misc.c
 @@ -11,7 +11,6 @@
  
  #undef CONFIG_PARAVIRT
@@ -2353,9 +2366,10 @@ diff -puN arch/i386/boot/compressed/misc.c~git-newsetup arch/i386/boot/compresse
  #ifndef CONFIG_RELOCATABLE
  	if ((u32)output != LOAD_PHYSICAL_ADDR)
  		error("Wrong destination address");
-diff -puN /dev/null arch/i386/boot/copy.S
+Index: linux-2.6.22.19/arch/i386/boot/copy.S
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/copy.S
++++ linux-2.6.22.19/arch/i386/boot/copy.S
 @@ -0,0 +1,101 @@
 +/* ----------------------------------------------------------------------- *
 + *
@@ -2458,9 +2472,10 @@ diff -puN /dev/null arch/i386/boot/copy.S
 +	.size	copy_to_gs, .-copy_to_gs
 +
 +#endif
-diff -puN /dev/null arch/i386/boot/cpu.c
+Index: linux-2.6.22.19/arch/i386/boot/cpu.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/cpu.c
++++ linux-2.6.22.19/arch/i386/boot/cpu.c
 @@ -0,0 +1,69 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -2531,9 +2546,10 @@ diff -puN /dev/null arch/i386/boot/cpu.c
 +		return 0;
 +	}
 +}
-diff -puN /dev/null arch/i386/boot/cpucheck.c
+Index: linux-2.6.22.19/arch/i386/boot/cpucheck.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/cpucheck.c
++++ linux-2.6.22.19/arch/i386/boot/cpucheck.c
 @@ -0,0 +1,266 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -2801,8 +2817,9 @@ diff -puN /dev/null arch/i386/boot/cpucheck.c
 +
 +	return (cpu.level < req_level || err) ? -1 : 0;
 +}
-diff -puN arch/i386/boot/edd.S~git-newsetup /dev/null
---- a/arch/i386/boot/edd.S
+Index: linux-2.6.22.19/arch/i386/boot/edd.S
+===================================================================
+--- linux-2.6.22.19.orig/arch/i386/boot/edd.S
 +++ /dev/null
 @@ -1,231 +0,0 @@
 -/*
@@ -3036,9 +3053,10 @@ diff -puN arch/i386/boot/edd.S~git-newsetup /dev/null
 -
 -edd_done:
 -#endif
-diff -puN /dev/null arch/i386/boot/edd.c
+Index: linux-2.6.22.19/arch/i386/boot/edd.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/edd.c
++++ linux-2.6.22.19/arch/i386/boot/edd.c
 @@ -0,0 +1,196 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -3236,9 +3254,10 @@ diff -puN /dev/null arch/i386/boot/edd.c
 +}
 +
 +#endif
-diff -puN /dev/null arch/i386/boot/header.S
+Index: linux-2.6.22.19/arch/i386/boot/header.S
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/header.S
++++ linux-2.6.22.19/arch/i386/boot/header.S
 @@ -0,0 +1,283 @@
 +/*
 + *	header.S
@@ -3523,9 +3542,10 @@ diff -puN /dev/null arch/i386/boot/header.S
 +setup_corrupt:
 +	.byte	7
 +	.string	"No setup signature found..."
-diff -puN /dev/null arch/i386/boot/main.c
+Index: linux-2.6.22.19/arch/i386/boot/main.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/main.c
++++ linux-2.6.22.19/arch/i386/boot/main.c
 @@ -0,0 +1,161 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -3688,9 +3708,10 @@ diff -puN /dev/null arch/i386/boot/main.c
 +	/* Do the last things and invoke protected mode */
 +	go_to_protected_mode();
 +}
-diff -puN /dev/null arch/i386/boot/mca.c
+Index: linux-2.6.22.19/arch/i386/boot/mca.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/mca.c
++++ linux-2.6.22.19/arch/i386/boot/mca.c
 @@ -0,0 +1,43 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -3735,9 +3756,10 @@ diff -puN /dev/null arch/i386/boot/mca.c
 +	copy_from_fs(&boot_params.sys_desc_table, bx, len);
 +	return 0;
 +}
-diff -puN /dev/null arch/i386/boot/memory.c
+Index: linux-2.6.22.19/arch/i386/boot/memory.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/memory.c
++++ linux-2.6.22.19/arch/i386/boot/memory.c
 @@ -0,0 +1,99 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -3838,9 +3860,10 @@ diff -puN /dev/null arch/i386/boot/memory.c
 +
 +	return detect_memory_88();
 +}
-diff -puN /dev/null arch/i386/boot/pm.c
+Index: linux-2.6.22.19/arch/i386/boot/pm.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/pm.c
++++ linux-2.6.22.19/arch/i386/boot/pm.c
 @@ -0,0 +1,170 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -4012,9 +4035,10 @@ diff -puN /dev/null arch/i386/boot/pm.c
 +	protected_mode_jump(boot_params.hdr.code32_start,
 +			    (u32)&boot_params + (ds() << 4));
 +}
-diff -puN /dev/null arch/i386/boot/pmjump.S
+Index: linux-2.6.22.19/arch/i386/boot/pmjump.S
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/pmjump.S
++++ linux-2.6.22.19/arch/i386/boot/pmjump.S
 @@ -0,0 +1,54 @@
 +/* ----------------------------------------------------------------------- *
 + *
@@ -4070,9 +4094,10 @@ diff -puN /dev/null arch/i386/boot/pmjump.S
 +	.word	__BOOT_CS		# segment
 +
 +	.size	protected_mode_jump, .-protected_mode_jump
-diff -puN /dev/null arch/i386/boot/printf.c
+Index: linux-2.6.22.19/arch/i386/boot/printf.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/printf.c
++++ linux-2.6.22.19/arch/i386/boot/printf.c
 @@ -0,0 +1,331 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -4405,8 +4430,9 @@ diff -puN /dev/null arch/i386/boot/printf.c
 +
 +	return printed;
 +}
-diff -puN arch/i386/boot/setup.S~git-newsetup /dev/null
---- a/arch/i386/boot/setup.S
+Index: linux-2.6.22.19/arch/i386/boot/setup.S
+===================================================================
+--- linux-2.6.22.19.orig/arch/i386/boot/setup.S
 +++ /dev/null
 @@ -1,1075 +0,0 @@
 -/*
@@ -5484,9 +5510,10 @@ diff -puN arch/i386/boot/setup.S~git-newsetup /dev/null
 -enddata:
 -.bss
 -endbss:
-diff -puN /dev/null arch/i386/boot/setup.ld
+Index: linux-2.6.22.19/arch/i386/boot/setup.ld
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/setup.ld
++++ linux-2.6.22.19/arch/i386/boot/setup.ld
 @@ -0,0 +1,54 @@
 +/*
 + * setup.ld
@@ -5542,9 +5569,10 @@ diff -puN /dev/null arch/i386/boot/setup.ld
 +	. = ASSERT(_end <= 0x8000, "Setup too big!");
 +	. = ASSERT(hdr == 0x1f1, "The setup header has the wrong offset!");
 +}
-diff -puN /dev/null arch/i386/boot/string.c
+Index: linux-2.6.22.19/arch/i386/boot/string.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/string.c
++++ linux-2.6.22.19/arch/i386/boot/string.c
 @@ -0,0 +1,34 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -5580,9 +5608,10 @@ diff -puN /dev/null arch/i386/boot/string.c
 +	}
 +	return 0;
 +}
-diff -puN arch/i386/boot/tools/build.c~git-newsetup arch/i386/boot/tools/build.c
---- a/arch/i386/boot/tools/build.c~git-newsetup
-+++ a/arch/i386/boot/tools/build.c
+Index: linux-2.6.22.19/arch/i386/boot/tools/build.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/i386/boot/tools/build.c
++++ linux-2.6.22.19/arch/i386/boot/tools/build.c
 @@ -1,13 +1,12 @@
  /*
   *  Copyright (C) 1991, 1992  Linus Torvalds
@@ -5821,9 +5850,10 @@ diff -puN arch/i386/boot/tools/build.c~git-newsetup arch/i386/boot/tools/build.c
 +	/* Everything is OK */
 +	return 0;
  }
-diff -puN /dev/null arch/i386/boot/tty.c
+Index: linux-2.6.22.19/arch/i386/boot/tty.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/tty.c
++++ linux-2.6.22.19/arch/i386/boot/tty.c
 @@ -0,0 +1,112 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -5937,9 +5967,10 @@ diff -puN /dev/null arch/i386/boot/tty.c
 +
 +	return 0;		/* Timeout! */
 +}
-diff -puN /dev/null arch/i386/boot/version.c
+Index: linux-2.6.22.19/arch/i386/boot/version.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/version.c
++++ linux-2.6.22.19/arch/i386/boot/version.c
 @@ -0,0 +1,23 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -5964,9 +5995,10 @@ diff -puN /dev/null arch/i386/boot/version.c
 +const char kernel_version[] =
 +	UTS_RELEASE " (" LINUX_COMPILE_BY "@" LINUX_COMPILE_HOST ") "
 +	UTS_VERSION;
-diff -puN /dev/null arch/i386/boot/vesa.h
+Index: linux-2.6.22.19/arch/i386/boot/vesa.h
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/vesa.h
++++ linux-2.6.22.19/arch/i386/boot/vesa.h
 @@ -0,0 +1,79 @@
 +/* ----------------------------------------------------------------------- *
 + *
@@ -6047,9 +6079,10 @@ diff -puN /dev/null arch/i386/boot/vesa.h
 +} __attribute__((packed));
 +
 +#endif /* LIB_SYS_VESA_H */
-diff -puN /dev/null arch/i386/boot/video-bios.c
+Index: linux-2.6.22.19/arch/i386/boot/video-bios.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/video-bios.c
++++ linux-2.6.22.19/arch/i386/boot/video-bios.c
 @@ -0,0 +1,125 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -6176,9 +6209,10 @@ diff -puN /dev/null arch/i386/boot/video-bios.c
 +	.xmode_first	= VIDEO_FIRST_BIOS,
 +	.xmode_n	= 0x80,
 +};
-diff -puN /dev/null arch/i386/boot/video-vesa.c
+Index: linux-2.6.22.19/arch/i386/boot/video-vesa.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/video-vesa.c
++++ linux-2.6.22.19/arch/i386/boot/video-vesa.c
 @@ -0,0 +1,283 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -6463,9 +6497,10 @@ diff -puN /dev/null arch/i386/boot/video-vesa.c
 +	.xmode_first	= VIDEO_FIRST_VESA,
 +	.xmode_n	= 0x200,
 +};
-diff -puN /dev/null arch/i386/boot/video-vga.c
+Index: linux-2.6.22.19/arch/i386/boot/video-vga.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/video-vga.c
++++ linux-2.6.22.19/arch/i386/boot/video-vga.c
 @@ -0,0 +1,260 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -6727,8 +6762,9 @@ diff -puN /dev/null arch/i386/boot/video-vga.c
 +	.probe		= vga_probe,
 +	.set_mode	= vga_set_mode,
 +};
-diff -puN arch/i386/boot/video.S~git-newsetup /dev/null
---- a/arch/i386/boot/video.S
+Index: linux-2.6.22.19/arch/i386/boot/video.S
+===================================================================
+--- linux-2.6.22.19.orig/arch/i386/boot/video.S
 +++ /dev/null
 @@ -1,2043 +0,0 @@
 -/*	video.S
@@ -8774,9 +8810,10 @@ diff -puN arch/i386/boot/video.S~git-newsetup /dev/null
 -adapter:	.byte	0	# Video adapter: 0=CGA/MDA/HGA,1=EGA,2=VGA
 -video_segment:	.word	0xb800	# Video memory segment
 -force_size:	.word	0	# Use this size instead of the one in BIOS vars
-diff -puN /dev/null arch/i386/boot/video.c
+Index: linux-2.6.22.19/arch/i386/boot/video.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/video.c
++++ linux-2.6.22.19/arch/i386/boot/video.c
 @@ -0,0 +1,456 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -9234,9 +9271,10 @@ diff -puN /dev/null arch/i386/boot/video.c
 +	if (do_restore)
 +		restore_screen();
 +}
-diff -puN /dev/null arch/i386/boot/video.h
+Index: linux-2.6.22.19/arch/i386/boot/video.h
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/video.h
++++ linux-2.6.22.19/arch/i386/boot/video.h
 @@ -0,0 +1,145 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -9383,9 +9421,10 @@ diff -puN /dev/null arch/i386/boot/video.h
 +u16 vga_crtc(void);		/* video-vga.c */
 +
 +#endif /* BOOT_VIDEO_H */
-diff -puN /dev/null arch/i386/boot/voyager.c
+Index: linux-2.6.22.19/arch/i386/boot/voyager.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/boot/voyager.c
++++ linux-2.6.22.19/arch/i386/boot/voyager.c
 @@ -0,0 +1,46 @@
 +/* -*- linux-c -*- ------------------------------------------------------- *
 + *
@@ -9433,10 +9472,10 @@ diff -puN /dev/null arch/i386/boot/voyager.c
 +}
 +
 +#endif /* CONFIG_X86_VOYAGER */
-diff -puN arch/i386/kernel/cpu/Makefile~git-newsetup arch/i386/kernel/cpu/Makefile
-diff -puN /dev/null arch/i386/kernel/cpu/addon_cpuid_features.c
+Index: linux-2.6.22.19/arch/i386/kernel/cpu/addon_cpuid_features.c
+===================================================================
 --- /dev/null
-+++ a/arch/i386/kernel/cpu/addon_cpuid_features.c
++++ linux-2.6.22.19/arch/i386/kernel/cpu/addon_cpuid_features.c
 @@ -0,0 +1,50 @@
 +
 +/*
@@ -9488,9 +9527,10 @@ diff -puN /dev/null arch/i386/kernel/cpu/addon_cpuid_features.c
 +			set_bit(cb->feature, c->x86_capability);
 +	}
 +}
-diff -puN arch/i386/kernel/cpu/common.c~git-newsetup arch/i386/kernel/cpu/common.c
---- a/arch/i386/kernel/cpu/common.c~git-newsetup
-+++ a/arch/i386/kernel/cpu/common.c
+Index: linux-2.6.22.19/arch/i386/kernel/cpu/common.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/i386/kernel/cpu/common.c
++++ linux-2.6.22.19/arch/i386/kernel/cpu/common.c
 @@ -353,6 +353,8 @@ static void __cpuinit generic_identify(s
  			if ( xlvl >= 0x80000004 )
  				get_model_name(c); /* Default name */
@@ -9500,9 +9540,10 @@ diff -puN arch/i386/kernel/cpu/common.c~git-newsetup arch/i386/kernel/cpu/common
  	}
  
  	early_intel_workaround(c);
-diff -puN arch/i386/kernel/cpu/proc.c~git-newsetup arch/i386/kernel/cpu/proc.c
---- a/arch/i386/kernel/cpu/proc.c~git-newsetup
-+++ a/arch/i386/kernel/cpu/proc.c
+Index: linux-2.6.22.19/arch/i386/kernel/cpu/proc.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/i386/kernel/cpu/proc.c
++++ linux-2.6.22.19/arch/i386/kernel/cpu/proc.c
 @@ -29,7 +29,8 @@ static int show_cpuinfo(struct seq_file 
  		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
  		NULL, NULL, NULL, "syscall", NULL, NULL, NULL, NULL,
@@ -9545,10 +9586,11 @@ diff -puN arch/i386/kernel/cpu/proc.c~git-newsetup arch/i386/kernel/cpu/proc.c
  		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
  		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
  	};
-diff -puN arch/i386/kernel/e820.c~git-newsetup arch/i386/kernel/e820.c
---- a/arch/i386/kernel/e820.c~git-newsetup
-+++ a/arch/i386/kernel/e820.c
-@@ -766,7 +766,7 @@ void __init print_memory_map(char *who)
+Index: linux-2.6.22.19/arch/i386/kernel/e820.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/i386/kernel/e820.c
++++ linux-2.6.22.19/arch/i386/kernel/e820.c
+@@ -734,7 +734,7 @@ void __init print_memory_map(char *who)
  		case E820_NVS:
  				printk("(ACPI NVS)\n");
  				break;
@@ -9557,9 +9599,10 @@ diff -puN arch/i386/kernel/e820.c~git-newsetup arch/i386/kernel/e820.c
  				break;
  		}
  	}
-diff -puN arch/i386/kernel/setup.c~git-newsetup arch/i386/kernel/setup.c
---- a/arch/i386/kernel/setup.c~git-newsetup
-+++ a/arch/i386/kernel/setup.c
+Index: linux-2.6.22.19/arch/i386/kernel/setup.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/i386/kernel/setup.c
++++ linux-2.6.22.19/arch/i386/kernel/setup.c
 @@ -102,19 +102,10 @@ static unsigned int highmem_pages = -1;
  /*
   * Setup options
@@ -9597,8 +9640,9 @@ diff -puN arch/i386/kernel/setup.c~git-newsetup arch/i386/kernel/setup.c
   	screen_info = SCREEN_INFO;
  	edid_info = EDID_INFO;
  	apm_info.bios = APM_BIOS_INFO;
-diff -puN arch/i386/kernel/verify_cpu.S~git-newsetup /dev/null
---- a/arch/i386/kernel/verify_cpu.S
+Index: linux-2.6.22.19/arch/i386/kernel/verify_cpu.S
+===================================================================
+--- linux-2.6.22.19.orig/arch/i386/kernel/verify_cpu.S
 +++ /dev/null
 @@ -1,94 +0,0 @@
 -/* Check if CPU has some minimum CPUID bits
@@ -9695,10 +9739,11 @@ diff -puN arch/i386/kernel/verify_cpu.S~git-newsetup /dev/null
 -	popfl
 -	movl	$1,%eax
 -	ret
-diff -puN arch/x86_64/Kconfig~git-newsetup arch/x86_64/Kconfig
---- a/arch/x86_64/Kconfig~git-newsetup
-+++ a/arch/x86_64/Kconfig
-@@ -453,6 +453,10 @@ config NR_CPUS
+Index: linux-2.6.22.19/arch/x86_64/Kconfig
+===================================================================
+--- linux-2.6.22.19.orig/arch/x86_64/Kconfig
++++ linux-2.6.22.19/arch/x86_64/Kconfig
+@@ -427,6 +427,10 @@ config NR_CPUS
  	  This is purely to save memory - each supported CPU requires
  	  memory in the static kernel configuration.
  
@@ -9709,9 +9754,10 @@ diff -puN arch/x86_64/Kconfig~git-newsetup arch/x86_64/Kconfig
  config HOTPLUG_CPU
  	bool "Support for suspend on SMP and hot-pluggable CPUs (EXPERIMENTAL)"
  	depends on SMP && HOTPLUG && EXPERIMENTAL
-diff -puN arch/x86_64/boot/Makefile~git-newsetup arch/x86_64/boot/Makefile
---- a/arch/x86_64/boot/Makefile~git-newsetup
-+++ a/arch/x86_64/boot/Makefile
+Index: linux-2.6.22.19/arch/x86_64/boot/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/arch/x86_64/boot/Makefile
++++ linux-2.6.22.19/arch/x86_64/boot/Makefile
 @@ -1,135 +1,9 @@
  #
  # arch/x86_64/boot/Makefile
@@ -9853,8 +9899,9 @@ diff -puN arch/x86_64/boot/Makefile~git-newsetup arch/x86_64/boot/Makefile
 -	sh $(srctree)/$(src)/install.sh $(KERNELRELEASE) $(BOOTIMAGE) System.map "$(INSTALL_PATH)"
 +src := arch/i386/boot
 +include $(src)/Makefile
-diff -puN arch/x86_64/boot/bootsect.S~git-newsetup /dev/null
---- a/arch/x86_64/boot/bootsect.S
+Index: linux-2.6.22.19/arch/x86_64/boot/bootsect.S
+===================================================================
+--- linux-2.6.22.19.orig/arch/x86_64/boot/bootsect.S
 +++ /dev/null
 @@ -1,98 +0,0 @@
 -/*
@@ -9955,9 +10002,10 @@ diff -puN arch/x86_64/boot/bootsect.S~git-newsetup /dev/null
 -vid_mode:	.word SVGA_MODE
 -root_dev:	.word ROOT_DEV
 -boot_flag:	.word 0xAA55
-diff -puN arch/x86_64/boot/compressed/Makefile~git-newsetup arch/x86_64/boot/compressed/Makefile
---- a/arch/x86_64/boot/compressed/Makefile~git-newsetup
-+++ a/arch/x86_64/boot/compressed/Makefile
+Index: linux-2.6.22.19/arch/x86_64/boot/compressed/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/arch/x86_64/boot/compressed/Makefile
++++ linux-2.6.22.19/arch/x86_64/boot/compressed/Makefile
 @@ -7,11 +7,12 @@
  #
  
@@ -9975,9 +10023,10 @@ diff -puN arch/x86_64/boot/compressed/Makefile~git-newsetup arch/x86_64/boot/com
  LDFLAGS := -m elf_x86_64
  
  LDFLAGS_vmlinux := -T
-diff -puN arch/x86_64/boot/compressed/head.S~git-newsetup arch/x86_64/boot/compressed/head.S
---- a/arch/x86_64/boot/compressed/head.S~git-newsetup
-+++ a/arch/x86_64/boot/compressed/head.S
+Index: linux-2.6.22.19/arch/x86_64/boot/compressed/head.S
+===================================================================
+--- linux-2.6.22.19.orig/arch/x86_64/boot/compressed/head.S
++++ linux-2.6.22.19/arch/x86_64/boot/compressed/head.S
 @@ -46,10 +46,10 @@ startup_32:
   * at and where we were actually loaded at.  This can only be done
   * with a short local call on x86.  Nothing  else will tell us what
@@ -9992,14 +10041,16 @@ diff -puN arch/x86_64/boot/compressed/head.S~git-newsetup arch/x86_64/boot/compr
  	call	1f
  1:	popl	%ebp
  	subl	$1b, %ebp
-diff -puN arch/x86_64/boot/install.sh~git-newsetup /dev/null
---- a/arch/x86_64/boot/install.sh
+Index: linux-2.6.22.19/arch/x86_64/boot/install.sh
+===================================================================
+--- linux-2.6.22.19.orig/arch/x86_64/boot/install.sh
 +++ /dev/null
 @@ -1,2 +0,0 @@
 -#!/bin/sh
 -. $srctree/arch/i386/boot/install.sh
-diff -puN arch/x86_64/boot/mtools.conf.in~git-newsetup /dev/null
---- a/arch/x86_64/boot/mtools.conf.in
+Index: linux-2.6.22.19/arch/x86_64/boot/mtools.conf.in
+===================================================================
+--- linux-2.6.22.19.orig/arch/x86_64/boot/mtools.conf.in
 +++ /dev/null
 @@ -1,17 +0,0 @@
 -#
@@ -10019,8 +10070,9 @@ diff -puN arch/x86_64/boot/mtools.conf.in~git-newsetup /dev/null
 -  file="@OBJ@/fdimage" cylinders=80 heads=2 sectors=36 filter
 -
 -
-diff -puN arch/x86_64/boot/setup.S~git-newsetup /dev/null
---- a/arch/x86_64/boot/setup.S
+Index: linux-2.6.22.19/arch/x86_64/boot/setup.S
+===================================================================
+--- linux-2.6.22.19.orig/arch/x86_64/boot/setup.S
 +++ /dev/null
 @@ -1,826 +0,0 @@
 -/*
@@ -10849,8 +10901,9 @@ diff -puN arch/x86_64/boot/setup.S~git-newsetup /dev/null
 -enddata:
 -.bss
 -endbss:
-diff -puN arch/x86_64/boot/tools/build.c~git-newsetup /dev/null
---- a/arch/x86_64/boot/tools/build.c
+Index: linux-2.6.22.19/arch/x86_64/boot/tools/build.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/x86_64/boot/tools/build.c
 +++ /dev/null
 @@ -1,185 +0,0 @@
 -/*
@@ -11038,10 +11091,11 @@ diff -puN arch/x86_64/boot/tools/build.c~git-newsetup /dev/null
 -
 -	return 0;					    /* Everything is OK */
 -}
-diff -puN arch/x86_64/kernel/Makefile~git-newsetup arch/x86_64/kernel/Makefile
---- a/arch/x86_64/kernel/Makefile~git-newsetup
-+++ a/arch/x86_64/kernel/Makefile
-@@ -45,6 +45,7 @@ obj-$(CONFIG_PCI)		+= early-quirks.o
+Index: linux-2.6.22.19/arch/x86_64/kernel/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/arch/x86_64/kernel/Makefile
++++ linux-2.6.22.19/arch/x86_64/kernel/Makefile
+@@ -43,6 +43,7 @@ obj-$(CONFIG_PCI)		+= early-quirks.o
  
  obj-y				+= topology.o
  obj-y				+= intel_cacheinfo.o
@@ -11049,7 +11103,7 @@ diff -puN arch/x86_64/kernel/Makefile~git-newsetup arch/x86_64/kernel/Makefile
  obj-y				+= pcspeaker.o
  
  CFLAGS_vsyscall.o		:= $(PROFILING) -g0
-@@ -58,6 +59,7 @@ cpuid-$(subst m,y,$(CONFIG_X86_CPUID))  
+@@ -53,6 +54,7 @@ cpuid-$(subst m,y,$(CONFIG_X86_CPUID))  
  topology-y                     += ../../i386/kernel/topology.o
  microcode-$(subst m,y,$(CONFIG_MICROCODE))  += ../../i386/kernel/microcode.o
  intel_cacheinfo-y		+= ../../i386/kernel/cpu/intel_cacheinfo.o
@@ -11057,10 +11111,11 @@ diff -puN arch/x86_64/kernel/Makefile~git-newsetup arch/x86_64/kernel/Makefile
  quirks-y			+= ../../i386/kernel/quirks.o
  i8237-y				+= ../../i386/kernel/i8237.o
  msr-$(subst m,y,$(CONFIG_X86_MSR))  += ../../i386/kernel/msr.o
-diff -puN arch/x86_64/kernel/setup.c~git-newsetup arch/x86_64/kernel/setup.c
---- a/arch/x86_64/kernel/setup.c~git-newsetup
-+++ a/arch/x86_64/kernel/setup.c
-@@ -855,6 +855,8 @@ void __cpuinit identify_cpu(struct cpuin
+Index: linux-2.6.22.19/arch/x86_64/kernel/setup.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/x86_64/kernel/setup.c
++++ linux-2.6.22.19/arch/x86_64/kernel/setup.c
+@@ -846,6 +846,8 @@ void __cpuinit identify_cpu(struct cpuin
  			c->x86_capability[2] = cpuid_edx(0x80860001);
  	}
  
@@ -11069,7 +11124,7 @@ diff -puN arch/x86_64/kernel/setup.c~git-newsetup arch/x86_64/kernel/setup.c
  	c->apicid = phys_pkg_id(0);
  
  	/*
-@@ -940,7 +942,7 @@ static int show_cpuinfo(struct seq_file 
+@@ -931,7 +933,7 @@ static int show_cpuinfo(struct seq_file 
  	        "fpu", "vme", "de", "pse", "tsc", "msr", "pae", "mce",
  	        "cx8", "apic", NULL, "sep", "mtrr", "pge", "mca", "cmov",
  	        "pat", "pse36", "pn", "clflush", NULL, "dts", "acpi", "mmx",
@@ -11078,7 +11133,7 @@ diff -puN arch/x86_64/kernel/setup.c~git-newsetup arch/x86_64/kernel/setup.c
  
  		/* AMD-defined */
  		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-@@ -956,10 +958,11 @@ static int show_cpuinfo(struct seq_file 
+@@ -947,10 +949,11 @@ static int show_cpuinfo(struct seq_file 
  		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
  
  		/* Other (Linux-defined) */
@@ -11094,7 +11149,7 @@ diff -puN arch/x86_64/kernel/setup.c~git-newsetup arch/x86_64/kernel/setup.c
  		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
  
  		/* Intel-defined (#2) */
-@@ -970,7 +973,7 @@ static int show_cpuinfo(struct seq_file 
+@@ -961,7 +964,7 @@ static int show_cpuinfo(struct seq_file 
  
  		/* VIA/Cyrix/Centaur-defined */
  		NULL, NULL, "rng", "rng_en", NULL, NULL, "ace", "ace_en",
@@ -11103,7 +11158,7 @@ diff -puN arch/x86_64/kernel/setup.c~git-newsetup arch/x86_64/kernel/setup.c
  		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
  		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
  
-@@ -981,6 +984,12 @@ static int show_cpuinfo(struct seq_file 
+@@ -972,6 +975,12 @@ static int show_cpuinfo(struct seq_file 
  		"osvw", "ibs", NULL, NULL, NULL, NULL,
  		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
  		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -11116,9 +11171,10 @@ diff -puN arch/x86_64/kernel/setup.c~git-newsetup arch/x86_64/kernel/setup.c
  	};
  	static char *x86_power_flags[] = { 
  		"ts",	/* temperature sensor */
-diff -puN arch/x86_64/kernel/verify_cpu.S~git-newsetup arch/x86_64/kernel/verify_cpu.S
---- a/arch/x86_64/kernel/verify_cpu.S~git-newsetup
-+++ a/arch/x86_64/kernel/verify_cpu.S
+Index: linux-2.6.22.19/arch/x86_64/kernel/verify_cpu.S
+===================================================================
+--- linux-2.6.22.19.orig/arch/x86_64/kernel/verify_cpu.S
++++ linux-2.6.22.19/arch/x86_64/kernel/verify_cpu.S
 @@ -37,20 +37,6 @@ verify_cpu:
  	pushl	$0			# Kill any dangerous flags
  	popfl
@@ -11162,9 +11218,10 @@ diff -puN arch/x86_64/kernel/verify_cpu.S~git-newsetup arch/x86_64/kernel/verify
  	jnz     verify_cpu_no_longmode
  
  verify_cpu_sse_test:
-diff -puN drivers/ide/legacy/hd.c~git-newsetup drivers/ide/legacy/hd.c
---- a/drivers/ide/legacy/hd.c~git-newsetup
-+++ a/drivers/ide/legacy/hd.c
+Index: linux-2.6.22.19/drivers/ide/legacy/hd.c
+===================================================================
+--- linux-2.6.22.19.orig/drivers/ide/legacy/hd.c
++++ linux-2.6.22.19/drivers/ide/legacy/hd.c
 @@ -718,74 +718,25 @@ static int __init hd_init(void)
  	device_timer.function = hd_times_out;
  	blk_queue_hardsect_size(hd_queue, 512);
@@ -11252,9 +11309,10 @@ diff -puN drivers/ide/legacy/hd.c~git-newsetup drivers/ide/legacy/hd.c
  
  	for (drive=0 ; drive < NR_HD ; drive++) {
  		struct gendisk *disk = alloc_disk(64);
-diff -puN include/asm-i386/boot.h~git-newsetup include/asm-i386/boot.h
---- a/include/asm-i386/boot.h~git-newsetup
-+++ a/include/asm-i386/boot.h
+Index: linux-2.6.22.19/include/asm-i386/boot.h
+===================================================================
+--- linux-2.6.22.19.orig/include/asm-i386/boot.h
++++ linux-2.6.22.19/include/asm-i386/boot.h
 @@ -1,5 +1,5 @@
 -#ifndef _LINUX_BOOT_H
 -#define _LINUX_BOOT_H
@@ -11269,9 +11327,10 @@ diff -puN include/asm-i386/boot.h~git-newsetup include/asm-i386/boot.h
  
 -#endif /* _LINUX_BOOT_H */
 +#endif /* _ASM_BOOT_H */
-diff -puN /dev/null include/asm-i386/bootparam.h
+Index: linux-2.6.22.19/include/asm-i386/bootparam.h
+===================================================================
 --- /dev/null
-+++ a/include/asm-i386/bootparam.h
++++ linux-2.6.22.19/include/asm-i386/bootparam.h
 @@ -0,0 +1,85 @@
 +#ifndef _ASM_BOOTPARAM_H
 +#define _ASM_BOOTPARAM_H
@@ -11358,9 +11417,10 @@ diff -puN /dev/null include/asm-i386/bootparam.h
 +} __attribute__((packed));
 +
 +#endif /* _ASM_BOOTPARAM_H */
-diff -puN include/asm-i386/cpufeature.h~git-newsetup include/asm-i386/cpufeature.h
---- a/include/asm-i386/cpufeature.h~git-newsetup
-+++ a/include/asm-i386/cpufeature.h
+Index: linux-2.6.22.19/include/asm-i386/cpufeature.h
+===================================================================
+--- linux-2.6.22.19.orig/include/asm-i386/cpufeature.h
++++ linux-2.6.22.19/include/asm-i386/cpufeature.h
 @@ -12,7 +12,7 @@
  #endif
  #include <asm/required-features.h>
@@ -11372,7 +11432,7 @@ diff -puN include/asm-i386/cpufeature.h~git-newsetup include/asm-i386/cpufeature
  #define X86_FEATURE_FPU		(0*32+ 0) /* Onboard FPU */
 @@ -81,6 +81,7 @@
  #define X86_FEATURE_BTS		(3*32+13)  /* Branch Trace Store */
- #define X86_FEATURE_LAPIC_TIMER_BROKEN (3*32+ 14) /* lapic timer broken in C1 */
+ /* 14 free */
  #define X86_FEATURE_SYNC_RDTSC	(3*32+15)  /* RDTSC synchronizes the CPU */
 +#define X86_FEATURE_REP_GOOD   (3*32+16) /* rep microcode works well on this CPU */
  
@@ -11408,9 +11468,10 @@ diff -puN include/asm-i386/cpufeature.h~git-newsetup include/asm-i386/cpufeature
  #define boot_cpu_has(bit)	cpu_has(&boot_cpu_data, bit)
  
  #define cpu_has_fpu		boot_cpu_has(X86_FEATURE_FPU)
-diff -puN include/asm-i386/e820.h~git-newsetup include/asm-i386/e820.h
---- a/include/asm-i386/e820.h~git-newsetup
-+++ a/include/asm-i386/e820.h
+Index: linux-2.6.22.19/include/asm-i386/e820.h
+===================================================================
+--- linux-2.6.22.19.orig/include/asm-i386/e820.h
++++ linux-2.6.22.19/include/asm-i386/e820.h
 @@ -25,13 +25,15 @@
  
  #ifndef __ASSEMBLY__
@@ -11433,10 +11494,11 @@ diff -puN include/asm-i386/e820.h~git-newsetup include/asm-i386/e820.h
  };
  
  extern struct e820map e820;
-diff -puN include/asm-i386/processor.h~git-newsetup include/asm-i386/processor.h
---- a/include/asm-i386/processor.h~git-newsetup
-+++ a/include/asm-i386/processor.h
-@@ -118,6 +118,7 @@ void __init cpu_detect(struct cpuinfo_x8
+Index: linux-2.6.22.19/include/asm-i386/processor.h
+===================================================================
+--- linux-2.6.22.19.orig/include/asm-i386/processor.h
++++ linux-2.6.22.19/include/asm-i386/processor.h
+@@ -119,6 +119,7 @@ void __init cpu_detect(struct cpuinfo_x8
  extern void identify_boot_cpu(void);
  extern void identify_secondary_cpu(struct cpuinfo_x86 *);
  extern void print_cpu_info(struct cpuinfo_x86 *);
@@ -11444,9 +11506,10 @@ diff -puN include/asm-i386/processor.h~git-newsetup include/asm-i386/processor.h
  extern unsigned int init_intel_cacheinfo(struct cpuinfo_x86 *c);
  extern unsigned short num_cache_leaves;
  
-diff -puN include/asm-i386/required-features.h~git-newsetup include/asm-i386/required-features.h
---- a/include/asm-i386/required-features.h~git-newsetup
-+++ a/include/asm-i386/required-features.h
+Index: linux-2.6.22.19/include/asm-i386/required-features.h
+===================================================================
+--- linux-2.6.22.19.orig/include/asm-i386/required-features.h
++++ linux-2.6.22.19/include/asm-i386/required-features.h
 @@ -3,7 +3,7 @@
  
  /* Define minimum CPUID feature set for kernel These bits are checked
@@ -11509,9 +11572,10 @@ diff -puN include/asm-i386/required-features.h~git-newsetup include/asm-i386/req
 +#define REQUIRED_MASK7	0
  
  #endif
-diff -puN include/asm-i386/setup.h~git-newsetup include/asm-i386/setup.h
---- a/include/asm-i386/setup.h~git-newsetup
-+++ a/include/asm-i386/setup.h
+Index: linux-2.6.22.19/include/asm-i386/setup.h
+===================================================================
+--- linux-2.6.22.19.orig/include/asm-i386/setup.h
++++ linux-2.6.22.19/include/asm-i386/setup.h
 @@ -26,12 +26,15 @@
  #define NEW_CL_POINTER		0x228	/* Relative to real mode data */
  
@@ -11540,9 +11604,10 @@ diff -puN include/asm-i386/setup.h~git-newsetup include/asm-i386/setup.h
  #define EFI_SYSTAB ((efi_system_table_t *) *((unsigned long *)(PARAM+0x1c4)))
  #define EFI_MEMDESC_SIZE (*((unsigned long *) (PARAM+0x1c8)))
  #define EFI_MEMDESC_VERSION (*((unsigned long *) (PARAM+0x1cc)))
-diff -puN include/asm-x86_64/alternative.h~git-newsetup include/asm-x86_64/alternative.h
---- a/include/asm-x86_64/alternative.h~git-newsetup
-+++ a/include/asm-x86_64/alternative.h
+Index: linux-2.6.22.19/include/asm-x86_64/alternative.h
+===================================================================
+--- linux-2.6.22.19.orig/include/asm-x86_64/alternative.h
++++ linux-2.6.22.19/include/asm-x86_64/alternative.h
 @@ -5,6 +5,41 @@
  
  #include <linux/types.h>
@@ -11625,9 +11690,10 @@ diff -puN include/asm-x86_64/alternative.h~git-newsetup include/asm-x86_64/alter
  struct paravirt_patch;
  #ifdef CONFIG_PARAVIRT
  void apply_paravirt(struct paravirt_patch *start, struct paravirt_patch *end);
-diff -puN include/asm-x86_64/boot.h~git-newsetup include/asm-x86_64/boot.h
---- a/include/asm-x86_64/boot.h~git-newsetup
-+++ a/include/asm-x86_64/boot.h
+Index: linux-2.6.22.19/include/asm-x86_64/boot.h
+===================================================================
+--- linux-2.6.22.19.orig/include/asm-x86_64/boot.h
++++ linux-2.6.22.19/include/asm-x86_64/boot.h
 @@ -1,15 +1 @@
 -#ifndef _LINUX_BOOT_H
 -#define _LINUX_BOOT_H
@@ -11645,14 +11711,16 @@ diff -puN include/asm-x86_64/boot.h~git-newsetup include/asm-x86_64/boot.h
 -
 -#endif
 +#include <asm-i386/boot.h>
-diff -puN /dev/null include/asm-x86_64/bootparam.h
+Index: linux-2.6.22.19/include/asm-x86_64/bootparam.h
+===================================================================
 --- /dev/null
-+++ a/include/asm-x86_64/bootparam.h
++++ linux-2.6.22.19/include/asm-x86_64/bootparam.h
 @@ -0,0 +1 @@
 +#include <asm-i386/bootparam.h>
-diff -puN include/asm-x86_64/cpufeature.h~git-newsetup include/asm-x86_64/cpufeature.h
---- a/include/asm-x86_64/cpufeature.h~git-newsetup
-+++ a/include/asm-x86_64/cpufeature.h
+Index: linux-2.6.22.19/include/asm-x86_64/cpufeature.h
+===================================================================
+--- linux-2.6.22.19.orig/include/asm-x86_64/cpufeature.h
++++ linux-2.6.22.19/include/asm-x86_64/cpufeature.h
 @@ -7,115 +7,24 @@
  #ifndef __ASM_X8664_CPUFEATURE_H
  #define __ASM_X8664_CPUFEATURE_H
@@ -11781,9 +11849,10 @@ diff -puN include/asm-x86_64/cpufeature.h~git-newsetup include/asm-x86_64/cpufea
 -#define cpu_has_bts 	       boot_cpu_has(X86_FEATURE_BTS)
  
  #endif /* __ASM_X8664_CPUFEATURE_H */
-diff -puN include/asm-x86_64/e820.h~git-newsetup include/asm-x86_64/e820.h
---- a/include/asm-x86_64/e820.h~git-newsetup
-+++ a/include/asm-x86_64/e820.h
+Index: linux-2.6.22.19/include/asm-x86_64/e820.h
+===================================================================
+--- linux-2.6.22.19.orig/include/asm-x86_64/e820.h
++++ linux-2.6.22.19/include/asm-x86_64/e820.h
 @@ -11,7 +11,9 @@
  #ifndef __E820_HEADER
  #define __E820_HEADER
@@ -11804,10 +11873,11 @@ diff -puN include/asm-x86_64/e820.h~git-newsetup include/asm-x86_64/e820.h
  	struct e820entry map[E820MAX];
  };
  
-diff -puN include/asm-x86_64/processor.h~git-newsetup include/asm-x86_64/processor.h
---- a/include/asm-x86_64/processor.h~git-newsetup
-+++ a/include/asm-x86_64/processor.h
-@@ -99,6 +99,7 @@ extern char ignore_irq13;
+Index: linux-2.6.22.19/include/asm-x86_64/processor.h
+===================================================================
+--- linux-2.6.22.19.orig/include/asm-x86_64/processor.h
++++ linux-2.6.22.19/include/asm-x86_64/processor.h
+@@ -100,6 +100,7 @@ extern char ignore_irq13;
  
  extern void identify_cpu(struct cpuinfo_x86 *);
  extern void print_cpu_info(struct cpuinfo_x86 *);
@@ -11815,7 +11885,7 @@ diff -puN include/asm-x86_64/processor.h~git-newsetup include/asm-x86_64/process
  extern unsigned int init_intel_cacheinfo(struct cpuinfo_x86 *c);
  extern unsigned short num_cache_leaves;
  
-@@ -367,8 +368,6 @@ static inline void sync_core(void)
+@@ -368,8 +369,6 @@ static inline void sync_core(void)
  	asm volatile("cpuid" : "=a" (tmp) : "0" (1) : "ebx","ecx","edx","memory");
  } 
  
@@ -11824,9 +11894,10 @@ diff -puN include/asm-x86_64/processor.h~git-newsetup include/asm-x86_64/process
  #define ARCH_HAS_PREFETCH
  static inline void prefetch(void *x) 
  { 
-diff -puN /dev/null include/asm-x86_64/required-features.h
+Index: linux-2.6.22.19/include/asm-x86_64/required-features.h
+===================================================================
 --- /dev/null
-+++ a/include/asm-x86_64/required-features.h
++++ linux-2.6.22.19/include/asm-x86_64/required-features.h
 @@ -0,0 +1,46 @@
 +#ifndef _ASM_REQUIRED_FEATURES_H
 +#define _ASM_REQUIRED_FEATURES_H 1
@@ -11874,9 +11945,10 @@ diff -puN /dev/null include/asm-x86_64/required-features.h
 +#define REQUIRED_MASK7	0
 +
 +#endif
-diff -puN include/asm-x86_64/segment.h~git-newsetup include/asm-x86_64/segment.h
---- a/include/asm-x86_64/segment.h~git-newsetup
-+++ a/include/asm-x86_64/segment.h
+Index: linux-2.6.22.19/include/asm-x86_64/segment.h
+===================================================================
+--- linux-2.6.22.19.orig/include/asm-x86_64/segment.h
++++ linux-2.6.22.19/include/asm-x86_64/segment.h
 @@ -3,6 +3,14 @@
  
  #include <asm/cache.h>
@@ -11892,9 +11964,10 @@ diff -puN include/asm-x86_64/segment.h~git-newsetup include/asm-x86_64/segment.h
  #define __KERNEL_CS	0x10
  #define __KERNEL_DS	0x18
  
-diff -puN include/linux/edd.h~git-newsetup include/linux/edd.h
---- a/include/linux/edd.h~git-newsetup
-+++ a/include/linux/edd.h
+Index: linux-2.6.22.19/include/linux/edd.h
+===================================================================
+--- linux-2.6.22.19.orig/include/linux/edd.h
++++ linux-2.6.22.19/include/linux/edd.h
 @@ -49,10 +49,6 @@
  #define EDD_MBR_SIG_MAX 16        /* max number of signatures to store */
  #define EDD_MBR_SIG_NR_BUF 0x1ea  /* addr of number of MBR signtaures at EDD_MBR_SIG_BUF
@@ -11906,9 +11979,10 @@ diff -puN include/linux/edd.h~git-newsetup include/linux/edd.h
  
  #ifndef __ASSEMBLY__
  
-diff -puN include/linux/screen_info.h~git-newsetup include/linux/screen_info.h
---- a/include/linux/screen_info.h~git-newsetup
-+++ a/include/linux/screen_info.h
+Index: linux-2.6.22.19/include/linux/screen_info.h
+===================================================================
+--- linux-2.6.22.19.orig/include/linux/screen_info.h
++++ linux-2.6.22.19/include/linux/screen_info.h
 @@ -10,7 +10,7 @@
  struct screen_info {
  	u8  orig_x;		/* 0x00 */
@@ -11939,4 +12013,3 @@ diff -puN include/linux/screen_info.h~git-newsetup include/linux/screen_info.h
  
  extern struct screen_info screen_info;
  
-_

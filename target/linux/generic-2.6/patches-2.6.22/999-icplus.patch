@@ -14,10 +14,10 @@ Signed-off-by: Kim Phillips <kim.phillips@freescale.com>
 Signed-off-by: Jeff Garzik <jeff@garzik.org>
 ---
 
-diff --git a/drivers/net/phy/Kconfig b/drivers/net/phy/Kconfig
-index 09b6f25..dd09011 100644
---- a/drivers/net/phy/Kconfig
-+++ b/drivers/net/phy/Kconfig
+Index: linux-2.6.22.19/drivers/net/phy/Kconfig
+===================================================================
+--- linux-2.6.22.19.orig/drivers/net/phy/Kconfig
++++ linux-2.6.22.19/drivers/net/phy/Kconfig
 @@ -55,6 +55,11 @@ config BROADCOM_PHY
  	---help---
  	  Currently supports the BCM5411, BCM5421 and BCM5461 PHYs.
@@ -30,21 +30,20 @@ index 09b6f25..dd09011 100644
  config FIXED_PHY
  	tristate "Drivers for PHY emulation on fixed speed/link"
  	---help---
-diff --git a/drivers/net/phy/Makefile b/drivers/net/phy/Makefile
-index bcd1efb..8885650 100644
---- a/drivers/net/phy/Makefile
-+++ b/drivers/net/phy/Makefile
+Index: linux-2.6.22.19/drivers/net/phy/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/drivers/net/phy/Makefile
++++ linux-2.6.22.19/drivers/net/phy/Makefile
 @@ -11,4 +11,5 @@ obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
  obj-$(CONFIG_SMSC_PHY)		+= smsc.o
  obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
  obj-$(CONFIG_BROADCOM_PHY)	+= broadcom.o
 +obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o
  obj-$(CONFIG_FIXED_PHY)		+= fixed.o
-diff --git a/drivers/net/phy/icplus.c b/drivers/net/phy/icplus.c
-new file mode 100644
-index 0000000..af3f1f2
+Index: linux-2.6.22.19/drivers/net/phy/icplus.c
+===================================================================
 --- /dev/null
-+++ b/drivers/net/phy/icplus.c
++++ linux-2.6.22.19/drivers/net/phy/icplus.c
 @@ -0,0 +1,134 @@
 +/*
 + * Driver for ICPlus PHYs

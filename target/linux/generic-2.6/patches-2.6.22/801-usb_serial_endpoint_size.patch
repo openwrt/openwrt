@@ -1,6 +1,8 @@
---- linux-2.6.22.4-old/drivers/usb/serial/usb-serial.c	2007-08-21 06:33:06.000000000 +0200
-+++ linux-2.6.22.4-new/drivers/usb/serial/usb-serial.c	2007-08-26 15:43:11.000000000 +0200
-@@ -56,6 +56,7 @@
+Index: linux-2.6.22.19/drivers/usb/serial/usb-serial.c
+===================================================================
+--- linux-2.6.22.19.orig/drivers/usb/serial/usb-serial.c
++++ linux-2.6.22.19/drivers/usb/serial/usb-serial.c
+@@ -56,6 +56,7 @@ static struct usb_driver usb_serial_driv
     drivers depend on it.
  */
  
@@ -8,7 +10,7 @@
  static int debug;
  static struct usb_serial *serial_table[SERIAL_TTY_MINORS];	/* initially all NULL */
  static spinlock_t table_lock;
-@@ -864,7 +865,7 @@
+@@ -864,7 +865,7 @@ int usb_serial_probe(struct usb_interfac
  			dev_err(&interface->dev, "No free urbs available\n");
  			goto probe_error;
  		}
@@ -17,7 +19,7 @@
  		port->bulk_in_size = buffer_size;
  		port->bulk_in_endpointAddress = endpoint->bEndpointAddress;
  		port->bulk_in_buffer = kmalloc (buffer_size, GFP_KERNEL);
-@@ -1245,3 +1246,5 @@
+@@ -1245,3 +1246,5 @@ MODULE_LICENSE("GPL");
  
  module_param(debug, bool, S_IRUGO | S_IWUSR);
  MODULE_PARM_DESC(debug, "Debug enabled or not");

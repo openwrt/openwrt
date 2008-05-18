@@ -1,6 +1,7 @@
-diff -urN linux-2.6.21.1.old/fs/squashfs/inode.c linux-2.6.21.1.dev/fs/squashfs/inode.c
---- linux-2.6.21.1.old/fs/squashfs/inode.c	2007-05-26 19:03:45.499713896 +0200
-+++ linux-2.6.21.1.dev/fs/squashfs/inode.c	2007-05-26 19:07:27.951896024 +0200
+Index: linux-2.6.22.19/fs/squashfs/inode.c
+===================================================================
+--- linux-2.6.22.19.orig/fs/squashfs/inode.c
++++ linux-2.6.22.19/fs/squashfs/inode.c
 @@ -4,6 +4,9 @@
   * Copyright (c) 2002, 2003, 2004, 2005, 2006
   * Phillip Lougher <phillip@lougher.org.uk>
@@ -39,7 +40,7 @@ diff -urN linux-2.6.21.1.old/fs/squashfs/inode.c linux-2.6.21.1.dev/fs/squashfs/
  static void squashfs_put_super(struct super_block *);
  static int squashfs_statfs(struct dentry *, struct kstatfs *);
  static int squashfs_symlink_readpage(struct file *file, struct page *page);
-@@ -64,7 +81,11 @@
+@@ -64,7 +81,11 @@ static int squashfs_get_sb(struct file_s
  			const char *, void *, struct vfsmount *);
  
  
@@ -51,7 +52,7 @@ diff -urN linux-2.6.21.1.old/fs/squashfs/inode.c linux-2.6.21.1.dev/fs/squashfs/
  
  static struct file_system_type squashfs_fs_type = {
  	.owner = THIS_MODULE,
-@@ -249,6 +270,15 @@
+@@ -249,6 +270,15 @@ SQSH_EXTERN unsigned int squashfs_read_d
  	if (compressed) {
  		int zlib_err;
  
@@ -67,7 +68,7 @@ diff -urN linux-2.6.21.1.old/fs/squashfs/inode.c linux-2.6.21.1.dev/fs/squashfs/
  		stream.next_in = c_buffer;
  		stream.avail_in = c_byte;
  		stream.next_out = buffer;
-@@ -263,7 +293,7 @@
+@@ -263,7 +293,7 @@ SQSH_EXTERN unsigned int squashfs_read_d
  			bytes = 0;
  		} else
  			bytes = stream.total_out;
@@ -76,7 +77,7 @@ diff -urN linux-2.6.21.1.old/fs/squashfs/inode.c linux-2.6.21.1.dev/fs/squashfs/
  		up(&msblk->read_data_mutex);
  	}
  
-@@ -2045,15 +2075,19 @@
+@@ -2045,15 +2075,19 @@ static int __init init_squashfs_fs(void)
  	printk(KERN_INFO "squashfs: version 3.0 (2006/03/15) "
  		"Phillip Lougher\n");
  
@@ -96,7 +97,7 @@ diff -urN linux-2.6.21.1.old/fs/squashfs/inode.c linux-2.6.21.1.dev/fs/squashfs/
  		destroy_inodecache();
  	}
  
-@@ -2064,7 +2098,9 @@
+@@ -2064,7 +2098,9 @@ out:
  
  static void __exit exit_squashfs_fs(void)
  {

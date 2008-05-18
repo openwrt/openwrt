@@ -1,6 +1,7 @@
-diff -urN linux-2.6.21-rc7/include/linux/netfilter/nf_conntrack_rtsp.h linux-2.6.21-rc7.rtsp/include/linux/netfilter/nf_conntrack_rtsp.h
---- linux-2.6.21-rc7/include/linux/netfilter/nf_conntrack_rtsp.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21-rc7.rtsp/include/linux/netfilter/nf_conntrack_rtsp.h	2007-04-16 14:07:06.000000000 +0200
+Index: linux-2.6.22.19/include/linux/netfilter/nf_conntrack_rtsp.h
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/include/linux/netfilter/nf_conntrack_rtsp.h
 @@ -0,0 +1,63 @@
 +/*
 + * RTSP extension for IP connection tracking.
@@ -65,9 +66,10 @@ diff -urN linux-2.6.21-rc7/include/linux/netfilter/nf_conntrack_rtsp.h linux-2.6
 +#endif /* __KERNEL__ */
 +
 +#endif /* _IP_CONNTRACK_RTSP_H */
-diff -urN linux-2.6.21-rc7/include/linux/netfilter_helpers.h linux-2.6.21-rc7.rtsp/include/linux/netfilter_helpers.h
---- linux-2.6.21-rc7/include/linux/netfilter_helpers.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21-rc7.rtsp/include/linux/netfilter_helpers.h	2007-04-15 00:34:57.000000000 +0200
+Index: linux-2.6.22.19/include/linux/netfilter_helpers.h
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/include/linux/netfilter_helpers.h
 @@ -0,0 +1,133 @@
 +/*
 + * Helpers for netfiler modules.  This file provides implementations for basic
@@ -202,9 +204,10 @@ diff -urN linux-2.6.21-rc7/include/linux/netfilter_helpers.h linux-2.6.21-rc7.rt
 +#endif /* __KERNEL__ */
 +
 +#endif /* _NETFILTER_HELPERS_H */
-diff -urN linux-2.6.21-rc7/include/linux/netfilter_mime.h linux-2.6.21-rc7.rtsp/include/linux/netfilter_mime.h
---- linux-2.6.21-rc7/include/linux/netfilter_mime.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21-rc7.rtsp/include/linux/netfilter_mime.h	2007-04-15 00:34:57.000000000 +0200
+Index: linux-2.6.22.19/include/linux/netfilter_mime.h
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/include/linux/netfilter_mime.h
 @@ -0,0 +1,89 @@
 +/*
 + * MIME functions for netfilter modules.  This file provides implementations
@@ -295,10 +298,11 @@ diff -urN linux-2.6.21-rc7/include/linux/netfilter_mime.h linux-2.6.21-rc7.rtsp/
 +#endif /* __KERNEL__ */
 +
 +#endif /* _NETFILTER_MIME_H */
-diff -urN linux-2.6.21-rc7/net/ipv4/netfilter/Makefile linux-2.6.21-rc7.rtsp/net/ipv4/netfilter/Makefile
---- linux-2.6.21-rc7/net/ipv4/netfilter/Makefile	2007-04-18 23:26:10.000000000 +0200
-+++ linux-2.6.21-rc7.rtsp/net/ipv4/netfilter/Makefile	2007-04-18 21:17:33.000000000 +0200
-@@ -64,6 +66,7 @@
+Index: linux-2.6.22.19/net/ipv4/netfilter/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/net/ipv4/netfilter/Makefile
++++ linux-2.6.22.19/net/ipv4/netfilter/Makefile
+@@ -23,6 +23,7 @@ obj-$(CONFIG_NF_NAT_AMANDA) += nf_nat_am
  obj-$(CONFIG_NF_NAT_FTP) += nf_nat_ftp.o
  obj-$(CONFIG_NF_NAT_H323) += nf_nat_h323.o
  obj-$(CONFIG_NF_NAT_IRC) += nf_nat_irc.o
@@ -306,10 +310,11 @@ diff -urN linux-2.6.21-rc7/net/ipv4/netfilter/Makefile linux-2.6.21-rc7.rtsp/net
  obj-$(CONFIG_NF_NAT_PPTP) += nf_nat_pptp.o
  obj-$(CONFIG_NF_NAT_SIP) += nf_nat_sip.o
  obj-$(CONFIG_NF_NAT_SNMP_BASIC) += nf_nat_snmp_basic.o
-diff -urN linux-2.6.21-rc7/net/netfilter/Kconfig linux-2.6.21-rc7.rtsp/net/netfilter/Kconfig
---- linux-2.6.21-rc7/net/netfilter/Kconfig	2007-04-18 23:26:10.000000000 +0200
-+++ linux-2.6.21-rc7.rtsp/net/netfilter/Kconfig	2007-04-18 22:25:13.000000000 +0200
-@@ -271,6 +272,16 @@
+Index: linux-2.6.22.19/net/netfilter/Kconfig
+===================================================================
+--- linux-2.6.22.19.orig/net/netfilter/Kconfig
++++ linux-2.6.22.19/net/netfilter/Kconfig
+@@ -239,6 +239,16 @@ config NF_CONNTRACK_TFTP
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -326,10 +331,11 @@ diff -urN linux-2.6.21-rc7/net/netfilter/Kconfig linux-2.6.21-rc7.rtsp/net/netfi
  config NF_CT_NETLINK
  	tristate 'Connection tracking netlink interface (EXPERIMENTAL)'
  	depends on EXPERIMENTAL && NF_CONNTRACK && NETFILTER_NETLINK
-diff -urN linux-2.6.21-rc7/net/netfilter/Makefile linux-2.6.21-rc7.rtsp/net/netfilter/Makefile
---- linux-2.6.21-rc7/net/netfilter/Makefile	2007-04-18 23:26:10.000000000 +0200
-+++ linux-2.6.21-rc7.rtsp/net/netfilter/Makefile	2007-04-18 21:17:33.000000000 +0200
-@@ -32,6 +32,7 @@
+Index: linux-2.6.22.19/net/netfilter/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/net/netfilter/Makefile
++++ linux-2.6.22.19/net/netfilter/Makefile
+@@ -32,6 +32,7 @@ obj-$(CONFIG_NF_CONNTRACK_PPTP) += nf_co
  obj-$(CONFIG_NF_CONNTRACK_SANE) += nf_conntrack_sane.o
  obj-$(CONFIG_NF_CONNTRACK_SIP) += nf_conntrack_sip.o
  obj-$(CONFIG_NF_CONNTRACK_TFTP) += nf_conntrack_tftp.o
@@ -337,9 +343,11 @@ diff -urN linux-2.6.21-rc7/net/netfilter/Makefile linux-2.6.21-rc7.rtsp/net/netf
  
  # generic X tables 
  obj-$(CONFIG_NETFILTER_XTABLES) += x_tables.o xt_tcpudp.o
---- linux-2.6.22.1/net/ipv4/netfilter/Kconfig.orig	2007-07-29 23:57:51.000000000 +0200
-+++ linux-2.6.22.1/net/ipv4/netfilter/Kconfig	2007-07-30 00:00:19.000000000 +0200
-@@ -274,6 +274,11 @@
+Index: linux-2.6.22.19/net/ipv4/netfilter/Kconfig
+===================================================================
+--- linux-2.6.22.19.orig/net/ipv4/netfilter/Kconfig
++++ linux-2.6.22.19/net/ipv4/netfilter/Kconfig
+@@ -296,6 +296,11 @@ config NF_NAT_IRC
  	depends on IP_NF_IPTABLES && NF_CONNTRACK && NF_NAT
  	default NF_NAT && NF_CONNTRACK_IRC
  
@@ -351,8 +359,10 @@ diff -urN linux-2.6.21-rc7/net/netfilter/Makefile linux-2.6.21-rc7.rtsp/net/netf
  config NF_NAT_TFTP
  	tristate
  	depends on IP_NF_IPTABLES && NF_CONNTRACK && NF_NAT
---- linux-2.6.22.1/net/netfilter/nf_conntrack_rtsp.c.orig	2007-07-30 17:37:14.000000000 +0200
-+++ linux-2.6.22.1/net/netfilter/nf_conntrack_rtsp.c	2007-07-30 00:03:07.000000000 +0200
+Index: linux-2.6.22.19/net/netfilter/nf_conntrack_rtsp.c
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/net/netfilter/nf_conntrack_rtsp.c
 @@ -0,0 +1,515 @@
 +/*
 + * RTSP extension for IP connection tracking
@@ -869,8 +879,10 @@ diff -urN linux-2.6.21-rc7/net/netfilter/Makefile linux-2.6.21-rc7.rtsp/net/netf
 +
 +EXPORT_SYMBOL(nf_nat_rtsp_hook_expectfn);
 +
---- linux-2.6.22.1/net/ipv4/netfilter/nf_nat_rtsp.c.orig	2007-07-30 17:35:02.000000000 +0200
-+++ linux-2.6.22.1/net/ipv4/netfilter/nf_nat_rtsp.c	2007-07-30 00:05:28.000000000 +0200
+Index: linux-2.6.22.19/net/ipv4/netfilter/nf_nat_rtsp.c
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/net/ipv4/netfilter/nf_nat_rtsp.c
 @@ -0,0 +1,496 @@
 +/*
 + * RTSP extension for TCP NAT alteration

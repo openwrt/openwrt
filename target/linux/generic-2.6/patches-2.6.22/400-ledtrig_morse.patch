@@ -1,6 +1,8 @@
---- linux-2.6.21.1.orig/drivers/leds/Kconfig	2007-09-09 07:15:28.000000000 +0200
-+++ linux-2.6.21.1/drivers/leds/Kconfig	2007-09-13 19:36:35.000000000 +0200
-@@ -149,5 +149,9 @@
+Index: linux-2.6.22.19/drivers/leds/Kconfig
+===================================================================
+--- linux-2.6.22.19.orig/drivers/leds/Kconfig
++++ linux-2.6.22.19/drivers/leds/Kconfig
+@@ -128,5 +128,9 @@ config LEDS_TRIGGER_HEARTBEAT
  	  load average.
  	  If unsure, say Y.
  
@@ -10,9 +12,11 @@
 +
  endmenu
  
---- linux-2.6.21.1.orig/drivers/leds/Makefile	2007-09-09 07:15:28.000000000 +0200
-+++ linux-2.6.21.1/drivers/leds/Makefile	2007-09-13 19:33:15.000000000 +0200
-@@ -23,3 +23,4 @@
+Index: linux-2.6.22.19/drivers/leds/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/drivers/leds/Makefile
++++ linux-2.6.22.19/drivers/leds/Makefile
+@@ -21,3 +21,4 @@ obj-$(CONFIG_LEDS_COBALT)		+= leds-cobal
  obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledtrig-timer.o
  obj-$(CONFIG_LEDS_TRIGGER_IDE_DISK)	+= ledtrig-ide-disk.o
  obj-$(CONFIG_LEDS_TRIGGER_HEARTBEAT)	+= ledtrig-heartbeat.o

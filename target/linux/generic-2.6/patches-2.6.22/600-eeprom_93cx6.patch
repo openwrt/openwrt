@@ -12,10 +12,10 @@ Signed-off-by: Michael Wu <flamingice@sourmilk.net>
 Signed-off-by: John W. Linville <linville@tuxdriver.com>
 ---
 
-diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
-index 616eee9..bd601ef 100644
---- a/drivers/misc/Kconfig
-+++ b/drivers/misc/Kconfig
+Index: linux-2.6.22.19/drivers/misc/Kconfig
+===================================================================
+--- linux-2.6.22.19.orig/drivers/misc/Kconfig
++++ linux-2.6.22.19/drivers/misc/Kconfig
 @@ -34,6 +34,11 @@ config PHANTOM
  	  If you choose to build module, its name will be phantom. If unsure,
  	  say N here.
@@ -34,20 +34,19 @@ index 616eee9..bd601ef 100644
  
 -
  endmenu
-diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
-index 8abbf2f..b5ce0e3 100644
---- a/drivers/misc/Makefile
-+++ b/drivers/misc/Makefile
+Index: linux-2.6.22.19/drivers/misc/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/drivers/misc/Makefile
++++ linux-2.6.22.19/drivers/misc/Makefile
 @@ -14,3 +14,4 @@ obj-$(CONFIG_PHANTOM)		+= phantom.o
  obj-$(CONFIG_SGI_IOC4)		+= ioc4.o
  obj-$(CONFIG_SONY_LAPTOP)	+= sony-laptop.o
  obj-$(CONFIG_THINKPAD_ACPI)	+= thinkpad_acpi.o
 +obj-$(CONFIG_EEPROM_93CX6)	+= eeprom_93cx6.o
-diff --git a/drivers/misc/eeprom_93cx6.c b/drivers/misc/eeprom_93cx6.c
-new file mode 100644
-index 0000000..bfcb434
+Index: linux-2.6.22.19/drivers/misc/eeprom_93cx6.c
+===================================================================
 --- /dev/null
-+++ b/drivers/misc/eeprom_93cx6.c
++++ linux-2.6.22.19/drivers/misc/eeprom_93cx6.c
 @@ -0,0 +1,229 @@
 +/*
 +	Copyright (C) 2004 - 2006 rt2x00 SourceForge Project
@@ -278,11 +277,10 @@ index 0000000..bfcb434
 +}
 +EXPORT_SYMBOL_GPL(eeprom_93cx6_multiread);
 +
-diff --git a/include/linux/eeprom_93cx6.h b/include/linux/eeprom_93cx6.h
-new file mode 100644
-index 0000000..d774b77
+Index: linux-2.6.22.19/include/linux/eeprom_93cx6.h
+===================================================================
 --- /dev/null
-+++ b/include/linux/eeprom_93cx6.h
++++ linux-2.6.22.19/include/linux/eeprom_93cx6.h
 @@ -0,0 +1,72 @@
 +/*
 +	Copyright (C) 2004 - 2006 rt2x00 SourceForge Project

@@ -1,6 +1,7 @@
-diff -urN linux-2.6.21.1.old/scripts/genksyms/parse.c_shipped linux-2.6.21.1.dev/scripts/genksyms/parse.c_shipped
---- linux-2.6.21.1.old/scripts/genksyms/parse.c_shipped	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/scripts/genksyms/parse.c_shipped	2007-05-26 21:26:23.565690112 +0200
+Index: linux-2.6.22.19/scripts/genksyms/parse.c_shipped
+===================================================================
+--- linux-2.6.22.19.orig/scripts/genksyms/parse.c_shipped
++++ linux-2.6.22.19/scripts/genksyms/parse.c_shipped
 @@ -144,7 +144,9 @@
  
  
@@ -11,9 +12,10 @@ diff -urN linux-2.6.21.1.old/scripts/genksyms/parse.c_shipped linux-2.6.21.1.dev
  #include "genksyms.h"
  
  static int is_typedef;
-diff -urN linux-2.6.21.1.old/scripts/genksyms/parse.y linux-2.6.21.1.dev/scripts/genksyms/parse.y
---- linux-2.6.21.1.old/scripts/genksyms/parse.y	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/scripts/genksyms/parse.y	2007-05-26 21:26:23.563690416 +0200
+Index: linux-2.6.22.19/scripts/genksyms/parse.y
+===================================================================
+--- linux-2.6.22.19.orig/scripts/genksyms/parse.y
++++ linux-2.6.22.19/scripts/genksyms/parse.y
 @@ -24,7 +24,9 @@
  %{
  
@@ -24,9 +26,10 @@ diff -urN linux-2.6.21.1.old/scripts/genksyms/parse.y linux-2.6.21.1.dev/scripts
  #include "genksyms.h"
  
  static int is_typedef;
-diff -urN linux-2.6.21.1.old/scripts/kallsyms.c linux-2.6.21.1.dev/scripts/kallsyms.c
---- linux-2.6.21.1.old/scripts/kallsyms.c	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/scripts/kallsyms.c	2007-05-26 21:26:23.579687984 +0200
+Index: linux-2.6.22.19/scripts/kallsyms.c
+===================================================================
+--- linux-2.6.22.19.orig/scripts/kallsyms.c
++++ linux-2.6.22.19/scripts/kallsyms.c
 @@ -30,6 +30,35 @@
  #include <stdlib.h>
  #include <string.h>
@@ -63,10 +66,11 @@ diff -urN linux-2.6.21.1.old/scripts/kallsyms.c linux-2.6.21.1.dev/scripts/kalls
  
  #define KSYM_NAME_LEN		127
  
-diff -urN linux-2.6.21.1.old/scripts/kconfig/Makefile linux-2.6.21.1.dev/scripts/kconfig/Makefile
---- linux-2.6.21.1.old/scripts/kconfig/Makefile	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/scripts/kconfig/Makefile	2007-05-26 21:26:23.553691936 +0200
-@@ -87,6 +87,9 @@
+Index: linux-2.6.22.19/scripts/kconfig/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/scripts/kconfig/Makefile
++++ linux-2.6.22.19/scripts/kconfig/Makefile
+@@ -87,6 +87,9 @@ check-lxdialog  := $(srctree)/$(src)/lxd
  # we really need to do so. (Do not call gcc as part of make mrproper)
  HOST_EXTRACFLAGS = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags)
  HOST_LOADLIBES   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOSTCC))
@@ -76,9 +80,10 @@ diff -urN linux-2.6.21.1.old/scripts/kconfig/Makefile linux-2.6.21.1.dev/scripts
  
  HOST_EXTRACFLAGS += -DLOCALE
  
-diff -urN linux-2.6.21.1.old/scripts/mod/mk_elfconfig.c linux-2.6.21.1.dev/scripts/mod/mk_elfconfig.c
---- linux-2.6.21.1.old/scripts/mod/mk_elfconfig.c	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/scripts/mod/mk_elfconfig.c	2007-05-26 21:26:23.553691936 +0200
+Index: linux-2.6.22.19/scripts/mod/mk_elfconfig.c
+===================================================================
+--- linux-2.6.22.19.orig/scripts/mod/mk_elfconfig.c
++++ linux-2.6.22.19/scripts/mod/mk_elfconfig.c
 @@ -1,7 +1,11 @@
  #include <stdio.h>
  #include <stdlib.h>
@@ -91,9 +96,10 @@ diff -urN linux-2.6.21.1.old/scripts/mod/mk_elfconfig.c linux-2.6.21.1.dev/scrip
  
  int
  main(int argc, char **argv)
-diff -urN linux-2.6.21.1.old/scripts/mod/modpost.h linux-2.6.21.1.dev/scripts/mod/modpost.h
---- linux-2.6.21.1.old/scripts/mod/modpost.h	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/scripts/mod/modpost.h	2007-05-26 21:26:23.553691936 +0200
+Index: linux-2.6.22.19/scripts/mod/modpost.h
+===================================================================
+--- linux-2.6.22.19.orig/scripts/mod/modpost.h
++++ linux-2.6.22.19/scripts/mod/modpost.h
 @@ -7,7 +7,11 @@
  #include <sys/mman.h>
  #include <fcntl.h>

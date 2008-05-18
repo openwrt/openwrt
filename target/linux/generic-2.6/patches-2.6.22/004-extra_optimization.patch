@@ -1,7 +1,8 @@
-diff -urN linux-2.6.21.1.old/Makefile linux-2.6.21.1.dev/Makefile
---- linux-2.6.21.1.old/Makefile	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/Makefile	2007-05-26 19:14:22.967804016 +0200
-@@ -507,6 +507,9 @@
+Index: linux-2.6.22.19/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/Makefile
++++ linux-2.6.22.19/Makefile
+@@ -507,6 +507,9 @@ CFLAGS          += $(call cc-option, -fn
  NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
  CHECKFLAGS     += $(NOSTDINC_FLAGS)
  
