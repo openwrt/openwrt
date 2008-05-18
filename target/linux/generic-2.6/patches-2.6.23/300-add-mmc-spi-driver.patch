@@ -2,10 +2,10 @@ This is a port of the MMC-SPI driver from 2.6.24.3
 --mb
 
 
-Index: linux-2.6.23.16/drivers/mmc/host/Kconfig
+Index: linux-2.6.23.17/drivers/mmc/host/Kconfig
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/host/Kconfig	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/drivers/mmc/host/Kconfig	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/mmc/host/Kconfig
++++ linux-2.6.23.17/drivers/mmc/host/Kconfig
 @@ -100,3 +100,16 @@ config MMC_TIFM_SD
            To compile this driver as a module, choose M here: the
  	  module will be called tifm_sd.
@@ -23,20 +23,20 @@ Index: linux-2.6.23.16/drivers/mmc/host/Kconfig
 +
 +	  If unsure, or if your system has no SPI master driver, say N.
 +
-Index: linux-2.6.23.16/drivers/mmc/host/Makefile
+Index: linux-2.6.23.17/drivers/mmc/host/Makefile
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/host/Makefile	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/drivers/mmc/host/Makefile	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/mmc/host/Makefile
++++ linux-2.6.23.17/drivers/mmc/host/Makefile
 @@ -15,4 +15,5 @@ obj-$(CONFIG_MMC_AU1X)		+= au1xmmc.o
  obj-$(CONFIG_MMC_OMAP)		+= omap.o
  obj-$(CONFIG_MMC_AT91)		+= at91_mci.o
  obj-$(CONFIG_MMC_TIFM_SD)	+= tifm_sd.o
 +obj-$(CONFIG_MMC_SPI)		+= mmc_spi.o
  
-Index: linux-2.6.23.16/drivers/mmc/host/mmc_spi.c
+Index: linux-2.6.23.17/drivers/mmc/host/mmc_spi.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/mmc/host/mmc_spi.c	2008-03-21 17:30:25.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/drivers/mmc/host/mmc_spi.c
 @@ -0,0 +1,1419 @@
 +/*
 + * mmc_spi.c - Access SD/MMC cards through SPI master controllers
@@ -1457,10 +1457,10 @@ Index: linux-2.6.23.16/drivers/mmc/host/mmc_spi.c
 +		"Hans-Peter Nilsson, Jan Nikitenko");
 +MODULE_DESCRIPTION("SPI SD/MMC host driver");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.23.16/include/linux/spi/mmc_spi.h
+Index: linux-2.6.23.17/include/linux/spi/mmc_spi.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/linux/spi/mmc_spi.h	2008-03-21 17:30:25.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/include/linux/spi/mmc_spi.h
 @@ -0,0 +1,33 @@
 +#ifndef __LINUX_SPI_MMC_SPI_H
 +#define __LINUX_SPI_MMC_SPI_H
@@ -1495,10 +1495,10 @@ Index: linux-2.6.23.16/include/linux/spi/mmc_spi.h
 +};
 +
 +#endif /* __LINUX_SPI_MMC_SPI_H */
-Index: linux-2.6.23.16/drivers/mmc/core/bus.c
+Index: linux-2.6.23.17/drivers/mmc/core/bus.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/core/bus.c	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/drivers/mmc/core/bus.c	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/mmc/core/bus.c
++++ linux-2.6.23.17/drivers/mmc/core/bus.c
 @@ -19,6 +19,7 @@
  
  #include "sysfs.h"
@@ -1630,10 +1630,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/bus.c
  
  		if (card->host->bus_ops->sysfs_remove)
  			card->host->bus_ops->sysfs_remove(card->host, card);
-Index: linux-2.6.23.16/drivers/mmc/core/core.c
+Index: linux-2.6.23.17/drivers/mmc/core/core.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/core/core.c	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/drivers/mmc/core/core.c	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/mmc/core/core.c
++++ linux-2.6.23.17/drivers/mmc/core/core.c
 @@ -18,7 +18,7 @@
  #include <linux/delay.h>
  #include <linux/pagemap.h>
@@ -2001,10 +2001,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/core.c
  module_exit(mmc_exit);
  
  MODULE_LICENSE("GPL");
-Index: linux-2.6.23.16/drivers/mmc/core/core.h
+Index: linux-2.6.23.17/drivers/mmc/core/core.h
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/core/core.h	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/drivers/mmc/core/core.h	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/mmc/core/core.h
++++ linux-2.6.23.17/drivers/mmc/core/core.h
 @@ -48,5 +48,7 @@ void mmc_rescan(struct work_struct *work
  void mmc_start_host(struct mmc_host *host);
  void mmc_stop_host(struct mmc_host *host);
@@ -2013,10 +2013,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/core.h
 +
  #endif
  
-Index: linux-2.6.23.16/drivers/mmc/core/host.c
+Index: linux-2.6.23.17/drivers/mmc/core/host.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/core/host.c	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/drivers/mmc/core/host.c	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/mmc/core/host.c
++++ linux-2.6.23.17/drivers/mmc/core/host.c
 @@ -15,6 +15,7 @@
  #include <linux/err.h>
  #include <linux/idr.h>
@@ -2053,10 +2053,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/host.c
  	spin_lock(&mmc_host_lock);
  	idr_remove(&mmc_host_idr, host->index);
  	spin_unlock(&mmc_host_lock);
-Index: linux-2.6.23.16/drivers/mmc/core/mmc.c
+Index: linux-2.6.23.17/drivers/mmc/core/mmc.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/core/mmc.c	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/drivers/mmc/core/mmc.c	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/mmc/core/mmc.c
++++ linux-2.6.23.17/drivers/mmc/core/mmc.c
 @@ -161,13 +161,12 @@ static int mmc_read_ext_csd(struct mmc_c
  {
  	int err;
@@ -2358,10 +2358,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/mmc.c
 +	return err;
  }
  
-Index: linux-2.6.23.16/drivers/mmc/core/mmc_ops.c
+Index: linux-2.6.23.17/drivers/mmc/core/mmc_ops.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/core/mmc_ops.c	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/drivers/mmc/core/mmc_ops.c	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/mmc/core/mmc_ops.c
++++ linux-2.6.23.17/drivers/mmc/core/mmc_ops.c
 @@ -10,7 +10,6 @@
   */
  
@@ -2719,10 +2719,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/mmc_ops.c
 +	return 0;
  }
  
-Index: linux-2.6.23.16/drivers/mmc/core/mmc_ops.h
+Index: linux-2.6.23.17/drivers/mmc/core/mmc_ops.h
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/core/mmc_ops.h	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/drivers/mmc/core/mmc_ops.h	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/mmc/core/mmc_ops.h
++++ linux-2.6.23.17/drivers/mmc/core/mmc_ops.h
 @@ -22,6 +22,9 @@ int mmc_send_csd(struct mmc_card *card, 
  int mmc_send_ext_csd(struct mmc_card *card, u8 *ext_csd);
  int mmc_switch(struct mmc_card *card, u8 set, u8 index, u8 value);
@@ -2733,10 +2733,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/mmc_ops.h
  
  #endif
  
-Index: linux-2.6.23.16/drivers/mmc/core/sd.c
+Index: linux-2.6.23.17/drivers/mmc/core/sd.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/core/sd.c	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/drivers/mmc/core/sd.c	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/mmc/core/sd.c
++++ linux-2.6.23.17/drivers/mmc/core/sd.c
 @@ -166,8 +166,6 @@ static int mmc_decode_scr(struct mmc_car
  	unsigned int scr_struct;
  	u32 resp[4];
@@ -3060,10 +3060,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/sd.c
 +	return err;
  }
  
-Index: linux-2.6.23.16/drivers/mmc/core/sd_ops.c
+Index: linux-2.6.23.17/drivers/mmc/core/sd_ops.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/core/sd_ops.c	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/drivers/mmc/core/sd_ops.c	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/mmc/core/sd_ops.c
++++ linux-2.6.23.17/drivers/mmc/core/sd_ops.c
 @@ -10,7 +10,6 @@
   */
  
@@ -3337,10 +3337,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/sd_ops.c
 +	return 0;
  }
  
-Index: linux-2.6.23.16/drivers/mmc/core/sdio.c
+Index: linux-2.6.23.17/drivers/mmc/core/sdio.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/mmc/core/sdio.c	2008-03-21 17:30:25.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/drivers/mmc/core/sdio.c
 @@ -0,0 +1,395 @@
 +/*
 + *  linux/drivers/mmc/sdio.c
@@ -3737,10 +3737,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/sdio.c
 +	return err;
 +}
 +
-Index: linux-2.6.23.16/drivers/mmc/core/sdio_bus.c
+Index: linux-2.6.23.17/drivers/mmc/core/sdio_bus.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/mmc/core/sdio_bus.c	2008-03-21 17:30:25.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/drivers/mmc/core/sdio_bus.c
 @@ -0,0 +1,265 @@
 +/*
 + *  linux/drivers/mmc/core/sdio_bus.c
@@ -4007,10 +4007,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/sdio_bus.c
 +	put_device(&func->dev);
 +}
 +
-Index: linux-2.6.23.16/drivers/mmc/core/sdio_bus.h
+Index: linux-2.6.23.17/drivers/mmc/core/sdio_bus.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/mmc/core/sdio_bus.h	2008-03-21 17:30:25.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/drivers/mmc/core/sdio_bus.h
 @@ -0,0 +1,22 @@
 +/*
 + *  linux/drivers/mmc/core/sdio_bus.h
@@ -4034,10 +4034,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/sdio_bus.h
 +
 +#endif
 +
-Index: linux-2.6.23.16/drivers/mmc/core/sdio_cis.c
+Index: linux-2.6.23.17/drivers/mmc/core/sdio_cis.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/mmc/core/sdio_cis.c	2008-03-21 17:30:25.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/drivers/mmc/core/sdio_cis.c
 @@ -0,0 +1,346 @@
 +/*
 + * linux/drivers/mmc/core/sdio_cis.c
@@ -4385,10 +4385,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/sdio_cis.c
 +	put_device(&func->card->dev);
 +}
 +
-Index: linux-2.6.23.16/drivers/mmc/core/sdio_cis.h
+Index: linux-2.6.23.17/drivers/mmc/core/sdio_cis.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/mmc/core/sdio_cis.h	2008-03-21 17:30:25.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/drivers/mmc/core/sdio_cis.h
 @@ -0,0 +1,23 @@
 +/*
 + * linux/drivers/mmc/core/sdio_cis.h
@@ -4413,10 +4413,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/sdio_cis.h
 +void sdio_free_func_cis(struct sdio_func *func);
 +
 +#endif
-Index: linux-2.6.23.16/drivers/mmc/core/sdio_io.c
+Index: linux-2.6.23.17/drivers/mmc/core/sdio_io.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/mmc/core/sdio_io.c	2008-03-21 17:30:25.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/drivers/mmc/core/sdio_io.c
 @@ -0,0 +1,548 @@
 +/*
 + *  linux/drivers/mmc/core/sdio_io.c
@@ -4966,10 +4966,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/sdio_io.c
 +		*err_ret = ret;
 +}
 +EXPORT_SYMBOL_GPL(sdio_f0_writeb);
-Index: linux-2.6.23.16/drivers/mmc/core/sdio_irq.c
+Index: linux-2.6.23.17/drivers/mmc/core/sdio_irq.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/mmc/core/sdio_irq.c	2008-03-21 17:30:25.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/drivers/mmc/core/sdio_irq.c
 @@ -0,0 +1,267 @@
 +/*
 + * linux/drivers/mmc/core/sdio_irq.c
@@ -5238,10 +5238,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/sdio_irq.c
 +}
 +EXPORT_SYMBOL_GPL(sdio_release_irq);
 +
-Index: linux-2.6.23.16/drivers/mmc/core/sdio_ops.c
+Index: linux-2.6.23.17/drivers/mmc/core/sdio_ops.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/mmc/core/sdio_ops.c	2008-03-21 17:30:25.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/drivers/mmc/core/sdio_ops.c
 @@ -0,0 +1,175 @@
 +/*
 + *  linux/drivers/mmc/sdio_ops.c
@@ -5418,10 +5418,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/sdio_ops.c
 +	return 0;
 +}
 +
-Index: linux-2.6.23.16/drivers/mmc/core/sdio_ops.h
+Index: linux-2.6.23.17/drivers/mmc/core/sdio_ops.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/mmc/core/sdio_ops.h	2008-03-21 17:30:25.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/drivers/mmc/core/sdio_ops.h
 @@ -0,0 +1,22 @@
 +/*
 + *  linux/drivers/mmc/sdio_ops.c
@@ -5445,10 +5445,10 @@ Index: linux-2.6.23.16/drivers/mmc/core/sdio_ops.h
 +
 +#endif
 +
-Index: linux-2.6.23.16/include/linux/mmc/card.h
+Index: linux-2.6.23.17/include/linux/mmc/card.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/mmc/card.h	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/include/linux/mmc/card.h	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/include/linux/mmc/card.h
++++ linux-2.6.23.17/include/linux/mmc/card.h
 @@ -55,7 +55,28 @@ struct sd_switch_caps {
  	unsigned int		hs_max_dtr;
  };
@@ -5512,10 +5512,10 @@ Index: linux-2.6.23.16/include/linux/mmc/card.h
  
  #define mmc_card_present(c)	((c)->state & MMC_STATE_PRESENT)
  #define mmc_card_readonly(c)	((c)->state & MMC_STATE_READONLY)
-Index: linux-2.6.23.16/include/linux/mmc/core.h
+Index: linux-2.6.23.17/include/linux/mmc/core.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/mmc/core.h	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/include/linux/mmc/core.h	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/include/linux/mmc/core.h
++++ linux-2.6.23.17/include/linux/mmc/core.h
 @@ -25,14 +25,20 @@ struct mmc_command {
  #define MMC_RSP_CRC	(1 << 2)		/* expect valid crc */
  #define MMC_RSP_BUSY	(1 << 3)		/* card may send busy */
@@ -5627,10 +5627,10 @@ Index: linux-2.6.23.16/include/linux/mmc/core.h
 +}
 +
  #endif
-Index: linux-2.6.23.16/include/linux/mmc/host.h
+Index: linux-2.6.23.17/include/linux/mmc/host.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/mmc/host.h	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/include/linux/mmc/host.h	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/include/linux/mmc/host.h
++++ linux-2.6.23.17/include/linux/mmc/host.h
 @@ -10,6 +10,8 @@
  #ifndef LINUX_MMC_HOST_H
  #define LINUX_MMC_HOST_H
@@ -5722,10 +5722,10 @@ Index: linux-2.6.23.16/include/linux/mmc/host.h
 +
  #endif
  
-Index: linux-2.6.23.16/include/linux/mmc/mmc.h
+Index: linux-2.6.23.17/include/linux/mmc/mmc.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/mmc/mmc.h	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/include/linux/mmc/mmc.h	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/include/linux/mmc/mmc.h
++++ linux-2.6.23.17/include/linux/mmc/mmc.h
 @@ -27,7 +27,7 @@
  
  /* Standard MMC commands (4.1)           type  argument     response */
@@ -5817,10 +5817,10 @@ Index: linux-2.6.23.16/include/linux/mmc/mmc.h
  #define EXT_CSD_SEC_CNT		212	/* RO, 4 bytes */
  
  /*
-Index: linux-2.6.23.16/include/linux/mmc/sdio.h
+Index: linux-2.6.23.17/include/linux/mmc/sdio.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/linux/mmc/sdio.h	2008-03-21 17:30:25.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/include/linux/mmc/sdio.h
 @@ -0,0 +1,159 @@
 +/*
 + *  include/linux/mmc/sdio.h
@@ -5981,10 +5981,10 @@ Index: linux-2.6.23.16/include/linux/mmc/sdio.h
 +
 +#endif
 +
-Index: linux-2.6.23.16/include/linux/mmc/sdio_func.h
+Index: linux-2.6.23.17/include/linux/mmc/sdio_func.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/linux/mmc/sdio_func.h	2008-03-21 17:30:25.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/include/linux/mmc/sdio_func.h
 @@ -0,0 +1,153 @@
 +/*
 + *  include/linux/mmc/sdio_func.h
@@ -6139,10 +6139,10 @@ Index: linux-2.6.23.16/include/linux/mmc/sdio_func.h
 +
 +#endif
 +
-Index: linux-2.6.23.16/include/linux/mmc/sdio_ids.h
+Index: linux-2.6.23.17/include/linux/mmc/sdio_ids.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/linux/mmc/sdio_ids.h	2008-03-21 17:30:25.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/include/linux/mmc/sdio_ids.h
 @@ -0,0 +1,29 @@
 +/*
 + * SDIO Classes, Interface Types, Manufacturer IDs, etc.
@@ -6173,10 +6173,10 @@ Index: linux-2.6.23.16/include/linux/mmc/sdio_ids.h
 +#define SDIO_DEVICE_ID_MARVELL_LIBERTAS		0x9103
 +
 +#endif
-Index: linux-2.6.23.16/include/linux/mod_devicetable.h
+Index: linux-2.6.23.17/include/linux/mod_devicetable.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/mod_devicetable.h	2008-03-21 17:28:37.000000000 +0100
-+++ linux-2.6.23.16/include/linux/mod_devicetable.h	2008-03-21 17:32:50.000000000 +0100
+--- linux-2.6.23.17.orig/include/linux/mod_devicetable.h
++++ linux-2.6.23.17/include/linux/mod_devicetable.h
 @@ -22,6 +22,18 @@ struct pci_device_id {
  };
  
@@ -6196,10 +6196,10 @@ Index: linux-2.6.23.16/include/linux/mod_devicetable.h
  #define IEEE1394_MATCH_VENDOR_ID	0x0001
  #define IEEE1394_MATCH_MODEL_ID		0x0002
  #define IEEE1394_MATCH_SPECIFIER_ID	0x0004
-Index: linux-2.6.23.16/drivers/mmc/card/Kconfig
+Index: linux-2.6.23.17/drivers/mmc/card/Kconfig
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/card/Kconfig	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/drivers/mmc/card/Kconfig	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/mmc/card/Kconfig
++++ linux-2.6.23.17/drivers/mmc/card/Kconfig
 @@ -32,3 +32,10 @@ config MMC_BLOCK_BOUNCE
  
  	  If unsure, say Y here.
@@ -6211,20 +6211,20 @@ Index: linux-2.6.23.16/drivers/mmc/card/Kconfig
 +	  SDIO function driver for SDIO cards that implements the UART
 +	  class, as well as the GPS class which appears like a UART.
 +
-Index: linux-2.6.23.16/drivers/mmc/card/Makefile
+Index: linux-2.6.23.17/drivers/mmc/card/Makefile
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/card/Makefile	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/drivers/mmc/card/Makefile	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/mmc/card/Makefile
++++ linux-2.6.23.17/drivers/mmc/card/Makefile
 @@ -9,3 +9,5 @@ endif
  obj-$(CONFIG_MMC_BLOCK)		+= mmc_block.o
  mmc_block-objs			:= block.o queue.o
  
 +obj-$(CONFIG_SDIO_UART)		+= sdio_uart.o
 +
-Index: linux-2.6.23.16/drivers/mmc/card/block.c
+Index: linux-2.6.23.17/drivers/mmc/card/block.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/card/block.c	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/drivers/mmc/card/block.c	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/mmc/card/block.c
++++ linux-2.6.23.17/drivers/mmc/card/block.c
 @@ -44,6 +44,9 @@
   * max 8 partitions per card
   */
@@ -6382,10 +6382,10 @@ Index: linux-2.6.23.16/drivers/mmc/card/block.c
  		mmc_blk_put(md);
  	}
  	mmc_set_drvdata(card, NULL);
-Index: linux-2.6.23.16/drivers/mmc/card/queue.c
+Index: linux-2.6.23.17/drivers/mmc/card/queue.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/card/queue.c	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/drivers/mmc/card/queue.c	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/mmc/card/queue.c
++++ linux-2.6.23.17/drivers/mmc/card/queue.c
 @@ -13,6 +13,7 @@
  #include <linux/blkdev.h>
  #include <linux/freezer.h>
@@ -6457,10 +6457,10 @@ Index: linux-2.6.23.16/drivers/mmc/card/queue.c
  
  	while (sg_len) {
  		mq->sg[0].length += mq->bounce_sg[sg_len - 1].length;
-Index: linux-2.6.23.16/drivers/mmc/card/sdio_uart.c
+Index: linux-2.6.23.17/drivers/mmc/card/sdio_uart.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/mmc/card/sdio_uart.c	2008-03-21 17:30:25.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/drivers/mmc/card/sdio_uart.c
 @@ -0,0 +1,1158 @@
 +/*
 + * linux/drivers/mmc/card/sdio_uart.c - SDIO UART/GPS driver
@@ -7620,10 +7620,10 @@ Index: linux-2.6.23.16/drivers/mmc/card/sdio_uart.c
 +
 +MODULE_AUTHOR("Nicolas Pitre");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.23.16/drivers/mmc/core/Makefile
+Index: linux-2.6.23.17/drivers/mmc/core/Makefile
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/core/Makefile	2008-03-21 17:28:26.000000000 +0100
-+++ linux-2.6.23.16/drivers/mmc/core/Makefile	2008-03-21 17:30:25.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/mmc/core/Makefile
++++ linux-2.6.23.17/drivers/mmc/core/Makefile
 @@ -8,5 +8,7 @@ endif
  
  obj-$(CONFIG_MMC)		+= mmc_core.o

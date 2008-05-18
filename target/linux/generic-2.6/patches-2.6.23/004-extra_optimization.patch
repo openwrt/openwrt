@@ -1,8 +1,8 @@
-Index: linux-2.6.23-rc6/Makefile
+Index: linux-2.6.23.17/Makefile
 ===================================================================
---- linux-2.6.23-rc6.orig/Makefile	2007-09-21 16:23:55.000000000 +0800
-+++ linux-2.6.23-rc6/Makefile	2007-09-21 16:23:56.000000000 +0800
-@@ -508,6 +508,9 @@
+--- linux-2.6.23.17.orig/Makefile
++++ linux-2.6.23.17/Makefile
+@@ -508,6 +508,9 @@ CFLAGS          += $(call cc-option, -fn
  NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
  CHECKFLAGS     += $(NOSTDINC_FLAGS)
  

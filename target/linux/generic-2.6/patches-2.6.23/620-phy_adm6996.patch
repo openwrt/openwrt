@@ -1,8 +1,8 @@
-Index: linux-2.6.23.16/drivers/net/phy/Kconfig
+Index: linux-2.6.23.17/drivers/net/phy/Kconfig
 ===================================================================
---- linux-2.6.23.16.orig/drivers/net/phy/Kconfig	2008-04-20 04:40:22.000000000 +0200
-+++ linux-2.6.23.16/drivers/net/phy/Kconfig	2008-04-20 04:40:32.000000000 +0200
-@@ -60,6 +60,11 @@
+--- linux-2.6.23.17.orig/drivers/net/phy/Kconfig
++++ linux-2.6.23.17/drivers/net/phy/Kconfig
+@@ -60,6 +60,11 @@ config ICPLUS_PHY
  	---help---
  	  Currently supports the IP175C PHY.
  
@@ -14,11 +14,11 @@ Index: linux-2.6.23.16/drivers/net/phy/Kconfig
  config FIXED_PHY
  	tristate "Drivers for PHY emulation on fixed speed/link"
  	---help---
-Index: linux-2.6.23.16/drivers/net/phy/Makefile
+Index: linux-2.6.23.17/drivers/net/phy/Makefile
 ===================================================================
---- linux-2.6.23.16.orig/drivers/net/phy/Makefile	2008-04-20 04:40:22.000000000 +0200
-+++ linux-2.6.23.16/drivers/net/phy/Makefile	2008-04-20 04:40:32.000000000 +0200
-@@ -12,4 +12,5 @@
+--- linux-2.6.23.17.orig/drivers/net/phy/Makefile
++++ linux-2.6.23.17/drivers/net/phy/Makefile
+@@ -12,4 +12,5 @@ obj-$(CONFIG_SMSC_PHY)		+= smsc.o
  obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
  obj-$(CONFIG_BROADCOM_PHY)	+= broadcom.o
  obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o

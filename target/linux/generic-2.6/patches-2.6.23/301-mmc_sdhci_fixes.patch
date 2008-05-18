@@ -1,8 +1,8 @@
-Index: linux-2.6.23.16/drivers/mmc/host/sdhci.c
+Index: linux-2.6.23.17/drivers/mmc/host/sdhci.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/mmc/host/sdhci.c	2008-04-28 08:33:14.000000000 +0200
-+++ linux-2.6.23.16/drivers/mmc/host/sdhci.c	2008-04-28 08:36:40.000000000 +0200
-@@ -487,16 +487,16 @@
+--- linux-2.6.23.17.orig/drivers/mmc/host/sdhci.c
++++ linux-2.6.23.17/drivers/mmc/host/sdhci.c
+@@ -481,16 +481,16 @@ static void sdhci_finish_data(struct sdh
  	 * Controller doesn't count down when in single block mode.
  	 */
  	if (data->blocks == 1)
@@ -22,7 +22,7 @@ Index: linux-2.6.23.16/drivers/mmc/host/sdhci.c
  	}
  
  	if (data->stop) {
-@@ -504,7 +504,7 @@
+@@ -498,7 +498,7 @@ static void sdhci_finish_data(struct sdh
  		 * The controller needs a reset of internal state machines
  		 * upon error conditions.
  		 */
@@ -31,7 +31,7 @@ Index: linux-2.6.23.16/drivers/mmc/host/sdhci.c
  			sdhci_reset(host, SDHCI_RESET_CMD);
  			sdhci_reset(host, SDHCI_RESET_DATA);
  		}
-@@ -539,7 +539,7 @@
+@@ -533,7 +533,7 @@ static void sdhci_send_command(struct sd
  			printk(KERN_ERR "%s: Controller never released "
  				"inhibit bit(s).\n", mmc_hostname(host->mmc));
  			sdhci_dumpregs(host);
@@ -40,7 +40,7 @@ Index: linux-2.6.23.16/drivers/mmc/host/sdhci.c
  			tasklet_schedule(&host->finish_tasklet);
  			return;
  		}
-@@ -560,7 +560,7 @@
+@@ -554,7 +554,7 @@ static void sdhci_send_command(struct sd
  	if ((cmd->flags & MMC_RSP_136) && (cmd->flags & MMC_RSP_BUSY)) {
  		printk(KERN_ERR "%s: Unsupported response type!\n",
  			mmc_hostname(host->mmc));
@@ -49,7 +49,7 @@ Index: linux-2.6.23.16/drivers/mmc/host/sdhci.c
  		tasklet_schedule(&host->finish_tasklet);
  		return;
  	}
-@@ -607,7 +607,7 @@
+@@ -601,7 +601,7 @@ static void sdhci_finish_command(struct 
  		}
  	}
  
@@ -58,7 +58,7 @@ Index: linux-2.6.23.16/drivers/mmc/host/sdhci.c
  
  	if (host->data && host->data_early)
  		sdhci_finish_data(host);
-@@ -730,7 +730,7 @@
+@@ -722,7 +722,7 @@ static void sdhci_request(struct mmc_hos
  	host->mrq = mrq;
  
  	if (!(readl(host->ioaddr + SDHCI_PRESENT_STATE) & SDHCI_CARD_PRESENT)) {
@@ -67,7 +67,7 @@ Index: linux-2.6.23.16/drivers/mmc/host/sdhci.c
  		tasklet_schedule(&host->finish_tasklet);
  	} else
  		sdhci_send_command(host, mrq->cmd);
-@@ -839,7 +839,7 @@
+@@ -831,7 +831,7 @@ static void sdhci_tasklet_card(unsigned 
  			sdhci_reset(host, SDHCI_RESET_CMD);
  			sdhci_reset(host, SDHCI_RESET_DATA);
  
@@ -76,7 +76,7 @@ Index: linux-2.6.23.16/drivers/mmc/host/sdhci.c
  			tasklet_schedule(&host->finish_tasklet);
  		}
  	}
-@@ -867,9 +867,9 @@
+@@ -859,9 +859,9 @@ static void sdhci_tasklet_finish(unsigne
  	 * The controller needs a reset of internal state machines
  	 * upon error conditions.
  	 */
@@ -89,7 +89,7 @@ Index: linux-2.6.23.16/drivers/mmc/host/sdhci.c
  
  		/* Some controllers need this kick or reset won't work here */
  		if (host->chip->quirks & SDHCI_QUIRK_CLOCK_BEFORE_RESET) {
-@@ -914,13 +914,13 @@
+@@ -906,13 +906,13 @@ static void sdhci_timeout_timer(unsigned
  		sdhci_dumpregs(host);
  
  		if (host->data) {
@@ -106,7 +106,7 @@ Index: linux-2.6.23.16/drivers/mmc/host/sdhci.c
  
  			tasklet_schedule(&host->finish_tasklet);
  		}
-@@ -949,13 +949,12 @@
+@@ -941,13 +941,12 @@ static void sdhci_cmd_irq(struct sdhci_h
  	}
  
  	if (intmask & SDHCI_INT_TIMEOUT)
@@ -125,7 +125,7 @@ Index: linux-2.6.23.16/drivers/mmc/host/sdhci.c
  		tasklet_schedule(&host->finish_tasklet);
  	else if (intmask & SDHCI_INT_RESPONSE)
  		sdhci_finish_command(host);
-@@ -982,13 +981,11 @@
+@@ -974,13 +973,11 @@ static void sdhci_data_irq(struct sdhci_
  	}
  
  	if (intmask & SDHCI_INT_DATA_TIMEOUT)
@@ -143,7 +143,7 @@ Index: linux-2.6.23.16/drivers/mmc/host/sdhci.c
  		sdhci_finish_data(host);
  	else {
  		if (intmask & (SDHCI_INT_DATA_AVAIL | SDHCI_INT_SPACE_AVAIL))
-@@ -1320,7 +1317,7 @@
+@@ -1312,7 +1309,7 @@ static int __devinit sdhci_probe_slot(st
  	mmc->ops = &sdhci_ops;
  	mmc->f_min = host->max_clk / 256;
  	mmc->f_max = host->max_clk;
