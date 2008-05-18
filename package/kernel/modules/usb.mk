@@ -330,6 +330,36 @@ endef
 $(eval $(call KernelPackage,usb-serial-cp2101))
 
 
+define KernelPackage/usb-serial-ark3116
+  $(call usbdep,kmod-usb-serial @LINUX_2_6)
+  TITLE:=Support for ArkMicroChips ARK3116 devices
+  KCONFIG:=CONFIG_USB_SERIAL_ARK3116
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/ark3116.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,65,ark3116)
+endef
+
+define KernelPackage/usb-serial-ark3116/description
+ Kernel support for ArkMicroChips ARK3116 USB-to-Serial converters
+endef
+
+$(eval $(call KernelPackage,usb-serial-ark3116))
+
+
+define KernelPackage/usb-serial-oti6858
+  $(call usbdep,kmod-usb-serial @LINUX_2_6)
+  TITLE:=Support for Ours Technology OTI6858 devices
+  KCONFIG:=CONFIG_USB_SERIAL_OTI6858
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/oti6858.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,65,oti6858)
+endef
+
+define KernelPackage/usb-serial-oti6858/description
+ Kernel support for Ours Technology OTI6858 USB-to-Serial converters
+endef
+
+$(eval $(call KernelPackage,usb-serial-oti6858))
+
+
 define KernelPackage/usb-serial-sierrawireless
   $(call usbdep,kmod-usb-serial @LINUX_2_6)
   TITLE:=Support for Sierra Wireless devices
