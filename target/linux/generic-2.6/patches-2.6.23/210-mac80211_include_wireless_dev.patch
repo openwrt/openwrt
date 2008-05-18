@@ -1,8 +1,8 @@
-Index: linux-2.6.23-rc6/include/linux/ieee80211.h
+Index: linux-2.6.23.17/include/linux/ieee80211.h
 ===================================================================
---- linux-2.6.23-rc6.orig/include/linux/ieee80211.h	2007-09-21 16:23:52.000000000 +0800
-+++ linux-2.6.23-rc6/include/linux/ieee80211.h	2007-09-21 16:24:07.000000000 +0800
-@@ -106,6 +106,75 @@
+--- linux-2.6.23.17.orig/include/linux/ieee80211.h
++++ linux-2.6.23.17/include/linux/ieee80211.h
+@@ -106,6 +106,75 @@ struct ieee80211_hdr {
  } __attribute__ ((packed));
  
  
@@ -78,7 +78,7 @@ Index: linux-2.6.23-rc6/include/linux/ieee80211.h
  struct ieee80211_mgmt {
  	__le16 frame_control;
  	__le16 duration;
-@@ -173,9 +242,51 @@
+@@ -173,9 +242,51 @@ struct ieee80211_mgmt {
  				struct {
  					u8 action_code;
  					u8 dialog_token;
@@ -130,7 +130,7 @@ Index: linux-2.6.23-rc6/include/linux/ieee80211.h
  				struct{
  					u8 action_code;
  					u8 element_id;
-@@ -184,6 +295,25 @@
+@@ -184,6 +295,25 @@ struct ieee80211_mgmt {
  					u8 new_chan;
  					u8 switch_count;
  				} __attribute__((packed)) chan_switch;
@@ -156,7 +156,7 @@ Index: linux-2.6.23-rc6/include/linux/ieee80211.h
  			} u;
  		} __attribute__ ((packed)) action;
  	} u;
-@@ -270,6 +400,18 @@
+@@ -270,6 +400,18 @@ enum ieee80211_statuscode {
  	WLAN_STATUS_UNSUPP_RSN_VERSION = 44,
  	WLAN_STATUS_INVALID_RSN_IE_CAP = 45,
  	WLAN_STATUS_CIPHER_SUITE_REJECTED = 46,
@@ -175,7 +175,7 @@ Index: linux-2.6.23-rc6/include/linux/ieee80211.h
  };
  
  
-@@ -300,9 +442,50 @@
+@@ -300,9 +442,50 @@ enum ieee80211_reasoncode {
  	WLAN_REASON_INVALID_RSN_IE_CAP = 22,
  	WLAN_REASON_IEEE8021X_FAILED = 23,
  	WLAN_REASON_CIPHER_SUITE_REJECTED = 24,
@@ -226,7 +226,7 @@ Index: linux-2.6.23-rc6/include/linux/ieee80211.h
  /* Information Element IDs */
  enum ieee80211_eid {
  	WLAN_EID_SSID = 0,
-@@ -318,6 +501,15 @@
+@@ -318,6 +501,15 @@ enum ieee80211_eid {
  	WLAN_EID_HP_PARAMS = 8,
  	WLAN_EID_HP_TABLE = 9,
  	WLAN_EID_REQUEST = 10,
@@ -242,7 +242,7 @@ Index: linux-2.6.23-rc6/include/linux/ieee80211.h
  	/* 802.11h */
  	WLAN_EID_PWR_CONSTRAINT = 32,
  	WLAN_EID_PWR_CAPABILITY = 33,
-@@ -332,6 +524,9 @@
+@@ -332,6 +524,9 @@ enum ieee80211_eid {
  	/* 802.11g */
  	WLAN_EID_ERP_INFO = 42,
  	WLAN_EID_EXT_SUPP_RATES = 50,
@@ -252,7 +252,7 @@ Index: linux-2.6.23-rc6/include/linux/ieee80211.h
  	/* 802.11i */
  	WLAN_EID_RSN = 48,
  	WLAN_EID_WPA = 221,
-@@ -340,6 +535,9 @@
+@@ -340,6 +535,9 @@ enum ieee80211_eid {
  	WLAN_EID_QOS_PARAMETER = 222
  };
  
@@ -262,7 +262,7 @@ Index: linux-2.6.23-rc6/include/linux/ieee80211.h
  /* cipher suite selectors */
  #define WLAN_CIPHER_SUITE_USE_GROUP	0x000FAC00
  #define WLAN_CIPHER_SUITE_WEP40		0x000FAC01
-@@ -350,4 +548,37 @@
+@@ -350,4 +548,37 @@ enum ieee80211_eid {
  
  #define WLAN_MAX_KEY_LEN		32
  
@@ -300,10 +300,10 @@ Index: linux-2.6.23-rc6/include/linux/ieee80211.h
 +};
 +
  #endif /* IEEE80211_H */
-Index: linux-2.6.23-rc6/include/linux/nl80211.h
+Index: linux-2.6.23.17/include/linux/nl80211.h
 ===================================================================
---- linux-2.6.23-rc6.orig/include/linux/nl80211.h	2007-09-21 16:23:52.000000000 +0800
-+++ linux-2.6.23-rc6/include/linux/nl80211.h	2007-09-21 16:24:07.000000000 +0800
+--- linux-2.6.23.17.orig/include/linux/nl80211.h
++++ linux-2.6.23.17/include/linux/nl80211.h
 @@ -7,6 +7,217 @@
   */
  
@@ -522,7 +522,7 @@ Index: linux-2.6.23-rc6/include/linux/nl80211.h
   * enum nl80211_iftype - (virtual) interface types
   * @NL80211_IFTYPE_UNSPECIFIED: unspecified type, driver decides
   * @NL80211_IFTYPE_ADHOC: independent BSS member
-@@ -35,4 +246,56 @@
+@@ -35,4 +246,56 @@ enum nl80211_iftype {
  };
  #define NL80211_IFTYPE_MAX (__NL80211_IFTYPE_AFTER_LAST - 1)
  
@@ -579,10 +579,10 @@ Index: linux-2.6.23-rc6/include/linux/nl80211.h
 +#define NL80211_KEYTYPE_MAX (__NL80211_KEYTYPE_AFTER_LAST - 1)
 +
  #endif /* __LINUX_NL80211_H */
-Index: linux-2.6.23-rc6/include/net/cfg80211.h
+Index: linux-2.6.23.17/include/net/cfg80211.h
 ===================================================================
---- linux-2.6.23-rc6.orig/include/net/cfg80211.h	2007-09-21 16:23:52.000000000 +0800
-+++ linux-2.6.23-rc6/include/net/cfg80211.h	2007-09-21 16:24:07.000000000 +0800
+--- linux-2.6.23.17.orig/include/net/cfg80211.h
++++ linux-2.6.23.17/include/net/cfg80211.h
 @@ -3,6 +3,7 @@
  
  #include <linux/netlink.h>
@@ -591,7 +591,7 @@ Index: linux-2.6.23-rc6/include/net/cfg80211.h
  #include <net/genetlink.h>
  
  /*
-@@ -49,6 +50,69 @@
+@@ -49,6 +50,69 @@ extern int ieee80211_radiotap_iterator_n
     struct ieee80211_radiotap_iterator *iterator);
  
  
@@ -661,7 +661,7 @@ Index: linux-2.6.23-rc6/include/net/cfg80211.h
  /* from net/wireless.h */
  struct wiphy;
  
-@@ -68,11 +132,62 @@
+@@ -68,11 +132,62 @@ struct wiphy;
   * @add_virtual_intf: create a new virtual interface with the given name
   *
   * @del_virtual_intf: remove the virtual interface determined by ifindex.
@@ -725,11 +725,11 @@ Index: linux-2.6.23-rc6/include/net/cfg80211.h
 +			    u32 seq, int flags, u8 cmd);
 +
  #endif /* __NET_CFG80211_H */
-Index: linux-2.6.23-rc6/include/net/iw_handler.h
+Index: linux-2.6.23.17/include/net/iw_handler.h
 ===================================================================
---- linux-2.6.23-rc6.orig/include/net/iw_handler.h	2007-09-21 16:23:52.000000000 +0800
-+++ linux-2.6.23-rc6/include/net/iw_handler.h	2007-09-21 16:24:07.000000000 +0800
-@@ -431,7 +431,13 @@
+--- linux-2.6.23.17.orig/include/net/iw_handler.h
++++ linux-2.6.23.17/include/net/iw_handler.h
+@@ -431,7 +431,13 @@ struct iw_public_data {
   * Those may be called only within the kernel.
   */
  
@@ -744,11 +744,11 @@ Index: linux-2.6.23-rc6/include/net/iw_handler.h
  
  /* Send a single event to user space */
  extern void wireless_send_event(struct net_device *	dev,
-Index: linux-2.6.23-rc6/include/net/mac80211.h
+Index: linux-2.6.23.17/include/net/mac80211.h
 ===================================================================
---- linux-2.6.23-rc6.orig/include/net/mac80211.h	2007-09-21 16:23:52.000000000 +0800
-+++ linux-2.6.23-rc6/include/net/mac80211.h	2007-09-21 16:24:07.000000000 +0800
-@@ -300,7 +300,6 @@
+--- linux-2.6.23.17.orig/include/net/mac80211.h
++++ linux-2.6.23.17/include/net/mac80211.h
+@@ -300,7 +300,6 @@ struct ieee80211_conf {
  	/* Following five fields are used for IEEE 802.11H */
  	unsigned int radar_detect;
  	unsigned int spect_mgmt;
@@ -756,7 +756,7 @@ Index: linux-2.6.23-rc6/include/net/mac80211.h
  	unsigned int quiet_duration; /* duration of quiet period */
  	unsigned int quiet_offset; /* how far into the beacon is the quiet
  				    * period */
-@@ -521,6 +520,9 @@
+@@ -521,6 +520,9 @@ struct ieee80211_hw {
  	 * per-packet RC4 key with each TX frame when doing hwcrypto */
  #define IEEE80211_HW_TKIP_REQ_PHASE2_KEY (1<<14)
  
@@ -766,7 +766,7 @@ Index: linux-2.6.23-rc6/include/net/mac80211.h
  	u32 flags;			/* hardware flags defined above */
  
  	/* Set to the size of a needed device specific skb headroom for TX skbs. */
-@@ -649,8 +651,7 @@
+@@ -649,8 +651,7 @@ struct ieee80211_ops {
  	 * used if the wlan hardware or low-level driver implements PAE.
  	 * 80211.o module will anyway filter frames based on authorization
  	 * state, so this function pointer can be NULL if low-level driver does
@@ -776,7 +776,7 @@ Index: linux-2.6.23-rc6/include/net/mac80211.h
  	int (*set_port_auth)(struct ieee80211_hw *hw, u8 *addr,
  			     int authorized);
  
-@@ -702,8 +703,9 @@
+@@ -702,8 +703,9 @@ struct ieee80211_ops {
  	/* Get statistics of the current TX queue status. This is used to get
  	 * number of currently queued packets (queue length), maximum queue
  	 * size (limit), and total number of packets sent using each TX queue
@@ -788,7 +788,7 @@ Index: linux-2.6.23-rc6/include/net/mac80211.h
  	int (*get_tx_stats)(struct ieee80211_hw *hw,
  			    struct ieee80211_tx_queue_stats *stats);
  
-@@ -713,12 +715,25 @@
+@@ -713,12 +715,25 @@ struct ieee80211_ops {
  	 * Must be atomic. */
  	u64 (*get_tsf)(struct ieee80211_hw *hw);
  

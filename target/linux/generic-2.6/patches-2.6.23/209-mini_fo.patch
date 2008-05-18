@@ -1,8 +1,8 @@
-Index: linux-2.6.23/fs/Kconfig
+Index: linux-2.6.23.17/fs/Kconfig
 ===================================================================
---- linux-2.6.23.orig/fs/Kconfig	2007-10-10 13:52:14.000000000 +0800
-+++ linux-2.6.23/fs/Kconfig	2007-10-10 13:53:23.000000000 +0800
-@@ -458,6 +458,9 @@
+--- linux-2.6.23.17.orig/fs/Kconfig
++++ linux-2.6.23.17/fs/Kconfig
+@@ -458,6 +458,9 @@ config OCFS2_DEBUG_MASKLOG
  	  This option will enlarge your kernel, but it allows debugging of
  	  ocfs2 filesystem issues.
  
@@ -12,11 +12,11 @@ Index: linux-2.6.23/fs/Kconfig
  config MINIX_FS
  	tristate "Minix fs support"
  	help
-Index: linux-2.6.23/fs/Makefile
+Index: linux-2.6.23.17/fs/Makefile
 ===================================================================
---- linux-2.6.23.orig/fs/Makefile	2007-10-10 13:52:14.000000000 +0800
-+++ linux-2.6.23/fs/Makefile	2007-10-10 13:53:23.000000000 +0800
-@@ -76,6 +76,7 @@
+--- linux-2.6.23.17.orig/fs/Makefile
++++ linux-2.6.23.17/fs/Makefile
+@@ -76,6 +76,7 @@ obj-$(CONFIG_SQUASHFS)		+= squashfs/
  obj-$(CONFIG_RAMFS)		+= ramfs/
  obj-$(CONFIG_HUGETLBFS)		+= hugetlbfs/
  obj-$(CONFIG_CODA_FS)		+= coda/
@@ -24,10 +24,10 @@ Index: linux-2.6.23/fs/Makefile
  obj-$(CONFIG_MINIX_FS)		+= minix/
  obj-$(CONFIG_FAT_FS)		+= fat/
  obj-$(CONFIG_MSDOS_FS)		+= msdos/
-Index: linux-2.6.23/fs/mini_fo/aux.c
+Index: linux-2.6.23.17/fs/mini_fo/aux.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/aux.c	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/aux.c
 @@ -0,0 +1,577 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -606,10 +606,10 @@ Index: linux-2.6.23/fs/mini_fo/aux.c
 +
 +#endif /* unused */
 +
-Index: linux-2.6.23/fs/mini_fo/ChangeLog
+Index: linux-2.6.23.17/fs/mini_fo/ChangeLog
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/ChangeLog	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/ChangeLog
 @@ -0,0 +1,281 @@
 +2006-01-24  Markus Klotzbuecher  <mk@mary.denx.de>
 +
@@ -892,10 +892,10 @@ Index: linux-2.6.23/fs/mini_fo/ChangeLog
 +	* Implementation of mini_fo_mknod and mini_fo_rename, support
 +          for device files.
 +	
-Index: linux-2.6.23/fs/mini_fo/dentry.c
+Index: linux-2.6.23.17/fs/mini_fo/dentry.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/dentry.c	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/dentry.c
 @@ -0,0 +1,244 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -1141,10 +1141,10 @@ Index: linux-2.6.23/fs/mini_fo/dentry.c
 +	d_delete:		mini_fo_d_delete,
 +	d_iput:		mini_fo_d_iput,
 +};
-Index: linux-2.6.23/fs/mini_fo/file.c
+Index: linux-2.6.23.17/fs/mini_fo/file.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/file.c	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/file.c
 @@ -0,0 +1,713 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -1859,10 +1859,10 @@ Index: linux-2.6.23/fs/mini_fo/file.c
 +		/* not implemented: sendpage */
 +		/* not implemented: get_unmapped_area */
 +	};
-Index: linux-2.6.23/fs/mini_fo/fist.h
+Index: linux-2.6.23.17/fs/mini_fo/fist.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/fist.h	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/fist.h
 @@ -0,0 +1,252 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -2116,10 +2116,10 @@ Index: linux-2.6.23/fs/mini_fo/fist.h
 +# define FIST_IOCTL_SET_DEBUG_VALUE	_IOW(0x15, 2, int)
 +
 +#endif /* not __FIST_H_ */
-Index: linux-2.6.23/fs/mini_fo/inode.c
+Index: linux-2.6.23.17/fs/mini_fo/inode.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/inode.c	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/inode.c
 @@ -0,0 +1,1564 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -3685,10 +3685,10 @@ Index: linux-2.6.23/fs/mini_fo/inode.c
 +		removexattr:    mini_fo_removexattr
 +# endif /* XATTR && LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,20) */
 +	};
-Index: linux-2.6.23/fs/mini_fo/main.c
+Index: linux-2.6.23.17/fs/mini_fo/main.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/main.c	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/main.c
 @@ -0,0 +1,423 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -4113,10 +4113,10 @@ Index: linux-2.6.23/fs/mini_fo/main.c
 +
 +module_init(init_mini_fo_fs)
 +module_exit(exit_mini_fo_fs)
-Index: linux-2.6.23/fs/mini_fo/Makefile
+Index: linux-2.6.23.17/fs/mini_fo/Makefile
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/Makefile	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/Makefile
 @@ -0,0 +1,17 @@
 +#
 +# Makefile for mini_fo 2.4 and 2.6 Linux kernels
@@ -4135,10 +4135,10 @@ Index: linux-2.6.23/fs/mini_fo/Makefile
 +# dependencies
 +${mini_fo-objs}: mini_fo.h fist.h
 +
-Index: linux-2.6.23/fs/mini_fo/meta.c
+Index: linux-2.6.23.17/fs/mini_fo/meta.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/meta.c	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/meta.c
 @@ -0,0 +1,1000 @@
 +/*
 + * Copyright (C) 2004, 2005 Markus Klotzbuecher <mk@creamnet.de>
@@ -5140,10 +5140,10 @@ Index: linux-2.6.23/fs/mini_fo/meta.c
 +	return 0;
 +}
 +
-Index: linux-2.6.23/fs/mini_fo/mini_fo.h
+Index: linux-2.6.23.17/fs/mini_fo/mini_fo.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/mini_fo.h	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/mini_fo.h
 @@ -0,0 +1,510 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -5655,10 +5655,10 @@ Index: linux-2.6.23/fs/mini_fo/mini_fo.h
 +/* ioctls */
 +
 +#endif	/* not __MINI_FO_H_ */
-Index: linux-2.6.23/fs/mini_fo/mini_fo-merge
+Index: linux-2.6.23.17/fs/mini_fo/mini_fo-merge
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/mini_fo-merge	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/mini_fo-merge
 @@ -0,0 +1,180 @@
 +#!/bin/bash
 +#
@@ -5840,10 +5840,10 @@ Index: linux-2.6.23/fs/mini_fo/mini_fo-merge
 +#rm $TMP/$SKIP_DEL_LIST 
 +
 +echo "Done!"
-Index: linux-2.6.23/fs/mini_fo/mini_fo-overlay
+Index: linux-2.6.23.17/fs/mini_fo/mini_fo-overlay
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/mini_fo-overlay	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/mini_fo-overlay
 @@ -0,0 +1,130 @@
 +#!/bin/bash
 +#
@@ -5975,10 +5975,10 @@ Index: linux-2.6.23/fs/mini_fo/mini_fo-overlay
 +if [ $? -ne 0 ]; then
 +    echo "Error, mounting failed, maybe no permisson to mount?"
 +fi
-Index: linux-2.6.23/fs/mini_fo/mmap.c
+Index: linux-2.6.23.17/fs/mini_fo/mmap.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/mmap.c	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/mmap.c
 @@ -0,0 +1,637 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -6617,10 +6617,10 @@ Index: linux-2.6.23/fs/mini_fo/mmap.c
 +	print_exit_status(err);
 +	return err;
 +}
-Index: linux-2.6.23/fs/mini_fo/README
+Index: linux-2.6.23.17/fs/mini_fo/README
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/README	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/README
 @@ -0,0 +1,163 @@
 +README for the mini_fo overlay file system
 +=========================================
@@ -6785,10 +6785,10 @@ Index: linux-2.6.23/fs/mini_fo/README
 +2 of the License, or (at your option) any later version.
 +
 +
-Index: linux-2.6.23/fs/mini_fo/RELEASE_NOTES
+Index: linux-2.6.23.17/fs/mini_fo/RELEASE_NOTES
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/RELEASE_NOTES	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/RELEASE_NOTES
 @@ -0,0 +1,111 @@
 +Release:	mini_fo-0.6.1 (v0-6-1)
 +Date:		21.09.2005
@@ -6901,10 +6901,10 @@ Index: linux-2.6.23/fs/mini_fo/RELEASE_NOTES
 +original state. I hope to fix this someday. Please note that this does
 +not effect the special hard links '.' and '..', that are handled
 +seperately by the lower fs.
-Index: linux-2.6.23/fs/mini_fo/state.c
+Index: linux-2.6.23.17/fs/mini_fo/state.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/state.c	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/state.c
 @@ -0,0 +1,620 @@
 +/*
 + * Copyright (C) 2005 Markus Klotzbuecher <mk@creamnet.de>
@@ -7526,10 +7526,10 @@ Index: linux-2.6.23/fs/mini_fo/state.c
 +	return err;
 +}
 +
-Index: linux-2.6.23/fs/mini_fo/super.c
+Index: linux-2.6.23.17/fs/mini_fo/super.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23/fs/mini_fo/super.c	2007-10-10 13:53:23.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/fs/mini_fo/super.c
 @@ -0,0 +1,281 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok

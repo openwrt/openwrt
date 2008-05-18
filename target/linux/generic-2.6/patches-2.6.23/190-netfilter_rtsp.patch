@@ -1,7 +1,7 @@
-Index: linux-2.6.23-rc9/include/linux/netfilter/nf_conntrack_rtsp.h
+Index: linux-2.6.23.17/include/linux/netfilter/nf_conntrack_rtsp.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc9/include/linux/netfilter/nf_conntrack_rtsp.h	2007-10-05 21:26:39.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/include/linux/netfilter/nf_conntrack_rtsp.h
 @@ -0,0 +1,63 @@
 +/*
 + * RTSP extension for IP connection tracking.
@@ -66,10 +66,10 @@ Index: linux-2.6.23-rc9/include/linux/netfilter/nf_conntrack_rtsp.h
 +#endif /* __KERNEL__ */
 +
 +#endif /* _IP_CONNTRACK_RTSP_H */
-Index: linux-2.6.23-rc9/include/linux/netfilter_helpers.h
+Index: linux-2.6.23.17/include/linux/netfilter_helpers.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc9/include/linux/netfilter_helpers.h	2007-10-05 21:26:39.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/include/linux/netfilter_helpers.h
 @@ -0,0 +1,133 @@
 +/*
 + * Helpers for netfiler modules.  This file provides implementations for basic
@@ -204,10 +204,10 @@ Index: linux-2.6.23-rc9/include/linux/netfilter_helpers.h
 +#endif /* __KERNEL__ */
 +
 +#endif /* _NETFILTER_HELPERS_H */
-Index: linux-2.6.23-rc9/include/linux/netfilter_mime.h
+Index: linux-2.6.23.17/include/linux/netfilter_mime.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc9/include/linux/netfilter_mime.h	2007-10-05 21:26:39.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/include/linux/netfilter_mime.h
 @@ -0,0 +1,89 @@
 +/*
 + * MIME functions for netfilter modules.  This file provides implementations
@@ -298,11 +298,11 @@ Index: linux-2.6.23-rc9/include/linux/netfilter_mime.h
 +#endif /* __KERNEL__ */
 +
 +#endif /* _NETFILTER_MIME_H */
-Index: linux-2.6.23-rc9/net/ipv4/netfilter/Makefile
+Index: linux-2.6.23.17/net/ipv4/netfilter/Makefile
 ===================================================================
---- linux-2.6.23-rc9.orig/net/ipv4/netfilter/Makefile	2007-10-05 21:26:39.000000000 +0800
-+++ linux-2.6.23-rc9/net/ipv4/netfilter/Makefile	2007-10-05 21:26:39.000000000 +0800
-@@ -23,6 +23,7 @@
+--- linux-2.6.23.17.orig/net/ipv4/netfilter/Makefile
++++ linux-2.6.23.17/net/ipv4/netfilter/Makefile
+@@ -23,6 +23,7 @@ obj-$(CONFIG_NF_NAT_AMANDA) += nf_nat_am
  obj-$(CONFIG_NF_NAT_FTP) += nf_nat_ftp.o
  obj-$(CONFIG_NF_NAT_H323) += nf_nat_h323.o
  obj-$(CONFIG_NF_NAT_IRC) += nf_nat_irc.o
@@ -310,11 +310,11 @@ Index: linux-2.6.23-rc9/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_NF_NAT_PPTP) += nf_nat_pptp.o
  obj-$(CONFIG_NF_NAT_SIP) += nf_nat_sip.o
  obj-$(CONFIG_NF_NAT_SNMP_BASIC) += nf_nat_snmp_basic.o
-Index: linux-2.6.23-rc9/net/netfilter/Kconfig
+Index: linux-2.6.23.17/net/netfilter/Kconfig
 ===================================================================
---- linux-2.6.23-rc9.orig/net/netfilter/Kconfig	2007-10-05 21:26:39.000000000 +0800
-+++ linux-2.6.23-rc9/net/netfilter/Kconfig	2007-10-05 21:26:39.000000000 +0800
-@@ -249,6 +249,16 @@
+--- linux-2.6.23.17.orig/net/netfilter/Kconfig
++++ linux-2.6.23.17/net/netfilter/Kconfig
+@@ -249,6 +249,16 @@ config NF_CONNTRACK_TFTP
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -331,11 +331,11 @@ Index: linux-2.6.23-rc9/net/netfilter/Kconfig
  config NF_CT_NETLINK
  	tristate 'Connection tracking netlink interface (EXPERIMENTAL)'
  	depends on EXPERIMENTAL && NF_CONNTRACK && NETFILTER_NETLINK
-Index: linux-2.6.23-rc9/net/netfilter/Makefile
+Index: linux-2.6.23.17/net/netfilter/Makefile
 ===================================================================
---- linux-2.6.23-rc9.orig/net/netfilter/Makefile	2007-10-05 21:26:39.000000000 +0800
-+++ linux-2.6.23-rc9/net/netfilter/Makefile	2007-10-05 21:26:39.000000000 +0800
-@@ -33,6 +33,7 @@
+--- linux-2.6.23.17.orig/net/netfilter/Makefile
++++ linux-2.6.23.17/net/netfilter/Makefile
+@@ -33,6 +33,7 @@ obj-$(CONFIG_NF_CONNTRACK_PPTP) += nf_co
  obj-$(CONFIG_NF_CONNTRACK_SANE) += nf_conntrack_sane.o
  obj-$(CONFIG_NF_CONNTRACK_SIP) += nf_conntrack_sip.o
  obj-$(CONFIG_NF_CONNTRACK_TFTP) += nf_conntrack_tftp.o
@@ -343,11 +343,11 @@ Index: linux-2.6.23-rc9/net/netfilter/Makefile
  
  # generic X tables 
  obj-$(CONFIG_NETFILTER_XTABLES) += x_tables.o xt_tcpudp.o
-Index: linux-2.6.23-rc9/net/ipv4/netfilter/Kconfig
+Index: linux-2.6.23.17/net/ipv4/netfilter/Kconfig
 ===================================================================
---- linux-2.6.23-rc9.orig/net/ipv4/netfilter/Kconfig	2007-10-05 21:26:39.000000000 +0800
-+++ linux-2.6.23-rc9/net/ipv4/netfilter/Kconfig	2007-10-05 21:26:39.000000000 +0800
-@@ -314,6 +314,11 @@
+--- linux-2.6.23.17.orig/net/ipv4/netfilter/Kconfig
++++ linux-2.6.23.17/net/ipv4/netfilter/Kconfig
+@@ -296,6 +296,11 @@ config NF_NAT_IRC
  	depends on IP_NF_IPTABLES && NF_CONNTRACK && NF_NAT
  	default NF_NAT && NF_CONNTRACK_IRC
  
@@ -359,10 +359,10 @@ Index: linux-2.6.23-rc9/net/ipv4/netfilter/Kconfig
  config NF_NAT_TFTP
  	tristate
  	depends on IP_NF_IPTABLES && NF_CONNTRACK && NF_NAT
-Index: linux-2.6.23-rc9/net/netfilter/nf_conntrack_rtsp.c
+Index: linux-2.6.23.17/net/netfilter/nf_conntrack_rtsp.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc9/net/netfilter/nf_conntrack_rtsp.c	2007-10-05 21:46:43.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/net/netfilter/nf_conntrack_rtsp.c
 @@ -0,0 +1,513 @@
 +/*
 + * RTSP extension for IP connection tracking
@@ -877,10 +877,10 @@ Index: linux-2.6.23-rc9/net/netfilter/nf_conntrack_rtsp.c
 +
 +EXPORT_SYMBOL(nf_nat_rtsp_hook_expectfn);
 +
-Index: linux-2.6.23-rc9/net/ipv4/netfilter/nf_nat_rtsp.c
+Index: linux-2.6.23.17/net/ipv4/netfilter/nf_nat_rtsp.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc9/net/ipv4/netfilter/nf_nat_rtsp.c	2007-10-05 21:41:16.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/net/ipv4/netfilter/nf_nat_rtsp.c
 @@ -0,0 +1,496 @@
 +/*
 + * RTSP extension for TCP NAT alteration

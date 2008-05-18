@@ -1,5 +1,7 @@
---- linux-2.6.24-rc5/net/netfilter/Kconfig	2007-12-11 23:43:21.000000000 -0600
-+++ linux-2.6.24-rc5-layer7/net/netfilter/Kconfig	2007-12-11 23:35:12.000000000 -0600
+Index: linux-2.6.23.17/net/netfilter/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/net/netfilter/Kconfig
++++ linux-2.6.23.17/net/netfilter/Kconfig
 @@ -633,6 +633,27 @@ config NETFILTER_XT_MATCH_STATE
  
  	  To compile it as a module, choose M here.  If unsure, say N.
@@ -28,9 +30,11 @@
  config NETFILTER_XT_MATCH_STATISTIC
  	tristate '"statistic" match support'
  	depends on NETFILTER_XTABLES
---- linux-2.6.24-rc5/net/netfilter/Makefile	2007-12-11 23:43:21.000000000 -0600
-+++ linux-2.6.24-rc5-layer7/net/netfilter/Makefile	2007-12-11 23:35:12.000000000 -0600
-@@ -73,6 +73,7 @@ obj-$(CONFIG_NETFILTER_XT_MATCH_QUOTA) +
+Index: linux-2.6.23.17/net/netfilter/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/net/netfilter/Makefile
++++ linux-2.6.23.17/net/netfilter/Makefile
+@@ -71,6 +71,7 @@ obj-$(CONFIG_NETFILTER_XT_MATCH_QUOTA) +
  obj-$(CONFIG_NETFILTER_XT_MATCH_REALM) += xt_realm.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_SCTP) += xt_sctp.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_STATE) += xt_state.o
@@ -38,8 +42,10 @@
  obj-$(CONFIG_NETFILTER_XT_MATCH_STATISTIC) += xt_statistic.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_STRING) += xt_string.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_TCPMSS) += xt_tcpmss.o
---- linux-2.6.24-rc5/net/netfilter/xt_layer7.c	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.24-rc5-layer7/net/netfilter/xt_layer7.c	2007-12-11 23:55:46.000000000 -0600
+Index: linux-2.6.23.17/net/netfilter/xt_layer7.c
+===================================================================
+--- /dev/null
++++ linux-2.6.23.17/net/netfilter/xt_layer7.c
 @@ -0,0 +1,634 @@
 +/*
 +  Kernel module to match application layer (OSI layer 7) data in connections.
@@ -675,8 +681,10 @@
 +
 +module_init(xt_layer7_init);
 +module_exit(xt_layer7_fini);
---- linux-2.6.24-rc5/net/netfilter/regexp/regexp.c	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.24-rc5-layer7/net/netfilter/regexp/regexp.c	2007-12-11 23:35:12.000000000 -0600
+Index: linux-2.6.23.17/net/netfilter/regexp/regexp.c
+===================================================================
+--- /dev/null
++++ linux-2.6.23.17/net/netfilter/regexp/regexp.c
 @@ -0,0 +1,1197 @@
 +/*
 + * regcomp and regexec -- regsub and regerror are elsewhere
@@ -1875,8 +1883,10 @@
 +#endif
 +
 +
---- linux-2.6.24-rc5/net/netfilter/regexp/regexp.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.24-rc5-layer7/net/netfilter/regexp/regexp.h	2007-12-11 23:35:12.000000000 -0600
+Index: linux-2.6.23.17/net/netfilter/regexp/regexp.h
+===================================================================
+--- /dev/null
++++ linux-2.6.23.17/net/netfilter/regexp/regexp.h
 @@ -0,0 +1,41 @@
 +/*
 + * Definitions etc. for regexp(3) routines.
@@ -1919,16 +1929,20 @@
 +void regerror(char *s);
 +
 +#endif
---- linux-2.6.24-rc5/net/netfilter/regexp/regmagic.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.24-rc5-layer7/net/netfilter/regexp/regmagic.h	2007-12-11 23:35:12.000000000 -0600
+Index: linux-2.6.23.17/net/netfilter/regexp/regmagic.h
+===================================================================
+--- /dev/null
++++ linux-2.6.23.17/net/netfilter/regexp/regmagic.h
 @@ -0,0 +1,5 @@
 +/*
 + * The first byte of the regexp internal "program" is actually this magic
 + * number; the start node begins in the second byte.
 + */
 +#define	MAGIC	0234
---- linux-2.6.24-rc5/net/netfilter/regexp/regsub.c	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.24-rc5-layer7/net/netfilter/regexp/regsub.c	2007-12-11 23:35:12.000000000 -0600
+Index: linux-2.6.23.17/net/netfilter/regexp/regsub.c
+===================================================================
+--- /dev/null
++++ linux-2.6.23.17/net/netfilter/regexp/regsub.c
 @@ -0,0 +1,95 @@
 +/*
 + * regsub
@@ -2025,9 +2039,11 @@
 +	}
 +	*dst++ = '\0';
 +}
---- linux-2.6.24-rc5/net/netfilter/nf_conntrack_core.c	2007-12-11 23:43:21.000000000 -0600
-+++ linux-2.6.24-rc5-layer7/net/netfilter/nf_conntrack_core.c	2007-12-11 23:35:12.000000000 -0600
-@@ -206,6 +206,14 @@ destroy_conntrack(struct nf_conntrack *n
+Index: linux-2.6.23.17/net/netfilter/nf_conntrack_core.c
+===================================================================
+--- linux-2.6.23.17.orig/net/netfilter/nf_conntrack_core.c
++++ linux-2.6.23.17/net/netfilter/nf_conntrack_core.c
+@@ -207,6 +207,14 @@ destroy_conntrack(struct nf_conntrack *n
  	 * too. */
  	nf_ct_remove_expectations(ct);
  
@@ -2042,9 +2058,11 @@
  	/* We overload first tuple to link into unconfirmed list. */
  	if (!nf_ct_is_confirmed(ct)) {
  		BUG_ON(hlist_unhashed(&ct->tuplehash[IP_CT_DIR_ORIGINAL].hnode));
---- linux-2.6.24-rc5/net/netfilter/nf_conntrack_standalone.c	2007-12-11 23:43:22.000000000 -0600
-+++ linux-2.6.24-rc5-layer7/net/netfilter/nf_conntrack_standalone.c	2007-12-11 23:35:12.000000000 -0600
-@@ -180,7 +180,12 @@ static int ct_seq_show(struct seq_file *
+Index: linux-2.6.23.17/net/netfilter/nf_conntrack_standalone.c
+===================================================================
+--- linux-2.6.23.17.orig/net/netfilter/nf_conntrack_standalone.c
++++ linux-2.6.23.17/net/netfilter/nf_conntrack_standalone.c
+@@ -179,7 +179,12 @@ static int ct_seq_show(struct seq_file *
  		return -ENOSPC;
  #endif
  
@@ -2058,9 +2076,11 @@
  		return -ENOSPC;
  
  	return 0;
---- linux-2.6.24-rc5/include/net/netfilter/nf_conntrack.h	2007-12-11 23:43:16.000000000 -0600
-+++ linux-2.6.24-rc5-layer7/include/net/netfilter/nf_conntrack.h	2007-12-11 23:35:12.000000000 -0600
-@@ -124,6 +124,22 @@ struct nf_conn
+Index: linux-2.6.23.17/include/net/netfilter/nf_conntrack.h
+===================================================================
+--- linux-2.6.23.17.orig/include/net/netfilter/nf_conntrack.h
++++ linux-2.6.23.17/include/net/netfilter/nf_conntrack.h
+@@ -127,6 +127,22 @@ struct nf_conn
  	u_int32_t secmark;
  #endif
  
@@ -2083,8 +2103,10 @@
  	/* Storage reserved for other modules: */
  	union nf_conntrack_proto proto;
  
---- linux-2.6.24-rc5/include/linux/netfilter/xt_layer7.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.6.24-rc5-layer7/include/linux/netfilter/xt_layer7.h	2007-12-11 23:35:12.000000000 -0600
+Index: linux-2.6.23.17/include/linux/netfilter/xt_layer7.h
+===================================================================
+--- /dev/null
++++ linux-2.6.23.17/include/linux/netfilter/xt_layer7.h
 @@ -0,0 +1,13 @@
 +#ifndef _XT_LAYER7_H
 +#define _XT_LAYER7_H

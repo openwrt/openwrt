@@ -1,7 +1,8 @@
-diff -Naur linux-2.6.21.5.orig/include/linux/pkt_sched.h linux-2.6.21.5/include/linux/pkt_sched.h
---- linux-2.6.21.5.orig/include/linux/pkt_sched.h	2007-06-11 11:37:06.000000000 -0700
-+++ linux-2.6.21.5/include/linux/pkt_sched.h	2007-06-22 22:53:46.000000000 -0700
-@@ -146,8 +146,37 @@
+Index: linux-2.6.23.17/include/linux/pkt_sched.h
+===================================================================
+--- linux-2.6.23.17.orig/include/linux/pkt_sched.h
++++ linux-2.6.23.17/include/linux/pkt_sched.h
+@@ -155,8 +155,37 @@ struct tc_sfq_qopt
   *
   *	The only reason for this is efficiency, it is possible
   *	to change these parameters in compile time.
@@ -39,10 +40,11 @@ diff -Naur linux-2.6.21.5.orig/include/linux/pkt_sched.h linux-2.6.21.5/include/
  /* RED section */
  
  enum
-diff -Naur linux-2.6.21.5.orig/net/sched/Kconfig linux-2.6.21.5/net/sched/Kconfig
---- linux-2.6.21.5.orig/net/sched/Kconfig	2007-06-11 11:37:06.000000000 -0700
-+++ linux-2.6.21.5/net/sched/Kconfig	2007-06-23 14:11:02.000000000 -0700
-@@ -189,6 +189,37 @@
+Index: linux-2.6.23.17/net/sched/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/net/sched/Kconfig
++++ linux-2.6.23.17/net/sched/Kconfig
+@@ -144,6 +144,37 @@ config NET_SCH_SFQ
  	  To compile this code as a module, choose M here: the
  	  module will be called sch_sfq.
  
@@ -80,10 +82,11 @@ diff -Naur linux-2.6.21.5.orig/net/sched/Kconfig linux-2.6.21.5/net/sched/Kconfi
  config NET_SCH_TEQL
  	tristate "True Link Equalizer (TEQL)"
  	---help---
-diff -Naur linux-2.6.21.5.orig/net/sched/Makefile linux-2.6.21.5/net/sched/Makefile
---- linux-2.6.21.5.orig/net/sched/Makefile	2007-06-11 11:37:06.000000000 -0700
-+++ linux-2.6.21.5/net/sched/Makefile	2007-06-22 22:53:46.000000000 -0700
-@@ -23,6 +23,7 @@
+Index: linux-2.6.23.17/net/sched/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/net/sched/Makefile
++++ linux-2.6.23.17/net/sched/Makefile
+@@ -22,6 +22,7 @@ obj-$(CONFIG_NET_SCH_GRED)	+= sch_gred.o
  obj-$(CONFIG_NET_SCH_INGRESS)	+= sch_ingress.o 
  obj-$(CONFIG_NET_SCH_DSMARK)	+= sch_dsmark.o
  obj-$(CONFIG_NET_SCH_SFQ)	+= sch_sfq.o
@@ -91,9 +94,10 @@ diff -Naur linux-2.6.21.5.orig/net/sched/Makefile linux-2.6.21.5/net/sched/Makef
  obj-$(CONFIG_NET_SCH_TBF)	+= sch_tbf.o
  obj-$(CONFIG_NET_SCH_TEQL)	+= sch_teql.o
  obj-$(CONFIG_NET_SCH_PRIO)	+= sch_prio.o
-diff -Naur linux-2.6.21.5.orig/net/sched/sch_esfq.c linux-2.6.21.5/net/sched/sch_esfq.c
---- linux-2.6.21.5.orig/net/sched/sch_esfq.c	1969-12-31 16:00:00.000000000 -0800
-+++ linux-2.6.21.5/net/sched/sch_esfq.c	2007-06-23 19:18:00.000000000 -0700
+Index: linux-2.6.23.17/net/sched/sch_esfq.c
+===================================================================
+--- /dev/null
++++ linux-2.6.23.17/net/sched/sch_esfq.c
 @@ -0,0 +1,702 @@
 +/*
 + * net/sched/sch_esfq.c	Extended Stochastic Fairness Queueing discipline.

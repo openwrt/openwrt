@@ -1,7 +1,7 @@
-Index: linux-2.6.23-rc6/include/linux/netfilter_ipv4/ipt_ROUTE.h
+Index: linux-2.6.23.17/include/linux/netfilter_ipv4/ipt_ROUTE.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc6/include/linux/netfilter_ipv4/ipt_ROUTE.h	2007-09-21 16:24:03.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/include/linux/netfilter_ipv4/ipt_ROUTE.h
 @@ -0,0 +1,23 @@
 +/* Header file for iptables ipt_ROUTE target
 + *
@@ -26,10 +26,10 @@ Index: linux-2.6.23-rc6/include/linux/netfilter_ipv4/ipt_ROUTE.h
 +#define IPT_ROUTE_TEE             0x02
 +
 +#endif /*_IPT_ROUTE_H_target*/
-Index: linux-2.6.23-rc6/include/linux/netfilter_ipv6/ip6t_ROUTE.h
+Index: linux-2.6.23.17/include/linux/netfilter_ipv6/ip6t_ROUTE.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc6/include/linux/netfilter_ipv6/ip6t_ROUTE.h	2007-09-21 16:24:03.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/include/linux/netfilter_ipv6/ip6t_ROUTE.h
 @@ -0,0 +1,23 @@
 +/* Header file for iptables ip6t_ROUTE target
 + *
@@ -54,10 +54,10 @@ Index: linux-2.6.23-rc6/include/linux/netfilter_ipv6/ip6t_ROUTE.h
 +#define IP6T_ROUTE_TEE             0x02
 +
 +#endif /*_IP6T_ROUTE_H_target*/
-Index: linux-2.6.23-rc6/net/ipv4/netfilter/ipt_ROUTE.c
+Index: linux-2.6.23.17/net/ipv4/netfilter/ipt_ROUTE.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc6/net/ipv4/netfilter/ipt_ROUTE.c	2007-09-21 16:24:03.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/net/ipv4/netfilter/ipt_ROUTE.c
 @@ -0,0 +1,463 @@
 +/*
 + * This implements the ROUTE target, which enables you to setup unusual
@@ -522,11 +522,11 @@ Index: linux-2.6.23-rc6/net/ipv4/netfilter/ipt_ROUTE.c
 +
 +module_init(init);
 +module_exit(fini);
-Index: linux-2.6.23-rc6/net/ipv4/netfilter/Kconfig
+Index: linux-2.6.23.17/net/ipv4/netfilter/Kconfig
 ===================================================================
---- linux-2.6.23-rc6.orig/net/ipv4/netfilter/Kconfig	2007-09-21 16:24:02.000000000 +0800
-+++ linux-2.6.23-rc6/net/ipv4/netfilter/Kconfig	2007-09-21 16:24:03.000000000 +0800
-@@ -562,5 +562,22 @@
+--- linux-2.6.23.17.orig/net/ipv4/netfilter/Kconfig
++++ linux-2.6.23.17/net/ipv4/netfilter/Kconfig
+@@ -552,5 +552,22 @@ config IP_NF_TARGET_SET
  	  To compile it as a module, choose M here.  If unsure, say N.
  
  
@@ -549,11 +549,11 @@ Index: linux-2.6.23-rc6/net/ipv4/netfilter/Kconfig
 +
  endmenu
  
-Index: linux-2.6.23-rc6/net/ipv4/netfilter/Makefile
+Index: linux-2.6.23.17/net/ipv4/netfilter/Makefile
 ===================================================================
---- linux-2.6.23-rc6.orig/net/ipv4/netfilter/Makefile	2007-09-21 16:24:02.000000000 +0800
-+++ linux-2.6.23-rc6/net/ipv4/netfilter/Makefile	2007-09-21 16:24:03.000000000 +0800
-@@ -61,6 +61,7 @@
+--- linux-2.6.23.17.orig/net/ipv4/netfilter/Makefile
++++ linux-2.6.23.17/net/ipv4/netfilter/Makefile
+@@ -61,6 +61,7 @@ obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_EC
  obj-$(CONFIG_IP_NF_TARGET_IMQ) += ipt_IMQ.o
  obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
@@ -561,11 +561,11 @@ Index: linux-2.6.23-rc6/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
  obj-$(CONFIG_IP_NF_TARGET_SAME) += ipt_SAME.o
  obj-$(CONFIG_IP_NF_TARGET_LOG) += ipt_LOG.o
-Index: linux-2.6.23-rc6/net/ipv6/ndisc.c
+Index: linux-2.6.23.17/net/ipv6/ndisc.c
 ===================================================================
---- linux-2.6.23-rc6.orig/net/ipv6/ndisc.c	2007-09-21 16:23:53.000000000 +0800
-+++ linux-2.6.23-rc6/net/ipv6/ndisc.c	2007-09-21 16:24:03.000000000 +0800
-@@ -154,6 +154,8 @@
+--- linux-2.6.23.17.orig/net/ipv6/ndisc.c
++++ linux-2.6.23.17/net/ipv6/ndisc.c
+@@ -154,6 +154,8 @@ struct neigh_table nd_tbl = {
  	.gc_thresh3 =	1024,
  };
  
@@ -574,10 +574,10 @@ Index: linux-2.6.23-rc6/net/ipv6/ndisc.c
  /* ND options */
  struct ndisc_options {
  	struct nd_opt_hdr *nd_opt_array[__ND_OPT_ARRAY_MAX];
-Index: linux-2.6.23-rc6/net/ipv6/netfilter/ip6t_ROUTE.c
+Index: linux-2.6.23.17/net/ipv6/netfilter/ip6t_ROUTE.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23-rc6/net/ipv6/netfilter/ip6t_ROUTE.c	2007-09-21 16:24:03.000000000 +0800
+--- /dev/null
++++ linux-2.6.23.17/net/ipv6/netfilter/ip6t_ROUTE.c
 @@ -0,0 +1,330 @@
 +/*
 + * This implements the ROUTE v6 target, which enables you to setup unusual
@@ -909,11 +909,11 @@ Index: linux-2.6.23-rc6/net/ipv6/netfilter/ip6t_ROUTE.c
 +module_init(init);
 +module_exit(fini);
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.23-rc6/net/ipv6/netfilter/Kconfig
+Index: linux-2.6.23.17/net/ipv6/netfilter/Kconfig
 ===================================================================
---- linux-2.6.23-rc6.orig/net/ipv6/netfilter/Kconfig	2007-09-21 16:24:02.000000000 +0800
-+++ linux-2.6.23-rc6/net/ipv6/netfilter/Kconfig	2007-09-21 16:24:03.000000000 +0800
-@@ -209,5 +209,18 @@
+--- linux-2.6.23.17.orig/net/ipv6/netfilter/Kconfig
++++ linux-2.6.23.17/net/ipv6/netfilter/Kconfig
+@@ -209,5 +209,18 @@ config IP6_NF_RAW
  	  If you want to compile it as a module, say M here and read
  	  <file:Documentation/kbuild/modules.txt>.  If unsure, say `N'.
  
@@ -932,11 +932,11 @@ Index: linux-2.6.23-rc6/net/ipv6/netfilter/Kconfig
 +
  endmenu
  
-Index: linux-2.6.23-rc6/net/ipv6/netfilter/Makefile
+Index: linux-2.6.23.17/net/ipv6/netfilter/Makefile
 ===================================================================
---- linux-2.6.23-rc6.orig/net/ipv6/netfilter/Makefile	2007-09-21 16:24:02.000000000 +0800
-+++ linux-2.6.23-rc6/net/ipv6/netfilter/Makefile	2007-09-21 16:24:03.000000000 +0800
-@@ -20,6 +20,7 @@
+--- linux-2.6.23.17.orig/net/ipv6/netfilter/Makefile
++++ linux-2.6.23.17/net/ipv6/netfilter/Makefile
+@@ -20,6 +20,7 @@ obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_
  obj-$(CONFIG_IP6_NF_RAW) += ip6table_raw.o
  obj-$(CONFIG_IP6_NF_MATCH_HL) += ip6t_hl.o
  obj-$(CONFIG_IP6_NF_TARGET_REJECT) += ip6t_REJECT.o
