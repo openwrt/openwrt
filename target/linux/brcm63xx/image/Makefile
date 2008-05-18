@@ -7,8 +7,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-LOADADDR = 0x8108c8f4		# RAM start + 16M 
-KERNEL_ENTRY = 0x80100000	# Default kernel entry in arch/mips/Makefile
+LOADADDR = 0x80010000		# RAM start + 16M 
+KERNEL_ENTRY = $(LOADADDR)	# Newer kernels add a jmp to the kernel_entry at the start of the binary
 RAMSIZE = 0x01000000		# 64MB
 
 LOADER_MAKEOPTS= \
