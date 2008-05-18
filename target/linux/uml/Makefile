@@ -23,7 +23,7 @@ BOARDNAME:=User Mode Linux
 FEATURES:=broken ext2
 LINUX_CONFIG:=$(CURDIR)/config/$(ARCH)
 
-LINUX_VERSION:=2.6.24.5
+LINUX_VERSION:=2.6.24.7
 
 include $(INCLUDE_DIR)/target.mk
 

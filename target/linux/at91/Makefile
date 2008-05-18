@@ -11,7 +11,7 @@ BOARD:=at91
 BOARDNAME:=Atmel AT91
 FEATURES:=squashfs usb
 
-LINUX_VERSION:=2.6.21.5
+LINUX_VERSION:=2.6.21.7
 
 include $(INCLUDE_DIR)/target.mk
 
