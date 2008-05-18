@@ -1,7 +1,8 @@
-diff -urN linux-2.6.21.1.old/drivers/net/r8169.c linux-2.6.21.1.dev/drivers/net/r8169.c
---- linux-2.6.21.1.old/drivers/net/r8169.c	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1.dev/drivers/net/r8169.c	2007-05-26 20:58:17.370030816 +0200
-@@ -494,7 +494,7 @@
+Index: linux-2.6.21.7/drivers/net/r8169.c
+===================================================================
+--- linux-2.6.21.7.orig/drivers/net/r8169.c
++++ linux-2.6.21.7/drivers/net/r8169.c
+@@ -494,7 +494,7 @@ static int rtl8169_poll(struct net_devic
  #endif
  
  static const u16 rtl8169_intr_mask =
@@ -10,7 +11,7 @@ diff -urN linux-2.6.21.1.old/drivers/net/r8169.c linux-2.6.21.1.dev/drivers/net/
  static const u16 rtl8169_napi_event =
  	RxOK | RxOverflow | RxFIFOOver | TxOK | TxErr;
  static const unsigned int rtl8169_rx_config =
-@@ -2652,10 +2652,12 @@
+@@ -2652,10 +2652,12 @@ rtl8169_interrupt(int irq, void *dev_ins
  		if (!(status & rtl8169_intr_mask))
  			break;
  

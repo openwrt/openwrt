@@ -1,7 +1,8 @@
-diff -urN linux-2.6.21.1.old/drivers/mtd/devices/block2mtd.c linux-2.6.21.1.dev/drivers/mtd/devices/block2mtd.c
---- linux-2.6.21.1.old/drivers/mtd/devices/block2mtd.c	2007-05-26 21:10:15.776816384 +0200
-+++ linux-2.6.21.1.dev/drivers/mtd/devices/block2mtd.c	2007-05-26 21:10:16.513704360 +0200
-@@ -112,7 +112,7 @@
+Index: linux-2.6.21.7/drivers/mtd/devices/block2mtd.c
+===================================================================
+--- linux-2.6.21.7.orig/drivers/mtd/devices/block2mtd.c
++++ linux-2.6.21.7/drivers/mtd/devices/block2mtd.c
+@@ -112,7 +112,7 @@ static int _block2mtd_erase(struct block
  		if (IS_ERR(page))
  			return PTR_ERR(page);
  
