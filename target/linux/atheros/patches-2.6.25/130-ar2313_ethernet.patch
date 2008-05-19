@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/drivers/net/Kconfig
+Index: linux-2.6.25.4/drivers/net/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/Kconfig
-+++ linux-2.6.25.1/drivers/net/Kconfig
+--- linux-2.6.25.4.orig/drivers/net/Kconfig
++++ linux-2.6.25.4/drivers/net/Kconfig
 @@ -367,6 +367,12 @@ config AX88796_93CX6
  	help
  	  Select this if your platform comes with an external 93CX6 eeprom.
@@ -15,10 +15,10 @@ Index: linux-2.6.25.1/drivers/net/Kconfig
  config MACE
  	tristate "MACE (Power Mac ethernet) support"
  	depends on PPC_PMAC && PPC32
-Index: linux-2.6.25.1/drivers/net/Makefile
+Index: linux-2.6.25.4/drivers/net/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/Makefile
-+++ linux-2.6.25.1/drivers/net/Makefile
+--- linux-2.6.25.4.orig/drivers/net/Makefile
++++ linux-2.6.25.4/drivers/net/Makefile
 @@ -194,6 +194,7 @@ obj-$(CONFIG_MVME147_NET) += mvme147.o 7
  obj-$(CONFIG_EQUALIZER) += eql.o
  obj-$(CONFIG_MIPS_JAZZ_SONIC) += jazzsonic.o

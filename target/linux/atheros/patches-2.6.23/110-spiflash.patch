@@ -1,7 +1,8 @@
-diff -urN linux.old/drivers/mtd/devices/Kconfig linux.dev/drivers/mtd/devices/Kconfig
---- linux.old/drivers/mtd/devices/Kconfig	2007-02-04 04:30:26.145338240 +0100
-+++ linux.dev/drivers/mtd/devices/Kconfig	2007-02-02 23:48:28.748969000 +0100
-@@ -76,6 +76,10 @@
+Index: linux-2.6.23.17/drivers/mtd/devices/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/devices/Kconfig
++++ linux-2.6.23.17/drivers/mtd/devices/Kconfig
+@@ -76,6 +76,10 @@ config MTD_M25P80
  	  used for program and data storage.  Set up your spi devices
  	  with the right board-specific platform data.
  
@@ -12,10 +13,11 @@ diff -urN linux.old/drivers/mtd/devices/Kconfig linux.dev/drivers/mtd/devices/Kc
  config MTD_SLRAM
  	tristate "Uncached system RAM"
  	help
-diff -urN linux.old/drivers/mtd/devices/Makefile linux.dev/drivers/mtd/devices/Makefile
---- linux.old/drivers/mtd/devices/Makefile	2007-02-04 04:30:26.146338088 +0100
-+++ linux.dev/drivers/mtd/devices/Makefile	2007-02-02 23:48:28.749969000 +0100
-@@ -18,3 +18,4 @@
+Index: linux-2.6.23.17/drivers/mtd/devices/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/devices/Makefile
++++ linux-2.6.23.17/drivers/mtd/devices/Makefile
+@@ -18,3 +18,4 @@ obj-$(CONFIG_MTD_BLOCK2MTD)	+= block2mtd
  obj-$(CONFIG_MTD_DATAFLASH)	+= mtd_dataflash.o
  obj-$(CONFIG_MTD_DATAFLASH26)	+= at91_dataflash26.o
  obj-$(CONFIG_MTD_M25P80)	+= m25p80.o

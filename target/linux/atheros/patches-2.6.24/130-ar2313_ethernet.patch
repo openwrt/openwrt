@@ -1,10 +1,10 @@
-Index: linux-2.6.23/drivers/net/Kconfig
+Index: linux-2.6.24.7/drivers/net/Kconfig
 ===================================================================
---- linux-2.6.23.orig/drivers/net/Kconfig	2007-10-14 00:55:22.000000000 +0200
-+++ linux-2.6.23/drivers/net/Kconfig	2007-10-14 00:56:32.000000000 +0200
-@@ -348,6 +348,12 @@
- 	  AX88796 driver, using platform bus to provide
- 	  chip detection and resources
+--- linux-2.6.24.7.orig/drivers/net/Kconfig
++++ linux-2.6.24.7/drivers/net/Kconfig
+@@ -362,6 +362,12 @@ config AX88796_93CX6
+ 	help
+ 	  Select this if your platform comes with an external 93CX6 eeprom.
  
 +config AR2313
 +	tristate "AR2313 Ethernet support"
@@ -15,12 +15,12 @@ Index: linux-2.6.23/drivers/net/Kconfig
  config MACE
  	tristate "MACE (Power Mac ethernet) support"
  	depends on PPC_PMAC && PPC32
-Index: linux-2.6.23/drivers/net/Makefile
+Index: linux-2.6.24.7/drivers/net/Makefile
 ===================================================================
---- linux-2.6.23.orig/drivers/net/Makefile	2007-10-14 00:55:22.000000000 +0200
-+++ linux-2.6.23/drivers/net/Makefile	2007-10-14 00:56:55.000000000 +0200
-@@ -182,6 +182,7 @@
- obj-$(CONFIG_LGUEST_NET) += lguest_net.o
+--- linux-2.6.24.7.orig/drivers/net/Makefile
++++ linux-2.6.24.7/drivers/net/Makefile
+@@ -190,6 +190,7 @@ obj-$(CONFIG_MVME147_NET) += mvme147.o 7
+ obj-$(CONFIG_EQUALIZER) += eql.o
  obj-$(CONFIG_MIPS_JAZZ_SONIC) += jazzsonic.o
  obj-$(CONFIG_MIPS_AU1X00_ENET) += au1000_eth.o
 +obj-$(CONFIG_AR2313) += ar2313/
