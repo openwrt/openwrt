@@ -1,6 +1,8 @@
---- linux-2.6.23.orig/net/core/dev.c	2007-10-12 23:42:06.000000000 +0200
-+++ linux-2.6.23/net/core/dev.c	2007-10-12 23:44:22.000000000 +0200
-@@ -3425,8 +3425,8 @@
+Index: linux-2.6.23.17/net/core/dev.c
+===================================================================
+--- linux-2.6.23.17.orig/net/core/dev.c
++++ linux-2.6.23.17/net/core/dev.c
+@@ -3426,8 +3426,8 @@ int register_netdevice(struct net_device
  	/* Fix illegal SG+CSUM combinations. */
  	if ((dev->features & NETIF_F_SG) &&
  	    !(dev->features & NETIF_F_ALL_CSUM)) {
@@ -11,7 +13,7 @@
  		dev->features &= ~NETIF_F_SG;
  	}
  
-@@ -3439,9 +3439,9 @@
+@@ -3440,9 +3440,9 @@ int register_netdevice(struct net_device
  	}
  	if (dev->features & NETIF_F_UFO) {
  		if (!(dev->features & NETIF_F_HW_CSUM)) {

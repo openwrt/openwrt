@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/arch/mips/Kconfig
+Index: linux-2.6.25.4/arch/mips/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/arch/mips/Kconfig
-+++ linux-2.6.25.1/arch/mips/Kconfig
+--- linux-2.6.25.4.orig/arch/mips/Kconfig
++++ linux-2.6.25.4/arch/mips/Kconfig
 @@ -59,6 +59,18 @@ config BCM47XX
  	help
  	 Support for BCM47XX based boards
@@ -29,10 +29,10 @@ Index: linux-2.6.25.1/arch/mips/Kconfig
  source "arch/mips/au1000/Kconfig"
  source "arch/mips/basler/excite/Kconfig"
  source "arch/mips/jazz/Kconfig"
-Index: linux-2.6.25.1/arch/mips/Makefile
+Index: linux-2.6.25.4/arch/mips/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/arch/mips/Makefile
-+++ linux-2.6.25.1/arch/mips/Makefile
+--- linux-2.6.25.4.orig/arch/mips/Makefile
++++ linux-2.6.25.4/arch/mips/Makefile
 @@ -276,6 +276,13 @@ libs-$(CONFIG_MIPS_XXS1500)	+= arch/mips
  load-$(CONFIG_MIPS_XXS1500)	+= 0xffffffff80100000
  
@@ -47,10 +47,10 @@ Index: linux-2.6.25.1/arch/mips/Makefile
  # Cobalt Server
  #
  core-$(CONFIG_MIPS_COBALT)	+= arch/mips/cobalt/
-Index: linux-2.6.25.1/include/asm-mips/bootinfo.h
+Index: linux-2.6.25.4/include/asm-mips/bootinfo.h
 ===================================================================
---- linux-2.6.25.1.orig/include/asm-mips/bootinfo.h
-+++ linux-2.6.25.1/include/asm-mips/bootinfo.h
+--- linux-2.6.25.4.orig/include/asm-mips/bootinfo.h
++++ linux-2.6.25.4/include/asm-mips/bootinfo.h
 @@ -94,6 +94,18 @@
  #define MACH_MSP7120_FPGA       5	/* PMC-Sierra MSP7120 Emulation */
  #define MACH_MSP_OTHER        255	/* PMC-Sierra unknown board type */

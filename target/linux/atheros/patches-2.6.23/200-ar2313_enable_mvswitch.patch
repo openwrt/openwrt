@@ -1,8 +1,8 @@
-Index: linux-2.6.23.16/drivers/net/ar2313/ar2313.c
+Index: linux-2.6.23.17/drivers/net/ar2313/ar2313.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/net/ar2313/ar2313.c	2008-04-29 14:51:39.000000000 +0200
-+++ linux-2.6.23.16/drivers/net/ar2313/ar2313.c	2008-04-29 14:52:14.000000000 +0200
-@@ -953,9 +953,9 @@
+--- linux-2.6.23.17.orig/drivers/net/ar2313/ar2313.c
++++ linux-2.6.23.17/drivers/net/ar2313/ar2313.c
+@@ -953,9 +953,9 @@ static int ar2313_rx_int(struct net_devi
  						((status >> DMA_RX_LEN_SHIFT) & 0x3fff) - CRC_LEN);
  
  				dev->stats.rx_bytes += skb->len;
@@ -14,7 +14,7 @@ Index: linux-2.6.23.16/drivers/net/ar2313/ar2313.c
  
  				skb_new->dev = dev;
  				/* 16 bit align */
-@@ -1370,6 +1370,8 @@
+@@ -1370,6 +1370,8 @@ static int mdiobus_probe (struct net_dev
  		return PTR_ERR(phydev);
  	}
  
@@ -23,11 +23,11 @@ Index: linux-2.6.23.16/drivers/net/ar2313/ar2313.c
  	/* mask with MAC supported features */
  	phydev->supported &= (SUPPORTED_10baseT_Half
  		| SUPPORTED_10baseT_Full
-Index: linux-2.6.23.16/drivers/net/ar2313/ar2313.h
+Index: linux-2.6.23.17/drivers/net/ar2313/ar2313.h
 ===================================================================
---- linux-2.6.23.16.orig/drivers/net/ar2313/ar2313.h	2008-04-29 14:51:39.000000000 +0200
-+++ linux-2.6.23.16/drivers/net/ar2313/ar2313.h	2008-04-29 14:52:15.000000000 +0200
-@@ -107,6 +107,8 @@
+--- linux-2.6.23.17.orig/drivers/net/ar2313/ar2313.h
++++ linux-2.6.23.17/drivers/net/ar2313/ar2313.h
+@@ -107,6 +107,8 @@ typedef struct {
   */
  struct ar2313_private {
  	struct net_device *dev;

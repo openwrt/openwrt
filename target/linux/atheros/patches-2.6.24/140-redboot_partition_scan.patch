@@ -1,7 +1,8 @@
-diff -urN linux.old/drivers/mtd/redboot.c linux.dev/drivers/mtd/redboot.c
---- linux.old/drivers/mtd/redboot.c	2006-12-14 23:53:29.000000000 +0100
-+++ linux.dev/drivers/mtd/redboot.c	2006-12-16 04:23:42.000000000 +0100
-@@ -64,6 +64,7 @@
+Index: linux-2.6.24.7/drivers/mtd/redboot.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/mtd/redboot.c
++++ linux-2.6.24.7/drivers/mtd/redboot.c
+@@ -64,6 +64,7 @@ static int parse_redboot_partitions(stru
  	if (!buf)
  		return -ENOMEM;
  
@@ -9,7 +10,7 @@ diff -urN linux.old/drivers/mtd/redboot.c linux.dev/drivers/mtd/redboot.c
  	if ( directory < 0 )
  		offset = master->size + directory*master->erasesize;
  	else
-@@ -140,6 +141,11 @@
+@@ -140,6 +141,11 @@ static int parse_redboot_partitions(stru
  	}
  	if (i == numslots) {
  		/* Didn't find it */
@@ -21,4 +22,3 @@ diff -urN linux.old/drivers/mtd/redboot.c linux.dev/drivers/mtd/redboot.c
  		printk(KERN_NOTICE "No RedBoot partition table detected in %s\n",
  		       master->name);
  		ret = 0;
-
