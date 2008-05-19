@@ -1,7 +1,7 @@
-Index: linux-2.6.23/drivers/mtd/devices/block2mtd.c
+Index: linux-2.6.23.17/drivers/mtd/devices/block2mtd.c
 ===================================================================
---- linux-2.6.23.orig/drivers/mtd/devices/block2mtd.c	2007-12-06 23:30:31.583285849 +0100
-+++ linux-2.6.23/drivers/mtd/devices/block2mtd.c	2007-12-06 23:31:29.970613152 +0100
+--- linux-2.6.23.17.orig/drivers/mtd/devices/block2mtd.c
++++ linux-2.6.23.17/drivers/mtd/devices/block2mtd.c
 @@ -20,6 +20,8 @@
  #include <linux/buffer_head.h>
  #include <linux/mutex.h>
@@ -24,7 +24,7 @@ Index: linux-2.6.23/drivers/mtd/devices/block2mtd.c
  
  /* Info for the block device */
  struct block2mtd_dev {
-@@ -38,10 +46,36 @@
+@@ -38,10 +46,36 @@ struct block2mtd_dev {
  	char devname[0];
  };
  
@@ -61,7 +61,7 @@ Index: linux-2.6.23/drivers/mtd/devices/block2mtd.c
  
  static struct page *page_read(struct address_space *mapping, int index)
  {
-@@ -518,7 +552,10 @@
+@@ -518,7 +552,10 @@ static int block2mtd_setup2(const char *
  	if (token[2] && (strlen(token[2]) + 1 > 80))
  		parse_err("mtd device name too long");
  
@@ -73,7 +73,7 @@ Index: linux-2.6.23/drivers/mtd/devices/block2mtd.c
  
  	return 0;
  }
-@@ -534,8 +571,11 @@
+@@ -534,8 +571,11 @@ static int block2mtd_setup(const char *v
  	   and block2mtd_init() has already been called,
  	   we can parse the argument now. */
  
@@ -86,11 +86,11 @@ Index: linux-2.6.23/drivers/mtd/devices/block2mtd.c
  
  	/* During early boot stage, we only save the parameters
  	   here. We must parse them later: if the param passed
-Index: linux-2.6.23/init/do_mounts.c
+Index: linux-2.6.23.17/init/do_mounts.c
 ===================================================================
---- linux-2.6.23.orig/init/do_mounts.c	2007-12-06 23:30:28.019082737 +0100
-+++ linux-2.6.23/init/do_mounts.c	2007-12-06 23:30:32.459335774 +0100
-@@ -241,16 +241,8 @@
+--- linux-2.6.23.17.orig/init/do_mounts.c
++++ linux-2.6.23.17/init/do_mounts.c
+@@ -241,16 +241,8 @@ static int __init fs_names_setup(char *s
  	return 1;
  }
  
@@ -107,7 +107,7 @@ Index: linux-2.6.23/init/do_mounts.c
  
  static void __init get_fs_names(char *page)
  {
-@@ -426,18 +418,6 @@
+@@ -426,18 +418,6 @@ void __init prepare_namespace(void)
  {
  	int is_floppy;
  
@@ -126,10 +126,10 @@ Index: linux-2.6.23/init/do_mounts.c
  	if (saved_root_name[0]) {
  		root_device_name = saved_root_name;
  		if (!strncmp(root_device_name, "mtd", 3)) {
-Index: linux-2.6.23/init/main.c
+Index: linux-2.6.23.17/init/main.c
 ===================================================================
---- linux-2.6.23.orig/init/main.c	2007-12-06 23:30:28.023082962 +0100
-+++ linux-2.6.23/init/main.c	2007-12-06 23:30:32.463336000 +0100
+--- linux-2.6.23.17.orig/init/main.c
++++ linux-2.6.23.17/init/main.c
 @@ -65,6 +65,7 @@
  #ifdef CONFIG_X86_LOCAL_APIC
  #include <asm/smp.h>
@@ -138,7 +138,7 @@ Index: linux-2.6.23/init/main.c
  
  /*
   * This is one of the first .c files built. Error out early if we have compiler
-@@ -662,13 +663,14 @@
+@@ -662,13 +663,14 @@ static int __init initcall_debug_setup(c
  __setup("initcall_debug", initcall_debug_setup);
  
  extern initcall_t __initcall_start[], __initcall_end[];
@@ -155,7 +155,7 @@ Index: linux-2.6.23/init/main.c
  		ktime_t t0, t1, delta;
  		char *msg = NULL;
  		char msgbuf[40];
-@@ -737,7 +739,7 @@
+@@ -737,7 +739,7 @@ static void __init do_basic_setup(void)
  	usermodehelper_init();
  	driver_init();
  	init_irq_proc();
@@ -164,7 +164,7 @@ Index: linux-2.6.23/init/main.c
  }
  
  static int __initdata nosoftlockup;
-@@ -810,6 +812,14 @@
+@@ -810,6 +812,14 @@ static int noinline init_post(void)
  	panic("No init found.  Try passing init= option to kernel.");
  }
  
@@ -179,7 +179,7 @@ Index: linux-2.6.23/init/main.c
  static int __init kernel_init(void * unused)
  {
  	lock_kernel();
-@@ -851,6 +861,17 @@
+@@ -851,6 +861,17 @@ static int __init kernel_init(void * unu
  
  	if (sys_access((const char __user *) ramdisk_execute_command, 0) != 0) {
  		ramdisk_execute_command = NULL;
@@ -197,11 +197,11 @@ Index: linux-2.6.23/init/main.c
  		prepare_namespace();
  	}
  
-Index: linux-2.6.23/arch/i386/kernel/vmlinux.lds.S
+Index: linux-2.6.23.17/arch/i386/kernel/vmlinux.lds.S
 ===================================================================
---- linux-2.6.23.orig/arch/i386/kernel/vmlinux.lds.S	2007-12-06 23:30:28.035083650 +0100
-+++ linux-2.6.23/arch/i386/kernel/vmlinux.lds.S	2007-12-06 23:30:32.467336225 +0100
-@@ -146,6 +146,11 @@
+--- linux-2.6.23.17.orig/arch/i386/kernel/vmlinux.lds.S
++++ linux-2.6.23.17/arch/i386/kernel/vmlinux.lds.S
+@@ -146,6 +146,11 @@ SECTIONS
  	INITCALLS
    	__initcall_end = .;
    }
@@ -213,10 +213,10 @@ Index: linux-2.6.23/arch/i386/kernel/vmlinux.lds.S
    .con_initcall.init : AT(ADDR(.con_initcall.init) - LOAD_OFFSET) {
    	__con_initcall_start = .;
  	*(.con_initcall.init)
-Index: linux-2.6.23/include/asm-generic/vmlinux.lds.h
+Index: linux-2.6.23.17/include/asm-generic/vmlinux.lds.h
 ===================================================================
---- linux-2.6.23.orig/include/asm-generic/vmlinux.lds.h	2007-12-06 23:30:28.043084102 +0100
-+++ linux-2.6.23/include/asm-generic/vmlinux.lds.h	2007-12-06 23:30:32.467336225 +0100
+--- linux-2.6.23.17.orig/include/asm-generic/vmlinux.lds.h
++++ linux-2.6.23.17/include/asm-generic/vmlinux.lds.h
 @@ -243,12 +243,14 @@
    	*(.initcall4s.init)						\
    	*(.initcall5.init)						\
