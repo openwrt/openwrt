@@ -1,9 +1,10 @@
-diff -urN linux.old/drivers/net/Kconfig linux.dev/drivers/net/Kconfig
---- linux.old/drivers/net/Kconfig	2006-12-14 03:13:47.000000000 +0100
-+++ linux.dev/drivers/net/Kconfig	2006-12-14 03:18:45.000000000 +0100
-@@ -313,6 +313,13 @@
- 
- source "drivers/net/arm/Kconfig"
+Index: linux-2.6.23.17/drivers/net/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/drivers/net/Kconfig
++++ linux-2.6.23.17/drivers/net/Kconfig
+@@ -348,6 +348,13 @@ config AX88796
+ 	  AX88796 driver, using platform bus to provide
+ 	  chip detection and resources
  
 +config KORINA
 +	tristate "Korina Local Ethernet support"
@@ -14,11 +15,12 @@ diff -urN linux.old/drivers/net/Kconfig linux.dev/drivers/net/Kconfig
 +
  config MACE
  	tristate "MACE (Power Mac ethernet) support"
- 	depends on NET_ETHERNET && PPC_PMAC && PPC32
-diff -urN linux.old/drivers/net/Makefile linux.dev/drivers/net/Makefile
---- linux.old/drivers/net/Makefile	2006-12-14 03:13:47.000000000 +0100
-+++ linux.dev/drivers/net/Makefile	2006-12-14 03:18:45.000000000 +0100
-@@ -23,6 +23,8 @@
+ 	depends on PPC_PMAC && PPC32
+Index: linux-2.6.23.17/drivers/net/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/drivers/net/Makefile
++++ linux-2.6.23.17/drivers/net/Makefile
+@@ -25,6 +25,8 @@ ucc_geth_driver-objs := ucc_geth.o ucc_g
  #
  obj-$(CONFIG_PLIP) += plip.o
  
@@ -27,4 +29,3 @@ diff -urN linux.old/drivers/net/Makefile linux.dev/drivers/net/Makefile
  obj-$(CONFIG_ROADRUNNER) += rrunner.o
  
  obj-$(CONFIG_HAPPYMEAL) += sunhme.o
-

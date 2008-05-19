@@ -1,7 +1,8 @@
-diff -urN linux-2.6.23.12/drivers/block/Kconfig linux-2.6.23.12.new/drivers/block/Kconfig
---- linux-2.6.23.12/drivers/block/Kconfig	2007-12-18 22:55:57.000000000 +0100
-+++ linux-2.6.23.12.new/drivers/block/Kconfig	2008-01-11 08:53:32.000000000 +0100
-@@ -426,6 +426,14 @@
+Index: linux-2.6.23.17/drivers/block/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/drivers/block/Kconfig
++++ linux-2.6.23.17/drivers/block/Kconfig
+@@ -426,6 +426,14 @@ config SUNVDC
  	  Support for virtual disk devices as a client under Sun
  	  Logical Domains.
  
@@ -16,10 +17,11 @@ diff -urN linux-2.6.23.12/drivers/block/Kconfig linux-2.6.23.12.new/drivers/bloc
  source "drivers/s390/block/Kconfig"
  
  config XILINX_SYSACE
-diff -urN linux-2.6.23.12/drivers/block/Makefile linux-2.6.23.12.new/drivers/block/Makefile
---- linux-2.6.23.12/drivers/block/Makefile	2007-12-18 22:55:57.000000000 +0100
-+++ linux-2.6.23.12.new/drivers/block/Makefile	2008-01-11 08:54:04.000000000 +0100
-@@ -21,6 +21,7 @@
+Index: linux-2.6.23.17/drivers/block/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/drivers/block/Makefile
++++ linux-2.6.23.17/drivers/block/Makefile
+@@ -21,6 +21,7 @@ obj-$(CONFIG_BLK_DEV_DAC960)	+= DAC960.o
  obj-$(CONFIG_XILINX_SYSACE)	+= xsysace.o
  obj-$(CONFIG_CDROM_PKTCDVD)	+= pktcdvd.o
  obj-$(CONFIG_SUNVDC)		+= sunvdc.o
