@@ -1,8 +1,8 @@
-Index: linux-2.6.25.1/drivers/serial/crisv10.c
+Index: linux-2.6.25.4/drivers/serial/crisv10.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/serial/crisv10.c	2008-05-03 20:54:24.000000000 +0100
-+++ linux-2.6.25.1/drivers/serial/crisv10.c	2008-05-03 21:07:48.000000000 +0100
-@@ -27,6 +27,7 @@
+--- linux-2.6.25.4.orig/drivers/serial/crisv10.c
++++ linux-2.6.25.4/drivers/serial/crisv10.c
+@@ -27,6 +27,7 @@ static char *serial_version = "$Revision
  #include <linux/kernel.h>
  #include <linux/mutex.h>
  #include <linux/bitops.h>
@@ -10,7 +10,7 @@ Index: linux-2.6.25.1/drivers/serial/crisv10.c
  
  #include <asm/io.h>
  #include <asm/irq.h>
-@@ -4384,6 +4385,7 @@
+@@ -4384,6 +4385,7 @@ static const struct tty_operations rs_op
  	.tiocmset = rs_tiocmset
  };
  
@@ -18,7 +18,7 @@ Index: linux-2.6.25.1/drivers/serial/crisv10.c
  static int __init
  rs_init(void)
  {
-@@ -4518,6 +4520,24 @@
+@@ -4518,6 +4520,24 @@ rs_init(void)
  #endif
  #endif /* CONFIG_SVINTO_SIM */
  

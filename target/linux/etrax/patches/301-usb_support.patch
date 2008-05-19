@@ -1,7 +1,8 @@
-diff -x .org -x .orig -x '.c*' -x '.h*' -x .git -x .git -urN clean-2.6.25-rc8/drivers/usb/Makefile source-2.6.25-rc8/drivers/usb/Makefile
---- clean-2.6.25-rc8/drivers/usb/Makefile	2008-04-07 10:26:24.000000000 +0200
-+++ source-2.6.25-rc8/drivers/usb/Makefile	2008-04-07 10:29:40.000000000 +0200
-@@ -16,6 +16,7 @@
+Index: linux-2.6.25.4/drivers/usb/Makefile
+===================================================================
+--- linux-2.6.25.4.orig/drivers/usb/Makefile
++++ linux-2.6.25.4/drivers/usb/Makefile
+@@ -16,6 +16,7 @@ obj-$(CONFIG_USB_UHCI_HCD)	+= host/
  obj-$(CONFIG_USB_SL811_HCD)	+= host/
  obj-$(CONFIG_USB_U132_HCD)	+= host/
  obj-$(CONFIG_USB_R8A66597_HCD)	+= host/
@@ -9,18 +10,20 @@ diff -x .org -x .orig -x '.c*' -x '.h*' -x .git -x .git -urN clean-2.6.25-rc8/dr
  
  obj-$(CONFIG_USB_ACM)		+= class/
  obj-$(CONFIG_USB_PRINTER)	+= class/
-diff -x .org -x .orig -x '.c*' -x '.h*' -x .git -x .git -urN clean-2.6.25-rc8/drivers/usb/host/Makefile source-2.6.25-rc8/drivers/usb/host/Makefile
---- clean-2.6.25-rc8/drivers/usb/host/Makefile	2008-04-07 10:26:24.000000000 +0200
-+++ source-2.6.25-rc8/drivers/usb/host/Makefile	2008-04-07 10:29:40.000000000 +0200
-@@ -17,3 +17,5 @@
+Index: linux-2.6.25.4/drivers/usb/host/Makefile
+===================================================================
+--- linux-2.6.25.4.orig/drivers/usb/host/Makefile
++++ linux-2.6.25.4/drivers/usb/host/Makefile
+@@ -17,3 +17,5 @@ obj-$(CONFIG_USB_SL811_CS)	+= sl811_cs.o
  obj-$(CONFIG_USB_U132_HCD)	+= u132-hcd.o
  obj-$(CONFIG_USB_R8A66597_HCD)	+= r8a66597-hcd.o
  
 +#obj-$(CONFIG_USB_CARNEOL)	+= hc-crisv10.o
 +obj-$(CONFIG_ETRAX_USB_HOST)	+= hc-crisv10.o
-diff -x .org -x .orig -x '.c*' -x '.h*' -x .git -x .git -urN clean-2.6.25-rc8/drivers/usb/host/hc-cris-dbg.h source-2.6.25-rc8/drivers/usb/host/hc-cris-dbg.h
---- clean-2.6.25-rc8/drivers/usb/host/hc-cris-dbg.h	1970-01-01 01:00:00.000000000 +0100
-+++ source-2.6.25-rc8/drivers/usb/host/hc-cris-dbg.h	2008-04-07 10:29:40.000000000 +0200
+Index: linux-2.6.25.4/drivers/usb/host/hc-cris-dbg.h
+===================================================================
+--- /dev/null
++++ linux-2.6.25.4/drivers/usb/host/hc-cris-dbg.h
 @@ -0,0 +1,143 @@
 +
 +/* macros for debug output */
@@ -165,9 +168,10 @@ diff -x .org -x .orig -x '.c*' -x '.h*' -x .git -x .git -urN clean-2.6.25-rc8/dr
 +		};							\
 +		s;							\
 +	})
-diff -x .org -x .orig -x '.c*' -x '.h*' -x .git -x .git -urN clean-2.6.25-rc8/drivers/usb/host/hc-crisv10.c source-2.6.25-rc8/drivers/usb/host/hc-crisv10.c
---- clean-2.6.25-rc8/drivers/usb/host/hc-crisv10.c	1970-01-01 01:00:00.000000000 +0100
-+++ source-2.6.25-rc8/drivers/usb/host/hc-crisv10.c	2008-04-07 10:29:40.000000000 +0200
+Index: linux-2.6.25.4/drivers/usb/host/hc-crisv10.c
+===================================================================
+--- /dev/null
++++ linux-2.6.25.4/drivers/usb/host/hc-crisv10.c
 @@ -0,0 +1,4800 @@
 +/*
 + *
@@ -4969,9 +4973,10 @@ diff -x .org -x .orig -x '.c*' -x '.h*' -x .git -x .git -urN clean-2.6.25-rc8/dr
 +/* Module hooks */
 +module_init(module_hcd_init);
 +module_exit(module_hcd_exit);
-diff -x .org -x .orig -x '.c*' -x '.h*' -x .git -x .git -urN clean-2.6.25-rc8/drivers/usb/host/hc-crisv10.h source-2.6.25-rc8/drivers/usb/host/hc-crisv10.h
---- clean-2.6.25-rc8/drivers/usb/host/hc-crisv10.h	1970-01-01 01:00:00.000000000 +0100
-+++ source-2.6.25-rc8/drivers/usb/host/hc-crisv10.h	2008-04-07 10:29:40.000000000 +0200
+Index: linux-2.6.25.4/drivers/usb/host/hc-crisv10.h
+===================================================================
+--- /dev/null
++++ linux-2.6.25.4/drivers/usb/host/hc-crisv10.h
 @@ -0,0 +1,331 @@
 +#ifndef __LINUX_ETRAX_USB_H
 +#define __LINUX_ETRAX_USB_H
