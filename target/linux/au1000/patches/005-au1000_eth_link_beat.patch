@@ -1,7 +1,8 @@
-diff -urN linux-2.6.16.7/drivers/net/au1000_eth.c linux-2.6.16.7.new/drivers/net/au1000_eth.c
---- linux-2.6.16.7/drivers/net/au1000_eth.c	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7.new/drivers/net/au1000_eth.c	2006-04-23 01:42:48.000000000 +0200
-@@ -12,6 +12,9 @@
+Index: linux-2.6.25.4/drivers/net/au1000_eth.c
+===================================================================
+--- linux-2.6.25.4.orig/drivers/net/au1000_eth.c
++++ linux-2.6.25.4/drivers/net/au1000_eth.c
+@@ -15,6 +15,9 @@
   * Author: MontaVista Software, Inc.
   *         	ppopov@mvista.com or source@mvista.com
   *
@@ -11,9 +12,9 @@ diff -urN linux-2.6.16.7/drivers/net/au1000_eth.c linux-2.6.16.7.new/drivers/net
   * ########################################################################
   *
   *  This program is free software; you can distribute it and/or modify it
-@@ -1672,6 +1675,10 @@
- 	aup->phy_ops->phy_status(dev, aup->phy_addr, &link, &speed);
- 	control = MAC_DISABLE_RX_OWN | MAC_RX_ENABLE | MAC_TX_ENABLE;
+@@ -835,6 +838,10 @@ static int au1000_init(struct net_device
+ 
+ 	control = MAC_RX_ENABLE | MAC_TX_ENABLE;
  #ifndef CONFIG_CPU_LITTLE_ENDIAN
 +	/*riemer: fix for startup without cable */
 +	if (!link)
@@ -21,4 +22,4 @@ diff -urN linux-2.6.16.7/drivers/net/au1000_eth.c linux-2.6.16.7.new/drivers/net
 +
  	control |= MAC_BIG_ENDIAN;
  #endif
- 	if (link && (dev->if_port == IF_PORT_100BASEFX)) {
+ 	if (aup->phy_dev) {
