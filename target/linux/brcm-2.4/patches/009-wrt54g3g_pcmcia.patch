@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/drivers/pcmcia/yenta.c
 ===================================================================
---- linux-2.4.35.4.orig/drivers/pcmcia/yenta.c	2007-12-15 05:19:36.066476349 +0100
-+++ linux-2.4.35.4/drivers/pcmcia/yenta.c	2007-12-15 05:20:16.268767348 +0100
-@@ -543,6 +543,9 @@
+--- linux-2.4.35.4.orig/drivers/pcmcia/yenta.c
++++ linux-2.4.35.4/drivers/pcmcia/yenta.c
+@@ -543,6 +543,9 @@ static unsigned int yenta_probe_irq(pci_
  	 * Probe for usable interrupts using the force
  	 * register to generate bogus card status events.
  	 */
@@ -12,7 +12,7 @@ Index: linux-2.4.35.4/drivers/pcmcia/yenta.c
  	cb_writel(socket, CB_SOCKET_EVENT, -1);
  	cb_writel(socket, CB_SOCKET_MASK, CB_CSTSMASK);
  	exca_writeb(socket, I365_CSCINT, 0);
-@@ -557,7 +560,8 @@
+@@ -557,7 +560,8 @@ static unsigned int yenta_probe_irq(pci_
  	}
  	cb_writel(socket, CB_SOCKET_MASK, 0);
  	exca_writeb(socket, I365_CSCINT, 0);
@@ -22,7 +22,7 @@ Index: linux-2.4.35.4/drivers/pcmcia/yenta.c
  	mask = probe_irq_mask(val) & 0xffff;
  
  	bridge_ctrl &= ~CB_BRIDGE_INTR;
-@@ -578,6 +582,12 @@
+@@ -578,6 +582,12 @@ static void yenta_get_socket_capabilitie
  	socket->cap.cb_dev = socket->dev;
  	socket->cap.bus = NULL;
  
@@ -35,7 +35,7 @@ Index: linux-2.4.35.4/drivers/pcmcia/yenta.c
  	printk(KERN_INFO "Yenta ISA IRQ mask 0x%04x, PCI irq %d\n",
  	       socket->cap.irq_mask, socket->cb_irq);
  }
-@@ -609,6 +619,15 @@
+@@ -609,6 +619,15 @@ static void yenta_open_bh(void * data)
  	printk(KERN_INFO "Socket status: %08x\n",
  	       cb_readl(socket, CB_SOCKET_STATE));
  
@@ -51,7 +51,7 @@ Index: linux-2.4.35.4/drivers/pcmcia/yenta.c
  	/* Register it with the pcmcia layer.. */
  	cardbus_register(socket);
  
-@@ -731,7 +750,7 @@
+@@ -731,7 +750,7 @@ static void yenta_allocate_res(pci_socke
  {
  	struct pci_bus *bus;
  	struct resource *root, *res;
@@ -60,7 +60,7 @@ Index: linux-2.4.35.4/drivers/pcmcia/yenta.c
  	u32 align, size, min, max;
  	unsigned offset;
  	unsigned mask;
-@@ -750,6 +769,15 @@
+@@ -750,6 +769,15 @@ static void yenta_allocate_res(pci_socke
  	res->end = 0;
  	root = pci_find_parent_resource(socket->dev, res);
  
@@ -76,7 +76,7 @@ Index: linux-2.4.35.4/drivers/pcmcia/yenta.c
  	if (!root)
  		return;
  
-@@ -794,6 +822,7 @@
+@@ -794,6 +822,7 @@ static void yenta_allocate_res(pci_socke
  		res->start = res->end = 0;
  		return;
  	}

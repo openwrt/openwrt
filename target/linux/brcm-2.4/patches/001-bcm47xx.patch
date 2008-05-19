@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/arch/mips/config-shared.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/config-shared.in	2007-12-15 05:19:53.151449966 +0100
-+++ linux-2.4.35.4/arch/mips/config-shared.in	2007-12-15 05:20:13.936634447 +0100
-@@ -208,6 +208,14 @@
+--- linux-2.4.35.4.orig/arch/mips/config-shared.in
++++ linux-2.4.35.4/arch/mips/config-shared.in
+@@ -208,6 +208,14 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]
     fi
     define_bool CONFIG_MIPS_RTC y
  fi
@@ -17,7 +17,7 @@ Index: linux-2.4.35.4/arch/mips/config-shared.in
  bool 'Support for SNI RM200 PCI' CONFIG_SNI_RM200_PCI
  bool 'Support for TANBAC TB0226 (Mbase)' CONFIG_TANBAC_TB0226
  bool 'Support for TANBAC TB0229 (VR4131DIMM)' CONFIG_TANBAC_TB0229
-@@ -229,6 +237,11 @@
+@@ -229,6 +237,11 @@ define_bool CONFIG_RWSEM_GENERIC_SPINLOC
  define_bool CONFIG_RWSEM_XCHGADD_ALGORITHM n
  
  #
@@ -29,7 +29,7 @@ Index: linux-2.4.35.4/arch/mips/config-shared.in
  # Select some configuration options automatically based on user selections.
  #
  if [ "$CONFIG_ACER_PICA_61" = "y" ]; then
-@@ -554,6 +567,12 @@
+@@ -554,6 +567,12 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]
     define_bool CONFIG_SWAP_IO_SPACE_L y
     define_bool CONFIG_BOOT_ELF32 y
  fi
@@ -42,7 +42,7 @@ Index: linux-2.4.35.4/arch/mips/config-shared.in
  if [ "$CONFIG_SNI_RM200_PCI" = "y" ]; then
     define_bool CONFIG_ARC32 y
     define_bool CONFIG_ARC_MEMORY y
-@@ -1042,7 +1061,11 @@
+@@ -1042,7 +1061,11 @@ comment 'Kernel hacking'
  
  bool 'Are you using a crosscompiler' CONFIG_CROSSCOMPILE
  bool 'Enable run-time debugging' CONFIG_RUNTIME_DEBUG
@@ -57,9 +57,9 @@ Index: linux-2.4.35.4/arch/mips/config-shared.in
     define_bool CONFIG_DEBUG_INFO y
 Index: linux-2.4.35.4/arch/mips/kernel/cpu-probe.c
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/cpu-probe.c	2007-12-15 05:19:44.862977633 +0100
-+++ linux-2.4.35.4/arch/mips/kernel/cpu-probe.c	2007-12-15 05:20:13.944634901 +0100
-@@ -162,7 +162,7 @@
+--- linux-2.4.35.4.orig/arch/mips/kernel/cpu-probe.c
++++ linux-2.4.35.4/arch/mips/kernel/cpu-probe.c
+@@ -162,7 +162,7 @@ static inline int __cpu_has_fpu(void)
  
  static inline void cpu_probe_legacy(struct cpuinfo_mips *c)
  {
@@ -68,7 +68,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/cpu-probe.c
  	case PRID_IMP_R2000:
  		c->cputype = CPU_R2000;
  		c->isa_level = MIPS_CPU_ISA_I;
-@@ -172,7 +172,7 @@
+@@ -172,7 +172,7 @@ static inline void cpu_probe_legacy(stru
  		c->tlbsize = 64;
  		break;
  	case PRID_IMP_R3000:
@@ -77,7 +77,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/cpu-probe.c
  			if (cpu_has_confreg())
  				c->cputype = CPU_R3081E;
  			else
-@@ -187,12 +187,12 @@
+@@ -187,12 +187,12 @@ static inline void cpu_probe_legacy(stru
  		break;
  	case PRID_IMP_R4000:
  		if (read_c0_config() & CONF_SC) {
@@ -92,7 +92,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/cpu-probe.c
  				c->cputype = CPU_R4400SC;
  			else
  				c->cputype = CPU_R4000SC;
-@@ -438,7 +438,7 @@
+@@ -438,7 +438,7 @@ static inline void decode_config1(struct
  static inline void cpu_probe_mips(struct cpuinfo_mips *c)
  {
  	decode_config1(c);
@@ -101,7 +101,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/cpu-probe.c
  	case PRID_IMP_4KC:
  		c->cputype = CPU_4KC;
  		c->isa_level = MIPS_CPU_ISA_M32;
-@@ -479,10 +479,10 @@
+@@ -479,10 +479,10 @@ static inline void cpu_probe_alchemy(str
  {
  	decode_config1(c);
  	c->options |= MIPS_CPU_PREFETCH;
@@ -114,7 +114,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/cpu-probe.c
  		case 0:
   			c->cputype = CPU_AU1000;
  			break;
-@@ -510,10 +510,34 @@
+@@ -510,10 +510,34 @@ static inline void cpu_probe_alchemy(str
  	}
  }
  
@@ -150,7 +150,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/cpu-probe.c
  	case PRID_IMP_SB1:
  		c->cputype = CPU_SB1;
  		c->isa_level = MIPS_CPU_ISA_M64;
-@@ -535,7 +559,7 @@
+@@ -535,7 +559,7 @@ static inline void cpu_probe_sibyte(stru
  static inline void cpu_probe_sandcraft(struct cpuinfo_mips *c)
  {
  	decode_config1(c);
@@ -159,7 +159,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/cpu-probe.c
  	case PRID_IMP_SR71000:
  		c->cputype = CPU_SR71000;
  		c->isa_level = MIPS_CPU_ISA_M64;
-@@ -560,7 +584,7 @@
+@@ -560,7 +584,7 @@ __init void cpu_probe(void)
  	c->cputype	= CPU_UNKNOWN;
  
  	c->processor_id = read_c0_prid();
@@ -168,7 +168,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/cpu-probe.c
  
  	case PRID_COMP_LEGACY:
  		cpu_probe_legacy(c);
-@@ -571,6 +595,9 @@
+@@ -571,6 +595,9 @@ __init void cpu_probe(void)
  	case PRID_COMP_ALCHEMY:
  		cpu_probe_alchemy(c);
  		break;
@@ -180,8 +180,8 @@ Index: linux-2.4.35.4/arch/mips/kernel/cpu-probe.c
  		break;
 Index: linux-2.4.35.4/arch/mips/kernel/head.S
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/head.S	2007-12-15 05:19:44.866977862 +0100
-+++ linux-2.4.35.4/arch/mips/kernel/head.S	2007-12-15 05:20:13.944634901 +0100
+--- linux-2.4.35.4.orig/arch/mips/kernel/head.S
++++ linux-2.4.35.4/arch/mips/kernel/head.S
 @@ -28,12 +28,20 @@
  #include <asm/mipsregs.h>
  #include <asm/stackframe.h>
@@ -206,9 +206,9 @@ Index: linux-2.4.35.4/arch/mips/kernel/head.S
  		EXPORT(stext)
 Index: linux-2.4.35.4/arch/mips/kernel/proc.c
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/proc.c	2007-12-15 05:19:36.358492990 +0100
-+++ linux-2.4.35.4/arch/mips/kernel/proc.c	2007-12-15 05:20:13.944634901 +0100
-@@ -78,9 +78,10 @@
+--- linux-2.4.35.4.orig/arch/mips/kernel/proc.c
++++ linux-2.4.35.4/arch/mips/kernel/proc.c
+@@ -78,9 +78,10 @@ static const char *cpu_name[] = {
  	[CPU_AU1550]	"Au1550",
  	[CPU_24K]	"MIPS 24K",
  	[CPU_AU1200]	"Au1200",
@@ -222,9 +222,9 @@ Index: linux-2.4.35.4/arch/mips/kernel/proc.c
  	unsigned int version = current_cpu_data.processor_id;
 Index: linux-2.4.35.4/arch/mips/kernel/setup.c
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/setup.c	2007-12-15 05:19:44.866977862 +0100
-+++ linux-2.4.35.4/arch/mips/kernel/setup.c	2007-12-15 05:20:13.944634901 +0100
-@@ -493,6 +493,7 @@
+--- linux-2.4.35.4.orig/arch/mips/kernel/setup.c
++++ linux-2.4.35.4/arch/mips/kernel/setup.c
+@@ -493,6 +493,7 @@ void __init setup_arch(char **cmdline_p)
  	void swarm_setup(void);
  	void hp_setup(void);
  	void au1x00_setup(void);
@@ -232,7 +232,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/setup.c
  	void frame_info_init(void);
  
  	frame_info_init();
-@@ -691,6 +692,11 @@
+@@ -691,6 +692,11 @@ void __init setup_arch(char **cmdline_p)
                  pmc_yosemite_setup();
                  break;
  #endif
@@ -246,9 +246,9 @@ Index: linux-2.4.35.4/arch/mips/kernel/setup.c
  	}
 Index: linux-2.4.35.4/arch/mips/kernel/traps.c
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/traps.c	2007-12-15 05:19:44.870978088 +0100
-+++ linux-2.4.35.4/arch/mips/kernel/traps.c	2007-12-15 05:20:13.944634901 +0100
-@@ -920,6 +920,7 @@
+--- linux-2.4.35.4.orig/arch/mips/kernel/traps.c
++++ linux-2.4.35.4/arch/mips/kernel/traps.c
+@@ -920,6 +920,7 @@ void __init per_cpu_trap_init(void)
  void __init trap_init(void)
  {
  	extern char except_vec1_generic;
@@ -256,7 +256,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/traps.c
  	extern char except_vec3_generic, except_vec3_r4000;
  	extern char except_vec_ejtag_debug;
  	extern char except_vec4;
-@@ -927,6 +928,7 @@
+@@ -927,6 +928,7 @@ void __init trap_init(void)
  
  	/* Copy the generic exception handler code to it's final destination. */
  	memcpy((void *)(KSEG0 + 0x80), &except_vec1_generic, 0x80);
@@ -264,7 +264,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/traps.c
  
  	/*
  	 * Setup default vectors
-@@ -985,6 +987,12 @@
+@@ -985,6 +987,12 @@ void __init trap_init(void)
  	set_except_vector(13, handle_tr);
  	set_except_vector(22, handle_mdmx);
  
@@ -279,9 +279,9 @@ Index: linux-2.4.35.4/arch/mips/kernel/traps.c
  
 Index: linux-2.4.35.4/arch/mips/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/Makefile	2007-12-15 05:19:51.215339635 +0100
-+++ linux-2.4.35.4/arch/mips/Makefile	2007-12-15 05:20:13.948635130 +0100
-@@ -726,6 +726,19 @@
+--- linux-2.4.35.4.orig/arch/mips/Makefile
++++ linux-2.4.35.4/arch/mips/Makefile
+@@ -726,6 +726,19 @@ LOADADDR      += 0x80020000
  endif
  
  #
@@ -301,7 +301,7 @@ Index: linux-2.4.35.4/arch/mips/Makefile
  # Choosing incompatible machines durings configuration will result in
  # error messages during linking.  Select a default linkscript if
  # none has been choosen above.
-@@ -779,6 +792,7 @@
+@@ -779,6 +792,7 @@ archclean:
  	$(MAKE) -C arch/$(ARCH)/tools clean
  	$(MAKE) -C arch/mips/baget clean
  	$(MAKE) -C arch/mips/lasat clean
@@ -311,9 +311,9 @@ Index: linux-2.4.35.4/arch/mips/Makefile
  	@$(MAKEBOOT) mrproper
 Index: linux-2.4.35.4/arch/mips/mm/c-r4k.c
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/mm/c-r4k.c	2007-12-15 05:19:44.874978317 +0100
-+++ linux-2.4.35.4/arch/mips/mm/c-r4k.c	2007-12-15 05:20:13.948635130 +0100
-@@ -1118,3 +1118,47 @@
+--- linux-2.4.35.4.orig/arch/mips/mm/c-r4k.c
++++ linux-2.4.35.4/arch/mips/mm/c-r4k.c
+@@ -1118,3 +1118,47 @@ void __init ld_mmu_r4xx0(void)
  	build_clear_page();
  	build_copy_page();
  }
@@ -363,9 +363,9 @@ Index: linux-2.4.35.4/arch/mips/mm/c-r4k.c
 +
 Index: linux-2.4.35.4/arch/mips/pci/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/pci/Makefile	2007-12-15 05:19:36.398495270 +0100
-+++ linux-2.4.35.4/arch/mips/pci/Makefile	2007-12-15 05:20:13.948635130 +0100
-@@ -13,7 +13,9 @@
+--- linux-2.4.35.4.orig/arch/mips/pci/Makefile
++++ linux-2.4.35.4/arch/mips/pci/Makefile
+@@ -13,7 +13,9 @@ obj-$(CONFIG_MIPS_GT64120)	+= ops-gt6412
  obj-$(CONFIG_MIPS_MSC)		+= ops-msc.o
  obj-$(CONFIG_MIPS_NILE4)	+= ops-nile4.o
  obj-$(CONFIG_SNI_RM200_PCI)	+= ops-sni.o
@@ -377,9 +377,9 @@ Index: linux-2.4.35.4/arch/mips/pci/Makefile
  include $(TOPDIR)/Rules.make
 Index: linux-2.4.35.4/drivers/char/serial.c
 ===================================================================
---- linux-2.4.35.4.orig/drivers/char/serial.c	2007-12-15 05:20:00.539871010 +0100
-+++ linux-2.4.35.4/drivers/char/serial.c	2007-12-15 05:20:13.952635360 +0100
-@@ -444,6 +444,10 @@
+--- linux-2.4.35.4.orig/drivers/char/serial.c
++++ linux-2.4.35.4/drivers/char/serial.c
+@@ -444,6 +444,10 @@ static _INLINE_ unsigned int serial_in(s
  		return inb(info->port+1);
  #endif
  	case SERIAL_IO_MEM:
@@ -390,7 +390,7 @@ Index: linux-2.4.35.4/drivers/char/serial.c
  		return readb((unsigned long) info->iomem_base +
  			     (offset<<info->iomem_reg_shift));
  	default:
-@@ -464,6 +468,9 @@
+@@ -464,6 +468,9 @@ static _INLINE_ void serial_out(struct a
  	case SERIAL_IO_MEM:
  		writeb(value, (unsigned long) info->iomem_base +
  			      (offset<<info->iomem_reg_shift));
@@ -400,7 +400,7 @@ Index: linux-2.4.35.4/drivers/char/serial.c
  		break;
  	default:
  		outb(value, info->port+offset);
-@@ -1728,7 +1735,7 @@
+@@ -1728,7 +1735,7 @@ static void change_speed(struct async_st
  			/* Special case since 134 is really 134.5 */
  			quot = (2*baud_base / 269);
  		else if (baud)
@@ -409,7 +409,7 @@ Index: linux-2.4.35.4/drivers/char/serial.c
  	}
  	/* If the quotient is zero refuse the change */
  	if (!quot && old_termios) {
-@@ -1745,12 +1752,12 @@
+@@ -1745,12 +1752,12 @@ static void change_speed(struct async_st
  				/* Special case since 134 is really 134.5 */
  				quot = (2*baud_base / 269);
  			else if (baud)
@@ -424,7 +424,7 @@ Index: linux-2.4.35.4/drivers/char/serial.c
  	/*
  	 * Work around a bug in the Oxford Semiconductor 952 rev B
  	 * chip which causes it to seriously miscalculate baud rates
-@@ -5994,6 +6001,13 @@
+@@ -5994,6 +6001,13 @@ static int __init serial_console_setup(s
  	 *	Divisor, bytesize and parity
  	 */
  	state = rs_table + co->index;
@@ -438,7 +438,7 @@ Index: linux-2.4.35.4/drivers/char/serial.c
  	if (doflow)
  		state->flags |= ASYNC_CONS_FLOW;
  	info = &async_sercons;
-@@ -6007,7 +6021,7 @@
+@@ -6007,7 +6021,7 @@ static int __init serial_console_setup(s
  	info->io_type = state->io_type;
  	info->iomem_base = state->iomem_base;
  	info->iomem_reg_shift = state->iomem_reg_shift;
@@ -449,8 +449,8 @@ Index: linux-2.4.35.4/drivers/char/serial.c
  	cval >>= 8;
 Index: linux-2.4.35.4/drivers/net/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/drivers/net/Makefile	2007-12-15 05:20:10.804455954 +0100
-+++ linux-2.4.35.4/drivers/net/Makefile	2007-12-15 05:20:13.952635360 +0100
+--- linux-2.4.35.4.orig/drivers/net/Makefile
++++ linux-2.4.35.4/drivers/net/Makefile
 @@ -3,6 +3,8 @@
  # Makefile for the Linux network (ethercard) device drivers.
  #
@@ -462,9 +462,9 @@ Index: linux-2.4.35.4/drivers/net/Makefile
  obj-n           :=
 Index: linux-2.4.35.4/drivers/parport/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/drivers/parport/Config.in	2007-12-15 05:19:36.422496639 +0100
-+++ linux-2.4.35.4/drivers/parport/Config.in	2007-12-15 05:20:13.956635587 +0100
-@@ -11,6 +11,7 @@
+--- linux-2.4.35.4.orig/drivers/parport/Config.in
++++ linux-2.4.35.4/drivers/parport/Config.in
+@@ -11,6 +11,7 @@ comment 'Parallel port support'
  tristate 'Parallel port support' CONFIG_PARPORT
  if [ "$CONFIG_PARPORT" != "n" ]; then
     dep_tristate '  PC-style hardware' CONFIG_PARPORT_PC $CONFIG_PARPORT
@@ -474,9 +474,9 @@ Index: linux-2.4.35.4/drivers/parport/Config.in
           define_tristate CONFIG_PARPORT_PC_CML1 m
 Index: linux-2.4.35.4/drivers/parport/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/drivers/parport/Makefile	2007-12-15 05:19:36.430497094 +0100
-+++ linux-2.4.35.4/drivers/parport/Makefile	2007-12-15 05:20:13.956635587 +0100
-@@ -22,6 +22,7 @@
+--- linux-2.4.35.4.orig/drivers/parport/Makefile
++++ linux-2.4.35.4/drivers/parport/Makefile
+@@ -22,6 +22,7 @@ endif
  
  obj-$(CONFIG_PARPORT)		+= parport.o
  obj-$(CONFIG_PARPORT_PC)	+= parport_pc.o
@@ -486,8 +486,8 @@ Index: linux-2.4.35.4/drivers/parport/Makefile
  obj-$(CONFIG_PARPORT_MFC3)	+= parport_mfc3.o
 Index: linux-2.4.35.4/include/asm-mips/bootinfo.h
 ===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/bootinfo.h	2007-12-15 05:19:45.026986980 +0100
-+++ linux-2.4.35.4/include/asm-mips/bootinfo.h	2007-12-15 05:20:13.956635587 +0100
+--- linux-2.4.35.4.orig/include/asm-mips/bootinfo.h
++++ linux-2.4.35.4/include/asm-mips/bootinfo.h
 @@ -37,6 +37,7 @@
  #define MACH_GROUP_HP_LJ       20 /* Hewlett Packard LaserJet               */
  #define MACH_GROUP_LASAT       21
@@ -514,8 +514,8 @@ Index: linux-2.4.35.4/include/asm-mips/bootinfo.h
  #define	MACH_TITAN_YOSEMITE	1 	/* PMC-Sierra Yosemite */
 Index: linux-2.4.35.4/include/asm-mips/cpu.h
 ===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/cpu.h	2007-12-15 05:19:36.442497779 +0100
-+++ linux-2.4.35.4/include/asm-mips/cpu.h	2007-12-15 05:20:13.956635587 +0100
+--- linux-2.4.35.4.orig/include/asm-mips/cpu.h
++++ linux-2.4.35.4/include/asm-mips/cpu.h
 @@ -22,6 +22,11 @@
     spec.
  */
@@ -566,9 +566,9 @@ Index: linux-2.4.35.4/include/asm-mips/cpu.h
   * ISA Level encodings
 Index: linux-2.4.35.4/include/asm-mips/r4kcache.h
 ===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/r4kcache.h	2007-12-15 05:19:36.450498234 +0100
-+++ linux-2.4.35.4/include/asm-mips/r4kcache.h	2007-12-15 05:20:13.960635812 +0100
-@@ -567,4 +567,17 @@
+--- linux-2.4.35.4.orig/include/asm-mips/r4kcache.h
++++ linux-2.4.35.4/include/asm-mips/r4kcache.h
+@@ -567,4 +567,17 @@ static inline void blast_scache128_page_
  			cache128_unroll32(addr|ws,Index_Writeback_Inv_SD);
  }
  
@@ -588,8 +588,8 @@ Index: linux-2.4.35.4/include/asm-mips/r4kcache.h
  #endif /* __ASM_R4KCACHE_H */
 Index: linux-2.4.35.4/include/asm-mips/serial.h
 ===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/serial.h	2007-12-15 05:19:36.458498689 +0100
-+++ linux-2.4.35.4/include/asm-mips/serial.h	2007-12-15 05:20:13.960635812 +0100
+--- linux-2.4.35.4.orig/include/asm-mips/serial.h
++++ linux-2.4.35.4/include/asm-mips/serial.h
 @@ -223,6 +223,13 @@
  #define TXX927_SERIAL_PORT_DEFNS
  #endif
@@ -614,9 +614,9 @@ Index: linux-2.4.35.4/include/asm-mips/serial.h
  	EV96100_SERIAL_PORT_DEFNS		\
 Index: linux-2.4.35.4/init/do_mounts.c
 ===================================================================
---- linux-2.4.35.4.orig/init/do_mounts.c	2007-12-15 05:19:48.667194423 +0100
-+++ linux-2.4.35.4/init/do_mounts.c	2007-12-15 05:20:13.960635812 +0100
-@@ -254,7 +254,13 @@
+--- linux-2.4.35.4.orig/init/do_mounts.c
++++ linux-2.4.35.4/init/do_mounts.c
+@@ -254,7 +254,13 @@ static struct dev_name_struct {
  	{ "ftlb", 0x2c08 },
  	{ "ftlc", 0x2c10 },
  	{ "ftld", 0x2c18 },

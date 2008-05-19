@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/arch/mips/lib/ide-std.c
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/lib/ide-std.c	2007-12-15 05:19:36.146480908 +0100
-+++ linux-2.4.35.4/arch/mips/lib/ide-std.c	2007-12-15 05:20:15.796740447 +0100
-@@ -31,12 +31,14 @@
+--- linux-2.4.35.4.orig/arch/mips/lib/ide-std.c
++++ linux-2.4.35.4/arch/mips/lib/ide-std.c
+@@ -31,12 +31,14 @@ static int std_ide_default_irq(ide_ioreg
  static ide_ioreg_t std_ide_default_io_base(int index)
  {
  	switch (index) {
