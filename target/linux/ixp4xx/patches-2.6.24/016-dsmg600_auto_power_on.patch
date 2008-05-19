@@ -16,10 +16,10 @@ Acked-by: Lennert Buytenhek <buytenh@wantstofly.org>
 PATCH FOLLOWS
 KernelVersion: 2.6.24-git5
 
-diff --git a/arch/arm/mach-ixp4xx/dsmg600-power.c b/arch/arm/mach-ixp4xx/dsmg600-power.c
-index 3471787..db63987 100644
---- a/arch/arm/mach-ixp4xx/dsmg600-power.c
-+++ b/arch/arm/mach-ixp4xx/dsmg600-power.c
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/dsmg600-power.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/dsmg600-power.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/dsmg600-power.c
 @@ -26,14 +26,13 @@
  #include <linux/jiffies.h>
  #include <linux/timer.h>
@@ -37,7 +37,7 @@ index 3471787..db63987 100644
  
  /* Must hold the button down for at least this many counts to be processed */
  #define PBUTTON_HOLDDOWN_COUNT 4 /* 2 secs */
-@@ -47,22 +46,27 @@ static void dsmg600_power_handler(unsigned long data)
+@@ -47,22 +46,27 @@ static void dsmg600_power_handler(unsign
  	 * state of the power button.
  	 */
  
@@ -72,7 +72,7 @@ index 3471787..db63987 100644
  	}
  
  	mod_timer(&dsmg600_power_timer, jiffies + msecs_to_jiffies(500));
-@@ -81,12 +85,12 @@ static int __init dsmg600_power_init(void)
+@@ -81,12 +85,12 @@ static int __init dsmg600_power_init(voi
  	if (!(machine_is_dsmg600()))
  		return 0;
  
@@ -87,7 +87,7 @@ index 3471787..db63987 100644
  
  		return -EIO;
  	}
-@@ -114,7 +118,7 @@ static void __exit dsmg600_power_exit(void)
+@@ -114,7 +118,7 @@ static void __exit dsmg600_power_exit(vo
  
  	del_timer_sync(&dsmg600_power_timer);
  
@@ -96,10 +96,10 @@ index 3471787..db63987 100644
  }
  
  module_init(dsmg600_power_init);
-diff --git a/include/asm-arm/arch-ixp4xx/dsmg600.h b/include/asm-arm/arch-ixp4xx/dsmg600.h
-index a19605a..b7673e1 100644
---- a/include/asm-arm/arch-ixp4xx/dsmg600.h
-+++ b/include/asm-arm/arch-ixp4xx/dsmg600.h
+Index: linux-2.6.24.7/include/asm-arm/arch-ixp4xx/dsmg600.h
+===================================================================
+--- linux-2.6.24.7.orig/include/asm-arm/arch-ixp4xx/dsmg600.h
++++ linux-2.6.24.7/include/asm-arm/arch-ixp4xx/dsmg600.h
 @@ -40,18 +40,13 @@
  /* Buttons */
  
@@ -120,6 +120,3 @@ index a19605a..b7673e1 100644
 -
  #define DSMG600_LED_WLAN_GPIO	14
 -#define DSMG600_LED_WLAN_BM	(1L << DSMG600_LED_WLAN_GPIO)
--- 
-1.5.2.5
-

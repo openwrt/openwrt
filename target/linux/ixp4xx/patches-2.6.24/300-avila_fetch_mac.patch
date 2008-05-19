@@ -1,7 +1,7 @@
-Index: linux-2.6.24.2/arch/arm/mach-ixp4xx/avila-setup.c
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/avila-setup.c
 ===================================================================
---- linux-2.6.24.2.orig/arch/arm/mach-ixp4xx/avila-setup.c
-+++ linux-2.6.24.2/arch/arm/mach-ixp4xx/avila-setup.c
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/avila-setup.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/avila-setup.c
 @@ -14,10 +14,18 @@
  #include <linux/kernel.h>
  #include <linux/init.h>
@@ -35,9 +35,9 @@ Index: linux-2.6.24.2/arch/arm/mach-ixp4xx/avila-setup.c
  static struct flash_platform_data avila_flash_data = {
  	.map_name	= "cfi_probe",
  	.width		= 2,
-@@ -192,10 +207,160 @@ static void __init avila_fixup(struct ma
- 	t->hdr.size = 0;
- }
+@@ -163,10 +178,160 @@ static struct platform_device *avila_dev
+ 	&avila_uart
+ };
  
 +static void __init avila_gw23xx_setup(void)
 +{
@@ -196,7 +196,7 @@ Index: linux-2.6.24.2/arch/arm/mach-ixp4xx/avila-setup.c
  	avila_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
  	avila_flash_resource.end =
  		IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size - 1;
-@@ -213,9 +378,28 @@ static void __init avila_init(void)
+@@ -184,9 +349,28 @@ static void __init avila_init(void)
  
  	platform_device_register(&avila_pata);
  

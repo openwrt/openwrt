@@ -1,6 +1,7 @@
-diff -uprN linux-2.6.23.orig/drivers/net/via-velocity.c linux-2.6.23/drivers/net/via-velocity.c
---- linux-2.6.23.orig/drivers/net/via-velocity.c	2007-10-09 15:31:38.000000000 -0500
-+++ linux-2.6.23/drivers/net/via-velocity.c	2007-10-11 00:53:45.000000000 -0500
+Index: linux-2.6.23.17/drivers/net/via-velocity.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/net/via-velocity.c
++++ linux-2.6.23.17/drivers/net/via-velocity.c
 @@ -96,11 +96,31 @@ MODULE_AUTHOR("VIA Networking Technologi
  MODULE_LICENSE("GPL");
  MODULE_DESCRIPTION("VIA Networking Velocity Family Gigabit Ethernet Adapter Driver");
@@ -782,9 +783,10 @@ diff -uprN linux-2.6.23.orig/drivers/net/via-velocity.c linux-2.6.23/drivers/net
  	/*
  	 *	Disable MIICR_MAUTO, so that mii addr can be set normally
  	 */
-diff -uprN linux-2.6.23.orig/drivers/net/via-velocity.h linux-2.6.23/drivers/net/via-velocity.h
---- linux-2.6.23.orig/drivers/net/via-velocity.h	2007-10-09 15:31:38.000000000 -0500
-+++ linux-2.6.23/drivers/net/via-velocity.h	2007-10-11 00:53:45.000000000 -0500
+Index: linux-2.6.23.17/drivers/net/via-velocity.h
+===================================================================
+--- linux-2.6.23.17.orig/drivers/net/via-velocity.h
++++ linux-2.6.23.17/drivers/net/via-velocity.h
 @@ -196,64 +196,70 @@
   *	Receive descriptor
   */

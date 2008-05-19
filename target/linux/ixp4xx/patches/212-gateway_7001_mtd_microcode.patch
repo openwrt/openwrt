@@ -1,5 +1,7 @@
---- linux-2.6.21.5/arch/arm/mach-ixp4xx/gateway7001-setup.c.orig	2007-06-19 18:03:37.202848276 +0100
-+++ linux-2.6.21.5/arch/arm/mach-ixp4xx/gateway7001-setup.c	2007-06-19 18:09:04.152969985 +0100
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/gateway7001-setup.c
+===================================================================
+--- linux-2.6.21.7.orig/arch/arm/mach-ixp4xx/gateway7001-setup.c
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/gateway7001-setup.c
 @@ -16,6 +16,7 @@
  #include <linux/device.h>
  #include <linux/serial.h>
@@ -8,7 +10,7 @@
  #include <linux/serial_8250.h>
  #include <linux/slab.h>
  
-@@ -122,11 +123,48 @@
+@@ -122,11 +123,48 @@ static struct platform_device mac1 = {
  	.resource	= &res_mac1,
  };
  
@@ -57,7 +59,7 @@
  };
  
  static void __init gateway7001_init(void)
-@@ -140,6 +178,7 @@
+@@ -140,6 +178,7 @@ static void __init gateway7001_init(void
  	*IXP4XX_EXP_CS1 = *IXP4XX_EXP_CS0;
  
  	platform_add_devices(gateway7001_devices, ARRAY_SIZE(gateway7001_devices));

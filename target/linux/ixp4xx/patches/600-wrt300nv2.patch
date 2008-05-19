@@ -1,7 +1,8 @@
-diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/Kconfig linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/Kconfig
---- linux-2.6.19.2/arch/arm/mach-ixp4xx/Kconfig	2007-05-03 23:17:47.000000000 +0200
-+++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/Kconfig	2007-04-24 14:25:02.000000000 +0200
-@@ -65,6 +65,14 @@
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/Kconfig
+===================================================================
+--- linux-2.6.21.7.orig/arch/arm/mach-ixp4xx/Kconfig
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/Kconfig
+@@ -73,6 +73,14 @@ config MACH_COMPEX
  	  WP18 or NP18A boards. For more information on this
  	  platform, see http://openwrt.org
  
@@ -16,10 +17,11 @@ diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/Kconfig linux-2.6.19.2-owrt/arch/a
  config ARCH_IXDP425
  	bool "IXDP425"
  	help
-diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/Makefile linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/Makefile
---- linux-2.6.19.2/arch/arm/mach-ixp4xx/Makefile	2007-05-03 23:17:47.000000000 +0200
-+++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/Makefile	2007-04-24 14:25:02.000000000 +0200
-@@ -15,6 +15,7 @@
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/Makefile
+===================================================================
+--- linux-2.6.21.7.orig/arch/arm/mach-ixp4xx/Makefile
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/Makefile
+@@ -17,6 +17,7 @@ obj-pci-$(CONFIG_MACH_GATEWAY7001)	+= ga
  obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
  obj-pci-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-pci.o
  obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp425-pci.o
@@ -27,16 +29,17 @@ diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/Makefile linux-2.6.19.2-owrt/arch/
  
  obj-y	+= common.o
  
-@@ -28,5 +29,6 @@
+@@ -32,5 +33,6 @@ obj-$(CONFIG_MACH_GATEWAY7001)	+= gatewa
  obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
  obj-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-setup.o
  obj-$(CONFIG_MACH_COMPEX)	+= compex-setup.o
 +obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
-diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/wrt300nv2-pci.c linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/wrt300nv2-pci.c
---- linux-2.6.19.2/arch/arm/mach-ixp4xx/wrt300nv2-pci.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/wrt300nv2-pci.c	2007-05-10 10:40:54.000000000 +0200
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/wrt300nv2-pci.c
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/wrt300nv2-pci.c
 @@ -0,0 +1,65 @@
 +/*
 + * arch/arch/mach-ixp4xx/wrt300nv2-pci.c
@@ -103,9 +106,10 @@ diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/wrt300nv2-pci.c linux-2.6.19.2-owr
 +}
 +
 +subsys_initcall(wrt300nv2_pci_init);
-diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/wrt300nv2-setup.c linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/wrt300nv2-setup.c
---- linux-2.6.19.2/arch/arm/mach-ixp4xx/wrt300nv2-setup.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/wrt300nv2-setup.c	2007-05-03 23:16:53.000000000 +0200
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/wrt300nv2-setup.c
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/wrt300nv2-setup.c
 @@ -0,0 +1,108 @@
 +/*
 + * arch/arm/mach-ixp4xx/wrt300nv2-setup.c
@@ -215,10 +219,11 @@ diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/wrt300nv2-setup.c linux-2.6.19.2-o
 +	.init_machine	= wrt300nv2_init,
 +MACHINE_END
 +#endif
-diff -Nur linux-2.6.19.2/include/asm-arm/arch-ixp4xx/uncompress.h linux-2.6.19.2-owrt/include/asm-arm/arch-ixp4xx/uncompress.h
---- linux-2.6.19.2/include/asm-arm/arch-ixp4xx/uncompress.h	2007-05-03 23:17:48.000000000 +0200
-+++ linux-2.6.19.2-owrt/include/asm-arm/arch-ixp4xx/uncompress.h	2007-04-24 14:25:02.000000000 +0200
-@@ -40,7 +40,7 @@
+Index: linux-2.6.21.7/include/asm-arm/arch-ixp4xx/uncompress.h
+===================================================================
+--- linux-2.6.21.7.orig/include/asm-arm/arch-ixp4xx/uncompress.h
++++ linux-2.6.21.7/include/asm-arm/arch-ixp4xx/uncompress.h
+@@ -40,7 +40,7 @@ static __inline__ void __arch_decomp_set
  	/*
  	 * Some boards are using UART2 as console
  	 */

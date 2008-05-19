@@ -1,7 +1,8 @@
-diff -Nur linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_npe.c linux-2.6.23-openwrt/arch/arm/mach-ixp4xx/ixp4xx_npe.c
---- linux-2.6.23/arch/arm/mach-ixp4xx/ixp4xx_npe.c	2007-10-22 22:18:15.000000000 +0200
-+++ linux-2.6.23-openwrt/arch/arm/mach-ixp4xx/ixp4xx_npe.c	2007-10-22 22:32:48.000000000 +0200
-@@ -585,6 +585,8 @@
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/ixp4xx_npe.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/ixp4xx_npe.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/ixp4xx_npe.c
+@@ -588,6 +588,8 @@ int npe_load_firmware(struct npe *npe, c
  	npe_reset(npe);
  #endif
  

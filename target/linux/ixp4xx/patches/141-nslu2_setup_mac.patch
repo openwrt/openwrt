@@ -1,8 +1,8 @@
-Index: linux-2.6.19/arch/arm/mach-ixp4xx/nslu2-setup.c
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/nslu2-setup.c
 ===================================================================
---- linux-2.6.19.orig/arch/arm/mach-ixp4xx/nslu2-setup.c
-+++ linux-2.6.19/arch/arm/mach-ixp4xx/nslu2-setup.c
-@@ -137,6 +137,29 @@ static struct platform_device nslu2_uart
+--- linux-2.6.21.7.orig/arch/arm/mach-ixp4xx/nslu2-setup.c
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/nslu2-setup.c
+@@ -138,6 +138,29 @@ static struct platform_device nslu2_uart
  	.resource		= nslu2_uart_resources,
  };
  
@@ -32,7 +32,7 @@ Index: linux-2.6.19/arch/arm/mach-ixp4xx/nslu2-setup.c
  static struct platform_device *nslu2_devices[] __initdata = {
  	&nslu2_i2c_controller,
  	&nslu2_flash,
-@@ -144,6 +166,7 @@ static struct platform_device *nslu2_dev
+@@ -145,6 +168,7 @@ static struct platform_device *nslu2_dev
  #ifdef CONFIG_LEDS_IXP4XX
  	&nslu2_leds,
  #endif

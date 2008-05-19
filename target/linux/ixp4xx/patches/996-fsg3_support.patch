@@ -1,7 +1,7 @@
-Index: linux-2.6.21.5-armeb/arch/arm/mach-ixp4xx/fsg-pci.c
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/fsg-pci.c
 ===================================================================
 --- /dev/null
-+++ linux-2.6.21.5-armeb/arch/arm/mach-ixp4xx/fsg-pci.c
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/fsg-pci.c
 @@ -0,0 +1,71 @@
 +/*
 + * arch/arch/mach-ixp4xx/fsg-pci.c
@@ -74,10 +74,10 @@ Index: linux-2.6.21.5-armeb/arch/arm/mach-ixp4xx/fsg-pci.c
 +}
 +
 +subsys_initcall(fsg_pci_init);
-Index: linux-2.6.21.5-armeb/arch/arm/mach-ixp4xx/fsg-setup.c
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/fsg-setup.c
 ===================================================================
 --- /dev/null
-+++ linux-2.6.21.5-armeb/arch/arm/mach-ixp4xx/fsg-setup.c
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/fsg-setup.c
 @@ -0,0 +1,223 @@
 +/*
 + * arch/arm/mach-ixp4xx/fsg-setup.c
@@ -302,10 +302,10 @@ Index: linux-2.6.21.5-armeb/arch/arm/mach-ixp4xx/fsg-setup.c
 +	.init_machine	= fsg_init,
 +MACHINE_END
 +
-Index: linux-2.6.21.5-armeb/include/asm-arm/arch-ixp4xx/fsg.h
+Index: linux-2.6.21.7/include/asm-arm/arch-ixp4xx/fsg.h
 ===================================================================
 --- /dev/null
-+++ linux-2.6.21.5-armeb/include/asm-arm/arch-ixp4xx/fsg.h
++++ linux-2.6.21.7/include/asm-arm/arch-ixp4xx/fsg.h
 @@ -0,0 +1,58 @@
 +/*
 + * include/asm-arm/arch-ixp4xx/fsg.h
@@ -365,10 +365,10 @@ Index: linux-2.6.21.5-armeb/include/asm-arm/arch-ixp4xx/fsg.h
 +#define FSG_LED_SATA_BIT	3
 +#define FSG_LED_WAN_BIT		4
 +#define FSG_LED_WLAN_BIT	5
-Index: linux-2.6.21.5-armeb/include/asm-arm/arch-ixp4xx/hardware.h
+Index: linux-2.6.21.7/include/asm-arm/arch-ixp4xx/hardware.h
 ===================================================================
---- linux-2.6.21.5-armeb.orig/include/asm-arm/arch-ixp4xx/hardware.h
-+++ linux-2.6.21.5-armeb/include/asm-arm/arch-ixp4xx/hardware.h
+--- linux-2.6.21.7.orig/include/asm-arm/arch-ixp4xx/hardware.h
++++ linux-2.6.21.7/include/asm-arm/arch-ixp4xx/hardware.h
 @@ -48,5 +48,6 @@ extern unsigned int processor_id;
  #include "nslu2.h"
  #include "nas100d.h"
@@ -376,10 +376,10 @@ Index: linux-2.6.21.5-armeb/include/asm-arm/arch-ixp4xx/hardware.h
 +#include "fsg.h"
  
  #endif  /* _ASM_ARCH_HARDWARE_H */
-Index: linux-2.6.21.5-armeb/include/asm-arm/arch-ixp4xx/irqs.h
+Index: linux-2.6.21.7/include/asm-arm/arch-ixp4xx/irqs.h
 ===================================================================
---- linux-2.6.21.5-armeb.orig/include/asm-arm/arch-ixp4xx/irqs.h
-+++ linux-2.6.21.5-armeb/include/asm-arm/arch-ixp4xx/irqs.h
+--- linux-2.6.21.7.orig/include/asm-arm/arch-ixp4xx/irqs.h
++++ linux-2.6.21.7/include/asm-arm/arch-ixp4xx/irqs.h
 @@ -128,4 +128,11 @@
  #define        IRQ_DSMG600_PCI_INTE    IRQ_IXP4XX_GPIO7
  #define        IRQ_DSMG600_PCI_INTF    IRQ_IXP4XX_GPIO6
@@ -392,9 +392,11 @@ Index: linux-2.6.21.5-armeb/include/asm-arm/arch-ixp4xx/irqs.h
 +#define        IRQ_FSG_PCI_INTC        IRQ_IXP4XX_GPIO5
 +
  #endif
---- linux-2.6.21.6/arch/arm/mach-ixp4xx/Makefile~	2007-07-11 22:20:52.000000000 +0930
-+++ linux-2.6.21.6/arch/arm/mach-ixp4xx/Makefile	2007-07-11 22:22:02.000000000 +0930
-@@ -13,6 +13,7 @@
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/Makefile
+===================================================================
+--- linux-2.6.21.7.orig/arch/arm/mach-ixp4xx/Makefile
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/Makefile
+@@ -13,6 +13,7 @@ obj-pci-$(CONFIG_MACH_GTWX5715)		+= gtwx
  obj-pci-$(CONFIG_MACH_NSLU2)		+= nslu2-pci.o
  obj-pci-$(CONFIG_MACH_NAS100D)		+= nas100d-pci.o
  obj-pci-$(CONFIG_MACH_DSMG600)		+= dsmg600-pci.o
@@ -402,7 +404,7 @@ Index: linux-2.6.21.5-armeb/include/asm-arm/arch-ixp4xx/irqs.h
  obj-pci-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-pci.o
  obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
  obj-pci-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-pci.o
-@@ -29,6 +30,7 @@
+@@ -29,6 +30,7 @@ obj-$(CONFIG_MACH_GTWX5715)	+= gtwx5715-
  obj-$(CONFIG_MACH_NSLU2)	+= nslu2-setup.o nslu2-power.o
  obj-$(CONFIG_MACH_NAS100D)	+= nas100d-setup.o nas100d-power.o
  obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o dsmg600-power.o
@@ -410,9 +412,11 @@ Index: linux-2.6.21.5-armeb/include/asm-arm/arch-ixp4xx/irqs.h
  obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
  obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
  obj-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-setup.o
---- linux-2.6.21.6/arch/arm/mach-ixp4xx/Kconfig~	2007-07-11 22:23:24.000000000 +0930
-+++ linux-2.6.21.6/arch/arm/mach-ixp4xx/Kconfig	2007-07-11 22:23:47.000000000 +0930
-@@ -138,6 +138,14 @@
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/Kconfig
+===================================================================
+--- linux-2.6.21.7.orig/arch/arm/mach-ixp4xx/Kconfig
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/Kconfig
+@@ -138,6 +138,14 @@ config MACH_DSMG600
  	  DSM-G600 RevA device. For more information on this platform,
  	  see http://www.nslu2-linux.org/wiki/DSMG600/HomePage
  

@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Kconfig
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
+--- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/Kconfig
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
 @@ -57,6 +57,14 @@ config MACH_WG302V2
  	  WG302 v2 or WAG302 v2 Access Points. For more information
  	  on this platform, see http://openwrt.org
@@ -17,10 +17,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
  config ARCH_IXDP425
  	bool "IXDP425"
  	help
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Makefile
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
+--- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/Makefile
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
 @@ -16,6 +16,7 @@ obj-pci-$(CONFIG_MACH_DSMG600)		+= dsmg6
  obj-pci-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-pci.o
  obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
@@ -37,10 +37,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
  obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/pronghornmetro-pci.c
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/pronghornmetro-pci.c
 ===================================================================
 --- /dev/null
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/pronghornmetro-pci.c
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/pronghornmetro-pci.c
 @@ -0,0 +1,74 @@
 +/*
 + * arch/arch/mach-ixp4xx/pronghornmetro-pci.c
@@ -116,10 +116,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/pronghornmetro-pci.c
 +}
 +
 +subsys_initcall(pronghornmetro_pci_init);
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/pronghornmetro-setup.c
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/pronghornmetro-setup.c
 ===================================================================
 --- /dev/null
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/pronghornmetro-setup.c
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/pronghornmetro-setup.c
 @@ -0,0 +1,147 @@
 +/*
 + * arch/arm/mach-ixp4xx/pronghornmetro-setup.c
@@ -268,10 +268,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/pronghornmetro-setup.c
 +	.init_machine	= pronghornmetro_init,
 +MACHINE_END
 +#endif
-Index: linux-2.6.25.1/Documentation/arm/IXP4xx
+Index: linux-2.6.25.4/Documentation/arm/IXP4xx
 ===================================================================
---- linux-2.6.25.1.orig/Documentation/arm/IXP4xx
-+++ linux-2.6.25.1/Documentation/arm/IXP4xx
+--- linux-2.6.25.4.orig/Documentation/arm/IXP4xx
++++ linux-2.6.25.4/Documentation/arm/IXP4xx
 @@ -111,6 +111,9 @@ http://www.adiengineering.com/productsCo
     the platform has two mini-PCI slots used for 802.11[bga] cards.
     Finally, there is an IDE port hanging off the expansion bus.
@@ -282,10 +282,10 @@ Index: linux-2.6.25.1/Documentation/arm/IXP4xx
  Gateworks Avila Network Platform
  http://www.gateworks.com/avila_sbc.htm
  
-Index: linux-2.6.25.1/include/asm-arm/arch-ixp4xx/uncompress.h
+Index: linux-2.6.25.4/include/asm-arm/arch-ixp4xx/uncompress.h
 ===================================================================
---- linux-2.6.25.1.orig/include/asm-arm/arch-ixp4xx/uncompress.h
-+++ linux-2.6.25.1/include/asm-arm/arch-ixp4xx/uncompress.h
+--- linux-2.6.25.4.orig/include/asm-arm/arch-ixp4xx/uncompress.h
++++ linux-2.6.25.4/include/asm-arm/arch-ixp4xx/uncompress.h
 @@ -41,7 +41,8 @@ static __inline__ void __arch_decomp_set
  	 * Some boards are using UART2 as console
  	 */

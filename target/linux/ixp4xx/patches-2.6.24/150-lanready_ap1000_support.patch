@@ -1,6 +1,7 @@
-diff -Nur linux-2.6.23.1/arch/arm/mach-ixp4xx/ap1000-setup.c linux-2.6.23.1-owrt/arch/arm/mach-ixp4xx/ap1000-setup.c
---- linux-2.6.23.1/arch/arm/mach-ixp4xx/ap1000-setup.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.23.1-owrt/arch/arm/mach-ixp4xx/ap1000-setup.c	2007-11-14 13:58:58.000000000 +0100
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/ap1000-setup.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/ap1000-setup.c
 @@ -0,0 +1,151 @@
 +/*
 + * arch/arm/mach-ixp4xx/ap1000-setup.c
@@ -153,10 +154,11 @@ diff -Nur linux-2.6.23.1/arch/arm/mach-ixp4xx/ap1000-setup.c linux-2.6.23.1-owrt
 +	.init_machine	= ap1000_init,
 +MACHINE_END
 +#endif
-diff -Nur linux-2.6.23.1/arch/arm/mach-ixp4xx/ixdp425-pci.c linux-2.6.23.1-owrt/arch/arm/mach-ixp4xx/ixdp425-pci.c
---- linux-2.6.23.1/arch/arm/mach-ixp4xx/ixdp425-pci.c	2007-11-14 13:15:50.000000000 +0100
-+++ linux-2.6.23.1-owrt/arch/arm/mach-ixp4xx/ixdp425-pci.c	2007-11-14 13:27:16.000000000 +0100
-@@ -66,7 +66,8 @@
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/ixdp425-pci.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/ixdp425-pci.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/ixdp425-pci.c
+@@ -66,7 +66,8 @@ struct hw_pci ixdp425_pci __initdata = {
  int __init ixdp425_pci_init(void)
  {
  	if (machine_is_ixdp425() || machine_is_ixcdp1100() ||
@@ -166,10 +168,11 @@ diff -Nur linux-2.6.23.1/arch/arm/mach-ixp4xx/ixdp425-pci.c linux-2.6.23.1-owrt/
  		pci_common_init(&ixdp425_pci);
  	return 0;
  }
-diff -Nur linux-2.6.23.1/arch/arm/mach-ixp4xx/Kconfig linux-2.6.23.1-owrt/arch/arm/mach-ixp4xx/Kconfig
---- linux-2.6.23.1/arch/arm/mach-ixp4xx/Kconfig	2007-11-14 13:15:50.000000000 +0100
-+++ linux-2.6.23.1-owrt/arch/arm/mach-ixp4xx/Kconfig	2007-11-14 13:25:07.000000000 +0100
-@@ -89,6 +89,14 @@
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/Kconfig
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/Kconfig
+@@ -89,6 +89,14 @@ config MACH_WRT300NV2
  	  WRT300N v2 router. For more information on this
  	  platform, see http://openwrt.org
  
@@ -184,10 +187,11 @@ diff -Nur linux-2.6.23.1/arch/arm/mach-ixp4xx/Kconfig linux-2.6.23.1-owrt/arch/a
  config ARCH_IXDP425
  	bool "IXDP425"
  	help
-diff -Nur linux-2.6.23.1/arch/arm/mach-ixp4xx/Makefile linux-2.6.23.1-owrt/arch/arm/mach-ixp4xx/Makefile
---- linux-2.6.23.1/arch/arm/mach-ixp4xx/Makefile	2007-11-14 13:15:50.000000000 +0100
-+++ linux-2.6.23.1-owrt/arch/arm/mach-ixp4xx/Makefile	2007-11-14 13:31:29.000000000 +0100
-@@ -20,6 +20,7 @@
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/Makefile
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/Makefile
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/Makefile
+@@ -20,6 +20,7 @@ obj-pci-$(CONFIG_MACH_PRONGHORNMETRO)	+=
  obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp425-pci.o
  obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o
  obj-pci-$(CONFIG_MACH_SIDEWINDER)		+= sidewinder-pci.o
@@ -195,7 +199,7 @@ diff -Nur linux-2.6.23.1/arch/arm/mach-ixp4xx/Makefile linux-2.6.23.1-owrt/arch/
  
  obj-y	+= common.o
  
-@@ -38,5 +39,6 @@
+@@ -38,5 +39,6 @@ obj-$(CONFIG_MACH_PRONGHORNMETRO)	+= pro
  obj-$(CONFIG_MACH_COMPEX)	+= compex-setup.o
  obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o
  obj-$(CONFIG_MACH_SIDEWINDER)	+= sidewinder-setup.o

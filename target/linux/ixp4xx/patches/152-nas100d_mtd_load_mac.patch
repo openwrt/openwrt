@@ -2,10 +2,10 @@
  arch/arm/mach-ixp4xx/nas100d-setup.c |   27 +++++++++++++++++++++++++++
  1 file changed, 27 insertions(+)
 
-Index: linux-2.6.19/arch/arm/mach-ixp4xx/nas100d-setup.c
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/nas100d-setup.c
 ===================================================================
---- linux-2.6.19.orig/arch/arm/mach-ixp4xx/nas100d-setup.c
-+++ linux-2.6.19/arch/arm/mach-ixp4xx/nas100d-setup.c
+--- linux-2.6.21.7.orig/arch/arm/mach-ixp4xx/nas100d-setup.c
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/nas100d-setup.c
 @@ -16,6 +16,7 @@
  #include <linux/serial.h>
  #include <linux/serial_8250.h>
@@ -14,7 +14,7 @@ Index: linux-2.6.19/arch/arm/mach-ixp4xx/nas100d-setup.c
  
  #include <asm/mach-types.h>
  #include <asm/mach/arch.h>
-@@ -165,6 +166,30 @@ static struct platform_device *nas100d_d
+@@ -166,6 +167,30 @@ static struct platform_device *nas100d_d
  	&nas100d_npe_ucode,
  };
  
@@ -45,7 +45,7 @@ Index: linux-2.6.19/arch/arm/mach-ixp4xx/nas100d-setup.c
  static void nas100d_power_off(void)
  {
  	/* This causes the box to drop the power and go dead. */
-@@ -196,6 +221,8 @@ static void __init nas100d_init(void)
+@@ -198,6 +223,8 @@ static void __init nas100d_init(void)
  	(void)platform_device_register(&nas100d_uart);
  
  	platform_add_devices(nas100d_devices, ARRAY_SIZE(nas100d_devices));

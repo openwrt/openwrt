@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/drivers/i2c/chips/eeprom.c
+Index: linux-2.6.25.4/drivers/i2c/chips/eeprom.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/i2c/chips/eeprom.c
-+++ linux-2.6.25.1/drivers/i2c/chips/eeprom.c
+--- linux-2.6.25.4.orig/drivers/i2c/chips/eeprom.c
++++ linux-2.6.25.4/drivers/i2c/chips/eeprom.c
 @@ -33,6 +33,8 @@
  #include <linux/jiffies.h>
  #include <linux/i2c.h>
@@ -99,10 +99,10 @@ Index: linux-2.6.25.1/drivers/i2c/chips/eeprom.c
  static int __init eeprom_init(void)
  {
  	return i2c_add_driver(&eeprom_driver);
-Index: linux-2.6.25.1/include/linux/eeprom.h
+Index: linux-2.6.25.4/include/linux/eeprom.h
 ===================================================================
 --- /dev/null
-+++ linux-2.6.25.1/include/linux/eeprom.h
++++ linux-2.6.25.4/include/linux/eeprom.h
 @@ -0,0 +1,71 @@
 +#ifndef _LINUX_EEPROM_H
 +#define _LINUX_EEPROM_H
@@ -175,10 +175,10 @@ Index: linux-2.6.25.1/include/linux/eeprom.h
 +extern int unregister_eeprom_notifier(struct notifier_block *nb);
 +
 +#endif /* _LINUX_EEPROM_H */
-Index: linux-2.6.25.1/include/linux/notifier.h
+Index: linux-2.6.25.4/include/linux/notifier.h
 ===================================================================
---- linux-2.6.25.1.orig/include/linux/notifier.h
-+++ linux-2.6.25.1/include/linux/notifier.h
+--- linux-2.6.25.4.orig/include/linux/notifier.h
++++ linux-2.6.25.4/include/linux/notifier.h
 @@ -248,5 +248,8 @@ extern struct blocking_notifier_head reb
  #define VT_WRITE		0x0003 /* A char got output */
  #define VT_UPDATE		0x0004 /* A bigger update occurred */

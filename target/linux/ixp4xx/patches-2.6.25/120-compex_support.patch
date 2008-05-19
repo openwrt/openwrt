@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Kconfig
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
+--- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/Kconfig
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
 @@ -65,6 +65,14 @@ config MACH_PRONGHORNMETRO
  	  Engineering Pronghorn Metro Platform. For more
  	  information on this platform, see <file:Documentation/arm/IXP4xx>.
@@ -17,10 +17,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
  config ARCH_IXDP425
  	bool "IXDP425"
  	help
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Makefile
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
+--- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/Makefile
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
 @@ -17,6 +17,7 @@ obj-pci-$(CONFIG_MACH_GATEWAY7001)	+= ga
  obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
  obj-pci-$(CONFIG_MACH_FSG)		+= fsg-pci.o
@@ -37,10 +37,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
  obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/compex-setup.c
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/compex-setup.c
 ===================================================================
 --- /dev/null
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/compex-setup.c
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/compex-setup.c
 @@ -0,0 +1,120 @@
 +/*
 + * arch/arm/mach-ixp4xx/compex-setup.c
@@ -162,10 +162,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/compex-setup.c
 +	.init_machine	= compex_init,
 +MACHINE_END
 +#endif
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/ixdp425-pci.c
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/ixdp425-pci.c
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/ixdp425-pci.c
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/ixdp425-pci.c
+--- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/ixdp425-pci.c
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/ixdp425-pci.c
 @@ -66,7 +66,7 @@ struct hw_pci ixdp425_pci __initdata = {
  int __init ixdp425_pci_init(void)
  {
@@ -175,10 +175,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/ixdp425-pci.c
  		pci_common_init(&ixdp425_pci);
  	return 0;
  }
-Index: linux-2.6.25.1/arch/arm/tools/mach-types
+Index: linux-2.6.25.4/arch/arm/tools/mach-types
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/tools/mach-types
-+++ linux-2.6.25.1/arch/arm/tools/mach-types
+--- linux-2.6.25.4.orig/arch/arm/tools/mach-types
++++ linux-2.6.25.4/arch/arm/tools/mach-types
 @@ -1276,7 +1276,7 @@ oiab			MACH_OIAB		OIAB			1269
  smdk6400		MACH_SMDK6400		SMDK6400		1270
  nokia_n800		MACH_NOKIA_N800		NOKIA_N800		1271

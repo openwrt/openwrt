@@ -2,12 +2,12 @@
  arch/arm/mach-ixp4xx/avila-setup.c |   50 ++++++++++++++++++++++++++++++++++++-
  1 file changed, 49 insertions(+), 1 deletion(-)
 
-Index: linux-2.6.19/arch/arm/mach-ixp4xx/avila-setup.c
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/avila-setup.c
 ===================================================================
---- linux-2.6.19.orig/arch/arm/mach-ixp4xx/avila-setup.c
-+++ linux-2.6.19/arch/arm/mach-ixp4xx/avila-setup.c
-@@ -104,10 +104,60 @@ static struct platform_device avila_uart
- 	.resource		= avila_uart_resources
+--- linux-2.6.21.7.orig/arch/arm/mach-ixp4xx/avila-setup.c
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/avila-setup.c
+@@ -132,10 +132,60 @@ static struct platform_device avila_pata
+ 	.resource		= avila_pata_resources,
  };
  
 +/* MACs */

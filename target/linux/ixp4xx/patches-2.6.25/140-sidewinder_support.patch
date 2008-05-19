@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Kconfig
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
+--- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/Kconfig
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
 @@ -65,6 +65,14 @@ config MACH_PRONGHORNMETRO
  	  Engineering Pronghorn Metro Platform. For more
  	  information on this platform, see <file:Documentation/arm/IXP4xx>.
@@ -26,10 +26,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
  	default y
  
  config CPU_IXP43X
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Makefile
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
+--- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/Makefile
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
 @@ -19,6 +19,7 @@ obj-pci-$(CONFIG_MACH_FSG)		+= fsg-pci.o
  obj-pci-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-pci.o
  obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp425-pci.o
@@ -46,10 +46,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
  obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/sidewinder-pci.c
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/sidewinder-pci.c
 ===================================================================
 --- /dev/null
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/sidewinder-pci.c
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/sidewinder-pci.c
 @@ -0,0 +1,71 @@
 +/*
 + * arch/arch/mach-ixp4xx/pronghornmetro-pci.c
@@ -122,10 +122,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/sidewinder-pci.c
 +}
 +
 +subsys_initcall(sidewinder_pci_init);
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/sidewinder-setup.c
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/sidewinder-setup.c
 ===================================================================
 --- /dev/null
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/sidewinder-setup.c
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/sidewinder-setup.c
 @@ -0,0 +1,115 @@
 +/*
 + * arch/arm/mach-ixp4xx/sidewinder-setup.c

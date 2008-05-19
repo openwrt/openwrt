@@ -1,7 +1,8 @@
-diff -Nur linux-2.6.19.2/drivers/net/ixp4xx/mac_driver.c linux-2.6.19.2-owrt/drivers/net/ixp4xx/mac_driver.c
---- linux-2.6.19.2/drivers/net/ixp4xx/mac_driver.c	2007-04-15 14:26:54.000000000 +0200
-+++ linux-2.6.19.2-owrt/drivers/net/ixp4xx/mac_driver.c	2007-04-15 14:33:44.000000000 +0200
-@@ -161,6 +161,16 @@
+Index: linux-2.6.21.7/drivers/net/ixp4xx/mac_driver.c
+===================================================================
+--- linux-2.6.21.7.orig/drivers/net/ixp4xx/mac_driver.c
++++ linux-2.6.21.7/drivers/net/ixp4xx/mac_driver.c
+@@ -161,6 +161,16 @@ static int media_check(struct net_device
  {
  	struct mac_info *mac = netdev_priv(dev);
  
@@ -18,7 +19,7 @@ diff -Nur linux-2.6.19.2/drivers/net/ixp4xx/mac_driver.c linux-2.6.19.2-owrt/dri
  	if (mii_check_media(&mac->mii, netif_msg_link(mac), init)) {
  		update_duplex_mode(dev);
  		return 1;
-@@ -458,7 +468,12 @@
+@@ -448,7 +458,12 @@ static int ixmac_ioctl(struct net_device
  		return -EINVAL;
  	if (!try_module_get(THIS_MODULE))
  		return -ENODEV;
@@ -32,7 +33,7 @@ diff -Nur linux-2.6.19.2/drivers/net/ixp4xx/mac_driver.c linux-2.6.19.2-owrt/dri
  	module_put(THIS_MODULE);
  	if (duplex_changed)
  		update_duplex_mode(dev);
-@@ -488,6 +503,9 @@
+@@ -478,6 +493,9 @@ static void ixmac_get_drvinfo(struct net
  static int ixmac_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
  {
  	struct mac_info *mac = netdev_priv(dev);
@@ -42,7 +43,7 @@ diff -Nur linux-2.6.19.2/drivers/net/ixp4xx/mac_driver.c linux-2.6.19.2-owrt/dri
  	mii_ethtool_gset(&mac->mii, cmd);
  	return 0;
  }
-@@ -496,6 +514,9 @@
+@@ -486,6 +504,9 @@ static int ixmac_set_settings(struct net
  {
  	struct mac_info *mac = netdev_priv(dev);
  	int rc;
@@ -52,7 +53,7 @@ diff -Nur linux-2.6.19.2/drivers/net/ixp4xx/mac_driver.c linux-2.6.19.2-owrt/dri
  	rc = mii_ethtool_sset(&mac->mii, cmd);
  	return rc;
  }
-@@ -503,12 +524,18 @@
+@@ -493,12 +514,18 @@ static int ixmac_set_settings(struct net
  static int ixmac_nway_reset(struct net_device *dev)
  {
  	struct mac_info *mac = netdev_priv(dev);

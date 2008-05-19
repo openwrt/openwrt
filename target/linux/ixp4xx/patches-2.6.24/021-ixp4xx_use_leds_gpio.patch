@@ -12,10 +12,10 @@ Signed-off-by: Rod Whitby <rod@whitby.id.au>
 PATCH FOLLOWS
 KernelVersion: v2.6.24-1915-gc9b12e6
 
-diff --git a/arch/arm/configs/ixp4xx_defconfig b/arch/arm/configs/ixp4xx_defconfig
-index 2d5ae33..77fe3b0 100644
---- a/arch/arm/configs/ixp4xx_defconfig
-+++ b/arch/arm/configs/ixp4xx_defconfig
+Index: linux-2.6.24.7/arch/arm/configs/ixp4xx_defconfig
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/configs/ixp4xx_defconfig
++++ linux-2.6.24.7/arch/arm/configs/ixp4xx_defconfig
 @@ -1330,8 +1330,8 @@ CONFIG_LEDS_CLASS=y
  #
  # LED drivers
@@ -27,10 +27,10 @@ index 2d5ae33..77fe3b0 100644
  
  #
  # LED Triggers
-diff --git a/arch/arm/mach-ixp4xx/dsmg600-setup.c b/arch/arm/mach-ixp4xx/dsmg600-setup.c
-index a1c44ef..d0e1295 100644
---- a/arch/arm/mach-ixp4xx/dsmg600-setup.c
-+++ b/arch/arm/mach-ixp4xx/dsmg600-setup.c
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/dsmg600-setup.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/dsmg600-setup.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/dsmg600-setup.c
 @@ -14,6 +14,7 @@
  #include <linux/kernel.h>
  #include <linux/serial.h>
@@ -39,7 +39,7 @@ index a1c44ef..d0e1295 100644
  #include <linux/i2c.h>
  #include <linux/i2c-gpio.h>
  
-@@ -58,29 +59,28 @@ static struct i2c_board_info __initdata dsmg600_i2c_board_info [] = {
+@@ -58,29 +59,28 @@ static struct i2c_board_info __initdata 
  	},
  };
  
@@ -83,7 +83,7 @@ index a1c44ef..d0e1295 100644
  
  static struct resource dsmg600_uart_resources[] = {
  	{
-@@ -128,6 +128,7 @@ static struct platform_device dsmg600_uart = {
+@@ -128,6 +128,7 @@ static struct platform_device dsmg600_ua
  static struct platform_device *dsmg600_devices[] __initdata = {
  	&dsmg600_i2c_gpio,
  	&dsmg600_flash,
@@ -103,11 +103,11 @@ index a1c44ef..d0e1295 100644
  }
  
  MACHINE_START(DSMG600, "D-Link DSM-G600 RevA")
-diff --git a/arch/arm/mach-ixp4xx/nas100d-setup.c b/arch/arm/mach-ixp4xx/nas100d-setup.c
-index dc782d0..5801579 100644
---- a/arch/arm/mach-ixp4xx/nas100d-setup.c
-+++ b/arch/arm/mach-ixp4xx/nas100d-setup.c
-@@ -46,35 +46,34 @@ static struct i2c_board_info __initdata nas100d_i2c_board_info [] = {
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/nas100d-setup.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/nas100d-setup.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/nas100d-setup.c
+@@ -46,35 +46,34 @@ static struct i2c_board_info __initdata 
  	},
  };
  
@@ -157,7 +157,7 @@ index dc782d0..5801579 100644
  
  static struct i2c_gpio_platform_data nas100d_i2c_gpio_data = {
  	.sda_pin		= NAS100D_SDA_PIN,
-@@ -135,9 +134,7 @@ static struct platform_device nas100d_uart = {
+@@ -135,9 +134,7 @@ static struct platform_device nas100d_ua
  static struct platform_device *nas100d_devices[] __initdata = {
  	&nas100d_i2c_gpio,
  	&nas100d_flash,
@@ -167,11 +167,11 @@ index dc782d0..5801579 100644
  };
  
  static void nas100d_power_off(void)
-diff --git a/arch/arm/mach-ixp4xx/nslu2-setup.c b/arch/arm/mach-ixp4xx/nslu2-setup.c
-index 16d091c..41d55c8 100644
---- a/arch/arm/mach-ixp4xx/nslu2-setup.c
-+++ b/arch/arm/mach-ixp4xx/nslu2-setup.c
-@@ -54,41 +54,37 @@ static struct i2c_board_info __initdata nslu2_i2c_board_info [] = {
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/nslu2-setup.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/nslu2-setup.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/nslu2-setup.c
+@@ -54,41 +54,37 @@ static struct i2c_board_info __initdata 
  	},
  };
  
@@ -227,7 +227,7 @@ index 16d091c..41d55c8 100644
  
  static struct platform_device nslu2_i2c_gpio = {
  	.name			= "i2c-gpio",
-@@ -151,9 +147,7 @@ static struct platform_device *nslu2_devices[] __initdata = {
+@@ -151,9 +147,7 @@ static struct platform_device *nslu2_dev
  	&nslu2_i2c_gpio,
  	&nslu2_flash,
  	&nslu2_beeper,
@@ -237,6 +237,3 @@ index 16d091c..41d55c8 100644
  };
  
  static void nslu2_power_off(void)
--- 
-1.5.2.5
-

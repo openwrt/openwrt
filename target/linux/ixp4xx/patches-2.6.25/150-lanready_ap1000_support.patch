@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/ap1000-setup.c
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/ap1000-setup.c
 ===================================================================
 --- /dev/null
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/ap1000-setup.c
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/ap1000-setup.c
 @@ -0,0 +1,151 @@
 +/*
 + * arch/arm/mach-ixp4xx/ap1000-setup.c
@@ -154,10 +154,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/ap1000-setup.c
 +	.init_machine	= ap1000_init,
 +MACHINE_END
 +#endif
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/ixdp425-pci.c
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/ixdp425-pci.c
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/ixdp425-pci.c
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/ixdp425-pci.c
+--- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/ixdp425-pci.c
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/ixdp425-pci.c
 @@ -66,7 +66,8 @@ struct hw_pci ixdp425_pci __initdata = {
  int __init ixdp425_pci_init(void)
  {
@@ -168,10 +168,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/ixdp425-pci.c
  		pci_common_init(&ixdp425_pci);
  	return 0;
  }
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Kconfig
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
+--- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/Kconfig
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
 @@ -89,6 +89,14 @@ config MACH_WRT300NV2
  	  WRT300N v2 router. For more information on this
  	  platform, see http://openwrt.org
@@ -187,10 +187,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
  config ARCH_IXDP425
  	bool "IXDP425"
  	help
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Makefile
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
+--- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/Makefile
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
 @@ -20,6 +20,7 @@ obj-pci-$(CONFIG_MACH_PRONGHORNMETRO)	+=
  obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp425-pci.o
  obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o

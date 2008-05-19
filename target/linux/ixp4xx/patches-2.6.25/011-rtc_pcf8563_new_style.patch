@@ -2,10 +2,10 @@
  drivers/rtc/rtc-pcf8563.c |  109 +++++++++++++---------------------------------
  1 file changed, 32 insertions(+), 77 deletions(-)
 
-Index: linux-2.6.25.1/drivers/rtc/rtc-pcf8563.c
+Index: linux-2.6.25.4/drivers/rtc/rtc-pcf8563.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/rtc/rtc-pcf8563.c
-+++ linux-2.6.25.1/drivers/rtc/rtc-pcf8563.c
+--- linux-2.6.25.4.orig/drivers/rtc/rtc-pcf8563.c
++++ linux-2.6.25.4/drivers/rtc/rtc-pcf8563.c
 @@ -18,17 +18,7 @@
  #include <linux/bcd.h>
  #include <linux/rtc.h>

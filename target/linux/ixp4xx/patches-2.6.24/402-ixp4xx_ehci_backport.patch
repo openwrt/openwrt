@@ -1,7 +1,8 @@
-diff -Nur linux-2.6.24.2/drivers/usb/host/ehci.h linux-2.6.24.2-owrt/drivers/usb/host/ehci.h
---- linux-2.6.24.2/drivers/usb/host/ehci.h	2008-02-11 06:51:11.000000000 +0100
-+++ linux-2.6.24.2-owrt/drivers/usb/host/ehci.h	2008-04-22 12:58:42.000000000 +0200
-@@ -730,6 +730,11 @@
+Index: linux-2.6.24.7/drivers/usb/host/ehci.h
+===================================================================
+--- linux-2.6.24.7.orig/drivers/usb/host/ehci.h
++++ linux-2.6.24.7/drivers/usb/host/ehci.h
+@@ -730,6 +730,11 @@ ehci_port_speed(struct ehci_hcd *ehci, u
  #define writel_be(val, addr)	out_be32((__force unsigned *)addr, val)
  #endif
  
@@ -13,10 +14,11 @@ diff -Nur linux-2.6.24.2/drivers/usb/host/ehci.h linux-2.6.24.2-owrt/drivers/usb
  static inline unsigned int ehci_readl(const struct ehci_hcd *ehci,
  		__u32 __iomem * regs)
  {
-diff -Nur linux-2.6.24.2/drivers/usb/host/ehci-hcd.c linux-2.6.24.2-owrt/drivers/usb/host/ehci-hcd.c
---- linux-2.6.24.2/drivers/usb/host/ehci-hcd.c	2008-02-11 06:51:11.000000000 +0100
-+++ linux-2.6.24.2-owrt/drivers/usb/host/ehci-hcd.c	2008-04-22 12:58:42.000000000 +0200
-@@ -964,6 +964,11 @@
+Index: linux-2.6.24.7/drivers/usb/host/ehci-hcd.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/usb/host/ehci-hcd.c
++++ linux-2.6.24.7/drivers/usb/host/ehci-hcd.c
+@@ -964,6 +964,11 @@ MODULE_LICENSE ("GPL");
  #define	PLATFORM_DRIVER		ehci_ppc_soc_driver
  #endif
  
@@ -28,9 +30,10 @@ diff -Nur linux-2.6.24.2/drivers/usb/host/ehci-hcd.c linux-2.6.24.2-owrt/drivers
  #if !defined(PCI_DRIVER) && !defined(PLATFORM_DRIVER) && \
      !defined(PS3_SYSTEM_BUS_DRIVER)
  #error "missing bus glue for ehci-hcd"
-diff -Nur linux-2.6.24.2/drivers/usb/host/ehci-ixp4xx.c linux-2.6.24.2-owrt/drivers/usb/host/ehci-ixp4xx.c
---- linux-2.6.24.2/drivers/usb/host/ehci-ixp4xx.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.24.2-owrt/drivers/usb/host/ehci-ixp4xx.c	2008-04-22 12:58:42.000000000 +0200
+Index: linux-2.6.24.7/drivers/usb/host/ehci-ixp4xx.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/drivers/usb/host/ehci-ixp4xx.c
 @@ -0,0 +1,152 @@
 +/*
 + * IXP4XX EHCI Host Controller Driver
@@ -184,10 +187,11 @@ diff -Nur linux-2.6.24.2/drivers/usb/host/ehci-ixp4xx.c linux-2.6.24.2-owrt/driv
 +//		.bus = &platform_bus_type
 +	},
 +};
-diff -Nur linux-2.6.24.2/drivers/usb/host/Kconfig linux-2.6.24.2-owrt/drivers/usb/host/Kconfig
---- linux-2.6.24.2/drivers/usb/host/Kconfig	2008-02-11 06:51:11.000000000 +0100
-+++ linux-2.6.24.2-owrt/drivers/usb/host/Kconfig	2008-04-22 12:58:42.000000000 +0200
-@@ -69,12 +69,12 @@
+Index: linux-2.6.24.7/drivers/usb/host/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/drivers/usb/host/Kconfig
++++ linux-2.6.24.7/drivers/usb/host/Kconfig
+@@ -69,12 +69,12 @@ config USB_EHCI_TT_NEWSCHED
  
  config USB_EHCI_BIG_ENDIAN_MMIO
  	bool
@@ -202,10 +206,11 @@ diff -Nur linux-2.6.24.2/drivers/usb/host/Kconfig linux-2.6.24.2-owrt/drivers/us
  	default y
  
  config USB_EHCI_FSL
-diff -Nur linux-2.6.24.2/drivers/usb/Kconfig linux-2.6.24.2-owrt/drivers/usb/Kconfig
---- linux-2.6.24.2/drivers/usb/Kconfig	2008-02-11 06:51:11.000000000 +0100
-+++ linux-2.6.24.2-owrt/drivers/usb/Kconfig	2008-04-22 12:58:42.000000000 +0200
-@@ -49,6 +49,7 @@
+Index: linux-2.6.24.7/drivers/usb/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/drivers/usb/Kconfig
++++ linux-2.6.24.7/drivers/usb/Kconfig
+@@ -49,6 +49,7 @@ config USB_ARCH_HAS_EHCI
  	boolean
  	default y if PPC_83xx
  	default y if SOC_AU1200

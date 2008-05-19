@@ -1,8 +1,8 @@
-Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
+Index: linux-2.6.21.7/drivers/net/via-velocity.c
 ===================================================================
---- linux-2.6.20-rc3.orig/drivers/net/via-velocity.c	2007-01-02 10:30:25.892465963 +0000
-+++ linux-2.6.20-rc3/drivers/net/via-velocity.c	2007-01-02 10:30:36.261113964 +0000
-@@ -96,11 +96,31 @@
+--- linux-2.6.21.7.orig/drivers/net/via-velocity.c
++++ linux-2.6.21.7/drivers/net/via-velocity.c
+@@ -96,11 +96,31 @@ MODULE_AUTHOR("VIA Networking Technologi
  MODULE_LICENSE("GPL");
  MODULE_DESCRIPTION("VIA Networking Velocity Family Gigabit Ethernet Adapter Driver");
  
@@ -34,7 +34,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  #define RX_DESC_MIN     64
  #define RX_DESC_MAX     255
  #define RX_DESC_DEF     64
-@@ -385,12 +405,12 @@
+@@ -385,12 +405,12 @@ static void __devinit velocity_set_int_o
  	if (val == -1)
  		*opt = def;
  	else if (val < min || val > max) {
@@ -51,7 +51,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  		*opt = val;
  	}
  }
-@@ -415,12 +435,12 @@
+@@ -415,12 +435,12 @@ static void __devinit velocity_set_bool_
  	if (val == -1)
  		*opt |= (def ? flag : 0);
  	else if (val < 0 || val > 1) {
@@ -68,7 +68,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  		*opt |= (val ? flag : 0);
  	}
  }
-@@ -438,6 +458,7 @@
+@@ -438,6 +458,7 @@ static void __devinit velocity_set_bool_
  static void __devinit velocity_get_options(struct velocity_opt *opts, int index, char *devname)
  {
  
@@ -76,7 +76,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	velocity_set_int_opt(&opts->rx_thresh, rx_thresh[index], RX_THRESH_MIN, RX_THRESH_MAX, RX_THRESH_DEF, "rx_thresh", devname);
  	velocity_set_int_opt(&opts->DMA_length, DMA_length[index], DMA_LENGTH_MIN, DMA_LENGTH_MAX, DMA_LENGTH_DEF, "DMA_length", devname);
  	velocity_set_int_opt(&opts->numrx, RxDescriptors[index], RX_DESC_MIN, RX_DESC_MAX, RX_DESC_DEF, "RxDescriptors", devname);
-@@ -452,6 +473,7 @@
+@@ -452,6 +473,7 @@ static void __devinit velocity_get_optio
  	velocity_set_int_opt((int *) &opts->wol_opts, wol_opts[index], WOL_OPT_MIN, WOL_OPT_MAX, WOL_OPT_DEF, "Wake On Lan options", devname);
  	velocity_set_int_opt((int *) &opts->int_works, int_works[index], INT_WORKS_MIN, INT_WORKS_MAX, INT_WORKS_DEF, "Interrupt service works", devname);
  	opts->numrx = (opts->numrx & ~3);
@@ -84,7 +84,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  }
  
  /**
-@@ -466,6 +488,8 @@
+@@ -466,6 +488,8 @@ static void velocity_init_cam_filter(str
  {
  	struct mac_regs __iomem * regs = vptr->mac_regs;
  
@@ -93,7 +93,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	/* Turn on MCFG_PQEN, turn off MCFG_RTGOPT */
  	WORD_REG_BITS_SET(MCFG_PQEN, MCFG_RTGOPT, &regs->MCFG);
  	WORD_REG_BITS_ON(MCFG_VIDFR, &regs->MCFG);
-@@ -484,14 +508,12 @@
+@@ -484,14 +508,12 @@ static void velocity_init_cam_filter(str
  			WORD_REG_BITS_ON(MCFG_RTGOPT, &regs->MCFG);
  
  		mac_set_cam(regs, 0, (u8 *) & (vptr->options.vid), VELOCITY_VLAN_ID_CAM);
@@ -110,7 +110,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  }
  
  /**
-@@ -508,13 +530,15 @@
+@@ -508,13 +530,15 @@ static void velocity_rx_reset(struct vel
  	struct mac_regs __iomem * regs = vptr->mac_regs;
  	int i;
  
@@ -127,7 +127,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  
  	writew(vptr->options.numrx, &regs->RBRDU);
  	writel(vptr->rd_pool_dma, &regs->RDBaseLo);
-@@ -537,12 +561,15 @@
+@@ -537,12 +561,15 @@ static void velocity_init_registers(stru
  	struct mac_regs __iomem * regs = vptr->mac_regs;
  	int i, mii_status;
  
@@ -143,7 +143,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  		netif_stop_queue(vptr->dev);
  
  		/*
-@@ -570,12 +597,13 @@
+@@ -570,12 +597,13 @@ static void velocity_init_registers(stru
  
  	case VELOCITY_INIT_COLD:
  	default:
@@ -158,7 +158,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  		mac_eeprom_reload(regs);
  		for (i = 0; i < 6; i++) {
  			writeb(vptr->dev->dev_addr[i], &(regs->PAR[i]));
-@@ -593,11 +621,16 @@
+@@ -593,11 +621,16 @@ static void velocity_init_registers(stru
  		 */
  		BYTE_REG_BITS_SET(CFGB_OFSET, (CFGB_CRANDOM | CFGB_CAP | CFGB_MBA | CFGB_BAKOPT), &regs->CFGB);
  
@@ -175,7 +175,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  		/*
  		 *	Set packet filter: Receive directed and broadcast address
  		 */
-@@ -607,10 +640,12 @@
+@@ -607,10 +640,12 @@ static void velocity_init_registers(stru
  		 *	Enable MII auto-polling
  		 */
  		enable_mii_autopoll(regs);
@@ -189,7 +189,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  		writew(vptr->options.numrx - 1, &regs->RDCSize);
  		mac_rx_queue_run(regs);
  		mac_rx_queue_wake(regs);
-@@ -618,10 +653,13 @@
+@@ -618,10 +653,13 @@ static void velocity_init_registers(stru
  		writew(vptr->options.numtx - 1, &regs->TDCSize);
  
  		for (i = 0; i < vptr->num_txq; i++) {
@@ -204,7 +204,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  		init_flow_control_register(vptr);
  
  		writel(CR0_STOP, &regs->CR0Clr);
-@@ -640,8 +678,10 @@
+@@ -640,8 +678,10 @@ static void velocity_init_registers(stru
  
  		enable_flow_control_ability(vptr);
  		mac_hw_mibs_init(regs);
@@ -215,7 +215,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  
  	}
  }
-@@ -659,6 +699,7 @@
+@@ -659,6 +699,7 @@ static int velocity_soft_reset(struct ve
  	struct mac_regs __iomem * regs = vptr->mac_regs;
  	int i = 0;
  
@@ -223,7 +223,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	writel(CR0_SFRST, &regs->CR0Set);
  
  	for (i = 0; i < W_MAX_TIMEOUT; i++) {
-@@ -722,6 +763,7 @@
+@@ -722,6 +763,7 @@ static int __devinit velocity_found1(str
  			VELOCITY_FULL_DRV_NAM, VELOCITY_VERSION);
  		printk(KERN_INFO "Copyright (c) 2002, 2003 VIA Networking Technologies, Inc.\n");
  		printk(KERN_INFO "Copyright (c) 2004 Red Hat Inc.\n");
@@ -231,7 +231,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  		first = 0;
  	}
  
-@@ -935,6 +977,7 @@
+@@ -935,6 +977,7 @@ static int velocity_init_rings(struct ve
  	dma_addr_t pool_dma;
  	u8 *pool;
  
@@ -239,7 +239,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	/*
  	 *	Allocate all RD/TD rings a single pool
  	 */
-@@ -997,6 +1040,7 @@
+@@ -997,6 +1040,7 @@ static int velocity_init_rings(struct ve
  static void velocity_free_rings(struct velocity_info *vptr)
  {
  	int size;
@@ -247,7 +247,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  
  	size = vptr->options.numrx * sizeof(struct rx_desc) +
  	       vptr->options.numtx * sizeof(struct tx_desc) * vptr->num_txq;
-@@ -1013,6 +1057,7 @@
+@@ -1013,6 +1057,7 @@ static inline void velocity_give_many_rx
  	struct mac_regs __iomem *regs = vptr->mac_regs;
  	int avail, dirty, unusable;
  
@@ -255,7 +255,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	/*
  	 * RD number must be equal to 4X per hardware spec
  	 * (programming guide rev 1.20, p.13)
-@@ -1026,7 +1071,8 @@
+@@ -1026,7 +1071,8 @@ static inline void velocity_give_many_rx
  	dirty = vptr->rd_dirty - unusable;
  	for (avail = vptr->rd_filled & 0xfffc; avail; avail--) {
  		dirty = (dirty > 0) ? dirty - 1 : vptr->options.numrx - 1;
@@ -265,7 +265,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	}
  
  	writew(vptr->rd_filled & 0xfffc, &regs->RBRDU);
-@@ -1036,12 +1082,14 @@
+@@ -1036,12 +1082,14 @@ static inline void velocity_give_many_rx
  static int velocity_rx_refill(struct velocity_info *vptr)
  {
  	int dirty = vptr->rd_dirty, done = 0, ret = 0;
@@ -281,7 +281,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  			break;
  
  		if (!vptr->rd_info[dirty].skb) {
-@@ -1076,6 +1124,7 @@
+@@ -1076,6 +1124,7 @@ static int velocity_init_rd_ring(struct 
  	unsigned int rsize = sizeof(struct velocity_rd_info) *
  					vptr->options.numrx;
  
@@ -289,7 +289,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	vptr->rd_info = kmalloc(rsize, GFP_KERNEL);
  	if(vptr->rd_info == NULL)
  		goto out;
-@@ -1105,6 +1154,7 @@
+@@ -1105,6 +1154,7 @@ static void velocity_free_rd_ring(struct
  {
  	int i;
  
@@ -297,7 +297,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	if (vptr->rd_info == NULL)
  		return;
  
-@@ -1146,6 +1196,7 @@
+@@ -1146,6 +1196,7 @@ static int velocity_init_td_ring(struct 
  	unsigned int tsize = sizeof(struct velocity_td_info) *
  					vptr->options.numtx;
  
@@ -305,7 +305,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	/* Init the TD ring entries */
  	for (j = 0; j < vptr->num_txq; j++) {
  		curr = vptr->td_pool_dma[j];
-@@ -1182,6 +1233,7 @@
+@@ -1182,6 +1233,7 @@ static void velocity_free_td_ring_entry(
  	struct velocity_td_info * td_info = &(vptr->td_infos[q][n]);
  	int i;
  
@@ -313,7 +313,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	if (td_info == NULL)
  		return;
  
-@@ -1211,6 +1263,7 @@
+@@ -1211,6 +1263,7 @@ static void velocity_free_td_ring(struct
  {
  	int i, j;
  
@@ -321,7 +321,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	for (j = 0; j < vptr->num_txq; j++) {
  		if (vptr->td_infos[j] == NULL)
  			continue;
-@@ -1238,34 +1291,42 @@
+@@ -1238,34 +1291,42 @@ static int velocity_rx_srv(struct veloci
  	struct net_device_stats *stats = &vptr->stats;
  	int rd_curr = vptr->rd_curr;
  	int works = 0;
@@ -369,7 +369,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  
  		vptr->dev->last_rx = jiffies;
  
-@@ -1296,13 +1357,21 @@
+@@ -1296,13 +1357,21 @@ static int velocity_rx_srv(struct veloci
  
  static inline void velocity_rx_csum(struct rx_desc *rd, struct sk_buff *skb)
  {
@@ -396,7 +396,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  					return;
  				}
  			}
-@@ -1328,9 +1397,11 @@
+@@ -1328,9 +1397,11 @@ static inline int velocity_rx_copy(struc
  {
  	int ret = -1;
  
@@ -408,7 +408,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  		new_skb = dev_alloc_skb(pkt_size + 2);
  		if (new_skb) {
  			new_skb->dev = vptr->dev;
-@@ -1360,10 +1431,12 @@
+@@ -1360,10 +1431,12 @@ static inline int velocity_rx_copy(struc
  static inline void velocity_iph_realign(struct velocity_info *vptr,
  					struct sk_buff *skb, int pkt_size)
  {
@@ -421,7 +421,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  		for (i = pkt_size; i >= 0; i--)
  			*(skb->data + i + 2) = *(skb->data + i);
  		skb_reserve(skb, 2);
-@@ -1382,19 +1455,27 @@
+@@ -1382,19 +1455,27 @@ static inline void velocity_iph_realign(
  static int velocity_receive_frame(struct velocity_info *vptr, int idx)
  {
  	void (*pci_action)(struct pci_dev *, dma_addr_t, size_t, int);
@@ -453,7 +453,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  		vptr->stats.multicast++;
  
  	skb = rd_info->skb;
-@@ -1408,7 +1489,8 @@
+@@ -1408,7 +1489,8 @@ static int velocity_receive_frame(struct
  	 */
  
  	if (vptr->flags & VELOCITY_FLAGS_VAL_PKT_LEN) {
@@ -463,7 +463,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  			stats->rx_length_errors++;
  			return -EINVAL;
  		}
-@@ -1452,6 +1534,7 @@
+@@ -1452,6 +1534,7 @@ static int velocity_alloc_rx_buf(struct 
  	struct rx_desc *rd = &(vptr->rd_ring[idx]);
  	struct velocity_rd_info *rd_info = &(vptr->rd_info[idx]);
  
@@ -471,7 +471,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	rd_info->skb = dev_alloc_skb(vptr->rx_buf_sz + 64);
  	if (rd_info->skb == NULL)
  		return -ENOMEM;
-@@ -1469,10 +1552,14 @@
+@@ -1469,10 +1552,14 @@ static int velocity_alloc_rx_buf(struct 
   	 */
  
  	*((u32 *) & (rd->rdesc0)) = 0;
@@ -489,7 +489,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	return 0;
  }
  
-@@ -1493,9 +1580,11 @@
+@@ -1493,9 +1580,11 @@ static int velocity_tx_srv(struct veloci
  	int full = 0;
  	int idx;
  	int works = 0;
@@ -501,7 +501,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	for (qnum = 0; qnum < vptr->num_txq; qnum++) {
  		for (idx = vptr->td_tail[qnum]; vptr->td_used[qnum] > 0;
  			idx = (idx + 1) % vptr->options.numtx) {
-@@ -1506,22 +1595,29 @@
+@@ -1506,22 +1595,29 @@ static int velocity_tx_srv(struct veloci
  			td = &(vptr->td_rings[qnum][idx]);
  			tdinfo = &(vptr->td_infos[qnum][idx]);
  
@@ -537,7 +537,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  					stats->tx_window_errors++;
  			} else {
  				stats->tx_packets++;
-@@ -1610,6 +1706,7 @@
+@@ -1610,6 +1706,7 @@ static void velocity_print_link_status(s
  
  static void velocity_error(struct velocity_info *vptr, int status)
  {
@@ -545,7 +545,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  
  	if (status & ISR_TXSTLI) {
  		struct mac_regs __iomem * regs = vptr->mac_regs;
-@@ -1699,6 +1796,7 @@
+@@ -1699,6 +1796,7 @@ static void velocity_free_tx_buf(struct 
  	struct sk_buff *skb = tdinfo->skb;
  	int i;
  
@@ -553,7 +553,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	/*
  	 *	Don't unmap the pre-allocated tx_bufs
  	 */
-@@ -1902,6 +2000,7 @@
+@@ -1902,6 +2000,7 @@ static int velocity_xmit(struct sk_buff 
  	struct velocity_td_info *tdinfo;
  	unsigned long flags;
  	int index;
@@ -561,7 +561,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  
  	int pktlen = skb->len;
  
-@@ -1918,9 +2017,18 @@
+@@ -1918,9 +2017,18 @@ static int velocity_xmit(struct sk_buff 
  	td_ptr = &(vptr->td_rings[qnum][index]);
  	tdinfo = &(vptr->td_infos[qnum][index]);
  
@@ -583,7 +583,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  
  	/*
  	 *	Pad short frames.
-@@ -1932,20 +2040,35 @@
+@@ -1932,20 +2040,35 @@ static int velocity_xmit(struct sk_buff 
  		memset(tdinfo->buf + skb->len, 0, ETH_ZLEN - skb->len);
  		tdinfo->skb = skb;
  		tdinfo->skb_dma[0] = tdinfo->buf_dma;
@@ -623,7 +623,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  			td_ptr->tdesc0.pktsize =
  			td_ptr->td_buf[0].pa_low = cpu_to_le32(tdinfo->skb_dma[0]);
  			td_ptr->td_buf[0].pa_high = 0;
-@@ -1962,6 +2085,7 @@
+@@ -1962,6 +2085,7 @@ static int velocity_xmit(struct sk_buff 
  			/* FIXME: support 48bit DMA later */
  			td_ptr->td_buf[i].pa_low = cpu_to_le32(tdinfo->skb_dma);
  			td_ptr->td_buf[i].pa_high = 0;
@@ -631,7 +631,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  			td_ptr->td_buf[i].bufsize = skb->len->skb->data_len;
  
  			for (i = 0; i < nfrags; i++) {
-@@ -1979,7 +2103,7 @@
+@@ -1979,7 +2103,7 @@ static int velocity_xmit(struct sk_buff 
  		}
  
  	} else
@@ -640,7 +640,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	{
  		/*
  		 *	Map the linear network buffer into PCI space and
-@@ -1987,19 +2111,30 @@
+@@ -1987,19 +2111,30 @@ static int velocity_xmit(struct sk_buff 
  		 */
  		tdinfo->skb = skb;
  		tdinfo->skb_dma[0] = pci_map_single(vptr->pdev, skb->data, pktlen, PCI_DMA_TODEVICE);
@@ -679,7 +679,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	}
  
  	/*
-@@ -2009,26 +2144,34 @@
+@@ -2009,26 +2144,34 @@ static int velocity_xmit(struct sk_buff 
  				 && (skb->ip_summed == CHECKSUM_PARTIAL)) {
  		struct iphdr *ip = skb->nh.iph;
  		if (ip->protocol == IPPROTO_TCP)
@@ -721,7 +721,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  		mac_tx_queue_wake(vptr->mac_regs, qnum);
  	}
  	dev->trans_start = jiffies;
-@@ -2054,7 +2197,7 @@
+@@ -2054,7 +2197,7 @@ static int velocity_intr(int irq, void *
  	u32 isr_status;
  	int max_count = 0;
  
@@ -730,7 +730,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	spin_lock(&vptr->lock);
  	isr_status = mac_read_isr(vptr->mac_regs);
  
-@@ -2073,7 +2216,10 @@
+@@ -2073,7 +2216,10 @@ static int velocity_intr(int irq, void *
  
  	while (isr_status != 0) {
  		mac_write_isr(vptr->mac_regs, isr_status);
@@ -742,7 +742,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  			velocity_error(vptr, isr_status);
  		if (isr_status & (ISR_PRXI | ISR_PPRXI))
  			max_count += velocity_rx_srv(vptr, isr_status);
-@@ -2111,6 +2257,7 @@
+@@ -2111,6 +2257,7 @@ static void velocity_set_multi(struct ne
  	int i;
  	struct dev_mc_list *mclist;
  
@@ -750,7 +750,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	if (dev->flags & IFF_PROMISC) {	/* Set promiscuous. */
  		writel(0xffffffff, &regs->MARCAM[0]);
  		writel(0xffffffff, &regs->MARCAM[4]);
-@@ -2154,6 +2301,7 @@
+@@ -2154,6 +2301,7 @@ static struct net_device_stats *velocity
  {
  	struct velocity_info *vptr = netdev_priv(dev);
  
@@ -758,7 +758,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	/* If the hardware is down, don't touch MII */
  	if(!netif_running(dev))
  		return &vptr->stats;
-@@ -2198,6 +2346,7 @@
+@@ -2198,6 +2346,7 @@ static int velocity_ioctl(struct net_dev
  	struct velocity_info *vptr = netdev_priv(dev);
  	int ret;
  
@@ -766,7 +766,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	/* If we are asked for information and the device is power
  	   saving then we need to bring the device back up to talk to it */
  
-@@ -2416,6 +2565,7 @@
+@@ -2416,6 +2565,7 @@ static int velocity_mii_read(struct mac_
  {
  	u16 ww;
  
@@ -774,7 +774,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	/*
  	 *	Disable MIICR_MAUTO, so that mii addr can be set normally
  	 */
-@@ -2452,6 +2602,7 @@
+@@ -2452,6 +2602,7 @@ static int velocity_mii_write(struct mac
  {
  	u16 ww;
  
@@ -782,10 +782,10 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.c
  	/*
  	 *	Disable MIICR_MAUTO, so that mii addr can be set normally
  	 */
-Index: linux-2.6.20-rc3/drivers/net/via-velocity.h
+Index: linux-2.6.21.7/drivers/net/via-velocity.h
 ===================================================================
---- linux-2.6.20-rc3.orig/drivers/net/via-velocity.h	2006-11-29 21:57:37.000000000 +0000
-+++ linux-2.6.20-rc3/drivers/net/via-velocity.h	2007-01-02 10:30:36.265114211 +0000
+--- linux-2.6.21.7.orig/drivers/net/via-velocity.h
++++ linux-2.6.21.7/drivers/net/via-velocity.h
 @@ -196,64 +196,70 @@
   *	Receive descriptor
   */
@@ -900,7 +900,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.h
  	struct td_buf td_buf[7];
  };
  
-@@ -279,6 +285,16 @@
+@@ -279,6 +285,16 @@ enum  velocity_owner {
  	OWNED_BY_NIC = 1
  };
  
@@ -917,7 +917,7 @@ Index: linux-2.6.20-rc3/drivers/net/via-velocity.h
  
  /*
   *	MAC registers and macros.
-@@ -1698,6 +1714,7 @@
+@@ -1698,6 +1714,7 @@ enum velocity_flow_cntl_type {
  };
  
  struct velocity_opt {

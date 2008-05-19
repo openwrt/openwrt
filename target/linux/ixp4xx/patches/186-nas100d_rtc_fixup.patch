@@ -1,7 +1,7 @@
-Index: linux-2.6.19/arch/arm/mach-ixp4xx/nas100d-setup.c
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/nas100d-setup.c
 ===================================================================
---- linux-2.6.19.orig/arch/arm/mach-ixp4xx/nas100d-setup.c
-+++ linux-2.6.19/arch/arm/mach-ixp4xx/nas100d-setup.c
+--- linux-2.6.21.7.orig/arch/arm/mach-ixp4xx/nas100d-setup.c
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/nas100d-setup.c
 @@ -18,6 +18,7 @@
  #include <linux/leds.h>
  #include <linux/mtd/mtd.h>
@@ -10,7 +10,7 @@ Index: linux-2.6.19/arch/arm/mach-ixp4xx/nas100d-setup.c
  #include <asm/mach-types.h>
  #include <asm/mach/arch.h>
  #include <asm/mach/flash.h>
-@@ -225,11 +226,42 @@ static void __init nas100d_init(void)
+@@ -227,11 +228,42 @@ static void __init nas100d_init(void)
  	register_mtd_user(&nas100d_flash_notifier);
  }
  

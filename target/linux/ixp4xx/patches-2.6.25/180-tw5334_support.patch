@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Kconfig
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
+--- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/Kconfig
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
 @@ -150,6 +150,14 @@ config ARCH_PRPMC1100
  	  PrPCM1100 Processor Mezanine Module. For more information on
  	  this platform, see <file:Documentation/arm/IXP4xx>.
@@ -17,10 +17,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Kconfig
  config MACH_NAS100D
  	bool
  	prompt "NAS100D"
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/Makefile
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
+--- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/Makefile
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
 @@ -22,6 +22,7 @@ obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp42
  obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o
  obj-pci-$(CONFIG_MACH_SIDEWINDER)		+= sidewinder-pci.o
@@ -37,10 +37,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/Makefile
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
  obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/tw5334-setup.c
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/tw5334-setup.c
 ===================================================================
 --- /dev/null
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/tw5334-setup.c
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/tw5334-setup.c
 @@ -0,0 +1,162 @@
 +/*
 + * arch/arm/mach-ixp4xx/tw5334-setup.c
@@ -204,10 +204,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/tw5334-setup.c
 +	.init_machine	= tw5334_init,
 +MACHINE_END
 +#endif
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/tw5334-pci.c
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/tw5334-pci.c
 ===================================================================
 --- /dev/null
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/tw5334-pci.c
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/tw5334-pci.c
 @@ -0,0 +1,69 @@
 +/*
 + * arch/arch/mach-ixp4xx/tw5334-pci.c
@@ -278,10 +278,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/tw5334-pci.c
 +}
 +
 +subsys_initcall(tw5334_pci_init);
-Index: linux-2.6.25.1/include/asm-arm/arch-ixp4xx/uncompress.h
+Index: linux-2.6.25.4/include/asm-arm/arch-ixp4xx/uncompress.h
 ===================================================================
---- linux-2.6.25.1.orig/include/asm-arm/arch-ixp4xx/uncompress.h
-+++ linux-2.6.25.1/include/asm-arm/arch-ixp4xx/uncompress.h
+--- linux-2.6.25.4.orig/include/asm-arm/arch-ixp4xx/uncompress.h
++++ linux-2.6.25.4/include/asm-arm/arch-ixp4xx/uncompress.h
 @@ -42,7 +42,8 @@ static __inline__ void __arch_decomp_set
  	 */
  	if (machine_is_adi_coyote() || machine_is_gtwx5715() ||

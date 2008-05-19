@@ -1,7 +1,8 @@
-diff -Nur linux-2.6.23/arch/arm/mach-ixp4xx/wrt300nv2-setup.c linux-2.6.23-owrt/arch/arm/mach-ixp4xx/wrt300nv2-setup.c
---- linux-2.6.23/arch/arm/mach-ixp4xx/wrt300nv2-setup.c	2007-10-23 19:20:08.000000000 +0200
-+++ linux-2.6.23-owrt/arch/arm/mach-ixp4xx/wrt300nv2-setup.c	2007-10-23 19:22:19.000000000 +0200
-@@ -76,9 +76,36 @@
+Index: linux-2.6.23.17/arch/arm/mach-ixp4xx/wrt300nv2-setup.c
+===================================================================
+--- linux-2.6.23.17.orig/arch/arm/mach-ixp4xx/wrt300nv2-setup.c
++++ linux-2.6.23.17/arch/arm/mach-ixp4xx/wrt300nv2-setup.c
+@@ -76,9 +76,36 @@ static struct platform_device wrt300nv2_
  	.resource	= &wrt300nv2_uart_resource,
  };
  

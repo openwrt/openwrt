@@ -1,7 +1,7 @@
-Index: linux-2.6.19/arch/arm/mach-ixp4xx/nslu2-setup.c
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/nslu2-setup.c
 ===================================================================
---- linux-2.6.19.orig/arch/arm/mach-ixp4xx/nslu2-setup.c
-+++ linux-2.6.19/arch/arm/mach-ixp4xx/nslu2-setup.c
+--- linux-2.6.21.7.orig/arch/arm/mach-ixp4xx/nslu2-setup.c
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/nslu2-setup.c
 @@ -20,6 +20,7 @@
  #include <linux/leds.h>
  #include <linux/mtd/mtd.h>
@@ -10,7 +10,7 @@ Index: linux-2.6.19/arch/arm/mach-ixp4xx/nslu2-setup.c
  #include <asm/mach-types.h>
  #include <asm/mach/arch.h>
  #include <asm/mach/flash.h>
-@@ -239,11 +240,41 @@ static void __init nslu2_init(void)
+@@ -253,11 +254,41 @@ static void __init nslu2_init(void)
  	register_mtd_user(&nslu2_flash_notifier);
  }
  
@@ -51,4 +51,4 @@ Index: linux-2.6.19/arch/arm/mach-ixp4xx/nslu2-setup.c
 +	.fixup          = nslu2_fixup,
  	.map_io		= ixp4xx_map_io,
  	.init_irq	= ixp4xx_init_irq,
- 	.timer          = &ixp4xx_timer,
+ 	.timer          = &nslu2_timer,

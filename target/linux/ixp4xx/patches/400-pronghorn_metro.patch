@@ -1,7 +1,8 @@
-diff -Nur linux-2.6.21.1/Documentation/arm/IXP4xx linux-2.6.21.1-owrt/Documentation/arm/IXP4xx
---- linux-2.6.21.1/Documentation/arm/IXP4xx	2007-06-10 13:54:49.000000000 +0200
-+++ linux-2.6.21.1-owrt/Documentation/arm/IXP4xx	2007-06-10 13:46:37.000000000 +0200
-@@ -111,6 +111,9 @@
+Index: linux-2.6.21.7/Documentation/arm/IXP4xx
+===================================================================
+--- linux-2.6.21.7.orig/Documentation/arm/IXP4xx
++++ linux-2.6.21.7/Documentation/arm/IXP4xx
+@@ -111,6 +111,9 @@ http://www.adiengineering.com/productsCo
     the platform has two mini-PCI slots used for 802.11[bga] cards.
     Finally, there is an IDE port hanging off the expansion bus.
  
@@ -11,10 +12,11 @@ diff -Nur linux-2.6.21.1/Documentation/arm/IXP4xx linux-2.6.21.1-owrt/Documentat
  Gateworks Avila Network Platform
  http://www.gateworks.com/avila_sbc.htm
  
-diff -Nur linux-2.6.21.1/arch/arm/mach-ixp4xx/Kconfig linux-2.6.21.1-owrt/arch/arm/mach-ixp4xx/Kconfig
---- linux-2.6.21.1/arch/arm/mach-ixp4xx/Kconfig	2007-06-10 13:54:47.000000000 +0200
-+++ linux-2.6.21.1-owrt/arch/arm/mach-ixp4xx/Kconfig	2007-06-10 13:46:37.000000000 +0200
-@@ -57,6 +57,14 @@
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/Kconfig
+===================================================================
+--- linux-2.6.21.7.orig/arch/arm/mach-ixp4xx/Kconfig
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/Kconfig
+@@ -57,6 +57,14 @@ config MACH_WG302V2
  	  WG302 v2 or WAG302 v2 Access Points. For more information
  	  on this platform, see http://openwrt.org
  
@@ -29,27 +31,29 @@ diff -Nur linux-2.6.21.1/arch/arm/mach-ixp4xx/Kconfig linux-2.6.21.1-owrt/arch/a
  config ARCH_IXDP425
  	bool "IXDP425"
  	help
-diff -Nur linux-2.6.21.1/arch/arm/mach-ixp4xx/Makefile linux-2.6.21.1-owrt/arch/arm/mach-ixp4xx/Makefile
---- linux-2.6.21.1/arch/arm/mach-ixp4xx/Makefile	2007-06-10 13:54:47.000000000 +0200
-+++ linux-2.6.21.1-owrt/arch/arm/mach-ixp4xx/Makefile	2007-06-10 13:46:37.000000000 +0200
-@@ -14,6 +14,7 @@
- obj-pci-$(CONFIG_MACH_NAS100D)		+= nas100d-pci.o
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/Makefile
+===================================================================
+--- linux-2.6.21.7.orig/arch/arm/mach-ixp4xx/Makefile
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/Makefile
+@@ -15,6 +15,7 @@ obj-pci-$(CONFIG_MACH_NAS100D)		+= nas10
+ obj-pci-$(CONFIG_MACH_DSMG600)		+= dsmg600-pci.o
  obj-pci-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-pci.o
  obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
 +obj-pci-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-pci.o
  
  obj-y	+= common.o
  
-@@ -26,5 +27,6 @@
- obj-$(CONFIG_MACH_NAS100D)	+= nas100d-setup.o nas100d-power.o
+@@ -28,5 +29,6 @@ obj-$(CONFIG_MACH_NAS100D)	+= nas100d-se
+ obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o dsmg600-power.o
  obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
  obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
 +obj-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-setup.o
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
-diff -Nur linux-2.6.21.1/arch/arm/mach-ixp4xx/pronghornmetro-pci.c linux-2.6.21.1-owrt/arch/arm/mach-ixp4xx/pronghornmetro-pci.c
---- linux-2.6.21.1/arch/arm/mach-ixp4xx/pronghornmetro-pci.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/arch/arm/mach-ixp4xx/pronghornmetro-pci.c	2007-06-10 13:50:08.000000000 +0200
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/pronghornmetro-pci.c
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/pronghornmetro-pci.c
 @@ -0,0 +1,74 @@
 +/*
 + * arch/arch/mach-ixp4xx/pronghornmetro-pci.c
@@ -125,9 +129,10 @@ diff -Nur linux-2.6.21.1/arch/arm/mach-ixp4xx/pronghornmetro-pci.c linux-2.6.21.
 +}
 +
 +subsys_initcall(pronghornmetro_pci_init);
-diff -Nur linux-2.6.21.1/arch/arm/mach-ixp4xx/pronghornmetro-setup.c linux-2.6.21.1-owrt/arch/arm/mach-ixp4xx/pronghornmetro-setup.c
---- linux-2.6.21.1/arch/arm/mach-ixp4xx/pronghornmetro-setup.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/arch/arm/mach-ixp4xx/pronghornmetro-setup.c	2007-06-10 13:51:51.000000000 +0200
+Index: linux-2.6.21.7/arch/arm/mach-ixp4xx/pronghornmetro-setup.c
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/arch/arm/mach-ixp4xx/pronghornmetro-setup.c
 @@ -0,0 +1,108 @@
 +/*
 + * arch/arm/mach-ixp4xx/pronghornmetro-setup.c
@@ -237,10 +242,11 @@ diff -Nur linux-2.6.21.1/arch/arm/mach-ixp4xx/pronghornmetro-setup.c linux-2.6.2
 +	.init_machine	= pronghornmetro_init,
 +MACHINE_END
 +#endif
-diff -Nur linux-2.6.21.1/include/asm-arm/arch-ixp4xx/uncompress.h linux-2.6.21.1-owrt/include/asm-arm/arch-ixp4xx/uncompress.h
---- linux-2.6.21.1/include/asm-arm/arch-ixp4xx/uncompress.h	2007-06-10 13:54:52.000000000 +0200
-+++ linux-2.6.21.1-owrt/include/asm-arm/arch-ixp4xx/uncompress.h	2007-06-10 13:49:37.000000000 +0200
-@@ -40,7 +40,7 @@
+Index: linux-2.6.21.7/include/asm-arm/arch-ixp4xx/uncompress.h
+===================================================================
+--- linux-2.6.21.7.orig/include/asm-arm/arch-ixp4xx/uncompress.h
++++ linux-2.6.21.7/include/asm-arm/arch-ixp4xx/uncompress.h
+@@ -40,7 +40,7 @@ static __inline__ void __arch_decomp_set
  	/*
  	 * Some boards are using UART2 as console
  	 */

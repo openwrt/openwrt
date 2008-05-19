@@ -2,10 +2,10 @@
  drivers/rtc/rtc-isl1208.c |  357 +++++++++++++++++++++-------------------------
  1 file changed, 170 insertions(+), 187 deletions(-)
 
-Index: linux-2.6.24-arm/drivers/rtc/rtc-isl1208.c
+Index: linux-2.6.24.7/drivers/rtc/rtc-isl1208.c
 ===================================================================
---- linux-2.6.24-arm.orig/drivers/rtc/rtc-isl1208.c	2008-02-01 13:33:11.000000000 +1030
-+++ linux-2.6.24-arm/drivers/rtc/rtc-isl1208.c	2008-02-01 13:36:24.000000000 +1030
+--- linux-2.6.24.7.orig/drivers/rtc/rtc-isl1208.c
++++ linux-2.6.24.7/drivers/rtc/rtc-isl1208.c
 @@ -15,16 +15,15 @@
  #include <linux/bcd.h>
  #include <linux/rtc.h>
@@ -89,7 +89,7 @@ Index: linux-2.6.24-arm/drivers/rtc/rtc-isl1208.c
  	};
  	int ret;
  
-@@ -103,15 +85,14 @@
+@@ -103,15 +85,14 @@ isl1208_i2c_read_regs(struct i2c_client 
  /* block write */
  static int
  isl1208_i2c_set_regs(struct i2c_client *client, u8 reg, u8 const buf[],
@@ -107,7 +107,7 @@ Index: linux-2.6.24-arm/drivers/rtc/rtc-isl1208.c
  	BUG_ON(reg > ISL1208_REG_USR2);
  	BUG_ON(reg + len > ISL1208_REG_USR2 + 1);
  
-@@ -125,7 +106,8 @@
+@@ -125,7 +106,8 @@ isl1208_i2c_set_regs(struct i2c_client *
  }
  
  /* simple check to see wether we have a isl1208 */
@@ -117,7 +117,7 @@ Index: linux-2.6.24-arm/drivers/rtc/rtc-isl1208.c
  {
  	u8 regs[ISL1208_RTC_SECTION_LEN] = { 0, };
  	u8 zero_mask[ISL1208_RTC_SECTION_LEN] = {
-@@ -139,24 +121,29 @@
+@@ -139,24 +121,29 @@ static int isl1208_i2c_validate_client(s
  		return ret;
  
  	for (i = 0; i < ISL1208_RTC_SECTION_LEN; ++i) {
@@ -153,7 +153,7 @@ Index: linux-2.6.24-arm/drivers/rtc/rtc-isl1208.c
  
  	/* The 6bit value in the ATR register controls the load
  	 * capacitance C_load * in steps of 0.25pF
-@@ -169,51 +156,54 @@
+@@ -169,51 +156,54 @@ static int isl1208_i2c_get_atr(struct i2
  	 *
  	 */
  
@@ -221,7 +221,7 @@ Index: linux-2.6.24-arm/drivers/rtc/rtc-isl1208.c
  {
  	struct i2c_client *const client = to_i2c_client(dev);
  	int sr, dtr, atr, usr;
-@@ -230,20 +220,19 @@
+@@ -230,20 +220,19 @@ static int isl1208_rtc_proc(struct devic
  		   (sr & ISL1208_REG_SR_ALM) ? " ALM" : "",
  		   (sr & ISL1208_REG_SR_WRTC) ? " WRTC" : "",
  		   (sr & ISL1208_REG_SR_XTOSCB) ? " XTOSCB" : "",
@@ -245,7 +245,7 @@ Index: linux-2.6.24-arm/drivers/rtc/rtc-isl1208.c
  
  	usr = isl1208_i2c_get_usr(client);
  	if (usr >= 0)
-@@ -252,9 +241,8 @@
+@@ -252,9 +241,8 @@ static int isl1208_rtc_proc(struct devic
  	return 0;
  }
  
@@ -257,7 +257,7 @@ Index: linux-2.6.24-arm/drivers/rtc/rtc-isl1208.c
  {
  	int sr;
  	u8 regs[ISL1208_RTC_SECTION_LEN] = { 0, };
-@@ -274,27 +262,30 @@
+@@ -274,27 +262,30 @@ static int isl1208_i2c_read_time(struct 
  
  	tm->tm_sec = BCD2BIN(regs[ISL1208_REG_SC]);
  	tm->tm_min = BCD2BIN(regs[ISL1208_REG_MN]);
@@ -295,7 +295,7 @@ Index: linux-2.6.24-arm/drivers/rtc/rtc-isl1208.c
  {
  	struct rtc_time *const tm = &alarm->time;
  	u8 regs[ISL1208_ALARM_SECTION_LEN] = { 0, };
-@@ -307,7 +298,7 @@
+@@ -307,7 +298,7 @@ static int isl1208_i2c_read_alarm(struct
  	}
  
  	sr = isl1208_i2c_read_regs(client, ISL1208_REG_SCA, regs,
@@ -304,7 +304,7 @@ Index: linux-2.6.24-arm/drivers/rtc/rtc-isl1208.c
  	if (sr < 0) {
  		dev_err(&client->dev, "%s: reading alarm section failed\n",
  			__func__);
-@@ -315,23 +306,25 @@
+@@ -315,23 +306,25 @@ static int isl1208_i2c_read_alarm(struct
  	}
  
  	/* MSB of each alarm register is an enable bit */
@@ -339,7 +339,7 @@ Index: linux-2.6.24-arm/drivers/rtc/rtc-isl1208.c
  {
  	int sr;
  	u8 regs[ISL1208_RTC_SECTION_LEN] = { 0, };
-@@ -353,7 +346,7 @@
+@@ -353,7 +346,7 @@ static int isl1208_i2c_set_time(struct i
  	}
  
  	/* set WRTC */
@@ -348,7 +348,7 @@ Index: linux-2.6.24-arm/drivers/rtc/rtc-isl1208.c
  				       sr | ISL1208_REG_SR_WRTC);
  	if (sr < 0) {
  		dev_err(&client->dev, "%s: writing SR failed\n", __func__);
-@@ -369,7 +362,7 @@
+@@ -369,7 +362,7 @@ static int isl1208_i2c_set_time(struct i
  	}
  
  	/* clear WRTC again */
@@ -357,7 +357,7 @@ Index: linux-2.6.24-arm/drivers/rtc/rtc-isl1208.c
  				       sr & ~ISL1208_REG_SR_WRTC);
  	if (sr < 0) {
  		dev_err(&client->dev, "%s: writing SR failed\n", __func__);
-@@ -380,70 +373,69 @@
+@@ -380,70 +373,69 @@ static int isl1208_i2c_set_time(struct i
  }
  
  
@@ -456,7 +456,7 @@ Index: linux-2.6.24-arm/drivers/rtc/rtc-isl1208.c
  {
  	int usr = -1;
  
-@@ -460,124 +452,116 @@
+@@ -460,124 +452,116 @@ static ssize_t isl1208_sysfs_store_usr(s
  
  	return isl1208_i2c_set_usr(to_i2c_client(dev), usr) ? -EIO : count;
  }
@@ -648,14 +648,10 @@ Index: linux-2.6.24-arm/drivers/rtc/rtc-isl1208.c
  {
  	i2c_del_driver(&isl1208_driver);
  }
----
- drivers/rtc/rtc-pcf8563.c |  109 +++++++++++++---------------------------------
- 1 file changed, 32 insertions(+), 77 deletions(-)
-
-Index: linux-2.6.24-armeb/drivers/rtc/rtc-pcf8563.c
+Index: linux-2.6.24.7/drivers/rtc/rtc-pcf8563.c
 ===================================================================
---- linux-2.6.24-armeb.orig/drivers/rtc/rtc-pcf8563.c	2008-01-30 13:50:01.000000000 +1030
-+++ linux-2.6.24-armeb/drivers/rtc/rtc-pcf8563.c	2008-01-30 13:51:55.000000000 +1030
+--- linux-2.6.24.7.orig/drivers/rtc/rtc-pcf8563.c
++++ linux-2.6.24.7/drivers/rtc/rtc-pcf8563.c
 @@ -18,17 +18,7 @@
  #include <linux/bcd.h>
  #include <linux/rtc.h>
@@ -675,7 +671,7 @@ Index: linux-2.6.24-armeb/drivers/rtc/rtc-pcf8563.c
  
  #define PCF8563_REG_ST1		0x00 /* status */
  #define PCF8563_REG_ST2		0x01
-@@ -53,8 +43,10 @@
+@@ -53,8 +43,10 @@ I2C_CLIENT_INSMOD;
  #define PCF8563_SC_LV		0x80 /* low voltage */
  #define PCF8563_MO_C		0x80 /* century */
  
@@ -687,7 +683,7 @@ Index: linux-2.6.24-armeb/drivers/rtc/rtc-pcf8563.c
  	/*
  	 * The meaning of MO_C bit varies by the chip type.
  	 * From PCF8563 datasheet: this bit is toggled when the years
-@@ -72,16 +64,13 @@
+@@ -72,16 +64,13 @@ struct pcf8563 {
  	int c_polarity;	/* 0: MO_C=1 means 19xx, otherwise MO_C=1 means 20xx */
  };
  
@@ -705,7 +701,7 @@ Index: linux-2.6.24-armeb/drivers/rtc/rtc-pcf8563.c
  	unsigned char buf[13] = { PCF8563_REG_ST1 };
  
  	struct i2c_msg msgs[] = {
-@@ -138,7 +127,7 @@
+@@ -138,7 +127,7 @@ static int pcf8563_get_datetime(struct i
  
  static int pcf8563_set_datetime(struct i2c_client *client, struct rtc_time *tm)
  {
@@ -714,7 +710,7 @@ Index: linux-2.6.24-armeb/drivers/rtc/rtc-pcf8563.c
  	int i, err;
  	unsigned char buf[9];
  
-@@ -257,100 +246,66 @@
+@@ -257,100 +246,66 @@ static const struct rtc_class_ops pcf856
  	.set_time	= pcf8563_rtc_set_time,
  };
  
@@ -841,14 +837,10 @@ Index: linux-2.6.24-armeb/drivers/rtc/rtc-pcf8563.c
  static int __init pcf8563_init(void)
  {
  	return i2c_add_driver(&pcf8563_driver);
----
- drivers/rtc/rtc-x1205.c |  128 ++++++++++++++++--------------------------------
- 1 file changed, 43 insertions(+), 85 deletions(-)
-
-Index: linux-2.6.24-armeb/drivers/rtc/rtc-x1205.c
+Index: linux-2.6.24.7/drivers/rtc/rtc-x1205.c
 ===================================================================
---- linux-2.6.24-armeb.orig/drivers/rtc/rtc-x1205.c	2008-01-30 13:50:44.000000000 +1030
-+++ linux-2.6.24-armeb/drivers/rtc/rtc-x1205.c	2008-01-30 13:51:35.000000000 +1030
+--- linux-2.6.24.7.orig/drivers/rtc/rtc-x1205.c
++++ linux-2.6.24.7/drivers/rtc/rtc-x1205.c
 @@ -22,20 +22,7 @@
  #include <linux/rtc.h>
  #include <linux/delay.h>
@@ -871,7 +863,7 @@ Index: linux-2.6.24-armeb/drivers/rtc/rtc-x1205.c
  
  /* offsets into CCR area */
  
-@@ -91,19 +78,7 @@
+@@ -91,19 +78,7 @@ I2C_CLIENT_INSMOD;
  
  #define X1205_HR_MIL		0x80	/* Set in ccr.hour for 24 hr mode */
  
@@ -892,7 +884,7 @@ Index: linux-2.6.24-armeb/drivers/rtc/rtc-x1205.c
  
  /*
   * In the routines that deal directly with the x1205 hardware, we use
-@@ -497,58 +472,51 @@
+@@ -497,58 +472,51 @@ static ssize_t x1205_sysfs_show_dtrim(st
  }
  static DEVICE_ATTR(dtrim, S_IRUGO, x1205_sysfs_show_dtrim, NULL);
  
@@ -978,7 +970,7 @@ Index: linux-2.6.24-armeb/drivers/rtc/rtc-x1205.c
  
  	i2c_set_clientdata(client, rtc);
  
-@@ -565,45 +533,35 @@
+@@ -565,45 +533,35 @@ static int x1205_probe(struct i2c_adapte
  	else
  		dev_err(&client->dev, "couldn't read status\n");
  

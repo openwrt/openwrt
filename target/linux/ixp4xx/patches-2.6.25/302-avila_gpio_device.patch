@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/avila-setup.c
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/avila-setup.c
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/avila-setup.c
+--- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/avila-setup.c
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
 @@ -192,10 +192,28 @@ static struct platform_device avila_leds
  	.dev.platform_data	= &avila_leds_data,
  };
@@ -32,10 +32,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/avila-setup.c
  };
  
  static void __init avila_gw23xx_setup(void)
-Index: linux-2.6.25.1/include/asm-arm/arch-ixp4xx/avila.h
+Index: linux-2.6.25.4/include/asm-arm/arch-ixp4xx/avila.h
 ===================================================================
---- linux-2.6.25.1.orig/include/asm-arm/arch-ixp4xx/avila.h
-+++ linux-2.6.25.1/include/asm-arm/arch-ixp4xx/avila.h
+--- linux-2.6.25.4.orig/include/asm-arm/arch-ixp4xx/avila.h
++++ linux-2.6.25.4/include/asm-arm/arch-ixp4xx/avila.h
 @@ -39,3 +39,6 @@
  /* User LEDs */
  #define AVILA_GW23XX_LED_USER_GPIO	3
