@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -11,7 +11,7 @@ BOARD:=au1000
 BOARDNAME:=RMI/AMD AU1x00
 FEATURES:=jffs2 usb pci
 
-LINUX_VERSION:=2.6.25
+LINUX_VERSION:=2.6.25.4
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += yamonenv
