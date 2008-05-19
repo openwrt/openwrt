@@ -1,7 +1,7 @@
-Index: linux-2.6.23.16/drivers/net/sl2312_emac.c
+Index: linux-2.6.23.17/drivers/net/sl2312_emac.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/net/sl2312_emac.c	2008-03-15 16:59:16.361058585 +0200
+--- /dev/null
++++ linux-2.6.23.17/drivers/net/sl2312_emac.c
 @@ -0,0 +1,4604 @@
 +#include <linux/module.h>
 +#include <linux/kernel.h>
@@ -4607,10 +4607,10 @@ Index: linux-2.6.23.16/drivers/net/sl2312_emac.c
 +	}
 +}
 +
-Index: linux-2.6.23.16/drivers/net/sl351x_crc16.c
+Index: linux-2.6.23.17/drivers/net/sl351x_crc16.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/net/sl351x_crc16.c	2008-03-15 16:57:25.854761029 +0200
+--- /dev/null
++++ linux-2.6.23.17/drivers/net/sl351x_crc16.c
 @@ -0,0 +1,93 @@
 +/****************************************************************************
 +* Name			: sl351x_crc16.c
@@ -4705,10 +4705,10 @@ Index: linux-2.6.23.16/drivers/net/sl351x_crc16.c
 +
 +    return(SWAP_WORD(crc));
 +}
-Index: linux-2.6.23.16/drivers/net/sl351x_gmac.c
+Index: linux-2.6.23.17/drivers/net/sl351x_gmac.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/net/sl351x_gmac.c	2008-03-15 16:59:23.361457295 +0200
+--- /dev/null
++++ linux-2.6.23.17/drivers/net/sl351x_gmac.c
 @@ -0,0 +1,5622 @@
 +/**************************************************************************
 +* Copyright 2006 StorLink Semiconductors, Inc.  All rights reserved.
@@ -10332,10 +10332,10 @@ Index: linux-2.6.23.16/drivers/net/sl351x_gmac.c
 +late_initcall(sl351x_mac_address_init);
 +
 +
-Index: linux-2.6.23.16/drivers/net/sl351x_hash.c
+Index: linux-2.6.23.17/drivers/net/sl351x_hash.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/net/sl351x_hash.c	2008-03-15 16:59:32.361970401 +0200
+--- /dev/null
++++ linux-2.6.23.17/drivers/net/sl351x_hash.c
 @@ -0,0 +1,713 @@
 +/**************************************************************************
 +* Copyright 2006 StorLink Semiconductors, Inc.  All rights reserved.
@@ -11050,10 +11050,10 @@ Index: linux-2.6.23.16/drivers/net/sl351x_hash.c
 +}
 +
 +
-Index: linux-2.6.23.16/drivers/net/sl351x_nat.c
+Index: linux-2.6.23.17/drivers/net/sl351x_nat.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/net/sl351x_nat.c	2008-03-15 16:59:39.862397640 +0200
+--- /dev/null
++++ linux-2.6.23.17/drivers/net/sl351x_nat.c
 @@ -0,0 +1,1736 @@
 +/****************************************************************************
 +* Copyright 2006 StorLink Semiconductors, Inc.  All rights reserved.
@@ -12791,10 +12791,10 @@ Index: linux-2.6.23.16/drivers/net/sl351x_nat.c
 +
 +#endif // CONFIG_SL351x_NAT
 +
-Index: linux-2.6.23.16/drivers/net/sl351x_proc.c
+Index: linux-2.6.23.17/drivers/net/sl351x_proc.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/net/sl351x_proc.c	2008-03-15 16:59:48.862910740 +0200
+--- /dev/null
++++ linux-2.6.23.17/drivers/net/sl351x_proc.c
 @@ -0,0 +1,578 @@
 +/****************************************************************************
 +* Copyright 2006 Storlink Corp.  All rights reserved.
@@ -13374,10 +13374,10 @@ Index: linux-2.6.23.16/drivers/net/sl351x_proc.c
 +module_exit(fini);
 +
 +#endif	// CONFIG_PROC_FS
-Index: linux-2.6.23.16/drivers/net/sl351x_toe.c
+Index: linux-2.6.23.17/drivers/net/sl351x_toe.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/net/sl351x_toe.c	2008-03-15 16:57:25.854761029 +0200
+--- /dev/null
++++ linux-2.6.23.17/drivers/net/sl351x_toe.c
 @@ -0,0 +1,1083 @@
 +/**************************************************************************
 +* Copyright 2006 StorLink Semiconductors, Inc.  All rights reserved.
@@ -14462,10 +14462,10 @@ Index: linux-2.6.23.16/drivers/net/sl351x_toe.c
 +}
 +
 +
-Index: linux-2.6.23.16/drivers/net/sl_lepus_hash.c
+Index: linux-2.6.23.17/drivers/net/sl_lepus_hash.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/net/sl_lepus_hash.c	2008-03-15 16:59:57.863423587 +0200
+--- /dev/null
++++ linux-2.6.23.17/drivers/net/sl_lepus_hash.c
 @@ -0,0 +1,553 @@
 +/**************************************************************************
 +* Copyright 2006 StorLink Semiconductors, Inc.  All rights reserved.
@@ -15020,10 +15020,10 @@ Index: linux-2.6.23.16/drivers/net/sl_lepus_hash.c
 +}
 +
 +
-Index: linux-2.6.23.16/drivers/net/sl_switch.c
+Index: linux-2.6.23.17/drivers/net/sl_switch.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/net/sl_switch.c	2008-03-15 17:00:08.364022040 +0200
+--- /dev/null
++++ linux-2.6.23.17/drivers/net/sl_switch.c
 @@ -0,0 +1,650 @@
 +#include <linux/module.h>
 +#include <linux/kernel.h>
@@ -15675,10 +15675,10 @@ Index: linux-2.6.23.16/drivers/net/sl_switch.c
 +}
 +EXPORT_SYMBOL(SPI_get_identifier);
 +
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/sl351x_gmac.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_gmac.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/sl351x_gmac.h	2008-03-15 16:57:25.854761029 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_gmac.h
 @@ -0,0 +1,2223 @@
 +/****************************************************************************
 +* Copyright 2006 StorLink Semiconductors, Inc.  All rights reserved.
@@ -17903,10 +17903,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/sl351x_gmac.h
 +/* transmit timeout value */
 +
 +#endif //_GMAC_SL351x_H
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/sl351x_hash_cfg.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_hash_cfg.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/sl351x_hash_cfg.h	2008-03-15 16:57:25.854761029 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_hash_cfg.h
 @@ -0,0 +1,365 @@
 +/*-----------------------------------------------------------------------------------
 +*	sl351x_hash_cfg.h
@@ -18273,10 +18273,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/sl351x_hash_cfg.h
 +
 +
 +
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/sl351x_nat_cfg.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_nat_cfg.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/sl351x_nat_cfg.h	2008-03-15 16:57:25.854761029 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_nat_cfg.h
 @@ -0,0 +1,211 @@
 +/**************************************************************************
 +* Copyright 2006 StorLink Semiconductors, Inc.  All rights reserved.                
@@ -18489,10 +18489,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/sl351x_nat_cfg.h
 +
 +
 +
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/sl351x_toe.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_toe.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/sl351x_toe.h	2008-03-15 16:57:25.854761029 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_toe.h
 @@ -0,0 +1,88 @@
 +/**************************************************************************
 +* Copyright 2006 StorLink Semiconductors, Inc.  All rights reserved.

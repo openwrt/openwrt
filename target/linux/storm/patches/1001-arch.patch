@@ -1,8 +1,8 @@
-Index: linux-2.6.23.16/arch/arm/Kconfig
+Index: linux-2.6.23.17/arch/arm/Kconfig
 ===================================================================
---- linux-2.6.23.16.orig/arch/arm/Kconfig	2008-03-13 17:46:04.000791190 +0200
-+++ linux-2.6.23.16/arch/arm/Kconfig	2008-03-13 17:48:24.508798285 +0200
-@@ -220,6 +220,9 @@
+--- linux-2.6.23.17.orig/arch/arm/Kconfig
++++ linux-2.6.23.17/arch/arm/Kconfig
+@@ -220,6 +220,9 @@ config ARCH_EP93XX
  	help
  	  This enables support for the Cirrus EP93xx series of CPUs.
  
@@ -12,7 +12,7 @@ Index: linux-2.6.23.16/arch/arm/Kconfig
  config ARCH_FOOTBRIDGE
  	bool "FootBridge"
  	select FOOTBRIDGE
-@@ -414,6 +417,8 @@
+@@ -414,6 +417,8 @@ source "arch/arm/mach-ep93xx/Kconfig"
  
  source "arch/arm/mach-footbridge/Kconfig"
  
@@ -21,7 +21,7 @@ Index: linux-2.6.23.16/arch/arm/Kconfig
  source "arch/arm/mach-integrator/Kconfig"
  
  source "arch/arm/mach-iop32x/Kconfig"
-@@ -549,6 +554,16 @@
+@@ -549,6 +554,16 @@ config PCI
  config PCI_SYSCALL
  	def_bool PCI
  
@@ -38,7 +38,7 @@ Index: linux-2.6.23.16/arch/arm/Kconfig
  # Select the host bridge type
  config PCI_HOST_VIA82C505
  	bool
-@@ -988,6 +1003,10 @@
+@@ -988,6 +1003,10 @@ if ALIGNMENT_TRAP || !CPU_CP15_MMU
  source "drivers/mtd/Kconfig"
  endif
  
@@ -49,7 +49,7 @@ Index: linux-2.6.23.16/arch/arm/Kconfig
  source "drivers/parport/Kconfig"
  
  source "drivers/pnp/Kconfig"
-@@ -997,7 +1016,7 @@
+@@ -997,7 +1016,7 @@ source "drivers/block/Kconfig"
  if PCMCIA || ARCH_CLPS7500 || ARCH_IOP32X || ARCH_IOP33X || ARCH_IXP4XX \
  	|| ARCH_L7200 || ARCH_LH7A40X || ARCH_PXA || ARCH_RPC \
  	|| ARCH_S3C2410 || ARCH_SA1100 || ARCH_SHARK || FOOTBRIDGE \
@@ -58,11 +58,11 @@ Index: linux-2.6.23.16/arch/arm/Kconfig
  source "drivers/ide/Kconfig"
  endif
  
-Index: linux-2.6.23.16/arch/arm/Makefile
+Index: linux-2.6.23.17/arch/arm/Makefile
 ===================================================================
---- linux-2.6.23.16.orig/arch/arm/Makefile	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/arch/arm/Makefile	2008-03-13 17:48:24.508798285 +0200
-@@ -72,6 +72,7 @@
+--- linux-2.6.23.17.orig/arch/arm/Makefile
++++ linux-2.6.23.17/arch/arm/Makefile
+@@ -72,6 +72,7 @@ tune-$(CONFIG_CPU_ARM920T)	:=-mtune=arm9
  tune-$(CONFIG_CPU_ARM922T)	:=-mtune=arm9tdmi
  tune-$(CONFIG_CPU_ARM925T)	:=-mtune=arm9tdmi
  tune-$(CONFIG_CPU_ARM926T)	:=-mtune=arm9tdmi
@@ -70,7 +70,7 @@ Index: linux-2.6.23.16/arch/arm/Makefile
  tune-$(CONFIG_CPU_SA110)	:=-mtune=strongarm110
  tune-$(CONFIG_CPU_SA1100)	:=-mtune=strongarm1100
  tune-$(CONFIG_CPU_XSCALE)	:=$(call cc-option,-mtune=xscale,-mtune=strongarm110) -Wa,-mcpu=xscale
-@@ -111,6 +112,7 @@
+@@ -111,6 +112,7 @@ endif
   machine-$(CONFIG_ARCH_PXA)	   := pxa
   machine-$(CONFIG_ARCH_L7200)	   := l7200
   machine-$(CONFIG_ARCH_INTEGRATOR) := integrator
@@ -78,11 +78,11 @@ Index: linux-2.6.23.16/arch/arm/Makefile
   textofs-$(CONFIG_ARCH_CLPS711X)   := 0x00028000
   machine-$(CONFIG_ARCH_CLPS711X)   := clps711x
   machine-$(CONFIG_ARCH_IOP32X)	   := iop32x
-Index: linux-2.6.23.16/arch/arm/boot/compressed/Makefile
+Index: linux-2.6.23.17/arch/arm/boot/compressed/Makefile
 ===================================================================
---- linux-2.6.23.16.orig/arch/arm/boot/compressed/Makefile	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/arch/arm/boot/compressed/Makefile	2008-03-13 17:48:24.508798285 +0200
-@@ -19,6 +19,10 @@
+--- linux-2.6.23.17.orig/arch/arm/boot/compressed/Makefile
++++ linux-2.6.23.17/arch/arm/boot/compressed/Makefile
+@@ -19,6 +19,10 @@ ifeq ($(CONFIG_ARCH_SHARK),y)
  OBJS		+= head-shark.o ofw-shark.o
  endif
  
@@ -93,10 +93,10 @@ Index: linux-2.6.23.16/arch/arm/boot/compressed/Makefile
  ifeq ($(CONFIG_ARCH_L7200),y)
  OBJS		+= head-l7200.o
  endif
-Index: linux-2.6.23.16/arch/arm/boot/compressed/head-sl2312.S
+Index: linux-2.6.23.17/arch/arm/boot/compressed/head-sl2312.S
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/boot/compressed/head-sl2312.S	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/boot/compressed/head-sl2312.S
 @@ -0,0 +1,6 @@
 +#include <asm/mach-types.h>
 +#include <asm/arch/sl2312.h>
@@ -104,10 +104,10 @@ Index: linux-2.6.23.16/arch/arm/boot/compressed/head-sl2312.S
 +		.section	".start", "ax"
 +		mov	r7, #MACH_TYPE_SL2312
 +
-Index: linux-2.6.23.16/arch/arm/boot/compressed/head.S
+Index: linux-2.6.23.17/arch/arm/boot/compressed/head.S
 ===================================================================
---- linux-2.6.23.16.orig/arch/arm/boot/compressed/head.S	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/arch/arm/boot/compressed/head.S	2008-03-13 17:48:24.508798285 +0200
+--- linux-2.6.23.17.orig/arch/arm/boot/compressed/head.S
++++ linux-2.6.23.17/arch/arm/boot/compressed/head.S
 @@ -57,6 +57,17 @@
  		mov	\rb, #0x50000000
  		add	\rb, \rb, #0x4000 * CONFIG_S3C_LOWLEVEL_UART_PORT
@@ -126,7 +126,7 @@ Index: linux-2.6.23.16/arch/arm/boot/compressed/head.S
  #else
  		.macro	loadsp,	rb
  		addruart \rb
-@@ -116,7 +127,28 @@
+@@ -116,7 +127,28 @@ start:
  		.rept	8
  		mov	r0, r0
  		.endr
@@ -156,7 +156,7 @@ Index: linux-2.6.23.16/arch/arm/boot/compressed/head.S
  		b	1f
  		.word	0x016f2818		@ Magic numbers to help the loader
  		.word	start			@ absolute load/run zImage address
-@@ -458,6 +490,39 @@
+@@ -458,6 +490,39 @@ __armv7_mmu_cache_on:
  		mcr	p15, 0, r0, c7, c5, 4	@ ISB
  		mov	pc, r12
  
@@ -196,7 +196,7 @@ Index: linux-2.6.23.16/arch/arm/boot/compressed/head.S
  __arm6_mmu_cache_on:
  		mov	r12, lr
  		bl	__setup_mmu
-@@ -625,6 +690,16 @@
+@@ -625,6 +690,16 @@ proc_types:
  
  		@ These match on the architecture ID
  
@@ -213,7 +213,7 @@ Index: linux-2.6.23.16/arch/arm/boot/compressed/head.S
  		.word	0x00020000		@ ARMv4T
  		.word	0x000f0000
  		b	__armv4_mmu_cache_on
-@@ -712,6 +787,23 @@
+@@ -712,6 +787,23 @@ __armv7_mmu_cache_off:
  		mcr	p15, 0, r0, c8, c7, 0	@ invalidate whole TLB
  		mov	pc, r12
  
@@ -237,7 +237,7 @@ Index: linux-2.6.23.16/arch/arm/boot/compressed/head.S
  __arm6_mmu_cache_off:
  		mov	r0, #0x00000030		@ ARM6 control reg.
  		b	__armv3_mmu_cache_off
-@@ -759,6 +851,17 @@
+@@ -759,6 +851,17 @@ __armv4_mpu_cache_flush:
  		mcr	p15, 0, ip, c7, c10, 4	@ drain WB
  		mov	pc, lr
  		
@@ -255,10 +255,10 @@ Index: linux-2.6.23.16/arch/arm/boot/compressed/head.S
  
  __armv6_mmu_cache_flush:
  		mov	r1, #0
-Index: linux-2.6.23.16/arch/arm/boot/compressed/it8712.h
+Index: linux-2.6.23.17/arch/arm/boot/compressed/it8712.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/boot/compressed/it8712.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/boot/compressed/it8712.h
 @@ -0,0 +1,25 @@
 +
 +#ifndef __IT8712_H__
@@ -285,11 +285,11 @@ Index: linux-2.6.23.16/arch/arm/boot/compressed/it8712.h
 +char LPCGetConfig(char LdnNumber, char Index);
 +
 +#endif
-Index: linux-2.6.23.16/arch/arm/boot/compressed/misc.c
+Index: linux-2.6.23.17/arch/arm/boot/compressed/misc.c
 ===================================================================
---- linux-2.6.23.16.orig/arch/arm/boot/compressed/misc.c	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/arch/arm/boot/compressed/misc.c	2008-03-13 17:48:24.508798285 +0200
-@@ -30,7 +30,7 @@
+--- linux-2.6.23.17.orig/arch/arm/boot/compressed/misc.c
++++ linux-2.6.23.17/arch/arm/boot/compressed/misc.c
+@@ -30,7 +30,7 @@ static void putstr(const char *ptr);
  #include <asm/arch/uncompress.h>
  
  #ifdef CONFIG_DEBUG_ICEDCC
@@ -298,7 +298,7 @@ Index: linux-2.6.23.16/arch/arm/boot/compressed/misc.c
  #ifdef CONFIG_CPU_V6
  
  static void icedcc_putc(int ch)
-@@ -69,6 +69,7 @@
+@@ -69,6 +69,7 @@ static void icedcc_putc(int ch)
  #define flush()	do { } while (0)
  #endif
  
@@ -306,7 +306,7 @@ Index: linux-2.6.23.16/arch/arm/boot/compressed/misc.c
  static void putstr(const char *ptr)
  {
  	char c;
-@@ -81,11 +82,36 @@
+@@ -81,11 +82,36 @@ static void putstr(const char *ptr)
  
  	flush();
  }
@@ -343,7 +343,7 @@ Index: linux-2.6.23.16/arch/arm/boot/compressed/misc.c
  /*
   * Optimised C version of memzero for the ARM.
   */
-@@ -346,6 +372,9 @@
+@@ -346,6 +372,9 @@ ulg
  decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p,
  		  int arch_id)
  {
@@ -353,7 +353,7 @@ Index: linux-2.6.23.16/arch/arm/boot/compressed/misc.c
  	output_data		= (uch *)output_start;	/* Points to kernel start */
  	free_mem_ptr		= free_mem_ptr_p;
  	free_mem_ptr_end	= free_mem_ptr_end_p;
-@@ -353,6 +382,33 @@
+@@ -353,6 +382,33 @@ decompress_kernel(ulg output_start, ulg 
  
  	arch_decomp_setup();
  
@@ -387,7 +387,7 @@ Index: linux-2.6.23.16/arch/arm/boot/compressed/misc.c
  	makecrc();
  	putstr("Uncompressing Linux...");
  	gunzip();
-@@ -374,4 +430,119 @@
+@@ -374,4 +430,119 @@ int main()
  	return 0;
  }
  #endif
@@ -507,10 +507,10 @@ Index: linux-2.6.23.16/arch/arm/boot/compressed/misc.c
 +
 +#endif
  	
-Index: linux-2.6.23.16/arch/arm/kernel/entry-armv.S
+Index: linux-2.6.23.17/arch/arm/kernel/entry-armv.S
 ===================================================================
---- linux-2.6.23.16.orig/arch/arm/kernel/entry-armv.S	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/arch/arm/kernel/entry-armv.S	2008-03-13 17:48:24.508798285 +0200
+--- linux-2.6.23.17.orig/arch/arm/kernel/entry-armv.S
++++ linux-2.6.23.17/arch/arm/kernel/entry-armv.S
 @@ -18,6 +18,8 @@
  #include <asm/memory.h>
  #include <asm/glue.h>
@@ -520,10 +520,10 @@ Index: linux-2.6.23.16/arch/arm/kernel/entry-armv.S
  #include <asm/arch/entry-macro.S>
  #include <asm/thread_notify.h>
  
-Index: linux-2.6.23.16/arch/arm/kernel/irq.c
+Index: linux-2.6.23.17/arch/arm/kernel/irq.c
 ===================================================================
---- linux-2.6.23.16.orig/arch/arm/kernel/irq.c	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/arch/arm/kernel/irq.c	2008-03-13 17:48:24.508798285 +0200
+--- linux-2.6.23.17.orig/arch/arm/kernel/irq.c
++++ linux-2.6.23.17/arch/arm/kernel/irq.c
 @@ -40,6 +40,8 @@
  #include <asm/system.h>
  #include <asm/mach/time.h>
@@ -533,7 +533,7 @@ Index: linux-2.6.23.16/arch/arm/kernel/irq.c
  /*
   * No architecture-specific irq_finish function defined in arm/arch/irqs.h.
   */
-@@ -111,8 +113,11 @@
+@@ -111,8 +113,11 @@ static struct irq_desc bad_irq_desc = {
  asmlinkage void __exception asm_do_IRQ(unsigned int irq, struct pt_regs *regs)
  {
  	struct pt_regs *old_regs = set_irq_regs(regs);
@@ -546,11 +546,11 @@ Index: linux-2.6.23.16/arch/arm/kernel/irq.c
  	/*
  	 * Some hardware gives randomly wrong interrupts.  Rather
  	 * than crashing, do something sensible.
-Index: linux-2.6.23.16/arch/arm/kernel/process.c
+Index: linux-2.6.23.17/arch/arm/kernel/process.c
 ===================================================================
---- linux-2.6.23.16.orig/arch/arm/kernel/process.c	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/arch/arm/kernel/process.c	2008-03-13 17:48:24.508798285 +0200
-@@ -117,7 +117,7 @@
+--- linux-2.6.23.17.orig/arch/arm/kernel/process.c
++++ linux-2.6.23.17/arch/arm/kernel/process.c
+@@ -117,7 +117,7 @@ void arm_machine_restart(char mode)
  void (*pm_idle)(void);
  EXPORT_SYMBOL(pm_idle);
  
@@ -559,7 +559,7 @@ Index: linux-2.6.23.16/arch/arm/kernel/process.c
  EXPORT_SYMBOL(pm_power_off);
  
  void (*arm_pm_restart)(char str) = arm_machine_restart;
-@@ -188,13 +188,37 @@
+@@ -188,13 +188,37 @@ __setup("reboot=", reboot_setup);
  
  void machine_halt(void)
  {
@@ -598,11 +598,11 @@ Index: linux-2.6.23.16/arch/arm/kernel/process.c
  }
  
  void machine_restart(char * __unused)
-Index: linux-2.6.23.16/arch/arm/kernel/time.c
+Index: linux-2.6.23.17/arch/arm/kernel/time.c
 ===================================================================
---- linux-2.6.23.16.orig/arch/arm/kernel/time.c	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/arch/arm/kernel/time.c	2008-03-13 17:48:24.508798285 +0200
-@@ -502,8 +502,13 @@
+--- linux-2.6.23.17.orig/arch/arm/kernel/time.c
++++ linux-2.6.23.17/arch/arm/kernel/time.c
+@@ -502,8 +502,13 @@ static int __init timer_init_sysfs(void)
  
  device_initcall(timer_init_sysfs);
  
@@ -616,10 +616,10 @@ Index: linux-2.6.23.16/arch/arm/kernel/time.c
  #ifndef CONFIG_GENERIC_TIME
  	if (system_timer->offset == NULL)
  		system_timer->offset = dummy_gettimeoffset;
-Index: linux-2.6.23.16/arch/arm/mach-sl2312/Kconfig
+Index: linux-2.6.23.17/arch/arm/mach-sl2312/Kconfig
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mach-sl2312/Kconfig	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mach-sl2312/Kconfig
 @@ -0,0 +1,33 @@
 +
 +menu "SL2312"
@@ -654,10 +654,10 @@ Index: linux-2.6.23.16/arch/arm/mach-sl2312/Kconfig
 +	 Enable this option to test dual cpu Inter-Processor-Interrupt
 +endmenu
 +
-Index: linux-2.6.23.16/arch/arm/mach-sl2312/Makefile
+Index: linux-2.6.23.17/arch/arm/mach-sl2312/Makefile
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mach-sl2312/Makefile	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mach-sl2312/Makefile
 @@ -0,0 +1,16 @@
 +#
 +# Makefile for the linux kernel.
@@ -675,20 +675,20 @@ Index: linux-2.6.23.16/arch/arm/mach-sl2312/Makefile
 +obj-$(CONFIG_SL2312_USB) += sl2312-otg.o # sl2312-otg-1.o
 +obj-$(CONFIG_GEMINI_XOR_ACCE) += xor.o
 +obj-$(CONFIG_GEMINI_IPI)      += gemini_ipi.o
-Index: linux-2.6.23.16/arch/arm/mach-sl2312/Makefile.boot
+Index: linux-2.6.23.17/arch/arm/mach-sl2312/Makefile.boot
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mach-sl2312/Makefile.boot	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mach-sl2312/Makefile.boot
 @@ -0,0 +1,5 @@
 +   zreladdr-y	:= 0x00008000
 +params_phys-y	:= 0x00508100
 +#params_phys-y	:= 0x00008100
 +initrd_phys-y	:= 0x00800000
 +
-Index: linux-2.6.23.16/arch/arm/mach-sl2312/arch.c
+Index: linux-2.6.23.17/arch/arm/mach-sl2312/arch.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mach-sl2312/arch.c	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mach-sl2312/arch.c
 @@ -0,0 +1,72 @@
 +/*
 + *  linux/arch/arm/mach-epxa10db/arch.c
@@ -762,10 +762,10 @@ Index: linux-2.6.23.16/arch/arm/mach-sl2312/arch.c
 +	.init_irq	= sl2312_init_irq,
 +	.timer		= &sl2312_timer,
 +MACHINE_END
-Index: linux-2.6.23.16/arch/arm/mach-sl2312/gemini_ipi.c
+Index: linux-2.6.23.17/arch/arm/mach-sl2312/gemini_ipi.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mach-sl2312/gemini_ipi.c	2008-03-15 16:53:01.339687322 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mach-sl2312/gemini_ipi.c
 @@ -0,0 +1,593 @@
 +/*
 + * FILE NAME sl_cir.c
@@ -1360,10 +1360,10 @@ Index: linux-2.6.23.16/arch/arm/mach-sl2312/gemini_ipi.c
 +MODULE_AUTHOR("Jason Lee <jason@storlink.com.tw>");
 +MODULE_DESCRIPTION("Storlink IPI driver");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.23.16/arch/arm/mach-sl2312/hw_xor.h
+Index: linux-2.6.23.17/arch/arm/mach-sl2312/hw_xor.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mach-sl2312/hw_xor.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mach-sl2312/hw_xor.h
 @@ -0,0 +1,573 @@
 +/*
 +*  linux/include/asm-arm/xor.h
@@ -1938,10 +1938,10 @@ Index: linux-2.6.23.16/arch/arm/mach-sl2312/hw_xor.h
 +}
 +#endif	//XOR_SW_FILL_IN
 +
-Index: linux-2.6.23.16/arch/arm/mach-sl2312/irq.c
+Index: linux-2.6.23.17/arch/arm/mach-sl2312/irq.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mach-sl2312/irq.c	2008-03-14 11:58:14.702460322 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mach-sl2312/irq.c
 @@ -0,0 +1,202 @@
 +/*
 + *  linux/arch/arm/mach-epxa10db/irq.c
@@ -2145,10 +2145,10 @@ Index: linux-2.6.23.16/arch/arm/mach-sl2312/irq.c
 +	__raw_writel(level,IRQ_TLEVEL(IO_ADDRESS(SL2312_INTERRUPT_BASE)));
 +
 +}
-Index: linux-2.6.23.16/arch/arm/mach-sl2312/lpc.c
+Index: linux-2.6.23.17/arch/arm/mach-sl2312/lpc.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mach-sl2312/lpc.c	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mach-sl2312/lpc.c
 @@ -0,0 +1,125 @@
 +/*
 + *
@@ -2275,10 +2275,10 @@ Index: linux-2.6.23.16/arch/arm/mach-sl2312/lpc.c
 +}
 +
 +//__initcall(InitLPCInterface);
-Index: linux-2.6.23.16/arch/arm/mach-sl2312/mm.c
+Index: linux-2.6.23.17/arch/arm/mach-sl2312/mm.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mach-sl2312/mm.c	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mach-sl2312/mm.c
 @@ -0,0 +1,80 @@
 +/*
 + *  linux/arch/arm/mach-epxa10db/mm.c
@@ -2360,10 +2360,10 @@ Index: linux-2.6.23.16/arch/arm/mach-sl2312/mm.c
 +{
 +	iotable_init(sl2312_io_desc, ARRAY_SIZE(sl2312_io_desc));
 +}
-Index: linux-2.6.23.16/arch/arm/mach-sl2312/pci.c
+Index: linux-2.6.23.17/arch/arm/mach-sl2312/pci.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mach-sl2312/pci.c	2008-03-14 12:56:27.401497897 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mach-sl2312/pci.c
 @@ -0,0 +1,359 @@
 +/*
 + *  linux/arch/arm/mach-sl2312/pci_sl2312.c
@@ -2724,10 +2724,10 @@ Index: linux-2.6.23.16/arch/arm/mach-sl2312/pci.c
 +}
 +
 +subsys_initcall(sl2312_pci_init);
-Index: linux-2.6.23.16/arch/arm/mach-sl2312/sl2312-otg-1.c
+Index: linux-2.6.23.17/arch/arm/mach-sl2312/sl2312-otg-1.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mach-sl2312/sl2312-otg-1.c	2008-03-15 16:53:18.340655940 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mach-sl2312/sl2312-otg-1.c
 @@ -0,0 +1,64 @@
 +/*
 + *  linux/arch/arm/mach-pxa/sl2312.c
@@ -2793,10 +2793,10 @@ Index: linux-2.6.23.16/arch/arm/mach-sl2312/sl2312-otg-1.c
 +}
 +
 +subsys_initcall(sl2312_1_init);
-Index: linux-2.6.23.16/arch/arm/mach-sl2312/sl2312-otg.c
+Index: linux-2.6.23.17/arch/arm/mach-sl2312/sl2312-otg.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mach-sl2312/sl2312-otg.c	2008-03-14 12:33:51.324219457 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mach-sl2312/sl2312-otg.c
 @@ -0,0 +1,87 @@
 +/*
 + *  linux/arch/arm/mach-pxa/sl2312.c
@@ -2885,10 +2885,10 @@ Index: linux-2.6.23.16/arch/arm/mach-sl2312/sl2312-otg.c
 +}
 +
 +subsys_initcall(sl2312_init);
-Index: linux-2.6.23.16/arch/arm/mach-sl2312/sl3516_device.c
+Index: linux-2.6.23.17/arch/arm/mach-sl2312/sl3516_device.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mach-sl2312/sl3516_device.c	2008-03-14 12:19:14.774267722 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mach-sl2312/sl3516_device.c
 @@ -0,0 +1,89 @@
 +/*
 + *  linux/arch/arm/mach-2312/sl3516_device.c
@@ -2979,10 +2979,10 @@ Index: linux-2.6.23.16/arch/arm/mach-sl2312/sl3516_device.c
 +}
 +
 +subsys_initcall(sl3516_init);
-Index: linux-2.6.23.16/arch/arm/mach-sl2312/time.c
+Index: linux-2.6.23.17/arch/arm/mach-sl2312/time.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mach-sl2312/time.c	2008-03-14 12:16:06.263525107 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mach-sl2312/time.c
 @@ -0,0 +1,134 @@
 +/*
 + *  linux/include/asm-arm/arch-epxa10db/time.h
@@ -3118,10 +3118,10 @@ Index: linux-2.6.23.16/arch/arm/mach-sl2312/time.c
 +}
 +
 +
-Index: linux-2.6.23.16/arch/arm/mach-sl2312/xor.c
+Index: linux-2.6.23.17/arch/arm/mach-sl2312/xor.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mach-sl2312/xor.c	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mach-sl2312/xor.c
 @@ -0,0 +1,1200 @@
 +/*
 + * arch/arm/mach-sl2312/xor.c
@@ -4323,11 +4323,11 @@ Index: linux-2.6.23.16/arch/arm/mach-sl2312/xor.c
 +module_init(gemini_xor_init);
 +module_exit(gemini_xor_exit);
 +
-Index: linux-2.6.23.16/arch/arm/mm/Kconfig
+Index: linux-2.6.23.17/arch/arm/mm/Kconfig
 ===================================================================
---- linux-2.6.23.16.orig/arch/arm/mm/Kconfig	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/arch/arm/mm/Kconfig	2008-03-13 17:48:24.508798285 +0200
-@@ -187,6 +187,26 @@
+--- linux-2.6.23.17.orig/arch/arm/mm/Kconfig
++++ linux-2.6.23.17/arch/arm/mm/Kconfig
+@@ -187,6 +187,26 @@ config CPU_ARM926T
  	  Say Y if you want support for the ARM926T processor.
  	  Otherwise, say N.
  
@@ -4354,7 +4354,7 @@ Index: linux-2.6.23.16/arch/arm/mm/Kconfig
  # ARM940T
  config CPU_ARM940T
  	bool "Support ARM940T processor" if ARCH_INTEGRATOR
-@@ -461,6 +481,9 @@
+@@ -461,6 +481,9 @@ config CPU_CACHE_VIVT
  config CPU_CACHE_VIPT
  	bool
  
@@ -4364,7 +4364,7 @@ Index: linux-2.6.23.16/arch/arm/mm/Kconfig
  if MMU
  # The copy-page model
  config CPU_COPY_V3
-@@ -475,6 +498,12 @@
+@@ -475,6 +498,12 @@ config CPU_COPY_V4WB
  config CPU_COPY_V6
  	bool
  
@@ -4377,7 +4377,7 @@ Index: linux-2.6.23.16/arch/arm/mm/Kconfig
  # This selects the TLB model
  config CPU_TLB_V3
  	bool
-@@ -534,6 +563,14 @@
+@@ -534,6 +563,14 @@ config CPU_CP15_MPU
  config IO_36
  	bool
  
@@ -4392,7 +4392,7 @@ Index: linux-2.6.23.16/arch/arm/mm/Kconfig
  comment "Processor Features"
  
  config ARM_THUMB
-@@ -600,7 +637,7 @@
+@@ -600,7 +637,7 @@ config CPU_DCACHE_SIZE
  
  config CPU_DCACHE_WRITETHROUGH
  	bool "Force write through D-cache"
@@ -4401,11 +4401,11 @@ Index: linux-2.6.23.16/arch/arm/mm/Kconfig
  	default y if CPU_ARM925T
  	help
  	  Say Y here to use the data cache in writethrough mode. Unless you
-Index: linux-2.6.23.16/arch/arm/mm/Makefile
+Index: linux-2.6.23.17/arch/arm/mm/Makefile
 ===================================================================
---- linux-2.6.23.16.orig/arch/arm/mm/Makefile	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/arch/arm/mm/Makefile	2008-03-13 17:48:24.508798285 +0200
-@@ -32,6 +32,7 @@
+--- linux-2.6.23.17.orig/arch/arm/mm/Makefile
++++ linux-2.6.23.17/arch/arm/mm/Makefile
+@@ -32,6 +32,7 @@ obj-$(CONFIG_CPU_CACHE_V4WT)	+= cache-v4
  obj-$(CONFIG_CPU_CACHE_V4WB)	+= cache-v4wb.o
  obj-$(CONFIG_CPU_CACHE_V6)	+= cache-v6.o
  obj-$(CONFIG_CPU_CACHE_V7)	+= cache-v7.o
@@ -4413,7 +4413,7 @@ Index: linux-2.6.23.16/arch/arm/mm/Makefile
  
  obj-$(CONFIG_CPU_COPY_V3)	+= copypage-v3.o
  obj-$(CONFIG_CPU_COPY_V4WT)	+= copypage-v4wt.o
-@@ -40,6 +41,7 @@
+@@ -40,6 +41,7 @@ obj-$(CONFIG_CPU_COPY_V6)	+= copypage-v6
  obj-$(CONFIG_CPU_SA1100)	+= copypage-v4mc.o
  obj-$(CONFIG_CPU_XSCALE)	+= copypage-xscale.o
  obj-$(CONFIG_CPU_XSC3)		+= copypage-xsc3.o
@@ -4421,7 +4421,7 @@ Index: linux-2.6.23.16/arch/arm/mm/Makefile
  
  obj-$(CONFIG_CPU_TLB_V3)	+= tlb-v3.o
  obj-$(CONFIG_CPU_TLB_V4WT)	+= tlb-v4.o
-@@ -47,6 +49,7 @@
+@@ -47,6 +49,7 @@ obj-$(CONFIG_CPU_TLB_V4WB)	+= tlb-v4wb.o
  obj-$(CONFIG_CPU_TLB_V4WBI)	+= tlb-v4wbi.o
  obj-$(CONFIG_CPU_TLB_V6)	+= tlb-v6.o
  obj-$(CONFIG_CPU_TLB_V7)	+= tlb-v7.o
@@ -4429,7 +4429,7 @@ Index: linux-2.6.23.16/arch/arm/mm/Makefile
  
  obj-$(CONFIG_CPU_ARM610)	+= proc-arm6_7.o
  obj-$(CONFIG_CPU_ARM710)	+= proc-arm6_7.o
-@@ -60,6 +63,7 @@
+@@ -60,6 +63,7 @@ obj-$(CONFIG_CPU_ARM925T)	+= proc-arm925
  obj-$(CONFIG_CPU_ARM926T)	+= proc-arm926.o
  obj-$(CONFIG_CPU_ARM940T)	+= proc-arm940.o
  obj-$(CONFIG_CPU_ARM946E)	+= proc-arm946.o
@@ -4437,10 +4437,10 @@ Index: linux-2.6.23.16/arch/arm/mm/Makefile
  obj-$(CONFIG_CPU_ARM1020)	+= proc-arm1020.o
  obj-$(CONFIG_CPU_ARM1020E)	+= proc-arm1020e.o
  obj-$(CONFIG_CPU_ARM1022)	+= proc-arm1022.o
-Index: linux-2.6.23.16/arch/arm/mm/cache-fa.S
+Index: linux-2.6.23.17/arch/arm/mm/cache-fa.S
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mm/cache-fa.S	2008-03-13 18:01:19.552965535 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mm/cache-fa.S
 @@ -0,0 +1,400 @@
 +/*
 + *  linux/arch/arm/mm/cache-fa.S
@@ -4842,10 +4842,10 @@ Index: linux-2.6.23.16/arch/arm/mm/cache-fa.S
 +	.long	fa_dma_clean_range
 +	.long	fa_dma_flush_range
 +	.size	fa_cache_fns, . - fa_cache_fns
-Index: linux-2.6.23.16/arch/arm/mm/copypage-fa.S
+Index: linux-2.6.23.17/arch/arm/mm/copypage-fa.S
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mm/copypage-fa.S	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mm/copypage-fa.S
 @@ -0,0 +1,106 @@
 +/*
 + *  linux/arch/arm/lib/copypage-fa.S
@@ -4953,10 +4953,10 @@ Index: linux-2.6.23.16/arch/arm/mm/copypage-fa.S
 +	.long	fa_clear_user_page
 +	.long	fa_copy_user_page
 +	.size	fa_user_fns, . - fa_user_fns
-Index: linux-2.6.23.16/arch/arm/mm/init.c
+Index: linux-2.6.23.17/arch/arm/mm/init.c
 ===================================================================
---- linux-2.6.23.16.orig/arch/arm/mm/init.c	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/arch/arm/mm/init.c	2008-03-13 17:48:24.508798285 +0200
+--- linux-2.6.23.17.orig/arch/arm/mm/init.c
++++ linux-2.6.23.17/arch/arm/mm/init.c
 @@ -23,6 +23,7 @@
  
  #include <asm/mach/arch.h>
@@ -4965,7 +4965,7 @@ Index: linux-2.6.23.16/arch/arm/mm/init.c
  
  #include "mm.h"
  
-@@ -252,6 +253,11 @@
+@@ -252,6 +253,11 @@ bootmem_init_node(int node, int initrd_n
  		initrd_end = initrd_start + phys_initrd_size;
  	}
  #endif
@@ -4977,10 +4977,10 @@ Index: linux-2.6.23.16/arch/arm/mm/init.c
  
  	/*
  	 * Finally, reserve any node zero regions.
-Index: linux-2.6.23.16/arch/arm/mm/proc-fa526.S
+Index: linux-2.6.23.17/arch/arm/mm/proc-fa526.S
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mm/proc-fa526.S	2008-03-14 14:59:46.823166907 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mm/proc-fa526.S
 @@ -0,0 +1,407 @@
 +/*
 + *  linux/arch/arm/mm/proc-fa526.S: MMU functions for FA526
@@ -5389,10 +5389,10 @@ Index: linux-2.6.23.16/arch/arm/mm/proc-fa526.S
 +	.size	__fa526_proc_info, . - __fa526_proc_info
 +
 +
-Index: linux-2.6.23.16/arch/arm/mm/tlb-fa.S
+Index: linux-2.6.23.17/arch/arm/mm/tlb-fa.S
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/arch/arm/mm/tlb-fa.S	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mm/tlb-fa.S
 @@ -0,0 +1,96 @@
 +/*
 + *  linux/arch/arm/mm/tlb-fa.S
@@ -5490,11 +5490,11 @@ Index: linux-2.6.23.16/arch/arm/mm/tlb-fa.S
 +	.long	fa_flush_kern_tlb_range
 +	.long	fa_tlb_flags
 +	.size	fa_tlb_fns, . - fa_tlb_fns
-Index: linux-2.6.23.16/arch/arm/tools/mach-types
+Index: linux-2.6.23.17/arch/arm/tools/mach-types
 ===================================================================
---- linux-2.6.23.16.orig/arch/arm/tools/mach-types	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/arch/arm/tools/mach-types	2008-03-13 17:48:24.508798285 +0200
-@@ -208,7 +208,8 @@
+--- linux-2.6.23.17.orig/arch/arm/tools/mach-types
++++ linux-2.6.23.17/arch/arm/tools/mach-types
+@@ -208,7 +208,8 @@ karo			ARCH_KARO		KARO			190
  fester			SA1100_FESTER		FESTER			191
  gpi			ARCH_GPI		GPI			192
  smdk2410		ARCH_SMDK2410		SMDK2410		193
@@ -5504,10 +5504,10 @@ Index: linux-2.6.23.16/arch/arm/tools/mach-types
  nexio			SA1100_NEXIO		NEXIO			195
  bitbox			SA1100_BITBOX		BITBOX			196
  g200			SA1100_G200		G200			197
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/SL_gpio.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/SL_gpio.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/SL_gpio.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/SL_gpio.h
 @@ -0,0 +1,59 @@
 +#define GPIO_MINOR_LAST 31
 +#define GPIO_MAJOR	120	// Experiemental
@@ -5568,10 +5568,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/SL_gpio.h
 +#define GPIO_PULLUP	1
 +#define GPIO_ENABLEPULL	1
 +#define GPIO_DISABLEPULL	0
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/debug-macro.S
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/debug-macro.S
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/debug-macro.S	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/debug-macro.S
 @@ -0,0 +1,20 @@
 +/* linux/include/asm-arm/arch-ebsa110/debug-macro.S
 + *
@@ -5593,10 +5593,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/debug-macro.S
 +#define UART_SHIFT	2
 +#define FLOW_CONTROL
 +#include <asm/hardware/debug-8250.S>
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/dma.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/dma.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/dma.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/dma.h
 @@ -0,0 +1,28 @@
 +/*
 + *  linux/include/asm-arm/arch-camelot/dma.h
@@ -5626,10 +5626,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/dma.h
 +
 +#endif /* _ASM_ARCH_DMA_H */
 +
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/entry-macro.S
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/entry-macro.S
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/entry-macro.S	2008-03-13 17:49:18.511875745 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/entry-macro.S
 @@ -0,0 +1,42 @@
 +/*
 + * include/asm-arm/arch-arm/entry-macro.S
@@ -5673,10 +5673,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/entry-macro.S
 +                .macro  irq_prio_table
 +                .endm
 +
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/flash.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/flash.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/flash.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/flash.h
 @@ -0,0 +1,83 @@
 +#ifndef __ASM_ARM_ARCH_FLASH_H
 +#define __ASM_ARM_ARCH_FLASH_H
@@ -5761,10 +5761,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/flash.h
 +extern int m25p80_sector_erase(__u32 address, __u32 schip_en);
 +
 +#endif
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/gemini_cir.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/gemini_cir.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/gemini_cir.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/gemini_cir.h
 @@ -0,0 +1,102 @@
 +#ifndef _ASM_ARCH_CIR_H
 +#define _ASM_ARCH_CIR_H
@@ -5868,10 +5868,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/gemini_cir.h
 +#define CIR_WAIT_INT_DATA			_IOWR (CIR_IOCTL_BASE, 15, struct cir_ioctl_data48)
 +
 +#endif //_ASM_ARCH_CIR_H
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/gemini_gpio.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/gemini_gpio.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/gemini_gpio.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/gemini_gpio.h
 @@ -0,0 +1,77 @@
 +/*
 + * FILE NAME gemini_gpio.h
@@ -5950,10 +5950,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/gemini_gpio.h
 +extern int request_gpio_irq(int bit,void (*handler)(int),char level,char high,char both);
 +extern int free_gpio_irq(int bit);
 +#endif
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/gemini_i2s.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/gemini_i2s.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/gemini_i2s.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/gemini_i2s.h
 @@ -0,0 +1,169 @@
 +#ifndef __GEMINI_I2S_H__
 +#define __GEMINI_I2S_H__
@@ -6124,10 +6124,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/gemini_i2s.h
 +
 +
 +#endif //__GEMINI_I2S_H__
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/gemini_ssp.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/gemini_ssp.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/gemini_ssp.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/gemini_ssp.h
 @@ -0,0 +1,263 @@
 +/******************************************************************************
 + *    gemini_ssp.h
@@ -6392,10 +6392,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/gemini_ssp.h
 +void ringBackJapan(int num) ;
 +void stateMachine(int num);
 +
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/hardware.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/hardware.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/hardware.h	2008-03-14 12:48:02.872746442 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/hardware.h
 @@ -0,0 +1,47 @@
 +/*
 + *  linux/include/asm-arm/arch-epxa10/hardware.h
@@ -6444,10 +6444,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/hardware.h
 +
 +#endif
 +
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/int_ctrl.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/int_ctrl.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/int_ctrl.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/int_ctrl.h
 @@ -0,0 +1,171 @@
 +/*
 + *
@@ -6620,10 +6620,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/int_ctrl.h
 +#endif /* __INT_CTRL_H */
 +
 +
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/io.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/io.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/io.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/io.h
 @@ -0,0 +1,50 @@
 +/*
 + *  linux/include/asm-arm/arch-epxa10db/io.h
@@ -6675,10 +6675,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/io.h
 +
 +
 +#endif
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/ipi.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/ipi.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/ipi.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/ipi.h
 @@ -0,0 +1,189 @@
 +/*
 + *  linux/include/asm-arm/arch-sl2312/system.h
@@ -6869,10 +6869,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/ipi.h
 +
 +
 +#endif
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/irq.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/irq.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/irq.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/irq.h
 @@ -0,0 +1,23 @@
 +/*
 + *  linux/include/asm-arm/arch-sl2312/irq.h
@@ -6897,10 +6897,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/irq.h
 + // Since we have PCI interrupt which the interrupt line is pseudo
 + // we need do some fixup
 +int fixup_irq(int irq);
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/irqs.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/irqs.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/irqs.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/irqs.h
 @@ -0,0 +1,102 @@
 +/*
 + *  linux/include/asm-arm/arch-camelot/irqs.h
@@ -7004,10 +7004,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/irqs.h
 +
 +
 +
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/it8712.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/it8712.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/it8712.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/it8712.h
 @@ -0,0 +1,24 @@
 +
 +#ifndef __IT8712_H__
@@ -7033,10 +7033,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/it8712.h
 +char LPCGetConfig(char LdnNumber, char Index);
 +
 +#endif
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/memory.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/memory.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/memory.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/memory.h
 @@ -0,0 +1,38 @@
 +/*
 + *  linux/include/asm-arm/arch-sl2312/memory.h
@@ -7076,10 +7076,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/memory.h
 +#define __bus_to_virt(x)	(x - /*SDRAM_BASE*/0 + PAGE_OFFSET)
 +
 +#endif
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/param.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/param.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/param.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/param.h
 @@ -0,0 +1,20 @@
 +/*
 + *  linux/include/asm-arm/arch-epxa10db/param.h
@@ -7101,10 +7101,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/param.h
 + * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 + */
 +
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/pci.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/pci.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/pci.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/pci.h
 @@ -0,0 +1,18 @@
 +
 +#ifndef __SL2312_PCI_H__
@@ -7124,10 +7124,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/pci.h
 +int sl2312_pci_get_int_src(void);
 +
 +#endif
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/platform.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/platform.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/platform.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/platform.h
 @@ -0,0 +1,7 @@
 +#ifndef PLATFORM_H
 +#define PLATFORM_H
@@ -7136,10 +7136,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/platform.h
 +#define MAXIRQNUM 68
 +#endif
 +
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/preempt.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/preempt.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/preempt.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/preempt.h
 @@ -0,0 +1,63 @@
 +/*
 + * include/asm-arm/arch-sl2312/preempt.h
@@ -7204,10 +7204,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/preempt.h
 +
 +#endif
 +
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/sl2312.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/sl2312.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/sl2312.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/sl2312.h
 @@ -0,0 +1,254 @@
 +#ifndef __sl2312_h
 +#define __sl2312_h
@@ -7463,10 +7463,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/sl2312.h
 +#endif
 +
 +
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/sl2312_ipsec.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/sl2312_ipsec.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/sl2312_ipsec.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/sl2312_ipsec.h
 @@ -0,0 +1,684 @@
 +#ifndef _IPSEC_DIAG_H
 +#define _IPSEC_DIAG_H
@@ -8152,17 +8152,17 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/sl2312_ipsec.h
 +
 +
 +#endif
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/sl_random.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/sl_random.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/sl_random.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/sl_random.h
 @@ -0,0 +1,2 @@
 +#define RANDOM_ADD		(IO_ADDRESS (0x051000000) + 0x0AC)
 +
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/system.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/system.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/system.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/system.h
 @@ -0,0 +1,54 @@
 +/*
 + *  linux/include/asm-arm/arch-sl2312/system.h
@@ -8218,10 +8218,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/system.h
 +//}
 +
 +#endif
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/timer.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/timer.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/timer.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/timer.h
 @@ -0,0 +1,53 @@
 +/*
 + *
@@ -8276,10 +8276,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/timer.h
 +#define TIMER_3_CR_INT_OFST 		    (8)
 +
 +#endif /* __TIMER00_H */
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/timex.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/timex.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/timex.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/timex.h
 @@ -0,0 +1,29 @@
 +/*
 + *  linux/include/asm-arm/arch-epxa10db/timex.h
@@ -8310,10 +8310,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/timex.h
 +
 +#define CLOCK_TICK_RATE		APB_CLK
 +
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/uart.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/uart.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/uart.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/uart.h
 @@ -0,0 +1,100 @@
 +/* *
 + *  Copyright (C) 2001 Altera Corporation
@@ -8415,10 +8415,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/uart.h
 +
 +
 +#endif /* __UART_H */
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/uncompress.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/uncompress.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/uncompress.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/uncompress.h
 @@ -0,0 +1,94 @@
 +/*
 + *  linux/include/asm-arm/arch-epxa10db/uncompress.h
@@ -8514,10 +8514,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/uncompress.h
 +#define arch_decomp_setup()
 +
 +#define arch_decomp_wdog()
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/vmalloc.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/vmalloc.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/vmalloc.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/vmalloc.h
 @@ -0,0 +1,36 @@
 +/*
 + *  linux/include/asm-arm/arch-epxa10db/vmalloc.h
@@ -8555,10 +8555,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/vmalloc.h
 +//#define MODULE_START    (PAGE_OFFSET - 16*1048576)
 +//#define MODULE_END      (PAGE_OFFSET)
 +
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/watchdog.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/watchdog.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/watchdog.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/watchdog.h
 @@ -0,0 +1,58 @@
 +#ifndef __WATCHDOG_H
 +#define __WATCHDOG_H
@@ -8618,10 +8618,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/watchdog.h
 +
 +
 +#endif
-Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/xor.h
+Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/xor.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/asm-arm/arch-sl2312/xor.h	2008-03-13 17:48:24.508798285 +0200
+--- /dev/null
++++ linux-2.6.23.17/include/asm-arm/arch-sl2312/xor.h
 @@ -0,0 +1,29 @@
 +/*
 + * include/asm-arm/arch-sl2312/xor.h
@@ -8652,10 +8652,10 @@ Index: linux-2.6.23.16/include/asm-arm/arch-sl2312/xor.h
 +
 +#endif /* _ASM_ARCH_XOR_H */
 +
-Index: linux-2.6.23.16/include/asm-arm/cacheflush.h
+Index: linux-2.6.23.17/include/asm-arm/cacheflush.h
 ===================================================================
---- linux-2.6.23.16.orig/include/asm-arm/cacheflush.h	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/include/asm-arm/cacheflush.h	2008-03-13 17:48:24.508798285 +0200
+--- linux-2.6.23.17.orig/include/asm-arm/cacheflush.h
++++ linux-2.6.23.17/include/asm-arm/cacheflush.h
 @@ -46,6 +46,18 @@
  # define MULTI_CACHE 1
  #endif
@@ -8675,10 +8675,10 @@ Index: linux-2.6.23.16/include/asm-arm/cacheflush.h
  #if defined(CONFIG_CPU_ARM926T)
  # ifdef _CACHE
  #  define MULTI_CACHE 1
-Index: linux-2.6.23.16/include/asm-arm/page.h
+Index: linux-2.6.23.17/include/asm-arm/page.h
 ===================================================================
---- linux-2.6.23.16.orig/include/asm-arm/page.h	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/include/asm-arm/page.h	2008-03-13 17:48:24.508798285 +0200
+--- linux-2.6.23.17.orig/include/asm-arm/page.h
++++ linux-2.6.23.17/include/asm-arm/page.h
 @@ -74,6 +74,18 @@
  # endif
  #endif
@@ -8698,10 +8698,10 @@ Index: linux-2.6.23.16/include/asm-arm/page.h
  #ifdef CONFIG_CPU_SA1100
  # ifdef _USER
  #  define MULTI_USER 1
-Index: linux-2.6.23.16/include/asm-arm/proc-fns.h
+Index: linux-2.6.23.17/include/asm-arm/proc-fns.h
 ===================================================================
---- linux-2.6.23.16.orig/include/asm-arm/proc-fns.h	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/include/asm-arm/proc-fns.h	2008-03-13 17:48:24.508798285 +0200
+--- linux-2.6.23.17.orig/include/asm-arm/proc-fns.h
++++ linux-2.6.23.17/include/asm-arm/proc-fns.h
 @@ -89,6 +89,14 @@
  #   define CPU_NAME cpu_arm922
  #  endif
@@ -8717,10 +8717,10 @@ Index: linux-2.6.23.16/include/asm-arm/proc-fns.h
  # ifdef CONFIG_CPU_ARM925T
  #  ifdef CPU_NAME
  #   undef  MULTI_CPU
-Index: linux-2.6.23.16/include/asm-arm/tlbflush.h
+Index: linux-2.6.23.17/include/asm-arm/tlbflush.h
 ===================================================================
---- linux-2.6.23.16.orig/include/asm-arm/tlbflush.h	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/include/asm-arm/tlbflush.h	2008-03-13 17:58:18.542650345 +0200
+--- linux-2.6.23.17.orig/include/asm-arm/tlbflush.h
++++ linux-2.6.23.17/include/asm-arm/tlbflush.h
 @@ -39,6 +39,8 @@
  #define TLB_V6_D_ASID	(1 << 17)
  #define TLB_V6_I_ASID	(1 << 18)
@@ -8783,7 +8783,7 @@ Index: linux-2.6.23.16/include/asm-arm/tlbflush.h
  #define v4wbi_tlb_flags	(TLB_WB | TLB_DCLEAN | \
  			 TLB_V4_I_FULL | TLB_V4_D_FULL | \
  			 TLB_V4_I_PAGE | TLB_V4_D_PAGE)
-@@ -246,12 +287,14 @@
+@@ -246,12 +287,14 @@ extern struct cpu_tlb_fns cpu_tlb;
  				 v4_possible_flags | \
  				 v4wbi_possible_flags | \
  				 v4wb_possible_flags | \
@@ -8798,7 +8798,7 @@ Index: linux-2.6.23.16/include/asm-arm/tlbflush.h
  				 v6wbi_always_flags)
  
  #define tlb_flag(f)	((always_tlb_flags & (f)) || (__tlb_flag & possible_tlb_flags & (f)))
-@@ -261,6 +304,9 @@
+@@ -261,6 +304,9 @@ static inline void local_flush_tlb_all(v
  	const int zero = 0;
  	const unsigned int __tlb_flag = __cpu_tlb_flags;
  
@@ -8808,7 +8808,7 @@ Index: linux-2.6.23.16/include/asm-arm/tlbflush.h
  	if (tlb_flag(TLB_WB))
  		dsb();
  
-@@ -281,6 +327,13 @@
+@@ -281,6 +327,13 @@ static inline void local_flush_tlb_all(v
  		dsb();
  		isb();
  	}
@@ -8822,7 +8822,7 @@ Index: linux-2.6.23.16/include/asm-arm/tlbflush.h
  }
  
  static inline void local_flush_tlb_mm(struct mm_struct *mm)
-@@ -289,6 +342,9 @@
+@@ -289,6 +342,9 @@ static inline void local_flush_tlb_mm(st
  	const int asid = ASID(mm);
  	const unsigned int __tlb_flag = __cpu_tlb_flags;
  
@@ -8832,7 +8832,7 @@ Index: linux-2.6.23.16/include/asm-arm/tlbflush.h
  	if (tlb_flag(TLB_WB))
  		dsb();
  
-@@ -317,6 +373,14 @@
+@@ -317,6 +373,14 @@ static inline void local_flush_tlb_mm(st
  		asm("mcr p15, 0, %0, c7, c5, 6" : : "r" (zero) : "cc");
  		dsb();
  	}
@@ -8847,7 +8847,7 @@ Index: linux-2.6.23.16/include/asm-arm/tlbflush.h
  }
  
  static inline void
-@@ -327,6 +391,9 @@
+@@ -327,6 +391,9 @@ local_flush_tlb_page(struct vm_area_stru
  
  	uaddr = (uaddr & PAGE_MASK) | ASID(vma->vm_mm);
  
@@ -8857,7 +8857,7 @@ Index: linux-2.6.23.16/include/asm-arm/tlbflush.h
  	if (tlb_flag(TLB_WB))
  		dsb();
  
-@@ -357,6 +424,13 @@
+@@ -357,6 +424,13 @@ local_flush_tlb_page(struct vm_area_stru
  		asm("mcr p15, 0, %0, c7, c5, 6" : : "r" (zero) : "cc");
  		dsb();
  	}
@@ -8871,7 +8871,7 @@ Index: linux-2.6.23.16/include/asm-arm/tlbflush.h
  }
  
  static inline void local_flush_tlb_kernel_page(unsigned long kaddr)
-@@ -366,6 +440,9 @@
+@@ -366,6 +440,9 @@ static inline void local_flush_tlb_kerne
  
  	kaddr &= PAGE_MASK;
  
@@ -8881,7 +8881,7 @@ Index: linux-2.6.23.16/include/asm-arm/tlbflush.h
  	if (tlb_flag(TLB_WB))
  		dsb();
  
-@@ -386,6 +463,12 @@
+@@ -386,6 +463,12 @@ static inline void local_flush_tlb_kerne
  		asm("mcr p15, 0, %0, c8, c6, 1" : : "r" (kaddr) : "cc");
  	if (tlb_flag(TLB_V6_I_PAGE))
  		asm("mcr p15, 0, %0, c8, c5, 1" : : "r" (kaddr) : "cc");
@@ -8894,7 +8894,7 @@ Index: linux-2.6.23.16/include/asm-arm/tlbflush.h
  
  	if (tlb_flag(TLB_V6_I_FULL | TLB_V6_D_FULL |
  		     TLB_V6_I_PAGE | TLB_V6_D_PAGE |
-@@ -412,6 +495,7 @@
+@@ -412,6 +495,7 @@ static inline void local_flush_tlb_kerne
   */
  static inline void flush_pmd_entry(pmd_t *pmd)
  {
@@ -8902,7 +8902,7 @@ Index: linux-2.6.23.16/include/asm-arm/tlbflush.h
  	const unsigned int __tlb_flag = __cpu_tlb_flags;
  
  	if (tlb_flag(TLB_DCLEAN))
-@@ -419,15 +503,30 @@
+@@ -419,15 +503,30 @@ static inline void flush_pmd_entry(pmd_t
  			: : "r" (pmd) : "cc");
  	if (tlb_flag(TLB_WB))
  		dsb();
@@ -8933,11 +8933,11 @@ Index: linux-2.6.23.16/include/asm-arm/tlbflush.h
  }
  
  #undef tlb_flag
-Index: linux-2.6.23.16/include/asm-arm/xor.h
+Index: linux-2.6.23.17/include/asm-arm/xor.h
 ===================================================================
---- linux-2.6.23.16.orig/include/asm-arm/xor.h	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/include/asm-arm/xor.h	2008-03-13 17:48:24.508798285 +0200
-@@ -139,3 +139,18 @@
+--- linux-2.6.23.17.orig/include/asm-arm/xor.h
++++ linux-2.6.23.17/include/asm-arm/xor.h
+@@ -139,3 +139,18 @@ static struct xor_block_template xor_blo
  		xor_speed(&xor_block_8regs);	\
  		xor_speed(&xor_block_32regs);	\
  	} while (0)
@@ -8956,11 +8956,11 @@ Index: linux-2.6.23.16/include/asm-arm/xor.h
 +	xor_speed(&xor_block_gemini); \
 +	} while (0)
 +#endif
-Index: linux-2.6.23.16/include/linux/apm_bios.h
+Index: linux-2.6.23.17/include/linux/apm_bios.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/apm_bios.h	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/include/linux/apm_bios.h	2008-03-13 17:48:24.508798285 +0200
-@@ -217,4 +217,24 @@
+--- linux-2.6.23.17.orig/include/linux/apm_bios.h
++++ linux-2.6.23.17/include/linux/apm_bios.h
+@@ -217,4 +217,24 @@ extern struct apm_info	apm_info;
  #define APM_IOC_STANDBY		_IO('A', 1)
  #define APM_IOC_SUSPEND		_IO('A', 2)
  
@@ -8985,11 +8985,11 @@ Index: linux-2.6.23.16/include/linux/apm_bios.h
 +#define PWC_SHUTDOWN			_IO ('A', 18)
 +
  #endif	/* LINUX_APM_H */
-Index: linux-2.6.23.16/kernel/time.c
+Index: linux-2.6.23.17/kernel/time.c
 ===================================================================
---- linux-2.6.23.16.orig/kernel/time.c	2008-03-13 17:46:04.500819685 +0200
-+++ linux-2.6.23.16/kernel/time.c	2008-03-13 17:48:24.508798285 +0200
-@@ -76,6 +76,7 @@
+--- linux-2.6.23.17.orig/kernel/time.c
++++ linux-2.6.23.17/kernel/time.c
+@@ -76,6 +76,7 @@ asmlinkage long sys_time(time_t __user *
   * why not move it into the appropriate arch directory (for those
   * architectures that need it).
   */
@@ -8997,7 +8997,7 @@ Index: linux-2.6.23.16/kernel/time.c
   
  asmlinkage long sys_stime(time_t __user *tptr)
  {
-@@ -87,6 +88,10 @@
+@@ -87,6 +88,10 @@ asmlinkage long sys_stime(time_t __user 
  
  	tv.tv_nsec = 0;
  
