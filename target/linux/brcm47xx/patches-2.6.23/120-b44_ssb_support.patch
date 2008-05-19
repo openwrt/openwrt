@@ -1,7 +1,7 @@
-Index: linux-2.6.23.16/drivers/net/b44.c
+Index: linux-2.6.23.17/drivers/net/b44.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/net/b44.c	2008-02-19 01:35:58.000000000 +0100
-+++ linux-2.6.23.16/drivers/net/b44.c	2008-02-19 01:37:04.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/net/b44.c
++++ linux-2.6.23.17/drivers/net/b44.c
 @@ -1,7 +1,9 @@
 -/* b44.c: Broadcom 4400 device driver.
 +/* b44.c: Broadcom 4400/47xx device driver.
@@ -1402,10 +1402,10 @@ Index: linux-2.6.23.16/drivers/net/b44.c
  }
  
  module_init(b44_init);
-Index: linux-2.6.23.16/drivers/net/b44.h
+Index: linux-2.6.23.17/drivers/net/b44.h
 ===================================================================
---- linux-2.6.23.16.orig/drivers/net/b44.h	2008-02-19 01:35:58.000000000 +0100
-+++ linux-2.6.23.16/drivers/net/b44.h	2008-02-19 01:36:00.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/net/b44.h
++++ linux-2.6.23.17/drivers/net/b44.h
 @@ -129,6 +129,7 @@
  #define  RXCONFIG_FLOW		0x00000020 /* Flow Control Enable */
  #define  RXCONFIG_FLOW_ACCEPT	0x00000040 /* Accept Unicast Flow Control Frame */
@@ -1529,10 +1529,10 @@ Index: linux-2.6.23.16/drivers/net/b44.h
  	struct net_device	*dev;
  
  	dma_addr_t		rx_ring_dma, tx_ring_dma;
-Index: linux-2.6.23.16/drivers/net/Kconfig
+Index: linux-2.6.23.17/drivers/net/Kconfig
 ===================================================================
---- linux-2.6.23.16.orig/drivers/net/Kconfig	2008-02-19 01:35:58.000000000 +0100
-+++ linux-2.6.23.16/drivers/net/Kconfig	2008-02-19 01:36:00.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/net/Kconfig
++++ linux-2.6.23.17/drivers/net/Kconfig
 @@ -1577,7 +1577,7 @@ config APRICOT
  
  config B44

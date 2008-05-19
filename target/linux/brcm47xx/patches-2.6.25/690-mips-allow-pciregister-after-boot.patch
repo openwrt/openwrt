@@ -1,10 +1,10 @@
 Allow registering PCI devices after early boot.
 
 This is an ugly hack and needs to be rewritten before going upstream.
-Index: linux-2.6.25/arch/mips/pci/pci.c
+Index: linux-2.6.25.4/arch/mips/pci/pci.c
 ===================================================================
---- linux-2.6.25.orig/arch/mips/pci/pci.c	2008-04-27 21:49:19.000000000 +0100
-+++ linux-2.6.25/arch/mips/pci/pci.c	2008-04-27 21:58:31.000000000 +0100
+--- linux-2.6.25.4.orig/arch/mips/pci/pci.c
++++ linux-2.6.25.4/arch/mips/pci/pci.c
 @@ -21,6 +21,17 @@
   */
  int pci_probe_only;
@@ -146,10 +146,10 @@ Index: linux-2.6.25/arch/mips/pci/pci.c
  
  	return 0;
  }
-Index: linux-2.6.25/drivers/ssb/main.c
+Index: linux-2.6.25.4/drivers/ssb/main.c
 ===================================================================
---- linux-2.6.25.orig/drivers/ssb/main.c	2008-04-27 21:55:32.000000000 +0100
-+++ linux-2.6.25/drivers/ssb/main.c	2008-04-27 21:58:31.000000000 +0100
+--- linux-2.6.25.4.orig/drivers/ssb/main.c
++++ linux-2.6.25.4/drivers/ssb/main.c
 @@ -1191,9 +1191,7 @@ static int __init ssb_modinit(void)
  /* ssb must be initialized after PCI but before the ssb drivers.
   * That means we must use some initcall between subsys_initcall

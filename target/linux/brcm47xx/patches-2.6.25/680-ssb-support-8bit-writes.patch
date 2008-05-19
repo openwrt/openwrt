@@ -1,8 +1,8 @@
 Add support for 8bit reads/writes to SSB.
-Index: linux-2.6.25.1/drivers/ssb/main.c
+Index: linux-2.6.25.4/drivers/ssb/main.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/ssb/main.c	2008-05-10 09:04:53.000000000 +0100
-+++ linux-2.6.25.1/drivers/ssb/main.c	2008-05-10 09:05:38.000000000 +0100
+--- linux-2.6.25.4.orig/drivers/ssb/main.c
++++ linux-2.6.25.4/drivers/ssb/main.c
 @@ -508,6 +508,14 @@ error:
  	return err;
  }
@@ -44,10 +44,10 @@ Index: linux-2.6.25.1/drivers/ssb/main.c
  	.write16	= ssb_ssb_write16,
  	.write32	= ssb_ssb_write32,
  };
-Index: linux-2.6.25.1/drivers/ssb/pci.c
+Index: linux-2.6.25.4/drivers/ssb/pci.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/ssb/pci.c	2008-05-10 09:04:53.000000000 +0100
-+++ linux-2.6.25.1/drivers/ssb/pci.c	2008-05-10 09:05:38.000000000 +0100
+--- linux-2.6.25.4.orig/drivers/ssb/pci.c
++++ linux-2.6.25.4/drivers/ssb/pci.c
 @@ -577,6 +577,19 @@ static inline int ssb_pci_assert_buspowe
  }
  #endif /* DEBUG */
@@ -99,10 +99,10 @@ Index: linux-2.6.25.1/drivers/ssb/pci.c
  	.write16	= ssb_pci_write16,
  	.write32	= ssb_pci_write32,
  };
-Index: linux-2.6.25.1/drivers/ssb/pcmcia.c
+Index: linux-2.6.25.4/drivers/ssb/pcmcia.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/ssb/pcmcia.c	2008-05-10 09:04:53.000000000 +0100
-+++ linux-2.6.25.1/drivers/ssb/pcmcia.c	2008-05-10 09:05:38.000000000 +0100
+--- linux-2.6.25.4.orig/drivers/ssb/pcmcia.c
++++ linux-2.6.25.4/drivers/ssb/pcmcia.c
 @@ -172,6 +172,22 @@ static int select_core_and_segment(struc
  	return 0;
  }
@@ -158,10 +158,10 @@ Index: linux-2.6.25.1/drivers/ssb/pcmcia.c
  	.write16	= ssb_pcmcia_write16,
  	.write32	= ssb_pcmcia_write32,
  };
-Index: linux-2.6.25.1/include/linux/ssb/ssb.h
+Index: linux-2.6.25.4/include/linux/ssb/ssb.h
 ===================================================================
---- linux-2.6.25.1.orig/include/linux/ssb/ssb.h	2008-05-10 09:04:53.000000000 +0100
-+++ linux-2.6.25.1/include/linux/ssb/ssb.h	2008-05-10 09:05:38.000000000 +0100
+--- linux-2.6.25.4.orig/include/linux/ssb/ssb.h
++++ linux-2.6.25.4/include/linux/ssb/ssb.h
 @@ -72,8 +72,10 @@ struct ssb_device;
  /* Lowlevel read/write operations on the device MMIO.
   * Internal, don't use that outside of ssb. */

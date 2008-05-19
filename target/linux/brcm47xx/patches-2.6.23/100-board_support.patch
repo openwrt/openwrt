@@ -1,8 +1,8 @@
-Index: linux-2.6.23/arch/mips/Kconfig
+Index: linux-2.6.23.17/arch/mips/Kconfig
 ===================================================================
---- linux-2.6.23.orig/arch/mips/Kconfig	2007-10-13 02:23:06.662507926 +0200
-+++ linux-2.6.23/arch/mips/Kconfig	2007-10-13 02:23:41.484492317 +0200
-@@ -4,6 +4,10 @@
+--- linux-2.6.23.17.orig/arch/mips/Kconfig
++++ linux-2.6.23.17/arch/mips/Kconfig
+@@ -4,6 +4,10 @@ config MIPS
  	# Horrible source of confusion.  Die, die, die ...
  	select EMBEDDED
  
@@ -13,7 +13,7 @@ Index: linux-2.6.23/arch/mips/Kconfig
  mainmenu "Linux/MIPS Kernel Configuration"
  
  menu "Machine selection"
-@@ -44,6 +48,23 @@
+@@ -44,6 +48,23 @@ config BASLER_EXCITE_PROTOTYPE
  	  note that a kernel built with this option selected will not be
  	  able to run on normal units.
  
@@ -37,11 +37,11 @@ Index: linux-2.6.23/arch/mips/Kconfig
  config MIPS_COBALT
  	bool "Cobalt Server"
  	select DMA_NONCOHERENT
-Index: linux-2.6.23/arch/mips/kernel/cpu-probe.c
+Index: linux-2.6.23.17/arch/mips/kernel/cpu-probe.c
 ===================================================================
---- linux-2.6.23.orig/arch/mips/kernel/cpu-probe.c	2007-10-13 02:23:06.666508151 +0200
-+++ linux-2.6.23/arch/mips/kernel/cpu-probe.c	2007-10-13 02:23:11.210767122 +0200
-@@ -793,6 +793,28 @@
+--- linux-2.6.23.17.orig/arch/mips/kernel/cpu-probe.c
++++ linux-2.6.23.17/arch/mips/kernel/cpu-probe.c
+@@ -793,6 +793,28 @@ static inline void cpu_probe_philips(str
  }
  
  
@@ -70,7 +70,7 @@ Index: linux-2.6.23/arch/mips/kernel/cpu-probe.c
  __init void cpu_probe(void)
  {
  	struct cpuinfo_mips *c = &current_cpu_data;
-@@ -815,6 +837,9 @@
+@@ -815,6 +837,9 @@ __init void cpu_probe(void)
  	case PRID_COMP_SIBYTE:
  		cpu_probe_sibyte(c);
  		break;
@@ -80,11 +80,11 @@ Index: linux-2.6.23/arch/mips/kernel/cpu-probe.c
  	case PRID_COMP_SANDCRAFT:
  		cpu_probe_sandcraft(c);
  		break;
-Index: linux-2.6.23/arch/mips/kernel/proc.c
+Index: linux-2.6.23.17/arch/mips/kernel/proc.c
 ===================================================================
---- linux-2.6.23.orig/arch/mips/kernel/proc.c	2007-10-13 02:23:06.678508839 +0200
-+++ linux-2.6.23/arch/mips/kernel/proc.c	2007-10-13 02:23:11.210767122 +0200
-@@ -82,6 +82,8 @@
+--- linux-2.6.23.17.orig/arch/mips/kernel/proc.c
++++ linux-2.6.23.17/arch/mips/kernel/proc.c
+@@ -82,6 +82,8 @@ static const char *cpu_name[] = {
  	[CPU_VR4181]	= "NEC VR4181",
  	[CPU_VR4181A]	= "NEC VR4181A",
  	[CPU_SR71000]	= "Sandcraft SR71000",
@@ -93,11 +93,11 @@ Index: linux-2.6.23/arch/mips/kernel/proc.c
  	[CPU_PR4450]	= "Philips PR4450",
  	[CPU_LOONGSON2]	= "ICT Loongson-2",
  };
-Index: linux-2.6.23/arch/mips/Makefile
+Index: linux-2.6.23.17/arch/mips/Makefile
 ===================================================================
---- linux-2.6.23.orig/arch/mips/Makefile	2007-10-13 02:23:06.682509066 +0200
-+++ linux-2.6.23/arch/mips/Makefile	2007-10-13 02:23:11.210767122 +0200
-@@ -533,6 +533,18 @@
+--- linux-2.6.23.17.orig/arch/mips/Makefile
++++ linux-2.6.23.17/arch/mips/Makefile
+@@ -533,6 +533,18 @@ libs-$(CONFIG_SIBYTE_BIGSUR)	+= arch/mip
  load-$(CONFIG_SIBYTE_BIGSUR)	:= 0xffffffff80100000
  
  #
@@ -116,11 +116,11 @@ Index: linux-2.6.23/arch/mips/Makefile
  # SNI RM
  #
  core-$(CONFIG_SNI_RM)		+= arch/mips/sni/
-Index: linux-2.6.23/arch/mips/mm/tlbex.c
+Index: linux-2.6.23.17/arch/mips/mm/tlbex.c
 ===================================================================
---- linux-2.6.23.orig/arch/mips/mm/tlbex.c	2007-10-13 02:23:06.694509748 +0200
-+++ linux-2.6.23/arch/mips/mm/tlbex.c	2007-10-13 02:26:00.272401391 +0200
-@@ -895,6 +895,8 @@
+--- linux-2.6.23.17.orig/arch/mips/mm/tlbex.c
++++ linux-2.6.23.17/arch/mips/mm/tlbex.c
+@@ -895,6 +895,8 @@ static __init void build_tlb_write_entry
  	case CPU_AU1550:
  	case CPU_AU1200:
  	case CPU_PR4450:
@@ -129,11 +129,11 @@ Index: linux-2.6.23/arch/mips/mm/tlbex.c
  		i_nop(p);
  		tlbw(p);
  		break;
-Index: linux-2.6.23/drivers/Kconfig
+Index: linux-2.6.23.17/drivers/Kconfig
 ===================================================================
---- linux-2.6.23.orig/drivers/Kconfig	2007-10-13 02:23:06.702510206 +0200
-+++ linux-2.6.23/drivers/Kconfig	2007-10-13 02:23:11.214767346 +0200
-@@ -58,6 +58,8 @@
+--- linux-2.6.23.17.orig/drivers/Kconfig
++++ linux-2.6.23.17/drivers/Kconfig
+@@ -60,6 +60,8 @@ source "drivers/power/Kconfig"
  
  source "drivers/hwmon/Kconfig"
  
@@ -142,10 +142,10 @@ Index: linux-2.6.23/drivers/Kconfig
  source "drivers/mfd/Kconfig"
  
  source "drivers/media/Kconfig"
-Index: linux-2.6.23/include/asm-mips/bootinfo.h
+Index: linux-2.6.23.17/include/asm-mips/bootinfo.h
 ===================================================================
---- linux-2.6.23.orig/include/asm-mips/bootinfo.h	2007-10-13 02:23:06.718511119 +0200
-+++ linux-2.6.23/include/asm-mips/bootinfo.h	2007-10-13 02:23:11.214767346 +0200
+--- linux-2.6.23.17.orig/include/asm-mips/bootinfo.h
++++ linux-2.6.23.17/include/asm-mips/bootinfo.h
 @@ -208,6 +208,12 @@
  #define MACH_GROUP_WINDRIVER   28	/* Windriver boards */
  #define MACH_WRPPMC             1
@@ -159,10 +159,10 @@ Index: linux-2.6.23/include/asm-mips/bootinfo.h
  #define CL_SIZE			COMMAND_LINE_SIZE
  
  const char *get_system_type(void);
-Index: linux-2.6.23/include/asm-mips/cpu.h
+Index: linux-2.6.23.17/include/asm-mips/cpu.h
 ===================================================================
---- linux-2.6.23.orig/include/asm-mips/cpu.h	2007-10-13 02:23:06.726511570 +0200
-+++ linux-2.6.23/include/asm-mips/cpu.h	2007-10-13 02:27:43.994312161 +0200
+--- linux-2.6.23.17.orig/include/asm-mips/cpu.h
++++ linux-2.6.23.17/include/asm-mips/cpu.h
 @@ -106,6 +106,13 @@
  #define PRID_IMP_SR71000        0x0400
  
@@ -189,20 +189,20 @@ Index: linux-2.6.23/include/asm-mips/cpu.h
  
  /*
   * ISA Level encodings
-Index: linux-2.6.23.1/drivers/Makefile
+Index: linux-2.6.23.17/drivers/Makefile
 ===================================================================
---- linux-2.6.23.1.orig/drivers/Makefile	2008-01-27 04:34:31.000000000 +0100
-+++ linux-2.6.23.1/drivers/Makefile		2008-01-27 04:39:57.000000000 +0100
-@@ -89,3 +89,4 @@
+--- linux-2.6.23.17.orig/drivers/Makefile
++++ linux-2.6.23.17/drivers/Makefile
+@@ -90,3 +90,4 @@ obj-$(CONFIG_HID)		+= hid/
  obj-$(CONFIG_PPC_PS3)		+= ps3/
  obj-$(CONFIG_OF)		+= of/
  obj-$(CONFIG_GPIO_DEVICE)	+= gpio/
 +obj-$(CONFIG_SSB)		+= ssb/
-Index: linux-2.6.23.1/include/linux/pci_ids.h
+Index: linux-2.6.23.17/include/linux/pci_ids.h
 ===================================================================
---- linux-2.6.23.1.orig/include/linux/pci_ids.h	2008-01-27 04:55:18.000000000 +0100
-+++ linux-2.6.23.1/include/linux/pci_ids.h	2008-01-27 04:55:22.000000000 +0100
-@@ -1972,6 +1972,7 @@
+--- linux-2.6.23.17.orig/include/linux/pci_ids.h
++++ linux-2.6.23.17/include/linux/pci_ids.h
+@@ -1980,6 +1980,7 @@
  #define PCI_DEVICE_ID_TIGON3_5906M	0x1713
  #define PCI_DEVICE_ID_BCM4401		0x4401
  #define PCI_DEVICE_ID_BCM4401B0		0x4402

@@ -1,8 +1,8 @@
-Index: linux-2.6.23.16/drivers/net/b44.c
+Index: linux-2.6.23.17/drivers/net/b44.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/net/b44.c	2008-03-22 19:52:40.000000000 -0700
-+++ linux-2.6.23.16/drivers/net/b44.c	2008-03-22 19:52:41.000000000 -0700
-@@ -2273,6 +2273,10 @@
+--- linux-2.6.23.17.orig/drivers/net/b44.c
++++ linux-2.6.23.17/drivers/net/b44.c
+@@ -2273,6 +2273,10 @@ static int __devinit b44_get_invariants(
  	       bp->phy_addr = sdev->bus->sprom.et1phyaddr;
  	       break;
  	}
