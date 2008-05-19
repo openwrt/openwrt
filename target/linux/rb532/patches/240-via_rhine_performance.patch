@@ -1,5 +1,7 @@
---- linux-2.6.23.12/drivers/net/via-rhine.c	2007-12-18 22:55:57.000000000 +0100
-+++ linux-2.6.23.12.new/drivers/net/via-rhine.c	2008-01-11 08:58:58.000000000 +0100
+Index: linux-2.6.23.17/drivers/net/via-rhine.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/net/via-rhine.c
++++ linux-2.6.23.17/drivers/net/via-rhine.c
 @@ -33,6 +33,8 @@
  #define DRV_VERSION	"1.4.3"
  #define DRV_RELDATE	"2007-03-06"
@@ -17,7 +19,7 @@
  /* Set the copy breakpoint for the copy-only-tiny-frames scheme.
     Setting to > 1518 effectively disables this feature. */
  #if defined(__alpha__) || defined(__arm__) || defined(__hppa__) \
-@@ -49,6 +52,7 @@
+@@ -49,6 +52,7 @@ static int rx_copybreak = 1518;
  #else
  static int rx_copybreak;
  #endif
@@ -25,7 +27,7 @@
  
  /* Work-around for broken BIOSes: they are unable to get the chip back out of
     power state D3 so PXE booting fails. bootparam(7): via-rhine.avoid_D3=1 */
-@@ -111,6 +115,7 @@
+@@ -111,6 +115,7 @@ static const int multicast_filter_limit 
  #include <asm/io.h>
  #include <asm/irq.h>
  #include <asm/uaccess.h>
@@ -33,7 +35,7 @@
  #include <linux/dmi.h>
  
  /* These identify the driver base version and may not be removed. */
-@@ -130,12 +135,14 @@
+@@ -130,12 +135,14 @@ MODULE_LICENSE("GPL");
  
  module_param(max_interrupt_work, int, 0);
  module_param(debug, int, 0);
@@ -50,7 +52,7 @@
  
  /*
  		Theory of Operation
-@@ -927,7 +934,7 @@
+@@ -927,7 +934,7 @@ static void alloc_rbufs(struct net_devic
  
  	/* Fill in the Rx buffers.  Handle allocation failure gracefully. */
  	for (i = 0; i < RX_RING_SIZE; i++) {
@@ -59,7 +61,7 @@
  		rp->rx_skbuff[i] = skb;
  		if (skb == NULL)
  			break;
-@@ -1484,7 +1491,9 @@
+@@ -1484,7 +1491,9 @@ static int rhine_rx(struct net_device *d
  			struct sk_buff *skb;
  			/* Length should omit the CRC */
  			int pkt_len = data_size - 4;
@@ -70,7 +72,7 @@
  			/* Check if the packet is long enough to accept without
  			   copying to a minimally-sized skbuff. */
  			if (pkt_len < rx_copybreak &&
-@@ -1503,7 +1512,9 @@
+@@ -1503,7 +1512,9 @@ static int rhine_rx(struct net_device *d
  							       rp->rx_skbuff_dma[entry],
  							       rp->rx_buf_sz,
  							       PCI_DMA_FROMDEVICE);
@@ -81,7 +83,7 @@
  				skb = rp->rx_skbuff[entry];
  				if (skb == NULL) {
  					printk(KERN_ERR "%s: Inconsistent Rx "
-@@ -1517,6 +1528,14 @@
+@@ -1517,6 +1528,14 @@ static int rhine_rx(struct net_device *d
  						 rp->rx_skbuff_dma[entry],
  						 rp->rx_buf_sz,
  						 PCI_DMA_FROMDEVICE);

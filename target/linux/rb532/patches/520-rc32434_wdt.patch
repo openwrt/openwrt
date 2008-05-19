@@ -1,18 +1,20 @@
-diff -ur linux-2.6.22.4.old/arch/mips/kernel/time.c linux-2.6.22.4.new/arch/mips/kernel/time.c
---- linux-2.6.22.4.old/arch/mips/kernel/time.c	2007-08-21 06:33:06.000000000 +0200
-+++ linux-2.6.22.4.new/arch/mips/kernel/time.c	2007-12-24 17:13:43.000000000 +0100
-@@ -478,3 +478,5 @@
+Index: linux-2.6.23.17/arch/mips/kernel/time.c
+===================================================================
+--- linux-2.6.23.17.orig/arch/mips/kernel/time.c
++++ linux-2.6.23.17/arch/mips/kernel/time.c
+@@ -479,3 +479,5 @@ EXPORT_SYMBOL(rtc_lock);
  EXPORT_SYMBOL(to_tm);
  EXPORT_SYMBOL(rtc_mips_set_time);
  EXPORT_SYMBOL(rtc_mips_get_time);
 +EXPORT_SYMBOL(mips_hpt_frequency);
 +
-diff -ur linux-2.6.22.4.old/drivers/char/watchdog/Kconfig linux-2.6.22.4.new/drivers/char/watchdog/Kconfig
---- linux-2.6.22.4.old/drivers/char/watchdog/Kconfig	2007-08-21 06:33:06.000000000 +0200
-+++ linux-2.6.22.4.new/drivers/char/watchdog/Kconfig	2007-12-24 17:13:43.000000000 +0100
-@@ -575,6 +575,19 @@
- 	  To compile this driver as a module, choose M here: the
- 	  module will be called rm9k_wdt.
+Index: linux-2.6.23.17/drivers/char/watchdog/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/drivers/char/watchdog/Kconfig
++++ linux-2.6.23.17/drivers/char/watchdog/Kconfig
+@@ -647,6 +647,19 @@ config WATCHDOG_RTAS
+ 	  To compile this driver as a module, choose M here. The module
+ 	  will be called wdrtas.
  
 +config RC32434_WDT
 +	tristate "IDT Interprise 79RC32434 SoC hardware watchdog"
@@ -30,14 +32,15 @@ diff -ur linux-2.6.22.4.old/drivers/char/watchdog/Kconfig linux-2.6.22.4.new/dri
  # S390 Architecture
  
  config ZVM_WATCHDOG
-diff -ur linux-2.6.22.4.old/drivers/char/watchdog/Makefile linux-2.6.22.4.new/drivers/char/watchdog/Makefile
---- linux-2.6.22.4.old/drivers/char/watchdog/Makefile	2007-08-21 06:33:06.000000000 +0200
-+++ linux-2.6.22.4.new/drivers/char/watchdog/Makefile	2007-12-24 17:13:43.000000000 +0100
-@@ -75,6 +75,7 @@
+Index: linux-2.6.23.17/drivers/char/watchdog/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/drivers/char/watchdog/Makefile
++++ linux-2.6.23.17/drivers/char/watchdog/Makefile
+@@ -90,6 +90,7 @@ obj-$(CONFIG_SBC_EPX_C3_WATCHDOG) += sbc
  obj-$(CONFIG_INDYDOG) += indydog.o
  obj-$(CONFIG_WDT_MTX1)	+= mtx-1_wdt.o
  obj-$(CONFIG_WDT_RM9K_GPI) += rm9k_wdt.o
 +obj-$(CONFIG_RC32434_WDT) += rc32434_wdt.o
  
- # S390 Architecture
+ # PARISC Architecture
  
