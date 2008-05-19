@@ -1,7 +1,8 @@
-diff -urN linux-2.6.24/arch/mips/Kconfig linux-2.6.24.new/arch/mips/Kconfig
---- linux-2.6.24/arch/mips/Kconfig	2008-01-24 23:58:37.000000000 +0100
-+++ linux-2.6.24.new/arch/mips/Kconfig	2008-02-13 16:20:49.000000000 +0100
-@@ -67,6 +67,17 @@
+Index: linux-2.6.24.7/arch/mips/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/arch/mips/Kconfig
++++ linux-2.6.24.7/arch/mips/Kconfig
+@@ -67,6 +67,17 @@ config BCM47XX
  	help
  	 Support for BCM47XX based boards
  
@@ -19,10 +20,11 @@ diff -urN linux-2.6.24/arch/mips/Kconfig linux-2.6.24.new/arch/mips/Kconfig
  config MIPS_COBALT
  	bool "Cobalt Server"
  	select CEVT_R4K
-diff -urN linux-2.6.24/arch/mips/kernel/cpu-probe.c linux-2.6.24.new/arch/mips/kernel/cpu-probe.c
---- linux-2.6.24/arch/mips/kernel/cpu-probe.c	2008-01-24 23:58:37.000000000 +0100
-+++ linux-2.6.24.new/arch/mips/kernel/cpu-probe.c	2008-02-13 16:23:21.000000000 +0100
-@@ -796,6 +796,18 @@
+Index: linux-2.6.24.7/arch/mips/kernel/cpu-probe.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/mips/kernel/cpu-probe.c
++++ linux-2.6.24.7/arch/mips/kernel/cpu-probe.c
+@@ -796,6 +796,18 @@ static inline void cpu_probe_broadcom(st
  	case PRID_IMP_BCM4710:
  		c->cputype = CPU_BCM4710;
  		break;
@@ -41,7 +43,7 @@ diff -urN linux-2.6.24/arch/mips/kernel/cpu-probe.c linux-2.6.24.new/arch/mips/k
  	default:
  		c->cputype = CPU_UNKNOWN;
  		break;
-@@ -878,6 +890,10 @@
+@@ -878,6 +890,10 @@ static __init const char *cpu_to_name(st
  	case CPU_SR71000:	name = "Sandcraft SR71000"; break;
  	case CPU_BCM3302:	name = "Broadcom BCM3302"; break;
  	case CPU_BCM4710:	name = "Broadcom BCM4710"; break;
@@ -52,10 +54,11 @@ diff -urN linux-2.6.24/arch/mips/kernel/cpu-probe.c linux-2.6.24.new/arch/mips/k
  	case CPU_PR4450:	name = "Philips PR4450"; break;
  	case CPU_LOONGSON2:	name = "ICT Loongson-2"; break;
  	default:
-diff -urN linux-2.6.24/arch/mips/Makefile linux-2.6.24.new/arch/mips/Makefile
---- linux-2.6.24/arch/mips/Makefile	2008-01-24 23:58:37.000000000 +0100
-+++ linux-2.6.24.new/arch/mips/Makefile	2008-02-13 16:21:21.000000000 +0100
-@@ -543,6 +543,10 @@
+Index: linux-2.6.24.7/arch/mips/Makefile
+===================================================================
+--- linux-2.6.24.7.orig/arch/mips/Makefile
++++ linux-2.6.24.7/arch/mips/Makefile
+@@ -543,6 +543,10 @@ core-$(CONFIG_BCM47XX)		+= arch/mips/bcm
  cflags-$(CONFIG_BCM47XX)	+= -Iinclude/asm-mips/mach-bcm47xx
  load-$(CONFIG_BCM47XX)		:= 0xffffffff80001000
  
@@ -66,10 +69,11 @@ diff -urN linux-2.6.24/arch/mips/Makefile linux-2.6.24.new/arch/mips/Makefile
  #
  # SNI RM
  #
-diff -urN linux-2.6.24/arch/mips/mm/c-r4k.c linux-2.6.24.new/arch/mips/mm/c-r4k.c
---- linux-2.6.24/arch/mips/mm/c-r4k.c	2008-01-24 23:58:37.000000000 +0100
-+++ linux-2.6.24.new/arch/mips/mm/c-r4k.c	2008-02-13 16:24:29.000000000 +0100
-@@ -878,6 +878,13 @@
+Index: linux-2.6.24.7/arch/mips/mm/c-r4k.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/mips/mm/c-r4k.c
++++ linux-2.6.24.7/arch/mips/mm/c-r4k.c
+@@ -878,6 +878,13 @@ static void __init probe_pcache(void)
  		if (!(config & MIPS_CONF_M))
  			panic("Don't know how to probe P-caches on this cpu.");
  
@@ -83,10 +87,11 @@ diff -urN linux-2.6.24/arch/mips/mm/c-r4k.c linux-2.6.24.new/arch/mips/mm/c-r4k.
  		/*
  		 * So we seem to be a MIPS32 or MIPS64 CPU
  		 * So let's probe the I-cache ...
-diff -urN linux-2.6.24/arch/mips/mm/tlbex.c linux-2.6.24.new/arch/mips/mm/tlbex.c
---- linux-2.6.24/arch/mips/mm/tlbex.c	2008-01-24 23:58:37.000000000 +0100
-+++ linux-2.6.24.new/arch/mips/mm/tlbex.c	2008-02-13 16:25:08.000000000 +0100
-@@ -910,6 +910,10 @@
+Index: linux-2.6.24.7/arch/mips/mm/tlbex.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/mips/mm/tlbex.c
++++ linux-2.6.24.7/arch/mips/mm/tlbex.c
+@@ -909,6 +909,10 @@ static __init void build_tlb_write_entry
  	case CPU_25KF:
  	case CPU_BCM3302:
  	case CPU_BCM4710:
@@ -97,17 +102,19 @@ diff -urN linux-2.6.24/arch/mips/mm/tlbex.c linux-2.6.24.new/arch/mips/mm/tlbex.
  	case CPU_LOONGSON2:
  		if (m4kc_tlbp_war())
  			i_nop(p);
-diff -urN linux-2.6.24/arch/mips/pci/Makefile linux-2.6.24.new/arch/mips/pci/Makefile
---- linux-2.6.24/arch/mips/pci/Makefile	2008-01-24 23:58:37.000000000 +0100
-+++ linux-2.6.24.new/arch/mips/pci/Makefile	2008-02-13 16:27:33.000000000 +0100
-@@ -48,3 +48,4 @@
+Index: linux-2.6.24.7/arch/mips/pci/Makefile
+===================================================================
+--- linux-2.6.24.7.orig/arch/mips/pci/Makefile
++++ linux-2.6.24.7/arch/mips/pci/Makefile
+@@ -48,3 +48,4 @@ obj-$(CONFIG_TOSHIBA_RBTX4938)	+= fixup-
  obj-$(CONFIG_VICTOR_MPC30X)	+= fixup-mpc30x.o
  obj-$(CONFIG_ZAO_CAPCELLA)	+= fixup-capcella.o
  obj-$(CONFIG_WR_PPMC)		+= fixup-wrppmc.o
 +obj-$(CONFIG_BCM963XX)		+= fixup-bcm96348.o pci-bcm96348.o ops-bcm96348.o
-diff -urN linux-2.6.24/include/asm-mips/bootinfo.h linux-2.6.24.new/include/asm-mips/bootinfo.h
---- linux-2.6.24/include/asm-mips/bootinfo.h	2008-01-24 23:58:37.000000000 +0100
-+++ linux-2.6.24.new/include/asm-mips/bootinfo.h	2008-02-13 16:26:05.000000000 +0100
+Index: linux-2.6.24.7/include/asm-mips/bootinfo.h
+===================================================================
+--- linux-2.6.24.7.orig/include/asm-mips/bootinfo.h
++++ linux-2.6.24.7/include/asm-mips/bootinfo.h
 @@ -197,6 +197,10 @@
   */
  #define MACH_GROUP_BRCM		23	/* Broadcom			*/
@@ -119,9 +126,10 @@ diff -urN linux-2.6.24/include/asm-mips/bootinfo.h linux-2.6.24.new/include/asm-
  
  #define CL_SIZE			COMMAND_LINE_SIZE
  
-diff -urN linux-2.6.24/include/asm-mips/cpu.h linux-2.6.24.new/include/asm-mips/cpu.h
---- linux-2.6.24/include/asm-mips/cpu.h	2008-01-24 23:58:37.000000000 +0100
-+++ linux-2.6.24.new/include/asm-mips/cpu.h	2008-02-13 16:27:13.000000000 +0100
+Index: linux-2.6.24.7/include/asm-mips/cpu.h
+===================================================================
+--- linux-2.6.24.7.orig/include/asm-mips/cpu.h
++++ linux-2.6.24.7/include/asm-mips/cpu.h
 @@ -111,6 +111,10 @@
  
  #define PRID_IMP_BCM4710	0x4000
@@ -133,7 +141,7 @@ diff -urN linux-2.6.24/include/asm-mips/cpu.h linux-2.6.24.new/include/asm-mips/
  
  /*
   * Definitions for 7:0 on legacy processors
-@@ -196,7 +200,8 @@
+@@ -196,7 +200,8 @@ enum cpu_type_enum {
  	 */
  	CPU_4KC, CPU_4KEC, CPU_4KSC, CPU_24K, CPU_34K, CPU_74K, CPU_AU1000,
  	CPU_AU1100, CPU_AU1200, CPU_AU1500, CPU_AU1550, CPU_PR4450,

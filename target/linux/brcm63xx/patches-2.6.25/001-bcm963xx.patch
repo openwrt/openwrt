@@ -16,10 +16,10 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  include/asm-mips/cpu.h       |    7 ++++++-
  8 files changed, 61 insertions(+), 1 deletions(-)
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index 8724ed3..1b1c4bf 100644
---- a/arch/mips/Kconfig
-+++ b/arch/mips/Kconfig
+Index: linux-2.6.25.4/arch/mips/Kconfig
+===================================================================
+--- linux-2.6.25.4.orig/arch/mips/Kconfig
++++ linux-2.6.25.4/arch/mips/Kconfig
 @@ -59,6 +59,17 @@ config BCM47XX
  	help
  	 Support for BCM47XX based boards
@@ -38,11 +38,11 @@ index 8724ed3..1b1c4bf 100644
  config MIPS_COBALT
  	bool "Cobalt Server"
  	select CEVT_R4K
-diff --git a/arch/mips/Makefile b/arch/mips/Makefile
-index 1c62381..16a29e1 100644
---- a/arch/mips/Makefile
-+++ b/arch/mips/Makefile
-@@ -560,6 +560,10 @@ core-$(CONFIG_BCM47XX)		+= arch/mips/bcm47xx/
+Index: linux-2.6.25.4/arch/mips/Makefile
+===================================================================
+--- linux-2.6.25.4.orig/arch/mips/Makefile
++++ linux-2.6.25.4/arch/mips/Makefile
+@@ -560,6 +560,10 @@ core-$(CONFIG_BCM47XX)		+= arch/mips/bcm
  cflags-$(CONFIG_BCM47XX)	+= -Iinclude/asm-mips/mach-bcm47xx
  load-$(CONFIG_BCM47XX)		:= 0xffffffff80001000
  
@@ -53,11 +53,11 @@ index 1c62381..16a29e1 100644
  #
  # SNI RM
  #
-diff --git a/arch/mips/kernel/cpu-probe.c b/arch/mips/kernel/cpu-probe.c
-index 89c3304..6706a07 100644
---- a/arch/mips/kernel/cpu-probe.c
-+++ b/arch/mips/kernel/cpu-probe.c
-@@ -803,6 +803,18 @@ static inline void cpu_probe_broadcom(struct cpuinfo_mips *c)
+Index: linux-2.6.25.4/arch/mips/kernel/cpu-probe.c
+===================================================================
+--- linux-2.6.25.4.orig/arch/mips/kernel/cpu-probe.c
++++ linux-2.6.25.4/arch/mips/kernel/cpu-probe.c
+@@ -803,6 +803,18 @@ static inline void cpu_probe_broadcom(st
  	case PRID_IMP_BCM4710:
  		c->cputype = CPU_BCM4710;
  		break;
@@ -76,7 +76,7 @@ index 89c3304..6706a07 100644
  	default:
  		c->cputype = CPU_UNKNOWN;
  		break;
-@@ -887,6 +899,10 @@ static __cpuinit const char *cpu_to_name(struct cpuinfo_mips *c)
+@@ -887,6 +899,10 @@ static __cpuinit const char *cpu_to_name
  	case CPU_SR71000:	name = "Sandcraft SR71000"; break;
  	case CPU_BCM3302:	name = "Broadcom BCM3302"; break;
  	case CPU_BCM4710:	name = "Broadcom BCM4710"; break;
@@ -87,10 +87,10 @@ index 89c3304..6706a07 100644
  	case CPU_PR4450:	name = "Philips PR4450"; break;
  	case CPU_LOONGSON2:	name = "ICT Loongson-2"; break;
  	default:
-diff --git a/arch/mips/mm/c-r4k.c b/arch/mips/mm/c-r4k.c
-index 77aefb4..23a67cb 100644
---- a/arch/mips/mm/c-r4k.c
-+++ b/arch/mips/mm/c-r4k.c
+Index: linux-2.6.25.4/arch/mips/mm/c-r4k.c
+===================================================================
+--- linux-2.6.25.4.orig/arch/mips/mm/c-r4k.c
++++ linux-2.6.25.4/arch/mips/mm/c-r4k.c
 @@ -882,6 +882,13 @@ static void __cpuinit probe_pcache(void)
  		if (!(config & MIPS_CONF_M))
  			panic("Don't know how to probe P-caches on this cpu.");
@@ -105,11 +105,11 @@ index 77aefb4..23a67cb 100644
  		/*
  		 * So we seem to be a MIPS32 or MIPS64 CPU
  		 * So let's probe the I-cache ...
-diff --git a/arch/mips/mm/tlbex.c b/arch/mips/mm/tlbex.c
-index 382738c..b3b6120 100644
---- a/arch/mips/mm/tlbex.c
-+++ b/arch/mips/mm/tlbex.c
-@@ -315,6 +315,10 @@ static void __cpuinit build_tlb_write_entry(u32 **p, struct uasm_label **l,
+Index: linux-2.6.25.4/arch/mips/mm/tlbex.c
+===================================================================
+--- linux-2.6.25.4.orig/arch/mips/mm/tlbex.c
++++ linux-2.6.25.4/arch/mips/mm/tlbex.c
+@@ -315,6 +315,10 @@ static void __cpuinit build_tlb_write_en
  	case CPU_25KF:
  	case CPU_BCM3302:
  	case CPU_BCM4710:
@@ -120,19 +120,19 @@ index 382738c..b3b6120 100644
  	case CPU_LOONGSON2:
  		if (m4kc_tlbp_war())
  			uasm_i_nop(p);
-diff --git a/arch/mips/pci/Makefile b/arch/mips/pci/Makefile
-index ed0c076..57a1111 100644
---- a/arch/mips/pci/Makefile
-+++ b/arch/mips/pci/Makefile
-@@ -48,3 +48,4 @@ obj-$(CONFIG_TOSHIBA_RBTX4938)	+= fixup-tx4938.o ops-tx4938.o
+Index: linux-2.6.25.4/arch/mips/pci/Makefile
+===================================================================
+--- linux-2.6.25.4.orig/arch/mips/pci/Makefile
++++ linux-2.6.25.4/arch/mips/pci/Makefile
+@@ -48,3 +48,4 @@ obj-$(CONFIG_TOSHIBA_RBTX4938)	+= fixup-
  obj-$(CONFIG_VICTOR_MPC30X)	+= fixup-mpc30x.o
  obj-$(CONFIG_ZAO_CAPCELLA)	+= fixup-capcella.o
  obj-$(CONFIG_WR_PPMC)		+= fixup-wrppmc.o
 +obj-$(CONFIG_BCM963XX)		+= fixup-bcm96348.o pci-bcm96348.o ops-bcm96348.o
-diff --git a/include/asm-mips/bootinfo.h b/include/asm-mips/bootinfo.h
-index e031bdf..17b2a37 100644
---- a/include/asm-mips/bootinfo.h
-+++ b/include/asm-mips/bootinfo.h
+Index: linux-2.6.25.4/include/asm-mips/bootinfo.h
+===================================================================
+--- linux-2.6.25.4.orig/include/asm-mips/bootinfo.h
++++ linux-2.6.25.4/include/asm-mips/bootinfo.h
 @@ -94,6 +94,18 @@
  #define MACH_MSP7120_FPGA       5	/* PMC-Sierra MSP7120 Emulation */
  #define MACH_MSP_OTHER        255	/* PMC-Sierra unknown board type */
@@ -152,10 +152,10 @@ index e031bdf..17b2a37 100644
  #define CL_SIZE			COMMAND_LINE_SIZE
  
  extern char *system_type;
-diff --git a/include/asm-mips/cpu.h b/include/asm-mips/cpu.h
-index bf5bbc7..e19389a 100644
---- a/include/asm-mips/cpu.h
-+++ b/include/asm-mips/cpu.h
+Index: linux-2.6.25.4/include/asm-mips/cpu.h
+===================================================================
+--- linux-2.6.25.4.orig/include/asm-mips/cpu.h
++++ linux-2.6.25.4/include/asm-mips/cpu.h
 @@ -111,6 +111,10 @@
  
  #define PRID_IMP_BCM4710	0x4000
@@ -177,6 +177,3 @@ index bf5bbc7..e19389a 100644
  
  	/*
  	 * MIPS64 class processors
--- 
-1.5.5.1
-

@@ -12,10 +12,10 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  arch/mips/bcm963xx/time.c |   64 ++++++++++++++++++++------------------------
  2 files changed, 31 insertions(+), 35 deletions(-)
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index 1b1c4bf..3f8be3f 100644
---- a/arch/mips/Kconfig
-+++ b/arch/mips/Kconfig
+Index: linux-2.6.25.4/arch/mips/Kconfig
+===================================================================
+--- linux-2.6.25.4.orig/arch/mips/Kconfig
++++ linux-2.6.25.4/arch/mips/Kconfig
 @@ -67,6 +67,8 @@ config BCM963XX
         select HW_HAS_PCI
         select DMA_NONCOHERENT
@@ -25,10 +25,10 @@ index 1b1c4bf..3f8be3f 100644
         help
           This is a fmaily of boards based on the Broadcom MIPS32
  
-diff --git a/arch/mips/bcm963xx/time.c b/arch/mips/bcm963xx/time.c
-index 8a5007e..9fae8fd 100644
---- a/arch/mips/bcm963xx/time.c
-+++ b/arch/mips/bcm963xx/time.c
+Index: linux-2.6.25.4/arch/mips/bcm963xx/time.c
+===================================================================
+--- linux-2.6.25.4.orig/arch/mips/bcm963xx/time.c
++++ linux-2.6.25.4/arch/mips/bcm963xx/time.c
 @@ -1,6 +1,7 @@
  /*
  <:copyright-gpl
@@ -97,12 +97,13 @@ index 8a5007e..9fae8fd 100644
 +
 +	printk("CPU frequency %lu.%02lu MHz\n", cpu_clock / 1000000,
 +		(cpu_clock % 1000000) * 100 / 1000000);
++
++	mips_hpt_frequency = cpu_clock / 2;
  
 -	printk("calculating r4koff... ");
 -	r4k_offset = cal_r4koff();
 -	printk("%08lx(%d)\n", r4k_offset, (int)r4k_offset);
-+	mips_hpt_frequency = cpu_clock / 2;
- 
+-
 -	est_freq = 2 * r4k_offset * HZ;
 -	est_freq += 5000;   /* round */
 -	est_freq -= est_freq % 10000;
@@ -116,6 +117,3 @@ index 8a5007e..9fae8fd 100644
 +	write_c0_count(0);
 +	write_c0_compare(0xffff);
  }
--- 
-1.5.5.1
-
