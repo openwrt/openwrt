@@ -16,7 +16,7 @@ do_mount() {
 	mkdir -p $target
 	config_get_bool enabled "$cfg" "enabled" '1'
 	[ "$enabled" -gt 0 ] && {
-	  /bin/mount -t $fstype -o $options $device $target 
+		mount -t $fstype -o $options $device $target
 	}
 }
 
@@ -25,8 +25,8 @@ do_swapon() {
 	config_get device "$cfg" device
 	[ -n "device" ] || return 0
 	config_get_bool enabled "$cfg" "enabled" '1'
-	[ "$enabled" -gt 0 ] && [ -x /usr/sbin/swapon ] && {
-	  /usr/sbin/swapon $device
+	[ "$enabled" -gt 0 ] && type swapon >/dev/null && {
+		swapon $device
 	}
 }
 
@@ -36,7 +36,7 @@ do_unmount() {
 	[ -n "target" ] || return 0
 	config_get_bool enabled "$cfg" "enabled" '1'
 	[ "$enabled" -gt 0 ] && {
-	  /bin/umount $target 
+		umount $target
 	}
 }
 	
@@ -45,8 +45,8 @@ do_swapoff() {
 	config_get device "$cfg" device
 	[ -n "device" ] || return 0
 	config_get_bool enabled "$cfg" "enabled" '1'
-	[ "$enabled" -gt 0 ] && [ -x /usr/sbin/swapoff ] && {
-	  /usr/sbin/swapoff $device
+	[ "$enabled" -gt 0 ] && type swapoff >/dev/null && {
+		swapoff $device
 	}
 }
 

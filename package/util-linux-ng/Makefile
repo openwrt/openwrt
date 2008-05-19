@@ -72,7 +72,7 @@ $(call Package/util-linux/Default)
 endef
 
 define Package/swap-utils/description
- This package contains a collection of tools for managing swap space: 
+ This package contains a collection of tools for managing swap space:
  - mkswap
  - swapon
  - swapoff
@@ -95,35 +95,34 @@ define Build/Compile
 endef
 
 define Package/fdisk/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fdisk/fdisk $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fdisk/fdisk $(1)/sbin/
 endef
 
 define Package/cfdisk/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fdisk/cfdisk $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fdisk/cfdisk $(1)/sbin/
 endef
 
 define Package/losetup/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mount/losetup $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mount/losetup $(1)/sbin/
 endef
 
 define Package/mount-utils/install
-	$(INSTALL_DIR) $(1)/usr/sbin/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mount/{u,}mount $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mount/{u,}mount $(1)/bin
 endef
 
 define Package/swap-utils/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/disk-utils/mkswap $(1)/usr/sbin/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mount/swapon $(1)/usr/sbin/
-	ln -sf swapon $(1)/usr/sbin/swapoff
+	$(INSTALL_DIR) $(1)/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/disk-utils/mkswap $(PKG_BUILD_DIR)/mount/swapon $(1)/sbin/
+	ln -sf swapon $(1)/sbin/swapoff
 endef
 
 define Package/hwclock/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hwclock/hwclock $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hwclock/hwclock $(1)/sbin/
 endef
 
 $(eval $(call BuildPackage,fdisk))
