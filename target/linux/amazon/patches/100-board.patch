@@ -1,7 +1,8 @@
-diff -urN linux.old/arch/mips/Kconfig linux.dev/arch/mips/Kconfig
---- linux.old/arch/mips/Kconfig	2007-02-02 23:55:52.912446784 +0100
-+++ linux.dev/arch/mips/Kconfig	2007-02-03 21:50:25.262027104 +0100
-@@ -145,6 +145,17 @@
+Index: linux-2.6.21.7/arch/mips/Kconfig
+===================================================================
+--- linux-2.6.21.7.orig/arch/mips/Kconfig
++++ linux-2.6.21.7/arch/mips/Kconfig
+@@ -159,6 +159,17 @@ config BASLER_EXCITE_PROTOTYPE
  	  note that a kernel built with this option selected will not be
  	  able to run on normal units.
  
@@ -19,7 +20,7 @@ diff -urN linux.old/arch/mips/Kconfig linux.dev/arch/mips/Kconfig
  config MIPS_COBALT
  	bool "Cobalt Server"
  	select DMA_NONCOHERENT
-@@ -766,6 +776,7 @@
+@@ -823,6 +834,7 @@ config TOSHIBA_RBTX4938
  
  endchoice
  
@@ -27,10 +28,11 @@ diff -urN linux.old/arch/mips/Kconfig linux.dev/arch/mips/Kconfig
  source "arch/mips/ddb5xxx/Kconfig"
  source "arch/mips/gt64120/ev64120/Kconfig"
  source "arch/mips/jazz/Kconfig"
-diff -urN linux.old/arch/mips/Makefile linux.dev/arch/mips/Makefile
---- linux.old/arch/mips/Makefile	2007-02-02 23:55:52.913446632 +0100
-+++ linux.dev/arch/mips/Makefile	2007-02-03 17:40:29.193776000 +0100
-@@ -267,6 +267,13 @@
+Index: linux-2.6.21.7/arch/mips/Makefile
+===================================================================
+--- linux-2.6.21.7.orig/arch/mips/Makefile
++++ linux-2.6.21.7/arch/mips/Makefile
+@@ -267,6 +267,13 @@ libs-$(CONFIG_MIPS_XXS1500)	+= arch/mips
  load-$(CONFIG_MIPS_XXS1500)	+= 0xffffffff80100000
  
  #
@@ -44,10 +46,11 @@ diff -urN linux.old/arch/mips/Makefile linux.dev/arch/mips/Makefile
  # Cobalt Server
  #
  core-$(CONFIG_MIPS_COBALT)	+= arch/mips/cobalt/
-diff -urN linux.old/include/asm-mips/bootinfo.h linux.dev/include/asm-mips/bootinfo.h
---- linux.old/include/asm-mips/bootinfo.h	2007-02-02 23:55:52.913446632 +0100
-+++ linux.dev/include/asm-mips/bootinfo.h	2007-02-03 17:51:02.531494032 +0100
-@@ -212,6 +212,12 @@
+Index: linux-2.6.21.7/include/asm-mips/bootinfo.h
+===================================================================
+--- linux-2.6.21.7.orig/include/asm-mips/bootinfo.h
++++ linux-2.6.21.7/include/asm-mips/bootinfo.h
+@@ -213,6 +213,12 @@
  #define MACH_GROUP_NEC_EMMA2RH 25	/* NEC EMMA2RH (was 23)		*/
  #define  MACH_NEC_MARKEINS	0	/* NEC EMMA2RH Mark-eins	*/
  
@@ -60,4 +63,3 @@ diff -urN linux.old/include/asm-mips/bootinfo.h linux.dev/include/asm-mips/booti
  #define CL_SIZE			COMMAND_LINE_SIZE
  
  const char *get_system_type(void);
-

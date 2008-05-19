@@ -1,6 +1,8 @@
---- linux-2.6.21.5/drivers/mtd/chips/cfi_cmdset_0002.c	2007-07-23 23:15:50.403369508 +0200
-+++ linux-2.6.21.5.orig/drivers/mtd/chips/cfi_cmdset_0002.c	2007-07-23 23:26:43.028560499 +0200
-@@ -1007,7 +1007,9 @@
+Index: linux-2.6.21.7/drivers/mtd/chips/cfi_cmdset_0002.c
+===================================================================
+--- linux-2.6.21.7.orig/drivers/mtd/chips/cfi_cmdset_0002.c
++++ linux-2.6.21.7/drivers/mtd/chips/cfi_cmdset_0002.c
+@@ -1007,7 +1007,9 @@ static int __xipram do_write_oneword(str
  	int ret = 0;
  	map_word oldd;
  	int retry_cnt = 0;
@@ -11,4 +13,3 @@
  	adr += chip->start;
  
  	spin_lock(chip->mutex);
-
