@@ -1,17 +1,19 @@
-diff -urN linux-2.6.23.1.orig/drivers/Kconfig linux-2.6.23.1/drivers/Kconfig
---- linux-2.6.23.1.orig/drivers/Kconfig	2008-01-29 00:49:27.000000000 +0100
-+++ linux-2.6.23.1/drivers/Kconfig	2008-01-29 00:50:39.000000000 +0100
-@@ -91,4 +91,6 @@
+Index: linux-2.6.23.17/drivers/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/drivers/Kconfig
++++ linux-2.6.23.17/drivers/Kconfig
+@@ -93,4 +93,6 @@ source "drivers/kvm/Kconfig"
  source "drivers/uio/Kconfig"
  
  source "drivers/lguest/Kconfig"
 +
 +source "drivers/vlynq/Kconfig"
  endmenu
-diff -urN linux-2.6.23.1.orig/drivers/Makefile linux-2.6.23.1/drivers/Makefile
---- linux-2.6.23.1.orig/drivers/Makefile	2008-01-29 00:49:27.000000000 +0100
-+++ linux-2.6.23.1/drivers/Makefile	2008-01-29 00:51:20.000000000 +0100
-@@ -88,4 +88,5 @@
+Index: linux-2.6.23.17/drivers/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/drivers/Makefile
++++ linux-2.6.23.17/drivers/Makefile
+@@ -89,4 +89,5 @@ obj-$(CONFIG_DMA_ENGINE)	+= dma/
  obj-$(CONFIG_HID)		+= hid/
  obj-$(CONFIG_PPC_PS3)		+= ps3/
  obj-$(CONFIG_OF)		+= of/

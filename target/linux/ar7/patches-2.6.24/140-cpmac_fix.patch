@@ -1,5 +1,7 @@
---- linux-2.6.24/drivers/net/cpmac.c	2008-01-25 02:20:37.000000000 +0100
-+++ linux-2.6.24/drivers/net/cpmac.c	2008-04-06 21:30:03.000000000 +0200
+Index: linux-2.6.24.7/drivers/net/cpmac.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/net/cpmac.c
++++ linux-2.6.24.7/drivers/net/cpmac.c
 @@ -38,6 +38,7 @@
  #include <linux/platform_device.h>
  #include <linux/dma-mapping.h>
@@ -8,7 +10,7 @@
  
  MODULE_AUTHOR("Eugene Konev <ejka@imfi.kspu.ru>");
  MODULE_DESCRIPTION("TI AR7 ethernet driver (CPMAC)");
-@@ -207,6 +208,7 @@
+@@ -207,6 +208,7 @@ struct cpmac_priv {
  	struct work_struct reset_work;
  	struct platform_device *pdev;
  	struct napi_struct napi;
@@ -16,7 +18,7 @@
  };
  
  static irqreturn_t cpmac_irq(int, void *);
-@@ -455,6 +457,9 @@
+@@ -455,6 +457,9 @@ static int cpmac_start_xmit(struct sk_bu
  	struct cpmac_desc *desc;
  	struct cpmac_priv *priv = netdev_priv(dev);
  
@@ -26,7 +28,7 @@
  	if (unlikely(skb_padto(skb, ETH_ZLEN)))
  		return NETDEV_TX_OK;
  
-@@ -634,14 +639,14 @@
+@@ -634,14 +639,14 @@ static void cpmac_clear_tx(struct net_de
  		priv->desc_ring[i].dataflags = 0;
  		if (priv->desc_ring[i].skb) {
  			dev_kfree_skb_any(priv->desc_ring[i].skb);
@@ -43,7 +45,7 @@
  	struct cpmac_priv *priv =
  		container_of(work, struct cpmac_priv, reset_work);
  
-@@ -650,8 +655,47 @@
+@@ -650,8 +655,47 @@ static void cpmac_hw_error(struct work_s
  	spin_unlock(&priv->rx_lock);
  	cpmac_clear_tx(priv->dev);
  	cpmac_hw_start(priv->dev);
@@ -93,7 +95,7 @@
  }
  
  static irqreturn_t cpmac_irq(int irq, void *dev_id)
-@@ -661,9 +705,6 @@
+@@ -661,9 +705,6 @@ static irqreturn_t cpmac_irq(int irq, vo
  	int queue;
  	u32 status;
  
@@ -103,7 +105,7 @@
  	priv = netdev_priv(dev);
  
  	status = cpmac_read(priv->regs, CPMAC_MAC_INT_VECTOR);
-@@ -685,49 +726,33 @@
+@@ -685,49 +726,33 @@ static irqreturn_t cpmac_irq(int irq, vo
  
  	cpmac_write(priv->regs, CPMAC_MAC_EOI_VECTOR, 0);
  
@@ -167,7 +169,7 @@
  }
  
  static int cpmac_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
-@@ -848,15 +873,6 @@
+@@ -848,15 +873,6 @@ static void cpmac_adjust_link(struct net
  	spin_unlock(&priv->lock);
  }
  
@@ -183,7 +185,7 @@
  static int cpmac_open(struct net_device *dev)
  {
  	int i, size, res;
-@@ -923,6 +939,7 @@
+@@ -923,6 +939,7 @@ static int cpmac_open(struct net_device 
  		goto fail_irq;
  	}
  
@@ -191,7 +193,7 @@
  	INIT_WORK(&priv->reset_work, cpmac_hw_error);
  	cpmac_hw_start(dev);
  
-@@ -999,11 +1016,11 @@
+@@ -999,11 +1016,11 @@ static int external_switch;
  static int __devinit cpmac_probe(struct platform_device *pdev)
  {
  	int rc, phy_id, i;
@@ -204,7 +206,7 @@
  	DECLARE_MAC_BUF(mac);
  
  	pdata = pdev->dev.platform_data;
-@@ -1017,9 +1034,23 @@
+@@ -1017,9 +1034,23 @@ static int __devinit cpmac_probe(struct 
  	}
  
  	if (phy_id == PHY_MAX_ADDR) {
@@ -230,7 +232,7 @@
  			printk(KERN_ERR "cpmac: no PHY present\n");
  			return -ENODEV;
  		}
-@@ -1063,32 +1094,8 @@
+@@ -1063,32 +1094,8 @@ static int __devinit cpmac_probe(struct 
  	priv->msg_enable = netif_msg_init(debug_level, 0xff);
  	memcpy(dev->dev_addr, pdata->dev_addr, sizeof(dev->dev_addr));
  

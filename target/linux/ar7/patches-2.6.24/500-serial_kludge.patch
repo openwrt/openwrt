@@ -1,8 +1,8 @@
-Index: linux-2.6.24/drivers/serial/8250.c
+Index: linux-2.6.24.7/drivers/serial/8250.c
 ===================================================================
---- linux-2.6.24/drivers/serial/8250.c	2007-09-21 16:23:51.000000000 +0800
-+++ linux-2.6.24/drivers/serial/8250.c	2007-09-21 16:24:14.000000000 +0800
-@@ -267,6 +267,13 @@
+--- linux-2.6.24.7.orig/drivers/serial/8250.c
++++ linux-2.6.24.7/drivers/serial/8250.c
+@@ -267,6 +267,13 @@ static const struct serial8250_config ua
  		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
  		.flags		= UART_CAP_FIFO,
  	},
@@ -16,7 +16,7 @@ Index: linux-2.6.24/drivers/serial/8250.c
  };
  
  #if defined (CONFIG_SERIAL_8250_AU1X00)
-@@ -2453,7 +2460,11 @@
+@@ -2453,7 +2460,11 @@ static void serial8250_console_putchar(s
  {
  	struct uart_8250_port *up = (struct uart_8250_port *)port;
  
@@ -28,10 +28,10 @@ Index: linux-2.6.24/drivers/serial/8250.c
  	serial_out(up, UART_TX, ch);
  }
  
-Index: linux-2.6.24/include/linux/serial_core.h
+Index: linux-2.6.24.7/include/linux/serial_core.h
 ===================================================================
---- linux-2.6.24/include/linux/serial_core.h	2007-09-21 16:23:51.000000000 +0800
-+++ linux-2.6.24/include/linux/serial_core.h	2007-09-21 16:24:14.000000000 +0800
+--- linux-2.6.24.7.orig/include/linux/serial_core.h
++++ linux-2.6.24.7/include/linux/serial_core.h
 @@ -40,7 +40,8 @@
  #define PORT_NS16550A	14
  #define PORT_XSCALE	15
