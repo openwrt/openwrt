@@ -1,7 +1,7 @@
-Index: linux-2.6.25/drivers/usb/host/adm5120.h
+Index: linux-2.6.25.4/drivers/usb/host/adm5120.h
 ===================================================================
---- linux-2.6.25.orig/drivers/usb/host/adm5120.h
-+++ linux-2.6.25/drivers/usb/host/adm5120.h
+--- linux-2.6.25.4.orig/drivers/usb/host/adm5120.h
++++ linux-2.6.25.4/drivers/usb/host/adm5120.h
 @@ -431,6 +431,13 @@ struct admhcd {
  #define	OHCI_QUIRK_BE_MMIO	0x10			/* BE registers */
  #define	OHCI_QUIRK_ZFMICRO	0x20			/* Compaq ZFMicro chipset*/
@@ -16,10 +16,10 @@ Index: linux-2.6.25/drivers/usb/host/adm5120.h
  };
  
  /* convert between an hcd pointer and the corresponding ahcd_hcd */
-Index: linux-2.6.25/drivers/usb/host/adm5120-hcd.c
+Index: linux-2.6.25.4/drivers/usb/host/adm5120-hcd.c
 ===================================================================
---- linux-2.6.25.orig/drivers/usb/host/adm5120-hcd.c
-+++ linux-2.6.25/drivers/usb/host/adm5120-hcd.c
+--- linux-2.6.25.4.orig/drivers/usb/host/adm5120-hcd.c
++++ linux-2.6.25.4/drivers/usb/host/adm5120-hcd.c
 @@ -35,6 +35,7 @@
  #include <linux/dma-mapping.h>
  #include <linux/dmapool.h>
@@ -66,10 +66,10 @@ Index: linux-2.6.25/drivers/usb/host/adm5120-hcd.c
  }
  module_exit(admhc_hcd_mod_exit);
  
-Index: linux-2.6.25/drivers/usb/host/adm5120-dbg.c
+Index: linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
 ===================================================================
---- linux-2.6.25.orig/drivers/usb/host/adm5120-dbg.c
-+++ linux-2.6.25/drivers/usb/host/adm5120-dbg.c
+--- linux-2.6.25.4.orig/drivers/usb/host/adm5120-dbg.c
++++ linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
 @@ -390,6 +390,42 @@ static inline void remove_debug_files(st
  
  #else

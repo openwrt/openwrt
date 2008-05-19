@@ -1,7 +1,7 @@
-Index: linux-2.6.24.2/arch/mips/Kconfig
+Index: linux-2.6.24.7/arch/mips/Kconfig
 ===================================================================
---- linux-2.6.24.2.orig/arch/mips/Kconfig
-+++ linux-2.6.24.2/arch/mips/Kconfig
+--- linux-2.6.24.7.orig/arch/mips/Kconfig
++++ linux-2.6.24.7/arch/mips/Kconfig
 @@ -16,6 +16,20 @@ choice
  	prompt "System type"
  	default SGI_IP22
@@ -31,10 +31,10 @@ Index: linux-2.6.24.2/arch/mips/Kconfig
  source "arch/mips/au1000/Kconfig"
  source "arch/mips/jazz/Kconfig"
  source "arch/mips/lasat/Kconfig"
-Index: linux-2.6.24.2/arch/mips/Makefile
+Index: linux-2.6.24.7/arch/mips/Makefile
 ===================================================================
---- linux-2.6.24.2.orig/arch/mips/Makefile
-+++ linux-2.6.24.2/arch/mips/Makefile
+--- linux-2.6.24.7.orig/arch/mips/Makefile
++++ linux-2.6.24.7/arch/mips/Makefile
 @@ -166,6 +166,16 @@ cflags-$(CONFIG_MACH_JAZZ)	+= -Iinclude/
  load-$(CONFIG_MACH_JAZZ)	+= 0xffffffff80080000
  
@@ -52,10 +52,10 @@ Index: linux-2.6.24.2/arch/mips/Makefile
  # Common Alchemy Au1x00 stuff
  #
  core-$(CONFIG_SOC_AU1X00)	+= arch/mips/au1000/common/
-Index: linux-2.6.24.2/include/asm-mips/bootinfo.h
+Index: linux-2.6.24.7/include/asm-mips/bootinfo.h
 ===================================================================
---- linux-2.6.24.2.orig/include/asm-mips/bootinfo.h
-+++ linux-2.6.24.2/include/asm-mips/bootinfo.h
+--- linux-2.6.24.7.orig/include/asm-mips/bootinfo.h
++++ linux-2.6.24.7/include/asm-mips/bootinfo.h
 @@ -198,6 +198,58 @@
  #define MACH_GROUP_BRCM		23	/* Broadcom			*/
  #define  MACH_BCM47XX		1	/* Broadcom BCM47XX		*/

@@ -1,7 +1,7 @@
-Index: linux-2.6.25/drivers/mtd/Kconfig
+Index: linux-2.6.25.4/drivers/mtd/Kconfig
 ===================================================================
---- linux-2.6.25.orig/drivers/mtd/Kconfig
-+++ linux-2.6.25/drivers/mtd/Kconfig
+--- linux-2.6.25.4.orig/drivers/mtd/Kconfig
++++ linux-2.6.25.4/drivers/mtd/Kconfig
 @@ -168,6 +168,22 @@ config MTD_OF_PARTS
  	  the partition map from the children of the flash node,
  	  as described in Documentation/powerpc/booting-without-of.txt.
@@ -25,10 +25,10 @@ Index: linux-2.6.25/drivers/mtd/Kconfig
  comment "User Modules And Translation Layers"
  
  config MTD_CHAR
-Index: linux-2.6.25/drivers/mtd/Makefile
+Index: linux-2.6.25.4/drivers/mtd/Makefile
 ===================================================================
---- linux-2.6.25.orig/drivers/mtd/Makefile
-+++ linux-2.6.25/drivers/mtd/Makefile
+--- linux-2.6.25.4.orig/drivers/mtd/Makefile
++++ linux-2.6.25.4/drivers/mtd/Makefile
 @@ -12,6 +12,7 @@ obj-$(CONFIG_MTD_REDBOOT_PARTS) += redbo
  obj-$(CONFIG_MTD_CMDLINE_PARTS) += cmdlinepart.o
  obj-$(CONFIG_MTD_AFS_PARTS)	+= afs.o

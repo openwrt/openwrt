@@ -1,7 +1,7 @@
-Index: linux-2.6.25/drivers/leds/Kconfig
+Index: linux-2.6.25.4/drivers/leds/Kconfig
 ===================================================================
---- linux-2.6.25.orig/drivers/leds/Kconfig
-+++ linux-2.6.25/drivers/leds/Kconfig
+--- linux-2.6.25.4.orig/drivers/leds/Kconfig
++++ linux-2.6.25.4/drivers/leds/Kconfig
 @@ -213,4 +213,12 @@ config LEDS_TRIGGER_DEFAULT_ON
  	  This allows LEDs to be initialised in the ON state.
  	  If unsure, say Y.
@@ -15,10 +15,10 @@ Index: linux-2.6.25/drivers/leds/Kconfig
 +	  If unsure, say N.
 +
  endif # NEW_LEDS
-Index: linux-2.6.25/drivers/leds/Makefile
+Index: linux-2.6.25.4/drivers/leds/Makefile
 ===================================================================
---- linux-2.6.25.orig/drivers/leds/Makefile
-+++ linux-2.6.25/drivers/leds/Makefile
+--- linux-2.6.25.4.orig/drivers/leds/Makefile
++++ linux-2.6.25.4/drivers/leds/Makefile
 @@ -30,3 +30,4 @@ obj-$(CONFIG_LEDS_TRIGGER_IDE_DISK)	+= l
  obj-$(CONFIG_LEDS_TRIGGER_HEARTBEAT)	+= ledtrig-heartbeat.o
  obj-$(CONFIG_LEDS_TRIGGER_MORSE)	+= ledtrig-morse.o
