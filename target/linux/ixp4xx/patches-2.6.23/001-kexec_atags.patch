@@ -1,6 +1,7 @@
-diff -uprN linux-2.6.23.orig/arch/arm/kernel/relocate_kernel.S linux-2.6.23/arch/arm/kernel/relocate_kernel.S
---- linux-2.6.23.orig/arch/arm/kernel/relocate_kernel.S	2007-10-09 15:31:38.000000000 -0500
-+++ linux-2.6.23/arch/arm/kernel/relocate_kernel.S	2007-10-09 22:19:32.000000000 -0500
+Index: linux-2.6.23.17/arch/arm/kernel/relocate_kernel.S
+===================================================================
+--- linux-2.6.23.17.orig/arch/arm/kernel/relocate_kernel.S
++++ linux-2.6.23.17/arch/arm/kernel/relocate_kernel.S
 @@ -7,6 +7,23 @@
  	.globl relocate_new_kernel
  relocate_new_kernel:
@@ -51,9 +52,10 @@ diff -uprN linux-2.6.23.orig/arch/arm/kernel/relocate_kernel.S linux-2.6.23/arch
  relocate_new_kernel_end:
  
  	.globl relocate_new_kernel_size
-diff -uprN linux-2.6.23.orig/arch/arm/kernel/setup.c linux-2.6.23/arch/arm/kernel/setup.c
---- linux-2.6.23.orig/arch/arm/kernel/setup.c	2007-10-09 15:31:38.000000000 -0500
-+++ linux-2.6.23/arch/arm/kernel/setup.c	2007-10-09 20:06:10.000000000 -0500
+Index: linux-2.6.23.17/arch/arm/kernel/setup.c
+===================================================================
+--- linux-2.6.23.17.orig/arch/arm/kernel/setup.c
++++ linux-2.6.23.17/arch/arm/kernel/setup.c
 @@ -24,6 +24,7 @@
  #include <linux/interrupt.h>
  #include <linux/smp.h>
@@ -105,9 +107,10 @@ diff -uprN linux-2.6.23.orig/arch/arm/kernel/setup.c linux-2.6.23/arch/arm/kerne
  	/*
  	 * If we have the old style parameters, convert them to
  	 * a tag list.
-diff -uprN linux-2.6.23.orig/include/asm-arm/kexec.h linux-2.6.23/include/asm-arm/kexec.h
---- linux-2.6.23.orig/include/asm-arm/kexec.h	2007-10-09 15:31:38.000000000 -0500
-+++ linux-2.6.23/include/asm-arm/kexec.h	2007-10-09 22:19:32.000000000 -0500
+Index: linux-2.6.23.17/include/asm-arm/kexec.h
+===================================================================
+--- linux-2.6.23.17.orig/include/asm-arm/kexec.h
++++ linux-2.6.23.17/include/asm-arm/kexec.h
 @@ -14,6 +14,8 @@
  
  #define KEXEC_ARCH KEXEC_ARCH_ARM

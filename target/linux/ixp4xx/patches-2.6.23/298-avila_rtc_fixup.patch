@@ -1,8 +1,9 @@
-diff -uprN linux-2.6.23.orig/arch/arm/mach-ixp4xx/avila-setup.c linux-2.6.23/arch/arm/mach-ixp4xx/avila-setup.c
---- linux-2.6.23.orig/arch/arm/mach-ixp4xx/avila-setup.c	2007-10-09 15:31:38.000000000 -0500
-+++ linux-2.6.23/arch/arm/mach-ixp4xx/avila-setup.c	2007-10-11 01:08:21.000000000 -0500
-@@ -138,6 +138,35 @@ static struct platform_device *avila_dev
- 	&avila_uart
+Index: linux-2.6.23.17/arch/arm/mach-ixp4xx/avila-setup.c
+===================================================================
+--- linux-2.6.23.17.orig/arch/arm/mach-ixp4xx/avila-setup.c
++++ linux-2.6.23.17/arch/arm/mach-ixp4xx/avila-setup.c
+@@ -165,6 +165,35 @@ static struct platform_device *avila_dev
+ 	&avila_eth[1],
  };
  
 +static char avila_rtc_probe[] __initdata = "rtc-ds1672.probe=0,0x68 ";
@@ -37,7 +38,7 @@ diff -uprN linux-2.6.23.orig/arch/arm/mach-ixp4xx/avila-setup.c linux-2.6.23/arc
  static void __init avila_init(void)
  {
  	ixp4xx_sys_init();
-@@ -165,6 +194,7 @@ MACHINE_START(AVILA, "Gateworks Avila Ne
+@@ -192,6 +221,7 @@ MACHINE_START(AVILA, "Gateworks Avila Ne
  	/* Maintainer: Deepak Saxena <dsaxena@plexity.net> */
  	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
  	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
@@ -45,7 +46,7 @@ diff -uprN linux-2.6.23.orig/arch/arm/mach-ixp4xx/avila-setup.c linux-2.6.23/arc
  	.map_io		= ixp4xx_map_io,
  	.init_irq	= ixp4xx_init_irq,
  	.timer		= &ixp4xx_timer,
-@@ -182,6 +212,7 @@ MACHINE_START(LOFT, "Giant Shoulder Inc 
+@@ -209,6 +239,7 @@ MACHINE_START(LOFT, "Giant Shoulder Inc 
  	/* Maintainer: Tom Billman <kernel@giantshoulderinc.com> */
  	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
  	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,

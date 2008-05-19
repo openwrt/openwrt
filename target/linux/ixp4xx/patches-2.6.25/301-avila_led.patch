@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/include/asm-arm/arch-ixp4xx/avila.h
+Index: linux-2.6.25.4/include/asm-arm/arch-ixp4xx/avila.h
 ===================================================================
---- linux-2.6.25.1.orig/include/asm-arm/arch-ixp4xx/avila.h
-+++ linux-2.6.25.1/include/asm-arm/arch-ixp4xx/avila.h
+--- linux-2.6.25.4.orig/include/asm-arm/arch-ixp4xx/avila.h
++++ linux-2.6.25.4/include/asm-arm/arch-ixp4xx/avila.h
 @@ -36,4 +36,6 @@
  #define AVILA_PCI_INTC_PIN	9
  #define AVILA_PCI_INTD_PIN	8
@@ -10,10 +10,10 @@ Index: linux-2.6.25.1/include/asm-arm/arch-ixp4xx/avila.h
 +/* User LEDs */
 +#define AVILA_GW23XX_LED_USER_GPIO	3
 +#define AVILA_GW23X7_LED_USER_GPIO	4
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/avila-setup.c
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/avila-setup.c
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/avila-setup.c
+--- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/avila-setup.c
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
 @@ -26,6 +26,7 @@
  # include <linux/eeprom.h>
  #endif

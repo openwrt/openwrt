@@ -1,7 +1,8 @@
-diff -Nur linux-2.6.24.2/arch/arm/mach-ixp4xx/Kconfig linux-2.6.24.2-owrt/arch/arm/mach-ixp4xx/Kconfig
---- linux-2.6.24.2/arch/arm/mach-ixp4xx/Kconfig	2008-04-09 01:34:46.000000000 +0200
-+++ linux-2.6.24.2-owrt/arch/arm/mach-ixp4xx/Kconfig	2008-04-09 00:06:48.000000000 +0200
-@@ -150,6 +150,14 @@
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/Kconfig
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/Kconfig
+@@ -150,6 +150,14 @@ config ARCH_PRPMC1100
  	  PrPCM1100 Processor Mezanine Module. For more information on
  	  this platform, see <file:Documentation/arm/IXP4xx>.
  
@@ -16,10 +17,11 @@ diff -Nur linux-2.6.24.2/arch/arm/mach-ixp4xx/Kconfig linux-2.6.24.2-owrt/arch/a
  config MACH_NAS100D
  	bool
  	prompt "NAS100D"
-diff -Nur linux-2.6.24.2/arch/arm/mach-ixp4xx/Makefile linux-2.6.24.2-owrt/arch/arm/mach-ixp4xx/Makefile
---- linux-2.6.24.2/arch/arm/mach-ixp4xx/Makefile	2008-04-09 01:34:46.000000000 +0200
-+++ linux-2.6.24.2-owrt/arch/arm/mach-ixp4xx/Makefile	2008-04-09 00:07:45.000000000 +0200
-@@ -22,6 +22,7 @@
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/Makefile
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/Makefile
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/Makefile
+@@ -22,6 +22,7 @@ obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp42
  obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o
  obj-pci-$(CONFIG_MACH_SIDEWINDER)		+= sidewinder-pci.o
  obj-pci-$(CONFIG_MACH_AP1000)		+= ixdp425-pci.o
@@ -27,17 +29,17 @@ diff -Nur linux-2.6.24.2/arch/arm/mach-ixp4xx/Makefile linux-2.6.24.2-owrt/arch/
  
  obj-y	+= common.o
  
-@@ -42,6 +43,7 @@
+@@ -42,5 +43,6 @@ obj-$(CONFIG_MACH_COMPEX)	+= compex-setu
  obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o
  obj-$(CONFIG_MACH_SIDEWINDER)	+= sidewinder-setup.o
  obj-$(CONFIG_MACH_AP1000)	+= ap1000-setup.o
 +obj-$(CONFIG_MACH_TW5334)	+= tw5334-setup.o
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
- obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
-diff -Nur linux-2.6.24.2/arch/arm/mach-ixp4xx/tw5334-setup.c linux-2.6.24.2-owrt/arch/arm/mach-ixp4xx/tw5334-setup.c
---- linux-2.6.24.2/arch/arm/mach-ixp4xx/tw5334-setup.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.24.2-owrt/arch/arm/mach-ixp4xx/tw5334-setup.c	2008-04-09 01:58:52.000000000 +0200
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/tw5334-setup.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/tw5334-setup.c
 @@ -0,0 +1,162 @@
 +/*
 + * arch/arm/mach-ixp4xx/tw5334-setup.c
@@ -201,9 +203,10 @@ diff -Nur linux-2.6.24.2/arch/arm/mach-ixp4xx/tw5334-setup.c linux-2.6.24.2-owrt
 +	.init_machine	= tw5334_init,
 +MACHINE_END
 +#endif
-diff -Nur linux-2.6.24.2/arch/arm/mach-ixp4xx/tw5334-pci.c linux-2.6.24.2-owrt/arch/arm/mach-ixp4xx/tw5334-pci.c
---- linux-2.6.24.2/arch/arm/mach-ixp4xx/tw5334-pci.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.24.2-owrt/arch/arm/mach-ixp4xx/tw5334-pci.c	2008-04-09 00:35:32.000000000 +0200
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/tw5334-pci.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/tw5334-pci.c
 @@ -0,0 +1,69 @@
 +/*
 + * arch/arch/mach-ixp4xx/tw5334-pci.c
@@ -274,9 +277,11 @@ diff -Nur linux-2.6.24.2/arch/arm/mach-ixp4xx/tw5334-pci.c linux-2.6.24.2-owrt/a
 +}
 +
 +subsys_initcall(tw5334_pci_init);
---- linux-2.6.24.2/include/asm-arm/arch-ixp4xx/uncompress.h	2008-04-07 08:59:19.000000000 +0200
-+++ linux-2.6.24.2-owrt/include/asm-arm/arch-ixp4xx/uncompress.h	2008-04-09 13:22:42.000000000 +0200
-@@ -42,7 +42,8 @@
+Index: linux-2.6.24.7/include/asm-arm/arch-ixp4xx/uncompress.h
+===================================================================
+--- linux-2.6.24.7.orig/include/asm-arm/arch-ixp4xx/uncompress.h
++++ linux-2.6.24.7/include/asm-arm/arch-ixp4xx/uncompress.h
+@@ -42,7 +42,8 @@ static __inline__ void __arch_decomp_set
  	 */
  	if (machine_is_adi_coyote() || machine_is_gtwx5715() ||
  			 machine_is_gateway7001() || machine_is_wg302v2() ||

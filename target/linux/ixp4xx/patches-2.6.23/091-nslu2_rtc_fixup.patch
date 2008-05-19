@@ -1,15 +1,16 @@
-diff -uprN linux-2.6.23.orig/arch/arm/mach-ixp4xx/nslu2-setup.c linux-2.6.23/arch/arm/mach-ixp4xx/nslu2-setup.c
---- linux-2.6.23.orig/arch/arm/mach-ixp4xx/nslu2-setup.c	2007-10-09 15:31:38.000000000 -0500
-+++ linux-2.6.23/arch/arm/mach-ixp4xx/nslu2-setup.c	2007-10-11 01:04:46.000000000 -0500
-@@ -19,6 +19,7 @@
- #include <linux/serial_8250.h>
+Index: linux-2.6.23.17/arch/arm/mach-ixp4xx/nslu2-setup.c
+===================================================================
+--- linux-2.6.23.17.orig/arch/arm/mach-ixp4xx/nslu2-setup.c
++++ linux-2.6.23.17/arch/arm/mach-ixp4xx/nslu2-setup.c
+@@ -20,6 +20,7 @@
  #include <linux/leds.h>
+ #include <linux/i2c-gpio.h>
  
 +#include <asm/setup.h>
  #include <asm/mach-types.h>
  #include <asm/mach/arch.h>
  #include <asm/mach/flash.h>
-@@ -171,6 +172,35 @@ static struct sys_timer nslu2_timer = {
+@@ -192,6 +193,35 @@ static struct sys_timer nslu2_timer = {
      .init   = nslu2_timer_init,
  };
  
@@ -44,8 +45,8 @@ diff -uprN linux-2.6.23.orig/arch/arm/mach-ixp4xx/nslu2-setup.c linux-2.6.23/arc
 +
  static void __init nslu2_init(void)
  {
- 	ixp4xx_sys_init();
-@@ -196,6 +226,7 @@ MACHINE_START(NSLU2, "Linksys NSLU2")
+ 	uint8_t __iomem *f;
+@@ -247,6 +277,7 @@ MACHINE_START(NSLU2, "Linksys NSLU2")
  	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
  	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xFFFC,
  	.boot_params	= 0x00000100,

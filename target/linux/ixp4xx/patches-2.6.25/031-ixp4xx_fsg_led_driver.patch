@@ -18,10 +18,10 @@ KernelVersion: v2.6.25-rc6-117-g457fb60
  3 files changed, 268 insertions(+), 0 deletions(-)
  create mode 100644 drivers/leds/leds-fsg.c
 
-Index: linux-2.6.25.1/drivers/leds/Kconfig
+Index: linux-2.6.25.4/drivers/leds/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/drivers/leds/Kconfig
-+++ linux-2.6.25.1/drivers/leds/Kconfig
+--- linux-2.6.25.4.orig/drivers/leds/Kconfig
++++ linux-2.6.25.4/drivers/leds/Kconfig
 @@ -46,6 +46,12 @@ config LEDS_SPITZ
  	  This option enables support for the LEDs on Sharp Zaurus
  	  SL-Cxx00 series (C1000, C3000, C3100).
@@ -35,10 +35,10 @@ Index: linux-2.6.25.1/drivers/leds/Kconfig
  config LEDS_TOSA
  	tristate "LED Support for the Sharp SL-6000 series"
  	depends on LEDS_CLASS && PXA_SHARPSL
-Index: linux-2.6.25.1/drivers/leds/Makefile
+Index: linux-2.6.25.4/drivers/leds/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/drivers/leds/Makefile
-+++ linux-2.6.25.1/drivers/leds/Makefile
+--- linux-2.6.25.4.orig/drivers/leds/Makefile
++++ linux-2.6.25.4/drivers/leds/Makefile
 @@ -22,6 +22,7 @@ obj-$(CONFIG_LEDS_GPIO)			+= leds-gpio.o
  obj-$(CONFIG_LEDS_CM_X270)              += leds-cm-x270.o
  obj-$(CONFIG_LEDS_CLEVO_MAIL)		+= leds-clevo-mail.o
@@ -47,10 +47,10 @@ Index: linux-2.6.25.1/drivers/leds/Makefile
  
  # LED Triggers
  obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledtrig-timer.o
-Index: linux-2.6.25.1/drivers/leds/leds-fsg.c
+Index: linux-2.6.25.4/drivers/leds/leds-fsg.c
 ===================================================================
 --- /dev/null
-+++ linux-2.6.25.1/drivers/leds/leds-fsg.c
++++ linux-2.6.25.4/drivers/leds/leds-fsg.c
 @@ -0,0 +1,261 @@
 +/*
 + * LED Driver for the Freecom FSG-3

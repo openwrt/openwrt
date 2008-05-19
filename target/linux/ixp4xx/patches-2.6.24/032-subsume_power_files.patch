@@ -11,23 +11,23 @@ Signed-off-by: Rod Whitby <rod@whitby.id.au>
 PATCH FOLLOWS
 KernelVersion: v2.6.24-1917-gaf66bd3
 
-Index: linux-2.6.24-armeb/arch/arm/mach-ixp4xx/Makefile
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/Makefile
 ===================================================================
---- linux-2.6.24-armeb.orig/arch/arm/mach-ixp4xx/Makefile	2008-02-03 22:45:22.000000000 +1030
-+++ linux-2.6.24-armeb/arch/arm/mach-ixp4xx/Makefile	2008-02-03 22:45:44.000000000 +1030
-@@ -23,7 +23,7 @@
- obj-$(CONFIG_MACH_IXDPG425)	+= coyote-setup.o
- obj-$(CONFIG_ARCH_ADI_COYOTE)	+= coyote-setup.o
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/Makefile
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/Makefile
+@@ -26,7 +26,7 @@ obj-$(CONFIG_ARCH_ADI_COYOTE)	+= coyote-
  obj-$(CONFIG_MACH_GTWX5715)	+= gtwx5715-setup.o
--obj-$(CONFIG_MACH_NSLU2)	+= nslu2-setup.o nslu2-power.o
-+obj-$(CONFIG_MACH_NSLU2)	+= nslu2-setup.o
- obj-$(CONFIG_MACH_NAS100D)	+= nas100d-setup.o nas100d-power.o
- obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o dsmg600-power.o
+ obj-$(CONFIG_MACH_NSLU2)	+= nslu2-setup.o
+ obj-$(CONFIG_MACH_NAS100D)	+= nas100d-setup.o
+-obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o dsmg600-power.o
++obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o
  obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
-Index: linux-2.6.24-armeb/arch/arm/mach-ixp4xx/nslu2-power.c
+ obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
+ obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/nslu2-power.c
 ===================================================================
---- linux-2.6.24-armeb.orig/arch/arm/mach-ixp4xx/nslu2-power.c	2008-02-03 22:45:10.000000000 +1030
-+++ /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/nslu2-power.c
++++ /dev/null
 @@ -1,92 +0,0 @@
 -/*
 - * arch/arm/mach-ixp4xx/nslu2-power.c
@@ -121,10 +121,10 @@ Index: linux-2.6.24-armeb/arch/arm/mach-ixp4xx/nslu2-power.c
 -MODULE_AUTHOR("Alessandro Zummo <a.zummo@towertech.it>");
 -MODULE_DESCRIPTION("NSLU2 Power/Reset driver");
 -MODULE_LICENSE("GPL");
-Index: linux-2.6.24-armeb/arch/arm/mach-ixp4xx/nslu2-setup.c
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/nslu2-setup.c
 ===================================================================
---- linux-2.6.24-armeb.orig/arch/arm/mach-ixp4xx/nslu2-setup.c	2008-02-03 22:45:22.000000000 +1030
-+++ linux-2.6.24-armeb/arch/arm/mach-ixp4xx/nslu2-setup.c	2008-02-03 22:45:44.000000000 +1030
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/nslu2-setup.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/nslu2-setup.c
 @@ -3,22 +3,26 @@
   *
   * NSLU2 board-setup
@@ -164,7 +164,7 @@ Index: linux-2.6.24-armeb/arch/arm/mach-ixp4xx/nslu2-setup.c
  
  static struct flash_platform_data nslu2_flash_data = {
  	.map_name		= "cfi_probe",
-@@ -181,6 +186,25 @@
+@@ -181,6 +186,25 @@ static void nslu2_power_off(void)
  	gpio_line_set(NSLU2_PO_GPIO, IXP4XX_GPIO_HIGH);
  }
  
@@ -190,7 +190,7 @@ Index: linux-2.6.24-armeb/arch/arm/mach-ixp4xx/nslu2-setup.c
  static void __init nslu2_timer_init(void)
  {
      /* The xtal on this machine is non-standard. */
-@@ -206,8 +230,6 @@
+@@ -206,8 +230,6 @@ static void __init nslu2_init(void)
  	nslu2_flash_resource.end =
  		IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size - 1;
  
@@ -199,7 +199,7 @@ Index: linux-2.6.24-armeb/arch/arm/mach-ixp4xx/nslu2-setup.c
  	i2c_register_board_info(0, nslu2_i2c_board_info,
  				ARRAY_SIZE(nslu2_i2c_board_info));
  
-@@ -220,6 +242,23 @@
+@@ -220,6 +242,23 @@ static void __init nslu2_init(void)
  
  	platform_add_devices(nslu2_devices, ARRAY_SIZE(nslu2_devices));
  
@@ -223,10 +223,10 @@ Index: linux-2.6.24-armeb/arch/arm/mach-ixp4xx/nslu2-setup.c
  
  	/*
  	 * Map in a portion of the flash and read the MAC address.
-Index: linux-2.6.24-armeb/include/asm-arm/arch-ixp4xx/nslu2.h
+Index: linux-2.6.24.7/include/asm-arm/arch-ixp4xx/nslu2.h
 ===================================================================
---- linux-2.6.24-armeb.orig/include/asm-arm/arch-ixp4xx/nslu2.h	2008-02-03 22:45:11.000000000 +1030
-+++ linux-2.6.24-armeb/include/asm-arm/arch-ixp4xx/nslu2.h	2008-02-03 22:45:44.000000000 +1030
+--- linux-2.6.24.7.orig/include/asm-arm/arch-ixp4xx/nslu2.h
++++ linux-2.6.24.7/include/asm-arm/arch-ixp4xx/nslu2.h
 @@ -39,34 +39,17 @@
  
  /* Buttons */
@@ -264,35 +264,9 @@ Index: linux-2.6.24-armeb/include/asm-arm/arch-ixp4xx/nslu2.h
 -#define NSLU2_LED_DISK2_BM	(1L << NSLU2_LED_DISK2_GPIO)
 -
 -
-From: Rod Whitby <rod@whitby.id.au>
-Subject: ixp4xx: Merge nas100d-power.c into nas100d-setup.c (Patch #4808)
-
-There is no reason to have power control in a separate file from the
-board setup code.  Merge it back into the board setup file and remove
-superfluous header includes.
-
-Signed-off-by: Rod Whitby <rod@whitby.id.au>
---
-PATCH FOLLOWS
-KernelVersion: 2.6.24-git9
-
-diff --git a/arch/arm/mach-ixp4xx/Makefile b/arch/arm/mach-ixp4xx/Makefile
-index 4fc7316..a7880ab 100644
---- a/arch/arm/mach-ixp4xx/Makefile
-+++ b/arch/arm/mach-ixp4xx/Makefile
-@@ -24,7 +24,7 @@ obj-$(CONFIG_MACH_IXDPG425)	+= coyote-setup.o
- obj-$(CONFIG_ARCH_ADI_COYOTE)	+= coyote-setup.o
- obj-$(CONFIG_MACH_GTWX5715)	+= gtwx5715-setup.o
- obj-$(CONFIG_MACH_NSLU2)	+= nslu2-setup.o
--obj-$(CONFIG_MACH_NAS100D)	+= nas100d-setup.o nas100d-power.o
-+obj-$(CONFIG_MACH_NAS100D)	+= nas100d-setup.o
- obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o dsmg600-power.o
- obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
- obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
-diff --git a/arch/arm/mach-ixp4xx/nas100d-power.c b/arch/arm/mach-ixp4xx/nas100d-power.c
-deleted file mode 100644
-index 4c1c01b..0000000
---- a/arch/arm/mach-ixp4xx/nas100d-power.c
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/nas100d-power.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/nas100d-power.c
 +++ /dev/null
 @@ -1,128 +0,0 @@
 -/*
@@ -423,10 +397,10 @@ index 4c1c01b..0000000
 -MODULE_AUTHOR("Alessandro Zummo <a.zummo@towertech.it>");
 -MODULE_DESCRIPTION("NAS100D Power/Reset driver");
 -MODULE_LICENSE("GPL");
-diff --git a/arch/arm/mach-ixp4xx/nas100d-setup.c b/arch/arm/mach-ixp4xx/nas100d-setup.c
-index a432226..4cecae8 100644
---- a/arch/arm/mach-ixp4xx/nas100d-setup.c
-+++ b/arch/arm/mach-ixp4xx/nas100d-setup.c
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/nas100d-setup.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/nas100d-setup.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/nas100d-setup.c
 @@ -3,8 +3,14 @@
   *
   * NAS 100d board-setup
@@ -563,38 +537,9 @@ index a432226..4cecae8 100644
  	/*
  	 * Map in a portion of the flash and read the MAC address.
  	 * Since it is stored in BE in the flash itself, we need to
--- 
-1.5.2.5
-
-From: Rod Whitby <rod@whitby.id.au>
-Subject: ixp4xx: Merge dsmg600-power.c into dsmg600-setup.c (Patch #4809)
-
-There is no reason to have power control in a separate file from the
-board setup code.  Merge it back into the board setup file and remove
-superfluous header includes.
-
-Signed-off-by: Rod Whitby <rod@whitby.id.au>
---
-PATCH FOLLOWS
-KernelVersion: 2.6.24-git9
-
-diff --git a/arch/arm/mach-ixp4xx/Makefile b/arch/arm/mach-ixp4xx/Makefile
-index a7880ab..c195688 100644
---- a/arch/arm/mach-ixp4xx/Makefile
-+++ b/arch/arm/mach-ixp4xx/Makefile
-@@ -25,7 +25,7 @@ obj-$(CONFIG_ARCH_ADI_COYOTE)	+= coyote-setup.o
- obj-$(CONFIG_MACH_GTWX5715)	+= gtwx5715-setup.o
- obj-$(CONFIG_MACH_NSLU2)	+= nslu2-setup.o
- obj-$(CONFIG_MACH_NAS100D)	+= nas100d-setup.o
--obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o dsmg600-power.o
-+obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o
- obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
- obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
- 
-diff --git a/arch/arm/mach-ixp4xx/dsmg600-power.c b/arch/arm/mach-ixp4xx/dsmg600-power.c
-deleted file mode 100644
-index db63987..0000000
---- a/arch/arm/mach-ixp4xx/dsmg600-power.c
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/dsmg600-power.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/dsmg600-power.c
 +++ /dev/null
 @@ -1,129 +0,0 @@
 -/*
@@ -726,10 +671,10 @@ index db63987..0000000
 -MODULE_AUTHOR("Michael Westerhof <mwester@dls.net>");
 -MODULE_DESCRIPTION("DSM-G600 Power/Reset driver");
 -MODULE_LICENSE("GPL");
-diff --git a/arch/arm/mach-ixp4xx/dsmg600-setup.c b/arch/arm/mach-ixp4xx/dsmg600-setup.c
-index d0e1295..6886596 100644
---- a/arch/arm/mach-ixp4xx/dsmg600-setup.c
-+++ b/arch/arm/mach-ixp4xx/dsmg600-setup.c
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/dsmg600-setup.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/dsmg600-setup.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/dsmg600-setup.c
 @@ -1,20 +1,29 @@
  /*
   * DSM-G600 board-setup
@@ -868,6 +813,3 @@ index d0e1295..6886596 100644
  }
  
  MACHINE_START(DSMG600, "D-Link DSM-G600 RevA")
--- 
-1.5.2.5
-

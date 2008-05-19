@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/drivers/net/arm/ixp4xx_eth.c
+Index: linux-2.6.25.4/drivers/net/arm/ixp4xx_eth.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/arm/ixp4xx_eth.c
-+++ linux-2.6.25.1/drivers/net/arm/ixp4xx_eth.c
+--- linux-2.6.25.4.orig/drivers/net/arm/ixp4xx_eth.c
++++ linux-2.6.25.4/drivers/net/arm/ixp4xx_eth.c
 @@ -165,14 +165,15 @@ struct port {
  	struct net_device *netdev;
  	struct napi_struct napi;
@@ -228,10 +228,10 @@ Index: linux-2.6.25.1/drivers/net/arm/ixp4xx_eth.c
  
  	INIT_DELAYED_WORK(&port->mdio_thread, mdio_thread);
  	return 0;
-Index: linux-2.6.25.1/include/asm-arm/arch-ixp4xx/platform.h
+Index: linux-2.6.25.4/include/asm-arm/arch-ixp4xx/platform.h
 ===================================================================
---- linux-2.6.25.1.orig/include/asm-arm/arch-ixp4xx/platform.h
-+++ linux-2.6.25.1/include/asm-arm/arch-ixp4xx/platform.h
+--- linux-2.6.25.4.orig/include/asm-arm/arch-ixp4xx/platform.h
++++ linux-2.6.25.4/include/asm-arm/arch-ixp4xx/platform.h
 @@ -95,12 +95,15 @@ struct sys_timer;
  #define IXP4XX_ETH_NPEB		0x10
  #define IXP4XX_ETH_NPEC		0x20

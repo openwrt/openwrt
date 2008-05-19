@@ -9,10 +9,10 @@ the 'maclist' code and read out by the ethernet config.
 
 Signed-off-by: John Bowler <jbowler@acm.org>
 
-Index: linux-2.6.21-rc1-arm/drivers/i2c/chips/eeprom.c
+Index: linux-2.6.21.7/drivers/i2c/chips/eeprom.c
 ===================================================================
---- linux-2.6.21-rc1-arm.orig/drivers/i2c/chips/eeprom.c	2007-02-21 02:24:14.000000000 -0800
-+++ linux-2.6.21-rc1-arm/drivers/i2c/chips/eeprom.c	2007-02-21 02:25:01.000000000 -0800
+--- linux-2.6.21.7.orig/drivers/i2c/chips/eeprom.c
++++ linux-2.6.21.7/drivers/i2c/chips/eeprom.c
 @@ -33,6 +33,8 @@
  #include <linux/jiffies.h>
  #include <linux/i2c.h>
@@ -22,7 +22,7 @@ Index: linux-2.6.21-rc1-arm/drivers/i2c/chips/eeprom.c
  
  /* Addresses to scan */
  static unsigned short normal_i2c[] = { 0x50, 0x51, 0x52, 0x53, 0x54,
-@@ -41,26 +43,7 @@
+@@ -41,26 +43,7 @@ static unsigned short normal_i2c[] = { 0
  /* Insmod parameters */
  I2C_CLIENT_INSMOD_1(eeprom);
  
@@ -50,7 +50,7 @@ Index: linux-2.6.21-rc1-arm/drivers/i2c/chips/eeprom.c
  
  static int eeprom_attach_adapter(struct i2c_adapter *adapter);
  static int eeprom_detect(struct i2c_adapter *adapter, int address, int kind);
-@@ -189,6 +172,7 @@
+@@ -189,6 +172,7 @@ static int eeprom_detect(struct i2c_adap
  	data->valid = 0;
  	mutex_init(&data->update_lock);
  	data->nature = UNKNOWN;
@@ -58,7 +58,7 @@ Index: linux-2.6.21-rc1-arm/drivers/i2c/chips/eeprom.c
  
  	/* Tell the I2C layer a new client has arrived */
  	if ((err = i2c_attach_client(new_client)))
-@@ -212,6 +196,9 @@
+@@ -212,6 +196,9 @@ static int eeprom_detect(struct i2c_adap
  	if (err)
  		goto exit_detach;
  
@@ -68,7 +68,7 @@ Index: linux-2.6.21-rc1-arm/drivers/i2c/chips/eeprom.c
  	return 0;
  
  exit_detach:
-@@ -237,6 +224,41 @@
+@@ -237,6 +224,41 @@ static int eeprom_detach_client(struct i
  	return 0;
  }
  
@@ -110,10 +110,10 @@ Index: linux-2.6.21-rc1-arm/drivers/i2c/chips/eeprom.c
  static int __init eeprom_init(void)
  {
  	return i2c_add_driver(&eeprom_driver);
-Index: linux-2.6.21-rc1-arm/include/linux/eeprom.h
+Index: linux-2.6.21.7/include/linux/eeprom.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.21-rc1-arm/include/linux/eeprom.h	2007-02-21 02:25:01.000000000 -0800
+--- /dev/null
++++ linux-2.6.21.7/include/linux/eeprom.h
 @@ -0,0 +1,71 @@
 +#ifndef _LINUX_EEPROM_H
 +#define _LINUX_EEPROM_H
@@ -186,11 +186,11 @@ Index: linux-2.6.21-rc1-arm/include/linux/eeprom.h
 +extern int unregister_eeprom_notifier(struct notifier_block *nb);
 +
 +#endif /* _LINUX_EEPROM_H */
-Index: linux-2.6.21-rc1-arm/include/linux/notifier.h
+Index: linux-2.6.21.7/include/linux/notifier.h
 ===================================================================
---- linux-2.6.21-rc1-arm.orig/include/linux/notifier.h	2007-02-21 02:24:14.000000000 -0800
-+++ linux-2.6.21-rc1-arm/include/linux/notifier.h	2007-02-21 02:25:01.000000000 -0800
-@@ -187,5 +187,8 @@
+--- linux-2.6.21.7.orig/include/linux/notifier.h
++++ linux-2.6.21.7/include/linux/notifier.h
+@@ -187,5 +187,8 @@ extern int srcu_notifier_call_chain(stru
  #define CPU_DOWN_FAILED		0x0006 /* CPU (unsigned)v NOT going down */
  #define CPU_DEAD		0x0007 /* CPU (unsigned)v dead */
  

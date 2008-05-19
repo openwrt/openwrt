@@ -1,7 +1,8 @@
-diff -Nur linux-2.6.23.16/drivers/net/arm/ixp4xx_eth.c linux-2.6.23.16-owrt/drivers/net/arm/ixp4xx_eth.c
---- linux-2.6.23.16/drivers/net/arm/ixp4xx_eth.c	2008-02-15 18:18:02.000000000 +0100
-+++ linux-2.6.23.16-owrt/drivers/net/arm/ixp4xx_eth.c	2008-02-18 12:14:42.000000000 +0100
-@@ -297,6 +297,27 @@
+Index: linux-2.6.23.17/drivers/net/arm/ixp4xx_eth.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/net/arm/ixp4xx_eth.c
++++ linux-2.6.23.17/drivers/net/arm/ixp4xx_eth.c
+@@ -297,6 +297,27 @@ static int mdio_read(struct net_device *
  	unsigned long flags;
  	u16 val;
  
@@ -29,7 +30,7 @@ diff -Nur linux-2.6.23.16/drivers/net/arm/ixp4xx_eth.c linux-2.6.23.16-owrt/driv
  	spin_lock_irqsave(&mdio_lock, flags);
  	val = mdio_cmd(dev, phy_id, location, 0, 0);
  	spin_unlock_irqrestore(&mdio_lock, flags);
-@@ -308,6 +329,9 @@
+@@ -308,6 +329,9 @@ static void mdio_write(struct net_device
  {
  	unsigned long flags;
  

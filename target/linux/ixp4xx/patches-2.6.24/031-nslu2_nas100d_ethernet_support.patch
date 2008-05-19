@@ -17,10 +17,10 @@ Tested-by: Tom King <tom@websb.net>
 PATCH FOLLOWS
 KernelVersion: v2.6.24-1916-g3832564
 
-diff --git a/arch/arm/configs/ixp4xx_defconfig b/arch/arm/configs/ixp4xx_defconfig
-index 77fe3b0..efa0485 100644
---- a/arch/arm/configs/ixp4xx_defconfig
-+++ b/arch/arm/configs/ixp4xx_defconfig
+Index: linux-2.6.24.7/arch/arm/configs/ixp4xx_defconfig
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/configs/ixp4xx_defconfig
++++ linux-2.6.24.7/arch/arm/configs/ixp4xx_defconfig
 @@ -1,7 +1,7 @@
  #
  # Automatically generated make config: don't edit
@@ -56,10 +56,10 @@ index 77fe3b0..efa0485 100644
  CONFIG_DLCI=m
  CONFIG_DLCI_MAX=8
  CONFIG_WAN_ROUTER_DRIVERS=m
-diff --git a/arch/arm/mach-ixp4xx/nas100d-setup.c b/arch/arm/mach-ixp4xx/nas100d-setup.c
-index 5801579..a432226 100644
---- a/arch/arm/mach-ixp4xx/nas100d-setup.c
-+++ b/arch/arm/mach-ixp4xx/nas100d-setup.c
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/nas100d-setup.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/nas100d-setup.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/nas100d-setup.c
 @@ -12,6 +12,7 @@
   *
   */
@@ -76,7 +76,7 @@ index 5801579..a432226 100644
  
  static struct flash_platform_data nas100d_flash_data = {
  	.map_name		= "cfi_probe",
-@@ -131,10 +133,28 @@ static struct platform_device nas100d_uart = {
+@@ -131,10 +133,28 @@ static struct platform_device nas100d_ua
  	.resource		= nas100d_uart_resources,
  };
  
@@ -142,10 +142,10 @@ index 5801579..a432226 100644
  }
  
  MACHINE_START(NAS100D, "Iomega NAS 100d")
-diff --git a/arch/arm/mach-ixp4xx/nslu2-setup.c b/arch/arm/mach-ixp4xx/nslu2-setup.c
-index 41d55c8..fd9ec17 100644
---- a/arch/arm/mach-ixp4xx/nslu2-setup.c
-+++ b/arch/arm/mach-ixp4xx/nslu2-setup.c
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/nslu2-setup.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/nslu2-setup.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/nslu2-setup.c
 @@ -14,6 +14,7 @@
   * Changed to conform to new style __init ixdp425 kas11 10/22/04
   */
@@ -162,7 +162,7 @@ index 41d55c8..fd9ec17 100644
  
  static struct flash_platform_data nslu2_flash_data = {
  	.map_name		= "cfi_probe",
-@@ -143,11 +145,29 @@ static struct platform_device nslu2_uart = {
+@@ -143,11 +145,29 @@ static struct platform_device nslu2_uart
  	.resource		= nslu2_uart_resources,
  };
  
@@ -230,6 +230,3 @@ index 41d55c8..fd9ec17 100644
  }
  
  MACHINE_START(NSLU2, "Linksys NSLU2")
--- 
-1.5.2.5
-

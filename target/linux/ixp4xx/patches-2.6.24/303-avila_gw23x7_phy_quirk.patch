@@ -1,8 +1,8 @@
-Index: linux-2.6.24.2/arch/arm/mach-ixp4xx/avila-setup.c
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/avila-setup.c
 ===================================================================
---- linux-2.6.24.2.orig/arch/arm/mach-ixp4xx/avila-setup.c
-+++ linux-2.6.24.2/arch/arm/mach-ixp4xx/avila-setup.c
-@@ -276,6 +276,7 @@ static void __init avila_gw2345_setup(vo
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/avila-setup.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/avila-setup.c
+@@ -247,6 +247,7 @@ static void __init avila_gw2345_setup(vo
  
  static void __init avila_gw2347_setup(void)
  {
@@ -10,7 +10,7 @@ Index: linux-2.6.24.2/arch/arm/mach-ixp4xx/avila-setup.c
  	platform_device_register(&avila_npeb_device);
  
  	avila_leds[0].gpio = AVILA_GW23X7_LED_USER_GPIO;
-@@ -310,6 +311,7 @@ static void __init avila_gw2355_setup(vo
+@@ -281,6 +282,7 @@ static void __init avila_gw2355_setup(vo
  
  static void __init avila_gw2357_setup(void)
  {
@@ -18,11 +18,11 @@ Index: linux-2.6.24.2/arch/arm/mach-ixp4xx/avila-setup.c
  	platform_device_register(&avila_npeb_device);
  
  	avila_leds[0].gpio = AVILA_GW23X7_LED_USER_GPIO;
-Index: linux-2.6.24.2/drivers/net/arm/ixp4xx_eth.c
+Index: linux-2.6.24.7/drivers/net/arm/ixp4xx_eth.c
 ===================================================================
---- linux-2.6.24.2.orig/drivers/net/arm/ixp4xx_eth.c
-+++ linux-2.6.24.2/drivers/net/arm/ixp4xx_eth.c
-@@ -347,6 +347,14 @@ static void phy_reset(struct net_device 
+--- linux-2.6.24.7.orig/drivers/net/arm/ixp4xx_eth.c
++++ linux-2.6.24.7/drivers/net/arm/ixp4xx_eth.c
+@@ -348,6 +348,14 @@ static void phy_reset(struct net_device 
  		return;
  	}
  
@@ -37,10 +37,10 @@ Index: linux-2.6.24.2/drivers/net/arm/ixp4xx_eth.c
  	/* restart auto negotiation */
  	bmcr = mdio_read(dev, phy_id, MII_BMCR);
  	bmcr |= (BMCR_ANENABLE | BMCR_ANRESTART);
-Index: linux-2.6.24.2/include/asm-arm/arch-ixp4xx/platform.h
+Index: linux-2.6.24.7/include/asm-arm/arch-ixp4xx/platform.h
 ===================================================================
---- linux-2.6.24.2.orig/include/asm-arm/arch-ixp4xx/platform.h
-+++ linux-2.6.24.2/include/asm-arm/arch-ixp4xx/platform.h
+--- linux-2.6.24.7.orig/include/asm-arm/arch-ixp4xx/platform.h
++++ linux-2.6.24.7/include/asm-arm/arch-ixp4xx/platform.h
 @@ -115,6 +115,8 @@ struct eth_plat_info {
  	u8 txreadyq;
  	u8 hwaddr[6];

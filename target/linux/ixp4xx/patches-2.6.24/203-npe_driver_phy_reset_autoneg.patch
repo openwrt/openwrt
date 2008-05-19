@@ -1,7 +1,7 @@
-Index: linux-2.6.24.2/drivers/net/arm/ixp4xx_eth.c
+Index: linux-2.6.24.7/drivers/net/arm/ixp4xx_eth.c
 ===================================================================
---- linux-2.6.24.2.orig/drivers/net/arm/ixp4xx_eth.c
-+++ linux-2.6.24.2/drivers/net/arm/ixp4xx_eth.c
+--- linux-2.6.24.7.orig/drivers/net/arm/ixp4xx_eth.c
++++ linux-2.6.24.7/drivers/net/arm/ixp4xx_eth.c
 @@ -322,8 +322,12 @@ static void phy_reset(struct net_device 
  	struct port *port = netdev_priv(dev);
  	int phy_id = port->mii[idx].phy_id;

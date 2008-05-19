@@ -24,10 +24,10 @@ Acked-by: Lennert Buytenhek <buytenh@wantstofly.org>
 PATCH FOLLOWS
 KernelVersion: 2.6.24-git5
 
-diff --git a/arch/arm/configs/ixp4xx_defconfig b/arch/arm/configs/ixp4xx_defconfig
-index db850a5..2d5ae33 100644
---- a/arch/arm/configs/ixp4xx_defconfig
-+++ b/arch/arm/configs/ixp4xx_defconfig
+Index: linux-2.6.24.7/arch/arm/configs/ixp4xx_defconfig
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/configs/ixp4xx_defconfig
++++ linux-2.6.24.7/arch/arm/configs/ixp4xx_defconfig
 @@ -1,69 +1,96 @@
  #
  # Automatically generated make config: don't edit
@@ -1005,7 +1005,8 @@ index db850a5..2d5ae33 100644
 -
 -#
 -# Wireless 802.11b ISA/PCI cards support
--#
++# Wireless LAN
+ #
 -# CONFIG_AIRO is not set
 -CONFIG_HERMES=y
 -# CONFIG_PLX_HERMES is not set
@@ -1013,18 +1014,17 @@ index db850a5..2d5ae33 100644
 -# CONFIG_NORTEL_HERMES is not set
 -CONFIG_PCI_HERMES=y
 -# CONFIG_ATMEL is not set
--
--#
--# Prism GT/Duette 802.11(a/b/g) PCI/Cardbus support
-+# Wireless LAN
- #
--# CONFIG_PRISM54 is not set
--# CONFIG_HOSTAP is not set
--CONFIG_NET_WIRELESS=y
 +# CONFIG_WLAN_PRE80211 is not set
 +# CONFIG_WLAN_80211 is not set
  
  #
+-# Prism GT/Duette 802.11(a/b/g) PCI/Cardbus support
+-#
+-# CONFIG_PRISM54 is not set
+-# CONFIG_HOSTAP is not set
+-CONFIG_NET_WIRELESS=y
+-
+-#
 -# Wan interfaces
 +# USB Network Adapters
  #
@@ -1313,12 +1313,10 @@ index db850a5..2d5ae33 100644
  #
 -# CONFIG_VIDEO_DEV is not set
 +# CONFIG_USBPCWATCHDOG is not set
- 
- #
--# Digital Video Broadcasting Devices
++
++#
 +# Sonics Silicon Backplane
- #
--# CONFIG_DVB is not set
++#
 +CONFIG_SSB_POSSIBLE=y
 +# CONFIG_SSB is not set
 +
@@ -1326,10 +1324,12 @@ index db850a5..2d5ae33 100644
 +# Multifunction device drivers
 +#
 +# CONFIG_MFD_SM501 is not set
-+
-+#
+ 
+ #
+-# Digital Video Broadcasting Devices
 +# Multimedia devices
-+#
+ #
+-# CONFIG_DVB is not set
 +# CONFIG_VIDEO_DEV is not set
 +# CONFIG_DVB_CORE is not set
 +CONFIG_DAB=y
@@ -1360,8 +1360,9 @@ index db850a5..2d5ae33 100644
  
  #
 -# USB support
+-#
 +# USB Input Devices
- #
++#
 +CONFIG_USB_HID=y
 +# CONFIG_USB_HIDINPUT_POWERBOOK is not set
 +# CONFIG_HID_FF is not set
@@ -1721,6 +1722,3 @@ index db850a5..2d5ae33 100644
 +CONFIG_HAS_IOMEM=y
 +CONFIG_HAS_IOPORT=y
 +CONFIG_HAS_DMA=y
--- 
-1.5.2.5
-

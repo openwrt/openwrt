@@ -18,10 +18,10 @@ Acked-by: Lennert Buytenhek <buytenh@wantstofly.org>
 PATCH FOLLOWS
 KernelVersion: 2.6.24-git5
 
-diff --git a/arch/arm/mach-ixp4xx/nas100d-power.c b/arch/arm/mach-ixp4xx/nas100d-power.c
-index 29aa98d..4c1c01b 100644
---- a/arch/arm/mach-ixp4xx/nas100d-power.c
-+++ b/arch/arm/mach-ixp4xx/nas100d-power.c
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/nas100d-power.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/nas100d-power.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/nas100d-power.c
 @@ -21,15 +21,59 @@
  #include <linux/irq.h>
  #include <linux/module.h>
@@ -86,7 +86,7 @@ index 29aa98d..4c1c01b 100644
  
  	return IRQ_HANDLED;
  }
-@@ -39,17 +83,30 @@ static int __init nas100d_power_init(void)
+@@ -39,17 +83,30 @@ static int __init nas100d_power_init(voi
  	if (!(machine_is_nas100d()))
  		return 0;
  
@@ -120,7 +120,7 @@ index 29aa98d..4c1c01b 100644
  	return 0;
  }
  
-@@ -58,7 +115,9 @@ static void __exit nas100d_power_exit(void)
+@@ -58,7 +115,9 @@ static void __exit nas100d_power_exit(vo
  	if (!(machine_is_nas100d()))
  		return;
  
@@ -131,11 +131,11 @@ index 29aa98d..4c1c01b 100644
  }
  
  module_init(nas100d_power_init);
-diff --git a/arch/arm/mach-ixp4xx/nas100d-setup.c b/arch/arm/mach-ixp4xx/nas100d-setup.c
-index 54d884f..213a4ce 100644
---- a/arch/arm/mach-ixp4xx/nas100d-setup.c
-+++ b/arch/arm/mach-ixp4xx/nas100d-setup.c
-@@ -43,20 +43,20 @@ static struct platform_device nas100d_flash = {
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/nas100d-setup.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/nas100d-setup.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/nas100d-setup.c
+@@ -43,20 +43,20 @@ static struct platform_device nas100d_fl
  static struct resource nas100d_led_resources[] = {
  	{
  		.name		= "wlan",   /* green led */
@@ -163,10 +163,10 @@ index 54d884f..213a4ce 100644
  		.flags		= IXP4XX_GPIO_LOW,
  	},
  };
-diff --git a/include/asm-arm/arch-ixp4xx/nas100d.h b/include/asm-arm/arch-ixp4xx/nas100d.h
-index 131e0a1..98d9378 100644
---- a/include/asm-arm/arch-ixp4xx/nas100d.h
-+++ b/include/asm-arm/arch-ixp4xx/nas100d.h
+Index: linux-2.6.24.7/include/asm-arm/arch-ixp4xx/nas100d.h
+===================================================================
+--- linux-2.6.24.7.orig/include/asm-arm/arch-ixp4xx/nas100d.h
++++ linux-2.6.24.7/include/asm-arm/arch-ixp4xx/nas100d.h
 @@ -38,15 +38,15 @@
  
  /* Buttons */
@@ -192,6 +192,3 @@ index 131e0a1..98d9378 100644
 +#define NAS100D_LED_WLAN_GPIO	0
 +#define NAS100D_LED_DISK_GPIO	3
 +#define NAS100D_LED_PWR_GPIO	15
--- 
-1.5.2.5
-

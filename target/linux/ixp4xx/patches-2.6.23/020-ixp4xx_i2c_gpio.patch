@@ -6,10 +6,10 @@ Tested by the nslu2-linux and openwrt projects in public firmware releases.
 Acked-by: Rod Whitby <rod@whitby.id.au>
 Signed-off-by: Michael-Luke Jones <mlj28@cam.ac.uk>
 
-Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/nslu2-setup.c
+Index: linux-2.6.23.17/arch/arm/mach-ixp4xx/nslu2-setup.c
 ===================================================================
---- linux-2.6.24-rc6-armeb.orig/arch/arm/mach-ixp4xx/nslu2-setup.c	2008-01-05 18:10:05.000000000 +1030
-+++ linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/nslu2-setup.c	2008-01-05 18:10:10.000000000 +1030
+--- linux-2.6.23.17.orig/arch/arm/mach-ixp4xx/nslu2-setup.c
++++ linux-2.6.23.17/arch/arm/mach-ixp4xx/nslu2-setup.c
 @@ -18,6 +18,7 @@
  #include <linux/serial.h>
  #include <linux/serial_8250.h>
@@ -18,7 +18,7 @@ Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/nslu2-setup.c
  
  #include <asm/mach-types.h>
  #include <asm/mach/arch.h>
-@@ -41,7 +42,7 @@
+@@ -41,7 +42,7 @@ static struct platform_device nslu2_flas
  	.resource		= &nslu2_flash_resource,
  };
  
@@ -27,7 +27,7 @@ Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/nslu2-setup.c
  	.sda_pin		= NSLU2_SDA_PIN,
  	.scl_pin		= NSLU2_SCL_PIN,
  };
-@@ -82,11 +83,12 @@
+@@ -82,11 +83,12 @@ static struct platform_device nslu2_leds
  };
  #endif
  
@@ -44,7 +44,7 @@ Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/nslu2-setup.c
  };
  
  static struct platform_device nslu2_beeper = {
-@@ -139,7 +141,7 @@
+@@ -139,7 +141,7 @@ static struct platform_device nslu2_uart
  };
  
  static struct platform_device *nslu2_devices[] __initdata = {
@@ -53,10 +53,10 @@ Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/nslu2-setup.c
  	&nslu2_flash,
  	&nslu2_beeper,
  #ifdef CONFIG_LEDS_IXP4XX
-Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c
+Index: linux-2.6.23.17/arch/arm/mach-ixp4xx/nas100d-setup.c
 ===================================================================
---- linux-2.6.24-rc6-armeb.orig/arch/arm/mach-ixp4xx/nas100d-setup.c	2008-01-05 18:10:05.000000000 +1030
-+++ linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c	2008-01-05 18:10:10.000000000 +1030
+--- linux-2.6.23.17.orig/arch/arm/mach-ixp4xx/nas100d-setup.c
++++ linux-2.6.23.17/arch/arm/mach-ixp4xx/nas100d-setup.c
 @@ -16,6 +16,7 @@
  #include <linux/serial.h>
  #include <linux/serial_8250.h>
@@ -65,7 +65,7 @@ Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c
  
  #include <asm/mach-types.h>
  #include <asm/mach/arch.h>
-@@ -68,16 +69,17 @@
+@@ -68,16 +69,17 @@ static struct platform_device nas100d_le
  };
  #endif
  
@@ -88,7 +88,7 @@ Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c
  };
  
  static struct resource nas100d_uart_resources[] = {
-@@ -124,7 +126,7 @@
+@@ -124,7 +126,7 @@ static struct platform_device nas100d_ua
  };
  
  static struct platform_device *nas100d_devices[] __initdata = {
@@ -97,10 +97,10 @@ Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/nas100d-setup.c
  	&nas100d_flash,
  #ifdef CONFIG_LEDS_IXP4XX
  	&nas100d_leds,
-Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/avila-setup.c
+Index: linux-2.6.23.17/arch/arm/mach-ixp4xx/avila-setup.c
 ===================================================================
---- linux-2.6.24-rc6-armeb.orig/arch/arm/mach-ixp4xx/avila-setup.c	2008-01-05 18:10:05.000000000 +1030
-+++ linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/avila-setup.c	2008-01-05 18:10:10.000000000 +1030
+--- linux-2.6.23.17.orig/arch/arm/mach-ixp4xx/avila-setup.c
++++ linux-2.6.23.17/arch/arm/mach-ixp4xx/avila-setup.c
 @@ -18,6 +18,7 @@
  #include <linux/tty.h>
  #include <linux/serial_8250.h>
@@ -109,7 +109,7 @@ Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/avila-setup.c
  
  #include <asm/types.h>
  #include <asm/setup.h>
-@@ -47,18 +48,17 @@
+@@ -47,18 +48,17 @@ static struct platform_device avila_flas
  	.resource	= &avila_flash_resource,
  };
  
@@ -133,7 +133,7 @@ Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/avila-setup.c
  };
  
  static struct resource avila_uart_resources[] = {
-@@ -133,7 +133,7 @@
+@@ -133,7 +133,7 @@ static struct platform_device avila_pata
  };
  
  static struct platform_device *avila_devices[] __initdata = {
@@ -142,10 +142,10 @@ Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/avila-setup.c
  	&avila_flash,
  	&avila_uart
  };
-Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/dsmg600-setup.c
+Index: linux-2.6.23.17/arch/arm/mach-ixp4xx/dsmg600-setup.c
 ===================================================================
---- linux-2.6.24-rc6-armeb.orig/arch/arm/mach-ixp4xx/dsmg600-setup.c	2008-01-05 18:10:05.000000000 +1030
-+++ linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/dsmg600-setup.c	2008-01-05 18:10:10.000000000 +1030
+--- linux-2.6.23.17.orig/arch/arm/mach-ixp4xx/dsmg600-setup.c
++++ linux-2.6.23.17/arch/arm/mach-ixp4xx/dsmg600-setup.c
 @@ -14,6 +14,7 @@
  #include <linux/kernel.h>
  #include <linux/serial.h>
@@ -154,7 +154,7 @@ Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/dsmg600-setup.c
  
  #include <asm/mach-types.h>
  #include <asm/mach/arch.h>
-@@ -37,15 +38,17 @@
+@@ -37,15 +38,17 @@ static struct platform_device dsmg600_fl
  	.resource		= &dsmg600_flash_resource,
  };
  
@@ -176,7 +176,7 @@ Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/dsmg600-setup.c
  };
  
  #ifdef CONFIG_LEDS_CLASS
-@@ -116,7 +119,7 @@
+@@ -116,7 +119,7 @@ static struct platform_device dsmg600_ua
  };
  
  static struct platform_device *dsmg600_devices[] __initdata = {
@@ -185,10 +185,10 @@ Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/dsmg600-setup.c
  	&dsmg600_flash,
  };
  
-Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/ixdp425-setup.c
+Index: linux-2.6.23.17/arch/arm/mach-ixp4xx/ixdp425-setup.c
 ===================================================================
---- linux-2.6.24-rc6-armeb.orig/arch/arm/mach-ixp4xx/ixdp425-setup.c	2008-01-05 18:10:05.000000000 +1030
-+++ linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/ixdp425-setup.c	2008-01-05 18:10:10.000000000 +1030
+--- linux-2.6.23.17.orig/arch/arm/mach-ixp4xx/ixdp425-setup.c
++++ linux-2.6.23.17/arch/arm/mach-ixp4xx/ixdp425-setup.c
 @@ -15,6 +15,7 @@
  #include <linux/tty.h>
  #include <linux/serial_8250.h>
@@ -197,7 +197,7 @@ Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/ixdp425-setup.c
  #include <linux/io.h>
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/nand.h>
-@@ -120,18 +121,17 @@
+@@ -120,18 +121,17 @@ static struct platform_device ixdp425_fl
  };
  #endif	/* CONFIG_MTD_NAND_PLATFORM */
  
@@ -221,7 +221,7 @@ Index: linux-2.6.24-rc6-armeb/arch/arm/mach-ixp4xx/ixdp425-setup.c
  };
  
  static struct resource ixdp425_uart_resources[] = {
-@@ -178,7 +178,7 @@
+@@ -178,7 +178,7 @@ static struct platform_device ixdp425_ua
  };
  
  static struct platform_device *ixdp425_devices[] __initdata = {

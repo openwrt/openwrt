@@ -1,7 +1,8 @@
-diff -Nur linux-2.6.23/arch/arm/mach-ixp4xx/Kconfig linux-2.6.23-owrt/arch/arm/mach-ixp4xx/Kconfig
---- linux-2.6.23/arch/arm/mach-ixp4xx/Kconfig	2007-10-23 18:03:34.000000000 +0200
-+++ linux-2.6.23-owrt/arch/arm/mach-ixp4xx/Kconfig	2007-10-23 18:22:41.000000000 +0200
-@@ -65,6 +65,14 @@
+Index: linux-2.6.23.17/arch/arm/mach-ixp4xx/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/arch/arm/mach-ixp4xx/Kconfig
++++ linux-2.6.23.17/arch/arm/mach-ixp4xx/Kconfig
+@@ -65,6 +65,14 @@ config MACH_PRONGHORNMETRO
  	  Engineering Pronghorn Metro Platform. For more
  	  information on this platform, see <file:Documentation/arm/IXP4xx>.
  
@@ -16,10 +17,11 @@ diff -Nur linux-2.6.23/arch/arm/mach-ixp4xx/Kconfig linux-2.6.23-owrt/arch/arm/m
  config ARCH_IXDP425
  	bool "IXDP425"
  	help
-diff -Nur linux-2.6.23/arch/arm/mach-ixp4xx/Makefile linux-2.6.23-owrt/arch/arm/mach-ixp4xx/Makefile
---- linux-2.6.23/arch/arm/mach-ixp4xx/Makefile	2007-10-23 18:03:34.000000000 +0200
-+++ linux-2.6.23-owrt/arch/arm/mach-ixp4xx/Makefile	2007-10-23 18:22:41.000000000 +0200
-@@ -17,6 +17,7 @@
+Index: linux-2.6.23.17/arch/arm/mach-ixp4xx/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/arch/arm/mach-ixp4xx/Makefile
++++ linux-2.6.23.17/arch/arm/mach-ixp4xx/Makefile
+@@ -17,6 +17,7 @@ obj-pci-$(CONFIG_MACH_GATEWAY7001)	+= ga
  obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
  obj-pci-$(CONFIG_MACH_FSG)		+= fsg-pci.o
  obj-pci-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-pci.o
@@ -27,17 +29,17 @@ diff -Nur linux-2.6.23/arch/arm/mach-ixp4xx/Makefile linux-2.6.23-owrt/arch/arm/
  
  obj-y	+= common.o
  
-@@ -32,6 +33,7 @@
+@@ -32,5 +33,6 @@ obj-$(CONFIG_MACH_GATEWAY7001)	+= gatewa
  obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
- obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o
+ obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o fsg-power.o
  obj-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-setup.o
 +obj-$(CONFIG_MACH_COMPEX)	+= compex-setup.o
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
- obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
-diff -Nur linux-2.6.23/arch/arm/mach-ixp4xx/compex-setup.c linux-2.6.23-owrt/arch/arm/mach-ixp4xx/compex-setup.c
---- linux-2.6.23/arch/arm/mach-ixp4xx/compex-setup.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.23-owrt/arch/arm/mach-ixp4xx/compex-setup.c	2007-10-23 18:22:41.000000000 +0200
+Index: linux-2.6.23.17/arch/arm/mach-ixp4xx/compex-setup.c
+===================================================================
+--- /dev/null
++++ linux-2.6.23.17/arch/arm/mach-ixp4xx/compex-setup.c
 @@ -0,0 +1,120 @@
 +/*
 + * arch/arm/mach-ixp4xx/compex-setup.c
@@ -159,10 +161,11 @@ diff -Nur linux-2.6.23/arch/arm/mach-ixp4xx/compex-setup.c linux-2.6.23-owrt/arc
 +	.init_machine	= compex_init,
 +MACHINE_END
 +#endif
-diff -Nur linux-2.6.23/arch/arm/mach-ixp4xx/ixdp425-pci.c linux-2.6.23-owrt/arch/arm/mach-ixp4xx/ixdp425-pci.c
---- linux-2.6.23/arch/arm/mach-ixp4xx/ixdp425-pci.c	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6.23-owrt/arch/arm/mach-ixp4xx/ixdp425-pci.c	2007-10-23 18:22:41.000000000 +0200
-@@ -66,7 +66,7 @@
+Index: linux-2.6.23.17/arch/arm/mach-ixp4xx/ixdp425-pci.c
+===================================================================
+--- linux-2.6.23.17.orig/arch/arm/mach-ixp4xx/ixdp425-pci.c
++++ linux-2.6.23.17/arch/arm/mach-ixp4xx/ixdp425-pci.c
+@@ -66,7 +66,7 @@ struct hw_pci ixdp425_pci __initdata = {
  int __init ixdp425_pci_init(void)
  {
  	if (machine_is_ixdp425() || machine_is_ixcdp1100() ||
@@ -171,10 +174,11 @@ diff -Nur linux-2.6.23/arch/arm/mach-ixp4xx/ixdp425-pci.c linux-2.6.23-owrt/arch
  		pci_common_init(&ixdp425_pci);
  	return 0;
  }
-diff -Nur linux-2.6.23/arch/arm/tools/mach-types linux-2.6.23-owrt/arch/arm/tools/mach-types
---- linux-2.6.23/arch/arm/tools/mach-types	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6.23-owrt/arch/arm/tools/mach-types	2007-10-23 18:22:41.000000000 +0200
-@@ -1278,7 +1278,7 @@
+Index: linux-2.6.23.17/arch/arm/tools/mach-types
+===================================================================
+--- linux-2.6.23.17.orig/arch/arm/tools/mach-types
++++ linux-2.6.23.17/arch/arm/tools/mach-types
+@@ -1278,7 +1278,7 @@ oiab			MACH_OIAB		OIAB			1269
  smdk6400		MACH_SMDK6400		SMDK6400		1270
  nokia_n800		MACH_NOKIA_N800		NOKIA_N800		1271
  greenphone		MACH_GREENPHONE		GREENPHONE		1272

@@ -6,14 +6,16 @@ PATA_UDMA_TIMING register.
 This patch fixes a copy/paste bug that breaks DMA modes on VT6421 PATA port.  
  
 Signed-off-by: Ondrej Zary <linux@rain...>  
-diff -Nur linux-2.6.21.6/drivers/ata/sata_via.c linux-2.6.21.6-new/drivers/ata/sata_via.c
---- linux-2.6.21.6/drivers/ata/sata_via.c	2007-07-07 06:47:55.000000000 +0200
-+++ linux-2.6.21.6-new/drivers/ata/sata_via.c	2007-09-29 11:05:07.000000000 +0200
-@@ -380,6 +380,6 @@
+Index: linux-2.6.21.7/drivers/ata/sata_via.c
+===================================================================
+--- linux-2.6.21.7.orig/drivers/ata/sata_via.c
++++ linux-2.6.21.7/drivers/ata/sata_via.c
+@@ -380,7 +380,7 @@ static void vt6421_set_dma_mode(struct a
  {
  	struct pci_dev *pdev = to_pci_dev(ap->host->dev);
  	static const u8 udma_bits[] = { 0xEE, 0xE8, 0xE6, 0xE4, 0xE2, 0xE1, 0xE0, 0xE0 };
 -	pci_write_config_byte(pdev, PATA_UDMA_TIMING, udma_bits[adev->pio_mode - XFER_UDMA_0]);
 +	pci_write_config_byte(pdev, PATA_UDMA_TIMING, udma_bits[adev->dma_mode - XFER_UDMA_0]);
  }
-
+ 
+ static int vt6421_port_start(struct ata_port *ap)

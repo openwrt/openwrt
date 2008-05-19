@@ -1,7 +1,7 @@
-diff --git a/drivers/net/arm/Kconfig b/drivers/net/arm/Kconfig
-index f9cc2b6..9274d3f 100644
---- a/drivers/net/arm/Kconfig
-+++ b/drivers/net/arm/Kconfig
+Index: linux-2.6.24.7/drivers/net/arm/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/drivers/net/arm/Kconfig
++++ linux-2.6.24.7/drivers/net/arm/Kconfig
 @@ -47,3 +47,13 @@ config EP93XX_ETH
  	help
  	  This is a driver for the ethernet hardware included in EP93xx CPUs.
@@ -16,20 +16,19 @@ index f9cc2b6..9274d3f 100644
 +	help
 +	  Say Y here if you want to use built-in Ethernet ports
 +	  on IXP4xx processor.
-diff --git a/drivers/net/arm/Makefile b/drivers/net/arm/Makefile
-index a4c8682..7c812ac 100644
---- a/drivers/net/arm/Makefile
-+++ b/drivers/net/arm/Makefile
+Index: linux-2.6.24.7/drivers/net/arm/Makefile
+===================================================================
+--- linux-2.6.24.7.orig/drivers/net/arm/Makefile
++++ linux-2.6.24.7/drivers/net/arm/Makefile
 @@ -9,3 +9,4 @@ obj-$(CONFIG_ARM_ETHER3)	+= ether3.o
  obj-$(CONFIG_ARM_ETHER1)	+= ether1.o
  obj-$(CONFIG_ARM_AT91_ETHER)	+= at91_ether.o
  obj-$(CONFIG_EP93XX_ETH)	+= ep93xx_eth.o
 +obj-$(CONFIG_IXP4XX_ETH)	+= ixp4xx_eth.o
-diff --git a/drivers/net/arm/ixp4xx_eth.c b/drivers/net/arm/ixp4xx_eth.c
-new file mode 100644
-index 0000000..98131a7
+Index: linux-2.6.24.7/drivers/net/arm/ixp4xx_eth.c
+===================================================================
 --- /dev/null
-+++ b/drivers/net/arm/ixp4xx_eth.c
++++ linux-2.6.24.7/drivers/net/arm/ixp4xx_eth.c
 @@ -0,0 +1,1261 @@
 +/*
 + * Intel IXP4xx Ethernet driver for Linux
@@ -1292,10 +1291,10 @@ index 0000000..98131a7
 +MODULE_LICENSE("GPL v2");
 +module_init(eth_init_module);
 +module_exit(eth_cleanup_module);
-diff --git a/drivers/net/wan/Kconfig b/drivers/net/wan/Kconfig
-index a3df09e..94e7aa7 100644
---- a/drivers/net/wan/Kconfig
-+++ b/drivers/net/wan/Kconfig
+Index: linux-2.6.24.7/drivers/net/wan/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/drivers/net/wan/Kconfig
++++ linux-2.6.24.7/drivers/net/wan/Kconfig
 @@ -334,6 +334,15 @@ config DSCC4_PCI_RST
  
  	  Say Y if your card supports this feature.
@@ -1312,10 +1311,10 @@ index a3df09e..94e7aa7 100644
  config DLCI
  	tristate "Frame Relay DLCI support"
  	---help---
-diff --git a/drivers/net/wan/Makefile b/drivers/net/wan/Makefile
-index d61fef3..1b1d116 100644
---- a/drivers/net/wan/Makefile
-+++ b/drivers/net/wan/Makefile
+Index: linux-2.6.24.7/drivers/net/wan/Makefile
+===================================================================
+--- linux-2.6.24.7.orig/drivers/net/wan/Makefile
++++ linux-2.6.24.7/drivers/net/wan/Makefile
 @@ -42,6 +42,7 @@ obj-$(CONFIG_C101)		+= c101.o
  obj-$(CONFIG_WANXL)		+= wanxl.o
  obj-$(CONFIG_PCI200SYN)		+= pci200syn.o
@@ -1324,11 +1323,10 @@ index d61fef3..1b1d116 100644
  
  clean-files := wanxlfw.inc
  $(obj)/wanxl.o:	$(obj)/wanxlfw.inc
-diff --git a/drivers/net/wan/ixp4xx_hss.c b/drivers/net/wan/ixp4xx_hss.c
-new file mode 100644
-index 0000000..c4cdace
+Index: linux-2.6.24.7/drivers/net/wan/ixp4xx_hss.c
+===================================================================
 --- /dev/null
-+++ b/drivers/net/wan/ixp4xx_hss.c
++++ linux-2.6.24.7/drivers/net/wan/ixp4xx_hss.c
 @@ -0,0 +1,1270 @@
 +/*
 + * Intel IXP4xx HSS (synchronous serial port) driver for Linux
@@ -2600,26 +2598,10 @@ index 0000000..c4cdace
 +MODULE_LICENSE("GPL v2");
 +module_init(hss_init_module);
 +module_exit(hss_cleanup_module);
-From: Krzysztof Halasa <khc@pm.waw.pl>
-Subject: Adds functions to read and write IXP4xx "feature" bits
-
-Adds functions to read and write IXP4xx "feature" (aka "fuse")
-bits, containing information about available/enabled CPU features.
-
-The uncompress.h included by boot/compressed/misc.c resides in
-a different space than rest of the kernel and thus can't use
-asm/hardware.h (including asm/arch/cpu.h - which, in turn, may use
-EXPORTed symbol "processor_id").
-
-Signed-off-by: Krzysztof Halasa <khc@pm.waw.pl>
---
-PATCH FOLLOWS
-KernelVersion: 2.6.23
-
-diff --git a/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h b/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h
-index 5d949d7..c704fe8 100644
---- a/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h
-+++ b/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h
+Index: linux-2.6.24.7/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h
+===================================================================
+--- linux-2.6.24.7.orig/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h
++++ linux-2.6.24.7/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h
 @@ -15,10 +15,6 @@
   *
   */
@@ -2668,10 +2650,10 @@ index 5d949d7..c704fe8 100644
 +				    IXP4XX_FEATURE_XSCALE_MAX_FREQ)
 +
  #endif
-diff --git a/include/asm-arm/arch-ixp4xx/cpu.h b/include/asm-arm/arch-ixp4xx/cpu.h
-index d2523b3..2fa3d6b 100644
---- a/include/asm-arm/arch-ixp4xx/cpu.h
-+++ b/include/asm-arm/arch-ixp4xx/cpu.h
+Index: linux-2.6.24.7/include/asm-arm/arch-ixp4xx/cpu.h
+===================================================================
+--- linux-2.6.24.7.orig/include/asm-arm/arch-ixp4xx/cpu.h
++++ linux-2.6.24.7/include/asm-arm/arch-ixp4xx/cpu.h
 @@ -28,4 +28,19 @@ extern unsigned int processor_id;
  #define cpu_is_ixp46x()	((processor_id & IXP4XX_PROCESSOR_ID_MASK) == \
  			  IXP465_PROCESSOR_ID_VALUE)
@@ -2692,10 +2674,10 @@ index d2523b3..2fa3d6b 100644
 +}
 +
  #endif  /* _ASM_ARCH_CPU_H */
-diff --git a/include/asm-arm/arch-ixp4xx/hardware.h b/include/asm-arm/arch-ixp4xx/hardware.h
-index 297ceda..73e8dc3 100644
---- a/include/asm-arm/arch-ixp4xx/hardware.h
-+++ b/include/asm-arm/arch-ixp4xx/hardware.h
+Index: linux-2.6.24.7/include/asm-arm/arch-ixp4xx/hardware.h
+===================================================================
+--- linux-2.6.24.7.orig/include/asm-arm/arch-ixp4xx/hardware.h
++++ linux-2.6.24.7/include/asm-arm/arch-ixp4xx/hardware.h
 @@ -27,13 +27,13 @@
  
  #define pcibios_assign_all_busses()	1
@@ -2713,10 +2695,10 @@ index 297ceda..73e8dc3 100644
  /* Platform helper functions and definitions */
  #include "platform.h"
  
-diff --git a/include/asm-arm/arch-ixp4xx/uncompress.h b/include/asm-arm/arch-ixp4xx/uncompress.h
-index f7a35b7..34ef48f 100644
---- a/include/asm-arm/arch-ixp4xx/uncompress.h
-+++ b/include/asm-arm/arch-ixp4xx/uncompress.h
+Index: linux-2.6.24.7/include/asm-arm/arch-ixp4xx/uncompress.h
+===================================================================
+--- linux-2.6.24.7.orig/include/asm-arm/arch-ixp4xx/uncompress.h
++++ linux-2.6.24.7/include/asm-arm/arch-ixp4xx/uncompress.h
 @@ -13,7 +13,7 @@
  #ifndef _ARCH_UNCOMPRESS_H_
  #define _ARCH_UNCOMPRESS_H_
@@ -2726,11 +2708,11 @@ index f7a35b7..34ef48f 100644
  #include <asm/mach-types.h>
  #include <linux/serial_reg.h>
  
-diff --git a/arch/arm/kernel/setup.c b/arch/arm/kernel/setup.c
-index 4de432e..c4c810b 100644
---- a/arch/arm/kernel/setup.c
-+++ b/arch/arm/kernel/setup.c
-@@ -61,6 +61,7 @@ extern int root_mountflags;
+Index: linux-2.6.24.7/arch/arm/kernel/setup.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/kernel/setup.c
++++ linux-2.6.24.7/arch/arm/kernel/setup.c
+@@ -62,6 +62,7 @@ extern int root_mountflags;
  extern void _stext, _text, _etext, __data_start, _edata, _end;
  
  unsigned int processor_id;
@@ -2738,25 +2720,11 @@ index 4de432e..c4c810b 100644
  unsigned int __machine_arch_type;
  EXPORT_SYMBOL(__machine_arch_type);
  
-
-
-From: Krzysztof Halasa <khc@pm.waw.pl>
-Subject: Adds drivers for IXP4xx QMgr and NPE features
-
-This patch adds drivers for IXP4xx hardware Queue Manager and for
-Network Processor Engines. Requires patch #4712 (reading/writing
-CPU feature (aka fuse) bits).
-
-Signed-off-by: Krzysztof Halasa <khc@pm.waw.pl>
---
-PATCH FOLLOWS
-KernelVersion: 2.6.23
-
-diff --git a/arch/arm/mach-ixp4xx/Kconfig b/arch/arm/mach-ixp4xx/Kconfig
-index 61b2dfc..e774447 100644
---- a/arch/arm/mach-ixp4xx/Kconfig
-+++ b/arch/arm/mach-ixp4xx/Kconfig
-@@ -189,6 +189,20 @@ config IXP4XX_INDIRECT_PCI
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/Kconfig
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/Kconfig
+@@ -262,6 +262,20 @@ config IXP4XX_INDIRECT_PCI
  	  need to use the indirect method instead. If you don't know
  	  what you need, leave this option unselected.
  
@@ -2777,21 +2745,20 @@ index 61b2dfc..e774447 100644
  endmenu
  
  endif
-diff --git a/arch/arm/mach-ixp4xx/Makefile b/arch/arm/mach-ixp4xx/Makefile
-index 77e00ad..4bb97e1 100644
---- a/arch/arm/mach-ixp4xx/Makefile
-+++ b/arch/arm/mach-ixp4xx/Makefile
-@@ -30,3 +30,5 @@ obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
- obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/Makefile
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/Makefile
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/Makefile
+@@ -48,3 +48,5 @@ obj-$(CONFIG_MACH_AP1000)	+= ap1000-setu
+ obj-$(CONFIG_MACH_TW5334)	+= tw5334-setup.o
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
 +obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
 +obj-$(CONFIG_IXP4XX_NPE)	+= ixp4xx_npe.o
-diff --git a/include/asm-arm/arch-ixp4xx/qmgr.h b/include/asm-arm/arch-ixp4xx/qmgr.h
-new file mode 100644
-index 0000000..1e52b95
+Index: linux-2.6.24.7/include/asm-arm/arch-ixp4xx/qmgr.h
+===================================================================
 --- /dev/null
-+++ b/include/asm-arm/arch-ixp4xx/qmgr.h
++++ linux-2.6.24.7/include/asm-arm/arch-ixp4xx/qmgr.h
 @@ -0,0 +1,126 @@
 +/*
 + * Copyright (C) 2007 Krzysztof Halasa <khc@pm.waw.pl>
@@ -2919,11 +2886,10 @@ index 0000000..1e52b95
 +}
 +
 +#endif
-diff --git a/include/asm-arm/arch-ixp4xx/npe.h b/include/asm-arm/arch-ixp4xx/npe.h
-new file mode 100644
-index 0000000..37d0511
+Index: linux-2.6.24.7/include/asm-arm/arch-ixp4xx/npe.h
+===================================================================
 --- /dev/null
-+++ b/include/asm-arm/arch-ixp4xx/npe.h
++++ linux-2.6.24.7/include/asm-arm/arch-ixp4xx/npe.h
 @@ -0,0 +1,39 @@
 +#ifndef __IXP4XX_NPE_H
 +#define __IXP4XX_NPE_H
@@ -2964,11 +2930,10 @@ index 0000000..37d0511
 +void npe_release(struct npe *npe);
 +
 +#endif /* __IXP4XX_NPE_H */
-diff --git a/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c b/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c
-new file mode 100644
-index 0000000..e833013
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c
+===================================================================
 --- /dev/null
-+++ b/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c
 @@ -0,0 +1,274 @@
 +/*
 + * Intel IXP4xx Queue Manager driver for Linux
@@ -3244,11 +3209,10 @@ index 0000000..e833013
 +EXPORT_SYMBOL(qmgr_disable_irq);
 +EXPORT_SYMBOL(qmgr_request_queue);
 +EXPORT_SYMBOL(qmgr_release_queue);
-diff --git a/arch/arm/mach-ixp4xx/ixp4xx_npe.c b/arch/arm/mach-ixp4xx/ixp4xx_npe.c
-new file mode 100644
-index 0000000..83c137e
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/ixp4xx_npe.c
+===================================================================
 --- /dev/null
-+++ b/arch/arm/mach-ixp4xx/ixp4xx_npe.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/ixp4xx_npe.c
 @@ -0,0 +1,741 @@
 +/*
 + * Intel IXP4xx Network Processor Engine driver for Linux
@@ -3991,30 +3955,11 @@ index 0000000..83c137e
 +EXPORT_SYMBOL(npe_send_message);
 +EXPORT_SYMBOL(npe_recv_message);
 +EXPORT_SYMBOL(npe_send_recv_message);
-
-
-From 35acb53f356e80efad803b9460986d9786dc9b96 Mon Sep 17 00:00:00 2001
-From: Krzysztof Halasa <khc@pm.waw.pl>
-Date: Tue, 29 Jan 2008 10:25:57 +1030
-Subject: Headers for IXP4xx built-in Ethernet and WAN drivers (Patch #4714)
-
-Adds platform structs and #defines required by drivers for
-IXP4xx built-in Ethernet and WAN (sync serial) ports.
-
-The actual drivers will reside in drivers/net/arm and
-drivers/net/wan and will be submitted separately.
-
-Signed-off-by: Krzysztof Halasa <khc@pm.waw.pl>
-Signed-off-by: Rod Whitby <rod@whitby.id.au>
-
-PATCH FOLLOWS
-KernelVersion: 2.6.24-git5
-
-diff --git a/include/asm-arm/arch-ixp4xx/platform.h b/include/asm-arm/arch-ixp4xx/platform.h
-index 2ce28e3..a1f2b54 100644
---- a/include/asm-arm/arch-ixp4xx/platform.h
-+++ b/include/asm-arm/arch-ixp4xx/platform.h
-@@ -91,6 +91,27 @@ struct ixp4xx_pata_data {
+Index: linux-2.6.24.7/include/asm-arm/arch-ixp4xx/platform.h
+===================================================================
+--- linux-2.6.24.7.orig/include/asm-arm/arch-ixp4xx/platform.h
++++ linux-2.6.24.7/include/asm-arm/arch-ixp4xx/platform.h
+@@ -102,6 +102,27 @@ struct ixp4xx_pata_data {
  
  struct sys_timer;
  
@@ -4042,29 +3987,11 @@ index 2ce28e3..a1f2b54 100644
  /*
   * Frequency of clock used for primary clocksource
   */
--- 
-1.5.2.5
-
-From 5a5be39c6411f2d6d8cead614f3f71af9fa4b4b4 Mon Sep 17 00:00:00 2001
-From: Krzysztof Halasa <khc@pm.waw.pl>
-Date: Fri, 1 Feb 2008 11:37:47 +1030
-Subject: Ethernet support for IXDP425 boards (Patch #4715)
-
-Adds IXDP425 platform support for two built-in 10/100 Ethernet ports.
-
-This patch will do nothing until the actual Ethernet driver is
-also included.
-
-Signed-off-by: Krzysztof Halasa <khc@pm.waw.pl>
---
-PATCH FOLLOWS
-KernelVersion: 2.6.23
-
-diff --git a/arch/arm/mach-ixp4xx/ixdp425-setup.c b/arch/arm/mach-ixp4xx/ixdp425-setup.c
-index e89070d..44584af 100644
---- a/arch/arm/mach-ixp4xx/ixdp425-setup.c
-+++ b/arch/arm/mach-ixp4xx/ixdp425-setup.c
-@@ -177,6 +177,31 @@ static struct platform_device ixdp425_uart = {
+Index: linux-2.6.24.7/arch/arm/mach-ixp4xx/ixdp425-setup.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/arm/mach-ixp4xx/ixdp425-setup.c
++++ linux-2.6.24.7/arch/arm/mach-ixp4xx/ixdp425-setup.c
+@@ -177,6 +177,31 @@ static struct platform_device ixdp425_ua
  	.resource		= ixdp425_uart_resources
  };
  
@@ -4096,7 +4023,7 @@ index e89070d..44584af 100644
  static struct platform_device *ixdp425_devices[] __initdata = {
  	&ixdp425_i2c_gpio,
  	&ixdp425_flash,
-@@ -184,7 +209,9 @@ static struct platform_device *ixdp425_devices[] __initdata = {
+@@ -184,7 +209,9 @@ static struct platform_device *ixdp425_d
      defined(CONFIG_MTD_NAND_PLATFORM_MODULE)
  	&ixdp425_flash_nand,
  #endif
@@ -4107,6 +4034,3 @@ index e89070d..44584af 100644
  };
  
  static void __init ixdp425_init(void)
--- 
-1.5.2.5
-

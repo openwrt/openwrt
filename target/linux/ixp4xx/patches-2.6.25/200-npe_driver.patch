@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/drivers/net/arm/Kconfig
+Index: linux-2.6.25.4/drivers/net/arm/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/arm/Kconfig
-+++ linux-2.6.25.1/drivers/net/arm/Kconfig
+--- linux-2.6.25.4.orig/drivers/net/arm/Kconfig
++++ linux-2.6.25.4/drivers/net/arm/Kconfig
 @@ -47,3 +47,11 @@ config EP93XX_ETH
  	help
  	  This is a driver for the ethernet hardware included in EP93xx CPUs.
@@ -14,19 +14,19 @@ Index: linux-2.6.25.1/drivers/net/arm/Kconfig
 +	help
 +	  Say Y here if you want to use built-in Ethernet ports
 +	  on IXP4xx processor.
-Index: linux-2.6.25.1/drivers/net/arm/Makefile
+Index: linux-2.6.25.4/drivers/net/arm/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/arm/Makefile
-+++ linux-2.6.25.1/drivers/net/arm/Makefile
+--- linux-2.6.25.4.orig/drivers/net/arm/Makefile
++++ linux-2.6.25.4/drivers/net/arm/Makefile
 @@ -9,3 +9,4 @@ obj-$(CONFIG_ARM_ETHER3)	+= ether3.o
  obj-$(CONFIG_ARM_ETHER1)	+= ether1.o
  obj-$(CONFIG_ARM_AT91_ETHER)	+= at91_ether.o
  obj-$(CONFIG_EP93XX_ETH)	+= ep93xx_eth.o
 +obj-$(CONFIG_IXP4XX_ETH)	+= ixp4xx_eth.o
-Index: linux-2.6.25.1/drivers/net/arm/ixp4xx_eth.c
+Index: linux-2.6.25.4/drivers/net/arm/ixp4xx_eth.c
 ===================================================================
 --- /dev/null
-+++ linux-2.6.25.1/drivers/net/arm/ixp4xx_eth.c
++++ linux-2.6.25.4/drivers/net/arm/ixp4xx_eth.c
 @@ -0,0 +1,1265 @@
 +/*
 + * Intel IXP4xx Ethernet driver for Linux
@@ -1293,10 +1293,10 @@ Index: linux-2.6.25.1/drivers/net/arm/ixp4xx_eth.c
 +MODULE_ALIAS("platform:ixp4xx_eth");
 +module_init(eth_init_module);
 +module_exit(eth_cleanup_module);
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/ixp4xx_npe.c
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/ixp4xx_npe.c
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/ixp4xx_npe.c
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/ixp4xx_npe.c
+--- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/ixp4xx_npe.c
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/ixp4xx_npe.c
 @@ -448,7 +448,9 @@ int npe_send_message(struct npe *npe, co
  		return -ETIMEDOUT;
  	}
@@ -1317,10 +1317,10 @@ Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/ixp4xx_npe.c
  	return 0;
  }
  
-Index: linux-2.6.25.1/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c
+Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c
 ===================================================================
---- linux-2.6.25.1.orig/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c
-+++ linux-2.6.25.1/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c
+--- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/ixp4xx_qmgr.c
 @@ -184,6 +184,8 @@ void qmgr_release_queue(unsigned int que
  	case 3: mask[0] = 0xFF; break;
  	}
