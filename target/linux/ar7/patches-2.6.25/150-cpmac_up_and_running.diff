@@ -13,10 +13,10 @@ Signed-off-by: Anton Vorontsov <avorontsov@ru.mvista.com>
  drivers/net/cpmac.c      |   19 +++----------------
  2 files changed, 20 insertions(+), 16 deletions(-)
 
-Index: linux-2.6.25.1/arch/mips/ar7/platform.c
+Index: linux-2.6.25.4/arch/mips/ar7/platform.c
 ===================================================================
---- linux-2.6.25.1.orig/arch/mips/ar7/platform.c	2008-05-03 16:17:30.000000000 +0200
-+++ linux-2.6.25.1/arch/mips/ar7/platform.c	2008-05-03 16:24:08.000000000 +0200
+--- linux-2.6.25.4.orig/arch/mips/ar7/platform.c
++++ linux-2.6.25.4/arch/mips/ar7/platform.c
 @@ -33,6 +33,8 @@
  #include <linux/vlynq.h>
  #include <linux/leds.h>
@@ -26,7 +26,7 @@ Index: linux-2.6.25.1/arch/mips/ar7/platform.c
  
  #include <asm/addrspace.h>
  #include <asm/ar7/ar7.h>
-@@ -205,6 +207,13 @@
+@@ -205,6 +207,13 @@ static struct physmap_flash_data physmap
  	.width = 2,
  };
  
@@ -40,7 +40,7 @@ Index: linux-2.6.25.1/arch/mips/ar7/platform.c
  static struct plat_cpmac_data cpmac_low_data = {
  	.reset_bit = 17,
  	.power_bit = 20,
-@@ -506,6 +515,10 @@
+@@ -506,6 +515,10 @@ static int __init ar7_register_devices(v
  	}
  
  	if (ar7_has_high_cpmac()) {
@@ -51,7 +51,7 @@ Index: linux-2.6.25.1/arch/mips/ar7/platform.c
  		cpmac_get_mac(1, cpmac_high_data.dev_addr);
  		res = platform_device_register(&cpmac_high);
  		if (res)
-@@ -514,6 +527,10 @@
+@@ -514,6 +527,10 @@ static int __init ar7_register_devices(v
  		cpmac_low_data.phy_mask = 0xffffffff;
  	}
  
@@ -62,11 +62,11 @@ Index: linux-2.6.25.1/arch/mips/ar7/platform.c
  	cpmac_get_mac(0, cpmac_low_data.dev_addr);
  	res = platform_device_register(&cpmac_low);
  	if (res)
-Index: linux-2.6.25.1/drivers/net/cpmac.c
+Index: linux-2.6.25.4/drivers/net/cpmac.c
 ===================================================================
---- linux-2.6.25.1.orig/drivers/net/cpmac.c	2008-05-03 16:21:17.000000000 +0200
-+++ linux-2.6.25.1/drivers/net/cpmac.c	2008-05-03 16:24:08.000000000 +0200
-@@ -1035,23 +1035,10 @@
+--- linux-2.6.25.4.orig/drivers/net/cpmac.c
++++ linux-2.6.25.4/drivers/net/cpmac.c
+@@ -1035,23 +1035,10 @@ static int __devinit cpmac_probe(struct 
  
  	if (phy_id == PHY_MAX_ADDR) {
  		if (external_switch || dumb_switch) {

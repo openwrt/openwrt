@@ -1,8 +1,8 @@
-Index: linux-2.6.23-rc6/drivers/char/Kconfig
+Index: linux-2.6.23.17/drivers/char/Kconfig
 ===================================================================
---- linux-2.6.23-rc6.orig/drivers/char/Kconfig	2007-09-21 16:23:51.000000000 +0800
-+++ linux-2.6.23-rc6/drivers/char/Kconfig	2007-09-21 16:24:12.000000000 +0800
-@@ -928,6 +928,15 @@
+--- linux-2.6.23.17.orig/drivers/char/Kconfig
++++ linux-2.6.23.17/drivers/char/Kconfig
+@@ -928,6 +928,15 @@ config MWAVE
  	  To compile this driver as a module, choose M here: the
  	  module will be called mwave.
  
@@ -18,11 +18,11 @@ Index: linux-2.6.23-rc6/drivers/char/Kconfig
  config SCx200_GPIO
  	tristate "NatSemi SCx200 GPIO Support"
  	depends on SCx200
-Index: linux-2.6.23-rc6/drivers/char/Makefile
+Index: linux-2.6.23.17/drivers/char/Makefile
 ===================================================================
---- linux-2.6.23-rc6.orig/drivers/char/Makefile	2007-09-21 16:23:51.000000000 +0800
-+++ linux-2.6.23-rc6/drivers/char/Makefile	2007-09-21 16:24:12.000000000 +0800
-@@ -89,6 +89,7 @@
+--- linux-2.6.23.17.orig/drivers/char/Makefile
++++ linux-2.6.23.17/drivers/char/Makefile
+@@ -89,6 +89,7 @@ obj-$(CONFIG_COBALT_LCD)	+= lcd.o
  obj-$(CONFIG_PPDEV)		+= ppdev.o
  obj-$(CONFIG_NWBUTTON)		+= nwbutton.o
  obj-$(CONFIG_NWFLASH)		+= nwflash.o

@@ -1,8 +1,8 @@
-Index: linux-2.6.23-rc6/drivers/mtd/Kconfig
+Index: linux-2.6.24.7/drivers/mtd/Kconfig
 ===================================================================
---- linux-2.6.23-rc6.orig/drivers/mtd/Kconfig	2007-09-21 16:23:59.000000000 +0800
-+++ linux-2.6.23-rc6/drivers/mtd/Kconfig	2007-09-21 16:24:11.000000000 +0800
-@@ -160,6 +160,12 @@
+--- linux-2.6.24.7.orig/drivers/mtd/Kconfig
++++ linux-2.6.24.7/drivers/mtd/Kconfig
+@@ -160,6 +160,12 @@ config MTD_AFS_PARTS
  	  for your particular device. It won't happen automatically. The
  	  'armflash' map driver (CONFIG_MTD_ARMFLASH) does this, for example.
  
@@ -15,11 +15,11 @@ Index: linux-2.6.23-rc6/drivers/mtd/Kconfig
  comment "User Modules And Translation Layers"
  
  config MTD_CHAR
-Index: linux-2.6.23-rc6/drivers/mtd/Makefile
+Index: linux-2.6.24.7/drivers/mtd/Makefile
 ===================================================================
---- linux-2.6.23-rc6.orig/drivers/mtd/Makefile	2007-09-21 16:23:51.000000000 +0800
-+++ linux-2.6.23-rc6/drivers/mtd/Makefile	2007-09-21 16:24:11.000000000 +0800
-@@ -11,6 +11,7 @@
+--- linux-2.6.24.7.orig/drivers/mtd/Makefile
++++ linux-2.6.24.7/drivers/mtd/Makefile
+@@ -11,6 +11,7 @@ obj-$(CONFIG_MTD_CONCAT)	+= mtdconcat.o
  obj-$(CONFIG_MTD_REDBOOT_PARTS) += redboot.o
  obj-$(CONFIG_MTD_CMDLINE_PARTS) += cmdlinepart.o
  obj-$(CONFIG_MTD_AFS_PARTS)	+= afs.o
@@ -27,11 +27,11 @@ Index: linux-2.6.23-rc6/drivers/mtd/Makefile
  
  # 'Users' - code which presents functionality to userspace.
  obj-$(CONFIG_MTD_CHAR)		+= mtdchar.o
-Index: linux-2.6.23-rc6/drivers/mtd/maps/physmap.c
+Index: linux-2.6.24.7/drivers/mtd/maps/physmap.c
 ===================================================================
---- linux-2.6.23-rc6.orig/drivers/mtd/maps/physmap.c	2007-09-21 16:23:51.000000000 +0800
-+++ linux-2.6.23-rc6/drivers/mtd/maps/physmap.c	2007-09-21 16:24:11.000000000 +0800
-@@ -74,7 +74,8 @@
+--- linux-2.6.24.7.orig/drivers/mtd/maps/physmap.c
++++ linux-2.6.24.7/drivers/mtd/maps/physmap.c
+@@ -74,7 +74,8 @@ static int physmap_flash_remove(struct p
  
  static const char *rom_probe_types[] = { "cfi_probe", "jedec_probe", "map_rom", NULL };
  #ifdef CONFIG_MTD_PARTITIONS

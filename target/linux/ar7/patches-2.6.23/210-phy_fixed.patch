@@ -1,8 +1,8 @@
-Index: linux-2.6.23-rc6/drivers/net/phy/fixed.c
+Index: linux-2.6.23.17/drivers/net/phy/fixed.c
 ===================================================================
---- linux-2.6.23-rc6.orig/drivers/net/phy/fixed.c	2007-09-21 16:23:51.000000000 +0800
-+++ linux-2.6.23-rc6/drivers/net/phy/fixed.c	2007-09-21 16:24:13.000000000 +0800
-@@ -189,6 +189,19 @@
+--- linux-2.6.23.17.orig/drivers/net/phy/fixed.c
++++ linux-2.6.23.17/drivers/net/phy/fixed.c
+@@ -189,6 +189,19 @@ static struct phy_driver fixed_mdio_driv
  	.driver 	= { .owner = THIS_MODULE,},
  };
  
@@ -22,7 +22,7 @@ Index: linux-2.6.23-rc6/drivers/net/phy/fixed.c
  /*-----------------------------------------------------------------------------
   *  This func is used to create all the necessary stuff, bind
   * the fixed phy driver and register all it on the mdio_bus_type.
-@@ -224,6 +237,12 @@
+@@ -224,6 +237,12 @@ static int fixed_mdio_register_device(in
  	}
  
  	fixed->regs = kzalloc(MII_REGS_NUM*sizeof(int), GFP_KERNEL);
@@ -35,7 +35,7 @@ Index: linux-2.6.23-rc6/drivers/net/phy/fixed.c
  	fixed->regs_num = MII_REGS_NUM;
  	fixed->phy_status.speed = speed;
  	fixed->phy_status.duplex = duplex;
-@@ -252,8 +271,11 @@
+@@ -252,8 +271,11 @@ static int fixed_mdio_register_device(in
  	fixed->phydev = phydev;
  
  	if(NULL == phydev) {
@@ -49,7 +49,7 @@ Index: linux-2.6.23-rc6/drivers/net/phy/fixed.c
  	}
  
  	phydev->irq = PHY_IGNORE_INTERRUPT;
-@@ -265,8 +287,33 @@
+@@ -265,8 +287,33 @@ static int fixed_mdio_register_device(in
  	else
  		snprintf(phydev->dev.bus_id, BUS_ID_SIZE,
  				"fixed@%d:%d", speed, duplex);
@@ -83,7 +83,7 @@ Index: linux-2.6.23-rc6/drivers/net/phy/fixed.c
  	err = device_register(&phydev->dev);
  	if(err) {
  		printk(KERN_ERR "Phy %s failed to register\n",
-@@ -303,6 +350,7 @@
+@@ -303,6 +350,7 @@ device_create_fail:
  	kfree(fixed);
  
  	return err;

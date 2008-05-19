@@ -1,6 +1,8 @@
---- linux-2.6.24.3/drivers/net/cpmac.c.orig	2008-03-10 23:59:56.000000000 +0000
-+++ linux-2.6.24.3/drivers/net/cpmac.c	2008-03-11 00:13:04.000000000 +0000
-@@ -187,6 +187,7 @@
+Index: linux-2.6.24.7/drivers/net/cpmac.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/net/cpmac.c
++++ linux-2.6.24.7/drivers/net/cpmac.c
+@@ -187,6 +187,7 @@ struct cpmac_desc {
  #define CPMAC_EOQ			0x1000
  	struct sk_buff *skb;
  	struct cpmac_desc *next;
@@ -8,7 +10,7 @@
  	dma_addr_t mapping;
  	dma_addr_t data_mapping;
  };
-@@ -242,6 +243,16 @@
+@@ -242,6 +243,16 @@ static void cpmac_dump_desc(struct net_d
  	printk("\n");
  }
  
@@ -25,7 +27,7 @@
  static void cpmac_dump_skb(struct net_device *dev, struct sk_buff *skb)
  {
  	int i;
-@@ -413,21 +424,40 @@
+@@ -413,21 +424,40 @@ static struct sk_buff *cpmac_rx_one(stru
  static int cpmac_poll(struct napi_struct *napi, int budget)
  {
  	struct sk_buff *skb;
@@ -68,7 +70,7 @@
  		skb = cpmac_rx_one(priv, desc);
  		if (likely(skb)) {
  			netif_receive_skb(skb);
-@@ -436,19 +466,81 @@
+@@ -436,19 +466,81 @@ static int cpmac_poll(struct napi_struct
  		desc = desc->next;
  	}
  
@@ -152,7 +154,7 @@
  }
  
  static int cpmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
-@@ -625,8 +717,10 @@
+@@ -625,8 +717,10 @@ static void cpmac_clear_rx(struct net_de
  			desc->dataflags = CPMAC_OWN;
  			dev->stats.rx_dropped++;
  		}
@@ -163,7 +165,7 @@
  }
  
  static void cpmac_clear_tx(struct net_device *dev)
-@@ -927,9 +1021,12 @@
+@@ -928,9 +1022,12 @@ static int cpmac_open(struct net_device 
  		desc->buflen = CPMAC_SKB_SIZE;
  		desc->dataflags = CPMAC_OWN;
  		desc->next = &priv->rx_head[(i + 1) % priv->ring_size];

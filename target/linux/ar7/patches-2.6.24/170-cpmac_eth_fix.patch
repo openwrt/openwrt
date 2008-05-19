@@ -1,7 +1,8 @@
-diff -pruN linux-2.6.24.2.old/drivers/net/cpmac.c linux-2.6.24.2/drivers/net/cpmac.c
---- linux-2.6.24.2.old/drivers/net/cpmac.c	2008-03-20 20:33:01.000000000 +0100
-+++ linux-2.6.24.2/drivers/net/cpmac.c	2008-03-20 20:47:31.000000000 +0100
-@@ -1178,9 +1179,7 @@ static int __devinit cpmac_probe(struct 
+Index: linux-2.6.24.7/drivers/net/cpmac.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/net/cpmac.c
++++ linux-2.6.24.7/drivers/net/cpmac.c
+@@ -1178,9 +1178,7 @@ static int __devinit cpmac_probe(struct 
  	priv->msg_enable = netif_msg_init(debug_level, 0xff);
  	memcpy(dev->dev_addr, pdata->dev_addr, sizeof(dev->dev_addr));
  
