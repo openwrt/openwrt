@@ -11,10 +11,10 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  drivers/mtd/redboot.c     |   13 ++++++++++---
  3 files changed, 18 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/mtd/maps/Kconfig b/drivers/mtd/maps/Kconfig
-index 12c2536..38b8d94 100644
---- a/drivers/mtd/maps/Kconfig
-+++ b/drivers/mtd/maps/Kconfig
+Index: linux-2.6.25.4/drivers/mtd/maps/Kconfig
+===================================================================
+--- linux-2.6.25.4.orig/drivers/mtd/maps/Kconfig
++++ linux-2.6.25.4/drivers/mtd/maps/Kconfig
 @@ -262,6 +262,13 @@ config MTD_MTX1
  	  Flash memory access on 4G Systems MTX-1 Board. If you have one of
  	  these boards and would like to use the flash chips on it, say 'Y'.
@@ -29,20 +29,20 @@ index 12c2536..38b8d94 100644
  config MTD_DILNETPC
  	tristate "CFI Flash device mapped on DIL/Net PC"
  	depends on X86 && MTD_CONCAT && MTD_PARTITIONS && MTD_CFI_INTELEXT
-diff --git a/drivers/mtd/maps/Makefile b/drivers/mtd/maps/Makefile
-index a9cbe80..e2c10be 100644
---- a/drivers/mtd/maps/Makefile
-+++ b/drivers/mtd/maps/Makefile
+Index: linux-2.6.25.4/drivers/mtd/maps/Makefile
+===================================================================
+--- linux-2.6.25.4.orig/drivers/mtd/maps/Makefile
++++ linux-2.6.25.4/drivers/mtd/maps/Makefile
 @@ -68,3 +68,4 @@ obj-$(CONFIG_MTD_PLATRAM)	+= plat-ram.o
  obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
  obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o
  obj-$(CONFIG_MTD_INTEL_VR_NOR)	+= intel_vr_nor.o
 +obj-$(CONFIG_MTD_BCM963XX)	+= bcm963xx-flash.o
-diff --git a/drivers/mtd/redboot.c b/drivers/mtd/redboot.c
-index 4747490..4f500af 100644
---- a/drivers/mtd/redboot.c
-+++ b/drivers/mtd/redboot.c
-@@ -39,7 +39,7 @@ static inline int redboot_checksum(struct fis_image_desc *img)
+Index: linux-2.6.25.4/drivers/mtd/redboot.c
+===================================================================
+--- linux-2.6.25.4.orig/drivers/mtd/redboot.c
++++ linux-2.6.25.4/drivers/mtd/redboot.c
+@@ -39,7 +39,7 @@ static inline int redboot_checksum(struc
  	return 1;
  }
  
@@ -51,7 +51,7 @@ index 4747490..4f500af 100644
                               struct mtd_partition **pparts,
                               unsigned long fis_origin)
  {
-@@ -161,6 +161,14 @@ static int parse_redboot_partitions(struct mtd_info *master,
+@@ -161,6 +161,14 @@ static int parse_redboot_partitions(stru
  		goto out;
  	}
  
@@ -66,7 +66,7 @@ index 4747490..4f500af 100644
  	for (i = 0; i < numslots; i++) {
  		struct fis_list *new_fl, **prev;
  
-@@ -183,9 +191,8 @@ static int parse_redboot_partitions(struct mtd_info *master,
+@@ -183,9 +191,8 @@ static int parse_redboot_partitions(stru
  		new_fl->img = &buf[i];
                  if (fis_origin) {
                          buf[i].flash_base -= fis_origin;
@@ -77,6 +77,3 @@ index 4747490..4f500af 100644
  
  		/* I'm sure the JFFS2 code has done me permanent damage.
  		 * I now think the following is _normal_
--- 
-1.5.5.1
-

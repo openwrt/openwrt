@@ -1,7 +1,8 @@
-diff -urN linux-2.6.19/drivers/mtd/maps/Kconfig linux-2.6.19.new/drivers/mtd/maps/Kconfig
---- linux-2.6.19/drivers/mtd/maps/Kconfig	2006-11-29 22:57:37.000000000 +0100
-+++ linux-2.6.19.new/drivers/mtd/maps/Kconfig	2006-12-18 17:21:07.000000000 +0100
-@@ -283,6 +283,13 @@
+Index: linux-2.6.24.7/drivers/mtd/maps/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/drivers/mtd/maps/Kconfig
++++ linux-2.6.24.7/drivers/mtd/maps/Kconfig
+@@ -269,6 +269,13 @@ config MTD_MTX1
  	  Flash memory access on 4G Systems MTX-1 Board. If you have one of
  	  these boards and would like to use the flash chips on it, say 'Y'.
  
@@ -15,10 +16,11 @@ diff -urN linux-2.6.19/drivers/mtd/maps/Kconfig linux-2.6.19.new/drivers/mtd/map
  config MTD_DILNETPC
  	tristate "CFI Flash device mapped on DIL/Net PC"
  	depends on X86 && MTD_CONCAT && MTD_PARTITIONS && MTD_CFI_INTELEXT
-diff -urN linux-2.6.19/drivers/mtd/redboot.c linux-2.6.19.new/drivers/mtd/redboot.c
---- linux-2.6.19/drivers/mtd/redboot.c	2006-12-18 17:09:14.000000000 +0100
-+++ linux-2.6.19.new/drivers/mtd/redboot.c	2006-12-18 17:14:26.000000000 +0100
-@@ -39,7 +39,7 @@
+Index: linux-2.6.24.7/drivers/mtd/redboot.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/mtd/redboot.c
++++ linux-2.6.24.7/drivers/mtd/redboot.c
+@@ -39,7 +39,7 @@ static inline int redboot_checksum(struc
  	return 1;
  }
  
@@ -27,7 +29,7 @@ diff -urN linux-2.6.19/drivers/mtd/redboot.c linux-2.6.19.new/drivers/mtd/redboo
                               struct mtd_partition **pparts,
                               unsigned long fis_origin)
  {
-@@ -146,6 +146,14 @@
+@@ -146,6 +146,14 @@ static int parse_redboot_partitions(stru
  		goto out;
  	}
  
@@ -42,7 +44,7 @@ diff -urN linux-2.6.19/drivers/mtd/redboot.c linux-2.6.19.new/drivers/mtd/redboo
  	for (i = 0; i < numslots; i++) {
  		struct fis_list *new_fl, **prev;
  
-@@ -168,9 +176,8 @@
+@@ -168,9 +176,8 @@ static int parse_redboot_partitions(stru
  		new_fl->img = &buf[i];
                  if (fis_origin) {
                          buf[i].flash_base -= fis_origin;
@@ -53,10 +55,11 @@ diff -urN linux-2.6.19/drivers/mtd/redboot.c linux-2.6.19.new/drivers/mtd/redboo
  
  		/* I'm sure the JFFS2 code has done me permanent damage.
  		 * I now think the following is _normal_
-diff -urN linux-2.6.24/drivers/mtd/maps/Makefile linux-2.6.24.new/drivers/mtd/maps/Makefile
---- linux-2.6.24/drivers/mtd/maps/Makefile	2008-01-24 23:58:37.000000000 +0100
-+++ linux-2.6.24.new/drivers/mtd/maps/Makefile	2008-02-13 16:30:02.000000000 +0100
-@@ -69,3 +69,4 @@
+Index: linux-2.6.24.7/drivers/mtd/maps/Makefile
+===================================================================
+--- linux-2.6.24.7.orig/drivers/mtd/maps/Makefile
++++ linux-2.6.24.7/drivers/mtd/maps/Makefile
+@@ -69,3 +69,4 @@ obj-$(CONFIG_MTD_PLATRAM)	+= plat-ram.o
  obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
  obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o
  obj-$(CONFIG_MTD_INTEL_VR_NOR)	+= intel_vr_nor.o

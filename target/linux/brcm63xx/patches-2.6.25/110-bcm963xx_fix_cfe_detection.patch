@@ -10,10 +10,10 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  drivers/mtd/maps/bcm963xx-flash.c |   11 ++++++-----
  1 files changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/mtd/maps/bcm963xx-flash.c b/drivers/mtd/maps/bcm963xx-flash.c
-index c4c4526..4da672b 100644
---- a/drivers/mtd/maps/bcm963xx-flash.c
-+++ b/drivers/mtd/maps/bcm963xx-flash.c
+Index: linux-2.6.25.4/drivers/mtd/maps/bcm963xx-flash.c
+===================================================================
+--- linux-2.6.25.4.orig/drivers/mtd/maps/bcm963xx-flash.c
++++ linux-2.6.25.4/drivers/mtd/maps/bcm963xx-flash.c
 @@ -1,8 +1,7 @@
  /*
 - * $Id$
@@ -25,7 +25,7 @@ index c4c4526..4da672b 100644
   *
   * This program is free software; you can redistribute it and/or modify
   * it under the terms of the GNU General Public License as published by
-@@ -184,11 +183,13 @@ static int bcm963xx_parts_size = sizeof(bcm963xx_parts) / sizeof(bcm963xx_parts[
+@@ -184,11 +183,13 @@ static int bcm963xx_parts_size = sizeof(
  static int bcm963xx_detect_cfe(struct mtd_info *master)
  {
         int idoffset = 0x4e0;
@@ -41,6 +41,3 @@ index c4c4526..4da672b 100644
         ret = master->read(master, idoffset, 8, &retlen, (void *)buf);
         printk("bcm963xx: Read Signature value of %s\n", buf);
         return strcmp(idstring,buf);
--- 
-1.5.5.1
-

@@ -13,10 +13,10 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  include/asm-mips/mach-bcm963xx/bcm_intr.h |   18 +--
  3 files changed, 119 insertions(+), 220 deletions(-)
 
-diff --git a/arch/mips/bcm963xx/irq.c b/arch/mips/bcm963xx/irq.c
-index 62a848b..11583c9 100644
---- a/arch/mips/bcm963xx/irq.c
-+++ b/arch/mips/bcm963xx/irq.c
+Index: linux-2.6.25.4/arch/mips/bcm963xx/irq.c
+===================================================================
+--- linux-2.6.25.4.orig/arch/mips/bcm963xx/irq.c
++++ linux-2.6.25.4/arch/mips/bcm963xx/irq.c
 @@ -1,259 +1,159 @@
  /*
 -<:copyright-gpl 
@@ -218,6 +218,7 @@ index 62a848b..11583c9 100644
  
 -void end_brcm_none(unsigned int irq)
 -{
+-}
 +	for (irq = 0, bit = 1; irq < 32; irq++, bit <<= 1) {
 +		if (pending & bit) {
 +			bcm963xx_ack_irq(irq + bcm963xx_irq_base);
@@ -228,7 +229,14 @@ index 62a848b..11583c9 100644
 +	}
 +
 +	spurious_interrupt();
- }
++}
++
++static struct irq_chip bcm963xx_irq_type = {
++	.name = "bcm963xx",
++	.unmask = bcm963xx_unmask_irq,
++	.mask = bcm963xx_mask_irq,
++	.ack = bcm963xx_ack_irq
++};
  
 -static struct hw_interrupt_type brcm_irq_type = {
 -	.typename	= "MIPS",
@@ -239,11 +247,11 @@ index 62a848b..11583c9 100644
 -	.ack	= ack_brcm_irq,
 -	.end	= end_brcm_irq,
 -	.set_affinity = NULL
-+static struct irq_chip bcm963xx_irq_type = {
-+	.name = "bcm963xx",
-+	.unmask = bcm963xx_unmask_irq,
-+	.mask = bcm963xx_mask_irq,
-+	.ack = bcm963xx_ack_irq
++static struct irq_chip bcm963xx_ext_irq_type = {
++	.name = "bcm963xx_ext",
++	.unmask = bcm963xx_unmask_ext_irq,
++	.mask = bcm963xx_mask_ext_irq,
++	.ack = bcm963xx_ack_ext_irq,
  };
  
 -static struct hw_interrupt_type brcm_irq_no_end_type = {
@@ -255,33 +263,26 @@ index 62a848b..11583c9 100644
 -	.ack	= ack_brcm_irq,
 -	.end	= end_brcm_none,
 -	.set_affinity = NULL
-+static struct irq_chip bcm963xx_ext_irq_type = {
-+	.name = "bcm963xx_ext",
-+	.unmask = bcm963xx_unmask_ext_irq,
-+	.mask = bcm963xx_mask_ext_irq,
-+	.ack = bcm963xx_ack_ext_irq,
- };
- 
--void __init arch_init_irq(void)
 +static struct irqaction bcm963xx_cascade_action = {
 +	.handler = no_action,
 +	.name = "BCM963xx cascade interrupt"
-+};
-+
+ };
+ 
+-void __init arch_init_irq(void)
 +static void __init bcm963xx_irq_init(int base)
  {
  	int i;
  
 -	clear_c0_status(ST0_BEV);
 -	change_c0_status(ST0_IM, (IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4));
--
++	bcm963xx_irq_base = base;
+ 
 -	for (i = 0; i < NR_IRQS; i++) {
 -		irq_desc[i].status = IRQ_DISABLED;
 -		irq_desc[i].action = 0;
 -		irq_desc[i].depth = 1;
 -		irq_desc[i].chip = &brcm_irq_type;
-+	bcm963xx_irq_base = base;
-+
+-	}
 +	/* External IRQs */
 +	set_irq_chip_and_handler(INTERRUPT_ID_EXTERNAL_0, &bcm963xx_ext_irq_type,
 +				 handle_level_irq);
@@ -295,7 +296,7 @@ index 62a848b..11583c9 100644
 +	for (i = 0; i < 32; i++) {
 +		set_irq_chip_and_handler(base + i, &bcm963xx_irq_type,
 +					 handle_level_irq);
- 	}
++	}
 +
 +	setup_irq(2, &bcm963xx_cascade_action);
 +	setup_irq(bcm963xx_irq_base, &bcm963xx_cascade_action);
@@ -310,10 +311,10 @@ index 62a848b..11583c9 100644
 +asmlinkage void plat_irq_dispatch(void)
  {
 -	unsigned long flags;
+-
+-	local_irq_save(flags);
 +	unsigned int pending = read_c0_status() & read_c0_cause() & ST0_IM;
  
--	local_irq_save(flags);
--
 -	PERF->ExtIrqCfg |= (1 << (irq - INTERRUPT_ID_EXTERNAL_0 + EI_CLEAR_SHFT));      // Clear
 -	PERF->ExtIrqCfg &= ~(1 << (irq - INTERRUPT_ID_EXTERNAL_0 + EI_MASK_SHFT));      // Mask
 -	PERF->ExtIrqCfg &= ~(1 << (irq - INTERRUPT_ID_EXTERNAL_0 + EI_INSENS_SHFT));    // Edge insesnsitive
@@ -381,11 +382,11 @@ index 62a848b..11583c9 100644
 -EXPORT_SYMBOL(request_external_irq);
 -EXPORT_SYMBOL(BcmHalMapInterrupt);
 -
-diff --git a/drivers/serial/bcm63xx_cons.c b/drivers/serial/bcm63xx_cons.c
-index 8fff16d..2302ea6 100644
---- a/drivers/serial/bcm63xx_cons.c
-+++ b/drivers/serial/bcm63xx_cons.c
-@@ -267,7 +267,7 @@ static void bcm_interrupt(int irq, void *dev, struct pt_regs *regs)
+Index: linux-2.6.25.4/drivers/serial/bcm63xx_cons.c
+===================================================================
+--- linux-2.6.25.4.orig/drivers/serial/bcm63xx_cons.c
++++ linux-2.6.25.4/drivers/serial/bcm63xx_cons.c
+@@ -267,7 +267,7 @@ static void bcm_interrupt(int irq, void 
  	}
  
  	// Clear the interrupt
@@ -394,7 +395,7 @@ index 8fff16d..2302ea6 100644
  #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
  	return IRQ_HANDLED;
  #endif
-@@ -880,7 +880,7 @@ static int bcm63xx_cons_open(struct tty_struct *tty, struct file *filp)
+@@ -880,7 +880,7 @@ static int bcm63xx_cons_open(struct tty_
  	info->count++;
  	tty->driver_data = info;
  	info->tty = tty;
@@ -412,7 +413,7 @@ index 8fff16d..2302ea6 100644
  	struct bcm_serial *info;
  
  	// Print the driver version information
-@@ -981,7 +981,12 @@ static int __init bcm63xx_serialinit(void)
+@@ -981,7 +981,12 @@ static int __init bcm63xx_serialinit(voi
  		 */
  		if (!info->port)
  			return 0;
@@ -426,10 +427,10 @@ index 8fff16d..2302ea6 100644
  	}
  
  	/* order matters here... the trick is that flags
-diff --git a/include/asm-mips/mach-bcm963xx/bcm_intr.h b/include/asm-mips/mach-bcm963xx/bcm_intr.h
-index 8c56840..920f783 100644
---- a/include/asm-mips/mach-bcm963xx/bcm_intr.h
-+++ b/include/asm-mips/mach-bcm963xx/bcm_intr.h
+Index: linux-2.6.25.4/include/asm-mips/mach-bcm963xx/bcm_intr.h
+===================================================================
+--- linux-2.6.25.4.orig/include/asm-mips/mach-bcm963xx/bcm_intr.h
++++ linux-2.6.25.4/include/asm-mips/mach-bcm963xx/bcm_intr.h
 @@ -39,18 +39,12 @@ struct pt_regs;
  typedef int (*FN_HANDLER) (int, void *);
  
@@ -455,6 +456,3 @@ index 8c56840..920f783 100644
  
  #ifdef __cplusplus
      }
--- 
-1.5.5.1
-

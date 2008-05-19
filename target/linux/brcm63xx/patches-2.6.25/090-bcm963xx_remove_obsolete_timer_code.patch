@@ -11,10 +11,10 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  arch/mips/bcm963xx/time.c  |   29 -----------------------------
  2 files changed, 0 insertions(+), 31 deletions(-)
 
-diff --git a/arch/mips/bcm963xx/setup.c b/arch/mips/bcm963xx/setup.c
-index 5847278..982cba0 100644
---- a/arch/mips/bcm963xx/setup.c
-+++ b/arch/mips/bcm963xx/setup.c
+Index: linux-2.6.25.4/arch/mips/bcm963xx/setup.c
+===================================================================
+--- linux-2.6.25.4.orig/arch/mips/bcm963xx/setup.c
++++ linux-2.6.25.4/arch/mips/bcm963xx/setup.c
 @@ -465,8 +465,6 @@ void __init plat_mem_setup(void)
  	_machine_halt = brcm_machine_halt;
  	pm_power_off = brcm_machine_halt;
@@ -24,11 +24,11 @@ index 5847278..982cba0 100644
      	/* mpi initialization */
      	mpi_init();
  }
-diff --git a/arch/mips/bcm963xx/time.c b/arch/mips/bcm963xx/time.c
-index fa0fa71..8a5007e 100644
---- a/arch/mips/bcm963xx/time.c
-+++ b/arch/mips/bcm963xx/time.c
-@@ -71,26 +71,6 @@ static inline unsigned long __init cal_r4koff(void)
+Index: linux-2.6.25.4/arch/mips/bcm963xx/time.c
+===================================================================
+--- linux-2.6.25.4.orig/arch/mips/bcm963xx/time.c
++++ linux-2.6.25.4/arch/mips/bcm963xx/time.c
+@@ -71,26 +71,6 @@ static inline unsigned long __init cal_r
  	return (mips_hpt_frequency / HZ);
  }
  
@@ -68,6 +68,3 @@ index fa0fa71..8a5007e 100644
 -	set_c0_status(IE_IRQ5);
 -}
 -#endif
--- 
-1.5.5.1
-

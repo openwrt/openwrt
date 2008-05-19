@@ -12,11 +12,11 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  drivers/serial/bcm63xx_cons.c |    6 ++++++
  1 files changed, 6 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/serial/bcm63xx_cons.c b/drivers/serial/bcm63xx_cons.c
-index 2302ea6..c60b8f0 100644
---- a/drivers/serial/bcm63xx_cons.c
-+++ b/drivers/serial/bcm63xx_cons.c
-@@ -258,8 +258,14 @@ static void bcm_interrupt(int irq, void *dev, struct pt_regs *regs)
+Index: linux-2.6.25.4/drivers/serial/bcm63xx_cons.c
+===================================================================
+--- linux-2.6.25.4.orig/drivers/serial/bcm63xx_cons.c
++++ linux-2.6.25.4/drivers/serial/bcm63xx_cons.c
+@@ -258,8 +258,14 @@ static void bcm_interrupt(int irq, void 
  	while (intStat) {
  		if (intStat & RXINT)
  			receive_chars(info);
@@ -31,6 +31,3 @@ index 2302ea6..c60b8f0 100644
  		else		/* don't know what it was, so let's mask it */
  			info->port->intMask &= ~intStat;
  
--- 
-1.5.5.1
-
