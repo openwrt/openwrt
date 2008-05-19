@@ -1,6 +1,8 @@
---- linux-2.6.21.1.orig/drivers/mtd/devices/at91_dataflash.c	2007-05-28 12:22:29.000000000 +0200
-+++ linux-2.6.21.1/drivers/mtd/devices/at91_dataflash.c	2007-05-28 16:10:21.000000000 +0200
-@@ -173,7 +173,7 @@
+Index: linux-2.6.21.7/drivers/mtd/devices/at91_dataflash.c
+===================================================================
+--- linux-2.6.21.7.orig/drivers/mtd/devices/at91_dataflash.c
++++ linux-2.6.21.7/drivers/mtd/devices/at91_dataflash.c
+@@ -173,7 +173,7 @@ static struct mtd_partition static_parti
  };
  #endif
  
@@ -9,9 +11,11 @@
  
  #endif
  
---- linux-2.6.21.1.orig/drivers/mtd/Kconfig	2007-05-28 12:22:09.000000000 +0200
-+++ linux-2.6.21.1/drivers/mtd/Kconfig	2007-05-28 16:09:16.000000000 +0200
-@@ -157,6 +157,12 @@
+Index: linux-2.6.21.7/drivers/mtd/Kconfig
+===================================================================
+--- linux-2.6.21.7.orig/drivers/mtd/Kconfig
++++ linux-2.6.21.7/drivers/mtd/Kconfig
+@@ -162,6 +162,12 @@ config MTD_AFS_PARTS
  	  for your particular device. It won't happen automatically. The
  	  'armflash' map driver (CONFIG_MTD_ARMFLASH) does this, for example.
  
@@ -24,9 +28,11 @@
  comment "User Modules And Translation Layers"
  	depends on MTD
  
---- linux-2.6.21.1.orig/drivers/mtd/Makefile	2007-04-27 23:49:26.000000000 +0200
-+++ linux-2.6.21.1/drivers/mtd/Makefile	2007-05-28 16:09:55.000000000 +0200
-@@ -12,6 +12,7 @@
+Index: linux-2.6.21.7/drivers/mtd/Makefile
+===================================================================
+--- linux-2.6.21.7.orig/drivers/mtd/Makefile
++++ linux-2.6.21.7/drivers/mtd/Makefile
+@@ -12,6 +12,7 @@ obj-$(CONFIG_MTD_CONCAT)	+= mtdconcat.o
  obj-$(CONFIG_MTD_REDBOOT_PARTS) += redboot.o
  obj-$(CONFIG_MTD_CMDLINE_PARTS) += cmdlinepart.o
  obj-$(CONFIG_MTD_AFS_PARTS)	+= afs.o

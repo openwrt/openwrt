@@ -1,7 +1,8 @@
-diff -urN linux-2.6.21.1.orig/arch/arm/mach-at91/board-vlink.c linux-2.6.21.1/arch/arm/mach-at91/board-vlink.c
---- linux-2.6.21.1.orig/arch/arm/mach-at91/board-vlink.c	2007-05-28 13:33:41.000000000 +0200
-+++ linux-2.6.21.1/arch/arm/mach-at91/board-vlink.c	2007-05-28 14:43:28.000000000 +0200
-@@ -61,7 +61,7 @@
+Index: linux-2.6.21.7/arch/arm/mach-at91/board-vlink.c
+===================================================================
+--- linux-2.6.21.7.orig/arch/arm/mach-at91/board-vlink.c
++++ linux-2.6.21.7/arch/arm/mach-at91/board-vlink.c
+@@ -61,7 +61,7 @@ static void __init vlink_map_io(void)
  	at91rm9200_initialize(18432000, AT91RM9200_PQFP);
  
  	/* Setup the LEDs */
@@ -10,7 +11,7 @@ diff -urN linux-2.6.21.1.orig/arch/arm/mach-at91/board-vlink.c linux-2.6.21.1/ar
  
  	/* Setup the serial ports and console */
  	at91_init_serial(&vlink_uart_config);
-@@ -81,10 +81,12 @@
+@@ -81,10 +81,12 @@ static struct at91_usbh_data __initdata 
  	.ports		= 1,
  };
  
@@ -23,7 +24,7 @@ diff -urN linux-2.6.21.1.orig/arch/arm/mach-at91/board-vlink.c linux-2.6.21.1/ar
  
  static struct at91_mmc_data __initdata vlink_mmc_data = {
  //	.det_pin	= AT91_PIN_PB27,
-@@ -108,18 +110,19 @@
+@@ -108,18 +110,19 @@ static struct spi_board_info vlink_spi_d
  #endif
  };
  
@@ -46,7 +47,7 @@ diff -urN linux-2.6.21.1.orig/arch/arm/mach-at91/board-vlink.c linux-2.6.21.1/ar
  
  static void __init vlink_board_init(void)
  {
-@@ -130,8 +133,8 @@
+@@ -130,8 +133,8 @@ static void __init vlink_board_init(void
  	/* USB Host */
  	at91_add_device_usbh(&vlink_usbh_data);
  	/* USB Device */
@@ -57,7 +58,7 @@ diff -urN linux-2.6.21.1.orig/arch/arm/mach-at91/board-vlink.c linux-2.6.21.1/ar
  	/* I2C */
  	at91_add_device_i2c();
  	/* SPI */
-@@ -145,7 +148,7 @@
+@@ -145,7 +148,7 @@ static void __init vlink_board_init(void
  	at91_add_device_mmc(0, &vlink_mmc_data);
  #endif
  	/* LEDs */
@@ -66,10 +67,11 @@ diff -urN linux-2.6.21.1.orig/arch/arm/mach-at91/board-vlink.c linux-2.6.21.1/ar
  }
  
  MACHINE_START(VLINK, "FDL VersaLink")
-diff -urN linux-2.6.21.1.orig/arch/arm/mach-at91/Makefile linux-2.6.21.1/arch/arm/mach-at91/Makefile
---- linux-2.6.21.1.orig/arch/arm/mach-at91/Makefile	2007-05-28 13:13:15.000000000 +0200
-+++ linux-2.6.21.1/arch/arm/mach-at91/Makefile	2007-05-28 14:19:06.000000000 +0200
-@@ -52,7 +52,7 @@
+Index: linux-2.6.21.7/arch/arm/mach-at91/Makefile
+===================================================================
+--- linux-2.6.21.7.orig/arch/arm/mach-at91/Makefile
++++ linux-2.6.21.7/arch/arm/mach-at91/Makefile
+@@ -52,7 +52,7 @@ led-$(CONFIG_MACH_CSB337)	+= leds.o
  led-$(CONFIG_MACH_CSB637)	+= leds.o
  led-$(CONFIG_MACH_KB9200)	+= leds.o
  led-$(CONFIG_MACH_KAFA)		+= leds.o
@@ -78,9 +80,10 @@ diff -urN linux-2.6.21.1.orig/arch/arm/mach-at91/Makefile linux-2.6.21.1/arch/ar
  obj-$(CONFIG_LEDS) += $(led-y)
  
  # VGA support
-diff -urN linux-2.6.21.1.orig/arch/arm/mach-at91/vlink_leds.c linux-2.6.21.1/arch/arm/mach-at91/vlink_leds.c
---- linux-2.6.21.1.orig/arch/arm/mach-at91/vlink_leds.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1/arch/arm/mach-at91/vlink_leds.c	2007-05-28 14:41:03.000000000 +0200
+Index: linux-2.6.21.7/arch/arm/mach-at91/vlink_leds.c
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/arch/arm/mach-at91/vlink_leds.c
 @@ -0,0 +1,105 @@
 +/*
 + * LED driver for Atmel AT91-based boards.

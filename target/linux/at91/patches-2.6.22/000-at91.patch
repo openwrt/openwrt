@@ -1,6 +1,7 @@
-diff -urN linux-2.6.22-rc5/arch/arm/boot/compressed/head-at91rm9200.S linux-2.6.22-rc5.new/arch/arm/boot/compressed/head-at91rm9200.S
---- linux-2.6.22-rc5/arch/arm/boot/compressed/head-at91rm9200.S	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/boot/compressed/head-at91rm9200.S	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/boot/compressed/head-at91rm9200.S
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/boot/compressed/head-at91rm9200.S
++++ linux-2.6.22.19/arch/arm/boot/compressed/head-at91rm9200.S
 @@ -73,6 +73,12 @@
  		cmp	r7, r3
  		beq	99f
@@ -14,9 +15,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/boot/compressed/head-at91rm9200.S linux-2.6.
  		@ Unknown board, use the AT91RM9200DK board
  		@ mov	r7, #MACH_TYPE_AT91RM9200
  		mov	r7,	#(MACH_TYPE_AT91RM9200DK & 0xff)
-diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22-rc5.new/arch/arm/configs/at91sam9260ek_defconfig
---- linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/configs/at91sam9260ek_defconfig	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/configs/at91sam9260ek_defconfig
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/configs/at91sam9260ek_defconfig
++++ linux-2.6.22.19/arch/arm/configs/at91sam9260ek_defconfig
 @@ -1,18 +1,24 @@
  #
  # Automatically generated make config: don't edit
@@ -44,7 +46,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  CONFIG_VECTORS_BASE=0xffff0000
  CONFIG_DEFCONFIG_LIST="/lib/modules/$UNAME_RELEASE/.config"
  
-@@ -31,13 +37,16 @@
+@@ -31,13 +37,16 @@ CONFIG_LOCALVERSION=""
  # CONFIG_SWAP is not set
  CONFIG_SYSVIPC=y
  # CONFIG_IPC_NS is not set
@@ -61,7 +63,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  CONFIG_INITRAMFS_SOURCE=""
  CONFIG_CC_OPTIMIZE_FOR_SIZE=y
  CONFIG_SYSCTL=y
-@@ -76,7 +85,9 @@
+@@ -76,7 +85,9 @@ CONFIG_KMOD=y
  # Block layer
  #
  CONFIG_BLOCK=y
@@ -71,7 +73,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  
  #
  # IO Schedulers
-@@ -110,10 +121,12 @@
+@@ -110,10 +121,12 @@ CONFIG_ARCH_AT91=y
  # CONFIG_ARCH_IMX is not set
  # CONFIG_ARCH_IOP32X is not set
  # CONFIG_ARCH_IOP33X is not set
@@ -84,7 +86,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  # CONFIG_ARCH_PNX4008 is not set
  # CONFIG_ARCH_PXA is not set
  # CONFIG_ARCH_RPC is not set
-@@ -129,21 +142,29 @@
+@@ -129,21 +142,29 @@ CONFIG_ARCH_AT91=y
  # CONFIG_ARCH_AT91RM9200 is not set
  CONFIG_ARCH_AT91SAM9260=y
  # CONFIG_ARCH_AT91SAM9261 is not set
@@ -115,7 +117,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  
  #
  # Processor Type
-@@ -166,6 +187,7 @@
+@@ -166,6 +187,7 @@ CONFIG_CPU_CP15_MMU=y
  # CONFIG_CPU_DCACHE_DISABLE is not set
  # CONFIG_CPU_DCACHE_WRITETHROUGH is not set
  # CONFIG_CPU_CACHE_ROUND_ROBIN is not set
@@ -123,7 +125,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  
  #
  # Bus support
-@@ -193,6 +215,7 @@
+@@ -193,6 +215,7 @@ CONFIG_FLAT_NODE_MEM_MAP=y
  # CONFIG_SPARSEMEM_STATIC is not set
  CONFIG_SPLIT_PTLOCK_CPUS=4096
  # CONFIG_RESOURCES_64BIT is not set
@@ -131,7 +133,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  # CONFIG_LEDS is not set
  CONFIG_ALIGNMENT_TRAP=y
  
-@@ -203,6 +226,7 @@
+@@ -203,6 +226,7 @@ CONFIG_ZBOOT_ROM_TEXT=0x0
  CONFIG_ZBOOT_ROM_BSS=0x0
  CONFIG_CMDLINE="mem=64M console=ttyS0,115200 initrd=0x21100000,3145728 root=/dev/ram0 rw"
  # CONFIG_XIP_KERNEL is not set
@@ -139,7 +141,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  
  #
  # Floating point emulation
-@@ -228,7 +252,6 @@
+@@ -228,7 +252,6 @@ CONFIG_BINFMT_ELF=y
  # Power management options
  #
  # CONFIG_PM is not set
@@ -147,7 +149,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  
  #
  # Networking
-@@ -242,9 +265,6 @@
+@@ -242,9 +265,6 @@ CONFIG_NET=y
  CONFIG_PACKET=y
  # CONFIG_PACKET_MMAP is not set
  CONFIG_UNIX=y
@@ -157,7 +159,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  # CONFIG_NET_KEY is not set
  CONFIG_INET=y
  # CONFIG_IP_MULTICAST is not set
-@@ -263,14 +283,15 @@
+@@ -263,14 +283,15 @@ CONFIG_IP_PNP_BOOTP=y
  # CONFIG_INET_IPCOMP is not set
  # CONFIG_INET_XFRM_TUNNEL is not set
  # CONFIG_INET_TUNNEL is not set
@@ -176,7 +178,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  # CONFIG_IPV6 is not set
  # CONFIG_INET6_XFRM_TUNNEL is not set
  # CONFIG_INET6_TUNNEL is not set
-@@ -328,6 +349,7 @@
+@@ -328,6 +349,7 @@ CONFIG_STANDALONE=y
  CONFIG_PREVENT_FIRMWARE_BUILD=y
  # CONFIG_FW_LOADER is not set
  # CONFIG_DEBUG_DRIVER is not set
@@ -184,7 +186,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  # CONFIG_SYS_HYPERVISOR is not set
  
  #
-@@ -348,6 +370,7 @@
+@@ -348,6 +370,7 @@ CONFIG_PREVENT_FIRMWARE_BUILD=y
  #
  # Plug and Play support
  #
@@ -192,7 +194,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  
  #
  # Block devices
-@@ -360,7 +383,6 @@
+@@ -360,7 +383,6 @@ CONFIG_BLK_DEV_RAM=y
  CONFIG_BLK_DEV_RAM_COUNT=16
  CONFIG_BLK_DEV_RAM_SIZE=8192
  CONFIG_BLK_DEV_RAM_BLOCKSIZE=1024
@@ -200,7 +202,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  # CONFIG_CDROM_PKTCDVD is not set
  # CONFIG_ATA_OVER_ETH is not set
  
-@@ -369,6 +391,7 @@
+@@ -369,6 +391,7 @@ CONFIG_BLK_DEV_INITRD=y
  #
  # CONFIG_RAID_ATTRS is not set
  CONFIG_SCSI=y
@@ -208,7 +210,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  # CONFIG_SCSI_NETLINK is not set
  CONFIG_SCSI_PROC_FS=y
  
-@@ -388,6 +411,7 @@
+@@ -388,6 +411,7 @@ CONFIG_BLK_DEV_SD=y
  CONFIG_SCSI_MULTI_LUN=y
  # CONFIG_SCSI_CONSTANTS is not set
  # CONFIG_SCSI_LOGGING is not set
@@ -216,7 +218,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  
  #
  # SCSI Transports
-@@ -405,6 +429,11 @@
+@@ -405,6 +429,11 @@ CONFIG_SCSI_MULTI_LUN=y
  # CONFIG_SCSI_DEBUG is not set
  
  #
@@ -228,7 +230,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  # Multi-device support (RAID and LVM)
  #
  # CONFIG_MD is not set
-@@ -425,7 +454,51 @@
+@@ -425,7 +454,51 @@ CONFIG_SCSI_MULTI_LUN=y
  #
  # Network device support
  #
@@ -281,7 +283,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  # CONFIG_NETPOLL is not set
  # CONFIG_NET_POLL_CONTROLLER is not set
  
-@@ -517,10 +590,6 @@
+@@ -517,10 +590,6 @@ CONFIG_HW_RANDOM=y
  # CONFIG_NVRAM is not set
  # CONFIG_DTLK is not set
  # CONFIG_R3964 is not set
@@ -292,7 +294,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  # CONFIG_RAW_DRIVER is not set
  
  #
-@@ -553,7 +622,11 @@
+@@ -553,7 +622,11 @@ CONFIG_HW_RANDOM=y
  #
  # Misc devices
  #
@@ -305,7 +307,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  
  #
  # LED devices
-@@ -582,7 +655,7 @@
+@@ -582,7 +655,7 @@ CONFIG_HW_RANDOM=y
  #
  # Graphics support
  #
@@ -314,7 +316,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  # CONFIG_FB is not set
  
  #
-@@ -590,7 +663,6 @@
+@@ -590,7 +663,6 @@ CONFIG_HW_RANDOM=y
  #
  # CONFIG_VGA_CONSOLE is not set
  CONFIG_DUMMY_CONSOLE=y
@@ -322,7 +324,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  
  #
  # Sound
-@@ -598,6 +670,12 @@
+@@ -598,6 +670,12 @@ CONFIG_DUMMY_CONSOLE=y
  # CONFIG_SOUND is not set
  
  #
@@ -335,7 +337,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  # USB support
  #
  CONFIG_USB_ARCH_HAS_HCD=y
-@@ -610,7 +688,6 @@
+@@ -610,7 +688,6 @@ CONFIG_USB=y
  # Miscellaneous USB options
  #
  CONFIG_USB_DEVICEFS=y
@@ -343,7 +345,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  # CONFIG_USB_DYNAMIC_MINORS is not set
  # CONFIG_USB_OTG is not set
  
-@@ -619,7 +696,8 @@
+@@ -619,7 +696,8 @@ CONFIG_USB_DEVICEFS=y
  #
  # CONFIG_USB_ISP116X_HCD is not set
  CONFIG_USB_OHCI_HCD=y
@@ -353,7 +355,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  CONFIG_USB_OHCI_LITTLE_ENDIAN=y
  # CONFIG_USB_SL811_HCD is not set
  
-@@ -671,6 +749,7 @@
+@@ -671,6 +749,7 @@ CONFIG_USB_STORAGE_DEBUG=y
  # CONFIG_USB_ATI_REMOTE2 is not set
  # CONFIG_USB_KEYSPAN_REMOTE is not set
  # CONFIG_USB_APPLETOUCH is not set
@@ -361,7 +363,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  
  #
  # USB Imaging devices
-@@ -708,6 +787,7 @@
+@@ -708,6 +787,7 @@ CONFIG_USB_MON=y
  # CONFIG_USB_RIO500 is not set
  # CONFIG_USB_LEGOTOWER is not set
  # CONFIG_USB_LCD is not set
@@ -369,7 +371,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  # CONFIG_USB_LED is not set
  # CONFIG_USB_CYPRESS_CY7C63 is not set
  # CONFIG_USB_CYTHERM is not set
-@@ -717,6 +797,7 @@
+@@ -717,6 +797,7 @@ CONFIG_USB_MON=y
  # CONFIG_USB_APPLEDISPLAY is not set
  # CONFIG_USB_LD is not set
  # CONFIG_USB_TRANCEVIBRATOR is not set
@@ -377,7 +379,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  # CONFIG_USB_TEST is not set
  
  #
-@@ -889,6 +970,11 @@
+@@ -889,6 +970,11 @@ CONFIG_NLS_ISO8859_1=y
  # CONFIG_NLS_UTF8 is not set
  
  #
@@ -389,7 +391,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  # Profiling support
  #
  # CONFIG_PROFILING is not set
-@@ -900,28 +986,30 @@
+@@ -900,28 +986,30 @@ CONFIG_NLS_ISO8859_1=y
  CONFIG_ENABLE_MUST_CHECK=y
  # CONFIG_MAGIC_SYSRQ is not set
  # CONFIG_UNUSED_SYMBOLS is not set
@@ -423,7 +425,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  CONFIG_DEBUG_USER=y
  # CONFIG_DEBUG_ERRORS is not set
  CONFIG_DEBUG_LL=y
-@@ -941,9 +1029,12 @@
+@@ -941,9 +1029,12 @@ CONFIG_DEBUG_LL=y
  #
  # Library routines
  #
@@ -436,9 +438,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9260ek_defconfig linux-2.6.22
  CONFIG_PLIST=y
 +CONFIG_HAS_IOMEM=y
 +CONFIG_HAS_IOPORT=y
-diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22-rc5.new/arch/arm/configs/at91sam9261ek_defconfig
---- linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/configs/at91sam9261ek_defconfig	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/configs/at91sam9261ek_defconfig
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/configs/at91sam9261ek_defconfig
++++ linux-2.6.22.19/arch/arm/configs/at91sam9261ek_defconfig
 @@ -1,18 +1,24 @@
  #
  # Automatically generated make config: don't edit
@@ -466,7 +469,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  CONFIG_VECTORS_BASE=0xffff0000
  CONFIG_DEFCONFIG_LIST="/lib/modules/$UNAME_RELEASE/.config"
  
-@@ -31,13 +37,16 @@
+@@ -31,13 +37,16 @@ CONFIG_LOCALVERSION=""
  # CONFIG_SWAP is not set
  CONFIG_SYSVIPC=y
  # CONFIG_IPC_NS is not set
@@ -483,7 +486,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  CONFIG_INITRAMFS_SOURCE=""
  CONFIG_CC_OPTIMIZE_FOR_SIZE=y
  CONFIG_SYSCTL=y
-@@ -76,7 +85,9 @@
+@@ -76,7 +85,9 @@ CONFIG_KMOD=y
  # Block layer
  #
  CONFIG_BLOCK=y
@@ -493,7 +496,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  
  #
  # IO Schedulers
-@@ -110,10 +121,12 @@
+@@ -110,10 +121,12 @@ CONFIG_ARCH_AT91=y
  # CONFIG_ARCH_IMX is not set
  # CONFIG_ARCH_IOP32X is not set
  # CONFIG_ARCH_IOP33X is not set
@@ -506,7 +509,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # CONFIG_ARCH_PNX4008 is not set
  # CONFIG_ARCH_PXA is not set
  # CONFIG_ARCH_RPC is not set
-@@ -129,6 +142,7 @@
+@@ -129,6 +142,7 @@ CONFIG_ARCH_AT91=y
  # CONFIG_ARCH_AT91RM9200 is not set
  # CONFIG_ARCH_AT91SAM9260 is not set
  CONFIG_ARCH_AT91SAM9261=y
@@ -514,7 +517,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  
  #
  # AT91SAM9261 Board Type
-@@ -138,12 +152,14 @@
+@@ -138,12 +152,14 @@ CONFIG_MACH_AT91SAM9261EK=y
  #
  # AT91 Board Options
  #
@@ -529,7 +532,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  
  #
  # Processor Type
-@@ -166,6 +182,7 @@
+@@ -166,6 +182,7 @@ CONFIG_CPU_CP15_MMU=y
  # CONFIG_CPU_DCACHE_DISABLE is not set
  # CONFIG_CPU_DCACHE_WRITETHROUGH is not set
  # CONFIG_CPU_CACHE_ROUND_ROBIN is not set
@@ -537,7 +540,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  
  #
  # Bus support
-@@ -193,6 +210,7 @@
+@@ -193,6 +210,7 @@ CONFIG_FLAT_NODE_MEM_MAP=y
  # CONFIG_SPARSEMEM_STATIC is not set
  CONFIG_SPLIT_PTLOCK_CPUS=4096
  # CONFIG_RESOURCES_64BIT is not set
@@ -545,7 +548,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # CONFIG_LEDS is not set
  CONFIG_ALIGNMENT_TRAP=y
  
-@@ -203,6 +221,7 @@
+@@ -203,6 +221,7 @@ CONFIG_ZBOOT_ROM_TEXT=0x0
  CONFIG_ZBOOT_ROM_BSS=0x0
  CONFIG_CMDLINE="mem=64M console=ttyS0,115200 initrd=0x21100000,3145728 root=/dev/ram0 rw"
  # CONFIG_XIP_KERNEL is not set
@@ -553,7 +556,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  
  #
  # Floating point emulation
-@@ -228,7 +247,6 @@
+@@ -228,7 +247,6 @@ CONFIG_BINFMT_ELF=y
  # Power management options
  #
  # CONFIG_PM is not set
@@ -561,7 +564,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  
  #
  # Networking
-@@ -245,6 +263,7 @@
+@@ -245,6 +263,7 @@ CONFIG_UNIX=y
  CONFIG_XFRM=y
  # CONFIG_XFRM_USER is not set
  # CONFIG_XFRM_SUB_POLICY is not set
@@ -569,7 +572,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # CONFIG_NET_KEY is not set
  CONFIG_INET=y
  # CONFIG_IP_MULTICAST is not set
-@@ -271,6 +290,7 @@
+@@ -271,6 +290,7 @@ CONFIG_INET_TCP_DIAG=y
  # CONFIG_TCP_CONG_ADVANCED is not set
  CONFIG_TCP_CONG_CUBIC=y
  CONFIG_DEFAULT_TCP_CONG="cubic"
@@ -577,7 +580,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # CONFIG_IPV6 is not set
  # CONFIG_INET6_XFRM_TUNNEL is not set
  # CONFIG_INET6_TUNNEL is not set
-@@ -328,6 +348,7 @@
+@@ -328,6 +348,7 @@ CONFIG_STANDALONE=y
  CONFIG_PREVENT_FIRMWARE_BUILD=y
  # CONFIG_FW_LOADER is not set
  # CONFIG_DEBUG_DRIVER is not set
@@ -585,7 +588,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # CONFIG_SYS_HYPERVISOR is not set
  
  #
-@@ -350,6 +371,7 @@
+@@ -350,6 +371,7 @@ CONFIG_MTD_CMDLINE_PARTS=y
  # User Modules And Translation Layers
  #
  # CONFIG_MTD_CHAR is not set
@@ -593,7 +596,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  CONFIG_MTD_BLOCK=y
  # CONFIG_FTL is not set
  # CONFIG_NFTL is not set
-@@ -386,6 +408,8 @@
+@@ -386,6 +408,8 @@ CONFIG_MTD_CFI_I2=y
  #
  # Self-contained MTD device drivers
  #
@@ -602,7 +605,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # CONFIG_MTD_SLRAM is not set
  # CONFIG_MTD_PHRAM is not set
  # CONFIG_MTD_MTDRAM is not set
-@@ -422,6 +446,7 @@
+@@ -422,6 +446,7 @@ CONFIG_MTD_NAND_AT91=y
  #
  # Plug and Play support
  #
@@ -610,7 +613,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  
  #
  # Block devices
-@@ -434,7 +459,6 @@
+@@ -434,7 +459,6 @@ CONFIG_BLK_DEV_RAM=y
  CONFIG_BLK_DEV_RAM_COUNT=16
  CONFIG_BLK_DEV_RAM_SIZE=8192
  CONFIG_BLK_DEV_RAM_BLOCKSIZE=1024
@@ -618,7 +621,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # CONFIG_CDROM_PKTCDVD is not set
  # CONFIG_ATA_OVER_ETH is not set
  
-@@ -443,6 +467,7 @@
+@@ -443,6 +467,7 @@ CONFIG_BLK_DEV_INITRD=y
  #
  # CONFIG_RAID_ATTRS is not set
  CONFIG_SCSI=y
@@ -626,7 +629,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # CONFIG_SCSI_NETLINK is not set
  CONFIG_SCSI_PROC_FS=y
  
-@@ -462,6 +487,7 @@
+@@ -462,6 +487,7 @@ CONFIG_BLK_DEV_SD=y
  CONFIG_SCSI_MULTI_LUN=y
  # CONFIG_SCSI_CONSTANTS is not set
  # CONFIG_SCSI_LOGGING is not set
@@ -634,7 +637,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  
  #
  # SCSI Transports
-@@ -479,6 +505,11 @@
+@@ -479,6 +505,11 @@ CONFIG_SCSI_MULTI_LUN=y
  # CONFIG_SCSI_DEBUG is not set
  
  #
@@ -646,7 +649,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # Multi-device support (RAID and LVM)
  #
  # CONFIG_MD is not set
-@@ -575,7 +606,16 @@
+@@ -575,7 +606,16 @@ CONFIG_INPUT_MOUSEDEV_SCREEN_Y=768
  # CONFIG_INPUT_KEYBOARD is not set
  # CONFIG_INPUT_MOUSE is not set
  # CONFIG_INPUT_JOYSTICK is not set
@@ -664,7 +667,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # CONFIG_INPUT_MISC is not set
  
  #
-@@ -634,10 +674,6 @@
+@@ -634,10 +674,6 @@ CONFIG_HW_RANDOM=y
  # CONFIG_NVRAM is not set
  # CONFIG_DTLK is not set
  # CONFIG_R3964 is not set
@@ -675,7 +678,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # CONFIG_RAW_DRIVER is not set
  
  #
-@@ -662,6 +698,7 @@
+@@ -662,6 +698,7 @@ CONFIG_I2C_CHARDEV=y
  # I2C Hardware Bus support
  #
  CONFIG_I2C_AT91=y
@@ -683,7 +686,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # CONFIG_I2C_OCORES is not set
  # CONFIG_I2C_PARPORT_LIGHT is not set
  # CONFIG_I2C_STUB is not set
-@@ -686,8 +723,20 @@
+@@ -686,8 +723,20 @@ CONFIG_I2C_AT91=y
  #
  # SPI support
  #
@@ -706,7 +709,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  
  #
  # Dallas's 1-wire bus
-@@ -703,7 +752,11 @@
+@@ -703,7 +752,11 @@ CONFIG_I2C_AT91=y
  #
  # Misc devices
  #
@@ -719,7 +722,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  
  #
  # LED devices
-@@ -732,7 +785,7 @@
+@@ -732,7 +785,7 @@ CONFIG_I2C_AT91=y
  #
  # Graphics support
  #
@@ -728,7 +731,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # CONFIG_FB is not set
  
  #
-@@ -740,7 +793,6 @@
+@@ -740,7 +793,6 @@ CONFIG_I2C_AT91=y
  #
  # CONFIG_VGA_CONSOLE is not set
  CONFIG_DUMMY_CONSOLE=y
@@ -736,7 +739,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  
  #
  # Sound
-@@ -748,6 +800,12 @@
+@@ -748,6 +800,12 @@ CONFIG_DUMMY_CONSOLE=y
  # CONFIG_SOUND is not set
  
  #
@@ -749,7 +752,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # USB support
  #
  CONFIG_USB_ARCH_HAS_HCD=y
-@@ -760,7 +818,6 @@
+@@ -760,7 +818,6 @@ CONFIG_USB=y
  # Miscellaneous USB options
  #
  CONFIG_USB_DEVICEFS=y
@@ -757,7 +760,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # CONFIG_USB_DYNAMIC_MINORS is not set
  # CONFIG_USB_OTG is not set
  
-@@ -769,7 +826,8 @@
+@@ -769,7 +826,8 @@ CONFIG_USB_DEVICEFS=y
  #
  # CONFIG_USB_ISP116X_HCD is not set
  CONFIG_USB_OHCI_HCD=y
@@ -767,7 +770,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  CONFIG_USB_OHCI_LITTLE_ENDIAN=y
  # CONFIG_USB_SL811_HCD is not set
  
-@@ -821,6 +879,7 @@
+@@ -821,6 +879,7 @@ CONFIG_USB_STORAGE_DEBUG=y
  # CONFIG_USB_ATI_REMOTE2 is not set
  # CONFIG_USB_KEYSPAN_REMOTE is not set
  # CONFIG_USB_APPLETOUCH is not set
@@ -775,7 +778,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  
  #
  # USB Imaging devices
-@@ -858,6 +917,7 @@
+@@ -858,6 +917,7 @@ CONFIG_USB_MON=y
  # CONFIG_USB_RIO500 is not set
  # CONFIG_USB_LEGOTOWER is not set
  # CONFIG_USB_LCD is not set
@@ -783,7 +786,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # CONFIG_USB_LED is not set
  # CONFIG_USB_CYPRESS_CY7C63 is not set
  # CONFIG_USB_CYTHERM is not set
-@@ -867,6 +927,7 @@
+@@ -867,6 +927,7 @@ CONFIG_USB_MON=y
  # CONFIG_USB_APPLEDISPLAY is not set
  # CONFIG_USB_LD is not set
  # CONFIG_USB_TRANCEVIBRATOR is not set
@@ -791,7 +794,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # CONFIG_USB_TEST is not set
  
  #
-@@ -903,7 +964,6 @@
+@@ -903,7 +964,6 @@ CONFIG_MMC=y
  # CONFIG_MMC_DEBUG is not set
  CONFIG_MMC_BLOCK=y
  CONFIG_MMC_AT91=m
@@ -799,7 +802,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  
  #
  # Real Time Clock
-@@ -973,7 +1033,6 @@
+@@ -973,7 +1033,6 @@ CONFIG_RAMFS=y
  # CONFIG_BEFS_FS is not set
  # CONFIG_BFS_FS is not set
  # CONFIG_EFS_FS is not set
@@ -807,7 +810,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # CONFIG_JFFS2_FS is not set
  CONFIG_CRAMFS=y
  # CONFIG_VXFS_FS is not set
-@@ -1045,6 +1104,11 @@
+@@ -1045,6 +1104,11 @@ CONFIG_NLS_ISO8859_1=y
  # CONFIG_NLS_UTF8 is not set
  
  #
@@ -819,7 +822,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  # Profiling support
  #
  # CONFIG_PROFILING is not set
-@@ -1056,28 +1120,30 @@
+@@ -1056,28 +1120,30 @@ CONFIG_NLS_ISO8859_1=y
  CONFIG_ENABLE_MUST_CHECK=y
  # CONFIG_MAGIC_SYSRQ is not set
  # CONFIG_UNUSED_SYMBOLS is not set
@@ -853,7 +856,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  CONFIG_DEBUG_USER=y
  # CONFIG_DEBUG_ERRORS is not set
  CONFIG_DEBUG_LL=y
-@@ -1097,9 +1163,12 @@
+@@ -1097,9 +1163,12 @@ CONFIG_DEBUG_LL=y
  #
  # Library routines
  #
@@ -866,9 +869,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9261ek_defconfig linux-2.6.22
  CONFIG_PLIST=y
 +CONFIG_HAS_IOMEM=y
 +CONFIG_HAS_IOPORT=y
-diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22-rc5.new/arch/arm/configs/at91sam9263ek_defconfig
---- linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/configs/at91sam9263ek_defconfig	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/configs/at91sam9263ek_defconfig
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/configs/at91sam9263ek_defconfig
++++ linux-2.6.22.19/arch/arm/configs/at91sam9263ek_defconfig
 @@ -1,11 +1,14 @@
  #
  # Automatically generated make config: don't edit
@@ -886,7 +890,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  CONFIG_GENERIC_HARDIRQS=y
  CONFIG_TRACE_IRQFLAGS_SUPPORT=y
  CONFIG_HARDIRQS_SW_RESEND=y
-@@ -15,6 +18,7 @@
+@@ -15,6 +18,7 @@ CONFIG_RWSEM_GENERIC_SPINLOCK=y
  # CONFIG_ARCH_HAS_ILOG2_U64 is not set
  CONFIG_GENERIC_HWEIGHT=y
  CONFIG_GENERIC_CALIBRATE_DELAY=y
@@ -894,7 +898,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  CONFIG_VECTORS_BASE=0xffff0000
  CONFIG_DEFCONFIG_LIST="/lib/modules/$UNAME_RELEASE/.config"
  
-@@ -33,6 +37,7 @@
+@@ -33,6 +37,7 @@ CONFIG_LOCALVERSION=""
  # CONFIG_SWAP is not set
  CONFIG_SYSVIPC=y
  # CONFIG_IPC_NS is not set
@@ -902,7 +906,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  # CONFIG_POSIX_MQUEUE is not set
  # CONFIG_BSD_PROCESS_ACCT is not set
  # CONFIG_TASKSTATS is not set
-@@ -41,6 +46,7 @@
+@@ -41,6 +46,7 @@ CONFIG_SYSVIPC=y
  # CONFIG_IKCONFIG is not set
  CONFIG_SYSFS_DEPRECATED=y
  # CONFIG_RELAY is not set
@@ -910,7 +914,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  CONFIG_INITRAMFS_SOURCE=""
  CONFIG_CC_OPTIMIZE_FOR_SIZE=y
  CONFIG_SYSCTL=y
-@@ -120,6 +126,7 @@
+@@ -120,6 +126,7 @@ CONFIG_ARCH_AT91=y
  # CONFIG_ARCH_IXP2000 is not set
  # CONFIG_ARCH_IXP23XX is not set
  # CONFIG_ARCH_L7200 is not set
@@ -918,7 +922,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  # CONFIG_ARCH_PNX4008 is not set
  # CONFIG_ARCH_PXA is not set
  # CONFIG_ARCH_RPC is not set
-@@ -152,6 +159,7 @@
+@@ -152,6 +159,7 @@ CONFIG_MTD_AT91_DATAFLASH_CARD=y
  # AT91 Feature Selections
  #
  # CONFIG_AT91_PROGRAMMABLE_CLOCKS is not set
@@ -926,7 +930,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  
  #
  # Processor Type
-@@ -174,6 +182,7 @@
+@@ -174,6 +182,7 @@ CONFIG_CPU_CP15_MMU=y
  # CONFIG_CPU_DCACHE_DISABLE is not set
  # CONFIG_CPU_DCACHE_WRITETHROUGH is not set
  # CONFIG_CPU_CACHE_ROUND_ROBIN is not set
@@ -934,7 +938,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  
  #
  # Bus support
-@@ -201,6 +210,7 @@
+@@ -201,6 +210,7 @@ CONFIG_FLAT_NODE_MEM_MAP=y
  # CONFIG_SPARSEMEM_STATIC is not set
  CONFIG_SPLIT_PTLOCK_CPUS=4096
  # CONFIG_RESOURCES_64BIT is not set
@@ -942,7 +946,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  # CONFIG_LEDS is not set
  CONFIG_ALIGNMENT_TRAP=y
  
-@@ -211,6 +221,7 @@
+@@ -211,6 +221,7 @@ CONFIG_ZBOOT_ROM_TEXT=0x0
  CONFIG_ZBOOT_ROM_BSS=0x0
  CONFIG_CMDLINE="mem=64M console=ttyS0,115200 initrd=0x21100000,3145728 root=/dev/ram0 rw"
  # CONFIG_XIP_KERNEL is not set
@@ -950,7 +954,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  
  #
  # Floating point emulation
-@@ -236,7 +247,6 @@
+@@ -236,7 +247,6 @@ CONFIG_BINFMT_ELF=y
  # Power management options
  #
  # CONFIG_PM is not set
@@ -958,7 +962,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  
  #
  # Networking
-@@ -333,6 +343,7 @@
+@@ -333,6 +343,7 @@ CONFIG_STANDALONE=y
  CONFIG_PREVENT_FIRMWARE_BUILD=y
  # CONFIG_FW_LOADER is not set
  # CONFIG_DEBUG_DRIVER is not set
@@ -966,7 +970,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  # CONFIG_SYS_HYPERVISOR is not set
  
  #
-@@ -430,6 +441,7 @@
+@@ -430,6 +441,7 @@ CONFIG_MTD_NAND_AT91=y
  #
  # Plug and Play support
  #
@@ -974,7 +978,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  
  #
  # Block devices
-@@ -443,7 +455,6 @@
+@@ -443,7 +455,6 @@ CONFIG_BLK_DEV_RAM=y
  CONFIG_BLK_DEV_RAM_COUNT=16
  CONFIG_BLK_DEV_RAM_SIZE=8192
  CONFIG_BLK_DEV_RAM_BLOCKSIZE=1024
@@ -982,7 +986,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  # CONFIG_CDROM_PKTCDVD is not set
  # CONFIG_ATA_OVER_ETH is not set
  
-@@ -531,6 +542,7 @@
+@@ -531,6 +542,7 @@ CONFIG_NETDEVICES=y
  #
  CONFIG_NET_ETHERNET=y
  CONFIG_MII=y
@@ -990,7 +994,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  # CONFIG_SMC91X is not set
  # CONFIG_DM9000 is not set
  
-@@ -685,6 +697,7 @@
+@@ -685,6 +697,7 @@ CONFIG_I2C_CHARDEV=y
  # I2C Hardware Bus support
  #
  CONFIG_I2C_AT91=y
@@ -998,7 +1002,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  # CONFIG_I2C_OCORES is not set
  # CONFIG_I2C_PARPORT_LIGHT is not set
  # CONFIG_I2C_STUB is not set
-@@ -722,6 +735,7 @@
+@@ -722,6 +735,7 @@ CONFIG_SPI_ATMEL=y
  #
  # SPI Protocol Masters
  #
@@ -1006,7 +1010,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  
  #
  # Dallas's 1-wire bus
-@@ -737,7 +751,11 @@
+@@ -737,7 +751,11 @@ CONFIG_SPI_ATMEL=y
  #
  # Misc devices
  #
@@ -1019,7 +1023,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  
  #
  # LED devices
-@@ -766,15 +784,23 @@
+@@ -766,15 +784,23 @@ CONFIG_SPI_ATMEL=y
  #
  # Graphics support
  #
@@ -1044,7 +1048,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  # CONFIG_FB_S1D13XXX is not set
  # CONFIG_FB_VIRTUAL is not set
  
-@@ -789,7 +815,6 @@
+@@ -789,7 +815,6 @@ CONFIG_DUMMY_CONSOLE=y
  # Logo configuration
  #
  # CONFIG_LOGO is not set
@@ -1052,7 +1056,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  
  #
  # Sound
-@@ -800,6 +825,7 @@
+@@ -800,6 +825,7 @@ CONFIG_DUMMY_CONSOLE=y
  # HID Devices
  #
  CONFIG_HID=y
@@ -1060,7 +1064,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  
  #
  # USB support
-@@ -814,9 +840,7 @@
+@@ -814,9 +840,7 @@ CONFIG_USB=y
  # Miscellaneous USB options
  #
  CONFIG_USB_DEVICEFS=y
@@ -1070,7 +1074,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  # CONFIG_USB_OTG is not set
  
  #
-@@ -824,7 +848,8 @@
+@@ -824,7 +848,8 @@ CONFIG_USB_DEVICEFS=y
  #
  # CONFIG_USB_ISP116X_HCD is not set
  CONFIG_USB_OHCI_HCD=y
@@ -1080,7 +1084,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  CONFIG_USB_OHCI_LITTLE_ENDIAN=y
  # CONFIG_USB_SL811_HCD is not set
  
-@@ -877,6 +902,7 @@
+@@ -877,6 +902,7 @@ CONFIG_USB_STORAGE=y
  # CONFIG_USB_ATI_REMOTE2 is not set
  # CONFIG_USB_KEYSPAN_REMOTE is not set
  # CONFIG_USB_APPLETOUCH is not set
@@ -1088,7 +1092,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  
  #
  # USB Imaging devices
-@@ -914,6 +940,7 @@
+@@ -914,6 +940,7 @@ CONFIG_USB_MON=y
  # CONFIG_USB_RIO500 is not set
  # CONFIG_USB_LEGOTOWER is not set
  # CONFIG_USB_LCD is not set
@@ -1096,7 +1100,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  # CONFIG_USB_LED is not set
  # CONFIG_USB_CYPRESS_CY7C63 is not set
  # CONFIG_USB_CYTHERM is not set
-@@ -923,6 +950,7 @@
+@@ -923,6 +950,7 @@ CONFIG_USB_MON=y
  # CONFIG_USB_APPLEDISPLAY is not set
  # CONFIG_USB_LD is not set
  # CONFIG_USB_TRANCEVIBRATOR is not set
@@ -1104,7 +1108,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  # CONFIG_USB_TEST is not set
  
  #
-@@ -959,7 +987,6 @@
+@@ -959,7 +987,6 @@ CONFIG_MMC=y
  # CONFIG_MMC_DEBUG is not set
  CONFIG_MMC_BLOCK=y
  CONFIG_MMC_AT91=m
@@ -1112,7 +1116,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  
  #
  # Real Time Clock
-@@ -1136,15 +1163,16 @@
+@@ -1136,15 +1163,16 @@ CONFIG_ENABLE_MUST_CHECK=y
  # CONFIG_DEBUG_FS is not set
  # CONFIG_HEADERS_CHECK is not set
  CONFIG_DEBUG_KERNEL=y
@@ -1130,7 +1134,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  # CONFIG_DEBUG_SPINLOCK_SLEEP is not set
  # CONFIG_DEBUG_LOCKING_API_SELFTESTS is not set
  # CONFIG_DEBUG_KOBJECT is not set
-@@ -1155,6 +1183,7 @@
+@@ -1155,6 +1183,7 @@ CONFIG_DEBUG_BUGVERBOSE=y
  CONFIG_FRAME_POINTER=y
  CONFIG_FORCED_INLINING=y
  # CONFIG_RCU_TORTURE_TEST is not set
@@ -1138,7 +1142,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
  CONFIG_DEBUG_USER=y
  # CONFIG_DEBUG_ERRORS is not set
  CONFIG_DEBUG_LL=y
-@@ -1180,5 +1209,7 @@
+@@ -1180,5 +1209,7 @@ CONFIG_BITREVERSE=y
  CONFIG_CRC32=y
  # CONFIG_LIBCRC32C is not set
  CONFIG_ZLIB_INFLATE=y
@@ -1147,9 +1151,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/at91sam9263ek_defconfig linux-2.6.22
 -CONFIG_IOMAP_COPY=y
 +CONFIG_HAS_IOMEM=y
 +CONFIG_HAS_IOPORT=y
-diff -urN linux-2.6.22-rc5/arch/arm/configs/cam60_defconfig linux-2.6.22-rc5.new/arch/arm/configs/cam60_defconfig
---- linux-2.6.22-rc5/arch/arm/configs/cam60_defconfig	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22-rc5.new/arch/arm/configs/cam60_defconfig	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/configs/cam60_defconfig
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/arch/arm/configs/cam60_defconfig
 @@ -0,0 +1,954 @@
 +#
 +# Automatically generated make config: don't edit
@@ -2105,9 +2110,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/cam60_defconfig linux-2.6.22-rc5.new
 +CONFIG_ZLIB_DEFLATE=y
 +CONFIG_PLIST=y
 +CONFIG_IOMAP_COPY=y
-diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.new/arch/arm/configs/kb9202_defconfig
---- linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/configs/kb9202_defconfig	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/configs/kb9202_defconfig
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/configs/kb9202_defconfig
++++ linux-2.6.22.19/arch/arm/configs/kb9202_defconfig
 @@ -1,19 +1,31 @@
  #
  # Automatically generated make config: don't edit
@@ -2145,7 +2151,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  CONFIG_BROKEN_ON_SMP=y
  CONFIG_INIT_ENV_ARG_LIMIT=32
  
-@@ -21,54 +33,103 @@
+@@ -21,54 +33,103 @@ CONFIG_INIT_ENV_ARG_LIMIT=32
  # General setup
  #
  CONFIG_LOCALVERSION=""
@@ -2266,7 +2272,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  # CONFIG_ARCH_PXA is not set
  # CONFIG_ARCH_RPC is not set
  # CONFIG_ARCH_SA1100 is not set
-@@ -76,34 +137,52 @@
+@@ -76,34 +137,52 @@ CONFIG_KMOD=y
  # CONFIG_ARCH_SHARK is not set
  # CONFIG_ARCH_LH7A40X is not set
  # CONFIG_ARCH_OMAP is not set
@@ -2326,7 +2332,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  
  #
  # Processor Features
-@@ -112,24 +191,44 @@
+@@ -112,24 +191,44 @@ CONFIG_ARM_THUMB=y
  # CONFIG_CPU_ICACHE_DISABLE is not set
  # CONFIG_CPU_DCACHE_DISABLE is not set
  # CONFIG_CPU_DCACHE_WRITETHROUGH is not set
@@ -2373,7 +2379,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  # CONFIG_LEDS is not set
  CONFIG_ALIGNMENT_TRAP=y
  
-@@ -138,8 +237,10 @@
+@@ -138,8 +237,10 @@ CONFIG_ALIGNMENT_TRAP=y
  #
  CONFIG_ZBOOT_ROM_TEXT=0x10000000
  CONFIG_ZBOOT_ROM_BSS=0x20040000
@@ -2386,7 +2392,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  
  #
  # Floating point emulation
-@@ -150,6 +251,7 @@
+@@ -150,6 +251,7 @@ CONFIG_CMDLINE="console=ttyS0,115200 roo
  #
  CONFIG_FPE_NWFPE=y
  # CONFIG_FPE_NWFPE_XP is not set
@@ -2394,7 +2400,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  
  #
  # Userspace binary formats
-@@ -165,6 +267,96 @@
+@@ -165,6 +267,96 @@ CONFIG_BINFMT_MISC=y
  # CONFIG_PM is not set
  
  #
@@ -2491,7 +2497,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  # Device Drivers
  #
  
-@@ -173,13 +365,95 @@
+@@ -173,13 +365,95 @@ CONFIG_BINFMT_MISC=y
  #
  CONFIG_STANDALONE=y
  CONFIG_PREVENT_FIRMWARE_BUILD=y
@@ -2590,7 +2596,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  
  #
  # Parallel port support
-@@ -189,6 +463,7 @@
+@@ -189,6 +463,7 @@ CONFIG_DEBUG_DRIVER=y
  #
  # Plug and Play support
  #
@@ -2598,7 +2604,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  
  #
  # Block devices
-@@ -196,28 +471,27 @@
+@@ -196,28 +471,27 @@ CONFIG_DEBUG_DRIVER=y
  # CONFIG_BLK_DEV_COW_COMMON is not set
  CONFIG_BLK_DEV_LOOP=y
  # CONFIG_BLK_DEV_CRYPTOLOOP is not set
@@ -2636,7 +2642,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  CONFIG_SCSI_PROC_FS=y
  
  #
-@@ -233,97 +507,61 @@
+@@ -233,97 +507,61 @@ CONFIG_CHR_DEV_SG=y
  #
  # Some SCSI devices (e.g. CD jukebox) support multiple LUNs
  #
@@ -2758,7 +2764,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  CONFIG_NETDEVICES=y
  # CONFIG_DUMMY is not set
  # CONFIG_BONDING is not set
-@@ -331,6 +569,11 @@
+@@ -331,6 +569,11 @@ CONFIG_NETDEVICES=y
  # CONFIG_TUN is not set
  
  #
@@ -2770,7 +2776,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  # Ethernet (10 or 100Mbit)
  #
  CONFIG_NET_ETHERNET=y
-@@ -357,11 +600,20 @@
+@@ -357,11 +600,20 @@ CONFIG_ARM_AT91_ETHER=y
  # CONFIG_NET_RADIO is not set
  
  #
@@ -2791,7 +2797,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  
  #
  # ISDN subsystem
-@@ -372,6 +624,7 @@
+@@ -372,6 +624,7 @@ CONFIG_ARM_AT91_ETHER=y
  # Input device support
  #
  CONFIG_INPUT=y
@@ -2799,7 +2805,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  
  #
  # Userland interfaces
-@@ -397,9 +650,7 @@
+@@ -397,9 +650,7 @@ CONFIG_INPUT_MOUSEDEV_SCREEN_Y=768
  #
  # Hardware I/O ports
  #
@@ -2810,7 +2816,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  # CONFIG_GAMEPORT is not set
  
  #
-@@ -408,6 +659,7 @@
+@@ -408,6 +659,7 @@ CONFIG_SERIO=y
  CONFIG_VT=y
  CONFIG_VT_CONSOLE=y
  CONFIG_HW_CONSOLE=y
@@ -2818,7 +2824,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  # CONFIG_SERIAL_NONSTANDARD is not set
  
  #
-@@ -420,11 +672,11 @@
+@@ -420,11 +672,11 @@ CONFIG_HW_CONSOLE=y
  #
  CONFIG_SERIAL_ATMEL=y
  CONFIG_SERIAL_ATMEL_CONSOLE=y
@@ -2832,7 +2838,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  
  #
  # IPMI
-@@ -435,21 +687,23 @@
+@@ -435,21 +687,23 @@ CONFIG_LEGACY_PTY_COUNT=256
  # Watchdog Cards
  #
  # CONFIG_WATCHDOG is not set
@@ -2860,7 +2866,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  
  #
  # I2C support
-@@ -457,10 +711,50 @@
+@@ -457,10 +711,50 @@ CONFIG_LEGACY_PTY_COUNT=256
  # CONFIG_I2C is not set
  
  #
@@ -2911,7 +2917,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  # Multimedia devices
  #
  # CONFIG_VIDEO_DEV is not set
-@@ -469,17 +763,57 @@
+@@ -469,17 +763,57 @@ CONFIG_LEGACY_PTY_COUNT=256
  # Digital Video Broadcasting Devices
  #
  # CONFIG_DVB is not set
@@ -2970,7 +2976,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  
  #
  # Sound
-@@ -487,82 +821,98 @@
+@@ -487,82 +821,98 @@ CONFIG_DUMMY_CONSOLE=y
  # CONFIG_SOUND is not set
  
  #
@@ -3093,7 +3099,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  # CONFIG_USB_USBNET is not set
  # CONFIG_USB_MON is not set
  
-@@ -580,12 +930,23 @@
+@@ -580,12 +930,23 @@ CONFIG_USB_STORAGE_DEBUG=y
  #
  # CONFIG_USB_EMI62 is not set
  # CONFIG_USB_EMI26 is not set
@@ -3119,7 +3125,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  
  #
  # USB DSL modem support
-@@ -599,36 +960,51 @@
+@@ -599,36 +960,51 @@ CONFIG_USB_STORAGE_DEBUG=y
  #
  # MMC/SD Card support
  #
@@ -3182,7 +3188,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  
  #
  # CD-ROM/DVD Filesystems
-@@ -643,25 +1019,40 @@
+@@ -643,25 +1019,40 @@ CONFIG_FAT_FS=y
  CONFIG_MSDOS_FS=y
  CONFIG_VFAT_FS=y
  CONFIG_FAT_DEFAULT_CODEPAGE=437
@@ -3227,7 +3233,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  # CONFIG_CRAMFS is not set
  # CONFIG_VXFS_FS is not set
  # CONFIG_HPFS_FS is not set
-@@ -675,16 +1066,23 @@
+@@ -675,16 +1066,23 @@ CONFIG_RAMFS=y
  CONFIG_NFS_FS=y
  CONFIG_NFS_V3=y
  # CONFIG_NFS_V3_ACL is not set
@@ -3251,7 +3257,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  
  #
  # Partition Types
-@@ -734,26 +1132,51 @@
+@@ -734,26 +1132,51 @@ CONFIG_NLS_ASCII=y
  # CONFIG_NLS_ISO8859_15 is not set
  # CONFIG_NLS_KOI8_R is not set
  # CONFIG_NLS_KOI8_U is not set
@@ -3311,7 +3317,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  CONFIG_DEBUG_LL=y
  # CONFIG_DEBUG_ICEDCC is not set
  
-@@ -766,7 +1189,43 @@
+@@ -766,7 +1189,43 @@ CONFIG_DEBUG_LL=y
  #
  # Cryptographic options
  #
@@ -3356,7 +3362,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
  
  #
  # Hardware crypto devices
-@@ -775,6 +1234,14 @@
+@@ -775,6 +1234,14 @@ CONFIG_DEBUG_LL=y
  #
  # Library routines
  #
@@ -3371,10 +3377,11 @@ diff -urN linux-2.6.22-rc5/arch/arm/configs/kb9202_defconfig linux-2.6.22-rc5.ne
 +CONFIG_PLIST=y
 +CONFIG_HAS_IOMEM=y
 +CONFIG_HAS_IOPORT=y
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91rm9200.c linux-2.6.22-rc5.new/arch/arm/mach-at91/at91rm9200.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/at91rm9200.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/at91rm9200.c	2007-07-29 05:23:04.000000000 +0200
-@@ -267,6 +267,33 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/at91rm9200.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/at91rm9200.c
++++ linux-2.6.22.19/arch/arm/mach-at91/at91rm9200.c
+@@ -267,6 +267,33 @@ static void at91rm9200_reset(void)
  
  
  /* --------------------------------------------------------------------
@@ -3408,7 +3415,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91rm9200.c linux-2.6.22-rc5.new/
   *  AT91RM9200 processor initialization
   * -------------------------------------------------------------------- */
  void __init at91rm9200_initialize(unsigned long main_clock, unsigned short banks)
-@@ -288,6 +315,9 @@
+@@ -288,6 +315,9 @@ void __init at91rm9200_initialize(unsign
  
  	/* Initialize GPIO subsystem */
  	at91_gpio_init(at91rm9200_gpio, banks);
@@ -3418,7 +3425,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91rm9200.c linux-2.6.22-rc5.new/
  }
  
  
-@@ -301,28 +331,28 @@
+@@ -301,28 +331,28 @@ void __init at91rm9200_initialize(unsign
  static unsigned int at91rm9200_default_irq_priority[NR_AIC_IRQS] __initdata = {
  	7,	/* Advanced Interrupt Controller (FIQ) */
  	7,	/* System Peripherals */
@@ -3462,10 +3469,11 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91rm9200.c linux-2.6.22-rc5.new/
  	3,	/* Ethernet MAC */
  	0,	/* Advanced Interrupt Controller (IRQ0) */
  	0,	/* Advanced Interrupt Controller (IRQ1) */
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91rm9200_devices.c linux-2.6.22-rc5.new/arch/arm/mach-at91/at91rm9200_devices.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/at91rm9200_devices.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/at91rm9200_devices.c	2007-07-29 05:23:04.000000000 +0200
-@@ -477,7 +477,18 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/at91rm9200_devices.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/at91rm9200_devices.c
++++ linux-2.6.22.19/arch/arm/mach-at91/at91rm9200_devices.c
+@@ -477,7 +477,18 @@ void __init at91_add_device_i2c(void) {}
   *  SPI
   * -------------------------------------------------------------------- */
  
@@ -3485,7 +3493,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91rm9200_devices.c linux-2.6.22-
  static u64 spi_dmamask = 0xffffffffUL;
  
  static struct resource spi_resources[] = {
-@@ -494,7 +505,7 @@
+@@ -494,7 +505,7 @@ static struct resource spi_resources[] =
  };
  
  static struct platform_device at91rm9200_spi_device = {
@@ -3494,7 +3502,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91rm9200_devices.c linux-2.6.22-
  	.id		= 0,
  	.dev		= {
  				.dma_mask		= &spi_dmamask,
-@@ -603,6 +614,32 @@
+@@ -603,6 +614,32 @@ void __init at91_init_leds(u8 cpu_led, u
  #endif
  
  
@@ -3527,10 +3535,11 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91rm9200_devices.c linux-2.6.22-
  /* --------------------------------------------------------------------
   *  UART
   * -------------------------------------------------------------------- */
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9260.c linux-2.6.22-rc5.new/arch/arm/mach-at91/at91sam9260.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9260.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/at91sam9260.c	2007-07-29 05:23:04.000000000 +0200
-@@ -269,6 +269,33 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/at91sam9260.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/at91sam9260.c
++++ linux-2.6.22.19/arch/arm/mach-at91/at91sam9260.c
+@@ -269,6 +269,33 @@ static void at91sam9260_reset(void)
  
  
  /* --------------------------------------------------------------------
@@ -3564,7 +3573,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9260.c linux-2.6.22-rc5.new
   *  AT91SAM9260 processor initialization
   * -------------------------------------------------------------------- */
  
-@@ -315,6 +342,9 @@
+@@ -315,6 +342,9 @@ void __init at91sam9260_initialize(unsig
  
  	/* Register GPIO subsystem */
  	at91_gpio_init(at91sam9260_gpio, 3);
@@ -3574,7 +3583,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9260.c linux-2.6.22-rc5.new
  }
  
  /* --------------------------------------------------------------------
-@@ -327,30 +357,30 @@
+@@ -327,30 +357,30 @@ void __init at91sam9260_initialize(unsig
  static unsigned int at91sam9260_default_irq_priority[NR_AIC_IRQS] __initdata = {
  	7,	/* Advanced Interrupt Controller */
  	7,	/* System Peripherals */
@@ -3619,10 +3628,11 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9260.c linux-2.6.22-rc5.new
  	0,	/* Timer Counter 3 */
  	0,	/* Timer Counter 4 */
  	0,	/* Timer Counter 5 */
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9260_devices.c linux-2.6.22-rc5.new/arch/arm/mach-at91/at91sam9260_devices.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9260_devices.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/at91sam9260_devices.c	2007-07-29 05:23:04.000000000 +0200
-@@ -524,6 +524,32 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/at91sam9260_devices.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/at91sam9260_devices.c
++++ linux-2.6.22.19/arch/arm/mach-at91/at91sam9260_devices.c
+@@ -524,6 +524,32 @@ void __init at91_init_leds(u8 cpu_led, u
  #endif
  
  
@@ -3655,10 +3665,11 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9260_devices.c linux-2.6.22
  /* --------------------------------------------------------------------
   *  UART
   * -------------------------------------------------------------------- */
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9261.c linux-2.6.22-rc5.new/arch/arm/mach-at91/at91sam9261.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9261.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/at91sam9261.c	2007-07-29 05:23:04.000000000 +0200
-@@ -247,6 +247,28 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/at91sam9261.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/at91sam9261.c
++++ linux-2.6.22.19/arch/arm/mach-at91/at91sam9261.c
+@@ -247,6 +247,28 @@ static void at91sam9261_reset(void)
  
  
  /* --------------------------------------------------------------------
@@ -3687,7 +3698,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9261.c linux-2.6.22-rc5.new
   *  AT91SAM9261 processor initialization
   * -------------------------------------------------------------------- */
  
-@@ -267,6 +289,9 @@
+@@ -267,6 +289,9 @@ void __init at91sam9261_initialize(unsig
  
  	/* Register GPIO subsystem */
  	at91_gpio_init(at91sam9261_gpio, 3);
@@ -3697,7 +3708,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9261.c linux-2.6.22-rc5.new
  }
  
  /* --------------------------------------------------------------------
-@@ -279,25 +304,25 @@
+@@ -279,25 +304,25 @@ void __init at91sam9261_initialize(unsig
  static unsigned int at91sam9261_default_irq_priority[NR_AIC_IRQS] __initdata = {
  	7,	/* Advanced Interrupt Controller */
  	7,	/* System Peripherals */
@@ -3738,9 +3749,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9261.c linux-2.6.22-rc5.new
  	3,	/* LCD Controller */
  	0,
  	0,
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9261_devices.c linux-2.6.22-rc5.new/arch/arm/mach-at91/at91sam9261_devices.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9261_devices.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/at91sam9261_devices.c	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/mach-at91/at91sam9261_devices.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/at91sam9261_devices.c
++++ linux-2.6.22.19/arch/arm/mach-at91/at91sam9261_devices.c
 @@ -14,6 +14,9 @@
  #include <asm/mach/map.h>
  
@@ -3751,7 +3763,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9261_devices.c linux-2.6.22
  
  #include <asm/arch/board.h>
  #include <asm/arch/gpio.h>
-@@ -522,6 +525,32 @@
+@@ -522,6 +525,32 @@ void __init at91_init_leds(u8 cpu_led, u
  #endif
  
  
@@ -3784,10 +3796,11 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9261_devices.c linux-2.6.22
  /* --------------------------------------------------------------------
   *  UART
   * -------------------------------------------------------------------- */
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9263.c linux-2.6.22-rc5.new/arch/arm/mach-at91/at91sam9263.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9263.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/at91sam9263.c	2007-07-29 05:23:04.000000000 +0200
-@@ -273,6 +273,28 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/at91sam9263.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/at91sam9263.c
++++ linux-2.6.22.19/arch/arm/mach-at91/at91sam9263.c
+@@ -273,6 +273,28 @@ static void at91sam9263_reset(void)
  
  
  /* --------------------------------------------------------------------
@@ -3816,7 +3829,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9263.c linux-2.6.22-rc5.new
   *  AT91SAM9263 processor initialization
   * -------------------------------------------------------------------- */
  
-@@ -292,6 +314,9 @@
+@@ -292,6 +314,9 @@ void __init at91sam9263_initialize(unsig
  
  	/* Register GPIO subsystem */
  	at91_gpio_init(at91sam9263_gpio, 5);
@@ -3826,7 +3839,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9263.c linux-2.6.22-rc5.new
  }
  
  /* --------------------------------------------------------------------
-@@ -304,34 +329,34 @@
+@@ -304,34 +329,34 @@ void __init at91sam9263_initialize(unsig
  static unsigned int at91sam9263_default_irq_priority[NR_AIC_IRQS] __initdata = {
  	7,	/* Advanced Interrupt Controller (FIQ) */
  	7,	/* System Peripherals */
@@ -3876,9 +3889,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9263.c linux-2.6.22-rc5.new
  	0,	/* Advanced Interrupt Controller (IRQ0) */
  	0,	/* Advanced Interrupt Controller (IRQ1) */
  };
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9263_devices.c linux-2.6.22-rc5.new/arch/arm/mach-at91/at91sam9263_devices.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9263_devices.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/at91sam9263_devices.c	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/mach-at91/at91sam9263_devices.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/at91sam9263_devices.c
++++ linux-2.6.22.19/arch/arm/mach-at91/at91sam9263_devices.c
 @@ -13,6 +13,9 @@
  #include <asm/mach/map.h>
  
@@ -3889,7 +3903,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9263_devices.c linux-2.6.22
  
  #include <asm/arch/board.h>
  #include <asm/arch/gpio.h>
-@@ -625,6 +628,56 @@
+@@ -625,6 +628,56 @@ void __init at91_add_device_ac97(struct 
  
  
  /* --------------------------------------------------------------------
@@ -3946,7 +3960,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9263_devices.c linux-2.6.22
   *  LCD Controller
   * -------------------------------------------------------------------- */
  
-@@ -715,6 +768,32 @@
+@@ -715,6 +768,32 @@ void __init at91_init_leds(u8 cpu_led, u
  #endif
  
  
@@ -3979,10 +3993,11 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9263_devices.c linux-2.6.22
  /* --------------------------------------------------------------------
   *  UART
   * -------------------------------------------------------------------- */
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9rl.c linux-2.6.22-rc5.new/arch/arm/mach-at91/at91sam9rl.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9rl.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/at91sam9rl.c	2007-07-29 05:23:04.000000000 +0200
-@@ -246,6 +246,28 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/at91sam9rl.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/at91sam9rl.c
++++ linux-2.6.22.19/arch/arm/mach-at91/at91sam9rl.c
+@@ -246,6 +246,28 @@ static void at91sam9rl_reset(void)
  
  
  /* --------------------------------------------------------------------
@@ -4011,7 +4026,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9rl.c linux-2.6.22-rc5.new/
   *  AT91SAM9RL processor initialization
   * -------------------------------------------------------------------- */
  
-@@ -284,6 +306,9 @@
+@@ -284,6 +306,9 @@ void __init at91sam9rl_initialize(unsign
  
  	/* Register GPIO subsystem */
  	at91_gpio_init(at91sam9rl_gpio, 4);
@@ -4021,10 +4036,11 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9rl.c linux-2.6.22-rc5.new/
  }
  
  /* --------------------------------------------------------------------
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9rl_devices.c linux-2.6.22-rc5.new/arch/arm/mach-at91/at91sam9rl_devices.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9rl_devices.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/at91sam9rl_devices.c	2007-07-29 05:23:04.000000000 +0200
-@@ -370,6 +370,32 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/at91sam9rl_devices.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/at91sam9rl_devices.c
++++ linux-2.6.22.19/arch/arm/mach-at91/at91sam9rl_devices.c
+@@ -370,6 +370,32 @@ void __init at91_init_leds(u8 cpu_led, u
  #endif
  
  
@@ -4057,9 +4073,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/at91sam9rl_devices.c linux-2.6.22-
  /* --------------------------------------------------------------------
   *  UART
   * -------------------------------------------------------------------- */
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-cam60.c linux-2.6.22-rc5.new/arch/arm/mach-at91/board-cam60.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/board-cam60.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/board-cam60.c	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/mach-at91/board-cam60.c
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/arch/arm/mach-at91/board-cam60.c
 @@ -0,0 +1,148 @@
 +/*
 + * KwikByte CAM60
@@ -4209,9 +4226,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-cam60.c linux-2.6.22-rc5.new
 +	.init_irq	= cam60_init_irq,
 +	.init_machine	= cam60_board_init,
 +MACHINE_END
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-chub.c linux-2.6.22-rc5.new/arch/arm/mach-at91/board-chub.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/board-chub.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/board-chub.c	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/mach-at91/board-chub.c
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/arch/arm/mach-at91/board-chub.c
 @@ -0,0 +1,132 @@
 +/*
 + * linux/arch/arm/mach-at91/board-chub.c
@@ -4345,9 +4363,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-chub.c linux-2.6.22-rc5.new/
 +	.init_irq	= chub_init_irq,
 +	.init_machine	= chub_board_init,
 +MACHINE_END
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-csb337.c linux-2.6.22-rc5.new/arch/arm/mach-at91/board-csb337.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/board-csb337.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/board-csb337.c	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/mach-at91/board-csb337.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/board-csb337.c
++++ linux-2.6.22.19/arch/arm/mach-at91/board-csb337.c
 @@ -24,6 +24,7 @@
  #include <linux/module.h>
  #include <linux/platform_device.h>
@@ -4356,7 +4375,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-csb337.c linux-2.6.22-rc5.ne
  #include <linux/mtd/physmap.h>
  
  #include <asm/hardware.h>
-@@ -59,6 +60,7 @@
+@@ -59,6 +60,7 @@ static void __init csb337_map_io(void)
  
  	/* Setup the LEDs */
  	at91_init_leds(AT91_PIN_PB0, AT91_PIN_PB1);
@@ -4364,7 +4383,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-csb337.c linux-2.6.22-rc5.ne
  
  	/* Setup the serial ports and console */
  	at91_init_serial(&csb337_uart_config);
-@@ -149,6 +151,55 @@
+@@ -149,6 +151,55 @@ static struct platform_device csb_flash 
  	.num_resources	= ARRAY_SIZE(csb_flash_resources),
  };
  
@@ -4420,7 +4439,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-csb337.c linux-2.6.22-rc5.ne
  static void __init csb337_board_init(void)
  {
  	/* Serial */
-@@ -168,8 +219,12 @@
+@@ -168,8 +219,12 @@ static void __init csb337_board_init(voi
  	at91_add_device_spi(csb337_spi_devices, ARRAY_SIZE(csb337_spi_devices));
  	/* MMC */
  	at91_add_device_mmc(0, &csb337_mmc_data);
@@ -4433,10 +4452,11 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-csb337.c linux-2.6.22-rc5.ne
  }
  
  MACHINE_START(CSB337, "Cogent CSB337")
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-dk.c linux-2.6.22-rc5.new/arch/arm/mach-at91/board-dk.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/board-dk.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/board-dk.c	2007-07-29 05:23:04.000000000 +0200
-@@ -73,6 +73,185 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/board-dk.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/board-dk.c
++++ linux-2.6.22.19/arch/arm/mach-at91/board-dk.c
+@@ -73,6 +73,185 @@ static void __init dk_init_irq(void)
  	at91rm9200_init_interrupts(NULL);
  }
  
@@ -4622,7 +4642,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-dk.c linux-2.6.22-rc5.new/ar
  static struct at91_eth_data __initdata dk_eth_data = {
  	.phy_irq_pin	= AT91_PIN_PC4,
  	.is_rmii	= 1,
-@@ -151,7 +330,7 @@
+@@ -151,7 +330,7 @@ static struct at91_nand_data __initdata 
  #define DK_FLASH_SIZE	0x200000
  
  static struct physmap_flash_data dk_flash_data = {
@@ -4631,7 +4651,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-dk.c linux-2.6.22-rc5.new/ar
  };
  
  static struct resource dk_flash_resource = {
-@@ -170,6 +349,13 @@
+@@ -170,6 +349,13 @@ static struct platform_device dk_flash =
  	.num_resources	= 1,
  };
  
@@ -4645,7 +4665,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-dk.c linux-2.6.22-rc5.new/ar
  
  static void __init dk_board_init(void)
  {
-@@ -200,8 +386,10 @@
+@@ -200,8 +386,10 @@ static void __init dk_board_init(void)
  	at91_add_device_nand(&dk_nand_data);
  	/* NOR Flash */
  	platform_device_register(&dk_flash);
@@ -4657,10 +4677,11 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-dk.c linux-2.6.22-rc5.new/ar
  }
  
  MACHINE_START(AT91RM9200DK, "Atmel AT91RM9200-DK")
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-ek.c linux-2.6.22-rc5.new/arch/arm/mach-at91/board-ek.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/board-ek.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/board-ek.c	2007-07-29 05:23:04.000000000 +0200
-@@ -73,6 +73,187 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/board-ek.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/board-ek.c
++++ linux-2.6.22.19/arch/arm/mach-at91/board-ek.c
+@@ -73,6 +73,187 @@ static void __init ek_init_irq(void)
  	at91rm9200_init_interrupts(NULL);
  }
  
@@ -4848,7 +4869,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-ek.c linux-2.6.22-rc5.new/ar
  static struct at91_eth_data __initdata ek_eth_data = {
  	.phy_irq_pin	= AT91_PIN_PC4,
  	.is_rmii	= 1,
-@@ -113,7 +294,7 @@
+@@ -113,7 +294,7 @@ static struct spi_board_info ek_spi_devi
  #define EK_FLASH_SIZE	0x200000
  
  static struct physmap_flash_data ek_flash_data = {
@@ -4857,7 +4878,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-ek.c linux-2.6.22-rc5.new/ar
  };
  
  static struct resource ek_flash_resource = {
-@@ -132,6 +313,18 @@
+@@ -132,6 +313,18 @@ static struct platform_device ek_flash =
  	.num_resources	= 1,
  };
  
@@ -4876,7 +4897,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-ek.c linux-2.6.22-rc5.new/ar
  
  static void __init ek_board_init(void)
  {
-@@ -158,8 +351,10 @@
+@@ -158,8 +351,10 @@ static void __init ek_board_init(void)
  #endif
  	/* NOR Flash */
  	platform_device_register(&ek_flash);
@@ -4888,9 +4909,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-ek.c linux-2.6.22-rc5.new/ar
  }
  
  MACHINE_START(AT91RM9200EK, "Atmel AT91RM9200-EK")
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-kb9202.c linux-2.6.22-rc5.new/arch/arm/mach-at91/board-kb9202.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/board-kb9202.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/board-kb9202.c	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/mach-at91/board-kb9202.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/board-kb9202.c
++++ linux-2.6.22.19/arch/arm/mach-at91/board-kb9202.c
 @@ -37,6 +37,8 @@
  #include <asm/arch/board.h>
  #include <asm/arch/gpio.h>
@@ -4900,7 +4922,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-kb9202.c linux-2.6.22-rc5.ne
  #include "generic.h"
  
  
-@@ -111,6 +113,48 @@
+@@ -111,6 +113,48 @@ static struct at91_nand_data __initdata 
  	.partition_info	= nand_partitions,
  };
  
@@ -4949,7 +4971,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-kb9202.c linux-2.6.22-rc5.ne
  static void __init kb9202_board_init(void)
  {
  	/* Serial */
-@@ -129,6 +173,8 @@
+@@ -129,6 +173,8 @@ static void __init kb9202_board_init(voi
  	at91_add_device_spi(NULL, 0);
  	/* NAND */
  	at91_add_device_nand(&kb9202_nand_data);
@@ -4958,9 +4980,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-kb9202.c linux-2.6.22-rc5.ne
  }
  
  MACHINE_START(KB9200, "KB920x")
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-sam9261ek.c linux-2.6.22-rc5.new/arch/arm/mach-at91/board-sam9261ek.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/board-sam9261ek.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/board-sam9261ek.c	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/mach-at91/board-sam9261ek.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/board-sam9261ek.c
++++ linux-2.6.22.19/arch/arm/mach-at91/board-sam9261ek.c
 @@ -27,6 +27,9 @@
  #include <linux/spi/spi.h>
  #include <linux/spi/ads7846.h>
@@ -4971,7 +4994,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-sam9261ek.c linux-2.6.22-rc5
  
  #include <asm/hardware.h>
  #include <asm/setup.h>
-@@ -251,6 +254,7 @@
+@@ -251,6 +254,7 @@ static struct spi_board_info ek_spi_devi
  		.bus_num	= 0,
  		.platform_data	= &ads_info,
  		.irq		= AT91SAM9261_ID_IRQ0,
@@ -4979,7 +5002,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-sam9261ek.c linux-2.6.22-rc5
  	},
  #endif
  #if defined(CONFIG_MTD_AT91_DATAFLASH_CARD)
-@@ -271,6 +275,65 @@
+@@ -271,6 +275,65 @@ static struct spi_board_info ek_spi_devi
  };
  
  
@@ -5045,7 +5068,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-sam9261ek.c linux-2.6.22-rc5
  static void __init ek_board_init(void)
  {
  	/* Serial */
-@@ -296,6 +359,8 @@
+@@ -296,6 +359,8 @@ static void __init ek_board_init(void)
  	/* MMC */
  	at91_add_device_mmc(0, &ek_mmc_data);
  #endif
@@ -5054,9 +5077,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-sam9261ek.c linux-2.6.22-rc5
  }
  
  MACHINE_START(AT91SAM9261EK, "Atmel AT91SAM9261-EK")
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-sam9263ek.c linux-2.6.22-rc5.new/arch/arm/mach-at91/board-sam9263ek.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/board-sam9263ek.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/board-sam9263ek.c	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/mach-at91/board-sam9263ek.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/board-sam9263ek.c
++++ linux-2.6.22.19/arch/arm/mach-at91/board-sam9263ek.c
 @@ -26,6 +26,9 @@
  #include <linux/platform_device.h>
  #include <linux/spi/spi.h>
@@ -5067,7 +5091,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-sam9263ek.c linux-2.6.22-rc5
  
  #include <asm/hardware.h>
  #include <asm/setup.h>
-@@ -202,6 +205,65 @@
+@@ -202,6 +205,65 @@ static struct at91_nand_data __initdata 
  
  
  /*
@@ -5133,7 +5157,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-sam9263ek.c linux-2.6.22-rc5
   * AC97
   */
  static struct atmel_ac97_data ek_ac97_data = {
-@@ -230,6 +292,8 @@
+@@ -230,6 +292,8 @@ static void __init ek_board_init(void)
  	at91_add_device_nand(&ek_nand_data);
  	/* I2C */
  	at91_add_device_i2c();
@@ -5142,9 +5166,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/board-sam9263ek.c linux-2.6.22-rc5
  	/* AC97 */
  	at91_add_device_ac97(&ek_ac97_data);
  }
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/clock.c linux-2.6.22-rc5.new/arch/arm/mach-at91/clock.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/clock.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/clock.c	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/mach-at91/clock.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/clock.c
++++ linux-2.6.22.19/arch/arm/mach-at91/clock.c
 @@ -32,6 +32,7 @@
  #include <asm/arch/cpu.h>
  
@@ -5153,7 +5178,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/clock.c linux-2.6.22-rc5.new/arch/
  
  
  /*
-@@ -254,6 +255,23 @@
+@@ -254,6 +255,23 @@ EXPORT_SYMBOL(clk_get_rate);
  
  /*------------------------------------------------------------------------*/
  
@@ -5177,10 +5202,11 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/clock.c linux-2.6.22-rc5.new/arch/
  #ifdef CONFIG_AT91_PROGRAMMABLE_CLOCKS
  
  /*
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/generic.h linux-2.6.22-rc5.new/arch/arm/mach-at91/generic.h
---- linux-2.6.22-rc5/arch/arm/mach-at91/generic.h	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/generic.h	2007-07-29 05:23:04.000000000 +0200
-@@ -36,6 +36,7 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/generic.h
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/generic.h
++++ linux-2.6.22.19/arch/arm/mach-at91/generic.h
+@@ -36,6 +36,7 @@ extern void __init at91_clock_associate(
   /* Power Management */
  extern void at91_irq_suspend(void);
  extern void at91_irq_resume(void);
@@ -5188,9 +5214,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/generic.h linux-2.6.22-rc5.new/arc
  
   /* GPIO */
  #define AT91RM9200_PQFP		3	/* AT91RM9200 PQFP package has 3 banks */
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/ics1523.c linux-2.6.22-rc5.new/arch/arm/mach-at91/ics1523.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/ics1523.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/ics1523.c	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/mach-at91/ics1523.c
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/arch/arm/mach-at91/ics1523.c
 @@ -0,0 +1,207 @@
 +/*
 + * arch/arm/mach-at91rm9200/ics1523.c
@@ -5399,10 +5426,11 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/ics1523.c linux-2.6.22-rc5.new/arc
 +
 +	return ack;
 +}
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/Kconfig linux-2.6.22-rc5.new/arch/arm/mach-at91/Kconfig
---- linux-2.6.22-rc5/arch/arm/mach-at91/Kconfig	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/Kconfig	2007-07-29 05:23:04.000000000 +0200
-@@ -97,6 +97,12 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/Kconfig
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/Kconfig
++++ linux-2.6.22.19/arch/arm/mach-at91/Kconfig
+@@ -97,6 +97,12 @@ config MACH_KAFA
  	help
  	  Select this if you are using Sperry-Sun's KAFA board.
  
@@ -5415,7 +5443,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/Kconfig linux-2.6.22-rc5.new/arch/
  endif
  
  # ----------------------------------------------------------
-@@ -121,6 +127,13 @@
+@@ -121,6 +127,13 @@ config MACH_AT91SAM9260EK
  	  Select this if you are using Atmel's AT91SAM9260-EK or AT91SAM9XE Evaluation Kit
  	  <http://www.atmel.com/dyn/products/tools_card.asp?tool_id=3933>
  
@@ -5429,7 +5457,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/Kconfig linux-2.6.22-rc5.new/arch/
  endif
  
  # ----------------------------------------------------------
-@@ -184,6 +197,20 @@
+@@ -184,6 +197,20 @@ config MTD_NAND_AT91_BUSWIDTH_16
  	  On AT91SAM926x boards both types of NAND flash can be present
  	  (8 and 16 bit data bus width).
  
@@ -5450,7 +5478,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/Kconfig linux-2.6.22-rc5.new/arch/
  # ----------------------------------------------------------
  
  comment "AT91 Feature Selections"
-@@ -194,6 +221,20 @@
+@@ -194,6 +221,20 @@ config AT91_PROGRAMMABLE_CLOCKS
  	  Select this if you need to program one or more of the PCK0..PCK3
  	  programmable clock outputs.
  
@@ -5471,10 +5499,11 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/Kconfig linux-2.6.22-rc5.new/arch/
  endmenu
  
  endif
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/Makefile linux-2.6.22-rc5.new/arch/arm/mach-at91/Makefile
---- linux-2.6.22-rc5/arch/arm/mach-at91/Makefile	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/Makefile	2007-07-29 05:23:04.000000000 +0200
-@@ -8,6 +8,8 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/Makefile
++++ linux-2.6.22.19/arch/arm/mach-at91/Makefile
+@@ -8,6 +8,8 @@ obj-n		:=
  obj-		:=
  
  obj-$(CONFIG_PM)		+= pm.o
@@ -5483,7 +5512,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/Makefile linux-2.6.22-rc5.new/arch
  
  # CPU-specific support
  obj-$(CONFIG_ARCH_AT91RM9200)	+= at91rm9200.o at91rm9200_time.o at91rm9200_devices.o
-@@ -26,10 +28,12 @@
+@@ -26,10 +28,12 @@ obj-$(CONFIG_MACH_CARMEVA)	+= board-carm
  obj-$(CONFIG_MACH_KB9200)	+= board-kb9202.o
  obj-$(CONFIG_MACH_ATEB9200)	+= board-eb9200.o
  obj-$(CONFIG_MACH_KAFA)		+= board-kafa.o
@@ -5496,7 +5525,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/Makefile linux-2.6.22-rc5.new/arch
  
  # AT91SAM9261 board-specific support
  obj-$(CONFIG_MACH_AT91SAM9261EK) += board-sam9261ek.o
-@@ -51,7 +55,7 @@
+@@ -51,7 +55,7 @@ led-$(CONFIG_MACH_KAFA)		+= leds.o
  obj-$(CONFIG_LEDS) += $(led-y)
  
  # VGA support
@@ -5505,10 +5534,11 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/Makefile linux-2.6.22-rc5.new/arch
  
  
  ifeq ($(CONFIG_PM_DEBUG),y)
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/pm.c linux-2.6.22-rc5.new/arch/arm/mach-at91/pm.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/pm.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/pm.c	2007-07-29 05:23:04.000000000 +0200
-@@ -63,6 +63,7 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/pm.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/pm.c
++++ linux-2.6.22.19/arch/arm/mach-at91/pm.c
+@@ -63,6 +63,7 @@ static int at91_pm_set_target(suspend_st
   * Verify that all the clocks are correct before entering
   * slow-clock mode.
   */
@@ -5516,7 +5546,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/pm.c linux-2.6.22-rc5.new/arch/arm
  static int at91_pm_verify_clocks(void)
  {
  	unsigned long scsr;
-@@ -103,20 +104,15 @@
+@@ -103,20 +104,15 @@ static int at91_pm_verify_clocks(void)
  }
  
  /*
@@ -5538,7 +5568,7 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/pm.c linux-2.6.22-rc5.new/arch/arm
  
  
  static void (*slow_clock)(void);
-@@ -205,16 +201,23 @@
+@@ -205,16 +201,23 @@ static struct pm_ops at91_pm_ops ={
  	.enter		= at91_pm_enter,
  };
  
@@ -5567,9 +5597,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/pm.c linux-2.6.22-rc5.new/arch/arm
  #endif
  
  	/* Disable SDRAM low-power mode.  Cannot be used with self-refresh. */
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/pm.c.orig linux-2.6.22-rc5.new/arch/arm/mach-at91/pm.c.orig
---- linux-2.6.22-rc5/arch/arm/mach-at91/pm.c.orig	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/pm.c.orig	2007-06-17 04:09:12.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/mach-at91/pm.c.orig
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/arch/arm/mach-at91/pm.c.orig
 @@ -0,0 +1,227 @@
 +/*
 + * arch/arm/mach-at91/pm.c
@@ -5798,9 +5829,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/pm.c.orig linux-2.6.22-rc5.new/arc
 +	return 0;
 +}
 +arch_initcall(at91_pm_init);
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/pm_slowclock.S linux-2.6.22-rc5.new/arch/arm/mach-at91/pm_slowclock.S
---- linux-2.6.22-rc5/arch/arm/mach-at91/pm_slowclock.S	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/pm_slowclock.S	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/mach-at91/pm_slowclock.S
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/arch/arm/mach-at91/pm_slowclock.S
 @@ -0,0 +1,172 @@
 +/*
 + * arch/arm/mach-at91/pm_slow_clock.S
@@ -5974,9 +6006,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/pm_slowclock.S linux-2.6.22-rc5.ne
 +
 +ENTRY(at91rm9200_slow_clock_sz)
 +	.word .-at91rm9200_slow_clock
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/tclib.c linux-2.6.22-rc5.new/arch/arm/mach-at91/tclib.c
---- linux-2.6.22-rc5/arch/arm/mach-at91/tclib.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/tclib.c	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/mach-at91/tclib.c
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/arch/arm/mach-at91/tclib.c
 @@ -0,0 +1,17 @@
 +#include <linux/clk.h>
 +#include <linux/kernel.h>
@@ -5995,9 +6028,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/tclib.c linux-2.6.22-rc5.new/arch/
 +	blocks = tcblocks;
 +	nblocks = n;
 +}
-diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/tclib.h linux-2.6.22-rc5.new/arch/arm/mach-at91/tclib.h
---- linux-2.6.22-rc5/arch/arm/mach-at91/tclib.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22-rc5.new/arch/arm/mach-at91/tclib.h	2007-07-29 05:23:04.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/mach-at91/tclib.h
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/arch/arm/mach-at91/tclib.h
 @@ -0,0 +1,11 @@
 +
 +#define TC_PER_TCB	3
@@ -6010,9 +6044,10 @@ diff -urN linux-2.6.22-rc5/arch/arm/mach-at91/tclib.h linux-2.6.22-rc5.new/arch/
 +};
 +
 +extern void __init atmel_tc_init(struct atmel_tcblock *tcblocks, int n);
-diff -urN -x CVS linux-2.6.22-rc1/include/asm-arm/arch-at91/at91_mci.h linux-2.6-stable/include/asm-arm/arch-at91/at91_mci.h
---- linux-2.6.22-rc1/include/asm-arm/arch-at91/at91_mci.h	Thu Apr 26 05:08:32 2007
-+++ linux-2.6-stable/include/asm-arm/arch-at91/at91_mci.h	Tue May  8 12:13:31 2007
+Index: linux-2.6.22.19/include/asm-arm/arch-at91/at91_mci.h
+===================================================================
+--- linux-2.6.22.19.orig/include/asm-arm/arch-at91/at91_mci.h
++++ linux-2.6.22.19/include/asm-arm/arch-at91/at91_mci.h
 @@ -26,6 +26,9 @@
  #define AT91_MCI_MR		0x04		/* Mode Register */
  #define		AT91_MCI_CLKDIV		(0xff  <<  0)	/* Clock Divider */
@@ -6023,9 +6058,10 @@ diff -urN -x CVS linux-2.6.22-rc1/include/asm-arm/arch-at91/at91_mci.h linux-2.6
  #define		AT91_MCI_PDCPADV	(1     << 14)	/* PDC Padding Value */
  #define		AT91_MCI_PDCMODE	(1     << 15)	/* PDC-orientated Mode */
  #define		AT91_MCI_BLKLEN		(0xfff << 18)	/* Data Block Length */
-diff -urN -x CVS linux-2.6.22-rc1/include/asm-arm/arch-at91/at91_pmc.h linux-2.6-stable/include/asm-arm/arch-at91/at91_pmc.h
---- linux-2.6.22-rc1/include/asm-arm/arch-at91/at91_pmc.h	Thu Apr 26 05:08:32 2007
-+++ linux-2.6-stable/include/asm-arm/arch-at91/at91_pmc.h	Fri May 11 16:45:00 2007
+Index: linux-2.6.22.19/include/asm-arm/arch-at91/at91_pmc.h
+===================================================================
+--- linux-2.6.22.19.orig/include/asm-arm/arch-at91/at91_pmc.h
++++ linux-2.6.22.19/include/asm-arm/arch-at91/at91_pmc.h
 @@ -37,7 +37,9 @@
  #define	AT91_PMC_PCDR		(AT91_PMC + 0x14)	/* Peripheral Clock Disable Register */
  #define	AT91_PMC_PCSR		(AT91_PMC + 0x18)	/* Peripheral Clock Status Register */
@@ -6037,9 +6073,10 @@ diff -urN -x CVS linux-2.6.22-rc1/include/asm-arm/arch-at91/at91_pmc.h linux-2.6
  #define		AT91_PMC_MOSCEN		(1    << 0)		/* Main Oscillator Enable */
  #define		AT91_PMC_OSCBYPASS	(1    << 1)		/* Oscillator Bypass [AT91SAM926x only] */
  #define		AT91_PMC_OSCOUNT	(0xff << 8)		/* Main Oscillator Start-up Time */
-diff -urN -x CVS linux-2.6.22-rc1/include/asm-arm/arch-at91/at91sam9260_matrix.h linux-2.6-stable/include/asm-arm/arch-at91/at91sam9260_matrix.h
---- linux-2.6.22-rc1/include/asm-arm/arch-at91/at91sam9260_matrix.h	Thu Apr 26 05:08:32 2007
-+++ linux-2.6-stable/include/asm-arm/arch-at91/at91sam9260_matrix.h	Fri May 11 16:20:33 2007
+Index: linux-2.6.22.19/include/asm-arm/arch-at91/at91sam9260_matrix.h
+===================================================================
+--- linux-2.6.22.19.orig/include/asm-arm/arch-at91/at91sam9260_matrix.h
++++ linux-2.6.22.19/include/asm-arm/arch-at91/at91sam9260_matrix.h
 @@ -67,7 +67,7 @@
  #define		AT91_MATRIX_CS4A		(1 << 4)	/* Chip Select 4 Assignment */
  #define			AT91_MATRIX_CS4A_SMC		(0 << 4)
@@ -6049,10 +6086,11 @@ diff -urN -x CVS linux-2.6.22-rc1/include/asm-arm/arch-at91/at91sam9260_matrix.h
  #define			AT91_MATRIX_CS5A_SMC		(0 << 5)
  #define			AT91_MATRIX_CS5A_SMC_CF2	(1 << 5)
  #define		AT91_MATRIX_DBPUC		(1 << 8)	/* Data Bus Pull-up Configuration */
-diff -urN -x CVS linux-2.6.22-rc1/include/asm-arm/arch-at91/board.h linux-2.6-stable/include/asm-arm/arch-at91/board.h
---- linux-2.6.22-rc1/include/asm-arm/arch-at91/board.h	Thu May 17 12:13:17 2007
-+++ linux-2.6-stable/include/asm-arm/arch-at91/board.h	Thu May 10 12:21:10 2007
-@@ -124,9 +124,21 @@
+Index: linux-2.6.22.19/include/asm-arm/arch-at91/board.h
+===================================================================
+--- linux-2.6.22.19.orig/include/asm-arm/arch-at91/board.h
++++ linux-2.6.22.19/include/asm-arm/arch-at91/board.h
+@@ -124,9 +124,21 @@ struct atmel_ac97_data {
  };
  extern void __init at91_add_device_ac97(struct atmel_ac97_data *data);
  
@@ -6074,9 +6112,10 @@ diff -urN -x CVS linux-2.6.22-rc1/include/asm-arm/arch-at91/board.h linux-2.6-st
 +extern void __init at91_gpio_leds(struct at91_gpio_led *leds, int nr);
 +
  #endif
-diff -urN -x CVS linux-2.6.22-rc1/include/asm-arm/arch-at91/ics1523.h linux-2.6-stable/include/asm-arm/arch-at91/ics1523.h
---- linux-2.6.22-rc1/include/asm-arm/arch-at91/ics1523.h	Thu Jan  1 02:00:00 1970
-+++ linux-2.6-stable/include/asm-arm/arch-at91/ics1523.h	Mon May 14 13:49:47 2007
+Index: linux-2.6.22.19/include/asm-arm/arch-at91/ics1523.h
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/include/asm-arm/arch-at91/ics1523.h
 @@ -0,0 +1,154 @@
 +//*----------------------------------------------------------------------------
 +//*         ATMEL Microcontroller Software Support  -  ROUSSET  -
@@ -6232,9 +6271,10 @@ diff -urN -x CVS linux-2.6.22-rc1/include/asm-arm/arch-at91/ics1523.h linux-2.6-
 +int at91_ics1523_init(void);
 +
 +#endif /* ics1523_h */
-diff -urN -x CVS linux-2.6.22-rc1/include/asm-arm/arch-at91/spi.h linux-2.6-stable/include/asm-arm/arch-at91/spi.h
---- linux-2.6.22-rc1/include/asm-arm/arch-at91/spi.h	Thu Jan  1 02:00:00 1970
-+++ linux-2.6-stable/include/asm-arm/arch-at91/spi.h	Mon May 14 13:49:47 2007
+Index: linux-2.6.22.19/include/asm-arm/arch-at91/spi.h
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/include/asm-arm/arch-at91/spi.h
 @@ -0,0 +1,54 @@
 +/*
 + * Serial Peripheral Interface (SPI) driver for the Atmel AT91RM9200
@@ -6290,10 +6330,11 @@ diff -urN -x CVS linux-2.6.22-rc1/include/asm-arm/arch-at91/spi.h linux-2.6-stab
 +extern int spi_transfer(struct spi_transfer_list* list);
 +
 +#endif
-diff -urN -x CVS linux-2.6.22-rc1/include/linux/clk.h linux-2.6-stable/include/linux/clk.h
---- linux-2.6.22-rc1/include/linux/clk.h	Thu Apr 26 05:08:32 2007
-+++ linux-2.6-stable/include/linux/clk.h	Tue May  8 12:13:31 2007
-@@ -121,4 +121,24 @@
+Index: linux-2.6.22.19/include/linux/clk.h
+===================================================================
+--- linux-2.6.22.19.orig/include/linux/clk.h
++++ linux-2.6.22.19/include/linux/clk.h
+@@ -121,4 +121,24 @@ int clk_set_parent(struct clk *clk, stru
   */
  struct clk *clk_get_parent(struct clk *clk);
  
@@ -6318,9 +6359,10 @@ diff -urN -x CVS linux-2.6.22-rc1/include/linux/clk.h linux-2.6-stable/include/l
 +int clk_must_disable(struct clk *clk);
 +
  #endif
-diff -urN -x CVS linux-2.6.22-rc1/include/linux/i2c-id.h linux-2.6-stable/include/linux/i2c-id.h
---- linux-2.6.22-rc1/include/linux/i2c-id.h	Thu May 17 12:13:23 2007
-+++ linux-2.6-stable/include/linux/i2c-id.h	Mon May 14 10:18:35 2007
+Index: linux-2.6.22.19/include/linux/i2c-id.h
+===================================================================
+--- linux-2.6.22.19.orig/include/linux/i2c-id.h
++++ linux-2.6.22.19/include/linux/i2c-id.h
 @@ -203,6 +203,7 @@
  
  /* --- PCA 9564 based algorithms */
@@ -6329,9 +6371,10 @@ diff -urN -x CVS linux-2.6.22-rc1/include/linux/i2c-id.h linux-2.6-stable/includ
  
  /* --- ACPI Embedded controller algorithms                              */
  #define I2C_HW_ACPI_EC          0x1f0000
-diff -urN -x CVS linux-2.6.22-rc1/sound/soc/at91/eti_b1_wm8731.c linux-2.6-stable/sound/soc/at91/eti_b1_wm8731.c
---- linux-2.6.22-rc1/sound/soc/at91/eti_b1_wm8731.c	Thu May 17 12:13:36 2007
-+++ linux-2.6-stable/sound/soc/at91/eti_b1_wm8731.c	Mon May 14 10:19:04 2007
+Index: linux-2.6.22.19/sound/soc/at91/eti_b1_wm8731.c
+===================================================================
+--- linux-2.6.22.19.orig/sound/soc/at91/eti_b1_wm8731.c
++++ linux-2.6.22.19/sound/soc/at91/eti_b1_wm8731.c
 @@ -34,8 +34,7 @@
  #include <sound/soc.h>
  #include <sound/soc-dapm.h>
@@ -6356,7 +6399,7 @@ diff -urN -x CVS linux-2.6.22-rc1/sound/soc/at91/eti_b1_wm8731.c linux-2.6-stabl
  static struct clk *pck1_clk;
  static struct clk *pllb_clk;
  
-@@ -277,7 +269,6 @@
+@@ -277,7 +269,6 @@ static struct platform_device *eti_b1_sn
  static int __init eti_b1_init(void)
  {
  	int ret;
@@ -6364,7 +6407,7 @@ diff -urN -x CVS linux-2.6.22-rc1/sound/soc/at91/eti_b1_wm8731.c linux-2.6-stabl
  	struct at91_ssc_periph *ssc = eti_b1_dai.cpu_dai->private_data;
  
  	if (!request_mem_region(AT91RM9200_BASE_SSC1, SZ_16K, "soc-audio")) {
-@@ -311,19 +302,12 @@
+@@ -311,19 +302,12 @@ static int __init eti_b1_init(void)
  		goto fail_io_unmap;
  	}
  
@@ -6390,9 +6433,10 @@ diff -urN -x CVS linux-2.6.22-rc1/sound/soc/at91/eti_b1_wm8731.c linux-2.6-stabl
  
  	/*
  	 * Set PCK1 parent to PLLB and its rate to 12 Mhz.
-diff -urN linux-2.6.22-rc5/drivers/char/at91_spi.c linux-2.6.22-rc5.new/drivers/char/at91_spi.c
---- linux-2.6.22-rc5/drivers/char/at91_spi.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22-rc5.new/drivers/char/at91_spi.c	2007-07-29 05:55:39.000000000 +0200
+Index: linux-2.6.22.19/drivers/char/at91_spi.c
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/drivers/char/at91_spi.c
 @@ -0,0 +1,336 @@
 +/*
 + * Serial Peripheral Interface (SPI) driver for the Atmel AT91RM9200 (Thunder)
@@ -6730,9 +6774,10 @@ diff -urN linux-2.6.22-rc5/drivers/char/at91_spi.c linux-2.6.22-rc5.new/drivers/
 +MODULE_LICENSE("GPL")
 +MODULE_AUTHOR("Andrew Victor")
 +MODULE_DESCRIPTION("SPI driver for Atmel AT91RM9200")
-diff -urN linux-2.6.22-rc5/drivers/char/at91_spidev.c linux-2.6.22-rc5.new/drivers/char/at91_spidev.c
---- linux-2.6.22-rc5/drivers/char/at91_spidev.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22-rc5.new/drivers/char/at91_spidev.c	2007-07-29 05:55:39.000000000 +0200
+Index: linux-2.6.22.19/drivers/char/at91_spidev.c
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/drivers/char/at91_spidev.c
 @@ -0,0 +1,236 @@
 +/*
 + * User-space interface to the SPI bus on Atmel AT91RM9200
@@ -6970,10 +7015,11 @@ diff -urN linux-2.6.22-rc5/drivers/char/at91_spidev.c linux-2.6.22-rc5.new/drive
 +MODULE_LICENSE("GPL")
 +MODULE_AUTHOR("Andrew Victor")
 +MODULE_DESCRIPTION("SPI /dev interface for Atmel AT91RM9200")
-diff -urN linux-2.6.22-rc5/drivers/char/Kconfig linux-2.6.22-rc5.new/drivers/char/Kconfig
---- linux-2.6.22-rc5/drivers/char/Kconfig	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/char/Kconfig	2007-07-29 05:55:39.000000000 +0200
-@@ -1083,5 +1083,21 @@
+Index: linux-2.6.22.19/drivers/char/Kconfig
+===================================================================
+--- linux-2.6.22.19.orig/drivers/char/Kconfig
++++ linux-2.6.22.19/drivers/char/Kconfig
+@@ -1083,5 +1083,21 @@ config DEVPORT
  
  source "drivers/s390/char/Kconfig"
  
@@ -6995,10 +7041,11 @@ diff -urN linux-2.6.22-rc5/drivers/char/Kconfig linux-2.6.22-rc5.new/drivers/cha
 +
  endmenu
  
-diff -urN linux-2.6.22-rc5/drivers/char/Makefile linux-2.6.22-rc5.new/drivers/char/Makefile
---- linux-2.6.22-rc5/drivers/char/Makefile	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/char/Makefile	2007-07-29 05:55:39.000000000 +0200
-@@ -93,6 +93,8 @@
+Index: linux-2.6.22.19/drivers/char/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/drivers/char/Makefile
++++ linux-2.6.22.19/drivers/char/Makefile
+@@ -93,6 +93,8 @@ obj-$(CONFIG_CS5535_GPIO)	+= cs5535_gpio
  obj-$(CONFIG_GPIO_VR41XX)	+= vr41xx_giu.o
  obj-$(CONFIG_GPIO_TB0219)	+= tb0219.o
  obj-$(CONFIG_TELCLOCK)		+= tlclk.o
@@ -7007,9 +7054,10 @@ diff -urN linux-2.6.22-rc5/drivers/char/Makefile linux-2.6.22-rc5.new/drivers/ch
  
  obj-$(CONFIG_WATCHDOG)		+= watchdog/
  obj-$(CONFIG_MWAVE)		+= mwave/
-diff -urN linux-2.6.22-rc5/drivers/i2c/busses/i2c-at91.c linux-2.6.22-rc5.new/drivers/i2c/busses/i2c-at91.c
---- linux-2.6.22-rc5/drivers/i2c/busses/i2c-at91.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/i2c/busses/i2c-at91.c	2007-07-29 05:55:39.000000000 +0200
+Index: linux-2.6.22.19/drivers/i2c/busses/i2c-at91.c
+===================================================================
+--- linux-2.6.22.19.orig/drivers/i2c/busses/i2c-at91.c
++++ linux-2.6.22.19/drivers/i2c/busses/i2c-at91.c
 @@ -31,8 +31,11 @@
  #include <asm/arch/board.h>
  #include <asm/arch/cpu.h>
@@ -7023,7 +7071,7 @@ diff -urN linux-2.6.22-rc5/drivers/i2c/busses/i2c-at91.c linux-2.6.22-rc5.new/dr
  
  static struct clk *twi_clk;
  static void __iomem *twi_base;
-@@ -53,7 +56,7 @@
+@@ -53,7 +56,7 @@ static void __devinit at91_twi_hwinit(vo
  	at91_twi_write(AT91_TWI_CR, AT91_TWI_MSEN);	/* Set Master mode */
  
  	/* Calcuate clock dividers */
@@ -7032,7 +7080,7 @@ diff -urN linux-2.6.22-rc5/drivers/i2c/busses/i2c-at91.c linux-2.6.22-rc5.new/dr
  	cdiv = cdiv + 1;	/* round up */
  	ckdiv = 0;
  	while (cdiv > 255) {
-@@ -61,11 +64,12 @@
+@@ -61,11 +64,12 @@ static void __devinit at91_twi_hwinit(vo
  		cdiv = cdiv >> 1;
  	}
  
@@ -7050,9 +7098,10 @@ diff -urN linux-2.6.22-rc5/drivers/i2c/busses/i2c-at91.c linux-2.6.22-rc5.new/dr
  	}
  
  	at91_twi_write(AT91_TWI_CWGR, (ckdiv << 16) | (cdiv << 8) | cdiv);
-diff -urN linux-2.6.22-rc5/drivers/i2c/busses/i2c-pca.c linux-2.6.22-rc5.new/drivers/i2c/busses/i2c-pca.c
---- linux-2.6.22-rc5/drivers/i2c/busses/i2c-pca.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22-rc5.new/drivers/i2c/busses/i2c-pca.c	2007-07-29 05:55:39.000000000 +0200
+Index: linux-2.6.22.19/drivers/i2c/busses/i2c-pca.c
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/drivers/i2c/busses/i2c-pca.c
 @@ -0,0 +1,213 @@
 +/*
 + *  Platform driver for PCA9564 I2C bus controller.
@@ -7267,10 +7316,11 @@ diff -urN linux-2.6.22-rc5/drivers/i2c/busses/i2c-pca.c linux-2.6.22-rc5.new/dri
 +MODULE_AUTHOR("Andrew Victor");
 +MODULE_DESCRIPTION("PCA9564 platform driver");
 +MODULE_LICENSE("GPL");
-diff -urN linux-2.6.22-rc5/drivers/i2c/busses/Kconfig linux-2.6.22-rc5.new/drivers/i2c/busses/Kconfig
---- linux-2.6.22-rc5/drivers/i2c/busses/Kconfig	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/i2c/busses/Kconfig	2007-07-29 05:55:39.000000000 +0200
-@@ -80,6 +80,14 @@
+Index: linux-2.6.22.19/drivers/i2c/busses/Kconfig
+===================================================================
+--- linux-2.6.22.19.orig/drivers/i2c/busses/Kconfig
++++ linux-2.6.22.19/drivers/i2c/busses/Kconfig
+@@ -80,6 +80,14 @@ config I2C_AT91
  	  This supports the use of the I2C interface on Atmel AT91
  	  processors.
  
@@ -7285,7 +7335,7 @@ diff -urN linux-2.6.22-rc5/drivers/i2c/busses/Kconfig linux-2.6.22-rc5.new/drive
  config I2C_AU1550
  	tristate "Au1550/Au1200 SMBus interface"
  	depends on SOC_AU1550 || SOC_AU1200
-@@ -598,6 +606,14 @@
+@@ -598,6 +606,14 @@ config I2C_VOODOO3
  	  This driver can also be built as a module.  If so, the module
  	  will be called i2c-voodoo3.
  
@@ -7300,10 +7350,11 @@ diff -urN linux-2.6.22-rc5/drivers/i2c/busses/Kconfig linux-2.6.22-rc5.new/drive
  config I2C_PCA_ISA
  	tristate "PCA9564 on an ISA bus"
  	depends on ISA
-diff -urN linux-2.6.22-rc5/drivers/i2c/busses/Makefile linux-2.6.22-rc5.new/drivers/i2c/busses/Makefile
---- linux-2.6.22-rc5/drivers/i2c/busses/Makefile	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/i2c/busses/Makefile	2007-07-29 05:55:39.000000000 +0200
-@@ -30,6 +30,7 @@
+Index: linux-2.6.22.19/drivers/i2c/busses/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/drivers/i2c/busses/Makefile
++++ linux-2.6.22.19/drivers/i2c/busses/Makefile
+@@ -30,6 +30,7 @@ obj-$(CONFIG_I2C_OMAP)		+= i2c-omap.o
  obj-$(CONFIG_I2C_PARPORT)	+= i2c-parport.o
  obj-$(CONFIG_I2C_PARPORT_LIGHT)	+= i2c-parport-light.o
  obj-$(CONFIG_I2C_PASEMI)	+= i2c-pasemi.o
@@ -7311,10 +7362,11 @@ diff -urN linux-2.6.22-rc5/drivers/i2c/busses/Makefile linux-2.6.22-rc5.new/driv
  obj-$(CONFIG_I2C_PCA_ISA)	+= i2c-pca-isa.o
  obj-$(CONFIG_I2C_PIIX4)		+= i2c-piix4.o
  obj-$(CONFIG_I2C_PNX)		+= i2c-pnx.o
-diff -urN linux-2.6.22-rc5/drivers/leds/Kconfig linux-2.6.22-rc5.new/drivers/leds/Kconfig
---- linux-2.6.22-rc5/drivers/leds/Kconfig	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/leds/Kconfig	2007-07-29 05:55:39.000000000 +0200
-@@ -77,6 +77,13 @@
+Index: linux-2.6.22.19/drivers/leds/Kconfig
+===================================================================
+--- linux-2.6.22.19.orig/drivers/leds/Kconfig
++++ linux-2.6.22.19/drivers/leds/Kconfig
+@@ -77,6 +77,13 @@ config LEDS_NET48XX
  	  This option enables support for the Soekris net4801 and net4826 error
  	  LED.
  
@@ -7328,9 +7380,10 @@ diff -urN linux-2.6.22-rc5/drivers/leds/Kconfig linux-2.6.22-rc5.new/drivers/led
  config LEDS_WRAP
  	tristate "LED Support for the WRAP series LEDs"
  	depends on LEDS_CLASS && SCx200_GPIO
-diff -urN linux-2.6.22-rc5/drivers/leds/leds-at91.c linux-2.6.22-rc5.new/drivers/leds/leds-at91.c
---- linux-2.6.22-rc5/drivers/leds/leds-at91.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22-rc5.new/drivers/leds/leds-at91.c	2007-07-29 05:55:39.000000000 +0200
+Index: linux-2.6.22.19/drivers/leds/leds-at91.c
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/drivers/leds/leds-at91.c
 @@ -0,0 +1,140 @@
 +/*
 + * AT91 GPIO based LED driver
@@ -7472,10 +7525,11 @@ diff -urN linux-2.6.22-rc5/drivers/leds/leds-at91.c linux-2.6.22-rc5.new/drivers
 +MODULE_DESCRIPTION("AT91 GPIO LED driver");
 +MODULE_AUTHOR("David Brownell");
 +MODULE_LICENSE("GPL");
-diff -urN linux-2.6.22-rc5/drivers/leds/Makefile linux-2.6.22-rc5.new/drivers/leds/Makefile
---- linux-2.6.22-rc5/drivers/leds/Makefile	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/leds/Makefile	2007-07-29 05:55:39.000000000 +0200
-@@ -16,6 +16,7 @@
+Index: linux-2.6.22.19/drivers/leds/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/drivers/leds/Makefile
++++ linux-2.6.22.19/drivers/leds/Makefile
+@@ -16,6 +16,7 @@ obj-$(CONFIG_LEDS_NET48XX)		+= leds-net4
  obj-$(CONFIG_LEDS_WRAP)			+= leds-wrap.o
  obj-$(CONFIG_LEDS_H1940)		+= leds-h1940.o
  obj-$(CONFIG_LEDS_COBALT)		+= leds-cobalt.o
@@ -7483,9 +7537,10 @@ diff -urN linux-2.6.22-rc5/drivers/leds/Makefile linux-2.6.22-rc5.new/drivers/le
  
  # LED Triggers
  obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledtrig-timer.o
-diff -urN linux-2.6.22-rc5/drivers/mmc/host/at91_mci.c linux-2.6.22-rc5.new/drivers/mmc/host/at91_mci.c
---- linux-2.6.22-rc5/drivers/mmc/host/at91_mci.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/mmc/host/at91_mci.c	2007-07-29 05:57:56.000000000 +0200
+Index: linux-2.6.22.19/drivers/mmc/host/at91_mci.c
+===================================================================
+--- linux-2.6.22.19.orig/drivers/mmc/host/at91_mci.c
++++ linux-2.6.22.19/drivers/mmc/host/at91_mci.c
 @@ -85,7 +85,7 @@
  
  #define AT91_MCI_ERRORS	(AT91_MCI_RINDE | AT91_MCI_RDIRE | AT91_MCI_RCRCE	\
@@ -7495,7 +7550,7 @@ diff -urN linux-2.6.22-rc5/drivers/mmc/host/at91_mci.c linux-2.6.22-rc5.new/driv
  
  #define at91_mci_read(host, reg)	__raw_readl((host)->baseaddr + (reg))
  #define at91_mci_write(host, reg, val)	__raw_writel((val), (host)->baseaddr + (reg))
-@@ -560,9 +560,7 @@
+@@ -560,9 +560,7 @@ static void at91mci_completed_command(st
  	pr_debug("Status = %08X [%08X %08X %08X %08X]\n",
  		 status, cmd->resp[0], cmd->resp[1], cmd->resp[2], cmd->resp[3]);
  
@@ -7506,7 +7561,7 @@ diff -urN linux-2.6.22-rc5/drivers/mmc/host/at91_mci.c linux-2.6.22-rc5.new/driv
  		if ((status & AT91_MCI_RCRCE) && !(mmc_resp_type(cmd) & MMC_RSP_CRC)) {
  			cmd->error = MMC_ERR_NONE;
  		}
-@@ -663,15 +661,15 @@
+@@ -663,15 +661,15 @@ static irqreturn_t at91_mci_irq(int irq,
  
  	int_status = at91_mci_read(host, AT91_MCI_SR);
  	int_mask = at91_mci_read(host, AT91_MCI_IMR);
@@ -7525,7 +7580,7 @@ diff -urN linux-2.6.22-rc5/drivers/mmc/host/at91_mci.c linux-2.6.22-rc5.new/driv
  		if (int_status & AT91_MCI_UNRE)
  			pr_debug("MMC: Underrun error\n");
  		if (int_status & AT91_MCI_OVRE)
-@@ -819,7 +817,7 @@
+@@ -819,7 +817,7 @@ static int __init at91_mci_probe(struct 
  	mmc->f_min = 375000;
  	mmc->f_max = 25000000;
  	mmc->ocr_avail = MMC_VDD_32_33 | MMC_VDD_33_34;
@@ -7534,7 +7589,7 @@ diff -urN linux-2.6.22-rc5/drivers/mmc/host/at91_mci.c linux-2.6.22-rc5.new/driv
  
  	mmc->max_blk_size = 4095;
  	mmc->max_blk_count = mmc->max_req_size;
-@@ -893,6 +891,8 @@
+@@ -893,6 +891,8 @@ static int __init at91_mci_probe(struct 
  
  	mmc_add_host(mmc);
  
@@ -7543,7 +7598,7 @@ diff -urN linux-2.6.22-rc5/drivers/mmc/host/at91_mci.c linux-2.6.22-rc5.new/driv
  	/*
  	 * monitor card insertion/removal if we can
  	 */
-@@ -922,6 +922,8 @@
+@@ -922,6 +922,8 @@ static int __exit at91_mci_remove(struct
  
  	host = mmc_priv(mmc);
  
@@ -7552,7 +7607,7 @@ diff -urN linux-2.6.22-rc5/drivers/mmc/host/at91_mci.c linux-2.6.22-rc5.new/driv
  	if (host->present != -1) {
  		free_irq(host->board->det_pin, host);
  		cancel_delayed_work(&host->mmc->detect);
-@@ -949,8 +951,12 @@
+@@ -949,8 +951,12 @@ static int __exit at91_mci_remove(struct
  static int at91_mci_suspend(struct platform_device *pdev, pm_message_t state)
  {
  	struct mmc_host *mmc = platform_get_drvdata(pdev);
@@ -7565,7 +7620,7 @@ diff -urN linux-2.6.22-rc5/drivers/mmc/host/at91_mci.c linux-2.6.22-rc5.new/driv
  	if (mmc)
  		ret = mmc_suspend_host(mmc, state);
  
-@@ -960,8 +966,12 @@
+@@ -960,8 +966,12 @@ static int at91_mci_suspend(struct platf
  static int at91_mci_resume(struct platform_device *pdev)
  {
  	struct mmc_host *mmc = platform_get_drvdata(pdev);
@@ -7578,9 +7633,10 @@ diff -urN linux-2.6.22-rc5/drivers/mmc/host/at91_mci.c linux-2.6.22-rc5.new/driv
  	if (mmc)
  		ret = mmc_resume_host(mmc);
  
-diff -urN linux-2.6.22-rc5/drivers/mtd/devices/at91_dataflash.c linux-2.6.22-rc5.new/drivers/mtd/devices/at91_dataflash.c
---- linux-2.6.22-rc5/drivers/mtd/devices/at91_dataflash.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22-rc5.new/drivers/mtd/devices/at91_dataflash.c	2007-07-29 05:55:39.000000000 +0200
+Index: linux-2.6.22.19/drivers/mtd/devices/at91_dataflash.c
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/drivers/mtd/devices/at91_dataflash.c
 @@ -0,0 +1,667 @@
 +/*
 + * Atmel DataFlash driver for Atmel AT91RM9200 (Thunder)
@@ -8249,10 +8305,11 @@ diff -urN linux-2.6.22-rc5/drivers/mtd/devices/at91_dataflash.c linux-2.6.22-rc5
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Andrew Victor");
 +MODULE_DESCRIPTION("DataFlash driver for Atmel AT91RM9200");
-diff -urN linux-2.6.22-rc5/drivers/mtd/devices/Kconfig linux-2.6.22-rc5.new/drivers/mtd/devices/Kconfig
---- linux-2.6.22-rc5/drivers/mtd/devices/Kconfig	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/mtd/devices/Kconfig	2007-07-29 05:55:39.000000000 +0200
-@@ -269,5 +269,11 @@
+Index: linux-2.6.22.19/drivers/mtd/devices/Kconfig
+===================================================================
+--- linux-2.6.22.19.orig/drivers/mtd/devices/Kconfig
++++ linux-2.6.22.19/drivers/mtd/devices/Kconfig
+@@ -269,5 +269,11 @@ config MTD_DOCPROBE_55AA
  	  LinuxBIOS or if you need to recover a DiskOnChip Millennium on which
  	  you have managed to wipe the first block.
  
@@ -8265,18 +8322,20 @@ diff -urN linux-2.6.22-rc5/drivers/mtd/devices/Kconfig linux-2.6.22-rc5.new/driv
 +	  If you have such a board, say 'Y'.
  
 +endmenu
-diff -urN linux-2.6.22-rc5/drivers/mtd/devices/Makefile linux-2.6.22-rc5.new/drivers/mtd/devices/Makefile
---- linux-2.6.22-rc5/drivers/mtd/devices/Makefile	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/mtd/devices/Makefile	2007-07-29 05:55:39.000000000 +0200
-@@ -18,3 +18,4 @@
+Index: linux-2.6.22.19/drivers/mtd/devices/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/drivers/mtd/devices/Makefile
++++ linux-2.6.22.19/drivers/mtd/devices/Makefile
+@@ -18,3 +18,4 @@ obj-$(CONFIG_MTD_BLOCK2MTD)	+= block2mtd
  obj-$(CONFIG_MTD_DATAFLASH)	+= mtd_dataflash.o
  obj-$(CONFIG_MTD_DATAFLASH26)	+= at91_dataflash26.o
  obj-$(CONFIG_MTD_M25P80)	+= m25p80.o
 +obj-$(CONFIG_MTD_AT91_DATAFLASH)+= at91_dataflash.o
-diff -urN linux-2.6.22-rc5/drivers/net/arm/at91_ether.c linux-2.6.22-rc5.new/drivers/net/arm/at91_ether.c
---- linux-2.6.22-rc5/drivers/net/arm/at91_ether.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/net/arm/at91_ether.c	2007-07-29 05:55:39.000000000 +0200
-@@ -894,6 +894,7 @@
+Index: linux-2.6.22.19/drivers/net/arm/at91_ether.c
+===================================================================
+--- linux-2.6.22.19.orig/drivers/net/arm/at91_ether.c
++++ linux-2.6.22.19/drivers/net/arm/at91_ether.c
+@@ -894,6 +894,7 @@ static void at91ether_rx(struct net_devi
  			skb_reserve(skb, 2);
  			memcpy(skb_put(skb, pktlen), p_recv, pktlen);
  
@@ -8284,7 +8343,7 @@ diff -urN linux-2.6.22-rc5/drivers/net/arm/at91_ether.c linux-2.6.22-rc5.new/dri
  			skb->protocol = eth_type_trans(skb, dev);
  			dev->last_rx = jiffies;
  			lp->stats.rx_bytes += pktlen;
-@@ -978,14 +979,22 @@
+@@ -978,14 +979,22 @@ static int __init at91ether_setup(unsign
  	struct net_device *dev;
  	struct at91_private *lp;
  	unsigned int val;
@@ -8310,7 +8369,7 @@ diff -urN linux-2.6.22-rc5/drivers/net/arm/at91_ether.c linux-2.6.22-rc5.new/dri
  	SET_MODULE_OWNER(dev);
  
  	/* Install the interrupt handler */
-@@ -1058,12 +1067,12 @@
+@@ -1058,12 +1067,12 @@ static int __init at91ether_setup(unsign
  	lp->phy_address = phy_address;	/* MDI address of PHY */
  
  	/* Register the network interface */
@@ -8326,9 +8385,10 @@ diff -urN linux-2.6.22-rc5/drivers/net/arm/at91_ether.c linux-2.6.22-rc5.new/dri
  	}
  
  	/* Determine current link speed */
-diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/drivers/serial/atmel_serial.c
---- linux-2.6.22-rc5/drivers/serial/atmel_serial.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/serial/atmel_serial.c	2007-07-29 05:55:39.000000000 +0200
+Index: linux-2.6.22.19/drivers/serial/atmel_serial.c
+===================================================================
+--- linux-2.6.22.19.orig/drivers/serial/atmel_serial.c
++++ linux-2.6.22.19/drivers/serial/atmel_serial.c
 @@ -7,6 +7,8 @@
   *  Based on drivers/char/serial_sa1100.c, by Deep Blue Solutions Ltd.
   *  Based on drivers/char/serial.c, by Linus Torvalds, Theodore Ts'o.
@@ -8372,7 +8432,7 @@ diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/dr
  /*
   * We wrap our port structure around the generic uart_port.
   */
-@@ -114,10 +129,20 @@
+@@ -114,10 +129,20 @@ struct atmel_uart_port {
  	struct uart_port	uart;		/* uart */
  	struct clk		*clk;		/* uart clock */
  	unsigned short		suspended;	/* is port suspended? */
@@ -8393,7 +8453,7 @@ diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/dr
  #ifdef SUPPORT_SYSRQ
  static struct console atmel_console;
  #endif
-@@ -205,7 +230,12 @@
+@@ -205,7 +230,12 @@ static void atmel_stop_tx(struct uart_po
  {
  	struct atmel_uart_port *atmel_port = (struct atmel_uart_port *) port;
  
@@ -8407,7 +8467,7 @@ diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/dr
  }
  
  /*
-@@ -215,7 +245,17 @@
+@@ -215,7 +245,17 @@ static void atmel_start_tx(struct uart_p
  {
  	struct atmel_uart_port *atmel_port = (struct atmel_uart_port *) port;
  
@@ -8426,7 +8486,7 @@ diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/dr
  }
  
  /*
-@@ -225,7 +265,12 @@
+@@ -225,7 +265,12 @@ static void atmel_stop_rx(struct uart_po
  {
  	struct atmel_uart_port *atmel_port = (struct atmel_uart_port *) port;
  
@@ -8440,7 +8500,7 @@ diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/dr
  }
  
  /*
-@@ -248,6 +293,134 @@
+@@ -248,6 +293,134 @@ static void atmel_break_ctl(struct uart_
  }
  
  /*
@@ -8575,7 +8635,7 @@ diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/dr
   * Characters received (called from interrupt handler)
   */
  static void atmel_rx_chars(struct uart_port *port)
-@@ -349,6 +522,14 @@
+@@ -349,6 +522,14 @@ static irqreturn_t atmel_interrupt(int i
  	status = UART_GET_CSR(port);
  	pending = status & UART_GET_IMR(port);
  	while (pending) {
@@ -8590,7 +8650,7 @@ diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/dr
  		/* Interrupt receive */
  		if (pending & ATMEL_US_RXRDY)
  			atmel_rx_chars(port);
-@@ -363,6 +544,12 @@
+@@ -363,6 +544,12 @@ static irqreturn_t atmel_interrupt(int i
  		if (pending & (ATMEL_US_RIIC | ATMEL_US_DSRIC | ATMEL_US_DCDIC | ATMEL_US_CTSIC))
  			wake_up_interruptible(&port->info->delta_msr_wait);
  
@@ -8603,7 +8663,7 @@ diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/dr
  		/* Interrupt transmit */
  		if (pending & ATMEL_US_TXRDY)
  			atmel_tx_chars(port);
-@@ -401,6 +588,47 @@
+@@ -401,6 +588,47 @@ static int atmel_startup(struct uart_por
  	}
  
  	/*
@@ -8651,7 +8711,7 @@ diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/dr
  	 * If there is a specific "open" function (to register
  	 * control line interrupts)
  	 */
-@@ -418,7 +646,15 @@
+@@ -418,7 +646,15 @@ static int atmel_startup(struct uart_por
  	UART_PUT_CR(port, ATMEL_US_RSTSTA | ATMEL_US_RSTRX);
  	UART_PUT_CR(port, ATMEL_US_TXEN | ATMEL_US_RXEN);		/* enable xmit & rcvr */
  
@@ -8668,7 +8728,7 @@ diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/dr
  
  	return 0;
  }
-@@ -431,6 +667,31 @@
+@@ -431,6 +667,31 @@ static void atmel_shutdown(struct uart_p
  	struct atmel_uart_port *atmel_port = (struct atmel_uart_port *) port;
  
  	/*
@@ -8700,7 +8760,7 @@ diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/dr
  	 * Disable all interrupts, port and break condition.
  	 */
  	UART_PUT_CR(port, ATMEL_US_RSTSTA);
-@@ -481,6 +742,7 @@
+@@ -481,6 +742,7 @@ static void atmel_serial_pm(struct uart_
   */
  static void atmel_set_termios(struct uart_port *port, struct ktermios * termios, struct ktermios * old)
  {
@@ -8708,7 +8768,7 @@ diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/dr
  	unsigned long flags;
  	unsigned int mode, imr, quot, baud;
  
-@@ -490,7 +752,7 @@
+@@ -490,7 +752,7 @@ static void atmel_set_termios(struct uar
  	baud = uart_get_baud_rate(port, termios, old, 0, port->uartclk/16);
  	quot = uart_get_divisor(port, baud);
  
@@ -8717,7 +8777,7 @@ diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/dr
  		quot /= 8;
  		mode |= ATMEL_US_USCLKS_MCK_DIV8;
  	}
-@@ -539,6 +801,9 @@
+@@ -539,6 +801,9 @@ static void atmel_set_termios(struct uar
  	if (termios->c_iflag & (BRKINT | PARMRK))
  		port->read_status_mask |= ATMEL_US_RXBRK;
  
@@ -8727,7 +8787,7 @@ diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/dr
  	/*
  	 * Characters to ignore
  	 */
-@@ -717,6 +982,13 @@
+@@ -717,6 +982,13 @@ static void __devinit atmel_init_port(st
  		clk_enable(atmel_port->clk);
  		port->uartclk = clk_get_rate(atmel_port->clk);
  	}
@@ -8741,7 +8801,7 @@ diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/dr
  }
  
  /*
-@@ -893,7 +1165,8 @@
+@@ -893,7 +1165,8 @@ static int atmel_serial_suspend(struct p
  	struct uart_port *port = platform_get_drvdata(pdev);
  	struct atmel_uart_port *atmel_port = (struct atmel_uart_port *) port;
  
@@ -8751,10 +8811,11 @@ diff -urN linux-2.6.22-rc5/drivers/serial/atmel_serial.c linux-2.6.22-rc5.new/dr
  		enable_irq_wake(port->irq);
  	else {
  		uart_suspend_port(&atmel_uart, port);
-diff -urN linux-2.6.22-rc5/drivers/spi/Kconfig linux-2.6.22-rc5.new/drivers/spi/Kconfig
---- linux-2.6.22-rc5/drivers/spi/Kconfig	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/spi/Kconfig	2007-07-29 05:55:39.000000000 +0200
-@@ -55,6 +55,7 @@
+Index: linux-2.6.22.19/drivers/spi/Kconfig
+===================================================================
+--- linux-2.6.22.19.orig/drivers/spi/Kconfig
++++ linux-2.6.22.19/drivers/spi/Kconfig
+@@ -55,6 +55,7 @@ comment "SPI Master Controller Drivers"
  config SPI_ATMEL
  	tristate "Atmel SPI Controller"
  	depends on (ARCH_AT91 || AVR32) && SPI_MASTER
@@ -8762,7 +8823,7 @@ diff -urN linux-2.6.22-rc5/drivers/spi/Kconfig linux-2.6.22-rc5.new/drivers/spi/
  	help
  	  This selects a driver for the Atmel SPI Controller, present on
  	  many AT32 (AVR32) and AT91 (ARM) chips.
-@@ -100,6 +101,24 @@
+@@ -100,6 +101,24 @@ config SPI_BUTTERFLY
  	  inexpensive battery powered microcontroller evaluation board.
  	  This same cable can be used to flash new firmware.
  
@@ -8787,10 +8848,11 @@ diff -urN linux-2.6.22-rc5/drivers/spi/Kconfig linux-2.6.22-rc5.new/drivers/spi/
  config SPI_IMX
  	tristate "Freescale iMX SPI controller"
  	depends on SPI_MASTER && ARCH_IMX && EXPERIMENTAL
-diff -urN linux-2.6.22-rc5/drivers/spi/Makefile linux-2.6.22-rc5.new/drivers/spi/Makefile
---- linux-2.6.22-rc5/drivers/spi/Makefile	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/spi/Makefile	2007-07-29 05:55:39.000000000 +0200
-@@ -23,6 +23,7 @@
+Index: linux-2.6.22.19/drivers/spi/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/drivers/spi/Makefile
++++ linux-2.6.22.19/drivers/spi/Makefile
+@@ -23,6 +23,7 @@ obj-$(CONFIG_SPI_MPC52xx_PSC)		+= mpc52x
  obj-$(CONFIG_SPI_MPC83xx)		+= spi_mpc83xx.o
  obj-$(CONFIG_SPI_S3C24XX_GPIO)		+= spi_s3c24xx_gpio.o
  obj-$(CONFIG_SPI_S3C24XX)		+= spi_s3c24xx.o
@@ -8798,9 +8860,10 @@ diff -urN linux-2.6.22-rc5/drivers/spi/Makefile linux-2.6.22-rc5.new/drivers/spi
  # 	... add above this line ...
  
  # SPI protocol drivers (device/link on bus)
-diff -urN linux-2.6.22-rc5/drivers/spi/spi_at91_bitbang.c linux-2.6.22-rc5.new/drivers/spi/spi_at91_bitbang.c
---- linux-2.6.22-rc5/drivers/spi/spi_at91_bitbang.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22-rc5.new/drivers/spi/spi_at91_bitbang.c	2007-07-29 05:55:39.000000000 +0200
+Index: linux-2.6.22.19/drivers/spi/spi_at91_bitbang.c
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/drivers/spi/spi_at91_bitbang.c
 @@ -0,0 +1,207 @@
 +/*
 + * at91_spi.c - at91 SPI driver (BOOTSTRAP/BITBANG VERSION)
@@ -9009,10 +9072,11 @@ diff -urN linux-2.6.22-rc5/drivers/spi/spi_at91_bitbang.c linux-2.6.22-rc5.new/d
 +MODULE_DESCRIPTION("AT91 SPI support (BOOTSTRAP/BITBANG VERSION)");
 +MODULE_AUTHOR("David Brownell");
 +MODULE_LICENSE("GPL");
-diff -urN linux-2.6.22-rc5/drivers/usb/gadget/at91_udc.c linux-2.6.22-rc5.new/drivers/usb/gadget/at91_udc.c
---- linux-2.6.22-rc5/drivers/usb/gadget/at91_udc.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/usb/gadget/at91_udc.c	2007-07-29 05:55:39.000000000 +0200
-@@ -1803,7 +1803,7 @@
+Index: linux-2.6.22.19/drivers/usb/gadget/at91_udc.c
+===================================================================
+--- linux-2.6.22.19.orig/drivers/usb/gadget/at91_udc.c
++++ linux-2.6.22.19/drivers/usb/gadget/at91_udc.c
+@@ -1803,7 +1803,7 @@ static int at91udc_suspend(struct platfo
  	 */
  	if ((!udc->suspended && udc->addr)
  			|| !wake
@@ -9021,10 +9085,11 @@ diff -urN linux-2.6.22-rc5/drivers/usb/gadget/at91_udc.c linux-2.6.22-rc5.new/dr
  		pullup(udc, 0);
  		wake = 0;
  	} else
-diff -urN linux-2.6.22-rc5/drivers/usb/host/ohci-at91.c linux-2.6.22-rc5.new/drivers/usb/host/ohci-at91.c
---- linux-2.6.22-rc5/drivers/usb/host/ohci-at91.c	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/usb/host/ohci-at91.c	2007-07-29 05:55:39.000000000 +0200
-@@ -299,7 +299,7 @@
+Index: linux-2.6.22.19/drivers/usb/host/ohci-at91.c
+===================================================================
+--- linux-2.6.22.19.orig/drivers/usb/host/ohci-at91.c
++++ linux-2.6.22.19/drivers/usb/host/ohci-at91.c
+@@ -299,7 +299,7 @@ ohci_hcd_at91_drv_suspend(struct platfor
  	 *
  	 * REVISIT: some boards will be able to turn VBUS off...
  	 */
@@ -9033,9 +9098,10 @@ diff -urN linux-2.6.22-rc5/drivers/usb/host/ohci-at91.c linux-2.6.22-rc5.new/dri
  		ohci_usb_reset (ohci);
  		at91_stop_clock();
  	}
-diff -urN linux-2.6.22-rc5/drivers/video/backlight/kb920x_bl.c linux-2.6.22-rc5.new/drivers/video/backlight/kb920x_bl.c
---- linux-2.6.22-rc5/drivers/video/backlight/kb920x_bl.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22-rc5.new/drivers/video/backlight/kb920x_bl.c	2007-07-29 05:55:39.000000000 +0200
+Index: linux-2.6.22.19/drivers/video/backlight/kb920x_bl.c
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/drivers/video/backlight/kb920x_bl.c
 @@ -0,0 +1,164 @@
 +/*
 + * Backlight Driver for KB9202
@@ -9201,10 +9267,11 @@ diff -urN linux-2.6.22-rc5/drivers/video/backlight/kb920x_bl.c linux-2.6.22-rc5.
 +MODULE_AUTHOR("KwikByte <kb9200_dev@kwikbyte.com>");
 +MODULE_DESCRIPTION("KB9202 Backlight Driver");
 +MODULE_LICENSE("GPL");
-diff -urN linux-2.6.22-rc5/drivers/video/backlight/Kconfig linux-2.6.22-rc5.new/drivers/video/backlight/Kconfig
---- linux-2.6.22-rc5/drivers/video/backlight/Kconfig	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/video/backlight/Kconfig	2007-07-29 05:55:39.000000000 +0200
-@@ -71,3 +71,11 @@
+Index: linux-2.6.22.19/drivers/video/backlight/Kconfig
+===================================================================
+--- linux-2.6.22.19.orig/drivers/video/backlight/Kconfig
++++ linux-2.6.22.19/drivers/video/backlight/Kconfig
+@@ -71,3 +71,11 @@ config BACKLIGHT_CARILLO_RANCH
  	help
  	  If you have a Intel LE80578 (Carillo Ranch) say Y to enable the
  	  backlight driver.
@@ -9216,18 +9283,20 @@ diff -urN linux-2.6.22-rc5/drivers/video/backlight/Kconfig linux-2.6.22-rc5.new/
 +	help
 +	  If you have a KwikByte KB9202 board, say Y to enable the
 +	  backlight driver.
-diff -urN linux-2.6.22-rc5/drivers/video/backlight/Makefile linux-2.6.22-rc5.new/drivers/video/backlight/Makefile
---- linux-2.6.22-rc5/drivers/video/backlight/Makefile	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/video/backlight/Makefile	2007-07-29 05:55:39.000000000 +0200
-@@ -7,3 +7,4 @@
+Index: linux-2.6.22.19/drivers/video/backlight/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/drivers/video/backlight/Makefile
++++ linux-2.6.22.19/drivers/video/backlight/Makefile
+@@ -7,3 +7,4 @@ obj-$(CONFIG_BACKLIGHT_HP680)	+= hp680_b
  obj-$(CONFIG_BACKLIGHT_LOCOMO)	+= locomolcd.o
  obj-$(CONFIG_BACKLIGHT_PROGEAR) += progear_bl.o
  obj-$(CONFIG_BACKLIGHT_CARILLO_RANCH) += cr_bllcd.o
 +obj-$(CONFIG_BACKLIGHT_KB920x)	+= kb920x_bl.o
-diff -urN linux-2.6.22-rc5/drivers/video/Kconfig linux-2.6.22-rc5.new/drivers/video/Kconfig
---- linux-2.6.22-rc5/drivers/video/Kconfig	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/video/Kconfig	2007-07-29 05:55:39.000000000 +0200
-@@ -822,6 +822,17 @@
+Index: linux-2.6.22.19/drivers/video/Kconfig
+===================================================================
+--- linux-2.6.22.19.orig/drivers/video/Kconfig
++++ linux-2.6.22.19/drivers/video/Kconfig
+@@ -822,6 +822,17 @@ config FB_EPSON1355
  	  framebuffer.  Product specs at
  	  <http://www.erd.epson.com/vdc/html/products.htm>.
  
@@ -9245,7 +9314,7 @@ diff -urN linux-2.6.22-rc5/drivers/video/Kconfig linux-2.6.22-rc5.new/drivers/vi
  config FB_S1D13XXX
  	tristate "Epson S1D13XXX framebuffer support"
  	depends on FB
-@@ -835,7 +846,7 @@
+@@ -835,7 +846,7 @@ config FB_S1D13XXX
  
  config FB_ATMEL
  	tristate "AT91/AT32 LCD Controller support"
@@ -9254,10 +9323,11 @@ diff -urN linux-2.6.22-rc5/drivers/video/Kconfig linux-2.6.22-rc5.new/drivers/vi
  	select FB_CFB_FILLRECT
  	select FB_CFB_COPYAREA
  	select FB_CFB_IMAGEBLIT
-diff -urN linux-2.6.22-rc5/drivers/video/Makefile linux-2.6.22-rc5.new/drivers/video/Makefile
---- linux-2.6.22-rc5/drivers/video/Makefile	2007-06-17 04:09:12.000000000 +0200
-+++ linux-2.6.22-rc5.new/drivers/video/Makefile	2007-07-29 05:55:39.000000000 +0200
-@@ -87,7 +87,8 @@
+Index: linux-2.6.22.19/drivers/video/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/drivers/video/Makefile
++++ linux-2.6.22.19/drivers/video/Makefile
+@@ -87,7 +87,8 @@ obj-$(CONFIG_FB_G364)             += g36
  obj-$(CONFIG_FB_SA1100)           += sa1100fb.o
  obj-$(CONFIG_FB_HIT)              += hitfb.o
  obj-$(CONFIG_FB_EPSON1355)	  += epson1355fb.o
@@ -9267,9 +9337,10 @@ diff -urN linux-2.6.22-rc5/drivers/video/Makefile linux-2.6.22-rc5.new/drivers/v
  obj-$(CONFIG_FB_PVR2)             += pvr2fb.o
  obj-$(CONFIG_FB_VOODOO1)          += sstfb.o
  obj-$(CONFIG_FB_ARMCLCD)	  += amba-clcd.o
-diff -urN linux-2.6.22-rc5/drivers/video/s1d15605fb.c linux-2.6.22-rc5.new/drivers/video/s1d15605fb.c
---- linux-2.6.22-rc5/drivers/video/s1d15605fb.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22-rc5.new/drivers/video/s1d15605fb.c	2007-07-29 05:55:39.000000000 +0200
+Index: linux-2.6.22.19/drivers/video/s1d15605fb.c
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/drivers/video/s1d15605fb.c
 @@ -0,0 +1,659 @@
 +/*
 + *  drivers/video/s1d15605.c

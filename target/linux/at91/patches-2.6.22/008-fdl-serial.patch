@@ -1,6 +1,8 @@
---- linux-2.6.21.1.orig/drivers/serial/atmel_serial.c	2007-05-28 12:22:29.000000000 +0200
-+++ linux-2.6.21.1/drivers/serial/atmel_serial.c	2007-05-28 16:39:09.000000000 +0200
-@@ -174,7 +174,35 @@
+Index: linux-2.6.22.19/drivers/serial/atmel_serial.c
+===================================================================
+--- linux-2.6.22.19.orig/drivers/serial/atmel_serial.c
++++ linux-2.6.22.19/drivers/serial/atmel_serial.c
+@@ -174,7 +174,35 @@ static void atmel_set_mctrl(struct uart_
  				at91_set_gpio_value(AT91_PIN_PA21, 0);
  			else
  				at91_set_gpio_value(AT91_PIN_PA21, 1);
@@ -36,7 +38,7 @@
  	}
  #endif
  
-@@ -211,8 +239,10 @@
+@@ -211,8 +239,10 @@ static u_int atmel_get_mctrl(struct uart
  	/*
  	 * The control signals are active low.
  	 */
@@ -49,7 +51,7 @@
  	if (!(status & ATMEL_US_CTS))
  		ret |= TIOCM_CTS;
  	if (!(status & ATMEL_US_DSR))
-@@ -220,6 +250,16 @@
+@@ -220,6 +250,16 @@ static u_int atmel_get_mctrl(struct uart
  	if (!(status & ATMEL_US_RI))
  		ret |= TIOCM_RI;
  
@@ -66,7 +68,7 @@
  	return ret;
  }
  
-@@ -511,6 +551,34 @@
+@@ -511,6 +551,34 @@ static void atmel_tx_chars(struct uart_p
  }
  
  /*
@@ -101,7 +103,7 @@
   * Interrupt handler
   */
  static irqreturn_t atmel_interrupt(int irq, void *dev_id)
-@@ -587,6 +655,23 @@
+@@ -587,6 +655,23 @@ static int atmel_startup(struct uart_por
  		return retval;
  	}
  
@@ -125,7 +127,7 @@
  	/*
  	 * Initialize DMA (if necessary)
  	 */
-@@ -603,6 +688,10 @@
+@@ -603,6 +688,10 @@ static int atmel_startup(struct uart_por
  					kfree(atmel_port->pdc_rx[0].buf);
  				}
  				free_irq(port->irq, port);
@@ -136,7 +138,7 @@
  				return -ENOMEM;
  			}
  			pdc->dma_addr = dma_map_single(port->dev, pdc->buf, PDC_BUFFER_SIZE, DMA_FROM_DEVICE);
-@@ -636,6 +725,10 @@
+@@ -636,6 +725,10 @@ static int atmel_startup(struct uart_por
  		retval = atmel_open_hook(port);
  		if (retval) {
  			free_irq(port->irq, port);
@@ -147,7 +149,7 @@
  			return retval;
  		}
  	}
-@@ -701,6 +794,10 @@
+@@ -701,6 +794,10 @@ static void atmel_shutdown(struct uart_p
  	 * Free the interrupt
  	 */
  	free_irq(port->irq, port);

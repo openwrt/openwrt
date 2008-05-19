@@ -1,6 +1,8 @@
---- linux-2.6.21.1.orig/arch/arm/mach-at91/at91rm9200_devices.c	2007-05-28 12:22:29.000000000 +0200
-+++ linux-2.6.21.1/arch/arm/mach-at91/at91rm9200_devices.c	2007-05-28 16:44:36.000000000 +0200
-@@ -618,7 +618,6 @@
+Index: linux-2.6.21.7/arch/arm/mach-at91/at91rm9200_devices.c
+===================================================================
+--- linux-2.6.21.7.orig/arch/arm/mach-at91/at91rm9200_devices.c
++++ linux-2.6.21.7/arch/arm/mach-at91/at91rm9200_devices.c
+@@ -618,7 +618,6 @@ void __init at91_init_leds(u8 cpu_led, u
  
  
  #if defined(CONFIG_NEW_LEDS)
@@ -8,7 +10,7 @@
  static struct platform_device at91_leds = {
  	.name		= "at91_leds",
  	.id		= -1,
-@@ -724,6 +723,10 @@
+@@ -724,6 +723,10 @@ static inline void configure_usart0_pins
  	 *  We need to drive the pin manually.  Default is off (RTS is active low).
  	 */
  	at91_set_gpio_output(AT91_PIN_PA21, 1);
@@ -19,7 +21,7 @@
  }
  
  static struct resource uart1_resources[] = {
-@@ -835,6 +838,12 @@
+@@ -835,6 +838,12 @@ static inline void configure_usart3_pins
  {
  	at91_set_B_periph(AT91_PIN_PA5, 1);		/* TXD3 */
  	at91_set_B_periph(AT91_PIN_PA6, 0);		/* RXD3 */
