@@ -1,7 +1,7 @@
-diff --git a/include/sound/ac97_codec.h b/include/sound/ac97_codec.h
-index 246ac23..874a2c8 100644
---- a/include/sound/ac97_codec.h
-+++ b/include/sound/ac97_codec.h
+Index: linux-2.6.23.17/include/sound/ac97_codec.h
+===================================================================
+--- linux-2.6.23.17.orig/include/sound/ac97_codec.h
++++ linux-2.6.23.17/include/sound/ac97_codec.h
 @@ -281,10 +281,12 @@
  /* specific - Analog Devices */
  #define AC97_AD_TEST		0x5a	/* test register */
@@ -15,11 +15,11 @@ index 246ac23..874a2c8 100644
  
  /* specific - Cirrus Logic */
  #define AC97_CSR_ACMODE		0x5e	/* AC Mode Register */
-diff --git a/sound/pci/ac97/ac97_codec.c b/sound/pci/ac97/ac97_codec.c
-index bbed644..090e852 100644
---- a/sound/pci/ac97/ac97_codec.c
-+++ b/sound/pci/ac97/ac97_codec.c
-@@ -49,7 +49,7 @@ module_param(enable_loopback, bool, 0444);
+Index: linux-2.6.23.17/sound/pci/ac97/ac97_codec.c
+===================================================================
+--- linux-2.6.23.17.orig/sound/pci/ac97/ac97_codec.c
++++ linux-2.6.23.17/sound/pci/ac97/ac97_codec.c
+@@ -49,7 +49,7 @@ module_param(enable_loopback, bool, 0444
  MODULE_PARM_DESC(enable_loopback, "Enable AC97 ADC/DAC Loopback Control");
  
  #ifdef CONFIG_SND_AC97_POWER_SAVE
@@ -28,11 +28,11 @@ index bbed644..090e852 100644
  module_param(power_save, bool, 0644);
  MODULE_PARM_DESC(power_save, "Enable AC97 power-saving control");
  #endif
-diff --git a/sound/pci/ac97/ac97_patch.c b/sound/pci/ac97/ac97_patch.c
-index 581ebba..06637f7 100644
---- a/sound/pci/ac97/ac97_patch.c
-+++ b/sound/pci/ac97/ac97_patch.c
-@@ -1973,8 +1973,9 @@ static const struct snd_kcontrol_new snd_ac97_ad1888_controls[] = {
+Index: linux-2.6.23.17/sound/pci/ac97/ac97_patch.c
+===================================================================
+--- linux-2.6.23.17.orig/sound/pci/ac97/ac97_patch.c
++++ linux-2.6.23.17/sound/pci/ac97/ac97_patch.c
+@@ -1973,8 +1973,9 @@ static const struct snd_kcontrol_new snd
  		.get = snd_ac97_ad1888_lohpsel_get,
  		.put = snd_ac97_ad1888_lohpsel_put
  	},
@@ -44,10 +44,10 @@ index 581ebba..06637f7 100644
  	AC97_SINGLE("Spread Front to Surround and Center/LFE", AC97_AD_MISC, 7, 1, 0),
  	{
  		.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
-diff --git a/sound/pci/cs5535audio/Makefile b/sound/pci/cs5535audio/Makefile
-index ad947b4..3866c4d 100644
---- a/sound/pci/cs5535audio/Makefile
-+++ b/sound/pci/cs5535audio/Makefile
+Index: linux-2.6.23.17/sound/pci/cs5535audio/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/sound/pci/cs5535audio/Makefile
++++ linux-2.6.23.17/sound/pci/cs5535audio/Makefile
 @@ -8,5 +8,9 @@ ifeq ($(CONFIG_PM),y)
  snd-cs5535audio-objs += cs5535audio_pm.o
  endif
@@ -58,11 +58,11 @@ index ad947b4..3866c4d 100644
 +
  # Toplevel Module Dependency
  obj-$(CONFIG_SND_CS5535AUDIO) += snd-cs5535audio.o
-diff --git a/sound/pci/cs5535audio/cs5535audio.c b/sound/pci/cs5535audio/cs5535audio.c
-index b8e75ef..389d9da 100644
---- a/sound/pci/cs5535audio/cs5535audio.c
-+++ b/sound/pci/cs5535audio/cs5535audio.c
-@@ -145,7 +145,7 @@ static unsigned short snd_cs5535audio_ac97_codec_read(struct snd_ac97 *ac97,
+Index: linux-2.6.23.17/sound/pci/cs5535audio/cs5535audio.c
+===================================================================
+--- linux-2.6.23.17.orig/sound/pci/cs5535audio/cs5535audio.c
++++ linux-2.6.23.17/sound/pci/cs5535audio/cs5535audio.c
+@@ -145,7 +145,7 @@ static unsigned short snd_cs5535audio_ac
  	return snd_cs5535audio_codec_read(cs5535au, reg);
  }
  
@@ -71,7 +71,7 @@ index b8e75ef..389d9da 100644
  {
  	struct snd_card *card = cs5535au->card;
  	struct snd_ac97_bus *pbus;
-@@ -160,10 +160,14 @@ static int snd_cs5535audio_mixer(struct cs5535audio *cs5535au)
+@@ -160,10 +160,14 @@ static int snd_cs5535audio_mixer(struct 
  		return err;
  
  	memset(&ac97, 0, sizeof(ac97));
@@ -87,7 +87,7 @@ index b8e75ef..389d9da 100644
  	if ((err = snd_ac97_mixer(pbus, &ac97, &cs5535au->ac97)) < 0) {
  		snd_printk(KERN_ERR "mixer failed\n");
  		return err;
-@@ -171,6 +175,12 @@ static int snd_cs5535audio_mixer(struct cs5535audio *cs5535au)
+@@ -171,6 +175,12 @@ static int snd_cs5535audio_mixer(struct 
  
  	snd_ac97_tune_hardware(cs5535au->ac97, ac97_quirks, ac97_quirk);
  
@@ -100,7 +100,7 @@ index b8e75ef..389d9da 100644
  	return 0;
  }
  
-@@ -206,7 +216,6 @@ static void process_bm1_irq(struct cs5535audio *cs5535au)
+@@ -206,7 +216,6 @@ static void process_bm1_irq(struct cs553
  static irqreturn_t snd_cs5535audio_interrupt(int irq, void *dev_id)
  {
  	u16 acc_irq_stat;
@@ -108,7 +108,7 @@ index b8e75ef..389d9da 100644
  	unsigned char count;
  	struct cs5535audio *cs5535au = dev_id;
  
-@@ -217,7 +226,7 @@ static irqreturn_t snd_cs5535audio_interrupt(int irq, void *dev_id)
+@@ -217,7 +226,7 @@ static irqreturn_t snd_cs5535audio_inter
  
  	if (!acc_irq_stat)
  		return IRQ_NONE;
@@ -117,7 +117,7 @@ index b8e75ef..389d9da 100644
  		if (acc_irq_stat & (1 << count)) {
  			switch (count) {
  			case IRQ_STS:
-@@ -232,26 +241,9 @@ static irqreturn_t snd_cs5535audio_interrupt(int irq, void *dev_id)
+@@ -232,26 +241,9 @@ static irqreturn_t snd_cs5535audio_inter
  			case BM1_IRQ_STS:
  				process_bm1_irq(cs5535au);
  				break;
@@ -146,10 +146,10 @@ index b8e75ef..389d9da 100644
  				break;
  			}
  		}
-diff --git a/sound/pci/cs5535audio/cs5535audio.h b/sound/pci/cs5535audio/cs5535audio.h
-index 4fd1f31..ff82f10 100644
---- a/sound/pci/cs5535audio/cs5535audio.h
-+++ b/sound/pci/cs5535audio/cs5535audio.h
+Index: linux-2.6.23.17/sound/pci/cs5535audio/cs5535audio.h
+===================================================================
+--- linux-2.6.23.17.orig/sound/pci/cs5535audio/cs5535audio.h
++++ linux-2.6.23.17/sound/pci/cs5535audio/cs5535audio.h
 @@ -16,57 +16,28 @@
  #define ACC_IRQ_STATUS			0x12
  #define ACC_BM0_CMD			0x20
@@ -246,11 +246,11 @@ index 4fd1f31..ff82f10 100644
  int __devinit snd_cs5535audio_pcm(struct cs5535audio *cs5535audio);
  
  #endif /* __SOUND_CS5535AUDIO_H */
-diff --git a/sound/pci/cs5535audio/cs5535audio_pcm.c b/sound/pci/cs5535audio/cs5535audio_pcm.c
-index 5450a9e..d23f8ea 100644
---- a/sound/pci/cs5535audio/cs5535audio_pcm.c
-+++ b/sound/pci/cs5535audio/cs5535audio_pcm.c
-@@ -164,6 +164,7 @@ static int cs5535audio_build_dma_packets(struct cs5535audio *cs5535au,
+Index: linux-2.6.23.17/sound/pci/cs5535audio/cs5535audio_pcm.c
+===================================================================
+--- linux-2.6.23.17.orig/sound/pci/cs5535audio/cs5535audio_pcm.c
++++ linux-2.6.23.17/sound/pci/cs5535audio/cs5535audio_pcm.c
+@@ -164,6 +164,7 @@ static int cs5535audio_build_dma_packets
  	jmpprd_addr = cpu_to_le32(lastdesc->addr +
  				  (sizeof(struct cs5535audio_dma_desc)*periods));
  
@@ -258,7 +258,7 @@ index 5450a9e..d23f8ea 100644
  	dma->period_bytes = period_bytes;
  	dma->periods = periods;
  	spin_lock_irq(&cs5535au->reg_lock);
-@@ -241,6 +242,7 @@ static void cs5535audio_clear_dma_packets(struct cs5535audio *cs5535au,
+@@ -241,6 +242,7 @@ static void cs5535audio_clear_dma_packet
  {
  	snd_dma_free_pages(&dma->desc_buf);
  	dma->desc_buf.area = NULL;
@@ -266,7 +266,7 @@ index 5450a9e..d23f8ea 100644
  }
  
  static int snd_cs5535audio_hw_params(struct snd_pcm_substream *substream,
-@@ -260,6 +262,9 @@ static int snd_cs5535audio_hw_params(struct snd_pcm_substream *substream,
+@@ -260,6 +262,9 @@ static int snd_cs5535audio_hw_params(str
  	err = cs5535audio_build_dma_packets(cs5535au, dma, substream,
  					    params_periods(hw_params),
  					    params_period_bytes(hw_params));
@@ -276,7 +276,7 @@ index 5450a9e..d23f8ea 100644
  	return err;
  }
  
-@@ -268,6 +273,15 @@ static int snd_cs5535audio_hw_free(struct snd_pcm_substream *substream)
+@@ -268,6 +273,15 @@ static int snd_cs5535audio_hw_free(struc
  	struct cs5535audio *cs5535au = snd_pcm_substream_chip(substream);
  	struct cs5535audio_dma *dma = substream->runtime->private_data;
  
@@ -292,7 +292,7 @@ index 5450a9e..d23f8ea 100644
  	cs5535audio_clear_dma_packets(cs5535au, dma, substream);
  	return snd_pcm_lib_free_pages(substream);
  }
-@@ -298,14 +312,12 @@ static int snd_cs5535audio_trigger(struct snd_pcm_substream *substream, int cmd)
+@@ -298,14 +312,12 @@ static int snd_cs5535audio_trigger(struc
  		break;
  	case SNDRV_PCM_TRIGGER_RESUME:
  		dma->ops->enable_dma(cs5535au);
@@ -307,7 +307,7 @@ index 5450a9e..d23f8ea 100644
  		break;
  	default:
  		snd_printk(KERN_ERR "unhandled trigger\n");
-@@ -344,6 +356,7 @@ static int snd_cs5535audio_capture_open(struct snd_pcm_substream *substream)
+@@ -344,6 +356,7 @@ static int snd_cs5535audio_capture_open(
  	int err;
  	struct cs5535audio *cs5535au = snd_pcm_substream_chip(substream);
  	struct snd_pcm_runtime *runtime = substream->runtime;
@@ -315,7 +315,7 @@ index 5450a9e..d23f8ea 100644
  
  	runtime->hw = snd_cs5535audio_capture;
  	cs5535au->capture_substream = substream;
-@@ -352,11 +365,29 @@ static int snd_cs5535audio_capture_open(struct snd_pcm_substream *substream)
+@@ -352,11 +365,29 @@ static int snd_cs5535audio_capture_open(
  	if ((err = snd_pcm_hw_constraint_integer(runtime,
  					 SNDRV_PCM_HW_PARAM_PERIODS)) < 0)
  		return err;
@@ -346,11 +346,11 @@ index 5450a9e..d23f8ea 100644
  	return 0;
  }
  
-diff --git a/sound/pci/cs5535audio/cs5535audio_pm.c b/sound/pci/cs5535audio/cs5535audio_pm.c
-index 3e4d198..838708f 100644
---- a/sound/pci/cs5535audio/cs5535audio_pm.c
-+++ b/sound/pci/cs5535audio/cs5535audio_pm.c
-@@ -64,18 +64,21 @@ int snd_cs5535audio_suspend(struct pci_dev *pci, pm_message_t state)
+Index: linux-2.6.23.17/sound/pci/cs5535audio/cs5535audio_pm.c
+===================================================================
+--- linux-2.6.23.17.orig/sound/pci/cs5535audio/cs5535audio_pm.c
++++ linux-2.6.23.17/sound/pci/cs5535audio/cs5535audio_pm.c
+@@ -64,18 +64,21 @@ int snd_cs5535audio_suspend(struct pci_d
  	int i;
  
  	snd_power_change_state(card, SNDRV_CTL_POWER_D3hot);
@@ -376,7 +376,7 @@ index 3e4d198..838708f 100644
  	pci_set_power_state(pci, pci_choose_state(pci, state));
  	return 0;
  }
-@@ -89,7 +92,12 @@ int snd_cs5535audio_resume(struct pci_dev *pci)
+@@ -89,7 +92,12 @@ int snd_cs5535audio_resume(struct pci_de
  	int i;
  
  	pci_set_power_state(pci, PCI_D0);
@@ -390,7 +390,7 @@ index 3e4d198..838708f 100644
  	if (pci_enable_device(pci) < 0) {
  		printk(KERN_ERR "cs5535audio: pci_enable_device failed, "
  		       "disabling device\n");
-@@ -112,17 +120,17 @@ int snd_cs5535audio_resume(struct pci_dev *pci)
+@@ -112,17 +120,17 @@ int snd_cs5535audio_resume(struct pci_de
  	if (!timeout)
  		snd_printk(KERN_ERR "Failure getting AC Link ready\n");
  

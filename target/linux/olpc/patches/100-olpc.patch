@@ -1,7 +1,7 @@
-diff --git a/arch/i386/Kconfig b/arch/i386/Kconfig
-index 97b64d7..92ceab7 100644
---- a/arch/i386/Kconfig
-+++ b/arch/i386/Kconfig
+Index: linux-2.6.23.17/arch/i386/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/arch/i386/Kconfig
++++ linux-2.6.23.17/arch/i386/Kconfig
 @@ -796,6 +796,15 @@ config SECCOMP
  
  	  If unsure, say Y. Only embedded should say N here.
@@ -93,10 +93,10 @@ index 97b64d7..92ceab7 100644
  source "drivers/pcmcia/Kconfig"
  
  source "drivers/pci/hotplug/Kconfig"
-diff --git a/arch/i386/kernel/Makefile b/arch/i386/kernel/Makefile
-index 9d33b00..2e2cf42 100644
---- a/arch/i386/kernel/Makefile
-+++ b/arch/i386/kernel/Makefile
+Index: linux-2.6.23.17/arch/i386/kernel/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/arch/i386/kernel/Makefile
++++ linux-2.6.23.17/arch/i386/kernel/Makefile
 @@ -39,13 +39,17 @@ obj-$(CONFIG_VM86)		+= vm86.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
  obj-$(CONFIG_HPET_TIMER) 	+= hpet.o
@@ -116,11 +116,11 @@ index 9d33b00..2e2cf42 100644
  
  # vsyscall.o contains the vsyscall DSO images as __initdata.
  # We must build both images before we can assemble it.
-diff --git a/arch/i386/kernel/geode.c b/arch/i386/kernel/geode.c
-index 41e8aec..637e301 100644
---- a/arch/i386/kernel/geode.c
-+++ b/arch/i386/kernel/geode.c
-@@ -145,10 +145,14 @@ EXPORT_SYMBOL_GPL(geode_gpio_setup_event);
+Index: linux-2.6.23.17/arch/i386/kernel/geode.c
+===================================================================
+--- linux-2.6.23.17.orig/arch/i386/kernel/geode.c
++++ linux-2.6.23.17/arch/i386/kernel/geode.c
+@@ -145,10 +145,14 @@ EXPORT_SYMBOL_GPL(geode_gpio_setup_event
  
  static int __init geode_southbridge_init(void)
  {
@@ -135,10 +135,10 @@ index 41e8aec..637e301 100644
  	return 0;
  }
  
-diff --git a/arch/i386/kernel/head.S b/arch/i386/kernel/head.S
-index 8f03821..3176280 100644
---- a/arch/i386/kernel/head.S
-+++ b/arch/i386/kernel/head.S
+Index: linux-2.6.23.17/arch/i386/kernel/head.S
+===================================================================
+--- linux-2.6.23.17.orig/arch/i386/kernel/head.S
++++ linux-2.6.23.17/arch/i386/kernel/head.S
 @@ -117,8 +117,34 @@ ENTRY(startup_32)
  	movl $(COMMAND_LINE_SIZE/4),%ecx
  	rep
@@ -159,7 +159,7 @@ index 8f03821..3176280 100644
 +
 +	mov 0x8(%ebp), %eax	/* Save callback address */
 +	mov %eax, call_firmware - __PAGE_OFFSET
- 
++
 +	/* Copy the OFW pdir into swapper_pg_dir */
 +	movl %esi, %edx		/* save %esi */
 +	movl $(swapper_pg_dir - __PAGE_OFFSET), %edi
@@ -169,7 +169,7 @@ index 8f03821..3176280 100644
 +	movsl
 +	movl %edx, %esi		/* restore %esi */
 +#endif
-+
+ 
 +1:
  /*
   * Initialize page tables.  This creates a PDE and a set of page
@@ -182,12 +182,10 @@ index 8f03821..3176280 100644
  page_pde_offset = (__PAGE_OFFSET >> 20);
  
  	movl $(pg0 - __PAGE_OFFSET), %edi
-	
-
-diff --git a/arch/i386/kernel/setup.c b/arch/i386/kernel/setup.c
-index d474cd6..c4b26ba 100644
---- a/arch/i386/kernel/setup.c
-+++ b/arch/i386/kernel/setup.c
+Index: linux-2.6.23.17/arch/i386/kernel/setup.c
+===================================================================
+--- linux-2.6.23.17.orig/arch/i386/kernel/setup.c
++++ linux-2.6.23.17/arch/i386/kernel/setup.c
 @@ -362,8 +362,10 @@ void __init zone_sizes_init(void)
  {
  	unsigned long max_zone_pfns[MAX_NR_ZONES];
@@ -199,7 +197,7 @@ index d474cd6..c4b26ba 100644
  	max_zone_pfns[ZONE_NORMAL] = max_low_pfn;
  #ifdef CONFIG_HIGHMEM
  	max_zone_pfns[ZONE_HIGHMEM] = highend_pfn;
-@@ -428,6 +430,9 @@ void __init setup_bootmem_allocator(void)
+@@ -428,6 +430,9 @@ void __init setup_bootmem_allocator(void
  	 */
  	acpi_reserve_bootmem();
  #endif
@@ -209,10 +207,10 @@ index d474cd6..c4b26ba 100644
  #ifdef CONFIG_X86_FIND_SMP_CONFIG
  	/*
  	 * Find and reserve possible boot-time SMP configuration:
-diff --git a/arch/i386/pci/Makefile b/arch/i386/pci/Makefile
-index 44650e0..1250a7b 100644
---- a/arch/i386/pci/Makefile
-+++ b/arch/i386/pci/Makefile
+Index: linux-2.6.23.17/arch/i386/pci/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/arch/i386/pci/Makefile
++++ linux-2.6.23.17/arch/i386/pci/Makefile
 @@ -3,6 +3,7 @@ obj-y				:= i386.o init.o
  obj-$(CONFIG_PCI_BIOS)		+= pcbios.o
  obj-$(CONFIG_PCI_MMCONFIG)	+= mmconfig.o direct.o mmconfig-shared.o
@@ -221,10 +219,10 @@ index 44650e0..1250a7b 100644
  
  pci-y				:= fixup.o
  pci-$(CONFIG_ACPI)		+= acpi.o
-diff --git a/arch/i386/pci/init.c b/arch/i386/pci/init.c
-index 3de9f9b..0f5f7dd 100644
---- a/arch/i386/pci/init.c
-+++ b/arch/i386/pci/init.c
+Index: linux-2.6.23.17/arch/i386/pci/init.c
+===================================================================
+--- linux-2.6.23.17.orig/arch/i386/pci/init.c
++++ linux-2.6.23.17/arch/i386/pci/init.c
 @@ -14,6 +14,9 @@ static __init int pci_access_init(void)
  #ifdef CONFIG_PCI_MMCONFIG
  	pci_mmcfg_init(type);
@@ -235,10 +233,10 @@ index 3de9f9b..0f5f7dd 100644
  	if (raw_pci_ops)
  		return 0;
  #ifdef CONFIG_PCI_BIOS
-diff --git a/arch/i386/pci/pci.h b/arch/i386/pci/pci.h
-index 8c66f27..a67e617 100644
---- a/arch/i386/pci/pci.h
-+++ b/arch/i386/pci/pci.h
+Index: linux-2.6.23.17/arch/i386/pci/pci.h
+===================================================================
+--- linux-2.6.23.17.orig/arch/i386/pci/pci.h
++++ linux-2.6.23.17/arch/i386/pci/pci.h
 @@ -93,6 +93,7 @@ extern void pci_direct_init(int type);
  extern void pci_pcbios_init(void);
  extern void pci_mmcfg_init(int type);
@@ -247,10 +245,10 @@ index 8c66f27..a67e617 100644
  
  /* pci-mmconfig.c */
  
-diff --git a/drivers/Makefile b/drivers/Makefile
-index f0878b2..c033d30 100644
---- a/drivers/Makefile
-+++ b/drivers/Makefile
+Index: linux-2.6.23.17/drivers/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/drivers/Makefile
++++ linux-2.6.23.17/drivers/Makefile
 @@ -23,6 +23,8 @@ obj-y				+= char/
  
  obj-$(CONFIG_CONNECTOR)		+= connector/
@@ -260,10 +258,10 @@ index f0878b2..c033d30 100644
  # i810fb and intelfb depend on char/agp/
  obj-$(CONFIG_FB_I810)           += video/i810/
  obj-$(CONFIG_FB_INTEL)          += video/intelfb/
-diff --git a/drivers/char/vt_ioctl.c b/drivers/char/vt_ioctl.c
-index c6f6f42..55ae42c 100644
---- a/drivers/char/vt_ioctl.c
-+++ b/drivers/char/vt_ioctl.c
+Index: linux-2.6.23.17/drivers/char/vt_ioctl.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/char/vt_ioctl.c
++++ linux-2.6.23.17/drivers/char/vt_ioctl.c
 @@ -37,6 +37,9 @@
  char vt_dont_switch;
  extern struct tty_driver *console_driver;
@@ -274,7 +272,7 @@ index c6f6f42..55ae42c 100644
  #define VT_IS_IN_USE(i)	(console_driver->ttys[i] && console_driver->ttys[i]->count)
  #define VT_BUSY(i)	(VT_IS_IN_USE(i) || i == fg_console || vc_cons[i].d == sel_cons)
  
-@@ -491,6 +494,14 @@ int vt_ioctl(struct tty_struct *tty, struct file * file,
+@@ -491,6 +494,14 @@ int vt_ioctl(struct tty_struct *tty, str
  		vc->vc_mode = (unsigned char) arg;
  		if (console != fg_console)
  			return 0;
@@ -289,11 +287,11 @@ index c6f6f42..55ae42c 100644
  		/*
  		 * explicitly blank/unblank the screen if switching modes
  		 */
-diff --git a/drivers/i2c/busses/scx200_acb.c b/drivers/i2c/busses/scx200_acb.c
-index e6c4a2b..874d623 100644
---- a/drivers/i2c/busses/scx200_acb.c
-+++ b/drivers/i2c/busses/scx200_acb.c
-@@ -46,6 +46,10 @@ static int base[MAX_DEVICES] = { 0x820, 0x840 };
+Index: linux-2.6.23.17/drivers/i2c/busses/scx200_acb.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/i2c/busses/scx200_acb.c
++++ linux-2.6.23.17/drivers/i2c/busses/scx200_acb.c
+@@ -46,6 +46,10 @@ static int base[MAX_DEVICES] = { 0x820, 
  module_param_array(base, int, NULL, 0);
  MODULE_PARM_DESC(base, "Base addresses for the ACCESS.bus controllers");
  
@@ -312,7 +310,7 @@ index e6c4a2b..874d623 100644
  
  /************************************************************************/
  
-@@ -392,11 +397,13 @@ static __init int scx200_acb_probe(struct scx200_acb_iface *iface)
+@@ -392,11 +397,13 @@ static __init int scx200_acb_probe(struc
  {
  	u8 val;
  
@@ -330,10 +328,10 @@ index e6c4a2b..874d623 100644
  		pr_debug(NAME ": ACBCTL2 readback failed\n");
  		return -ENXIO;
  	}
-diff --git a/drivers/input/keyboard/atkbd.c b/drivers/input/keyboard/atkbd.c
-index 41fc3d0..a15e7a9 100644
---- a/drivers/input/keyboard/atkbd.c
-+++ b/drivers/input/keyboard/atkbd.c
+Index: linux-2.6.23.17/drivers/input/keyboard/atkbd.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/input/keyboard/atkbd.c
++++ linux-2.6.23.17/drivers/input/keyboard/atkbd.c
 @@ -63,12 +63,25 @@ static int atkbd_extra;
  module_param_named(extra, atkbd_extra, bool, 0);
  MODULE_PARM_DESC(extra, "Enable extra LEDs and keys on IBM RapidAcces, EzKey and similar keyboards");
@@ -361,7 +359,7 @@ index 41fc3d0..a15e7a9 100644
  
  #ifdef CONFIG_KEYBOARD_ATKBD_HP_KEYCODES
  
-@@ -87,11 +100,17 @@ static unsigned char atkbd_set2_keycode[512] = {
+@@ -87,11 +100,17 @@ static unsigned char atkbd_set2_keycode[
  	 82, 83, 80, 76, 77, 72,  1, 69, 87, 78, 81, 74, 55, 73, 70, 99,
  
  	  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -381,7 +379,7 @@ index 41fc3d0..a15e7a9 100644
  	  0,  0,  0,  0,  0,  0,  0,  0,  0,107,  0,105,102,  0,  0,112,
  	110,111,108,112,106,103,  0,119,  0,118,109,  0, 99,104,119,  0,
  
-@@ -150,19 +169,6 @@ static unsigned char atkbd_unxlate_table[128] = {
+@@ -150,19 +169,6 @@ static unsigned char atkbd_unxlate_table
  #define ATKBD_RET_HANGEUL	0xf2
  #define ATKBD_RET_ERR		0xff
  
@@ -401,7 +399,7 @@ index 41fc3d0..a15e7a9 100644
  #define ATKBD_LED_EVENT_BIT	0
  #define ATKBD_REP_EVENT_BIT	1
  
-@@ -174,7 +180,7 @@ static unsigned char atkbd_unxlate_table[128] = {
+@@ -174,7 +180,7 @@ static unsigned char atkbd_unxlate_table
  #define ATKBD_XL_HANJA		0x20
  
  static struct {
@@ -419,7 +417,7 @@ index 41fc3d0..a15e7a9 100644
  	unsigned char set;
  	unsigned char translated;
  	unsigned char extra;
-@@ -351,7 +357,7 @@ static irqreturn_t atkbd_interrupt(struct serio *serio, unsigned char data,
+@@ -351,7 +357,7 @@ static irqreturn_t atkbd_interrupt(struc
  	unsigned int code = data;
  	int scroll = 0, hscroll = 0, click = -1, add_release_event = 0;
  	int value;
@@ -428,7 +426,7 @@ index 41fc3d0..a15e7a9 100644
  
  #ifdef ATKBD_DEBUG
  	printk(KERN_DEBUG "atkbd.c: Received %02x flags %02x\n", data, flags);
-@@ -856,9 +862,11 @@ static void atkbd_set_keycode_table(struct atkbd *atkbd)
+@@ -856,9 +862,11 @@ static void atkbd_set_keycode_table(stru
  						atkbd->keycode[i | 0x80] = atkbd_scroll_keys[j].keycode;
  		}
  	} else if (atkbd->set == 3) {
@@ -442,7 +440,7 @@ index 41fc3d0..a15e7a9 100644
  
  		if (atkbd->scroll)
  			for (i = 0; i < ARRAY_SIZE(atkbd_scroll_keys); i++)
-@@ -925,8 +933,8 @@ static void atkbd_set_device_attrs(struct atkbd *atkbd)
+@@ -925,8 +933,8 @@ static void atkbd_set_device_attrs(struc
  	}
  
  	input_dev->keycode = atkbd->keycode;
@@ -453,7 +451,7 @@ index 41fc3d0..a15e7a9 100644
  
  	for (i = 0; i < 512; i++)
  		if (atkbd->keycode[i] && atkbd->keycode[i] < ATKBD_SPECIAL)
-@@ -1017,6 +1025,10 @@ static int atkbd_connect(struct serio *serio, struct serio_driver *drv)
+@@ -1017,6 +1025,10 @@ static int atkbd_connect(struct serio *s
  	return err;
  }
  
@@ -464,7 +462,7 @@ index 41fc3d0..a15e7a9 100644
  /*
   * atkbd_reconnect() tries to restore keyboard into a sane state and is
   * most likely called on resume.
-@@ -1027,6 +1039,12 @@ static int atkbd_reconnect(struct serio *serio)
+@@ -1027,6 +1039,12 @@ static int atkbd_reconnect(struct serio 
  	struct atkbd *atkbd = serio_get_drvdata(serio);
  	struct serio_driver *drv = serio->drv;
  
@@ -477,10 +475,10 @@ index 41fc3d0..a15e7a9 100644
  	if (!atkbd || !drv) {
  		printk(KERN_DEBUG "atkbd: reconnect request, but serio is disconnected, ignoring...\n");
  		return -1;
-diff --git a/drivers/input/mouse/Kconfig b/drivers/input/mouse/Kconfig
-index 7bbea09..6febbc5 100644
---- a/drivers/input/mouse/Kconfig
-+++ b/drivers/input/mouse/Kconfig
+Index: linux-2.6.23.17/drivers/input/mouse/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/drivers/input/mouse/Kconfig
++++ linux-2.6.23.17/drivers/input/mouse/Kconfig
 @@ -96,6 +96,16 @@ config MOUSE_PS2_TOUCHKIT
  
  	  If unsure, say N.
@@ -498,19 +496,19 @@ index 7bbea09..6febbc5 100644
  config MOUSE_SERIAL
  	tristate "Serial mouse"
  	select SERIO
-diff --git a/drivers/input/mouse/Makefile b/drivers/input/mouse/Makefile
-index 9e6e363..f4654ce 100644
---- a/drivers/input/mouse/Makefile
-+++ b/drivers/input/mouse/Makefile
-@@ -24,3 +24,4 @@ psmouse-$(CONFIG_MOUSE_PS2_LOGIPS2PP)	+= logips2pp.o
+Index: linux-2.6.23.17/drivers/input/mouse/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/drivers/input/mouse/Makefile
++++ linux-2.6.23.17/drivers/input/mouse/Makefile
+@@ -24,3 +24,4 @@ psmouse-$(CONFIG_MOUSE_PS2_LOGIPS2PP)	+=
  psmouse-$(CONFIG_MOUSE_PS2_LIFEBOOK)	+= lifebook.o
  psmouse-$(CONFIG_MOUSE_PS2_TRACKPOINT)	+= trackpoint.o
  psmouse-$(CONFIG_MOUSE_PS2_TOUCHKIT)	+= touchkit_ps2.o
 +psmouse-$(CONFIG_MOUSE_PS2_OLPC)	+= olpc.o
-diff --git a/drivers/input/mouse/psmouse-base.c b/drivers/input/mouse/psmouse-base.c
-index b9f0fb2..edcdb68 100644
---- a/drivers/input/mouse/psmouse-base.c
-+++ b/drivers/input/mouse/psmouse-base.c
+Index: linux-2.6.23.17/drivers/input/mouse/psmouse-base.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/input/mouse/psmouse-base.c
++++ linux-2.6.23.17/drivers/input/mouse/psmouse-base.c
 @@ -26,6 +26,7 @@
  #include "synaptics.h"
  #include "logips2pp.h"
@@ -519,7 +517,7 @@ index b9f0fb2..edcdb68 100644
  #include "lifebook.h"
  #include "trackpoint.h"
  #include "touchkit_ps2.h"
-@@ -103,7 +104,7 @@ static struct attribute_group psmouse_attribute_group = {
+@@ -103,7 +104,7 @@ static struct attribute_group psmouse_at
   */
  static DEFINE_MUTEX(psmouse_mutex);
  
@@ -528,7 +526,7 @@ index b9f0fb2..edcdb68 100644
  
  struct psmouse_protocol {
  	enum psmouse_type type;
-@@ -320,7 +321,7 @@ static irqreturn_t psmouse_interrupt(struct serio *serio,
+@@ -320,7 +321,7 @@ static irqreturn_t psmouse_interrupt(str
  			goto out;
  		}
  
@@ -537,7 +535,7 @@ index b9f0fb2..edcdb68 100644
  			__psmouse_set_state(psmouse, PSMOUSE_IGNORE);
  			serio_reconnect(serio);
  			goto out;
-@@ -631,8 +632,21 @@ static int psmouse_extensions(struct psmouse *psmouse,
+@@ -631,8 +632,21 @@ static int psmouse_extensions(struct psm
  		}
  	}
  
@@ -559,7 +557,7 @@ index b9f0fb2..edcdb68 100644
  		if (genius_detect(psmouse, set_properties) == 0)
  			return PSMOUSE_GENPS;
  
-@@ -762,6 +776,14 @@ static const struct psmouse_protocol psmouse_protocols[] = {
+@@ -762,6 +776,14 @@ static const struct psmouse_protocol psm
  		.detect		= touchkit_ps2_detect,
  	},
  #endif
@@ -574,10 +572,10 @@ index b9f0fb2..edcdb68 100644
  	{
  		.type		= PSMOUSE_CORTRON,
  		.name		= "CortronPS/2",
-diff --git a/drivers/input/mouse/psmouse.h b/drivers/input/mouse/psmouse.h
-index 1317bdd..c4857df 100644
---- a/drivers/input/mouse/psmouse.h
-+++ b/drivers/input/mouse/psmouse.h
+Index: linux-2.6.23.17/drivers/input/mouse/psmouse.h
+===================================================================
+--- linux-2.6.23.17.orig/drivers/input/mouse/psmouse.h
++++ linux-2.6.23.17/drivers/input/mouse/psmouse.h
 @@ -89,6 +89,7 @@ enum psmouse_type {
  	PSMOUSE_TRACKPOINT,
  	PSMOUSE_TOUCHKIT_PS2,
@@ -586,7 +584,7 @@ index 1317bdd..c4857df 100644
  	PSMOUSE_AUTO		/* This one should always be last */
  };
  
-@@ -96,6 +97,7 @@ int psmouse_sliced_command(struct psmouse *psmouse, unsigned char command);
+@@ -96,6 +97,7 @@ int psmouse_sliced_command(struct psmous
  int psmouse_reset(struct psmouse *psmouse);
  void psmouse_set_resolution(struct psmouse *psmouse, unsigned int resolution);
  
@@ -594,11 +592,11 @@ index 1317bdd..c4857df 100644
  
  struct psmouse_attribute {
  	struct device_attribute dattr;
-diff --git a/drivers/input/serio/i8042.c b/drivers/input/serio/i8042.c
-index c2eea27..3510726 100644
---- a/drivers/input/serio/i8042.c
-+++ b/drivers/input/serio/i8042.c
-@@ -868,6 +868,11 @@ static long i8042_panic_blink(long count)
+Index: linux-2.6.23.17/drivers/input/serio/i8042.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/input/serio/i8042.c
++++ linux-2.6.23.17/drivers/input/serio/i8042.c
+@@ -868,6 +868,11 @@ static long i8042_panic_blink(long count
  #undef DELAY
  
  #ifdef CONFIG_PM
@@ -610,7 +608,7 @@ index c2eea27..3510726 100644
  /*
   * Here we try to restore the original BIOS settings. We only want to
   * do that once, when we really suspend, not when we taking memory
-@@ -878,8 +883,15 @@ static long i8042_panic_blink(long count)
+@@ -878,8 +883,15 @@ static long i8042_panic_blink(long count
  static int i8042_suspend(struct platform_device *dev, pm_message_t state)
  {
  	if (dev->dev.power.power_state.event != state.event) {
@@ -626,7 +624,7 @@ index c2eea27..3510726 100644
  
  		dev->dev.power.power_state = state;
  	}
-@@ -902,9 +914,15 @@ static int i8042_resume(struct platform_device *dev)
+@@ -902,9 +914,15 @@ static int i8042_resume(struct platform_
  	if (dev->dev.power.power_state.event == PM_EVENT_ON)
  		return 0;
  
@@ -642,11 +640,11 @@ index c2eea27..3510726 100644
  
  	error = i8042_controller_selftest();
  	if (error)
-diff --git a/drivers/input/serio/serio.c b/drivers/input/serio/serio.c
-index 372ca49..c9e5308 100644
---- a/drivers/input/serio/serio.c
-+++ b/drivers/input/serio/serio.c
-@@ -916,11 +916,22 @@ static int serio_uevent(struct device *dev, char **envp, int num_envp, char *buf
+Index: linux-2.6.23.17/drivers/input/serio/serio.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/input/serio/serio.c
++++ linux-2.6.23.17/drivers/input/serio/serio.c
+@@ -916,11 +916,22 @@ static int serio_uevent(struct device *d
  #endif /* CONFIG_HOTPLUG */
  
  #ifdef CONFIG_PM
@@ -669,10 +667,10 @@ index 372ca49..c9e5308 100644
  
  		dev->power.power_state = state;
  	}
-diff --git a/drivers/media/video/cafe_ccic.c b/drivers/media/video/cafe_ccic.c
-index ef53618..47881d2 100644
---- a/drivers/media/video/cafe_ccic.c
-+++ b/drivers/media/video/cafe_ccic.c
+Index: linux-2.6.23.17/drivers/media/video/cafe_ccic.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/media/video/cafe_ccic.c
++++ linux-2.6.23.17/drivers/media/video/cafe_ccic.c
 @@ -63,13 +63,13 @@ MODULE_SUPPORTED_DEVICE("Video");
   */
  
@@ -694,7 +692,7 @@ index ef53618..47881d2 100644
  
  static int n_dma_bufs = 3;
  module_param(n_dma_bufs, uint, 0644);
-@@ -370,6 +370,10 @@ static int cafe_smbus_write_data(struct cafe_camera *cam,
+@@ -370,6 +370,10 @@ static int cafe_smbus_write_data(struct 
  	rval = value | ((command << TWSIC1_ADDR_SHIFT) & TWSIC1_ADDR);
  	cafe_reg_write(cam, REG_TWSIC1, rval);
  	spin_unlock_irqrestore(&cam->dev_lock, flags);
@@ -705,7 +703,7 @@ index ef53618..47881d2 100644
  
  	/*
  	 * Time to wait for the write to complete.  THIS IS A RACY
-@@ -1503,7 +1507,7 @@ static int cafe_v4l_release(struct inode *inode, struct file *filp)
+@@ -1503,7 +1507,7 @@ static int cafe_v4l_release(struct inode
  	}
  	if (cam->users == 0) {
  		cafe_ctlr_power_down(cam);
@@ -714,7 +712,7 @@ index ef53618..47881d2 100644
  			cafe_free_dma_bufs(cam);
  	}
  	mutex_unlock(&cam->s_mutex);
-@@ -2162,7 +2166,7 @@ static int cafe_pci_probe(struct pci_dev *pdev,
+@@ -2162,7 +2166,7 @@ static int cafe_pci_probe(struct pci_dev
  	/*
  	 * If so requested, try to get our DMA buffers now.
  	 */
@@ -723,10 +721,10 @@ index ef53618..47881d2 100644
  		if (cafe_alloc_dma_bufs(cam, 1))
  			cam_warn(cam, "Unable to alloc DMA buffers at load"
  					" will try again later.");
-diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
-index 73e248f..f7afde3 100644
---- a/drivers/misc/Kconfig
-+++ b/drivers/misc/Kconfig
+Index: linux-2.6.23.17/drivers/misc/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/drivers/misc/Kconfig
++++ linux-2.6.23.17/drivers/misc/Kconfig
 @@ -202,5 +202,10 @@ config THINKPAD_ACPI_BAY
  
  	  If you are not sure, say Y here.
@@ -738,11 +736,11 @@ index 73e248f..f7afde3 100644
 +	  The driver supports both read as well as write commands.
  
  endif # MISC_DEVICES
-diff --git a/drivers/mmc/host/sdhci.c b/drivers/mmc/host/sdhci.c
-index 20a7d89..9abbb58 100644
---- a/drivers/mmc/host/sdhci.c
-+++ b/drivers/mmc/host/sdhci.c
-@@ -411,6 +411,12 @@ static void sdhci_prepare_data(struct sdhci_host *host, struct mmc_data *data)
+Index: linux-2.6.23.17/drivers/mmc/host/sdhci.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mmc/host/sdhci.c
++++ linux-2.6.23.17/drivers/mmc/host/sdhci.c
+@@ -411,6 +411,12 @@ static void sdhci_prepare_data(struct sd
  			break;
  	}
  
@@ -755,7 +753,7 @@ index 20a7d89..9abbb58 100644
  	if (count >= 0xF) {
  		printk(KERN_WARNING "%s: Too large timeout requested!\n",
  			mmc_hostname(host->mmc));
-@@ -676,19 +682,17 @@ static void sdhci_set_power(struct sdhci_host *host, unsigned short power)
+@@ -676,19 +682,17 @@ static void sdhci_set_power(struct sdhci
  	if (!(host->chip->quirks & SDHCI_QUIRK_SINGLE_POWER_WRITE))
  		writeb(0, host->ioaddr + SDHCI_POWER_CONTROL);
  
@@ -778,7 +776,7 @@ index 20a7d89..9abbb58 100644
  		break;
  	default:
  		BUG();
-@@ -696,6 +700,10 @@ static void sdhci_set_power(struct sdhci_host *host, unsigned short power)
+@@ -696,6 +700,10 @@ static void sdhci_set_power(struct sdhci
  
  	writeb(pwr, host->ioaddr + SDHCI_POWER_CONTROL);
  
@@ -789,11 +787,11 @@ index 20a7d89..9abbb58 100644
  out:
  	host->power = power;
  }
-diff --git a/drivers/mtd/Kconfig b/drivers/mtd/Kconfig
-index fbec8cd..8848e8a 100644
---- a/drivers/mtd/Kconfig
-+++ b/drivers/mtd/Kconfig
-@@ -278,6 +278,14 @@ config SSFDC
+Index: linux-2.6.23.17/drivers/mtd/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/Kconfig
++++ linux-2.6.23.17/drivers/mtd/Kconfig
+@@ -288,6 +288,14 @@ config SSFDC
  	  This enables read only access to SmartMedia formatted NAND
  	  flash. You can mount it with FAT file system.
  
@@ -808,10 +806,10 @@ index fbec8cd..8848e8a 100644
  source "drivers/mtd/chips/Kconfig"
  
  source "drivers/mtd/maps/Kconfig"
-diff --git a/drivers/mtd/Makefile b/drivers/mtd/Makefile
-index 6d958a4..7f0b04b 100644
---- a/drivers/mtd/Makefile
-+++ b/drivers/mtd/Makefile
+Index: linux-2.6.23.17/drivers/mtd/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/Makefile
++++ linux-2.6.23.17/drivers/mtd/Makefile
 @@ -22,6 +22,7 @@ obj-$(CONFIG_NFTL)		+= nftl.o
  obj-$(CONFIG_INFTL)		+= inftl.o
  obj-$(CONFIG_RFD_FTL)		+= rfd_ftl.o
@@ -820,11 +818,11 @@ index 6d958a4..7f0b04b 100644
  
  nftl-objs		:= nftlcore.o nftlmount.o
  inftl-objs		:= inftlcore.o inftlmount.o
-diff --git a/drivers/mtd/chips/cfi_cmdset_0001.c b/drivers/mtd/chips/cfi_cmdset_0001.c
-index 2f19fa7..39eff9f 100644
---- a/drivers/mtd/chips/cfi_cmdset_0001.c
-+++ b/drivers/mtd/chips/cfi_cmdset_0001.c
-@@ -526,7 +526,7 @@ static int cfi_intelext_partition_fixup(struct mtd_info *mtd,
+Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0001.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/chips/cfi_cmdset_0001.c
++++ linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0001.c
+@@ -526,7 +526,7 @@ static int cfi_intelext_partition_fixup(
  	struct cfi_pri_intelext *extp = cfi->cmdset_priv;
  
  	/*
@@ -833,7 +831,7 @@ index 2f19fa7..39eff9f 100644
  	 *
  	 * To support multiple partitions when available, we simply arrange
  	 * for each of them to have their own flchip structure even if they
-@@ -1780,7 +1780,7 @@ static int __xipram do_erase_oneblock(struct map_info *map, struct flchip *chip,
+@@ -1781,7 +1781,7 @@ static int __xipram do_erase_oneblock(st
  	return ret;
  }
  
@@ -842,7 +840,7 @@ index 2f19fa7..39eff9f 100644
  {
  	unsigned long ofs, len;
  	int ret;
-@@ -1930,7 +1930,7 @@ static int cfi_intelext_lock(struct mtd_info *mtd, loff_t ofs, size_t len)
+@@ -1931,7 +1931,7 @@ static int cfi_intelext_lock(struct mtd_
  	printk(KERN_DEBUG "%s: lock status before, ofs=0x%08llx, len=0x%08X\n",
  	       __FUNCTION__, ofs, len);
  	cfi_varsize_frob(mtd, do_printlockstatus_oneblock,
@@ -851,7 +849,7 @@ index 2f19fa7..39eff9f 100644
  #endif
  
  	ret = cfi_varsize_frob(mtd, do_xxlock_oneblock,
-@@ -1940,7 +1940,7 @@ static int cfi_intelext_lock(struct mtd_info *mtd, loff_t ofs, size_t len)
+@@ -1941,7 +1941,7 @@ static int cfi_intelext_lock(struct mtd_
  	printk(KERN_DEBUG "%s: lock status after, ret=%d\n",
  	       __FUNCTION__, ret);
  	cfi_varsize_frob(mtd, do_printlockstatus_oneblock,
@@ -860,7 +858,7 @@ index 2f19fa7..39eff9f 100644
  #endif
  
  	return ret;
-@@ -1954,7 +1954,7 @@ static int cfi_intelext_unlock(struct mtd_info *mtd, loff_t ofs, size_t len)
+@@ -1955,7 +1955,7 @@ static int cfi_intelext_unlock(struct mt
  	printk(KERN_DEBUG "%s: lock status before, ofs=0x%08llx, len=0x%08X\n",
  	       __FUNCTION__, ofs, len);
  	cfi_varsize_frob(mtd, do_printlockstatus_oneblock,
@@ -869,7 +867,7 @@ index 2f19fa7..39eff9f 100644
  #endif
  
  	ret = cfi_varsize_frob(mtd, do_xxlock_oneblock,
-@@ -1964,7 +1964,7 @@ static int cfi_intelext_unlock(struct mtd_info *mtd, loff_t ofs, size_t len)
+@@ -1965,7 +1965,7 @@ static int cfi_intelext_unlock(struct mt
  	printk(KERN_DEBUG "%s: lock status after, ret=%d\n",
  	       __FUNCTION__, ret);
  	cfi_varsize_frob(mtd, do_printlockstatus_oneblock,
@@ -878,7 +876,7 @@ index 2f19fa7..39eff9f 100644
  #endif
  
  	return ret;
-@@ -2255,7 +2255,7 @@ static void cfi_intelext_save_locks(struct mtd_info *mtd)
+@@ -2256,7 +2256,7 @@ static void cfi_intelext_save_locks(stru
  			adr = region->offset + block * len;
  
  			status = cfi_varsize_frob(mtd,
@@ -887,11 +885,11 @@ index 2f19fa7..39eff9f 100644
  			if (status)
  				set_bit(block, region->lockmap);
  			else
-diff --git a/drivers/mtd/chips/cfi_cmdset_0002.c b/drivers/mtd/chips/cfi_cmdset_0002.c
-index 1f64458..389acc6 100644
---- a/drivers/mtd/chips/cfi_cmdset_0002.c
-+++ b/drivers/mtd/chips/cfi_cmdset_0002.c
-@@ -1609,7 +1609,7 @@ static int __xipram do_erase_oneblock(struct map_info *map, struct flchip *chip,
+Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/chips/cfi_cmdset_0002.c
++++ linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
+@@ -1617,7 +1617,7 @@ static int __xipram do_erase_oneblock(st
  }
  
  
@@ -900,10 +898,10 @@ index 1f64458..389acc6 100644
  {
  	unsigned long ofs, len;
  	int ret;
-diff --git a/drivers/mtd/chips/jedec_probe.c b/drivers/mtd/chips/jedec_probe.c
-index 58e561e..593e9d6 100644
---- a/drivers/mtd/chips/jedec_probe.c
-+++ b/drivers/mtd/chips/jedec_probe.c
+Index: linux-2.6.23.17/drivers/mtd/chips/jedec_probe.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/chips/jedec_probe.c
++++ linux-2.6.23.17/drivers/mtd/chips/jedec_probe.c
 @@ -70,6 +70,7 @@
  
  /* Fujitsu */
@@ -920,7 +918,7 @@ index 58e561e..593e9d6 100644
  #define M29W800DT	0x00D7
  #define M29W800DB	0x005B
  #define M29W160DT	0x22C4
-@@ -646,6 +648,23 @@ static const struct amd_flash_info jedec_table[] = {
+@@ -646,6 +648,23 @@ static const struct amd_flash_info jedec
  		}
  	}, {
  		.mfr_id		= MANUFACTURER_FUJITSU,
@@ -944,7 +942,7 @@ index 58e561e..593e9d6 100644
  		.dev_id		= MBM29LV650UE,
  		.name		= "Fujitsu MBM29LV650UE",
  		.uaddr		= {
-@@ -1510,6 +1529,23 @@ static const struct amd_flash_info jedec_table[] = {
+@@ -1510,6 +1529,23 @@ static const struct amd_flash_info jedec
                         ERASEINFO(0x1000,256)
                 }
  
@@ -968,10 +966,10 @@ index 58e561e..593e9d6 100644
         }, {
  		.mfr_id		= MANUFACTURER_ST,	/* FIXME - CFI device? */
  		.dev_id		= M29W800DT,
-diff --git a/drivers/mtd/devices/Kconfig b/drivers/mtd/devices/Kconfig
-index ff642f8..b4ea64d 100644
---- a/drivers/mtd/devices/Kconfig
-+++ b/drivers/mtd/devices/Kconfig
+Index: linux-2.6.23.17/drivers/mtd/devices/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/devices/Kconfig
++++ linux-2.6.23.17/drivers/mtd/devices/Kconfig
 @@ -69,12 +69,21 @@ config MTD_DATAFLASH26
  	  If you have such a board and such a DataFlash, say 'Y'.
  
@@ -998,10 +996,10 @@ index ff642f8..b4ea64d 100644
  
  config MTD_SLRAM
  	tristate "Uncached system RAM"
-diff --git a/drivers/mtd/devices/m25p80.c b/drivers/mtd/devices/m25p80.c
-index 78c2511..98df5bc 100644
---- a/drivers/mtd/devices/m25p80.c
-+++ b/drivers/mtd/devices/m25p80.c
+Index: linux-2.6.23.17/drivers/mtd/devices/m25p80.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/devices/m25p80.c
++++ linux-2.6.23.17/drivers/mtd/devices/m25p80.c
 @@ -1,5 +1,5 @@
  /*
 - * MTD SPI driver for ST M25Pxx flash chips
@@ -1068,7 +1066,7 @@ index 78c2511..98df5bc 100644
  	u8			command[4];
  };
  
-@@ -150,8 +150,9 @@ static int wait_till_ready(struct m25p *flash)
+@@ -150,8 +150,9 @@ static int wait_till_ready(struct m25p *
   */
  static int erase_sector(struct m25p *flash, u32 offset)
  {
@@ -1080,7 +1078,7 @@ index 78c2511..98df5bc 100644
  
  	/* Wait until finished previous write command. */
  	if (wait_till_ready(flash))
-@@ -161,7 +162,7 @@ static int erase_sector(struct m25p *flash, u32 offset)
+@@ -161,7 +162,7 @@ static int erase_sector(struct m25p *fla
  	write_enable(flash);
  
  	/* Set up command buffer. */
@@ -1089,7 +1087,7 @@ index 78c2511..98df5bc 100644
  	flash->command[1] = offset >> 16;
  	flash->command[2] = offset >> 8;
  	flash->command[3] = offset;
-@@ -201,13 +202,17 @@ static int m25p80_erase(struct mtd_info *mtd, struct erase_info *instr)
+@@ -201,13 +202,17 @@ static int m25p80_erase(struct mtd_info 
  	addr = instr->addr;
  	len = instr->len;
  
@@ -1109,7 +1107,7 @@ index 78c2511..98df5bc 100644
  			return -EIO;
  		}
  
-@@ -215,7 +220,7 @@ static int m25p80_erase(struct mtd_info *mtd, struct erase_info *instr)
+@@ -215,7 +220,7 @@ static int m25p80_erase(struct mtd_info 
  		len -= mtd->erasesize;
  	}
  
@@ -1118,7 +1116,7 @@ index 78c2511..98df5bc 100644
  
  	instr->state = MTD_ERASE_DONE;
  	mtd_erase_callback(instr);
-@@ -260,16 +265,19 @@ static int m25p80_read(struct mtd_info *mtd, loff_t from, size_t len,
+@@ -260,16 +265,19 @@ static int m25p80_read(struct mtd_info *
  	if (retlen)
  		*retlen = 0;
  
@@ -1141,7 +1139,7 @@ index 78c2511..98df5bc 100644
  
  	/* Set up the write data buffer. */
  	flash->command[0] = OPCODE_READ;
-@@ -281,7 +289,7 @@ static int m25p80_read(struct mtd_info *mtd, loff_t from, size_t len,
+@@ -281,7 +289,7 @@ static int m25p80_read(struct mtd_info *
  
  	*retlen = m.actual_length - sizeof(flash->command);
  
@@ -1150,7 +1148,7 @@ index 78c2511..98df5bc 100644
  
  	return 0;
  }
-@@ -323,7 +331,7 @@ static int m25p80_write(struct mtd_info *mtd, loff_t to, size_t len,
+@@ -323,7 +331,7 @@ static int m25p80_write(struct mtd_info 
  	t[1].tx_buf = buf;
  	spi_message_add_tail(&t[1], &m);
  
@@ -1159,7 +1157,7 @@ index 78c2511..98df5bc 100644
  
  	/* Wait until finished previous write command. */
  	if (wait_till_ready(flash))
-@@ -381,10 +389,10 @@ static int m25p80_write(struct mtd_info *mtd, loff_t to, size_t len,
+@@ -381,10 +389,10 @@ static int m25p80_write(struct mtd_info 
  			if (retlen)
  				*retlen += m.actual_length
  					- sizeof(flash->command);
@@ -1173,7 +1171,7 @@ index 78c2511..98df5bc 100644
  
  	return 0;
  }
-@@ -398,24 +406,118 @@ static int m25p80_write(struct mtd_info *mtd, loff_t to, size_t len,
+@@ -398,24 +406,118 @@ static int m25p80_write(struct mtd_info 
  
  struct flash_info {
  	char		*name;
@@ -1304,7 +1302,7 @@ index 78c2511..98df5bc 100644
  /*
   * board specific setup should have ensured the SPI clock used here
   * matches what the READ command supports, at least until this driver
-@@ -429,37 +531,51 @@ static int __devinit m25p_probe(struct spi_device *spi)
+@@ -429,37 +531,51 @@ static int __devinit m25p_probe(struct s
  	unsigned			i;
  
  	/* Platform data helps sort out which chip type we have, as
@@ -1375,7 +1373,7 @@ index 78c2511..98df5bc 100644
  		flash->mtd.name = data->name;
  	else
  		flash->mtd.name = spi->dev.bus_id;
-@@ -468,17 +584,25 @@ static int __devinit m25p_probe(struct spi_device *spi)
+@@ -468,17 +584,25 @@ static int __devinit m25p_probe(struct s
  	flash->mtd.writesize = 1;
  	flash->mtd.flags = MTD_CAP_NORFLASH;
  	flash->mtd.size = info->sector_size * info->n_sectors;
@@ -1404,7 +1402,7 @@ index 78c2511..98df5bc 100644
  		flash->mtd.name,
  		flash->mtd.size, flash->mtd.size / (1024*1024),
  		flash->mtd.erasesize, flash->mtd.erasesize / 1024,
-@@ -488,7 +612,7 @@ static int __devinit m25p_probe(struct spi_device *spi)
+@@ -488,7 +612,7 @@ static int __devinit m25p_probe(struct s
  		for (i = 0; i < flash->mtd.numeraseregions; i++)
  			DEBUG(MTD_DEBUG_LEVEL2,
  				"mtd.eraseregions[%d] = { .offset = 0x%.8x, "
@@ -1413,7 +1411,7 @@ index 78c2511..98df5bc 100644
  				".numblocks = %d }\n",
  				i, flash->mtd.eraseregions[i].offset,
  				flash->mtd.eraseregions[i].erasesize,
-@@ -516,14 +640,14 @@ static int __devinit m25p_probe(struct spi_device *spi)
+@@ -516,14 +640,14 @@ static int __devinit m25p_probe(struct s
  		}
  
  		if (nr_parts > 0) {
@@ -1434,7 +1432,7 @@ index 78c2511..98df5bc 100644
  			}
  			flash->partitioned = 1;
  			return add_mtd_partitions(&flash->mtd, parts, nr_parts);
-@@ -560,6 +684,11 @@ static struct spi_driver m25p80_driver = {
+@@ -560,6 +684,11 @@ static struct spi_driver m25p80_driver =
  	},
  	.probe	= m25p_probe,
  	.remove	= __devexit_p(m25p_remove),
@@ -1446,10 +1444,10 @@ index 78c2511..98df5bc 100644
  };
  
  
-diff --git a/drivers/mtd/devices/mtd_dataflash.c b/drivers/mtd/devices/mtd_dataflash.c
-index a987e91..a5ed6d2 100644
---- a/drivers/mtd/devices/mtd_dataflash.c
-+++ b/drivers/mtd/devices/mtd_dataflash.c
+Index: linux-2.6.23.17/drivers/mtd/devices/mtd_dataflash.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/devices/mtd_dataflash.c
++++ linux-2.6.23.17/drivers/mtd/devices/mtd_dataflash.c
 @@ -14,6 +14,7 @@
  #include <linux/slab.h>
  #include <linux/delay.h>
@@ -1467,7 +1465,7 @@ index a987e91..a5ed6d2 100644
  	struct spi_device	*spi;
  
  	struct mtd_info		mtd;
-@@ -167,7 +168,7 @@ static int dataflash_erase(struct mtd_info *mtd, struct erase_info *instr)
+@@ -167,7 +168,7 @@ static int dataflash_erase(struct mtd_in
  	x.len = 4;
  	spi_message_add_tail(&x, &msg);
  
@@ -1476,7 +1474,7 @@ index a987e91..a5ed6d2 100644
  	while (instr->len > 0) {
  		unsigned int	pageaddr;
  		int		status;
-@@ -210,7 +211,7 @@ static int dataflash_erase(struct mtd_info *mtd, struct erase_info *instr)
+@@ -210,7 +211,7 @@ static int dataflash_erase(struct mtd_in
  			instr->len -= priv->page_size;
  		}
  	}
@@ -1485,7 +1483,7 @@ index a987e91..a5ed6d2 100644
  
  	/* Inform MTD subsystem that erase is complete */
  	instr->state = MTD_ERASE_DONE;
-@@ -266,7 +267,7 @@ static int dataflash_read(struct mtd_info *mtd, loff_t from, size_t len,
+@@ -266,7 +267,7 @@ static int dataflash_read(struct mtd_inf
  	x[1].len = len;
  	spi_message_add_tail(&x[1], &msg);
  
@@ -1494,7 +1492,7 @@ index a987e91..a5ed6d2 100644
  
  	/* Continuous read, max clock = f(car) which may be less than
  	 * the peak rate available.  Some chips support commands with
-@@ -279,7 +280,7 @@ static int dataflash_read(struct mtd_info *mtd, loff_t from, size_t len,
+@@ -279,7 +280,7 @@ static int dataflash_read(struct mtd_inf
  	/* plus 4 "don't care" bytes */
  
  	status = spi_sync(priv->spi, &msg);
@@ -1503,7 +1501,7 @@ index a987e91..a5ed6d2 100644
  
  	if (status >= 0) {
  		*retlen = msg.actual_length - 8;
-@@ -336,7 +337,7 @@ static int dataflash_write(struct mtd_info *mtd, loff_t to, size_t len,
+@@ -336,7 +337,7 @@ static int dataflash_write(struct mtd_in
  	else
  		writelen = len;
  
@@ -1512,7 +1510,7 @@ index a987e91..a5ed6d2 100644
  	while (remaining > 0) {
  		DEBUG(MTD_DEBUG_LEVEL3, "write @ %i:%i len=%i\n",
  			pageaddr, offset, writelen);
-@@ -441,7 +442,7 @@ static int dataflash_write(struct mtd_info *mtd, loff_t to, size_t len,
+@@ -441,7 +442,7 @@ static int dataflash_write(struct mtd_in
  		else
  			writelen = remaining;
  	}
@@ -1521,7 +1519,7 @@ index a987e91..a5ed6d2 100644
  
  	return status;
  }
-@@ -463,7 +464,7 @@ add_dataflash(struct spi_device *spi, char *name,
+@@ -463,7 +464,7 @@ add_dataflash(struct spi_device *spi, ch
  	if (!priv)
  		return -ENOMEM;
  
@@ -1530,10 +1528,10 @@ index a987e91..a5ed6d2 100644
  	priv->spi = spi;
  	priv->page_size = pagesize;
  	priv->page_offset = pageoffset;
-diff --git a/drivers/mtd/devices/pmc551.c b/drivers/mtd/devices/pmc551.c
-index e8f686f..7060a08 100644
---- a/drivers/mtd/devices/pmc551.c
-+++ b/drivers/mtd/devices/pmc551.c
+Index: linux-2.6.23.17/drivers/mtd/devices/pmc551.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/devices/pmc551.c
++++ linux-2.6.23.17/drivers/mtd/devices/pmc551.c
 @@ -30,8 +30,8 @@
   *
   * Notes:
@@ -1554,7 +1552,7 @@ index e8f686f..7060a08 100644
   *	* MUST fix the init function to not spin on a register
   *	waiting for it to set .. this does not safely handle busted
   *	devices that never reset the register correctly which will
-@@ -562,10 +562,10 @@ static u32 fixup_pmc551(struct pci_dev *dev)
+@@ -562,10 +562,10 @@ static u32 fixup_pmc551(struct pci_dev *
  	/*
  	 * Some screen fun
  	 */
@@ -1619,11 +1617,11 @@ index e8f686f..7060a08 100644
  				"0x%p\n", priv->asize >> 20, priv->start);
  			pci_iounmap(priv->dev, priv->start);
  		}
-diff --git a/drivers/mtd/maps/nettel.c b/drivers/mtd/maps/nettel.c
-index 7b96cd0..0c9b305 100644
---- a/drivers/mtd/maps/nettel.c
-+++ b/drivers/mtd/maps/nettel.c
-@@ -158,68 +158,11 @@ static struct notifier_block nettel_notifier_block = {
+Index: linux-2.6.23.17/drivers/mtd/maps/nettel.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/maps/nettel.c
++++ linux-2.6.23.17/drivers/mtd/maps/nettel.c
+@@ -158,68 +158,11 @@ static struct notifier_block nettel_noti
  	nettel_reboot_notifier, NULL, 0
  };
  
@@ -1713,10 +1711,10 @@ index 7b96cd0..0c9b305 100644
  {
  #ifdef CONFIG_MTD_CFI_INTELEXT
  	unregister_reboot_notifier(&nettel_notifier_block);
-diff --git a/drivers/mtd/maps/pmcmsp-ramroot.c b/drivers/mtd/maps/pmcmsp-ramroot.c
-index 18049bc..30de5c0 100644
---- a/drivers/mtd/maps/pmcmsp-ramroot.c
-+++ b/drivers/mtd/maps/pmcmsp-ramroot.c
+Index: linux-2.6.23.17/drivers/mtd/maps/pmcmsp-ramroot.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/maps/pmcmsp-ramroot.c
++++ linux-2.6.23.17/drivers/mtd/maps/pmcmsp-ramroot.c
 @@ -79,7 +79,6 @@ static int __init init_rrmap(void)
  		rr_mtd->owner = THIS_MODULE;
  
@@ -1725,10 +1723,10 @@ index 18049bc..30de5c0 100644
  
  		return 0;
  	}
-diff --git a/drivers/mtd/mtd_blkdevs.c b/drivers/mtd/mtd_blkdevs.c
-index ef89780..74d9d30 100644
---- a/drivers/mtd/mtd_blkdevs.c
-+++ b/drivers/mtd/mtd_blkdevs.c
+Index: linux-2.6.23.17/drivers/mtd/mtd_blkdevs.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/mtd_blkdevs.c
++++ linux-2.6.23.17/drivers/mtd/mtd_blkdevs.c
 @@ -24,10 +24,9 @@
  #include <linux/kthread.h>
  #include <asm/uaccess.h>
@@ -1742,7 +1740,7 @@ index ef89780..74d9d30 100644
  
  struct mtd_blkcore_priv {
  	struct task_struct *thread;
-@@ -202,7 +201,7 @@ static int blktrans_ioctl(struct inode *inode, struct file *file,
+@@ -202,7 +201,7 @@ static int blktrans_ioctl(struct inode *
  	}
  }
  
@@ -1751,11 +1749,11 @@ index ef89780..74d9d30 100644
  	.owner		= THIS_MODULE,
  	.open		= blktrans_open,
  	.release	= blktrans_release,
-diff --git a/drivers/mtd/mtdchar.c b/drivers/mtd/mtdchar.c
-index d091b24..22ed96c 100644
---- a/drivers/mtd/mtdchar.c
-+++ b/drivers/mtd/mtdchar.c
-@@ -136,7 +136,8 @@ static int mtd_close(struct inode *inode, struct file *file)
+Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/mtdchar.c
++++ linux-2.6.23.17/drivers/mtd/mtdchar.c
+@@ -137,7 +137,8 @@ static int mtd_close(struct inode *inode
  
  	DEBUG(MTD_DEBUG_LEVEL0, "MTD_close\n");
  
@@ -1765,10 +1763,10 @@ index d091b24..22ed96c 100644
  		mtd->sync(mtd);
  
  	put_mtd_device(mtd);
-diff --git a/drivers/mtd/mtdcore.c b/drivers/mtd/mtdcore.c
-index c153b64..6c2645e 100644
---- a/drivers/mtd/mtdcore.c
-+++ b/drivers/mtd/mtdcore.c
+Index: linux-2.6.23.17/drivers/mtd/mtdcore.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/mtdcore.c
++++ linux-2.6.23.17/drivers/mtd/mtdcore.c
 @@ -22,6 +22,8 @@
  
  #include <linux/mtd/mtd.h>
@@ -1778,10 +1776,10 @@ index c153b64..6c2645e 100644
  /* These are exported solely for the purpose of mtd_blkdevs.c. You
     should not use them for _anything_ else */
  DEFINE_MUTEX(mtd_table_mutex);
-diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
-index f1d60b6..df25cab 100644
---- a/drivers/mtd/nand/Kconfig
-+++ b/drivers/mtd/nand/Kconfig
+Index: linux-2.6.23.17/drivers/mtd/nand/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/nand/Kconfig
++++ linux-2.6.23.17/drivers/mtd/nand/Kconfig
 @@ -134,10 +134,10 @@ config MTD_NAND_S3C2410_HWECC
  
  config MTD_NAND_NDFC
@@ -1804,11 +1802,11 @@ index f1d60b6..df25cab 100644
  	  laptop.
  
  config MTD_NAND_CS553X
-diff --git a/drivers/mtd/nand/cafe_nand.c b/drivers/mtd/nand/cafe_nand.c
-index cff969d..cca69b3 100644
---- a/drivers/mtd/nand/cafe_nand.c
-+++ b/drivers/mtd/nand/cafe_nand.c
-@@ -821,14 +821,53 @@ static struct pci_device_id cafe_nand_tbl[] = {
+Index: linux-2.6.23.17/drivers/mtd/nand/cafe_nand.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/nand/cafe_nand.c
++++ linux-2.6.23.17/drivers/mtd/nand/cafe_nand.c
+@@ -822,14 +822,53 @@ static struct pci_device_id cafe_nand_tb
  
  MODULE_DEVICE_TABLE(pci, cafe_nand_tbl);
  
@@ -1863,10 +1861,10 @@ index cff969d..cca69b3 100644
  #endif
  };
  
-diff --git a/drivers/mtd/nand/ndfc.c b/drivers/mtd/nand/ndfc.c
-index fd7a8d5..1c0e89f 100644
---- a/drivers/mtd/nand/ndfc.c
-+++ b/drivers/mtd/nand/ndfc.c
+Index: linux-2.6.23.17/drivers/mtd/nand/ndfc.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/nand/ndfc.c
++++ linux-2.6.23.17/drivers/mtd/nand/ndfc.c
 @@ -24,7 +24,11 @@
  #include <linux/platform_device.h>
  
@@ -1879,7 +1877,7 @@ index fd7a8d5..1c0e89f 100644
  
  struct ndfc_nand_mtd {
  	struct mtd_info			mtd;
-@@ -230,7 +234,11 @@ static int ndfc_nand_probe(struct platform_device *pdev)
+@@ -230,7 +234,11 @@ static int ndfc_nand_probe(struct platfo
  	struct ndfc_controller *ndfc = &ndfc_ctrl;
  	unsigned long long phys = settings->ndfc_erpn | res->start;
  
@@ -1891,10 +1889,10 @@ index fd7a8d5..1c0e89f 100644
  	if (!ndfc->ndfcbase) {
  		printk(KERN_ERR "NDFC: ioremap failed\n");
  		return -EIO;
-diff --git a/drivers/mtd/onenand/Kconfig b/drivers/mtd/onenand/Kconfig
-index c257d39..cb41cbc 100644
---- a/drivers/mtd/onenand/Kconfig
-+++ b/drivers/mtd/onenand/Kconfig
+Index: linux-2.6.23.17/drivers/mtd/onenand/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/onenand/Kconfig
++++ linux-2.6.23.17/drivers/mtd/onenand/Kconfig
 @@ -40,4 +40,27 @@ config MTD_ONENAND_OTP
  
  	  OTP block is fully-guaranteed to be a valid block.
@@ -1923,10 +1921,10 @@ index c257d39..cb41cbc 100644
 +	  OneNAND MTD layer.
 +
  endif # MTD_ONENAND
-diff --git a/drivers/mtd/onenand/Makefile b/drivers/mtd/onenand/Makefile
-index 269cfe4..4d2eacf 100644
---- a/drivers/mtd/onenand/Makefile
-+++ b/drivers/mtd/onenand/Makefile
+Index: linux-2.6.23.17/drivers/mtd/onenand/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/onenand/Makefile
++++ linux-2.6.23.17/drivers/mtd/onenand/Makefile
 @@ -8,4 +8,7 @@ obj-$(CONFIG_MTD_ONENAND)		+= onenand.o
  # Board specific.
  obj-$(CONFIG_MTD_ONENAND_GENERIC)	+= generic.o
@@ -1935,11 +1933,11 @@ index 269cfe4..4d2eacf 100644
 +obj-$(CONFIG_MTD_ONENAND_SIM)		+= onenand_sim.o
 +
  onenand-objs = onenand_base.o onenand_bbt.o
-diff --git a/drivers/mtd/onenand/onenand_base.c b/drivers/mtd/onenand/onenand_base.c
-index 0537fac..7d194cf 100644
---- a/drivers/mtd/onenand/onenand_base.c
-+++ b/drivers/mtd/onenand/onenand_base.c
-@@ -206,6 +206,15 @@ static int onenand_command(struct mtd_info *mtd, int cmd, loff_t addr, size_t le
+Index: linux-2.6.23.17/drivers/mtd/onenand/onenand_base.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/mtd/onenand/onenand_base.c
++++ linux-2.6.23.17/drivers/mtd/onenand/onenand_base.c
+@@ -206,6 +206,15 @@ static int onenand_command(struct mtd_in
  	default:
  		block = (int) (addr >> this->erase_shift);
  		page = (int) (addr >> this->page_shift);
@@ -1955,7 +1953,7 @@ index 0537fac..7d194cf 100644
  		page &= this->page_mask;
  		break;
  	}
-@@ -216,8 +225,12 @@ static int onenand_command(struct mtd_info *mtd, int cmd, loff_t addr, size_t le
+@@ -216,8 +225,12 @@ static int onenand_command(struct mtd_in
  		value = onenand_bufferram_address(this, block);
  		this->write_word(value, this->base + ONENAND_REG_START_ADDRESS2);
  
@@ -1970,7 +1968,7 @@ index 0537fac..7d194cf 100644
  
  		return 0;
  	}
-@@ -247,6 +260,8 @@ static int onenand_command(struct mtd_info *mtd, int cmd, loff_t addr, size_t le
+@@ -247,6 +260,8 @@ static int onenand_command(struct mtd_in
  			break;
  
  		default:
@@ -1979,7 +1977,7 @@ index 0537fac..7d194cf 100644
  			dataram = ONENAND_CURRENT_BUFFERRAM(this);
  			break;
  		}
-@@ -445,8 +460,9 @@ static inline int onenand_bufferram_offset(struct mtd_info *mtd, int area)
+@@ -445,8 +460,9 @@ static inline int onenand_bufferram_offs
  	struct onenand_chip *this = mtd->priv;
  
  	if (ONENAND_CURRENT_BUFFERRAM(this)) {
@@ -1990,7 +1988,7 @@ index 0537fac..7d194cf 100644
  		if (area == ONENAND_SPARERAM)
  			return mtd->oobsize;
  	}
-@@ -572,6 +588,30 @@ static int onenand_write_bufferram(struct mtd_info *mtd, int area,
+@@ -572,6 +588,30 @@ static int onenand_write_bufferram(struc
  }
  
  /**
@@ -2021,7 +2019,7 @@ index 0537fac..7d194cf 100644
   * onenand_check_bufferram - [GENERIC] Check BufferRAM information
   * @param mtd		MTD data structure
   * @param addr		address to check
-@@ -585,7 +625,10 @@ static int onenand_check_bufferram(struct mtd_info *mtd, loff_t addr)
+@@ -585,7 +625,10 @@ static int onenand_check_bufferram(struc
  	int blockpage, found = 0;
  	unsigned int i;
  
@@ -2033,7 +2031,7 @@ index 0537fac..7d194cf 100644
  
  	/* Is there valid data? */
  	i = ONENAND_CURRENT_BUFFERRAM(this);
-@@ -625,7 +668,10 @@ static void onenand_update_bufferram(struct mtd_info *mtd, loff_t addr,
+@@ -625,7 +668,10 @@ static void onenand_update_bufferram(str
  	int blockpage;
  	unsigned int i;
  
@@ -2045,7 +2043,7 @@ index 0537fac..7d194cf 100644
  
  	/* Invalidate another BufferRAM */
  	i = ONENAND_NEXT_BUFFERRAM(this);
-@@ -734,6 +780,7 @@ static int onenand_read(struct mtd_info *mtd, loff_t from, size_t len,
+@@ -734,6 +780,7 @@ static int onenand_read(struct mtd_info 
  	int read = 0, column;
  	int thislen;
  	int ret = 0, boundary = 0;
@@ -2053,7 +2051,7 @@ index 0537fac..7d194cf 100644
  
  	DEBUG(MTD_DEBUG_LEVEL3, "onenand_read: from = 0x%08x, len = %i\n", (unsigned int) from, (int) len);
  
-@@ -754,22 +801,22 @@ static int onenand_read(struct mtd_info *mtd, loff_t from, size_t len,
+@@ -754,22 +801,22 @@ static int onenand_read(struct mtd_info 
   	/* Do first load to bufferRAM */
   	if (read < len) {
   		if (!onenand_check_bufferram(mtd, from)) {
@@ -2082,7 +2080,7 @@ index 0537fac..7d194cf 100644
   			/*
   			 * Chip boundary handling in DDP
   			 * Now we issued chip 1 read and pointed chip 1
-@@ -794,7 +841,7 @@ static int onenand_read(struct mtd_info *mtd, loff_t from, size_t len,
+@@ -794,7 +841,7 @@ static int onenand_read(struct mtd_info 
   			this->write_word(ONENAND_DDP_CHIP1, this->base + ONENAND_REG_START_ADDRESS2);
   		ONENAND_SET_NEXT_BUFFERRAM(this);
   		buf += thislen;
@@ -2091,7 +2089,7 @@ index 0537fac..7d194cf 100644
   		column = 0;
   		cond_resched();
   		/* Now wait for load */
-@@ -1079,7 +1126,7 @@ int onenand_bbt_read_oob(struct mtd_info *mtd, loff_t from,
+@@ -1079,7 +1126,7 @@ int onenand_bbt_read_oob(struct mtd_info
  		/* Read more? */
  		if (read < len) {
  			/* Update Page size */
@@ -2100,7 +2098,7 @@ index 0537fac..7d194cf 100644
  			column = 0;
  		}
  	}
-@@ -1135,12 +1182,12 @@ static int onenand_verify(struct mtd_info *mtd, const u_char *buf, loff_t addr,
+@@ -1135,12 +1182,12 @@ static int onenand_verify(struct mtd_inf
  	int thislen, column;
  
  	while (len != 0) {
@@ -2118,7 +2116,7 @@ index 0537fac..7d194cf 100644
  
  		onenand_update_bufferram(mtd, addr, 0);
  
-@@ -1236,6 +1283,10 @@ static int onenand_write(struct mtd_info *mtd, loff_t to, size_t len,
+@@ -1236,6 +1283,10 @@ static int onenand_write(struct mtd_info
  
  		/* In partial page write we don't update bufferram */
  		onenand_update_bufferram(mtd, to, !ret && !subpage);
@@ -2129,7 +2127,7 @@ index 0537fac..7d194cf 100644
  
  		if (ret) {
  			printk(KERN_ERR "onenand_write: write filaed %d\n", ret);
-@@ -1384,6 +1435,10 @@ static int onenand_do_write_oob(struct mtd_info *mtd, loff_t to, size_t len,
+@@ -1384,6 +1435,10 @@ static int onenand_do_write_oob(struct m
  		this->command(mtd, ONENAND_CMD_PROGOOB, to, mtd->oobsize);
  
  		onenand_update_bufferram(mtd, to, 0);
@@ -2140,7 +2138,7 @@ index 0537fac..7d194cf 100644
  
  		ret = this->wait(mtd, FL_WRITING);
  		if (ret) {
-@@ -2107,6 +2162,7 @@ static int onenand_lock_user_prot_reg(struct mtd_info *mtd, loff_t from,
+@@ -2107,6 +2162,7 @@ static int onenand_lock_user_prot_reg(st
   *
   * Check and set OneNAND features
   * - lock scheme
@@ -2148,7 +2146,7 @@ index 0537fac..7d194cf 100644
   */
  static void onenand_check_features(struct mtd_info *mtd)
  {
-@@ -2118,19 +2174,35 @@ static void onenand_check_features(struct mtd_info *mtd)
+@@ -2118,19 +2174,35 @@ static void onenand_check_features(struc
  	process = this->version_id >> ONENAND_VERSION_PROCESS_SHIFT;
  
  	/* Lock scheme */
@@ -2193,7 +2191,7 @@ index 0537fac..7d194cf 100644
  }
  
  /**
-@@ -2257,6 +2329,8 @@ static int onenand_probe(struct mtd_info *mtd)
+@@ -2257,6 +2329,8 @@ static int onenand_probe(struct mtd_info
  	this->erase_shift = ffs(mtd->erasesize) - 1;
  	this->page_shift = ffs(mtd->writesize) - 1;
  	this->page_mask = (1 << (this->erase_shift - this->page_shift)) - 1;
@@ -2202,7 +2200,7 @@ index 0537fac..7d194cf 100644
  
  	/* REVIST: Multichip handling */
  
-@@ -2265,6 +2339,17 @@ static int onenand_probe(struct mtd_info *mtd)
+@@ -2265,6 +2339,17 @@ static int onenand_probe(struct mtd_info
  	/* Check OneNAND features */
  	onenand_check_features(mtd);
  
@@ -2220,11 +2218,11 @@ index 0537fac..7d194cf 100644
  	return 0;
  }
  
-diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
-index 7dcaa09..eb69d4d 100644
---- a/drivers/pci/quirks.c
-+++ b/drivers/pci/quirks.c
-@@ -1390,6 +1390,17 @@ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_INTEL,	0x260a, quirk_intel_pcie_pm);
+Index: linux-2.6.23.17/drivers/pci/quirks.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/pci/quirks.c
++++ linux-2.6.23.17/drivers/pci/quirks.c
+@@ -1396,6 +1396,17 @@ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_IN
  DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_INTEL,	0x260b, quirk_intel_pcie_pm);
  
  /*
@@ -2242,10 +2240,10 @@ index 7dcaa09..eb69d4d 100644
   * Toshiba TC86C001 IDE controller reports the standard 8-byte BAR0 size
   * but the PIO transfers won't work if BAR0 falls at the odd 8 bytes.
   * Re-allocate the region if needed...
-diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
-index 5216c11..3e3df7e 100644
---- a/drivers/video/Kconfig
-+++ b/drivers/video/Kconfig
+Index: linux-2.6.23.17/drivers/video/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/drivers/video/Kconfig
++++ linux-2.6.23.17/drivers/video/Kconfig
 @@ -594,7 +594,7 @@ config FB_TGA
  
  config FB_VESA
@@ -2289,11 +2287,11 @@ index 5216c11..3e3df7e 100644
  config FB_XILINX
  	tristate "Xilinx frame buffer support"
  	depends on FB && XILINX_VIRTEX
-diff --git a/drivers/video/Makefile b/drivers/video/Makefile
-index 06eec7b..fc535fb 100644
---- a/drivers/video/Makefile
-+++ b/drivers/video/Makefile
-@@ -111,6 +111,7 @@ obj-$(CONFIG_FB_PNX4008_DUM_RGB)  += pnx4008/
+Index: linux-2.6.23.17/drivers/video/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/drivers/video/Makefile
++++ linux-2.6.23.17/drivers/video/Makefile
+@@ -111,6 +111,7 @@ obj-$(CONFIG_FB_PNX4008_DUM_RGB)  += pnx
  obj-$(CONFIG_FB_IBM_GXT4500)	  += gxt4500.o
  obj-$(CONFIG_FB_PS3)		  += ps3fb.o
  obj-$(CONFIG_FB_SM501)            += sm501fb.o
@@ -2301,10 +2299,10 @@ index 06eec7b..fc535fb 100644
  obj-$(CONFIG_FB_XILINX)           += xilinxfb.o
  obj-$(CONFIG_FB_OMAP)             += omap/
  
-diff --git a/drivers/video/fbmem.c b/drivers/video/fbmem.c
-index 0740272..4ac6a95 100644
---- a/drivers/video/fbmem.c
-+++ b/drivers/video/fbmem.c
+Index: linux-2.6.23.17/drivers/video/fbmem.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/video/fbmem.c
++++ linux-2.6.23.17/drivers/video/fbmem.c
 @@ -820,6 +820,53 @@ static void try_to_load(int fb)
  #endif /* CONFIG_KMOD */
  
@@ -2359,10 +2357,10 @@ index 0740272..4ac6a95 100644
  fb_pan_display(struct fb_info *info, struct fb_var_screeninfo *var)
  {
  	struct fb_fix_screeninfo *fix = &info->fix;
-diff --git a/drivers/video/geode/Makefile b/drivers/video/geode/Makefile
-index 957304b..5c98da1 100644
---- a/drivers/video/geode/Makefile
-+++ b/drivers/video/geode/Makefile
+Index: linux-2.6.23.17/drivers/video/geode/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/drivers/video/geode/Makefile
++++ linux-2.6.23.17/drivers/video/geode/Makefile
 @@ -5,5 +5,5 @@ obj-$(CONFIG_FB_GEODE_GX)  += gxfb.o
  obj-$(CONFIG_FB_GEODE_LX)  += lxfb.o
  
@@ -2370,10 +2368,10 @@ index 957304b..5c98da1 100644
 -gxfb-objs  := gxfb_core.o display_gx.o video_gx.o
 +gxfb-objs  := gxfb_core.o display_gx.o video_gx.o suspend_gx.o
  lxfb-objs  := lxfb_core.o lxfb_ops.o
-diff --git a/drivers/video/geode/display_gx.c b/drivers/video/geode/display_gx.c
-index 0f16e4b..a432b99 100644
---- a/drivers/video/geode/display_gx.c
-+++ b/drivers/video/geode/display_gx.c
+Index: linux-2.6.23.17/drivers/video/geode/display_gx.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/video/geode/display_gx.c
++++ linux-2.6.23.17/drivers/video/geode/display_gx.c
 @@ -11,26 +11,44 @@
   *   Free Software Foundation; either version 2 of the License, or * (at your
   *   option) any later version.
@@ -2431,44 +2429,48 @@ index 0f16e4b..a432b99 100644
  
  int gx_line_delta(int xres, int bpp)
  {
-@@ -63,23 +80,23 @@ static void gx_set_mode(struct fb_info *info)
+@@ -63,23 +80,23 @@ static void gx_set_mode(struct fb_info *
  	gcfg = readl(par->dc_regs + DC_GENERAL_CFG);
  	dcfg = readl(par->dc_regs + DC_DISPLAY_CFG);
  
 -	/* Disable the timing generator. */
 -	dcfg &= ~(DC_DCFG_TGEN);
 -	writel(dcfg, par->dc_regs + DC_DISPLAY_CFG);
-+	/* Programming the clock is costly and ugly, so avoid if if we can */
- 
+-
 -	/* Wait for pending memory requests before disabling the FIFO load. */
 -	udelay(100);
+-
+-	/* Disable FIFO load and compression. */
+-	gcfg &= ~(DC_GCFG_DFLE | DC_GCFG_CMPE | DC_GCFG_DECE);
+-	writel(gcfg, par->dc_regs + DC_GENERAL_CFG);
+-
+-	/* Setup DCLK and its divisor. */
+-	par->vid_ops->set_dclk(info);
+-
+-	/*
+-	 * Setup new mode.
+-	 */
++	/* Programming the clock is costly and ugly, so avoid if if we can */
++
 +	if (par->curdclk != info->var.pixclock) {
 +		/* Disable the timing generator. */
 +		dcfg &= ~(DC_DCFG_TGEN);
 +		writel(dcfg, par->dc_regs + DC_DISPLAY_CFG);
- 
--	/* Disable FIFO load and compression. */
--	gcfg &= ~(DC_GCFG_DFLE | DC_GCFG_CMPE | DC_GCFG_DECE);
--	writel(gcfg, par->dc_regs + DC_GENERAL_CFG);
++
 +		/* Wait for pending memory requests before disabling the FIFO load. */
 +		udelay(100);
- 
--	/* Setup DCLK and its divisor. */
--	par->vid_ops->set_dclk(info);
++
 +		/* Disable FIFO load and compression. */
 +		gcfg &= ~(DC_GCFG_DFLE | DC_GCFG_CMPE | DC_GCFG_DECE);
 +		writel(gcfg, par->dc_regs + DC_GENERAL_CFG);
- 
--	/*
--	 * Setup new mode.
--	 */
++
 +		/* Setup DCLK and its divisor. */
 +		par->vid_ops->set_dclk(info);
 +	}
  
  	/* Clear all unused feature bits. */
  	gcfg &= DC_GCFG_YUVM | DC_GCFG_VDSE;
-@@ -90,12 +107,13 @@ static void gx_set_mode(struct fb_info *info)
+@@ -90,12 +107,13 @@ static void gx_set_mode(struct fb_info *
  	gcfg |= (6 << DC_GCFG_DFHPEL_POS) | (5 << DC_GCFG_DFHPSL_POS) | DC_GCFG_DFLE;
  
  	/* Framebuffer start offset. */
@@ -2486,7 +2488,7 @@ index 0f16e4b..a432b99 100644
  
  
  	/* Enable graphics and video data and unmask address lines. */
-@@ -134,17 +152,16 @@ static void gx_set_mode(struct fb_info *info)
+@@ -134,17 +152,16 @@ static void gx_set_mode(struct fb_info *
  	vblankend = vsyncend + info->var.upper_margin;
  	vtotal = vblankend;
  
@@ -2512,10 +2514,10 @@ index 0f16e4b..a432b99 100644
  
  	par->vid_ops->configure_display(info);
  
-diff --git a/drivers/video/geode/display_gx.h b/drivers/video/geode/display_gx.h
-index 0af33f3..d20b877 100644
---- a/drivers/video/geode/display_gx.h
-+++ b/drivers/video/geode/display_gx.h
+Index: linux-2.6.23.17/drivers/video/geode/display_gx.h
+===================================================================
+--- linux-2.6.23.17.orig/drivers/video/geode/display_gx.h
++++ linux-2.6.23.17/drivers/video/geode/display_gx.h
 @@ -20,6 +20,9 @@ extern struct geode_dc_ops gx_dc_ops;
  #define GLD_MSR_CONFIG   0xC0002001
  #define GLD_MSR_CONFIG_DM_FP 0x40
@@ -2526,10 +2528,10 @@ index 0af33f3..d20b877 100644
  /* Display controller registers */
  
  #define DC_UNLOCK 0x00
-diff --git a/drivers/video/geode/geodefb.h b/drivers/video/geode/geodefb.h
-index ae04820..0214d11 100644
---- a/drivers/video/geode/geodefb.h
-+++ b/drivers/video/geode/geodefb.h
+Index: linux-2.6.23.17/drivers/video/geode/geodefb.h
+===================================================================
+--- linux-2.6.23.17.orig/drivers/video/geode/geodefb.h
++++ linux-2.6.23.17/drivers/video/geode/geodefb.h
 @@ -12,6 +12,10 @@
  #ifndef __GEODEFB_H__
  #define __GEODEFB_H__
@@ -2566,10 +2568,10 @@ index ae04820..0214d11 100644
  };
  
  #endif /* !__GEODEFB_H__ */
-diff --git a/drivers/video/geode/gxfb_core.c b/drivers/video/geode/gxfb_core.c
-index cf841ef..3eabc53 100644
---- a/drivers/video/geode/gxfb_core.c
-+++ b/drivers/video/geode/gxfb_core.c
+Index: linux-2.6.23.17/drivers/video/geode/gxfb_core.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/video/geode/gxfb_core.c
++++ linux-2.6.23.17/drivers/video/geode/gxfb_core.c
 @@ -30,12 +30,31 @@
  #include <linux/fb.h>
  #include <linux/init.h>
@@ -2602,7 +2604,7 @@ index cf841ef..3eabc53 100644
  
  /* Modes relevant to the GX (taken from modedb.c) */
  static const struct fb_videomode gx_modedb[] __initdata = {
-@@ -103,8 +122,20 @@ static const struct fb_videomode gx_modedb[] __initdata = {
+@@ -103,8 +122,20 @@ static const struct fb_videomode gx_mode
  	{ NULL, 85, 1600, 1200, 4357, 304, 64, 46, 1, 192, 3,
  	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
  	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
@@ -2623,7 +2625,7 @@ index cf841ef..3eabc53 100644
  static int gxfb_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
  {
  	if (var->xres > 1600 || var->yres > 1200)
-@@ -137,7 +168,7 @@ static int gxfb_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
+@@ -137,7 +168,7 @@ static int gxfb_check_var(struct fb_var_
  	return 0;
  }
  
@@ -2632,7 +2634,7 @@ index cf841ef..3eabc53 100644
  {
  	struct geodefb_par *par = info->par;
  
-@@ -204,16 +235,26 @@ static int gxfb_blank(int blank_mode, struct fb_info *info)
+@@ -204,16 +235,26 @@ static int gxfb_blank(int blank_mode, st
  	return par->vid_ops->blank_display(info, blank_mode);
  }
  
@@ -2660,7 +2662,7 @@ index cf841ef..3eabc53 100644
  	ret = pci_request_region(dev, 3, "gxfb (video processor)");
  	if (ret < 0)
  		return ret;
-@@ -232,36 +273,118 @@ static int __init gxfb_map_video_memory(struct fb_info *info, struct pci_dev *de
+@@ -232,36 +273,118 @@ static int __init gxfb_map_video_memory(
  	ret = pci_request_region(dev, 0, "gxfb (framebuffer)");
  	if (ret < 0)
  		return ret;
@@ -2784,7 +2786,7 @@ index cf841ef..3eabc53 100644
  };
  
  static struct fb_info * __init gxfb_init_fbinfo(struct device *dev)
-@@ -303,23 +426,86 @@ static struct fb_info * __init gxfb_init_fbinfo(struct device *dev)
+@@ -303,23 +426,86 @@ static struct fb_info * __init gxfb_init
  	return info;
  }
  
@@ -2877,7 +2879,7 @@ index cf841ef..3eabc53 100644
  		dev_err(&pdev->dev, "failed to map frame buffer or controller registers\n");
  		goto err;
  	}
-@@ -333,32 +519,60 @@ static int __init gxfb_probe(struct pci_dev *pdev, const struct pci_device_id *i
+@@ -333,32 +519,60 @@ static int __init gxfb_probe(struct pci_
  	else
  		par->enable_crt = 1;
  
@@ -2949,7 +2951,7 @@ index cf841ef..3eabc53 100644
  		pci_release_region(pdev, 0);
  	}
  	if (par->vid_regs) {
-@@ -370,8 +584,9 @@ static int __init gxfb_probe(struct pci_dev *pdev, const struct pci_device_id *i
+@@ -370,8 +584,9 @@ static int __init gxfb_probe(struct pci_
  		pci_release_region(pdev, 2);
  	}
  
@@ -2961,7 +2963,7 @@ index cf841ef..3eabc53 100644
  	return ret;
  }
  
-@@ -397,9 +612,7 @@ static void gxfb_remove(struct pci_dev *pdev)
+@@ -397,9 +612,7 @@ static void gxfb_remove(struct pci_dev *
  }
  
  static struct pci_device_id gxfb_id_table[] = {
@@ -3024,10 +3026,10 @@ index cf841ef..3eabc53 100644
 +
  MODULE_DESCRIPTION("Framebuffer driver for the AMD Geode GX");
  MODULE_LICENSE("GPL");
-diff --git a/drivers/video/geode/lxfb.h b/drivers/video/geode/lxfb.h
-index 6c227f9..5be8a4d 100644
---- a/drivers/video/geode/lxfb.h
-+++ b/drivers/video/geode/lxfb.h
+Index: linux-2.6.23.17/drivers/video/geode/lxfb.h
+===================================================================
+--- linux-2.6.23.17.orig/drivers/video/geode/lxfb.h
++++ linux-2.6.23.17/drivers/video/geode/lxfb.h
 @@ -25,10 +25,23 @@ void lx_set_mode(struct fb_info *);
  void lx_get_gamma(struct fb_info *, unsigned int *, int);
  void lx_set_gamma(struct fb_info *, unsigned int *, int);
@@ -3052,10 +3054,10 @@ index 6c227f9..5be8a4d 100644
  /* MSRS */
  
  #define MSR_LX_GLD_CONFIG    0x48002001
-diff --git a/drivers/video/geode/lxfb_core.c b/drivers/video/geode/lxfb_core.c
-index 5e30b40..c9060ed 100644
---- a/drivers/video/geode/lxfb_core.c
-+++ b/drivers/video/geode/lxfb_core.c
+Index: linux-2.6.23.17/drivers/video/geode/lxfb_core.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/video/geode/lxfb_core.c
++++ linux-2.6.23.17/drivers/video/geode/lxfb_core.c
 @@ -22,6 +22,7 @@
  #include <linux/init.h>
  #include <linux/pci.h>
@@ -3081,6 +3083,45 @@ index 5e30b40..c9060ed 100644
 +	  0, FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
 +	/* 800x600-60 VESA */
 +	{ NULL, 60, 800, 600, 25000, 88, 40, 23, 01, 128, 4,
++	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
++	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
++	/* 800x600-75 VESA */
++	{ NULL, 75, 800, 600, 20202, 160, 16, 21, 01, 80, 3,
++	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
++	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
++	/* 800x600-85 VESA */
++	{ NULL, 85, 800, 600, 17761, 152, 32, 27, 01, 64, 3,
++	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
++	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
++	/* 1024x768-60 VESA */
++	{ NULL, 60, 1024, 768, 15384, 160, 24, 29, 3, 136, 6,
++	  0, FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
++	/* 1024x768-75 VESA */
++	{ NULL, 75, 1024, 768, 12690, 176, 16, 28, 1, 96, 3,
++	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
++	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
++	/* 1024x768-85 VESA */
++	{ NULL, 85, 1024, 768, 10582, 208, 48, 36, 1, 96, 3,
++	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
++	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
++	/* 1280x960-60 VESA */
++	{ NULL, 60, 1280, 960, 9259, 312, 96, 36, 1, 112, 3,
++	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
++	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
++	/* 1280x960-85 VESA */
++	{ NULL, 85, 1280, 960, 6734, 224, 64, 47, 1, 160, 3,
++	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
++	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
++	/* 1280x1024-60 VESA */
++	{ NULL, 60, 1280, 1024, 9259, 248, 48, 38, 1, 112, 3,
++	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
++	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
++	/* 1280x1024-75 VESA */
++	{ NULL, 75, 1280, 1024, 7407, 248, 16, 38, 1, 144, 3,
++	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
++	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
++	/* 1280x1024-85 VESA */
++	{ NULL, 85, 1280, 1024, 6349, 224, 64, 44, 1, 160, 3,
  	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
 -	  FB_VMODE_NONINTERLACED, 0 },
 -	/* 640x400-70 */
@@ -3092,27 +3133,15 @@ index 5e30b40..c9060ed 100644
 -	  0, FB_VMODE_NONINTERLACED, 0 },
 -	/* 640x480-72 */
 -	{ NULL, 72, 640, 480, 32102, 120, 16, 20, 1, 40, 3,
-+	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
-+	/* 800x600-75 VESA */
-+	{ NULL, 75, 800, 600, 20202, 160, 16, 21, 01, 80, 3,
- 	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
+-	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
 -	  FB_VMODE_NONINTERLACED, 0 },
 -	/* 640x480-75 */
 -	{ NULL, 75, 640, 480, 31746, 120, 16, 16, 1, 64, 3,
-+	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
-+	/* 800x600-85 VESA */
-+	{ NULL, 85, 800, 600, 17761, 152, 32, 27, 01, 64, 3,
- 	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
+-	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
 -	  FB_VMODE_NONINTERLACED, 0 },
 -	/* 640x480-85 */
 -	{ NULL, 85, 640, 480, 27780, 80, 56, 25, 1, 56, 3,
-+	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
-+	/* 1024x768-60 VESA */
-+	{ NULL, 60, 1024, 768, 15384, 160, 24, 29, 3, 136, 6,
-+	  0, FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
-+	/* 1024x768-75 VESA */
-+	{ NULL, 75, 1024, 768, 12690, 176, 16, 28, 1, 96, 3,
- 	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
+-	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
 -	  FB_VMODE_NONINTERLACED, 0 },
 -	/* 640x480-90 */
 -	{ NULL, 90, 640, 480, 26392, 96, 32, 22, 1, 64, 3,
@@ -3122,10 +3151,7 @@ index 5e30b40..c9060ed 100644
 -	  0, FB_VMODE_NONINTERLACED, 0 },
 -	/* 640x480-60 */
 -	{ NULL, 60, 640, 480, 39682, 48, 16, 25, 10, 88, 2,
-+	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
-+	/* 1024x768-85 VESA */
-+	{ NULL, 85, 1024, 768, 10582, 208, 48, 36, 1, 96, 3,
- 	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
+-	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
 -	  FB_VMODE_NONINTERLACED, 0 },
 -	/* 800x600-56 */
 -	{ NULL, 56, 800, 600, 27901, 128, 24, 22, 1, 72, 2,
@@ -3153,24 +3179,15 @@ index 5e30b40..c9060ed 100644
 -	  0, FB_VMODE_NONINTERLACED, 0 },
 -	/* 800x600-60 */
 -	{ NULL, 60, 800, 600, 25131, 88, 40, 23, 1, 128, 4,
-+	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
-+	/* 1280x960-60 VESA */
-+	{ NULL, 60, 1280, 960, 9259, 312, 96, 36, 1, 112, 3,
- 	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
+-	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
 -	  FB_VMODE_NONINTERLACED, 0 },
 -	/* 1024x768-60 */
 -	{ NULL, 60, 1024, 768, 15385, 160, 24, 29, 3, 136, 6,
-+	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
-+	/* 1280x960-85 VESA */
-+	{ NULL, 85, 1280, 960, 6734, 224, 64, 47, 1, 160, 3,
- 	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
+-	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
 -	  FB_VMODE_NONINTERLACED, 0 },
 -	/* 1024x768-70 */
 -	{ NULL, 70, 1024, 768, 13346, 144, 24, 29, 3, 136, 6,
-+	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
-+	/* 1280x1024-60 VESA */
-+	{ NULL, 60, 1280, 1024, 9259, 248, 48, 38, 1, 112, 3,
- 	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
+-	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
 -	  FB_VMODE_NONINTERLACED, 0 },
 -	/* 1024x768-72 */
 -	{ NULL, 72, 1024, 768, 12702, 168, 56, 29, 4, 112, 3,
@@ -3189,10 +3206,7 @@ index 5e30b40..c9060ed 100644
 -	  0, FB_VMODE_NONINTERLACED, 0 },
 -	/* 1024x768-60 */
 -	{ NULL, 60, 1024, 768, 15385, 160, 24, 29, 3, 136, 6,
-+	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
-+	/* 1280x1024-75 VESA */
-+	{ NULL, 75, 1280, 1024, 7407, 248, 16, 38, 1, 144, 3,
- 	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
+-	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
 -	  FB_VMODE_NONINTERLACED, 0 },
 -	/* 1152x864-60 */
 -	{ NULL, 60, 1152, 864, 12251, 184, 64, 27, 1, 120, 3,
@@ -3217,10 +3231,7 @@ index 5e30b40..c9060ed 100644
 -	  0, FB_VMODE_NONINTERLACED, 0 },
 -	/* 1152x864-60 */
 -	{ NULL, 60, 1152, 864, 12251, 184, 64, 27, 1, 120, 3,
-+	  FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA },
-+	/* 1280x1024-85 VESA */
-+	{ NULL, 85, 1280, 1024, 6349, 224, 64, 44, 1, 160, 3,
- 	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
+-	  FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
 -	  FB_VMODE_NONINTERLACED, 0 },
 -	/* 1280x1024-60 */
 -	{ NULL, 60, 1280, 1024, 9262, 248, 48, 38, 1, 112, 3,
@@ -3313,7 +3324,7 @@ index 5e30b40..c9060ed 100644
  static int lxfb_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
  {
  	if (var->xres > 1920 || var->yres > 1440)
-@@ -379,16 +278,55 @@ static int __init lxfb_map_video_memory(struct fb_info *info,
+@@ -379,16 +278,55 @@ static int __init lxfb_map_video_memory(
  	return 0;
  }
  
@@ -3369,7 +3380,7 @@ index 5e30b40..c9060ed 100644
  };
  
  static struct fb_info * __init lxfb_init_fbinfo(struct device *dev)
-@@ -431,6 +369,45 @@ static struct fb_info * __init lxfb_init_fbinfo(struct device *dev)
+@@ -431,6 +369,45 @@ static struct fb_info * __init lxfb_init
  	return info;
  }
  
@@ -3415,7 +3426,7 @@ index 5e30b40..c9060ed 100644
  static int __init lxfb_probe(struct pci_dev *pdev,
  			     const struct pci_device_id *id)
  {
-@@ -467,6 +444,13 @@ static int __init lxfb_probe(struct pci_dev *pdev,
+@@ -467,6 +444,13 @@ static int __init lxfb_probe(struct pci_
  	modedb_ptr = (struct fb_videomode *) geode_modedb;
  	modedb_size = ARRAY_SIZE(geode_modedb);
  
@@ -3440,10 +3451,10 @@ index 5e30b40..c9060ed 100644
  };
  
  #ifndef MODULE
-diff --git a/drivers/video/geode/lxfb_ops.c b/drivers/video/geode/lxfb_ops.c
-index 4fbc99b..47ed9de 100644
---- a/drivers/video/geode/lxfb_ops.c
-+++ b/drivers/video/geode/lxfb_ops.c
+Index: linux-2.6.23.17/drivers/video/geode/lxfb_ops.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/video/geode/lxfb_ops.c
++++ linux-2.6.23.17/drivers/video/geode/lxfb_ops.c
 @@ -13,9 +13,13 @@
  #include <linux/fb.h>
  #include <linux/uaccess.h>
@@ -3521,7 +3532,7 @@ index 4fbc99b..47ed9de 100644
  	writel(DC_UNLOCK_CODE, par->dc_regs + DC_UNLOCK);
  
  	lx_graphics_disable(info);
-@@ -534,3 +580,285 @@ int lx_blank_display(struct fb_info *info, int blank_mode)
+@@ -534,3 +580,285 @@ int lx_blank_display(struct fb_info *inf
  
  	return 0;
  }
@@ -3807,10 +3818,10 @@ index 4fbc99b..47ed9de 100644
 +	lx_power_on = 1;
 +	return 0;
 +}
-diff --git a/drivers/video/geode/video_gx.c b/drivers/video/geode/video_gx.c
-index 7f3f18d..e282e74 100644
---- a/drivers/video/geode/video_gx.c
-+++ b/drivers/video/geode/video_gx.c
+Index: linux-2.6.23.17/drivers/video/geode/video_gx.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/video/geode/video_gx.c
++++ linux-2.6.23.17/drivers/video/geode/video_gx.c
 @@ -16,10 +16,14 @@
  #include <asm/io.h>
  #include <asm/delay.h>
@@ -3826,7 +3837,7 @@ index 7f3f18d..e282e74 100644
  
  /*
   * Tables of register settings for various DOTCLKs.
-@@ -58,7 +62,7 @@ static const struct gx_pll_entry gx_pll_table_48MHz[] = {
+@@ -58,7 +62,7 @@ static const struct gx_pll_entry gx_pll_
  	{ 13888, POSTDIV3,	    0x000007E1 },	/*  72.0000 */
  	{ 13426, PREMULT2,	    0x00000F4A },	/*  74.4810 */
  	{ 13333, 0,		    0x00000052 },	/*  75.0000 */
@@ -3835,7 +3846,7 @@ index 7f3f18d..e282e74 100644
  	{ 12500, POSTDIV3|PREMULT2, 0x00000709 },	/*  80.0000 */
  	{ 11135, PREMULT2,	    0x00000262 },	/*  89.8000 */
  	{ 10582, 0,		    0x000002D2 },	/*  94.5000 */
-@@ -117,8 +121,9 @@ static const struct gx_pll_entry gx_pll_table_14MHz[] = {
+@@ -117,8 +121,9 @@ static const struct gx_pll_entry gx_pll_
  	{  4357, 0, 0x0000057D },	/* 229.5000 */
  };
  
@@ -3846,7 +3857,7 @@ index 7f3f18d..e282e74 100644
  	const struct gx_pll_entry *pll_table;
  	int pll_table_len;
  	int i, best_i;
-@@ -173,115 +178,169 @@ static void gx_set_dclk_frequency(struct fb_info *info)
+@@ -173,115 +178,169 @@ static void gx_set_dclk_frequency(struct
  	do {
  		rdmsrl(MSR_GLCP_DOTPLL, dotpll);
  	} while (timeout-- && !(dotpll & MSR_GLCP_DOTPLL_LOCK));
@@ -3889,35 +3900,35 @@ index 7f3f18d..e282e74 100644
 +		if (pll_table[i].dotpll_value == (u32) (dotpll >> 32))
 +			break;
 +	}
++
++	return (i == pll_table_len) ? 0 : pll_table[i].pixclock;
++}
  
 -	fp = readl(par->vid_regs + GX_FP_PM);
 -	fp &= ~GX_FP_PM_P;
 -	writel(fp, par->vid_regs + GX_FP_PM);
-+	return (i == pll_table_len) ? 0 : pll_table[i].pixclock;
-+}
-+
-+
-+#define CMP(val, mask, res) (((val) & (mask)) == (res))
  
 -	/* Set timing 1 */
-+static void
-+gx_configure_tft(struct fb_info *info) {
++#define CMP(val, mask, res) (((val) & (mask)) == (res))
  
 -	fp = readl(par->vid_regs + GX_FP_PT1);
 -	fp &= GX_FP_PT1_VSIZE_MASK;
 -	fp |= info->var.yres << GX_FP_PT1_VSIZE_SHIFT;
 -	writel(fp, par->vid_regs + GX_FP_PT1);
-+	struct geodefb_par *par = info->par;
-+	u32 val, fp = 0, fp1, fp2, sync = 0;
++static void
++gx_configure_tft(struct fb_info *info) {
  
 -	/* Timing 2 */
 -	/* Set bits that are always on for TFT */
-+	/* Set up the DF pad select MSR */
++	struct geodefb_par *par = info->par;
++	u32 val, fp = 0, fp1, fp2, sync = 0;
  
 -	fp = 0x0F100000;
-+	rdmsrl(GX_VP_MSR_PAD_SELECT, val);
++	/* Set up the DF pad select MSR */
  
 -	/* Add sync polarity */
++	rdmsrl(GX_VP_MSR_PAD_SELECT, val);
++
 +	if ((val & GX_VP_PAD_SELECT_MASK) != GX_VP_PAD_SELECT_TFT) {
 +		val &= ~GX_VP_PAD_SELECT_MASK;
 +		val |= GX_VP_PAD_SELECT_TFT;
@@ -3942,28 +3953,28 @@ index 7f3f18d..e282e74 100644
 +
 +	if (!CMP(fp1, GX_FP_PT1_VSIZE_MASK, info->var.yres << GX_FP_PT1_VSIZE_SHIFT) ||
 +	    (fp2 != (0x0F100000 | sync))) {
- 
--	/* Enable the FP data and power (in case the BIOS didn't) */
++
 +		/* Turn off the panel */
- 
--	fp = readl(par->vid_regs + GX_DCFG);
--	fp |= GX_DCFG_FP_PWR_EN | GX_DCFG_FP_DATA_EN;
--	writel(fp, par->vid_regs + GX_DCFG);
++
 +#ifdef NOTUSED
 +		/* Do we really need to turn off the panel? */
 +		/* Possibly - we have a glitch somewhere */
  
--	/* Unblank the panel */
+-	/* Enable the FP data and power (in case the BIOS didn't) */
 +		fp = readl(par->vid_regs + GX_FP_PM);
 +		fp &= ~GX_FP_PM_P;
 +		writel(fp, par->vid_regs + GX_FP_PM);
 +#endif
-+
+ 
+-	fp = readl(par->vid_regs + GX_DCFG);
+-	fp |= GX_DCFG_FP_PWR_EN | GX_DCFG_FP_DATA_EN;
+-	writel(fp, par->vid_regs + GX_DCFG);
 +		/* Timing 1 */
 +		fp1 &= GX_FP_PT1_VSIZE_MASK;
 +		fp1 |= info->var.yres << GX_FP_PT1_VSIZE_SHIFT;
 +		writel(fp, par->vid_regs + GX_FP_PT1);
-+
+ 
+-	/* Unblank the panel */
 +		/* Timing 2 */
 +		writel(0x0F100000 | sync, par->vid_regs + GX_FP_PT2);
 +	}
@@ -4081,7 +4092,7 @@ index 7f3f18d..e282e74 100644
  
  	/* Set up the flat panel (if it is enabled) */
  
-@@ -289,6 +348,100 @@ static void gx_configure_display(struct fb_info *info)
+@@ -289,6 +348,100 @@ static void gx_configure_display(struct 
  		gx_configure_tft(info);
  }
  
@@ -4182,7 +4193,7 @@ index 7f3f18d..e282e74 100644
  static int gx_blank_display(struct fb_info *info, int blank_mode)
  {
  	struct geodefb_par *par = info->par;
-@@ -315,6 +468,7 @@ static int gx_blank_display(struct fb_info *info, int blank_mode)
+@@ -315,6 +468,7 @@ static int gx_blank_display(struct fb_in
  	default:
  		return -EINVAL;
  	}
@@ -4190,7 +4201,7 @@ index 7f3f18d..e282e74 100644
  	dcfg = readl(par->vid_regs + GX_DCFG);
  	dcfg &= ~(GX_DCFG_DAC_BL_EN
  		  | GX_DCFG_HSYNC_EN | GX_DCFG_VSYNC_EN);
-@@ -326,7 +480,7 @@ static int gx_blank_display(struct fb_info *info, int blank_mode)
+@@ -326,7 +480,7 @@ static int gx_blank_display(struct fb_in
  		dcfg |= GX_DCFG_VSYNC_EN;
  	writel(dcfg, par->vid_regs + GX_DCFG);
  
@@ -4199,7 +4210,7 @@ index 7f3f18d..e282e74 100644
  
  	if (par->enable_crt == 0) {
  		fp_pm = readl(par->vid_regs + GX_FP_PM);
-@@ -340,8 +494,37 @@ static int gx_blank_display(struct fb_info *info, int blank_mode)
+@@ -340,8 +494,37 @@ static int gx_blank_display(struct fb_in
  	return 0;
  }
  
@@ -4237,10 +4248,10 @@ index 7f3f18d..e282e74 100644
  	.configure_display = gx_configure_display,
  	.blank_display	   = gx_blank_display,
  };
-diff --git a/drivers/video/geode/video_gx.h b/drivers/video/geode/video_gx.h
-index ce28d8f..c57b36b 100644
---- a/drivers/video/geode/video_gx.h
-+++ b/drivers/video/geode/video_gx.h
+Index: linux-2.6.23.17/drivers/video/geode/video_gx.h
+===================================================================
+--- linux-2.6.23.17.orig/drivers/video/geode/video_gx.h
++++ linux-2.6.23.17/drivers/video/geode/video_gx.h
 @@ -11,6 +11,8 @@
  #ifndef __VIDEO_GX_H__
  #define __VIDEO_GX_H__
@@ -4288,10 +4299,10 @@ index ce28d8f..c57b36b 100644
 +void gx_restore_regs(struct fb_info *info, struct geoderegs *regs);
 +
  #endif /* !__VIDEO_GX_H__ */
-diff --git a/drivers/video/modedb.c b/drivers/video/modedb.c
-index 3741ad7..49f6db5 100644
---- a/drivers/video/modedb.c
-+++ b/drivers/video/modedb.c
+Index: linux-2.6.23.17/drivers/video/modedb.c
+===================================================================
+--- linux-2.6.23.17.orig/drivers/video/modedb.c
++++ linux-2.6.23.17/drivers/video/modedb.c
 @@ -33,6 +33,8 @@ const char *global_mode_option;
       *  Standard video mode definitions (taken from XFree86)
       */
@@ -4301,7 +4312,7 @@ index 3741ad7..49f6db5 100644
  static const struct fb_videomode modedb[] = {
      {
  	/* 640x400 @ 70 Hz, 31.5 kHz hsync */
-@@ -504,7 +506,8 @@ int fb_find_mode(struct fb_var_screeninfo *var,
+@@ -504,7 +506,8 @@ int fb_find_mode(struct fb_var_screeninf
      }
  
      if (!default_mode)
@@ -4311,11 +4322,11 @@ index 3741ad7..49f6db5 100644
  
      if (!default_bpp)
  	default_bpp = 8;
-diff --git a/fs/Kconfig b/fs/Kconfig
-index f9eed6d..6fa3ea2 100644
---- a/fs/Kconfig
-+++ b/fs/Kconfig
-@@ -999,6 +999,23 @@ config HUGETLBFS
+Index: linux-2.6.23.17/fs/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/fs/Kconfig
++++ linux-2.6.23.17/fs/Kconfig
+@@ -1003,6 +1003,23 @@ config HUGETLBFS
  config HUGETLB_PAGE
  	def_bool HUGETLBFS
  
@@ -4339,7 +4350,7 @@ index f9eed6d..6fa3ea2 100644
  config RAMFS
  	bool
  	default y
-@@ -1225,6 +1242,14 @@ config JFFS2_FS_WRITEBUFFER
+@@ -1229,6 +1246,14 @@ config JFFS2_FS_WRITEBUFFER
  	    - NOR flash with transparent ECC
  	    - DataFlash
  
@@ -4354,7 +4365,7 @@ index f9eed6d..6fa3ea2 100644
  config JFFS2_SUMMARY
  	bool "JFFS2 summary support (EXPERIMENTAL)"
  	depends on JFFS2_FS && EXPERIMENTAL
-@@ -1295,52 +1320,52 @@ config JFFS2_ZLIB
+@@ -1299,52 +1324,52 @@ config JFFS2_ZLIB
  	select ZLIB_DEFLATE
  	depends on JFFS2_FS
  	default y
@@ -4434,11 +4445,11 @@ index f9eed6d..6fa3ea2 100644
  
  endchoice
  
-diff --git a/fs/Makefile b/fs/Makefile
-index 720c29d..61f1a4d 100644
---- a/fs/Makefile
-+++ b/fs/Makefile
-@@ -108,6 +108,7 @@ obj-$(CONFIG_ADFS_FS)		+= adfs/
+Index: linux-2.6.23.17/fs/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/fs/Makefile
++++ linux-2.6.23.17/fs/Makefile
+@@ -110,6 +110,7 @@ obj-$(CONFIG_ADFS_FS)		+= adfs/
  obj-$(CONFIG_FUSE_FS)		+= fuse/
  obj-$(CONFIG_UDF_FS)		+= udf/
  obj-$(CONFIG_SUN_OPENPROMFS)	+= openpromfs/
@@ -4446,11 +4457,11 @@ index 720c29d..61f1a4d 100644
  obj-$(CONFIG_JFS_FS)		+= jfs/
  obj-$(CONFIG_XFS_FS)		+= xfs/
  obj-$(CONFIG_9P_FS)		+= 9p/
-diff --git a/fs/jffs2/background.c b/fs/jffs2/background.c
-index 504643f..d568ae8 100644
---- a/fs/jffs2/background.c
-+++ b/fs/jffs2/background.c
-@@ -23,8 +23,8 @@ static int jffs2_garbage_collect_thread(void *);
+Index: linux-2.6.23.17/fs/jffs2/background.c
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/background.c
++++ linux-2.6.23.17/fs/jffs2/background.c
+@@ -23,8 +23,8 @@ static int jffs2_garbage_collect_thread(
  void jffs2_garbage_collect_trigger(struct jffs2_sb_info *c)
  {
  	spin_lock(&c->erase_completion_lock);
@@ -4461,10 +4472,10 @@ index 504643f..d568ae8 100644
  	spin_unlock(&c->erase_completion_lock);
  }
  
-diff --git a/fs/jffs2/compr.c b/fs/jffs2/compr.c
-index 485d065..d90ca05 100644
---- a/fs/jffs2/compr.c
-+++ b/fs/jffs2/compr.c
+Index: linux-2.6.23.17/fs/jffs2/compr.c
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/compr.c
++++ linux-2.6.23.17/fs/jffs2/compr.c
 @@ -5,7 +5,7 @@
   * Created by Arjan van de Ven <arjanv@redhat.com>
   *
@@ -4474,7 +4485,7 @@ index 485d065..d90ca05 100644
   *
   * For licensing information, see the file 'LICENCE' in this directory.
   *
-@@ -43,121 +43,122 @@ static uint32_t none_stat_compr_blocks=0,none_stat_decompr_blocks=0,none_stat_co
+@@ -43,121 +43,122 @@ static uint32_t none_stat_compr_blocks=0
   * *datalen accordingly to show the amount of data which were compressed.
   */
  uint16_t jffs2_compress(struct jffs2_sb_info *c, struct jffs2_inode_info *f,
@@ -4489,12 +4500,7 @@ index 485d065..d90ca05 100644
 -        unsigned char *output_buf = NULL, *tmp_buf;
 -        uint32_t orig_slen, orig_dlen;
 -        uint32_t best_slen=0, best_dlen=0;
-+	int compr_ret;
-+	struct jffs2_compressor *this, *best=NULL;
-+	unsigned char *output_buf = NULL, *tmp_buf;
-+	uint32_t orig_slen, orig_dlen;
-+	uint32_t best_slen=0, best_dlen=0;
- 
+-
 -        switch (jffs2_compression_mode) {
 -        case JFFS2_COMPR_MODE_NONE:
 -                break;
@@ -4511,23 +4517,7 @@ index 485d065..d90ca05 100644
 -                        /* Skip decompress-only backwards-compatibility and disabled modules */
 -                        if ((!this->compress)||(this->disabled))
 -                                continue;
-+	switch (jffs2_compression_mode) {
-+	case JFFS2_COMPR_MODE_NONE:
-+		break;
-+	case JFFS2_COMPR_MODE_PRIORITY:
-+		output_buf = kmalloc(*cdatalen,GFP_KERNEL);
-+		if (!output_buf) {
-+			printk(KERN_WARNING "JFFS2: No memory for compressor allocation. Compression failed.\n");
-+			goto out;
-+		}
-+		orig_slen = *datalen;
-+		orig_dlen = *cdatalen;
-+		spin_lock(&jffs2_compressor_list_lock);
-+		list_for_each_entry(this, &jffs2_compressor_list, list) {
-+			/* Skip decompress-only backwards-compatibility and disabled modules */
-+			if ((!this->compress)||(this->disabled))
-+				continue;
- 
+-
 -                        this->usecount++;
 -                        spin_unlock(&jffs2_compressor_list_lock);
 -                        *datalen  = orig_slen;
@@ -4606,6 +4596,29 @@ index 485d065..d90ca05 100644
 -        default:
 -                printk(KERN_ERR "JFFS2: unknow compression mode.\n");
 -        }
++	int compr_ret;
++	struct jffs2_compressor *this, *best=NULL;
++	unsigned char *output_buf = NULL, *tmp_buf;
++	uint32_t orig_slen, orig_dlen;
++	uint32_t best_slen=0, best_dlen=0;
++
++	switch (jffs2_compression_mode) {
++	case JFFS2_COMPR_MODE_NONE:
++		break;
++	case JFFS2_COMPR_MODE_PRIORITY:
++		output_buf = kmalloc(*cdatalen,GFP_KERNEL);
++		if (!output_buf) {
++			printk(KERN_WARNING "JFFS2: No memory for compressor allocation. Compression failed.\n");
++			goto out;
++		}
++		orig_slen = *datalen;
++		orig_dlen = *cdatalen;
++		spin_lock(&jffs2_compressor_list_lock);
++		list_for_each_entry(this, &jffs2_compressor_list, list) {
++			/* Skip decompress-only backwards-compatibility and disabled modules */
++			if ((!this->compress)||(this->disabled))
++				continue;
++
 +			this->usecount++;
 +			spin_unlock(&jffs2_compressor_list_lock);
 +			*datalen  = orig_slen;
@@ -4707,7 +4720,7 @@ index 485d065..d90ca05 100644
  	return ret;
  }
  
-@@ -165,8 +166,8 @@ int jffs2_decompress(struct jffs2_sb_info *c, struct jffs2_inode_info *f,
+@@ -165,8 +166,8 @@ int jffs2_decompress(struct jffs2_sb_inf
  		     uint16_t comprtype, unsigned char *cdata_in,
  		     unsigned char *data_out, uint32_t cdatalen, uint32_t datalen)
  {
@@ -4718,7 +4731,7 @@ index 485d065..d90ca05 100644
  
  	/* Older code had a bug where it would write non-zero 'usercompr'
  	   fields. Deal with it. */
-@@ -177,32 +178,32 @@ int jffs2_decompress(struct jffs2_sb_info *c, struct jffs2_inode_info *f,
+@@ -177,32 +178,32 @@ int jffs2_decompress(struct jffs2_sb_inf
  	case JFFS2_COMPR_NONE:
  		/* This should be special-cased elsewhere, but we might as well deal with it */
  		memcpy(data_out, cdata_in, datalen);
@@ -4771,7 +4784,7 @@ index 485d065..d90ca05 100644
  		return -EIO;
  	}
  	return 0;
-@@ -210,108 +211,108 @@ int jffs2_decompress(struct jffs2_sb_info *c, struct jffs2_inode_info *f,
+@@ -210,108 +211,108 @@ int jffs2_decompress(struct jffs2_sb_inf
  
  int jffs2_register_compressor(struct jffs2_compressor *comp)
  {
@@ -4790,6 +4803,16 @@ index 485d065..d90ca05 100644
 -        comp->stat_compr_blocks=0;
 -        comp->stat_decompr_blocks=0;
 -        D1(printk(KERN_DEBUG "Registering JFFS2 compressor \"%s\"\n", comp->name));
+-
+-        spin_lock(&jffs2_compressor_list_lock);
+-
+-        list_for_each_entry(this, &jffs2_compressor_list, list) {
+-                if (this->priority < comp->priority) {
+-                        list_add(&comp->list, this->list.prev);
+-                        goto out;
+-                }
+-        }
+-        list_add_tail(&comp->list, &jffs2_compressor_list);
 +	if (!comp->name) {
 +		printk(KERN_WARNING "NULL compressor name at registering JFFS2 compressor. Failed.\n");
 +		return -1;
@@ -4802,17 +4825,9 @@ index 485d065..d90ca05 100644
 +	comp->stat_compr_blocks=0;
 +	comp->stat_decompr_blocks=0;
 +	D1(printk(KERN_DEBUG "Registering JFFS2 compressor \"%s\"\n", comp->name));
- 
--        spin_lock(&jffs2_compressor_list_lock);
++
 +	spin_lock(&jffs2_compressor_list_lock);
- 
--        list_for_each_entry(this, &jffs2_compressor_list, list) {
--                if (this->priority < comp->priority) {
--                        list_add(&comp->list, this->list.prev);
--                        goto out;
--                }
--        }
--        list_add_tail(&comp->list, &jffs2_compressor_list);
++
 +	list_for_each_entry(this, &jffs2_compressor_list, list) {
 +		if (this->priority < comp->priority) {
 +			list_add(&comp->list, this->list.prev);
@@ -4839,19 +4854,13 @@ index 485d065..d90ca05 100644
  {
 -        D2(struct jffs2_compressor *this;)
 +	D2(struct jffs2_compressor *this;)
- 
--        D1(printk(KERN_DEBUG "Unregistering JFFS2 compressor \"%s\"\n", comp->name));
++
 +	D1(printk(KERN_DEBUG "Unregistering JFFS2 compressor \"%s\"\n", comp->name));
  
--        spin_lock(&jffs2_compressor_list_lock);
+-        D1(printk(KERN_DEBUG "Unregistering JFFS2 compressor \"%s\"\n", comp->name));
 +	spin_lock(&jffs2_compressor_list_lock);
  
--        if (comp->usecount) {
--                spin_unlock(&jffs2_compressor_list_lock);
--                printk(KERN_WARNING "JFFS2: Compressor modul is in use. Unregister failed.\n");
--                return -1;
--        }
--        list_del(&comp->list);
+-        spin_lock(&jffs2_compressor_list_lock);
 +	if (comp->usecount) {
 +		spin_unlock(&jffs2_compressor_list_lock);
 +		printk(KERN_WARNING "JFFS2: Compressor modul is in use. Unregister failed.\n");
@@ -4859,6 +4868,13 @@ index 485d065..d90ca05 100644
 +	}
 +	list_del(&comp->list);
  
+-        if (comp->usecount) {
+-                spin_unlock(&jffs2_compressor_list_lock);
+-                printk(KERN_WARNING "JFFS2: Compressor modul is in use. Unregister failed.\n");
+-                return -1;
+-        }
+-        list_del(&comp->list);
+-
 -        D2(list_for_each_entry(this, &jffs2_compressor_list, list) {
 -                printk(KERN_DEBUG "Compressor \"%s\", prio %d\n", this->name, this->priority);
 -        })
@@ -4937,10 +4953,10 @@ index 485d065..d90ca05 100644
 -        return 0;
 +	return 0;
  }
-diff --git a/fs/jffs2/compr.h b/fs/jffs2/compr.h
-index 68cc701..1070275 100644
---- a/fs/jffs2/compr.h
-+++ b/fs/jffs2/compr.h
+Index: linux-2.6.23.17/fs/jffs2/compr.h
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/compr.h
++++ linux-2.6.23.17/fs/jffs2/compr.h
 @@ -2,7 +2,7 @@
   * JFFS2 -- Journalling Flash File System, Version 2.
   *
@@ -5014,11 +5030,11 @@ index 68cc701..1070275 100644
  
  void jffs2_free_comprbuf(unsigned char *comprbuf, unsigned char *orig);
  
-diff --git a/fs/jffs2/compr_rtime.c b/fs/jffs2/compr_rtime.c
-index 0d0bfd2..546d153 100644
---- a/fs/jffs2/compr_rtime.c
-+++ b/fs/jffs2/compr_rtime.c
-@@ -104,7 +104,7 @@ static int jffs2_rtime_decompress(unsigned char *data_in,
+Index: linux-2.6.23.17/fs/jffs2/compr_rtime.c
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/compr_rtime.c
++++ linux-2.6.23.17/fs/jffs2/compr_rtime.c
+@@ -104,7 +104,7 @@ static int jffs2_rtime_decompress(unsign
  			}
  		}
  	}
@@ -5027,11 +5043,11 @@ index 0d0bfd2..546d153 100644
  }
  
  static struct jffs2_compressor jffs2_rtime_comp = {
-diff --git a/fs/jffs2/compr_rubin.c b/fs/jffs2/compr_rubin.c
-index ea0431e..c73fa89 100644
---- a/fs/jffs2/compr_rubin.c
-+++ b/fs/jffs2/compr_rubin.c
-@@ -384,7 +384,7 @@ static int jffs2_rubinmips_decompress(unsigned char *data_in,
+Index: linux-2.6.23.17/fs/jffs2/compr_rubin.c
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/compr_rubin.c
++++ linux-2.6.23.17/fs/jffs2/compr_rubin.c
+@@ -384,7 +384,7 @@ static int jffs2_rubinmips_decompress(un
  				      void *model)
  {
  	rubin_do_decompress(BIT_DIVIDER_MIPS, bits_mips, data_in, cpage_out, sourcelen, dstlen);
@@ -5040,7 +5056,7 @@ index ea0431e..c73fa89 100644
  }
  
  static int jffs2_dynrubin_decompress(unsigned char *data_in,
-@@ -399,7 +399,7 @@ static int jffs2_dynrubin_decompress(unsigned char *data_in,
+@@ -399,7 +399,7 @@ static int jffs2_dynrubin_decompress(uns
  		bits[c] = data_in[c];
  
  	rubin_do_decompress(256, bits, data_in+8, cpage_out, sourcelen-8, dstlen);
@@ -5049,11 +5065,11 @@ index ea0431e..c73fa89 100644
  }
  
  static struct jffs2_compressor jffs2_rubinmips_comp = {
-diff --git a/fs/jffs2/compr_zlib.c b/fs/jffs2/compr_zlib.c
-index 2b87fcc..cfd301a 100644
---- a/fs/jffs2/compr_zlib.c
-+++ b/fs/jffs2/compr_zlib.c
-@@ -181,7 +181,7 @@ static int jffs2_zlib_decompress(unsigned char *data_in,
+Index: linux-2.6.23.17/fs/jffs2/compr_zlib.c
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/compr_zlib.c
++++ linux-2.6.23.17/fs/jffs2/compr_zlib.c
+@@ -181,7 +181,7 @@ static int jffs2_zlib_decompress(unsigne
  	}
  	zlib_inflateEnd(&inf_strm);
  	mutex_unlock(&inflate_mutex);
@@ -5076,11 +5092,11 @@ index 2b87fcc..cfd301a 100644
  
      return ret;
  }
-diff --git a/fs/jffs2/dir.c b/fs/jffs2/dir.c
-index c1dfca3..d293a1f 100644
---- a/fs/jffs2/dir.c
-+++ b/fs/jffs2/dir.c
-@@ -32,7 +32,7 @@ static int jffs2_mkdir (struct inode *,struct dentry *,int);
+Index: linux-2.6.23.17/fs/jffs2/dir.c
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/dir.c
++++ linux-2.6.23.17/fs/jffs2/dir.c
+@@ -32,7 +32,7 @@ static int jffs2_mkdir (struct inode *,s
  static int jffs2_rmdir (struct inode *,struct dentry *);
  static int jffs2_mknod (struct inode *,struct dentry *,int,dev_t);
  static int jffs2_rename (struct inode *, struct dentry *,
@@ -5089,7 +5105,7 @@ index c1dfca3..d293a1f 100644
  
  const struct file_operations jffs2_dir_operations =
  {
-@@ -770,7 +770,7 @@ static int jffs2_mknod (struct inode *dir_i, struct dentry *dentry, int mode, de
+@@ -770,7 +770,7 @@ static int jffs2_mknod (struct inode *di
  }
  
  static int jffs2_rename (struct inode *old_dir_i, struct dentry *old_dentry,
@@ -5098,11 +5114,11 @@ index c1dfca3..d293a1f 100644
  {
  	int ret;
  	struct jffs2_sb_info *c = JFFS2_SB_INFO(old_dir_i->i_sb);
-diff --git a/fs/jffs2/erase.c b/fs/jffs2/erase.c
-index 66e7c2f..efd83f3 100644
---- a/fs/jffs2/erase.c
-+++ b/fs/jffs2/erase.c
-@@ -38,8 +38,8 @@ static void jffs2_erase_block(struct jffs2_sb_info *c,
+Index: linux-2.6.23.17/fs/jffs2/erase.c
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/erase.c
++++ linux-2.6.23.17/fs/jffs2/erase.c
+@@ -38,8 +38,8 @@ static void jffs2_erase_block(struct jff
  #ifdef __ECOS
         ret = jffs2_flash_erase(c, jeb);
         if (!ret) {
@@ -5113,7 +5129,7 @@ index 66e7c2f..efd83f3 100644
         }
         bad_offset = jeb->offset;
  #else /* Linux */
-@@ -50,12 +50,14 @@ static void jffs2_erase_block(struct jffs2_sb_info *c,
+@@ -50,12 +50,14 @@ static void jffs2_erase_block(struct jff
  	instr = kmalloc(sizeof(struct erase_info) + sizeof(struct erase_priv_struct), GFP_KERNEL);
  	if (!instr) {
  		printk(KERN_WARNING "kmalloc for struct erase_info in jffs2_erase_block failed. Refiling block for later\n");
@@ -5128,7 +5144,7 @@ index 66e7c2f..efd83f3 100644
  		return;
  	}
  
-@@ -82,12 +84,14 @@ static void jffs2_erase_block(struct jffs2_sb_info *c,
+@@ -82,12 +84,14 @@ static void jffs2_erase_block(struct jff
  	if (ret == -ENOMEM || ret == -EAGAIN) {
  		/* Erase failed immediately. Refile it on the list */
  		D1(printk(KERN_DEBUG "Erase at 0x%08x failed: %d. Refiling on erase_pending_list\n", jeb->offset, ret));
@@ -5143,7 +5159,7 @@ index 66e7c2f..efd83f3 100644
  		return;
  	}
  
-@@ -114,6 +118,7 @@ void jffs2_erase_pending_blocks(struct jffs2_sb_info *c, int count)
+@@ -114,6 +118,7 @@ void jffs2_erase_pending_blocks(struct j
  			jeb = list_entry(c->erase_complete_list.next, struct jffs2_eraseblock, list);
  			list_del(&jeb->list);
  			spin_unlock(&c->erase_completion_lock);
@@ -5151,7 +5167,7 @@ index 66e7c2f..efd83f3 100644
  			jffs2_mark_erased_block(c, jeb);
  
  			if (!--count) {
-@@ -134,6 +139,7 @@ void jffs2_erase_pending_blocks(struct jffs2_sb_info *c, int count)
+@@ -134,6 +139,7 @@ void jffs2_erase_pending_blocks(struct j
  			jffs2_free_jeb_node_refs(c, jeb);
  			list_add(&jeb->list, &c->erasing_list);
  			spin_unlock(&c->erase_completion_lock);
@@ -5159,7 +5175,7 @@ index 66e7c2f..efd83f3 100644
  
  			jffs2_erase_block(c, jeb);
  
-@@ -142,23 +148,25 @@ void jffs2_erase_pending_blocks(struct jffs2_sb_info *c, int count)
+@@ -142,23 +148,25 @@ void jffs2_erase_pending_blocks(struct j
  		}
  
  		/* Be nice */
@@ -5188,7 +5204,7 @@ index 66e7c2f..efd83f3 100644
  	/* Ensure that kupdated calls us again to mark them clean */
  	jffs2_erase_pending_trigger(c);
  }
-@@ -172,22 +180,26 @@ static void jffs2_erase_failed(struct jffs2_sb_info *c, struct jffs2_eraseblock
+@@ -172,22 +180,26 @@ static void jffs2_erase_failed(struct jf
  		   failed too many times. */
  		if (!jffs2_write_nand_badblock(c, jeb, bad_offset)) {
  			/* We'd like to give this block another try. */
@@ -5215,7 +5231,7 @@ index 66e7c2f..efd83f3 100644
  	wake_up(&c->erase_wait);
  }
  
-@@ -317,6 +329,33 @@ static int jffs2_block_check_erase(struct jffs2_sb_info *c, struct jffs2_erasebl
+@@ -317,6 +329,33 @@ static int jffs2_block_check_erase(struc
  	size_t retlen;
  	int ret = -EIO;
  
@@ -5249,7 +5265,7 @@ index 66e7c2f..efd83f3 100644
  	ebuf = kmalloc(PAGE_SIZE, GFP_KERNEL);
  	if (!ebuf) {
  		printk(KERN_WARNING "Failed to allocate page buffer for verifying erase at 0x%08x. Refiling\n", jeb->offset);
-@@ -417,6 +456,7 @@ static void jffs2_mark_erased_block(struct jffs2_sb_info *c, struct jffs2_eraseb
+@@ -417,6 +456,7 @@ static void jffs2_mark_erased_block(stru
  		jffs2_link_node_ref(c, jeb, jeb->offset | REF_NORMAL, c->cleanmarker_size, NULL);
  	}
  
@@ -5257,7 +5273,7 @@ index 66e7c2f..efd83f3 100644
  	spin_lock(&c->erase_completion_lock);
  	c->erasing_size -= c->sector_size;
  	c->free_size += jeb->free_size;
-@@ -429,23 +469,28 @@ static void jffs2_mark_erased_block(struct jffs2_sb_info *c, struct jffs2_eraseb
+@@ -429,23 +469,28 @@ static void jffs2_mark_erased_block(stru
  	c->nr_erasing_blocks--;
  	c->nr_free_blocks++;
  	spin_unlock(&c->erase_completion_lock);
@@ -5286,11 +5302,11 @@ index 66e7c2f..efd83f3 100644
 +	up(&c->erase_free_sem);
  	return;
  }
-diff --git a/fs/jffs2/gc.c b/fs/jffs2/gc.c
-index 2d99e06..eded819 100644
---- a/fs/jffs2/gc.c
-+++ b/fs/jffs2/gc.c
-@@ -556,7 +556,7 @@ static int jffs2_garbage_collect_pristine(struct jffs2_sb_info *c,
+Index: linux-2.6.23.17/fs/jffs2/gc.c
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/gc.c
++++ linux-2.6.23.17/fs/jffs2/gc.c
+@@ -556,7 +556,7 @@ static int jffs2_garbage_collect_pristin
  
  	node = kmalloc(rawlen, GFP_KERNEL);
  	if (!node)
@@ -5299,7 +5315,7 @@ index 2d99e06..eded819 100644
  
  	ret = jffs2_flash_read(c, ref_offset(raw), rawlen, &retlen, (char *)node);
  	if (!ret && retlen != rawlen)
-@@ -624,7 +624,7 @@ static int jffs2_garbage_collect_pristine(struct jffs2_sb_info *c,
+@@ -624,7 +624,7 @@ static int jffs2_garbage_collect_pristin
  
  	if (ret || (retlen != rawlen)) {
  		printk(KERN_NOTICE "Write of %d bytes at 0x%08x failed. returned %d, retlen %zd\n",
@@ -5308,10 +5324,10 @@ index 2d99e06..eded819 100644
  		if (retlen) {
  			jffs2_add_physical_node_ref(c, phys_ofs | REF_OBSOLETE, rawlen, NULL);
  		} else {
-diff --git a/fs/jffs2/jffs2_fs_sb.h b/fs/jffs2/jffs2_fs_sb.h
-index b13298a..ae99cd7 100644
---- a/fs/jffs2/jffs2_fs_sb.h
-+++ b/fs/jffs2/jffs2_fs_sb.h
+Index: linux-2.6.23.17/fs/jffs2/jffs2_fs_sb.h
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/jffs2_fs_sb.h
++++ linux-2.6.23.17/fs/jffs2/jffs2_fs_sb.h
 @@ -106,6 +106,9 @@ struct jffs2_sb_info {
  
  	uint32_t wbuf_pagesize; /* 0 for NOR and other flashes with no wbuf */
@@ -5322,11 +5338,11 @@ index b13298a..ae99cd7 100644
  #ifdef CONFIG_JFFS2_FS_WRITEBUFFER
  	unsigned char *wbuf; /* Write-behind buffer for NAND flash */
  	uint32_t wbuf_ofs;
-diff --git a/fs/jffs2/nodelist.h b/fs/jffs2/nodelist.h
-index bc5509f..8b4955a 100644
---- a/fs/jffs2/nodelist.h
-+++ b/fs/jffs2/nodelist.h
-@@ -127,7 +127,7 @@ static inline struct jffs2_inode_cache *jffs2_raw_ref_to_ic(struct jffs2_raw_nod
+Index: linux-2.6.23.17/fs/jffs2/nodelist.h
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/nodelist.h
++++ linux-2.6.23.17/fs/jffs2/nodelist.h
+@@ -127,7 +127,7 @@ static inline struct jffs2_inode_cache *
  	return ((struct jffs2_inode_cache *)raw);
  }
  
@@ -5344,11 +5360,11 @@ index bc5509f..8b4955a 100644
  
  #define write_ofs(c) ((c)->nextblock->offset + (c)->sector_size - (c)->nextblock->free_size)
  
-diff --git a/fs/jffs2/nodemgmt.c b/fs/jffs2/nodemgmt.c
-index dbc908a..5b49bff 100644
---- a/fs/jffs2/nodemgmt.c
-+++ b/fs/jffs2/nodemgmt.c
-@@ -154,7 +154,7 @@ int jffs2_reserve_space_gc(struct jffs2_sb_info *c, uint32_t minsize,
+Index: linux-2.6.23.17/fs/jffs2/nodemgmt.c
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/nodemgmt.c
++++ linux-2.6.23.17/fs/jffs2/nodemgmt.c
+@@ -154,7 +154,7 @@ int jffs2_reserve_space_gc(struct jffs2_
  	while(ret == -EAGAIN) {
  		ret = jffs2_do_reserve_space(c, minsize, len, sumsize);
  		if (ret) {
@@ -5357,7 +5373,7 @@ index dbc908a..5b49bff 100644
  		}
  	}
  	spin_unlock(&c->erase_completion_lock);
-@@ -423,7 +423,12 @@ struct jffs2_raw_node_ref *jffs2_add_physical_node_ref(struct jffs2_sb_info *c,
+@@ -423,7 +423,12 @@ struct jffs2_raw_node_ref *jffs2_add_phy
  	   even after refiling c->nextblock */
  	if ((c->nextblock || ((ofs & 3) != REF_OBSOLETE))
  	    && (jeb != c->nextblock || (ofs & ~3) != jeb->offset + (c->sector_size - jeb->free_size))) {
@@ -5371,11 +5387,11 @@ index dbc908a..5b49bff 100644
  		return ERR_PTR(-EINVAL);
  	}
  #endif
-diff --git a/fs/jffs2/readinode.c b/fs/jffs2/readinode.c
-index b5baa35..8d4319c 100644
---- a/fs/jffs2/readinode.c
-+++ b/fs/jffs2/readinode.c
-@@ -211,7 +211,7 @@ static void jffs2_kill_tn(struct jffs2_sb_info *c, struct jffs2_tmp_dnode_info *
+Index: linux-2.6.23.17/fs/jffs2/readinode.c
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/readinode.c
++++ linux-2.6.23.17/fs/jffs2/readinode.c
+@@ -211,7 +211,7 @@ static void jffs2_kill_tn(struct jffs2_s
   * ordering.
   *
   * Returns 0 if the node was handled (including marking it obsolete)
@@ -5384,7 +5400,7 @@ index b5baa35..8d4319c 100644
   */
  static int jffs2_add_tn_to_tree(struct jffs2_sb_info *c,
  				struct jffs2_readinode_info *rii,
-@@ -862,8 +862,8 @@ static inline int read_unknown(struct jffs2_sb_info *c, struct jffs2_raw_node_re
+@@ -862,8 +862,8 @@ static inline int read_unknown(struct jf
  		JFFS2_ERROR("REF_UNCHECKED but unknown node at %#08x\n",
  			    ref_offset(ref));
  		JFFS2_ERROR("Node is {%04x,%04x,%08x,%08x}. Please report this error.\n",
@@ -5395,11 +5411,11 @@ index b5baa35..8d4319c 100644
  		jffs2_mark_node_obsolete(c, ref);
  		return 0;
  	}
-diff --git a/fs/jffs2/scan.c b/fs/jffs2/scan.c
-index 6c75cd4..59dd408 100644
---- a/fs/jffs2/scan.c
-+++ b/fs/jffs2/scan.c
-@@ -863,7 +863,7 @@ scan_more:
+Index: linux-2.6.23.17/fs/jffs2/scan.c
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/scan.c
++++ linux-2.6.23.17/fs/jffs2/scan.c
+@@ -877,7 +877,7 @@ scan_more:
  			switch (je16_to_cpu(node->nodetype) & JFFS2_COMPAT_MASK) {
  			case JFFS2_FEATURE_ROCOMPAT:
  				printk(KERN_NOTICE "Read-only compatible feature node (0x%04x) found at offset 0x%08x\n", je16_to_cpu(node->nodetype), ofs);
@@ -5408,11 +5424,11 @@ index 6c75cd4..59dd408 100644
  				if (!(jffs2_is_readonly(c)))
  					return -EROFS;
  				if ((err = jffs2_scan_dirty_space(c, jeb, PAD(je32_to_cpu(node->totlen)))))
-diff --git a/fs/jffs2/security.c b/fs/jffs2/security.c
-index bc9f6ba..02c39c6 100644
---- a/fs/jffs2/security.c
-+++ b/fs/jffs2/security.c
-@@ -38,9 +38,9 @@ int jffs2_init_security(struct inode *inode, struct inode *dir)
+Index: linux-2.6.23.17/fs/jffs2/security.c
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/security.c
++++ linux-2.6.23.17/fs/jffs2/security.c
+@@ -38,9 +38,9 @@ int jffs2_init_security(struct inode *in
  	}
  	rc = do_jffs2_setxattr(inode, JFFS2_XPREFIX_SECURITY, name, value, len, 0);
  
@@ -5425,10 +5441,10 @@ index bc9f6ba..02c39c6 100644
  }
  
  /* ---- XATTR Handler for "security.*" ----------------- */
-diff --git a/fs/jffs2/summary.c b/fs/jffs2/summary.c
-index d828b29..2a77d3f 100644
---- a/fs/jffs2/summary.c
-+++ b/fs/jffs2/summary.c
+Index: linux-2.6.23.17/fs/jffs2/summary.c
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/summary.c
++++ linux-2.6.23.17/fs/jffs2/summary.c
 @@ -2,10 +2,10 @@
   * JFFS2 -- Journalling Flash File System, Version 2.
   *
@@ -5444,10 +5460,10 @@ index d828b29..2a77d3f 100644
   *
   * For licensing information, see the file 'LICENCE' in this directory.
   *
-diff --git a/fs/jffs2/summary.h b/fs/jffs2/summary.h
-index 0c6669e..8bf34f2 100644
---- a/fs/jffs2/summary.h
-+++ b/fs/jffs2/summary.h
+Index: linux-2.6.23.17/fs/jffs2/summary.h
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/summary.h
++++ linux-2.6.23.17/fs/jffs2/summary.h
 @@ -2,9 +2,9 @@
   * JFFS2 -- Journalling Flash File System, Version 2.
   *
@@ -5461,11 +5477,11 @@ index 0c6669e..8bf34f2 100644
   *
   * For licensing information, see the file 'LICENCE' in this directory.
   *
-diff --git a/fs/jffs2/wbuf.c b/fs/jffs2/wbuf.c
-index 91d1d0f..d1d4f27 100644
---- a/fs/jffs2/wbuf.c
-+++ b/fs/jffs2/wbuf.c
-@@ -220,6 +220,47 @@ static struct jffs2_raw_node_ref **jffs2_incore_replace_raw(struct jffs2_sb_info
+Index: linux-2.6.23.17/fs/jffs2/wbuf.c
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/wbuf.c
++++ linux-2.6.23.17/fs/jffs2/wbuf.c
+@@ -220,6 +220,47 @@ static struct jffs2_raw_node_ref **jffs2
  	return NULL;
  }
  
@@ -5513,7 +5529,7 @@ index 91d1d0f..d1d4f27 100644
  /* Recover from failure to write wbuf. Recover the nodes up to the
   * wbuf, not the one which we were starting to try to write. */
  
-@@ -380,7 +421,7 @@ static void jffs2_wbuf_recover(struct jffs2_sb_info *c)
+@@ -380,7 +421,7 @@ static void jffs2_wbuf_recover(struct jf
  			ret = c->mtd->write(c->mtd, ofs, towrite, &retlen,
  					    rewrite_buf);
  
@@ -5522,7 +5538,7 @@ index 91d1d0f..d1d4f27 100644
  			/* Argh. We tried. Really we did. */
  			printk(KERN_CRIT "Recovery of wbuf failed due to a second write error\n");
  			kfree(buf);
-@@ -587,15 +628,16 @@ static int __jffs2_flush_wbuf(struct jffs2_sb_info *c, int pad)
+@@ -587,15 +628,16 @@ static int __jffs2_flush_wbuf(struct jff
  
  		ret = c->mtd->write(c->mtd, c->wbuf_ofs, c->wbuf_pagesize, &retlen, c->wbuf);
  
@@ -5559,7 +5575,7 @@ index 91d1d0f..d1d4f27 100644
  
  static const struct jffs2_unknown_node oob_cleanmarker =
  {
-@@ -1021,8 +1063,8 @@ int jffs2_check_oob_empty(struct jffs2_sb_info *c,
+@@ -1021,8 +1063,8 @@ int jffs2_check_oob_empty(struct jffs2_s
  /*
   * Check for a valid cleanmarker.
   * Returns: 0 if a valid cleanmarker was found
@@ -5570,7 +5586,7 @@ index 91d1d0f..d1d4f27 100644
   */
  int jffs2_check_nand_cleanmarker(struct jffs2_sb_info *c,
  				 struct jffs2_eraseblock *jeb)
-@@ -1138,11 +1180,22 @@ int jffs2_nand_flash_setup(struct jffs2_sb_info *c)
+@@ -1138,11 +1180,22 @@ int jffs2_nand_flash_setup(struct jffs2_
  		return -ENOMEM;
  	}
  
@@ -5593,11 +5609,11 @@ index 91d1d0f..d1d4f27 100644
  	kfree(c->wbuf);
  	kfree(c->oobbuf);
  }
-diff --git a/fs/jffs2/xattr.h b/fs/jffs2/xattr.h
-index 3b0ff29..6e3b5dd 100644
---- a/fs/jffs2/xattr.h
-+++ b/fs/jffs2/xattr.h
-@@ -75,7 +75,7 @@ extern void jffs2_build_xattr_subsystem(struct jffs2_sb_info *c);
+Index: linux-2.6.23.17/fs/jffs2/xattr.h
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/xattr.h
++++ linux-2.6.23.17/fs/jffs2/xattr.h
+@@ -75,7 +75,7 @@ extern void jffs2_build_xattr_subsystem(
  extern void jffs2_clear_xattr_subsystem(struct jffs2_sb_info *c);
  
  extern struct jffs2_xattr_datum *jffs2_setup_xattr_datum(struct jffs2_sb_info *c,
@@ -5606,10 +5622,10 @@ index 3b0ff29..6e3b5dd 100644
  
  extern void jffs2_xattr_delete_inode(struct jffs2_sb_info *c, struct jffs2_inode_cache *ic);
  extern void jffs2_xattr_free_inode(struct jffs2_sb_info *c, struct jffs2_inode_cache *ic);
-diff --git a/fs/jffs2/xattr_user.c b/fs/jffs2/xattr_user.c
-index 40942bc..8bbeab9 100644
---- a/fs/jffs2/xattr_user.c
-+++ b/fs/jffs2/xattr_user.c
+Index: linux-2.6.23.17/fs/jffs2/xattr_user.c
+===================================================================
+--- linux-2.6.23.17.orig/fs/jffs2/xattr_user.c
++++ linux-2.6.23.17/fs/jffs2/xattr_user.c
 @@ -17,7 +17,7 @@
  #include "nodelist.h"
  
@@ -5619,7 +5635,7 @@ index 40942bc..8bbeab9 100644
  {
  	if (!strcmp(name, ""))
  		return -EINVAL;
-@@ -25,7 +25,7 @@ static int jffs2_user_getxattr(struct inode *inode, const char *name,
+@@ -25,7 +25,7 @@ static int jffs2_user_getxattr(struct in
  }
  
  static int jffs2_user_setxattr(struct inode *inode, const char *name, const void *buffer,
@@ -5628,11 +5644,11 @@ index 40942bc..8bbeab9 100644
  {
  	if (!strcmp(name, ""))
  		return -EINVAL;
-diff --git a/include/asm-i386/geode.h b/include/asm-i386/geode.h
-index 6da4bbb..f18ebe2 100644
---- a/include/asm-i386/geode.h
-+++ b/include/asm-i386/geode.h
-@@ -135,6 +135,55 @@ static inline void geode_gpio_event_pme(unsigned int gpio, int pair)
+Index: linux-2.6.23.17/include/asm-i386/geode.h
+===================================================================
+--- linux-2.6.23.17.orig/include/asm-i386/geode.h
++++ linux-2.6.23.17/include/asm-i386/geode.h
+@@ -135,6 +135,55 @@ static inline void geode_gpio_event_pme(
  	geode_gpio_setup_event(gpio, pair, 1);
  }
  
@@ -5688,11 +5704,10 @@ index 6da4bbb..f18ebe2 100644
  /* Specific geode tests */
  
  static inline int is_geode_gx(void)
-
-diff --git a/include/asm-i386/setup.h b/include/asm-i386/setup.h
-index 7862fe8..d7146c0 100644
---- a/include/asm-i386/setup.h
-+++ b/include/asm-i386/setup.h
+Index: linux-2.6.23.17/include/asm-i386/setup.h
+===================================================================
+--- linux-2.6.23.17.orig/include/asm-i386/setup.h
++++ linux-2.6.23.17/include/asm-i386/setup.h
 @@ -24,6 +24,7 @@
  #define OLD_CL_BASE_ADDR	0x90000
  #define OLD_CL_OFFSET		0x90022
@@ -5701,11 +5716,11 @@ index 7862fe8..d7146c0 100644
  
  #ifndef __ASSEMBLY__
  
-diff --git a/include/linux/console.h b/include/linux/console.h
-index 56a7bcd..1a8b034 100644
---- a/include/linux/console.h
-+++ b/include/linux/console.h
-@@ -121,14 +121,11 @@ extern void console_stop(struct console *);
+Index: linux-2.6.23.17/include/linux/console.h
+===================================================================
+--- linux-2.6.23.17.orig/include/linux/console.h
++++ linux-2.6.23.17/include/linux/console.h
+@@ -121,14 +121,11 @@ extern void console_stop(struct console 
  extern void console_start(struct console *);
  extern int is_console_locked(void);
  
@@ -5722,10 +5737,10 @@ index 56a7bcd..1a8b034 100644
  
  int mda_console_init(void);
  void prom_con_init(void);
-diff --git a/include/linux/fb.h b/include/linux/fb.h
-index cec5410..6b59db5 100644
---- a/include/linux/fb.h
-+++ b/include/linux/fb.h
+Index: linux-2.6.23.17/include/linux/fb.h
+===================================================================
+--- linux-2.6.23.17.orig/include/linux/fb.h
++++ linux-2.6.23.17/include/linux/fb.h
 @@ -664,6 +664,12 @@ struct fb_ops {
  	/* restore saved state */
  	void (*fb_restore_state)(struct fb_info *info);
@@ -5739,7 +5754,7 @@ index cec5410..6b59db5 100644
  	/* get capability given var */
  	void (*fb_get_caps)(struct fb_info *info, struct fb_blit_caps *caps,
  			    struct fb_var_screeninfo *var);
-@@ -943,6 +949,9 @@ extern int fb_get_color_depth(struct fb_var_screeninfo *var,
+@@ -943,6 +949,9 @@ extern int fb_get_color_depth(struct fb_
  extern int fb_get_options(char *name, char **option);
  extern int fb_new_modelist(struct fb_info *info);
  
@@ -5749,10 +5764,10 @@ index cec5410..6b59db5 100644
  extern struct fb_info *registered_fb[FB_MAX];
  extern int num_registered_fb;
  extern struct class *fb_class;
-diff --git a/include/linux/mtd/onenand.h b/include/linux/mtd/onenand.h
-index a56d24a..fd0a260 100644
---- a/include/linux/mtd/onenand.h
-+++ b/include/linux/mtd/onenand.h
+Index: linux-2.6.23.17/include/linux/mtd/onenand.h
+===================================================================
+--- linux-2.6.23.17.orig/include/linux/mtd/onenand.h
++++ linux-2.6.23.17/include/linux/mtd/onenand.h
 @@ -60,6 +60,7 @@ struct onenand_bufferram {
   * @erase_shift:	[INTERN] number of address bits in a block
   * @page_shift:		[INTERN] number of address bits in a page
@@ -5800,10 +5815,10 @@ index a56d24a..fd0a260 100644
  #define ONENAND_PAGEBUF_ALLOC		(0x1000)
  #define ONENAND_OOBBUF_ALLOC		(0x2000)
  
-diff --git a/include/linux/mtd/onenand_regs.h b/include/linux/mtd/onenand_regs.h
-index af94719..c46161f 100644
---- a/include/linux/mtd/onenand_regs.h
-+++ b/include/linux/mtd/onenand_regs.h
+Index: linux-2.6.23.17/include/linux/mtd/onenand_regs.h
+===================================================================
+--- linux-2.6.23.17.orig/include/linux/mtd/onenand_regs.h
++++ linux-2.6.23.17/include/linux/mtd/onenand_regs.h
 @@ -74,6 +74,8 @@
  
  #define ONENAND_DEVICE_DENSITY_512Mb	(0x002)
@@ -5822,10 +5837,10 @@ index af94719..c46161f 100644
  #define ONENAND_CMD_UNLOCK		(0x23)
  #define ONENAND_CMD_LOCK		(0x2A)
  #define ONENAND_CMD_LOCK_TIGHT		(0x2C)
-diff --git a/include/linux/vt_kern.h b/include/linux/vt_kern.h
-index 699b7e9..b44facf 100644
---- a/include/linux/vt_kern.h
-+++ b/include/linux/vt_kern.h
+Index: linux-2.6.23.17/include/linux/vt_kern.h
+===================================================================
+--- linux-2.6.23.17.orig/include/linux/vt_kern.h
++++ linux-2.6.23.17/include/linux/vt_kern.h
 @@ -95,4 +95,23 @@ struct vt_spawn_console {
  };
  extern struct vt_spawn_console vt_spawn_con;
@@ -5850,10 +5865,10 @@ index 699b7e9..b44facf 100644
 +}
 +
  #endif /* _VT_KERN_H */
-diff --git a/kernel/power/console.c b/kernel/power/console.c
-index 89bcf49..dca98f5 100644
---- a/kernel/power/console.c
-+++ b/kernel/power/console.c
+Index: linux-2.6.23.17/kernel/power/console.c
+===================================================================
+--- linux-2.6.23.17.orig/kernel/power/console.c
++++ linux-2.6.23.17/kernel/power/console.c
 @@ -9,7 +9,7 @@
  #include <linux/console.h>
  #include "power.h"

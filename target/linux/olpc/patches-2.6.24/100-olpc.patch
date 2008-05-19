@@ -1,6 +1,7 @@
-diff -purN linux_2.6.24_org/arch/x86/Kconfig linux_2.6.24_olpc/arch/x86/Kconfig
---- linux_2.6.24_org/arch/x86/Kconfig	2008-02-15 20:11:57.000000000 +0000
-+++ linux_2.6.24_olpc/arch/x86/Kconfig	2008-02-15 18:59:21.000000000 +0000
+Index: linux-2.6.24.7/arch/x86/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/arch/x86/Kconfig
++++ linux-2.6.24.7/arch/x86/Kconfig
 @@ -1415,6 +1415,9 @@ config PCI_GODIRECT
  config PCI_GOANY
  	bool "Any"
@@ -54,10 +55,11 @@ diff -purN linux_2.6.24_org/arch/x86/Kconfig linux_2.6.24_olpc/arch/x86/Kconfig
  source "drivers/pcmcia/Kconfig"
  
  source "drivers/pci/hotplug/Kconfig"
-diff -purN linux_2.6.24_org/arch/x86/kernel/Makefile_32 linux_2.6.24_olpc/arch/x86/kernel/Makefile_32
---- linux_2.6.24_org/arch/x86/kernel/Makefile_32	2008-02-15 20:11:58.000000000 +0000
-+++ linux_2.6.24_olpc/arch/x86/kernel/Makefile_32	2008-02-15 18:59:25.000000000 +0000
-@@ -49,6 +49,13 @@ obj-y				+= pcspeaker.o
+Index: linux-2.6.24.7/arch/x86/kernel/Makefile_32
+===================================================================
+--- linux-2.6.24.7.orig/arch/x86/kernel/Makefile_32
++++ linux-2.6.24.7/arch/x86/kernel/Makefile_32
+@@ -50,6 +50,13 @@ obj-y				+= pcspeaker.o
  
  obj-$(CONFIG_SCx200)		+= scx200_32.o
  
@@ -71,9 +73,10 @@ diff -purN linux_2.6.24_org/arch/x86/kernel/Makefile_32 linux_2.6.24_olpc/arch/x
  # vsyscall_32.o contains the vsyscall DSO images as __initdata.
  # We must build both images before we can assemble it.
  # Note: kbuild does not track this dependency due to usage of .incbin
-diff -purN linux_2.6.24_org/arch/x86/kernel/ofw.c linux_2.6.24_olpc/arch/x86/kernel/ofw.c
---- linux_2.6.24_org/arch/x86/kernel/ofw.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/arch/x86/kernel/ofw.c	2008-02-15 18:59:25.000000000 +0000
+Index: linux-2.6.24.7/arch/x86/kernel/ofw.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/arch/x86/kernel/ofw.c
 @@ -0,0 +1,100 @@
 +/*
 + * ofw.c - Open Firmware client interface for 32-bit systems.
@@ -175,9 +178,10 @@ diff -purN linux_2.6.24_org/arch/x86/kernel/ofw.c linux_2.6.24_olpc/arch/x86/ker
 +	return retval;
 +}
 +EXPORT_SYMBOL(ofw);
-diff -purN linux_2.6.24_org/arch/x86/kernel/olpc.c linux_2.6.24_olpc/arch/x86/kernel/olpc.c
---- linux_2.6.24_org/arch/x86/kernel/olpc.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/arch/x86/kernel/olpc.c	2008-02-15 18:59:25.000000000 +0000
+Index: linux-2.6.24.7/arch/x86/kernel/olpc.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/arch/x86/kernel/olpc.c
 @@ -0,0 +1,287 @@
 +/* Support for the OLPC DCON and OLPC EC access
 + * Copyright (C) 2006, Advanced Micro Devices, Inc.
@@ -466,9 +470,10 @@ diff -purN linux_2.6.24_org/arch/x86/kernel/olpc.c linux_2.6.24_olpc/arch/x86/ke
 +}
 +
 +postcore_initcall(olpc_init);
-diff -purN linux_2.6.24_org/arch/x86/kernel/olpc-pm.c linux_2.6.24_olpc/arch/x86/kernel/olpc-pm.c
---- linux_2.6.24_org/arch/x86/kernel/olpc-pm.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/arch/x86/kernel/olpc-pm.c	2008-02-15 18:59:26.000000000 +0000
+Index: linux-2.6.24.7/arch/x86/kernel/olpc-pm.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/arch/x86/kernel/olpc-pm.c
 @@ -0,0 +1,946 @@
 +/* olpc-pm.c
 + * © 2006 Red Hat, Inc.
@@ -1416,9 +1421,10 @@ diff -purN linux_2.6.24_org/arch/x86/kernel/olpc-pm.c linux_2.6.24_olpc/arch/x86
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("David Woodhouse <dwmw2@infradead.org>");
 +MODULE_DESCRIPTION("AMD Geode power management for OLPC CL1");
-diff -purN linux_2.6.24_org/arch/x86/kernel/olpc-sleep.S linux_2.6.24_olpc/arch/x86/kernel/olpc-sleep.S
---- linux_2.6.24_org/arch/x86/kernel/olpc-sleep.S	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/arch/x86/kernel/olpc-sleep.S	2008-02-15 18:59:26.000000000 +0000
+Index: linux-2.6.24.7/arch/x86/kernel/olpc-sleep.S
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/arch/x86/kernel/olpc-sleep.S
 @@ -0,0 +1,39 @@
 +.text
 +
@@ -1459,9 +1465,10 @@ diff -purN linux_2.6.24_org/arch/x86/kernel/olpc-sleep.S linux_2.6.24_olpc/arch/
 +	
 +	
 +	
-diff -purN linux_2.6.24_org/arch/x86/kernel/olpc-wakeup.S linux_2.6.24_olpc/arch/x86/kernel/olpc-wakeup.S
---- linux_2.6.24_org/arch/x86/kernel/olpc-wakeup.S	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/arch/x86/kernel/olpc-wakeup.S	2008-02-15 18:59:25.000000000 +0000
+Index: linux-2.6.24.7/arch/x86/kernel/olpc-wakeup.S
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/arch/x86/kernel/olpc-wakeup.S
 @@ -0,0 +1,133 @@
 +.text
 +#include <linux/linkage.h>
@@ -1596,9 +1603,10 @@ diff -purN linux_2.6.24_org/arch/x86/kernel/olpc-wakeup.S linux_2.6.24_olpc/arch
 +saved_cr4:     .long   0
 +saved_cr0:     .long   0
 +
-diff -purN linux_2.6.24_org/arch/x86/kernel/prom.c linux_2.6.24_olpc/arch/x86/kernel/prom.c
---- linux_2.6.24_org/arch/x86/kernel/prom.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/arch/x86/kernel/prom.c	2008-02-15 18:59:26.000000000 +0000
+Index: linux-2.6.24.7/arch/x86/kernel/prom.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/arch/x86/kernel/prom.c
 @@ -0,0 +1,478 @@
 +/*
 + * Procedures for creating, accessing and interpreting the device tree.
@@ -2078,9 +2086,10 @@ diff -purN linux_2.6.24_org/arch/x86/kernel/prom.c linux_2.6.24_olpc/arch/x86/ke
 +	printk("PROM: Built device tree with %u bytes of memory.\n",
 +	       prom_early_allocated);
 +}
-diff -purN linux_2.6.24_org/arch/x86/pci/olpc.c linux_2.6.24_olpc/arch/x86/pci/olpc.c
---- linux_2.6.24_org/arch/x86/pci/olpc.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/arch/x86/pci/olpc.c	2008-02-15 18:59:22.000000000 +0000
+Index: linux-2.6.24.7/arch/x86/pci/olpc.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/arch/x86/pci/olpc.c
 @@ -0,0 +1,298 @@
 +/*
 + * olpcpci.c - Low-level PCI config space access for OLPC systems
@@ -2380,9 +2389,10 @@ diff -purN linux_2.6.24_org/arch/x86/pci/olpc.c linux_2.6.24_olpc/arch/x86/pci/o
 +	raw_pci_ops = &pci_olpc_conf;
 +	is_lx = is_geode_lx();
 +}
-diff -purN linux_2.6.24_org/Documentation/kernel-parameters.txt linux_2.6.24_olpc/Documentation/kernel-parameters.txt
---- linux_2.6.24_org/Documentation/kernel-parameters.txt	2008-02-15 20:12:29.000000000 +0000
-+++ linux_2.6.24_olpc/Documentation/kernel-parameters.txt	2008-02-15 18:59:54.000000000 +0000
+Index: linux-2.6.24.7/Documentation/kernel-parameters.txt
+===================================================================
+--- linux-2.6.24.7.orig/Documentation/kernel-parameters.txt
++++ linux-2.6.24.7/Documentation/kernel-parameters.txt
 @@ -1244,6 +1244,13 @@ and is between 256 and 4096 characters. 
  
  	nr_uarts=	[SERIAL] maximum number of UARTs to be registered.
@@ -2397,9 +2407,10 @@ diff -purN linux_2.6.24_org/Documentation/kernel-parameters.txt linux_2.6.24_olp
  	opl3=		[HW,OSS]
  			Format: <io>
  
-diff -purN linux_2.6.24_org/drivers/base/dd.c linux_2.6.24_olpc/drivers/base/dd.c
---- linux_2.6.24_org/drivers/base/dd.c	2008-02-15 20:11:29.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/base/dd.c	2008-02-15 18:58:46.000000000 +0000
+Index: linux-2.6.24.7/drivers/base/dd.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/base/dd.c
++++ linux-2.6.24.7/drivers/base/dd.c
 @@ -293,7 +293,6 @@ static void __device_release_driver(stru
  	if (drv) {
  		driver_sysfs_remove(dev);
@@ -2416,9 +2427,10 @@ diff -purN linux_2.6.24_org/drivers/base/dd.c linux_2.6.24_olpc/drivers/base/dd.
  		put_driver(drv);
  	}
  }
-diff -purN linux_2.6.24_org/drivers/char/vt_ioctl.c linux_2.6.24_olpc/drivers/char/vt_ioctl.c
---- linux_2.6.24_org/drivers/char/vt_ioctl.c	2008-02-15 20:11:48.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/char/vt_ioctl.c	2008-02-15 18:59:11.000000000 +0000
+Index: linux-2.6.24.7/drivers/char/vt_ioctl.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/char/vt_ioctl.c
++++ linux-2.6.24.7/drivers/char/vt_ioctl.c
 @@ -38,6 +38,9 @@
  char vt_dont_switch;
  extern struct tty_driver *console_driver;
@@ -2444,9 +2456,10 @@ diff -purN linux_2.6.24_org/drivers/char/vt_ioctl.c linux_2.6.24_olpc/drivers/ch
  		/*
  		 * explicitly blank/unblank the screen if switching modes
  		 */
-diff -purN linux_2.6.24_org/drivers/i2c/busses/scx200_acb.c linux_2.6.24_olpc/drivers/i2c/busses/scx200_acb.c
---- linux_2.6.24_org/drivers/i2c/busses/scx200_acb.c	2008-02-15 20:11:33.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/i2c/busses/scx200_acb.c	2008-02-15 18:58:49.000000000 +0000
+Index: linux-2.6.24.7/drivers/i2c/busses/scx200_acb.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/i2c/busses/scx200_acb.c
++++ linux-2.6.24.7/drivers/i2c/busses/scx200_acb.c
 @@ -46,6 +46,10 @@ static int base[MAX_DEVICES] = { 0x820, 
  module_param_array(base, int, NULL, 0);
  MODULE_PARM_DESC(base, "Base addresses for the ACCESS.bus controllers");
@@ -2484,9 +2497,10 @@ diff -purN linux_2.6.24_org/drivers/i2c/busses/scx200_acb.c linux_2.6.24_olpc/dr
  		pr_debug(NAME ": ACBCTL2 readback failed\n");
  		return -ENXIO;
  	}
-diff -purN linux_2.6.24_org/drivers/input/keyboard/atkbd.c linux_2.6.24_olpc/drivers/input/keyboard/atkbd.c
---- linux_2.6.24_org/drivers/input/keyboard/atkbd.c	2008-02-15 20:11:51.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/input/keyboard/atkbd.c	2008-02-15 18:59:14.000000000 +0000
+Index: linux-2.6.24.7/drivers/input/keyboard/atkbd.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/input/keyboard/atkbd.c
++++ linux-2.6.24.7/drivers/input/keyboard/atkbd.c
 @@ -63,12 +63,25 @@ static int atkbd_extra;
  module_param_named(extra, atkbd_extra, bool, 0);
  MODULE_PARM_DESC(extra, "Enable extra LEDs and keys on IBM RapidAcces, EzKey and similar keyboards");
@@ -2630,9 +2644,10 @@ diff -purN linux_2.6.24_org/drivers/input/keyboard/atkbd.c linux_2.6.24_olpc/dri
  	if (!atkbd || !drv) {
  		printk(KERN_DEBUG "atkbd: reconnect request, but serio is disconnected, ignoring...\n");
  		return -1;
-diff -purN linux_2.6.24_org/drivers/input/mouse/Kconfig linux_2.6.24_olpc/drivers/input/mouse/Kconfig
---- linux_2.6.24_org/drivers/input/mouse/Kconfig	2008-02-15 20:11:51.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/input/mouse/Kconfig	2008-02-15 18:59:14.000000000 +0000
+Index: linux-2.6.24.7/drivers/input/mouse/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/drivers/input/mouse/Kconfig
++++ linux-2.6.24.7/drivers/input/mouse/Kconfig
 @@ -96,6 +96,16 @@ config MOUSE_PS2_TOUCHKIT
  
  	  If unsure, say N.
@@ -2650,17 +2665,19 @@ diff -purN linux_2.6.24_org/drivers/input/mouse/Kconfig linux_2.6.24_olpc/driver
  config MOUSE_SERIAL
  	tristate "Serial mouse"
  	select SERIO
-diff -purN linux_2.6.24_org/drivers/input/mouse/Makefile linux_2.6.24_olpc/drivers/input/mouse/Makefile
---- linux_2.6.24_org/drivers/input/mouse/Makefile	2008-02-15 20:11:51.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/input/mouse/Makefile	2008-02-15 18:59:14.000000000 +0000
+Index: linux-2.6.24.7/drivers/input/mouse/Makefile
+===================================================================
+--- linux-2.6.24.7.orig/drivers/input/mouse/Makefile
++++ linux-2.6.24.7/drivers/input/mouse/Makefile
 @@ -24,3 +24,4 @@ psmouse-$(CONFIG_MOUSE_PS2_LOGIPS2PP)	+=
  psmouse-$(CONFIG_MOUSE_PS2_LIFEBOOK)	+= lifebook.o
  psmouse-$(CONFIG_MOUSE_PS2_TRACKPOINT)	+= trackpoint.o
  psmouse-$(CONFIG_MOUSE_PS2_TOUCHKIT)	+= touchkit_ps2.o
 +psmouse-$(CONFIG_MOUSE_PS2_OLPC)	+= olpc.o
-diff -purN linux_2.6.24_org/drivers/input/mouse/olpc.c linux_2.6.24_olpc/drivers/input/mouse/olpc.c
---- linux_2.6.24_org/drivers/input/mouse/olpc.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/drivers/input/mouse/olpc.c	2008-02-15 18:59:14.000000000 +0000
+Index: linux-2.6.24.7/drivers/input/mouse/olpc.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/drivers/input/mouse/olpc.c
 @@ -0,0 +1,837 @@
 +/*
 + * OLPC touchpad PS/2 mouse driver
@@ -3499,9 +3516,10 @@ diff -purN linux_2.6.24_org/drivers/input/mouse/olpc.c linux_2.6.24_olpc/drivers
 +	}
 +	return 0;
 +}
-diff -purN linux_2.6.24_org/drivers/input/mouse/olpc.h linux_2.6.24_olpc/drivers/input/mouse/olpc.h
---- linux_2.6.24_org/drivers/input/mouse/olpc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/drivers/input/mouse/olpc.h	2008-02-15 18:59:14.000000000 +0000
+Index: linux-2.6.24.7/drivers/input/mouse/olpc.h
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/drivers/input/mouse/olpc.h
 @@ -0,0 +1,78 @@
 +/*
 + * OLPC touchpad PS/2 mouse driver
@@ -3581,9 +3599,10 @@ diff -purN linux_2.6.24_org/drivers/input/mouse/olpc.h linux_2.6.24_olpc/drivers
 +#endif
 +
 +#endif
-diff -purN linux_2.6.24_org/drivers/input/mouse/psmouse-base.c linux_2.6.24_olpc/drivers/input/mouse/psmouse-base.c
---- linux_2.6.24_org/drivers/input/mouse/psmouse-base.c	2008-02-15 20:11:51.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/input/mouse/psmouse-base.c	2008-02-15 18:59:14.000000000 +0000
+Index: linux-2.6.24.7/drivers/input/mouse/psmouse-base.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/input/mouse/psmouse-base.c
++++ linux-2.6.24.7/drivers/input/mouse/psmouse-base.c
 @@ -26,6 +26,7 @@
  #include "synaptics.h"
  #include "logips2pp.h"
@@ -3656,9 +3675,10 @@ diff -purN linux_2.6.24_org/drivers/input/mouse/psmouse-base.c linux_2.6.24_olpc
  	{
  		.type		= PSMOUSE_CORTRON,
  		.name		= "CortronPS/2",
-diff -purN linux_2.6.24_org/drivers/input/mouse/psmouse.h linux_2.6.24_olpc/drivers/input/mouse/psmouse.h
---- linux_2.6.24_org/drivers/input/mouse/psmouse.h	2008-02-15 20:11:51.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/input/mouse/psmouse.h	2008-02-15 18:59:14.000000000 +0000
+Index: linux-2.6.24.7/drivers/input/mouse/psmouse.h
+===================================================================
+--- linux-2.6.24.7.orig/drivers/input/mouse/psmouse.h
++++ linux-2.6.24.7/drivers/input/mouse/psmouse.h
 @@ -88,6 +88,7 @@ enum psmouse_type {
  	PSMOUSE_LIFEBOOK,
  	PSMOUSE_TRACKPOINT,
@@ -3677,9 +3697,10 @@ diff -purN linux_2.6.24_org/drivers/input/mouse/psmouse.h linux_2.6.24_olpc/driv
  
  struct psmouse_attribute {
  	struct device_attribute dattr;
-diff -purN linux_2.6.24_org/drivers/input/serio/i8042.c linux_2.6.24_olpc/drivers/input/serio/i8042.c
---- linux_2.6.24_org/drivers/input/serio/i8042.c	2008-02-15 20:11:51.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/input/serio/i8042.c	2008-02-15 18:59:14.000000000 +0000
+Index: linux-2.6.24.7/drivers/input/serio/i8042.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/input/serio/i8042.c
++++ linux-2.6.24.7/drivers/input/serio/i8042.c
 @@ -874,6 +874,11 @@ static long i8042_panic_blink(long count
  #undef DELAY
  
@@ -3724,9 +3745,10 @@ diff -purN linux_2.6.24_org/drivers/input/serio/i8042.c linux_2.6.24_olpc/driver
  
  	error = i8042_controller_selftest();
  	if (error)
-diff -purN linux_2.6.24_org/drivers/input/serio/serio.c linux_2.6.24_olpc/drivers/input/serio/serio.c
---- linux_2.6.24_org/drivers/input/serio/serio.c	2008-02-15 20:11:51.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/input/serio/serio.c	2008-02-15 18:59:14.000000000 +0000
+Index: linux-2.6.24.7/drivers/input/serio/serio.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/input/serio/serio.c
++++ linux-2.6.24.7/drivers/input/serio/serio.c
 @@ -910,11 +910,22 @@ static int serio_uevent(struct device *d
  #endif /* CONFIG_HOTPLUG */
  
@@ -3750,9 +3772,10 @@ diff -purN linux_2.6.24_org/drivers/input/serio/serio.c linux_2.6.24_olpc/driver
  
  		dev->power.power_state = state;
  	}
-diff -purN linux_2.6.24_org/drivers/Kconfig linux_2.6.24_olpc/drivers/Kconfig
---- linux_2.6.24_org/drivers/Kconfig	2008-02-15 20:11:21.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/Kconfig	2008-02-15 18:58:34.000000000 +0000
+Index: linux-2.6.24.7/drivers/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/drivers/Kconfig
++++ linux-2.6.24.7/drivers/Kconfig
 @@ -94,6 +94,8 @@ source "drivers/auxdisplay/Kconfig"
  
  source "drivers/kvm/Kconfig"
@@ -3762,9 +3785,10 @@ diff -purN linux_2.6.24_org/drivers/Kconfig linux_2.6.24_olpc/drivers/Kconfig
  source "drivers/uio/Kconfig"
  
  source "drivers/virtio/Kconfig"
-diff -purN linux_2.6.24_org/drivers/Makefile linux_2.6.24_olpc/drivers/Makefile
---- linux_2.6.24_org/drivers/Makefile	2008-02-15 20:11:24.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/Makefile	2008-02-15 18:58:43.000000000 +0000
+Index: linux-2.6.24.7/drivers/Makefile
+===================================================================
+--- linux-2.6.24.7.orig/drivers/Makefile
++++ linux-2.6.24.7/drivers/Makefile
 @@ -23,6 +23,8 @@ obj-y				+= char/
  
  obj-$(CONFIG_CONNECTOR)		+= connector/
@@ -3774,9 +3798,10 @@ diff -purN linux_2.6.24_org/drivers/Makefile linux_2.6.24_olpc/drivers/Makefile
  # i810fb and intelfb depend on char/agp/
  obj-$(CONFIG_FB_I810)           += video/i810/
  obj-$(CONFIG_FB_INTEL)          += video/intelfb/
-diff -purN linux_2.6.24_org/drivers/media/video/cafe_ccic.c linux_2.6.24_olpc/drivers/media/video/cafe_ccic.c
---- linux_2.6.24_org/drivers/media/video/cafe_ccic.c	2008-02-15 20:11:25.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/media/video/cafe_ccic.c	2008-02-15 18:58:44.000000000 +0000
+Index: linux-2.6.24.7/drivers/media/video/cafe_ccic.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/media/video/cafe_ccic.c
++++ linux-2.6.24.7/drivers/media/video/cafe_ccic.c
 @@ -372,6 +372,10 @@ static int cafe_smbus_write_data(struct 
  	rval = value | ((command << TWSIC1_ADDR_SHIFT) & TWSIC1_ADDR);
  	cafe_reg_write(cam, REG_TWSIC1, rval);
@@ -3843,9 +3868,10 @@ diff -purN linux_2.6.24_org/drivers/media/video/cafe_ccic.c linux_2.6.24_olpc/dr
  	set_bit(CF_CONFIG_NEEDED, &cam->flags);
  	if (cam->state == S_SPECREAD)
  		cam->state = S_IDLE;  /* Don't bother restarting */
-diff -purN linux_2.6.24_org/drivers/misc/Kconfig linux_2.6.24_olpc/drivers/misc/Kconfig
---- linux_2.6.24_org/drivers/misc/Kconfig	2008-02-15 20:11:42.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/misc/Kconfig	2008-02-15 18:58:52.000000000 +0000
+Index: linux-2.6.24.7/drivers/misc/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/drivers/misc/Kconfig
++++ linux-2.6.24.7/drivers/misc/Kconfig
 @@ -219,6 +219,11 @@ config THINKPAD_ACPI_BAY
  
  	  If you are not sure, say Y here.
@@ -3858,9 +3884,10 @@ diff -purN linux_2.6.24_org/drivers/misc/Kconfig linux_2.6.24_olpc/drivers/misc/
  
  config ATMEL_SSC
  	tristate "Device driver for Atmel SSC peripheral"
-diff -purN linux_2.6.24_org/drivers/mmc/card/block.c linux_2.6.24_olpc/drivers/mmc/card/block.c
---- linux_2.6.24_org/drivers/mmc/card/block.c	2008-02-15 20:11:13.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/mmc/card/block.c	2008-02-15 18:58:17.000000000 +0000
+Index: linux-2.6.24.7/drivers/mmc/card/block.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/mmc/card/block.c
++++ linux-2.6.24.7/drivers/mmc/card/block.c
 @@ -237,6 +237,13 @@ static int mmc_blk_issue_rq(struct mmc_q
  		if (brq.data.blocks > card->host->max_blk_count)
  			brq.data.blocks = card->host->max_blk_count;
@@ -3875,9 +3902,10 @@ diff -purN linux_2.6.24_org/drivers/mmc/card/block.c linux_2.6.24_olpc/drivers/m
  		/*
  		 * If the host doesn't support multiple block writes, force
  		 * block writes to single block. SD cards are excepted from
-diff -purN linux_2.6.24_org/drivers/mmc/host/sdhci.c linux_2.6.24_olpc/drivers/mmc/host/sdhci.c
---- linux_2.6.24_org/drivers/mmc/host/sdhci.c	2008-02-15 20:11:13.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/mmc/host/sdhci.c	2008-02-15 18:58:17.000000000 +0000
+Index: linux-2.6.24.7/drivers/mmc/host/sdhci.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/mmc/host/sdhci.c
++++ linux-2.6.24.7/drivers/mmc/host/sdhci.c
 @@ -441,6 +441,12 @@ static void sdhci_prepare_data(struct sd
  			break;
  	}
@@ -3925,9 +3953,10 @@ diff -purN linux_2.6.24_org/drivers/mmc/host/sdhci.c linux_2.6.24_olpc/drivers/m
  out:
  	host->power = power;
  }
-diff -purN linux_2.6.24_org/drivers/mtd/nand/cafe_nand.c linux_2.6.24_olpc/drivers/mtd/nand/cafe_nand.c
---- linux_2.6.24_org/drivers/mtd/nand/cafe_nand.c	2008-02-15 20:11:46.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/mtd/nand/cafe_nand.c	2008-02-15 18:58:57.000000000 +0000
+Index: linux-2.6.24.7/drivers/mtd/nand/cafe_nand.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/mtd/nand/cafe_nand.c
++++ linux-2.6.24.7/drivers/mtd/nand/cafe_nand.c
 @@ -11,6 +11,7 @@
  #undef DEBUG
  #include <linux/mtd/mtd.h>
@@ -3984,9 +4013,10 @@ diff -purN linux_2.6.24_org/drivers/mtd/nand/cafe_nand.c linux_2.6.24_olpc/drive
  	goto out;
  
   out_irq:
-diff -purN linux_2.6.24_org/drivers/mtd/redboot.c linux_2.6.24_olpc/drivers/mtd/redboot.c
---- linux_2.6.24_org/drivers/mtd/redboot.c	2008-02-15 20:11:46.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/mtd/redboot.c	2008-02-15 18:58:58.000000000 +0000
+Index: linux-2.6.24.7/drivers/mtd/redboot.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/mtd/redboot.c
++++ linux-2.6.24.7/drivers/mtd/redboot.c
 @@ -59,16 +59,31 @@ static int parse_redboot_partitions(stru
  	static char nullstring[] = "unallocated";
  #endif
@@ -4024,9 +4054,10 @@ diff -purN linux_2.6.24_org/drivers/mtd/redboot.c linux_2.6.24_olpc/drivers/mtd/
  	printk(KERN_NOTICE "Searching for RedBoot partition table in %s at offset 0x%lx\n",
  	       master->name, offset);
  
-diff -purN linux_2.6.24_org/drivers/net/forcedeth.c linux_2.6.24_olpc/drivers/net/forcedeth.c
---- linux_2.6.24_org/drivers/net/forcedeth.c	2008-02-15 20:11:19.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/net/forcedeth.c	2008-02-15 18:58:33.000000000 +0000
+Index: linux-2.6.24.7/drivers/net/forcedeth.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/net/forcedeth.c
++++ linux-2.6.24.7/drivers/net/forcedeth.c
 @@ -3559,11 +3559,13 @@ static int nv_request_irq(struct net_dev
  	}
  	if (ret != 0 && np->msi_flags & NV_MSI_CAPABLE) {
@@ -4049,10 +4080,11 @@ diff -purN linux_2.6.24_org/drivers/net/forcedeth.c linux_2.6.24_olpc/drivers/ne
  			np->msi_flags &= ~NV_MSI_ENABLED;
  		}
  	}
-diff -purN linux_2.6.24_org/drivers/pci/quirks.c linux_2.6.24_olpc/drivers/pci/quirks.c
---- linux_2.6.24_org/drivers/pci/quirks.c	2008-02-15 20:11:33.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/pci/quirks.c	2008-02-15 18:58:50.000000000 +0000
-@@ -1359,6 +1359,17 @@ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_IN
+Index: linux-2.6.24.7/drivers/pci/quirks.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/pci/quirks.c
++++ linux-2.6.24.7/drivers/pci/quirks.c
+@@ -1360,6 +1360,17 @@ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_IN
  DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_INTEL,	0x260b, quirk_intel_pcie_pm);
  
  /*
@@ -4070,9 +4102,10 @@ diff -purN linux_2.6.24_org/drivers/pci/quirks.c linux_2.6.24_olpc/drivers/pci/q
   * Toshiba TC86C001 IDE controller reports the standard 8-byte BAR0 size
   * but the PIO transfers won't work if BAR0 falls at the odd 8 bytes.
   * Re-allocate the region if needed...
-diff -purN linux_2.6.24_org/drivers/power/ds2760_battery.c linux_2.6.24_olpc/drivers/power/ds2760_battery.c
---- linux_2.6.24_org/drivers/power/ds2760_battery.c	2008-02-15 20:11:45.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/power/ds2760_battery.c	2008-02-15 18:58:56.000000000 +0000
+Index: linux-2.6.24.7/drivers/power/ds2760_battery.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/power/ds2760_battery.c
++++ linux-2.6.24.7/drivers/power/ds2760_battery.c
 @@ -409,6 +409,7 @@ static int ds2760_battery_suspend(struct
  	struct ds2760_device_info *di = platform_get_drvdata(pdev);
  
@@ -4081,9 +4114,10 @@ diff -purN linux_2.6.24_org/drivers/power/ds2760_battery.c linux_2.6.24_olpc/dri
  
  	return 0;
  }
-diff -purN linux_2.6.24_org/drivers/power/olpc_battery.c linux_2.6.24_olpc/drivers/power/olpc_battery.c
---- linux_2.6.24_org/drivers/power/olpc_battery.c	2008-02-15 20:11:45.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/power/olpc_battery.c	2008-02-15 18:58:56.000000000 +0000
+Index: linux-2.6.24.7/drivers/power/olpc_battery.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/power/olpc_battery.c
++++ linux-2.6.24.7/drivers/power/olpc_battery.c
 @@ -14,12 +14,13 @@
  #include <linux/power_supply.h>
  #include <linux/jiffies.h>
@@ -4234,9 +4268,10 @@ diff -purN linux_2.6.24_org/drivers/power/olpc_battery.c linux_2.6.24_olpc/drive
  	power_supply_unregister(&olpc_bat);
  	power_supply_unregister(&olpc_ac);
  	platform_device_unregister(bat_pdev);
-diff -purN linux_2.6.24_org/drivers/power/power_supply_sysfs.c linux_2.6.24_olpc/drivers/power/power_supply_sysfs.c
---- linux_2.6.24_org/drivers/power/power_supply_sysfs.c	2008-02-15 20:11:45.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/power/power_supply_sysfs.c	2008-02-15 18:58:56.000000000 +0000
+Index: linux-2.6.24.7/drivers/power/power_supply_sysfs.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/power/power_supply_sysfs.c
++++ linux-2.6.24.7/drivers/power/power_supply_sysfs.c
 @@ -114,9 +114,11 @@ static struct device_attribute power_sup
  	POWER_SUPPLY_ATTR(time_to_empty_avg),
  	POWER_SUPPLY_ATTR(time_to_full_now),
@@ -4249,9 +4284,10 @@ diff -purN linux_2.6.24_org/drivers/power/power_supply_sysfs.c linux_2.6.24_olpc
  };
  
  static ssize_t power_supply_show_static_attrs(struct device *dev,
-diff -purN linux_2.6.24_org/drivers/serial/serial_core.c linux_2.6.24_olpc/drivers/serial/serial_core.c
---- linux_2.6.24_org/drivers/serial/serial_core.c	2008-02-15 20:11:33.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/serial/serial_core.c	2008-02-15 18:58:51.000000000 +0000
+Index: linux-2.6.24.7/drivers/serial/serial_core.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/serial/serial_core.c
++++ linux-2.6.24.7/drivers/serial/serial_core.c
 @@ -2013,6 +2013,7 @@ int uart_suspend_port(struct uart_driver
  int uart_resume_port(struct uart_driver *drv, struct uart_port *port)
  {
@@ -4281,9 +4317,10 @@ diff -purN linux_2.6.24_org/drivers/serial/serial_core.c linux_2.6.24_olpc/drive
  		port->ops->set_termios(port, &termios, NULL);
  		console_start(port->cons);
  	}
-diff -purN linux_2.6.24_org/drivers/sysprof/config.h linux_2.6.24_olpc/drivers/sysprof/config.h
---- linux_2.6.24_org/drivers/sysprof/config.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/drivers/sysprof/config.h	2008-02-15 18:58:59.000000000 +0000
+Index: linux-2.6.24.7/drivers/sysprof/config.h
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/drivers/sysprof/config.h
 @@ -0,0 +1,23 @@
 +/* config.h.  Generated by configure.  */
 +/* config.h.in.  Generated from configure.ac by autoheader.  */
@@ -4308,9 +4345,10 @@ diff -purN linux_2.6.24_org/drivers/sysprof/config.h linux_2.6.24_olpc/drivers/s
 +
 +/* Define to the version of this package. */
 +#define PACKAGE_VERSION "1.0.8"
-diff -purN linux_2.6.24_org/drivers/sysprof/Kconfig linux_2.6.24_olpc/drivers/sysprof/Kconfig
---- linux_2.6.24_org/drivers/sysprof/Kconfig	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/drivers/sysprof/Kconfig	2008-02-15 18:58:59.000000000 +0000
+Index: linux-2.6.24.7/drivers/sysprof/Kconfig
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/drivers/sysprof/Kconfig
 @@ -0,0 +1,12 @@
 +
 +menu "Sysprof"
@@ -4324,14 +4362,16 @@ diff -purN linux_2.6.24_org/drivers/sysprof/Kconfig linux_2.6.24_olpc/drivers/sy
 +	 sysprof-module, to generate stacktraces which are then interpreted by
 +	 the userspace program "sysprof".
 +endmenu
-diff -purN linux_2.6.24_org/drivers/sysprof/Makefile linux_2.6.24_olpc/drivers/sysprof/Makefile
---- linux_2.6.24_org/drivers/sysprof/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/drivers/sysprof/Makefile	2008-02-15 18:58:59.000000000 +0000
+Index: linux-2.6.24.7/drivers/sysprof/Makefile
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/drivers/sysprof/Makefile
 @@ -0,0 +1 @@
 +obj-$(CONFIG_SYSPROF)	+= sysprof-module.o
-diff -purN linux_2.6.24_org/drivers/sysprof/sysprof-module.c linux_2.6.24_olpc/drivers/sysprof/sysprof-module.c
---- linux_2.6.24_org/drivers/sysprof/sysprof-module.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/drivers/sysprof/sysprof-module.c	2008-02-15 18:58:59.000000000 +0000
+Index: linux-2.6.24.7/drivers/sysprof/sysprof-module.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/drivers/sysprof/sysprof-module.c
 @@ -0,0 +1,271 @@
 +/* -*- c-basic-offset: 8 -*- */
 +
@@ -4604,9 +4644,10 @@ diff -purN linux_2.6.24_org/drivers/sysprof/sysprof-module.c linux_2.6.24_olpc/d
 +	printk(KERN_ALERT "sysprof: unloaded\n");
 +}
 +
-diff -purN linux_2.6.24_org/drivers/sysprof/sysprof-module.h linux_2.6.24_olpc/drivers/sysprof/sysprof-module.h
---- linux_2.6.24_org/drivers/sysprof/sysprof-module.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/drivers/sysprof/sysprof-module.h	2008-02-15 18:58:59.000000000 +0000
+Index: linux-2.6.24.7/drivers/sysprof/sysprof-module.h
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/drivers/sysprof/sysprof-module.h
 @@ -0,0 +1,37 @@
 +/* Sysprof -- Sampling, systemwide CPU profiler
 + * Copyright 2004, Red Hat, Inc.
@@ -4645,9 +4686,10 @@ diff -purN linux_2.6.24_org/drivers/sysprof/sysprof-module.h linux_2.6.24_olpc/d
 +};
 +
 +#endif
-diff -purN linux_2.6.24_org/drivers/usb/core/driver.c linux_2.6.24_olpc/drivers/usb/core/driver.c
---- linux_2.6.24_org/drivers/usb/core/driver.c	2008-02-15 20:11:09.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/usb/core/driver.c	2008-02-15 18:58:14.000000000 +0000
+Index: linux-2.6.24.7/drivers/usb/core/driver.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/usb/core/driver.c
++++ linux-2.6.24.7/drivers/usb/core/driver.c
 @@ -1062,8 +1062,15 @@ static int usb_suspend_both(struct usb_d
  				break;
  		}
@@ -4665,10 +4707,11 @@ diff -purN linux_2.6.24_org/drivers/usb/core/driver.c linux_2.6.24_olpc/drivers/
  
  	/* If the suspend failed, resume interfaces that did get suspended */
  	if (status != 0) {
-diff -purN linux_2.6.24_org/drivers/usb/core/quirks.c linux_2.6.24_olpc/drivers/usb/core/quirks.c
---- linux_2.6.24_org/drivers/usb/core/quirks.c	2008-02-15 20:11:09.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/usb/core/quirks.c	2008-02-15 18:58:12.000000000 +0000
-@@ -45,6 +45,9 @@ static const struct usb_device_id usb_qu
+Index: linux-2.6.24.7/drivers/usb/core/quirks.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/usb/core/quirks.c
++++ linux-2.6.24.7/drivers/usb/core/quirks.c
+@@ -48,6 +48,9 @@ static const struct usb_device_id usb_qu
  	/* SKYMEDI USB_DRIVE */
  	{ USB_DEVICE(0x1516, 0x8628), .driver_info = USB_QUIRK_RESET_RESUME },
  
@@ -4678,9 +4721,10 @@ diff -purN linux_2.6.24_org/drivers/usb/core/quirks.c linux_2.6.24_olpc/drivers/
  	{ }  /* terminating entry must be last */
  };
  
-diff -purN linux_2.6.24_org/drivers/usb/core/usb.h linux_2.6.24_olpc/drivers/usb/core/usb.h
---- linux_2.6.24_org/drivers/usb/core/usb.h	2008-02-15 20:11:09.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/usb/core/usb.h	2008-02-15 18:58:14.000000000 +0000
+Index: linux-2.6.24.7/drivers/usb/core/usb.h
+===================================================================
+--- linux-2.6.24.7.orig/drivers/usb/core/usb.h
++++ linux-2.6.24.7/drivers/usb/core/usb.h
 @@ -41,6 +41,7 @@ extern void usb_host_cleanup(void);
  extern void usb_autosuspend_work(struct work_struct *work);
  extern int usb_port_suspend(struct usb_device *dev);
@@ -4689,9 +4733,10 @@ diff -purN linux_2.6.24_org/drivers/usb/core/usb.h linux_2.6.24_olpc/drivers/usb
  extern int usb_external_suspend_device(struct usb_device *udev,
  		pm_message_t msg);
  extern int usb_external_resume_device(struct usb_device *udev);
-diff -purN linux_2.6.24_org/drivers/usb/host/ehci-hcd.c linux_2.6.24_olpc/drivers/usb/host/ehci-hcd.c
---- linux_2.6.24_org/drivers/usb/host/ehci-hcd.c	2008-02-15 20:11:09.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/usb/host/ehci-hcd.c	2008-02-15 18:58:12.000000000 +0000
+Index: linux-2.6.24.7/drivers/usb/host/ehci-hcd.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/usb/host/ehci-hcd.c
++++ linux-2.6.24.7/drivers/usb/host/ehci-hcd.c
 @@ -653,9 +653,16 @@ static irqreturn_t ehci_irq (struct usb_
  
  	/* complete the unlinking of some qh [4.15.2.3] */
@@ -4712,9 +4757,10 @@ diff -purN linux_2.6.24_org/drivers/usb/host/ehci-hcd.c linux_2.6.24_olpc/driver
  	}
  
  	/* remote wakeup [4.3.1] */
-diff -purN linux_2.6.24_org/drivers/usb/host/ehci-hub.c linux_2.6.24_olpc/drivers/usb/host/ehci-hub.c
---- linux_2.6.24_org/drivers/usb/host/ehci-hub.c	2008-02-15 20:11:09.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/usb/host/ehci-hub.c	2008-02-15 18:58:12.000000000 +0000
+Index: linux-2.6.24.7/drivers/usb/host/ehci-hub.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/usb/host/ehci-hub.c
++++ linux-2.6.24.7/drivers/usb/host/ehci-hub.c
 @@ -132,10 +132,15 @@ static int ehci_bus_suspend (struct usb_
  		ehci_quiesce (ehci);
  		hcd->state = HC_STATE_QUIESCING;
@@ -4760,9 +4806,10 @@ diff -purN linux_2.6.24_org/drivers/usb/host/ehci-hub.c linux_2.6.24_olpc/driver
  
  	if (time_before (jiffies, ehci->next_statechange))
  		msleep(5);
-diff -purN linux_2.6.24_org/drivers/usb/host/ehci-pci.c linux_2.6.24_olpc/drivers/usb/host/ehci-pci.c
---- linux_2.6.24_org/drivers/usb/host/ehci-pci.c	2008-02-15 20:11:09.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/usb/host/ehci-pci.c	2008-02-15 18:58:12.000000000 +0000
+Index: linux-2.6.24.7/drivers/usb/host/ehci-pci.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/usb/host/ehci-pci.c
++++ linux-2.6.24.7/drivers/usb/host/ehci-pci.c
 @@ -247,6 +247,9 @@ static int ehci_pci_suspend(struct usb_h
  		rc = -EINVAL;
  		goto bail;
@@ -4773,9 +4820,10 @@ diff -purN linux_2.6.24_org/drivers/usb/host/ehci-pci.c linux_2.6.24_olpc/driver
  	ehci_writel(ehci, 0, &ehci->regs->intr_enable);
  	(void)ehci_readl(ehci, &ehci->regs->intr_enable);
  
-diff -purN linux_2.6.24_org/drivers/usb/host/ehci-q.c linux_2.6.24_olpc/drivers/usb/host/ehci-q.c
---- linux_2.6.24_org/drivers/usb/host/ehci-q.c	2008-02-15 20:11:09.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/usb/host/ehci-q.c	2008-02-15 18:58:12.000000000 +0000
+Index: linux-2.6.24.7/drivers/usb/host/ehci-q.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/usb/host/ehci-q.c
++++ linux-2.6.24.7/drivers/usb/host/ehci-q.c
 @@ -177,7 +177,7 @@ static int qtd_copy_status (
  			if (QTD_CERR (token))
  				status = -EPIPE;
@@ -4797,9 +4845,10 @@ diff -purN linux_2.6.24_org/drivers/usb/host/ehci-q.c linux_2.6.24_olpc/drivers/
  	timer_action_done (ehci, TIMER_IAA_WATCHDOG);
  
  	// qh->hw_next = cpu_to_hc32(qh->qh_dma);
-diff -purN linux_2.6.24_org/drivers/usb/host/ohci-pci.c linux_2.6.24_olpc/drivers/usb/host/ohci-pci.c
---- linux_2.6.24_org/drivers/usb/host/ohci-pci.c	2008-02-15 20:11:09.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/usb/host/ohci-pci.c	2008-02-15 18:58:12.000000000 +0000
+Index: linux-2.6.24.7/drivers/usb/host/ohci-pci.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/usb/host/ohci-pci.c
++++ linux-2.6.24.7/drivers/usb/host/ohci-pci.c
 @@ -317,6 +317,8 @@ static int ohci_pci_resume (struct usb_h
  	/* FIXME: we should try to detect loss of VBUS power here */
  	prepare_for_handover(hcd);
@@ -4809,9 +4858,10 @@ diff -purN linux_2.6.24_org/drivers/usb/host/ohci-pci.c linux_2.6.24_olpc/driver
  	return 0;
  }
  
-diff -purN linux_2.6.24_org/drivers/usb/storage/usb.c linux_2.6.24_olpc/drivers/usb/storage/usb.c
---- linux_2.6.24_org/drivers/usb/storage/usb.c	2008-02-15 20:11:09.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/usb/storage/usb.c	2008-02-15 18:58:11.000000000 +0000
+Index: linux-2.6.24.7/drivers/usb/storage/usb.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/usb/storage/usb.c
++++ linux-2.6.24.7/drivers/usb/storage/usb.c
 @@ -244,7 +244,7 @@ static int storage_pre_reset(struct usb_
  	return 0;
  }
@@ -4834,9 +4884,10 @@ diff -purN linux_2.6.24_org/drivers/usb/storage/usb.c linux_2.6.24_olpc/drivers/
  }
  
  /*
-diff -purN linux_2.6.24_org/drivers/video/fbmem.c linux_2.6.24_olpc/drivers/video/fbmem.c
---- linux_2.6.24_org/drivers/video/fbmem.c	2008-02-15 20:11:23.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/video/fbmem.c	2008-02-15 18:58:42.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/fbmem.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/video/fbmem.c
++++ linux-2.6.24.7/drivers/video/fbmem.c
 @@ -820,6 +820,53 @@ static void try_to_load(int fb)
  #endif /* CONFIG_KMOD */
  
@@ -4891,9 +4942,10 @@ diff -purN linux_2.6.24_org/drivers/video/fbmem.c linux_2.6.24_olpc/drivers/vide
  fb_pan_display(struct fb_info *info, struct fb_var_screeninfo *var)
  {
  	struct fb_fix_screeninfo *fix = &info->fix;
-diff -purN linux_2.6.24_org/drivers/video/geode/display_gx.c linux_2.6.24_olpc/drivers/video/geode/display_gx.c
---- linux_2.6.24_org/drivers/video/geode/display_gx.c	2008-02-15 20:11:23.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/video/geode/display_gx.c	2008-02-15 18:58:41.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/geode/display_gx.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/video/geode/display_gx.c
++++ linux-2.6.24.7/drivers/video/geode/display_gx.c
 @@ -11,26 +11,44 @@
   *   Free Software Foundation; either version 2 of the License, or * (at your
   *   option) any later version.
@@ -5036,9 +5088,10 @@ diff -purN linux_2.6.24_org/drivers/video/geode/display_gx.c linux_2.6.24_olpc/d
  
  	par->vid_ops->configure_display(info);
  
-diff -purN linux_2.6.24_org/drivers/video/geode/display_gx.h linux_2.6.24_olpc/drivers/video/geode/display_gx.h
---- linux_2.6.24_org/drivers/video/geode/display_gx.h	2008-02-15 20:11:23.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/video/geode/display_gx.h	2008-02-15 18:58:41.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/geode/display_gx.h
+===================================================================
+--- linux-2.6.24.7.orig/drivers/video/geode/display_gx.h
++++ linux-2.6.24.7/drivers/video/geode/display_gx.h
 @@ -20,6 +20,9 @@ extern struct geode_dc_ops gx_dc_ops;
  #define GLD_MSR_CONFIG   0xC0002001
  #define GLD_MSR_CONFIG_DM_FP 0x40
@@ -5049,9 +5102,10 @@ diff -purN linux_2.6.24_org/drivers/video/geode/display_gx.h linux_2.6.24_olpc/d
  /* Display controller registers */
  
  #define DC_UNLOCK 0x00
-diff -purN linux_2.6.24_org/drivers/video/geode/geodefb.h linux_2.6.24_olpc/drivers/video/geode/geodefb.h
---- linux_2.6.24_org/drivers/video/geode/geodefb.h	2008-02-15 20:11:23.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/video/geode/geodefb.h	2008-02-15 18:58:41.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/geode/geodefb.h
+===================================================================
+--- linux-2.6.24.7.orig/drivers/video/geode/geodefb.h
++++ linux-2.6.24.7/drivers/video/geode/geodefb.h
 @@ -12,6 +12,10 @@
  #ifndef __GEODEFB_H__
  #define __GEODEFB_H__
@@ -5088,9 +5142,10 @@ diff -purN linux_2.6.24_org/drivers/video/geode/geodefb.h linux_2.6.24_olpc/driv
  };
  
  #endif /* !__GEODEFB_H__ */
-diff -purN linux_2.6.24_org/drivers/video/geode/geode_regs.h linux_2.6.24_olpc/drivers/video/geode/geode_regs.h
---- linux_2.6.24_org/drivers/video/geode/geode_regs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/drivers/video/geode/geode_regs.h	2008-02-15 18:58:41.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/geode/geode_regs.h
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/drivers/video/geode/geode_regs.h
 @@ -0,0 +1,255 @@
 +/* This header file defines the registers and suspend/resume
 +   structures for the Geode GX and LX.   The lxfb driver defines
@@ -5347,9 +5402,10 @@ diff -purN linux_2.6.24_org/drivers/video/geode/geode_regs.h linux_2.6.24_olpc/d
 +};
 +
 +#endif
-diff -purN linux_2.6.24_org/drivers/video/geode/gxfb_core.c linux_2.6.24_olpc/drivers/video/geode/gxfb_core.c
---- linux_2.6.24_org/drivers/video/geode/gxfb_core.c	2008-02-15 20:11:23.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/video/geode/gxfb_core.c	2008-02-15 18:58:41.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/geode/gxfb_core.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/video/geode/gxfb_core.c
++++ linux-2.6.24.7/drivers/video/geode/gxfb_core.c
 @@ -30,12 +30,31 @@
  #include <linux/fb.h>
  #include <linux/init.h>
@@ -5804,9 +5860,10 @@ diff -purN linux_2.6.24_org/drivers/video/geode/gxfb_core.c linux_2.6.24_olpc/dr
 +
  MODULE_DESCRIPTION("Framebuffer driver for the AMD Geode GX");
  MODULE_LICENSE("GPL");
-diff -purN linux_2.6.24_org/drivers/video/geode/Kconfig linux_2.6.24_olpc/drivers/video/geode/Kconfig
---- linux_2.6.24_org/drivers/video/geode/Kconfig	2008-02-15 20:11:23.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/video/geode/Kconfig	2008-02-15 18:58:41.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/geode/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/drivers/video/geode/Kconfig
++++ linux-2.6.24.7/drivers/video/geode/Kconfig
 @@ -38,26 +38,6 @@ config FB_GEODE_GX
  
  	  If unsure, say N.
@@ -5834,9 +5891,10 @@ diff -purN linux_2.6.24_org/drivers/video/geode/Kconfig linux_2.6.24_olpc/driver
  config FB_GEODE_GX1
  	tristate "AMD Geode GX1 framebuffer support (EXPERIMENTAL)"
  	depends on FB && FB_GEODE && EXPERIMENTAL
-diff -purN linux_2.6.24_org/drivers/video/geode/lxfb_core.c linux_2.6.24_olpc/drivers/video/geode/lxfb_core.c
---- linux_2.6.24_org/drivers/video/geode/lxfb_core.c	2008-02-15 20:11:23.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/video/geode/lxfb_core.c	2008-02-15 18:58:41.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/geode/lxfb_core.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/video/geode/lxfb_core.c
++++ linux-2.6.24.7/drivers/video/geode/lxfb_core.c
 @@ -21,7 +21,8 @@
  #include <linux/fb.h>
  #include <linux/init.h>
@@ -6250,9 +6308,10 @@ diff -purN linux_2.6.24_org/drivers/video/geode/lxfb_core.c linux_2.6.24_olpc/dr
  };
  
  #ifndef MODULE
-diff -purN linux_2.6.24_org/drivers/video/geode/lxfb.h linux_2.6.24_olpc/drivers/video/geode/lxfb.h
---- linux_2.6.24_org/drivers/video/geode/lxfb.h	2008-02-15 20:11:23.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/video/geode/lxfb.h	2008-02-15 18:58:41.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/geode/lxfb.h
+===================================================================
+--- linux-2.6.24.7.orig/drivers/video/geode/lxfb.h
++++ linux-2.6.24.7/drivers/video/geode/lxfb.h
 @@ -25,10 +25,23 @@ void lx_set_mode(struct fb_info *);
  void lx_get_gamma(struct fb_info *, unsigned int *, int);
  void lx_set_gamma(struct fb_info *, unsigned int *, int);
@@ -6286,9 +6345,10 @@ diff -purN linux_2.6.24_org/drivers/video/geode/lxfb.h linux_2.6.24_olpc/drivers
  
  #define DC_IRQ               0xC8
  #define  DC_IRQ_MASK         (1 << 0)
-diff -purN linux_2.6.24_org/drivers/video/geode/lxfb_ops.c linux_2.6.24_olpc/drivers/video/geode/lxfb_ops.c
---- linux_2.6.24_org/drivers/video/geode/lxfb_ops.c	2008-02-15 20:11:23.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/video/geode/lxfb_ops.c	2008-02-15 18:58:41.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/geode/lxfb_ops.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/video/geode/lxfb_ops.c
++++ linux-2.6.24.7/drivers/video/geode/lxfb_ops.c
 @@ -11,11 +11,15 @@
  #include <linux/kernel.h>
  #include <linux/errno.h>
@@ -6803,9 +6863,10 @@ diff -purN linux_2.6.24_org/drivers/video/geode/lxfb_ops.c linux_2.6.24_olpc/dri
 +	lx_power_on = 1;
  	return 0;
  }
-diff -purN linux_2.6.24_org/drivers/video/geode/Makefile linux_2.6.24_olpc/drivers/video/geode/Makefile
---- linux_2.6.24_org/drivers/video/geode/Makefile	2008-02-15 20:11:23.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/video/geode/Makefile	2008-02-15 18:58:41.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/geode/Makefile
+===================================================================
+--- linux-2.6.24.7.orig/drivers/video/geode/Makefile
++++ linux-2.6.24.7/drivers/video/geode/Makefile
 @@ -5,5 +5,5 @@ obj-$(CONFIG_FB_GEODE_GX)  += gxfb.o
  obj-$(CONFIG_FB_GEODE_LX)  += lxfb.o
  
@@ -6813,9 +6874,10 @@ diff -purN linux_2.6.24_org/drivers/video/geode/Makefile linux_2.6.24_olpc/drive
 -gxfb-objs  := gxfb_core.o display_gx.o video_gx.o
 +gxfb-objs  := gxfb_core.o display_gx.o video_gx.o suspend_gx.o
  lxfb-objs  := lxfb_core.o lxfb_ops.o
-diff -purN linux_2.6.24_org/drivers/video/geode/suspend_gx.c linux_2.6.24_olpc/drivers/video/geode/suspend_gx.c
---- linux_2.6.24_org/drivers/video/geode/suspend_gx.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/drivers/video/geode/suspend_gx.c	2008-02-15 18:58:41.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/geode/suspend_gx.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/drivers/video/geode/suspend_gx.c
 @@ -0,0 +1,272 @@
 +#include <linux/fb.h>
 +#include <asm/io.h>
@@ -7089,9 +7151,10 @@ diff -purN linux_2.6.24_org/drivers/video/geode/suspend_gx.c linux_2.6.24_olpc/d
 +}
 +
 +#endif
-diff -purN linux_2.6.24_org/drivers/video/geode/video_gx.c linux_2.6.24_olpc/drivers/video/geode/video_gx.c
---- linux_2.6.24_org/drivers/video/geode/video_gx.c	2008-02-15 20:11:23.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/video/geode/video_gx.c	2008-02-15 18:58:41.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/geode/video_gx.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/video/geode/video_gx.c
++++ linux-2.6.24.7/drivers/video/geode/video_gx.c
 @@ -16,10 +16,14 @@
  #include <asm/io.h>
  #include <asm/delay.h>
@@ -7518,9 +7581,10 @@ diff -purN linux_2.6.24_org/drivers/video/geode/video_gx.c linux_2.6.24_olpc/dri
  	.configure_display = gx_configure_display,
  	.blank_display	   = gx_blank_display,
  };
-diff -purN linux_2.6.24_org/drivers/video/geode/video_gx.h linux_2.6.24_olpc/drivers/video/geode/video_gx.h
---- linux_2.6.24_org/drivers/video/geode/video_gx.h	2008-02-15 20:11:23.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/video/geode/video_gx.h	2008-02-15 18:58:41.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/geode/video_gx.h
+===================================================================
+--- linux-2.6.24.7.orig/drivers/video/geode/video_gx.h
++++ linux-2.6.24.7/drivers/video/geode/video_gx.h
 @@ -11,6 +11,8 @@
  #ifndef __VIDEO_GX_H__
  #define __VIDEO_GX_H__
@@ -7568,9 +7632,10 @@ diff -purN linux_2.6.24_org/drivers/video/geode/video_gx.h linux_2.6.24_olpc/dri
 +void gx_restore_regs(struct fb_info *info, struct geoderegs *regs);
 +
  #endif /* !__VIDEO_GX_H__ */
-diff -purN linux_2.6.24_org/drivers/video/Kconfig linux_2.6.24_olpc/drivers/video/Kconfig
---- linux_2.6.24_org/drivers/video/Kconfig	2008-02-15 20:11:22.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/video/Kconfig	2008-02-15 18:58:36.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/drivers/video/Kconfig
++++ linux-2.6.24.7/drivers/video/Kconfig
 @@ -1869,6 +1869,15 @@ config FB_PS3_DEFAULT_SIZE_M
  	  The default value can be overridden on the kernel command line
  	  using the "ps3fb" option (e.g. "ps3fb=9M");
@@ -7587,9 +7652,10 @@ diff -purN linux_2.6.24_org/drivers/video/Kconfig linux_2.6.24_olpc/drivers/vide
  config FB_XILINX
  	tristate "Xilinx frame buffer support"
  	depends on FB && XILINX_VIRTEX
-diff -purN linux_2.6.24_org/drivers/video/Makefile linux_2.6.24_olpc/drivers/video/Makefile
---- linux_2.6.24_org/drivers/video/Makefile	2008-02-15 20:11:22.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/video/Makefile	2008-02-15 18:58:36.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/Makefile
+===================================================================
+--- linux-2.6.24.7.orig/drivers/video/Makefile
++++ linux-2.6.24.7/drivers/video/Makefile
 @@ -111,6 +111,7 @@ obj-$(CONFIG_FB_PNX4008_DUM_RGB)  += pnx
  obj-$(CONFIG_FB_IBM_GXT4500)	  += gxt4500.o
  obj-$(CONFIG_FB_PS3)		  += ps3fb.o
@@ -7598,9 +7664,10 @@ diff -purN linux_2.6.24_org/drivers/video/Makefile linux_2.6.24_olpc/drivers/vid
  obj-$(CONFIG_FB_XILINX)           += xilinxfb.o
  obj-$(CONFIG_FB_OMAP)             += omap/
  
-diff -purN linux_2.6.24_org/drivers/video/modedb.c linux_2.6.24_olpc/drivers/video/modedb.c
---- linux_2.6.24_org/drivers/video/modedb.c	2008-02-15 20:11:23.000000000 +0000
-+++ linux_2.6.24_olpc/drivers/video/modedb.c	2008-02-15 18:58:41.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/modedb.c
+===================================================================
+--- linux-2.6.24.7.orig/drivers/video/modedb.c
++++ linux-2.6.24.7/drivers/video/modedb.c
 @@ -33,6 +33,8 @@ const char *fb_mode_option;
       *  Standard video mode definitions (taken from XFree86)
       */
@@ -7620,9 +7687,10 @@ diff -purN linux_2.6.24_org/drivers/video/modedb.c linux_2.6.24_olpc/drivers/vid
  
      if (!default_bpp)
  	default_bpp = 8;
-diff -purN linux_2.6.24_org/drivers/video/olpc_dcon.c linux_2.6.24_olpc/drivers/video/olpc_dcon.c
---- linux_2.6.24_org/drivers/video/olpc_dcon.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/drivers/video/olpc_dcon.c	2008-02-15 18:58:42.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/olpc_dcon.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/drivers/video/olpc_dcon.c
 @@ -0,0 +1,946 @@
 +/*
 + * Mainly by David Woodhouse, somewhat modified by Jordan Crouse
@@ -8570,10 +8638,10 @@ diff -purN linux_2.6.24_org/drivers/video/olpc_dcon.c linux_2.6.24_olpc/drivers/
 +module_exit(olpc_dcon_exit);
 +
 +MODULE_LICENSE("GPL");
-Binary files linux_2.6.24_org/drivers/video/.olpc_dcon.c.swp and linux_2.6.24_olpc/drivers/video/.olpc_dcon.c.swp differ
-diff -purN linux_2.6.24_org/drivers/video/olpc_dcon.h linux_2.6.24_olpc/drivers/video/olpc_dcon.h
---- linux_2.6.24_org/drivers/video/olpc_dcon.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/drivers/video/olpc_dcon.h	2008-02-15 18:58:35.000000000 +0000
+Index: linux-2.6.24.7/drivers/video/olpc_dcon.h
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/drivers/video/olpc_dcon.h
 @@ -0,0 +1,75 @@
 +#ifndef OLPC_DCON_H_
 +#define OLPC_DCON_H_
@@ -8650,9 +8718,10 @@ diff -purN linux_2.6.24_org/drivers/video/olpc_dcon.h linux_2.6.24_olpc/drivers/
 +#define DCON_IRQ                6
 +
 +#endif
-diff -purN linux_2.6.24_org/fs/jffs2/nodelist.h linux_2.6.24_olpc/fs/jffs2/nodelist.h
---- linux_2.6.24_org/fs/jffs2/nodelist.h	2008-02-15 20:10:35.000000000 +0000
-+++ linux_2.6.24_olpc/fs/jffs2/nodelist.h	2008-02-15 18:57:39.000000000 +0000
+Index: linux-2.6.24.7/fs/jffs2/nodelist.h
+===================================================================
+--- linux-2.6.24.7.orig/fs/jffs2/nodelist.h
++++ linux-2.6.24.7/fs/jffs2/nodelist.h
 @@ -197,7 +197,7 @@ struct jffs2_inode_cache {
  #define RAWNODE_CLASS_XATTR_DATUM	1
  #define RAWNODE_CLASS_XATTR_REF		2
@@ -8662,9 +8731,10 @@ diff -purN linux_2.6.24_org/fs/jffs2/nodelist.h linux_2.6.24_olpc/fs/jffs2/nodel
  
  #define write_ofs(c) ((c)->nextblock->offset + (c)->sector_size - (c)->nextblock->free_size)
  
-diff -purN linux_2.6.24_org/fs/Kconfig linux_2.6.24_olpc/fs/Kconfig
---- linux_2.6.24_org/fs/Kconfig	2008-02-15 20:10:31.000000000 +0000
-+++ linux_2.6.24_olpc/fs/Kconfig	2008-02-15 18:57:33.000000000 +0000
+Index: linux-2.6.24.7/fs/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/fs/Kconfig
++++ linux-2.6.24.7/fs/Kconfig
 @@ -1031,6 +1031,37 @@ config HUGETLBFS
  config HUGETLB_PAGE
  	def_bool HUGETLBFS
@@ -8703,9 +8773,10 @@ diff -purN linux_2.6.24_org/fs/Kconfig linux_2.6.24_olpc/fs/Kconfig
  config CONFIGFS_FS
  	tristate "Userspace-driven configuration filesystem (EXPERIMENTAL)"
  	depends on SYSFS && EXPERIMENTAL
-diff -purN linux_2.6.24_org/fs/Makefile linux_2.6.24_olpc/fs/Makefile
---- linux_2.6.24_org/fs/Makefile	2008-02-15 20:10:33.000000000 +0000
-+++ linux_2.6.24_olpc/fs/Makefile	2008-02-15 18:57:34.000000000 +0000
+Index: linux-2.6.24.7/fs/Makefile
+===================================================================
+--- linux-2.6.24.7.orig/fs/Makefile
++++ linux-2.6.24.7/fs/Makefile
 @@ -110,6 +110,7 @@ obj-$(CONFIG_ADFS_FS)		+= adfs/
  obj-$(CONFIG_FUSE_FS)		+= fuse/
  obj-$(CONFIG_UDF_FS)		+= udf/
@@ -8714,14 +8785,16 @@ diff -purN linux_2.6.24_org/fs/Makefile linux_2.6.24_olpc/fs/Makefile
  obj-$(CONFIG_JFS_FS)		+= jfs/
  obj-$(CONFIG_XFS_FS)		+= xfs/
  obj-$(CONFIG_9P_FS)		+= 9p/
-diff -purN linux_2.6.24_org/fs/promfs/Makefile linux_2.6.24_olpc/fs/promfs/Makefile
---- linux_2.6.24_org/fs/promfs/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/fs/promfs/Makefile	2008-02-15 18:57:33.000000000 +0000
+Index: linux-2.6.24.7/fs/promfs/Makefile
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/fs/promfs/Makefile
 @@ -0,0 +1 @@
 +obj-$(CONFIG_PROMFS_FS) += promfs.o
-diff -purN linux_2.6.24_org/fs/promfs/promfs.c linux_2.6.24_olpc/fs/promfs/promfs.c
---- linux_2.6.24_org/fs/promfs/promfs.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/fs/promfs/promfs.c	2008-02-15 18:57:33.000000000 +0000
+Index: linux-2.6.24.7/fs/promfs/promfs.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/fs/promfs/promfs.c
 @@ -0,0 +1,295 @@
 +/*
 + * promfs.c - generic inode/dentry functions for IEEE 1275-based filesystems.
@@ -9018,9 +9091,10 @@ diff -purN linux_2.6.24_org/fs/promfs/promfs.c linux_2.6.24_olpc/fs/promfs/promf
 +
 +module_init(init_promfs);
 +module_exit(exit_promfs);
-diff -purN linux_2.6.24_org/include/asm-x86/ofw.h linux_2.6.24_olpc/include/asm-x86/ofw.h
---- linux_2.6.24_org/include/asm-x86/ofw.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/include/asm-x86/ofw.h	2008-02-15 18:57:59.000000000 +0000
+Index: linux-2.6.24.7/include/asm-x86/ofw.h
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/include/asm-x86/ofw.h
 @@ -0,0 +1,16 @@
 +/*
 + * Definitions for Open Firmware client interface on 32-bit system.
@@ -9038,9 +9112,10 @@ diff -purN linux_2.6.24_org/include/asm-x86/ofw.h linux_2.6.24_olpc/include/asm-
 +extern int ofw(char *, int, int, ...); 
 +
 +#endif
-diff -purN linux_2.6.24_org/include/asm-x86/olpc.h linux_2.6.24_olpc/include/asm-x86/olpc.h
---- linux_2.6.24_org/include/asm-x86/olpc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/include/asm-x86/olpc.h	2008-02-15 18:57:59.000000000 +0000
+Index: linux-2.6.24.7/include/asm-x86/olpc.h
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/include/asm-x86/olpc.h
 @@ -0,0 +1,107 @@
 +/* OLPC machine specific definitions */
 +
@@ -9149,9 +9224,10 @@ diff -purN linux_2.6.24_org/include/asm-x86/olpc.h linux_2.6.24_olpc/include/asm
 +
 +#endif
 +
-diff -purN linux_2.6.24_org/include/asm-x86/prom.h linux_2.6.24_olpc/include/asm-x86/prom.h
---- linux_2.6.24_org/include/asm-x86/prom.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/include/asm-x86/prom.h	2008-02-15 18:57:59.000000000 +0000
+Index: linux-2.6.24.7/include/asm-x86/prom.h
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/include/asm-x86/prom.h
 @@ -0,0 +1,108 @@
 +#ifndef _I386_PROM_H
 +#define _I386_PROM_H
@@ -9261,9 +9337,10 @@ diff -purN linux_2.6.24_org/include/asm-x86/prom.h linux_2.6.24_olpc/include/asm
 +
 +#endif /* __KERNEL__ */
 +#endif
-diff -purN linux_2.6.24_org/include/linux/battery.h linux_2.6.24_olpc/include/linux/battery.h
---- linux_2.6.24_org/include/linux/battery.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/include/linux/battery.h	2008-02-15 18:58:06.000000000 +0000
+Index: linux-2.6.24.7/include/linux/battery.h
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/include/linux/battery.h
 @@ -0,0 +1,101 @@
 +/*
 + * Driver model for batteries
@@ -9366,9 +9443,10 @@ diff -purN linux_2.6.24_org/include/linux/battery.h linux_2.6.24_olpc/include/li
 +ssize_t battery_attribute_show_status(char *buf, unsigned long status);
 +ssize_t battery_attribute_show_ac_status(char *buf, unsigned long status);
 +#endif /* __LINUX_BATTERY_H__ */
-diff -purN linux_2.6.24_org/include/linux/fb.h linux_2.6.24_olpc/include/linux/fb.h
---- linux_2.6.24_org/include/linux/fb.h	2008-02-15 20:10:55.000000000 +0000
-+++ linux_2.6.24_olpc/include/linux/fb.h	2008-02-15 18:58:01.000000000 +0000
+Index: linux-2.6.24.7/include/linux/fb.h
+===================================================================
+--- linux-2.6.24.7.orig/include/linux/fb.h
++++ linux-2.6.24.7/include/linux/fb.h
 @@ -666,6 +666,12 @@ struct fb_ops {
  	/* restore saved state */
  	void (*fb_restore_state)(struct fb_info *info);
@@ -9392,9 +9470,10 @@ diff -purN linux_2.6.24_org/include/linux/fb.h linux_2.6.24_olpc/include/linux/f
  extern struct fb_info *registered_fb[FB_MAX];
  extern int num_registered_fb;
  extern struct class *fb_class;
-diff -purN linux_2.6.24_org/include/linux/i2c-id.h linux_2.6.24_olpc/include/linux/i2c-id.h
---- linux_2.6.24_org/include/linux/i2c-id.h	2008-02-15 20:10:52.000000000 +0000
-+++ linux_2.6.24_olpc/include/linux/i2c-id.h	2008-02-15 18:58:00.000000000 +0000
+Index: linux-2.6.24.7/include/linux/i2c-id.h
+===================================================================
+--- linux-2.6.24.7.orig/include/linux/i2c-id.h
++++ linux-2.6.24.7/include/linux/i2c-id.h
 @@ -125,6 +125,7 @@
  #define I2C_DRIVERID_LM4857 	92 	/* LM4857 Audio Amplifier */
  #define I2C_DRIVERID_VP27SMPX	93	/* Panasonic VP27s tuner internal MPX */
@@ -9403,9 +9482,10 @@ diff -purN linux_2.6.24_org/include/linux/i2c-id.h linux_2.6.24_olpc/include/lin
  
  #define I2C_DRIVERID_I2CDEV	900
  #define I2C_DRIVERID_ARP        902    /* SMBus ARP Client              */
-diff -purN linux_2.6.24_org/include/linux/isl_38xx.h linux_2.6.24_olpc/include/linux/isl_38xx.h
---- linux_2.6.24_org/include/linux/isl_38xx.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/include/linux/isl_38xx.h	2008-02-15 18:58:05.000000000 +0000
+Index: linux-2.6.24.7/include/linux/isl_38xx.h
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/include/linux/isl_38xx.h
 @@ -0,0 +1,127 @@
 +/*
 + *  Copyright (C) 2002 Intersil Americas Inc.
@@ -9534,9 +9614,10 @@ diff -purN linux_2.6.24_org/include/linux/isl_38xx.h linux_2.6.24_olpc/include/l
 +#define ISL38XX_DMA_MASTER_CONTROL_TRIGGER      0x00000004
 +
 +#endif /* _LINUX_ISL_38XX_H */
-diff -purN linux_2.6.24_org/include/linux/pm.h linux_2.6.24_olpc/include/linux/pm.h
---- linux_2.6.24_org/include/linux/pm.h	2008-02-15 20:11:06.000000000 +0000
-+++ linux_2.6.24_olpc/include/linux/pm.h	2008-02-15 18:58:06.000000000 +0000
+Index: linux-2.6.24.7/include/linux/pm.h
+===================================================================
+--- linux-2.6.24.7.orig/include/linux/pm.h
++++ linux-2.6.24.7/include/linux/pm.h
 @@ -178,6 +178,9 @@ struct dev_pm_info {
  	unsigned		can_wakeup:1;
  #ifdef	CONFIG_PM_SLEEP
@@ -9547,9 +9628,10 @@ diff -purN linux_2.6.24_org/include/linux/pm.h linux_2.6.24_olpc/include/linux/p
  	struct list_head	entry;
  #endif
  };
-diff -purN linux_2.6.24_org/include/linux/power_supply.h linux_2.6.24_olpc/include/linux/power_supply.h
---- linux_2.6.24_org/include/linux/power_supply.h	2008-02-15 20:10:55.000000000 +0000
-+++ linux_2.6.24_olpc/include/linux/power_supply.h	2008-02-15 18:58:01.000000000 +0000
+Index: linux-2.6.24.7/include/linux/power_supply.h
+===================================================================
+--- linux-2.6.24.7.orig/include/linux/power_supply.h
++++ linux-2.6.24.7/include/linux/power_supply.h
 @@ -98,9 +98,11 @@ enum power_supply_property {
  	POWER_SUPPLY_PROP_TIME_TO_EMPTY_AVG,
  	POWER_SUPPLY_PROP_TIME_TO_FULL_NOW,
@@ -9574,9 +9656,10 @@ diff -purN linux_2.6.24_org/include/linux/power_supply.h linux_2.6.24_olpc/inclu
  extern void power_supply_unregister(struct power_supply *psy);
  
  /* For APM emulation, think legacy userspace. */
-diff -purN linux_2.6.24_org/include/linux/vt_kern.h linux_2.6.24_olpc/include/linux/vt_kern.h
---- linux_2.6.24_org/include/linux/vt_kern.h	2008-02-15 20:10:55.000000000 +0000
-+++ linux_2.6.24_olpc/include/linux/vt_kern.h	2008-02-15 18:58:02.000000000 +0000
+Index: linux-2.6.24.7/include/linux/vt_kern.h
+===================================================================
+--- linux-2.6.24.7.orig/include/linux/vt_kern.h
++++ linux-2.6.24.7/include/linux/vt_kern.h
 @@ -96,4 +96,23 @@ struct vt_spawn_console {
  };
  extern struct vt_spawn_console vt_spawn_con;
@@ -9601,9 +9684,10 @@ diff -purN linux_2.6.24_org/include/linux/vt_kern.h linux_2.6.24_olpc/include/li
 +}
 +
  #endif /* _VT_KERN_H */
-diff -purN linux_2.6.24_org/include/sound/ac97_codec.h linux_2.6.24_olpc/include/sound/ac97_codec.h
---- linux_2.6.24_org/include/sound/ac97_codec.h	2008-02-15 20:10:44.000000000 +0000
-+++ linux_2.6.24_olpc/include/sound/ac97_codec.h	2008-02-15 18:57:45.000000000 +0000
+Index: linux-2.6.24.7/include/sound/ac97_codec.h
+===================================================================
+--- linux-2.6.24.7.orig/include/sound/ac97_codec.h
++++ linux-2.6.24.7/include/sound/ac97_codec.h
 @@ -281,10 +281,12 @@
  /* specific - Analog Devices */
  #define AC97_AD_TEST		0x5a	/* test register */
@@ -9617,9 +9701,10 @@ diff -purN linux_2.6.24_org/include/sound/ac97_codec.h linux_2.6.24_olpc/include
  
  /* specific - Cirrus Logic */
  #define AC97_CSR_ACMODE		0x5e	/* AC Mode Register */
-diff -purN linux_2.6.24_org/kernel/power/console.c linux_2.6.24_olpc/kernel/power/console.c
---- linux_2.6.24_org/kernel/power/console.c	2008-02-15 20:12:34.000000000 +0000
-+++ linux_2.6.24_olpc/kernel/power/console.c	2008-02-15 19:00:00.000000000 +0000
+Index: linux-2.6.24.7/kernel/power/console.c
+===================================================================
+--- linux-2.6.24.7.orig/kernel/power/console.c
++++ linux-2.6.24.7/kernel/power/console.c
 @@ -9,7 +9,7 @@
  #include <linux/console.h>
  #include "power.h"
@@ -9629,9 +9714,10 @@ diff -purN linux_2.6.24_org/kernel/power/console.c linux_2.6.24_olpc/kernel/powe
  #define SUSPEND_CONSOLE	(MAX_NR_CONSOLES-1)
  
  static int orig_fgconsole, orig_kmsg;
-diff -purN linux_2.6.24_org/kernel/power/Kconfig linux_2.6.24_olpc/kernel/power/Kconfig
---- linux_2.6.24_org/kernel/power/Kconfig	2008-02-15 20:12:34.000000000 +0000
-+++ linux_2.6.24_olpc/kernel/power/Kconfig	2008-02-15 19:00:00.000000000 +0000
+Index: linux-2.6.24.7/kernel/power/Kconfig
+===================================================================
+--- linux-2.6.24.7.orig/kernel/power/Kconfig
++++ linux-2.6.24.7/kernel/power/Kconfig
 @@ -37,9 +37,22 @@ config PM_DEBUG
  	code. This is helpful when debugging and reporting PM bugs, like
  	suspend support.
@@ -9656,9 +9742,10 @@ diff -purN linux_2.6.24_org/kernel/power/Kconfig linux_2.6.24_olpc/kernel/power/
  	default n
  	---help---
  	This option enables verbose messages from the Power Management code.
-diff -purN linux_2.6.24_org/kernel/power/main.c linux_2.6.24_olpc/kernel/power/main.c
---- linux_2.6.24_org/kernel/power/main.c	2008-02-15 20:12:34.000000000 +0000
-+++ linux_2.6.24_olpc/kernel/power/main.c	2008-02-15 19:00:00.000000000 +0000
+Index: linux-2.6.24.7/kernel/power/main.c
+===================================================================
+--- linux-2.6.24.7.orig/kernel/power/main.c
++++ linux-2.6.24.7/kernel/power/main.c
 @@ -76,11 +76,13 @@ static int suspend_prepare(void)
  	if (!suspend_ops || !suspend_ops->enter)
  		return -EPERM;
@@ -9673,9 +9760,10 @@ diff -purN linux_2.6.24_org/kernel/power/main.c linux_2.6.24_olpc/kernel/power/m
  
  	if (freeze_processes()) {
  		error = -EAGAIN;
-diff -purN linux_2.6.24_org/scripts/kconfig/conf.c linux_2.6.24_olpc/scripts/kconfig/conf.c
---- linux_2.6.24_org/scripts/kconfig/conf.c	2008-02-15 20:10:15.000000000 +0000
-+++ linux_2.6.24_olpc/scripts/kconfig/conf.c	2008-02-15 18:57:09.000000000 +0000
+Index: linux-2.6.24.7/scripts/kconfig/conf.c
+===================================================================
+--- linux-2.6.24.7.orig/scripts/kconfig/conf.c
++++ linux-2.6.24.7/scripts/kconfig/conf.c
 @@ -22,6 +22,7 @@ enum {
  	ask_new,
  	ask_silent,
@@ -9791,9 +9879,10 @@ diff -purN linux_2.6.24_org/scripts/kconfig/conf.c linux_2.6.24_olpc/scripts/kco
  		fprintf(stderr, _("\n*** Error during writing of the kernel configuration.\n\n"));
  		return 1;
  	}
-diff -purN linux_2.6.24_org/scripts/kconfig/confdata.c linux_2.6.24_olpc/scripts/kconfig/confdata.c
---- linux_2.6.24_org/scripts/kconfig/confdata.c	2008-02-15 20:10:15.000000000 +0000
-+++ linux_2.6.24_olpc/scripts/kconfig/confdata.c	2008-02-15 18:57:09.000000000 +0000
+Index: linux-2.6.24.7/scripts/kconfig/confdata.c
+===================================================================
+--- linux-2.6.24.7.orig/scripts/kconfig/confdata.c
++++ linux-2.6.24.7/scripts/kconfig/confdata.c
 @@ -393,7 +393,7 @@ int conf_read(const char *name)
  	return 0;
  }
@@ -9817,9 +9906,10 @@ diff -purN linux_2.6.24_org/scripts/kconfig/confdata.c linux_2.6.24_olpc/scripts
  
  	sym_set_change_count(0);
  
-diff -purN linux_2.6.24_org/scripts/kconfig/gconf.c linux_2.6.24_olpc/scripts/kconfig/gconf.c
---- linux_2.6.24_org/scripts/kconfig/gconf.c	2008-02-15 20:10:15.000000000 +0000
-+++ linux_2.6.24_olpc/scripts/kconfig/gconf.c	2008-02-15 18:57:09.000000000 +0000
+Index: linux-2.6.24.7/scripts/kconfig/gconf.c
+===================================================================
+--- linux-2.6.24.7.orig/scripts/kconfig/gconf.c
++++ linux-2.6.24.7/scripts/kconfig/gconf.c
 @@ -621,7 +621,7 @@ void on_load1_activate(GtkMenuItem * men
  
  void on_save_activate(GtkMenuItem * menuitem, gpointer user_data)
@@ -9838,9 +9928,10 @@ diff -purN linux_2.6.24_org/scripts/kconfig/gconf.c linux_2.6.24_olpc/scripts/kc
  		text_insert_msg(_("Error"), _("Unable to save configuration !"));
  
  	gtk_widget_destroy(GTK_WIDGET(user_data));
-diff -purN linux_2.6.24_org/scripts/kconfig/lkc_proto.h linux_2.6.24_olpc/scripts/kconfig/lkc_proto.h
---- linux_2.6.24_org/scripts/kconfig/lkc_proto.h	2008-02-15 20:10:15.000000000 +0000
-+++ linux_2.6.24_olpc/scripts/kconfig/lkc_proto.h	2008-02-15 18:57:09.000000000 +0000
+Index: linux-2.6.24.7/scripts/kconfig/lkc_proto.h
+===================================================================
+--- linux-2.6.24.7.orig/scripts/kconfig/lkc_proto.h
++++ linux-2.6.24.7/scripts/kconfig/lkc_proto.h
 @@ -3,7 +3,7 @@
  P(conf_parse,void,(const char *name));
  P(conf_read,int,(const char *name));
@@ -9850,9 +9941,10 @@ diff -purN linux_2.6.24_org/scripts/kconfig/lkc_proto.h linux_2.6.24_olpc/script
  P(conf_write_autoconf,int,(void));
  P(conf_get_changed,bool,(void));
  P(conf_set_changed_callback, void,(void (*fn)(void)));
-diff -purN linux_2.6.24_org/scripts/kconfig/Makefile linux_2.6.24_olpc/scripts/kconfig/Makefile
---- linux_2.6.24_org/scripts/kconfig/Makefile	2008-02-15 20:10:15.000000000 +0000
-+++ linux_2.6.24_olpc/scripts/kconfig/Makefile	2008-02-15 18:57:09.000000000 +0000
+Index: linux-2.6.24.7/scripts/kconfig/Makefile
+===================================================================
+--- linux-2.6.24.7.orig/scripts/kconfig/Makefile
++++ linux-2.6.24.7/scripts/kconfig/Makefile
 @@ -69,6 +69,9 @@ endif
  %_defconfig: $(obj)/conf
  	$(Q)$< -D arch/$(SRCARCH)/configs/$@ $(Kconfig)
@@ -9863,10 +9955,10 @@ diff -purN linux_2.6.24_org/scripts/kconfig/Makefile linux_2.6.24_olpc/scripts/k
  # Help text used by make help
  help:
  	@echo  '  config	  - Update current config utilising a line-oriented program'
-Binary files linux_2.6.24_org/scripts/kconfig/mconf and linux_2.6.24_olpc/scripts/kconfig/mconf differ
-diff -purN linux_2.6.24_org/scripts/kconfig/mconf.c linux_2.6.24_olpc/scripts/kconfig/mconf.c
---- linux_2.6.24_org/scripts/kconfig/mconf.c	2008-02-15 20:10:15.000000000 +0000
-+++ linux_2.6.24_olpc/scripts/kconfig/mconf.c	2008-02-15 18:57:09.000000000 +0000
+Index: linux-2.6.24.7/scripts/kconfig/mconf.c
+===================================================================
+--- linux-2.6.24.7.orig/scripts/kconfig/mconf.c
++++ linux-2.6.24.7/scripts/kconfig/mconf.c
 @@ -885,7 +885,7 @@ static void conf_save(void)
  		case 0:
  			if (!dialog_input_result[0])
@@ -9885,9 +9977,10 @@ diff -purN linux_2.6.24_org/scripts/kconfig/mconf.c linux_2.6.24_olpc/scripts/kc
  			fprintf(stderr, _("\n\n"
  				"Error during writing of the kernel configuration.\n"
  				"Your kernel configuration changes were NOT saved."
-diff -purN linux_2.6.24_org/scripts/kconfig/qconf.cc linux_2.6.24_olpc/scripts/kconfig/qconf.cc
---- linux_2.6.24_org/scripts/kconfig/qconf.cc	2008-02-15 20:10:15.000000000 +0000
-+++ linux_2.6.24_olpc/scripts/kconfig/qconf.cc	2008-02-15 18:57:09.000000000 +0000
+Index: linux-2.6.24.7/scripts/kconfig/qconf.cc
+===================================================================
+--- linux-2.6.24.7.orig/scripts/kconfig/qconf.cc
++++ linux-2.6.24.7/scripts/kconfig/qconf.cc
 @@ -1458,7 +1458,7 @@ void ConfigMainWindow::loadConfig(void)
  
  void ConfigMainWindow::saveConfig(void)
@@ -9915,9 +10008,10 @@ diff -purN linux_2.6.24_org/scripts/kconfig/qconf.cc linux_2.6.24_olpc/scripts/k
  	case QMessageBox::No:
  		e->accept();
  		break;
-diff -purN linux_2.6.24_org/sound/pci/ac97/ac97_patch.c linux_2.6.24_olpc/sound/pci/ac97/ac97_patch.c
---- linux_2.6.24_org/sound/pci/ac97/ac97_patch.c	2008-02-15 20:10:24.000000000 +0000
-+++ linux_2.6.24_olpc/sound/pci/ac97/ac97_patch.c	2008-02-15 18:57:24.000000000 +0000
+Index: linux-2.6.24.7/sound/pci/ac97/ac97_patch.c
+===================================================================
+--- linux-2.6.24.7.orig/sound/pci/ac97/ac97_patch.c
++++ linux-2.6.24.7/sound/pci/ac97/ac97_patch.c
 @@ -2029,8 +2029,9 @@ static const struct snd_kcontrol_new snd
  		.get = snd_ac97_ad1888_lohpsel_get,
  		.put = snd_ac97_ad1888_lohpsel_put
@@ -9930,9 +10024,10 @@ diff -purN linux_2.6.24_org/sound/pci/ac97/ac97_patch.c linux_2.6.24_olpc/sound/
  	AC97_SINGLE("Spread Front to Surround and Center/LFE", AC97_AD_MISC, 7, 1, 0),
  	{
  		.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
-diff -purN linux_2.6.24_org/sound/pci/cs5535audio/cs5535audio.c linux_2.6.24_olpc/sound/pci/cs5535audio/cs5535audio.c
---- linux_2.6.24_org/sound/pci/cs5535audio/cs5535audio.c	2008-02-15 20:10:23.000000000 +0000
-+++ linux_2.6.24_olpc/sound/pci/cs5535audio/cs5535audio.c	2008-02-15 18:57:23.000000000 +0000
+Index: linux-2.6.24.7/sound/pci/cs5535audio/cs5535audio.c
+===================================================================
+--- linux-2.6.24.7.orig/sound/pci/cs5535audio/cs5535audio.c
++++ linux-2.6.24.7/sound/pci/cs5535audio/cs5535audio.c
 @@ -145,7 +145,7 @@ static unsigned short snd_cs5535audio_ac
  	return snd_cs5535audio_codec_read(cs5535au, reg);
  }
@@ -9971,9 +10066,10 @@ diff -purN linux_2.6.24_org/sound/pci/cs5535audio/cs5535audio.c linux_2.6.24_olp
  	return 0;
  }
  
-diff -purN linux_2.6.24_org/sound/pci/cs5535audio/cs5535audio.h linux_2.6.24_olpc/sound/pci/cs5535audio/cs5535audio.h
---- linux_2.6.24_org/sound/pci/cs5535audio/cs5535audio.h	2008-02-15 20:10:23.000000000 +0000
-+++ linux_2.6.24_olpc/sound/pci/cs5535audio/cs5535audio.h	2008-02-15 18:57:23.000000000 +0000
+Index: linux-2.6.24.7/sound/pci/cs5535audio/cs5535audio.h
+===================================================================
+--- linux-2.6.24.7.orig/sound/pci/cs5535audio/cs5535audio.h
++++ linux-2.6.24.7/sound/pci/cs5535audio/cs5535audio.h
 @@ -78,6 +78,7 @@ struct cs5535audio_dma {
  	unsigned int buf_addr, buf_bytes;
  	unsigned int period_bytes, periods;
@@ -10004,9 +10100,10 @@ diff -purN linux_2.6.24_org/sound/pci/cs5535audio/cs5535audio.h linux_2.6.24_olp
  int __devinit snd_cs5535audio_pcm(struct cs5535audio *cs5535audio);
  
  #endif /* __SOUND_CS5535AUDIO_H */
-diff -purN linux_2.6.24_org/sound/pci/cs5535audio/cs5535audio_olpc.c linux_2.6.24_olpc/sound/pci/cs5535audio/cs5535audio_olpc.c
---- linux_2.6.24_org/sound/pci/cs5535audio/cs5535audio_olpc.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux_2.6.24_olpc/sound/pci/cs5535audio/cs5535audio_olpc.c	2008-02-15 18:57:23.000000000 +0000
+Index: linux-2.6.24.7/sound/pci/cs5535audio/cs5535audio_olpc.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/sound/pci/cs5535audio/cs5535audio_olpc.c
 @@ -0,0 +1,110 @@
 +#include <sound/driver.h>
 +#include <sound/core.h>
@@ -10118,9 +10215,10 @@ diff -purN linux_2.6.24_org/sound/pci/cs5535audio/cs5535audio_olpc.c linux_2.6.2
 +	return snd_ctl_add(card, snd_ctl_new1(&snd_cs5535audio_controls,
 +			ac97->private_data));
 +}
-diff -purN linux_2.6.24_org/sound/pci/cs5535audio/cs5535audio_pcm.c linux_2.6.24_olpc/sound/pci/cs5535audio/cs5535audio_pcm.c
---- linux_2.6.24_org/sound/pci/cs5535audio/cs5535audio_pcm.c	2008-02-15 20:10:23.000000000 +0000
-+++ linux_2.6.24_olpc/sound/pci/cs5535audio/cs5535audio_pcm.c	2008-02-15 18:57:23.000000000 +0000
+Index: linux-2.6.24.7/sound/pci/cs5535audio/cs5535audio_pcm.c
+===================================================================
+--- linux-2.6.24.7.orig/sound/pci/cs5535audio/cs5535audio_pcm.c
++++ linux-2.6.24.7/sound/pci/cs5535audio/cs5535audio_pcm.c
 @@ -259,6 +259,9 @@ static int snd_cs5535audio_hw_params(str
  	err = cs5535audio_build_dma_packets(cs5535au, dma, substream,
  					    params_periods(hw_params),
@@ -10186,9 +10284,10 @@ diff -purN linux_2.6.24_org/sound/pci/cs5535audio/cs5535audio_pcm.c linux_2.6.24
  	return 0;
  }
  
-diff -purN linux_2.6.24_org/sound/pci/cs5535audio/Makefile linux_2.6.24_olpc/sound/pci/cs5535audio/Makefile
---- linux_2.6.24_org/sound/pci/cs5535audio/Makefile	2008-02-15 20:10:23.000000000 +0000
-+++ linux_2.6.24_olpc/sound/pci/cs5535audio/Makefile	2008-02-15 18:57:23.000000000 +0000
+Index: linux-2.6.24.7/sound/pci/cs5535audio/Makefile
+===================================================================
+--- linux-2.6.24.7.orig/sound/pci/cs5535audio/Makefile
++++ linux-2.6.24.7/sound/pci/cs5535audio/Makefile
 @@ -5,5 +5,9 @@
  snd-cs5535audio-y := cs5535audio.o cs5535audio_pcm.o
  snd-cs5535audio-$(CONFIG_PM) += cs5535audio_pm.o
