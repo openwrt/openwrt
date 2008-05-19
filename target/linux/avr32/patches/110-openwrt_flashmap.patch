@@ -1,7 +1,8 @@
-diff -Nur linux-2.6.21.3/arch/avr32/boards/atngw100/flash.c linux-2.6.21.3-owrt/arch/avr32/boards/atngw100/flash.c
---- linux-2.6.21.3/arch/avr32/boards/atngw100/flash.c	2007-06-07 18:34:04.000000000 +0200
-+++ linux-2.6.21.3-owrt/arch/avr32/boards/atngw100/flash.c	2007-06-07 18:36:02.000000000 +0200
-@@ -43,9 +43,14 @@
+Index: linux-2.6.24.7/arch/avr32/boards/atngw100/flash.c
+===================================================================
+--- linux-2.6.24.7.orig/arch/avr32/boards/atngw100/flash.c
++++ linux-2.6.24.7/arch/avr32/boards/atngw100/flash.c
+@@ -45,9 +45,14 @@ static struct mtd_partition flash_parts[
  		.mask_flags     = MTD_WRITEABLE,
  	},
  	{
