@@ -1,7 +1,7 @@
-Index: linux-2.6.21gum/drivers/cpufreq/Kconfig
+Index: linux-2.6.21.7/drivers/cpufreq/Kconfig
 ===================================================================
---- linux-2.6.21gum.orig/drivers/cpufreq/Kconfig
-+++ linux-2.6.21gum/drivers/cpufreq/Kconfig
+--- linux-2.6.21.7.orig/drivers/cpufreq/Kconfig
++++ linux-2.6.21.7/drivers/cpufreq/Kconfig
 @@ -52,7 +52,7 @@ config CPU_FREQ_STAT_DETAILS
  
  choice
@@ -26,10 +26,10 @@ Index: linux-2.6.21gum/drivers/cpufreq/Kconfig
  endchoice
  
  config CPU_FREQ_GOV_PERFORMANCE
-Index: linux-2.6.21gum/include/linux/cpufreq.h
+Index: linux-2.6.21.7/include/linux/cpufreq.h
 ===================================================================
---- linux-2.6.21gum.orig/include/linux/cpufreq.h
-+++ linux-2.6.21gum/include/linux/cpufreq.h
+--- linux-2.6.21.7.orig/include/linux/cpufreq.h
++++ linux-2.6.21.7/include/linux/cpufreq.h
 @@ -286,6 +286,9 @@ extern struct cpufreq_governor cpufreq_g
  #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_USERSPACE)
  extern struct cpufreq_governor cpufreq_gov_userspace;
