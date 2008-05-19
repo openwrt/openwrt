@@ -1,7 +1,7 @@
-Index: linux-2.6.23.16/drivers/char/gemini_gpio_dev.c
+Index: linux-2.6.23.17/drivers/char/gemini_gpio_dev.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/char/gemini_gpio_dev.c	2008-03-15 17:05:28.382258620 +0200
+--- /dev/null
++++ linux-2.6.23.17/drivers/char/gemini_gpio_dev.c
 @@ -0,0 +1,356 @@
 +/*
 + * 	GPIO driver for Gemini board
@@ -359,11 +359,11 @@ Index: linux-2.6.23.16/drivers/char/gemini_gpio_dev.c
 +MODULE_AUTHOR("Jonas Majauskas");
 +MODULE_LICENSE("GPL");
 +
-Index: linux-2.6.23.16/drivers/char/Kconfig
+Index: linux-2.6.23.17/drivers/char/Kconfig
 ===================================================================
---- linux-2.6.23.16.orig/drivers/char/Kconfig	2008-03-13 17:45:54.000221290 +0200
-+++ linux-2.6.23.16/drivers/char/Kconfig	2008-03-15 17:05:09.381175866 +0200
-@@ -1064,5 +1064,12 @@
+--- linux-2.6.23.17.orig/drivers/char/Kconfig
++++ linux-2.6.23.17/drivers/char/Kconfig
+@@ -1064,5 +1064,12 @@ config DEVPORT
  
  source "drivers/s390/char/Kconfig"
  
@@ -376,11 +376,11 @@ Index: linux-2.6.23.16/drivers/char/Kconfig
 +
  endmenu
  
-Index: linux-2.6.23.16/drivers/char/Makefile
+Index: linux-2.6.23.17/drivers/char/Makefile
 ===================================================================
---- linux-2.6.23.16.orig/drivers/char/Makefile	2008-03-15 17:04:35.879266660 +0200
-+++ linux-2.6.23.16/drivers/char/Makefile	2008-03-15 17:05:09.381175866 +0200
-@@ -115,6 +115,7 @@
+--- linux-2.6.23.17.orig/drivers/char/Makefile
++++ linux-2.6.23.17/drivers/char/Makefile
+@@ -115,6 +115,7 @@ obj-$(CONFIG_IPMI_HANDLER)	+= ipmi/
  
  obj-$(CONFIG_HANGCHECK_TIMER)	+= hangcheck-timer.o
  obj-$(CONFIG_TCG_TPM)		+= tpm/

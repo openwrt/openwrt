@@ -1,7 +1,7 @@
-Index: linux-2.6.23.16/drivers/serial/it8712.c
+Index: linux-2.6.23.17/drivers/serial/it8712.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/serial/it8712.c	2008-03-15 17:59:53.568330991 +0200
+--- /dev/null
++++ linux-2.6.23.17/drivers/serial/it8712.c
 @@ -0,0 +1,858 @@
 +/*
 + *  linux/drivers/char/serial_uart00.c
@@ -861,10 +861,10 @@ Index: linux-2.6.23.16/drivers/serial/it8712.c
 +
 +
 +__initcall(it8712_init);
-Index: linux-2.6.23.16/drivers/serial/it8712.h
+Index: linux-2.6.23.17/drivers/serial/it8712.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/serial/it8712.h	2008-03-15 17:59:53.568330991 +0200
+--- /dev/null
++++ linux-2.6.23.17/drivers/serial/it8712.h
 @@ -0,0 +1,135 @@
 +#define UART_RX		0	/* In:  Receive buffer (DLAB=0) */
 +#define UART_TX		0	/* Out: Transmit buffer (DLAB=0) */
@@ -1001,10 +1001,10 @@ Index: linux-2.6.23.16/drivers/serial/it8712.h
 +
 +
 +
-Index: linux-2.6.23.16/drivers/serial/serial_it8712.c
+Index: linux-2.6.23.17/drivers/serial/serial_it8712.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/serial/serial_it8712.c	2008-03-15 17:59:53.568330991 +0200
+--- /dev/null
++++ linux-2.6.23.17/drivers/serial/serial_it8712.c
 @@ -0,0 +1,876 @@
 +/*
 + *  linux/drivers/char/serial_uart00.c
@@ -1882,10 +1882,10 @@ Index: linux-2.6.23.16/drivers/serial/serial_it8712.c
 +
 +
 +__initcall(it8712_init);
-Index: linux-2.6.23.16/drivers/serial/serial_sl2312.c
+Index: linux-2.6.23.17/drivers/serial/serial_sl2312.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/serial/serial_sl2312.c	2008-03-17 12:30:50.290536619 +0200
+--- /dev/null
++++ linux-2.6.23.17/drivers/serial/serial_sl2312.c
 @@ -0,0 +1,827 @@
 +/*
 + *  linux/drivers/char/serial_uart00.c
@@ -2714,10 +2714,10 @@ Index: linux-2.6.23.16/drivers/serial/serial_sl2312.c
 +
 +
 +__initcall(sl2312_init);
-Index: linux-2.6.23.16/include/linux/serial_core.h
+Index: linux-2.6.23.17/include/linux/serial_core.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/serial_core.h	2008-03-15 17:59:22.566564448 +0200
-+++ linux-2.6.23.16/include/linux/serial_core.h	2008-03-15 17:59:53.568330991 +0200
+--- linux-2.6.23.17.orig/include/linux/serial_core.h
++++ linux-2.6.23.17/include/linux/serial_core.h
 @@ -147,6 +147,10 @@
  #define PORT_SB1250_DUART	77
  
@@ -2729,11 +2729,11 @@ Index: linux-2.6.23.16/include/linux/serial_core.h
  #ifdef __KERNEL__
  
  #include <linux/compiler.h>
-Index: linux-2.6.23.16/drivers/char/Makefile
+Index: linux-2.6.23.17/drivers/char/Makefile
 ===================================================================
---- linux-2.6.23.16.orig/drivers/char/Makefile	2008-03-15 17:59:22.566564448 +0200
-+++ linux-2.6.23.16/drivers/char/Makefile	2008-03-17 12:19:43.252524398 +0200
-@@ -70,6 +70,16 @@
+--- linux-2.6.23.17.orig/drivers/char/Makefile
++++ linux-2.6.23.17/drivers/char/Makefile
+@@ -70,6 +70,16 @@ obj-$(CONFIG_R3964)		+= n_r3964.o
  obj-$(CONFIG_APPLICOM)		+= applicom.o
  obj-$(CONFIG_SONYPI)		+= sonypi.o
  obj-$(CONFIG_RTC)		+= rtc.o
@@ -2750,11 +2750,11 @@ Index: linux-2.6.23.16/drivers/char/Makefile
  obj-$(CONFIG_HPET)		+= hpet.o
  obj-$(CONFIG_GEN_RTC)		+= genrtc.o
  obj-$(CONFIG_EFI_RTC)		+= efirtc.o
-Index: linux-2.6.23.16/drivers/serial/Kconfig
+Index: linux-2.6.23.17/drivers/serial/Kconfig
 ===================================================================
---- linux-2.6.23.16.orig/drivers/serial/Kconfig	2008-03-15 17:59:22.566564448 +0200
-+++ linux-2.6.23.16/drivers/serial/Kconfig	2008-03-15 17:59:53.568330991 +0200
-@@ -280,6 +280,56 @@
+--- linux-2.6.23.17.orig/drivers/serial/Kconfig
++++ linux-2.6.23.17/drivers/serial/Kconfig
+@@ -280,6 +280,56 @@ config SERIAL_8250_RM9K
  
  comment "Non-8250 serial port support"
  
@@ -2811,11 +2811,11 @@ Index: linux-2.6.23.16/drivers/serial/Kconfig
  config SERIAL_AMBA_PL010
  	tristate "ARM AMBA PL010 serial port support"
  	depends on ARM_AMBA && (BROKEN || !ARCH_VERSATILE)
-Index: linux-2.6.23.16/drivers/serial/Makefile
+Index: linux-2.6.23.17/drivers/serial/Makefile
 ===================================================================
---- linux-2.6.23.16.orig/drivers/serial/Makefile	2008-03-15 17:59:22.566564448 +0200
-+++ linux-2.6.23.16/drivers/serial/Makefile	2008-03-15 17:59:53.568330991 +0200
-@@ -62,5 +62,7 @@
+--- linux-2.6.23.17.orig/drivers/serial/Makefile
++++ linux-2.6.23.17/drivers/serial/Makefile
+@@ -62,5 +62,7 @@ obj-$(CONFIG_SERIAL_SGI_IOC3) += ioc3_se
  obj-$(CONFIG_SERIAL_ATMEL) += atmel_serial.o
  obj-$(CONFIG_SERIAL_UARTLITE) += uartlite.o
  obj-$(CONFIG_SERIAL_NETX) += netx-serial.o
