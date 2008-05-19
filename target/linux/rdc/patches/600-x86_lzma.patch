@@ -1,6 +1,7 @@
-diff -Naur linux-old/arch/x86/boot/compressed/LzmaDecode.c linux-lzma/arch/i386/boot/compressed/LzmaDecode.c
---- linux-old/arch/x86/boot/compressed/LzmaDecode.c	1969-12-31 19:00:00.000000000 -0500
-+++ linux-lzma/arch/x86/boot/compressed/LzmaDecode.c	2005-06-05 00:07:38.000000000 -0400
+Index: linux-2.6.24.7/arch/x86/boot/compressed/LzmaDecode.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/arch/x86/boot/compressed/LzmaDecode.c
 @@ -0,0 +1,586 @@
 +/*
 +  LzmaDecode.c
@@ -588,9 +589,10 @@ diff -Naur linux-old/arch/x86/boot/compressed/LzmaDecode.c linux-lzma/arch/i386/
 +  *outSizeProcessed = nowPos;
 +  return LZMA_RESULT_OK;
 +}
-diff -Naur linux-old/arch/x86/boot/compressed/LzmaDecode.h linux-lzma/arch/i386/boot/compressed/LzmaDecode.h
---- linux-old/arch/x86/boot/compressed/LzmaDecode.h	1969-12-31 19:00:00.000000000 -0500
-+++ linux-lzma/arch/x86/boot/compressed/LzmaDecode.h	2005-06-05 00:07:39.000000000 -0400
+Index: linux-2.6.24.7/arch/x86/boot/compressed/LzmaDecode.h
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/arch/x86/boot/compressed/LzmaDecode.h
 @@ -0,0 +1,100 @@
 +/* 
 +  LzmaDecode.h
@@ -692,9 +694,10 @@ diff -Naur linux-old/arch/x86/boot/compressed/LzmaDecode.h linux-lzma/arch/i386/
 +    UInt32 *outSizeProcessed);
 +
 +#endif
-diff -Naur linux-old/arch/x86/boot/compressed/lzma_misc.c linux-lzma/arch/i386/boot/compressed/lzma_misc.c
---- linux-old/arch/x86/boot/compressed/lzma_misc.c	1969-12-31 19:00:00.000000000 -0500
-+++ linux-lzma/arch/x86/boot/compressed/lzma_misc.c	2005-06-04 21:33:48.000000000 -0400
+Index: linux-2.6.24.7/arch/x86/boot/compressed/lzma_misc.c
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/arch/x86/boot/compressed/lzma_misc.c
 @@ -0,0 +1,281 @@
 +/*
 + * lzma_misc.c
@@ -977,10 +980,11 @@ diff -Naur linux-old/arch/x86/boot/compressed/lzma_misc.c linux-lzma/arch/i386/b
 +	lzma_unzip();
 +	return;
 +}
-diff -urN linux-2.6.19.2/scripts/Makefile.lib linux-2.6.19.2.new/scripts/Makefile.lib
---- linux-2.6.19.2/scripts/Makefile.lib	2007-01-10 20:10:37.000000000 +0100
-+++ linux-2.6.19.2.new/scripts/Makefile.lib	2007-04-15 23:51:54.000000000 +0200
-@@ -162,4 +162,9 @@
+Index: linux-2.6.24.7/scripts/Makefile.lib
+===================================================================
+--- linux-2.6.24.7.orig/scripts/Makefile.lib
++++ linux-2.6.24.7/scripts/Makefile.lib
+@@ -166,4 +166,9 @@ cmd_objcopy = $(OBJCOPY) $(OBJCOPYFLAGS)
  quiet_cmd_gzip = GZIP    $@
  cmd_gzip = gzip -f -9 < $< > $@
  
@@ -991,17 +995,19 @@ diff -urN linux-2.6.19.2/scripts/Makefile.lib linux-2.6.19.2.new/scripts/Makefil
 +cmd_lzma = bash -e scripts/lzma_kern $< $@ -lc7 -lp0 -pb0
 +# to use lzmacomp,
 +# cmd_lzma = lzmacomp $< 700 > $@
-diff -u linux/scripts/lzma_kern linux/scripts/lzma_kern
---- linux/scripts/lzma_kern	2007-07-27 20:18:17.013014750 -0700
-+++ linux/scripts/lzma_kern	2007-07-27 20:18:17.013014750 -0700
+Index: linux-2.6.24.7/scripts/lzma_kern
+===================================================================
+--- /dev/null
++++ linux-2.6.24.7/scripts/lzma_kern
 @@ -0,0 +1,4 @@
 +get-size() { echo "$5" ;}
 +printf -v len '%.8x' "$(get-size $(ls -l "$1"))"
 +lzma e "$@"
 +echo -ne "\x$(echo $len | cut -c 7,8)\x$(echo $len | cut -c 5,6)\x$(echo $len | cut -c 3,4)\x$(echo $len | cut -c 1,2)" >> "$2"
-diff -urN linux-2.6.24/arch/x86/boot/compressed/Makefile_32 linux-2.6.24.new/arch/x86/boot/compressed/Makefile_32
---- linux-2.6.24/arch/x86/boot/compressed/Makefile_32	2008-01-24 23:58:37.000000000 +0100
-+++ linux-2.6.24.new/arch/x86/boot/compressed/Makefile_32	2008-02-13 15:21:03.000000000 +0100
+Index: linux-2.6.24.7/arch/x86/boot/compressed/Makefile_32
+===================================================================
+--- linux-2.6.24.7.orig/arch/x86/boot/compressed/Makefile_32
++++ linux-2.6.24.7/arch/x86/boot/compressed/Makefile_32
 @@ -4,8 +4,8 @@
  # create a compressed vmlinux image from the original vmlinux
  #
@@ -1013,7 +1019,7 @@ diff -urN linux-2.6.24/arch/x86/boot/compressed/Makefile_32 linux-2.6.24.new/arc
  EXTRA_AFLAGS	:= -traditional
  
  LDFLAGS_vmlinux := -T
-@@ -17,7 +17,7 @@
+@@ -17,7 +17,7 @@ KBUILD_CFLAGS  := -m32 -D__KERNEL__ $(LI
  	   $(call cc-option,-fno-stack-protector)
  LDFLAGS := -m elf_i386
  
@@ -1022,7 +1028,7 @@ diff -urN linux-2.6.24/arch/x86/boot/compressed/Makefile_32 linux-2.6.24.new/arc
  	$(call if_changed,ld)
  	@:
  
-@@ -37,14 +37,14 @@
+@@ -37,14 +37,14 @@ $(obj)/vmlinux.bin.all: $(vmlinux.bin.al
  	$(call if_changed,relocbin)
  
  ifdef CONFIG_RELOCATABLE
