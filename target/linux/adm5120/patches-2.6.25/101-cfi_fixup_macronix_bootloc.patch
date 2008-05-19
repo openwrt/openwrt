@@ -1,7 +1,7 @@
-Index: linux-2.6.25/drivers/mtd/chips/cfi_cmdset_0002.c
+Index: linux-2.6.25.4/drivers/mtd/chips/cfi_cmdset_0002.c
 ===================================================================
---- linux-2.6.25.orig/drivers/mtd/chips/cfi_cmdset_0002.c
-+++ linux-2.6.25/drivers/mtd/chips/cfi_cmdset_0002.c
+--- linux-2.6.25.4.orig/drivers/mtd/chips/cfi_cmdset_0002.c
++++ linux-2.6.25.4/drivers/mtd/chips/cfi_cmdset_0002.c
 @@ -47,12 +47,19 @@
  #define MANUFACTURER_AMD	0x0001
  #define MANUFACTURER_ATMEL	0x001F
@@ -74,10 +74,10 @@ Index: linux-2.6.25/drivers/mtd/chips/cfi_cmdset_0002.c
  	{ 0, 0, NULL, NULL }
  };
  
-Index: linux-2.6.25/drivers/mtd/chips/Kconfig
+Index: linux-2.6.25.4/drivers/mtd/chips/Kconfig
 ===================================================================
---- linux-2.6.25.orig/drivers/mtd/chips/Kconfig
-+++ linux-2.6.25/drivers/mtd/chips/Kconfig
+--- linux-2.6.25.4.orig/drivers/mtd/chips/Kconfig
++++ linux-2.6.25.4/drivers/mtd/chips/Kconfig
 @@ -196,6 +196,14 @@ config MTD_CFI_AMDSTD
  	  provides support for one of those command sets, used on chips
  	  including the AMD Am29LV320.

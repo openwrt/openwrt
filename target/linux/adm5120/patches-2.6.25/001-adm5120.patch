@@ -1,7 +1,7 @@
-Index: linux-2.6.25/arch/mips/Kconfig
+Index: linux-2.6.25.4/arch/mips/Kconfig
 ===================================================================
---- linux-2.6.25.orig/arch/mips/Kconfig
-+++ linux-2.6.25/arch/mips/Kconfig
+--- linux-2.6.25.4.orig/arch/mips/Kconfig
++++ linux-2.6.25.4/arch/mips/Kconfig
 @@ -18,6 +18,20 @@ choice
  	prompt "System type"
  	default SGI_IP22
@@ -31,10 +31,10 @@ Index: linux-2.6.25/arch/mips/Kconfig
  source "arch/mips/au1000/Kconfig"
  source "arch/mips/basler/excite/Kconfig"
  source "arch/mips/jazz/Kconfig"
-Index: linux-2.6.25/arch/mips/Makefile
+Index: linux-2.6.25.4/arch/mips/Makefile
 ===================================================================
---- linux-2.6.25.orig/arch/mips/Makefile
-+++ linux-2.6.25/arch/mips/Makefile
+--- linux-2.6.25.4.orig/arch/mips/Makefile
++++ linux-2.6.25.4/arch/mips/Makefile
 @@ -174,6 +174,16 @@ cflags-$(CONFIG_MACH_JAZZ)	+= -Iinclude/
  load-$(CONFIG_MACH_JAZZ)	+= 0xffffffff80080000
  
@@ -52,10 +52,10 @@ Index: linux-2.6.25/arch/mips/Makefile
  # Common Alchemy Au1x00 stuff
  #
  core-$(CONFIG_SOC_AU1X00)	+= arch/mips/au1000/common/
-Index: linux-2.6.25/include/asm-mips/bootinfo.h
+Index: linux-2.6.25.4/include/asm-mips/bootinfo.h
 ===================================================================
---- linux-2.6.25.orig/include/asm-mips/bootinfo.h
-+++ linux-2.6.25/include/asm-mips/bootinfo.h
+--- linux-2.6.25.4.orig/include/asm-mips/bootinfo.h
++++ linux-2.6.25.4/include/asm-mips/bootinfo.h
 @@ -94,6 +94,58 @@
  #define MACH_MSP7120_FPGA       5	/* PMC-Sierra MSP7120 Emulation */
  #define MACH_MSP_OTHER        255	/* PMC-Sierra unknown board type */
