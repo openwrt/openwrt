@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/Documentation/Configure.help
 ===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help	2007-12-15 05:20:10.792455269 +0100
-+++ linux-2.4.35.4/Documentation/Configure.help	2007-12-15 05:20:11.948521148 +0100
-@@ -2986,6 +2986,14 @@
+--- linux-2.4.35.4.orig/Documentation/Configure.help
++++ linux-2.4.35.4/Documentation/Configure.help
+@@ -2986,6 +2986,14 @@ CONFIG_IP_NF_MATCH_TOS
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
  
@@ -19,8 +19,8 @@ Index: linux-2.4.35.4/Documentation/Configure.help
    This option allows you to match firewall rules against condition
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_iprange.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_iprange.h	2007-12-15 05:20:11.952521377 +0100
+--- /dev/null
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_iprange.h
 @@ -0,0 +1,23 @@
 +#ifndef _IPT_IPRANGE_H
 +#define _IPT_IPRANGE_H
@@ -47,9 +47,9 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_iprange.h
 +#endif /* _IPT_IPRANGE_H */
 Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in	2007-12-15 05:20:11.688506331 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in	2007-12-15 05:20:11.960521836 +0100
-@@ -27,6 +27,7 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
++++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+@@ -27,6 +27,7 @@ tristate 'IP tables support (required fo
  if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; then
  # The simple matches.
    dep_tristate '  limit match support' CONFIG_IP_NF_MATCH_LIMIT $CONFIG_IP_NF_IPTABLES
@@ -59,8 +59,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
    dep_tristate '  IP set support' CONFIG_IP_NF_SET $CONFIG_IP_NF_IPTABLES
 Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_iprange.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_iprange.c	2007-12-15 05:20:11.964522063 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/ipt_iprange.c
 @@ -0,0 +1,101 @@
 +/*
 + * iptables module to match IP address ranges
@@ -165,9 +165,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_iprange.c
 +module_exit(fini);
 Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile	2007-12-15 05:20:11.696506789 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile	2007-12-15 05:20:11.976522746 +0100
-@@ -90,6 +90,7 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
++++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+@@ -90,6 +90,7 @@ obj-$(CONFIG_IP_NF_NAT) += iptable_nat.o
  # matches
  obj-$(CONFIG_IP_NF_MATCH_HELPER) += ipt_helper.o
  obj-$(CONFIG_IP_NF_MATCH_LIMIT) += ipt_limit.o

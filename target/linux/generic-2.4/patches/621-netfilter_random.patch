@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/Documentation/Configure.help
 ===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help	2007-12-15 05:20:11.948521148 +0100
-+++ linux-2.4.35.4/Documentation/Configure.help	2007-12-15 05:20:12.260538930 +0100
-@@ -2914,6 +2914,15 @@
+--- linux-2.4.35.4.orig/Documentation/Configure.help
++++ linux-2.4.35.4/Documentation/Configure.help
+@@ -2914,6 +2914,15 @@ CONFIG_IP_NF_MATCH_MAC
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
  
@@ -18,7 +18,7 @@ Index: linux-2.4.35.4/Documentation/Configure.help
  Netfilter MARK match support
  CONFIG_IP_NF_MATCH_MARK
    Netfilter mark matching allows you to match packets based on the
-@@ -3229,6 +3238,7 @@
+@@ -3229,6 +3238,7 @@ CONFIG_IP_NF_MATCH_HELPER
    If you want to compile it as a module, say M here and read
    Documentation/modules.txt.  If unsure, say `Y'.
  
@@ -26,7 +26,7 @@ Index: linux-2.4.35.4/Documentation/Configure.help
  TCPMSS match support
  CONFIG_IP_NF_MATCH_TCPMSS
    This option adds a `tcpmss' match, which allows you to examine the
-@@ -3376,6 +3386,14 @@
+@@ -3376,6 +3386,14 @@ CONFIG_IP6_NF_MATCH_MAC
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
  
@@ -43,8 +43,8 @@ Index: linux-2.4.35.4/Documentation/Configure.help
    This option allows you to match the length of a packet against a
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_random.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_random.h	2007-12-15 05:20:12.264539159 +0100
+--- /dev/null
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_random.h
 @@ -0,0 +1,11 @@
 +#ifndef _IPT_RAND_H
 +#define _IPT_RAND_H
@@ -59,8 +59,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_random.h
 +#endif /*_IPT_RAND_H*/
 Index: linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_random.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_random.h	2007-12-15 05:20:12.272539617 +0100
+--- /dev/null
++++ linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_random.h
 @@ -0,0 +1,11 @@
 +#ifndef _IP6T_RAND_H
 +#define _IP6T_RAND_H
@@ -75,9 +75,9 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_random.h
 +#endif /*_IP6T_RAND_H*/
 Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in	2007-12-15 05:20:11.960521836 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in	2007-12-15 05:20:12.276539844 +0100
-@@ -48,6 +48,7 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
++++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+@@ -48,6 +48,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    dep_tristate '  netfilter MARK match support' CONFIG_IP_NF_MATCH_MARK $CONFIG_IP_NF_IPTABLES
    dep_tristate '  Multiple port match support' CONFIG_IP_NF_MATCH_MULTIPORT $CONFIG_IP_NF_IPTABLES
    dep_tristate '  TOS match support' CONFIG_IP_NF_MATCH_TOS $CONFIG_IP_NF_IPTABLES
@@ -87,8 +87,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
    dep_tristate '  recent match support' CONFIG_IP_NF_MATCH_RECENT $CONFIG_IP_NF_IPTABLES
 Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_random.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_random.c	2007-12-15 05:20:12.276539844 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/ipt_random.c
 @@ -0,0 +1,96 @@
 +/*
 +  This is a module which is used for a "random" match support.
@@ -188,9 +188,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_random.c
 +module_exit(fini);
 Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile	2007-12-15 05:20:11.976522746 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile	2007-12-15 05:20:12.276539844 +0100
-@@ -115,6 +115,8 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
++++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+@@ -115,6 +115,8 @@ obj-$(CONFIG_IP_NF_MATCH_TOS) += ipt_tos
  obj-$(CONFIG_IP_NF_MATCH_TIME) += ipt_time.o
  obj-$(CONFIG_IP_NF_MATCH_CONDITION) += ipt_condition.o
  
@@ -201,9 +201,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_IP_NF_MATCH_ECN) += ipt_ecn.o
 Index: linux-2.4.35.4/net/ipv6/netfilter/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv6/netfilter/Config.in	2007-12-15 05:20:10.816456638 +0100
-+++ linux-2.4.35.4/net/ipv6/netfilter/Config.in	2007-12-15 05:20:12.276539844 +0100
-@@ -19,6 +19,7 @@
+--- linux-2.4.35.4.orig/net/ipv6/netfilter/Config.in
++++ linux-2.4.35.4/net/ipv6/netfilter/Config.in
+@@ -19,6 +19,7 @@ if [ "$CONFIG_IP6_NF_IPTABLES" != "n" ];
    dep_tristate '  limit match support' CONFIG_IP6_NF_MATCH_LIMIT $CONFIG_IP6_NF_IPTABLES
    dep_tristate '  condition match support' CONFIG_IP6_NF_MATCH_CONDITION $CONFIG_IP6_NF_IPTABLES
    dep_tristate '  MAC address match support' CONFIG_IP6_NF_MATCH_MAC $CONFIG_IP6_NF_IPTABLES
@@ -213,8 +213,8 @@ Index: linux-2.4.35.4/net/ipv6/netfilter/Config.in
    fi
 Index: linux-2.4.35.4/net/ipv6/netfilter/ip6t_random.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv6/netfilter/ip6t_random.c	2007-12-15 05:20:12.276539844 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv6/netfilter/ip6t_random.c
 @@ -0,0 +1,97 @@
 +/*
 +  This is a module which is used for a "random" match support.
@@ -315,9 +315,9 @@ Index: linux-2.4.35.4/net/ipv6/netfilter/ip6t_random.c
 +module_exit(fini);
 Index: linux-2.4.35.4/net/ipv6/netfilter/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv6/netfilter/Makefile	2007-12-15 05:20:10.816456638 +0100
-+++ linux-2.4.35.4/net/ipv6/netfilter/Makefile	2007-12-15 05:20:12.280540069 +0100
-@@ -32,6 +32,7 @@
+--- linux-2.4.35.4.orig/net/ipv6/netfilter/Makefile
++++ linux-2.4.35.4/net/ipv6/netfilter/Makefile
+@@ -32,6 +32,7 @@ obj-$(CONFIG_IP6_NF_TARGET_MARK) += ip6t
  obj-$(CONFIG_IP6_NF_TARGET_IMQ) += ip6t_IMQ.o
  obj-$(CONFIG_IP6_NF_QUEUE) += ip6_queue.o
  obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_LOG.o

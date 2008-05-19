@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/arch/mips/kernel/time.c
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/time.c	2007-12-15 05:19:41.138765402 +0100
-+++ linux-2.4.35.4/arch/mips/kernel/time.c	2007-12-15 05:19:55.011555967 +0100
-@@ -151,6 +151,27 @@
+--- linux-2.4.35.4.orig/arch/mips/kernel/time.c
++++ linux-2.4.35.4/arch/mips/kernel/time.c
+@@ -151,6 +151,27 @@ void (*mips_timer_ack)(void);
  unsigned int (*mips_hpt_read)(void);
  void (*mips_hpt_init)(unsigned int);
  
@@ -30,7 +30,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/time.c
  
  /*
   * timeofday services, for syscalls.
-@@ -761,3 +782,5 @@
+@@ -761,3 +782,5 @@ EXPORT_SYMBOL(rtc_lock);
  EXPORT_SYMBOL(to_tm);
  EXPORT_SYMBOL(rtc_set_time);
  EXPORT_SYMBOL(rtc_get_time);
@@ -38,9 +38,9 @@ Index: linux-2.4.35.4/arch/mips/kernel/time.c
 +EXPORT_SYMBOL(get_tscll);
 Index: linux-2.4.35.4/include/asm-mips/timex.h
 ===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/timex.h	2007-12-15 05:19:41.146765860 +0100
-+++ linux-2.4.35.4/include/asm-mips/timex.h	2007-12-15 05:19:55.015556197 +0100
-@@ -31,6 +31,19 @@
+--- linux-2.4.35.4.orig/include/asm-mips/timex.h
++++ linux-2.4.35.4/include/asm-mips/timex.h
+@@ -31,6 +31,19 @@ static inline cycles_t get_cycles (void)
  	return read_c0_count();
  }
  
@@ -62,8 +62,8 @@ Index: linux-2.4.35.4/include/asm-mips/timex.h
  
 Index: linux-2.4.35.4/include/net/pkt_sched.h
 ===================================================================
---- linux-2.4.35.4.orig/include/net/pkt_sched.h	2007-12-15 05:19:41.154766315 +0100
-+++ linux-2.4.35.4/include/net/pkt_sched.h	2007-12-15 05:19:55.023556652 +0100
+--- linux-2.4.35.4.orig/include/net/pkt_sched.h
++++ linux-2.4.35.4/include/net/pkt_sched.h
 @@ -5,7 +5,11 @@
  #define PSCHED_JIFFIES 		2
  #define PSCHED_CPU 		3
@@ -76,7 +76,7 @@ Index: linux-2.4.35.4/include/net/pkt_sched.h
  
  #include <linux/config.h>
  #include <linux/types.h>
-@@ -261,7 +265,7 @@
+@@ -261,7 +265,7 @@ extern int psched_clock_scale;
  #define PSCHED_US2JIFFIE(delay) (((delay)+psched_clock_per_hz-1)/psched_clock_per_hz)
  #define PSCHED_JIFFIE2US(delay) ((delay)*psched_clock_per_hz)
  

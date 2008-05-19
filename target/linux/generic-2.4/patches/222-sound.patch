@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/drivers/sound/sound_core.c
 ===================================================================
---- linux-2.4.35.4.orig/drivers/sound/sound_core.c	2007-12-15 05:19:38.946640480 +0100
-+++ linux-2.4.35.4/drivers/sound/sound_core.c	2007-12-15 05:20:01.199908622 +0100
-@@ -174,9 +174,9 @@
+--- linux-2.4.35.4.orig/drivers/sound/sound_core.c
++++ linux-2.4.35.4/drivers/sound/sound_core.c
+@@ -174,9 +174,9 @@ static int sound_insert_unit(struct soun
  	}
  	
  	if (r == low)
@@ -14,7 +14,7 @@ Index: linux-2.4.35.4/drivers/sound/sound_core.c
  	s->de = devfs_register (devfs_handle, name_buf,
  				DEVFS_FL_NONE, SOUND_MAJOR, s->unit_minor,
  				S_IFCHR | mode, fops, NULL);
-@@ -507,9 +507,9 @@
+@@ -507,9 +507,9 @@ int soundcore_open(struct inode *inode, 
  		 *  ALSA toplevel modules for soundcards, thus we need
  		 *  load them at first.	  [Jaroslav Kysela <perex@jcu.cz>]
  		 */

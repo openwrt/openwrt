@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/fs/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/fs/Config.in	2007-12-15 05:19:52.319402550 +0100
-+++ linux-2.4.35.4/fs/Config.in	2007-12-15 05:20:05.284141367 +0100
-@@ -77,6 +77,7 @@
+--- linux-2.4.35.4.orig/fs/Config.in
++++ linux-2.4.35.4/fs/Config.in
+@@ -77,6 +77,7 @@ dep_mbool '  JFS debugging' CONFIG_JFS_D
  dep_mbool '  JFS statistics' CONFIG_JFS_STATISTICS $CONFIG_JFS_FS
  
  tristate 'Minix fs support' CONFIG_MINIX_FS
@@ -12,9 +12,9 @@ Index: linux-2.4.35.4/fs/Config.in
  tristate 'NTFS file system support (read only)' CONFIG_NTFS_FS
 Index: linux-2.4.35.4/fs/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/fs/Makefile	2007-12-15 05:19:52.319402550 +0100
-+++ linux-2.4.35.4/fs/Makefile	2007-12-15 05:20:05.288141596 +0100
-@@ -31,6 +31,7 @@
+--- linux-2.4.35.4.orig/fs/Makefile
++++ linux-2.4.35.4/fs/Makefile
+@@ -31,6 +31,7 @@ subdir-$(CONFIG_RAMFS)		+= ramfs
  subdir-$(CONFIG_CODA_FS)	+= coda
  subdir-$(CONFIG_INTERMEZZO_FS)	+= intermezzo
  subdir-$(CONFIG_MINIX_FS)	+= minix
@@ -24,8 +24,8 @@ Index: linux-2.4.35.4/fs/Makefile
  subdir-$(CONFIG_MSDOS_FS)	+= msdos
 Index: linux-2.4.35.4/fs/mini_fo/aux.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/aux.c	2007-12-15 05:20:05.296142055 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/aux.c
 @@ -0,0 +1,580 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -609,8 +609,8 @@ Index: linux-2.4.35.4/fs/mini_fo/aux.c
 +
 Index: linux-2.4.35.4/fs/mini_fo/ChangeLog
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/ChangeLog	2007-12-15 05:20:05.296142055 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/ChangeLog
 @@ -0,0 +1,281 @@
 +2006-01-24  Markus Klotzbuecher  <mk@mary.denx.de>
 +
@@ -895,8 +895,8 @@ Index: linux-2.4.35.4/fs/mini_fo/ChangeLog
 +	
 Index: linux-2.4.35.4/fs/mini_fo/dentry.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/dentry.c	2007-12-15 05:20:05.296142055 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/dentry.c
 @@ -0,0 +1,244 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -1144,8 +1144,8 @@ Index: linux-2.4.35.4/fs/mini_fo/dentry.c
 +};
 Index: linux-2.4.35.4/fs/mini_fo/file.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/file.c	2007-12-15 05:20:05.300142281 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/file.c
 @@ -0,0 +1,717 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -1866,8 +1866,8 @@ Index: linux-2.4.35.4/fs/mini_fo/file.c
 +	};
 Index: linux-2.4.35.4/fs/mini_fo/fist.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/fist.h	2007-12-15 05:20:05.300142281 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/fist.h
 @@ -0,0 +1,248 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -2119,8 +2119,8 @@ Index: linux-2.4.35.4/fs/mini_fo/fist.h
 +#endif /* not __FIST_H_ */
 Index: linux-2.4.35.4/fs/mini_fo/inode.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/inode.c	2007-12-15 05:20:05.300142281 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/inode.c
 @@ -0,0 +1,1573 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -3697,8 +3697,8 @@ Index: linux-2.4.35.4/fs/mini_fo/inode.c
 +	};
 Index: linux-2.4.35.4/fs/mini_fo/main.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/main.c	2007-12-15 05:20:05.300142281 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/main.c
 @@ -0,0 +1,414 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -4116,8 +4116,8 @@ Index: linux-2.4.35.4/fs/mini_fo/main.c
 +module_exit(exit_mini_fo_fs)
 Index: linux-2.4.35.4/fs/mini_fo/Makefile
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/Makefile	2007-12-15 05:20:05.304142507 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/Makefile
 @@ -0,0 +1,22 @@
 +#
 +# Makefile for mini_fo 2.4 and 2.6 Linux kernels
@@ -4143,8 +4143,8 @@ Index: linux-2.4.35.4/fs/mini_fo/Makefile
 +
 Index: linux-2.4.35.4/fs/mini_fo/meta.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/meta.c	2007-12-15 05:20:05.304142507 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/meta.c
 @@ -0,0 +1,1000 @@
 +/*
 + * Copyright (C) 2004, 2005 Markus Klotzbuecher <mk@creamnet.de>
@@ -5148,8 +5148,8 @@ Index: linux-2.4.35.4/fs/mini_fo/meta.c
 +
 Index: linux-2.4.35.4/fs/mini_fo/mini_fo.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/mini_fo.h	2007-12-15 05:20:05.304142507 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/mini_fo.h
 @@ -0,0 +1,503 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -5656,8 +5656,8 @@ Index: linux-2.4.35.4/fs/mini_fo/mini_fo.h
 +#endif	/* not __MINI_FO_H_ */
 Index: linux-2.4.35.4/fs/mini_fo/mini_fo-merge
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/mini_fo-merge	2007-12-15 05:20:05.304142507 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/mini_fo-merge
 @@ -0,0 +1,180 @@
 +#!/bin/bash
 +#
@@ -5841,8 +5841,8 @@ Index: linux-2.4.35.4/fs/mini_fo/mini_fo-merge
 +echo "Done!"
 Index: linux-2.4.35.4/fs/mini_fo/mini_fo-overlay
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/mini_fo-overlay	2007-12-15 05:20:05.308142736 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/mini_fo-overlay
 @@ -0,0 +1,130 @@
 +#!/bin/bash
 +#
@@ -5976,8 +5976,8 @@ Index: linux-2.4.35.4/fs/mini_fo/mini_fo-overlay
 +fi
 Index: linux-2.4.35.4/fs/mini_fo/mmap.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/mmap.c	2007-12-15 05:20:05.316143195 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/mmap.c
 @@ -0,0 +1,637 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -6618,8 +6618,8 @@ Index: linux-2.4.35.4/fs/mini_fo/mmap.c
 +}
 Index: linux-2.4.35.4/fs/mini_fo/README
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/README	2007-12-15 05:20:05.316143195 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/README
 @@ -0,0 +1,163 @@
 +README for the mini_fo overlay file system
 +=========================================
@@ -6786,8 +6786,8 @@ Index: linux-2.4.35.4/fs/mini_fo/README
 +
 Index: linux-2.4.35.4/fs/mini_fo/RELEASE_NOTES
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/RELEASE_NOTES	2007-12-15 05:20:05.316143195 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/RELEASE_NOTES
 @@ -0,0 +1,111 @@
 +Release:	mini_fo-0.6.1 (v0-6-1)
 +Date:		21.09.2005
@@ -6902,8 +6902,8 @@ Index: linux-2.4.35.4/fs/mini_fo/RELEASE_NOTES
 +seperately by the lower fs.
 Index: linux-2.4.35.4/fs/mini_fo/state.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/state.c	2007-12-15 05:20:05.316143195 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/state.c
 @@ -0,0 +1,620 @@
 +/*
 + * Copyright (C) 2005 Markus Klotzbuecher <mk@creamnet.de>
@@ -7527,8 +7527,8 @@ Index: linux-2.4.35.4/fs/mini_fo/state.c
 +
 Index: linux-2.4.35.4/fs/mini_fo/super.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/mini_fo/super.c	2007-12-15 05:20:05.316143195 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/mini_fo/super.c
 @@ -0,0 +1,259 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok

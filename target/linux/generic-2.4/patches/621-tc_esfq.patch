@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/Documentation/Configure.help
 ===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help	2007-12-15 05:20:12.260538930 +0100
-+++ linux-2.4.35.4/Documentation/Configure.help	2007-12-15 05:20:12.604558535 +0100
-@@ -11153,6 +11153,24 @@
+--- linux-2.4.35.4.orig/Documentation/Configure.help
++++ linux-2.4.35.4/Documentation/Configure.help
+@@ -11153,6 +11153,24 @@ CONFIG_NET_SCH_HFSC
    whenever you want).  If you want to compile it as a module, say M
    here and read <file:Documentation/modules.txt>.
  
@@ -29,9 +29,9 @@ Index: linux-2.4.35.4/Documentation/Configure.help
    Say Y here if you want to use the Clark-Shenker-Zhang (CSZ) packet
 Index: linux-2.4.35.4/include/linux/pkt_sched.h
 ===================================================================
---- linux-2.4.35.4.orig/include/linux/pkt_sched.h	2007-12-15 05:19:36.750515331 +0100
-+++ linux-2.4.35.4/include/linux/pkt_sched.h	2007-12-15 05:20:12.608558764 +0100
-@@ -173,8 +173,36 @@
+--- linux-2.4.35.4.orig/include/linux/pkt_sched.h
++++ linux-2.4.35.4/include/linux/pkt_sched.h
+@@ -173,8 +173,36 @@ struct tc_sfq_qopt
   *
   *	The only reason for this is efficiency, it is possible
   *	to change these parameters in compile time.
@@ -70,9 +70,9 @@ Index: linux-2.4.35.4/include/linux/pkt_sched.h
  enum
 Index: linux-2.4.35.4/net/sched/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/net/sched/Config.in	2007-12-15 05:19:36.758515786 +0100
-+++ linux-2.4.35.4/net/sched/Config.in	2007-12-15 05:20:12.608558764 +0100
-@@ -12,6 +12,7 @@
+--- linux-2.4.35.4.orig/net/sched/Config.in
++++ linux-2.4.35.4/net/sched/Config.in
+@@ -12,6 +12,7 @@ fi
  tristate '  The simplest PRIO pseudoscheduler' CONFIG_NET_SCH_PRIO
  tristate '  RED queue' CONFIG_NET_SCH_RED
  tristate '  SFQ queue' CONFIG_NET_SCH_SFQ
@@ -82,9 +82,9 @@ Index: linux-2.4.35.4/net/sched/Config.in
  tristate '  GRED queue' CONFIG_NET_SCH_GRED
 Index: linux-2.4.35.4/net/sched/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/net/sched/Makefile	2007-12-15 05:19:36.766516242 +0100
-+++ linux-2.4.35.4/net/sched/Makefile	2007-12-15 05:20:12.608558764 +0100
-@@ -19,6 +19,7 @@
+--- linux-2.4.35.4.orig/net/sched/Makefile
++++ linux-2.4.35.4/net/sched/Makefile
+@@ -19,6 +19,7 @@ obj-$(CONFIG_NET_SCH_HPFQ)	+= sch_hpfq.o
  obj-$(CONFIG_NET_SCH_HFSC)	+= sch_hfsc.o
  obj-$(CONFIG_NET_SCH_HTB)	+= sch_htb.o
  obj-$(CONFIG_NET_SCH_SFQ)	+= sch_sfq.o
@@ -94,8 +94,8 @@ Index: linux-2.4.35.4/net/sched/Makefile
  obj-$(CONFIG_NET_SCH_PRIO)	+= sch_prio.o
 Index: linux-2.4.35.4/net/sched/sch_esfq.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/sched/sch_esfq.c	2007-12-15 05:20:12.608558764 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/sched/sch_esfq.c
 @@ -0,0 +1,649 @@
 +/*
 + * net/sched/sch_esfq.c	Extended Stochastic Fairness Queueing discipline.

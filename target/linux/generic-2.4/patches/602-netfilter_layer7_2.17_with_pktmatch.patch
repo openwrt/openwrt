@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/Documentation/Configure.help
 ===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help	2007-12-15 05:19:54.063501941 +0100
-+++ linux-2.4.35.4/Documentation/Configure.help	2007-12-15 05:20:06.024183543 +0100
-@@ -29207,6 +29207,18 @@
+--- linux-2.4.35.4.orig/Documentation/Configure.help
++++ linux-2.4.35.4/Documentation/Configure.help
+@@ -29207,6 +29207,18 @@ CONFIG_SOUND_WM97XX
    
    If unsure, say N.
  
@@ -23,9 +23,9 @@ Index: linux-2.4.35.4/Documentation/Configure.help
  #   capitalize: AppleTalk, Ethernet, DOS, DMA, FAT, FTP, Internet,
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
 ===================================================================
---- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_conntrack.h	2007-12-15 05:19:38.358606970 +0100
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h	2007-12-15 05:20:06.024183543 +0100
-@@ -207,6 +207,17 @@
+--- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_conntrack.h
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
+@@ -207,6 +207,17 @@ struct ip_conntrack
  	} nat;
  #endif /* CONFIG_IP_NF_NAT_NEEDED */
  
@@ -45,8 +45,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
  /* get master conntrack via master expectation */
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_layer7.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_layer7.h	2007-12-15 05:20:06.032183998 +0100
+--- /dev/null
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_layer7.h
 @@ -0,0 +1,27 @@
 +/* 
 +  By Matthew Strait <quadong@users.sf.net>, Dec 2003.
@@ -77,9 +77,9 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_layer7.h
 +#endif /* _IPT_LAYER7_H */
 Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in	2007-12-15 05:20:05.764168722 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in	2007-12-15 05:20:06.036184227 +0100
-@@ -44,6 +44,9 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
++++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+@@ -44,6 +44,9 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
      dep_tristate '  Unclean match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_UNCLEAN $CONFIG_IP_NF_IPTABLES
      dep_tristate '  Owner match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_OWNER $CONFIG_IP_NF_IPTABLES
@@ -91,9 +91,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
    dep_tristate '  Packet filtering' CONFIG_IP_NF_FILTER $CONFIG_IP_NF_IPTABLES 
 Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile	2007-12-15 05:20:05.764168722 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile	2007-12-15 05:20:06.036184227 +0100
-@@ -87,6 +87,7 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
++++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+@@ -87,6 +87,7 @@ obj-$(CONFIG_IP_NF_MATCH_STATE) += ipt_s
  obj-$(CONFIG_IP_NF_MATCH_CONNTRACK) += ipt_conntrack.o
  obj-$(CONFIG_IP_NF_MATCH_UNCLEAN) += ipt_unclean.o
  obj-$(CONFIG_IP_NF_MATCH_TCPMSS) += ipt_tcpmss.o
@@ -103,9 +103,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
 Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_core.c	2007-12-15 05:19:38.386608565 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c	2007-12-15 05:20:06.036184227 +0100
-@@ -346,6 +346,14 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_core.c
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
+@@ -346,6 +346,14 @@ destroy_conntrack(struct nf_conntrack *n
  		}
  		kfree(ct->master);
  	}
@@ -122,9 +122,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
  	if (master)
 Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_standalone.c
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_standalone.c	2007-12-15 05:19:38.394609023 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_standalone.c	2007-12-15 05:20:06.036184227 +0100
-@@ -107,6 +107,13 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_standalone.c
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_standalone.c
+@@ -107,6 +107,13 @@ print_conntrack(char *buffer, struct ip_
  		len += sprintf(buffer + len, "[ASSURED] ");
  	len += sprintf(buffer + len, "use=%u ",
  		       atomic_read(&conntrack->ct_general.use));
@@ -140,8 +140,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_standalone.c
  	return len;
 Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_layer7.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_layer7.c	2007-12-15 05:20:06.040184453 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/ipt_layer7.c
 @@ -0,0 +1,595 @@
 +/* 
 +  Kernel module to match application layer (OSI layer 7) 
@@ -740,8 +740,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_layer7.c
 +module_exit(fini);
 Index: linux-2.4.35.4/net/ipv4/netfilter/regexp/regexp.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/regexp/regexp.c	2007-12-15 05:20:06.040184453 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/regexp/regexp.c
 @@ -0,0 +1,1195 @@
 +/*
 + * regcomp and regexec -- regsub and regerror are elsewhere
@@ -1940,8 +1940,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/regexp/regexp.c
 +
 Index: linux-2.4.35.4/net/ipv4/netfilter/regexp/regexp.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/regexp/regexp.h	2007-12-15 05:20:06.040184453 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/regexp/regexp.h
 @@ -0,0 +1,40 @@
 +/*
 + * Definitions etc. for regexp(3) routines.
@@ -1985,8 +1985,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/regexp/regexp.h
 +#endif
 Index: linux-2.4.35.4/net/ipv4/netfilter/regexp/regmagic.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/regexp/regmagic.h	2007-12-15 05:20:06.040184453 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/regexp/regmagic.h
 @@ -0,0 +1,5 @@
 +/*
 + * The first byte of the regexp internal "program" is actually this magic
@@ -1995,8 +1995,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/regexp/regmagic.h
 +#define	MAGIC	0234
 Index: linux-2.4.35.4/net/ipv4/netfilter/regexp/regsub.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/regexp/regsub.c	2007-12-15 05:20:06.044184683 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/regexp/regsub.c
 @@ -0,0 +1,95 @@
 +/*
 + * regsub

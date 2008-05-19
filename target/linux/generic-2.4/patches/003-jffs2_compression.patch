@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/Documentation/Configure.help
 ===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help	2007-12-15 05:19:42.546845646 +0100
-+++ linux-2.4.35.4/Documentation/Configure.help	2007-12-15 05:19:49.287229757 +0100
-@@ -17580,6 +17580,32 @@
+--- linux-2.4.35.4.orig/Documentation/Configure.help
++++ linux-2.4.35.4/Documentation/Configure.help
+@@ -17580,6 +17580,32 @@ CONFIG_JFFS2_FS_DEBUG
    If reporting bugs, please try to have available a full dump of the
    messages at debug level 1 while the misbehaviour was occurring.
  
@@ -37,9 +37,9 @@ Index: linux-2.4.35.4/Documentation/Configure.help
    Enabling this option will cause statistics from mounted JFFS file systems
 Index: linux-2.4.35.4/fs/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/fs/Config.in	2007-12-15 05:19:48.635192599 +0100
-+++ linux-2.4.35.4/fs/Config.in	2007-12-15 05:19:49.287229757 +0100
-@@ -50,6 +50,12 @@
+--- linux-2.4.35.4.orig/fs/Config.in
++++ linux-2.4.35.4/fs/Config.in
+@@ -50,6 +50,12 @@ dep_tristate 'Journalling Flash File Sys
  if [ "$CONFIG_JFFS2_FS" = "y" -o "$CONFIG_JFFS2_FS" = "m" ] ; then
     int 'JFFS2 debugging verbosity (0 = quiet, 2 = noisy)' CONFIG_JFFS2_FS_DEBUG 0
  fi
@@ -54,8 +54,8 @@ Index: linux-2.4.35.4/fs/Config.in
  if [ "$CONFIG_SQUASHFS" = "y" -o "$CONFIG_SQUASHFS" = "m" ] ; then
 Index: linux-2.4.35.4/fs/jffs2/Config.in.bbc.inc
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/jffs2/Config.in.bbc.inc	2007-12-15 05:19:49.295230212 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/jffs2/Config.in.bbc.inc
 @@ -0,0 +1,5 @@
 +dep_mbool '  ARMLIB compression support for BBC (EXPERIMENTAL)' CONFIG_JFFS2_BBC_ARMLIB $CONFIG_JFFS2_FS
 +dep_mbool '  LZO1X-* compression support for BBC (EXPERIMENTAL)' CONFIG_JFFS2_BBC_LZO $CONFIG_JFFS2_FS
@@ -64,8 +64,8 @@ Index: linux-2.4.35.4/fs/jffs2/Config.in.bbc.inc
 +dep_mbool '  LZSS compression support for BBC (EXPERIMENTAL)' CONFIG_JFFS2_BBC_LZSS $CONFIG_JFFS2_FS
 Index: linux-2.4.35.4/fs/jffs2/Configure.help.bbc.inc
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/jffs2/Configure.help.bbc.inc	2007-12-15 05:19:49.299230441 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/jffs2/Configure.help.bbc.inc
 @@ -0,0 +1,25 @@
 +ARMLIB compression support for BBC (EXPERIMENTAL)
 +CONFIG_JFFS2_BBC_ARMLIB
@@ -94,8 +94,8 @@ Index: linux-2.4.35.4/fs/jffs2/Configure.help.bbc.inc
 +  was included just for testing)
 Index: linux-2.4.35.4/fs/jffs2/Kconfig.bbc.inc
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/jffs2/Kconfig.bbc.inc	2007-12-15 05:19:49.303230670 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/jffs2/Kconfig.bbc.inc
 @@ -0,0 +1,40 @@
 +config JFFS2_BBC_ARMLIB
 +	bool "ARMLIB compression support for BBC (EXPERIMENTAL)"
@@ -139,8 +139,8 @@ Index: linux-2.4.35.4/fs/jffs2/Kconfig.bbc.inc
 +	  was included just for testing)
 Index: linux-2.4.35.4/fs/jffs2/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/fs/jffs2/Makefile	2007-12-15 05:19:42.578847470 +0100
-+++ linux-2.4.35.4/fs/jffs2/Makefile	2007-12-15 05:19:49.307230896 +0100
+--- linux-2.4.35.4.orig/fs/jffs2/Makefile
++++ linux-2.4.35.4/fs/jffs2/Makefile
 @@ -10,9 +10,23 @@
  # Note 2! The CFLAGS definitions are now in the main makefile...
  
@@ -167,8 +167,8 @@ Index: linux-2.4.35.4/fs/jffs2/Makefile
  
 Index: linux-2.4.35.4/fs/jffs2/Makefile.bbc.inc
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/jffs2/Makefile.bbc.inc	2007-12-15 05:19:49.307230896 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/jffs2/Makefile.bbc.inc
 @@ -0,0 +1,12 @@
 +JFFS2_BBC_KERNEL_OBJS-y = jffs2_bbc_framework.o jffs2_bbc_fs.o
 +
@@ -184,9 +184,9 @@ Index: linux-2.4.35.4/fs/jffs2/Makefile.bbc.inc
 +                        jffs2_bbc_lzss_comp.o jffs2_bbc_lzari_comp.o jffs2_bbc_lzhd_comp.o
 Index: linux-2.4.35.4/fs/jffs2/compr_zlib.c
 ===================================================================
---- linux-2.4.35.4.orig/fs/jffs2/compr_zlib.c	2007-12-15 05:19:42.590848151 +0100
-+++ linux-2.4.35.4/fs/jffs2/compr_zlib.c	2007-12-15 05:19:49.307230896 +0100
-@@ -85,7 +85,7 @@
+--- linux-2.4.35.4.orig/fs/jffs2/compr_zlib.c
++++ linux-2.4.35.4/fs/jffs2/compr_zlib.c
+@@ -85,7 +85,7 @@ void jffs2_zlib_exit(void)
  	vfree(inflate_workspace);
  }
  
@@ -195,7 +195,7 @@ Index: linux-2.4.35.4/fs/jffs2/compr_zlib.c
  		   __u32 *sourcelen, __u32 *dstlen)
  {
  	z_stream strm;
-@@ -145,7 +145,7 @@
+@@ -145,7 +145,7 @@ int zlib_compress(unsigned char *data_in
  	return 0;
  }
  
@@ -204,7 +204,7 @@ Index: linux-2.4.35.4/fs/jffs2/compr_zlib.c
  		      __u32 srclen, __u32 destlen)
  {
  	z_stream strm;
-@@ -175,3 +175,19 @@
+@@ -175,3 +175,19 @@ void zlib_decompress(unsigned char *data
  	zlib_inflateEnd(&strm);
  	up(&inflate_sem);
  }
@@ -226,8 +226,8 @@ Index: linux-2.4.35.4/fs/jffs2/compr_zlib.c
 +
 Index: linux-2.4.35.4/fs/jffs2/file.c
 ===================================================================
---- linux-2.4.35.4.orig/fs/jffs2/file.c	2007-12-15 05:19:42.594848380 +0100
-+++ linux-2.4.35.4/fs/jffs2/file.c	2007-12-15 05:19:49.307230896 +0100
+--- linux-2.4.35.4.orig/fs/jffs2/file.c
++++ linux-2.4.35.4/fs/jffs2/file.c
 @@ -35,6 +35,7 @@
   *
   */
@@ -236,7 +236,7 @@ Index: linux-2.4.35.4/fs/jffs2/file.c
  #include <linux/kernel.h>
  #include <linux/mtd/compatmac.h> /* for min() */
  #include <linux/slab.h>
-@@ -459,6 +460,7 @@
+@@ -459,6 +460,7 @@ int jffs2_commit_write (struct file *fil
  
  		comprbuf = kmalloc(cdatalen, GFP_KERNEL);
  		if (comprbuf) {
@@ -246,8 +246,8 @@ Index: linux-2.4.35.4/fs/jffs2/file.c
  		if (comprtype == JFFS2_COMPR_NONE) {
 Index: linux-2.4.35.4/fs/jffs2/gc.c
 ===================================================================
---- linux-2.4.35.4.orig/fs/jffs2/gc.c	2007-12-15 05:19:42.602848836 +0100
-+++ linux-2.4.35.4/fs/jffs2/gc.c	2007-12-15 05:19:49.311231126 +0100
+--- linux-2.4.35.4.orig/fs/jffs2/gc.c
++++ linux-2.4.35.4/fs/jffs2/gc.c
 @@ -35,6 +35,7 @@
   *
   */
@@ -256,7 +256,7 @@ Index: linux-2.4.35.4/fs/jffs2/gc.c
  #include <linux/kernel.h>
  #include <linux/mtd/mtd.h>
  #include <linux/slab.h>
-@@ -651,6 +652,7 @@
+@@ -651,6 +652,7 @@ static int jffs2_garbage_collect_dnode(s
  		writebuf = pg_ptr + (offset & (PAGE_CACHE_SIZE -1));
  
  		if (comprbuf) {
@@ -266,8 +266,8 @@ Index: linux-2.4.35.4/fs/jffs2/gc.c
  		if (comprtype) {
 Index: linux-2.4.35.4/fs/jffs2/hpatch
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/jffs2/hpatch	2007-12-15 05:19:49.311231126 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/jffs2/hpatch
 @@ -0,0 +1,191 @@
 +#!/usr/bin/perl
 +# A patch-like utility
@@ -462,8 +462,8 @@ Index: linux-2.4.35.4/fs/jffs2/hpatch
 +close(CMD);
 Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_armlib_comp.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_armlib_comp.c	2007-12-15 05:19:49.311231126 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_armlib_comp.c
 @@ -0,0 +1,2224 @@
 +/*
 + * JFFS2-BBC: armlib compressor plugin
@@ -2691,8 +2691,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_armlib_comp.c
 +/*END OF ARMLIB*/
 Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_framework.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_framework.c	2007-12-15 05:19:49.315231352 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_framework.c
 @@ -0,0 +1,1324 @@
 +/* 
 + * JFFS2-BBC: Compression Framework
@@ -4020,8 +4020,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_framework.c
 +#endif
 Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_framework.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_framework.h	2007-12-15 05:19:49.315231352 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_framework.h
 @@ -0,0 +1,202 @@
 +/*
 + * JFFS2-BBC: Compression Framework - headers
@@ -4227,8 +4227,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_framework.h
 +#endif
 Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_fs.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_fs.c	2007-12-15 05:19:49.315231352 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_fs.c
 @@ -0,0 +1,331 @@
 +/*
 + * JFFS2-BBC: File System Extension for Linux Kernel
@@ -4563,8 +4563,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_fs.c
 +}
 Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_fs.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_fs.h	2007-12-15 05:19:49.315231352 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_fs.h
 @@ -0,0 +1,30 @@
 +/*
 + * JFFS2 BBC: File System Extension for Linux Kernel - headers
@@ -4598,8 +4598,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_fs.h
 +void jffs2_bbc_proc_deinit(void);
 Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzari_comp.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzari_comp.c	2007-12-15 05:19:49.319231581 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzari_comp.c
 @@ -0,0 +1,788 @@
 +/* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 +
@@ -5391,8 +5391,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzari_comp.c
 +}
 Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzhd_comp.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzhd_comp.c	2007-12-15 05:19:49.319231581 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzhd_comp.c
 @@ -0,0 +1,747 @@
 +/* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 +
@@ -6143,8 +6143,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzhd_comp.c
 +}
 Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzo_comp.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzo_comp.c	2007-12-15 05:19:49.323231810 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzo_comp.c
 @@ -0,0 +1,2435 @@
 +/* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 +
@@ -8583,8 +8583,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzo_comp.c
 +}
 Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzss_comp.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzss_comp.c	2007-12-15 05:19:49.323231810 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzss_comp.c
 @@ -0,0 +1,385 @@
 +/* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 +
@@ -8973,8 +8973,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzss_comp.c
 +}
 Index: linux-2.4.35.4/fs/jffs2/linux-2.4.25.hpatch
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/jffs2/linux-2.4.25.hpatch	2007-12-15 05:19:49.323231810 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/jffs2/linux-2.4.25.hpatch
 @@ -0,0 +1,97 @@
 +FMakefile
 +=BBC insertion
@@ -9075,8 +9075,8 @@ Index: linux-2.4.35.4/fs/jffs2/linux-2.4.25.hpatch
 ++
 Index: linux-2.4.35.4/fs/jffs2/read.c
 ===================================================================
---- linux-2.4.35.4.orig/fs/jffs2/read.c	2007-12-15 05:19:42.666852484 +0100
-+++ linux-2.4.35.4/fs/jffs2/read.c	2007-12-15 05:19:49.323231810 +0100
+--- linux-2.4.35.4.orig/fs/jffs2/read.c
++++ linux-2.4.35.4/fs/jffs2/read.c
 @@ -35,6 +35,7 @@
   *
   */
@@ -9085,7 +9085,7 @@ Index: linux-2.4.35.4/fs/jffs2/read.c
  #include <linux/kernel.h>
  #include <linux/slab.h>
  #include <linux/jffs2.h>
-@@ -140,6 +141,7 @@
+@@ -140,6 +141,7 @@ int jffs2_read_dnode(struct jffs2_sb_inf
  	D2(printk(KERN_DEBUG "Data CRC matches calculated CRC %08x\n", crc));
  	if (ri->compr != JFFS2_COMPR_NONE) {
  		D2(printk(KERN_DEBUG "Decompress %d bytes from %p to %d bytes at %p\n", ri->csize, readbuf, ri->dsize, decomprbuf)); 
@@ -9095,8 +9095,8 @@ Index: linux-2.4.35.4/fs/jffs2/read.c
  			printk(KERN_WARNING "Error: jffs2_decompress returned %d\n", ret);
 Index: linux-2.4.35.4/fs/jffs2/super.c
 ===================================================================
---- linux-2.4.35.4.orig/fs/jffs2/super.c	2007-12-15 05:19:42.678853169 +0100
-+++ linux-2.4.35.4/fs/jffs2/super.c	2007-12-15 05:19:49.323231810 +0100
+--- linux-2.4.35.4.orig/fs/jffs2/super.c
++++ linux-2.4.35.4/fs/jffs2/super.c
 @@ -35,6 +35,7 @@
   *
   */
@@ -9105,7 +9105,7 @@ Index: linux-2.4.35.4/fs/jffs2/super.c
  #include <linux/config.h>
  #include <linux/kernel.h>
  #include <linux/module.h>
-@@ -272,6 +273,7 @@
+@@ -272,6 +273,7 @@ static struct super_block *jffs2_read_su
  	sb->s_magic = JFFS2_SUPER_MAGIC;
  	if (!(sb->s_flags & MS_RDONLY))
  		jffs2_start_garbage_collect_thread(c);
@@ -9113,7 +9113,7 @@ Index: linux-2.4.35.4/fs/jffs2/super.c
  	return sb;
  
   out_root_i:
-@@ -288,6 +290,7 @@
+@@ -288,6 +290,7 @@ static struct super_block *jffs2_read_su
  void jffs2_put_super (struct super_block *sb)
  {
  	struct jffs2_sb_info *c = JFFS2_SB_INFO(sb);
@@ -9121,7 +9121,7 @@ Index: linux-2.4.35.4/fs/jffs2/super.c
  
  	D2(printk(KERN_DEBUG "jffs2: jffs2_put_super()\n"));
  
-@@ -344,6 +347,9 @@
+@@ -344,6 +347,9 @@ static int __init init_jffs2_fs(void)
  {
  	int ret;
  
@@ -9131,7 +9131,7 @@ Index: linux-2.4.35.4/fs/jffs2/super.c
  	printk(KERN_NOTICE "JFFS2 version 2.1. (C) 2001 Red Hat, Inc., designed by Axis Communications AB.\n");
  
  #ifdef JFFS2_OUT_OF_KERNEL
-@@ -388,6 +394,8 @@
+@@ -388,6 +394,8 @@ static int __init init_jffs2_fs(void)
  
  static void __exit exit_jffs2_fs(void)
  {

@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in	2007-12-15 05:20:10.812456409 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in	2007-12-15 05:20:11.208478976 +0100
-@@ -47,6 +47,7 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
++++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+@@ -47,6 +47,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    dep_tristate '  netfilter MARK match support' CONFIG_IP_NF_MATCH_MARK $CONFIG_IP_NF_IPTABLES
    dep_tristate '  Multiple port match support' CONFIG_IP_NF_MATCH_MULTIPORT $CONFIG_IP_NF_IPTABLES
    dep_tristate '  TOS match support' CONFIG_IP_NF_MATCH_TOS $CONFIG_IP_NF_IPTABLES
@@ -12,8 +12,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
    dep_tristate '  ECN match support' CONFIG_IP_NF_MATCH_ECN $CONFIG_IP_NF_IPTABLES
 Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_time.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_time.c	2007-12-15 05:20:11.212479205 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/ipt_time.c
 @@ -0,0 +1,193 @@
 +/*
 +  This is a module which is used for time matching
@@ -210,9 +210,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_time.c
 +}
 Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile	2007-12-15 05:20:10.812456409 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile	2007-12-15 05:20:11.216479434 +0100
-@@ -111,6 +111,7 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
++++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+@@ -111,6 +111,7 @@ obj-$(CONFIG_IP_NF_MATCH_PKTTYPE) += ipt
  obj-$(CONFIG_IP_NF_MATCH_MULTIPORT) += ipt_multiport.o
  obj-$(CONFIG_IP_NF_MATCH_OWNER) += ipt_owner.o
  obj-$(CONFIG_IP_NF_MATCH_TOS) += ipt_tos.o
@@ -222,8 +222,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_IP_NF_MATCH_RECENT) += ipt_recent.o
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_time.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_time.h	2007-12-15 05:20:11.216479434 +0100
+--- /dev/null
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_time.h
 @@ -0,0 +1,15 @@
 +#ifndef __ipt_time_h_included__
 +#define __ipt_time_h_included__
