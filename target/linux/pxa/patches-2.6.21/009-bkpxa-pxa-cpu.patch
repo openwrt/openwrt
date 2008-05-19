@@ -10,10 +10,10 @@ from hh.org-cvs:
 # Patch managed by http://www.mn-logistik.de/unsupported/pxa250/patcher
 #
 
-Index: linux-2.6.21gum/arch/arm/mm/proc-xscale.S
+Index: linux-2.6.21.7/arch/arm/mm/proc-xscale.S
 ===================================================================
---- linux-2.6.21gum.orig/arch/arm/mm/proc-xscale.S
-+++ linux-2.6.21gum/arch/arm/mm/proc-xscale.S
+--- linux-2.6.21.7.orig/arch/arm/mm/proc-xscale.S
++++ linux-2.6.21.7/arch/arm/mm/proc-xscale.S
 @@ -474,11 +474,62 @@ ENTRY(cpu_xscale_set_pte_ext)
  	movne	r2, #0				@ no -> fault
  
@@ -77,10 +77,10 @@ Index: linux-2.6.21gum/arch/arm/mm/proc-xscale.S
  
  	.ltorg
  
-Index: linux-2.6.21gum/include/asm-arm/arch-pxa/pxa-regs.h
+Index: linux-2.6.21.7/include/asm-arm/arch-pxa/pxa-regs.h
 ===================================================================
---- linux-2.6.21gum.orig/include/asm-arm/arch-pxa/pxa-regs.h
-+++ linux-2.6.21gum/include/asm-arm/arch-pxa/pxa-regs.h
+--- linux-2.6.21.7.orig/include/asm-arm/arch-pxa/pxa-regs.h
++++ linux-2.6.21.7/include/asm-arm/arch-pxa/pxa-regs.h
 @@ -1345,6 +1345,7 @@
  #define GPIO_ALT_FN_2_OUT	0x280
  #define GPIO_ALT_FN_3_IN	0x300

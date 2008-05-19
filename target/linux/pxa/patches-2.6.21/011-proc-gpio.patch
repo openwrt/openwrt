@@ -1,7 +1,7 @@
-Index: linux-2.6.21gum/arch/arm/Kconfig
+Index: linux-2.6.21.7/arch/arm/Kconfig
 ===================================================================
---- linux-2.6.21gum.orig/arch/arm/Kconfig
-+++ linux-2.6.21gum/arch/arm/Kconfig
+--- linux-2.6.21.7.orig/arch/arm/Kconfig
++++ linux-2.6.21.7/arch/arm/Kconfig
 @@ -505,6 +505,8 @@ config PCI_HOST_VIA82C505
  	depends on PCI && ARCH_SHARK
  	default y
@@ -11,20 +11,38 @@ Index: linux-2.6.21gum/arch/arm/Kconfig
  source "drivers/pci/Kconfig"
  
  source "drivers/pcmcia/Kconfig"
-Index: linux-2.6.21gum/drivers/Makefile
+Index: linux-2.6.21.7/drivers/Makefile
 ===================================================================
---- linux-2.6.21gum.orig/drivers/Makefile
-+++ linux-2.6.21gum/drivers/Makefile
+--- linux-2.6.21.7.orig/drivers/Makefile
++++ linux-2.6.21.7/drivers/Makefile
 @@ -81,3 +81,4 @@ obj-$(CONFIG_GENERIC_TIME)	+= clocksourc
  obj-$(CONFIG_DMA_ENGINE)	+= dma/
  obj-$(CONFIG_HID)		+= hid/
  obj-$(CONFIG_PPC_PS3)		+= ps3/
 +obj-$(CONFIG_PROC_GPIO)		+= gpio/
-Index: linux-2.6.21gum/drivers/gpio/Kconfig
+Index: linux-2.6.21.7/drivers/gpio/Kconfig
 ===================================================================
---- /dev/null
-+++ linux-2.6.21gum/drivers/gpio/Kconfig
-@@ -0,0 +1,12 @@
+--- linux-2.6.21.7.orig/drivers/gpio/Kconfig
++++ linux-2.6.21.7/drivers/gpio/Kconfig
+@@ -2,14 +2,27 @@ menuconfig NEW_GPIO
+ 	bool "GPIO Support"
+ 	depends on GENERIC_GPIO
+ 	help
+-	  Say Y to enable Linux GPIO device support.  This allows control of 
+-	  GPIO pins using a character device 
++	  Say Y to enable Linux GPIO device support.  This allows control of
++	  GPIO pins using a character device
+ 
+ if NEW_GPIO
+ 
+ config GPIO_DEVICE
+ 	tristate "GPIO device support"
+ 	help
+-	  This option enables the gpio character device 
++	  This option enables the gpio character device
+ 
+ endif # NEW_GPIO
++
 +config PROC_GPIO
 +	tristate "GPIO /proc interface"
 +	depends on PXA25x || PXA27x
@@ -37,18 +55,19 @@ Index: linux-2.6.21gum/drivers/gpio/Kconfig
 +	depends on PROC_GPIO
 +	help
 +	  This enables printk logging of activity done through /proc/gpio
-Index: linux-2.6.21gum/drivers/gpio/Makefile
+Index: linux-2.6.21.7/drivers/gpio/Makefile
 ===================================================================
---- /dev/null
-+++ linux-2.6.21gum/drivers/gpio/Makefile
-@@ -0,0 +1,3 @@
-+# Expose GPIOs under /proc
-+obj-$(CONFIG_PROC_GPIO)			+= proc_gpio.o
+--- linux-2.6.21.7.orig/drivers/gpio/Makefile
++++ linux-2.6.21.7/drivers/gpio/Makefile
+@@ -1 +1,4 @@
+ obj-$(CONFIG_GPIO_DEVICE)	+= gpio_dev.o
 +
-Index: linux-2.6.21gum/drivers/gpio/proc_gpio.c
++# Expose GPIOs under /proc
++obj-$(CONFIG_PROC_GPIO)		+= proc_gpio.o
+Index: linux-2.6.21.7/drivers/gpio/proc_gpio.c
 ===================================================================
 --- /dev/null
-+++ linux-2.6.21gum/drivers/gpio/proc_gpio.c
++++ linux-2.6.21.7/drivers/gpio/proc_gpio.c
 @@ -0,0 +1,276 @@
 +/*
 + *
