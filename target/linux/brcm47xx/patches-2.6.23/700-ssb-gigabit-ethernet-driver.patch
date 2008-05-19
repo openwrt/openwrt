@@ -1,7 +1,7 @@
-Index: linux-2.6.23.16/drivers/ssb/Kconfig
+Index: linux-2.6.23.17/drivers/ssb/Kconfig
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/Kconfig	2008-03-19 11:16:18.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/Kconfig	2008-03-19 11:16:18.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/ssb/Kconfig
++++ linux-2.6.23.17/drivers/ssb/Kconfig
 @@ -120,4 +120,13 @@ config SSB_DRIVER_EXTIF
  
  	  If unsure, say N
@@ -16,10 +16,10 @@ Index: linux-2.6.23.16/drivers/ssb/Kconfig
 +	  If unsure, say N
 +
  endmenu
-Index: linux-2.6.23.16/drivers/ssb/Makefile
+Index: linux-2.6.23.17/drivers/ssb/Makefile
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/Makefile	2008-03-19 11:16:18.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/Makefile	2008-03-19 11:16:18.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/ssb/Makefile
++++ linux-2.6.23.17/drivers/ssb/Makefile
 @@ -11,6 +11,7 @@ ssb-y					+= driver_chipcommon.o
  ssb-$(CONFIG_SSB_DRIVER_MIPS)		+= driver_mipscore.o
  ssb-$(CONFIG_SSB_DRIVER_EXTIF)		+= driver_extif.o
@@ -28,10 +28,10 @@ Index: linux-2.6.23.16/drivers/ssb/Makefile
  
  # b43 pci-ssb-bridge driver
  # Not strictly a part of SSB, but kept here for convenience
-Index: linux-2.6.23.16/drivers/ssb/driver_gige.c
+Index: linux-2.6.23.17/drivers/ssb/driver_gige.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/ssb/driver_gige.c	2008-03-19 11:16:18.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/drivers/ssb/driver_gige.c
 @@ -0,0 +1,294 @@
 +/*
 + * Sonics Silicon Backplane
@@ -327,10 +327,10 @@ Index: linux-2.6.23.16/drivers/ssb/driver_gige.c
 +{
 +	return ssb_driver_register(&ssb_gige_driver);
 +}
-Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_gige.h
+Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_gige.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/linux/ssb/ssb_driver_gige.h	2008-03-19 11:16:18.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/include/linux/ssb/ssb_driver_gige.h
 @@ -0,0 +1,174 @@
 +#ifndef LINUX_SSB_DRIVER_GIGE_H_
 +#define LINUX_SSB_DRIVER_GIGE_H_
@@ -506,10 +506,10 @@ Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_gige.h
 +
 +#endif /* CONFIG_SSB_DRIVER_GIGE */
 +#endif /* LINUX_SSB_DRIVER_GIGE_H_ */
-Index: linux-2.6.23.16/drivers/ssb/driver_pcicore.c
+Index: linux-2.6.23.17/drivers/ssb/driver_pcicore.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/driver_pcicore.c	2008-03-19 11:16:18.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/driver_pcicore.c	2008-03-19 11:16:18.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/ssb/driver_pcicore.c
++++ linux-2.6.23.17/drivers/ssb/driver_pcicore.c
 @@ -60,74 +60,6 @@ static DEFINE_SPINLOCK(cfgspace_lock);
  /* Core to access the external PCI config space. Can only have one. */
  static struct ssb_pcicore *extpci_core;
@@ -678,10 +678,10 @@ Index: linux-2.6.23.16/drivers/ssb/driver_pcicore.c
  static void ssb_pcicore_init_hostmode(struct ssb_pcicore *pc)
  {
  	u32 val;
-Index: linux-2.6.23.16/drivers/ssb/embedded.c
+Index: linux-2.6.23.17/drivers/ssb/embedded.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/embedded.c	2008-03-19 11:16:18.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/embedded.c	2008-03-19 11:16:18.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/ssb/embedded.c
++++ linux-2.6.23.17/drivers/ssb/embedded.c
 @@ -10,6 +10,9 @@
  
  #include <linux/ssb/ssb.h>
@@ -783,10 +783,10 @@ Index: linux-2.6.23.16/drivers/ssb/embedded.c
 +
 +	return -ENODEV;
 +}
-Index: linux-2.6.23.16/include/linux/ssb/ssb.h
+Index: linux-2.6.23.17/include/linux/ssb/ssb.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/ssb/ssb.h	2008-03-19 11:16:18.000000000 +0100
-+++ linux-2.6.23.16/include/linux/ssb/ssb.h	2008-03-19 11:16:18.000000000 +0100
+--- linux-2.6.23.17.orig/include/linux/ssb/ssb.h
++++ linux-2.6.23.17/include/linux/ssb/ssb.h
 @@ -422,5 +422,12 @@ extern int ssb_bus_powerup(struct ssb_bu
  extern u32 ssb_admatch_base(u32 adm);
  extern u32 ssb_admatch_size(u32 adm);
@@ -800,10 +800,10 @@ Index: linux-2.6.23.16/include/linux/ssb/ssb.h
 +#endif /* CONFIG_SSB_EMBEDDED */
  
  #endif /* LINUX_SSB_H_ */
-Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_pci.h
+Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_pci.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/ssb/ssb_driver_pci.h	2008-03-19 11:16:18.000000000 +0100
-+++ linux-2.6.23.16/include/linux/ssb/ssb_driver_pci.h	2008-03-19 11:16:18.000000000 +0100
+--- linux-2.6.23.17.orig/include/linux/ssb/ssb_driver_pci.h
++++ linux-2.6.23.17/include/linux/ssb/ssb_driver_pci.h
 @@ -1,6 +1,11 @@
  #ifndef LINUX_SSB_PCICORE_H_
  #define LINUX_SSB_PCICORE_H_
@@ -843,10 +843,10 @@ Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_pci.h
 +
  #endif /* CONFIG_SSB_DRIVER_PCICORE */
  #endif /* LINUX_SSB_PCICORE_H_ */
-Index: linux-2.6.23.16/drivers/ssb/main.c
+Index: linux-2.6.23.17/drivers/ssb/main.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/main.c	2008-03-19 11:16:18.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/main.c	2008-03-19 11:16:18.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/ssb/main.c
++++ linux-2.6.23.17/drivers/ssb/main.c
 @@ -14,6 +14,7 @@
  #include <linux/io.h>
  #include <linux/ssb/ssb.h>
@@ -905,10 +905,10 @@ Index: linux-2.6.23.16/drivers/ssb/main.c
  	b43_pci_ssb_bridge_exit();
  	bus_unregister(&ssb_bustype);
  }
-Index: linux-2.6.23.16/drivers/ssb/ssb_private.h
+Index: linux-2.6.23.17/drivers/ssb/ssb_private.h
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/ssb_private.h	2008-03-19 11:16:15.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/ssb_private.h	2008-03-19 11:16:18.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/ssb/ssb_private.h
++++ linux-2.6.23.17/drivers/ssb/ssb_private.h
 @@ -118,6 +118,8 @@ extern u32 ssb_calc_clock_rate(u32 pllty
  extern int ssb_devices_freeze(struct ssb_bus *bus);
  extern int ssb_devices_thaw(struct ssb_bus *bus);
@@ -918,10 +918,10 @@ Index: linux-2.6.23.16/drivers/ssb/ssb_private.h
  
  /* b43_pci_bridge.c */
  #ifdef CONFIG_SSB_PCIHOST
-Index: linux-2.6.23.16/drivers/net/tg3.c
+Index: linux-2.6.23.17/drivers/net/tg3.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/net/tg3.c	2008-03-19 11:16:15.000000000 +0100
-+++ linux-2.6.23.16/drivers/net/tg3.c	2008-03-19 11:16:18.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/net/tg3.c
++++ linux-2.6.23.17/drivers/net/tg3.c
 @@ -38,6 +38,7 @@
  #include <linux/workqueue.h>
  #include <linux/prefetch.h>
@@ -1205,10 +1205,10 @@ Index: linux-2.6.23.16/drivers/net/tg3.c
  
  	/* The word/byte swap controls here control register access byte
  	 * swapping.  DMA data byte swapping is controlled in the GRC_MODE
-Index: linux-2.6.23.16/drivers/net/tg3.h
+Index: linux-2.6.23.17/drivers/net/tg3.h
 ===================================================================
---- linux-2.6.23.16.orig/drivers/net/tg3.h	2008-03-19 11:16:15.000000000 +0100
-+++ linux-2.6.23.16/drivers/net/tg3.h	2008-03-19 11:16:18.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/net/tg3.h
++++ linux-2.6.23.17/drivers/net/tg3.h
 @@ -2279,6 +2279,10 @@ struct tg3 {
  #define TG3_FLG2_PHY_JITTER_BUG		0x20000000
  #define TG3_FLG2_NO_FWARE_REPORTED	0x40000000
@@ -1238,11 +1238,11 @@ Index: linux-2.6.23.16/drivers/net/tg3.h
  
  	struct tg3_hw_stats		*hw_stats;
  	dma_addr_t			stats_mapping;
-Index: linux-2.6.23.16/drivers/ssb/driver_mipscore.c
+Index: linux-2.6.23.17/drivers/ssb/driver_mipscore.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/driver_mipscore.c	2008-03-19 11:16:18.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/driver_mipscore.c	2008-03-19 11:16:18.000000000 +0100
-@@ -211,6 +211,7 @@ void ssb_mipscore_init(struct ssb_mipsco
+--- linux-2.6.23.17.orig/drivers/ssb/driver_mipscore.c
++++ linux-2.6.23.17/drivers/ssb/driver_mipscore.c
+@@ -212,6 +212,7 @@ void ssb_mipscore_init(struct ssb_mipsco
  			/* fallthrough */
  		case SSB_DEV_PCI:
  		case SSB_DEV_ETHERNET:

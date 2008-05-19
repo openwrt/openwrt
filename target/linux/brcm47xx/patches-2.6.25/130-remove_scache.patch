@@ -1,7 +1,7 @@
-Index: linux-2.6.25/arch/mips/Kconfig
+Index: linux-2.6.25.4/arch/mips/Kconfig
 ===================================================================
---- linux-2.6.25.orig/arch/mips/Kconfig	2008-04-26 21:57:10.000000000 +0100
-+++ linux-2.6.25/arch/mips/Kconfig	2008-04-26 21:57:13.000000000 +0100
+--- linux-2.6.25.4.orig/arch/mips/Kconfig
++++ linux-2.6.25.4/arch/mips/Kconfig
 @@ -228,7 +228,6 @@ config MIPS_MALTA
  	select I8259
  	select MIPS_BOARDS_GEN
@@ -24,10 +24,10 @@ Index: linux-2.6.25/arch/mips/Kconfig
  config R5000_CPU_SCACHE
  	bool
  	select BOARD_SCACHE
-Index: linux-2.6.25/arch/mips/kernel/cpu-probe.c
+Index: linux-2.6.25.4/arch/mips/kernel/cpu-probe.c
 ===================================================================
---- linux-2.6.25.orig/arch/mips/kernel/cpu-probe.c	2008-04-26 21:56:21.000000000 +0100
-+++ linux-2.6.25/arch/mips/kernel/cpu-probe.c	2008-04-26 21:57:13.000000000 +0100
+--- linux-2.6.25.4.orig/arch/mips/kernel/cpu-probe.c
++++ linux-2.6.25.4/arch/mips/kernel/cpu-probe.c
 @@ -704,6 +704,8 @@ static inline void cpu_probe_mips(struct
  		break;
  	case PRID_IMP_25KF:
@@ -37,10 +37,10 @@ Index: linux-2.6.25/arch/mips/kernel/cpu-probe.c
  		break;
  	case PRID_IMP_34K:
  		c->cputype = CPU_34K;
-Index: linux-2.6.25/arch/mips/mm/c-r4k.c
+Index: linux-2.6.25.4/arch/mips/mm/c-r4k.c
 ===================================================================
---- linux-2.6.25.orig/arch/mips/mm/c-r4k.c	2008-04-26 21:56:21.000000000 +0100
-+++ linux-2.6.25/arch/mips/mm/c-r4k.c	2008-04-26 22:08:15.000000000 +0100
+--- linux-2.6.25.4.orig/arch/mips/mm/c-r4k.c
++++ linux-2.6.25.4/arch/mips/mm/c-r4k.c
 @@ -1103,7 +1103,6 @@ static void __init loongson2_sc_init(voi
  
  extern int r5k_sc_init(void);
@@ -84,10 +84,10 @@ Index: linux-2.6.25/arch/mips/mm/c-r4k.c
  	/* compute a couple of other cache variables */
  	c->scache.waysize = scache_size / c->scache.ways;
  
-Index: linux-2.6.25/arch/mips/mm/Makefile
+Index: linux-2.6.25.4/arch/mips/mm/Makefile
 ===================================================================
---- linux-2.6.25.orig/arch/mips/mm/Makefile	2008-04-26 21:56:21.000000000 +0100
-+++ linux-2.6.25/arch/mips/mm/Makefile	2008-04-26 21:57:13.000000000 +0100
+--- linux-2.6.25.4.orig/arch/mips/mm/Makefile
++++ linux-2.6.25.4/arch/mips/mm/Makefile
 @@ -32,6 +32,5 @@ obj-$(CONFIG_CPU_VR41XX)	+= c-r4k.o cex-
  obj-$(CONFIG_IP22_CPU_SCACHE)	+= sc-ip22.o
  obj-$(CONFIG_R5000_CPU_SCACHE)  += sc-r5k.o

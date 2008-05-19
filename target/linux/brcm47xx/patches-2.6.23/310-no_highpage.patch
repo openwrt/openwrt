@@ -1,8 +1,8 @@
-Index: linux-2.6.23/arch/mips/mm/init.c
+Index: linux-2.6.23.17/arch/mips/mm/init.c
 ===================================================================
---- linux-2.6.23.orig/arch/mips/mm/init.c	2007-10-13 11:46:58.762489429 +0200
-+++ linux-2.6.23/arch/mips/mm/init.c	2007-10-13 11:47:36.092616749 +0200
-@@ -205,31 +205,6 @@
+--- linux-2.6.23.17.orig/arch/mips/mm/init.c
++++ linux-2.6.23.17/arch/mips/mm/init.c
+@@ -205,31 +205,6 @@ void kunmap_coherent(void)
  	preempt_check_resched();
  }
  
@@ -34,10 +34,10 @@ Index: linux-2.6.23/arch/mips/mm/init.c
  void copy_to_user_page(struct vm_area_struct *vma,
  	struct page *page, unsigned long vaddr, void *dst, const void *src,
  	unsigned long len)
-Index: linux-2.6.23/include/asm-mips/page.h
+Index: linux-2.6.23.17/include/asm-mips/page.h
 ===================================================================
---- linux-2.6.23.orig/include/asm-mips/page.h	2007-10-13 11:45:50.518600430 +0200
-+++ linux-2.6.23/include/asm-mips/page.h	2007-10-13 11:47:26.472068504 +0200
+--- linux-2.6.23.17.orig/include/asm-mips/page.h
++++ linux-2.6.23.17/include/asm-mips/page.h
 @@ -35,6 +35,7 @@
  #ifndef __ASSEMBLY__
  
@@ -46,7 +46,7 @@ Index: linux-2.6.23/include/asm-mips/page.h
  #include <asm/io.h>
  
  /*
-@@ -67,13 +68,16 @@
+@@ -67,13 +68,16 @@ static inline void clear_user_page(void 
  		flush_data_cache_page((unsigned long)addr);
  }
  

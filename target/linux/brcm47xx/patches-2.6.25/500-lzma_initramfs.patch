@@ -1,7 +1,7 @@
-Index: linux-2.6.25/scripts/gen_initramfs_list.sh
+Index: linux-2.6.25.4/scripts/gen_initramfs_list.sh
 ===================================================================
---- linux-2.6.25.orig/scripts/gen_initramfs_list.sh	2008-04-26 21:57:00.000000000 +0100
-+++ linux-2.6.25/scripts/gen_initramfs_list.sh	2008-04-26 21:57:20.000000000 +0100
+--- linux-2.6.25.4.orig/scripts/gen_initramfs_list.sh
++++ linux-2.6.25.4/scripts/gen_initramfs_list.sh
 @@ -287,7 +287,7 @@ if [ ! -z ${output_file} ]; then
  	if [ "${is_cpio_compressed}" = "compressed" ]; then
  		cat ${cpio_tfile} > ${output_file}
@@ -11,10 +11,10 @@ Index: linux-2.6.25/scripts/gen_initramfs_list.sh
  	fi
  	[ -z ${cpio_file} ] && rm ${cpio_tfile}
  fi
-Index: linux-2.6.25/init/initramfs.c
+Index: linux-2.6.25.4/init/initramfs.c
 ===================================================================
---- linux-2.6.25.orig/init/initramfs.c	2008-04-26 21:56:21.000000000 +0100
-+++ linux-2.6.25/init/initramfs.c	2008-04-26 21:57:20.000000000 +0100
+--- linux-2.6.25.4.orig/init/initramfs.c
++++ linux-2.6.25.4/init/initramfs.c
 @@ -441,6 +441,69 @@ static void __init flush_window(void)
  	outcnt = 0;
  }

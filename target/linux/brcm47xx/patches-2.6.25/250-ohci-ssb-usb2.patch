@@ -1,7 +1,7 @@
-Index: linux-2.6.25/drivers/usb/host/ohci-ssb.c
+Index: linux-2.6.25.4/drivers/usb/host/ohci-ssb.c
 ===================================================================
---- linux-2.6.25.orig/drivers/usb/host/ohci-ssb.c	2008-04-26 21:56:21.000000000 +0100
-+++ linux-2.6.25/drivers/usb/host/ohci-ssb.c	2008-04-26 22:07:53.000000000 +0100
+--- linux-2.6.25.4.orig/drivers/usb/host/ohci-ssb.c
++++ linux-2.6.25.4/drivers/usb/host/ohci-ssb.c
 @@ -142,10 +142,59 @@ static int ssb_ohci_attach(struct ssb_de
  	int err = -ENOMEM;
  	u32 tmp, flags = 0;
@@ -64,7 +64,7 @@ Index: linux-2.6.25/drivers/usb/host/ohci-ssb.c
  
  	hcd = usb_create_hcd(&ssb_ohci_hc_driver, dev->dev,
  			dev->dev->bus_id);
-@@ -235,6 +284,7 @@ static int ssb_ohci_resume(struct ssb_de
+@@ -236,6 +285,7 @@ static int ssb_ohci_resume(struct ssb_de
  static const struct ssb_device_id ssb_ohci_table[] = {
  	SSB_DEVICE(SSB_VENDOR_BROADCOM, SSB_DEV_USB11_HOSTDEV, SSB_ANY_REV),
  	SSB_DEVICE(SSB_VENDOR_BROADCOM, SSB_DEV_USB11_HOST, SSB_ANY_REV),

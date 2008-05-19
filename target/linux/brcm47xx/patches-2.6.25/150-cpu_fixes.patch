@@ -1,7 +1,7 @@
-Index: linux-2.6.25/arch/mips/kernel/genex.S
+Index: linux-2.6.25.4/arch/mips/kernel/genex.S
 ===================================================================
---- linux-2.6.25.orig/arch/mips/kernel/genex.S	2008-04-26 21:56:21.000000000 +0100
-+++ linux-2.6.25/arch/mips/kernel/genex.S	2008-04-26 21:57:14.000000000 +0100
+--- linux-2.6.25.4.orig/arch/mips/kernel/genex.S
++++ linux-2.6.25.4/arch/mips/kernel/genex.S
 @@ -51,6 +51,10 @@ NESTED(except_vec1_generic, 0, sp)
  NESTED(except_vec3_generic, 0, sp)
  	.set	push
@@ -13,10 +13,10 @@ Index: linux-2.6.25/arch/mips/kernel/genex.S
  #if R5432_CP0_INTERRUPT_WAR
  	mfc0	k0, CP0_INDEX
  #endif
-Index: linux-2.6.25/arch/mips/mm/c-r4k.c
+Index: linux-2.6.25.4/arch/mips/mm/c-r4k.c
 ===================================================================
---- linux-2.6.25.orig/arch/mips/mm/c-r4k.c	2008-04-26 21:57:13.000000000 +0100
-+++ linux-2.6.25/arch/mips/mm/c-r4k.c	2008-04-26 21:57:14.000000000 +0100
+--- linux-2.6.25.4.orig/arch/mips/mm/c-r4k.c
++++ linux-2.6.25.4/arch/mips/mm/c-r4k.c
 @@ -33,6 +33,9 @@
  #include <asm/cacheflush.h> /* for run_uncached() */
  
@@ -114,10 +114,10 @@ Index: linux-2.6.25/arch/mips/mm/c-r4k.c
  	coherency_setup();
 +#endif
  }
-Index: linux-2.6.25/arch/mips/mm/tlbex.c
+Index: linux-2.6.25.4/arch/mips/mm/tlbex.c
 ===================================================================
---- linux-2.6.25.orig/arch/mips/mm/tlbex.c	2008-04-26 21:56:21.000000000 +0100
-+++ linux-2.6.25/arch/mips/mm/tlbex.c	2008-04-26 21:57:14.000000000 +0100
+--- linux-2.6.25.4.orig/arch/mips/mm/tlbex.c
++++ linux-2.6.25.4/arch/mips/mm/tlbex.c
 @@ -677,6 +677,9 @@ static void __cpuinit build_r4000_tlb_re
  		/* No need for uasm_i_nop */
  	}
@@ -138,10 +138,10 @@ Index: linux-2.6.25/arch/mips/mm/tlbex.c
  #ifdef CONFIG_64BIT
  	build_get_pmde64(p, l, r, pte, ptr); /* get pmd in ptr */
  #else
-Index: linux-2.6.25/include/asm-mips/r4kcache.h
+Index: linux-2.6.25.4/include/asm-mips/r4kcache.h
 ===================================================================
---- linux-2.6.25.orig/include/asm-mips/r4kcache.h	2008-04-26 21:56:21.000000000 +0100
-+++ linux-2.6.25/include/asm-mips/r4kcache.h	2008-04-26 21:57:14.000000000 +0100
+--- linux-2.6.25.4.orig/include/asm-mips/r4kcache.h
++++ linux-2.6.25.4/include/asm-mips/r4kcache.h
 @@ -17,6 +17,20 @@
  #include <asm/cpu-features.h>
  #include <asm/mipsmtregs.h>
@@ -358,10 +358,10 @@ Index: linux-2.6.25/include/asm-mips/r4kcache.h
 +__BUILD_BLAST_CACHE_RANGE(inv_s, scache, Hit_Invalidate_SD,,, )
  
  #endif /* _ASM_R4KCACHE_H */
-Index: linux-2.6.25/include/asm-mips/stackframe.h
+Index: linux-2.6.25.4/include/asm-mips/stackframe.h
 ===================================================================
---- linux-2.6.25.orig/include/asm-mips/stackframe.h	2008-04-26 21:56:21.000000000 +0100
-+++ linux-2.6.25/include/asm-mips/stackframe.h	2008-04-26 21:57:14.000000000 +0100
+--- linux-2.6.25.4.orig/include/asm-mips/stackframe.h
++++ linux-2.6.25.4/include/asm-mips/stackframe.h
 @@ -359,6 +359,10 @@
  		.macro	RESTORE_SP_AND_RET
  		LONG_L	sp, PT_R29(sp)

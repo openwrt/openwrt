@@ -1,7 +1,7 @@
-Index: linux-2.6.23.16/drivers/ssb/Kconfig
+Index: linux-2.6.23.17/drivers/ssb/Kconfig
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/Kconfig	2008-02-19 13:46:05.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/Kconfig	2008-02-19 13:46:33.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/ssb/Kconfig
++++ linux-2.6.23.17/drivers/ssb/Kconfig
 @@ -105,6 +105,12 @@ config SSB_DRIVER_MIPS
  
  	  If unsure, say N
@@ -15,10 +15,10 @@ Index: linux-2.6.23.16/drivers/ssb/Kconfig
  config SSB_DRIVER_EXTIF
  	bool "SSB Broadcom EXTIF core driver (EXPERIMENTAL)"
  	depends on SSB_DRIVER_MIPS && EXPERIMENTAL
-Index: linux-2.6.23.16/drivers/ssb/Makefile
+Index: linux-2.6.23.17/drivers/ssb/Makefile
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/Makefile	2008-02-19 13:46:05.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/Makefile	2008-02-19 13:46:33.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/ssb/Makefile
++++ linux-2.6.23.17/drivers/ssb/Makefile
 @@ -1,5 +1,6 @@
  # core
  ssb-y					+= main.o scan.o
@@ -26,10 +26,10 @@ Index: linux-2.6.23.16/drivers/ssb/Makefile
  
  # host support
  ssb-$(CONFIG_SSB_PCIHOST)		+= pci.o pcihost_wrapper.o
-Index: linux-2.6.23.16/drivers/ssb/driver_extif.c
+Index: linux-2.6.23.17/drivers/ssb/driver_extif.c
 ===================================================================
---- linux-2.6.23.16.orig/drivers/ssb/driver_extif.c	2008-02-19 13:46:05.000000000 +0100
-+++ linux-2.6.23.16/drivers/ssb/driver_extif.c	2008-02-19 13:46:33.000000000 +0100
+--- linux-2.6.23.17.orig/drivers/ssb/driver_extif.c
++++ linux-2.6.23.17/drivers/ssb/driver_extif.c
 @@ -37,6 +37,12 @@ static inline u32 extif_write32_masked(s
  	return value;
  }
@@ -43,10 +43,10 @@ Index: linux-2.6.23.16/drivers/ssb/driver_extif.c
  #ifdef CONFIG_SSB_SERIAL
  static bool serial_exists(u8 *regs)
  {
-Index: linux-2.6.23.16/drivers/ssb/embedded.c
+Index: linux-2.6.23.17/drivers/ssb/embedded.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/drivers/ssb/embedded.c	2008-02-19 13:46:33.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/drivers/ssb/embedded.c
 @@ -0,0 +1,26 @@
 +/*
 + * Sonics Silicon Backplane
@@ -74,10 +74,10 @@ Index: linux-2.6.23.16/drivers/ssb/embedded.c
 +	}
 +	return -ENODEV;
 +}
-Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_chipcommon.h
+Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_chipcommon.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/ssb/ssb_driver_chipcommon.h	2008-02-19 13:46:29.000000000 +0100
-+++ linux-2.6.23.16/include/linux/ssb/ssb_driver_chipcommon.h	2008-02-19 13:46:33.000000000 +0100
+--- linux-2.6.23.17.orig/include/linux/ssb/ssb_driver_chipcommon.h
++++ linux-2.6.23.17/include/linux/ssb/ssb_driver_chipcommon.h
 @@ -360,6 +360,11 @@ struct ssb_chipcommon {
  	u16 fast_pwrup_delay;
  };
@@ -90,10 +90,10 @@ Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_chipcommon.h
  extern void ssb_chipcommon_init(struct ssb_chipcommon *cc);
  
  #include <linux/pm.h>
-Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_extif.h
+Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_extif.h
 ===================================================================
---- linux-2.6.23.16.orig/include/linux/ssb/ssb_driver_extif.h	2008-02-19 13:46:05.000000000 +0100
-+++ linux-2.6.23.16/include/linux/ssb/ssb_driver_extif.h	2008-02-19 13:46:33.000000000 +0100
+--- linux-2.6.23.17.orig/include/linux/ssb/ssb_driver_extif.h
++++ linux-2.6.23.17/include/linux/ssb/ssb_driver_extif.h
 @@ -178,6 +178,9 @@ u32 ssb_extif_gpio_outen(struct ssb_exti
  u32 ssb_extif_gpio_polarity(struct ssb_extif *extif, u32 mask, u32 value);
  u32 ssb_extif_gpio_intmask(struct ssb_extif *extif, u32 mask, u32 value);
@@ -116,10 +116,10 @@ Index: linux-2.6.23.16/include/linux/ssb/ssb_driver_extif.h
 +
  #endif /* CONFIG_SSB_DRIVER_EXTIF */
  #endif /* LINUX_SSB_EXTIFCORE_H_ */
-Index: linux-2.6.23.16/include/linux/ssb/ssb_embedded.h
+Index: linux-2.6.23.17/include/linux/ssb/ssb_embedded.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.23.16/include/linux/ssb/ssb_embedded.h	2008-02-19 13:46:33.000000000 +0100
+--- /dev/null
++++ linux-2.6.23.17/include/linux/ssb/ssb_embedded.h
 @@ -0,0 +1,10 @@
 +#ifndef LINUX_SSB_EMBEDDED_H_
 +#define LINUX_SSB_EMBEDDED_H_
