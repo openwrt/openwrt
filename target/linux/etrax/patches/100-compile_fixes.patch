@@ -1,7 +1,7 @@
-Index: linux-2.6.25.1/arch/cris/arch-v10/boot/Makefile
+Index: linux-2.6.25.4/arch/cris/arch-v10/boot/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/arch/cris/arch-v10/boot/Makefile	2008-05-03 18:16:00.000000000 +0100
-+++ linux-2.6.25.1/arch/cris/arch-v10/boot/Makefile	2008-05-03 18:16:12.000000000 +0100
+--- linux-2.6.25.4.orig/arch/cris/arch-v10/boot/Makefile
++++ linux-2.6.25.4/arch/cris/arch-v10/boot/Makefile
 @@ -2,10 +2,10 @@
  # arch/cris/arch-v10/boot/Makefile
  #
@@ -15,7 +15,7 @@ Index: linux-2.6.25.1/arch/cris/arch-v10/boot/Makefile
  targets := Image
  
  $(obj)/Image: vmlinux FORCE
-@@ -14,7 +14,6 @@
+@@ -14,7 +14,6 @@ $(obj)/Image: vmlinux FORCE
  
  $(obj)/compressed/vmlinux: $(obj)/Image FORCE
  	$(Q)$(MAKE) $(build)=$(obj)/compressed $@
@@ -23,10 +23,10 @@ Index: linux-2.6.25.1/arch/cris/arch-v10/boot/Makefile
  
  $(obj)/zImage:  $(obj)/compressed/vmlinux
  	@cp $< $@
-Index: linux-2.6.25.1/arch/cris/arch-v10/boot/compressed/Makefile
+Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/arch/cris/arch-v10/boot/compressed/Makefile	2008-05-03 18:16:00.000000000 +0100
-+++ linux-2.6.25.1/arch/cris/arch-v10/boot/compressed/Makefile	2008-05-03 18:16:12.000000000 +0100
+--- linux-2.6.25.4.orig/arch/cris/arch-v10/boot/compressed/Makefile
++++ linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/Makefile
 @@ -2,12 +2,11 @@
  # arch/cris/arch-v10/boot/compressed/Makefile
  #
@@ -42,7 +42,7 @@ Index: linux-2.6.25.1/arch/cris/arch-v10/boot/compressed/Makefile
  OBJCOPYFLAGS = -O binary --remove-section=.bss
  
  quiet_cmd_image = BUILD   $@
-@@ -22,10 +21,10 @@
+@@ -22,10 +21,10 @@ $(obj)/decompress.bin: $(obj)/decompress
  	$(call if_changed,objcopy)
  
  $(obj)/head.o: $(obj)/head.S .config
@@ -55,10 +55,10 @@ Index: linux-2.6.25.1/arch/cris/arch-v10/boot/compressed/Makefile
  
  $(obj)/vmlinux: $(obj)/piggy.gz $(obj)/decompress.bin FORCE
  	$(call if_changed,image)
-Index: linux-2.6.25.1/arch/cris/arch-v10/boot/compressed/misc.c
+Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/misc.c
 ===================================================================
---- linux-2.6.25.1.orig/arch/cris/arch-v10/boot/compressed/misc.c	2008-05-03 18:16:00.000000000 +0100
-+++ linux-2.6.25.1/arch/cris/arch-v10/boot/compressed/misc.c	2008-05-03 18:16:12.000000000 +0100
+--- linux-2.6.25.4.orig/arch/cris/arch-v10/boot/compressed/misc.c
++++ linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/misc.c
 @@ -5,7 +5,7 @@
   * adapted for Linux.
   *
@@ -68,7 +68,7 @@ Index: linux-2.6.25.1/arch/cris/arch-v10/boot/compressed/misc.c
   * adaptation for Linux/CRIS Axis Communications AB, 1999
   *
   */
-@@ -99,7 +99,7 @@
+@@ -99,7 +99,7 @@ static void error(char *m);
  static void gzip_mark(void **);
  static void gzip_release(void **);
   
@@ -77,7 +77,7 @@ Index: linux-2.6.25.1/arch/cris/arch-v10/boot/compressed/misc.c
  
  /* the "heap" is put directly after the BSS ends, at end */
    
-@@ -139,7 +139,7 @@
+@@ -139,7 +139,7 @@ static void gzip_release(void **ptr)
  /* decompressor info and error messages to serial console */
  
  static void
@@ -86,7 +86,7 @@ Index: linux-2.6.25.1/arch/cris/arch-v10/boot/compressed/misc.c
  {
  #ifndef CONFIG_ETRAX_DEBUG_PORT_NULL
  	while(*s) {
-@@ -209,9 +209,9 @@
+@@ -209,9 +209,9 @@ flush_window()
  static void
  error(char *x)
  {
@@ -99,7 +99,7 @@ Index: linux-2.6.25.1/arch/cris/arch-v10/boot/compressed/misc.c
  
  	while(1);	/* Halt */
  }
-@@ -257,14 +257,7 @@
+@@ -257,14 +257,7 @@ decompress_kernel()
  
  	makecrc();
  
@@ -116,13 +116,17 @@ Index: linux-2.6.25.1/arch/cris/arch-v10/boot/compressed/misc.c
 -	puts("Done. Now booting the kernel.\n");
 +	putstr("Done. Now booting the kernel.\n");
  }
-Index: linux-2.6.25.1/arch/cris/arch-v10/mm/init.c
+Index: linux-2.6.25.4/arch/cris/arch-v10/mm/init.c
 ===================================================================
---- linux-2.6.25.1.orig/arch/cris/arch-v10/mm/init.c	2008-05-03 18:18:51.000000000 +0100
-+++ linux-2.6.25.1/arch/cris/arch-v10/mm/init.c	2008-05-03 18:18:53.000000000 +0100
-@@ -113,3 +113,6 @@
- 		(unsigned long)((&__init_end - &__init_begin) >> 10));
+--- linux-2.6.25.4.orig/arch/cris/arch-v10/mm/init.c
++++ linux-2.6.25.4/arch/cris/arch-v10/mm/init.c
+@@ -184,6 +184,9 @@ paging_init(void)
+ 
+ 	free_area_init_node(0, &contig_page_data, zones_size, PAGE_OFFSET >> PAGE_SHIFT, 0);
  }
 +void free_initrd_mem(unsigned long start, unsigned long end)
 +{
 +}
+ 
+ /* Initialize remaps of some I/O-ports. It is important that this
+  * is called before any driver is initialized.
