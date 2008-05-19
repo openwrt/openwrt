@@ -1,7 +1,8 @@
-diff -urN linux-2.6.21.5.old/arch/arm/mach-at91/at91rm9200_devices.c linux-2.6.21.5/arch/arm/mach-at91/at91rm9200_devices.c
---- linux-2.6.21.5.old/arch/arm/mach-at91/at91rm9200_devices.c	2008-03-13 16:24:18.000000000 +0100
-+++ linux-2.6.21.5/arch/arm/mach-at91/at91rm9200_devices.c	2008-03-13 16:34:43.000000000 +0100
-@@ -840,9 +840,9 @@
+Index: linux-2.6.21.7/arch/arm/mach-at91/at91rm9200_devices.c
+===================================================================
+--- linux-2.6.21.7.orig/arch/arm/mach-at91/at91rm9200_devices.c
++++ linux-2.6.21.7/arch/arm/mach-at91/at91rm9200_devices.c
+@@ -840,9 +840,9 @@ static inline void configure_usart3_pins
  	at91_set_B_periph(AT91_PIN_PA6, 0);		/* RXD3 */
  	at91_set_B_periph(AT91_PIN_PB0, 0);   /* RTS3 */
  	at91_set_B_periph(AT91_PIN_PB1, 0);   /* CTS3 */
@@ -14,10 +15,11 @@ diff -urN linux-2.6.21.5.old/arch/arm/mach-at91/at91rm9200_devices.c linux-2.6.2
  	at91_set_deglitch(AT91_PIN_PA24, 1);
  }
  
-diff -urN linux-2.6.21.5.old/arch/arm/mach-at91/board-vlink.c linux-2.6.21.5/arch/arm/mach-at91/board-vlink.c
---- linux-2.6.21.5.old/arch/arm/mach-at91/board-vlink.c	2008-03-13 16:24:18.000000000 +0100
-+++ linux-2.6.21.5/arch/arm/mach-at91/board-vlink.c	2008-03-13 16:35:05.000000000 +0100
-@@ -126,6 +126,7 @@
+Index: linux-2.6.21.7/arch/arm/mach-at91/board-vlink.c
+===================================================================
+--- linux-2.6.21.7.orig/arch/arm/mach-at91/board-vlink.c
++++ linux-2.6.21.7/arch/arm/mach-at91/board-vlink.c
+@@ -126,6 +126,7 @@ static struct spi_board_info vlink_spi_d
  
  static void __init vlink_board_init(void)
  {
@@ -25,7 +27,7 @@ diff -urN linux-2.6.21.5.old/arch/arm/mach-at91/board-vlink.c linux-2.6.21.5/arc
  	/* Serial */
  	at91_add_device_serial();
  	/* Ethernet */
-@@ -147,6 +148,10 @@
+@@ -147,6 +148,10 @@ static void __init vlink_board_init(void
  //	at91_set_gpio_output(AT91_PIN_PB22, 1);	/* this MMC card slot can optionally use SPI signaling (CS3). */
  	at91_add_device_mmc(0, &vlink_mmc_data);
  #endif
@@ -36,8 +38,8 @@ diff -urN linux-2.6.21.5.old/arch/arm/mach-at91/board-vlink.c linux-2.6.21.5/arc
  	/* LEDs */
  //	at91_gpio_leds(vlink_leds, ARRAY_SIZE(vlink_leds));
  
-@@ -164,10 +169,16 @@
- /* SIM Cards */
+@@ -164,10 +169,16 @@ static void __init vlink_board_init(void
+ 	/* SIM Cards */
  	if (at91_get_gpio_value(AT91_PIN_PB8)) {
  		at91_set_gpio_output(AT91_PIN_PB11, 0);
 -		at91_set_gpio_output(AT91_PIN_PB9, 1);
@@ -53,9 +55,9 @@ diff -urN linux-2.6.21.5.old/arch/arm/mach-at91/board-vlink.c linux-2.6.21.5/arc
 +		else
 +			at91_set_gpio_output(AT91_PIN_PC13, 0);
  	}
- 		
+ 
  	at91_set_gpio_output(AT91_PIN_PB10, 1); // ENBSC2
-@@ -182,7 +193,18 @@
+@@ -182,7 +193,18 @@ static void __init vlink_board_init(void
  	at91_set_gpio_input(AT91_PIN_PB27, 1);  // UDB_CNX
  	at91_set_gpio_output(AT91_PIN_PB28, 1); // UDB_PUP
  	at91_set_multi_drive(AT91_PIN_PB28, 1); // Set to multi-drive
@@ -75,10 +77,11 @@ diff -urN linux-2.6.21.5.old/arch/arm/mach-at91/board-vlink.c linux-2.6.21.5/arc
  }
  
  MACHINE_START(VLINK, "FDL VersaLink")
-diff -urN linux-2.6.21.5.old/drivers/char/vlink_giu.c linux-2.6.21.5/drivers/char/vlink_giu.c
---- linux-2.6.21.5.old/drivers/char/vlink_giu.c	2008-03-13 16:24:18.000000000 +0100
-+++ linux-2.6.21.5/drivers/char/vlink_giu.c	2008-03-13 16:37:06.000000000 +0100
-@@ -41,8 +41,7 @@
+Index: linux-2.6.21.7/drivers/char/vlink_giu.c
+===================================================================
+--- linux-2.6.21.7.orig/drivers/char/vlink_giu.c
++++ linux-2.6.21.7/drivers/char/vlink_giu.c
+@@ -41,8 +41,7 @@ static int major;	/* default is dynamic 
  module_param(major, int, 0);
  MODULE_PARM_DESC(major, "Major device number");
  
@@ -88,7 +91,7 @@ diff -urN linux-2.6.21.5.old/drivers/char/vlink_giu.c linux-2.6.21.5/drivers/cha
  struct vio_dev {
  	struct cdev cdev;
  };
-@@ -50,6 +49,53 @@
+@@ -50,6 +49,53 @@ struct vio_dev {
  struct vio_dev *vio_devices;
  static struct class *vio_class;
  
@@ -142,7 +145,7 @@ diff -urN linux-2.6.21.5.old/drivers/char/vlink_giu.c linux-2.6.21.5/drivers/cha
  static ssize_t gpio_read(struct file *file, char __user *buf, size_t len,
                           loff_t *ppos)
  {
-@@ -160,6 +206,8 @@
+@@ -160,6 +206,8 @@ static int vio_probe(struct platform_dev
  {
  	int retval, i, j;
  	dev_t vdev = 0;
@@ -151,7 +154,7 @@ diff -urN linux-2.6.21.5.old/drivers/char/vlink_giu.c linux-2.6.21.5/drivers/cha
  
  	if (major) {
  		vdev = MKDEV(major, 0);
-@@ -185,6 +233,7 @@
+@@ -185,6 +233,7 @@ static int vio_probe(struct platform_dev
  		vio_remove(dev);
  		return PTR_ERR(vio_class);
  	}
@@ -159,7 +162,7 @@ diff -urN linux-2.6.21.5.old/drivers/char/vlink_giu.c linux-2.6.21.5/drivers/cha
  
  	vio_devices = kmalloc(VIO_NR_DEVS * sizeof(struct vio_dev), GFP_KERNEL);
  	if (!vio_devices) {
-@@ -198,8 +247,10 @@
+@@ -198,8 +247,10 @@ static int vio_probe(struct platform_dev
  			int iodev = at91_is_pin_gpio(PIN_BASE + i*32 + j);
  			if (iodev) {
  				vio_setup_cdev(&vio_devices[i*32 + j], i*32 + j);
@@ -172,7 +175,7 @@ diff -urN linux-2.6.21.5.old/drivers/char/vlink_giu.c linux-2.6.21.5/drivers/cha
  			}
  		}
  
-@@ -212,6 +263,29 @@
+@@ -212,6 +263,29 @@ fail:
  	return retval;
  }
  

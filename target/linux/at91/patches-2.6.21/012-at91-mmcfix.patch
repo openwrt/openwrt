@@ -1,5 +1,7 @@
---- linux-2.6.21.1.old/drivers/mmc/at91_mci.c	2007-06-05 09:08:57.000000000 +0200
-+++ linux-2.6.21.1/drivers/mmc/at91_mci.c	2007-06-05 10:59:11.000000000 +0200
+Index: linux-2.6.21.7/drivers/mmc/at91_mci.c
+===================================================================
+--- linux-2.6.21.7.orig/drivers/mmc/at91_mci.c
++++ linux-2.6.21.7/drivers/mmc/at91_mci.c
 @@ -79,7 +79,8 @@
  
  #define DRIVER_NAME "at91_mci"
@@ -10,7 +12,7 @@
  
  #define FL_SENT_COMMAND	(1 << 0)
  #define FL_SENT_STOP	(1 << 1)
-@@ -132,7 +133,7 @@
+@@ -132,7 +133,7 @@ struct at91mci_host
  /*
   * Copy from sg to a dma block - used for transfers
   */
@@ -19,7 +21,7 @@
  {
  	unsigned int len, i, size;
  	unsigned *dmabuf = host->buffer;
-@@ -181,7 +182,7 @@
+@@ -181,7 +182,7 @@ static inline void at91mci_sg_to_dma(str
  /*
   * Prepare a dma read
   */
@@ -28,7 +30,7 @@
  {
  	int i;
  	struct scatterlist *sg;
-@@ -249,23 +250,24 @@
+@@ -249,23 +250,24 @@ static void at91mci_pre_dma_read(struct 
  /*
   * Handle after a dma read
   */
@@ -56,7 +58,7 @@
  	}
  
  	while (host->in_use_index < host->transfer_index) {
-@@ -300,39 +302,14 @@
+@@ -300,39 +302,14 @@ static void at91mci_post_dma_read(struct
  
  	/* Is there another transfer to trigger? */
  	if (host->transfer_index < data->sg_len)
@@ -99,7 +101,7 @@
  }
  
  /*
-@@ -340,10 +317,17 @@
+@@ -340,10 +317,17 @@ static void at91_mci_handle_transmitted(
   */
  static void at91_mci_enable(struct at91mci_host *host)
  {
@@ -118,7 +120,7 @@
  
  	/* use Slot A or B (only one at same time) */
  	at91_mci_write(host, AT91_MCI_SDCR, host->board->slot_b);
-@@ -359,9 +343,8 @@
+@@ -359,9 +343,8 @@ static void at91_mci_disable(struct at91
  
  /*
   * Send a command
@@ -129,7 +131,7 @@
  {
  	unsigned int cmdr, mr;
  	unsigned int block_length;
-@@ -372,8 +355,7 @@
+@@ -372,8 +355,7 @@ static unsigned int at91_mci_send_comman
  
  	host->cmd = cmd;
  
@@ -139,7 +141,7 @@
  	if ((at91_mci_read(host, AT91_MCI_SR) & AT91_MCI_RTOE) && (cmd->opcode == 1)) {
  		pr_debug("Clearing timeout\n");
  		at91_mci_write(host, AT91_MCI_ARGR, 0);
-@@ -383,7 +365,7 @@
+@@ -383,7 +365,7 @@ static unsigned int at91_mci_send_comman
  			pr_debug("Clearing: SR = %08X\n", at91_mci_read(host, AT91_MCI_SR));
  		}
  	}
@@ -148,7 +150,7 @@
  	cmdr = cmd->opcode;
  
  	if (mmc_resp_type(cmd) == MMC_RSP_NONE)
-@@ -440,50 +422,48 @@
+@@ -440,50 +422,48 @@ static unsigned int at91_mci_send_comman
  		at91_mci_write(host, ATMEL_PDC_TCR, 0);
  		at91_mci_write(host, ATMEL_PDC_TNPR, 0);
  		at91_mci_write(host, ATMEL_PDC_TNCR, 0);
@@ -239,7 +241,7 @@
  		}
  	}
  
-@@ -498,39 +478,24 @@
+@@ -498,39 +478,24 @@ static unsigned int at91_mci_send_comman
  	if (cmdr & AT91_MCI_TRCMD_START) {
  		if (cmdr & AT91_MCI_TRDIR)
  			at91_mci_write(host, ATMEL_PDC_PTCR, ATMEL_PDC_RXTEN);
@@ -283,7 +285,7 @@
  	}
  	else
  		mmc_request_done(host->mmc, host->request);
-@@ -539,7 +504,7 @@
+@@ -539,7 +504,7 @@ static void at91mci_process_next(struct 
  /*
   * Handle a command that has been completed
   */
@@ -292,7 +294,7 @@
  {
  	struct mmc_command *cmd = host->cmd;
  	unsigned int status;
-@@ -583,7 +548,7 @@
+@@ -583,7 +548,7 @@ static void at91mci_completed_command(st
  	else
  		cmd->error = MMC_ERR_NONE;
  
@@ -301,7 +303,7 @@
  }
  
  /*
-@@ -595,7 +560,60 @@
+@@ -595,7 +560,60 @@ static void at91_mci_request(struct mmc_
  	host->request = mrq;
  	host->flags = 0;
  
@@ -363,7 +365,7 @@
  }
  
  /*
-@@ -698,29 +716,33 @@
+@@ -698,29 +716,33 @@ static irqreturn_t at91_mci_irq(int irq,
  			at91_mci_handle_transmitted(host);
  		}
  
@@ -405,7 +407,7 @@
  
  		if (int_status & AT91_MCI_TXRDY)
  			pr_debug("Ready to transmit\n");
-@@ -730,14 +752,14 @@
+@@ -730,14 +752,14 @@ static irqreturn_t at91_mci_irq(int irq,
  
  		if (int_status & AT91_MCI_CMDRDY) {
  			pr_debug("Command ready\n");

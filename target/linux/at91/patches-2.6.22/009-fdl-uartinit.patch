@@ -1,7 +1,8 @@
-diff -urN linux-2.6.22.1.old/arch/arm/mach-at91/at91rm9200_devices.c linux-2.6.22.1/arch/arm/mach-at91/at91rm9200_devices.c
---- linux-2.6.22.1.old/arch/arm/mach-at91/at91rm9200_devices.c	2007-07-29 06:46:13.000000000 +0200
-+++ linux-2.6.22.1/arch/arm/mach-at91/at91rm9200_devices.c	2007-07-29 07:23:35.000000000 +0200
-@@ -721,6 +721,10 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/at91rm9200_devices.c
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/at91rm9200_devices.c
++++ linux-2.6.22.19/arch/arm/mach-at91/at91rm9200_devices.c
+@@ -721,6 +721,10 @@ static inline void configure_usart0_pins
  	 *  We need to drive the pin manually.  Default is off (RTS is active low).
  	 */
  	at91_set_gpio_output(AT91_PIN_PA21, 1);
@@ -12,7 +13,7 @@ diff -urN linux-2.6.22.1.old/arch/arm/mach-at91/at91rm9200_devices.c linux-2.6.2
  }
  
  static struct resource uart1_resources[] = {
-@@ -832,6 +836,12 @@
+@@ -832,6 +836,12 @@ static inline void configure_usart3_pins
  {
  	at91_set_B_periph(AT91_PIN_PA5, 1);		/* TXD3 */
  	at91_set_B_periph(AT91_PIN_PA6, 0);		/* RXD3 */

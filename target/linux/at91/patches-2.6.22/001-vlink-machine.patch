@@ -1,6 +1,7 @@
-diff -urN linux-2.6.22.1.old/arch/arm/boot/compressed/head-at91rm9200.S linux-2.6.22.1/arch/arm/boot/compressed/head-at91rm9200.S
---- linux-2.6.22.1.old/arch/arm/boot/compressed/head-at91rm9200.S	2007-07-29 06:33:09.000000000 +0200
-+++ linux-2.6.22.1/arch/arm/boot/compressed/head-at91rm9200.S	2007-07-29 06:39:45.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/boot/compressed/head-at91rm9200.S
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/boot/compressed/head-at91rm9200.S
++++ linux-2.6.22.19/arch/arm/boot/compressed/head-at91rm9200.S
 @@ -67,6 +67,12 @@
  		cmp	r7, r3
  		beq	99f
@@ -14,9 +15,10 @@ diff -urN linux-2.6.22.1.old/arch/arm/boot/compressed/head-at91rm9200.S linux-2.
  		@ Ajeco 1ARM : 1075
  		mov	r3,	#(MACH_TYPE_ONEARM & 0xff)
  		orr	r3, r3, #(MACH_TYPE_ONEARM & 0xff00)
-diff -urN linux-2.6.22.1.old/arch/arm/mach-at91/board-vlink.c linux-2.6.22.1/arch/arm/mach-at91/board-vlink.c
---- linux-2.6.22.1.old/arch/arm/mach-at91/board-vlink.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22.1/arch/arm/mach-at91/board-vlink.c	2007-07-29 06:40:47.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/mach-at91/board-vlink.c
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/arch/arm/mach-at91/board-vlink.c
 @@ -0,0 +1,191 @@
 +/*
 + * linux/arch/arm/mach-at91/board-vlink.c
@@ -209,10 +211,11 @@ diff -urN linux-2.6.22.1.old/arch/arm/mach-at91/board-vlink.c linux-2.6.22.1/arc
 +	.init_irq	= vlink_init_irq,
 +	.init_machine	= vlink_board_init,
 +MACHINE_END
-diff -urN linux-2.6.22.1.old/arch/arm/mach-at91/Kconfig linux-2.6.22.1/arch/arm/mach-at91/Kconfig
---- linux-2.6.22.1.old/arch/arm/mach-at91/Kconfig	2007-07-29 06:33:09.000000000 +0200
-+++ linux-2.6.22.1/arch/arm/mach-at91/Kconfig	2007-07-29 06:42:19.000000000 +0200
-@@ -103,6 +103,12 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/Kconfig
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/Kconfig
++++ linux-2.6.22.19/arch/arm/mach-at91/Kconfig
+@@ -103,6 +103,12 @@ config MACH_CHUB
  	help
  	  Select this if you are using Promwad's Chub board.
  
@@ -225,10 +228,11 @@ diff -urN linux-2.6.22.1.old/arch/arm/mach-at91/Kconfig linux-2.6.22.1/arch/arm/
  endif
  
  # ----------------------------------------------------------
-diff -urN linux-2.6.22.1.old/arch/arm/mach-at91/Makefile linux-2.6.22.1/arch/arm/mach-at91/Makefile
---- linux-2.6.22.1.old/arch/arm/mach-at91/Makefile	2007-07-29 06:33:09.000000000 +0200
-+++ linux-2.6.22.1/arch/arm/mach-at91/Makefile	2007-07-29 06:43:36.000000000 +0200
-@@ -29,6 +29,7 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/Makefile
++++ linux-2.6.22.19/arch/arm/mach-at91/Makefile
+@@ -29,6 +29,7 @@ obj-$(CONFIG_MACH_KB9200)	+= board-kb920
  obj-$(CONFIG_MACH_ATEB9200)	+= board-eb9200.o
  obj-$(CONFIG_MACH_KAFA)		+= board-kafa.o
  obj-$(CONFIG_MACH_CHUB)		+= board-chub.o
@@ -236,7 +240,7 @@ diff -urN linux-2.6.22.1.old/arch/arm/mach-at91/Makefile linux-2.6.22.1/arch/arm
  obj-$(CONFIG_MACH_PICOTUX2XX)	+= board-picotux200.o
  
  # AT91SAM9260 board-specific support
-@@ -52,6 +53,7 @@
+@@ -52,6 +53,7 @@ led-$(CONFIG_MACH_CSB337)	+= leds.o
  led-$(CONFIG_MACH_CSB637)	+= leds.o
  led-$(CONFIG_MACH_KB9200)	+= leds.o
  led-$(CONFIG_MACH_KAFA)		+= leds.o

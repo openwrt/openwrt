@@ -1,7 +1,8 @@
-diff -urN linux-2.6.22.1.old/arch/arm/mach-at91/Makefile linux-2.6.22.1/arch/arm/mach-at91/Makefile
---- linux-2.6.22.1.old/arch/arm/mach-at91/Makefile	2007-07-29 06:46:13.000000000 +0200
-+++ linux-2.6.22.1/arch/arm/mach-at91/Makefile	2007-07-29 06:54:19.000000000 +0200
-@@ -53,7 +53,7 @@
+Index: linux-2.6.22.19/arch/arm/mach-at91/Makefile
+===================================================================
+--- linux-2.6.22.19.orig/arch/arm/mach-at91/Makefile
++++ linux-2.6.22.19/arch/arm/mach-at91/Makefile
+@@ -53,7 +53,7 @@ led-$(CONFIG_MACH_CSB337)	+= leds.o
  led-$(CONFIG_MACH_CSB637)	+= leds.o
  led-$(CONFIG_MACH_KB9200)	+= leds.o
  led-$(CONFIG_MACH_KAFA)		+= leds.o
@@ -10,9 +11,10 @@ diff -urN linux-2.6.22.1.old/arch/arm/mach-at91/Makefile linux-2.6.22.1/arch/arm
  obj-$(CONFIG_LEDS) += $(led-y)
  
  # VGA support
-diff -urN linux-2.6.22.1.old/arch/arm/mach-at91/vlink_leds.c linux-2.6.22.1/arch/arm/mach-at91/vlink_leds.c
---- linux-2.6.22.1.old/arch/arm/mach-at91/vlink_leds.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.22.1/arch/arm/mach-at91/vlink_leds.c	2007-07-29 06:54:58.000000000 +0200
+Index: linux-2.6.22.19/arch/arm/mach-at91/vlink_leds.c
+===================================================================
+--- /dev/null
++++ linux-2.6.22.19/arch/arm/mach-at91/vlink_leds.c
 @@ -0,0 +1,105 @@
 +/*
 + * LED driver for Atmel AT91-based boards.

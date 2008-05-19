@@ -1,5 +1,7 @@
---- linux-2.6.21.1.orig/arch/arm/boot/compressed/head-at91rm9200.S	2007-05-28 12:22:29.000000000 +0200
-+++ linux-2.6.21.1/arch/arm/boot/compressed/head-at91rm9200.S	2007-05-28 12:52:16.000000000 +0200
+Index: linux-2.6.21.7/arch/arm/boot/compressed/head-at91rm9200.S
+===================================================================
+--- linux-2.6.21.7.orig/arch/arm/boot/compressed/head-at91rm9200.S
++++ linux-2.6.21.7/arch/arm/boot/compressed/head-at91rm9200.S
 @@ -61,6 +61,12 @@
  		cmp	r7, r3
  		beq	99f
@@ -13,8 +15,10 @@
  		@ Ajeco 1ARM : 1075
  		mov	r3,	#(MACH_TYPE_ONEARM & 0xff)
  		orr	r3, r3, #(MACH_TYPE_ONEARM & 0xff00)
---- linux-2.6.21.1.orig/arch/arm/mach-at91/board-vlink.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1/arch/arm/mach-at91/board-vlink.c	2007-05-28 13:09:54.000000000 +0200
+Index: linux-2.6.21.7/arch/arm/mach-at91/board-vlink.c
+===================================================================
+--- /dev/null
++++ linux-2.6.21.7/arch/arm/mach-at91/board-vlink.c
 @@ -0,0 +1,160 @@
 +/*
 + * linux/arch/arm/mach-at91/board-vlink.c
@@ -176,9 +180,11 @@
 +	.init_irq	= vlink_init_irq,
 +	.init_machine	= vlink_board_init,
 +MACHINE_END
---- linux-2.6.21.1.orig/arch/arm/mach-at91/Kconfig	2007-05-28 12:22:29.000000000 +0200
-+++ linux-2.6.21.1/arch/arm/mach-at91/Kconfig	2007-05-28 13:11:45.000000000 +0200
-@@ -96,6 +96,12 @@
+Index: linux-2.6.21.7/arch/arm/mach-at91/Kconfig
+===================================================================
+--- linux-2.6.21.7.orig/arch/arm/mach-at91/Kconfig
++++ linux-2.6.21.7/arch/arm/mach-at91/Kconfig
+@@ -96,6 +96,12 @@ config MACH_CHUB
  	help
  	  Select this if you are using Promwad's Chub board.
  
@@ -191,9 +197,11 @@
  endif
  
  # ----------------------------------------------------------
---- linux-2.6.21.1.orig/arch/arm/mach-at91/Makefile	2007-05-28 12:22:29.000000000 +0200
-+++ linux-2.6.21.1/arch/arm/mach-at91/Makefile	2007-05-28 13:13:15.000000000 +0200
-@@ -29,6 +29,7 @@
+Index: linux-2.6.21.7/arch/arm/mach-at91/Makefile
+===================================================================
+--- linux-2.6.21.7.orig/arch/arm/mach-at91/Makefile
++++ linux-2.6.21.7/arch/arm/mach-at91/Makefile
+@@ -29,6 +29,7 @@ obj-$(CONFIG_MACH_KB9200)	+= board-kb920
  obj-$(CONFIG_MACH_ATEB9200)	+= board-eb9200.o
  obj-$(CONFIG_MACH_KAFA)		+= board-kafa.o
  obj-$(CONFIG_MACH_CHUB)		+= board-chub.o
@@ -201,7 +209,7 @@
  
  # AT91SAM9260 board-specific support
  obj-$(CONFIG_MACH_AT91SAM9260EK) += board-sam9260ek.o
-@@ -51,6 +52,7 @@
+@@ -51,6 +52,7 @@ led-$(CONFIG_MACH_CSB337)	+= leds.o
  led-$(CONFIG_MACH_CSB637)	+= leds.o
  led-$(CONFIG_MACH_KB9200)	+= leds.o
  led-$(CONFIG_MACH_KAFA)		+= leds.o
