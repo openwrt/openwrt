@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/drivers/ide/pci/pdc202xx_old.c
 ===================================================================
---- linux-2.4.35.4.orig/drivers/ide/pci/pdc202xx_old.c	2007-12-15 05:19:35.922468144 +0100
-+++ linux-2.4.35.4/drivers/ide/pci/pdc202xx_old.c	2007-12-15 05:20:17.136816813 +0100
-@@ -253,23 +253,23 @@
+--- linux-2.4.35.4.orig/drivers/ide/pci/pdc202xx_old.c
++++ linux-2.4.35.4/drivers/ide/pci/pdc202xx_old.c
+@@ -253,23 +253,23 @@ static int pdc202xx_tune_chipset (ide_dr
  	pci_read_config_byte(dev, (drive_pci)|0x03, &DP);
  
  	if (speed < XFER_SW_DMA_0) {
@@ -30,7 +30,7 @@ Index: linux-2.4.35.4/drivers/ide/pci/pdc202xx_old.c
  			pci_read_config_byte(dev, (drive_pci)|0x01, &BP);
  
  			/* clear DMA modes of lower 8421 bits of C Register */
-@@ -373,6 +373,9 @@
+@@ -373,6 +373,9 @@ static int config_chipset_for_dma (ide_d
  	u8 ultra_66		= ((id->dma_ultra & 0x0010) ||
  				   (id->dma_ultra & 0x0008)) ? 1 : 0;
  

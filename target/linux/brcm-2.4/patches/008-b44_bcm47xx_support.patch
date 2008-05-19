@@ -1,7 +1,7 @@
 Index: linux-2.4.35.4/drivers/net/b44.c
 ===================================================================
---- linux-2.4.35.4.orig/drivers/net/b44.c	2007-12-15 05:19:36.094477944 +0100
-+++ linux-2.4.35.4/drivers/net/b44.c	2007-12-15 05:20:16.020753214 +0100
+--- linux-2.4.35.4.orig/drivers/net/b44.c
++++ linux-2.4.35.4/drivers/net/b44.c
 @@ -1,7 +1,9 @@
  /* b44.c: Broadcom 4400 device driver.
   *
@@ -53,7 +53,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  #define DRV_MODULE_NAME		"b44"
  #define PFX DRV_MODULE_NAME	": "
  #define DRV_MODULE_VERSION	"0.93"
-@@ -75,7 +112,7 @@
+@@ -75,7 +110,7 @@ static char version[] __devinitdata =
  	DRV_MODULE_NAME ".c:v" DRV_MODULE_VERSION " (" DRV_MODULE_RELDATE ")\n";
  
  MODULE_AUTHOR("David S. Miller (davem@redhat.com)");
@@ -62,7 +62,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  MODULE_LICENSE("GPL");
  MODULE_PARM(b44_debug, "i");
  MODULE_PARM_DESC(b44_debug, "B44 bitmapped debugging message enable value");
-@@ -89,6 +126,8 @@
+@@ -89,6 +124,8 @@ static struct pci_device_id b44_pci_tbl[
  	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0UL },
  	{ PCI_VENDOR_ID_BROADCOM, PCI_DEVICE_ID_BCM4401B1,
  	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0UL },
@@ -71,7 +71,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  	{ }	/* terminate list with empty entry */
  };
  
-@@ -113,11 +152,13 @@
+@@ -113,11 +150,13 @@ static int b44_wait_bit(struct b44 *bp, 
  		udelay(10);
  	}
  	if (i == timeout) {
@@ -85,7 +85,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  		return -ENODEV;
  	}
  	return 0;
-@@ -236,6 +277,8 @@
+@@ -236,6 +275,8 @@ static void ssb_core_reset(struct b44 *b
  	udelay(1);
  }
  
@@ -94,7 +94,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  static int ssb_core_unit(struct b44 *bp)
  {
  #if 0
-@@ -258,6 +301,9 @@
+@@ -258,6 +299,9 @@ static int ssb_core_unit(struct b44 *bp)
  		break;
  	};
  #endif
@@ -104,7 +104,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  	return 0;
  }
  
-@@ -267,6 +313,28 @@
+@@ -267,6 +311,28 @@ static int ssb_is_core_up(struct b44 *bp
  		== SBTMSLOW_CLOCK);
  }
  
@@ -133,7 +133,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  static void __b44_cam_write(struct b44 *bp, unsigned char *data, int index)
  {
  	u32 val;
-@@ -287,7 +355,7 @@
+@@ -287,7 +353,7 @@ static void __b44_cam_write(struct b44 *
  
  static inline void __b44_disable_ints(struct b44 *bp)
  {
@@ -142,7 +142,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  }
  
  static void b44_disable_ints(struct b44 *bp)
-@@ -303,14 +371,14 @@
+@@ -303,14 +369,14 @@ static void b44_enable_ints(struct b44 *
  	bw32(B44_IMASK, bp->imask);
  }
  
@@ -159,7 +159,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  			     (reg << MDIO_DATA_RA_SHIFT) |
  			     (MDIO_TA_VALID << MDIO_DATA_TA_SHIFT)));
  	err = b44_wait_bit(bp, B44_EMAC_ISTAT, EMAC_INT_MII, 100, 0);
-@@ -319,23 +387,42 @@
+@@ -319,23 +385,42 @@ static int b44_readphy(struct b44 *bp, i
  	return err;
  }
  
@@ -204,7 +204,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  	err = b44_writephy(bp, MII_BMCR, BMCR_RESET);
  	if (err)
  		return err;
-@@ -406,6 +493,23 @@
+@@ -406,6 +491,23 @@ static int b44_setup_phy(struct b44 *bp)
  	u32 val;
  	int err;
  
@@ -228,7 +228,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  	if ((err = b44_readphy(bp, B44_MII_ALEDCTRL, &val)) != 0)
  		goto out;
  	if ((err = b44_writephy(bp, B44_MII_ALEDCTRL,
-@@ -498,6 +602,19 @@
+@@ -498,6 +600,19 @@ static void b44_check_phy(struct b44 *bp
  {
  	u32 bmsr, aux;
  
@@ -248,7 +248,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  	if (!b44_readphy(bp, MII_BMSR, &bmsr) &&
  	    !b44_readphy(bp, B44_MII_AUXCTRL, &aux) &&
  	    (bmsr != 0xffff)) {
-@@ -765,6 +882,25 @@
+@@ -765,6 +880,25 @@ static int b44_rx(struct b44 *bp, int bu
  	return received;
  }
  
@@ -274,7 +274,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  static int b44_poll(struct net_device *netdev, int *budget)
  {
  	struct b44 *bp = netdev->priv;
-@@ -772,13 +908,13 @@
+@@ -772,13 +906,13 @@ static int b44_poll(struct net_device *n
  
  	spin_lock_irq(&bp->lock);
  
@@ -290,7 +290,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  	done = 1;
  	if (bp->istat & ISTAT_RX) {
  		int orig_budget = *budget;
-@@ -796,24 +932,18 @@
+@@ -796,24 +930,18 @@ static int b44_poll(struct net_device *n
  			done = 0;
  	}
  
@@ -319,7 +319,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  static irqreturn_t b44_interrupt(int irq, void *dev_id, struct pt_regs *regs)
  {
  	struct net_device *dev = dev_id;
-@@ -832,6 +962,18 @@
+@@ -832,6 +960,18 @@ static irqreturn_t b44_interrupt(int irq
  	 */
  	istat &= imask;
  	if (istat) {
@@ -338,7 +338,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  		handled = 1;
  		if (netif_rx_schedule_prep(dev)) {
  			/* NOTE: These writes are posted by the readback of
-@@ -848,6 +990,7 @@
+@@ -848,6 +988,7 @@ static irqreturn_t b44_interrupt(int irq
  		bw32(B44_ISTAT, istat);
  		br32(B44_ISTAT);
  	}
@@ -346,7 +346,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  	spin_unlock_irqrestore(&bp->lock, flags);
  	return IRQ_RETVAL(handled);
  }
-@@ -859,16 +1002,7 @@
+@@ -859,16 +1000,7 @@ static void b44_tx_timeout(struct net_de
  	printk(KERN_ERR PFX "%s: transmit timed out, resetting\n",
  	       dev->name);
  
@@ -364,7 +364,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  	netif_wake_queue(dev);
  }
  
-@@ -1092,6 +1226,8 @@
+@@ -1092,6 +1224,8 @@ static void b44_clear_stats(struct b44 *
  /* bp->lock is held. */
  static void b44_chip_reset(struct b44 *bp)
  {
@@ -373,7 +373,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  	if (ssb_is_core_up(bp)) {
  		bw32(B44_RCV_LAZY, 0);
  		bw32(B44_ENET_CTRL, ENET_CTRL_DISABLE);
-@@ -1105,9 +1241,10 @@
+@@ -1105,9 +1239,10 @@ static void b44_chip_reset(struct b44 *b
  		bw32(B44_DMARX_CTRL, 0);
  		bp->rx_prod = bp->rx_cons = 0;
  	} else {
@@ -387,7 +387,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  	}
  
  	ssb_core_reset(bp);
-@@ -1115,6 +1252,11 @@
+@@ -1115,6 +1250,11 @@ static void b44_chip_reset(struct b44 *b
  	b44_clear_stats(bp);
  
  	/* Make PHY accessible. */
@@ -399,7 +399,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  	bw32(B44_MDIO_CTRL, (MDIO_CTRL_PREAMBLE |
  			     (0x0d & MDIO_CTRL_MAXF_MASK)));
  	br32(B44_MDIO_CTRL);
-@@ -1216,6 +1358,8 @@
+@@ -1216,6 +1356,8 @@ static int b44_open(struct net_device *d
  	struct b44 *bp = dev->priv;
  	int err;
  
@@ -408,7 +408,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  	err = b44_alloc_consistent(bp);
  	if (err)
  		return err;
-@@ -1236,9 +1380,10 @@
+@@ -1236,9 +1378,10 @@ static int b44_open(struct net_device *d
  	bp->timer.expires = jiffies + HZ;
  	bp->timer.data = (unsigned long) bp;
  	bp->timer.function = b44_timer;
@@ -420,7 +420,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  
  	return 0;
  
-@@ -1638,7 +1783,7 @@
+@@ -1638,7 +1781,7 @@ static int b44_ioctl(struct net_device *
  		u32 mii_regval;
  
  		spin_lock_irq(&bp->lock);
@@ -429,7 +429,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  		spin_unlock_irq(&bp->lock);
  
  		data->val_out = mii_regval;
-@@ -1651,7 +1796,7 @@
+@@ -1651,7 +1794,7 @@ static int b44_ioctl(struct net_device *
  			return -EPERM;
  
  		spin_lock_irq(&bp->lock);
@@ -438,7 +438,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  		spin_unlock_irq(&bp->lock);
  
  		return err;
-@@ -1678,21 +1823,52 @@
+@@ -1678,21 +1821,52 @@ static int b44_read_eeprom(struct b44 *b
  static int __devinit b44_get_invariants(struct b44 *bp)
  {
  	u8 eeprom[128];
@@ -504,7 +504,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  
  	/* With this, plus the rx_header prepended to the data by the
  	 * hardware, we'll land the ethernet header on a 2-byte boundary.
-@@ -1702,13 +1878,12 @@
+@@ -1702,13 +1876,12 @@ static int __devinit b44_get_invariants(
  	bp->imask = IMASK_DEF;
  
  	bp->core_unit = ssb_core_unit(bp);
@@ -520,7 +520,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  }
  
  static int __devinit b44_init_one(struct pci_dev *pdev,
-@@ -1720,6 +1895,10 @@
+@@ -1720,6 +1893,10 @@ static int __devinit b44_init_one(struct
  	struct b44 *bp;
  	int err, i;
  
@@ -531,7 +531,7 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  	if (b44_version_printed++ == 0)
  		printk(KERN_INFO "%s", version);
  
-@@ -1834,11 +2013,17 @@
+@@ -1834,11 +2011,17 @@ static int __devinit b44_init_one(struct
  	 */ 
  	b44_chip_reset(bp);
  
@@ -552,8 +552,8 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  err_out_iounmap:
 Index: linux-2.4.35.4/drivers/net/b44.h
 ===================================================================
---- linux-2.4.35.4.orig/drivers/net/b44.h	2007-12-15 05:19:36.102478402 +0100
-+++ linux-2.4.35.4/drivers/net/b44.h	2007-12-15 05:20:16.028753670 +0100
+--- linux-2.4.35.4.orig/drivers/net/b44.h
++++ linux-2.4.35.4/drivers/net/b44.h
 @@ -229,8 +229,6 @@
  #define  SBIPSFLAG_IMASK4	0x3f000000 /* Which sbflags --> mips interrupt 4 */
  #define  SBIPSFLAG_ISHIFT4	24
@@ -563,7 +563,7 @@ Index: linux-2.4.35.4/drivers/net/b44.h
  #define B44_SBADMATCH3	0x0F60UL /* SB Address Match 3 */
  #define B44_SBADMATCH2	0x0F68UL /* SB Address Match 2 */
  #define B44_SBADMATCH1	0x0F70UL /* SB Address Match 1 */
-@@ -461,6 +459,8 @@
+@@ -461,6 +459,8 @@ struct ring_info {
  };
  
  #define B44_MCAST_TABLE_SIZE	32
@@ -574,8 +574,8 @@ Index: linux-2.4.35.4/drivers/net/b44.h
   * which probes HW values.  Must have same relative layout as HW
 Index: linux-2.4.35.4/include/linux/pci_ids.h
 ===================================================================
---- linux-2.4.35.4.orig/include/linux/pci_ids.h	2007-12-15 05:19:36.114479084 +0100
-+++ linux-2.4.35.4/include/linux/pci_ids.h	2007-12-15 05:20:16.032753896 +0100
+--- linux-2.4.35.4.orig/include/linux/pci_ids.h
++++ linux-2.4.35.4/include/linux/pci_ids.h
 @@ -1756,6 +1756,7 @@
  #define PCI_DEVICE_ID_TIGON3_5901_2	0x170e
  #define PCI_DEVICE_ID_BCM4401		0x4401

@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/net/sched/sch_generic.c
 ===================================================================
---- linux-2.4.35.4.orig/net/sched/sch_generic.c	2007-12-15 05:20:10.816456638 +0100
-+++ linux-2.4.35.4/net/sched/sch_generic.c	2007-12-15 05:20:16.704792197 +0100
-@@ -84,6 +84,11 @@
+--- linux-2.4.35.4.orig/net/sched/sch_generic.c
++++ linux-2.4.35.4/net/sched/sch_generic.c
+@@ -84,6 +84,11 @@ int qdisc_restart(struct net_device *dev
  	struct sk_buff *skb;
  
  	/* Dequeue packet */
