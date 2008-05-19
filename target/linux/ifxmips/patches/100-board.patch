@@ -1,8 +1,8 @@
-Index: linux-2.6.25.1/arch/mips/Kconfig
+Index: linux-2.6.25.4/arch/mips/Kconfig
 ===================================================================
---- linux-2.6.25.1.orig/arch/mips/Kconfig	2008-05-10 01:14:39.000000000 +0100
-+++ linux-2.6.25.1/arch/mips/Kconfig	2008-05-10 01:29:54.000000000 +0100
-@@ -78,6 +78,19 @@
+--- linux-2.6.25.4.orig/arch/mips/Kconfig
++++ linux-2.6.25.4/arch/mips/Kconfig
+@@ -78,6 +78,19 @@ config MIPS_COBALT
  	select SYS_SUPPORTS_LITTLE_ENDIAN
  	select GENERIC_HARDIRQS_NO__DO_IRQ
  
@@ -22,7 +22,7 @@ Index: linux-2.6.25.1/arch/mips/Kconfig
  config MACH_DECSTATION
  	bool "DECstations"
  	select BOOT_ELF32
-@@ -693,6 +706,7 @@
+@@ -693,6 +706,7 @@ source "arch/mips/sibyte/Kconfig"
  source "arch/mips/tx4927/Kconfig"
  source "arch/mips/tx4938/Kconfig"
  source "arch/mips/vr41xx/Kconfig"
@@ -30,11 +30,11 @@ Index: linux-2.6.25.1/arch/mips/Kconfig
  
  endmenu
  
-Index: linux-2.6.25.1/arch/mips/Makefile
+Index: linux-2.6.25.4/arch/mips/Makefile
 ===================================================================
---- linux-2.6.25.1.orig/arch/mips/Makefile	2008-05-10 01:14:49.000000000 +0100
-+++ linux-2.6.25.1/arch/mips/Makefile	2008-05-10 01:14:49.000000000 +0100
-@@ -282,6 +282,13 @@
+--- linux-2.6.25.4.orig/arch/mips/Makefile
++++ linux-2.6.25.4/arch/mips/Makefile
+@@ -282,6 +282,13 @@ core-$(CONFIG_MIPS_COBALT)	+= arch/mips/
  cflags-$(CONFIG_MIPS_COBALT)	+= -Iinclude/asm-mips/mach-cobalt
  load-$(CONFIG_MIPS_COBALT)	+= 0xffffffff80080000
  
@@ -48,10 +48,10 @@ Index: linux-2.6.25.1/arch/mips/Makefile
  #
  # DECstation family
  #
-Index: linux-2.6.25.1/include/asm-mips/bootinfo.h
+Index: linux-2.6.25.4/include/asm-mips/bootinfo.h
 ===================================================================
---- linux-2.6.25.1.orig/include/asm-mips/bootinfo.h	2008-05-10 01:14:39.000000000 +0100
-+++ linux-2.6.25.1/include/asm-mips/bootinfo.h	2008-05-10 01:14:49.000000000 +0100
+--- linux-2.6.25.4.orig/include/asm-mips/bootinfo.h
++++ linux-2.6.25.4/include/asm-mips/bootinfo.h
 @@ -94,6 +94,12 @@
  #define MACH_MSP7120_FPGA       5	/* PMC-Sierra MSP7120 Emulation */
  #define MACH_MSP_OTHER        255	/* PMC-Sierra unknown board type */
@@ -65,11 +65,11 @@ Index: linux-2.6.25.1/include/asm-mips/bootinfo.h
  #define CL_SIZE			COMMAND_LINE_SIZE
  
  extern char *system_type;
-Index: linux-2.6.25.1/arch/mips/kernel/traps.c
+Index: linux-2.6.25.4/arch/mips/kernel/traps.c
 ===================================================================
---- linux-2.6.25.1.orig/arch/mips/kernel/traps.c	2008-05-10 01:14:39.000000000 +0100
-+++ linux-2.6.25.1/arch/mips/kernel/traps.c	2008-05-10 01:14:49.000000000 +0100
-@@ -1379,6 +1379,7 @@
+--- linux-2.6.25.4.orig/arch/mips/kernel/traps.c
++++ linux-2.6.25.4/arch/mips/kernel/traps.c
+@@ -1379,6 +1379,7 @@ void __cpuinit per_cpu_trap_init(void)
  	 */
  	if (cpu_has_mips_r2) {
  		cp0_compare_irq = (read_c0_intctl() >> 29) & 7;
