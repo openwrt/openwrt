@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/arch/mips/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/Makefile	2007-12-15 05:19:44.870978088 +0100
-+++ linux-2.4.35.4/arch/mips/Makefile	2007-12-15 05:19:50.987326639 +0100
-@@ -44,10 +44,10 @@
+--- linux-2.4.35.4.orig/arch/mips/Makefile
++++ linux-2.4.35.4/arch/mips/Makefile
+@@ -44,10 +44,10 @@ MAKEBOOT = $(MAKE) -C arch/$(ARCH)/boot
  GCCFLAGS	:= -I $(TOPDIR)/include/asm/gcc
  GCCFLAGS	+= -G 0 -mno-abicalls -fno-pic -pipe
  GCCFLAGS	+= $(call check_gcc, -finline-limit=100000,)
@@ -16,7 +16,7 @@ Index: linux-2.4.35.4/arch/mips/Makefile
  GCCFLAGS	+= -g
  ifdef CONFIG_SB1XXX_CORELIS
  GCCFLAGS	+= -mno-sched-prolog -fno-omit-frame-pointer
-@@ -69,13 +69,13 @@
+@@ -69,13 +69,13 @@ endif
  set_gccflags = $(shell \
  while :; do \
  	cpu=$(1); isa=-$(2); \
@@ -32,7 +32,7 @@ Index: linux-2.4.35.4/arch/mips/Makefile
  		$(CC) $$gcc_opt$$cpu $$isa -S -o /dev/null \
  			-xc /dev/null > /dev/null 2>&1 && \
  			break 2; \
-@@ -90,7 +90,7 @@
+@@ -90,7 +90,7 @@ else \
  fi; \
  gas_abi=-Wa,-32; gas_cpu=$$cpu; gas_isa=-Wa,$$isa; \
  while :; do \
@@ -41,7 +41,7 @@ Index: linux-2.4.35.4/arch/mips/Makefile
  		$(CC) $$gas_abi $$gas_opt$$cpu $$gas_isa -Wa,-Z -c \
  			-o /dev/null -xassembler /dev/null > /dev/null 2>&1 && \
  			break 2; \
-@@ -172,6 +172,7 @@
+@@ -172,6 +172,7 @@ endif
  endif
  
  AFLAGS		+= $(GCCFLAGS)
@@ -51,9 +51,9 @@ Index: linux-2.4.35.4/arch/mips/Makefile
  LD		+= -m $(ld-emul)
 Index: linux-2.4.35.4/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/Makefile	2007-12-15 05:19:45.074989715 +0100
-+++ linux-2.4.35.4/Makefile	2007-12-15 05:19:50.995327098 +0100
-@@ -17,7 +17,7 @@
+--- linux-2.4.35.4.orig/Makefile
++++ linux-2.4.35.4/Makefile
+@@ -17,7 +17,7 @@ HPATH   	= $(TOPDIR)/include
  FINDHPATH	= $(HPATH)/asm $(HPATH)/linux $(HPATH)/scsi $(HPATH)/net $(HPATH)/math-emu
  
  HOSTCC  	= gcc
@@ -62,7 +62,7 @@ Index: linux-2.4.35.4/Makefile
  
  CROSS_COMPILE 	=
  
-@@ -88,10 +88,9 @@
+@@ -88,10 +88,9 @@ export MODLIB
  #
  # standard CFLAGS
  #
@@ -74,7 +74,7 @@ Index: linux-2.4.35.4/Makefile
  	  -fno-strict-aliasing -fno-common
  CFLAGS += -fno-builtin-strpbrk -fno-builtin-sprintf
  ifndef CONFIG_FRAME_POINTER
-@@ -105,6 +104,8 @@
+@@ -105,6 +104,8 @@ if_gcc4 = $(shell if echo __GNUC__ | $(C
  # disable pointer signedness warnings in gcc 4.0
  CFLAGS += $(call check_gcc,-Wno-pointer-sign,)
  

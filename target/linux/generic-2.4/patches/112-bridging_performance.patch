@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/net/core/dev.c
 ===================================================================
---- linux-2.4.35.4.orig/net/core/dev.c	2007-12-15 05:19:51.651364482 +0100
-+++ linux-2.4.35.4/net/core/dev.c	2007-12-15 05:19:54.483525877 +0100
-@@ -1289,6 +1289,19 @@
+--- linux-2.4.35.4.orig/net/core/dev.c
++++ linux-2.4.35.4/net/core/dev.c
+@@ -1289,6 +1289,19 @@ int netif_rx(struct sk_buff *skb)
  	local_irq_save(flags);
  
  	netdev_rx_stat[this_cpu].total++;

@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/drivers/usb/host/ehci-q.c
 ===================================================================
---- linux-2.4.35.4.orig/drivers/usb/host/ehci-q.c	2007-12-15 05:19:39.114650056 +0100
-+++ linux-2.4.35.4/drivers/usb/host/ehci-q.c	2007-12-15 05:20:00.107846389 +0100
-@@ -782,6 +782,11 @@
+--- linux-2.4.35.4.orig/drivers/usb/host/ehci-q.c
++++ linux-2.4.35.4/drivers/usb/host/ehci-q.c
+@@ -782,6 +782,11 @@ static void qh_link_async (struct ehci_h
  		if (!(cmd & CMD_ASE)) {
  			/* in case a clear of CMD_ASE didn't take yet */
  			(void) handshake (&ehci->regs->status, STS_ASS, 0, 150);

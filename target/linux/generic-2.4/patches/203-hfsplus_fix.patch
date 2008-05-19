@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/fs/hfsplus/super.c
 ===================================================================
---- linux-2.4.35.4.orig/fs/hfsplus/super.c	2007-12-15 05:19:39.238657121 +0100
-+++ linux-2.4.35.4/fs/hfsplus/super.c	2007-12-15 05:19:59.575816071 +0100
-@@ -240,8 +240,7 @@
+--- linux-2.4.35.4.orig/fs/hfsplus/super.c
++++ linux-2.4.35.4/fs/hfsplus/super.c
+@@ -240,8 +240,7 @@ int hfsplus_remount(struct super_block *
  	if (!(*flags & MS_RDONLY)) {
  		struct hfsplus_vh *vhdr = HFSPLUS_SB(sb).s_vhdr;
  
@@ -12,7 +12,7 @@ Index: linux-2.4.35.4/fs/hfsplus/super.c
  			printk("HFS+-fs warning: Filesystem was not cleanly unmounted, "
  			       "running fsck.hfsplus is recommended.  leaving read-only.\n");
  			sb->s_flags |= MS_RDONLY;
-@@ -343,8 +342,7 @@
+@@ -343,8 +342,7 @@ static int hfsplus_fill_super(struct sup
  	/* Set up operations so we can load metadata */
  	sb->s_op = &hfsplus_sops;
  

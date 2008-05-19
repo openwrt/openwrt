@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/arch/mips/kernel/branch.c
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/branch.c	2007-12-15 05:19:41.102763351 +0100
-+++ linux-2.4.35.4/arch/mips/kernel/branch.c	2007-12-15 05:19:55.259570100 +0100
-@@ -170,7 +170,7 @@
+--- linux-2.4.35.4.orig/arch/mips/kernel/branch.c
++++ linux-2.4.35.4/arch/mips/kernel/branch.c
+@@ -170,7 +170,7 @@ int __compute_return_epc(struct pt_regs 
  		bit = (insn.i_format.rt >> 2);
  		bit += (bit != 0);
  		bit += 23;

@@ -1,7 +1,7 @@
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_string.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_string.h	2007-12-15 05:20:08.388318268 +0100
+--- /dev/null
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_string.h
 @@ -0,0 +1,18 @@
 +#ifndef _IPT_STRING_H
 +#define _IPT_STRING_H
@@ -23,9 +23,9 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_string.h
 +#endif /*_IPT_STRING_H*/
 Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in	2007-12-15 05:20:07.892290000 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in	2007-12-15 05:20:08.396318720 +0100
-@@ -63,6 +63,7 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
++++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+@@ -63,6 +63,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    fi
    if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
      dep_tristate '  Unclean match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_UNCLEAN $CONFIG_IP_NF_IPTABLES
@@ -35,8 +35,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
      dep_mbool '  Layer 7 debugging output (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_LAYER7_DEBUG $CONFIG_IP_NF_MATCH_LAYER7
 Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_string.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_string.c	2007-12-15 05:20:08.400318949 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/ipt_string.c
 @@ -0,0 +1,99 @@
 +/* String matching match for iptables
 + * 
@@ -139,9 +139,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_string.c
 +module_exit(fini);
 Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile	2007-12-15 05:20:07.900290454 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile	2007-12-15 05:20:08.400318949 +0100
-@@ -108,6 +108,7 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
++++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+@@ -108,6 +108,7 @@ obj-$(CONFIG_IP_NF_MATCH_STATE) += ipt_s
  obj-$(CONFIG_IP_NF_MATCH_CONNMARK) += ipt_connmark.o
  obj-$(CONFIG_IP_NF_MATCH_CONNTRACK) += ipt_conntrack.o
  obj-$(CONFIG_IP_NF_MATCH_UNCLEAN) += ipt_unclean.o
@@ -151,8 +151,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  
 Index: linux-2.4.35.4/net/ipv4/netfilter/textsearch/textsearch.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/textsearch/textsearch.c	2007-12-15 05:20:08.400318949 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/textsearch/textsearch.c
 @@ -0,0 +1,305 @@
 +/*
 + * lib/textsearch.c	Generic text search interface
@@ -461,8 +461,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/textsearch/textsearch.c
 +
 Index: linux-2.4.35.4/net/ipv4/netfilter/textsearch/textsearch.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/textsearch/textsearch.h	2007-12-15 05:20:08.400318949 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/textsearch/textsearch.h
 @@ -0,0 +1,182 @@
 +#ifndef __LINUX_TEXTSEARCH_H
 +#define __LINUX_TEXTSEARCH_H
@@ -648,8 +648,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/textsearch/textsearch.h
 +#endif
 Index: linux-2.4.35.4/net/ipv4/netfilter/textsearch/ts_bm.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/textsearch/ts_bm.c	2007-12-15 05:20:08.400318949 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/textsearch/ts_bm.c
 @@ -0,0 +1,190 @@
 +/*
 + * lib/ts_bm.c		Boyer-Moore text search implementation
@@ -843,8 +843,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/textsearch/ts_bm.c
 +}
 Index: linux-2.4.35.4/net/ipv4/netfilter/textsearch/ts_kmp.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/textsearch/ts_kmp.c	2007-12-15 05:20:08.404319178 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/textsearch/ts_kmp.c
 @@ -0,0 +1,141 @@
 +/*
 + * lib/ts_kmp.c		Knuth-Morris-Pratt text search implementation

@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
 ===================================================================
---- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_conntrack.h	2007-12-15 05:20:06.024183543 +0100
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h	2007-12-15 05:20:06.392204515 +0100
-@@ -50,16 +50,19 @@
+--- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_conntrack.h
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
+@@ -50,16 +50,19 @@ enum ip_conntrack_status {
  
  #include <linux/netfilter_ipv4/ip_conntrack_tcp.h>
  #include <linux/netfilter_ipv4/ip_conntrack_icmp.h>
@@ -22,7 +22,7 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
  };
  
  /* Add protocol helper include file here */
-@@ -67,6 +70,7 @@
+@@ -67,6 +70,7 @@ union ip_conntrack_expect_proto {
  
  #include <linux/netfilter_ipv4/ip_conntrack_ftp.h>
  #include <linux/netfilter_ipv4/ip_conntrack_irc.h>
@@ -30,7 +30,7 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
  
  /* per expectation: application helper private data */
  union ip_conntrack_expect_help {
-@@ -74,6 +78,7 @@
+@@ -74,6 +78,7 @@ union ip_conntrack_expect_help {
  	struct ip_ct_amanda_expect exp_amanda_info;
  	struct ip_ct_ftp_expect exp_ftp_info;
  	struct ip_ct_irc_expect exp_irc_info;
@@ -38,7 +38,7 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
  
  #ifdef CONFIG_IP_NF_NAT_NEEDED
  	union {
-@@ -87,14 +92,17 @@
+@@ -87,14 +92,17 @@ union ip_conntrack_help {
  	/* insert conntrack helper private data (master) here */
  	struct ip_ct_ftp_master ct_ftp_info;
  	struct ip_ct_irc_master ct_irc_info;
@@ -58,8 +58,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
  
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_pptp.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_pptp.h	2007-12-15 05:20:06.400204969 +0100
+--- /dev/null
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_pptp.h
 @@ -0,0 +1,313 @@
 +/* PPTP constants and structs */
 +#ifndef _CONNTRACK_PPTP_H
@@ -376,8 +376,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_pptp.h
 +#endif /* _CONNTRACK_PPTP_H */
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h	2007-12-15 05:20:06.400204969 +0100
+--- /dev/null
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h
 @@ -0,0 +1,123 @@
 +#ifndef _CONNTRACK_PROTO_GRE_H
 +#define _CONNTRACK_PROTO_GRE_H
@@ -504,8 +504,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h
 +#endif /* _CONNTRACK_PROTO_GRE_H */
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
 ===================================================================
---- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_conntrack_tuple.h	2007-12-15 05:19:38.250600816 +0100
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_tuple.h	2007-12-15 05:20:06.400204969 +0100
+--- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
 @@ -14,7 +14,7 @@
  union ip_conntrack_manip_proto
  {
@@ -515,7 +515,7 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
  
  	struct {
  		u_int16_t port;
-@@ -25,6 +25,9 @@
+@@ -25,6 +25,9 @@ union ip_conntrack_manip_proto
  	struct {
  		u_int16_t id;
  	} icmp;
@@ -525,7 +525,7 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
  };
  
  /* The manipulable part of the tuple. */
-@@ -44,7 +47,7 @@
+@@ -44,7 +47,7 @@ struct ip_conntrack_tuple
  		u_int32_t ip;
  		union {
  			/* Add other protocols here. */
@@ -534,7 +534,7 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
  
  			struct {
  				u_int16_t port;
-@@ -55,6 +58,9 @@
+@@ -55,6 +58,9 @@ struct ip_conntrack_tuple
  			struct {
  				u_int8_t type, code;
  			} icmp;
@@ -544,7 +544,7 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
  		} u;
  
  		/* The protocol. */
-@@ -80,10 +86,16 @@
+@@ -80,10 +86,16 @@ enum ip_conntrack_dir
  #ifdef __KERNEL__
  
  #define DUMP_TUPLE(tp)						\
@@ -566,8 +566,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
  
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_nat_pptp.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_nat_pptp.h	2007-12-15 05:20:06.400204969 +0100
+--- /dev/null
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_nat_pptp.h
 @@ -0,0 +1,11 @@
 +/* PPTP constants and structs */
 +#ifndef _NAT_PPTP_H
@@ -582,9 +582,9 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_nat_pptp.h
 +#endif /* _NAT_PPTP_H */
 Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in	2007-12-15 05:20:06.036184227 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in	2007-12-15 05:20:06.400204969 +0100
-@@ -10,6 +10,8 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
++++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+@@ -10,6 +10,8 @@ if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ];
    dep_tristate '  Amanda protocol support' CONFIG_IP_NF_AMANDA $CONFIG_IP_NF_CONNTRACK
    dep_tristate '  TFTP protocol support' CONFIG_IP_NF_TFTP $CONFIG_IP_NF_CONNTRACK
    dep_tristate '  IRC protocol support' CONFIG_IP_NF_IRC $CONFIG_IP_NF_CONNTRACK
@@ -593,7 +593,7 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
  fi
  
  if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
-@@ -63,6 +65,20 @@
+@@ -63,6 +65,20 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
        define_bool CONFIG_IP_NF_NAT_NEEDED y
        dep_tristate '    MASQUERADE target support' CONFIG_IP_NF_TARGET_MASQUERADE $CONFIG_IP_NF_NAT
        dep_tristate '    REDIRECT target support' CONFIG_IP_NF_TARGET_REDIRECT $CONFIG_IP_NF_NAT
@@ -616,9 +616,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
        else
 Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_core.c	2007-12-15 05:20:06.036184227 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c	2007-12-15 05:20:06.404205198 +0100
-@@ -143,6 +143,8 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_core.c
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
+@@ -143,6 +143,8 @@ ip_ct_get_tuple(const struct iphdr *iph,
  	tuple->dst.ip = iph->daddr;
  	tuple->dst.protonum = iph->protocol;
  
@@ -627,7 +627,7 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
  	ret = protocol->pkt_to_tuple((u_int32_t *)iph + iph->ihl,
  				     len - 4*iph->ihl,
  				     tuple);
-@@ -158,6 +160,8 @@
+@@ -158,6 +160,8 @@ invert_tuple(struct ip_conntrack_tuple *
  	inverse->dst.ip = orig->src.ip;
  	inverse->dst.protonum = orig->dst.protonum;
  
@@ -636,7 +636,7 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
  	return protocol->invert_tuple(inverse, orig);
  }
  
-@@ -970,8 +974,8 @@
+@@ -970,8 +974,8 @@ int ip_conntrack_expect_related(struct i
  	 * so there is no need to use the tuple lock too */
  
  	DEBUGP("ip_conntrack_expect_related %p\n", related_to);
@@ -647,7 +647,7 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
  
  	old = LIST_FIND(&ip_conntrack_expect_list, resent_expect,
  		        struct ip_conntrack_expect *, &expect->tuple, 
-@@ -1089,15 +1093,14 @@
+@@ -1089,15 +1093,14 @@ int ip_conntrack_change_expect(struct ip
  
  	MUST_BE_READ_LOCKED(&ip_conntrack_lock);
  	WRITE_LOCK(&ip_conntrack_expect_tuple_lock);
@@ -669,8 +669,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
  			/* Force NAT to find an unused tuple */
 Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_pptp_priv.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_pptp_priv.h	2007-12-15 05:20:06.404205198 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_pptp_priv.h
 @@ -0,0 +1,24 @@
 +#ifndef _IP_CT_PPTP_PRIV_H
 +#define _IP_CT_PPTP_PRIV_H
@@ -698,8 +698,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_pptp_priv.h
 +#endif
 Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_gre.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_gre.c	2007-12-15 05:20:06.404205198 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_gre.c
 @@ -0,0 +1,333 @@
 +/*
 + * ip_conntrack_proto_gre.c - Version 1.2 
@@ -1036,9 +1036,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_gre.c
 +module_exit(fini);
 Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_core.c
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_nat_core.c	2007-12-15 05:19:38.290603095 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_nat_core.c	2007-12-15 05:20:06.404205198 +0100
-@@ -424,7 +424,7 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_nat_core.c
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_nat_core.c
+@@ -424,7 +424,7 @@ get_unique_tuple(struct ip_conntrack_tup
  	*tuple = *orig_tuple;
  	while ((rptr = find_best_ips_proto_fast(tuple, mr, conntrack, hooknum))
  	       != NULL) {
@@ -1047,7 +1047,7 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_core.c
  		/* 3) The per-protocol part of the manip is made to
  		   map into the range to make a unique tuple. */
  
-@@ -564,9 +564,9 @@
+@@ -564,9 +564,9 @@ ip_nat_setup_info(struct ip_conntrack *c
  		       HOOK2MANIP(hooknum)==IP_NAT_MANIP_SRC ? "SRC" : "DST",
  		       conntrack);
  		DEBUGP("Original: ");
@@ -1061,8 +1061,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_core.c
  		/* We now have two tuples (SRCIP/SRCPT/DSTIP/DSTPT):
 Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_pptp.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_nat_pptp.c	2007-12-15 05:20:06.408205428 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_nat_pptp.c
 @@ -0,0 +1,482 @@
 +/*
 + * ip_nat_pptp.c	- Version 1.5
@@ -1548,8 +1548,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_pptp.c
 +module_exit(fini);
 Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_proto_gre.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_nat_proto_gre.c	2007-12-15 05:20:06.408205428 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_nat_proto_gre.c
 @@ -0,0 +1,202 @@
 +/*
 + * ip_nat_proto_gre.c - Version 1.2
@@ -1755,9 +1755,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_proto_gre.c
 +module_exit(fini);
 Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile	2007-12-15 05:20:06.036184227 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile	2007-12-15 05:20:06.408205428 +0100
-@@ -36,23 +36,32 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
++++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+@@ -36,23 +36,32 @@ obj-$(CONFIG_IP_NF_AMANDA) += ip_conntra
  ifdef CONFIG_IP_NF_AMANDA
  	export-objs += ip_conntrack_amanda.o
  endif
@@ -1794,8 +1794,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_IP_NF_IPTABLES) += ip_tables.o
 Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_pptp.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_pptp.c	2007-12-15 05:20:06.408205428 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_pptp.c
 @@ -0,0 +1,635 @@
 +/*
 + * ip_conntrack_pptp.c	- Version 1.9

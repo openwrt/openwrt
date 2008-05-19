@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/Documentation/Configure.help
 ===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help	2007-12-15 05:20:07.880289314 +0100
-+++ linux-2.4.35.4/Documentation/Configure.help	2007-12-15 05:20:09.280369103 +0100
-@@ -2979,6 +2979,14 @@
+--- linux-2.4.35.4.orig/Documentation/Configure.help
++++ linux-2.4.35.4/Documentation/Configure.help
+@@ -2979,6 +2979,14 @@ CONFIG_IP_NF_MATCH_TOS
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
  
@@ -17,7 +17,7 @@ Index: linux-2.4.35.4/Documentation/Configure.help
  conntrack match support
  CONFIG_IP_NF_MATCH_CONNTRACK
    This is a general conntrack match module, a superset of the state match.
-@@ -3354,6 +3362,14 @@
+@@ -3354,6 +3362,14 @@ CONFIG_IP6_NF_MATCH_MARK
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
  
@@ -34,8 +34,8 @@ Index: linux-2.4.35.4/Documentation/Configure.help
    Multiport matching allows you to match TCP or UDP packets based on
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_condition.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_condition.h	2007-12-15 05:20:09.296370013 +0100
+--- /dev/null
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_condition.h
 @@ -0,0 +1,11 @@
 +#ifndef __IPT_CONDITION_MATCH__
 +#define __IPT_CONDITION_MATCH__
@@ -50,8 +50,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_condition.h
 +#endif
 Index: linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_condition.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_condition.h	2007-12-15 05:20:09.300370243 +0100
+--- /dev/null
++++ linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_condition.h
 @@ -0,0 +1,11 @@
 +#ifndef __IP6T_CONDITION_MATCH__
 +#define __IP6T_CONDITION_MATCH__
@@ -66,9 +66,9 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_condition.h
 +#endif
 Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in	2007-12-15 05:20:08.692335591 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in	2007-12-15 05:20:09.300370243 +0100
-@@ -43,6 +43,7 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
++++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+@@ -43,6 +43,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    dep_tristate '  netfilter MARK match support' CONFIG_IP_NF_MATCH_MARK $CONFIG_IP_NF_IPTABLES
    dep_tristate '  Multiple port match support' CONFIG_IP_NF_MATCH_MULTIPORT $CONFIG_IP_NF_IPTABLES
    dep_tristate '  TOS match support' CONFIG_IP_NF_MATCH_TOS $CONFIG_IP_NF_IPTABLES
@@ -78,9 +78,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
    dep_tristate '  peer to peer traffic match support' CONFIG_IP_NF_MATCH_IPP2P $CONFIG_IP_NF_IPTABLES
 Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile	2007-12-15 05:20:08.696335817 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile	2007-12-15 05:20:09.300370243 +0100
-@@ -94,6 +94,7 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
++++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+@@ -94,6 +94,7 @@ obj-$(CONFIG_IP_NF_MATCH_PKTTYPE) += ipt
  obj-$(CONFIG_IP_NF_MATCH_MULTIPORT) += ipt_multiport.o
  obj-$(CONFIG_IP_NF_MATCH_OWNER) += ipt_owner.o
  obj-$(CONFIG_IP_NF_MATCH_TOS) += ipt_tos.o
@@ -90,8 +90,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  
 Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_condition.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_condition.c	2007-12-15 05:20:09.300370243 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/ipt_condition.c
 @@ -0,0 +1,256 @@
 +/*-------------------------------------------*\
 +|          Netfilter Condition Module         |
@@ -351,9 +351,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_condition.c
 +module_exit(fini);
 Index: linux-2.4.35.4/net/ipv6/netfilter/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv6/netfilter/Config.in	2007-12-15 05:19:37.590563202 +0100
-+++ linux-2.4.35.4/net/ipv6/netfilter/Config.in	2007-12-15 05:20:09.300370243 +0100
-@@ -17,6 +17,7 @@
+--- linux-2.4.35.4.orig/net/ipv6/netfilter/Config.in
++++ linux-2.4.35.4/net/ipv6/netfilter/Config.in
+@@ -17,6 +17,7 @@ tristate 'IP6 tables support (required f
  if [ "$CONFIG_IP6_NF_IPTABLES" != "n" ]; then
  # The simple matches.
    dep_tristate '  limit match support' CONFIG_IP6_NF_MATCH_LIMIT $CONFIG_IP6_NF_IPTABLES
@@ -363,9 +363,9 @@ Index: linux-2.4.35.4/net/ipv6/netfilter/Config.in
      dep_tristate '  Routing header match support (EXPERIMENTAL)' CONFIG_IP6_NF_MATCH_RT $CONFIG_IP6_NF_IPTABLES
 Index: linux-2.4.35.4/net/ipv6/netfilter/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv6/netfilter/Makefile	2007-12-15 05:19:37.598563658 +0100
-+++ linux-2.4.35.4/net/ipv6/netfilter/Makefile	2007-12-15 05:20:09.304370470 +0100
-@@ -14,6 +14,7 @@
+--- linux-2.4.35.4.orig/net/ipv6/netfilter/Makefile
++++ linux-2.4.35.4/net/ipv6/netfilter/Makefile
+@@ -14,6 +14,7 @@ export-objs := ip6_tables.o
  # Link order matters here.
  obj-$(CONFIG_IP6_NF_IPTABLES) += ip6_tables.o
  obj-$(CONFIG_IP6_NF_MATCH_LIMIT) += ip6t_limit.o
@@ -375,8 +375,8 @@ Index: linux-2.4.35.4/net/ipv6/netfilter/Makefile
  obj-$(CONFIG_IP6_NF_MATCH_MAC) += ip6t_mac.o
 Index: linux-2.4.35.4/net/ipv6/netfilter/ip6t_condition.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv6/netfilter/ip6t_condition.c	2007-12-15 05:20:09.304370470 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv6/netfilter/ip6t_condition.c
 @@ -0,0 +1,254 @@
 +/*-------------------------------------------*\
 +|    Netfilter Condition Module for IPv6      |

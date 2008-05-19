@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_core.c	2007-12-15 05:20:06.404205198 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c	2007-12-15 05:20:06.772226171 +0100
-@@ -1410,7 +1410,7 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_core.c
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
+@@ -1410,7 +1410,7 @@ void ip_conntrack_cleanup(void)
  	nf_unregister_sockopt(&so_getorigdst);
  }
  
@@ -11,7 +11,7 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
  MODULE_PARM(hashsize, "i");
  
  int __init ip_conntrack_init(void)
-@@ -1431,7 +1431,7 @@
+@@ -1431,7 +1431,7 @@ int __init ip_conntrack_init(void)
  		if (ip_conntrack_htable_size < 16)
  			ip_conntrack_htable_size = 16;
  	}

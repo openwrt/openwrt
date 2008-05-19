@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/Documentation/Configure.help
 ===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help	2007-12-15 05:20:09.280369103 +0100
-+++ linux-2.4.35.4/Documentation/Configure.help	2007-12-15 05:20:09.632389161 +0100
-@@ -2888,6 +2888,13 @@
+--- linux-2.4.35.4.orig/Documentation/Configure.help
++++ linux-2.4.35.4/Documentation/Configure.help
+@@ -2888,6 +2888,13 @@ CONFIG_IP_NF_MATCH_LIMIT
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
  
@@ -18,8 +18,8 @@ Index: linux-2.4.35.4/Documentation/Configure.help
    This patch allows you to match packet in accrodance
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_quota.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_quota.h	2007-12-15 05:20:09.636389390 +0100
+--- /dev/null
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_quota.h
 @@ -0,0 +1,12 @@
 +#ifndef _IPT_QUOTA_H
 +#define _IPT_QUOTA_H
@@ -35,9 +35,9 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_quota.h
 +#endif /*_IPT_QUOTA_H*/
 Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in	2007-12-15 05:20:09.300370243 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in	2007-12-15 05:20:09.644389846 +0100
-@@ -24,6 +24,7 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
++++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+@@ -24,6 +24,7 @@ tristate 'IP tables support (required fo
  if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; then
  # The simple matches.
    dep_tristate '  limit match support' CONFIG_IP_NF_MATCH_LIMIT $CONFIG_IP_NF_IPTABLES
@@ -47,9 +47,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
    if [ "$CONFIG_IP_NF_SET" != "n" ]; then
 Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile	2007-12-15 05:20:09.300370243 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile	2007-12-15 05:20:09.644389846 +0100
-@@ -74,6 +74,7 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
++++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+@@ -74,6 +74,7 @@ obj-$(CONFIG_IP_NF_NAT) += iptable_nat.o
  # matches
  obj-$(CONFIG_IP_NF_MATCH_HELPER) += ipt_helper.o
  obj-$(CONFIG_IP_NF_MATCH_LIMIT) += ipt_limit.o
@@ -59,8 +59,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_IP_NF_TARGET_SET) += ipt_SET.o
 Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_quota.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_quota.c	2007-12-15 05:20:09.644389846 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/ipt_quota.c
 @@ -0,0 +1,88 @@
 +/* 
 + * netfilter module to enforce network quotas

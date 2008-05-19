@@ -1,7 +1,7 @@
 Index: linux-2.4.35.4/fs/jffs2/build.c
 ===================================================================
---- linux-2.4.35.4.orig/fs/jffs2/build.c	2007-12-15 05:19:38.778630906 +0100
-+++ linux-2.4.35.4/fs/jffs2/build.c	2007-12-15 05:20:03.936064549 +0100
+--- linux-2.4.35.4.orig/fs/jffs2/build.c
++++ linux-2.4.35.4/fs/jffs2/build.c
 @@ -31,6 +31,10 @@
   * provisions above, a recipient may use your version of this file
   * under either the RHEPL or the GPL.
@@ -21,7 +21,7 @@ Index: linux-2.4.35.4/fs/jffs2/build.c
  #include "nodelist.h"
  
  int jffs2_build_inode_pass1(struct jffs2_sb_info *, struct jffs2_inode_cache *);
-@@ -89,6 +94,18 @@
+@@ -89,6 +94,18 @@ int jffs2_build_filesystem(struct jffs2_
  	if (ret)
  		return ret;
  
@@ -42,8 +42,8 @@ Index: linux-2.4.35.4/fs/jffs2/build.c
  	   as such, and also increase nlink of any children. */
 Index: linux-2.4.35.4/fs/jffs2/scan.c
 ===================================================================
---- linux-2.4.35.4.orig/fs/jffs2/scan.c	2007-12-15 05:19:38.786631361 +0100
-+++ linux-2.4.35.4/fs/jffs2/scan.c	2007-12-15 05:20:03.948065230 +0100
+--- linux-2.4.35.4.orig/fs/jffs2/scan.c
++++ linux-2.4.35.4/fs/jffs2/scan.c
 @@ -31,6 +31,10 @@
   * provisions above, a recipient may use your version of this file
   * under either the RHEPL or the GPL.
@@ -55,7 +55,7 @@ Index: linux-2.4.35.4/fs/jffs2/scan.c
   * $Id: scan.c,v 1.51.2.4 2003/11/02 13:51:18 dwmw2 Exp $
   *
   */
-@@ -88,7 +92,12 @@
+@@ -88,7 +92,12 @@ int jffs2_scan_medium(struct jffs2_sb_in
  	for (i=0; i<c->nr_blocks; i++) {
  		struct jffs2_eraseblock *jeb = &c->blocks[i];
  
@@ -69,7 +69,7 @@ Index: linux-2.4.35.4/fs/jffs2/scan.c
  		if (ret < 0)
  			return ret;
  
-@@ -181,6 +190,7 @@
+@@ -181,6 +190,7 @@ static int jffs2_scan_eraseblock (struct
  
  	while(ofs < jeb->offset + c->sector_size) {
  		ssize_t retlen;
@@ -77,7 +77,7 @@ Index: linux-2.4.35.4/fs/jffs2/scan.c
  		ACCT_PARANOIA_CHECK(jeb);
  		
  		if (ofs & 3) {
-@@ -202,8 +212,18 @@
+@@ -202,8 +212,18 @@ static int jffs2_scan_eraseblock (struct
  			break;
  		}
  

@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in	2007-12-15 05:20:10.196421304 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in	2007-12-15 05:20:10.504438857 +0100
-@@ -17,6 +17,7 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
++++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+@@ -17,6 +17,7 @@ if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ];
    dep_tristate '   PPTP protocol support' CONFIG_IP_NF_PPTP $CONFIG_IP_NF_CT_PROTO_GRE
    dep_tristate '  H.323 (netmeeting) support' CONFIG_IP_NF_H323 $CONFIG_IP_NF_CONNTRACK
    dep_tristate '  RTSP protocol support' CONFIG_IP_NF_RTSP $CONFIG_IP_NF_CONNTRACK
@@ -10,7 +10,7 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
  fi
  
  if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
-@@ -126,6 +127,13 @@
+@@ -126,6 +127,13 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
           define_tristate CONFIG_IP_NF_NAT_RTSP $CONFIG_IP_NF_NAT
         fi
        fi
@@ -26,9 +26,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
        fi
 Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile	2007-12-15 05:20:10.196421304 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile	2007-12-15 05:20:10.508439083 +0100
-@@ -61,6 +61,10 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
++++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+@@ -61,6 +61,10 @@ obj-$(CONFIG_IP_NF_RTSP) += ip_conntrack
  ifdef CONFIG_IP_NF_NAT_RTSP
         export-objs += ip_conntrack_rtsp.o
  endif
@@ -39,7 +39,7 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  
  
  
-@@ -73,6 +77,7 @@
+@@ -73,6 +77,7 @@ obj-$(CONFIG_IP_NF_NAT_PROTO_GRE) += ip_
  obj-$(CONFIG_IP_NF_NAT_PPTP) += ip_nat_pptp.o
  obj-$(CONFIG_IP_NF_NAT_H323) += ip_nat_h323.o
  obj-$(CONFIG_IP_NF_NAT_RTSP) += ip_nat_rtsp.o
@@ -49,8 +49,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_IP_NF_IPTABLES) += ip_tables.o
 Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_mms.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_mms.c	2007-12-15 05:20:10.516439541 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_mms.c
 @@ -0,0 +1,292 @@
 +/* MMS extension for IP connection tracking
 + * (C) 2002 by Filip Sneppe <filip.sneppe@cronos.be>
@@ -346,8 +346,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_mms.c
 +module_exit(fini);
 Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_mms.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_nat_mms.c	2007-12-15 05:20:10.516439541 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_nat_mms.c
 @@ -0,0 +1,330 @@
 +/* MMS extension for TCP NAT alteration.
 + * (C) 2002 by Filip Sneppe <filip.sneppe@cronos.be>
@@ -681,9 +681,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_mms.c
 +module_exit(fini);
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
 ===================================================================
---- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_conntrack.h	2007-12-15 05:20:10.204421761 +0100
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h	2007-12-15 05:20:10.516439541 +0100
-@@ -73,6 +73,7 @@
+--- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_conntrack.h
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
+@@ -73,6 +73,7 @@ union ip_conntrack_expect_proto {
  #include <linux/netfilter_ipv4/ip_conntrack_pptp.h>
  #include <linux/netfilter_ipv4/ip_conntrack_h323.h>
  #include <linux/netfilter_ipv4/ip_conntrack_rtsp.h>
@@ -691,7 +691,7 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
  
  /* per expectation: application helper private data */
  union ip_conntrack_expect_help {
-@@ -83,6 +84,7 @@
+@@ -83,6 +84,7 @@ union ip_conntrack_expect_help {
  	struct ip_ct_pptp_expect exp_pptp_info;
  	struct ip_ct_h225_expect exp_h225_info;
  	struct ip_ct_rtsp_expect exp_rtsp_info;
@@ -699,7 +699,7 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
  
  #ifdef CONFIG_IP_NF_NAT_NEEDED
  	union {
-@@ -99,6 +101,7 @@
+@@ -99,6 +101,7 @@ union ip_conntrack_help {
  	struct ip_ct_pptp_master ct_pptp_info;
  	struct ip_ct_h225_master ct_h225_info;
  	struct ip_ct_rtsp_master ct_rtsp_info;
@@ -709,8 +709,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
  #ifdef CONFIG_IP_NF_NAT_NEEDED
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_mms.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_mms.h	2007-12-15 05:20:10.516439541 +0100
+--- /dev/null
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_mms.h
 @@ -0,0 +1,31 @@
 +#ifndef _IP_CONNTRACK_MMS_H
 +#define _IP_CONNTRACK_MMS_H

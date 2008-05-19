@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/include/linux/netdevice.h
 ===================================================================
---- linux-2.4.35.4.orig/include/linux/netdevice.h	2007-12-15 05:19:42.162823760 +0100
-+++ linux-2.4.35.4/include/linux/netdevice.h	2007-12-15 05:19:51.635363571 +0100
-@@ -295,7 +295,9 @@
+--- linux-2.4.35.4.orig/include/linux/netdevice.h
++++ linux-2.4.35.4/include/linux/netdevice.h
+@@ -295,7 +295,9 @@ struct net_device
  
  	/* List of functions to handle Wireless Extensions (instead of ioctl).
  	 * See <net/iw_handler.h> for details. Jean II */
@@ -15,8 +15,8 @@ Index: linux-2.4.35.4/include/linux/netdevice.h
  
 Index: linux-2.4.35.4/include/linux/wireless.h
 ===================================================================
---- linux-2.4.35.4.orig/include/linux/wireless.h	2007-12-15 05:19:42.170824216 +0100
-+++ linux-2.4.35.4/include/linux/wireless.h	2007-12-15 05:19:51.643364027 +0100
+--- linux-2.4.35.4.orig/include/linux/wireless.h
++++ linux-2.4.35.4/include/linux/wireless.h
 @@ -1,10 +1,10 @@
  /*
   * This file define a set of standard wireless extensions
@@ -305,7 +305,7 @@ Index: linux-2.4.35.4/include/linux/wireless.h
  /****************************** TYPES ******************************/
  
  /* --------------------------- SUBTYPES --------------------------- */
-@@ -456,7 +644,7 @@
+@@ -456,7 +644,7 @@ struct	iw_freq
  	__s32		m;		/* Mantissa */
  	__s16		e;		/* Exponent */
  	__u8		i;		/* List index (when in range struct) */
@@ -314,7 +314,7 @@ Index: linux-2.4.35.4/include/linux/wireless.h
  };
  
  /*
-@@ -507,6 +695,132 @@
+@@ -507,6 +695,132 @@ struct	iw_thrspy
  	struct iw_quality	high;		/* High threshold */
  };
  
@@ -447,7 +447,7 @@ Index: linux-2.4.35.4/include/linux/wireless.h
  /* ------------------------ WIRELESS STATS ------------------------ */
  /*
   * Wireless statistics (used for /proc/net/wireless)
-@@ -610,11 +924,12 @@
+@@ -610,11 +924,12 @@ struct	iw_range
  	/* Old Frequency (backward compat - moved lower ) */
  	__u16		old_num_channels;
  	__u8		old_num_frequency;
@@ -463,7 +463,7 @@ Index: linux-2.4.35.4/include/linux/wireless.h
  
  	/* Quality of link & SNR stuff */
  	/* Quality range (link, level, noise)
-@@ -685,6 +1000,8 @@
+@@ -685,6 +1000,8 @@ struct	iw_range
  	struct iw_freq	freq[IW_MAX_FREQUENCIES];	/* list */
  	/* Note : this frequency list doesn't need to fit channel numbers,
  	 * because each entry contain its channel index */
@@ -474,8 +474,8 @@ Index: linux-2.4.35.4/include/linux/wireless.h
  /*
 Index: linux-2.4.35.4/include/net/iw_handler.h
 ===================================================================
---- linux-2.4.35.4.orig/include/net/iw_handler.h	2007-12-15 05:19:42.178824671 +0100
-+++ linux-2.4.35.4/include/net/iw_handler.h	2007-12-15 05:19:51.647364253 +0100
+--- linux-2.4.35.4.orig/include/net/iw_handler.h
++++ linux-2.4.35.4/include/net/iw_handler.h
 @@ -1,10 +1,10 @@
  /*
   * This file define the new driver API for Wireless Extensions
@@ -526,7 +526,7 @@ Index: linux-2.4.35.4/include/net/iw_handler.h
  /* Driver level flags */
  #define IW_DESCR_FLAG_WAIT	0x0100	/* Wait for driver event */
  
-@@ -311,23 +319,25 @@
+@@ -311,23 +319,25 @@ struct iw_handler_def
  	/* Array of handlers for standard ioctls
  	 * We will call dev->wireless_handlers->standard[ioctl - SIOCSIWNAME]
  	 */
@@ -559,7 +559,7 @@ Index: linux-2.4.35.4/include/net/iw_handler.h
  };
  
  /* ---------------------- IOCTL DESCRIPTION ---------------------- */
-@@ -374,18 +384,29 @@
+@@ -374,18 +384,29 @@ struct iw_ioctl_description
   */
  struct iw_spy_data
  {
@@ -595,9 +595,9 @@ Index: linux-2.4.35.4/include/net/iw_handler.h
  /**************************** PROTOTYPES ****************************/
 Index: linux-2.4.35.4/net/core/dev.c
 ===================================================================
---- linux-2.4.35.4.orig/net/core/dev.c	2007-12-15 05:19:42.186825129 +0100
-+++ linux-2.4.35.4/net/core/dev.c	2007-12-15 05:19:51.651364482 +0100
-@@ -2426,7 +2426,7 @@
+--- linux-2.4.35.4.orig/net/core/dev.c
++++ linux-2.4.35.4/net/core/dev.c
+@@ -2426,7 +2426,7 @@ int dev_ioctl(unsigned int cmd, void *ar
  				/* Follow me in net/core/wireless.c */
  				ret = wireless_process_ioctl(&ifr, cmd);
  				rtnl_unlock();
@@ -608,8 +608,8 @@ Index: linux-2.4.35.4/net/core/dev.c
  				return ret;
 Index: linux-2.4.35.4/net/core/wireless.c
 ===================================================================
---- linux-2.4.35.4.orig/net/core/wireless.c	2007-12-15 05:19:42.194825585 +0100
-+++ linux-2.4.35.4/net/core/wireless.c	2007-12-15 05:19:51.655364711 +0100
+--- linux-2.4.35.4.orig/net/core/wireless.c
++++ linux-2.4.35.4/net/core/wireless.c
 @@ -2,7 +2,7 @@
   * This file implement the Wireless Extensions APIs.
   *
@@ -649,7 +649,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  #undef WE_IOCTL_DEBUG		/* Debug IOCTL API */
  #undef WE_EVENT_DEBUG		/* Debug Event dispatcher */
  #undef WE_SPY_DEBUG		/* Debug enhanced spy support */
-@@ -131,14 +137,14 @@
+@@ -131,14 +137,14 @@ static const struct iw_ioctl_description
  	{ IW_HEADER_TYPE_ADDR, 0, 0, 0, 0, 0},
  	/* SIOCGIWAP */
  	{ IW_HEADER_TYPE_ADDR, 0, 0, 0, 0, IW_DESCR_FLAG_DUMP},
@@ -669,7 +669,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  	/* SIOCSIWESSID */
  	{ IW_HEADER_TYPE_POINT, 0, 1, 0, IW_ESSID_MAX_SIZE + 1, IW_DESCR_FLAG_EVENT},
  	/* SIOCGIWESSID */
-@@ -179,6 +185,25 @@
+@@ -179,6 +185,25 @@ static const struct iw_ioctl_description
  	{ IW_HEADER_TYPE_PARAM, 0, 0, 0, 0, 0},
  	/* SIOCGIWPOWER */
  	{ IW_HEADER_TYPE_PARAM, 0, 0, 0, 0, 0},
@@ -695,7 +695,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  };
  static const int standard_ioctl_num = (sizeof(standard_ioctl) /
  				       sizeof(struct iw_ioctl_description));
-@@ -198,12 +223,22 @@
+@@ -198,12 +223,22 @@ static const struct iw_ioctl_description
  	{ IW_HEADER_TYPE_ADDR, 0, 0, 0, 0, 0},
  	/* IWEVEXPIRED */
  	{ IW_HEADER_TYPE_ADDR, 0, 0, 0, 0, 0},
@@ -719,7 +719,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  	0,				/* IW_PRIV_TYPE_NONE */
  	1,				/* IW_PRIV_TYPE_BYTE */
  	1,				/* IW_PRIV_TYPE_CHAR */
-@@ -270,12 +305,15 @@
+@@ -270,12 +305,15 @@ static inline iw_handler get_handler(str
   */
  static inline struct iw_statistics *get_wireless_stats(struct net_device *dev)
  {
@@ -738,7 +738,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  }
  
  /* ---------------------------------------------------------------- */
-@@ -310,14 +348,32 @@
+@@ -310,14 +348,32 @@ static inline int call_commit_handler(st
  
  /* ---------------------------------------------------------------- */
  /*
@@ -773,7 +773,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  }
  
  
-@@ -350,11 +406,14 @@
+@@ -350,11 +406,14 @@ static inline int sprintf_wireless_stats
  			       dev->name,
  			       stats->status,
  			       stats->qual.qual,
@@ -791,7 +791,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  			       stats->discard.nwid,
  			       stats->discard.code,
  			       stats->discard.fragment,
-@@ -470,13 +529,15 @@
+@@ -470,13 +529,15 @@ static inline int ioctl_export_private(s
  	/* Check NULL pointer */
  	if(iwr->u.data.pointer == NULL)
  		return -EFAULT;
@@ -810,7 +810,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  
  	/* Set the number of available ioctls. */
  	iwr->u.data.length = dev->wireless_handlers->num_private_args;
-@@ -505,7 +566,6 @@
+@@ -505,7 +566,6 @@ static inline int ioctl_standard_call(st
  	const struct iw_ioctl_description *	descr;
  	struct iw_request_info			info;
  	int					ret = -EINVAL;
@@ -818,7 +818,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  
  	/* Get the description of the IOCTL */
  	if((cmd - SIOCIWFIRST) >= standard_ioctl_num)
-@@ -536,8 +596,14 @@
+@@ -536,8 +596,14 @@ static inline int ioctl_standard_call(st
  #endif	/* WE_SET_EVENT */
  	} else {
  		char *	extra;
@@ -833,7 +833,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  		/* Check what user space is giving us */
  		if(IW_IS_SET(cmd)) {
  			/* Check NULL pointer */
-@@ -554,18 +620,33 @@
+@@ -554,18 +620,33 @@ static inline int ioctl_standard_call(st
  			if(iwr->u.data.pointer == NULL)
  				return -EFAULT;
  			/* Save user space buffer size for checking */
@@ -873,7 +873,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  		if (extra == NULL) {
  			return -ENOMEM;
  		}
-@@ -591,14 +672,11 @@
+@@ -591,14 +672,11 @@ static inline int ioctl_standard_call(st
  
  		/* If we have something to return to the user */
  		if (!ret && IW_IS_GET(cmd)) {
@@ -889,7 +889,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  
  			err = copy_to_user(iwr->u.data.pointer, extra,
  					   iwr->u.data.length *
-@@ -661,7 +739,7 @@
+@@ -661,7 +739,7 @@ static inline int ioctl_private_call(str
  				     iw_handler		handler)
  {
  	struct iwreq *			iwr = (struct iwreq *) ifr;
@@ -898,7 +898,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  	struct iw_request_info		info;
  	int				extra_size = 0;
  	int				i;
-@@ -701,7 +779,7 @@
+@@ -701,7 +779,7 @@ static inline int ioctl_private_call(str
  			   ((extra_size + offset) <= IFNAMSIZ))
  				extra_size = 0;
  		} else {
@@ -907,7 +907,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  			extra_size = get_priv_size(descr->get_args);
  
  			/* Does it fits in iwr ? */
-@@ -771,6 +849,14 @@
+@@ -771,6 +849,14 @@ static inline int ioctl_private_call(str
  
  		/* If we have something to return to the user */
  		if (!ret && IW_IS_GET(cmd)) {
@@ -922,7 +922,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  			err = copy_to_user(iwr->u.data.pointer, extra,
  					   extra_size);
  			if (err)
-@@ -1042,9 +1128,25 @@
+@@ -1042,9 +1128,25 @@ void wireless_send_event(struct net_devi
   * One of the main advantage of centralising spy support here is that
   * it becomes much easier to improve and extend it without having to touch
   * the drivers. One example is the addition of the Spy-Threshold events.
@@ -949,7 +949,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  /*------------------------------------------------------------------*/
  /*
   * Standard Wireless Handler : set Spy List
-@@ -1054,16 +1156,26 @@
+@@ -1054,16 +1156,26 @@ int iw_handler_set_spy(struct net_device
  		       union iwreq_data *	wrqu,
  		       char *			extra)
  {
@@ -981,7 +981,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  	/* Are there are addresses to copy? */
  	if(wrqu->data.length > 0) {
  		int i;
-@@ -1089,13 +1201,14 @@
+@@ -1089,13 +1201,14 @@ int iw_handler_set_spy(struct net_device
  			       spydata->spy_address[i][5]);
  #endif	/* WE_SPY_DEBUG */
  	}
@@ -999,7 +999,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  }
  
  /*------------------------------------------------------------------*/
-@@ -1107,12 +1220,14 @@
+@@ -1107,12 +1220,14 @@ int iw_handler_get_spy(struct net_device
  		       union iwreq_data *	wrqu,
  		       char *			extra)
  {
@@ -1017,7 +1017,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  	wrqu->data.length = spydata->spy_number;
  
  	/* Copy addresses. */
-@@ -1129,9 +1244,6 @@
+@@ -1129,9 +1244,6 @@ int iw_handler_get_spy(struct net_device
  	for(i = 0; i < spydata->spy_number; i++)
  		spydata->spy_stat[i].updated = 0;
  	return 0;
@@ -1027,7 +1027,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  }
  
  /*------------------------------------------------------------------*/
-@@ -1143,11 +1255,13 @@
+@@ -1143,11 +1255,13 @@ int iw_handler_set_thrspy(struct net_dev
  			  union iwreq_data *	wrqu,
  			  char *		extra)
  {
@@ -1044,7 +1044,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  	/* Just do it */
  	memcpy(&(spydata->spy_thr_low), &(threshold->low),
  	       2 * sizeof(struct iw_quality));
-@@ -1160,9 +1274,6 @@
+@@ -1160,9 +1274,6 @@ int iw_handler_set_thrspy(struct net_dev
  #endif	/* WE_SPY_DEBUG */
  
  	return 0;
@@ -1054,7 +1054,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  }
  
  /*------------------------------------------------------------------*/
-@@ -1174,22 +1285,20 @@
+@@ -1174,22 +1285,20 @@ int iw_handler_get_thrspy(struct net_dev
  			  union iwreq_data *	wrqu,
  			  char *		extra)
  {
@@ -1082,7 +1082,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  /*------------------------------------------------------------------*/
  /*
   * Prepare and send a Spy Threshold event
-@@ -1227,7 +1336,6 @@
+@@ -1227,7 +1336,6 @@ static void iw_send_thrspy_event(struct 
  	/* Send event to user space */
  	wireless_send_event(dev, SIOCGIWTHRSPY, &wrqu, (char *) &threshold);
  }
@@ -1090,7 +1090,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  
  /* ---------------------------------------------------------------- */
  /*
-@@ -1240,12 +1348,14 @@
+@@ -1240,12 +1348,14 @@ void wireless_spy_update(struct net_devi
  			 unsigned char *	address,
  			 struct iw_quality *	wstats)
  {
@@ -1108,7 +1108,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  #ifdef WE_SPY_DEBUG
  	printk(KERN_DEBUG "wireless_spy_update() :  offset %ld, spydata %p, address %02X:%02X:%02X:%02X:%02X:%02X\n", dev->wireless_handlers->spy_offset, spydata, address[0], address[1], address[2], address[3], address[4], address[5]);
  #endif	/* WE_SPY_DEBUG */
-@@ -1257,7 +1367,7 @@
+@@ -1257,7 +1367,7 @@ void wireless_spy_update(struct net_devi
  			       sizeof(struct iw_quality));
  			match = i;
  		}
@@ -1117,7 +1117,7 @@ Index: linux-2.4.35.4/net/core/wireless.c
  	/* Generate an event if we cross the spy threshold.
  	 * To avoid event storms, we have a simple hysteresis : we generate
  	 * event only when we go under the low threshold or above the
-@@ -1277,6 +1387,4 @@
+@@ -1277,6 +1387,4 @@ void wireless_spy_update(struct net_devi
  			}
  		}
  	}

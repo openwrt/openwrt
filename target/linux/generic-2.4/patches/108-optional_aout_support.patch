@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/Documentation/Configure.help
 ===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help	2007-12-15 05:19:52.251398675 +0100
-+++ linux-2.4.35.4/Documentation/Configure.help	2007-12-15 05:19:53.139449282 +0100
-@@ -4690,6 +4690,12 @@
+--- linux-2.4.35.4.orig/Documentation/Configure.help
++++ linux-2.4.35.4/Documentation/Configure.help
+@@ -4690,6 +4690,12 @@ CONFIG_BINFMT_ELF
    ld.so (check the file <file:Documentation/Changes> for location and
    latest version).
  
@@ -15,7 +15,7 @@ Index: linux-2.4.35.4/Documentation/Configure.help
  Kernel support for a.out binaries
  CONFIG_BINFMT_AOUT
    A.out (Assembler.OUTput) is a set of formats for libraries and
-@@ -4703,13 +4709,11 @@
+@@ -4703,13 +4709,11 @@ CONFIG_BINFMT_AOUT
    warrant removing support. However its removal is a good idea if you
    wish to ensure that absolutely none of your programs will use this
    older executable format. If you don't know what to answer at this
@@ -33,9 +33,9 @@ Index: linux-2.4.35.4/Documentation/Configure.help
  CONFIG_OSF4_COMPAT
 Index: linux-2.4.35.4/arch/alpha/config.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/alpha/config.in	2007-12-15 05:19:41.518787058 +0100
-+++ linux-2.4.35.4/arch/alpha/config.in	2007-12-15 05:19:53.143449511 +0100
-@@ -315,6 +315,9 @@
+--- linux-2.4.35.4.orig/arch/alpha/config.in
++++ linux-2.4.35.4/arch/alpha/config.in
+@@ -315,6 +315,9 @@ if [ "$CONFIG_BINFMT_AOUT" != "n" ]; the
  fi
  
  bool 'Kernel support for ELF binaries' CONFIG_BINFMT_ELF
@@ -47,9 +47,9 @@ Index: linux-2.4.35.4/arch/alpha/config.in
  source drivers/parport/Config.in
 Index: linux-2.4.35.4/arch/alpha/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/alpha/defconfig	2007-12-15 05:19:41.526787516 +0100
-+++ linux-2.4.35.4/arch/alpha/defconfig	2007-12-15 05:19:53.143449511 +0100
-@@ -72,6 +72,7 @@
+--- linux-2.4.35.4.orig/arch/alpha/defconfig
++++ linux-2.4.35.4/arch/alpha/defconfig
+@@ -72,6 +72,7 @@ CONFIG_KCORE_ELF=y
  # CONFIG_KCORE_AOUT is not set
  # CONFIG_BINFMT_AOUT is not set
  CONFIG_BINFMT_ELF=y
@@ -59,9 +59,9 @@ Index: linux-2.4.35.4/arch/alpha/defconfig
  
 Index: linux-2.4.35.4/arch/arm/config.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/arm/config.in	2007-12-15 05:19:41.534787971 +0100
-+++ linux-2.4.35.4/arch/arm/config.in	2007-12-15 05:19:53.143449511 +0100
-@@ -499,6 +499,9 @@
+--- linux-2.4.35.4.orig/arch/arm/config.in
++++ linux-2.4.35.4/arch/arm/config.in
+@@ -499,6 +499,9 @@ choice 'Kernel core (/proc/kcore) format
  	 A.OUT		CONFIG_KCORE_AOUT" ELF
  tristate 'Kernel support for a.out binaries' CONFIG_BINFMT_AOUT
  bool 'Kernel support for ELF binaries' CONFIG_BINFMT_ELF
@@ -73,9 +73,9 @@ Index: linux-2.4.35.4/arch/arm/config.in
  dep_tristate 'RISC OS personality' CONFIG_ARTHUR $CONFIG_CPU_32
 Index: linux-2.4.35.4/arch/arm/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/arm/defconfig	2007-12-15 05:19:41.542788427 +0100
-+++ linux-2.4.35.4/arch/arm/defconfig	2007-12-15 05:19:53.143449511 +0100
-@@ -83,8 +83,9 @@
+--- linux-2.4.35.4.orig/arch/arm/defconfig
++++ linux-2.4.35.4/arch/arm/defconfig
+@@ -83,8 +83,9 @@ CONFIG_SYSCTL=y
  CONFIG_NWFPE=y
  CONFIG_KCORE_ELF=y
  # CONFIG_KCORE_AOUT is not set
@@ -88,9 +88,9 @@ Index: linux-2.4.35.4/arch/arm/defconfig
  # CONFIG_ARTHUR is not set
 Index: linux-2.4.35.4/arch/cris/config.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/cris/config.in	2007-12-15 05:19:41.550788882 +0100
-+++ linux-2.4.35.4/arch/cris/config.in	2007-12-15 05:19:53.143449511 +0100
-@@ -31,6 +31,9 @@
+--- linux-2.4.35.4.orig/arch/cris/config.in
++++ linux-2.4.35.4/arch/cris/config.in
+@@ -31,6 +31,9 @@ bool 'BSD Process Accounting' CONFIG_BSD
  bool 'Sysctl support' CONFIG_SYSCTL
  
  bool 'Kernel support for ELF binaries' CONFIG_BINFMT_ELF
@@ -102,9 +102,9 @@ Index: linux-2.4.35.4/arch/cris/config.in
  
 Index: linux-2.4.35.4/arch/cris/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/cris/defconfig	2007-12-15 05:19:41.554789111 +0100
-+++ linux-2.4.35.4/arch/cris/defconfig	2007-12-15 05:19:53.147449737 +0100
-@@ -18,6 +18,7 @@
+--- linux-2.4.35.4.orig/arch/cris/defconfig
++++ linux-2.4.35.4/arch/cris/defconfig
+@@ -18,6 +18,7 @@ CONFIG_SYSVIPC=y
  # CONFIG_BSD_PROCESS_ACCT is not set
  # CONFIG_SYSCTL is not set
  CONFIG_BINFMT_ELF=y
@@ -114,9 +114,9 @@ Index: linux-2.4.35.4/arch/cris/defconfig
  
 Index: linux-2.4.35.4/arch/i386/config.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/i386/config.in	2007-12-15 05:19:41.562789566 +0100
-+++ linux-2.4.35.4/arch/i386/config.in	2007-12-15 05:19:53.147449737 +0100
-@@ -329,6 +329,9 @@
+--- linux-2.4.35.4.orig/arch/i386/config.in
++++ linux-2.4.35.4/arch/i386/config.in
+@@ -329,6 +329,9 @@ if [ "$CONFIG_PROC_FS" = "y" ]; then
  fi
  tristate 'Kernel support for a.out binaries' CONFIG_BINFMT_AOUT
  bool 'Kernel support for ELF binaries' CONFIG_BINFMT_ELF
@@ -128,9 +128,9 @@ Index: linux-2.4.35.4/arch/i386/config.in
  
 Index: linux-2.4.35.4/arch/i386/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/i386/defconfig	2007-12-15 05:19:41.570790022 +0100
-+++ linux-2.4.35.4/arch/i386/defconfig	2007-12-15 05:19:53.147449737 +0100
-@@ -115,9 +115,10 @@
+--- linux-2.4.35.4.orig/arch/i386/defconfig
++++ linux-2.4.35.4/arch/i386/defconfig
+@@ -115,9 +115,10 @@ CONFIG_SYSVIPC=y
  CONFIG_SYSCTL=y
  CONFIG_KCORE_ELF=y
  # CONFIG_KCORE_AOUT is not set
@@ -145,9 +145,9 @@ Index: linux-2.4.35.4/arch/i386/defconfig
  # CONFIG_APM is not set
 Index: linux-2.4.35.4/arch/ia64/config.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/ia64/config.in	2007-12-15 05:19:41.578790477 +0100
-+++ linux-2.4.35.4/arch/ia64/config.in	2007-12-15 05:19:53.147449737 +0100
-@@ -124,6 +124,9 @@
+--- linux-2.4.35.4.orig/arch/ia64/config.in
++++ linux-2.4.35.4/arch/ia64/config.in
+@@ -124,6 +124,9 @@ bool 'System V IPC' CONFIG_SYSVIPC
  bool 'BSD Process Accounting' CONFIG_BSD_PROCESS_ACCT
  bool 'Sysctl support' CONFIG_SYSCTL
  bool 'Kernel support for ELF binaries' CONFIG_BINFMT_ELF
@@ -159,9 +159,9 @@ Index: linux-2.4.35.4/arch/ia64/config.in
  if [ "$CONFIG_IA64_HP_SIM" = "n" ]; then
 Index: linux-2.4.35.4/arch/ia64/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/ia64/defconfig	2007-12-15 05:19:41.586790935 +0100
-+++ linux-2.4.35.4/arch/ia64/defconfig	2007-12-15 05:19:53.151449966 +0100
-@@ -60,6 +60,7 @@
+--- linux-2.4.35.4.orig/arch/ia64/defconfig
++++ linux-2.4.35.4/arch/ia64/defconfig
+@@ -60,6 +60,7 @@ CONFIG_SYSVIPC=y
  # CONFIG_BSD_PROCESS_ACCT is not set
  CONFIG_SYSCTL=y
  CONFIG_BINFMT_ELF=y
@@ -171,9 +171,9 @@ Index: linux-2.4.35.4/arch/ia64/defconfig
  CONFIG_ACPI_EFI=y
 Index: linux-2.4.35.4/arch/m68k/config.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/m68k/config.in	2007-12-15 05:19:41.594791391 +0100
-+++ linux-2.4.35.4/arch/m68k/config.in	2007-12-15 05:19:53.151449966 +0100
-@@ -99,6 +99,9 @@
+--- linux-2.4.35.4.orig/arch/m68k/config.in
++++ linux-2.4.35.4/arch/m68k/config.in
+@@ -99,6 +99,9 @@ if [ "$CONFIG_PROC_FS" = "y" ]; then
  fi
  tristate 'Kernel support for a.out binaries' CONFIG_BINFMT_AOUT
  bool 'Kernel support for ELF binaries' CONFIG_BINFMT_ELF
@@ -185,9 +185,9 @@ Index: linux-2.4.35.4/arch/m68k/config.in
  if [ "$CONFIG_AMIGA" = "y" ]; then
 Index: linux-2.4.35.4/arch/m68k/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/m68k/defconfig	2007-12-15 05:19:41.602791846 +0100
-+++ linux-2.4.35.4/arch/m68k/defconfig	2007-12-15 05:19:53.151449966 +0100
-@@ -44,8 +44,9 @@
+--- linux-2.4.35.4.orig/arch/m68k/defconfig
++++ linux-2.4.35.4/arch/m68k/defconfig
+@@ -44,8 +44,9 @@ CONFIG_SYSVIPC=y
  CONFIG_SYSCTL=y
  CONFIG_KCORE_ELF=y
  # CONFIG_KCORE_AOUT is not set
@@ -200,9 +200,9 @@ Index: linux-2.4.35.4/arch/m68k/defconfig
  # CONFIG_AMIGA_PCMCIA is not set
 Index: linux-2.4.35.4/arch/mips/config-shared.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/config-shared.in	2007-12-15 05:19:44.814974898 +0100
-+++ linux-2.4.35.4/arch/mips/config-shared.in	2007-12-15 05:19:53.151449966 +0100
-@@ -873,6 +873,9 @@
+--- linux-2.4.35.4.orig/arch/mips/config-shared.in
++++ linux-2.4.35.4/arch/mips/config-shared.in
+@@ -873,6 +873,9 @@ define_bool CONFIG_KCORE_ELF y
  define_bool CONFIG_KCORE_AOUT n
  define_bool CONFIG_BINFMT_AOUT n
  bool 'Kernel support for ELF binaries' CONFIG_BINFMT_ELF
@@ -214,9 +214,9 @@ Index: linux-2.4.35.4/arch/mips/config-shared.in
  dep_bool 'Kernel support for n32 binaries' CONFIG_MIPS32_N32 $CONFIG_MIPS32_COMPAT
 Index: linux-2.4.35.4/arch/mips/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig	2007-12-15 05:19:44.814974898 +0100
-+++ linux-2.4.35.4/arch/mips/defconfig	2007-12-15 05:19:53.155450196 +0100
-@@ -143,6 +143,7 @@
+--- linux-2.4.35.4.orig/arch/mips/defconfig
++++ linux-2.4.35.4/arch/mips/defconfig
+@@ -143,6 +143,7 @@ CONFIG_KCORE_ELF=y
  # CONFIG_KCORE_AOUT is not set
  # CONFIG_BINFMT_AOUT is not set
  CONFIG_BINFMT_ELF=y
@@ -226,8 +226,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig
  # CONFIG_MIPS32_N32 is not set
 Index: linux-2.4.35.4/arch/mips/kernel/irixelf.c
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/irixelf.c	2007-12-15 05:19:41.626793215 +0100
-+++ linux-2.4.35.4/arch/mips/kernel/irixelf.c	2007-12-15 05:19:53.155450196 +0100
+--- linux-2.4.35.4.orig/arch/mips/kernel/irixelf.c
++++ linux-2.4.35.4/arch/mips/kernel/irixelf.c
 @@ -8,6 +8,7 @@
   * Copyright 1993, 1994: Eric Youngdale (ericy@cais.com).
   */
@@ -236,7 +236,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/irixelf.c
  #include <linux/module.h>
  
  #include <linux/fs.h>
-@@ -48,7 +49,12 @@
+@@ -48,7 +49,12 @@ static int irix_core_dump(long signr, st
  extern int dump_fpu (elf_fpregset_t *);
  
  static struct linux_binfmt irix_format = {
@@ -250,7 +250,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/irixelf.c
  	irix_core_dump, PAGE_SIZE
  };
  
-@@ -794,6 +800,7 @@
+@@ -794,6 +800,7 @@ out_free_ph:
  	goto out;
  }
  
@@ -258,7 +258,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/irixelf.c
  /* This is really simpleminded and specialized - we are loading an
   * a.out library that is given an ELF header.
   */
-@@ -873,6 +880,7 @@
+@@ -873,6 +880,7 @@ static int load_irix_library(struct file
  	kfree(elf_phdata);
  	return 0;
  }
@@ -268,9 +268,9 @@ Index: linux-2.4.35.4/arch/mips/kernel/irixelf.c
   * a phdr ptr USER_PHDRP in userspace, and a count CNT telling how many
 Index: linux-2.4.35.4/arch/mips64/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips64/defconfig	2007-12-15 05:19:44.874978317 +0100
-+++ linux-2.4.35.4/arch/mips64/defconfig	2007-12-15 05:19:53.155450196 +0100
-@@ -147,6 +147,7 @@
+--- linux-2.4.35.4.orig/arch/mips64/defconfig
++++ linux-2.4.35.4/arch/mips64/defconfig
+@@ -147,6 +147,7 @@ CONFIG_KCORE_ELF=y
  # CONFIG_KCORE_AOUT is not set
  # CONFIG_BINFMT_AOUT is not set
  CONFIG_BINFMT_ELF=y
@@ -280,9 +280,9 @@ Index: linux-2.4.35.4/arch/mips64/defconfig
  # CONFIG_MIPS32_N32 is not set
 Index: linux-2.4.35.4/arch/parisc/config.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/parisc/config.in	2007-12-15 05:19:41.638793897 +0100
-+++ linux-2.4.35.4/arch/parisc/config.in	2007-12-15 05:19:53.155450196 +0100
-@@ -89,6 +89,9 @@
+--- linux-2.4.35.4.orig/arch/parisc/config.in
++++ linux-2.4.35.4/arch/parisc/config.in
+@@ -89,6 +89,9 @@ bool 'BSD Process Accounting' CONFIG_BSD
  bool 'Sysctl support' CONFIG_SYSCTL
  define_bool CONFIG_KCORE_ELF y
  bool 'Kernel support for ELF binaries' CONFIG_BINFMT_ELF
@@ -294,9 +294,9 @@ Index: linux-2.4.35.4/arch/parisc/config.in
  
 Index: linux-2.4.35.4/arch/parisc/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/parisc/defconfig	2007-12-15 05:19:41.646794355 +0100
-+++ linux-2.4.35.4/arch/parisc/defconfig	2007-12-15 05:19:53.159450422 +0100
-@@ -56,6 +56,7 @@
+--- linux-2.4.35.4.orig/arch/parisc/defconfig
++++ linux-2.4.35.4/arch/parisc/defconfig
+@@ -56,6 +56,7 @@ CONFIG_SYSVIPC=y
  CONFIG_SYSCTL=y
  CONFIG_KCORE_ELF=y
  CONFIG_BINFMT_ELF=y
@@ -306,9 +306,9 @@ Index: linux-2.4.35.4/arch/parisc/defconfig
  # CONFIG_PM is not set
 Index: linux-2.4.35.4/arch/ppc/config.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/ppc/config.in	2007-12-15 05:19:41.654794810 +0100
-+++ linux-2.4.35.4/arch/ppc/config.in	2007-12-15 05:19:53.159450422 +0100
-@@ -384,6 +384,7 @@
+--- linux-2.4.35.4.orig/arch/ppc/config.in
++++ linux-2.4.35.4/arch/ppc/config.in
+@@ -384,6 +384,7 @@ if [ "$CONFIG_PROC_FS" = "y" ]; then
  fi
  define_bool CONFIG_BINFMT_ELF y
  define_bool CONFIG_KERNEL_ELF y
@@ -318,9 +318,9 @@ Index: linux-2.4.35.4/arch/ppc/config.in
  
 Index: linux-2.4.35.4/arch/ppc/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/ppc/defconfig	2007-12-15 05:19:41.662795265 +0100
-+++ linux-2.4.35.4/arch/ppc/defconfig	2007-12-15 05:19:53.159450422 +0100
-@@ -59,7 +59,8 @@
+--- linux-2.4.35.4.orig/arch/ppc/defconfig
++++ linux-2.4.35.4/arch/ppc/defconfig
+@@ -59,7 +59,8 @@ CONFIG_SYSVIPC=y
  CONFIG_KCORE_ELF=y
  CONFIG_BINFMT_ELF=y
  CONFIG_KERNEL_ELF=y
@@ -332,9 +332,9 @@ Index: linux-2.4.35.4/arch/ppc/defconfig
  CONFIG_HOTPLUG=y
 Index: linux-2.4.35.4/arch/ppc64/config.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/ppc64/config.in	2007-12-15 05:19:41.670795721 +0100
-+++ linux-2.4.35.4/arch/ppc64/config.in	2007-12-15 05:19:53.159450422 +0100
-@@ -82,6 +82,9 @@
+--- linux-2.4.35.4.orig/arch/ppc64/config.in
++++ linux-2.4.35.4/arch/ppc64/config.in
+@@ -82,6 +82,9 @@ if [ "$CONFIG_PROC_FS" = "y" ]; then
  fi
  
  bool 'Kernel support for 64 bit ELF binaries' CONFIG_BINFMT_ELF
@@ -346,9 +346,9 @@ Index: linux-2.4.35.4/arch/ppc64/config.in
  
 Index: linux-2.4.35.4/arch/ppc64/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/ppc64/defconfig	2007-12-15 05:19:41.678796176 +0100
-+++ linux-2.4.35.4/arch/ppc64/defconfig	2007-12-15 05:19:53.163450651 +0100
-@@ -56,6 +56,7 @@
+--- linux-2.4.35.4.orig/arch/ppc64/defconfig
++++ linux-2.4.35.4/arch/ppc64/defconfig
+@@ -56,6 +56,7 @@ CONFIG_SYSVIPC=y
  # CONFIG_BSD_PROCESS_ACCT is not set
  CONFIG_KCORE_ELF=y
  CONFIG_BINFMT_ELF=y
@@ -358,9 +358,9 @@ Index: linux-2.4.35.4/arch/ppc64/defconfig
  CONFIG_PCI_NAMES=y
 Index: linux-2.4.35.4/arch/s390/config.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/s390/config.in	2007-12-15 05:19:41.686796634 +0100
-+++ linux-2.4.35.4/arch/s390/config.in	2007-12-15 05:19:53.163450651 +0100
-@@ -58,6 +58,9 @@
+--- linux-2.4.35.4.orig/arch/s390/config.in
++++ linux-2.4.35.4/arch/s390/config.in
+@@ -58,6 +58,9 @@ bool 'BSD Process Accounting' CONFIG_BSD
  bool 'Sysctl support' CONFIG_SYSCTL
  define_bool CONFIG_KCORE_ELF y
  bool 'Kernel support for ELF binaries' CONFIG_BINFMT_ELF
@@ -372,9 +372,9 @@ Index: linux-2.4.35.4/arch/s390/config.in
  bool 'Pseudo page fault support' CONFIG_PFAULT
 Index: linux-2.4.35.4/arch/s390/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/s390/defconfig	2007-12-15 05:19:41.694797090 +0100
-+++ linux-2.4.35.4/arch/s390/defconfig	2007-12-15 05:19:53.163450651 +0100
-@@ -46,6 +46,7 @@
+--- linux-2.4.35.4.orig/arch/s390/defconfig
++++ linux-2.4.35.4/arch/s390/defconfig
+@@ -46,6 +46,7 @@ CONFIG_SYSVIPC=y
  CONFIG_SYSCTL=y
  CONFIG_KCORE_ELF=y
  CONFIG_BINFMT_ELF=y
@@ -384,9 +384,9 @@ Index: linux-2.4.35.4/arch/s390/defconfig
  CONFIG_PFAULT=y
 Index: linux-2.4.35.4/arch/s390x/config.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/s390x/config.in	2007-12-15 05:19:41.698797316 +0100
-+++ linux-2.4.35.4/arch/s390x/config.in	2007-12-15 05:19:53.163450651 +0100
-@@ -61,6 +61,9 @@
+--- linux-2.4.35.4.orig/arch/s390x/config.in
++++ linux-2.4.35.4/arch/s390x/config.in
+@@ -61,6 +61,9 @@ bool 'BSD Process Accounting' CONFIG_BSD
  bool 'Sysctl support' CONFIG_SYSCTL
  define_bool CONFIG_KCORE_ELF y
  bool 'Kernel support for ELF binaries' CONFIG_BINFMT_ELF
@@ -398,9 +398,9 @@ Index: linux-2.4.35.4/arch/s390x/config.in
  bool 'Pseudo page fault support' CONFIG_PFAULT
 Index: linux-2.4.35.4/arch/s390x/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/s390x/defconfig	2007-12-15 05:19:41.706797774 +0100
-+++ linux-2.4.35.4/arch/s390x/defconfig	2007-12-15 05:19:53.163450651 +0100
-@@ -47,6 +47,7 @@
+--- linux-2.4.35.4.orig/arch/s390x/defconfig
++++ linux-2.4.35.4/arch/s390x/defconfig
+@@ -47,6 +47,7 @@ CONFIG_SYSVIPC=y
  CONFIG_SYSCTL=y
  CONFIG_KCORE_ELF=y
  CONFIG_BINFMT_ELF=y
@@ -410,9 +410,9 @@ Index: linux-2.4.35.4/arch/s390x/defconfig
  CONFIG_PFAULT=y
 Index: linux-2.4.35.4/arch/sh/config.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/sh/config.in	2007-12-15 05:19:41.714798229 +0100
-+++ linux-2.4.35.4/arch/sh/config.in	2007-12-15 05:19:53.163450651 +0100
-@@ -283,6 +283,9 @@
+--- linux-2.4.35.4.orig/arch/sh/config.in
++++ linux-2.4.35.4/arch/sh/config.in
+@@ -283,6 +283,9 @@ if [ "$CONFIG_PROC_FS" = "y" ]; then
  	 A.OUT		CONFIG_KCORE_AOUT" ELF
  fi
  bool 'Kernel support for ELF binaries' CONFIG_BINFMT_ELF
@@ -424,9 +424,9 @@ Index: linux-2.4.35.4/arch/sh/config.in
  bool 'Select task to kill on out of memory condition' CONFIG_OOM_KILLER
 Index: linux-2.4.35.4/arch/sh/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/sh/defconfig	2007-12-15 05:19:41.722798685 +0100
-+++ linux-2.4.35.4/arch/sh/defconfig	2007-12-15 05:19:53.167450880 +0100
-@@ -48,6 +48,7 @@
+--- linux-2.4.35.4.orig/arch/sh/defconfig
++++ linux-2.4.35.4/arch/sh/defconfig
+@@ -48,6 +48,7 @@ CONFIG_CF_ENABLER=y
  CONFIG_KCORE_ELF=y
  # CONFIG_KCORE_AOUT is not set
  CONFIG_BINFMT_ELF=y
@@ -436,9 +436,9 @@ Index: linux-2.4.35.4/arch/sh/defconfig
  #
 Index: linux-2.4.35.4/arch/sparc/config.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/sparc/config.in	2007-12-15 05:19:41.730799140 +0100
-+++ linux-2.4.35.4/arch/sparc/config.in	2007-12-15 05:19:53.167450880 +0100
-@@ -74,6 +74,9 @@
+--- linux-2.4.35.4.orig/arch/sparc/config.in
++++ linux-2.4.35.4/arch/sparc/config.in
+@@ -74,6 +74,9 @@ if [ "$CONFIG_PROC_FS" = "y" ]; then
  fi
  tristate 'Kernel support for a.out binaries' CONFIG_BINFMT_AOUT
  bool 'Kernel support for ELF binaries' CONFIG_BINFMT_ELF
@@ -450,9 +450,9 @@ Index: linux-2.4.35.4/arch/sparc/config.in
  bool 'Select task to kill on out of memory condition' CONFIG_OOM_KILLER
 Index: linux-2.4.35.4/arch/sparc/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/sparc/defconfig	2007-12-15 05:19:41.738799596 +0100
-+++ linux-2.4.35.4/arch/sparc/defconfig	2007-12-15 05:19:53.167450880 +0100
-@@ -49,9 +49,10 @@
+--- linux-2.4.35.4.orig/arch/sparc/defconfig
++++ linux-2.4.35.4/arch/sparc/defconfig
+@@ -49,9 +49,10 @@ CONFIG_SYSVIPC=y
  # CONFIG_BSD_PROCESS_ACCT is not set
  CONFIG_SYSCTL=y
  CONFIG_KCORE_ELF=y
@@ -467,9 +467,9 @@ Index: linux-2.4.35.4/arch/sparc/defconfig
  
 Index: linux-2.4.35.4/arch/sparc64/config.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/sparc64/config.in	2007-12-15 05:19:41.742799824 +0100
-+++ linux-2.4.35.4/arch/sparc64/config.in	2007-12-15 05:19:53.167450880 +0100
-@@ -79,6 +79,9 @@
+--- linux-2.4.35.4.orig/arch/sparc64/config.in
++++ linux-2.4.35.4/arch/sparc64/config.in
+@@ -79,6 +79,9 @@ if [ "$CONFIG_SPARC32_COMPAT" != "n" ]; 
     bool '  Kernel support for 32-bit (ie. SunOS) a.out binaries' CONFIG_BINFMT_AOUT32
  fi
  bool 'Kernel support for 64-bit ELF binaries' CONFIG_BINFMT_ELF
@@ -481,9 +481,9 @@ Index: linux-2.4.35.4/arch/sparc64/config.in
  if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
 Index: linux-2.4.35.4/arch/sparc64/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/sparc64/defconfig	2007-12-15 05:19:41.750800280 +0100
-+++ linux-2.4.35.4/arch/sparc64/defconfig	2007-12-15 05:19:53.167450880 +0100
-@@ -70,7 +70,8 @@
+--- linux-2.4.35.4.orig/arch/sparc64/defconfig
++++ linux-2.4.35.4/arch/sparc64/defconfig
+@@ -70,7 +70,8 @@ CONFIG_SPARC32_COMPAT=y
  CONFIG_BINFMT_ELF32=y
  # CONFIG_BINFMT_AOUT32 is not set
  CONFIG_BINFMT_ELF=y
@@ -495,9 +495,9 @@ Index: linux-2.4.35.4/arch/sparc64/defconfig
  # CONFIG_OOM_KILLER is not set
 Index: linux-2.4.35.4/arch/x86_64/config.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/x86_64/config.in	2007-12-15 05:19:41.758800735 +0100
-+++ linux-2.4.35.4/arch/x86_64/config.in	2007-12-15 05:19:53.171451107 +0100
-@@ -118,6 +118,9 @@
+--- linux-2.4.35.4.orig/arch/x86_64/config.in
++++ linux-2.4.35.4/arch/x86_64/config.in
+@@ -118,6 +118,9 @@ if [ "$CONFIG_PROC_FS" = "y" ]; then
  fi
  #tristate 'Kernel support for a.out binaries' CONFIG_BINFMT_AOUT
  bool 'Kernel support for ELF binaries' CONFIG_BINFMT_ELF
@@ -509,9 +509,9 @@ Index: linux-2.4.35.4/arch/x86_64/config.in
  bool 'Power Management support' CONFIG_PM
 Index: linux-2.4.35.4/arch/x86_64/defconfig
 ===================================================================
---- linux-2.4.35.4.orig/arch/x86_64/defconfig	2007-12-15 05:19:41.766801193 +0100
-+++ linux-2.4.35.4/arch/x86_64/defconfig	2007-12-15 05:19:53.171451107 +0100
-@@ -67,6 +67,7 @@
+--- linux-2.4.35.4.orig/arch/x86_64/defconfig
++++ linux-2.4.35.4/arch/x86_64/defconfig
+@@ -67,6 +67,7 @@ CONFIG_SYSVIPC=y
  CONFIG_SYSCTL=y
  CONFIG_KCORE_ELF=y
  CONFIG_BINFMT_ELF=y
@@ -521,8 +521,8 @@ Index: linux-2.4.35.4/arch/x86_64/defconfig
  CONFIG_IA32_EMULATION=y
 Index: linux-2.4.35.4/fs/binfmt_elf.c
 ===================================================================
---- linux-2.4.35.4.orig/fs/binfmt_elf.c	2007-12-15 05:19:45.006985841 +0100
-+++ linux-2.4.35.4/fs/binfmt_elf.c	2007-12-15 05:19:53.171451107 +0100
+--- linux-2.4.35.4.orig/fs/binfmt_elf.c
++++ linux-2.4.35.4/fs/binfmt_elf.c
 @@ -9,6 +9,7 @@
   * Copyright 1993, 1994: Eric Youngdale (ericy@cais.com).
   */
@@ -541,7 +541,7 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  static unsigned long elf_map (struct file *, unsigned long, struct elf_phdr *, int, int);
  extern int dump_fpu (struct pt_regs *, elf_fpregset_t *);
  extern void dump_thread(struct pt_regs *, struct user *);
-@@ -74,7 +77,13 @@
+@@ -74,7 +77,13 @@ static int elf_core_dump(long signr, str
  #define ELF_PAGEALIGN(_v) (((_v) + ELF_MIN_ALIGN - 1) & ~(ELF_MIN_ALIGN - 1))
  
  static struct linux_binfmt elf_format = {
@@ -556,7 +556,7 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  };
  
  #define BAD_ADDR(x)	((unsigned long)(x) >= TASK_SIZE)
-@@ -404,6 +413,7 @@
+@@ -404,6 +413,7 @@ out:
  	return error;
  }
  
@@ -564,7 +564,7 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  static unsigned long load_aout_interp(struct exec * interp_ex,
  			     struct file * interpreter)
  {
-@@ -451,6 +461,7 @@
+@@ -451,6 +461,7 @@ static unsigned long load_aout_interp(st
  out:
  	return elf_entry;
  }
@@ -572,7 +572,7 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  
  /*
   * These are the functions used to load ELF style executables and shared
-@@ -458,7 +469,9 @@
+@@ -458,7 +469,9 @@ out:
   */
  
  #define INTERPRETER_NONE 0
@@ -582,7 +582,7 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  #define INTERPRETER_ELF 2
  
  
-@@ -482,7 +495,9 @@
+@@ -482,7 +495,9 @@ static int load_elf_binary(struct linux_
  	struct elfhdr elf_ex;
  	struct elfhdr interp_elf_ex;
    	struct exec interp_ex;
@@ -592,7 +592,7 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  	struct files_struct *files;
  	
  	/* Get the exec-header */
-@@ -612,6 +627,7 @@
+@@ -612,6 +627,7 @@ static int load_elf_binary(struct linux_
  
  	/* Some simple consistency checks for the interpreter */
  	if (elf_interpreter) {
@@ -600,7 +600,7 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  		interpreter_type = INTERPRETER_ELF | INTERPRETER_AOUT;
  
  		/* Now figure out which format our binary is */
-@@ -619,6 +635,9 @@
+@@ -619,6 +635,9 @@ static int load_elf_binary(struct linux_
  		    (N_MAGIC(interp_ex) != ZMAGIC) &&
  		    (N_MAGIC(interp_ex) != QMAGIC))
  			interpreter_type = INTERPRETER_ELF;
@@ -610,7 +610,7 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  
  		if (memcmp(interp_elf_ex.e_ident, ELFMAG, SELFMAG) != 0)
  			interpreter_type &= ~INTERPRETER_ELF;
-@@ -627,6 +646,7 @@
+@@ -627,6 +646,7 @@ static int load_elf_binary(struct linux_
  		if (!interpreter_type)
  			goto out_free_dentry;
  
@@ -618,7 +618,7 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  		/* Make sure only one type was selected */
  		if ((interpreter_type & INTERPRETER_ELF) &&
  		     interpreter_type != INTERPRETER_ELF) {
-@@ -634,6 +654,7 @@
+@@ -634,6 +654,7 @@ static int load_elf_binary(struct linux_
  			// printk(KERN_WARNING "ELF: Ambiguous type, using ELF\n");
  			interpreter_type = INTERPRETER_ELF;
  		}
@@ -626,7 +626,7 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  		/* Verify the interpreter has a valid arch */
  		if ((interpreter_type == INTERPRETER_ELF) &&
  		    !elf_check_arch(&interp_elf_ex))
-@@ -651,6 +672,7 @@
+@@ -651,6 +672,7 @@ static int load_elf_binary(struct linux_
  	/* OK, we are done with that, now set up the arg stuff,
  	   and then start this sucker up */
  
@@ -634,7 +634,7 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  	if (!bprm->sh_bang) {
  		char * passed_p;
  
-@@ -669,6 +691,7 @@
+@@ -669,6 +691,7 @@ static int load_elf_binary(struct linux_
  		/* Executables without an interpreter also need a personality  */
  		SET_PERSONALITY(elf_ex, ibcs2_interpreter);
  	}
@@ -642,7 +642,7 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  
  	/* Flush all traces of the currently running executable */
  	retval = flush_old_exec(bprm);
-@@ -817,10 +840,12 @@
+@@ -817,10 +840,12 @@ static int load_elf_binary(struct linux_
  	padzero(elf_bss);
  
  	if (elf_interpreter) {
@@ -655,7 +655,7 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  			elf_entry = load_elf_interp(&interp_elf_ex,
  						    interpreter,
  						    &interp_load_addr);
-@@ -849,7 +874,9 @@
+@@ -849,7 +874,9 @@ static int load_elf_binary(struct linux_
  
  	kfree(elf_phdata);
  
@@ -665,7 +665,7 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  		sys_close(elf_exec_fileno);
  
  	set_binfmt(&elf_format);
-@@ -863,10 +890,14 @@
+@@ -863,10 +890,14 @@ static int load_elf_binary(struct linux_
  			&elf_ex,
  			load_addr, load_bias,
  			interp_load_addr,
@@ -680,7 +680,7 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  	current->mm->start_brk = current->mm->brk = elf_brk;
  	current->mm->end_code = end_code;
  	current->mm->start_code = start_code;
-@@ -937,9 +968,9 @@
+@@ -937,9 +968,9 @@ out_free_ph:
  	goto out;
  }
  
@@ -691,7 +691,7 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  static int load_elf_library(struct file *file)
  {
  	struct elf_phdr *elf_phdata;
-@@ -1016,6 +1047,7 @@
+@@ -1016,6 +1047,7 @@ out_free_ph:
  out:
  	return error;
  }
@@ -701,9 +701,9 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
   * Note that some platforms still use traditional core dumps and not
 Index: linux-2.4.35.4/fs/exec.c
 ===================================================================
---- linux-2.4.35.4.orig/fs/exec.c	2007-12-15 05:19:41.786802333 +0100
-+++ linux-2.4.35.4/fs/exec.c	2007-12-15 05:19:53.175451333 +0100
-@@ -109,6 +109,7 @@
+--- linux-2.4.35.4.orig/fs/exec.c
++++ linux-2.4.35.4/fs/exec.c
+@@ -109,6 +109,7 @@ static inline void put_binfmt(struct lin
   */
  asmlinkage long sys_uselib(const char * library)
  {
@@ -711,7 +711,7 @@ Index: linux-2.4.35.4/fs/exec.c
  	struct file * file;
  	struct nameidata nd;
  	int error;
-@@ -155,6 +156,9 @@
+@@ -155,6 +156,9 @@ out:
  exit:
  	path_release(&nd);
  	goto out;

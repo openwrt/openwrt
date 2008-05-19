@@ -1,7 +1,7 @@
 Index: linux-2.4.35.4/arch/mips/kernel/signal.c
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/signal.c	2007-12-15 05:19:39.146651877 +0100
-+++ linux-2.4.35.4/arch/mips/kernel/signal.c	2007-12-15 05:19:59.787828152 +0100
+--- linux-2.4.35.4.orig/arch/mips/kernel/signal.c
++++ linux-2.4.35.4/arch/mips/kernel/signal.c
 @@ -6,8 +6,10 @@
   * Copyright (C) 1991, 1992  Linus Torvalds
   * Copyright (C) 1994 - 1999  Ralf Baechle
@@ -13,7 +13,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/signal.c
  #include <linux/sched.h>
  #include <linux/mm.h>
  #include <linux/smp.h>
-@@ -76,7 +78,9 @@
+@@ -76,7 +78,9 @@ int copy_siginfo_to_user(siginfo_t *to, 
   * Atomically swap in the new signal mask, and wait for a signal.
   */
  save_static_function(sys_sigsuspend);
@@ -24,7 +24,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/signal.c
  {
  	sigset_t *uset, saveset, newset;
  
-@@ -102,7 +106,9 @@
+@@ -102,7 +106,9 @@ static_unused int _sys_sigsuspend(struct
  }
  
  save_static_function(sys_rt_sigsuspend);
@@ -37,8 +37,8 @@ Index: linux-2.4.35.4/arch/mips/kernel/signal.c
          size_t sigsetsize;
 Index: linux-2.4.35.4/arch/mips/kernel/syscall.c
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/syscall.c	2007-12-15 05:19:39.154652335 +0100
-+++ linux-2.4.35.4/arch/mips/kernel/syscall.c	2007-12-15 05:19:59.795828608 +0100
+--- linux-2.4.35.4.orig/arch/mips/kernel/syscall.c
++++ linux-2.4.35.4/arch/mips/kernel/syscall.c
 @@ -5,6 +5,7 @@
   *
   * Copyright (C) 1995 - 2000 by Ralf Baechle
@@ -47,7 +47,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/syscall.c
   *
   * TODO:  Implement the compatibility syscalls.
   *        Don't waste that much memory for empty entries in the syscall
-@@ -158,7 +159,9 @@
+@@ -158,7 +159,9 @@ sys_mmap2(unsigned long addr, unsigned l
  }
  
  save_static_function(sys_fork);
@@ -58,7 +58,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/syscall.c
  {
  	int res;
  
-@@ -168,7 +171,9 @@
+@@ -168,7 +171,9 @@ static_unused int _sys_fork(struct pt_re
  
  
  save_static_function(sys_clone);
@@ -71,9 +71,9 @@ Index: linux-2.4.35.4/arch/mips/kernel/syscall.c
  	unsigned long newsp;
 Index: linux-2.4.35.4/arch/mips/ld.script.in
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/ld.script.in	2007-12-15 05:19:39.162652791 +0100
-+++ linux-2.4.35.4/arch/mips/ld.script.in	2007-12-15 05:19:59.799828834 +0100
-@@ -9,6 +9,7 @@
+--- linux-2.4.35.4.orig/arch/mips/ld.script.in
++++ linux-2.4.35.4/arch/mips/ld.script.in
+@@ -9,6 +9,7 @@ SECTIONS
    {
      _ftext = . ;
      *(.text)
@@ -83,8 +83,8 @@ Index: linux-2.4.35.4/arch/mips/ld.script.in
      *(.rodata1)
 Index: linux-2.4.35.4/arch/mips64/kernel/signal.c
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/signal.c	2007-12-15 05:19:39.170653246 +0100
-+++ linux-2.4.35.4/arch/mips64/kernel/signal.c	2007-12-15 05:19:59.803829063 +0100
+--- linux-2.4.35.4.orig/arch/mips64/kernel/signal.c
++++ linux-2.4.35.4/arch/mips64/kernel/signal.c
 @@ -6,8 +6,10 @@
   * Copyright (C) 1991, 1992  Linus Torvalds
   * Copyright (C) 1994 - 2000  Ralf Baechle
@@ -96,7 +96,7 @@ Index: linux-2.4.35.4/arch/mips64/kernel/signal.c
  #include <linux/sched.h>
  #include <linux/mm.h>
  #include <linux/smp.h>
-@@ -75,7 +77,9 @@
+@@ -75,7 +77,9 @@ int copy_siginfo_to_user(siginfo_t *to, 
   * Atomically swap in the new signal mask, and wait for a signal.
   */
  save_static_function(sys_rt_sigsuspend);
@@ -109,8 +109,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/signal.c
          size_t sigsetsize;
 Index: linux-2.4.35.4/arch/mips64/kernel/signal32.c
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/signal32.c	2007-12-15 05:19:39.174653475 +0100
-+++ linux-2.4.35.4/arch/mips64/kernel/signal32.c	2007-12-15 05:19:59.807829292 +0100
+--- linux-2.4.35.4.orig/arch/mips64/kernel/signal32.c
++++ linux-2.4.35.4/arch/mips64/kernel/signal32.c
 @@ -6,7 +6,9 @@
   * Copyright (C) 1991, 1992  Linus Torvalds
   * Copyright (C) 1994 - 2000  Ralf Baechle
@@ -121,7 +121,7 @@ Index: linux-2.4.35.4/arch/mips64/kernel/signal32.c
  #include <linux/sched.h>
  #include <linux/mm.h>
  #include <linux/smp.h>
-@@ -192,7 +194,9 @@
+@@ -192,7 +194,9 @@ static inline int get_sigset(sigset_t *k
   * Atomically swap in the new signal mask, and wait for a signal.
   */
  save_static_function(sys32_sigsuspend);
@@ -132,7 +132,7 @@ Index: linux-2.4.35.4/arch/mips64/kernel/signal32.c
  {
  	sigset32_t *uset;
  	sigset_t newset, saveset;
-@@ -219,7 +223,9 @@
+@@ -219,7 +223,9 @@ static_unused int _sys32_sigsuspend(abi6
  }
  
  save_static_function(sys32_rt_sigsuspend);
@@ -145,8 +145,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/signal32.c
  	sigset_t newset, saveset;
 Index: linux-2.4.35.4/arch/mips64/kernel/syscall.c
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/syscall.c	2007-12-15 05:19:39.186654157 +0100
-+++ linux-2.4.35.4/arch/mips64/kernel/syscall.c	2007-12-15 05:19:59.811829522 +0100
+--- linux-2.4.35.4.orig/arch/mips64/kernel/syscall.c
++++ linux-2.4.35.4/arch/mips64/kernel/syscall.c
 @@ -6,7 +6,9 @@
   * Copyright (C) 1995 - 2000, 2001 by Ralf Baechle
   * Copyright (C) 1999, 2000 Silicon Graphics, Inc.
@@ -157,7 +157,7 @@ Index: linux-2.4.35.4/arch/mips64/kernel/syscall.c
  #include <linux/errno.h>
  #include <linux/linkage.h>
  #include <linux/mm.h>
-@@ -151,7 +153,9 @@
+@@ -151,7 +153,9 @@ out:
  }
  
  save_static_function(sys_fork);
@@ -168,7 +168,7 @@ Index: linux-2.4.35.4/arch/mips64/kernel/syscall.c
  {
  	int res;
  
-@@ -160,7 +164,9 @@
+@@ -160,7 +164,9 @@ static_unused int _sys_fork(abi64_no_reg
  }
  
  save_static_function(sys_clone);
@@ -181,8 +181,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/syscall.c
  	unsigned long newsp;
 Index: linux-2.4.35.4/include/asm-mips/ptrace.h
 ===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/ptrace.h	2007-12-15 05:19:39.194654615 +0100
-+++ linux-2.4.35.4/include/asm-mips/ptrace.h	2007-12-15 05:19:59.815829748 +0100
+--- linux-2.4.35.4.orig/include/asm-mips/ptrace.h
++++ linux-2.4.35.4/include/asm-mips/ptrace.h
 @@ -4,6 +4,7 @@
   * for more details.
   *
@@ -191,7 +191,7 @@ Index: linux-2.4.35.4/include/asm-mips/ptrace.h
   *
   * Machine dependent structs and defines to help the user use
   * the ptrace system call.
-@@ -64,12 +65,10 @@
+@@ -64,12 +65,10 @@ __asm__ (                               
          "sw\t$22,"__str(PT_R22)"($29)\n\t"                              \
          "sw\t$23,"__str(PT_R23)"($29)\n\t"                              \
          "sw\t$30,"__str(PT_R30)"($29)\n\t"                              \
@@ -207,8 +207,8 @@ Index: linux-2.4.35.4/include/asm-mips/ptrace.h
  /* Arbitrarily choose the same ptrace numbers as used by the Sparc code. */
 Index: linux-2.4.35.4/include/asm-mips64/ptrace.h
 ===================================================================
---- linux-2.4.35.4.orig/include/asm-mips64/ptrace.h	2007-12-15 05:19:39.202655071 +0100
-+++ linux-2.4.35.4/include/asm-mips64/ptrace.h	2007-12-15 05:19:59.815829748 +0100
+--- linux-2.4.35.4.orig/include/asm-mips64/ptrace.h
++++ linux-2.4.35.4/include/asm-mips64/ptrace.h
 @@ -5,6 +5,7 @@
   *
   * Copyright (C) 1994, 95, 96, 97, 98, 99, 2000 by Ralf Baechle
@@ -217,7 +217,7 @@ Index: linux-2.4.35.4/include/asm-mips64/ptrace.h
   */
  #ifndef _ASM_PTRACE_H
  #define _ASM_PTRACE_H
-@@ -61,12 +62,10 @@
+@@ -61,12 +62,10 @@ __asm__ (                               
          "sd\t$22,"__str(PT_R22)"($29)\n\t"                              \
          "sd\t$23,"__str(PT_R23)"($29)\n\t"                              \
          "sd\t$30,"__str(PT_R30)"($29)\n\t"                              \

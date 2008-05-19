@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/drivers/char/serial.c
 ===================================================================
---- linux-2.4.35.4.orig/drivers/char/serial.c	2007-12-15 05:19:44.934981737 +0100
-+++ linux-2.4.35.4/drivers/char/serial.c	2007-12-15 05:20:00.539871010 +0100
-@@ -5458,18 +5458,6 @@
+--- linux-2.4.35.4.orig/drivers/char/serial.c
++++ linux-2.4.35.4/drivers/char/serial.c
+@@ -5458,18 +5458,6 @@ static int __init rs_init(void)
  		       sizeof(struct rs_multiport_struct));
  #endif
  	}

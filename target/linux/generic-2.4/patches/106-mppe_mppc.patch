@@ -6,9 +6,9 @@ Microsoft Point-to-Point Encryption / Compression support
 
 Index: linux-2.4.35.4/Documentation/Configure.help
 ===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help	2007-12-15 05:19:49.287229757 +0100
-+++ linux-2.4.35.4/Documentation/Configure.help	2007-12-15 05:19:51.927380210 +0100
-@@ -9974,6 +9974,28 @@
+--- linux-2.4.35.4.orig/Documentation/Configure.help
++++ linux-2.4.35.4/Documentation/Configure.help
+@@ -9974,6 +9974,28 @@ CONFIG_PPP_BSDCOMP
    module; it is called bsd_comp.o and will show up in the directory
    modules once you have said "make modules". If unsure, say N.
  
@@ -39,9 +39,9 @@ Index: linux-2.4.35.4/Documentation/Configure.help
    Support for PPP over Ethernet.
 Index: linux-2.4.35.4/crypto/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/crypto/Config.in	2007-12-15 05:19:42.094819886 +0100
-+++ linux-2.4.35.4/crypto/Config.in	2007-12-15 05:19:51.927380210 +0100
-@@ -11,7 +11,9 @@
+--- linux-2.4.35.4.orig/crypto/Config.in
++++ linux-2.4.35.4/crypto/Config.in
+@@ -11,7 +11,9 @@ if [ "$CONFIG_INET_AH" = "y" -o \
       "$CONFIG_INET6_AH" = "y" -o \
       "$CONFIG_INET6_AH" = "m" -o \
       "$CONFIG_INET6_ESP" = "y" -o \
@@ -52,7 +52,7 @@ Index: linux-2.4.35.4/crypto/Config.in
    define_bool CONFIG_CRYPTO y
  else
    bool 'Cryptographic API' CONFIG_CRYPTO
-@@ -51,11 +53,24 @@
+@@ -51,11 +53,24 @@ if [ "$CONFIG_CRYPTO" = "y" ]; then
         "$CONFIG_INET6_AH" = "y" -o \
         "$CONFIG_INET6_AH" = "m" -o \
         "$CONFIG_INET6_ESP" = "y" -o \
@@ -81,7 +81,7 @@ Index: linux-2.4.35.4/crypto/Config.in
    tristate       '  SHA256 digest algorithm' CONFIG_CRYPTO_SHA256
    tristate       '  SHA384 and SHA512 digest algorithms' CONFIG_CRYPTO_SHA512
    tristate       '  Whirlpool digest algorithms' CONFIG_CRYPTO_WP512
-@@ -76,7 +91,20 @@
+@@ -76,7 +91,20 @@ if [ "$CONFIG_CRYPTO" = "y" ]; then
    tristate       '  TEA and XTEA cipher algorithms' CONFIG_CRYPTO_TEA
    tristate       '  Khazad cipher algorithm' CONFIG_CRYPTO_KHAZAD
    tristate       '  Anubis cipher algorithm' CONFIG_CRYPTO_ANUBIS
@@ -104,9 +104,9 @@ Index: linux-2.4.35.4/crypto/Config.in
         "$CONFIG_INET6_IPCOMP" = "y" -o \
 Index: linux-2.4.35.4/drivers/net/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/drivers/net/Config.in	2007-12-15 05:19:42.102820341 +0100
-+++ linux-2.4.35.4/drivers/net/Config.in	2007-12-15 05:19:51.931380439 +0100
-@@ -336,6 +336,7 @@
+--- linux-2.4.35.4.orig/drivers/net/Config.in
++++ linux-2.4.35.4/drivers/net/Config.in
+@@ -336,6 +336,7 @@ if [ ! "$CONFIG_PPP" = "n" ]; then
     dep_tristate '  PPP support for sync tty ports' CONFIG_PPP_SYNC_TTY $CONFIG_PPP
     dep_tristate '  PPP Deflate compression' CONFIG_PPP_DEFLATE $CONFIG_PPP
     dep_tristate '  PPP BSD-Compress compression' CONFIG_PPP_BSDCOMP $CONFIG_PPP
@@ -116,9 +116,9 @@ Index: linux-2.4.35.4/drivers/net/Config.in
     fi
 Index: linux-2.4.35.4/drivers/net/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/drivers/net/Makefile	2007-12-15 05:19:42.110820796 +0100
-+++ linux-2.4.35.4/drivers/net/Makefile	2007-12-15 05:19:51.931380439 +0100
-@@ -166,6 +166,7 @@
+--- linux-2.4.35.4.orig/drivers/net/Makefile
++++ linux-2.4.35.4/drivers/net/Makefile
+@@ -166,6 +166,7 @@ obj-$(CONFIG_PPP_ASYNC) += ppp_async.o
  obj-$(CONFIG_PPP_SYNC_TTY) += ppp_synctty.o
  obj-$(CONFIG_PPP_DEFLATE) += ppp_deflate.o
  obj-$(CONFIG_PPP_BSDCOMP) += bsd_comp.o
@@ -128,8 +128,8 @@ Index: linux-2.4.35.4/drivers/net/Makefile
  obj-$(CONFIG_SLIP) += slip.o
 Index: linux-2.4.35.4/drivers/net/ppp_generic.c
 ===================================================================
---- linux-2.4.35.4.orig/drivers/net/ppp_generic.c	2007-12-15 05:19:42.114821025 +0100
-+++ linux-2.4.35.4/drivers/net/ppp_generic.c	2007-12-15 05:19:51.931380439 +0100
+--- linux-2.4.35.4.orig/drivers/net/ppp_generic.c
++++ linux-2.4.35.4/drivers/net/ppp_generic.c
 @@ -19,7 +19,7 @@
   * PPP driver, written by Michael Callahan and Al Longyear, and
   * subsequently hacked by Paul Mackerras.
@@ -139,7 +139,7 @@ Index: linux-2.4.35.4/drivers/net/ppp_generic.c
   */
  
  #include <linux/config.h>
-@@ -102,6 +102,7 @@
+@@ -102,6 +102,7 @@ struct ppp {
  	spinlock_t	rlock;		/* lock for receive side 58 */
  	spinlock_t	wlock;		/* lock for transmit side 5c */
  	int		mru;		/* max receive unit 60 */
@@ -147,7 +147,7 @@ Index: linux-2.4.35.4/drivers/net/ppp_generic.c
  	unsigned int	flags;		/* control bits 64 */
  	unsigned int	xstate;		/* transmit state bits 68 */
  	unsigned int	rstate;		/* receive state bits 6c */
-@@ -552,7 +553,9 @@
+@@ -552,7 +553,9 @@ static int ppp_ioctl(struct inode *inode
  	case PPPIOCSMRU:
  		if (get_user(val, (int *) arg))
  			break;
@@ -158,7 +158,7 @@ Index: linux-2.4.35.4/drivers/net/ppp_generic.c
  		err = 0;
  		break;
  
-@@ -1025,14 +1028,37 @@
+@@ -1025,14 +1028,37 @@ ppp_send_frame(struct ppp *ppp, struct s
  	case PPP_CCP:
  		/* peek at outbound CCP frames */
  		ppp_ccp_peek(ppp, skb, 0);
@@ -198,7 +198,7 @@ Index: linux-2.4.35.4/drivers/net/ppp_generic.c
  		if (new_skb == 0) {
  			printk(KERN_ERR "PPP: no memory (comp pkt)\n");
  			goto drop;
-@@ -1050,9 +1076,21 @@
+@@ -1050,9 +1076,21 @@ ppp_send_frame(struct ppp *ppp, struct s
  			skb = new_skb;
  			skb_put(skb, len);
  			skb_pull(skb, 2);	/* pull off A/C bytes */
@@ -221,7 +221,7 @@ Index: linux-2.4.35.4/drivers/net/ppp_generic.c
  		}
  	}
  
-@@ -1540,14 +1578,15 @@
+@@ -1540,14 +1578,15 @@ ppp_decompress_frame(struct ppp *ppp, st
  	int len;
  
  	if (proto == PPP_COMP) {
@@ -239,7 +239,7 @@ Index: linux-2.4.35.4/drivers/net/ppp_generic.c
  		if (len < 0) {
  			/* Pass the compressed frame to pppd as an
  			   error indication. */
-@@ -1573,7 +1612,14 @@
+@@ -1573,7 +1612,14 @@ ppp_decompress_frame(struct ppp *ppp, st
  	return skb;
  
   err:
@@ -255,7 +255,7 @@ Index: linux-2.4.35.4/drivers/net/ppp_generic.c
  	ppp_receive_error(ppp);
  	return skb;
  }
-@@ -2253,6 +2299,7 @@
+@@ -2253,6 +2299,7 @@ ppp_create_interface(int unit, int *retp
  	/* Initialize the new ppp unit */
  	ppp->file.index = unit;
  	ppp->mru = PPP_MRU;
@@ -265,8 +265,8 @@ Index: linux-2.4.35.4/drivers/net/ppp_generic.c
  	for (i = 0; i < NUM_NP; ++i)
 Index: linux-2.4.35.4/drivers/net/ppp_mppe_mppc.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/drivers/net/ppp_mppe_mppc.c	2007-12-15 05:19:51.935380668 +0100
+--- /dev/null
++++ linux-2.4.35.4/drivers/net/ppp_mppe_mppc.c
 @@ -0,0 +1,1312 @@
 +/*
 + * ppp_mppe_mppc.c - MPPC/MPPE "compressor/decompressor" module.
@@ -1582,8 +1582,8 @@ Index: linux-2.4.35.4/drivers/net/ppp_mppe_mppc.c
 +MODULE_LICENSE("Dual BSD/GPL");
 Index: linux-2.4.35.4/include/linux/ppp-comp.h
 ===================================================================
---- linux-2.4.35.4.orig/include/linux/ppp-comp.h	2007-12-15 05:19:42.134822165 +0100
-+++ linux-2.4.35.4/include/linux/ppp-comp.h	2007-12-15 05:19:51.935380668 +0100
+--- linux-2.4.35.4.orig/include/linux/ppp-comp.h
++++ linux-2.4.35.4/include/linux/ppp-comp.h
 @@ -28,7 +28,7 @@
   */
  
@@ -1593,7 +1593,7 @@ Index: linux-2.4.35.4/include/linux/ppp-comp.h
   *
   *  NOTE TO MAINTAINERS:
   *     If you modify this file at all, please set the above date.
-@@ -78,7 +78,7 @@
+@@ -78,7 +78,7 @@ struct compressor {
  
  	/* Compress a packet */
  	int     (*compress) (void *state, unsigned char *rptr,
@@ -1602,7 +1602,7 @@ Index: linux-2.4.35.4/include/linux/ppp-comp.h
  
  	/* Return compression statistics */
  	void	(*comp_stat) (void *state, struct compstat *stats);
-@@ -99,7 +99,7 @@
+@@ -99,7 +99,7 @@ struct compressor {
  
  	/* Decompress a packet. */
  	int	(*decompress) (void *state, unsigned char *ibuf, int isize,
@@ -1611,7 +1611,7 @@ Index: linux-2.4.35.4/include/linux/ppp-comp.h
  
  	/* Update state for an incompressible packet received */
  	void	(*incomp) (void *state, unsigned char *ibuf, int icnt);
-@@ -187,6 +187,42 @@
+@@ -187,6 +187,42 @@ struct compressor {
  #define DEFLATE_CHK_SEQUENCE	0
  
  /*

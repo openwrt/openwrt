@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/drivers/mtd/chips/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/chips/Config.in	2007-12-15 05:19:42.454840402 +0100
-+++ linux-2.4.35.4/drivers/mtd/chips/Config.in	2007-12-15 05:19:50.035272385 +0100
-@@ -45,6 +45,7 @@
+--- linux-2.4.35.4.orig/drivers/mtd/chips/Config.in
++++ linux-2.4.35.4/drivers/mtd/chips/Config.in
+@@ -45,6 +45,7 @@ fi
  dep_tristate '  Support for Intel/Sharp flash chips' CONFIG_MTD_CFI_INTELEXT $CONFIG_MTD_GEN_PROBE
  dep_tristate '  Support for AMD/Fujitsu flash chips' CONFIG_MTD_CFI_AMDSTD $CONFIG_MTD_GEN_PROBE
  dep_tristate '  Support for ST (Advanced Architecture) flash chips' CONFIG_MTD_CFI_STAA $CONFIG_MTD_GEN_PROBE
@@ -12,9 +12,9 @@ Index: linux-2.4.35.4/drivers/mtd/chips/Config.in
  dep_tristate '  Support for ROM chips in bus mapping' CONFIG_MTD_ROM $CONFIG_MTD
 Index: linux-2.4.35.4/drivers/mtd/chips/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/chips/Makefile	2007-12-15 05:19:42.462840857 +0100
-+++ linux-2.4.35.4/drivers/mtd/chips/Makefile	2007-12-15 05:19:50.039272613 +0100
-@@ -18,6 +18,7 @@
+--- linux-2.4.35.4.orig/drivers/mtd/chips/Makefile
++++ linux-2.4.35.4/drivers/mtd/chips/Makefile
+@@ -18,6 +18,7 @@ obj-$(CONFIG_MTD)		+= chipreg.o
  obj-$(CONFIG_MTD_AMDSTD)	+= amd_flash.o 
  obj-$(CONFIG_MTD_CFI)		+= cfi_probe.o
  obj-$(CONFIG_MTD_CFI_STAA)	+= cfi_cmdset_0020.o
@@ -24,8 +24,8 @@ Index: linux-2.4.35.4/drivers/mtd/chips/Makefile
  obj-$(CONFIG_MTD_GEN_PROBE)	+= gen_probe.o
 Index: linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0701.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0701.c	2007-12-15 05:19:50.047273069 +0100
+--- /dev/null
++++ linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0701.c
 @@ -0,0 +1,855 @@
 +/*
 + * Common Flash Interface support:
@@ -884,9 +884,9 @@ Index: linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0701.c
 +
 Index: linux-2.4.35.4/drivers/mtd/chips/cfi_probe.c
 ===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/chips/cfi_probe.c	2007-12-15 05:19:42.474841541 +0100
-+++ linux-2.4.35.4/drivers/mtd/chips/cfi_probe.c	2007-12-15 05:19:50.051273298 +0100
-@@ -67,8 +67,15 @@
+--- linux-2.4.35.4.orig/drivers/mtd/chips/cfi_probe.c
++++ linux-2.4.35.4/drivers/mtd/chips/cfi_probe.c
+@@ -67,8 +67,15 @@ static int cfi_probe_chip(struct map_inf
  	cfi_send_gen_cmd(0xF0, 0, base, map, cfi, cfi->device_type, NULL);
  	cfi_send_gen_cmd(0x98, 0x55, base, map, cfi, cfi->device_type, NULL);
  
@@ -906,9 +906,9 @@ Index: linux-2.4.35.4/drivers/mtd/chips/cfi_probe.c
  		/* This is the first time we're called. Set up the CFI 
 Index: linux-2.4.35.4/drivers/mtd/chips/gen_probe.c
 ===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/chips/gen_probe.c	2007-12-15 05:19:42.482841997 +0100
-+++ linux-2.4.35.4/drivers/mtd/chips/gen_probe.c	2007-12-15 05:19:50.055273524 +0100
-@@ -328,13 +328,18 @@
+--- linux-2.4.35.4.orig/drivers/mtd/chips/gen_probe.c
++++ linux-2.4.35.4/drivers/mtd/chips/gen_probe.c
+@@ -328,13 +328,18 @@ static struct mtd_info *check_cmd_set(st
  		return cfi_cmdset_0001(map, primary);
  #endif
  #ifdef CONFIG_MTD_CFI_AMDSTD

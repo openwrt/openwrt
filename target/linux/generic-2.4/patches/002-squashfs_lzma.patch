@@ -1,7 +1,7 @@
 Index: linux-2.4.35.4/fs/squashfs/inode.c
 ===================================================================
---- linux-2.4.35.4.orig/fs/squashfs/inode.c	2007-12-15 05:19:48.647193283 +0100
-+++ linux-2.4.35.4/fs/squashfs/inode.c	2007-12-15 05:19:49.015214255 +0100
+--- linux-2.4.35.4.orig/fs/squashfs/inode.c
++++ linux-2.4.35.4/fs/squashfs/inode.c
 @@ -4,6 +4,9 @@
   * Copyright (c) 2002, 2003, 2004, 2005, 2006
   * Phillip Lougher <phillip@lougher.org.uk>
@@ -41,7 +41,7 @@ Index: linux-2.4.35.4/fs/squashfs/inode.c
  static struct super_block *squashfs_read_super(struct super_block *, void *, int);
  static void squashfs_put_super(struct super_block *);
  static int squashfs_statfs(struct super_block *, struct statfs *);
-@@ -53,7 +71,11 @@
+@@ -53,7 +71,11 @@ static long long read_blocklist(struct i
  				int readahead_blks, char *block_list,
  				unsigned short **block_p, unsigned int *bsize);
  
@@ -53,7 +53,7 @@ Index: linux-2.4.35.4/fs/squashfs/inode.c
  
  static DECLARE_FSTYPE_DEV(squashfs_fs_type, "squashfs", squashfs_read_super);
  
-@@ -229,6 +251,15 @@
+@@ -229,6 +251,15 @@ SQSH_EXTERN unsigned int squashfs_read_d
  	if (compressed) {
  		int zlib_err;
  
@@ -69,7 +69,7 @@ Index: linux-2.4.35.4/fs/squashfs/inode.c
  		stream.next_in = c_buffer;
  		stream.avail_in = c_byte;
  		stream.next_out = buffer;
-@@ -243,6 +274,7 @@
+@@ -243,6 +274,7 @@ SQSH_EXTERN unsigned int squashfs_read_d
  			bytes = 0;
  		} else
  			bytes = stream.total_out;
@@ -77,7 +77,7 @@ Index: linux-2.4.35.4/fs/squashfs/inode.c
  		
  		up(&msblk->read_data_mutex);
  	}
-@@ -2004,17 +2036,21 @@
+@@ -2004,17 +2036,21 @@ static int __init init_squashfs_fs(void)
  	printk(KERN_INFO "squashfs: version 3.0 (2006/03/15) "
  		"Phillip Lougher\n");
  
@@ -101,8 +101,8 @@ Index: linux-2.4.35.4/fs/squashfs/inode.c
  
 Index: linux-2.4.35.4/fs/squashfs/LzmaDecode.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/squashfs/LzmaDecode.c	2007-12-15 05:19:49.019214484 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/squashfs/LzmaDecode.c
 @@ -0,0 +1,663 @@
 +/*
 +  LzmaDecode.c
@@ -769,8 +769,8 @@ Index: linux-2.4.35.4/fs/squashfs/LzmaDecode.c
 +}
 Index: linux-2.4.35.4/fs/squashfs/LzmaDecode.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/fs/squashfs/LzmaDecode.h	2007-12-15 05:19:49.027214939 +0100
+--- /dev/null
++++ linux-2.4.35.4/fs/squashfs/LzmaDecode.h
 @@ -0,0 +1,100 @@
 +/* 
 +  LzmaDecode.h
@@ -874,8 +874,8 @@ Index: linux-2.4.35.4/fs/squashfs/LzmaDecode.h
 +#endif
 Index: linux-2.4.35.4/fs/squashfs/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/fs/squashfs/Makefile	2007-12-15 05:19:48.651193513 +0100
-+++ linux-2.4.35.4/fs/squashfs/Makefile	2007-12-15 05:19:49.031215169 +0100
+--- linux-2.4.35.4.orig/fs/squashfs/Makefile
++++ linux-2.4.35.4/fs/squashfs/Makefile
 @@ -4,7 +4,7 @@
  
  O_TARGET := squashfs.o

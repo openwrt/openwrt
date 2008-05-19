@@ -1,7 +1,7 @@
 Index: linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0001.c
 ===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/chips/cfi_cmdset_0001.c	2007-12-15 05:19:42.414838122 +0100
-+++ linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0001.c	2007-12-15 05:19:50.315288342 +0100
+--- linux-2.4.35.4.orig/drivers/mtd/chips/cfi_cmdset_0001.c
++++ linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0001.c
 @@ -28,10 +28,18 @@
  #include <linux/slab.h>
  #include <linux/delay.h>
@@ -21,7 +21,7 @@ Index: linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0001.c
  // debugging, turns off buffer write mode #define FORCE_WORD_WRITE
  
  static int cfi_intelext_read (struct mtd_info *, loff_t, size_t, size_t *, u_char *);
-@@ -45,6 +53,7 @@
+@@ -45,6 +53,7 @@ static int cfi_intelext_lock(struct mtd_
  static int cfi_intelext_unlock(struct mtd_info *mtd, loff_t ofs, size_t len);
  static int cfi_intelext_suspend (struct mtd_info *);
  static void cfi_intelext_resume (struct mtd_info *);
@@ -29,7 +29,7 @@ Index: linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0001.c
  
  static void cfi_intelext_destroy(struct mtd_info *);
  
-@@ -288,6 +297,9 @@
+@@ -288,6 +297,9 @@ static struct mtd_info *cfi_intelext_set
  	map->fldrv = &cfi_intelext_chipdrv;
  	MOD_INC_USE_COUNT;
  	mtd->name = map->name;
@@ -39,7 +39,7 @@ Index: linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0001.c
  	return mtd;
  
   setup_err:
-@@ -1961,10 +1973,40 @@
+@@ -1961,10 +1973,40 @@ static void cfi_intelext_resume(struct m
  	}
  }
  
@@ -82,8 +82,8 @@ Index: linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0001.c
  	kfree(cfi);
 Index: linux-2.4.35.4/include/linux/mtd/mtd.h
 ===================================================================
---- linux-2.4.35.4.orig/include/linux/mtd/mtd.h	2007-12-15 05:19:42.422838578 +0100
-+++ linux-2.4.35.4/include/linux/mtd/mtd.h	2007-12-15 05:19:50.315288342 +0100
+--- linux-2.4.35.4.orig/include/linux/mtd/mtd.h
++++ linux-2.4.35.4/include/linux/mtd/mtd.h
 @@ -10,6 +10,7 @@
  #include <linux/version.h>
  #include <linux/types.h>
@@ -92,7 +92,7 @@ Index: linux-2.4.35.4/include/linux/mtd/mtd.h
  #include <linux/module.h>
  #include <linux/uio.h>
  
-@@ -217,6 +218,8 @@
+@@ -217,6 +218,8 @@ struct mtd_info {
  	int (*suspend) (struct mtd_info *mtd);
  	void (*resume) (struct mtd_info *mtd);
  

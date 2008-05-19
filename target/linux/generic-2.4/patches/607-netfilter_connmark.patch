@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
 ===================================================================
---- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_conntrack.h	2007-12-15 05:20:06.392204515 +0100
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h	2007-12-15 05:20:07.552270623 +0100
-@@ -226,6 +226,9 @@
+--- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_conntrack.h
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
+@@ -226,6 +226,9 @@ struct ip_conntrack
  		unsigned int app_data_len;
  	} layer7;
  #endif
@@ -14,8 +14,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
  /* get master conntrack via master expectation */
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_CONNMARK.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_CONNMARK.h	2007-12-15 05:20:07.556270849 +0100
+--- /dev/null
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_CONNMARK.h
 @@ -0,0 +1,25 @@
 +#ifndef _IPT_CONNMARK_H_target
 +#define _IPT_CONNMARK_H_target
@@ -44,8 +44,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_CONNMARK.h
 +#endif /*_IPT_CONNMARK_H_target*/
 Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_connmark.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_connmark.h	2007-12-15 05:20:07.564271306 +0100
+--- /dev/null
++++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_connmark.h
 @@ -0,0 +1,18 @@
 +#ifndef _IPT_CONNMARK_H
 +#define _IPT_CONNMARK_H
@@ -67,9 +67,9 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_connmark.h
 +#endif /*_IPT_CONNMARK_H*/
 Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in	2007-12-15 05:20:07.284255349 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in	2007-12-15 05:20:07.568271536 +0100
-@@ -6,7 +6,8 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
++++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+@@ -6,7 +6,8 @@ comment '  IP: Netfilter Configuration'
  
  tristate 'Connection tracking (required for masq/NAT)' CONFIG_IP_NF_CONNTRACK
  if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ]; then
@@ -79,7 +79,7 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
    dep_tristate '  Amanda protocol support' CONFIG_IP_NF_AMANDA $CONFIG_IP_NF_CONNTRACK
    dep_tristate '  TFTP protocol support' CONFIG_IP_NF_TFTP $CONFIG_IP_NF_CONNTRACK
    dep_tristate '  IRC protocol support' CONFIG_IP_NF_IRC $CONFIG_IP_NF_CONNTRACK
-@@ -42,6 +43,9 @@
+@@ -42,6 +43,9 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ]; then
      dep_tristate '  Connection state match support' CONFIG_IP_NF_MATCH_STATE $CONFIG_IP_NF_CONNTRACK $CONFIG_IP_NF_IPTABLES 
      dep_tristate '  Connection tracking match support' CONFIG_IP_NF_MATCH_CONNTRACK $CONFIG_IP_NF_CONNTRACK $CONFIG_IP_NF_IPTABLES 
@@ -89,7 +89,7 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
    fi
    if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
      dep_tristate '  Unclean match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_UNCLEAN $CONFIG_IP_NF_IPTABLES
-@@ -125,6 +129,9 @@
+@@ -125,6 +129,9 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
   
      dep_tristate '    MARK target support' CONFIG_IP_NF_TARGET_MARK $CONFIG_IP_NF_MANGLE
    fi
@@ -101,9 +101,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
    dep_tristate '  ULOG target support' CONFIG_IP_NF_TARGET_ULOG $CONFIG_IP_NF_IPTABLES
 Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile	2007-12-15 05:20:07.288255579 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile	2007-12-15 05:20:07.568271536 +0100
-@@ -93,6 +93,7 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
++++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+@@ -93,6 +93,7 @@ obj-$(CONFIG_IP_NF_MATCH_LENGTH) += ipt_
  
  obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
  obj-$(CONFIG_IP_NF_MATCH_STATE) += ipt_state.o
@@ -111,7 +111,7 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_IP_NF_MATCH_CONNTRACK) += ipt_conntrack.o
  obj-$(CONFIG_IP_NF_MATCH_UNCLEAN) += ipt_unclean.o
  obj-$(CONFIG_IP_NF_MATCH_TCPMSS) += ipt_tcpmss.o
-@@ -110,6 +111,7 @@
+@@ -110,6 +111,7 @@ obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += i
  obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
  obj-$(CONFIG_IP_NF_NAT_SNMP_BASIC) += ip_nat_snmp_basic.o
  obj-$(CONFIG_IP_NF_TARGET_LOG) += ipt_LOG.o
@@ -121,9 +121,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_IP_NF_TARGET_TCPMSS) += ipt_TCPMSS.o
 Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_core.c	2007-12-15 05:20:06.772226171 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c	2007-12-15 05:20:07.568271536 +0100
-@@ -754,6 +754,9 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_core.c
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
+@@ -754,6 +754,9 @@ init_conntrack(const struct ip_conntrack
  		__set_bit(IPS_EXPECTED_BIT, &conntrack->status);
  		conntrack->master = expected;
  		expected->sibling = conntrack;
@@ -135,9 +135,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
  		nf_conntrack_get(&master_ct(conntrack)->infos[0]);
 Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_standalone.c
 ===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_standalone.c	2007-12-15 05:20:06.036184227 +0100
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_standalone.c	2007-12-15 05:20:07.568271536 +0100
-@@ -107,6 +107,9 @@
+--- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_standalone.c
++++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_standalone.c
+@@ -107,6 +107,9 @@ print_conntrack(char *buffer, struct ip_
  		len += sprintf(buffer + len, "[ASSURED] ");
  	len += sprintf(buffer + len, "use=%u ",
  		       atomic_read(&conntrack->ct_general.use));
@@ -149,8 +149,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_standalone.c
  	if(conntrack->layer7.app_proto)
 Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_CONNMARK.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_CONNMARK.c	2007-12-15 05:20:07.568271536 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/ipt_CONNMARK.c
 @@ -0,0 +1,118 @@
 +/* This kernel module is used to modify the connection mark values, or
 + * to optionally restore the skb nfmark from the connection mark
@@ -272,8 +272,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_CONNMARK.c
 +module_exit(fini);
 Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_connmark.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_connmark.c	2007-12-15 05:20:07.572271763 +0100
+--- /dev/null
++++ linux-2.4.35.4/net/ipv4/netfilter/ipt_connmark.c
 @@ -0,0 +1,83 @@
 +/* This kernel module matches connection mark values set by the
 + * CONNMARK target

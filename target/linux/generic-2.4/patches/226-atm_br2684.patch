@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/net/atm/br2684.c
 ===================================================================
---- linux-2.4.35.4.orig/net/atm/br2684.c	2007-12-15 05:19:38.818633185 +0100
-+++ linux-2.4.35.4/net/atm/br2684.c	2007-12-15 05:20:03.656048591 +0100
-@@ -55,36 +55,55 @@
+--- linux-2.4.35.4.orig/net/atm/br2684.c
++++ linux-2.4.35.4/net/atm/br2684.c
+@@ -55,36 +55,55 @@ static void skb_debug(const struct sk_bu
  #define skb_debug(skb)	do {} while (0)
  #endif
  
@@ -64,7 +64,7 @@ Index: linux-2.4.35.4/net/atm/br2684.c
  	struct net_device_stats stats;
  	int mac_was_set;
  };
-@@ -173,24 +192,84 @@
+@@ -173,24 +192,84 @@ static int br2684_xmit_vcc(struct sk_buf
  		}
  		skb = skb2;
  	}
@@ -160,7 +160,7 @@ Index: linux-2.4.35.4/net/atm/br2684.c
  	atomic_add(skb->truesize, &atmvcc->sk->wmem_alloc);
  	ATM_SKB(skb)->atm_options = atmvcc->atm_options;
  	brdev->stats.tx_packets++;
-@@ -428,18 +507,39 @@
+@@ -428,18 +507,39 @@ static void br2684_push(struct atm_vcc *
  	atm_return(atmvcc, skb->truesize);
  	DPRINTK("skb from brdev %p\n", brdev);
  	if (brvcc->encaps == e_llc) {
@@ -205,7 +205,7 @@ Index: linux-2.4.35.4/net/atm/br2684.c
  	} else {
  		plen = PADLEN + ETH_HLEN;	/* pad, dstmac,srcmac, ethtype */
  		/* first 2 chars should be 0 */
-@@ -448,13 +548,14 @@
+@@ -448,13 +548,14 @@ static void br2684_push(struct atm_vcc *
  			dev_kfree_skb(skb);
  			return;
  		}
@@ -221,7 +221,7 @@ Index: linux-2.4.35.4/net/atm/br2684.c
  #ifdef FASTER_VERSION
  	/* FIXME: tcpdump shows that pointer to mac header is 2 bytes earlier,
  	   than should be. What else should I set? */
-@@ -465,30 +566,29 @@
+@@ -465,30 +566,29 @@ static void br2684_push(struct atm_vcc *
  	skb->protocol = ((u16 *) skb->data)[-1];
  #else				/* some protocols might require this: */
  	skb->protocol = br_type_trans(skb, &brdev->net_dev);
@@ -259,7 +259,7 @@ Index: linux-2.4.35.4/net/atm/br2684.c
  	netif_rx(skb);
  }
  
-@@ -525,10 +625,10 @@
+@@ -525,10 +625,10 @@ Note: we do not have explicit unassign, 
  		err = -EEXIST;
  		goto error;
  	}
@@ -274,7 +274,7 @@ Index: linux-2.4.35.4/net/atm/br2684.c
  		err = -EINVAL;
  		goto error;
  	}
-@@ -554,18 +654,21 @@
+@@ -554,18 +654,21 @@ Note: we do not have explicit unassign, 
  	brvcc->atmvcc = atmvcc;
  	atmvcc->user_back = brvcc;
  	brvcc->encaps = (enum br2684_encaps) be.encaps;
@@ -297,7 +297,7 @@ Index: linux-2.4.35.4/net/atm/br2684.c
  	write_unlock_irq(&devs_lock);
  	MOD_DEC_USE_COUNT;
  	return err;
-@@ -608,12 +711,25 @@
+@@ -608,12 +711,25 @@ static int br2684_create(unsigned long a
  
  	if (ni.ifname[0] != '\0') {
  		memcpy(brdev->net_dev.name, ni.ifname,
@@ -326,7 +326,7 @@ Index: linux-2.4.35.4/net/atm/br2684.c
  	brdev->mac_was_set = 0;
  #ifdef FASTER_VERSION
  	my_eth_header = brdev->net_dev.hard_header;
-@@ -677,12 +793,11 @@
+@@ -677,12 +793,11 @@ static int br2684_ioctl(struct atm_vcc *
  		err = br2684_setfilt(atmvcc, arg);
  		MOD_DEC_USE_COUNT;
  		return err;
@@ -340,7 +340,7 @@ Index: linux-2.4.35.4/net/atm/br2684.c
  /* Never put more than 256 bytes in at once */
  static int br2684_proc_engine(loff_t pos, char *buf)
  {
-@@ -692,52 +807,62 @@
+@@ -692,52 +807,62 @@ static int br2684_proc_engine(loff_t pos
  	list_for_each(lhd, &br2684_devs) {
  		brdev = list_entry_brdev(lhd);
  		if (pos-- == 0)
@@ -428,7 +428,7 @@ Index: linux-2.4.35.4/net/atm/br2684.c
  	page = get_free_page(GFP_KERNEL);
  	if (!page)
  		return -ENOMEM;
-@@ -746,7 +871,7 @@
+@@ -746,7 +871,7 @@ static ssize_t br2684_proc_read(struct f
  		left = count;
  	read_lock(&devs_lock);
  	for (;;) {
@@ -437,7 +437,7 @@ Index: linux-2.4.35.4/net/atm/br2684.c
  		if (x == 0)
  			break;
  		if (x > left)
-@@ -761,12 +886,11 @@
+@@ -761,12 +886,11 @@ static ssize_t br2684_proc_read(struct f
  		}
  		len += x;
  		left -= x;
@@ -451,7 +451,7 @@ Index: linux-2.4.35.4/net/atm/br2684.c
  	if (len > 0 && copy_to_user(buf, (char *) page, len))
  		len = -EFAULT;
  	free_page(page);
-@@ -774,23 +898,20 @@
+@@ -774,23 +898,20 @@ static ssize_t br2684_proc_read(struct f
  }
  
  static struct file_operations br2684_proc_operations = {
@@ -476,7 +476,7 @@ Index: linux-2.4.35.4/net/atm/br2684.c
  	br2684_ioctl_set(br2684_ioctl);
  	return 0;
  }
-@@ -799,9 +920,7 @@
+@@ -799,9 +920,7 @@ static void __exit UNUSED br2684_exit(vo
  {
  	struct br2684_dev *brdev;
  	br2684_ioctl_set(NULL);
@@ -488,9 +488,9 @@ Index: linux-2.4.35.4/net/atm/br2684.c
  		unregister_netdev(&brdev->net_dev);
 Index: linux-2.4.35.4/net/atm/common.c
 ===================================================================
---- linux-2.4.35.4.orig/net/atm/common.c	2007-12-15 05:19:38.826633641 +0100
-+++ linux-2.4.35.4/net/atm/common.c	2007-12-15 05:20:03.656048591 +0100
-@@ -158,6 +158,7 @@
+--- linux-2.4.35.4.orig/net/atm/common.c
++++ linux-2.4.35.4/net/atm/common.c
+@@ -158,6 +158,7 @@ void br2684_ioctl_set(int (*hook)(struct
  }
  #ifdef CONFIG_ATM_BR2684_MODULE
  EXPORT_SYMBOL(br2684_ioctl_set);
@@ -500,8 +500,8 @@ Index: linux-2.4.35.4/net/atm/common.c
  
 Index: linux-2.4.35.4/include/linux/atmbr2684.h
 ===================================================================
---- linux-2.4.35.4.orig/include/linux/atmbr2684.h	2007-12-15 05:19:38.838634325 +0100
-+++ linux-2.4.35.4/include/linux/atmbr2684.h	2007-12-15 05:20:03.668049273 +0100
+--- linux-2.4.35.4.orig/include/linux/atmbr2684.h
++++ linux-2.4.35.4/include/linux/atmbr2684.h
 @@ -3,6 +3,7 @@
  
  #include <linux/atm.h>
@@ -539,7 +539,7 @@ Index: linux-2.4.35.4/include/linux/atmbr2684.h
  };
  
  /*
-@@ -68,16 +78,17 @@
+@@ -68,16 +78,17 @@ struct br2684_if_spec {
   * is per-backend specific
   */
  struct atm_backend_br2684 {
@@ -566,7 +566,7 @@ Index: linux-2.4.35.4/include/linux/atmbr2684.h
  };
  
  /*
-@@ -95,7 +106,12 @@
+@@ -95,7 +106,12 @@ struct br2684_filter_set {
  	struct br2684_filter filter;
  };
  

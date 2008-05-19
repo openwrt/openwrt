@@ -1,8 +1,8 @@
 Index: linux-2.4.35.4/include/linux/atmdev.h
 ===================================================================
---- linux-2.4.35.4.orig/include/linux/atmdev.h	2007-12-15 05:19:38.898637744 +0100
-+++ linux-2.4.35.4/include/linux/atmdev.h	2007-12-15 05:20:02.816000717 +0100
-@@ -400,6 +400,7 @@
+--- linux-2.4.35.4.orig/include/linux/atmdev.h
++++ linux-2.4.35.4/include/linux/atmdev.h
+@@ -400,6 +400,7 @@ extern rwlock_t vcc_sklist_lock;
  struct atm_dev *atm_dev_register(const char *type,const struct atmdev_ops *ops,
      int number,atm_dev_flags_t *flags); /* number == -1: pick first available */
  struct atm_dev *atm_dev_lookup(int number);
@@ -12,8 +12,8 @@ Index: linux-2.4.35.4/include/linux/atmdev.h
  void vcc_insert_socket(struct sock *sk);
 Index: linux-2.4.35.4/net/atm/resources.c
 ===================================================================
---- linux-2.4.35.4.orig/net/atm/resources.c	2007-12-15 05:19:38.910638429 +0100
-+++ linux-2.4.35.4/net/atm/resources.c	2007-12-15 05:20:02.824001175 +0100
+--- linux-2.4.35.4.orig/net/atm/resources.c
++++ linux-2.4.35.4/net/atm/resources.c
 @@ -10,6 +10,7 @@
  #include <linux/sonet.h>
  #include <linux/kernel.h> /* for barrier */
@@ -22,7 +22,7 @@ Index: linux-2.4.35.4/net/atm/resources.c
  #include <linux/bitops.h>
  #include <net/sock.h>	 /* for struct sock */
  #include <asm/segment.h> /* for get_fs_long and put_fs_long */
-@@ -70,6 +71,44 @@
+@@ -70,6 +71,44 @@ struct atm_dev *atm_dev_lookup(int numbe
  	return dev;
  }
  
@@ -67,7 +67,7 @@ Index: linux-2.4.35.4/net/atm/resources.c
  struct atm_dev *atm_dev_register(const char *type, const struct atmdev_ops *ops,
  				 int number, atm_dev_flags_t *flags)
  {
-@@ -123,7 +162,10 @@
+@@ -123,7 +162,10 @@ struct atm_dev *atm_dev_register(const c
  		}
  	}
  #endif
@@ -79,7 +79,7 @@ Index: linux-2.4.35.4/net/atm/resources.c
  	return dev;
  }
  
-@@ -131,6 +173,10 @@
+@@ -131,6 +173,10 @@ struct atm_dev *atm_dev_register(const c
  void atm_dev_deregister(struct atm_dev *dev)
  {
  	unsigned long warning_time;
@@ -90,7 +90,7 @@ Index: linux-2.4.35.4/net/atm/resources.c
  
  #ifdef CONFIG_PROC_FS
  	if (dev->ops->proc_read)
-@@ -399,6 +445,7 @@
+@@ -399,6 +445,7 @@ done:
  }
  
  

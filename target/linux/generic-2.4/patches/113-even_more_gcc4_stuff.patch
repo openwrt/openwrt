@@ -1,7 +1,7 @@
 Index: linux-2.4.35.4/arch/mips/kernel/mips_ksyms.c
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/mips_ksyms.c	2007-12-15 05:19:41.186768139 +0100
-+++ linux-2.4.35.4/arch/mips/kernel/mips_ksyms.c	2007-12-15 05:19:54.695537960 +0100
+--- linux-2.4.35.4.orig/arch/mips/kernel/mips_ksyms.c
++++ linux-2.4.35.4/arch/mips/kernel/mips_ksyms.c
 @@ -30,6 +30,10 @@
  #include <asm/floppy.h>
  #endif
@@ -13,7 +13,7 @@ Index: linux-2.4.35.4/arch/mips/kernel/mips_ksyms.c
  extern void *__bzero(void *__s, size_t __count);
  extern long __strncpy_from_user_nocheck_asm(char *__to,
                                              const char *__from, long __len);
-@@ -78,6 +82,13 @@
+@@ -78,6 +82,13 @@ EXPORT_SYMBOL_NOVERS(__strnlen_user_noch
  EXPORT_SYMBOL_NOVERS(__strnlen_user_asm);
  
  
@@ -29,9 +29,9 @@ Index: linux-2.4.35.4/arch/mips/kernel/mips_ksyms.c
  
 Index: linux-2.4.35.4/arch/mips/lib/Makefile
 ===================================================================
---- linux-2.4.35.4.orig/arch/mips/lib/Makefile	2007-12-15 05:19:41.194768595 +0100
-+++ linux-2.4.35.4/arch/mips/lib/Makefile	2007-12-15 05:19:54.699538186 +0100
-@@ -9,7 +9,8 @@
+--- linux-2.4.35.4.orig/arch/mips/lib/Makefile
++++ linux-2.4.35.4/arch/mips/lib/Makefile
+@@ -9,7 +9,8 @@ L_TARGET = lib.a
  obj-y				+= csum_partial.o csum_partial_copy.o \
  				   promlib.o rtc-std.o rtc-no.o memcpy.o \
  				   memset.o watch.o strlen_user.o \
@@ -43,8 +43,8 @@ Index: linux-2.4.35.4/arch/mips/lib/Makefile
  
 Index: linux-2.4.35.4/arch/mips/lib/ashldi3.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/arch/mips/lib/ashldi3.c	2007-12-15 05:19:54.707538644 +0100
+--- /dev/null
++++ linux-2.4.35.4/arch/mips/lib/ashldi3.c
 @@ -0,0 +1,62 @@
 +/* ashrdi3.c extracted from gcc-2.95.2/libgcc2.c which is: */
 +/* Copyright (C) 1989, 92-98, 1999 Free Software Foundation, Inc.
@@ -110,8 +110,8 @@ Index: linux-2.4.35.4/arch/mips/lib/ashldi3.c
 +}
 Index: linux-2.4.35.4/arch/mips/lib/ashrdi3.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/arch/mips/lib/ashrdi3.c	2007-12-15 05:19:54.711538870 +0100
+--- /dev/null
++++ linux-2.4.35.4/arch/mips/lib/ashrdi3.c
 @@ -0,0 +1,63 @@
 +/* ashrdi3.c extracted from gcc-2.7.2/libgcc2.c which is: */
 +/* Copyright (C) 1989, 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
@@ -178,8 +178,8 @@ Index: linux-2.4.35.4/arch/mips/lib/ashrdi3.c
 +}
 Index: linux-2.4.35.4/arch/mips/lib/lshrdi3.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/arch/mips/lib/lshrdi3.c	2007-12-15 05:19:54.715539100 +0100
+--- /dev/null
++++ linux-2.4.35.4/arch/mips/lib/lshrdi3.c
 @@ -0,0 +1,62 @@
 +/* lshrdi3.c extracted from gcc-2.7.2/libgcc2.c which is: */
 +/* Copyright (C) 1989, 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
@@ -245,8 +245,8 @@ Index: linux-2.4.35.4/arch/mips/lib/lshrdi3.c
 +}
 Index: linux-2.4.35.4/arch/mips/lib/muldi3.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.35.4/arch/mips/lib/muldi3.c	2007-12-15 05:19:54.715539100 +0100
+--- /dev/null
++++ linux-2.4.35.4/arch/mips/lib/muldi3.c
 @@ -0,0 +1,63 @@
 +/* muldi3.c extracted from gcc-2.7.2.3/libgcc2.c and 
 +			   gcc-2.7.2.3/longlong.h which is: */
@@ -313,8 +313,8 @@ Index: linux-2.4.35.4/arch/mips/lib/muldi3.c
 +}
 Index: linux-2.4.35.4/fs/cifs/cifsfs.c
 ===================================================================
---- linux-2.4.35.4.orig/fs/cifs/cifsfs.c	2007-12-15 05:19:52.279400271 +0100
-+++ linux-2.4.35.4/fs/cifs/cifsfs.c	2007-12-15 05:19:54.715539100 +0100
+--- linux-2.4.35.4.orig/fs/cifs/cifsfs.c
++++ linux-2.4.35.4/fs/cifs/cifsfs.c
 @@ -50,8 +50,6 @@
  static struct quotactl_ops cifs_quotactl_ops;
  #endif
@@ -326,9 +326,9 @@ Index: linux-2.4.35.4/fs/cifs/cifsfs.c
  int traceSMB = 0;
 Index: linux-2.4.35.4/include/asm-mips/uaccess.h
 ===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/uaccess.h	2007-12-15 05:19:41.238771101 +0100
-+++ linux-2.4.35.4/include/asm-mips/uaccess.h	2007-12-15 05:19:54.715539100 +0100
-@@ -149,7 +149,7 @@
+--- linux-2.4.35.4.orig/include/asm-mips/uaccess.h
++++ linux-2.4.35.4/include/asm-mips/uaccess.h
+@@ -149,7 +149,7 @@ static inline int verify_area(int type, 
   * Returns zero on success, or -EFAULT on error.
   */
  #define put_user(x,ptr)	\
@@ -337,7 +337,7 @@ Index: linux-2.4.35.4/include/asm-mips/uaccess.h
  
  /*
   * get_user: - Get a simple variable from user space.
-@@ -169,7 +169,7 @@
+@@ -169,7 +169,7 @@ static inline int verify_area(int type, 
   * On error, the variable @x is set to zero.
   */
  #define get_user(x,ptr) \
@@ -346,7 +346,7 @@ Index: linux-2.4.35.4/include/asm-mips/uaccess.h
  
  /*
   * __put_user: - Write a simple value into user space, with less checking.
-@@ -191,7 +191,7 @@
+@@ -191,7 +191,7 @@ static inline int verify_area(int type, 
   * Returns zero on success, or -EFAULT on error.
   */
  #define __put_user(x,ptr) \
@@ -355,7 +355,7 @@ Index: linux-2.4.35.4/include/asm-mips/uaccess.h
  
  /*
   * __get_user: - Get a simple variable from user space, with less checking.
-@@ -214,7 +214,7 @@
+@@ -214,7 +214,7 @@ static inline int verify_area(int type, 
   * On error, the variable @x is set to zero.
   */
  #define __get_user(x,ptr) \
@@ -364,7 +364,7 @@ Index: linux-2.4.35.4/include/asm-mips/uaccess.h
  
  struct __large_struct { unsigned long buf[100]; };
  #define __m(x) (*(struct __large_struct *)(x))
-@@ -232,7 +232,7 @@
+@@ -232,7 +232,7 @@ struct __large_struct { unsigned long bu
  #define __get_user_nocheck(x,ptr,size)					\
  ({									\
  	long __gu_err = 0;						\
