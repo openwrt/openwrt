@@ -1,8 +1,8 @@
-Index: linux-2.6.22-rc6/drivers/ide/ide.c
+Index: linux-2.6.24.7/drivers/ide/ide.c
 ===================================================================
---- linux-2.6.22-rc6.orig/drivers/ide/ide.c	2007-06-28 08:23:49.463514496 +0200
-+++ linux-2.6.22-rc6/drivers/ide/ide.c	2007-06-28 08:23:54.658724704 +0200
-@@ -1604,6 +1604,7 @@
+--- linux-2.6.24.7.orig/drivers/ide/ide.c
++++ linux-2.6.24.7/drivers/ide/ide.c
+@@ -1563,6 +1563,7 @@ done:
  extern void __init pnpide_init(void);
  extern void __exit pnpide_exit(void);
  extern void __init h8300_ide_init(void);
@@ -10,7 +10,7 @@ Index: linux-2.6.22-rc6/drivers/ide/ide.c
  
  /*
   * probe_for_hwifs() finds/initializes "known" IDE interfaces
-@@ -1668,6 +1669,9 @@
+@@ -1627,6 +1628,9 @@ static void __init probe_for_hwifs (void
  #ifdef CONFIG_H8300
  	h8300_ide_init();
  #endif
@@ -20,11 +20,11 @@ Index: linux-2.6.22-rc6/drivers/ide/ide.c
  }
  
  /*
-Index: linux-2.6.22-rc6/drivers/ide/Kconfig
+Index: linux-2.6.24.7/drivers/ide/Kconfig
 ===================================================================
---- linux-2.6.22-rc6.orig/drivers/ide/Kconfig	2007-06-28 08:23:49.470513432 +0200
-+++ linux-2.6.22-rc6/drivers/ide/Kconfig	2007-06-28 08:23:54.658724704 +0200
-@@ -946,6 +946,14 @@
+--- linux-2.6.24.7.orig/drivers/ide/Kconfig
++++ linux-2.6.24.7/drivers/ide/Kconfig
+@@ -1018,6 +1018,14 @@ config BLK_DEV_MPC8xx_IDE
  
  	  If unsure, say N.
  
@@ -39,15 +39,15 @@ Index: linux-2.6.22-rc6/drivers/ide/Kconfig
  choice
  	prompt "Type of MPC8xx IDE interface"
  	depends on BLK_DEV_MPC8xx_IDE
-Index: linux-2.6.22-rc6/drivers/ide/Makefile
+Index: linux-2.6.24.7/drivers/ide/Makefile
 ===================================================================
---- linux-2.6.22-rc6.orig/drivers/ide/Makefile	2007-06-28 08:23:49.478512216 +0200
-+++ linux-2.6.22-rc6/drivers/ide/Makefile	2007-06-28 08:23:54.659724552 +0200
-@@ -37,6 +37,7 @@
+--- linux-2.6.24.7.orig/drivers/ide/Makefile
++++ linux-2.6.24.7/drivers/ide/Makefile
+@@ -37,6 +37,7 @@ ide-core-$(CONFIG_BLK_DEV_Q40IDE)	+= leg
  # built-in only drivers from ppc/
  ide-core-$(CONFIG_BLK_DEV_MPC8xx_IDE)	+= ppc/mpc8xx.o
  ide-core-$(CONFIG_BLK_DEV_IDE_PMAC)	+= ppc/pmac.o
 +ide-core-$(CONFIG_BLK_DEV_MAGICBOX_IDE)	+= ppc/magicbox_ide.o
  
  # built-in only drivers from h8300/
- ide-core-$(CONFIG_H8300)		+= h8300/ide-h8300.o
+ ide-core-$(CONFIG_IDE_H8300)		+= h8300/ide-h8300.o
