@@ -1,8 +1,7 @@
-Index: openssl-0.9.8e/Configure
-===================================================================
---- openssl-0.9.8e.orig/Configure	2007-06-04 13:23:32.150846224 +0200
-+++ openssl-0.9.8e/Configure	2007-06-04 13:23:32.217836040 +0200
-@@ -353,6 +353,8 @@
+diff -ur openssl-0.9.8g/Configure openssl-0.9.8g2/Configure
+--- openssl-0.9.8g/Configure	2007-09-16 14:24:17.000000000 +0200
++++ openssl-0.9.8g2/Configure	2008-05-19 22:46:03.000000000 +0200
+@@ -352,6 +352,8 @@
  "linux-alpha+bwx-gcc","gcc:-O3 -DL_ENDIAN -DTERMIO::-D_REENTRANT::-ldl:SIXTY_FOUR_BIT_LONG RC4_CHAR RC4_CHUNK DES_RISC1 DES_UNROLL:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
  "linux-alpha-ccc","ccc:-fast -readonly_strings -DL_ENDIAN -DTERMIO::-D_REENTRANT:::SIXTY_FOUR_BIT_LONG RC4_CHUNK DES_INT DES_PTR DES_RISC1 DES_UNROLL:${no_asm}",
  "linux-alpha+bwx-ccc","ccc:-fast -readonly_strings -DL_ENDIAN -DTERMIO::-D_REENTRANT:::SIXTY_FOUR_BIT_LONG RC4_CHAR RC4_CHUNK DES_INT DES_PTR DES_RISC1 DES_UNROLL:${no_asm}",
