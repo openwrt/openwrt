@@ -5,6 +5,10 @@
 #ifndef BCMDRIVER
 #include <linux/ssb/ssb_embedded.h>
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,25)
+#include <linux/gpio.h>
+#define ssb ssb_bcm47xx
+#endif
 extern struct ssb_bus ssb;
 
 
@@ -51,11 +55,16 @@ static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *))
 {
 	int irq;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,25)
+	irq = gpio_to_irq(0);
+	if (irq == -EINVAL) return;
+#else
 	if (ssb.chipco.dev)
 		irq = ssb_mips_irq(ssb.chipco.dev) + 2;
 	else if (ssb.extif.dev)
 		irq = ssb_mips_irq(ssb.extif.dev) + 2;
 	else return;
+#endif
 	
 	if (enabled) {
 		if (request_irq(irq, handler, IRQF_SHARED | IRQF_SAMPLE_RANDOM, "gpio", handler))
