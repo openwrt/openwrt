@@ -1,7 +1,21 @@
-Index: openssl-0.9.8e/util/libeay.num
-===================================================================
---- openssl-0.9.8e.orig/util/libeay.num	2007-06-04 13:23:32.021865832 +0200
-+++ openssl-0.9.8e/util/libeay.num	2007-06-04 13:23:33.045710184 +0200
+diff -ur openssl-0.9.8g/Configure openssl-0.9.8g2/Configure
+--- openssl-0.9.8g/Configure	2008-05-19 22:49:45.000000000 +0200
++++ openssl-0.9.8g2/Configure	2008-05-19 22:50:40.000000000 +0200
+@@ -1685,6 +1685,11 @@
+ 	close(OUT);
+   }
+   
++# ugly hack to disable engines
++if($target eq "mingwx") {
++	system("sed -e s/^LIB/XLIB/g -i engines/Makefile");
++}
++  
+ print <<EOF;
+ 
+ Configured for $target.
+diff -ur openssl-0.9.8g/util/libeay.num openssl-0.9.8g2/util/libeay.num
+--- openssl-0.9.8g/util/libeay.num	2007-06-11 18:33:48.000000000 +0200
++++ openssl-0.9.8g2/util/libeay.num	2008-05-19 22:50:40.000000000 +0200
 @@ -2071,7 +2071,6 @@
  UI_add_error_string                     2633	EXIST::FUNCTION:
  KRB5_CHECKSUM_free                      2634	EXIST::FUNCTION:
@@ -67,19 +81,3 @@ Index: openssl-0.9.8e/util/libeay.num
  EC_GROUP_set_curve_name                 3533	EXIST::FUNCTION:EC
  X509_CERT_PAIR_it                       3534	EXIST:!EXPORT_VAR_AS_FUNCTION:VARIABLE:
  X509_CERT_PAIR_it                       3534	EXIST:EXPORT_VAR_AS_FUNCTION:FUNCTION:
-Index: openssl-0.9.8e/Configure
-===================================================================
---- openssl-0.9.8e.orig/Configure	2007-06-04 13:23:32.598778128 +0200
-+++ openssl-0.9.8e/Configure	2007-06-04 13:23:33.046710032 +0200
-@@ -1644,6 +1644,11 @@
- 	close(OUT);
-   }
-   
-+# ugly hack to disable engines
-+if($target eq "mingwx") {
-+	system("sed -e s/^LIB/XLIB/g -i engines/Makefile");
-+}
-+  
- print <<EOF;
- 
- Configured for $target.
