@@ -682,7 +682,7 @@ static struct platform_t __init *platform_detect(void)
 	/* Look for a model identifier */
 
 	/* Based on "model_name" */
-	if (buf = nvram_get("model_name")) {
+	if ((buf = nvram_get("model_name"))) {
 		if (!strcmp(buf, "DIR-130"))
 			return &platforms[DIR130];
 		if (!strcmp(buf, "DIR-330"))
@@ -690,13 +690,13 @@ static struct platform_t __init *platform_detect(void)
 	}
 
 	/* Based on "model_no" */
-	if (buf = nvram_get("model_no")) {
+	if ((buf = nvram_get("model_no"))) {
 		if (startswith(buf,"WL700")) /* WL700* */
 			return &platforms[WL700GE];
 	}
 
 	/* Based on "hardware_version" */
-	if (buf = nvram_get("hardware_version")) {
+	if ((buf = nvram_get("hardware_version"))) {
 		if (startswith(buf,"WL500GPV2-")) /* WL500GPV2-* */
 			return &platforms[WL500GPV2];
 		if (startswith(buf,"WL520GC-")) /* WL520GU-* */
@@ -706,7 +706,7 @@ static struct platform_t __init *platform_detect(void)
 	}
 
 	/* Based on "ModelId" */
-	if (buf = nvram_get("ModelId")) {
+	if ((buf = nvram_get("ModelId"))) {
 		if (!strcmp(buf, "WR850GP"))
 			return &platforms[WR850GP];
 		if (!strcmp(buf,"WX-5565"))

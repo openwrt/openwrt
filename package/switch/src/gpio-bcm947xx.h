@@ -5,6 +5,10 @@
 #ifndef BCMDRIVER
 #include <linux/ssb/ssb_embedded.h>
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,25)
+#define ssb ssb_bcm47xx
+#endif
+
 extern struct ssb_bus ssb;
 
 
