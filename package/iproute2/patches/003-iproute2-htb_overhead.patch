@@ -1,8 +1,8 @@
-Index: iproute-2.6.20-070313/tc/q_htb.c
+Index: iproute2-2.6.25/tc/q_htb.c
 ===================================================================
---- iproute-2.6.20-070313.orig/tc/q_htb.c	2007-06-09 13:53:57.000000000 +0100
-+++ iproute-2.6.20-070313/tc/q_htb.c	2007-06-09 13:54:00.000000000 +0100
-@@ -35,10 +35,14 @@
+--- iproute2-2.6.25.orig/tc/q_htb.c	2008-05-01 00:37:50.000000000 +0100
++++ iproute2-2.6.25/tc/q_htb.c	2008-05-01 20:30:28.000000000 +0100
+@@ -35,10 +35,14 @@ static void explain(void)
  		" default  minor id of class to which unclassified packets are sent {0}\n"
  		" r2q      DRR quantums are computed as rate in Bps/r2q {10}\n"
  		" debug    string of 16 numbers each 0-3 {0}\n\n"
@@ -18,7 +18,7 @@ Index: iproute-2.6.20-070313/tc/q_htb.c
  		" ceil     definite upper class rate (no borrows) {rate}\n"
  		" cburst   burst but for ceil {computed}\n"
  		" mtu      max packet size we create rate map for {1600}\n"
-@@ -103,7 +107,9 @@
+@@ -103,7 +107,9 @@ static int htb_parse_class_opt(struct qd
  	struct tc_htb_opt opt;
  	__u32 rtab[256],ctab[256];
  	unsigned buffer=0,cbuffer=0;
@@ -29,7 +29,7 @@ Index: iproute-2.6.20-070313/tc/q_htb.c
  	struct rtattr *tail;
  
  	memset(&opt, 0, sizeof(opt)); mtu = 1600; /* eth packet len */
-@@ -120,6 +126,16 @@
+@@ -120,6 +126,16 @@ static int htb_parse_class_opt(struct qd
  			if (get_u32(&mtu, *argv, 10)) {
  				explain1("mtu"); return -1;
  			}
@@ -46,7 +46,7 @@ Index: iproute-2.6.20-070313/tc/q_htb.c
  		} else if (matches(*argv, "quantum") == 0) {
  			NEXT_ARG();
  			if (get_u32(&opt.quantum, *argv, 10)) {
-@@ -191,14 +207,18 @@
+@@ -191,14 +207,18 @@ static int htb_parse_class_opt(struct qd
  	if (!buffer) buffer = opt.rate.rate / HZ + mtu;
  	if (!cbuffer) cbuffer = opt.ceil.rate / HZ + mtu;
  
@@ -61,13 +61,13 @@ Index: iproute-2.6.20-070313/tc/q_htb.c
  	}
  	opt.buffer = tc_calc_xmittime(opt.rate.rate, buffer);
  	opt.rate.cell_log = cell_log;
- 	
+ 
 -	if ((ccell_log = tc_calc_rtable(opt.ceil.rate, ctab, cell_log, mtu, 0)) < 0) {
 +	if ((ccell_log = tc_calc_rtable(opt.ceil.rate, ctab, cell_log, mtu, mpu)) < 0) {
  		fprintf(stderr, "htb: failed to calculate ceil rate table.\n");
  		return -1;
  	}
-@@ -222,6 +242,7 @@
+@@ -222,6 +242,7 @@ static int htb_print_opt(struct qdisc_ut
  	double buffer,cbuffer;
  	SPRINT_BUF(b1);
  	SPRINT_BUF(b2);
@@ -75,7 +75,7 @@ Index: iproute-2.6.20-070313/tc/q_htb.c
  
  	if (opt == NULL)
  		return 0;
-@@ -244,10 +265,16 @@
+@@ -244,10 +265,16 @@ static int htb_print_opt(struct qdisc_ut
  	    fprintf(f, "ceil %s ", sprint_rate(hopt->ceil.rate, b1));
  	    cbuffer = ((double)hopt->ceil.rate*tc_core_tick2usec(hopt->cbuffer))/1000000;
  	    if (show_details) {

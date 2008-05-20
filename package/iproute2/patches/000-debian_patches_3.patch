@@ -1,8 +1,8 @@
-Index: iproute-2.6.20-070313/doc/ip-cref.tex
+Index: iproute2-2.6.25/doc/ip-cref.tex
 ===================================================================
---- iproute-2.6.20-070313.orig/doc/ip-cref.tex	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/doc/ip-cref.tex	2007-06-09 13:53:57.000000000 +0100
-@@ -1322,6 +1322,19 @@
+--- iproute2-2.6.25.orig/doc/ip-cref.tex	2008-05-01 00:17:55.000000000 +0100
++++ iproute2-2.6.25/doc/ip-cref.tex	2008-05-01 00:26:48.000000000 +0100
+@@ -1315,6 +1315,19 @@ peers are allowed to send to us.
      If it is not given, Linux uses the value selected with \verb|sysctl|
      variable \verb|net/ipv4/tcp_reordering|.
  
@@ -22,7 +22,7 @@ Index: iproute-2.6.20-070313/doc/ip-cref.tex
  
  
  \item \verb|nexthop NEXTHOP|
-@@ -2651,6 +2664,9 @@
+@@ -2644,6 +2657,9 @@ http://www.cisco.com/univercd/cc/td/doc/
  \bibitem{RFC-DHCP} R.~Droms.
  ``Dynamic Host Configuration Protocol.'', RFC-2131
  
@@ -32,11 +32,11 @@ Index: iproute-2.6.20-070313/doc/ip-cref.tex
  \end{thebibliography}
  
  
-Index: iproute-2.6.20-070313/doc/Makefile
+Index: iproute2-2.6.25/doc/Makefile
 ===================================================================
---- iproute-2.6.20-070313.orig/doc/Makefile	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/doc/Makefile	2007-06-09 13:53:57.000000000 +0100
-@@ -14,6 +14,7 @@
+--- iproute2-2.6.25.orig/doc/Makefile	2008-05-01 00:17:55.000000000 +0100
++++ iproute2-2.6.25/doc/Makefile	2008-05-01 00:26:48.000000000 +0100
+@@ -14,6 +14,7 @@ PAGESIZE=a4
  PAGESPERPAGE=2
  
  HTMLFILES=$(subst .sgml,.html,$(shell echo *.sgml))
@@ -44,7 +44,7 @@ Index: iproute-2.6.20-070313/doc/Makefile
  DVIFILES=$(subst .ps,.dvi,$(PSFILES))
  
  
-@@ -23,6 +24,8 @@
+@@ -23,6 +24,8 @@ pstwocol: $(PSFILES)
  
  html: $(HTMLFILES)
  
@@ -53,7 +53,7 @@ Index: iproute-2.6.20-070313/doc/Makefile
  dvi: $(DVIFILES)
  
  print: $(PSFILES)
-@@ -47,9 +50,12 @@
+@@ -47,9 +50,12 @@ print: $(PSFILES)
  %.html: %.sgml
  	$(SGML2HTML) $<
  
@@ -67,10 +67,10 @@ Index: iproute-2.6.20-070313/doc/Makefile
  clean:
 -	rm -f *.aux *.log *.toc $(PSFILES) $(DVIFILES) *.html
 +	rm -f *.aux *.log *.toc $(PSFILES) $(DVIFILES) *.html $(TXTFILES)
-Index: iproute-2.6.20-070313/include/linux/pkt_sched.h
+Index: iproute2-2.6.25/include/linux/pkt_sched.h
 ===================================================================
---- iproute-2.6.20-070313.orig/include/linux/pkt_sched.h	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/include/linux/pkt_sched.h	2007-06-09 13:53:57.000000000 +0100
+--- iproute2-2.6.25.orig/include/linux/pkt_sched.h	2008-05-01 00:17:55.000000000 +0100
++++ iproute2-2.6.25/include/linux/pkt_sched.h	2008-05-01 00:37:45.000000000 +0100
 @@ -1,3 +1,409 @@
 +#if 0
 +#ifndef __LINUX_PKT_SCHED_H
@@ -294,19 +294,19 @@ Index: iproute-2.6.20-070313/include/linux/pkt_sched.h
 +#define TCA_SET_OFF TCA_GRED_PARMS
 +struct tc_gred_qopt
 +{
-+       __u32           limit;          /* HARD maximal queue length (bytes)    
++       __u32           limit;          /* HARD maximal queue length (bytes)
 +*/
-+       __u32           qth_min;        /* Min average length threshold (bytes) 
++       __u32           qth_min;        /* Min average length threshold (bytes)
 +*/
-+       __u32           qth_max;        /* Max average length threshold (bytes) 
++       __u32           qth_max;        /* Max average length threshold (bytes)
 +*/
 +       __u32           DP;             /* upto 2^32 DPs */
-+       __u32           backlog;        
-+       __u32           qave;   
-+       __u32           forced; 
-+       __u32           early;  
-+       __u32           other;  
-+       __u32           pdrop;  
++       __u32           backlog;
++       __u32           qave;
++       __u32           forced;
++       __u32           early;
++       __u32           other;
++       __u32           pdrop;
 +
 +       unsigned char   Wlog;           /* log(W)               */
 +       unsigned char   Plog;           /* log(P_max/(qth_max-qth_min)) */
@@ -481,7 +481,7 @@ Index: iproute-2.6.20-070313/include/linux/pkt_sched.h
  #ifndef __LINUX_PKT_SCHED_H
  #define __LINUX_PKT_SCHED_H
  
-@@ -466,4 +872,116 @@
+@@ -482,4 +888,116 @@ struct tc_netem_corrupt
  
  #define NETEM_DIST_SCALE	8192
  
@@ -598,20 +598,20 @@ Index: iproute-2.6.20-070313/include/linux/pkt_sched.h
 +};
 +
  #endif
-Index: iproute-2.6.20-070313/ip/iproute.c
+Index: iproute2-2.6.25/ip/iproute.c
 ===================================================================
---- iproute-2.6.20-070313.orig/ip/iproute.c	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/ip/iproute.c	2007-06-09 13:53:57.000000000 +0100
-@@ -73,7 +73,7 @@
- 	fprintf(stderr, "OPTIONS := FLAGS [ mtu NUMBER ] [ advmss NUMBER ]\n");
- 	fprintf(stderr, "           [ rtt NUMBER ] [ rttvar NUMBER ]\n");
+--- iproute2-2.6.25.orig/ip/iproute.c	2008-05-01 00:17:55.000000000 +0100
++++ iproute2-2.6.25/ip/iproute.c	2008-05-01 00:28:02.000000000 +0100
+@@ -73,7 +73,7 @@ static void usage(void)
+ 	fprintf(stderr, "           [ rtt TIME ] [ rttvar TIME ]\n");
  	fprintf(stderr, "           [ window NUMBER] [ cwnd NUMBER ] [ initcwnd NUMBER ]\n");
--	fprintf(stderr, "           [ ssthresh NUMBER ] [ realms REALM ]\n");
-+	fprintf(stderr, "           [ ssthresh NUMBER ] [ realms REALM ] [ hoplimit NUMBER ]\n");
+ 	fprintf(stderr, "           [ ssthresh NUMBER ] [ realms REALM ] [ src ADDRESS ]\n");
+-	fprintf(stderr, "           [ rto_min TIME ]\n");
++	fprintf(stderr, "           [ rto_min TIME ] [ hoplimit NUMBER ]\n");
  	fprintf(stderr, "TYPE := [ unicast | local | broadcast | multicast | throw |\n");
  	fprintf(stderr, "          unreachable | prohibit | blackhole | nat ]\n");
  	fprintf(stderr, "TABLE_ID := [ local | main | default | all | NUMBER ]\n");
-@@ -789,6 +789,30 @@
+@@ -780,6 +780,30 @@ int iproute_modify(int cmd, unsigned fla
  				invarg("\"reordering\" value is invalid\n", *argv);
  			rta_addattr32(mxrta, sizeof(mxbuf), RTAX_REORDERING, reord);
  #endif
@@ -642,24 +642,24 @@ Index: iproute-2.6.20-070313/ip/iproute.c
  		} else if (strcmp(*argv, "rtt") == 0) {
  			unsigned rtt;
  			NEXT_ARG();
-Index: iproute-2.6.20-070313/ip/iptunnel.c
+Index: iproute2-2.6.25/ip/iptunnel.c
 ===================================================================
---- iproute-2.6.20-070313.orig/ip/iptunnel.c	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/ip/iptunnel.c	2007-06-09 13:53:57.000000000 +0100
-@@ -113,7 +113,7 @@
+--- iproute2-2.6.25.orig/ip/iptunnel.c	2008-05-01 00:17:55.000000000 +0100
++++ iproute2-2.6.25/ip/iptunnel.c	2008-05-01 00:26:48.000000000 +0100
+@@ -134,7 +134,7 @@ static int parse_args(int argc, char **a
  			NEXT_ARG();
- 			p->i_flags |= GRE_KEY;
+ 			p->o_flags |= GRE_KEY;
  			if (strchr(*argv, '.'))
 -				p->o_key = get_addr32(*argv);
 +				p->i_key = get_addr32(*argv);
  			else {
  				if (get_unsigned(&uval, *argv, 0)<0) {
- 					fprintf(stderr, "invalid value of \"ikey\"\n");
-Index: iproute-2.6.20-070313/Makefile
+ 					fprintf(stderr, "invalid value of \"okey\"\n");
+Index: iproute2-2.6.25/Makefile
 ===================================================================
---- iproute-2.6.20-070313.orig/Makefile	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/Makefile	2007-06-09 13:53:57.000000000 +0100
-@@ -48,7 +48,7 @@
+--- iproute2-2.6.25.orig/Makefile	2008-05-01 00:17:55.000000000 +0100
++++ iproute2-2.6.25/Makefile	2008-05-01 00:26:48.000000000 +0100
+@@ -48,7 +48,7 @@ install: all
  		$(DESTDIR)$(DOCDIR)/examples
  	install -m 0644 $(shell find examples/diffserv -maxdepth 1 -type f) \
  		$(DESTDIR)$(DOCDIR)/examples/diffserv
@@ -668,7 +668,7 @@ Index: iproute-2.6.20-070313/Makefile
  	install -m 0644 $(shell find etc/iproute2 -maxdepth 1 -type f) $(DESTDIR)$(CONFDIR)
  	install -m 0755 -d $(DESTDIR)$(MANDIR)/man8
  	install -m 0644 $(shell find man/man8 -maxdepth 1 -type f) $(DESTDIR)$(MANDIR)/man8
-@@ -59,7 +59,7 @@
+@@ -65,7 +65,7 @@ snapshot:
  
  clean:
  	rm -f cscope.*
@@ -677,36 +677,10 @@ Index: iproute-2.6.20-070313/Makefile
  	do $(MAKE) $(MFLAGS) -C $$i clean; done
  
  clobber: clean
-Index: iproute-2.6.20-070313/man/man8/ip.8
+Index: iproute2-2.6.25/misc/Makefile
 ===================================================================
---- iproute-2.6.20-070313.orig/man/man8/ip.8	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/man/man8/ip.8	2007-06-09 13:53:57.000000000 +0100
-@@ -1808,6 +1808,8 @@
- .RB "IP Command reference " ip-cref.ps
- .br
- .RB "IP tunnels " ip-cref.ps
-+.br
-+.RB http://lartc.org/
- 
- .SH AUTHOR
- Original Manpage  by Michail Litvak <mci@owl.openwall.com>
-Index: iproute-2.6.20-070313/man/man8/tc.8
-===================================================================
---- iproute-2.6.20-070313.orig/man/man8/tc.8	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/man/man8/tc.8	2007-06-09 13:53:57.000000000 +0100
-@@ -341,7 +341,7 @@
- .BR tc-pfifo (8),
- .BR tc-bfifo (8),
- .BR tc-pfifo_fast (8),
--.BR tc-filters (8)
-+.BR http://lartc.org/
- 
- .SH AUTHOR
- Manpage maintained by bert hubert (ahu@ds9a.nl)
-Index: iproute-2.6.20-070313/misc/Makefile
-===================================================================
---- iproute-2.6.20-070313.orig/misc/Makefile	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/misc/Makefile	2007-06-09 13:53:57.000000000 +0100
+--- iproute2-2.6.25.orig/misc/Makefile	2008-05-01 00:17:55.000000000 +0100
++++ iproute2-2.6.25/misc/Makefile	2008-05-01 00:26:48.000000000 +0100
 @@ -1,7 +1,8 @@
  SSOBJ=ss.o ssfilter.o
  LNSTATOBJ=lnstat.o lnstat_util.o
@@ -717,68 +691,22 @@ Index: iproute-2.6.20-070313/misc/Makefile
  
  include ../Config
  
-Index: iproute-2.6.20-070313/misc/netbug
+Index: iproute2-2.6.25/tc/Makefile
 ===================================================================
---- iproute-2.6.20-070313.orig/misc/netbug	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/misc/netbug	2007-06-09 13:53:57.000000000 +0100
-@@ -1,23 +1,16 @@
- #! /bin/bash
- 
-+set -e
-+
- echo -n "Send network configuration summary to [ENTER means kuznet@ms2.inr.ac.ru] "
- IFS="" read mail || exit 1
- [ -z "$mail" ] && mail=kuznet@ms2.inr.ac.ru
- 
-+netbug=`mktemp -d -t netbug.XXXXXX` || {echo "$0: Cannot create temporary directory" >&2; exit 1;  }
-+netbugtar=`tempfile -d $netbug --suffix=tar.gz` || {echo "$0: Cannot create temporary file" >&2; exit 1;  }
-+tmppath=$netbug
-+trap "/bin/rm -rf $netbug $netbugtar" 0 1 2 3 13 15
- 
--netbug=""
--while [ "$netbug" = "" ]; do
--	netbug=`echo netbug.$$.$RANDOM`
--	if [ -e /tmp/$netbug ]; then
--		netbug=""
--	fi
--done
--
--tmppath=/tmp/$netbug
--
--trap "rm -rf $tmppath $tmppath.tar.gz" 0 SIGINT
--
--mkdir $tmppath
- mkdir $tmppath/net
- 
- cat /proc/slabinfo > $tmppath/slabinfo
-@@ -44,9 +37,8 @@
- fi
- 
- cd /tmp
--tar c $netbug | gzip -9c > $netbug.tar.gz
--
--uuencode $netbug.tar.gz $netbug.tar.gz | mail -s $netbug "$mail"
-+tar c $tmppath | gzip -9c > $netbugtar
-+uuencode $netbugtar $netbugtar | mail -s $netbug "$mail"
- 
- echo "Sending to <$mail>; subject is $netbug"
- 
-Index: iproute-2.6.20-070313/tc/Makefile
-===================================================================
---- iproute-2.6.20-070313.orig/tc/Makefile	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/tc/Makefile	2007-06-09 13:53:57.000000000 +0100
-@@ -11,6 +11,7 @@
- TCMODULES += q_prio.o
- TCMODULES += q_tbf.o
+--- iproute2-2.6.25.orig/tc/Makefile	2008-05-01 00:17:55.000000000 +0100
++++ iproute2-2.6.25/tc/Makefile	2008-05-01 00:30:13.000000000 +0100
+@@ -13,6 +13,7 @@ TCMODULES += q_tbf.o
  TCMODULES += q_cbq.o
+ TCMODULES += q_rr.o
+ TCMODULES += q_netem.o
 +TCMODULES += q_wrr.o
  TCMODULES += f_rsvp.o
  TCMODULES += f_u32.o
  TCMODULES += f_route.o
-Index: iproute-2.6.20-070313/tc/q_htb.c
+Index: iproute2-2.6.25/tc/q_htb.c
 ===================================================================
---- iproute-2.6.20-070313.orig/tc/q_htb.c	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/tc/q_htb.c	2007-06-09 13:53:57.000000000 +0100
+--- iproute2-2.6.25.orig/tc/q_htb.c	2008-05-01 00:17:55.000000000 +0100
++++ iproute2-2.6.25/tc/q_htb.c	2008-05-01 00:37:50.000000000 +0100
 @@ -1,3 +1,311 @@
 +#if 0
 +/*
@@ -979,7 +907,7 @@ Index: iproute-2.6.20-070313/tc/q_htb.c
 +	}
 +	opt.buffer = tc_calc_xmittime(opt.rate.rate, buffer);
 +	opt.rate.cell_log = cell_log;
-+	
++
 +	if ((ccell_log = tc_calc_rtable(opt.ceil.rate, ctab, cell_log, mtu, 0)) < 0) {
 +		fprintf(stderr, "htb: failed to calculate ceil rate table.\n");
 +		return -1;
@@ -1036,14 +964,14 @@ Index: iproute-2.6.20-070313/tc/q_htb.c
 +		fprintf(f, "cburst %s ", sprint_size(cbuffer, b1));
 +	    }
 +	    if (show_raw)
-+		fprintf(f, "buffer [%08x] cbuffer [%08x] ", 
++		fprintf(f, "buffer [%08x] cbuffer [%08x] ",
 +			hopt->buffer,hopt->cbuffer);
 +	}
 +	if (tb[TCA_HTB_INIT]) {
 +	    gopt = RTA_DATA(tb[TCA_HTB_INIT]);
 +	    if (RTA_PAYLOAD(tb[TCA_HTB_INIT])  < sizeof(*gopt)) return -1;
 +
-+	    fprintf(f, "r2q %d default %x direct_packets_stat %u", 
++	    fprintf(f, "r2q %d default %x direct_packets_stat %u",
 +		    gopt->rate2quantum,gopt->defcls,gopt->direct_pkts);
 +		if (show_details)
 +			fprintf(f," ver %d.%d",gopt->version >> 16,gopt->version & 0xffff);
@@ -1061,7 +989,7 @@ Index: iproute-2.6.20-070313/tc/q_htb.c
 +		return -1;
 +
 +	st = RTA_DATA(xstats);
-+	fprintf(f, " lended: %u borrowed: %u giants: %u\n", 
++	fprintf(f, " lended: %u borrowed: %u giants: %u\n",
 +		st->lends,st->borrows,st->giants);
 +	fprintf(f, " tokens: %d ctokens: %d\n", st->tokens,st->ctokens);
 +	return 0;
@@ -1091,10 +1019,10 @@ Index: iproute-2.6.20-070313/tc/q_htb.c
  /*
   * q_htb.c		HTB.
   *
-Index: iproute-2.6.20-070313/tc/q_wrr.c
+Index: iproute2-2.6.25/tc/q_wrr.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ iproute-2.6.20-070313/tc/q_wrr.c	2007-06-09 13:53:57.000000000 +0100
++++ iproute2-2.6.25/tc/q_wrr.c	2008-05-01 00:37:17.000000000 +0100
 @@ -0,0 +1,322 @@
 +#include <stdio.h>
 +#include <stdlib.h>
@@ -1113,16 +1041,16 @@ Index: iproute-2.6.20-070313/tc/q_wrr.c
 +#define usage() return(-1)
 +
 +// Returns -1 on error
-+static int wrr_parse_qdisc_weight(int argc, char** argv, 
++static int wrr_parse_qdisc_weight(int argc, char** argv,
 +                              struct tc_wrr_qdisc_modf* opt) {
 +  int i;
-+  
++
 +  opt->weight1.weight_mode=-1;
 +  opt->weight2.weight_mode=-1;
-+  
-+  for(i=0; i<argc; i++) {  
++
++  for(i=0; i<argc; i++) {
 +    if(!memcmp(argv[i],"wmode1=",7)) {
-+      opt->weight1.weight_mode=atoi(argv[i]+7);            
++      opt->weight1.weight_mode=atoi(argv[i]+7);
 +    } else if(!memcmp(argv[i],"wmode2=",7)) {
 +      opt->weight2.weight_mode=atoi(argv[i]+7);
 +    } else {
@@ -1133,16 +1061,16 @@ Index: iproute-2.6.20-070313/tc/q_wrr.c
 +  return 0;
 +}
 +
-+static int wrr_parse_class_modf(int argc, char** argv, 
++static int wrr_parse_class_modf(int argc, char** argv,
 +                                struct tc_wrr_class_modf* modf) {
 +  int i;
-+  
++
 +  if(argc<1) {
 +    fprintf(stderr, "Usage: ... [weight1=val] [decr1=val] [incr1=val] [min1=val] [max1=val] [val2=val] ...\n");
 +    fprintf(stderr, "  The values can be floating point like 0.42 or divisions like 42/100\n");
 +    return -1;
 +  }
-+  
++
 +  // Set meaningless values:
 +  modf->weight1.val=0;
 +  modf->weight1.decr=(__u64)-1;
@@ -1154,7 +1082,7 @@ Index: iproute-2.6.20-070313/tc/q_wrr.c
 +  modf->weight2.incr=(__u64)-1;
 +  modf->weight2.min=0;
 +  modf->weight2.max=0;
-+  
++
 +  // And read values:
 +  for(i=0; i<argc; i++) {
 +    char arg[80];
@@ -1165,29 +1093,29 @@ Index: iproute-2.6.20-070313/tc/q_wrr.c
 +      return -1;
 +    }
 +    strcpy(arg,argv[i]);
-+    
++
 +    name=strtok(arg,"=");
 +    if(name) value1=strtok(0,"/");
 +    if(value1) value2=strtok(0,"");
-+    
++
 +    if(!value1) {
 +      fprintf(stderr,"No = found in argument: %s\n",argv[i]);
 +      return -1;
 +    }
-+    
++
 +    f_val1=atof(value1);
-+    if(value2) f_val2=atof(value2);    
-+    
++    if(value2) f_val2=atof(value2);
++
 +    if(f_val2==0)  {
 +      fprintf(stderr,"Division by 0\n");
 +      return -1;
 +    }
-+        
-+    value=f_val1/f_val2;    
++
++    value=f_val1/f_val2;
 +    if(value>1) value=1;
-+    if(value<0) value=0;            
++    if(value<0) value=0;
 +    value*=((__u64)-1);
-+    
++
 +    // And find the value set
 +    if(!strcmp(name,"weight1"))    modf->weight1.val=value;
 +    else if(!strcmp(name,"decr1")) modf->weight1.decr=value;
@@ -1203,7 +1131,7 @@ Index: iproute-2.6.20-070313/tc/q_wrr.c
 +      fprintf(stderr,"illegal value: %s\n",name);
 +      return -1;
 +    }
-+  }    
++  }
 +
 +  return 0;
 +}
@@ -1213,57 +1141,57 @@ Index: iproute-2.6.20-070313/tc/q_wrr.c
 +  if(n->nlmsg_flags & NLM_F_CREATE) {
 +    // This is a create request:
 +    struct tc_wrr_qdisc_crt opt;
-+	
++
 +    int sour,dest,ip,mac,masq;
 +
 +    if(argc<4) {
 +      fprintf(stderr, "Usage: ... wrr sour|dest ip|masq|mac maxclasses proxymaxcon [penalty-setup]\n");
 +      return -1;
-+    }	  
-+  
++    }
++
 +    // Read sour/dest:
 +    memset(&opt,0,sizeof(opt));
 +    sour=!strcmp(argv[0],"sour");
-+    dest=!strcmp(argv[0],"dest");	
-+	
++    dest=!strcmp(argv[0],"dest");
++
 +    if(!sour && !dest) {
 +      fprintf(stderr,"sour or dest must be specified\n");
 +      return -1;
-+    }	
++    }
 +
 +    // Read ip/mac
 +    ip=!strcmp(argv[1],"ip");
-+    mac=!strcmp(argv[1],"mac");	
-+    masq=!strcmp(argv[1],"masq");	
++    mac=!strcmp(argv[1],"mac");
++    masq=!strcmp(argv[1],"masq");
 +
 +    if(!ip && !mac && !masq) {
 +      fprintf(stderr,"ip, masq or mac must be specified\n");
 +      return -1;
-+    }	
++    }
 +
-+    opt.srcaddr=sour;		
++    opt.srcaddr=sour;
 +    opt.usemac=mac;
-+    opt.usemasq=masq;		
++    opt.usemasq=masq;
 +    opt.bands_max=atoi(argv[2]);
-+    
++
 +    opt.proxy_maxconn=atoi(argv[3]);
-+    
++
 +    // Read weights:
 +    if(wrr_parse_qdisc_weight(argc-4,argv+4,&opt.qdisc_modf)<0) return -1;
 +    if(opt.qdisc_modf.weight1.weight_mode==-1) opt.qdisc_modf.weight1.weight_mode=0;
 +    if(opt.qdisc_modf.weight2.weight_mode==-1) opt.qdisc_modf.weight2.weight_mode=0;
-+		
++
 +    addattr_l(n, 1024, TCA_OPTIONS, &opt, sizeof(opt));
 +  } else {
 +    struct tc_wrr_qdisc_modf_std opt;
 +    char qdisc,class;
-+    
++
 +    // This is a modify request:
 +    if(argc<1) {
 +      fprintf(stderr,"... qdisc ... or ... class ...\n");
 +      return -1;
 +    }
-+            
++
 +    qdisc=!strcmp(argv[0],"qdisc");
 +    class=!strcmp(argv[0],"class");
 +
@@ -1271,20 +1199,20 @@ Index: iproute-2.6.20-070313/tc/q_wrr.c
 +      fprintf(stderr,"qdisc or class must be specified\n");
 +      return -1;
 +    }
-+      
++
 +    argc--;
 +    argv++;
-+      
++
 +    opt.proxy=0;
-+    
++
 +    if(qdisc) {
 +      opt.change_class=0;
 +      if(wrr_parse_qdisc_weight(argc, argv, &opt.qdisc_modf)<0) return -1;
 +    } else {
-+      int a0,a1,a2,a3,a4=0,a5=0;      
++      int a0,a1,a2,a3,a4=0,a5=0;
 +
 +      opt.change_class=1;
-+      
++
 +      if(argc<1) {
 +        fprintf(stderr,"... <mac>|<ip>|<masq> ...\n");
 +        return -1;
@@ -1296,13 +1224,13 @@ Index: iproute-2.6.20-070313/tc/q_wrr.c
 +	fprintf(stderr,"Wrong format of mac or ip address\n");
 +	return -1;
 +      }
-+      
++
 +      opt.addr[0]=a0; opt.addr[1]=a1; opt.addr[2]=a2;
 +      opt.addr[3]=a3; opt.addr[4]=a4; opt.addr[5]=a5;
 +
 +      if(wrr_parse_class_modf(argc-1, argv+1, &opt.class_modf)<0) return -1;
-+    }  
-+  
++    }
++
 +    addattr_l(n, 1024, TCA_OPTIONS, &opt, sizeof(opt));
 +  }
 +  return 0;
@@ -1310,13 +1238,13 @@ Index: iproute-2.6.20-070313/tc/q_wrr.c
 +
 +static int wrr_parse_copt(struct qdisc_util *qu, int argc, char **argv, struct nlmsghdr *n) {
 +  struct tc_wrr_class_modf opt;
-+  
++
 +  memset(&opt,0,sizeof(opt));
 +  if(wrr_parse_class_modf(argc,argv,&opt)<0) return -1;
-+  
++
 +  addattr_l(n, 1024, TCA_OPTIONS, &opt, sizeof(opt));
-+  return 0;  
-+}  
++  return 0;
++}
 +
 +static int wrr_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
 +{
@@ -1328,20 +1256,20 @@ Index: iproute-2.6.20-070313/tc/q_wrr.c
 +	if (RTA_PAYLOAD(opt)  < sizeof(*qopt))
 +		return -1;
 +	qopt = RTA_DATA(opt);
-+	
++
 +	fprintf(f,"\n  (%s/%s) (maxclasses %i) (usedclasses %i) (reused classes %i)\n",
 +	  qopt->qdisc_crt.srcaddr ? "sour" : "dest",
-+	  qopt->qdisc_crt.usemac  ? "mac"  : (qopt->qdisc_crt.usemasq ? "masq" : "ip"),	  
-+	  qopt->qdisc_crt.bands_max,	  	  	  
++	  qopt->qdisc_crt.usemac  ? "mac"  : (qopt->qdisc_crt.usemasq ? "masq" : "ip"),
++	  qopt->qdisc_crt.bands_max,
 +	  qopt->bands_cur,
 +	  qopt->bands_reused
 +	  );
-+	  
++
 +	if(qopt->qdisc_crt.proxy_maxconn) {
 +	  fprintf(f,"  (proxy maxcon %i) (proxy curcon %i)\n",
 +	    qopt->qdisc_crt.proxy_maxconn,qopt->proxy_curconn);
 +	}
-+	
++
 +	fprintf(f,"  (waiting classes %i) (packets requeued %i) (priosum: %Lg)\n",
 +	  qopt->nodes_in_heap,
 +	  qopt->packets_requed,
@@ -1351,7 +1279,7 @@ Index: iproute-2.6.20-070313/tc/q_wrr.c
 +	fprintf(f,"  (wmode1 %i) (wmode2 %i) \n",
 +	  qopt->qdisc_crt.qdisc_modf.weight1.weight_mode,
 +	  qopt->qdisc_crt.qdisc_modf.weight2.weight_mode);
-+	  
++
 +	return 0;
 +}
 +
@@ -1369,15 +1297,15 @@ Index: iproute-2.6.20-070313/tc/q_wrr.c
 +    fprintf(f,"(unused)");
 +    return 0;
 +  }
-+  
++
 +  if(copt->usemac) {
 +    fprintf(f,"\n  (address: %.2X:%.2X:%.2X:%.2X:%.2X:%.2X)\n",
 +      copt->addr[0],copt->addr[1],copt->addr[2],
 +      copt->addr[3],copt->addr[4],copt->addr[5]);
-+  } else {     
++  } else {
 +    fprintf(f,"\n  (address: %i.%i.%i.%i)\n",copt->addr[0],copt->addr[1],copt->addr[2],copt->addr[3]);
-+  }    
-+  
++  }
++
 +  fprintf(f,"  (total weight: %Lg) (current position: %i) (counters: %u %u : %u %u)\n",
 +    (copt->class_modf.weight1.val/d)*(copt->class_modf.weight2.val/d),
 +    copt->heappos,
@@ -1386,7 +1314,7 @@ Index: iproute-2.6.20-070313/tc/q_wrr.c
 +    (unsigned)(copt->penal_ls>>32),
 +    (unsigned)(copt->penal_ls & 0xffffffffU)
 +    );
-+    
++
 +  fprintf(f,"  Pars 1: (weight %Lg) (decr: %Lg) (incr: %Lg) (min: %Lg) (max: %Lg)\n",
 +    copt->class_modf.weight1.val/d,
 +    copt->class_modf.weight1.decr/d,
@@ -1400,7 +1328,7 @@ Index: iproute-2.6.20-070313/tc/q_wrr.c
 +    copt->class_modf.weight2.incr/d,
 +    copt->class_modf.weight2.min/d,
 +    copt->class_modf.weight2.max/d);
-+  
++
 +  return 0;
 +}
 +
