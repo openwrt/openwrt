@@ -161,7 +161,7 @@ define Package/base-files$(TARGET)/install
 	rm -f $(1)/var
 	ln -sf /tmp $(1)/var
 	mkdir -p $(1)/etc
-	ln -sf /tmp/resolv.conf $(1)/etc/resolv.conf
+	ln -sf /tmp/resolv.conf /tmp/fstab $(1)/etc/
 	$(call Package/base-files/install-target,$(1))
 	for conffile in $(1)/etc/config/*; do \
 		if [ -f "$$$$conffile" ]; then \

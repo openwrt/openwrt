@@ -15,9 +15,8 @@ do_mount() {
 	[ -n "target" ] || return 0
 	mkdir -p $target
 	config_get_bool enabled "$cfg" "enabled" '1'
-	[ "$enabled" -gt 0 ] && {
-		mount -t $fstype -o $options $device $target
-	}
+	[ "$enabled" -eq 0 ] && options="noauto,$options"
+	echo "$device	$target	$fstype	$options	0	0" >> /tmp/fstab
 }
 
 do_swapon() {
@@ -25,8 +24,8 @@ do_swapon() {
 	config_get device "$cfg" device
 	[ -n "device" ] || return 0
 	config_get_bool enabled "$cfg" "enabled" '1'
-	[ "$enabled" -gt 0 ] && type swapon >/dev/null && {
-		swapon $device
+	[ "$enabled" -gt 0 ] && {
+		echo "$device	none	swap	${noauto}sw	0	0" >> /tmp/fstab
 	}
 }
 
@@ -52,8 +51,11 @@ do_swapoff() {
 
 start() {
 	config_load fstab
+	echo '# WARNING: this is an auto generated file, please use uci to set static filesystems' > /tmp/fstab
 	config_foreach do_mount mount
 	config_foreach do_swapon swap
+	mount -a
+	swapon -a
 }
 
 stop() {
