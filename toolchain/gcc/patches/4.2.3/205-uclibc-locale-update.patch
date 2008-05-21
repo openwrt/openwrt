@@ -1,6 +1,8 @@
---- gcc/libstdc++-v3/config/locale/uclibc/c_locale.cc.uclibc200_update~	2006-03-10 15:32:37 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/c_locale.cc	2006-03-10 15:39:14 +0100
-@@ -46,16 +47,13 @@
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c_locale.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/c_locale.cc	2008-05-21 13:45:45.253289024 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c_locale.cc	2008-05-21 13:45:46.729290157 +0200
+@@ -46,16 +46,13 @@
      __convert_to_v(const char* __s, float& __v, ios_base::iostate& __err, 
  		   const __c_locale& __cloc)
      {
@@ -24,7 +26,7 @@
      }
  
    template<>
-@@ -63,16 +61,13 @@
+@@ -63,16 +60,13 @@
      __convert_to_v(const char* __s, double& __v, ios_base::iostate& __err, 
  		   const __c_locale& __cloc)
      {
@@ -48,7 +50,7 @@
      }
  
    template<>
-@@ -80,16 +75,13 @@
+@@ -80,16 +74,13 @@
      __convert_to_v(const char* __s, long double& __v, ios_base::iostate& __err,
  		   const __c_locale& __cloc)
      {
@@ -72,7 +74,7 @@
      }
  
    void
-@@ -110,7 +102,7 @@
+@@ -110,7 +101,7 @@
    void
    locale::facet::_S_destroy_c_locale(__c_locale& __cloc)
    {
@@ -81,8 +83,10 @@
        __freelocale(__cloc); 
    }
  
---- gcc/libstdc++-v3/config/locale/uclibc/ctype_members.cc.uclibc200_update~	2006-03-10 15:32:37 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/ctype_members.cc	2006-03-10 15:39:14 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/ctype_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/ctype_members.cc	2008-05-21 13:45:45.257288137 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/ctype_members.cc	2008-05-21 13:45:46.729290157 +0200
 @@ -33,9 +33,14 @@
  
  // Written by Benjamin Kosnik <bkoz@redhat.com>
@@ -144,8 +148,10 @@
    const wchar_t* 
    ctype<wchar_t>::
    do_is(const wchar_t* __lo, const wchar_t* __hi, mask* __vec) const
---- gcc/libstdc++-v3/config/locale/uclibc/messages_members.h.uclibc200_update~	2006-03-10 15:32:37 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/messages_members.h	2006-03-10 15:39:14 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/messages_members.h
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/messages_members.h	2008-05-21 13:45:45.257288137 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/messages_members.h	2008-05-21 13:45:46.729290157 +0200
 @@ -47,18 +47,21 @@
    template<typename _CharT>
       messages<_CharT>::messages(size_t __refs)
@@ -173,8 +179,10 @@
       }
  
    template<typename _CharT>
---- gcc/libstdc++-v3/config/locale/uclibc/monetary_members.cc.uclibc200_update~	2006-03-10 15:37:27 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/monetary_members.cc	2006-03-10 15:39:14 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/monetary_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/monetary_members.cc	2008-05-21 13:45:46.105290284 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/monetary_members.cc	2008-05-21 13:45:46.729290157 +0200
 @@ -33,9 +33,14 @@
  
  // Written by Benjamin Kosnik <bkoz@redhat.com>
@@ -199,8 +207,10 @@
        }
      return __ret;
    }
---- gcc/libstdc++-v3/config/locale/uclibc/numeric_members.cc.uclibc200_update~	2006-03-10 15:37:27 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/numeric_members.cc	2006-03-10 15:39:14 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/numeric_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/numeric_members.cc	2008-05-21 13:45:46.105290284 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/numeric_members.cc	2008-05-21 13:45:46.733288711 +0200
 @@ -33,9 +33,14 @@
  
  // Written by Benjamin Kosnik <bkoz@redhat.com>
@@ -216,8 +226,10 @@
  #include <bits/c++locale_internal.h>
  
  #ifdef __UCLIBC_MJN3_ONLY__
---- gcc/libstdc++-v3/config/locale/uclibc/time_members.h.uclibc200_update~	2006-03-10 15:06:17 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/time_members.h	2006-03-10 15:39:14 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/time_members.h
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/time_members.h	2008-05-21 13:45:43.933287929 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/time_members.h	2008-05-21 13:45:46.733288711 +0200
 @@ -37,25 +37,33 @@
    template<typename _CharT>
      __timepunct<_CharT>::__timepunct(size_t __refs) 
@@ -258,8 +270,10 @@
      }
  
    template<typename _CharT>
---- gcc-4.2/libstdc++-v3/config/locale/uclibc/c_locale.h.old	2006-09-28 11:39:00.000000000 +0200
-+++ gcc-4.2/libstdc++-v3/config/locale/uclibc/c_locale.h	2006-09-28 12:10:41.000000000 +0200
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c_locale.h
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/c_locale.h	2008-05-21 13:45:45.257288137 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c_locale.h	2008-05-21 13:45:46.733288711 +0200
 @@ -39,21 +39,23 @@
  #pragma GCC system_header
  

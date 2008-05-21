@@ -1,5 +1,7 @@
---- gcc/libstdc++-v3/config/locale/uclibc/c++locale_internal.h.uclibc200no__x~	2006-03-10 15:06:17 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/c++locale_internal.h	2006-03-10 15:32:37 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c++locale_internal.h
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/c++locale_internal.h	2008-05-21 13:45:43.925289703 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c++locale_internal.h	2008-05-21 13:45:45.253289024 +0200
 @@ -60,4 +60,49 @@
  extern "C" __typeof(wctype_l) __wctype_l;
  #endif 
@@ -50,8 +52,10 @@
 +# endif
 +
  #endif // GLIBC 2.3 and later
---- gcc/libstdc++-v3/config/locale/uclibc/c_locale.cc.uclibc200no__x~	2006-03-10 15:06:17 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/c_locale.cc	2006-03-10 15:32:37 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c_locale.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/c_locale.cc	2008-05-21 13:45:43.925289703 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c_locale.cc	2008-05-21 13:45:45.253289024 +0200
 @@ -39,20 +39,6 @@
  #include <langinfo.h>
  #include <bits/c++locale_internal.h>
@@ -73,8 +77,10 @@
  namespace std 
  {
    template<>
---- gcc/libstdc++-v3/config/locale/uclibc/collate_members.cc.uclibc200no__x~	2006-03-10 15:06:17 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/collate_members.cc	2006-03-10 15:32:37 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/collate_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/collate_members.cc	2008-05-21 13:45:43.929287698 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/collate_members.cc	2008-05-21 13:45:45.253289024 +0200
 @@ -36,13 +36,6 @@
  #include <locale>
  #include <bits/c++locale_internal.h>
@@ -89,8 +95,10 @@
  namespace std
  {
    // These are basically extensions to char_traits, and perhaps should
---- gcc/libstdc++-v3/config/locale/uclibc/monetary_members.cc.uclibc200no__x~	2006-03-10 15:06:17 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/monetary_members.cc	2006-03-10 15:32:37 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/monetary_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/monetary_members.cc	2008-05-21 13:45:43.933287929 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/monetary_members.cc	2008-05-21 13:45:45.257288137 +0200
 @@ -43,10 +43,6 @@
  #warning tailor for stub locale support
  #endif
@@ -102,8 +110,10 @@
  namespace std
  {
    // Construct and return valid pattern consisting of some combination of:
---- gcc/libstdc++-v3/config/locale/uclibc/numeric_members.cc.uclibc200no__x~	2006-03-10 15:06:17 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/numeric_members.cc	2006-03-10 15:32:37 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/numeric_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/numeric_members.cc	2008-05-21 13:45:43.933287929 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/numeric_members.cc	2008-05-21 13:45:45.257288137 +0200
 @@ -41,9 +41,6 @@
  #ifdef __UCLIBC_MJN3_ONLY__
  #warning tailor for stub locale support
@@ -114,8 +124,10 @@
  
  namespace std
  {
---- gcc/libstdc++-v3/config/locale/uclibc/time_members.cc.uclibc200no__x~	2006-03-10 15:06:17 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/time_members.cc	2006-03-10 15:32:37 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/time_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/time_members.cc	2008-05-21 13:45:43.933287929 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/time_members.cc	2008-05-21 13:45:45.257288137 +0200
 @@ -40,9 +40,6 @@
  #ifdef __UCLIBC_MJN3_ONLY__
  #warning tailor for stub locale support
@@ -126,8 +138,10 @@
  
  namespace std
  {
---- gcc/libstdc++-v3/config/locale/uclibc/ctype_members.cc.uclibc200no__x~	2006-03-10 15:06:17 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/ctype_members.cc	2006-03-10 15:32:37 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/ctype_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/ctype_members.cc	2008-05-21 13:45:43.929287698 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/ctype_members.cc	2008-05-21 13:45:45.257288137 +0200
 @@ -38,13 +38,6 @@
  #undef _LIBC
  #include <bits/c++locale_internal.h>
@@ -142,8 +156,10 @@
  namespace std
  {
    // NB: The other ctype<char> specializations are in src/locale.cc and
---- gcc/libstdc++-v3/config/locale/uclibc/messages_members.cc.uclibc200no__x~	2006-03-10 15:06:17 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/messages_members.cc	2006-03-10 15:32:37 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/messages_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/messages_members.cc	2008-05-21 13:45:43.929287698 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/messages_members.cc	2008-05-21 13:45:45.257288137 +0200
 @@ -39,13 +39,10 @@
  #ifdef __UCLIBC_MJN3_ONLY__
  #warning fix gettext stuff
@@ -160,8 +176,10 @@
  #define gettext(msgid) (msgid)
  #endif
  
---- gcc/libstdc++-v3/config/locale/uclibc/messages_members.h.uclibc200no__x~	2006-03-10 15:06:17 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/messages_members.h	2006-03-10 15:32:37 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/messages_members.h
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/messages_members.h	2008-05-21 13:45:43.929287698 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/messages_members.h	2008-05-21 13:45:45.257288137 +0200
 @@ -36,15 +36,11 @@
  #ifdef __UCLIBC_MJN3_ONLY__
  #warning fix prototypes for *textdomain funcs
@@ -201,8 +219,10 @@
        return 0;
      }
  
---- gcc/libstdc++-v3/config/locale/uclibc/c_locale.h.uclibc200no__x~	2006-03-10 15:06:17 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/c_locale.h	2006-03-10 15:32:37 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c_locale.h
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/c_locale.h	2008-05-21 13:45:43.925289703 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c_locale.h	2008-05-21 13:45:45.257288137 +0200
 @@ -68,6 +68,7 @@
  {
    extern "C" __typeof(uselocale) __uselocale;

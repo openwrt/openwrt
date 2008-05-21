@@ -1,8 +1,10 @@
---- gcc-4.0.0/libstdc++-v3/include/c_std/std_cstdio.h-orig	2005-04-29 00:08:41.000000000 -0500
-+++ gcc-4.0.0/libstdc++-v3/include/c_std/std_cstdio.h	2005-04-29 00:08:45.000000000 -0500
-@@ -142,7 +142,7 @@
-   using ::vsprintf;
- }
+Index: gcc-4.2.3/libstdc++-v3/include/c_std/std_cstdio.h
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/include/c_std/std_cstdio.h	2006-12-07 10:33:51.000000000 +0100
++++ gcc-4.2.3/libstdc++-v3/include/c_std/std_cstdio.h	2008-05-21 13:45:48.645288116 +0200
+@@ -144,7 +144,7 @@
+ 
+ _GLIBCXX_END_NAMESPACE
  
 -#if _GLIBCXX_USE_C99
 +#if _GLIBCXX_USE_C99 || defined(__UCLIBC__)

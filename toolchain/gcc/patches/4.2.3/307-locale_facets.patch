@@ -4,9 +4,11 @@ std::snprintf function, that, on uClibc, doens't handle sized 0 buffer.
 
 Signed-off-by: Carmelo Amoroso <carmelo.amoroso@st.com>
 
---- gcc-4.2.1/libstdc++-v3/include/bits/locale_facets.tcc	2006-10-17 18:43:47.000000000 +0200
-+++ gcc-4.2.1-st/libstdc++-v3/include/bits/locale_facets.tcc	2007-08-22 18:54:23.000000000 +0200
-@@ -1143,7 +1143,7 @@ _GLIBCXX_BEGIN_LDBL_NAMESPACE
+Index: gcc-4.2.3/libstdc++-v3/include/bits/locale_facets.tcc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/include/bits/locale_facets.tcc	2008-01-05 12:04:43.000000000 +0100
++++ gcc-4.2.3/libstdc++-v3/include/bits/locale_facets.tcc	2008-05-21 13:45:51.877288338 +0200
+@@ -1145,7 +1145,7 @@
  	const int __cs_size = __fixed ? __max_exp + __prec + 4
  	                              : __max_digits * 2 + __prec;
  	char* __cs = static_cast<char*>(__builtin_alloca(__cs_size));
@@ -15,7 +17,7 @@ Signed-off-by: Carmelo Amoroso <carmelo.amoroso@st.com>
  				      __prec, __v);
  #endif
  
-@@ -1777,7 +1777,7 @@ _GLIBCXX_BEGIN_LDBL_NAMESPACE
+@@ -1779,7 +1779,7 @@
        // max_exponent10 + 1 for the integer part, + 2 for sign and '\0'.
        const int __cs_size = numeric_limits<long double>::max_exponent10 + 3;
        char* __cs = static_cast<char*>(__builtin_alloca(__cs_size));
