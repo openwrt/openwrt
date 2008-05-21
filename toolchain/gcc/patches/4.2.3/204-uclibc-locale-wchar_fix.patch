@@ -1,5 +1,7 @@
---- gcc/libstdc++-v3/config/locale/uclibc/monetary_members.cc.uclibc200_wchar~	2006-03-10 15:32:37 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/monetary_members.cc	2006-03-10 15:37:27 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/monetary_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/monetary_members.cc	2008-05-21 13:45:45.257288137 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/monetary_members.cc	2008-05-21 13:45:46.105290284 +0200
 @@ -401,7 +401,7 @@
  # ifdef __UCLIBC_HAS_XLOCALE__
  	  _M_data->_M_decimal_point = __cloc->decimal_point_wc;
@@ -18,8 +20,10 @@
  	  _M_data->_M_decimal_point = __global_locale->decimal_point_wc;
  	  _M_data->_M_thousands_sep = __global_locale->thousands_sep_wc;
  # endif
---- gcc/libstdc++-v3/config/locale/uclibc/numeric_members.cc.uclibc200_wchar~	2006-03-10 15:32:37 +0100
-+++ gcc/libstdc++-v3/config/locale/uclibc/numeric_members.cc	2006-03-10 15:37:27 +0100
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/numeric_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/numeric_members.cc	2008-05-21 13:45:45.257288137 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/numeric_members.cc	2008-05-21 13:45:46.105290284 +0200
 @@ -127,12 +127,25 @@
  	{
  	  // Named locale.

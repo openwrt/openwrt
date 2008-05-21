@@ -1,7 +1,8 @@
-diff -Nrup gcc-4.2.1/gcc/config/avr32/avr32.c gcc-4.2.1-new/gcc/config/avr32/avr32.c
---- gcc-4.2.1/gcc/config/avr32/avr32.c  2007-11-15 18:20:25.000000000 +0100
-+++ gcc-4.2.1-new/gcc/config/avr32/avr32.c      2007-11-16 13:34:39.000000000 +0100
-@@ -705,8 +705,8 @@ avr32_output_mi_thunk (FILE * file,
+Index: gcc-4.2.3/gcc/config/avr32/avr32.c
+===================================================================
+--- gcc-4.2.3.orig/gcc/config/avr32/avr32.c	2008-05-21 13:46:00.342290304 +0200
++++ gcc-4.2.3/gcc/config/avr32/avr32.c	2008-05-21 13:46:00.930288105 +0200
+@@ -705,8 +705,8 @@
        {
          if (avr32_const_ok_for_constraint_p (mi_delta, 'I', "Is21"))
            {

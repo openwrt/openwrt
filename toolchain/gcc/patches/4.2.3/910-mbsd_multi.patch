@@ -17,11 +17,11 @@
 	This patch was authored by Thorsten Glaser <tg@mirbsd.de>
 	with copyright assignment to the FSF in effect.
 
-Index: gcc-4.2.0/gcc/c-opts.c
+Index: gcc-4.2.3/gcc/c-opts.c
 ===================================================================
---- gcc-4.2.0.orig/gcc/c-opts.c	2007-07-31 02:27:12.007256629 +0200
-+++ gcc-4.2.0/gcc/c-opts.c	2007-07-31 02:27:39.324813371 +0200
-@@ -107,6 +107,9 @@
+--- gcc-4.2.3.orig/gcc/c-opts.c	2008-01-27 19:36:59.000000000 +0100
++++ gcc-4.2.3/gcc/c-opts.c	2008-05-21 13:46:01.550289703 +0200
+@@ -106,6 +106,9 @@
  /* Number of deferred options scanned for -include.  */
  static size_t include_cursor;
  
@@ -31,7 +31,7 @@ Index: gcc-4.2.0/gcc/c-opts.c
  static void set_Wimplicit (int);
  static void handle_OPT_d (const char *);
  static void set_std_cxx98 (int);
-@@ -449,6 +452,14 @@
+@@ -450,6 +453,14 @@
        mesg_implicit_function_declaration = 2;
        break;
  
@@ -46,7 +46,7 @@ Index: gcc-4.2.0/gcc/c-opts.c
      case OPT_Wformat:
        set_Wformat (value);
        break;
-@@ -691,6 +702,12 @@
+@@ -692,6 +703,12 @@
        flag_exceptions = value;
        break;
  
@@ -59,7 +59,7 @@ Index: gcc-4.2.0/gcc/c-opts.c
      case OPT_fimplement_inlines:
        flag_implement_inlines = value;
        break;
-@@ -1151,6 +1168,47 @@
+@@ -1157,6 +1174,47 @@
    /* Has to wait until now so that cpplib has its hash table.  */
    init_pragma ();
  
@@ -107,11 +107,11 @@ Index: gcc-4.2.0/gcc/c-opts.c
    return true;
  }
  
-Index: gcc-4.2.0/gcc/c.opt
+Index: gcc-4.2.3/gcc/c.opt
 ===================================================================
---- gcc-4.2.0.orig/gcc/c.opt	2007-07-31 02:27:12.015257093 +0200
-+++ gcc-4.2.0/gcc/c.opt	2007-07-31 02:27:39.328813597 +0200
-@@ -189,6 +189,10 @@
+--- gcc-4.2.3.orig/gcc/c.opt	2007-09-01 17:28:30.000000000 +0200
++++ gcc-4.2.3/gcc/c.opt	2008-05-21 13:46:01.550289703 +0200
+@@ -188,6 +188,10 @@
  C ObjC RejectNegative
  Make implicit function declarations an error
  
@@ -122,7 +122,7 @@ Index: gcc-4.2.0/gcc/c.opt
  Wfloat-equal
  C ObjC C++ ObjC++ Var(warn_float_equal)
  Warn if testing floating point numbers for equality
-@@ -544,6 +548,9 @@
+@@ -543,6 +547,9 @@
  fhonor-std
  C++ ObjC++
  
@@ -132,11 +132,11 @@ Index: gcc-4.2.0/gcc/c.opt
  fhosted
  C ObjC
  Assume normal C execution environment
-Index: gcc-4.2.0/gcc/common.opt
+Index: gcc-4.2.3/gcc/common.opt
 ===================================================================
---- gcc-4.2.0.orig/gcc/common.opt	2007-07-31 02:27:12.023257546 +0200
-+++ gcc-4.2.0/gcc/common.opt	2007-07-31 02:27:39.360815422 +0200
-@@ -81,6 +81,10 @@
+--- gcc-4.2.3.orig/gcc/common.opt	2008-01-27 19:36:59.000000000 +0100
++++ gcc-4.2.3/gcc/common.opt	2008-05-21 13:46:01.550289703 +0200
+@@ -80,6 +80,10 @@
  Common Joined
  Treat specified warning as error
  
@@ -147,7 +147,7 @@ Index: gcc-4.2.0/gcc/common.opt
  Wextra
  Common
  Print extra (possibly unwanted) warnings
-@@ -481,6 +485,9 @@
+@@ -480,6 +484,9 @@
  Common Report Var(flag_guess_branch_prob)
  Enable guessing of branch probabilities
  
@@ -157,11 +157,11 @@ Index: gcc-4.2.0/gcc/common.opt
  ; Nonzero means ignore `#ident' directives.  0 means handle them.
  ; Generate position-independent code for executables if possible
  ; On SVR4 targets, it also controls whether or not to emit a
-Index: gcc-4.2.0/gcc/opts.c
+Index: gcc-4.2.3/gcc/opts.c
 ===================================================================
---- gcc-4.2.0.orig/gcc/opts.c	2007-07-31 02:27:12.031257991 +0200
-+++ gcc-4.2.0/gcc/opts.c	2007-07-31 02:28:36.320061346 +0200
-@@ -492,9 +492,6 @@
+--- gcc-4.2.3.orig/gcc/opts.c	2008-01-27 19:36:59.000000000 +0100
++++ gcc-4.2.3/gcc/opts.c	2008-05-21 13:46:01.562288718 +0200
+@@ -483,9 +483,6 @@
        flag_schedule_insns_after_reload = 1;
  #endif
        flag_regmove = 1;
@@ -171,7 +171,7 @@ Index: gcc-4.2.0/gcc/opts.c
        flag_reorder_blocks = 1;
        flag_reorder_functions = 1;
        flag_tree_store_ccp = 1;
-@@ -510,6 +507,10 @@
+@@ -501,6 +498,10 @@
  
    if (optimize >= 3)
      {
@@ -182,7 +182,7 @@ Index: gcc-4.2.0/gcc/opts.c
        flag_inline_functions = 1;
        flag_unswitch_loops = 1;
        flag_gcse_after_reload = 1;
-@@ -711,6 +712,17 @@
+@@ -702,6 +703,17 @@
        }
        break;
  
@@ -200,10 +200,10 @@ Index: gcc-4.2.0/gcc/opts.c
      case OPT_Wextra:
        set_Wextra (value);
        break;
-Index: gcc-4.2.0/gcc/doc/cppopts.texi
+Index: gcc-4.2.3/gcc/doc/cppopts.texi
 ===================================================================
---- gcc-4.2.0.orig/gcc/doc/cppopts.texi	2007-07-31 02:27:12.039258455 +0200
-+++ gcc-4.2.0/gcc/doc/cppopts.texi	2007-07-31 02:27:39.408818157 +0200
+--- gcc-4.2.3.orig/gcc/doc/cppopts.texi	2006-08-16 22:36:23.000000000 +0200
++++ gcc-4.2.3/gcc/doc/cppopts.texi	2008-05-21 13:46:01.570286943 +0200
 @@ -166,6 +166,11 @@
  Make all warnings into hard errors.  Source code which triggers warnings
  will be rejected.
@@ -216,10 +216,10 @@ Index: gcc-4.2.0/gcc/doc/cppopts.texi
  @item -Wsystem-headers
  @opindex Wsystem-headers
  Issue warnings for code in system headers.  These are normally unhelpful
-Index: gcc-4.2.0/gcc/doc/invoke.texi
+Index: gcc-4.2.3/gcc/doc/invoke.texi
 ===================================================================
---- gcc-4.2.0.orig/gcc/doc/invoke.texi	2007-07-31 02:27:12.047258920 +0200
-+++ gcc-4.2.0/gcc/doc/invoke.texi	2007-07-31 02:29:13.218164047 +0200
+--- gcc-4.2.3.orig/gcc/doc/invoke.texi	2008-05-21 13:45:54.274288067 +0200
++++ gcc-4.2.3/gcc/doc/invoke.texi	2008-05-21 13:46:01.582288192 +0200
 @@ -226,7 +226,7 @@
  -Wc++-compat -Wcast-align  -Wcast-qual  -Wchar-subscripts  -Wcomment @gol
  -Wconversion  -Wno-deprecated-declarations @gol
@@ -229,7 +229,7 @@ Index: gcc-4.2.0/gcc/doc/invoke.texi
  -Wfatal-errors  -Wfloat-equal  -Wformat  -Wformat=2 @gol
  -Wno-format-extra-args -Wformat-nonliteral @gol
  -Wformat-security  -Wformat-y2k @gol
-@@ -3569,6 +3569,22 @@
+@@ -3566,6 +3566,22 @@
  @option{-W}@var{foo}.  However, @option{-Wno-error=}@var{foo} does not
  imply anything.
  
@@ -252,7 +252,7 @@ Index: gcc-4.2.0/gcc/doc/invoke.texi
  @item -Wstack-protector
  @opindex Wstack-protector
  This option is only active when @option{-fstack-protector} is active.  It
-@@ -4901,7 +4917,7 @@
+@@ -4893,7 +4909,7 @@
  second branch or a point immediately following it, depending on whether
  the condition is known to be true or false.
  
@@ -261,7 +261,7 @@ Index: gcc-4.2.0/gcc/doc/invoke.texi
  
  @item -fcse-follow-jumps
  @opindex fcse-follow-jumps
-@@ -5019,7 +5035,7 @@
+@@ -5011,7 +5027,7 @@
  @option{-fno-delete-null-pointer-checks} to disable this optimization
  for programs which depend on that behavior.
  
@@ -270,7 +270,7 @@ Index: gcc-4.2.0/gcc/doc/invoke.texi
  
  @item -fexpensive-optimizations
  @opindex fexpensive-optimizations
-@@ -5437,7 +5453,7 @@
+@@ -5460,7 +5476,7 @@
  allowed to alias.  For an example, see the C front-end function
  @code{c_get_alias_set}.
  
@@ -279,11 +279,11 @@ Index: gcc-4.2.0/gcc/doc/invoke.texi
  
  @item -fstrict-overflow
  @opindex fstrict-overflow
-Index: gcc-4.2.0/gcc/java/jvspec.c
+Index: gcc-4.2.3/gcc/java/jvspec.c
 ===================================================================
---- gcc-4.2.0.orig/gcc/java/jvspec.c	2007-07-31 02:27:12.055259364 +0200
-+++ gcc-4.2.0/gcc/java/jvspec.c	2007-07-31 02:27:39.484822490 +0200
-@@ -632,6 +632,7 @@
+--- gcc-4.2.3.orig/gcc/java/jvspec.c	2007-08-31 10:27:50.000000000 +0200
++++ gcc-4.2.3/gcc/java/jvspec.c	2008-05-21 13:46:01.582288192 +0200
+@@ -631,6 +631,7 @@
       class name.  Append dummy `.c' that can be stripped by set_input so %b
       is correct.  */ 
    set_input (concat (main_class_name, "main.c", NULL));
