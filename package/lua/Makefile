@@ -113,14 +113,13 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/lauxlib.h $(1)/usr/include/
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/lnum_config.h $(1)/usr/include/
 	mkdir -p $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/liblua.{a,so.*} $(1)/usr/lib/
-	ln -sf liblua.so.$(PKG_VERSION) $(1)/usr/lib/liblua.so
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/liblua.* $(1)/usr/lib/
 	ln -sf liblua.so.$(PKG_VERSION) $(1)/usr/lib/liblualib.so
 endef
 
 define Package/liblua/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/liblua.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/liblua.so* $(1)/usr/lib/
 endef
 
 define Package/lua/install
