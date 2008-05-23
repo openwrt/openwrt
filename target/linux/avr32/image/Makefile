@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2007 OpenWrt.org
+#
+# Copyright (C) 2007-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -22,6 +22,14 @@ endef
 
 define Image/BuildKernel
 	cp $(KDIR)/uImage $(BIN_DIR)/openwrt-$(BOARD)-uImage
+
+	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux $(KDIR)/vmlinux.lzma
+	mkimage -A avr32 -O linux -T kernel -a 0x10000000 -C lzma \
+		-e 0x90000000 \
+		-n 'OpenWrt Linux-$(LINUX_VERSION)' \
+		-d $(KDIR)/vmlinux.lzma $(KDIR)/uImage-lzma
+
+	cp $(KDIR)/uImage-lzma $(BIN_DIR)/openwrt-$(BOARD)-uImage-lzma
 endef
 
 define Image/Build
