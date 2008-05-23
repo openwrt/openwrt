@@ -125,11 +125,10 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/cambria-pci.c
 +}
 +
 +subsys_initcall(cambria_pci_init);
-Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/cambria-setup.c
-===================================================================
---- /dev/null
-+++ linux-2.6.25.4/arch/arm/mach-ixp4xx/cambria-setup.c
-@@ -0,0 +1,250 @@
+diff -ruN /usr/src/openwrt/clean/linux-2.6.25.4/arch/arm/mach-ixp4xx/cambria-setup.c linux-2.6.25.4/arch/arm/mach-ixp4xx/cambria-setup.c
+--- /usr/src/openwrt/clean/linux-2.6.25.4/arch/arm/mach-ixp4xx/cambria-setup.c	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.6.25.4/arch/arm/mach-ixp4xx/cambria-setup.c	2008-05-20 16:02:43.000000000 -0700
+@@ -0,0 +1,445 @@
 +/*
 + * arch/arm/mach-ixp4xx/cambria-setup.c
 + *
@@ -157,7 +156,8 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/cambria-setup.c
 +# include <linux/i2c.h>
 +# include <linux/eeprom.h>
 +#endif
-+                                                                                
++
++#include <linux/leds.h>                                                                                
 +#include <linux/i2c-gpio.h>
 +#include <asm/types.h>
 +#include <asm/setup.h>
@@ -167,6 +167,13 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/cambria-setup.c
 +#include <asm/mach-types.h>
 +#include <asm/mach/arch.h>
 +#include <asm/mach/flash.h>
++
++struct cambria_board_info {
++  unsigned char *model;
++  void    (* setup)(void);
++};
++
++static struct cambria_board_info *cambria_info __initdata;
 +
 +static struct flash_platform_data cambria_flash_data = {
 +	.map_name	= "cfi_probe",
@@ -257,96 +264,263 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/cambria-setup.c
 +	.resource		= cambria_pata_resources,
 +};
 +
-+static struct eth_plat_info cambria_plat_eth[] = {
-+        {
-+		.phy		= 2,
-+		.rxq		= 4,
-+		.txreadyq	= 21,
-+        }, {
-+		.phy		= 1,
-+		.rxq		= 2,
-+		.txreadyq	= 19,
++static struct eth_plat_info cambria_npec_data = {
++	.phy	= 2,
++	.rxq	= 4,
++	.txreadyq	= 21,
++};
++
++static struct eth_plat_info cambria_npea_data = {
++	.phy	= 1,
++	.rxq	= 2,
++	.txreadyq	= 19,
++};
++
++static struct platform_device cambria_npec_device = {
++	.name		= "ixp4xx_eth",
++	.id			= IXP4XX_ETH_NPEC,
++	.dev.platform_data	= &cambria_npec_data,
++};
++
++static struct platform_device cambria_npea_device = {
++	.name		= "ixp4xx_eth",
++	.id			= IXP4XX_ETH_NPEA,
++	.dev.platform_data	= &cambria_npea_data,
++};
++
++static struct gpio_led cambria_gpio_leds[] = {
++  {
++    .name   = "user",  /* green led */
++    .gpio   = 5,
++    .active_low = 1,
++  }
++};
++
++static struct gpio_led_platform_data cambria_gpio_leds_data = {
++  .num_leds   = 1,
++  .leds     = cambria_gpio_leds,
++};
++
++static struct platform_device cambria_gpio_leds_device = {
++  .name     = "leds-gpio",
++  .id     = -1,
++  .dev.platform_data  = &cambria_gpio_leds_data,
++};
++
++
++static struct latch_led cambria_latch_leds[] = {
++	{
++		.name   = "ledA",  /* green led */
++		.bit    = 0,
++	},
++	{
++		.name   = "ledB",  /* green led */
++		.bit    = 1,
++	},
++	{
++		.name   = "ledC",  /* green led */
++		.bit    = 2,
++	},
++	{
++		.name   = "ledD",  /* green led */
++		.bit    = 3,
++	},
++	{
++		.name   = "ledE",  /* green led */
++		.bit    = 4,
++	},
++	{
++		.name   = "ledF",  /* green led */
++		.bit    = 5,
++	},
++	{
++		.name   = "ledG",  /* green led */
++		.bit    = 6,
++	},
++	{
++		.name   = "ledH",  /* green led */
++		.bit    = 7,
 +	}
 +};
 +
-+static struct platform_device cambria_eth[] = {
-+        {
-+                .name                   = "ixp4xx_eth",
-+                .id                     = IXP4XX_ETH_NPEC,
-+                .dev.platform_data      = cambria_plat_eth,
-+        }, {
-+                .name                   = "ixp4xx_eth",
-+                .id                     = IXP4XX_ETH_NPEA,
-+                .dev.platform_data      = cambria_plat_eth + 1,
-+	}
++static struct latch_led_platform_data cambria_latch_leds_data = {
++	.num_leds   = 8,
++	.leds       = cambria_latch_leds,
++	.mem        = 0x53F40000,
 +};
 +
-+#ifdef CONFIG_LEDS_IXP4XX
-+static struct platform_device cambria_leds_pld = {
-+	.name		= "IXP4XX-PLD-LED",
-+	.id		= -1,
-+	.num_resources	= 0,
++static struct platform_device cambria_latch_leds_device = {
++	.name     = "leds-latch",
++	.id     = -1,
++	.dev.platform_data  = &cambria_latch_leds_data,
 +};
 +
-+static struct platform_device cambria_leds_mem = {
-+	.name		= "IXP4XX-MEM-LED",
-+	.id		= -1,
-+	.num_resources	= 0,
++static struct resource cambria_usb0_resources[] = {
++	{
++		.start    = 0xCD000000,
++		.end      = 0xCD000300,
++		.flags    = IORESOURCE_MEM,
++	},
++	{
++		.start    = 32,
++		.flags    = IORESOURCE_IRQ,
++	},
 +};
-+#endif
++
++static struct resource cambria_usb1_resources[] = {
++	{
++		.start    = 0xCE000000,
++		.end      = 0xCE000300,
++		.flags    = IORESOURCE_MEM,
++	},
++	{
++		.start    = 33,
++		.flags    = IORESOURCE_IRQ,
++	},
++};
++
++static u64 ehci_dma_mask = ~(u32)0;
++
++static struct platform_device cambria_usb0_device =  {
++	.name   = "ixp4xx-ehci",
++	.id   = 0,
++	.dev = {
++		.dma_mask               = &ehci_dma_mask,
++		.coherent_dma_mask      = 0xffffffff,
++	},
++	.resource = cambria_usb0_resources,
++	.num_resources  = 2,
++};
++
++static struct platform_device cambria_usb1_device =  {
++	.name   = "ixp4xx-ehci",
++	.id   = 1,
++	.dev = {
++		.dma_mask               = &ehci_dma_mask,
++		.coherent_dma_mask      = 0xffffffff,
++	},
++	.resource = cambria_usb1_resources,
++	.num_resources  = 2,
++};
++
 +
 +static struct platform_device *cambria_devices[] __initdata = {
 +	&cambria_i2c_gpio,
 +	&cambria_flash,
 +	&cambria_uart,
-+#ifdef CONFIG_LEDS_IXP4XX
-+	&cambria_leds_pld,
-+	&cambria_leds_mem,
-+#endif
-+	&cambria_eth[0],
-+	&cambria_eth[1],
 +};
 +
-+#ifdef CONFIG_SENSORS_EEPROM
-+static int cambria_eeprom_do(struct notifier_block *self, unsigned long event, void *t)
++static void __init cambria_gw23xx_setup(void)
 +{
-+	struct eeprom_data *data = t;
-+	struct sockaddr address;
-+	struct net_device * netdev;
-+
-+	char macs[12];
-+
-+	/* The MACs are the first 12 bytes in the eeprom at address 0x51 */
-+	if (event == EEPROM_REGISTER && data->client.addr == 0x51) {
-+		data->attr->read(&data->client.dev.kobj, data->attr, macs, 0, 12);
-+		/* eth0 */
-+		memcpy(address.sa_data, macs, ETH_ALEN);
-+		memcpy(&cambria_plat_eth[0].hwaddr, macs, ETH_ALEN);
-+		if ( (netdev = dev_get_by_name(&init_net, "eth0")) )
-+			netdev->set_mac_address(netdev, &address);
-+
-+		/* eth1 */
-+		memcpy(address.sa_data, macs + ETH_ALEN, ETH_ALEN);
-+		memcpy(&cambria_plat_eth[1].hwaddr, macs + ETH_ALEN, ETH_ALEN);
-+		if ( (netdev = dev_get_by_name(&init_net, "eth1")) )
-+			netdev->set_mac_address(netdev, &address);
-+	}
-+
-+	return NOTIFY_DONE;
++  platform_device_register(&cambria_npec_device);
++  platform_device_register(&cambria_npea_device);
 +}
 +
-+static struct notifier_block cambria_eeprom_notifier = {
-+	.notifier_call = cambria_eeprom_do
++#ifdef CONFIG_SENSORS_EEPROM
++static void __init cambria_gw2350_setup(void)
++{
++  platform_device_register(&cambria_npec_device);
++  platform_device_register(&cambria_npea_device);
++
++	platform_device_register(&cambria_usb0_device);
++	platform_device_register(&cambria_usb1_device);
++
++	platform_device_register(&cambria_gpio_leds_device);
++}
++
++static void __init cambria_gw2358_setup(void)
++{
++  platform_device_register(&cambria_npec_device);
++  platform_device_register(&cambria_npea_device);
++
++	platform_device_register(&cambria_usb0_device);
++	platform_device_register(&cambria_usb1_device);
++
++	platform_device_register(&cambria_pata);
++	
++	platform_device_register(&cambria_latch_leds_device);
++}
++
++static struct cambria_board_info cambria_boards[] __initdata = {
++  {
++    .model    = "GW2350",
++    .setup    = cambria_gw2350_setup,
++  }, {
++    .model    = "GW2358",
++    .setup    = cambria_gw2358_setup,
++  }
 +};
-+#endif
++
++static struct cambria_board_info * __init cambria_find_board_info(char *model)
++{
++  int i;
++
++  for (i = 0; i < ARRAY_SIZE(cambria_boards); i++) {
++    struct cambria_board_info *info = &cambria_boards[i];
++    if (strncmp(info->model, model, strlen(info->model)) == 0)
++      return info;
++  }
++
++  return NULL;
++}
++
++struct cambria_eeprom_header {
++	unsigned char mac0[ETH_ALEN];
++	unsigned char mac1[ETH_ALEN];
++	unsigned char res0[4];
++	unsigned char magic[2];
++	unsigned char config[14];
++	unsigned char model[16];
++};
++
++static int __init cambria_eeprom_notify(struct notifier_block *self,
++		unsigned long event, void *t)
++{
++  struct eeprom_data *ee = t;
++  struct cambria_eeprom_header hdr;
++
++  if (cambria_info)
++    return NOTIFY_DONE;
++
++  /* The eeprom is at address 0x51 */
++  if (event != EEPROM_REGISTER || ee->client.addr != 0x51)
++    return NOTIFY_DONE;
++
++  ee->attr->read(&ee->client.dev.kobj, ee->attr, (char *)&hdr,
++              0, sizeof(hdr));
++
++  if (hdr.magic[0] != 'G' || hdr.magic[1] != 'W')
++    return NOTIFY_DONE;
++
++  memcpy(&cambria_npec_data.hwaddr, hdr.mac0, ETH_ALEN);
++  memcpy(&cambria_npea_data.hwaddr, hdr.mac1, ETH_ALEN);
++
++  cambria_info = cambria_find_board_info(hdr.model);
++
++  return NOTIFY_OK;
++}
++
++static struct notifier_block cambria_eeprom_notifier __initdata = {
++       .notifier_call = cambria_eeprom_notify
++};
++
++static void __init cambria_register_eeprom_notifier(void)
++{
++  register_eeprom_notifier(&cambria_eeprom_notifier);
++}
++
++static void __init cambria_unregister_eeprom_notifier(void)
++{
++  unregister_eeprom_notifier(&cambria_eeprom_notifier);
++}
++#else /* CONFIG_SENSORS_EEPROM */
++static inline void cambria_register_eeprom_notifier(void) {};
++static inline void cambria_unregister_eeprom_notifier(void) {};
++#endif /* CONFIG_SENSORS_EEPROM */
 +
 +static void __init cambria_init(void)
 +{
 +	ixp4xx_sys_init();
-+
-+#ifdef CONFIG_SENSORS_EEPROM
-+	register_eeprom_notifier(&cambria_eeprom_notifier);
-+#endif
 +
 +	cambria_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
 +	cambria_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + SZ_32M - 1;
@@ -365,8 +539,28 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/cambria-setup.c
 +	cambria_pata_data.cs0_cfg = IXP4XX_EXP_CS3;
 +	cambria_pata_data.cs1_cfg = IXP4XX_EXP_CS3;
 +
-+	platform_device_register(&cambria_pata);
++	cambria_register_eeprom_notifier();
 +}
++
++static int __init cambria_model_setup(void)
++{
++  if (!machine_is_cambria())
++    return 0;
++
++  if (cambria_info) {
++    printk(KERN_DEBUG "Running on Gateworks Cambria %s\n",
++              cambria_info->model);
++    cambria_info->setup();
++  } else {
++    printk(KERN_INFO "Unknown/missing Cambria model number"
++            " -- defaults will be used\n");
++    cambria_gw23xx_setup();
++  }
++
++  cambria_unregister_eeprom_notifier();
++  return 0;
++}
++late_initcall(cambria_model_setup);
 +
 +#ifdef CONFIG_MACH_CAMBRIA
 +MACHINE_START(CAMBRIA, "Gateworks Cambria series")
