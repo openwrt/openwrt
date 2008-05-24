@@ -30,7 +30,7 @@ $(eval $(call KernelPackage,hwmon-core))
 define KernelPackage/hwmon-lm77
   SUBMENU:=$(HWMON_MENU)
   TITLE:=LM77 monitoring support
-  DEPENDS:=kmod-hwmon-core
+  DEPENDS:=kmod-hwmon-core kmod-i2c-core
   KCONFIG:=CONFIG_SENSORS_LM77
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm77.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,lm77)
