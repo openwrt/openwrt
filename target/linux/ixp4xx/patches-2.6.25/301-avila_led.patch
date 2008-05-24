@@ -35,49 +35,49 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
 +
 +static struct latch_led avila_latch_leds[] = {
 +	{
-+		.name   = "led0",  /* green led */
-+		.bit    = 0,
++		.name	= "led0",  /* green led */
++		.bit	= 0,
 +	},
 +	{
-+		.name   = "led1",  /* green led */
-+		.bit    = 1,
++		.name	= "led1",  /* green led */
++		.bit	= 1,
 +	},
 +	{
-+		.name   = "led2",  /* green led */
-+		.bit    = 2,
++		.name	= "led2",  /* green led */
++		.bit	= 2,
 +	},
 +	{
-+		.name   = "led3",  /* green led */
-+		.bit    = 3,
++		.name	= "led3",  /* green led */
++		.bit	= 3,
 +	},
 +	{
-+		.name   = "led4",  /* green led */
-+		.bit    = 4,
++		.name	= "led4",  /* green led */
++		.bit	= 4,
 +	},
 +	{
-+		.name   = "led5",  /* green led */
-+		.bit    = 5,
++		.name	= "led5",  /* green led */
++		.bit	= 5,
 +	},
 +	{
-+		.name   = "led6",  /* green led */
-+		.bit    = 6,
++		.name	= "led6",  /* green led */
++		.bit	= 6,
 +	},
 +	{
-+		.name   = "led7",  /* green led */
-+		.bit    = 7,
++		.name	= "led7",  /* green led */
++		.bit	= 7,
 +	}
 +};
 +
 +static struct latch_led_platform_data avila_latch_leds_data = {
-+	.num_leds   = 8,
-+	.leds       = avila_latch_leds,
-+	.mem        = 0x51000000,
++	.num_leds	= 8,
++	.leds		= avila_latch_leds,
++	.mem		= 0x51000000,
 +};
 +
 +static struct platform_device avila_latch_leds_device = {
-+	.name     = "leds-latch",
-+	.id     = -1,
-+	.dev.platform_data  = &avila_latch_leds_data,
++	.name			= "leds-latch",
++	.id			= -1,
++	.dev.platform_data	= &avila_latch_leds_data,
 +};
 +
  static struct platform_device *avila_devices[] __initdata = {
