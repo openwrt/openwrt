@@ -3,7 +3,7 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
 --- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/avila-setup.c
 +++ linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
 @@ -239,10 +239,28 @@ static struct platform_device avila_latc
- 	.dev.platform_data  = &avila_latch_leds_data,
+ 	.dev.platform_data	= &avila_latch_leds_data,
  };
  
 +static struct resource avila_gpio_resources[] = {
