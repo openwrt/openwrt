@@ -110,8 +110,8 @@ define Package/losetup/install
 endef
 
 define Package/mount-utils/install
-	$(INSTALL_DIR) $(1)/sbin/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mount/{u,}mount $(1)/sbin
+	$(INSTALL_DIR) $(1)/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mount/{u,}mount $(1)/bin
 endef
 
 define Package/swap-utils/install
