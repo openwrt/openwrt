@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -32,10 +32,9 @@ PKG_UNPACK:= \
 
 include $(INCLUDE_DIR)/package.mk
 
-# XXX: remove @!TARGET_* later when we have PCI support properly detected on all targets
 define KernelPackage/acx
   TITLE:=Driver for TI ACX1xx chipset
-  DEPENDS:=@LINUX_2_6 +wireless-tools @!TARGET_atheros @!TARGET_avr32 @!TARGET_uml
+  DEPENDS:=@LINUX_2_6 @CONFIG_PCI||TARGET_ar7 +wireless-tools
   URL:=http://acx100.sourceforge.net/
   SUBMENU:=Wireless Drivers
   FILES:= $(PKG_BUILD_DIR)/acx.$(LINUX_KMOD_SUFFIX)

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -154,11 +154,10 @@ endef
 $(eval $(call KernelPackage,pcmcia-serial))
 
 
-# XXX: remove @!TARGET_* later when we have USB support properly detected on all targets
 define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
-  DEPENDS:=@USB_SUPPORT @!TARGET_uml
+  DEPENDS:=@USB_SUPPORT
   KCONFIG:= \
 	CONFIG_BLUEZ \
 	CONFIG_BLUEZ_L2CAP \
@@ -306,7 +305,6 @@ endef
 $(eval $(call KernelPackage,softdog))
 
 
-# XXX: remove @TARGET_* later when we are able to detect the exact version of the kernel
 define KernelPackage/leds-gpio
   SUBMENU:=$(OTHER_MENU)
   TITLE:=GPIO LED support

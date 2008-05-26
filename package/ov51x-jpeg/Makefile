@@ -36,12 +36,11 @@ define Package/ov51x-jpeg-utils/description
  Utility programs for the video-ov51x kernel module
 endef
 
-# XXX: remove @!TARGET_* later when we have USB support properly detected on all targets
 define KernelPackage/video-ov51x-jpeg
 $(call Package/ov51x-jpeg/Default)
   SUBMENU:=Video Support
   TITLE:=OV51x based USB webcam support (JPEG)
-  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core kmod-video-core @!TARGET_atheros @!TARGET_uml
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core kmod-video-core
   FILES:=$(PKG_BUILD_DIR)/ov51x-jpeg.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,70,ov51x-jpeg)
 endef

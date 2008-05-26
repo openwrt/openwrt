@@ -18,12 +18,10 @@ PKG_FWP54_MD5SUM:=09f9da7ea757173c9de1a0322a1f9782
 
 include $(INCLUDE_DIR)/package.mk
 
-# XXX: remove @!TARGET_* later when we have PCI & USB support properly detected on all targets
-
 define KernelPackage/p54/Default
   SUBMENU:=Wireless Drivers
   TITLE:=Prism Wireless Support (mac80211)
-  DEPENDS:=+kmod-mac80211 @!TARGET_ar7 @!TARGET_atheros @!TARGET_uml
+  DEPENDS:=+kmod-mac80211 @BROKEN
 endef
 
 define KernelPackage/p54-common

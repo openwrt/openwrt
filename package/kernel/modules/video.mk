@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -11,7 +11,7 @@ VIDEO_MENU:=Video Support
 define KernelPackage/video-core
   SUBMENU:=$(VIDEO_MENU)
   TITLE=Video4Linux support
-  DEPENDS:= @!TARGET_uml
+  DEPENDS:=@PCI_SUPPORT||USB_SUPPORT
   KCONFIG:= \
 	CONFIG_VIDEO_DEV \
 	CONFIG_VIDEO_V4L1=y \

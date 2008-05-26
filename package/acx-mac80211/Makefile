@@ -27,11 +27,10 @@ PKG_FW_C19_MD5SUM:=a1fa9681e297b4e36e257090fc12265a
 
 include $(INCLUDE_DIR)/package.mk
 
-# XXX: remove @!TARGET_* later when we have PCI support properly detected on all targets
 define KernelPackage/acx-mac80211
   SUBMENU:=Wireless Drivers
   TITLE:=ACX111 Mac80211 driver
-  DEPENDS:=+kmod-mac80211 @!TARGET_atheros @!TARGET_uml @BROKEN
+  DEPENDS:=@LINUX_2_6 @PCI_SUPPORT||TARGET_ar7 +kmod-mac80211 @BROKEN
   FILES:=$(PKG_BUILD_DIR)/acx-mac80211.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,acx-mac80211)
 endef
