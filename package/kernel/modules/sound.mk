@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,11 +8,10 @@
 
 SOUND_MENU:=Sound Support
 
-# XXX: remove @!TARGET_* later when we have PCI & USB support properly detected on all targets
 define KernelPackage/sound-core
   SUBMENU:=$(SOUND_MENU)
   TITLE:=Sound support
-  DEPENDS:=@USB_SUPPORT||PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT||USB_SUPPORT
   KCONFIG:= \
 	CONFIG_SOUND \
 	CONFIG_SND \
