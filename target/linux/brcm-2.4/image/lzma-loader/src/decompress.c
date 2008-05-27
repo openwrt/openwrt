@@ -120,7 +120,9 @@ static __inline__ unsigned char get_byte(void)
 
 /* should be the first function */
 void entry(unsigned long icache_size, unsigned long icache_lsize, 
-	unsigned long dcache_size, unsigned long dcache_lsize)
+	unsigned long dcache_size, unsigned long dcache_lsize,
+	unsigned long fw_arg0, unsigned long fw_arg1,
+	unsigned long fw_arg2, unsigned long fw_arg3)
 {
 	unsigned int i;  /* temp value */
 	unsigned int lc; /* literal context bits */
@@ -170,6 +172,8 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 		blast_icache(icache_size, icache_lsize);
 
 		/* Jump to load address */
-		((void (*)(void)) LOADADDR)();
+		((void (*)(unsigned long, unsigned long, unsigned long,
+			unsigned long)) LOADADDR)(fw_arg0, fw_arg1, fw_arg2,
+				fw_arg3);
 	}
 }
