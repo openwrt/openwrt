@@ -172,7 +172,7 @@ int nandmtd_ReadChunkFromNAND(yaffs_Device * dev, int chunkInNAND, __u8 * data,
 	__u8 *spareAsBytes = (__u8 *) spare;
 
 	if (data && spare) {
-		if (dev->useNANDECC) {	
+		if (dev->useNANDECC) {
 			/* Careful, this call adds 2 ints */
 			/* to the end of the spare data.  Calling function */
 			/* should allocate enough memory for spare, */

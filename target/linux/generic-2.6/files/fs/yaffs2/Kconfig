@@ -26,7 +26,7 @@ config YAFFS_YAFFS1
 	default y
 	help
 	  Enable YAFFS1 support -- yaffs for 512 byte / page devices
-	  
+
 	  Not needed for 2K-page devices.
 
 	  If unsure, say Y.
@@ -157,9 +157,9 @@ config YAFFS_ALWAYS_CHECK_CHUNK_ERASED
 	  Enabling this forces on the test that chunks are erased in flash
 	  before writing to them. This takes more time but is potentially
 	  a bit more secure.
- 
+
 	  Suggest setting Y during development and ironing out driver
-	  issues etc. Suggest setting to N if you want faster writing.  
+	  issues etc. Suggest setting to N if you want faster writing.
 
 	  If unsure, say Y.
 

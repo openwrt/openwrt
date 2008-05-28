@@ -1,10 +1,10 @@
 /*
- * YAFFS: Yet another Flash File System . A NAND-flash specific file system. 
+ * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
  *
  * Copyright (C) 2002-2007 Aleph One Ltd.
  *   for Toby Churchill Ltd and Brightstar Engineering
  *
- * Created by Martin Fouts <Martin.Fouts@palmsource.com> 
+ * Created by Martin Fouts <Martin.Fouts@palmsource.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License version 2.1 as

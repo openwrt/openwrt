@@ -128,10 +128,10 @@ void yaffs_UnpackTags2(yaffs_ExtendedTags * t, yaffs_PackedTags2 * pt)
 						  (yaffs_PackedTags2TagsPart),
 						  &pt->ecc, &ecc);
 			switch(result){
-				case 0: 
-					t->eccResult = YAFFS_ECC_RESULT_NO_ERROR; 
+				case 0:
+					t->eccResult = YAFFS_ECC_RESULT_NO_ERROR;
 					break;
-				case 1: 
+				case 1:
 					t->eccResult = YAFFS_ECC_RESULT_FIXED;
 					break;
 				case -1:

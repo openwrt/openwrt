@@ -295,7 +295,7 @@ int nandmtd1_MarkNANDBlockBad(struct yaffs_DeviceStruct *dev, int blockNo)
 }
 
 /* Check any MTD prerequists.
- * 
+ *
  * Returns YAFFS_OK or YAFFS_FAIL.
  */
 static int nandmtd1_TestPrerequists(struct mtd_info * mtd)
