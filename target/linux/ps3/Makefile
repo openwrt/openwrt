@@ -20,13 +20,10 @@ define Target/Description
 	Build bootloader images for the Sony PS3 Game Console
 endef
 
-# no patches required
-define Kernel/Prepare/ps3
-	bzcat $(DL_DIR)/$(LINUX_SOURCE) | $(TAR) -C $(KERNEL_BUILD_DIR) $(TAR_OPTIONS)
-endef
-
+# no generic patches required
 define Kernel/Prepare
-	$(call Kernel/Prepare/ps3)
+	bzcat $(DL_DIR)/$(LINUX_SOURCE) | $(TAR) -C $(KERNEL_BUILD_DIR) $(TAR_OPTIONS)
+	$(call PatchDir,$(PATCH_DIR),)
 endef
 
 KERNELNAME:="zImage"
