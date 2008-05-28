@@ -1,5 +1,5 @@
 /*
- * YAFFS: Yet another Flash File System . A NAND-flash specific file system. 
+ * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
  *
  * Copyright (C) 2002-2007 Aleph One Ltd.
  *   for Toby Churchill Ltd and Brightstar Engineering
@@ -15,7 +15,7 @@
 
 /*
  * This file is just holds extra declarations used during development.
- * Most of these are from kernel includes placed here so we can use them in 
+ * Most of these are from kernel includes placed here so we can use them in
  * applications.
  *
  */

@@ -1,5 +1,5 @@
 /*
- * YAFFS: Yet another Flash File System . A NAND-flash specific file system. 
+ * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
  *
  * Copyright (C) 2002-2007 Aleph One Ltd.
  *   for Toby Churchill Ltd and Brightstar Engineering
@@ -16,9 +16,9 @@
  /*
   * This code implements the ECC algorithm used in SmartMedia.
   *
-  * The ECC comprises 22 bits of parity information and is stuffed into 3 bytes. 
+  * The ECC comprises 22 bits of parity information and is stuffed into 3 bytes.
   * The two unused bit are set to 1.
-  * The ECC can correct single bit errors in a 256-byte page of data. Thus, two such ECC 
+  * The ECC can correct single bit errors in a 256-byte page of data. Thus, two such ECC
   * blocks are used on a 512-byte NAND page.
   *
   */

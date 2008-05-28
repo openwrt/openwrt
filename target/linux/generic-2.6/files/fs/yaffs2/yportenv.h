@@ -1,5 +1,5 @@
 /*
- * YAFFS: Yet another Flash File System . A NAND-flash specific file system. 
+ * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
  *
  * Copyright (C) 2002-2007 Aleph One Ltd.
  *   for Toby Churchill Ltd and Brightstar Engineering
@@ -150,7 +150,7 @@ extern unsigned int yaffs_wr_attempts;
  * Tracing flags.
  * The flags masked in YAFFS_TRACE_ALWAYS are always traced.
  */
- 
+
 #define YAFFS_TRACE_OS			0x00000002
 #define YAFFS_TRACE_ALLOCATE		0x00000004
 #define YAFFS_TRACE_SCAN		0x00000008

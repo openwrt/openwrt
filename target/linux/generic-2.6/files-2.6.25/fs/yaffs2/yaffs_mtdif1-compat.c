@@ -30,9 +30,9 @@ Message-Id: <200705181006.49860.ian@brightstareng.com>
 X-Virus-Scanned: by amavisd-new at brightstareng.com
 Status: R
 X-Status: NT
-X-KMail-EncryptionState:  
-X-KMail-SignatureState:  
-X-KMail-MDN-Sent:  
+X-KMail-EncryptionState:
+X-KMail-SignatureState:
+X-KMail-MDN-Sent:
 
 --Boundary-00=_5LbTGmt62YoutxM
 Content-Type: text/plain;
@@ -49,9 +49,9 @@ On Friday 18 May 2007 08:34, you wrote:
 
 Good news!
 
-Attached is a newer yaffs_mtdif1.c with a bandaid to help the 
+Attached is a newer yaffs_mtdif1.c with a bandaid to help the
 2.6.18 and 2.6.19 versions of MTD not trip on the oob read.
-See the LINUX_VERSION_CODE conditional in 
+See the LINUX_VERSION_CODE conditional in
 nandmtd1_ReadChunkWithTagsFromNAND.
 
 -imcd
@@ -361,7 +361,7 @@ int nandmtd1_MarkNANDBlockBad(struct yaffs_DeviceStruct *dev, int blockNo)
 }
 
 /* Check any MTD prerequists.
- * 
+ *
  * Returns YAFFS_OK or YAFFS_FAIL.
  */
 static int nandmtd1_TestPrerequists(struct mtd_info * mtd)
