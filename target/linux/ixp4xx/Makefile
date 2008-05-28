@@ -22,6 +22,6 @@ define Kernel/Configure
 	$(if $(CONFIG_EABI_SUPPORT),echo '# CONFIG_OABI_COMPAT is not set' >> $(LINUX_DIR)/.config)
 endef
 
-DEFAULT_PACKAGES += ixp4xx-microcode
+DEFAULT_PACKAGES += ixp4xx-microcode fconfig
 
 $(eval $(call BuildTarget))
