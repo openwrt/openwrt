@@ -208,7 +208,7 @@ $(eval $(call KernelPackage,iptunnel4))
 define KernelPackage/iptunnel6
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPv6 tunneling
-  DEPENDS:= @LINUX_2_6
+  DEPENDS:= @LINUX_2_6 +kmod-ipv6
   KCONFIG:= \
 	CONFIG_INET6_TUNNEL
   FILES:= $(foreach mod,tunnel6, \
@@ -227,7 +227,11 @@ $(eval $(call KernelPackage,iptunnel6))
 define KernelPackage/ipv6
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPv6 support
-  KCONFIG:=CONFIG_IPV6
+  KCONFIG:= \
+	CONFIG_IPV6 \
+	CONFIG_IPV6_PRIVACY=y \
+	CONFIG_IPV6_MULTIPLE_TABLES=y \
+	CONFIG_IPV6_SUBTREES=y
   FILES:=$(LINUX_DIR)/net/ipv6/ipv6.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,ipv6)
 endef
@@ -262,6 +266,24 @@ define KernelPackage/sit/description
 endef
 
 $(eval $(call KernelPackage,sit))
+
+
+define KernelPackage/ip6-tunnel
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=IP-in-IPv6 tunnelling
+  DEPENDS:= @LINUX_2_6 +kmod-ipv6 +kmod-iptunnel6
+  KCONFIG:= CONFIG_IPV6_TUNNEL
+  FILES:= $(foreach mod,ip6_tunnel, \
+	$(LINUX_DIR)/net/ipv6/$(mod).$(LINUX_KMOD_SUFFIX) \
+  )
+  AUTOLOAD:=$(call AutoLoad,32,ip6_tunnel)
+endef
+
+define KernelPackage/ip6-tunnel/description
+ Kernel modules for IPv6-in-IPv6 and IPv4-in-IPv6 tunnelling
+endef
+
+$(eval $(call KernelPackage,ip6-tunnel))
 
 
 define KernelPackage/gre
