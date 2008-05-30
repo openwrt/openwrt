@@ -1,8 +1,6 @@
-Index: linux-2.6.24.7/drivers/w1/masters/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/drivers/w1/masters/Kconfig
-+++ linux-2.6.24.7/drivers/w1/masters/Kconfig
-@@ -42,5 +42,15 @@ config W1_MASTER_DS1WM
+--- a/drivers/w1/masters/Kconfig
++++ b/drivers/w1/masters/Kconfig
+@@ -42,5 +42,15 @@
  	  in HP iPAQ devices like h5xxx, h2200, and ASIC3-based like
  	  hx4700.
  
@@ -18,19 +16,15 @@ Index: linux-2.6.24.7/drivers/w1/masters/Kconfig
 +
  endmenu
  
-Index: linux-2.6.24.7/drivers/w1/masters/Makefile
-===================================================================
---- linux-2.6.24.7.orig/drivers/w1/masters/Makefile
-+++ linux-2.6.24.7/drivers/w1/masters/Makefile
-@@ -6,3 +6,4 @@ obj-$(CONFIG_W1_MASTER_MATROX)		+= matro
+--- a/drivers/w1/masters/Makefile
++++ b/drivers/w1/masters/Makefile
+@@ -6,3 +6,4 @@
  obj-$(CONFIG_W1_MASTER_DS2490)		+= ds2490.o
  obj-$(CONFIG_W1_MASTER_DS2482)		+= ds2482.o
  obj-$(CONFIG_W1_MASTER_DS1WM)		+= ds1wm.o
 +obj-$(CONFIG_W1_MASTER_GPIO)		+= w1-gpio.o
-Index: linux-2.6.24.7/drivers/w1/masters/w1-gpio.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/drivers/w1/masters/w1-gpio.c
++++ b/drivers/w1/masters/w1-gpio.c
 @@ -0,0 +1,124 @@
 +/*
 + * w1-gpio - GPIO w1 bus master driver
@@ -156,10 +150,8 @@ Index: linux-2.6.24.7/drivers/w1/masters/w1-gpio.c
 +MODULE_DESCRIPTION("GPIO w1 bus master driver");
 +MODULE_AUTHOR("Ville Syrjala <syrjala@sci.fi>");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.24.7/include/linux/w1-gpio.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/include/linux/w1-gpio.h
++++ b/include/linux/w1-gpio.h
 @@ -0,0 +1,23 @@
 +/*
 + * w1-gpio interface to platform code

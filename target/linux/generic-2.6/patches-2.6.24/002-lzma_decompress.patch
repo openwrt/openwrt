@@ -1,7 +1,5 @@
-Index: linux-2.6.24.7/include/linux/LzmaDecode.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/include/linux/LzmaDecode.h
++++ b/include/linux/LzmaDecode.h
 @@ -0,0 +1,100 @@
 +/*
 +  LzmaDecode.h
@@ -103,10 +101,8 @@ Index: linux-2.6.24.7/include/linux/LzmaDecode.h
 +    UInt32 *outSizeProcessed);
 +
 +#endif
-Index: linux-2.6.24.7/lib/LzmaDecode.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/lib/LzmaDecode.c
++++ b/lib/LzmaDecode.c
 @@ -0,0 +1,663 @@
 +/*
 +  LzmaDecode.c
@@ -771,11 +767,9 @@ Index: linux-2.6.24.7/lib/LzmaDecode.c
 +  *outSizeProcessed = nowPos;
 +  return LZMA_RESULT_OK;
 +}
-Index: linux-2.6.24.7/lib/Makefile
-===================================================================
---- linux-2.6.24.7.orig/lib/Makefile
-+++ linux-2.6.24.7/lib/Makefile
-@@ -14,7 +14,7 @@ lib-$(CONFIG_SMP) += cpumask.o
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -14,7 +14,7 @@
  lib-y	+= kobject.o kref.o klist.o
  
  obj-y += div64.o sort.o parser.o halfmd4.o debug_locks.o random32.o \
@@ -784,7 +778,7 @@ Index: linux-2.6.24.7/lib/Makefile
  
  ifeq ($(CONFIG_DEBUG_KOBJECT),y)
  CFLAGS_kobject.o += -DDEBUG
-@@ -64,6 +64,7 @@ obj-$(CONFIG_SMP) += percpu_counter.o
+@@ -64,6 +64,7 @@
  obj-$(CONFIG_AUDIT_GENERIC) += audit.o
  
  obj-$(CONFIG_SWIOTLB) += swiotlb.o
