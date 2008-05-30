@@ -1,7 +1,5 @@
-Index: linux-2.6.24.7/arch/avr32/boards/atngw100/Kconfig
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/arch/avr32/boards/atngw100/Kconfig
++++ b/arch/avr32/boards/atngw100/Kconfig
 @@ -0,0 +1,12 @@
 +# NGW100 customization
 +
@@ -15,10 +13,8 @@ Index: linux-2.6.24.7/arch/avr32/boards/atngw100/Kconfig
 +
 +	  Choose 'Y' here if you're having i2c-related problems and
 +	  want to rule out the i2c bus driver.
-Index: linux-2.6.24.7/arch/avr32/boards/atngw100/setup.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/boards/atngw100/setup.c
-+++ linux-2.6.24.7/arch/avr32/boards/atngw100/setup.c
+--- a/arch/avr32/boards/atngw100/setup.c
++++ b/arch/avr32/boards/atngw100/setup.c
 @@ -20,7 +20,7 @@
  #include <asm/io.h>
  #include <asm/setup.h>
@@ -28,7 +24,7 @@ Index: linux-2.6.24.7/arch/avr32/boards/atngw100/setup.c
  #include <asm/arch/board.h>
  #include <asm/arch/init.h>
  #include <asm/arch/portmux.h>
-@@ -37,11 +37,16 @@ static struct eth_platform_data __initda
+@@ -37,11 +37,16 @@
  static struct spi_board_info spi0_board_info[] __initdata = {
  	{
  		.modalias	= "mtd_dataflash",
@@ -46,7 +42,7 @@ Index: linux-2.6.24.7/arch/avr32/boards/atngw100/setup.c
  /*
   * The next two functions should go away as the boot loader is
   * supposed to initialize the macb address registers with a valid
-@@ -124,6 +129,7 @@ static struct platform_device ngw_gpio_l
+@@ -124,6 +129,7 @@
  	}
  };
  
@@ -54,7 +50,7 @@ Index: linux-2.6.24.7/arch/avr32/boards/atngw100/setup.c
  static struct i2c_gpio_platform_data i2c_gpio_data = {
  	.sda_pin		= GPIO_PIN_PA(6),
  	.scl_pin		= GPIO_PIN_PA(7),
-@@ -139,6 +145,7 @@ static struct platform_device i2c_gpio_d
+@@ -139,6 +145,7 @@
  		.platform_data	= &i2c_gpio_data,
  	},
  };
@@ -62,7 +58,7 @@ Index: linux-2.6.24.7/arch/avr32/boards/atngw100/setup.c
  
  static int __init atngw100_init(void)
  {
-@@ -157,6 +164,7 @@ static int __init atngw100_init(void)
+@@ -157,6 +164,7 @@
  	set_hw_addr(at32_add_device_eth(1, &eth_data[1]));
  
  	at32_add_device_spi(0, spi0_board_info, ARRAY_SIZE(spi0_board_info));
@@ -70,7 +66,7 @@ Index: linux-2.6.24.7/arch/avr32/boards/atngw100/setup.c
  	at32_add_device_usba(0, NULL);
  
  	for (i = 0; i < ARRAY_SIZE(ngw_leds); i++) {
-@@ -165,11 +173,15 @@ static int __init atngw100_init(void)
+@@ -165,11 +173,15 @@
  	}
  	platform_device_register(&ngw_gpio_leds);
  
@@ -86,10 +82,8 @@ Index: linux-2.6.24.7/arch/avr32/boards/atngw100/setup.c
  
  	return 0;
  }
-Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1000.h
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/boards/atstk1000/atstk1000.h
-+++ linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1000.h
+--- a/arch/avr32/boards/atstk1000/atstk1000.h
++++ b/arch/avr32/boards/atstk1000/atstk1000.h
 @@ -12,4 +12,6 @@
  
  extern struct atmel_lcdfb_info atstk1000_lcdc_data;
@@ -97,10 +91,8 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1000.h
 +void atstk1000_setup_j2_leds(void);
 +
  #endif /* __ARCH_AVR32_BOARDS_ATSTK1000_ATSTK1000_H */
-Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1002.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/boards/atstk1000/atstk1002.c
-+++ linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1002.c
+--- a/arch/avr32/boards/atstk1000/atstk1002.c
++++ b/arch/avr32/boards/atstk1000/atstk1002.c
 @@ -11,7 +11,6 @@
  #include <linux/etherdevice.h>
  #include <linux/init.h>
@@ -118,7 +110,7 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1002.c
  #include <asm/arch/board.h>
  #include <asm/arch/init.h>
  #include <asm/arch/portmux.h>
-@@ -49,18 +48,16 @@ static struct eth_platform_data __initda
+@@ -49,18 +48,16 @@
  	},
  };
  
@@ -140,7 +132,7 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1002.c
  	{
  		/* AT73C213 */
  		.modalias	= "at73c213",
-@@ -80,12 +77,25 @@ static struct spi_board_info spi0_board_
+@@ -80,12 +77,25 @@
  };
  #endif
  
@@ -167,7 +159,7 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1002.c
  /*
   * The next two functions should go away as the boot loader is
   * supposed to initialize the macb address registers with a valid
-@@ -141,68 +151,8 @@ static void __init set_hw_addr(struct pl
+@@ -141,68 +151,8 @@
  	clk_put(pclk);
  }
  
@@ -238,7 +230,7 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1002.c
  {
  	struct clk *gclk;
  	struct clk *pll;
-@@ -220,7 +170,7 @@ static void __init at73c213_set_clk(stru
+@@ -220,7 +170,7 @@
  	}
  
  	at32_select_periph(GPIO_PIN_PA(30), GPIO_PERIPH_A, 0);
@@ -247,7 +239,7 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1002.c
  
  err_set_clk:
  	clk_put(pll);
-@@ -229,12 +179,16 @@ err_pll:
+@@ -229,12 +179,16 @@
  err_gclk:
  	return;
  }
@@ -267,7 +259,7 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1002.c
  	at32_map_usart(0, 1);	/* USART 0/B: /dev/ttyS1, IRDA */
  #else
  	at32_map_usart(1, 0);	/* USART 1/A: /dev/ttyS0, DB9 */
-@@ -271,7 +225,7 @@ static int __init atstk1002_init(void)
+@@ -271,7 +225,7 @@
  
  	at32_add_system_devices();
  
@@ -276,7 +268,7 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1002.c
  	at32_add_device_usart(1);
  #else
  	at32_add_device_usart(0);
-@@ -281,12 +235,16 @@ static int __init atstk1002_init(void)
+@@ -281,12 +235,16 @@
  #ifndef CONFIG_BOARD_ATSTK1002_SW6_CUSTOM
  	set_hw_addr(at32_add_device_eth(0, &eth_data[0]));
  #endif
@@ -295,7 +287,7 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1002.c
  #ifdef CONFIG_BOARD_ATSTK1002_SW5_CUSTOM
  	set_hw_addr(at32_add_device_eth(1, &eth_data[1]));
  #else
-@@ -294,18 +252,23 @@ static int __init atstk1002_init(void)
+@@ -294,18 +252,23 @@
  			     fbmem_start, fbmem_size);
  #endif
  	at32_add_device_usba(0, NULL);
@@ -327,10 +319,8 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1002.c
  	return 0;
  }
  postcore_initcall(atstk1002_init);
-Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1003.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1003.c
++++ b/arch/avr32/boards/atstk1000/atstk1003.c
 @@ -0,0 +1,185 @@
 +/*
 + * ATSTK1003 daughterboard-specific init code
@@ -517,10 +507,8 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1003.c
 +	return 0;
 +}
 +postcore_initcall(atstk1003_init);
-Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1004.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1004.c
++++ b/arch/avr32/boards/atstk1000/atstk1004.c
 @@ -0,0 +1,156 @@
 +/*
 + * ATSTK1003 daughterboard-specific init code
@@ -678,10 +666,8 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/atstk1004.c
 +	return 0;
 +}
 +postcore_initcall(atstk1004_init);
-Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/boards/atstk1000/Kconfig
-+++ linux-2.6.24.7/arch/avr32/boards/atstk1000/Kconfig
+--- a/arch/avr32/boards/atstk1000/Kconfig
++++ b/arch/avr32/boards/atstk1000/Kconfig
 @@ -1,34 +1,53 @@
  # STK1000 customization
  
@@ -744,7 +730,7 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/Kconfig
  	bool "SW4: use ISI/Camera (not GPIOs, SPI1, and PS2-B)"
  	help
  	  To use the camera interface you'll need a custom card (on the
-@@ -36,27 +55,29 @@ config BOARD_ATSTK1002_SW4_CUSTOM
+@@ -36,27 +55,29 @@
  
  config BOARD_ATSTK1002_SW5_CUSTOM
  	bool "SW5: use MACB1 (not LCDC)"
@@ -779,7 +765,7 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/Kconfig
  	optional
  	help
  	  Select this if you have jumpered the J2 jumper block to the
-@@ -64,16 +85,77 @@ choice
+@@ -64,16 +85,77 @@
  	  IDC cable.  A default "heartbeat" trigger is provided, but
  	  you can of course override this.
  
@@ -860,19 +846,15 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/Kconfig
 +	  operating on 3.3 volt.
 +
 +endif	# stk 1000
-Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/Makefile
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/boards/atstk1000/Makefile
-+++ linux-2.6.24.7/arch/avr32/boards/atstk1000/Makefile
+--- a/arch/avr32/boards/atstk1000/Makefile
++++ b/arch/avr32/boards/atstk1000/Makefile
 @@ -1,2 +1,4 @@
  obj-y				+= setup.o flash.o
  obj-$(CONFIG_BOARD_ATSTK1002)	+= atstk1002.o
 +obj-$(CONFIG_BOARD_ATSTK1003)	+= atstk1003.o
 +obj-$(CONFIG_BOARD_ATSTK1004)	+= atstk1004.o
-Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/setup.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/boards/atstk1000/setup.c
-+++ linux-2.6.24.7/arch/avr32/boards/atstk1000/setup.c
+--- a/arch/avr32/boards/atstk1000/setup.c
++++ b/arch/avr32/boards/atstk1000/setup.c
 @@ -10,13 +10,17 @@
  #include <linux/bootmem.h>
  #include <linux/fb.h>
@@ -891,7 +873,7 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/setup.c
  
  #include "atstk1000.h"
  
-@@ -61,3 +65,63 @@ struct atmel_lcdfb_info __initdata atstk
+@@ -61,3 +65,63 @@
  	.default_monspecs	= &atstk1000_default_monspecs,
  	.guard_time		= 2,
  };
@@ -955,10 +937,8 @@ Index: linux-2.6.24.7/arch/avr32/boards/atstk1000/setup.c
 +
 +}
 +#endif /* CONFIG_BOARD_ATSTK1000_J2_LED */
-Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/configs/atngw100_defconfig
-+++ linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
+--- a/arch/avr32/configs/atngw100_defconfig
++++ b/arch/avr32/configs/atngw100_defconfig
 @@ -1,46 +1,52 @@
  #
  # Automatically generated make config: don't edit
@@ -1021,7 +1001,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  CONFIG_SYSFS_DEPRECATED=y
  # CONFIG_RELAY is not set
  CONFIG_BLK_DEV_INITRD=y
-@@ -61,35 +67,28 @@ CONFIG_FUTEX=y
+@@ -61,35 +67,28 @@
  CONFIG_ANON_INODES=y
  CONFIG_EPOLL=y
  CONFIG_SIGNALFD=y
@@ -1060,7 +1040,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  
  #
  # IO Schedulers
-@@ -107,21 +106,28 @@ CONFIG_DEFAULT_IOSCHED="cfq"
+@@ -107,21 +106,28 @@
  #
  # System Type and features
  #
@@ -1092,7 +1072,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  CONFIG_LOAD_ADDRESS=0x10000000
  CONFIG_ENTRY_ADDRESS=0x90000000
  CONFIG_PHYS_OFFSET=0x10000000
-@@ -141,10 +147,14 @@ CONFIG_FLATMEM_MANUAL=y
+@@ -141,10 +147,14 @@
  CONFIG_FLATMEM=y
  CONFIG_FLAT_NODE_MEM_MAP=y
  # CONFIG_SPARSEMEM_STATIC is not set
@@ -1107,7 +1087,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_HZ_100 is not set
  CONFIG_HZ_250=y
  # CONFIG_HZ_300 is not set
-@@ -153,13 +163,31 @@ CONFIG_HZ=250
+@@ -153,13 +163,31 @@
  CONFIG_CMDLINE=""
  
  #
@@ -1142,7 +1122,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_PCCARD is not set
  
  #
-@@ -213,6 +241,7 @@ CONFIG_INET_TUNNEL=y
+@@ -213,6 +241,7 @@
  CONFIG_INET_XFRM_MODE_TRANSPORT=y
  CONFIG_INET_XFRM_MODE_TUNNEL=y
  CONFIG_INET_XFRM_MODE_BEET=y
@@ -1150,7 +1130,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  CONFIG_INET_DIAG=y
  CONFIG_INET_TCP_DIAG=y
  # CONFIG_TCP_CONG_ADVANCED is not set
-@@ -240,6 +269,7 @@ CONFIG_IPV6_SIT=y
+@@ -240,6 +269,7 @@
  # CONFIG_NETWORK_SECMARK is not set
  CONFIG_NETFILTER=y
  # CONFIG_NETFILTER_DEBUG is not set
@@ -1158,7 +1138,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  
  #
  # Core Netfilter Configuration
-@@ -252,6 +282,7 @@ CONFIG_NF_CONNTRACK_MARK=y
+@@ -252,6 +282,7 @@
  # CONFIG_NF_CONNTRACK_EVENTS is not set
  CONFIG_NF_CT_PROTO_GRE=m
  # CONFIG_NF_CT_PROTO_SCTP is not set
@@ -1166,7 +1146,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  CONFIG_NF_CONNTRACK_AMANDA=m
  CONFIG_NF_CONNTRACK_FTP=m
  CONFIG_NF_CONNTRACK_H323=m
-@@ -269,9 +300,11 @@ CONFIG_NETFILTER_XT_TARGET_MARK=m
+@@ -269,9 +300,11 @@
  CONFIG_NETFILTER_XT_TARGET_NFQUEUE=m
  CONFIG_NETFILTER_XT_TARGET_NFLOG=m
  # CONFIG_NETFILTER_XT_TARGET_NOTRACK is not set
@@ -1178,7 +1158,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  CONFIG_NETFILTER_XT_MATCH_CONNMARK=m
  CONFIG_NETFILTER_XT_MATCH_CONNTRACK=m
  # CONFIG_NETFILTER_XT_MATCH_DCCP is not set
-@@ -284,6 +317,7 @@ CONFIG_NETFILTER_XT_MATCH_MAC=m
+@@ -284,6 +317,7 @@
  CONFIG_NETFILTER_XT_MATCH_MARK=m
  CONFIG_NETFILTER_XT_MATCH_POLICY=m
  CONFIG_NETFILTER_XT_MATCH_MULTIPORT=m
@@ -1186,7 +1166,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  CONFIG_NETFILTER_XT_MATCH_PKTTYPE=m
  CONFIG_NETFILTER_XT_MATCH_QUOTA=m
  CONFIG_NETFILTER_XT_MATCH_REALM=m
-@@ -292,6 +326,8 @@ CONFIG_NETFILTER_XT_MATCH_STATE=m
+@@ -292,6 +326,8 @@
  CONFIG_NETFILTER_XT_MATCH_STATISTIC=m
  CONFIG_NETFILTER_XT_MATCH_STRING=m
  CONFIG_NETFILTER_XT_MATCH_TCPMSS=m
@@ -1195,7 +1175,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  CONFIG_NETFILTER_XT_MATCH_HASHLIMIT=m
  
  #
-@@ -359,13 +395,19 @@ CONFIG_IP6_NF_TARGET_REJECT=m
+@@ -359,13 +395,19 @@
  CONFIG_IP6_NF_MANGLE=m
  CONFIG_IP6_NF_TARGET_HL=m
  CONFIG_IP6_NF_RAW=m
@@ -1216,7 +1196,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_LLC2 is not set
  # CONFIG_IPX is not set
  # CONFIG_ATALK is not set
-@@ -373,10 +415,6 @@ CONFIG_VLAN_8021Q=m
+@@ -373,10 +415,6 @@
  # CONFIG_LAPB is not set
  # CONFIG_ECONET is not set
  # CONFIG_WAN_ROUTER is not set
@@ -1227,7 +1207,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_NET_SCHED is not set
  CONFIG_NET_CLS_ROUTE=y
  
-@@ -384,6 +422,7 @@ CONFIG_NET_CLS_ROUTE=y
+@@ -384,6 +422,7 @@
  # Network testing
  #
  # CONFIG_NET_PKTGEN is not set
@@ -1235,7 +1215,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_HAMRADIO is not set
  # CONFIG_IRDA is not set
  # CONFIG_BT is not set
-@@ -397,6 +436,7 @@ CONFIG_NET_CLS_ROUTE=y
+@@ -397,6 +436,7 @@
  # CONFIG_MAC80211 is not set
  # CONFIG_IEEE80211 is not set
  # CONFIG_RFKILL is not set
@@ -1243,7 +1223,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  
  #
  # Device Drivers
-@@ -405,16 +445,13 @@ CONFIG_NET_CLS_ROUTE=y
+@@ -405,16 +445,13 @@
  #
  # Generic Driver Options
  #
@@ -1261,7 +1241,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_CONNECTOR is not set
  CONFIG_MTD=y
  # CONFIG_MTD_DEBUG is not set
-@@ -434,6 +471,7 @@ CONFIG_MTD_BLOCK=y
+@@ -434,6 +471,7 @@
  # CONFIG_INFTL is not set
  # CONFIG_RFD_FTL is not set
  # CONFIG_SSFDC is not set
@@ -1269,7 +1249,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  
  #
  # RAM/ROM/Flash chip drivers
-@@ -493,20 +531,8 @@ CONFIG_MTD_DATAFLASH=y
+@@ -493,20 +531,8 @@
  # UBI - Unsorted block images
  #
  # CONFIG_MTD_UBI is not set
@@ -1291,7 +1271,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_BLK_DEV_COW_COMMON is not set
  CONFIG_BLK_DEV_LOOP=m
  # CONFIG_BLK_DEV_CRYPTOLOOP is not set
-@@ -517,11 +543,13 @@ CONFIG_BLK_DEV_RAM_SIZE=4096
+@@ -517,11 +543,13 @@
  CONFIG_BLK_DEV_RAM_BLOCKSIZE=1024
  # CONFIG_CDROM_PKTCDVD is not set
  # CONFIG_ATA_OVER_ETH is not set
@@ -1310,7 +1290,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_IDE is not set
  
  #
-@@ -529,30 +557,42 @@ CONFIG_BLK_DEV_RAM_BLOCKSIZE=1024
+@@ -529,30 +557,42 @@
  #
  # CONFIG_RAID_ATTRS is not set
  # CONFIG_SCSI is not set
@@ -1364,7 +1344,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_NETDEV_1000 is not set
  # CONFIG_NETDEV_10000 is not set
  
-@@ -571,21 +611,14 @@ CONFIG_PPP_DEFLATE=m
+@@ -571,21 +611,14 @@
  CONFIG_PPP_BSDCOMP=m
  CONFIG_PPP_MPPE=m
  CONFIG_PPPOE=m
@@ -1387,7 +1367,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_PHONE is not set
  
  #
-@@ -615,28 +648,57 @@ CONFIG_SLHC=m
+@@ -615,28 +648,57 @@
  #
  CONFIG_SERIAL_ATMEL=y
  CONFIG_SERIAL_ATMEL_CONSOLE=y
@@ -1455,7 +1435,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  
  #
  # SPI support
-@@ -655,13 +717,25 @@ CONFIG_SPI_ATMEL=y
+@@ -655,13 +717,25 @@
  # SPI Protocol Masters
  #
  # CONFIG_SPI_AT25 is not set
@@ -1485,7 +1465,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  
  #
  # Multifunction device drivers
-@@ -678,23 +752,21 @@ CONFIG_SPI_ATMEL=y
+@@ -678,23 +752,21 @@
  #
  # Graphics support
  #
@@ -1513,7 +1493,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_USB_ARCH_HAS_HCD is not set
  # CONFIG_USB_ARCH_HAS_OHCI is not set
  # CONFIG_USB_ARCH_HAS_EHCI is not set
-@@ -706,12 +778,48 @@ CONFIG_SPI_ATMEL=y
+@@ -706,12 +778,48 @@
  #
  # USB Gadget Support
  #
@@ -1565,7 +1545,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  CONFIG_NEW_LEDS=y
  CONFIG_LEDS_CLASS=y
  
-@@ -726,53 +834,71 @@ CONFIG_LEDS_GPIO=y
+@@ -726,53 +834,71 @@
  CONFIG_LEDS_TRIGGERS=y
  CONFIG_LEDS_TRIGGER_TIMER=y
  CONFIG_LEDS_TRIGGER_HEARTBEAT=y
@@ -1658,7 +1638,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_REISERFS_FS is not set
  # CONFIG_JFS_FS is not set
  # CONFIG_FS_POSIX_ACL is not set
-@@ -781,7 +907,8 @@ CONFIG_JBD=y
+@@ -781,7 +907,8 @@
  # CONFIG_OCFS2_FS is not set
  # CONFIG_MINIX_FS is not set
  # CONFIG_ROMFS_FS is not set
@@ -1668,7 +1648,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_QUOTA is not set
  # CONFIG_DNOTIFY is not set
  # CONFIG_AUTOFS_FS is not set
-@@ -814,7 +941,6 @@ CONFIG_SYSFS=y
+@@ -814,7 +941,6 @@
  CONFIG_TMPFS=y
  # CONFIG_TMPFS_POSIX_ACL is not set
  # CONFIG_HUGETLB_PAGE is not set
@@ -1676,7 +1656,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  CONFIG_CONFIGFS_FS=y
  
  #
-@@ -830,10 +956,12 @@ CONFIG_CONFIGFS_FS=y
+@@ -830,10 +956,12 @@
  CONFIG_JFFS2_FS=y
  CONFIG_JFFS2_FS_DEBUG=0
  CONFIG_JFFS2_FS_WRITEBUFFER=y
@@ -1689,7 +1669,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  CONFIG_JFFS2_RTIME=y
  # CONFIG_JFFS2_RUBIN is not set
  # CONFIG_CRAMFS is not set
-@@ -842,19 +970,21 @@ CONFIG_JFFS2_RTIME=y
+@@ -842,19 +970,21 @@
  # CONFIG_QNX4FS_FS is not set
  # CONFIG_SYSV_FS is not set
  # CONFIG_UFS_FS is not set
@@ -1716,7 +1696,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  CONFIG_NFS_COMMON=y
  CONFIG_SUNRPC=y
  # CONFIG_SUNRPC_BIND34 is not set
-@@ -871,23 +1001,18 @@ CONFIG_CIFS=m
+@@ -871,23 +1001,18 @@
  # CONFIG_NCP_FS is not set
  # CONFIG_CODA_FS is not set
  # CONFIG_AFS_FS is not set
@@ -1743,7 +1723,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_NLS_CODEPAGE_852 is not set
  # CONFIG_NLS_CODEPAGE_855 is not set
  # CONFIG_NLS_CODEPAGE_857 is not set
-@@ -908,7 +1033,7 @@ CONFIG_NLS_CODEPAGE_850=y
+@@ -908,7 +1033,7 @@
  # CONFIG_NLS_CODEPAGE_1250 is not set
  # CONFIG_NLS_CODEPAGE_1251 is not set
  # CONFIG_NLS_ASCII is not set
@@ -1752,7 +1732,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_NLS_ISO8859_2 is not set
  # CONFIG_NLS_ISO8859_3 is not set
  # CONFIG_NLS_ISO8859_4 is not set
-@@ -921,18 +1046,19 @@ CONFIG_NLS_ISO8859_1=y
+@@ -921,18 +1046,19 @@
  # CONFIG_NLS_ISO8859_15 is not set
  # CONFIG_NLS_KOI8_R is not set
  # CONFIG_NLS_KOI8_U is not set
@@ -1778,7 +1758,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  CONFIG_ENABLE_MUST_CHECK=y
  CONFIG_MAGIC_SYSRQ=y
  # CONFIG_UNUSED_SYMBOLS is not set
-@@ -941,12 +1067,17 @@ CONFIG_MAGIC_SYSRQ=y
+@@ -941,12 +1067,17 @@
  CONFIG_DEBUG_KERNEL=y
  # CONFIG_DEBUG_SHIRQ is not set
  CONFIG_DETECT_SOFTLOCKUP=y
@@ -1796,7 +1776,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_DEBUG_SPINLOCK_SLEEP is not set
  # CONFIG_DEBUG_LOCKING_API_SELFTESTS is not set
  # CONFIG_DEBUG_KOBJECT is not set
-@@ -954,21 +1085,21 @@ CONFIG_DEBUG_BUGVERBOSE=y
+@@ -954,21 +1085,21 @@
  # CONFIG_DEBUG_INFO is not set
  # CONFIG_DEBUG_VM is not set
  # CONFIG_DEBUG_LIST is not set
@@ -1823,7 +1803,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  CONFIG_CRYPTO=y
  CONFIG_CRYPTO_ALGAPI=y
  CONFIG_CRYPTO_BLKCIPHER=y
-@@ -989,6 +1120,7 @@ CONFIG_CRYPTO_ECB=m
+@@ -989,6 +1120,7 @@
  CONFIG_CRYPTO_CBC=y
  CONFIG_CRYPTO_PCBC=m
  # CONFIG_CRYPTO_LRW is not set
@@ -1831,7 +1811,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_CRYPTO_CRYPTD is not set
  CONFIG_CRYPTO_DES=y
  # CONFIG_CRYPTO_FCRYPT is not set
-@@ -1002,15 +1134,14 @@ CONFIG_CRYPTO_DES=y
+@@ -1002,15 +1134,14 @@
  CONFIG_CRYPTO_ARC4=m
  # CONFIG_CRYPTO_KHAZAD is not set
  # CONFIG_CRYPTO_ANUBIS is not set
@@ -1850,7 +1830,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  
  #
  # Library routines
-@@ -1018,8 +1149,9 @@ CONFIG_CRYPTO_DEFLATE=y
+@@ -1018,8 +1149,9 @@
  CONFIG_BITREVERSE=y
  CONFIG_CRC_CCITT=m
  # CONFIG_CRC16 is not set
@@ -1861,10 +1841,8 @@ Index: linux-2.6.24.7/arch/avr32/configs/atngw100_defconfig
  # CONFIG_LIBCRC32C is not set
  CONFIG_ZLIB_INFLATE=y
  CONFIG_ZLIB_DEFLATE=y
-Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/configs/atstk1002_defconfig
-+++ linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
+--- a/arch/avr32/configs/atstk1002_defconfig
++++ b/arch/avr32/configs/atstk1002_defconfig
 @@ -1,48 +1,49 @@
  #
  # Automatically generated make config: don't edit
@@ -1930,7 +1908,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  CONFIG_SYSFS_DEPRECATED=y
  CONFIG_RELAY=y
  CONFIG_BLK_DEV_INITRD=y
-@@ -63,35 +64,28 @@ CONFIG_FUTEX=y
+@@ -63,35 +64,28 @@
  CONFIG_ANON_INODES=y
  CONFIG_EPOLL=y
  CONFIG_SIGNALFD=y
@@ -1969,7 +1947,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  
  #
  # IO Schedulers
-@@ -99,32 +93,49 @@ CONFIG_BLOCK=y
+@@ -99,32 +93,49 @@
  CONFIG_IOSCHED_NOOP=y
  # CONFIG_IOSCHED_AS is not set
  # CONFIG_IOSCHED_DEADLINE is not set
@@ -2027,7 +2005,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  CONFIG_LOAD_ADDRESS=0x10000000
  CONFIG_ENTRY_ADDRESS=0x90000000
  CONFIG_PHYS_OFFSET=0x10000000
-@@ -144,10 +155,14 @@ CONFIG_FLATMEM_MANUAL=y
+@@ -144,10 +155,14 @@
  CONFIG_FLATMEM=y
  CONFIG_FLAT_NODE_MEM_MAP=y
  # CONFIG_SPARSEMEM_STATIC is not set
@@ -2042,7 +2020,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  # CONFIG_HZ_100 is not set
  CONFIG_HZ_250=y
  # CONFIG_HZ_300 is not set
-@@ -156,13 +171,31 @@ CONFIG_HZ=250
+@@ -156,13 +171,31 @@
  CONFIG_CMDLINE=""
  
  #
@@ -2077,7 +2055,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  # CONFIG_PCCARD is not set
  
  #
-@@ -182,7 +215,12 @@ CONFIG_NET=y
+@@ -182,7 +215,12 @@
  CONFIG_PACKET=y
  CONFIG_PACKET_MMAP=y
  CONFIG_UNIX=y
@@ -2091,7 +2069,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  CONFIG_INET=y
  # CONFIG_IP_MULTICAST is not set
  # CONFIG_IP_ADVANCED_ROUTER is not set
-@@ -191,36 +229,52 @@ CONFIG_IP_PNP=y
+@@ -191,36 +229,52 @@
  CONFIG_IP_PNP_DHCP=y
  # CONFIG_IP_PNP_BOOTP is not set
  # CONFIG_IP_PNP_RARP is not set
@@ -2156,7 +2134,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  # CONFIG_LLC2 is not set
  # CONFIG_IPX is not set
  # CONFIG_ATALK is not set
-@@ -228,16 +282,13 @@ CONFIG_DEFAULT_TCP_CONG="cubic"
+@@ -228,16 +282,13 @@
  # CONFIG_LAPB is not set
  # CONFIG_ECONET is not set
  # CONFIG_WAN_ROUTER is not set
@@ -2174,7 +2152,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  # CONFIG_HAMRADIO is not set
  # CONFIG_IRDA is not set
  # CONFIG_BT is not set
-@@ -251,6 +302,7 @@ CONFIG_DEFAULT_TCP_CONG="cubic"
+@@ -251,6 +302,7 @@
  # CONFIG_MAC80211 is not set
  # CONFIG_IEEE80211 is not set
  # CONFIG_RFKILL is not set
@@ -2182,7 +2160,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  
  #
  # Device Drivers
-@@ -259,16 +311,13 @@ CONFIG_DEFAULT_TCP_CONG="cubic"
+@@ -259,16 +311,13 @@
  #
  # Generic Driver Options
  #
@@ -2200,7 +2178,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  # CONFIG_CONNECTOR is not set
  CONFIG_MTD=y
  # CONFIG_MTD_DEBUG is not set
-@@ -288,6 +337,7 @@ CONFIG_MTD_BLOCK=y
+@@ -288,6 +337,7 @@
  # CONFIG_INFTL is not set
  # CONFIG_RFD_FTL is not set
  # CONFIG_SSFDC is not set
@@ -2208,7 +2186,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  
  #
  # RAM/ROM/Flash chip drivers
-@@ -327,6 +377,8 @@ CONFIG_MTD_PHYSMAP_BANKWIDTH=2
+@@ -327,6 +377,8 @@
  #
  # Self-contained MTD device drivers
  #
@@ -2217,7 +2195,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  # CONFIG_MTD_SLRAM is not set
  # CONFIG_MTD_PHRAM is not set
  # CONFIG_MTD_MTDRAM is not set
-@@ -345,20 +397,8 @@ CONFIG_MTD_PHYSMAP_BANKWIDTH=2
+@@ -345,20 +397,8 @@
  # UBI - Unsorted block images
  #
  # CONFIG_MTD_UBI is not set
@@ -2239,7 +2217,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  # CONFIG_BLK_DEV_COW_COMMON is not set
  CONFIG_BLK_DEV_LOOP=m
  # CONFIG_BLK_DEV_CRYPTOLOOP is not set
-@@ -369,42 +409,91 @@ CONFIG_BLK_DEV_RAM_SIZE=4096
+@@ -369,42 +409,91 @@
  CONFIG_BLK_DEV_RAM_BLOCKSIZE=1024
  # CONFIG_CDROM_PKTCDVD is not set
  # CONFIG_ATA_OVER_ETH is not set
@@ -2345,7 +2323,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  # CONFIG_NETDEV_1000 is not set
  # CONFIG_NETDEV_10000 is not set
  
-@@ -423,27 +512,54 @@ CONFIG_PPP_DEFLATE=m
+@@ -423,27 +512,54 @@
  CONFIG_PPP_BSDCOMP=m
  # CONFIG_PPP_MPPE is not set
  # CONFIG_PPPOE is not set
@@ -2409,7 +2387,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  
  #
  # Hardware I/O ports
-@@ -467,40 +583,94 @@ CONFIG_SLHC=m
+@@ -467,40 +583,94 @@
  #
  CONFIG_SERIAL_ATMEL=y
  CONFIG_SERIAL_ATMEL_CONSOLE=y
@@ -2516,7 +2494,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  
  #
  # Multifunction device drivers
-@@ -517,23 +687,104 @@ CONFIG_UNIX98_PTYS=y
+@@ -517,23 +687,104 @@
  #
  # Graphics support
  #
@@ -2626,7 +2604,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  # CONFIG_USB_ARCH_HAS_HCD is not set
  # CONFIG_USB_ARCH_HAS_OHCI is not set
  # CONFIG_USB_ARCH_HAS_EHCI is not set
-@@ -545,63 +796,137 @@ CONFIG_UNIX98_PTYS=y
+@@ -545,63 +796,137 @@
  #
  # USB Gadget Support
  #
@@ -2782,7 +2760,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  # CONFIG_ROMFS_FS is not set
  CONFIG_INOTIFY=y
  CONFIG_INOTIFY_USER=y
-@@ -609,7 +934,7 @@ CONFIG_INOTIFY_USER=y
+@@ -609,7 +934,7 @@
  # CONFIG_DNOTIFY is not set
  # CONFIG_AUTOFS_FS is not set
  # CONFIG_AUTOFS4_FS is not set
@@ -2791,7 +2769,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  
  #
  # CD-ROM/DVD Filesystems
-@@ -637,8 +962,7 @@ CONFIG_SYSFS=y
+@@ -637,8 +962,7 @@
  CONFIG_TMPFS=y
  # CONFIG_TMPFS_POSIX_ACL is not set
  # CONFIG_HUGETLB_PAGE is not set
@@ -2801,7 +2779,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  
  #
  # Miscellaneous filesystems
-@@ -652,11 +976,12 @@ CONFIG_CONFIGFS_FS=m
+@@ -652,11 +976,12 @@
  # CONFIG_EFS_FS is not set
  CONFIG_JFFS2_FS=y
  CONFIG_JFFS2_FS_DEBUG=0
@@ -2815,7 +2793,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  CONFIG_JFFS2_RTIME=y
  # CONFIG_JFFS2_RUBIN is not set
  # CONFIG_CRAMFS is not set
-@@ -665,10 +990,7 @@ CONFIG_JFFS2_RTIME=y
+@@ -665,10 +990,7 @@
  # CONFIG_QNX4FS_FS is not set
  # CONFIG_SYSV_FS is not set
  # CONFIG_UFS_FS is not set
@@ -2827,7 +2805,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  CONFIG_NFS_FS=y
  CONFIG_NFS_V3=y
  # CONFIG_NFS_V3_ACL is not set
-@@ -688,17 +1010,12 @@ CONFIG_SUNRPC=y
+@@ -688,17 +1010,12 @@
  # CONFIG_NCP_FS is not set
  # CONFIG_CODA_FS is not set
  # CONFIG_AFS_FS is not set
@@ -2845,7 +2823,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  CONFIG_NLS=m
  CONFIG_NLS_DEFAULT="iso8859-1"
  CONFIG_NLS_CODEPAGE_437=m
-@@ -739,17 +1056,18 @@ CONFIG_NLS_ISO8859_1=m
+@@ -739,17 +1056,18 @@
  # CONFIG_NLS_KOI8_R is not set
  # CONFIG_NLS_KOI8_U is not set
  CONFIG_NLS_UTF8=m
@@ -2869,7 +2847,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  CONFIG_ENABLE_MUST_CHECK=y
  CONFIG_MAGIC_SYSRQ=y
  # CONFIG_UNUSED_SYMBOLS is not set
-@@ -758,12 +1076,17 @@ CONFIG_DEBUG_FS=y
+@@ -758,12 +1076,17 @@
  CONFIG_DEBUG_KERNEL=y
  # CONFIG_DEBUG_SHIRQ is not set
  CONFIG_DETECT_SOFTLOCKUP=y
@@ -2887,7 +2865,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  # CONFIG_DEBUG_SPINLOCK_SLEEP is not set
  # CONFIG_DEBUG_LOCKING_API_SELFTESTS is not set
  # CONFIG_DEBUG_KOBJECT is not set
-@@ -771,22 +1094,63 @@ CONFIG_DEBUG_BUGVERBOSE=y
+@@ -771,22 +1094,63 @@
  # CONFIG_DEBUG_INFO is not set
  # CONFIG_DEBUG_VM is not set
  # CONFIG_DEBUG_LIST is not set
@@ -2957,7 +2935,7 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  
  #
  # Library routines
-@@ -794,10 +1158,10 @@ CONFIG_FORCED_INLINING=y
+@@ -794,10 +1158,10 @@
  CONFIG_BITREVERSE=y
  CONFIG_CRC_CCITT=m
  # CONFIG_CRC16 is not set
@@ -2970,10 +2948,8 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1002_defconfig
  CONFIG_ZLIB_INFLATE=y
  CONFIG_ZLIB_DEFLATE=y
  CONFIG_PLIST=y
-Index: linux-2.6.24.7/arch/avr32/configs/atstk1003_defconfig
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/arch/avr32/configs/atstk1003_defconfig
++++ b/arch/avr32/configs/atstk1003_defconfig
 @@ -0,0 +1,1041 @@
 +#
 +# Automatically generated make config: don't edit
@@ -4016,10 +3992,8 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1003_defconfig
 +CONFIG_HAS_IOMEM=y
 +CONFIG_HAS_IOPORT=y
 +CONFIG_HAS_DMA=y
-Index: linux-2.6.24.7/arch/avr32/configs/atstk1004_defconfig
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/arch/avr32/configs/atstk1004_defconfig
++++ b/arch/avr32/configs/atstk1004_defconfig
 @@ -0,0 +1,639 @@
 +#
 +# Automatically generated make config: don't edit
@@ -4660,10 +4634,8 @@ Index: linux-2.6.24.7/arch/avr32/configs/atstk1004_defconfig
 +CONFIG_HAS_IOMEM=y
 +CONFIG_HAS_IOPORT=y
 +CONFIG_HAS_DMA=y
-Index: linux-2.6.24.7/arch/avr32/drivers/dw-dmac.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/arch/avr32/drivers/dw-dmac.c
++++ b/arch/avr32/drivers/dw-dmac.c
 @@ -0,0 +1,761 @@
 +/*
 + * Driver for the Synopsys DesignWare DMA Controller
@@ -5426,10 +5398,8 @@ Index: linux-2.6.24.7/arch/avr32/drivers/dw-dmac.c
 +MODULE_DESCRIPTION("Synopsys DesignWare DMA Controller driver");
 +MODULE_AUTHOR("Haavard Skinnemoen <hskinnemoen@atmel.com>");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.24.7/arch/avr32/drivers/dw-dmac.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/arch/avr32/drivers/dw-dmac.h
++++ b/arch/avr32/drivers/dw-dmac.h
 @@ -0,0 +1,42 @@
 +/*
 + * Driver for the Synopsys DesignWare DMA Controller
@@ -5473,17 +5443,13 @@ Index: linux-2.6.24.7/arch/avr32/drivers/dw-dmac.h
 +#define DW_DMAC_CHAN_DSR	0x050
 +
 +#endif /* __AVR32_DW_DMAC_H__ */
-Index: linux-2.6.24.7/arch/avr32/drivers/Makefile
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/arch/avr32/drivers/Makefile
++++ b/arch/avr32/drivers/Makefile
 @@ -0,0 +1 @@
 +obj-$(CONFIG_DW_DMAC)			+= dw-dmac.o
-Index: linux-2.6.24.7/arch/avr32/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/Kconfig
-+++ linux-2.6.24.7/arch/avr32/Kconfig
-@@ -45,6 +45,9 @@ config RWSEM_GENERIC_SPINLOCK
+--- a/arch/avr32/Kconfig
++++ b/arch/avr32/Kconfig
+@@ -45,6 +45,9 @@
  config GENERIC_TIME
  	def_bool y
  
@@ -5493,7 +5459,7 @@ Index: linux-2.6.24.7/arch/avr32/Kconfig
  config RWSEM_XCHGADD_ALGORITHM
  	def_bool n
  
-@@ -54,6 +57,9 @@ config ARCH_HAS_ILOG2_U32
+@@ -54,6 +57,9 @@
  config ARCH_HAS_ILOG2_U64
  	def_bool n
  
@@ -5503,7 +5469,7 @@ Index: linux-2.6.24.7/arch/avr32/Kconfig
  config GENERIC_HWEIGHT
  	def_bool y
  
-@@ -68,6 +74,8 @@ source "init/Kconfig"
+@@ -68,6 +74,8 @@
  
  menu "System Type and features"
  
@@ -5512,7 +5478,7 @@ Index: linux-2.6.24.7/arch/avr32/Kconfig
  config SUBARCH_AVR32B
  	bool
  config MMU
-@@ -81,19 +89,23 @@ config PLATFORM_AT32AP
+@@ -81,19 +89,23 @@
  	select MMU
  	select PERFORMANCE_COUNTERS
  
@@ -5546,7 +5512,7 @@ Index: linux-2.6.24.7/arch/avr32/Kconfig
  
  choice
  	prompt "AVR32 board type"
-@@ -101,15 +113,18 @@ choice
+@@ -101,15 +113,18 @@
  
  config BOARD_ATSTK1000
  	bool "ATSTK1000 evaluation board"
@@ -5566,7 +5532,7 @@ Index: linux-2.6.24.7/arch/avr32/Kconfig
  
  choice
  	prompt "Boot loader type"
-@@ -123,15 +138,15 @@ source "arch/avr32/mach-at32ap/Kconfig"
+@@ -123,15 +138,15 @@
  
  config LOAD_ADDRESS
  	hex
@@ -5585,7 +5551,7 @@ Index: linux-2.6.24.7/arch/avr32/Kconfig
  
  source "kernel/Kconfig.preempt"
  
-@@ -163,6 +178,20 @@ config OWNERSHIP_TRACE
+@@ -163,6 +178,20 @@
  	  enabling Nexus-compliant debuggers to keep track of the PID of the
  	  currently executing task.
  
@@ -5606,7 +5572,7 @@ Index: linux-2.6.24.7/arch/avr32/Kconfig
  # FPU emulation goes here
  
  source "kernel/Kconfig.hz"
-@@ -219,6 +248,8 @@ source "drivers/Kconfig"
+@@ -219,6 +248,8 @@
  
  source "fs/Kconfig"
  
@@ -5615,11 +5581,9 @@ Index: linux-2.6.24.7/arch/avr32/Kconfig
  source "arch/avr32/Kconfig.debug"
  
  source "security/Kconfig"
-Index: linux-2.6.24.7/arch/avr32/Kconfig.debug
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/Kconfig.debug
-+++ linux-2.6.24.7/arch/avr32/Kconfig.debug
-@@ -6,14 +6,4 @@ config TRACE_IRQFLAGS_SUPPORT
+--- a/arch/avr32/Kconfig.debug
++++ b/arch/avr32/Kconfig.debug
+@@ -6,14 +6,4 @@
  
  source "lib/Kconfig.debug"
  
@@ -5634,10 +5598,8 @@ Index: linux-2.6.24.7/arch/avr32/Kconfig.debug
 -          If in doubt, say "N".
 -
  endmenu
-Index: linux-2.6.24.7/arch/avr32/kernel/cpu.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/kernel/cpu.c
-+++ linux-2.6.24.7/arch/avr32/kernel/cpu.c
+--- a/arch/avr32/kernel/cpu.c
++++ b/arch/avr32/kernel/cpu.c
 @@ -13,6 +13,7 @@
  #include <linux/percpu.h>
  #include <linux/param.h>
@@ -5646,7 +5608,7 @@ Index: linux-2.6.24.7/arch/avr32/kernel/cpu.c
  
  #include <asm/setup.h>
  #include <asm/sysreg.h>
-@@ -187,9 +188,20 @@ static int __init topology_init(void)
+@@ -187,9 +188,20 @@
  
  subsys_initcall(topology_init);
  
@@ -5668,7 +5630,7 @@ Index: linux-2.6.24.7/arch/avr32/kernel/cpu.c
  };
  #define NR_CPU_NAMES ARRAY_SIZE(cpu_names)
  
-@@ -206,12 +218,32 @@ static const char *mmu_types[] = {
+@@ -206,12 +218,32 @@
  	"MPU"
  };
  
@@ -5701,7 +5663,7 @@ Index: linux-2.6.24.7/arch/avr32/kernel/cpu.c
  
  	config0 = sysreg_read(CONFIG0);
  	config1 = sysreg_read(CONFIG1);
-@@ -221,11 +253,14 @@ void __init setup_processor(void)
+@@ -221,11 +253,14 @@
  	arch_rev = SYSREG_BFEXT(AR, config0);
  	mmu_type = SYSREG_BFEXT(MMUT, config0);
  
@@ -5716,7 +5678,7 @@ Index: linux-2.6.24.7/arch/avr32/kernel/cpu.c
  
  	tmp = SYSREG_BFEXT(ILSZ, config1);
  	if (tmp) {
-@@ -247,41 +282,34 @@ void __init setup_processor(void)
+@@ -247,41 +282,34 @@
  		return;
  	}
  
@@ -5773,7 +5735,7 @@ Index: linux-2.6.24.7/arch/avr32/kernel/cpu.c
  	printk("\n");
  	boot_cpu_data.features = features;
  }
-@@ -291,6 +319,8 @@ static int c_show(struct seq_file *m, vo
+@@ -291,6 +319,8 @@
  {
  	unsigned int icache_size, dcache_size;
  	unsigned int cpu = smp_processor_id();
@@ -5782,7 +5744,7 @@ Index: linux-2.6.24.7/arch/avr32/kernel/cpu.c
  
  	icache_size = boot_cpu_data.icache.ways *
  		boot_cpu_data.icache.sets *
-@@ -301,15 +331,21 @@ static int c_show(struct seq_file *m, vo
+@@ -301,15 +331,21 @@
  
  	seq_printf(m, "processor\t: %d\n", cpu);
  
@@ -5806,7 +5768,7 @@ Index: linux-2.6.24.7/arch/avr32/kernel/cpu.c
  	seq_printf(m, "i-cache\t\t: %dK (%u ways x %u sets x %u)\n",
  		   icache_size >> 10,
  		   boot_cpu_data.icache.ways,
-@@ -320,7 +356,13 @@ static int c_show(struct seq_file *m, vo
+@@ -320,7 +356,13 @@
  		   boot_cpu_data.dcache.ways,
  		   boot_cpu_data.dcache.sets,
  		   boot_cpu_data.dcache.linesz);
@@ -5821,7 +5783,7 @@ Index: linux-2.6.24.7/arch/avr32/kernel/cpu.c
  		   boot_cpu_data.loops_per_jiffy / (500000/HZ),
  		   (boot_cpu_data.loops_per_jiffy / (5000/HZ)) % 100);
  
-@@ -343,7 +385,7 @@ static void c_stop(struct seq_file *m, v
+@@ -343,7 +385,7 @@
  
  }
  
@@ -5830,10 +5792,8 @@ Index: linux-2.6.24.7/arch/avr32/kernel/cpu.c
  	.start	= c_start,
  	.next	= c_next,
  	.stop	= c_stop,
-Index: linux-2.6.24.7/arch/avr32/kernel/dma-controller.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/arch/avr32/kernel/dma-controller.c
++++ b/arch/avr32/kernel/dma-controller.c
 @@ -0,0 +1,34 @@
 +/*
 + * Preliminary DMA controller framework for AVR32
@@ -5869,11 +5829,9 @@ Index: linux-2.6.24.7/arch/avr32/kernel/dma-controller.c
 +	return NULL;
 +}
 +EXPORT_SYMBOL(find_dma_controller);
-Index: linux-2.6.24.7/arch/avr32/kernel/entry-avr32b.S
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/kernel/entry-avr32b.S
-+++ linux-2.6.24.7/arch/avr32/kernel/entry-avr32b.S
-@@ -741,26 +741,6 @@ irq_level\level:
+--- a/arch/avr32/kernel/entry-avr32b.S
++++ b/arch/avr32/kernel/entry-avr32b.S
+@@ -741,26 +741,6 @@
  
  	.section .irq.text,"ax",@progbits
  
@@ -5900,11 +5858,9 @@ Index: linux-2.6.24.7/arch/avr32/kernel/entry-avr32b.S
  	.global	irq_level0
  	.global	irq_level1
  	.global	irq_level2
-Index: linux-2.6.24.7/arch/avr32/kernel/irq.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/kernel/irq.c
-+++ linux-2.6.24.7/arch/avr32/kernel/irq.c
-@@ -25,6 +25,17 @@ void ack_bad_irq(unsigned int irq)
+--- a/arch/avr32/kernel/irq.c
++++ b/arch/avr32/kernel/irq.c
+@@ -25,6 +25,17 @@
  	printk("unexpected IRQ %u\n", irq);
  }
  
@@ -5922,11 +5878,9 @@ Index: linux-2.6.24.7/arch/avr32/kernel/irq.c
  #ifdef CONFIG_PROC_FS
  int show_interrupts(struct seq_file *p, void *v)
  {
-Index: linux-2.6.24.7/arch/avr32/kernel/kprobes.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/kernel/kprobes.c
-+++ linux-2.6.24.7/arch/avr32/kernel/kprobes.c
-@@ -48,6 +48,7 @@ int __kprobes arch_prepare_kprobe(struct
+--- a/arch/avr32/kernel/kprobes.c
++++ b/arch/avr32/kernel/kprobes.c
+@@ -48,6 +48,7 @@
  void __kprobes arch_arm_kprobe(struct kprobe *p)
  {
  	pr_debug("arming kprobe at %p\n", p->addr);
@@ -5934,7 +5888,7 @@ Index: linux-2.6.24.7/arch/avr32/kernel/kprobes.c
  	*p->addr = BREAKPOINT_INSTRUCTION;
  	flush_icache_range((unsigned long)p->addr,
  			   (unsigned long)p->addr + sizeof(kprobe_opcode_t));
-@@ -56,6 +57,7 @@ void __kprobes arch_arm_kprobe(struct kp
+@@ -56,6 +57,7 @@
  void __kprobes arch_disarm_kprobe(struct kprobe *p)
  {
  	pr_debug("disarming kprobe at %p\n", p->addr);
@@ -5942,7 +5896,7 @@ Index: linux-2.6.24.7/arch/avr32/kernel/kprobes.c
  	*p->addr = p->opcode;
  	flush_icache_range((unsigned long)p->addr,
  			   (unsigned long)p->addr + sizeof(kprobe_opcode_t));
-@@ -260,9 +262,6 @@ int __kprobes longjmp_break_handler(stru
+@@ -260,9 +262,6 @@
  
  int __init arch_init_kprobes(void)
  {
@@ -5952,11 +5906,9 @@ Index: linux-2.6.24.7/arch/avr32/kernel/kprobes.c
  	/* TODO: Register kretprobe trampoline */
  	return 0;
  }
-Index: linux-2.6.24.7/arch/avr32/kernel/Makefile
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/kernel/Makefile
-+++ linux-2.6.24.7/arch/avr32/kernel/Makefile
-@@ -6,9 +6,11 @@ extra-y				:= head.o vmlinux.lds
+--- a/arch/avr32/kernel/Makefile
++++ b/arch/avr32/kernel/Makefile
+@@ -6,9 +6,11 @@
  
  obj-$(CONFIG_SUBARCH_AVR32B)	+= entry-avr32b.o
  obj-y				+= syscall_table.o syscall-stubs.o irq.o
@@ -5969,10 +5921,8 @@ Index: linux-2.6.24.7/arch/avr32/kernel/Makefile
  obj-$(CONFIG_KPROBES)		+= kprobes.o
  obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
 +obj-$(CONFIG_NMI_DEBUGGING)	+= nmi_debug.o
-Index: linux-2.6.24.7/arch/avr32/kernel/nmi_debug.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/arch/avr32/kernel/nmi_debug.c
++++ b/arch/avr32/kernel/nmi_debug.c
 @@ -0,0 +1,82 @@
 +/*
 + * Copyright (C) 2007 Atmel Corporation
@@ -6056,10 +6006,8 @@ Index: linux-2.6.24.7/arch/avr32/kernel/nmi_debug.c
 +	return 0;
 +}
 +__setup("nmi_debug", nmi_debug_setup);
-Index: linux-2.6.24.7/arch/avr32/kernel/ocd.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/arch/avr32/kernel/ocd.c
++++ b/arch/avr32/kernel/ocd.c
 @@ -0,0 +1,163 @@
 +/*
 + * Copyright (C) 2007 Atmel Corporation
@@ -6224,10 +6172,8 @@ Index: linux-2.6.24.7/arch/avr32/kernel/ocd.c
 +	return 0;
 +}
 +arch_initcall(ocd_init);
-Index: linux-2.6.24.7/arch/avr32/kernel/process.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/kernel/process.c
-+++ linux-2.6.24.7/arch/avr32/kernel/process.c
+--- a/arch/avr32/kernel/process.c
++++ b/arch/avr32/kernel/process.c
 @@ -11,17 +11,18 @@
  #include <linux/fs.h>
  #include <linux/ptrace.h>
@@ -6249,7 +6195,7 @@ Index: linux-2.6.24.7/arch/avr32/kernel/process.c
  /*
   * This file handles the architecture-dependent parts of process handling..
   */
-@@ -30,8 +31,10 @@ void cpu_idle(void)
+@@ -30,8 +31,10 @@
  {
  	/* endless idle loop with no priority at all */
  	while (1) {
@@ -6260,7 +6206,7 @@ Index: linux-2.6.24.7/arch/avr32/kernel/process.c
  		preempt_enable_no_resched();
  		schedule();
  		preempt_disable();
-@@ -103,7 +106,7 @@ EXPORT_SYMBOL(kernel_thread);
+@@ -103,7 +106,7 @@
   */
  void exit_thread(void)
  {
@@ -6269,7 +6215,7 @@ Index: linux-2.6.24.7/arch/avr32/kernel/process.c
  }
  
  void flush_thread(void)
-@@ -345,6 +348,10 @@ int copy_thread(int nr, unsigned long cl
+@@ -345,6 +348,10 @@
  	p->thread.cpu_context.ksp = (unsigned long)childregs;
  	p->thread.cpu_context.pc = (unsigned long)ret_from_fork;
  
@@ -6280,11 +6226,9 @@ Index: linux-2.6.24.7/arch/avr32/kernel/process.c
  	return 0;
  }
  
-Index: linux-2.6.24.7/arch/avr32/kernel/ptrace.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/kernel/ptrace.c
-+++ linux-2.6.24.7/arch/avr32/kernel/ptrace.c
-@@ -58,6 +58,7 @@ void ptrace_disable(struct task_struct *
+--- a/arch/avr32/kernel/ptrace.c
++++ b/arch/avr32/kernel/ptrace.c
+@@ -58,6 +58,7 @@
  {
  	clear_tsk_thread_flag(child, TIF_SINGLE_STEP);
  	clear_tsk_thread_flag(child, TIF_BREAKPOINT);
@@ -6292,7 +6236,7 @@ Index: linux-2.6.24.7/arch/avr32/kernel/ptrace.c
  }
  
  /*
-@@ -144,10 +145,6 @@ long arch_ptrace(struct task_struct *chi
+@@ -144,10 +145,6 @@
  {
  	int ret;
  
@@ -6303,11 +6247,9 @@ Index: linux-2.6.24.7/arch/avr32/kernel/ptrace.c
  	switch (request) {
  	/* Read the word at location addr in the child process */
  	case PTRACE_PEEKTEXT:
-Index: linux-2.6.24.7/arch/avr32/kernel/setup.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/kernel/setup.c
-+++ linux-2.6.24.7/arch/avr32/kernel/setup.c
-@@ -273,6 +273,8 @@ static int __init early_parse_fbmem(char
+--- a/arch/avr32/kernel/setup.c
++++ b/arch/avr32/kernel/setup.c
+@@ -273,6 +273,8 @@
  			printk(KERN_WARNING
  			       "Failed to allocate framebuffer memory\n");
  			fbmem_size = 0;
@@ -6316,11 +6258,9 @@ Index: linux-2.6.24.7/arch/avr32/kernel/setup.c
  		}
  	}
  
-Index: linux-2.6.24.7/arch/avr32/kernel/signal.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/kernel/signal.c
-+++ linux-2.6.24.7/arch/avr32/kernel/signal.c
-@@ -270,19 +270,12 @@ int do_signal(struct pt_regs *regs, sigs
+--- a/arch/avr32/kernel/signal.c
++++ b/arch/avr32/kernel/signal.c
+@@ -270,19 +270,12 @@
  	if (!user_mode(regs))
  		return 0;
  
@@ -6340,10 +6280,8 @@ Index: linux-2.6.24.7/arch/avr32/kernel/signal.c
  	if (syscall) {
  		switch (regs->r12) {
  		case -ERESTART_RESTARTBLOCK:
-Index: linux-2.6.24.7/arch/avr32/kernel/time.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/kernel/time.c
-+++ linux-2.6.24.7/arch/avr32/kernel/time.c
+--- a/arch/avr32/kernel/time.c
++++ b/arch/avr32/kernel/time.c
 @@ -1,16 +1,12 @@
  /*
   * Copyright (C) 2004-2007 Atmel Corporation
@@ -6654,10 +6592,8 @@ Index: linux-2.6.24.7/arch/avr32/kernel/time.c
  }
 -
 -device_initcall(init_timer_sysfs);
-Index: linux-2.6.24.7/arch/avr32/kernel/traps.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/kernel/traps.c
-+++ linux-2.6.24.7/arch/avr32/kernel/traps.c
+--- a/arch/avr32/kernel/traps.c
++++ b/arch/avr32/kernel/traps.c
 @@ -9,6 +9,7 @@
  #include <linux/bug.h>
  #include <linux/init.h>
@@ -6666,7 +6602,7 @@ Index: linux-2.6.24.7/arch/avr32/kernel/traps.c
  #include <linux/module.h>
  #include <linux/notifier.h>
  #include <linux/sched.h>
-@@ -107,9 +108,23 @@ void _exception(long signr, struct pt_re
+@@ -107,9 +108,23 @@
  
  asmlinkage void do_nmi(unsigned long ecr, struct pt_regs *regs)
  {
@@ -6693,9 +6629,7 @@ Index: linux-2.6.24.7/arch/avr32/kernel/traps.c
  }
  
  asmlinkage void do_critical_exception(unsigned long ecr, struct pt_regs *regs)
-Index: linux-2.6.24.7/arch/avr32/mach-at32ap/at32ap7000.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/mach-at32ap/at32ap7000.c
+--- a/arch/avr32/mach-at32ap/at32ap7000.c
 +++ /dev/null
 @@ -1,1730 +0,0 @@
 -/*
@@ -8428,10 +8362,8 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/at32ap7000.c
 -	pm_writel(PBA_MASK, pba_mask);
 -	pm_writel(PBB_MASK, pbb_mask);
 -}
-Index: linux-2.6.24.7/arch/avr32/mach-at32ap/at32ap700x.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/arch/avr32/mach-at32ap/at32ap700x.c
++++ b/arch/avr32/mach-at32ap/at32ap700x.c
 @@ -0,0 +1,1944 @@
 +/*
 + * Copyright (C) 2005-2006 Atmel Corporation
@@ -10377,10 +10309,8 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/at32ap700x.c
 +	pm_writel(PBA_MASK, pba_mask);
 +	pm_writel(PBB_MASK, pbb_mask);
 +}
-Index: linux-2.6.24.7/arch/avr32/mach-at32ap/extint.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/mach-at32ap/extint.c
-+++ linux-2.6.24.7/arch/avr32/mach-at32ap/extint.c
+--- a/arch/avr32/mach-at32ap/extint.c
++++ b/arch/avr32/mach-at32ap/extint.c
 @@ -26,16 +26,10 @@
  #define EIC_MODE				0x0014
  #define EIC_EDGE				0x0018
@@ -10399,7 +10329,7 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/extint.c
  
  /* Bit manipulation macros */
  #define EIC_BIT(name)					\
-@@ -63,6 +57,9 @@ struct eic {
+@@ -63,6 +57,9 @@
  	unsigned int first_irq;
  };
  
@@ -10409,7 +10339,7 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/extint.c
  static void eic_ack_irq(unsigned int irq)
  {
  	struct eic *eic = get_irq_chip_data(irq);
-@@ -133,8 +130,11 @@ static int eic_set_irq_type(unsigned int
+@@ -133,8 +130,11 @@
  		eic_writel(eic, EDGE, edge);
  		eic_writel(eic, LEVEL, level);
  
@@ -10422,7 +10352,7 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/extint.c
  		desc->status &= ~(IRQ_TYPE_SENSE_MASK | IRQ_LEVEL);
  		desc->status |= flow_type;
  	}
-@@ -154,9 +154,8 @@ static struct irq_chip eic_chip = {
+@@ -154,9 +154,8 @@
  static void demux_eic_irq(unsigned int irq, struct irq_desc *desc)
  {
  	struct eic *eic = desc->handler_data;
@@ -10433,7 +10363,7 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/extint.c
  
  	status = eic_readl(eic, ISR);
  	pending = status & eic_readl(eic, IMR);
-@@ -165,15 +164,28 @@ static void demux_eic_irq(unsigned int i
+@@ -165,15 +164,28 @@
  		i = fls(pending) - 1;
  		pending &= ~(1 << i);
  
@@ -10468,7 +10398,7 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/extint.c
  static int __init eic_probe(struct platform_device *pdev)
  {
  	struct eic *eic;
-@@ -214,14 +226,13 @@ static int __init eic_probe(struct platf
+@@ -214,14 +226,13 @@
  	pattern = eic_readl(eic, MODE);
  	nr_irqs = fls(pattern);
  
@@ -10485,7 +10415,7 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/extint.c
  		set_irq_chip_and_handler(eic->first_irq + i, &eic_chip,
  					 handle_level_irq);
  		set_irq_chip_data(eic->first_irq + i, eic);
-@@ -230,6 +241,16 @@ static int __init eic_probe(struct platf
+@@ -230,6 +241,16 @@
  	set_irq_chained_handler(int_irq, demux_eic_irq);
  	set_irq_data(int_irq, eic);
  
@@ -10502,10 +10432,8 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/extint.c
  	dev_info(&pdev->dev,
  		 "External Interrupt Controller at 0x%p, IRQ %u\n",
  		 eic->regs, int_irq);
-Index: linux-2.6.24.7/arch/avr32/mach-at32ap/gpio-dev.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/arch/avr32/mach-at32ap/gpio-dev.c
++++ b/arch/avr32/mach-at32ap/gpio-dev.c
 @@ -0,0 +1,573 @@
 +/*
 + * GPIO /dev and configfs interface
@@ -11080,10 +11008,8 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/gpio-dev.c
 +	return err;
 +}
 +late_initcall(gpio_dev_init);
-Index: linux-2.6.24.7/arch/avr32/mach-at32ap/intc.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/mach-at32ap/intc.c
-+++ linux-2.6.24.7/arch/avr32/mach-at32ap/intc.c
+--- a/arch/avr32/mach-at32ap/intc.c
++++ b/arch/avr32/mach-at32ap/intc.c
 @@ -13,7 +13,6 @@
  #include <linux/irq.h>
  #include <linux/platform_device.h>
@@ -11092,11 +11018,9 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/intc.c
  #include <asm/io.h>
  
  #include "intc.h"
-Index: linux-2.6.24.7/arch/avr32/mach-at32ap/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/mach-at32ap/Kconfig
-+++ linux-2.6.24.7/arch/avr32/mach-at32ap/Kconfig
-@@ -3,9 +3,9 @@ if PLATFORM_AT32AP
+--- a/arch/avr32/mach-at32ap/Kconfig
++++ b/arch/avr32/mach-at32ap/Kconfig
+@@ -3,9 +3,9 @@
  menu "Atmel AVR32 AP options"
  
  choice
@@ -11109,7 +11033,7 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/Kconfig
  	help
  	  Define the width of the AP7000 external static memory interface.
  	  This is used to determine how to mangle the address and/or data
-@@ -15,17 +15,24 @@ choice
+@@ -15,17 +15,24 @@
  	  width for all chip selects, excluding the flash (which is using
  	  raw access and is thus not affected by any of this.)
  
@@ -11137,10 +11061,8 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/Kconfig
  endmenu
  
  endif # PLATFORM_AT32AP
-Index: linux-2.6.24.7/arch/avr32/mach-at32ap/Makefile
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/mach-at32ap/Makefile
-+++ linux-2.6.24.7/arch/avr32/mach-at32ap/Makefile
+--- a/arch/avr32/mach-at32ap/Makefile
++++ b/arch/avr32/mach-at32ap/Makefile
 @@ -1,4 +1,4 @@
  obj-y				+= at32ap.o clock.o intc.o extint.o pio.o hsmc.o
 -obj-$(CONFIG_CPU_AT32AP7000)	+= at32ap7000.o
@@ -11148,11 +11070,9 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/Makefile
 +obj-$(CONFIG_CPU_AT32AP700X)	+= at32ap700x.o pm-at32ap700x.o
  obj-$(CONFIG_CPU_FREQ_AT32AP)	+= cpufreq.o
 +obj-$(CONFIG_GPIO_DEV)		+= gpio-dev.o
-Index: linux-2.6.24.7/arch/avr32/mach-at32ap/pio.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/mach-at32ap/pio.c
-+++ linux-2.6.24.7/arch/avr32/mach-at32ap/pio.c
-@@ -162,6 +162,82 @@ fail:
+--- a/arch/avr32/mach-at32ap/pio.c
++++ b/arch/avr32/mach-at32ap/pio.c
+@@ -162,6 +162,82 @@
  	dump_stack();
  }
  
@@ -11235,10 +11155,8 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/pio.c
  /*--------------------------------------------------------------------------*/
  
  /* GPIO API */
-Index: linux-2.6.24.7/arch/avr32/mach-at32ap/pm-at32ap700x.S
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/arch/avr32/mach-at32ap/pm-at32ap700x.S
++++ b/arch/avr32/mach-at32ap/pm-at32ap700x.S
 @@ -0,0 +1,66 @@
 +/*
 + * Low-level Power Management code.
@@ -11306,9 +11224,7 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/pm-at32ap700x.S
 +	unmask_interrupts
 +	retal	r12
 +	.size	cpu_idle_skip_sleep, . - cpu_idle_skip_sleep
-Index: linux-2.6.24.7/arch/avr32/mach-at32ap/time-tc.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/mach-at32ap/time-tc.c
+--- a/arch/avr32/mach-at32ap/time-tc.c
 +++ /dev/null
 @@ -1,218 +0,0 @@
 -/*
@@ -11529,11 +11445,9 @@ Index: linux-2.6.24.7/arch/avr32/mach-at32ap/time-tc.c
 -
 -	return IRQ_NONE;
 -}
-Index: linux-2.6.24.7/arch/avr32/Makefile
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/Makefile
-+++ linux-2.6.24.7/arch/avr32/Makefile
-@@ -16,7 +16,7 @@ KBUILD_AFLAGS	+= -mrelax -mno-pic
+--- a/arch/avr32/Makefile
++++ b/arch/avr32/Makefile
+@@ -16,7 +16,7 @@
  CFLAGS_MODULE	+= -mno-relax
  LDFLAGS_vmlinux	+= --relax
  
@@ -11542,7 +11456,7 @@ Index: linux-2.6.24.7/arch/avr32/Makefile
  
  KBUILD_CFLAGS	+= $(cpuflags-y)
  KBUILD_AFLAGS	+= $(cpuflags-y)
-@@ -31,6 +31,8 @@ core-$(CONFIG_BOARD_ATNGW100)		+= arch/a
+@@ -31,6 +31,8 @@
  core-$(CONFIG_LOADER_U_BOOT)		+= arch/avr32/boot/u-boot/
  core-y					+= arch/avr32/kernel/
  core-y					+= arch/avr32/mm/
@@ -11551,11 +11465,9 @@ Index: linux-2.6.24.7/arch/avr32/Makefile
  libs-y					+= arch/avr32/lib/
  
  archincdir-$(CONFIG_PLATFORM_AT32AP)	:= arch-at32ap
-Index: linux-2.6.24.7/arch/avr32/mm/dma-coherent.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/mm/dma-coherent.c
-+++ linux-2.6.24.7/arch/avr32/mm/dma-coherent.c
-@@ -41,6 +41,13 @@ static struct page *__dma_alloc(struct d
+--- a/arch/avr32/mm/dma-coherent.c
++++ b/arch/avr32/mm/dma-coherent.c
+@@ -41,6 +41,13 @@
  	struct page *page, *free, *end;
  	int order;
  
@@ -11569,11 +11481,9 @@ Index: linux-2.6.24.7/arch/avr32/mm/dma-coherent.c
  	size = PAGE_ALIGN(size);
  	order = get_order(size);
  
-Index: linux-2.6.24.7/arch/avr32/mm/fault.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/mm/fault.c
-+++ linux-2.6.24.7/arch/avr32/mm/fault.c
-@@ -189,6 +189,8 @@ no_context:
+--- a/arch/avr32/mm/fault.c
++++ b/arch/avr32/mm/fault.c
+@@ -189,6 +189,8 @@
  
  	page = sysreg_read(PTBR);
  	printk(KERN_ALERT "ptbr = %08lx", page);
@@ -11582,11 +11492,9 @@ Index: linux-2.6.24.7/arch/avr32/mm/fault.c
  	if (page) {
  		page = ((unsigned long *)page)[address >> 22];
  		printk(" pgd = %08lx", page);
-Index: linux-2.6.24.7/arch/avr32/mm/tlb.c
-===================================================================
---- linux-2.6.24.7.orig/arch/avr32/mm/tlb.c
-+++ linux-2.6.24.7/arch/avr32/mm/tlb.c
-@@ -348,7 +348,7 @@ static int tlb_show(struct seq_file *tlb
+--- a/arch/avr32/mm/tlb.c
++++ b/arch/avr32/mm/tlb.c
+@@ -348,7 +348,7 @@
  	return 0;
  }
  
@@ -11595,10 +11503,8 @@ Index: linux-2.6.24.7/arch/avr32/mm/tlb.c
  	.start		= tlb_start,
  	.next		= tlb_next,
  	.stop		= tlb_stop,
-Index: linux-2.6.24.7/arch/avr32/oprofile/Makefile
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/arch/avr32/oprofile/Makefile
++++ b/arch/avr32/oprofile/Makefile
 @@ -0,0 +1,8 @@
 +obj-$(CONFIG_OPROFILE) += oprofile.o
 +
@@ -11608,10 +11514,8 @@ Index: linux-2.6.24.7/arch/avr32/oprofile/Makefile
 +				oprofilefs.o oprofile_stats.o		\
 +				timer_int.o)
 +oprofile-y		+= op_model_avr32.o
-Index: linux-2.6.24.7/arch/avr32/oprofile/op_model_avr32.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/arch/avr32/oprofile/op_model_avr32.c
++++ b/arch/avr32/oprofile/op_model_avr32.c
 @@ -0,0 +1,234 @@
 +/*
 + * AVR32 Performance Counter Driver
@@ -11847,11 +11751,9 @@ Index: linux-2.6.24.7/arch/avr32/oprofile/op_model_avr32.c
 +{
 +
 +}
-Index: linux-2.6.24.7/Documentation/kernel-parameters.txt
-===================================================================
---- linux-2.6.24.7.orig/Documentation/kernel-parameters.txt
-+++ linux-2.6.24.7/Documentation/kernel-parameters.txt
-@@ -34,6 +34,7 @@ parameter is applicable:
+--- a/Documentation/kernel-parameters.txt
++++ b/Documentation/kernel-parameters.txt
+@@ -34,6 +34,7 @@
  	ALSA	ALSA sound support is enabled.
  	APIC	APIC support is enabled.
  	APM	Advanced Power Management support is enabled.
@@ -11859,7 +11761,7 @@ Index: linux-2.6.24.7/Documentation/kernel-parameters.txt
  	AX25	Appropriate AX.25 support is enabled.
  	BLACKFIN Blackfin architecture is enabled.
  	DRM	Direct Rendering Management support is enabled.
-@@ -1124,6 +1125,10 @@ and is between 256 and 4096 characters. 
+@@ -1124,6 +1125,10 @@
  			of returning the full 64-bit number.
  			The default is to return 64-bit inode numbers.
  
@@ -11870,19 +11772,15 @@ Index: linux-2.6.24.7/Documentation/kernel-parameters.txt
  	nmi_watchdog=	[KNL,BUGS=X86-32] Debugging features for SMP kernels
  
  	no387		[BUGS=X86-32] Tells the kernel to use the 387 maths
-Index: linux-2.6.24.7/drivers/clocksource/Makefile
-===================================================================
---- linux-2.6.24.7.orig/drivers/clocksource/Makefile
-+++ linux-2.6.24.7/drivers/clocksource/Makefile
+--- a/drivers/clocksource/Makefile
++++ b/drivers/clocksource/Makefile
 @@ -1,3 +1,4 @@
 +obj-$(CONFIG_ATMEL_TCB_CLKSRC)	+= tcb_clksrc.o
  obj-$(CONFIG_X86_CYCLONE_TIMER)	+= cyclone.o
  obj-$(CONFIG_X86_PM_TIMER)	+= acpi_pm.o
  obj-$(CONFIG_SCx200HR_TIMER)	+= scx200_hrt.o
-Index: linux-2.6.24.7/drivers/clocksource/tcb_clksrc.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/drivers/clocksource/tcb_clksrc.c
++++ b/drivers/clocksource/tcb_clksrc.c
 @@ -0,0 +1,305 @@
 +#include <linux/init.h>
 +#include <linux/clocksource.h>
@@ -12189,10 +12087,8 @@ Index: linux-2.6.24.7/drivers/clocksource/tcb_clksrc.c
 +	return 0;
 +}
 +arch_initcall(tcb_clksrc_init);
-Index: linux-2.6.24.7/drivers/i2c/busses/i2c-atmeltwi.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/drivers/i2c/busses/i2c-atmeltwi.c
++++ b/drivers/i2c/busses/i2c-atmeltwi.c
 @@ -0,0 +1,436 @@
 +/*
 + * i2c Support for Atmel's Two-Wire Interface (TWI)
@@ -12630,10 +12526,8 @@ Index: linux-2.6.24.7/drivers/i2c/busses/i2c-atmeltwi.c
 +MODULE_AUTHOR("Espen Krangnes");
 +MODULE_DESCRIPTION("I2C driver for Atmel TWI");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.24.7/drivers/i2c/busses/i2c-atmeltwi.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/drivers/i2c/busses/i2c-atmeltwi.h
++++ b/drivers/i2c/busses/i2c-atmeltwi.h
 @@ -0,0 +1,117 @@
 +/*
 + * Register definitions for the Atmel Two-Wire Interface
@@ -12752,11 +12646,9 @@ Index: linux-2.6.24.7/drivers/i2c/busses/i2c-atmeltwi.h
 +	__raw_writel((value), (port)->regs + TWI_##reg)
 +
 +#endif /* __ATMELTWI_H__ */
-Index: linux-2.6.24.7/drivers/i2c/busses/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/drivers/i2c/busses/Kconfig
-+++ linux-2.6.24.7/drivers/i2c/busses/Kconfig
-@@ -88,6 +88,14 @@ config I2C_AT91
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -88,6 +88,14 @@
  	  to support combined I2C messages.  Use the i2c-gpio driver
  	  unless your system can cope with those limitations.
  
@@ -12771,11 +12663,9 @@ Index: linux-2.6.24.7/drivers/i2c/busses/Kconfig
  config I2C_AU1550
  	tristate "Au1550/Au1200 SMBus interface"
  	depends on SOC_AU1550 || SOC_AU1200
-Index: linux-2.6.24.7/drivers/i2c/busses/Makefile
-===================================================================
---- linux-2.6.24.7.orig/drivers/i2c/busses/Makefile
-+++ linux-2.6.24.7/drivers/i2c/busses/Makefile
-@@ -53,6 +53,7 @@ obj-$(CONFIG_I2C_VIAPRO)	+= i2c-viapro.o
+--- a/drivers/i2c/busses/Makefile
++++ b/drivers/i2c/busses/Makefile
+@@ -53,6 +53,7 @@
  obj-$(CONFIG_I2C_VOODOO3)	+= i2c-voodoo3.o
  obj-$(CONFIG_SCx200_ACB)	+= scx200_acb.o
  obj-$(CONFIG_SCx200_I2C)	+= scx200_i2c.o
@@ -12783,10 +12673,8 @@ Index: linux-2.6.24.7/drivers/i2c/busses/Makefile
  
  ifeq ($(CONFIG_I2C_DEBUG_BUS),y)
  EXTRA_CFLAGS += -DDEBUG
-Index: linux-2.6.24.7/drivers/input/serio/at32psif.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/drivers/input/serio/at32psif.c
++++ b/drivers/input/serio/at32psif.c
 @@ -0,0 +1,351 @@
 +/*
 + * Copyright (C) 2007 Atmel Corporation
@@ -13139,10 +13027,8 @@ Index: linux-2.6.24.7/drivers/input/serio/at32psif.c
 +MODULE_AUTHOR("Hans-Christian Egtvedt <hcegtvedt@atmel.com>");
 +MODULE_DESCRIPTION("Atmel AVR32 PSIF PS/2 driver");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.24.7/drivers/input/serio/at32psif.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/drivers/input/serio/at32psif.h
++++ b/drivers/input/serio/at32psif.h
 @@ -0,0 +1,82 @@
 +/*
 + * Copyright (C) 2007 Atmel Corporation
@@ -13226,11 +13112,9 @@ Index: linux-2.6.24.7/drivers/input/serio/at32psif.h
 +	__raw_writel((value), (port)->regs + PSIF_##reg)
 +
 +#endif /* _AT32PSIF_H */
-Index: linux-2.6.24.7/drivers/input/serio/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/drivers/input/serio/Kconfig
-+++ linux-2.6.24.7/drivers/input/serio/Kconfig
-@@ -88,6 +88,17 @@ config SERIO_RPCKBD
+--- a/drivers/input/serio/Kconfig
++++ b/drivers/input/serio/Kconfig
+@@ -88,6 +88,17 @@
  	  To compile this driver as a module, choose M here: the
  	  module will be called rpckbd.
  
@@ -13248,11 +13132,9 @@ Index: linux-2.6.24.7/drivers/input/serio/Kconfig
  config SERIO_AMBAKMI
  	tristate "AMBA KMI keyboard controller"
  	depends on ARM_AMBA
-Index: linux-2.6.24.7/drivers/input/serio/Makefile
-===================================================================
---- linux-2.6.24.7.orig/drivers/input/serio/Makefile
-+++ linux-2.6.24.7/drivers/input/serio/Makefile
-@@ -12,6 +12,7 @@ obj-$(CONFIG_SERIO_CT82C710)	+= ct82c710
+--- a/drivers/input/serio/Makefile
++++ b/drivers/input/serio/Makefile
+@@ -12,6 +12,7 @@
  obj-$(CONFIG_SERIO_RPCKBD)	+= rpckbd.o
  obj-$(CONFIG_SERIO_SA1111)	+= sa1111ps2.o
  obj-$(CONFIG_SERIO_AMBAKMI)	+= ambakmi.o
@@ -13260,11 +13142,9 @@ Index: linux-2.6.24.7/drivers/input/serio/Makefile
  obj-$(CONFIG_SERIO_Q40KBD)	+= q40kbd.o
  obj-$(CONFIG_SERIO_GSCPS2)	+= gscps2.o
  obj-$(CONFIG_HP_SDC)		+= hp_sdc.o
-Index: linux-2.6.24.7/drivers/leds/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/drivers/leds/Kconfig
-+++ linux-2.6.24.7/drivers/leds/Kconfig
-@@ -18,6 +18,13 @@ config LEDS_CLASS
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
+@@ -18,6 +18,13 @@
  
  comment "LED drivers"
  
@@ -13278,10 +13158,8 @@ Index: linux-2.6.24.7/drivers/leds/Kconfig
  config LEDS_CORGI
  	tristate "LED Support for the Sharp SL-C7x0 series"
  	depends on LEDS_CLASS && PXA_SHARP_C7xx
-Index: linux-2.6.24.7/drivers/leds/leds-atmel-pwm.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/drivers/leds/leds-atmel-pwm.c
++++ b/drivers/leds/leds-atmel-pwm.c
 @@ -0,0 +1,155 @@
 +#include <linux/kernel.h>
 +#include <linux/platform_device.h>
@@ -13438,11 +13316,9 @@ Index: linux-2.6.24.7/drivers/leds/leds-atmel-pwm.c
 +
 +MODULE_DESCRIPTION("Driver for LEDs with PWM-controlled brightness");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.24.7/drivers/leds/Makefile
-===================================================================
---- linux-2.6.24.7.orig/drivers/leds/Makefile
-+++ linux-2.6.24.7/drivers/leds/Makefile
-@@ -5,6 +5,7 @@ obj-$(CONFIG_LEDS_CLASS)		+= led-class.o
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
+@@ -5,6 +5,7 @@
  obj-$(CONFIG_LEDS_TRIGGERS)		+= led-triggers.o
  
  # LED Platform Drivers
@@ -13450,10 +13326,8 @@ Index: linux-2.6.24.7/drivers/leds/Makefile
  obj-$(CONFIG_LEDS_CORGI)		+= leds-corgi.o
  obj-$(CONFIG_LEDS_LOCOMO)		+= leds-locomo.o
  obj-$(CONFIG_LEDS_SPITZ)		+= leds-spitz.o
-Index: linux-2.6.24.7/drivers/misc/atmel_pwm.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/drivers/misc/atmel_pwm.c
++++ b/drivers/misc/atmel_pwm.c
 @@ -0,0 +1,409 @@
 +#include <linux/module.h>
 +#include <linux/clk.h>
@@ -13864,10 +13738,8 @@ Index: linux-2.6.24.7/drivers/misc/atmel_pwm.c
 +
 +MODULE_DESCRIPTION("Driver for AT32/AT91 PWM module");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.24.7/drivers/misc/atmel_tclib.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/drivers/misc/atmel_tclib.c
++++ b/drivers/misc/atmel_tclib.c
 @@ -0,0 +1,161 @@
 +#include <linux/atmel_tc.h>
 +#include <linux/clk.h>
@@ -14030,11 +13902,9 @@ Index: linux-2.6.24.7/drivers/misc/atmel_tclib.c
 +	return platform_driver_probe(&tc_driver, tc_probe);
 +}
 +arch_initcall(tc_init);
-Index: linux-2.6.24.7/drivers/misc/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/drivers/misc/Kconfig
-+++ linux-2.6.24.7/drivers/misc/Kconfig
-@@ -13,6 +13,48 @@ menuconfig MISC_DEVICES
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -13,6 +13,48 @@
  
  if MISC_DEVICES
  
@@ -14083,11 +13953,9 @@ Index: linux-2.6.24.7/drivers/misc/Kconfig
  config IBM_ASM
  	tristate "Device driver for IBM RSA service processor"
  	depends on X86 && PCI && INPUT && EXPERIMENTAL
-Index: linux-2.6.24.7/drivers/misc/Makefile
-===================================================================
---- linux-2.6.24.7.orig/drivers/misc/Makefile
-+++ linux-2.6.24.7/drivers/misc/Makefile
-@@ -7,7 +7,9 @@ obj-$(CONFIG_IBM_ASM)		+= ibmasm/
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
+@@ -7,7 +7,9 @@
  obj-$(CONFIG_HDPU_FEATURES)	+= hdpuftrs/
  obj-$(CONFIG_MSI_LAPTOP)     += msi-laptop.o
  obj-$(CONFIG_ASUS_LAPTOP)     += asus-laptop.o
@@ -14097,10 +13965,8 @@ Index: linux-2.6.24.7/drivers/misc/Makefile
  obj-$(CONFIG_LKDTM)		+= lkdtm.o
  obj-$(CONFIG_TIFM_CORE)       	+= tifm_core.o
  obj-$(CONFIG_TIFM_7XX1)       	+= tifm_7xx1.o
-Index: linux-2.6.24.7/drivers/mmc/host/atmel-mci.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/drivers/mmc/host/atmel-mci.c
++++ b/drivers/mmc/host/atmel-mci.c
 @@ -0,0 +1,1220 @@
 +/*
 + * Atmel MultiMedia Card Interface driver
@@ -15322,10 +15188,8 @@ Index: linux-2.6.24.7/drivers/mmc/host/atmel-mci.c
 +
 +MODULE_DESCRIPTION("Atmel Multimedia Card Interface driver");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.24.7/drivers/mmc/host/atmel-mci.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/drivers/mmc/host/atmel-mci.h
++++ b/drivers/mmc/host/atmel-mci.h
 @@ -0,0 +1,192 @@
 +/*
 + * Atmel MultiMedia Card Interface driver
@@ -15519,11 +15383,9 @@ Index: linux-2.6.24.7/drivers/mmc/host/atmel-mci.h
 +	__raw_writel((value), (port)->regs + MCI_##reg)
 +
 +#endif /* __DRIVERS_MMC_ATMEL_MCI_H__ */
-Index: linux-2.6.24.7/drivers/mmc/host/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/drivers/mmc/host/Kconfig
-+++ linux-2.6.24.7/drivers/mmc/host/Kconfig
-@@ -91,6 +91,16 @@ config MMC_AT91
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -91,6 +91,16 @@
  
  	  If unsure, say N.
  
@@ -15540,11 +15402,9 @@ Index: linux-2.6.24.7/drivers/mmc/host/Kconfig
  config MMC_IMX
  	tristate "Motorola i.MX Multimedia Card Interface support"
  	depends on ARCH_IMX
-Index: linux-2.6.24.7/drivers/mmc/host/Makefile
-===================================================================
---- linux-2.6.24.7.orig/drivers/mmc/host/Makefile
-+++ linux-2.6.24.7/drivers/mmc/host/Makefile
-@@ -15,6 +15,7 @@ obj-$(CONFIG_MMC_WBSD)		+= wbsd.o
+--- a/drivers/mmc/host/Makefile
++++ b/drivers/mmc/host/Makefile
+@@ -15,6 +15,7 @@
  obj-$(CONFIG_MMC_AU1X)		+= au1xmmc.o
  obj-$(CONFIG_MMC_OMAP)		+= omap.o
  obj-$(CONFIG_MMC_AT91)		+= at91_mci.o
@@ -15552,10 +15412,8 @@ Index: linux-2.6.24.7/drivers/mmc/host/Makefile
  obj-$(CONFIG_MMC_TIFM_SD)	+= tifm_sd.o
  obj-$(CONFIG_MMC_SPI)		+= mmc_spi.o
  
-Index: linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0001.c
-===================================================================
---- linux-2.6.24.7.orig/drivers/mtd/chips/cfi_cmdset_0001.c
-+++ linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0001.c
+--- a/drivers/mtd/chips/cfi_cmdset_0001.c
++++ b/drivers/mtd/chips/cfi_cmdset_0001.c
 @@ -50,6 +50,7 @@
  #define I82802AC	0x00ac
  #define MANUFACTURER_ST         0x0020
@@ -15564,7 +15422,7 @@ Index: linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0001.c
  
  static int cfi_intelext_read (struct mtd_info *, loff_t, size_t, size_t *, u_char *);
  static int cfi_intelext_write_words(struct mtd_info *, loff_t, size_t, size_t *, const u_char *);
-@@ -157,6 +158,47 @@ static void cfi_tell_features(struct cfi
+@@ -157,6 +158,47 @@
  }
  #endif
  
@@ -15612,7 +15470,7 @@ Index: linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0001.c
  #ifdef CMDSET0001_DISABLE_ERASE_SUSPEND_ON_WRITE
  /* Some Intel Strata Flash prior to FPO revision C has bugs in this area */
  static void fixup_intel_strataflash(struct mtd_info *mtd, void* param)
-@@ -234,6 +276,7 @@ static void fixup_use_powerup_lock(struc
+@@ -234,6 +276,7 @@
  }
  
  static struct cfi_fixup cfi_fixup_table[] = {
@@ -15620,11 +15478,9 @@ Index: linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0001.c
  #ifdef CMDSET0001_DISABLE_ERASE_SUSPEND_ON_WRITE
  	{ CFI_MFR_ANY, CFI_ID_ANY, fixup_intel_strataflash, NULL },
  #endif
-Index: linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0002.c
-===================================================================
---- linux-2.6.24.7.orig/drivers/mtd/chips/cfi_cmdset_0002.c
-+++ linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0002.c
-@@ -186,6 +186,10 @@ static void fixup_convert_atmel_pri(stru
+--- a/drivers/mtd/chips/cfi_cmdset_0002.c
++++ b/drivers/mtd/chips/cfi_cmdset_0002.c
+@@ -186,6 +186,10 @@
  		extp->TopBottom = 2;
  	else
  		extp->TopBottom = 3;
@@ -15635,7 +15491,7 @@ Index: linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0002.c
  }
  
  static void fixup_use_secsi(struct mtd_info *mtd, void *param)
-@@ -218,6 +222,7 @@ static void fixup_use_atmel_lock(struct 
+@@ -218,6 +222,7 @@
  }
  
  static struct cfi_fixup cfi_fixup_table[] = {
@@ -15643,7 +15499,7 @@ Index: linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0002.c
  #ifdef AMD_BOOTLOC_BUG
  	{ CFI_MFR_AMD, CFI_ID_ANY, fixup_amd_bootblock, NULL },
  #endif
-@@ -230,7 +235,6 @@ static struct cfi_fixup cfi_fixup_table[
+@@ -230,7 +235,6 @@
  #if !FORCE_WORD_WRITE
  	{ CFI_MFR_ANY, CFI_ID_ANY, fixup_use_write_buffers, NULL, },
  #endif
@@ -15651,10 +15507,8 @@ Index: linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0002.c
  	{ 0, 0, NULL, NULL }
  };
  static struct cfi_fixup jedec_fixup_table[] = {
-Index: linux-2.6.24.7/drivers/pcmcia/at32_cf.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/drivers/pcmcia/at32_cf.c
++++ b/drivers/pcmcia/at32_cf.c
 @@ -0,0 +1,533 @@
 +/*
 + * Driver for AVR32 Static Memory Controller: CompactFlash support
@@ -16189,11 +16043,9 @@ Index: linux-2.6.24.7/drivers/pcmcia/at32_cf.c
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("Driver for SMC PCMCIA interface");
 +MODULE_AUTHOR("Hans-Christian Egtvedt <hcegtvedt@atmel.com>");
-Index: linux-2.6.24.7/drivers/pcmcia/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/drivers/pcmcia/Kconfig
-+++ linux-2.6.24.7/drivers/pcmcia/Kconfig
-@@ -276,6 +276,13 @@ config ELECTRA_CF
+--- a/drivers/pcmcia/Kconfig
++++ b/drivers/pcmcia/Kconfig
+@@ -276,6 +276,13 @@
  	  Say Y here to support the CompactFlash controller on the
  	  PA Semi Electra eval board.
  
@@ -16207,11 +16059,9 @@ Index: linux-2.6.24.7/drivers/pcmcia/Kconfig
  config PCCARD_NONSTATIC
  	tristate
  
-Index: linux-2.6.24.7/drivers/pcmcia/Makefile
-===================================================================
---- linux-2.6.24.7.orig/drivers/pcmcia/Makefile
-+++ linux-2.6.24.7/drivers/pcmcia/Makefile
-@@ -38,6 +38,7 @@ obj-$(CONFIG_PCMCIA_VRC4173)			+= vrc417
+--- a/drivers/pcmcia/Makefile
++++ b/drivers/pcmcia/Makefile
+@@ -38,6 +38,7 @@
  obj-$(CONFIG_OMAP_CF)				+= omap_cf.o
  obj-$(CONFIG_AT91_CF)				+= at91_cf.o
  obj-$(CONFIG_ELECTRA_CF)			+= electra_cf.o
@@ -16219,10 +16069,8 @@ Index: linux-2.6.24.7/drivers/pcmcia/Makefile
  
  sa11xx_core-y					+= soc_common.o sa11xx_base.o
  pxa2xx_core-y					+= soc_common.o pxa2xx_base.o
-Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
-===================================================================
---- linux-2.6.24.7.orig/drivers/serial/atmel_serial.c
-+++ linux-2.6.24.7/drivers/serial/atmel_serial.c
+--- a/drivers/serial/atmel_serial.c
++++ b/drivers/serial/atmel_serial.c
 @@ -7,6 +7,8 @@
   *  Based on drivers/char/serial_sa1100.c, by Deep Blue Solutions Ltd.
   *  Based on drivers/char/serial.c, by Linus Torvalds, Theodore Ts'o.
@@ -16297,7 +16145,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  /*
   * We wrap our port structure around the generic uart_port.
   */
-@@ -115,6 +132,19 @@ struct atmel_uart_port {
+@@ -115,6 +132,19 @@
  	struct clk		*clk;		/* uart clock */
  	unsigned short		suspended;	/* is port suspended? */
  	int			break_active;	/* break being received */
@@ -16317,7 +16165,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  };
  
  static struct atmel_uart_port atmel_ports[ATMEL_MAX_UART];
-@@ -123,6 +153,38 @@ static struct atmel_uart_port atmel_port
+@@ -123,6 +153,38 @@
  static struct console atmel_console;
  #endif
  
@@ -16356,7 +16204,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  /*
   * Return TIOCSER_TEMT when transmitter FIFO and Shift register is empty.
   */
-@@ -142,8 +204,8 @@ static void atmel_set_mctrl(struct uart_
+@@ -142,8 +204,8 @@
  #ifdef CONFIG_ARCH_AT91RM9200
  	if (cpu_is_at91rm9200()) {
  		/*
@@ -16367,7 +16215,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  		 */
  		if (port->mapbase == AT91RM9200_BASE_US0) {
  			if (mctrl & TIOCM_RTS)
-@@ -204,7 +266,12 @@ static u_int atmel_get_mctrl(struct uart
+@@ -204,7 +266,12 @@
   */
  static void atmel_stop_tx(struct uart_port *port)
  {
@@ -16381,7 +16229,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  }
  
  /*
-@@ -212,7 +279,17 @@ static void atmel_stop_tx(struct uart_po
+@@ -212,7 +279,17 @@
   */
  static void atmel_start_tx(struct uart_port *port)
  {
@@ -16400,7 +16248,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  }
  
  /*
-@@ -220,7 +297,12 @@ static void atmel_start_tx(struct uart_p
+@@ -220,7 +297,12 @@
   */
  static void atmel_stop_rx(struct uart_port *port)
  {
@@ -16414,7 +16262,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  }
  
  /*
-@@ -228,7 +310,8 @@ static void atmel_stop_rx(struct uart_po
+@@ -228,7 +310,8 @@
   */
  static void atmel_enable_ms(struct uart_port *port)
  {
@@ -16424,7 +16272,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  }
  
  /*
-@@ -243,22 +326,63 @@ static void atmel_break_ctl(struct uart_
+@@ -243,22 +326,63 @@
  }
  
  /*
@@ -16495,7 +16343,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  		/*
  		 * note that the error handling code is
  		 * out of the main execution path
-@@ -266,15 +390,14 @@ static void atmel_rx_chars(struct uart_p
+@@ -266,15 +390,14 @@
  		if (unlikely(status & (ATMEL_US_PARE | ATMEL_US_FRAME
  				       | ATMEL_US_OVRE | ATMEL_US_RXBRK)
  			     || atmel_port->break_active)) {
@@ -16515,7 +16363,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  			} else {
  				/*
  				 * This is either the end-of-break
-@@ -287,52 +410,30 @@ static void atmel_rx_chars(struct uart_p
+@@ -287,52 +410,30 @@
  				status &= ~ATMEL_US_RXBRK;
  				atmel_port->break_active = 0;
  			}
@@ -16574,7 +16422,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  
  	while (UART_GET_CSR(port) & ATMEL_US_TXRDY) {
  		UART_PUT_CHAR(port, xmit->buf[xmit->tail]);
-@@ -345,8 +446,88 @@ static void atmel_tx_chars(struct uart_p
+@@ -345,8 +446,88 @@
  	if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
  		uart_write_wakeup(port);
  
@@ -16665,7 +16513,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  }
  
  /*
-@@ -355,47 +536,255 @@ static void atmel_tx_chars(struct uart_p
+@@ -355,47 +536,255 @@
  static irqreturn_t atmel_interrupt(int irq, void *dev_id)
  {
  	struct uart_port *port = dev_id;
@@ -16951,7 +16799,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  }
  
  /*
-@@ -403,6 +792,8 @@ static irqreturn_t atmel_interrupt(int i
+@@ -403,6 +792,8 @@
   */
  static int atmel_startup(struct uart_port *port)
  {
@@ -16960,7 +16808,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  	int retval;
  
  	/*
-@@ -415,13 +806,64 @@ static int atmel_startup(struct uart_por
+@@ -415,13 +806,64 @@
  	/*
  	 * Allocate the IRQ
  	 */
@@ -17026,7 +16874,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  	 * If there is a specific "open" function (to register
  	 * control line interrupts)
  	 */
-@@ -437,9 +879,21 @@ static int atmel_startup(struct uart_por
+@@ -437,9 +879,21 @@
  	 * Finally, enable the serial port
  	 */
  	UART_PUT_CR(port, ATMEL_US_RSTSTA | ATMEL_US_RSTRX);
@@ -17050,7 +16898,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  
  	return 0;
  }
-@@ -449,6 +903,38 @@ static int atmel_startup(struct uart_por
+@@ -449,6 +903,38 @@
   */
  static void atmel_shutdown(struct uart_port *port)
  {
@@ -17089,7 +16937,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  	/*
  	 * Disable all interrupts, port and break condition.
  	 */
-@@ -471,45 +957,48 @@ static void atmel_shutdown(struct uart_p
+@@ -471,45 +957,48 @@
  /*
   * Power / Clock management.
   */
@@ -17160,7 +17008,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  		quot /= 8;
  		mode |= ATMEL_US_USCLKS_MCK_DIV8;
  	}
-@@ -536,18 +1025,17 @@ static void atmel_set_termios(struct uar
+@@ -536,18 +1025,17 @@
  
  	/* parity */
  	if (termios->c_cflag & PARENB) {
@@ -17183,7 +17031,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  		mode |= ATMEL_US_PAR_NONE;
  
  	spin_lock_irqsave(&port->lock, flags);
-@@ -558,6 +1046,10 @@ static void atmel_set_termios(struct uar
+@@ -558,6 +1046,10 @@
  	if (termios->c_iflag & (BRKINT | PARMRK))
  		port->read_status_mask |= ATMEL_US_RXBRK;
  
@@ -17194,7 +17042,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  	/*
  	 * Characters to ignore
  	 */
-@@ -573,16 +1065,16 @@ static void atmel_set_termios(struct uar
+@@ -573,16 +1065,16 @@
  		if (termios->c_iflag & IGNPAR)
  			port->ignore_status_mask |= ATMEL_US_OVRE;
  	}
@@ -17217,7 +17065,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  
  	/* disable receiver and transmitter */
  	UART_PUT_CR(port, ATMEL_US_TXDIS | ATMEL_US_RXDIS);
-@@ -708,7 +1200,8 @@ static struct uart_ops atmel_pops = {
+@@ -708,7 +1200,8 @@
  /*
   * Configure the port from the platform device resource info.
   */
@@ -17227,7 +17075,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  {
  	struct uart_port *port = &atmel_port->uart;
  	struct atmel_uart_data *data = pdev->dev.platform_data;
-@@ -723,6 +1216,11 @@ static void __devinit atmel_init_port(st
+@@ -723,6 +1216,11 @@
  	port->mapbase	= pdev->resource[0].start;
  	port->irq	= pdev->resource[1].start;
  
@@ -17239,7 +17087,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  	if (data->regs)
  		/* Already mapped by setup code */
  		port->membase = data->regs;
-@@ -731,11 +1229,17 @@ static void __devinit atmel_init_port(st
+@@ -731,11 +1229,17 @@
  		port->membase	= NULL;
  	}
  
@@ -17258,7 +17106,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  }
  
  /*
-@@ -755,12 +1259,11 @@ void __init atmel_register_uart_fns(stru
+@@ -755,12 +1259,11 @@
  	atmel_pops.set_wake	= fns->set_wake;
  }
  
@@ -17272,7 +17120,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  	UART_PUT_CHAR(port, ch);
  }
  
-@@ -773,38 +1276,40 @@ static void atmel_console_write(struct c
+@@ -773,38 +1276,40 @@
  	unsigned int status, imr;
  
  	/*
@@ -17328,7 +17176,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  
  	mr = UART_GET_MR(port) & ATMEL_US_CHRL;
  	if (mr == ATMEL_US_CHRL_8)
-@@ -824,7 +1329,6 @@ static void __init atmel_console_get_opt
+@@ -824,7 +1329,6 @@
  	 * lower than one of those, as it would make us fall through
  	 * to a much lower baud rate than we really want.
  	 */
@@ -17336,7 +17184,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  	*baud = port->uartclk / (16 * (quot - 1));
  }
  
-@@ -836,10 +1340,12 @@ static int __init atmel_console_setup(st
+@@ -836,10 +1340,12 @@
  	int parity = 'n';
  	int flow = 'n';
  
@@ -17351,7 +17199,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  	UART_PUT_CR(port, ATMEL_US_RSTSTA | ATMEL_US_RSTRX);
  	UART_PUT_CR(port, ATMEL_US_TXEN | ATMEL_US_RXEN);
  
-@@ -871,13 +1377,16 @@ static struct console atmel_console = {
+@@ -871,13 +1377,16 @@
  static int __init atmel_console_init(void)
  {
  	if (atmel_default_console_device) {
@@ -17370,7 +17218,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  console_initcall(atmel_console_init);
  
  /*
-@@ -885,34 +1394,48 @@ console_initcall(atmel_console_init);
+@@ -885,34 +1394,48 @@
   */
  static int __init atmel_late_console_init(void)
  {
@@ -17430,7 +17278,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  		enable_irq_wake(port->irq);
  	else {
  		uart_suspend_port(&atmel_uart, port);
-@@ -925,13 +1448,12 @@ static int atmel_serial_suspend(struct p
+@@ -925,13 +1448,12 @@
  static int atmel_serial_resume(struct platform_device *pdev)
  {
  	struct uart_port *port = platform_get_drvdata(pdev);
@@ -17446,7 +17294,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  		disable_irq_wake(port->irq);
  
  	return 0;
-@@ -944,15 +1466,40 @@ static int atmel_serial_resume(struct pl
+@@ -944,15 +1466,40 @@
  static int __devinit atmel_serial_probe(struct platform_device *pdev)
  {
  	struct atmel_uart_port *port;
@@ -17490,7 +17338,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  	}
  
  	return ret;
-@@ -961,19 +1508,21 @@ static int __devinit atmel_serial_probe(
+@@ -961,19 +1508,21 @@
  static int __devexit atmel_serial_remove(struct platform_device *pdev)
  {
  	struct uart_port *port = platform_get_drvdata(pdev);
@@ -17520,9 +17368,7 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.c
  
  	return ret;
  }
-Index: linux-2.6.24.7/drivers/serial/atmel_serial.h
-===================================================================
---- linux-2.6.24.7.orig/drivers/serial/atmel_serial.h
+--- a/drivers/serial/atmel_serial.h
 +++ /dev/null
 @@ -1,127 +0,0 @@
 -/*
@@ -17652,11 +17498,9 @@ Index: linux-2.6.24.7/drivers/serial/atmel_serial.h
 -#define ATMEL_US_IF		0x4c			/* IrDA Filter Register */
 -
 -#endif
-Index: linux-2.6.24.7/drivers/serial/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/drivers/serial/Kconfig
-+++ linux-2.6.24.7/drivers/serial/Kconfig
-@@ -380,6 +380,21 @@ config SERIAL_ATMEL_CONSOLE
+--- a/drivers/serial/Kconfig
++++ b/drivers/serial/Kconfig
+@@ -380,6 +380,21 @@
  	  console is the device which receives all kernel messages and
  	  warnings and which allows logins in single user mode).
  
@@ -17678,11 +17522,9 @@ Index: linux-2.6.24.7/drivers/serial/Kconfig
  config SERIAL_ATMEL_TTYAT
  	bool "Install as device ttyATn instead of ttySn"
  	depends on SERIAL_ATMEL=y
-Index: linux-2.6.24.7/drivers/spi/atmel_spi.c
-===================================================================
---- linux-2.6.24.7.orig/drivers/spi/atmel_spi.c
-+++ linux-2.6.24.7/drivers/spi/atmel_spi.c
-@@ -51,7 +51,9 @@ struct atmel_spi {
+--- a/drivers/spi/atmel_spi.c
++++ b/drivers/spi/atmel_spi.c
+@@ -51,7 +51,9 @@
  	u8			stopping;
  	struct list_head	queue;
  	struct spi_transfer	*current_transfer;
@@ -17693,7 +17535,7 @@ Index: linux-2.6.24.7/drivers/spi/atmel_spi.c
  
  	void			*buffer;
  	dma_addr_t		buffer_dma;
-@@ -113,6 +115,16 @@ static void cs_deactivate(struct atmel_s
+@@ -113,6 +115,16 @@
  	unsigned gpio = (unsigned) spi->controller_data;
  	unsigned active = spi->mode & SPI_CS_HIGH;
  	u32 mr;
@@ -17710,7 +17552,7 @@ Index: linux-2.6.24.7/drivers/spi/atmel_spi.c
  
  	/* only deactivate *this* device; sometimes transfers to
  	 * another device may be active when this routine is called.
-@@ -131,6 +143,48 @@ static void cs_deactivate(struct atmel_s
+@@ -131,6 +143,48 @@
  		gpio_set_value(gpio, !active);
  }
  
@@ -17759,7 +17601,7 @@ Index: linux-2.6.24.7/drivers/spi/atmel_spi.c
  /*
   * Submit next transfer for DMA.
   * lock is held, spi irq is blocked
-@@ -140,53 +194,78 @@ static void atmel_spi_next_xfer(struct s
+@@ -140,53 +194,78 @@
  {
  	struct atmel_spi	*as = spi_master_get_devdata(master);
  	struct spi_transfer	*xfer;
@@ -17877,7 +17719,7 @@ Index: linux-2.6.24.7/drivers/spi/atmel_spi.c
  	 * transfer because we need to handle some difficult timing
  	 * issues otherwise. If we wait for ENDTX in one transfer and
  	 * then starts waiting for ENDRX in the next, it's difficult
-@@ -196,17 +275,7 @@ static void atmel_spi_next_xfer(struct s
+@@ -196,17 +275,7 @@
  	 *
  	 * It should be doable, though. Just not now...
  	 */
@@ -17895,7 +17737,7 @@ Index: linux-2.6.24.7/drivers/spi/atmel_spi.c
  	spi_writel(as, PTCR, SPI_BIT(TXTEN) | SPI_BIT(RXTEN));
  }
  
-@@ -304,6 +373,7 @@ atmel_spi_msg_done(struct spi_master *ma
+@@ -304,6 +373,7 @@
  	spin_lock(&as->lock);
  
  	as->current_transfer = NULL;
@@ -17903,7 +17745,7 @@ Index: linux-2.6.24.7/drivers/spi/atmel_spi.c
  
  	/* continue if needed */
  	if (list_empty(&as->queue) || as->stopping)
-@@ -387,7 +457,7 @@ atmel_spi_interrupt(int irq, void *dev_i
+@@ -387,7 +457,7 @@
  
  		spi_writel(as, IDR, pending);
  
@@ -17912,7 +17754,7 @@ Index: linux-2.6.24.7/drivers/spi/atmel_spi.c
  			msg->actual_length += xfer->len;
  
  			if (!msg->is_dma_mapped)
-@@ -397,7 +467,7 @@ atmel_spi_interrupt(int irq, void *dev_i
+@@ -397,7 +467,7 @@
  			if (xfer->delay_usecs)
  				udelay(xfer->delay_usecs);
  
@@ -17921,7 +17763,7 @@ Index: linux-2.6.24.7/drivers/spi/atmel_spi.c
  				/* report completed message */
  				atmel_spi_msg_done(master, as, msg, 0,
  						xfer->cs_change);
-@@ -500,9 +570,14 @@ static int atmel_spi_setup(struct spi_de
+@@ -500,9 +570,14 @@
  	if (!(spi->mode & SPI_CPHA))
  		csr |= SPI_BIT(NCPHA);
  
@@ -17939,10 +17781,8 @@ Index: linux-2.6.24.7/drivers/spi/atmel_spi.c
  
  	/* chipselect must have been muxed as GPIO (e.g. in board setup) */
  	npcs_pin = (unsigned int)spi->controller_data;
-Index: linux-2.6.24.7/drivers/usb/gadget/atmel_usba_udc.c
-===================================================================
---- linux-2.6.24.7.orig/drivers/usb/gadget/atmel_usba_udc.c
-+++ linux-2.6.24.7/drivers/usb/gadget/atmel_usba_udc.c
+--- a/drivers/usb/gadget/atmel_usba_udc.c
++++ b/drivers/usb/gadget/atmel_usba_udc.c
 @@ -18,6 +18,7 @@
  #include <linux/platform_device.h>
  #include <linux/usb/ch9.h>
@@ -17959,7 +17799,7 @@ Index: linux-2.6.24.7/drivers/usb/gadget/atmel_usba_udc.c
  
  #ifdef CONFIG_USB_GADGET_DEBUG_FS
  #include <linux/debugfs.h>
-@@ -324,53 +326,6 @@ static int vbus_is_present(struct usba_u
+@@ -324,53 +326,6 @@
  	return 1;
  }
  
@@ -18013,7 +17853,7 @@ Index: linux-2.6.24.7/drivers/usb/gadget/atmel_usba_udc.c
  static void next_fifo_transaction(struct usba_ep *ep, struct usba_request *req)
  {
  	unsigned int transaction_len;
-@@ -387,7 +342,7 @@ static void next_fifo_transaction(struct
+@@ -387,7 +342,7 @@
  		ep->ep.name, req, transaction_len,
  		req->last_transaction ? ", done" : "");
  
@@ -18022,7 +17862,7 @@ Index: linux-2.6.24.7/drivers/usb/gadget/atmel_usba_udc.c
  	usba_ep_writel(ep, SET_STA, USBA_TX_PK_RDY);
  	req->req.actual += transaction_len;
  }
-@@ -476,7 +431,7 @@ static void receive_data(struct usba_ep 
+@@ -476,7 +431,7 @@
  			bytecount = req->req.length - req->req.actual;
  		}
  
@@ -18031,7 +17871,7 @@ Index: linux-2.6.24.7/drivers/usb/gadget/atmel_usba_udc.c
  				ep->fifo, bytecount);
  		req->req.actual += bytecount;
  
-@@ -1029,33 +984,6 @@ static const struct usb_gadget_ops usba_
+@@ -1029,33 +984,6 @@
  	.set_selfpowered	= usba_udc_set_selfpowered,
  };
  
@@ -18065,7 +17905,7 @@ Index: linux-2.6.24.7/drivers/usb/gadget/atmel_usba_udc.c
  static struct usb_endpoint_descriptor usba_ep0_desc = {
  	.bLength = USB_DT_ENDPOINT_SIZE,
  	.bDescriptorType = USB_DT_ENDPOINT,
-@@ -1074,7 +1002,6 @@ static void nop_release(struct device *d
+@@ -1074,7 +1002,6 @@
  static struct usba_udc the_udc = {
  	.gadget	= {
  		.ops		= &usba_udc_ops,
@@ -18073,7 +17913,7 @@ Index: linux-2.6.24.7/drivers/usb/gadget/atmel_usba_udc.c
  		.ep_list	= LIST_HEAD_INIT(the_udc.gadget.ep_list),
  		.is_dualspeed	= 1,
  		.name		= "atmel_usba_udc",
-@@ -1231,7 +1158,7 @@ static int do_test_mode(struct usba_udc 
+@@ -1231,7 +1158,7 @@
  		} else {
  			usba_ep_writel(ep, CTL_ENB, USBA_EPT_ENABLE);
  			usba_writel(udc, TST, USBA_TST_PKT_MODE);
@@ -18082,7 +17922,7 @@ Index: linux-2.6.24.7/drivers/usb/gadget/atmel_usba_udc.c
  					sizeof(test_packet_buffer));
  			usba_ep_writel(ep, SET_STA, USBA_TX_PK_RDY);
  			dev_info(dev, "Entering Test_Packet mode...\n");
-@@ -1539,7 +1466,7 @@ restart:
+@@ -1539,7 +1466,7 @@
  		}
  
  		DBG(DBG_FIFO, "Copying ctrl request from 0x%p:\n", ep->fifo);
@@ -18091,7 +17931,7 @@ Index: linux-2.6.24.7/drivers/usb/gadget/atmel_usba_udc.c
  
  		/* Free up one bank in the FIFO so that we can
  		 * generate or receive a reply right away. */
-@@ -1911,7 +1838,7 @@ static int __init usba_udc_probe(struct 
+@@ -1911,7 +1838,7 @@
  
  	regs = platform_get_resource(pdev, IORESOURCE_MEM, CTRL_IOMEM_ID);
  	fifo = platform_get_resource(pdev, IORESOURCE_MEM, FIFO_IOMEM_ID);
@@ -18100,7 +17940,7 @@ Index: linux-2.6.24.7/drivers/usb/gadget/atmel_usba_udc.c
  		return -ENXIO;
  
  	irq = platform_get_irq(pdev, 0);
-@@ -1959,16 +1886,44 @@ static int __init usba_udc_probe(struct 
+@@ -1959,16 +1886,44 @@
  	usba_writel(udc, CTRL, 0);
  	clk_disable(pclk);
  
@@ -18146,7 +17986,7 @@ Index: linux-2.6.24.7/drivers/usb/gadget/atmel_usba_udc.c
  
  		list_add_tail(&ep->ep.ep_list, &udc->gadget.ep_list);
  	}
-@@ -1987,7 +1942,7 @@ static int __init usba_udc_probe(struct 
+@@ -1987,7 +1942,7 @@
  		goto err_device_add;
  	}
  
@@ -18155,7 +17995,7 @@ Index: linux-2.6.24.7/drivers/usb/gadget/atmel_usba_udc.c
  		if (!gpio_request(pdata->vbus_pin, "atmel_usba_udc")) {
  			udc->vbus_pin = pdata->vbus_pin;
  
-@@ -2007,7 +1962,7 @@ static int __init usba_udc_probe(struct 
+@@ -2007,7 +1962,7 @@
  	}
  
  	usba_init_debugfs(udc);
@@ -18164,7 +18004,7 @@ Index: linux-2.6.24.7/drivers/usb/gadget/atmel_usba_udc.c
  		usba_ep_init_debugfs(udc, &usba_ep[i]);
  
  	return 0;
-@@ -2015,6 +1970,8 @@ static int __init usba_udc_probe(struct 
+@@ -2015,6 +1970,8 @@
  err_device_add:
  	free_irq(irq, udc);
  err_request_irq:
@@ -18173,7 +18013,7 @@ Index: linux-2.6.24.7/drivers/usb/gadget/atmel_usba_udc.c
  	iounmap(udc->fifo);
  err_map_fifo:
  	iounmap(udc->regs);
-@@ -2032,10 +1989,11 @@ static int __exit usba_udc_remove(struct
+@@ -2032,10 +1989,11 @@
  {
  	struct usba_udc *udc;
  	int i;
@@ -18186,10 +18026,8 @@ Index: linux-2.6.24.7/drivers/usb/gadget/atmel_usba_udc.c
  		usba_ep_cleanup_debugfs(&usba_ep[i]);
  	usba_cleanup_debugfs(udc);
  
-Index: linux-2.6.24.7/drivers/video/atmel_lcdfb.c
-===================================================================
---- linux-2.6.24.7.orig/drivers/video/atmel_lcdfb.c
-+++ linux-2.6.24.7/drivers/video/atmel_lcdfb.c
+--- a/drivers/video/atmel_lcdfb.c
++++ b/drivers/video/atmel_lcdfb.c
 @@ -16,6 +16,7 @@
  #include <linux/fb.h>
  #include <linux/init.h>
@@ -18209,7 +18047,7 @@ Index: linux-2.6.24.7/drivers/video/atmel_lcdfb.c
  
  static inline void atmel_lcdfb_update_dma2d(struct atmel_lcdfb_info *sinfo,
  					struct fb_var_screeninfo *var)
-@@ -69,12 +72,113 @@ static void atmel_lcdfb_update_dma2d(str
+@@ -69,12 +72,113 @@
  }
  #endif
  
@@ -18324,7 +18162,7 @@ Index: linux-2.6.24.7/drivers/video/atmel_lcdfb.c
  	.ywrapstep	= 0,
  	.accel		= FB_ACCEL_NONE,
  };
-@@ -148,6 +252,8 @@ static int atmel_lcdfb_alloc_video_memor
+@@ -148,6 +252,8 @@
  		return -ENOMEM;
  	}
  
@@ -18333,7 +18171,7 @@ Index: linux-2.6.24.7/drivers/video/atmel_lcdfb.c
  	return 0;
  }
  
-@@ -203,6 +309,26 @@ static int atmel_lcdfb_check_var(struct 
+@@ -203,6 +309,26 @@
  	var->transp.offset = var->transp.length = 0;
  	var->xoffset = var->yoffset = 0;
  
@@ -18360,7 +18198,7 @@ Index: linux-2.6.24.7/drivers/video/atmel_lcdfb.c
  	switch (var->bits_per_pixel) {
  	case 1:
  	case 2:
-@@ -370,10 +496,6 @@ static int atmel_lcdfb_set_par(struct fb
+@@ -370,10 +496,6 @@
  	/* Disable all interrupts */
  	lcdc_writel(sinfo, ATMEL_LCDC_IDR, ~0UL);
  
@@ -18371,7 +18209,7 @@ Index: linux-2.6.24.7/drivers/video/atmel_lcdfb.c
  	/* ...wait for DMA engine to become idle... */
  	while (lcdc_readl(sinfo, ATMEL_LCDC_DMACON) & ATMEL_LCDC_DMABUSY)
  		msleep(10);
-@@ -516,7 +638,6 @@ static int __init atmel_lcdfb_init_fbinf
+@@ -516,7 +638,6 @@
  	struct fb_info *info = sinfo->info;
  	int ret = 0;
  
@@ -18379,7 +18217,7 @@ Index: linux-2.6.24.7/drivers/video/atmel_lcdfb.c
  	info->var.activate |= FB_ACTIVATE_FORCE | FB_ACTIVATE_NOW;
  
  	dev_info(info->device,
-@@ -577,6 +698,7 @@ static int __init atmel_lcdfb_probe(stru
+@@ -577,6 +698,7 @@
  		sinfo->default_monspecs = pdata_sinfo->default_monspecs;
  		sinfo->atmel_lcdfb_power_control = pdata_sinfo->atmel_lcdfb_power_control;
  		sinfo->guard_time = pdata_sinfo->guard_time;
@@ -18387,7 +18225,7 @@ Index: linux-2.6.24.7/drivers/video/atmel_lcdfb.c
  	} else {
  		dev_err(dev, "cannot get default configuration\n");
  		goto free_info;
-@@ -645,6 +767,11 @@ static int __init atmel_lcdfb_probe(stru
+@@ -645,6 +767,11 @@
  		info->screen_base = ioremap(info->fix.smem_start, info->fix.smem_len);
  		if (!info->screen_base)
  			goto release_intmem;
@@ -18399,7 +18237,7 @@ Index: linux-2.6.24.7/drivers/video/atmel_lcdfb.c
  	} else {
  		/* alocate memory buffer */
  		ret = atmel_lcdfb_alloc_video_memory(sinfo);
-@@ -670,6 +797,9 @@ static int __init atmel_lcdfb_probe(stru
+@@ -670,6 +797,9 @@
  		goto release_mem;
  	}
  
@@ -18409,7 +18247,7 @@ Index: linux-2.6.24.7/drivers/video/atmel_lcdfb.c
  	/* interrupt */
  	ret = request_irq(sinfo->irq_base, atmel_lcdfb_interrupt, 0, pdev->name, info);
  	if (ret) {
-@@ -721,6 +851,7 @@ free_cmap:
+@@ -721,6 +851,7 @@
  unregister_irqs:
  	free_irq(sinfo->irq_base, info);
  unmap_mmio:
@@ -18417,7 +18255,7 @@ Index: linux-2.6.24.7/drivers/video/atmel_lcdfb.c
  	iounmap(sinfo->mmio);
  release_mem:
   	release_mem_region(info->fix.mmio_start, info->fix.mmio_len);
-@@ -755,6 +886,7 @@ static int __exit atmel_lcdfb_remove(str
+@@ -755,6 +886,7 @@
  	if (!sinfo)
  		return 0;
  
@@ -18425,7 +18263,7 @@ Index: linux-2.6.24.7/drivers/video/atmel_lcdfb.c
  	if (sinfo->atmel_lcdfb_power_control)
  		sinfo->atmel_lcdfb_power_control(0);
  	unregister_framebuffer(info);
-@@ -781,6 +913,9 @@ static int __exit atmel_lcdfb_remove(str
+@@ -781,6 +913,9 @@
  
  static struct platform_driver atmel_lcdfb_driver = {
  	.remove		= __exit_p(atmel_lcdfb_remove),
@@ -18435,11 +18273,9 @@ Index: linux-2.6.24.7/drivers/video/atmel_lcdfb.c
  	.driver		= {
  		.name	= "atmel_lcdfb",
  		.owner	= THIS_MODULE,
-Index: linux-2.6.24.7/drivers/video/backlight/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/drivers/video/backlight/Kconfig
-+++ linux-2.6.24.7/drivers/video/backlight/Kconfig
-@@ -50,6 +50,19 @@ config BACKLIGHT_CLASS_DEVICE
+--- a/drivers/video/backlight/Kconfig
++++ b/drivers/video/backlight/Kconfig
+@@ -50,6 +50,19 @@
  	  To have support for your specific LCD panel you will have to
  	  select the proper drivers which depend on this option.
  
@@ -18459,11 +18295,9 @@ Index: linux-2.6.24.7/drivers/video/backlight/Kconfig
  config BACKLIGHT_CORGI
  	tristate "Generic (aka Sharp Corgi) Backlight Driver"
  	depends on BACKLIGHT_CLASS_DEVICE
-Index: linux-2.6.24.7/drivers/video/console/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/drivers/video/console/Kconfig
-+++ linux-2.6.24.7/drivers/video/console/Kconfig
-@@ -6,7 +6,7 @@ menu "Console display driver support"
+--- a/drivers/video/console/Kconfig
++++ b/drivers/video/console/Kconfig
+@@ -6,7 +6,7 @@
  
  config VGA_CONSOLE
  	bool "VGA text console" if EMBEDDED || !X86
@@ -18472,11 +18306,9 @@ Index: linux-2.6.24.7/drivers/video/console/Kconfig
  	default y
  	help
  	  Saying Y here will allow you to use Linux in text mode through a
-Index: linux-2.6.24.7/drivers/watchdog/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/drivers/watchdog/Kconfig
-+++ linux-2.6.24.7/drivers/watchdog/Kconfig
-@@ -223,7 +223,7 @@ config DAVINCI_WATCHDOG
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -223,7 +223,7 @@
  
  config AT32AP700X_WDT
  	tristate "AT32AP700x watchdog"
@@ -18485,9 +18317,7 @@ Index: linux-2.6.24.7/drivers/watchdog/Kconfig
  	help
  	  Watchdog timer embedded into AT32AP700x devices. This will reboot
  	  your system when the timeout is reached.
-Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/at32ap7000.h
-===================================================================
---- linux-2.6.24.7.orig/include/asm-avr32/arch-at32ap/at32ap7000.h
+--- a/include/asm-avr32/arch-at32ap/at32ap7000.h
 +++ /dev/null
 @@ -1,35 +0,0 @@
 -/*
@@ -18525,10 +18355,8 @@ Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/at32ap7000.h
 -#define GPIO_PIN_PE(N)	(GPIO_PIOE_BASE + (N))
 -
 -#endif /* __ASM_ARCH_AT32AP7000_H__ */
-Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/at32ap700x.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/include/asm-avr32/arch-at32ap/at32ap700x.h
++++ b/include/asm-avr32/arch-at32ap/at32ap700x.h
 @@ -0,0 +1,35 @@
 +/*
 + * Pin definitions for AT32AP7000.
@@ -18565,11 +18393,9 @@ Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/at32ap700x.h
 +#define GPIO_PIN_PE(N)	(GPIO_PIOE_BASE + (N))
 +
 +#endif /* __ASM_ARCH_AT32AP700X_H__ */
-Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/board.h
-===================================================================
---- linux-2.6.24.7.orig/include/asm-avr32/arch-at32ap/board.h
-+++ linux-2.6.24.7/include/asm-avr32/arch-at32ap/board.h
-@@ -38,9 +38,7 @@ struct platform_device *
+--- a/include/asm-avr32/arch-at32ap/board.h
++++ b/include/asm-avr32/arch-at32ap/board.h
+@@ -38,9 +38,7 @@
  at32_add_device_lcdc(unsigned int id, struct atmel_lcdfb_info *data,
  		     unsigned long fbmem_start, unsigned long fbmem_len);
  
@@ -18580,7 +18406,7 @@ Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/board.h
  struct platform_device *
  at32_add_device_usba(unsigned int id, struct usba_platform_data *data);
  
-@@ -51,6 +49,9 @@ struct platform_device *
+@@ -51,6 +49,9 @@
  at32_add_device_ide(unsigned int id, unsigned int extint,
  		    struct ide_platform_data *data);
  
@@ -18590,7 +18416,7 @@ Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/board.h
  /* depending on what's hooked up, not all SSC pins will be used */
  #define	ATMEL_SSC_TK		0x01
  #define	ATMEL_SSC_TF		0x02
-@@ -65,8 +66,17 @@ at32_add_device_ide(unsigned int id, uns
+@@ -65,8 +66,17 @@
  struct platform_device *
  at32_add_device_ssc(unsigned int id, unsigned int flags);
  
@@ -18610,7 +18436,7 @@ Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/board.h
  struct platform_device *at32_add_device_ac97c(unsigned int id);
  struct platform_device *at32_add_device_abdac(unsigned int id);
  
-@@ -81,4 +91,7 @@ struct platform_device *
+@@ -81,4 +91,7 @@
  at32_add_device_cf(unsigned int id, unsigned int extint,
  		struct cf_platform_data *data);
  
@@ -18618,10 +18444,8 @@ Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/board.h
 +at32_add_device_psif(unsigned int id);
 +
  #endif /* __ASM_ARCH_BOARD_H */
-Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/cpu.h
-===================================================================
---- linux-2.6.24.7.orig/include/asm-avr32/arch-at32ap/cpu.h
-+++ linux-2.6.24.7/include/asm-avr32/arch-at32ap/cpu.h
+--- a/include/asm-avr32/arch-at32ap/cpu.h
++++ b/include/asm-avr32/arch-at32ap/cpu.h
 @@ -14,7 +14,7 @@
   * Only AT32AP7000 is defined for now. We can identify the specific
   * chip at runtime, but I'm not sure if it's really worth it.
@@ -18631,10 +18455,8 @@ Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/cpu.h
  # define cpu_is_at32ap7000()	(1)
  #else
  # define cpu_is_at32ap7000()	(0)
-Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/io.h
-===================================================================
---- linux-2.6.24.7.orig/include/asm-avr32/arch-at32ap/io.h
-+++ linux-2.6.24.7/include/asm-avr32/arch-at32ap/io.h
+--- a/include/asm-avr32/arch-at32ap/io.h
++++ b/include/asm-avr32/arch-at32ap/io.h
 @@ -4,7 +4,7 @@
  /* For "bizarre" halfword swapping */
  #include <linux/byteorder/swabb.h>
@@ -18653,10 +18475,8 @@ Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/io.h
  # define __swizzle_addr_b(addr)	(addr ^ 1UL)
  # define __swizzle_addr_w(addr)	(addr)
  # define __swizzle_addr_l(addr)	(addr)
-Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/pm.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/include/asm-avr32/arch-at32ap/pm.h
++++ b/include/asm-avr32/arch-at32ap/pm.h
 @@ -0,0 +1,48 @@
 +/*
 + * AVR32 AP Power Management.
@@ -18706,11 +18526,9 @@ Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/pm.h
 +#endif
 +
 +#endif /* __ASM_AVR32_ARCH_PM_H */
-Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/portmux.h
-===================================================================
---- linux-2.6.24.7.orig/include/asm-avr32/arch-at32ap/portmux.h
-+++ linux-2.6.24.7/include/asm-avr32/arch-at32ap/portmux.h
-@@ -26,4 +26,16 @@ void at32_select_periph(unsigned int pin
+--- a/include/asm-avr32/arch-at32ap/portmux.h
++++ b/include/asm-avr32/arch-at32ap/portmux.h
+@@ -26,4 +26,16 @@
  void at32_select_gpio(unsigned int pin, unsigned long flags);
  void at32_reserve_pin(unsigned int pin);
  
@@ -18727,9 +18545,7 @@ Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/portmux.h
 +#endif /* CONFIG_GPIO_DEV */
 +
  #endif /* __ASM_ARCH_PORTMUX_H__ */
-Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/time.h
-===================================================================
---- linux-2.6.24.7.orig/include/asm-avr32/arch-at32ap/time.h
+--- a/include/asm-avr32/arch-at32ap/time.h
 +++ /dev/null
 @@ -1,112 +0,0 @@
 -/*
@@ -18844,10 +18660,8 @@ Index: linux-2.6.24.7/include/asm-avr32/arch-at32ap/time.h
 -	__raw_writel((value), port + (0x40 * instance) + TIMER_##reg)
 -
 -#endif /* _ASM_AVR32_ARCH_AT32AP_TIME_H */
-Index: linux-2.6.24.7/include/asm-avr32/asm.h
-===================================================================
---- linux-2.6.24.7.orig/include/asm-avr32/asm.h
-+++ linux-2.6.24.7/include/asm-avr32/asm.h
+--- a/include/asm-avr32/asm.h
++++ b/include/asm-avr32/asm.h
 @@ -12,10 +12,10 @@
  #include <asm/asm-offsets.h>
  #include <asm/thread_info.h>
@@ -18863,11 +18677,9 @@ Index: linux-2.6.24.7/include/asm-avr32/asm.h
  
  #ifdef CONFIG_FRAME_POINTER
  	.macro	save_fp
-Index: linux-2.6.24.7/include/asm-avr32/byteorder.h
-===================================================================
---- linux-2.6.24.7.orig/include/asm-avr32/byteorder.h
-+++ linux-2.6.24.7/include/asm-avr32/byteorder.h
-@@ -12,8 +12,10 @@ extern unsigned long __builtin_bswap_32(
+--- a/include/asm-avr32/byteorder.h
++++ b/include/asm-avr32/byteorder.h
+@@ -12,8 +12,10 @@
  extern unsigned short __builtin_bswap_16(unsigned short x);
  #endif
  
@@ -18878,10 +18690,8 @@ Index: linux-2.6.24.7/include/asm-avr32/byteorder.h
  
  #if !defined(__STRICT_ANSI__) || defined(__KERNEL__)
  # define __BYTEORDER_HAS_U64__
-Index: linux-2.6.24.7/include/asm-avr32/dma-controller.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/include/asm-avr32/dma-controller.h
++++ b/include/asm-avr32/dma-controller.h
 @@ -0,0 +1,166 @@
 +/*
 + * Copyright (C) 2005-2006 Atmel Corporation
@@ -19049,9 +18859,7 @@ Index: linux-2.6.24.7/include/asm-avr32/dma-controller.h
 +extern struct dma_controller *find_dma_controller(int id);
 +
 +#endif /* __ASM_AVR32_DMA_CONTROLLER_H */
-Index: linux-2.6.24.7/include/asm-avr32/intc.h
-===================================================================
---- linux-2.6.24.7.orig/include/asm-avr32/intc.h
+--- a/include/asm-avr32/intc.h
 +++ /dev/null
 @@ -1,128 +0,0 @@
 -#ifndef __ASM_AVR32_INTC_H
@@ -19182,10 +18990,8 @@ Index: linux-2.6.24.7/include/asm-avr32/intc.h
 -extern int intc_register_controller(struct irq_controller *ctrl);
 -
 -#endif /* __ASM_AVR32_INTC_H */
-Index: linux-2.6.24.7/include/asm-avr32/irq.h
-===================================================================
---- linux-2.6.24.7.orig/include/asm-avr32/irq.h
-+++ linux-2.6.24.7/include/asm-avr32/irq.h
+--- a/include/asm-avr32/irq.h
++++ b/include/asm-avr32/irq.h
 @@ -11,4 +11,14 @@
  
  #define irq_canonicalize(i)	(i)
@@ -19201,10 +19007,8 @@ Index: linux-2.6.24.7/include/asm-avr32/irq.h
 +#endif
 +
  #endif /* __ASM_AVR32_IOCTLS_H */
-Index: linux-2.6.24.7/include/asm-avr32/kdebug.h
-===================================================================
---- linux-2.6.24.7.orig/include/asm-avr32/kdebug.h
-+++ linux-2.6.24.7/include/asm-avr32/kdebug.h
+--- a/include/asm-avr32/kdebug.h
++++ b/include/asm-avr32/kdebug.h
 @@ -5,6 +5,7 @@
  enum die_val {
  	DIE_BREAKPOINT,
@@ -19213,11 +19017,9 @@ Index: linux-2.6.24.7/include/asm-avr32/kdebug.h
  };
  
  #endif /* __ASM_AVR32_KDEBUG_H */
-Index: linux-2.6.24.7/include/asm-avr32/ocd.h
-===================================================================
---- linux-2.6.24.7.orig/include/asm-avr32/ocd.h
-+++ linux-2.6.24.7/include/asm-avr32/ocd.h
-@@ -533,6 +533,11 @@ static inline void __ocd_write(unsigned 
+--- a/include/asm-avr32/ocd.h
++++ b/include/asm-avr32/ocd.h
+@@ -533,6 +533,11 @@
  #define ocd_read(reg)			__ocd_read(OCD_##reg)
  #define ocd_write(reg, value)		__ocd_write(OCD_##reg, value)
  
@@ -19229,11 +19031,9 @@ Index: linux-2.6.24.7/include/asm-avr32/ocd.h
  #endif /* !__ASSEMBLER__ */
  
  #endif /* __ASM_AVR32_OCD_H */
-Index: linux-2.6.24.7/include/asm-avr32/pgtable.h
-===================================================================
---- linux-2.6.24.7.orig/include/asm-avr32/pgtable.h
-+++ linux-2.6.24.7/include/asm-avr32/pgtable.h
-@@ -157,6 +157,7 @@ extern struct page *empty_zero_page;
+--- a/include/asm-avr32/pgtable.h
++++ b/include/asm-avr32/pgtable.h
+@@ -157,6 +157,7 @@
  #define _PAGE_S(x)	_PAGE_NORMAL(x)
  
  #define PAGE_COPY	_PAGE_P(PAGE_WRITE | PAGE_READ)
@@ -19241,11 +19041,9 @@ Index: linux-2.6.24.7/include/asm-avr32/pgtable.h
  
  #ifndef __ASSEMBLY__
  /*
-Index: linux-2.6.24.7/include/asm-avr32/processor.h
-===================================================================
---- linux-2.6.24.7.orig/include/asm-avr32/processor.h
-+++ linux-2.6.24.7/include/asm-avr32/processor.h
-@@ -57,11 +57,25 @@ struct avr32_cpuinfo {
+--- a/include/asm-avr32/processor.h
++++ b/include/asm-avr32/processor.h
+@@ -57,11 +57,25 @@
  	unsigned short cpu_revision;
  	enum tlb_config tlb_config;
  	unsigned long features;
@@ -19271,11 +19069,9 @@ Index: linux-2.6.24.7/include/asm-avr32/processor.h
  extern struct avr32_cpuinfo boot_cpu_data;
  
  #ifdef CONFIG_SMP
-Index: linux-2.6.24.7/include/asm-avr32/ptrace.h
-===================================================================
---- linux-2.6.24.7.orig/include/asm-avr32/ptrace.h
-+++ linux-2.6.24.7/include/asm-avr32/ptrace.h
-@@ -121,7 +121,15 @@ struct pt_regs {
+--- a/include/asm-avr32/ptrace.h
++++ b/include/asm-avr32/ptrace.h
+@@ -121,7 +121,15 @@
  };
  
  #ifdef __KERNEL__
@@ -19292,7 +19088,7 @@ Index: linux-2.6.24.7/include/asm-avr32/ptrace.h
  extern void show_regs (struct pt_regs *);
  
  static __inline__ int valid_user_regs(struct pt_regs *regs)
-@@ -141,9 +149,6 @@ static __inline__ int valid_user_regs(st
+@@ -141,9 +149,6 @@
  	return 0;
  }
  
@@ -19302,11 +19098,9 @@ Index: linux-2.6.24.7/include/asm-avr32/ptrace.h
  
  #endif /* __KERNEL__ */
  
-Index: linux-2.6.24.7/include/asm-avr32/thread_info.h
-===================================================================
---- linux-2.6.24.7.orig/include/asm-avr32/thread_info.h
-+++ linux-2.6.24.7/include/asm-avr32/thread_info.h
-@@ -88,6 +88,7 @@ static inline struct thread_info *curren
+--- a/include/asm-avr32/thread_info.h
++++ b/include/asm-avr32/thread_info.h
+@@ -88,6 +88,7 @@
  #define TIF_MEMDIE		6
  #define TIF_RESTORE_SIGMASK	7	/* restore signal mask in do_signal */
  #define TIF_CPU_GOING_TO_SLEEP	8	/* CPU is entering sleep 0 mode */
@@ -19314,10 +19108,8 @@ Index: linux-2.6.24.7/include/asm-avr32/thread_info.h
  #define TIF_USERSPACE		31      /* true if FS sets userspace */
  
  #define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
-Index: linux-2.6.24.7/include/linux/atmel_pwm.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/include/linux/atmel_pwm.h
++++ b/include/linux/atmel_pwm.h
 @@ -0,0 +1,70 @@
 +#ifndef __LINUX_ATMEL_PWM_H
 +#define __LINUX_ATMEL_PWM_H
@@ -19389,10 +19181,8 @@ Index: linux-2.6.24.7/include/linux/atmel_pwm.h
 +}
 +
 +#endif /* __LINUX_ATMEL_PWM_H */
-Index: linux-2.6.24.7/include/linux/atmel_serial.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/include/linux/atmel_serial.h
++++ b/include/linux/atmel_serial.h
 @@ -0,0 +1,127 @@
 +/*
 + * include/linux/atmel_serial.h
@@ -19521,10 +19311,8 @@ Index: linux-2.6.24.7/include/linux/atmel_serial.h
 +#define ATMEL_US_IF		0x4c			/* IrDA Filter Register */
 +
 +#endif
-Index: linux-2.6.24.7/include/linux/atmel_tc.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/include/linux/atmel_tc.h
++++ b/include/linux/atmel_tc.h
 @@ -0,0 +1,252 @@
 +/*
 + * Timer/Counter Unit (TC) registers.
@@ -19778,10 +19566,8 @@ Index: linux-2.6.24.7/include/linux/atmel_tc.h
 +#define     ATMEL_TC_ETRGS	(1 <<  7)	/* external trigger */
 +
 +#endif
-Index: linux-2.6.24.7/include/linux/usb/atmel_usba_udc.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/include/linux/usb/atmel_usba_udc.h
++++ b/include/linux/usb/atmel_usba_udc.h
 @@ -0,0 +1,22 @@
 +/*
 + * Platform data definitions for Atmel USBA gadget driver.
@@ -19805,10 +19591,8 @@ Index: linux-2.6.24.7/include/linux/usb/atmel_usba_udc.h
 +};
 +
 +#endif /* __LINUX_USB_USBA_H */
-Index: linux-2.6.24.7/include/video/atmel_lcdc.h
-===================================================================
---- linux-2.6.24.7.orig/include/video/atmel_lcdc.h
-+++ linux-2.6.24.7/include/video/atmel_lcdc.h
+--- a/include/video/atmel_lcdc.h
++++ b/include/video/atmel_lcdc.h
 @@ -22,7 +22,7 @@
  #ifndef __ATMEL_LCDC_H__
  #define __ATMEL_LCDC_H__
@@ -19818,7 +19602,7 @@ Index: linux-2.6.24.7/include/video/atmel_lcdc.h
  struct atmel_lcdfb_info {
  	spinlock_t		lock;
  	struct fb_info		*info;
-@@ -33,7 +33,14 @@ struct atmel_lcdfb_info {
+@@ -33,7 +33,14 @@
  	struct platform_device	*pdev;
  	struct clk		*bus_clk;
  	struct clk		*lcdc_clk;
@@ -19834,7 +19618,7 @@ Index: linux-2.6.24.7/include/video/atmel_lcdc.h
  	unsigned int		default_lcdcon2;
  	unsigned int		default_dmacon;
  	void (*atmel_lcdfb_power_control)(int on);
-@@ -115,20 +122,20 @@ struct atmel_lcdfb_info {
+@@ -115,20 +122,20 @@
  #define		ATMEL_LCDC_MEMOR_LITTLE		(1 << 31)
  
  #define ATMEL_LCDC_TIM1		0x0808
@@ -19862,11 +19646,9 @@ Index: linux-2.6.24.7/include/video/atmel_lcdc.h
  
  #define ATMEL_LCDC_LCDFRMCFG	0x0810
  #define	ATMEL_LCDC_LINEVAL	(0x7ff <<  0)
-Index: linux-2.6.24.7/init/do_mounts.c
-===================================================================
---- linux-2.6.24.7.orig/init/do_mounts.c
-+++ linux-2.6.24.7/init/do_mounts.c
-@@ -219,8 +219,14 @@ __setup("root=", root_dev_setup);
+--- a/init/do_mounts.c
++++ b/init/do_mounts.c
+@@ -219,8 +219,14 @@
  
  static int __init rootwait_setup(char *str)
  {
@@ -19882,11 +19664,9 @@ Index: linux-2.6.24.7/init/do_mounts.c
  	root_wait = 1;
  	return 1;
  }
-Index: linux-2.6.24.7/kernel/ptrace.c
-===================================================================
---- linux-2.6.24.7.orig/kernel/ptrace.c
-+++ linux-2.6.24.7/kernel/ptrace.c
-@@ -470,6 +470,8 @@ asmlinkage long sys_ptrace(long request,
+--- a/kernel/ptrace.c
++++ b/kernel/ptrace.c
+@@ -470,6 +470,8 @@
  	lock_kernel();
  	if (request == PTRACE_TRACEME) {
  		ret = ptrace_traceme();
@@ -19895,11 +19675,9 @@ Index: linux-2.6.24.7/kernel/ptrace.c
  		goto out;
  	}
  
-Index: linux-2.6.24.7/MAINTAINERS
-===================================================================
---- linux-2.6.24.7.orig/MAINTAINERS
-+++ linux-2.6.24.7/MAINTAINERS
-@@ -671,6 +671,12 @@ W:	http://www.atmel.com/products/AT91/
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -671,6 +671,12 @@
  W:	http://www.at91.com/
  S:	Maintained
  
@@ -19912,10 +19690,8 @@ Index: linux-2.6.24.7/MAINTAINERS
  ATMEL LCDFB DRIVER
  P:	Nicolas Ferre
  M:	nicolas.ferre@atmel.com
-Index: linux-2.6.24.7/sound/avr32/ac97c.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/sound/avr32/ac97c.c
++++ b/sound/avr32/ac97c.c
 @@ -0,0 +1,914 @@
 +/*
 + * Driver for the Atmel AC97 controller
@@ -20831,10 +20607,8 @@ Index: linux-2.6.24.7/sound/avr32/ac97c.c
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("Driver for Atmel AC97 Controller");
 +MODULE_AUTHOR("Haavard Skinnemoen <hskinnemoen@atmel.com>");
-Index: linux-2.6.24.7/sound/avr32/ac97c.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/sound/avr32/ac97c.h
++++ b/sound/avr32/ac97c.h
 @@ -0,0 +1,71 @@
 +/*
 + * Register definitions for the Atmel AC97 Controller.
@@ -20907,10 +20681,8 @@ Index: linux-2.6.24.7/sound/avr32/ac97c.h
 +#define AC97C_CHANNEL_B		0x2
 +
 +#endif /* __SOUND_AVR32_AC97C_H */
-Index: linux-2.6.24.7/sound/avr32/Kconfig
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/sound/avr32/Kconfig
++++ b/sound/avr32/Kconfig
 @@ -0,0 +1,11 @@
 +menu "AVR32 devices"
 +	depends on SND != n && AVR32
@@ -20923,19 +20695,15 @@ Index: linux-2.6.24.7/sound/avr32/Kconfig
 +	  ALSA sound driver for the Atmel AC97 controller.
 +
 +endmenu
-Index: linux-2.6.24.7/sound/avr32/Makefile
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/sound/avr32/Makefile
++++ b/sound/avr32/Makefile
 @@ -0,0 +1,3 @@
 +snd-atmel-ac97-objs		:= ac97c.o
 +
 +obj-$(CONFIG_SND_ATMEL_AC97)	+= snd-atmel-ac97.o
-Index: linux-2.6.24.7/sound/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/sound/Kconfig
-+++ linux-2.6.24.7/sound/Kconfig
-@@ -63,6 +63,8 @@ source "sound/aoa/Kconfig"
+--- a/sound/Kconfig
++++ b/sound/Kconfig
+@@ -63,6 +63,8 @@
  
  source "sound/arm/Kconfig"
  
@@ -20944,11 +20712,9 @@ Index: linux-2.6.24.7/sound/Kconfig
  if SPI
  source "sound/spi/Kconfig"
  endif
-Index: linux-2.6.24.7/sound/Makefile
-===================================================================
---- linux-2.6.24.7.orig/sound/Makefile
-+++ linux-2.6.24.7/sound/Makefile
-@@ -6,7 +6,7 @@ obj-$(CONFIG_SOUND_PRIME) += sound_firmw
+--- a/sound/Makefile
++++ b/sound/Makefile
+@@ -6,7 +6,7 @@
  obj-$(CONFIG_SOUND_PRIME) += oss/
  obj-$(CONFIG_DMASOUND) += oss/
  obj-$(CONFIG_SND) += core/ i2c/ drivers/ isa/ pci/ ppc/ arm/ sh/ synth/ usb/ \
@@ -20957,10 +20723,8 @@ Index: linux-2.6.24.7/sound/Makefile
  obj-$(CONFIG_SND_AOA) += aoa/
  
  # This one must be compilable even if sound is configured out
-Index: linux-2.6.24.7/sound/oss/at32_abdac.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/sound/oss/at32_abdac.c
++++ b/sound/oss/at32_abdac.c
 @@ -0,0 +1,722 @@
 +/*
 + * OSS Sound Driver for the Atmel AT32 on-chip DAC.
@@ -21684,10 +21448,8 @@ Index: linux-2.6.24.7/sound/oss/at32_abdac.c
 +MODULE_AUTHOR("Haavard Skinnemoen <hskinnemoen@atmel.com>");
 +MODULE_DESCRIPTION("Sound Driver for the Atmel AT32 ABDAC");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.24.7/sound/oss/at32_abdac.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/sound/oss/at32_abdac.h
++++ b/sound/oss/at32_abdac.h
 @@ -0,0 +1,59 @@
 +/*
 + * Register definitions for the Atmel AT32 on-chip DAC.
@@ -21748,11 +21510,9 @@ Index: linux-2.6.24.7/sound/oss/at32_abdac.h
 +	__raw_writel((value), (port)->regs + DAC_##reg)
 +
 +#endif /* __SOUND_OSS_AT32_ABDAC_H__ */
-Index: linux-2.6.24.7/sound/oss/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/sound/oss/Kconfig
-+++ linux-2.6.24.7/sound/oss/Kconfig
-@@ -654,3 +654,7 @@ config SOUND_SH_DAC_AUDIO_CHANNEL
+--- a/sound/oss/Kconfig
++++ b/sound/oss/Kconfig
+@@ -654,3 +654,7 @@
  	int "DAC channel"
  	default "1"
  	depends on SOUND_SH_DAC_AUDIO
@@ -21760,11 +21520,9 @@ Index: linux-2.6.24.7/sound/oss/Kconfig
 +config SOUND_AT32_ABDAC
 +	tristate "Atmel AT32 Audio Bitstream DAC (ABDAC) support"
 +	depends on SOUND_PRIME && AVR32
-Index: linux-2.6.24.7/sound/oss/Makefile
-===================================================================
---- linux-2.6.24.7.orig/sound/oss/Makefile
-+++ linux-2.6.24.7/sound/oss/Makefile
-@@ -10,6 +10,7 @@ obj-$(CONFIG_SOUND_CS4232)	+= cs4232.o a
+--- a/sound/oss/Makefile
++++ b/sound/oss/Makefile
+@@ -10,6 +10,7 @@
  
  # Please leave it as is, cause the link order is significant !
  
@@ -21772,11 +21530,9 @@ Index: linux-2.6.24.7/sound/oss/Makefile
  obj-$(CONFIG_SOUND_SH_DAC_AUDIO)	+= sh_dac_audio.o
  obj-$(CONFIG_SOUND_HAL2)	+= hal2.o
  obj-$(CONFIG_SOUND_AEDSP16)	+= aedsp16.o
-Index: linux-2.6.24.7/sound/spi/at73c213.c
-===================================================================
---- linux-2.6.24.7.orig/sound/spi/at73c213.c
-+++ linux-2.6.24.7/sound/spi/at73c213.c
-@@ -744,7 +744,7 @@ cleanup:
+--- a/sound/spi/at73c213.c
++++ b/sound/spi/at73c213.c
+@@ -744,7 +744,7 @@
  /*
   * Device functions
   */
@@ -21785,7 +21541,7 @@ Index: linux-2.6.24.7/sound/spi/at73c213.c
  {
  	/*
  	 * Continuous clock output.
-@@ -774,7 +774,7 @@ static int snd_at73c213_ssc_init(struct 
+@@ -774,7 +774,7 @@
  	return 0;
  }
  
@@ -21794,7 +21550,7 @@ Index: linux-2.6.24.7/sound/spi/at73c213.c
  {
  	int retval;
  	unsigned char dac_ctrl = 0;
-@@ -939,7 +939,7 @@ out:
+@@ -939,7 +939,7 @@
  	return retval;
  }
  
