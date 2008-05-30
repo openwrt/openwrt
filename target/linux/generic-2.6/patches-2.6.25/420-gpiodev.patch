@@ -1,10 +1,9 @@
-Index: linux-2.6.25.4/drivers/gpio/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/drivers/gpio/Kconfig
-+++ linux-2.6.25.4/drivers/gpio/Kconfig
-@@ -2,6 +2,13 @@
- # GPIO infrastructure and expanders
- #
+diff -Nur linux-2.6.25/drivers/char/Kconfig linux-2.6.25-owrt/drivers/char/Kconfig
+--- linux-2.6.25/drivers/char/Kconfig	2008-05-15 17:00:12.000000000 +0200
++++ linux-2.6.25-owrt/drivers/char/Kconfig	2008-05-30 11:58:39.000000000 +0200
+@@ -955,6 +955,13 @@
+ 
+ 	  If compiled as a module, it will be called cs5535_gpio.
  
 +config GPIO_DEVICE
 +	tristate "GPIO device support"
@@ -13,15 +12,17 @@ Index: linux-2.6.25.4/drivers/gpio/Kconfig
 +	  Say Y to enable Linux GPIO device support.  This allows control of
 +	  GPIO pins using a character device
 +
- config HAVE_GPIO_LIB
- 	bool
- 	help
-Index: linux-2.6.25.4/drivers/gpio/Makefile
-===================================================================
---- linux-2.6.25.4.orig/drivers/gpio/Makefile
-+++ linux-2.6.25.4/drivers/gpio/Makefile
-@@ -7,3 +7,4 @@ obj-$(CONFIG_HAVE_GPIO_LIB)	+= gpiolib.o
- obj-$(CONFIG_GPIO_MCP23S08)	+= mcp23s08.o
- obj-$(CONFIG_GPIO_PCA953X)	+= pca953x.o
- obj-$(CONFIG_GPIO_PCF857X)	+= pcf857x.o
+ config GPIO_VR41XX
+ 	tristate "NEC VR4100 series General-purpose I/O Unit support"
+ 	depends on CPU_VR41XX
+diff -Nur linux-2.6.25/drivers/char/Makefile linux-2.6.25-owrt/drivers/char/Makefile
+--- linux-2.6.25/drivers/char/Makefile	2008-05-15 17:00:12.000000000 +0200
++++ linux-2.6.25-owrt/drivers/char/Makefile	2008-05-30 11:57:33.000000000 +0200
+@@ -94,6 +94,7 @@
+ obj-$(CONFIG_PC8736x_GPIO)	+= pc8736x_gpio.o
+ obj-$(CONFIG_NSC_GPIO)		+= nsc_gpio.o
+ obj-$(CONFIG_CS5535_GPIO)	+= cs5535_gpio.o
 +obj-$(CONFIG_GPIO_DEVICE)	+= gpio_dev.o
+ obj-$(CONFIG_GPIO_VR41XX)	+= vr41xx_giu.o
+ obj-$(CONFIG_GPIO_TB0219)	+= tb0219.o
+ obj-$(CONFIG_TELCLOCK)		+= tlclk.o
