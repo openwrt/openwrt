@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/drivers/net/phy/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/drivers/net/phy/Kconfig
-+++ linux-2.6.25.4/drivers/net/phy/Kconfig
-@@ -65,6 +65,11 @@ config REALTEK_PHY
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -65,6 +65,11 @@
  	---help---
  	  Supports the Realtek 821x PHY.
  
@@ -14,11 +12,9 @@ Index: linux-2.6.25.4/drivers/net/phy/Kconfig
  config FIXED_PHY
  	bool "Driver for MDIO Bus/PHY emulation with fixed speed/link PHYs"
  	depends on PHYLIB=y
-Index: linux-2.6.25.4/drivers/net/phy/Makefile
-===================================================================
---- linux-2.6.25.4.orig/drivers/net/phy/Makefile
-+++ linux-2.6.25.4/drivers/net/phy/Makefile
-@@ -12,6 +12,7 @@ obj-$(CONFIG_SMSC_PHY)		+= smsc.o
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -12,6 +12,7 @@
  obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
  obj-$(CONFIG_BROADCOM_PHY)	+= broadcom.o
  obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o

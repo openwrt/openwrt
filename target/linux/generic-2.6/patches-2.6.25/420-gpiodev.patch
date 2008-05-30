@@ -1,6 +1,5 @@
-diff -Nur linux-2.6.25/drivers/char/Kconfig linux-2.6.25-owrt/drivers/char/Kconfig
---- linux-2.6.25/drivers/char/Kconfig	2008-05-15 17:00:12.000000000 +0200
-+++ linux-2.6.25-owrt/drivers/char/Kconfig	2008-05-30 11:58:39.000000000 +0200
+--- a/drivers/char/Kconfig
++++ b/drivers/char/Kconfig
 @@ -955,6 +955,13 @@
  
  	  If compiled as a module, it will be called cs5535_gpio.
@@ -15,9 +14,8 @@ diff -Nur linux-2.6.25/drivers/char/Kconfig linux-2.6.25-owrt/drivers/char/Kconf
  config GPIO_VR41XX
  	tristate "NEC VR4100 series General-purpose I/O Unit support"
  	depends on CPU_VR41XX
-diff -Nur linux-2.6.25/drivers/char/Makefile linux-2.6.25-owrt/drivers/char/Makefile
---- linux-2.6.25/drivers/char/Makefile	2008-05-15 17:00:12.000000000 +0200
-+++ linux-2.6.25-owrt/drivers/char/Makefile	2008-05-30 11:57:33.000000000 +0200
+--- a/drivers/char/Makefile
++++ b/drivers/char/Makefile
 @@ -94,6 +94,7 @@
  obj-$(CONFIG_PC8736x_GPIO)	+= pc8736x_gpio.o
  obj-$(CONFIG_NSC_GPIO)		+= nsc_gpio.o
