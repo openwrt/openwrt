@@ -1,7 +1,5 @@
-Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
-===================================================================
---- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/avila-setup.c
-+++ linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
+--- a/arch/arm/mach-ixp4xx/avila-setup.c
++++ b/arch/arm/mach-ixp4xx/avila-setup.c
 @@ -26,6 +26,7 @@
  # include <linux/eeprom.h>
  #endif
@@ -10,7 +8,7 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
  #include <linux/i2c-gpio.h>
  
  #include <asm/types.h>
-@@ -172,6 +173,72 @@ static struct platform_device avila_npec
+@@ -172,6 +173,72 @@
  	.dev.platform_data	= &avila_npec_data,
  };
  
@@ -83,7 +81,7 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
  static struct platform_device *avila_devices[] __initdata = {
  	&avila_i2c_gpio,
  	&avila_flash,
-@@ -182,6 +249,8 @@ static void __init avila_gw23xx_setup(vo
+@@ -182,6 +249,8 @@
  {
  	platform_device_register(&avila_npeb_device);
  	platform_device_register(&avila_npec_device);
@@ -92,7 +90,7 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
  }
  
  #ifdef CONFIG_SENSORS_EEPROM
-@@ -189,6 +258,8 @@ static void __init avila_gw2342_setup(vo
+@@ -189,6 +258,8 @@
  {
  	platform_device_register(&avila_npeb_device);
  	platform_device_register(&avila_npec_device);
@@ -101,7 +99,7 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
  }
  
  static void __init avila_gw2345_setup(void)
-@@ -199,22 +270,30 @@ static void __init avila_gw2345_setup(vo
+@@ -199,22 +270,30 @@
  
  	avila_npec_data.phy = 5; /* port 5 of the KS8995 switch */
  	platform_device_register(&avila_npec_device);
@@ -132,7 +130,7 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
  }
  
  static void __init avila_gw2355_setup(void)
-@@ -225,11 +304,29 @@ static void __init avila_gw2355_setup(vo
+@@ -225,11 +304,29 @@
  
  	avila_npec_data.phy = 16;
  	platform_device_register(&avila_npec_device);
@@ -162,10 +160,8 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
  }
  
  static struct avila_board_info avila_boards[] __initdata = {
-Index: linux-2.6.25.4/include/asm-arm/arch-ixp4xx/avila.h
-===================================================================
---- linux-2.6.25.4.orig/include/asm-arm/arch-ixp4xx/avila.h
-+++ linux-2.6.25.4/include/asm-arm/arch-ixp4xx/avila.h
+--- a/include/asm-arm/arch-ixp4xx/avila.h
++++ b/include/asm-arm/arch-ixp4xx/avila.h
 @@ -36,4 +36,6 @@
  #define AVILA_PCI_INTC_PIN	9
  #define AVILA_PCI_INTD_PIN	8

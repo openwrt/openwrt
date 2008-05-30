@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/drivers/net/arm/ixp4xx_eth.c
-===================================================================
---- linux-2.6.25.4.orig/drivers/net/arm/ixp4xx_eth.c
-+++ linux-2.6.25.4/drivers/net/arm/ixp4xx_eth.c
-@@ -322,8 +322,12 @@ static void phy_reset(struct net_device 
+--- a/drivers/net/arm/ixp4xx_eth.c
++++ b/drivers/net/arm/ixp4xx_eth.c
+@@ -322,8 +322,12 @@
  	struct port *port = netdev_priv(dev);
  	int phy_id = port->mii[idx].phy_id;
  	int cycles = 0;
@@ -16,7 +14,7 @@ Index: linux-2.6.25.4/drivers/net/arm/ixp4xx_eth.c
  
  	while (cycles < MAX_MII_RESET_RETRIES) {
  		if (!(mdio_read(dev, phy_id, MII_BMCR) & BMCR_RESET)) {
-@@ -331,13 +335,23 @@ static void phy_reset(struct net_device 
+@@ -331,13 +335,23 @@
  			printk(KERN_DEBUG "%s: phy_reset() took %i cycles\n",
  			       dev->name, cycles);
  #endif
