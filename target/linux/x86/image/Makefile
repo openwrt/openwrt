@@ -57,6 +57,17 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
   endef
 endif
 
+ifeq ($(CONFIG_X86_VDI_IMAGES),y)
+  define Image/Build/vdi
+    # left here because the image builder doesnt need these
+    ifeq ($(1),ext2)
+		rm $(BIN_DIR)/openwrt-$(BOARD)-ext2.vdi || true
+		vditool DD $(BIN_DIR)/openwrt-$(BOARD)-ext2.vdi $(BIN_DIR)/openwrt-$(BOARD)-ext2.image
+    endif
+  endef
+endif
+
+
 define Image/Prepare
 	$(CP) $(LINUX_DIR)/arch/x86/boot/bzImage $(KDIR)/bzImage
 	$(call Image/Prepare/grub)
@@ -86,10 +97,17 @@ endef
 
 define Image/Build
 	$(call Image/Build/grub,$(1))
+	$(call Image/Build/vdi,$(1))
 	$(call Image/Build/$(1))
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1).fs
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD)-vmlinuz
 endef
 
 $(eval $(call BuildImage))
+
+ifeq ($(CONFIG_X86_VDI_IMAGES),y)
+  $(eval $(call RequireCommand,vditool, \
+	You need vditool to generate VirtualBox images. \
+  ))
+endif
 

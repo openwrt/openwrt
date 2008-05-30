@@ -33,3 +33,13 @@ config X86_GRUB_BOOTOPTS
     default ""
     help
         If you don't know, just leave it blank.
+
+
+config X86_VDI_IMAGES
+    bool "Build VirtuBox image files (VDI). Requires vditool"
+    depends TARGET_x86
+    depends TARGET_ROOTFS_EXT2FS
+    depends X86_GRUB_IMAGES
+    select PACKAGE_kmod-pcnet32
+
+
