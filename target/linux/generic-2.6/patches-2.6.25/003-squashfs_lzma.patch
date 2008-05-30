@@ -1,7 +1,5 @@
-Index: linux-2.6.25.4/fs/squashfs/inode.c
-===================================================================
---- linux-2.6.25.4.orig/fs/squashfs/inode.c
-+++ linux-2.6.25.4/fs/squashfs/inode.c
+--- a/fs/squashfs/inode.c
++++ b/fs/squashfs/inode.c
 @@ -4,6 +4,9 @@
   * Copyright (c) 2002, 2003, 2004, 2005, 2006
   * Phillip Lougher <phillip@lougher.org.uk>
@@ -40,7 +38,7 @@ Index: linux-2.6.25.4/fs/squashfs/inode.c
  static void squashfs_put_super(struct super_block *);
  static int squashfs_statfs(struct dentry *, struct kstatfs *);
  static int squashfs_symlink_readpage(struct file *file, struct page *page);
-@@ -64,7 +81,11 @@ static int squashfs_get_sb(struct file_s
+@@ -64,7 +81,11 @@
  			const char *, void *, struct vfsmount *);
  
  
@@ -52,7 +50,7 @@ Index: linux-2.6.25.4/fs/squashfs/inode.c
  
  static struct file_system_type squashfs_fs_type = {
  	.owner = THIS_MODULE,
-@@ -249,6 +270,15 @@ SQSH_EXTERN unsigned int squashfs_read_d
+@@ -249,6 +270,15 @@
  	if (compressed) {
  		int zlib_err;
  
@@ -68,7 +66,7 @@ Index: linux-2.6.25.4/fs/squashfs/inode.c
  		stream.next_in = c_buffer;
  		stream.avail_in = c_byte;
  		stream.next_out = buffer;
-@@ -263,7 +293,7 @@ SQSH_EXTERN unsigned int squashfs_read_d
+@@ -263,7 +293,7 @@
  			bytes = 0;
  		} else
  			bytes = stream.total_out;
@@ -77,7 +75,7 @@ Index: linux-2.6.25.4/fs/squashfs/inode.c
  		up(&msblk->read_data_mutex);
  	}
  
-@@ -2045,15 +2075,19 @@ static int __init init_squashfs_fs(void)
+@@ -2045,15 +2075,19 @@
  	printk(KERN_INFO "squashfs: version 3.0 (2006/03/15) "
  		"Phillip Lougher\n");
  
@@ -97,7 +95,7 @@ Index: linux-2.6.25.4/fs/squashfs/inode.c
  		destroy_inodecache();
  	}
  
-@@ -2064,7 +2098,9 @@ out:
+@@ -2064,7 +2098,9 @@
  
  static void __exit exit_squashfs_fs(void)
  {

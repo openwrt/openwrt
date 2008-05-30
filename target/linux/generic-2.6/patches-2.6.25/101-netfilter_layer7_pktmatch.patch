@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/include/linux/netfilter/xt_layer7.h
-===================================================================
---- linux-2.6.25.4.orig/include/linux/netfilter/xt_layer7.h
-+++ linux-2.6.25.4/include/linux/netfilter/xt_layer7.h
-@@ -8,6 +8,7 @@ struct xt_layer7_info {
+--- a/include/linux/netfilter/xt_layer7.h
++++ b/include/linux/netfilter/xt_layer7.h
+@@ -8,6 +8,7 @@
      char protocol[MAX_PROTOCOL_LEN];
      char pattern[MAX_PATTERN_LEN];
      u_int8_t invert;
@@ -10,11 +8,9 @@ Index: linux-2.6.25.4/include/linux/netfilter/xt_layer7.h
  };
  
  #endif /* _XT_LAYER7_H */
-Index: linux-2.6.25.4/net/netfilter/xt_layer7.c
-===================================================================
---- linux-2.6.25.4.orig/net/netfilter/xt_layer7.c
-+++ linux-2.6.25.4/net/netfilter/xt_layer7.c
-@@ -297,34 +297,36 @@ static int match_no_append(struct nf_con
+--- a/net/netfilter/xt_layer7.c
++++ b/net/netfilter/xt_layer7.c
+@@ -297,34 +297,36 @@
  }
  
  /* add the new app data to the conntrack.  Return number of bytes added. */
@@ -65,7 +61,7 @@ Index: linux-2.6.25.4/net/netfilter/xt_layer7.c
  	return length;
  }
  
-@@ -411,7 +413,7 @@ match(const struct sk_buff *skbin,
+@@ -411,7 +413,7 @@
  	const struct xt_layer7_info * info = matchinfo;
  	enum ip_conntrack_info master_ctinfo, ctinfo;
  	struct nf_conn *master_conntrack, *conntrack;
@@ -74,7 +70,7 @@ Index: linux-2.6.25.4/net/netfilter/xt_layer7.c
  	unsigned int pattern_result, appdatalen;
  	regexp * comppattern;
  
-@@ -439,8 +441,8 @@ match(const struct sk_buff *skbin,
+@@ -439,8 +441,8 @@
  		master_conntrack = master_ct(master_conntrack);
  
  	/* if we've classified it or seen too many packets */
@@ -85,7 +81,7 @@ Index: linux-2.6.25.4/net/netfilter/xt_layer7.c
  
  		pattern_result = match_no_append(conntrack, master_conntrack, 
  						 ctinfo, master_ctinfo, info);
-@@ -473,6 +475,25 @@ match(const struct sk_buff *skbin,
+@@ -473,6 +475,25 @@
  	/* the return value gets checked later, when we're ready to use it */
  	comppattern = compile_and_cache(info->pattern, info->protocol);
  

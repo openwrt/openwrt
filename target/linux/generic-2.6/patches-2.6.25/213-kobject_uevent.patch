@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/lib/kobject_uevent.c
-===================================================================
---- linux-2.6.25.4.orig/lib/kobject_uevent.c
-+++ linux-2.6.25.4/lib/kobject_uevent.c
-@@ -27,7 +27,8 @@ u64 uevent_seqnum;
+--- a/lib/kobject_uevent.c
++++ b/lib/kobject_uevent.c
+@@ -27,7 +27,8 @@
  char uevent_helper[UEVENT_HELPER_PATH_LEN] = CONFIG_UEVENT_HELPER_PATH;
  static DEFINE_SPINLOCK(sequence_lock);
  #if defined(CONFIG_NET)
@@ -12,7 +10,7 @@ Index: linux-2.6.25.4/lib/kobject_uevent.c
  #endif
  
  /* the strings here must match the enum in include/linux/kobject.h */
-@@ -40,6 +41,18 @@ static const char *kobject_actions[] = {
+@@ -40,6 +41,18 @@
  	[KOBJ_OFFLINE] =	"offline",
  };
  
@@ -31,7 +29,7 @@ Index: linux-2.6.25.4/lib/kobject_uevent.c
  /**
   * kobject_action_type - translate action string to numeric type
   *
-@@ -192,9 +205,7 @@ int kobject_uevent_env(struct kobject *k
+@@ -192,9 +205,7 @@
  		kobj->state_remove_uevent_sent = 1;
  
  	/* we will send an event, so request a new sequence number */
