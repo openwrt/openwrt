@@ -1,8 +1,6 @@
-Index: linux-2.6.24.7/Makefile
-===================================================================
---- linux-2.6.24.7.orig/Makefile
-+++ linux-2.6.24.7/Makefile
-@@ -527,6 +527,9 @@ KBUILD_CFLAGS         += $(call cc-optio
+--- a/Makefile
++++ b/Makefile
+@@ -527,6 +527,9 @@
  NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
  CHECKFLAGS     += $(NOSTDINC_FLAGS)
  

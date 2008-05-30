@@ -1,8 +1,6 @@
-Index: linux-2.6.24.7/fs/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/fs/Kconfig
-+++ linux-2.6.24.7/fs/Kconfig
-@@ -1405,6 +1405,71 @@ config CRAMFS
+--- a/fs/Kconfig
++++ b/fs/Kconfig
+@@ -1405,6 +1405,71 @@
  
  	  If unsure, say N.
  
@@ -74,11 +72,9 @@ Index: linux-2.6.24.7/fs/Kconfig
  config VXFS_FS
  	tristate "FreeVxFS file system support (VERITAS VxFS(TM) compatible)"
  	depends on BLOCK
-Index: linux-2.6.24.7/fs/Makefile
-===================================================================
---- linux-2.6.24.7.orig/fs/Makefile
-+++ linux-2.6.24.7/fs/Makefile
-@@ -72,6 +72,7 @@ obj-$(CONFIG_JBD)		+= jbd/
+--- a/fs/Makefile
++++ b/fs/Makefile
+@@ -72,6 +72,7 @@
  obj-$(CONFIG_JBD2)		+= jbd2/
  obj-$(CONFIG_EXT2_FS)		+= ext2/
  obj-$(CONFIG_CRAMFS)		+= cramfs/
@@ -86,10 +82,8 @@ Index: linux-2.6.24.7/fs/Makefile
  obj-y				+= ramfs/
  obj-$(CONFIG_HUGETLBFS)		+= hugetlbfs/
  obj-$(CONFIG_CODA_FS)		+= coda/
-Index: linux-2.6.24.7/fs/squashfs/inode.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/fs/squashfs/inode.c
++++ b/fs/squashfs/inode.c
 @@ -0,0 +1,2122 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
@@ -2213,10 +2207,8 @@ Index: linux-2.6.24.7/fs/squashfs/inode.c
 +MODULE_DESCRIPTION("squashfs, a compressed read-only filesystem");
 +MODULE_AUTHOR("Phillip Lougher <phillip@lougher.org.uk>");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.24.7/fs/squashfs/Makefile
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/fs/squashfs/Makefile
++++ b/fs/squashfs/Makefile
 @@ -0,0 +1,7 @@
 +#
 +# Makefile for the linux squashfs routines.
@@ -2225,10 +2217,8 @@ Index: linux-2.6.24.7/fs/squashfs/Makefile
 +obj-$(CONFIG_SQUASHFS) += squashfs.o
 +squashfs-y += inode.o
 +squashfs-y += squashfs2_0.o
-Index: linux-2.6.24.7/fs/squashfs/squashfs2_0.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/fs/squashfs/squashfs2_0.c
++++ b/fs/squashfs/squashfs2_0.c
 @@ -0,0 +1,758 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
@@ -2988,10 +2978,8 @@ Index: linux-2.6.24.7/fs/squashfs/squashfs2_0.c
 +
 +	return 1;
 +}
-Index: linux-2.6.24.7/fs/squashfs/squashfs.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/fs/squashfs/squashfs.h
++++ b/fs/squashfs/squashfs.h
 @@ -0,0 +1,86 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
@@ -3079,10 +3067,8 @@ Index: linux-2.6.24.7/fs/squashfs/squashfs.h
 +	return 0;
 +}
 +#endif
-Index: linux-2.6.24.7/include/linux/magic.h
-===================================================================
---- linux-2.6.24.7.orig/include/linux/magic.h
-+++ linux-2.6.24.7/include/linux/magic.h
+--- a/include/linux/magic.h
++++ b/include/linux/magic.h
 @@ -35,6 +35,9 @@
  #define REISER2FS_SUPER_MAGIC_STRING	"ReIsEr2Fs"
  #define REISER2FS_JR_SUPER_MAGIC_STRING	"ReIsEr3Fs"
@@ -3093,10 +3079,8 @@ Index: linux-2.6.24.7/include/linux/magic.h
  #define SMB_SUPER_MAGIC		0x517B
  #define USBDEVICE_SUPER_MAGIC	0x9fa2
  #define CGROUP_SUPER_MAGIC	0x27e0eb
-Index: linux-2.6.24.7/include/linux/squashfs_fs.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/include/linux/squashfs_fs.h
++++ b/include/linux/squashfs_fs.h
 @@ -0,0 +1,911 @@
 +#ifndef SQUASHFS_FS
 +#define SQUASHFS_FS
@@ -4009,10 +3993,8 @@ Index: linux-2.6.24.7/include/linux/squashfs_fs.h
 +
 +#endif
 +#endif
-Index: linux-2.6.24.7/include/linux/squashfs_fs_i.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/include/linux/squashfs_fs_i.h
++++ b/include/linux/squashfs_fs_i.h
 @@ -0,0 +1,45 @@
 +#ifndef SQUASHFS_FS_I
 +#define SQUASHFS_FS_I
@@ -4059,10 +4041,8 @@ Index: linux-2.6.24.7/include/linux/squashfs_fs_i.h
 +	struct inode	vfs_inode;
 +};
 +#endif
-Index: linux-2.6.24.7/include/linux/squashfs_fs_sb.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.24.7/include/linux/squashfs_fs_sb.h
++++ b/include/linux/squashfs_fs_sb.h
 @@ -0,0 +1,74 @@
 +#ifndef SQUASHFS_FS_SB
 +#define SQUASHFS_FS_SB
@@ -4138,10 +4118,8 @@ Index: linux-2.6.24.7/include/linux/squashfs_fs_sb.h
 +	int			(*read_fragment_index_table)(struct super_block *s);
 +};
 +#endif
-Index: linux-2.6.24.7/init/do_mounts_rd.c
-===================================================================
---- linux-2.6.24.7.orig/init/do_mounts_rd.c
-+++ linux-2.6.24.7/init/do_mounts_rd.c
+--- a/init/do_mounts_rd.c
++++ b/init/do_mounts_rd.c
 @@ -5,6 +5,7 @@
  #include <linux/ext2_fs.h>
  #include <linux/romfs_fs.h>
@@ -4150,7 +4128,7 @@ Index: linux-2.6.24.7/init/do_mounts_rd.c
  #include <linux/initrd.h>
  #include <linux/string.h>
  
-@@ -39,6 +40,7 @@ static int __init crd_load(int in_fd, in
+@@ -39,6 +40,7 @@
   * numbers could not be found.
   *
   * We currently check for the following magic numbers:
@@ -4158,7 +4136,7 @@ Index: linux-2.6.24.7/init/do_mounts_rd.c
   * 	minix
   * 	ext2
   *	romfs
-@@ -53,6 +55,7 @@ identify_ramdisk_image(int fd, int start
+@@ -53,6 +55,7 @@
  	struct ext2_super_block *ext2sb;
  	struct romfs_super_block *romfsb;
  	struct cramfs_super *cramfsb;
@@ -4166,7 +4144,7 @@ Index: linux-2.6.24.7/init/do_mounts_rd.c
  	int nblocks = -1;
  	unsigned char *buf;
  
-@@ -64,6 +67,7 @@ identify_ramdisk_image(int fd, int start
+@@ -64,6 +67,7 @@
  	ext2sb = (struct ext2_super_block *) buf;
  	romfsb = (struct romfs_super_block *) buf;
  	cramfsb = (struct cramfs_super *) buf;
@@ -4174,7 +4152,7 @@ Index: linux-2.6.24.7/init/do_mounts_rd.c
  	memset(buf, 0xe5, size);
  
  	/*
-@@ -101,6 +105,15 @@ identify_ramdisk_image(int fd, int start
+@@ -101,6 +105,15 @@
  		goto done;
  	}
  

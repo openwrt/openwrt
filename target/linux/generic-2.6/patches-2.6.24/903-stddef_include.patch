@@ -1,8 +1,6 @@
-Index: linux-2.6.24.7/include/linux/stddef.h
-===================================================================
---- linux-2.6.24.7.orig/include/linux/stddef.h
-+++ linux-2.6.24.7/include/linux/stddef.h
-@@ -16,6 +16,7 @@ enum {
+--- a/include/linux/stddef.h
++++ b/include/linux/stddef.h
+@@ -16,6 +16,7 @@
  	false	= 0,
  	true	= 1
  };
@@ -10,7 +8,7 @@ Index: linux-2.6.24.7/include/linux/stddef.h
  
  #undef offsetof
  #ifdef __compiler_offsetof
-@@ -23,6 +24,5 @@ enum {
+@@ -23,6 +24,5 @@
  #else
  #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
  #endif

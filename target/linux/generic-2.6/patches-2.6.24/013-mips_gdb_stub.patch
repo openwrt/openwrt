@@ -1,8 +1,6 @@
-Index: linux-2.6.24.7/arch/mips/kernel/gdb-stub.c
-===================================================================
---- linux-2.6.24.7.orig/arch/mips/kernel/gdb-stub.c
-+++ linux-2.6.24.7/arch/mips/kernel/gdb-stub.c
-@@ -656,6 +656,7 @@ void set_async_breakpoint(unsigned long 
+--- a/arch/mips/kernel/gdb-stub.c
++++ b/arch/mips/kernel/gdb-stub.c
+@@ -656,6 +656,7 @@
  	*epc = (unsigned long)async_breakpoint;
  }
  
@@ -10,7 +8,7 @@ Index: linux-2.6.24.7/arch/mips/kernel/gdb-stub.c
  static void kgdb_wait(void *arg)
  {
  	unsigned flags;
-@@ -668,6 +669,7 @@ static void kgdb_wait(void *arg)
+@@ -668,6 +669,7 @@
  
  	local_irq_restore(flags);
  }
