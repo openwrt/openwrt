@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/drivers/leds/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/drivers/leds/Kconfig
-+++ linux-2.6.25.4/drivers/leds/Kconfig
-@@ -125,6 +125,12 @@ config LEDS_GPIO
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
+@@ -125,6 +125,12 @@
  	  outputs. To be useful the particular board must have LEDs
  	  and they must be connected to the GPIO lines.
  
@@ -15,10 +13,8 @@ Index: linux-2.6.25.4/drivers/leds/Kconfig
  config LEDS_CM_X270
  	tristate "LED Support for the CM-X270 LEDs"
  	depends on LEDS_CLASS && MACH_ARMCORE
-Index: linux-2.6.25.4/drivers/leds/leds-latch.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.25.4/drivers/leds/leds-latch.c
++++ b/drivers/leds/leds-latch.c
 @@ -0,0 +1,141 @@
 +/*
 + * LEDs driver for Memory Latched Devices
@@ -161,11 +157,9 @@ Index: linux-2.6.25.4/drivers/leds/leds-latch.c
 +MODULE_AUTHOR("Chris Lang <clang@gateworks.com>");
 +MODULE_DESCRIPTION("Latch LED driver");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.25.4/drivers/leds/Makefile
-===================================================================
---- linux-2.6.25.4.orig/drivers/leds/Makefile
-+++ linux-2.6.25.4/drivers/leds/Makefile
-@@ -19,6 +19,7 @@ obj-$(CONFIG_LEDS_H1940)		+= leds-h1940.
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
+@@ -19,6 +19,7 @@
  obj-$(CONFIG_LEDS_COBALT_QUBE)		+= leds-cobalt-qube.o
  obj-$(CONFIG_LEDS_COBALT_RAQ)		+= leds-cobalt-raq.o
  obj-$(CONFIG_LEDS_GPIO)			+= leds-gpio.o
@@ -173,11 +167,9 @@ Index: linux-2.6.25.4/drivers/leds/Makefile
  obj-$(CONFIG_LEDS_CM_X270)              += leds-cm-x270.o
  obj-$(CONFIG_LEDS_CLEVO_MAIL)		+= leds-clevo-mail.o
  obj-$(CONFIG_LEDS_HP6XX)		+= leds-hp6xx.o
-Index: linux-2.6.25.4/include/linux/leds.h
-===================================================================
---- linux-2.6.25.4.orig/include/linux/leds.h
-+++ linux-2.6.25.4/include/linux/leds.h
-@@ -136,5 +136,18 @@ struct gpio_led_platform_data {
+--- a/include/linux/leds.h
++++ b/include/linux/leds.h
+@@ -136,5 +136,18 @@
  	struct gpio_led *leds;
  };
  

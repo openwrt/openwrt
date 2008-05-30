@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
-===================================================================
---- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/avila-setup.c
-+++ linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
-@@ -239,10 +239,28 @@ static struct platform_device avila_latc
+--- a/arch/arm/mach-ixp4xx/avila-setup.c
++++ b/arch/arm/mach-ixp4xx/avila-setup.c
+@@ -239,10 +239,28 @@
  	.dev.platform_data	= &avila_latch_leds_data,
  };
  
@@ -32,10 +30,8 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/avila-setup.c
  };
  
  static void __init avila_gw23xx_setup(void)
-Index: linux-2.6.25.4/include/asm-arm/arch-ixp4xx/avila.h
-===================================================================
---- linux-2.6.25.4.orig/include/asm-arm/arch-ixp4xx/avila.h
-+++ linux-2.6.25.4/include/asm-arm/arch-ixp4xx/avila.h
+--- a/include/asm-arm/arch-ixp4xx/avila.h
++++ b/include/asm-arm/arch-ixp4xx/avila.h
 @@ -39,3 +39,6 @@
  /* User LEDs */
  #define AVILA_GW23XX_LED_USER_GPIO	3

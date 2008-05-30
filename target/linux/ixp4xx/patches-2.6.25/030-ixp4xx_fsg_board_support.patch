@@ -45,11 +45,9 @@ now calls machine_restart() directly.
  create mode 100644 arch/arm/mach-ixp4xx/fsg-setup.c
  create mode 100644 include/asm-arm/arch-ixp4xx/fsg.h
 
-Index: linux-2.6.25.4/arch/arm/configs/ixp4xx_defconfig
-===================================================================
---- linux-2.6.25.4.orig/arch/arm/configs/ixp4xx_defconfig
-+++ linux-2.6.25.4/arch/arm/configs/ixp4xx_defconfig
-@@ -165,6 +165,7 @@ CONFIG_ARCH_PRPMC1100=y
+--- a/arch/arm/configs/ixp4xx_defconfig
++++ b/arch/arm/configs/ixp4xx_defconfig
+@@ -165,6 +165,7 @@
  CONFIG_MACH_NAS100D=y
  CONFIG_MACH_DSMG600=y
  CONFIG_ARCH_IXDP4XX=y
@@ -57,7 +55,7 @@ Index: linux-2.6.25.4/arch/arm/configs/ixp4xx_defconfig
  CONFIG_CPU_IXP46X=y
  CONFIG_CPU_IXP43X=y
  CONFIG_MACH_GTWX5715=y
-@@ -770,7 +771,7 @@ CONFIG_ATA=y
+@@ -770,7 +771,7 @@
  # CONFIG_SATA_SIL24 is not set
  # CONFIG_SATA_SIS is not set
  # CONFIG_SATA_ULI is not set
@@ -66,7 +64,7 @@ Index: linux-2.6.25.4/arch/arm/configs/ixp4xx_defconfig
  # CONFIG_SATA_VITESSE is not set
  # CONFIG_SATA_INIC162X is not set
  # CONFIG_PATA_ALI is not set
-@@ -1143,7 +1144,7 @@ CONFIG_HWMON=y
+@@ -1143,7 +1144,7 @@
  # CONFIG_SENSORS_VIA686A is not set
  # CONFIG_SENSORS_VT1211 is not set
  # CONFIG_SENSORS_VT8231 is not set
@@ -75,7 +73,7 @@ Index: linux-2.6.25.4/arch/arm/configs/ixp4xx_defconfig
  # CONFIG_SENSORS_W83791D is not set
  # CONFIG_SENSORS_W83792D is not set
  # CONFIG_SENSORS_W83793 is not set
-@@ -1334,8 +1335,8 @@ CONFIG_LEDS_CLASS=y
+@@ -1334,8 +1335,8 @@
  #
  # LED drivers
  #
@@ -85,7 +83,7 @@ Index: linux-2.6.25.4/arch/arm/configs/ixp4xx_defconfig
  
  #
  # LED Triggers
-@@ -1367,7 +1368,7 @@ CONFIG_RTC_INTF_DEV=y
+@@ -1367,7 +1368,7 @@
  # CONFIG_RTC_DRV_DS1672 is not set
  # CONFIG_RTC_DRV_MAX6900 is not set
  # CONFIG_RTC_DRV_RS5C372 is not set
@@ -94,11 +92,9 @@ Index: linux-2.6.25.4/arch/arm/configs/ixp4xx_defconfig
  CONFIG_RTC_DRV_X1205=y
  CONFIG_RTC_DRV_PCF8563=y
  # CONFIG_RTC_DRV_PCF8583 is not set
-Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/Kconfig
-+++ linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
-@@ -125,6 +125,15 @@ config	ARCH_IXDP4XX
+--- a/arch/arm/mach-ixp4xx/Kconfig
++++ b/arch/arm/mach-ixp4xx/Kconfig
+@@ -125,6 +125,15 @@
  	depends on ARCH_IXDP425 || MACH_IXDP465 || MACH_KIXRP435
  	default y
  
@@ -114,11 +110,9 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
  #
  # Certain registers and IRQs are only enabled if supporting IXP465 CPUs
  #
-Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
-===================================================================
---- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/Makefile
-+++ linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
-@@ -15,6 +15,7 @@ obj-pci-$(CONFIG_MACH_NAS100D)		+= nas10
+--- a/arch/arm/mach-ixp4xx/Makefile
++++ b/arch/arm/mach-ixp4xx/Makefile
+@@ -15,6 +15,7 @@
  obj-pci-$(CONFIG_MACH_DSMG600)		+= dsmg600-pci.o
  obj-pci-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-pci.o
  obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
@@ -126,7 +120,7 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
  
  obj-y	+= common.o
  
-@@ -28,6 +29,7 @@ obj-$(CONFIG_MACH_NAS100D)	+= nas100d-se
+@@ -28,6 +29,7 @@
  obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o
  obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
  obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
@@ -134,10 +128,8 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
  obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
-Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/fsg-pci.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.25.4/arch/arm/mach-ixp4xx/fsg-pci.c
++++ b/arch/arm/mach-ixp4xx/fsg-pci.c
 @@ -0,0 +1,71 @@
 +/*
 + * arch/arch/mach-ixp4xx/fsg-pci.c
@@ -210,10 +202,8 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/fsg-pci.c
 +}
 +
 +subsys_initcall(fsg_pci_init);
-Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/fsg-setup.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.25.4/arch/arm/mach-ixp4xx/fsg-setup.c
++++ b/arch/arm/mach-ixp4xx/fsg-setup.c
 @@ -0,0 +1,276 @@
 +/*
 + * arch/arm/mach-ixp4xx/fsg-setup.c
@@ -491,10 +481,8 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/fsg-setup.c
 +	.init_machine	= fsg_init,
 +MACHINE_END
 +
-Index: linux-2.6.25.4/include/asm-arm/arch-ixp4xx/fsg.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.25.4/include/asm-arm/arch-ixp4xx/fsg.h
++++ b/include/asm-arm/arch-ixp4xx/fsg.h
 @@ -0,0 +1,50 @@
 +/*
 + * include/asm-arm/arch-ixp4xx/fsg.h
@@ -546,10 +534,8 @@ Index: linux-2.6.25.4/include/asm-arm/arch-ixp4xx/fsg.h
 +#define FSG_LED_USB_BIT		4
 +#define FSG_LED_RING_BIT	5
 +#define FSG_LED_SYNC_BIT	7
-Index: linux-2.6.25.4/include/asm-arm/arch-ixp4xx/hardware.h
-===================================================================
---- linux-2.6.25.4.orig/include/asm-arm/arch-ixp4xx/hardware.h
-+++ linux-2.6.25.4/include/asm-arm/arch-ixp4xx/hardware.h
+--- a/include/asm-arm/arch-ixp4xx/hardware.h
++++ b/include/asm-arm/arch-ixp4xx/hardware.h
 @@ -45,5 +45,6 @@
  #include "nslu2.h"
  #include "nas100d.h"
@@ -557,10 +543,8 @@ Index: linux-2.6.25.4/include/asm-arm/arch-ixp4xx/hardware.h
 +#include "fsg.h"
  
  #endif  /* _ASM_ARCH_HARDWARE_H */
-Index: linux-2.6.25.4/include/asm-arm/arch-ixp4xx/irqs.h
-===================================================================
---- linux-2.6.25.4.orig/include/asm-arm/arch-ixp4xx/irqs.h
-+++ linux-2.6.25.4/include/asm-arm/arch-ixp4xx/irqs.h
+--- a/include/asm-arm/arch-ixp4xx/irqs.h
++++ b/include/asm-arm/arch-ixp4xx/irqs.h
 @@ -128,4 +128,11 @@
  #define        IRQ_DSMG600_PCI_INTE    IRQ_IXP4XX_GPIO7
  #define        IRQ_DSMG600_PCI_INTF    IRQ_IXP4XX_GPIO6

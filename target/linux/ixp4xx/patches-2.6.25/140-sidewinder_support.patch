@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/Kconfig
-+++ linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
-@@ -65,6 +65,14 @@ config MACH_PRONGHORNMETRO
+--- a/arch/arm/mach-ixp4xx/Kconfig
++++ b/arch/arm/mach-ixp4xx/Kconfig
+@@ -65,6 +65,14 @@
  	  Engineering Pronghorn Metro Platform. For more
  	  information on this platform, see <file:Documentation/arm/IXP4xx>.
  
@@ -17,7 +15,7 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
  config MACH_COMPEX
  	bool "Compex WP18 / NP18A"
  	select PCI
-@@ -163,7 +171,7 @@ config MACH_FSG
+@@ -163,7 +171,7 @@
  #
  config CPU_IXP46X
  	bool
@@ -26,11 +24,9 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Kconfig
  	default y
  
  config CPU_IXP43X
-Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
-===================================================================
---- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/Makefile
-+++ linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
-@@ -19,6 +19,7 @@ obj-pci-$(CONFIG_MACH_FSG)		+= fsg-pci.o
+--- a/arch/arm/mach-ixp4xx/Makefile
++++ b/arch/arm/mach-ixp4xx/Makefile
+@@ -19,6 +19,7 @@
  obj-pci-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-pci.o
  obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp425-pci.o
  obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o
@@ -38,7 +34,7 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
  
  obj-y	+= common.o
  
-@@ -36,6 +37,7 @@ obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o
+@@ -36,6 +37,7 @@
  obj-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-setup.o
  obj-$(CONFIG_MACH_COMPEX)	+= compex-setup.o
  obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o
@@ -46,10 +42,8 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/Makefile
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
  obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
-Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/sidewinder-pci.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.25.4/arch/arm/mach-ixp4xx/sidewinder-pci.c
++++ b/arch/arm/mach-ixp4xx/sidewinder-pci.c
 @@ -0,0 +1,71 @@
 +/*
 + * arch/arch/mach-ixp4xx/pronghornmetro-pci.c
@@ -122,10 +116,8 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/sidewinder-pci.c
 +}
 +
 +subsys_initcall(sidewinder_pci_init);
-Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/sidewinder-setup.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.25.4/arch/arm/mach-ixp4xx/sidewinder-setup.c
++++ b/arch/arm/mach-ixp4xx/sidewinder-setup.c
 @@ -0,0 +1,115 @@
 +/*
 + * arch/arm/mach-ixp4xx/sidewinder-setup.c

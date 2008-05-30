@@ -1,7 +1,5 @@
-Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/gtwx5715-setup.c
-===================================================================
---- linux-2.6.25.4.orig/arch/arm/mach-ixp4xx/gtwx5715-setup.c
-+++ linux-2.6.25.4/arch/arm/mach-ixp4xx/gtwx5715-setup.c
+--- a/arch/arm/mach-ixp4xx/gtwx5715-setup.c
++++ b/arch/arm/mach-ixp4xx/gtwx5715-setup.c
 @@ -29,6 +29,8 @@
  #include <linux/serial_8250.h>
  #include <linux/slab.h>
@@ -11,7 +9,7 @@ Index: linux-2.6.25.4/arch/arm/mach-ixp4xx/gtwx5715-setup.c
  #include <asm/types.h>
  #include <asm/setup.h>
  #include <asm/memory.h>
-@@ -121,9 +123,41 @@ static struct platform_device gtwx5715_f
+@@ -121,9 +123,41 @@
  	.resource	= &gtwx5715_flash_resource,
  };
  
