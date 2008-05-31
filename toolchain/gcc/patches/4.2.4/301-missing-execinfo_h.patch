@@ -1,0 +1,13 @@
+Index: gcc-4.2.3/boehm-gc/include/gc.h
+===================================================================
+--- gcc-4.2.3.orig/boehm-gc/include/gc.h	2006-09-18 20:45:08.000000000 +0200
++++ gcc-4.2.3/boehm-gc/include/gc.h	2008-05-21 13:45:48.073288722 +0200
+@@ -502,7 +502,7 @@
+ #if defined(__linux__) || defined(__GLIBC__)
+ # include <features.h>
+ # if (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1 || __GLIBC__ > 2) \
+-     && !defined(__ia64__)
++     && !defined(__ia64__) && !defined(__UCLIBC__)
+ #   ifndef GC_HAVE_BUILTIN_BACKTRACE
+ #     define GC_HAVE_BUILTIN_BACKTRACE
+ #   endif

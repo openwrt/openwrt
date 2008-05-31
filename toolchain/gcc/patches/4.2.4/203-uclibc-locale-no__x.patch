@@ -1,0 +1,233 @@
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c++locale_internal.h
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/c++locale_internal.h	2008-05-21 13:45:43.925289703 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c++locale_internal.h	2008-05-21 13:45:45.253289024 +0200
+@@ -60,4 +60,49 @@
+ extern "C" __typeof(wctype_l) __wctype_l;
+ #endif 
+ 
++# define __nl_langinfo_l nl_langinfo_l
++# define __strcoll_l strcoll_l
++# define __strftime_l strftime_l
++# define __strtod_l strtod_l
++# define __strtof_l strtof_l
++# define __strtold_l strtold_l
++# define __strxfrm_l strxfrm_l
++# define __newlocale newlocale
++# define __freelocale freelocale
++# define __duplocale duplocale
++# define __uselocale uselocale
++
++# ifdef _GLIBCXX_USE_WCHAR_T
++#  define __iswctype_l iswctype_l
++#  define __towlower_l towlower_l
++#  define __towupper_l towupper_l
++#  define __wcscoll_l wcscoll_l
++#  define __wcsftime_l wcsftime_l
++#  define __wcsxfrm_l wcsxfrm_l
++#  define __wctype_l wctype_l
++# endif
++
++#else
++# define __nl_langinfo_l(N, L)       nl_langinfo((N))
++# define __strcoll_l(S1, S2, L)      strcoll((S1), (S2))
++# define __strtod_l(S, E, L)         strtod((S), (E))
++# define __strtof_l(S, E, L)         strtof((S), (E))
++# define __strtold_l(S, E, L)        strtold((S), (E))
++# define __strxfrm_l(S1, S2, N, L)   strxfrm((S1), (S2), (N))
++# warning should dummy __newlocale check for C|POSIX ?
++# define __newlocale(a, b, c)        NULL
++# define __freelocale(a)             ((void)0)
++# define __duplocale(a)              __c_locale()
++//# define __uselocale ?
++//
++# ifdef _GLIBCXX_USE_WCHAR_T
++#  define __iswctype_l(C, M, L)       iswctype((C), (M))
++#  define __towlower_l(C, L)          towlower((C))
++#  define __towupper_l(C, L)          towupper((C))
++#  define __wcscoll_l(S1, S2, L)      wcscoll((S1), (S2))
++//#  define __wcsftime_l(S, M, F, T, L)  wcsftime((S), (M), (F), (T)) 
++#  define __wcsxfrm_l(S1, S2, N, L)   wcsxfrm((S1), (S2), (N))
++#  define __wctype_l(S, L)            wctype((S))
++# endif
++
+ #endif // GLIBC 2.3 and later
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c_locale.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/c_locale.cc	2008-05-21 13:45:43.925289703 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c_locale.cc	2008-05-21 13:45:45.253289024 +0200
+@@ -39,20 +39,6 @@
+ #include <langinfo.h>
+ #include <bits/c++locale_internal.h>
+ 
+-#ifndef __UCLIBC_HAS_XLOCALE__
+-#define __strtol_l(S, E, B, L)      strtol((S), (E), (B))
+-#define __strtoul_l(S, E, B, L)     strtoul((S), (E), (B))
+-#define __strtoll_l(S, E, B, L)     strtoll((S), (E), (B))
+-#define __strtoull_l(S, E, B, L)    strtoull((S), (E), (B))
+-#define __strtof_l(S, E, L)         strtof((S), (E))
+-#define __strtod_l(S, E, L)         strtod((S), (E))
+-#define __strtold_l(S, E, L)        strtold((S), (E))
+-#warning should dummy __newlocale check for C|POSIX ?
+-#define __newlocale(a, b, c)        NULL
+-#define __freelocale(a)             ((void)0)
+-#define __duplocale(a)              __c_locale()
+-#endif
+-
+ namespace std 
+ {
+   template<>
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/collate_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/collate_members.cc	2008-05-21 13:45:43.929287698 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/collate_members.cc	2008-05-21 13:45:45.253289024 +0200
+@@ -36,13 +36,6 @@
+ #include <locale>
+ #include <bits/c++locale_internal.h>
+ 
+-#ifndef __UCLIBC_HAS_XLOCALE__
+-#define __strcoll_l(S1, S2, L)      strcoll((S1), (S2))
+-#define __strxfrm_l(S1, S2, N, L)   strxfrm((S1), (S2), (N))
+-#define __wcscoll_l(S1, S2, L)      wcscoll((S1), (S2))
+-#define __wcsxfrm_l(S1, S2, N, L)   wcsxfrm((S1), (S2), (N))
+-#endif
+-
+ namespace std
+ {
+   // These are basically extensions to char_traits, and perhaps should
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/monetary_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/monetary_members.cc	2008-05-21 13:45:43.933287929 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/monetary_members.cc	2008-05-21 13:45:45.257288137 +0200
+@@ -43,10 +43,6 @@
+ #warning tailor for stub locale support
+ #endif
+ 
+-#ifndef __UCLIBC_HAS_XLOCALE__
+-#define __nl_langinfo_l(N, L)         nl_langinfo((N))
+-#endif
+-
+ namespace std
+ {
+   // Construct and return valid pattern consisting of some combination of:
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/numeric_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/numeric_members.cc	2008-05-21 13:45:43.933287929 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/numeric_members.cc	2008-05-21 13:45:45.257288137 +0200
+@@ -41,9 +41,6 @@
+ #ifdef __UCLIBC_MJN3_ONLY__
+ #warning tailor for stub locale support
+ #endif
+-#ifndef __UCLIBC_HAS_XLOCALE__
+-#define __nl_langinfo_l(N, L)         nl_langinfo((N))
+-#endif
+ 
+ namespace std
+ {
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/time_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/time_members.cc	2008-05-21 13:45:43.933287929 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/time_members.cc	2008-05-21 13:45:45.257288137 +0200
+@@ -40,9 +40,6 @@
+ #ifdef __UCLIBC_MJN3_ONLY__
+ #warning tailor for stub locale support
+ #endif
+-#ifndef __UCLIBC_HAS_XLOCALE__
+-#define __nl_langinfo_l(N, L)         nl_langinfo((N))
+-#endif
+ 
+ namespace std
+ {
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/ctype_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/ctype_members.cc	2008-05-21 13:45:43.929287698 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/ctype_members.cc	2008-05-21 13:45:45.257288137 +0200
+@@ -38,13 +38,6 @@
+ #undef _LIBC
+ #include <bits/c++locale_internal.h>
+ 
+-#ifndef __UCLIBC_HAS_XLOCALE__
+-#define __wctype_l(S, L)           wctype((S))
+-#define __towupper_l(C, L)         towupper((C))
+-#define __towlower_l(C, L)         towlower((C))
+-#define __iswctype_l(C, M, L)      iswctype((C), (M))
+-#endif
+-
+ namespace std
+ {
+   // NB: The other ctype<char> specializations are in src/locale.cc and
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/messages_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/messages_members.cc	2008-05-21 13:45:43.929287698 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/messages_members.cc	2008-05-21 13:45:45.257288137 +0200
+@@ -39,13 +39,10 @@
+ #ifdef __UCLIBC_MJN3_ONLY__
+ #warning fix gettext stuff
+ #endif
+-#ifdef __UCLIBC_HAS_GETTEXT_AWARENESS__
+-extern "C" char *__dcgettext(const char *domainname,
+-			     const char *msgid, int category);
+ #undef gettext
+-#define gettext(msgid) __dcgettext(NULL, msgid, LC_MESSAGES)
++#ifdef __UCLIBC_HAS_GETTEXT_AWARENESS__
++#define gettext(msgid) dcgettext(NULL, msgid, LC_MESSAGES)
+ #else
+-#undef gettext
+ #define gettext(msgid) (msgid)
+ #endif
+ 
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/messages_members.h
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/messages_members.h	2008-05-21 13:45:43.929287698 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/messages_members.h	2008-05-21 13:45:45.257288137 +0200
+@@ -36,15 +36,11 @@
+ #ifdef __UCLIBC_MJN3_ONLY__
+ #warning fix prototypes for *textdomain funcs
+ #endif
+-#ifdef __UCLIBC_HAS_GETTEXT_AWARENESS__
+-extern "C" char *__textdomain(const char *domainname);
+-extern "C" char *__bindtextdomain(const char *domainname,
+-				  const char *dirname);
+-#else
+-#undef __textdomain
+-#undef __bindtextdomain
+-#define __textdomain(D)           ((void)0)
+-#define __bindtextdomain(D,P)     ((void)0)
++#ifndef __UCLIBC_HAS_GETTEXT_AWARENESS__
++#undef textdomain
++#undef bindtextdomain
++#define textdomain(D)           ((void)0)
++#define bindtextdomain(D,P)     ((void)0)
+ #endif
+ 
+   // Non-virtual member functions.
+@@ -70,7 +66,7 @@
+     messages<_CharT>::open(const basic_string<char>& __s, const locale& __loc, 
+ 			   const char* __dir) const
+     { 
+-      __bindtextdomain(__s.c_str(), __dir);
++      bindtextdomain(__s.c_str(), __dir);
+       return this->do_open(__s, __loc); 
+     }
+ 
+@@ -90,7 +86,7 @@
+     { 
+       // No error checking is done, assume the catalog exists and can
+       // be used.
+-      __textdomain(__s.c_str());
++      textdomain(__s.c_str());
+       return 0;
+     }
+ 
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c_locale.h
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/c_locale.h	2008-05-21 13:45:43.925289703 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c_locale.h	2008-05-21 13:45:45.257288137 +0200
+@@ -68,6 +68,7 @@
+ {
+   extern "C" __typeof(uselocale) __uselocale;
+ }
++#define __uselocale uselocale
+ #endif
+ 
+ namespace std

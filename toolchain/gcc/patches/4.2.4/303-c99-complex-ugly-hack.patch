@@ -1,0 +1,14 @@
+Index: gcc-4.2.3/libstdc++-v3/configure
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/configure	2008-05-21 13:45:44.017287734 +0200
++++ gcc-4.2.3/libstdc++-v3/configure	2008-05-21 13:45:49.305288105 +0200
+@@ -7514,6 +7514,9 @@
+ cat >>conftest.$ac_ext <<_ACEOF
+ /* end confdefs.h.  */
+ #include <complex.h>
++#ifdef __UCLIBC__
++#error ugly hack to make sure configure test fails here for cross until uClibc supports the complex funcs
++#endif
+ int
+ main ()
+ {
