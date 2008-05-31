@@ -1,0 +1,361 @@
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c_locale.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/c_locale.cc	2008-05-21 13:45:45.253289024 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c_locale.cc	2008-05-21 13:45:46.729290157 +0200
+@@ -46,16 +46,13 @@
+     __convert_to_v(const char* __s, float& __v, ios_base::iostate& __err, 
+ 		   const __c_locale& __cloc)
+     {
+-      if (!(__err & ios_base::failbit))
+-	{
+-	  char* __sanity;
+-	  errno = 0;
+-	  float __f = __strtof_l(__s, &__sanity, __cloc);
+-          if (__sanity != __s && errno != ERANGE)
+-	    __v = __f;
+-	  else
+-	    __err |= ios_base::failbit;
+-	}
++      char* __sanity;
++      errno = 0;
++      float __f = __strtof_l(__s, &__sanity, __cloc);
++      if (__sanity != __s && errno != ERANGE)
++	__v = __f;
++      else
++	__err |= ios_base::failbit;
+     }
+ 
+   template<>
+@@ -63,16 +60,13 @@
+     __convert_to_v(const char* __s, double& __v, ios_base::iostate& __err, 
+ 		   const __c_locale& __cloc)
+     {
+-      if (!(__err & ios_base::failbit))
+-	{
+-	  char* __sanity;
+-	  errno = 0;
+-	  double __d = __strtod_l(__s, &__sanity, __cloc);
+-          if (__sanity != __s && errno != ERANGE)
+-	    __v = __d;
+-	  else
+-	    __err |= ios_base::failbit;
+-	}
++      char* __sanity;
++      errno = 0;
++      double __d = __strtod_l(__s, &__sanity, __cloc);
++      if (__sanity != __s && errno != ERANGE)
++	__v = __d;
++      else
++	__err |= ios_base::failbit;
+     }
+ 
+   template<>
+@@ -80,16 +74,13 @@
+     __convert_to_v(const char* __s, long double& __v, ios_base::iostate& __err,
+ 		   const __c_locale& __cloc)
+     {
+-      if (!(__err & ios_base::failbit))
+-	{
+-	  char* __sanity;
+-	  errno = 0;
+-	  long double __ld = __strtold_l(__s, &__sanity, __cloc);
+-          if (__sanity != __s && errno != ERANGE)
+-	    __v = __ld;
+-	  else
+-	    __err |= ios_base::failbit;
+-	}
++      char* __sanity;
++      errno = 0;
++      long double __ld = __strtold_l(__s, &__sanity, __cloc);
++      if (__sanity != __s && errno != ERANGE)
++	__v = __ld;
++      else
++	__err |= ios_base::failbit;
+     }
+ 
+   void
+@@ -110,7 +101,7 @@
+   void
+   locale::facet::_S_destroy_c_locale(__c_locale& __cloc)
+   {
+-    if (_S_get_c_locale() != __cloc)
++    if (__cloc && _S_get_c_locale() != __cloc)
+       __freelocale(__cloc); 
+   }
+ 
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/ctype_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/ctype_members.cc	2008-05-21 13:45:45.257288137 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/ctype_members.cc	2008-05-21 13:45:46.729290157 +0200
+@@ -33,9 +33,14 @@
+ 
+ // Written by Benjamin Kosnik <bkoz@redhat.com>
+ 
++#include <features.h>
++#ifdef __UCLIBC_HAS_LOCALE__
+ #define _LIBC
+ #include <locale>
+ #undef _LIBC
++#else
++#include <locale>
++#endif
+ #include <bits/c++locale_internal.h>
+ 
+ namespace std
+@@ -138,20 +143,34 @@
+   ctype<wchar_t>::
+   do_is(mask __m, wchar_t __c) const
+   { 
+-    // Highest bitmask in ctype_base == 10, but extra in "C"
+-    // library for blank.
++    // The case of __m == ctype_base::space is particularly important,
++    // due to its use in many istream functions.  Therefore we deal with
++    // it first, exploiting the knowledge that on GNU systems _M_bit[5]
++    // is the mask corresponding to ctype_base::space.  NB: an encoding
++    // change would not affect correctness!
+     bool __ret = false;
+-    const size_t __bitmasksize = 11; 
+-    for (size_t __bitcur = 0; __bitcur <= __bitmasksize; ++__bitcur)
+-      if (__m & _M_bit[__bitcur]
+-	  && __iswctype_l(__c, _M_wmask[__bitcur], _M_c_locale_ctype))
+-	{
+-	  __ret = true;
+-	  break;
+-	}
++    if (__m == _M_bit[5])
++      __ret = __iswctype_l(__c, _M_wmask[5], _M_c_locale_ctype);
++    else
++      {
++	// Highest bitmask in ctype_base == 10, but extra in "C"
++	// library for blank.
++	const size_t __bitmasksize = 11;
++	for (size_t __bitcur = 0; __bitcur <= __bitmasksize; ++__bitcur)
++	  if (__m & _M_bit[__bitcur])
++	    {
++	      if (__iswctype_l(__c, _M_wmask[__bitcur], _M_c_locale_ctype))
++		{
++		  __ret = true;
++		  break;
++		}
++	      else if (__m == _M_bit[__bitcur])
++		break;
++	    }
++      }
+     return __ret;    
+   }
+-  
++
+   const wchar_t* 
+   ctype<wchar_t>::
+   do_is(const wchar_t* __lo, const wchar_t* __hi, mask* __vec) const
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/messages_members.h
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/messages_members.h	2008-05-21 13:45:45.257288137 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/messages_members.h	2008-05-21 13:45:46.729290157 +0200
+@@ -47,18 +47,21 @@
+   template<typename _CharT>
+      messages<_CharT>::messages(size_t __refs)
+      : facet(__refs), _M_c_locale_messages(_S_get_c_locale()), 
+-     _M_name_messages(_S_get_c_name())
++       _M_name_messages(_S_get_c_name())
+      { }
+ 
+   template<typename _CharT>
+      messages<_CharT>::messages(__c_locale __cloc, const char* __s, 
+ 				size_t __refs) 
+-     : facet(__refs), _M_c_locale_messages(_S_clone_c_locale(__cloc)),
+-     _M_name_messages(__s)
++     : facet(__refs), _M_c_locale_messages(NULL), _M_name_messages(NULL)
+      {
+-       char* __tmp = new char[std::strlen(__s) + 1];
+-       std::strcpy(__tmp, __s);
++       const size_t __len = std::strlen(__s) + 1;
++       char* __tmp = new char[__len];
++       std::memcpy(__tmp, __s, __len);
+        _M_name_messages = __tmp;
++
++       // Last to avoid leaking memory if new throws.
++       _M_c_locale_messages = _S_clone_c_locale(__cloc);
+      }
+ 
+   template<typename _CharT>
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/monetary_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/monetary_members.cc	2008-05-21 13:45:46.105290284 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/monetary_members.cc	2008-05-21 13:45:46.729290157 +0200
+@@ -33,9 +33,14 @@
+ 
+ // Written by Benjamin Kosnik <bkoz@redhat.com>
+ 
++#include <features.h>
++#ifdef __UCLIBC_HAS_LOCALE__
+ #define _LIBC
+ #include <locale>
+ #undef _LIBC
++#else
++#include <locale>
++#endif
+ #include <bits/c++locale_internal.h>
+ 
+ #ifdef __UCLIBC_MJN3_ONLY__
+@@ -206,7 +211,7 @@
+ 	  }
+ 	break;
+       default:
+-	;
++	__ret = pattern();
+       }
+     return __ret;
+   }
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/numeric_members.cc
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/numeric_members.cc	2008-05-21 13:45:46.105290284 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/numeric_members.cc	2008-05-21 13:45:46.733288711 +0200
+@@ -33,9 +33,14 @@
+ 
+ // Written by Benjamin Kosnik <bkoz@redhat.com>
+ 
++#include <features.h>
++#ifdef __UCLIBC_HAS_LOCALE__
+ #define _LIBC
+ #include <locale>
+ #undef _LIBC
++#else
++#include <locale>
++#endif
+ #include <bits/c++locale_internal.h>
+ 
+ #ifdef __UCLIBC_MJN3_ONLY__
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/time_members.h
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/time_members.h	2008-05-21 13:45:43.933287929 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/time_members.h	2008-05-21 13:45:46.733288711 +0200
+@@ -37,25 +37,33 @@
+   template<typename _CharT>
+     __timepunct<_CharT>::__timepunct(size_t __refs) 
+     : facet(__refs), _M_data(NULL), _M_c_locale_timepunct(NULL), 
+-    _M_name_timepunct(_S_get_c_name())
++      _M_name_timepunct(_S_get_c_name())
+     { _M_initialize_timepunct(); }
+ 
+   template<typename _CharT>
+     __timepunct<_CharT>::__timepunct(__cache_type* __cache, size_t __refs) 
+     : facet(__refs), _M_data(__cache), _M_c_locale_timepunct(NULL), 
+-    _M_name_timepunct(_S_get_c_name())
++      _M_name_timepunct(_S_get_c_name())
+     { _M_initialize_timepunct(); }
+ 
+   template<typename _CharT>
+     __timepunct<_CharT>::__timepunct(__c_locale __cloc, const char* __s,
+ 				     size_t __refs) 
+     : facet(__refs), _M_data(NULL), _M_c_locale_timepunct(NULL), 
+-    _M_name_timepunct(__s)
++      _M_name_timepunct(NULL)
+     { 
+-      char* __tmp = new char[std::strlen(__s) + 1];
+-      std::strcpy(__tmp, __s);
++      const size_t __len = std::strlen(__s) + 1;
++      char* __tmp = new char[__len];
++      std::memcpy(__tmp, __s, __len);
+       _M_name_timepunct = __tmp;
+-      _M_initialize_timepunct(__cloc); 
++
++      try
++	{ _M_initialize_timepunct(__cloc); }
++      catch(...)
++	{
++	  delete [] _M_name_timepunct;
++	  __throw_exception_again;
++	}
+     }
+ 
+   template<typename _CharT>
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c_locale.h
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/c_locale.h	2008-05-21 13:45:45.257288137 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/c_locale.h	2008-05-21 13:45:46.733288711 +0200
+@@ -39,21 +39,23 @@
+ #pragma GCC system_header
+ 
+ #include <cstring>              // get std::strlen
+-#include <cstdio>               // get std::snprintf or std::sprintf
++#include <cstdio>               // get std::vsnprintf or std::vsprintf
+ #include <clocale>
+ #include <langinfo.h>		// For codecvt
+ #ifdef __UCLIBC_MJN3_ONLY__
+ #warning fix this
+ #endif
+-#ifdef __UCLIBC_HAS_LOCALE__
++#ifdef _GLIBCXX_USE_ICONV
+ #include <iconv.h>		// For codecvt using iconv, iconv_t
+ #endif
+-#ifdef __UCLIBC_HAS_GETTEXT_AWARENESS__
+-#include <libintl.h> 		// For messages
++#ifdef HAVE_LIBINTL_H
++#include <libintl.h>		// For messages
+ #endif
++#include <cstdarg>
+ 
+ #ifdef __UCLIBC_MJN3_ONLY__
+ #warning what is _GLIBCXX_C_LOCALE_GNU for
++// psm: used in os/gnu-linux/ctype_noninline.h
+ #endif
+ #define _GLIBCXX_C_LOCALE_GNU 1
+ 
+@@ -62,7 +64,7 @@
+ #endif
+ // #define _GLIBCXX_NUM_CATEGORIES 6
+ #define _GLIBCXX_NUM_CATEGORIES 0
+- 
++
+ #ifdef __UCLIBC_HAS_XLOCALE__
+ namespace __gnu_cxx
+ {
+@@ -79,22 +81,24 @@
+   typedef int*			__c_locale;
+ #endif
+ 
+-  // Convert numeric value of type _Tv to string and return length of
+-  // string.  If snprintf is available use it, otherwise fall back to
+-  // the unsafe sprintf which, in general, can be dangerous and should
++  // Convert numeric value of type double to string and return length of
++  // string.  If vsnprintf is available use it, otherwise fall back to
++  // the unsafe vsprintf which, in general, can be dangerous and should
+   // be avoided.
+-  template<typename _Tv>
+-    int
+-    __convert_from_v(char* __out, 
+-		     const int __size __attribute__ ((__unused__)),
+-		     const char* __fmt,
+-#ifdef __UCLIBC_HAS_XCLOCALE__
+-		     _Tv __v, const __c_locale& __cloc, int __prec)
++    inline int
++    __convert_from_v(const __c_locale&
++#ifndef __UCLIBC_HAS_XCLOCALE__
++					__cloc __attribute__ ((__unused__))
++#endif
++		     ,
++		     char* __out,
++		     const int __size,
++		     const char* __fmt, ...)
+     {
++      va_list __args;
++#ifdef __UCLIBC_HAS_XCLOCALE__
+       __c_locale __old = __gnu_cxx::__uselocale(__cloc);
+ #else
+-		     _Tv __v, const __c_locale&, int __prec)
+-    {
+ # ifdef __UCLIBC_HAS_LOCALE__
+       char* __old = std::setlocale(LC_ALL, NULL);
+       char* __sav = new char[std::strlen(__old) + 1];
+@@ -103,7 +107,9 @@
+ # endif
+ #endif
+ 
+-      const int __ret = std::snprintf(__out, __size, __fmt, __prec, __v);
++      va_start(__args, __fmt);
++      const int __ret = std::vsnprintf(__out, __size, __fmt, __args);
++      va_end(__args);
+ 
+ #ifdef __UCLIBC_HAS_XCLOCALE__
+       __gnu_cxx::__uselocale(__old);

@@ -1,0 +1,38 @@
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/messages_members.h
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/messages_members.h	2008-05-21 13:45:46.729290157 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/messages_members.h	2008-05-21 13:45:51.249287676 +0200
+@@ -32,7 +32,8 @@
+ //
+ 
+ // Written by Benjamin Kosnik <bkoz@redhat.com>
+-
++namespace std
++{
+ #ifdef __UCLIBC_MJN3_ONLY__
+ #warning fix prototypes for *textdomain funcs
+ #endif
+@@ -115,3 +116,4 @@
+ 	   this->_S_create_c_locale(this->_M_c_locale_messages, __s); 
+ 	 }
+      }
++}
+Index: gcc-4.2.3/libstdc++-v3/config/locale/uclibc/time_members.h
+===================================================================
+--- gcc-4.2.3.orig/libstdc++-v3/config/locale/uclibc/time_members.h	2008-05-21 13:45:46.733288711 +0200
++++ gcc-4.2.3/libstdc++-v3/config/locale/uclibc/time_members.h	2008-05-21 13:45:51.249287676 +0200
+@@ -33,7 +33,8 @@
+ //
+ 
+ // Written by Benjamin Kosnik <bkoz@redhat.com>
+-
++namespace std
++{
+   template<typename _CharT>
+     __timepunct<_CharT>::__timepunct(size_t __refs) 
+     : facet(__refs), _M_data(NULL), _M_c_locale_timepunct(NULL), 
+@@ -74,3 +75,4 @@
+       delete _M_data; 
+       _S_destroy_c_locale(_M_c_locale_timepunct); 
+     }
++}

@@ -1,0 +1,36 @@
+Index: gcc-4.2.3/gcc/config.gcc
+===================================================================
+--- gcc-4.2.3.orig/gcc/config.gcc	2008-05-21 13:45:54.181287953 +0200
++++ gcc-4.2.3/gcc/config.gcc	2008-05-21 13:46:03.094289162 +0200
+@@ -704,7 +704,7 @@
+ 	extra_parts=""
+ 	use_collect2=yes
+ 	;;
+-arm*-*-linux*)			# ARM GNU/Linux with ELF
++arm*-linux*)			# ARM GNU/Linux with ELF
+ 	tm_file="dbxelf.h elfos.h linux.h arm/elf.h arm/linux-gas.h arm/linux-elf.h"
+ 	tmake_file="${tmake_file} t-linux arm/t-arm"
+ 	case ${target} in
+@@ -713,7 +713,7 @@
+ 		;;
+ 	esac
+ 	case ${target} in
+-	arm*-*-linux-*eabi)
++	arm*-linux-*eabi)
+ 	    tm_file="$tm_file arm/bpabi.h arm/linux-eabi.h"
+ 	    tmake_file="$tmake_file arm/t-arm-elf arm/t-bpabi arm/t-linux-eabi"
+   	    # The BPABI long long divmod functions return a 128-bit value in
+Index: gcc-4.2.3/gcc/config/arm/linux-eabi.h
+===================================================================
+--- gcc-4.2.3.orig/gcc/config/arm/linux-eabi.h	2007-09-01 17:28:30.000000000 +0200
++++ gcc-4.2.3/gcc/config/arm/linux-eabi.h	2008-05-21 13:46:03.094289162 +0200
+@@ -47,7 +47,8 @@
+ #define SUBTARGET_CPU_DEFAULT TARGET_CPU_arm10tdmi
+ 
+ #undef SUBTARGET_EXTRA_LINK_SPEC
+-#define SUBTARGET_EXTRA_LINK_SPEC " -m armelf_linux_eabi"
++#define SUBTARGET_EXTRA_LINK_SPEC \
++	" %{mbig-endian:-m armelfb_linux_eabi} %{mlittle-endian:-m armelf_linux_eabi} "
+ 
+ /* Use ld-linux.so.3 so that it will be possible to run "classic"
+    GNU/Linux binaries on an EABI system.  */
