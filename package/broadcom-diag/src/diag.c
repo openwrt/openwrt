@@ -491,7 +491,8 @@ static struct platform_t __initdata platforms[] = {
 			/* No usable buttons */
 		},
 		.leds		= {
-			{ .name = "dmz",	.gpio = 1 << 4, .polarity = REVERSE },
+//			{ .name = "power",	.gpio = 1 << 0  .polarity = REVERSE },	// Usable when retrofitting D26 (?)
+			{ .name = "dmz",	.gpio = 1 << 4, .polarity = REVERSE },	// actual name WWW
 			{ .name = "wlan",	.gpio = 1 << 3, .polarity = REVERSE },
 		},
 	},
@@ -502,7 +503,7 @@ static struct platform_t __initdata platforms[] = {
 		},
 		.leds		= {
 			{ .name = "power",	.gpio = 1 << 5, .polarity = REVERSE },
-			{ .name = "dmz",	.gpio = 1 << 0, .polarity = REVERSE },
+			{ .name = "dmz",	.gpio = 1 << 0, .polarity = REVERSE },	// actual name WWW
 			{ .name = "wlan",	.gpio = 1 << 3, .polarity = REVERSE },
 		},
 	},
@@ -770,6 +771,9 @@ static struct platform_t __init *platform_detect(void)
 		if (!strcmp(boardnum, "10496"))
 			return &platforms[USR5461];
 
+		if (!strcmp(getvar("boardtype"), "0x0101") && !strcmp(getvar("boardrev"), "0x10")) /* SE505V2 With Modified CFE */
+			return &platforms[SE505V2];
+		
 	} else { /* PMON based - old stuff */
 		if ((simple_strtoul(getvar("GemtekPmonVer"), NULL, 0) == 9) &&
 			(simple_strtoul(getvar("et0phyaddr"), NULL, 0) == 30)) {
