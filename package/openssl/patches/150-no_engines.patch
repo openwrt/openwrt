@@ -1,7 +1,7 @@
-diff -ur openssl-0.9.8g/Configure openssl-0.9.8g2/Configure
---- openssl-0.9.8g/Configure	2008-05-19 22:49:45.000000000 +0200
-+++ openssl-0.9.8g2/Configure	2008-05-19 22:50:40.000000000 +0200
-@@ -1685,6 +1685,11 @@
+diff -ur openssl-0.9.8h.orig/Configure openssl-0.9.8h/Configure
+--- openssl-0.9.8h.orig/Configure	2008-05-31 17:31:04.000000000 +0200
++++ openssl-0.9.8h/Configure	2008-05-31 17:30:47.000000000 +0200
+@@ -1712,6 +1712,11 @@
  	close(OUT);
    }
    
@@ -13,9 +13,9 @@ diff -ur openssl-0.9.8g/Configure openssl-0.9.8g2/Configure
  print <<EOF;
  
  Configured for $target.
-diff -ur openssl-0.9.8g/util/libeay.num openssl-0.9.8g2/util/libeay.num
---- openssl-0.9.8g/util/libeay.num	2007-06-11 18:33:48.000000000 +0200
-+++ openssl-0.9.8g2/util/libeay.num	2008-05-19 22:50:40.000000000 +0200
+diff -ur openssl-0.9.8h.orig/util/libeay.num openssl-0.9.8h/util/libeay.num
+--- openssl-0.9.8h.orig/util/libeay.num	2008-05-31 17:27:46.000000000 +0200
++++ openssl-0.9.8h/util/libeay.num	2008-05-31 17:30:47.000000000 +0200
 @@ -2071,7 +2071,6 @@
  UI_add_error_string                     2633	EXIST::FUNCTION:
  KRB5_CHECKSUM_free                      2634	EXIST::FUNCTION:
