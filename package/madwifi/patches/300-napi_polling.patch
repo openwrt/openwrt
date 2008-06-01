@@ -363,14 +363,6 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -8423,6 +8580,7 @@
- ath_draintxq(struct ath_softc *sc)
- {
- 	struct ath_hal *ah = sc->sc_ah;
-+	int npend = 0;
- 	unsigned int i;
- 
- 	/* XXX return value */
 @@ -10281,9 +10439,9 @@
  	dev->mtu = mtu;
  	if ((dev->flags & IFF_RUNNING) && !sc->sc_invalid) {
