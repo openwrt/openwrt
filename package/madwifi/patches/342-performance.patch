@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-04-17 18:17:28.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-04-17 18:17:28.000000000 +0200
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-06-01 02:04:25.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-06-01 02:04:25.000000000 +0200
 @@ -3237,7 +3237,6 @@
  	struct ath_softc *sc = dev->priv;
  	struct ieee80211_node *ni = NULL;
@@ -48,8 +48,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	ATH_TXQ_LOCK_IRQ(txq);
 Index: madwifi-trunk-r3314/net80211/ieee80211_output.c
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_output.c	2008-04-17 18:17:27.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/ieee80211_output.c	2008-04-17 18:18:04.000000000 +0200
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_output.c	2008-06-01 02:04:24.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211_output.c	2008-06-01 02:04:25.000000000 +0200
 @@ -283,7 +283,7 @@
  	 * normal vap. */
  	if (vap->iv_xrvap && (ni == vap->iv_bss) &&
@@ -59,36 +59,70 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_output.c
  		if (skb1) {
  			memset(SKB_CB(skb1), 0, sizeof(struct ieee80211_cb));
  #ifdef IEEE80211_DEBUG_REFCNT
-@@ -615,100 +615,45 @@
- 		skb = skb_unshare(skb, GFP_ATOMIC);
+@@ -566,7 +566,7 @@
+ 	struct ieee80211_key *key, struct sk_buff *skb, int ismulticast)
+ {
+ 	/* XXX pre-calculate per node? */
+-	int need_headroom = LLC_SNAPFRAMELEN + hdrsize + IEEE80211_ADDR_LEN;
++	int need_headroom = LLC_SNAPFRAMELEN + hdrsize;
+ 	int need_tailroom = 0;
+ #ifdef ATH_SUPERG_FF
+ 	int isff = ATH_FF_MAGIC_PRESENT(skb);
+@@ -608,109 +608,56 @@
+ 				need_tailroom += cip->ic_miclen;
  	}
  
--#ifdef ATH_SUPERG_FF
--	if (isff) {
--		if (skb == NULL) {
-+	if (skb_cloned(skb) ||
-+		(need_headroom > skb_headroom(skb)) ||
-+		(!isff && (need_tailroom > skb_tailroom(skb)))) {
+-	if (skb_shared(skb)) {
+-		/* Take our own reference to the node in the clone */
+-		ieee80211_ref_node(SKB_CB(skb)->ni);
+-		/* Unshare the node, decrementing users in the old skb */
+-		skb = skb_unshare(skb, GFP_ATOMIC);
++	need_headroom -= skb_headroom(skb);
++	if (isff)
++		need_tailroom -= skb_tailroom(skb2);
++	else
++		need_tailroom -= skb_tailroom(skb);
++
++	if (need_headroom < 0)
++		need_headroom = 0;
++	if (need_tailroom < 0)
++		need_tailroom = 0;
++
++	if (skb_cloned(skb) || (need_headroom > 0) ||
++		(!isff && (need_tailroom > 0))) {
 +
 +		if (pskb_expand_head(skb, need_headroom, need_tailroom, GFP_ATOMIC)) {
- 			IEEE80211_DPRINTF(vap, IEEE80211_MSG_OUTPUT,
++			IEEE80211_DPRINTF(vap, IEEE80211_MSG_OUTPUT,
++				"%s: cannot expand storage (tail)\n", __func__);
++			goto error;
++		}
+ 	}
+ 
+ #ifdef ATH_SUPERG_FF
+ 	if (isff) {
+-		if (skb == NULL) {
+-			IEEE80211_DPRINTF(vap, IEEE80211_MSG_OUTPUT,
 -				"%s: cannot unshare for encapsulation\n",
 -				__func__);
-+				"%s: cannot expand storage (tail)\n", __func__);
- 			vap->iv_stats.is_tx_nobuf++;
+-			vap->iv_stats.is_tx_nobuf++;
 -			ieee80211_dev_kfree_skb(&skb2);
 -
-+			ieee80211_dev_kfree_skb(&skb);
- 			return NULL;
- 		}
-+	}
+-			return NULL;
+-		}
++		inter_headroom -= skb_headroom(skb2);
++		if (inter_headroom < 0)
++			inter_headroom = 0;
++		if ((skb_cloned(skb2) ||
++			(inter_headroom > 0) || (need_tailroom > 0))) {
  
 -		/* first skb header */
 -		if (skb_headroom(skb) < need_headroom) {
 -			struct sk_buff *tmp = skb;
 -			skb = skb_realloc_headroom(skb, need_headroom);
 -			if (skb == NULL) {
--				IEEE80211_DPRINTF(vap, IEEE80211_MSG_OUTPUT,
++			if (pskb_expand_head(skb2, inter_headroom,
++				need_tailroom, GFP_ATOMIC)) {
+ 				IEEE80211_DPRINTF(vap, IEEE80211_MSG_OUTPUT,
 -					"%s: cannot expand storage (head1)\n",
 -					__func__);
 -				vap->iv_stats.is_tx_nobuf++;
@@ -99,15 +133,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_output.c
 -			ieee80211_dev_kfree_skb(&tmp);
 -			/* NB: cb[] area was copied, but not next ptr. must do that
 -			 *     prior to return on success. */
-+#ifdef ATH_SUPERG_FF
-+	if (isff) {
-+		if (skb_shared(skb2)) {
-+			/* Take our own reference to the node in the clone */
-+			ieee80211_ref_node(SKB_CB(skb2)->ni);
-+			/* Unshare the node, decrementing users in the old skb */
-+			skb2 = skb_unshare(skb2, GFP_ATOMIC);
- 		}
- 
+-		}
+-
 -		/* second skb with header and tail adjustments possible */
 -		if (skb_tailroom(skb2) < need_tailroom) {
 -			int n = 0;
@@ -122,35 +149,28 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_output.c
 -				vap->iv_stats.is_tx_nobuf++;
 -				/* this shouldn't happen, but don't send first ff either */
 -				ieee80211_dev_kfree_skb(&skb);
--			}
++					"%s: cannot expand storage (tail)\n", __func__);
++				goto error;
+ 			}
 -		} else if (skb_headroom(skb2) < inter_headroom) {
 -			struct sk_buff *tmp = skb2;
-+		if ((skb_cloned(skb2) ||
-+			(inter_headroom > skb_headroom(skb2)) ||
-+			(need_tailroom > skb_tailroom(skb2)))) {
- 
+-
 -			skb2 = skb_realloc_headroom(skb2, inter_headroom);
 -			if (skb2 == NULL) {
-+			if (pskb_expand_head(skb2, inter_headroom,
-+				need_tailroom, GFP_ATOMIC)) {
- 				IEEE80211_DPRINTF(vap, IEEE80211_MSG_OUTPUT,
+-				IEEE80211_DPRINTF(vap, IEEE80211_MSG_OUTPUT,
 -					"%s: cannot expand storage (head2)\n",
 -					__func__);
-+					"%s: cannot expand storage (tail)\n", __func__);
- 				vap->iv_stats.is_tx_nobuf++;
+-				vap->iv_stats.is_tx_nobuf++;
 -				/* this shouldn't happen, but don't send first ff either */
- 				ieee80211_dev_kfree_skb(&skb);
+-				ieee80211_dev_kfree_skb(&skb);
 -				skb = NULL;
 -			} else
 -				ieee80211_skb_copy_noderef(tmp, skb);
 -			ieee80211_dev_kfree_skb(&tmp);
--		}
+ 		}
 -		if (skb) {
 -			skb->next = skb2;
-+				ieee80211_dev_kfree_skb(&skb2);
-+				return NULL;
-+			}
- 		}
+-		}
 -		return skb;
 +		skb->next = skb2;
  	}
@@ -184,12 +204,31 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_output.c
 -	}
  
  	return skb;
++
++error:
++	vap->iv_stats.is_tx_nobuf++;
++	ieee80211_dev_kfree_skb(&skb);
++#ifdef ATH_SUPERG_FF
++	if (skb2)
++		ieee80211_dev_kfree_skb(&skb2);
++#endif
++	return NULL;
  }
+ 
+ #define	KEY_UNDEFINED(k)	((k).wk_cipher == &ieee80211_cipher_none)
 Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_input.c	2008-04-17 18:17:28.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/ieee80211_input.c	2008-04-17 18:25:48.000000000 +0200
-@@ -244,20 +244,6 @@
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_input.c	2008-06-01 02:04:25.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211_input.c	2008-06-01 02:04:33.000000000 +0200
+@@ -204,7 +204,6 @@
+ 	struct ieee80211_frame *wh;
+ 	struct ieee80211_key *key;
+ 	struct ether_header *eh;
+-	struct sk_buff *skb2;
+ #ifdef ATH_SUPERG_FF
+ 	struct llc *llc;
+ #endif
+@@ -244,20 +243,6 @@
  		vap->iv_stats.is_rx_tooshort++;
  		goto out;
  	}
@@ -210,7 +249,7 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
  
  	/*
  	 * Bit of a cheat here, we use a pointer for a 3-address
-@@ -738,7 +724,7 @@
+@@ -738,7 +723,7 @@
  			/* ether_type must be length as FF frames are always LLC/SNAP encap'd */ 
  			frame_len = ntohs(eh_tmp->ether_type); 
  
@@ -219,7 +258,7 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
  			if (skb1 == NULL)
  				goto err;
  			ieee80211_skb_copy_noderef(skb, skb1);
-@@ -1137,7 +1123,7 @@
+@@ -1137,7 +1122,7 @@
  
  		if (ETHER_IS_MULTICAST(eh->ether_dhost) && !netif_queue_stopped(dev)) {
  			/* Create a SKB for the BSS to send out. */
