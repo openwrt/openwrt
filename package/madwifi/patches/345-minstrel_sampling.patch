@@ -1,8 +1,8 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-04-21 09:13:19.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-04-23 01:15:49.000000000 +0200
-@@ -8095,6 +8095,7 @@
+--- madwifi-trunk-r3314.orig/ath/if_ath.c
++++ madwifi-trunk-r3314/ath/if_ath.c
+@@ -8094,6 +8094,7 @@
  		ath_hal_setupxtxdesc(sc->sc_ah, ds, mrr.rate1, mrr.retries1,
  				     mrr.rate2, mrr.retries2,
  				     mrr.rate3, mrr.retries3);
@@ -12,8 +12,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  #ifndef ATH_SUPERG_FF
 Index: madwifi-trunk-r3314/ath/if_athvar.h
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-04-21 09:13:19.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_athvar.h	2008-04-23 01:15:49.000000000 +0200
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h
++++ madwifi-trunk-r3314/ath/if_athvar.h
 @@ -446,6 +446,7 @@
  	u_int16_t bf_flags;				/* tx descriptor flags */
  	u_int64_t bf_tsf;
@@ -24,8 +24,8 @@ Index: madwifi-trunk-r3314/ath/if_athvar.h
  	 *      multiple segments.
 Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath_rate/minstrel/minstrel.c	2008-04-21 09:13:19.000000000 +0200
-+++ madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c	2008-04-23 01:15:50.000000000 +0200
+--- madwifi-trunk-r3314.orig/ath_rate/minstrel/minstrel.c
++++ madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
 @@ -333,15 +333,19 @@
  		if (sn->static_rate_ndx >= 0) {
  			    ndx = sn->static_rate_ndx;
@@ -76,8 +76,8 @@ Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
  		tries = tries - tries1;
 Index: madwifi-trunk-r3314/net80211/ieee80211_rate.h
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_rate.h	2008-04-21 09:11:19.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/ieee80211_rate.h	2008-04-21 09:13:19.000000000 +0200
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_rate.h
++++ madwifi-trunk-r3314/net80211/ieee80211_rate.h
 @@ -87,6 +87,7 @@
  	int retries2;
  	int rate3;

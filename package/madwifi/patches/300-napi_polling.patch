@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-03-06 23:49:24.344018025 +0100
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-03-07 00:38:01.010996975 +0100
+--- madwifi-trunk-r3314.orig/ath/if_ath.c
++++ madwifi-trunk-r3314/ath/if_ath.c
 @@ -184,7 +184,11 @@
  	struct sk_buff *, int, int, u_int64_t);
  static void ath_setdefantenna(struct ath_softc *, u_int);
@@ -15,7 +15,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  static int ath_hardstart(struct sk_buff *, struct net_device *);
  static int ath_mgtstart(struct ieee80211com *, struct sk_buff *);
  #ifdef ATH_SUPERG_COMP
-@@ -374,6 +378,9 @@
+@@ -376,6 +380,9 @@
  		u_int32_t new_clamped_maxtxpower);
  static u_int32_t ath_get_real_maxtxpower(struct ath_softc *sc);
  
@@ -25,7 +25,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  /* calibrate every 30 secs in steady state but check every second at first. */
  static int ath_calinterval = ATH_SHORT_CALINTERVAL;
  static int ath_countrycode = CTRY_DEFAULT;	/* country code */
-@@ -545,7 +552,6 @@
+@@ -547,7 +554,6 @@
  
  	atomic_set(&sc->sc_txbuf_counter, 0);
  
@@ -33,7 +33,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	ATH_INIT_TQUEUE(&sc->sc_txtq,	  ath_tx_tasklet,	dev);
  	ATH_INIT_TQUEUE(&sc->sc_bmisstq,  ath_bmiss_tasklet,	dev);
  	ATH_INIT_TQUEUE(&sc->sc_bstucktq, ath_bstuck_tasklet,	dev);
-@@ -819,6 +825,12 @@
+@@ -821,6 +827,12 @@
  	dev->set_mac_address = ath_set_mac_address;
  	dev->change_mtu = ath_change_mtu;
  	dev->tx_queue_len = ATH_TXBUF - ATH_TXBUF_MGT_RESERVED;
@@ -46,7 +46,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  #ifdef USE_HEADERLEN_RESV
  	dev->hard_header_len += sizeof(struct ieee80211_qosframe) +
  				sizeof(struct llc) +
-@@ -2213,6 +2225,7 @@
+@@ -2216,6 +2228,7 @@
  		(status & HAL_INT_GLOBAL)	? " HAL_INT_GLOBAL"	: ""
  		);
  
@@ -54,7 +54,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	status &= sc->sc_imask;			/* discard unasked for bits */
  	/* As soon as we know we have a real interrupt we intend to service, 
  	 * we will check to see if we need an initial hardware TSF reading. 
-@@ -2270,7 +2283,23 @@
+@@ -2273,7 +2286,23 @@
  		}
  		if (status & (HAL_INT_RX | HAL_INT_RXPHY)) {
  			ath_uapsd_processtriggers(sc, hw_tsf);
@@ -79,7 +79,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  		}
  		if (status & HAL_INT_TX) {
  #ifdef ATH_SUPERG_DYNTURBO
-@@ -2296,6 +2325,11 @@
+@@ -2299,6 +2328,11 @@
  				}
  			}
  #endif
@@ -91,7 +91,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  			ATH_SCHEDULE_TQUEUE(&sc->sc_txtq, &needmark);
  		}
  		if (status & HAL_INT_BMISS) {
-@@ -2508,6 +2542,7 @@
+@@ -2511,6 +2545,7 @@
  	if (sc->sc_tx99 != NULL)
  		sc->sc_tx99->start(sc->sc_tx99);
  #endif
@@ -99,7 +99,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  
  done:
  	ATH_UNLOCK(sc);
-@@ -2548,6 +2583,9 @@
+@@ -2551,6 +2586,9 @@
  		if (sc->sc_tx99 != NULL)
  			sc->sc_tx99->stop(sc->sc_tx99);
  #endif
@@ -109,7 +109,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  		netif_stop_queue(dev);	/* XXX re-enabled by ath_newstate */
  		dev->flags &= ~IFF_RUNNING;	/* NB: avoid recursion */
  		ieee80211_stop_running(ic);	/* stop all VAPs */
-@@ -4006,6 +4044,39 @@
+@@ -4009,6 +4047,39 @@
  	return ath_keyset(sc, k, mac, vap->iv_bss);
  }
  
@@ -149,7 +149,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  /*
   * Block/unblock tx+rx processing while a key change is done.
   * We assume the caller serializes key management operations
-@@ -4023,13 +4094,7 @@
+@@ -4026,13 +4097,7 @@
  	 * When called from the rx tasklet we cannot use
  	 * tasklet_disable because it will block waiting
  	 * for us to complete execution.
@@ -163,7 +163,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	netif_stop_queue(dev);
  }
  
-@@ -4040,9 +4105,9 @@
+@@ -4043,9 +4108,9 @@
  	struct ath_softc *sc = dev->priv;
  
  	DPRINTF(sc, ATH_DEBUG_KEYCACHE, "End\n");
@@ -176,7 +176,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  }
  
  /*
-@@ -6347,15 +6412,25 @@
+@@ -6350,15 +6415,25 @@
  	sc->sc_rxotherant = 0;
  }
  
@@ -206,7 +206,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	struct ieee80211com *ic = &sc->sc_ic;
  	struct ath_hal *ah = sc ? sc->sc_ah : NULL;
  	struct ath_desc *ds;
-@@ -6365,8 +6440,10 @@
+@@ -6368,8 +6443,10 @@
  	unsigned int len;
  	int type;
  	u_int phyerr;
@@ -217,7 +217,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	do {
  		bf = STAILQ_FIRST(&sc->sc_rxbuf);
  		if (bf == NULL) {		/* XXX ??? can this happen */
-@@ -6390,6 +6467,15 @@
+@@ -6393,6 +6470,15 @@
  			/* NB: never process the self-linked entry at the end */
  			break;
  		}
@@ -233,7 +233,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  		skb = bf->bf_skb;
  		if (skb == NULL) {
  			EPRINTF(sc, "Dropping; buffer contains NULL skbuff.\n");
-@@ -6437,6 +6523,7 @@
+@@ -6440,6 +6526,7 @@
  				sc->sc_stats.ast_rx_phyerr++;
  				phyerr = rs->rs_phyerr & 0x1f;
  				sc->sc_stats.ast_rx_phy[phyerr]++;
@@ -241,7 +241,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  			}
  			if (rs->rs_status & HAL_RXERR_DECRYPT) {
  				/*
-@@ -6632,9 +6719,43 @@
+@@ -6635,9 +6722,43 @@
  		STAILQ_INSERT_TAIL(&sc->sc_rxbuf, bf, bf_list);
  		ATH_RXBUF_UNLOCK_IRQ(sc);
  	} while (ath_rxbuf_init(sc, bf) == 0);
@@ -285,7 +285,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  #undef PA2DESC
  }
  
-@@ -8285,12 +8406,24 @@
+@@ -8288,12 +8409,24 @@
  {
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
@@ -310,7 +310,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -8306,7 +8439,9 @@
+@@ -8309,7 +8442,9 @@
  {
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
@@ -320,7 +320,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	/*
  	 * Process each active queue.
  	 */
-@@ -8327,6 +8462,16 @@
+@@ -8330,6 +8465,16 @@
  	if (sc->sc_uapsdq && txqactive(sc->sc_ah, sc->sc_uapsdq->axq_qnum))
  		ath_tx_processq(sc, sc->sc_uapsdq);
  
@@ -337,7 +337,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -8342,13 +8487,25 @@
+@@ -8345,13 +8490,25 @@
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
  	unsigned int i;
@@ -363,7 +363,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -10281,9 +10439,9 @@
+@@ -10284,9 +10441,9 @@
  	dev->mtu = mtu;
  	if ((dev->flags & IFF_RUNNING) && !sc->sc_invalid) {
  		/* NB: the rx buffers may need to be reallocated */
@@ -377,8 +377,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  
 Index: madwifi-trunk-r3314/ath/if_athvar.h
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-03-06 23:49:24.296015306 +0100
-+++ madwifi-trunk-r3314/ath/if_athvar.h	2008-03-07 00:34:32.792958008 +0100
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h
++++ madwifi-trunk-r3314/ath/if_athvar.h
 @@ -53,6 +53,10 @@
  # include	<asm/bitops.h>
  #endif
@@ -427,8 +427,8 @@ Index: madwifi-trunk-r3314/ath/if_athvar.h
  #define	ATH_RXBUF_LOCK_DESTROY(_sc)
 Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_input.c	2008-03-06 23:49:11.027259154 +0100
-+++ madwifi-trunk-r3314/net80211/ieee80211_input.c	2008-03-07 00:34:41.589459294 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_input.c
++++ madwifi-trunk-r3314/net80211/ieee80211_input.c
 @@ -1198,7 +1198,7 @@
  			/* attach vlan tag */
  			struct ieee80211_node *ni_tmp = SKB_CB(skb)->ni;
@@ -462,8 +462,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
  				/* node reference was leaked */
 Index: madwifi-trunk-r3314/net80211/ieee80211_monitor.c
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_monitor.c	2008-03-06 23:49:11.031259383 +0100
-+++ madwifi-trunk-r3314/net80211/ieee80211_monitor.c	2008-03-07 00:33:59.235045655 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_monitor.c
++++ madwifi-trunk-r3314/net80211/ieee80211_monitor.c
 @@ -584,8 +584,8 @@
  			skb1->protocol = 
  				__constant_htons(0x0019); /* ETH_P_80211_RAW */
@@ -477,8 +477,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_monitor.c
  				if (SKB_CB(skb1)->ni != NULL)
 Index: madwifi-trunk-r3314/net80211/ieee80211_skb.c
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_skb.c	2008-03-06 23:49:11.039259840 +0100
-+++ madwifi-trunk-r3314/net80211/ieee80211_skb.c	2008-03-06 23:49:24.384020316 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_skb.c
++++ madwifi-trunk-r3314/net80211/ieee80211_skb.c
 @@ -73,7 +73,7 @@
  #undef dev_queue_xmit
  #undef kfree_skb
@@ -510,8 +510,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_skb.c
  EXPORT_SYMBOL(skb_clone_debug);
 Index: madwifi-trunk-r3314/net80211/ieee80211_skb.h
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_skb.h	2008-03-06 23:49:11.047260294 +0100
-+++ madwifi-trunk-r3314/net80211/ieee80211_skb.h	2008-03-06 23:49:24.384020316 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_skb.h
++++ madwifi-trunk-r3314/net80211/ieee80211_skb.h
 @@ -116,7 +116,7 @@
  int  vlan_hwaccel_receive_skb_debug(struct sk_buff *skb, 
  				    struct vlan_group *grp, unsigned short vlan_tag, 

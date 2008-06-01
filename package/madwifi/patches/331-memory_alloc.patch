@@ -1,8 +1,8 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-20 18:10:52.499506168 +0100
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-20 18:10:52.731519391 +0100
-@@ -3315,17 +3315,18 @@
+--- madwifi-trunk-r3314.orig/ath/if_ath.c
++++ madwifi-trunk-r3314/ath/if_ath.c
+@@ -3318,17 +3318,18 @@
  	 * without affecting any other bridge ports. */
  	if (skb_cloned(skb)) {
  		/* Remember the original SKB so we can free up our references */
@@ -27,7 +27,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	eh = (struct ether_header *)skb->data;
  
  #ifdef ATH_SUPERG_FF
-@@ -3596,6 +3597,8 @@
+@@ -3599,6 +3600,8 @@
  	sc->sc_stats.ast_tx_mgmt++;
  	return 0;
  bad:

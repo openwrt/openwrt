@@ -1,8 +1,8 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-02-20 22:22:50.203268987 +0100
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-02-20 22:23:25.745294410 +0100
-@@ -8905,7 +8915,7 @@
+--- madwifi-trunk-r3314.orig/ath/if_ath.c
++++ madwifi-trunk-r3314/ath/if_ath.c
+@@ -8911,7 +8911,7 @@
  		 * re configure beacons when it is a turbo mode switch.
  		 * HW seems to turn off beacons during turbo mode switch.
  		 */
@@ -11,4 +11,3 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  			ath_beacon_config(sc, NULL);
  		/*
  		 * Re-enable interrupts.
-

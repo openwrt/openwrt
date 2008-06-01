@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-04-09 02:58:41.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-04-09 02:59:40.000000000 +0200
+--- madwifi-trunk-r3314.orig/ath/if_ath.c
++++ madwifi-trunk-r3314/ath/if_ath.c
 @@ -2479,7 +2479,7 @@
  	 */
  	sc->sc_curchan.channel = ic->ic_curchan->ic_freq;
@@ -11,7 +11,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  		EPRINTF(sc, "unable to reset hardware: '%s' (HAL status %u) "
  			"(freq %u flags 0x%x)\n", 
  			ath_get_hal_status_desc(status), status,
-@@ -8865,8 +8865,7 @@
+@@ -8853,8 +8853,7 @@
  		 * needed to do the reset with chanchange = AH_FALSE in order
  		 * to receive traffic when peforming high velocity channel
  		 * changes. */

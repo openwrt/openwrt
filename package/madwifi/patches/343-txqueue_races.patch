@@ -2,9 +2,9 @@ Merged from madwifi trunk r3551, r3552
 
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-04-20 23:18:52.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-04-20 23:20:36.000000000 +0200
-@@ -8245,6 +8245,17 @@
+--- madwifi-trunk-r3314.orig/ath/if_ath.c
++++ madwifi-trunk-r3314/ath/if_ath.c
+@@ -8244,6 +8244,17 @@
  			goto bf_fail;
  		}
  
@@ -24,8 +24,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  
 Index: madwifi-trunk-r3314/ath/if_athvar.h
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-04-20 23:18:48.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_athvar.h	2008-04-20 23:21:12.000000000 +0200
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h
++++ madwifi-trunk-r3314/ath/if_athvar.h
 @@ -586,7 +586,8 @@
  } while (0)
  #define ATH_TXQ_REMOVE_HEAD(_tq, _field) do { \

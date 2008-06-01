@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/tools/80211debug.c
 ===================================================================
---- madwifi-trunk-r3314.orig/tools/80211debug.c	2008-05-19 13:58:46.000000000 +0200
-+++ madwifi-trunk-r3314/tools/80211debug.c	2008-05-19 14:15:10.000000000 +0200
+--- madwifi-trunk-r3314.orig/tools/80211debug.c
++++ madwifi-trunk-r3314/tools/80211debug.c
 @@ -48,6 +48,7 @@
  #include <ctype.h>
  #include <getopt.h>
@@ -21,8 +21,8 @@ Index: madwifi-trunk-r3314/tools/80211debug.c
  	const char *cp, *tp;
 Index: madwifi-trunk-r3314/tools/80211stats.c
 ===================================================================
---- madwifi-trunk-r3314.orig/tools/80211stats.c	2008-05-19 13:58:46.000000000 +0200
-+++ madwifi-trunk-r3314/tools/80211stats.c	2008-05-19 14:16:17.000000000 +0200
+--- madwifi-trunk-r3314.orig/tools/80211stats.c
++++ madwifi-trunk-r3314/tools/80211stats.c
 @@ -59,6 +59,7 @@
  #include "net80211/ieee80211.h"
  #include "net80211/ieee80211_crypto.h"
@@ -42,8 +42,8 @@ Index: madwifi-trunk-r3314/tools/80211stats.c
  	struct ieee80211req_sta_info *si;
 Index: madwifi-trunk-r3314/tools/athchans.c
 ===================================================================
---- madwifi-trunk-r3314.orig/tools/athchans.c	2008-05-19 13:58:46.000000000 +0200
-+++ madwifi-trunk-r3314/tools/athchans.c	2008-05-19 14:15:28.000000000 +0200
+--- madwifi-trunk-r3314.orig/tools/athchans.c
++++ madwifi-trunk-r3314/tools/athchans.c
 @@ -58,6 +58,7 @@
  #include "net80211/ieee80211.h"
  #include "net80211/ieee80211_crypto.h"
@@ -65,8 +65,8 @@ Index: madwifi-trunk-r3314/tools/athchans.c
  	struct ieee80211req_chanlist chanlist;
 Index: madwifi-trunk-r3314/tools/athctrl.c
 ===================================================================
---- madwifi-trunk-r3314.orig/tools/athctrl.c	2008-05-19 13:58:46.000000000 +0200
-+++ madwifi-trunk-r3314/tools/athctrl.c	2008-05-19 14:15:44.000000000 +0200
+--- madwifi-trunk-r3314.orig/tools/athctrl.c
++++ madwifi-trunk-r3314/tools/athctrl.c
 @@ -52,6 +52,7 @@
  #include <err.h>
  
@@ -86,8 +86,8 @@ Index: madwifi-trunk-r3314/tools/athctrl.c
  	int distance = -1;
 Index: madwifi-trunk-r3314/tools/athdebug.c
 ===================================================================
---- madwifi-trunk-r3314.orig/tools/athdebug.c	2008-05-19 13:58:46.000000000 +0200
-+++ madwifi-trunk-r3314/tools/athdebug.c	2008-05-19 14:15:59.000000000 +0200
+--- madwifi-trunk-r3314.orig/tools/athdebug.c
++++ madwifi-trunk-r3314/tools/athdebug.c
 @@ -51,6 +51,7 @@
  #include <ctype.h>
  #include <getopt.h>
@@ -107,8 +107,8 @@ Index: madwifi-trunk-r3314/tools/athdebug.c
  	const char *ifname = "wifi0";
 Index: madwifi-trunk-r3314/tools/athkey.c
 ===================================================================
---- madwifi-trunk-r3314.orig/tools/athkey.c	2008-05-19 13:58:46.000000000 +0200
-+++ madwifi-trunk-r3314/tools/athkey.c	2008-05-19 14:13:06.000000000 +0200
+--- madwifi-trunk-r3314.orig/tools/athkey.c
++++ madwifi-trunk-r3314/tools/athkey.c
 @@ -58,6 +58,7 @@
  #include "net80211/ieee80211.h"
  #include "net80211/ieee80211_crypto.h"
@@ -129,8 +129,8 @@ Index: madwifi-trunk-r3314/tools/athkey.c
  	struct ieee80211req_key setkey;
 Index: madwifi-trunk-r3314/tools/athstats.c
 ===================================================================
---- madwifi-trunk-r3314.orig/tools/athstats.c	2008-05-19 13:58:46.000000000 +0200
-+++ madwifi-trunk-r3314/tools/athstats.c	2008-05-19 14:13:44.000000000 +0200
+--- madwifi-trunk-r3314.orig/tools/athstats.c
++++ madwifi-trunk-r3314/tools/athstats.c
 @@ -65,6 +65,7 @@
  
  #undef ARRAY_SIZE
@@ -150,8 +150,8 @@ Index: madwifi-trunk-r3314/tools/athstats.c
  	const char *ifname = "wifi0";
 Index: madwifi-trunk-r3314/tools/do_multi.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ madwifi-trunk-r3314/tools/do_multi.c	2008-05-19 14:56:28.000000000 +0200
+--- /dev/null
++++ madwifi-trunk-r3314/tools/do_multi.c
 @@ -0,0 +1,32 @@
 +#include <string.h>
 +#include "do_multi.h"
@@ -187,8 +187,8 @@ Index: madwifi-trunk-r3314/tools/do_multi.c
 +}
 Index: madwifi-trunk-r3314/tools/do_multi.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ madwifi-trunk-r3314/tools/do_multi.h	2008-05-19 14:42:44.000000000 +0200
+--- /dev/null
++++ madwifi-trunk-r3314/tools/do_multi.h
 @@ -0,0 +1,15 @@
 +#ifdef DO_MULTI
 +int a80211debug_init(int argc, char *argv[]);
@@ -207,8 +207,8 @@ Index: madwifi-trunk-r3314/tools/do_multi.h
 +#endif
 Index: madwifi-trunk-r3314/tools/Makefile
 ===================================================================
---- madwifi-trunk-r3314.orig/tools/Makefile	2008-05-19 13:58:46.000000000 +0200
-+++ madwifi-trunk-r3314/tools/Makefile	2008-05-19 14:56:55.000000000 +0200
+--- madwifi-trunk-r3314.orig/tools/Makefile
++++ madwifi-trunk-r3314/tools/Makefile
 @@ -46,56 +46,55 @@
  HAL=   $(TOP)/hal
  endif
@@ -295,8 +295,8 @@ Index: madwifi-trunk-r3314/tools/Makefile
 +	rm -f $(ALLPROGS) madwifi_multi *.o core a.out
 Index: madwifi-trunk-r3314/tools/wlanconfig.c
 ===================================================================
---- madwifi-trunk-r3314.orig/tools/wlanconfig.c	2008-05-19 13:58:46.000000000 +0200
-+++ madwifi-trunk-r3314/tools/wlanconfig.c	2008-05-19 14:14:07.000000000 +0200
+--- madwifi-trunk-r3314.orig/tools/wlanconfig.c
++++ madwifi-trunk-r3314/tools/wlanconfig.c
 @@ -61,6 +61,7 @@
  #include "net80211/ieee80211.h"
  #include "net80211/ieee80211_crypto.h"
@@ -316,8 +316,8 @@ Index: madwifi-trunk-r3314/tools/wlanconfig.c
  	unsigned char bnounit = 0;
 Index: madwifi-trunk-r3314/tools/ath_info.c
 ===================================================================
---- madwifi-trunk-r3314.orig/tools/ath_info.c	2008-05-19 13:58:46.000000000 +0200
-+++ madwifi-trunk-r3314/tools/ath_info.c	2008-05-19 14:44:45.000000000 +0200
+--- madwifi-trunk-r3314.orig/tools/ath_info.c
++++ madwifi-trunk-r3314/tools/ath_info.c
 @@ -98,6 +98,7 @@
  #include <sys/mman.h>
  #include <endian.h>
