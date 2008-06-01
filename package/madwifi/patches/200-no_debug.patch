@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-03-07 01:47:43.177523993 +0100
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-03-07 01:47:43.193516906 +0100
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-05-19 14:54:42.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-05-19 14:54:47.000000000 +0200
 @@ -42,7 +42,6 @@
   * This software is derived from work of Atsushi Onoe; his contribution
   * is greatly appreciated.
@@ -103,8 +103,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
   * necessary actions (such as a DFS reaction to radar). */
 Index: madwifi-trunk-r3314/ath_rate/amrr/amrr.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath_rate/amrr/amrr.c	2008-03-07 01:45:09.410373793 +0100
-+++ madwifi-trunk-r3314/ath_rate/amrr/amrr.c	2008-03-07 01:47:43.193516906 +0100
+--- madwifi-trunk-r3314.orig/ath_rate/amrr/amrr.c	2008-05-19 14:53:01.000000000 +0200
++++ madwifi-trunk-r3314/ath_rate/amrr/amrr.c	2008-05-19 14:54:47.000000000 +0200
 @@ -70,7 +70,9 @@
  
  #include "amrr.h"
@@ -117,8 +117,8 @@ Index: madwifi-trunk-r3314/ath_rate/amrr/amrr.c
  	if (sc->sc_debug & 0x10)					\
 Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath_rate/minstrel/minstrel.c	2008-03-07 01:45:09.418374247 +0100
-+++ madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c	2008-03-07 01:47:43.201513363 +0100
+--- madwifi-trunk-r3314.orig/ath_rate/minstrel/minstrel.c	2008-05-19 14:54:42.000000000 +0200
++++ madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c	2008-05-19 14:54:47.000000000 +0200
 @@ -117,7 +117,9 @@
  
  #include "minstrel.h"
@@ -131,8 +131,8 @@ Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
  		ATH_DEBUG_RATE		= 0x00000010	/* rate control */
 Index: madwifi-trunk-r3314/ath_rate/onoe/onoe.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath_rate/onoe/onoe.c	2008-03-07 01:45:09.426374706 +0100
-+++ madwifi-trunk-r3314/ath_rate/onoe/onoe.c	2008-03-07 01:47:43.205511589 +0100
+--- madwifi-trunk-r3314.orig/ath_rate/onoe/onoe.c	2008-05-19 14:53:01.000000000 +0200
++++ madwifi-trunk-r3314/ath_rate/onoe/onoe.c	2008-05-19 14:54:47.000000000 +0200
 @@ -66,7 +66,9 @@
  
  #include "onoe.h"
@@ -145,8 +145,8 @@ Index: madwifi-trunk-r3314/ath_rate/onoe/onoe.c
  	ATH_DEBUG_RATE	= 0x00000010,	/* rate control */
 Index: madwifi-trunk-r3314/ath_rate/sample/sample.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath_rate/sample/sample.c	2008-03-07 01:45:09.434375158 +0100
-+++ madwifi-trunk-r3314/ath_rate/sample/sample.c	2008-03-07 01:47:43.209509818 +0100
+--- madwifi-trunk-r3314.orig/ath_rate/sample/sample.c	2008-05-19 14:53:01.000000000 +0200
++++ madwifi-trunk-r3314/ath_rate/sample/sample.c	2008-05-19 14:54:47.000000000 +0200
 @@ -68,7 +68,9 @@
  
  #include "sample.h"
@@ -160,8 +160,8 @@ Index: madwifi-trunk-r3314/ath_rate/sample/sample.c
  	ATH_DEBUG_RATE		= 0x00000010,	/* rate control */
 Index: madwifi-trunk-r3314/tools/do_multi.c
 ===================================================================
---- madwifi-trunk-r3314.orig/tools/do_multi.c	2008-03-07 01:45:09.442375616 +0100
-+++ madwifi-trunk-r3314/tools/do_multi.c	2008-03-07 01:47:43.213508047 +0100
+--- madwifi-trunk-r3314.orig/tools/do_multi.c	2008-05-19 14:53:01.000000000 +0200
++++ madwifi-trunk-r3314/tools/do_multi.c	2008-05-19 14:54:47.000000000 +0200
 @@ -9,16 +9,20 @@
  
      progname = basename(argv[0]);
@@ -185,42 +185,30 @@ Index: madwifi-trunk-r3314/tools/do_multi.c
      if(strcmp(progname, "athstats") == 0)
 Index: madwifi-trunk-r3314/tools/Makefile
 ===================================================================
---- madwifi-trunk-r3314.orig/tools/Makefile	2008-03-07 01:45:09.450376072 +0100
-+++ madwifi-trunk-r3314/tools/Makefile	2008-03-07 01:47:43.217506273 +0100
-@@ -46,9 +46,10 @@
- HAL=   $(TOP)/hal
- endif
+--- madwifi-trunk-r3314.orig/tools/Makefile	2008-05-19 14:54:31.000000000 +0200
++++ madwifi-trunk-r3314/tools/Makefile	2008-05-19 14:55:14.000000000 +0200
+@@ -48,6 +48,8 @@
  
-+DEBUG=-DAR_DEBUG
+ all: compile
  
++DEBUG = -DAR_DEBUG
++
  ALLPROGS=	athstats 80211stats athkey athchans athctrl \
--	athdebug 80211debug wlanconfig ath_info
-+	$(if $(DEBUG),80211debug athdebug) wlanconfig ath_info
+ 	athdebug 80211debug wlanconfig ath_info
  
- OBJS=	$(patsubst %,%.o,$(ALLPROGS) do_multi)
- ALL=	${OBJS} madwifi_multi
-@@ -57,7 +58,7 @@
+@@ -55,7 +57,7 @@
  
- INCS=	-I. -I$(HAL) -I$(TOP) -I$(ATH_HAL)
+ INCS=	-I. -I../ath -I$(HAL) -I$(TOP) -I$(ATH_HAL)
  CFLAGS=	-g -O2 -Wall
 -ALL_CFLAGS= $(CFLAGS) $(INCS)
 +ALL_CFLAGS= $(CFLAGS) $(INCS) $(DEBUG)
  LDFLAGS=
  
- all:	$(ALL)
-@@ -84,7 +85,7 @@
- 	${CC} -c -o do_multi.o -DDOMULTI=1 ${ALL_CFLAGS} do_multi.c
- madwifi_multi: $(OBJS)
- 	${CC} -o madwifi_multi ${LDFLAGS} ${OBJS}
--	for i in athstats 80211stats athkey athchans athctrl athdebug wlanconfig 80211debug; do \
-+	for i in $(ALLPROGS); do \
- 	ln -s -f madwifi_multi $$i; \
- 	done
  
 Index: madwifi-trunk-r3314/net80211/ieee80211_linux.h
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_linux.h	2008-03-07 01:45:09.458376527 +0100
-+++ madwifi-trunk-r3314/net80211/ieee80211_linux.h	2008-03-07 01:47:43.217506273 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_linux.h	2008-05-19 14:53:01.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211_linux.h	2008-05-19 14:54:47.000000000 +0200
 @@ -29,8 +29,6 @@
  #ifndef _NET80211_IEEE80211_LINUX_H_
  #define _NET80211_IEEE80211_LINUX_H_
@@ -232,8 +220,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_linux.h
  #include <linux/wireless.h>
 Index: madwifi-trunk-r3314/Makefile.inc
 ===================================================================
---- madwifi-trunk-r3314.orig/Makefile.inc	2008-03-07 01:45:09.482377896 +0100
-+++ madwifi-trunk-r3314/Makefile.inc	2008-03-07 01:47:43.217506273 +0100
+--- madwifi-trunk-r3314.orig/Makefile.inc	2008-05-19 14:53:01.000000000 +0200
++++ madwifi-trunk-r3314/Makefile.inc	2008-05-19 14:54:47.000000000 +0200
 @@ -148,7 +148,8 @@
  TOOLS=  $(TOP)/tools 
  
@@ -246,8 +234,8 @@ Index: madwifi-trunk-r3314/Makefile.inc
  # TARGET defines the target platform architecture. It must match one of
 Index: madwifi-trunk-r3314/ath/if_ath_radar.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath_radar.c	2008-03-07 01:45:09.386372426 +0100
-+++ madwifi-trunk-r3314/ath/if_ath_radar.c	2008-03-07 01:47:43.217506273 +0100
+--- madwifi-trunk-r3314.orig/ath/if_ath_radar.c	2008-05-19 14:54:42.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath_radar.c	2008-05-19 14:54:47.000000000 +0200
 @@ -19,8 +19,6 @@
   * $Id: if_ath_radar.c 2464 2007-06-15 22:51:56Z mtaylor $
   */
@@ -268,8 +256,8 @@ Index: madwifi-trunk-r3314/ath/if_ath_radar.c
  
 Index: madwifi-trunk-r3314/ath/if_ath_hal.h
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath_hal.h	2008-03-07 01:45:09.394372879 +0100
-+++ madwifi-trunk-r3314/ath/if_ath_hal.h	2008-03-07 01:47:43.221504502 +0100
+--- madwifi-trunk-r3314.orig/ath/if_ath_hal.h	2008-05-19 14:53:01.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath_hal.h	2008-05-19 14:54:47.000000000 +0200
 @@ -1081,6 +1081,7 @@
  
             tail -f /var/log/messages | sed -f hal_unmangle.sed 
@@ -289,8 +277,8 @@ Index: madwifi-trunk-r3314/ath/if_ath_hal.h
  #endif				/* #ifndef _IF_ATH_HAL_H_ */
 Index: madwifi-trunk-r3314/net80211/ieee80211_var.h
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_var.h	2008-03-07 01:45:09.466376986 +0100
-+++ madwifi-trunk-r3314/net80211/ieee80211_var.h	2008-03-07 01:47:43.221504502 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_var.h	2008-05-19 14:53:01.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211_var.h	2008-05-19 14:54:47.000000000 +0200
 @@ -492,9 +492,10 @@
  	/* inject a fake radar signal -- used while on a 802.11h DFS channels */
  	unsigned int (*ic_test_radar)(struct ieee80211com *);
@@ -305,8 +293,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_var.h
  	unsigned int (*ic_get_dfs_cac_time)(struct ieee80211com *);
 Index: madwifi-trunk-r3314/net80211/ieee80211_wireless.c
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_wireless.c	2008-03-07 01:45:09.474377438 +0100
-+++ madwifi-trunk-r3314/net80211/ieee80211_wireless.c	2008-03-07 01:47:43.225502730 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_wireless.c	2008-05-19 14:53:01.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211_wireless.c	2008-05-19 14:54:47.000000000 +0200
 @@ -1548,6 +1548,7 @@
  	return 0;
  }
@@ -347,8 +335,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_wireless.c
  	set_priv(IEEE80211_IOCTL_WDSADDMAC, ieee80211_ioctl_wdsmac),
 Index: madwifi-trunk-r3314/ath/if_ath_debug.h
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath_debug.h	2008-03-07 01:45:09.402373336 +0100
-+++ madwifi-trunk-r3314/ath/if_ath_debug.h	2008-03-07 01:47:43.225502730 +0100
+--- madwifi-trunk-r3314.orig/ath/if_ath_debug.h	2008-05-19 14:53:01.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath_debug.h	2008-05-19 14:54:47.000000000 +0200
 @@ -68,13 +68,6 @@
  		ath_keyprint((_sc), __func__, _ix, _hk, _mac);		\
  } while (0)
@@ -381,8 +369,8 @@ Index: madwifi-trunk-r3314/ath/if_ath_debug.h
  #endif /* #ifndef _IF_ATH_DEBUG_H_ */
 Index: madwifi-trunk-r3314/net80211/ieee80211_node.c
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_node.c	2008-03-07 01:49:21.741746524 +0100
-+++ madwifi-trunk-r3314/net80211/ieee80211_node.c	2008-03-07 01:50:03.856146488 +0100
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_node.c	2008-05-19 14:53:01.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211_node.c	2008-05-19 14:54:47.000000000 +0200
 @@ -920,6 +920,9 @@
  	ni->ni_rxkeyoff = 0;
  }
