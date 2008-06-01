@@ -25,98 +25,45 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trun
 
 include $(INCLUDE_DIR)/package.mk
 
-ifdef CONFIG_MADWIFI_BUS_DEFAULT
-  ifneq ($(CONFIG_TARGET_atheros),)
-    BUS:=AHB
-  else
-    ifneq ($(CONFIG_PCI_SUPPORT),)
-      BUS:=PCI
-    endif
-  endif
-
-  # XXX: remove this check later when we have PCI support properly detected on all targets
-  ifneq ($(CONFIG_TARGET_ar7)$(CONFIG_TARGET_uml),)
-    BUS:=
-  endif
+ifneq ($(CONFIG_TARGET_atheros),)
+  BUS:=AHB
 else
-  ifdef CONFIG_MADWIFI_BUS_PCI
+  ifneq ($(CONFIG_PCI_SUPPORT),)
     BUS:=PCI
-  else
-    ifdef CONFIG_MADWIFI_BUS_AHB
-      BUS:=AHB
-    endif
   endif
 endif
 
-ifdef CONFIG_MADWIFI_HAL_DEFAULT
-  ifeq ($(ARCH),mips)
-    HAL_TARGET:=mips-be-elf
-  endif
-  ifeq ($(ARCH),mipsel)
-    HAL_TARGET:=mips-le-elf
-  endif
-  ifeq ($(ARCH),i386)
-    HAL_TARGET:=i386-elf
-  endif
-  ifeq ($(ARCH),i686)
-    HAL_TARGET:=i386-elf
-  endif
-  ifeq ($(BOARD),ixp4xx)
-    HAL_TARGET:=xscale-be-elf
-  endif
-  ifeq ($(BOARD),iop32x)
-    HAL_TARGET:=xscale-le-elf
-  endif
-  ifeq ($(ARCH),powerpc)
-    HAL_TARGET:=powerpc-be-elf
-  endif
-  ifeq ($(BOARD),storm)
-    HAL_TARGET:=armv4-le-elf
-  endif
-  ifneq ($(CONFIG_TARGET_atheros),)
-    HAL_TARGET:=ap51
-  endif
-else
-  ifdef CONFIG_MADWIFI_HAL_MIPS_BE_ELF
-    HAL_TARGET:=mips-be-elf
-  endif
+# XXX: remove this check later when we have PCI support properly detected on all targets
+ifneq ($(CONFIG_TARGET_ar7)$(CONFIG_TARGET_uml),)
+  BUS:=
+endif
 
-  ifdef CONFIG_MADWIFI_HAL_MIPS_LE_ELF
-    HAL_TARGET:=mips-le-elf
-  endif
-
-  ifdef CONFIG_MADWIFI_HAL_I386_ELF
-    HAL_TARGET:=i386-elf
-  endif
-
-  ifdef CONFIG_MADWIFI_HAL_XSCALE_BE_ELF
-    HAL_TARGET:=xscale-be-elf
-  endif
-
-  ifdef CONFIG_MADWIFI_HAL_XSCALE_LE_ELF
-    HAL_TARGET:=xscale-le-elf
-  endif
-
-  ifdef CONFIG_MADWIFI_HAL_ARMV4_LE_ELF
-    HAL_TARGET:=armv4-le-elf
-  endif
-
-  ifdef CONFIG_MADWIFI_HAL_AP30
-    HAL_TARGET:=ap30
-  endif
-
-  ifdef CONFIG_MADWIFI_HAL_AP43
-    HAL_TARGET:=ap43
-  endif
-
-  ifdef CONFIG_MADWIFI_HAL_AP51
-    HAL_TARGET:=ap51
-  endif
-
-  ifdef CONFIG_MADWIFI_HAL_AP61
-    HAL_TARGET:=ap61
-  endif
-
+ifeq ($(ARCH),mips)
+  HAL_TARGET:=mips-be-elf
+endif
+ifeq ($(ARCH),mipsel)
+  HAL_TARGET:=mips-le-elf
+endif
+ifeq ($(ARCH),i386)
+  HAL_TARGET:=i386-elf
+endif
+ifeq ($(ARCH),i686)
+  HAL_TARGET:=i386-elf
+endif
+ifeq ($(BOARD),ixp4xx)
+  HAL_TARGET:=xscale-be-elf
+endif
+ifeq ($(BOARD),iop32x)
+  HAL_TARGET:=xscale-le-elf
+endif
+ifeq ($(ARCH),powerpc)
+  HAL_TARGET:=powerpc-be-elf
+endif
+ifeq ($(BOARD),storm)
+  HAL_TARGET:=armv4-le-elf
+endif
+ifneq ($(CONFIG_TARGET_atheros),)
+  HAL_TARGET:=wisoc
 endif
 
 ifdef CONFIG_MADWIFI_RCA_MINSTREL
@@ -206,10 +153,10 @@ MAKE_ARGS:= \
 	ATH_RATE="ath_rate/$(RATE_CONTROL)" \
 	WARNINGS="-Wno-unused" \
 	$(if $(CONFIG_MADWIFI_DEBUG),,DEBUG="") \
-	DOMULTI=1
+	DO_MULTI=1
 
 MAKE_VARS:= \
-	COPTS="-DCONFIG_ATHEROS_RATE_DEFAULT='\"$(RATE_CONTROL)\"'" \
+	COPTS="-DCONFIG_ATHEROS_RATE_DEFAULT='\"$(RATE_CONTROL)\"' -DATH_REVERSE_ENGINEERING=1" \
 
 HALFILE:=$(lastword $(sort $(wildcard ./ath_hal-*.tgz)))
 ifneq ($(HALFILE),)
@@ -220,6 +167,12 @@ ifneq ($(HALFILE),)
 	tar xvzf $(HALFILE) -C $(PKG_BUILD_DIR)/tmp
 	$(CP) $(PKG_BUILD_DIR)/tmp/ath_hal*/* $(PKG_BUILD_DIR)/hal/
 	rm -rf $(PKG_BUILD_DIR)/tmp
+	# patch cflags
+	$(SED) 's, -E[LB],,' \
+		-e 's, -mapcs-32,,' \
+		$(PKG_BUILD_DIR)/hal/public/*.inc
+	$(SED) 's,march=armv4,march=armv5te,' \
+		$(PKG_BUILD_DIR)/hal/public/xscale*.inc
   endef
 endif
 
