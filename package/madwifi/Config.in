@@ -2,13 +2,12 @@
 
 config MADWIFI_DEBUG
 	bool "Enable compilation of debugging features"
-	depends on EXPERIMENTAL
+	depends on EXPERIMENTAL && PACKAGE_kmod-madwifi
 	default n
-
-endchoice
 
 choice
 	prompt "Rate control algorithm selection"
+	depends on PACKAGE_kmod-madwifi
 	default MADWIFI_RCA_MINSTREL
 	help
 	  This option controls how MadWifi chooses its bitrate.

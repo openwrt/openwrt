@@ -135,10 +135,7 @@ define KernelPackage/madwifi/description
 endef
 
 define KernelPackage/madwifi/config
-	menu "MadWifi Configuration"
-		depends on PACKAGE_kmod-madwifi
-		source "$(SOURCE)/Config.in"
-	endmenu
+	source "$(SOURCE)/Config.in"
 endef
 
 MAKE_ARGS:= \
