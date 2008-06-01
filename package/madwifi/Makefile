@@ -166,6 +166,7 @@ ifneq ($(HALFILE),)
 	rm -rf $(PKG_BUILD_DIR)/tmp
 	# patch cflags
 	$(SED) 's, -E[LB],,' \
+		-e 's, -mips2,,' \
 		-e 's, -mapcs-32,,' \
 		$(PKG_BUILD_DIR)/hal/public/*.inc
 	$(SED) 's,march=armv4,march=armv5te,' \
