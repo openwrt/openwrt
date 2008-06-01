@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/net80211/ieee80211_scan_sta.c
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_scan_sta.c	2008-06-01 03:41:58.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/ieee80211_scan_sta.c	2008-06-01 03:42:18.000000000 +0200
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_scan_sta.c
++++ madwifi-trunk-r3314/net80211/ieee80211_scan_sta.c
 @@ -317,147 +317,6 @@
  #undef ISPROBE
  }
@@ -343,8 +343,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_scan_sta.c
  	.scan_end		= adhoc_pick_bss,
 Index: madwifi-trunk-r3314/net80211/ieee80211.c
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211.c	2008-06-01 03:41:58.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/ieee80211.c	2008-06-01 03:42:18.000000000 +0200
+--- madwifi-trunk-r3314.orig/net80211/ieee80211.c
++++ madwifi-trunk-r3314/net80211/ieee80211.c
 @@ -278,6 +278,11 @@
  			("channel with bogus ieee number %u", c->ic_ieee));
  		setbit(ic->ic_chan_avail, c->ic_ieee);
@@ -359,8 +359,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211.c
  			ic->ic_modecaps |= 1 << IEEE80211_MODE_11A;
 Index: madwifi-trunk-r3314/net80211/_ieee80211.h
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/_ieee80211.h	2008-06-01 03:41:58.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/_ieee80211.h	2008-06-01 03:42:18.000000000 +0200
+--- madwifi-trunk-r3314.orig/net80211/_ieee80211.h
++++ madwifi-trunk-r3314/net80211/_ieee80211.h
 @@ -132,6 +132,11 @@
  	IEEE80211_SCAN_FIRST	= 2,	/* take first suitable candidate */
  };
@@ -383,8 +383,8 @@ Index: madwifi-trunk-r3314/net80211/_ieee80211.h
  #define	IEEE80211_CHAN_MAX	255
 Index: madwifi-trunk-r3314/net80211/ieee80211_ioctl.h
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_ioctl.h	2008-06-01 03:41:58.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/ieee80211_ioctl.h	2008-06-01 03:42:18.000000000 +0200
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_ioctl.h
++++ madwifi-trunk-r3314/net80211/ieee80211_ioctl.h
 @@ -555,6 +555,7 @@
  #define	IEEE80211_IOCTL_WDSADDMAC	(SIOCIWFIRSTPRIV+26)
  #define	IEEE80211_IOCTL_WDSDELMAC	(SIOCIWFIRSTPRIV+28)
@@ -395,8 +395,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_ioctl.h
  	IEEE80211_WMMPARAMS_CWMIN       = 1,
 Index: madwifi-trunk-r3314/net80211/ieee80211_scan_ap.c
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_scan_ap.c	2008-06-01 03:41:58.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/ieee80211_scan_ap.c	2008-06-01 03:42:18.000000000 +0200
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_scan_ap.c
++++ madwifi-trunk-r3314/net80211/ieee80211_scan_ap.c
 @@ -129,131 +129,7 @@
  
  static int ap_flush(struct ieee80211_scan_state *);
@@ -666,8 +666,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_scan_ap.c
  				as->as_required_mode)
 Index: madwifi-trunk-r3314/net80211/ieee80211_scan.c
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_scan.c	2008-06-01 03:41:58.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/ieee80211_scan.c	2008-06-01 03:42:18.000000000 +0200
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_scan.c
++++ madwifi-trunk-r3314/net80211/ieee80211_scan.c
 @@ -958,6 +958,79 @@
  	}
  }
@@ -750,8 +750,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_scan.c
   * signal is detected.  AP mode only.  Return 1 on success, 0 on
 Index: madwifi-trunk-r3314/net80211/ieee80211_scan.h
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_scan.h	2008-06-01 03:41:58.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/ieee80211_scan.h	2008-06-01 03:42:18.000000000 +0200
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_scan.h
++++ madwifi-trunk-r3314/net80211/ieee80211_scan.h
 @@ -219,4 +219,7 @@
  void ieee80211_scanner_unregister(enum ieee80211_opmode,
  	const struct ieee80211_scanner *);
@@ -762,8 +762,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_scan.h
  #endif /* _NET80211_IEEE80211_SCAN_H_ */
 Index: madwifi-trunk-r3314/net80211/ieee80211_wireless.c
 ===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_wireless.c	2008-06-01 03:41:58.000000000 +0200
-+++ madwifi-trunk-r3314/net80211/ieee80211_wireless.c	2008-06-01 03:42:53.000000000 +0200
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_wireless.c
++++ madwifi-trunk-r3314/net80211/ieee80211_wireless.c
 @@ -3873,6 +3873,106 @@
  	return ieee80211_ioctl_setmlme(dev, info, w, (char *)&mlme);
  }
