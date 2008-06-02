@@ -716,7 +716,7 @@
  
 +config IP_NF_TARGET_IMQ
 +       tristate "IMQ target support"
-+       depends on IP_NF_MANGLE
++       depends on IP_NF_MANGLE && IMQ
 +       help
 +         This option adds a `IMQ' target which is used to specify if and
 +         to which IMQ device packets should get enqueued/dequeued.
@@ -818,7 +818,7 @@
  
 +config IP6_NF_TARGET_IMQ
 +	tristate "IMQ target support"
-+	depends on IP6_NF_MANGLE
++	depends on IP6_NF_MANGLE && IMQ
 +	help
 +          This option adds a `IMQ' target which is used to specify if and
 +          to which imq device packets should get enqueued/dequeued.
