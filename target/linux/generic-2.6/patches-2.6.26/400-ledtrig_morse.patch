@@ -1,7 +1,7 @@
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -181,4 +181,8 @@
- 	  load average.
+@@ -190,4 +190,8 @@
+ 	  This allows LEDs to be initialised in the ON state.
  	  If unsure, say Y.
  
 +config LEDS_TRIGGER_MORSE
@@ -11,7 +11,7 @@
  endif # NEW_LEDS
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -26,3 +26,4 @@
+@@ -27,3 +27,4 @@
  obj-$(CONFIG_LEDS_TRIGGER_IDE_DISK)	+= ledtrig-ide-disk.o
  obj-$(CONFIG_LEDS_TRIGGER_HEARTBEAT)	+= ledtrig-heartbeat.o
  obj-$(CONFIG_LEDS_TRIGGER_DEFAULT_ON)	+= ledtrig-default-on.o
