@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/drivers/net/imq.c
-@@ -0,0 +1,409 @@
+@@ -0,0 +1,410 @@
 +/*
 + *             Pseudo-driver for the intermediate queue device.
 + *
@@ -66,6 +66,7 @@
 +#endif
 +#include <linux/imq.h>
 +#include <net/pkt_sched.h>
++#include <net/netfilter/nf_queue.h>
 +
 +extern int qdisc_restart1(struct net_device *dev);
 +
@@ -137,7 +138,7 @@
 +/* called for packets kfree'd in qdiscs at places other than enqueue */
 +static void imq_skb_destructor(struct sk_buff *skb)
 +{
-+	struct nf_info *info = skb->nf_info;
++	struct nf_queue_entry *info = skb->nf_queue_entry;
 +
 +	if (info) {
 +		if (info->indev)
@@ -159,17 +160,17 @@
 +	skb->destructor = NULL;
 +
 +	dev->trans_start = jiffies;
-+	nf_reinject(skb, skb->nf_info, NF_ACCEPT);
++	nf_reinject(skb->nf_queue_entry, NF_ACCEPT);
 +	return 0;
 +}
 +
-+static int imq_nf_queue(struct sk_buff *skb, struct nf_info *info, unsigned queue_num, void *data)
++static int imq_nf_queue(struct nf_queue_entry *info, unsigned queue_num)
 +{
 +	struct net_device *dev;
 +	struct net_device_stats *stats;
 +	struct sk_buff *skb2 = NULL;
 +	struct Qdisc *q;
-+	unsigned int index = skb->imq_flags&IMQ_F_IFMASK;
++	unsigned int index = info->skb->imq_flags&IMQ_F_IFMASK;
 +	int ret = -1;
 +
 +	if (index > numdevs)
@@ -177,31 +178,31 @@
 +
 +	dev = imq_devs + index;
 +	if (!(dev->flags & IFF_UP)) {
-+		skb->imq_flags = 0;
-+		nf_reinject(skb, info, NF_ACCEPT);
++		info->skb->imq_flags = 0;
++		nf_reinject(info, NF_ACCEPT);
 +		return 0;
 +	}
 +	dev->last_rx = jiffies;
 +
-+	if (skb->destructor) {
-+		skb2 = skb;
-+		skb = skb_clone(skb, GFP_ATOMIC);
-+		if (!skb)
++	if (info->skb->destructor) {
++		skb2 = info->skb;
++		info->skb = skb_clone(info->skb, GFP_ATOMIC);
++		if (!info->skb)
 +			return -1;
 +	}
-+	skb->nf_info = info;
++	info->skb->nf_queue_entry = info;
 +
 +	stats = (struct net_device_stats *)dev->priv;
-+	stats->rx_bytes+= skb->len;
++	stats->rx_bytes+= info->skb->len;
 +	stats->rx_packets++;
 +
 +	spin_lock_bh(&dev->queue_lock);
 +	q = dev->qdisc;
 +	if (q->enqueue) {
-+		q->enqueue(skb_get(skb), q);
-+		if (skb_shared(skb)) {
-+			skb->destructor = imq_skb_destructor;
-+			kfree_skb(skb);
++		q->enqueue(skb_get(info->skb), q);
++		if (skb_shared(info->skb)) {
++			info->skb->destructor = imq_skb_destructor;
++			kfree_skb(info->skb);
 +			ret = 0;
 +		}
 +	}
@@ -214,7 +215,7 @@
 +	spin_unlock_bh(&dev->queue_lock);
 +
 +	if (skb2)
-+		kfree_skb(ret ? skb : skb2);
++		kfree_skb(ret ? info->skb : skb2);
 +
 +	return ret;
 +}
@@ -396,7 +397,7 @@
 +    .init = imq_init_module,
 +    .exit = imq_exit_module,
 +};
-+
++ 
 +static int __init imq_init(void)
 +{
 +    return register_pernet_device(&imq_net_ops);
@@ -593,8 +594,8 @@
  	struct sk_buff		*nfct_reasm;
  #endif
 +#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-+	unsigned char		imq_flags;
-+	struct nf_info		*nf_info;
++	unsigned char			imq_flags;
++	struct nf_queue_entry	*nf_queue_entry;
 +#endif
  #ifdef CONFIG_BRIDGE_NETFILTER
  	struct nf_bridge_info	*nf_bridge;
@@ -605,7 +606,7 @@
  #endif
 +#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 +	dst->imq_flags = src->imq_flags;
-+	dst->nf_info = src->nf_info;
++	dst->nf_queue_entry = src->nf_queue_entry;
 +#endif
  #ifdef CONFIG_BRIDGE_NETFILTER
  	dst->nf_bridge  = src->nf_bridge;
@@ -709,13 +710,13 @@
 +MODULE_LICENSE("GPL");
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -315,6 +315,17 @@
+@@ -145,6 +145,17 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
 +config IP_NF_TARGET_IMQ
 +       tristate "IMQ target support"
-+       depends on IP_NF_MANGLE && IMQ
++       depends on IP_NF_MANGLE
 +       help
 +         This option adds a `IMQ' target which is used to specify if and
 +         to which IMQ device packets should get enqueued/dequeued.
@@ -724,9 +725,9 @@
 +
 +         To compile it as a module, choose M here.  If unsure, say N.
 +
- config IP_NF_TARGET_ECN
- 	tristate "ECN target support"
- 	depends on IP_NF_MANGLE
+ config IP_NF_TARGET_REJECT
+ 	tristate "REJECT target support"
+ 	depends on IP_NF_FILTER
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
 @@ -55,6 +55,7 @@
@@ -839,7 +840,7 @@
  
 --- a/net/sched/sch_generic.c
 +++ b/net/sched/sch_generic.c
-@@ -182,6 +182,13 @@
+@@ -182,6 +182,12 @@
  	return ret;
  }
  
@@ -847,7 +848,6 @@
 +{
 +	return qdisc_restart(dev);
 +}
-+
 +EXPORT_SYMBOL(qdisc_restart1);
 +
  void __qdisc_run(struct net_device *dev)
