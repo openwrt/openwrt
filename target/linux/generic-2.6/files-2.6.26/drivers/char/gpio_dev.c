@@ -142,7 +142,7 @@ gpio_probe(struct platform_device *dev)
 	}
 
 	gpio_class = class_create(THIS_MODULE, DEVNAME);
-	class_device_create(gpio_class, NULL, MKDEV(dev_major, 0), NULL, DEVNAME);
+	device_create(gpio_class, NULL, MKDEV(dev_major, 0), NULL, DEVNAME);
 
 	printk(KERN_INFO DRVNAME ": gpio device registered with major %d\n", dev_major);
 
