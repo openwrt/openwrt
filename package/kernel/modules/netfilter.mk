@@ -157,7 +157,6 @@ define KernelPackage/ipt-imq
   SUBMENU:=$(NF_MENU)
   TITLE:=Intermediate Queueing support
   KCONFIG:=CONFIG_IP_NF_TARGET_IMQ
-  DEPENDS:=@!LINUX_2_6_25
   FILES:=$(LINUX_DIR)/net/ipv4/netfilter/*IMQ*.$(LINUX_KMOD_SUFFIX) $(LINUX_DIR)/drivers/net/imq.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(patsubst %.ko,%,$(wildcard $(LINUX_DIR)/net/ipv4/netfilter/*IMQ*.$(LINUX_KMOD_SUFFIX) $(LINUX_DIR)/drivers/net/imq.$(LINUX_KMOD_SUFFIX)))))
 endef
@@ -272,11 +271,10 @@ endef
 $(eval $(call KernelPackage,ipt-extra))
 
 
-# XXX: disabled on 2.6.25 due to broken IMQ
 define KernelPackage/ip6tables
   SUBMENU:=$(NF_MENU)
   TITLE:=IPv6 modules
-  DEPENDS:=+kmod-ipv6 @!LINUX_2_6_25
+  DEPENDS:=+kmod-ipv6
   KCONFIG:=CONFIG_IP6_NF_IPTABLES
   FILES:=$(foreach mod,$(IPT_IPV6-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_IPV6-m)))
