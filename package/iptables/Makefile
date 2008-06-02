@@ -15,6 +15,7 @@ ifeq ($(CONFIG_LINUX_2_4),y)
   PKG_VERSION:=1.3.8
   PKG_RELEASE:=3
   PKG_MD5SUM:=0a9209f928002e5eee9cdff8fef4d4b3
+  MAKE_TARGETS:=experimental install-experimental
 endif
 
 ifeq ($(CONFIG_LINUX_2_6),y)
@@ -230,7 +231,7 @@ define Build/Compile
 		KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
 		KBUILD_OUTPUT="$(LINUX_DIR)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all experimental install install-experimental
+		all install $(MAKE_TARGETS)
 endef
 
 define Build/InstallDev
