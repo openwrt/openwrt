@@ -21,7 +21,7 @@
   */
  STATIC void
 -#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
-+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)) && (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26)))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)) && (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26))
  mini_fo_umount_begin(struct vfsmount *mnt, int flags)
  {
  	struct vfsmount *hidden_mnt;
