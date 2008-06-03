@@ -161,6 +161,7 @@ sub target_config_features(@) {
 		/ext2/ and $ret .= "\tselect USES_EXT2\n";
 		/tgz/ and $ret .= "\tselect USES_TGZ\n";
 		/cpiogz/ and $ret .= "\tselect USES_CPIOGZ\n";
+		/fpu/ and $ret .= "\tselect HAS_FPU\n";
 	}
 	return $ret;
 }
