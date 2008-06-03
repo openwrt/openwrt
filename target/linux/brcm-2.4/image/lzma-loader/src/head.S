@@ -38,6 +38,11 @@
 	.text
 	LEAF(startup)
 	.set noreorder
+	addi    sp, -48 
+	sw      a0, 16(sp) 
+	sw      a1, 20(sp) 
+	sw      a2, 24(sp) 
+	sw      a3, 28(sp)
 	
 	/* Copy decompressor code to the right place */
 	li	t2, BZ_TEXT_START
