@@ -73,8 +73,8 @@ define Package/libuci/install
 endef
 
 define Package/libuci-lua/install
-	$(INSTALL_DIR) $(1)/usr/lib/lua/5.1
-	$(CP) $(PKG_BUILD_DIR)/lua/uci.so $(1)/usr/lib/lua/5.1
+	$(INSTALL_DIR) $(1)/usr/lib/lua
+	$(CP) $(PKG_BUILD_DIR)/lua/uci.so $(1)/usr/lib/lua/
 endef
 
 define Package/uci/install
