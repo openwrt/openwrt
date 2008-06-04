@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3314/ath/if_athvar.h
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h
-+++ madwifi-trunk-r3314/ath/if_athvar.h
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
 @@ -126,6 +126,11 @@
  #define ATH_GET_NETDEV_DEV(ndev)	((ndev)->class_dev.dev)
  #endif
@@ -14,10 +12,8 @@ Index: madwifi-trunk-r3314/ath/if_athvar.h
  #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,23)
  static inline struct net_device *_alloc_netdev(int sizeof_priv, const char *mask,
  					       void (*setup)(struct net_device *))
-Index: madwifi-trunk-r3314/ath/if_ath_radar.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath_radar.c
-+++ madwifi-trunk-r3314/ath/if_ath_radar.c
+--- a/ath/if_ath_radar.c
++++ b/ath/if_ath_radar.c
 @@ -92,6 +92,13 @@
  #define nofloat_pct(_value, _pct) \
  	( (_value * (1000 + _pct)) / 1000 )
@@ -32,10 +28,8 @@ Index: madwifi-trunk-r3314/ath/if_ath_radar.c
  struct radar_pattern_specification {
  	/* The name of the rule/specification (i.e. what did we detect) */
  	const char *name;
-Index: madwifi-trunk-r3314/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c
-+++ madwifi-trunk-r3314/ath/if_ath.c
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -4705,6 +4705,46 @@
  #undef USE_SHPREAMBLE
  }
@@ -83,10 +77,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  /*
   * Generate beacon frame and queue cab data for a VAP.
   */
-Index: madwifi-trunk-r3314/net80211/sort.c
-===================================================================
 --- /dev/null
-+++ madwifi-trunk-r3314/net80211/sort.c
++++ b/net80211/sort.c
 @@ -0,0 +1,120 @@
 +/*
 + * A fast, small, non-recursive O(nlog n) sort for the Linux kernel

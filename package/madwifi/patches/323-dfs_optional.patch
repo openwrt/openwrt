@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3314/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c
-+++ madwifi-trunk-r3314/ath/if_ath.c
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -1774,17 +1774,14 @@
  			 * may have occurred in the intervening timeframe. */
  			bf->bf_channoise = ic->ic_channoise;
@@ -27,10 +25,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  
  			/* Prepare wireless header for examination */
  			bus_dma_sync_single(sc->sc_bdev, bf->bf_skbaddr,
-Index: madwifi-trunk-r3314/ath/if_ath_radar.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath_radar.c
-+++ madwifi-trunk-r3314/ath/if_ath_radar.c
+--- a/ath/if_ath_radar.c
++++ b/ath/if_ath_radar.c
 @@ -261,7 +261,7 @@
  		unsigned int new_rxfilt = old_rxfilt;
  

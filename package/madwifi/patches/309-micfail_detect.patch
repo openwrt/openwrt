@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3314/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c
-+++ madwifi-trunk-r3314/ath/if_ath.c
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -6446,6 +6446,7 @@
  	int type;
  	u_int phyerr;
@@ -83,10 +81,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  		/*
  		 * Normal receive.
  		 */
-Index: madwifi-trunk-r3314/net80211/ieee80211_crypto_ccmp.c
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_crypto_ccmp.c
-+++ madwifi-trunk-r3314/net80211/ieee80211_crypto_ccmp.c
+--- a/net80211/ieee80211_crypto_ccmp.c
++++ b/net80211/ieee80211_crypto_ccmp.c
 @@ -73,7 +73,7 @@
  static int ccmp_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  static int ccmp_decap(struct ieee80211_key *, struct sk_buff *, int);
@@ -105,10 +101,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_crypto_ccmp.c
  {
  	return 1;
  }
-Index: madwifi-trunk-r3314/net80211/ieee80211_crypto.h
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_crypto.h
-+++ madwifi-trunk-r3314/net80211/ieee80211_crypto.h
+--- a/net80211/ieee80211_crypto.h
++++ b/net80211/ieee80211_crypto.h
 @@ -145,7 +145,7 @@
  	int (*ic_encap)(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  	int (*ic_decap)(struct ieee80211_key *, struct sk_buff *, int);
@@ -131,10 +125,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_crypto.h
  }
  
  /*
-Index: madwifi-trunk-r3314/net80211/ieee80211_crypto_none.c
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_crypto_none.c
-+++ madwifi-trunk-r3314/net80211/ieee80211_crypto_none.c
+--- a/net80211/ieee80211_crypto_none.c
++++ b/net80211/ieee80211_crypto_none.c
 @@ -52,7 +52,7 @@
  static int none_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  static int none_decap(struct ieee80211_key *, struct sk_buff *, int);
@@ -153,10 +145,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_crypto_none.c
  {
  	struct ieee80211vap *vap = k->wk_private;
  
-Index: madwifi-trunk-r3314/net80211/ieee80211_crypto_tkip.c
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_crypto_tkip.c
-+++ madwifi-trunk-r3314/net80211/ieee80211_crypto_tkip.c
+--- a/net80211/ieee80211_crypto_tkip.c
++++ b/net80211/ieee80211_crypto_tkip.c
 @@ -57,7 +57,7 @@
  static int tkip_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  static int tkip_enmic(struct ieee80211_key *, struct sk_buff *, int);
@@ -184,10 +174,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_crypto_tkip.c
  		struct ieee80211vap *vap = ctx->tc_vap;
  		u8 mic[IEEE80211_WEP_MICLEN];
  		u8 mic0[IEEE80211_WEP_MICLEN];
-Index: madwifi-trunk-r3314/net80211/ieee80211_crypto_wep.c
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_crypto_wep.c
-+++ madwifi-trunk-r3314/net80211/ieee80211_crypto_wep.c
+--- a/net80211/ieee80211_crypto_wep.c
++++ b/net80211/ieee80211_crypto_wep.c
 @@ -54,7 +54,7 @@
  static int wep_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  static int wep_decap(struct ieee80211_key *, struct sk_buff *, int);
@@ -206,10 +194,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_crypto_wep.c
  {
  	return 1;
  }
-Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_input.c
-+++ madwifi-trunk-r3314/net80211/ieee80211_input.c
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
 @@ -669,7 +669,7 @@
  		 * Next strip any MSDU crypto bits.
  		 */
@@ -267,10 +253,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
  #ifdef IEEE80211_DEBUG
  /*
   * Debugging support.
-Index: madwifi-trunk-r3314/net80211/ieee80211_proto.h
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_proto.h
-+++ madwifi-trunk-r3314/net80211/ieee80211_proto.h
+--- a/net80211/ieee80211_proto.h
++++ b/net80211/ieee80211_proto.h
 @@ -90,6 +90,7 @@
  void ieee80211_set11gbasicrates(struct ieee80211_rateset *, enum ieee80211_phymode);
  enum ieee80211_phymode ieee80211_get11gbasicrates(struct ieee80211_rateset *);
@@ -279,10 +263,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_proto.h
  
  /*
   * Return the size of the 802.11 header for a management or data frame.
-Index: madwifi-trunk-r3314/net80211/ieee80211_linux.c
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_linux.c
-+++ madwifi-trunk-r3314/net80211/ieee80211_linux.c
+--- a/net80211/ieee80211_linux.c
++++ b/net80211/ieee80211_linux.c
 @@ -337,8 +337,8 @@
  	/* TODO: needed parameters: count, keyid, key type, src address, TSC */
  	snprintf(buf, sizeof(buf), "%s(keyid=%d %scast addr=" MAC_FMT ")", tag,
@@ -294,10 +276,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_linux.c
  	memset(&wrqu, 0, sizeof(wrqu));
  	wrqu.data.length = strlen(buf);
  	wireless_send_event(dev, IWEVCUSTOM, &wrqu, buf);
-Index: madwifi-trunk-r3314/net80211/ieee80211_output.c
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_output.c
-+++ madwifi-trunk-r3314/net80211/ieee80211_output.c
+--- a/net80211/ieee80211_output.c
++++ b/net80211/ieee80211_output.c
 @@ -1074,13 +1074,16 @@
  			cip = (struct ieee80211_cipher *) key->wk_cipher;
  			ciphdrsize = cip->ic_header;
@@ -318,10 +298,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_output.c
  
  		/*
  		 * Allocate sk_buff for each subsequent fragment; First fragment
-Index: madwifi-trunk-r3314/net80211/ieee80211_node.c
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_node.c
-+++ madwifi-trunk-r3314/net80211/ieee80211_node.c
+--- a/net80211/ieee80211_node.c
++++ b/net80211/ieee80211_node.c
 @@ -2264,11 +2264,13 @@
  	/* From this point onwards we can no longer find the node,
  	 * so no more references are generated

@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3314/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c
-+++ madwifi-trunk-r3314/ath/if_ath.c
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -2721,6 +2721,9 @@
  static int
  ath_set_ack_bitrate(struct ath_softc *sc, int high)
@@ -28,10 +26,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  				break;
  			case ATH_RP:
  				ath_rp_record(sc,
-Index: madwifi-trunk-r3314/ath/if_athvar.h
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h
-+++ madwifi-trunk-r3314/ath/if_athvar.h
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
 @@ -681,6 +681,7 @@
  	unsigned int	sc_devstopped:1;	/* stopped due to of no tx bufs */
  	unsigned int	sc_stagbeacons:1;	/* use staggered beacons */

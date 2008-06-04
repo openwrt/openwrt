@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3314/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c
-+++ madwifi-trunk-r3314/ath/if_ath.c
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -8431,8 +8431,6 @@
  	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
  	local_irq_restore(flags);
@@ -29,10 +27,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	if (sc->sc_softled)
  		ath_led_event(sc, ATH_LED_TX);
  }
-Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_input.c
-+++ madwifi-trunk-r3314/net80211/ieee80211_input.c
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
 @@ -1132,7 +1132,7 @@
  	    (vap->iv_flags & IEEE80211_F_NOBRIDGE) == 0) {
  		struct sk_buff *skb1 = NULL;

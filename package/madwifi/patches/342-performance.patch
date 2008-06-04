@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3314/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c
-+++ madwifi-trunk-r3314/ath/if_ath.c
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -3237,7 +3237,6 @@
  	struct ath_softc *sc = dev->priv;
  	struct ieee80211_node *ni = NULL;
@@ -46,10 +44,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	/* NB: use this lock to protect an->an_tx_ffbuf (and txq->axq_stageq)
  	 *     in athff_can_aggregate() call too. */
  	ATH_TXQ_LOCK_IRQ(txq);
-Index: madwifi-trunk-r3314/net80211/ieee80211_output.c
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_output.c
-+++ madwifi-trunk-r3314/net80211/ieee80211_output.c
+--- a/net80211/ieee80211_output.c
++++ b/net80211/ieee80211_output.c
 @@ -283,7 +283,7 @@
  	 * normal vap. */
  	if (vap->iv_xrvap && (ni == vap->iv_bss) &&
@@ -216,10 +212,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_output.c
  }
  
  #define	KEY_UNDEFINED(k)	((k).wk_cipher == &ieee80211_cipher_none)
-Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_input.c
-+++ madwifi-trunk-r3314/net80211/ieee80211_input.c
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
 @@ -204,7 +204,6 @@
  	struct ieee80211_frame *wh;
  	struct ieee80211_key *key;

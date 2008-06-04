@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3314/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c
-+++ madwifi-trunk-r3314/ath/if_ath.c
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -10265,11 +10265,11 @@
  	sc->sc_currates = rt;
  	sc->sc_curmode = mode;
@@ -17,10 +15,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	/* rate index used to send mgt frames */
  	sc->sc_minrateix = 0;
  }
-Index: madwifi-trunk-r3314/ath/if_athvar.h
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h
-+++ madwifi-trunk-r3314/ath/if_athvar.h
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
 @@ -272,6 +272,10 @@
  #define AES_ICV_FIELD_SIZE      8       /* AES ICV field size */
  #define EXT_IV_FIELD_SIZE       4       /* ext IV field size */
@@ -32,10 +28,8 @@ Index: madwifi-trunk-r3314/ath/if_athvar.h
  /* XR specific macros */
  
  #define XR_DEFAULT_GRPPOLL_RATE_STR 	"0.25 1 1 3 3 6 6 20"
-Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath_rate/minstrel/minstrel.c
-+++ madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
+--- a/ath_rate/minstrel/minstrel.c
++++ b/ath_rate/minstrel/minstrel.c
 @@ -197,7 +197,7 @@
  		unsigned int x = 0, tt = 0;
  		unsigned int cix = rt->info[rix].controlRate;
@@ -54,10 +48,8 @@ Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
  			tt += (t_slot * cw / 2);
  		}
  		return tt;
-Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.h
-===================================================================
---- madwifi-trunk-r3314.orig/ath_rate/minstrel/minstrel.h
-+++ madwifi-trunk-r3314/ath_rate/minstrel/minstrel.h
+--- a/ath_rate/minstrel/minstrel.h
++++ b/ath_rate/minstrel/minstrel.h
 @@ -180,14 +180,6 @@
  #define MAX(a,b)        ((a) > (b) ? (a) : (b))
  #endif
@@ -73,10 +65,8 @@ Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.h
  /*
   * Definitions for pulling the rate and trie counts from
   * a 5212 h/w descriptor. These Don't belong here; the
-Index: madwifi-trunk-r3314/ath_rate/sample/sample.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath_rate/sample/sample.c
-+++ madwifi-trunk-r3314/ath_rate/sample/sample.c
+--- a/ath_rate/sample/sample.c
++++ b/ath_rate/sample/sample.c
 @@ -170,7 +170,7 @@
  	struct ieee80211com *ic = &sc->sc_ic;
  	unsigned int tt = 0;
@@ -95,10 +85,8 @@ Index: madwifi-trunk-r3314/ath_rate/sample/sample.c
  		tt += (t_slot * cw / 2);
  	}
  	return tt;
-Index: madwifi-trunk-r3314/ath_rate/sample/sample.h
-===================================================================
---- madwifi-trunk-r3314.orig/ath_rate/sample/sample.h
-+++ madwifi-trunk-r3314/ath_rate/sample/sample.h
+--- a/ath_rate/sample/sample.h
++++ b/ath_rate/sample/sample.h
 @@ -106,9 +106,6 @@
  #define MAX(a,b)        ((a) > (b) ? (a) : (b))
  #endif
