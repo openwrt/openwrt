@@ -12,9 +12,10 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 PKG_RELEASE:=1
 
-PKG_VERSION:=2008-04-07
+PKG_VERSION:=2008-05-26
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
+PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/05
+#PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
