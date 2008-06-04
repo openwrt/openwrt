@@ -1,0 +1,35 @@
+Make it clear that Orion top-level IRQs are level-triggered.  This
+means that we don't need an ->ack() handler, or at least, we don't
+need the ->ack() handler (or the acking part of the ->mask_ack()
+handler) to actually do anything.
+
+Given that, we might as well point our ->mask_ack() handler at the
+->mask() handler instead of providing a dummy ->ack() handler, since
+providing a ->mask_ack() handler on level IRQ sources will prevent
+->ack() from ever being called.
+
+Signed-off-by: Lennert Buytenhek <buytenh@marvell.com>
+---
+ arch/arm/plat-orion/irq.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+--- a/arch/arm/plat-orion/irq.c
++++ b/arch/arm/plat-orion/irq.c
+@@ -36,8 +36,8 @@
+ 
+ static struct irq_chip orion_irq_chip = {
+ 	.name		= "orion_irq",
+-	.ack		= orion_irq_mask,
+ 	.mask		= orion_irq_mask,
++	.mask_ack	= orion_irq_mask,
+ 	.unmask		= orion_irq_unmask,
+ };
+ 
+@@ -59,6 +59,7 @@
+ 		set_irq_chip(irq, &orion_irq_chip);
+ 		set_irq_chip_data(irq, maskaddr);
+ 		set_irq_handler(irq, handle_level_irq);
++		irq_desc[irq].status |= IRQ_LEVEL;
+ 		set_irq_flags(irq, IRQF_VALID);
+ 	}
+ }

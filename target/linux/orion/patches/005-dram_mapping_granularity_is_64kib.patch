@@ -1,0 +1,26 @@
+The DRAM base address and size fields in the CPU's MBUS bridge have
+64KiB granularity, instead of the currently used 16MiB.  Since all
+of the currently supported MBUS peripherals support 64KiB granularity
+as well, this patch changes the Orion address map code to stop
+rounding base addresses down and sizes up to multiples of 16MiB.
+
+Found by Ke Wei <kewei@marvell.com>.
+
+Signed-off-by: Lennert Buytenhek <buytenh@marvell.com>
+---
+ arch/arm/mach-orion5x/addr-map.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/mach-orion5x/addr-map.c
++++ b/arch/arm/mach-orion5x/addr-map.c
+@@ -152,8 +152,8 @@
+ 			w = &orion5x_mbus_dram_info.cs[cs++];
+ 			w->cs_index = i;
+ 			w->mbus_attr = 0xf & ~(1 << i);
+-			w->base = base & 0xff000000;
+-			w->size = (size | 0x00ffffff) + 1;
++			w->base = base & 0xffff0000;
++			w->size = (size | 0x0000ffff) + 1;
+ 		}
+ 	}
+ 	orion5x_mbus_dram_info.num_cs = cs;
