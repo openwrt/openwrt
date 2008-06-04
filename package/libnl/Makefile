@@ -36,7 +36,7 @@ define Build/Compile
 		install
 endef
 
-ifneq ($(CONFIG_LINUX_2_6_23)$(CONFIG_LINUX_2_6_24),)
+ifneq ($(CONFIG_LINUX_2_6),)
   define Build/InstallDev
 	$(INSTALL_DIR) $(1)
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
