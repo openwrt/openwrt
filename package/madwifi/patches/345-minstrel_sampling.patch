@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3314/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c
-+++ madwifi-trunk-r3314/ath/if_ath.c
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -8094,6 +8094,7 @@
  		ath_hal_setupxtxdesc(sc->sc_ah, ds, mrr.rate1, mrr.retries1,
  				     mrr.rate2, mrr.retries2,
@@ -10,10 +8,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	}
  
  #ifndef ATH_SUPERG_FF
-Index: madwifi-trunk-r3314/ath/if_athvar.h
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h
-+++ madwifi-trunk-r3314/ath/if_athvar.h
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
 @@ -446,6 +446,7 @@
  	u_int16_t bf_flags;				/* tx descriptor flags */
  	u_int64_t bf_tsf;
@@ -22,10 +18,8 @@ Index: madwifi-trunk-r3314/ath/if_athvar.h
  #ifdef ATH_SUPERG_FF
  	/* XXX: combine this with bf_skbaddr if it ever changes to accommodate
  	 *      multiple segments.
-Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath_rate/minstrel/minstrel.c
-+++ madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
+--- a/ath_rate/minstrel/minstrel.c
++++ b/ath_rate/minstrel/minstrel.c
 @@ -333,15 +333,19 @@
  		if (sn->static_rate_ndx >= 0) {
  			    ndx = sn->static_rate_ndx;
@@ -74,10 +68,8 @@ Index: madwifi-trunk-r3314/ath_rate/minstrel/minstrel.c
  		if  (tries2 < 0)
  			return;
  		tries = tries - tries1;
-Index: madwifi-trunk-r3314/net80211/ieee80211_rate.h
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_rate.h
-+++ madwifi-trunk-r3314/net80211/ieee80211_rate.h
+--- a/net80211/ieee80211_rate.h
++++ b/net80211/ieee80211_rate.h
 @@ -87,6 +87,7 @@
  	int retries2;
  	int rate3;

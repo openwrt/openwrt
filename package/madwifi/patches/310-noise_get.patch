@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3314/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c
-+++ madwifi-trunk-r3314/ath/if_ath.c
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -1695,8 +1695,6 @@
  	 * get to reality.  This value is used in monitor mode and by tools like
  	 * Wireshark and Kismet.
@@ -35,10 +33,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  		/*
  		 * Reset rssi stats; maybe not the best place...
  		 */
-Index: madwifi-trunk-r3314/net80211/ieee80211_wireless.c
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_wireless.c
-+++ madwifi-trunk-r3314/net80211/ieee80211_wireless.c
+--- a/net80211/ieee80211_wireless.c
++++ b/net80211/ieee80211_wireless.c
 @@ -4358,6 +4358,7 @@
  	si->isi_state = ni->ni_flags;
  	si->isi_authmode = ni->ni_authmode;
@@ -47,10 +43,8 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_wireless.c
  	si->isi_capinfo = ni->ni_capinfo;
  	si->isi_athflags = ni->ni_ath_flags;
  	si->isi_erp = ni->ni_erp;
-Index: madwifi-trunk-r3314/net80211/ieee80211_ioctl.h
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_ioctl.h
-+++ madwifi-trunk-r3314/net80211/ieee80211_ioctl.h
+--- a/net80211/ieee80211_ioctl.h
++++ b/net80211/ieee80211_ioctl.h
 @@ -311,6 +311,7 @@
  	u_int16_t isi_state;		/* state flags */
  	u_int8_t isi_authmode;		/* authentication algorithm */

@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3314/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c
-+++ madwifi-trunk-r3314/ath/if_ath.c
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -397,6 +397,7 @@
  static int maxvaps = -1;
  static int outdoor = -1;
@@ -153,10 +151,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  		/* start periodic recalibration timer */
  		mod_timer(&sc->sc_cal_ch, jiffies + (ath_calinterval * HZ));
  	}
-Index: madwifi-trunk-r3314/ath/if_athvar.h
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h
-+++ madwifi-trunk-r3314/ath/if_athvar.h
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
 @@ -778,6 +778,8 @@
  	struct ieee80211vap **sc_bslot;		/* beacon xmit slots */
  	int sc_bnext;				/* next slot for beacon xmit */

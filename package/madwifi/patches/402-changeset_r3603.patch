@@ -1,0 +1,176 @@
+--- a/Makefile
++++ b/Makefile
+@@ -40,10 +40,7 @@
+ # Makefile for the HAL-based Atheros driver.
+ #
+ 
+-ifeq ($(obj),)
+-obj=	.
+-endif
+-
++obj := $(firstword $(obj) $(SUBDIRS) .)
+ TOP = $(obj)
+ 
+ ifneq (svnversion.h,$(MAKECMDGOALS))
+--- a/ath/Makefile
++++ b/ath/Makefile
+@@ -40,10 +40,7 @@
+ # Makefile for the Atheros WLAN driver.
+ #
+ 
+-ifeq ($(obj),)
+-obj=	.
+-endif
+-
++obj := $(firstword $(obj) $(SUBDIRS) .)
+ TOP = $(obj)/..
+ 
+ ifeq ($(strip $(BUS)),AHB)
+--- a/ath_hal/Makefile
++++ b/ath_hal/Makefile
+@@ -40,10 +40,7 @@
+ # Makefile for the Atheros WLAN driver.
+ #
+ 
+-ifeq ($(obj),)
+-obj=	.
+-endif
+-
++obj := $(firstword $(obj) $(SUBDIRS) .)
+ TOP = $(obj)/..
+ 
+ include $(TOP)/Makefile.inc
+--- a/ath_rate/Makefile
++++ b/ath_rate/Makefile
+@@ -1,7 +1,4 @@
+-ifeq ($(obj),)
+-obj=	.
+-endif
+-
++obj := $(firstword $(obj) $(SUBDIRS) .)
+ TOP = $(obj)/..
+ 
+ obj-y := amrr/ onoe/ sample/ minstrel/
+--- a/ath_rate/amrr/Makefile
++++ b/ath_rate/amrr/Makefile
+@@ -40,10 +40,7 @@
+ #
+ # Makefile for the Atheros Rate Control Support.
+ #
+-ifeq ($(obj),)
+-obj=	.
+-endif
+-
++obj := $(firstword $(obj) $(SUBDIRS) .)
+ TOP = $(obj)/../..
+ 
+ obj-m		+= ath_rate_amrr.o
+--- a/ath_rate/minstrel/Makefile
++++ b/ath_rate/minstrel/Makefile
+@@ -38,10 +38,7 @@
+ #
+ # Makefile for the Atheros Rate Control Support.
+ #
+-ifeq ($(obj),)
+-obj=	.
+-endif
+-
++obj := $(firstword $(obj) $(SUBDIRS) .)
+ TOP = $(obj)/../..
+ 
+ obj-m		+= ath_rate_minstrel.o
+--- a/ath_rate/onoe/Makefile
++++ b/ath_rate/onoe/Makefile
+@@ -40,10 +40,7 @@
+ #
+ # Makefile for the Atheros Rate Control Support.
+ #
+-ifeq ($(obj),)
+-obj=	.
+-endif
+-
++obj := $(firstword $(obj) $(SUBDIRS) .)
+ TOP = $(obj)/../..
+ 
+ obj-m		+= ath_rate_onoe.o
+--- a/ath_rate/sample/Makefile
++++ b/ath_rate/sample/Makefile
+@@ -38,10 +38,7 @@
+ #
+ # Makefile for the Atheros Rate Control Support.
+ #
+-ifeq ($(obj),)
+-obj=	.
+-endif
+-
++obj := $(firstword $(obj) $(SUBDIRS) .)
+ TOP = $(obj)/../..
+ 
+ obj-m		+= ath_rate_sample.o
+--- a/net80211/Makefile
++++ b/net80211/Makefile
+@@ -39,10 +39,7 @@
+ #
+ # Makefile for the 802.11 WLAN modules.
+ #
+-ifeq ($(obj),)
+-obj=	.
+-endif
+-
++obj := $(firstword $(obj) $(SUBDIRS) .)
+ TOP = $(obj)/..
+ #
+ # There is one authenticator mechanism: an in-kernel implementation
+--- a/regression/Makefile
++++ b/regression/Makefile
+@@ -1,7 +1,4 @@
+-ifeq ($(obj),)
+-obj=	.
+-endif
+-
++obj := $(firstword $(obj) $(SUBDIRS) .)
+ TOP = $(obj)/..
+ 
+ obj-y := ccmp/ tkip/ wep/
+--- a/regression/ccmp/Makefile
++++ b/regression/ccmp/Makefile
+@@ -1,10 +1,7 @@
+ #
+ # Makefile for the CCMP regression test.
+ #
+-ifeq ($(obj),)
+-obj=	.
+-endif
+-
++obj := $(firstword $(obj) $(SUBDIRS) .)
+ TOP = $(obj)/../..
+ 
+ obj-m			+= ath_test_ccmp.o
+--- a/regression/tkip/Makefile
++++ b/regression/tkip/Makefile
+@@ -1,10 +1,7 @@
+ #
+ # Makefile for the TKIP regression test.
+ #
+-ifeq ($(obj),)
+-obj=	.
+-endif
+-
++obj := $(firstword $(obj) $(SUBDIRS) .)
+ TOP = $(obj)/../..
+ 
+ obj-m			+= ath_test_tkip.o
+--- a/regression/wep/Makefile
++++ b/regression/wep/Makefile
+@@ -1,10 +1,7 @@
+ #
+ # Makefile for the WEP regression test.
+ #
+-ifeq ($(obj),)
+-obj=	.
+-endif
+-
++obj := $(firstword $(obj) $(SUBDIRS) .)
+ TOP = $(obj)/../..
+ 
+ obj-m			+= ath_test_wep.o
