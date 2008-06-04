@@ -42,7 +42,24 @@ hostapd_setup_vif() {
 			append hostapd_cfg "wpa_passphrase=$psk" "$N"
 		;;
 		*wpa*|*WPA*)
-		# FIXME: add wpa+radius here
+		        # required fields? formats?
+		        # hostapd is particular, maybe a default configuration for failures
+			config_get server "$vif" server
+			append hostapd_cfg "auth_server_addr=$server" "$N"
+			config_get port "$vif" port
+			port=${port:-1812}
+			append hostapd_cfg "auth_server_port=$port" "$N"
+			config_get secret "$vif" key
+			append hostapd_cfg "auth_server_shared_secret=$secret" "$N"
+			config_get nasid "$vif" nasid
+			append hostapd_cfg "nas_identifier=$nasid" "$N"
+			append hostapd_cfg "eapol_key_index_workaround=1" "$N"
+			append hostapd_cfg "radius_acct_interim_interval=300" "$N"
+			append hostapd_cfg "ieee8021x=1" "$N"
+			append hostapd_cfg "auth_algs=1" "$N"
+			append hostapd_cfg "wpa_key_mgmt=WPA-EAP" "$N"
+			append hostapd_cfg "wpa_group_rekey=300" "$N"
+			append hostapd_cfg "wpa_gmk_rekey=640" "$N"
 		;;
 		*)
 			return 0;
