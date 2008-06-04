@@ -1,0 +1,47 @@
+#!/bin/sh
+# Copyright (C) 2008 OpenWrt.org
+
+ps3_db_bin=/usr/sbin/ps3-flash-util
+ps3_db_owner_petitboot=3
+ps3_db_key_telnet=3
+
+if [ ! -f $ps3_db_bin ] ||
+   [ ! `$ps3_db_bin -P $ps3_db_owner_petitboot $ps3_db_key_telnet` ] ||
+   [ `$ps3_db_bin -P $ps3_db_owner_petitboot $ps3_db_key_telnet` = 0 ]; then
+    echo \
+"
+ === IMPORTANT ==========================
+  Telnet login is disabled for security
+  reasons. Enabling telnet login on the
+  host will allow any user connected to
+  the same network to login to the host.
+
+  You can enable telnet login with the
+  following command in the host console:
+
+  # $ps3_db_bin -H $ps3_db_owner_petitboot $ps3_db_key_telnet 1
+
+  You can disable telnet login with the
+  following command in the host console:
+
+  # $ps3_db_bin -H $ps3_db_owner_petitboot $ps3_db_key_telnet 0
+ ----------------------------------------
+"
+    exit 0
+fi
+
+grep '^root:[^!]' /etc/passwd >&- 2>&-
+[ "$?" = "0" -a -z "$FAILSAFE" ]  &&
+{
+    echo "Login failed."
+    exit 0
+} || {
+cat << EOF
+ === IMPORTANT ============================
+  Use 'passwd' to set your login password
+  this will disable telnet and enable SSH
+ ------------------------------------------
+EOF
+}
+
+exec /bin/ash --login
