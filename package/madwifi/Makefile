@@ -56,6 +56,9 @@ endif
 ifeq ($(BOARD),iop32x)
   HAL_TARGET:=xscale-le-elf
 endif
+ifeq ($(BOARD),orion)
+  HAL_TARGET:=xscale-le-elf
+endif
 ifeq ($(ARCH),powerpc)
   HAL_TARGET:=powerpc-be-elf
 endif
