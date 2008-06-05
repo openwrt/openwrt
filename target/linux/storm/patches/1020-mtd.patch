@@ -1,8 +1,6 @@
-Index: linux-2.6.23.17/drivers/mtd/chips/Kconfig
-===================================================================
---- linux-2.6.23.17.orig/drivers/mtd/chips/Kconfig
-+++ linux-2.6.23.17/drivers/mtd/chips/Kconfig
-@@ -220,6 +220,13 @@ config MTD_ROM
+--- a/drivers/mtd/chips/Kconfig
++++ b/drivers/mtd/chips/Kconfig
+@@ -220,6 +220,13 @@
  	  This option enables basic support for ROM chips accessed through
  	  a bus mapping driver.
  
@@ -16,10 +14,8 @@ Index: linux-2.6.23.17/drivers/mtd/chips/Kconfig
  config MTD_ABSENT
  	tristate "Support for absent chips in bus mapping"
  	help
-Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/mtd/chips/cfi_cmdset_0002.c
-+++ linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
+--- a/drivers/mtd/chips/cfi_cmdset_0002.c
++++ b/drivers/mtd/chips/cfi_cmdset_0002.c
 @@ -39,10 +39,15 @@
  #include <linux/mtd/cfi.h>
  #include <linux/mtd/xip.h>
@@ -39,7 +35,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  
  #define MANUFACTURER_AMD	0x0001
  #define MANUFACTURER_ATMEL	0x001F
-@@ -322,6 +327,13 @@ struct mtd_info *cfi_cmdset_0002(struct 
+@@ -322,6 +327,13 @@
  #endif
  
  		bootloc = extp->TopBottom;
@@ -53,7 +49,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  		if ((bootloc != 2) && (bootloc != 3)) {
  			printk(KERN_WARNING "%s: CFI does not contain boot "
  			       "bank location. Assuming top.\n", map->name);
-@@ -340,6 +352,9 @@ struct mtd_info *cfi_cmdset_0002(struct 
+@@ -340,6 +352,9 @@
  				cfi->cfiq->EraseRegionInfo[j] = swap;
  			}
  		}
@@ -63,7 +59,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  		/* Set the default CFI lock/unlock addresses */
  		cfi->addr_unlock1 = 0x555;
  		cfi->addr_unlock2 = 0x2aa;
-@@ -461,6 +476,7 @@ static int __xipram chip_ready(struct ma
+@@ -461,6 +476,7 @@
  	map_word d, t;
  
  	d = map_read(map, addr);
@@ -71,7 +67,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  	t = map_read(map, addr);
  
  	return map_word_equal(map, d, t);
-@@ -626,7 +642,9 @@ static void put_chip(struct map_info *ma
+@@ -626,7 +642,9 @@
  	default:
  		printk(KERN_ERR "MTD: put_chip() called with oldstate %d!!\n", chip->oldstate);
  	}
@@ -81,7 +77,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  }
  
  #ifdef CONFIG_MTD_XIP
-@@ -940,7 +958,9 @@ static inline int do_read_secsi_onechip(
+@@ -940,7 +958,9 @@
  	cfi_send_gen_cmd(0x90, cfi->addr_unlock1, chip->start, map, cfi, cfi->device_type, NULL);
  	cfi_send_gen_cmd(0x00, cfi->addr_unlock1, chip->start, map, cfi, cfi->device_type, NULL);
  
@@ -91,7 +87,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  	spin_unlock(chip->mutex);
  
  	return 0;
-@@ -1005,7 +1025,10 @@ static int __xipram do_write_oneword(str
+@@ -1005,7 +1025,10 @@
  	 */
  	unsigned long uWriteTimeout = ( HZ / 1000 ) + 1;
  	int ret = 0;
@@ -103,7 +99,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  	int retry_cnt = 0;
  
  	adr += chip->start;
-@@ -1037,9 +1060,15 @@ static int __xipram do_write_oneword(str
+@@ -1037,9 +1060,15 @@
  	ENABLE_VPP(map);
  	xip_disable(map, chip, adr);
   retry:
@@ -119,7 +115,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  	map_write(map, datum, adr);
  	chip->state = FL_WRITING;
  
-@@ -1072,7 +1101,13 @@ static int __xipram do_write_oneword(str
+@@ -1072,7 +1101,13 @@
  		}
  
  		if (chip_ready(map, adr))
@@ -134,7 +130,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  
  		/* Latency issues. Drop the lock, wait a while and retry */
  		UDELAY(map, chip, adr, 1);
-@@ -1084,8 +1119,17 @@ static int __xipram do_write_oneword(str
+@@ -1084,8 +1119,17 @@
  		/* FIXME - should have reset delay before continuing */
  
  		if (++retry_cnt <= MAX_WORD_RETRIES)
@@ -153,7 +149,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  		ret = -EIO;
  	}
  	xip_enable(map, chip, adr);
-@@ -1171,7 +1215,14 @@ static int cfi_amdstd_write_words(struct
+@@ -1171,7 +1215,14 @@
  				return 0;
  		}
  	}
@@ -169,7 +165,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  	/* We are now aligned, write as much as possible */
  	while(len >= map_bankwidth(map)) {
  		map_word datum;
-@@ -1181,7 +1232,15 @@ static int cfi_amdstd_write_words(struct
+@@ -1181,7 +1232,15 @@
  		ret = do_write_oneword(map, &cfi->chips[chipnum],
  				       ofs, datum);
  		if (ret)
@@ -185,7 +181,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  
  		ofs += map_bankwidth(map);
  		buf += map_bankwidth(map);
-@@ -1189,19 +1248,38 @@ static int cfi_amdstd_write_words(struct
+@@ -1189,19 +1248,38 @@
  		len -= map_bankwidth(map);
  
  		if (ofs >> cfi->chipshift) {
@@ -224,7 +220,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  		spin_lock(cfi->chips[chipnum].mutex);
  
  		if (cfi->chips[chipnum].state != FL_READY) {
-@@ -1221,7 +1299,11 @@ static int cfi_amdstd_write_words(struct
+@@ -1221,7 +1299,11 @@
  #endif
  			goto retry1;
  		}
@@ -237,7 +233,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  		tmp_buf = map_read(map, ofs + chipstart);
  
  		spin_unlock(cfi->chips[chipnum].mutex);
-@@ -1231,11 +1313,23 @@ static int cfi_amdstd_write_words(struct
+@@ -1231,11 +1313,23 @@
  		ret = do_write_oneword(map, &cfi->chips[chipnum],
  				ofs, tmp_buf);
  		if (ret)
@@ -262,7 +258,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  	return 0;
  }
  
-@@ -1275,6 +1369,7 @@ static int __xipram do_write_buffer(stru
+@@ -1275,6 +1369,7 @@
  	ENABLE_VPP(map);
  	xip_disable(map, chip, cmd_adr);
  
@@ -270,7 +266,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  	cfi_send_gen_cmd(0xAA, cfi->addr_unlock1, chip->start, map, cfi, cfi->device_type, NULL);
  	cfi_send_gen_cmd(0x55, cfi->addr_unlock2, chip->start, map, cfi, cfi->device_type, NULL);
  	//cfi_send_gen_cmd(0xA0, cfi->addr_unlock1, chip->start, map, cfi, cfi->device_type, NULL);
-@@ -1535,6 +1630,9 @@ static int __xipram do_erase_oneblock(st
+@@ -1535,6 +1630,9 @@
  	DECLARE_WAITQUEUE(wait, current);
  	int ret = 0;
  
@@ -280,7 +276,7 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  	adr += chip->start;
  
  	spin_lock(chip->mutex);
-@@ -1613,6 +1711,9 @@ static int __xipram do_erase_oneblock(st
+@@ -1613,6 +1711,9 @@
  	chip->state = FL_READY;
  	put_chip(map, chip, adr);
  	spin_unlock(chip->mutex);
@@ -290,10 +286,8 @@ Index: linux-2.6.23.17/drivers/mtd/chips/cfi_cmdset_0002.c
  	return ret;
  }
  
-Index: linux-2.6.23.17/drivers/mtd/chips/map_serial.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/mtd/chips/map_serial.c
++++ b/drivers/mtd/chips/map_serial.c
 @@ -0,0 +1,188 @@
 +/*
 + * Common code to handle map devices which are simple ROM
@@ -483,11 +477,9 @@ Index: linux-2.6.23.17/drivers/mtd/chips/map_serial.c
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("David Woodhouse <dwmw2@infradead.org>");
 +MODULE_DESCRIPTION("MTD chip driver for ROM chips");
-Index: linux-2.6.23.17/drivers/mtd/maps/Kconfig
-===================================================================
---- linux-2.6.23.17.orig/drivers/mtd/maps/Kconfig
-+++ linux-2.6.23.17/drivers/mtd/maps/Kconfig
-@@ -614,5 +614,30 @@ config MTD_PLATRAM
+--- a/drivers/mtd/maps/Kconfig
++++ b/drivers/mtd/maps/Kconfig
+@@ -614,5 +614,30 @@
  
  	  This selection automatically selects the map_ram driver.
  
@@ -518,10 +510,8 @@ Index: linux-2.6.23.17/drivers/mtd/maps/Kconfig
 +
  endmenu
  
-Index: linux-2.6.23.17/drivers/mtd/maps/sl2312-flash-atmel.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/mtd/maps/sl2312-flash-atmel.c
++++ b/drivers/mtd/maps/sl2312-flash-atmel.c
 @@ -0,0 +1,554 @@
 +/*
 + * $Id: sl2312-flash-atmel.c,v 1.2 2006/06/05 02:35:57 middle Exp $
@@ -1077,10 +1067,8 @@ Index: linux-2.6.23.17/drivers/mtd/maps/sl2312-flash-atmel.c
 +MODULE_AUTHOR("Plus Chen <plus@storlink.com.tw>");
 +MODULE_DESCRIPTION("MTD map driver for Storlink Sword boards");
 +
-Index: linux-2.6.23.17/drivers/mtd/maps/sl2312-flash-cfi.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/mtd/maps/sl2312-flash-cfi.c
++++ b/drivers/mtd/maps/sl2312-flash-cfi.c
 @@ -0,0 +1,370 @@
 +/*======================================================================
 +
@@ -1452,10 +1440,8 @@ Index: linux-2.6.23.17/drivers/mtd/maps/sl2312-flash-cfi.c
 +MODULE_AUTHOR("Storlink Ltd");
 +MODULE_DESCRIPTION("CFI map driver");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.23.17/drivers/mtd/maps/sl2312-flash-m25p80.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/mtd/maps/sl2312-flash-m25p80.c
++++ b/drivers/mtd/maps/sl2312-flash-m25p80.c
 @@ -0,0 +1,498 @@
 +/*
 + * $Id: sl2312-flash-m25p80.c,v 1.2 2006/06/02 08:46:02 middle Exp $
@@ -1955,10 +1941,8 @@ Index: linux-2.6.23.17/drivers/mtd/maps/sl2312-flash-m25p80.c
 +MODULE_AUTHOR("Plus Chen <plus@storlink.com.tw>");
 +MODULE_DESCRIPTION("MTD map driver for Storlink Sword boards");
 +
-Index: linux-2.6.23.17/drivers/mtd/maps/sl2312_flashmap.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/mtd/maps/sl2312_flashmap.h
++++ b/drivers/mtd/maps/sl2312_flashmap.h
 @@ -0,0 +1,21 @@
 +/*
 + * Please note that the name are used in mkflash script. Therefore
@@ -1974,17 +1958,15 @@ Index: linux-2.6.23.17/drivers/mtd/maps/sl2312_flashmap.h
 +
 +static struct mtd_partition sl2312_partitions[] = {
 +	{ name: "RedBoot", 	 offset: 0x00000000, size: 0x00020000, },
-+	{ name: "Kernel", 	 offset: 0x00020000, size: 0x00100000, },
-+	{ name: "Ramdisk", 	 offset: 0x00120000, size: 0x00500000, },
-+	{ name: "etc", 	 	 offset: 0x00620000, size: 0x001A0000, },
++	{ name: "kernel", 	 offset: 0x00020000, size: 0x00100000, },
++	{ name: "rootfs", 	 offset: 0x00120000, size: 0x00500000, },
++	{ name: "rootfs_data", 	 offset: 0x00620000, size: 0x001A0000, },
 +	{ name: "VCTL", 	 offset: 0x007C0000, size: 0x00010000, },
 +	{ name: "cfg", 	 	 offset: 0x007D0000, size: 0x00020000, },
 +	{ name: "FIS directory", offset: 0x007F0000, size: 0x00010000, }
 +};
-Index: linux-2.6.23.17/drivers/mtd/maps/sl2312_flashmap.h.16MB
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/mtd/maps/sl2312_flashmap.h.16MB
++++ b/drivers/mtd/maps/sl2312_flashmap.h.16MB
 @@ -0,0 +1,21 @@
 +/*
 + * Please note that the name are used in mkflash script. Therefore
@@ -2007,10 +1989,8 @@ Index: linux-2.6.23.17/drivers/mtd/maps/sl2312_flashmap.h.16MB
 +	{ name: "CurConf", 	 offset: 0x00F40000, size: 0x000A0000, },
 +	{ name: "FIS directory", offset: 0x00FE0000, size: 0x00020000, }
 +};
-Index: linux-2.6.23.17/drivers/mtd/maps/sl2312_flashmap.h.8MB
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/mtd/maps/sl2312_flashmap.h.8MB
++++ b/drivers/mtd/maps/sl2312_flashmap.h.8MB
 @@ -0,0 +1,21 @@
 +/*
 + * Please note that the name are used in mkflash script. Therefore
@@ -2033,11 +2013,9 @@ Index: linux-2.6.23.17/drivers/mtd/maps/sl2312_flashmap.h.8MB
 +	{ name: "CurConf", 	 offset: 0x007C0000, size: 0x00020000, },
 +	{ name: "FIS directory", offset: 0x007E0000, size: 0x00020000, }
 +};
-Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/mtd/mtdchar.c
-+++ linux-2.6.23.17/drivers/mtd/mtdchar.c
-@@ -59,6 +59,77 @@ struct mtd_file_info {
+--- a/drivers/mtd/mtdchar.c
++++ b/drivers/mtd/mtdchar.c
+@@ -59,6 +59,77 @@
  	enum mtd_file_modes mode;
  };
  
@@ -2115,7 +2093,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  static loff_t mtd_lseek (struct file *file, loff_t offset, int orig)
  {
  	struct mtd_file_info *mfi = file->private_data;
-@@ -162,13 +233,21 @@ static ssize_t mtd_read(struct file *fil
+@@ -162,13 +233,21 @@
  	int len;
  	char *kbuf;
  
@@ -2138,7 +2116,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  
  	/* FIXME: Use kiovec in 2.5 to lock down the user's buffers
  	   and pass them directly to the MTD functions */
-@@ -178,8 +257,12 @@ static ssize_t mtd_read(struct file *fil
+@@ -178,8 +257,12 @@
  	else
  		kbuf=kmalloc(count, GFP_KERNEL);
  
@@ -2152,7 +2130,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  
  	while (count) {
  
-@@ -224,6 +307,9 @@ static ssize_t mtd_read(struct file *fil
+@@ -224,6 +307,9 @@
  			*ppos += retlen;
  			if (copy_to_user(buf, kbuf, retlen)) {
  				kfree(kbuf);
@@ -2162,7 +2140,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  				return -EFAULT;
  			}
  			else
-@@ -235,13 +321,19 @@ static ssize_t mtd_read(struct file *fil
+@@ -235,13 +321,19 @@
  				count = 0;
  		}
  		else {
@@ -2183,7 +2161,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  	return total_retlen;
  } /* mtd_read */
  
-@@ -255,24 +347,40 @@ static ssize_t mtd_write(struct file *fi
+@@ -255,24 +347,40 @@
  	int ret=0;
  	int len;
  
@@ -2227,7 +2205,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  
  	while (count) {
  
-@@ -283,6 +391,9 @@ static ssize_t mtd_write(struct file *fi
+@@ -283,6 +391,9 @@
  
  		if (copy_from_user(kbuf, buf, len)) {
  			kfree(kbuf);
@@ -2237,7 +2215,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  			return -EFAULT;
  		}
  
-@@ -323,11 +434,17 @@ static ssize_t mtd_write(struct file *fi
+@@ -323,11 +434,17 @@
  		}
  		else {
  			kfree(kbuf);
@@ -2255,7 +2233,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  	return total_retlen;
  } /* mtd_write */
  
-@@ -381,36 +498,67 @@ static int mtd_ioctl(struct inode *inode
+@@ -381,36 +498,67 @@
  	u_long size;
  	struct mtd_info_user info;
  
@@ -2326,7 +2304,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  		break;
  	}
  
-@@ -433,7 +581,12 @@ static int mtd_ioctl(struct inode *inode
+@@ -433,7 +581,12 @@
  		struct erase_info *erase;
  
  		if(!(file->f_mode & 2))
@@ -2339,7 +2317,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  
  		erase=kzalloc(sizeof(struct erase_info),GFP_KERNEL);
  		if (!erase)
-@@ -447,6 +600,9 @@ static int mtd_ioctl(struct inode *inode
+@@ -447,6 +600,9 @@
  			if (copy_from_user(&erase->addr, argp,
  				    sizeof(struct erase_info_user))) {
  				kfree(erase);
@@ -2349,7 +2327,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  				return -EFAULT;
  			}
  			erase->mtd = mtd;
-@@ -484,14 +640,26 @@ static int mtd_ioctl(struct inode *inode
+@@ -484,14 +640,26 @@
  		struct mtd_oob_buf buf;
  		struct mtd_oob_ops ops;
  
@@ -2379,7 +2357,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  
  		if (!mtd->write_oob)
  			ret = -EOPNOTSUPP;
-@@ -499,8 +667,12 @@ static int mtd_ioctl(struct inode *inode
+@@ -499,8 +667,12 @@
  			ret = access_ok(VERIFY_READ, buf.ptr,
  					buf.length) ? 0 : EFAULT;
  
@@ -2393,7 +2371,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  
  		ops.ooblen = buf.length;
  		ops.ooboffs = buf.start & (mtd->oobsize - 1);
-@@ -536,19 +708,35 @@ static int mtd_ioctl(struct inode *inode
+@@ -536,19 +708,35 @@
  		struct mtd_oob_buf buf;
  		struct mtd_oob_ops ops;
  
@@ -2433,7 +2411,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  
  		ops.ooblen = buf.length;
  		ops.ooboffs = buf.start & (mtd->oobsize - 1);
-@@ -580,7 +768,12 @@ static int mtd_ioctl(struct inode *inode
+@@ -580,7 +768,12 @@
  		struct erase_info_user info;
  
  		if (copy_from_user(&info, argp, sizeof(info)))
@@ -2446,7 +2424,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  
  		if (!mtd->lock)
  			ret = -EOPNOTSUPP;
-@@ -594,7 +787,12 @@ static int mtd_ioctl(struct inode *inode
+@@ -594,7 +787,12 @@
  		struct erase_info_user info;
  
  		if (copy_from_user(&info, argp, sizeof(info)))
@@ -2459,7 +2437,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  
  		if (!mtd->unlock)
  			ret = -EOPNOTSUPP;
-@@ -629,11 +827,21 @@ static int mtd_ioctl(struct inode *inode
+@@ -629,11 +827,21 @@
  		loff_t offs;
  
  		if (copy_from_user(&offs, argp, sizeof(loff_t)))
@@ -2481,7 +2459,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  		break;
  	}
  
-@@ -642,11 +850,21 @@ static int mtd_ioctl(struct inode *inode
+@@ -642,11 +850,21 @@
  		loff_t offs;
  
  		if (copy_from_user(&offs, argp, sizeof(loff_t)))
@@ -2503,7 +2481,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  		break;
  	}
  
-@@ -654,8 +872,12 @@ static int mtd_ioctl(struct inode *inode
+@@ -654,8 +872,12 @@
  	case OTPSELECT:
  	{
  		int mode;
@@ -2517,7 +2495,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  
  		mfi->mode = MTD_MODE_NORMAL;
  
-@@ -670,7 +892,12 @@ static int mtd_ioctl(struct inode *inode
+@@ -670,7 +892,12 @@
  	{
  		struct otp_info *buf = kmalloc(4096, GFP_KERNEL);
  		if (!buf)
@@ -2530,7 +2508,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  		ret = -EOPNOTSUPP;
  		switch (mfi->mode) {
  		case MTD_MODE_OTP_FACTORY:
-@@ -701,12 +928,24 @@ static int mtd_ioctl(struct inode *inode
+@@ -701,12 +928,24 @@
  	{
  		struct otp_info info;
  
@@ -2558,7 +2536,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  		ret = mtd->lock_user_prot_reg(mtd, info.start, info.length);
  		break;
  	}
-@@ -742,8 +981,12 @@ static int mtd_ioctl(struct inode *inode
+@@ -742,8 +981,12 @@
  			break;
  
  		case MTD_MODE_RAW:
@@ -2572,7 +2550,7 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  			mfi->mode = arg;
  
  		case MTD_MODE_NORMAL:
-@@ -766,6 +1009,10 @@ static int mtd_ioctl(struct inode *inode
+@@ -766,6 +1009,10 @@
  		ret = -ENOTTY;
  	}
  
@@ -2583,11 +2561,9 @@ Index: linux-2.6.23.17/drivers/mtd/mtdchar.c
  	return ret;
  } /* memory_ioctl */
  
-Index: linux-2.6.23.17/drivers/mtd/nand/Kconfig
-===================================================================
---- linux-2.6.23.17.orig/drivers/mtd/nand/Kconfig
-+++ linux-2.6.23.17/drivers/mtd/nand/Kconfig
-@@ -44,6 +44,13 @@ config MTD_NAND_AUTCPU12
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -44,6 +44,13 @@
  	  This enables the driver for the autronix autcpu12 board to
  	  access the SmartMediaCard.
  
@@ -2601,10 +2577,8 @@ Index: linux-2.6.23.17/drivers/mtd/nand/Kconfig
  config MTD_NAND_EDB7312
  	tristate "Support for Cirrus Logic EBD7312 evaluation board"
  	depends on ARCH_EDB7312
-Index: linux-2.6.23.17/drivers/mtd/nand/sl2312-flash-nand.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/mtd/nand/sl2312-flash-nand.c
++++ b/drivers/mtd/nand/sl2312-flash-nand.c
 @@ -0,0 +1,2287 @@
 +/*
 + *  drivers/mtd/sl2312.c
@@ -4893,10 +4867,8 @@ Index: linux-2.6.23.17/drivers/mtd/nand/sl2312-flash-nand.c
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Alice Hennessy <ahennessy@mvista.com>");
 +MODULE_DESCRIPTION("Glue layer for SmartMediaCard on Toshiba RBsl2312");
-Index: linux-2.6.23.17/drivers/mtd/nand/sl2312-flash-nand.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/mtd/nand/sl2312-flash-nand.h
++++ b/drivers/mtd/nand/sl2312-flash-nand.h
 @@ -0,0 +1,24 @@
 +#ifndef SL2312_FLASH_NAND_H
 +#define SL2312_FLASH_NAND_H
@@ -4922,10 +4894,8 @@ Index: linux-2.6.23.17/drivers/mtd/nand/sl2312-flash-nand.h
 +
 +
 +#endif /* SL2312_FLASH_NAND_H */
-Index: linux-2.6.23.17/include/linux/mtd/kvctl.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/include/linux/mtd/kvctl.h
++++ b/include/linux/mtd/kvctl.h
 @@ -0,0 +1,40 @@
 +#ifndef KVCTL_H
 +#define KVCTL_H
@@ -4967,11 +4937,9 @@ Index: linux-2.6.23.17/include/linux/mtd/kvctl.h
 +#define VCT_VLAN		8
 +
 +#endif
-Index: linux-2.6.23.17/drivers/mtd/maps/Makefile
-===================================================================
---- linux-2.6.23.17.orig/drivers/mtd/maps/Makefile
-+++ linux-2.6.23.17/drivers/mtd/maps/Makefile
-@@ -71,3 +71,7 @@ obj-$(CONFIG_MTD_PLATRAM)	+= plat-ram.o
+--- a/drivers/mtd/maps/Makefile
++++ b/drivers/mtd/maps/Makefile
+@@ -71,3 +71,7 @@
  obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
  obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o
  obj-$(CONFIG_MTD_TQM834x)	+= tqm834x.o
