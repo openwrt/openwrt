@@ -30,11 +30,9 @@ and didn't make it with the ppc32 equivalent. Thanks.
 
 
 ---
-Index: linux-2.6.23.17/include/asm-ppc/io.h
-===================================================================
---- linux-2.6.23.17.orig/include/asm-ppc/io.h
-+++ linux-2.6.23.17/include/asm-ppc/io.h
-@@ -453,11 +453,21 @@ static inline unsigned int ioread16(void
+--- a/include/asm-ppc/io.h
++++ b/include/asm-ppc/io.h
+@@ -453,11 +453,21 @@
  	return readw(addr);
  }
  
@@ -56,7 +54,7 @@ Index: linux-2.6.23.17/include/asm-ppc/io.h
  static inline void iowrite8(u8 val, void __iomem *addr)
  {
  	writeb(val, addr);
-@@ -468,11 +478,21 @@ static inline void iowrite16(u16 val, vo
+@@ -468,11 +478,21 @@
  	writew(val, addr);
  }
  

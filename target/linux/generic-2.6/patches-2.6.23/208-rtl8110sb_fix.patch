@@ -1,8 +1,6 @@
-Index: linux-2.6.23.17/drivers/net/r8169.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/net/r8169.c
-+++ linux-2.6.23.17/drivers/net/r8169.c
-@@ -1459,7 +1459,7 @@ static const struct rtl_cfg_info {
+--- a/drivers/net/r8169.c
++++ b/drivers/net/r8169.c
+@@ -1459,7 +1459,7 @@
  		.hw_start	= rtl_hw_start_8169,
  		.region		= 1,
  		.align		= 0,
@@ -11,7 +9,7 @@ Index: linux-2.6.23.17/drivers/net/r8169.c
  				  RxFIFOOver | TxErr | TxOK | RxOK | RxErr,
  		.napi_event	= RxFIFOOver | TxErr | TxOK | RxOK | RxOverflow
  	},
-@@ -1467,7 +1467,7 @@ static const struct rtl_cfg_info {
+@@ -1467,7 +1467,7 @@
  		.hw_start	= rtl_hw_start_8168,
  		.region		= 2,
  		.align		= 8,
@@ -20,7 +18,7 @@ Index: linux-2.6.23.17/drivers/net/r8169.c
  				  TxErr | TxOK | RxOK | RxErr,
  		.napi_event	= TxErr | TxOK | RxOK | RxOverflow
  	},
-@@ -1475,7 +1475,7 @@ static const struct rtl_cfg_info {
+@@ -1475,7 +1475,7 @@
  		.hw_start	= rtl_hw_start_8101,
  		.region		= 2,
  		.align		= 8,
@@ -29,7 +27,7 @@ Index: linux-2.6.23.17/drivers/net/r8169.c
  				  RxFIFOOver | TxErr | TxOK | RxOK | RxErr,
  		.napi_event	= RxFIFOOver | TxErr | TxOK | RxOK | RxOverflow
  	}
-@@ -2779,10 +2779,12 @@ static irqreturn_t rtl8169_interrupt(int
+@@ -2779,10 +2779,12 @@
  			break;
  		}
  

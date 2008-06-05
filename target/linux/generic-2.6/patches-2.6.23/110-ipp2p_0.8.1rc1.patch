@@ -1,7 +1,5 @@
-Index: linux-2.6.23.17/include/linux/netfilter_ipv4/ipt_ipp2p.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/include/linux/netfilter_ipv4/ipt_ipp2p.h
++++ b/include/linux/netfilter_ipv4/ipt_ipp2p.h
 @@ -0,0 +1,31 @@
 +#ifndef __IPT_IPP2P_H
 +#define __IPT_IPP2P_H
@@ -34,10 +32,8 @@ Index: linux-2.6.23.17/include/linux/netfilter_ipv4/ipt_ipp2p.h
 +#define IPP2P_MUTE		(1 << 14)
 +#define IPP2P_WASTE		(1 << 15)
 +#define IPP2P_XDCC		(1 << 16)
-Index: linux-2.6.23.17/net/ipv4/netfilter/ipt_ipp2p.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/net/ipv4/netfilter/ipt_ipp2p.c
++++ b/net/ipv4/netfilter/ipt_ipp2p.c
 @@ -0,0 +1,856 @@
 +#if defined(MODVERSIONS)
 +#include <linux/modversions.h>
@@ -895,11 +891,9 @@ Index: linux-2.6.23.17/net/ipv4/netfilter/ipt_ipp2p.c
 +module_exit(fini);
 +
 +
-Index: linux-2.6.23.17/net/ipv4/netfilter/Kconfig
-===================================================================
---- linux-2.6.23.17.orig/net/ipv4/netfilter/Kconfig
-+++ linux-2.6.23.17/net/ipv4/netfilter/Kconfig
-@@ -63,6 +63,12 @@ config IP_NF_MATCH_IPRANGE
+--- a/net/ipv4/netfilter/Kconfig
++++ b/net/ipv4/netfilter/Kconfig
+@@ -63,6 +63,12 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -912,11 +906,9 @@ Index: linux-2.6.23.17/net/ipv4/netfilter/Kconfig
  config IP_NF_MATCH_TOS
  	tristate "TOS match support"
  	depends on IP_NF_IPTABLES
-Index: linux-2.6.23.17/net/ipv4/netfilter/Makefile
-===================================================================
---- linux-2.6.23.17.orig/net/ipv4/netfilter/Makefile
-+++ linux-2.6.23.17/net/ipv4/netfilter/Makefile
-@@ -50,6 +50,8 @@ obj-$(CONFIG_IP_NF_MATCH_AH) += ipt_ah.o
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
+@@ -50,6 +50,8 @@
  obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
  obj-$(CONFIG_IP_NF_MATCH_ADDRTYPE) += ipt_addrtype.o
  
