@@ -57,7 +57,7 @@ Index: linux-2.6.25.4/arch/mips/kernel/cpu-probe.c
 ===================================================================
 --- linux-2.6.25.4.orig/arch/mips/kernel/cpu-probe.c
 +++ linux-2.6.25.4/arch/mips/kernel/cpu-probe.c
-@@ -803,6 +803,18 @@ static inline void cpu_probe_broadcom(st
+@@ -803,6 +803,21 @@ static inline void cpu_probe_broadcom(st
  	case PRID_IMP_BCM4710:
  		c->cputype = CPU_BCM4710;
  		break;
@@ -73,10 +73,13 @@ Index: linux-2.6.25.4/arch/mips/kernel/cpu-probe.c
 +	case PRID_IMP_BCM6358:
 +		c->cputype = CPU_BCM6358;
 +		break;
++	case PRID_IMP_BCM3350:
++		c->cputype = CPU_BCM3350;
++		break;
  	default:
  		c->cputype = CPU_UNKNOWN;
  		break;
-@@ -887,6 +899,10 @@ static __cpuinit const char *cpu_to_name
+@@ -887,6 +899,11 @@ static __cpuinit const char *cpu_to_name
  	case CPU_SR71000:	name = "Sandcraft SR71000"; break;
  	case CPU_BCM3302:	name = "Broadcom BCM3302"; break;
  	case CPU_BCM4710:	name = "Broadcom BCM4710"; break;
@@ -84,6 +87,7 @@ Index: linux-2.6.25.4/arch/mips/kernel/cpu-probe.c
 +	case CPU_BCM6345:	name = "Broadcom BCM6345"; break;
 +	case CPU_BCM6348:	name = "Broadcom BCM6348"; break;
 +	case CPU_BCM6358:	name = "Broadcom BCM6358"; break;
++	case CPU_BCM3350:	name = "Broadcom BCM3350"; break;
  	case CPU_PR4450:	name = "Philips PR4450"; break;
  	case CPU_LOONGSON2:	name = "ICT Loongson-2"; break;
  	default:
@@ -95,7 +99,7 @@ Index: linux-2.6.25.4/arch/mips/mm/c-r4k.c
  		if (!(config & MIPS_CONF_M))
  			panic("Don't know how to probe P-caches on this cpu.");
  
-+		if (c->cputype == CPU_BCM6338 || c->cputype == CPU_BCM6345 || c->cputype == CPU_BCM6348 || c->cputype == CPU_BCM6358)
++		if (c->cputype == CPU_BCM6338 || c->cputype == CPU_BCM6345 || c->cputype == CPU_BCM6348 || c->cputype == CPU_BCM6358 || c->cputype == CPU_BCM3350)
 +		{
 +			printk("bcm963xx: enabling icache and dcache...\n");
 +			/* Enable caches */
@@ -109,7 +113,7 @@ Index: linux-2.6.25.4/arch/mips/mm/tlbex.c
 ===================================================================
 --- linux-2.6.25.4.orig/arch/mips/mm/tlbex.c
 +++ linux-2.6.25.4/arch/mips/mm/tlbex.c
-@@ -315,6 +315,10 @@ static void __cpuinit build_tlb_write_en
+@@ -315,6 +315,11 @@ static void __cpuinit build_tlb_write_en
  	case CPU_25KF:
  	case CPU_BCM3302:
  	case CPU_BCM4710:
@@ -117,6 +121,7 @@ Index: linux-2.6.25.4/arch/mips/mm/tlbex.c
 +	case CPU_BCM6345:
 +	case CPU_BCM6348:
 +	case CPU_BCM6358:
++	case CPU_BCM3350:
  	case CPU_LOONGSON2:
  		if (m4kc_tlbp_war())
  			uasm_i_nop(p);
@@ -133,7 +138,7 @@ Index: linux-2.6.25.4/include/asm-mips/bootinfo.h
 ===================================================================
 --- linux-2.6.25.4.orig/include/asm-mips/bootinfo.h
 +++ linux-2.6.25.4/include/asm-mips/bootinfo.h
-@@ -94,6 +94,18 @@
+@@ -94,6 +94,19 @@
  #define MACH_MSP7120_FPGA       5	/* PMC-Sierra MSP7120 Emulation */
  #define MACH_MSP_OTHER        255	/* PMC-Sierra unknown board type */
  
@@ -148,6 +153,7 @@ Index: linux-2.6.25.4/include/asm-mips/bootinfo.h
 +#define  MACH_BCM96345		3
 +#define  MACH_BCM96348		4
 +#define  MACH_BCM96358		5
++#define  MACH_BCM3350		6
 +
  #define CL_SIZE			COMMAND_LINE_SIZE
  
@@ -156,7 +162,7 @@ Index: linux-2.6.25.4/include/asm-mips/cpu.h
 ===================================================================
 --- linux-2.6.25.4.orig/include/asm-mips/cpu.h
 +++ linux-2.6.25.4/include/asm-mips/cpu.h
-@@ -111,6 +111,10 @@
+@@ -111,6 +111,11 @@
  
  #define PRID_IMP_BCM4710	0x4000
  #define PRID_IMP_BCM3302	0x9000
@@ -164,6 +170,7 @@ Index: linux-2.6.25.4/include/asm-mips/cpu.h
 +#define PRID_IMP_BCM6345        0x8000
 +#define PRID_IMP_BCM6348        0x9100
 +#define PRID_IMP_BCM6358        0xA000
++#define PRID_IMP_BCM3350	0x28000
  
  /*
   * Definitions for 7:0 on legacy processors
@@ -173,7 +180,7 @@ Index: linux-2.6.25.4/include/asm-mips/cpu.h
  	CPU_AU1100, CPU_AU1200, CPU_AU1210, CPU_AU1250, CPU_AU1500, CPU_AU1550,
 -	CPU_PR4450, CPU_BCM3302, CPU_BCM4710,
 +	CPU_PR4450, CPU_BCM3302, CPU_BCM4710, CPU_BCM6338, CPU_BCM6345, CPU_BCM6348,
-+	CPU_BCM6358,
++	CPU_BCM6358, CPU_BCM3350,
  
  	/*
  	 * MIPS64 class processors
