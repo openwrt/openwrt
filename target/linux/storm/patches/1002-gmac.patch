@@ -1,7 +1,5 @@
-Index: linux-2.6.23.17/drivers/net/sl2312_emac.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/net/sl2312_emac.c
++++ b/drivers/net/sl2312_emac.c
 @@ -0,0 +1,4604 @@
 +#include <linux/module.h>
 +#include <linux/kernel.h>
@@ -4607,10 +4605,8 @@ Index: linux-2.6.23.17/drivers/net/sl2312_emac.c
 +	}
 +}
 +
-Index: linux-2.6.23.17/drivers/net/sl351x_crc16.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/net/sl351x_crc16.c
++++ b/drivers/net/sl351x_crc16.c
 @@ -0,0 +1,93 @@
 +/****************************************************************************
 +* Name			: sl351x_crc16.c
@@ -4705,10 +4701,8 @@ Index: linux-2.6.23.17/drivers/net/sl351x_crc16.c
 +
 +    return(SWAP_WORD(crc));
 +}
-Index: linux-2.6.23.17/drivers/net/sl351x_gmac.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/net/sl351x_gmac.c
++++ b/drivers/net/sl351x_gmac.c
 @@ -0,0 +1,5622 @@
 +/**************************************************************************
 +* Copyright 2006 StorLink Semiconductors, Inc.  All rights reserved.
@@ -4859,7 +4853,7 @@ Index: linux-2.6.23.17/drivers/net/sl351x_gmac.c
 +struct net_device_stats * gmac_get_stats(struct net_device *dev);
 +static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev);
 +static void gmac_set_rx_mode(struct net_device *dev);
-+static irqreturn_t toe_gmac_interrupt (int irq, void *dev_instance, struct pt_regs *regs);
++static irqreturn_t toe_gmac_interrupt (int irq, void *dev_instance);
 +static void toe_gmac_handle_default_rxq(struct net_device *dev, GMAC_INFO_T *tp);
 +unsigned int mii_read(unsigned char phyad,unsigned char regad);
 +void mii_write(unsigned char phyad,unsigned char regad,unsigned int value);
@@ -6532,7 +6526,7 @@ Index: linux-2.6.23.17/drivers/net/sl351x_gmac.c
 +#ifdef	L2_jumbo_frame
 +		if (total_len >= (dev->mtu+14) && (skb->nh.iph->protocol == 0x011) && skb->nh.iph && (skb->nh.iph->frag_off & __constant_htons(0x3fff)))
 +#else
-+		if (total_len <= 1514 && skb->nh.iph && (skb->nh.iph->frag_off & __constant_htons(0x3fff)))
++		if (total_len <= 1514 && ip_hdr(skb) && (ip_hdr(skb)->frag_off & __constant_htons(0x3fff)))
 +#endif
 +			word1  = total_len |
 +					TSS_IP_CHKSUM_BIT  |
@@ -7012,7 +7006,7 @@ Index: linux-2.6.23.17/drivers/net/sl351x_gmac.c
 +	toe = (TOE_INFO_T *)&toe_private_data;
 +
 +    /* hook ISR */
-+	retval = request_irq (dev->irq, toe_gmac_interrupt, SA_INTERRUPT, dev->name, dev);
++	retval = request_irq (dev->irq, toe_gmac_interrupt, IRQF_DISABLED, dev->name, dev);
 +	if (retval)
 +		return retval;
 +
@@ -7140,7 +7134,7 @@ Index: linux-2.6.23.17/drivers/net/sl351x_gmac.c
 +/*----------------------------------------------------------------------
 +* toe_gmac_interrupt
 +*----------------------------------------------------------------------*/
-+static irqreturn_t toe_gmac_interrupt (int irq, void *dev_instance, struct pt_regs *regs)
++static irqreturn_t toe_gmac_interrupt (int irq, void *dev_instance)
 +{
 +	struct net_device   *dev = (struct net_device *)dev_instance;
 +	TOE_INFO_T			*toe;
@@ -10332,10 +10326,8 @@ Index: linux-2.6.23.17/drivers/net/sl351x_gmac.c
 +late_initcall(sl351x_mac_address_init);
 +
 +
-Index: linux-2.6.23.17/drivers/net/sl351x_hash.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/net/sl351x_hash.c
++++ b/drivers/net/sl351x_hash.c
 @@ -0,0 +1,713 @@
 +/**************************************************************************
 +* Copyright 2006 StorLink Semiconductors, Inc.  All rights reserved.
@@ -11050,10 +11042,8 @@ Index: linux-2.6.23.17/drivers/net/sl351x_hash.c
 +}
 +
 +
-Index: linux-2.6.23.17/drivers/net/sl351x_nat.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/net/sl351x_nat.c
++++ b/drivers/net/sl351x_nat.c
 @@ -0,0 +1,1736 @@
 +/****************************************************************************
 +* Copyright 2006 StorLink Semiconductors, Inc.  All rights reserved.
@@ -11117,8 +11107,8 @@ Index: linux-2.6.23.17/drivers/net/sl351x_nat.c
 +#include <asm/arch/sl351x_hash_cfg.h>
 +#include <asm/arch/sl351x_nat_cfg.h>
 +#ifdef CONFIG_NETFILTER
-+#include <linux/netfilter_ipv4/ip_conntrack.h>
-+#include <linux/netfilter_ipv4/ip_conntrack_tcp.h>
++// #include <linux/netfilter/nf_conntrack.h>
++#include <linux/netfilter/nf_conntrack_tcp.h>
 +#endif
 +
 +//#define NAT_DEBUG_MSG		1
@@ -12791,10 +12781,8 @@ Index: linux-2.6.23.17/drivers/net/sl351x_nat.c
 +
 +#endif // CONFIG_SL351x_NAT
 +
-Index: linux-2.6.23.17/drivers/net/sl351x_proc.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/net/sl351x_proc.c
++++ b/drivers/net/sl351x_proc.c
 @@ -0,0 +1,578 @@
 +/****************************************************************************
 +* Copyright 2006 Storlink Corp.  All rights reserved.
@@ -12839,7 +12827,7 @@ Index: linux-2.6.23.17/drivers/net/sl351x_proc.c
 +#include <linux/tcp.h>
 +#include <linux/ppp_defs.h>
 +#ifdef CONFIG_NETFILTER
-+#include <linux/netfilter_ipv4/ip_conntrack.h>
++// #include <linux/netfilter_ipv4/ip_conntrack.h>
 +#endif
 +#include <linux/proc_fs.h>
 +#include <linux/seq_file.h>
@@ -13374,10 +13362,8 @@ Index: linux-2.6.23.17/drivers/net/sl351x_proc.c
 +module_exit(fini);
 +
 +#endif	// CONFIG_PROC_FS
-Index: linux-2.6.23.17/drivers/net/sl351x_toe.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/net/sl351x_toe.c
++++ b/drivers/net/sl351x_toe.c
 @@ -0,0 +1,1083 @@
 +/**************************************************************************
 +* Copyright 2006 StorLink Semiconductors, Inc.  All rights reserved.
@@ -14462,10 +14448,8 @@ Index: linux-2.6.23.17/drivers/net/sl351x_toe.c
 +}
 +
 +
-Index: linux-2.6.23.17/drivers/net/sl_lepus_hash.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/net/sl_lepus_hash.c
++++ b/drivers/net/sl_lepus_hash.c
 @@ -0,0 +1,553 @@
 +/**************************************************************************
 +* Copyright 2006 StorLink Semiconductors, Inc.  All rights reserved.
@@ -15020,10 +15004,8 @@ Index: linux-2.6.23.17/drivers/net/sl_lepus_hash.c
 +}
 +
 +
-Index: linux-2.6.23.17/drivers/net/sl_switch.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/net/sl_switch.c
++++ b/drivers/net/sl_switch.c
 @@ -0,0 +1,650 @@
 +#include <linux/module.h>
 +#include <linux/kernel.h>
@@ -15675,10 +15657,8 @@ Index: linux-2.6.23.17/drivers/net/sl_switch.c
 +}
 +EXPORT_SYMBOL(SPI_get_identifier);
 +
-Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_gmac.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_gmac.h
++++ b/include/asm-arm/arch-sl2312/sl351x_gmac.h
 @@ -0,0 +1,2223 @@
 +/****************************************************************************
 +* Copyright 2006 StorLink Semiconductors, Inc.  All rights reserved.
@@ -17903,10 +17883,8 @@ Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_gmac.h
 +/* transmit timeout value */
 +
 +#endif //_GMAC_SL351x_H
-Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_hash_cfg.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_hash_cfg.h
++++ b/include/asm-arm/arch-sl2312/sl351x_hash_cfg.h
 @@ -0,0 +1,365 @@
 +/*-----------------------------------------------------------------------------------
 +*	sl351x_hash_cfg.h
@@ -18273,10 +18251,8 @@ Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_hash_cfg.h
 +
 +
 +
-Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_nat_cfg.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_nat_cfg.h
++++ b/include/asm-arm/arch-sl2312/sl351x_nat_cfg.h
 @@ -0,0 +1,211 @@
 +/**************************************************************************
 +* Copyright 2006 StorLink Semiconductors, Inc.  All rights reserved.                
@@ -18489,10 +18465,8 @@ Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_nat_cfg.h
 +
 +
 +
-Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_toe.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_toe.h
++++ b/include/asm-arm/arch-sl2312/sl351x_toe.h
 @@ -0,0 +1,88 @@
 +/**************************************************************************
 +* Copyright 2006 StorLink Semiconductors, Inc.  All rights reserved.
@@ -18582,3 +18556,60 @@ Index: linux-2.6.23.17/include/asm-arm/arch-sl2312/sl351x_toe.h
 +};
 +
 +#endif // __SL351x_TOE_H
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -2131,6 +2131,42 @@
+ 
+ 	  The safe and default value for this is N.
+ 
++config NET_GMAC
++	tristate "Storlink Gigabit Ethernet support"
++	depends on ARCH_SL2312
++	help
++	  This driver supports Storlink dual Gigabit Ethernet.
++
++config NET_SL2312
++	tristate "Storlink Gigabit Ethernet support"
++	depends on NET_GMAC
++	help
++	  This driver supports Storlink dual Gigabit Ethernet.
++
++config NET_SL351X
++	tristate "Storlink Lepus Gigabit Ethernet support"
++	depends on NET_GMAC
++	help
++	  This driver supports Storlink TOE and NAT dual Gigabit Ethernet.
++
++config SL2312_TSO
++	bool "Tx Segmentation Enable"
++	depends on NET_GMAC
++	help
++	  TBD
++
++config SL2312_MPAGE
++	bool "Tx Multipage Enable"
++	depends on NET_GMAC
++	help
++	  TBD
++
++config SL2312_RECVFILE
++	bool "Rx Multipage Enable"
++	depends on NET_GMAC
++	help
++	  TBD
++
+ config DL2K
+ 	tristate "D-Link DL2000-based Gigabit Ethernet support"
+ 	depends on PCI
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -236,4 +236,8 @@
+ 
+ obj-$(CONFIG_FS_ENET) += fs_enet/
+ 
+-obj-$(CONFIG_NETXEN_NIC) += netxen/
++
++obj-$(CONFIG_NET_SL351X)+= sl351x_gmac.o sl351x_nat.o sl351x_hash.o sl351x_crc16.o sl351x_proc.o sl_switch.o
++obj-$(CONFIG_NET_SL2312)+= sl2312_emac.o
++
++

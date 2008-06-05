@@ -1,7 +1,5 @@
-Index: linux-2.6.23.17/drivers/serial/it8712.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/serial/it8712.c
++++ b/drivers/serial/it8712.c
 @@ -0,0 +1,858 @@
 +/*
 + *  linux/drivers/char/serial_uart00.c
@@ -861,10 +859,8 @@ Index: linux-2.6.23.17/drivers/serial/it8712.c
 +
 +
 +__initcall(it8712_init);
-Index: linux-2.6.23.17/drivers/serial/it8712.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/serial/it8712.h
++++ b/drivers/serial/it8712.h
 @@ -0,0 +1,135 @@
 +#define UART_RX		0	/* In:  Receive buffer (DLAB=0) */
 +#define UART_TX		0	/* Out: Transmit buffer (DLAB=0) */
@@ -1001,10 +997,8 @@ Index: linux-2.6.23.17/drivers/serial/it8712.h
 +
 +
 +
-Index: linux-2.6.23.17/drivers/serial/serial_it8712.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/serial/serial_it8712.c
++++ b/drivers/serial/serial_it8712.c
 @@ -0,0 +1,876 @@
 +/*
 + *  linux/drivers/char/serial_uart00.c
@@ -1882,10 +1876,8 @@ Index: linux-2.6.23.17/drivers/serial/serial_it8712.c
 +
 +
 +__initcall(it8712_init);
-Index: linux-2.6.23.17/drivers/serial/serial_sl2312.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/serial/serial_sl2312.c
++++ b/drivers/serial/serial_sl2312.c
 @@ -0,0 +1,827 @@
 +/*
 + *  linux/drivers/char/serial_uart00.c
@@ -1959,7 +1951,7 @@ Index: linux-2.6.23.17/drivers/serial/serial_sl2312.c
 +#define UART_NR		1
 +
 +
-+#define SERIAL_SL2312_NAME	"ttySL"
++#define SERIAL_SL2312_NAME	"ttyS"
 +#define SERIAL_SL2312_MAJOR	204
 +#define SERIAL_SL2312_MINOR	40      /* Temporary - will change in future */
 +#define SERIAL_SL2312_NR	UART_NR
@@ -2714,10 +2706,8 @@ Index: linux-2.6.23.17/drivers/serial/serial_sl2312.c
 +
 +
 +__initcall(sl2312_init);
-Index: linux-2.6.23.17/include/linux/serial_core.h
-===================================================================
---- linux-2.6.23.17.orig/include/linux/serial_core.h
-+++ linux-2.6.23.17/include/linux/serial_core.h
+--- a/include/linux/serial_core.h
++++ b/include/linux/serial_core.h
 @@ -147,6 +147,10 @@
  #define PORT_SB1250_DUART	77
  
@@ -2729,11 +2719,9 @@ Index: linux-2.6.23.17/include/linux/serial_core.h
  #ifdef __KERNEL__
  
  #include <linux/compiler.h>
-Index: linux-2.6.23.17/drivers/char/Makefile
-===================================================================
---- linux-2.6.23.17.orig/drivers/char/Makefile
-+++ linux-2.6.23.17/drivers/char/Makefile
-@@ -70,6 +70,16 @@ obj-$(CONFIG_R3964)		+= n_r3964.o
+--- a/drivers/char/Makefile
++++ b/drivers/char/Makefile
+@@ -70,6 +70,16 @@
  obj-$(CONFIG_APPLICOM)		+= applicom.o
  obj-$(CONFIG_SONYPI)		+= sonypi.o
  obj-$(CONFIG_RTC)		+= rtc.o
@@ -2750,11 +2738,9 @@ Index: linux-2.6.23.17/drivers/char/Makefile
  obj-$(CONFIG_HPET)		+= hpet.o
  obj-$(CONFIG_GEN_RTC)		+= genrtc.o
  obj-$(CONFIG_EFI_RTC)		+= efirtc.o
-Index: linux-2.6.23.17/drivers/serial/Kconfig
-===================================================================
---- linux-2.6.23.17.orig/drivers/serial/Kconfig
-+++ linux-2.6.23.17/drivers/serial/Kconfig
-@@ -280,6 +280,56 @@ config SERIAL_8250_RM9K
+--- a/drivers/serial/Kconfig
++++ b/drivers/serial/Kconfig
+@@ -280,6 +280,56 @@
  
  comment "Non-8250 serial port support"
  
@@ -2778,7 +2764,7 @@ Index: linux-2.6.23.17/drivers/serial/Kconfig
 +        Even if you say Y here, the currently visible virtual console
 +        (/dev/tty0) will still be used as the system console by default, but
 +        you can alter that using a kernel command line option such as
-+        "console=ttySL0". (Try "man bootparam" or see the documentation of
++        "console=ttyS0". (Try "man bootparam" or see the documentation of
 +        your boot loader (lilo or loadlin) about how to pass options to the
 +        kernel at boot time.)
 +
@@ -2811,11 +2797,9 @@ Index: linux-2.6.23.17/drivers/serial/Kconfig
  config SERIAL_AMBA_PL010
  	tristate "ARM AMBA PL010 serial port support"
  	depends on ARM_AMBA && (BROKEN || !ARCH_VERSATILE)
-Index: linux-2.6.23.17/drivers/serial/Makefile
-===================================================================
---- linux-2.6.23.17.orig/drivers/serial/Makefile
-+++ linux-2.6.23.17/drivers/serial/Makefile
-@@ -62,5 +62,7 @@ obj-$(CONFIG_SERIAL_SGI_IOC3) += ioc3_se
+--- a/drivers/serial/Makefile
++++ b/drivers/serial/Makefile
+@@ -62,5 +62,7 @@
  obj-$(CONFIG_SERIAL_ATMEL) += atmel_serial.o
  obj-$(CONFIG_SERIAL_UARTLITE) += uartlite.o
  obj-$(CONFIG_SERIAL_NETX) += netx-serial.o
