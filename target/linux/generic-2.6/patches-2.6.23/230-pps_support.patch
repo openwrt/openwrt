@@ -1,7 +1,5 @@
-Index: linux-2.6.23.17/Documentation/pps/Makefile
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/Documentation/pps/Makefile
++++ b/Documentation/pps/Makefile
 @@ -0,0 +1,27 @@
 +TARGETS = ppstest ppsctl
 +
@@ -30,10 +28,8 @@ Index: linux-2.6.23.17/Documentation/pps/Makefile
 +clean :
 +	rm -f *.o *~ core .depend
 +	rm -f ${TARGETS}
-Index: linux-2.6.23.17/Documentation/pps/pps.txt
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/Documentation/pps/pps.txt
++++ b/Documentation/pps/pps.txt
 @@ -0,0 +1,170 @@
 +
 +			PPS - Pulse Per Second
@@ -205,10 +201,8 @@ Index: linux-2.6.23.17/Documentation/pps/pps.txt
 +
 +Please, note that to compile userland programs you need the file timepps.h
 +(see Documentation/pps/).
-Index: linux-2.6.23.17/Documentation/pps/ppsctl.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/Documentation/pps/ppsctl.c
++++ b/Documentation/pps/ppsctl.c
 @@ -0,0 +1,62 @@
 +#include <stdio.h>
 +#include <unistd.h>
@@ -272,10 +266,8 @@ Index: linux-2.6.23.17/Documentation/pps/ppsctl.c
 +
 +	return 0;
 +}
-Index: linux-2.6.23.17/Documentation/pps/ppsfind
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/Documentation/pps/ppsfind
++++ b/Documentation/pps/ppsfind
 @@ -0,0 +1,17 @@
 +#!/bin/sh
 +
@@ -294,10 +286,8 @@ Index: linux-2.6.23.17/Documentation/pps/ppsfind
 +done
 +
 +exit 0
-Index: linux-2.6.23.17/Documentation/pps/ppstest.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/Documentation/pps/ppstest.c
++++ b/Documentation/pps/ppstest.c
 @@ -0,0 +1,151 @@
 +#include <stdio.h>
 +#include <stdlib.h>
@@ -450,10 +440,8 @@ Index: linux-2.6.23.17/Documentation/pps/ppstest.c
 +
 +	return 0;
 +}
-Index: linux-2.6.23.17/Documentation/pps/timepps.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/Documentation/pps/timepps.h
++++ b/Documentation/pps/timepps.h
 @@ -0,0 +1,193 @@
 +/*
 + * timepps.h -- PPS API main header
@@ -648,11 +636,9 @@ Index: linux-2.6.23.17/Documentation/pps/timepps.h
 +}
 +
 +#endif				/* _SYS_TIMEPPS_H_ */
-Index: linux-2.6.23.17/MAINTAINERS
-===================================================================
---- linux-2.6.23.17.orig/MAINTAINERS
-+++ linux-2.6.23.17/MAINTAINERS
-@@ -3011,6 +3011,13 @@ P:	James Chapman
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -3011,6 +3011,13 @@
  M:	jchapman@katalix.com
  S:	Maintained
  
@@ -666,11 +652,9 @@ Index: linux-2.6.23.17/MAINTAINERS
  PREEMPTIBLE KERNEL
  P:	Robert Love
  M:	rml@tech9.net
-Index: linux-2.6.23.17/drivers/Kconfig
-===================================================================
---- linux-2.6.23.17.orig/drivers/Kconfig
-+++ linux-2.6.23.17/drivers/Kconfig
-@@ -52,6 +52,8 @@ source "drivers/i2c/Kconfig"
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
+@@ -52,6 +52,8 @@
  
  source "drivers/spi/Kconfig"
  
@@ -679,11 +663,9 @@ Index: linux-2.6.23.17/drivers/Kconfig
  source "drivers/w1/Kconfig"
  
  source "drivers/power/Kconfig"
-Index: linux-2.6.23.17/drivers/Makefile
-===================================================================
---- linux-2.6.23.17.orig/drivers/Makefile
-+++ linux-2.6.23.17/drivers/Makefile
-@@ -63,6 +63,7 @@ obj-$(CONFIG_INPUT)		+= input/
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -63,6 +63,7 @@
  obj-$(CONFIG_I2O)		+= message/
  obj-$(CONFIG_RTC_LIB)		+= rtc/
  obj-y				+= i2c/
@@ -691,11 +673,9 @@ Index: linux-2.6.23.17/drivers/Makefile
  obj-$(CONFIG_W1)		+= w1/
  obj-$(CONFIG_POWER_SUPPLY)	+= power/
  obj-$(CONFIG_HWMON)		+= hwmon/
-Index: linux-2.6.23.17/drivers/char/lp.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/char/lp.c
-+++ linux-2.6.23.17/drivers/char/lp.c
-@@ -746,6 +746,27 @@ static struct console lpcons = {
+--- a/drivers/char/lp.c
++++ b/drivers/char/lp.c
+@@ -746,6 +746,27 @@
  
  #endif /* console on line printer */
  
@@ -723,7 +703,7 @@ Index: linux-2.6.23.17/drivers/char/lp.c
  /* --- initialisation code ------------------------------------- */
  
  static int parport_nr[LP_NO] = { [0 ... LP_NO-1] = LP_PARPORT_UNSPEC };
-@@ -817,6 +838,38 @@ static int lp_register(int nr, struct pa
+@@ -817,6 +838,38 @@
  	}
  #endif
  
@@ -762,7 +742,7 @@ Index: linux-2.6.23.17/drivers/char/lp.c
  	return 0;
  }
  
-@@ -860,6 +913,14 @@ static void lp_detach (struct parport *p
+@@ -860,6 +913,14 @@
  		console_registered = NULL;
  	}
  #endif /* CONFIG_LP_CONSOLE */
@@ -777,10 +757,8 @@ Index: linux-2.6.23.17/drivers/char/lp.c
  }
  
  static struct parport_driver lp_driver = {
-Index: linux-2.6.23.17/drivers/pps/Kconfig
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/pps/Kconfig
++++ b/drivers/pps/Kconfig
 @@ -0,0 +1,34 @@
 +#
 +# PPS support configuration
@@ -816,10 +794,8 @@ Index: linux-2.6.23.17/drivers/pps/Kconfig
 +source drivers/pps/clients/Kconfig
 +
 +endmenu
-Index: linux-2.6.23.17/drivers/pps/Makefile
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/pps/Makefile
++++ b/drivers/pps/Makefile
 @@ -0,0 +1,11 @@
 +#
 +# Makefile for the PPS core.
@@ -832,10 +808,8 @@ Index: linux-2.6.23.17/drivers/pps/Makefile
 +ifeq ($(CONFIG_PPS_DEBUG),y)
 +EXTRA_CFLAGS += -DDEBUG
 +endif
-Index: linux-2.6.23.17/drivers/pps/clients/Kconfig
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/pps/clients/Kconfig
++++ b/drivers/pps/clients/Kconfig
 @@ -0,0 +1,38 @@
 +#
 +# PPS clients configuration
@@ -875,10 +849,8 @@ Index: linux-2.6.23.17/drivers/pps/clients/Kconfig
 +	  with the interrupt pin of your parallel port.
 +
 +endif
-Index: linux-2.6.23.17/drivers/pps/clients/Makefile
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/pps/clients/Makefile
++++ b/drivers/pps/clients/Makefile
 @@ -0,0 +1,9 @@
 +#
 +# Makefile for PPS clients.
@@ -889,10 +861,8 @@ Index: linux-2.6.23.17/drivers/pps/clients/Makefile
 +ifeq ($(CONFIG_PPS_DEBUG),y)
 +EXTRA_CFLAGS += -DDEBUG
 +endif
-Index: linux-2.6.23.17/drivers/pps/clients/ktimer.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/pps/clients/ktimer.c
++++ b/drivers/pps/clients/ktimer.c
 @@ -0,0 +1,114 @@
 +/*
 + * ktimer.c -- kernel timer test client
@@ -1008,10 +978,8 @@ Index: linux-2.6.23.17/drivers/pps/clients/ktimer.c
 +MODULE_AUTHOR("Rodolfo Giometti <giometti@linux.it>");
 +MODULE_DESCRIPTION("dummy PPS source by using a kernel timer (just for debug)");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.23.17/drivers/pps/kapi.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/pps/kapi.c
++++ b/drivers/pps/kapi.c
 @@ -0,0 +1,271 @@
 +/*
 + * kapi.c -- kernel API
@@ -1284,10 +1252,8 @@ Index: linux-2.6.23.17/drivers/pps/kapi.c
 +	spin_unlock_irqrestore(&idr_lock, flags);
 +}
 +EXPORT_SYMBOL(pps_event);
-Index: linux-2.6.23.17/drivers/pps/pps.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/pps/pps.c
++++ b/drivers/pps/pps.c
 @@ -0,0 +1,332 @@
 +/*
 + * pps.c -- Main PPS support file
@@ -1621,10 +1587,8 @@ Index: linux-2.6.23.17/drivers/pps/pps.c
 +MODULE_AUTHOR("Rodolfo Giometti <giometti@linux.it>");
 +MODULE_DESCRIPTION("LinuxPPS support (RFC 2783) - ver. " PPS_VERSION);
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.23.17/drivers/pps/sysfs.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/pps/sysfs.c
++++ b/drivers/pps/sysfs.c
 @@ -0,0 +1,124 @@
 +/*
 + * sysfs.c -- sysfs support
@@ -1750,11 +1714,9 @@ Index: linux-2.6.23.17/drivers/pps/sysfs.c
 +
 +	return 0;
 +}
-Index: linux-2.6.23.17/drivers/serial/8250.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/serial/8250.c
-+++ linux-2.6.23.17/drivers/serial/8250.c
-@@ -2118,6 +2118,8 @@ serial8250_set_termios(struct uart_port 
+--- a/drivers/serial/8250.c
++++ b/drivers/serial/8250.c
+@@ -2118,6 +2118,8 @@
  		up->ier |= UART_IER_MSI;
  	if (up->capabilities & UART_CAP_UUE)
  		up->ier |= UART_IER_UUE | UART_IER_RTOIE;
@@ -1763,10 +1725,8 @@ Index: linux-2.6.23.17/drivers/serial/8250.c
  
  	serial_out(up, UART_IER, up->ier);
  
-Index: linux-2.6.23.17/drivers/serial/serial_core.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/serial/serial_core.c
-+++ linux-2.6.23.17/drivers/serial/serial_core.c
+--- a/drivers/serial/serial_core.c
++++ b/drivers/serial/serial_core.c
 @@ -33,6 +33,7 @@
  #include <linux/serial.h> /* for serial_state and serial_icounter_struct */
  #include <linux/delay.h>
@@ -1775,7 +1735,7 @@ Index: linux-2.6.23.17/drivers/serial/serial_core.c
  
  #include <asm/irq.h>
  #include <asm/uaccess.h>
-@@ -633,6 +634,54 @@ static int uart_get_info(struct uart_sta
+@@ -633,6 +634,54 @@
  	return 0;
  }
  
@@ -1830,7 +1790,7 @@ Index: linux-2.6.23.17/drivers/serial/serial_core.c
  static int uart_set_info(struct uart_state *state,
  			 struct serial_struct __user *newinfo)
  {
-@@ -807,11 +856,19 @@ static int uart_set_info(struct uart_sta
+@@ -807,11 +856,19 @@
  			(port->flags & UPF_LOW_LATENCY) ? 1 : 0;
  
   check_and_exit:
@@ -1851,7 +1811,7 @@ Index: linux-2.6.23.17/drivers/serial/serial_core.c
  		    old_custom_divisor != port->custom_divisor) {
  			/*
  			 * If they're setting up a custom divisor or speed,
-@@ -2110,6 +2167,12 @@ uart_configure_port(struct uart_driver *
+@@ -2110,6 +2167,12 @@
  		port->ops->config_port(port, flags);
  	}
  
@@ -1864,7 +1824,7 @@ Index: linux-2.6.23.17/drivers/serial/serial_core.c
  	if (port->type != PORT_UNKNOWN) {
  		unsigned long flags;
  
-@@ -2359,6 +2422,12 @@ int uart_remove_one_port(struct uart_dri
+@@ -2359,6 +2422,12 @@
  	mutex_unlock(&state->mutex);
  
  	/*
@@ -1877,11 +1837,9 @@ Index: linux-2.6.23.17/drivers/serial/serial_core.c
  	 * Remove the devices from the tty layer
  	 */
  	tty_unregister_device(drv->tty_driver, port->line);
-Index: linux-2.6.23.17/include/linux/Kbuild
-===================================================================
---- linux-2.6.23.17.orig/include/linux/Kbuild
-+++ linux-2.6.23.17/include/linux/Kbuild
-@@ -295,6 +295,7 @@ unifdef-y += pmu.h
+--- a/include/linux/Kbuild
++++ b/include/linux/Kbuild
+@@ -295,6 +295,7 @@
  unifdef-y += poll.h
  unifdef-y += ppp_defs.h
  unifdef-y += ppp-comp.h
@@ -1889,11 +1847,9 @@ Index: linux-2.6.23.17/include/linux/Kbuild
  unifdef-y += ptrace.h
  unifdef-y += qnx4_fs.h
  unifdef-y += quota.h
-Index: linux-2.6.23.17/include/linux/parport.h
-===================================================================
---- linux-2.6.23.17.orig/include/linux/parport.h
-+++ linux-2.6.23.17/include/linux/parport.h
-@@ -100,6 +100,7 @@ typedef enum {
+--- a/include/linux/parport.h
++++ b/include/linux/parport.h
+@@ -100,6 +100,7 @@
  #include <linux/proc_fs.h>
  #include <linux/spinlock.h>
  #include <linux/wait.h>
@@ -1901,7 +1857,7 @@ Index: linux-2.6.23.17/include/linux/parport.h
  #include <asm/system.h>
  #include <asm/ptrace.h>
  #include <asm/semaphore.h>
-@@ -327,6 +328,11 @@ struct parport {
+@@ -327,6 +328,11 @@
  
  	struct list_head full_list;
  	struct parport *slaves[3];
@@ -1913,7 +1869,7 @@ Index: linux-2.6.23.17/include/linux/parport.h
  };
  
  #define DEFAULT_SPIN_TIME 500 /* us */
-@@ -517,6 +523,12 @@ extern int parport_daisy_select (struct 
+@@ -517,6 +523,12 @@
  /* Lowlevel drivers _can_ call this support function to handle irqs.  */
  static __inline__ void parport_generic_irq(int irq, struct parport *port)
  {
@@ -1926,10 +1882,8 @@ Index: linux-2.6.23.17/include/linux/parport.h
  	parport_ieee1284_interrupt (irq, port);
  	read_lock(&port->cad_lock);
  	if (port->cad && port->cad->irq_func)
-Index: linux-2.6.23.17/include/linux/pps.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/include/linux/pps.h
++++ b/include/linux/pps.h
 @@ -0,0 +1,196 @@
 +/*
 + * pps.h -- PPS API kernel header.
@@ -2127,10 +2081,8 @@ Index: linux-2.6.23.17/include/linux/pps.h
 +#endif /* __KERNEL__ */
 +
 +#endif /* _PPS_H_ */
-Index: linux-2.6.23.17/include/linux/serial_core.h
-===================================================================
---- linux-2.6.23.17.orig/include/linux/serial_core.h
-+++ linux-2.6.23.17/include/linux/serial_core.h
+--- a/include/linux/serial_core.h
++++ b/include/linux/serial_core.h
 @@ -157,6 +157,7 @@
  #include <linux/tty.h>
  #include <linux/mutex.h>
@@ -2139,7 +2091,7 @@ Index: linux-2.6.23.17/include/linux/serial_core.h
  
  struct uart_port;
  struct uart_info;
-@@ -236,6 +237,9 @@ struct uart_port {
+@@ -236,6 +237,9 @@
  	unsigned char		regshift;		/* reg offset shift */
  	unsigned char		iotype;			/* io access style */
  	unsigned char		unused1;
@@ -2149,7 +2101,7 @@ Index: linux-2.6.23.17/include/linux/serial_core.h
  
  #define UPIO_PORT		(0)
  #define UPIO_HUB6		(1)
-@@ -280,7 +284,8 @@ struct uart_port {
+@@ -280,7 +284,8 @@
  #define UPF_IOREMAP		((__force upf_t) (1 << 31))
  
  #define UPF_CHANGE_MASK		((__force upf_t) (0x17fff))
@@ -2159,7 +2111,7 @@ Index: linux-2.6.23.17/include/linux/serial_core.h
  
  	unsigned int		mctrl;			/* current modem ctrl settings */
  	unsigned int		timeout;		/* character-based timeout */
-@@ -312,6 +317,10 @@ struct uart_state {
+@@ -312,6 +317,10 @@
  	struct uart_info	*info;
  	struct uart_port	*port;
  
@@ -2170,7 +2122,7 @@ Index: linux-2.6.23.17/include/linux/serial_core.h
  	struct mutex		mutex;
  };
  
-@@ -476,13 +485,22 @@ uart_handle_dcd_change(struct uart_port 
+@@ -476,13 +485,22 @@
  {
  	struct uart_info *info = port->info;
  

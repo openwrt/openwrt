@@ -1,8 +1,6 @@
-Index: linux-2.6.23.17/drivers/leds/Kconfig
-===================================================================
---- linux-2.6.23.17.orig/drivers/leds/Kconfig
-+++ linux-2.6.23.17/drivers/leds/Kconfig
-@@ -81,6 +81,12 @@ config LEDS_WRAP
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
+@@ -81,6 +81,12 @@
  	help
  	  This option enables support for the PCEngines WRAP programmable LEDs.
  
@@ -15,11 +13,9 @@ Index: linux-2.6.23.17/drivers/leds/Kconfig
  config LEDS_H1940
  	tristate "LED Support for iPAQ H1940 device"
  	depends LEDS_CLASS && ARCH_H1940
-Index: linux-2.6.23.17/drivers/leds/Makefile
-===================================================================
---- linux-2.6.23.17.orig/drivers/leds/Makefile
-+++ linux-2.6.23.17/drivers/leds/Makefile
-@@ -14,6 +14,7 @@ obj-$(CONFIG_LEDS_S3C24XX)		+= leds-s3c2
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
+@@ -14,6 +14,7 @@
  obj-$(CONFIG_LEDS_AMS_DELTA)		+= leds-ams-delta.o
  obj-$(CONFIG_LEDS_NET48XX)		+= leds-net48xx.o
  obj-$(CONFIG_LEDS_WRAP)			+= leds-wrap.o
