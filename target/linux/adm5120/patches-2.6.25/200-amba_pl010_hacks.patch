@@ -1,7 +1,5 @@
-Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
-===================================================================
---- linux-2.6.25.4.orig/drivers/serial/amba-pl010.c
-+++ linux-2.6.25.4/drivers/serial/amba-pl010.c
+--- a/drivers/serial/amba-pl010.c
++++ b/drivers/serial/amba-pl010.c
 @@ -52,11 +52,10 @@
  
  #include <asm/io.h>
@@ -16,7 +14,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  
  #define AMBA_ISR_PASS_LIMIT	256
  
-@@ -82,7 +81,7 @@ static void pl010_stop_tx(struct uart_po
+@@ -82,7 +81,7 @@
  	struct uart_amba_port *uap = (struct uart_amba_port *)port;
  	unsigned int cr;
  
@@ -25,7 +23,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  	cr &= ~UART010_CR_TIE;
  	writel(cr, uap->port.membase + UART010_CR);
  }
-@@ -92,7 +91,7 @@ static void pl010_start_tx(struct uart_p
+@@ -92,7 +91,7 @@
  	struct uart_amba_port *uap = (struct uart_amba_port *)port;
  	unsigned int cr;
  
@@ -34,7 +32,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  	cr |= UART010_CR_TIE;
  	writel(cr, uap->port.membase + UART010_CR);
  }
-@@ -102,7 +101,7 @@ static void pl010_stop_rx(struct uart_po
+@@ -102,7 +101,7 @@
  	struct uart_amba_port *uap = (struct uart_amba_port *)port;
  	unsigned int cr;
  
@@ -43,7 +41,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  	cr &= ~(UART010_CR_RIE | UART010_CR_RTIE);
  	writel(cr, uap->port.membase + UART010_CR);
  }
-@@ -112,7 +111,7 @@ static void pl010_enable_ms(struct uart_
+@@ -112,7 +111,7 @@
  	struct uart_amba_port *uap = (struct uart_amba_port *)port;
  	unsigned int cr;
  
@@ -52,7 +50,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  	cr |= UART010_CR_MSIE;
  	writel(cr, uap->port.membase + UART010_CR);
  }
-@@ -122,9 +121,9 @@ static void pl010_rx_chars(struct uart_a
+@@ -122,9 +121,9 @@
  	struct tty_struct *tty = uap->port.info->tty;
  	unsigned int status, ch, flag, rsr, max_count = 256;
  
@@ -64,7 +62,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  		flag = TTY_NORMAL;
  
  		uap->port.icount.rx++;
-@@ -133,7 +132,7 @@ static void pl010_rx_chars(struct uart_a
+@@ -133,7 +132,7 @@
  		 * Note that the error handling code is
  		 * out of the main execution path
  		 */
@@ -73,7 +71,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  		if (unlikely(rsr & UART01x_RSR_ANY)) {
  			writel(0, uap->port.membase + UART01x_ECR);
  
-@@ -165,7 +164,7 @@ static void pl010_rx_chars(struct uart_a
+@@ -165,7 +164,7 @@
  		uart_insert_char(&uap->port, rsr, UART01x_RSR_OE, ch, flag);
  
  	ignore_char:
@@ -82,7 +80,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  	}
  	spin_unlock(&uap->port.lock);
  	tty_flip_buffer_push(tty);
-@@ -210,7 +209,7 @@ static void pl010_modem_status(struct ua
+@@ -210,7 +209,7 @@
  
  	writel(0, uap->port.membase + UART010_ICR);
  
@@ -91,7 +89,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  
  	delta = status ^ uap->old_status;
  	uap->old_status = status;
-@@ -238,7 +237,7 @@ static irqreturn_t pl010_int(int irq, vo
+@@ -238,7 +237,7 @@
  
  	spin_lock(&uap->port.lock);
  
@@ -100,7 +98,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  	if (status) {
  		do {
  			if (status & (UART010_IIR_RTIS | UART010_IIR_RIS))
-@@ -251,7 +250,7 @@ static irqreturn_t pl010_int(int irq, vo
+@@ -251,7 +250,7 @@
  			if (pass_counter-- == 0)
  				break;
  
@@ -109,7 +107,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  		} while (status & (UART010_IIR_RTIS | UART010_IIR_RIS |
  				   UART010_IIR_TIS));
  		handled = 1;
-@@ -265,7 +264,7 @@ static irqreturn_t pl010_int(int irq, vo
+@@ -265,7 +264,7 @@
  static unsigned int pl010_tx_empty(struct uart_port *port)
  {
  	struct uart_amba_port *uap = (struct uart_amba_port *)port;
@@ -118,7 +116,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  	return status & UART01x_FR_BUSY ? 0 : TIOCSER_TEMT;
  }
  
-@@ -275,7 +274,7 @@ static unsigned int pl010_get_mctrl(stru
+@@ -275,7 +274,7 @@
  	unsigned int result = 0;
  	unsigned int status;
  
@@ -127,7 +125,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  	if (status & UART01x_FR_DCD)
  		result |= TIOCM_CAR;
  	if (status & UART01x_FR_DSR)
-@@ -301,7 +300,7 @@ static void pl010_break_ctl(struct uart_
+@@ -301,7 +300,7 @@
  	unsigned int lcr_h;
  
  	spin_lock_irqsave(&uap->port.lock, flags);
@@ -136,7 +134,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  	if (break_state == -1)
  		lcr_h |= UART01x_LCRH_BRK;
  	else
-@@ -334,7 +333,7 @@ static int pl010_startup(struct uart_por
+@@ -334,7 +333,7 @@
  	/*
  	 * initialise the old status of the modem signals
  	 */
@@ -145,7 +143,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  
  	/*
  	 * Finally, enable interrupts
-@@ -365,7 +364,7 @@ static void pl010_shutdown(struct uart_p
+@@ -365,7 +364,7 @@
  	writel(0, uap->port.membase + UART010_CR);
  
  	/* disable break condition and fifos */
@@ -154,7 +152,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  		~(UART01x_LCRH_BRK | UART01x_LCRH_FEN),
  	       uap->port.membase + UART010_LCRH);
  
-@@ -387,7 +386,7 @@ pl010_set_termios(struct uart_port *port
+@@ -387,7 +386,7 @@
  	/*
  	 * Ask the core to calculate the divisor for us.
  	 */
@@ -163,7 +161,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  	quot = uart_get_divisor(port, baud);
  
  	switch (termios->c_cflag & CSIZE) {
-@@ -450,7 +449,7 @@ pl010_set_termios(struct uart_port *port
+@@ -450,7 +449,7 @@
  		uap->port.ignore_status_mask |= UART_DUMMY_RSR_RX;
  
  	/* first, disable everything */
@@ -172,7 +170,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  
  	if (UART_ENABLE_MS(port, termios->c_cflag))
  		old_cr |= UART010_CR_MSIE;
-@@ -540,7 +539,7 @@ static struct uart_ops amba_pl010_pops =
+@@ -540,7 +539,7 @@
  	.verify_port	= pl010_verify_port,
  };
  
@@ -181,7 +179,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  
  #ifdef CONFIG_SERIAL_AMBA_PL010_CONSOLE
  
-@@ -550,7 +549,7 @@ static void pl010_console_putchar(struct
+@@ -550,7 +549,7 @@
  	unsigned int status;
  
  	do {
@@ -190,7 +188,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  		barrier();
  	} while (!UART_TX_READY(status));
  	writel(ch, uap->port.membase + UART01x_DR);
-@@ -567,7 +566,7 @@ pl010_console_write(struct console *co, 
+@@ -567,7 +566,7 @@
  	/*
  	 *	First save the CR then disable the interrupts
  	 */
@@ -199,7 +197,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  	writel(UART01x_CR_UARTEN, uap->port.membase + UART010_CR);
  
  	uart_console_write(&uap->port, s, count, pl010_console_putchar);
-@@ -577,7 +576,7 @@ pl010_console_write(struct console *co, 
+@@ -577,7 +576,7 @@
  	 *	and restore the TCR
  	 */
  	do {
@@ -208,7 +206,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  		barrier();
  	} while (status & UART01x_FR_BUSY);
  	writel(old_cr, uap->port.membase + UART010_CR);
-@@ -589,9 +588,9 @@ static void __init
+@@ -589,9 +588,9 @@
  pl010_console_get_options(struct uart_amba_port *uap, int *baud,
  			     int *parity, int *bits)
  {
@@ -220,7 +218,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  
  		*parity = 'n';
  		if (lcr_h & UART01x_LCRH_PEN) {
-@@ -606,8 +605,8 @@ pl010_console_get_options(struct uart_am
+@@ -606,8 +605,8 @@
  		else
  			*bits = 8;
  
@@ -231,7 +229,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  		*baud = uap->port.uartclk / (16 * (quot + 1));
  	}
  }
-@@ -625,7 +624,7 @@ static int __init pl010_console_setup(st
+@@ -625,7 +624,7 @@
  	 * if so, search for the first available port that does have
  	 * console support.
  	 */
@@ -240,7 +238,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  		co->index = 0;
  	uap = amba_ports[co->index];
  	if (!uap)
-@@ -643,7 +642,7 @@ static int __init pl010_console_setup(st
+@@ -643,7 +642,7 @@
  
  static struct uart_driver amba_reg;
  static struct console amba_console = {
@@ -249,7 +247,7 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  	.write		= pl010_console_write,
  	.device		= uart_console_device,
  	.setup		= pl010_console_setup,
-@@ -659,11 +658,11 @@ static struct console amba_console = {
+@@ -659,11 +658,11 @@
  
  static struct uart_driver amba_reg = {
  	.owner			= THIS_MODULE,
@@ -264,11 +262,9 @@ Index: linux-2.6.25.4/drivers/serial/amba-pl010.c
  	.cons			= AMBA_CONSOLE,
  };
  
-Index: linux-2.6.25.4/drivers/serial/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/drivers/serial/Kconfig
-+++ linux-2.6.25.4/drivers/serial/Kconfig
-@@ -287,10 +287,25 @@ config SERIAL_AMBA_PL010
+--- a/drivers/serial/Kconfig
++++ b/drivers/serial/Kconfig
+@@ -287,10 +287,25 @@
  	help
  	  This selects the ARM(R) AMBA(R) PrimeCell PL010 UART.  If you have
  	  an Integrator/AP or Integrator/PP2 platform, or if you have a

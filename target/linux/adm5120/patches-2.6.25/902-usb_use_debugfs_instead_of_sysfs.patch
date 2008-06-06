@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/drivers/usb/host/adm5120.h
-===================================================================
---- linux-2.6.25.4.orig/drivers/usb/host/adm5120.h
-+++ linux-2.6.25.4/drivers/usb/host/adm5120.h
-@@ -431,6 +431,13 @@ struct admhcd {
+--- a/drivers/usb/host/adm5120.h
++++ b/drivers/usb/host/adm5120.h
+@@ -431,6 +431,13 @@
  #define	OHCI_QUIRK_BE_MMIO	0x10			/* BE registers */
  #define	OHCI_QUIRK_ZFMICRO	0x20			/* Compaq ZFMicro chipset*/
  	// there are also chip quirks/bugs in init logic
@@ -16,10 +14,8 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120.h
  };
  
  /* convert between an hcd pointer and the corresponding ahcd_hcd */
-Index: linux-2.6.25.4/drivers/usb/host/adm5120-hcd.c
-===================================================================
---- linux-2.6.25.4.orig/drivers/usb/host/adm5120-hcd.c
-+++ linux-2.6.25.4/drivers/usb/host/adm5120-hcd.c
+--- a/drivers/usb/host/adm5120-hcd.c
++++ b/drivers/usb/host/adm5120-hcd.c
 @@ -35,6 +35,7 @@
  #include <linux/dma-mapping.h>
  #include <linux/dmapool.h>
@@ -28,7 +24,7 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120-hcd.c
  
  #include <asm/io.h>
  #include <asm/irq.h>
-@@ -799,6 +800,14 @@ static int __init admhc_hcd_mod_init(voi
+@@ -804,6 +805,14 @@
  	pr_info("%s: block sizes: ed %Zd td %Zd\n", hcd_name,
  		sizeof (struct ed), sizeof (struct td));
  
@@ -43,7 +39,7 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120-hcd.c
  #ifdef PLATFORM_DRIVER
  	ret = platform_driver_register(&PLATFORM_DRIVER);
  	if (ret < 0)
-@@ -811,6 +820,12 @@ static int __init admhc_hcd_mod_init(voi
+@@ -816,6 +825,12 @@
  	platform_driver_unregister(&PLATFORM_DRIVER);
  error_platform:
  #endif
@@ -56,7 +52,7 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120-hcd.c
  	return ret;
  }
  module_init(admhc_hcd_mod_init);
-@@ -818,6 +833,9 @@ module_init(admhc_hcd_mod_init);
+@@ -823,6 +838,9 @@
  static void __exit admhc_hcd_mod_exit(void)
  {
  	platform_driver_unregister(&PLATFORM_DRIVER);
@@ -66,11 +62,9 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120-hcd.c
  }
  module_exit(admhc_hcd_mod_exit);
  
-Index: linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
-===================================================================
---- linux-2.6.25.4.orig/drivers/usb/host/adm5120-dbg.c
-+++ linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
-@@ -390,6 +390,42 @@ static inline void remove_debug_files(st
+--- a/drivers/usb/host/adm5120-dbg.c
++++ b/drivers/usb/host/adm5120-dbg.c
+@@ -390,6 +390,42 @@
  
  #else
  
@@ -113,7 +107,7 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
  static ssize_t
  show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
  {
-@@ -455,8 +491,7 @@ show_list(struct admhcd *ahcd, char *buf
+@@ -455,8 +491,7 @@
  	return count - size;
  }
  
@@ -123,7 +117,7 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
  {
  	struct usb_bus		*bus;
  	struct usb_hcd		*hcd;
-@@ -464,24 +499,22 @@ show_async(struct device *dev, struct de
+@@ -464,24 +499,22 @@
  	size_t			temp;
  	unsigned long		flags;
  
@@ -151,7 +145,7 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
  {
  	struct usb_bus		*bus;
  	struct usb_hcd		*hcd;
-@@ -496,10 +529,10 @@ show_periodic(struct device *dev, struct
+@@ -496,10 +529,10 @@
  		return 0;
  	seen_count = 0;
  
@@ -164,7 +158,7 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
  	size = PAGE_SIZE;
  
  	temp = scnprintf(next, size, "size = %d\n", NUM_INTS);
-@@ -574,13 +607,11 @@ show_periodic(struct device *dev, struct
+@@ -574,13 +607,11 @@
  
  	return PAGE_SIZE - size;
  }
@@ -179,7 +173,7 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
  {
  	struct usb_bus		*bus;
  	struct usb_hcd		*hcd;
-@@ -591,11 +622,11 @@ show_registers(struct device *dev, struc
+@@ -591,11 +622,11 @@
  	char			*next;
  	u32			rdata;
  
@@ -193,7 +187,7 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
  	size = PAGE_SIZE;
  
  	spin_lock_irqsave(&ahcd->lock, flags);
-@@ -656,27 +687,154 @@ done:
+@@ -656,27 +687,154 @@
  	spin_unlock_irqrestore(&ahcd->lock, flags);
  	return PAGE_SIZE - size;
  }

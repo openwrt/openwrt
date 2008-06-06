@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/drivers/mtd/maps/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/drivers/mtd/maps/Kconfig
-+++ linux-2.6.25.4/drivers/mtd/maps/Kconfig
-@@ -590,5 +590,9 @@ config MTD_PLATRAM
+--- a/drivers/mtd/maps/Kconfig
++++ b/drivers/mtd/maps/Kconfig
+@@ -590,5 +590,9 @@
  
  	  This selection automatically selects the map_ram driver.
  
@@ -12,11 +10,9 @@ Index: linux-2.6.25.4/drivers/mtd/maps/Kconfig
 +
  endmenu
  
-Index: linux-2.6.25.4/drivers/mtd/maps/Makefile
-===================================================================
---- linux-2.6.25.4.orig/drivers/mtd/maps/Makefile
-+++ linux-2.6.25.4/drivers/mtd/maps/Makefile
-@@ -44,6 +44,7 @@ obj-$(CONFIG_MTD_DBOX2)		+= dbox2-flash.
+--- a/drivers/mtd/maps/Makefile
++++ b/drivers/mtd/maps/Makefile
+@@ -44,6 +44,7 @@
  obj-$(CONFIG_MTD_SOLUTIONENGINE)+= solutionengine.o
  obj-$(CONFIG_MTD_PCI)		+= pci.o
  obj-$(CONFIG_MTD_ALCHEMY)       += alchemy-flash.o
