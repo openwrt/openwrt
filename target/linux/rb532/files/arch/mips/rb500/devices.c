@@ -130,6 +130,19 @@ static struct platform_device cf_slot0 = {
 };
 
 /* Resources and device for NAND.  There is no data needed and no irqs, so just define the memory used. */
+
+/*
+ * We need to use the OLD Yaffs-1 OOB layout, otherwise the RB bootloader
+ * will not be able to find the kernel that we load.  So set the oobinfo
+ * when creating the partitions
+ */
+static struct nand_ecclayout rb500_nand_ecclayout = {
+	.eccbytes	= 6,
+	.eccpos		= { 8, 9, 10, 13, 14, 15 },
+	.oobavail	= 9,
+	.oobfree	= { { 0, 4 }, { 6, 2 }, { 11, 2 }, { 4, 1 } }
+};
+
 int rb500_dev_ready(struct mtd_info *mtd)
 {
         return MEM32(IDT434_REG_BASE + GPIOD) & GPIO_RDY;
@@ -260,6 +273,16 @@ static void __init parse_mac_addr(char *macstr)
 /* NAND definitions */
 #define NAND_CHIP_DELAY	25
 
+static int rb500_nand_fixup(struct mtd_info *mtd)
+{
+	struct nand_chip *chip = mtd->priv;
+
+	if (mtd->writesize == 512)
+		chip->ecc.layout = &rb500_nand_ecclayout;
+
+	return 0;
+}
+
 static void __init rb500_nand_setup(void)
 {
 	switch (mips_machtype) {
@@ -277,6 +300,8 @@ static void __init rb500_nand_setup(void)
 	rb500_nand_data.chip.partitions = rb500_partition_info;
 	rb500_nand_data.chip.chip_delay = NAND_CHIP_DELAY;
 	rb500_nand_data.chip.options = NAND_NO_AUTOINCR;
+
+	rb500_nand_data.chip.chip_fixup = &rb500_nand_fixup;
 }
 
 
