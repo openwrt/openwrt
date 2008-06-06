@@ -1,0 +1,13 @@
+Index: madwifi-trunk-r3314/ath_hal/Makefile
+===================================================================
+--- madwifi-trunk-r3314.orig/ath_hal/Makefile	2008-06-07 01:33:20.180406306 +0200
++++ madwifi-trunk-r3314/ath_hal/Makefile	2008-06-07 01:33:25.636717245 +0200
+@@ -78,7 +78,7 @@
+ quiet_cmd_uudecode = UUDECODE $@
+       cmd_uudecode = $(obj)/uudecode -o $@ $<
+ 
+-$(obj)/$(TARGET).hal.o: $(HAL)/public/$(TARGET).hal.o.uu $(obj)/uudecode
++$(TARGET).hal.o: $(HAL)/public/$(TARGET).hal.o.uu $(obj)/uudecode
+ ifdef LINUX24
+ 	$(Q)$(obj)/uudecode -o $@ $<
+ else
