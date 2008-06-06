@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/drivers/watchdog/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/drivers/watchdog/Kconfig
-+++ linux-2.6.25.4/drivers/watchdog/Kconfig
-@@ -619,6 +619,18 @@ config SBC_EPX_C3_WATCHDOG
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -619,6 +619,18 @@
  
  # MIPS Architecture
  
@@ -21,11 +19,9 @@ Index: linux-2.6.25.4/drivers/watchdog/Kconfig
  config INDYDOG
  	tristate "Indy/I2 Hardware Watchdog"
  	depends on SGI_HAS_INDYDOG
-Index: linux-2.6.25.4/drivers/watchdog/Makefile
-===================================================================
---- linux-2.6.25.4.orig/drivers/watchdog/Makefile
-+++ linux-2.6.25.4/drivers/watchdog/Makefile
-@@ -90,6 +90,7 @@ obj-$(CONFIG_SBC_EPX_C3_WATCHDOG) += sbc
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
+@@ -90,6 +90,7 @@
  # M68KNOMMU Architecture
  
  # MIPS Architecture

@@ -1,8 +1,6 @@
-Index: linux-2.6.24.7/drivers/ata/Makefile
-===================================================================
---- linux-2.6.24.7.orig/drivers/ata/Makefile
-+++ linux-2.6.24.7/drivers/ata/Makefile
-@@ -69,6 +69,7 @@ obj-$(CONFIG_PATA_BF54X)	+= pata_bf54x.o
+--- a/drivers/ata/Makefile
++++ b/drivers/ata/Makefile
+@@ -69,6 +69,7 @@
  obj-$(CONFIG_PATA_PLATFORM)	+= pata_platform.o
  obj-$(CONFIG_PATA_OF_PLATFORM)	+= pata_of_platform.o
  obj-$(CONFIG_PATA_ICSIDE)	+= pata_icside.o
@@ -10,11 +8,9 @@ Index: linux-2.6.24.7/drivers/ata/Makefile
  # Should be last but two libata driver
  obj-$(CONFIG_PATA_ACPI)		+= pata_acpi.o
  # Should be last but one libata driver
-Index: linux-2.6.24.7/drivers/ata/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/drivers/ata/Kconfig
-+++ linux-2.6.24.7/drivers/ata/Kconfig
-@@ -660,4 +660,13 @@ config PATA_BF54X
+--- a/drivers/ata/Kconfig
++++ b/drivers/ata/Kconfig
+@@ -660,4 +660,13 @@
  
  	  If unsure, say N.
  

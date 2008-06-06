@@ -1,7 +1,5 @@
-Index: linux-2.6.25.4/drivers/mtd/chips/cfi_cmdset_0002.c
-===================================================================
---- linux-2.6.25.4.orig/drivers/mtd/chips/cfi_cmdset_0002.c
-+++ linux-2.6.25.4/drivers/mtd/chips/cfi_cmdset_0002.c
+--- a/drivers/mtd/chips/cfi_cmdset_0002.c
++++ b/drivers/mtd/chips/cfi_cmdset_0002.c
 @@ -47,12 +47,19 @@
  #define MANUFACTURER_AMD	0x0001
  #define MANUFACTURER_ATMEL	0x001F
@@ -22,7 +20,7 @@ Index: linux-2.6.25.4/drivers/mtd/chips/cfi_cmdset_0002.c
  static int cfi_amdstd_read (struct mtd_info *, loff_t, size_t, size_t *, u_char *);
  static int cfi_amdstd_write_words(struct mtd_info *, loff_t, size_t, size_t *, const u_char *);
  static int cfi_amdstd_write_buffers(struct mtd_info *, loff_t, size_t, size_t *, const u_char *);
-@@ -221,6 +228,41 @@ static void fixup_use_atmel_lock(struct 
+@@ -221,6 +228,41 @@
  	mtd->flags |= MTD_POWERUP_LOCK;
  }
  
@@ -64,7 +62,7 @@ Index: linux-2.6.25.4/drivers/mtd/chips/cfi_cmdset_0002.c
  static struct cfi_fixup cfi_fixup_table[] = {
  	{ CFI_MFR_ATMEL, CFI_ID_ANY, fixup_convert_atmel_pri, NULL },
  #ifdef AMD_BOOTLOC_BUG
-@@ -252,6 +294,9 @@ static struct cfi_fixup fixup_table[] = 
+@@ -252,6 +294,9 @@
  	 */
  	{ CFI_MFR_ANY, CFI_ID_ANY, fixup_use_erase_chip, NULL },
  	{ CFI_MFR_ATMEL, AT49BV6416, fixup_use_atmel_lock, NULL },
@@ -74,11 +72,9 @@ Index: linux-2.6.25.4/drivers/mtd/chips/cfi_cmdset_0002.c
  	{ 0, 0, NULL, NULL }
  };
  
-Index: linux-2.6.25.4/drivers/mtd/chips/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/drivers/mtd/chips/Kconfig
-+++ linux-2.6.25.4/drivers/mtd/chips/Kconfig
-@@ -196,6 +196,14 @@ config MTD_CFI_AMDSTD
+--- a/drivers/mtd/chips/Kconfig
++++ b/drivers/mtd/chips/Kconfig
+@@ -196,6 +196,14 @@
  	  provides support for one of those command sets, used on chips
  	  including the AMD Am29LV320.
  

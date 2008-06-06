@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
-===================================================================
---- linux-2.6.25.4.orig/drivers/usb/host/adm5120-dbg.c
-+++ linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
-@@ -456,7 +456,7 @@ show_list(struct admhcd *ahcd, char *buf
+--- a/drivers/usb/host/adm5120-dbg.c
++++ b/drivers/usb/host/adm5120-dbg.c
+@@ -456,7 +456,7 @@
  }
  
  static ssize_t
@@ -11,7 +9,7 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
  {
  	struct usb_bus		*bus;
  	struct usb_hcd		*hcd;
-@@ -464,7 +464,7 @@ show_async(struct class_device *class_de
+@@ -464,7 +464,7 @@
  	size_t			temp;
  	unsigned long		flags;
  
@@ -20,7 +18,7 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
  	hcd = bus_to_hcd(bus);
  	ahcd = hcd_to_admhcd(hcd);
  
-@@ -475,13 +475,13 @@ show_async(struct class_device *class_de
+@@ -475,13 +475,13 @@
  
  	return temp;
  }
@@ -36,7 +34,7 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
  {
  	struct usb_bus		*bus;
  	struct usb_hcd		*hcd;
-@@ -496,7 +496,7 @@ show_periodic(struct class_device *class
+@@ -496,7 +496,7 @@
  		return 0;
  	seen_count = 0;
  
@@ -45,7 +43,7 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
  	hcd = bus_to_hcd(bus);
  	ahcd = hcd_to_admhcd(hcd);
  	next = buf;
-@@ -574,13 +574,13 @@ show_periodic(struct class_device *class
+@@ -574,13 +574,13 @@
  
  	return PAGE_SIZE - size;
  }
@@ -61,7 +59,7 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
  {
  	struct usb_bus		*bus;
  	struct usb_hcd		*hcd;
-@@ -591,7 +591,7 @@ show_registers(struct class_device *clas
+@@ -591,7 +591,7 @@
  	char			*next;
  	u32			rdata;
  
@@ -70,7 +68,7 @@ Index: linux-2.6.25.4/drivers/usb/host/adm5120-dbg.c
  	hcd = bus_to_hcd(bus);
  	ahcd = hcd_to_admhcd(hcd);
  	regs = ahcd->regs;
-@@ -656,27 +656,27 @@ done:
+@@ -656,27 +656,27 @@
  	spin_unlock_irqrestore(&ahcd->lock, flags);
  	return PAGE_SIZE - size;
  }

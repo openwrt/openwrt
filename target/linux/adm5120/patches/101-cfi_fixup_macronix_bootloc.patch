@@ -1,7 +1,5 @@
-Index: linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0002.c
-===================================================================
---- linux-2.6.24.7.orig/drivers/mtd/chips/cfi_cmdset_0002.c
-+++ linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0002.c
+--- a/drivers/mtd/chips/cfi_cmdset_0002.c
++++ b/drivers/mtd/chips/cfi_cmdset_0002.c
 @@ -47,12 +47,19 @@
  #define MANUFACTURER_AMD	0x0001
  #define MANUFACTURER_ATMEL	0x001F
@@ -22,7 +20,7 @@ Index: linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0002.c
  static int cfi_amdstd_read (struct mtd_info *, loff_t, size_t, size_t *, u_char *);
  static int cfi_amdstd_write_words(struct mtd_info *, loff_t, size_t, size_t *, const u_char *);
  static int cfi_amdstd_write_buffers(struct mtd_info *, loff_t, size_t, size_t *, const u_char *);
-@@ -217,6 +224,41 @@ static void fixup_use_atmel_lock(struct 
+@@ -217,6 +224,41 @@
  	mtd->flags |= MTD_STUPID_LOCK;
  }
  
@@ -64,7 +62,7 @@ Index: linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0002.c
  static struct cfi_fixup cfi_fixup_table[] = {
  #ifdef AMD_BOOTLOC_BUG
  	{ CFI_MFR_AMD, CFI_ID_ANY, fixup_amd_bootblock, NULL },
-@@ -231,6 +273,9 @@ static struct cfi_fixup cfi_fixup_table[
+@@ -231,6 +273,9 @@
  	{ CFI_MFR_ANY, CFI_ID_ANY, fixup_use_write_buffers, NULL, },
  #endif
  	{ CFI_MFR_ATMEL, CFI_ID_ANY, fixup_convert_atmel_pri, NULL },
@@ -74,11 +72,9 @@ Index: linux-2.6.24.7/drivers/mtd/chips/cfi_cmdset_0002.c
  	{ 0, 0, NULL, NULL }
  };
  static struct cfi_fixup jedec_fixup_table[] = {
-Index: linux-2.6.24.7/drivers/mtd/chips/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/drivers/mtd/chips/Kconfig
-+++ linux-2.6.24.7/drivers/mtd/chips/Kconfig
-@@ -196,6 +196,14 @@ config MTD_CFI_AMDSTD
+--- a/drivers/mtd/chips/Kconfig
++++ b/drivers/mtd/chips/Kconfig
+@@ -196,6 +196,14 @@
  	  provides support for one of those command sets, used on chips
  	  including the AMD Am29LV320.
  

@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/drivers/leds/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/drivers/leds/Kconfig
-+++ linux-2.6.25.4/drivers/leds/Kconfig
-@@ -25,6 +25,21 @@ config LEDS_ATMEL_PWM
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
+@@ -25,6 +25,21 @@
  	  This option enables support for LEDs driven using outputs
  	  of the dedicated PWM controller found on newer Atmel SOCs.
  
@@ -24,11 +22,9 @@ Index: linux-2.6.25.4/drivers/leds/Kconfig
  config LEDS_CORGI
  	tristate "LED Support for the Sharp SL-C7x0 series"
  	depends on LEDS_CLASS && PXA_SHARP_C7xx
-Index: linux-2.6.25.4/drivers/leds/Makefile
-===================================================================
---- linux-2.6.25.4.orig/drivers/leds/Makefile
-+++ linux-2.6.25.4/drivers/leds/Makefile
-@@ -5,6 +5,7 @@ obj-$(CONFIG_LEDS_CLASS)		+= led-class.o
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
+@@ -5,6 +5,7 @@
  obj-$(CONFIG_LEDS_TRIGGERS)		+= led-triggers.o
  
  # LED Platform Drivers
