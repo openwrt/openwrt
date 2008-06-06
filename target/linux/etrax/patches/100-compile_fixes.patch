@@ -1,21 +1,16 @@
 Index: linux-2.6.25.4/arch/cris/arch-v10/boot/Makefile
 ===================================================================
---- linux-2.6.25.4.orig/arch/cris/arch-v10/boot/Makefile
-+++ linux-2.6.25.4/arch/cris/arch-v10/boot/Makefile
-@@ -2,10 +2,10 @@
+--- linux-2.6.25.4.orig/arch/cris/arch-v10/boot/Makefile	2008-06-06 20:20:55.000000000 +0100
++++ linux-2.6.25.4/arch/cris/arch-v10/boot/Makefile	2008-06-06 20:21:20.000000000 +0100
+@@ -2,7 +2,6 @@
  # arch/cris/arch-v10/boot/Makefile
  #
  
 -OBJCOPY = objcopy-cris
-+OBJCOPY = /usr/local/cris/objcopy-cris
  OBJCOPYFLAGS = -O binary --remove-section=.bss
  
--subdir- := compressed rescue
-+subdir- := compressed 
- targets := Image
- 
- $(obj)/Image: vmlinux FORCE
-@@ -14,7 +14,6 @@ $(obj)/Image: vmlinux FORCE
+ subdir- := compressed rescue
+@@ -14,7 +13,6 @@
  
  $(obj)/compressed/vmlinux: $(obj)/Image FORCE
  	$(Q)$(MAKE) $(build)=$(obj)/compressed $@
@@ -25,40 +20,39 @@ Index: linux-2.6.25.4/arch/cris/arch-v10/boot/Makefile
  	@cp $< $@
 Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/Makefile
 ===================================================================
---- linux-2.6.25.4.orig/arch/cris/arch-v10/boot/compressed/Makefile
-+++ linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/Makefile
-@@ -2,12 +2,11 @@
+--- linux-2.6.25.4.orig/arch/cris/arch-v10/boot/compressed/Makefile	2008-06-06 20:20:55.000000000 +0100
++++ linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/Makefile	2008-06-06 20:56:01.000000000 +0100
+@@ -2,12 +2,10 @@
  # arch/cris/arch-v10/boot/compressed/Makefile
  #
  
 -CC = gcc-cris -melf $(LINUXINCLUDE)
  ccflags-y += -O2
 -LD = ld-cris
-+LD=/usr/local/cris/ld-cris
++LD = $(CROSS_COMPILE)ld -m criself
  ldflags-y += -T $(obj)/decompress.ld
  OBJECTS = $(obj)/head.o $(obj)/misc.o
 -OBJCOPY = objcopy-cris
-+OBJCOPY = /usr/local/cris/objcopy-cris
  OBJCOPYFLAGS = -O binary --remove-section=.bss
  
  quiet_cmd_image = BUILD   $@
-@@ -22,10 +21,10 @@ $(obj)/decompress.bin: $(obj)/decompress
+@@ -22,10 +20,10 @@
  	$(call if_changed,objcopy)
  
  $(obj)/head.o: $(obj)/head.S .config
 -	@$(CC) -D__ASSEMBLY__ -traditional -c $< -o $@
-+	/usr/local/cris/gcc-cris -melf $(LINUXINCLUDE) -D__ASSEMBLY__ -traditional -c $< -o $@
++	@$(CC) -D__ASSEMBLY__  -traditional -Wa,--em=criself -c $< -o $@
  
  $(obj)/misc.o: $(obj)/misc.c .config
 -	@$(CC) -D__KERNEL__ -c $< -o $@
-+	/usr/local/cris/gcc-cris -melf $(LINUXINCLUDE) -D__KERNEL__ -c $< -o $@ 
++	@$(CC) -D__KERNEL__ -Wa,--em=criself -c $< -o $@
  
  $(obj)/vmlinux: $(obj)/piggy.gz $(obj)/decompress.bin FORCE
  	$(call if_changed,image)
 Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/misc.c
 ===================================================================
---- linux-2.6.25.4.orig/arch/cris/arch-v10/boot/compressed/misc.c
-+++ linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/misc.c
+--- linux-2.6.25.4.orig/arch/cris/arch-v10/boot/compressed/misc.c	2008-06-06 20:20:55.000000000 +0100
++++ linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/misc.c	2008-06-06 21:02:10.000000000 +0100
 @@ -5,7 +5,7 @@
   * adapted for Linux.
   *
@@ -68,7 +62,7 @@ Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/misc.c
   * adaptation for Linux/CRIS Axis Communications AB, 1999
   *
   */
-@@ -99,7 +99,7 @@ static void error(char *m);
+@@ -99,12 +99,12 @@
  static void gzip_mark(void **);
  static void gzip_release(void **);
   
@@ -77,7 +71,14 @@ Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/misc.c
  
  /* the "heap" is put directly after the BSS ends, at end */
    
-@@ -139,7 +139,7 @@ static void gzip_release(void **ptr)
+-extern int end;
+-static long free_mem_ptr = (long)&end;
++extern int _end;
++static long free_mem_ptr = (long)&_end;
+  
+ #include "../../../../../lib/inflate.c"
+ 
+@@ -139,7 +139,7 @@
  /* decompressor info and error messages to serial console */
  
  static void
@@ -86,7 +87,7 @@ Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/misc.c
  {
  #ifndef CONFIG_ETRAX_DEBUG_PORT_NULL
  	while(*s) {
-@@ -209,9 +209,9 @@ flush_window()
+@@ -209,9 +209,9 @@
  static void
  error(char *x)
  {
@@ -99,7 +100,7 @@ Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/misc.c
  
  	while(1);	/* Halt */
  }
-@@ -257,14 +257,7 @@ decompress_kernel()
+@@ -257,14 +257,7 @@
  
  	makecrc();
  
@@ -118,9 +119,9 @@ Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/misc.c
  }
 Index: linux-2.6.25.4/arch/cris/arch-v10/mm/init.c
 ===================================================================
---- linux-2.6.25.4.orig/arch/cris/arch-v10/mm/init.c
-+++ linux-2.6.25.4/arch/cris/arch-v10/mm/init.c
-@@ -184,6 +184,9 @@ paging_init(void)
+--- linux-2.6.25.4.orig/arch/cris/arch-v10/mm/init.c	2008-06-06 20:20:55.000000000 +0100
++++ linux-2.6.25.4/arch/cris/arch-v10/mm/init.c	2008-06-06 20:21:20.000000000 +0100
+@@ -184,6 +184,9 @@
  
  	free_area_init_node(0, &contig_page_data, zones_size, PAGE_OFFSET >> PAGE_SHIFT, 0);
  }
@@ -130,3 +131,161 @@ Index: linux-2.6.25.4/arch/cris/arch-v10/mm/init.c
  
  /* Initialize remaps of some I/O-ports. It is important that this
   * is called before any driver is initialized.
+Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/head.S
+===================================================================
+--- linux-2.6.25.4.orig/arch/cris/arch-v10/boot/compressed/head.S	2008-06-06 20:20:55.000000000 +0100
++++ linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/head.S	2008-06-06 21:03:05.000000000 +0100
+@@ -10,13 +10,14 @@
+ 
+ #define ASSEMBLER_MACROS_ONLY
+ #include <asm/arch/sv_addr_ag.h>
++#include <linux/autoconf.h>
+ 
+ #define RAM_INIT_MAGIC 0x56902387
+ #define COMMAND_LINE_MAGIC 0x87109563
+ 
+ 	;; Exported symbols
+ 	
+-	.globl	_input_data
++	.globl	input_data
+ 
+ 	
+ 	.text
+@@ -26,7 +27,7 @@
+ 
+ ;; We need to initialze DRAM registers before we start using the DRAM
+ 	
+-	cmp.d	RAM_INIT_MAGIC, r8	; Already initialized?
++	cmp.d	RAM_INIT_MAGIC, $r8	; Already initialized?
+ 	beq	dram_init_finished
+ 	nop
+ 	
+@@ -36,91 +37,91 @@
+ 		
+ 	;; Initiate the PA and PB ports
+ 
+-	move.b   CONFIG_ETRAX_DEF_R_PORT_PA_DATA, r0
+-	move.b   r0, [R_PORT_PA_DATA]
++	move.b   CONFIG_ETRAX_DEF_R_PORT_PA_DATA, $r0
++	move.b   $r0, [R_PORT_PA_DATA]
+ 
+-	move.b   CONFIG_ETRAX_DEF_R_PORT_PA_DIR, r0
+-	move.b   r0, [R_PORT_PA_DIR]
++	move.b   CONFIG_ETRAX_DEF_R_PORT_PA_DIR, $r0
++	move.b   $r0, [R_PORT_PA_DIR]
+ 
+-	move.b   CONFIG_ETRAX_DEF_R_PORT_PB_DATA, r0
+-	move.b   r0, [R_PORT_PB_DATA]
++	move.b   CONFIG_ETRAX_DEF_R_PORT_PB_DATA, $r0
++	move.b   $r0, [R_PORT_PB_DATA]
+ 
+-	move.b   CONFIG_ETRAX_DEF_R_PORT_PB_DIR, r0
+-	move.b   r0, [R_PORT_PB_DIR]
++	move.b   CONFIG_ETRAX_DEF_R_PORT_PB_DIR, $r0
++	move.b   $r0, [R_PORT_PB_DIR]
+ 
+ 	;; Setup the stack to a suitably high address.
+ 	;; We assume 8 MB is the minimum DRAM in an eLinux
+ 	;; product and put the sp at the top for now.
+ 
+-	move.d	0x40800000, sp
++	move.d	0x40800000, $sp
+ 
+ 	;; Figure out where the compressed piggyback image is
+ 	;; in the flash (since we wont try to copy it to DRAM
+ 	;; before unpacking). It is at _edata, but in flash.
+ 	;; Use (_edata - basse) as offset to the current PC.
+ 	
+-basse:	move.d	pc, r5
+-	and.d	0x7fffffff, r5	; strip any non-cache bit
+-	subq	2, r5		; compensate for the move.d pc instr
+-	move.d	r5, r0		; save for later - flash address of 'basse'
+-	add.d	_edata, r5
+-	sub.d	basse, r5	; r5 = flash address of '_edata'
++basse:	move.d	$pc, $r5
++	and.d	0x7fffffff, $r5	; strip any non-cache bit
++	subq	2, $r5		; compensate for the move.d pc instr
++	move.d	$r5, $r0		; save for later - flash address of 'basse'
++	add.d	_edata, $r5
++	sub.d	basse, $r5	; r5 = flash address of '_edata'
+ 	
+ 	;; Copy text+data to DRAM
+ 	
+-	move.d	basse, r1	; destination
+-	move.d	_edata, r2	; end destination
+-1:	move.w	[r0+], r3
+-	move.w	r3, [r1+]
+-	cmp.d	r2, r1
++	move.d	basse, $r1	; destination
++	move.d	_edata, $r2	; end destination
++1:	move.w	[$r0+], $r3
++	move.w	$r3, [$r1+]
++	cmp.d	$r2, $r1
+ 	bcs	1b
+ 	nop
+ 
+-	move.d	r5, [_input_data] ; for the decompressor
++	move.d	$r5, [input_data] ; for the decompressor
+ 
+ 
+ 	;; Clear the decompressors BSS (between _edata and _end)
+ 	
+-	moveq	0, r0
+-	move.d	_edata, r1
+-	move.d	_end, r2
+-1:	move.w	r0, [r1+]
+-	cmp.d	r2, r1
++	moveq	0, $r0
++	move.d	_edata, $r1
++	move.d	_end, $r2
++1:	move.w	$r0, [$r1+]
++	cmp.d	$r2, $r1
+ 	bcs	1b
+ 	nop
+ 
+ 	;;  Save command line magic and address.
+-	move.d	_cmd_line_magic, $r12
++	move.d	cmd_line_magic, $r12
+ 	move.d  $r10, [$r12]
+-	move.d	_cmd_line_addr, $r12
++	move.d	cmd_line_addr, $r12
+ 	move.d  $r11, [$r12]
+ 	
+ 	;; Do the decompression and save compressed size in _inptr
+ 
+-	jsr	_decompress_kernel
++	jsr	decompress_kernel
+ 	
+ 	;; Put start address of root partition in r9 so the kernel can use it
+ 	;; when mounting from flash
+ 
+-	move.d	[_input_data], r9	; flash address of compressed kernel
+-	add.d	[_inptr], r9		; size of compressed kernel
++	move.d	[input_data], $r9	; flash address of compressed kernel
++	add.d	[inptr], $r9		; size of compressed kernel
+ 
+ 	;; Restore command line magic and address.
+-	move.d  _cmd_line_magic, $r10
++	move.d  cmd_line_magic, $r10
+ 	move.d  [$r10], $r10
+-	move.d  _cmd_line_addr, $r11
++	move.d  cmd_line_addr, $r11
+ 	move.d  [$r11], $r11
+ 
+ 	;; Enter the decompressed kernel
+-	move.d	RAM_INIT_MAGIC, r8	; Tell kernel that DRAM is initialized
++	move.d	RAM_INIT_MAGIC, $r8	; Tell kernel that DRAM is initialized
+ 	jump	0x40004000	; kernel is linked to this address
+ 	
+ 	.data
+ 
+-_input_data:
++input_data:
+ 	.dword	0		; used by the decompressor
+-_cmd_line_magic:
++cmd_line_magic:
+ 	.dword 0
+-_cmd_line_addr:
++cmd_line_addr:
+ 	.dword 0
+ #include "../../lib/hw_settings.S"
