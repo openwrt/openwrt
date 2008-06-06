@@ -22,6 +22,3 @@ define Target/Description
 endef
 
 $(eval $(call BuildTarget))
-$(eval $(call RequireCommand,/usr/local/cris/gcc-cris, \
-	Please install the binary cris toolchain. \
-))
