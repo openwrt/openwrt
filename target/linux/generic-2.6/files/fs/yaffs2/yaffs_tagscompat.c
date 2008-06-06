@@ -14,6 +14,7 @@
 #include "yaffs_guts.h"
 #include "yaffs_tagscompat.h"
 #include "yaffs_ecc.h"
+#include "yaffs_getblockinfo.h"
 
 static void yaffs_HandleReadDataError(yaffs_Device * dev, int chunkInNAND);
 #ifdef NOTYET
@@ -438,7 +439,7 @@ int yaffs_TagsCompatabilityReadChunkWithTagsFromNAND(yaffs_Device * dev,
 	yaffs_ECCResult eccResult;
 
 	static yaffs_Spare spareFF;
-	static int init;
+	static int init = 0;
 
 	if (!init) {
 		memset(&spareFF, 0xFF, sizeof(spareFF));
@@ -497,9 +498,9 @@ int yaffs_TagsCompatabilityMarkNANDBlockBad(struct yaffs_DeviceStruct *dev,
 }
 
 int yaffs_TagsCompatabilityQueryNANDBlock(struct yaffs_DeviceStruct *dev,
-					  int blockNo, yaffs_BlockState *
-					  state,
-					  int *sequenceNumber)
+					  int blockNo,
+					  yaffs_BlockState *state,
+					  __u32 *sequenceNumber)
 {
 
 	yaffs_Spare spare0, spare1;
