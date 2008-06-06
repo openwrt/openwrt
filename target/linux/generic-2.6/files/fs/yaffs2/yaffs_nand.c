@@ -12,12 +12,13 @@
  */
 
 const char *yaffs_nand_c_version =
-    "$Id: yaffs_nand.c,v 1.7 2007-02-14 01:09:06 wookey Exp $";
+    "$Id: yaffs_nand.c,v 1.9 2008-05-05 07:58:58 charles Exp $";
 
 #include "yaffs_nand.h"
 #include "yaffs_tagscompat.h"
 #include "yaffs_tagsvalidity.h"
 
+#include "yaffs_getblockinfo.h"
 
 int yaffs_ReadChunkWithTagsFromNAND(yaffs_Device * dev, int chunkInNAND,
 					   __u8 * buffer,
@@ -98,7 +99,7 @@ int yaffs_MarkBlockBad(yaffs_Device * dev, int blockNo)
 int yaffs_QueryInitialBlockState(yaffs_Device * dev,
 						 int blockNo,
 						 yaffs_BlockState * state,
-						 unsigned *sequenceNumber)
+						 __u32 *sequenceNumber)
 {
 	blockNo -= dev->blockOffset;
 
