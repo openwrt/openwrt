@@ -213,6 +213,16 @@ static void __init rb1xx_mac_setup(void)
 	}
 }
 
+static int rb1xx_nand_fixup(struct mtd_info *mtd)
+{
+	struct nand_chip *chip = mtd->priv;
+
+	if (mtd->writesize == 512)
+		chip->ecc.layout = &rb1xx_nand_ecclayout;
+
+	return 0;
+}
+
 static void __init rb1xx_flash_setup(void)
 {
 	/* setup data for flash0 device */
@@ -223,9 +233,10 @@ static void __init rb1xx_flash_setup(void)
 	adm5120_nand_data.chip.nr_chips = 1;
 	adm5120_nand_data.chip.nr_partitions = ARRAY_SIZE(rb1xx_nand_parts);
 	adm5120_nand_data.chip.partitions = rb1xx_nand_parts;
-	adm5120_nand_data.chip.ecclayout = &rb1xx_nand_ecclayout;
 	adm5120_nand_data.chip.chip_delay = RB1XX_NAND_CHIP_DELAY;
 	adm5120_nand_data.chip.options = NAND_NO_AUTOINCR;
+
+	adm5120_nand_data.chip.chip_fixup = &rb1xx_nand_fixup;
 }
 
 static void __init rb1xx_setup(void)
