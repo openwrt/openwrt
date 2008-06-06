@@ -20,8 +20,7 @@ add_route() {
 		return 1
 	}
 	[ -n "$gateway" ] || {
-		echo "Missing gateway in route section $config"
-		return 1
+		config_get gateway "$interface" gateway
 	}
 
 	netmask="${netmask:-255.255.255.255}"
@@ -52,8 +51,7 @@ add_route6() {
 		return 1
 	}
 	[ -n "$gateway" ] || {
-		echo "Missing gateway in route section $config"
-		return 1
+		config_get gateway "$interface" gateway
 	}
 
 	/sbin/route -A inet6 add $target gw "$gateway" ${dev:+dev "$dev"} ${metric:+ metric "$metric"}
