@@ -20,6 +20,8 @@
 #ifndef _IFXMIPS_H__
 #define _IFXMIPS_H__
 
+#define ifxmips_r32(reg) __raw_readl(reg)
+#define ifxmips_w32(val,reg) __raw_writel(val,reg)
 
 /*------------ GENERAL */
 

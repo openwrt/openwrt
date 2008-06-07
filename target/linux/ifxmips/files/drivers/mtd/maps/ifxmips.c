@@ -135,7 +135,7 @@ ifxmips_mtd_probe (void)
 	struct mtd_partition *parts = NULL;
 	unsigned long uimage_size;
 
-	writel(0x1d7ff, IFXMIPS_EBU_BUSCON0);
+	ifxmips_w32(0x1d7ff, IFXMIPS_EBU_BUSCON0);
 
 	ifxmips_map.read = ifxmips_read16;
 	ifxmips_map.write = ifxmips_write16;

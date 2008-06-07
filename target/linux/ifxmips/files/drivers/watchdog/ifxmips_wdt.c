@@ -46,8 +46,8 @@ ifxmips_wdt_enable (unsigned int timeout)
 	int retval = 0;
 
 	/* clock divider & prewarning limit */
-	wdt_clkdiv = 1 << (7 * IFXMIPS_BIU_WDT_CR_CLKDIV_GET(readl(IFXMIPS_BIU_WDT_CR)));
-	wdt_pwl = 0x8000 >> IFXMIPS_BIU_WDT_CR_PWL_GET(readl(IFXMIPS_BIU_WDT_CR));
+	wdt_clkdiv = 1 << (7 * IFXMIPS_BIU_WDT_CR_CLKDIV_GET(ifxmips_r32(IFXMIPS_BIU_WDT_CR)));
+	wdt_pwl = 0x8000 >> IFXMIPS_BIU_WDT_CR_PWL_GET(ifxmips_r32(IFXMIPS_BIU_WDT_CR));
 
 	//TODO
 	printk("WARNING FUNCTION CALL MISSING!!!");
@@ -68,21 +68,21 @@ ifxmips_wdt_enable (unsigned int timeout)
 	}
 
 	/* Write first part of password access */
-	writel(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW1), IFXMIPS_BIU_WDT_CR);
+	ifxmips_w32(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW1), IFXMIPS_BIU_WDT_CR);
 
-	wdt_cr = readl(IFXMIPS_BIU_WDT_CR);
+	wdt_cr = ifxmips_r32(IFXMIPS_BIU_WDT_CR);
 	wdt_cr &= (!IFXMIPS_BIU_WDT_CR_PW_SET(0xff) &
 		   !IFXMIPS_BIU_WDT_CR_PWL_SET(0x3) &
 		   !IFXMIPS_BIU_WDT_CR_CLKDIV_SET(0x3) &
 		   !IFXMIPS_BIU_WDT_CR_RELOAD_SET(0xffff));
 
 	wdt_cr |= (IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW2) |
-		   IFXMIPS_BIU_WDT_CR_PWL_SET(IFXMIPS_BIU_WDT_CR_PWL_GET(readl(IFXMIPS_BIU_WDT_CR))) |
-		   IFXMIPS_BIU_WDT_CR_CLKDIV_SET(IFXMIPS_BIU_WDT_CR_CLKDIV_GET(readl(IFXMIPS_BIU_WDT_CR))) |
+		   IFXMIPS_BIU_WDT_CR_PWL_SET(IFXMIPS_BIU_WDT_CR_PWL_GET(ifxmips_r32(IFXMIPS_BIU_WDT_CR))) |
+		   IFXMIPS_BIU_WDT_CR_CLKDIV_SET(IFXMIPS_BIU_WDT_CR_CLKDIV_GET(ifxmips_r32(IFXMIPS_BIU_WDT_CR))) |
 		   IFXMIPS_BIU_WDT_CR_RELOAD_SET(wdt_reload) |
 		   IFXMIPS_BIU_WDT_CR_GEN);
 
-	writel(wdt_cr, IFXMIPS_BIU_WDT_CR);
+	ifxmips_w32(wdt_cr, IFXMIPS_BIU_WDT_CR);
 
 	printk("watchdog enabled\n");
 
@@ -93,8 +93,8 @@ out:
 void
 ifxmips_wdt_disable (void)
 {
-	writel(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW1), IFXMIPS_BIU_WDT_CR);
-	writel(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW2), IFXMIPS_BIU_WDT_CR);
+	ifxmips_w32(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW1), IFXMIPS_BIU_WDT_CR);
+	ifxmips_w32(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW2), IFXMIPS_BIU_WDT_CR);
 
 	printk("watchdog disabled\n");
 }
@@ -105,9 +105,9 @@ ifxmips_wdt_enable_feature (int en, int type)
 {
 	unsigned int wdt_cr = 0;
 
-	writel(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW1), IFXMIPS_BIU_WDT_CR);
+	ifxmips_w32(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW1), IFXMIPS_BIU_WDT_CR);
 
-	wdt_cr = readl(IFXMIPS_BIU_WDT_CR);
+	wdt_cr = ifxmips_r32(IFXMIPS_BIU_WDT_CR);
 
 	if (en)
 	{
@@ -118,7 +118,7 @@ ifxmips_wdt_enable_feature (int en, int type)
 		wdt_cr |= IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW2);
 	}
 
-	writel(wdt_cr, IFXMIPS_BIU_WDT_CR);
+	ifxmips_w32(wdt_cr, IFXMIPS_BIU_WDT_CR);
 }
 
 void
@@ -126,14 +126,14 @@ ifxmips_wdt_prewarning_limit (int pwl)
 {
 	unsigned int wdt_cr = 0;
 
-	wdt_cr = readl(IFXMIPS_BIU_WDT_CR);
-	writel(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW1), IFXMIPS_BIU_WDT_CR);
+	wdt_cr = ifxmips_r32(IFXMIPS_BIU_WDT_CR);
+	ifxmips_w32(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW1), IFXMIPS_BIU_WDT_CR);
 
 	wdt_cr &= 0xf300ffff;
 	wdt_cr |= (IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW2) | IFXMIPS_BIU_WDT_CR_PWL_SET(pwl));
 
 	/* Set reload value in second password access */
-	writel(wdt_cr, IFXMIPS_BIU_WDT_CR);
+	ifxmips_w32(wdt_cr, IFXMIPS_BIU_WDT_CR);
 }
 
 void
@@ -141,14 +141,14 @@ ifxmips_wdt_set_clkdiv (int clkdiv)
 {
 	unsigned int wdt_cr = 0;
 
-	wdt_cr = readl(IFXMIPS_BIU_WDT_CR);
-	writel(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW1), IFXMIPS_BIU_WDT_CR);
+	wdt_cr = ifxmips_r32(IFXMIPS_BIU_WDT_CR);
+	ifxmips_w32(IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW1), IFXMIPS_BIU_WDT_CR);
 
 	wdt_cr &= 0xfc00ffff;
 	wdt_cr |= (IFXMIPS_BIU_WDT_CR_PW_SET(IFXMIPS_WDT_PW2) | IFXMIPS_BIU_WDT_CR_CLKDIV_SET(clkdiv));
 
 	/* Set reload value in second password access */
-	writel(wdt_cr, IFXMIPS_BIU_WDT_CR);
+	ifxmips_w32(wdt_cr, IFXMIPS_BIU_WDT_CR);
 }
 
 static int
@@ -189,7 +189,7 @@ ifxmips_wdt_ioctl (struct inode *inode, struct file *file, unsigned int cmd,
 		break;
 
 	case IFXMIPS_WDT_IOC_GET_STATUS:
-		user_arg = readl(IFXMIPS_BIU_WDT_SR);
+		user_arg = ifxmips_r32(IFXMIPS_BIU_WDT_SR);
 		copy_to_user((int*)arg, (int*)&user_arg, sizeof(int));
 		break;
 
@@ -244,9 +244,9 @@ ifxmips_wdt_register_proc_read (char *buf, char **start, off_t offset, int count
 
 	len += sprintf (buf + len, "IFXMIPS_BIU_WDT_PROC_READ\n");
 	len += sprintf (buf + len, "IFXMIPS_BIU_WDT_CR(0x%08x)	: 0x%08x\n",
-			(unsigned int)IFXMIPS_BIU_WDT_CR, readl(IFXMIPS_BIU_WDT_CR));
+			(unsigned int)IFXMIPS_BIU_WDT_CR, ifxmips_r32(IFXMIPS_BIU_WDT_CR));
 	len += sprintf (buf + len, "IFXMIPS_BIU_WDT_SR(0x%08x)	: 0x%08x\n",
-			(unsigned int)IFXMIPS_BIU_WDT_SR, readl(IFXMIPS_BIU_WDT_SR));
+			(unsigned int)IFXMIPS_BIU_WDT_SR, ifxmips_r32(IFXMIPS_BIU_WDT_SR));
 
 	*eof = 1;
 

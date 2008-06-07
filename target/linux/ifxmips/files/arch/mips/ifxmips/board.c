@@ -99,7 +99,7 @@ static struct platform_device ifxmips_mtd[] =
 const char*
 get_system_type (void)
 {
-	chiprev = readl(IFXMIPS_MPS_CHIPID);
+	chiprev = ifxmips_r32(IFXMIPS_MPS_CHIPID);
 	switch(chiprev)
 	{
 	case BOARD_DANUBE_CHIPID:

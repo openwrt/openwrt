@@ -2,7 +2,7 @@ Index: linux-2.6.25.4/arch/mips/Kconfig
 ===================================================================
 --- linux-2.6.25.4.orig/arch/mips/Kconfig
 +++ linux-2.6.25.4/arch/mips/Kconfig
-@@ -78,6 +78,19 @@ config MIPS_COBALT
+@@ -78,6 +78,21 @@ config MIPS_COBALT
  	select SYS_SUPPORTS_LITTLE_ENDIAN
  	select GENERIC_HARDIRQS_NO__DO_IRQ
  
@@ -18,6 +18,8 @@ Index: linux-2.6.25.4/arch/mips/Kconfig
 +	select SYS_SUPPORTS_32BIT_KERNEL
 +	select SYS_HAS_EARLY_PRINTK
 +	select HW_HAS_PCI
++	select GENERIC_GPIO 
++	select SWAP_IO_SPACE
 +
  config MACH_DECSTATION
  	bool "DECstations"

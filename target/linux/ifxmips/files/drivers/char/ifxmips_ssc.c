@@ -80,7 +80,7 @@ ifx_ssc_get_kernel_clk (struct ifx_ssc_port *info)
 {
 	unsigned int rmc;
 
-	rmc = (readl(IFXMIPS_SSC_CLC) & IFX_CLC_RUN_DIVIDER_MASK) >> IFX_CLC_RUN_DIVIDER_OFFSET;
+	rmc = (ifxmips_r32(IFXMIPS_SSC_CLC) & IFX_CLC_RUN_DIVIDER_MASK) >> IFX_CLC_RUN_DIVIDER_OFFSET;
 	if (rmc == 0)
 	{
 		printk ("ifx_ssc_get_kernel_clk rmc==0 \n");
@@ -97,12 +97,12 @@ rx_int (struct ifx_ssc_port *info)
 	unsigned long *tmp_ptr;
 	unsigned int rx_valid_cnt;
 	/* number of words waiting in the RX FIFO */
-	fifo_fill_lev = (readl(IFXMIPS_SSC_FSTAT) & IFX_SSC_FSTAT_RECEIVED_WORDS_MASK) >> IFX_SSC_FSTAT_RECEIVED_WORDS_OFFSET;
+	fifo_fill_lev = (ifxmips_r32(IFXMIPS_SSC_FSTAT) & IFX_SSC_FSTAT_RECEIVED_WORDS_MASK) >> IFX_SSC_FSTAT_RECEIVED_WORDS_OFFSET;
 	bytes_in_buf = info->rxbuf_end - info->rxbuf_ptr;
 	// transfer with 32 bits per entry
 	while ((bytes_in_buf >= 4) && (fifo_fill_lev > 0)) {
 		tmp_ptr = (unsigned long *) info->rxbuf_ptr;
-		*tmp_ptr = readl(IFXMIPS_SSC_RB);
+		*tmp_ptr = ifxmips_r32(IFXMIPS_SSC_RB);
 		info->rxbuf_ptr += 4;
 		info->stats.rxBytes += 4;
 		fifo_fill_lev--;
@@ -111,14 +111,14 @@ rx_int (struct ifx_ssc_port *info)
 
 	// now do the rest as mentioned in STATE.RXBV
 	while ((bytes_in_buf > 0) && (fifo_fill_lev > 0)) {
-		rx_valid_cnt = (readl(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_RX_BYTE_VALID_MASK) >> IFX_SSC_STATE_RX_BYTE_VALID_OFFSET;
+		rx_valid_cnt = (ifxmips_r32(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_RX_BYTE_VALID_MASK) >> IFX_SSC_STATE_RX_BYTE_VALID_OFFSET;
 		if (rx_valid_cnt == 0)
 			break;
 
 		if (rx_valid_cnt > bytes_in_buf)
 			rx_valid_cnt = bytes_in_buf;
 
-		tmp_val = readl(IFXMIPS_SSC_RB);
+		tmp_val = ifxmips_r32(IFXMIPS_SSC_RB);
 
 		for (i = 0; i < rx_valid_cnt; i++)
 		{
@@ -134,12 +134,12 @@ rx_int (struct ifx_ssc_port *info)
 	{
 		disable_irq(IFXMIPS_SSC_RIR);
 		wake_up_interruptible (&info->rwait);
-	} else if ((info->opts.modeRxTx == IFX_SSC_MODE_RX) && (readl(IFXMIPS_SSC_RXCNT) == 0))
+	} else if ((info->opts.modeRxTx == IFX_SSC_MODE_RX) && (ifxmips_r32(IFXMIPS_SSC_RXCNT) == 0))
 	{
 		if (info->rxbuf_end - info->rxbuf_ptr < IFX_SSC_RXREQ_BLOCK_SIZE)
-			writel((info->rxbuf_end - info->rxbuf_ptr) << IFX_SSC_RXREQ_RXCOUNT_OFFSET, IFXMIPS_SSC_RXREQ);
+			ifxmips_w32((info->rxbuf_end - info->rxbuf_ptr) << IFX_SSC_RXREQ_RXCOUNT_OFFSET, IFXMIPS_SSC_RXREQ);
 		else
-			writel(IFX_SSC_RXREQ_BLOCK_SIZE << IFX_SSC_RXREQ_RXCOUNT_OFFSET,  IFXMIPS_SSC_RXREQ);
+			ifxmips_w32(IFX_SSC_RXREQ_BLOCK_SIZE << IFX_SSC_RXREQ_RXCOUNT_OFFSET,  IFXMIPS_SSC_RXREQ);
 	}
 }
 
@@ -148,8 +148,8 @@ tx_int (struct ifx_ssc_port *info)
 {
 
 	int fifo_space, fill, i;
-	fifo_space = ((readl(IFXMIPS_SSC_ID) & IFX_SSC_PERID_TXFS_MASK) >> IFX_SSC_PERID_TXFS_OFFSET)
-		- ((readl(IFXMIPS_SSC_FSTAT) & IFX_SSC_FSTAT_TRANSMIT_WORDS_MASK) >> IFX_SSC_FSTAT_TRANSMIT_WORDS_OFFSET);
+	fifo_space = ((ifxmips_r32(IFXMIPS_SSC_ID) & IFX_SSC_PERID_TXFS_MASK) >> IFX_SSC_PERID_TXFS_OFFSET)
+		- ((ifxmips_r32(IFXMIPS_SSC_FSTAT) & IFX_SSC_FSTAT_TRANSMIT_WORDS_MASK) >> IFX_SSC_FSTAT_TRANSMIT_WORDS_OFFSET);
 
 	if (fifo_space == 0)
 		return;
@@ -162,7 +162,7 @@ tx_int (struct ifx_ssc_port *info)
 	for (i = 0; i < fill / 4; i++)
 	{
 		// at first 32 bit access
-		writel(*(UINT32 *) info->txbuf_ptr, IFXMIPS_SSC_TB);
+		ifxmips_w32(*(UINT32 *) info->txbuf_ptr, IFXMIPS_SSC_TB);
 		info->txbuf_ptr += 4;
 	}
 
@@ -224,7 +224,7 @@ ifx_ssc_err_int (int irq, void *dev_id)
 	unsigned long flags;
 
 	local_irq_save (flags);
-	state = readl(IFXMIPS_SSC_STATE);
+	state = ifxmips_r32(IFXMIPS_SSC_STATE);
 
 	if ((state & IFX_SSC_STATE_RX_UFL) != 0) {
 		info->stats.rxUnErr++;
@@ -252,7 +252,7 @@ ifx_ssc_err_int (int irq, void *dev_id)
 	}
 
 	if (write_back)
-		writel(write_back, IFXMIPS_SSC_WHBSTATE);
+		ifxmips_w32(write_back, IFXMIPS_SSC_WHBSTATE);
 
 	local_irq_restore (flags);
 
@@ -278,12 +278,12 @@ ifx_ssc_abort (struct ifx_ssc_port *info)
 	// complete word. The disable cuts the transmission immediatly and 
 	// releases the chip selects. This could result in unpredictable 
 	// behavior of connected external devices!
-	enabled = (readl(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_IS_ENABLED) != 0;
-	writel(IFX_SSC_WHBSTATE_CLR_ENABLE, IFXMIPS_SSC_WHBSTATE);
+	enabled = (ifxmips_r32(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_IS_ENABLED) != 0;
+	ifxmips_w32(IFX_SSC_WHBSTATE_CLR_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
 	// flush fifos
-	writel(IFX_SSC_XFCON_FIFO_FLUSH, IFXMIPS_SSC_TXFCON);
-	writel(IFX_SSC_XFCON_FIFO_FLUSH, IFXMIPS_SSC_RXFCON);
+	ifxmips_w32(IFX_SSC_XFCON_FIFO_FLUSH, IFXMIPS_SSC_TXFCON);
+	ifxmips_w32(IFX_SSC_XFCON_FIFO_FLUSH, IFXMIPS_SSC_RXFCON);
 
 	// free txbuf
 	if (info->txbuf != NULL)
@@ -302,10 +302,10 @@ ifx_ssc_abort (struct ifx_ssc_port *info)
 	mask_and_ack_ifxmips_irq(IFXMIPS_SSC_EIR);
 
 	// clear error flags
-	writel(IFX_SSC_WHBSTATE_CLR_ALL_ERROR, IFXMIPS_SSC_WHBSTATE);
+	ifxmips_w32(IFX_SSC_WHBSTATE_CLR_ALL_ERROR, IFXMIPS_SSC_WHBSTATE);
 
 	if (enabled)
-		writel(IFX_SSC_WHBSTATE_SET_ENABLE, IFXMIPS_SSC_WHBSTATE);
+		ifxmips_w32(IFX_SSC_WHBSTATE_SET_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
 }
 
@@ -343,22 +343,22 @@ ifx_ssc_open (struct inode *inode, struct file *filp)
 	disable_irq(IFXMIPS_SSC_EIR);
 
 	/* Flush and enable TX/RX FIFO */
-	writel((IFX_SSC_DEF_TXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_FLUSH | IFX_SSC_XFCON_FIFO_ENABLE, IFXMIPS_SSC_TXFCON);
-	writel((IFX_SSC_DEF_RXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_FLUSH | IFX_SSC_XFCON_FIFO_ENABLE, IFXMIPS_SSC_RXFCON);
+	ifxmips_w32((IFX_SSC_DEF_TXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_FLUSH | IFX_SSC_XFCON_FIFO_ENABLE, IFXMIPS_SSC_TXFCON);
+	ifxmips_w32((IFX_SSC_DEF_RXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_FLUSH | IFX_SSC_XFCON_FIFO_ENABLE, IFXMIPS_SSC_RXFCON);
 
 	/* logically flush the software FIFOs */
 	info->rxbuf_ptr = 0;
 	info->txbuf_ptr = 0;
 
 	/* clear all error bits */
-	writel(IFX_SSC_WHBSTATE_CLR_ALL_ERROR, IFXMIPS_SSC_WHBSTATE);
+	ifxmips_w32(IFX_SSC_WHBSTATE_CLR_ALL_ERROR, IFXMIPS_SSC_WHBSTATE);
 
 	// clear pending interrupts
 	mask_and_ack_ifxmips_irq(IFXMIPS_SSC_RIR);
 	mask_and_ack_ifxmips_irq(IFXMIPS_SSC_TIR);
 	mask_and_ack_ifxmips_irq(IFXMIPS_SSC_EIR);
 
-	writel(IFX_SSC_WHBSTATE_SET_ENABLE, IFXMIPS_SSC_WHBSTATE);
+	ifxmips_w32(IFX_SSC_WHBSTATE_SET_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
 	return 0;
 }
@@ -382,7 +382,7 @@ ifx_ssc_close (struct inode *inode, struct file *filp)
 	if (!info)
 		return -ENXIO;
 
-	writel(IFX_SSC_WHBSTATE_CLR_ENABLE, IFXMIPS_SSC_WHBSTATE);
+	ifxmips_w32(IFX_SSC_WHBSTATE_CLR_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
 	ifx_ssc_abort(info);
 
@@ -451,13 +451,13 @@ ifx_ssc_read_helper (struct ifx_ssc_port *info, char *buf, size_t len, int from_
 		enable_irq(IFXMIPS_SSC_RIR);
 	} else {
 		local_irq_restore(flags);
-		if (readl(IFXMIPS_SSC_RXCNT) & IFX_SSC_RXCNT_TODO_MASK)
+		if (ifxmips_r32(IFXMIPS_SSC_RXCNT) & IFX_SSC_RXCNT_TODO_MASK)
 			return -EBUSY;
 		enable_irq(IFXMIPS_SSC_RIR);
 		if (len < IFX_SSC_RXREQ_BLOCK_SIZE)
-			writel(len << IFX_SSC_RXREQ_RXCOUNT_OFFSET, IFXMIPS_SSC_RXREQ);
+			ifxmips_w32(len << IFX_SSC_RXREQ_RXCOUNT_OFFSET, IFXMIPS_SSC_RXREQ);
 		else
-			writel(IFX_SSC_RXREQ_BLOCK_SIZE << IFX_SSC_RXREQ_RXCOUNT_OFFSET, IFXMIPS_SSC_RXREQ);
+			ifxmips_w32(IFX_SSC_RXREQ_BLOCK_SIZE << IFX_SSC_RXREQ_RXCOUNT_OFFSET, IFXMIPS_SSC_RXREQ);
 	}
 
 	__add_wait_queue (&info->rwait, &wait);
@@ -643,12 +643,12 @@ ifx_ssc_frm_status_get (struct ifx_ssc_port *info)
 {
 	unsigned long tmp;
 
-	tmp = readl(IFXMIPS_SSC_SFSTAT);
+	tmp = ifxmips_r32(IFXMIPS_SSC_SFSTAT);
 	info->frm_status.DataBusy = (tmp & IFX_SSC_SFSTAT_IN_DATA) > 0;
 	info->frm_status.PauseBusy = (tmp & IFX_SSC_SFSTAT_IN_PAUSE) > 0;
 	info->frm_status.DataCount = (tmp & IFX_SSC_SFSTAT_DATA_COUNT_MASK) >> IFX_SSC_SFSTAT_DATA_COUNT_OFFSET;
 	info->frm_status.PauseCount = (tmp & IFX_SSC_SFSTAT_PAUSE_COUNT_MASK) >> IFX_SSC_SFSTAT_PAUSE_COUNT_OFFSET;
-	tmp = readl(IFXMIPS_SSC_SFCON);
+	tmp = ifxmips_r32(IFXMIPS_SSC_SFCON);
 	info->frm_status.EnIntAfterData = (tmp & IFX_SSC_SFCON_FIR_ENABLE_BEFORE_PAUSE) > 0;
 	info->frm_status.EnIntAfterPause = (tmp & IFX_SSC_SFCON_FIR_ENABLE_AFTER_PAUSE) > 0;
 
@@ -661,7 +661,7 @@ ifx_ssc_frm_control_get (struct ifx_ssc_port *info)
 {
 	unsigned long tmp;
 
-	tmp = readl(IFXMIPS_SSC_SFCON);
+	tmp = ifxmips_r32(IFXMIPS_SSC_SFCON);
 	info->frm_opts.FrameEnable = (tmp & IFX_SSC_SFCON_SF_ENABLE) > 0;
 	info->frm_opts.DataLength = (tmp & IFX_SSC_SFCON_DATA_LENGTH_MASK) >> IFX_SSC_SFCON_DATA_LENGTH_OFFSET;
 	info->frm_opts.PauseLength = (tmp & IFX_SSC_SFCON_PAUSE_LENGTH_MASK) >> IFX_SSC_SFCON_PAUSE_LENGTH_OFFSET;
@@ -686,7 +686,7 @@ ifx_ssc_frm_control_set (struct ifx_ssc_port *info)
 		return -EINVAL;
 
 	// read interrupt bits (they're not changed here)
-	tmp = readl(IFXMIPS_SSC_SFCON) &
+	tmp = ifxmips_r32(IFXMIPS_SSC_SFCON) &
 		(IFX_SSC_SFCON_FIR_ENABLE_BEFORE_PAUSE | IFX_SSC_SFCON_FIR_ENABLE_AFTER_PAUSE);
 
 	// set all values with respect to it's bit position (for data and pause 
@@ -698,7 +698,7 @@ ifx_ssc_frm_control_set (struct ifx_ssc_port *info)
 	tmp |= info->frm_opts.FrameEnable * IFX_SSC_SFCON_SF_ENABLE;
 	tmp |= info->frm_opts.StopAfterPause * IFX_SSC_SFCON_STOP_AFTER_PAUSE;
 
-	writel(tmp, IFXMIPS_SSC_SFCON);
+	ifxmips_w32(tmp, IFXMIPS_SSC_SFCON);
 
 	return 0;
 }
@@ -711,12 +711,12 @@ ifx_ssc_rxtx_mode_set (struct ifx_ssc_port *info, unsigned int val)
 	if (!(info) || (val & ~(IFX_SSC_MODE_MASK)))
 		return -EINVAL;
 
-	if ((readl(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_BUSY)
-	    || (readl(IFXMIPS_SSC_RXCNT) & IFX_SSC_RXCNT_TODO_MASK))
+	if ((ifxmips_r32(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_BUSY)
+	    || (ifxmips_r32(IFXMIPS_SSC_RXCNT) & IFX_SSC_RXCNT_TODO_MASK))
 		return -EBUSY;
 
-	tmp = (readl(IFXMIPS_SSC_CON) & ~(IFX_SSC_CON_RX_OFF | IFX_SSC_CON_TX_OFF)) | (val);
-	writel(tmp, IFXMIPS_SSC_SFCON);
+	tmp = (ifxmips_r32(IFXMIPS_SSC_CON) & ~(IFX_SSC_CON_RX_OFF | IFX_SSC_CON_TX_OFF)) | (val);
+	ifxmips_w32(tmp, IFXMIPS_SSC_SFCON);
 	info->opts.modeRxTx = val;
 
 	return 0;
@@ -766,20 +766,20 @@ ifx_ssc_sethwopts (struct ifx_ssc_port *info)
 
 	local_irq_save (flags);
 
-	writel(bits, IFXMIPS_SSC_CON);
-	writel((info->opts.gpoCs << IFX_SSC_GPOCON_ISCSB0_POS) |
+	ifxmips_w32(bits, IFXMIPS_SSC_CON);
+	ifxmips_w32((info->opts.gpoCs << IFX_SSC_GPOCON_ISCSB0_POS) |
 				   (info->opts.gpoInv << IFX_SSC_GPOCON_INVOUT0_POS), IFXMIPS_SSC_GPOCON);
 
-	writel(info->opts.gpoCs << IFX_SSC_WHBGPOSTAT_SETOUT0_POS, IFXMIPS_SSC_WHBGPOSTAT);
+	ifxmips_w32(info->opts.gpoCs << IFX_SSC_WHBGPOSTAT_SETOUT0_POS, IFXMIPS_SSC_WHBGPOSTAT);
 
 	//master mode
 	if (opts->masterSelect)
-		writel(IFX_SSC_WHBSTATE_SET_MASTER_SELECT, IFXMIPS_SSC_WHBSTATE);
+		ifxmips_w32(IFX_SSC_WHBSTATE_SET_MASTER_SELECT, IFXMIPS_SSC_WHBSTATE);
 	else
-		writel(IFX_SSC_WHBSTATE_CLR_MASTER_SELECT, IFXMIPS_SSC_WHBSTATE);
+		ifxmips_w32(IFX_SSC_WHBSTATE_CLR_MASTER_SELECT, IFXMIPS_SSC_WHBSTATE);
 
 	// init serial framing
-	writel(0, IFXMIPS_SSC_SFCON);
+	ifxmips_w32(0, IFXMIPS_SSC_SFCON);
 	/* set up the port pins */
 	//check for general requirements to switch (external) pad/pin characteristics
 	/* TODO: P0.9 SPI_CS4, P0.10 SPI_CS5, P 0.11 SPI_CS6, because of ASC0 */
@@ -823,23 +823,23 @@ ifx_ssc_set_baud (struct ifx_ssc_port *info, unsigned int baud)
 
 	local_irq_save (flags);
 
-	enabled = (readl(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_IS_ENABLED);
-	writel(IFX_SSC_WHBSTATE_CLR_ENABLE, IFXMIPS_SSC_WHBSTATE);
+	enabled = (ifxmips_r32(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_IS_ENABLED);
+	ifxmips_w32(IFX_SSC_WHBSTATE_CLR_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
 	br = (((ifx_ssc_clock >> 1) + baud / 2) / baud) - 1;
 	wmb();
 
 	if (br > 0xffff || ((br == 0) &&
-			((readl(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_IS_MASTER) == 0))) {
+			((ifxmips_r32(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_IS_MASTER) == 0))) {
 		local_irq_restore (flags);
 		printk ("%s: invalid baudrate %u\n", __func__, baud);
 		return -EINVAL;
 	}
 
-	writel(br, IFXMIPS_SSC_BR);
+	ifxmips_w32(br, IFXMIPS_SSC_BR);
 
 	if (enabled)
-		writel(IFX_SSC_WHBSTATE_SET_ENABLE, IFXMIPS_SSC_WHBSTATE);
+		ifxmips_w32(IFX_SSC_WHBSTATE_SET_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
 	local_irq_restore(flags);
 
@@ -853,8 +853,8 @@ ifx_ssc_hwinit (struct ifx_ssc_port *info)
 	unsigned long flags;
 	bool enabled;
 
-	enabled = (readl(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_IS_ENABLED);
-	writel(IFX_SSC_WHBSTATE_CLR_ENABLE, IFXMIPS_SSC_WHBSTATE);
+	enabled = (ifxmips_r32(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_IS_ENABLED);
+	ifxmips_w32(IFX_SSC_WHBSTATE_CLR_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
 	if (ifx_ssc_sethwopts (info) < 0)
 	{
@@ -871,14 +871,14 @@ ifx_ssc_hwinit (struct ifx_ssc_port *info)
 	local_irq_save (flags);
 
 	/* TX FIFO */
-	writel((IFX_SSC_DEF_TXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_ENABLE, IFXMIPS_SSC_TXFCON);
+	ifxmips_w32((IFX_SSC_DEF_TXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_ENABLE, IFXMIPS_SSC_TXFCON);
 	/* RX FIFO */
-	writel((IFX_SSC_DEF_RXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_ENABLE, IFXMIPS_SSC_RXFCON);
+	ifxmips_w32((IFX_SSC_DEF_RXFIFO_FL << IFX_SSC_XFCON_ITL_OFFSET) | IFX_SSC_XFCON_FIFO_ENABLE, IFXMIPS_SSC_RXFCON);
 
 	local_irq_restore (flags);
 
 	if (enabled)
-		writel(IFX_SSC_WHBSTATE_SET_ENABLE, IFXMIPS_SSC_WHBSTATE);
+		ifxmips_w32(IFX_SSC_WHBSTATE_SET_ENABLE, IFXMIPS_SSC_WHBSTATE);
 
 	return 0;
 }
@@ -926,7 +926,7 @@ ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 		/* if the buffers are not empty then the port is */
 		/* busy and we shouldn't change things on-the-fly! */
 		if (!info->txbuf || !info->rxbuf ||
-		    (readl(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_BUSY)) {
+		    (ifxmips_r32(IFXMIPS_SSC_STATE) & IFX_SSC_STATE_BUSY)) {
 			ret_val = -EBUSY;
 			break;
 		}
@@ -967,7 +967,7 @@ ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 		ret_val = ifx_ssc_rxtx_mode_set (info, tmp);
 		break;
 	case IFX_SSC_RXTX_MODE_GET:
-		tmp = readl(IFXMIPS_SSC_CON) &
+		tmp = ifxmips_r32(IFXMIPS_SSC_CON) &
 			(~(IFX_SSC_CON_RX_OFF | IFX_SSC_CON_TX_OFF));
 		if (from_kernel)
 			*((unsigned int *) data) = tmp;
@@ -991,7 +991,7 @@ ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 		if (tmp > IFX_SSC_MAX_GPO_OUT)
 			ret_val = -EINVAL;
 		else
-			writel(1 << (tmp + IFX_SSC_WHBGPOSTAT_SETOUT0_POS),
+			ifxmips_w32(1 << (tmp + IFX_SSC_WHBGPOSTAT_SETOUT0_POS),
 				 IFXMIPS_SSC_WHBGPOSTAT);
 		break;
 	case IFX_SSC_GPO_OUT_CLR:
@@ -1004,12 +1004,12 @@ ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 		if (tmp > IFX_SSC_MAX_GPO_OUT)
 			ret_val = -EINVAL;
 		else {
-			writel(1 << (tmp + IFX_SSC_WHBGPOSTAT_CLROUT0_POS),
+			ifxmips_w32(1 << (tmp + IFX_SSC_WHBGPOSTAT_CLROUT0_POS),
 				 IFXMIPS_SSC_WHBGPOSTAT);
 		}
 		break;
 	case IFX_SSC_GPO_OUT_GET:
-		tmp = readl(IFXMIPS_SSC_GPOSTAT);
+		tmp = ifxmips_r32(IFXMIPS_SSC_GPOSTAT);
 		if (from_kernel)
 			*((unsigned int *) data) = tmp;
 		else if (copy_to_user ((void *) data,
@@ -1053,7 +1053,7 @@ ifx_ssc_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 		/* if the buffers are not empty then the port is */
 		/* busy and we shouldn't change things on-the-fly! */
 		if (!info->txbuf || !info->rxbuf ||
-		    (readl(IFXMIPS_SSC_STATE)
+		    (ifxmips_r32(IFXMIPS_SSC_STATE)
 		     & IFX_SSC_STATE_BUSY)) {
 			ret_val = -EBUSY;
 			break;
@@ -1165,14 +1165,14 @@ ifx_ssc_init (void)
 			info->mapbase = IFXMIPS_SSC_BASE_ADDR;
 		}
 
-		writel(IFX_SSC_DEF_RMC << IFX_CLC_RUN_DIVIDER_OFFSET, IFXMIPS_SSC_CLC);
+		ifxmips_w32(IFX_SSC_DEF_RMC << IFX_CLC_RUN_DIVIDER_OFFSET, IFXMIPS_SSC_CLC);
 
 		init_waitqueue_head (&info->rwait);
 
 		local_irq_save (flags);
 
 		// init serial framing register
-		writel(IFX_SSC_DEF_SFCON, IFXMIPS_SSC_SFCON);
+		ifxmips_w32(IFX_SSC_DEF_SFCON, IFXMIPS_SSC_SFCON);
 
 		ret_val = request_irq(IFXMIPS_SSC_TIR, ifx_ssc_tx_int, IRQF_DISABLED, "ifx_ssc_tx", info);
 		if (ret_val)
@@ -1197,7 +1197,7 @@ ifx_ssc_init (void)
 			local_irq_restore (flags);
 			goto irqerr;
 		}
-		writel(IFX_SSC_DEF_IRNEN, IFXMIPS_SSC_IRN);
+		ifxmips_w32(IFX_SSC_DEF_IRNEN, IFXMIPS_SSC_IRN);
 
 		//enable_irq(IFXMIPS_SSC_TIR);
 		//enable_irq(IFXMIPS_SSC_RIR);
@@ -1233,7 +1233,7 @@ ifx_ssc_cleanup_module (void)
 	int i;
 
 	for (i = 0; i < PORT_CNT; i++) {
-		writel(IFX_SSC_WHBSTATE_CLR_ENABLE, IFXMIPS_SSC_WHBSTATE);
+		ifxmips_w32(IFX_SSC_WHBSTATE_CLR_ENABLE, IFXMIPS_SSC_WHBSTATE);
 		free_irq(IFXMIPS_SSC_TIR, &isp[i]);
 		free_irq(IFXMIPS_SSC_RIR, &isp[i]);
 		free_irq(IFXMIPS_SSC_EIR, &isp[i]);

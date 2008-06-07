@@ -95,7 +95,7 @@ int
 ifxmips_port_set_open_drain (unsigned int port, unsigned int pin)
 {
 	IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_OD + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_OD + (port * 0xC));
+	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P0_OD + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_OD + (port * 0xC));
 
 	return 0;
 }
@@ -105,7 +105,7 @@ int
 ifxmips_port_clear_open_drain (unsigned int port, unsigned int pin)
 {
 	IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_OD + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_OD + (port * 0xC));
+	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P0_OD + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_OD + (port * 0xC));
 
 	return 0;
 }
@@ -115,7 +115,7 @@ int
 ifxmips_port_set_pudsel (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_PUDSEL + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_PUDSEL + (port * 0xC));
+	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P0_PUDSEL + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_PUDSEL + (port * 0xC));
 
 	return 0;
 }
@@ -125,7 +125,7 @@ int
 ifxmips_port_clear_pudsel (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_PUDSEL + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_PUDSEL + (port * 0xC));
+	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P0_PUDSEL + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_PUDSEL + (port * 0xC));
 
 	return 0;
 }
@@ -135,7 +135,7 @@ int
 ifxmips_port_set_puden (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_PUDEN + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_PUDEN + (port * 0xC));
+	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P0_PUDEN + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_PUDEN + (port * 0xC));
 
 	return 0;
 }
@@ -145,7 +145,7 @@ int
 ifxmips_port_clear_puden (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_PUDEN + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_PUDEN + (port * 0xC));
+	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P0_PUDEN + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_PUDEN + (port * 0xC));
 
 	return 0;
 }
@@ -155,7 +155,7 @@ int
 ifxmips_port_set_stoff (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_STOFF + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_STOFF + (port * 0xC));
+	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P0_STOFF + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_STOFF + (port * 0xC));
 
 	return 0;
 }
@@ -165,7 +165,7 @@ int
 ifxmips_port_clear_stoff (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_STOFF + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_STOFF + (port * 0xC));
+	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P0_STOFF + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_STOFF + (port * 0xC));
 
 	return 0;
 }
@@ -175,7 +175,7 @@ int
 ifxmips_port_set_dir_out (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_DIR + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_DIR + (port * 0xC));
+	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P0_DIR + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_DIR + (port * 0xC));
 
 	return 0;
 }
@@ -185,7 +185,7 @@ int
 ifxmips_port_set_dir_in (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_DIR + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_DIR + (port * 0xC));
+	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P0_DIR + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_DIR + (port * 0xC));
 
 	return 0;
 }
@@ -195,7 +195,7 @@ int
 ifxmips_port_set_output (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_OUT + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_OUT + (port * 0xC));
+	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P0_OUT + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_OUT + (port * 0xC));
 
 	return 0;
 }
@@ -205,7 +205,7 @@ int
 ifxmips_port_clear_output (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_OUT + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_OUT + (port * 0xC));
+	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P0_OUT + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_OUT + (port * 0xC));
 
 	return 0;
 }
@@ -216,7 +216,7 @@ ifxmips_port_get_input (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
 
-	if (readl(IFXMIPS_GPIO_P0_IN + (port * 0xC)) & (1 << pin))
+	if (ifxmips_r32(IFXMIPS_GPIO_P0_IN + (port * 0xC)) & (1 << pin))
 		return 0;
 	else
 		return 1;
@@ -227,7 +227,7 @@ int
 ifxmips_port_set_altsel0 (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_ALTSEL0 + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_ALTSEL0 + (port * 0xC));
+	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P0_ALTSEL0 + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_ALTSEL0 + (port * 0xC));
 
 	return 0;
 }
@@ -237,7 +237,7 @@ int
 ifxmips_port_clear_altsel0 (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_ALTSEL0 + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_ALTSEL0 + (port * 0xC));
+	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P0_ALTSEL0 + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_ALTSEL0 + (port * 0xC));
 
 	return 0;
 }
@@ -247,7 +247,7 @@ int
 ifxmips_port_set_altsel1 (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_ALTSEL1 + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_ALTSEL1 + (port * 0xC));
+	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P0_ALTSEL1 + (port * 0xC)) | (1 << pin), IFXMIPS_GPIO_P0_ALTSEL1 + (port * 0xC));
 
 	return 0;
 }
@@ -257,7 +257,7 @@ int
 ifxmips_port_clear_altsel1 (unsigned int port, unsigned int pin)
 {
     IFXMIPS_GPIO_SANITY;
-	writel(readl(IFXMIPS_GPIO_P0_ALTSEL1 + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_ALTSEL1 + (port * 0xC));
+	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P0_ALTSEL1 + (port * 0xC)) & ~(1 << pin), IFXMIPS_GPIO_P0_ALTSEL1 + (port * 0xC));
 
 	return 0;
 }
@@ -347,7 +347,7 @@ long ifxmips_port_read_procmem_helper(char* tag, u32* in_reg, char *buf)
 	unsigned int len, t;
 
 	len = sprintf(buf, "\n%s: ", tag);
-	reg = readl(in_reg);
+	reg = ifxmips_r32(in_reg);
 	bit = 0x80000000;
 	for (t = 0; t < 32; t++) {
 		if ((reg & bit) > 0)

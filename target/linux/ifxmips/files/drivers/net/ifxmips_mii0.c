@@ -60,8 +60,8 @@ ifxmips_write_mdio (u32 phy_addr, u32 phy_reg, u16 phy_data)
 		((phy_reg & MDIO_ACC_REG_MASK) << MDIO_ACC_REG_OFFSET) |
 		phy_data;
 
-	while (readl(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST);
-	writel(val, IFXMIPS_PPE32_MDIO_ACC);
+	while (ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST);
+	ifxmips_w32(val, IFXMIPS_PPE32_MDIO_ACC);
 }
 
 unsigned short
@@ -71,9 +71,9 @@ ifxmips_read_mdio (u32 phy_addr, u32 phy_reg)
 		((phy_addr & MDIO_ACC_ADDR_MASK) << MDIO_ACC_ADDR_OFFSET) |
 		((phy_reg & MDIO_ACC_REG_MASK) << MDIO_ACC_REG_OFFSET);
 
-	writel(val, IFXMIPS_PPE32_MDIO_ACC);
-	while (readl(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST){};
-	val = readl(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_VAL_MASK;
+	ifxmips_w32(val, IFXMIPS_PPE32_MDIO_ACC);
+	while (ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST){};
+	val = ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_VAL_MASK;
 
 	return val;
 }
@@ -374,13 +374,13 @@ ifxmips_sw_chip_init (int mode)
 	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_PPE);
 
 	if(mode == REV_MII_MODE)
-		writel((readl(IFXMIPS_PPE32_CFG) & PPE32_MII_MASK) | PPE32_MII_REVERSE, IFXMIPS_PPE32_CFG);
+		ifxmips_w32((ifxmips_r32(IFXMIPS_PPE32_CFG) & PPE32_MII_MASK) | PPE32_MII_REVERSE, IFXMIPS_PPE32_CFG);
 	else if(mode == MII_MODE)
-		writel((readl(IFXMIPS_PPE32_CFG) & PPE32_MII_MASK) | PPE32_MII_NORMAL, IFXMIPS_PPE32_CFG);
+		ifxmips_w32((ifxmips_r32(IFXMIPS_PPE32_CFG) & PPE32_MII_MASK) | PPE32_MII_NORMAL, IFXMIPS_PPE32_CFG);
 
-	writel(PPE32_PLEN_UNDER | PPE32_PLEN_OVER, IFXMIPS_PPE32_IG_PLEN_CTRL);
+	ifxmips_w32(PPE32_PLEN_UNDER | PPE32_PLEN_OVER, IFXMIPS_PPE32_IG_PLEN_CTRL);
 
-	writel(PPE32_CGEN, IFXMIPS_PPE32_ENET_MAC_CFG);
+	ifxmips_w32(PPE32_CGEN, IFXMIPS_PPE32_ENET_MAC_CFG);
 
 	wmb();
 }
