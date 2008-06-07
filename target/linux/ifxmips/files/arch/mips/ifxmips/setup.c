@@ -49,7 +49,7 @@ __init bus_error_init (void)
 unsigned int
 ifxmips_get_ddr_hz (void)
 {
-	switch (readl(IFXMIPS_CGU_SYS) & 0x3)
+	switch (ifxmips_r32(IFXMIPS_CGU_SYS) & 0x3)
 	{
 	case 0:
 		return CLOCK_167M;
@@ -66,7 +66,7 @@ unsigned int
 ifxmips_get_cpu_hz (void)
 {
 	unsigned int ddr_clock = ifxmips_get_ddr_hz();
-	switch (readl(IFXMIPS_CGU_SYS) & 0xc)
+	switch (ifxmips_r32(IFXMIPS_CGU_SYS) & 0xc)
 	{
 	case 0:
 		return CLOCK_333M;
@@ -81,7 +81,7 @@ unsigned int
 ifxmips_get_fpi_hz (void)
 {
 	unsigned int ddr_clock = ifxmips_get_ddr_hz();
-	if (readl(IFXMIPS_CGU_SYS) & 0x40)
+	if (ifxmips_r32(IFXMIPS_CGU_SYS) & 0x40)
 	{
 		return ddr_clock >> 1;
 	}
@@ -92,7 +92,7 @@ EXPORT_SYMBOL(ifxmips_get_fpi_hz);
 unsigned int
 ifxmips_get_cpu_ver (void)
 {
-	return readl(IFXMIPS_MCD_CHIPID) & 0xFFFFF000;
+	return ifxmips_r32(IFXMIPS_MCD_CHIPID) & 0xFFFFF000;
 }
 EXPORT_SYMBOL(ifxmips_get_cpu_ver);
 
@@ -130,10 +130,10 @@ plat_time_init (void)
 	write_c0_compare(r4k_cur);
 	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_GPT | IFXMIPS_PMU_PWDCR_FPI);
 
-	writel(0x100, IFXMIPS_GPTU_GPT_CLC);
+	ifxmips_w32(0x100, IFXMIPS_GPTU_GPT_CLC);
 
-	writel(0xffff, IFXMIPS_GPTU_GPT_CAPREL);
-	writel(0x80C0, IFXMIPS_GPTU_GPT_T6CON);
+	ifxmips_w32(0xffff, IFXMIPS_GPTU_GPT_CAPREL);
+	ifxmips_w32(0x80C0, IFXMIPS_GPTU_GPT_T6CON);
 }
 
 extern const char* get_system_type (void);

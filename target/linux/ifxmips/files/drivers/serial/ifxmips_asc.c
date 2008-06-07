@@ -88,7 +88,7 @@ static void
 ifxmipsasc_stop_rx (struct uart_port *port)
 {
 	/* clear the RX enable bit */
-	writel(ASCWHBSTATE_CLRREN, IFXMIPS_ASC1_WHBSTATE);
+	ifxmips_w32(ASCWHBSTATE_CLRREN, IFXMIPS_ASC1_WHBSTATE);
 }
 
 static void
@@ -104,12 +104,12 @@ ifxmipsasc_rx_chars (struct uart_port *port)
 	struct tty_struct *tty = port->info->tty;
 	unsigned int ch = 0, rsr = 0, fifocnt;
 
-	fifocnt = readl(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_RXFFLMASK;
+	fifocnt = ifxmips_r32(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_RXFFLMASK;
 	while (fifocnt--)
 	{
 		u8 flag = TTY_NORMAL;
-		ch = readl(IFXMIPS_ASC1_RBUF);
-		rsr = (readl(IFXMIPS_ASC1_STATE) & ASCSTATE_ANY) | UART_DUMMY_UER_RX;
+		ch = ifxmips_r32(IFXMIPS_ASC1_RBUF);
+		rsr = (ifxmips_r32(IFXMIPS_ASC1_STATE) & ASCSTATE_ANY) | UART_DUMMY_UER_RX;
 		tty_flip_buffer_push(tty);
 		port->icount.rx++;
 
@@ -120,14 +120,14 @@ ifxmipsasc_rx_chars (struct uart_port *port)
 		if (rsr & ASCSTATE_ANY) {
 			if (rsr & ASCSTATE_PE) {
 				port->icount.parity++;
-				writel(readl(IFXMIPS_ASC1_WHBSTATE) | ASCWHBSTATE_CLRPE, IFXMIPS_ASC1_WHBSTATE);
+				ifxmips_w32(ifxmips_r32(IFXMIPS_ASC1_WHBSTATE) | ASCWHBSTATE_CLRPE, IFXMIPS_ASC1_WHBSTATE);
 			} else if (rsr & ASCSTATE_FE) {
 				port->icount.frame++;
-				writel(readl(IFXMIPS_ASC1_WHBSTATE) | ASCWHBSTATE_CLRFE, IFXMIPS_ASC1_WHBSTATE);
+				ifxmips_w32(ifxmips_r32(IFXMIPS_ASC1_WHBSTATE) | ASCWHBSTATE_CLRFE, IFXMIPS_ASC1_WHBSTATE);
 			}
 			if (rsr & ASCSTATE_ROE) {
 				port->icount.overrun++;
-				writel(readl(IFXMIPS_ASC1_WHBSTATE) | ASCWHBSTATE_CLRROE, IFXMIPS_ASC1_WHBSTATE);
+				ifxmips_w32(ifxmips_r32(IFXMIPS_ASC1_WHBSTATE) | ASCWHBSTATE_CLRROE, IFXMIPS_ASC1_WHBSTATE);
 			}
 
 			rsr &= port->read_status_mask;
@@ -166,11 +166,11 @@ ifxmipsasc_tx_chars (struct uart_port *port)
 		return;
 	}
 
-	while(((readl(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK)
+	while(((ifxmips_r32(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK)
 			        >> ASCFSTAT_TXFFLOFF) != IFXMIPSASC_TXFIFO_FULL)
 	{
 		if (port->x_char) {
-			writel(port->x_char, IFXMIPS_ASC1_TBUF);
+			ifxmips_w32(port->x_char, IFXMIPS_ASC1_TBUF);
 			port->icount.tx++;
 			port->x_char = 0;
 			continue;
@@ -179,7 +179,7 @@ ifxmipsasc_tx_chars (struct uart_port *port)
 		if (uart_circ_empty(xmit))
 			break;
 
-		writel(port->info->xmit.buf[port->info->xmit.tail], IFXMIPS_ASC1_TBUF);
+		ifxmips_w32(port->info->xmit.buf[port->info->xmit.tail], IFXMIPS_ASC1_TBUF);
 		xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
 		port->icount.tx++;
 	}
@@ -191,7 +191,7 @@ ifxmipsasc_tx_chars (struct uart_port *port)
 static irqreturn_t
 ifxmipsasc_tx_int (int irq, void *port)
 {
-	writel(ASC_IRNCR_TIR, IFXMIPS_ASC1_IRNCR);
+	ifxmips_w32(ASC_IRNCR_TIR, IFXMIPS_ASC1_IRNCR);
 	ifxmipsasc_start_tx(port);
 	mask_and_ack_ifxmips_irq(irq);
 
@@ -202,7 +202,7 @@ static irqreturn_t
 ifxmipsasc_er_int (int irq, void *port)
 {
 	/* clear any pending interrupts */
-	writel(readl(IFXMIPS_ASC1_WHBSTATE) | ASCWHBSTATE_CLRPE |
+	ifxmips_w32(ifxmips_r32(IFXMIPS_ASC1_WHBSTATE) | ASCWHBSTATE_CLRPE |
 			ASCWHBSTATE_CLRFE | ASCWHBSTATE_CLRROE, IFXMIPS_ASC1_WHBSTATE);
 
 	return IRQ_HANDLED;
@@ -211,7 +211,7 @@ ifxmipsasc_er_int (int irq, void *port)
 static irqreturn_t
 ifxmipsasc_rx_int (int irq, void *port)
 {
-	writel(ASC_IRNCR_RIR, IFXMIPS_ASC1_IRNCR);
+	ifxmips_w32(ASC_IRNCR_RIR, IFXMIPS_ASC1_IRNCR);
 	ifxmipsasc_rx_chars((struct uart_port *) port);
 	mask_and_ack_ifxmips_irq(irq);
 
@@ -223,7 +223,7 @@ ifxmipsasc_tx_empty (struct uart_port *port)
 {
 	int status;
 
-	status = readl(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK;
+	status = ifxmips_r32(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK;
 
 	return status ? 0 : TIOCSER_TEMT;
 }
@@ -251,17 +251,17 @@ ifxmipsasc1_hw_init (void)
 {
 	/* this setup was probably already done in ROM/u-boot  but we do it again*/
 	/* TODO: GPIO pins are multifunction */
-	writel(readl(IFXMIPS_ASC1_CLC) & ~IFXMIPS_ASC1_CLC_DISS, IFXMIPS_ASC1_CLC);
-	writel((readl(IFXMIPS_ASC1_CLC) & ~ASCCLC_RMCMASK) | (1 << ASCCLC_RMCOFFSET), IFXMIPS_ASC1_CLC);
-	writel(0, IFXMIPS_ASC1_PISEL);
-	writel(((IFXMIPSASC_TXFIFO_FL << ASCTXFCON_TXFITLOFF) &
+	ifxmips_w32(ifxmips_r32(IFXMIPS_ASC1_CLC) & ~IFXMIPS_ASC1_CLC_DISS, IFXMIPS_ASC1_CLC);
+	ifxmips_w32((ifxmips_r32(IFXMIPS_ASC1_CLC) & ~ASCCLC_RMCMASK) | (1 << ASCCLC_RMCOFFSET), IFXMIPS_ASC1_CLC);
+	ifxmips_w32(0, IFXMIPS_ASC1_PISEL);
+	ifxmips_w32(((IFXMIPSASC_TXFIFO_FL << ASCTXFCON_TXFITLOFF) &
 		ASCTXFCON_TXFITLMASK) | ASCTXFCON_TXFEN | ASCTXFCON_TXFFLU, IFXMIPS_ASC1_TXFCON);
-	writel(((IFXMIPSASC_RXFIFO_FL << ASCRXFCON_RXFITLOFF) &
+	ifxmips_w32(((IFXMIPSASC_RXFIFO_FL << ASCRXFCON_RXFITLOFF) &
 		ASCRXFCON_RXFITLMASK) | ASCRXFCON_RXFEN | ASCRXFCON_RXFFLU, IFXMIPS_ASC1_RXFCON);
 	wmb ();
 
 	/*framing, overrun, enable */
-	writel(readl(IFXMIPS_ASC1_CON) | ASCCON_M_8ASYNC | ASCCON_FEN | ASCCON_TOEN | ASCCON_ROEN,
+	ifxmips_w32(ifxmips_r32(IFXMIPS_ASC1_CON) | ASCCON_M_8ASYNC | ASCCON_FEN | ASCCON_TOEN | ASCCON_ROEN,
 		IFXMIPS_ASC1_CON);
 }
 
@@ -299,7 +299,7 @@ ifxmipsasc_startup (struct uart_port *port)
 		goto err2;
 	}
 
-	writel(ASC_IRNREN_RX_BUF | ASC_IRNREN_TX_BUF | ASC_IRNREN_ERR | ASC_IRNREN_TX,
+	ifxmips_w32(ASC_IRNREN_RX_BUF | ASC_IRNREN_TX_BUF | ASC_IRNREN_ERR | ASC_IRNREN_TX,
 		IFXMIPS_ASC1_IRNREN);
 
 	local_irq_restore(flags);
@@ -325,13 +325,13 @@ ifxmipsasc_shutdown (struct uart_port *port)
 	/*
 	 * disable the baudrate generator to disable the ASC
 	 */
-	writel(0, IFXMIPS_ASC1_CON);
+	ifxmips_w32(0, IFXMIPS_ASC1_CON);
 
 	/* flush and then disable the fifos */
-	writel(readl(IFXMIPS_ASC1_RXFCON) | ASCRXFCON_RXFFLU, IFXMIPS_ASC1_RXFCON);
-	writel(readl(IFXMIPS_ASC1_RXFCON) & ~ASCRXFCON_RXFEN, IFXMIPS_ASC1_RXFCON);
-	writel(readl(IFXMIPS_ASC1_TXFCON) | ASCTXFCON_TXFFLU, IFXMIPS_ASC1_TXFCON);
-	writel(readl(IFXMIPS_ASC1_TXFCON) & ~ASCTXFCON_TXFEN, IFXMIPS_ASC1_TXFCON);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_ASC1_RXFCON) | ASCRXFCON_RXFFLU, IFXMIPS_ASC1_RXFCON);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_ASC1_RXFCON) & ~ASCRXFCON_RXFEN, IFXMIPS_ASC1_RXFCON);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_ASC1_TXFCON) | ASCTXFCON_TXFFLU, IFXMIPS_ASC1_TXFCON);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_ASC1_TXFCON) & ~ASCTXFCON_TXFEN, IFXMIPS_ASC1_TXFCON);
 }
 
 static void ifxmipsasc_set_termios(struct uart_port *port, struct ktermios *new, struct ktermios *old)
@@ -395,7 +395,7 @@ static void ifxmipsasc_set_termios(struct uart_port *port, struct ktermios *new,
 	local_irq_save(flags);
 
 	/* set up CON */
-	writel(readl(IFXMIPS_ASC1_CON) | con, IFXMIPS_ASC1_CON);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_ASC1_CON) | con, IFXMIPS_ASC1_CON);
 
 	/* Set baud rate - take a divider of 2 into account */
     baud = uart_get_baud_rate(port, new, old, 0, port->uartclk / 16);
@@ -403,22 +403,22 @@ static void ifxmipsasc_set_termios(struct uart_port *port, struct ktermios *new,
 	quot = quot / 2 - 1;
 
 	/* disable the baudrate generator */
-	writel(readl(IFXMIPS_ASC1_CON) & ~ASCCON_R, IFXMIPS_ASC1_CON);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_ASC1_CON) & ~ASCCON_R, IFXMIPS_ASC1_CON);
 
 	/* make sure the fractional divider is off */
-	writel(readl(IFXMIPS_ASC1_CON) & ~ASCCON_FDE, IFXMIPS_ASC1_CON);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_ASC1_CON) & ~ASCCON_FDE, IFXMIPS_ASC1_CON);
 
 	/* set up to use divisor of 2 */
-	writel(readl(IFXMIPS_ASC1_CON) & ~ASCCON_BRS, IFXMIPS_ASC1_CON);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_ASC1_CON) & ~ASCCON_BRS, IFXMIPS_ASC1_CON);
 
 	/* now we can write the new baudrate into the register */
-	writel(quot, IFXMIPS_ASC1_BG);
+	ifxmips_w32(quot, IFXMIPS_ASC1_BG);
 
 	/* turn the baudrate generator back on */
-	writel(readl(IFXMIPS_ASC1_CON) | ASCCON_R, IFXMIPS_ASC1_CON);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_ASC1_CON) | ASCCON_R, IFXMIPS_ASC1_CON);
 
 	/* enable rx */
-	writel(ASCWHBSTATE_SETREN, IFXMIPS_ASC1_WHBSTATE);
+	ifxmips_w32(ASCWHBSTATE_SETREN, IFXMIPS_ASC1_WHBSTATE);
 
 	local_irq_restore(flags);
 }
@@ -507,7 +507,7 @@ ifxmipsasc_console_write (struct console *co, const char *s, u_int count)
 		/* wait until the FIFO is not full */
 		do
 		{
-			fifocnt = (readl(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK)
+			fifocnt = (ifxmips_r32(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK)
 			                >> ASCFSTAT_TXFFLOFF;
 		} while (fifocnt == IFXMIPSASC_TXFIFO_FULL);
 
@@ -518,14 +518,14 @@ ifxmipsasc_console_write (struct console *co, const char *s, u_int count)
 
 		if (s[i] == '\n')
 		{
-			writel('\r', IFXMIPS_ASC1_TBUF);
+			ifxmips_w32('\r', IFXMIPS_ASC1_TBUF);
 			do
 			{
-				fifocnt = (readl(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK)
+				fifocnt = (ifxmips_r32(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK)
 					>> ASCFSTAT_TXFFLOFF;
 			} while (fifocnt == IFXMIPSASC_TXFIFO_FULL);
 		}
-		writel(s[i], IFXMIPS_ASC1_TBUF);
+		ifxmips_w32(s[i], IFXMIPS_ASC1_TBUF);
 	}
 
 	local_irq_restore(flags);

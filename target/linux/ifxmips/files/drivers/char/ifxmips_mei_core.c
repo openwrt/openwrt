@@ -260,7 +260,7 @@ unsigned char got_int = 0;
 static void
 meiLongwordWrite (u32* ul_address, u32 ul_data)
 {
-	writel(ul_data, ul_address);
+	ifxmips_w32(ul_data, ul_address);
 	wmb();
 	return;
 }				//    end of "meiLongwordWrite(..."
@@ -277,7 +277,7 @@ static void
 meiLongwordRead (u32* ul_address, u32 * pul_data)
 {
 	//*pul_data = *((volatile u32 *)ul_address);
-	*pul_data = readl(ul_address);
+	*pul_data = ifxmips_r32(ul_address);
 	wmb();
 	return;
 }				//    end of "meiLongwordRead(..."
@@ -3561,9 +3561,9 @@ ifxmips_mei_init_module (void)
 	ifxmips_mei_ceoc_init ();
 #endif
 	// power up mei 
-	temp = readl(IFXMIPS_PMU_PWDCR);
+	temp = ifxmips_r32(IFXMIPS_PMU_PWDCR);
 	temp &= 0xffff7dbe;
-	writel(temp, IFXMIPS_PMU_PWDCR);
+	ifxmips_w32(temp, IFXMIPS_PMU_PWDCR);
 
 #if defined (CONFIG_ATM_IFXMIPS)
 	IFX_ATM_LED_Callback_Register (adsl_led_flash);

@@ -54,7 +54,7 @@ void
 ifxmips_led_set (unsigned int led)
 {
 	led &= 0xffffff;
-	writel(readl(IFXMIPS_LED_CPU0) | led, IFXMIPS_LED_CPU0);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_LED_CPU0) | led, IFXMIPS_LED_CPU0);
 }
 EXPORT_SYMBOL(ifxmips_led_set);
 
@@ -62,7 +62,7 @@ void
 ifxmips_led_clear (unsigned int led)
 {
 	led = ~(led & 0xffffff);
-	writel(readl(IFXMIPS_LED_CPU0) & led, IFXMIPS_LED_CPU0);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_LED_CPU0) & led, IFXMIPS_LED_CPU0);
 }
 EXPORT_SYMBOL(ifxmips_led_clear);
 
@@ -70,7 +70,7 @@ void
 ifxmips_led_blink_set (unsigned int led)
 {
 	led &= 0xffffff;
-	writel(readl(IFXMIPS_LED_CON0) | led, IFXMIPS_LED_CON0);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_LED_CON0) | led, IFXMIPS_LED_CON0);
 }
 EXPORT_SYMBOL(ifxmips_led_blink_set);
 
@@ -78,7 +78,7 @@ void
 ifxmips_led_blink_clear (unsigned int led)
 {
 	led = ~(led & 0xffffff);
-	writel(readl(IFXMIPS_LED_CON0) & led, IFXMIPS_LED_CON0);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_LED_CON0) & led, IFXMIPS_LED_CON0);
 }
 EXPORT_SYMBOL(ifxmips_led_blink_clear);
 
@@ -115,29 +115,29 @@ ifxmips_led_probe(struct platform_device *dev)
 
 	ifxmips_led_setup_gpio();
 
-	writel(0, IFXMIPS_LED_AR);
-	writel(0, IFXMIPS_LED_CPU0);
-	writel(0, IFXMIPS_LED_CPU1);
-	writel(LED_CON0_SWU, IFXMIPS_LED_CON0);
-	writel(0, IFXMIPS_LED_CON1);
+	ifxmips_w32(0, IFXMIPS_LED_AR);
+	ifxmips_w32(0, IFXMIPS_LED_CPU0);
+	ifxmips_w32(0, IFXMIPS_LED_CPU1);
+	ifxmips_w32(LED_CON0_SWU, IFXMIPS_LED_CON0);
+	ifxmips_w32(0, IFXMIPS_LED_CON1);
 
 	/* setup the clock edge that the shift register is triggered on */
-	writel(readl(IFXMIPS_LED_CON0) & ~IFXMIPS_LED_EDGE_MASK, IFXMIPS_LED_CON0);
-	writel(readl(IFXMIPS_LED_CON0) | IFXMIPS_LED_CLK_EDGE, IFXMIPS_LED_CON0);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_LED_CON0) & ~IFXMIPS_LED_EDGE_MASK, IFXMIPS_LED_CON0);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_LED_CON0) | IFXMIPS_LED_CLK_EDGE, IFXMIPS_LED_CON0);
 
 	/* per default leds 15-0 are set */
-	writel(IFXMIPS_LED_GROUP1 | IFXMIPS_LED_GROUP0, IFXMIPS_LED_CON1);
+	ifxmips_w32(IFXMIPS_LED_GROUP1 | IFXMIPS_LED_GROUP0, IFXMIPS_LED_CON1);
 
 	/* leds are update periodically by the FPID */
-	writel(readl(IFXMIPS_LED_CON1) & ~IFXMIPS_LED_UPD_MASK, IFXMIPS_LED_CON1);
-	writel(readl(IFXMIPS_LED_CON1) | IFXMIPS_LED_UPD_SRC_FPI, IFXMIPS_LED_CON1);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_LED_CON1) & ~IFXMIPS_LED_UPD_MASK, IFXMIPS_LED_CON1);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_LED_CON1) | IFXMIPS_LED_UPD_SRC_FPI, IFXMIPS_LED_CON1);
 
 	/* set led update speed */
-	writel(readl(IFXMIPS_LED_CON1) & ~IFXMIPS_LED_MASK, IFXMIPS_LED_CON1);
-	writel(readl(IFXMIPS_LED_CON1) | IFXMIPS_LED_SPEED, IFXMIPS_LED_CON1);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_LED_CON1) & ~IFXMIPS_LED_MASK, IFXMIPS_LED_CON1);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_LED_CON1) | IFXMIPS_LED_SPEED, IFXMIPS_LED_CON1);
 
 	/* adsl 0 and 1 leds are updated by the arc */
-	writel(readl(IFXMIPS_LED_CON0) | IFXMIPS_LED_ADSL_SRC, IFXMIPS_LED_CON0);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_LED_CON0) | IFXMIPS_LED_ADSL_SRC, IFXMIPS_LED_CON0);
 
 	/* per default, the leds are turned on */
 	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_LED);

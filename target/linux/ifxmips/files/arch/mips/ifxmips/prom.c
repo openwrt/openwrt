@@ -39,11 +39,11 @@ prom_free_prom_memory (void)
 void
 prom_putchar (char c)
 {
-	while ((readl(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK) >> ASCFSTAT_TXFFLOFF);
+	while ((ifxmips_r32(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK) >> ASCFSTAT_TXFFLOFF);
 
 	if (c == '\n')
-		writel('\r', IFXMIPS_ASC1_TBUF);
-	writel(c, IFXMIPS_ASC1_TBUF);
+		ifxmips_w32('\r', IFXMIPS_ASC1_TBUF);
+	ifxmips_w32(c, IFXMIPS_ASC1_TBUF);
 }
 
 void

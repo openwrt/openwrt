@@ -37,7 +37,7 @@ ifxmips_machine_restart (char *command)
 	printk (KERN_NOTICE "System restart\n");
 	local_irq_disable ();
 
-	writel(readl(IFXMIPS_RCU_REQ) | IFXMIPS_RST_ALL, IFXMIPS_RCU_REQ);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_RCU_REQ) | IFXMIPS_RST_ALL, IFXMIPS_RCU_REQ);
 	for (;;);
 }
 

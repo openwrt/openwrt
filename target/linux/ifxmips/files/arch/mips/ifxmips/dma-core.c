@@ -97,9 +97,9 @@ enable_ch_irq (_dma_channel_info *pCh)
 	int flag;
 
 	local_irq_save(flag);
-	writel(chan_no, IFXMIPS_DMA_CS);
-	writel(0x4a, IFXMIPS_DMA_CIE);
-	writel(readl(IFXMIPS_DMA_IRNEN) | (1 << chan_no), IFXMIPS_DMA_IRNEN);
+	ifxmips_w32(chan_no, IFXMIPS_DMA_CS);
+	ifxmips_w32(0x4a, IFXMIPS_DMA_CIE);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_IRNEN) | (1 << chan_no), IFXMIPS_DMA_IRNEN);
 	local_irq_restore(flag);
 	enable_ifxmips_irq(pCh->irq);
 }
@@ -112,9 +112,9 @@ disable_ch_irq (_dma_channel_info *pCh)
 
 	local_irq_save(flag);
 	g_ifxmips_dma_int_status &= ~(1 << chan_no);
-	writel(chan_no, IFXMIPS_DMA_CS);
-	writel(0, IFXMIPS_DMA_CIE);
-	writel(readl(IFXMIPS_DMA_IRNEN) & ~(1 << chan_no), IFXMIPS_DMA_IRNEN);
+	ifxmips_w32(chan_no, IFXMIPS_DMA_CS);
+	ifxmips_w32(0, IFXMIPS_DMA_CIE);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_IRNEN) & ~(1 << chan_no), IFXMIPS_DMA_IRNEN);
 	local_irq_restore(flag);
 	mask_and_ack_ifxmips_irq(pCh->irq);
 }
@@ -126,8 +126,8 @@ open_chan (_dma_channel_info *pCh)
 	int chan_no = (int)(pCh - dma_chan);
 
 	local_irq_save(flag);
-	writel(chan_no, IFXMIPS_DMA_CS);
-	writel(readl(IFXMIPS_DMA_CCTRL) | 1, IFXMIPS_DMA_CCTRL);
+	ifxmips_w32(chan_no, IFXMIPS_DMA_CS);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_CCTRL) | 1, IFXMIPS_DMA_CCTRL);
 	if(pCh->dir == IFXMIPS_DMA_RX)
 		enable_ch_irq(pCh);
 	local_irq_restore(flag);
@@ -140,8 +140,8 @@ close_chan(_dma_channel_info *pCh)
 	int chan_no = (int) (pCh - dma_chan);
 
 	local_irq_save(flag);
-	writel(chan_no, IFXMIPS_DMA_CS);
-	writel(readl(IFXMIPS_DMA_CCTRL) & ~1, IFXMIPS_DMA_CCTRL);
+	ifxmips_w32(chan_no, IFXMIPS_DMA_CS);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_CCTRL) & ~1, IFXMIPS_DMA_CCTRL);
 	disable_ch_irq(pCh);
 	local_irq_restore(flag);
 }
@@ -151,8 +151,8 @@ reset_chan (_dma_channel_info *pCh)
 {
 	int chan_no = (int) (pCh - dma_chan);
 
-	writel(chan_no, IFXMIPS_DMA_CS);
-	writel(readl(IFXMIPS_DMA_CCTRL) | 2, IFXMIPS_DMA_CCTRL);
+	ifxmips_w32(chan_no, IFXMIPS_DMA_CS);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_CCTRL) | 2, IFXMIPS_DMA_CCTRL);
 }
 
 void
@@ -176,10 +176,10 @@ rx_chan_intr_handler (int chan_no)
 		pCh->weight--;
 	} else {
 		local_irq_save(flag);
-		tmp = readl(IFXMIPS_DMA_CS);
-		writel(chan_no, IFXMIPS_DMA_CS);
-		writel(readl(IFXMIPS_DMA_CIS) | 0x7e, IFXMIPS_DMA_CIS);
-		writel(tmp, IFXMIPS_DMA_CS);
+		tmp = ifxmips_r32(IFXMIPS_DMA_CS);
+		ifxmips_w32(chan_no, IFXMIPS_DMA_CS);
+		ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_CIS) | 0x7e, IFXMIPS_DMA_CIS);
+		ifxmips_w32(tmp, IFXMIPS_DMA_CS);
 		g_ifxmips_dma_int_status &= ~(1 << chan_no);
 		local_irq_restore(flag);
 		enable_ifxmips_irq(dma_chan[chan_no].irq);
@@ -195,10 +195,10 @@ tx_chan_intr_handler (int chan_no)
     int flag;
 
     local_irq_save(flag);
-    tmp = readl(IFXMIPS_DMA_CS);
-    writel(chan_no, IFXMIPS_DMA_CS);
-    writel(readl(IFXMIPS_DMA_CIS) | 0x7e, IFXMIPS_DMA_CIS);
-    writel(tmp, IFXMIPS_DMA_CS);
+    tmp = ifxmips_r32(IFXMIPS_DMA_CS);
+    ifxmips_w32(chan_no, IFXMIPS_DMA_CS);
+    ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_CIS) | 0x7e, IFXMIPS_DMA_CIS);
+    ifxmips_w32(tmp, IFXMIPS_DMA_CS);
     g_ifxmips_dma_int_status &= ~(1 << chan_no);
     local_irq_restore(flag);
 	pDev->current_tx_chan = pCh->rel_chan_no;
@@ -272,10 +272,10 @@ dma_interrupt (int irq, void *dev_id)
 	if (chan_no < 0 || chan_no > 19)
 		BUG();
 
-	tmp = readl(IFXMIPS_DMA_IRNEN);
-	writel(0, IFXMIPS_DMA_IRNEN);
+	tmp = ifxmips_r32(IFXMIPS_DMA_IRNEN);
+	ifxmips_w32(0, IFXMIPS_DMA_IRNEN);
 	g_ifxmips_dma_int_status |= 1 << chan_no;
-	writel(tmp, IFXMIPS_DMA_IRNEN);
+	ifxmips_w32(tmp, IFXMIPS_DMA_IRNEN);
 	mask_and_ack_ifxmips_irq(irq);
 
     if (!g_ifxmips_dma_in_process)
@@ -337,16 +337,16 @@ dma_device_register(_dma_device_info *dev)
 				memset(tx_desc_p, 0, sizeof(struct tx_desc));
 			}
 			local_irq_save(flag);
-			writel(chan_no, IFXMIPS_DMA_CS);
+			ifxmips_w32(chan_no, IFXMIPS_DMA_CS);
 			/*check if the descriptor length is changed */
-			if (readl(IFXMIPS_DMA_CDLEN) != pCh->desc_len)
-				writel(pCh->desc_len, IFXMIPS_DMA_CDLEN);
+			if (ifxmips_r32(IFXMIPS_DMA_CDLEN) != pCh->desc_len)
+				ifxmips_w32(pCh->desc_len, IFXMIPS_DMA_CDLEN);
 
-			writel(readl(IFXMIPS_DMA_CCTRL) & ~1, IFXMIPS_DMA_CCTRL);
-			writel(readl(IFXMIPS_DMA_CCTRL) | 2, IFXMIPS_DMA_CCTRL);
-			while (readl(IFXMIPS_DMA_CCTRL) & 2){};
-			writel(readl(IFXMIPS_DMA_IRNEN) | (1 << chan_no), IFXMIPS_DMA_IRNEN);
-			writel(0x30100, IFXMIPS_DMA_CCTRL);	/*reset and enable channel,enable channel later */
+			ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_CCTRL) & ~1, IFXMIPS_DMA_CCTRL);
+			ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_CCTRL) | 2, IFXMIPS_DMA_CCTRL);
+			while (ifxmips_r32(IFXMIPS_DMA_CCTRL) & 2){};
+			ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_IRNEN) | (1 << chan_no), IFXMIPS_DMA_IRNEN);
+			ifxmips_w32(0x30100, IFXMIPS_DMA_CCTRL);	/*reset and enable channel,enable channel later */
 			local_irq_restore(flag);
 		}
 	}
@@ -376,16 +376,16 @@ dma_device_register(_dma_device_info *dev)
 			}
 
 			local_irq_save(flag);
-			writel(chan_no, IFXMIPS_DMA_CS);
+			ifxmips_w32(chan_no, IFXMIPS_DMA_CS);
 			/*check if the descriptor length is changed */
-			if (readl(IFXMIPS_DMA_CDLEN) != pCh->desc_len)
-				writel(pCh->desc_len, IFXMIPS_DMA_CDLEN);
-			writel(readl(IFXMIPS_DMA_CCTRL) & ~1, IFXMIPS_DMA_CCTRL);
-			writel(readl(IFXMIPS_DMA_CCTRL) | 2, IFXMIPS_DMA_CCTRL);
-			while (readl(IFXMIPS_DMA_CCTRL) & 2){};
-			writel(0x0a, IFXMIPS_DMA_CIE);	/*fix me, should enable all the interrupts here? */
-			writel(readl(IFXMIPS_DMA_IRNEN) | (1 << chan_no), IFXMIPS_DMA_IRNEN);
-			writel(0x30000, IFXMIPS_DMA_CCTRL);
+			if (ifxmips_r32(IFXMIPS_DMA_CDLEN) != pCh->desc_len)
+				ifxmips_w32(pCh->desc_len, IFXMIPS_DMA_CDLEN);
+			ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_CCTRL) & ~1, IFXMIPS_DMA_CCTRL);
+			ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_CCTRL) | 2, IFXMIPS_DMA_CCTRL);
+			while (ifxmips_r32(IFXMIPS_DMA_CCTRL) & 2){};
+			ifxmips_w32(0x0a, IFXMIPS_DMA_CIE);	/*fix me, should enable all the interrupts here? */
+			ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_IRNEN) | (1 << chan_no), IFXMIPS_DMA_IRNEN);
+			ifxmips_w32(0x30000, IFXMIPS_DMA_CCTRL);
 			local_irq_restore(flag);
 			enable_ifxmips_irq(dma_chan[chan_no].irq);
 		}
@@ -409,14 +409,14 @@ dma_device_unregister (_dma_device_info *dev)
 		{
 			chan_no = (int)(dev->tx_chan[i] - dma_chan);
 			local_irq_save (flag);
-			writel(chan_no, IFXMIPS_DMA_CS);
+			ifxmips_w32(chan_no, IFXMIPS_DMA_CS);
 			pCh->curr_desc = 0;
 			pCh->prev_desc = 0;
 			pCh->control = IFXMIPS_DMA_CH_OFF;
-			writel(0, IFXMIPS_DMA_CIE);	/*fix me, should disable all the interrupts here? */
-			writel(readl(IFXMIPS_DMA_IRNEN) & ~(1 << chan_no), IFXMIPS_DMA_IRNEN);	/*disable interrupts */
-			writel(readl(IFXMIPS_DMA_CCTRL) & ~1, IFXMIPS_DMA_CCTRL);
-			while (readl(IFXMIPS_DMA_CCTRL) & 1) {};
+			ifxmips_w32(0, IFXMIPS_DMA_CIE);	/*fix me, should disable all the interrupts here? */
+			ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_IRNEN) & ~(1 << chan_no), IFXMIPS_DMA_IRNEN);	/*disable interrupts */
+			ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_CCTRL) & ~1, IFXMIPS_DMA_CCTRL);
+			while (ifxmips_r32(IFXMIPS_DMA_CCTRL) & 1) {};
 			local_irq_restore (flag);
 
 			for (j = 0; j < pCh->desc_len; j++)
@@ -446,11 +446,11 @@ dma_device_unregister (_dma_device_info *dev)
 		pCh->prev_desc = 0;
 		pCh->control = IFXMIPS_DMA_CH_OFF;
 
-		writel(chan_no, IFXMIPS_DMA_CS);
-		writel(0, IFXMIPS_DMA_CIE); /*fix me, should disable all the interrupts here? */
-		writel(readl(IFXMIPS_DMA_IRNEN) & ~(1 << chan_no), IFXMIPS_DMA_IRNEN);	/*disable interrupts */
-		writel(readl(IFXMIPS_DMA_CCTRL) & ~1, IFXMIPS_DMA_CCTRL);
-		while (readl(IFXMIPS_DMA_CCTRL) & 1) {};
+		ifxmips_w32(chan_no, IFXMIPS_DMA_CS);
+		ifxmips_w32(0, IFXMIPS_DMA_CIE); /*fix me, should disable all the interrupts here? */
+		ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_IRNEN) & ~(1 << chan_no), IFXMIPS_DMA_IRNEN);	/*disable interrupts */
+		ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_CCTRL) & ~1, IFXMIPS_DMA_CCTRL);
+		while (ifxmips_r32(IFXMIPS_DMA_CCTRL) & 1) {};
 
 		local_irq_restore (flag);
 		for (j = 0; j < pCh->desc_len; j++)
@@ -577,8 +577,8 @@ dma_device_write (struct dma_device_info *dma_dev, u8 * dataptr, int len, void *
 		dma_dev->intr_handler (dma_dev, TX_BUF_FULL_INT);
 	}
 
-	writel(chan_no, IFXMIPS_DMA_CS);
-	tmp = readl(IFXMIPS_DMA_CCTRL);
+	ifxmips_w32(chan_no, IFXMIPS_DMA_CS);
+	tmp = ifxmips_r32(IFXMIPS_DMA_CCTRL);
 
 	if (!(tmp & 1))
 		pCh->open (pCh);
@@ -625,14 +625,14 @@ map_dma_chan(_dma_chan_map *map)
 		dma_devs[i].rx_burst_len = 4;
 		if (i == 0)
 		{
-			writel(0, IFXMIPS_DMA_PS);
-			writel(readl(IFXMIPS_DMA_PCTRL) | ((0xf << 8) | (1 << 6)), IFXMIPS_DMA_PCTRL);	/*enable dma drop */
+			ifxmips_w32(0, IFXMIPS_DMA_PS);
+			ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_PCTRL) | ((0xf << 8) | (1 << 6)), IFXMIPS_DMA_PCTRL);	/*enable dma drop */
 		}
 
 		if (i == 1)
 		{
-			writel(1, IFXMIPS_DMA_PS);
-			writel(0x14, IFXMIPS_DMA_PCTRL);	/*deu port setting */
+			ifxmips_w32(1, IFXMIPS_DMA_PS);
+			ifxmips_w32(0x14, IFXMIPS_DMA_PCTRL);	/*deu port setting */
 		}
 
 		for (j = 0; j < MAX_DMA_CHANNEL_NUM; j++)
@@ -688,17 +688,17 @@ dma_chip_init(void)
 	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_DMA);
 
 	// reset DMA
-	writel(readl(IFXMIPS_DMA_CTRL) | 1, IFXMIPS_DMA_CTRL);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_CTRL) | 1, IFXMIPS_DMA_CTRL);
 
 	// diable all interrupts
-	writel(0, IFXMIPS_DMA_IRNEN);
+	ifxmips_w32(0, IFXMIPS_DMA_IRNEN);
 
 	for (i = 0; i < MAX_DMA_CHANNEL_NUM; i++)
 	{
-		writel(i, IFXMIPS_DMA_CS);
-		writel(0x2, IFXMIPS_DMA_CCTRL);
-		writel(0x80000040, IFXMIPS_DMA_CPOLL);
-		writel(readl(IFXMIPS_DMA_CCTRL) & ~0x1, IFXMIPS_DMA_CCTRL);
+		ifxmips_w32(i, IFXMIPS_DMA_CS);
+		ifxmips_w32(0x2, IFXMIPS_DMA_CCTRL);
+		ifxmips_w32(0x80000040, IFXMIPS_DMA_CPOLL);
+		ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_CCTRL) & ~0x1, IFXMIPS_DMA_CCTRL);
 
 	}
 }
@@ -728,9 +728,9 @@ ifxmips_dma_init (void)
 		dma_chan[i].curr_desc = 0;
 		dma_chan[i].desc_len = IFXMIPS_DMA_DESCRIPTOR_OFFSET;
 
-		writel(i, IFXMIPS_DMA_CS);
-		writel((u32)CPHYSADDR(dma_chan[i].desc_base), IFXMIPS_DMA_CDBA);
-		writel(dma_chan[i].desc_len, IFXMIPS_DMA_CDLEN);
+		ifxmips_w32(i, IFXMIPS_DMA_CS);
+		ifxmips_w32((u32)CPHYSADDR(dma_chan[i].desc_base), IFXMIPS_DMA_CDBA);
+		ifxmips_w32(dma_chan[i].desc_len, IFXMIPS_DMA_CDLEN);
 	}
 
 	return 0;

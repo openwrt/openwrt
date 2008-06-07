@@ -48,7 +48,7 @@ disable_ifxmips_irq (unsigned int irq_nr)
 	for (i = 0; i <= 4; i++)
 	{
 		if (irq_nr < INT_NUM_IM_OFFSET){
-			writel(readl(ifxmips_ier) & ~(1 << irq_nr ), ifxmips_ier);
+			ifxmips_w32(ifxmips_r32(ifxmips_ier) & ~(1 << irq_nr ), ifxmips_ier);
 			return;
 		}
 		ifxmips_ier += IFXMIPS_ICU_OFFSET;
@@ -69,8 +69,8 @@ mask_and_ack_ifxmips_irq (unsigned int irq_nr)
 	{
 		if (irq_nr < INT_NUM_IM_OFFSET)
 		{
-			writel(readl(ifxmips_ier) & ~(1 << irq_nr ), ifxmips_ier);
-			writel((1 << irq_nr ), ifxmips_isr);
+			ifxmips_w32(ifxmips_r32(ifxmips_ier) & ~(1 << irq_nr ), ifxmips_ier);
+			ifxmips_w32((1 << irq_nr ), ifxmips_isr);
 			return;
 		}
 		ifxmips_ier += IFXMIPS_ICU_OFFSET;
@@ -91,7 +91,7 @@ enable_ifxmips_irq (unsigned int irq_nr)
 	{
 		if (irq_nr < INT_NUM_IM_OFFSET)
 		{
-			writel(readl(ifxmips_ier) | (1 << irq_nr ), ifxmips_ier);
+			ifxmips_w32(ifxmips_r32(ifxmips_ier) | (1 << irq_nr ), ifxmips_ier);
 			return;
 		}
 		ifxmips_ier += IFXMIPS_ICU_OFFSET;
@@ -145,7 +145,7 @@ ifxmips_hw_irqdispatch (int module)
 {
 	u32 irq;
 
-	irq = readl(IFXMIPS_ICU_IM0_IOSR + (module * IFXMIPS_ICU_OFFSET));
+	irq = ifxmips_r32(IFXMIPS_ICU_IM0_IOSR + (module * IFXMIPS_ICU_OFFSET));
 	if (irq == 0)
 		return;
 
@@ -153,7 +153,7 @@ ifxmips_hw_irqdispatch (int module)
 	do_IRQ ((int) irq + INT_NUM_IM0_IRL0 + (INT_NUM_IM_OFFSET * module));
 
 	if ((irq == 22) && (module == 0)){
-		writel(readl(IFXMIPS_EBU_PCC_ISTAT) | 0x10, IFXMIPS_EBU_PCC_ISTAT);
+		ifxmips_w32(ifxmips_r32(IFXMIPS_EBU_PCC_ISTAT) | 0x10, IFXMIPS_EBU_PCC_ISTAT);
 	}
 }
 
@@ -195,7 +195,7 @@ arch_init_irq(void)
 
 	for (i = 0; i < 5; i++)
 	{
-		writel(0, IFXMIPS_ICU_IM0_IER + (i * IFXMIPS_ICU_OFFSET));
+		ifxmips_w32(0, IFXMIPS_ICU_IM0_IER + (i * IFXMIPS_ICU_OFFSET));
 	}
 
 	mips_cpu_irq_init();
