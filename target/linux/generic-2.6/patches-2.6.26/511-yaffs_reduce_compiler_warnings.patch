@@ -1,6 +1,6 @@
 --- a/fs/yaffs2/yaffs_fs.c
 +++ b/fs/yaffs2/yaffs_fs.c
-@@ -969,7 +970,7 @@
+@@ -969,7 +969,7 @@
  		f->f_version = inode->i_version;
  	}
  
@@ -9,7 +9,7 @@
  		curoffs++;
  		if (curoffs >= offset) {
  			l = list_entry(i, yaffs_Object, siblings);
-@@ -1273,7 +1275,7 @@
+@@ -1273,7 +1273,7 @@
  
  	if (target &&
  	    target->variantType == YAFFS_OBJECT_TYPE_DIRECTORY &&
@@ -18,7 +18,7 @@
  
  	        T(YAFFS_TRACE_OS, (KERN_DEBUG "target is non-empty dir\n"));
  
-@@ -1529,7 +1531,7 @@
+@@ -1529,7 +1529,7 @@
  	yaffs_GrossUnlock(dev);
  
  	/* we assume this is protected by lock_kernel() in mount/umount */
@@ -27,7 +27,7 @@
  
  	if(dev->spareBuffer){
  		YFREE(dev->spareBuffer);
-@@ -1864,7 +1866,7 @@
+@@ -1864,7 +1864,7 @@
  	dev->skipCheckpointWrite = options.skip_checkpoint_write;
  
  	/* we assume this is protected by lock_kernel() in mount/umount */
