@@ -61,18 +61,18 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 
   ifeq ($(CONFIG_TARGET_ROOTFS_TGZ),y)
     define Image/mkfs/tgz
-		$(TAR) -zcf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-rootfs.tgz --owner=root --group=root -C $(TARGET_DIR)/ .
+		$(TAR) -zcf $(BIN_DIR)/openwrt-$(BOARD)-rootfs.tgz --owner=root --group=root -C $(TARGET_DIR)/ .
     endef
   endif
 
   ifeq ($(CONFIG_TARGET_ROOTFS_CPIOGZ),y)
     define Image/mkfs/cpiogz
-		( cd $(TARGET_DIR); find . | cpio -o -H newc | gzip -9 >$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-rootfs.cpio.gz )
+		( cd $(TARGET_DIR); find . | cpio -o -H newc | gzip -9 >$(BIN_DIR)/openwrt-$(BOARD)-rootfs.cpio.gz )
     endef
   endif
 else
   define Image/BuildKernel
-	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.elf
+	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.elf
 	$(call Image/Build/Initramfs)
   endef
 endif
