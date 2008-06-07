@@ -81,12 +81,12 @@
 	"update_uboot=tftp 0x80500000 u-boot.ifx;era 1:0-10; cp.b 0x80500000 0xb0000000 0x10000\0" \
 	"update_openwrt=tftp 0x80500000 openwrt-ifxmips-2.6-squashfs.image; era 1:10-120; cp.b 0x80500000 0xb0030000 0x300000\0"
 
-#define CONFIG_BOOTCOMMAND	"bootm 0xb00030000"
+#define CONFIG_BOOTCOMMAND	"bootm 0xb0030000"
 
-#define CONFIG_COMMANDS_YES	(CONFIG_CMD_DFL 	| \
+#define CONFIG_COMMANDS_YES	(CONFIG_CMD_DFL	| \
 				 CFG_CMD_ASKENV		| \
 				 CFG_CMD_DHRYSTONE	| \
-				 CFG_CMD_NET    	)
+				 CFG_CMD_NET	)
 
 #define CONFIG_COMMANDS_NO	(CFG_CMD_NFS		| \
 				 CFG_CMD_FPGA		| \
@@ -107,7 +107,7 @@
 				 CFG_CMD_ELF
 				 CFG_CMD_NAND
 #endif
-				 
+
 #include <cmd_confdefs.h>
 
 /*
