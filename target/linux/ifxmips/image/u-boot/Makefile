@@ -22,6 +22,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Build/Compile
 	cp -r ./files/* $(PKG_BUILD_DIR)
+	find $(PKG_BUILD_DIR) -name .svn | $(XARGS) rm -rf
 	cd $(PKG_BUILD_DIR);chmod a+x build_danube.sh;./build_danube.sh
 endef
 
