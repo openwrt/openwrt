@@ -233,9 +233,9 @@
 	#define IFX_CFG_FLASH_FIRMWARE_IMAGE_MTDBLOCK_NAME	"/dev/mtdblock4"
 
         #define IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME              "ubootconfig"
-        #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0xB07E0000
-        #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0xB07FFFFF
-        #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x20000
+        #define IFX_CFG_FLASH_UBOOT_CFG_START_ADDR              0xB0020000
+        #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0xB002FFFF
+        #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x10000
         #define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAME           "/dev/mtdblock5"
 
         #define IFX_CFG_FLASH_END_ADDR                          0xB07FFFFF
