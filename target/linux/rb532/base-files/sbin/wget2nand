@@ -23,7 +23,7 @@ url=$1
 	echo "No URL specified for image TGZ"
 	echo "Usage : $0 URL"
 	exit 1
-} 
+}
 
 boot="$(find_mtd_part 'RouterBoard NAND Boot')"
 main="$(find_mtd_part 'rootfs')"
@@ -44,8 +44,8 @@ mount -t yaffs2 "$main" /tmp/wget2nand/
 mount -t yaffs2 "$boot" /tmp/wget2nand-boot
 
 echo "Copying filesystem..."
-( wget -O - $url/openwrt-rb532-2.6-rootfs.tgz) | ( cd /tmp/wget2nand/; tar xvz )
-wget -O /tmp/wget2nand-boot/kernel $url/openwrt-rb532-2.6-vmlinux 
+( wget -O - $url/openwrt-rb532-rootfs.tgz) | ( cd /tmp/wget2nand/; tar xvz )
+wget -O /tmp/wget2nand-boot/kernel $url/openwrt-rb532-vmlinux
 
 # No need to patch the kernel, this was done during the build process
 chmod +x /tmp/wget2nand-boot/kernel
