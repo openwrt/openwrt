@@ -49,7 +49,7 @@
 
 #define DRVNAME		"ifxmips_mii0"
 
-static struct net_device ifxmips_mii0_dev;
+static struct net_device *ifxmips_mii0_dev;
 static unsigned char u_boot_ethaddr[MAX_ADDR_LEN];
 
 void
@@ -233,12 +233,12 @@ dma_intr_handler (struct dma_device_info* dma_dev, int status)
 	switch (status)
 	{
 	case RCV_INT:
-		switch_hw_receive(&ifxmips_mii0_dev, dma_dev);
+		switch_hw_receive(ifxmips_mii0_dev, dma_dev);
 		break;
 
 	case TX_BUF_FULL_INT:
 		printk(KERN_INFO DRVNAME ": tx buffer full\n");
-		netif_stop_queue(&ifxmips_mii0_dev);
+		netif_stop_queue(ifxmips_mii0_dev);
 		for (i = 0; i < dma_dev->max_tx_chan_num; i++)
 		{
 			if ((dma_dev->tx_chan[i])->control==IFXMIPS_DMA_CH_ON)
@@ -250,7 +250,7 @@ dma_intr_handler (struct dma_device_info* dma_dev, int status)
 		for (i = 0; i < dma_dev->max_tx_chan_num; i++)
 			dma_dev->tx_chan[i]->disable_irq(dma_dev->tx_chan[i]);
 
-		netif_wake_queue(&ifxmips_mii0_dev);
+		netif_wake_queue(ifxmips_mii0_dev);
 		break;
 	}
 
@@ -312,10 +312,6 @@ switch_init (struct net_device *dev)
 	dev->get_stats = ifxmips_get_stats;
 	dev->tx_timeout = switch_tx_timeout;
 	dev->watchdog_timeo = 10 * HZ;
-	dev->priv = kmalloc(sizeof(struct switch_priv), GFP_KERNEL);
-
-	if (dev->priv == NULL)
-		return -ENOMEM;
 
 	memset(dev->priv, 0, sizeof(struct switch_priv));
 	priv = dev->priv;
@@ -394,15 +390,16 @@ ifxmips_mii_probe(struct platform_device *dev)
 {
 	int result = 0;
 
-	ifxmips_mii0_dev.init = switch_init;
+	ifxmips_mii0_dev = alloc_etherdev(sizeof(struct switch_priv));
 
-	strcpy(ifxmips_mii0_dev.name, "eth%d");
-	SET_MODULE_OWNER(dev);
+	ifxmips_mii0_dev->init = switch_init;
 
-	result = register_netdev(&ifxmips_mii0_dev);
+	strcpy(ifxmips_mii0_dev->name, "eth%d");
+
+	result = register_netdev(ifxmips_mii0_dev);
 	if (result)
 	{
-		printk(KERN_INFO DRVNAME ": error %i registering device \"%s\"\n", result, ifxmips_mii0_dev.name);
+		printk(KERN_INFO DRVNAME ": error %i registering device \"%s\"\n", result, ifxmips_mii0_dev->name);
 		goto out;
 	}
 
@@ -417,37 +414,37 @@ out:
 static int
 ifxmips_mii_remove(struct platform_device *dev)
 {
-	struct switch_priv *priv = (struct switch_priv*)ifxmips_mii0_dev.priv;
+	struct switch_priv *priv = (struct switch_priv*)ifxmips_mii0_dev->priv;
 
 	printk(KERN_INFO DRVNAME ": ifxmips_mii0 cleanup\n");
 
 	dma_device_unregister(priv->dma_device);
 	dma_device_release(priv->dma_device);
 	kfree(priv->dma_device);
-	kfree(ifxmips_mii0_dev.priv);
-	unregister_netdev(&ifxmips_mii0_dev);
+	kfree(ifxmips_mii0_dev->priv);
+	unregister_netdev(ifxmips_mii0_dev);
 
 	return 0;
 }
 
-static struct 
-platform_driver ifxmips_mii_driver = { 
-	.probe = ifxmips_mii_probe, 
-	.remove = ifxmips_mii_remove, 
-	.driver = { 
-		.name = DRVNAME, 
-		.owner = THIS_MODULE, 
-	}, 
+static struct
+platform_driver ifxmips_mii_driver = {
+	.probe = ifxmips_mii_probe,
+	.remove = ifxmips_mii_remove,
+	.driver = {
+		.name = DRVNAME,
+		.owner = THIS_MODULE,
+	},
 };
 
 int __init
 ifxmips_mii_init(void)
 {
-	int ret = platform_driver_register(&ifxmips_mii_driver); 
-	if (ret) 
-		printk(KERN_INFO DRVNAME ": Error registering platfom driver!"); 
+	int ret = platform_driver_register(&ifxmips_mii_driver);
+	if (ret)
+		printk(KERN_INFO DRVNAME ": Error registering platfom driver!");
 
-	return ret; 
+	return ret;
 }
 
 static void __exit
