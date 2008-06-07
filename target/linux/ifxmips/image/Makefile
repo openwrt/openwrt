@@ -22,17 +22,17 @@ define Image/BuildKernel
 		-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
 		-d $(KDIR)/vmlinux.lzma $(KDIR)/uImage
 
-	cp $(KDIR)/uImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-uImage
+	cp $(KDIR)/uImage $(BIN_DIR)/openwrt-$(BOARD)-uImage
 endef
 
 define Image/Build/squashfs
-	cat $(KDIR)/uImage $(KDIR)/root.$(1) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).image
-	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).image)
+	cat $(KDIR)/uImage $(KDIR)/root.$(1) > $(BIN_DIR)/openwrt-$(BOARD)-$(1).image
+	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(BOARD)-$(1).image)
 endef
 
 define Image/Build/jffs2-64k
 	dd if=$(KDIR)/uImage of=$(KDIR)/uImage.$(1) bs=64k conv=sync
-	cat $(KDIR)/uImage.$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).image
+	cat $(KDIR)/uImage.$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/openwrt-$(BOARD)-$(1).image
 endef
 
 define Image/Build
