@@ -3,8 +3,8 @@
  *
  *  Mikrotik RouterBOARD 1xx series
  *
- *  Copyright (C) 2007 OpenWrt.org
- *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2007-2008 OpenWrt.org
+ *  Copyright (C) 2007-2008 Gabor Juhos <juhosg at openwrt.org>
  *
  *  NAND initialization code was based on a driver for Linux 2.6.19+ which
  *  was derived from the driver for Linux 2.4.xx published by Mikrotik for
@@ -248,6 +248,10 @@ static void __init rb1xx_setup(void)
 	adm5120_nand_set_spn(1);
 	adm5120_nand_set_wpn(0);
 
+	adm5120_buttons_data.nbuttons = 1;
+	adm5120_buttons[0].desc = "reset button";
+	adm5120_buttons[0].gpio = ADM5120_GPIO_PIN7;
+
 	rb1xx_flash_setup();
 	rb1xx_mac_setup();
 }
@@ -268,6 +272,10 @@ static void __init rb150_setup(void)
 	adm5120_nand_device.resource = rb150_nand_resource;
 	adm5120_nand_data.ctrl.cmd_ctrl = rb150_nand_cmd_ctrl;
 	adm5120_nand_data.ctrl.dev_ready = rb150_nand_ready;
+
+	adm5120_buttons_data.nbuttons = 1;
+	adm5120_buttons[0].desc = "reset button";
+	adm5120_buttons[0].gpio = ADM5120_GPIO_PIN1;
 
 	adm5120_flash0_data.window_size = 512*1024;
 

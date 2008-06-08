@@ -3,8 +3,8 @@
  *
  *  Generic ADM5120 platform devices
  *
- *  Copyright (C) 2007 OpenWrt.org
- *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2007-2008 OpenWrt.org
+ *  Copyright (C) 2007-2008 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -175,6 +175,45 @@ struct amba_device adm5120_uart1_device = {
 	},
 	.irq		= { ADM5120_IRQ_UART1, -1 },
 	.periphid	= 0x0041010,
+};
+
+#define ADM5120_BUTTON_THRESHOLD	5
+#define ADM5120_BUTTON_INTERVAL		20
+
+struct gpio_button adm5120_buttons[ADM5120_NUM_BUTTONS] = {
+	{
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.threshold	= ADM5120_BUTTON_THRESHOLD,
+	}, {
+		.type		= EV_KEY,
+		.code		= BTN_1,
+		.threshold	= ADM5120_BUTTON_THRESHOLD,
+	}, {
+		.type		= EV_KEY,
+		.code		= BTN_2,
+		.threshold	= ADM5120_BUTTON_THRESHOLD,
+	}, {
+		.type		= EV_KEY,
+		.code		= BTN_3,
+		.threshold	= ADM5120_BUTTON_THRESHOLD,
+	}, {
+		.type		= EV_KEY,
+		.code		= BTN_4,
+		.threshold	= ADM5120_BUTTON_THRESHOLD,
+	}
+};
+
+struct gpio_buttons_platform_data adm5120_buttons_data = {
+	.poll_interval	= ADM5120_BUTTON_INTERVAL,
+	.nbuttons	= ARRAY_SIZE(adm5120_buttons),
+	.buttons	= adm5120_buttons,
+};
+
+struct platform_device adm5120_buttons_device = {
+	.name		= "gpio-buttons",
+	.id		= 0,
+	.dev.platform_data = &adm5120_buttons_data,
 };
 
 void adm5120_uart_set_mctrl(struct amba_device *dev, void __iomem *base,
