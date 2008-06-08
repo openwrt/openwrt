@@ -24,6 +24,7 @@
 #define _IFXMIPS_GPIO_H_
 
 #include <asm/ifxmips/ifxmips.h>
+#include <asm/ifxmips/ifxmips_gpio.h>
 
 static inline int gpio_direction_input(unsigned gpio) {
 	ifxmips_port_set_dir_in(0, gpio);
