@@ -43,7 +43,7 @@
 #define MAX_PORTS			2
 #define PINS_PER_PORT		16
 
-#define DRVNAME				"ifxmips_gpio"  
+#define DRVNAME				"ifxmips_gpio"
 
 static unsigned int ifxmips_gpio_major = 0;
 
@@ -51,7 +51,7 @@ static unsigned int ifxmips_gpio_major = 0;
 #define IFXMIPS_RST_PIN 15
 #define IFXMIPS_RST_PORT 1
 
-static struct timer_list rst_button_timer; 
+static struct timer_list rst_button_timer;
 
 extern struct sock *uevent_sock;
 extern u64 uevent_next_seqnum(void);
@@ -315,10 +315,10 @@ done:
 static void reset_button_poll(unsigned long unused)
 {
 	struct event_t *event;
-	
+
 	rst_button_timer.expires = jiffies + HZ;
 	add_timer(&rst_button_timer);
-	
+
 	if (pressed != ifxmips_port_get_input(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN))
 	{
 		if(pressed)
@@ -341,197 +341,12 @@ static void reset_button_poll(unsigned long unused)
 }
 #endif
 
-long ifxmips_port_read_procmem_helper(char* tag, u32* in_reg, char *buf)
-{
-	u32 reg, bit = 0;
-	unsigned int len, t;
-
-	len = sprintf(buf, "\n%s: ", tag);
-	reg = ifxmips_r32(in_reg);
-	bit = 0x80000000;
-	for (t = 0; t < 32; t++) {
-		if ((reg & bit) > 0)
-			len = len + sprintf(buf + len, "X");
-		else
-			len = len + sprintf(buf + len, " ");
-		bit = bit >> 1;
-	}
-
-	return len;
-}
-
-int
-ifxmips_port_read_procmem (char *buf, char **start, off_t offset, int count,
-			  int *eof, void *data)
-{
-	long len = sprintf (buf, "\nIFXMips Port Settings\n");
-
-	len += sprintf (buf + len,
-			"         3         2         1         0\n");
-	len += sprintf (buf + len,
-			"        10987654321098765432109876543210\n");
-	len += sprintf (buf + len,
-			"----------------------------------------\n");
-
-	len += ifxmips_port_read_procmem_helper("P0-OUT", IFXMIPS_GPIO_P0_OUT, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P1-OUT", IFXMIPS_GPIO_P1_OUT, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P0-IN ", IFXMIPS_GPIO_P0_IN, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P1-IN ", IFXMIPS_GPIO_P1_IN, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P0-DIR", IFXMIPS_GPIO_P0_DIR, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P1-DIR", IFXMIPS_GPIO_P1_DIR, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P0-STO ", IFXMIPS_GPIO_P0_STOFF, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P1-STO ", IFXMIPS_GPIO_P1_STOFF, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P0-PUDE", IFXMIPS_GPIO_P0_PUDEN, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P1-PUDE", IFXMIPS_GPIO_P1_PUDEN, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P0-OD  ", IFXMIPS_GPIO_P0_OD, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P1-OD  ", IFXMIPS_GPIO_P1_OD, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P0-PUDS", IFXMIPS_GPIO_P0_PUDSEL, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P1-PUDS", IFXMIPS_GPIO_P1_PUDSEL, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P0-ALT0", IFXMIPS_GPIO_P0_ALTSEL0, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P1-ALT0", IFXMIPS_GPIO_P1_ALTSEL0, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P0-ALT1", IFXMIPS_GPIO_P0_ALTSEL1, &buf[len]);
-	len += ifxmips_port_read_procmem_helper("P1-ALT1", IFXMIPS_GPIO_P1_ALTSEL1, &buf[len]);
-	len = len + sprintf (buf + len, "\n\n");
-
-	*eof = 1;
-
-	return len;
-}
-
-static int
-ifxmips_port_open (struct inode *inode, struct file *filep)
-{
-	return 0;
-}
-
-static int
-ifxmips_port_release (struct inode *inode, struct file *filelp)
-{
-	return 0;
-}
-
-static int
-ifxmips_port_ioctl (struct inode *inode, struct file *filp,
-			unsigned int cmd, unsigned long arg)
-{
-	int ret = 0;
-	volatile struct ifxmips_port_ioctl_parm parm;
-
-	if (_IOC_TYPE (cmd) != IFXMIPS_PORT_IOC_MAGIC)
-		return -EINVAL;
-
-	if (_IOC_DIR (cmd) & _IOC_WRITE) {
-		if (!access_ok
-		    (VERIFY_READ, arg,
-		     sizeof (struct ifxmips_port_ioctl_parm)))
-			return -EFAULT;
-		ret = copy_from_user ((void *) &parm, (void *) arg,
-				      sizeof (struct ifxmips_port_ioctl_parm));
-	}
-	if (_IOC_DIR (cmd) & _IOC_READ) {
-		if (!access_ok
-		    (VERIFY_WRITE, arg,
-		     sizeof (struct ifxmips_port_ioctl_parm)))
-			return -EFAULT;
-	}
-
-	if (down_trylock (&port_sem) != 0)
-		return -EBUSY;
-
-	switch (cmd) {
-	case IFXMIPS_PORT_IOCOD:
-		if (parm.value == 0x00)
-			ifxmips_port_clear_open_drain(parm.port, parm.pin);
-		else
-			ifxmips_port_set_open_drain(parm.port, parm.pin);
-		break;
-
-	case IFXMIPS_PORT_IOCPUDSEL:
-		if (parm.value == 0x00)
-			ifxmips_port_clear_pudsel(parm.port, parm.pin);
-		else
-			ifxmips_port_set_pudsel(parm.port, parm.pin);
-		break;
-
-	case IFXMIPS_PORT_IOCPUDEN:
-		if (parm.value == 0x00)
-			ifxmips_port_clear_puden(parm.port, parm.pin);
-		else
-			ifxmips_port_set_puden(parm.port, parm.pin);
-		break;
-
-	case IFXMIPS_PORT_IOCSTOFF:
-		if (parm.value == 0x00)
-			ifxmips_port_clear_stoff(parm.port, parm.pin);
-		else
-			ifxmips_port_set_stoff(parm.port, parm.pin);
-		break;
-
-	case IFXMIPS_PORT_IOCDIR:
-		if (parm.value == 0x00)
-			ifxmips_port_set_dir_in(parm.port, parm.pin);
-		else
-			ifxmips_port_set_dir_out(parm.port, parm.pin);
-		break;
-
-	case IFXMIPS_PORT_IOCOUTPUT:
-		if (parm.value == 0x00)
-			ifxmips_port_clear_output(parm.port, parm.pin);
-		else
-			ifxmips_port_set_output(parm.port, parm.pin);
-		break;
-
-	case IFXMIPS_PORT_IOCALTSEL0:
-		if (parm.value == 0x00)
-			ifxmips_port_clear_altsel0(parm.port, parm.pin);
-		else
-			ifxmips_port_set_altsel0(parm.port, parm.pin);
-		break;
-
-	case IFXMIPS_PORT_IOCALTSEL1:
-		if (parm.value == 0x00)
-			ifxmips_port_clear_altsel1(parm.port, parm.pin);
-		else
-			ifxmips_port_set_altsel1(parm.port, parm.pin);
-		break;
-
-	case IFXMIPS_PORT_IOCINPUT:
-		parm.value = ifxmips_port_get_input(parm.port, parm.pin);
-		copy_to_user((void*)arg, (void*)&parm,
-			sizeof(struct ifxmips_port_ioctl_parm));
-		break;
-
-	default:
-		ret = -EINVAL;
-	}
-
-	up (&port_sem);
-
-	return ret;
-}
-
-static struct file_operations port_fops = {
-      .open = ifxmips_port_open,
-      .release = ifxmips_port_release,
-      .ioctl = ifxmips_port_ioctl
-};
-
 static int
 ifxmips_gpio_probe (struct platform_device *dev)
 {
 	int retval = 0;
 
 	sema_init (&port_sem, 1);
-
-	ifxmips_gpio_major = register_chrdev(0, DRVNAME, &port_fops);
-	if (!ifxmips_gpio_major)
-	{
-		printk(KERN_INFO DRVNAME ": Error! Could not register port device. #%d\n", ifxmips_gpio_major);
-		retval = -EINVAL;
-		goto out;
-	}
-
-	create_proc_read_entry(DRVNAME, 0, NULL, ifxmips_port_read_procmem, NULL);
 
 #ifdef CONFIG_IFXMIPS_GPIO_RST_BTN
 	ifxmips_port_set_open_drain(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN);
@@ -549,7 +364,6 @@ ifxmips_gpio_probe (struct platform_device *dev)
 
 	printk(KERN_INFO DRVNAME ": device successfully initialized #%d.\n", ifxmips_gpio_major);
 
-out:
 	return retval;
 }
 
@@ -560,7 +374,6 @@ ifxmips_gpio_remove (struct platform_device *pdev)
 	del_timer_sync(&rst_button_timer);
 #endif
 	unregister_chrdev(ifxmips_gpio_major, DRVNAME);
-	remove_proc_entry(DRVNAME, NULL);
 
 	return 0;
 }
