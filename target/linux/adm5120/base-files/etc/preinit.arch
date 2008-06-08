@@ -1,0 +1,16 @@
+. /etc/functions.sh
+
+insmod input-core
+insmod input-polldev
+insmod gpio_buttons
+insmod button-hotplug
+
+ifname=eth0
+
+failsafe_ip
+
+netmsg 192.168.1.255 "Press reset now, to enter Failsafe!"
+
+ifconfig "$ifname" 0.0.0.0 down
+
+sleep 2
