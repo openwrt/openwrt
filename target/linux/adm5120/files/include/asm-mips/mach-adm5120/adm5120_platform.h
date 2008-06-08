@@ -3,8 +3,8 @@
  *
  *  ADM5120 specific platform definitions
  *
- *  Copyright (C) 2007 OpenWrt.org
- *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2007-2008 OpenWrt.org
+ *  Copyright (C) 2007-2008 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -22,6 +22,9 @@
 #include <linux/mtd/map.h>
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/nand.h>
+
+#include <linux/input.h>
+#include <linux/gpio_buttons.h>
 
 #include <linux/amba/bus.h>
 #include <linux/amba/serial.h>
@@ -59,10 +62,14 @@ static inline void adm5120_pci_set_irq_map(unsigned int nr_irqs,
 }
 #endif
 
+#define ADM5120_NUM_BUTTONS	4
+
 extern struct adm5120_flash_platform_data adm5120_flash0_data;
 extern struct adm5120_flash_platform_data adm5120_flash1_data;
 extern struct platform_nand_data adm5120_nand_data;
 extern struct adm5120_switch_platform_data adm5120_switch_data;
+extern struct gpio_button adm5120_buttons[ADM5120_NUM_BUTTONS];
+extern struct gpio_buttons_platform_data adm5120_buttons_data;
 extern struct amba_pl010_data adm5120_uart0_data;
 extern struct amba_pl010_data adm5120_uart1_data;
 
@@ -71,6 +78,7 @@ extern struct platform_device adm5120_flash1_device;
 extern struct platform_device adm5120_nand_device;
 extern struct platform_device adm5120_hcd_device;
 extern struct platform_device adm5120_switch_device;
+extern struct platform_device adm5120_buttons_device;
 extern struct amba_device adm5120_uart0_device;
 extern struct amba_device adm5120_uart1_device;
 

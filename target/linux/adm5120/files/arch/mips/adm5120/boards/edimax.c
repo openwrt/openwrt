@@ -3,8 +3,8 @@
  *
  *  Edimax boards
  *
- *  Copyright (C) 2007 OpenWrt.org
- *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2007-2008 OpenWrt.org
+ *  Copyright (C) 2007-2008 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -46,6 +46,7 @@ static struct mtd_partition br61xx_partitions[] = {
 static struct platform_device *br6104k_devices[] __initdata = {
 	&adm5120_flash0_device,
 	&adm5120_hcd_device,
+	&adm5120_buttons_device,
 };
 
 static struct platform_device *br61x4wg_devices[] __initdata = {
@@ -56,6 +57,10 @@ static void __init br61xx_setup(void) {
 	/* setup data for flash0 device */
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(br61xx_partitions);
 	adm5120_flash0_data.parts = br61xx_partitions;
+
+	adm5120_buttons_data.nbuttons = 1;
+	adm5120_buttons[0].desc = "reset button";
+	adm5120_buttons[0].gpio = ADM5120_GPIO_PIN2;
 
 	/* TODO: setup mac addresses, if possible */
 }

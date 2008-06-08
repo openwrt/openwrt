@@ -3,8 +3,8 @@
  *
  *  Compex boards
  *
- *  Copyright (C) 2007 OpenWrt.org
- *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2007-2008 OpenWrt.org
+ *  Copyright (C) 2007-2008 Gabor Juhos <juhosg at openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -57,6 +57,7 @@ static struct platform_device *np2xg_devices[] __initdata = {
 
 static struct platform_device *wp54_devices[] __initdata = {
 	&adm5120_flash0_device,
+	&adm5120_buttons_device,
 };
 
 unsigned char np27g_vlans[6] __initdata = {
@@ -132,19 +133,17 @@ static void __init wp54_setup(void)
 	/* setup data for flash0 device */
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
 
+	adm5120_buttons_data.nbuttons = 1;
+	adm5120_buttons[0].desc = "reset button";
+	adm5120_buttons[0].gpio = ADM5120_GPIO_PIN2;
+
 	/* TODO: setup mac address */
 }
 
 static void __init wp54_wrt_setup(void)
 {
-	gpio_request(ADM5120_GPIO_PIN5, NULL); /* for flash A20 line */
-	gpio_direction_output(ADM5120_GPIO_PIN5, 0);
+	wp54_setup();
 
-	gpio_request(ADM5120_GPIO_PIN3, NULL); /* for system reset */
-	gpio_direction_output(ADM5120_GPIO_PIN3, 1);
-
-	/* setup data for flash0 device */
-	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(wp54g_wrt_partitions);
 	adm5120_flash0_data.parts = wp54g_wrt_partitions;
 
