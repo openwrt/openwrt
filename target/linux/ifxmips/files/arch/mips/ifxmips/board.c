@@ -35,7 +35,7 @@
 #include <asm/io.h>
 #include <asm/ifxmips/ifxmips.h>
 
-#define MAX_IFXMIPS_DEVS		5
+#define MAX_IFXMIPS_DEVS		6
 
 #define BOARD_DANUBE			"Danube"
 #define BOARD_DANUBE_CHIPID		0x10129083
@@ -96,6 +96,26 @@ static struct platform_device ifxmips_mtd[] =
 	},
 };
 
+#ifdef CONFIG_GPIO_DEVICE
+static struct resource ifxmips_gpio_dev_resources[] = {
+	{
+		.name = "gpio",
+		.flags  = 0,
+		.start = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5) | (1 << 8) | (1 << 9) | (1 << 12),
+		.end = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5) | (1 << 8) | (1 << 9) | (1 << 12),
+	},
+};
+
+static struct platform_device ifxmips_gpio_dev[] = {
+	{
+		.name     = "GPIODEV",
+		.id     = -1,
+		.num_resources    = ARRAY_SIZE(ifxmips_gpio_dev_resources),
+		.resource   = ifxmips_gpio_dev_resources,
+	}
+};
+#endif
+
 const char*
 get_system_type (void)
 {
@@ -119,18 +139,18 @@ int __init ifxmips_init_devices(void)
 	*	Currently we support 3 chips
 	*	1.) Danube
 	*	2.) Twinpass (Danube without dsl phy)
-	*	3.) KDbg74 (used for debuging)
 	*/
 
 	int dev = 0;
 
 	/* the following devices are generic for all targets */
-
 	ifxmips_devs[dev++] = ifxmips_led;
 	ifxmips_devs[dev++] = ifxmips_gpio;
 	ifxmips_devs[dev++] = ifxmips_mii;
 	ifxmips_devs[dev++] = ifxmips_mtd;
-
+#ifdef CONFIG_GPIO_DEVICE
+	ifxmips_devs[dev++] = ifxmips_gpio_dev;
+#endif
 	return platform_add_devices(ifxmips_devs, dev);
 }
 
