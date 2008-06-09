@@ -1,0 +1,13 @@
+Index: madwifi-trunk-r3314/ath/if_ath.c
+===================================================================
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-06-01 20:07:35.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-06-01 20:17:01.000000000 +0200
+@@ -2528,7 +2528,7 @@
+ 	 * Enable MIB interrupts when there are hardware phy counters.
+ 	 * Note we only do this (at the moment) for station mode.
+ 	 */
+-	if (sc->sc_needmib && ic->ic_opmode == IEEE80211_M_STA)
++	if (sc->sc_needmib)
+ 		sc->sc_imask |= HAL_INT_MIB;
+ 	ath_hal_intrset(ah, sc->sc_imask);
+ 
