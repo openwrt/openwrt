@@ -51,12 +51,12 @@ prepare-tmpinfo: FORCE
 	fi
 
 scripts/config/mconf:
-	@$(_SINGLE)$(SUBMAKE) -s -j1 -C scripts/config all
+	@$(SUBMAKE) -s -j1 -C scripts/config all
 
 $(eval $(call rdep,scripts/config,scripts/config/mconf))
 
 scripts/config/conf:
-	@$(_SINGLE)$(SUBMAKE) -s -j1 -C scripts/config conf
+	@$(SUBMAKE) -s -j1 -C scripts/config conf
 
 config: scripts/config/conf prepare-tmpinfo FORCE
 	$< Config.in
