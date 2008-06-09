@@ -8,9 +8,7 @@
 
 ifeq ($(NO_TRACE_MAKE),)
 NO_TRACE_MAKE := $(MAKE) V=99
-SUBMAKE := $(MAKE)
 export NO_TRACE_MAKE
-export SUBMAKE
 endif
 
 ifndef KBUILD_VERBOSE
@@ -27,7 +25,7 @@ endif
 
 ifneq ($(KBUILD_VERBOSE),99)
   define MESSAGE
-	printf "$(_Y)%s$(_N)\n" "$(1)" >&3
+	printf "$(_Y)%s$(_N)\n" "$(1)" >&254
   endef
 
   ifeq ($(QUIET),1)
@@ -39,16 +37,20 @@ ifneq ($(KBUILD_VERBOSE),99)
     _NULL:=$(if $(MAKECMDGOALS),$(shell \
 		$(call MESSAGE, make[$(MAKELEVEL)]$(if $(_DIR), -C $(_DIR)) $(MAKECMDGOALS)); \
     ))
+    SUBMAKE=$(MAKE)
   else
     ifeq ($(KBUILD_VERBOSE),0)
-      MAKE:=>/dev/null 2>&1 $(MAKE)
+      SILENT:=>/dev/null 2>&1
+    else
+      SILENT:=
     endif
     export QUIET:=1
-    MAKE:=cmd() { $(MAKE) -s $$* || {  echo "make $$*: build failed. Please re-run make with V=99 to see what's going on"; false; } } 3>&1 4>&2; cmd
+    SUBMAKE=cmd() { $(SILENT) $(MAKE) -s $$* || { echo "make $$*: build failed. Please re-run make with V=99 to see what's going on"; false; } } 254>&1 255>&2; cmd
   endif
 
   .SILENT: $(MAKECMDGOALS)
 else
+  SUBMAKE=$(MAKE)
   define MESSAGE
     printf "%s\n" "$(1)"
   endef

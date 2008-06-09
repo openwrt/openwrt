@@ -8,10 +8,6 @@ include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/prereq.mk
 
 ifneq ($(DUMP),1)
-  override MAKEFLAGS=
-endif
-
-ifneq ($(DUMP),1)
   all: compile
 endif
 
@@ -101,7 +97,7 @@ define BuildKernel
 	@$(MAKE) compile
 
   image-prereq:
-	$(SUBMAKE) -s -C image prereq TARGET_BUILD=
+	@$(NO_TRACE_MAKE) -s -C image prereq TARGET_BUILD=
 
   prereq: image-prereq
 
