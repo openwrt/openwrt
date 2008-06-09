@@ -83,7 +83,7 @@ define Build/DefaultTargets
 	touch $$@
 
   $(STAMP_INSTALLED): $(STAMP_BUILT)
-	$(SUBMAKE) clean-staging
+	$(SUBMAKE) -j1 clean-staging
 	rm -rf $(TMP_DIR)/stage-$(PKG_NAME)
 	mkdir -p $(TMP_DIR)/stage-$(PKG_NAME)/host $(STAGING_DIR)/packages $(STAGING_DIR_HOST)/packages
 	$(call Build/InstallDev,$(TMP_DIR)/stage-$(PKG_NAME),$(TMP_DIR)/stage-$(PKG_NAME)/host)

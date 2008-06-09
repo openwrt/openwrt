@@ -23,6 +23,12 @@ $(strip $(subst ",,$(1)))
 endef
 #"))
 
+empty:=
+space:= $(empty) $(empty)
+merge=$(subst $(space),,$(1))
+confvar=$(call merge,$(foreach v,$(1),$(if $($(v)),y,n)))
+
+_SINGLE=MAKEFLAGS=$(space)
 ARCH:=$(call qstrip,$(shell echo $(CONFIG_ARCH) | sed -e 's/i[3-9]86/i386/'))
 BOARD:=$(call qstrip,$(CONFIG_TARGET_BOARD))
 TARGET_OPTIMIZATION:=$(call qstrip,$(CONFIG_TARGET_OPTIMIZATION))
@@ -144,11 +150,6 @@ define shexport
 $(call shvar,$(1))=$$(call $(1))
 export $(call shvar,$(1))
 endef
-
-empty:=
-space:= $(empty) $(empty)
-merge=$(subst $(space),,$(1))
-confvar=$(call merge,$(foreach v,$(1),$(if $($(v)),y,n)))
 
 # file extension
 ext=$(word $(words $(subst ., ,$(1))),$(subst ., ,$(1)))

@@ -16,6 +16,12 @@ world:
 include $(TOPDIR)/include/host.mk
 
 ifneq ($(OPENWRT_BUILD),1)
+  # XXX: these three lines are normally defined by rules.mk
+  # but we can't include that file in this context
+  empty:=
+  space:= $(empty) $(empty)
+  _SINGLE=MAKEFLAGS=$(space)
+
   override OPENWRT_BUILD=1
   export OPENWRT_BUILD
   include $(TOPDIR)/include/debug.mk
@@ -44,7 +50,7 @@ $(BUILD_DIR)/.prepared: Makefile
 
 clean: FORCE
 	rm -rf $(BUILD_DIR) $(BIN_DIR)
-	$(MAKE) target/linux/clean
+	$(SUBMAKE) target/linux/clean
 
 dirclean: clean
 	rm -rf $(STAGING_DIR) $(STAGING_DIR_HOST) $(STAGING_DIR_TOOLCHAIN) $(TOOLCHAIN_DIR) $(BUILD_DIR_HOST)
@@ -55,7 +61,7 @@ prereq: $(package/stamp-prereq) $(target/stamp-prereq) ;
 
 prepare: .config $(tools/stamp-install) $(toolchain/stamp-install)
 world: prepare $(target/stamp-compile) $(package/stamp-cleanup) $(package/stamp-compile) $(package/stamp-install) $(package/stamp-rootfs-prepare) $(target/stamp-install) FORCE
-	$(MAKE) package/index
+	$(SUBMAKE) package/index
 
 # update all feeds, re-create index files, install symlinks
 package/symlinks:

@@ -35,8 +35,8 @@ prepare-mk: FORCE ;
 
 prepare-tmpinfo: FORCE
 	mkdir -p tmp/info
-	+$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS="$(TOPDIR)/include/package*.mk" SCAN_DEPTH=5 SCAN_EXTRA=""
-	+$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPS="profiles/*.mk $(TOPDIR)/include/kernel*.mk $(TOPDIR)/include/target.mk" SCAN_DEPTH=2 SCAN_EXTRA="" SCAN_MAKEOPTS="TARGET_BUILD=1"
+	$(_SINGLE)$(NO_TRACE_MAKE) -j1 -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS="$(TOPDIR)/include/package*.mk" SCAN_DEPTH=5 SCAN_EXTRA=""
+	$(_SINGLE)$(NO_TRACE_MAKE) -j1 -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPS="profiles/*.mk $(TOPDIR)/include/kernel*.mk $(TOPDIR)/include/target.mk" SCAN_DEPTH=2 SCAN_EXTRA="" SCAN_MAKEOPTS="TARGET_BUILD=1"
 	for type in package target; do \
 		f=tmp/.$${type}info; t=tmp/.config-$${type}.in; \
 		[ "$$t" -nt "$$f" ] || ./scripts/metadata.pl $${type}_config "$$f" > "$$t" || { rm -f "$$t"; echo "Failed to build $$t"; false; break; }; \
@@ -51,12 +51,12 @@ prepare-tmpinfo: FORCE
 	fi
 
 scripts/config/mconf:
-	@+$(MAKE) -C scripts/config all
+	@$(_SINGLE)$(SUBMAKE) -s -j1 -C scripts/config all
 
 $(eval $(call rdep,scripts/config,scripts/config/mconf))
 
 scripts/config/conf:
-	@+$(MAKE) -C scripts/config conf
+	@$(_SINGLE)$(SUBMAKE) -s -j1 -C scripts/config conf
 
 config: scripts/config/conf prepare-tmpinfo FORCE
 	$< Config.in
@@ -86,41 +86,41 @@ kernel_menuconfig: .config FORCE
 tmp/.prereq-build: include/prereq-build.mk
 	mkdir -p tmp
 	rm -f tmp/.host.mk
-	@+$(NO_TRACE_MAKE) -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
+	@$(_SINGLE)$(NO_TRACE_MAKE) -j1 -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
 	}
 	touch $@
 
 download: .config FORCE
-	+$(MAKE) tools/download
-	+$(MAKE) toolchain/download
-	+$(MAKE) package/download
-	+$(MAKE) target/download
+	@+$(SUBMAKE) tools/download
+	@+$(SUBMAKE) toolchain/download
+	@+$(SUBMAKE) package/download
+	@+$(SUBMAKE) target/download
 
 clean dirclean: .config
-	@$(MAKE) $@ 
+	@+$(SUBMAKE) $@ 
 
 prereq:: .config
-	@+$(SUBMAKE) -s tmp/.prereq-build $(PREP_MK)
+	@+$(MAKE) -s tmp/.prereq-build $(PREP_MK)
 	@$(NO_TRACE_MAKE) -s $@
 
 %::
 	@+$(PREP_MK) $(NO_TRACE_MAKE) -s prereq
-	@+$(MAKE) -r $@
+	@+$(SUBMAKE) -r $@
 
 help:
 	cat README
 
 docs docs/compile: FORCE
-	$(MAKE) -C docs compile
+	@$(_SINGLE)$(SUBMAKE) -j1 -C docs compile
 
 docs/clean: FORCE
-	$(MAKE) -C docs clean
+	@$(_SINGLE)$(SUBMAKE) -j1 -C docs clean
 
 distclean:
 	rm -rf tmp build_dir staging_dir dl .config* feeds package/feeds package/openwrt-packages bin
-	$(MAKE) -C scripts/config clean
+	@$(_SINGLE)$(SUBMAKE) -j1 -C scripts/config clean
 
 ifeq ($(findstring v,$(DEBUG)),)
   .SILENT: symlinkclean clean dirclean distclean config-clean download help tmpinfo-clean .config scripts/config/mconf scripts/config/conf menuconfig tmp/.prereq-build tmp/.prereq-package prepare-tmpinfo
