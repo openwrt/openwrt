@@ -246,7 +246,7 @@ mvswitch_config_init(struct phy_device *pdev)
 	w16(pdev, MV_SWITCHREG(ATU_CTRL),
 		MV_ATUCTL_RESET |
 		MV_ATUCTL_ATU_1K |
-		MV_ATUCTL_AGETIME(4080) /* maximum */
+		MV_ATUCTL_AGETIME(MV_ATUCTL_AGETIME_MIN) /* minimum without disabling ageing */
 	);
 
 	i = 100; /* timeout */
