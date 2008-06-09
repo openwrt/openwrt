@@ -114,6 +114,8 @@ enum {
 };
 
 enum {
+#define MV_ATUCTL_AGETIME_MIN	16
+#define MV_ATUCTL_AGETIME_MAX	4080
 #define MV_ATUCTL_AGETIME(_n)	((((_n) / 16) & 0xff) << 4)
 	MV_ATUCTL_ATU_256   = (0 << 12),
 	MV_ATUCTL_ATU_512   = (1 << 12),
