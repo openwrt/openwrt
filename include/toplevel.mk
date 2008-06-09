@@ -93,10 +93,10 @@ tmp/.prereq-build: include/prereq-build.mk
 	touch $@
 
 download: .config FORCE
-	$(MAKE) -j1 tools/download
-	$(MAKE) -j1 toolchain/download
-	$(MAKE) -j1 package/download
-	$(MAKE) -j1 target/download
+	+$(MAKE) tools/download
+	+$(MAKE) toolchain/download
+	+$(MAKE) package/download
+	+$(MAKE) target/download
 
 clean dirclean: .config
 	@$(MAKE) $@ 
