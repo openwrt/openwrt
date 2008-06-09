@@ -1,6 +1,7 @@
 ifeq ($(TOPDIR),)
   TOPDIR:=${CURDIR}/..
 endif
+PKG_NAME=docs
 
 all: compile
 
@@ -10,7 +11,7 @@ include $(INCLUDE_DIR)/prereq.mk
 MAIN = openwrt.tex
 DEPS = $(MAIN) Makefile config.tex network.tex network-scripts.tex network-scripts.tex wireless.tex build.tex adding.tex bugs.tex $(TMP_DIR)/.prereq-docs
 
-compile:
+compile: $(TMP_DIR)/.prereq-docs
 	$(NO_TRACE_MAKE) cleanup
 	latex $(MAIN)
 	$(NO_TRACE_MAKE) openwrt.pdf openwrt.html
