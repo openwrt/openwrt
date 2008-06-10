@@ -17,14 +17,6 @@
 #ifndef __YPORTENV_H__
 #define __YPORTENV_H__
 
-/*
- * Define the MTD version in terms of Linux Kernel versions
- * This allows yaffs to be used independantly of the kernel
- * as well as with it.
- */
-
-#define MTD_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
-
 #if defined CONFIG_YAFFS_WINCE
 
 #include "ywinceenv.h"
@@ -34,10 +26,7 @@
 #include "moduleconfig.h"
 
 /* Linux kernel */
-
 #include <linux/version.h>
-#define MTD_VERSION_CODE LINUX_VERSION_CODE
-
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
 #include <linux/config.h>
 #endif
@@ -100,8 +89,6 @@
 	({ int x = __builtin_choose_expr(assertion, 0, (void)0); (void) x; })
 
 #elif defined CONFIG_YAFFS_DIRECT
-
-#define MTD_VERSION_CODE MTD_VERSION(2,6,22)
 
 /* Direct interface */
 #include "ydirectenv.h"
@@ -193,8 +180,8 @@ extern unsigned int yaffs_wr_attempts;
 
 #define T(mask,p) do{ if((mask) & (yaffs_traceMask | YAFFS_TRACE_ALWAYS)) TOUT(p);} while(0)
 
-#ifndef YBUG
-#define YBUG() do {T(YAFFS_TRACE_BUG,(TSTR("==>> yaffs bug: " __FILE__ " %d" TENDSTR),__LINE__));} while(0)
+#ifndef CONFIG_YAFFS_WINCE
+#define YBUG() T(YAFFS_TRACE_BUG,(TSTR("==>> yaffs bug: " __FILE__ " %d" TENDSTR),__LINE__))
 #endif
 
 #endif

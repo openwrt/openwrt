@@ -12,11 +12,11 @@
  */
 
 const char *yaffs_checkptrw_c_version =
-    "$Id: yaffs_checkptrw.c,v 1.16 2008-05-05 07:58:58 charles Exp $";
+    "$Id: yaffs_checkptrw.c,v 1.14 2007-05-15 20:07:40 charles Exp $";
 
 
 #include "yaffs_checkptrw.h"
-#include "yaffs_getblockinfo.h"
+
 
 static int yaffs_CheckpointSpaceOk(yaffs_Device *dev)
 {
@@ -142,7 +142,7 @@ int yaffs_CheckpointOpen(yaffs_Device *dev, int forWriting)
 		return 0;
 
 	if(!dev->checkpointBuffer)
-		dev->checkpointBuffer = YMALLOC_DMA(dev->totalBytesPerChunk);
+		dev->checkpointBuffer = YMALLOC_DMA(dev->nDataBytesPerChunk);
 	if(!dev->checkpointBuffer)
 		return 0;
 

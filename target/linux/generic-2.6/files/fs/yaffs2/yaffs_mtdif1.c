@@ -34,9 +34,9 @@
 #include "linux/mtd/mtd.h"
 
 /* Don't compile this module if we don't have MTD's mtd_oob_ops interface */
-#if (MTD_VERSION_CODE > MTD_VERSION(2,6,17))
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
 
-const char *yaffs_mtdif1_c_version = "$Id: yaffs_mtdif1.c,v 1.7 2007-12-13 15:35:18 wookey Exp $";
+const char *yaffs_mtdif1_c_version = "$Id: yaffs_mtdif1.c,v 1.3 2007/05/15 20:16:11 ian Exp $";
 
 #ifndef CONFIG_YAFFS_9BYTE_TAGS
 # define YTAG1_SIZE 8
@@ -189,7 +189,7 @@ int nandmtd1_ReadChunkWithTagsFromNAND(yaffs_Device *dev,
 	ops.datbuf = data;
 	ops.oobbuf = (__u8 *)&pt1;
 
-#if (MTD_VERSION_CODE < MTD_VERSION(2,6,20))
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20))
 	/* In MTD 2.6.18 to 2.6.19 nand_base.c:nand_do_read_oob() has a bug;
 	 * help it out with ops.len = ops.ooblen when ops.datbuf == NULL.
 	 */
@@ -288,7 +288,7 @@ int nandmtd1_MarkNANDBlockBad(struct yaffs_DeviceStruct *dev, int blockNo)
 	int blocksize = dev->nChunksPerBlock * dev->nDataBytesPerChunk;
 	int retval;
 
-	yaffs_trace(YAFFS_TRACE_BAD_BLOCKS, "marking block %d bad\n", blockNo);
+	yaffs_trace(YAFFS_TRACE_BAD_BLOCKS, "marking block %d bad", blockNo);
 
 	retval = mtd->block_markbad(mtd, (loff_t)blocksize * blockNo);
 	return (retval) ? YAFFS_FAIL : YAFFS_OK;
@@ -327,7 +327,6 @@ int nandmtd1_QueryNANDBlock(struct yaffs_DeviceStruct *dev, int blockNo,
 {
 	struct mtd_info * mtd = dev->genericDevice;
 	int chunkNo = blockNo * dev->nChunksPerBlock;
-	loff_t addr = (loff_t)chunkNo * dev->nDataBytesPerChunk;
 	yaffs_ExtendedTags etags;
 	int state = YAFFS_BLOCK_STATE_DEAD;
 	int seqnum = 0;
@@ -341,15 +340,10 @@ int nandmtd1_QueryNANDBlock(struct yaffs_DeviceStruct *dev, int blockNo,
 	}
 
 	retval = nandmtd1_ReadChunkWithTagsFromNAND(dev, chunkNo, NULL, &etags);
-	etags.blockBad = (mtd->block_isbad)(mtd, addr);
 	if (etags.blockBad) {
 		yaffs_trace(YAFFS_TRACE_BAD_BLOCKS,
-			"block %d is marked bad\n", blockNo);
+			"block %d is marked bad", blockNo);
 		state = YAFFS_BLOCK_STATE_DEAD;
-	}
-	else if (etags.eccResult != YAFFS_ECC_RESULT_NO_ERROR) {
-		/* bad tags, need to look more closely */
-		state = YAFFS_BLOCK_STATE_NEEDS_SCANNING;
 	}
 	else if (etags.chunkUsed) {
 		state = YAFFS_BLOCK_STATE_NEEDS_SCANNING;
@@ -366,4 +360,4 @@ int nandmtd1_QueryNANDBlock(struct yaffs_DeviceStruct *dev, int blockNo,
 	return YAFFS_OK;
 }
 
-#endif /*MTD_VERSION*/
+#endif /*KERNEL_VERSION*/

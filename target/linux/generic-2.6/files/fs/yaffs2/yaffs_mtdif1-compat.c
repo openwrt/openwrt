@@ -1,3 +1,69 @@
+From ian@brightstareng.com Fri May 18 15:06:49 2007
+From ian@brightstareng.com Fri May 18 15:08:21 2007
+Received: from 206.173.66.57.ptr.us.xo.net ([206.173.66.57] helo=zebra.brightstareng.com)
+	by apollo.linkchoose.co.uk with esmtp (Exim 4.60)
+	(envelope-from <ian@brightstareng.com>)
+	id 1Hp380-00011e-T6
+	for david.goodenough@linkchoose.co.uk; Fri, 18 May 2007 15:08:21 +0100
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by zebra.brightstareng.com (Postfix) with ESMTP
+	id 4819F28C004; Fri, 18 May 2007 10:07:49 -0400 (EDT)
+Received: from zebra.brightstareng.com ([127.0.0.1])
+ by localhost (zebra [127.0.0.1]) (amavisd-new, port 10024) with ESMTP
+ id 05328-06; Fri, 18 May 2007 10:07:16 -0400 (EDT)
+Received: from pippin (unknown [192.168.1.25])
+	by zebra.brightstareng.com (Postfix) with ESMTP
+	id 8BEF528C1BC; Fri, 18 May 2007 10:06:53 -0400 (EDT)
+From: Ian McDonnell <ian@brightstareng.com>
+To: David Goodenough <david.goodenough@linkchoose.co.uk>
+Subject: Re: something tested this time -- yaffs_mtdif1-compat.c
+Date: Fri, 18 May 2007 10:06:49 -0400
+User-Agent: KMail/1.9.1
+References: <200705142207.06909.ian@brightstareng.com> <200705171131.53536.ian@brightstareng.com> <200705181334.32166.david.goodenough@linkchoose.co.uk>
+In-Reply-To: <200705181334.32166.david.goodenough@linkchoose.co.uk>
+Cc: Andrea Conti <alyf@alyf.net>,
+ Charles Manning <manningc2@actrix.gen.nz>
+MIME-Version: 1.0
+Content-Type: Multipart/Mixed;
+  boundary="Boundary-00=_5LbTGmt62YoutxM"
+Message-Id: <200705181006.49860.ian@brightstareng.com>
+X-Virus-Scanned: by amavisd-new at brightstareng.com
+Status: R
+X-Status: NT
+X-KMail-EncryptionState:
+X-KMail-SignatureState:
+X-KMail-MDN-Sent:
+
+--Boundary-00=_5LbTGmt62YoutxM
+Content-Type: text/plain;
+  charset="iso-8859-15"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+David, Andrea,
+
+On Friday 18 May 2007 08:34, you wrote:
+> Yea team.  With this fix in place (I put it in the wrong place
+> at first) I can now mount and ls the Yaffs partition without
+> an error messages!
+
+Good news!
+
+Attached is a newer yaffs_mtdif1.c with a bandaid to help the
+2.6.18 and 2.6.19 versions of MTD not trip on the oob read.
+See the LINUX_VERSION_CODE conditional in
+nandmtd1_ReadChunkWithTagsFromNAND.
+
+-imcd
+
+--Boundary-00=_5LbTGmt62YoutxM
+Content-Type: text/x-csrc;
+  charset="iso-8859-15";
+  name="yaffs_mtdif1.c"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+	filename="yaffs_mtdif1.c"
+
 /*
  * YAFFS: Yet another FFS. A NAND-flash specific file system.
  * yaffs_mtdif1.c  NAND mtd interface functions for small-page NAND.
@@ -36,7 +102,7 @@
 /* Don't compile this module if we don't have MTD's mtd_oob_ops interface */
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
 
-const char *yaffs_mtdif1_c_version = "$Id: yaffs_mtdif1.c,v 1.3 2007/05/15 20:16:11 ian Exp $";
+const char *yaffs_mtdif1_c_version = "$Id$";
 
 #ifndef CONFIG_YAFFS_9BYTE_TAGS
 # define YTAG1_SIZE 8
@@ -101,8 +167,6 @@ int nandmtd1_WriteChunkWithTagsToNAND(yaffs_Device *dev,
 	/* we assume that PackedTags1 and yaffs_Tags are compatible */
 	compile_time_assertion(sizeof(yaffs_PackedTags1) == 12);
 	compile_time_assertion(sizeof(yaffs_Tags) == 8);
-
-	dev->nPageWrites++;
 
 	yaffs_PackTags1(&pt1, etags);
 	yaffs_CalcTagsECC((yaffs_Tags *)&pt1);
@@ -180,8 +244,6 @@ int nandmtd1_ReadChunkWithTagsFromNAND(yaffs_Device *dev,
 	int retval;
 	int deleted;
 
-	dev->nPageReads++;
-
 	memset(&ops, 0, sizeof(ops));
 	ops.mode = MTD_OOB_AUTO;
 	ops.len = (data) ? chunkBytes : 0;
@@ -241,7 +303,7 @@ int nandmtd1_ReadChunkWithTagsFromNAND(yaffs_Device *dev,
 	deleted = !pt1.deleted;
 	pt1.deleted = 1;
 #else
-	deleted = (yaffs_CountBits(((__u8 *)&pt1)[8]) < 7);
+	(void) deleted; /* not used */
 #endif
 
 	/* Check the packed tags mini-ECC and correct if necessary/possible.
@@ -254,8 +316,7 @@ int nandmtd1_ReadChunkWithTagsFromNAND(yaffs_Device *dev,
 	case 1:
 		/* recovered tags-ECC error */
 		dev->tagsEccFixed++;
-		if (eccres == YAFFS_ECC_RESULT_NO_ERROR)
-			eccres = YAFFS_ECC_RESULT_FIXED;
+		eccres = YAFFS_ECC_RESULT_FIXED;
 		break;
 	default:
 		/* unrecovered tags-ECC error */
@@ -270,8 +331,13 @@ int nandmtd1_ReadChunkWithTagsFromNAND(yaffs_Device *dev,
 	yaffs_UnpackTags1(etags, &pt1);
 	etags->eccResult = eccres;
 
-	/* Set deleted state */
+	/* Set deleted state.
+	 */
+#ifndef CONFIG_YAFFS_9BYTE_TAGS
 	etags->chunkDeleted = deleted;
+#else
+	etags->chunkDeleted = (yaffs_CountBits(((__u8 *)&pt1)[8]) < 7);
+#endif
 	return YAFFS_OK;
 }
 
@@ -306,7 +372,7 @@ static int nandmtd1_TestPrerequists(struct mtd_info * mtd)
 
 	if (oobavail < YTAG1_SIZE) {
 		yaffs_trace(YAFFS_TRACE_ERROR,
-			"mtd device has only %d bytes for tags, need %d\n",
+			"mtd device has only %d bytes for tags, need %d",
 			oobavail, YTAG1_SIZE);
 		return YAFFS_FAIL;
 	}
@@ -361,3 +427,8 @@ int nandmtd1_QueryNANDBlock(struct yaffs_DeviceStruct *dev, int blockNo,
 }
 
 #endif /*KERNEL_VERSION*/
+
+--Boundary-00=_5LbTGmt62YoutxM--
+
+
+
