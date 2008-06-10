@@ -12,14 +12,13 @@
  */
 
 const char *yaffs_guts_c_version =
-    "$Id: yaffs_guts.c,v 1.56 2008-05-08 23:23:26 charles Exp $";
+    "$Id: yaffs_guts.c,v 1.49 2007-05-15 20:07:40 charles Exp $";
 
 #include "yportenv.h"
 
 #include "yaffsinterface.h"
 #include "yaffs_guts.h"
 #include "yaffs_tagsvalidity.h"
-#include "yaffs_getblockinfo.h"
 
 #include "yaffs_tagscompat.h"
 #ifndef  CONFIG_YAFFS_USE_OWN_SORT
@@ -79,6 +78,9 @@ static int yaffs_DoGenericObjectDeletion(yaffs_Object * in);
 
 static yaffs_BlockInfo *yaffs_GetBlockInfo(yaffs_Device * dev, int blockNo);
 
+static __u8 *yaffs_GetTempBuffer(yaffs_Device * dev, int lineNo);
+static void yaffs_ReleaseTempBuffer(yaffs_Device * dev, __u8 * buffer,
+				    int lineNo);
 
 static int yaffs_CheckChunkErased(struct yaffs_DeviceStruct *dev,
 				  int chunkInNAND);
@@ -119,32 +121,23 @@ static yaffs_Tnode *yaffs_FindLevel0Tnode(yaffs_Device * dev,
 
 /* Function to calculate chunk and offset */
 
-static void yaffs_AddrToChunk(yaffs_Device *dev, loff_t addr, int *chunkOut, __u32 *offsetOut)
+static void yaffs_AddrToChunk(yaffs_Device *dev, loff_t addr, __u32 *chunk, __u32 *offset)
 {
-	int chunk;
-	__u32 offset;
-	
-	chunk  = (__u32)(addr >> dev->chunkShift);
-		
-	if(dev->chunkDiv == 1)
+	if(dev->chunkShift){
+		/* Easy-peasy power of 2 case */
+		*chunk  = (__u32)(addr >> dev->chunkShift);
+		*offset = (__u32)(addr & dev->chunkMask);
+	}
+	else if(dev->crumbsPerChunk)
 	{
-		/* easy power of 2 case */
-		offset = (__u32)(addr & dev->chunkMask);
+		/* Case where we're using "crumbs" */
+		*offset = (__u32)(addr & dev->crumbMask);
+		addr >>= dev->crumbShift;
+		*chunk = ((__u32)addr)/dev->crumbsPerChunk;
+		*offset += ((addr - (*chunk * dev->crumbsPerChunk)) << dev->crumbShift);
 	}
 	else
-	{
-		/* Non power-of-2 case */
-		
-		loff_t chunkBase;
-		
-		chunk /= dev->chunkDiv;
-		
-		chunkBase = ((loff_t)chunk) * dev->nDataBytesPerChunk;
-		offset = (__u32)(addr - chunkBase);
-	}
-
-	*chunkOut = chunk;
-	*offsetOut = offset;
+		YBUG();
 }
 
 /* Function to return the number of shifts for a power of 2 greater than or equal
@@ -175,7 +168,7 @@ static __u32 ShiftsGE(__u32 x)
 /* Function to return the number of shifts to get a 1 in bit 0
  */
 
-static __u32 Shifts(__u32 x)
+static __u32 ShiftDiv(__u32 x)
 {
 	int nShifts;
 
@@ -207,21 +200,16 @@ static int yaffs_InitialiseTempBuffers(yaffs_Device *dev)
 	for (i = 0; buf && i < YAFFS_N_TEMP_BUFFERS; i++) {
 		dev->tempBuffer[i].line = 0;	/* not in use */
 		dev->tempBuffer[i].buffer = buf =
-		    YMALLOC_DMA(dev->totalBytesPerChunk);
+		    YMALLOC_DMA(dev->nDataBytesPerChunk);
 	}
 
 	return buf ? YAFFS_OK : YAFFS_FAIL;
 
 }
 
-__u8 *yaffs_GetTempBuffer(yaffs_Device * dev, int lineNo)
+static __u8 *yaffs_GetTempBuffer(yaffs_Device * dev, int lineNo)
 {
 	int i, j;
-
-	dev->tempInUse++;
-	if(dev->tempInUse > dev->maxTemp)
-		dev->maxTemp = dev->tempInUse;
-
 	for (i = 0; i < YAFFS_N_TEMP_BUFFERS; i++) {
 		if (dev->tempBuffer[i].line == 0) {
 			dev->tempBuffer[i].line = lineNo;
@@ -254,13 +242,10 @@ __u8 *yaffs_GetTempBuffer(yaffs_Device * dev, int lineNo)
 
 }
 
-void yaffs_ReleaseTempBuffer(yaffs_Device * dev, __u8 * buffer,
+static void yaffs_ReleaseTempBuffer(yaffs_Device * dev, __u8 * buffer,
 				    int lineNo)
 {
 	int i;
-	
-	dev->tempInUse--;
-	
 	for (i = 0; i < YAFFS_N_TEMP_BUFFERS; i++) {
 		if (dev->tempBuffer[i].buffer == buffer) {
 			dev->tempBuffer[i].line = 0;
@@ -405,13 +390,10 @@ static int yaffs_SkipVerification(yaffs_Device *dev)
 	return !(yaffs_traceMask & (YAFFS_TRACE_VERIFY | YAFFS_TRACE_VERIFY_FULL));
 }
 
-#if 0
 static int yaffs_SkipFullVerification(yaffs_Device *dev)
 {
 	return !(yaffs_traceMask & (YAFFS_TRACE_VERIFY_FULL));
 }
-
-#endif
 
 static int yaffs_SkipNANDVerification(yaffs_Device *dev)
 {
@@ -615,6 +597,7 @@ static int yaffs_VerifyTnodeWorker(yaffs_Object * obj, yaffs_Tnode * tn,
 	int i;
 	yaffs_Device *dev = obj->myDev;
 	int ok = 1;
+	int nTnodeBytes = (dev->tnodeWidth * YAFFS_NTNODES_LEVEL0)/8;
 
 	if (tn) {
 		if (level > 0) {
@@ -663,6 +646,7 @@ static void yaffs_VerifyFile(yaffs_Object *obj)
 	__u32 lastChunk;
 	__u32 x;
 	__u32 i;
+	int ok;
 	yaffs_Device *dev;
 	yaffs_ExtendedTags tags;
 	yaffs_Tnode *tn;
@@ -845,7 +829,7 @@ static void yaffs_VerifyObjects(yaffs_Device *dev)
 {
 	yaffs_Object *obj;
 	int i;
-	struct ylist_head *lh;
+	struct list_head *lh;
 
 	if(yaffs_SkipVerification(dev))
 		return;
@@ -853,9 +837,9 @@ static void yaffs_VerifyObjects(yaffs_Device *dev)
 	/* Iterate through the objects in each hash entry */
 
 	 for(i = 0; i <  YAFFS_NOBJECT_BUCKETS; i++){
-	 	ylist_for_each(lh, &dev->objectBucket[i].list) {
+	 	list_for_each(lh, &dev->objectBucket[i].list) {
 			if (lh) {
-				obj = ylist_entry(lh, yaffs_Object, hashLink);
+				obj = list_entry(lh, yaffs_Object, hashLink);
 				yaffs_VerifyObject(obj);
 			}
 		}
@@ -930,6 +914,7 @@ static int yaffs_CheckChunkErased(struct yaffs_DeviceStruct *dev,
 	return retval;
 
 }
+
 
 static int yaffs_WriteNewChunkWithTagsToNAND(struct yaffs_DeviceStruct *dev,
 					     const __u8 * data,
@@ -1007,11 +992,7 @@ static int yaffs_WriteNewChunkWithTagsToNAND(struct yaffs_DeviceStruct *dev,
 		/* Copy the data into the robustification buffer */
 		yaffs_HandleWriteChunkOk(dev, chunk, data, tags);
 
-	} while (writeOk != YAFFS_OK &&
-	        (yaffs_wr_attempts <= 0 || attempts <= yaffs_wr_attempts));
-
-	if(!writeOk)
-		chunk = -1;
+	} while (writeOk != YAFFS_OK && attempts < yaffs_wr_attempts);
 
 	if (attempts > 1) {
 		T(YAFFS_TRACE_ERROR,
@@ -1162,10 +1143,6 @@ static int yaffs_CreateTnodes(yaffs_Device * dev, int nTnodes)
 	 * Must be a multiple of 32-bits  */
 	tnodeSize = (dev->tnodeWidth * YAFFS_NTNODES_LEVEL0)/8;
 
-	if(tnodeSize < sizeof(yaffs_Tnode))
-		tnodeSize = sizeof(yaffs_Tnode);
-
-
 	/* make these things */
 
 	newTnodes = YMALLOC(nTnodes * tnodeSize);
@@ -1256,21 +1233,15 @@ static yaffs_Tnode *yaffs_GetTnodeRaw(yaffs_Device * dev)
 		dev->nFreeTnodes--;
 	}
 
-	dev->nCheckpointBlocksRequired = 0; /* force recalculation*/
-
 	return tn;
 }
 
 static yaffs_Tnode *yaffs_GetTnode(yaffs_Device * dev)
 {
 	yaffs_Tnode *tn = yaffs_GetTnodeRaw(dev);
-	int tnodeSize = (dev->tnodeWidth * YAFFS_NTNODES_LEVEL0)/8;
-
-	if(tnodeSize < sizeof(yaffs_Tnode))
-		tnodeSize = sizeof(yaffs_Tnode);
 
 	if(tn)
-		memset(tn, 0, tnodeSize);
+		memset(tn, 0, (dev->tnodeWidth * YAFFS_NTNODES_LEVEL0)/8);
 
 	return tn;
 }
@@ -1291,8 +1262,6 @@ static void yaffs_FreeTnode(yaffs_Device * dev, yaffs_Tnode * tn)
 		dev->freeTnodes = tn;
 		dev->nFreeTnodes++;
 	}
-	dev->nCheckpointBlocksRequired = 0; /* force recalculation*/
-
 }
 
 static void yaffs_DeinitialiseTnodes(yaffs_Device * dev)
@@ -1885,7 +1854,7 @@ static int yaffs_CreateFreeObjects(yaffs_Device * dev, int nObjects)
 	/* Hook them into the free list */
 	for (i = 0; i < nObjects - 1; i++) {
 		newObjects[i].siblings.next =
-		    (struct ylist_head *)(&newObjects[i + 1]);
+		    (struct list_head *)(&newObjects[i + 1]);
 	}
 
 	newObjects[nObjects - 1].siblings.next = (void *)dev->freeObjects;
@@ -1925,9 +1894,9 @@ static yaffs_Object *yaffs_AllocateEmptyObject(yaffs_Device * dev)
 		tn->myDev = dev;
 		tn->chunkId = -1;
 		tn->variantType = YAFFS_OBJECT_TYPE_UNKNOWN;
-		YINIT_LIST_HEAD(&(tn->hardLinks));
-		YINIT_LIST_HEAD(&(tn->hashLink));
-		YINIT_LIST_HEAD(&tn->siblings);
+		INIT_LIST_HEAD(&(tn->hardLinks));
+		INIT_LIST_HEAD(&(tn->hashLink));
+		INIT_LIST_HEAD(&tn->siblings);
 
 		/* Add it to the lost and found directory.
 		 * NB Can't put root or lostNFound in lostNFound so
@@ -1937,8 +1906,6 @@ static yaffs_Object *yaffs_AllocateEmptyObject(yaffs_Device * dev)
 			yaffs_AddObjectToDirectory(dev->lostNFoundDir, tn);
 		}
 	}
-
-	dev->nCheckpointBlocksRequired = 0; /* force recalculation*/
 
 	return tn;
 }
@@ -1970,8 +1937,8 @@ static void yaffs_UnhashObject(yaffs_Object * tn)
 	yaffs_Device *dev = tn->myDev;
 
 	/* If it is still linked into the bucket list, free from the list */
-	if (!ylist_empty(&tn->hashLink)) {
-		ylist_del_init(&tn->hashLink);
+	if (!list_empty(&tn->hashLink)) {
+		list_del_init(&tn->hashLink);
 		bucket = yaffs_HashFunction(tn->objectId);
 		dev->objectBucket[bucket].count--;
 	}
@@ -1997,12 +1964,9 @@ static void yaffs_FreeObject(yaffs_Object * tn)
 	yaffs_UnhashObject(tn);
 
 	/* Link into the free list. */
-	tn->siblings.next = (struct ylist_head *)(dev->freeObjects);
+	tn->siblings.next = (struct list_head *)(dev->freeObjects);
 	dev->freeObjects = tn;
 	dev->nFreeObjects++;
-
-	dev->nCheckpointBlocksRequired = 0; /* force recalculation*/
-
 }
 
 #ifdef __KERNEL__
@@ -2043,7 +2007,7 @@ static void yaffs_InitialiseObjects(yaffs_Device * dev)
 	dev->nFreeObjects = 0;
 
 	for (i = 0; i < YAFFS_NOBJECT_BUCKETS; i++) {
-		YINIT_LIST_HEAD(&dev->objectBucket[i].list);
+		INIT_LIST_HEAD(&dev->objectBucket[i].list);
 		dev->objectBucket[i].count = 0;
 	}
 
@@ -2094,7 +2058,7 @@ static int yaffs_CreateNewObjectNumber(yaffs_Device * dev)
 	 */
 
 	int found = 0;
-	struct ylist_head *i;
+	struct list_head *i;
 
 	__u32 n = (__u32) bucket;
 
@@ -2104,10 +2068,10 @@ static int yaffs_CreateNewObjectNumber(yaffs_Device * dev)
 		found = 1;
 		n += YAFFS_NOBJECT_BUCKETS;
 		if (1 || dev->objectBucket[bucket].count > 0) {
-			ylist_for_each(i, &dev->objectBucket[bucket].list) {
+			list_for_each(i, &dev->objectBucket[bucket].list) {
 				/* If there is already one in the list */
 				if (i
-				    && ylist_entry(i, yaffs_Object,
+				    && list_entry(i, yaffs_Object,
 						  hashLink)->objectId == n) {
 					found = 0;
 				}
@@ -2124,7 +2088,7 @@ static void yaffs_HashObject(yaffs_Object * in)
 	int bucket = yaffs_HashFunction(in->objectId);
 	yaffs_Device *dev = in->myDev;
 
-	ylist_add(&in->hashLink, &dev->objectBucket[bucket].list);
+	list_add(&in->hashLink, &dev->objectBucket[bucket].list);
 	dev->objectBucket[bucket].count++;
 
 }
@@ -2132,13 +2096,13 @@ static void yaffs_HashObject(yaffs_Object * in)
 yaffs_Object *yaffs_FindObjectByNumber(yaffs_Device * dev, __u32 number)
 {
 	int bucket = yaffs_HashFunction(number);
-	struct ylist_head *i;
+	struct list_head *i;
 	yaffs_Object *in;
 
-	ylist_for_each(i, &dev->objectBucket[bucket].list) {
+	list_for_each(i, &dev->objectBucket[bucket].list) {
 		/* Look if it is in the list */
 		if (i) {
-			in = ylist_entry(i, yaffs_Object, hashLink);
+			in = list_entry(i, yaffs_Object, hashLink);
 			if (in->objectId == number) {
 #ifdef __KERNEL__
 				/* Don't tell the VFS about this one if it is defered free */
@@ -2159,7 +2123,7 @@ yaffs_Object *yaffs_CreateNewObject(yaffs_Device * dev, int number,
 {
 
 	yaffs_Object *theObject;
-	yaffs_Tnode *tn = NULL;
+	yaffs_Tnode *tn;
 
 	if (number < 0) {
 		number = yaffs_CreateNewObjectNumber(dev);
@@ -2207,7 +2171,7 @@ yaffs_Object *yaffs_CreateNewObject(yaffs_Device * dev, int number,
 			theObject->variant.fileVariant.top = tn;
 			break;
 		case YAFFS_OBJECT_TYPE_DIRECTORY:
-			YINIT_LIST_HEAD(&theObject->variant.directoryVariant.
+			INIT_LIST_HEAD(&theObject->variant.directoryVariant.
 				       children);
 			break;
 		case YAFFS_OBJECT_TYPE_SYMLINK:
@@ -2274,7 +2238,7 @@ static yaffs_Object *yaffs_MknodObject(yaffs_ObjectType type,
 				       const YCHAR * aliasString, __u32 rdev)
 {
 	yaffs_Object *in;
-	YCHAR *str = NULL;
+	YCHAR *str;
 
 	yaffs_Device *dev = parent->myDev;
 
@@ -2332,7 +2296,7 @@ static yaffs_Object *yaffs_MknodObject(yaffs_ObjectType type,
 			    equivalentObject;
 			in->variant.hardLinkVariant.equivalentObjectId =
 			    equivalentObject->objectId;
-			ylist_add(&in->hardLinks, &equivalentObject->hardLinks);
+			list_add(&in->hardLinks, &equivalentObject->hardLinks);
 			break;
 		case YAFFS_OBJECT_TYPE_FILE:
 		case YAFFS_OBJECT_TYPE_DIRECTORY:
@@ -2493,7 +2457,7 @@ int yaffs_RenameObject(yaffs_Object * oldDir, const YCHAR * oldName,
 		existingTarget = yaffs_FindObjectByName(newDir, newName);
 		if (existingTarget &&
 		    existingTarget->variantType == YAFFS_OBJECT_TYPE_DIRECTORY &&
-		    !ylist_empty(&existingTarget->variant.directoryVariant.children)) {
+		    !list_empty(&existingTarget->variant.directoryVariant.children)) {
 			/* There is a target that is a non-empty directory, so we fail */
 			return YAFFS_FAIL;	/* EEXIST or ENOTEMPTY */
 		} else if (existingTarget && existingTarget != obj) {
@@ -2837,40 +2801,6 @@ static int yaffs_FindBlockForAllocation(yaffs_Device * dev)
 }
 
 
-
-static int yaffs_CalcCheckpointBlocksRequired(yaffs_Device *dev)
-{
-	if(!dev->nCheckpointBlocksRequired){
-		/* Not a valid value so recalculate */
-		int nBytes = 0;
-		int nBlocks;
-		int devBlocks = (dev->endBlock - dev->startBlock + 1);
-		int tnodeSize;
-
-		tnodeSize = (dev->tnodeWidth * YAFFS_NTNODES_LEVEL0)/8;
-
-		if(tnodeSize < sizeof(yaffs_Tnode))
-			tnodeSize = sizeof(yaffs_Tnode);
-
-		nBytes += sizeof(yaffs_CheckpointValidity);
-		nBytes += sizeof(yaffs_CheckpointDevice);
-		nBytes += devBlocks * sizeof(yaffs_BlockInfo);
-		nBytes += devBlocks * dev->chunkBitmapStride;
-		nBytes += (sizeof(yaffs_CheckpointObject) + sizeof(__u32)) * (dev->nObjectsCreated - dev->nFreeObjects);
-		nBytes += (tnodeSize + sizeof(__u32)) * (dev->nTnodesCreated - dev->nFreeTnodes);
-		nBytes += sizeof(yaffs_CheckpointValidity);
-		nBytes += sizeof(__u32); /* checksum*/
-
-		/* Round up and add 2 blocks to allow for some bad blocks, so add 3 */
-
-		nBlocks = (nBytes/(dev->nDataBytesPerChunk * dev->nChunksPerBlock)) + 3;
-
-		dev->nCheckpointBlocksRequired = nBlocks;
-	}
-
-	return dev->nCheckpointBlocksRequired;
-}
-
 // Check if there's space to allocate...
 // Thinks.... do we need top make this ths same as yaffs_GetFreeChunks()?
 static int yaffs_CheckSpaceForAllocation(yaffs_Device * dev)
@@ -2879,7 +2809,7 @@ static int yaffs_CheckSpaceForAllocation(yaffs_Device * dev)
 	int reservedBlocks = dev->nReservedBlocks;
 	int checkpointBlocks;
 
-	checkpointBlocks =  yaffs_CalcCheckpointBlocksRequired(dev) - dev->blocksInCheckpoint;
+	checkpointBlocks =  dev->nCheckpointReservedBlocks - dev->blocksInCheckpoint;
 	if(checkpointBlocks < 0)
 		checkpointBlocks = 0;
 
@@ -3107,7 +3037,7 @@ static int yaffs_GarbageCollectBlock(yaffs_Device * dev, int block)
 						yaffs_ObjectHeader *oh;
 						oh = (yaffs_ObjectHeader *)buffer;
 						oh->isShrink = 0;
-						oh->shadowsObject = oh->inbandShadowsObject = -1;
+						oh->shadowsObject = -1;
 						tags.extraShadows = 0;
 						tags.extraIsShrinkHeader = 0;
 
@@ -3212,7 +3142,7 @@ static int yaffs_CheckGarbageCollection(yaffs_Device * dev)
 	do {
 		maxTries++;
 
-		checkpointBlockAdjust = yaffs_CalcCheckpointBlocksRequired(dev) - dev->blocksInCheckpoint;
+		checkpointBlockAdjust = (dev->nCheckpointReservedBlocks - dev->blocksInCheckpoint);
 		if(checkpointBlockAdjust < 0)
 			checkpointBlockAdjust = 0;
 
@@ -3698,7 +3628,7 @@ int yaffs_UpdateObjectHeader(yaffs_Object * in, const YCHAR * name, int force,
 
 		oh->type = in->variantType;
 		oh->yst_mode = in->yst_mode;
-		oh->shadowsObject = oh->inbandShadowsObject = shadows;
+		oh->shadowsObject = shadows;
 
 #ifdef CONFIG_YAFFS_WINCE
 		oh->win_atime[0] = in->win_atime[0];
@@ -4290,11 +4220,7 @@ static int yaffs_CheckpointTnodeWorker(yaffs_Object * in, yaffs_Tnode * tn,
 	int i;
 	yaffs_Device *dev = in->myDev;
 	int ok = 1;
-	int tnodeSize = (dev->tnodeWidth * YAFFS_NTNODES_LEVEL0)/8;
-
-	if(tnodeSize < sizeof(yaffs_Tnode))
-		tnodeSize = sizeof(yaffs_Tnode);
-
+	int nTnodeBytes = (dev->tnodeWidth * YAFFS_NTNODES_LEVEL0)/8;
 
 	if (tn) {
 		if (level > 0) {
@@ -4312,7 +4238,7 @@ static int yaffs_CheckpointTnodeWorker(yaffs_Object * in, yaffs_Tnode * tn,
 			/* printf("write tnode at %d\n",baseOffset); */
 			ok = (yaffs_CheckpointWrite(dev,&baseOffset,sizeof(baseOffset)) == sizeof(baseOffset));
 			if(ok)
-				ok = (yaffs_CheckpointWrite(dev,tn,tnodeSize) == tnodeSize);
+				ok = (yaffs_CheckpointWrite(dev,tn,nTnodeBytes) == nTnodeBytes);
 		}
 	}
 
@@ -4346,10 +4272,6 @@ static int yaffs_ReadCheckpointTnodes(yaffs_Object *obj)
 	yaffs_FileStructure *fileStructPtr = &obj->variant.fileVariant;
 	yaffs_Tnode *tn;
 	int nread = 0;
-	int tnodeSize = (dev->tnodeWidth * YAFFS_NTNODES_LEVEL0)/8;
-
-	if(tnodeSize < sizeof(yaffs_Tnode))
-		tnodeSize = sizeof(yaffs_Tnode);
 
 	ok = (yaffs_CheckpointRead(dev,&baseChunk,sizeof(baseChunk)) == sizeof(baseChunk));
 
@@ -4361,7 +4283,8 @@ static int yaffs_ReadCheckpointTnodes(yaffs_Object *obj)
 		/* printf("read  tnode at %d\n",baseChunk); */
 		tn = yaffs_GetTnodeRaw(dev);
 		if(tn)
-			ok = (yaffs_CheckpointRead(dev,tn,tnodeSize) == tnodeSize);
+			ok = (yaffs_CheckpointRead(dev,tn,(dev->tnodeWidth * YAFFS_NTNODES_LEVEL0)/8) ==
+			      (dev->tnodeWidth * YAFFS_NTNODES_LEVEL0)/8);
 		else
 			ok = 0;
 
@@ -4392,7 +4315,7 @@ static int yaffs_WriteCheckpointObjects(yaffs_Device *dev)
 	yaffs_CheckpointObject cp;
 	int i;
 	int ok = 1;
-	struct ylist_head *lh;
+	struct list_head *lh;
 
 
 	/* Iterate through the objects in each hash entry,
@@ -4400,9 +4323,9 @@ static int yaffs_WriteCheckpointObjects(yaffs_Device *dev)
 	 */
 
 	 for(i = 0; ok &&  i <  YAFFS_NOBJECT_BUCKETS; i++){
-	 	ylist_for_each(lh, &dev->objectBucket[i].list) {
+	 	list_for_each(lh, &dev->objectBucket[i].list) {
 			if (lh) {
-				obj = ylist_entry(lh, yaffs_Object, hashLink);
+				obj = list_entry(lh, yaffs_Object, hashLink);
 				if (!obj->deferedFree) {
 					yaffs_ObjectToCheckpointObject(&cp,obj);
 					cp.structType = sizeof(cp);
@@ -4460,7 +4383,7 @@ static int yaffs_ReadCheckpointObjects(yaffs_Device *dev)
 					ok = yaffs_ReadCheckpointTnodes(obj);
 				} else if(obj->variantType == YAFFS_OBJECT_TYPE_HARDLINK) {
 					obj->hardLinks.next =
-						    (struct ylist_head *)
+						    (struct list_head *)
 						    hardList;
 					hardList = obj;
 				}
@@ -4666,7 +4589,7 @@ int yaffs_ReadDataFromFile(yaffs_Object * in, __u8 * buffer, loff_t offset,
 {
 
 	int chunk;
-	__u32 start;
+	int start;
 	int nToCopy;
 	int n = nBytes;
 	int nDone = 0;
@@ -4694,10 +4617,10 @@ int yaffs_ReadDataFromFile(yaffs_Object * in, __u8 * buffer, loff_t offset,
 		cache = yaffs_FindChunkCache(in, chunk);
 
 		/* If the chunk is already in the cache or it is less than a whole chunk
-		 * or we're using inband tags then use the cache (if there is caching)
+		 * then use the cache (if there is caching)
 		 * else bypass the cache.
 		 */
-		if (cache || nToCopy != dev->nDataBytesPerChunk || dev->inbandTags) {
+		if (cache || nToCopy != dev->nDataBytesPerChunk) {
 			if (dev->nShortOpCaches > 0) {
 
 				/* If we can't find the data in the cache, then load it up. */
@@ -4786,7 +4709,7 @@ int yaffs_WriteDataToFile(yaffs_Object * in, const __u8 * buffer, loff_t offset,
 {
 
 	int chunk;
-	__u32 start;
+	int start;
 	int nToCopy;
 	int n = nBytes;
 	int nDone = 0;
@@ -4834,10 +4757,8 @@ int yaffs_WriteDataToFile(yaffs_Object * in, const __u8 * buffer, loff_t offset,
 			nToWriteBack = dev->nDataBytesPerChunk;
 		}
 
-		if (nToCopy != dev->nDataBytesPerChunk || dev->inbandTags) {
-			/* An incomplete start or end chunk (or maybe both start and end chunk), 
-			 * or we're using inband tags, so we want to use the cache buffers.
-			 */
+		if (nToCopy != dev->nDataBytesPerChunk) {
+			/* An incomplete start or end chunk (or maybe both start and end chunk) */
 			if (dev->nShortOpCaches > 0) {
 				yaffs_ChunkCache *cache;
 				/* If we can't find the data in the cache, then load the cache */
@@ -4925,8 +4846,7 @@ int yaffs_WriteDataToFile(yaffs_Object * in, const __u8 * buffer, loff_t offset,
 			}
 
 		} else {
-			/* A full chunk. Write directly from the supplied buffer. */
-			
+
 #ifdef CONFIG_YAFFS_WINCE
 			/* Under WinCE can't do direct transfer. Need to use a local buffer.
 			 * This is because we otherwise screw up WinCE's memory mapper
@@ -4945,7 +4865,7 @@ int yaffs_WriteDataToFile(yaffs_Object * in, const __u8 * buffer, loff_t offset,
 							 0);
 			yaffs_ReleaseTempBuffer(dev, localBuffer, __LINE__);
 #else
-
+			/* A full chunk. Write directly from the supplied buffer. */
 			chunkWritten =
 			    yaffs_WriteChunkDataToObject(in, chunk, buffer,
 							 dev->nDataBytesPerChunk,
@@ -5023,7 +4943,7 @@ int yaffs_ResizeFile(yaffs_Object * in, loff_t newSize)
 {
 
 	int oldFileSize = in->variant.fileVariant.fileSize;
-	__u32 newSizeOfPartialChunk;
+	int newSizeOfPartialChunk;
 	int newFullChunks;
 
 	yaffs_Device *dev = in->myDev;
@@ -5036,11 +4956,11 @@ int yaffs_ResizeFile(yaffs_Object * in, loff_t newSize)
 	yaffs_CheckGarbageCollection(dev);
 
 	if (in->variantType != YAFFS_OBJECT_TYPE_FILE) {
-		return YAFFS_FAIL;
+		return yaffs_GetFileSize(in);
 	}
 
 	if (newSize == oldFileSize) {
-		return YAFFS_OK;
+		return oldFileSize;
 	}
 
 	if (newSize < oldFileSize) {
@@ -5085,7 +5005,7 @@ int yaffs_ResizeFile(yaffs_Object * in, loff_t newSize)
 					 (newSize < oldFileSize) ? 1 : 0, 0);
 	}
 
-	return YAFFS_OK;
+	return newSize;
 }
 
 loff_t yaffs_GetFileSize(yaffs_Object * obj)
@@ -5138,7 +5058,7 @@ static int yaffs_DoGenericObjectDeletion(yaffs_Object * in)
 
 	if (in->myDev->isYaffs2 && (in->parent != in->myDev->deletedDir)) {
 		/* Move to the unlinked directory so we have a record that it was deleted. */
-		yaffs_ChangeObjectName(in, in->myDev->deletedDir,_Y("deleted"), 0, 0);
+		yaffs_ChangeObjectName(in, in->myDev->deletedDir,"deleted", 0, 0);
 
 	}
 
@@ -5176,7 +5096,7 @@ static int yaffs_UnlinkFile(yaffs_Object * in)
 		if (immediateDeletion) {
 			retVal =
 			    yaffs_ChangeObjectName(in, in->myDev->deletedDir,
-						   _Y("deleted"), 0, 0);
+						   "deleted", 0, 0);
 			T(YAFFS_TRACE_TRACING,
 			  (TSTR("yaffs: immediate deletion of file %d" TENDSTR),
 			   in->objectId));
@@ -5189,7 +5109,7 @@ static int yaffs_UnlinkFile(yaffs_Object * in)
 		} else {
 			retVal =
 			    yaffs_ChangeObjectName(in, in->myDev->unlinkedDir,
-						   _Y("unlinked"), 0, 0);
+						   "unlinked", 0, 0);
 		}
 
 	}
@@ -5224,7 +5144,7 @@ int yaffs_DeleteFile(yaffs_Object * in)
 static int yaffs_DeleteDirectory(yaffs_Object * in)
 {
 	/* First check that the directory is empty. */
-	if (ylist_empty(&in->variant.directoryVariant.children)) {
+	if (list_empty(&in->variant.directoryVariant.children)) {
 		return yaffs_DoGenericObjectDeletion(in);
 	}
 
@@ -5244,7 +5164,7 @@ static int yaffs_DeleteHardLink(yaffs_Object * in)
 	/* remove this hardlink from the list assocaited with the equivalent
 	 * object
 	 */
-	ylist_del(&in->hardLinks);
+	list_del(&in->hardLinks);
 	return yaffs_DoGenericObjectDeletion(in);
 }
 
@@ -5276,7 +5196,7 @@ static int yaffs_UnlinkWorker(yaffs_Object * obj)
 
 	if (obj->variantType == YAFFS_OBJECT_TYPE_HARDLINK) {
 		return yaffs_DeleteHardLink(obj);
-	} else if (!ylist_empty(&obj->hardLinks)) {
+	} else if (!list_empty(&obj->hardLinks)) {
 		/* Curve ball: We're unlinking an object that has a hardlink.
 		 *
 		 * This problem arises because we are not strictly following
@@ -5295,10 +5215,10 @@ static int yaffs_UnlinkWorker(yaffs_Object * obj)
 		int retVal;
 		YCHAR name[YAFFS_MAX_NAME_LENGTH + 1];
 
-		hl = ylist_entry(obj->hardLinks.next, yaffs_Object, hardLinks);
+		hl = list_entry(obj->hardLinks.next, yaffs_Object, hardLinks);
 
-		ylist_del_init(&hl->hardLinks);
-		ylist_del_init(&hl->siblings);
+		list_del_init(&hl->hardLinks);
+		list_del_init(&hl->siblings);
 
 		yaffs_GetObjectName(hl, name, YAFFS_MAX_NAME_LENGTH + 1);
 
@@ -5405,13 +5325,13 @@ static void yaffs_HardlinkFixup(yaffs_Device *dev, yaffs_Object *hardList)
 		if (in) {
 			/* Add the hardlink pointers */
 			hl->variant.hardLinkVariant.equivalentObject = in;
-			ylist_add(&hl->hardLinks, &in->hardLinks);
+			list_add(&hl->hardLinks, &in->hardLinks);
 		} else {
 			/* Todo Need to report/handle this better.
 			 * Got a problem... hardlink to a non-existant object
 			 */
 			hl->variant.hardLinkVariant.equivalentObject = NULL;
-			YINIT_LIST_HEAD(&hl->hardLinks);
+			INIT_LIST_HEAD(&hl->hardLinks);
 
 		}
 
@@ -5451,7 +5371,7 @@ static int yaffs_Scan(yaffs_Device * dev)
 	yaffs_BlockState state;
 	yaffs_Object *hardList = NULL;
 	yaffs_BlockInfo *bi;
-	__u32 sequenceNumber;
+	int sequenceNumber;
 	yaffs_ObjectHeader *oh;
 	yaffs_Object *in;
 	yaffs_Object *parent;
@@ -5568,8 +5488,6 @@ static int yaffs_Scan(yaffs_Device * dev)
 	for (blockIterator = startIterator; !alloc_failed && blockIterator <= endIterator;
 	     blockIterator++) {
 
-	     	YYIELD();
-	     	
 		if (dev->isYaffs2) {
 			/* get the block to scan in the correct order */
 			blk = blockIndex[blockIterator].block;
@@ -5630,7 +5548,8 @@ static int yaffs_Scan(yaffs_Device * dev)
 						bi->sequenceNumber)) {
 						T(YAFFS_TRACE_ALWAYS,
 						  (TSTR
-						   ("yaffs: Allocation block %d was not highest sequence id: block seq = %d, dev seq = %d"
+						   ("yaffs: Allocation block %d was not highest sequence id:"
+						    " block seq = %d, dev seq = %d"
 						    TENDSTR), blk,bi->sequenceNumber,dev->sequenceNumber));
 					}
 				}
@@ -5804,7 +5723,7 @@ static int yaffs_Scan(yaffs_Device * dev)
 						/* Set up as a directory */
 						parent->variantType =
 						    YAFFS_OBJECT_TYPE_DIRECTORY;
-						YINIT_LIST_HEAD(&parent->variant.
+						INIT_LIST_HEAD(&parent->variant.
 							       directoryVariant.
 							       children);
 					} else if (parent->variantType !=
@@ -5816,7 +5735,8 @@ static int yaffs_Scan(yaffs_Device * dev)
 
 						T(YAFFS_TRACE_ERROR,
 						  (TSTR
-						   ("yaffs tragedy: attempting to use non-directory as a directory in scan. Put in lost+found."
+						   ("yaffs tragedy: attempting to use non-directory as"
+						    " a directory in scan. Put in lost+found."
 						    TENDSTR)));
 						parent = dev->lostNFoundDir;
 					}
@@ -5861,7 +5781,7 @@ static int yaffs_Scan(yaffs_Device * dev)
 						    equivalentObjectId =
 						    oh->equivalentObjectId;
 						in->hardLinks.next =
-						    (struct ylist_head *)
+						    (struct list_head *)
 						    hardList;
 						hardList = in;
 						break;
@@ -5920,16 +5840,16 @@ static int yaffs_Scan(yaffs_Device * dev)
 	 * just delete them.
 	 */
 	{
-		struct ylist_head *i;
-		struct ylist_head *n;
+		struct list_head *i;
+		struct list_head *n;
 
 		yaffs_Object *l;
 		/* Soft delete all the unlinked files */
-		ylist_for_each_safe(i, n,
+		list_for_each_safe(i, n,
 				   &dev->unlinkedDir->variant.directoryVariant.
 				   children) {
 			if (i) {
-				l = ylist_entry(i, yaffs_Object, siblings);
+				l = list_entry(i, yaffs_Object, siblings);
 				yaffs_DestroyObject(l);
 			}
 		}
@@ -6018,7 +5938,7 @@ static int yaffs_ScanBackwards(yaffs_Device * dev)
 	yaffs_BlockState state;
 	yaffs_Object *hardList = NULL;
 	yaffs_BlockInfo *bi;
-	__u32 sequenceNumber;
+	int sequenceNumber;
 	yaffs_ObjectHeader *oh;
 	yaffs_Object *in;
 	yaffs_Object *parent;
@@ -6133,10 +6053,8 @@ static int yaffs_ScanBackwards(yaffs_Device * dev)
 
 	/* Sort the blocks */
 #ifndef CONFIG_YAFFS_USE_OWN_SORT
-	{
-		/* Use qsort now. */
-		yaffs_qsort(blockIndex, nBlocksToScan, sizeof(yaffs_BlockIndex), ybicmp);
-	}
+	yaffs_qsort(blockIndex, nBlocksToScan,
+		sizeof(yaffs_BlockIndex), ybicmp);
 #else
 	{
 	 	/* Dungy old bubble sort... */
@@ -6347,12 +6265,6 @@ static int yaffs_ScanBackwards(yaffs_Device * dev)
 									NULL);
 
 					oh = (yaffs_ObjectHeader *) chunkData;
-					
-					if(dev->inbandTags){
-						/* Fix up the header if they got corrupted by inband tags */
-						oh->shadowsObject = oh->inbandShadowsObject;
-						oh->isShrink = oh->inbandIsShrink;
-					}
 
 					if (!in)
 						in = yaffs_FindOrCreateObjectByNumber(dev, tags.objectId, oh->type);
@@ -6363,7 +6275,8 @@ static int yaffs_ScanBackwards(yaffs_Device * dev)
 					/* TODO Hoosterman we have a problem! */
 					T(YAFFS_TRACE_ERROR,
 					  (TSTR
-					   ("yaffs tragedy: Could not make object for object  %d at chunk %d during scan"
+					   ("yaffs tragedy: Could not make object for object  %d  "
+					    "at chunk %d during scan"
 					    TENDSTR), tags.objectId, chunk));
 
 				}
@@ -6521,7 +6434,7 @@ static int yaffs_ScanBackwards(yaffs_Device * dev)
 						/* Set up as a directory */
 						parent->variantType =
 						    YAFFS_OBJECT_TYPE_DIRECTORY;
-						YINIT_LIST_HEAD(&parent->variant.
+						INIT_LIST_HEAD(&parent->variant.
 							       directoryVariant.
 							       children);
 					} else if (parent->variantType !=
@@ -6533,7 +6446,8 @@ static int yaffs_ScanBackwards(yaffs_Device * dev)
 
 						T(YAFFS_TRACE_ERROR,
 						  (TSTR
-						   ("yaffs tragedy: attempting to use non-directory as a directory in scan. Put in lost+found."
+						   ("yaffs tragedy: attempting to use non-directory as"
+						    " a directory in scan. Put in lost+found."
 						    TENDSTR)));
 						parent = dev->lostNFoundDir;
 					}
@@ -6584,7 +6498,7 @@ static int yaffs_ScanBackwards(yaffs_Device * dev)
 						  in->variant.hardLinkVariant.equivalentObjectId =
 						    equivalentObjectId;
 						  in->hardLinks.next =
-						    (struct ylist_head *) hardList;
+						    (struct list_head *) hardList;
 						  hardList = in;
 						}
 						break;
@@ -6644,27 +6558,27 @@ static int yaffs_ScanBackwards(yaffs_Device * dev)
 	*  Sort out state of unlinked and deleted objects.
 	*/
 	{
-		struct ylist_head *i;
-		struct ylist_head *n;
+		struct list_head *i;
+		struct list_head *n;
 
 		yaffs_Object *l;
 
 		/* Soft delete all the unlinked files */
-		ylist_for_each_safe(i, n,
+		list_for_each_safe(i, n,
 				   &dev->unlinkedDir->variant.directoryVariant.
 				   children) {
 			if (i) {
-				l = ylist_entry(i, yaffs_Object, siblings);
+				l = list_entry(i, yaffs_Object, siblings);
 				yaffs_DestroyObject(l);
 			}
 		}
 
 		/* Soft delete all the deletedDir files */
-		ylist_for_each_safe(i, n,
+		list_for_each_safe(i, n,
 				   &dev->deletedDir->variant.directoryVariant.
 				   children) {
 			if (i) {
-				l = ylist_entry(i, yaffs_Object, siblings);
+				l = list_entry(i, yaffs_Object, siblings);
 				yaffs_DestroyObject(l);
 
 			}
@@ -6691,7 +6605,7 @@ static void yaffs_RemoveObjectFromDirectory(yaffs_Object * obj)
 	if(dev && dev->removeObjectCallback)
 		dev->removeObjectCallback(obj);
 
-	ylist_del_init(&obj->siblings);
+	list_del_init(&obj->siblings);
 	obj->parent = NULL;
 }
 
@@ -6717,14 +6631,14 @@ static void yaffs_AddObjectToDirectory(yaffs_Object * directory,
 
 	if (obj->siblings.prev == NULL) {
 		/* Not initialised */
-		YINIT_LIST_HEAD(&obj->siblings);
+		INIT_LIST_HEAD(&obj->siblings);
 
-	} else if (!ylist_empty(&obj->siblings)) {
+	} else if (!list_empty(&obj->siblings)) {
 		/* If it is holed up somewhere else, un hook it */
 		yaffs_RemoveObjectFromDirectory(obj);
 	}
 	/* Now add it */
-	ylist_add(&obj->siblings, &directory->variant.directoryVariant.children);
+	list_add(&obj->siblings, &directory->variant.directoryVariant.children);
 	obj->parent = directory;
 
 	if (directory == obj->myDev->unlinkedDir
@@ -6740,7 +6654,7 @@ yaffs_Object *yaffs_FindObjectByName(yaffs_Object * directory,
 {
 	int sum;
 
-	struct ylist_head *i;
+	struct list_head *i;
 	YCHAR buffer[YAFFS_MAX_NAME_LENGTH + 1];
 
 	yaffs_Object *l;
@@ -6765,9 +6679,9 @@ yaffs_Object *yaffs_FindObjectByName(yaffs_Object * directory,
 
 	sum = yaffs_CalcNameSum(name);
 
-	ylist_for_each(i, &directory->variant.directoryVariant.children) {
+	list_for_each(i, &directory->variant.directoryVariant.children) {
 		if (i) {
-			l = ylist_entry(i, yaffs_Object, siblings);
+			l = list_entry(i, yaffs_Object, siblings);
 
 			yaffs_CheckObjectDetailsLoaded(l);
 
@@ -6799,7 +6713,7 @@ yaffs_Object *yaffs_FindObjectByName(yaffs_Object * directory,
 int yaffs_ApplyToDirectoryChildren(yaffs_Object * theDir,
 				   int (*fn) (yaffs_Object *))
 {
-	struct ylist_head *i;
+	struct list_head *i;
 	yaffs_Object *l;
 
 	if (!theDir) {
@@ -6816,9 +6730,9 @@ int yaffs_ApplyToDirectoryChildren(yaffs_Object * theDir,
 		YBUG();
 	}
 
-	ylist_for_each(i, &theDir->variant.directoryVariant.children) {
+	list_for_each(i, &theDir->variant.directoryVariant.children) {
 		if (i) {
-			l = ylist_entry(i, yaffs_Object, siblings);
+			l = list_entry(i, yaffs_Object, siblings);
 			if (l && !fn(l)) {
 				return YAFFS_FAIL;
 			}
@@ -6907,12 +6821,12 @@ int yaffs_GetObjectFileLength(yaffs_Object * obj)
 int yaffs_GetObjectLinkCount(yaffs_Object * obj)
 {
 	int count = 0;
-	struct ylist_head *i;
+	struct list_head *i;
 
 	if (!obj->unlinked) {
 		count++;	/* the object itself */
 	}
-	ylist_for_each(i, &obj->hardLinks) {
+	list_for_each(i, &obj->hardLinks) {
 		count++;	/* add the hard links; */
 	}
 	return count;
@@ -7135,9 +7049,8 @@ int yaffs_GutsInitialise(yaffs_Device * dev)
 
 	/* Check geometry parameters. */
 
-	if ((!dev->inbandTags && dev->isYaffs2 && dev->totalBytesPerChunk < 1024) ||
-	    (!dev->isYaffs2 && dev->totalBytesPerChunk != 512) ||
-	    (dev->inbandTags && !dev->isYaffs2 ) ||
+	if ((dev->isYaffs2 && dev->nDataBytesPerChunk < 1024) ||
+	    (!dev->isYaffs2 && dev->nDataBytesPerChunk != 512) ||
 	     dev->nChunksPerBlock < 2 ||
 	     dev->nReservedBlocks < 2 ||
 	     dev->internalStartBlock <= 0 ||
@@ -7146,8 +7059,8 @@ int yaffs_GutsInitialise(yaffs_Device * dev)
 	    ) {
 		T(YAFFS_TRACE_ALWAYS,
 		  (TSTR
-		   ("yaffs: NAND geometry problems: chunk size %d, type is yaffs%s, inbandTags %d "
-		    TENDSTR), dev->totalBytesPerChunk, dev->isYaffs2 ? "2" : "", dev->inbandTags));
+		   ("yaffs: NAND geometry problems: chunk size %d, type is yaffs%s "
+		    TENDSTR), dev->nDataBytesPerChunk, dev->isYaffs2 ? "2" : ""));
 		return YAFFS_FAIL;
 	}
 
@@ -7156,12 +7069,6 @@ int yaffs_GutsInitialise(yaffs_Device * dev)
 		  (TSTR("yaffs: InitialiseNAND failed" TENDSTR)));
 		return YAFFS_FAIL;
 	}
-	
-	/* Sort out space for inband tags, if required */
-	if(dev->inbandTags)
-		dev->nDataBytesPerChunk = dev->totalBytesPerChunk - sizeof(yaffs_PackedTags2TagsPart);
-	else 
-		dev->nDataBytesPerChunk = dev->totalBytesPerChunk;
 
 	/* Got the right mix of functions? */
 	if (!yaffs_CheckDevFunctions(dev)) {
@@ -7197,14 +7104,22 @@ int yaffs_GutsInitialise(yaffs_Device * dev)
 	/*
 	 *  Calculate all the chunk size manipulation numbers:
 	 */
- 	 {
-		__u32 x = dev->nDataBytesPerChunk;
-		 /* We always use dev->chunkShift and dev->chunkDiv */
-		 dev->chunkShift = Shifts(x);
-		 x >>= dev->chunkShift;
-		 dev->chunkDiv = x;
-		 /* We only use chunk mask if chunkDiv is 1 */
-		 dev->chunkMask = (1<<dev->chunkShift) - 1;
+	 /* Start off assuming it is a power of 2 */
+	 dev->chunkShift = ShiftDiv(dev->nDataBytesPerChunk);
+	 dev->chunkMask = (1<<dev->chunkShift) - 1;
+
+	 if(dev->nDataBytesPerChunk == (dev->chunkMask + 1)){
+	 	/* Yes it is a power of 2, disable crumbs */
+		dev->crumbMask = 0;
+		dev->crumbShift = 0;
+		dev->crumbsPerChunk = 0;
+	 } else {
+	 	/* Not a power of 2, use crumbs instead */
+		dev->crumbShift = ShiftDiv(sizeof(yaffs_PackedTags2TagsPart));
+		dev->crumbMask = (1<<dev->crumbShift)-1;
+		dev->crumbsPerChunk = dev->nDataBytesPerChunk/(1 << dev->crumbShift);
+		dev->chunkShift = 0;
+		dev->chunkMask = 0;
 	}
 
 
@@ -7288,7 +7203,7 @@ int yaffs_GutsInitialise(yaffs_Device * dev)
 	if (!init_failed &&
 	    dev->nShortOpCaches > 0) {
 		int i;
-		void *buf;
+		__u8 *buf;
 		int srCacheBytes = dev->nShortOpCaches * sizeof(yaffs_ChunkCache);
 
 		if (dev->nShortOpCaches > YAFFS_MAX_SHORT_OP_CACHES) {
@@ -7304,7 +7219,7 @@ int yaffs_GutsInitialise(yaffs_Device * dev)
 			dev->srCache[i].object = NULL;
 			dev->srCache[i].lastUse = 0;
 			dev->srCache[i].dirty = 0;
-			dev->srCache[i].data = buf = YMALLOC_DMA(dev->totalBytesPerChunk);
+			dev->srCache[i].data = buf = YMALLOC_DMA(dev->nDataBytesPerChunk);
 		}
 		if(!buf)
 			init_failed = 1;
@@ -7430,7 +7345,6 @@ void yaffs_Deinitialise(yaffs_Device * dev)
 			YFREE(dev->tempBuffer[i].buffer);
 		}
 
-
 		dev->isMounted = 0;
 	}
 
@@ -7496,7 +7410,7 @@ int yaffs_GetNumberOfFreeChunks(yaffs_Device * dev)
 	nFree -= ((dev->nReservedBlocks + 1) * dev->nChunksPerBlock);
 
 	/* Now we figure out how much to reserve for the checkpoint and report that... */
-	blocksForCheckpoint = yaffs_CalcCheckpointBlocksRequired(dev) - dev->blocksInCheckpoint;
+	blocksForCheckpoint = dev->nCheckpointReservedBlocks - dev->blocksInCheckpoint;
 	if(blocksForCheckpoint < 0)
 		blocksForCheckpoint = 0;
 
@@ -7534,25 +7448,22 @@ static void yaffs_VerifyFreeChunks(yaffs_Device * dev)
 /*---------------------------------------- YAFFS test code ----------------------*/
 
 #define yaffs_CheckStruct(structure,syze, name) \
-	do { \
            if(sizeof(structure) != syze) \
 	       { \
 	         T(YAFFS_TRACE_ALWAYS,(TSTR("%s should be %d but is %d\n" TENDSTR),\
 		 name,syze,sizeof(structure))); \
 	         return YAFFS_FAIL; \
-		} \
-	} while(0)
+		}
 
 static int yaffs_CheckStructures(void)
 {
-/*      yaffs_CheckStruct(yaffs_Tags,8,"yaffs_Tags"); */
-/*      yaffs_CheckStruct(yaffs_TagsUnion,8,"yaffs_TagsUnion"); */
-/*      yaffs_CheckStruct(yaffs_Spare,16,"yaffs_Spare"); */
+/*      yaffs_CheckStruct(yaffs_Tags,8,"yaffs_Tags") */
+/*      yaffs_CheckStruct(yaffs_TagsUnion,8,"yaffs_TagsUnion") */
+/*      yaffs_CheckStruct(yaffs_Spare,16,"yaffs_Spare") */
 #ifndef CONFIG_YAFFS_TNODE_LIST_DEBUG
-	yaffs_CheckStruct(yaffs_Tnode, 2 * YAFFS_NTNODES_LEVEL0, "yaffs_Tnode");
+	yaffs_CheckStruct(yaffs_Tnode, 2 * YAFFS_NTNODES_LEVEL0, "yaffs_Tnode")
 #endif
-#ifndef CONFIG_YAFFS_WINCE
-		yaffs_CheckStruct(yaffs_ObjectHeader, 512, "yaffs_ObjectHeader");
-#endif
+	    yaffs_CheckStruct(yaffs_ObjectHeader, 512, "yaffs_ObjectHeader")
+
 	    return YAFFS_OK;
 }
