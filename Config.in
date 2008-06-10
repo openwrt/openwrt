@@ -142,6 +142,10 @@ config EXTERNAL_KERNEL_TREE
 	prompt "Use external kernel tree" if DEVEL
 	default ""
 
+config BUILD_DEVELOPER_SYSTEM
+	bool "build a non-stripped system, so gcc can be run natively on target" if DEVEL
+	default n
+
 source "toolchain/Config.in"
 menuconfig BUILDSYSTEM_SETTINGS
     bool "Buildsystem settings" 

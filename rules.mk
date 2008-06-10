@@ -120,11 +120,15 @@ TARGET_CONFIGURE_OPTS:= \
   SIZE=$(TARGET_CROSS)size
 
 # strip an entire directory
-RSTRIP:= \
-  NM="$(TARGET_CROSS)nm" \
-  STRIP="$(STRIP)" \
-  STRIP_KMOD="$(TARGET_CROSS)strip --strip-unneeded --remove-section=.comment" \
-  $(SCRIPT_DIR)/rstrip.sh
+ifneq ($(CONFIG_BUILD_DEVELOPER_SYSTEM),)
+  RSTRIP:=:
+else
+  RSTRIP:= \
+    NM="$(TARGET_CROSS)nm" \
+    STRIP="$(STRIP)" \
+    STRIP_KMOD="$(TARGET_CROSS)strip --strip-unneeded --remove-section=.comment" \
+    $(SCRIPT_DIR)/rstrip.sh
+endif
 
 ifeq ($(CONFIG_ENABLE_LOCALE),true)
   DISABLE_NLS:=
