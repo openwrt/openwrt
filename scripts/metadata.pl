@@ -495,6 +495,7 @@ EOF
 sub gen_package_mk() {
 	my %conf;
 	my %dep;
+	my %done;
 	my $line;
 
 	parse_package_metadata($ARGV[0]) or exit 1;
@@ -503,6 +504,9 @@ sub gen_package_mk() {
 		my $pkg = $package{$name};
 
 		next if defined $pkg->{vdepends};
+		next if $done{$pkg->{src}};
+		$done{$pkg->{src}} = 1;
+
 		if ($ENV{SDK}) {
 			$conf{$pkg->{src}} or do {
 				$config = 'm';
@@ -518,23 +522,37 @@ sub gen_package_mk() {
 
 		my $hasdeps = 0;
 		my $depline = "";
-		foreach my $dep (@{$pkg->{depends}}, @{$pkg->{builddepends}}) {
-			next if $dep =~ /@/;
-			$dep =~ s/\+//;
+		foreach my $deps (@{$pkg->{depends}}, @{$pkg->{builddepends}}) {
+			next if $deps =~ /@/;
+			$deps =~ s/\+//;
 			my $idx;
-			my $pkg_dep = $package{$dep};
-			next if defined $pkg_dep->{vdepends};
+			my $pkg_dep = $package{$deps};
+			my @deps;
 
-			if (defined $pkg_dep->{src}) {
-				($pkg->{src} ne $pkg_dep->{src}) and $idx = $pkg_dep->{subdir}.$pkg_dep->{src};
-			} elsif (defined($srcpackage{$dep})) {
-				$idx = $subdir{$dep}.$dep;
+			if ($pkg_dep->{vdepends}) {
+				@deps = @{$pkg_dep->{vdepends}};
+			} else {
+				@deps = ($deps);
 			}
-			undef $idx if $idx =~ /^(kernel)|(base-files)$/;
-			if ($idx) {
-				next if $dep{$pkg->{src}."->".$idx};
-				$depline .= " \$(curdir)/$idx/compile";
-				$dep{$pkg->{src}."->".$idx} = 1;
+
+			foreach my $dep (@deps) {
+				$pkg_dep = $package{$deps};
+				if (defined $pkg_dep->{src}) {
+					($pkg->{src} ne $pkg_dep->{src}) and $idx = $pkg_dep->{subdir}.$pkg_dep->{src};
+				} elsif (defined($srcpackage{$dep})) {
+					$idx = $subdir{$dep}.$dep;
+				}
+				undef $idx if $idx =~ /^(kernel)|(base-files)$/;
+				if ($idx) {
+					next if $dep{$pkg->{src}."->".$idx};
+					next if $pkg->{src} eq $pkg_dep->{src};
+					if ($pkg_dep->{vdepends}) {
+						$depline .= " \$(if \$(CONFIG_PACKAGE_$dep),\$(curdir)/$idx/compile)";
+					} else {
+						$depline .= " \$(curdir)/$idx/compile";
+						$dep{$pkg->{src}."->".$idx} = 1;
+					}
+				}
 			}
 		}
 		if ($depline) {
