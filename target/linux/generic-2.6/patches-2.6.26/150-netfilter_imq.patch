@@ -599,7 +599,7 @@
  	select CRC32
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -143,6 +143,7 @@
+@@ -142,6 +142,7 @@
  obj-$(CONFIG_XEN_NETDEV_FRONTEND) += xen-netfront.o
  
  obj-$(CONFIG_DUMMY) += dummy.o
@@ -643,7 +643,7 @@
 +#endif /* _IP6T_IMQ_H */
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -296,6 +296,10 @@
+@@ -300,6 +300,10 @@
  	struct nf_conntrack	*nfct;
  	struct sk_buff		*nfct_reasm;
  #endif
@@ -654,7 +654,7 @@
  #ifdef CONFIG_BRIDGE_NETFILTER
  	struct nf_bridge_info	*nf_bridge;
  #endif
-@@ -1736,6 +1740,10 @@
+@@ -1633,6 +1637,10 @@
  	dst->nfct_reasm = src->nfct_reasm;
  	nf_conntrack_get_reasm(src->nfct_reasm);
  #endif
@@ -677,7 +677,7 @@
  #include <linux/proc_fs.h>
  #include <linux/seq_file.h>
  #include <linux/stat.h>
-@@ -1537,7 +1540,11 @@
+@@ -1545,7 +1548,11 @@
  int dev_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
  {
  	if (likely(!skb->next)) {
@@ -784,7 +784,7 @@
  	depends on IP_NF_FILTER
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -55,6 +55,7 @@
+@@ -58,6 +58,7 @@
  obj-$(CONFIG_IP_NF_TARGET_CLUSTERIP) += ipt_CLUSTERIP.o
  obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_ECN.o
  obj-$(CONFIG_IP_NF_TARGET_LOG) += ipt_LOG.o
