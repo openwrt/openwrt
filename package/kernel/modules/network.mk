@@ -581,6 +581,27 @@ endef
 
 $(eval $(call KernelPackage,sis900))
 
+define KernelPackage/sky2
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=SysKonnect Yukon2 support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_SKY2
+  FILES:=$(LINUX_DIR)/drivers/net/sky2.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,sky2)
+endef
+
+define KernelPackage/sky2/description
+  This driver supports Gigabit Ethernet adapters based on the
+  Marvell Yukon 2 chipset:
+  Marvell 88E8021/88E8022/88E8035/88E8036/88E8038/88E8050/88E8052/
+  88E8053/88E8055/88E8061/88E8062, SysKonnect SK-9E21D/SK-9S21
+
+  There is companion driver for the older Marvell Yukon and
+  Genesis based adapters: skge.
+endef
+
+$(eval $(call KernelPackage,sky2))
+
 
 define KernelPackage/via-rhine
   SUBMENU:=$(NETWORK_DEVICES_MENU)
