@@ -12,6 +12,10 @@ system_config() {
 
 	config_get conloglevel "$cfg" conloglevel
 	[ -n "$conloglevel" ] && dmesg -n "$conloglevel"
+	
+	config_get timezone "$cfg" timezone 
+	[ -z "$timezone" ] && timezone=UTC
+	echo "$timezone" > /tmp/TZ
 
 	config_get log_ip "$cfg" log_ip 
 	config_get log_size "$cfg" log_size
