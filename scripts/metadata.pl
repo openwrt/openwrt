@@ -505,17 +505,6 @@ sub gen_package_mk() {
 		my @srcdeps;
 
 		next if defined $pkg->{vdepends};
-		next if $done{$pkg->{src}};
-		$done{$pkg->{src}} = 1;
-
-		foreach my $spkg (@{$srcpackage{$pkg->{src}}}) {
-			foreach my $dep (@{$spkg->{depends}}, @{$spkg->{builddepends}}) {
-				$dep =~ /@/ or do {
-					$dep =~ s/\+//g;
-					push @srcdeps, $dep;
-				};
-			}
-		}
 
 		if ($ENV{SDK}) {
 			$conf{$pkg->{src}} or do {
@@ -528,6 +517,18 @@ sub gen_package_mk() {
 		if ($config) {
 			print "package-$config += $pkg->{subdir}$pkg->{src}\n";
 			$pkg->{prereq} and print "prereq-$config += $pkg->{subdir}$pkg->{src}\n";
+		}
+
+		next if $done{$pkg->{src}};
+		$done{$pkg->{src}} = 1;
+
+		foreach my $spkg (@{$srcpackage{$pkg->{src}}}) {
+			foreach my $dep (@{$spkg->{depends}}, @{$spkg->{builddepends}}) {
+				$dep =~ /@/ or do {
+					$dep =~ s/\+//g;
+					push @srcdeps, $dep;
+				};
+			}
 		}
 
 		my $hasdeps = 0;
