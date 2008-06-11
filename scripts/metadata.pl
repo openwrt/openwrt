@@ -502,10 +502,20 @@ sub gen_package_mk() {
 	foreach my $name (sort {uc($a) cmp uc($b)} keys %package) {
 		my $config;
 		my $pkg = $package{$name};
+		my @srcdeps;
 
 		next if defined $pkg->{vdepends};
 		next if $done{$pkg->{src}};
 		$done{$pkg->{src}} = 1;
+
+		foreach my $spkg (@{$srcpackage{$pkg->{src}}}) {
+			foreach my $dep (@{$spkg->{depends}}, @{$spkg->{builddepends}}) {
+				$dep =~ /@/ or do {
+					$dep =~ s/\+//g;
+					push @srcdeps, $dep;
+				};
+			}
+		}
 
 		if ($ENV{SDK}) {
 			$conf{$pkg->{src}} or do {
@@ -522,9 +532,7 @@ sub gen_package_mk() {
 
 		my $hasdeps = 0;
 		my $depline = "";
-		foreach my $deps (@{$pkg->{depends}}, @{$pkg->{builddepends}}) {
-			next if $deps =~ /@/;
-			$deps =~ s/\+//;
+		foreach my $deps (@srcdeps) {
 			my $idx;
 			my $pkg_dep = $package{$deps};
 			my @deps;
@@ -544,10 +552,12 @@ sub gen_package_mk() {
 				}
 				undef $idx if $idx =~ /^(kernel)|(base-files)$/;
 				if ($idx) {
-					next if $dep{$pkg->{src}."->".$idx};
 					next if $pkg->{src} eq $pkg_dep->{src};
+					next if $dep{$pkg->{src}."->".$idx};
+					next if $dep{$pkg->{src}."->($dep)".$idx};
 					if ($pkg_dep->{vdepends}) {
 						$depline .= " \$(if \$(CONFIG_PACKAGE_$dep),\$(curdir)/$idx/compile)";
+						$dep{$pkg->{src}."->($dep)".$idx} = 1;
 					} else {
 						$depline .= " \$(curdir)/$idx/compile";
 						$dep{$pkg->{src}."->".$idx} = 1;
