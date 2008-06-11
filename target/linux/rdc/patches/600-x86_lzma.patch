@@ -1004,31 +1004,28 @@ Index: linux-2.6.24.7/scripts/lzma_kern
 +printf -v len '%.8x' "$(get-size $(ls -l "$1"))"
 +lzma e "$@"
 +echo -ne "\x$(echo $len | cut -c 7,8)\x$(echo $len | cut -c 5,6)\x$(echo $len | cut -c 3,4)\x$(echo $len | cut -c 1,2)" >> "$2"
-Index: linux-2.6.24.7/arch/x86/boot/compressed/Makefile_32
-===================================================================
---- linux-2.6.24.7.orig/arch/x86/boot/compressed/Makefile_32
-+++ linux-2.6.24.7/arch/x86/boot/compressed/Makefile_32
-@@ -4,8 +4,8 @@
+diff -urN linux-2.6.25.4/arch/x86/boot/compressed/Makefile linux-2.6.25.4.new/arch/x86/boot/compressed/Makefile
+--- linux-2.6.25.4/arch/x86/boot/compressed/Makefile	2008-05-15 17:00:12.000000000 +0200
++++ linux-2.6.25.4.new/arch/x86/boot/compressed/Makefile	2008-06-11 14:42:09.000000000 +0200
+@@ -4,7 +4,7 @@
  # create a compressed vmlinux image from the original vmlinux
  #
  
--targets		:= vmlinux vmlinux.bin vmlinux.bin.gz head_32.o misc_32.o piggy.o \
--			vmlinux.bin.all vmlinux.relocs
-+targets		:= vmlinux vmlinux.bin vmlinux.bin.lzma head_32.o piggy.o \
-+			vmlinux.bin.all vmlinux.relocs lzma_misc.o
- EXTRA_AFLAGS	:= -traditional
+-targets := vmlinux vmlinux.bin vmlinux.bin.gz head_$(BITS).o misc.o piggy.o
++targets := vmlinux vmlinux.bin vmlinux.bin.lzma head_$(BITS).o lzma_misc.o piggy.o
  
+ KBUILD_CFLAGS := -m$(BITS) -D__KERNEL__ $(LINUX_INCLUDE) -O2
+ KBUILD_CFLAGS += -fno-strict-aliasing -fPIC
+@@ -18,7 +18,7 @@
+ LDFLAGS := -m elf_$(UTS_MACHINE)
  LDFLAGS_vmlinux := -T
-@@ -17,7 +17,7 @@ KBUILD_CFLAGS  := -m32 -D__KERNEL__ $(LI
- 	   $(call cc-option,-fno-stack-protector)
- LDFLAGS := -m elf_i386
  
--$(obj)/vmlinux: $(src)/vmlinux_32.lds $(obj)/head_32.o $(obj)/misc_32.o $(obj)/piggy.o FORCE
-+$(obj)/vmlinux: $(src)/vmlinux_32.lds $(obj)/head_32.o $(obj)/lzma_misc.o $(obj)/piggy.o FORCE
+-$(obj)/vmlinux: $(src)/vmlinux_$(BITS).lds $(obj)/head_$(BITS).o $(obj)/misc.o $(obj)/piggy.o FORCE
++$(obj)/vmlinux: $(src)/vmlinux_$(BITS).lds $(obj)/head_$(BITS).o $(obj)/lzma_misc.o $(obj)/piggy.o FORCE
  	$(call if_changed,ld)
  	@:
  
-@@ -37,14 +37,14 @@ $(obj)/vmlinux.bin.all: $(vmlinux.bin.al
+@@ -44,11 +44,11 @@
  	$(call if_changed,relocbin)
  
  ifdef CONFIG_RELOCATABLE
@@ -1042,9 +1039,12 @@ Index: linux-2.6.24.7/arch/x86/boot/compressed/Makefile_32
 +$(obj)/vmlinux.bin.lzma: $(obj)/vmlinux.bin FORCE
 +	$(call if_changed,lzma)
  endif
- 
  LDFLAGS_piggy.o := -r --format binary --oformat elf32-i386 -T
  
--$(obj)/piggy.o: $(src)/vmlinux_32.scr $(obj)/vmlinux.bin.gz FORCE
-+$(obj)/piggy.o: $(src)/vmlinux_32.scr $(obj)/vmlinux.bin.lzma FORCE
+@@ -60,5 +60,5 @@
+ endif
+ 
+ 
+-$(obj)/piggy.o: $(obj)/vmlinux.scr $(obj)/vmlinux.bin.gz FORCE
++$(obj)/piggy.o: $(obj)/vmlinux.scr $(obj)/vmlinux.bin.lzma FORCE
  	$(call if_changed,ld)
