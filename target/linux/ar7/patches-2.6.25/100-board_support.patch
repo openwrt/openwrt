@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/arch/mips/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/arch/mips/Kconfig
-+++ linux-2.6.25.4/arch/mips/Kconfig
-@@ -18,6 +18,24 @@ choice
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -18,6 +18,24 @@
  	prompt "System type"
  	default SGI_IP22
  
@@ -27,11 +25,9 @@ Index: linux-2.6.25.4/arch/mips/Kconfig
  config MACH_ALCHEMY
  	bool "Alchemy processor based machines"
  
-Index: linux-2.6.25.4/arch/mips/kernel/traps.c
-===================================================================
---- linux-2.6.25.4.orig/arch/mips/kernel/traps.c
-+++ linux-2.6.25.4/arch/mips/kernel/traps.c
-@@ -1112,9 +1112,22 @@ void *set_except_vector(int n, void *add
+--- a/arch/mips/kernel/traps.c
++++ b/arch/mips/kernel/traps.c
+@@ -1112,9 +1112,22 @@
  
  	exception_handlers[n] = handler;
  	if (n == 0 && cpu_has_divec) {
@@ -57,11 +53,9 @@ Index: linux-2.6.25.4/arch/mips/kernel/traps.c
  	}
  	return (void *)old_handler;
  }
-Index: linux-2.6.25.4/arch/mips/Makefile
-===================================================================
---- linux-2.6.25.4.orig/arch/mips/Makefile
-+++ linux-2.6.25.4/arch/mips/Makefile
-@@ -167,6 +167,13 @@ libs-$(CONFIG_SIBYTE_CFE)	+= arch/mips/s
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -167,6 +167,13 @@
  #
  
  #
@@ -75,11 +69,9 @@ Index: linux-2.6.25.4/arch/mips/Makefile
  # Acer PICA 61, Mips Magnum 4000 and Olivetti M700.
  #
  core-$(CONFIG_MACH_JAZZ)	+= arch/mips/jazz/
-Index: linux-2.6.25.4/include/asm-mips/page.h
-===================================================================
---- linux-2.6.25.4.orig/include/asm-mips/page.h
-+++ linux-2.6.25.4/include/asm-mips/page.h
-@@ -182,8 +182,10 @@ typedef struct { unsigned long pgprot; }
+--- a/include/asm-mips/page.h
++++ b/include/asm-mips/page.h
+@@ -182,8 +182,10 @@
  #define VM_DATA_DEFAULT_FLAGS	(VM_READ | VM_WRITE | VM_EXEC | \
  				 VM_MAYREAD | VM_MAYWRITE | VM_MAYEXEC)
  

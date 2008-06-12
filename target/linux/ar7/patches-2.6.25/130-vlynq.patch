@@ -1,19 +1,15 @@
-Index: linux-2.6.25.4/drivers/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/drivers/Kconfig
-+++ linux-2.6.25.4/drivers/Kconfig
-@@ -97,4 +97,6 @@ source "drivers/dca/Kconfig"
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
+@@ -97,4 +97,6 @@
  source "drivers/auxdisplay/Kconfig"
  
  source "drivers/uio/Kconfig"
 +
 +source "drivers/vlynq/Kconfig"
  endmenu
-Index: linux-2.6.25.4/drivers/Makefile
-===================================================================
---- linux-2.6.25.4.orig/drivers/Makefile
-+++ linux-2.6.25.4/drivers/Makefile
-@@ -91,5 +91,6 @@ obj-$(CONFIG_DCA)		+= dca/
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -91,5 +91,6 @@
  obj-$(CONFIG_HID)		+= hid/
  obj-$(CONFIG_PPC_PS3)		+= ps3/
  obj-$(CONFIG_OF)		+= of/

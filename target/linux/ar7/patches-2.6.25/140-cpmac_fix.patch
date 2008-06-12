@@ -1,7 +1,5 @@
-Index: linux-2.6.25.4/drivers/net/cpmac.c
-===================================================================
---- linux-2.6.25.4.orig/drivers/net/cpmac.c
-+++ linux-2.6.25.4/drivers/net/cpmac.c
+--- a/drivers/net/cpmac.c
++++ b/drivers/net/cpmac.c
 @@ -38,6 +38,7 @@
  #include <linux/platform_device.h>
  #include <linux/dma-mapping.h>
@@ -10,7 +8,7 @@ Index: linux-2.6.25.4/drivers/net/cpmac.c
  
  MODULE_AUTHOR("Eugene Konev <ejka@imfi.kspu.ru>");
  MODULE_DESCRIPTION("TI AR7 ethernet driver (CPMAC)");
-@@ -207,6 +208,7 @@ struct cpmac_priv {
+@@ -207,6 +208,7 @@
  	struct work_struct reset_work;
  	struct platform_device *pdev;
  	struct napi_struct napi;
@@ -18,7 +16,7 @@ Index: linux-2.6.25.4/drivers/net/cpmac.c
  };
  
  static irqreturn_t cpmac_irq(int, void *);
-@@ -455,6 +457,9 @@ static int cpmac_start_xmit(struct sk_bu
+@@ -455,6 +457,9 @@
  	struct cpmac_desc *desc;
  	struct cpmac_priv *priv = netdev_priv(dev);
  
@@ -28,7 +26,7 @@ Index: linux-2.6.25.4/drivers/net/cpmac.c
  	if (unlikely(skb_padto(skb, ETH_ZLEN)))
  		return NETDEV_TX_OK;
  
-@@ -634,14 +639,14 @@ static void cpmac_clear_tx(struct net_de
+@@ -634,14 +639,14 @@
  		priv->desc_ring[i].dataflags = 0;
  		if (priv->desc_ring[i].skb) {
  			dev_kfree_skb_any(priv->desc_ring[i].skb);
@@ -45,7 +43,7 @@ Index: linux-2.6.25.4/drivers/net/cpmac.c
  	struct cpmac_priv *priv =
  		container_of(work, struct cpmac_priv, reset_work);
  
-@@ -650,8 +655,47 @@ static void cpmac_hw_error(struct work_s
+@@ -650,8 +655,47 @@
  	spin_unlock(&priv->rx_lock);
  	cpmac_clear_tx(priv->dev);
  	cpmac_hw_start(priv->dev);
@@ -95,7 +93,7 @@ Index: linux-2.6.25.4/drivers/net/cpmac.c
  }
  
  static irqreturn_t cpmac_irq(int irq, void *dev_id)
-@@ -682,49 +726,33 @@ static irqreturn_t cpmac_irq(int irq, vo
+@@ -682,49 +726,33 @@
  
  	cpmac_write(priv->regs, CPMAC_MAC_EOI_VECTOR, 0);
  
@@ -159,7 +157,7 @@ Index: linux-2.6.25.4/drivers/net/cpmac.c
  }
  
  static int cpmac_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
-@@ -911,6 +939,7 @@ static int cpmac_open(struct net_device 
+@@ -911,6 +939,7 @@
  		goto fail_irq;
  	}
  
