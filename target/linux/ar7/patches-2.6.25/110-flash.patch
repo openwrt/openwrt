@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/drivers/mtd/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/drivers/mtd/Kconfig
-+++ linux-2.6.25.4/drivers/mtd/Kconfig
-@@ -168,6 +168,12 @@ config MTD_OF_PARTS
+--- a/drivers/mtd/Kconfig
++++ b/drivers/mtd/Kconfig
+@@ -168,6 +168,12 @@
  	  the partition map from the children of the flash node,
  	  as described in Documentation/powerpc/booting-without-of.txt.
  
@@ -15,11 +13,9 @@ Index: linux-2.6.25.4/drivers/mtd/Kconfig
  comment "User Modules And Translation Layers"
  
  config MTD_CHAR
-Index: linux-2.6.25.4/drivers/mtd/Makefile
-===================================================================
---- linux-2.6.25.4.orig/drivers/mtd/Makefile
-+++ linux-2.6.25.4/drivers/mtd/Makefile
-@@ -12,6 +12,7 @@ obj-$(CONFIG_MTD_REDBOOT_PARTS) += redbo
+--- a/drivers/mtd/Makefile
++++ b/drivers/mtd/Makefile
+@@ -12,6 +12,7 @@
  obj-$(CONFIG_MTD_CMDLINE_PARTS) += cmdlinepart.o
  obj-$(CONFIG_MTD_AFS_PARTS)	+= afs.o
  obj-$(CONFIG_MTD_OF_PARTS)      += ofpart.o
@@ -27,11 +23,9 @@ Index: linux-2.6.25.4/drivers/mtd/Makefile
  
  # 'Users' - code which presents functionality to userspace.
  obj-$(CONFIG_MTD_CHAR)		+= mtdchar.o
-Index: linux-2.6.25.4/drivers/mtd/maps/physmap.c
-===================================================================
---- linux-2.6.25.4.orig/drivers/mtd/maps/physmap.c
-+++ linux-2.6.25.4/drivers/mtd/maps/physmap.c
-@@ -87,7 +87,8 @@ static int physmap_flash_remove(struct p
+--- a/drivers/mtd/maps/physmap.c
++++ b/drivers/mtd/maps/physmap.c
+@@ -87,7 +87,8 @@
  
  static const char *rom_probe_types[] = { "cfi_probe", "jedec_probe", "map_rom", NULL };
  #ifdef CONFIG_MTD_PARTITIONS

@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/drivers/net/cpmac.c
-===================================================================
---- linux-2.6.25.4.orig/drivers/net/cpmac.c
-+++ linux-2.6.25.4/drivers/net/cpmac.c
-@@ -1178,9 +1178,7 @@ static int __devinit cpmac_probe(struct 
+--- a/drivers/net/cpmac.c
++++ b/drivers/net/cpmac.c
+@@ -1178,9 +1178,7 @@
  	priv->msg_enable = netif_msg_init(debug_level, 0xff);
  	memcpy(dev->dev_addr, pdata->dev_addr, sizeof(dev->dev_addr));
  
