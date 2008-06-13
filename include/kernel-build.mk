@@ -77,6 +77,7 @@ define BuildKernel
 	$(MAKE) -C image compile TARGET_BUILD=
 
   oldconfig menuconfig: $(STAMP_PREPARED) FORCE
+	[ -e "$(LINUX_CONFIG)" ] || touch "$(LINUX_CONFIG)"
 	$(LINUX_CONFCMD) > $(LINUX_DIR)/.config
 	touch $(LINUX_CONFIG)
 	$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) $$@
