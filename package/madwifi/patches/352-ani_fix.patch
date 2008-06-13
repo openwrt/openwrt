@@ -1,13 +1,288 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-06-01 20:07:35.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-06-01 20:17:01.000000000 +0200
-@@ -2528,7 +2528,7 @@
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-06-13 03:42:29.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-06-13 03:46:33.000000000 +0200
+@@ -1014,9 +1014,7 @@
+ 	 */
+ 	sc->sc_hasveol = ath_hal_hasveol(ah);
+ 
+-	/* Interference mitigation/ambient noise immunity (ANI).
+-	 * In modes other than HAL_M_STA, it causes receive sensitivity
+-	 * problems for OFDM. */
++	/* Interference mitigation/ambient noise immunity (ANI). */
+ 	sc->sc_hasintmit = ath_hal_hasintmit(ah);
+ 
+ 	/* get mac address from hardware */
+@@ -1144,6 +1142,11 @@
+ 	sc->sc_rp_lasttsf	= 0;
+ 	sc->sc_last_tsf		= 0;
+ 
++	/* set all 3 to auto */
++	sc->sc_intmit = -1;
++	sc->sc_noise_immunity = -1;
++	sc->sc_ofdm_weak_det = -1;
++
+ 	return 0;
+ bad3:
+ 	ieee80211_ifdetach(ic);
+@@ -2347,16 +2350,6 @@
+ 		}
+ 		if (status & HAL_INT_MIB) {
+ 			sc->sc_stats.ast_mib++;
+-			/* When the card receives lots of PHY errors, the MIB
+-			 * interrupt will fire at a very rapid rate. We will use
+-			 * a timer to enforce at least 1 jiffy delay between
+-			 * MIB interrupts. This should be unproblematic, since
+-			 * the hardware will continue to update the counters in 
+-			 * the mean time. */
+-			sc->sc_imask &= ~HAL_INT_MIB;
+-			ath_hal_intrset(ah, sc->sc_imask);
+-			mod_timer(&sc->sc_mib_enable, jiffies + 1);
+-
+ 			/* Let the HAL handle the event. */
+ 			ath_hal_mibevent(ah, &sc->sc_halstats);
+ 		}
+@@ -2426,6 +2419,43 @@
+ 	return flags;
+ }
+ 
++static int ath_setintmit(struct ath_softc *sc)
++{
++	struct ath_hal *ah = sc->sc_ah;
++	int ret;
++	int val;
++
++	if (!sc->sc_hasintmit)
++		return 0;
++
++	switch(sc->sc_intmit) {
++		case -1:
++			if (sc->sc_opmode != IEEE80211_M_MONITOR)
++				val = 1;
++			else
++				val = 0;
++			break;
++		case 0: /* disabled */
++		case 1: /* enabled */
++			val = sc->sc_intmit;
++			break;
++		default:
++			return 0;
++	}
++	ret = ath_hal_setintmit(ah, val);
++	if (val)
++		goto done;
++
++	/* manual settings */
++	if ((sc->sc_noise_immunity >= 0) && (sc->sc_noise_immunity <= 5))
++		ath_hal_setcapability(ah, HAL_CAP_INTMIT, 2, sc->sc_noise_immunity, NULL);
++	if ((sc->sc_ofdm_weak_det == 0) || (sc->sc_ofdm_weak_det == 1))
++		ath_hal_setcapability(ah, HAL_CAP_INTMIT, 3, sc->sc_ofdm_weak_det, NULL);
++
++done:
++	return ret;
++}
++
+ /*
+  * Context: process context
+  */
+@@ -2491,8 +2521,7 @@
+ 	if (sc->sc_softled)
+ 		ath_hal_gpioCfgOutput(ah, sc->sc_ledpin);
+ 
+-	if ((sc->sc_opmode != HAL_M_STA) && sc->sc_hasintmit)
+-		ath_hal_setintmit(ah, 0);
++	ath_setintmit(sc);
+ 
+ 	/*
+ 	 * This is needed only to setup initial state
+@@ -2528,7 +2557,7 @@
  	 * Enable MIB interrupts when there are hardware phy counters.
  	 * Note we only do this (at the moment) for station mode.
  	 */
--	if (sc->sc_needmib && ic->ic_opmode == IEEE80211_M_STA)
-+	if (sc->sc_needmib)
+-	if (sc->sc_needmib)
++	if (sc->sc_needmib && ath_hal_getintmit(ah, NULL))
  		sc->sc_imask |= HAL_INT_MIB;
  	ath_hal_intrset(ah, sc->sc_imask);
  
+@@ -2785,9 +2814,7 @@
+ 		EPRINTF(sc, "Unable to reset hardware: '%s' (HAL status %u)\n",
+ 			ath_get_hal_status_desc(status), status);
+ 
+-	if ((sc->sc_opmode != HAL_M_STA) && sc->sc_hasintmit)
+-		ath_hal_setintmit(ah, 0);
+-
++	ath_setintmit(sc);
+ 	ath_update_txpow(sc);		/* update tx power state */
+ 	ath_radar_update(sc);
+ 	ath_setdefantenna(sc, sc->sc_defant);
+@@ -4165,6 +4192,8 @@
+ 	if (sc->sc_nmonvaps > 0)
+ 		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON |
+ 			  HAL_RX_FILTER_PROBEREQ | HAL_RX_FILTER_PROM);
++	if (sc->sc_hasintmit && !sc->sc_needmib && ath_hal_getintmit(ah, NULL))
++		rfilt |= HAL_RX_FILTER_PHYERR;
+ 	if (sc->sc_curchan.privFlags & CHANNEL_DFS)
+ 		rfilt |= (HAL_RX_FILTER_PHYERR | HAL_RX_FILTER_PHYRADAR);
+ 	return rfilt;
+@@ -6513,9 +6542,6 @@
+ 			rs->rs_rssi = 0;
+ 
+ 		len = rs->rs_datalen;
+-		/* DMA sync. dies spectacularly if len == 0 */
+-		if (len == 0)
+-			goto rx_next;
+ 
+ 		if (rs->rs_more) {
+ 			/*
+@@ -8865,9 +8891,7 @@
+ 		if (sc->sc_softled)
+ 			ath_hal_gpioCfgOutput(ah, sc->sc_ledpin);
+ 
+-		if ((sc->sc_opmode != HAL_M_STA) && sc->sc_hasintmit)
+-			ath_hal_setintmit(ah, 0);
+-
++		ath_setintmit(sc);
+ 		sc->sc_curchan = hchan;
+ 		ath_update_txpow(sc);		/* update tx power state */
+ 		ath_radar_update(sc);
+@@ -10644,9 +10668,54 @@
+ 	ATH_RP_IGNORED 		= 24,
+ 	ATH_RADAR_IGNORED       = 25,
+ 	ATH_MAXVAPS  		= 26,
++	ATH_INTMIT			= 27,
++	ATH_NOISE_IMMUNITY	= 28,
++	ATH_OFDM_WEAK_DET	= 29
+ };
+ 
+ static int
++ath_sysctl_set_intmit(struct ath_softc *sc, long ctl, u_int val)
++{
++	int ret;
++
++	switch(ctl) {
++	case ATH_INTMIT:
++		sc->sc_intmit = val;
++		break;
++	case ATH_NOISE_IMMUNITY:
++		sc->sc_noise_immunity = val;
++		break;
++	case ATH_OFDM_WEAK_DET:
++		sc->sc_ofdm_weak_det = val;
++		break;
++	default:
++		return -EINVAL;
++	}
++	ret = ath_setintmit(sc);
++	ath_calcrxfilter(sc);
++	return ret;
++}
++
++static int
++ath_sysctl_get_intmit(struct ath_softc *sc, long ctl, u_int *val)
++{
++	struct ath_hal *ah = sc->sc_ah;
++
++	switch(ctl) {
++	case ATH_INTMIT:
++		*val = (ath_hal_getcapability(ah, HAL_CAP_INTMIT, 1, NULL) == HAL_OK);
++		break;
++	case ATH_NOISE_IMMUNITY:
++		return ath_hal_getcapability(ah, HAL_CAP_INTMIT, 2, val);
++	case ATH_OFDM_WEAK_DET:
++		return ath_hal_getcapability(ah, HAL_CAP_INTMIT, 3, val);
++	default:
++		return -EINVAL;
++	}
++	return 0;
++}
++
++static int
+ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl, write, filp, buffer, lenp, ppos)
+ {
+ 	struct ath_softc *sc = ctl->extra1;
+@@ -10832,6 +10901,11 @@
+ 			case ATH_RADAR_IGNORED:
+ 				sc->sc_radar_ignored = val;
+ 				break;
++			case ATH_INTMIT:
++			case ATH_NOISE_IMMUNITY:
++			case ATH_OFDM_WEAK_DET:
++				ret = ath_sysctl_set_intmit(sc, (long)ctl->extra2, val);
++				break;
+ 			default:
+ 				ret = -EINVAL;
+ 				break;
+@@ -10898,6 +10972,11 @@
+ 		case ATH_RADAR_IGNORED:
+ 			val = sc->sc_radar_ignored;
+ 			break;
++		case ATH_INTMIT:
++		case ATH_NOISE_IMMUNITY:
++		case ATH_OFDM_WEAK_DET:
++			ret = ath_sysctl_get_intmit(sc, (long)ctl->extra2, &val);
++			break;
+ 		default:
+ 			ret = -EINVAL;
+ 			break;
+@@ -11075,6 +11154,24 @@
+ 	  .proc_handler = ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_RADAR_IGNORED,
+ 	},
++	{ .ctl_name	= CTL_AUTO,
++	  .procname     = "intmit",
++	  .mode         = 0644,
++	  .proc_handler = ath_sysctl_halparam,
++	  .extra2	= (void *)ATH_INTMIT,
++	},
++	{ .ctl_name	= CTL_AUTO,
++	  .procname     = "noise_immunity",
++	  .mode         = 0644,
++	  .proc_handler = ath_sysctl_halparam,
++	  .extra2	= (void *)ATH_NOISE_IMMUNITY,
++	},
++	{ .ctl_name	= CTL_AUTO,
++	  .procname     = "ofdm_weak_det",
++	  .mode         = 0644,
++	  .proc_handler = ath_sysctl_halparam,
++	  .extra2	= (void *)ATH_OFDM_WEAK_DET,
++	},
+ 	{ 0 }
+ };
+ 
+Index: madwifi-trunk-r3314/ath/if_athvar.h
+===================================================================
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-06-13 03:42:28.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_athvar.h	2008-06-13 03:42:29.000000000 +0200
+@@ -693,6 +693,10 @@
+ 	unsigned int sc_txcont_power; /* Continuous transmit power in 0.5dBm units */
+ 	unsigned int sc_txcont_rate;  /* Continuous transmit rate in Mbps */
+ 
++	int8_t sc_intmit; /* Interference mitigation enabled, -1 = auto, based on mode, 0/1 = off/on */
++	int8_t sc_noise_immunity; /* Noise immunity level, 1-5, -1 == auto) */
++	int8_t sc_ofdm_weak_det; /* OFDM weak frames detection, -1 == auto */
++
+ 	/* rate tables */
+ 	const HAL_RATE_TABLE *sc_rates[IEEE80211_MODE_MAX];
+ 	const HAL_RATE_TABLE *sc_currates;	/* current rate table */
+Index: madwifi-trunk-r3314/ath/if_ath_hal.h
+===================================================================
+--- madwifi-trunk-r3314.orig/ath/if_ath_hal.h	2008-06-13 03:42:27.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath_hal.h	2008-06-13 03:45:35.000000000 +0200
+@@ -67,14 +67,14 @@
+ 
+ static inline HAL_BOOL ath_hal_getdiagstate(struct ath_hal *ah, int request,
+ 					    const void *args, u_int32_t argsize,
+-					    void **result,
++					    void *result,
+ 					    u_int32_t *resultsize)
+ {
+ 	HAL_BOOL ret;
+ 	ATH_HAL_LOCK_IRQ(ah->ah_sc);
+ 	ath_hal_set_function(__func__);
+ 	ret =
+-	    ah->ah_getDiagState(ah, request, args, argsize, *result,
++	    ah->ah_getDiagState(ah, request, args, argsize, result,
+ 				resultsize);
+ 	ath_hal_set_function(NULL);
+ 	ATH_HAL_UNLOCK_IRQ(ah->ah_sc);
