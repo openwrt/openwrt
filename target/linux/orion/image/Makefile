@@ -8,15 +8,15 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Image/Prepare
-	cp $(LINUX_DIR)/arch/arm/boot/uImage $(KDIR)/uImage
+#
+# XXX - FIXME, we hardcode for the WRT350N v2 for now
+#
+	echo -en "\x61\x70\xa0\xe3\x06\x7c\x87\xe3" > $(KDIR)/uImage
+	cat $(LINUX_DIR)/arch/arm/boot/uImage >> $(KDIR)/uImage
 endef
 
 define Image/BuildKernel
 	cp $(KDIR)/uImage $(BIN_DIR)/openwrt-$(BOARD)-uImage
-#
-# XXX - FIXME
-#
-#	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/arm-magic.sh
 endef
 
 define Image/Build
@@ -26,7 +26,7 @@ endef
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	( \
-		dd if=$(LINUX_DIR)/arch/arm/boot/uImage bs=1024k conv=sync; \
+		dd if=$(KDIR)/uImage bs=1024k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
 	) > $(BIN_DIR)/openwrt-$(BOARD)-$(1).img
 endef
