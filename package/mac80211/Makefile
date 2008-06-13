@@ -176,6 +176,7 @@ define Build/Prepare
 	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
 	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT61FW)
 	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT71FW)
+	rm -rf $(PKG_BUILD_DIR)/include/linux/ssb
 endef
 
 ifneq ($(CONFIG_PACKAGE_kmod-mac80211),)
