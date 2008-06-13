@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-06-13 03:42:29.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-06-13 03:46:33.000000000 +0200
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-06-13 09:28:25.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-06-13 09:29:00.000000000 +0200
 @@ -1014,9 +1014,7 @@
  	 */
  	sc->sc_hasveol = ath_hal_hasveol(ah);
@@ -252,14 +252,14 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  
 Index: madwifi-trunk-r3314/ath/if_athvar.h
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-06-13 03:42:28.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_athvar.h	2008-06-13 03:42:29.000000000 +0200
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-06-13 09:28:25.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_athvar.h	2008-06-13 09:29:00.000000000 +0200
 @@ -693,6 +693,10 @@
  	unsigned int sc_txcont_power; /* Continuous transmit power in 0.5dBm units */
  	unsigned int sc_txcont_rate;  /* Continuous transmit rate in Mbps */
  
 +	int8_t sc_intmit; /* Interference mitigation enabled, -1 = auto, based on mode, 0/1 = off/on */
-+	int8_t sc_noise_immunity; /* Noise immunity level, 1-5, -1 == auto) */
++	int8_t sc_noise_immunity; /* Noise immunity level, 0-4, -1 == auto) */
 +	int8_t sc_ofdm_weak_det; /* OFDM weak frames detection, -1 == auto */
 +
  	/* rate tables */
@@ -267,8 +267,8 @@ Index: madwifi-trunk-r3314/ath/if_athvar.h
  	const HAL_RATE_TABLE *sc_currates;	/* current rate table */
 Index: madwifi-trunk-r3314/ath/if_ath_hal.h
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath_hal.h	2008-06-13 03:42:27.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_ath_hal.h	2008-06-13 03:45:35.000000000 +0200
+--- madwifi-trunk-r3314.orig/ath/if_ath_hal.h	2008-06-13 09:28:25.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath_hal.h	2008-06-13 09:29:00.000000000 +0200
 @@ -67,14 +67,14 @@
  
  static inline HAL_BOOL ath_hal_getdiagstate(struct ath_hal *ah, int request,
