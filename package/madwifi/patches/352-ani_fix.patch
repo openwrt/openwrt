@@ -1,7 +1,7 @@
 Index: madwifi-trunk-r3314/ath/if_ath.c
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-06-13 09:28:25.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-06-13 09:29:00.000000000 +0200
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-06-13 10:39:28.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath.c	2008-06-13 10:39:54.000000000 +0200
 @@ -1014,9 +1014,7 @@
  	 */
  	sc->sc_hasveol = ath_hal_hasveol(ah);
@@ -100,7 +100,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	 * Enable MIB interrupts when there are hardware phy counters.
  	 * Note we only do this (at the moment) for station mode.
  	 */
--	if (sc->sc_needmib)
+-	if (sc->sc_needmib && ic->ic_opmode == IEEE80211_M_STA)
 +	if (sc->sc_needmib && ath_hal_getintmit(ah, NULL))
  		sc->sc_imask |= HAL_INT_MIB;
  	ath_hal_intrset(ah, sc->sc_imask);
@@ -252,8 +252,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  
 Index: madwifi-trunk-r3314/ath/if_athvar.h
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-06-13 09:28:25.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_athvar.h	2008-06-13 09:29:00.000000000 +0200
+--- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-06-13 10:39:28.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_athvar.h	2008-06-13 10:39:32.000000000 +0200
 @@ -693,6 +693,10 @@
  	unsigned int sc_txcont_power; /* Continuous transmit power in 0.5dBm units */
  	unsigned int sc_txcont_rate;  /* Continuous transmit rate in Mbps */
@@ -267,8 +267,8 @@ Index: madwifi-trunk-r3314/ath/if_athvar.h
  	const HAL_RATE_TABLE *sc_currates;	/* current rate table */
 Index: madwifi-trunk-r3314/ath/if_ath_hal.h
 ===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath_hal.h	2008-06-13 09:28:25.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_ath_hal.h	2008-06-13 09:29:00.000000000 +0200
+--- madwifi-trunk-r3314.orig/ath/if_ath_hal.h	2008-06-13 10:39:26.000000000 +0200
++++ madwifi-trunk-r3314/ath/if_ath_hal.h	2008-06-13 10:39:32.000000000 +0200
 @@ -67,14 +67,14 @@
  
  static inline HAL_BOOL ath_hal_getdiagstate(struct ath_hal *ah, int request,
