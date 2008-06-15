@@ -23,7 +23,8 @@ ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
   $(curdir)/uClibc/install:=$(curdir)/gcc/install
 endif
 
-$(TOOLCHAIN_DIR)/info.mk: .config
+ifneq ($(ARCH),)
+  $(TOOLCHAIN_DIR)/info.mk: .config
 	@for dir in $(TOOLCHAIN_DIR); do ( \
 		set -x; \
 		mkdir -p "$$dir"; \
@@ -32,6 +33,7 @@ $(TOOLCHAIN_DIR)/info.mk: .config
 	); done
 	@grep GCC_VERSION $@ >/dev/null 2>&1 || $(INSTALL_DATA) $(TOPDIR)/toolchain/info.mk $@
 	@touch $@
+endif
 
 # prerequisites for the individual targets
 $(curdir)/ := .config prereq
