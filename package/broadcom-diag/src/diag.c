@@ -142,9 +142,12 @@ static void __init bcm4780_init(void) {
 static void __init bcm57xx_init(void) {
 	int pin = 1 << 2;
 
+#ifndef LINUX_2_4
+	/* FIXME: switch comes up, but port mappings/vlans not right */
 	gpio_outen(pin, pin);
 	gpio_control(pin, 0);
 	gpio_out(pin, pin);
+#endif
 }
 
 static struct platform_t __initdata platforms[] = {
