@@ -45,7 +45,7 @@ prepare-tmpinfo: FORCE
 	touch $(TOPDIR)/tmp/.build
 
 .config: ./scripts/config/conf prepare-tmpinfo
-	@+if [ -f .config ] || ! grep CONFIG_HAVE_DOT_CONFIG .config >/dev/null; then \
+	@+if [ \! -f .config ] || ! grep CONFIG_HAVE_DOT_CONFIG .config >/dev/null; then \
 		[ -e $(HOME)/.openwrt/defconfig ] && cp $(HOME)/.openwrt/defconfig .config; \
 		$(NO_TRACE_MAKE) menuconfig $(PREP_MK); \
 	fi
