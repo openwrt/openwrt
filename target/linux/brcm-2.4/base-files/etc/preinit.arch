@@ -4,7 +4,7 @@ failsafe() {
 	lock /tmp/.failsafe
 	failsafe_ip
 
-	echo "0 1 2 3 4 5u*" > /proc/switch/eth0/vlan/0/ports
+	echo "0 1 2 3 4 ${cpu_port:-5u*}" > /proc/switch/eth0/vlan/0/ports
 	
 	set_state failsafe
 	[ -x "/usr/sbin/nvram" ] && {
@@ -39,8 +39,19 @@ esac
 
 failsafe_ip
 
+check_module () {
+  module="$1"; shift; params="$*"
+
+  insmod "$module" "$params"
+  sleep 1
+  grep "^$module" /proc/modules
+  return $?
+}
+
 insmod switch-core
-insmod switch-robo || insmod switch-adm || rmmod switch-core
+check_module switch-robo || check_module switch-adm  || { 
+  check_module bcm57xx activate_gpio=0x4 && cpu_port="8u*"
+} || rmmod switch-core
 
 [ -d /proc/switch/eth0 ] && {
 	echo 1 > /proc/switch/eth0/reset
@@ -48,7 +59,7 @@ insmod switch-robo || insmod switch-adm || rmmod switch-core
 	# this would be easier if we blasted the message across all ports
 	# but we don't want packets leaking across interfaces
 	for port in $(seq 0 4); do {
-		echo "$port 5u*" > /proc/switch/eth0/vlan/0/ports
+		echo "$port ${cpu_port:-5u*}" > /proc/switch/eth0/vlan/0/ports
 		netmsg 192.168.1.255 "Press reset now, to enter Failsafe!"
 	}; done
 } || netmsg 192.168.1.255 "Press reset now, to enter Failsafe!"
