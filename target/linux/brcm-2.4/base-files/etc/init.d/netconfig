@@ -102,6 +102,11 @@ start() {
 				}
 			}
 		}
+		if (nvram["boardtype"] == "0x478") {
+			# generic broadcom 4785 processor with 5397 switch?
+			c["vlan0ports"] = "1 2 3 4 8*"
+			c["vlan1ports"] = "0 8"
+		}
 
 		# WAP54G
 		if ((nvram["boardnum"] == "2") || \
