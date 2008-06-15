@@ -404,6 +404,21 @@ switch_vlan_config *switch_parse_vlan(switch_driver *driver, char *buf)
 }
 
 
+int switch_device_registered (char* device) {
+	struct list_head *pos;
+	switch_driver *new;
+
+	list_for_each(pos, &drivers.list) {
+		if (strcmp(list_entry(pos, switch_driver, list)->interface, device) == 0) {
+			printk("There is already a switch registered on the device '%s'\n", device);
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
+
 int switch_register_driver(switch_driver *driver)
 {
 	struct list_head *pos;
@@ -476,6 +491,7 @@ static void __exit switch_exit(void)
 MODULE_AUTHOR("Felix Fietkau <openwrt@nbd.name>");
 MODULE_LICENSE("GPL");
 
+EXPORT_SYMBOL(switch_device_registered);
 EXPORT_SYMBOL(switch_register_driver);
 EXPORT_SYMBOL(switch_unregister_driver);
 EXPORT_SYMBOL(switch_parse_vlan);

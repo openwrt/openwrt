@@ -42,6 +42,7 @@ typedef struct {
 } switch_vlan_config;
 
 
+extern int switch_device_registered (char* device);
 extern int switch_register_driver(switch_driver *driver);
 extern void switch_unregister_driver(char *name);
 extern switch_vlan_config *switch_parse_vlan(switch_driver *driver, char *buf);
