@@ -528,7 +528,8 @@ static int __init robo_init(void)
 
 	device = strdup("ethX");
 	for (device[3] = '0'; (device[3] <= '3') && notfound; device[3]++) {
-		notfound = robo_probe(device);
+		if (! switch_device_registered (device))
+			notfound = robo_probe(device);
 	}
 	device[3]--;
 	
