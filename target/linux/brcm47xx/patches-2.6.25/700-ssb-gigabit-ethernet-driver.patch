@@ -990,8 +990,8 @@ Index: linux-2.6.25.4/drivers/net/tg3.c
  		      MI_COM_PHY_ADDR_MASK);
  	frame_val |= ((reg << MI_COM_REG_ADDR_SHIFT) &
  		      MI_COM_REG_ADDR_MASK);
-@@ -810,6 +817,11 @@ static void tg3_phydsp_write(struct tg3 
- 	tg3_writephy(tp, MII_TG3_DSP_RW_PORT, val);
+@@ -804,6 +811,11 @@ static int tg3_writephy(struct tg3 *tp, 
+ 	return ret;
  }
  
 +static int tg3_writephy(struct tg3 *tp, int reg, u32 val)
@@ -999,9 +999,9 @@ Index: linux-2.6.25.4/drivers/net/tg3.c
 +	return __tg3_writephy(tp, PHY_ADDR, reg, val);
 +}
 +
- static void tg3_phy_toggle_automdix(struct tg3 *tp, int enable)
+ static void tg3_phydsp_write(struct tg3 *tp, u32 reg, u32 val)
  {
- 	u32 phy;
+ 	tg3_writephy(tp, MII_TG3_DSP_ADDRESS, reg);
 @@ -2250,6 +2262,14 @@ static int tg3_setup_copper_phy(struct t
  			}
  		}
