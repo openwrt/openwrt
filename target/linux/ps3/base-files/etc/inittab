@@ -1,6 +1,7 @@
 ::sysinit:/etc/init.d/rcS S boot
 ::shutdown:/etc/init.d/rcS K stop
 ::ctrlaltdel:/sbin/reboot
-tts/0::askfirst:/bin/ash --login
-ttyS0::askfirst:/bin/ash --login
+::restart:/sbin/init
 tty1::respawn:/sbin/initrun
+tty2::askfirst:/bin/ash --login
+tty3::askfirst:/bin/ash --login
