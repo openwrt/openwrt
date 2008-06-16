@@ -25,7 +25,7 @@ endif
 
 ifneq ($(KBUILD_VERBOSE),99)
   define MESSAGE
-	printf "$(_Y)%s$(_N)\n" "$(1)" >&254
+	printf "$(_Y)%s$(_N)\n" "$(1)" >&8
   endef
 
   ifeq ($(QUIET),1)
@@ -45,7 +45,7 @@ ifneq ($(KBUILD_VERBOSE),99)
       SILENT:=
     endif
     export QUIET:=1
-    SUBMAKE=cmd() { $(SILENT) $(MAKE) -s $$* || { echo "make $$*: build failed. Please re-run make with V=99 to see what's going on"; false; } } 254>&1 255>&2; cmd
+    SUBMAKE=cmd() { $(SILENT) $(MAKE) -s $$* || { echo "make $$*: build failed. Please re-run make with V=99 to see what's going on"; false; } } 8>&1 9>&2; cmd
   endif
 
   .SILENT: $(MAKECMDGOALS)
