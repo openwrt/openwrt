@@ -26,11 +26,9 @@
  create mode 100644 net/ipv6/netfilter/ip6t_IMQ.c
 
 
-diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
-index 3a0b20a..05c51e7 100644
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -117,6 +117,129 @@ config EQUALIZER
+@@ -117,6 +117,129 @@
  	  To compile this driver as a module, choose M here: the module
  	  will be called eql.  If unsure, say N.
  
@@ -160,11 +158,9 @@ index 3a0b20a..05c51e7 100644
  config TUN
  	tristate "Universal TUN/TAP device driver support"
  	select CRC32
-diff --git a/drivers/net/Makefile b/drivers/net/Makefile
-index 3b1ea32..17d0575 100644
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -143,6 +143,7 @@ obj-$(CONFIG_SLHC) += slhc.o
+@@ -143,6 +143,7 @@
  obj-$(CONFIG_XEN_NETDEV_FRONTEND) += xen-netfront.o
  
  obj-$(CONFIG_DUMMY) += dummy.o
@@ -172,9 +168,6 @@ index 3b1ea32..17d0575 100644
  obj-$(CONFIG_IFB) += ifb.o
  obj-$(CONFIG_MACVLAN) += macvlan.o
  obj-$(CONFIG_DE600) += de600.o
-diff --git a/drivers/net/imq.c b/drivers/net/imq.c
-new file mode 100644
-index 0000000..47c31b4
 --- /dev/null
 +++ b/drivers/net/imq.c
 @@ -0,0 +1,474 @@
@@ -652,9 +645,6 @@ index 0000000..47c31b4
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS_RTNL_LINK("imq");
 +
-diff --git a/include/linux/imq.h b/include/linux/imq.h
-new file mode 100644
-index 0000000..1447c4e
 --- /dev/null
 +++ b/include/linux/imq.h
 @@ -0,0 +1,9 @@
@@ -667,9 +657,6 @@ index 0000000..1447c4e
 +#define IMQ_F_ENQUEUE  0x80
 +
 +#endif /* _IMQ_H */
-diff --git a/include/linux/netfilter_ipv4/ipt_IMQ.h b/include/linux/netfilter_ipv4/ipt_IMQ.h
-new file mode 100644
-index 0000000..a304991
 --- /dev/null
 +++ b/include/linux/netfilter_ipv4/ipt_IMQ.h
 @@ -0,0 +1,8 @@
@@ -681,9 +668,6 @@ index 0000000..a304991
 +};
 +
 +#endif /* _IPT_IMQ_H */
-diff --git a/include/linux/netfilter_ipv6/ip6t_IMQ.h b/include/linux/netfilter_ipv6/ip6t_IMQ.h
-new file mode 100644
-index 0000000..605f549
 --- /dev/null
 +++ b/include/linux/netfilter_ipv6/ip6t_IMQ.h
 @@ -0,0 +1,8 @@
@@ -695,11 +679,9 @@ index 0000000..605f549
 +};
 +
 +#endif /* _IP6T_IMQ_H */
-diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
-index bbd8d00..f7d6f7e 100644
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -296,6 +296,10 @@ struct sk_buff {
+@@ -296,6 +296,10 @@
  	struct nf_conntrack	*nfct;
  	struct sk_buff		*nfct_reasm;
  #endif
@@ -710,7 +692,7 @@ index bbd8d00..f7d6f7e 100644
  #ifdef CONFIG_BRIDGE_NETFILTER
  	struct nf_bridge_info	*nf_bridge;
  #endif
-@@ -1736,6 +1740,10 @@ static inline void __nf_copy(struct sk_buff *dst, const struct sk_buff *src)
+@@ -1736,6 +1740,10 @@
  	dst->nfct_reasm = src->nfct_reasm;
  	nf_conntrack_get_reasm(src->nfct_reasm);
  #endif
@@ -721,8 +703,6 @@ index bbd8d00..f7d6f7e 100644
  #ifdef CONFIG_BRIDGE_NETFILTER
  	dst->nf_bridge  = src->nf_bridge;
  	nf_bridge_get(src->nf_bridge);
-diff --git a/net/core/dev.c b/net/core/dev.c
-index 460e7f9..094838b 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -95,6 +95,9 @@
@@ -735,7 +715,7 @@ index 460e7f9..094838b 100644
  #include <linux/proc_fs.h>
  #include <linux/seq_file.h>
  #include <linux/stat.h>
-@@ -1537,7 +1540,11 @@ static int dev_gso_segment(struct sk_buff *skb)
+@@ -1537,7 +1540,11 @@
  int dev_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
  {
  	if (likely(!skb->next)) {
@@ -748,11 +728,9 @@ index 460e7f9..094838b 100644
  			dev_queue_xmit_nit(skb, dev);
  
  		if (netif_needs_gso(dev, skb)) {
-diff --git a/net/ipv4/netfilter/Kconfig b/net/ipv4/netfilter/Kconfig
-index 9a077cb..3bde19b 100644
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -123,6 +123,17 @@ config IP_NF_FILTER
+@@ -145,6 +145,17 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -770,11 +748,9 @@ index 9a077cb..3bde19b 100644
  config IP_NF_TARGET_REJECT
  	tristate "REJECT target support"
  	depends on IP_NF_FILTER
-diff --git a/net/ipv4/netfilter/Makefile b/net/ipv4/netfilter/Makefile
-index 0c7dc78..7617528 100644
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -51,6 +51,7 @@ obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
+@@ -55,6 +55,7 @@
  obj-$(CONFIG_IP_NF_TARGET_CLUSTERIP) += ipt_CLUSTERIP.o
  obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_ECN.o
  obj-$(CONFIG_IP_NF_TARGET_LOG) += ipt_LOG.o
@@ -782,9 +758,6 @@ index 0c7dc78..7617528 100644
  obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
  obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
-diff --git a/net/ipv4/netfilter/ipt_IMQ.c b/net/ipv4/netfilter/ipt_IMQ.c
-new file mode 100644
-index 0000000..cda69a4
 --- /dev/null
 +++ b/net/ipv4/netfilter/ipt_IMQ.c
 @@ -0,0 +1,69 @@
@@ -857,11 +830,9 @@ index 0000000..cda69a4
 +MODULE_AUTHOR("http://www.linuximq.net");
 +MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 +MODULE_LICENSE("GPL");
-diff --git a/net/ipv6/netfilter/Kconfig b/net/ipv6/netfilter/Kconfig
-index 6cae547..3b3b610 100644
 --- a/net/ipv6/netfilter/Kconfig
 +++ b/net/ipv6/netfilter/Kconfig
-@@ -179,6 +179,15 @@ config IP6_NF_MANGLE
+@@ -179,6 +179,15 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -877,8 +848,6 @@ index 6cae547..3b3b610 100644
  config IP6_NF_TARGET_HL
  	tristate  'HL (hoplimit) target support'
  	depends on IP6_NF_MANGLE
-diff --git a/net/ipv6/netfilter/Makefile b/net/ipv6/netfilter/Makefile
-index fbf2c14..dcfe80b 100644
 --- a/net/ipv6/netfilter/Makefile
 +++ b/net/ipv6/netfilter/Makefile
 @@ -6,6 +6,7 @@
@@ -889,9 +858,6 @@ index fbf2c14..dcfe80b 100644
  obj-$(CONFIG_IP6_NF_QUEUE) += ip6_queue.o
  obj-$(CONFIG_IP6_NF_RAW) += ip6table_raw.o
  
-diff --git a/net/ipv6/netfilter/ip6t_IMQ.c b/net/ipv6/netfilter/ip6t_IMQ.c
-new file mode 100644
-index 0000000..5cf7b72
 --- /dev/null
 +++ b/net/ipv6/netfilter/ip6t_IMQ.c
 @@ -0,0 +1,69 @@
@@ -964,11 +930,9 @@ index 0000000..5cf7b72
 +MODULE_AUTHOR("http://www.linuximq.net");
 +MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 +MODULE_LICENSE("GPL");
-diff --git a/net/sched/sch_generic.c b/net/sched/sch_generic.c
-index b741618..dcb916e 100644
 --- a/net/sched/sch_generic.c
 +++ b/net/sched/sch_generic.c
-@@ -203,6 +203,7 @@ void __qdisc_run(struct net_device *dev)
+@@ -203,6 +203,7 @@
  
  	clear_bit(__LINK_STATE_QDISC_RUNNING, &dev->state);
  }
