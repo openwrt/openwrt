@@ -50,35 +50,34 @@
 #include <asm/processor.h>
 
 #define DRV_NAME	"r6040"
-#define DRV_VERSION	"0.18"
-#define DRV_RELDATE	"13Jun2008"
+#define DRV_VERSION	"0.19"
+#define DRV_RELDATE	"16Jun2008"
 
 /* define bits of a debug mask */
-#define DBG_PHY           (1<< 0) /*!< show PHY read/write */
-#define DBG_FREE_BUFS     (1<< 1) /*!< show calls to r6040_free_*bufs */
-#define DBG_RING          (1<< 2) /*!< debug init./freeing of descr rings */
-#define DBG_RX_BUF        (1<< 3) /*!< show alloc. of new rx buf (in IRQ context !) */
-#define DBG_TX_BUF        (1<< 4) /*!< show arrival of new tx buf */
-#define DBG_RX_IRQ        (1<< 5) /*!< show RX IRQ handling */
-#define DBG_TX_IRQ        (1<< 6) /*!< debug TX done IRQ */
-#define DBG_RX_DESCR      (1<< 7) /*!< debug rx descr to be processed */
-#define DBG_RX_DATA       (1<< 8) /*!< show some user data of incoming packet */
-#define DBG_EXIT          (1<< 9) /*!< show exit code calls */
-#define DBG_INIT          (1<<10) /*!< show init. code calls */
-#define DBG_TX_RING_DUMP  (1<<11) /*!< dump the tx ring after creation */
-#define DBG_RX_RING_DUMP  (1<<12) /*!< dump the rx ring after creation */
-#define DBG_TX_DESCR      (1<<13) /*!< dump the setting of a descr for tx */
-#define DBG_TX_DATA       (1<<14) /*!< dump some tx data */
-#define DBG_IRQ           (1<<15) /*!< print inside the irq handler */
-#define DBG_POLL          (1<<16) /*!< dump info on poll procedure */
-#define DBG_MAC_ADDR      (1<<17) /*!< debug mac address setting */
-#define DBG_OPEN          (1<<18) /*!< debug open proc. */
+#define DBG_PHY           0x00000001 /*!< show PHY read/write */
+#define DBG_FREE_BUFS     0x00000002 /*!< show calls to r6040_free_*bufs */
+#define DBG_RING          0x00000004 /*!< debug init./freeing of descr rings */
+#define DBG_RX_BUF        0x00000008 /*!< show alloc. of new rx buf (in IRQ context !) */
+#define DBG_TX_BUF        0x00000010 /*!< show arrival of new tx buf */
+#define DBG_TX_DONE       0x00000020 /*!< debug TX done */
+#define DBG_RX_DESCR      0x00000040 /*!< debug rx descr to be processed */
+#define DBG_RX_DATA       0x00000080 /*!< show some user data of incoming packet */
+#define DBG_EXIT          0x00000100 /*!< show exit code calls */
+#define DBG_INIT          0x00000200 /*!< show init. code calls */
+#define DBG_TX_RING_DUMP  0x00000400 /*!< dump the tx ring after creation */
+#define DBG_RX_RING_DUMP  0x00000800 /*!< dump the rx ring after creation */
+#define DBG_TX_DESCR      0x00001000 /*!< dump the setting of a descr for tx */
+#define DBG_TX_DATA       0x00002000 /*!< dump some tx data */
+#define DBG_IRQ           0x00004000 /*!< print inside the irq handler */
+#define DBG_POLL          0x00008000 /*!< dump info on poll procedure */
+#define DBG_MAC_ADDR      0x00010000 /*!< debug mac address setting */
+#define DBG_OPEN          0x00020000 /*!< debug open proc. */
 
 static int debug = 0;
 module_param(debug, int, 0);
 MODULE_PARM_DESC(debug, "debug mask (-1 for all)");
 
-/* define wcd hich debugs are left in the code during compilation */
+/* define which debugs are left in the code during compilation */
 #define DEBUG (-1) /* all debugs */
 
 #define dbg(l, f, ...)				\
@@ -207,6 +206,21 @@ struct r6040_descriptor {
 	u32	rev2;			/* 1C-1F */
 } __attribute__((aligned(32)));
 
+/*! defines for the status field in the r6040_descriptor */
+#define DESC_STATUS_OWNER_MAC       (1<<15) /*!< if set the MAC is the owner of this descriptor */
+#define DESC_STATUS_RX_OK           (1<<14) /*!< rx was successful */
+#define DESC_STATUS_RX_ERR          (1<<11) /*!< rx PHY error */
+#define DESC_STATUS_RX_ERR_DRIBBLE  (1<<10) /*!< rx dribble packet */
+#define DESC_STATUS_RX_ERR_BUFLEN   (1<< 9) /*!< rx length exceeded buffer size */
+#define DESC_STATUS_RX_ERR_LONG     (1<< 8) /*!< rx length > maximum packet length */
+#define DESC_STATUS_RX_ERR_RUNT     (1<< 7) /*!< rx: packet length < 64 byte */
+#define DESC_STATUS_RX_ERR_CRC      (1<< 6) /*!< rx: crc error */
+#define DESC_STATUS_RX_BROADCAST    (1<< 5) /*!< rx: broadcast (no error) */
+#define DESC_STATUS_RX_MULTICAST    (1<< 4) /*!< rx: multicast (no error) */
+#define DESC_STATUS_RX_MCH_HIT      (1<< 3) /*!< rx: multicast hit in hash table (no error) */
+#define DESC_STATUS_RX_MIDH_HIT     (1<< 2) /*!< rx: MID table hit (no error) */
+#define DESC_STATUS_RX_IDX_MID_MASK 3       /*!< rx: mask for the index of matched MIDx */
+
 struct r6040_private {
 	spinlock_t lock;		/* driver lock */
 	struct timer_list timer;
@@ -219,7 +233,7 @@ struct r6040_private {
 	struct r6040_descriptor *tx_ring;
 	dma_addr_t rx_ring_dma;
 	dma_addr_t tx_ring_dma;
-	u16	tx_free_desc, rx_free_desc, phy_addr, phy_mode;
+	u16	tx_free_desc, phy_addr, phy_mode;
 	u16	mcr0, mcr1;
 	u16	switch_sig;
 	struct net_device *dev;
@@ -251,23 +265,23 @@ void r6040_multicast_list(struct net_device *dev);
     It is omitted if delim == '\0' */
 STATIC char *hex2str(void *addr, char *buf, int nr_bytes, int delim)
 {
-	unsigned char *dst = addr;
+	unsigned char *src = addr;
 	char *outb = buf;
 
 #define BIN2HEXDIGIT(x) ((x) < 10 ? '0'+(x) : 'A'-10+(x))
 
 	while (nr_bytes > 0) {
-		*outb++ = BIN2HEXDIGIT(*dst>>4);
-		*outb++ = BIN2HEXDIGIT(*dst&0xf);
+		*outb++ = BIN2HEXDIGIT(*src>>4);
+		*outb++ = BIN2HEXDIGIT(*src&0xf);
 		if (delim)
 			*outb++ = delim;
 		nr_bytes--;
-		dst++;
+		src++;
 	}
 
 	if (delim)
-		dst--;
-	*dst = '\0';
+		outb--;
+	*outb = '\0';
 	return buf;
 }
 
@@ -355,6 +369,7 @@ void r6040_free_txbufs(struct net_device *dev)
 	dbg(DBG_FREE_BUFS, "EXIT\n");
 }
 
+/*! unmap and free all rx skb */
 void r6040_free_rxbufs(struct net_device *dev)
 {
 	struct r6040_private *lp = netdev_priv(dev);
@@ -384,45 +399,19 @@ void r6040_init_ring_desc(struct r6040_descriptor *desc_ring,
 	dbg(DBG_RING, "desc_ring %p desc_dma %08x size x%x\n",
 	    desc_ring, desc_dma, size);
 
+	
 	while (size-- > 0) {
 		mapping += sizeof(*desc);
+		memset(desc, 0, sizeof(*desc));
 		desc->ndesc = cpu_to_le32(mapping);
 		desc->vndescp = desc + 1;
 		desc++;
 	}
+
+	/* last descriptor points to first one to close the descriptor ring */
 	desc--;
 	desc->ndesc = cpu_to_le32(desc_dma);
 	desc->vndescp = desc_ring;
-}
-
-/* Allocate skb buffer for rx descriptor */
-STATIC void rx_buf_alloc(struct r6040_private *lp, struct net_device *dev)
-{
-	struct r6040_descriptor *descptr;
-
-	dbg(DBG_RX_BUF, "rx_insert %p rx_free_desc x%x dev %p\n",
-	    lp->rx_insert_ptr, lp->rx_free_desc, dev);
-
-	descptr = lp->rx_insert_ptr;
-	while (lp->rx_free_desc < RX_DCNT) {
-		descptr->skb_ptr = netdev_alloc_skb(dev, MAX_BUF_SIZE);
-
-		dbg(DBG_RX_BUF, "alloc'ed skb %p for rx descptr %p\n",
-		    descptr->skb_ptr, descptr);
-
-		if (!descptr->skb_ptr)
-			break;
-		descptr->buf = cpu_to_le32(pci_map_single(lp->pdev,
-			descptr->skb_ptr->data,
-			MAX_BUF_SIZE, PCI_DMA_FROMDEVICE));
-		descptr->status = 0x8000;
-		/* debug before descptr goes to next ! */
-		dbg(DBG_RX_BUF, "descptr %p skb->data %p buf %08x rx_free_desc x%x\n",
-		    descptr, descptr->skb_ptr->data, descptr->buf, lp->rx_free_desc);
-		descptr = descptr->vndescp;
-		lp->rx_free_desc++;
-	}
-	lp->rx_insert_ptr = descptr;
 }
 
 #if (DEBUG & DBG_TX_RING_DUMP)
@@ -449,7 +438,7 @@ dump_tx_ring(struct r6040_private *lp)
 }
 #endif /* #if (DEBUG & DBG_TX_RING_DUMP) */
 
-void r6040_alloc_txbufs(struct net_device *dev)
+void r6040_init_txbufs(struct net_device *dev)
 {
 	struct r6040_private *lp = netdev_priv(dev);
 
@@ -489,22 +478,44 @@ dump_rx_ring(struct r6040_private *lp)
 }
 #endif /* #if (DEBUG & DBG_TX_RING_DUMP) */
 
-void r6040_alloc_rxbufs(struct net_device *dev)
+int r6040_alloc_rxbufs(struct net_device *dev)
 {
 	struct r6040_private *lp = netdev_priv(dev);
-
-	lp->rx_free_desc = 0;
+	struct r6040_descriptor *desc;
+	struct sk_buff *skb;
+	int rc;
 
 	lp->rx_remove_ptr = lp->rx_insert_ptr = lp->rx_ring;
 	r6040_init_ring_desc(lp->rx_ring, lp->rx_ring_dma, RX_DCNT);
 
-	rx_buf_alloc(lp, dev);
+	/* alloc skbs for the rx descriptors */
+	desc = lp->rx_ring;
+	do {
+		if (!(skb=netdev_alloc_skb(dev, MAX_BUF_SIZE))) {
+			err("failed to alloc skb for rx\n");
+			rc = -ENOMEM;
+			goto err_exit;
+		}
+		desc->skb_ptr = skb;
+		desc->buf = cpu_to_le32(pci_map_single(lp->pdev,
+						       desc->skb_ptr->data,
+						       MAX_BUF_SIZE, PCI_DMA_FROMDEVICE));
+		desc->status = DESC_STATUS_OWNER_MAC;
+		desc = desc->vndescp;
+	} while (desc != lp->rx_ring);
 
 #if (DEBUG & DBG_RX_RING_DUMP)
 	if (debug & DBG_RX_RING_DUMP) {
 		dump_rx_ring(lp);
 	}
 #endif
+
+	return 0;
+
+err_exit:
+	/* dealloc all previously allocated skb */
+	r6040_free_rxbufs(dev);
+	return rc;
 }
 
 /*! reset MAC and set all registers */
@@ -548,8 +559,8 @@ void r6040_init_mac_regs(struct r6040_private *lp)
 	iowrite16(lp->rx_ring_dma >> 16, ioaddr + MRD_SA1);
 
 	/* set interrupt waiting time and packet numbers */
-	iowrite16(0x0F06, ioaddr + MT_ICR);
-	iowrite16(0x0F06, ioaddr + MR_ICR);
+	iowrite16(0, ioaddr + MT_ICR);
+	iowrite16(0, ioaddr + MR_ICR);
 
 	/* enable interrupts */
 	iowrite16(INT_MASK, ioaddr + MIER);
@@ -637,8 +648,8 @@ int r6040_close(struct net_device *dev)
 
 	/* deleted timer */
 	del_timer_sync(&lp->timer);
-
 	spin_lock_irq(&lp->lock);
+	napi_disable(&lp->napi);
 	netif_stop_queue(dev);
 	r6040_down(dev);
 	spin_unlock_irq(&lp->lock);
@@ -711,85 +722,78 @@ int r6040_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 int r6040_rx(struct net_device *dev, int limit)
 {
 	struct r6040_private *priv = netdev_priv(dev);
-	int count;
-	void __iomem *ioaddr = priv->base;
-	u16 err;
+	int count=0;
+	struct r6040_descriptor *descptr = priv->rx_remove_ptr;
+	struct sk_buff *skb_ptr, *new_skb;
+	char obuf[2*32+1] __attribute__ ((unused)); /* for debugging */
 
-	for (count = 0; count < limit; ++count) {
-		struct r6040_descriptor *descptr = priv->rx_remove_ptr;
-		struct sk_buff *skb_ptr;
+	while (count < limit && !(descptr->status & DESC_STATUS_OWNER_MAC)) {
+		/* limit not reached and the descriptor belongs to the CPU */
 
-		descptr = priv->rx_remove_ptr;
-
+		dbg(DBG_RX_DESCR, "descptr %p status x%x data len x%x\n",
+		    descptr, descptr->status, descptr->len);
+		
 		/* Check for errors */
-		err = ioread16(ioaddr + MLSR);
-		if (err & 0x0400)
+		if (descptr->status & DESC_STATUS_RX_ERR) {
+		
 			dev->stats.rx_errors++;
-		/* RX FIFO over-run */
-		if (err & 0x8000)
-			dev->stats.rx_fifo_errors++;
-		/* RX descriptor unavailable */
-		if (err & 0x0080)
-			dev->stats.rx_frame_errors++;
-		/* Received packet with length over buffer lenght */
-		if (err & 0x0020)
-			dev->stats.rx_over_errors++;
-		/* Received packet with too long or short */
-		if (err & (0x0010 | 0x0008))
-			dev->stats.rx_length_errors++;
-		/* Received packet with CRC errors */
-		if (err & 0x0004) {
-			spin_lock(&priv->lock);
-			dev->stats.rx_crc_errors++;
-			spin_unlock(&priv->lock);
-		}
-
-		dbg(DBG_RX_IRQ, "descptr %p status x%x err x%x\n", 
-		    descptr, descptr->status, err);
-
-		while (priv->rx_free_desc) {
-			/* No RX packet */
-			if (descptr->status & 0x8000)
-				break;
-			skb_ptr = descptr->skb_ptr;
-			if (!skb_ptr) {
-				printk(KERN_ERR "%s: Inconsistent RX"
-					"descriptor chain\n",
-					dev->name);
-				break;
-			}
-			descptr->skb_ptr = NULL;
-			skb_ptr->dev = priv->dev;
-			/* Do not count the CRC */
-			skb_put(skb_ptr, descptr->len - 4);
-			pci_unmap_single(priv->pdev, le32_to_cpu(descptr->buf),
-				MAX_BUF_SIZE, PCI_DMA_FROMDEVICE);
-			skb_ptr->protocol = eth_type_trans(skb_ptr, priv->dev);
-
-			dbg(DBG_RX_DESCR, "descptr %p status x%x err x%x data len x%x\n",
-			    descptr, descptr->status, err, descptr->len);
-
-			{
-				char obuf[2*32+1] __attribute__ ((unused));
-				dbg(DBG_RX_DATA, "rx len x%x: %s...\n",
-				    descptr->len, 
-				    hex2str(skb_ptr->data, obuf, sizeof(obuf)/2, '\0'));
+			
+			if (descptr->status & (DESC_STATUS_RX_ERR_DRIBBLE|
+					       DESC_STATUS_RX_ERR_BUFLEN|
+					       DESC_STATUS_RX_ERR_LONG|
+					       DESC_STATUS_RX_ERR_RUNT)) {
+				/* packet too long or too short*/
+				dev->stats.rx_length_errors++;
 			}
 
-			/* Send to upper layer */
-			netif_receive_skb(skb_ptr);
-			dev->last_rx = jiffies;
-			dev->stats.rx_packets++;
-			dev->stats.rx_bytes += descptr->len;
-			/* To next descriptor */
-			descptr = descptr->vndescp;
-			priv->rx_free_desc--;
+			if (descptr->status & DESC_STATUS_RX_ERR_CRC) {
+				dev->stats.rx_crc_errors++;
+			}
+			goto next_descr;
 		}
-		priv->rx_remove_ptr = descptr;
-	}
-	/* Allocate new RX buffer */
-	if (priv->rx_free_desc < RX_DCNT)
-		rx_buf_alloc(priv, priv->dev);
+		
+		/* successful received packet */
+		
+		/* first try to allocate new skb. If this fails
+		   we drop the packet and leave the old skb there.*/
+		new_skb = netdev_alloc_skb(dev, MAX_BUF_SIZE);
+		if (!new_skb) {
+			dev->stats.rx_dropped++;
+			goto next_descr;
+		}
+		skb_ptr = descptr->skb_ptr;
+		skb_ptr->dev = priv->dev;
+		/* Do not count the CRC */
+		skb_put(skb_ptr, descptr->len - 4);
+		pci_unmap_single(priv->pdev, le32_to_cpu(descptr->buf),
+				 MAX_BUF_SIZE, PCI_DMA_FROMDEVICE);
+		skb_ptr->protocol = eth_type_trans(skb_ptr, priv->dev);
+
+		dbg(DBG_RX_DATA, "rx len x%x: %s...\n",
+		    descptr->len, 
+		    hex2str(skb_ptr->data, obuf, sizeof(obuf)/2, '\0'));
+
+		/* Send to upper layer */
+		netif_receive_skb(skb_ptr);
+		dev->last_rx = jiffies;
+		dev->stats.rx_packets++;
+		dev->stats.rx_bytes += (descptr->len-4);
+
+		/* put new skb into descriptor */
+		descptr->skb_ptr = new_skb;
+		descptr->buf = cpu_to_le32(pci_map_single(priv->pdev,
+			descptr->skb_ptr->data,
+			MAX_BUF_SIZE, PCI_DMA_FROMDEVICE));
+
+next_descr:		
+		/* put the descriptor back to the MAC */
+		descptr->status = DESC_STATUS_OWNER_MAC;
+		descptr = descptr->vndescp;
+		count++; /* shall we count errors and dropped packets as well? */
+	} /* while (limit && !(descptr->status & DESC_STATUS_OWNER_MAC)) */
+
+	/* remember next descriptor to check for rx */
+	priv->rx_remove_ptr = descptr;
 
 	return count;
 }
@@ -813,8 +817,8 @@ void r6040_tx(struct net_device *dev)
 		if (err & (0x2000 | 0x4000))
 			dev->stats.tx_carrier_errors++;
 
-		dbg(DBG_TX_IRQ, "descptr %p status x%x err x%x\n",
-		    descptr, descptr->status, err);
+		dbg(DBG_TX_DONE, "descptr %p status x%x err x%x jiffies %lu\n",
+		    descptr, descptr->status, err, jiffies);
 
 		if (descptr->status & 0x8000)
 			break; /* Not complete */
@@ -866,7 +870,7 @@ irqreturn_t r6040_interrupt(int irq, void *dev_id)
 	/* Read MISR status and clear */
 	status = ioread16(ioaddr + MISR);
 
-	dbg(DBG_IRQ, "status x%x\n", status);
+	dbg(DBG_IRQ, "status x%x jiffies %lu\n", status, jiffies);
 
 	if (status == 0x0000 || status == 0xffff)
 		return IRQ_NONE;
@@ -885,7 +889,7 @@ irqreturn_t r6040_interrupt(int irq, void *dev_id)
 	}
 
 	/* rx FIFO full */
-	if (status & (1<<2)) {
+	if (status & RX_FIFO_FULL) {
 		dev->stats.rx_fifo_errors++;
 	}
 	
@@ -906,16 +910,18 @@ void r6040_poll_controller(struct net_device *dev)
 #endif
 
 /* Init RDC MAC */
-void r6040_up(struct net_device *dev)
+int r6040_up(struct net_device *dev)
 {
 	struct r6040_private *lp = netdev_priv(dev);
 	void __iomem *ioaddr = lp->base;
+	int rc;
 
 	dbg(DBG_INIT, "ENTER\n");
 
 	/* Initialise and alloc RX/TX buffers */
-	r6040_alloc_txbufs(dev);
-	r6040_alloc_rxbufs(dev);
+	r6040_init_txbufs(dev);
+	if ((rc=r6040_alloc_rxbufs(dev)))
+		return rc;
 
 	/* Read the PHY ID */
 	lp->switch_sig = phy_read(ioaddr, 0, 2);
@@ -945,6 +951,8 @@ void r6040_up(struct net_device *dev)
 
 	/* Reset MAC and init all registers */
 	r6040_init_mac_regs(lp);
+
+	return 0;
 }
 
 /*
@@ -1007,8 +1015,14 @@ int r6040_open(struct net_device *dev)
 
 	dbg(DBG_OPEN, "allocated tx ring\n");
 
-	r6040_up(dev);
-
+	if ((ret=r6040_up(dev))) {
+		pci_free_consistent(lp->pdev, TX_DESC_SIZE, lp->tx_ring,
+				    lp->tx_ring_dma);
+		pci_free_consistent(lp->pdev, RX_DESC_SIZE, lp->rx_ring,
+				     lp->rx_ring_dma);
+		return ret;
+	}
+		
 	napi_enable(&lp->napi);
 	netif_start_queue(dev);
 
@@ -1054,8 +1068,8 @@ int r6040_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	descptr->buf = cpu_to_le32(pci_map_single(lp->pdev,
 		skb->data, skb->len, PCI_DMA_TODEVICE));
 
-	dbg(DBG_TX_DESCR, "desc @ %p: len x%x buf %08x skb->data %p skb->len x%x\n",
-	    descptr, descptr->len, descptr->buf, skb->data, skb->len);
+	dbg(DBG_TX_DESCR, "desc @ %p: len x%x buf %08x skb->data %p skb->len x%x jiffies %lu\n",
+	    descptr, descptr->len, descptr->buf, skb->data, skb->len, jiffies);
 
 	{
 		char obuf[2*32+1];
@@ -1255,8 +1269,6 @@ int __devinit r6040_init_one(struct pci_dev *pdev,
 	}
 	SET_NETDEV_DEV(dev, &pdev->dev);
 	lp = netdev_priv(dev);
-	lp->pdev = pdev;
-	lp->dev = dev;
 
 	if (pci_request_regions(pdev, DRV_NAME)) {
 		printk(KERN_ERR DRV_NAME ": Failed to request PCI regions\n");
@@ -1282,6 +1294,8 @@ int __devinit r6040_init_one(struct pci_dev *pdev,
 
 	/* Link new device into r6040_root_dev */
 	lp->pdev = pdev;
+
+	lp->dev = dev;
 
 	/* Init RDC private data */
 	lp->mcr0 = 0x1002;
