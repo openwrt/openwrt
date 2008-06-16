@@ -13,6 +13,7 @@ endef
 
 define Image/BuildKernel
 	cp $(KDIR)/image $(BIN_DIR)/otheros.bld
+	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.elf
 endef
 
 $(eval $(call BuildImage))

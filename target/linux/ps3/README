@@ -1,32 +1,43 @@
-OpenWRT on Sony PS3 Game Console
+OpenWRT on the Sony PS3 Game Console
 
-To install the built image, you'll need to copy bin/otheros.bld to a
-USB device, MMC card or CD image. The image will need to be placed
-on your media, at the path:
+The OpenWRT build will create both a 1st stage PS3-Linux image
+suitable for programming into the PS3 flash memory, and a 2nd
+stage PS3-Linux image suitable for loading via bootloaders or
+the kexec utility.
 
-  /ps3/otheros/otheros.bld
+The 2nd stage image is convenient for testing new builds.  It can
+be loaded from disk, USB device, or the network by an existing
+Other OS bootloader.  After the 2nd stage image is tested and
+found to be good, the 1st stage image can then be programmed into
+flash memory.  It is recommended to use this method during
+development to avoid corrupting the flash memory contents, which
+requires a reboot to the Game OS to repair.
 
-Then insert the media into the ps3, and navigate to 'Install Other OS'
-in the PS3's menu.
+Known good Other OS bootloader images and installation information
+can be found here:
 
-Depending on your monitor, you may need to alter the kernel command
-line options. The default is to autodetect, which should work on most
-monitors. However, if you get a blank screen on boot, or you'd like to
-use a different resolution, you can specify a different video mode.
+  http://www.kernel.org/pub/linux/kernel/people/geoff/cell/
 
-To do this, 'make kernel_menuconfig' and go to 'Kernel Options' ->
-'Initial kernel command string', and add a video= parameter - for
-example "video=720p". You can also specify a vide mode explicitly,
-for example "video=9" for 1080i at 50Hz. Possible mode ids are:
+The 2nd stage image file is bin/openwrt-ps3-vmlinux.elf.  It can
+be loaded with an entry in the bootloader config file.  It has
+no initrd file.
 
-Video mode ID:
- 0:auto mode
- YUV 60Hz  1:480i  2:480p  3:720p  4:1080i  5:1080p
- YUV 50Hz  6:576i  7:576p  8:720p  9:1080i 10:1080p
- RGB 60Hz 33:480i 34:480p 35:720p 36:1080i 37:1080p
- RGB 50Hz 38:576i 39:576p 40:720p 41:1080i 42:1080p
- VESA     11:WXGA 12:SXGA 13:WUXGA
+The 1st stage image is named bin/otheros.bld.  It can be programmed
+into flash memory either from Linux or the Game OS.  From Linux,
+use the command:
 
- full screen mode: <video mode ID> + 128
- dither ON mode  : <video mode ID> + 2048
+  ps3-flash-util -w otheros.bld
 
+From the Game OS, use the menu item 'Install Other OS'.
+
+Tips on how to recover your PS3-Linux system when it hangs up or no
+longer boots can be found here:
+
+  http://www.kernel.org/pub/linux/kernel/people/geoff/cell/ps3-howto/ps3-boot-recovery-howto.txt
+
+To alter the kernel command line options, run 'make kernel_menuconfig'
+and go to 'Kernel Options' -> 'Initial kernel command string'.
+
+The default video behavior is to autodetect the monitor capabilities,
+which should work for most monitors.  More info on video modes can be
+found in the man page of the ps3-video-mode utility.
