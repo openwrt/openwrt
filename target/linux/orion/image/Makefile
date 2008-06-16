@@ -11,11 +11,14 @@ define Image/Prepare
 #
 # XXX - FIXME, we hardcode for the WRT350N v2 for now
 #
-	echo -en "\x61\x70\xa0\xe3\x06\x7c\x87\xe3" > $(KDIR)/uImage
-	cat $(LINUX_DIR)/arch/arm/boot/uImage >> $(KDIR)/uImage
+	echo -en "\x61\x70\xa0\xe3\x06\x7c\x87\xe3" > $(KDIR)/zImage
+	cat $(LINUX_DIR)/arch/arm/boot/zImage >> $(KDIR)/zImage
 endef
 
 define Image/BuildKernel
+	$(STAGING_DIR_HOST)/bin/mkimage -A arm -O linux -T kernel \
+	-C none -a 0x00008000 -e 0x00008000 -n 'Linux-$(LINUX_VERSION)' \
+	-d $(KDIR)/zImage $(KDIR)/uImage
 	cp $(KDIR)/uImage $(BIN_DIR)/openwrt-$(BOARD)-uImage
 endef
 
