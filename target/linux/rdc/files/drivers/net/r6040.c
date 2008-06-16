@@ -50,8 +50,45 @@
 #include <asm/processor.h>
 
 #define DRV_NAME	"r6040"
-#define DRV_VERSION	"0.16"
-#define DRV_RELDATE	"10Nov2007"
+#define DRV_VERSION	"0.18"
+#define DRV_RELDATE	"13Jun2008"
+
+/* define bits of a debug mask */
+#define DBG_PHY           (1<< 0) /*!< show PHY read/write */
+#define DBG_FREE_BUFS     (1<< 1) /*!< show calls to r6040_free_*bufs */
+#define DBG_RING          (1<< 2) /*!< debug init./freeing of descr rings */
+#define DBG_RX_BUF        (1<< 3) /*!< show alloc. of new rx buf (in IRQ context !) */
+#define DBG_TX_BUF        (1<< 4) /*!< show arrival of new tx buf */
+#define DBG_RX_IRQ        (1<< 5) /*!< show RX IRQ handling */
+#define DBG_TX_IRQ        (1<< 6) /*!< debug TX done IRQ */
+#define DBG_RX_DESCR      (1<< 7) /*!< debug rx descr to be processed */
+#define DBG_RX_DATA       (1<< 8) /*!< show some user data of incoming packet */
+#define DBG_EXIT          (1<< 9) /*!< show exit code calls */
+#define DBG_INIT          (1<<10) /*!< show init. code calls */
+#define DBG_TX_RING_DUMP  (1<<11) /*!< dump the tx ring after creation */
+#define DBG_RX_RING_DUMP  (1<<12) /*!< dump the rx ring after creation */
+#define DBG_TX_DESCR      (1<<13) /*!< dump the setting of a descr for tx */
+#define DBG_TX_DATA       (1<<14) /*!< dump some tx data */
+#define DBG_IRQ           (1<<15) /*!< print inside the irq handler */
+#define DBG_POLL          (1<<16) /*!< dump info on poll procedure */
+#define DBG_MAC_ADDR      (1<<17) /*!< debug mac address setting */
+#define DBG_OPEN          (1<<18) /*!< debug open proc. */
+
+static int debug = 0;
+module_param(debug, int, 0);
+MODULE_PARM_DESC(debug, "debug mask (-1 for all)");
+
+/* define wcd hich debugs are left in the code during compilation */
+#define DEBUG (-1) /* all debugs */
+
+#define dbg(l, f, ...)				\
+  do { \
+    if ((DEBUG & l) && (debug & l)) { \
+      printk(KERN_INFO DRV_NAME " %s: " f, __FUNCTION__, ## __VA_ARGS__); \
+    } \
+  } while (0)
+
+#define err(f, ...) printk(KERN_WARNING DRV_NAME " %s: " f, __FUNCTION__, ## __VA_ARGS__)
 
 /* PHY CHIP Address */
 #define PHY1_ADDR	1	/* For MAC1 */
@@ -182,11 +219,43 @@ static char version[] __devinitdata = KERN_INFO DRV_NAME
 
 static int phy_table[] = { PHY1_ADDR, PHY2_ADDR };
 
+/* jal2: comment out to get more symbols for debugging */
+//#define STATIC static
+#define STATIC
+
+#if DEBUG
+/*! hexdump an memory area into a string. delim is taken as the delimiter between two bytes.
+    It is omitted if delim == '\0' */
+STATIC char *hex2str(void *addr, char *buf, int nr_bytes, int delim)
+{
+	unsigned char *dst = addr;
+	char *outb = buf;
+
+#define BIN2HEXDIGIT(x) ((x) < 10 ? '0'+(x) : 'A'-10+(x))
+
+	while (nr_bytes > 0) {
+		*outb++ = BIN2HEXDIGIT(*dst>>4);
+		*outb++ = BIN2HEXDIGIT(*dst&0xf);
+		if (delim)
+			*outb++ = delim;
+		nr_bytes--;
+		dst++;
+	}
+
+	if (delim)
+		dst--;
+	*dst = '\0';
+	return buf;
+}
+
+#endif /* #if DEBUG */
+
 /* Read a word data from PHY Chip */
-static int phy_read(void __iomem *ioaddr, int phy_addr, int reg)
+STATIC int phy_read(void __iomem *ioaddr, int phy_addr, int reg)
 {
 	int limit = 2048;
 	u16 cmd;
+	int rc;
 
 	iowrite16(MDIO_READ + reg + (phy_addr << 8), ioaddr + MMDIO);
 	/* Wait for the read bit to be cleared */
@@ -196,14 +265,23 @@ static int phy_read(void __iomem *ioaddr, int phy_addr, int reg)
 			break;
 	}
 
-	return ioread16(ioaddr + MMRD);
+	if (limit <= 0)
+		err("phy addr x%x reg x%x timed out\n",
+		    phy_addr, reg);
+
+	rc=ioread16(ioaddr + MMRD);
+
+	dbg(DBG_PHY, "phy addr x%x reg x%x val x%x\n", phy_addr, reg, rc);
+	return rc;
 }
 
 /* Write a word data from PHY Chip */
-static void phy_write(void __iomem *ioaddr, int phy_addr, int reg, u16 val)
+STATIC void phy_write(void __iomem *ioaddr, int phy_addr, int reg, u16 val)
 {
 	int limit = 2048;
 	u16 cmd;
+
+	dbg(DBG_PHY, "phy addr x%x reg x%x val x%x\n", phy_addr, reg, val);
 
 	iowrite16(val, ioaddr + MMWD);
 	/* Write the command to the MDIO bus */
@@ -214,9 +292,12 @@ static void phy_write(void __iomem *ioaddr, int phy_addr, int reg, u16 val)
 		if (cmd & MDIO_WRITE)
 			break;
 	}
+	if (limit <= 0)
+		err("phy addr x%x reg x%x val x%x timed out\n",
+		    phy_addr, reg, val);
 }
 
-static int mdio_read(struct net_device *dev, int mii_id, int reg)
+STATIC int mdio_read(struct net_device *dev, int mii_id, int reg)
 {
 	struct r6040_private *lp = netdev_priv(dev);
 	void __iomem *ioaddr = lp->base;
@@ -224,7 +305,7 @@ static int mdio_read(struct net_device *dev, int mii_id, int reg)
 	return (phy_read(ioaddr, lp->phy_addr, reg));
 }
 
-static void mdio_write(struct net_device *dev, int mii_id, int reg, int val)
+STATIC void mdio_write(struct net_device *dev, int mii_id, int reg, int val)
 {
 	struct r6040_private *lp = netdev_priv(dev);
 	void __iomem *ioaddr = lp->base;
@@ -232,11 +313,12 @@ static void mdio_write(struct net_device *dev, int mii_id, int reg, int val)
 	phy_write(ioaddr, lp->phy_addr, reg, val);
 }
 
-static void r6040_free_txbufs(struct net_device *dev)
+void r6040_free_txbufs(struct net_device *dev)
 {
 	struct r6040_private *lp = netdev_priv(dev);
 	int i;
 
+	dbg(DBG_FREE_BUFS, "ENTER\n");
 	for (i = 0; i < TX_DCNT; i++) {
 		if (lp->tx_insert_ptr->skb_ptr) {
 			pci_unmap_single(lp->pdev,
@@ -247,13 +329,15 @@ static void r6040_free_txbufs(struct net_device *dev)
 		}
 		lp->tx_insert_ptr = lp->tx_insert_ptr->vndescp;
 	}
+	dbg(DBG_FREE_BUFS, "EXIT\n");
 }
 
-static void r6040_free_rxbufs(struct net_device *dev)
+void r6040_free_rxbufs(struct net_device *dev)
 {
 	struct r6040_private *lp = netdev_priv(dev);
 	int i;
 
+	dbg(DBG_FREE_BUFS, "ENTER\n");
 	for (i = 0; i < RX_DCNT; i++) {
 		if (lp->rx_insert_ptr->skb_ptr) {
 			pci_unmap_single(lp->pdev,
@@ -264,13 +348,18 @@ static void r6040_free_rxbufs(struct net_device *dev)
 		}
 		lp->rx_insert_ptr = lp->rx_insert_ptr->vndescp;
 	}
+	dbg(DBG_FREE_BUFS, "EXIT\n");
+
 }
 
-static void r6040_init_ring_desc(struct r6040_descriptor *desc_ring,
+void r6040_init_ring_desc(struct r6040_descriptor *desc_ring,
 				 dma_addr_t desc_dma, int size)
 {
 	struct r6040_descriptor *desc = desc_ring;
 	dma_addr_t mapping = desc_dma;
+
+	dbg(DBG_RING, "desc_ring %p desc_dma %08x size x%x\n",
+	    desc_ring, desc_dma, size);
 
 	while (size-- > 0) {
 		mapping += sizeof(sizeof(*desc));
@@ -284,14 +373,20 @@ static void r6040_init_ring_desc(struct r6040_descriptor *desc_ring,
 }
 
 /* Allocate skb buffer for rx descriptor */
-static void rx_buf_alloc(struct r6040_private *lp, struct net_device *dev)
+STATIC void rx_buf_alloc(struct r6040_private *lp, struct net_device *dev)
 {
 	struct r6040_descriptor *descptr;
 	void __iomem *ioaddr = lp->base;
 
+	dbg(DBG_RX_BUF, "rx_insert %p rx_free_desc x%x dev %p\n",
+	    lp->rx_insert_ptr, lp->rx_free_desc, dev);
+
 	descptr = lp->rx_insert_ptr;
 	while (lp->rx_free_desc < RX_DCNT) {
 		descptr->skb_ptr = netdev_alloc_skb(dev, MAX_BUF_SIZE);
+
+		dbg(DBG_RX_BUF, "alloc'ed skb %p for rx descptr %p\n",
+		    descptr->skb_ptr, descptr);
 
 		if (!descptr->skb_ptr)
 			break;
@@ -299,6 +394,9 @@ static void rx_buf_alloc(struct r6040_private *lp, struct net_device *dev)
 			descptr->skb_ptr->data,
 			MAX_BUF_SIZE, PCI_DMA_FROMDEVICE));
 		descptr->status = 0x8000;
+		/* debug before descptr goes to next ! */
+		dbg(DBG_RX_BUF, "descptr %p skb->data %p buf %08x rx_free_desc x%x\n",
+		    descptr, descptr->skb_ptr->data, descptr->buf, lp->rx_free_desc);
 		descptr = descptr->vndescp;
 		lp->rx_free_desc++;
 		/* Trigger RX DMA */
@@ -307,7 +405,31 @@ static void rx_buf_alloc(struct r6040_private *lp, struct net_device *dev)
 	lp->rx_insert_ptr = descptr;
 }
 
-static void r6040_alloc_txbufs(struct net_device *dev)
+#if (DEBUG & DBG_TX_RING_DUMP)
+/*! dump the tx ring to syslog */
+STATIC void
+dump_tx_ring(struct r6040_private *lp)
+{
+	int i;
+	struct r6040_descriptor *ptr;
+
+	printk(KERN_INFO "%s: nr_desc x%x tx_ring %p tx_ring_dma %08x "
+	       "tx_insert %p tx_remove %p\n",
+	       DRV_NAME, TX_DCNT, lp->tx_ring, lp->tx_ring_dma,
+	       lp->tx_insert_ptr, lp->tx_remove_ptr);
+
+	if (lp->tx_ring) {
+		for(i=0, ptr=lp->tx_ring; i < TX_DCNT; i++, ptr++) {
+			printk(KERN_INFO "%s: %d. descr: status x%x len x%x "
+			       "ndesc %08x vbufp %p vndescp %p skb_ptr %p\n", 
+			       DRV_NAME, i, ptr->status, ptr->len,
+			       ptr->ndesc, ptr->vbufp, ptr->vndescp, ptr->skb_ptr);
+		}
+	}
+}
+#endif /* #if (DEBUG & DBG_TX_RING_DUMP) */
+
+void r6040_alloc_txbufs(struct net_device *dev)
 {
 	struct r6040_private *lp = netdev_priv(dev);
 	void __iomem *ioaddr = lp->base;
@@ -317,11 +439,40 @@ static void r6040_alloc_txbufs(struct net_device *dev)
 	lp->tx_remove_ptr = lp->tx_insert_ptr = lp->tx_ring;
 	r6040_init_ring_desc(lp->tx_ring, lp->tx_ring_dma, TX_DCNT);
 
+#if (DEBUG & DBG_TX_RING_DUMP)
+	if (debug & DBG_TX_RING_DUMP) {
+		dump_tx_ring(lp);
+	}
+#endif
 	iowrite16(lp->tx_ring_dma, ioaddr + MTD_SA0);
 	iowrite16(lp->tx_ring_dma >> 16, ioaddr + MTD_SA1);
 }
 
-static void r6040_alloc_rxbufs(struct net_device *dev)
+#if (DEBUG & DBG_RX_RING_DUMP)
+/*! dump the rx ring to syslog */
+STATIC void
+dump_rx_ring(struct r6040_private *lp)
+{
+	int i;
+	struct r6040_descriptor *ptr;
+
+	printk(KERN_INFO "%s: nr_desc x%x rx_ring %p rx_ring_dma %08x "
+	       "rx_insert %p rx_remove %p\n",
+	       DRV_NAME, RX_DCNT, lp->rx_ring, lp->rx_ring_dma,
+	       lp->rx_insert_ptr, lp->rx_remove_ptr);
+
+	if (lp->rx_ring) {
+		for(i=0, ptr=lp->rx_ring; i < RX_DCNT; i++, ptr++) {
+			printk(KERN_INFO "%s: %d. descr: status x%x len x%x "
+			       "ndesc %08x vbufp %p vndescp %p skb_ptr %p\n", 
+			       DRV_NAME, i, ptr->status, ptr->len,
+			       ptr->ndesc, ptr->vbufp, ptr->vndescp, ptr->skb_ptr);
+		}
+	}
+}
+#endif /* #if (DEBUG & DBG_TX_RING_DUMP) */
+
+void r6040_alloc_rxbufs(struct net_device *dev)
 {
 	struct r6040_private *lp = netdev_priv(dev);
 	void __iomem *ioaddr = lp->base;
@@ -333,11 +484,17 @@ static void r6040_alloc_rxbufs(struct net_device *dev)
 
 	rx_buf_alloc(lp, dev);
 
+#if (DEBUG & DBG_RX_RING_DUMP)
+	if (debug & DBG_RX_RING_DUMP) {
+		dump_rx_ring(lp);
+	}
+#endif
+
 	iowrite16(lp->rx_ring_dma, ioaddr + MRD_SA0);
 	iowrite16(lp->rx_ring_dma >> 16, ioaddr + MRD_SA1);
 }
 
-static void r6040_tx_timeout(struct net_device *dev)
+void r6040_tx_timeout(struct net_device *dev)
 {
 	struct r6040_private *priv = netdev_priv(dev);
 	void __iomem *ioaddr = priv->base;
@@ -365,7 +522,7 @@ static void r6040_tx_timeout(struct net_device *dev)
 	netif_wake_queue(dev);
 }
 
-static struct net_device_stats *r6040_get_stats(struct net_device *dev)
+struct net_device_stats *r6040_get_stats(struct net_device *dev)
 {
 	struct r6040_private *priv = netdev_priv(dev);
 	void __iomem *ioaddr = priv->base;
@@ -380,7 +537,7 @@ static struct net_device_stats *r6040_get_stats(struct net_device *dev)
 }
 
 /* Stop RDC MAC and Free the allocated resource */
-static void r6040_down(struct net_device *dev)
+void r6040_down(struct net_device *dev)
 {
 	struct r6040_private *lp = netdev_priv(dev);
 	void __iomem *ioaddr = lp->base;
@@ -388,6 +545,8 @@ static void r6040_down(struct net_device *dev)
 	int limit = 2048;
 	u16 *adrp;
 	u16 cmd;
+
+	dbg(DBG_EXIT, "ENTER\n");
 
 	/* Stop MAC */
 	iowrite16(MSK_INT, ioaddr + MIER);	/* Mask Off Interrupt */
@@ -397,6 +556,9 @@ static void r6040_down(struct net_device *dev)
 		if (cmd & 0x1)
 			break;
 	}
+
+	if (limit <= 0)
+		err("timeout while waiting for reset\n");
 
 	/* Restore MAC Address to MIDx */
 	adrp = (u16 *) dev->dev_addr;
@@ -414,11 +576,15 @@ static void r6040_down(struct net_device *dev)
 	/* Free Descriptor memory */
 	pci_free_consistent(pdev, RX_DESC_SIZE, lp->rx_ring, lp->rx_ring_dma);
 	pci_free_consistent(pdev, TX_DESC_SIZE, lp->tx_ring, lp->tx_ring_dma);
+
+	dbg(DBG_EXIT, "EXIT\n");
 }
 
-static int r6040_close(struct net_device *dev)
+int r6040_close(struct net_device *dev)
 {
 	struct r6040_private *lp = netdev_priv(dev);
+
+	dbg(DBG_EXIT, "ENTER\n");
 
 	/* deleted timer */
 	del_timer_sync(&lp->timer);
@@ -428,11 +594,12 @@ static int r6040_close(struct net_device *dev)
 	r6040_down(dev);
 	spin_unlock_irq(&lp->lock);
 
+	dbg(DBG_EXIT, "EXIT\n");
 	return 0;
 }
 
-/* Status of PHY CHIP */
-static int phy_mode_chk(struct net_device *dev)
+/* Status of PHY CHIP. Returns 0x8000 for full duplex, 0 for half duplex */
+STATIC int phy_mode_chk(struct net_device *dev)
 {
 	struct r6040_private *lp = netdev_priv(dev);
 	void __iomem *ioaddr = lp->base;
@@ -463,10 +630,11 @@ static int phy_mode_chk(struct net_device *dev)
 			phy_dat = 0x0000;
 	}
 
+	dbg(DBG_PHY, "RETURN x%x\n", phy_dat);
 	return phy_dat;
 };
 
-static void r6040_set_carrier(struct mii_if_info *mii)
+void r6040_set_carrier(struct mii_if_info *mii)
 {
 	if (phy_mode_chk(mii->dev)) {
 		/* autoneg is off: Link is always assumed to be up */
@@ -476,7 +644,7 @@ static void r6040_set_carrier(struct mii_if_info *mii)
 		phy_mode_chk(mii->dev);
 }
 
-static int r6040_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+int r6040_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 {
 	struct r6040_private *lp = netdev_priv(dev);
 	struct mii_ioctl_data *data = if_mii(rq);
@@ -491,7 +659,7 @@ static int r6040_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 	return rc;
 }
 
-static int r6040_rx(struct net_device *dev, int limit)
+int r6040_rx(struct net_device *dev, int limit)
 {
 	struct r6040_private *priv = netdev_priv(dev);
 	int count;
@@ -529,6 +697,9 @@ static int r6040_rx(struct net_device *dev, int limit)
 			spin_unlock(&priv->lock);
 		}
 
+		dbg(DBG_RX_IRQ, "descptr %p status x%x err x%x\n", 
+		    descptr, descptr->status, err);
+
 		while (priv->rx_free_desc) {
 			/* No RX packet */
 			if (descptr->status & 0x8000)
@@ -547,6 +718,17 @@ static int r6040_rx(struct net_device *dev, int limit)
 			pci_unmap_single(priv->pdev, le32_to_cpu(descptr->buf),
 				MAX_BUF_SIZE, PCI_DMA_FROMDEVICE);
 			skb_ptr->protocol = eth_type_trans(skb_ptr, priv->dev);
+
+			dbg(DBG_RX_DESCR, "descptr %p status x%x err x%x data len x%x\n",
+			    descptr, descptr->status, err, descptr->len);
+
+			{
+				char obuf[2*32+1] __attribute__ ((unused));
+				dbg(DBG_RX_DATA, "rx len x%x: %s...\n",
+				    descptr->len, 
+				    hex2str(skb_ptr->data, obuf, sizeof(obuf)/2, '\0'));
+			}
+
 			/* Send to upper layer */
 			netif_receive_skb(skb_ptr);
 			dev->last_rx = jiffies;
@@ -565,7 +747,7 @@ static int r6040_rx(struct net_device *dev, int limit)
 	return count;
 }
 
-static void r6040_tx(struct net_device *dev)
+void r6040_tx(struct net_device *dev)
 {
 	struct r6040_private *priv = netdev_priv(dev);
 	struct r6040_descriptor *descptr;
@@ -583,6 +765,9 @@ static void r6040_tx(struct net_device *dev)
 			dev->stats.rx_fifo_errors++;
 		if (err & (0x2000 | 0x4000))
 			dev->stats.tx_carrier_errors++;
+
+		dbg(DBG_TX_IRQ, "descptr %p status x%x err x%x\n",
+		    descptr, descptr->status, err);
 
 		if (descptr->status & 0x8000)
 			break; /* Not complete */
@@ -603,7 +788,7 @@ static void r6040_tx(struct net_device *dev)
 	spin_unlock(&priv->lock);
 }
 
-static int r6040_poll(struct napi_struct *napi, int budget)
+int r6040_poll(struct napi_struct *napi, int budget)
 {
 	struct r6040_private *priv =
 		container_of(napi, struct r6040_private, napi);
@@ -612,6 +797,8 @@ static int r6040_poll(struct napi_struct *napi, int budget)
 	int work_done;
 
 	work_done = r6040_rx(dev, budget);
+
+	dbg(DBG_POLL, "budget x%x done x%x\n", budget, work_done);
 
 	if (work_done < budget) {
 		netif_rx_complete(dev, napi);
@@ -622,7 +809,7 @@ static int r6040_poll(struct napi_struct *napi, int budget)
 }
 
 /* The RDC interrupt handler. */
-static irqreturn_t r6040_interrupt(int irq, void *dev_id)
+irqreturn_t r6040_interrupt(int irq, void *dev_id)
 {
 	struct net_device *dev = dev_id;
 	struct r6040_private *lp = netdev_priv(dev);
@@ -633,6 +820,8 @@ static irqreturn_t r6040_interrupt(int irq, void *dev_id)
 	iowrite16(MSK_INT, ioaddr + MIER);
 	/* Read MISR status and clear */
 	status = ioread16(ioaddr + MISR);
+
+	dbg(DBG_IRQ, "status x%x\n", status);
 
 	if (status == 0x0000 || status == 0xffff)
 		return IRQ_NONE;
@@ -651,7 +840,7 @@ static irqreturn_t r6040_interrupt(int irq, void *dev_id)
 }
 
 #ifdef CONFIG_NET_POLL_CONTROLLER
-static void r6040_poll_controller(struct net_device *dev)
+void r6040_poll_controller(struct net_device *dev)
 {
 	disable_irq(dev->irq);
 	r6040_interrupt(dev->irq, dev);
@@ -660,10 +849,12 @@ static void r6040_poll_controller(struct net_device *dev)
 #endif
 
 /* Init RDC MAC */
-static void r6040_up(struct net_device *dev)
+void r6040_up(struct net_device *dev)
 {
 	struct r6040_private *lp = netdev_priv(dev);
 	void __iomem *ioaddr = lp->base;
+
+	dbg(DBG_INIT, "ENTER\n");
 
 	/* Initialise and alloc RX/TX buffers */
 	r6040_alloc_txbufs(dev);
@@ -712,7 +903,7 @@ static void r6040_up(struct net_device *dev)
   A periodic timer routine
 	Polling PHY Chip Link Status
 */
-static void r6040_timer(unsigned long data)
+void r6040_timer(unsigned long data)
 {
 	struct net_device *dev = (struct net_device *)data;
 	struct r6040_private *lp = netdev_priv(dev);
@@ -729,7 +920,7 @@ static void r6040_timer(unsigned long data)
 		lp->phy_mode = phy_mode;
 		lp->mcr0 = (lp->mcr0 & 0x7fff) | phy_mode;
 		iowrite16(lp->mcr0, ioaddr);
-		printk(KERN_INFO "Link Change %x \n", ioread16(ioaddr));
+		printk(KERN_INFO "Link Change x%x \n", ioread16(ioaddr));
 	}
 
 	/* Timer active again */
@@ -737,7 +928,7 @@ static void r6040_timer(unsigned long data)
 }
 
 /* Read/set MAC address routines */
-static void r6040_mac_address(struct net_device *dev)
+void r6040_mac_address(struct net_device *dev)
 {
 	struct r6040_private *lp = netdev_priv(dev);
 	void __iomem *ioaddr = lp->base;
@@ -754,18 +945,27 @@ static void r6040_mac_address(struct net_device *dev)
 	iowrite16(adrp[0], ioaddr + MID_0L);
 	iowrite16(adrp[1], ioaddr + MID_0M);
 	iowrite16(adrp[2], ioaddr + MID_0H);
+
+	{
+		char obuf[3*ETH_ALEN] __attribute__ ((unused));
+		dbg(DBG_MAC_ADDR, "set MAC addr %s\n", 
+		    hex2str(dev->dev_addr, obuf, ETH_ALEN, ':'));
+	}
 }
 
-static int r6040_open(struct net_device *dev)
+int r6040_open(struct net_device *dev)
 {
 	struct r6040_private *lp = netdev_priv(dev);
 	int ret;
 
+	dbg(DBG_OPEN, "ENTER\n");
 	/* Request IRQ and Register interrupt handler */
 	ret = request_irq(dev->irq, &r6040_interrupt,
 		IRQF_SHARED, dev->name, dev);
 	if (ret)
 		return ret;
+
+	dbg(DBG_OPEN, "got irq %d\n", dev->irq);
 
 	/* Set MAC address */
 	r6040_mac_address(dev);
@@ -776,6 +976,8 @@ static int r6040_open(struct net_device *dev)
 	if (!lp->rx_ring)
 		return -ENOMEM;
 
+	dbg(DBG_OPEN, "allocated rx ring\n");
+
 	lp->tx_ring =
 		pci_alloc_consistent(lp->pdev, TX_DESC_SIZE, &lp->tx_ring_dma);
 	if (!lp->tx_ring) {
@@ -783,6 +985,8 @@ static int r6040_open(struct net_device *dev)
 				     lp->rx_ring_dma);
 		return -ENOMEM;
 	}
+
+	dbg(DBG_OPEN, "allocated tx ring\n");
 
 	r6040_up(dev);
 
@@ -796,7 +1000,7 @@ static int r6040_open(struct net_device *dev)
 	return 0;
 }
 
-static int r6040_start_xmit(struct sk_buff *skb, struct net_device *dev)
+int r6040_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct r6040_private *lp = netdev_priv(dev);
 	struct r6040_descriptor *descptr;
@@ -830,6 +1034,16 @@ static int r6040_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	descptr->skb_ptr = skb;
 	descptr->buf = cpu_to_le32(pci_map_single(lp->pdev,
 		skb->data, skb->len, PCI_DMA_TODEVICE));
+
+	dbg(DBG_TX_DESCR, "desc @ %p: len x%x buf %08x skb->data %p skb->len x%x\n",
+	    descptr, descptr->len, descptr->buf, skb->data, skb->len);
+
+	{
+		char obuf[2*32+1];
+		dbg(DBG_TX_DATA, "tx len x%x: %s\n",
+		    descptr->len, hex2str(skb->data, obuf, sizeof(obuf)/2, '\0'));
+	}
+
 	descptr->status = 0x8000;
 	/* Trigger the MAC to check the TX descriptor */
 	iowrite16(0x01, ioaddr + MTPR);
@@ -844,7 +1058,7 @@ static int r6040_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	return ret;
 }
 
-static void r6040_multicast_list(struct net_device *dev)
+void r6040_multicast_list(struct net_device *dev)
 {
 	struct r6040_private *lp = netdev_priv(dev);
 	void __iomem *ioaddr = lp->base;
@@ -922,7 +1136,7 @@ static void r6040_multicast_list(struct net_device *dev)
 	}
 }
 
-static void netdev_get_drvinfo(struct net_device *dev,
+STATIC void netdev_get_drvinfo(struct net_device *dev,
 			struct ethtool_drvinfo *info)
 {
 	struct r6040_private *rp = netdev_priv(dev);
@@ -932,7 +1146,7 @@ static void netdev_get_drvinfo(struct net_device *dev,
 	strcpy(info->bus_info, pci_name(rp->pdev));
 }
 
-static int netdev_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
+STATIC int netdev_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
 {
 	struct r6040_private *rp = netdev_priv(dev);
 	int rc;
@@ -944,7 +1158,7 @@ static int netdev_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
 	return rc;
 }
 
-static int netdev_set_settings(struct net_device *dev, struct ethtool_cmd *cmd)
+STATIC int netdev_set_settings(struct net_device *dev, struct ethtool_cmd *cmd)
 {
 	struct r6040_private *rp = netdev_priv(dev);
 	int rc;
@@ -957,7 +1171,7 @@ static int netdev_set_settings(struct net_device *dev, struct ethtool_cmd *cmd)
 	return rc;
 }
 
-static u32 netdev_get_link(struct net_device *dev)
+STATIC u32 netdev_get_link(struct net_device *dev)
 {
 	struct r6040_private *rp = netdev_priv(dev);
 
@@ -971,7 +1185,7 @@ static struct ethtool_ops netdev_ethtool_ops = {
 	.get_link		= netdev_get_link,
 };
 
-static int __devinit r6040_init_one(struct pci_dev *pdev,
+int __devinit r6040_init_one(struct pci_dev *pdev,
 					 const struct pci_device_id *ent)
 {
 	struct net_device *dev;
@@ -984,6 +1198,7 @@ static int __devinit r6040_init_one(struct pci_dev *pdev,
 	u16 *adrp;
 
 	printk(KERN_INFO "%s\n", version);
+	printk(KERN_INFO DRV_NAME ": debug %x\n", debug);
 
 	err = pci_enable_device(pdev);
 	if (err)
@@ -1065,6 +1280,15 @@ static int __devinit r6040_init_one(struct pci_dev *pdev,
 	dev->ethtool_ops = &netdev_ethtool_ops;
 	dev->tx_timeout = &r6040_tx_timeout;
 	dev->watchdog_timeo = TX_TIMEOUT;
+
+	{
+	/* jal2: added for debugging only: set fixed mac address.
+	   Otherwise we need to call "ifconfig ethX hw ether XX:XX:..."
+	   before we can invoke "ifconfig ethX up" */
+		static const u8 dflt_addr[ETH_ALEN] = {0,0x50,0xfc,2,3,4};
+		memcpy(dev->dev_addr, dflt_addr, ETH_ALEN);
+	}
+
 #ifdef CONFIG_NET_POLL_CONTROLLER
 	dev->poll_controller = r6040_poll_controller;
 #endif
@@ -1082,6 +1306,8 @@ static int __devinit r6040_init_one(struct pci_dev *pdev,
 		printk(KERN_ERR DRV_NAME ": Failed to register net device\n");
 		goto err_out_res;
 	}
+
+	dbg(DBG_INIT, "%s successfully registered\n", dev->name);
 	return 0;
 
 err_out_res:
@@ -1094,7 +1320,7 @@ err_out_disable:
 	return err;
 }
 
-static void __devexit r6040_remove_one(struct pci_dev *pdev)
+void __devexit r6040_remove_one(struct pci_dev *pdev)
 {
 	struct net_device *dev = pci_get_drvdata(pdev);
 
