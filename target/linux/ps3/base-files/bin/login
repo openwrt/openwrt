@@ -1,13 +1,11 @@
 #!/bin/sh
 # Copyright (C) 2008 OpenWrt.org
 
-ps3_db_bin=/usr/sbin/ps3-flash-util
-ps3_db_owner_petitboot=3
-ps3_db_key_telnet=3
+bl_option=/sbin/bl-option
 
-if [ ! -f $ps3_db_bin ] ||
-   [ ! `$ps3_db_bin -P $ps3_db_owner_petitboot $ps3_db_key_telnet` ] ||
-   [ `$ps3_db_bin -P $ps3_db_owner_petitboot $ps3_db_key_telnet` = 0 ]; then
+if [ ! -f $bl_option ] ||
+   [ ! `$bl_option --get-telnet-enabled` ] ||
+   [ `$bl_option --get-telnet-enabled` = "0" ]; then
     echo \
 "
  === IMPORTANT ==========================
@@ -19,12 +17,12 @@ if [ ! -f $ps3_db_bin ] ||
   You can enable telnet login with the
   following command in the host console:
 
-  # $ps3_db_bin -H $ps3_db_owner_petitboot $ps3_db_key_telnet 1
+  # $bl_option -T 1
 
   You can disable telnet login with the
   following command in the host console:
 
-  # $ps3_db_bin -H $ps3_db_owner_petitboot $ps3_db_key_telnet 0
+  # $bl_option -T 0
  ----------------------------------------
 "
     exit 0
