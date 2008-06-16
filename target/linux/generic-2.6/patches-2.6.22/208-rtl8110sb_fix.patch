@@ -1,8 +1,6 @@
-Index: linux-2.6.22.19/drivers/net/r8169.c
-===================================================================
---- linux-2.6.22.19.orig/drivers/net/r8169.c
-+++ linux-2.6.22.19/drivers/net/r8169.c
-@@ -494,7 +494,7 @@ static int rtl8169_poll(struct net_devic
+--- a/drivers/net/r8169.c
++++ b/drivers/net/r8169.c
+@@ -494,7 +494,7 @@
  #endif
  
  static const u16 rtl8169_intr_mask =
@@ -11,7 +9,7 @@ Index: linux-2.6.22.19/drivers/net/r8169.c
  static const u16 rtl8169_napi_event =
  	RxOK | RxOverflow | RxFIFOOver | TxOK | TxErr;
  static const unsigned int rtl8169_rx_config =
-@@ -2640,10 +2640,12 @@ rtl8169_interrupt(int irq, void *dev_ins
+@@ -2640,10 +2640,12 @@
  		if (!(status & rtl8169_intr_mask))
  			break;
  

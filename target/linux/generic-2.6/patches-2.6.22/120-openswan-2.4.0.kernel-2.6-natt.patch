@@ -1,7 +1,5 @@
-Index: linux-2.6.22.19/include/net/xfrmudp.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.22.19/include/net/xfrmudp.h
++++ b/include/net/xfrmudp.h
 @@ -0,0 +1,10 @@
 +/*
 + * pointer to function for type that xfrm4_input wants, to permit
@@ -13,11 +11,9 @@ Index: linux-2.6.22.19/include/net/xfrmudp.h
 +extern int udp4_register_esp_rcvencap(xfrm4_rcv_encap_t func
 +				      , xfrm4_rcv_encap_t *oldfunc);
 +extern int udp4_unregister_esp_rcvencap(xfrm4_rcv_encap_t func);
-Index: linux-2.6.22.19/net/ipv4/Kconfig
-===================================================================
---- linux-2.6.22.19.orig/net/ipv4/Kconfig
-+++ linux-2.6.22.19/net/ipv4/Kconfig
-@@ -266,6 +266,12 @@ config NET_IPGRE_BROADCAST
+--- a/net/ipv4/Kconfig
++++ b/net/ipv4/Kconfig
+@@ -266,6 +266,12 @@
  	  Network), but can be distributed all over the Internet. If you want
  	  to do that, say Y here and to "IP multicast routing" below.
  
@@ -30,10 +26,8 @@ Index: linux-2.6.22.19/net/ipv4/Kconfig
  config IP_MROUTE
  	bool "IP: multicast routing"
  	depends on IP_MULTICAST
-Index: linux-2.6.22.19/net/ipv4/udp.c
-===================================================================
---- linux-2.6.22.19.orig/net/ipv4/udp.c
-+++ linux-2.6.22.19/net/ipv4/udp.c
+--- a/net/ipv4/udp.c
++++ b/net/ipv4/udp.c
 @@ -101,12 +101,15 @@
  #include <net/route.h>
  #include <net/checksum.h>
@@ -50,7 +44,7 @@ Index: linux-2.6.22.19/net/ipv4/udp.c
  DEFINE_SNMP_STAT(struct udp_mib, udp_statistics) __read_mostly;
  
  struct hlist_head udp_hash[UDP_HTABLE_SIZE];
-@@ -919,6 +922,42 @@ int udp_disconnect(struct sock *sk, int 
+@@ -919,6 +922,42 @@
  	return 0;
  }
  
@@ -93,7 +87,7 @@ Index: linux-2.6.22.19/net/ipv4/udp.c
  /* return:
   * 	1  if the UDP system should process it
   *	0  if we should drop this packet
-@@ -926,7 +965,7 @@ int udp_disconnect(struct sock *sk, int 
+@@ -926,7 +965,7 @@
   */
  static int udp_encap_rcv(struct sock * sk, struct sk_buff *skb)
  {
@@ -102,7 +96,7 @@ Index: linux-2.6.22.19/net/ipv4/udp.c
  	return 1;
  #else
  	struct udp_sock *up = udp_sk(sk);
-@@ -941,11 +980,11 @@ static int udp_encap_rcv(struct sock * s
+@@ -941,11 +980,11 @@
  	/* if we're overly short, let UDP handle it */
  	len = skb->len - sizeof(struct udphdr);
  	if (len <= 0)
@@ -116,7 +110,7 @@ Index: linux-2.6.22.19/net/ipv4/udp.c
  
  	/* If this is a paged skb, make sure we pull up
  	 * whatever data we need to look at. */
-@@ -968,7 +1007,7 @@ static int udp_encap_rcv(struct sock * s
+@@ -968,7 +1007,7 @@
  			len = sizeof(struct udphdr);
  		} else
  			/* Must be an IKE packet.. pass it through */
@@ -125,7 +119,7 @@ Index: linux-2.6.22.19/net/ipv4/udp.c
  		break;
  	case UDP_ENCAP_ESPINUDP_NON_IKE:
  		/* Check if this is a keepalive packet.  If so, eat it. */
-@@ -981,7 +1020,7 @@ static int udp_encap_rcv(struct sock * s
+@@ -981,7 +1020,7 @@
  			len = sizeof(struct udphdr) + 2 * sizeof(u32);
  		} else
  			/* Must be an IKE packet.. pass it through */
@@ -134,7 +128,7 @@ Index: linux-2.6.22.19/net/ipv4/udp.c
  		break;
  	}
  
-@@ -992,6 +1031,8 @@ static int udp_encap_rcv(struct sock * s
+@@ -992,6 +1031,8 @@
  	 */
  	if (skb_cloned(skb) && pskb_expand_head(skb, 0, 0, GFP_ATOMIC))
  		return 0;
@@ -143,7 +137,7 @@ Index: linux-2.6.22.19/net/ipv4/udp.c
  
  	/* Now we can update and verify the packet length... */
  	iph = ip_hdr(skb);
-@@ -1056,9 +1097,13 @@ int udp_queue_rcv_skb(struct sock * sk, 
+@@ -1056,9 +1097,13 @@
  			return 0;
  		}
  		if (ret < 0) {
@@ -160,7 +154,7 @@ Index: linux-2.6.22.19/net/ipv4/udp.c
  			return -ret;
  		}
  		/* FALLTHROUGH -- it's a UDP Packet */
-@@ -1742,3 +1787,9 @@ EXPORT_SYMBOL(udp_poll);
+@@ -1742,3 +1787,9 @@
  EXPORT_SYMBOL(udp_proc_register);
  EXPORT_SYMBOL(udp_proc_unregister);
  #endif
