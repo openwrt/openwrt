@@ -10,14 +10,15 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=linux-uvc
-PKG_REV:=151
+PKG_REV:=215
 PKG_VERSION:=r$(PKG_REV)
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=svn://svn.berlios.de/linux-uvc/linux-uvc/trunk
+PKG_SOURCE_URL:=http://svn.berlios.de/svnroot/repos/linux-uvc/linux-uvc/trunk/
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_REV)
+PKG_SOURCE_PROTO:=svn
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -31,6 +32,7 @@ define KernelPackage/video-uvc
 endef
 
 define Build/Compile
+	echo "#define DRIVER_VERSION	\"SVN $(PKG_VERSION)\"" > "$(PKG_BUILD_DIR)/version.h"
 	$(MAKE) -C $(LINUX_DIR) \
 		ARCH="$(LINUX_KARCH)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
