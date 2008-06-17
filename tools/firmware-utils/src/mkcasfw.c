@@ -148,6 +148,8 @@ struct board_info {
 
 /* Ovislink products */
 #define MODEL_MU_5000FS		0x01000040 /* NFS-101U */
+#define MODEL_WL_5420CAM	0x020B0101 /* CAS-630W? */
+#define MODEL_WL_5460CAM	0x020B0001 /* CAS-670W */
 
 /* Repotec products */
 
@@ -225,6 +227,8 @@ static struct board_info boards[] = {
 
 	/* Ovislink products */
 	BOARD_NFS("MU-5000FS", "Ovislink MU-5000FS", MODEL_MU_5000FS),
+	BOARD_CAS("WL-5420CAM", "Ovislink WL-5420 CAM", MODEL_WL_5420CAM),
+	BOARD_CAS("WL-5460CAM", "Ovislink WL-5460 CAM", MODEL_WL_5460CAM),
 
 	/* Sitecom products */
 	BOARD_CAS("LN-403", "Sitecom LN-403", MODEL_LN_403),
