@@ -68,20 +68,23 @@ static void rb153_pata_exec_command(struct ata_port *ap,
 	rb153_pata_finish_io(ap);
 }
 
-static void rb153_pata_data_xfer(struct ata_device *adev, unsigned char *buf,
+static unsigned int rb153_pata_data_xfer(struct ata_device *adev, unsigned char *buf,
 				unsigned int buflen, int write_data)
 {
 	void __iomem *ioaddr = adev->link->ap->ioaddr.data_addr;
-
+	unsigned int t;
+	
+	t = buflen;	
 	if (write_data) {
-		for (; buflen > 0; buflen--, buf++)
+		for (; t > 0; t--, buf++)
 			writeb(*buf, ioaddr);
 	} else {
-		for (; buflen > 0; buflen--, buf++)
+		for (; t > 0; t--, buf++)
 			*buf = readb(ioaddr);
 	}
 
 	rb153_pata_finish_io(adev->link->ap);
+	return buflen;
 }
 
 static void rb153_pata_freeze(struct ata_port *ap)

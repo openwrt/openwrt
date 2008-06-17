@@ -35,6 +35,7 @@
 #include <linux/dma-mapping.h>
 #include <linux/dmapool.h>
 #include <linux/reboot.h>
+#include <linux/debugfs.h>
 
 #include <asm/io.h>
 #include <asm/irq.h>
@@ -45,7 +46,7 @@
 #include "../core/hcd.h"
 #include "../core/hub.h"
 
-#define DRIVER_VERSION	"0.24.0"
+#define DRIVER_VERSION	"0.25.0"
 #define DRIVER_AUTHOR	"Gabor Juhos <juhosg at openwrt.org>"
 #define DRIVER_DESC	"ADMtek USB 1.1 Host Controller Driver"
 
@@ -799,6 +800,14 @@ static int __init admhc_hcd_mod_init(void)
 	pr_info("%s: block sizes: ed %Zd td %Zd\n", hcd_name,
 		sizeof (struct ed), sizeof (struct td));
 
+#ifdef DEBUG
+	admhc_debug_root = debugfs_create_dir("admhc", NULL);
+	if (!admhc_debug_root) {
+		ret = -ENOENT;
+		goto error_debug;
+	}
+#endif
+
 #ifdef PLATFORM_DRIVER
 	ret = platform_driver_register(&PLATFORM_DRIVER);
 	if (ret < 0)
@@ -811,6 +820,12 @@ static int __init admhc_hcd_mod_init(void)
 	platform_driver_unregister(&PLATFORM_DRIVER);
 error_platform:
 #endif
+
+#ifdef DEBUG
+	debugfs_remove(admhc_debug_root);
+	admhc_debug_root = NULL;
+error_debug:
+#endif
 	return ret;
 }
 module_init(admhc_hcd_mod_init);
@@ -818,6 +833,9 @@ module_init(admhc_hcd_mod_init);
 static void __exit admhc_hcd_mod_exit(void)
 {
 	platform_driver_unregister(&PLATFORM_DRIVER);
+#ifdef DEBUG
+	debugfs_remove(admhc_debug_root);
+#endif
 }
 module_exit(admhc_hcd_mod_exit);
 

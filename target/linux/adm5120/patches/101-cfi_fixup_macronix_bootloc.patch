@@ -20,8 +20,8 @@
  static int cfi_amdstd_read (struct mtd_info *, loff_t, size_t, size_t *, u_char *);
  static int cfi_amdstd_write_words(struct mtd_info *, loff_t, size_t, size_t *, const u_char *);
  static int cfi_amdstd_write_buffers(struct mtd_info *, loff_t, size_t, size_t *, const u_char *);
-@@ -217,6 +224,41 @@
- 	mtd->flags |= MTD_STUPID_LOCK;
+@@ -221,6 +228,41 @@
+ 	mtd->flags |= MTD_POWERUP_LOCK;
  }
  
 +#ifdef CONFIG_MTD_CFI_FIXUP_MACRONIX_BOOTLOC
@@ -60,18 +60,18 @@
 +#endif /* CONFIG_MTD_CFI_FIXUP_MACRONIX_BOOTLOC */
 +
  static struct cfi_fixup cfi_fixup_table[] = {
- #ifdef AMD_BOOTLOC_BUG
- 	{ CFI_MFR_AMD, CFI_ID_ANY, fixup_amd_bootblock, NULL },
-@@ -231,6 +273,9 @@
- 	{ CFI_MFR_ANY, CFI_ID_ANY, fixup_use_write_buffers, NULL, },
- #endif
  	{ CFI_MFR_ATMEL, CFI_ID_ANY, fixup_convert_atmel_pri, NULL },
+ #ifdef AMD_BOOTLOC_BUG
+@@ -252,6 +294,9 @@
+ 	 */
+ 	{ CFI_MFR_ANY, CFI_ID_ANY, fixup_use_erase_chip, NULL },
+ 	{ CFI_MFR_ATMEL, AT49BV6416, fixup_use_atmel_lock, NULL },
 +#ifdef CONFIG_MTD_CFI_FIXUP_MACRONIX_BOOTLOC
 +	{ MANUFACTURER_MACRONIX, CFI_ID_ANY, fixup_macronix_bootloc, NULL, },
 +#endif
  	{ 0, 0, NULL, NULL }
  };
- static struct cfi_fixup jedec_fixup_table[] = {
+ 
 --- a/drivers/mtd/chips/Kconfig
 +++ b/drivers/mtd/chips/Kconfig
 @@ -196,6 +196,14 @@

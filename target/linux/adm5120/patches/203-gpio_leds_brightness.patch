@@ -23,5 +23,5 @@
 +		break;
 +	}
  
- 	/* setting GPIOs with I2C/etc requires a preemptible task context */
- 	if (led_dat->can_sleep) {
+ 	/* Setting GPIOs with I2C/etc requires a task context, and we don't
+ 	 * seem to have a reliable way to know if we're already in one; so

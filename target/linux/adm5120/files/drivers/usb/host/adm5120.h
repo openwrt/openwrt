@@ -431,6 +431,13 @@ struct admhcd {
 #define	OHCI_QUIRK_BE_MMIO	0x10			/* BE registers */
 #define	OHCI_QUIRK_ZFMICRO	0x20			/* Compaq ZFMicro chipset*/
 	// there are also chip quirks/bugs in init logic
+
+#ifdef DEBUG
+	struct dentry		*debug_dir;
+	struct dentry		*debug_async;
+	struct dentry		*debug_periodic;
+	struct dentry		*debug_registers;
+#endif
 };
 
 /* convert between an hcd pointer and the corresponding ahcd_hcd */

@@ -1,8 +1,8 @@
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -18,6 +18,21 @@
- 
- comment "LED drivers"
+@@ -25,6 +25,21 @@
+ 	  This option enables support for LEDs driven using outputs
+ 	  of the dedicated PWM controller found on newer Atmel SOCs.
  
 +config LEDS_ADM5120
 +	tristate "LED Support for ADM5120 GPIO LEDs"
@@ -29,6 +29,6 @@
  
  # LED Platform Drivers
 +obj-$(CONFIG_LEDS_ADM5120)		+= leds-adm5120.o
+ obj-$(CONFIG_LEDS_ATMEL_PWM)		+= leds-atmel-pwm.o
  obj-$(CONFIG_LEDS_CORGI)		+= leds-corgi.o
  obj-$(CONFIG_LEDS_LOCOMO)		+= leds-locomo.o
- obj-$(CONFIG_LEDS_SPITZ)		+= leds-spitz.o
