@@ -27,6 +27,7 @@
 #include <linux/watchdog.h>
 #include <linux/miscdevice.h>
 #include <asm-mips/ifxmips/ifxmips_wdt.h>
+#include <asm-mips/ifxmips/ifxmips_cgu.h>
 #include <asm-mips/ifxmips/ifxmips.h>
 
 #define DRVNAME			"ifxmips_wdt"
@@ -35,7 +36,6 @@
 extern unsigned int ifxmips_get_fpi_hz (void);
 
 static int ifxmips_wdt_inuse = 0;
-static int ifxmips_wdt_major = 0;
 
 int
 ifxmips_wdt_enable (unsigned int timeout)
@@ -49,9 +49,7 @@ ifxmips_wdt_enable (unsigned int timeout)
 	wdt_clkdiv = 1 << (7 * IFXMIPS_BIU_WDT_CR_CLKDIV_GET(ifxmips_r32(IFXMIPS_BIU_WDT_CR)));
 	wdt_pwl = 0x8000 >> IFXMIPS_BIU_WDT_CR_PWL_GET(ifxmips_r32(IFXMIPS_BIU_WDT_CR));
 
-	//TODO
-	printk("WARNING FUNCTION CALL MISSING!!!");
-	//ffpi = cgu_get_io_region_clock();
+	ffpi = cgu_get_io_region_clock();
 	printk("cpu clock = %d\n", ffpi);
 
 	/* caculate reload value */
