@@ -1,6 +1,6 @@
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -607,6 +607,18 @@
+@@ -619,6 +619,18 @@
  
  # MIPS Architecture
  
@@ -18,10 +18,10 @@
 +
  config INDYDOG
  	tristate "Indy/I2 Hardware Watchdog"
- 	depends on SGI_IP22
+ 	depends on SGI_HAS_INDYDOG
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -89,6 +89,7 @@
+@@ -90,6 +90,7 @@
  # M68KNOMMU Architecture
  
  # MIPS Architecture

@@ -1,8 +1,8 @@
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -160,6 +160,22 @@
- 	  for your particular device. It won't happen automatically. The
- 	  'armflash' map driver (CONFIG_MTD_ARMFLASH) does this, for example.
+@@ -168,6 +168,22 @@
+ 	  the partition map from the children of the flash node,
+ 	  as described in Documentation/powerpc/booting-without-of.txt.
  
 +config MTD_MYLOADER_PARTS
 +	tristate "MyLoader partition parsing"
@@ -25,10 +25,10 @@
  config MTD_CHAR
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -11,6 +11,7 @@
- obj-$(CONFIG_MTD_REDBOOT_PARTS) += redboot.o
+@@ -12,6 +12,7 @@
  obj-$(CONFIG_MTD_CMDLINE_PARTS) += cmdlinepart.o
  obj-$(CONFIG_MTD_AFS_PARTS)	+= afs.o
+ obj-$(CONFIG_MTD_OF_PARTS)      += ofpart.o
 +obj-$(CONFIG_MTD_MYLOADER_PARTS) += myloader.o
  
  # 'Users' - code which presents functionality to userspace.
