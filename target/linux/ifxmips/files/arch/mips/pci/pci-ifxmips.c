@@ -14,17 +14,8 @@
 #define IFXMIPS_PCI_IO_BASE     0x1AE00000
 #define IFXMIPS_PCI_IO_SIZE     0x00200000
 
-#define IFXMIPS_PCI_CFG_BUSNUM_SHF 16
-#define IFXMIPS_PCI_CFG_DEVNUM_SHF 11
-#define IFXMIPS_PCI_CFG_FUNNUM_SHF 8
-
-#define PCI_ACCESS_READ  0
-#define PCI_ACCESS_WRITE 1
-
-#define CONFIG_IFXMIPS_PCI_HW_SWAP 1
-
-static int ifxmips_pci_read_config_dword(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 *val);
-static int ifxmips_pci_write_config_dword(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 val);
+extern int ifxmips_pci_read_config_dword(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 *val);
+extern int ifxmips_pci_write_config_dword(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 val);
 
 struct pci_ops ifxmips_pci_ops = {
 	.read = ifxmips_pci_read_config_dword,
@@ -53,112 +44,12 @@ static struct pci_controller ifxmips_pci_controller = {
 	.io_offset	= 0x00000000UL,
 };
 
-static u32 ifxmips_pci_mapped_cfg;
-
-static int
-ifxmips_pci_config_access(unsigned char access_type,
-		struct pci_bus *bus, unsigned int devfn, unsigned int where, u32 *data)
-{
-	unsigned long cfg_base;
-	unsigned long flags;
-
-	u32 temp;
-
-	/* IFXMips support slot from 0 to 15 */
-	/* dev_fn 0&0x68 (AD29) is ifxmips itself */
-	if ((bus->number != 0) || ((devfn & 0xf8) > 0x78)
-			|| ((devfn & 0xf8) == 0) || ((devfn & 0xf8) == 0x68))
-		return 1;
-
-	local_irq_save(flags);
-
-	cfg_base = ifxmips_pci_mapped_cfg;
-	cfg_base |= (bus->number << IFXMIPS_PCI_CFG_BUSNUM_SHF) | (devfn <<
-			IFXMIPS_PCI_CFG_FUNNUM_SHF) | (where & ~0x3);
-
-	/* Perform access */
-	if (access_type == PCI_ACCESS_WRITE)
-	{
-#ifdef CONFIG_IFXMIPS_PCI_HW_SWAP
-		ifxmips_w32(swab32(*data), ((u32*)cfg_base));
-#else
-		ifxmips_w32(*data, ((u32*)cfg_base));
-#endif
-	} else {
-		*data = ifxmips_r32(((u32*)(cfg_base)));
-#ifdef CONFIG_IFXMIPS_PCI_HW_SWAP
-		*data = swab32(*data);
-#endif
-	}
-	wmb();
-
-	/* clean possible Master abort */
-	cfg_base = (ifxmips_pci_mapped_cfg | (0x0 << IFXMIPS_PCI_CFG_FUNNUM_SHF)) + 4;
-	temp = ifxmips_r32(((u32*)(cfg_base)));
-#ifdef CONFIG_IFXMIPS_PCI_HW_SWAP
-	temp = swab32 (temp);
-#endif
-	cfg_base = (ifxmips_pci_mapped_cfg | (0x68 << IFXMIPS_PCI_CFG_FUNNUM_SHF)) + 4;
-	ifxmips_w32(temp, ((u32*)cfg_base));
-
-	local_irq_restore(flags);
-
-	if (((*data) == 0xffffffff) && (access_type == PCI_ACCESS_READ))
-		return 1;
-
-	return 0;
-}
-
-static int ifxmips_pci_read_config_dword(struct pci_bus *bus, unsigned int devfn,
-		int where, int size, u32 * val)
-{
-	u32 data = 0;
-
-	if (ifxmips_pci_config_access(PCI_ACCESS_READ, bus, devfn, where, &data))
-		return PCIBIOS_DEVICE_NOT_FOUND;
-
-	if (size == 1)
-		*val = (data >> ((where & 3) << 3)) & 0xff;
-	else if (size == 2)
-		*val = (data >> ((where & 3) << 3)) & 0xffff;
-	else
-		*val = data;
-
-	return PCIBIOS_SUCCESSFUL;
-}
-
-static int ifxmips_pci_write_config_dword(struct pci_bus *bus, unsigned int devfn,
-		int where, int size, u32 val)
-{
-	u32 data = 0;
-
-	if (size == 4)
-	{
-		data = val;
-	} else {
-		if (ifxmips_pci_config_access(PCI_ACCESS_READ, bus, devfn, where, &data))
-			return PCIBIOS_DEVICE_NOT_FOUND;
-
-		if (size == 1)
-			data = (data & ~(0xff << ((where & 3) << 3))) |
-				(val << ((where & 3) << 3));
-		else if (size == 2)
-			data = (data & ~(0xffff << ((where & 3) << 3))) |
-				(val << ((where & 3) << 3));
-	}
-
-	if (ifxmips_pci_config_access(PCI_ACCESS_WRITE, bus, devfn, where, &data))
-		return PCIBIOS_DEVICE_NOT_FOUND;
-
-	return PCIBIOS_SUCCESSFUL;
-}
-
+u32 ifxmips_pci_mapped_cfg;
 
 int pcibios_plat_dev_init(struct pci_dev *dev){
 	u8 pin;
 
 	pci_read_config_byte(dev, PCI_INTERRUPT_PIN, &pin);
-
 	switch(pin) {
 		case 0:
 			break;
@@ -175,43 +66,24 @@ int pcibios_plat_dev_init(struct pci_dev *dev){
 			printk ("WARNING: invalid interrupt pin %d\n", pin);
 			return 1;
 	}
-
 	return 0;
 }
 
 static void __init ifxmips_pci_startup (void){
-	/*initialize the first PCI device--ifxmips itself */
 	u32 temp_buffer;
-	/*TODO: trigger reset */
 	ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) & ~0xf00000, IFXMIPS_CGU_IFCCR);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) | 0x800000, IFXMIPS_CGU_IFCCR);
-	/* PCIS of IF_CLK of CGU   : 1 =>PCI Clock output
-	   0 =>clock input
-	   PADsel of PCI_CR of CGU : 1 =>From CGU
-	   : 0 =>From pad
-	 */
 	ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) | (1 << 16), IFXMIPS_CGU_IFCCR);
 	ifxmips_w32((1 << 31) | (1 << 30), IFXMIPS_CGU_PCICR);
-
-	/* prepare GPIO */
-	/* PCI_RST: P1.5 ALT 01 */
-	//pliu20060613: start
 	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P1_OUT) | (1 << 5), IFXMIPS_GPIO_P1_OUT);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P1_OD) | (1 << 5), IFXMIPS_GPIO_P1_OD);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P1_DIR) | (1 << 5), IFXMIPS_GPIO_P1_DIR);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P1_ALTSEL1) & ~(1 << 5), IFXMIPS_GPIO_P1_ALTSEL1);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P1_ALTSEL0) & ~(1 << 5), IFXMIPS_GPIO_P1_ALTSEL0);
-	//pliu20060613: end
-	/* PCI_REQ1: P1.13 ALT 01 */
-	/* PCI_GNT1: P1.14 ALT 01 */
 	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P1_DIR) & ~0x2000, IFXMIPS_GPIO_P1_DIR);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P1_DIR) | 0x4000, IFXMIPS_GPIO_P1_DIR);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P1_ALTSEL1) & ~0x6000, IFXMIPS_GPIO_P1_ALTSEL1);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P1_ALTSEL0) | 0x6000, IFXMIPS_GPIO_P1_ALTSEL0);
-	/* PCI_REQ2: P1.15 ALT 10 */
-	/* PCI_GNT2: P1.7 ALT 10 */
-
-
 	/* enable auto-switching between PCI and EBU */
 	ifxmips_w32(0xa, PCI_CR_CLK_CTRL);
 	/* busy, i.e. configuration is not done, PCI access has to be retried */
@@ -220,8 +92,8 @@ static void __init ifxmips_pci_startup (void){
 	/* BUS Master/IO/MEM access */
 	ifxmips_w32(ifxmips_r32(PCI_CS_STS_CMD) | 7, PCI_CS_STS_CMD);
 
-	temp_buffer = ifxmips_r32(PCI_CR_PC_ARB);
 	/* enable external 2 PCI masters */
+	temp_buffer = ifxmips_r32(PCI_CR_PC_ARB);
 	temp_buffer &= (~(0xf << 16));
 	/* enable internal arbiter */
 	temp_buffer |= (1 << INTERNAL_ARB_ENABLE_BIT);
@@ -234,12 +106,8 @@ static void __init ifxmips_pci_startup (void){
 	/* enable all external masters request */
 	temp_buffer &= (~(3 << PCI_MASTER2_REQ_MASK_2BITS));
 	ifxmips_w32(temp_buffer, PCI_CR_PC_ARB);
-
 	wmb ();
 
-	/* FPI ==> PCI MEM address mapping */
-	/* base: 0xb8000000 == > 0x18000000 */
-	/* size: 8x4M = 32M */
 	ifxmips_w32(0x18000000, PCI_CR_FCI_ADDR_MAP0);
 	ifxmips_w32(0x18400000, PCI_CR_FCI_ADDR_MAP1);
 	ifxmips_w32(0x18800000, PCI_CR_FCI_ADDR_MAP2);
@@ -248,20 +116,11 @@ static void __init ifxmips_pci_startup (void){
 	ifxmips_w32(0x19400000, PCI_CR_FCI_ADDR_MAP5);
 	ifxmips_w32(0x19800000, PCI_CR_FCI_ADDR_MAP6);
 	ifxmips_w32(0x19c00000, PCI_CR_FCI_ADDR_MAP7);
-
-	/* FPI ==> PCI IO address mapping */
-	/* base: 0xbAE00000 == > 0xbAE00000 */
-	/* size: 2M */
 	ifxmips_w32(0x1ae00000, PCI_CR_FCI_ADDR_MAP11hg);
-
-	/* PCI ==> FPI address mapping */
-	/* base: 0x0 ==> 0x0 */
-	/* size: 32M */
-	/* BAR1 32M map to SDR address */
 	ifxmips_w32(0x0e000008, PCI_CR_BAR11MASK);
 	ifxmips_w32(0, PCI_CR_PCI_ADDR_MAP11);
 	ifxmips_w32(0, PCI_CS_BASE_ADDR1);
-#ifdef CONFIG_IFXMIPS_PCI_HW_SWAP
+#ifdef CONFIG_SWAP_IO_SPACE
 	/* both TX and RX endian swap are enabled */
 	ifxmips_w32(ifxmips_r32(PCI_CR_PCI_EOI) | 3, PCI_CR_PCI_EOI);
 	wmb ();
@@ -269,14 +128,13 @@ static void __init ifxmips_pci_startup (void){
 	/*TODO: disable BAR2 & BAR3 - why was this in the origianl infineon code */
 	ifxmips_w32(ifxmips_r32(PCI_CR_BAR12MASK) | 0x80000000, PCI_CR_BAR12MASK);
 	ifxmips_w32(ifxmips_r32(PCI_CR_BAR13MASK) | 0x80000000, PCI_CR_BAR13MASK);
-	/*use 8 dw burse length */
+	/*use 8 dw burst length */
 	ifxmips_w32(0x303, PCI_CR_FCI_BURST_LENGTH);
-
 	ifxmips_w32(ifxmips_r32(PCI_CR_PCI_MOD) | (1 << 24), PCI_CR_PCI_MOD);
 	wmb();
 	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P1_OUT) & ~(1 << 5), IFXMIPS_GPIO_P1_OUT);
 	wmb();
-	mdelay (1);
+	mdelay(1);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P1_OUT) | (1 << 5), IFXMIPS_GPIO_P1_OUT);
 }
 
@@ -287,7 +145,6 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin){
 			return (INT_NUM_IM1_IRL0 + 17);
 		case 14:
 			/* IDSEL = AD30 --> mini PCI connector */
-			//return (INT_NUM_IM1_IRL0 + 14);
 			return (INT_NUM_IM0_IRL0 + 22);
 		default:
 			printk("Warning: no IRQ found for PCI device in slot %d, pin %d\n", slot, pin);
@@ -300,19 +157,13 @@ int pcibios_init(void){
 
 	pci_probe_only = 0;
 	printk ("PCI: Probing PCI hardware on host bus 0.\n");
-
 	ifxmips_pci_startup ();
-
 	//	IFXMIPS_PCI_REG32(PCI_CR_CLK_CTRL_REG) &= (~8);
-	ifxmips_pci_mapped_cfg = ioremap_nocache(0x17000000, 0x800 * 16);
-	printk("IFXMips PCI mapped to 0x%08X\n", (unsigned long)ifxmips_pci_mapped_cfg);
-
+	ifxmips_pci_mapped_cfg = (u32)ioremap_nocache(0x17000000, 0x800 * 16);
+	printk("IFXMips PCI mapped to 0x%08lX\n", (unsigned long)ifxmips_pci_mapped_cfg);
 	ifxmips_pci_controller.io_map_base = (unsigned long)ioremap(IFXMIPS_PCI_IO_BASE, IFXMIPS_PCI_IO_SIZE - 1);
-
-	printk("IFXMips PCI I/O mapped to 0x%08X\n", (unsigned long)ifxmips_pci_controller.io_map_base);
-
+	printk("IFXMips PCI I/O mapped to 0x%08lX\n", (unsigned long)ifxmips_pci_controller.io_map_base);
 	register_pci_controller(&ifxmips_pci_controller);
-
 	return 0;
 }
 
