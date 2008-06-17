@@ -1,10 +1,8 @@
 /*
- *  $Id$
- *
  *  ADM5120 specific interrupt handlers
  *
- *  Copyright (C) 2007 OpenWrt.org
- *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2007-2008 OpenWrt.org
+ *  Copyright (C) 2007-2008 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -17,25 +15,33 @@
 #include <linux/version.h>
 #include <linux/interrupt.h>
 #include <linux/ioport.h>
-
 #include <linux/io.h>
+
 #include <asm/irq.h>
 #include <asm/irq_cpu.h>
 #include <asm/mipsregs.h>
 #include <asm/bitops.h>
 
-#include <adm5120_defs.h>
-#include <adm5120_irq.h>
-
-#define INTC_WRITE(reg, val)	__raw_writel((val), \
-	(void __iomem *)(KSEG1ADDR(ADM5120_INTC_BASE) + reg))
-
-#define INTC_READ(reg)		__raw_readl(\
-	(void __iomem *)(KSEG1ADDR(ADM5120_INTC_BASE) + reg))
+#include <asm/mach-adm5120/adm5120_defs.h>
+#include <asm/mach-adm5120/adm5120_irq.h>
 
 static void adm5120_intc_irq_unmask(unsigned int irq);
 static void adm5120_intc_irq_mask(unsigned int irq);
 static int  adm5120_intc_irq_set_type(unsigned int irq, unsigned int flow_type);
+
+static inline void intc_write_reg(unsigned int reg, u32 val)
+{
+	void __iomem *base = (void __iomem *)KSEG1ADDR(ADM5120_INTC_BASE);
+
+	__raw_writel(val, base + reg);
+}
+
+static inline u32 intc_read_reg(unsigned int reg)
+{
+	void __iomem *base = (void __iomem *)KSEG1ADDR(ADM5120_INTC_BASE);
+
+	return __raw_readl(base + reg);
+}
 
 static struct irq_chip adm5120_intc_irq_chip = {
 	.name 		= "INTC",
@@ -53,13 +59,13 @@ static struct irqaction adm5120_intc_irq_action = {
 static void adm5120_intc_irq_unmask(unsigned int irq)
 {
 	irq -= ADM5120_INTC_IRQ_BASE;
-	INTC_WRITE(INTC_REG_IRQ_ENABLE, 1 << irq);
+	intc_write_reg(INTC_REG_IRQ_ENABLE, 1 << irq);
 }
 
 static void adm5120_intc_irq_mask(unsigned int irq)
 {
 	irq -= ADM5120_INTC_IRQ_BASE;
-	INTC_WRITE(INTC_REG_IRQ_DISABLE, 1 << irq);
+	intc_write_reg(INTC_REG_IRQ_DISABLE, 1 << irq);
 }
 
 static int adm5120_intc_irq_set_type(unsigned int irq, unsigned int flow_type)
@@ -94,13 +100,13 @@ static int adm5120_intc_irq_set_type(unsigned int irq, unsigned int flow_type)
 	switch (irq) {
 	case ADM5120_IRQ_GPIO2:
 	case ADM5120_IRQ_GPIO4:
-		mode = INTC_READ(INTC_REG_INT_MODE);
+		mode = intc_read_reg(INTC_REG_INT_MODE);
 		if (sense == IRQ_TYPE_LEVEL_LOW)
 			mode |= (1 << (irq - ADM5120_INTC_IRQ_BASE));
 		else
 			mode &= ~(1 << (irq - ADM5120_INTC_IRQ_BASE));
 
-		INTC_WRITE(INTC_REG_INT_MODE, mode);
+		intc_write_reg(INTC_REG_INT_MODE, mode);
 		/* fallthrough */
 	default:
 		irq_desc[irq].status &= ~IRQ_TYPE_SENSE_MASK;
@@ -117,10 +123,10 @@ static void adm5120_intc_irq_dispatch(void)
 	int irq;
 
 	/* dispatch only one IRQ at a time */
-	status = INTC_READ(INTC_REG_IRQ_STATUS) & INTC_INT_ALL;
+	status = intc_read_reg(INTC_REG_IRQ_STATUS) & INTC_INT_ALL;
 
 	if (status) {
-		irq = ADM5120_INTC_IRQ_BASE+fls(status)-1;
+		irq = ADM5120_INTC_IRQ_BASE + fls(status) - 1;
 		do_IRQ(irq);
 	} else
 		spurious_interrupt();
@@ -142,24 +148,24 @@ asmlinkage void plat_irq_dispatch(void)
 
 #define INTC_IRQ_STATUS (IRQ_LEVEL | IRQ_TYPE_LEVEL_HIGH | IRQ_DISABLED)
 
-static void __init adm5120_intc_irq_init(int base)
+static void __init adm5120_intc_irq_init(void)
 {
 	int i;
 
 	/* disable all interrupts */
-	INTC_WRITE(INTC_REG_IRQ_DISABLE, INTC_INT_ALL);
+	intc_write_reg(INTC_REG_IRQ_DISABLE, INTC_INT_ALL);
 
 	/* setup all interrupts to generate IRQ instead of FIQ */
-	INTC_WRITE(INTC_REG_INT_MODE, 0);
+	intc_write_reg(INTC_REG_INT_MODE, 0);
 
 	/* set active level for all external interrupts to HIGH */
-	INTC_WRITE(INTC_REG_INT_LEVEL, 0);
+	intc_write_reg(INTC_REG_INT_LEVEL, 0);
 
 	/* disable usage of the TEST_SOURCE register */
-	INTC_WRITE(INTC_REG_IRQ_SOURCE_SELECT, 0);
+	intc_write_reg(INTC_REG_IRQ_SOURCE_SELECT, 0);
 
 	for (i = ADM5120_INTC_IRQ_BASE;
-		i <= ADM5120_INTC_IRQ_BASE+INTC_IRQ_LAST;
+		i <= ADM5120_INTC_IRQ_BASE + INTC_IRQ_LAST;
 		i++) {
 		irq_desc[i].status = INTC_IRQ_STATUS;
 		set_irq_chip_and_handler(i, &adm5120_intc_irq_chip,
@@ -171,5 +177,5 @@ static void __init adm5120_intc_irq_init(int base)
 
 void __init arch_init_irq(void) {
 	mips_cpu_irq_init();
-	adm5120_intc_irq_init(ADM5120_INTC_IRQ_BASE);
+	adm5120_intc_irq_init();
 }
