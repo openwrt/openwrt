@@ -1,7 +1,5 @@
-Index: linux-2.6.25.4/arch/cris/arch-v10/boot/Makefile
-===================================================================
---- linux-2.6.25.4.orig/arch/cris/arch-v10/boot/Makefile	2008-06-09 17:00:36.381498250 +0200
-+++ linux-2.6.25.4/arch/cris/arch-v10/boot/Makefile	2008-06-09 17:00:40.967491000 +0200
+--- a/arch/cris/arch-v10/boot/Makefile
++++ b/arch/cris/arch-v10/boot/Makefile
 @@ -2,7 +2,6 @@
  # arch/cris/arch-v10/boot/Makefile
  #
@@ -18,10 +16,8 @@ Index: linux-2.6.25.4/arch/cris/arch-v10/boot/Makefile
  
  $(obj)/zImage:  $(obj)/compressed/vmlinux
  	@cp $< $@
-Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/Makefile
-===================================================================
---- linux-2.6.25.4.orig/arch/cris/arch-v10/boot/compressed/Makefile	2008-06-09 17:00:36.381498250 +0200
-+++ linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/Makefile	2008-06-09 17:00:40.967491000 +0200
+--- a/arch/cris/arch-v10/boot/compressed/Makefile
++++ b/arch/cris/arch-v10/boot/compressed/Makefile
 @@ -2,12 +2,10 @@
  # arch/cris/arch-v10/boot/compressed/Makefile
  #
@@ -49,10 +45,8 @@ Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/Makefile
  
  $(obj)/vmlinux: $(obj)/piggy.gz $(obj)/decompress.bin FORCE
  	$(call if_changed,image)
-Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/misc.c
-===================================================================
---- linux-2.6.25.4.orig/arch/cris/arch-v10/boot/compressed/misc.c	2008-06-09 17:00:36.381498250 +0200
-+++ linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/misc.c	2008-06-09 17:00:40.967491000 +0200
+--- a/arch/cris/arch-v10/boot/compressed/misc.c
++++ b/arch/cris/arch-v10/boot/compressed/misc.c
 @@ -5,7 +5,7 @@
   * adapted for Linux.
   *
@@ -117,10 +111,8 @@ Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/misc.c
 -	puts("Done. Now booting the kernel.\n");
 +	putstr("Done. Now booting the kernel.\n");
  }
-Index: linux-2.6.25.4/arch/cris/arch-v10/mm/init.c
-===================================================================
---- linux-2.6.25.4.orig/arch/cris/arch-v10/mm/init.c	2008-06-09 17:00:36.385496500 +0200
-+++ linux-2.6.25.4/arch/cris/arch-v10/mm/init.c	2008-06-09 17:00:40.967491000 +0200
+--- a/arch/cris/arch-v10/mm/init.c
++++ b/arch/cris/arch-v10/mm/init.c
 @@ -184,6 +184,9 @@
  
  	free_area_init_node(0, &contig_page_data, zones_size, PAGE_OFFSET >> PAGE_SHIFT, 0);
@@ -131,10 +123,8 @@ Index: linux-2.6.25.4/arch/cris/arch-v10/mm/init.c
  
  /* Initialize remaps of some I/O-ports. It is important that this
   * is called before any driver is initialized.
-Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/head.S
-===================================================================
---- linux-2.6.25.4.orig/arch/cris/arch-v10/boot/compressed/head.S	2008-06-09 17:00:36.385496500 +0200
-+++ linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/head.S	2008-06-09 17:00:40.971489250 +0200
+--- a/arch/cris/arch-v10/boot/compressed/head.S
++++ b/arch/cris/arch-v10/boot/compressed/head.S
 @@ -10,13 +10,14 @@
  
  #define ASSEMBLER_MACROS_ONLY
@@ -289,10 +279,8 @@ Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/head.S
 +cmd_line_addr:
  	.dword 0
  #include "../../lib/hw_settings.S"
-Index: linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/decompress.ld
-===================================================================
---- linux-2.6.25.4.orig/arch/cris/arch-v10/boot/compressed/decompress.ld	2008-05-15 17:00:12.000000000 +0200
-+++ linux-2.6.25.4/arch/cris/arch-v10/boot/compressed/decompress.ld	2008-06-09 17:12:54.930425750 +0200
+--- a/arch/cris/arch-v10/boot/compressed/decompress.ld
++++ b/arch/cris/arch-v10/boot/compressed/decompress.ld
 @@ -1,4 +1,4 @@
 -OUTPUT_FORMAT(elf32-us-cris)
 +OUTPUT_FORMAT(elf32-cris)

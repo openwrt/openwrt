@@ -12,10 +12,8 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  2 files changed, 1 insertions(+), 60 deletions(-)
  delete mode 100644 arch/mips/bcm963xx/int-handler.S
 
-Index: linux-2.6.25.4/arch/mips/bcm963xx/Makefile
-===================================================================
---- linux-2.6.25.4.orig/arch/mips/bcm963xx/Makefile
-+++ linux-2.6.25.4/arch/mips/bcm963xx/Makefile
+--- a/arch/mips/bcm963xx/Makefile
++++ b/arch/mips/bcm963xx/Makefile
 @@ -3,7 +3,7 @@
  #
  # Copyright (C) 2004 Broadcom Corporation
@@ -25,9 +23,7 @@ Index: linux-2.6.25.4/arch/mips/bcm963xx/Makefile
  
  SRCBASE         := $(TOPDIR)
  EXTRA_CFLAGS    += -I$(SRCBASE)/include
-Index: linux-2.6.25.4/arch/mips/bcm963xx/int-handler.S
-===================================================================
---- linux-2.6.25.4.orig/arch/mips/bcm963xx/int-handler.S
+--- a/arch/mips/bcm963xx/int-handler.S
 +++ /dev/null
 @@ -1,59 +0,0 @@
 -/*

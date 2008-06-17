@@ -12,11 +12,9 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  arch/mips/bcm963xx/time.c |   64 ++++++++++++++++++++------------------------
  2 files changed, 31 insertions(+), 35 deletions(-)
 
-Index: linux-2.6.25.4/arch/mips/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/arch/mips/Kconfig
-+++ linux-2.6.25.4/arch/mips/Kconfig
-@@ -67,6 +67,8 @@ config BCM963XX
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -67,6 +67,8 @@
         select HW_HAS_PCI
         select DMA_NONCOHERENT
         select IRQ_CPU
@@ -25,10 +23,8 @@ Index: linux-2.6.25.4/arch/mips/Kconfig
         help
           This is a fmaily of boards based on the Broadcom MIPS32
  
-Index: linux-2.6.25.4/arch/mips/bcm963xx/time.c
-===================================================================
---- linux-2.6.25.4.orig/arch/mips/bcm963xx/time.c
-+++ linux-2.6.25.4/arch/mips/bcm963xx/time.c
+--- a/arch/mips/bcm963xx/time.c
++++ b/arch/mips/bcm963xx/time.c
 @@ -1,6 +1,7 @@
  /*
  <:copyright-gpl

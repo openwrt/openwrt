@@ -11,11 +11,9 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  arch/mips/Makefile |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-Index: linux-2.6.25.4/arch/mips/Makefile
-===================================================================
---- linux-2.6.25.4.orig/arch/mips/Makefile
-+++ linux-2.6.25.4/arch/mips/Makefile
-@@ -562,7 +562,7 @@ load-$(CONFIG_BCM47XX)		:= 0xffffffff800
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -562,7 +562,7 @@
  
  core-$(CONFIG_BCM963XX)		+= arch/mips/bcm963xx/
  cflags-$(CONFIG_BCM963XX)	+= -Iinclude/asm-mips/mach-bcm963xx

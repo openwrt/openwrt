@@ -1,7 +1,5 @@
-Index: linux-2.6.25.4/drivers/net/au1000_eth.c
-===================================================================
---- linux-2.6.25.4.orig/drivers/net/au1000_eth.c
-+++ linux-2.6.25.4/drivers/net/au1000_eth.c
+--- a/drivers/net/au1000_eth.c
++++ b/drivers/net/au1000_eth.c
 @@ -15,6 +15,9 @@
   * Author: MontaVista Software, Inc.
   *         	ppopov@mvista.com or source@mvista.com
@@ -12,7 +10,7 @@ Index: linux-2.6.25.4/drivers/net/au1000_eth.c
   * ########################################################################
   *
   *  This program is free software; you can distribute it and/or modify it
-@@ -835,6 +838,10 @@ static int au1000_init(struct net_device
+@@ -835,6 +838,10 @@
  
  	control = MAC_RX_ENABLE | MAC_TX_ENABLE;
  #ifndef CONFIG_CPU_LITTLE_ENDIAN

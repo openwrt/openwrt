@@ -11,11 +11,9 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  drivers/mtd/redboot.c     |   13 ++++++++++---
  3 files changed, 18 insertions(+), 3 deletions(-)
 
-Index: linux-2.6.25.4/drivers/mtd/maps/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/drivers/mtd/maps/Kconfig
-+++ linux-2.6.25.4/drivers/mtd/maps/Kconfig
-@@ -262,6 +262,13 @@ config MTD_MTX1
+--- a/drivers/mtd/maps/Kconfig
++++ b/drivers/mtd/maps/Kconfig
+@@ -262,6 +262,13 @@
  	  Flash memory access on 4G Systems MTX-1 Board. If you have one of
  	  these boards and would like to use the flash chips on it, say 'Y'.
  
@@ -29,20 +27,16 @@ Index: linux-2.6.25.4/drivers/mtd/maps/Kconfig
  config MTD_DILNETPC
  	tristate "CFI Flash device mapped on DIL/Net PC"
  	depends on X86 && MTD_CONCAT && MTD_PARTITIONS && MTD_CFI_INTELEXT
-Index: linux-2.6.25.4/drivers/mtd/maps/Makefile
-===================================================================
---- linux-2.6.25.4.orig/drivers/mtd/maps/Makefile
-+++ linux-2.6.25.4/drivers/mtd/maps/Makefile
-@@ -68,3 +68,4 @@ obj-$(CONFIG_MTD_PLATRAM)	+= plat-ram.o
+--- a/drivers/mtd/maps/Makefile
++++ b/drivers/mtd/maps/Makefile
+@@ -68,3 +68,4 @@
  obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
  obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o
  obj-$(CONFIG_MTD_INTEL_VR_NOR)	+= intel_vr_nor.o
 +obj-$(CONFIG_MTD_BCM963XX)	+= bcm963xx-flash.o
-Index: linux-2.6.25.4/drivers/mtd/redboot.c
-===================================================================
---- linux-2.6.25.4.orig/drivers/mtd/redboot.c
-+++ linux-2.6.25.4/drivers/mtd/redboot.c
-@@ -39,7 +39,7 @@ static inline int redboot_checksum(struc
+--- a/drivers/mtd/redboot.c
++++ b/drivers/mtd/redboot.c
+@@ -39,7 +39,7 @@
  	return 1;
  }
  
@@ -51,7 +45,7 @@ Index: linux-2.6.25.4/drivers/mtd/redboot.c
                               struct mtd_partition **pparts,
                               unsigned long fis_origin)
  {
-@@ -161,6 +161,14 @@ static int parse_redboot_partitions(stru
+@@ -161,6 +161,14 @@
  		goto out;
  	}
  
@@ -66,7 +60,7 @@ Index: linux-2.6.25.4/drivers/mtd/redboot.c
  	for (i = 0; i < numslots; i++) {
  		struct fis_list *new_fl, **prev;
  
-@@ -183,9 +191,8 @@ static int parse_redboot_partitions(stru
+@@ -183,9 +191,8 @@
  		new_fl->img = &buf[i];
                  if (fis_origin) {
                          buf[i].flash_base -= fis_origin;

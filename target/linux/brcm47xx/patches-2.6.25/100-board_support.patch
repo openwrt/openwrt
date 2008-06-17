@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/arch/mips/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/arch/mips/Kconfig
-+++ linux-2.6.25.4/arch/mips/Kconfig
-@@ -50,8 +50,10 @@ config BCM47XX
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -50,8 +50,10 @@
  	select SYS_SUPPORTS_32BIT_KERNEL
  	select SYS_SUPPORTS_LITTLE_ENDIAN
  	select SSB
@@ -13,7 +11,7 @@ Index: linux-2.6.25.4/arch/mips/Kconfig
  	select SSB_PCICORE_HOSTMODE if PCI
  	select GENERIC_GPIO
  	select SYS_HAS_EARLY_PRINTK
-@@ -790,6 +792,7 @@ config CSRC_SB1250
+@@ -790,6 +792,7 @@
  
  config CFE
  	bool
@@ -21,10 +19,8 @@ Index: linux-2.6.25.4/arch/mips/Kconfig
  
  config DMA_COHERENT
  	bool
-Index: linux-2.6.25.4/include/asm-mips/bootinfo.h
-===================================================================
---- linux-2.6.25.4.orig/include/asm-mips/bootinfo.h
-+++ linux-2.6.25.4/include/asm-mips/bootinfo.h
+--- a/include/asm-mips/bootinfo.h
++++ b/include/asm-mips/bootinfo.h
 @@ -94,6 +94,12 @@
  #define MACH_MSP7120_FPGA       5	/* PMC-Sierra MSP7120 Emulation */
  #define MACH_MSP_OTHER        255	/* PMC-Sierra unknown board type */
@@ -38,11 +34,9 @@ Index: linux-2.6.25.4/include/asm-mips/bootinfo.h
  #define CL_SIZE			COMMAND_LINE_SIZE
  
  extern char *system_type;
-Index: linux-2.6.25.4/include/linux/pci_ids.h
-===================================================================
---- linux-2.6.25.4.orig/include/linux/pci_ids.h
-+++ linux-2.6.25.4/include/linux/pci_ids.h
-@@ -2000,6 +2000,7 @@
+--- a/include/linux/pci_ids.h
++++ b/include/linux/pci_ids.h
+@@ -2001,6 +2001,7 @@
  #define PCI_DEVICE_ID_TIGON3_5906M	0x1713
  #define PCI_DEVICE_ID_BCM4401		0x4401
  #define PCI_DEVICE_ID_BCM4401B0		0x4402

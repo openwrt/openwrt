@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/drivers/mtd/maps/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/drivers/mtd/maps/Kconfig
-+++ linux-2.6.25.4/drivers/mtd/maps/Kconfig
-@@ -337,6 +337,12 @@ config MTD_CFI_FLAGADM
+--- a/drivers/mtd/maps/Kconfig
++++ b/drivers/mtd/maps/Kconfig
+@@ -337,6 +337,12 @@
  	  Mapping for the Flaga digital module. If you don't have one, ignore
  	  this setting.
  
@@ -15,11 +13,9 @@ Index: linux-2.6.25.4/drivers/mtd/maps/Kconfig
  config MTD_WALNUT
  	tristate "Flash device mapped on IBM 405GP Walnut"
  	depends on MTD_JEDECPROBE && WALNUT && !PPC_MERGE
-Index: linux-2.6.25.4/drivers/mtd/maps/Makefile
-===================================================================
---- linux-2.6.25.4.orig/drivers/mtd/maps/Makefile
-+++ linux-2.6.25.4/drivers/mtd/maps/Makefile
-@@ -31,6 +31,7 @@ obj-$(CONFIG_MTD_PMC_MSP_RAMROOT)+= pmcm
+--- a/drivers/mtd/maps/Makefile
++++ b/drivers/mtd/maps/Makefile
+@@ -31,6 +31,7 @@
  obj-$(CONFIG_MTD_PCMCIA)	+= pcmciamtd.o
  obj-$(CONFIG_MTD_RPXLITE)	+= rpxlite.o
  obj-$(CONFIG_MTD_TQM8XXL)	+= tqm8xxl.o

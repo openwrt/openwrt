@@ -1,10 +1,8 @@
-Index: linux-2.6.24.7/drivers/mtd/maps/Kconfig
-===================================================================
---- linux-2.6.24.7.orig/drivers/mtd/maps/Kconfig
-+++ linux-2.6.24.7/drivers/mtd/maps/Kconfig
-@@ -117,6 +117,50 @@ config MTD_PNC2000
- 	  PNC-2000 is the name of Network Camera product from PHOTRON
- 	  Ltd. in Japan. It uses CFI-compliant flash.
+--- a/drivers/mtd/maps/Kconfig
++++ b/drivers/mtd/maps/Kconfig
+@@ -110,6 +110,50 @@
+ 	  Sun Microsystems boardsets.  This driver will require CFI support
+ 	  in the kernel, so if you did not enable CFI previously, do that now.
  
 +config MTD_RDC3210
 +	tristate "CFI Flash device mapped on RDC3210"
@@ -53,13 +51,11 @@ Index: linux-2.6.24.7/drivers/mtd/maps/Kconfig
  config MTD_SC520CDP
  	tristate "CFI Flash device mapped on AMD SC520 CDP"
  	depends on X86 && MTD_CFI && MTD_CONCAT
-Index: linux-2.6.24.7/drivers/mtd/maps/Makefile
-===================================================================
---- linux-2.6.24.7.orig/drivers/mtd/maps/Makefile
-+++ linux-2.6.24.7/drivers/mtd/maps/Makefile
-@@ -30,6 +30,7 @@ obj-$(CONFIG_MTD_PMC_MSP_EVM)   += pmcms
+--- a/drivers/mtd/maps/Makefile
++++ b/drivers/mtd/maps/Makefile
+@@ -29,6 +29,7 @@
+ obj-$(CONFIG_MTD_PMC_MSP_EVM)   += pmcmsp-flash.o
  obj-$(CONFIG_MTD_PMC_MSP_RAMROOT)+= pmcmsp-ramroot.o
- obj-$(CONFIG_MTD_PNC2000)	+= pnc2000.o
  obj-$(CONFIG_MTD_PCMCIA)	+= pcmciamtd.o
 +obj-$(CONFIG_MTD_RDC3210)	+= rdc3210.o
  obj-$(CONFIG_MTD_RPXLITE)	+= rpxlite.o
