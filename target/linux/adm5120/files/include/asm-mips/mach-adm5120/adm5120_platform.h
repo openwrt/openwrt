@@ -62,7 +62,7 @@ static inline void adm5120_pci_set_irq_map(unsigned int nr_irqs,
 }
 #endif
 
-#define ADM5120_NUM_BUTTONS	4
+#define ADM5120_NUM_BUTTONS	5
 
 extern struct adm5120_flash_platform_data adm5120_flash0_data;
 extern struct adm5120_flash_platform_data adm5120_flash1_data;
