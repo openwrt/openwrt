@@ -1,7 +1,5 @@
-Index: linux-2.6.25.4/drivers/char/Makefile
-===================================================================
---- linux-2.6.25.4.orig/drivers/char/Makefile	2008-06-07 10:59:30.000000000 +0100
-+++ linux-2.6.25.4/drivers/char/Makefile	2008-06-07 10:59:42.000000000 +0100
+--- a/drivers/char/Makefile
++++ b/drivers/char/Makefile
 @@ -113,6 +113,12 @@
  obj-$(CONFIG_JS_RTC)		+= js-rtc.o
  js-rtc-y = rtc.o
@@ -15,19 +13,15 @@ Index: linux-2.6.25.4/drivers/char/Makefile
  # Files generated that shall be removed upon make clean
  clean-files := consolemap_deftbl.c defkeymap.c
  
-Index: linux-2.6.25.4/drivers/mtd/maps/Makefile
-===================================================================
---- linux-2.6.25.4.orig/drivers/mtd/maps/Makefile	2008-06-07 10:59:30.000000000 +0100
-+++ linux-2.6.25.4/drivers/mtd/maps/Makefile	2008-06-07 10:59:42.000000000 +0100
+--- a/drivers/mtd/maps/Makefile
++++ b/drivers/mtd/maps/Makefile
 @@ -68,3 +68,4 @@
  obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
  obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o
  obj-$(CONFIG_MTD_INTEL_VR_NOR)	+= intel_vr_nor.o
 +obj-$(CONFIG_MTD_IFXMIPS)  += ifxmips.o
-Index: linux-2.6.25.4/drivers/net/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/drivers/net/Kconfig	2008-06-07 10:59:30.000000000 +0100
-+++ linux-2.6.25.4/drivers/net/Kconfig	2008-06-07 10:59:42.000000000 +0100
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
 @@ -351,6 +351,12 @@
  
  source "drivers/net/arm/Kconfig"
@@ -41,10 +35,8 @@ Index: linux-2.6.25.4/drivers/net/Kconfig
  config AX88796
  	tristate "ASIX AX88796 NE2000 clone support"
  	depends on ARM || MIPS || SUPERH
-Index: linux-2.6.25.4/drivers/serial/Kconfig
-===================================================================
---- linux-2.6.25.4.orig/drivers/serial/Kconfig	2008-06-07 10:59:30.000000000 +0100
-+++ linux-2.6.25.4/drivers/serial/Kconfig	2008-06-07 10:59:42.000000000 +0100
+--- a/drivers/serial/Kconfig
++++ b/drivers/serial/Kconfig
 @@ -1327,6 +1327,14 @@
  	  Currently, only 8250 compatible ports are supported, but
  	  others can easily be added.
@@ -60,20 +52,16 @@ Index: linux-2.6.25.4/drivers/serial/Kconfig
  config SERIAL_QE
  	tristate "Freescale QUICC Engine serial port support"
  	depends on QUICC_ENGINE
-Index: linux-2.6.25.4/drivers/serial/Makefile
-===================================================================
---- linux-2.6.25.4.orig/drivers/serial/Makefile	2008-06-07 10:59:30.000000000 +0100
-+++ linux-2.6.25.4/drivers/serial/Makefile	2008-06-07 10:59:42.000000000 +0100
+--- a/drivers/serial/Makefile
++++ b/drivers/serial/Makefile
 @@ -66,4 +66,5 @@
  obj-$(CONFIG_SERIAL_NETX) += netx-serial.o
  obj-$(CONFIG_SERIAL_OF_PLATFORM) += of_serial.o
  obj-$(CONFIG_SERIAL_KS8695) += serial_ks8695.o
 +obj-$(CONFIG_SERIAL_IFXMIPS) += ifxmips_asc.o
  obj-$(CONFIG_SERIAL_QE) += ucc_uart.o
-Index: linux-2.6.25.4/drivers/watchdog/Makefile
-===================================================================
---- linux-2.6.25.4.orig/drivers/watchdog/Makefile	2008-06-07 10:59:30.000000000 +0100
-+++ linux-2.6.25.4/drivers/watchdog/Makefile	2008-06-07 10:59:42.000000000 +0100
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
 @@ -96,6 +96,7 @@
  obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
  obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
@@ -82,10 +70,8 @@ Index: linux-2.6.25.4/drivers/watchdog/Makefile
  
  # PARISC Architecture
  
-Index: linux-2.6.25.4/drivers/net/Makefile
-===================================================================
---- linux-2.6.25.4.orig/drivers/net/Makefile	2008-06-07 11:00:16.000000000 +0100
-+++ linux-2.6.25.4/drivers/net/Makefile	2008-06-07 11:01:08.000000000 +0100
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
 @@ -254,3 +254,4 @@
  obj-$(CONFIG_NETXEN_NIC) += netxen/
  obj-$(CONFIG_NIU) += niu.o

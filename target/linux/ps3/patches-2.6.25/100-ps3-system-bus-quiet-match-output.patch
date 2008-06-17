@@ -9,7 +9,7 @@ Signed-off-by: Geoff Levand <geoffrey.levand@am.sony.com>
 
 --- a/arch/powerpc/platforms/ps3/system-bus.c
 +++ b/arch/powerpc/platforms/ps3/system-bus.c
-@@ -349,9 +349,14 @@ static int ps3_system_bus_match(struct d
+@@ -349,9 +349,14 @@
  
  	result = dev->match_id == drv->match_id;
  
@@ -27,7 +27,7 @@ Signed-off-by: Geoff Levand <geoffrey.levand@am.sony.com>
  	return result;
  }
  
-@@ -362,7 +367,7 @@ static int ps3_system_bus_probe(struct d
+@@ -362,7 +367,7 @@
  	struct ps3_system_bus_driver *drv;
  
  	BUG_ON(!dev);
@@ -36,7 +36,7 @@ Signed-off-by: Geoff Levand <geoffrey.levand@am.sony.com>
  
  	drv = ps3_system_bus_dev_to_system_bus_drv(dev);
  	BUG_ON(!drv);
-@@ -370,10 +375,10 @@ static int ps3_system_bus_probe(struct d
+@@ -370,10 +375,10 @@
  	if (drv->probe)
  		result = drv->probe(dev);
  	else
@@ -49,7 +49,7 @@ Signed-off-by: Geoff Levand <geoffrey.levand@am.sony.com>
  	return result;
  }
  
-@@ -384,7 +389,7 @@ static int ps3_system_bus_remove(struct 
+@@ -384,7 +389,7 @@
  	struct ps3_system_bus_driver *drv;
  
  	BUG_ON(!dev);
@@ -58,7 +58,7 @@ Signed-off-by: Geoff Levand <geoffrey.levand@am.sony.com>
  
  	drv = ps3_system_bus_dev_to_system_bus_drv(dev);
  	BUG_ON(!drv);
-@@ -395,7 +400,7 @@ static int ps3_system_bus_remove(struct 
+@@ -395,7 +400,7 @@
  		dev_dbg(&dev->core, "%s:%d %s: no remove method\n",
  			__func__, __LINE__, drv->core.name);
  

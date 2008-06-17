@@ -1,8 +1,6 @@
-Index: linux-2.6.25.4/drivers/mtd/chips/cfi_cmdset_0002.c
-===================================================================
---- linux-2.6.25.4.orig/drivers/mtd/chips/cfi_cmdset_0002.c
-+++ linux-2.6.25.4/drivers/mtd/chips/cfi_cmdset_0002.c
-@@ -1015,7 +1015,9 @@ static int __xipram do_write_oneword(str
+--- a/drivers/mtd/chips/cfi_cmdset_0002.c
++++ b/drivers/mtd/chips/cfi_cmdset_0002.c
+@@ -1015,7 +1015,9 @@
  	int retry_cnt = 0;
  
  	adr += chip->start;

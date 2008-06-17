@@ -12,11 +12,9 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  drivers/serial/bcm63xx_cons.c |    6 ++++++
  1 files changed, 6 insertions(+), 0 deletions(-)
 
-Index: linux-2.6.25.4/drivers/serial/bcm63xx_cons.c
-===================================================================
---- linux-2.6.25.4.orig/drivers/serial/bcm63xx_cons.c
-+++ linux-2.6.25.4/drivers/serial/bcm63xx_cons.c
-@@ -258,8 +258,14 @@ static void bcm_interrupt(int irq, void 
+--- a/drivers/serial/bcm63xx_cons.c
++++ b/drivers/serial/bcm63xx_cons.c
+@@ -258,8 +258,14 @@
  	while (intStat) {
  		if (intStat & RXINT)
  			receive_chars(info);

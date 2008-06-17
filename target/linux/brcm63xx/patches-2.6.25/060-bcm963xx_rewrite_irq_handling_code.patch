@@ -13,10 +13,8 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  include/asm-mips/mach-bcm963xx/bcm_intr.h |   18 +--
  3 files changed, 119 insertions(+), 220 deletions(-)
 
-Index: linux-2.6.25.4/arch/mips/bcm963xx/irq.c
-===================================================================
---- linux-2.6.25.4.orig/arch/mips/bcm963xx/irq.c
-+++ linux-2.6.25.4/arch/mips/bcm963xx/irq.c
+--- a/arch/mips/bcm963xx/irq.c
++++ b/arch/mips/bcm963xx/irq.c
 @@ -1,259 +1,159 @@
  /*
 -<:copyright-gpl 
@@ -382,11 +380,9 @@ Index: linux-2.6.25.4/arch/mips/bcm963xx/irq.c
 -EXPORT_SYMBOL(request_external_irq);
 -EXPORT_SYMBOL(BcmHalMapInterrupt);
 -
-Index: linux-2.6.25.4/drivers/serial/bcm63xx_cons.c
-===================================================================
---- linux-2.6.25.4.orig/drivers/serial/bcm63xx_cons.c
-+++ linux-2.6.25.4/drivers/serial/bcm63xx_cons.c
-@@ -267,7 +267,7 @@ static void bcm_interrupt(int irq, void 
+--- a/drivers/serial/bcm63xx_cons.c
++++ b/drivers/serial/bcm63xx_cons.c
+@@ -267,7 +267,7 @@
  	}
  
  	// Clear the interrupt
@@ -395,7 +391,7 @@ Index: linux-2.6.25.4/drivers/serial/bcm63xx_cons.c
  #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
  	return IRQ_HANDLED;
  #endif
-@@ -880,7 +880,7 @@ static int bcm63xx_cons_open(struct tty_
+@@ -880,7 +880,7 @@
  	info->count++;
  	tty->driver_data = info;
  	info->tty = tty;
@@ -404,7 +400,7 @@ Index: linux-2.6.25.4/drivers/serial/bcm63xx_cons.c
  
  	// Start up serial port
  	retval = startup(info);
-@@ -927,7 +927,7 @@ static struct tty_operations rs_ops = {
+@@ -927,7 +927,7 @@
  -------------------------------------------------------------------------- */
  static int __init bcm63xx_serialinit(void)
  {
@@ -413,7 +409,7 @@ Index: linux-2.6.25.4/drivers/serial/bcm63xx_cons.c
  	struct bcm_serial *info;
  
  	// Print the driver version information
-@@ -981,7 +981,12 @@ static int __init bcm63xx_serialinit(voi
+@@ -981,7 +981,12 @@
  		 */
  		if (!info->port)
  			return 0;
@@ -427,11 +423,9 @@ Index: linux-2.6.25.4/drivers/serial/bcm63xx_cons.c
  	}
  
  	/* order matters here... the trick is that flags
-Index: linux-2.6.25.4/include/asm-mips/mach-bcm963xx/bcm_intr.h
-===================================================================
---- linux-2.6.25.4.orig/include/asm-mips/mach-bcm963xx/bcm_intr.h
-+++ linux-2.6.25.4/include/asm-mips/mach-bcm963xx/bcm_intr.h
-@@ -39,18 +39,12 @@ struct pt_regs;
+--- a/include/asm-mips/mach-bcm963xx/bcm_intr.h
++++ b/include/asm-mips/mach-bcm963xx/bcm_intr.h
+@@ -39,18 +39,12 @@
  typedef int (*FN_HANDLER) (int, void *);
  
  /* prototypes */

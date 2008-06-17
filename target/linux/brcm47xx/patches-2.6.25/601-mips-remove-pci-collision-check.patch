@@ -2,11 +2,9 @@ The SSB pcicore driver does create some MMIO resource collisions.
 However, the pcicore PCI-fixup routine fixes these collisions afterwards.
 Remove this sanity check for now until we find a better solution.
 --mb
-Index: linux-2.6.25.4/arch/mips/pci/pci.c
-===================================================================
---- linux-2.6.25.4.orig/arch/mips/pci/pci.c
-+++ linux-2.6.25.4/arch/mips/pci/pci.c
-@@ -182,12 +182,10 @@ static int pcibios_enable_resources(stru
+--- a/arch/mips/pci/pci.c
++++ b/arch/mips/pci/pci.c
+@@ -182,12 +182,10 @@
  		if ((idx == PCI_ROM_RESOURCE) &&
  				(!(r->flags & IORESOURCE_ROM_ENABLE)))
  			continue;
