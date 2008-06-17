@@ -78,6 +78,7 @@ define Package/libuci-lua/install
 endef
 
 define Package/uci/install
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uci $(1)/sbin/
 	$(CP) ./files/uci/* $(1)/
