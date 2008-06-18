@@ -106,11 +106,11 @@ enable_atheros() {
 				*) agmode=auto;;
 			esac
 			iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
-			ifconfig "$ifname" up
 			sleep 1
 			iwpriv "$ifname" mode "$agmode"
 			iwpriv "$ifname" pureg "$pureg"
 			iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
+			ifconfig "$ifname" up
 		}
 	
 		config_get_bool hidden "$vif" hidden 0
