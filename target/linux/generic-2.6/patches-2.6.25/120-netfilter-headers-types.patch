@@ -1,0 +1,88 @@
+commit c8942f1f0a7e2160ebf2e51ba89e50ee5895a1e7
+Author: Patrick McHardy <kaber@trash.net>
+Date:   Wed May 21 14:08:38 2008 -0700
+
+    netfilter: Move linux/types.h inclusions outside of #ifdef __KERNEL__
+    
+    Greg Steuck <greg@nest.cx> points out that some of the netfilter
+    headers can't be used in userspace without including linux/types.h
+    first. The headers include their own linux/types.h include statements,
+    these are stripped by make headers-install because they are inside
+    #ifdef __KERNEL__ however. Move them out to fix this.
+    
+    Reported and Tested by Greg Steuck.
+    
+    Signed-off-by: Patrick McHardy <kaber@trash.net>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+diff --git a/include/linux/netfilter.h b/include/linux/netfilter.h
+index e4c6659..0c5eb7e 100644
+--- a/include/linux/netfilter.h
++++ b/include/linux/netfilter.h
+@@ -3,7 +3,6 @@
+ 
+ #ifdef __KERNEL__
+ #include <linux/init.h>
+-#include <linux/types.h>
+ #include <linux/skbuff.h>
+ #include <linux/net.h>
+ #include <linux/netdevice.h>
+@@ -14,6 +13,7 @@
+ #include <linux/list.h>
+ #include <net/net_namespace.h>
+ #endif
++#include <linux/types.h>
+ #include <linux/compiler.h>
+ 
+ /* Responses from hook functions. */
+diff --git a/include/linux/netfilter_arp/arp_tables.h b/include/linux/netfilter_arp/arp_tables.h
+index dd9c97f..590ac3d 100644
+--- a/include/linux/netfilter_arp/arp_tables.h
++++ b/include/linux/netfilter_arp/arp_tables.h
+@@ -11,11 +11,11 @@
+ 
+ #ifdef __KERNEL__
+ #include <linux/if.h>
+-#include <linux/types.h>
+ #include <linux/in.h>
+ #include <linux/if_arp.h>
+ #include <linux/skbuff.h>
+ #endif
++#include <linux/types.h>
+ #include <linux/compiler.h>
+ #include <linux/netfilter_arp.h>
+ 
+diff --git a/include/linux/netfilter_ipv4/ip_tables.h b/include/linux/netfilter_ipv4/ip_tables.h
+index bfc889f..092bd50 100644
+--- a/include/linux/netfilter_ipv4/ip_tables.h
++++ b/include/linux/netfilter_ipv4/ip_tables.h
+@@ -17,11 +17,11 @@
+ 
+ #ifdef __KERNEL__
+ #include <linux/if.h>
+-#include <linux/types.h>
+ #include <linux/in.h>
+ #include <linux/ip.h>
+ #include <linux/skbuff.h>
+ #endif
++#include <linux/types.h>
+ #include <linux/compiler.h>
+ #include <linux/netfilter_ipv4.h>
+ 
+diff --git a/include/linux/netfilter_ipv6/ip6_tables.h b/include/linux/netfilter_ipv6/ip6_tables.h
+index f2507dc..1089e33 100644
+--- a/include/linux/netfilter_ipv6/ip6_tables.h
++++ b/include/linux/netfilter_ipv6/ip6_tables.h
+@@ -17,11 +17,11 @@
+ 
+ #ifdef __KERNEL__
+ #include <linux/if.h>
+-#include <linux/types.h>
+ #include <linux/in6.h>
+ #include <linux/ipv6.h>
+ #include <linux/skbuff.h>
+ #endif
++#include <linux/types.h>
+ #include <linux/compiler.h>
+ #include <linux/netfilter_ipv6.h>
+ 
