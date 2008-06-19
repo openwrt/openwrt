@@ -79,7 +79,7 @@
 	"serverip=192.168.45.100\0" \
 	"ipaddr=192.168.45.108\0"  \
 	"update_uboot=tftp 0x80500000 u-boot.ifx;era 1:0-10; cp.b 0x80500000 0xb0000000 0x10000\0" \
-	"update_openwrt=tftp 0x80500000 openwrt-ifxmips-2.6-squashfs.image; era 1:10-120; cp.b 0x80500000 0xb0030000 0x300000\0"
+	"update_openwrt=tftp 0x80500000 openwrt-ifxmips-squashfs.image; era 1:10-120; cp.b 0x80500000 0xb0030000 0x300000\0"
 
 #define CONFIG_BOOTCOMMAND	"bootm 0xb0030000"
 
