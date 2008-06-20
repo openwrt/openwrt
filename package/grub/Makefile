@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -30,7 +30,13 @@ define Package/grub
   URL:=http://www.gnu.org/software/grub/
 endef
 
-ifeq ($(HOST_ARCH),x86_64)
+ifeq ($(HOST_OS),Linux)
+  NATIVEGRUB-i386:=1
+  NATIVEGRUB-i686:=1
+  NATIVEGRUB:=$(NATIVEGRUB-$(HOST_ARCH))
+endif
+
+ifeq ($(NATIVEGRUB),)
 CONFIGURE_FLAGS:= \
 	--target=$(GNU_TARGET_NAME) \
 	--host=$(GNU_TARGET_NAME) \
@@ -62,7 +68,7 @@ define Build/Configure
 endef
 
 #
-# ./configure detects whether the host compiler supports 
+# ./configure detects whether the host compiler supports
 # -fno-stack-protector but only sets STAGE2_CFLAGS accordingly
 #
 define Build/Compile
