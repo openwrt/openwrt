@@ -507,6 +507,20 @@ endef
 
 $(eval $(call KernelPackage,usb-atm-ueagle))
 
+define KernelPackage/usb-atm-cxacru
+  $(call usbdep,kmod-usb-atm @LINUX_2_6)
+  TITLE:=cxacru
+  FILES:=$(LINUX_DIR)/drivers/usb/atm/cxacru.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=CONFIG_USB_CXACRU
+  AUTOLOAD:=$(call AutoLoad,70,cxacru)
+endef
+
+define KernelPackage/usb-atm-cxacru/description
+ Kernel support for cxacru based USB ADSL modems
+endef
+
+$(eval $(call KernelPackage,usb-atm-cxacru))
+
 
 define KernelPackage/usb-net
   $(call usbdep,)
