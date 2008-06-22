@@ -6,7 +6,24 @@
 #
 
 define Image/Build/ZyXEL
+	$(call Image/Build/Loader,$(2),bin,0x80500000,0,y,$(2))
 	$(call Image/Build/TRXNoloader,$(call imgname,$(1),$(2)).trx,$(1))
+	$(STAGING_DIR_HOST)/bin/mkzynfw -B $(2) \
+		-b $(KDIR)/loader-$(2).bin \
+		-r $(call imgname,$(1),$(2)).trx:0x10000 \
+		-o $(call imgname,$(1),$(2))-webui.bin
+endef
+
+define Image/Build/Template/ZyXEL
+	$(call Image/Build/ZyXEL,$(1),$(2))
+endef
+
+define Image/Build/Template/ZyXEL/squashfs
+	$(call Image/Build/Template/ZyXEL,squashfs,$(1))
+endef
+
+define Image/Build/Template/ZyXEL/jffs2
+	$(call Image/Build/Template/ZyXEL,jffs2,$(1))
 endef
 
 define Image/Build/Template/ZyXEL/Initramfs
