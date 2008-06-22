@@ -21,6 +21,8 @@
 #define BOOTBASE_MAC_LEN	6
 #define BOOTBASE_FEAT_LEN	22
 
+#define BOOTEXT_DEF_SIZE	0x18000
+
 struct zyn_bootbase_info {
 	char		vendor[BOOTBASE_NAME_LEN]; /* Vendor name */
 	char		model[BOOTBASE_NAME_LEN]; /* Model name */

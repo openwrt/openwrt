@@ -96,6 +96,7 @@ struct board_info {
 	uint32_t flash_size;	/* board flash size */
 	uint32_t code_start;	/* code start address */
 	uint32_t romio_offs;	/* offset of the firmware within the flash */
+	uint32_t bootext_size;	/* maximum size of bootext block */
 };
 
 /*
@@ -121,11 +122,12 @@ int num_blocks = 0;
 #define ATHEROS_FLASH_BASE	0xBFC00000
 #define ATHEROS_CODE_START	0x80e00000
 
-#define BOARD(n, d, v, m, fb, fs, cs, fo) { \
-	.name = (n), .desc=(d), \
-	.vendor = (v), .model = (m), \
-	.flash_base = (fb), .flash_size = (fs)<<20, \
-	.code_start = (cs), .romio_offs = (fo) \
+#define BOARD(n, d, v, m, fb, fs, cs, fo) {		\
+	.name = (n), .desc=(d),				\
+	.vendor = (v), .model = (m),			\
+	.flash_base = (fb), .flash_size = (fs)<<20,	\
+	.code_start = (cs), .romio_offs = (fo),		\
+	.bootext_size = BOOTEXT_DEF_SIZE		\
 	}
 
 #define ADMBOARD1(n, d, m, fs) BOARD(n, d, ZYNOS_VENDOR_ID_ZYXEL, m, \
@@ -173,6 +175,7 @@ static struct board_info boards[] = {
 		.flash_size	= 4*1024*1024,
 		.code_start	= 0x94008000,
 		.romio_offs	= 0x20000,
+		.bootext_size	= BOOTEXT_DEF_SIZE,
 	},
 
 #if 0
@@ -205,6 +208,7 @@ static struct board_info boards[] = {
 		.flash_size	= 8*1024*1024,
 		.code_start	= 0x94014000,
 		.romio_offs	= 0x40000,
+		.bootext_size	= BOOTEXT_DEF_SIZE,
 	},
 
 	/*
@@ -701,11 +705,13 @@ write_out_image(FILE *outfile)
 	hdr.type = OBJECT_TYPE_BOOTEXT;
 	hdr.flags = ROMBIN_FLAG_OCSUM;
 
+	offset = board->romio_offs;
+
 	res = write_out_header(outfile, &hdr);
 	if (res)
 		return res;
 
-	offset = sizeof(hdr);
+	offset += sizeof(hdr);
 
 	csum_init(&css);
 	res = write_out_block(outfile, bootext_block, &css);
@@ -713,8 +719,12 @@ write_out_image(FILE *outfile)
 		return res;
 
 	offset += bootext_block->file_size;
+	if (offset > (board->romio_offs + board->bootext_size)) {
+		ERR("bootext file '%s' is too big", bootext_block->file_name);
+		return -1;
+	}
 
-	padlen = ALIGN(offset,MMAP_ALIGN) - offset;
+	padlen = ALIGN(offset, MMAP_ALIGN) - offset;
 	res = write_out_padding(outfile, padlen, 0xFF, &css);
 	if (res)
 		return res;
@@ -728,16 +738,26 @@ write_out_image(FILE *outfile)
 		return res;
 
 	offset += MMAP_DATA_SIZE;
-	hdr.osize = offset - sizeof(hdr);
+	hdr.osize = offset - sizeof(hdr) - board->romio_offs;
 	hdr.ocsum = csum_get(&css);
 
-	for (i=0; i < num_blocks; i++) {
+	if ((offset - board->romio_offs) < board->bootext_size) {
+		padlen = board->romio_offs + board->bootext_size - offset;
+		res = write_out_padding(outfile, padlen, 0xFF, NULL);
+		if (res)
+			return res;
+		offset += padlen;
+
+		DBG(2, "bootext end at %08x", offset);
+	}
+
+	for (i = 0; i < num_blocks; i++) {
 		block = &blocks[i];
 
 		if (block->type == BLOCK_TYPE_BOOTEXT)
 			continue;
 
-		padlen = ALIGN(offset,block->align) - offset;
+		padlen = ALIGN(offset, block->align) - offset;
 		res = write_out_padding(outfile, padlen, 0xFF, NULL);
 		if (res)
 			return res;
@@ -999,7 +1019,6 @@ main(int argc, char *argv[])
 		ERR("invalid option: %s", argv[optind]);
 		goto out;
 	}
-
 
 	if (process_blocks() != 0) {
 		goto out;
