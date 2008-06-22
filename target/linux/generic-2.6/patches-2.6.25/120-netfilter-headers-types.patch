@@ -15,8 +15,6 @@ Date:   Wed May 21 14:08:38 2008 -0700
     Signed-off-by: Patrick McHardy <kaber@trash.net>
     Signed-off-by: David S. Miller <davem@davemloft.net>
 
-diff --git a/include/linux/netfilter.h b/include/linux/netfilter.h
-index e4c6659..0c5eb7e 100644
 --- a/include/linux/netfilter.h
 +++ b/include/linux/netfilter.h
 @@ -3,7 +3,6 @@
@@ -26,17 +24,15 @@ index e4c6659..0c5eb7e 100644
 -#include <linux/types.h>
  #include <linux/skbuff.h>
  #include <linux/net.h>
- #include <linux/netdevice.h>
-@@ -14,6 +13,7 @@
+ #include <linux/if.h>
+@@ -12,6 +11,7 @@
+ #include <linux/wait.h>
  #include <linux/list.h>
- #include <net/net_namespace.h>
  #endif
 +#include <linux/types.h>
  #include <linux/compiler.h>
  
  /* Responses from hook functions. */
-diff --git a/include/linux/netfilter_arp/arp_tables.h b/include/linux/netfilter_arp/arp_tables.h
-index dd9c97f..590ac3d 100644
 --- a/include/linux/netfilter_arp/arp_tables.h
 +++ b/include/linux/netfilter_arp/arp_tables.h
 @@ -11,11 +11,11 @@
@@ -52,8 +48,6 @@ index dd9c97f..590ac3d 100644
  #include <linux/compiler.h>
  #include <linux/netfilter_arp.h>
  
-diff --git a/include/linux/netfilter_ipv4/ip_tables.h b/include/linux/netfilter_ipv4/ip_tables.h
-index bfc889f..092bd50 100644
 --- a/include/linux/netfilter_ipv4/ip_tables.h
 +++ b/include/linux/netfilter_ipv4/ip_tables.h
 @@ -17,11 +17,11 @@
@@ -69,8 +63,6 @@ index bfc889f..092bd50 100644
  #include <linux/compiler.h>
  #include <linux/netfilter_ipv4.h>
  
-diff --git a/include/linux/netfilter_ipv6/ip6_tables.h b/include/linux/netfilter_ipv6/ip6_tables.h
-index f2507dc..1089e33 100644
 --- a/include/linux/netfilter_ipv6/ip6_tables.h
 +++ b/include/linux/netfilter_ipv6/ip6_tables.h
 @@ -17,11 +17,11 @@

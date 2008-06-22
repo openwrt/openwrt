@@ -1,173 +1,3 @@
-
-
----
-
- drivers/net/Kconfig                     |  123 ++++++++
- drivers/net/Makefile                    |    1 
- drivers/net/imq.c                       |  474 +++++++++++++++++++++++++++++++
- include/linux/imq.h                     |    9 +
- include/linux/netfilter_ipv4/ipt_IMQ.h  |    8 +
- include/linux/netfilter_ipv6/ip6t_IMQ.h |    8 +
- include/linux/skbuff.h                  |    8 +
- net/core/dev.c                          |    9 +
- net/ipv4/netfilter/Kconfig              |   11 +
- net/ipv4/netfilter/Makefile             |    1 
- net/ipv4/netfilter/ipt_IMQ.c            |   69 +++++
- net/ipv6/netfilter/Kconfig              |    9 +
- net/ipv6/netfilter/Makefile             |    1 
- net/ipv6/netfilter/ip6t_IMQ.c           |   69 +++++
- net/sched/sch_generic.c                 |    1 
- 15 files changed, 800 insertions(+), 1 deletions(-)
- create mode 100644 drivers/net/imq.c
- create mode 100644 include/linux/imq.h
- create mode 100644 include/linux/netfilter_ipv4/ipt_IMQ.h
- create mode 100644 include/linux/netfilter_ipv6/ip6t_IMQ.h
- create mode 100644 net/ipv4/netfilter/ipt_IMQ.c
- create mode 100644 net/ipv6/netfilter/ip6t_IMQ.c
-
-
---- a/drivers/net/Kconfig
-+++ b/drivers/net/Kconfig
-@@ -117,6 +117,129 @@
- 	  To compile this driver as a module, choose M here: the module
- 	  will be called eql.  If unsure, say N.
- 
-+config IMQ
-+	tristate "IMQ (intermediate queueing device) support"
-+	depends on NETDEVICES && NETFILTER
-+	---help---
-+	  The IMQ device(s) is used as placeholder for QoS queueing
-+	  disciplines. Every packet entering/leaving the IP stack can be
-+	  directed through the IMQ device where it's enqueued/dequeued to the
-+	  attached qdisc. This allows you to treat network devices as classes
-+	  and distribute bandwidth among them. Iptables is used to specify
-+	  through which IMQ device, if any, packets travel.
-+
-+	  More information at: http://www.linuximq.net/
-+
-+	  To compile this driver as a module, choose M here: the module
-+	  will be called imq.  If unsure, say N.
-+
-+choice
-+	prompt "IMQ behavior (PRE/POSTROUTING)"
-+	depends on IMQ
-+	default IMQ_BEHAVIOR_BB
-+	help
-+
-+		This settings defines how IMQ behaves in respect to its
-+		hooking in PREROUTING and POSTROUTING.
-+
-+		IMQ can work in any of the following ways:
-+
-+		    PREROUTING   |      POSTROUTING
-+		-----------------|-------------------
-+		#1  After NAT    |      After NAT
-+		#2  After NAT    |      Before NAT
-+		#3  Before NAT   |      After NAT
-+		#4  Before NAT   |      Before NAT
-+
-+		The default behavior is to hook before NAT on PREROUTING
-+		and after NAT on POSTROUTING (#3).
-+
-+		This settings are specially usefull when trying to use IMQ
-+		to shape NATed clients.
-+
-+		More information can be found at: www.linuximq.net
-+
-+		If not sure leave the default settings alone.
-+
-+config IMQ_BEHAVIOR_AA
-+	bool "IMQ AA"
-+	help
-+		This settings defines how IMQ behaves in respect to its
-+		hooking in PREROUTING and POSTROUTING.
-+
-+		Choosing this option will make IMQ hook like this:
-+
-+		PREROUTING:   After NAT
-+		POSTROUTING:  After NAT
-+
-+		More information can be found at: www.linuximq.net
-+
-+		If not sure leave the default settings alone.
-+
-+config IMQ_BEHAVIOR_AB
-+	bool "IMQ AB"
-+	help
-+		This settings defines how IMQ behaves in respect to its
-+		hooking in PREROUTING and POSTROUTING.
-+
-+		Choosing this option will make IMQ hook like this:
-+
-+		PREROUTING:   After NAT
-+		POSTROUTING:  Before NAT
-+
-+		More information can be found at: www.linuximq.net
-+
-+		If not sure leave the default settings alone.
-+
-+config IMQ_BEHAVIOR_BA
-+	bool "IMQ BA"
-+	help
-+		This settings defines how IMQ behaves in respect to its
-+		hooking in PREROUTING and POSTROUTING.
-+
-+		Choosing this option will make IMQ hook like this:
-+
-+		PREROUTING:   Before NAT
-+		POSTROUTING:  After NAT
-+
-+		More information can be found at: www.linuximq.net
-+
-+		If not sure leave the default settings alone.
-+
-+config IMQ_BEHAVIOR_BB
-+	bool "IMQ BB"
-+	help
-+		This settings defines how IMQ behaves in respect to its
-+		hooking in PREROUTING and POSTROUTING.
-+
-+		Choosing this option will make IMQ hook like this:
-+
-+		PREROUTING:   Before NAT
-+		POSTROUTING:  Before NAT
-+
-+		More information can be found at: www.linuximq.net
-+
-+		If not sure leave the default settings alone.
-+
-+endchoice
-+
-+config IMQ_NUM_DEVS
-+
-+	int "Number of IMQ devices"
-+	range 2 16
-+	depends on IMQ
-+	default "16"
-+	help
-+
-+		This settings defines how many IMQ devices will be
-+		created.
-+
-+		The default value is 16.
-+
-+		More information can be found at: www.linuximq.net
-+
-+		If not sure leave the default settings alone.
-+
- config TUN
- 	tristate "Universal TUN/TAP device driver support"
- 	select CRC32
---- a/drivers/net/Makefile
-+++ b/drivers/net/Makefile
-@@ -143,6 +143,7 @@
- obj-$(CONFIG_XEN_NETDEV_FRONTEND) += xen-netfront.o
- 
- obj-$(CONFIG_DUMMY) += dummy.o
-+obj-$(CONFIG_IMQ) += imq.o
- obj-$(CONFIG_IFB) += ifb.o
- obj-$(CONFIG_MACVLAN) += macvlan.o
- obj-$(CONFIG_DE600) += de600.o
 --- /dev/null
 +++ b/drivers/net/imq.c
 @@ -0,0 +1,474 @@
@@ -220,13 +50,13 @@
 + *             I didn't forget anybody). I apologize again for my lack of time.
 + *
 + *
-+ *             2008/06/07 - Changed imq.c to use qdisc_run() instead of
-+ *             qdisc_restart() and moved qdisc_run() to tasklet to avoid
-+ *             recursive locking. (Jussi Kivilinna)
-+ *
-+ *             2008/06/14 - New initialization routines to fix 'rmmod' not
-+ *             working anymore. Used code from ifb.c (Jussi Kivilinna)
-+ *
++ *             2008/06/17 - 2.6.25 - Changed imq.c to use qdisc_run() instead 
++ *	       of qdisc_restart() and moved qdisc_run() to tasklet to avoid
++ *             recursive locking. New initialization routines to fix 'rmmod' not
++ *             working anymore. Used code from ifb.c. (Jussi Kivilinna)
++ *	       
++ *	       Also, many thanks to pablo Sebastian Greco for making the initial
++ *	       patch and to those who helped the testing.
 + *
 + *             More info at: http://www.linuximq.net/ (Andre Correa)
 + */
@@ -645,6 +475,148 @@
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS_RTNL_LINK("imq");
 +
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -117,6 +117,129 @@
+ 	  To compile this driver as a module, choose M here: the module
+ 	  will be called eql.  If unsure, say N.
+ 
++config IMQ
++	tristate "IMQ (intermediate queueing device) support"
++	depends on NETDEVICES && NETFILTER
++	---help---
++	  The IMQ device(s) is used as placeholder for QoS queueing
++	  disciplines. Every packet entering/leaving the IP stack can be
++	  directed through the IMQ device where it's enqueued/dequeued to the
++	  attached qdisc. This allows you to treat network devices as classes
++	  and distribute bandwidth among them. Iptables is used to specify
++	  through which IMQ device, if any, packets travel.
++
++	  More information at: http://www.linuximq.net/
++
++	  To compile this driver as a module, choose M here: the module
++	  will be called imq.  If unsure, say N.
++
++choice
++	prompt "IMQ behavior (PRE/POSTROUTING)"
++	depends on IMQ
++	default IMQ_BEHAVIOR_AB
++	help
++
++		This settings defines how IMQ behaves in respect to its
++		hooking in PREROUTING and POSTROUTING.
++
++		IMQ can work in any of the following ways:
++
++		    PREROUTING   |      POSTROUTING
++		-----------------|-------------------
++		#1  After NAT    |      After NAT
++		#2  After NAT    |      Before NAT
++		#3  Before NAT   |      After NAT
++		#4  Before NAT   |      Before NAT
++
++		The default behavior is to hook before NAT on PREROUTING
++		and after NAT on POSTROUTING (#3).
++
++		This settings are specially usefull when trying to use IMQ
++		to shape NATed clients.
++
++		More information can be found at: www.linuximq.net
++
++		If not sure leave the default settings alone.
++
++config IMQ_BEHAVIOR_AA
++	bool "IMQ AA"
++	help
++		This settings defines how IMQ behaves in respect to its
++		hooking in PREROUTING and POSTROUTING.
++
++		Choosing this option will make IMQ hook like this:
++
++		PREROUTING:   After NAT
++		POSTROUTING:  After NAT
++
++		More information can be found at: www.linuximq.net
++
++		If not sure leave the default settings alone.
++
++config IMQ_BEHAVIOR_AB
++	bool "IMQ AB"
++	help
++		This settings defines how IMQ behaves in respect to its
++		hooking in PREROUTING and POSTROUTING.
++
++		Choosing this option will make IMQ hook like this:
++
++		PREROUTING:   After NAT
++		POSTROUTING:  Before NAT
++
++		More information can be found at: www.linuximq.net
++
++		If not sure leave the default settings alone.
++
++config IMQ_BEHAVIOR_BA
++	bool "IMQ BA"
++	help
++		This settings defines how IMQ behaves in respect to its
++		hooking in PREROUTING and POSTROUTING.
++
++		Choosing this option will make IMQ hook like this:
++
++		PREROUTING:   Before NAT
++		POSTROUTING:  After NAT
++
++		More information can be found at: www.linuximq.net
++
++		If not sure leave the default settings alone.
++
++config IMQ_BEHAVIOR_BB
++	bool "IMQ BB"
++	help
++		This settings defines how IMQ behaves in respect to its
++		hooking in PREROUTING and POSTROUTING.
++
++		Choosing this option will make IMQ hook like this:
++
++		PREROUTING:   Before NAT
++		POSTROUTING:  Before NAT
++
++		More information can be found at: www.linuximq.net
++
++		If not sure leave the default settings alone.
++
++endchoice
++
++config IMQ_NUM_DEVS
++
++	int "Number of IMQ devices"
++	range 2 16
++	depends on IMQ
++	default "16"
++	help
++
++		This settings defines how many IMQ devices will be
++		created.
++
++		The default value is 16.
++
++		More information can be found at: www.linuximq.net
++
++		If not sure leave the default settings alone.
++
+ config TUN
+ 	tristate "Universal TUN/TAP device driver support"
+ 	select CRC32
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -143,6 +143,7 @@
+ obj-$(CONFIG_XEN_NETDEV_FRONTEND) += xen-netfront.o
+ 
+ obj-$(CONFIG_DUMMY) += dummy.o
++obj-$(CONFIG_IMQ) += imq.o
+ obj-$(CONFIG_IFB) += ifb.o
+ obj-$(CONFIG_MACVLAN) += macvlan.o
+ obj-$(CONFIG_DE600) += de600.o
 --- /dev/null
 +++ b/include/linux/imq.h
 @@ -0,0 +1,9 @@
@@ -728,36 +700,6 @@
  			dev_queue_xmit_nit(skb, dev);
  
  		if (netif_needs_gso(dev, skb)) {
---- a/net/ipv4/netfilter/Kconfig
-+++ b/net/ipv4/netfilter/Kconfig
-@@ -145,6 +145,17 @@
- 
- 	  To compile it as a module, choose M here.  If unsure, say N.
- 
-+config IP_NF_TARGET_IMQ
-+       tristate "IMQ target support"
-+       depends on IP_NF_MANGLE
-+       help
-+         This option adds a `IMQ' target which is used to specify if and
-+         to which IMQ device packets should get enqueued/dequeued.
-+
-+	 For more information visit: http://www.linuximq.net/
-+
-+         To compile it as a module, choose M here.  If unsure, say N.
-+
- config IP_NF_TARGET_REJECT
- 	tristate "REJECT target support"
- 	depends on IP_NF_FILTER
---- a/net/ipv4/netfilter/Makefile
-+++ b/net/ipv4/netfilter/Makefile
-@@ -55,6 +55,7 @@
- obj-$(CONFIG_IP_NF_TARGET_CLUSTERIP) += ipt_CLUSTERIP.o
- obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_ECN.o
- obj-$(CONFIG_IP_NF_TARGET_LOG) += ipt_LOG.o
-+obj-$(CONFIG_IP_NF_TARGET_IMQ) += ipt_IMQ.o
- obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
- obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
- obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
 --- /dev/null
 +++ b/net/ipv4/netfilter/ipt_IMQ.c
 @@ -0,0 +1,69 @@
@@ -830,34 +772,36 @@
 +MODULE_AUTHOR("http://www.linuximq.net");
 +MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 +MODULE_LICENSE("GPL");
---- a/net/ipv6/netfilter/Kconfig
-+++ b/net/ipv6/netfilter/Kconfig
-@@ -179,6 +179,15 @@
+--- a/net/ipv4/netfilter/Kconfig
++++ b/net/ipv4/netfilter/Kconfig
+@@ -145,6 +145,17 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
-+config IP6_NF_TARGET_IMQ
-+	tristate "IMQ target support"
-+	depends on IP6_NF_MANGLE
-+	help
-+          This option adds a `IMQ' target which is used to specify if and
-+          to which imq device packets should get enqueued/dequeued.
++config IP_NF_TARGET_IMQ
++       tristate "IMQ target support"
++       depends on IP_NF_MANGLE && IMQ
++       help
++         This option adds a `IMQ' target which is used to specify if and
++         to which IMQ device packets should get enqueued/dequeued.
 +
-+          To compile it as a module, choose M here.  If unsure, say N.
++	 For more information visit: http://www.linuximq.net/
 +
- config IP6_NF_TARGET_HL
- 	tristate  'HL (hoplimit) target support'
- 	depends on IP6_NF_MANGLE
---- a/net/ipv6/netfilter/Makefile
-+++ b/net/ipv6/netfilter/Makefile
-@@ -6,6 +6,7 @@
- obj-$(CONFIG_IP6_NF_IPTABLES) += ip6_tables.o
- obj-$(CONFIG_IP6_NF_FILTER) += ip6table_filter.o
- obj-$(CONFIG_IP6_NF_MANGLE) += ip6table_mangle.o
-+obj-$(CONFIG_IP6_NF_TARGET_IMQ) += ip6t_IMQ.o
- obj-$(CONFIG_IP6_NF_QUEUE) += ip6_queue.o
- obj-$(CONFIG_IP6_NF_RAW) += ip6table_raw.o
- 
++         To compile it as a module, choose M here.  If unsure, say N.
++
+ config IP_NF_TARGET_REJECT
+ 	tristate "REJECT target support"
+ 	depends on IP_NF_FILTER
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
+@@ -55,6 +55,7 @@
+ obj-$(CONFIG_IP_NF_TARGET_CLUSTERIP) += ipt_CLUSTERIP.o
+ obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_ECN.o
+ obj-$(CONFIG_IP_NF_TARGET_LOG) += ipt_LOG.o
++obj-$(CONFIG_IP_NF_TARGET_IMQ) += ipt_IMQ.o
+ obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
+ obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
+ obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
 --- /dev/null
 +++ b/net/ipv6/netfilter/ip6t_IMQ.c
 @@ -0,0 +1,69 @@
@@ -930,6 +874,34 @@
 +MODULE_AUTHOR("http://www.linuximq.net");
 +MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 +MODULE_LICENSE("GPL");
+--- a/net/ipv6/netfilter/Kconfig
++++ b/net/ipv6/netfilter/Kconfig
+@@ -179,6 +179,15 @@
+ 
+ 	  To compile it as a module, choose M here.  If unsure, say N.
+ 
++config IP6_NF_TARGET_IMQ
++	tristate "IMQ target support"
++	depends on IP6_NF_MANGLE && IMQ
++	help
++          This option adds a `IMQ' target which is used to specify if and
++          to which imq device packets should get enqueued/dequeued.
++
++          To compile it as a module, choose M here.  If unsure, say N.
++
+ config IP6_NF_TARGET_HL
+ 	tristate  'HL (hoplimit) target support'
+ 	depends on IP6_NF_MANGLE
+--- a/net/ipv6/netfilter/Makefile
++++ b/net/ipv6/netfilter/Makefile
+@@ -6,6 +6,7 @@
+ obj-$(CONFIG_IP6_NF_IPTABLES) += ip6_tables.o
+ obj-$(CONFIG_IP6_NF_FILTER) += ip6table_filter.o
+ obj-$(CONFIG_IP6_NF_MANGLE) += ip6table_mangle.o
++obj-$(CONFIG_IP6_NF_TARGET_IMQ) += ip6t_IMQ.o
+ obj-$(CONFIG_IP6_NF_QUEUE) += ip6_queue.o
+ obj-$(CONFIG_IP6_NF_RAW) += ip6table_raw.o
+ 
 --- a/net/sched/sch_generic.c
 +++ b/net/sched/sch_generic.c
 @@ -203,6 +203,7 @@
