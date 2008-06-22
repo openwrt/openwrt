@@ -564,6 +564,15 @@ write_out_header(FILE *outfile, struct zyn_rombin_hdr *hdr)
 	t.ccsum = HOST_TO_BE16(hdr->ccsum);
 	t.mmap_addr = HOST_TO_BE32(hdr->mmap_addr);
 
+	DBG(2, "hdr.addr      = 0x%08x", hdr->addr);
+	DBG(2, "hdr.type      = 0x%02x", hdr->type);
+	DBG(2, "hdr.osize     = 0x%08x", hdr->osize);
+	DBG(2, "hdr.csize     = 0x%08x", hdr->csize);
+	DBG(2, "hdr.flags     = 0x%02x", hdr->flags);
+	DBG(2, "hdr.ocsum     = 0x%04x", hdr->ocsum);
+	DBG(2, "hdr.ccsum     = 0x%04x", hdr->ccsum);
+	DBG(2, "hdr.mmap_addr = 0x%08x", hdr->mmap_addr);
+
 	return write_out_data(outfile, (uint8_t *)&t, sizeof(t), NULL);
 }
 
@@ -622,6 +631,35 @@ block_stat_file(struct fw_block *block)
 
 	block->file_size = st.st_size;
 	return 0;
+}
+
+
+int
+read_magic(uint16_t *magic)
+{
+	FILE *f;
+	int res;
+
+	errno = 0;
+	f = fopen(bootext_block->file_name,"r");
+	if (errno) {
+		ERRS("unable to open file: %s", bootext_block->file_name);
+		return -1;
+	}
+
+	errno = 0;
+	fread(magic, 2, 1, f);
+	if (errno != 0) {
+		ERRS("unable to read from file: %s", bootext_block->file_name);
+		res = -1;
+		goto err;
+	}
+
+	res = 0;
+
+err:
+	fclose(f);
+	return res;
 }
 
 
@@ -698,6 +736,8 @@ write_out_image(FILE *outfile)
 	int i, res;
 	uint32_t offset;
 	uint32_t padlen;
+	uint16_t csum;
+	uint16_t t;
 
 	/* setup header fields */
 	memset(&hdr, 0, sizeof(hdr));
@@ -731,19 +771,16 @@ write_out_image(FILE *outfile)
 
 	offset += padlen;
 
-	mmap.addr = board->flash_base + board->romio_offs + offset;
-	hdr.mmap_addr = mmap.addr;
+	mmap.addr = board->flash_base + offset;
 	res = write_out_mmap(outfile, &mmap, &css);
 	if (res)
 		return res;
 
 	offset += MMAP_DATA_SIZE;
-	hdr.osize = offset - sizeof(hdr) - board->romio_offs;
-	hdr.ocsum = csum_get(&css);
 
 	if ((offset - board->romio_offs) < board->bootext_size) {
 		padlen = board->romio_offs + board->bootext_size - offset;
-		res = write_out_padding(outfile, padlen, 0xFF, NULL);
+		res = write_out_padding(outfile, padlen, 0xFF, &css);
 		if (res)
 			return res;
 		offset += padlen;
@@ -758,16 +795,44 @@ write_out_image(FILE *outfile)
 			continue;
 
 		padlen = ALIGN(offset, block->align) - offset;
-		res = write_out_padding(outfile, padlen, 0xFF, NULL);
+		res = write_out_padding(outfile, padlen, 0xFF, &css);
 		if (res)
 			return res;
 		offset += padlen;
 
-		res = write_out_block(outfile, block, NULL);
+		res = write_out_block(outfile, block, &css);
 		if (res)
 			return res;
 		offset += block->file_size;
 	}
+
+	padlen = ALIGN(offset, 4) - offset;
+	res = write_out_padding(outfile, padlen, 0xFF, &css);
+	if (res)
+		return res;
+	offset += padlen;
+
+	csum = csum_get(&css);
+	hdr.mmap_addr = mmap.addr;
+	hdr.osize = 2;
+
+	res = read_magic(&hdr.ocsum);
+	if (res)
+		return res;
+	hdr.ocsum = BE16_TO_HOST(hdr.ocsum);
+
+	if (csum <= hdr.ocsum)
+		t = hdr.ocsum - csum;
+	else
+		t = hdr.ocsum - csum - 1;
+
+	DBG(2, "ocsum=%04x, csum=%04x, fix=%04x", hdr.ocsum, csum, t);
+
+	t = HOST_TO_BE16(t);
+	res = write_out_data(outfile, (uint8_t *)&t, 2, NULL);
+	if (res)
+		return res;
+
 
 	res = write_out_header(outfile, &hdr);
 
@@ -884,7 +949,7 @@ parse_opt_block(char ch, char *arg)
 		}
 	}
 
-	if(block->type == BLOCK_TYPE_BOOTEXT)
+	if (block->type == BLOCK_TYPE_BOOTEXT)
 		return 0;
 
 	p = argv[i++];
