@@ -32,33 +32,33 @@
 #include <asm/ifxmips/ifxmips.h>
 
 static void
-ifxmips_machine_restart (char *command)
+ifxmips_machine_restart(char *command)
 {
-	printk (KERN_NOTICE "System restart\n");
-	local_irq_disable ();
+	printk(KERN_NOTICE "System restart\n");
+	local_irq_disable();
 
-	ifxmips_w32(ifxmips_r32(IFXMIPS_RCU_REQ) | IFXMIPS_RST_ALL, IFXMIPS_RCU_REQ);
-	for (;;);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_RCU_RST) | IFXMIPS_RCU_RST_ALL, IFXMIPS_RCU_RST);
+	for(;;);
 }
 
 static void
-ifxmips_machine_halt (void)
+ifxmips_machine_halt(void)
 {
-	printk (KERN_NOTICE "System halted.\n");
-	local_irq_disable ();
-	for (;;);
+	printk(KERN_NOTICE "System halted.\n");
+	local_irq_disable();
+	for(;;);
 }
 
 static void
-ifxmips_machine_power_off (void)
+ifxmips_machine_power_off(void)
 {
 	printk (KERN_NOTICE "Please turn off the power now.\n");
-	local_irq_disable ();
-	for (;;);
+	local_irq_disable();
+	for(;;);
 }
 
 void
-ifxmips_reboot_setup (void)
+ifxmips_reboot_setup(void)
 {
 	_machine_restart = ifxmips_machine_restart;
 	_machine_halt = ifxmips_machine_halt;
