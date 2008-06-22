@@ -725,9 +725,9 @@ mei_fuse_prg (void)
 {
 	u32 reg_data, fuse_value;
 	int i = 0;
-	meiLongwordRead ( IFXMIPS_RCU_REQ, &reg_data);
+	meiLongwordRead ( IFXMIPS_RCU_RST, &reg_data);
 	while ((reg_data & 0x10000000) == 0) {
-		meiLongwordRead ( IFXMIPS_RCU_REQ, &reg_data);
+		meiLongwordRead ( IFXMIPS_RCU_RST, &reg_data);
 		//add a watchdog
 		i++;
 		/* 0x4000 translate to  about 16 ms@111M, so should be enough */
@@ -736,8 +736,8 @@ mei_fuse_prg (void)
 	}
 	// STEP a: Prepare memory for external accesses
 	// Write fuse_en bit24
-	meiLongwordRead (IFXMIPS_RCU_REQ, &reg_data);
-	meiLongwordWrite (IFXMIPS_RCU_REQ, reg_data | (1 << 24));
+	meiLongwordRead (IFXMIPS_RCU_RST, &reg_data);
+	meiLongwordWrite (IFXMIPS_RCU_RST, reg_data | (1 << 24));
 
 	mei_fuse_rar_init ();
 	for (i = 0; i < 4; i++) {
@@ -795,8 +795,8 @@ mei_fuse_prg (void)
 			break;
 		}
 	}
-	meiLongwordRead (IFXMIPS_RCU_REQ, &reg_data);
-	meiLongwordWrite (IFXMIPS_RCU_REQ, reg_data & 0xF7FFFFFF);
+	meiLongwordRead (IFXMIPS_RCU_RST, &reg_data);
+	meiLongwordWrite (IFXMIPS_RCU_RST, reg_data & 0xF7FFFFFF);
 }
 
 /**
@@ -912,11 +912,11 @@ meiResetARC (void)
 
 	meiHaltArc ();
 
-	meiLongwordRead (IFXMIPS_RCU_REQ, &arc_debug_data);
-	meiLongwordWrite (IFXMIPS_RCU_REQ,
+	meiLongwordRead (IFXMIPS_RCU_RST, &arc_debug_data);
+	meiLongwordWrite (IFXMIPS_RCU_RST,
 			  arc_debug_data | IFXMIPS_RCU_RST_REQ_DFE |
 			  IFXMIPS_RCU_RST_REQ_AFE);
-	meiLongwordWrite (IFXMIPS_RCU_REQ, arc_debug_data);
+	meiLongwordWrite (IFXMIPS_RCU_RST, arc_debug_data);
 	// reset ARC
 	meiLongwordWrite(MEI_RST_CONTROL, MEI_SOFT_RESET);
 	meiLongwordWrite(MEI_RST_CONTROL, 0);
@@ -2769,8 +2769,8 @@ mei_ioctl (MEI_inode_t * ino, MEI_file_t * fil, unsigned int command,
 			*IFXMIPS_GPIO_P0_OD = (*IFXMIPS_GPIO_P0_OD) | 0x800;
 
 			//enable ARC JTAG
-			meiLongwordRead(IFXMIPS_RCU_REQ, &reg_data);
-			meiLongwordWrite(IFXMIPS_RCU_REQ, reg_data | IFXMIPS_RCU_RST_REQ_ARC_JTAG);
+			meiLongwordRead(IFXMIPS_RCU_RST, &reg_data);
+			meiLongwordWrite(IFXMIPS_RCU_RST, reg_data | IFXMIPS_RCU_RST_REQ_ARC_JTAG);
 			break;
 
 		case GET_ADSL_LOOP_DIAGNOSTICS_MODE:
