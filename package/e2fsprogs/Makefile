@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -9,12 +9,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
-PKG_VERSION:=1.39
+PKG_VERSION:=1.40.11
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/e2fsprogs
-PKG_MD5SUM:=06f7806782e357797fad1d34b7ced0c6
+PKG_MD5SUM:=004cea70d724fdc7f1a952dffe4c9db8
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -95,7 +95,8 @@ CONFIGURE_ARGS += \
 	--enable-static \
 	--disable-rpath \
 	--enable-elf-shlibs \
-	--enable-dynamic-e2fsck
+	--enable-dynamic-e2fsck \
+	--disable-tls
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
