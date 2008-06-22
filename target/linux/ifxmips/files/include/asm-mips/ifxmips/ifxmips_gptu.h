@@ -139,24 +139,16 @@ struct gptu_ioctl_param {
  *              Data Type
  * ####################################
  */
-#if defined(__KERNEL__)
-    typedef void (*timer_callback)(unsigned long arg);
-#endif  //  defined(__KERNEL__)
+typedef void (*timer_callback)(unsigned long arg);
 
-
-/*
- * ####################################
- *             Declaration
- * ####################################
- */
 
 #if defined(__KERNEL__)
-    extern int request_timer(unsigned int, unsigned int, unsigned long, unsigned long, unsigned long);
-    extern int free_timer(unsigned int);
-    extern int start_timer(unsigned int, int);
-    extern int stop_timer(unsigned int);
-    extern int reset_counter_flags(u32 timer, u32 flags);
-    extern int get_count_value(unsigned int, unsigned long *);
+    extern int ifxmips_request_timer(unsigned int, unsigned int, unsigned long, unsigned long, unsigned long);
+    extern int ifxmips_free_timer(unsigned int);
+    extern int ifxmips_start_timer(unsigned int, int);
+    extern int ifxmips_stop_timer(unsigned int);
+    extern int ifxmips_reset_counter_flags(u32 timer, u32 flags);
+    extern int ifxmips_get_count_value(unsigned int, unsigned long *);
 
     extern u32 cal_divider(unsigned long);
 

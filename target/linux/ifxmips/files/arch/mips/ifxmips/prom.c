@@ -29,25 +29,28 @@
 #include <asm/bootinfo.h>
 #include <asm/ifxmips/ifxmips.h>
 
+
 static char buf[1024];
+u32 *prom_cp1_base = NULL;
+u32 prom_cp1_size = 0;
 
 void
-prom_free_prom_memory (void)
+prom_free_prom_memory(void)
 {
 }
 
 void
-prom_putchar (char c)
+prom_putchar(char c)
 {
-	while ((ifxmips_r32(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK) >> ASCFSTAT_TXFFLOFF);
+	while((ifxmips_r32(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK) >> ASCFSTAT_TXFFLOFF);
 
-	if (c == '\n')
+	if(c == '\n')
 		ifxmips_w32('\r', IFXMIPS_ASC1_TBUF);
 	ifxmips_w32(c, IFXMIPS_ASC1_TBUF);
 }
 
 void
-prom_printf (const char * fmt, ...)
+prom_printf(const char * fmt, ...)
 {
 	va_list args;
 	int l;
@@ -58,17 +61,69 @@ prom_printf (const char * fmt, ...)
 	va_end(args);
 	buf_end = buf + l;
 
-	for (p = buf; p < buf_end; p++)
+	for(p = buf; p < buf_end; p++)
 	{
 		prom_putchar(*p);
 	}
 }
 
+u32 *prom_get_cp1_base(void)
+{
+	return prom_cp1_base;
+}
+
+u32 prom_get_cp1_size(void)
+{
+	return prom_cp1_size;
+}
+
 void __init
 prom_init(void)
 {
+	int argc = fw_arg0;
+	char **argv = (char **) fw_arg1;
+	char **envp = (char **) fw_arg2;
+
+	int memsize = 16;
+	int i;
+
 	mips_machtype = MACH_INFINEON_IFXMIPS;
 
-	strcpy(&(arcs_cmdline[0]), "console=ttyS0,115200 rootfstype=squashfs,jffs2 init=/etc/preinit");
-	add_memory_region (0x00000000, 0x2000000, BOOT_MEM_RAM);
+	argv = (char**)KSEG1ADDR((unsigned long)argv);
+	arcs_cmdline[0] = '\0';
+	for(i = 1; i < argc; i++)
+	{
+		char *a = (char*)KSEG1ADDR(argv[i]);
+		if(!a)
+			continue;
+		if(strlen(arcs_cmdline) + strlen(a + 1) >= sizeof(arcs_cmdline))
+			break;
+		strcat(arcs_cmdline, a);
+		strcat(arcs_cmdline, " ");
+	}
+
+	envp = (char**)KSEG1ADDR((unsigned long)envp);
+	while(*envp)
+	{
+		char *e = (char*)KSEG1ADDR(*envp);
+
+		if(!strncmp(e, "memsize=", 8))
+		{
+			e += 8;
+			memsize = simple_strtoul(e, NULL, 10);
+		}
+		envp++;
+	}
+
+	prom_cp1_size = 2;
+	memsize -= prom_cp1_size;
+	prom_cp1_base = (u32*)(0xA0000000 + (memsize * 1024 * 1024));
+
+	prom_printf(KERN_INFO "Using %dMB Ram and reserving %dMB for cp1\n", memsize, prom_cp1_size);
+	memsize *= 1024 * 1024;
+
+	if(!*arcs_cmdline)
+		strcpy(&(arcs_cmdline[0]), "console=ttyS0,115200 rootfstype=squashfs,jffs2 init=/etc/preinit");
+
+	add_memory_region(0x00000000, memsize, BOOT_MEM_RAM);
 }
