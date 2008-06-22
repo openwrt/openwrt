@@ -129,7 +129,7 @@ detect_squashfs_partition (unsigned long start_offset){
 }
 
 static int
-ifxmips_mtd_probe (void)
+ifxmips_mtd_probe (struct platform_device *dev)
 {
 	struct mtd_info *ifxmips_mtd = NULL;
 	struct mtd_partition *parts = NULL;
@@ -179,23 +179,23 @@ ifxmips_mtd_probe (void)
 	return 0;
 }
 
-static struct 
-platform_driver ifxmips_mtd_driver = { 
-	.probe = ifxmips_mtd_probe, 
-	.driver = { 
-		.name = DRVNAME, 
-		.owner = THIS_MODULE, 
-	}, 
-}; 
+static struct
+platform_driver ifxmips_mtd_driver = {
+	.probe = ifxmips_mtd_probe,
+	.driver = {
+		.name = DRVNAME,
+		.owner = THIS_MODULE,
+	},
+};
 
 int __init
 init_ifxmips_mtd (void)
 {
-	int ret = platform_driver_register(&ifxmips_mtd_driver); 
-	if (ret) 
-		printk(KERN_INFO DRVNAME ": error registering platfom driver!"); 
+	int ret = platform_driver_register(&ifxmips_mtd_driver);
+	if (ret)
+		printk(KERN_INFO DRVNAME ": error registering platfom driver!");
 
-	return ret; 
+	return ret;
 }
 
 static void

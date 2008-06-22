@@ -28,14 +28,17 @@
 
 static inline int gpio_direction_input(unsigned gpio) {
 	ifxmips_port_set_dir_in(0, gpio);
+	return 0;
 }
 
 static inline int gpio_direction_output(unsigned gpio, int value) {
 	ifxmips_port_set_dir_out(0, gpio);
+	return 0;
 }
 
 static inline int gpio_get_value(unsigned gpio) {
 	ifxmips_port_get_input(0, gpio);
+	return 0;
 }
 
 static inline void gpio_set_value(unsigned gpio, int value) {
