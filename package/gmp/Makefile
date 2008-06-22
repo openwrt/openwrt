@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,12 +9,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gmp
-PKG_VERSION:=4.2.1
+PKG_VERSION:=4.2.2
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@GNU/gmp
-PKG_MD5SUM:=091c56e0e1cca6b09b17b69d47ef18e3
+PKG_MD5SUM:=7ce52531644e6d12f16911b7e3151f3f
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -22,7 +22,12 @@ define Package/libgmp
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=GNU multiprecision arithmetic library
-  URL:=http://www.swox.com/gmp/
+  URL:=http://gmplib.org/
+endef
+
+define Package/libgmp/description
+	GMP is a free library for arbitrary precision arithmetic, operating on
+	signed integers, rational numbers, and floating point numbers.
 endef
 
 CONFIGURE_VARS += CC="$(TARGET_CROSS)gcc"
