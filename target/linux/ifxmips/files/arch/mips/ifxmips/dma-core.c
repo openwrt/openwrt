@@ -32,9 +32,9 @@
 #define DMA_INT_BUDGET      100	/*budget for interrupt handling */
 #define DMA_POLL_COUNTER    4	/*fix me, set the correct counter value here! */
 
-extern void mask_and_ack_ifxmips_irq (unsigned int irq_nr);
-extern void enable_ifxmips_irq (unsigned int irq_nr);
-extern void disable_ifxmips_irq (unsigned int irq_nr);
+extern void ifxmips_mask_and_ack_irq (unsigned int irq_nr);
+extern void ifxmips_enable_irq (unsigned int irq_nr);
+extern void ifxmips_disable_irq (unsigned int irq_nr);
 
 u64 *g_desc_list;
 _dma_device_info dma_devs[MAX_DMA_DEVICE_NUM];
@@ -101,7 +101,7 @@ enable_ch_irq (_dma_channel_info *pCh)
 	ifxmips_w32(0x4a, IFXMIPS_DMA_CIE);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_IRNEN) | (1 << chan_no), IFXMIPS_DMA_IRNEN);
 	local_irq_restore(flag);
-	enable_ifxmips_irq(pCh->irq);
+	ifxmips_enable_irq(pCh->irq);
 }
 
 void
@@ -116,7 +116,7 @@ disable_ch_irq (_dma_channel_info *pCh)
 	ifxmips_w32(0, IFXMIPS_DMA_CIE);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_IRNEN) & ~(1 << chan_no), IFXMIPS_DMA_IRNEN);
 	local_irq_restore(flag);
-	mask_and_ack_ifxmips_irq(pCh->irq);
+	ifxmips_mask_and_ack_irq(pCh->irq);
 }
 
 void
@@ -182,7 +182,7 @@ rx_chan_intr_handler (int chan_no)
 		ifxmips_w32(tmp, IFXMIPS_DMA_CS);
 		g_ifxmips_dma_int_status &= ~(1 << chan_no);
 		local_irq_restore(flag);
-		enable_ifxmips_irq(dma_chan[chan_no].irq);
+		ifxmips_enable_irq(dma_chan[chan_no].irq);
 	}
 }
 
@@ -276,7 +276,7 @@ dma_interrupt (int irq, void *dev_id)
 	ifxmips_w32(0, IFXMIPS_DMA_IRNEN);
 	g_ifxmips_dma_int_status |= 1 << chan_no;
 	ifxmips_w32(tmp, IFXMIPS_DMA_IRNEN);
-	mask_and_ack_ifxmips_irq(irq);
+	ifxmips_mask_and_ack_irq(irq);
 
     if (!g_ifxmips_dma_in_process)
 	{
@@ -387,7 +387,7 @@ dma_device_register(_dma_device_info *dev)
 			ifxmips_w32(ifxmips_r32(IFXMIPS_DMA_IRNEN) | (1 << chan_no), IFXMIPS_DMA_IRNEN);
 			ifxmips_w32(0x30000, IFXMIPS_DMA_CCTRL);
 			local_irq_restore(flag);
-			enable_ifxmips_irq(dma_chan[chan_no].irq);
+			ifxmips_enable_irq(dma_chan[chan_no].irq);
 		}
 	}
 }
@@ -438,7 +438,7 @@ dma_device_unregister (_dma_device_info *dev)
 	{
 		pCh = dev->rx_chan[i];
 		chan_no = (int)(dev->rx_chan[i] - dma_chan);
-		disable_ifxmips_irq(pCh->irq);
+		ifxmips_disable_irq(pCh->irq);
 
 		local_irq_save(flag);
 		g_ifxmips_dma_int_status &= ~(1 << chan_no);

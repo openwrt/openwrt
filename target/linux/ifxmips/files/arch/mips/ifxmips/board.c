@@ -1,6 +1,4 @@
 /*
- *   arch/mips/ifxmips/board.c
- *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; either version 2 of the License, or
@@ -16,7 +14,6 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
  *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
- *
  */
 
 #include <linux/autoconf.h>
@@ -43,13 +40,11 @@
 #define BOARD_TWINPASS			"Twinpass"
 #define BOARD_TWINPASS_CHIPID	0x3012D083
 
-#define BOARD_DANUBE			"Danube"
-
 static unsigned int chiprev;
-
 static struct platform_device *ifxmips_devs[MAX_IFXMIPS_DEVS];
 
-static struct platform_device ifxmips_led[] =
+static struct platform_device
+ifxmips_led[] =
 {
 	{
 		.id = 0,
@@ -57,7 +52,8 @@ static struct platform_device ifxmips_led[] =
 	},
 };
 
-static struct platform_device ifxmips_gpio[] =
+static struct platform_device
+ifxmips_gpio[] =
 {
 	{
 		.id = 0,
@@ -65,7 +61,8 @@ static struct platform_device ifxmips_gpio[] =
 	},
 };
 
-static struct platform_device ifxmips_mii[] =
+static struct platform_device
+ifxmips_mii[] =
 {
 	{
 		.id = 0,
@@ -73,7 +70,8 @@ static struct platform_device ifxmips_mii[] =
 	},
 };
 
-static struct platform_device ifxmips_wdt[] =
+static struct platform_device
+ifxmips_wdt[] =
 {
 	{
 		.id = 0,
@@ -81,17 +79,20 @@ static struct platform_device ifxmips_wdt[] =
 	},
 };
 
-static struct physmap_flash_data ifxmips_mtd_data = {
+static struct physmap_flash_data
+ifxmips_mtd_data = {
 	.width    = 2,
 };
 
-static struct resource ifxmips_mtd_resource = {
+static struct resource
+ifxmips_mtd_resource = {
 	.start  = IFXMIPS_FLASH_START,
 	.end    = IFXMIPS_FLASH_START + IFXMIPS_FLASH_MAX - 1,
 	.flags  = IORESOURCE_MEM,
 };
 
-static struct platform_device ifxmips_mtd[] =
+static struct platform_device
+ifxmips_mtd[] =
 {
 	{
 		.id = 0,
@@ -105,16 +106,20 @@ static struct platform_device ifxmips_mtd[] =
 };
 
 #ifdef CONFIG_GPIO_DEVICE
-static struct resource ifxmips_gpio_dev_resources[] = {
+static struct resource
+ifxmips_gpio_dev_resources[] = {
 	{
 		.name = "gpio",
 		.flags  = 0,
-		.start = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5) | (1 << 8) | (1 << 9) | (1 << 12),
-		.end = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5) | (1 << 8) | (1 << 9) | (1 << 12),
+		.start = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) |
+			(1 << 4) | (1 << 5) | (1 << 8) | (1 << 9) | (1 << 12),
+		.end = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) |
+			(1 << 4) | (1 << 5) | (1 << 8) | (1 << 9) | (1 << 12),
 	},
 };
 
-static struct platform_device ifxmips_gpio_dev[] = {
+static struct platform_device
+ifxmips_gpio_dev[] = {
 	{
 		.name     = "GPIODEV",
 		.id     = -1,
@@ -125,7 +130,7 @@ static struct platform_device ifxmips_gpio_dev[] = {
 #endif
 
 const char*
-get_system_type (void)
+get_system_type(void)
 {
 	chiprev = ifxmips_r32(IFXMIPS_MPS_CHIPID);
 	switch(chiprev)
@@ -140,18 +145,11 @@ get_system_type (void)
 	return BOARD_SYSTEM_TYPE;
 }
 
-int __init ifxmips_init_devices(void)
+int __init
+ifxmips_init_devices(void)
 {
-	/*
-	*	This is where we detect what chip we are running on
-	*	Currently we support 3 chips
-	*	1.) Danube
-	*	2.) Twinpass (Danube without dsl phy)
-	*/
-
 	int dev = 0;
 
-	/* the following devices are generic for all targets */
 	ifxmips_devs[dev++] = ifxmips_led;
 	ifxmips_devs[dev++] = ifxmips_gpio;
 	ifxmips_devs[dev++] = ifxmips_mii;

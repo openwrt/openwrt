@@ -229,7 +229,7 @@ enum duplex
    autoneg
 };
 
-struct switch_priv {
+struct ifxmips_mii_priv {
     struct net_device_stats stats;
     int rx_packetlen;
     u8 *rx_packetdata;

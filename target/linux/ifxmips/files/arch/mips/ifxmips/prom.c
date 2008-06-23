@@ -1,6 +1,4 @@
 /*
- *   arch/mips/ifxmips/prom.c
- *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; either version 2 of the License, or
@@ -16,12 +14,7 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
  *   Copyright (C) 2005 Wu Qi Ming infineon
- *
- *   Rewrite of Infineon IFXMips code, thanks to infineon for the support,
- *   software and hardware
- *
  *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
- *
  */
 
 #include <linux/init.h>
@@ -29,10 +22,9 @@
 #include <asm/bootinfo.h>
 #include <asm/ifxmips/ifxmips.h>
 
-
 static char buf[1024];
-u32 *prom_cp1_base = NULL;
-u32 prom_cp1_size = 0;
+unsigned int *prom_cp1_base = NULL;
+unsigned int prom_cp1_size = 0;
 
 void
 prom_free_prom_memory(void)
@@ -62,17 +54,15 @@ prom_printf(const char * fmt, ...)
 	buf_end = buf + l;
 
 	for(p = buf; p < buf_end; p++)
-	{
 		prom_putchar(*p);
-	}
 }
 
-u32 *prom_get_cp1_base(void)
+unsigned int *prom_get_cp1_base(void)
 {
 	return prom_cp1_base;
 }
 
-u32 prom_get_cp1_size(void)
+unsigned int prom_get_cp1_size(void)
 {
 	return prom_cp1_size;
 }
@@ -117,13 +107,15 @@ prom_init(void)
 
 	prom_cp1_size = 2;
 	memsize -= prom_cp1_size;
-	prom_cp1_base = (u32*)(0xA0000000 + (memsize * 1024 * 1024));
+	prom_cp1_base = (unsigned int*)(0xA0000000 + (memsize * 1024 * 1024));
 
-	prom_printf(KERN_INFO "Using %dMB Ram and reserving %dMB for cp1\n", memsize, prom_cp1_size);
+	prom_printf(KERN_INFO "Using %dMB Ram and reserving %dMB for cp1\n",
+		memsize, prom_cp1_size);
 	memsize *= 1024 * 1024;
 
 	if(!*arcs_cmdline)
-		strcpy(&(arcs_cmdline[0]), "console=ttyS0,115200 rootfstype=squashfs,jffs2 init=/etc/preinit");
+		strcpy(&(arcs_cmdline[0]),
+			"console=ttyS0,115200 rootfstype=squashfs,jffs2 init=/etc/preinit");
 
 	add_memory_region(0x00000000, memsize, BOOT_MEM_RAM);
 }

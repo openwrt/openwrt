@@ -817,7 +817,7 @@ ifxmips_gptu_init(void)
 }
 
 void __exit
-ifxmips_gptu_exit (void)
+ifxmips_gptu_exit(void)
 {
 	unsigned int i;
 
@@ -827,9 +827,7 @@ ifxmips_gptu_exit (void)
 			disable_irq (timer_dev.timer[i].irq);
 		free_irq(timer_dev.timer[i].irq, &timer_dev.timer[i]);
 	}
-
 	ifxmips_disable_gptu();
-
 	misc_deregister(&gptu_miscdev);
 }
 

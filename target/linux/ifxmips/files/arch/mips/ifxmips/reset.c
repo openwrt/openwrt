@@ -1,6 +1,4 @@
 /*
- *   arch/mips/ifxmips/prom.c
- *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; either version 2 of the License, or
@@ -15,13 +13,7 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
- *   Copyright (C) 2005 infineon
- *
- *   Rewrite of Infineon IFXMips code, thanks to infineon for the support,
- *   software and hardware
- *
  *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
- *
  */
 
 #include <linux/kernel.h>

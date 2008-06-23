@@ -1,6 +1,4 @@
 /*
- *   arch/mips/ifxmips/pmu.c
- *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; either version 2 of the License, or
@@ -16,7 +14,6 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
  *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
- *
  */
 
 #include <linux/kernel.h>
@@ -25,7 +22,7 @@
 #include <asm/ifxmips/ifxmips.h>
 
 void
-ifxmips_pmu_enable (unsigned int module)
+ifxmips_pmu_enable(unsigned int module)
 {
 	int err = 1000000;
 
@@ -38,7 +35,7 @@ ifxmips_pmu_enable (unsigned int module)
 EXPORT_SYMBOL(ifxmips_pmu_enable);
 
 void
-ifxmips_pmu_disable (unsigned int module)
+ifxmips_pmu_disable(unsigned int module)
 {
 	ifxmips_w32(ifxmips_r32(IFXMIPS_PMU_PWDCR) | module, IFXMIPS_PMU_PWDCR);
 }
