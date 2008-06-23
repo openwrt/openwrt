@@ -1,6 +1,4 @@
 /*
- *   arch/mips/ifxmips/cgu.c
- *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; either version 2 of the License, or
@@ -16,10 +14,7 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
  *   Copyright (C) 2007 Xu Liang, infineon
- *
- *   Rewrite of Infineon IFXMips code
  *   Copyright (C) 2008 John Crispin <blogic@openwrt.org> 
- *
  */
 
 #include <linux/kernel.h>
@@ -75,9 +70,10 @@
 #define CGU_IF_CLK_USBSEL               GET_BITS(*IFXMIPS_CGU_IF_CLK, 5, 4)
 #define CGU_IF_CLK_MIISEL               GET_BITS(*IFXMIPS_CGU_IF_CLK, 1, 0)
 
-static u32 cgu_get_pll0_fdiv(void);
+static unsigned int cgu_get_pll0_fdiv(void);
 
-static inline u32 get_input_clock(int pll)
+static inline unsigned int
+get_input_clock(int pll)
 {
 	switch(pll)
 	{
@@ -110,8 +106,8 @@ static inline u32 get_input_clock(int pll)
 	}
 }
 
-static inline u32
-cal_dsm(int pll, u32 num, u32 den)
+static inline unsigned int
+cal_dsm(int pll, unsigned int num, unsigned int den)
 {
 	u64 res, clock = get_input_clock(pll);
 
@@ -120,56 +116,65 @@ cal_dsm(int pll, u32 num, u32 den)
 	return res;
 }
 
-static inline u32
-mash_dsm(int pll, u32 M, u32 N, u32 K)
+static inline unsigned int
+mash_dsm(int pll, unsigned int M, unsigned int N, unsigned int K)
 {
-	u32 num = ((N + 1) << 10) + K;
-	u32 den = (M + 1) << 10;
+	unsigned int num = ((N + 1) << 10) + K;
+	unsigned int den = (M + 1) << 10;
 
 	return cal_dsm(pll, num, den);
 }
 
-static inline u32 ssff_dsm_1(int pll, u32 M, u32 N, u32 K)
+static inline unsigned int
+ssff_dsm_1(int pll, unsigned int M,	unsigned int N, unsigned int K)
 {
-	u32 num = ((N + 1) << 11) + K + 512;
-	u32 den = (M + 1) << 11;
+	unsigned int num = ((N + 1) << 11) + K + 512;
+	unsigned int den = (M + 1) << 11;
 
 	return cal_dsm(pll, num, den);
 }
 
-static inline u32 ssff_dsm_2(int pll, u32 M, u32 N, u32 K)
+static inline unsigned int
+ssff_dsm_2(int pll, unsigned int M,	unsigned int N, unsigned int K)
 {
-	u32 num = K >= 512 ? ((N + 1) << 12) + K - 512 : ((N + 1) << 12) + K + 3584;
-	u32 den = (M + 1) << 12;
+	unsigned int num = K >= 512 ?
+		((N + 1) << 12) + K - 512 : ((N + 1) << 12) + K + 3584;
+	unsigned int den = (M + 1) << 12;
 
 	return cal_dsm(pll, num, den);
 }
 
-static inline u32 dsm(int pll, u32 M, u32 N, u32 K, u32 dsmsel, u32 phase_div_en)
+static inline unsigned int
+dsm(int pll, unsigned int M, unsigned int N, unsigned int K,
+	unsigned int dsmsel, unsigned int phase_div_en)
 {
-	if ( !dsmsel )
+	if(!dsmsel)
 		return mash_dsm(pll, M, N, K);
-	else if ( !phase_div_en )
+	else if(!phase_div_en)
 		return mash_dsm(pll, M, N, K);
 	else
 		return ssff_dsm_2(pll, M, N, K);
 }
 
-static inline u32 cgu_get_pll0_fosc(void)
+static inline unsigned int
+cgu_get_pll0_fosc(void)
 {
 	if(CGU_PLL0_BYPASS)
 		return get_input_clock(0);
 	else
 		return !CGU_PLL0_CFG_FRAC_EN
-			? dsm(0, CGU_PLL0_CFG_PLLM, CGU_PLL0_CFG_PLLN, 0, CGU_PLL0_CFG_DSMSEL, CGU_PLL0_PHASE_DIVIDER_ENABLE)
-			: dsm(0, CGU_PLL0_CFG_PLLM, CGU_PLL0_CFG_PLLN, CGU_PLL0_CFG_PLLK, CGU_PLL0_CFG_DSMSEL, CGU_PLL0_PHASE_DIVIDER_ENABLE);
+			? dsm(0, CGU_PLL0_CFG_PLLM, CGU_PLL0_CFG_PLLN, 0, CGU_PLL0_CFG_DSMSEL,
+				CGU_PLL0_PHASE_DIVIDER_ENABLE)
+			: dsm(0, CGU_PLL0_CFG_PLLM, CGU_PLL0_CFG_PLLN, CGU_PLL0_CFG_PLLK,
+				CGU_PLL0_CFG_DSMSEL, CGU_PLL0_PHASE_DIVIDER_ENABLE);
 }
 
-static inline u32 cgu_get_pll0_fps(int phase)
+static inline unsigned int
+cgu_get_pll0_fps(int phase)
 {
-	register u32 fps = cgu_get_pll0_fosc();
+	register unsigned int fps = cgu_get_pll0_fosc();
 
-	switch ( phase )
+	switch(phase)
 	{
 	case 1:
 		/*  1.25    */
@@ -183,14 +188,16 @@ static inline u32 cgu_get_pll0_fps(int phase)
 	return fps;
 }
 
-static u32 cgu_get_pll0_fdiv(void)
+static unsigned int
+cgu_get_pll0_fdiv(void)
 {
-	register u32 div = CGU_PLL2_CFG_INPUT_DIV + 1;
+	register unsigned int div = CGU_PLL2_CFG_INPUT_DIV + 1;
 
 	return (cgu_get_pll0_fosc() + (div >> 1)) / div;
 }
 
-static inline u32 cgu_get_pll1_fosc(void)
+static inline unsigned int
+cgu_get_pll1_fosc(void)
 {
 	if(CGU_PLL1_BYPASS)
 		return get_input_clock(1);
@@ -200,19 +207,22 @@ static inline u32 cgu_get_pll1_fosc(void)
 			: dsm(1, CGU_PLL1_CFG_PLLM, CGU_PLL1_CFG_PLLN, CGU_PLL1_CFG_PLLK, CGU_PLL1_CFG_DSMSEL, 0);
 }
 
-static inline u32 cgu_get_pll1_fps(void)
+static inline unsigned int
+cgu_get_pll1_fps(void)
 {
-	register u32 fps = cgu_get_pll1_fosc();
+	register unsigned int fps = cgu_get_pll1_fosc();
 
 	return ((fps << 1) + 1) / 3;
 }
 
-static inline u32 cgu_get_pll1_fdiv(void)
+static inline unsigned int
+cgu_get_pll1_fdiv(void)
 {
 	return cgu_get_pll1_fosc();
 }
 
-static inline u32 cgu_get_pll2_fosc(void)
+static inline unsigned int
+cgu_get_pll2_fosc(void)
 {
 	u64 res, clock = get_input_clock(2);
 
@@ -225,9 +235,10 @@ static inline u32 cgu_get_pll2_fosc(void)
 	return res;
 }
 
-static inline u32 cgu_get_pll2_fps(int phase)
+static inline unsigned int
+cgu_get_pll2_fps(int phase)
 {
-	register u32 fps = cgu_get_pll2_fosc();
+	register unsigned int fps = cgu_get_pll2_fosc();
 
 	switch ( phase )
 	{
@@ -242,23 +253,25 @@ static inline u32 cgu_get_pll2_fps(int phase)
 	return fps;
 }
 
-static inline u32 cgu_get_pll2_fdiv(void)
+static inline unsigned int
+cgu_get_pll2_fdiv(void)
 {
-	register u32 div = CGU_IF_CLK_PCI_CLK + 1;
+	register unsigned int div = CGU_IF_CLK_PCI_CLK + 1;
 	return (cgu_get_pll2_fosc() + (div >> 1)) / div;
 }
 
-u32 cgu_get_mips_clock(int cpu)
+unsigned int
+cgu_get_mips_clock(int cpu)
 {
-	register u32 ret = cgu_get_pll0_fosc();
-	register u32 cpusel = cpu == 0 ? CGU_SYS_CPU0SEL : CGU_SYS_CPU1SEL;
+	register unsigned int ret = cgu_get_pll0_fosc();
+	register unsigned int cpusel = cpu == 0 ? CGU_SYS_CPU0SEL : CGU_SYS_CPU1SEL;
 
-	if ( cpusel == 0 )
+	if(cpusel == 0)
 		return ret;
-	else if ( cpusel == 2 )
+	else if(cpusel == 2)
 		ret <<= 1;
 
-	switch ( CGU_SYS_DDR_SEL )
+	switch(CGU_SYS_DDR_SEL)
 	{
 	default:
 	case 0:
@@ -272,16 +285,18 @@ u32 cgu_get_mips_clock(int cpu)
 	}
 }
 
-u32 cgu_get_cpu_clock(void)
+unsigned int
+cgu_get_cpu_clock(void)
 {
 	return cgu_get_mips_clock(0);
 }
 
-u32 cgu_get_io_region_clock(void)
+unsigned int
+cgu_get_io_region_clock(void)
 {
-	register u32 ret = cgu_get_pll0_fosc();
+	register unsigned int ret = cgu_get_pll0_fosc();
 
-	switch ( CGU_SYS_DDR_SEL )
+	switch(CGU_SYS_DDR_SEL)
 	{
 	default:
 	case 0:
@@ -295,9 +310,10 @@ u32 cgu_get_io_region_clock(void)
 	}
 }
 
-u32 cgu_get_fpi_bus_clock(int fpi)
+unsigned int
+cgu_get_fpi_bus_clock(int fpi)
 {
-	register u32 ret = cgu_get_io_region_clock();
+	register unsigned int ret = cgu_get_io_region_clock();
 
 	if((fpi == 2) && (CGU_SYS_FPI_SEL))
 		ret >>= 1;
@@ -305,9 +321,10 @@ u32 cgu_get_fpi_bus_clock(int fpi)
 	return ret;
 }
 
-u32 cgu_get_pp32_clock(void)
+unsigned int
+cgu_get_pp32_clock(void)
 {
-	switch ( CGU_SYS_PPESEL )
+	switch(CGU_SYS_PPESEL)
 	{
 	default:
 	case 0:
@@ -321,9 +338,10 @@ u32 cgu_get_pp32_clock(void)
 	}
 }
 
-u32 cgu_get_ethernet_clock(int mii)
+unsigned int
+cgu_get_ethernet_clock(int mii)
 {
-	switch ( CGU_IF_CLK_MIISEL )
+	switch(CGU_IF_CLK_MIISEL)
 	{
 	case 0:
 		return (cgu_get_pll2_fosc() + 3) / 12;
@@ -337,9 +355,10 @@ u32 cgu_get_ethernet_clock(int mii)
 	return 0;
 }
 
-u32 cgu_get_usb_clock(void)
+unsigned int
+cgu_get_usb_clock(void)
 {
-	switch ( CGU_IF_CLK_USBSEL )
+	switch(CGU_IF_CLK_USBSEL)
 	{
 	case 0:
 		return (cgu_get_pll2_fosc() + 12) / 25;
@@ -353,15 +372,16 @@ u32 cgu_get_usb_clock(void)
 	return 0;
 }
 
-u32 cgu_get_clockout(int clkout)
+unsigned int
+cgu_get_clockout(int clkout)
 {
-	u32 fosc1 = cgu_get_pll1_fosc();
-	u32 fosc2 = cgu_get_pll2_fosc();
+	unsigned int fosc1 = cgu_get_pll1_fosc();
+	unsigned int fosc2 = cgu_get_pll2_fosc();
 
-	if ( clkout > 3 || clkout < 0 )
+	if(clkout > 3 || clkout < 0)
 		return 0;
 
-	switch ( ((u32)clkout << 2) | GET_BITS(*IFXMIPS_CGU_IF_CLK, 15 - clkout * 2, 14 - clkout * 2) )
+	switch(((unsigned int)clkout << 2) | GET_BITS(*IFXMIPS_CGU_IF_CLK, 15 - clkout * 2, 14 - clkout * 2))
 	{
 	case 0: /*  32.768KHz   */
 	case 15:
@@ -391,6 +411,5 @@ u32 cgu_get_clockout(int clkout)
 	case 11:/*  60MHz       */
 		return (fosc2 + 2) / 5;
 	}
-
 	return 0;
 }

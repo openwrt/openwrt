@@ -193,7 +193,7 @@ ifxmipsasc_tx_int (int irq, void *port)
 {
 	ifxmips_w32(ASC_IRNCR_TIR, IFXMIPS_ASC1_IRNCR);
 	ifxmipsasc_start_tx(port);
-	mask_and_ack_ifxmips_irq(irq);
+	ifxmips_mask_and_ack_irq(irq);
 
 	return IRQ_HANDLED;
 }
@@ -213,7 +213,7 @@ ifxmipsasc_rx_int (int irq, void *port)
 {
 	ifxmips_w32(ASC_IRNCR_RIR, IFXMIPS_ASC1_IRNCR);
 	ifxmipsasc_rx_chars((struct uart_port *) port);
-	mask_and_ack_ifxmips_irq(irq);
+	ifxmips_mask_and_ack_irq(irq);
 
 	return IRQ_HANDLED;
 }

@@ -60,6 +60,7 @@
 #include <asm/ifxmips/ifxmips_mei_app_ioctl.h>
 #include <asm/ifxmips/ifxmips_gpio.h>
 #include <asm/ifxmips/ifxmips_led.h>
+#include <asm/ifxmips/ifxmips_irq.h>
 
 #ifdef CONFIG_DEVFS_FS
 #define IFXMIPS_DEVNAME  "ifxmips"
@@ -79,7 +80,7 @@
         up(&id)
 
 #define MEI_MASK_AND_ACK_IRQ \
-        mask_and_ack_ifxmips_irq
+        ifxmips_mask_and_ack_irq
 
 #define MEI_DISABLE_IRQ \
         disable_irq

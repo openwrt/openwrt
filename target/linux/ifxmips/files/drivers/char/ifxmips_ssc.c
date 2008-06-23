@@ -73,7 +73,7 @@ static unsigned int ifx_ssc_get_kernel_clk (struct ifx_ssc_port *info);
 static void tx_int (struct ifx_ssc_port *);
 
 extern unsigned int ifxmips_get_fpi_hz (void);
-extern void mask_and_ack_ifxmips_irq (unsigned int irq_nr);
+extern void ifxmips_mask_and_ack_irq (unsigned int irq_nr);
 
 static inline unsigned int
 ifx_ssc_get_kernel_clk (struct ifx_ssc_port *info)
@@ -297,9 +297,9 @@ ifx_ssc_abort (struct ifx_ssc_port *info)
 		wake_up_interruptible (&info->rwait);
 
 	// clear pending int's 
-	mask_and_ack_ifxmips_irq(IFXMIPS_SSC_RIR);
-	mask_and_ack_ifxmips_irq(IFXMIPS_SSC_TIR);
-	mask_and_ack_ifxmips_irq(IFXMIPS_SSC_EIR);
+	ifxmips_mask_and_ack_irq(IFXMIPS_SSC_RIR);
+	ifxmips_mask_and_ack_irq(IFXMIPS_SSC_TIR);
+	ifxmips_mask_and_ack_irq(IFXMIPS_SSC_EIR);
 
 	// clear error flags
 	ifxmips_w32(IFX_SSC_WHBSTATE_CLR_ALL_ERROR, IFXMIPS_SSC_WHBSTATE);
@@ -354,9 +354,9 @@ ifx_ssc_open (struct inode *inode, struct file *filp)
 	ifxmips_w32(IFX_SSC_WHBSTATE_CLR_ALL_ERROR, IFXMIPS_SSC_WHBSTATE);
 
 	// clear pending interrupts
-	mask_and_ack_ifxmips_irq(IFXMIPS_SSC_RIR);
-	mask_and_ack_ifxmips_irq(IFXMIPS_SSC_TIR);
-	mask_and_ack_ifxmips_irq(IFXMIPS_SSC_EIR);
+	ifxmips_mask_and_ack_irq(IFXMIPS_SSC_RIR);
+	ifxmips_mask_and_ack_irq(IFXMIPS_SSC_TIR);
+	ifxmips_mask_and_ack_irq(IFXMIPS_SSC_EIR);
 
 	ifxmips_w32(IFX_SSC_WHBSTATE_SET_ENABLE, IFXMIPS_SSC_WHBSTATE);
 

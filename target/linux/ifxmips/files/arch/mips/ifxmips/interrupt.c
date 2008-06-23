@@ -1,6 +1,4 @@
 /*
- *   arch/mips/ifxmips/interrupt.c
- *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; either version 2 of the License, or
@@ -16,12 +14,7 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
  *   Copyright (C) 2005 Wu Qi Ming infineon
- *
- *   Rewrite of Infineon IFXMips code, thanks to infineon for the support,
- *   software and hardware
- *
  *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
- *
  */
 
 #include <linux/init.h>
@@ -37,17 +30,16 @@
 #include <asm/ifxmips/ifxmips_irq.h>
 #include <asm/irq_cpu.h>
 
-
 void
-disable_ifxmips_irq (unsigned int irq_nr)
+ifxmips_disable_irq(unsigned int irq_nr)
 {
 	int i;
 	u32 *ifxmips_ier = IFXMIPS_ICU_IM0_IER;
 
 	irq_nr -= INT_NUM_IRQ0;
-	for (i = 0; i <= 4; i++)
+	for(i = 0; i <= 4; i++)
 	{
-		if (irq_nr < INT_NUM_IM_OFFSET){
+		if(irq_nr < INT_NUM_IM_OFFSET){
 			ifxmips_w32(ifxmips_r32(ifxmips_ier) & ~(1 << irq_nr ), ifxmips_ier);
 			return;
 		}
@@ -55,19 +47,19 @@ disable_ifxmips_irq (unsigned int irq_nr)
 		irq_nr -= INT_NUM_IM_OFFSET;
 	}
 }
-EXPORT_SYMBOL (disable_ifxmips_irq);
+EXPORT_SYMBOL(ifxmips_disable_irq);
 
 void
-mask_and_ack_ifxmips_irq (unsigned int irq_nr)
+ifxmips_mask_and_ack_irq(unsigned int irq_nr)
 {
 	int i;
 	u32 *ifxmips_ier = IFXMIPS_ICU_IM0_IER;
 	u32 *ifxmips_isr = IFXMIPS_ICU_IM0_ISR;
 
 	irq_nr -= INT_NUM_IRQ0;
-	for (i = 0; i <= 4; i++)
+	for(i = 0; i <= 4; i++)
 	{
-		if (irq_nr < INT_NUM_IM_OFFSET)
+		if(irq_nr < INT_NUM_IM_OFFSET)
 		{
 			ifxmips_w32(ifxmips_r32(ifxmips_ier) & ~(1 << irq_nr ), ifxmips_ier);
 			ifxmips_w32((1 << irq_nr ), ifxmips_isr);
@@ -78,18 +70,18 @@ mask_and_ack_ifxmips_irq (unsigned int irq_nr)
 		irq_nr -= INT_NUM_IM_OFFSET;
 	}
 }
-EXPORT_SYMBOL (mask_and_ack_ifxmips_irq);
+EXPORT_SYMBOL(ifxmips_mask_and_ack_irq);
 
 void
-enable_ifxmips_irq (unsigned int irq_nr)
+ifxmips_enable_irq(unsigned int irq_nr)
 {
 	int i;
 	u32 *ifxmips_ier = IFXMIPS_ICU_IM0_IER;
 
 	irq_nr -= INT_NUM_IRQ0;
-	for (i = 0; i <= 4; i++)
+	for(i = 0; i <= 4; i++)
 	{
-		if (irq_nr < INT_NUM_IM_OFFSET)
+		if(irq_nr < INT_NUM_IM_OFFSET)
 		{
 			ifxmips_w32(ifxmips_r32(ifxmips_ier) | (1 << irq_nr ), ifxmips_ier);
 			return;
@@ -98,78 +90,79 @@ enable_ifxmips_irq (unsigned int irq_nr)
 		irq_nr -= INT_NUM_IM_OFFSET;
 	}
 }
-EXPORT_SYMBOL (enable_ifxmips_irq);
+EXPORT_SYMBOL(ifxmips_enable_irq);
 
 static unsigned int
-startup_ifxmips_irq (unsigned int irq)
+ifxmips_startup_irq(unsigned int irq)
 {
-	enable_ifxmips_irq (irq);
+	ifxmips_enable_irq(irq);
 	return 0;
 }
 
 static void
-end_ifxmips_irq (unsigned int irq)
+ifxmips_end_irq(unsigned int irq)
 {
-	if (!(irq_desc[irq].status & (IRQ_DISABLED | IRQ_INPROGRESS)))
-		enable_ifxmips_irq (irq);
+	if(!(irq_desc[irq].status & (IRQ_DISABLED | IRQ_INPROGRESS)))
+		ifxmips_enable_irq (irq);
 }
 
-static struct hw_interrupt_type ifxmips_irq_type = {
+static struct hw_interrupt_type
+ifxmips_irq_type = {
 	"IFXMIPS",
-	.startup = startup_ifxmips_irq,
-	.enable = enable_ifxmips_irq,
-	.disable = disable_ifxmips_irq,
-	.unmask = enable_ifxmips_irq,
-	.ack = end_ifxmips_irq,
-	.mask = disable_ifxmips_irq,
-	.mask_ack = mask_and_ack_ifxmips_irq,
-	.end = end_ifxmips_irq,
+	.startup = ifxmips_startup_irq,
+	.enable = ifxmips_enable_irq,
+	.disable = ifxmips_disable_irq,
+	.unmask = ifxmips_enable_irq,
+	.ack = ifxmips_end_irq,
+	.mask = ifxmips_disable_irq,
+	.mask_ack = ifxmips_mask_and_ack_irq,
+	.end = ifxmips_end_irq,
 };
 
 static inline int
 ls1bit32(unsigned long x)
 {
 	__asm__ (
-		"       .set    push                                    \n"
-		"       .set    mips32                                  \n"
-		"       clz     %0, %1                                  \n"
-		"       .set    pop                                     \n"
+		".set push \n"
+		".set mips32 \n"
+		"clz %0, %1 \n"
+		".set pop \n"
 		: "=r" (x)
 		: "r" (x));
-
-		return 31 - x;
+	return 31 - x;
 }
 
 void
-ifxmips_hw_irqdispatch (int module)
+ifxmips_hw_irqdispatch(int module)
 {
 	u32 irq;
 
 	irq = ifxmips_r32(IFXMIPS_ICU_IM0_IOSR + (module * IFXMIPS_ICU_OFFSET));
-	if (irq == 0)
+	if(irq == 0)
 		return;
 
-	irq = ls1bit32 (irq);
-	do_IRQ ((int) irq + INT_NUM_IM0_IRL0 + (INT_NUM_IM_OFFSET * module));
+	irq = ls1bit32(irq);
+	do_IRQ((int)irq + INT_NUM_IM0_IRL0 + (INT_NUM_IM_OFFSET * module));
 
-	if ((irq == 22) && (module == 0)){
+	if((irq == 22) && (module == 0)){
 		ifxmips_w32(ifxmips_r32(IFXMIPS_EBU_PCC_ISTAT) | 0x10, IFXMIPS_EBU_PCC_ISTAT);
 	}
 }
 
 asmlinkage void
-plat_irq_dispatch (void)
+plat_irq_dispatch(void)
 {
 	unsigned int pending = read_c0_status() & read_c0_cause() & ST0_IM;
 	unsigned int i;
 
-	if (pending & CAUSEF_IP7){
+	if(pending & CAUSEF_IP7)
+	{
 		do_IRQ(MIPS_CPU_TIMER_IRQ);
 		goto out;
 	} else {
-		for (i = 0; i < 5; i++)
+		for(i = 0; i < 5; i++)
 		{
-			if (pending & (CAUSEF_IP2 << i))
+			if(pending & (CAUSEF_IP2 << i))
 			{
 				ifxmips_hw_irqdispatch(i);
 				goto out;
@@ -182,7 +175,8 @@ out:
 	return;
 }
 
-static struct irqaction cascade = {
+static struct irqaction
+cascade = {
 	.handler = no_action,
 	.flags = IRQF_DISABLED,
 	.name = "cascade",
@@ -193,27 +187,16 @@ arch_init_irq(void)
 {
 	int i;
 
-	for (i = 0; i < 5; i++)
-	{
+	for(i = 0; i < 5; i++)
 		ifxmips_w32(0, IFXMIPS_ICU_IM0_IER + (i * IFXMIPS_ICU_OFFSET));
-	}
 
 	mips_cpu_irq_init();
 
-	for (i = 2; i <= 6; i++)
-	{
+	for(i = 2; i <= 6; i++)
 		setup_irq(i, &cascade);
-	}
 
-	for (i = INT_NUM_IRQ0; i <= (INT_NUM_IRQ0 + (5 * INT_NUM_IM_OFFSET)); i++)
-	{
-#if 0
-		irq_desc[i].status = IRQ_DISABLED;
-		irq_desc[i].action = NULL;
-		irq_desc[i].depth = 1;
-#endif
+	for(i = INT_NUM_IRQ0; i <= (INT_NUM_IRQ0 + (5 * INT_NUM_IM_OFFSET)); i++)
 		set_irq_chip_and_handler(i, &ifxmips_irq_type, handle_level_irq);
-	}
 
-	set_c0_status (IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4 | IE_IRQ5);
+	set_c0_status(IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4 | IE_IRQ5);
 }
