@@ -38,17 +38,31 @@
 
 /*------------ ASC1 */
 
-#define IFXMIPS_ASC1_BASE_ADDR	(KSEG1 + 0x1E100C00)
+#define IFXMIPS_ASC_BASE_ADDR	(KSEG1 + 0x1E100400)
+#define IFXMIPS_ASC_BASE_DIFF	(0x1E100C00 - 0x1E100400)
 
-/* FIFO status register */
-#define IFXMIPS_ASC1_FSTAT		((u32*)(IFXMIPS_ASC1_BASE_ADDR + 0x0048))
-#define ASCFSTAT_TXFFLMASK		0x3F00
-#define ASCFSTAT_TXFFLOFF		8
+#define IFXMIPS_ASC_FSTAT		0x0048
+#define IFXMIPS_ASC_TBUF		0x0020
+#define IFXMIPS_ASC_WHBSTATE	0x0018
+#define IFXMIPS_ASC_RBUF		0x0024
+#define IFXMIPS_ASC_STATE		0x0014
+#define IFXMIPS_ASC_IRNCR		0x00F8
+#define IFXMIPS_ASC_CLC			0x0000
+#define IFXMIPS_ASC_PISEL		0x0004
+#define IFXMIPS_ASC_TXFCON		0x0044
+#define IFXMIPS_ASC_RXFCON		0x0040
+#define IFXMIPS_ASC_CON			0x0010
+#define IFXMIPS_ASC_BG			0x0050
+#define IFXMIPS_ASC_IRNREN		0x00F4
 
-/* ASC1 transmit buffer */
-#define IFXMIPS_ASC1_TBUF		((u32*)(IFXMIPS_ASC1_BASE_ADDR + 0x0020))
-
-/* channel operating modes */
+#define IFXMIPS_ASC_CLC_DISS	0x2
+#define ASC_IRNREN_RX_BUF		0x8
+#define ASC_IRNREN_TX_BUF		0x4
+#define ASC_IRNREN_ERR			0x2
+#define ASC_IRNREN_TX			0x1
+#define ASC_IRNCR_TIR			0x4
+#define ASC_IRNCR_RIR			0x2
+#define ASC_IRNCR_EIR			0x4
 #define ASCOPT_CSIZE			0x3
 #define ASCOPT_CS7				0x1
 #define ASCOPT_CS8				0x2
@@ -56,50 +70,9 @@
 #define ASCOPT_STOPB			0x8
 #define ASCOPT_PARODD			0x0
 #define ASCOPT_CREAD			0x20
+#define ASCFSTAT_TXFFLMASK		0x3F00
+#define ASCFSTAT_TXFFLOFF		8
 
-/* hardware modified control register */
-#define IFXMIPS_ASC1_WHBSTATE	((u32*)(IFXMIPS_ASC1_BASE_ADDR + 0x0018))
-
-/* receive buffer register */
-#define IFXMIPS_ASC1_RBUF		((u32*)(IFXMIPS_ASC1_BASE_ADDR + 0x0024))
-
-/* status register */
-#define IFXMIPS_ASC1_STATE		((u32*)(IFXMIPS_ASC1_BASE_ADDR + 0x0014))
-
-/* interrupt control */
-#define IFXMIPS_ASC1_IRNCR		((u32*)(IFXMIPS_ASC1_BASE_ADDR + 0x00F8))
-
-#define ASC_IRNCR_TIR			0x4
-#define ASC_IRNCR_RIR			0x2
-#define ASC_IRNCR_EIR			0x4
-
-/* clock control */
-#define IFXMIPS_ASC1_CLC			((u32*)(IFXMIPS_ASC1_BASE_ADDR + 0x0000))
-
-#define IFXMIPS_ASC1_CLC_DISS	0x2
-
-/* port input select register */
-#define IFXMIPS_ASC1_PISEL		((u32*)(IFXMIPS_ASC1_BASE_ADDR + 0x0004))
-
-/* tx fifo */
-#define IFXMIPS_ASC1_TXFCON		((u32*)(IFXMIPS_ASC1_BASE_ADDR + 0x0044))
-
-/* rx fifo */
-#define IFXMIPS_ASC1_RXFCON		((u32*)(IFXMIPS_ASC1_BASE_ADDR + 0x0040))
-
-/* control */
-#define IFXMIPS_ASC1_CON		((u32*)(IFXMIPS_ASC1_BASE_ADDR + 0x0010))
-
-/* timer reload */
-#define IFXMIPS_ASC1_BG			((u32*)(IFXMIPS_ASC1_BASE_ADDR + 0x0050))
-
-/* int enable */
-#define IFXMIPS_ASC1_IRNREN		((u32*)(IFXMIPS_ASC1_BASE_ADDR + 0x00F4))
-
-#define ASC_IRNREN_RX_BUF		0x8
-#define ASC_IRNREN_TX_BUF		0x4
-#define ASC_IRNREN_ERR			0x2
-#define ASC_IRNREN_TX			0x1
 
 
 /*------------ RCU */

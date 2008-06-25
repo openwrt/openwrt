@@ -20,8 +20,8 @@
 #ifndef _IFXPROM_H__
 #define _IFXPROM_H__
 
-void prom_printf(const char * fmt, ...);
-u32 *prom_get_cp1_base(void);
-u32 prom_get_cp1_size(void);
+extern void prom_printf(const char * fmt, ...);
+extern u32 *prom_get_cp1_base(void);
+extern u32 prom_get_cp1_size(void);
 
 #endif

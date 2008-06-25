@@ -147,7 +147,7 @@ ifxmips_led_probe(struct platform_device *dev)
 		struct ifxmips_led *tmp = kzalloc(sizeof(struct ifxmips_led), GFP_KERNEL);
 		tmp->cdev.brightness_set = ifxmips_ledapi_set;
 		tmp->cdev.name = kmalloc(sizeof("ifxmips:led:00"), GFP_KERNEL);
-		sprintf(tmp->cdev.name, "ifxmips:led:%02d", i);
+		sprintf((char*)tmp->cdev.name, "ifxmips:led:%02d", i);
 		tmp->cdev.default_trigger = NULL;
 		tmp->bit = i;
 		led_classdev_register(&dev->dev, &tmp->cdev);
