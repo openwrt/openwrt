@@ -26,6 +26,18 @@ static char buf[1024];
 unsigned int *prom_cp1_base = NULL;
 unsigned int prom_cp1_size = 0;
 
+static inline u32
+asc_r32(unsigned long r)
+{
+	return ifxmips_r32((u32*)(IFXMIPS_ASC_BASE_ADDR + IFXMIPS_ASC_BASE_DIFF + r));
+}
+
+static inline void
+asc_w32(u32 v, unsigned long r)
+{
+	ifxmips_w32(v, (u32*)(IFXMIPS_ASC_BASE_ADDR + IFXMIPS_ASC_BASE_DIFF + r));
+}
+
 void
 prom_free_prom_memory(void)
 {
@@ -34,11 +46,15 @@ prom_free_prom_memory(void)
 void
 prom_putchar(char c)
 {
-	while((ifxmips_r32(IFXMIPS_ASC1_FSTAT) & ASCFSTAT_TXFFLMASK) >> ASCFSTAT_TXFFLOFF);
+	unsigned long flags;
+
+	local_irq_save(flags);
+	while((asc_r32(IFXMIPS_ASC_FSTAT) & ASCFSTAT_TXFFLMASK) >> ASCFSTAT_TXFFLOFF);
 
 	if(c == '\n')
-		ifxmips_w32('\r', IFXMIPS_ASC1_TBUF);
-	ifxmips_w32(c, IFXMIPS_ASC1_TBUF);
+		asc_w32('\r', IFXMIPS_ASC_TBUF);
+	asc_w32(c, IFXMIPS_ASC_TBUF);
+	local_irq_restore(flags);
 }
 
 void

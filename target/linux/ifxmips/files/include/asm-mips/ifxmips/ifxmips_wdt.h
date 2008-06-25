@@ -15,6 +15,7 @@
  *
  *   Copyright (C) 2005 infineon
  *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
+ *
  */
 
 #ifndef IFXMIPS_WDT_H
