@@ -15,6 +15,8 @@ LINUX_VERSION:=2.6.26-rc7
 
 include $(INCLUDE_DIR)/target.mk
 
+KERNELNAME:="uImage"
+
 DEFAULT_PACKAGES += kmod-madwifi
 
 define Kernel/Configure

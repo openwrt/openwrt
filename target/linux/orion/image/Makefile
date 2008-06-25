@@ -8,18 +8,17 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Image/Prepare
-#
-# XXX - FIXME, we hardcode for the WRT350N v2 for now
-#
-	echo -en "\x61\x70\xa0\xe3\x06\x7c\x87\xe3" > $(KDIR)/zImage
-	cat $(LINUX_DIR)/arch/arm/boot/zImage >> $(KDIR)/zImage
+	cp $(LINUX_DIR)/arch/arm/boot/uImage $(KDIR)/uImage
 endef
 
 define Image/BuildKernel
+# WRT350N v2: mach id 1633 (0x661)
+	echo -en "\x06\x1c\xa0\xe3\x61\x10\x81\xe3" > $(KDIR)/wrt350nv2-zImage
+	cat $(LINUX_DIR)/arch/arm/boot/zImage >> $(KDIR)/wrt350nv2-zImage
 	$(STAGING_DIR_HOST)/bin/mkimage -A arm -O linux -T kernel \
 	-C none -a 0x00008000 -e 0x00008000 -n 'Linux-$(LINUX_VERSION)' \
-	-d $(KDIR)/zImage $(KDIR)/uImage
-	cp $(KDIR)/uImage $(BIN_DIR)/openwrt-$(BOARD)-uImage
+	-d $(KDIR)/wrt350nv2-zImage $(KDIR)/wrt350nv2-uImage
+	cp $(KDIR)/wrt350nv2-uImage $(BIN_DIR)/openwrt-wrt350nv2-uImage
 endef
 
 define Image/Build
