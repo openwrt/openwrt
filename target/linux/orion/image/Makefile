@@ -19,6 +19,13 @@ define Image/BuildKernel
 	-C none -a 0x00008000 -e 0x00008000 -n 'Linux-$(LINUX_VERSION)' \
 	-d $(KDIR)/wrt350nv2-zImage $(KDIR)/wrt350nv2-uImage
 	cp $(KDIR)/wrt350nv2-uImage $(BIN_DIR)/openwrt-wrt350nv2-uImage
+# WNR854T: mach id 1801 (0x709)
+	echo -en "\x07\x1c\xa0\xe3\x09\x10\x81\xe3" > $(KDIR)/wnr854t-zImage
+	cat $(LINUX_DIR)/arch/arm/boot/zImage >> $(KDIR)/wnr854t-zImage
+	$(STAGING_DIR_HOST)/bin/mkimage -A arm -O linux -T kernel \
+	-C none -a 0x00008000 -e 0x00008000 -n 'Linux-$(LINUX_VERSION)' \
+	-d $(KDIR)/wnr854t-zImage $(KDIR)/wnr854t-uImage
+	cp $(KDIR)/wnr854t-uImage $(BIN_DIR)/openwrt-wnr854t-uImage
 endef
 
 define Image/Build
