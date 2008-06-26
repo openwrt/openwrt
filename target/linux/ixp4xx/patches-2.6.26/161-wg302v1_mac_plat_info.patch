@@ -1,0 +1,30 @@
+--- a/arch/arm/mach-ixp4xx/wg302v1-setup.c
++++ b/arch/arm/mach-ixp4xx/wg302v1-setup.c
+@@ -77,9 +77,27 @@
+ 	.resource	= &wg302v1_uart_resource,
+ };
+ 
++/* Built-in 10/100 Ethernet MAC interfaces */
++static struct eth_plat_info wg302_plat_eth[] = {
++	{
++		.phy		= 30,
++		.rxq		= 3,
++		.txreadyq	= 20,
++	}
++};
++
++static struct platform_device wg302_eth[] = {
++	{
++		.name			= "ixp4xx_eth",
++		.id			= IXP4XX_ETH_NPEB,
++		.dev.platform_data	= wg302_plat_eth,
++	}
++};
++
+ static struct platform_device *wg302v1_devices[] __initdata = {
+ 	&wg302v1_flash,
+ 	&wg302v1_uart,
++	&wg302_eth[0],
+ };
+ 
+ static void __init wg302v1_init(void)
