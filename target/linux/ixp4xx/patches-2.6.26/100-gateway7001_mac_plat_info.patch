@@ -1,0 +1,40 @@
+--- a/arch/arm/mach-ixp4xx/gateway7001-setup.c
++++ b/arch/arm/mach-ixp4xx/gateway7001-setup.c
+@@ -76,9 +76,36 @@
+ 	.resource	= &gateway7001_uart_resource,
+ };
+ 
++/* Built-in 10/100 Ethernet MAC interfaces */
++static struct eth_plat_info gateway7001_plat_eth[] = {
++        {
++                .phy            = 1,
++                .rxq            = 3,
++		.txreadyq	= 20,
++        }, {
++                .phy            = 2,
++                .rxq            = 4,
++		.txreadyq	= 21,
++	}
++};
++
++static struct platform_device gateway7001_eth[] = {
++        {
++                .name                   = "ixp4xx_eth",
++                .id                     = IXP4XX_ETH_NPEB,
++                .dev.platform_data      = gateway7001_plat_eth,
++        }, {
++                .name                   = "ixp4xx_eth",
++                .id                     = IXP4XX_ETH_NPEC,
++                .dev.platform_data      = gateway7001_plat_eth + 1,
++	}
++};
++
+ static struct platform_device *gateway7001_devices[] __initdata = {
+ 	&gateway7001_flash,
+-	&gateway7001_uart
++	&gateway7001_uart,
++	&gateway7001_eth[0],
++	&gateway7001_eth[1],
+ };
+ 
+ static void __init gateway7001_init(void)

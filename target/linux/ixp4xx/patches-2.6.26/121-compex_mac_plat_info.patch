@@ -1,0 +1,40 @@
+--- a/arch/arm/mach-ixp4xx/compex-setup.c
++++ b/arch/arm/mach-ixp4xx/compex-setup.c
+@@ -90,9 +90,36 @@
+ 	.resource		= compex_uart_resources,
+ };
+ 
++/* Built-in 10/100 Ethernet MAC interfaces */
++static struct eth_plat_info compex_plat_eth[] = {
++	{
++		.phy		= -1,
++		.rxq		= 3,
++		.txreadyq	= 20,
++	}, {
++		.phy		= 3,
++		.rxq		= 4,
++		.txreadyq	= 21,
++	}
++};
++
++static struct platform_device compex_eth[] = {
++	{
++		.name			= "ixp4xx_eth",
++		.id			= IXP4XX_ETH_NPEB,
++		.dev.platform_data	= compex_plat_eth,
++	}, {
++		.name			= "ixp4xx_eth",
++		.id			= IXP4XX_ETH_NPEC,
++		.dev.platform_data	= compex_plat_eth + 1,
++	}
++};
++
+ static struct platform_device *compex_devices[] __initdata = {
+ 	&compex_flash,
+-	&compex_uart
++	&compex_uart,
++	&compex_eth[0],
++	&compex_eth[1],
+ };
+ 
+ static void __init compex_init(void)
