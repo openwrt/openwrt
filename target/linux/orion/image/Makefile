@@ -28,8 +28,26 @@ define Image/BuildKernel
 	cp $(KDIR)/wnr854t-uImage $(BIN_DIR)/openwrt-wnr854t-uImage
 endef
 
+define Image/Build/Netgear
+	mkdir $(KDIR)/netgear_image
+	cp $(KDIR)/wnr854t-uImage $(KDIR)/netgear_image/uImage
+	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 -m none -p -l -q -e 128KiB -o $(KDIR)/wnr854t-uImage.jffs2 -d $(KDIR)/netgear_image
+	rm -rf $(KDIR)/netgear_image
+	( \
+		dd if=$(KDIR)/wnr854t-uImage.jffs2 bs=1024k conv=sync; \
+		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
+	) > $(BIN_DIR)/openwrt-$(2)-$(1).img
+	$(STAGING_DIR_HOST)/bin/add_header $(3) $(BIN_DIR)/openwrt-$(2)-$(1).img $(BIN_DIR)/openwrt-$(2)-$(1)-webupgrade.img
+endef
+
+define Image/Build/Linksys
+# placeholder for the WRT350N v2
+endef
+
 define Image/Build
 	$(call Image/Build/$(1),$(1))
+	$(call Image/Build/Netgear,$(1),wnr854t,NG_WNR854T,$(1))
+	$(call Image/Build/Linksys,$(1),wrt350nv2,WNR350Nv2,$(1))
 endef
 
 define Image/Build/squashfs
