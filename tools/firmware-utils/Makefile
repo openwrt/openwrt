@@ -31,6 +31,7 @@ define Build/Compile
 	$(call cc,mkcasfw)
 	$(call cc,mkfwimage,-lz)
 	$(call cc,imagetag)
+	$(call cc,add_header)
 endef
 
 define Build/Install
