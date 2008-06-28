@@ -14,6 +14,7 @@ ROOTPART=$(strip $(subst ",, $(CONFIG_X86_GRUB_ROOTPART)))
 
 
 ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
+ifneq ($(HOST_OS),Darwin)
   define Image/cmdline/squashfs
     block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=squashfs init=/etc/preinit
   endef
@@ -44,9 +45,7 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
 	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(1).image $(CONFIG_X86_GRUB_KERNELPART) $(KDIR)/root.grub $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
 	$(call Image/Build/grub/$(1))
   endef
-endif
 
-ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
   define Image/Prepare/grub
 	# for the image builder
 	$(CP) \
@@ -55,6 +54,11 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
 		$(STAGING_DIR_HOST)/usr/lib/grub/i386-pc/e2fs_stage1_5 \
 		$(KDIR)/
   endef
+else
+  define Image/Build/grub
+	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(TARGET_PATH)" NOGRUB=1 ./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(1).image $(CONFIG_X86_GRUB_KERNELPART) "" $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
+  endef
+endif
 endif
 
 ifeq ($(CONFIG_X86_VDI_IMAGES),y)

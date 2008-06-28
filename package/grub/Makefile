@@ -45,6 +45,7 @@ else
 CONFIGURE_FLAGS:=
 endif
 
+ifneq ($(HOST_OS),Darwin)
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
 		LDFLAGS="-static" \
@@ -83,5 +84,6 @@ define Build/InstallDev
 		install
 	mv $(STAGING_DIR_HOST)/usr/sbin/grub $(STAGING_DIR_HOST)/bin
 endef
+endif
 
 $(eval $(call BuildPackage,grub))
