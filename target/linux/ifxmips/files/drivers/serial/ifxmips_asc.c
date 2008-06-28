@@ -41,7 +41,7 @@
 #include <linux/console.h>
 #include <linux/sysrq.h>
 #include <linux/irq.h>
-
+#include <linux/platform_device.h>
 #include <asm/system.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
@@ -60,7 +60,6 @@ static void ifxmipsasc_tx_chars(struct uart_port *port);
 extern void prom_printf(const char * fmt, ...);
 static struct uart_port ifxmipsasc_port[2];
 static struct uart_driver ifxmipsasc_reg;
-static unsigned int uartclk = 0;
 extern unsigned int ifxmips_get_fpi_hz(void);
 
 static void
@@ -155,7 +154,6 @@ static void
 ifxmipsasc_tx_chars(struct uart_port *port)
 {
 	struct circ_buf *xmit = &port->info->xmit;
-
 	if(uart_tx_stopped(port))
 	{
 		ifxmipsasc_stop_tx(port);
@@ -245,10 +243,7 @@ ifxmipsasc_startup(struct uart_port *port)
 	unsigned long flags;
 	int retval;
 
-	if(uartclk == 0)
-		uartclk = ifxmips_get_fpi_hz();
-
-	port->uartclk = uartclk;
+	port->uartclk = ifxmips_get_fpi_hz();
 
 	ifxmips_w32(ifxmips_r32(port->membase + IFXMIPS_ASC_CLC) & ~IFXMIPS_ASC_CLC_DISS, port->membase + IFXMIPS_ASC_CLC);
 	ifxmips_w32(((ifxmips_r32(port->membase + IFXMIPS_ASC_CLC) & ~ASCCLC_RMCMASK)) | (1 << ASCCLC_RMCOFFSET), port->membase + IFXMIPS_ASC_CLC);
@@ -260,17 +255,17 @@ ifxmipsasc_startup(struct uart_port *port)
 
 	local_irq_save(flags);
 
-	retval = request_irq(port->irq, ifxmipsasc_rx_int, IRQF_DISABLED, "asc_rx", port);
-	if(retval)
-	{
-		printk("failed to request ifxmipsasc_rx_int\n");
-		return retval;
-	}
-
-	retval = request_irq(port->irq + 2, ifxmipsasc_tx_int, IRQF_DISABLED, "asc_tx", port);
+	retval = request_irq(port->irq, ifxmipsasc_tx_int, IRQF_DISABLED, "asc_tx", port);
 	if(retval)
 	{
 		printk("failed to request ifxmipsasc_tx_int\n");
+		return retval;
+	}
+
+	retval = request_irq(port->irq + 2, ifxmipsasc_rx_int, IRQF_DISABLED, "asc_rx", port);
+	if(retval)
+	{
+		printk("failed to request ifxmipsasc_rx_int\n");
 		goto err1;
 	}
 
@@ -402,7 +397,15 @@ static void ifxmipsasc_set_termios(struct uart_port *port, struct ktermios *new,
 static const char*
 ifxmipsasc_type(struct uart_port *port)
 {
-	return port->type == PORT_IFXMIPSASC ? "IFXMIPSASC" : NULL;
+	if(port->type == PORT_IFXMIPSASC)
+	{
+		if(port->membase == IFXMIPS_ASC_BASE_ADDR)
+			return "asc0";
+		else
+			return "asc1";
+	} else {
+		return NULL;
+	}
 }
 
 static void
@@ -465,54 +468,53 @@ static struct uart_port ifxmipsasc_port[2] =
 		membase:		(void *)IFXMIPS_ASC_BASE_ADDR,
 		mapbase:		IFXMIPS_ASC_BASE_ADDR,
 		iotype:			SERIAL_IO_MEM,
-		irq:			IFXMIPSASC_RIR(0),
+		irq:			IFXMIPSASC_TIR(0),
 		uartclk:		0,
 		fifosize:		16,
 		type:			PORT_IFXMIPSASC,
 		ops:			&ifxmipsasc_pops,
 		flags:			ASYNC_BOOT_AUTOCONF,
+		line:			0
 	}, {
 		membase:		(void *)(IFXMIPS_ASC_BASE_ADDR + IFXMIPS_ASC_BASE_DIFF),
 		mapbase:		IFXMIPS_ASC_BASE_ADDR + IFXMIPS_ASC_BASE_DIFF,
 		iotype:			SERIAL_IO_MEM,
-		irq:			IFXMIPSASC_RIR(1),
+		irq:			IFXMIPSASC_TIR(1),
 		uartclk:		0,
 		fifosize:		16,
 		type:			PORT_IFXMIPSASC,
 		ops:			&ifxmipsasc_pops,
 		flags:			ASYNC_BOOT_AUTOCONF,
+		line:			1
 	}
 };
 
 static void
 ifxmipsasc_console_write(struct console *co, const char *s, u_int count)
 {
+	int port = co->index;
 	int i, fifocnt;
 	unsigned long flags;
-
 	local_irq_save(flags);
 	for(i = 0; i < count; i++)
 	{
-		/* wait until the FIFO is not full */
-		do
-		{
-			fifocnt = (ifxmips_r32((u32*)(IFXMIPS_ASC_BASE_ADDR + (co->index * IFXMIPS_ASC_BASE_DIFF) + IFXMIPS_ASC_FSTAT)) & ASCFSTAT_TXFFLMASK)
+		do {
+			fifocnt = (ifxmips_r32((u32*)(IFXMIPS_ASC_BASE_ADDR + (port * IFXMIPS_ASC_BASE_DIFF) + IFXMIPS_ASC_FSTAT)) & ASCFSTAT_TXFFLMASK)
 			                >> ASCFSTAT_TXFFLOFF;
-		}while(fifocnt == IFXMIPSASC_TXFIFO_FULL);
+		} while(fifocnt == IFXMIPSASC_TXFIFO_FULL);
 
 		if(s[i] == '\0')
 			break;
 
 		if(s[i] == '\n')
 		{
-			ifxmips_w32('\r', (u32*)(IFXMIPS_ASC_BASE_ADDR + (co->index * IFXMIPS_ASC_BASE_DIFF) + IFXMIPS_ASC_TBUF));
-			do
-			{
-				fifocnt = (ifxmips_r32((u32*)(IFXMIPS_ASC_BASE_ADDR + (co->index * IFXMIPS_ASC_BASE_DIFF) + IFXMIPS_ASC_FSTAT)) & ASCFSTAT_TXFFLMASK)
+			ifxmips_w32('\r', (u32*)(IFXMIPS_ASC_BASE_ADDR + (port * IFXMIPS_ASC_BASE_DIFF) + IFXMIPS_ASC_TBUF));
+			do {
+				fifocnt = (ifxmips_r32((u32*)(IFXMIPS_ASC_BASE_ADDR + (port * IFXMIPS_ASC_BASE_DIFF) + IFXMIPS_ASC_FSTAT)) & ASCFSTAT_TXFFLMASK)
 					>> ASCFSTAT_TXFFLOFF;
 			} while(fifocnt == IFXMIPSASC_TXFIFO_FULL);
 		}
-		ifxmips_w32(s[i], (u32*)(IFXMIPS_ASC_BASE_ADDR + (co->index * IFXMIPS_ASC_BASE_DIFF) + IFXMIPS_ASC_TBUF));
+		ifxmips_w32(s[i], (u32*)(IFXMIPS_ASC_BASE_ADDR + (port * IFXMIPS_ASC_BASE_DIFF) + IFXMIPS_ASC_TBUF));
 	}
 
 	local_irq_restore(flags);
@@ -521,23 +523,16 @@ ifxmipsasc_console_write(struct console *co, const char *s, u_int count)
 static int __init
 ifxmipsasc_console_setup(struct console *co, char *options)
 {
-	struct uart_port *port;
+	int port = co->index;
 	int baud = 115200;
 	int bits = 8;
 	int parity = 'n';
 	int flow = 'n';
-
-	if(uartclk == 0)
-		uartclk = ifxmips_get_fpi_hz();
-	co->index = 0;
-	port = &ifxmipsasc_port[co->index];
-	ifxmipsasc_port[co->index].uartclk = uartclk;
-	ifxmipsasc_port[co->index].type = PORT_IFXMIPSASC;
-
+	ifxmipsasc_port[port].uartclk = ifxmips_get_fpi_hz();
+	ifxmipsasc_port[port].type = PORT_IFXMIPSASC;
 	if(options)
 		uart_parse_options(options, &baud, &parity, &bits, &flow);
-
-	return uart_set_options(port, co, baud, parity, bits, flow);
+	return uart_set_options(&ifxmipsasc_port[port], co, baud, parity, bits, flow);
 }
 
 static struct console ifxmipsasc_console[2] =
@@ -578,22 +573,20 @@ static struct uart_driver ifxmipsasc_reg =
 	.major =			TTY_MAJOR,
 	.minor =			64,
 	.nr =				2,
-	.cons =				ifxmipsasc_console,
+	.cons =				&ifxmipsasc_console[1],
 };
 
-static int __init
+int __init
 ifxmipsasc_init(void)
 {
-	unsigned char res;
-
+	int ret;
 	uart_register_driver(&ifxmipsasc_reg);
-	res = uart_add_one_port(&ifxmipsasc_reg, &ifxmipsasc_port[0]);
-	res = uart_add_one_port(&ifxmipsasc_reg, &ifxmipsasc_port[1]);
-
-	return res;
+	ret = uart_add_one_port(&ifxmipsasc_reg, &ifxmipsasc_port[0]);
+	ret = uart_add_one_port(&ifxmipsasc_reg, &ifxmipsasc_port[1]);
+	return 0;
 }
 
-static void __exit
+void __exit
 ifxmipsasc_exit(void)
 {
 	uart_unregister_driver(&ifxmipsasc_reg);

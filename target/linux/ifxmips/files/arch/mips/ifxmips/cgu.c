@@ -413,3 +413,19 @@ cgu_get_clockout(int clkout)
 	}
 	return 0;
 }
+
+void cgu_setup_pci_clk(int external_clock)
+{
+	//set clock to 33Mhz 
+	ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) & ~0xf00000, IFXMIPS_CGU_IFCCR);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) | 0x800000, IFXMIPS_CGU_IFCCR);
+	// internal or external clock
+	if(external_clock)
+	{
+		ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) & ~ (1 << 16), IFXMIPS_CGU_IFCCR);
+		ifxmips_w32((1 << 30), IFXMIPS_CGU_PCICR);
+	} else {
+		ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) | (1 << 16), IFXMIPS_CGU_IFCCR);
+		ifxmips_w32((1 << 31) | (1 << 30), IFXMIPS_CGU_PCICR);
+	}
+}

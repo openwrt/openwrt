@@ -2,22 +2,8 @@
 
 menu "IFXMips built-in"
 
-config IFXMIPS_ASC_UART
-	bool "IFXMips asc uart"
-	select SERIAL_CORE
-	select SERIAL_CORE_CONSOLE
-	default y
-
 config MTD_IFXMIPS
 	bool "IFXMips flash map"
-	default y
-
-config IFXMIPS_WDT
-	bool "IFXMips watchdog"
-	default y
-
-config IFXMIPS_LED
-	bool "IFXMips led"
 	default y
 
 config IFXMIPS_SSC
