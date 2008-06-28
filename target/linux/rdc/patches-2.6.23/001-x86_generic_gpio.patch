@@ -1,0 +1,15 @@
+diff --git a/arch/i386/Kconfig b/arch/i386/Kconfig
+index 97b64d7..f8c1d32 100644
+--- a/arch/i386/Kconfig
++++ b/arch/i386/Kconfig
+@@ -79,6 +79,10 @@ config GENERIC_BUG
+        default y
+        depends on BUG
+
++config GENERIC_GPIO
++       bool
++       default n
++
+ config GENERIC_HWEIGHT
+        bool
+        default y

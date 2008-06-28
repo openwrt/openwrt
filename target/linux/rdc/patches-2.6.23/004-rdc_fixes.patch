@@ -1,0 +1,73 @@
+diff -urN linux-2.6.19/arch/i386/Kconfig linux-2.6.19.new/arch/i386/Kconfig
+--- linux-2.6.19/arch/i386/Kconfig	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/arch/i386/Kconfig	2006-12-17 17:13:33.000000000 +0100
+@@ -180,6 +180,16 @@
+ 	  Only choose this option if you have such a system, otherwise you
+ 	  should say N here.
+ 
++config X86_RDC
++	bool "Support for RDC 3211 boards"
++	select GENERIC_GPIO
++	select LEDS_GPIO
++	help
++	  Support for RDC 3211 systems. Say 'Y' here if the kernel is 
++	  supposed to run on an IA-32 RDC R3211 system.
++	  Only choose this option if you have such as system, otherwise you
++	  should say N here.
++
+ endchoice
+ 
+ config ACPI_SRAT
+diff -urN linux-2.6.19/arch/i386/Makefile linux-2.6.19.new/arch/i386/Makefile
+--- linux-2.6.19/arch/i386/Makefile	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/arch/i386/Makefile	2006-12-17 17:13:33.000000000 +0100
+@@ -92,6 +92,10 @@
+ mflags-$(CONFIG_X86_ES7000)	:= -Iinclude/asm-i386/mach-es7000
+ mcore-$(CONFIG_X86_ES7000)	:= mach-default
+ core-$(CONFIG_X86_ES7000)	:= arch/i386/mach-es7000/
++# RDC subarch support
++mflags-$(CONFIG_X86_RDC)	:= -Iinclude/asm-i386/mach-rdc
++mcore-$(CONFIG_X86_RDC)		:= mach-default
++core-$(CONFIG_X86_RDC)		+= arch/i386/mach-rdc/
+ 
+ # default subarch .h files
+ mflags-y += -Iinclude/asm-i386/mach-default
+--- timex.h	2007-08-07 10:44:03.816112250 -0700
++++ linux/include/asm-i386/timex.h	2007-08-07 10:48:47.905866750 -0700
+@@ -11,6 +11,8 @@
+ 
+ #ifdef CONFIG_X86_ELAN
+ #  define CLOCK_TICK_RATE 1189200 /* AMD Elan has different frequency! */
++#elif defined(CONFIG_X86_RDC)
++#  define CLOCK_TICK_RATE 1041667 /* Underlying HZ for R8610 */
+ #else
+ #  define CLOCK_TICK_RATE 1193182 /* Underlying HZ */
+ #endif
+--- reboot_fixups.c	2007-08-07 12:02:00.908412250 -0700
++++ linux/arch/i386/kernel/reboot_fixups.c	2007-08-07 12:18:49.391438500 -0700
+@@ -13,6 +13,17 @@
+ #include <linux/pci.h>
+ #include <asm/reboot_fixups.h>
+ #include <asm/msr.h>
++
++static void r8610_reset(struct pci_dev *dev)
++{
++	int i;
++
++	outl(0x80003840,0xCF8);
++	i=inl(0xCFC);
++	i |= 0x1600;
++	outl(i,0xCFC);
++	outb(1,0x92);
++}
+ 
+ static void cs5530a_warm_reset(struct pci_dev *dev)
+ {
+@@ -40,6 +53,7 @@
+ };
+ 
+ static struct device_fixup fixups_table[] = {
++{ PCI_VENDOR_ID_RDC, PCI_DEVICE_ID_RDC_R6030, r8610_reset },
+ { PCI_VENDOR_ID_CYRIX, PCI_DEVICE_ID_CYRIX_5530_LEGACY, cs5530a_warm_reset },
+ { PCI_VENDOR_ID_AMD, PCI_DEVICE_ID_AMD_CS5536_ISA, cs5536_warm_reset },
+ };
