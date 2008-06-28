@@ -27,6 +27,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/cfi.h>
 #include <asm/ifxmips/ifxmips.h>
+#include <asm/ifxmips/ifxmips_ebu.h>
 #include <linux/magic.h>
 #include <linux/platform_device.h>
 
@@ -41,19 +42,23 @@ ifxmips_map = {
 static map_word
 ifxmips_read16(struct map_info * map, unsigned long adr)
 {
+	unsigned long flags;
 	map_word temp;
-
+	spin_lock_irqsave(&ebu_lock, flags);
 	adr ^= 2;
 	temp.x[0] = *((__u16 *) (map->virt + adr));
-
+	spin_unlock_irqrestore(&ebu_lock, flags);
 	return temp;
 }
 
 static void
 ifxmips_write16(struct map_info *map, map_word d, unsigned long adr)
 {
+	unsigned long flags;
+	spin_lock_irqsave(&ebu_lock, flags);
 	adr ^= 2;
 	*((__u16 *) (map->virt + adr)) = d.x[0];
+	spin_unlock_irqrestore(&ebu_lock, flags);
 }
 
 void
@@ -61,12 +66,14 @@ ifxmips_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t le
 {
 	unsigned char *p;
 	unsigned char *to_8;
-
+	unsigned long flags;
+	spin_lock_irqsave(&ebu_lock, flags);
 	from = (unsigned long)(from + map->virt);
 	p = (unsigned char*) from;
 	to_8 = (unsigned char*) to;
 	while(len--)
 		*to_8++ = *p++;
+		spin_unlock_irqrestore(&ebu_lock, flags);
 }
 
 void
@@ -74,12 +81,14 @@ ifxmips_copy_to(struct map_info *map, unsigned long to, const void *from, ssize_
 {
 	unsigned char *p =  (unsigned char*)from;
 	unsigned char *to_8;
-
+	unsigned long flags;
+	spin_lock_irqsave(&ebu_lock, flags);
 	to += (unsigned long) map->virt;
 	to_8 = (unsigned char*)to;
 	while(len--){
 		*p++ = *to_8++;
 	}
+	spin_unlock_irqrestore(&ebu_lock, flags);
 }
 
 static struct mtd_partition

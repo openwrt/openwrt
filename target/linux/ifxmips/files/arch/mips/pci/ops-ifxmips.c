@@ -8,6 +8,7 @@
 #include <asm/ifxmips/ifxmips_irq.h>
 #include <asm/addrspace.h>
 #include <linux/vmalloc.h>
+#include <asm/ifxmips/ifxmips_ebu.h>
 
 #define IFXMIPS_PCI_CFG_BUSNUM_SHF 16
 #define IFXMIPS_PCI_CFG_DEVNUM_SHF 11
@@ -33,7 +34,7 @@ ifxmips_pci_config_access(unsigned char access_type,
 			|| ((devfn & 0xf8) == 0) || ((devfn & 0xf8) == 0x68))
 		return 1;
 
-	local_irq_save(flags);
+	spin_lock_irqsave(&ebu_lock, flags);
 
 	cfg_base = ifxmips_pci_mapped_cfg;
 	cfg_base |= (bus->number << IFXMIPS_PCI_CFG_BUSNUM_SHF) | (devfn <<
@@ -64,7 +65,7 @@ ifxmips_pci_config_access(unsigned char access_type,
 	cfg_base = (ifxmips_pci_mapped_cfg | (0x68 << IFXMIPS_PCI_CFG_FUNNUM_SHF)) + 4;
 	ifxmips_w32(temp, ((u32*)cfg_base));
 
-	local_irq_restore(flags);
+	spin_unlock_irqrestore(&ebu_lock, flags);
 
 	if (((*data) == 0xffffffff) && (access_type == PCI_ACCESS_READ))
 		return 1;
