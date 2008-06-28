@@ -60,6 +60,8 @@ endef
 
 define Package/ip/install
 	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/etc/iproute2
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/etc/iproute2/rt_tables $(1)/etc/iproute2
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ip/ip $(1)/usr/sbin/
 endef
 
