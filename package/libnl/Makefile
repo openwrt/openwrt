@@ -29,6 +29,8 @@ define Package/libnl/description
  This package contains a library for applications dealing with netlink sockets
 endef
 
+TARGET_CFLAGS += -ffunction-sections
+
 define Build/Compile
 	$(call Build/Compile/Default)
 	make -C $(PKG_BUILD_DIR) \
