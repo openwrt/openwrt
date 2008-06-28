@@ -6,6 +6,7 @@
 #include <linux/mm.h>
 #include <asm/ifxmips/ifxmips.h>
 #include <asm/ifxmips/ifxmips_irq.h>
+#include <asm/ifxmips/ifxmips_cgu.h>
 #include <asm/addrspace.h>
 #include <linux/vmalloc.h>
 
@@ -17,26 +18,30 @@
 extern int ifxmips_pci_read_config_dword(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 *val);
 extern int ifxmips_pci_write_config_dword(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 val);
 
-struct pci_ops ifxmips_pci_ops = {
+struct pci_ops ifxmips_pci_ops =
+{
 	.read = ifxmips_pci_read_config_dword,
 	.write = ifxmips_pci_write_config_dword
 };
 
-static struct resource pci_io_resource = {
+static struct resource pci_io_resource =
+{
 	.name = "io pci IO space",
 	.start = IFXMIPS_PCI_IO_BASE,
 	.end = IFXMIPS_PCI_IO_BASE + IFXMIPS_PCI_IO_SIZE - 1,
 	.flags = IORESOURCE_IO
 };
 
-static struct resource pci_mem_resource = {
+static struct resource pci_mem_resource =
+{
 	.name = "ext pci memory space",
 	.start = IFXMIPS_PCI_MEM_BASE,
 	.end = IFXMIPS_PCI_MEM_BASE + IFXMIPS_PCI_MEM_SIZE - 1,
 	.flags = IORESOURCE_MEM
 };
 
-static struct pci_controller ifxmips_pci_controller = {
+static struct pci_controller ifxmips_pci_controller =
+{
 	.pci_ops = &ifxmips_pci_ops,
 	.mem_resource = &pci_mem_resource,
 	.mem_offset	= 0x00000000UL,
@@ -45,12 +50,25 @@ static struct pci_controller ifxmips_pci_controller = {
 };
 
 u32 ifxmips_pci_mapped_cfg;
+u32 ifxmips_pci_external_clock = 0;
 
-int pcibios_plat_dev_init(struct pci_dev *dev){
+static int __init
+ifxmips_pci_set_external_clk(char *str)
+{
+	printk("cgu: setting up external pci clock\n");
+	ifxmips_pci_external_clock = 1;
+	return 1;
+}
+__setup("pci_external_clk", ifxmips_pci_set_external_clk);
+
+int
+pcibios_plat_dev_init(struct pci_dev *dev)
+{
 	u8 pin;
 
 	pci_read_config_byte(dev, PCI_INTERRUPT_PIN, &pin);
-	switch(pin) {
+	switch(pin)
+	{
 		case 0:
 			break;
 		case 1:
@@ -69,12 +87,13 @@ int pcibios_plat_dev_init(struct pci_dev *dev){
 	return 0;
 }
 
-static void __init ifxmips_pci_startup (void){
+static void __init
+ifxmips_pci_startup(void)
+{
 	u32 temp_buffer;
-	ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) & ~0xf00000, IFXMIPS_CGU_IFCCR);
-	ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) | 0x800000, IFXMIPS_CGU_IFCCR);
-	ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) | (1 << 16), IFXMIPS_CGU_IFCCR);
-	ifxmips_w32((1 << 31) | (1 << 30), IFXMIPS_CGU_PCICR);
+
+	cgu_setup_pci_clk(ifxmips_pci_external_clock);
+
 	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P1_OUT) | (1 << 5), IFXMIPS_GPIO_P1_OUT);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P1_OD) | (1 << 5), IFXMIPS_GPIO_P1_OD);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P1_DIR) | (1 << 5), IFXMIPS_GPIO_P1_DIR);
@@ -138,8 +157,10 @@ static void __init ifxmips_pci_startup (void){
 	ifxmips_w32(ifxmips_r32(IFXMIPS_GPIO_P1_OUT) | (1 << 5), IFXMIPS_GPIO_P1_OUT);
 }
 
-int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin){
-	switch (slot) {
+int __init
+pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin){
+	switch(slot)
+	{
 		case 13:
 			/* IDSEL = AD29 --> USB Host Controller */
 			return (INT_NUM_IM1_IRL0 + 17);
@@ -152,11 +173,13 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin){
 	}
 }
 
-int pcibios_init(void){
+int
+pcibios_init(void)
+{
 	extern int pci_probe_only;
 
 	pci_probe_only = 0;
-	printk ("PCI: Probing PCI hardware on host bus 0.\n");
+	printk("PCI: Probing PCI hardware on host bus 0.\n");
 	ifxmips_pci_startup ();
 	//	IFXMIPS_PCI_REG32(PCI_CR_CLK_CTRL_REG) &= (~8);
 	ifxmips_pci_mapped_cfg = (u32)ioremap_nocache(0x17000000, 0x800 * 16);

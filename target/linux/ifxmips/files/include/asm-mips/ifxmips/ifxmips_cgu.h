@@ -8,4 +8,5 @@ u32 cgu_get_pp32_clock(void);
 u32 cgu_get_ethernet_clock(int mii);
 u32 cgu_get_usb_clock(void);
 u32 cgu_get_clockout(int clkout);
+void cgu_setup_pci_clk(int internal_clock);
 #endif

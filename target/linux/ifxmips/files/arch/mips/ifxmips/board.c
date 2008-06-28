@@ -32,7 +32,7 @@
 #include <asm/io.h>
 #include <asm/ifxmips/ifxmips.h>
 
-#define MAX_IFXMIPS_DEVS		7
+#define MAX_IFXMIPS_DEVS		9
 
 #define BOARD_DANUBE			"Danube"
 #define BOARD_DANUBE_CHIPID		0x10129083
@@ -76,6 +76,24 @@ ifxmips_wdt[] =
 	{
 		.id = 0,
 		.name = "ifxmips_wdt",
+	},
+};
+
+static struct platform_device
+ifxmips_asc0[] =
+{
+	{
+		.id = 0,
+		.name = "ifxmips_asc",
+	},
+};
+
+static struct platform_device
+ifxmips_asc1[] =
+{
+	{
+		.id = 1,
+		.name = "ifxmips_asc",
 	},
 };
 
@@ -155,6 +173,8 @@ ifxmips_init_devices(void)
 	ifxmips_devs[dev++] = ifxmips_mii;
 	ifxmips_devs[dev++] = ifxmips_mtd;
 	ifxmips_devs[dev++] = ifxmips_wdt;
+	//ifxmips_devs[dev++] = ifxmips_asc0;
+	ifxmips_devs[dev++] = ifxmips_asc1;
 #ifdef CONFIG_GPIO_DEVICE
 	ifxmips_devs[dev++] = ifxmips_gpio_dev;
 #endif

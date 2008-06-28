@@ -125,8 +125,7 @@ prom_init(void)
 	memsize -= prom_cp1_size;
 	prom_cp1_base = (unsigned int*)(0xA0000000 + (memsize * 1024 * 1024));
 
-	prom_printf(KERN_INFO "Using %dMB Ram and reserving %dMB for cp1\n",
-		memsize, prom_cp1_size);
+	prom_printf("Using %dMB Ram and reserving %dMB for cp1\n", memsize, prom_cp1_size);
 	memsize *= 1024 * 1024;
 
 	if(!*arcs_cmdline)
