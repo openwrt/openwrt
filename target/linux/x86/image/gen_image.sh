@@ -28,10 +28,13 @@ ROOTFSSIZE="$(($4 / 512))"
 
 BLOCKS="$((($KERNELSIZE / 2) - 1))"
 
-genext2fs -d "$KERNELDIR" -b "$BLOCKS" "$OUTPUT.kernel"
-dd if="$OUTPUT.kernel" of="$OUTPUT" bs=512 seek="$KERNELOFFSET" conv=notrunc
 [ -n "$PADDING" ] && dd if=/dev/zero of="$OUTPUT" bs=512 seek="$ROOTFSOFFSET" conv=notrunc count="$ROOTFSSIZE"
 dd if="$ROOTFSIMAGE" of="$OUTPUT" bs=512 seek="$ROOTFSOFFSET" conv=notrunc
+
+[ -n "$NOGRUB" ] && exit 0
+
+genext2fs -d "$KERNELDIR" -b "$BLOCKS" "$OUTPUT.kernel"
+dd if="$OUTPUT.kernel" of="$OUTPUT" bs=512 seek="$KERNELOFFSET" conv=notrunc
 #rm -f "$OUTPUT.kernel"
 
 which chpax >/dev/null && chpax -zp $(which grub)
