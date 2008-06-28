@@ -7,14 +7,6 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define Build/Clean
-	$(MAKE) -C u-boot clean
-endef
-
-define Build/Compile
-	$(MAKE) -C u-boot compile
-endef
-
 define Image/BuildKernel
 	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux $(KDIR)/vmlinux.lzma
 	mkimage -A mips -O linux -T kernel -a 0x80002000 -C lzma -e \
