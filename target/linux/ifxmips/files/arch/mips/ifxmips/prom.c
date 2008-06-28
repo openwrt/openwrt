@@ -26,16 +26,22 @@ static char buf[1024];
 unsigned int *prom_cp1_base = NULL;
 unsigned int prom_cp1_size = 0;
 
+#ifdef IFXMIPS_PROM_ASC0
+#define IFXMIPS_ASC_DIFF	0
+#else
+#define IFXMIPS_ASC_DIFF	IFXMIPS_ASC_BASE_DIFF
+#endif
+
 static inline u32
 asc_r32(unsigned long r)
 {
-	return ifxmips_r32((u32*)(IFXMIPS_ASC_BASE_ADDR + IFXMIPS_ASC_BASE_DIFF + r));
+	return ifxmips_r32((u32*)(IFXMIPS_ASC_BASE_ADDR + IFXMIPS_ASC_DIFF + r));
 }
 
 static inline void
 asc_w32(u32 v, unsigned long r)
 {
-	ifxmips_w32(v, (u32*)(IFXMIPS_ASC_BASE_ADDR + IFXMIPS_ASC_BASE_DIFF + r));
+	ifxmips_w32(v, (u32*)(IFXMIPS_ASC_BASE_ADDR + IFXMIPS_ASC_DIFF + r));
 }
 
 void
