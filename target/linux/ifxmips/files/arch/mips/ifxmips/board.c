@@ -43,6 +43,9 @@
 static unsigned int chiprev;
 static struct platform_device *ifxmips_devs[MAX_IFXMIPS_DEVS];
 
+spinlock_t ebu_lock = SPIN_LOCK_UNLOCKED;
+EXPORT_SYMBOL_GPL(ebu_lock);
+
 static struct platform_device
 ifxmips_led[] =
 {
@@ -76,24 +79,6 @@ ifxmips_wdt[] =
 	{
 		.id = 0,
 		.name = "ifxmips_wdt",
-	},
-};
-
-static struct platform_device
-ifxmips_asc0[] =
-{
-	{
-		.id = 0,
-		.name = "ifxmips_asc",
-	},
-};
-
-static struct platform_device
-ifxmips_asc1[] =
-{
-	{
-		.id = 1,
-		.name = "ifxmips_asc",
 	},
 };
 
@@ -173,8 +158,6 @@ ifxmips_init_devices(void)
 	ifxmips_devs[dev++] = ifxmips_mii;
 	ifxmips_devs[dev++] = ifxmips_mtd;
 	ifxmips_devs[dev++] = ifxmips_wdt;
-	//ifxmips_devs[dev++] = ifxmips_asc0;
-	ifxmips_devs[dev++] = ifxmips_asc1;
 #ifdef CONFIG_GPIO_DEVICE
 	ifxmips_devs[dev++] = ifxmips_gpio_dev;
 #endif
