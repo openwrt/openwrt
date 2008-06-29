@@ -31,7 +31,6 @@
 #include <linux/magic.h>
 #include <linux/platform_device.h>
 
-
 static struct map_info
 ifxmips_map = {
 	.name = "ifxmips_mtd",
@@ -46,7 +45,7 @@ ifxmips_read16(struct map_info * map, unsigned long adr)
 	map_word temp;
 	spin_lock_irqsave(&ebu_lock, flags);
 	adr ^= 2;
-	temp.x[0] = *((__u16 *) (map->virt + adr));
+	temp.x[0] = *((__u16*)(map->virt + adr));
 	spin_unlock_irqrestore(&ebu_lock, flags);
 	return temp;
 }
@@ -57,7 +56,7 @@ ifxmips_write16(struct map_info *map, map_word d, unsigned long adr)
 	unsigned long flags;
 	spin_lock_irqsave(&ebu_lock, flags);
 	adr ^= 2;
-	*((__u16 *) (map->virt + adr)) = d.x[0];
+	*((__u16*)(map->virt + adr)) = d.x[0];
 	spin_unlock_irqrestore(&ebu_lock, flags);
 }
 
@@ -73,7 +72,7 @@ ifxmips_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t le
 	to_8 = (unsigned char*) to;
 	while(len--)
 		*to_8++ = *p++;
-		spin_unlock_irqrestore(&ebu_lock, flags);
+	spin_unlock_irqrestore(&ebu_lock, flags);
 }
 
 void
@@ -85,9 +84,8 @@ ifxmips_copy_to(struct map_info *map, unsigned long to, const void *from, ssize_
 	spin_lock_irqsave(&ebu_lock, flags);
 	to += (unsigned long) map->virt;
 	to_8 = (unsigned char*)to;
-	while(len--){
+	while(len--)
 		*p++ = *to_8++;
-	}
 	spin_unlock_irqrestore(&ebu_lock, flags);
 }
 
@@ -118,7 +116,6 @@ ifxmips_partitions[4] = {
 int
 find_uImage_size(unsigned long start_offset){
 	unsigned long temp;
-
 	ifxmips_copy_from(&ifxmips_map, &temp, start_offset + 12, 4);
 	printk(KERN_INFO "ifxmips_mtd: kernel size is %ld \n", temp + 0x40);
 	return temp + 0x40;
@@ -127,9 +124,7 @@ find_uImage_size(unsigned long start_offset){
 int
 detect_squashfs_partition(unsigned long start_offset){
 	unsigned long temp;
-
 	ifxmips_copy_from(&ifxmips_map, &temp, start_offset, 4);
-
 	return (temp == SQUASHFS_MAGIC);
 }
 
@@ -146,10 +141,10 @@ ifxmips_mtd_probe(struct platform_device *dev)
 	ifxmips_map.write = ifxmips_write16;
 	ifxmips_map.copy_from = ifxmips_copy_from;
 	ifxmips_map.copy_to = ifxmips_copy_to;
+	ifxmips_map.phys = dev->resource->start;
+	ifxmips_map.size = dev->resource->end - ifxmips_map.phys + 1;
+	ifxmips_map.virt = ioremap_nocache(ifxmips_map.phys, ifxmips_map.size);
 
-	ifxmips_map.phys = IFXMIPS_FLASH_START;
-	ifxmips_map.virt = ioremap_nocache(IFXMIPS_FLASH_START, IFXMIPS_FLASH_MAX);
-	ifxmips_map.size = IFXMIPS_FLASH_MAX;
 	if(!ifxmips_map.virt)
 	{
 		printk(KERN_WARNING "ifxmips_mtd: failed to ioremap!\n");
@@ -165,7 +160,6 @@ ifxmips_mtd_probe(struct platform_device *dev)
 	}
 
 	ifxmips_mtd->owner = THIS_MODULE;
-
 	uimage_size = find_uImage_size(ifxmips_partitions[2].offset);
 
 	if(detect_squashfs_partition(ifxmips_partitions[2].offset + uimage_size))
@@ -205,8 +199,7 @@ init_ifxmips_mtd(void)
 	return ret;
 }
 
-static void
-__exit
+static void __exit
 cleanup_ifxmips_mtd(void)
 {
 	platform_driver_unregister(&ifxmips_mtd_driver);

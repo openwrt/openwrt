@@ -133,7 +133,7 @@ static int ifxmips_wdt_release(struct inode *inode, struct file *file)
 		ifxmips_wdt_disable();
 	else
 #endif
-		printk(KERN_INFO "watchdog closed without warning, rebooting system\n");
+		printk("ifxmips_wdt: watchdog closed without warning, rebooting system\n");
 	return 0;
 }
 

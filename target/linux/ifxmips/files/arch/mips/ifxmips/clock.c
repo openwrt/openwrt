@@ -429,3 +429,46 @@ void cgu_setup_pci_clk(int external_clock)
 		ifxmips_w32((1 << 31) | (1 << 30), IFXMIPS_CGU_PCICR);
 	}
 }
+
+unsigned int
+ifxmips_get_ddr_hz(void)
+{
+	switch(ifxmips_r32(IFXMIPS_CGU_SYS) & 0x3)
+	{
+	case 0:
+		return CLOCK_167M;
+	case 1:
+		return CLOCK_133M;
+	case 2:
+		return CLOCK_111M;
+	}
+	return CLOCK_83M;
+}
+EXPORT_SYMBOL(ifxmips_get_ddr_hz);
+
+unsigned int
+ifxmips_get_cpu_hz(void)
+{
+	unsigned int ddr_clock = ifxmips_get_ddr_hz();
+	switch(ifxmips_r32(IFXMIPS_CGU_SYS) & 0xc)
+	{
+	case 0:
+		return CLOCK_333M;
+	case 4:
+		return ddr_clock;
+	}
+	return ddr_clock << 1;
+}
+EXPORT_SYMBOL(ifxmips_get_cpu_hz);
+
+unsigned int
+ifxmips_get_fpi_hz(void)
+{
+	unsigned int ddr_clock = ifxmips_get_ddr_hz();
+	if(ifxmips_r32(IFXMIPS_CGU_SYS) & 0x40)
+		return ddr_clock >> 1;
+	return ddr_clock;
+}
+EXPORT_SYMBOL(ifxmips_get_fpi_hz);
+
+
