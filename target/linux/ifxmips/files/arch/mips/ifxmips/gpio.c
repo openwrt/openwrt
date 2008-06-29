@@ -45,9 +45,9 @@
 #define PINS_PER_PORT		16
 
 #ifdef CONFIG_IFXMIPS_GPIO_RST_BTN
-#define IFXMIPS_RST_PIN 15
-#define IFXMIPS_RST_PORT 1
 
+unsigned int rst_port = 1;
+unsigned int rst_pin = 15;
 static struct timer_list rst_button_timer;
 
 extern struct sock *uevent_sock;
@@ -306,7 +306,7 @@ reset_button_poll(unsigned long unused)
 	rst_button_timer.expires = jiffies + (HZ / 4);
 	add_timer(&rst_button_timer);
 
-	if (pressed != ifxmips_port_get_input(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN))
+	if (pressed != ifxmips_port_get_input(rst_port, rst_pin))
 	{
 		if(pressed)
 			pressed = 0;
@@ -333,10 +333,12 @@ ifxmips_gpio_probe(struct platform_device *dev)
 	int retval = 0;
 
 #ifdef CONFIG_IFXMIPS_GPIO_RST_BTN
-	ifxmips_port_set_open_drain(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN);
-	ifxmips_port_clear_altsel0(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN);
-	ifxmips_port_clear_altsel1(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN);
-	ifxmips_port_set_dir_in(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN);
+	rst_port = dev->resource[0].start;
+	rst_pin = dev->resource[0].end;
+	ifxmips_port_set_open_drain(rst_port, rst_pin);
+	ifxmips_port_clear_altsel0(rst_port, rst_pin);
+	ifxmips_port_clear_altsel1(rst_port, rst_pin);
+	ifxmips_port_set_dir_in(rst_port, rst_pin);
 	seen = jiffies;
 	init_timer(&rst_button_timer);
 	rst_button_timer.function = reset_button_poll;
