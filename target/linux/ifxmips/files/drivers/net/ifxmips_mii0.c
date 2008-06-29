@@ -54,6 +54,7 @@ ifxmips_write_mdio(u32 phy_addr, u32 phy_reg, u16 phy_data)
 	while(ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST);
 	ifxmips_w32(val, IFXMIPS_PPE32_MDIO_ACC);
 }
+EXPORT_SYMBOL(ifxmips_write_mdio);
 
 unsigned short
 ifxmips_read_mdio(u32 phy_addr, u32 phy_reg)
@@ -67,6 +68,7 @@ ifxmips_read_mdio(u32 phy_addr, u32 phy_reg)
 	val = ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_VAL_MASK;
 	return val;
 }
+EXPORT_SYMBOL(ifxmips_read_mdio);
 
 int
 ifxmips_ifxmips_mii_open(struct net_device *dev)
@@ -346,6 +348,7 @@ ifxmips_mii_probe(struct platform_device *dev)
 	ifxmips_mii0_dev->init = ifxmips_mii_dev_init;
 	memcpy(mac_addr, mac->mac, 6);
 	strcpy(ifxmips_mii0_dev->name, "eth%d");
+	ifxmips_mii_chip_init(REV_MII_MODE);
 	result = register_netdev(ifxmips_mii0_dev);
 	if (result)
 	{
@@ -353,7 +356,6 @@ ifxmips_mii_probe(struct platform_device *dev)
 		goto out;
 	}
 
-	ifxmips_mii_chip_init(REV_MII_MODE);
 	printk(KERN_INFO "ifxmips_mii0: driver loaded!\n");
 
 out:

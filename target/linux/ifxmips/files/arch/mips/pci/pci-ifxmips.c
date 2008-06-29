@@ -50,7 +50,7 @@ static struct pci_controller ifxmips_pci_controller =
 };
 
 u32 ifxmips_pci_mapped_cfg;
-u32 ifxmips_pci_external_clock = 0;
+int ifxmips_pci_external_clock = 0;
 
 static int __init
 ifxmips_pci_set_external_clk(char *str)
