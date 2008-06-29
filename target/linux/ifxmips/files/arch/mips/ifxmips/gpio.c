@@ -303,7 +303,7 @@ reset_button_poll(unsigned long unused)
 {
 	struct event_t *event;
 
-	rst_button_timer.expires = jiffies + HZ;
+	rst_button_timer.expires = jiffies + (HZ / 4);
 	add_timer(&rst_button_timer);
 
 	if (pressed != ifxmips_port_get_input(IFXMIPS_RST_PORT, IFXMIPS_RST_PIN))
@@ -312,7 +312,6 @@ reset_button_poll(unsigned long unused)
 			pressed = 0;
 		else
 			pressed = 1;
-		printk("reset button was %s\n", (pressed ? "pressed" : "released"));
 		event = (struct event_t *) kzalloc(sizeof(struct event_t), GFP_ATOMIC);
 		if (!event)
 		{

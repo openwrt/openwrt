@@ -27,6 +27,7 @@
 #include <asm/ifxmips/ifxmips.h>
 #include <asm/ifxmips/ifxmips_irq.h>
 #include <asm/ifxmips/ifxmips_pmu.h>
+#include <asm/ifxmips/ifxmips_cgu.h>
 #include <asm/ifxmips/ifxmips_prom.h>
 
 static unsigned int r4k_offset;
@@ -35,50 +36,9 @@ static unsigned int r4k_cur;
 extern void ifxmips_reboot_setup(void);
 
 unsigned int
-ifxmips_get_ddr_hz(void)
-{
-	switch(ifxmips_r32(IFXMIPS_CGU_SYS) & 0x3)
-	{
-	case 0:
-		return CLOCK_167M;
-	case 1:
-		return CLOCK_133M;
-	case 2:
-		return CLOCK_111M;
-	}
-	return CLOCK_83M;
-}
-EXPORT_SYMBOL(ifxmips_get_ddr_hz);
-
-unsigned int
-ifxmips_get_cpu_hz(void)
-{
-	unsigned int ddr_clock = ifxmips_get_ddr_hz();
-	switch(ifxmips_r32(IFXMIPS_CGU_SYS) & 0xc)
-	{
-	case 0:
-		return CLOCK_333M;
-	case 4:
-		return ddr_clock;
-	}
-	return ddr_clock << 1;
-}
-EXPORT_SYMBOL(ifxmips_get_cpu_hz);
-
-unsigned int
-ifxmips_get_fpi_hz(void)
-{
-	unsigned int ddr_clock = ifxmips_get_ddr_hz();
-	if(ifxmips_r32(IFXMIPS_CGU_SYS) & 0x40)
-		return ddr_clock >> 1;
-	return ddr_clock;
-}
-EXPORT_SYMBOL(ifxmips_get_fpi_hz);
-
-unsigned int
 ifxmips_get_cpu_ver(void)
 {
-	return ifxmips_r32(IFXMIPS_MCD_CHIPID) & 0xFFFFF000;
+	return (ifxmips_r32(IFXMIPS_MPS_CHIPID) & 0xF0000000) >> 28;
 }
 EXPORT_SYMBOL(ifxmips_get_cpu_ver);
 
@@ -100,27 +60,15 @@ ifxmips_get_counter_resolution(void)
 		return res;
 }
 
-int
-ifxmips_be_handler(struct pt_regs *regs, int is_fixup)
-{
-	/*TODO*/
-	printk(KERN_ERR "TODO: BUS error\n");
-
-	return MIPS_BE_FATAL;
-}
-
 void __init
 plat_time_init(void)
 {
 	mips_hpt_frequency = ifxmips_get_cpu_hz() / ifxmips_get_counter_resolution();
 	r4k_cur = (read_c0_count() + r4k_offset);
 	write_c0_compare(r4k_cur);
+
 	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_GPT | IFXMIPS_PMU_PWDCR_FPI);
-
-	ifxmips_w32(0x100, IFXMIPS_GPTU_GPT_CLC);
-
-	ifxmips_w32(0xffff, IFXMIPS_GPTU_GPT_CAPREL);
-	ifxmips_w32(0x80C0, IFXMIPS_GPTU_GPT_T6CON);
+	ifxmips_w32(0x100, IFXMIPS_GPTU_GPT_CLC); // set clock divider to 1
 }
 
 void __init
@@ -134,7 +82,6 @@ plat_mem_setup(void)
 	write_c0_status(status);
 
 	ifxmips_reboot_setup();
-	board_be_handler = &ifxmips_be_handler;
 
 	ioport_resource.start = IOPORT_RESOURCE_START;
 	ioport_resource.end = IOPORT_RESOURCE_END;

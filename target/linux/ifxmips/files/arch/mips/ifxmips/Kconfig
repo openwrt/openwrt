@@ -18,6 +18,10 @@ config IFXMIPS_MEI
 	bool "IFXMips mei"
 	default y
 
+config IFXMIPS_GPIO_RST_BTN
+	bool "Reset Button"
+	default y
+
 choice
 	prompt "prom_printf ASC"
 	help

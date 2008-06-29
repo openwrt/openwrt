@@ -40,10 +40,8 @@
 #include <asm/ifxmips/ifxmips_dma.h>
 #include <asm/ifxmips/ifxmips_pmu.h>
 
-#define DRVNAME		"ifxmips_mii0"
-
 static struct net_device *ifxmips_mii0_dev;
-static unsigned char u_boot_ethaddr[MAX_ADDR_LEN];
+static unsigned char mac_addr[MAX_ADDR_LEN];
 
 void
 ifxmips_write_mdio(u32 phy_addr, u32 phy_reg, u16 phy_data)
@@ -110,7 +108,7 @@ ifxmips_mii_hw_receive(struct net_device* dev,struct dma_device_info* dma_dev)
 
 	if(len >= ETHERNET_PACKET_DMA_BUFFER_SIZE)
 	{
-		printk(KERN_INFO DRVNAME ": packet too large %d\n",len);
+		printk(KERN_INFO "ifxmips_mii0: packet too large %d\n",len);
 		goto ifxmips_mii_hw_receive_err_exit;
 	}
 
@@ -118,13 +116,13 @@ ifxmips_mii_hw_receive(struct net_device* dev,struct dma_device_info* dma_dev)
 	len -= 4;
 	if(skb == NULL)
 	{
-		printk(KERN_INFO DRVNAME ": cannot restore pointer\n");
+		printk(KERN_INFO "ifxmips_mii0: cannot restore pointer\n");
 		goto ifxmips_mii_hw_receive_err_exit;
 	}
 
 	if(len > (skb->end - skb->tail))
 	{
-		printk(KERN_INFO DRVNAME ": BUG, len:%d end:%p tail:%p\n",
+		printk(KERN_INFO "ifxmips_mii0: BUG, len:%d end:%p tail:%p\n",
 			(len+4), skb->end, skb->tail);
 		goto ifxmips_mii_hw_receive_err_exit;
 	}
@@ -157,9 +155,7 @@ ifxmips_mii_hw_tx(char *buf, int len, struct net_device *dev)
 	int ret = 0;
 	struct ifxmips_mii_priv *priv = dev->priv;
 	struct dma_device_info* dma_dev = priv->dma_device;
-
 	ret = dma_device_write(dma_dev, buf, len, priv->skb);
-
 	return ret;
 }
 
@@ -219,7 +215,7 @@ dma_intr_handler(struct dma_device_info* dma_dev, int status)
 		break;
 
 	case TX_BUF_FULL_INT:
-		printk(KERN_INFO DRVNAME ": tx buffer full\n");
+		printk(KERN_INFO "ifxmips_mii0: tx buffer full\n");
 		netif_stop_queue(ifxmips_mii0_dev);
 		for (i = 0; i < dma_dev->max_tx_chan_num; i++)
 		{
@@ -280,12 +276,11 @@ ifxmips_get_stats(struct net_device *dev)
 static int
 ifxmips_mii_dev_init(struct net_device *dev)
 {
-	u64 retval = 0;
 	int i;
 	struct ifxmips_mii_priv *priv;
 
 	ether_setup(dev);
-	printk(KERN_INFO DRVNAME ": %s is up\n", dev->name);
+	printk(KERN_INFO "ifxmips_mii0: %s is up\n", dev->name);
 	dev->open = ifxmips_ifxmips_mii_open;
 	dev->stop = ifxmips_mii_release;
 	dev->hard_start_xmit = ifxmips_mii_tx;
@@ -318,26 +313,12 @@ ifxmips_mii_dev_init(struct net_device *dev)
 
 	dma_device_register(priv->dma_device);
 
-	/*read the mac address from the mac table and put them into the mac table.*/
-	for (i = 0; i < 6; i++)
-		retval += u_boot_ethaddr[i];
-
-	//TODO
-	/* ethaddr not set in u-boot ? */
-	if(retval == 0)
+	printk(KERN_INFO "ifxmips_mii0: using mac=");
+	for(i = 0; i < 6; i++)
 	{
-		printk(KERN_INFO DRVNAME ": using default MAC address\n");
-		dev->dev_addr[0] = 0x00;
-		dev->dev_addr[1] = 0x11;
-		dev->dev_addr[2] = 0x22;
-		dev->dev_addr[3] = 0x33;
-		dev->dev_addr[4] = 0x44;
-		dev->dev_addr[5] = 0x55;
-	} else {
-		for(i = 0; i < 6; i++)
-			dev->dev_addr[i] = u_boot_ethaddr[i];
+		dev->dev_addr[i] = mac_addr[i];
+		printk("%02X%c", dev->dev_addr[i], (i == 5)?('\n'):(':'));
 	}
-
 	return 0;
 }
 
@@ -348,9 +329,9 @@ ifxmips_mii_chip_init(int mode)
 	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_PPE);
 
 	if(mode == REV_MII_MODE)
-		ifxmips_w32((ifxmips_r32(IFXMIPS_PPE32_CFG) & PPE32_MII_MASK) | PPE32_MII_REVERSE, IFXMIPS_PPE32_CFG);
+		ifxmips_w32_mask(PPE32_MII_MASK, PPE32_MII_REVERSE, IFXMIPS_PPE32_CFG);
 	else if(mode == MII_MODE)
-		ifxmips_w32((ifxmips_r32(IFXMIPS_PPE32_CFG) & PPE32_MII_MASK) | PPE32_MII_NORMAL, IFXMIPS_PPE32_CFG);
+		ifxmips_w32_mask(PPE32_MII_MASK, PPE32_MII_NORMAL, IFXMIPS_PPE32_CFG);
 	ifxmips_w32(PPE32_PLEN_UNDER | PPE32_PLEN_OVER, IFXMIPS_PPE32_IG_PLEN_CTRL);
 	ifxmips_w32(PPE32_CGEN, IFXMIPS_PPE32_ENET_MAC_CFG);
 	wmb();
@@ -360,20 +341,20 @@ static int
 ifxmips_mii_probe(struct platform_device *dev)
 {
 	int result = 0;
-
+	struct ifxmips_mac *mac = (struct ifxmips_mac*)dev->dev.platform_data;
 	ifxmips_mii0_dev = alloc_etherdev(sizeof(struct ifxmips_mii_priv));
 	ifxmips_mii0_dev->init = ifxmips_mii_dev_init;
+	memcpy(mac_addr, mac->mac, 6);
 	strcpy(ifxmips_mii0_dev->name, "eth%d");
 	result = register_netdev(ifxmips_mii0_dev);
 	if (result)
 	{
-		printk(KERN_INFO DRVNAME ": error %i registering device \"%s\"\n", result, ifxmips_mii0_dev->name);
+		printk(KERN_INFO "ifxmips_mii0: error %i registering device \"%s\"\n", result, ifxmips_mii0_dev->name);
 		goto out;
 	}
 
-	/* ifxmips eval kit connects the phy/switch in REV mode */
 	ifxmips_mii_chip_init(REV_MII_MODE);
-	printk(KERN_INFO DRVNAME ": driver loaded!\n");
+	printk(KERN_INFO "ifxmips_mii0: driver loaded!\n");
 
 out:
 	return result;
@@ -384,7 +365,7 @@ ifxmips_mii_remove(struct platform_device *dev)
 {
 	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv*)ifxmips_mii0_dev->priv;
 
-	printk(KERN_INFO DRVNAME ": ifxmips_mii0 cleanup\n");
+	printk(KERN_INFO "ifxmips_mii0: ifxmips_mii0 cleanup\n");
 
 	dma_device_unregister(priv->dma_device);
 	dma_device_release(priv->dma_device);
@@ -399,7 +380,7 @@ platform_driver ifxmips_mii_driver = {
 	.probe = ifxmips_mii_probe,
 	.remove = ifxmips_mii_remove,
 	.driver = {
-		.name = DRVNAME,
+		.name = "ifxmips_mii0",
 		.owner = THIS_MODULE,
 	},
 };
@@ -409,7 +390,7 @@ ifxmips_mii_init(void)
 {
 	int ret = platform_driver_register(&ifxmips_mii_driver);
 	if (ret)
-		printk(KERN_INFO DRVNAME ": Error registering platfom driver!");
+		printk(KERN_INFO "ifxmips_mii0: Error registering platfom driver!");
 	return ret;
 }
 

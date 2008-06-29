@@ -22,6 +22,7 @@
 
 #define ifxmips_r32(reg) __raw_readl(reg)
 #define ifxmips_w32(val,reg) __raw_writel(val,reg)
+#define ifxmips_w32_mask(clear,set,reg)	ifxmips_w32((ifxmips_r32(reg) & ~clear) | set, reg)
 
 /*------------ GENERAL */
 
@@ -86,13 +87,6 @@
 #define IFXMIPS_RCU_RST_REQ_DFE	(1 << 7)
 #define IFXMIPS_RCU_RST_REQ_AFE	(1 << 11)
 #define IFXMIPS_RCU_RST_REQ_ARC_JTAG	(1 << 20)
-
-/*------------ MCD */
-
-#define IFXMIPS_MCD_BASE_ADDR	(KSEG1 + 0x1F106000)
-
-/* chip id */
-#define IFXMIPS_MCD_CHIPID		((u32*)(IFXMIPS_MCD_BASE_ADDR + 0x0028))
 
 
 /*------------ GPTU */

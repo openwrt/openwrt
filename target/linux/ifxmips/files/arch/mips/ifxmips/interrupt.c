@@ -141,6 +141,7 @@ ifxmips_hw_irqdispatch(int module)
 	if(irq == 0)
 		return;
 
+	/* we need to do this due to a silicon bug */
 	irq = ls1bit32(irq);
 	do_IRQ((int)irq + INT_NUM_IM0_IRL0 + (INT_NUM_IM_OFFSET * module));
 

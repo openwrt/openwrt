@@ -30,7 +30,9 @@
 #include <asm/time.h>
 #include <asm/irq.h>
 #include <asm/io.h>
+#include <linux/etherdevice.h>
 #include <asm/ifxmips/ifxmips.h>
+#include <asm/ifxmips/ifxmips_mii0.h>
 
 #define MAX_IFXMIPS_DEVS		9
 
@@ -42,9 +44,12 @@
 
 static unsigned int chiprev;
 static struct platform_device *ifxmips_devs[MAX_IFXMIPS_DEVS];
+static int cmdline_mac = 0;
 
 spinlock_t ebu_lock = SPIN_LOCK_UNLOCKED;
 EXPORT_SYMBOL_GPL(ebu_lock);
+
+static struct ifxmips_mac ifxmips_mii_mac;
 
 static struct platform_device
 ifxmips_led[] =
@@ -70,6 +75,9 @@ ifxmips_mii[] =
 	{
 		.id = 0,
 		.name = "ifxmips_mii0",
+		.dev = {
+			.platform_data = &ifxmips_mii_mac,
+		}
 	},
 };
 
@@ -80,11 +88,6 @@ ifxmips_wdt[] =
 		.id = 0,
 		.name = "ifxmips_wdt",
 	},
-};
-
-static struct physmap_flash_data
-ifxmips_mtd_data = {
-	.width    = 2,
 };
 
 static struct resource
@@ -100,9 +103,6 @@ ifxmips_mtd[] =
 	{
 		.id = 0,
 		.name = "ifxmips_mtd",
-		.dev = {
-			.platform_data = &ifxmips_mtd_data,
-		},
 		.num_resources  = 1,
 		.resource   = &ifxmips_mtd_resource,
 	},
@@ -148,10 +148,39 @@ get_system_type(void)
 	return BOARD_SYSTEM_TYPE;
 }
 
+#define IS_HEX(x)	(((x >='0' && x <= '9') || (x >='a' && x <= 'f') || (x >='A' && x <= 'F'))?(1):(0))
+static int __init
+ifxmips_set_mii0_mac(char *str)
+{
+	int i;
+	str = strchr(str, '=');
+	if(!str)
+		goto out;
+	str++;
+	if(strlen(str) != 17)
+		goto out;
+	for(i = 0; i < 6; i++)
+	{
+		if(!IS_HEX(str[3 * i]) || !IS_HEX(str[(3 * i) + 1]))
+			goto out;
+		if((i != 5) && (str[(3 * i) + 2] != ':'))
+			goto out;
+		ifxmips_mii_mac.mac[i] = simple_strtoul(&str[3 * i], NULL, 16);
+	}
+	if(is_valid_ether_addr(ifxmips_mii_mac.mac))
+		cmdline_mac = 1;
+out:
+	return 1;
+}
+__setup("mii0_mac", ifxmips_set_mii0_mac);
+
 int __init
 ifxmips_init_devices(void)
 {
 	int dev = 0;
+
+	if(!cmdline_mac)
+		random_ether_addr(ifxmips_mii_mac.mac);
 
 	ifxmips_devs[dev++] = ifxmips_led;
 	ifxmips_devs[dev++] = ifxmips_gpio;
