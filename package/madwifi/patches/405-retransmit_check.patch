@@ -1,0 +1,26 @@
+Index: madwifi-trunk-r3314/net80211/ieee80211.h
+===================================================================
+--- madwifi-trunk-r3314.orig/net80211/ieee80211.h	2008-07-01 22:16:19.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211.h	2008-07-01 22:17:12.000000000 +0200
+@@ -174,8 +174,6 @@
+ #define	IEEE80211_SEQ_SEQ_MASK			0xfff0
+ #define	IEEE80211_SEQ_SEQ_SHIFT			4
+ 
+-#define	IEEE80211_SEQ_LEQ(a,b)	((int)((a)-(b)) <= 0)
+-
+ #define	IEEE80211_NWID_LEN			32
+ 
+ #define	IEEE80211_QOS_TXOP			0x00ff
+Index: madwifi-trunk-r3314/net80211/ieee80211_input.c
+===================================================================
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_input.c	2008-07-01 22:17:11.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211_input.c	2008-07-01 22:17:49.000000000 +0200
+@@ -412,7 +412,7 @@
+ 				tid = 0;
+ 			rxseq = le16toh(*(__le16 *)wh->i_seq);
+ 			if ((wh->i_fc[1] & IEEE80211_FC1_RETRY) &&
+-			    IEEE80211_SEQ_LEQ(rxseq, ni->ni_rxseqs[tid])) {
++			    (rxseq == ni->ni_rxseqs[tid])) {
+ 				/* duplicate, discard */
+ 				IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
+ 					bssid, "duplicate",
