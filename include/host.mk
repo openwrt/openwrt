@@ -39,12 +39,11 @@ $(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
 		else \
 			echo 'FIND_L=find $$(1) -follow' >> $@; \
 		fi; \
+		if xargs --help 2>&1 | grep 'gnu.org' >/dev/null; then \
+			echo 'XARGS:=xargs -r' >> $@; \
+		else \
+			echo 'XARGS:=xargs' >> $@; \
+		fi; \
 	)
 
-endif
-
-ifeq ($(HOST_OS),Linux)
-  XARGS:=xargs -r
-else
-  XARGS:=xargs
 endif
