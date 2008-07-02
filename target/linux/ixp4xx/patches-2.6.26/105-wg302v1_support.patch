@@ -1,3 +1,13 @@
+--- a/arch/arm/configs/ixp4xx_defconfig
++++ b/arch/arm/configs/ixp4xx_defconfig
+@@ -155,6 +155,7 @@
+ CONFIG_MACH_LOFT=y
+ CONFIG_ARCH_ADI_COYOTE=y
+ CONFIG_MACH_GATEWAY7001=y
++CONFIG_MACH_WG302V1=y
+ CONFIG_MACH_WG302V2=y
+ CONFIG_ARCH_IXDP425=y
+ CONFIG_MACH_IXDPG425=y
 --- a/arch/arm/mach-ixp4xx/Kconfig
 +++ b/arch/arm/mach-ixp4xx/Kconfig
 @@ -49,6 +49,14 @@
@@ -24,18 +34,18 @@
 +obj-pci-$(CONFIG_MACH_WG302V1)		+= wg302v1-pci.o
  obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
  obj-pci-$(CONFIG_MACH_FSG)		+= fsg-pci.o
- obj-pci-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-pci.o
-@@ -33,6 +34,7 @@
+ 
+@@ -28,6 +29,7 @@
  obj-$(CONFIG_MACH_NAS100D)	+= nas100d-setup.o
  obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o
  obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
 +obj-$(CONFIG_MACH_WG302V1)	+= wg302v1-setup.o
  obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
  obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o
- obj-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-setup.o
+ 
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/wg302v1-pci.c
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,64 @@
 +/*
 + * arch/arch/mach-ixp4xx/wg302v1-pci.c
 + *
@@ -79,7 +89,8 @@
 +		return IRQ_IXP4XX_GPIO8;
 +	else if (slot == 2)
 +		return IRQ_IXP4XX_GPIO10;
-+	else return -1;
++	else
++		return -1;
 +}
 +
 +struct hw_pci wg302v1_pci __initdata = {
@@ -101,7 +112,7 @@
 +subsys_initcall(wg302v1_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/wg302v1-setup.c
-@@ -0,0 +1,109 @@
+@@ -0,0 +1,126 @@
 +/*
 + * arch/arm/mach-ixp4xx/wg302v1-setup.c
 + *
@@ -123,10 +134,10 @@
 +#include <linux/tty.h>
 +#include <linux/serial_8250.h>
 +#include <linux/slab.h>
++#include <linux/types.h>
++#include <linux/memory.h>
 +
-+#include <asm/types.h>
 +#include <asm/setup.h>
-+#include <asm/memory.h>
 +#include <asm/hardware.h>
 +#include <asm/irq.h>
 +#include <asm/mach-types.h>
@@ -181,9 +192,26 @@
 +	.resource	= &wg302v1_uart_resource,
 +};
 +
++static struct eth_plat_info wg302v1_plat_eth[] = {
++	{
++		.phy		= 30,
++		.rxq		= 3,
++		.txreadyq	= 20,
++	}
++};
++
++static struct platform_device wg302v1_eth[] = {
++	{
++		.name			= "ixp4xx_eth",
++		.id			= IXP4XX_ETH_NPEB,
++		.dev.platform_data	= wg302v1_plat_eth,
++	}
++};
++
 +static struct platform_device *wg302v1_devices[] __initdata = {
 +	&wg302v1_flash,
 +	&wg302v1_uart,
++	&wg302v1_eth[0],
 +};
 +
 +static void __init wg302v1_init(void)

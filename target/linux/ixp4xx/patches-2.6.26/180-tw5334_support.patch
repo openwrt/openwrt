@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-ixp4xx/Kconfig
 +++ b/arch/arm/mach-ixp4xx/Kconfig
-@@ -150,6 +150,14 @@
+@@ -160,6 +160,14 @@
  	  PrPCM1100 Processor Mezanine Module. For more information on
  	  this platform, see <file:Documentation/arm/IXP4xx>.
  
@@ -276,8 +276,8 @@
  	 */
  	if (machine_is_adi_coyote() || machine_is_gtwx5715() ||
  			 machine_is_gateway7001() || machine_is_wg302v2() ||
--			 machine_is_pronghorn_metro() || machine_is_wrt300nv2())
-+			 machine_is_pronghorn_metro() || machine_is_wrt300nv2() ||
+-			 machine_is_pronghorn() || machine_is_pronghorn_metro() || machine_is_wrt300nv2())
++			 machine_is_pronghorn() || machine_is_pronghorn_metro() || machine_is_wrt300nv2() ||
 +			 machine_is_tw5334())
  		uart_base = (volatile u32*) IXP4XX_UART2_BASE_PHYS;
  	else
