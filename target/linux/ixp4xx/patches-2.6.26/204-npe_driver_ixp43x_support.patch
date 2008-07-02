@@ -1,3 +1,15 @@
+From cba5c286f3ea34ea4767fc00c705434a00fe2c37 Mon Sep 17 00:00:00 2001
+From: Imre Kaloz <kaloz@openwrt.org>
+Date: Thu, 26 Jun 2008 01:58:02 +0200
+Subject: [PATCH] Add support for the ethernet ports on IXP43x
+
+---
+ arch/arm/mach-ixp4xx/ixp4xx_npe.c         |    6 +++---
+ drivers/net/arm/ixp4xx_eth.c              |   13 +++++++++----
+ include/asm-arm/arch-ixp4xx/cpu.h         |    2 ++
+ include/asm-arm/arch-ixp4xx/ixp4xx-regs.h |    7 ++++---
+ 4 files changed, 18 insertions(+), 10 deletions(-)
+
 --- a/arch/arm/mach-ixp4xx/ixp4xx_npe.c
 +++ b/arch/arm/mach-ixp4xx/ixp4xx_npe.c
 @@ -575,8 +575,8 @@

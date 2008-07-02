@@ -1,8 +1,8 @@
 --- a/arch/arm/mach-ixp4xx/Kconfig
 +++ b/arch/arm/mach-ixp4xx/Kconfig
-@@ -65,6 +65,14 @@
- 	  Engineering Pronghorn Metro Platform. For more
- 	  information on this platform, see <file:Documentation/arm/IXP4xx>.
+@@ -83,6 +83,14 @@
+ 	depends on MACH_PRONGHORN
+ 	default y
  
 +config MACH_SIDEWINDER
 +	bool "Sidewinder"
@@ -15,7 +15,7 @@
  config MACH_COMPEX
  	bool "Compex WP18 / NP18A"
  	select PCI
-@@ -163,7 +171,7 @@
+@@ -181,7 +189,7 @@
  #
  config CPU_IXP46X
  	bool
@@ -26,16 +26,16 @@
  config CPU_IXP43X
 --- a/arch/arm/mach-ixp4xx/Makefile
 +++ b/arch/arm/mach-ixp4xx/Makefile
-@@ -19,6 +19,7 @@
- obj-pci-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-pci.o
+@@ -20,6 +20,7 @@
+ obj-pci-$(CONFIG_MACH_PRONGHORN)	+= pronghorn-pci.o
  obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp425-pci.o
  obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o
 +obj-pci-$(CONFIG_MACH_SIDEWINDER)		+= sidewinder-pci.o
  
  obj-y	+= common.o
  
-@@ -36,6 +37,7 @@
- obj-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-setup.o
+@@ -38,6 +39,7 @@
+ obj-$(CONFIG_MACH_PRONGHORN)	+= pronghorn-setup.o
  obj-$(CONFIG_MACH_COMPEX)	+= compex-setup.o
  obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o
 +obj-$(CONFIG_MACH_SIDEWINDER)	+= sidewinder-setup.o

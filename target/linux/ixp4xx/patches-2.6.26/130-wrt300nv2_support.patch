@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-ixp4xx/Kconfig
 +++ b/arch/arm/mach-ixp4xx/Kconfig
-@@ -73,6 +73,14 @@
+@@ -91,6 +91,14 @@
  	  WP18 or NP18A boards. For more information on this
  	  platform, see http://openwrt.org
  
@@ -17,17 +17,17 @@
  	help
 --- a/arch/arm/mach-ixp4xx/Makefile
 +++ b/arch/arm/mach-ixp4xx/Makefile
-@@ -18,6 +18,7 @@
+@@ -19,6 +19,7 @@
  obj-pci-$(CONFIG_MACH_FSG)		+= fsg-pci.o
- obj-pci-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-pci.o
+ obj-pci-$(CONFIG_MACH_PRONGHORN)	+= pronghorn-pci.o
  obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp425-pci.o
 +obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o
  
  obj-y	+= common.o
  
-@@ -34,6 +35,7 @@
+@@ -36,6 +37,7 @@
  obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o
- obj-$(CONFIG_MACH_PRONGHORNMETRO)	+= pronghornmetro-setup.o
+ obj-$(CONFIG_MACH_PRONGHORN)	+= pronghorn-setup.o
  obj-$(CONFIG_MACH_COMPEX)	+= compex-setup.o
 +obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o
  
@@ -218,8 +218,8 @@
  	 */
  	if (machine_is_adi_coyote() || machine_is_gtwx5715() ||
  			 machine_is_gateway7001() || machine_is_wg302v2() ||
--			 machine_is_pronghorn_metro())
-+			 machine_is_pronghorn_metro() || machine_is_wrt300nv2())
+-			 machine_is_pronghorn() || machine_is_pronghorn_metro())
++			 machine_is_pronghorn() || machine_is_pronghorn_metro() || machine_is_wrt300nv2())
  		uart_base = (volatile u32*) IXP4XX_UART2_BASE_PHYS;
  	else
  		uart_base = (volatile u32*) IXP4XX_UART1_BASE_PHYS;
