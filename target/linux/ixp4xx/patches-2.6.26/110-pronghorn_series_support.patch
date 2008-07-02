@@ -153,6 +153,7 @@
 +#include <linux/types.h>
 +#include <linux/memory.h>
 +#include <linux/i2c-gpio.h>
++#include <linux/leds.h>
 +
 +#include <asm/setup.h>
 +#include <asm/hardware.h>
@@ -242,12 +243,11 @@
 +	{
 +		.name		= "pronghorn:green:status",
 +		.gpio		= 7,
-+	},
-+	{ },
++	}
 +};
 +
 +static struct gpio_led_platform_data pronghorn_led_data = {
-+	.num_leds		= ARRAY_SIZE(pronghorn_led_pin),
++	.num_leds		= 1,
 +	.leds			= pronghorn_led_pin,
 +};
 +
