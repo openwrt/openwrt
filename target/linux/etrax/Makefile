@@ -18,7 +18,7 @@ KERNELNAME:="zImage"
 DEFAULT_PACKAGES += foxboard-utils
 
 define Target/Description
-	Build fimware images for the FOXBOARD made by acmesystems.it
+	Build firmware images for the FOXBOARD made by acmesystems.it
 endef
 
 $(eval $(call BuildTarget))
