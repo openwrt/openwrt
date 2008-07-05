@@ -259,12 +259,17 @@ static struct ifxmips_board boards[] =
 
 int
 ifxmips_find_brn_block(void){
-	unsigned char temp[0];
+	unsigned char temp[8];
 	memcpy_fromio(temp, (void*)KSEG1ADDR(IFXMIPS_FLASH_START + 0x800000 - 0x10000), 8);
 	if(memcmp(temp, "BRN-BOOT", 8) == 0)
+	{
+		if(!cmdline_mac)
+			memcpy_fromio(ifxmips_mii_mac, (void*)KSEG1ADDR(IFXMIPS_FLASH_START + 0x800000 - 0x10000 + 0x16), 6);
+		cmdline_mac = 1;
 		return 1;
-	else
+	} else {
 		return 0;
+	}
 }
 
 int
