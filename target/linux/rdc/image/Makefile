@@ -47,6 +47,7 @@ define Image/Build/wl153
 	echo -ne "\x$$$$(cut -c 7,8 < $(KDIR)/rdSize)\x$$$$(cut -c 5,6 < $(KDIR)/rdSize)\x$$$$(cut -c 3,4 < $(KDIR)/rdSize)\x$$$$(cut -c 1,2 < $(KDIR)/rdSize)WRRM" >> $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
 	cat $(KDIR)/bzSize.tmp $(KDIR)/bzImage $(KDIR)/root.$(1).gz >> $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
 	$(RM) $(KDIR)/bzSize.tmp $(KDIR)/bzSize $(KDIR)/rdSize
+	if [ `ls -l $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img | sed -r 's/^[^[:blank:]]+[[:blank:]]+[^[:blank:]]+[[:blank:]]+[^[:blank:]]+[[:blank:]]+[^[:blank:]]+[[:blank:]]+([^[:blank:]]+).+$$$$/\1/'` -gt $$$$((0xffff0000-0xffe08000)) ]; then mv $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img.too_big; echo "#ERR image too big"; fi 
 endef
 
 define Image/Build/dir450
