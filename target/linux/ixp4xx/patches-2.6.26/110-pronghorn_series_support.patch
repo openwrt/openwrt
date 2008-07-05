@@ -11,7 +11,7 @@
  CONFIG_MACH_IXDP465=y
 --- a/arch/arm/mach-ixp4xx/Kconfig
 +++ b/arch/arm/mach-ixp4xx/Kconfig
-@@ -65,6 +65,24 @@
+@@ -65,6 +65,22 @@
  	  WG302 v2 or WAG302 v2 Access Points. For more information
  	  on this platform, see http://openwrt.org
  
@@ -29,9 +29,7 @@
 +# CF slot connected to the expansion bus, so we just enable them together.
 +#
 +config MACH_PRONGHORNMETRO
-+	bool 
-+	depends on MACH_PRONGHORN
-+	default y
++	def_bool MACH_PRONGHORN
 +
  config ARCH_IXDP425
  	bool "IXDP425"
@@ -322,7 +320,7 @@
 +	ixp4xx_sys_init();
 +
 +	pronghorn_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
-+	pronghorn_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + SZ_16M - 1;
++	pronghorn_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + SZ_32M - 1;
 +
 +	*IXP4XX_EXP_CS0 |= IXP4XX_FLASH_WRITABLE;
 +	*IXP4XX_EXP_CS1 = *IXP4XX_EXP_CS0;
