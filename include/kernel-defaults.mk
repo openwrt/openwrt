@@ -49,27 +49,6 @@ define Kernel/Prepare/Default
 endef
 endif
 
-define Kernel/Configure/2.4
-	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile
-	$(MAKE) $(KERNEL_MAKEOPTS) oldconfig include/linux/compile.h include/linux/version.h
-	$(MAKE) $(KERNEL_MAKEOPTS) dep
-endef
-define Kernel/Configure/2.6
-	-$(MAKE) $(KERNEL_MAKEOPTS) oldconfig prepare scripts
-endef
-define Kernel/Configure/Default
-	$(LINUX_CONFCMD) > $(LINUX_DIR)/.config.target
-	$(SCRIPT_DIR)/metadata.pl kconfig $(TMP_DIR)/.packageinfo $(TOPDIR)/.config > $(LINUX_DIR)/.config.override
-	$(SCRIPT_DIR)/kconfig.pl 'm+' $(LINUX_DIR)/.config.target $(LINUX_DIR)/.config.override > $(LINUX_DIR)/.config
-	$(call Kernel/Configure/$(KERNEL))
-	rm -rf $(KERNEL_BUILD_DIR)/modules
-endef
-
-define Kernel/CompileModules/Default
-	rm -f $(LINUX_DIR)/vmlinux $(LINUX_DIR)/System.map
-	$(MAKE) $(KERNEL_MAKEOPTS) modules
-endef
-
 ifeq ($(KERNEL),2.6)
   ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
     define Kernel/SetInitramfs
@@ -83,13 +62,35 @@ ifeq ($(KERNEL),2.6)
     define Kernel/SetInitramfs
 		mv $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
 		grep -v INITRAMFS $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
-		rm -f $(TARGET_DIR)/init
 		echo 'CONFIG_INITRAMFS_SOURCE=""' >> $(LINUX_DIR)/.config
     endef
   endif
 endif
-define Kernel/CompileImage/Default
+
+define Kernel/Configure/2.4
+	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile
+	$(MAKE) $(KERNEL_MAKEOPTS) oldconfig include/linux/compile.h include/linux/version.h
+	$(MAKE) $(KERNEL_MAKEOPTS) dep
+endef
+define Kernel/Configure/2.6
+	-$(MAKE) $(KERNEL_MAKEOPTS) oldconfig prepare scripts
+endef
+define Kernel/Configure/Default
+	$(LINUX_CONFCMD) > $(LINUX_DIR)/.config.target
+	$(SCRIPT_DIR)/metadata.pl kconfig $(TMP_DIR)/.packageinfo $(TOPDIR)/.config > $(LINUX_DIR)/.config.override
+	$(SCRIPT_DIR)/kconfig.pl 'm+' $(LINUX_DIR)/.config.target $(LINUX_DIR)/.config.override > $(LINUX_DIR)/.config
 	$(call Kernel/SetInitramfs)
+	$(call Kernel/Configure/$(KERNEL))
+	rm -rf $(KERNEL_BUILD_DIR)/modules
+endef
+
+define Kernel/CompileModules/Default
+	rm -f $(LINUX_DIR)/vmlinux $(LINUX_DIR)/System.map
+	$(MAKE) $(KERNEL_MAKEOPTS) modules
+endef
+
+define Kernel/CompileImage/Default
+	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),,rm -f $(TARGET_DIR)/init)
 	$(MAKE) $(KERNEL_MAKEOPTS) $(KERNELNAME)
 	$(KERNEL_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)
 	$(KERNEL_CROSS)objcopy -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux.elf
