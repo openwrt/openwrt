@@ -27,6 +27,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/cfi.h>
 #include <asm/ifxmips/ifxmips.h>
+#include <asm/ifxmips/ifxmips_prom.h>
 #include <asm/ifxmips/ifxmips_ebu.h>
 #include <linux/magic.h>
 #include <linux/platform_device.h>
@@ -90,14 +91,14 @@ ifxmips_copy_to(struct map_info *map, unsigned long to, const void *from, ssize_
 }
 
 static struct mtd_partition
-ifxmips_partitions[4] = {
+ifxmips_partitions[] = {
 	{
-		name:"U-Boot",
+		name:"uboot",
 		offset:0x00000000,
 		size:0x00020000,
 	},
 	{
-		name:"U-Boot-Env",
+		name:"uboot_env",
 		offset:0x00020000,
 		size:0x00010000,
 	},
@@ -111,6 +112,11 @@ ifxmips_partitions[4] = {
 		offset:0x0,
 		size:0x0,
 	},
+	{
+		name:"board_config",
+		offset:0x0,
+		size:0x0,
+	},
 };
 
 int
@@ -119,6 +125,18 @@ find_uImage_size(unsigned long start_offset){
 	ifxmips_copy_from(&ifxmips_map, &temp, start_offset + 12, 4);
 	printk(KERN_INFO "ifxmips_mtd: kernel size is %ld \n", temp + 0x40);
 	return temp + 0x40;
+}
+
+int
+find_brn_block(unsigned long start_offset){
+	unsigned char temp[9];
+	ifxmips_copy_from(&ifxmips_map, &temp, start_offset, 8);
+	temp[8] = '\0';
+	printk(KERN_INFO "data in brn block %s\n", temp);
+	if(memcmp(temp, "BRN-BOOT", 8) == 0)
+		return 1;
+	else
+		return 0;
 }
 
 int
@@ -170,12 +188,19 @@ ifxmips_mtd_probe(struct platform_device *dev)
 		uimage_size += 0x10000;
 	}
 
+	parts = &ifxmips_partitions[0];
 	ifxmips_partitions[2].size = uimage_size;
 	ifxmips_partitions[3].offset = ifxmips_partitions[2].offset + ifxmips_partitions[2].size;
 	ifxmips_partitions[3].size = ((ifxmips_mtd->size >> 20) * 1024 * 1024) - ifxmips_partitions[3].offset;
-
-	parts = &ifxmips_partitions[0];
-	add_mtd_partitions(ifxmips_mtd, parts, 4);
+	if(ifxmips_has_brn_block())
+	{
+		ifxmips_partitions[3].size -= ifxmips_mtd->erasesize;
+		ifxmips_partitions[4].offset = ifxmips_mtd->size - ifxmips_mtd->erasesize;
+		ifxmips_partitions[4].size = ifxmips_mtd->erasesize;
+		add_mtd_partitions(ifxmips_mtd, parts, 5);
+	} else {
+		add_mtd_partitions(ifxmips_mtd, parts, 4);
+	}
 
 	printk(KERN_INFO "ifxmips_mtd: added ifxmips flash with %dMB\n", ifxmips_mtd->size >> 20);
 	return 0;

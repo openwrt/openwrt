@@ -32,7 +32,6 @@
 #include <asm/io.h>
 #include <linux/etherdevice.h>
 #include <asm/ifxmips/ifxmips.h>
-#include <asm/ifxmips/ifxmips_mii0.h>
 
 #define MAX_BOARD_NAME_LEN		32
 #define MAX_IFXMIPS_DEVS		9
@@ -63,7 +62,8 @@ struct ifxmips_board {
 spinlock_t ebu_lock = SPIN_LOCK_UNLOCKED;
 EXPORT_SYMBOL_GPL(ebu_lock);
 
-static struct ifxmips_mac ifxmips_mii_mac;
+static unsigned char ifxmips_mii_mac[6];
+static int ifxmips_brn = 0;
 
 static struct platform_device
 ifxmips_led =
@@ -86,7 +86,7 @@ ifxmips_mii =
 	.id = 0,
 	.name = "ifxmips_mii0",
 	.dev = {
-		.platform_data = &ifxmips_mii_mac,
+		.platform_data = ifxmips_mii_mac,
 	}
 };
 
@@ -172,9 +172,9 @@ ifxmips_set_mii0_mac(char *str)
 			goto out;
 		if((i != 5) && (str[(3 * i) + 2] != ':'))
 			goto out;
-		ifxmips_mii_mac.mac[i] = simple_strtoul(&str[3 * i], NULL, 16);
+		ifxmips_mii_mac[i] = simple_strtoul(&str[3 * i], NULL, 16);
 	}
-	if(is_valid_ether_addr(ifxmips_mii_mac.mac))
+	if(is_valid_ether_addr(ifxmips_mii_mac))
 		cmdline_mac = 1;
 out:
 	return 1;
@@ -257,7 +257,24 @@ static struct ifxmips_board boards[] =
 	},
 };
 
-struct ifxmips_board* ifxmips_find_board(void)
+int
+ifxmips_find_brn_block(void){
+	unsigned char temp[0];
+	memcpy_fromio(temp, (void*)KSEG1ADDR(IFXMIPS_FLASH_START + 0x800000 - 0x10000), 8);
+	if(memcmp(temp, "BRN-BOOT", 8) == 0)
+		return 1;
+	else
+		return 0;
+}
+
+int
+ifxmips_has_brn_block(void)
+{
+	return ifxmips_brn;
+}
+
+struct ifxmips_board*
+ifxmips_find_board(void)
 {
 	int i;
 	if(!*board_name)
@@ -274,9 +291,10 @@ ifxmips_init_devices(void)
 	struct ifxmips_board *board = ifxmips_find_board();
 
 	chiprev = ifxmips_r32(IFXMIPS_MPS_CHIPID);
+	ifxmips_brn = ifxmips_find_brn_block();
 
 	if(!cmdline_mac)
-		random_ether_addr(ifxmips_mii_mac.mac);
+		random_ether_addr(ifxmips_mii_mac);
 
 	if(!board)
 	{

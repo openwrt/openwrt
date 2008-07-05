@@ -14,7 +14,6 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
  *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
- *
  */
 #ifndef _IFXMIPS_PMU_H__
 #define _IFXMIPS_PMU_H__
