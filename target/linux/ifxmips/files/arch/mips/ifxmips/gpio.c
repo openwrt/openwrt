@@ -39,7 +39,6 @@
 #include <asm/semaphore.h>
 #include <asm/uaccess.h>
 #include <asm/ifxmips/ifxmips.h>
-#include <asm/ifxmips/ifxmips_ioctl.h>
 
 #define MAX_PORTS			2
 #define PINS_PER_PORT		16

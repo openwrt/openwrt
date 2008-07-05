@@ -18,6 +18,7 @@
  */
 
 #include <linux/init.h>
+#include <linux/module.h>
 #include <linux/bootmem.h>
 #include <asm/bootinfo.h>
 #include <asm/ifxmips/ifxmips.h>
@@ -83,11 +84,13 @@ unsigned int *prom_get_cp1_base(void)
 {
 	return prom_cp1_base;
 }
+EXPORT_SYMBOL(prom_get_cp1_base);
 
 unsigned int prom_get_cp1_size(void)
 {
 	return prom_cp1_size;
 }
+EXPORT_SYMBOL(prom_get_cp1_size);
 
 void __init
 prom_init(void)

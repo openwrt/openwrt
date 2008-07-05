@@ -15,8 +15,12 @@
  *
  *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
  */
+#ifndef _IFXMIPS_LED_H__ 
+#define _IFXMIPS_LED_H__
 
 extern void ifxmips_led_set(unsigned int led);
 extern void ifxmips_led_clear(unsigned int led);
 extern void ifxmips_led_blink_set(unsigned int led);
 extern void ifxmips_led_blink_clear(unsigned int led);
+
+#endif

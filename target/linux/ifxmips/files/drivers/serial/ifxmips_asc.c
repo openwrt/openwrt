@@ -48,7 +48,6 @@
 #include <asm/bitops.h>
 #include <asm/ifxmips/ifxmips.h>
 #include <asm/ifxmips/ifxmips_irq.h>
-#include <asm/ifxmips/ifxmips_serial.h>
 
 #define PORT_IFXMIPSASC  111
 
@@ -161,7 +160,7 @@ ifxmipsasc_tx_chars(struct uart_port *port)
 	}
 
 	while(((ifxmips_r32(port->membase + IFXMIPS_ASC_FSTAT) & ASCFSTAT_TXFFLMASK)
-			        >> ASCFSTAT_TXFFLOFF) != IFXMIPSASC_TXFIFO_FULL)
+			        >> ASCFSTAT_TXFFLOFF) != TXFIFO_FULL)
 	{
 		if(port->x_char)
 		{
@@ -248,8 +247,8 @@ ifxmipsasc_startup(struct uart_port *port)
 	ifxmips_w32(ifxmips_r32(port->membase + IFXMIPS_ASC_CLC) & ~IFXMIPS_ASC_CLC_DISS, port->membase + IFXMIPS_ASC_CLC);
 	ifxmips_w32(((ifxmips_r32(port->membase + IFXMIPS_ASC_CLC) & ~ASCCLC_RMCMASK)) | (1 << ASCCLC_RMCOFFSET), port->membase + IFXMIPS_ASC_CLC);
 	ifxmips_w32(0, port->membase + IFXMIPS_ASC_PISEL);
-	ifxmips_w32(((IFXMIPSASC_TXFIFO_FL << ASCTXFCON_TXFITLOFF) & ASCTXFCON_TXFITLMASK) | ASCTXFCON_TXFEN | ASCTXFCON_TXFFLU, port->membase + IFXMIPS_ASC_TXFCON);
-	ifxmips_w32(((IFXMIPSASC_RXFIFO_FL << ASCRXFCON_RXFITLOFF) & ASCRXFCON_RXFITLMASK) | ASCRXFCON_RXFEN | ASCRXFCON_RXFFLU, port->membase + IFXMIPS_ASC_RXFCON);
+	ifxmips_w32(((TXFIFO_FL << ASCTXFCON_TXFITLOFF) & ASCTXFCON_TXFITLMASK) | ASCTXFCON_TXFEN | ASCTXFCON_TXFFLU, port->membase + IFXMIPS_ASC_TXFCON);
+	ifxmips_w32(((RXFIFO_FL << ASCRXFCON_RXFITLOFF) & ASCRXFCON_RXFITLMASK) | ASCRXFCON_RXFEN | ASCRXFCON_RXFFLU, port->membase + IFXMIPS_ASC_RXFCON);
 	wmb ();
 	ifxmips_w32(ifxmips_r32(port->membase + IFXMIPS_ASC_CON) | ASCCON_M_8ASYNC | ASCCON_FEN | ASCCON_TOEN | ASCCON_ROEN, port->membase + IFXMIPS_ASC_CON);
 
@@ -399,7 +398,7 @@ ifxmipsasc_type(struct uart_port *port)
 {
 	if(port->type == PORT_IFXMIPSASC)
 	{
-		if(port->membase == IFXMIPS_ASC_BASE_ADDR)
+		if(port->membase == (void*)IFXMIPS_ASC_BASE_ADDR)
 			return "asc0";
 		else
 			return "asc1";
@@ -501,7 +500,7 @@ ifxmipsasc_console_write(struct console *co, const char *s, u_int count)
 		do {
 			fifocnt = (ifxmips_r32((u32*)(IFXMIPS_ASC_BASE_ADDR + (port * IFXMIPS_ASC_BASE_DIFF) + IFXMIPS_ASC_FSTAT)) & ASCFSTAT_TXFFLMASK)
 			                >> ASCFSTAT_TXFFLOFF;
-		} while(fifocnt == IFXMIPSASC_TXFIFO_FULL);
+		} while(fifocnt == TXFIFO_FULL);
 
 		if(s[i] == '\0')
 			break;
@@ -512,7 +511,7 @@ ifxmipsasc_console_write(struct console *co, const char *s, u_int count)
 			do {
 				fifocnt = (ifxmips_r32((u32*)(IFXMIPS_ASC_BASE_ADDR + (port * IFXMIPS_ASC_BASE_DIFF) + IFXMIPS_ASC_FSTAT)) & ASCFSTAT_TXFFLMASK)
 					>> ASCFSTAT_TXFFLOFF;
-			} while(fifocnt == IFXMIPSASC_TXFIFO_FULL);
+			} while(fifocnt == TXFIFO_FULL);
 		}
 		ifxmips_w32(s[i], (u32*)(IFXMIPS_ASC_BASE_ADDR + (port * IFXMIPS_ASC_BASE_DIFF) + IFXMIPS_ASC_TBUF));
 	}

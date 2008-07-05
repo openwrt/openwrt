@@ -14,14 +14,13 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
  *   Copyright (C) 2008 John Crispin <blogic@openwrt.org> 
- *
  */
-
 #ifndef _IFXPROM_H__
 #define _IFXPROM_H__
 
 extern void prom_printf(const char * fmt, ...);
 extern u32 *prom_get_cp1_base(void);
 extern u32 prom_get_cp1_size(void);
+extern int ifxmips_has_brn_block(void);
 
 #endif

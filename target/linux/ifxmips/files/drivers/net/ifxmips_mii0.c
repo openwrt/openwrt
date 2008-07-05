@@ -36,9 +36,14 @@
 #include <linux/init.h>
 #include <asm/delay.h>
 #include <asm/ifxmips/ifxmips.h>
-#include <asm/ifxmips/ifxmips_mii0.h>
 #include <asm/ifxmips/ifxmips_dma.h>
 #include <asm/ifxmips/ifxmips_pmu.h>
+
+struct ifxmips_mii_priv {
+	struct net_device_stats stats;
+	struct dma_device_info *dma_device;
+	struct sk_buff *skb;
+};
 
 static struct net_device *ifxmips_mii0_dev;
 static unsigned char mac_addr[MAX_ADDR_LEN];
@@ -63,6 +68,7 @@ ifxmips_read_mdio(u32 phy_addr, u32 phy_reg)
 		((phy_addr & MDIO_ACC_ADDR_MASK) << MDIO_ACC_ADDR_OFFSET) |
 		((phy_reg & MDIO_ACC_REG_MASK) << MDIO_ACC_REG_OFFSET);
 
+	while(ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST);
 	ifxmips_w32(val, IFXMIPS_PPE32_MDIO_ACC);
 	while(ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST){};
 	val = ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_VAL_MASK;
@@ -343,10 +349,10 @@ static int
 ifxmips_mii_probe(struct platform_device *dev)
 {
 	int result = 0;
-	struct ifxmips_mac *mac = (struct ifxmips_mac*)dev->dev.platform_data;
+	unsigned char *mac = (unsigned char*)dev->dev.platform_data;
 	ifxmips_mii0_dev = alloc_etherdev(sizeof(struct ifxmips_mii_priv));
 	ifxmips_mii0_dev->init = ifxmips_mii_dev_init;
-	memcpy(mac_addr, mac->mac, 6);
+	memcpy(mac_addr, mac, 6);
 	strcpy(ifxmips_mii0_dev->name, "eth%d");
 	ifxmips_mii_chip_init(REV_MII_MODE);
 	result = register_netdev(ifxmips_mii0_dev);
