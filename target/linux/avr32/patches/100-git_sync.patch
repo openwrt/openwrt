@@ -1,3 +1,105 @@
+--- a/Documentation/serial/driver
++++ b/Documentation/serial/driver
+@@ -186,6 +186,17 @@
+ 	Locking: port_sem taken.
+ 	Interrupts: caller dependent.
+ 
++  flush_buffer(port)
++	Flush any write buffers, reset any DMA state and stop any
++	ongoing DMA transfers.
++
++	This will be called whenever the port->info->xmit circular
++	buffer is cleared.
++
++	Locking: port->lock taken.
++	Interrupts: locally disabled.
++	This call must not sleep
++
+   set_termios(port,termios,oldtermios)
+ 	Change the port parameters, including word length, parity, stop
+ 	bits.  Update read_status_mask and ignore_status_mask to indicate
+--- a/arch/avr32/Kconfig
++++ b/arch/avr32/Kconfig
+@@ -47,6 +47,9 @@
+ config GENERIC_TIME
+ 	def_bool y
+ 
++config GENERIC_CLOCKEVENTS
++	def_bool y
++
+ config RWSEM_XCHGADD_ALGORITHM
+ 	def_bool n
+ 
+@@ -70,6 +73,8 @@
+ 
+ menu "System Type and features"
+ 
++source "kernel/time/Kconfig"
++
+ config SUBARCH_AVR32B
+ 	bool
+ config MMU
+@@ -83,6 +88,7 @@
+ 	select MMU
+ 	select PERFORMANCE_COUNTERS
+ 	select HAVE_GPIO_LIB
++	select GENERIC_ALLOCATOR
+ 
+ #
+ # CPU types
+@@ -117,6 +123,9 @@
+ if BOARD_ATSTK1000
+ source "arch/avr32/boards/atstk1000/Kconfig"
+ endif
++if BOARD_ATNGW100
++source "arch/avr32/boards/atngw100/Kconfig"
++endif
+ 
+ choice
+ 	prompt "Boot loader type"
+@@ -142,6 +151,9 @@
+ 
+ source "kernel/Kconfig.preempt"
+ 
++config QUICKLIST
++	def_bool y
++
+ config HAVE_ARCH_BOOTMEM_NODE
+ 	def_bool n
+ 
+@@ -180,6 +192,10 @@
+ 	  be dumped to the console when a Non-Maskable Interrupt
+ 	  happens.
+ 
++config DW_DMAC
++	tristate "Synopsys DesignWare DMA Controller support"
++	default y if CPU_AT32AP7000
++
+ # FPU emulation goes here
+ 
+ source "kernel/Kconfig.hz"
+@@ -196,6 +212,11 @@
+ 
+ menu "Power management options"
+ 
++config ARCH_SUSPEND_POSSIBLE
++	def_bool y
++
++source "kernel/power/Kconfig"
++
+ menu "CPU Frequency scaling"
+ 
+ source "drivers/cpufreq/Kconfig"
+--- a/arch/avr32/Makefile
++++ b/arch/avr32/Makefile
+@@ -32,6 +32,7 @@
+ core-y					+= arch/avr32/kernel/
+ core-y					+= arch/avr32/mm/
+ drivers-$(CONFIG_OPROFILE)		+= arch/avr32/oprofile/
++drivers-y				+= arch/avr32/drivers/
+ libs-y					+= arch/avr32/lib/
+ 
+ archincdir-$(CONFIG_PLATFORM_AT32AP)	:= arch-at32ap
 --- /dev/null
 +++ b/arch/avr32/boards/atngw100/Kconfig
 @@ -0,0 +1,12 @@
@@ -87,6 +189,87 @@
  
  	return 0;
  }
+--- a/arch/avr32/boards/atstk1000/Kconfig
++++ b/arch/avr32/boards/atstk1000/Kconfig
+@@ -18,6 +18,10 @@
+ 	bool "ATSTK1004"
+ 	select CPU_AT32AP7002
+ 
++config BOARD_ATSTK1006
++	bool "ATSTK1006"
++	select CPU_AT32AP7000
++
+ endchoice
+ 
+ 
+@@ -102,4 +106,60 @@
+ 	depends on !BOARD_ATSTK100X_SW1_CUSTOM && !BOARD_ATSTK100X_SW3_CUSTOM
+ 	default y
+ 
++config BOARD_ATSTK100X_ENABLE_AC97
++	bool "Use AC97C instead of ABDAC"
++	help
++	  Select this if you want to use the built-in AC97 controller
++	  instead of the built-in Audio Bitstream DAC. These share
++	  the same I/O pins on the AP7000, so both can't be enabled
++	  at the same time.
++
++	  Note that the STK1000 kit doesn't ship with an AC97 codec on
++	  board, so say N unless you've got an expansion board with an
++	  AC97 codec on it that you want to use.
++
++config BOARD_ATSTK1000_CF_HACKS
++	bool "ATSTK1000 CompactFlash hacks"
++	depends on !BOARD_ATSTK100X_SW4_CUSTOM
++	help
++	  Select this if you have re-routed the CompactFlash RESET and
++	  CD signals to GPIOs on your STK1000. This is necessary for
++	  reset and card detection to work properly, although some CF
++	  cards may be able to cope without reset.
++
++config BOARD_ATSTK1000_CF_RESET_PIN
++	hex "CompactFlash RESET pin"
++	default 0x30
++	depends on BOARD_ATSTK1000_CF_HACKS
++	help
++	  Select which GPIO pin to use for the CompactFlash RESET
++	  signal. This is specified as a hexadecimal number and should
++	  be defined as 0x20 * gpio_port + pin.
++
++	  The default is 0x30, which is pin 16 on PIOB, aka GPIO14.
++
++config BOARD_ATSTK1000_CF_DETECT_PIN
++	hex "CompactFlash DETECT pin"
++	default 0x3e
++	depends on BOARD_ATSTK1000_CF_HACKS
++	help
++	  Select which GPIO pin to use for the CompactFlash CD
++	  signal. This is specified as a hexadecimal number and should
++	  be defined as 0x20 * gpio_port + pin.
++
++	  The default is 0x3e, which is pin 30 on PIOB, aka GPIO15.
++
++config BOARD_ATSTK100X_ENABLE_PSIF
++	bool "Enable PSIF peripheral (PS/2 support)"
++	default n
++	help
++	  Select this if you want to use the PSIF peripheral to hook up PS/2
++	  devices to your STK1000. This will require a hardware modification to
++	  work correctly, since PS/2 devices require 5 volt power and signals,
++	  while the STK1000 only provides 3.3 volt.
++
++	  Say N if you have not modified the hardware to boost the voltage, say
++	  Y if you have level convertion hardware or a PS/2 device capable of
++	  operating on 3.3 volt.
++
+ endif	# stk 1000
+--- a/arch/avr32/boards/atstk1000/Makefile
++++ b/arch/avr32/boards/atstk1000/Makefile
+@@ -2,3 +2,4 @@
+ obj-$(CONFIG_BOARD_ATSTK1002)	+= atstk1002.o
+ obj-$(CONFIG_BOARD_ATSTK1003)	+= atstk1003.o
+ obj-$(CONFIG_BOARD_ATSTK1004)	+= atstk1004.o
++obj-$(CONFIG_BOARD_ATSTK1006)	+= atstk1002.o
 --- a/arch/avr32/boards/atstk1000/atstk1002.c
 +++ b/arch/avr32/boards/atstk1000/atstk1002.c
 @@ -1,7 +1,7 @@
@@ -230,7 +413,7 @@
  #endif
  	at32_add_device_usba(0, NULL);
 +#ifdef CONFIG_BOARD_ATSTK100X_ENABLE_AC97
-+	at32_add_device_ac97c(0);
++	at32_add_device_ac97c(0, NULL);
 +#else
 +	at32_add_device_abdac(0);
 +#endif
@@ -290,7 +473,7 @@
  #endif
  	at32_add_device_usba(0, NULL);
 +#ifdef CONFIG_BOARD_ATSTK100X_ENABLE_AC97
-+	at32_add_device_ac97c(0);
++	at32_add_device_ac97c(0, NULL);
 +#else
 +	at32_add_device_abdac(0);
 +#endif
@@ -333,7 +516,7 @@
 +			     fbmem_start, fbmem_size, 0);
  	at32_add_device_usba(0, NULL);
 +#ifdef CONFIG_BOARD_ATSTK100X_ENABLE_AC97
-+	at32_add_device_ac97c(0);
++	at32_add_device_ac97c(0, NULL);
 +#else
 +	at32_add_device_abdac(0);
 +#endif
@@ -347,87 +530,6 @@
  
  	atstk1000_setup_j2_leds();
  	atstk1004_setup_extdac();
---- a/arch/avr32/boards/atstk1000/Kconfig
-+++ b/arch/avr32/boards/atstk1000/Kconfig
-@@ -18,6 +18,10 @@
- 	bool "ATSTK1004"
- 	select CPU_AT32AP7002
- 
-+config BOARD_ATSTK1006
-+	bool "ATSTK1006"
-+	select CPU_AT32AP7000
-+
- endchoice
- 
- 
-@@ -102,4 +106,60 @@
- 	depends on !BOARD_ATSTK100X_SW1_CUSTOM && !BOARD_ATSTK100X_SW3_CUSTOM
- 	default y
- 
-+config BOARD_ATSTK100X_ENABLE_AC97
-+	bool "Use AC97C instead of ABDAC"
-+	help
-+	  Select this if you want to use the built-in AC97 controller
-+	  instead of the built-in Audio Bitstream DAC. These share
-+	  the same I/O pins on the AP7000, so both can't be enabled
-+	  at the same time.
-+
-+	  Note that the STK1000 kit doesn't ship with an AC97 codec on
-+	  board, so say N unless you've got an expansion board with an
-+	  AC97 codec on it that you want to use.
-+
-+config BOARD_ATSTK1000_CF_HACKS
-+	bool "ATSTK1000 CompactFlash hacks"
-+	depends on !BOARD_ATSTK100X_SW4_CUSTOM
-+	help
-+	  Select this if you have re-routed the CompactFlash RESET and
-+	  CD signals to GPIOs on your STK1000. This is necessary for
-+	  reset and card detection to work properly, although some CF
-+	  cards may be able to cope without reset.
-+
-+config BOARD_ATSTK1000_CF_RESET_PIN
-+	hex "CompactFlash RESET pin"
-+	default 0x30
-+	depends on BOARD_ATSTK1000_CF_HACKS
-+	help
-+	  Select which GPIO pin to use for the CompactFlash RESET
-+	  signal. This is specified as a hexadecimal number and should
-+	  be defined as 0x20 * gpio_port + pin.
-+
-+	  The default is 0x30, which is pin 16 on PIOB, aka GPIO14.
-+
-+config BOARD_ATSTK1000_CF_DETECT_PIN
-+	hex "CompactFlash DETECT pin"
-+	default 0x3e
-+	depends on BOARD_ATSTK1000_CF_HACKS
-+	help
-+	  Select which GPIO pin to use for the CompactFlash CD
-+	  signal. This is specified as a hexadecimal number and should
-+	  be defined as 0x20 * gpio_port + pin.
-+
-+	  The default is 0x3e, which is pin 30 on PIOB, aka GPIO15.
-+
-+config BOARD_ATSTK100X_ENABLE_PSIF
-+	bool "Enable PSIF peripheral (PS/2 support)"
-+	default n
-+	help
-+	  Select this if you want to use the PSIF peripheral to hook up PS/2
-+	  devices to your STK1000. This will require a hardware modification to
-+	  work correctly, since PS/2 devices require 5 volt power and signals,
-+	  while the STK1000 only provides 3.3 volt.
-+
-+	  Say N if you have not modified the hardware to boost the voltage, say
-+	  Y if you have level convertion hardware or a PS/2 device capable of
-+	  operating on 3.3 volt.
-+
- endif	# stk 1000
---- a/arch/avr32/boards/atstk1000/Makefile
-+++ b/arch/avr32/boards/atstk1000/Makefile
-@@ -2,3 +2,4 @@
- obj-$(CONFIG_BOARD_ATSTK1002)	+= atstk1002.o
- obj-$(CONFIG_BOARD_ATSTK1003)	+= atstk1003.o
- obj-$(CONFIG_BOARD_ATSTK1004)	+= atstk1004.o
-+obj-$(CONFIG_BOARD_ATSTK1006)	+= atstk1002.o
 --- a/arch/avr32/configs/atngw100_defconfig
 +++ b/arch/avr32/configs/atngw100_defconfig
 @@ -1,7 +1,7 @@
@@ -3542,6 +3644,10 @@
 +CONFIG_HAS_IOPORT=y
 +CONFIG_HAS_DMA=y
 --- /dev/null
++++ b/arch/avr32/drivers/Makefile
+@@ -0,0 +1 @@
++obj-$(CONFIG_DW_DMAC)			+= dw-dmac.o
+--- /dev/null
 +++ b/arch/avr32/drivers/dw-dmac.c
 @@ -0,0 +1,761 @@
 +/*
@@ -4350,72 +4456,16 @@
 +#define DW_DMAC_CHAN_DSR	0x050
 +
 +#endif /* __AVR32_DW_DMAC_H__ */
---- /dev/null
-+++ b/arch/avr32/drivers/Makefile
-@@ -0,0 +1 @@
-+obj-$(CONFIG_DW_DMAC)			+= dw-dmac.o
---- a/arch/avr32/Kconfig
-+++ b/arch/avr32/Kconfig
-@@ -47,6 +47,9 @@
- config GENERIC_TIME
- 	def_bool y
- 
-+config GENERIC_CLOCKEVENTS
-+	def_bool y
-+
- config RWSEM_XCHGADD_ALGORITHM
- 	def_bool n
- 
-@@ -70,6 +73,8 @@
- 
- menu "System Type and features"
- 
-+source "kernel/time/Kconfig"
-+
- config SUBARCH_AVR32B
- 	bool
- config MMU
-@@ -83,6 +88,7 @@
- 	select MMU
- 	select PERFORMANCE_COUNTERS
- 	select HAVE_GPIO_LIB
-+	select GENERIC_ALLOCATOR
- 
- #
- # CPU types
-@@ -117,6 +123,9 @@
- if BOARD_ATSTK1000
- source "arch/avr32/boards/atstk1000/Kconfig"
- endif
-+if BOARD_ATNGW100
-+source "arch/avr32/boards/atngw100/Kconfig"
-+endif
- 
- choice
- 	prompt "Boot loader type"
-@@ -180,6 +189,10 @@
- 	  be dumped to the console when a Non-Maskable Interrupt
- 	  happens.
- 
-+config DW_DMAC
-+	tristate "Synopsys DesignWare DMA Controller support"
-+	default y if CPU_AT32AP7000
-+
- # FPU emulation goes here
- 
- source "kernel/Kconfig.hz"
-@@ -196,6 +209,11 @@
- 
- menu "Power management options"
- 
-+config ARCH_SUSPEND_POSSIBLE
-+	def_bool y
-+
-+source "kernel/power/Kconfig"
-+
- menu "CPU Frequency scaling"
- 
- source "drivers/cpufreq/Kconfig"
+--- a/arch/avr32/kernel/Makefile
++++ b/arch/avr32/kernel/Makefile
+@@ -9,6 +9,7 @@
+ obj-y				+= setup.o traps.o semaphore.o ocd.o ptrace.o
+ obj-y				+= signal.o sys_avr32.o process.o time.o
+ obj-y				+= init_task.o switch_to.o cpu.o
++obj-y				+= dma-controller.o
+ obj-$(CONFIG_MODULES)		+= module.o avr32_ksyms.o
+ obj-$(CONFIG_KPROBES)		+= kprobes.o
+ obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
 --- a/arch/avr32/kernel/avr32_ksyms.c
 +++ b/arch/avr32/kernel/avr32_ksyms.c
 @@ -29,7 +29,9 @@
@@ -4476,7 +4526,147 @@
 +EXPORT_SYMBOL(find_dma_controller);
 --- a/arch/avr32/kernel/entry-avr32b.S
 +++ b/arch/avr32/kernel/entry-avr32b.S
-@@ -741,26 +741,6 @@
+@@ -74,50 +74,41 @@
+ 	.align	2
+ 	bral	do_dtlb_modified
+ 
+-	/*
+-	 * r0 :	PGD/PT/PTE
+-	 * r1 : Offending address
+-	 * r2 : Scratch register
+-	 * r3 : Cause (5, 12 or 13)
+-	 */
+ #define	tlbmiss_save	pushm	r0-r3
+ #define tlbmiss_restore	popm	r0-r3
+ 
+-	.section .tlbx.ex.text,"ax",@progbits
++	.org	0x50
+ 	.global	itlb_miss
+ itlb_miss:
+ 	tlbmiss_save
+ 	rjmp	tlb_miss_common
+ 
+-	.section .tlbr.ex.text,"ax",@progbits
++	.org	0x60
+ dtlb_miss_read:
+ 	tlbmiss_save
+ 	rjmp	tlb_miss_common
+ 
+-	.section .tlbw.ex.text,"ax",@progbits
++	.org	0x70
+ dtlb_miss_write:
+ 	tlbmiss_save
+ 
+ 	.global	tlb_miss_common
++	.align	2
+ tlb_miss_common:
+ 	mfsr	r0, SYSREG_TLBEAR
+ 	mfsr	r1, SYSREG_PTBR
+ 
+-	/* Is it the vmalloc space? */
+-	bld	r0, 31
+-	brcs	handle_vmalloc_miss
+-
+-	/* First level lookup */
++	/*
++	 * First level lookup: The PGD contains virtual pointers to
++	 * the second-level page tables, but they may be NULL if not
++	 * present.
++	 */
+ pgtbl_lookup:
+ 	lsr	r2, r0, PGDIR_SHIFT
+ 	ld.w	r3, r1[r2 << 2]
+ 	bfextu	r1, r0, PAGE_SHIFT, PGDIR_SHIFT - PAGE_SHIFT
+-	bld	r3, _PAGE_BIT_PRESENT
+-	brcc	page_table_not_present
+-
+-	/* Translate to virtual address in P1. */
+-	andl	r3, 0xf000
+-	sbr	r3, 31
++	cp.w	r3, 0
++	breq	page_table_not_present
+ 
+ 	/* Second level lookup */
+ 	ld.w	r2, r3[r1 << 2]
+@@ -148,16 +139,55 @@
+ 	tlbmiss_restore
+ 	rete
+ 
+-handle_vmalloc_miss:
+-	/* Simply do the lookup in init's page table */
++	/* The slow path of the TLB miss handler */
++	.align	2
++page_table_not_present:
++	/* Do we need to synchronize with swapper_pg_dir? */
++	bld	r0, 31
++	brcs	sync_with_swapper_pg_dir
++
++page_not_present:
++	tlbmiss_restore
++	sub	sp, 4
++	stmts	--sp, r0-lr
++	rcall	save_full_context_ex
++	mfsr	r12, SYSREG_ECR
++	mov	r11, sp
++	rcall	do_page_fault
++	rjmp	ret_from_exception
++
++	.align	2
++sync_with_swapper_pg_dir:
++	/*
++	 * If swapper_pg_dir contains a non-NULL second-level page
++	 * table pointer, copy it into the current PGD. If not, we
++	 * must handle it as a full-blown page fault.
++	 *
++	 * Jumping back to pgtbl_lookup causes an unnecessary lookup,
++	 * but it is guaranteed to be a cache hit, it won't happen
++	 * very often, and we absolutely do not want to sacrifice any
++	 * performance in the fast path in order to improve this.
++	 */
+ 	mov	r1, lo(swapper_pg_dir)
+ 	orh	r1, hi(swapper_pg_dir)
++	ld.w	r3, r1[r2 << 2]
++	cp.w	r3, 0
++	breq	page_not_present
++	mfsr	r1, SYSREG_PTBR
++	st.w	r1[r2 << 2], r3
+ 	rjmp	pgtbl_lookup
+ 
++	/*
++	 * We currently have two bytes left at this point until we
++	 * crash into the system call handler...
++	 *
++	 * Don't worry, the assembler will let us know.
++	 */
++
+ 
+ 	/* ---                    System Call                    --- */
+ 
+-	.section .scall.text,"ax",@progbits
++	.org	0x100
+ system_call:
+ #ifdef CONFIG_PREEMPT
+ 	mask_interrupts
+@@ -266,18 +296,6 @@
+ 	brcc	syscall_exit_cont
+ 	rjmp	enter_monitor_mode
+ 
+-	/* The slow path of the TLB miss handler */
+-page_table_not_present:
+-page_not_present:
+-	tlbmiss_restore
+-	sub	sp, 4
+-	stmts	--sp, r0-lr
+-	rcall	save_full_context_ex
+-	mfsr	r12, SYSREG_ECR
+-	mov	r11, sp
+-	rcall	do_page_fault
+-	rjmp	ret_from_exception
+-
+ 	/* This function expects to find offending PC in SYSREG_RAR_EX */
+ 	.type	save_full_context_ex, @function
+ 	.align	2
+@@ -741,26 +759,6 @@
  
  	.section .irq.text,"ax",@progbits
  
@@ -4503,16 +4693,6 @@
  	.global	irq_level0
  	.global	irq_level1
  	.global	irq_level2
---- a/arch/avr32/kernel/Makefile
-+++ b/arch/avr32/kernel/Makefile
-@@ -9,6 +9,7 @@
- obj-y				+= setup.o traps.o semaphore.o ocd.o ptrace.o
- obj-y				+= signal.o sys_avr32.o process.o time.o
- obj-y				+= init_task.o switch_to.o cpu.o
-+obj-y				+= dma-controller.o
- obj-$(CONFIG_MODULES)		+= module.o avr32_ksyms.o
- obj-$(CONFIG_KPROBES)		+= kprobes.o
- obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
 --- a/arch/avr32/kernel/process.c
 +++ b/arch/avr32/kernel/process.c
 @@ -18,11 +18,11 @@
@@ -4563,7 +4743,7 @@
  
 --- a/arch/avr32/kernel/time.c
 +++ b/arch/avr32/kernel/time.c
-@@ -1,16 +1,12 @@
+@@ -1,233 +1,147 @@
  /*
   * Copyright (C) 2004-2007 Atmel Corporation
   *
@@ -4577,13 +4757,25 @@
 -
  #include <linux/clk.h>
 -#include <linux/clocksource.h>
+-#include <linux/time.h>
+-#include <linux/module.h>
 +#include <linux/clockchips.h>
- #include <linux/time.h>
- #include <linux/module.h>
++#include <linux/init.h>
  #include <linux/interrupt.h>
-@@ -27,207 +23,133 @@
- #include <asm/io.h>
- #include <asm/sections.h>
+ #include <linux/irq.h>
+-#include <linux/kernel_stat.h>
+-#include <linux/errno.h>
+-#include <linux/init.h>
+-#include <linux/profile.h>
+-#include <linux/sysdev.h>
+-#include <linux/err.h>
++#include <linux/kernel.h>
++#include <linux/time.h>
+ 
+-#include <asm/div64.h>
+ #include <asm/sysreg.h>
+-#include <asm/io.h>
+-#include <asm/sections.h>
  
 -/* how many counter cycles in a jiffy? */
 -static u32 cycles_per_jiffy;
@@ -4629,20 +4821,20 @@
 - * By default we provide the null RTC ops
 - */
 -static unsigned long null_rtc_get_time(void)
-+static irqreturn_t timer_interrupt(int irq, void *dev_id)
- {
+-{
 -	return mktime(2007, 1, 1, 0, 0, 0);
 -}
 -
 -static int null_rtc_set_time(unsigned long sec)
--{
++static irqreturn_t timer_interrupt(int irq, void *dev_id)
+ {
 -	return 0;
 -}
-+	struct clock_event_device *evdev = dev_id;
- 
+-
 -static unsigned long (*rtc_get_time)(void) = null_rtc_get_time;
 -static int (*rtc_set_time)(unsigned long) = null_rtc_set_time;
--
++	struct clock_event_device *evdev = dev_id;
+ 
 -static void avr32_timer_ack(void)
 -{
 -	u32 count;
@@ -4873,6 +5065,34 @@
  }
 -
 -device_initcall(init_timer_sysfs);
+--- a/arch/avr32/kernel/vmlinux.lds.S
++++ b/arch/avr32/kernel/vmlinux.lds.S
+@@ -68,14 +68,6 @@
+ 		_evba = .;
+ 		_text = .;
+ 		*(.ex.text)
+-		. = 0x50;
+-		*(.tlbx.ex.text)
+-		. = 0x60;
+-		*(.tlbr.ex.text)
+-		. = 0x70;
+-		*(.tlbw.ex.text)
+-		. = 0x100;
+-		*(.scall.text)
+ 		*(.irq.text)
+ 		KPROBES_TEXT
+ 		TEXT_TEXT
+@@ -107,6 +99,10 @@
+ 		 */
+ 		*(.data.init_task)
+ 
++		/* Then, the page-aligned data */
++		. = ALIGN(PAGE_SIZE);
++		*(.data.page_aligned)
++
+ 		/* Then, the cacheline aligned data */
+ 		. = ALIGN(L1_CACHE_BYTES);
+ 		*(.data.cacheline_aligned)
 --- a/arch/avr32/lib/io-readsb.S
 +++ b/arch/avr32/lib/io-readsb.S
 @@ -41,7 +41,7 @@
@@ -4884,6 +5104,96 @@
  	sub	r10, 1
  	st.b	r11++, r8
  	brne	3b
+--- a/arch/avr32/mach-at32ap/Kconfig
++++ b/arch/avr32/mach-at32ap/Kconfig
+@@ -26,6 +26,13 @@
+ 
+ endchoice
+ 
++config GPIO_DEV
++	bool "GPIO /dev interface"
++	select CONFIGFS_FS
++	default n
++	help
++	  Say `Y' to enable a /dev interface to the GPIO pins.
++
+ endmenu
+ 
+ endif # PLATFORM_AT32AP
+--- a/arch/avr32/mach-at32ap/Makefile
++++ b/arch/avr32/mach-at32ap/Makefile
+@@ -1,4 +1,9 @@
+-obj-y				+= at32ap.o clock.o intc.o extint.o pio.o hsmc.o
+-obj-$(CONFIG_CPU_AT32AP700X)	+= at32ap700x.o
+-obj-$(CONFIG_CPU_AT32AP700X)	+= time-tc.o
++obj-y				+= pdc.o clock.o intc.o extint.o pio.o hsmc.o
++obj-$(CONFIG_CPU_AT32AP700X)	+= at32ap700x.o pm-at32ap700x.o
+ obj-$(CONFIG_CPU_FREQ_AT32AP)	+= cpufreq.o
++obj-$(CONFIG_GPIO_DEV)		+= gpio-dev.o
++obj-$(CONFIG_PM)		+= pm.o
++
++ifeq ($(CONFIG_PM_DEBUG),y)
++CFLAGS_pm.o	+= -DDEBUG
++endif
+--- a/arch/avr32/mach-at32ap/at32ap.c
++++ /dev/null
+@@ -1,56 +0,0 @@
+-/*
+- * Copyright (C) 2006 Atmel Corporation
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- */
+-
+-#include <linux/clk.h>
+-#include <linux/err.h>
+-#include <linux/init.h>
+-#include <linux/platform_device.h>
+-
+-#include <asm/arch/init.h>
+-
+-void __init setup_platform(void)
+-{
+-	at32_clock_init();
+-	at32_portmux_init();
+-}
+-
+-static int __init pdc_probe(struct platform_device *pdev)
+-{
+-	struct clk *pclk, *hclk;
+-
+-	pclk = clk_get(&pdev->dev, "pclk");
+-	if (IS_ERR(pclk)) {
+-		dev_err(&pdev->dev, "no pclk defined\n");
+-		return PTR_ERR(pclk);
+-	}
+-	hclk = clk_get(&pdev->dev, "hclk");
+-	if (IS_ERR(hclk)) {
+-		dev_err(&pdev->dev, "no hclk defined\n");
+-		clk_put(pclk);
+-		return PTR_ERR(hclk);
+-	}
+-
+-	clk_enable(pclk);
+-	clk_enable(hclk);
+-
+-	dev_info(&pdev->dev, "Atmel Peripheral DMA Controller enabled\n");
+-	return 0;
+-}
+-
+-static struct platform_driver pdc_driver = {
+-	.probe		= pdc_probe,
+-	.driver		= {
+-		.name	= "pdc",
+-	},
+-};
+-
+-static int __init pdc_init(void)
+-{
+-	return platform_driver_register(&pdc_driver);
+-}
+-arch_initcall(pdc_init);
 --- a/arch/avr32/mach-at32ap/at32ap700x.c
 +++ b/arch/avr32/mach-at32ap/at32ap700x.c
 @@ -6,11 +6,13 @@
@@ -5149,8 +5459,7 @@
 -	.num_resources	= ARRAY_SIZE(at32_systc0_resource),
 +	.resource	= at32_tcb0_resource,
 +	.num_resources	= ARRAY_SIZE(at32_tcb0_resource),
- };
--DEV_CLK(pclk, at32_systc0, pbb, 3);
++};
 +DEV_CLK(t0_clk, at32_tcb0, pbb, 3);
 +
 +static struct resource at32_tcb1_resource[] = {
@@ -5162,7 +5471,8 @@
 +	.id		= 1,
 +	.resource	= at32_tcb1_resource,
 +	.num_resources	= ARRAY_SIZE(at32_tcb1_resource),
-+};
+ };
+-DEV_CLK(pclk, at32_systc0, pbb, 3);
 +DEV_CLK(t0_clk, at32_tcb1, pbb, 4);
  
  /* --------------------------------------------------------------------
@@ -5259,7 +5569,27 @@
   *  USART
   * -------------------------------------------------------------------- */
  
-@@ -989,7 +1228,9 @@
+@@ -951,7 +1190,8 @@
+ 	switch (id) {
+ 	case 0:
+ 		pdev = &atmel_spi0_device;
+-		select_peripheral(PA(0),  PERIPH_A, 0);	/* MISO	 */
++		/* pullup MISO so a level is always defined */
++		select_peripheral(PA(0),  PERIPH_A, AT32_GPIOF_PULLUP);
+ 		select_peripheral(PA(1),  PERIPH_A, 0);	/* MOSI	 */
+ 		select_peripheral(PA(2),  PERIPH_A, 0);	/* SCK	 */
+ 		at32_spi_setup_slaves(0, b, n, spi0_pins);
+@@ -959,7 +1199,8 @@
+ 
+ 	case 1:
+ 		pdev = &atmel_spi1_device;
+-		select_peripheral(PB(0),  PERIPH_B, 0);	/* MISO  */
++		/* pullup MISO so a level is always defined */
++		select_peripheral(PB(0),  PERIPH_B, AT32_GPIOF_PULLUP);
+ 		select_peripheral(PB(1),  PERIPH_B, 0);	/* MOSI  */
+ 		select_peripheral(PB(5),  PERIPH_B, 0);	/* SCK   */
+ 		at32_spi_setup_slaves(1, b, n, spi1_pins);
+@@ -989,7 +1230,9 @@
  	.index		= 2,
  };
  
@@ -5270,7 +5600,7 @@
  {
  	struct platform_device *pdev;
  
-@@ -1009,6 +1250,9 @@
+@@ -1009,6 +1252,9 @@
  
  	atmel_twi0_pclk.dev = &pdev->dev;
  
@@ -5280,7 +5610,7 @@
  	platform_device_add(pdev);
  	return pdev;
  
-@@ -1032,7 +1276,8 @@
+@@ -1032,7 +1278,8 @@
  	.index		= 9,
  };
  
@@ -5290,7 +5620,7 @@
  {
  	struct platform_device *pdev;
  
-@@ -1041,11 +1286,15 @@
+@@ -1041,11 +1288,15 @@
  
  	pdev = platform_device_alloc("atmel_mci", id);
  	if (!pdev)
@@ -5308,7 +5638,7 @@
  
  	select_peripheral(PA(10), PERIPH_A, 0);	/* CLK	 */
  	select_peripheral(PA(11), PERIPH_A, 0);	/* CMD	 */
-@@ -1054,12 +1303,19 @@
+@@ -1054,12 +1305,19 @@
  	select_peripheral(PA(14), PERIPH_A, 0);	/* DATA2 */
  	select_peripheral(PA(15), PERIPH_A, 0);	/* DATA3 */
  
@@ -5329,7 +5659,7 @@
  	platform_device_put(pdev);
  	return NULL;
  }
-@@ -1097,7 +1353,8 @@
+@@ -1097,7 +1355,8 @@
  
  struct platform_device *__init
  at32_add_device_lcdc(unsigned int id, struct atmel_lcdfb_info *data,
@@ -5339,7 +5669,7 @@
  {
  	struct platform_device *pdev;
  	struct atmel_lcdfb_info *info;
-@@ -1124,37 +1381,77 @@
+@@ -1124,37 +1383,77 @@
  	switch (id) {
  	case 0:
  		pdev = &atmel_lcdfb0_device;
@@ -5448,7 +5778,7 @@
  
  		clk_set_parent(&atmel_lcdfb0_pixclk, &pll0);
  		clk_set_rate(&atmel_lcdfb0_pixclk, clk_get_rate(&pll0));
-@@ -1351,9 +1648,39 @@
+@@ -1351,9 +1650,39 @@
  	.index		= 6,
  };
  
@@ -5488,7 +5818,7 @@
  	struct platform_device *pdev;
  
  	if (id != 0)
-@@ -1367,13 +1694,20 @@
+@@ -1367,13 +1696,20 @@
  					  ARRAY_SIZE(usba0_resource)))
  		goto out_free_pdev;
  
@@ -5515,7 +5845,7 @@
  
  	usba0_pclk.dev = &pdev->dev;
  	usba0_hclk.dev = &pdev->dev;
-@@ -1526,6 +1860,58 @@
+@@ -1526,6 +1862,58 @@
  #endif
  
  /* --------------------------------------------------------------------
@@ -5574,7 +5904,64 @@
   * AC97C
   * -------------------------------------------------------------------- */
  static struct resource atmel_ac97c0_resource[] __initdata = {
-@@ -1683,6 +2069,7 @@
+@@ -1540,9 +1928,11 @@
+ 	.index		= 10,
+ };
+ 
+-struct platform_device *__init at32_add_device_ac97c(unsigned int id)
++struct platform_device *__init
++at32_add_device_ac97c(unsigned int id, struct ac97c_platform_data *data)
+ {
+ 	struct platform_device *pdev;
++	struct ac97c_platform_data _data;
+ 
+ 	if (id != 0)
+ 		return NULL;
+@@ -1553,19 +1943,37 @@
+ 
+ 	if (platform_device_add_resources(pdev, atmel_ac97c0_resource,
+ 				ARRAY_SIZE(atmel_ac97c0_resource)))
+-		goto err_add_resources;
++		goto fail;
+ 
+-	select_peripheral(PB(20), PERIPH_B, 0);	/* SYNC	*/
+-	select_peripheral(PB(21), PERIPH_B, 0);	/* SDO	*/
+-	select_peripheral(PB(22), PERIPH_B, 0);	/* SDI	*/
+-	select_peripheral(PB(23), PERIPH_B, 0);	/* SCLK	*/
++	if (!data) {
++		data = &_data;
++		memset(data, 0, sizeof(struct ac97c_platform_data));
++		data->reset_pin = GPIO_PIN_NONE;
++	}
++
++	data->dma_rx_periph_id = 3;
++	data->dma_tx_periph_id = 4;
++	data->dma_controller_id = 0;
++
++	if (platform_device_add_data(pdev, data,
++				sizeof(struct ac97c_platform_data)))
++		goto fail;
++
++	select_peripheral(PB(20), PERIPH_B, 0);	/* SDO	*/
++	select_peripheral(PB(21), PERIPH_B, 0);	/* SYNC	*/
++	select_peripheral(PB(22), PERIPH_B, 0);	/* SCLK	*/
++	select_peripheral(PB(23), PERIPH_B, 0);	/* SDI	*/
++
++	/* TODO: gpio_is_valid(data->reset_pin) with kernel 2.6.26. */
++	if (data->reset_pin != GPIO_PIN_NONE)
++		at32_select_gpio(data->reset_pin, 0);
+ 
+ 	atmel_ac97c0_pclk.dev = &pdev->dev;
+ 
+ 	platform_device_add(pdev);
+ 	return pdev;
+ 
+-err_add_resources:
++fail:
+ 	platform_device_put(pdev);
+ 	return NULL;
+ }
+@@ -1683,6 +2091,7 @@
  	&hmatrix_clk,
  	&ebi_clk,
  	&hramc_clk,
@@ -5582,7 +5969,7 @@
  	&smc0_pclk,
  	&smc0_mck,
  	&pdc_hclk,
-@@ -1694,7 +2081,10 @@
+@@ -1694,7 +2103,10 @@
  	&pio2_mck,
  	&pio3_mck,
  	&pio4_mck,
@@ -5594,7 +5981,7 @@
  	&atmel_usart0_usart,
  	&atmel_usart1_usart,
  	&atmel_usart2_usart,
-@@ -1730,16 +2120,7 @@
+@@ -1730,16 +2142,7 @@
  };
  unsigned int at32_nr_clocks = ARRAY_SIZE(at32_clock_list);
  
@@ -5612,7 +5999,7 @@
  {
  	u32 cpu_mask = 0, hsb_mask = 0, pba_mask = 0, pbb_mask = 0;
  	int i;
-@@ -1794,4 +2175,36 @@
+@@ -1794,4 +2197,36 @@
  	pm_writel(HSB_MASK, hsb_mask);
  	pm_writel(PBA_MASK, pba_mask);
  	pm_writel(PBB_MASK, pbb_mask);
@@ -5649,65 +6036,6 @@
 +	return -ENOMEM;
  }
 +core_initcall(sram_init);
---- a/arch/avr32/mach-at32ap/at32ap.c
-+++ /dev/null
-@@ -1,56 +0,0 @@
--/*
-- * Copyright (C) 2006 Atmel Corporation
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License version 2 as
-- * published by the Free Software Foundation.
-- */
--
--#include <linux/clk.h>
--#include <linux/err.h>
--#include <linux/init.h>
--#include <linux/platform_device.h>
--
--#include <asm/arch/init.h>
--
--void __init setup_platform(void)
--{
--	at32_clock_init();
--	at32_portmux_init();
--}
--
--static int __init pdc_probe(struct platform_device *pdev)
--{
--	struct clk *pclk, *hclk;
--
--	pclk = clk_get(&pdev->dev, "pclk");
--	if (IS_ERR(pclk)) {
--		dev_err(&pdev->dev, "no pclk defined\n");
--		return PTR_ERR(pclk);
--	}
--	hclk = clk_get(&pdev->dev, "hclk");
--	if (IS_ERR(hclk)) {
--		dev_err(&pdev->dev, "no hclk defined\n");
--		clk_put(pclk);
--		return PTR_ERR(hclk);
--	}
--
--	clk_enable(pclk);
--	clk_enable(hclk);
--
--	dev_info(&pdev->dev, "Atmel Peripheral DMA Controller enabled\n");
--	return 0;
--}
--
--static struct platform_driver pdc_driver = {
--	.probe		= pdc_probe,
--	.driver		= {
--		.name	= "pdc",
--	},
--};
--
--static int __init pdc_init(void)
--{
--	return platform_driver_register(&pdc_driver);
--}
--arch_initcall(pdc_init);
 --- a/arch/avr32/mach-at32ap/cpufreq.c
 +++ b/arch/avr32/mach-at32ap/cpufreq.c
 @@ -108,5 +108,4 @@
@@ -6409,37 +6737,6 @@
  unsigned long intc_get_pending(unsigned int group)
  {
  	return intc_readl(&intc0, INTREQ0 + 4 * group);
---- a/arch/avr32/mach-at32ap/Kconfig
-+++ b/arch/avr32/mach-at32ap/Kconfig
-@@ -26,6 +26,13 @@
- 
- endchoice
- 
-+config GPIO_DEV
-+	bool "GPIO /dev interface"
-+	select CONFIGFS_FS
-+	default n
-+	help
-+	  Say `Y' to enable a /dev interface to the GPIO pins.
-+
- endmenu
- 
- endif # PLATFORM_AT32AP
---- a/arch/avr32/mach-at32ap/Makefile
-+++ b/arch/avr32/mach-at32ap/Makefile
-@@ -1,4 +1,9 @@
--obj-y				+= at32ap.o clock.o intc.o extint.o pio.o hsmc.o
--obj-$(CONFIG_CPU_AT32AP700X)	+= at32ap700x.o
--obj-$(CONFIG_CPU_AT32AP700X)	+= time-tc.o
-+obj-y				+= pdc.o clock.o intc.o extint.o pio.o hsmc.o
-+obj-$(CONFIG_CPU_AT32AP700X)	+= at32ap700x.o pm-at32ap700x.o
- obj-$(CONFIG_CPU_FREQ_AT32AP)	+= cpufreq.o
-+obj-$(CONFIG_GPIO_DEV)		+= gpio-dev.o
-+obj-$(CONFIG_PM)		+= pm.o
-+
-+ifeq ($(CONFIG_PM_DEBUG),y)
-+CFLAGS_pm.o	+= -DDEBUG
-+endif
 --- /dev/null
 +++ b/arch/avr32/mach-at32ap/pdc.c
 @@ -0,0 +1,48 @@
@@ -6584,6 +6881,17 @@
 +			label = "[irq]";
  		if (!label)
  			continue;
+ 
+--- a/arch/avr32/mach-at32ap/pio.h
++++ b/arch/avr32/mach-at32ap/pio.h
+@@ -57,7 +57,7 @@
+ 
+ /* Bitfields in IFDR */
+ 
+-/* Bitfields in ISFR */
++/* Bitfields in IFSR */
+ 
+ /* Bitfields in SODR */
  
 --- /dev/null
 +++ b/arch/avr32/mach-at32ap/pm-at32ap700x.S
@@ -7310,16 +7618,6 @@
 -
 -	return IRQ_NONE;
 -}
---- a/arch/avr32/Makefile
-+++ b/arch/avr32/Makefile
-@@ -32,6 +32,7 @@
- core-y					+= arch/avr32/kernel/
- core-y					+= arch/avr32/mm/
- drivers-$(CONFIG_OPROFILE)		+= arch/avr32/oprofile/
-+drivers-y				+= arch/avr32/drivers/
- libs-y					+= arch/avr32/lib/
- 
- archincdir-$(CONFIG_PLATFORM_AT32AP)	:= arch-at32ap
 --- a/arch/avr32/mm/init.c
 +++ b/arch/avr32/mm/init.c
 @@ -11,6 +11,7 @@
@@ -7330,8 +7628,16 @@
  #include <linux/bootmem.h>
  #include <linux/pagemap.h>
  #include <linux/nodemask.h>
-@@ -28,15 +29,13 @@
- pgd_t swapper_pg_dir[PTRS_PER_PGD];
+@@ -23,20 +24,20 @@
+ #include <asm/setup.h>
+ #include <asm/sections.h>
+ 
++#define __page_aligned	__attribute__((section(".data.page_aligned")))
++
+ DEFINE_PER_CPU(struct mmu_gather, mmu_gathers);
+ 
+-pgd_t swapper_pg_dir[PTRS_PER_PGD];
++pgd_t swapper_pg_dir[PTRS_PER_PGD] __page_aligned;
  
  struct page *empty_zero_page;
 +EXPORT_SYMBOL(empty_zero_page);
@@ -7347,6 +7653,359 @@
  void show_mem(void)
  {
  	int total = 0, reserved = 0, cached = 0;
+@@ -109,19 +110,9 @@
+ 	zero_page = alloc_bootmem_low_pages_node(NODE_DATA(0),
+ 						 PAGE_SIZE);
+ 
+-	{
+-		pgd_t *pg_dir;
+-		int i;
+-
+-		pg_dir = swapper_pg_dir;
+-		sysreg_write(PTBR, (unsigned long)pg_dir);
+-
+-		for (i = 0; i < PTRS_PER_PGD; i++)
+-			pgd_val(pg_dir[i]) = 0;
+-
+-		enable_mmu();
+-		printk ("CPU: Paging enabled\n");
+-	}
++	sysreg_write(PTBR, (unsigned long)swapper_pg_dir);
++	enable_mmu();
++	printk ("CPU: Paging enabled\n");
+ 
+ 	for_each_online_node(nid) {
+ 		pg_data_t *pgdat = NODE_DATA(nid);
+--- a/arch/avr32/mm/tlb.c
++++ b/arch/avr32/mm/tlb.c
+@@ -11,21 +11,21 @@
+ 
+ #include <asm/mmu_context.h>
+ 
+-#define _TLBEHI_I	0x100
++/* TODO: Get the correct number from the CONFIG1 system register */
++#define NR_TLB_ENTRIES 32
+ 
+-void show_dtlb_entry(unsigned int index)
++static void show_dtlb_entry(unsigned int index)
+ {
+-	unsigned int tlbehi, tlbehi_save, tlbelo, mmucr, mmucr_save;
++	u32 tlbehi, tlbehi_save, tlbelo, mmucr, mmucr_save;
+ 	unsigned long flags;
+ 
+ 	local_irq_save(flags);
+ 	mmucr_save = sysreg_read(MMUCR);
+ 	tlbehi_save = sysreg_read(TLBEHI);
+-	mmucr = mmucr_save & 0x13;
+-	mmucr |= index << 14;
++	mmucr = SYSREG_BFINS(DRP, index, mmucr_save);
+ 	sysreg_write(MMUCR, mmucr);
+ 
+-	asm volatile("tlbr" : : : "memory");
++	__builtin_tlbr();
+ 	cpu_sync_pipeline();
+ 
+ 	tlbehi = sysreg_read(TLBEHI);
+@@ -33,15 +33,17 @@
+ 
+ 	printk("%2u: %c %c %02x   %05x %05x %o  %o  %c %c %c %c\n",
+ 	       index,
+-	       (tlbehi & 0x200)?'1':'0',
+-	       (tlbelo & 0x100)?'1':'0',
+-	       (tlbehi & 0xff),
+-	       (tlbehi >> 12), (tlbelo >> 12),
+-	       (tlbelo >> 4) & 7, (tlbelo >> 2) & 3,
+-	       (tlbelo & 0x200)?'1':'0',
+-	       (tlbelo & 0x080)?'1':'0',
+-	       (tlbelo & 0x001)?'1':'0',
+-	       (tlbelo & 0x002)?'1':'0');
++	       SYSREG_BFEXT(TLBEHI_V, tlbehi) ? '1' : '0',
++	       SYSREG_BFEXT(G, tlbelo) ? '1' : '0',
++	       SYSREG_BFEXT(ASID, tlbehi),
++	       SYSREG_BFEXT(VPN, tlbehi) >> 2,
++	       SYSREG_BFEXT(PFN, tlbelo) >> 2,
++	       SYSREG_BFEXT(AP, tlbelo),
++	       SYSREG_BFEXT(SZ, tlbelo),
++	       SYSREG_BFEXT(TLBELO_C, tlbelo) ? 'C' : ' ',
++	       SYSREG_BFEXT(B, tlbelo) ? 'B' : ' ',
++	       SYSREG_BFEXT(W, tlbelo) ? 'W' : ' ',
++	       SYSREG_BFEXT(TLBELO_D, tlbelo) ? 'D' : ' ');
+ 
+ 	sysreg_write(MMUCR, mmucr_save);
+ 	sysreg_write(TLBEHI, tlbehi_save);
+@@ -54,29 +56,33 @@
+ 	unsigned int i;
+ 
+ 	printk("ID  V G ASID VPN   PFN   AP SZ C B W D\n");
+-	for (i = 0; i < 32; i++)
++	for (i = 0; i < NR_TLB_ENTRIES; i++)
+ 		show_dtlb_entry(i);
+ }
+ 
+-static unsigned long last_mmucr;
+-
+-static inline void set_replacement_pointer(unsigned shift)
++static void update_dtlb(unsigned long address, pte_t pte)
+ {
+-	unsigned long mmucr, mmucr_save;
++	u32 tlbehi;
++	u32 mmucr;
+ 
+-	mmucr = mmucr_save = sysreg_read(MMUCR);
++	/*
++	 * We're not changing the ASID here, so no need to flush the
++	 * pipeline.
++	 */
++	tlbehi = sysreg_read(TLBEHI);
++	tlbehi = SYSREG_BF(ASID, SYSREG_BFEXT(ASID, tlbehi));
++	tlbehi |= address & MMU_VPN_MASK;
++	tlbehi |= SYSREG_BIT(TLBEHI_V);
++	sysreg_write(TLBEHI, tlbehi);
+ 
+ 	/* Does this mapping already exist? */
+-	__asm__ __volatile__(
+-		"	tlbs\n"
+-		"	mfsr %0, %1"
+-		: "=r"(mmucr)
+-		: "i"(SYSREG_MMUCR));
++	__builtin_tlbs();
++	mmucr = sysreg_read(MMUCR);
+ 
+ 	if (mmucr & SYSREG_BIT(MMUCR_N)) {
+ 		/* Not found -- pick a not-recently-accessed entry */
+-		unsigned long rp;
+-		unsigned long tlbar = sysreg_read(TLBARLO);
++		unsigned int rp;
++		u32 tlbar = sysreg_read(TLBARLO);
+ 
+ 		rp = 32 - fls(tlbar);
+ 		if (rp == 32) {
+@@ -84,30 +90,14 @@
+ 			sysreg_write(TLBARLO, -1L);
+ 		}
+ 
+-		mmucr &= 0x13;
+-		mmucr |= (rp << shift);
+-
++		mmucr = SYSREG_BFINS(DRP, rp, mmucr);
+ 		sysreg_write(MMUCR, mmucr);
+ 	}
+ 
+-	last_mmucr = mmucr;
+-}
+-
+-static void update_dtlb(unsigned long address, pte_t pte, unsigned long asid)
+-{
+-	unsigned long vpn;
+-
+-	vpn = (address & MMU_VPN_MASK) | _TLBEHI_VALID | asid;
+-	sysreg_write(TLBEHI, vpn);
+-	cpu_sync_pipeline();
+-
+-	set_replacement_pointer(14);
+-
+ 	sysreg_write(TLBELO, pte_val(pte) & _PAGE_FLAGS_HARDWARE_MASK);
+ 
+ 	/* Let's go */
+-	asm volatile("nop\n\ttlbw" : : : "memory");
+-	cpu_sync_pipeline();
++	__builtin_tlbw();
+ }
+ 
+ void update_mmu_cache(struct vm_area_struct *vma,
+@@ -120,39 +110,40 @@
+ 		return;
+ 
+ 	local_irq_save(flags);
+-	update_dtlb(address, pte, get_asid());
++	update_dtlb(address, pte);
+ 	local_irq_restore(flags);
+ }
+ 
+-void __flush_tlb_page(unsigned long asid, unsigned long page)
++static void __flush_tlb_page(unsigned long asid, unsigned long page)
+ {
+-	unsigned long mmucr, tlbehi;
++	u32 mmucr, tlbehi;
+ 
+-	page |= asid;
+-	sysreg_write(TLBEHI, page);
+-	cpu_sync_pipeline();
+-	asm volatile("tlbs");
++	/*
++	 * Caller is responsible for masking out non-PFN bits in page
++	 * and changing the current ASID if necessary. This means that
++	 * we don't need to flush the pipeline after writing TLBEHI.
++	 */
++	tlbehi = page | asid;
++	sysreg_write(TLBEHI, tlbehi);
++
++	__builtin_tlbs();
+ 	mmucr = sysreg_read(MMUCR);
+ 
+ 	if (!(mmucr & SYSREG_BIT(MMUCR_N))) {
+-		unsigned long tlbarlo;
+-		unsigned long entry;
++		unsigned int entry;
++		u32 tlbarlo;
+ 
+ 		/* Clear the "valid" bit */
+-		tlbehi = sysreg_read(TLBEHI);
+-		tlbehi &= ~_TLBEHI_VALID;
+ 		sysreg_write(TLBEHI, tlbehi);
+-		cpu_sync_pipeline();
+ 
+ 		/* mark the entry as "not accessed" */
+-		entry = (mmucr >> 14) & 0x3f;
++		entry = SYSREG_BFEXT(DRP, mmucr);
+ 		tlbarlo = sysreg_read(TLBARLO);
+-		tlbarlo |= (0x80000000 >> entry);
++		tlbarlo |= (0x80000000UL >> entry);
+ 		sysreg_write(TLBARLO, tlbarlo);
+ 
+ 		/* update the entry with valid bit clear */
+-		asm volatile("tlbw");
+-		cpu_sync_pipeline();
++		__builtin_tlbw();
+ 	}
+ }
+ 
+@@ -190,17 +181,22 @@
+ 
+ 		local_irq_save(flags);
+ 		size = (end - start + (PAGE_SIZE - 1)) >> PAGE_SHIFT;
++
+ 		if (size > (MMU_DTLB_ENTRIES / 4)) { /* Too many entries to flush */
+ 			mm->context = NO_CONTEXT;
+ 			if (mm == current->mm)
+ 				activate_context(mm);
+ 		} else {
+-			unsigned long asid = mm->context & MMU_CONTEXT_ASID_MASK;
+-			unsigned long saved_asid = MMU_NO_ASID;
++			unsigned long asid;
++			unsigned long saved_asid;
++
++			asid = mm->context & MMU_CONTEXT_ASID_MASK;
++			saved_asid = MMU_NO_ASID;
+ 
+ 			start &= PAGE_MASK;
+ 			end += (PAGE_SIZE - 1);
+ 			end &= PAGE_MASK;
++
+ 			if (mm != current->mm) {
+ 				saved_asid = get_asid();
+ 				set_asid(asid);
+@@ -218,33 +214,34 @@
+ }
+ 
+ /*
+- * TODO: If this is only called for addresses > TASK_SIZE, we can probably
+- * skip the ASID stuff and just use the Global bit...
++ * This function depends on the pages to be flushed having the G
++ * (global) bit set in their pte. This is true for all
++ * PAGE_KERNEL(_RO) pages.
+  */
+ void flush_tlb_kernel_range(unsigned long start, unsigned long end)
+ {
+ 	unsigned long flags;
+ 	int size;
+ 
+-	local_irq_save(flags);
+ 	size = (end - start + (PAGE_SIZE - 1)) >> PAGE_SHIFT;
+ 	if (size > (MMU_DTLB_ENTRIES / 4)) { /* Too many entries to flush */
+ 		flush_tlb_all();
+ 	} else {
+-		unsigned long asid = init_mm.context & MMU_CONTEXT_ASID_MASK;
+-		unsigned long saved_asid = get_asid();
++		unsigned long asid;
++
++		local_irq_save(flags);
++		asid = get_asid();
+ 
+ 		start &= PAGE_MASK;
+ 		end += (PAGE_SIZE - 1);
+ 		end &= PAGE_MASK;
+-		set_asid(asid);
++
+ 		while (start < end) {
+ 			__flush_tlb_page(asid, start);
+ 			start += PAGE_SIZE;
+ 		}
+-		set_asid(saved_asid);
++		local_irq_restore(flags);
+ 	}
+-	local_irq_restore(flags);
+ }
+ 
+ void flush_tlb_mm(struct mm_struct *mm)
+@@ -280,7 +277,7 @@
+ {
+ 	static unsigned long tlb_index;
+ 
+-	if (*pos >= 32)
++	if (*pos >= NR_TLB_ENTRIES)
+ 		return NULL;
+ 
+ 	tlb_index = 0;
+@@ -291,7 +288,7 @@
+ {
+ 	unsigned long *index = v;
+ 
+-	if (*index >= 31)
++	if (*index >= NR_TLB_ENTRIES - 1)
+ 		return NULL;
+ 
+ 	++*pos;
+@@ -313,16 +310,16 @@
+ 	if (*index == 0)
+ 		seq_puts(tlb, "ID  V G ASID VPN   PFN   AP SZ C B W D\n");
+ 
+-	BUG_ON(*index >= 32);
++	BUG_ON(*index >= NR_TLB_ENTRIES);
+ 
+ 	local_irq_save(flags);
+ 	mmucr_save = sysreg_read(MMUCR);
+ 	tlbehi_save = sysreg_read(TLBEHI);
+-	mmucr = mmucr_save & 0x13;
+-	mmucr |= *index << 14;
++	mmucr = SYSREG_BFINS(DRP, *index, mmucr_save);
+ 	sysreg_write(MMUCR, mmucr);
+ 
+-	asm volatile("tlbr" : : : "memory");
++	/* TLBR might change the ASID */
++	__builtin_tlbr();
+ 	cpu_sync_pipeline();
+ 
+ 	tlbehi = sysreg_read(TLBEHI);
+@@ -334,16 +331,18 @@
+ 	local_irq_restore(flags);
+ 
+ 	seq_printf(tlb, "%2lu: %c %c %02x   %05x %05x %o  %o  %c %c %c %c\n",
+-	       *index,
+-	       (tlbehi & 0x200)?'1':'0',
+-	       (tlbelo & 0x100)?'1':'0',
+-	       (tlbehi & 0xff),
+-	       (tlbehi >> 12), (tlbelo >> 12),
+-	       (tlbelo >> 4) & 7, (tlbelo >> 2) & 3,
+-	       (tlbelo & 0x200)?'1':'0',
+-	       (tlbelo & 0x080)?'1':'0',
+-	       (tlbelo & 0x001)?'1':'0',
+-	       (tlbelo & 0x002)?'1':'0');
++		   *index,
++		   SYSREG_BFEXT(TLBEHI_V, tlbehi) ? '1' : '0',
++		   SYSREG_BFEXT(G, tlbelo) ? '1' : '0',
++		   SYSREG_BFEXT(ASID, tlbehi),
++		   SYSREG_BFEXT(VPN, tlbehi) >> 2,
++		   SYSREG_BFEXT(PFN, tlbelo) >> 2,
++		   SYSREG_BFEXT(AP, tlbelo),
++		   SYSREG_BFEXT(SZ, tlbelo),
++		   SYSREG_BFEXT(TLBELO_C, tlbelo) ? '1' : '0',
++		   SYSREG_BFEXT(B, tlbelo) ? '1' : '0',
++		   SYSREG_BFEXT(W, tlbelo) ? '1' : '0',
++		   SYSREG_BFEXT(TLBELO_D, tlbelo) ? '1' : '0');
+ 
+ 	return 0;
+ }
 --- a/arch/avr32/oprofile/op_model_avr32.c
 +++ b/arch/avr32/oprofile/op_model_avr32.c
 @@ -16,7 +16,6 @@
@@ -7701,6 +8360,33 @@
 +	return 0;
 +}
 +arch_initcall(tcb_clksrc_init);
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -88,6 +88,14 @@
+ 	  to support combined I2C messages.  Use the i2c-gpio driver
+ 	  unless your system can cope with those limitations.
+ 
++config I2C_ATMELTWI
++	tristate "Atmel Two-Wire Interface (TWI)"
++	depends on I2C && (ARCH_AT91 || PLATFORM_AT32AP)
++	help
++	  Atmel on-chip TWI controller. Say Y if you have an AT32 or
++	  AT91-based device and want to use its built-in TWI
++	  functionality.
++
+ config I2C_AU1550
+ 	tristate "Au1550/Au1200 SMBus interface"
+ 	depends on SOC_AU1550 || SOC_AU1200
+--- a/drivers/i2c/busses/Makefile
++++ b/drivers/i2c/busses/Makefile
+@@ -52,6 +52,7 @@
+ obj-$(CONFIG_I2C_VOODOO3)	+= i2c-voodoo3.o
+ obj-$(CONFIG_SCx200_ACB)	+= scx200_acb.o
+ obj-$(CONFIG_SCx200_I2C)	+= scx200_i2c.o
++obj-$(CONFIG_I2C_ATMELTWI)	+= i2c-atmeltwi.o
+ 
+ ifeq ($(CONFIG_I2C_DEBUG_BUS),y)
+ EXTRA_CFLAGS += -DDEBUG
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-atmeltwi.c
 @@ -0,0 +1,436 @@
@@ -8260,33 +8946,36 @@
 +	__raw_writel((value), (port)->regs + TWI_##reg)
 +
 +#endif /* __ATMELTWI_H__ */
---- a/drivers/i2c/busses/Kconfig
-+++ b/drivers/i2c/busses/Kconfig
-@@ -88,6 +88,14 @@
- 	  to support combined I2C messages.  Use the i2c-gpio driver
- 	  unless your system can cope with those limitations.
+--- a/drivers/input/serio/Kconfig
++++ b/drivers/input/serio/Kconfig
+@@ -88,6 +88,17 @@
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called rpckbd.
  
-+config I2C_ATMELTWI
-+	tristate "Atmel Two-Wire Interface (TWI)"
-+	depends on I2C && (ARCH_AT91 || PLATFORM_AT32AP)
++config SERIO_AT32PSIF
++	tristate "AVR32 PSIF PS/2 keyboard and mouse controller"
++	depends on AVR32
++	default n
 +	help
-+	  Atmel on-chip TWI controller. Say Y if you have an AT32 or
-+	  AT91-based device and want to use its built-in TWI
-+	  functionality.
++	  Say Y here if you want to use the PSIF peripheral on AVR32 devices
++	  and connect a PS/2 keyboard and/or mouse to it.
 +
- config I2C_AU1550
- 	tristate "Au1550/Au1200 SMBus interface"
- 	depends on SOC_AU1550 || SOC_AU1200
---- a/drivers/i2c/busses/Makefile
-+++ b/drivers/i2c/busses/Makefile
-@@ -52,6 +52,7 @@
- obj-$(CONFIG_I2C_VOODOO3)	+= i2c-voodoo3.o
- obj-$(CONFIG_SCx200_ACB)	+= scx200_acb.o
- obj-$(CONFIG_SCx200_I2C)	+= scx200_i2c.o
-+obj-$(CONFIG_I2C_ATMELTWI)	+= i2c-atmeltwi.o
- 
- ifeq ($(CONFIG_I2C_DEBUG_BUS),y)
- EXTRA_CFLAGS += -DDEBUG
++	  To compile this driver as a module, choose M here: the module will
++	  be called at32psif.
++
+ config SERIO_AMBAKMI
+ 	tristate "AMBA KMI keyboard controller"
+ 	depends on ARM_AMBA
+--- a/drivers/input/serio/Makefile
++++ b/drivers/input/serio/Makefile
+@@ -12,6 +12,7 @@
+ obj-$(CONFIG_SERIO_RPCKBD)	+= rpckbd.o
+ obj-$(CONFIG_SERIO_SA1111)	+= sa1111ps2.o
+ obj-$(CONFIG_SERIO_AMBAKMI)	+= ambakmi.o
++obj-$(CONFIG_SERIO_AT32PSIF)	+= at32psif.o
+ obj-$(CONFIG_SERIO_Q40KBD)	+= q40kbd.o
+ obj-$(CONFIG_SERIO_GSCPS2)	+= gscps2.o
+ obj-$(CONFIG_HP_SDC)		+= hp_sdc.o
 --- /dev/null
 +++ b/drivers/input/serio/at32psif.c
 @@ -0,0 +1,351 @@
@@ -8726,36 +9415,58 @@
 +	__raw_writel((value), (port)->regs + PSIF_##reg)
 +
 +#endif /* _AT32PSIF_H */
---- a/drivers/input/serio/Kconfig
-+++ b/drivers/input/serio/Kconfig
-@@ -88,6 +88,17 @@
- 	  To compile this driver as a module, choose M here: the
- 	  module will be called rpckbd.
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -22,6 +22,39 @@
+ 	  purposes including software controlled power-efficent backlights
+ 	  on LCD displays, motor control, and waveform generation.
  
-+config SERIO_AT32PSIF
-+	tristate "AVR32 PSIF PS/2 keyboard and mouse controller"
-+	depends on AVR32
-+	default n
++config ATMEL_TCLIB
++	bool "Atmel AT32/AT91 Timer/Counter Library"
++	depends on (AVR32 || ARCH_AT91)
 +	help
-+	  Say Y here if you want to use the PSIF peripheral on AVR32 devices
-+	  and connect a PS/2 keyboard and/or mouse to it.
++	  Select this if you want a library to allocate the Timer/Counter
++	  blocks found on many Atmel processors.  This facilitates using
++	  these blocks by different drivers despite processor differences.
 +
-+	  To compile this driver as a module, choose M here: the module will
-+	  be called at32psif.
++config ATMEL_TCB_CLKSRC
++	bool "TC Block Clocksource"
++	depends on ATMEL_TCLIB && GENERIC_TIME
++	default y
++	help
++	  Select this to get a high precision clocksource based on a
++	  TC block with a 5+ MHz base clock rate.  Two timer channels
++	  are combined to make a single 32-bit timer.
 +
- config SERIO_AMBAKMI
- 	tristate "AMBA KMI keyboard controller"
- 	depends on ARM_AMBA
---- a/drivers/input/serio/Makefile
-+++ b/drivers/input/serio/Makefile
-@@ -12,6 +12,7 @@
- obj-$(CONFIG_SERIO_RPCKBD)	+= rpckbd.o
- obj-$(CONFIG_SERIO_SA1111)	+= sa1111ps2.o
- obj-$(CONFIG_SERIO_AMBAKMI)	+= ambakmi.o
-+obj-$(CONFIG_SERIO_AT32PSIF)	+= at32psif.o
- obj-$(CONFIG_SERIO_Q40KBD)	+= q40kbd.o
- obj-$(CONFIG_SERIO_GSCPS2)	+= gscps2.o
- obj-$(CONFIG_HP_SDC)		+= hp_sdc.o
++	  When GENERIC_CLOCKEVENTS is defined, the third timer channel
++	  may be used as a clock event device supporting oneshot mode
++	  (delays of up to two seconds) based on the 32 KiHz clock.
++
++config ATMEL_TCB_CLKSRC_BLOCK
++	int
++	depends on ATMEL_TCB_CLKSRC
++	prompt "TC Block" if ARCH_AT91RM9200 || ARCH_AT91SAM9260 || CPU_AT32AP700X
++	default 0
++	range 0 1
++	help
++	  Some chips provide more than one TC block, so you have the
++	  choice of which one to use for the clock framework.  The other
++	  TC can be used for other purposes, such as PWM generation and
++	  interval timing.
++
+ config IBM_ASM
+ 	tristate "Device driver for IBM RSA service processor"
+ 	depends on X86 && PCI && INPUT && EXPERIMENTAL
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
+@@ -10,6 +10,7 @@
+ obj-$(CONFIG_ASUS_LAPTOP)     += asus-laptop.o
+ obj-$(CONFIG_ATMEL_PWM)		+= atmel_pwm.o
+ obj-$(CONFIG_ATMEL_SSC)		+= atmel-ssc.o
++obj-$(CONFIG_ATMEL_TCLIB)	+= atmel_tclib.o
+ obj-$(CONFIG_TC1100_WMI)	+= tc1100-wmi.o
+ obj-$(CONFIG_LKDTM)		+= lkdtm.o
+ obj-$(CONFIG_TIFM_CORE)       	+= tifm_core.o
 --- /dev/null
 +++ b/drivers/misc/atmel_tclib.c
 @@ -0,0 +1,161 @@
@@ -8920,61 +9631,38 @@
 +	return platform_driver_probe(&tc_driver, tc_probe);
 +}
 +arch_initcall(tc_init);
---- a/drivers/misc/Kconfig
-+++ b/drivers/misc/Kconfig
-@@ -22,6 +22,39 @@
- 	  purposes including software controlled power-efficent backlights
- 	  on LCD displays, motor control, and waveform generation.
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -91,6 +91,16 @@
  
-+config ATMEL_TCLIB
-+	bool "Atmel AT32/AT91 Timer/Counter Library"
-+	depends on (AVR32 || ARCH_AT91)
+ 	  If unsure, say N.
+ 
++config MMC_ATMELMCI
++	tristate "Atmel Multimedia Card Interface support"
++	depends on AVR32 && MMC
 +	help
-+	  Select this if you want a library to allocate the Timer/Counter
-+	  blocks found on many Atmel processors.  This facilitates using
-+	  these blocks by different drivers despite processor differences.
++	  This selects the Atmel Multimedia Card Interface. If you have
++	  a AT91 (ARM) or AT32 (AVR32) platform with a Multimedia Card
++	  slot, say Y or M here.
 +
-+config ATMEL_TCB_CLKSRC
-+	bool "TC Block Clocksource"
-+	depends on ATMEL_TCLIB && GENERIC_TIME
-+	default y
-+	help
-+	  Select this to get a high precision clocksource based on a
-+	  TC block with a 5+ MHz base clock rate.  Two timer channels
-+	  are combined to make a single 32-bit timer.
++	  If unsure, say N.
 +
-+	  When GENERIC_CLOCKEVENTS is defined, the third timer channel
-+	  may be used as a clock event device supporting oneshot mode
-+	  (delays of up to two seconds) based on the 32 KiHz clock.
-+
-+config ATMEL_TCB_CLKSRC_BLOCK
-+	int
-+	depends on ATMEL_TCB_CLKSRC
-+	prompt "TC Block" if ARCH_AT91RM9200 || ARCH_AT91SAM9260 || CPU_AT32AP700X
-+	default 0
-+	range 0 1
-+	help
-+	  Some chips provide more than one TC block, so you have the
-+	  choice of which one to use for the clock framework.  The other
-+	  TC can be used for other purposes, such as PWM generation and
-+	  interval timing.
-+
- config IBM_ASM
- 	tristate "Device driver for IBM RSA service processor"
- 	depends on X86 && PCI && INPUT && EXPERIMENTAL
---- a/drivers/misc/Makefile
-+++ b/drivers/misc/Makefile
-@@ -10,6 +10,7 @@
- obj-$(CONFIG_ASUS_LAPTOP)     += asus-laptop.o
- obj-$(CONFIG_ATMEL_PWM)		+= atmel_pwm.o
- obj-$(CONFIG_ATMEL_SSC)		+= atmel-ssc.o
-+obj-$(CONFIG_ATMEL_TCLIB)	+= atmel_tclib.o
- obj-$(CONFIG_TC1100_WMI)	+= tc1100-wmi.o
- obj-$(CONFIG_LKDTM)		+= lkdtm.o
- obj-$(CONFIG_TIFM_CORE)       	+= tifm_core.o
+ config MMC_IMX
+ 	tristate "Motorola i.MX Multimedia Card Interface support"
+ 	depends on ARCH_IMX
+--- a/drivers/mmc/host/Makefile
++++ b/drivers/mmc/host/Makefile
+@@ -15,6 +15,7 @@
+ obj-$(CONFIG_MMC_AU1X)		+= au1xmmc.o
+ obj-$(CONFIG_MMC_OMAP)		+= omap.o
+ obj-$(CONFIG_MMC_AT91)		+= at91_mci.o
++obj-$(CONFIG_MMC_ATMELMCI)	+= atmel-mci.o
+ obj-$(CONFIG_MMC_TIFM_SD)	+= tifm_sd.o
+ obj-$(CONFIG_MMC_SPI)		+= mmc_spi.o
+ 
 --- /dev/null
 +++ b/drivers/mmc/host/atmel-mci.c
-@@ -0,0 +1,1220 @@
+@@ -0,0 +1,1234 @@
 +/*
 + * Atmel MultiMedia Card Interface driver
 + *
@@ -9054,6 +9742,7 @@
 +	struct clk		*mck;
 +	struct platform_device	*pdev;
 +
++	int pending_stop;
 +#ifdef CONFIG_DEBUG_FS
 +	struct dentry		*debugfs_root;
 +	struct dentry		*debugfs_regs;
@@ -9843,6 +10532,12 @@
 +		data->bytes_xfered = data->blocks * data->blksz;
 +		atmci_data_complete(host, data);
 +	}
++	/* See if there is a pending STOP which can be sent */
++	if (host->pending_stop && mci_cmd_is_complete(host)) {
++		host->pending_stop = 0;
++		if (mrq->stop && !mci_set_stop_sent_is_completed(host))
++			send_stop_cmd(host->mmc, mrq->data, 0);
++	}
 +}
 +
 +static void atmci_cmd_interrupt(struct mmc_host *mmc, u32 status)
@@ -9895,9 +10590,16 @@
 +	 * drivers) or when interrupts are disabled for a long time.
 +	 */
 +	mci_set_dma_complete(host);
-+	if (data->stop && mci_cmd_is_complete(host)
-+			&& !mci_set_stop_sent_is_completed(host))
-+		send_stop_cmd(host->mmc, data, 0);
++
++	if (data->stop) {
++		if (!mci_cmd_is_complete(host)) {
++			/* Just remember a STOP must be sent */
++			host->pending_stop = 1;
++		} else if (!mci_set_stop_sent_is_completed(host)) {
++			send_stop_cmd(host->mmc, data, 0);
++			host->pending_stop = 0;
++		}
++	}
 +
 +	/*
 +	 * Regardless of what the documentation says, we have to wait
@@ -10390,35 +11092,78 @@
 +	__raw_writel((value), (port)->regs + MCI_##reg)
 +
 +#endif /* __DRIVERS_MMC_ATMEL_MCI_H__ */
---- a/drivers/mmc/host/Kconfig
-+++ b/drivers/mmc/host/Kconfig
-@@ -91,6 +91,16 @@
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -272,12 +272,54 @@
  
- 	  If unsure, say N.
+ 	  If you say "m", the module will be called "cs553x_nand.ko".
  
-+config MMC_ATMELMCI
-+	tristate "Atmel Multimedia Card Interface support"
-+	depends on AVR32 && MMC
+-config MTD_NAND_AT91
+-	bool "Support for NAND Flash / SmartMedia on AT91"
+-	depends on ARCH_AT91
++config MTD_NAND_ATMEL
++	bool "Support for NAND Flash / SmartMedia on AT91 and AVR32"
++	depends on ARCH_AT91 || AVR32
+ 	help
+ 	  Enables support for NAND Flash / Smart Media Card interface
+-	  on Atmel AT91 processors.
++	  on Atmel AT91 and AVR32 processors.
++choice
++	prompt "ECC management for NAND Flash / SmartMedia on AT91 / AVR32"
++	depends on MTD_NAND_ATMEL
++
++config MTD_NAND_ATMEL_ECC_HW
++	bool "Hardware ECC"
++	depends on ARCH_AT91SAM9263 || ARCH_AT91SAM9260 || AVR32
 +	help
-+	  This selects the Atmel Multimedia Card Interface. If you have
-+	  a AT91 (ARM) or AT32 (AVR32) platform with a Multimedia Card
-+	  slot, say Y or M here.
++	  Use hardware ECC instead of software ECC when the chip
++	  supports it.
 +
-+	  If unsure, say N.
++	  The hardware ECC controller is capable of single bit error
++	  correction and 2-bit random detection per page.
 +
- config MMC_IMX
- 	tristate "Motorola i.MX Multimedia Card Interface support"
- 	depends on ARCH_IMX
---- a/drivers/mmc/host/Makefile
-+++ b/drivers/mmc/host/Makefile
-@@ -15,6 +15,7 @@
- obj-$(CONFIG_MMC_AU1X)		+= au1xmmc.o
- obj-$(CONFIG_MMC_OMAP)		+= omap.o
- obj-$(CONFIG_MMC_AT91)		+= at91_mci.o
-+obj-$(CONFIG_MMC_ATMELMCI)	+= atmel-mci.o
- obj-$(CONFIG_MMC_TIFM_SD)	+= tifm_sd.o
- obj-$(CONFIG_MMC_SPI)		+= mmc_spi.o
++	  NB : hardware and software ECC schemes are incompatible.
++	  If you switch from one to another, you'll have to erase your
++	  mtd partition.
++
++	  If unsure, say Y
++
++config MTD_NAND_ATMEL_ECC_SOFT
++	bool "Software ECC"
++	help
++	  Use software ECC.
++
++	  NB : hardware and software ECC schemes are incompatible.
++	  If you switch from one to another, you'll have to erase your
++	  mtd partition.
++
++config MTD_NAND_ATMEL_ECC_NONE
++	bool "No ECC (testing only, DANGEROUS)"
++	depends on DEBUG_KERNEL
++	help
++	  No ECC will be used.
++	  It's not a good idea and it should be reserved for testing
++	  purpose only.
++
++	  If unsure, say N
++
++	  endchoice
++
++endchoice
  
+ config MTD_NAND_CM_X270
+ 	tristate "Support for NAND Flash on CM-X270 modules"
+--- a/drivers/mtd/nand/Makefile
++++ b/drivers/mtd/nand/Makefile
+@@ -24,7 +24,7 @@
+ obj-$(CONFIG_MTD_NAND_NANDSIM)		+= nandsim.o
+ obj-$(CONFIG_MTD_NAND_CS553X)		+= cs553x_nand.o
+ obj-$(CONFIG_MTD_NAND_NDFC)		+= ndfc.o
+-obj-$(CONFIG_MTD_NAND_AT91)		+= at91_nand.o
++obj-$(CONFIG_MTD_NAND_ATMEL)		+= atmel_nand.o
+ obj-$(CONFIG_MTD_NAND_CM_X270)		+= cmx270_nand.o
+ obj-$(CONFIG_MTD_NAND_BASLER_EXCITE)	+= excite_nandflash.o
+ obj-$(CONFIG_MTD_NAND_PLATFORM)		+= plat_nand.o
 --- a/drivers/mtd/nand/at91_nand.c
 +++ /dev/null
 @@ -1,236 +0,0 @@
@@ -11357,78 +12102,6 @@
  MODULE_AUTHOR(DRV_AUTHOR);
  MODULE_DESCRIPTION(DRV_DESC);
 +MODULE_ALIAS("platform:" DRV_NAME);
---- a/drivers/mtd/nand/Kconfig
-+++ b/drivers/mtd/nand/Kconfig
-@@ -272,12 +272,54 @@
- 
- 	  If you say "m", the module will be called "cs553x_nand.ko".
- 
--config MTD_NAND_AT91
--	bool "Support for NAND Flash / SmartMedia on AT91"
--	depends on ARCH_AT91
-+config MTD_NAND_ATMEL
-+	bool "Support for NAND Flash / SmartMedia on AT91 and AVR32"
-+	depends on ARCH_AT91 || AVR32
- 	help
- 	  Enables support for NAND Flash / Smart Media Card interface
--	  on Atmel AT91 processors.
-+	  on Atmel AT91 and AVR32 processors.
-+choice
-+	prompt "ECC management for NAND Flash / SmartMedia on AT91 / AVR32"
-+	depends on MTD_NAND_ATMEL
-+
-+config MTD_NAND_ATMEL_ECC_HW
-+	bool "Hardware ECC"
-+	depends on ARCH_AT91SAM9263 || ARCH_AT91SAM9260 || AVR32
-+	help
-+	  Use hardware ECC instead of software ECC when the chip
-+	  supports it.
-+
-+	  The hardware ECC controller is capable of single bit error
-+	  correction and 2-bit random detection per page.
-+
-+	  NB : hardware and software ECC schemes are incompatible.
-+	  If you switch from one to another, you'll have to erase your
-+	  mtd partition.
-+
-+	  If unsure, say Y
-+
-+config MTD_NAND_ATMEL_ECC_SOFT
-+	bool "Software ECC"
-+	help
-+	  Use software ECC.
-+
-+	  NB : hardware and software ECC schemes are incompatible.
-+	  If you switch from one to another, you'll have to erase your
-+	  mtd partition.
-+
-+config MTD_NAND_ATMEL_ECC_NONE
-+	bool "No ECC (testing only, DANGEROUS)"
-+	depends on DEBUG_KERNEL
-+	help
-+	  No ECC will be used.
-+	  It's not a good idea and it should be reserved for testing
-+	  purpose only.
-+
-+	  If unsure, say N
-+
-+	  endchoice
-+
-+endchoice
- 
- config MTD_NAND_CM_X270
- 	tristate "Support for NAND Flash on CM-X270 modules"
---- a/drivers/mtd/nand/Makefile
-+++ b/drivers/mtd/nand/Makefile
-@@ -24,7 +24,7 @@
- obj-$(CONFIG_MTD_NAND_NANDSIM)		+= nandsim.o
- obj-$(CONFIG_MTD_NAND_CS553X)		+= cs553x_nand.o
- obj-$(CONFIG_MTD_NAND_NDFC)		+= ndfc.o
--obj-$(CONFIG_MTD_NAND_AT91)		+= at91_nand.o
-+obj-$(CONFIG_MTD_NAND_ATMEL)		+= atmel_nand.o
- obj-$(CONFIG_MTD_NAND_CM_X270)		+= cmx270_nand.o
- obj-$(CONFIG_MTD_NAND_BASLER_EXCITE)	+= excite_nandflash.o
- obj-$(CONFIG_MTD_NAND_PLATFORM)		+= plat_nand.o
 --- a/drivers/mtd/nand/ndfc.c
 +++ b/drivers/mtd/nand/ndfc.c
 @@ -317,3 +317,5 @@
@@ -11519,6 +12192,32 @@
  	---help---
  	  You should say Y here if you have a PC-style parallel port. All
  	  IBM PC compatible computers and some Alphas have PC-style
+--- a/drivers/pcmcia/Kconfig
++++ b/drivers/pcmcia/Kconfig
+@@ -277,6 +277,13 @@
+ 	  Say Y here to support the CompactFlash controller on the
+ 	  PA Semi Electra eval board.
+ 
++config AT32_CF
++	tristate "AT32AP CompactFlash Controller"
++	depends on PCMCIA && AVR32 && PLATFORM_AT32AP
++	help
++	  Say Y here to support the CompactFlash controller on AT32 chips.
++	  Or choose M to compile the driver as a module named "at32_cf".
++
+ config PCCARD_NONSTATIC
+ 	tristate
+ 
+--- a/drivers/pcmcia/Makefile
++++ b/drivers/pcmcia/Makefile
+@@ -38,6 +38,7 @@
+ obj-$(CONFIG_OMAP_CF)				+= omap_cf.o
+ obj-$(CONFIG_AT91_CF)				+= at91_cf.o
+ obj-$(CONFIG_ELECTRA_CF)			+= electra_cf.o
++obj-$(CONFIG_AT32_CF)				+= at32_cf.o
+ 
+ sa11xx_core-y					+= soc_common.o sa11xx_base.o
+ pxa2xx_core-y					+= soc_common.o pxa2xx_base.o
 --- /dev/null
 +++ b/drivers/pcmcia/at32_cf.c
 @@ -0,0 +1,533 @@
@@ -12055,35 +12754,57 @@
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("Driver for SMC PCMCIA interface");
 +MODULE_AUTHOR("Hans-Christian Egtvedt <hcegtvedt@atmel.com>");
---- a/drivers/pcmcia/Kconfig
-+++ b/drivers/pcmcia/Kconfig
-@@ -277,6 +277,13 @@
- 	  Say Y here to support the CompactFlash controller on the
- 	  PA Semi Electra eval board.
+--- a/drivers/rtc/rtc-at32ap700x.c
++++ b/drivers/rtc/rtc-at32ap700x.c
+@@ -262,6 +262,7 @@
+ 	}
  
-+config AT32_CF
-+	tristate "AT32AP CompactFlash Controller"
-+	depends on PCMCIA && AVR32 && PLATFORM_AT32AP
-+	help
-+	  Say Y here to support the CompactFlash controller on AT32 chips.
-+	  Or choose M to compile the driver as a module named "at32_cf".
+ 	platform_set_drvdata(pdev, rtc);
++	device_init_wakeup(&pdev->dev, 1);
+ 
+ 	dev_info(&pdev->dev, "Atmel RTC for AT32AP700x at %08lx irq %ld\n",
+ 			(unsigned long)rtc->regs, rtc->irq);
+@@ -281,6 +282,8 @@
+ {
+ 	struct rtc_at32ap700x *rtc = platform_get_drvdata(pdev);
+ 
++	device_init_wakeup(&pdev->dev, 0);
 +
- config PCCARD_NONSTATIC
- 	tristate
- 
---- a/drivers/pcmcia/Makefile
-+++ b/drivers/pcmcia/Makefile
-@@ -38,6 +38,7 @@
- obj-$(CONFIG_OMAP_CF)				+= omap_cf.o
- obj-$(CONFIG_AT91_CF)				+= at91_cf.o
- obj-$(CONFIG_ELECTRA_CF)			+= electra_cf.o
-+obj-$(CONFIG_AT32_CF)				+= at32_cf.o
- 
- sa11xx_core-y					+= soc_common.o sa11xx_base.o
- pxa2xx_core-y					+= soc_common.o pxa2xx_base.o
+ 	free_irq(rtc->irq, rtc);
+ 	iounmap(rtc->regs);
+ 	rtc_device_unregister(rtc->rtc);
 --- a/drivers/serial/atmel_serial.c
 +++ b/drivers/serial/atmel_serial.c
-@@ -1440,6 +1440,15 @@
+@@ -957,6 +957,20 @@
+ }
+ 
+ /*
++ * Flush any TX data submitted for DMA. Called when the TX circular
++ * buffer is reset.
++ */
++static void atmel_flush_buffer(struct uart_port *port)
++{
++	struct atmel_uart_port *atmel_port = to_atmel_uart_port(port);
++
++	if (atmel_use_dma_tx(port)) {
++		UART_PUT_TCR(port, 0);
++		atmel_port->pdc_tx.ofs = 0;
++	}
++}
++
++/*
+  * Power / Clock management.
+  */
+ static void atmel_serial_pm(struct uart_port *port, unsigned int state,
+@@ -1190,6 +1204,7 @@
+ 	.break_ctl	= atmel_break_ctl,
+ 	.startup	= atmel_startup,
+ 	.shutdown	= atmel_shutdown,
++	.flush_buffer	= atmel_flush_buffer,
+ 	.set_termios	= atmel_set_termios,
+ 	.type		= atmel_type,
+ 	.release_port	= atmel_release_port,
+@@ -1440,6 +1455,15 @@
  };
  
  #ifdef CONFIG_PM
@@ -12099,7 +12820,7 @@
  static int atmel_serial_suspend(struct platform_device *pdev,
  				pm_message_t state)
  {
-@@ -1447,7 +1456,7 @@
+@@ -1447,7 +1471,7 @@
  	struct atmel_uart_port *atmel_port = to_atmel_uart_port(port);
  
  	if (device_may_wakeup(&pdev->dev)
@@ -12108,6 +12829,17 @@
  		enable_irq_wake(port->irq);
  	else {
  		uart_suspend_port(&atmel_uart, port);
+--- a/drivers/serial/serial_core.c
++++ b/drivers/serial/serial_core.c
+@@ -552,6 +552,8 @@
+ 
+ 	spin_lock_irqsave(&port->lock, flags);
+ 	uart_circ_clear(&state->info->xmit);
++	if (port->ops->flush_buffer)
++		port->ops->flush_buffer(port);
+ 	spin_unlock_irqrestore(&port->lock, flags);
+ 	tty_wakeup(tty);
+ }
 --- a/drivers/spi/atmel_spi.c
 +++ b/drivers/spi/atmel_spi.c
 @@ -51,9 +51,7 @@
@@ -12332,6 +13064,21 @@
  				/* report completed message */
  				atmel_spi_msg_done(master, as, msg, 0,
  						xfer->cs_change);
+--- a/drivers/usb/gadget/Kconfig
++++ b/drivers/usb/gadget/Kconfig
+@@ -118,10 +118,10 @@
+ config USB_GADGET_ATMEL_USBA
+ 	boolean "Atmel USBA"
+ 	select USB_GADGET_DUALSPEED
+-	depends on AVR32
++	depends on AVR32 || ARCH_AT91CAP9
+ 	help
+ 	  USBA is the integrated high-speed USB Device controller on
+-	  the AT32AP700x processors from Atmel.
++	  the AT32AP700x and AT91CAP9 processors from Atmel.
+ 
+ config USB_ATMEL_USBA
+ 	tristate
 --- a/drivers/usb/gadget/atmel_usba_udc.c
 +++ b/drivers/usb/gadget/atmel_usba_udc.c
 @@ -18,6 +18,7 @@
@@ -12684,21 +13431,6 @@
  
  /* Bitfields in FNUM */
  #define USBA_MICRO_FRAME_NUM_OFFSET		0
---- a/drivers/usb/gadget/Kconfig
-+++ b/drivers/usb/gadget/Kconfig
-@@ -118,10 +118,10 @@
- config USB_GADGET_ATMEL_USBA
- 	boolean "Atmel USBA"
- 	select USB_GADGET_DUALSPEED
--	depends on AVR32
-+	depends on AVR32 || ARCH_AT91CAP9
- 	help
- 	  USBA is the integrated high-speed USB Device controller on
--	  the AT32AP700x processors from Atmel.
-+	  the AT32AP700x and AT91CAP9 processors from Atmel.
- 
- config USB_ATMEL_USBA
- 	tristate
 --- a/drivers/video/atmel_lcdfb.c
 +++ b/drivers/video/atmel_lcdfb.c
 @@ -38,7 +38,9 @@
@@ -12846,12 +13578,13 @@
  struct platform_device *
  at32_add_device_usba(unsigned int id, struct usba_platform_data *data);
  
-@@ -68,8 +73,17 @@
+@@ -68,9 +73,27 @@
  struct platform_device *
  at32_add_device_ssc(unsigned int id, unsigned int flags);
  
 -struct platform_device *at32_add_device_twi(unsigned int id);
 -struct platform_device *at32_add_device_mci(unsigned int id);
+-struct platform_device *at32_add_device_ac97c(unsigned int id);
 +struct i2c_board_info;
 +struct platform_device *at32_add_device_twi(unsigned int id,
 +					    struct i2c_board_info *b,
@@ -12863,10 +13596,20 @@
 +};
 +struct platform_device *
 +at32_add_device_mci(unsigned int id, struct mci_platform_data *data);
- struct platform_device *at32_add_device_ac97c(unsigned int id);
++
++struct ac97c_platform_data {
++	unsigned short dma_rx_periph_id;
++	unsigned short dma_tx_periph_id;
++	unsigned short dma_controller_id;
++	int reset_pin;
++};
++struct platform_device *
++at32_add_device_ac97c(unsigned int id, struct ac97c_platform_data *data);
++
  struct platform_device *at32_add_device_abdac(unsigned int id);
  
-@@ -84,4 +98,20 @@
+ struct cf_platform_data {
+@@ -84,4 +107,20 @@
  at32_add_device_cf(unsigned int id, unsigned int extint,
  		struct cf_platform_data *data);
  
@@ -13452,6 +14195,16 @@
  #endif
  
  #endif /* __ASM_AVR32_IOCTLS_H */
+--- a/include/asm-avr32/mmu_context.h
++++ b/include/asm-avr32/mmu_context.h
+@@ -13,7 +13,6 @@
+ #define __ASM_AVR32_MMU_CONTEXT_H
+ 
+ #include <asm/tlbflush.h>
+-#include <asm/pgalloc.h>
+ #include <asm/sysreg.h>
+ #include <asm-generic/mm_hooks.h>
+ 
 --- a/include/asm-avr32/page.h
 +++ b/include/asm-avr32/page.h
 @@ -8,13 +8,11 @@
@@ -13480,6 +14233,185 @@
 +#include <asm-generic/pci-dma-compat.h>
 +
  #endif /* __ASM_AVR32_PCI_H__ */
+--- a/include/asm-avr32/pgalloc.h
++++ b/include/asm-avr32/pgalloc.h
+@@ -8,65 +8,79 @@
+ #ifndef __ASM_AVR32_PGALLOC_H
+ #define __ASM_AVR32_PGALLOC_H
+ 
+-#include <asm/processor.h>
+-#include <linux/threads.h>
+-#include <linux/slab.h>
+-#include <linux/mm.h>
++#include <linux/quicklist.h>
++#include <asm/page.h>
++#include <asm/pgtable.h>
+ 
+-#define pmd_populate_kernel(mm, pmd, pte) \
+-	set_pmd(pmd, __pmd(_PAGE_TABLE + __pa(pte)))
++#define QUICK_PGD	0	/* Preserve kernel mappings over free */
++#define QUICK_PT	1	/* Zero on free */
+ 
+-static __inline__ void pmd_populate(struct mm_struct *mm, pmd_t *pmd,
++static inline void pmd_populate_kernel(struct mm_struct *mm,
++				       pmd_t *pmd, pte_t *pte)
++{
++	set_pmd(pmd, __pmd((unsigned long)pte));
++}
++
++static inline void pmd_populate(struct mm_struct *mm, pmd_t *pmd,
+ 				    pgtable_t pte)
+ {
+-	set_pmd(pmd, __pmd(_PAGE_TABLE + page_to_phys(pte)));
++	set_pmd(pmd, __pmd((unsigned long)page_address(pte)));
+ }
+ #define pmd_pgtable(pmd) pmd_page(pmd)
+ 
++static inline void pgd_ctor(void *x)
++{
++	pgd_t *pgd = x;
++
++	memcpy(pgd + USER_PTRS_PER_PGD,
++		swapper_pg_dir + USER_PTRS_PER_PGD,
++		(PTRS_PER_PGD - USER_PTRS_PER_PGD) * sizeof(pgd_t));
++}
++
+ /*
+  * Allocate and free page tables
+  */
+-static __inline__ pgd_t *pgd_alloc(struct mm_struct *mm)
++static inline pgd_t *pgd_alloc(struct mm_struct *mm)
+ {
+-	return kcalloc(USER_PTRS_PER_PGD, sizeof(pgd_t), GFP_KERNEL);
++	return quicklist_alloc(QUICK_PGD, GFP_KERNEL | __GFP_REPEAT, pgd_ctor);
+ }
+ 
+ static inline void pgd_free(struct mm_struct *mm, pgd_t *pgd)
+ {
+-	kfree(pgd);
++	quicklist_free(QUICK_PGD, NULL, pgd);
+ }
+ 
+ static inline pte_t *pte_alloc_one_kernel(struct mm_struct *mm,
+ 					  unsigned long address)
+ {
+-	pte_t *pte;
+-
+-	pte = (pte_t *)get_zeroed_page(GFP_KERNEL | __GFP_REPEAT);
+-
+-	return pte;
++	return quicklist_alloc(QUICK_PT, GFP_KERNEL | __GFP_REPEAT, NULL);
+ }
+ 
+-static inline struct page *pte_alloc_one(struct mm_struct *mm,
++static inline pgtable_t pte_alloc_one(struct mm_struct *mm,
+ 					 unsigned long address)
+ {
+-	struct page *pte;
++	struct page *page;
++	void *pg;
+ 
+-	pte = alloc_page(GFP_KERNEL | __GFP_REPEAT | __GFP_ZERO);
+-	if (!pte)
++	pg = quicklist_alloc(QUICK_PT, GFP_KERNEL | __GFP_REPEAT, NULL);
++	if (!pg)
+ 		return NULL;
+-	pgtable_page_ctor(pte);
+-	return pte;
++
++	page = virt_to_page(pg);
++	pgtable_page_ctor(page);
++
++	return page;
+ }
+ 
+ static inline void pte_free_kernel(struct mm_struct *mm, pte_t *pte)
+ {
+-	free_page((unsigned long)pte);
++	quicklist_free(QUICK_PT, NULL, pte);
+ }
+ 
+ static inline void pte_free(struct mm_struct *mm, pgtable_t pte)
+ {
+ 	pgtable_page_dtor(pte);
+-	__free_page(pte);
++	quicklist_free_page(QUICK_PT, NULL, pte);
+ }
+ 
+ #define __pte_free_tlb(tlb,pte)				\
+@@ -75,6 +89,10 @@
+ 	tlb_remove_page((tlb), pte);			\
+ } while (0)
+ 
+-#define check_pgt_cache() do { } while(0)
++static inline void check_pgt_cache(void)
++{
++	quicklist_trim(QUICK_PGD, NULL, 25, 16);
++	quicklist_trim(QUICK_PT, NULL, 25, 16);
++}
+ 
+ #endif /* __ASM_AVR32_PGALLOC_H */
+--- a/include/asm-avr32/pgtable.h
++++ b/include/asm-avr32/pgtable.h
+@@ -129,13 +129,6 @@
+ 
+ #define _PAGE_FLAGS_CACHE_MASK	(_PAGE_CACHABLE | _PAGE_BUFFER | _PAGE_WT)
+ 
+-/* TODO: Check for saneness */
+-/* User-mode page table flags (to be set in a pgd or pmd entry) */
+-#define _PAGE_TABLE		(_PAGE_PRESENT | _PAGE_TYPE_SMALL | _PAGE_RW \
+-				 | _PAGE_USER | _PAGE_ACCESSED | _PAGE_DIRTY)
+-/* Kernel-mode page table flags */
+-#define _KERNPG_TABLE		(_PAGE_PRESENT | _PAGE_TYPE_SMALL | _PAGE_RW \
+-				 | _PAGE_ACCESSED | _PAGE_DIRTY)
+ /* Flags that may be modified by software */
+ #define _PAGE_CHG_MASK		(PTE_MASK | _PAGE_ACCESSED | _PAGE_DIRTY \
+ 				 | _PAGE_FLAGS_CACHE_MASK)
+@@ -254,10 +247,14 @@
+ }
+ 
+ #define pmd_none(x)	(!pmd_val(x))
+-#define pmd_present(x)	(pmd_val(x) & _PAGE_PRESENT)
+-#define pmd_clear(xp)	do { set_pmd(xp, __pmd(0)); } while (0)
+-#define	pmd_bad(x)	((pmd_val(x) & (~PAGE_MASK & ~_PAGE_USER))	\
+-			 != _KERNPG_TABLE)
++#define pmd_present(x)	(pmd_val(x))
++
++static inline void pmd_clear(pmd_t *pmdp)
++{
++	set_pmd(pmdp, __pmd(0));
++}
++
++#define	pmd_bad(x)	(pmd_val(x) & ~PAGE_MASK)
+ 
+ /*
+  * Permanent address of a page. We don't support highmem, so this is
+@@ -295,19 +292,16 @@
+ 
+ #define page_pte(page)	page_pte_prot(page, __pgprot(0))
+ 
+-#define pmd_page_vaddr(pmd)					\
+-	((unsigned long) __va(pmd_val(pmd) & PAGE_MASK))
+-
+-#define pmd_page(pmd)	(phys_to_page(pmd_val(pmd)))
++#define pmd_page_vaddr(pmd)	pmd_val(pmd)
++#define pmd_page(pmd)		(virt_to_page(pmd_val(pmd)))
+ 
+ /* to find an entry in a page-table-directory. */
+-#define pgd_index(address) (((address) >> PGDIR_SHIFT) & (PTRS_PER_PGD-1))
+-#define pgd_offset(mm, address) ((mm)->pgd+pgd_index(address))
+-#define pgd_offset_current(address)				\
+-	((pgd_t *)__mfsr(SYSREG_PTBR) + pgd_index(address))
++#define pgd_index(address)	(((address) >> PGDIR_SHIFT)	\
++				 & (PTRS_PER_PGD - 1))
++#define pgd_offset(mm, address)	((mm)->pgd + pgd_index(address))
+ 
+ /* to find an entry in a kernel page-table-directory */
+-#define pgd_offset_k(address) pgd_offset(&init_mm, address)
++#define pgd_offset_k(address)	pgd_offset(&init_mm, address)
+ 
+ /* Find an entry in the third-level page table.. */
+ #define pte_index(address)				\
 --- /dev/null
 +++ b/include/asm-avr32/serial.h
 @@ -0,0 +1,13 @@
@@ -13505,6 +14437,16 @@
 +#define TIF_FREEZE		29
  #define TIF_DEBUG		30	/* debugging enabled */
  #define TIF_USERSPACE		31      /* true if FS sets userspace */
+ 
+--- a/include/asm-avr32/tlbflush.h
++++ b/include/asm-avr32/tlbflush.h
+@@ -26,7 +26,6 @@
+ extern void flush_tlb_range(struct vm_area_struct *vma, unsigned long start,
+ 			    unsigned long end);
+ extern void flush_tlb_page(struct vm_area_struct *vma, unsigned long page);
+-extern void __flush_tlb_page(unsigned long asid, unsigned long page);
+ 
+ extern void flush_tlb_kernel_range(unsigned long start, unsigned long end);
  
 --- /dev/null
 +++ b/include/asm-avr32/xor.h
@@ -13781,6 +14723,16 @@
  extern int write_inode_now(struct inode *, int);
  extern int filemap_fdatawrite(struct address_space *);
  extern int filemap_flush(struct address_space *);
+--- a/include/linux/serial_core.h
++++ b/include/linux/serial_core.h
+@@ -188,6 +188,7 @@
+ 	void		(*break_ctl)(struct uart_port *, int ctl);
+ 	int		(*startup)(struct uart_port *);
+ 	void		(*shutdown)(struct uart_port *);
++	void		(*flush_buffer)(struct uart_port *);
+ 	void		(*set_termios)(struct uart_port *, struct ktermios *new,
+ 				       struct ktermios *old);
+ 	void		(*pm)(struct uart_port *, unsigned int state,
 --- /dev/null
 +++ b/include/linux/usb/atmel_usba_udc.h
 @@ -0,0 +1,22 @@
@@ -13806,424 +14758,62 @@
 +};
 +
 +#endif /* __LINUX_USB_USBA_H */
---- a/include/mtd/Kbuild
-+++ b/include/mtd/Kbuild
-@@ -3,5 +3,4 @@
- header-y += mtd-abi.h
- header-y += mtd-user.h
- header-y += nftl-user.h
--header-y += ubi-header.h
- header-y += ubi-user.h
---- a/include/mtd/ubi-header.h
-+++ /dev/null
-@@ -1,372 +0,0 @@
--/*
-- * Copyright (c) International Business Machines Corp., 2006
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License, or
-- * (at your option) any later version.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
-- * the GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-- *
-- * Authors: Artem Bityutskiy (Битюцкий Артём)
-- *          Thomas Gleixner
-- *          Frank Haverkamp
-- *          Oliver Lohmann
-- *          Andreas Arnez
-- */
--
--/*
-- * This file defines the layout of UBI headers and all the other UBI on-flash
-- * data structures. May be included by user-space.
-- */
--
--#ifndef __UBI_HEADER_H__
--#define __UBI_HEADER_H__
--
--#include <asm/byteorder.h>
--
--/* The version of UBI images supported by this implementation */
--#define UBI_VERSION 1
--
--/* The highest erase counter value supported by this implementation */
--#define UBI_MAX_ERASECOUNTER 0x7FFFFFFF
--
--/* The initial CRC32 value used when calculating CRC checksums */
--#define UBI_CRC32_INIT 0xFFFFFFFFU
--
--/* Erase counter header magic number (ASCII "UBI#") */
--#define UBI_EC_HDR_MAGIC  0x55424923
--/* Volume identifier header magic number (ASCII "UBI!") */
--#define UBI_VID_HDR_MAGIC 0x55424921
--
--/*
-- * Volume type constants used in the volume identifier header.
-- *
-- * @UBI_VID_DYNAMIC: dynamic volume
-- * @UBI_VID_STATIC: static volume
-- */
--enum {
--	UBI_VID_DYNAMIC = 1,
--	UBI_VID_STATIC  = 2
--};
--
--/*
-- * Volume flags used in the volume table record.
-- *
-- * @UBI_VTBL_AUTORESIZE_FLG: auto-resize this volume
-- *
-- * %UBI_VTBL_AUTORESIZE_FLG flag can be set only for one volume in the volume
-- * table. UBI automatically re-sizes the volume which has this flag and makes
-- * the volume to be of largest possible size. This means that if after the
-- * initialization UBI finds out that there are available physical eraseblocks
-- * present on the device, it automatically appends all of them to the volume
-- * (the physical eraseblocks reserved for bad eraseblocks handling and other
-- * reserved physical eraseblocks are not taken). So, if there is a volume with
-- * the %UBI_VTBL_AUTORESIZE_FLG flag set, the amount of available logical
-- * eraseblocks will be zero after UBI is loaded, because all of them will be
-- * reserved for this volume. Note, the %UBI_VTBL_AUTORESIZE_FLG bit is cleared
-- * after the volume had been initialized.
-- *
-- * The auto-resize feature is useful for device production purposes. For
-- * example, different NAND flash chips may have different amount of initial bad
-- * eraseblocks, depending of particular chip instance. Manufacturers of NAND
-- * chips usually guarantee that the amount of initial bad eraseblocks does not
-- * exceed certain percent, e.g. 2%. When one creates an UBI image which will be
-- * flashed to the end devices in production, he does not know the exact amount
-- * of good physical eraseblocks the NAND chip on the device will have, but this
-- * number is required to calculate the volume sized and put them to the volume
-- * table of the UBI image. In this case, one of the volumes (e.g., the one
-- * which will store the root file system) is marked as "auto-resizable", and
-- * UBI will adjust its size on the first boot if needed.
-- *
-- * Note, first UBI reserves some amount of physical eraseblocks for bad
-- * eraseblock handling, and then re-sizes the volume, not vice-versa. This
-- * means that the pool of reserved physical eraseblocks will always be present.
-- */
--enum {
--	UBI_VTBL_AUTORESIZE_FLG = 0x01,
--};
--
--/*
-- * Compatibility constants used by internal volumes.
-- *
-- * @UBI_COMPAT_DELETE: delete this internal volume before anything is written
-- * to the flash
-- * @UBI_COMPAT_RO: attach this device in read-only mode
-- * @UBI_COMPAT_PRESERVE: preserve this internal volume - do not touch its
-- * physical eraseblocks, don't allow the wear-leveling unit to move them
-- * @UBI_COMPAT_REJECT: reject this UBI image
-- */
--enum {
--	UBI_COMPAT_DELETE   = 1,
--	UBI_COMPAT_RO       = 2,
--	UBI_COMPAT_PRESERVE = 4,
--	UBI_COMPAT_REJECT   = 5
--};
--
--/* Sizes of UBI headers */
--#define UBI_EC_HDR_SIZE  sizeof(struct ubi_ec_hdr)
--#define UBI_VID_HDR_SIZE sizeof(struct ubi_vid_hdr)
--
--/* Sizes of UBI headers without the ending CRC */
--#define UBI_EC_HDR_SIZE_CRC  (UBI_EC_HDR_SIZE  - sizeof(__be32))
--#define UBI_VID_HDR_SIZE_CRC (UBI_VID_HDR_SIZE - sizeof(__be32))
--
--/**
-- * struct ubi_ec_hdr - UBI erase counter header.
-- * @magic: erase counter header magic number (%UBI_EC_HDR_MAGIC)
-- * @version: version of UBI implementation which is supposed to accept this
-- * UBI image
-- * @padding1: reserved for future, zeroes
-- * @ec: the erase counter
-- * @vid_hdr_offset: where the VID header starts
-- * @data_offset: where the user data start
-- * @padding2: reserved for future, zeroes
-- * @hdr_crc: erase counter header CRC checksum
-- *
-- * The erase counter header takes 64 bytes and has a plenty of unused space for
-- * future usage. The unused fields are zeroed. The @version field is used to
-- * indicate the version of UBI implementation which is supposed to be able to
-- * work with this UBI image. If @version is greater then the current UBI
-- * version, the image is rejected. This may be useful in future if something
-- * is changed radically. This field is duplicated in the volume identifier
-- * header.
-- *
-- * The @vid_hdr_offset and @data_offset fields contain the offset of the the
-- * volume identifier header and user data, relative to the beginning of the
-- * physical eraseblock. These values have to be the same for all physical
-- * eraseblocks.
-- */
--struct ubi_ec_hdr {
--	__be32  magic;
--	__u8    version;
--	__u8    padding1[3];
--	__be64  ec; /* Warning: the current limit is 31-bit anyway! */
--	__be32  vid_hdr_offset;
--	__be32  data_offset;
--	__u8    padding2[36];
--	__be32  hdr_crc;
--} __attribute__ ((packed));
--
--/**
-- * struct ubi_vid_hdr - on-flash UBI volume identifier header.
-- * @magic: volume identifier header magic number (%UBI_VID_HDR_MAGIC)
-- * @version: UBI implementation version which is supposed to accept this UBI
-- * image (%UBI_VERSION)
-- * @vol_type: volume type (%UBI_VID_DYNAMIC or %UBI_VID_STATIC)
-- * @copy_flag: if this logical eraseblock was copied from another physical
-- * eraseblock (for wear-leveling reasons)
-- * @compat: compatibility of this volume (%0, %UBI_COMPAT_DELETE,
-- * %UBI_COMPAT_IGNORE, %UBI_COMPAT_PRESERVE, or %UBI_COMPAT_REJECT)
-- * @vol_id: ID of this volume
-- * @lnum: logical eraseblock number
-- * @leb_ver: version of this logical eraseblock (IMPORTANT: obsolete, to be
-- * removed, kept only for not breaking older UBI users)
-- * @data_size: how many bytes of data this logical eraseblock contains
-- * @used_ebs: total number of used logical eraseblocks in this volume
-- * @data_pad: how many bytes at the end of this physical eraseblock are not
-- * used
-- * @data_crc: CRC checksum of the data stored in this logical eraseblock
-- * @padding1: reserved for future, zeroes
-- * @sqnum: sequence number
-- * @padding2: reserved for future, zeroes
-- * @hdr_crc: volume identifier header CRC checksum
-- *
-- * The @sqnum is the value of the global sequence counter at the time when this
-- * VID header was created. The global sequence counter is incremented each time
-- * UBI writes a new VID header to the flash, i.e. when it maps a logical
-- * eraseblock to a new physical eraseblock. The global sequence counter is an
-- * unsigned 64-bit integer and we assume it never overflows. The @sqnum
-- * (sequence number) is used to distinguish between older and newer versions of
-- * logical eraseblocks.
-- *
-- * There are 2 situations when there may be more then one physical eraseblock
-- * corresponding to the same logical eraseblock, i.e., having the same @vol_id
-- * and @lnum values in the volume identifier header. Suppose we have a logical
-- * eraseblock L and it is mapped to the physical eraseblock P.
-- *
-- * 1. Because UBI may erase physical eraseblocks asynchronously, the following
-- * situation is possible: L is asynchronously erased, so P is scheduled for
-- * erasure, then L is written to,i.e. mapped to another physical eraseblock P1,
-- * so P1 is written to, then an unclean reboot happens. Result - there are 2
-- * physical eraseblocks P and P1 corresponding to the same logical eraseblock
-- * L. But P1 has greater sequence number, so UBI picks P1 when it attaches the
-- * flash.
-- *
-- * 2. From time to time UBI moves logical eraseblocks to other physical
-- * eraseblocks for wear-leveling reasons. If, for example, UBI moves L from P
-- * to P1, and an unclean reboot happens before P is physically erased, there
-- * are two physical eraseblocks P and P1 corresponding to L and UBI has to
-- * select one of them when the flash is attached. The @sqnum field says which
-- * PEB is the original (obviously P will have lower @sqnum) and the copy. But
-- * it is not enough to select the physical eraseblock with the higher sequence
-- * number, because the unclean reboot could have happen in the middle of the
-- * copying process, so the data in P is corrupted. It is also not enough to
-- * just select the physical eraseblock with lower sequence number, because the
-- * data there may be old (consider a case if more data was added to P1 after
-- * the copying). Moreover, the unclean reboot may happen when the erasure of P
-- * was just started, so it result in unstable P, which is "mostly" OK, but
-- * still has unstable bits.
-- *
-- * UBI uses the @copy_flag field to indicate that this logical eraseblock is a
-- * copy. UBI also calculates data CRC when the data is moved and stores it at
-- * the @data_crc field of the copy (P1). So when UBI needs to pick one physical
-- * eraseblock of two (P or P1), the @copy_flag of the newer one (P1) is
-- * examined. If it is cleared, the situation* is simple and the newer one is
-- * picked. If it is set, the data CRC of the copy (P1) is examined. If the CRC
-- * checksum is correct, this physical eraseblock is selected (P1). Otherwise
-- * the older one (P) is selected.
-- *
-- * Note, there is an obsolete @leb_ver field which was used instead of @sqnum
-- * in the past. But it is not used anymore and we keep it in order to be able
-- * to deal with old UBI images. It will be removed at some point.
-- *
-- * There are 2 sorts of volumes in UBI: user volumes and internal volumes.
-- * Internal volumes are not seen from outside and are used for various internal
-- * UBI purposes. In this implementation there is only one internal volume - the
-- * layout volume. Internal volumes are the main mechanism of UBI extensions.
-- * For example, in future one may introduce a journal internal volume. Internal
-- * volumes have their own reserved range of IDs.
-- *
-- * The @compat field is only used for internal volumes and contains the "degree
-- * of their compatibility". It is always zero for user volumes. This field
-- * provides a mechanism to introduce UBI extensions and to be still compatible
-- * with older UBI binaries. For example, if someone introduced a journal in
-- * future, he would probably use %UBI_COMPAT_DELETE compatibility for the
-- * journal volume.  And in this case, older UBI binaries, which know nothing
-- * about the journal volume, would just delete this volume and work perfectly
-- * fine. This is similar to what Ext2fs does when it is fed by an Ext3fs image
-- * - it just ignores the Ext3fs journal.
-- *
-- * The @data_crc field contains the CRC checksum of the contents of the logical
-- * eraseblock if this is a static volume. In case of dynamic volumes, it does
-- * not contain the CRC checksum as a rule. The only exception is when the
-- * data of the physical eraseblock was moved by the wear-leveling unit, then
-- * the wear-leveling unit calculates the data CRC and stores it in the
-- * @data_crc field. And of course, the @copy_flag is %in this case.
-- *
-- * The @data_size field is used only for static volumes because UBI has to know
-- * how many bytes of data are stored in this eraseblock. For dynamic volumes,
-- * this field usually contains zero. The only exception is when the data of the
-- * physical eraseblock was moved to another physical eraseblock for
-- * wear-leveling reasons. In this case, UBI calculates CRC checksum of the
-- * contents and uses both @data_crc and @data_size fields. In this case, the
-- * @data_size field contains data size.
-- *
-- * The @used_ebs field is used only for static volumes and indicates how many
-- * eraseblocks the data of the volume takes. For dynamic volumes this field is
-- * not used and always contains zero.
-- *
-- * The @data_pad is calculated when volumes are created using the alignment
-- * parameter. So, effectively, the @data_pad field reduces the size of logical
-- * eraseblocks of this volume. This is very handy when one uses block-oriented
-- * software (say, cramfs) on top of the UBI volume.
-- */
--struct ubi_vid_hdr {
--	__be32  magic;
--	__u8    version;
--	__u8    vol_type;
--	__u8    copy_flag;
--	__u8    compat;
--	__be32  vol_id;
--	__be32  lnum;
--	__be32  leb_ver; /* obsolete, to be removed, don't use */
--	__be32  data_size;
--	__be32  used_ebs;
--	__be32  data_pad;
--	__be32  data_crc;
--	__u8    padding1[4];
--	__be64  sqnum;
--	__u8    padding2[12];
--	__be32  hdr_crc;
--} __attribute__ ((packed));
--
--/* Internal UBI volumes count */
--#define UBI_INT_VOL_COUNT 1
--
--/*
-- * Starting ID of internal volumes. There is reserved room for 4096 internal
-- * volumes.
-- */
--#define UBI_INTERNAL_VOL_START (0x7FFFFFFF - 4096)
--
--/* The layout volume contains the volume table */
--
--#define UBI_LAYOUT_VOLUME_ID     UBI_INTERNAL_VOL_START
--#define UBI_LAYOUT_VOLUME_TYPE   UBI_VID_DYNAMIC
--#define UBI_LAYOUT_VOLUME_ALIGN  1
--#define UBI_LAYOUT_VOLUME_EBS    2
--#define UBI_LAYOUT_VOLUME_NAME   "layout volume"
--#define UBI_LAYOUT_VOLUME_COMPAT UBI_COMPAT_REJECT
--
--/* The maximum number of volumes per one UBI device */
--#define UBI_MAX_VOLUMES 128
--
--/* The maximum volume name length */
--#define UBI_VOL_NAME_MAX 127
--
--/* Size of the volume table record */
--#define UBI_VTBL_RECORD_SIZE sizeof(struct ubi_vtbl_record)
--
--/* Size of the volume table record without the ending CRC */
--#define UBI_VTBL_RECORD_SIZE_CRC (UBI_VTBL_RECORD_SIZE - sizeof(__be32))
--
--/**
-- * struct ubi_vtbl_record - a record in the volume table.
-- * @reserved_pebs: how many physical eraseblocks are reserved for this volume
-- * @alignment: volume alignment
-- * @data_pad: how many bytes are unused at the end of the each physical
-- * eraseblock to satisfy the requested alignment
-- * @vol_type: volume type (%UBI_DYNAMIC_VOLUME or %UBI_STATIC_VOLUME)
-- * @upd_marker: if volume update was started but not finished
-- * @name_len: volume name length
-- * @name: the volume name
-- * @flags: volume flags (%UBI_VTBL_AUTORESIZE_FLG)
-- * @padding: reserved, zeroes
-- * @crc: a CRC32 checksum of the record
-- *
-- * The volume table records are stored in the volume table, which is stored in
-- * the layout volume. The layout volume consists of 2 logical eraseblock, each
-- * of which contains a copy of the volume table (i.e., the volume table is
-- * duplicated). The volume table is an array of &struct ubi_vtbl_record
-- * objects indexed by the volume ID.
-- *
-- * If the size of the logical eraseblock is large enough to fit
-- * %UBI_MAX_VOLUMES records, the volume table contains %UBI_MAX_VOLUMES
-- * records. Otherwise, it contains as many records as it can fit (i.e., size of
-- * logical eraseblock divided by sizeof(struct ubi_vtbl_record)).
-- *
-- * The @upd_marker flag is used to implement volume update. It is set to %1
-- * before update and set to %0 after the update. So if the update operation was
-- * interrupted, UBI knows that the volume is corrupted.
-- *
-- * The @alignment field is specified when the volume is created and cannot be
-- * later changed. It may be useful, for example, when a block-oriented file
-- * system works on top of UBI. The @data_pad field is calculated using the
-- * logical eraseblock size and @alignment. The alignment must be multiple to the
-- * minimal flash I/O unit. If @alignment is 1, all the available space of
-- * the physical eraseblocks is used.
-- *
-- * Empty records contain all zeroes and the CRC checksum of those zeroes.
-- */
--struct ubi_vtbl_record {
--	__be32  reserved_pebs;
--	__be32  alignment;
--	__be32  data_pad;
--	__u8    vol_type;
--	__u8    upd_marker;
--	__be16  name_len;
--	__u8    name[UBI_VOL_NAME_MAX+1];
--	__u8    flags;
--	__u8    padding[23];
--	__be32  crc;
--} __attribute__ ((packed));
--
--#endif /* !__UBI_HEADER_H__ */
---- a/init/do_mounts.c
-+++ b/init/do_mounts.c
-@@ -126,8 +126,14 @@
+--- a/mm/Kconfig
++++ b/mm/Kconfig
+@@ -187,7 +187,7 @@
+ config NR_QUICK
+ 	int
+ 	depends on QUICKLIST
+-	default "2" if SUPERH
++	default "2" if SUPERH || AVR32
+ 	default "1"
  
- static int __init rootwait_setup(char *str)
- {
--	if (*str)
-+	if (*str && *str != '=')
- 		return 0;
-+
-+	if (*str)
-+		printk(KERN_WARNING
-+			"WARNING: \"rootwait=1\" is deprecated, "
-+			"use \"rootwait\" instead.\n");
-+
- 	root_wait = 1;
- 	return 1;
- }
-@@ -347,7 +353,8 @@
+ config VIRT_TO_BUS
+--- a/sound/Kconfig
++++ b/sound/Kconfig
+@@ -63,6 +63,8 @@
  
- 	if (saved_root_name[0]) {
- 		root_device_name = saved_root_name;
--		if (!strncmp(root_device_name, "mtd", 3)) {
-+		if (!strncmp(root_device_name, "mtd", 3) ||
-+		    !strncmp(root_device_name, "ubi", 3)) {
- 			mount_block_root(root_device_name, root_mountflags);
- 			goto out;
- 		}
+ source "sound/arm/Kconfig"
+ 
++source "sound/avr32/Kconfig"
++
+ if SPI
+ source "sound/spi/Kconfig"
+ endif
+--- a/sound/Makefile
++++ b/sound/Makefile
+@@ -6,7 +6,7 @@
+ obj-$(CONFIG_SOUND_PRIME) += oss/
+ obj-$(CONFIG_DMASOUND) += oss/
+ obj-$(CONFIG_SND) += core/ i2c/ drivers/ isa/ pci/ ppc/ arm/ sh/ synth/ usb/ \
+-	sparc/ spi/ parisc/ pcmcia/ mips/ soc/
++	sparc/ spi/ parisc/ pcmcia/ mips/ soc/ avr32/
+ obj-$(CONFIG_SND_AOA) += aoa/
+ 
+ # This one must be compilable even if sound is configured out
 --- /dev/null
-+++ b/localversion-atmel
-@@ -0,0 +1 @@
-+.atmel.1
++++ b/sound/avr32/Kconfig
+@@ -0,0 +1,11 @@
++menu "AVR32 devices"
++	depends on SND != n && AVR32
++
++config SND_ATMEL_AC97
++	tristate "Atmel AC97 Controller Driver"
++	select SND_PCM
++	select SND_AC97_CODEC
++	help
++	  ALSA sound driver for the Atmel AC97 controller.
++
++endmenu
+--- /dev/null
++++ b/sound/avr32/Makefile
+@@ -0,0 +1,3 @@
++snd-atmel-ac97-objs		:= ac97c.o
++
++obj-$(CONFIG_SND_ATMEL_AC97)	+= snd-atmel-ac97.o
 --- /dev/null
 +++ b/sound/avr32/ac97c.c
-@@ -0,0 +1,914 @@
+@@ -0,0 +1,951 @@
 +/*
 + * Driver for the Atmel AC97 controller
 + *
@@ -14236,6 +14826,7 @@
 +#include <linux/clk.h>
 +#include <linux/delay.h>
 +#include <linux/dma-mapping.h>
++#include <linux/gpio.h>
 +#include <linux/init.h>
 +#include <linux/interrupt.h>
 +#include <linux/module.h>
@@ -14243,7 +14834,6 @@
 +#include <linux/mutex.h>
 +#include <linux/io.h>
 +
-+#include <sound/driver.h>
 +#include <sound/core.h>
 +#include <sound/initval.h>
 +#include <sound/pcm.h>
@@ -14251,6 +14841,7 @@
 +#include <sound/ac97_codec.h>
 +#include <sound/memalloc.h>
 +
++#include <asm/arch/board.h>
 +#include <asm/dma-controller.h>
 +
 +#include "ac97c.h"
@@ -14263,6 +14854,7 @@
 +	struct dma_request_cyclic req_rx;
 +	unsigned short rx_periph_id;
 +	unsigned short tx_periph_id;
++	unsigned short controller;
 +};
 +
 +struct atmel_ac97 {
@@ -14277,6 +14869,7 @@
 +	struct snd_ac97_bus *ac97_bus;
 +	int opened;
 +	int period;
++	int reset_pin;
 +	u64 cur_format;
 +	unsigned int cur_rate;
 +	struct clk *mck;
@@ -14918,6 +15511,14 @@
 +
 +static void snd_atmel_ac97_reset(struct atmel_ac97 *chip)
 +{
++	/* TODO: gpio_is_valid(data->reset_pin) with kernel 2.6.26. */
++	if (chip->reset_pin >= 0) {
++		gpio_set_value(chip->reset_pin, 0);
++		/* AC97 v2.2 specifications says minimum 1 us. */
++		udelay(5);
++		gpio_set_value(chip->reset_pin, 1);
++	}
++
 +	ac97c_writel(chip, MR, AC97C_MR_WRST);
 +	mdelay(1);
 +	ac97c_writel(chip, MR, AC97C_MR_ENA);
@@ -14953,6 +15554,7 @@
 +		.read	= snd_atmel_ac97_read,
 +	};
 +	struct atmel_ac97 *chip = get_chip(card);
++	struct ac97c_platform_data *pdata;
 +	struct resource *regs;
 +	struct clk *mck;
 +	int err;
@@ -14960,6 +15562,26 @@
 +	regs = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 +	if (!regs)
 +		return -ENXIO;
++
++	pdata = pdev->dev.platform_data;
++	if (!pdata)
++		return -ENXIO;
++
++	chip->reset_pin = pdata->reset_pin;
++
++	/* TODO: gpio_is_valid(data->reset_pin) with kernel 2.6.26. */
++	if (chip->reset_pin >= 0) {
++		if (gpio_request(chip->reset_pin, chip->card->shortname)) {
++			dev_dbg(&pdev->dev, "ac97: reset pin not available\n");
++			chip->reset_pin = -1;
++		} else {
++			gpio_direction_output(chip->reset_pin, 1);
++		}
++	}
++
++	chip->dma.rx_periph_id = pdata->dma_rx_periph_id;
++	chip->dma.tx_periph_id = pdata->dma_tx_periph_id;
++	chip->dma.controller = pdata->dma_controller_id;
 +
 +	mck = clk_get(&pdev->dev, "pclk");
 +	if (IS_ERR(mck))
@@ -14999,7 +15621,9 @@
 +			THIS_MODULE, sizeof(struct atmel_ac97));
 +	if (!card)
 +		goto out;
++
 +	chip = get_chip(card);
++	chip->reset_pin = -1;
 +
 +	err = snd_atmel_ac97_create(card, pdev);
 +	if (err)
@@ -15015,22 +15639,18 @@
 +	if (err)
 +		goto out_free_card;
 +
-+	/* TODO: Get this information from the platform device */
-+	chip->dma.req_tx.req.dmac = find_dma_controller(0);
++	chip->dma.req_tx.req.dmac = find_dma_controller(chip->dma.controller);
 +	if (!chip->dma.req_tx.req.dmac) {
 +		dev_dbg(&chip->pdev->dev, "DMA controller for TX missing\n");
 +		err = -ENODEV;
 +		goto out_free_card;
 +	}
-+	chip->dma.req_rx.req.dmac = find_dma_controller(0);
++	chip->dma.req_rx.req.dmac = find_dma_controller(chip->dma.controller);
 +	if (!chip->dma.req_rx.req.dmac) {
 +		dev_dbg(&chip->pdev->dev, "DMA controller for RX missing\n");
 +		err = -ENODEV;
 +		goto out_free_card;
 +	}
-+
-+	chip->dma.rx_periph_id = 3;
-+	chip->dma.tx_periph_id = 4;
 +
 +	ch = dma_alloc_channel(chip->dma.req_tx.req.dmac);
 +	if (ch < 0) {
@@ -15073,6 +15693,9 @@
 +	return 0;
 +
 +out_free_card:
++	/* TODO: gpio_is_valid(data->reset_pin) with kernel 2.6.26. */
++	if (chip->reset_pin >= 0)
++		gpio_free(chip->reset_pin);
 +	snd_card_free(card);
 +out:
 +	return err;
@@ -15092,7 +15715,7 @@
 +
 +static int snd_atmel_ac97_resume(struct platform_device *pdev)
 +{
-+	struct snd_card *card = dev_get_drvdata(pdev);
++	struct snd_card *card = platform_get_drvdata(pdev);
 +	struct atmel_ac97 *chip = card->private_data;
 +
 +	clk_enable(chip->mck);
@@ -15107,7 +15730,11 @@
 +static int __devexit snd_atmel_ac97_remove(struct platform_device *pdev)
 +{
 +	struct snd_card *card = platform_get_drvdata(pdev);
++	struct atmel_ac97 *chip = get_chip(card);
 +
++	/* TODO: gpio_is_valid(data->reset_pin) with kernel 2.6.26. */
++	if (chip->reset_pin >= 0)
++		gpio_free(chip->reset_pin);
 +	snd_card_free(card);
 +	platform_set_drvdata(pdev, NULL);
 +	return 0;
@@ -15212,48 +15839,26 @@
 +#define AC97C_CHANNEL_B		0x2
 +
 +#endif /* __SOUND_AVR32_AC97C_H */
---- /dev/null
-+++ b/sound/avr32/Kconfig
-@@ -0,0 +1,11 @@
-+menu "AVR32 devices"
-+	depends on SND != n && AVR32
+--- a/sound/oss/Kconfig
++++ b/sound/oss/Kconfig
+@@ -654,3 +654,7 @@
+ 	int "DAC channel"
+ 	default "1"
+ 	depends on SOUND_SH_DAC_AUDIO
 +
-+config SND_ATMEL_AC97
-+	tristate "Atmel AC97 Controller Driver"
-+	select SND_PCM
-+	select SND_AC97_CODEC
-+	help
-+	  ALSA sound driver for the Atmel AC97 controller.
-+
-+endmenu
---- /dev/null
-+++ b/sound/avr32/Makefile
-@@ -0,0 +1,3 @@
-+snd-atmel-ac97-objs		:= ac97c.o
-+
-+obj-$(CONFIG_SND_ATMEL_AC97)	+= snd-atmel-ac97.o
---- a/sound/Kconfig
-+++ b/sound/Kconfig
-@@ -63,6 +63,8 @@
++config SOUND_AT32_ABDAC
++	tristate "Atmel AT32 Audio Bitstream DAC (ABDAC) support"
++	depends on SOUND_PRIME && AVR32
+--- a/sound/oss/Makefile
++++ b/sound/oss/Makefile
+@@ -9,6 +9,7 @@
  
- source "sound/arm/Kconfig"
+ # Please leave it as is, cause the link order is significant !
  
-+source "sound/avr32/Kconfig"
-+
- if SPI
- source "sound/spi/Kconfig"
- endif
---- a/sound/Makefile
-+++ b/sound/Makefile
-@@ -6,7 +6,7 @@
- obj-$(CONFIG_SOUND_PRIME) += oss/
- obj-$(CONFIG_DMASOUND) += oss/
- obj-$(CONFIG_SND) += core/ i2c/ drivers/ isa/ pci/ ppc/ arm/ sh/ synth/ usb/ \
--	sparc/ spi/ parisc/ pcmcia/ mips/ soc/
-+	sparc/ spi/ parisc/ pcmcia/ mips/ soc/ avr32/
- obj-$(CONFIG_SND_AOA) += aoa/
- 
- # This one must be compilable even if sound is configured out
++obj-$(CONFIG_SOUND_AT32_ABDAC)	+= at32_abdac.o
+ obj-$(CONFIG_SOUND_SH_DAC_AUDIO)	+= sh_dac_audio.o
+ obj-$(CONFIG_SOUND_HAL2)	+= hal2.o
+ obj-$(CONFIG_SOUND_AEDSP16)	+= aedsp16.o
 --- /dev/null
 +++ b/sound/oss/at32_abdac.c
 @@ -0,0 +1,722 @@
@@ -16041,26 +16646,6 @@
 +	__raw_writel((value), (port)->regs + DAC_##reg)
 +
 +#endif /* __SOUND_OSS_AT32_ABDAC_H__ */
---- a/sound/oss/Kconfig
-+++ b/sound/oss/Kconfig
-@@ -654,3 +654,7 @@
- 	int "DAC channel"
- 	default "1"
- 	depends on SOUND_SH_DAC_AUDIO
-+
-+config SOUND_AT32_ABDAC
-+	tristate "Atmel AT32 Audio Bitstream DAC (ABDAC) support"
-+	depends on SOUND_PRIME && AVR32
---- a/sound/oss/Makefile
-+++ b/sound/oss/Makefile
-@@ -9,6 +9,7 @@
- 
- # Please leave it as is, cause the link order is significant !
- 
-+obj-$(CONFIG_SOUND_AT32_ABDAC)	+= at32_abdac.o
- obj-$(CONFIG_SOUND_SH_DAC_AUDIO)	+= sh_dac_audio.o
- obj-$(CONFIG_SOUND_HAL2)	+= hal2.o
- obj-$(CONFIG_SOUND_AEDSP16)	+= aedsp16.o
 --- a/sound/spi/at73c213.c
 +++ b/sound/spi/at73c213.c
 @@ -737,7 +737,7 @@
