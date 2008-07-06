@@ -32,6 +32,7 @@
 #include <asm/io.h>
 #include <linux/etherdevice.h>
 #include <asm/ifxmips/ifxmips.h>
+#include <linux/leds.h>
 
 #define MAX_BOARD_NAME_LEN		32
 #define MAX_IFXMIPS_DEVS		9
@@ -119,6 +120,31 @@ ifxmips_gpio_dev = {
 	.id     = -1,
 	.num_resources    =	1,
 };
+
+#ifdef CONFIG_LEDS_GPIO
+static struct gpio_led arv4519_leds[] = {
+	{ .name = "ifxmips:green:power0", .gpio = 3, .active_low = 0, },
+	{ .name = "ifxmips:red:power1", .gpio = 7, .active_low = 1, },
+	{ .name = "ifxmips:green:adsl", .gpio = 4, .active_low = 1, },
+	{ .name = "ifxmips:green:internet0", .gpio = 5, .active_low = 0, },
+	{ .name = "ifxmips:red:internet1", .gpio = 8, .active_low = 1, },
+	{ .name = "ifxmips:green:wlan", .gpio = 6, .active_low = 1, },
+	{ .name = "ifxmips:green:usb", .gpio = 19, .active_low = 1, },
+};
+
+static const struct gpio_led_platform_data arv4519_led_data = {
+	.num_leds = ARRAY_SIZE(arv4519_leds),
+	.leds = (void *) arv4519_leds,
+};
+
+static struct platform_device arv4519_gpio_leds = {
+	.name = "leds-gpio",
+	.id = -1,
+	.dev = {
+		.platform_data = (void *) &arv4519_led_data,
+	 }
+};
+#endif
 
 const char*
 get_system_type(void)
@@ -235,8 +261,11 @@ static struct ifxmips_board boards[] =
 		.system_type = SYSTEM_DANUBE_CHIPID2,
 		.devs =
 		{
-			&ifxmips_led, &ifxmips_gpio, &ifxmips_mii,
+			&ifxmips_gpio, &ifxmips_mii,
 			&ifxmips_mtd, &ifxmips_wdt, &ifxmips_gpio_dev,
+#ifdef CONFIG_LEDS_GPIO
+			&arv4519_gpio_leds,
+#endif
 		},
 		.reset_resource =
 		{
@@ -277,6 +306,7 @@ ifxmips_has_brn_block(void)
 {
 	return ifxmips_brn;
 }
+EXPORT_SYMBOL(ifxmips_has_brn_block);
 
 struct ifxmips_board*
 ifxmips_find_board(void)

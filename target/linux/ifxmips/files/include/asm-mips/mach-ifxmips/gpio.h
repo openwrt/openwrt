@@ -26,23 +26,35 @@
 #include <asm/ifxmips/ifxmips.h>
 #include <asm/ifxmips/ifxmips_gpio.h>
 
+#define GPIO_TO_PORT(x) ((x > 15)?(1):(0))
+#define GPIO_TO_GPIO(x) ((x > 15)?(x-16):(x))
+
 static inline int gpio_direction_input(unsigned gpio) {
-	ifxmips_port_set_dir_in(0, gpio);
+	ifxmips_port_set_open_drain(GPIO_TO_PORT(gpio), GPIO_TO_GPIO(gpio));
+	ifxmips_port_clear_altsel0(GPIO_TO_PORT(gpio), GPIO_TO_GPIO(gpio));
+    ifxmips_port_clear_altsel1(GPIO_TO_PORT(gpio), GPIO_TO_GPIO(gpio));
+	ifxmips_port_set_dir_in(GPIO_TO_PORT(gpio), GPIO_TO_GPIO(gpio));
 	return 0;
 }
 
 static inline int gpio_direction_output(unsigned gpio, int value) {
-	ifxmips_port_set_dir_out(0, gpio);
+	ifxmips_port_clear_open_drain(GPIO_TO_PORT(gpio), GPIO_TO_GPIO(gpio));
+	ifxmips_port_clear_altsel0(GPIO_TO_PORT(gpio), GPIO_TO_GPIO(gpio));
+	ifxmips_port_clear_altsel1(GPIO_TO_PORT(gpio), GPIO_TO_GPIO(gpio));
+	ifxmips_port_set_dir_out(GPIO_TO_PORT(gpio), GPIO_TO_GPIO(gpio));
 	return 0;
 }
 
 static inline int gpio_get_value(unsigned gpio) {
-	ifxmips_port_get_input(0, gpio);
+	ifxmips_port_get_input(GPIO_TO_PORT(gpio), GPIO_TO_GPIO(gpio));
 	return 0;
 }
 
 static inline void gpio_set_value(unsigned gpio, int value) {
-	ifxmips_port_set_output(0, gpio);
+	if(value)
+		ifxmips_port_set_output(GPIO_TO_PORT(gpio), GPIO_TO_GPIO(gpio));
+	else
+		ifxmips_port_clear_output(GPIO_TO_PORT(gpio), GPIO_TO_GPIO(gpio));
 }
 
 static inline int gpio_request(unsigned gpio, const char *label) {
