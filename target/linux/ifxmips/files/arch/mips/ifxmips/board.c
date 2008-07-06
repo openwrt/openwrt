@@ -25,14 +25,15 @@
 #include <linux/kernel.h>
 #include <linux/reboot.h>
 #include <linux/platform_device.h>
+#include <linux/leds.h>
+#include <linux/etherdevice.h>
 #include <asm/bootinfo.h>
 #include <asm/reboot.h>
 #include <asm/time.h>
 #include <asm/irq.h>
 #include <asm/io.h>
-#include <linux/etherdevice.h>
+#include <asm/gpio.h>
 #include <asm/ifxmips/ifxmips.h>
-#include <linux/leds.h>
 
 #define MAX_BOARD_NAME_LEN		32
 #define MAX_IFXMIPS_DEVS		9
@@ -44,6 +45,12 @@
 #define SYSTEM_TWINPASS			"Twinpass"
 #define SYSTEM_TWINPASS_CHIPID	0x3012D083
 
+enum {
+	EASY50712,
+	EASY4010,
+	ARV4519,
+};
+
 extern int ifxmips_pci_external_clock;
 
 static unsigned int chiprev;
@@ -51,11 +58,14 @@ static int cmdline_mac = 0;
 char board_name[MAX_BOARD_NAME_LEN + 1] = { 0 };
 
 struct ifxmips_board {
+	int type;
 	char name[32];
 	unsigned int system_type;
-	struct platform_device *devs[MAX_IFXMIPS_DEVS];
+	struct platform_device **devs;
 	struct resource reset_resource;
 	struct resource gpiodev_resource;
+	struct gpio_led *ifxmips_leds;
+	struct gpio_led *gpio_leds;
 	int pci_external_clock;
 	int num_devs;
 };
@@ -66,11 +76,16 @@ EXPORT_SYMBOL_GPL(ebu_lock);
 static unsigned char ifxmips_mii_mac[6];
 static int ifxmips_brn = 0;
 
+static struct gpio_led_platform_data ifxmips_led_data;
+
 static struct platform_device
 ifxmips_led =
 {
 	.id = 0,
 	.name = "ifxmips_led",
+	.dev = {
+		.platform_data = (void *) &ifxmips_led_data,
+	}
 };
 
 static struct platform_device
@@ -122,29 +137,88 @@ ifxmips_gpio_dev = {
 };
 
 #ifdef CONFIG_LEDS_GPIO
-static struct gpio_led arv4519_leds[] = {
-	{ .name = "ifxmips:green:power0", .gpio = 3, .active_low = 0, },
-	{ .name = "ifxmips:red:power1", .gpio = 7, .active_low = 1, },
-	{ .name = "ifxmips:green:adsl", .gpio = 4, .active_low = 1, },
-	{ .name = "ifxmips:green:internet0", .gpio = 5, .active_low = 0, },
-	{ .name = "ifxmips:red:internet1", .gpio = 8, .active_low = 1, },
-	{ .name = "ifxmips:green:wlan", .gpio = 6, .active_low = 1, },
-	{ .name = "ifxmips:green:usb", .gpio = 19, .active_low = 1, },
+static struct gpio_led arv4519_gpio_leds[] = {
+	{ .name = "ifx:green:power", .gpio = 3, .active_low = 1, },
+	{ .name = "ifx:red:power", .gpio = 7, .active_low = 1, },
+	{ .name = "ifx:green:adsl", .gpio = 4, .active_low = 1, },
+	{ .name = "ifx:green:internet", .gpio = 5, .active_low = 1, },
+	{ .name = "ifx:red:internet", .gpio = 8, .active_low = 1, },
+	{ .name = "ifx:green:wlan", .gpio = 6, .active_low = 1, },
+	{ .name = "ifx:green:usb", .gpio = 19, .active_low = 1, },
 };
 
-static const struct gpio_led_platform_data arv4519_led_data = {
-	.num_leds = ARRAY_SIZE(arv4519_leds),
-	.leds = (void *) arv4519_leds,
-};
+static struct gpio_led_platform_data ifxmips_gpio_led_data;
 
-static struct platform_device arv4519_gpio_leds = {
+static struct platform_device ifxmips_gpio_leds = {
 	.name = "leds-gpio",
 	.id = -1,
 	.dev = {
-		.platform_data = (void *) &arv4519_led_data,
+		.platform_data = (void *) &ifxmips_gpio_led_data,
 	 }
 };
 #endif
+
+struct platform_device *easy50712_devs[] = {
+	&ifxmips_led, &ifxmips_gpio, &ifxmips_mii,
+	&ifxmips_mtd, &ifxmips_wdt, &ifxmips_gpio_dev
+};
+
+struct platform_device *easy4010_devs[] = {
+	&ifxmips_led, &ifxmips_gpio, &ifxmips_mii,
+	&ifxmips_mtd, &ifxmips_wdt, &ifxmips_gpio_dev
+};
+
+struct platform_device *arv5419_devs[] = {
+	&ifxmips_gpio, &ifxmips_mii, &ifxmips_mtd, &ifxmips_wdt,
+#ifdef CONFIG_LEDS_GPIO
+	&ifxmips_gpio_leds,
+#endif
+};
+
+static struct gpio_led easy50712_leds[] = {
+	{ .name = "ifx:green:test0", .gpio = 0,},
+	{ .name = "ifx:green:test1", .gpio = 1,},
+	{ .name = "ifx:green:test2", .gpio = 2,},
+	{ .name = "ifx:green:test3", .gpio = 3,},
+};
+
+static struct gpio_led easy4010_leds[] = {
+	{ .name = "ifx:green:test0", .gpio = 0,},
+	{ .name = "ifx:green:test1", .gpio = 1,},
+	{ .name = "ifx:green:test2", .gpio = 2,},
+	{ .name = "ifx:green:test3", .gpio = 3,},
+};
+
+static struct ifxmips_board boards[] =
+{
+	{
+		.type = EASY50712,
+		.name = "EASY50712",
+		.system_type = SYSTEM_DANUBE_CHIPID1,
+		.devs = easy50712_devs,
+		.reset_resource = {.name = "reset", .start = 1, .end = 15,},
+		.gpiodev_resource =	{.name = "gpio", .start = (1 << 0) | (1 << 1),
+			.end = (1 << 0) | (1 << 1)},
+		.ifxmips_leds = easy50712_leds,
+	}, {
+		.type = EASY4010,
+		.name = "EASY4010",
+		.system_type = SYSTEM_TWINPASS_CHIPID,
+		.devs = easy4010_devs,
+		.reset_resource = {.name = "reset", .start = 1, .end = 15},
+		.gpiodev_resource =	{.name = "gpio", .start = (1 << 0) | (1 << 1),
+			.end = (1 << 0) | (1 << 1)},
+		.ifxmips_leds = easy4010_leds,
+	}, {
+		.type = ARV4519,
+		.name = "ARV4519",
+		.system_type = SYSTEM_DANUBE_CHIPID2,
+		.devs = arv5419_devs,
+		.reset_resource = {.name = "reset", .start = 1, .end = 14},
+		.pci_external_clock = 1,
+		.gpio_leds = arv4519_gpio_leds,
+	},
+};
 
 const char*
 get_system_type(void)
@@ -179,12 +253,11 @@ out:
 }
 __setup("ifxmips_board", ifxmips_set_board_type);
 
-#define IS_HEX(x) \
-	(((x >='0' && x <= '9') || (x >='a' && x <= 'f') || (x >='A' && x <= 'F'))?(1):(0))
-
 static int __init
 ifxmips_set_mii0_mac(char *str)
 {
+#define IS_HEX(x) \
+	(((x >='0' && x <= '9') || (x >='a' && x <= 'f') || (x >='A' && x <= 'F'))?(1):(0))
 	int i;
 	str = strchr(str, '=');
 	if(!str)
@@ -206,85 +279,6 @@ out:
 	return 1;
 }
 __setup("mii0_mac", ifxmips_set_mii0_mac);
-
-
-static struct ifxmips_board boards[] =
-{
-	{
-		.name = "EASY50712",
-		.system_type = SYSTEM_DANUBE_CHIPID1,
-		.devs =
-		{
-			&ifxmips_led, &ifxmips_gpio, &ifxmips_mii,
-			&ifxmips_mtd, &ifxmips_wdt, &ifxmips_gpio_dev,
-		},
-		.reset_resource =
-		{
-			.name = "reset",
-			.start = 1,
-			.end = 15,
-		},
-		.gpiodev_resource =
-		{
-			.name = "gpio",
-			.start = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) |
-					(1 << 4) | (1 << 5) | (1 << 8) | (1 << 9) | (1 << 12),
-			.end = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) |
-					(1 << 4) | (1 << 5) | (1 << 8) | (1 << 9) | (1 << 12),
-		},
-		.num_devs = 6,
-	}, {
-		.name = "EASY4010",
-		.system_type = SYSTEM_TWINPASS_CHIPID,
-		.devs =
-		{
-			&ifxmips_led, &ifxmips_gpio, &ifxmips_mii,
-			&ifxmips_mtd, &ifxmips_wdt, &ifxmips_gpio_dev,
-		},
-		.reset_resource =
-		{
-			.name = "reset",
-			.start = 1,
-			.end = 15,
-		},
-		.gpiodev_resource =
-		{
-			.name = "gpio",
-			.start = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) |
-					(1 << 4) | (1 << 5) | (1 << 8) | (1 << 9) | (1 << 12),
-			.end = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) |
-					(1 << 4) | (1 << 5) | (1 << 8) | (1 << 9) | (1 << 12),
-		},
-		.num_devs = 6,
-	}, {
-		.name = "ARV4519",
-		.system_type = SYSTEM_DANUBE_CHIPID2,
-		.devs =
-		{
-			&ifxmips_gpio, &ifxmips_mii,
-			&ifxmips_mtd, &ifxmips_wdt, &ifxmips_gpio_dev,
-#ifdef CONFIG_LEDS_GPIO
-			&arv4519_gpio_leds,
-#endif
-		},
-		.reset_resource =
-		{
-			.name = "reset",
-			.start = 1,
-			.end = 12,
-		},
-		.gpiodev_resource =
-		{
-			.name = "gpio",
-			.start = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) |
-					(1 << 4) | (1 << 5) | (1 << 8) | (1 << 9) | (1 << 12),
-			.end = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) |
-					(1 << 4) | (1 << 5) | (1 << 8) | (1 << 9) | (1 << 12),
-		},
-		.pci_external_clock = 1,
-		.num_devs = 6,
-	},
-};
 
 int
 ifxmips_find_brn_block(void){
@@ -344,6 +338,38 @@ ifxmips_init_devices(void)
 			break;
 		}
 	}
+
+	switch(board->type)
+	{
+	case EASY50712:
+		board->num_devs = ARRAY_SIZE(easy50712_devs);
+		ifxmips_led_data.num_leds = ARRAY_SIZE(easy50712_leds);
+		break;
+	case EASY4010:
+		board->num_devs = ARRAY_SIZE(easy4010_devs);
+		ifxmips_led_data.num_leds = ARRAY_SIZE(easy4010_leds);
+		break;
+	case ARV4519:
+		gpio_set_value(3, 0);
+		gpio_set_value(4, 0);
+		gpio_set_value(5, 0);
+		gpio_set_value(6, 0);
+		gpio_set_value(7, 1);
+		gpio_set_value(8, 1);
+		gpio_set_value(19, 0);
+		board->num_devs = ARRAY_SIZE(arv5419_devs);
+#ifdef CONFIG_LEDS_GPIO
+		ifxmips_gpio_led_data.num_leds = ARRAY_SIZE(arv4519_gpio_leds);
+#endif
+		break;
+	}
+#ifdef CONFIG_LEDS_GPIO
+	ifxmips_gpio_led_data.leds = board->gpio_leds;
+#endif
+	ifxmips_led_data.leds = board->ifxmips_leds;
+
+	printk("%s:%s[%d]adding %d devs\n", __FILE__, __func__, __LINE__, board->num_devs);
+
 	ifxmips_gpio.resource = &board->reset_resource;
 	ifxmips_gpio_dev.resource = &board->gpiodev_resource;
 	if(board->pci_external_clock)
