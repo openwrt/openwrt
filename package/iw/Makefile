@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2007 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -9,8 +9,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iw
-PKG_REV:=11b24c28b802bae2abda8f46d457df60fa602594
-PKG_VERSION:=20071130_$(PKG_REV)
+PKG_REV:=4d3a72da3f21761bf4f2866a6a3400d4ecf67365
+PKG_VERSION:=20080414_$(PKG_REV)
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
