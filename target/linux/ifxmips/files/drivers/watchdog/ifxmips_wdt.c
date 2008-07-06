@@ -122,7 +122,6 @@ static int
 ifxmips_wdt_open(struct inode *inode, struct file *file)
 {
 	ifxmips_wdt_enable(wdt_timeout);
-	printk("ifxmips_wdt: activated");
 	return nonseekable_open(inode, file);
 }
 
