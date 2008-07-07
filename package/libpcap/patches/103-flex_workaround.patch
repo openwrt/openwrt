@@ -1,10 +1,8 @@
 
 	Copyright (C) 2006 Markus Wigge
 
-Index: libpcap-0.9.4/Makefile.in
-===================================================================
---- libpcap-0.9.4.orig/Makefile.in	2007-06-04 13:22:03.799277704 +0200
-+++ libpcap-0.9.4/Makefile.in	2007-06-04 13:22:04.181219640 +0200
+--- a/Makefile.in
++++ b/Makefile.in
 @@ -53,7 +53,7 @@
  CC = @CC@
  CCOPT = @V_CCOPT@
@@ -12,5 +10,5 @@ Index: libpcap-0.9.4/Makefile.in
 -DEFS = @DEFS@ @V_DEFS@
 +DEFS = -D_BSD_SOURCE @DEFS@ @V_DEFS@
  LIBS = @V_LIBS@
+ DAGLIBS = @DAGLIBS@
  DYEXT = @DYEXT@
- 
