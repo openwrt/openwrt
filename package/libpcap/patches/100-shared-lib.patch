@@ -1,14 +1,12 @@
-Index: libpcap-0.9.4/Makefile.in
-===================================================================
---- libpcap-0.9.4.orig/Makefile.in	2007-06-04 13:22:03.547316008 +0200
-+++ libpcap-0.9.4/Makefile.in	2007-06-04 13:22:03.614305824 +0200
+--- a/Makefile.in
++++ b/Makefile.in
 @@ -37,6 +37,15 @@
  srcdir = @srcdir@
  VPATH = @srcdir@
  
 +# some defines for shared library compilation
 +MAJ=0.9
-+MIN=4
++MIN=8
 +VERSION=$(MAJ).$(MIN)
 +LIBNAME=pcap
 +LIBRARY=lib$(LIBNAME).a
@@ -18,7 +16,7 @@ Index: libpcap-0.9.4/Makefile.in
  #
  # You shouldn't need to edit anything below.
  #
-@@ -50,6 +59,7 @@
+@@ -52,6 +61,7 @@
  
  # Standard CFLAGS
  CFLAGS = $(CCOPT) $(INCLS) $(DEFS)
@@ -26,7 +24,7 @@ Index: libpcap-0.9.4/Makefile.in
  
  INSTALL = @INSTALL@
  INSTALL_PROGRAM = @INSTALL_PROGRAM@
-@@ -70,7 +80,12 @@
+@@ -72,7 +82,12 @@
  .c.o:
  	@rm -f $@
  	$(CC) $(CFLAGS) -c $(srcdir)/$*.c
@@ -39,7 +37,7 @@ Index: libpcap-0.9.4/Makefile.in
  PSRC =	pcap-@V_PCAP@.c
  FSRC =  fad-@V_FINDALLDEVS@.c
  SSRC =  @SSRC@
-@@ -84,6 +99,7 @@
+@@ -86,6 +101,7 @@
  # We would like to say "OBJ = $(SRC:.c=.o)" but Ultrix's make cannot
  # hack the extra indirection
  OBJ =	$(PSRC:.c=.o) $(FSRC:.c=.o) $(CSRC:.c=.o) $(SSRC:.c=.o) $(GENSRC:.c=.o) $(LIBOBJS)
@@ -47,7 +45,7 @@ Index: libpcap-0.9.4/Makefile.in
  HDR =	pcap.h pcap-int.h pcap-namedb.h pcap-nit.h pcap-pf.h \
  	ethertype.h gencode.h gnuc.h
  GENHDR = \
-@@ -95,15 +111,23 @@
+@@ -97,15 +113,23 @@
  TAGFILES = \
  	$(SRC) $(HDR) $(TAGHDR)
  
@@ -73,7 +71,7 @@ Index: libpcap-0.9.4/Makefile.in
  shared: libpcap.$(DYEXT)
  
  #
-@@ -129,6 +153,10 @@
+@@ -131,6 +155,10 @@
  scanner.o: scanner.c tokdefs.h
  	$(CC) $(CFLAGS) -c scanner.c
  
@@ -84,7 +82,7 @@ Index: libpcap-0.9.4/Makefile.in
  pcap.o: version.h
  
  tokdefs.h: grammar.c
-@@ -142,9 +170,16 @@
+@@ -144,9 +172,16 @@
  	@rm -f $@
  	$(CC) $(CFLAGS) -Dyylval=pcap_lval -c grammar.c
  
@@ -101,7 +99,7 @@ Index: libpcap-0.9.4/Makefile.in
  snprintf.o: $(srcdir)/missing/snprintf.c
  	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/missing/snprintf.c
  
-@@ -170,10 +205,17 @@
+@@ -172,10 +207,17 @@
  bpf_filter.o: bpf_filter.c
  	$(CC) $(CFLAGS) -c bpf_filter.c
  

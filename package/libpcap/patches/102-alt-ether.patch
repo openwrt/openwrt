@@ -1,7 +1,5 @@
-Index: libpcap-0.9.4/nametoaddr.c
-===================================================================
---- libpcap-0.9.4.orig/nametoaddr.c	2007-06-04 13:22:03.499323304 +0200
-+++ libpcap-0.9.4/nametoaddr.c	2007-06-04 13:22:03.986249280 +0200
+--- a/nametoaddr.c
++++ b/nametoaddr.c
 @@ -410,7 +410,7 @@
  	e = ep = (u_char *)malloc(6);
  
@@ -11,19 +9,17 @@ Index: libpcap-0.9.4/nametoaddr.c
  			s += 1;
  		d = xdtoi(*s++);
  		if (isxdigit((unsigned char)*s)) {
-Index: libpcap-0.9.4/scanner.l
-===================================================================
---- libpcap-0.9.4.orig/scanner.l	2007-06-04 13:22:03.506322240 +0200
-+++ libpcap-0.9.4/scanner.l	2007-06-04 13:22:03.987249128 +0200
+--- a/scanner.l
++++ b/scanner.l
 @@ -80,6 +80,7 @@
  N		([0-9]+|(0X|0x)[0-9A-Fa-f]+)
  B		([0-9A-Fa-f][0-9A-Fa-f]?)
  W		([0-9A-Fa-f][0-9A-Fa-f]?[0-9A-Fa-f]?[0-9A-Fa-f]?)
 +X               [0-9A-Fa-f]
  
- %a 16000
- %o 19000
-@@ -306,7 +307,7 @@
+ %a 18400
+ %o 21500
+@@ -310,7 +311,7 @@
  {N}			{ yylval.i = stoi((char *)yytext); return NUM; }
  ({N}\.{N})|({N}\.{N}\.{N})|({N}\.{N}\.{N}\.{N})	{
  			yylval.s = sdup((char *)yytext); return HID; }
@@ -32,7 +28,7 @@ Index: libpcap-0.9.4/scanner.l
  			  return EID; }
  {V6}			{
  #ifdef INET6
-@@ -324,6 +325,7 @@
+@@ -328,6 +329,7 @@
  #endif /*INET6*/
  			}
  {B}:+({B}:+)+		{ bpf_error("bogus ethernet address %s", yytext); }

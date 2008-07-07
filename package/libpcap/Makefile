@@ -9,12 +9,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libpcap
-PKG_VERSION:=0.9.4
+PKG_VERSION:=0.9.8
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.tcpdump.org/release/
-PKG_MD5SUM:=79025766e8027df154cb1f32de8a7974
+PKG_MD5SUM:=5208f24d0328ee7c20b52c43eaa9aa0e
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -26,7 +26,7 @@ define Package/libpcap
 endef
 
 define Package/libpcap/description
- This package contains a system-independent library for user-level network 
+ This package contains a system-independent library for user-level network
  packet capture.
 endef
 
