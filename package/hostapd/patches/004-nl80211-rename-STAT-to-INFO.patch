@@ -1,7 +1,5 @@
-Index: hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576/hostapd/driver_nl80211.c
-===================================================================
---- hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576.orig/hostapd/driver_nl80211.c.orig	2008-04-09 14:03:17.000000000 +1200
-+++ hostapd-20071107_03ec0ec5cdb974d51a4a2a566bea4c4568138576/hostapd/driver_nl80211.c	2008-04-09 14:06:37.000000000 +1200
+--- a/hostapd/driver_nl80211.c
++++ b/hostapd/driver_nl80211.c
 @@ -598,11 +598,11 @@
  	struct nlattr *tb[NL80211_ATTR_MAX + 1];
  	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
