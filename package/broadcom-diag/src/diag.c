@@ -61,6 +61,8 @@ enum {
 	WRTSL54GS,
 	WRT54G3G,
 	WRT350N,
+	WRT600N,
+	WRT600NV11,
 
 	/* ASUS */
 	WLHDD,
@@ -237,6 +239,38 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "ses_green",	.gpio = 1 << 9, .polarity = REVERSE },
 			{ .name = "usb_blink",	.gpio = 1 << 10, .polarity = REVERSE },
 			{ .name = "usb",	.gpio = 1 << 11, .polarity = REVERSE },
+		},
+		.platform_init = bcm57xx_init,
+	},
+	[WRT600N] = {
+		.name           = "Linksys WRT600N",
+		.buttons        = {
+			{ .name = "reset",      .gpio = 1 << 6 },
+			{ .name = "ses",        .gpio = 1 << 7 },
+		},
+		.leds           = {
+			{ .name = "power",              .gpio = 1 << 2,  .polarity = REVERSE }, // Power LED
+			{ .name = "usb",                .gpio = 1 << 3,  .polarity = REVERSE }, // USB LED
+			{ .name = "wl0_ses_amber",      .gpio = 1 << 8,  .polarity = REVERSE }, // 2.4Ghz LED Amber
+			{ .name = "wl0_ses_green",      .gpio = 1 << 9,  .polarity = REVERSE }, // 2.4Ghz LED Green
+			{ .name = "wl1_ses_amber",      .gpio = 1 << 10, .polarity = REVERSE }, // 5.6Ghz LED Amber
+			{ .name = "wl1_ses_green",      .gpio = 1 << 11, .polarity = REVERSE }, // 5.6Ghz LED Green
+		},
+		.platform_init = bcm57xx_init,
+	},
+	[WRT600NV11] = {
+		.name           = "Linksys WRT600N V1.1",
+		.buttons        = {
+			{ .name = "reset",      .gpio = 1 << 6 },
+			{ .name = "ses",        .gpio = 1 << 7 },
+		},
+		.leds           = {
+			{ .name = "power",             .gpio = 1 << 2,  .polarity = REVERSE }, // Power LED
+			{ .name = "usb",                .gpio = 1 << 3,  .polarity = REVERSE }, // USB LED
+			{ .name = "wl0_ses_amber",      .gpio = 1 << 8,  .polarity = REVERSE }, // 2.4Ghz LED Amber
+			{ .name = "wl0_ses_green",     .gpio = 1 << 9,  .polarity = REVERSE }, // 2.4Ghz LED Green
+			{ .name = "wl1_ses_amber",      .gpio = 1 << 10, .polarity = REVERSE }, // 5.6Ghz LED Amber
+			{ .name = "wl1_ses_green",      .gpio = 1 << 11, .polarity = REVERSE }, // 5.6Ghz LED Green
 		},
 		.platform_init = bcm57xx_init,
 	},
@@ -745,6 +779,14 @@ static struct platform_t __init *platform_detect(void)
 	/* no easy model number, attempt to guess */
 	boardnum = getvar("boardnum");
 	boardtype = getvar("boardtype");
+
+	if (!strcmp(boardnum, "20070615")) { /* Linksys WRT600N  v1/V1.1 */
+		if (!strcmp(boardtype, "0x478") && !strcmp(getvar("cardbus"), "0") && !strcmp(getvar("switch_type"),"BCM5395"))
+			return &platforms[WRT600NV11];
+
+	if (!strcmp(boardtype, "0x478") && !strcmp(getvar("cardbus"), "0"))
+			return &platforms[WRT600N];
+	}
 
 	if (startswith(getvar("pmon_ver"), "CFE")) {
 		/* CFE based - newer hardware */

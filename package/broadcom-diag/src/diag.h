@@ -24,7 +24,7 @@
 #include <linux/irq.h>
 #define MODULE_NAME "diag"
 
-#define MAX_GPIO 8
+#define MAX_GPIO 16
 #define FLASH_TIME HZ/6
 
 enum polarity_t {
