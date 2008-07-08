@@ -1,0 +1,11 @@
+--- linux-2.6.25.10.old/drivers/usb/serial/usb-serial.c	2008-07-08 07:42:24.000000000 +0200
++++ linux-2.6.25.10/drivers/usb/serial/usb-serial.c	2008-07-08 14:07:39.000000000 +0200
+@@ -905,7 +905,7 @@
+ 			dev_err(&interface->dev, "No free urbs available\n");
+ 			goto probe_error;
+ 		}
+-		buffer_size = (endpoint->wMaxPacketSize > maxSize) ? endpoint->wMaxPacketSize : maxSize;
++		buffer_size = 2048;
+ 		port->bulk_in_size = buffer_size;
+ 		port->bulk_in_endpointAddress = endpoint->bEndpointAddress;
+ 		port->bulk_in_buffer = kmalloc (buffer_size, GFP_KERNEL);
