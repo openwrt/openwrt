@@ -11,7 +11,7 @@ BOARD:=rdc
 BOARDNAME:=RDC 321x
 FEATURES:=squashfs jffs2 pci
 
-LINUX_VERSION:=2.6.25.10
+LINUX_VERSION:=2.6.24.7
 
 include $(INCLUDE_DIR)/target.mk
 
@@ -20,7 +20,7 @@ define Target/Description
         (e.g. Airlink101 AR525W, Linksys WRT54R, Sitecom WL-153)
 endef
 
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
   define Kernel/SetInitramfs
 	echo "r6040 parent=wlan0" > $(TARGET_DIR)/etc/modules.d/99-r6040
 	$(RM) $(TARGET_DIR)/sbin/init
