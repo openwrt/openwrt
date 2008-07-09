@@ -32,7 +32,7 @@ PKG_FWCUTTER_MD5SUM:=3db2f4de85a459451f5b391cf67a8d44
 define KernelPackage/b43
   SUBMENU:=Wireless Drivers
   TITLE:=Broadcom 43xx wireless support
-  DEPENDS:=@TARGET_brcm47xx +kmod-mac80211 +kmod-crypto-aes +kmod-crypto-arc4 +kmod-crypto-michael-mic
+  DEPENDS:=@TARGET_brcm47xx +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/b43.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,b43)
 endef
