@@ -186,7 +186,7 @@ int __init ar5315_pci_init(void)
 {
 	u32 reg;
 
-	printk("AR531x PCI init... ");
+	printk("AR531x PCI init... \n");
 
 	cfgaddr = (u32) ioremap_nocache(0x80000000, 1*1024*1024); /* Remap PCI config space */
 	set_io_port_base((unsigned long) ioremap_nocache(AR531X_MEM_BASE + AR531X_IO_SIZE - 1, AR531X_IO_SIZE)); /* PCI I/O space */
