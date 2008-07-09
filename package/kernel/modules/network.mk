@@ -245,6 +245,7 @@ $(eval $(call KernelPackage,ipv6))
 
 define KernelPackage/sit
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  DEPENDS:=+kmod-iptunnel4
   TITLE:=IPv6-in-IPv4 tunnelling
 endef
 
