@@ -328,15 +328,6 @@
 +	platform_add_devices(pronghorn_devices, ARRAY_SIZE(pronghorn_devices));
 +
 +	if (machine_is_pronghorn()) {
-+		pronghorn_pata_resources[0].start = IXP4XX_EXP_BUS_BASE(3);
-+		pronghorn_pata_resources[0].end = IXP4XX_EXP_BUS_END(3);
-+
-+		pronghorn_pata_resources[1].start = IXP4XX_EXP_BUS_BASE(4);
-+		pronghorn_pata_resources[1].end = IXP4XX_EXP_BUS_END(4);
-+
-+		pronghorn_pata_data.cs0_cfg = IXP4XX_EXP_CS3;
-+		pronghorn_pata_data.cs1_cfg = IXP4XX_EXP_CS4;
-+	} else {
 +		pronghorn_pata_resources[0].start = IXP4XX_EXP_BUS_BASE(2);
 +		pronghorn_pata_resources[0].end = IXP4XX_EXP_BUS_END(2);
 +
@@ -345,6 +336,15 @@
 +
 +		pronghorn_pata_data.cs0_cfg = IXP4XX_EXP_CS2;
 +		pronghorn_pata_data.cs1_cfg = IXP4XX_EXP_CS3;
++	} else {
++		pronghorn_pata_resources[0].start = IXP4XX_EXP_BUS_BASE(3);
++		pronghorn_pata_resources[0].end = IXP4XX_EXP_BUS_END(3);
++
++		pronghorn_pata_resources[1].start = IXP4XX_EXP_BUS_BASE(4);
++		pronghorn_pata_resources[1].end = IXP4XX_EXP_BUS_END(4);
++
++		pronghorn_pata_data.cs0_cfg = IXP4XX_EXP_CS3;
++		pronghorn_pata_data.cs1_cfg = IXP4XX_EXP_CS4;
 +
 +		platform_device_register(&pronghorn_i2c_gpio);
 +	}
