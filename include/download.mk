@@ -67,7 +67,7 @@ define DownloadMethod/svn
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
-		svn co -r$(VERSION) $(URL) $(SUBDIR) && \
+		svn co --non-interactive -r$(VERSION) $(URL) $(SUBDIR) && \
 		find $(SUBDIR) -name .svn | xargs rm -rf && \
 		echo "Packing checkout..." && \
 		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
