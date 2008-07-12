@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3314/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2008-06-13 10:39:28.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_ath.c	2008-06-13 10:39:54.000000000 +0200
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -1014,9 +1014,7 @@
  	 */
  	sc->sc_hasveol = ath_hal_hasveol(ah);
@@ -250,10 +248,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	{ 0 }
  };
  
-Index: madwifi-trunk-r3314/ath/if_athvar.h
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_athvar.h	2008-06-13 10:39:28.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_athvar.h	2008-06-13 10:39:32.000000000 +0200
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
 @@ -693,6 +693,10 @@
  	unsigned int sc_txcont_power; /* Continuous transmit power in 0.5dBm units */
  	unsigned int sc_txcont_rate;  /* Continuous transmit rate in Mbps */
@@ -265,10 +261,8 @@ Index: madwifi-trunk-r3314/ath/if_athvar.h
  	/* rate tables */
  	const HAL_RATE_TABLE *sc_rates[IEEE80211_MODE_MAX];
  	const HAL_RATE_TABLE *sc_currates;	/* current rate table */
-Index: madwifi-trunk-r3314/ath/if_ath_hal.h
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath_hal.h	2008-06-13 10:39:26.000000000 +0200
-+++ madwifi-trunk-r3314/ath/if_ath_hal.h	2008-06-13 10:39:32.000000000 +0200
+--- a/ath/if_ath_hal.h
++++ b/ath/if_ath_hal.h
 @@ -67,14 +67,14 @@
  
  static inline HAL_BOOL ath_hal_getdiagstate(struct ath_hal *ah, int request,
