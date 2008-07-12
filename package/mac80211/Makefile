@@ -122,35 +122,13 @@ define KernelPackage/rt73-usb
   AUTOLOAD:=$(call AutoLoad,27,rt73usb)
 endef
 
-RT2X00_CONFOPTS:=CONFIG_RT2X00=y \
-		CONFIG_RT2X00_DEBUG=y \
-		CONFIG_RT2X00_LIB_FIRMWARE=y \
-		CONFIG_RT2X00_LIB_LEDS=y
-
-ifneq ($(CONFIG_PACKAGE_kmod-rt2x00-pci),)
-  RT2X00_CONFOPTS+= CONFIG_RT2X00_LIB_PCI=y
-endif
-ifneq ($(CONFIG_PACKAGE_kmod-rt2x00-usb),)
-  RT2X00_CONFOPTS+= CONFIG_RT2X00_LIB_USB=y
-endif
-ifneq ($(CONFIG_PACKAGE_kmod-rt2400-pci),)
-  RT2X00_CONFOPTS+= CONFIG_RT2400PCI=y
-endif
-ifneq ($(CONFIG_PACKAGE_kmod-rt2500-pci),)
-  RT2X00_CONFOPTS+= CONFIG_RT2500PCI=y
-endif
-ifneq ($(CONFIG_PACKAGE_kmod-rt2500-usb),)
-  RT2X00_CONFOPTS+= CONFIG_RT2500USB=y
-endif
-ifneq ($(CONFIG_PACKAGE_kmod-rt61-pci),)
-  RT2X00_CONFOPTS+= CONFIG_RT61PCI=y
-endif
-ifneq ($(CONFIG_PACKAGE_kmod-rt73-usb),)
-  RT2X00_CONFOPTS+= CONFIG_RT73USB=y
-endif
-
-
-CONFOPTS:=MAC80211 CFG80211 NL80211 MAC80211_RC_DEFAULT_PID MAC80211_RC_PID \
+define KernelPackage/net-zd1211rw
+  SUBMENU:=Wireless Drivers
+  TITLE:=Zydas ZD1211 support
+  DEPENDS:=@LINUX_2_6_24||LINUX_2_6_25 @USB_SUPPORT +kmod-ieee80211-softmac
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/zd1211rw/zd1211rw.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,60,zd1211rw)
+endef
 
 BUILDFLAGS:= \
 	$(foreach opt,$(CONFOPTS),-DCONFIG_$(opt)) \
@@ -209,7 +187,7 @@ define KernelPackage/rt73-usb/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rt73.bin $(1)/lib/firmware/
 endef
 
-
+$(eval $(call KernelPackage,net-zd1211rw))
 $(eval $(call KernelPackage,mac80211))
 $(eval $(call KernelPackage,rt2x00-lib))
 $(eval $(call KernelPackage,rt2x00-pci))

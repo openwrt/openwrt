@@ -198,18 +198,3 @@ endef
 
 $(eval $(call KernelPackage,net-prism54))
 
-
-define KernelPackage/net-zd1211rw
-  SUBMENU:=$(WIRELESS_MENU)
-  TITLE:=Zydas ZD1211 support
-  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-ieee80211-softmac
-  KCONFIG:=CONFIG_ZD1211RW
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/zd1211rw/zd1211rw.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,60,zd1211rw)
-endef
-
-define KernelPackage/net-zd1211rw/description
- Kernel modules for Zydas ZD1211 support, kernel version
-endef
-
-$(eval $(call KernelPackage,net-zd1211rw))
