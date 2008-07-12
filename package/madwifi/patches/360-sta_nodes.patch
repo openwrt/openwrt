@@ -1,0 +1,59 @@
+Drop stale AP nodes from the client list when disconnecting.
+Fixes some reassoc issues.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+--- a/net80211/ieee80211_proto.c
++++ b/net80211/ieee80211_proto.c
+@@ -1348,7 +1348,7 @@
+ 				IEEE80211_SEND_MGMT(ni,
+ 					IEEE80211_FC0_SUBTYPE_DISASSOC,
+ 					IEEE80211_REASON_ASSOC_LEAVE);
+-				ieee80211_sta_leave(ni);
++				ieee80211_node_leave(ni);
+ 				break;
+ 			case IEEE80211_M_HOSTAP:
+ 				ieee80211_iterate_nodes(&ic->ic_sta,
+@@ -1358,6 +1358,7 @@
+ 				break;
+ 			}
+ 			goto reset;
++		case IEEE80211_S_AUTH:
+ 		case IEEE80211_S_ASSOC:
+ 			switch (vap->iv_opmode) {
+ 			case IEEE80211_M_STA:
+@@ -1376,7 +1377,6 @@
+ 		case IEEE80211_S_SCAN:
+ 			ieee80211_cancel_scan(vap);
+ 			goto reset;
+-		case IEEE80211_S_AUTH:
+ 		reset:
+ 			ieee80211_reset_bss(vap);
+ 			break;
+@@ -1432,7 +1432,7 @@
+ 			break;
+ 		case IEEE80211_S_RUN:		/* beacon miss */
+ 			if (vap->iv_opmode == IEEE80211_M_STA) {
+-				ieee80211_sta_leave(ni);
++				ieee80211_node_leave(ni);
+ 				vap->iv_flags &= ~IEEE80211_F_SIBSS;	/* XXX */
+ 				if (ic->ic_roaming == IEEE80211_ROAMING_AUTO)
+ 					ieee80211_check_scan(vap,
+@@ -1483,7 +1483,7 @@
+ 				vap->iv_state = ostate;	/* stay RUN */
+ 				break;
+ 			case IEEE80211_FC0_SUBTYPE_DEAUTH:
+-				ieee80211_sta_leave(ni);
++				ieee80211_node_leave(ni);
+ 				if (ic->ic_roaming == IEEE80211_ROAMING_AUTO) {
+ 					/* try to reauth */
+ 					IEEE80211_SEND_MGMT(ni,
+@@ -1510,7 +1510,7 @@
+ 				IEEE80211_FC0_SUBTYPE_ASSOC_REQ, 0);
+ 			break;
+ 		case IEEE80211_S_RUN:
+-			ieee80211_sta_leave(ni);
++			ieee80211_node_leave(ni);
+ 			if (ic->ic_roaming == IEEE80211_ROAMING_AUTO) {
+ 				/* NB: caller specifies ASSOC/REASSOC by arg */
+ 				IEEE80211_SEND_MGMT(ni, arg ?
