@@ -97,6 +97,28 @@ endef
 $(eval $(call KernelPackage,crypto-arc4))
 
 
+define KernelPackage/crypto-aead
+  SUBMENU:=$(CRYPTO_MENU)
+  TITLE:=Authenticated Encryption with Associated Data
+  DEPENDS:=+kmod-crypto-core
+  KCONFIG:=CONFIG_CRYPTO_AEAD
+  FILES:=$(LINUX_DIR)/crypto/aead.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,09,aead)
+endef
+
+$(eval $(call KernelPackage,crypto-aead))
+
+define KernelPackage/crypto-authenc
+  SUBMENU:=$(CRYPTO_MENU)
+  TITLE:=Combined mode wrapper for IPsec
+  DEPENDS:=+kmod-crypto-core +kmod-crypto-aead
+  KCONFIG:=CONFIG_CRYPTO_AUTHENC
+  FILES:=$(LINUX_DIR)/crypto/authenc.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,09,authenc)
+endef
+
+$(eval $(call KernelPackage,crypto-authenc))
+
 define KernelPackage/crypto-des
   SUBMENU:=$(CRYPTO_MENU)
   TITLE:=DES/3DES cipher CryptoAPI module
