@@ -9,11 +9,11 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ixp4xx-microcode
 PKG_VERSION:=2.4
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
-PKG_SOURCE:=IPL_ixp400NpeLibrary-2_4.zip
-PKG_SOURCE_URL:=http://downloadmirror.intel.com/12954/eng/
-PKG_MD5SUM:=9a6dc3846041b899edf9eff8a906fb11
+PKG_SOURCE:=IPL_ixp400NpeLibraryWithCrypto-2_4.zip
+PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
+PKG_MD5SUM:=dd5f6482e625ecb334469958bcd54b37
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
