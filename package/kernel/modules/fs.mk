@@ -359,6 +359,23 @@ endef
 $(eval $(call KernelPackage,nls-cp1250))
 
 
+define KernelPackage/nls-cp1251
+  SUBMENU:=$(FS_MENU)
+  TITLE:=Codepage 1251 (Russian)
+  KCONFIG:=CONFIG_NLS_CODEPAGE_1251
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp1251.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,25,nls_cp1251)
+$(call KernelPackage/nls/Depends)
+endef
+
+
+define KernelPackage/nls-cp1251/description
+ Kernel module for NLS Codepage 1251 (Russian)
+endef
+
+$(eval $(call KernelPackage,nls-cp1251))
+
+
 define KernelPackage/nls-iso8859-1
   SUBMENU:=$(FS_MENU)
   TITLE:=ISO 8859-1 (Latin 1; Western European Languages)
