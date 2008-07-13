@@ -51,6 +51,11 @@ fixup_linksys() {
 				nvram_set pa0maxpwr 0x4e
 			}
 		;;
+		"1071") #0x042f
+			nvram_set sdram_init "$(printf 0x%04x $(( $(/usr/sbin/nvram get sdram_init) | 0x0009 )))"
+			[ "$COMMIT" = 1 ] && {
+				nvram_set sdram_ncdl 0x0
+			}
 	esac
 	[ "$COMMIT" = "1" ] && nvram commit
 }
