@@ -226,6 +226,29 @@ endef
 
 $(eval $(call KernelPackage,crypto-misc))
 
+define KernelPackage/crypto-ocf
+  SUBMENU:=$(CRYPTO_MENU)
+  TITLE:=OCF modules
+  DEPENDS:=+kmod-crypto-core
+  KCONFIG:= \
+	CONFIG_OCF_OCF \
+	CONFIG_OCF_CRYPTODEV \
+	CONFIG_OCF_CRYPTOSOFT \
+	CONFIG_OCF_FIPS=y \
+	CONFIG_OCF_RANDOMHARVEST=y
+  FILES:= \
+	$(LINUX_DIR)/crypto/ocf/ocf.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/crypto/ocf/cryptodev.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/crypto/ocf/cryptosoft.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,09, \
+	ocf \
+	cryptodev \
+	cryptosoft \
+  )
+endef
+
+$(eval $(call KernelPackage,crypto-ocf))
+
 
 define KernelPackage/crypto-null
   SUBMENU:=$(CRYPTO_MENU)
