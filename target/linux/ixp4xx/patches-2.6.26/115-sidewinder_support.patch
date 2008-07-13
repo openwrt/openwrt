@@ -1,3 +1,18 @@
+From 60bdaaaf3446b4237566c6e04855186fc7bd766b Mon Sep 17 00:00:00 2001
+From: Imre Kaloz <kaloz@openwrt.org>
+Date: Sun, 13 Jul 2008 22:46:45 +0200
+Subject: [PATCH] Add support for the ADI Sidewinder
+
+Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
+---
+ arch/arm/mach-ixp4xx/Kconfig            |   10 ++-
+ arch/arm/mach-ixp4xx/Makefile           |    2 +
+ arch/arm/mach-ixp4xx/sidewinder-pci.c   |   68 ++++++++++++++
+ arch/arm/mach-ixp4xx/sidewinder-setup.c |  151 +++++++++++++++++++++++++++++++
+ 4 files changed, 230 insertions(+), 1 deletions(-)
+ create mode 100644 arch/arm/mach-ixp4xx/sidewinder-pci.c
+ create mode 100644 arch/arm/mach-ixp4xx/sidewinder-setup.c
+
 --- a/arch/arm/mach-ixp4xx/Kconfig
 +++ b/arch/arm/mach-ixp4xx/Kconfig
 @@ -81,6 +81,14 @@
@@ -5,17 +20,17 @@
  	def_bool MACH_PRONGHORN
  
 +config MACH_SIDEWINDER
-+	bool "Sidewinder"
++	bool "ADI Sidewinder"
 +	select PCI
 +	help
 +	  Say 'Y' here if you want your kernel to support the ADI 
-+	  Engineering Sidewinder Platform. For more
-+	  information on this platform, see <file:Documentation/arm/IXP4xx>.
++	  Engineering Sidewinder board. For more information on this
++	  platform, see http://www.adiengineering.com
 +
- config MACH_COMPEX
- 	bool "Compex WP18 / NP18A"
- 	select PCI
-@@ -179,7 +187,7 @@
+ config ARCH_IXDP425
+ 	bool "IXDP425"
+ 	help
+@@ -163,7 +171,7 @@
  #
  config CPU_IXP46X
  	bool
@@ -26,31 +41,31 @@
  config CPU_IXP43X
 --- a/arch/arm/mach-ixp4xx/Makefile
 +++ b/arch/arm/mach-ixp4xx/Makefile
-@@ -20,6 +20,7 @@
+@@ -18,6 +18,7 @@
+ obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
+ obj-pci-$(CONFIG_MACH_FSG)		+= fsg-pci.o
  obj-pci-$(CONFIG_MACH_PRONGHORN)	+= pronghorn-pci.o
- obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp425-pci.o
- obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o
-+obj-pci-$(CONFIG_MACH_SIDEWINDER)		+= sidewinder-pci.o
++obj-pci-$(CONFIG_MACH_SIDEWINDER)	+= sidewinder-pci.o
  
  obj-y	+= common.o
  
-@@ -38,6 +39,7 @@
+@@ -34,6 +35,7 @@
+ obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
+ obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o
  obj-$(CONFIG_MACH_PRONGHORN)	+= pronghorn-setup.o
- obj-$(CONFIG_MACH_COMPEX)	+= compex-setup.o
- obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o
 +obj-$(CONFIG_MACH_SIDEWINDER)	+= sidewinder-setup.o
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
  obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/sidewinder-pci.c
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,68 @@
 +/*
 + * arch/arch/mach-ixp4xx/pronghornmetro-pci.c
 + *
 + * PCI setup routines for ADI Engineering Sidewinder
 + *
-+ * Copyright (C) 2007 Imre Kaloz <kaloz@openwrt.org>
++ * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
 + *
 + * based on coyote-pci.c:
 + *	Copyright (C) 2002 Jungo Software Technologies.
@@ -75,10 +90,6 @@
 +
 +#include <asm/mach/pci.h>
 +
-+extern void ixp4xx_pci_preinit(void);
-+extern int ixp4xx_setup(int nr, struct pci_sys_data *sys);
-+extern struct pci_bus *ixp4xx_scan_bus(int nr, struct pci_sys_data *sys);
-+
 +void __init sidewinder_pci_preinit(void)
 +{
 +	set_irq_type(IRQ_IXP4XX_GPIO11, IRQT_LOW);
@@ -96,16 +107,17 @@
 +		return IRQ_IXP4XX_GPIO10;
 +	else if (slot == 3)
 +		return IRQ_IXP4XX_GPIO9;
-+	else return -1;
++	else
++		return -1;
 +}
 +
 +struct hw_pci sidewinder_pci __initdata = {
-+	.nr_controllers = 1,
-+	.preinit =        sidewinder_pci_preinit,
-+	.swizzle =        pci_std_swizzle,
-+	.setup =          ixp4xx_setup,
-+	.scan =           ixp4xx_scan_bus,
-+	.map_irq =        sidewinder_map_irq,
++	.nr_controllers	= 1,
++	.preinit	= sidewinder_pci_preinit,
++	.swizzle	= pci_std_swizzle,
++	.setup		= ixp4xx_setup,
++	.scan		= ixp4xx_scan_bus,
++	.map_irq	= sidewinder_map_irq,
 +};
 +
 +int __init sidewinder_pci_init(void)
@@ -118,13 +130,13 @@
 +subsys_initcall(sidewinder_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/sidewinder-setup.c
-@@ -0,0 +1,115 @@
+@@ -0,0 +1,149 @@
 +/*
 + * arch/arm/mach-ixp4xx/sidewinder-setup.c
 + *
 + * Board setup for the ADI Engineering Sidewinder
 + *
-+ * Copyright (C) 2007 Imre Kaloz <Kaloz@openwrt.org>
++ * Copyright (C) 2008 Imre Kaloz <Kaloz@openwrt.org>
 + *
 + * based on coyote-setup.c:
 + *      Copyright (C) 2003-2005 MontaVista Software, Inc.
@@ -161,14 +173,14 @@
 +
 +static struct resource sidewinder_uart_resources[] = {
 +	{
-+	.start	= IXP4XX_UART1_BASE_PHYS,
-+	.end	= IXP4XX_UART1_BASE_PHYS + 0x0fff,
-+	.flags	= IORESOURCE_MEM,
++		.start	= IXP4XX_UART1_BASE_PHYS,
++		.end	= IXP4XX_UART1_BASE_PHYS + 0x0fff,
++		.flags	= IORESOURCE_MEM,
 +	},
 +	{
-+	.start	= IXP4XX_UART2_BASE_PHYS,
-+	.end	= IXP4XX_UART2_BASE_PHYS + 0x0fff,
-+	.flags	= IORESOURCE_MEM,
++		.start	= IXP4XX_UART2_BASE_PHYS,
++		.end	= IXP4XX_UART2_BASE_PHYS + 0x0fff,
++		.flags	= IORESOURCE_MEM,
 +	}
 +};
 +
@@ -197,16 +209,52 @@
 +static struct platform_device sidewinder_uart = {
 +	.name		= "serial8250",
 +	.id		= PLAT8250_DEV_PLATFORM,
-+	.dev			= {
++	.dev		= {
 +		.platform_data	= sidewinder_uart_data,
 +	},
 +	.num_resources	= ARRAY_SIZE(sidewinder_uart_resources),
 +	.resource	= sidewinder_uart_resources,
 +};
 +
++static struct eth_plat_info sidewinder_plat_eth[] = {
++	{
++		.phy		= 5,
++		.rxq		= 3,
++		.txreadyq	= 20,
++	}, {
++		.phy		= IXP4XX_ETH_PHY_MAX_ADDR,
++		.phy_mask	= 0x1e,
++		.rxq		= 4,
++		.txreadyq	= 21,
++	}, {
++		.phy		= 31,
++		.rxq		= 2,
++		.txreadyq	= 19,
++	}
++};
++
++static struct platform_device sidewinder_eth[] = {
++	{
++		.name			= "ixp4xx_eth",
++		.id			= IXP4XX_ETH_NPEB,
++		.dev.platform_data	= sidewinder_plat_eth,
++	}, {
++		.name			= "ixp4xx_eth",
++		.id			= IXP4XX_ETH_NPEC,
++		.dev.platform_data	= sidewinder_plat_eth + 1,
++	}, {
++		.name			= "ixp4xx_eth",
++		.id			= IXP4XX_ETH_NPEA,
++		.dev.platform_data	= sidewinder_plat_eth + 2,
++	}
++};
++
 +static struct platform_device *sidewinder_devices[] __initdata = {
 +	&sidewinder_flash,
 +	&sidewinder_uart,
++	&sidewinder_eth[0],
++	&sidewinder_eth[1],
++	&sidewinder_eth[2],
 +};
 +
 +static void __init sidewinder_init(void)
@@ -222,7 +270,6 @@
 +	platform_add_devices(sidewinder_devices, ARRAY_SIZE(sidewinder_devices));
 +}
 +
-+#ifdef CONFIG_MACH_SIDEWINDER
 +MACHINE_START(SIDEWINDER, "ADI Engineering Sidewinder")
 +	/* Maintainer: Imre Kaloz <kaloz@openwrt.org> */
 +	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
@@ -233,4 +280,3 @@
 +	.boot_params	= 0x0100,
 +	.init_machine	= sidewinder_init,
 +MACHINE_END
-+#endif
