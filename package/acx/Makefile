@@ -18,7 +18,7 @@ PKG_SOURCE_URL:=@SF/acx100
 PKG_MD5SUM:=7d5ce3215708e4e9f95cf567a9ee3a12
 
 PKG_FW_C16_NAME:=tiacx111c16
-PKG_FW_C16_URL:=http://teknoraver.campuslife.it/software/acx-mac80211/
+PKG_FW_C16_URL:=http://teknoraver.net/software/acx-mac80211/
 PKG_FW_C16_MD5SUM:=7026826460376f6b174f9225bd7781b9
 
 PKG_FW_C19_NAME:=tiacx111c19
