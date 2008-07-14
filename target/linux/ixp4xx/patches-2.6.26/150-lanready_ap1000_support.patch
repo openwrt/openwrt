@@ -154,12 +154,11 @@
 +#endif
 --- a/arch/arm/mach-ixp4xx/ixdp425-pci.c
 +++ b/arch/arm/mach-ixp4xx/ixdp425-pci.c
-@@ -66,7 +66,8 @@
- int __init ixdp425_pci_init(void)
+@@ -67,7 +67,7 @@
  {
  	if (machine_is_ixdp425() || machine_is_ixcdp1100() ||
--			machine_is_ixdp465() || machine_is_kixrp435() || machine_is_compex())
-+			machine_is_ixdp465() || machine_is_kixrp435() ||
+ 			machine_is_ixdp465() || machine_is_kixrp435() ||
+-			machine_is_compex())
 +			machine_is_compex() || machine_is_ap1000())
  		pci_common_init(&ixdp425_pci);
  	return 0;
