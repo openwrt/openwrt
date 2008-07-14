@@ -7,8 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=binutils
-PKG_VERSION:=$(strip $(subst ",, $(CONFIG_BINUTILS_VERSION)))
-#"))
+PKG_VERSION:=$(call qstrip,$(CONFIG_BINUTILS_VERSION))
 
 PKG_SOURCE_URL:=http://ftp.gnu.org/gnu/binutils/ \
 	ftp://gatekeeper.dec.com/pub/GNU/ \
