@@ -571,46 +571,6 @@
      } while(0)
  
  /* max = 24: 128bit encrypt, max = 32: 256bit encrypt */
---- a/crypto/chainiv.c
-+++ b/crypto/chainiv.c
-@@ -117,6 +117,7 @@
- static int async_chainiv_schedule_work(struct async_chainiv_ctx *ctx)
- {
- 	int queued;
-+	int err = ctx->err;
- 
- 	if (!ctx->queue.qlen) {
- 		smp_mb__before_clear_bit();
-@@ -131,7 +132,7 @@
- 	BUG_ON(!queued);
- 
- out:
--	return ctx->err;
-+	return err;
- }
- 
- static int async_chainiv_postpone_request(struct skcipher_givcrypt_request *req)
-@@ -227,6 +228,7 @@
- 						     postponed);
- 	struct skcipher_givcrypt_request *req;
- 	struct ablkcipher_request *subreq;
-+	int err;
- 
- 	/* Only handle one request at a time to avoid hogging keventd. */
- 	spin_lock_bh(&ctx->lock);
-@@ -241,7 +243,11 @@
- 	subreq = skcipher_givcrypt_reqctx(req);
- 	subreq->base.flags |= CRYPTO_TFM_REQ_MAY_SLEEP;
- 
--	async_chainiv_givencrypt_tail(req);
-+	err = async_chainiv_givencrypt_tail(req);
-+
-+	local_bh_disable();
-+	skcipher_givcrypt_complete(req, err);
-+	local_bh_enable();
- }
- 
- static int async_chainiv_init(struct crypto_tfm *tfm)
 --- a/crypto/crc32c.c
 +++ b/crypto/crc32c.c
 @@ -5,20 +5,23 @@
@@ -3593,7 +3553,7 @@
  
  	j = 0;
  	for (i = 0; i < tcount; i++) {
-@@ -602,6 +638,7 @@
+@@ -596,6 +632,7 @@
  			printk("test %u (%d bit key):\n",
  			j, template[i].klen * 8);
  
@@ -3601,7 +3561,7 @@
  			crypto_ablkcipher_clear_flags(tfm, ~0);
  			if (template[i].wk)
  				crypto_ablkcipher_set_flags(
-@@ -657,14 +694,21 @@
+@@ -649,14 +686,21 @@
  			temp = 0;
  			for (k = 0; k < template[i].np; k++) {
  				printk("page %u\n", k);
@@ -3625,7 +3585,7 @@
  			}
  		}
  	}
-@@ -1180,6 +1224,14 @@
+@@ -1172,6 +1216,14 @@
  		test_cipher("ecb(des3_ede)", DECRYPT, des3_ede_dec_tv_template,
  			    DES3_EDE_DEC_TEST_VECTORS);
  
@@ -3640,7 +3600,7 @@
  		test_hash("md4", md4_tv_template, MD4_TEST_VECTORS);
  
  		test_hash("sha224", sha224_tv_template, SHA224_TEST_VECTORS);
-@@ -1390,6 +1442,14 @@
+@@ -1382,6 +1434,14 @@
  			    DES3_EDE_ENC_TEST_VECTORS);
  		test_cipher("ecb(des3_ede)", DECRYPT, des3_ede_dec_tv_template,
  			    DES3_EDE_DEC_TEST_VECTORS);
@@ -3655,7 +3615,7 @@
  		break;
  
  	case 5:
-@@ -1558,7 +1618,7 @@
+@@ -1550,7 +1610,7 @@
  	case 29:
  		test_hash("tgr128", tgr128_tv_template, TGR128_TEST_VECTORS);
  		break;
@@ -3664,7 +3624,7 @@
  	case 30:
  		test_cipher("ecb(xeta)", ENCRYPT, xeta_enc_tv_template,
  			    XETA_ENC_TEST_VECTORS);
-@@ -1623,6 +1683,22 @@
+@@ -1615,6 +1675,22 @@
  			    CTS_MODE_DEC_TEST_VECTORS);
  		break;
  
@@ -3687,7 +3647,7 @@
  	case 100:
  		test_hash("hmac(md5)", hmac_md5_tv_template,
  			  HMAC_MD5_TEST_VECTORS);
-@@ -1658,6 +1734,16 @@
+@@ -1650,6 +1726,16 @@
  			  XCBC_AES_TEST_VECTORS);
  		break;
  
@@ -3704,7 +3664,7 @@
  	case 200:
  		test_cipher_speed("ecb(aes)", ENCRYPT, sec, NULL, 0,
  				speed_template_16_24_32);
-@@ -1796,6 +1882,22 @@
+@@ -1788,6 +1874,22 @@
  		test_hash_speed("sha224", sec, generic_hash_speed_template);
  		if (mode > 300 && mode < 400) break;
  
