@@ -21,7 +21,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gcc
-PKG_VERSION:=$(strip $(subst ",, $(CONFIG_GCC_VERSION)))#"))
+PKG_VERSION:=$(call qstrip,$(CONFIG_GCC_VERSION))
 
 PATCH_DIR=./patches/$(PKG_VERSION)
 PKG_SOURCE_URL:=ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-$(PKG_VERSION) \

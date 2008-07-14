@@ -8,9 +8,9 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/target.mk
 
 PKG_NAME:=uClibc
-PKG_VERSION:=$(strip $(subst ",, $(CONFIG_UCLIBC_VERSION)))#"))
-PKG_EXTRAVERSION:=$(strip $(subst ",, $(CONFIG_UCLIBC_EXTRA_VERSION)))#"))
-PKG_VERSION_SNAPSHOT:=$(strip $(subst ",, $(CONFIG_UCLIBC_VERSION_SNAPSHOT)))#"))
+PKG_VERSION:=$(call qstrip,$(CONFIG_UCLIBC_VERSION))
+PKG_EXTRAVERSION:=$(call qstrip,$(CONFIG_UCLIBC_EXTRA_VERSION))
+PKG_VERSION_SNAPSHOT:=$(call qstrip,$(CONFIG_UCLIBC_VERSION_SNAPSHOT))
 ifeq ($(PKG_VERSION_SNAPSHOT),y)
 PKG_SOURCE_URL:=http://www.uclibc.org/downloads/snapshots
 else
