@@ -1,8 +1,7 @@
-Index: compat-wireless-2008-05-26/config.mk
-===================================================================
---- compat-wireless-2008-05-26.orig/config.mk	2008-05-27 19:15:19.000000000 +0100
-+++ compat-wireless-2008-05-26/config.mk	2008-05-27 19:52:31.000000000 +0100
-@@ -28,73 +28,6 @@ CONFIG_NL80211=y
+diff -urN compat-wireless-2008-05-26/config.mk compat-wireless-2008-05-26.new/config.mk
+--- compat-wireless-2008-05-26/config.mk	2008-05-20 09:37:02.000000000 +0200
++++ compat-wireless-2008-05-26.new/config.mk	2008-07-14 10:52:01.000000000 +0200
+@@ -28,73 +28,6 @@
  # PCI Drivers
  ifneq ($(CONFIG_PCI),)
  
@@ -76,12 +75,10 @@ Index: compat-wireless-2008-05-26/config.mk
  CONFIG_RT2X00_LIB_PCI=m
  CONFIG_RT2400PCI=m
  CONFIG_RT2500PCI=m
-@@ -116,33 +49,6 @@ CONFIG_EEPROM_93CX6=m
- 
- # USB Drivers
+@@ -118,32 +51,6 @@
  ifneq ($(CONFIG_USB),)
--CONFIG_ZD1211RW=m
--
+ CONFIG_ZD1211RW=m
+ 
 -# support for USB Wireless devices using Atmel at76c503,
 -# at76c505 or at76c505a chips.
 -CONFIG_USB_ATMEL=m
@@ -107,10 +104,11 @@ Index: compat-wireless-2008-05-26/config.mk
 -
 -CONFIG_P54_USB=m
 -CONFIG_RTL8187=m
- 
+-
  # RT2500USB does not require firmware
  CONFIG_RT2500USB=m
-@@ -168,39 +74,6 @@ ifeq ($(NEED_RT2X00_FIRMWARE),y)
+ CONFIG_RT2X00_LIB_USB=m
+@@ -168,39 +75,6 @@
  CONFIG_RT2X00_LIB_FIRMWARE=y
  endif
  
