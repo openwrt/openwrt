@@ -1,0 +1,51 @@
+This patch decreases the timeouts for assoc/auth to more realistic values. Improves roaming speed
+Index: wpa_supplicant-0.6.3/wpa_supplicant/events.c
+===================================================================
+--- wpa_supplicant-0.6.3.orig/wpa_supplicant/events.c	2008-02-23 03:45:24.000000000 +0100
++++ wpa_supplicant-0.6.3/wpa_supplicant/events.c	2008-07-09 15:13:37.000000000 +0200
+@@ -762,7 +762,7 @@
+ 		wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
+ 	} else if (!ft_completed) {
+ 		/* Timeout for receiving the first EAPOL packet */
+-		wpa_supplicant_req_auth_timeout(wpa_s, 10, 0);
++		wpa_supplicant_req_auth_timeout(wpa_s, 3, 0);
+ 	}
+ 	wpa_supplicant_cancel_scan(wpa_s);
+ 
+Index: wpa_supplicant-0.6.3/wpa_supplicant/scan.c
+===================================================================
+--- wpa_supplicant-0.6.3.orig/wpa_supplicant/scan.c	2008-02-23 03:45:24.000000000 +0100
++++ wpa_supplicant-0.6.3/wpa_supplicant/scan.c	2008-07-09 15:13:37.000000000 +0200
+@@ -144,6 +144,7 @@
+ 		return;
+ 	}
+ 
++	wpa_drv_flush_pmkid(wpa_s);
+ 	if (wpa_s->use_client_mlme) {
+ 		ieee80211_sta_set_probe_req_ie(wpa_s, extra_ie, extra_ie_len);
+ 		ret = ieee80211_sta_req_scan(wpa_s, ssid ? ssid->ssid : NULL,
+@@ -156,7 +157,7 @@
+ 
+ 	if (ret) {
+ 		wpa_printf(MSG_WARNING, "Failed to initiate AP scan.");
+-		wpa_supplicant_req_scan(wpa_s, 10, 0);
++		wpa_supplicant_req_scan(wpa_s, 3, 0);
+ 	}
+ }
+ 
+Index: wpa_supplicant-0.6.3/wpa_supplicant/wpa_supplicant.c
+===================================================================
+--- wpa_supplicant-0.6.3.orig/wpa_supplicant/wpa_supplicant.c	2008-02-23 03:45:24.000000000 +0100
++++ wpa_supplicant-0.6.3/wpa_supplicant/wpa_supplicant.c	2008-07-09 15:13:37.000000000 +0200
+@@ -1092,9 +1092,9 @@
+ 		/* Timeout for IEEE 802.11 authentication and association */
+ 		int timeout;
+ 		if (assoc_failed)
+-			timeout = 5;
++			timeout = 2;
+ 		else if (wpa_s->conf->ap_scan == 1)
+-			timeout = 10;
++			timeout = 3;
+ 		else
+ 			timeout = 60;
+ 		wpa_supplicant_req_auth_timeout(wpa_s, timeout, 0);
