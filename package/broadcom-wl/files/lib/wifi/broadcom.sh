@@ -3,8 +3,8 @@ append DRIVERS "broadcom"
 scan_broadcom() {
 	local device="$1"
 	local wds
-	local adhoc sta apmode
-	local adhoc_if sta_if ap_if
+	local adhoc sta apmode mon
+	local adhoc_if sta_if ap_if mon_if
 
 	config_get vifs "$device" vifs
 	for vif in $vifs; do
@@ -26,17 +26,21 @@ scan_broadcom() {
 				config_get addr "$vif" bssid
 				[ -z "$addr" ] || append wds "$addr"
 			;;
+			monitor)
+				mon=1
+				mon_if="$vif"
+			;;
 			*) echo "$device($vif): Invalid mode";;
 		esac
 	done
 	config_set "$device" wds "$wds"
 
 	local _c=
-	for vif in ${adhoc_if:-$sta_if $ap_if}; do
+	for vif in ${adhoc_if:-$sta_if $ap_if $mon_if}; do
 		config_set "$vif" ifname "wl0${_c:+.$_c}"
 		_c=$((${_c:-0} + 1))
 	done
-	config_set "$device" vifs "${adhoc_if:-$sta_if $ap_if}"
+	config_set "$device" vifs "${adhoc_if:-$sta_if $ap_if $mon_if}"
 
 	ifdown="down"
 	for vif in 0 1 2 3; do
@@ -49,20 +53,29 @@ scan_broadcom() {
 	mssid=1
 	apsta=0
 	radio=1
-	case "$adhoc:$sta:$apmode" in
+	monitor=0
+	passive=0
+	case "$adhoc:$sta:$apmode:$mon" in
 		1*)
 			ap=0
 			mssid=
 			infra=0
 		;;
-		:1:1)
+		:1:1:)
 			apsta=1
 			wet=1
 		;;
-		:1:)
+		:1::)
 			wet=1
 			ap=0
 			mssid=
+		;;
+		:::1)
+			wet=1
+			ap=0
+			mssid=
+			monitor=1
+			passive=1
 		;;
 		::)
 			radio=0
@@ -201,6 +214,11 @@ enable_broadcom() {
 		append vif_post_up "vlan_mode 0" "$N"
 		append vif_post_up "ssid $ssid" "$N"
 		append vif_do_up "ssid $ssid" "$N"
+
+		[ "$mode" = "monitor" ] && {
+			append vif_post_up "monitor $monitor" "$N"
+			append vif_post_up "passive $passive" "$N"
+		}
 		
 		append vif_post_up "enabled 1" "$N"
 		
@@ -243,6 +261,8 @@ ${wet:+wet 1}
 802.11h 0
 rxant ${rxant:-3}
 txant ${txant:-3}
+monitor ${monitor:-0}
+passive ${passive:-0}
 
 radio ${radio:-1}
 macfilter ${macfilter:-0}
