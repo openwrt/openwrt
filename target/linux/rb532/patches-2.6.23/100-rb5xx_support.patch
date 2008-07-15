@@ -1,0 +1,103 @@
+Index: linux-2.6.23.17/arch/mips/Kconfig
+===================================================================
+--- linux-2.6.23.17.orig/arch/mips/Kconfig
++++ linux-2.6.23.17/arch/mips/Kconfig
+@@ -595,6 +595,20 @@ config WR_PPMC
+ 	  This enables support for the Wind River MIPS32 4KC PPMC evaluation
+ 	  board, which is based on GT64120 bridge chip.
+ 
++config MIKROTIK_RB500
++	bool "Support for RB5xx boards"
++	select HW_HAS_PCI
++	select IRQ_CPU
++	select SYS_HAS_CPU_MIPS32_R1
++	select SYS_SUPPORTS_LITTLE_ENDIAN
++	select SYS_SUPPORTS_32BIT_KERNEL
++	select SWAP_IO_SPACE
++	select DMA_NONCOHERENT
++	select GENERIC_GPIO
++	help
++	 Support the Mikrotik(tm) Routerboard 500 series,
++	 such as the RB532.
++
+ endchoice
+ 
+ source "arch/mips/au1000/Kconfig"
+@@ -829,6 +843,7 @@ config MIPS_L1_CACHE_SHIFT
+ 	default "4" if MACH_DECSTATION
+ 	default "7" if SGI_IP27 || SNI_RM
+ 	default "4" if PMC_MSP4200_EVAL
++	default "4" if MIKROTIK_RB500
+ 	default "5"
+ 
+ config HAVE_STD_PC_SERIAL_PORT
+Index: linux-2.6.23.17/arch/mips/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/arch/mips/Makefile
++++ linux-2.6.23.17/arch/mips/Makefile
+@@ -300,6 +300,13 @@ load-$(CONFIG_LEMOTE_FULONG) +=0xfffffff
+ cflags-$(CONFIG_LEMOTE_FULONG) += -Iinclude/asm-mips/mach-lemote
+ 
+ #
++# Routerboard 532 board
++#
++core-$(CONFIG_MIKROTIK_RB500)	+= arch/mips/rb500/
++cflags-$(CONFIG_MIKROTIK_RB500)	+= -Iinclude/asm-mips/rc32434
++load-$(CONFIG_MIKROTIK_RB500)	+= 0xffffffff80101000
++
++#
+ # For all MIPS, Inc. eval boards
+ #
+ core-$(CONFIG_MIPS_BOARDS_GEN)	+= arch/mips/mips-boards/generic/
+Index: linux-2.6.23.17/arch/mips/pci/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/arch/mips/pci/Makefile
++++ linux-2.6.23.17/arch/mips/pci/Makefile
+@@ -46,3 +46,4 @@ obj-$(CONFIG_TOSHIBA_RBTX4938)	+= fixup-
+ obj-$(CONFIG_VICTOR_MPC30X)	+= fixup-mpc30x.o
+ obj-$(CONFIG_ZAO_CAPCELLA)	+= fixup-capcella.o
+ obj-$(CONFIG_WR_PPMC)		+= fixup-wrppmc.o
++obj-$(CONFIG_MIKROTIK_RB500)	+= pci-rc32434.o ops-rc32434.o fixup-rb500.o
+Index: linux-2.6.23.17/drivers/pci/Makefile
+===================================================================
+--- linux-2.6.23.17.orig/drivers/pci/Makefile
++++ linux-2.6.23.17/drivers/pci/Makefile
+@@ -32,6 +32,7 @@ obj-$(CONFIG_PPC32) += setup-irq.o
+ obj-$(CONFIG_PPC64) += setup-bus.o
+ obj-$(CONFIG_MIPS) += setup-bus.o setup-irq.o
+ obj-$(CONFIG_X86_VISWS) += setup-irq.o
++obj-$(CONFIG_MIKROTIK_RB500) += setup-irq.o
+ 
+ #
+ # ACPI Related PCI FW Functions
+Index: linux-2.6.23.17/include/asm-mips/bootinfo.h
+===================================================================
+--- linux-2.6.23.17.orig/include/asm-mips/bootinfo.h
++++ linux-2.6.23.17/include/asm-mips/bootinfo.h
+@@ -208,6 +208,11 @@
+ #define MACH_GROUP_WINDRIVER   28	/* Windriver boards */
+ #define MACH_WRPPMC             1
+ 
++
++#define MACH_GROUP_MIKROTIK	29 	/* Mikrotik Boards                       */
++#define  MACH_MIKROTIK_RB532	0	/* Mikrotik RouterBoard 532 */
++#define  MACH_MIKROTIK_RB532A	1	/* Mikrotik RouterBoard 532A */
++
+ #define CL_SIZE			COMMAND_LINE_SIZE
+ 
+ const char *get_system_type(void);
+Index: linux-2.6.23.17/include/asm-mips/cpu.h
+===================================================================
+--- linux-2.6.23.17.orig/include/asm-mips/cpu.h
++++ linux-2.6.23.17/include/asm-mips/cpu.h
+@@ -217,8 +217,9 @@
+ #define CPU_R14000		64
+ #define CPU_LOONGSON1           65
+ #define CPU_LOONGSON2           66
++#define CPU_RC32300            	67
+ 
+-#define CPU_LAST		66
++#define CPU_LAST		67
+ 
+ /*
+  * ISA Level encodings
