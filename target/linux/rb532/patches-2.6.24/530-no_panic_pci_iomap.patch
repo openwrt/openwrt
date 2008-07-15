@@ -1,0 +1,12 @@
+diff -urN linux-2.6.24.7/arch/mips/lib/iomap-pci.c linux-2.6.24.7.new/arch/mips/lib/iomap-pci.c
+--- linux-2.6.24.7/arch/mips/lib/iomap-pci.c	2008-05-07 01:22:34.000000000 +0200
++++ linux-2.6.24.7.new/arch/mips/lib/iomap-pci.c	2008-07-15 16:24:22.000000000 +0200
+@@ -32,7 +32,7 @@
+ 		       "report it to linux-mips@linux-mips.org or your "
+ 		       "vendor.\n", name);
+ #ifdef CONFIG_PCI_DOMAINS
+-		panic("To avoid data corruption io_map_base MUST be set with "
++		printk(KERN_WARNING "To avoid data corruption io_map_base MUST be set with "
+ 		      "multiple PCI domains.");
+ #endif
+ 	}

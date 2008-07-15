@@ -1,0 +1,101 @@
+diff -urN linux-2.6.24.7/arch/mips/Kconfig linux-2.6.24.7.new/arch/mips/Kconfig
+--- linux-2.6.24.7/arch/mips/Kconfig	2008-05-07 01:22:34.000000000 +0200
++++ linux-2.6.24.7.new/arch/mips/Kconfig	2008-07-15 15:29:51.000000000 +0200
+@@ -687,6 +687,23 @@
+ 	  This enables support for the Wind River MIPS32 4KC PPMC evaluation
+ 	  board, which is based on GT64120 bridge chip.
+ 
++config MIKROTIK_RB500
++	bool "Support for RB5xx boards"
++	select HW_HAS_PCI
++       select CEVT_R4K
++       select CSRC_R4K
++	select IRQ_CPU
++	select SYS_HAS_CPU_MIPS32_R1
++	select SYS_SUPPORTS_LITTLE_ENDIAN
++	select SYS_SUPPORTS_32BIT_KERNEL
++	select SWAP_IO_SPACE
++	select DMA_NONCOHERENT
++	select GENERIC_GPIO
++	help
++	  Support the Mikrotik(tm) Routerboard 500 series,
++	  such as the RB532.
++
++
+ endchoice
+ 
+ source "arch/mips/au1000/Kconfig"
+@@ -967,6 +982,7 @@
+ 	default "4" if MACH_DECSTATION
+ 	default "7" if SGI_IP27 || SNI_RM
+ 	default "4" if PMC_MSP4200_EVAL
++	default "4" if MIKROTIK_RB500
+ 	default "5"
+ 
+ config HAVE_STD_PC_SERIAL_PORT
+diff -urN linux-2.6.24.7/arch/mips/Makefile linux-2.6.24.7.new/arch/mips/Makefile
+--- linux-2.6.24.7/arch/mips/Makefile	2008-07-15 15:27:55.000000000 +0200
++++ linux-2.6.24.7.new/arch/mips/Makefile	2008-07-15 15:30:21.000000000 +0200
+@@ -297,6 +297,13 @@
+ cflags-$(CONFIG_LEMOTE_FULONG) += -Iinclude/asm-mips/mach-lemote
+ 
+ #
++# Routerboard 532 board
++#
++core-$(CONFIG_MIKROTIK_RB500)  += arch/mips/rb500/
++cflags-$(CONFIG_MIKROTIK_RB500)        += -Iinclude/asm-mips/rc32434
++load-$(CONFIG_MIKROTIK_RB500)  += 0xffffffff80101000
++
++#
+ # For all MIPS, Inc. eval boards
+ #
+ core-$(CONFIG_MIPS_BOARDS_GEN)	+= arch/mips/mips-boards/generic/
+diff -urN linux-2.6.24.7/arch/mips/pci/Makefile linux-2.6.24.7.new/arch/mips/pci/Makefile
+--- linux-2.6.24.7/arch/mips/pci/Makefile	2008-05-07 01:22:34.000000000 +0200
++++ linux-2.6.24.7.new/arch/mips/pci/Makefile	2008-07-15 15:30:46.000000000 +0200
+@@ -48,3 +48,4 @@
+ obj-$(CONFIG_VICTOR_MPC30X)	+= fixup-mpc30x.o
+ obj-$(CONFIG_ZAO_CAPCELLA)	+= fixup-capcella.o
+ obj-$(CONFIG_WR_PPMC)		+= fixup-wrppmc.o
++obj-$(CONFIG_MIKROTIK_RB500)	+= pci-rc32434.o ops-rc32434.o fixup-rb500.o
+diff -urN linux-2.6.24.7/drivers/pci/Makefile linux-2.6.24.7.new/drivers/pci/Makefile
+--- linux-2.6.24.7/drivers/pci/Makefile	2008-05-07 01:22:34.000000000 +0200
++++ linux-2.6.24.7.new/drivers/pci/Makefile	2008-07-15 15:31:20.000000000 +0200
+@@ -35,6 +35,7 @@
+ obj-$(CONFIG_PPC64) += setup-bus.o
+ obj-$(CONFIG_MIPS) += setup-bus.o setup-irq.o
+ obj-$(CONFIG_X86_VISWS) += setup-irq.o
++obj-$(CONFIG_MIKROTIK_RB500) += setup-irq.o
+ 
+ #
+ # ACPI Related PCI FW Functions
+diff -urN linux-2.6.24.7/include/asm-mips/bootinfo.h linux-2.6.24.7.new/include/asm-mips/bootinfo.h
+--- linux-2.6.24.7/include/asm-mips/bootinfo.h	2008-05-07 01:22:34.000000000 +0200
++++ linux-2.6.24.7.new/include/asm-mips/bootinfo.h	2008-07-15 15:32:06.000000000 +0200
+@@ -198,6 +198,14 @@
+ #define MACH_GROUP_BRCM		23	/* Broadcom			*/
+ #define  MACH_BCM47XX		1	/* Broadcom BCM47XX		*/
+ 
++
++/*
++ * Valid machtype for group Mikrotik
++ */
++#define MACH_GROUP_MIKROTIK    29      /* Mikrotik Boards                       */
++#define  MACH_MIKROTIK_RB532   0       /* Mikrotik RouterBoard 532 */
++#define  MACH_MIKROTIK_RB532A  1       /* Mikrotik RouterBoard 532A */
++
+ #define CL_SIZE			COMMAND_LINE_SIZE
+ 
+ const char *get_system_type(void);
+diff -urN linux-2.6.24.7/include/asm-mips/cpu.h linux-2.6.24.7.new/include/asm-mips/cpu.h
+--- linux-2.6.24.7/include/asm-mips/cpu.h	2008-05-07 01:22:34.000000000 +0200
++++ linux-2.6.24.7.new/include/asm-mips/cpu.h	2008-07-15 15:32:22.000000000 +0200
+@@ -196,7 +196,7 @@
+ 	 */
+ 	CPU_4KC, CPU_4KEC, CPU_4KSC, CPU_24K, CPU_34K, CPU_74K, CPU_AU1000,
+ 	CPU_AU1100, CPU_AU1200, CPU_AU1500, CPU_AU1550, CPU_PR4450,
+-	CPU_BCM3302, CPU_BCM4710,
++	CPU_BCM3302, CPU_BCM4710, CPU_RC32300,
+ 
+ 	/*
+ 	 * MIPS64 class processors
