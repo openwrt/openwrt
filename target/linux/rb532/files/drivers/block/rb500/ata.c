@@ -358,6 +358,8 @@ static int do_identify(struct cf_mips_dev *dev)
 	u16 sbuf[CF_SECT_SIZE >> 1];
  	int res;
 	char tstr[17]; //serial
+	char tmp;
+	int i;
 	BUG_ON(dev->tstate!=TS_IDLE);
 	dev->tbuf = (char *) sbuf;
 	dev->tbuf_size = CF_SECT_SIZE;
@@ -381,8 +383,16 @@ static int do_identify(struct cf_mips_dev *dev)
 	dev->spt = sbuf[6];
 	dev->sectors = ((unsigned long) sbuf[7] << 16) | sbuf[8];
 	dev->dtype=sbuf[0];
-	memcpy(tstr,&sbuf[12],16);
-	tstr[16]=0;
+	memcpy(tstr, &sbuf[12], 16);
+	tstr[16] = '\0';
+
+	/* Byte-swap the serial number */
+	for (i = 0; i<8; i++) {
+		tmp = tstr[i * 2];
+		tstr[i * 2] = tstr[i * 2 +1];
+		tstr[i * 2 + 1] = tmp;
+	}
+
 	printk(KERN_INFO "cf-mips: %s detected, C/H/S=%d/%d/%d sectors=%u (%uMB) Serial=%s\n",
 	       (sbuf[0] == 0x848A ? "CF card" : "ATA drive"), dev->cyl, dev->head,
 	       dev->spt, dev->sectors, dev->sectors >> 11, tstr);
