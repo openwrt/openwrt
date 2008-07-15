@@ -9,7 +9,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wpa_supplicant
-PKG_VERSION:=0.5.10
+PKG_VERSION:=0.6.3
 PKG_RELEASE:=1
 PKG_MD5SUM:=9e7b99da67c47d81121368c6d580d069
 
@@ -17,11 +17,11 @@ PKG_SOURCE_URL:=http://hostap.epitest.fi/releases
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 
 include $(INCLUDE_DIR)/package.mk
+STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(call confvar,CONFIG_PACKAGE_kmod-madwifi CONFIG_WPA_SUPPLICANT_NO_TIMESTAMP_CHECK)
 
 define Package/wpa-supplicant
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+libopenssl
   TITLE:=WPA Supplicant
   URL:=http://hostap.epitest.fi/wpa_supplicant/
 endef
@@ -29,6 +29,17 @@ endef
 define Package/wpa-supplicant/Description
  WPA Supplicant
 endef
+
+define Package/wpa-supplicant/config
+  config WPA_SUPPLICANT_NO_TIMESTAMP_CHECK
+	bool "Disable timestamp check"
+	depends PACKAGE_wpa-supplicant
+	default n
+	help
+		This disables the timestamp check for certificates in wpa_supplicant
+		Useful for devices without RTC that cannot reliably get the real date/time
+endef
+
 
 define Package/wpa-cli
   SECTION:=net
@@ -38,31 +49,35 @@ define Package/wpa-cli
 endef
 
 define Package/wpa-cli/Description
- 
+ WPA Supplicant control utility 
 endef
 
+CONFIG=$(firstword $(wildcard ./files/config.$(BOARD) ./files/config.$(ARCH) ./config))
+TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include/madwifi $(if $(CONFIG_WPA_SUPPLICANT_NO_TIMESTAMP_CHECK),-DNO_TIMESTAMP_CHECK)
+
 define Build/Configure
-	cp ./files/config.$(ARCH) $(PKG_BUILD_DIR)/.config
+	cp $(CONFIG) $(PKG_BUILD_DIR)/wpa_supplicant/.config
+	$(if $(CONFIG_PACKAGE_kmod-madwifi),,$(SED) 's,^CONFIG_DRIVER_MADWIFI,#CONFIG_DRIVER_MADWIFI,g' $(PKG_BUILD_DIR)/wpa_supplicant/.config)
 endef
 
 define Build/Compile
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	CFLAGS="$(TARGET_CFLAGS)" \
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	$(MAKE) -C $(PKG_BUILD_DIR)/wpa_supplicant \
 		CC="$(TARGET_CC)" \
 		KERNEL=$(LINUX_DIR) \
 		CPPFLAGS="$(TARGET_CPPFLAGS)" \
 		LDFLAGS="$(TARGET_LDFLAGS)" \
 		all
-	$(STRIP) $(PKG_BUILD_DIR)/wpa_supplicant
-	$(STRIP) $(PKG_BUILD_DIR)/wpa_cli
-		
 endef
 
 define Package/wpa-supplicant/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/wpa_{supplicant,passphrase} $(1)/usr/sbin/
+	$(CP) \
+		$(PKG_BUILD_DIR)/wpa_supplicant/wpa_supplicant \
+		$(PKG_BUILD_DIR)/wpa_supplicant/wpa_passphrase \
+		$(1)/usr/sbin/
 endef
 
 define Package/wpa-cli/install

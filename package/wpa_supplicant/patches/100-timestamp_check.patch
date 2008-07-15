@@ -1,0 +1,17 @@
+Index: wpa_supplicant-0.6.3/src/tls/x509v3.c
+===================================================================
+--- wpa_supplicant-0.6.3.orig/src/tls/x509v3.c	2008-02-23 03:45:24.000000000 +0100
++++ wpa_supplicant-0.6.3/src/tls/x509v3.c	2008-07-09 12:47:19.000000000 +0200
+@@ -1551,8 +1551,11 @@
+ 		if (chain_trusted)
+ 			continue;
+ 
+-		if ((unsigned long) now.sec <
++		if (
++#ifndef NO_TIMESTAMP_CHECK
++		    (unsigned long) now.sec <
+ 		    (unsigned long) cert->not_before ||
++#endif
+ 		    (unsigned long) now.sec >
+ 		    (unsigned long) cert->not_after) {
+ 			wpa_printf(MSG_INFO, "X509: Certificate not valid "
