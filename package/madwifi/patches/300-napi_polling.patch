@@ -44,7 +44,7 @@
  #ifdef USE_HEADERLEN_RESV
  	dev->hard_header_len += sizeof(struct ieee80211_qosframe) +
  				sizeof(struct llc) +
-@@ -2216,6 +2228,7 @@
+@@ -2220,6 +2232,7 @@
  		(status & HAL_INT_GLOBAL)	? " HAL_INT_GLOBAL"	: ""
  		);
  
@@ -52,7 +52,7 @@
  	status &= sc->sc_imask;			/* discard unasked for bits */
  	/* As soon as we know we have a real interrupt we intend to service, 
  	 * we will check to see if we need an initial hardware TSF reading. 
-@@ -2273,7 +2286,23 @@
+@@ -2277,7 +2290,23 @@
  		}
  		if (status & (HAL_INT_RX | HAL_INT_RXPHY)) {
  			ath_uapsd_processtriggers(sc, hw_tsf);
@@ -77,7 +77,7 @@
  		}
  		if (status & HAL_INT_TX) {
  #ifdef ATH_SUPERG_DYNTURBO
-@@ -2299,6 +2328,11 @@
+@@ -2303,6 +2332,11 @@
  				}
  			}
  #endif
@@ -89,7 +89,7 @@
  			ATH_SCHEDULE_TQUEUE(&sc->sc_txtq, &needmark);
  		}
  		if (status & HAL_INT_BMISS) {
-@@ -2511,6 +2545,7 @@
+@@ -2515,6 +2549,7 @@
  	if (sc->sc_tx99 != NULL)
  		sc->sc_tx99->start(sc->sc_tx99);
  #endif
@@ -97,7 +97,7 @@
  
  done:
  	ATH_UNLOCK(sc);
-@@ -2551,6 +2586,9 @@
+@@ -2555,6 +2590,9 @@
  		if (sc->sc_tx99 != NULL)
  			sc->sc_tx99->stop(sc->sc_tx99);
  #endif
@@ -107,7 +107,7 @@
  		netif_stop_queue(dev);	/* XXX re-enabled by ath_newstate */
  		dev->flags &= ~IFF_RUNNING;	/* NB: avoid recursion */
  		ieee80211_stop_running(ic);	/* stop all VAPs */
-@@ -4009,6 +4047,39 @@
+@@ -4013,6 +4051,39 @@
  	return ath_keyset(sc, k, mac, vap->iv_bss);
  }
  
@@ -147,7 +147,7 @@
  /*
   * Block/unblock tx+rx processing while a key change is done.
   * We assume the caller serializes key management operations
-@@ -4026,13 +4097,7 @@
+@@ -4032,13 +4103,7 @@
  	 * When called from the rx tasklet we cannot use
  	 * tasklet_disable because it will block waiting
  	 * for us to complete execution.
@@ -161,8 +161,8 @@
  	netif_stop_queue(dev);
  }
  
-@@ -4043,9 +4108,9 @@
- 	struct ath_softc *sc = dev->priv;
+@@ -4051,9 +4116,9 @@
+ #endif
  
  	DPRINTF(sc, ATH_DEBUG_KEYCACHE, "End\n");
 -	netif_wake_queue(dev);
@@ -174,7 +174,7 @@
  }
  
  /*
-@@ -6350,15 +6415,25 @@
+@@ -6360,15 +6425,25 @@
  	sc->sc_rxotherant = 0;
  }
  
@@ -204,7 +204,7 @@
  	struct ieee80211com *ic = &sc->sc_ic;
  	struct ath_hal *ah = sc ? sc->sc_ah : NULL;
  	struct ath_desc *ds;
-@@ -6368,8 +6443,10 @@
+@@ -6378,8 +6453,10 @@
  	unsigned int len;
  	int type;
  	u_int phyerr;
@@ -215,7 +215,7 @@
  	do {
  		bf = STAILQ_FIRST(&sc->sc_rxbuf);
  		if (bf == NULL) {		/* XXX ??? can this happen */
-@@ -6393,6 +6470,15 @@
+@@ -6403,6 +6480,15 @@
  			/* NB: never process the self-linked entry at the end */
  			break;
  		}
@@ -231,7 +231,7 @@
  		skb = bf->bf_skb;
  		if (skb == NULL) {
  			EPRINTF(sc, "Dropping; buffer contains NULL skbuff.\n");
-@@ -6440,6 +6526,7 @@
+@@ -6450,6 +6536,7 @@
  				sc->sc_stats.ast_rx_phyerr++;
  				phyerr = rs->rs_phyerr & 0x1f;
  				sc->sc_stats.ast_rx_phy[phyerr]++;
@@ -239,7 +239,7 @@
  			}
  			if (rs->rs_status & HAL_RXERR_DECRYPT) {
  				/*
-@@ -6635,9 +6722,43 @@
+@@ -6645,9 +6732,43 @@
  		STAILQ_INSERT_TAIL(&sc->sc_rxbuf, bf, bf_list);
  		ATH_RXBUF_UNLOCK_IRQ(sc);
  	} while (ath_rxbuf_init(sc, bf) == 0);
@@ -283,7 +283,7 @@
  #undef PA2DESC
  }
  
-@@ -8288,12 +8409,24 @@
+@@ -8298,12 +8419,24 @@
  {
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
@@ -308,7 +308,7 @@
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -8309,7 +8442,9 @@
+@@ -8319,7 +8452,9 @@
  {
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
@@ -318,7 +318,7 @@
  	/*
  	 * Process each active queue.
  	 */
-@@ -8330,6 +8465,16 @@
+@@ -8340,6 +8475,16 @@
  	if (sc->sc_uapsdq && txqactive(sc->sc_ah, sc->sc_uapsdq->axq_qnum))
  		ath_tx_processq(sc, sc->sc_uapsdq);
  
@@ -335,7 +335,7 @@
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -8345,13 +8490,25 @@
+@@ -8355,13 +8500,25 @@
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
  	unsigned int i;
@@ -361,7 +361,7 @@
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -10284,9 +10441,9 @@
+@@ -10296,9 +10453,9 @@
  	dev->mtu = mtu;
  	if ((dev->flags & IFF_RUNNING) && !sc->sc_invalid) {
  		/* NB: the rx buffers may need to be reallocated */
