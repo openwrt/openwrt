@@ -17,7 +17,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/ocf-ubsec-ssb
   SUBMENU:=$(CRYPTO_MENU)
-  DEPENDS:=@LINUX_2_6
+  DEPENDS:=@TARGET_brcm47xx
   TITLE:=BCM5365P IPSec Core driver
   FILES:=$(PKG_BUILD_DIR)/src/ubsec_ssb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,ubsec_ssb)
