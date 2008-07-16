@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -1695,8 +1695,6 @@
+@@ -1699,8 +1699,6 @@
  	 * get to reality.  This value is used in monitor mode and by tools like
  	 * Wireshark and Kismet.
  	 */
@@ -9,7 +9,7 @@
  	ATH_RXBUF_LOCK_IRQ(sc);
  	if (sc->sc_rxbufcur == NULL)
  		sc->sc_rxbufcur = STAILQ_FIRST(&sc->sc_rxbuf);
-@@ -8966,6 +8964,7 @@
+@@ -8978,6 +8976,7 @@
  			sc->sc_curchan.channel);
  		sc->sc_stats.ast_per_calfail++;
  	}
@@ -17,7 +17,7 @@
  
  	ath_hal_process_noisefloor(ah);
  	if (isIQdone == AH_TRUE) {
-@@ -9034,6 +9033,7 @@
+@@ -9046,6 +9045,7 @@
  	struct ath_softc *sc = dev->priv;
  
  	(void) ath_chan_set(sc, ic->ic_curchan);
@@ -25,7 +25,7 @@
  	/*
  	 * If we are returning to our bss channel then mark state
  	 * so the next recv'd beacon's TSF will be used to sync the
-@@ -9302,6 +9302,7 @@
+@@ -9314,6 +9314,7 @@
  		}
  
  		ath_hal_process_noisefloor(ah);

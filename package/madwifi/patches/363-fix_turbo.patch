@@ -1,0 +1,11 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -4914,7 +4914,7 @@
+ 	 * capability info and arrange for a mode change
+ 	 * if needed.
+ 	 */
+-	if (sc->sc_dturbo) {
++	if (sc->sc_dturbo && NULL != avp->av_boff.bo_tim) {
+ 		u_int8_t dtim;
+ 		dtim = ((avp->av_boff.bo_tim[2] == 1) ||
+ 			(avp->av_boff.bo_tim[3] == 1));

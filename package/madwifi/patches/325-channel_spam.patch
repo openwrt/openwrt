@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -9783,7 +9783,9 @@
+@@ -9795,7 +9795,9 @@
  	/*
  	 * Convert HAL channels to ieee80211 ones.
  	 */
@@ -10,7 +10,7 @@
  	for (i = 0; i < nchan; i++) {
  		HAL_CHANNEL *c = &chans[i];
  		struct ieee80211_channel *ichan = &ic->ic_channels[i];
-@@ -9810,6 +9812,7 @@
+@@ -9822,6 +9824,7 @@
  		ic->ic_chan_non_occupy[i].tv_sec  = 0;
  		ic->ic_chan_non_occupy[i].tv_usec = 0;
  
@@ -18,7 +18,7 @@
  		IPRINTF(sc, "Channel %3d (%4d MHz) Max Tx Power %d dBm%s "
  				"[%d hw %d reg] Flags%s%s%s%s%s%s%s%s%s%s%s%s%"
  				"s%s%s%s%s%s%s%s%s%s%s%s\n",
-@@ -9898,6 +9901,7 @@
+@@ -9910,6 +9913,7 @@
  				(c->privFlags & 0x0080 ? 
  				 " PF & (1 << 7)" : "")
  				);

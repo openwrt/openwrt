@@ -1,0 +1,20 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -6321,7 +6321,7 @@
+ 
+ 	/* Never copy the SKB, as it is ours on the RX side, and this is the 
+ 	 * last process on the TX side and we only modify our own headers. */
+-	tskb = ath_skb_removepad(skb, 0 /* Copy SKB */);
++	tskb = ath_skb_removepad(skb, !tx /* Copy SKB */);
+ 	if (tskb == NULL) {
+ 		DPRINTF(sc, ATH_DEBUG_ANY,
+ 			"Dropping; ath_skb_removepad failed!\n");
+@@ -6329,6 +6329,8 @@
+ 	}
+ 	
+ 	ieee80211_input_monitor(ic, tskb, bf, tx, tsf, sc);
++	if (tskb != skb)
++		ieee80211_dev_kfree_skb(&tskb);
+ }
+ 
+ /*

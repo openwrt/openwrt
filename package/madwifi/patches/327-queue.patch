@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -8431,8 +8431,6 @@
+@@ -8441,8 +8441,6 @@
  	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
  	local_irq_restore(flags);
  
@@ -9,7 +9,7 @@
  	if (sc->sc_softled)
  		ath_led_event(sc, ATH_LED_TX);
  }
-@@ -8479,8 +8477,6 @@
+@@ -8489,8 +8487,6 @@
  	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
  	local_irq_restore(flags);
  
@@ -18,7 +18,7 @@
  	if (sc->sc_softled)
  		ath_led_event(sc, ATH_LED_TX);
  }
-@@ -8513,8 +8509,6 @@
+@@ -8523,8 +8519,6 @@
  	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
  	local_irq_restore(flags);
  
