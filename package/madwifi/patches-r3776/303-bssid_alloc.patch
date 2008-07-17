@@ -1,0 +1,53 @@
+Index: madwifi-trunk-r3776/ath/if_ath.c
+===================================================================
+--- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-17 01:49:58.000000000 +0200
++++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-17 01:57:39.000000000 +0200
+@@ -1333,7 +1333,7 @@
+ 		/* Use RadioTAP interface type for monitor mode. */
+ 		dev->type = ARPHRD_IEEE80211_RADIOTAP;
+ 
+-	if (flags & IEEE80211_CLONE_BSSID) {
++	if (!(flags & IEEE80211_CLONE_BSSID)) {
+ 		if (sc->sc_hasbmask) {
+ 			struct ieee80211vap *v;
+ 			uint64_t id_mask = 0;
+@@ -1347,11 +1347,12 @@
+ 			TAILQ_FOREACH(v, &ic->ic_vaps, iv_next)
+ 				id_mask |= (1 << ATH_GET_VAP_ID(v->iv_myaddr));
+ 
+-			for (id = 1; id < ath_maxvaps; id++) {
++			for (id = 0; id < ath_maxvaps; id++) {
+ 				/* Get the first available slot. */
+ 				if ((id_mask & (1 << id)) == 0) {
+ 					ATH_SET_VAP_BSSID(vap->iv_myaddr, id);
+ 					ATH_SET_VAP_BSSID(vap->iv_bssid, id);
++					sc->sc_bclast = id;
+ 					break;
+ 				}
+ 			}
+@@ -1359,7 +1360,12 @@
+ 			EPRINTF(sc, "Unique BSSID requested on HW that does"
+ 				"does not support the necessary features.");
+ 		}
++	} else {
++		/* share the BSSID of the last created VAP */
++		ATH_SET_VAP_BSSID(vap->iv_myaddr, sc->sc_bclast);
++		ATH_SET_VAP_BSSID(vap->iv_bssid, sc->sc_bclast);
+ 	}
++
+ 	avp->av_bslot = -1;
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15)
+ 	atomic_set(&avp->av_beacon_alloc, 0);
+Index: madwifi-trunk-r3776/ath/if_athvar.h
+===================================================================
+--- madwifi-trunk-r3776.orig/ath/if_athvar.h	2008-07-17 01:27:21.000000000 +0200
++++ madwifi-trunk-r3776/ath/if_athvar.h	2008-07-17 01:57:15.000000000 +0200
+@@ -802,7 +802,7 @@
+ 	} sc_updateslot;			/* slot time update fsm */
+ 	int sc_slotupdate;			/* slot to next advance fsm */
+ 	struct ieee80211vap **sc_bslot;		/* beacon xmit slots */
+-	int sc_bnext;				/* next slot for beacon xmit */
++	int sc_bclast;				/* last used slot for beacon xmit */
+ 
+ 	int sc_beacon_cal;			/* use beacon timer for calibration */
+ 	long unsigned int sc_calinterval_sec;	/* current interval for calibration (in seconds) */

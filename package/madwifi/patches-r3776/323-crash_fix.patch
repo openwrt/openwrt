@@ -1,0 +1,23 @@
+Index: madwifi-trunk-r3776/net80211/ieee80211_node.c
+===================================================================
+--- madwifi-trunk-r3776.orig/net80211/ieee80211_node.c	2008-07-17 02:56:18.000000000 +0200
++++ madwifi-trunk-r3776/net80211/ieee80211_node.c	2008-07-17 04:05:43.000000000 +0200
+@@ -1999,11 +1999,13 @@
+ 	/* From this point onwards we can no longer find the node,
+ 	 * so no more references are generated
+ 	 */
+-	ieee80211_remove_wds_addr(nt, ni->ni_macaddr);
+-	ieee80211_del_wds_node(nt, ni);
+-	IEEE80211_NODE_TABLE_LOCK_IRQ(nt);
+-	node_table_leave_locked(nt, ni);
+-	IEEE80211_NODE_TABLE_UNLOCK_IRQ(nt);
++	if (nt) {
++		ieee80211_remove_wds_addr(nt, ni->ni_macaddr);
++		ieee80211_del_wds_node(nt, ni);
++		IEEE80211_NODE_TABLE_LOCK_IRQ(nt);
++		node_table_leave_locked(nt, ni);
++		IEEE80211_NODE_TABLE_UNLOCK_IRQ(nt);
++	}
+ 
+ 	/*
+ 	 * If node wasn't previously associated all

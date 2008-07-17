@@ -1,0 +1,59 @@
+Index: madwifi-trunk-r3776/ath/if_ath.c
+===================================================================
+--- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-17 01:15:21.000000000 +0200
++++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-17 01:20:11.000000000 +0200
+@@ -423,8 +423,8 @@
+ 		"defaults to '" DEF_RATE_CTL "'");
+ MODULE_PARM_DESC(intmit, "Enable interference mitigation by default.  Default is 0.");
+ 
+-static int	ath_debug = 0;
+ #ifdef AR_DEBUG
++static int	ath_debug = 0;
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,5,52))
+ MODULE_PARM(ath_debug, "i");
+ #else
+@@ -435,8 +435,8 @@
+ static void ath_printtxbuf(const struct ath_buf *, int);
+ #endif /* defined(AR_DEBUG) */
+ 
+-static int	ieee80211_debug = 0;
+ #ifdef AR_DEBUG
++static int	ieee80211_debug = 0;
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,5,52))
+ MODULE_PARM(ieee80211_debug, "i");
+ #else
+@@ -853,8 +853,10 @@
+ 	ic->ic_updateslot = ath_updateslot;
+ 	atomic_set(&ic->ic_node_counter, 0);
+ 	ic->ic_debug = 0;
++#ifdef AR_DEBUG
+ 	sc->sc_debug = (ath_debug & ~ATH_DEBUG_GLOBAL);
+ 	sc->sc_default_ieee80211_debug = ieee80211_debug;
++#endif
+ 
+ 	ic->ic_wme.wme_update = ath_wme_update;
+ 	ic->ic_uapsd_flush = ath_uapsd_flush;
+Index: madwifi-trunk-r3776/net80211/ieee80211_scan_ap.c
+===================================================================
+--- madwifi-trunk-r3776.orig/net80211/ieee80211_scan_ap.c	2008-07-17 00:21:29.000000000 +0200
++++ madwifi-trunk-r3776/net80211/ieee80211_scan_ap.c	2008-07-17 01:25:32.000000000 +0200
+@@ -790,15 +790,18 @@
+ 	struct ap_state *as = ss->ss_priv;
+ 	struct channel chans[ss_last]; /* actually ss_last-1 is required */
+ 	struct channel *c = NULL;
+-	struct pc_params params = { vap, ss, flags };
+ 	int benefit = 0;
+ 	int sta_assoc = 0;
+ 
++#ifdef IEEE80211_DEBUG
++	struct pc_params params = { vap, ss, flags };
++
+ 	for (i = 0; i < ss_last; i++) {
+ 		chans[i].chan = ss->ss_chans[i];
+ 		chans[i].orig = i;
+ 		chans[i].params = &params;
+ 	}
++#endif
+ 
+ 	sort(chans, ss_last, sizeof(*chans), pc_cmp, pc_swap);
+ 

@@ -1,0 +1,14 @@
+Index: madwifi-trunk-r3776/net80211/ieee80211_linux.c
+===================================================================
+--- madwifi-trunk-r3776.orig/net80211/ieee80211_linux.c	2008-07-17 00:21:29.000000000 +0200
++++ madwifi-trunk-r3776/net80211/ieee80211_linux.c	2008-07-17 00:49:54.000000000 +0200
+@@ -330,6 +330,9 @@
+ 		k->wk_cipher->ic_name, k->wk_keyix,
+ 		(unsigned long long)rsc);
+ 
++	/* disabled for now due to bogus events for unknown reasons */
++	return;
++
+ 	/* TODO: needed parameters: count, keyid, key type, src address, TSC */
+ 	snprintf(buf, sizeof(buf), "%s(keyid=%d %scast addr=" MAC_FMT ")", tag,
+ 		k->wk_keyix,

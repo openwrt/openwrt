@@ -1,0 +1,46 @@
+Index: madwifi-trunk-r3776/ath/if_ath.c
+===================================================================
+--- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-17 02:00:09.000000000 +0200
++++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-17 02:09:38.000000000 +0200
+@@ -8447,8 +8447,6 @@
+ 	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
+ 	local_irq_restore(flags);
+ 
+-	netif_wake_queue(dev);
+-
+ 	if (sc->sc_softled)
+ 		ath_led_event(sc, ATH_LED_TX);
+ }
+@@ -8504,8 +8502,6 @@
+ 	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
+ 	local_irq_restore(flags);
+ 
+-	netif_wake_queue(dev);
+-
+ 	if (sc->sc_softled)
+ 		ath_led_event(sc, ATH_LED_TX);
+ }
+@@ -8536,7 +8532,9 @@
+ 				STAILQ_FIRST(&sc->sc_cabq->axq_q) ? "not setup" : "empty");
+ 		}
+ 	}
+-	netif_wake_queue(dev);
++
++	if (ath_get_buffers_available(sc) > ATH_TXBUF_MGT_RESERVED)
++		netif_wake_queue(dev);
+ 
+ 	if (sc->sc_softled)
+ 		ath_led_event(sc, ATH_LED_TX);
+Index: madwifi-trunk-r3776/net80211/ieee80211_input.c
+===================================================================
+--- madwifi-trunk-r3776.orig/net80211/ieee80211_input.c	2008-07-17 02:04:20.000000000 +0200
++++ madwifi-trunk-r3776/net80211/ieee80211_input.c	2008-07-17 02:05:45.000000000 +0200
+@@ -1116,7 +1116,7 @@
+ 	    (vap->iv_flags & IEEE80211_F_NOBRIDGE) == 0) {
+ 		struct sk_buff *skb1 = NULL;
+ 
+-		if (ETHER_IS_MULTICAST(eh->ether_dhost)) {
++		if (ETHER_IS_MULTICAST(eh->ether_dhost) && !netif_queue_stopped(dev)) {
+ 			/* Create a SKB for the BSS to send out. */
+ 			skb1 = skb_copy(skb, GFP_ATOMIC);
+ 			if (skb1)
