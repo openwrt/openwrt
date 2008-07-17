@@ -1,0 +1,13 @@
+Index: madwifi-trunk-r3776/ath/if_ath.c
+===================================================================
+--- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-17 04:00:42.000000000 +0200
++++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-17 04:11:45.000000000 +0200
+@@ -504,7 +504,7 @@
+ 
+ 	/* Allocate space for dynamically determined maximum VAP count */
+ 	sc->sc_bslot = 
+-		kzalloc(ath_maxvaps * sizeof(struct ieee80211vap), GFP_KERNEL);
++		kzalloc(ath_maxvaps * sizeof(struct ieee80211vap *), GFP_KERNEL);
+ 
+ 	/*
+ 	 * Cache line size is used to size and align various

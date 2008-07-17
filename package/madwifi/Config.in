@@ -5,6 +5,14 @@ config MADWIFI_DEBUG
 	depends on EXPERIMENTAL && PACKAGE_kmod-madwifi
 	default n
 
+config MADWIFI_TESTING
+	bool "Use the testing version of MadWiFi"
+	depends on PACKAGE_kmod-madwifi
+	default n
+	help
+	  Use the testing version of MadWiFi, which is newer, but also less tested
+	  May contain unexpected bugs :)
+
 choice
 	prompt "Rate control algorithm selection"
 	depends on PACKAGE_kmod-madwifi

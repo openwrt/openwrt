@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=madwifi
-PKG_REV:=3314
+PKG_REV:=$(if $(CONFIG_MADWIFI_TESTING),3776,3314)
 PKG_VERSION:=r$(PKG_REV)
 # PKG_BRANCH:=madwifi-dfs
 PKG_RELEASE:=1
@@ -22,6 +22,8 @@ PKG_SOURCE_URL:=http://svn.madwifi.org/madwifi/$(if $(PKG_BRANCH),branches/$(PKG
 PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trunk)-$(PKG_VERSION)
+
+PATCH_DIR=$(if $(CONFIG_MADWIFI_TESTING),./patches-r$(PKG_REV),./patches)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -151,9 +153,13 @@ MAKE_ARGS:= \
 	KERNELPATH="$(LINUX_DIR)" \
 	LDOPTS="--no-warn-mismatch " \
 	ATH_RATE="ath_rate/$(RATE_CONTROL)" \
-	WARNINGS="-Wno-unused" \
-	$(if $(CONFIG_MADWIFI_DEBUG),,DEBUG="") \
 	DO_MULTI=1
+
+ifneq ($(CONFIG_MADWIFI_TESTING),)
+  MAKE_ARGS += $(if $(CONFIG_MADWIFI_DEBUG),,ATH_DEBUG=)
+else
+  MAKE_ARGS += $(if $(CONFIG_MADWIFI_DEBUG),,DEBUG=) WARNINGS="-Wno-unused"
+endif
 
 MAKE_VARS:= \
 	COPTS="-DCONFIG_ATHEROS_RATE_DEFAULT='\"$(RATE_CONTROL)\"' -DATH_REVERSE_ENGINEERING=1" \

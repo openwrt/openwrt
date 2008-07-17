@@ -1,0 +1,13 @@
+Index: madwifi-trunk-r3776/ath/if_ath.c
+===================================================================
+--- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-17 00:36:00.000000000 +0200
++++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-17 00:47:22.000000000 +0200
+@@ -482,7 +482,7 @@
+ 	HAL_STATUS status;
+ 	int error = 0;
+ 	unsigned int i;
+-	int autocreatemode = IEEE80211_M_STA;
++	int autocreatemode = -1;
+ 	u_int8_t csz;
+ 
+ 	sc->devid = devid;

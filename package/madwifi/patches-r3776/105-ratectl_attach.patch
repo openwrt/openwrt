@@ -1,0 +1,25 @@
+Index: madwifi-trunk-r3776/net80211/ieee80211_rate.c
+===================================================================
+--- madwifi-trunk-r3776.orig/net80211/ieee80211_rate.c	2008-07-17 00:35:59.000000000 +0200
++++ madwifi-trunk-r3776/net80211/ieee80211_rate.c	2008-07-17 00:47:27.000000000 +0200
+@@ -100,8 +100,18 @@
+ 		ieee80211_load_module(buf);
+ 
+ 	if (!ratectls[id].attach) {
+-		printk(KERN_ERR "Error loading module \"%s\"\n", buf);
+-		return NULL;
++		/* pick the first available rate control module */
++		printk(KERN_INFO "Rate control module \"%s\" not available\n", buf);
++		for (id = 0; id < IEEE80211_RATE_MAX; id++) {
++			if (ratectls[id].attach)
++				break;
++		}
++		if (!ratectls[id].attach) {
++			printk(KERN_ERR "No rate control module available");
++			return NULL;
++		} else {
++			printk(KERN_INFO "Using \"%s\" instead.\n", module_names[id]);
++		}
+ 	}
+ 
+ 	ctl = ratectls[id].attach(sc);
