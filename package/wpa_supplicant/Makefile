@@ -31,13 +31,7 @@ define Package/wpa-supplicant/Description
 endef
 
 define Package/wpa-supplicant/config
-  config WPA_SUPPLICANT_NO_TIMESTAMP_CHECK
-	bool "Disable timestamp check"
-	depends PACKAGE_wpa-supplicant
-	default n
-	help
-		This disables the timestamp check for certificates in wpa_supplicant
-		Useful for devices without RTC that cannot reliably get the real date/time
+	source "$(SOURCE)/Config.in"
 endef
 
 
