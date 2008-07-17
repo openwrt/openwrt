@@ -2,15 +2,6 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
 ===================================================================
 --- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-17 01:49:58.000000000 +0200
 +++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-17 01:57:39.000000000 +0200
-@@ -1333,7 +1333,7 @@
- 		/* Use RadioTAP interface type for monitor mode. */
- 		dev->type = ARPHRD_IEEE80211_RADIOTAP;
- 
--	if (flags & IEEE80211_CLONE_BSSID) {
-+	if (!(flags & IEEE80211_CLONE_BSSID)) {
- 		if (sc->sc_hasbmask) {
- 			struct ieee80211vap *v;
- 			uint64_t id_mask = 0;
 @@ -1347,11 +1347,12 @@
  			TAILQ_FOREACH(v, &ic->ic_vaps, iv_next)
  				id_mask |= (1 << ATH_GET_VAP_ID(v->iv_myaddr));
