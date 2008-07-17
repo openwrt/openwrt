@@ -627,15 +627,13 @@ rc32434_rx_dma_interrupt(int irq, void *dev_id)
 	
 	lp = (struct rc32434_local *)dev->priv;
 	
-	spin_lock(&lp->lock);
 	dmas = __raw_readl(&lp->rx_dma_regs->dmas);
 	if(dmas & (DMAS_d_m|DMAS_h_m|DMAS_e_m)) {
 		/* Mask D H E bit in Rx DMA */
 		dmasm = __raw_readl(&lp->rx_dma_regs->dmasm);
 		__raw_writel(dmasm | (DMASM_d_m | DMASM_h_m | DMASM_e_m), &lp->rx_dma_regs->dmasm);
+		netif_rx_schedule(dev, &lp->napi);
 
-		netif_rx_schedule_prep(dev, &lp->napi);
-		
 		if (dmas & DMAS_e_m)
 			ERR(": DMA error\n");
 		
@@ -644,39 +642,29 @@ rc32434_rx_dma_interrupt(int irq, void *dev_id)
 	else
 		retval = IRQ_NONE;
 	
-	spin_unlock(&lp->lock);
 	return retval;
 }
 
-static int rc32434_poll(struct napi_struct *napi, int budget)
+
+static int rc32434_rx(struct net_device *dev, int limit)
 {
-	struct rc32434_local* lp = container_of(napi, struct rc32434_local, napi);
-	struct net_device *dev = lp->dev;
+        struct rc32434_local *lp = netdev_priv(dev);
 	volatile DMAD_t  rd = &lp->rd_ring[lp->rx_next_done];
-	struct sk_buff *skb, *skb_new;
-	u8* pkt_buf;
-	u32 devcs, count, pkt_len, pktuncrc_len;
-	volatile u32 dmas;
-	u32 received = 0;
-	int rx_work_limit = min(budget, 64);
+        struct sk_buff *skb, *skb_new;
+        u8 *pkt_buf;
+        u32 devcs, pkt_len, dmas, rx_free_desc;
+	u32 pktuncrc_len;
+        int count;
 
 	dma_cache_inv((u32)rd, sizeof(*rd));
-	while ( (count = RC32434_RBSIZE - (u32)DMA_COUNT(rd->control)) != 0) {
-		if(--rx_work_limit <0)
-                {
-                        break;
-                }
+	for (count = 0; count < limit; count++) {
 		/* init the var. used for the later operations within the while loop */
 		skb_new = NULL;
 		devcs = rd->devcs;
 		pkt_len = RCVPKT_LENGTH(devcs);
 		skb = lp->rx_skb[lp->rx_next_done];
       
-		if (count < 64) {
-			lp->stats.rx_errors++;
-			lp->stats.rx_dropped++;			
-		}
-		else if ((devcs & ( ETHRX_ld_m)) !=	ETHRX_ld_m) {
+		if ((devcs & ( ETHRX_ld_m)) !=	ETHRX_ld_m) {
 			/* check that this is a whole packet */
 			/* WARNING: DMA_FD bit incorrectly set in Rc32434 (errata ref #077) */
 			lp->stats.rx_errors++;
@@ -684,7 +672,6 @@ static int rc32434_poll(struct napi_struct *napi, int budget)
 		}
 		else if ( (devcs & ETHRX_rok_m)  ) {
 			
-			{
 				/* must be the (first and) last descriptor then */
 				pkt_buf = (u8*)lp->rx_skb[lp->rx_next_done]->data;
 				
@@ -693,7 +680,7 @@ static int rc32434_poll(struct napi_struct *napi, int budget)
 				dma_cache_inv((unsigned long)pkt_buf, pktuncrc_len);
 				
 				/* Malloc up new buffer. */					  
-				skb_new = dev_alloc_skb(RC32434_RBSIZE + 2);					             	
+				skb_new = netdev_alloc_skb(dev, RC32434_RBSIZE + 2);					             	
 				
 				if (skb_new != NULL){
 					/* Make room */
@@ -722,8 +709,6 @@ static int rc32434_poll(struct napi_struct *napi, int budget)
 					lp->stats.rx_errors++;		
 					lp->stats.rx_dropped++;					
 				}
-			}
-			
 		}			
 		else {
 			/* This should only happen if we enable accepting broken packets */
@@ -755,12 +740,12 @@ static int rc32434_poll(struct napi_struct *napi, int budget)
 				DBG(2, "RX Preamble error\n");
 			}
 		}
-		
 		rd->devcs = 0;
 		
 		/* restore descriptor's curr_addr */
-		if(skb_new)
-			rd->ca = CPHYSADDR(skb_new->data); 
+		if(skb_new) {
+			rd->ca = CPHYSADDR(skb_new->data);
+		}
 		else
 			rd->ca = CPHYSADDR(skb->data);
 		
@@ -772,13 +757,11 @@ static int rc32434_poll(struct napi_struct *napi, int budget)
 		rd = &lp->rd_ring[lp->rx_next_done];
 		__raw_writel( ~DMAS_d_m, &lp->rx_dma_regs->dmas);
 	}	
-        budget =- received;
-        if(rx_work_limit < 0)
-                goto not_done;
 	
 	dmas = __raw_readl(&lp->rx_dma_regs->dmas);
 	
 	if(dmas & DMAS_h_m) {
+		/* Mask off halt and error bits */
 		__raw_writel( ~(DMAS_h_m | DMAS_e_m), &lp->rx_dma_regs->dmas);
 #ifdef RC32434_PROC_DEBUG
 		lp->dma_halt_cnt++;
@@ -790,13 +773,27 @@ static int rc32434_poll(struct napi_struct *napi, int budget)
 		rc32434_chain_rx(lp,rd);
 	}
 	
-	netif_rx_complete(dev, &lp->napi);
-	/* Enable D H E bit in Rx DMA */
-	__raw_writel(__raw_readl(&lp->rx_dma_regs->dmasm) & ~(DMASM_d_m | DMASM_h_m |DMASM_e_m), &lp->rx_dma_regs->dmasm); 
-	return 0;
- not_done:
-	return 1;
-}	
+	return count;
+}
+
+static int rc32434_poll(struct napi_struct *napi, int budget)
+{
+        struct rc32434_local *lp =
+                container_of(napi, struct rc32434_local, napi);
+        struct net_device *dev = lp->dev;
+        int work_done;
+
+        work_done = rc32434_rx(dev, budget);
+        if (work_done < budget) {
+                netif_rx_complete(dev, napi);
+
+		/* Mask off interrupts */
+                writel(readl(&lp->rx_dma_regs->dmasm) &
+			(DMASM_d_m | DMASM_h_m |DMASM_e_m),
+                        &lp->rx_dma_regs->dmasm);
+        }
+        return work_done;
+}
 
 
 
@@ -812,8 +809,6 @@ rc32434_tx_dma_interrupt(int irq, void *dev_id)
 	ASSERT(dev != NULL);
 	
 	lp = (struct rc32434_local *)dev->priv;
-	
-	spin_lock(&lp->lock);
 	
 	dmas = __raw_readl(&lp->tx_dma_regs->dmas);
 	
@@ -838,8 +833,6 @@ rc32434_tx_dma_interrupt(int irq, void *dev_id)
 	}
 	else
 		retval = IRQ_NONE;
-	
-	spin_unlock(&lp->lock);
 	
 	return retval;
 }
@@ -995,9 +988,6 @@ static int rc32434_init(struct net_device *dev)
 	/* Enable Ethernet Interface */ 
 	__raw_writel(ETHINTFC_en_m, &lp->eth_regs->ethintfc); 
 	
-#ifndef CONFIG_IDT_USE_NAPI
-	tasklet_disable(lp->rx_tasklet);
-#endif
 	tasklet_disable(lp->tx_tasklet);
 	
 	/* Initialize the transmit Descriptors */
