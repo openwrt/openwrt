@@ -21,7 +21,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/kexec-tools
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@i386||@powerpc +zlib
+  DEPENDS:=@i386||@powerpc||@mipsel +zlib
   TITLE:=Kernel boots kernel
   URL:=http://kernel.org/pub/linux/kernel/people/horms/kexec-tools/
   MENU:=1
