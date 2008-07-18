@@ -76,7 +76,7 @@ endef
 
 define Package/wpa-cli/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/wpa_cli $(1)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant/wpa_cli $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,wpa-supplicant))
