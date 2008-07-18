@@ -23,7 +23,7 @@ PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trunk)-$(PKG_VERSION)
 
-PATCH_DIR=$(if $(CONFIG_MADWIFI_TESTING),./patches-r$(PKG_REV),./patches)
+PATCH_DIR=$(if $(CONFIG_MADWIFI_TESTING),./patches-testing,./patches)
 
 include $(INCLUDE_DIR)/package.mk
 
