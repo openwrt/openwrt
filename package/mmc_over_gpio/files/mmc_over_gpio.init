@@ -3,11 +3,11 @@
 START=90
 
 SYSFS="/sys"
-SYSFS_DRIVERDIR="$SYSFS/bus/platform/drivers/spi-gpio-mmc"
+SYSFS_DRIVERDIR="$SYSFS/bus/platform/drivers/gpiommc"
 
 # add_device(name, DI_pin, DO_pin, CLK_pin, CS_pin, mode)
 add_device() {
-	echo -n "$1" "$2","$3","$4","$5" "$6" > $SYSFS_DRIVERDIR/add
+	echo -n "$1" "$2" "$3" "$4" "$5" "$6" > $SYSFS_DRIVERDIR/add
 }
 
 # remove_device(name)
