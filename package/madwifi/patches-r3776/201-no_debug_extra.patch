@@ -33,27 +33,4 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  
  	ic->ic_wme.wme_update = ath_wme_update;
  	ic->ic_uapsd_flush = ath_uapsd_flush;
-Index: madwifi-trunk-r3776/net80211/ieee80211_scan_ap.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_scan_ap.c	2008-07-17 00:21:29.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_scan_ap.c	2008-07-17 01:25:32.000000000 +0200
-@@ -790,15 +790,18 @@
- 	struct ap_state *as = ss->ss_priv;
- 	struct channel chans[ss_last]; /* actually ss_last-1 is required */
- 	struct channel *c = NULL;
--	struct pc_params params = { vap, ss, flags };
- 	int benefit = 0;
- 	int sta_assoc = 0;
- 
-+#ifdef IEEE80211_DEBUG
-+	struct pc_params params = { vap, ss, flags };
-+
- 	for (i = 0; i < ss_last; i++) {
- 		chans[i].chan = ss->ss_chans[i];
- 		chans[i].orig = i;
- 		chans[i].params = &params;
- 	}
-+#endif
- 
- 	sort(chans, ss_last, sizeof(*chans), pc_cmp, pc_swap);
- 
+

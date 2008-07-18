@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3776/tools/80211debug.c
-===================================================================
---- madwifi-trunk-r3776.orig/tools/80211debug.c	2008-07-17 00:22:03.000000000 +0200
-+++ madwifi-trunk-r3776/tools/80211debug.c	2008-07-17 00:23:16.000000000 +0200
+--- a/tools/80211debug.c
++++ b/tools/80211debug.c
 @@ -48,6 +48,7 @@
  #include <ctype.h>
  #include <getopt.h>
@@ -19,10 +17,8 @@ Index: madwifi-trunk-r3776/tools/80211debug.c
  {
  	const char *ifname = "ath0";
  	const char *cp, *tp;
-Index: madwifi-trunk-r3776/tools/80211stats.c
-===================================================================
---- madwifi-trunk-r3776.orig/tools/80211stats.c	2008-07-17 00:22:03.000000000 +0200
-+++ madwifi-trunk-r3776/tools/80211stats.c	2008-07-17 00:23:16.000000000 +0200
+--- a/tools/80211stats.c
++++ b/tools/80211stats.c
 @@ -59,6 +59,7 @@
  #include "net80211/ieee80211.h"
  #include "net80211/ieee80211_crypto.h"
@@ -40,10 +36,8 @@ Index: madwifi-trunk-r3776/tools/80211stats.c
  {
  	int c, len;
  	struct ieee80211req_sta_info *si;
-Index: madwifi-trunk-r3776/tools/athchans.c
-===================================================================
---- madwifi-trunk-r3776.orig/tools/athchans.c	2008-07-17 00:22:03.000000000 +0200
-+++ madwifi-trunk-r3776/tools/athchans.c	2008-07-17 00:23:16.000000000 +0200
+--- a/tools/athchans.c
++++ b/tools/athchans.c
 @@ -58,6 +58,7 @@
  #include "net80211/ieee80211.h"
  #include "net80211/ieee80211_crypto.h"
@@ -63,10 +57,8 @@ Index: madwifi-trunk-r3776/tools/athchans.c
  {
  	const char *ifname = "wifi0";
  	struct ieee80211req_chanlist chanlist;
-Index: madwifi-trunk-r3776/tools/athctrl.c
-===================================================================
---- madwifi-trunk-r3776.orig/tools/athctrl.c	2008-07-17 00:22:03.000000000 +0200
-+++ madwifi-trunk-r3776/tools/athctrl.c	2008-07-17 00:23:16.000000000 +0200
+--- a/tools/athctrl.c
++++ b/tools/athctrl.c
 @@ -52,6 +52,7 @@
  #include <err.h>
  
@@ -84,10 +76,8 @@ Index: madwifi-trunk-r3776/tools/athctrl.c
  {
  	char device[IFNAMSIZ + 1];
  	int distance = -1;
-Index: madwifi-trunk-r3776/tools/athdebug.c
-===================================================================
---- madwifi-trunk-r3776.orig/tools/athdebug.c	2008-07-17 00:22:03.000000000 +0200
-+++ madwifi-trunk-r3776/tools/athdebug.c	2008-07-17 00:23:16.000000000 +0200
+--- a/tools/athdebug.c
++++ b/tools/athdebug.c
 @@ -51,6 +51,7 @@
  #include <ctype.h>
  #include <getopt.h>
@@ -105,10 +95,8 @@ Index: madwifi-trunk-r3776/tools/athdebug.c
  {
  #ifdef __linux__
  	const char *ifname = "wifi0";
-Index: madwifi-trunk-r3776/tools/athkey.c
-===================================================================
---- madwifi-trunk-r3776.orig/tools/athkey.c	2008-07-17 00:22:03.000000000 +0200
-+++ madwifi-trunk-r3776/tools/athkey.c	2008-07-17 00:23:16.000000000 +0200
+--- a/tools/athkey.c
++++ b/tools/athkey.c
 @@ -58,6 +58,7 @@
  #include "net80211/ieee80211.h"
  #include "net80211/ieee80211_crypto.h"
@@ -127,10 +115,8 @@ Index: madwifi-trunk-r3776/tools/athkey.c
  {
  	const char *ifname = "wifi0";
  	struct ieee80211req_key setkey;
-Index: madwifi-trunk-r3776/tools/athstats.c
-===================================================================
---- madwifi-trunk-r3776.orig/tools/athstats.c	2008-07-17 00:22:03.000000000 +0200
-+++ madwifi-trunk-r3776/tools/athstats.c	2008-07-17 00:23:16.000000000 +0200
+--- a/tools/athstats.c
++++ b/tools/athstats.c
 @@ -65,6 +65,7 @@
  
  #undef ARRAY_SIZE
@@ -148,10 +134,8 @@ Index: madwifi-trunk-r3776/tools/athstats.c
  {
  #ifdef __linux__
  	const char *ifname = "wifi0";
-Index: madwifi-trunk-r3776/tools/do_multi.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ madwifi-trunk-r3776/tools/do_multi.c	2008-07-17 00:46:52.000000000 +0200
+--- /dev/null
++++ b/tools/do_multi.c
 @@ -0,0 +1,36 @@
 +#include <string.h>
 +#include "do_multi.h"
@@ -189,10 +173,8 @@ Index: madwifi-trunk-r3776/tools/do_multi.c
 +
 +    return ret;
 +}
-Index: madwifi-trunk-r3776/tools/do_multi.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ madwifi-trunk-r3776/tools/do_multi.h	2008-07-17 00:23:16.000000000 +0200
+--- /dev/null
++++ b/tools/do_multi.h
 @@ -0,0 +1,15 @@
 +#ifdef DO_MULTI
 +int a80211debug_init(int argc, char *argv[]);
@@ -209,10 +191,8 @@ Index: madwifi-trunk-r3776/tools/do_multi.h
 +#else
 +#define CMD(name) main
 +#endif
-Index: madwifi-trunk-r3776/tools/Makefile
-===================================================================
---- madwifi-trunk-r3776.orig/tools/Makefile	2008-07-17 00:22:03.000000000 +0200
-+++ madwifi-trunk-r3776/tools/Makefile	2008-07-17 00:45:15.000000000 +0200
+--- a/tools/Makefile
++++ b/tools/Makefile
 @@ -50,42 +50,43 @@
  PROGRAMS = athstats 80211stats athkey athchans athctrl \
  	athdebug 80211debug wlanconfig wpakey
@@ -296,10 +276,8 @@ Index: madwifi-trunk-r3776/tools/Makefile
  	for d in $(SUBDIRS); do \
  		$(MAKE) -C $$d clean; \
  	done
-Index: madwifi-trunk-r3776/tools/wlanconfig.c
-===================================================================
---- madwifi-trunk-r3776.orig/tools/wlanconfig.c	2008-07-17 00:22:03.000000000 +0200
-+++ madwifi-trunk-r3776/tools/wlanconfig.c	2008-07-17 00:45:42.000000000 +0200
+--- a/tools/wlanconfig.c
++++ b/tools/wlanconfig.c
 @@ -61,6 +61,7 @@
  #include "net80211/ieee80211.h"
  #include "net80211/ieee80211_crypto.h"
@@ -317,19 +295,21 @@ Index: madwifi-trunk-r3776/tools/wlanconfig.c
  {
  	const char *ifname, *cmd;
  	unsigned char bnounit = 0;
-Index: madwifi-trunk-r3776/tools/ath_info/Makefile
-===================================================================
---- madwifi-trunk-r3776.orig/tools/ath_info/Makefile	2008-07-17 00:21:42.000000000 +0200
-+++ madwifi-trunk-r3776/tools/ath_info/Makefile	2008-07-17 00:36:23.000000000 +0200
-@@ -15,13 +15,13 @@
- PROGRAMS = ath_info
- MANS = ath_info.8
+--- a/tools/ath_info/Makefile
++++ b/tools/ath_info/Makefile
+@@ -17,11 +17,18 @@
  
--all: $(PROGRAMS)
-+all: $(if $(DO_MULTI),ath_info.o,$(PROGRAMS))
+ all: $(PROGRAMS)
  
++
++ifneq ($(DO_MULTI),)
++ath_info: ath_info.o
++	rm -f $@
++	ln -s ../madwifi_multi $@
++else
  ath_info: ath_info.o
  	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
++endif
  
  .c.o:
 -	$(CC) $(CFLAGS) -c $<
@@ -337,10 +317,8 @@ Index: madwifi-trunk-r3776/tools/ath_info/Makefile
  
  clean:
  	rm -f *.o $(PROGRAMS)
-Index: madwifi-trunk-r3776/tools/ath_info/ath_info.c
-===================================================================
---- madwifi-trunk-r3776.orig/tools/ath_info/ath_info.c	2008-07-17 00:24:08.000000000 +0200
-+++ madwifi-trunk-r3776/tools/ath_info/ath_info.c	2008-07-17 00:24:15.000000000 +0200
+--- a/tools/ath_info/ath_info.c
++++ b/tools/ath_info/ath_info.c
 @@ -28,6 +28,7 @@
  #include <sys/mman.h>
  #include <endian.h>
@@ -359,10 +337,8 @@ Index: madwifi-trunk-r3776/tools/ath_info/ath_info.c
  {
  	unsigned long long dev_addr;
  	u_int16_t srev, phy_rev_5ghz, phy_rev_2ghz, ee_magic;
-Index: madwifi-trunk-r3776/tools/wpakey.c
-===================================================================
---- madwifi-trunk-r3776.orig/tools/wpakey.c	2008-07-17 00:21:30.000000000 +0200
-+++ madwifi-trunk-r3776/tools/wpakey.c	2008-07-17 00:46:18.000000000 +0200
+--- a/tools/wpakey.c
++++ b/tools/wpakey.c
 @@ -25,6 +25,7 @@
  
  #include <unistd.h>
