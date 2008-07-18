@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3776/ath/if_athvar.h
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_athvar.h	2008-07-17 00:21:39.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_athvar.h	2008-07-17 00:50:03.000000000 +0200
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
 @@ -129,6 +129,11 @@
  #define ATH_GET_NETDEV_DEV(ndev)	((ndev)->class_dev.dev)
  #endif
@@ -14,10 +12,8 @@ Index: madwifi-trunk-r3776/ath/if_athvar.h
  #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,23)
  static inline struct net_device *_alloc_netdev(int sizeof_priv, const char *mask,
  					       void (*setup)(struct net_device *))
-Index: madwifi-trunk-r3776/ath/if_ath_radar.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath_radar.c	2008-07-17 00:21:39.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath_radar.c	2008-07-17 00:50:03.000000000 +0200
+--- a/ath/if_ath_radar.c
++++ b/ath/if_ath_radar.c
 @@ -89,6 +89,13 @@
  #define nofloat_pct(_value, _pct) \
  	( (_value * (1000 + _pct)) / 1000 )
@@ -32,10 +28,8 @@ Index: madwifi-trunk-r3776/ath/if_ath_radar.c
  struct radar_pattern_specification {
  	/* The name of the rule/specification (i.e. what did we detect) */
  	const char *name;
-Index: madwifi-trunk-r3776/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-17 00:47:22.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-17 00:50:03.000000000 +0200
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -4878,6 +4878,46 @@
  	return (txqs & (1 << qnum));
  }
@@ -83,10 +77,8 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  /*
   * Generate beacon frame and queue cab data for a VAP.
   */
-Index: madwifi-trunk-r3776/net80211/sort.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ madwifi-trunk-r3776/net80211/sort.c	2008-07-17 00:50:03.000000000 +0200
+--- /dev/null
++++ b/net80211/sort.c
 @@ -0,0 +1,120 @@
 +/*
 + * A fast, small, non-recursive O(nlog n) sort for the Linux kernel

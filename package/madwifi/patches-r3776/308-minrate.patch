@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3776/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-17 02:20:53.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-17 02:23:00.000000000 +0200
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -1300,6 +1300,7 @@
  	vap->iv_key_update_begin = ath_key_update_begin;
  	vap->iv_key_update_end = ath_key_update_end;
@@ -10,10 +8,8 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  	if (sc->sc_default_ieee80211_debug) {
  		/* User specified defaults for new VAPs were provided, so
  		 * use those (only). */
-Index: madwifi-trunk-r3776/ath_rate/minstrel/minstrel.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath_rate/minstrel/minstrel.c	2008-07-17 02:22:33.000000000 +0200
-+++ madwifi-trunk-r3776/ath_rate/minstrel/minstrel.c	2008-07-17 02:27:44.000000000 +0200
+--- a/ath_rate/minstrel/minstrel.c
++++ b/ath_rate/minstrel/minstrel.c
 @@ -652,6 +652,8 @@
  
  	sn->num_rates = ni->ni_rates.rs_nrates;
@@ -38,10 +34,8 @@ Index: madwifi-trunk-r3776/ath_rate/minstrel/minstrel.c
  		if (sn->rates[x].rix == 0xff) {
  			DPRINTF(sc, "%s: %s ignore bogus rix at %d\n",
  				dev_info, __func__, x);
-Index: madwifi-trunk-r3776/ath_rate/sample/sample.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath_rate/sample/sample.c	2008-07-17 02:20:53.000000000 +0200
-+++ madwifi-trunk-r3776/ath_rate/sample/sample.c	2008-07-17 02:27:08.000000000 +0200
+--- a/ath_rate/sample/sample.c
++++ b/ath_rate/sample/sample.c
 @@ -845,8 +845,15 @@
  		sn->num_rates = vap->iv_maxrateindex;
  
@@ -60,10 +54,8 @@ Index: madwifi-trunk-r3776/ath_rate/sample/sample.c
  		if (sn->rates[x].rix == 0xff) {
  			DPRINTF(sc, ATH_DEBUG_RATE, "%s: %s ignore bogus rix at %u\n",
  				dev_info, __func__, x);
-Index: madwifi-trunk-r3776/net80211/ieee80211_ioctl.h
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_ioctl.h	2008-07-17 02:20:53.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_ioctl.h	2008-07-17 02:25:53.000000000 +0200
+--- a/net80211/ieee80211_ioctl.h
++++ b/net80211/ieee80211_ioctl.h
 @@ -651,6 +651,7 @@
  	IEEE80211_PARAM_SCANBUFS		= 81,	/* Heap analysis for TX DMA */
  	IEEE80211_PARAM_LEAKTXBUFS		= 82,	/* Leak tx buffers */
@@ -72,10 +64,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_ioctl.h
  };
  
  #define	SIOCG80211STATS			(SIOCDEVPRIVATE+2)
-Index: madwifi-trunk-r3776/net80211/ieee80211_var.h
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_var.h	2008-07-17 02:20:53.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_var.h	2008-07-17 02:23:00.000000000 +0200
+--- a/net80211/ieee80211_var.h
++++ b/net80211/ieee80211_var.h
 @@ -292,6 +292,7 @@
  	struct ieee80211_app_ie app_ie[IEEE80211_APPIE_NUM_OF_FRAME]; /* app-specified IEs by frame type */
  	u_int32_t app_filter;				/* filters which management frames are forwarded to app */
@@ -84,10 +74,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_var.h
  };
  
  /* Debug functions need the defintion of struct ieee80211vap because iv_debug 
-Index: madwifi-trunk-r3776/net80211/ieee80211_wireless.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_wireless.c	2008-07-17 02:20:53.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_wireless.c	2008-07-17 02:26:17.000000000 +0200
+--- a/net80211/ieee80211_wireless.c
++++ b/net80211/ieee80211_wireless.c
 @@ -2879,6 +2879,12 @@
  		else
  			vap->iv_maxrateindex = 0;

@@ -3,10 +3,8 @@ when letting wpa_supplicant control roaming.
 
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
-Index: madwifi-trunk-r3776/net80211/ieee80211_ioctl.h
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_ioctl.h	2008-07-17 04:03:30.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_ioctl.h	2008-07-17 04:07:29.000000000 +0200
+--- a/net80211/ieee80211_ioctl.h
++++ b/net80211/ieee80211_ioctl.h
 @@ -656,6 +656,8 @@
  	IEEE80211_PARAM_PROTMODE_RSSI		= 85,	/* RSSI Threshold for enabling protection mode */
  	IEEE80211_PARAM_PROTMODE_TIMEOUT	= 86,	/* Timeout for expiring protection mode */
@@ -16,10 +14,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_ioctl.h
  };
  
  #define	SIOCG80211STATS			(SIOCDEVPRIVATE+2)
-Index: madwifi-trunk-r3776/net80211/ieee80211_wireless.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_wireless.c	2008-07-17 04:03:07.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_wireless.c	2008-07-17 04:07:56.000000000 +0200
+--- a/net80211/ieee80211_wireless.c
++++ b/net80211/ieee80211_wireless.c
 @@ -2832,6 +2832,12 @@
  	case IEEE80211_PARAM_ROAM_RATE_11G:
  		vap->iv_roam.rate11g = value;
@@ -61,10 +57,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_wireless.c
  	{ IEEE80211_PARAM_UAPSDINFO,
  	  IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "uapsd" },
  	{ IEEE80211_PARAM_UAPSDINFO,
-Index: madwifi-trunk-r3776/net80211/ieee80211_input.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_input.c	2008-07-17 04:07:08.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_input.c	2008-07-17 04:09:03.000000000 +0200
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
 @@ -3234,6 +3234,17 @@
  
  			/* When rssi is low, start doing bgscans more frequently to allow
@@ -83,10 +77,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_input.c
  			if ((rssi < vap->iv_bgscanthr) &&
  					(!vap->iv_bgscanthr_next ||
  						!time_before(jiffies, vap->iv_bgscanthr_next)) &&
-Index: madwifi-trunk-r3776/net80211/ieee80211_var.h
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_var.h	2008-07-17 04:07:08.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_var.h	2008-07-17 04:07:10.000000000 +0200
+--- a/net80211/ieee80211_var.h
++++ b/net80211/ieee80211_var.h
 @@ -233,6 +233,9 @@
  	u_int iv_bgscanintvl;				/* bg scan min interval */
  	u_int iv_bgscanthr;					/* bg scan rssi threshold */

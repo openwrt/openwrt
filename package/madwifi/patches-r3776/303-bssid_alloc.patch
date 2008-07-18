@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3776/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-17 01:49:58.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-17 01:57:39.000000000 +0200
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -1347,11 +1347,12 @@
  			TAILQ_FOREACH(v, &ic->ic_vaps, iv_next)
  				id_mask |= (1 << ATH_GET_VAP_ID(v->iv_myaddr));
@@ -29,10 +27,8 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  	avp->av_bslot = -1;
  #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15)
  	atomic_set(&avp->av_beacon_alloc, 0);
-Index: madwifi-trunk-r3776/ath/if_athvar.h
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_athvar.h	2008-07-17 01:27:21.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_athvar.h	2008-07-17 01:57:15.000000000 +0200
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
 @@ -802,7 +802,7 @@
  	} sc_updateslot;			/* slot time update fsm */
  	int sc_slotupdate;			/* slot to next advance fsm */

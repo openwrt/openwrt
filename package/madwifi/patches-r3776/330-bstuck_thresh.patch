@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3776/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-17 04:11:45.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-17 04:12:51.000000000 +0200
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -354,6 +354,7 @@
  static int ath_outdoor = AH_FALSE;		/* enable outdoor use */
  static int ath_xchanmode = AH_TRUE;		/* enable extended channels */
@@ -34,7 +32,7 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  MODULE_PARM_DESC(autocreate, "Create ath device in "
  		"[sta|ap|wds|adhoc|ahdemo|monitor] mode. defaults to sta, use "
  		"'none' to disable");
-@@ -5238,7 +5242,7 @@
+@@ -5239,7 +5243,7 @@
  		DPRINTF(sc, ATH_DEBUG_BEACON_PROC,
  			"Missed %u consecutive beacons (n_beacon=%u)\n",
  			sc->sc_bmisscount, n_beacon);
@@ -43,7 +41,7 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  			ATH_SCHEDULE_TQUEUE(&sc->sc_bstucktq, needmark);
  		return;
  	}
-@@ -5409,7 +5413,7 @@
+@@ -5410,7 +5414,7 @@
  	 *     check will be true, in which case return
  	 *     without resetting the driver.
  	 */

@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3776/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-17 00:53:04.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-17 01:15:21.000000000 +0200
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -323,8 +323,10 @@
  static void ath_set_dfs_cac_time(struct ieee80211com *, unsigned int seconds);
  
@@ -148,10 +146,8 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  /* If we are shutting down or blowing off the DFS channel availability check
   * then we call this to stop the behavior before we take the rest of the
   * necessary actions (such as a DFS reaction to radar). */
-Index: madwifi-trunk-r3776/ath_rate/amrr/amrr.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath_rate/amrr/amrr.c	2008-07-17 00:21:30.000000000 +0200
-+++ madwifi-trunk-r3776/ath_rate/amrr/amrr.c	2008-07-17 00:53:20.000000000 +0200
+--- a/ath_rate/amrr/amrr.c
++++ b/ath_rate/amrr/amrr.c
 @@ -70,7 +70,9 @@
  
  #include "amrr.h"
@@ -162,10 +158,8 @@ Index: madwifi-trunk-r3776/ath_rate/amrr/amrr.c
  #ifdef AMRR_DEBUG
  #define	DPRINTF(sc, _fmt, ...) do {					\
  	if (sc->sc_debug & 0x10)					\
-Index: madwifi-trunk-r3776/ath_rate/minstrel/minstrel.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath_rate/minstrel/minstrel.c	2008-07-17 00:47:36.000000000 +0200
-+++ madwifi-trunk-r3776/ath_rate/minstrel/minstrel.c	2008-07-17 01:16:06.000000000 +0200
+--- a/ath_rate/minstrel/minstrel.c
++++ b/ath_rate/minstrel/minstrel.c
 @@ -117,7 +117,9 @@
  
  #include "minstrel.h"
@@ -187,10 +181,8 @@ Index: madwifi-trunk-r3776/ath_rate/minstrel/minstrel.c
  
  	IEEE80211_NODE_TABLE_LOCK_IRQ(nt);
  	TAILQ_FOREACH(ni, &nt->nt_node, ni_list) {
-Index: madwifi-trunk-r3776/ath_rate/onoe/onoe.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath_rate/onoe/onoe.c	2008-07-17 00:21:29.000000000 +0200
-+++ madwifi-trunk-r3776/ath_rate/onoe/onoe.c	2008-07-17 00:53:20.000000000 +0200
+--- a/ath_rate/onoe/onoe.c
++++ b/ath_rate/onoe/onoe.c
 @@ -66,7 +66,9 @@
  
  #include "onoe.h"
@@ -201,10 +193,8 @@ Index: madwifi-trunk-r3776/ath_rate/onoe/onoe.c
  #ifdef ONOE_DEBUG
  enum {
  	ATH_DEBUG_RATE	= 0x00000010,	/* rate control */
-Index: madwifi-trunk-r3776/ath_rate/sample/sample.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath_rate/sample/sample.c	2008-07-17 00:21:30.000000000 +0200
-+++ madwifi-trunk-r3776/ath_rate/sample/sample.c	2008-07-17 00:53:20.000000000 +0200
+--- a/ath_rate/sample/sample.c
++++ b/ath_rate/sample/sample.c
 @@ -68,7 +68,9 @@
  
  #include "sample.h"
@@ -216,10 +206,8 @@ Index: madwifi-trunk-r3776/ath_rate/sample/sample.c
  #ifdef SAMPLE_DEBUG
  enum {
  	ATH_DEBUG_RATE		= 0x00000010,	/* rate control */
-Index: madwifi-trunk-r3776/tools/do_multi.c
-===================================================================
---- madwifi-trunk-r3776.orig/tools/do_multi.c	2008-07-17 00:46:52.000000000 +0200
-+++ madwifi-trunk-r3776/tools/do_multi.c	2008-07-17 00:53:20.000000000 +0200
+--- a/tools/do_multi.c
++++ b/tools/do_multi.c
 @@ -9,16 +9,20 @@
  
      progname = basename(argv[0]);
@@ -241,10 +229,8 @@ Index: madwifi-trunk-r3776/tools/do_multi.c
      if(strcmp(progname, "athkey") == 0)
  	ret =  athkey_init(argc, argv);
      if(strcmp(progname, "athstats") == 0)
-Index: madwifi-trunk-r3776/tools/Makefile
-===================================================================
---- madwifi-trunk-r3776.orig/tools/Makefile	2008-07-17 00:45:15.000000000 +0200
-+++ madwifi-trunk-r3776/tools/Makefile	2008-07-17 01:10:33.000000000 +0200
+--- a/tools/Makefile
++++ b/tools/Makefile
 @@ -39,6 +39,10 @@
  
  ATH_HAL = $(TOP)/ath_hal
@@ -284,10 +270,8 @@ Index: madwifi-trunk-r3776/tools/Makefile
  
  all: all-subdirs compile
  
-Index: madwifi-trunk-r3776/ath/if_ath_hal.h
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath_hal.h	2008-07-17 00:21:39.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath_hal.h	2008-07-17 00:53:20.000000000 +0200
+--- a/ath/if_ath_hal.h
++++ b/ath/if_ath_hal.h
 @@ -1263,6 +1263,7 @@
  
             tail -f /var/log/messages | sed -f hal_unmangle.sed 
@@ -305,10 +289,8 @@ Index: madwifi-trunk-r3776/ath/if_ath_hal.h
  #include "if_ath_hal_wrappers.h"
  #include "if_ath_hal_extensions.h"
  
-Index: madwifi-trunk-r3776/net80211/ieee80211_var.h
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_var.h	2008-07-17 00:21:29.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_var.h	2008-07-17 00:53:20.000000000 +0200
+--- a/net80211/ieee80211_var.h
++++ b/net80211/ieee80211_var.h
 @@ -495,9 +495,10 @@
  	/* inject a fake radar signal -- used while on a 802.11h DFS channels */
  	unsigned int (*ic_test_radar)(struct ieee80211com *);
@@ -321,10 +303,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_var.h
  	/* DFS channel availability check time (in seconds) */
  	void (*ic_set_dfs_cac_time)(struct ieee80211com *, unsigned int);
  	unsigned int (*ic_get_dfs_cac_time)(struct ieee80211com *);
-Index: madwifi-trunk-r3776/net80211/ieee80211_wireless.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_wireless.c	2008-07-17 00:21:29.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_wireless.c	2008-07-17 00:53:20.000000000 +0200
+--- a/net80211/ieee80211_wireless.c
++++ b/net80211/ieee80211_wireless.c
 @@ -1557,6 +1557,7 @@
  	return 0;
  }
@@ -363,10 +343,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_wireless.c
  	set_priv(IEEE80211_IOCTL_ADDMAC, ieee80211_ioctl_addmac),
  	set_priv(IEEE80211_IOCTL_DELMAC, ieee80211_ioctl_delmac),
  	set_priv(IEEE80211_IOCTL_WDSADDMAC, ieee80211_ioctl_wdsmac),
-Index: madwifi-trunk-r3776/ath/if_ath_debug.h
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath_debug.h	2008-07-17 00:21:39.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath_debug.h	2008-07-17 00:53:20.000000000 +0200
+--- a/ath/if_ath_debug.h
++++ b/ath/if_ath_debug.h
 @@ -54,6 +54,10 @@
  	ATH_DEBUG_GLOBAL	= (ATH_DEBUG_SKB|ATH_DEBUG_SKB_REF)
  };
@@ -414,10 +392,8 @@ Index: madwifi-trunk-r3776/ath/if_ath_debug.h
 +#endif
  
  #endif /* #ifndef _IF_ATH_DEBUG_H_ */
-Index: madwifi-trunk-r3776/ath/if_ath_pci.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath_pci.c	2008-07-17 00:21:39.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath_pci.c	2008-07-17 00:53:20.000000000 +0200
+--- a/ath/if_ath_pci.c
++++ b/ath/if_ath_pci.c
 @@ -134,8 +134,10 @@
  	u16 vdevice;
  	int i;

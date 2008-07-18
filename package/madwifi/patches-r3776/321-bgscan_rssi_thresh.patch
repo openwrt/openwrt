@@ -4,10 +4,8 @@ time, before losing connectivity entirely)
 
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
-Index: madwifi-trunk-r3776/net80211/ieee80211_ioctl.h
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_ioctl.h	2008-07-17 03:07:53.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_ioctl.h	2008-07-17 04:03:30.000000000 +0200
+--- a/net80211/ieee80211_ioctl.h
++++ b/net80211/ieee80211_ioctl.h
 @@ -655,6 +655,7 @@
  	IEEE80211_PARAM_MINRATE			= 84,	/* Minimum rate (by table index) */
  	IEEE80211_PARAM_PROTMODE_RSSI		= 85,	/* RSSI Threshold for enabling protection mode */
@@ -16,10 +14,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_ioctl.h
  };
  
  #define	SIOCG80211STATS			(SIOCDEVPRIVATE+2)
-Index: madwifi-trunk-r3776/net80211/ieee80211_var.h
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_var.h	2008-07-17 02:56:18.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_var.h	2008-07-17 04:03:07.000000000 +0200
+--- a/net80211/ieee80211_var.h
++++ b/net80211/ieee80211_var.h
 @@ -92,6 +92,8 @@
  #define	IEEE80211_BGSCAN_IDLE_MIN	100	/* min idle time (ms) */
  #define	IEEE80211_BGSCAN_IDLE_DEFAULT	250	/* default idle time (ms) */
@@ -47,10 +43,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_var.h
  
  #define IEEE80211_COM_UAPSD_ENABLE(_ic)		((_ic)->ic_flags_ext |= IEEE80211_FEXT_UAPSD)
  #define IEEE80211_COM_UAPSD_DISABLE(_ic)	((_ic)->ic_flags_ext &= ~IEEE80211_FEXT_UAPSD)
-Index: madwifi-trunk-r3776/net80211/ieee80211_wireless.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_wireless.c	2008-07-17 03:08:16.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_wireless.c	2008-07-17 04:03:07.000000000 +0200
+--- a/net80211/ieee80211_wireless.c
++++ b/net80211/ieee80211_wireless.c
 @@ -2778,6 +2778,9 @@
  		else
  			retv = EINVAL;
@@ -82,10 +76,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_wireless.c
  	{ IEEE80211_PARAM_MCAST_RATE,
  	  IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "mcast_rate" },
  	{ IEEE80211_PARAM_MCAST_RATE,
-Index: madwifi-trunk-r3776/net80211/ieee80211_input.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_input.c	2008-07-17 02:56:18.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_input.c	2008-07-17 04:03:07.000000000 +0200
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
 @@ -2984,8 +2984,10 @@
  {
  	struct ieee80211com *ic = vap->iv_ic;
@@ -122,10 +114,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_input.c
  			if (ni->ni_intval != scan.bintval) {
  				IEEE80211_NOTE(vap, IEEE80211_MSG_ASSOC, ni,
  						"beacon interval divergence: "
-Index: madwifi-trunk-r3776/net80211/ieee80211_scan.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_scan.c	2008-07-17 03:07:53.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_scan.c	2008-07-17 04:03:07.000000000 +0200
+--- a/net80211/ieee80211_scan.c
++++ b/net80211/ieee80211_scan.c
 @@ -793,7 +793,7 @@
  				ieee80211_sta_pwrsave(vap, 0);
  				if (ss->ss_next >= ss->ss_last) {

@@ -1,8 +1,6 @@
-Index: madwifi-trunk-r3776/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-17 02:28:06.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-17 02:37:41.000000000 +0200
-@@ -8109,6 +8109,7 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -8110,6 +8110,7 @@
  		ath_hal_setupxtxdesc(sc->sc_ah, ds, mrr.rate1, mrr.retries1,
  				     mrr.rate2, mrr.retries2,
  				     mrr.rate3, mrr.retries3);
@@ -10,10 +8,8 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  	}
  
  #ifndef ATH_SUPERG_FF
-Index: madwifi-trunk-r3776/ath/if_athvar.h
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_athvar.h	2008-07-17 02:20:51.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_athvar.h	2008-07-17 02:37:41.000000000 +0200
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
 @@ -454,6 +454,7 @@
  	u_int16_t bf_flags;				/* tx descriptor flags */
  	u_int64_t bf_tsf;
@@ -22,10 +18,8 @@ Index: madwifi-trunk-r3776/ath/if_athvar.h
  #ifdef ATH_SUPERG_FF
  	/* XXX: combine this with bf_skbaddr if it ever changes to accommodate
  	 *      multiple segments.
-Index: madwifi-trunk-r3776/ath_rate/minstrel/minstrel.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath_rate/minstrel/minstrel.c	2008-07-17 02:27:44.000000000 +0200
-+++ madwifi-trunk-r3776/ath_rate/minstrel/minstrel.c	2008-07-17 02:39:20.000000000 +0200
+--- a/ath_rate/minstrel/minstrel.c
++++ b/ath_rate/minstrel/minstrel.c
 @@ -341,18 +341,21 @@
  		if (sn->static_rate_ndx >= 0) {
  			    ndx = sn->static_rate_ndx;
@@ -78,10 +72,8 @@ Index: madwifi-trunk-r3776/ath_rate/minstrel/minstrel.c
  		if  (tries2 < 0)
  			return;
  		tries = tries - tries1;
-Index: madwifi-trunk-r3776/net80211/ieee80211_rate.h
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_rate.h	2008-07-17 00:21:29.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_rate.h	2008-07-17 02:37:41.000000000 +0200
+--- a/net80211/ieee80211_rate.h
++++ b/net80211/ieee80211_rate.h
 @@ -87,6 +87,7 @@
  	int retries2;
  	int rate3;

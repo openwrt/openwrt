@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3776/net80211/ieee80211.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211.c	2008-07-17 00:21:29.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211.c	2008-07-17 02:56:18.000000000 +0200
+--- a/net80211/ieee80211.c
++++ b/net80211/ieee80211.c
 @@ -347,7 +347,9 @@
  			IEEE80211_MS_TO_TU(IEEE80211_BMISSTHRESH_DEFAULT_MS), 
  			ic->ic_lintval), ic->ic_lintval);
@@ -13,10 +11,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211.c
  	IEEE80211_LOCK_INIT(ic, "ieee80211com");
  	IEEE80211_VAPS_LOCK_INIT(ic, "ieee80211com_vaps");
  	TAILQ_INIT(&ic->ic_vaps);
-Index: madwifi-trunk-r3776/net80211/ieee80211_input.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_input.c	2008-07-17 02:30:28.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_input.c	2008-07-17 02:56:18.000000000 +0200
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
 @@ -3382,14 +3382,18 @@
  			IEEE80211_IS_CHAN_ANYG(ic->ic_curchan)) {
  
@@ -41,10 +37,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_input.c
  			}
  		}
  
-Index: madwifi-trunk-r3776/net80211/ieee80211_ioctl.h
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_ioctl.h	2008-07-17 02:25:53.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_ioctl.h	2008-07-17 02:56:52.000000000 +0200
+--- a/net80211/ieee80211_ioctl.h
++++ b/net80211/ieee80211_ioctl.h
 @@ -652,6 +652,8 @@
  	IEEE80211_PARAM_LEAKTXBUFS		= 82,	/* Leak tx buffers */
  	IEEE80211_PARAM_MAXRATE			= 83,	/* Maximum rate (by table index) */
@@ -54,10 +48,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_ioctl.h
  };
  
  #define	SIOCG80211STATS			(SIOCDEVPRIVATE+2)
-Index: madwifi-trunk-r3776/net80211/ieee80211_var.h
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_var.h	2008-07-17 02:23:00.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_var.h	2008-07-17 02:56:18.000000000 +0200
+--- a/net80211/ieee80211_var.h
++++ b/net80211/ieee80211_var.h
 @@ -138,6 +138,9 @@
  
  #define	IEEE80211_APPIE_MAX	1024
@@ -78,10 +70,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_var.h
  
  	/* Channel state:
  	 *
-Index: madwifi-trunk-r3776/net80211/ieee80211_wireless.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_wireless.c	2008-07-17 02:26:17.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_wireless.c	2008-07-17 02:56:18.000000000 +0200
+--- a/net80211/ieee80211_wireless.c
++++ b/net80211/ieee80211_wireless.c
 @@ -2336,6 +2336,12 @@
  	case IEEE80211_PARAM_RSSI_EWMA:
  		ic->ic_rssi_ewma = value;
@@ -123,10 +113,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_wireless.c
  	{ IEEE80211_PARAM_MCASTCIPHER,
  	  IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "mcastcipher" },
  	{ IEEE80211_PARAM_MCASTCIPHER,
-Index: madwifi-trunk-r3776/net80211/ieee80211_node.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_node.c	2008-07-17 02:20:51.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_node.c	2008-07-17 02:56:18.000000000 +0200
+--- a/net80211/ieee80211_node.c
++++ b/net80211/ieee80211_node.c
 @@ -1591,6 +1591,17 @@
  
  	ieee80211_scan_timeout(ic);
