@@ -1,8 +1,6 @@
-Index: madwifi-trunk-r3776/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-17 02:37:41.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-17 03:04:02.000000000 +0200
-@@ -10889,8 +10889,13 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -10890,8 +10890,13 @@
  				break;
  #endif
  			case ATH_ACKRATE:
@@ -18,10 +16,8 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  				break;
  			case ATH_RP:
  				ath_rp_record(sc,
-Index: madwifi-trunk-r3776/ath/if_athvar.h
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_athvar.h	2008-07-17 02:37:41.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_athvar.h	2008-07-17 03:04:02.000000000 +0200
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
 @@ -698,6 +698,7 @@
  	unsigned int	sc_hasclrkey:1;		/* CLR key supported */
  	unsigned int	sc_stagbeacons:1;	/* use staggered beacons */
@@ -30,10 +26,8 @@ Index: madwifi-trunk-r3776/ath/if_athvar.h
  	unsigned int	sc_ackrate:1;		/* send acks at high bitrate */
  	unsigned int	sc_dfs_cac:1;		/* waiting on channel for radar detect */
  	unsigned int	sc_hasintmit:1;		/* Interference mitigation */
-Index: madwifi-trunk-r3776/ath/if_ath_hal_extensions.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath_hal_extensions.c	2008-07-17 00:21:39.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath_hal_extensions.c	2008-07-17 03:04:48.000000000 +0200
+--- a/ath/if_ath_hal_extensions.c
++++ b/ath/if_ath_hal_extensions.c
 @@ -129,6 +129,9 @@
  int
  ath_set_ack_bitrate(struct ath_softc *sc, int high)

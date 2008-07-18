@@ -3,10 +3,8 @@ Fixes some reassoc issues.
 
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
-Index: madwifi-trunk-r3776/net80211/ieee80211_proto.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_proto.c	2008-07-17 02:20:51.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_proto.c	2008-07-17 04:06:47.000000000 +0200
+--- a/net80211/ieee80211_proto.c
++++ b/net80211/ieee80211_proto.c
 @@ -1352,7 +1352,7 @@
  				IEEE80211_SEND_MGMT(ni,
  					IEEE80211_FC0_SUBTYPE_DISASSOC,

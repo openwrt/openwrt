@@ -1,8 +1,6 @@
-Index: madwifi-trunk-r3776/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-17 01:46:44.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-17 01:49:58.000000000 +0200
-@@ -8996,6 +8996,7 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -8997,6 +8997,7 @@
  			ATH_LONG_CALINTERVAL_SECS : 
  			ATH_SHORT_CALINTERVAL_SECS;
  	}
@@ -10,7 +8,7 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  
  	DPRINTF(sc, ATH_DEBUG_CALIBRATE, "Channel %u [flags=%04x] -- IQ %s.\n",
  		sc->sc_curchan.channel, sc->sc_curchan.channelFlags,
-@@ -9051,6 +9052,7 @@
+@@ -9052,6 +9053,7 @@
  	struct ath_softc *sc = dev->priv;
  
  	(void) ath_chan_set(sc, ic->ic_curchan);
@@ -18,10 +16,8 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  	/*
  	 * If we are returning to our bss channel then mark state
  	 * so the next recv'd beacon's TSF will be used to sync the
-Index: madwifi-trunk-r3776/net80211/ieee80211_wireless.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_wireless.c	2008-07-17 00:53:20.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_wireless.c	2008-07-17 01:49:58.000000000 +0200
+--- a/net80211/ieee80211_wireless.c
++++ b/net80211/ieee80211_wireless.c
 @@ -4396,6 +4396,7 @@
  	si->isi_state = ni->ni_flags;
  	si->isi_authmode = ni->ni_authmode;
@@ -30,10 +26,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_wireless.c
  	si->isi_capinfo = ni->ni_capinfo;
  	si->isi_athflags = ni->ni_ath_flags;
  	si->isi_erp = ni->ni_erp;
-Index: madwifi-trunk-r3776/net80211/ieee80211_ioctl.h
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_ioctl.h	2008-07-17 00:21:29.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_ioctl.h	2008-07-17 01:49:58.000000000 +0200
+--- a/net80211/ieee80211_ioctl.h
++++ b/net80211/ieee80211_ioctl.h
 @@ -312,6 +312,7 @@
  	u_int16_t isi_state;		/* state flags */
  	u_int8_t isi_authmode;		/* authentication algorithm */

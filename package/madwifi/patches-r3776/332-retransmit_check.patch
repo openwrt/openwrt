@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3776/net80211/ieee80211.h
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211.h	2008-07-17 04:14:08.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211.h	2008-07-17 04:14:13.000000000 +0200
+--- a/net80211/ieee80211.h
++++ b/net80211/ieee80211.h
 @@ -174,8 +174,6 @@
  #define	IEEE80211_SEQ_SEQ_MASK			0xfff0
  #define	IEEE80211_SEQ_SEQ_SHIFT			4
@@ -11,10 +9,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211.h
  #define	IEEE80211_NWID_LEN			32
  
  #define	IEEE80211_QOS_TXOP			0x00ff
-Index: madwifi-trunk-r3776/net80211/ieee80211_input.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_input.c	2008-07-17 04:14:08.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_input.c	2008-07-17 04:14:13.000000000 +0200
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
 @@ -406,7 +406,7 @@
  				tid = 0;
  			rxseq = le16toh(*(__le16 *)wh->i_seq);

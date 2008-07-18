@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3776/net80211/ieee80211_beacon.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_beacon.c	2008-07-17 00:21:29.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_beacon.c	2008-07-17 01:58:24.000000000 +0200
+--- a/net80211/ieee80211_beacon.c
++++ b/net80211/ieee80211_beacon.c
 @@ -544,10 +544,10 @@
  			vap->iv_flags &= ~IEEE80211_F_XRUPDATE;
  		}
@@ -15,10 +13,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_beacon.c
  		}
  	}
  	/* if it is a mode change beacon for dynamic turbo case */
-Index: madwifi-trunk-r3776/net80211/ieee80211_input.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_input.c	2008-07-17 01:46:44.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_input.c	2008-07-17 01:58:24.000000000 +0200
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
 @@ -3384,9 +3384,12 @@
  			/* Assume no ERP IE == 11b AP */
  			if ((!has_erp || (has_erp && (scan.erp & IEEE80211_ERP_NON_ERP_PRESENT))) &&
@@ -33,10 +29,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_input.c
  			}
  		}
  
-Index: madwifi-trunk-r3776/net80211/ieee80211_node.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_node.c	2008-07-17 01:46:44.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_node.c	2008-07-17 01:58:24.000000000 +0200
+--- a/net80211/ieee80211_node.c
++++ b/net80211/ieee80211_node.c
 @@ -1741,8 +1741,12 @@
  		}
  

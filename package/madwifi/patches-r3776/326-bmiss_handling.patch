@@ -5,10 +5,8 @@ for the APs probe response.
 
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
-Index: madwifi-trunk-r3776/net80211/ieee80211_input.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_input.c	2008-07-17 04:03:07.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_input.c	2008-07-17 04:06:33.000000000 +0200
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
 @@ -3369,12 +3369,17 @@
  			}
  
@@ -31,10 +29,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_input.c
  
  			/* If scanning, pass the info to the scan module.
  			 * Otherwise, check if it's the right time to do
-Index: madwifi-trunk-r3776/net80211/ieee80211_proto.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_proto.c	2008-07-17 04:06:18.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_proto.c	2008-07-17 04:06:33.000000000 +0200
+--- a/net80211/ieee80211_proto.c
++++ b/net80211/ieee80211_proto.c
 @@ -1213,6 +1213,8 @@
  	}
  	/* XXX locking */
@@ -94,10 +90,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_proto.c
  			mod_timer(&vap->iv_swbmiss, jiffies + vap->iv_swbmiss_period);
  		}
  
-Index: madwifi-trunk-r3776/net80211/ieee80211_var.h
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_var.h	2008-07-17 04:03:07.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_var.h	2008-07-17 04:06:33.000000000 +0200
+--- a/net80211/ieee80211_var.h
++++ b/net80211/ieee80211_var.h
 @@ -292,6 +292,7 @@
  
  	struct timer_list iv_swbmiss;			/* software beacon miss timer */

@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3776/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-17 03:06:03.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-17 03:53:09.000000000 +0200
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -343,6 +343,8 @@
  		unsigned int param, unsigned int value);
  
@@ -203,7 +201,7 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  /*
   * Context: process context
   */
-@@ -4248,8 +4240,7 @@
+@@ -4249,8 +4241,7 @@
  	u_int32_t rfilt;
  
  	/* Preserve the current Phy. radar and err. filters. */
@@ -213,7 +211,7 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  		 HAL_RX_FILTER_UCAST | HAL_RX_FILTER_BCAST |
  		 HAL_RX_FILTER_MCAST;
  	if (ic->ic_opmode != IEEE80211_M_STA)
-@@ -4265,6 +4256,8 @@
+@@ -4266,6 +4257,8 @@
  	if (sc->sc_nmonvaps > 0)
  		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON |
  			  HAL_RX_FILTER_PROBEREQ | HAL_RX_FILTER_PROM);
@@ -222,7 +220,7 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  	if (sc->sc_curchan.privFlags & CHANNEL_DFS)
  		rfilt |= (HAL_RX_FILTER_PHYERR | HAL_RX_FILTER_PHYRADAR);
  	return rfilt;
-@@ -6809,8 +6802,7 @@
+@@ -6810,8 +6803,7 @@
  	dev->quota -= bf_processed;
  #endif
  
@@ -232,7 +230,7 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  	if (!bf_processed)
  		DPRINTF(sc, ATH_DEBUG_RX_PROC,
  			"Warning: %s got scheduled when no receive "
-@@ -8726,7 +8718,6 @@
+@@ -8727,7 +8719,6 @@
  	ath_hal_rxena(ah);		/* enable recv descriptors */
  	ath_mode_init(dev);		/* set filters, etc. */
  	ath_hal_startpcurecv(ah);	/* re-enable PCU/DMA engine */
@@ -240,7 +238,7 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  	return 0;
  }
  
-@@ -10632,8 +10623,10 @@
+@@ -10633,8 +10624,10 @@
  	ATH_RP_IGNORED 		= 24,
  	ATH_RADAR_IGNORED       = 25,
  	ATH_MAXVAPS  		= 26,
@@ -253,7 +251,7 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  };
  
  static inline int 
-@@ -10695,6 +10688,48 @@
+@@ -10696,6 +10689,48 @@
  }
  
  static int
@@ -302,7 +300,7 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl, write, filp, buffer, lenp, ppos)
  {
  	struct ath_softc *sc = ctl->extra1;
-@@ -10933,30 +10968,13 @@
+@@ -10934,30 +10969,13 @@
  				sc->sc_radar_ignored = val;
  				break;
  			case ATH_INTMIT:
@@ -339,7 +337,7 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  			default:
  				ret = -EINVAL;
  				break;
-@@ -11028,9 +11046,14 @@
+@@ -11029,9 +11047,14 @@
  		case ATH_RADAR_IGNORED:
  			val = sc->sc_radar_ignored;
  			break;
@@ -357,7 +355,7 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  		default:
  			ret = -EINVAL;
  			break;
-@@ -11412,6 +11435,24 @@
+@@ -11413,6 +11436,24 @@
  	  .maxlen	= sizeof(ath_xchanmode),
  	  .proc_handler	= proc_dointvec
  	},
@@ -382,10 +380,8 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  	{ 0 }
  };
  static ctl_table ath_ath_table[] = {
-Index: madwifi-trunk-r3776/ath/if_athvar.h
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_athvar.h	2008-07-17 03:04:02.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_athvar.h	2008-07-17 03:12:36.000000000 +0200
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
 @@ -712,6 +712,10 @@
  	unsigned int sc_txcont_power; /* Continuous transmit power in 0.5dBm units */
  	unsigned int sc_txcont_rate;  /* Continuous transmit rate in Mbps */
@@ -397,10 +393,8 @@ Index: madwifi-trunk-r3776/ath/if_athvar.h
  	/* rate tables */
  	const HAL_RATE_TABLE *sc_rates[IEEE80211_MODE_MAX];
  	const HAL_RATE_TABLE *sc_currates;	/* current rate table */
-Index: madwifi-trunk-r3776/ath/if_ath_hal_extensions.h
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath_hal_extensions.h	2008-07-17 00:21:39.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath_hal_extensions.h	2008-07-17 03:50:03.000000000 +0200
+--- a/ath/if_ath_hal_extensions.h
++++ b/ath/if_ath_hal_extensions.h
 @@ -237,296 +237,18 @@
  	AR5K_DMASIZE_512B
  };
@@ -701,10 +695,8 @@ Index: madwifi-trunk-r3776/ath/if_ath_hal_extensions.h
  
  static inline void ath_hal_set_dmasize_pcie(struct ath_hal *ah) {
  	SET_FIELD(ah, AR5K_TXCFG, AR5K_TXCFG_SDMAMR, AR5K_DMASIZE_128B);
-Index: madwifi-trunk-r3776/ath/if_ath_hal.h
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath_hal.h	2008-07-17 00:53:20.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath_hal.h	2008-07-17 03:41:25.000000000 +0200
+--- a/ath/if_ath_hal.h
++++ b/ath/if_ath_hal.h
 @@ -79,7 +79,7 @@
  	ath_hal_set_function(__func__);
  	ath_hal_set_device(SC_DEV_NAME(ah->ah_sc));
@@ -714,10 +706,8 @@ Index: madwifi-trunk-r3776/ath/if_ath_hal.h
  				resultsize);
  	ath_hal_set_function(NULL);
  	ath_hal_set_device(NULL);
-Index: madwifi-trunk-r3776/scripts/if_ath_hal_generator.pl
-===================================================================
---- madwifi-trunk-r3776.orig/scripts/if_ath_hal_generator.pl	2008-07-17 00:21:30.000000000 +0200
-+++ madwifi-trunk-r3776/scripts/if_ath_hal_generator.pl	2008-07-17 03:46:30.000000000 +0200
+--- a/scripts/if_ath_hal_generator.pl
++++ b/scripts/if_ath_hal_generator.pl
 @@ -145,7 +145,9 @@
      "ah_waitForBeaconDone"        => "ath_hal_waitforbeacon",
      "ah_writeAssocid"             => "ath_hal_setassocid",

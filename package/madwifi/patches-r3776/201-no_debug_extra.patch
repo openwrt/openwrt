@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3776/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-17 01:15:21.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-17 01:20:11.000000000 +0200
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -423,8 +423,8 @@
  		"defaults to '" DEF_RATE_CTL "'");
  MODULE_PARM_DESC(intmit, "Enable interference mitigation by default.  Default is 0.");
@@ -33,4 +31,3 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  
  	ic->ic_wme.wme_update = ath_wme_update;
  	ic->ic_uapsd_flush = ath_uapsd_flush;
-

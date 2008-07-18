@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3776/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_ath.c	2008-07-18 23:26:43.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_ath.c	2008-07-18 23:29:26.000000000 +0200
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -182,7 +182,11 @@
  	struct sk_buff *, int, int, u_int64_t);
  static void ath_setdefantenna(struct ath_softc *, u_int);
@@ -388,10 +386,8 @@ Index: madwifi-trunk-r3776/ath/if_ath.c
  	}
  	ATH_UNLOCK(sc);
  
-Index: madwifi-trunk-r3776/ath/if_athvar.h
-===================================================================
---- madwifi-trunk-r3776.orig/ath/if_athvar.h	2008-07-18 23:26:22.000000000 +0200
-+++ madwifi-trunk-r3776/ath/if_athvar.h	2008-07-18 23:27:47.000000000 +0200
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
 @@ -56,6 +56,10 @@
  # include	<asm/bitops.h>
  #endif
@@ -438,10 +434,8 @@ Index: madwifi-trunk-r3776/ath/if_athvar.h
  
  #define	ATH_RXBUF_LOCK_INIT(_sc)	spin_lock_init(&(_sc)->sc_rxbuflock)
  #define	ATH_RXBUF_LOCK_DESTROY(_sc)
-Index: madwifi-trunk-r3776/net80211/ieee80211_skb.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_skb.c	2008-07-18 23:26:22.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_skb.c	2008-07-18 23:27:47.000000000 +0200
+--- a/net80211/ieee80211_skb.c
++++ b/net80211/ieee80211_skb.c
 @@ -73,7 +73,7 @@
  #undef dev_queue_xmit
  #undef kfree_skb
@@ -471,10 +465,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_skb.c
  EXPORT_SYMBOL(alloc_skb_debug);
  EXPORT_SYMBOL(dev_alloc_skb_debug);
  EXPORT_SYMBOL(skb_clone_debug);
-Index: madwifi-trunk-r3776/net80211/ieee80211_skb.h
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_skb.h	2008-07-18 23:26:22.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_skb.h	2008-07-18 23:27:47.000000000 +0200
+--- a/net80211/ieee80211_skb.h
++++ b/net80211/ieee80211_skb.h
 @@ -115,7 +115,7 @@
  
  int vlan_hwaccel_rx_debug(struct sk_buff *skb, struct vlan_group *grp,
@@ -504,10 +496,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_skb.h
  #define	alloc_skb(_length, _gfp_mask) \
  	alloc_skb_debug(_length, _gfp_mask, __func__, __LINE__)
  #define	dev_alloc_skb(_length) \
-Index: madwifi-trunk-r3776/net80211/ieee80211_input.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_input.c	2008-07-18 23:26:22.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_input.c	2008-07-18 23:27:47.000000000 +0200
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
 @@ -1185,7 +1185,7 @@
  			ret = vlan_hwaccel_rx(skb,
  					vap->iv_vlgrp, ni->ni_vlan);
@@ -526,10 +516,8 @@ Index: madwifi-trunk-r3776/net80211/ieee80211_input.c
  			vap->iv_devstats.rx_dropped++;
  	}
  }
-Index: madwifi-trunk-r3776/net80211/ieee80211_monitor.c
-===================================================================
---- madwifi-trunk-r3776.orig/net80211/ieee80211_monitor.c	2008-07-18 23:26:22.000000000 +0200
-+++ madwifi-trunk-r3776/net80211/ieee80211_monitor.c	2008-07-18 23:27:47.000000000 +0200
+--- a/net80211/ieee80211_monitor.c
++++ b/net80211/ieee80211_monitor.c
 @@ -580,7 +580,7 @@
  
  			if (SKB_NI(skb1) != NULL)
