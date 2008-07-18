@@ -120,7 +120,7 @@ ifeq ($(findstring PCI,$(BUS)),PCI)
   MADWIFI_AUTOLOAD+= ath_pci
 endif
 
-MADWIFI_APPLETS:=80211stats,athchans,athctrl,athkey,athstats,wlanconfig,ath_info
+MADWIFI_APPLETS:=80211stats,athchans,athctrl,athkey,athstats,wlanconfig,$(if $(CONFIG_MADWIFI_TESTING),ath_info/)ath_info
 ifdef CONFIG_MADWIFI_DEBUG
   MADWIFI_APPLETS:=$(strip $(MADWIFI_APPLETS)),athdebug,80211debug
 endif
