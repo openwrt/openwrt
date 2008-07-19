@@ -78,7 +78,7 @@ mvswitch_mangle_tx(struct sk_buff *skb, struct net_device *dev)
 	if (__vlan_hwaccel_get_tag(skb, &vid))
 		goto error;
 
-	if ((skb->len <= 62) || (skb_headroom(skb) < MV_HEADER_SIZE)) {
+	if (skb_cloned(skb) || (skb->len <= 62) || (skb_headroom(skb) < MV_HEADER_SIZE)) {
 		if (pskb_expand_head(skb, MV_HEADER_SIZE, 0, GFP_ATOMIC))
 			goto error_expand;
 		if (skb->len < 62)
