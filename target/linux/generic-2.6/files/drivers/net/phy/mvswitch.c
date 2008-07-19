@@ -79,7 +79,7 @@ mvswitch_mangle_tx(struct sk_buff *skb, struct net_device *dev)
 		goto error;
 
 	if (skb_cloned(skb) || (skb->len <= 62) || (skb_headroom(skb) < MV_HEADER_SIZE)) {
-		if (pskb_expand_head(skb, MV_HEADER_SIZE, 0, GFP_ATOMIC))
+		if (pskb_expand_head(skb, MV_HEADER_SIZE, (skb->len < 62 ? 62 - skb->len : 0), GFP_ATOMIC))
 			goto error_expand;
 		if (skb->len < 62)
 			skb->len = 62;
@@ -217,6 +217,20 @@ mvswitch_vlan_rx_register(struct net_device *dev, struct vlan_group *grp)
 
 
 static int
+mvswitch_wait_mask(struct phy_device *pdev, int addr, int reg, u16 mask, u16 val)
+{
+	int i = 100;
+	u16 r;
+
+	do {
+		r = r16(pdev, addr, reg) & mask;
+		if (r == val)
+			return 0;
+	} while(--i > 0);
+	return -ETIMEDOUT;
+}
+
+static int
 mvswitch_config_init(struct phy_device *pdev)
 {
 	struct mvswitch_priv *priv = to_mvsw(pdev);
@@ -231,6 +245,7 @@ mvswitch_config_init(struct phy_device *pdev)
 	pdev->supported = ADVERTISED_100baseT_Full;
 	pdev->advertising = ADVERTISED_100baseT_Full;
 	dev->phy_ptr = priv;
+	dev->irq = PHY_POLL;
 
 	/* initialize default vlans */
 	for (i = 0; i < MV_PORTS; i++)
@@ -242,24 +257,21 @@ mvswitch_config_init(struct phy_device *pdev)
 
 	msleep(2); /* wait for the status change to settle in */
 
-	/* put the device in reset and set ATU flags */
+	/* put the ATU in reset */
+	w16(pdev, MV_SWITCHREG(ATU_CTRL), MV_ATUCTL_RESET);
+
+	i = mvswitch_wait_mask(pdev, MV_SWITCHREG(ATU_CTRL), MV_ATUCTL_RESET, 0);
+	if (i < 0) {
+		printk("%s: Timeout waiting for the switch to reset.\n", dev->name);
+		return i;
+	}
+
+	/* set the ATU flags */
 	w16(pdev, MV_SWITCHREG(ATU_CTRL),
-		MV_ATUCTL_RESET |
+		MV_ATUCTL_NO_LEARN |
 		MV_ATUCTL_ATU_1K |
 		MV_ATUCTL_AGETIME(MV_ATUCTL_AGETIME_MIN) /* minimum without disabling ageing */
 	);
-
-	i = 100; /* timeout */
-	do {
-		if (!(r16(pdev, MV_SWITCHREG(ATU_CTRL)) & MV_ATUCTL_RESET))
-			break;
-		msleep(1);
-	} while (--i > 0);
-
-	if (!i) {
-		printk("%s: Timeout waiting for the switch to reset.\n", dev->name);
-		return -ETIMEDOUT;
-	}
 
 	/* initialize the cpu port */
 	w16(pdev, MV_PORTREG(CONTROL, MV_CPUPORT),
@@ -288,7 +300,7 @@ mvswitch_config_init(struct phy_device *pdev)
 		}
 		/* leave port unconfigured if it's not part of a vlan */
 		if (!vlmap)
-			break;
+			continue;
 
 		/* add the cpu port to the allowed destinations list */
 		vlmap |= (1 << MV_CPUPORT);
@@ -299,19 +311,17 @@ mvswitch_config_init(struct phy_device *pdev)
 		/* apply vlan settings */
 		w16(pdev, MV_PORTREG(VLANMAP, i),
 			MV_PORTVLAN_PORTS(vlmap) |
-			MV_PORTVLAN_ID(pvid)
+			MV_PORTVLAN_ID(i)
 		);
 
 		/* re-enable port */
-		w16(pdev, MV_PORTREG(CONTROL, i), MV_PORTCTRL_ENABLED);
+		w16(pdev, MV_PORTREG(CONTROL, i),
+			MV_PORTCTRL_ENABLED
+		);
 	}
 
-	/* build the target list for the cpu port */
-	for (i = 0; i < MV_PORTS; i++)
-		vlmap |= (1 << i);
-
 	w16(pdev, MV_PORTREG(VLANMAP, MV_CPUPORT),
-		MV_PORTVLAN_PORTS(vlmap)
+		MV_PORTVLAN_ID(MV_CPUPORT)
 	);
 
 	/* set the port association vector */
@@ -343,11 +353,28 @@ mvswitch_config_init(struct phy_device *pdev)
 }
 
 static int
-mvswitch_read_status(struct phy_device *phydev)
+mvswitch_read_status(struct phy_device *pdev)
 {
-	phydev->speed = SPEED_100;
-	phydev->duplex = DUPLEX_FULL;
-	phydev->state = PHY_UP;
+	pdev->speed = SPEED_100;
+	pdev->duplex = DUPLEX_FULL;
+	pdev->state = PHY_UP;
+
+	/* XXX ugly workaround: we can't force the switch
+	 * to gracefully handle hosts moving from one port to another,
+	 * so we have to regularly clear the ATU database */
+
+	/* wait for the ATU to become available */
+	mvswitch_wait_mask(pdev, MV_SWITCHREG(ATU_OP), MV_ATUOP_INPROGRESS, 0);
+
+	/* flush the ATU */
+	w16(pdev, MV_SWITCHREG(ATU_OP),
+		MV_ATUOP_INPROGRESS |
+		MV_ATUOP_FLUSH_ALL
+	);
+
+	/* wait for operation to complete */
+	mvswitch_wait_mask(pdev, MV_SWITCHREG(ATU_OP), MV_ATUOP_INPROGRESS, 0);
+
 	return 0;
 }
 
