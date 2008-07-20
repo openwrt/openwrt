@@ -1,0 +1,15 @@
+Replace udelay(3000) with mdelay(3), because udelay(3000) fails on ARM
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+--- a/drivers/net/wireless/ath9k/recv.c
++++ b/drivers/net/wireless/ath9k/recv.c
+@@ -737,7 +737,7 @@
+ 	ath9k_hw_stoppcurecv(ah);	/* disable PCU */
+ 	ath9k_hw_setrxfilter(ah, 0);	/* clear recv filter */
+ 	stopped = ath9k_hw_stopdmarecv(ah);	/* disable DMA engine */
+-	udelay(3000);			/* 3ms is long enough for 1 frame */
++	mdelay(3);			/* 3ms is long enough for 1 frame */
+ 	tsf = ath9k_hw_gettsf64(ah);
+ 	sc->sc_rxlink = NULL;		/* just in case */
+ 	return stopped;
