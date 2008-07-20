@@ -1,0 +1,16 @@
+Fix a return code check for ath9k_hw_nvram_read, this function returns
+AH_TRUE when the call succeeded
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+--- a/drivers/net/wireless/ath9k/hw.c
++++ b/drivers/net/wireless/ath9k/hw.c
+@@ -803,7 +803,7 @@
+ 		u_int16_t magic, magic2;
+ 		int addr;
+ 
+-		if (ath9k_hw_nvram_read(ah, AR5416_EEPROM_MAGIC_OFFSET,
++		if (!ath9k_hw_nvram_read(ah, AR5416_EEPROM_MAGIC_OFFSET,
+ 					&magic)) {
+ 			HDPRINTF(ah, HAL_DBG_EEPROM,
+ 				 "%s: Reading Magic # failed\n", __func__);
