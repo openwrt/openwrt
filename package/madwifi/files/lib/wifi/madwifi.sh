@@ -97,6 +97,8 @@ enable_atheros() {
 		[ "$first" = 1 ] && {
 			# only need to change freq band and channel on the first vif
 			config_get agmode "$device" agmode
+			[ -z "$agmode" ] && config_get agmode "$device" mode
+
 			pureg=0
 			case "$agmode" in
 				*b) agmode=11b;;
@@ -105,11 +107,9 @@ enable_atheros() {
 				*a) agmode=11a;;
 				*) agmode=auto;;
 			esac
-			iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
 			iwpriv "$ifname" mode "$agmode"
 			iwpriv "$ifname" pureg "$pureg"
 			iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
-			ifconfig "$ifname" up
 		}
 	
 		config_get_bool hidden "$vif" hidden 0
@@ -244,8 +244,6 @@ enable_atheros() {
 		esac
 
 		ifconfig "$ifname" up
-		iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
-
 		local net_cfg bridge
 		net_cfg="$(find_net_config "$vif")"
 		[ -z "$net_cfg" ] || {
