@@ -12,9 +12,9 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 PKG_RELEASE:=1
 
-PKG_VERSION:=2008-05-26
+PKG_VERSION:=$(if $(CONFIG_TARGET_brcm47xx),2008-05-26,2008-07-19)
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/05
+PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/07
 #PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
 
@@ -23,7 +23,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/mac80211
   SUBMENU:=Wireless Drivers
   TITLE:=Linux 802.11 Wireless Networking Stack
-  DEPENDS:=@LINUX_2_6_23||LINUX_2_6_24||LINUX_2_6_25 +kmod-crypto-arc4 +kmod-crypto-aes +wireless-tools
+  DEPENDS:=@LINUX_2_6 +kmod-crypto-arc4 +kmod-crypto-aes +wireless-tools
   FILES:= \
 	$(PKG_BUILD_DIR)/net/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/net/wireless/cfg80211.$(LINUX_KMOD_SUFFIX)
@@ -168,8 +168,9 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include/mac80211
+	mkdir -p $(1)/usr/include/mac80211 $(1)/usr/include/net/mac80211
 	$(CP) $(PKG_BUILD_DIR)/net/mac80211/*.h $(PKG_BUILD_DIR)/include/* $(1)/usr/include/mac80211/
+	$(CP) $(PKG_BUILD_DIR)/net/mac80211/rate.h $(1)/usr/include/net/mac80211/
 endef
 
 define KernelPackage/mac80211/install
