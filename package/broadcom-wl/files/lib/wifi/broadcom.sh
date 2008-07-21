@@ -202,7 +202,7 @@ enable_broadcom() {
 					*) auth=2; wsec=2;;
 				esac
 				eval "${vif}_key=\"\$key\""
-				nasopts="-r \"\$${vif}_key\" -h $server -p $port"
+				nasopts="-r \"\$${vif}_key\" -h $server -p ${port:-1812}"
 			;;
 		esac
 		append vif_do_up "wsec $wsec" "$N"
