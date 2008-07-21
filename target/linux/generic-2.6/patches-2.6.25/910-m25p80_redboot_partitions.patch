@@ -1,0 +1,17 @@
+diff -Nur a/drivers/mtd/devices/m25p80.c b/drivers/mtd/devices/m25p80.c
+--- a/drivers/mtd/devices/m25p80.c	2008-07-06 14:36:59.000000000 +0200
++++ b/drivers/mtd/devices/m25p80.c	2008-07-06 15:17:48.000000000 +0200
+@@ -631,12 +631,10 @@
+ 		struct mtd_partition	*parts = NULL;
+ 		int			nr_parts = 0;
+ 
+-#ifdef CONFIG_MTD_CMDLINE_PARTS
+-		static const char *part_probes[] = { "cmdlinepart", NULL, };
++		static const char *part_probes[] = { "RedBoot", "cmdlinepart", NULL, };
+ 
+ 		nr_parts = parse_mtd_partitions(&flash->mtd,
+ 				part_probes, &parts, 0);
+-#endif
+ 
+ 		if (nr_parts <= 0 && data && data->parts) {
+ 			parts = data->parts;
