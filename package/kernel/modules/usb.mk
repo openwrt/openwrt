@@ -361,7 +361,7 @@ $(eval $(call KernelPackage,usb-serial-oti6858))
 
 
 define KernelPackage/usb-serial-sierrawireless
-  $(call usbdep,kmod-usb-serial @LINUX_2_6)
+  $(call usbdep,kmod-usb-serial)
   TITLE:=Support for Sierra Wireless devices
   KCONFIG:=CONFIG_USB_SERIAL_SIERRAWIRELESS
   FILES:=$(LINUX_DIR)/drivers/usb/serial/sierra.$(LINUX_KMOD_SUFFIX)
