@@ -39,15 +39,21 @@ setup_interface_3g() {
 	local chat="/etc/chatscripts/3g.chat"
 	
 	config_get device "$config" device
+	config_get maxwait "$config" maxwait
+	maxwait=${maxwait:-20}
+	while [ ! -e "$device" -a $maxwait -gt 0 ];do # wait for driver loading to catch up
+		maxwait=$(($maxwait - 1))
+		sleep 1
+	done
 
 	for module in slhc ppp_generic ppp_async; do
 		/sbin/insmod $module 2>&- >&-
 	done
 
-	config_get apn "$cfg" apn
-	config_get service "$cfg" service
-	config_get pincode "$cfg" pincode
-	config_get mtu "$cfg" mtu
+	config_get apn "$config" apn
+	config_get service "$config" service
+	config_get pincode "$config" pincode
+	config_get mtu "$config" mtu
 
 	set_3g_led 1 0 1
 
@@ -74,7 +80,7 @@ setup_interface_3g() {
 		# Don't assume Option to be default as it breaks with Huawei Cards/Sticks
 		
 		PINCODE="$pincode" gcom -d "$device" -s /etc/gcom/setpin.gcom || {
-			echo "$cfg(3g): Failed to set the PIN code."
+			echo "$config(3g): Failed to set the PIN code."
 			set_3g_led 0 0 0
 			return 1
 		}
