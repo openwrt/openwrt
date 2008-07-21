@@ -115,6 +115,11 @@ config switch       "eth0"
     option vlan2    "4 5"
 \end{Verbatim}
 
+Three interfaces will be automatically created using this switch layout :
+\texttt{eth0.0} (vlan0), \texttt{eth0.1} (vlan1) and \texttt{eth0.2} (vlan2).
+You can then assign those interfaces to a custom network configuration name
+like \texttt{lan}, \texttt{wan} or \texttt{dmz} for instance.
+
 \subsubsection{Setting up IPv6 connectivity}
 
 OpenWrt supports IPv6 connectivity using PPP, Tunnel brokers or static
@@ -123,8 +128,9 @@ assignment.
 If you use PPP, IPv6 will be setup using IP6CP and there is nothing to
 configure.
 
-To setup an IPv6 tunnel to a tunnel broker, you have to edit the
-\texttt{/etc/config/6tunnel} file and change the settings accordingly :
+To setup an IPv6 tunnel to a tunnel broker, you can install the
+\texttt{6scripts} package and edit the \texttt{/etc/config/6tunnel}
+file and change the settings accordingly :
 
 \begin{Verbatim}
 config 6tunnel
@@ -150,6 +156,17 @@ config 6tunnel
     \item{\texttt{'prefix'}:}
 	IPv6 prefix to setup on the LAN.
 \end{itemize}
+
+Using the same package you can also setup an IPv6 bridged connection :
+
+\begin{Verbatim}
+config 6bridge
+	option bridge	'br6'
+\end{Verbatim}
+
+By default the script bridges the WAN interface with the LAN interface
+and uses ebtables to filter anything that is not IPv6 on the bridge.
+
 
 IPv6 static addressing is also supported using a similar setup as
 IPv4 but with the \texttt{ip6} prefixing (when applicable).
