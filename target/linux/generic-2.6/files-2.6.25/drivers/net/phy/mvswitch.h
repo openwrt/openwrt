@@ -123,7 +123,21 @@ enum {
 	MV_ATUCTL_ATUMASK   = (3 << 12),
 	MV_ATUCTL_NO_LEARN  = (1 << 14),
 	MV_ATUCTL_RESET     = (1 << 15),
-}
+};
+
+enum {
+#define MV_ATUOP_DBNUM(_n)	((_n) & 0x0f)
+
+	MV_ATUOP_NOOP       = (0 << 12),
+	MV_ATUOP_FLUSH_ALL  = (1 << 12),
+	MV_ATUOP_FLUSH_U    = (2 << 12),
+	MV_ATUOP_LOAD_DB    = (3 << 12),
+	MV_ATUOP_GET_NEXT   = (4 << 12),
+	MV_ATUOP_FLUSH_DB   = (5 << 12),
+	MV_ATUOP_FLUSH_DB_UU= (6 << 12),
+
+	MV_ATUOP_INPROGRESS = (1 << 15),
+};
 
 #define MV_IDENT_MASK		0xfff0
 #define MV_IDENT_VALUE		0x0600
