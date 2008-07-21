@@ -64,6 +64,13 @@ UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 		-e 's/cris.*/cris/' \
 )
 
+# Remove me when there are no 2.6.23 targets
+ifeq ($(findstring 86,$(ARCH)),86)
+  ifneq ($(LINUX_2_6_23),y)
+	UCLIBC_TARGET_ARCH:=x86
+  endif
+endif
+
 define Build/Prepare/Snapshot
 	$(PKG_UNPACK)
 	rm -Rf $(PKG_BUILD_DIR)
