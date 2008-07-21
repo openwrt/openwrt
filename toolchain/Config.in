@@ -83,6 +83,7 @@ config TARGET_OPTIMIZATION
 	default "-O2 -pipe -march=i686 -funit-at-a-time" if TARGET_x86_mediacenter
 	default "-O2 -pipe -march=i486 -funit-at-a-time" if TARGET_x86
 	default "-Os -pipe -march=i486 -funit-at-a-time" if TARGET_rdc
+	default "-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time" if TARGET_ar71xx
 	default "-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time" if mipsel || mips
 	default "-Os -pipe -march=armv5te -mtune=xscale -funit-at-a-time" if TARGET_ixp4xx || TARGET_iop32x || TARGET_pxa || TARGET_orion
 	default "-Os -pipe -march=armv4t -mtune=arm9tdmi -funit-at-a-time" if TARGET_storm

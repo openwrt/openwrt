@@ -1,0 +1,7 @@
+config AG71XX
+	tristate "Atheros AR71xx built-in ethernet mac support"
+	depends on ATHEROS_AR71XX
+	select PHYLIB
+	help
+	  If you wish to compile a kernel for AR71xx/91xx and enable
+	  ethernet support, then you should always answer Y to this.
