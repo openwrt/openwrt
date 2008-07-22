@@ -10,9 +10,9 @@ do_mount() {
 	config_get options "$cfg" options
 	options="${options:-rw}"
 	config_get device "$cfg" device
-	[ -n "device" ] || return 0
+	[ -n "$device" ] || return 0
 	config_get target "$cfg" target
-	[ -n "target" ] || return 0
+	[ -n "$target" ] || return 0
 	mkdir -p $target
 	config_get_bool enabled "$cfg" "enabled" '1'
 	[ "$enabled" -eq 0 ] && options="noauto,$options"
@@ -22,7 +22,7 @@ do_mount() {
 do_swapon() {
 	local cfg="$1"
 	config_get device "$cfg" device
-	[ -n "device" ] || return 0
+	[ -n "$device" ] || return 0
 	config_get_bool enabled "$cfg" "enabled" '1'
 	[ "$enabled" -gt 0 ] && {
 		echo "$device	none	swap	${noauto}sw	0	0" >> /tmp/fstab
@@ -32,7 +32,7 @@ do_swapon() {
 do_unmount() {
 	local cfg="$1"
 	config_get target "$cfg" target
-	[ -n "target" ] || return 0
+	[ -n "$target" ] || return 0
 	config_get_bool enabled "$cfg" "enabled" '1'
 	[ "$enabled" -gt 0 ] && {
 		umount $target
@@ -42,7 +42,7 @@ do_unmount() {
 do_swapoff() {
 	local cfg="$1"
 	config_get device "$cfg" device
-	[ -n "device" ] || return 0
+	[ -n "$device" ] || return 0
 	config_get_bool enabled "$cfg" "enabled" '1'
 	[ "$enabled" -gt 0 ] && type swapoff >/dev/null && {
 		swapoff $device
