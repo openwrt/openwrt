@@ -1169,8 +1169,7 @@ void ath9k_hw_gettxintrtxqs(struct ath_hal *ah, u_int32_t *txqs);
 void ath9k_hw_clr11n_aggr(struct ath_hal *ah, struct ath_desc *ds);
 void ath9k_hw_set11n_virtualmorefrag(struct ath_hal *ah,
 				     struct ath_desc *ds, u_int vmf);
-enum hal_bool ath9k_hw_SetTxPowerLimit(struct ath_hal *ah, u_int32_t limit,
-				       u_int16_t tpcInDb);
+enum hal_bool ath9k_hw_set_txpowerlimit(struct ath_hal *ah, u_int32_t limit);
 enum hal_bool ath9k_regd_is_public_safety_sku(struct ath_hal *ah);
 int ath9k_hw_setuptxqueue(struct ath_hal *ah, enum hal_tx_queue type,
 			  const struct hal_txq_info *qInfo);

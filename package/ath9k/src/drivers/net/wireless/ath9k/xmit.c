@@ -121,7 +121,7 @@ static void ath_tx_mcastqaddbuf(struct ath_softc *sc,
 	DPRINTF(sc, ATH_DEBUG_TX_PROC,
 		"%s: txq depth = %d\n", __func__, txq->axq_depth);
 	if (txq->axq_link != NULL) {
-		*txq->axq_link = cpu_to_le32(bf->bf_daddr);
+		*txq->axq_link = bf->bf_daddr;
 		DPRINTF(sc, ATH_DEBUG_XMIT,
 			"%s: link[%u](%p)=%llx (%p)\n",
 			__func__,
@@ -168,7 +168,7 @@ static void ath_tx_txqaddbuf(struct ath_softc *sc,
 			__func__, txq->axq_qnum,
 			ito64(bf->bf_daddr), bf->bf_desc);
 	} else {
-		*txq->axq_link = cpu_to_le32(bf->bf_daddr);
+		*txq->axq_link = bf->bf_daddr;
 		DPRINTF(sc, ATH_DEBUG_XMIT, "%s: link[%u] (%p)=%llx (%p)\n",
 			__func__,
 			txq->axq_qnum, txq->axq_link,
@@ -2062,7 +2062,6 @@ static int ath_tx_start_dma(struct ath_softc *sc,
 			    AH_TRUE,            /* first segment */
 			    (n_sg == 1) ? AH_TRUE : AH_FALSE, /* last segment */
 			    ds);                /* first descriptor */
-	ath_desc_swap(ds);
 
 	bf->bf_lastfrm = bf;
 	bf->bf_ht = txctl->ht;

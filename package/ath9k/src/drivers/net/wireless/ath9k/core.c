@@ -452,7 +452,7 @@ int ath_set_channel(struct ath_softc *sc, struct hal_channel *hchan)
 		 * if we're switching; e.g. 11a to 11b/g.
 		 */
 		ath_chan_change(sc, hchan);
-		ath_update_txpow(sc, 0);	/* update tx power state */
+		ath_update_txpow(sc);	/* update tx power state */
 		/*
 		 * Re-enable interrupts.
 		 */
@@ -1020,7 +1020,7 @@ int ath_open(struct ath_softc *sc, struct hal_channel *initial_chan)
 	 * This is needed only to setup initial state
 	 * but it's best done after a reset.
 	 */
-	ath_update_txpow(sc, 0);
+	ath_update_txpow(sc);
 
 	/*
 	 * Setup the hardware after reset:
@@ -1111,7 +1111,7 @@ static int ath_reset_end(struct ath_softc *sc, u_int32_t flag)
 	 */
 	ath_chan_change(sc, &sc->sc_curchan);
 
-	ath_update_txpow(sc, 0);	/* update tx power state */
+	ath_update_txpow(sc);	/* update tx power state */
 
 	if (sc->sc_beacons)
 		ath_beacon_config(sc, ATH_IF_ID_ANY);	/* restart beacons */
@@ -1827,29 +1827,20 @@ int ath_keyset(struct ath_softc *sc,
  *  Set Transmit power in HAL
  *
  *  This routine makes the actual HAL calls to set the new transmit power
- *  limit.  This also calls back into the protocol layer setting the max
- *  transmit power limit.
+ *  limit.
 */
 
-void ath_update_txpow(struct ath_softc *sc, u_int16_t tpcInDb)
+void ath_update_txpow(struct ath_softc *sc)
 {
 	struct ath_hal *ah = sc->sc_ah;
-	u_int32_t txpow, txpowlimit;
+	u_int32_t txpow;
 
-	txpowlimit = (sc->sc_config.txpowlimit_override) ?
-	    sc->sc_config.txpowlimit_override : sc->sc_config.txpowlimit;
-
-	if (sc->sc_curtxpow != txpowlimit) {
-		ath9k_hw_SetTxPowerLimit(ah, txpowlimit, tpcInDb);
+	if (sc->sc_curtxpow != sc->sc_config.txpowlimit) {
+		ath9k_hw_set_txpowerlimit(ah, sc->sc_config.txpowlimit);
 		/* read back in case value is clamped */
 		ath9k_hw_getcapability(ah, HAL_CAP_TXPOW, 1, &txpow);
 		sc->sc_curtxpow = txpow;
 	}
-
-	/* Fetch max tx power level and update protocal stack */
-	ath9k_hw_getcapability(ah, HAL_CAP_TXPOW, 2, &txpow);
-
-	ath__update_txpow(sc, sc->sc_curtxpow, txpow);
 }
 
 /* Return the current country and domain information */
@@ -2139,22 +2130,6 @@ void ath_descdma_cleanup(struct ath_softc *sc,
 	INIT_LIST_HEAD(head);
 	kfree(dd->dd_bufptr);
 	memzero(dd, sizeof(*dd));
-}
-
-/*
- *  Endian Swap for transmit descriptor
- *
- * XXX: Move cpu_to_le32() into hw.c and anywhere we set them, then
- * remove this.
-*/
-void ath_desc_swap(struct ath_desc *ds)
-{
-	ds->ds_link = cpu_to_le32(ds->ds_link);
-	ds->ds_data = cpu_to_le32(ds->ds_data);
-	ds->ds_ctl0 = cpu_to_le32(ds->ds_ctl0);
-	ds->ds_ctl1 = cpu_to_le32(ds->ds_ctl1);
-	ds->ds_hw[0] = cpu_to_le32(ds->ds_hw[0]);
-	ds->ds_hw[1] = cpu_to_le32(ds->ds_hw[1]);
 }
 
 /*************/

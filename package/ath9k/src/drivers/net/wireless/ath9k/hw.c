@@ -803,7 +803,7 @@ static inline enum hal_status ath9k_hw_check_eeprom(struct ath_hal *ah)
 		u_int16_t magic, magic2;
 		int addr;
 
-		if (ath9k_hw_nvram_read(ah, AR5416_EEPROM_MAGIC_OFFSET,
+		if (!ath9k_hw_nvram_read(ah, AR5416_EEPROM_MAGIC_OFFSET,
 					&magic)) {
 			HDPRINTF(ah, HAL_DBG_EEPROM,
 				 "%s: Reading Magic # failed\n", __func__);
@@ -852,9 +852,14 @@ static inline enum hal_status ath9k_hw_check_eeprom(struct ath_hal *ah)
 	else
 		el = ahp->ah_eeprom.baseEepHeader.length;
 
+	if (el < sizeof(struct ar5416_eeprom))
+		el = sizeof(struct ar5416_eeprom) / sizeof(u_int16_t);
+	else
+		el = el / sizeof(u_int16_t);
+
 	eepdata = (u_int16_t *) (&ahp->ah_eeprom);
-	for (i = 0; i <
-		min(el, sizeof(struct ar5416_eeprom)) / sizeof(u_int16_t); i++)
+
+	for (i = 0; i < el; i++)
 		sum ^= *eepdata++;
 
 	if (need_swap) {
@@ -6389,9 +6394,7 @@ ath9k_hw_adc_dccal_calibrate(struct ath_hal *ah, u_int8_t numChains)
 		  AR_PHY_NEW_ADC_DC_OFFSET_CORR_ENABLE);
 }
 
-enum hal_bool
-ath9k_hw_SetTxPowerLimit(struct ath_hal *ah, u_int32_t limit,
-			 u_int16_t tpcInDb)
+enum hal_bool ath9k_hw_set_txpowerlimit(struct ath_hal *ah, u_int32_t limit)
 {
 	struct ath_hal_5416 *ahp = AH5416(ah);
 	struct hal_channel_internal *ichan = ah->ah_curchan;
@@ -8329,6 +8332,8 @@ static const char *ath9k_hw_devname(u_int16_t devid)
 	case AR5416_DEVID_PCI:
 	case AR5416_DEVID_PCIE:
 		return "Atheros 5416";
+	case AR9160_DEVID_PCI:
+		return "Atheros 9160";
 	case AR9280_DEVID_PCI:
 	case AR9280_DEVID_PCIE:
 		return "Atheros 9280";
@@ -8350,6 +8355,7 @@ struct ath_hal *ath9k_hw_attach(u_int16_t devid, void *sc, void __iomem *mem,
 	switch (devid) {
 	case AR5416_DEVID_PCI:
 	case AR5416_DEVID_PCIE:
+	case AR9160_DEVID_PCI:
 	case AR9280_DEVID_PCI:
 	case AR9280_DEVID_PCIE:
 		ah = ath9k_hw_do_attach(devid, sc, mem, error);

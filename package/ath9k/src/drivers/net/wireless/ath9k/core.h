@@ -384,7 +384,6 @@ void ath_desc_free(struct ath_softc *sc);
 void ath_descdma_cleanup(struct ath_softc *sc,
 			 struct ath_descdma *dd,
 			 struct list_head *head);
-void ath_desc_swap(struct ath_desc *ds);
 
 /******/
 /* RX */
@@ -1212,7 +1211,7 @@ int ath_keyset(struct ath_softc *sc,
 int ath_get_hal_qnum(u16 queue, struct ath_softc *sc);
 int ath_get_mac80211_qnum(u_int queue, struct ath_softc *sc);
 void ath_setslottime(struct ath_softc *sc);
-void ath_update_txpow(struct ath_softc *sc, u_int16_t tpcInDb);
+void ath_update_txpow(struct ath_softc *sc);
 int ath_cabq_update(struct ath_softc *);
 void ath_get_currentCountry(struct ath_softc *sc,
 	struct hal_country_entry *ctry);
@@ -1228,9 +1227,6 @@ void ath_skb_unmap_single(struct ath_softc *sc,
 			  int direction,
 			  dma_addr_t *pa);
 void ath_mcast_merge(struct ath_softc *sc, u_int32_t mfilt[2]);
-void ath__update_txpow(struct ath_softc *sc,
-		       u_int16_t txpowlimit,
-		       u_int16_t txpowlevel);
 enum hal_ht_macmode ath_cwm_macmode(struct ath_softc *sc);
 
 #endif /* CORE_H */

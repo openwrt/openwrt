@@ -525,6 +525,7 @@ static int ath9k_config(struct ieee80211_hw *hw,
 
 	hchan.channel = curchan->center_freq;
 	hchan.channelFlags = ath_chan2flags(curchan, sc);
+	sc->sc_config.txpowlimit = 2 * conf->power_level;
 
 	/* set h/w channel */
 	if (ath_set_channel(sc, &hchan) < 0)
@@ -1059,13 +1060,6 @@ void ath_setup_channel_list(struct ath_softc *sc,
 			}
 		}
 	}
-}
-
-void ath__update_txpow(struct ath_softc *sc,
-		       u_int16_t txpowlimit,
-		       u_int16_t txpowlevel)
-{
-
 }
 
 void ath_get_beaconconfig(struct ath_softc *sc,
