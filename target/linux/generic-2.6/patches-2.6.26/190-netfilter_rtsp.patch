@@ -347,7 +347,7 @@
  	depends on IP_NF_IPTABLES && NF_CONNTRACK && NF_NAT
 --- /dev/null
 +++ b/net/netfilter/nf_conntrack_rtsp.c
-@@ -0,0 +1,513 @@
+@@ -0,0 +1,517 @@
 +/*
 + * RTSP extension for IP connection tracking
 + * (C) 2003 by Tom Marshall <tmarshall at real.com>
@@ -679,7 +679,8 @@
 +
 +		be_loport = htons(expinfo.loport);
 +
-+		nf_ct_expect_init(exp, ct->tuplehash[!dir].tuple.src.l3num,
++		nf_ct_expect_init(exp, NF_CT_EXPECT_CLASS_DEFAULT,
++			ct->tuplehash[!dir].tuple.src.l3num,
 +			&ct->tuplehash[!dir].tuple.src.u3, &ct->tuplehash[!dir].tuple.dst.u3,
 +			IPPROTO_UDP, NULL, &be_loport);
 +
@@ -784,6 +785,7 @@
 +
 +static struct nf_conntrack_helper rtsp_helpers[MAX_PORTS];
 +static char rtsp_names[MAX_PORTS][10];
++static struct nf_conntrack_expect_policy rtsp_expect_policy;
 +
 +/* This function is intentionally _NOT_ defined as __exit */
 +static void
@@ -815,6 +817,9 @@
 +		return -EBUSY;
 +	}
 +
++	rtsp_expect_policy.max_expected = max_outstanding;
++	rtsp_expect_policy.timeout = setup_timeout;
++
 +	rtsp_buffer = kmalloc(65536, GFP_KERNEL);
 +	if (!rtsp_buffer)
 +		return -ENOMEM;
@@ -829,8 +834,7 @@
 +		memset(hlpr, 0, sizeof(struct nf_conntrack_helper));
 +		hlpr->tuple.src.u.tcp.port = htons(ports[i]);
 +		hlpr->tuple.dst.protonum = IPPROTO_TCP;
-+		hlpr->max_expected = max_outstanding;
-+		hlpr->timeout = setup_timeout;
++		hlpr->expect_policy = &rtsp_expect_policy;
 +		hlpr->me = THIS_MODULE;
 +		hlpr->help = help;
 +
