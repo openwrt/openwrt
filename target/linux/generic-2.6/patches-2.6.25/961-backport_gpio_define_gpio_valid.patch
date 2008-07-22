@@ -121,15 +121,19 @@ index 7e77b6f..464c5b3 100644
  struct seq_file;
  struct module;
  
-@@ -99,6 +105,12 @@ extern int __gpio_cansleep(unsigned gpio);
+@@ -99,6 +105,16 @@ extern int __gpio_cansleep(unsigned gpio);
  
  #else
  
-+static inline int gpio_is_valid(int number)
++static inline int __gpio_is_valid(int number)
 +{
 +	/* only non-negative numbers are valid */
 +	return number >= 0;
 +}
++
++#ifndef gpio_is_valid
++#define gpio_is_valid	__gpio_is_valid
++#endif
 +
  /* platforms that don't directly support access to GPIOs through I2C, SPI,
   * or other blocking infrastructure can use these wrappers.

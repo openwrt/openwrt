@@ -31,14 +31,12 @@ Index: linux-2.6.25.10/include/asm-mips/mach-bcm47xx/gpio.h
  
  static inline int gpio_request(unsigned gpio, const char *label)
  {
-@@ -52,6 +53,10 @@ static inline int gpio_direction_output(
+@@ -52,6 +53,8 @@ static inline int gpio_direction_output(
  	return bcm47xx_gpio_direction_output(gpio, value);
  }
  
-+static inline int gpio_is_valid(int gpio)
-+{
-+	return bcm47xx_gpio_is_valid(gpio);
-+}
++#define gpio_is_valid	bcm47xx_gpio_is_valid
++
  
  /* cansleep wrappers */
  #include <asm-generic/gpio.h>
