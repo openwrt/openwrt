@@ -140,11 +140,6 @@ static void ath_beacon_setup(struct ath_softc *sc,
 	series[0].RateFlags = (ctsrate) ? HAL_RATESERIES_RTS_CTS : 0;
 	ath9k_hw_set11n_ratescenario(ah, ds, ds, 0,
 		ctsrate, ctsduration, series, 4, 0);
-
-	/* NB: The desc swap function becomes void,
-	 * if descriptor swapping is not enabled
-	 */
-	ath_desc_swap(ds);
 }
 
 /* Move everything from the vap's mcast queue to the hardware cab queue.
@@ -164,7 +159,7 @@ static void empty_mcastq_into_cabq(struct ath_hal *ah,
 	if (!cabq->axq_link)
 		ath9k_hw_puttxbuf(ah, cabq->axq_qnum, bfmcast->bf_daddr);
 	else
-		*cabq->axq_link = cpu_to_le32(bfmcast->bf_daddr);
+		*cabq->axq_link = bfmcast->bf_daddr;
 
 	/* append the private vap mcast list to  the cabq */
 
@@ -693,11 +688,7 @@ void ath9k_beacon_tasklet(unsigned long data)
 			if (if_id != ATH_IF_ID_ANY) {
 				bf = ath_beacon_generate(sc, if_id);
 				if (bf != NULL) {
-					if (bflink != &bfaddr)
-						*bflink = cpu_to_le32(
-							bf->bf_daddr);
-					else
-						*bflink = bf->bf_daddr;
+					*bflink = bf->bf_daddr;
 					bflink = &bf->bf_desc->ds_link;
 					bc++;
 				}

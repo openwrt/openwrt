@@ -737,7 +737,7 @@ enum hal_bool ath_stoprecv(struct ath_softc *sc)
 	ath9k_hw_stoppcurecv(ah);	/* disable PCU */
 	ath9k_hw_setrxfilter(ah, 0);	/* clear recv filter */
 	stopped = ath9k_hw_stopdmarecv(ah);	/* disable DMA engine */
-	udelay(3000);			/* 3ms is long enough for 1 frame */
+	mdelay(3);			/* 3ms is long enough for 1 frame */
 	tsf = ath9k_hw_gettsf64(ah);
 	sc->sc_rxlink = NULL;		/* just in case */
 	return stopped;
@@ -1380,7 +1380,7 @@ dma_addr_t ath_skb_map_single(struct ath_softc *sc,
 	 * Use skb's entire data area instead.
 	 */
 	*pa = pci_map_single(sc->pdev, skb->data,
-		skb->end - skb->head, direction);
+		skb_end_pointer(skb) - skb->head, direction);
 	return *pa;
 }
 
@@ -1390,5 +1390,6 @@ void ath_skb_unmap_single(struct ath_softc *sc,
 			  dma_addr_t *pa)
 {
 	/* Unmap skb's entire data area */
-	pci_unmap_single(sc->pdev, *pa, skb->end - skb->head, direction);
+	pci_unmap_single(sc->pdev, *pa,
+		skb_end_pointer(skb) - skb->head, direction);
 }
