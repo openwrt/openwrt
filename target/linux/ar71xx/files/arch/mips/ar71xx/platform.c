@@ -22,6 +22,8 @@
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/platform.h>
 
+static u8 ar71xx_mac_base[ETH_ALEN] __initdata;
+
 /*
  * OHCI (USB full speed host controller)
  */
@@ -232,6 +234,7 @@ void __init ar71xx_add_device_eth(unsigned int id, phy_interface_t phy_if_mode,
 		default:
 			BUG();
 		}
+		memcpy(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, ETH_ALEN);
 		ar71xx_eth0_data.phy_if_mode = phy_if_mode;
 		ar71xx_eth0_data.phy_mask = phy_mask;
 		pdev = &ar71xx_eth0_device;
@@ -247,6 +250,8 @@ void __init ar71xx_add_device_eth(unsigned int id, phy_interface_t phy_if_mode,
 		default:
 			BUG();
 		}
+		memcpy(ar71xx_eth1_data.mac_addr, ar71xx_mac_base, ETH_ALEN);
+		ar71xx_eth1_data.mac_addr[5] += id;
 		ar71xx_eth1_data.phy_if_mode = phy_if_mode;
 		ar71xx_eth1_data.phy_mask = phy_mask;
 		pdev = &ar71xx_eth1_device;
@@ -284,6 +289,21 @@ void __init ar71xx_add_device_spi(struct ar71xx_spi_platform_data *pdata,
 	spi_register_board_info(info, n);
 	ar71xx_spi_device.dev.platform_data = pdata;
 	platform_device_register(&ar71xx_spi_device);
+}
+
+void __init ar71xx_set_mac_base(char *mac_str)
+{
+	u8 tmp[ETH_ALEN];
+	int t;
+
+	t = sscanf(mac_str, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
+			&tmp[0], &tmp[1], &tmp[2], &tmp[3], &tmp[4], &tmp[5]);
+
+	if (t == ETH_ALEN)
+		memcpy(ar71xx_mac_base, tmp, ETH_ALEN);
+	else
+		printk(KERN_DEBUG "AR71XX: failed to parse mac address "
+				"\"%s\"\n", mac_str);
 }
 
 static int __init ar71xx_machine_setup(void)

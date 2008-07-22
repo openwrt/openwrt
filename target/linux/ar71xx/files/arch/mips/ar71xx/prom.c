@@ -18,15 +18,16 @@
 #include <asm/addrspace.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
+#include <asm/mach-ar71xx/platform.h>
 
 struct board_rec {
 	char		*name;
 	unsigned long	mach_type;
 };
 
-static int prom_argc __initdata;
-static char **prom_argv __initdata;
-static char **prom_envp __initdata;
+static int ar71xx_prom_argc __initdata;
+static char **ar71xx_prom_argv __initdata;
+static char **ar71xx_prom_envp __initdata;
 
 static struct board_rec boards[] __initdata = {
 	{
@@ -41,30 +42,37 @@ static struct board_rec boards[] __initdata = {
 	}
 };
 
-char *(*prom_getenv)(const char *envname) __initdata;
-
-static __init char *dummy_getenv(const char *envname)
-{
-	return NULL;
-}
-
-static void __init routerboot_printargs(void)
+static __init void routerboot_printargs(void)
 {
 	int i;
 
-	for (i = 0; i < prom_argc; i++)
+	for (i = 0; i < ar71xx_prom_argc; i++)
 		printk(KERN_DEBUG "prom: routerboot envp[%d]: %s\n",
-				i, prom_envp[i]);
+				i, ar71xx_prom_argv[i]);
 }
 
 static __init char *routerboot_getenv(const char *envname)
 {
-	char **env;
-	int i = strlen(envname);
+	int len = strlen(envname);
+	int i;
 
-	for (env = prom_envp; *env != NULL; env++)
-		if (strncmp(envname, *env, i) == 0 && (*env)[i] == '=')
-			return *env + i + 1;
+	for (i = 0; i < ar71xx_prom_argc; i++) {
+		char *env = ar71xx_prom_argv[i];
+		if (strncmp(envname, env, len) == 0 && (env)[len] == '=')
+			return env + len + 1;
+	}
+
+	return NULL;
+}
+
+static __init char *redboot_getenv(const char *envname)
+{
+	int len = strlen(envname);
+	char **env;
+
+	for (env = ar71xx_prom_envp; *env != NULL; env++)
+		if (strncmp(envname, *env, len) == 0 && (*env)[len] == '=')
+			return *env + len + 1;
 
 	return NULL;
 }
@@ -82,27 +90,36 @@ static __init unsigned long find_board_byname(char *name)
 
 void __init prom_init(void)
 {
-	char *board;
+	char *board = NULL;
+	char *mac = NULL;
 
 	printk(KERN_DEBUG "prom: fw_arg0=%08x, fw_arg1=%08x, "
 			"fw_arg2=%08x, fw_arg3=%08x\n",
 			(unsigned int)fw_arg0, (unsigned int)fw_arg1,
 			(unsigned int)fw_arg2, (unsigned int)fw_arg3);
 
-	prom_getenv = dummy_getenv;
-
-	if ((fw_arg0 == 7) && (fw_arg2 == 0)) {
-		prom_argc = fw_arg0;
-		prom_envp = (char **)fw_arg1;
-		prom_getenv = routerboot_getenv;
+	if ((fw_arg0 == 7) && (fw_arg2 == 0) && (fw_arg3 == 0)) {
+		 /* assume RouterBOOT */
+		ar71xx_prom_argc = fw_arg0;
+		ar71xx_prom_argv = (char **)fw_arg1;
 		routerboot_printargs();
+		board = routerboot_getenv("board");
+		mac = routerboot_getenv("kmac");
+	} else {
+		/* assume Redboot */
+		ar71xx_prom_argc = fw_arg0;
+		ar71xx_prom_argv = (char **)fw_arg1;
+		ar71xx_prom_envp = (char **)fw_arg2;
+		mac = redboot_getenv("ethaddr");
 	}
 
-	board = prom_getenv("board");
 	if (board)
 		mips_machtype = find_board_byname(board);
 	else
 		mips_machtype = MACH_AR71XX_GENERIC;
+
+	if (mac)
+		ar71xx_set_mac_base(mac);
 
 	ar71xx_print_cmdline();
 }
