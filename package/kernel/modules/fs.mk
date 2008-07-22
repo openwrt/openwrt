@@ -185,13 +185,11 @@ define KernelPackage/fs-nfs-common
   TITLE:=Common NFS filesystem modules
   KCONFIG:= \
 	CONFIG_LOCKD \
-	CONFIG_SUNRPC \
-	CONFIG_NFS_ACL_SUPPORT
+	CONFIG_SUNRPC
   FILES:= \
 	$(LINUX_DIR)/fs/lockd/lockd.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/sunrpc/sunrpc.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/fs/nfs_common/nfs_acl.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,sunrpc lockd nfs_acl)
+	$(LINUX_DIR)/net/sunrpc/sunrpc.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,sunrpc lockd)
 endef
 
 $(eval $(call KernelPackage,fs-nfs-common))
@@ -202,13 +200,9 @@ define KernelPackage/fs-nfs
   TITLE:=NFS filesystem support
   DEPENDS:=kmod-fs-nfs-common
   KCONFIG:= \
-	CONFIG_NFS_FS \
-	CONFIG_LOCKD \
-	CONFIG_SUNRPC
+	CONFIG_NFS_FS
   FILES:= \
-	$(LINUX_DIR)/fs/nfs/nfs.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/fs/lockd/lockd.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/sunrpc/sunrpc.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/fs/nfs/nfs.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,nfs)
 endef
 
@@ -229,8 +223,9 @@ define KernelPackage/fs-nfsd
 	CONFIG_SUNRPC_GSS
   FILES:= \
   	$(LINUX_DIR)/fs/nfsd/nfsd.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/fs/exportfs/exportfs.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/net/sunrpc/auth_gss/auth_rpcgss.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,nfsd)
+  AUTOLOAD:=$(call AutoLoad,40,auth_rpcgss exportfs nfsd)
 endef
 
 define KernelPackage/fs-nfsd/2.6
