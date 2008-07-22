@@ -692,13 +692,14 @@ static void ag71xx_set_multicast_list(struct net_device *dev)
 
 static int __init ag71xx_probe(struct platform_device *pdev)
 {
-	static u8 default_mac[ETH_ALEN] = {0x00, 0xba, 0xdb, 0xad, 0xba, 0xd0};
 	struct net_device *dev;
 	struct resource *res;
 	struct ag71xx *ag;
+	struct ag71xx_platform_data *pdata;
 	int err;
 
-	if (!pdev->dev.platform_data) {
+	pdata = pdev->dev.platform_data;
+	if (!pdata) {
 		dev_err(&pdev->dev, "no platform data specified\n");
 		err = -ENXIO;
 		goto err_out;
@@ -765,8 +766,14 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 
 	netif_napi_add(dev, &ag->napi, ag71xx_poll, AG71XX_NAPI_WEIGHT);
 
-	memcpy(dev->dev_addr, default_mac, ETH_ALEN);
-	dev->dev_addr[5] += pdev->id & 0xff;
+	if (is_valid_ether_addr(pdata->mac_addr))
+		memcpy(dev->dev_addr, pdata->mac_addr, ETH_ALEN);
+	else {
+		dev->dev_addr[0] = 0xde;
+		dev->dev_addr[1] = 0xad;
+		get_random_bytes(&dev->dev_addr[2], 3);
+		dev->dev_addr[5] = pdev->id & 0xff;
+	}
 
 	err = register_netdev(dev);
 	if (err) {
