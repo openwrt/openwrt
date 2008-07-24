@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,13 +9,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
-PKG_VERSION:=0.50
-PKG_RELEASE:=3
+PKG_VERSION:=0.51
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://matt.ucc.asn.au/dropbear/releases/ \
-	http://www.mirrors.wiretapped.net/security/cryptography/apps/ssh/dropbear/
-PKG_MD5SUM:=5c0f7405b915799c3d952d3a93a5df69
+PKG_SOURCE_URL:= \
+	http://www.mirrors.wiretapped.net/security/cryptography/apps/ssh/dropbear/ \
+	http://matt.ucc.asn.au/dropbear/releases/
+PKG_MD5SUM:=1045df60c2bdbd39c707238305a1e9e5
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -74,7 +75,7 @@ define Build/Compile
 		LD="$(TARGET_CC)" \
 		PROGRAMS="dropbearconvert"
 endef
-	
+
 define Package/dropbear/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/dropbearmulti $(1)/usr/sbin/dropbear

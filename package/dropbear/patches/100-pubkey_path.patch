@@ -1,16 +1,16 @@
-Index: dropbear-0.50/svr-authpubkey.c
+Index: dropbear-0.51/svr-authpubkey.c
 ===================================================================
---- dropbear-0.50.orig/svr-authpubkey.c	2007-08-10 23:47:48.000000000 +0200
-+++ dropbear-0.50/svr-authpubkey.c	2007-08-10 23:47:48.000000000 +0200
+--- dropbear-0.51.orig/svr-authpubkey.c	2008-04-22 17:29:49.000000000 -0700
++++ dropbear-0.51/svr-authpubkey.c	2008-04-22 17:29:49.000000000 -0700
 @@ -176,6 +176,8 @@
  		goto out;
  	}
  
-+	if (ses.authstate.pw->pw_uid != 0) {
++	if (ses.authstate.pw_uid != 0) {
 +
  	/* we don't need to check pw and pw_dir for validity, since
  	 * its been done in checkpubkeyperms. */
- 	len = strlen(ses.authstate.pw->pw_dir);
+ 	len = strlen(ses.authstate.pw_dir);
 @@ -187,6 +189,9 @@
  
  	/* open the file */
@@ -25,7 +25,7 @@ Index: dropbear-0.50/svr-authpubkey.c
  		goto out;
  	}
  
-+	if (ses.authstate.pw->pw_uid != 0) {
++	if (ses.authstate.pw_uid != 0) {
 +
  	/* allocate max required pathname storage,
  	 * = path + "/.ssh/authorized_keys" + '\0' = pathlen + 22 */
