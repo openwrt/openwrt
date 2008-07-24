@@ -256,7 +256,7 @@ $(eval $(call KernelPackage,usb-serial-airprime))
 
 
 define KernelPackage/usb-serial-belkin
-  $(call usbdep,kmod-usb-serial)
+  $(call usbdep,kmod-usb-serial @LINUX_2_6&&@!LINUX_2_6_23)
   TITLE:=Support for Belkin devices
   KCONFIG:=CONFIG_USB_SERIAL_BELKIN
   FILES:=$(LINUX_DIR)/drivers/usb/serial/belkin_sa.$(LINUX_KMOD_SUFFIX)
@@ -268,6 +268,21 @@ define KernelPackage/usb-serial-belkin/description
 endef
 
 $(eval $(call KernelPackage,usb-serial-belkin))
+
+
+define KernelPackage/usb-serial-ch341
+  $(call usbdep,kmod-usb-serial)
+  TITLE:=Support for CH341 devices
+  KCONFIG:=CONFIG_USB_SERIAL_CH341
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/ch341.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,65,ch341)
+endef
+
+define KernelPackage/usb-serial-belkin/description
+ Kernel support for Winchiphead CH341 USB-to-Serial converters
+endef
+
+$(eval $(call KernelPackage,usb-serial-ch341))
 
 
 define KernelPackage/usb-serial-ftdi
