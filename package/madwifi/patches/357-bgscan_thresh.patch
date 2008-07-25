@@ -25,17 +25,18 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #define IEEE80211_COVERAGE_CLASS_MAX	31	/* max coverage class */
  #define IEEE80211_REGCLASSIDS_MAX	10	/* max regclass id list */
  
-@@ -219,6 +221,9 @@
+@@ -219,6 +221,10 @@
  	u_int8_t iv_nickname[IEEE80211_NWID_LEN];
  	u_int iv_bgscanidle;				/* bg scan idle threshold */
  	u_int iv_bgscanintvl;				/* bg scan min interval */
 +	u_int iv_bgscanthr;					/* bg scan rssi threshold */
 +	u_int iv_bgscantrintvl;				/* bg scan trigger interval */
 +	unsigned long iv_bgscanthr_next;		/* last trigger for bgscan */
++	unsigned long iv_lastconnect;	/* time of last connect attempt */
  	u_int iv_scanvalid;				/* scan cache valid threshold */
  	struct ieee80211_roam iv_roam;			/* sta-mode roaming state */
  
-@@ -608,6 +613,7 @@
+@@ -608,6 +614,7 @@
  #define IEEE80211_FEXT_SWBMISS		0x00000400	/* CONF: use software beacon timer */
  #define IEEE80211_FEXT_DROPUNENC_EAPOL	0x00000800	/* CONF: drop unencrypted eapol frames */
  #define IEEE80211_FEXT_APPIE_UPDATE	0x00001000	/* STATE: beacon APP IE updated */
@@ -90,17 +91,19 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
  
  static __inline int
-@@ -3258,6 +3260,23 @@
+@@ -3258,6 +3260,25 @@
  			/* record tsf of last beacon */
  			memcpy(ni->ni_tstamp.data, scan.tstamp,
  				sizeof(ni->ni_tstamp));
 +
 +			/* When rssi is low, start doing bgscans more frequently to allow
 +			 * the supplicant to make a better switching decision */
-+			if ((rssi < vap->iv_bgscanthr) &&
++			if (!(ic->ic_flags & IEEE80211_F_SCAN) && (rssi < vap->iv_bgscanthr) &&
 +					(!vap->iv_bgscanthr_next ||
 +						!time_before(jiffies, vap->iv_bgscanthr_next)) &&
-+					!(ic->ic_flags & IEEE80211_F_SCAN)) {
++					(vap->iv_state == IEEE80211_S_RUN) &&
++					time_after(jiffies, vap->iv_lastconnect +
++						msecs_to_jiffies(IEEE80211_BGSCAN_INTVAL_MIN * 1000))) {
 +				int ret;
 +
 +				ic->ic_lastdata = 0;
@@ -116,7 +119,15 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  						"beacon interval divergence: "
 --- a/net80211/ieee80211_scan.c
 +++ b/net80211/ieee80211_scan.c
-@@ -782,7 +782,7 @@
+@@ -616,6 +616,7 @@
+ 
+ 		/* clear bg scan NOPICK and mark cancel request */
+ 		ss->ss_flags &= ~IEEE80211_SCAN_NOPICK;
++		ic->ic_flags_ext &= ~IEEE80211_FEXT_BGSCAN_THR;
+ 		SCAN_PRIVATE(ss)->ss_iflags |= ISCAN_CANCEL;
+ 		ss->ss_ops->scan_cancel(ss, vap);
+ 		/* force it to fire asap */
+@@ -782,7 +783,7 @@
  				ieee80211_sta_pwrsave(vap, 0);
  				if (ss->ss_next >= ss->ss_last) {
  					ieee80211_notify_scan_done(vap);
@@ -125,3 +136,25 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  				}
  			}
  			SCAN_PRIVATE(ss)->ss_iflags &= ~ISCAN_CANCEL;
+--- a/net80211/ieee80211_proto.c
++++ b/net80211/ieee80211_proto.c
+@@ -1450,6 +1450,7 @@
+ 		}
+ 		break;
+ 	case IEEE80211_S_AUTH:
++		vap->iv_lastconnect = jiffies;
+ 		/* auth frames are possible between IBSS nodes, 
+ 		 * see 802.11-1999, chapter 5.7.6 */
+ 		KASSERT(vap->iv_opmode == IEEE80211_M_STA || 
+--- a/net80211/ieee80211_output.c
++++ b/net80211/ieee80211_output.c
+@@ -238,7 +238,8 @@
+ 	}
+ 	
+ 	/* Cancel any running BG scan */
+-	ieee80211_cancel_scan(vap);
++	if (!(ic->ic_flags_ext & IEEE80211_FEXT_BGSCAN_THR) && (vap->iv_state == IEEE80211_S_RUN))
++		ieee80211_cancel_scan(vap);
+ 
+ 	/* 
+ 	 * Find the node for the destination so we can do
