@@ -7,7 +7,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -3398,12 +3398,17 @@
+@@ -3400,12 +3400,17 @@
  			}
  
  			/* WDS/Repeater: re-schedule software beacon timer for 
@@ -70,7 +70,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		if (ic->ic_roaming == IEEE80211_ROAMING_AUTO) {
  #ifdef ATH_SUPERG_DYNTURBO
  			/* 
-@@ -1617,14 +1642,14 @@
+@@ -1621,14 +1646,14 @@
  		}
  
  		/* WDS/Repeater: Start software beacon timer for STA */
@@ -92,7 +92,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
 --- a/net80211/ieee80211_var.h
 +++ b/net80211/ieee80211_var.h
-@@ -282,6 +282,7 @@
+@@ -283,6 +283,7 @@
  
  	struct timer_list iv_swbmiss;			/* software beacon miss timer */
  	u_int16_t iv_swbmiss_period; 			/* software beacon miss timer period */
