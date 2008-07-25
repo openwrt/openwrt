@@ -59,10 +59,11 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	{ IEEE80211_PARAM_UAPSDINFO,
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -3263,6 +3263,17 @@
+@@ -3261,6 +3261,19 @@
+ 			memcpy(ni->ni_tstamp.data, scan.tstamp,
+ 				sizeof(ni->ni_tstamp));
  
- 			/* When rssi is low, start doing bgscans more frequently to allow
- 			 * the supplicant to make a better switching decision */
++			/* when rssi falls below the disconnection threshold, drop the connection */
 +			if ((vap->iv_rssi_dis_thr > 0) && (vap->iv_rssi_dis_max > 0)) {
 +				if ((rssi > 0) && (rssi < vap->iv_rssi_dis_thr)) {
 +					if (++vap->iv_rssi_dis_trig > vap->iv_rssi_dis_max) {
@@ -74,9 +75,10 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +					vap->iv_rssi_dis_trig = 0;
 +				}
 +			}
- 			if ((rssi < vap->iv_bgscanthr) &&
- 					(!vap->iv_bgscanthr_next ||
- 						!time_before(jiffies, vap->iv_bgscanthr_next)) &&
++
+ 			/* When rssi is low, start doing bgscans more frequently to allow
+ 			 * the supplicant to make a better switching decision */
+ 			if (!(ic->ic_flags & IEEE80211_F_SCAN) && (rssi < vap->iv_bgscanthr) &&
 --- a/net80211/ieee80211_var.h
 +++ b/net80211/ieee80211_var.h
 @@ -223,6 +223,9 @@
@@ -87,5 +89,5 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	u_int iv_rssi_dis_max;				/* max beacons below disconnect threshold */
 +	u_int iv_rssi_dis_trig;				/* rssi disassoc trigger count */
  	unsigned long iv_bgscanthr_next;		/* last trigger for bgscan */
+ 	unsigned long iv_lastconnect;	/* time of last connect attempt */
  	u_int iv_scanvalid;				/* scan cache valid threshold */
- 	struct ieee80211_roam iv_roam;			/* sta-mode roaming state */
