@@ -3,8 +3,10 @@ by some cisco systems.
 
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
---- a/net80211/ieee80211_scan_sta.c
-+++ b/net80211/ieee80211_scan_sta.c
+Index: madwifi-trunk-r3314/net80211/ieee80211_scan_sta.c
+===================================================================
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_scan_sta.c	2008-07-23 11:39:10.000000000 +0200
++++ madwifi-trunk-r3314/net80211/ieee80211_scan_sta.c	2008-07-24 18:24:23.000000000 +0200
 @@ -209,6 +209,19 @@
  		ieee80211_saveie(iep, ie);
  }
@@ -25,6 +27,17 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  /*
   * Process a beacon or probe response frame; create an
   * entry in the scan cache or update any previous entry.
+@@ -233,8 +246,8 @@
+ 	SCAN_STA_LOCK_IRQ(st);
+ 	LIST_FOREACH(se, &st->st_hash[hash], se_hash)
+ 		if (IEEE80211_ADDR_EQ(se->base.se_macaddr, macaddr) &&
+-		    sp->ssid[1] == se->base.se_ssid[1] &&
+-		    !memcmp(se->base.se_ssid+2, sp->ssid+2, se->base.se_ssid[1]))
++		    (is_empty_ssid(sp->ssid) || (sp->ssid[1] == se->base.se_ssid[1] &&
++		    !memcmp(se->base.se_ssid+2, sp->ssid+2, se->base.se_ssid[1]))))
+ 			goto found;
+ 
+ 	MALLOC(se, struct sta_entry *, sizeof(struct sta_entry),
 @@ -252,8 +265,8 @@
  	ise = &se->base;
  
