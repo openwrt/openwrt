@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -6321,7 +6321,7 @@
+@@ -6324,7 +6324,7 @@
  
  	/* Never copy the SKB, as it is ours on the RX side, and this is the 
  	 * last process on the TX side and we only modify our own headers. */
@@ -9,7 +9,7 @@
  	if (tskb == NULL) {
  		DPRINTF(sc, ATH_DEBUG_ANY,
  			"Dropping; ath_skb_removepad failed!\n");
-@@ -6329,6 +6329,8 @@
+@@ -6332,6 +6332,8 @@
  	}
  	
  	ieee80211_input_monitor(ic, tskb, bf, tx, tsf, sc);

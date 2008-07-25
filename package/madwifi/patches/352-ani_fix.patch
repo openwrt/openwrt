@@ -114,7 +114,7 @@
  	ath_update_txpow(sc);		/* update tx power state */
  	ath_radar_update(sc);
  	ath_setdefantenna(sc, sc->sc_defant);
-@@ -4173,6 +4200,8 @@
+@@ -4176,6 +4203,8 @@
  	if (sc->sc_nmonvaps > 0)
  		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON |
  			  HAL_RX_FILTER_PROBEREQ | HAL_RX_FILTER_PROM);
@@ -123,7 +123,7 @@
  	if (sc->sc_curchan.privFlags & CHANNEL_DFS)
  		rfilt |= (HAL_RX_FILTER_PHYERR | HAL_RX_FILTER_PHYRADAR);
  	return rfilt;
-@@ -6523,9 +6552,6 @@
+@@ -6526,9 +6555,6 @@
  			rs->rs_rssi = 0;
  
  		len = rs->rs_datalen;
@@ -133,7 +133,7 @@
  
  		if (rs->rs_more) {
  			/*
-@@ -8877,9 +8903,7 @@
+@@ -8880,9 +8906,7 @@
  		if (sc->sc_softled)
  			ath_hal_gpioCfgOutput(ah, sc->sc_ledpin);
  
@@ -144,7 +144,7 @@
  		sc->sc_curchan = hchan;
  		ath_update_txpow(sc);		/* update tx power state */
  		ath_radar_update(sc);
-@@ -10656,9 +10680,54 @@
+@@ -10659,9 +10683,54 @@
  	ATH_RP_IGNORED 		= 24,
  	ATH_RADAR_IGNORED       = 25,
  	ATH_MAXVAPS  		= 26,
@@ -199,7 +199,7 @@
  ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl, write, filp, buffer, lenp, ppos)
  {
  	struct ath_softc *sc = ctl->extra1;
-@@ -10844,6 +10913,11 @@
+@@ -10847,6 +10916,11 @@
  			case ATH_RADAR_IGNORED:
  				sc->sc_radar_ignored = val;
  				break;
@@ -211,7 +211,7 @@
  			default:
  				ret = -EINVAL;
  				break;
-@@ -10910,6 +10984,11 @@
+@@ -10913,6 +10987,11 @@
  		case ATH_RADAR_IGNORED:
  			val = sc->sc_radar_ignored;
  			break;
@@ -223,7 +223,7 @@
  		default:
  			ret = -EINVAL;
  			break;
-@@ -11087,6 +11166,24 @@
+@@ -11090,6 +11169,24 @@
  	  .proc_handler = ath_sysctl_halparam,
  	  .extra2	= (void *)ATH_RADAR_IGNORED,
  	},

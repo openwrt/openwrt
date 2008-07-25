@@ -16,7 +16,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #define	SIOCG80211STATS			(SIOCDEVPRIVATE+2)
 --- a/net80211/ieee80211_wireless.c
 +++ b/net80211/ieee80211_wireless.c
-@@ -2798,6 +2798,12 @@
+@@ -2799,6 +2799,12 @@
  	case IEEE80211_PARAM_ROAM_RATE_11G:
  		vap->iv_roam.rate11b = value;
  		break;
@@ -29,7 +29,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	case IEEE80211_PARAM_UAPSDINFO:
  		if (vap->iv_opmode == IEEE80211_M_HOSTAP) {
  			if (ic->ic_caps & IEEE80211_C_UAPSD) {
-@@ -3183,6 +3189,12 @@
+@@ -3184,6 +3190,12 @@
  	case IEEE80211_PARAM_ROAM_RATE_11G:
  		param[0] = vap->iv_roam.rate11b;
  		break;
@@ -42,7 +42,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	case IEEE80211_PARAM_UAPSDINFO:
  		if (vap->iv_opmode == IEEE80211_M_HOSTAP) {
  			if (IEEE80211_VAP_UAPSD_ENABLED(vap))
-@@ -5732,6 +5744,14 @@
+@@ -5733,6 +5745,14 @@
  	  IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "rate11g" },
  	{ IEEE80211_PARAM_ROAM_RATE_11G,
  	  0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_rate11g" },

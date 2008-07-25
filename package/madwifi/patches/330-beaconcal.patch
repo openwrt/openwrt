@@ -68,7 +68,7 @@
  	 * Convert to a HAL channel description with the flags
  	 * constrained to reflect the current operating mode.
  	 */
-@@ -5153,6 +5177,8 @@
+@@ -5156,6 +5180,8 @@
  			"Invoking ath_hal_txstart with sc_bhalq: %d\n",
  			sc->sc_bhalq);
  		ath_hal_txstart(ah, sc->sc_bhalq);
@@ -77,7 +77,7 @@
  
  		sc->sc_stats.ast_be_xmit++;		/* XXX per-VAP? */
  	}
-@@ -5402,6 +5428,7 @@
+@@ -5405,6 +5431,7 @@
  		ath_hal_beacontimers(ah, &bs);
  		sc->sc_imask |= HAL_INT_BMISS;
  		ath_hal_intrset(ah, sc->sc_imask);
@@ -85,7 +85,7 @@
  	} else {
  		ath_hal_intrset(ah, 0);
  		if (reset_tsf)
-@@ -5413,8 +5440,11 @@
+@@ -5416,8 +5443,11 @@
  			 */
  			intval |= HAL_BEACON_ENA;
  			sc->sc_imask |= HAL_INT_SWBA;
@@ -98,7 +98,7 @@
  #ifdef ATH_SUPERG_DYNTURBO
  		ath_beacon_dturbo_config(vap, intval &
  				~(HAL_BEACON_RESET_TSF | HAL_BEACON_ENA));
-@@ -8882,6 +8912,9 @@
+@@ -8885,6 +8915,9 @@
  			/* Enter DFS wait period */
  			mod_timer(&sc->sc_dfs_cac_timer,
  				jiffies + (sc->sc_dfs_cac_period * HZ));
@@ -108,7 +108,7 @@
  		}
  		/*
  		 * re configure beacons when it is a turbo mode switch.
-@@ -8991,8 +9024,11 @@
+@@ -8994,8 +9027,11 @@
  		sc->sc_curchan.channel, sc->sc_curchan.channelFlags,
  		isIQdone ? "done" : "not done");
  
@@ -122,7 +122,7 @@
  }
  
  static void
-@@ -9099,7 +9135,8 @@
+@@ -9102,7 +9138,8 @@
  		ieee80211_state_name[vap->iv_state],
  		ieee80211_state_name[nstate]);
  
@@ -132,7 +132,7 @@
  
  	ath_hal_setledstate(ah, leds[nstate]);	/* set LED */
  	netif_stop_queue(dev);			/* before we do anything else */
-@@ -9324,7 +9361,8 @@
+@@ -9327,7 +9364,8 @@
  				"VAP -> DFSWAIT_PENDING \n");
  			/* start calibration timer with a really small value 
  			 * 1/10 sec */
@@ -142,7 +142,7 @@
  			/* wake the receiver */
  			netif_wake_queue(dev);
  			/* don't do the other usual stuff... */
-@@ -9367,7 +9405,7 @@
+@@ -9370,7 +9408,7 @@
  	error = avp->av_newstate(vap, nstate, arg);
  
  	/* Finally, start any timers. */
