@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2007 Ubiquiti Networks, Inc.
+ * Copyright (C) 2008 Lukas Kuna <ValXdater@seznam.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -27,14 +28,14 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <limits.h>
-
+#include <linux/limits.h>
 #include "fw.h"
 
 typedef struct part_data {
 	char 	partition_name[64];
 	int  	partition_index;
 	u_int32_t	partition_baseaddr;
+	u_int32_t	partition_startaddr;
 	u_int32_t	partition_memaddr;
 	u_int32_t	partition_entryaddr;
 	u_int32_t  partition_length;
@@ -47,15 +48,17 @@ typedef struct part_data {
 #define DEFAULT_OUTPUT_FILE 	"firmware-image.bin"
 #define DEFAULT_VERSION		"UNKNOWN"
 
-#define OPTIONS "hv:o:i:"
+#define OPTIONS "hv:o:r:k:"
 
+#define FIRMWARE_MAX_LENGTH	(0x390000)
+#define partition_startaddr	(0xBFC30000)
 static int debug = 0;
 
 typedef struct image_info {
 	char version[256];
 	char outputfile[PATH_MAX];
 	u_int32_t	part_count;
-	part_data_t parts[MAX_SECTIONS]; 
+	part_data_t parts[MAX_SECTIONS];
 } image_info_t;
 
 static void write_header(void* mem, const char* version)
@@ -128,7 +131,8 @@ static void usage(const char* progname)
              "Usage: %s [options]\n"
 	     "\t-v <version string>\t - firmware version information, default: %s\n"
 	     "\t-o <output file>\t - firmware output file, default: %s\n"
-	     "\t-i <input file>\t\t - firmware layout file, default: none\n"
+	     "\t-k <kernel file>\t\t - kernel file\n"
+	     "\t-r <rootfs file>\t\t - rootfs file\n"
 	     "\t-h\t\t\t - this help\n", VERSION,
 	     progname, DEFAULT_VERSION, DEFAULT_OUTPUT_FILE);
 }
@@ -154,76 +158,52 @@ static void print_image_info(const image_info_t* im)
 
 
 
-/**
- * Image layout file format:
- *
- * <partition name>\t<partition index>\t<partition size>\t<data file name>
- *
- */
-static int parse_image_layout(const char* layoutfile, image_info_t* im)
+static u_int32_t filelength(const char* file)
 {
-	int fd = 0;
-	char line[1028];
-	FILE* f;
+	FILE *p;
+	int ret = -1;
 
-	im->part_count = 0;
+	if ( (p = fopen(file, "rb") ) == NULL) return (-1);
 
-	fd = open(layoutfile, O_RDONLY);
-	if (fd < 0) {
-		ERROR("Could not open file '%s'\n", layoutfile);
-		return -1;
-	}
+	fseek(p, 0, SEEK_END);
+	ret = ftell(p);
 
-	f = fdopen(fd, "r");
-	if (f == NULL) {
-		close(fd);
-		return -2;
-	}
+	fclose (p);
 
-	while (!feof(f))
-	{
-		char name[32];
-		u_int32_t index;
-		u_int32_t baseaddr;
-		u_int32_t size;
-		u_int32_t memaddr;
-		u_int32_t entryaddr;
-		char file[PATH_MAX];
-		u_int32_t c;
-		part_data_t* d;
+	return (ret);
+}
 
-		if (fgets(line, sizeof(line), f) == NULL)
-			break;
+static int create_image_layout(const char* kernelfile, const char* rootfsfile, image_info_t* im)
+{
+	part_data_t* kernel = &im->parts[0];
+	part_data_t* rootfs = &im->parts[1];
 
-		// TODO: very inconvenient format, use smarter parsing someday
-		if ((c = sscanf(line, "%32[^\t]\t%X\t%X\t%X\t%X\t%X\t%128[^\t\n]", name, &index, &baseaddr, &size, &memaddr, &entryaddr, file)) != 7)
-		    	continue;
+	strcpy(kernel->partition_name, "kernel");
+	kernel->partition_index = 1;
+	kernel->partition_baseaddr = partition_startaddr;
+	if ( (kernel->partition_length = filelength(kernelfile)) < 0) return (-1);
+	kernel->partition_memaddr = 0x80041000;
+	kernel->partition_entryaddr = 0x80041000;
+	strncpy(kernel->filename, kernelfile, sizeof(kernel->filename));
 
-		DEBUG("%s\t\t0x%02X\t0x%08X\t0x%08X\t0x%08X\t0x%08X\t%s\n", name, index, baseaddr, size, memaddr, entryaddr, file);
+	if (filelength(rootfsfile) + kernel->partition_length > FIRMWARE_MAX_LENGTH)
+		return (-2);
 
-		c = im->part_count;
-		if (c == MAX_SECTIONS)
-			break;
+	strcpy(rootfs->partition_name, "rootfs");
+	rootfs->partition_index = 2;
+	rootfs->partition_baseaddr = partition_startaddr + kernel->partition_length;
+	rootfs->partition_length = FIRMWARE_MAX_LENGTH - kernel->partition_length;
+	rootfs->partition_memaddr = 0x00000000;
+	rootfs->partition_entryaddr = 0x00000000;
+	strncpy(rootfs->filename, rootfsfile, sizeof(rootfs->filename));
 
-		d = &im->parts[c];
-		strncpy(d->partition_name, name, sizeof(d->partition_name));
-		d->partition_index = index;
-		d->partition_baseaddr = baseaddr;
-		d->partition_length = size;
-		d->partition_memaddr = memaddr;
-		d->partition_entryaddr = entryaddr;
-		strncpy(d->filename, file, sizeof(d->filename));
-
-		im->part_count++;
-	}
-
-	fclose(f);
+	im->part_count = 2;
 
 	return 0;
 }
 
 /**
- * Checks the availability and validity of all image components. 
+ * Checks the availability and validity of all image components.
  * Fills in stats member of the part_data structure.
  */
 static int validate_image_layout(image_info_t* im)
@@ -260,7 +240,7 @@ static int validate_image_layout(image_info_t* im)
 		}
 		if (d->stats.st_size > d->partition_length) {
 			ERROR("File '%s' too big (%d) - max size: 0x%08X (exceeds %lu bytes)\n",
-				       	d->filename, i, d->partition_length, 
+				       	d->filename, i, d->partition_length,
 					d->stats.st_size - d->partition_length);
 			return -4;
 		}
@@ -318,7 +298,7 @@ static int build_image(image_info_t* im)
 
 	if (fwrite(mem, mem_size, 1, f) != 1)
 	{
-		ERROR("Could not write %d bytes into file: '%s'\n", 
+		ERROR("Could not write %d bytes into file: '%s'\n",
 				mem_size, im->outputfile);
 		return -11;
 	}
@@ -331,12 +311,14 @@ static int build_image(image_info_t* im)
 
 int main(int argc, char* argv[])
 {
-	char inputfile[PATH_MAX];
+	char kernelfile[PATH_MAX];
+	char rootfsfile[PATH_MAX];
 	int o, rc;
 	image_info_t im;
 
 	memset(&im, 0, sizeof(im));
-	memset(inputfile, 0, sizeof(inputfile));
+	memset(kernelfile, 0, sizeof(kernelfile));
+	memset(rootfsfile, 0, sizeof(rootfsfile));
 
 	strcpy(im.outputfile, DEFAULT_OUTPUT_FILE);
 	strcpy(im.version, DEFAULT_VERSION);
@@ -352,27 +334,42 @@ int main(int argc, char* argv[])
 			if (optarg)
 				strncpy(im.outputfile, optarg, sizeof(im.outputfile));
 			break;
-		case 'i':
-			if (optarg)
-				strncpy(inputfile, optarg, sizeof(inputfile));
-			break;
 		case 'h':
 			usage(argv[0]);
 			return -1;
+		case 'k':
+			if (optarg)
+				strncpy(kernelfile, optarg, sizeof(kernelfile));
+			break;
+		case 'r':
+			if (optarg)
+				strncpy(rootfsfile, optarg, sizeof(rootfsfile));
+			break;
+		case 's':
+			if (optarg)
+				#undef partition_startaddr
+				#define partition_startaddr	(optarg)
+			break;
 		}
 	}
 
-	if (strlen(inputfile) == 0)
+	if (strlen(kernelfile) == 0)
 	{
-		ERROR("Input file is not specified, cannot continue\n");
+		ERROR("Kernel file is not specified, cannot continue\n");
 		usage(argv[0]);
 		return -2;
 	}
 
-	if ((rc = parse_image_layout(inputfile, &im)) != 0)
+	if (strlen(rootfsfile) == 0)
 	{
-		ERROR("Failed parsing firmware layout file '%s' - error code: %d\n", 
-			inputfile, rc);
+		ERROR("Root FS file is not specified, cannot continue\n");
+		usage(argv[0]);
+		return -2;
+	}
+
+	if ((rc = create_image_layout(kernelfile, rootfsfile, &im)) != 0)
+	{
+		ERROR("Failed creating firmware layout description - error code: %d\n", rc);
 		return -3;
 	}
 

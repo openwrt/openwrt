@@ -22,6 +22,16 @@ endef
 define Image/Build
 	$(call Image/Build/$(1))
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-root.$(1) bs=128k conv=sync
+
+	$(STAGING_DIR_HOST)/bin/mkfwimage -k $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma \
+		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
+		-v XS2.ar2316.OpenWRT \
+		-o $(BIN_DIR)/openwrt-$(BOARD)-ubnt2-$(1).bin
+	$(STAGING_DIR_HOST)/bin/mkfwimage -k $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma \
+		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
+		-v XS5.ar2313.OpenWRT \
+		-o $(BIN_DIR)/openwrt-$(BOARD)-ubnt5-$(1).bin \
+		-s 0xBE030000
 endef
 
 $(eval $(call BuildImage))
