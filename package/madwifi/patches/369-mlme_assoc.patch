@@ -1,0 +1,10 @@
+--- a/net80211/ieee80211_wireless.c
++++ b/net80211/ieee80211_wireless.c
+@@ -3726,6 +3726,7 @@
+ 		if (vap->iv_opmode == IEEE80211_M_STA) {
+ 			struct scanlookup lookup;
+ 
++			preempt_scan(dev, 100, 100);
+ 			lookup.se = NULL;
+ 			lookup.mac = mlme->im_macaddr;
+ 			/* XXX use revised api w/ explicit ssid */
