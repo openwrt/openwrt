@@ -99,6 +99,7 @@ enum {
 
 	/* Dell */
 	TM2300,
+	TM2300V2,
 
 	/* Motorola */
 	WE800G,
@@ -566,6 +567,16 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "power",	.gpio = 1 << 7, .polarity = REVERSE },
 		},
 	},
+	[TM2300V2] = {
+		.name		= "Dell TrueMobile 2300 v2",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 0 },
+		},
+		.leds		= {
+			{ .name = "wlan",	.gpio = 1 << 6, .polarity = REVERSE },
+			{ .name = "power",	.gpio = 1 << 7, .polarity = REVERSE },
+		},
+	},
 	/* Motorola */
 	[WE800G] = {
 		.name		= "Motorola WE800G",
@@ -747,8 +758,8 @@ static struct platform_t __init *platform_detect(void)
 	if ((buf = nvram_get("ModelId"))) {
 		if (!strcmp(buf, "WR850GP"))
 			return &platforms[WR850GP];
-		if (!strcmp(buf,"WX-5565"))
-			return &platforms[TM2300];
+		if (!strcmp(buf, "WX-5565") && !strcmp(getvar("boardtype"),"bcm94710ap"))
+			return &platforms[TM2300]; /* Dell TrueMobile 2300 */
 		if (startswith(buf,"WE800G")) /* WE800G* */
 			return &platforms[WE800G];
 	}
@@ -804,6 +815,11 @@ static struct platform_t __init *platform_detect(void)
 			return &platforms[WRT54G];
 		}
 
+		if (!strcmp(boardnum, "44") || !strcmp(boardnum, "44\r")) {
+			if (!strcmp(boardtype,"0x0101") || !strcmp(boardtype, "0x0101\r"))
+				return &platforms[TM2300V2]; /* Dell TrueMobile 2300 v2 */
+		}
+
 		if (!strcmp(boardnum, "45")) { /* ASUS */
 			if (!strcmp(boardtype,"0x042f"))
 				return &platforms[WL500GP];
@@ -818,7 +834,7 @@ static struct platform_t __init *platform_detect(void)
 
 		if (!strcmp(getvar("boardtype"), "0x0101") && !strcmp(getvar("boardrev"), "0x10")) /* SE505V2 With Modified CFE */
 			return &platforms[SE505V2];
-		
+
 	} else { /* PMON based - old stuff */
 		if ((simple_strtoul(getvar("GemtekPmonVer"), NULL, 0) == 9) &&
 			(simple_strtoul(getvar("et0phyaddr"), NULL, 0) == 30)) {
@@ -1010,7 +1026,7 @@ static irqreturn_t button_handler(int irq, void *dev_id, struct pt_regs *regs)
 
 	changed &= ~gpio_outen(0, 0);
 
-	for (b = platform.buttons; b->name; b++) { 
+	for (b = platform.buttons; b->name; b++) {
 		struct event_t *event;
 
 		if (!(b->gpio & changed)) continue;
