@@ -28,7 +28,7 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <linux/limits.h>
+#include <limits.h>
 #include "fw.h"
 
 typedef struct part_data {
