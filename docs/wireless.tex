@@ -1,5 +1,5 @@
 The WiFi settings are configured in the file \texttt{/etc/config/wireless}
-(currently supported on Broadcom and Atheros). When booting the router for the first time
+(currently supported on Broadcom, Atheros and mac80211). When booting the router for the first time
 it should detect your card and create a sample configuration file. By default '\texttt{option network  lan}' is
 commented. This prevents unsecured sharing of the network over the wireless interface.
 
@@ -35,6 +35,22 @@ config wifi-device      "wifi0"
 
 config wifi-iface
     option device       "wifi0"
+#   option network  lan
+    option mode         "ap"
+    option ssid         "OpenWrt"
+    option hidden       "0"
+    option encryption   "none"
+\end{Verbatim}
+
+\paragraph{Generic mac80211 wireless config:}
+
+\begin{Verbatim}
+config wifi-device      "wifi0"
+    option type         "mac80211"
+    option channel      "5"
+
+config wifi-iface
+    option device       "wlan0"
 #   option network  lan
     option mode         "ap"
     option ssid         "OpenWrt"
@@ -78,7 +94,7 @@ A full outline of the wireless configuration file with description of each field
 
 \begin{Verbatim}
 config wifi-device     wifi device name
-    option type     broadcom, atheros
+    option type     broadcom, atheros, mac80211
     option country  us, uk, fr, de, etc.
     option channel  1-14
     option maxassoc 1-128 (broadcom only)
@@ -88,7 +104,7 @@ config wifi-device     wifi device name
 config wifi-iface
     option network  the interface you want wifi to bridge with 
     option device   wifi0, wifi1, wifi2, wifiN
-    option mode     ap, sta, adhoc, or wds
+    option mode     ap, sta, adhoc, monitor, or wds
     option ssid     ssid name
     option bssid    bssid address
     option encryption none, wep, psk, psk2, wpa, wpa2 
@@ -150,6 +166,9 @@ config wifi-iface
             \item \texttt{adhoc} \\
                 Ad-Hoc mode
 
+            \item \texttt{monitor} \\
+                Monitor mode
+
             \item \texttt{wds} \\
                 WDS point-to-point link
 
@@ -181,7 +200,7 @@ config wifi-iface
         The RADIUS server ip address
 
     \item \texttt{port} (wpa) \\
-        The RADIUS server port
+        The RADIUS server port (defaults to 1812)
 
     \item \texttt{hidden} \\
         0 broadcasts the ssid; 1 disables broadcasting of the ssid
@@ -204,6 +223,7 @@ Only the following mode combinations are supported:
             \item 1x \texttt{sta}, 0-3x \texttt{ap}
             \item 1-4x \texttt{ap}
             \item 1x \texttt{adhoc}
+            \item 1x \texttt{monitor}
         \end{itemize}
 
         WDS links can only be used in pure AP mode and cannot use WEP (except when sharing the
@@ -211,10 +231,13 @@ Only the following mode combinations are supported:
 
     \item \textbf{Atheros}: \\
         \begin{itemize}
-            \item 1x \texttt{sta}, 0-4x \texttt{ap}
-            \item 1-4x \texttt{ap}
+            \item 1x \texttt{sta}, 0-Nx \texttt{ap}
+            \item 1-Nx \texttt{ap}
             \item 1x \texttt{adhoc}
         \end{itemize}
+
+	N is the maximum number of VAPs that the module allows, it defaults to 4, but can be
+	changed by loading the module with the maxvaps=N parameter.
 \end{itemize}
 
 \paragraph{Adding a new driver configuration}
