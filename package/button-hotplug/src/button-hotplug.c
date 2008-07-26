@@ -24,7 +24,7 @@
 #include <net/sock.h>
 
 #define DRV_NAME	"button-hotplug"
-#define DRV_VERSION	"0.3.0"
+#define DRV_VERSION	"0.3.1"
 #define DRV_DESC	"Button Hotplug driver"
 
 #define BH_SKB_SIZE	2048
@@ -36,15 +36,15 @@
 
 #define PFX	DRV_NAME ": "
 
-/*#define BH_DEBUG*/
+#undef BH_DEBUG
 
 #ifdef BH_DEBUG
-#define BH_DBG(fmt, args...) printk(KERN_DEBUG "%s" fmt, ##args )
+#define BH_DBG(fmt, args...) printk(KERN_DEBUG "%s: " fmt, DRV_NAME, ##args )
 #else
 #define BH_DBG(fmt, args...) do {} while (0)
 #endif
 
-#define BH_ERR(fmt, args...) printk(KERN_ERR "%s" fmt, ##args )
+#define BH_ERR(fmt, args...) printk(KERN_ERR "%s: " fmt, DRV_NAME, ##args )
 
 struct bh_priv {
 	unsigned long		seen[BH_BTN_COUNT];
