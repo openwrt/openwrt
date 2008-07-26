@@ -47,7 +47,7 @@
 --- a/drivers/usb/host/ohci-hcd.c
 +++ b/drivers/usb/host/ohci-hcd.c
 @@ -1057,6 +1057,11 @@
- #define PLATFORM_DRIVER		ohci_hcd_sm501_driver
+ #define SM501_OHCI_DRIVER	ohci_hcd_sm501_driver
  #endif
  
 +#ifdef CONFIG_USB_OHCI_AR71XX

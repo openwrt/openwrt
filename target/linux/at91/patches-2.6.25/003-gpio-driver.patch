@@ -1,6 +1,5 @@
-diff -urN linux-2.6.25.10.old/arch/arm/mach-at91/board-vlink.c linux-2.6.25.10/arch/arm/mach-at91/board-vlink.c
---- linux-2.6.25.10.old/arch/arm/mach-at91/board-vlink.c	2008-07-07 11:20:21.000000000 +0200
-+++ linux-2.6.25.10/arch/arm/mach-at91/board-vlink.c	2008-07-07 12:11:40.000000000 +0200
+--- a/arch/arm/mach-at91/board-vlink.c
++++ b/arch/arm/mach-at91/board-vlink.c
 @@ -99,7 +99,7 @@
  */
  
@@ -103,9 +102,8 @@ diff -urN linux-2.6.25.10.old/arch/arm/mach-at91/board-vlink.c linux-2.6.25.10/a
  }
  
  MACHINE_START(VLINK, "FDL VersaLink")
-diff -urN linux-2.6.25.10.old/arch/arm/mach-at91/gpio.c linux-2.6.25.10/arch/arm/mach-at91/gpio.c
---- linux-2.6.25.10.old/arch/arm/mach-at91/gpio.c	2008-07-07 11:20:21.000000000 +0200
-+++ linux-2.6.25.10/arch/arm/mach-at91/gpio.c	2008-07-07 11:42:33.000000000 +0200
+--- a/arch/arm/mach-at91/gpio.c
++++ b/arch/arm/mach-at91/gpio.c
 @@ -29,6 +29,7 @@
  
  static struct at91_gpio_bank *gpio;
@@ -175,9 +173,8 @@ diff -urN linux-2.6.25.10.old/arch/arm/mach-at91/gpio.c linux-2.6.25.10/arch/arm
  /*--------------------------------------------------------------------------*/
  
  #ifdef CONFIG_PM
-diff -urN linux-2.6.25.10.old/drivers/char/Kconfig linux-2.6.25.10/drivers/char/Kconfig
---- linux-2.6.25.10.old/drivers/char/Kconfig	2008-07-07 11:20:21.000000000 +0200
-+++ linux-2.6.25.10/drivers/char/Kconfig	2008-07-07 11:42:33.000000000 +0200
+--- a/drivers/char/Kconfig
++++ b/drivers/char/Kconfig
 @@ -1072,5 +1072,12 @@
  	  The SPI driver gives user mode access to this serial
  	  bus on the AT91RM9200 processor.
@@ -191,9 +188,8 @@ diff -urN linux-2.6.25.10.old/drivers/char/Kconfig linux-2.6.25.10/drivers/char/
 +
  endmenu
  
-diff -urN linux-2.6.25.10.old/drivers/char/Makefile linux-2.6.25.10/drivers/char/Makefile
---- linux-2.6.25.10.old/drivers/char/Makefile	2008-07-07 11:20:21.000000000 +0200
-+++ linux-2.6.25.10/drivers/char/Makefile	2008-07-07 11:42:33.000000000 +0200
+--- a/drivers/char/Makefile
++++ b/drivers/char/Makefile
 @@ -100,6 +100,7 @@
  obj-$(CONFIG_TELCLOCK)		+= tlclk.o
  obj-$(CONFIG_AT91_SPI)		+= at91_spi.o
@@ -202,9 +198,8 @@ diff -urN linux-2.6.25.10.old/drivers/char/Makefile linux-2.6.25.10/drivers/char
  
  obj-$(CONFIG_MWAVE)		+= mwave/
  obj-$(CONFIG_AGP)		+= agp/
-diff -urN linux-2.6.25.10.old/drivers/char/vlink_giu.c linux-2.6.25.10/drivers/char/vlink_giu.c
---- linux-2.6.25.10.old/drivers/char/vlink_giu.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.25.10/drivers/char/vlink_giu.c	2008-07-07 13:41:51.000000000 +0200
+--- /dev/null
++++ b/drivers/char/vlink_giu.c
 @@ -0,0 +1,333 @@
 +/*
 + *  Driver for FDL Versalink GPIO
@@ -539,9 +534,8 @@ diff -urN linux-2.6.25.10.old/drivers/char/vlink_giu.c linux-2.6.25.10/drivers/c
 +
 +MODULE_AUTHOR("Hamish Guthrie <hamish@prodigi.ch>");
 +MODULE_DESCRIPTION("FDL Versalink GPIO Driver");
-+MODULE_LICENSE("GPL");
---- linux-2.6.25.10.old/include/asm-arm/arch-at91/gpio.h	2008-07-03 05:46:47.000000000 +0200
-+++ linux-2.6.25.10/include/asm-arm/arch-at91/gpio.h	2008-07-07 17:03:03.000000000 +0200
+--- a/include/asm-arm/arch-at91/gpio.h
++++ b/include/asm-arm/arch-at91/gpio.h
 @@ -199,6 +199,7 @@
  /* callable at any time */
  extern int at91_set_gpio_value(unsigned pin, int value);

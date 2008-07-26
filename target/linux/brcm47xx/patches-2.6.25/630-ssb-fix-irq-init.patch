@@ -6,11 +6,9 @@ the PCI core, if our host-bus is not PCI.
 Reported-by: Steve Brown <sbrown@cortland.com>
 Signed-off-by: Michael Buesch <mb@bu3sch.de>
 
-Index: wireless-testing/drivers/ssb/driver_pcicore.c
-===================================================================
---- wireless-testing.orig/drivers/ssb/driver_pcicore.c	2008-06-10 13:58:23.000000000 +0200
-+++ wireless-testing/drivers/ssb/driver_pcicore.c	2008-07-04 23:16:02.000000000 +0200
-@@ -537,6 +537,13 @@ int ssb_pcicore_dev_irqvecs_enable(struc
+--- a/drivers/ssb/driver_pcicore.c
++++ b/drivers/ssb/driver_pcicore.c
+@@ -519,6 +519,13 @@
  	int err = 0;
  	u32 tmp;
  

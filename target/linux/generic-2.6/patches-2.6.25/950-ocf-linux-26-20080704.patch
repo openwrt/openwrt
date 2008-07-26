@@ -1,25 +1,15 @@
-Index: linux-2.6.x/crypto/Kconfig
-===================================================================
-RCS file: /cvs/sw/linux-2.6.x/crypto/Kconfig,v
-retrieving revision 1.1.1.29
-diff -u -r1.1.1.29 Kconfig
---- linux-2.6.x/crypto/Kconfig	10 Oct 2007 00:54:29 -0000	1.1.1.29
-+++ linux-2.6.x/crypto/Kconfig	15 Dec 2007 11:08:08 -0000
-@@ -471,3 +471,6 @@
+--- a/crypto/Kconfig
++++ b/crypto/Kconfig
+@@ -593,3 +593,6 @@
  source "drivers/crypto/Kconfig"
  
  endif	# if CRYPTO
 +
 +source "crypto/ocf/Kconfig"
 +
-Index: linux-2.6.x/crypto/Makefile
-===================================================================
-RCS file: /cvs/sw/linux-2.6.x/crypto/Makefile,v
-retrieving revision 1.1.1.23
-diff -u -r1.1.1.23 Makefile
---- linux-2.6.x/crypto/Makefile	10 Oct 2007 00:54:29 -0000	1.1.1.23
-+++ linux-2.6.x/crypto/Makefile	15 Dec 2007 11:08:08 -0000
-@@ -51,6 +51,8 @@
+--- a/crypto/Makefile
++++ b/crypto/Makefile
+@@ -65,6 +65,8 @@
  
  obj-$(CONFIG_CRYPTO_TEST) += tcrypt.o
  
@@ -28,14 +18,8 @@ diff -u -r1.1.1.23 Makefile
  #
  # generic algorithms and the async_tx api
  #
-Index: linux-2.6.x/drivers/char/random.c
-===================================================================
-RCS file: /cvs/sw/linux-2.6.x/drivers/char/random.c,v
-retrieving revision 1.1.1.41
-retrieving revision 1.6
-diff -u -r1.1.1.41 -r1.6
---- linux-2.6.x/drivers/char/random.c	22 Apr 2008 01:36:57 -0000	1.1.1.41
-+++ linux-2.6.x/drivers/char/random.c	22 Apr 2008 04:48:56 -0000	1.6
+--- a/drivers/char/random.c
++++ b/drivers/char/random.c
 @@ -129,6 +129,9 @@
   *                                unsigned int value);
   * 	void add_interrupt_randomness(int irq);
@@ -122,14 +106,8 @@ diff -u -r1.1.1.41 -r1.6
  #define EXTRACT_SIZE 10
  
  /*********************************************************************
-Index: linux-2.6.x/fs/fcntl.c
-===================================================================
-RCS file: /cvs/sw/linux-2.6.x/fs/fcntl.c,v
-retrieving revision 1.1.1.39
-retrieving revision 1.5
-diff -u -r1.1.1.39 -r1.5
---- linux-2.6.x/fs/fcntl.c	22 Apr 2008 01:37:55 -0000	1.1.1.39
-+++ linux-2.6.x/fs/fcntl.c	22 Apr 2008 04:49:02 -0000	1.5
+--- a/fs/fcntl.c
++++ b/fs/fcntl.c
 @@ -202,6 +202,7 @@
  		ret = dupfd(file, 0, 0);
  	return ret;
@@ -138,14 +116,8 @@ diff -u -r1.1.1.39 -r1.5
  
  #define SETFL_MASK (O_APPEND | O_NONBLOCK | O_NDELAY | FASYNC | O_DIRECT | O_NOATIME)
  
-Index: linux-2.6.x/include/linux/miscdevice.h
-===================================================================
-RCS file: /cvs/sw/linux-2.6.x/include/linux/miscdevice.h,v
-retrieving revision 1.1.1.16
-retrieving revision 1.8
-diff -u -r1.1.1.16 -r1.8
---- linux-2.6.x/include/linux/miscdevice.h	22 Apr 2008 01:36:52 -0000	1.1.1.16
-+++ linux-2.6.x/include/linux/miscdevice.h	22 Apr 2008 04:49:10 -0000	1.8
+--- a/include/linux/miscdevice.h
++++ b/include/linux/miscdevice.h
 @@ -12,6 +12,7 @@
  #define APOLLO_MOUSE_MINOR 7
  #define PC110PAD_MINOR 9
@@ -154,14 +126,8 @@ diff -u -r1.1.1.16 -r1.8
  #define WATCHDOG_MINOR		130	/* Watchdog timer     */
  #define TEMP_MINOR		131	/* Temperature Sensor */
  #define RTC_MINOR 135
-Index: linux-2.6.x/include/linux/random.h
-===================================================================
-RCS file: /cvs/sw/linux-2.6.x/include/linux/random.h,v
-retrieving revision 1.1.1.12
-retrieving revision 1.5
-diff -u -r1.1.1.12 -r1.5
---- linux-2.6.x/include/linux/random.h	26 Apr 2007 11:16:52 -0000	1.1.1.12
-+++ linux-2.6.x/include/linux/random.h	22 May 2008 03:31:38 -0000	1.5
+--- a/include/linux/random.h
++++ b/include/linux/random.h
 @@ -8,6 +8,7 @@
  #define _LINUX_RANDOM_H
  
@@ -212,8 +178,8 @@ diff -u -r1.1.1.12 -r1.5
  extern void get_random_bytes(void *buf, int nbytes);
  void generate_random_uuid(unsigned char uuid_out[16]);
  
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/hifn/Makefile	2007-07-25 11:02:33.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/hifn/Makefile
 @@ -0,0 +1,13 @@
 +# for SGlinux builds
 +-include $(ROOTDIR)/modules/.config
@@ -228,8 +194,8 @@ diff -u -r1.1.1.12 -r1.5
 +-include $(TOPDIR)/Rules.make
 +endif
 +
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/safe/Makefile	2007-07-25 11:02:33.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/safe/Makefile
 @@ -0,0 +1,12 @@
 +# for SGlinux builds
 +-include $(ROOTDIR)/modules/.config
@@ -243,8 +209,8 @@ diff -u -r1.1.1.12 -r1.5
 +-include $(TOPDIR)/Rules.make
 +endif
 +
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/Makefile	2008-07-04 14:48:17.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/Makefile
 @@ -0,0 +1,120 @@
 +# for SGlinux builds
 +-include $(ROOTDIR)/modules/.config
@@ -366,8 +332,8 @@ diff -u -r1.1.1.12 -r1.5
 +					crypto-tools; \
 +		gzip -9 /tmp/crypto-tools-$$REL.tar
 +
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/talitos/Makefile	2007-07-25 11:02:33.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/talitos/Makefile
 @@ -0,0 +1,12 @@
 +# for SGlinux builds
 +-include $(ROOTDIR)/modules/.config
@@ -381,8 +347,8 @@ diff -u -r1.1.1.12 -r1.5
 +-include $(TOPDIR)/Rules.make
 +endif
 +
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/ixp4xx/Makefile	2007-10-19 11:24:59.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/ixp4xx/Makefile
 @@ -0,0 +1,104 @@
 +# for SGlinux builds
 +-include $(ROOTDIR)/modules/.config
@@ -488,8 +454,8 @@ diff -u -r1.1.1.12 -r1.5
 +-include $(TOPDIR)/Rules.make
 +endif
 +
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/ocfnull/Makefile	2007-07-25 11:02:33.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/ocfnull/Makefile
 @@ -0,0 +1,12 @@
 +# for SGlinux builds
 +-include $(ROOTDIR)/modules/.config
@@ -503,8 +469,8 @@ diff -u -r1.1.1.12 -r1.5
 +-include $(TOPDIR)/Rules.make
 +endif
 +
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/pasemi/Makefile	2007-12-12 11:36:18.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/pasemi/Makefile
 @@ -0,0 +1,12 @@
 +# for SGlinux builds
 +-include $(ROOTDIR)/modules/.config
@@ -518,8 +484,8 @@ diff -u -r1.1.1.12 -r1.5
 +-include $(TOPDIR)/Rules.make
 +endif
 +
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/Config.in	2008-06-23 10:09:55.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/Config.in
 @@ -0,0 +1,32 @@
 +#############################################################################
 +
@@ -553,8 +519,8 @@ diff -u -r1.1.1.12 -r1.5
 +endmenu
 +
 +#############################################################################
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/Kconfig	2008-06-23 10:10:33.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/Kconfig
 @@ -0,0 +1,95 @@
 +menu "OCF Configuration"
 +
@@ -651,8 +617,8 @@ diff -u -r1.1.1.12 -r1.5
 +	  for comparison.
 +
 +endmenu
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/README	2007-12-15 21:31:03.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/README
 @@ -0,0 +1,166 @@
 +README - ocf-linux-20071215
 +---------------------------
@@ -820,8 +786,8 @@ diff -u -r1.1.1.12 -r1.5
 +
 +David McCullough
 +david_mccullough@securecomputing.com
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/hifn/hifn7751reg.h	2007-06-20 09:15:58.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/hifn/hifn7751reg.h
 @@ -0,0 +1,540 @@
 +/* $FreeBSD: src/sys/dev/hifn/hifn7751reg.h,v 1.7 2007/03/21 03:42:49 sam Exp $ */
 +/*	$OpenBSD: hifn7751reg.h,v 1.35 2002/04/08 17:49:42 jason Exp $	*/
@@ -1363,8 +1329,8 @@ diff -u -r1.1.1.12 -r1.5
 +#define	HIFN_MAX_SEGLEN 	0xffff		/* maximum dma segment len */
 +#define	HIFN_MAX_DMALEN		0x3ffff		/* maximum dma length */
 +#endif /* __HIFN_H__ */
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/hifn/hifn7751var.h	2007-06-20 09:22:39.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/hifn/hifn7751var.h
 @@ -0,0 +1,369 @@
 +/* $FreeBSD: src/sys/dev/hifn/hifn7751var.h,v 1.9 2007/03/21 03:42:49 sam Exp $ */
 +/*	$OpenBSD: hifn7751var.h,v 1.42 2002/04/08 17:49:42 jason Exp $	*/
@@ -1735,8 +1701,8 @@ diff -u -r1.1.1.12 -r1.5
 +};
 +
 +#endif /* __HIFN7751VAR_H__ */
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/hifn/hifn7751.c	2008-02-14 14:59:01.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/hifn/hifn7751.c
 @@ -0,0 +1,2970 @@
 +/*	$OpenBSD: hifn7751.c,v 1.120 2002/05/17 00:33:34 deraadt Exp $	*/
 +
@@ -4708,8 +4674,8 @@ diff -u -r1.1.1.12 -r1.5
 +MODULE_LICENSE("BSD");
 +MODULE_AUTHOR("David McCullough <david_mccullough@securecomputing.com>");
 +MODULE_DESCRIPTION("OCF driver for hifn PCI crypto devices");
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/hifn/hifnHIPP.c	2007-07-25 14:36:45.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/hifn/hifnHIPP.c
 @@ -0,0 +1,420 @@
 +/*-
 + * Driver for Hifn HIPP-I/II chipset
@@ -5131,8 +5097,8 @@ diff -u -r1.1.1.12 -r1.5
 +MODULE_LICENSE("BSD");
 +MODULE_AUTHOR("Michael Richardson <mcr@xelerance.com>");
 +MODULE_DESCRIPTION("OCF driver for hifn HIPP-I/II PCI crypto devices");
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/hifn/hifnHIPPreg.h	2007-07-25 10:11:22.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/hifn/hifnHIPPreg.h
 @@ -0,0 +1,46 @@
 +/*-
 + * Hifn HIPP-I/HIPP-II (7855/8155) driver.
@@ -5180,8 +5146,8 @@ diff -u -r1.1.1.12 -r1.5
 +#define HIPP_1_REVID            0x01 /* BOGUS */
 +
 +#endif /* __HIPP_H__ */
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/hifn/hifnHIPPvar.h	2007-07-25 13:47:04.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/hifn/hifnHIPPvar.h
 @@ -0,0 +1,93 @@
 +/*
 + * Hifn HIPP-I/HIPP-II (7855/8155) driver.
@@ -5276,8 +5242,8 @@ diff -u -r1.1.1.12 -r1.5
 +#define	HIPP_UNLOCK(_sc)	spin_unlock_irqrestore(&(_sc)->sc_mtx, l_flags)
 +
 +#endif /* __HIFNHIPPVAR_H__ */
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/safe/md5.c	2005-05-20 10:30:52.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/safe/md5.c
 @@ -0,0 +1,308 @@
 +/*	$KAME: md5.c,v 1.5 2000/11/08 06:13:08 itojun Exp $	*/
 +/*
@@ -5587,8 +5553,8 @@ diff -u -r1.1.1.12 -r1.5
 +	ctxt->md5_stc += C;
 +	ctxt->md5_std += D;
 +}
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/safe/md5.h	2005-05-20 10:30:52.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/safe/md5.h
 @@ -0,0 +1,76 @@
 +/*	$FreeBSD: src/sys/crypto/md5.h,v 1.4 2002/03/20 05:13:50 alfred Exp $	*/
 +/*	$KAME: md5.h,v 1.4 2000/03/27 04:36:22 sumikawa Exp $	*/
@@ -5666,8 +5632,8 @@ diff -u -r1.1.1.12 -r1.5
 +} while (0)
 +
 +#endif /* ! _NETINET6_MD5_H_*/
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/safe/safe.c	2007-07-27 11:34:59.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/safe/safe.c
 @@ -0,0 +1,2288 @@
 +/*-
 + * Linux port done by David McCullough <david_mccullough@securecomputing.com>
@@ -7957,8 +7923,8 @@ diff -u -r1.1.1.12 -r1.5
 +MODULE_LICENSE("BSD");
 +MODULE_AUTHOR("David McCullough <david_mccullough@securecomputing.com>");
 +MODULE_DESCRIPTION("OCF driver for safenet PCI crypto devices");
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/safe/sha1.c	2005-05-20 10:30:53.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/safe/sha1.c
 @@ -0,0 +1,279 @@
 +/*	$KAME: sha1.c,v 1.5 2000/11/08 06:13:08 itojun Exp $	*/
 +/*
@@ -8239,8 +8205,8 @@ diff -u -r1.1.1.12 -r1.5
 +}
 +
 +#endif /*unsupported*/
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/safe/sha1.h	2005-05-20 10:30:53.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/safe/sha1.h
 @@ -0,0 +1,72 @@
 +/*	$FreeBSD: src/sys/crypto/sha1.h,v 1.8 2002/03/20 05:13:50 alfred Exp $	*/
 +/*	$KAME: sha1.h,v 1.5 2000/03/27 04:36:23 sumikawa Exp $	*/
@@ -8314,8 +8280,8 @@ diff -u -r1.1.1.12 -r1.5
 +#define	SHA1_RESULTLEN	(160/8)
 +
 +#endif /*_NETINET6_SHA1_H_*/
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/safe/safereg.h	2005-03-16 15:19:57.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/safe/safereg.h
 @@ -0,0 +1,421 @@
 +/*-
 + * Copyright (c) 2003 Sam Leffler, Errno Consulting
@@ -8738,8 +8704,8 @@ diff -u -r1.1.1.12 -r1.5
 +	u_int32_t	sa_saved_indigest[5];	/* saved inner digest */
 +};
 +#endif /* _SAFE_SAFEREG_H_ */
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/safe/safevar.h	2007-07-03 09:46:58.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/safe/safevar.h
 @@ -0,0 +1,230 @@
 +/*-
 + * The linux port of this code done by David McCullough
@@ -8971,8 +8937,8 @@ diff -u -r1.1.1.12 -r1.5
 +	u_int32_t st_noicvcopy;		/* ICV data copies suppressed */
 +};
 +#endif /* _SAFE_SAFEVAR_H_ */
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/crypto.c	2008-07-03 10:58:33.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/crypto.c
 @@ -0,0 +1,1741 @@
 +/*-
 + * Linux port done by David McCullough <david_mccullough@securecomputing.com>
@@ -10715,8 +10681,8 @@ diff -u -r1.1.1.12 -r1.5
 +MODULE_LICENSE("BSD");
 +MODULE_AUTHOR("David McCullough <david_mccullough@securecomputing.com>");
 +MODULE_DESCRIPTION("OCF (OpenBSD Cryptographic Framework)");
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/criov.c	2007-07-18 13:01:47.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/criov.c
 @@ -0,0 +1,215 @@
 +/*      $OpenBSD: criov.c,v 1.9 2002/01/29 15:48:29 jason Exp $	*/
 +
@@ -10933,8 +10899,8 @@ diff -u -r1.1.1.12 -r1.5
 +EXPORT_SYMBOL(crypto_copydata);
 +EXPORT_SYMBOL(crypto_apply);
 +
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/uio.h	2007-07-03 09:52:33.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/uio.h
 @@ -0,0 +1,54 @@
 +#ifndef _OCF_UIO_H_
 +#define _OCF_UIO_H_
@@ -10990,8 +10956,8 @@ diff -u -r1.1.1.12 -r1.5
 +};
 +
 +#endif
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/talitos/talitos.c	2008-04-01 15:48:31.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/talitos/talitos.c
 @@ -0,0 +1,1359 @@
 +/*
 + * crypto/ocf/talitos/talitos.c
@@ -12352,8 +12318,8 @@ diff -u -r1.1.1.12 -r1.5
 +MODULE_LICENSE("Dual BSD/GPL");
 +MODULE_AUTHOR("kim.phillips@freescale.com");
 +MODULE_DESCRIPTION("OCF driver for Freescale SEC (talitos)");
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/talitos/talitos_soft.h	2007-07-20 11:47:16.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/talitos/talitos_soft.h
 @@ -0,0 +1,77 @@
 +/*
 + * Freescale SEC data structures for integration with ocf-linux
@@ -12432,8 +12398,8 @@ diff -u -r1.1.1.12 -r1.5
 +
 +#define	TALITOS_SESSION(sid)	((sid) & 0x0fffffff)
 +#define	TALITOS_SID(crd, sesn)	(((crd) << 28) | ((sesn) & 0x0fffffff))
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/talitos/talitos_dev.h	2007-11-23 07:31:44.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/talitos/talitos_dev.h
 @@ -0,0 +1,277 @@
 +/*
 + * Freescale SEC (talitos) device dependent data structures
@@ -12712,8 +12678,8 @@ diff -u -r1.1.1.12 -r1.5
 +							printk(a); \
 +						} \
 +					} while (0)
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/random.c	2007-12-04 13:56:03.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/random.c
 @@ -0,0 +1,317 @@
 +/*
 + * A system independant way of adding entropy to the kernels pool
@@ -13032,8 +12998,8 @@ diff -u -r1.1.1.12 -r1.5
 +	return retval;
 +}
 +
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/ocf-bench.c	2007-07-23 22:26:12.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/ocf-bench.c
 @@ -0,0 +1,436 @@
 +/*
 + * A loadable module that benchmarks the OCF crypto speed from kernel space.
@@ -13471,8 +13437,8 @@ diff -u -r1.1.1.12 -r1.5
 +MODULE_LICENSE("BSD");
 +MODULE_AUTHOR("David McCullough <david_mccullough@securecomputing.com>");
 +MODULE_DESCRIPTION("Benchmark various in-kernel crypto speeds");
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/ixp4xx/ixp4xx.c	2008-07-03 10:28:05.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/ixp4xx/ixp4xx.c
 @@ -0,0 +1,1328 @@
 +/*
 + * An OCF module that uses Intels IXP CryptACC API to do the crypto.
@@ -14802,8 +14768,8 @@ diff -u -r1.1.1.12 -r1.5
 +MODULE_LICENSE("Dual BSD/GPL");
 +MODULE_AUTHOR("David McCullough <dmccullough@cyberguard.com>");
 +MODULE_DESCRIPTION("ixp (OCF module for IXP4xx crypto)");
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/cryptodev.c	2007-12-14 12:35:04.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/cryptodev.c
 @@ -0,0 +1,1048 @@
 +/*	$OpenBSD: cryptodev.c,v 1.52 2002/06/19 07:22:46 deraadt Exp $	*/
 +
@@ -15853,8 +15819,8 @@ diff -u -r1.1.1.12 -r1.5
 +MODULE_LICENSE("BSD");
 +MODULE_AUTHOR("David McCullough <david_mccullough@securecomputing.com>");
 +MODULE_DESCRIPTION("Cryptodev (user interface to OCF)");
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/cryptodev.h	2007-09-26 22:15:05.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/cryptodev.h
 @@ -0,0 +1,478 @@
 +/*	$FreeBSD: src/sys/opencrypto/cryptodev.h,v 1.25 2007/05/09 19:37:02 gnn Exp $	*/
 +/*	$OpenBSD: cryptodev.h,v 1.31 2002/06/11 11:14:29 beck Exp $	*/
@@ -16334,8 +16300,8 @@ diff -u -r1.1.1.12 -r1.5
 +
 +#endif /* __KERNEL__ */
 +#endif /* _CRYPTO_CRYPTO_H_ */
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/ocfnull/ocfnull.c	2007-07-13 16:02:05.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/ocfnull/ocfnull.c
 @@ -0,0 +1,203 @@
 +/*
 + * An OCF module for determining the cost of crypto versus the cost of
@@ -16540,8 +16506,8 @@ diff -u -r1.1.1.12 -r1.5
 +MODULE_LICENSE("Dual BSD/GPL");
 +MODULE_AUTHOR("David McCullough <david_mccullough@securecomputing.com>");
 +MODULE_DESCRIPTION("ocfnull - claims a lot but does nothing");
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/cryptosoft.c	2008-02-14 14:59:01.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/cryptosoft.c
 @@ -0,0 +1,898 @@
 +/*
 + * An OCF module that uses the linux kernel cryptoapi, based on the
@@ -17441,8 +17407,8 @@ diff -u -r1.1.1.12 -r1.5
 +MODULE_LICENSE("Dual BSD/GPL");
 +MODULE_AUTHOR("David McCullough <david_mccullough@securecomputing.com>");
 +MODULE_DESCRIPTION("Cryptosoft (OCF module for kernel crypto)");
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/rndtest.c	2007-07-20 13:22:03.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/rndtest.c
 @@ -0,0 +1,300 @@
 +/*	$OpenBSD$	*/
 +
@@ -17744,8 +17710,8 @@ diff -u -r1.1.1.12 -r1.5
 +	return(rsp.rs_discard);
 +}
 +
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/rndtest.h	2005-05-20 10:28:26.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/rndtest.h
 @@ -0,0 +1,54 @@
 +/*	$FreeBSD: src/sys/dev/rndtest/rndtest.h,v 1.1 2003/03/11 22:54:44 sam Exp $	*/
 +/*	$OpenBSD$	*/
@@ -17801,8 +17767,8 @@ diff -u -r1.1.1.12 -r1.5
 +};
 +
 +extern int rndtest_buf(unsigned char *buf);
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/ocf-compat.h	2008-04-27 09:30:47.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/ocf-compat.h
 @@ -0,0 +1,268 @@
 +#ifndef _BSD_COMPAT_H_
 +#define _BSD_COMPAT_H_ 1
@@ -18072,8 +18038,8 @@ diff -u -r1.1.1.12 -r1.5
 +
 +/****************************************************************************/
 +#endif /* _BSD_COMPAT_H_ */
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/pasemi/pasemi.c	2007-12-12 11:36:18.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/pasemi/pasemi.c
 @@ -0,0 +1,1009 @@
 +/*
 + * Copyright (C) 2007 PA Semi, Inc
@@ -19084,8 +19050,8 @@ diff -u -r1.1.1.12 -r1.5
 +MODULE_LICENSE("Dual BSD/GPL");
 +MODULE_AUTHOR("Egor Martovetsky egor@pasemi.com");
 +MODULE_DESCRIPTION("OCF driver for PA Semi PWRficient DMA Crypto Engine");
---- /dev/null	2007-07-04 13:54:27.000000000 +1000
-+++ linux/crypto/ocf/pasemi/pasemi_fnu.h	2007-12-12 11:36:18.000000000 +1000
+--- /dev/null
++++ b/crypto/ocf/pasemi/pasemi_fnu.h
 @@ -0,0 +1,410 @@
 +/*
 + * Copyright (C) 2007 PA Semi, Inc

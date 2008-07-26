@@ -1,6 +1,6 @@
---- linux-2.6.25.10.old/arch/arm/mach-at91/at91rm9200_devices.c	2008-07-04 15:04:13.000000000 +0200
-+++ linux-2.6.25.10/arch/arm/mach-at91/at91rm9200_devices.c	2008-07-04 15:11:44.000000000 +0200
-@@ -981,7 +981,15 @@
+--- a/arch/arm/mach-at91/at91rm9200_devices.c
++++ b/arch/arm/mach-at91/at91rm9200_devices.c
+@@ -1001,7 +1001,15 @@
  		 *  We need to drive the pin manually.  Default is off (RTS is active low).
  		 */
  		at91_set_gpio_output(AT91_PIN_PA21, 1);
@@ -17,7 +17,7 @@
  }
  
  static struct resource uart1_resources[] = {
-@@ -1119,6 +1127,14 @@
+@@ -1139,6 +1147,14 @@
  		at91_set_B_periph(AT91_PIN_PB1, 0);	/* CTS3 */
  	if (pins & ATMEL_UART_RTS)
  		at91_set_B_periph(AT91_PIN_PB0, 0);	/* RTS3 */

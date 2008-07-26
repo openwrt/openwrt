@@ -1,8 +1,6 @@
-Index: linux-2.6.22.19/drivers/net/arm/at91_ether.c
-===================================================================
---- linux-2.6.22.19.orig/drivers/net/arm/at91_ether.c
-+++ linux-2.6.22.19/drivers/net/arm/at91_ether.c
-@@ -146,6 +146,7 @@ static void update_linkspeed(struct net_
+--- a/drivers/net/arm/at91_ether.c
++++ b/drivers/net/arm/at91_ether.c
+@@ -146,6 +146,7 @@
  	struct at91_private *lp = netdev_priv(dev);
  	unsigned int bmsr, bmcr, lpa, mac_cfg;
  	unsigned int speed, duplex;
@@ -10,7 +8,7 @@ Index: linux-2.6.22.19/drivers/net/arm/at91_ether.c
  
  	if (!mii_link_ok(&lp->mii)) {		/* no link */
  		netif_carrier_off(dev);
-@@ -158,8 +159,15 @@ static void update_linkspeed(struct net_
+@@ -158,8 +159,15 @@
  	read_phy(lp->phy_address, MII_BMSR, &bmsr);
  	read_phy(lp->phy_address, MII_BMCR, &bmcr);
  	if (bmcr & BMCR_ANENABLE) {				/* AutoNegotiation is enabled */

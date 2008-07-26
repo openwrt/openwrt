@@ -9659,7 +9659,7 @@
 +obj-$(CONFIG_MMC_ATMELMCI)	+= atmel-mci.o
  obj-$(CONFIG_MMC_TIFM_SD)	+= tifm_sd.o
  obj-$(CONFIG_MMC_SPI)		+= mmc_spi.o
- 
+ obj-$(CONFIG_GPIOMMC)		+= gpiommc.o
 --- /dev/null
 +++ b/drivers/mmc/host/atmel-mci.c
 @@ -0,0 +1,1234 @@
@@ -14714,7 +14714,7 @@
 +#endif
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -1691,6 +1691,8 @@
+@@ -1692,6 +1692,8 @@
  extern int invalidate_inode_pages2(struct address_space *mapping);
  extern int invalidate_inode_pages2_range(struct address_space *mapping,
  					 pgoff_t start, pgoff_t end);
