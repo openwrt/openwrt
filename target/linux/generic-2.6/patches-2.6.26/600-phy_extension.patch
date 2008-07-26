@@ -20,7 +20,7 @@
 +		if (copy_to_user(useraddr, &ecmd, sizeof(ecmd)))
 +			return -EFAULT;
 +		return 0;
-+	
++
 +	case ETHTOOL_SSET:
 +		if (copy_from_user(&ecmd, useraddr, sizeof(ecmd)))
 +			return -EFAULT;
@@ -33,7 +33,7 @@
 +			tmp |= (BMCR_ANRESTART);
 +			phy_write(phydev, MII_BMCR, tmp);
 +			return 0;
-+		}	
++		}
 +		return -EINVAL;
 +
 +	case ETHTOOL_GLINK:
@@ -51,6 +51,26 @@
  /**
   * phy_mii_ioctl - generic PHY MII ioctl interface
   * @phydev: the phy_device struct
+@@ -403,8 +447,8 @@
+ 		}
+ 
+ 		phy_write(phydev, mii_data->reg_num, val);
+-		
+-		if (mii_data->reg_num == MII_BMCR 
++
++		if (mii_data->reg_num == MII_BMCR
+ 				&& val & BMCR_RESET
+ 				&& phydev->drv->config_init) {
+ 			phy_scan_fixups(phydev);
+@@ -524,7 +568,7 @@
+ 	int idx;
+ 
+ 	idx = phy_find_setting(phydev->speed, phydev->duplex);
+-	
++
+ 	idx++;
+ 
+ 	idx = phy_find_valid(idx, phydev->supported);
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
 @@ -434,6 +434,7 @@

@@ -573,7 +573,12 @@
  /* max = 24: 128bit encrypt, max = 32: 256bit encrypt */
 --- a/crypto/crc32c.c
 +++ b/crypto/crc32c.c
-@@ -5,20 +5,23 @@
+@@ -1,24 +1,27 @@
+-/* 
++/*
+  * Cryptographic API.
+  *
+  * CRC32C chksum
   *
   * This module file is a wrapper to invoke the lib/crc32c routines.
   *
@@ -581,7 +586,8 @@
 + *
   * This program is free software; you can redistribute it and/or modify it
   * under the terms of the GNU General Public License as published by the Free
-  * Software Foundation; either version 2 of the License, or (at your option) 
+- * Software Foundation; either version 2 of the License, or (at your option) 
++ * Software Foundation; either version 2 of the License, or (at your option)
   * any later version.
   *
   */
@@ -599,7 +605,21 @@
  #define CHKSUM_DIGEST_SIZE	4
  
  struct chksum_ctx {
-@@ -71,7 +74,7 @@
+@@ -27,7 +30,7 @@
+ };
+ 
+ /*
+- * Steps through buffer one byte at at time, calculates reflected 
++ * Steps through buffer one byte at at time, calculates reflected
+  * crc using table.
+  */
+ 
+@@ -67,11 +70,11 @@
+ static void chksum_final(struct crypto_tfm *tfm, u8 *out)
+ {
+ 	struct chksum_ctx *mctx = crypto_tfm_ctx(tfm);
+-	
++
  	*(__le32 *)out = ~cpu_to_le32(mctx->crc);
  }
  
@@ -675,7 +695,7 @@
 +static int crc32c_final(struct ahash_request *req)
 +{
 +	u32 *crcp = ahash_request_ctx(req);
-+	
++
 +	*(__le32 *)req->result = ~cpu_to_le32p(crcp);
 +	return 0;
 +}
@@ -8329,12 +8349,12 @@
 @@ -0,0 +1,154 @@
 +/*
 + * Hash: Hash algorithms under the crypto API
-+ * 
++ *
 + * Copyright (c) 2008 Herbert Xu <herbert@gondor.apana.org.au>
 + *
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License as published by the Free
-+ * Software Foundation; either version 2 of the License, or (at your option) 
++ * Software Foundation; either version 2 of the License, or (at your option)
 + * any later version.
 + *
 + */
@@ -8486,12 +8506,12 @@
 @@ -0,0 +1,78 @@
 +/*
 + * Hash algorithms.
-+ * 
++ *
 + * Copyright (c) 2008 Herbert Xu <herbert@gondor.apana.org.au>
 + *
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License as published by the Free
-+ * Software Foundation; either version 2 of the License, or (at your option) 
++ * Software Foundation; either version 2 of the License, or (at your option)
 + * any later version.
 + *
 + */

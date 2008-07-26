@@ -11,7 +11,7 @@
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.  
++ * published by the Free Software Foundation.
 + */
 +
 +#if 0
@@ -40,8 +40,8 @@
 + * - in order to "deal with" backward compatibility, renamed to ipset
 + */
 +
-+/* 
-+ * Used so that the kernel module and ipset-binary can match their versions 
++/*
++ * Used so that the kernel module and ipset-binary can match their versions
 + */
 +#define IP_SET_PROTOCOL_VERSION 2
 +
@@ -52,7 +52,7 @@
 + *
 + * The representation works in HOST byte order, because most set types
 + * will perform arithmetic operations and compare operations.
-+ * 
++ *
 + * For now the type is an uint32_t.
 + *
 + * Make sure to ONLY use the functions when translating and parsing
@@ -103,8 +103,8 @@
 + *	200-299: list, save, restore
 + */
 +
-+/* Single shot operations: 
-+ * version, create, destroy, flush, rename and swap 
++/* Single shot operations:
++ * version, create, destroy, flush, rename and swap
 + *
 + * Sets are identified by name.
 + */
@@ -155,7 +155,7 @@
 +	unsigned version;
 +};
 +
-+/* Double shots operations: 
++/* Double shots operations:
 + * add, del, test, bind and unbind.
 + *
 + * First we query the kernel to get the index and type of the target set,
@@ -197,7 +197,7 @@
 +};
 +
 +#define IP_SET_OP_UNBIND_SET	0x00000105	/* Unbind an IP from a set */
-+/* Uses ip_set_req_bind, with type speficic addage 
++/* Uses ip_set_req_bind, with type speficic addage
 + * index = 0 means unbinding for all sets */
 +
 +#define IP_SET_OP_TEST_BIND_SET	0x00000106	/* Test binding an IP to a set */
@@ -243,7 +243,7 @@
 +#define IP_SET_OP_LIST		0x00000203
 +struct ip_set_req_list {
 +	IP_SET_REQ_BYINDEX;
-+	/* sets number of struct ip_set_list in reply */ 
++	/* sets number of struct ip_set_list in reply */
 +};
 +
 +struct ip_set_list {
@@ -283,7 +283,7 @@
 +/* The restore operation */
 +#define IP_SET_OP_RESTORE	0x00000205
 +/* Uses ip_set_req_setnames followed by ip_set_restore structures
-+ * plus a marker ip_set_restore, followed by ip_set_hash_save 
++ * plus a marker ip_set_restore, followed by ip_set_hash_save
 + * structures.
 + */
 +struct ip_set_restore {
@@ -344,7 +344,7 @@
 +	 * return 0 if not in set, 1 if in set.
 +	 */
 +	int (*testip_kernel) (struct ip_set *set,
-+			      const struct sk_buff * skb, 
++			      const struct sk_buff * skb,
 +			      ip_set_ip_t *ip,
 +			      const u_int32_t *flags,
 +			      unsigned char index);
@@ -367,7 +367,7 @@
 +	 * and -ERANGE if the address lies outside the set bounds.
 +	 * If the address was not already in the set, 0 is returned.
 +	 */
-+	int (*addip) (struct ip_set *set, 
++	int (*addip) (struct ip_set *set,
 +		      const void *data, size_t size,
 +		      ip_set_ip_t *ip);
 +
@@ -377,7 +377,7 @@
 +	 * If the address was not already in the set, 0 is returned.
 +	 */
 +	int (*addip_kernel) (struct ip_set *set,
-+			     const struct sk_buff * skb, 
++			     const struct sk_buff * skb,
 +			     ip_set_ip_t *ip,
 +			     const u_int32_t *flags,
 +			     unsigned char index);
@@ -387,7 +387,7 @@
 +	 * and -ERANGE if the address lies outside the set bounds.
 +	 * If the address really was in the set, 0 is returned.
 +	 */
-+	int (*delip) (struct ip_set *set, 
++	int (*delip) (struct ip_set *set,
 +		      const void *data, size_t size,
 +		      ip_set_ip_t *ip);
 +
@@ -397,7 +397,7 @@
 +	 * If the address really was in the set, 0 is returned.
 +	 */
 +	int (*delip_kernel) (struct ip_set *set,
-+			     const struct sk_buff * skb, 
++			     const struct sk_buff * skb,
 +			     ip_set_ip_t *ip,
 +			     const u_int32_t *flags,
 +			     unsigned char index);
@@ -429,11 +429,11 @@
 +	/* Listing: Get the header
 +	 *
 +	 * Fill in the information in "data".
-+	 * This function is always run after list_header_size() under a 
-+	 * writelock on the set. Therefor is the length of "data" always 
-+	 * correct. 
++	 * This function is always run after list_header_size() under a
++	 * writelock on the set. Therefor is the length of "data" always
++	 * correct.
 +	 */
-+	void (*list_header) (const struct ip_set *set, 
++	void (*list_header) (const struct ip_set *set,
 +			     void *data);
 +
 +	/* Listing: Get the size for the set members
@@ -443,9 +443,9 @@
 +	/* Listing: Get the set members
 +	 *
 +	 * Fill in the information in "data".
-+	 * This function is always run after list_member_size() under a 
-+	 * writelock on the set. Therefor is the length of "data" always 
-+	 * correct. 
++	 * This function is always run after list_member_size() under a
++	 * writelock on the set. Therefor is the length of "data" always
++	 * correct.
 +	 */
 +	void (*list_members) (const struct ip_set *set,
 +			      void *data);
@@ -567,14 +567,14 @@
 +{
 +	unsigned int bits = 32;
 +	ip_set_ip_t maskaddr;
-+	
++
 +	if (mask == 0xFFFFFFFF)
 +		return bits;
-+	
++
 +	maskaddr = 0xFFFFFFFE;
 +	while (--bits >= 0 && maskaddr != mask)
 +		maskaddr <<= 1;
-+	
++
 +	return bits;
 +}
 +
@@ -582,14 +582,14 @@
 +range_to_mask(ip_set_ip_t from, ip_set_ip_t to, unsigned int *bits)
 +{
 +	ip_set_ip_t mask = 0xFFFFFFFE;
-+	
++
 +	*bits = 32;
 +	while (--(*bits) >= 0 && mask && (to & mask) != from)
 +		mask <<= 1;
-+		
++
 +	return mask;
 +}
-+	
++
 +#endif /* __IP_SET_IPMAP_H */
 --- /dev/null
 +++ b/include/linux/netfilter_ipv4/ip_set_ipporthash.h
@@ -945,7 +945,7 @@
 +	void *arrays[0];
 +};
 +
-+static inline void * 
++static inline void *
 +harray_malloc(size_t hashsize, size_t typesize, int flags)
 +{
 +	struct harray *harray;
@@ -961,21 +961,21 @@
 +	size = hashsize/max_elements;
 +	if (hashsize % max_elements)
 +		size++;
-+	
++
 +	/* Last pointer signals end of arrays */
 +	harray = kmalloc(sizeof(struct harray) + (size + 1) * sizeof(void *),
 +			 flags);
 +
 +	if (!harray)
 +		return NULL;
-+	
++
 +	for (i = 0; i < size - 1; i++) {
 +		harray->arrays[i] = kmalloc(max_elements * typesize, flags);
 +		if (!harray->arrays[i])
 +			goto undo;
 +		memset(harray->arrays[i], 0, max_elements * typesize);
 +	}
-+	harray->arrays[i] = kmalloc((hashsize - i * max_elements) * typesize, 
++	harray->arrays[i] = kmalloc((hashsize - i * max_elements) * typesize,
 +				    flags);
 +	if (!harray->arrays[i])
 +		goto undo;
@@ -983,7 +983,7 @@
 +
 +	harray->max_elements = max_elements;
 +	harray->arrays[size] = NULL;
-+	
++
 +	return (void *)harray;
 +
 +    undo:
@@ -998,7 +998,7 @@
 +{
 +	struct harray *harray = (struct harray *) h;
 +	size_t i;
-+	
++
 +    	for (i = 0; harray->arrays[i] != NULL; i++)
 +    		kfree(harray->arrays[i]);
 +    	kfree(harray);
@@ -1008,10 +1008,10 @@
 +{
 +	struct harray *harray = (struct harray *) h;
 +	size_t i;
-+	
++
 +    	for (i = 0; harray->arrays[i+1] != NULL; i++)
 +		memset(harray->arrays[i], 0, harray->max_elements * typesize);
-+	memset(harray->arrays[i], 0, 
++	memset(harray->arrays[i], 0,
 +	       (hashsize - i * harray->max_elements) * typesize);
 +}
 +
@@ -1059,7 +1059,7 @@
 +
 +static unsigned char shifts[] = {255, 253, 249, 241, 225, 193, 129, 1};
 +
-+static inline ip_set_ip_t 
++static inline ip_set_ip_t
 +pack(ip_set_ip_t ip, unsigned char cidr)
 +{
 +	ip_set_ip_t addr, *paddr = &addr;
@@ -1070,7 +1070,7 @@
 +	DP("ip:%u.%u.%u.%u/%u", NIPQUAD(addr), cidr);
 +#endif
 +	n = cidr / 8;
-+	t = cidr % 8;	
++	t = cidr % 8;
 +	a = &((unsigned char *)paddr)[n];
 +	*a = *a /(1 << (8 - t)) + shifts[t];
 +#ifdef __KERNEL__
@@ -1144,7 +1144,7 @@
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.  
++ * published by the Free Software Foundation.
 + */
 +
 +/* Kernel module for IP set management */
@@ -1183,12 +1183,12 @@
 +
 +/*
 + * Sets are identified either by the index in ip_set_list or by id.
-+ * The id never changes and is used to find a key in the hash. 
-+ * The index may change by swapping and used at all other places 
++ * The id never changes and is used to find a key in the hash.
++ * The index may change by swapping and used at all other places
 + * (set/SET netfilter modules, binding value, etc.)
 + *
 + * Userspace requests are serialized by ip_set_mutex and sets can
-+ * be deleted only from userspace. Therefore ip_set_list locking 
++ * be deleted only from userspace. Therefore ip_set_list locking
 + * must obey the following rules:
 + *
 + * - kernel requests: read and write locking mandatory
@@ -1219,35 +1219,35 @@
 +	list_for_each_entry(set_hash, &ip_set_hash[key], list)
 +		if (set_hash->id == id && set_hash->ip == ip)
 +			return set_hash;
-+			
++
 +	return NULL;
 +}
 +
 +static ip_set_id_t
 +ip_set_find_in_hash(ip_set_id_t id, ip_set_ip_t ip)
 +{
-+	u_int32_t key = jhash_2words(id, ip, ip_set_hash_random) 
++	u_int32_t key = jhash_2words(id, ip, ip_set_hash_random)
 +				% ip_set_bindings_hash_size;
 +	struct ip_set_hash *set_hash;
 +
 +	ASSERT_READ_LOCK(&ip_set_lock);
 +	IP_SET_ASSERT(ip_set_list[id]);
-+	DP("set: %s, ip: %u.%u.%u.%u", ip_set_list[id]->name, HIPQUAD(ip));	
-+	
++	DP("set: %s, ip: %u.%u.%u.%u", ip_set_list[id]->name, HIPQUAD(ip));
++
 +	set_hash = __ip_set_find(key, id, ip);
-+	
-+	DP("set: %s, ip: %u.%u.%u.%u, binding: %s", ip_set_list[id]->name, 
++
++	DP("set: %s, ip: %u.%u.%u.%u, binding: %s", ip_set_list[id]->name,
 +	   HIPQUAD(ip),
 +	   set_hash != NULL ? ip_set_list[set_hash->binding]->name : "");
 +
 +	return (set_hash != NULL ? set_hash->binding : IP_SET_INVALID_ID);
 +}
 +
-+static inline void 
++static inline void
 +__set_hash_del(struct ip_set_hash *set_hash)
 +{
 +	ASSERT_WRITE_LOCK(&ip_set_lock);
-+	IP_SET_ASSERT(ip_set_list[set_hash->binding]);	
++	IP_SET_ASSERT(ip_set_list[set_hash->binding]);
 +
 +	__ip_set_put(set_hash->binding);
 +	list_del(&set_hash->list);
@@ -1260,9 +1260,9 @@
 +	u_int32_t key = jhash_2words(id, ip, ip_set_hash_random)
 +				% ip_set_bindings_hash_size;
 +	struct ip_set_hash *set_hash;
-+	
++
 +	IP_SET_ASSERT(ip_set_list[id]);
-+	DP("set: %s, ip: %u.%u.%u.%u", ip_set_list[id]->name, HIPQUAD(ip));	
++	DP("set: %s, ip: %u.%u.%u.%u", ip_set_list[id]->name, HIPQUAD(ip));
 +	write_lock_bh(&ip_set_lock);
 +	set_hash = __ip_set_find(key, id, ip);
 +	DP("set: %s, ip: %u.%u.%u.%u, binding: %s", ip_set_list[id]->name,
@@ -1275,17 +1275,17 @@
 +	return 0;
 +}
 +
-+static int 
++static int
 +ip_set_hash_add(ip_set_id_t id, ip_set_ip_t ip, ip_set_id_t binding)
 +{
 +	u_int32_t key = jhash_2words(id, ip, ip_set_hash_random)
 +				% ip_set_bindings_hash_size;
 +	struct ip_set_hash *set_hash;
 +	int ret = 0;
-+	
++
 +	IP_SET_ASSERT(ip_set_list[id]);
 +	IP_SET_ASSERT(ip_set_list[binding]);
-+	DP("set: %s, ip: %u.%u.%u.%u, binding: %s", ip_set_list[id]->name, 
++	DP("set: %s, ip: %u.%u.%u.%u, binding: %s", ip_set_list[id]->name,
 +	   HIPQUAD(ip), ip_set_list[binding]->name);
 +	write_lock_bh(&ip_set_lock);
 +	set_hash = __ip_set_find(key, id, ip);
@@ -1300,7 +1300,7 @@
 +		set_hash->ip = ip;
 +		list_add(&set_hash->list, &ip_set_hash[key]);
 +	} else {
-+		IP_SET_ASSERT(ip_set_list[set_hash->binding]);	
++		IP_SET_ASSERT(ip_set_list[set_hash->binding]);
 +		DP("overwrite binding: %s",
 +		   ip_set_list[set_hash->binding]->name);
 +		__ip_set_put(set_hash->binding);
@@ -1353,7 +1353,7 @@
 +	ip_set_ip_t ip;
 +	int res;
 +	unsigned char i = 0;
-+	
++
 +	IP_SET_ASSERT(flags[i]);
 +	read_lock_bh(&ip_set_lock);
 +	do {
@@ -1364,8 +1364,8 @@
 +		res = set->type->testip_kernel(set, skb, &ip, flags, i++);
 +		read_unlock_bh(&set->lock);
 +		i += !!(set->type->features & IPSET_DATA_DOUBLE);
-+	} while (res > 0 
-+		 && flags[i] 
++	} while (res > 0
++		 && flags[i]
 +		 && follow_bindings(index, set, ip));
 +	read_unlock_bh(&ip_set_lock);
 +
@@ -1394,7 +1394,7 @@
 +		write_unlock_bh(&set->lock);
 +		i += !!(set->type->features & IPSET_DATA_DOUBLE);
 +	} while ((res == 0 || res == -EEXIST)
-+		 && flags[i] 
++		 && flags[i]
 +		 && follow_bindings(index, set, ip));
 +	read_unlock_bh(&ip_set_lock);
 +
@@ -1425,7 +1425,7 @@
 +		write_unlock_bh(&set->lock);
 +		i += !!(set->type->features & IPSET_DATA_DOUBLE);
 +	} while ((res == 0 || res == -EEXIST)
-+		 && flags[i] 
++		 && flags[i]
 +		 && follow_bindings(index, set, ip));
 +	read_unlock_bh(&ip_set_lock);
 +}
@@ -1443,11 +1443,11 @@
 +	return NULL;
 +}
 +
-+int 
++int
 +ip_set_register_set_type(struct ip_set_type *set_type)
 +{
 +	int ret = 0;
-+	
++
 +	if (set_type->protocol_version != IP_SET_PROTOCOL_VERSION) {
 +		ip_set_printk("'%s' uses wrong protocol version %u (want %u)",
 +			      set_type->typename,
@@ -1459,7 +1459,7 @@
 +	write_lock_bh(&ip_set_lock);
 +	if (find_set_type(set_type->typename)) {
 +		/* Duplicate! */
-+		ip_set_printk("'%s' already registered!", 
++		ip_set_printk("'%s' already registered!",
 +			      set_type->typename);
 +		ret = -EINVAL;
 +		goto unlock;
@@ -1505,7 +1505,7 @@
 +ip_set_get_byname(const char *name)
 +{
 +	ip_set_id_t i, index = IP_SET_INVALID_ID;
-+	
++
 +	down(&ip_set_app_mutex);
 +	for (i = 0; i < ip_set_max; i++) {
 +		if (ip_set_list[i] != NULL
@@ -1531,12 +1531,12 @@
 +
 +	if (index >= ip_set_max)
 +		return IP_SET_INVALID_ID;
-+	
++
 +	if (ip_set_list[index])
 +		__ip_set_get(index);
 +	else
 +		index = IP_SET_INVALID_ID;
-+		
++
 +	up(&ip_set_app_mutex);
 +	return index;
 +}
@@ -1559,7 +1559,7 @@
 +ip_set_find_byname(const char *name)
 +{
 +	ip_set_id_t i, index = IP_SET_INVALID_ID;
-+	
++
 +	for (i = 0; i < ip_set_max; i++) {
 +		if (ip_set_list[i] != NULL
 +		    && strcmp(ip_set_list[i]->name, name) == 0) {
@@ -1575,7 +1575,7 @@
 +{
 +	if (index >= ip_set_max || ip_set_list[index] == NULL)
 +		index = IP_SET_INVALID_ID;
-+	
++
 +	return index;
 +}
 +
@@ -1606,7 +1606,7 @@
 +	struct ip_set *set = ip_set_list[index];
 +	ip_set_ip_t ip;
 +	int res;
-+	
++
 +	IP_SET_ASSERT(set);
 +	do {
 +		write_lock_bh(&set->lock);
@@ -1638,7 +1638,7 @@
 +	struct ip_set *set = ip_set_list[index];
 +	ip_set_ip_t ip;
 +	int res;
-+	
++
 +	IP_SET_ASSERT(set);
 +	write_lock_bh(&set->lock);
 +	res = set->type->delip(set,
@@ -1682,18 +1682,18 @@
 +	IP_SET_ASSERT(set);
 +	if (size < sizeof(struct ip_set_req_bind))
 +		return -EINVAL;
-+		
++
 +	req_bind = (struct ip_set_req_bind *) data;
 +	req_bind->binding[IP_SET_MAXNAMELEN - 1] = '\0';
 +
 +	if (strcmp(req_bind->binding, IPSET_TOKEN_DEFAULT) == 0) {
 +		/* Default binding of a set */
 +		char *binding_name;
-+		
++
 +		if (size != sizeof(struct ip_set_req_bind) + IP_SET_MAXNAMELEN)
 +			return -EINVAL;
 +
-+		binding_name = (char *)(data + sizeof(struct ip_set_req_bind));	
++		binding_name = (char *)(data + sizeof(struct ip_set_req_bind));
 +		binding_name[IP_SET_MAXNAMELEN - 1] = '\0';
 +
 +		binding = ip_set_find_byname(binding_name);
@@ -1720,7 +1720,7 @@
 +			      &ip);
 +	DP("set %s, ip: %u.%u.%u.%u, binding %s",
 +	   set->name, HIPQUAD(ip), ip_set_list[binding]->name);
-+	
++
 +	if (res >= 0)
 +		res = ip_set_hash_add(set->id, ip, binding);
 +
@@ -1769,10 +1769,10 @@
 +	DP("");
 +	if (size < sizeof(struct ip_set_req_bind))
 +		return -EINVAL;
-+		
++
 +	req_bind = (struct ip_set_req_bind *) data;
 +	req_bind->binding[IP_SET_MAXNAMELEN - 1] = '\0';
-+	
++
 +	DP("%u %s", index, req_bind->binding);
 +	if (index == IP_SET_INVALID_ID) {
 +		/* unbind :all: */
@@ -1792,7 +1792,7 @@
 +		DP("unreachable reached!");
 +		return -EINVAL;
 +	}
-+	
++
 +	set = ip_set_list[index];
 +	IP_SET_ASSERT(set);
 +	if (strcmp(req_bind->binding, IPSET_TOKEN_DEFAULT) == 0) {
@@ -1801,7 +1801,7 @@
 +
 +		if (binding == IP_SET_INVALID_ID)
 +			return -ENOENT;
-+			
++
 +		write_lock_bh(&ip_set_lock);
 +		/* Sets in hash values are referenced */
 +		__ip_set_put(set->binding);
@@ -1817,7 +1817,7 @@
 +		write_unlock_bh(&ip_set_lock);
 +		return 0;
 +	}
-+	
++
 +	res = __ip_set_testip(set,
 +			      data + sizeof(struct ip_set_req_bind),
 +			      size - sizeof(struct ip_set_req_bind),
@@ -1844,24 +1844,24 @@
 +	IP_SET_ASSERT(set);
 +	if (size < sizeof(struct ip_set_req_bind))
 +		return -EINVAL;
-+		
++
 +	req_bind = (struct ip_set_req_bind *) data;
 +	req_bind->binding[IP_SET_MAXNAMELEN - 1] = '\0';
 +
 +	if (strcmp(req_bind->binding, IPSET_TOKEN_DEFAULT) == 0) {
 +		/* Default binding of set */
 +		char *binding_name;
-+		
++
 +		if (size != sizeof(struct ip_set_req_bind) + IP_SET_MAXNAMELEN)
 +			return -EINVAL;
 +
-+		binding_name = (char *)(data + sizeof(struct ip_set_req_bind));	
++		binding_name = (char *)(data + sizeof(struct ip_set_req_bind));
 +		binding_name[IP_SET_MAXNAMELEN - 1] = '\0';
 +
 +		binding = ip_set_find_byname(binding_name);
 +		if (binding == IP_SET_INVALID_ID)
 +			return -ENOENT;
-+		
++
 +		res = (set->binding == binding) ? -EEXIST : 0;
 +
 +		return res;
@@ -1869,15 +1869,15 @@
 +	binding = ip_set_find_byname(req_bind->binding);
 +	if (binding == IP_SET_INVALID_ID)
 +		return -ENOENT;
-+		
-+	
++
++
 +	res = __ip_set_testip(set,
 +			      data + sizeof(struct ip_set_req_bind),
 +			      size - sizeof(struct ip_set_req_bind),
 +			      &ip);
 +	DP("set %s, ip: %u.%u.%u.%u, binding %s",
 +	   set->name, HIPQUAD(ip), ip_set_list[binding]->name);
-+	   
++
 +	if (res >= 0)
 +		res = (ip_set_find_in_hash(set->id, ip) == binding)
 +			? -EEXIST : 0;
@@ -1889,7 +1889,7 @@
 +find_set_type_rlock(const char *typename)
 +{
 +	struct ip_set_type *type;
-+	
++
 +	read_lock_bh(&ip_set_lock);
 +	type = find_set_type(typename);
 +	if (type == NULL)
@@ -1918,7 +1918,7 @@
 +		/* No free slot remained */
 +		return -ERANGE;
 +	/* Check that index is usable as id (swapping) */
-+    check:	
++    check:
 +	for (i = 0;  i < ip_set_max; i++) {
 +		if (ip_set_list[i] != NULL
 +		    && ip_set_list[i]->id == *id) {
@@ -1998,7 +1998,7 @@
 +
 +	/*
 +	 * Here, we have a valid, constructed set. &ip_set_lock again,
-+	 * find free id/index and check that it is not already in 
++	 * find free id/index and check that it is not already in
 +	 * ip_set_list.
 +	 */
 +	write_lock_bh(&ip_set_lock);
@@ -2013,7 +2013,7 @@
 +		res = -ERANGE;
 +		goto cleanup;
 +	}
-+	 
++
 +	/*
 +	 * Finally! Add our shiny new set to the list, and be done.
 +	 */
@@ -2022,7 +2022,7 @@
 +	ip_set_list[index] = set;
 +	write_unlock_bh(&ip_set_lock);
 +	return res;
-+	
++
 +    cleanup:
 +	write_unlock_bh(&ip_set_lock);
 +	set->type->destroy(set);
@@ -2072,7 +2072,7 @@
 +		ip_set_destroy_set(index);
 +	} else {
 +		for (i = 0; i < ip_set_max; i++) {
-+			if (ip_set_list[i] != NULL 
++			if (ip_set_list[i] != NULL
 +			    && (atomic_read(&ip_set_list[i]->ref)))
 +			    	return -EBUSY;
 +		}
@@ -2095,7 +2095,7 @@
 +	write_unlock_bh(&set->lock);
 +}
 +
-+/* 
++/*
 + * Flush data in a set - or in all sets
 + */
 +static int
@@ -2122,7 +2122,7 @@
 +	write_lock_bh(&ip_set_lock);
 +	for (i = 0; i < ip_set_max; i++) {
 +		if (ip_set_list[i] != NULL
-+		    && strncmp(ip_set_list[i]->name, 
++		    && strncmp(ip_set_list[i]->name,
 +			       name,
 +			       IP_SET_MAXNAMELEN - 1) == 0) {
 +			res = -EEXIST;
@@ -2152,7 +2152,7 @@
 +	if (from->type->features != to->type->features)
 +		return -ENOEXEC;
 +
-+	/* No magic here: ref munging protected by the mutex */	
++	/* No magic here: ref munging protected by the mutex */
 +	write_lock_bh(&ip_set_lock);
 +	strncpy(from_name, from->name, IP_SET_MAXNAMELEN);
 +	from_ref = atomic_read(&from->ref);
@@ -2161,10 +2161,10 @@
 +	atomic_set(&from->ref, atomic_read(&to->ref));
 +	strncpy(to->name, from_name, IP_SET_MAXNAMELEN);
 +	atomic_set(&to->ref, from_ref);
-+	
++
 +	ip_set_list[from_index] = to;
 +	ip_set_list[to_index] = from;
-+	
++
 +	write_unlock_bh(&ip_set_lock);
 +	return 0;
 +}
@@ -2194,7 +2194,7 @@
 +		    ip_set_id_t id, void *data, int *used)
 +{
 +	if (set_hash->id == id) {
-+		struct ip_set_hash_list *hash_list = 
++		struct ip_set_hash_list *hash_list =
 +			(struct ip_set_hash_list *)(data + *used);
 +
 +		hash_list->ip = set_hash->ip;
@@ -2257,7 +2257,7 @@
 +
 +	/* Fill in set spefific bindings data */
 +	FOREACH_HASH_DO(__set_hash_bindings, set->id, data, used);
-+	
++
 +	return 0;
 +
 +    unlock_set:
@@ -2287,7 +2287,7 @@
 +	*used += sizeof(struct ip_set_save);
 +
 +	set = ip_set_list[index];
-+	DP("set: %s, used: %u(%u) %p %p", set->name, *used, len, 
++	DP("set: %s, used: %u(%u) %p %p", set->name, *used, len,
 +	   data, data + *used);
 +
 +	read_lock_bh(&set->lock);
@@ -2336,7 +2336,7 @@
 +{
 +	if (*res == 0
 +	    && (id == IP_SET_INVALID_ID || set_hash->id == id)) {
-+		struct ip_set_hash_save *hash_save = 
++		struct ip_set_hash_save *hash_save =
 +			(struct ip_set_hash_save *)(data + *used);
 +		/* Ensure bindings size */
 +		if (*used + sizeof(struct ip_set_hash_save) > len) {
@@ -2377,7 +2377,7 @@
 +		index = ip_set_list[index]->id;
 +	FOREACH_HASH_DO(__set_hash_save_bindings, index, data, used, len, &res);
 +
-+	return res;	
++	return res;
 +}
 +
 +/*
@@ -2396,7 +2396,7 @@
 +	/* Loop to restore sets */
 +	while (1) {
 +		line++;
-+		
++
 +		DP("%u %u %u", used, sizeof(struct ip_set_restore), len);
 +		/* Get and ensure header size */
 +		if (used + sizeof(struct ip_set_restore) > len)
@@ -2405,8 +2405,8 @@
 +		used += sizeof(struct ip_set_restore);
 +
 +		/* Ensure data size */
-+		if (used 
-+		    + set_restore->header_size 
++		if (used
++		    + set_restore->header_size
 +		    + set_restore->members_size > len)
 +			return line;
 +
@@ -2415,7 +2415,7 @@
 +			line--;
 +			goto bindings;
 +		}
-+		
++
 +		/* Try to create the set */
 +		DP("restore %s %s", set_restore->name, set_restore->typename);
 +		res = ip_set_create(set_restore->name,
@@ -2423,7 +2423,7 @@
 +				    set_restore->index,
 +				    data + used,
 +				    set_restore->header_size);
-+		
++
 +		if (res != 0)
 +			return line;
 +		used += set_restore->header_size;
@@ -2444,7 +2444,7 @@
 +			res = __ip_set_addip(index,
 +					   data + used + members_size,
 +					   set->type->reqsize);
-+			if (!(res == 0 || res == -EEXIST)) 
++			if (!(res == 0 || res == -EEXIST))
 +				return line;
 +			members_size += set->type->reqsize;
 +		}
@@ -2453,25 +2453,25 @@
 +		   set_restore->members_size, members_size);
 +		if (members_size != set_restore->members_size)
 +			return line++;
-+		used += set_restore->members_size;		
++		used += set_restore->members_size;
 +	}
-+	
++
 +   bindings:
 +   	/* Loop to restore bindings */
 +   	while (used < len) {
 +		line++;
 +
-+		DP("restore binding, line %u", line);		
++		DP("restore binding, line %u", line);
 +		/* Get and ensure size */
 +		if (used + sizeof(struct ip_set_hash_save) > len)
 +			return line;
 +		hash_save = (struct ip_set_hash_save *) (data + used);
 +		used += sizeof(struct ip_set_hash_save);
-+		
++
 +		/* hash_save->id is used to store the index */
 +		index = ip_set_find_byindex(hash_save->id);
 +		DP("restore binding index %u, id %u, %u -> %u",
-+		   index, hash_save->id, hash_save->ip, hash_save->binding);		
++		   index, hash_save->id, hash_save->ip, hash_save->binding);
 +		if (index != hash_save->id)
 +			return line;
 +		if (ip_set_find_byindex(hash_save->binding) == IP_SET_INVALID_ID) {
@@ -2481,7 +2481,7 @@
 +		set = ip_set_list[hash_save->id];
 +		/* Null valued IP means default binding */
 +		if (hash_save->ip)
-+			res = ip_set_hash_add(set->id, 
++			res = ip_set_hash_add(set->id,
 +					      hash_save->ip,
 +					      hash_save->binding);
 +		else {
@@ -2497,8 +2497,8 @@
 +   	}
 +   	if (used != len)
 +   		return line;
-+   	
-+	return 0;	
++
++	return 0;
 +}
 +
 +static int
@@ -2545,7 +2545,7 @@
 +
 +	op = (unsigned *)data;
 +	DP("op=%x", *op);
-+	
++
 +	if (*op < IP_SET_OP_VERSION) {
 +		/* Check the version at the beginning of operations */
 +		struct ip_set_req_version *req_version =
@@ -2560,7 +2560,7 @@
 +	case IP_SET_OP_CREATE:{
 +		struct ip_set_req_create *req_create
 +			= (struct ip_set_req_create *) data;
-+		
++
 +		if (len < sizeof(struct ip_set_req_create)) {
 +			ip_set_printk("short CREATE data (want >=%zu, got %u)",
 +				      sizeof(struct ip_set_req_create), len);
@@ -2579,7 +2579,7 @@
 +	case IP_SET_OP_DESTROY:{
 +		struct ip_set_req_std *req_destroy
 +			= (struct ip_set_req_std *) data;
-+		
++
 +		if (len != sizeof(struct ip_set_req_std)) {
 +			ip_set_printk("invalid DESTROY data (want %zu, got %u)",
 +				      sizeof(struct ip_set_req_std), len);
@@ -2598,7 +2598,7 @@
 +				goto done;
 +			}
 +		}
-+			
++
 +		res = ip_set_destroy(index);
 +		goto done;
 +	}
@@ -2640,7 +2640,7 @@
 +
 +		req_rename->name[IP_SET_MAXNAMELEN - 1] = '\0';
 +		req_rename->typename[IP_SET_MAXNAMELEN - 1] = '\0';
-+			
++
 +		index = ip_set_find_byname(req_rename->name);
 +		if (index == IP_SET_INVALID_ID) {
 +			res = -ENOENT;
@@ -2677,10 +2677,10 @@
 +		res = ip_set_swap(index, to_index);
 +		goto done;
 +	}
-+	default: 
++	default:
 +		break;	/* Set identified by id */
 +	}
-+	
++
 +	/* There we may have add/del/test/bind/unbind/test_bind operations */
 +	if (*op < IP_SET_OP_ADD_IP || *op > IP_SET_OP_TEST_BIND_SET) {
 +		res = -EBADMSG;
@@ -2697,7 +2697,7 @@
 +	req_adt = (struct ip_set_req_adt *) data;
 +
 +	/* -U :all: :all:|:default: uses IP_SET_INVALID_ID */
-+	if (!(*op == IP_SET_OP_UNBIND_SET 
++	if (!(*op == IP_SET_OP_UNBIND_SET
 +	      && req_adt->index == IP_SET_INVALID_ID)) {
 +		index = ip_set_find_byindex(req_adt->index);
 +		if (index == IP_SET_INVALID_ID) {
@@ -2716,7 +2716,7 @@
 +	return res;
 +}
 +
-+static int 
++static int
 +ip_set_sockfn_get(struct sock *sk, int optval, void *user, int *len)
 +{
 +	int res = 0;
@@ -2851,7 +2851,7 @@
 +			req_max_sets->set.index = IP_SET_INVALID_ID;
 +		} else {
 +			req_max_sets->set.name[IP_SET_MAXNAMELEN - 1] = '\0';
-+			req_max_sets->set.index = 
++			req_max_sets->set.index =
 +				ip_set_find_byname(req_max_sets->set.name);
 +			if (req_max_sets->set.index == IP_SET_INVALID_ID) {
 +				res = -ENOENT;
@@ -2866,7 +2866,7 @@
 +		}
 +		goto copy;
 +	}
-+	case IP_SET_OP_LIST_SIZE: 
++	case IP_SET_OP_LIST_SIZE:
 +	case IP_SET_OP_SAVE_SIZE: {
 +		struct ip_set_req_setnames *req_setnames
 +			= (struct ip_set_req_setnames *) data;
@@ -2887,7 +2887,7 @@
 +		for (i = 0; i < ip_set_max; i++) {
 +			if (ip_set_list[i] == NULL)
 +				continue;
-+			name_list = (struct ip_set_name_list *) 
++			name_list = (struct ip_set_name_list *)
 +				(data + used);
 +			used += sizeof(struct ip_set_name_list);
 +			if (used > copylen) {
@@ -2917,7 +2917,7 @@
 +					+ set->type->header_size
 +					+ set->type->list_members_size(set);
 +				/* Sets are identified by id in the hash */
-+				FOREACH_HASH_DO(__set_hash_bindings_size_list, 
++				FOREACH_HASH_DO(__set_hash_bindings_size_list,
 +						set->id, &req_setnames->size);
 +				break;
 +			}
@@ -3007,7 +3007,7 @@
 +		}
 +		if (res == 0)
 +			res = ip_set_save_bindings(index, data, &used, *len);
-+			
++
 +		if (res != 0)
 +			goto done;
 +		else if (copylen != used) {
@@ -3050,7 +3050,7 @@
 +   	             ? ip_set_list[index]->name
 +   	             : ":all:", copylen);
 +	res = copy_to_user(user, data, copylen);
-+    	
++
 +    done:
 +	up(&ip_set_app_mutex);
 +	vfree(data);
@@ -3148,7 +3148,7 @@
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.  
++ * published by the Free Software Foundation.
 + */
 +
 +/* Kernel module implementing an ip hash set */
@@ -3191,7 +3191,7 @@
 +	*hash_ip = ip & map->netmask;
 +	DP("set: %s, ip:%u.%u.%u.%u, %u.%u.%u.%u, %u.%u.%u.%u",
 +	   set->name, HIPQUAD(ip), HIPQUAD(*hash_ip), HIPQUAD(map->netmask));
-+	
++
 +	for (i = 0; i < map->probes; i++) {
 +		id = jhash_ip(map, i, *hash_ip) % map->hashsize;
 +		DP("hash key: %u", id);
@@ -3214,7 +3214,7 @@
 +testip(struct ip_set *set, const void *data, size_t size,
 +       ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_req_iphash *req = 
++	struct ip_set_req_iphash *req =
 +	    (struct ip_set_req_iphash *) data;
 +
 +	if (size != sizeof(struct ip_set_req_iphash)) {
@@ -3227,19 +3227,19 @@
 +}
 +
 +static int
-+testip_kernel(struct ip_set *set, 
++testip_kernel(struct ip_set *set,
 +	      const struct sk_buff *skb,
 +	      ip_set_ip_t *hash_ip,
 +	      const u_int32_t *flags,
 +	      unsigned char index)
 +{
 +	return __testip(set,
-+			ntohl(flags[index] & IPSET_SRC 
++			ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+				? ip_hdr(skb)->saddr 
++				? ip_hdr(skb)->saddr
 +				: ip_hdr(skb)->daddr),
 +#else
-+				? skb->nh.iph->saddr 
++				? skb->nh.iph->saddr
 +				: skb->nh.iph->daddr),
 +#endif
 +			hash_ip);
@@ -3251,12 +3251,12 @@
 +	__u32 probe;
 +	u_int16_t i;
 +	ip_set_ip_t *elem;
-+	
++
 +	if (!ip || map->elements >= limit)
 +		return -ERANGE;
 +
 +	*hash_ip = ip & map->netmask;
-+	
++
 +	for (i = 0; i < map->probes; i++) {
 +		probe = jhash_ip(map, i, *hash_ip) % map->hashsize;
 +		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, probe);
@@ -3276,7 +3276,7 @@
 +addip(struct ip_set *set, const void *data, size_t size,
 +        ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_req_iphash *req = 
++	struct ip_set_req_iphash *req =
 +	    (struct ip_set_req_iphash *) data;
 +
 +	if (size != sizeof(struct ip_set_req_iphash)) {
@@ -3289,19 +3289,19 @@
 +}
 +
 +static int
-+addip_kernel(struct ip_set *set, 
++addip_kernel(struct ip_set *set,
 +	     const struct sk_buff *skb,
 +	     ip_set_ip_t *hash_ip,
 +	     const u_int32_t *flags,
 +	     unsigned char index)
 +{
 +	return __addip((struct ip_set_iphash *) set->data,
-+		       ntohl(flags[index] & IPSET_SRC 
++		       ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+				? ip_hdr(skb)->saddr 
++				? ip_hdr(skb)->saddr
 +				: ip_hdr(skb)->daddr),
 +#else
-+		       		? skb->nh.iph->saddr 
++		       		? skb->nh.iph->saddr
 +				: skb->nh.iph->daddr),
 +#endif
 +		       hash_ip);
@@ -3315,23 +3315,23 @@
 +	u_int32_t i, hashsize = map->hashsize;
 +	int res;
 +	struct ip_set_iphash *tmp;
-+	
++
 +	if (map->resize == 0)
 +		return -ERANGE;
 +
 +    again:
 +    	res = 0;
-+    	
++
 +	/* Calculate new hash size */
 +	hashsize += (hashsize * map->resize)/100;
 +	if (hashsize == map->hashsize)
 +		hashsize++;
-+	
++
 +	ip_set_printk("rehashing of set %s triggered: "
 +		      "hashsize grows from %u to %u",
 +		      set->name, map->hashsize, hashsize);
 +
-+	tmp = kmalloc(sizeof(struct ip_set_iphash) 
++	tmp = kmalloc(sizeof(struct ip_set_iphash)
 +		      + map->probes * sizeof(uint32_t), GFP_ATOMIC);
 +	if (!tmp) {
 +		DP("out of memory for %d bytes",
@@ -3351,11 +3351,11 @@
 +	tmp->resize = map->resize;
 +	tmp->netmask = map->netmask;
 +	memcpy(tmp->initval, map->initval, map->probes * sizeof(uint32_t));
-+	
++
 +	write_lock_bh(&set->lock);
 +	map = (struct ip_set_iphash *) set->data; /* Play safe */
 +	for (i = 0; i < map->hashsize && res == 0; i++) {
-+		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);	
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);
 +		if (*elem)
 +			res = __addip(tmp, *elem, &hash_ip);
 +	}
@@ -3366,7 +3366,7 @@
 +		kfree(tmp);
 +		goto again;
 +	}
-+	
++
 +	/* Success at resizing! */
 +	members = map->members;
 +
@@ -3392,7 +3392,7 @@
 +	id = hash_id(set, ip, hash_ip);
 +	if (id == UINT_MAX)
 +		return -EEXIST;
-+		
++
 +	elem = HARRAY_ELEM(map->members, ip_set_ip_t *, id);
 +	*elem = 0;
 +	map->elements--;
@@ -3417,19 +3417,19 @@
 +}
 +
 +static int
-+delip_kernel(struct ip_set *set, 
++delip_kernel(struct ip_set *set,
 +	     const struct sk_buff *skb,
 +	     ip_set_ip_t *hash_ip,
 +	     const u_int32_t *flags,
 +	     unsigned char index)
 +{
 +	return __delip(set,
-+		       ntohl(flags[index] & IPSET_SRC 
++		       ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+				? ip_hdr(skb)->saddr 
++				? ip_hdr(skb)->saddr
 +				: ip_hdr(skb)->daddr),
 +#else
-+				? skb->nh.iph->saddr 
++				? skb->nh.iph->saddr
 +				: skb->nh.iph->daddr),
 +#endif
 +		       hash_ip);
@@ -3459,7 +3459,7 @@
 +		return -ENOEXEC;
 +	}
 +
-+	map = kmalloc(sizeof(struct ip_set_iphash) 
++	map = kmalloc(sizeof(struct ip_set_iphash)
 +		      + req->probes * sizeof(uint32_t), GFP_KERNEL);
 +	if (!map) {
 +		DP("out of memory for %d bytes",
@@ -3527,7 +3527,7 @@
 +	ip_set_ip_t i, *elem;
 +
 +	for (i = 0; i < map->hashsize; i++) {
-+		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);	
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);
 +		((ip_set_ip_t *)data)[i] = *elem;
 +	}
 +}
@@ -3582,7 +3582,7 @@
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.  
++ * published by the Free Software Foundation.
 + */
 +
 +/* Kernel module implementing an IP set type: the single bitmap type */
@@ -3610,7 +3610,7 @@
 +__testip(struct ip_set *set, ip_set_ip_t ip, ip_set_ip_t *hash_ip)
 +{
 +	struct ip_set_ipmap *map = (struct ip_set_ipmap *) set->data;
-+	
++
 +	if (ip < map->first_ip || ip > map->last_ip)
 +		return -ERANGE;
 +
@@ -3624,7 +3624,7 @@
 +testip(struct ip_set *set, const void *data, size_t size,
 +       ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_req_ipmap *req = 
++	struct ip_set_req_ipmap *req =
 +	    (struct ip_set_req_ipmap *) data;
 +
 +	if (size != sizeof(struct ip_set_req_ipmap)) {
@@ -3637,7 +3637,7 @@
 +}
 +
 +static int
-+testip_kernel(struct ip_set *set, 
++testip_kernel(struct ip_set *set,
 +	      const struct sk_buff *skb,
 +	      ip_set_ip_t *hash_ip,
 +	      const u_int32_t *flags,
@@ -3646,10 +3646,10 @@
 +	int res =  __testip(set,
 +			ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+				? ip_hdr(skb)->saddr 
++				? ip_hdr(skb)->saddr
 +				: ip_hdr(skb)->daddr),
 +#else
-+				? skb->nh.iph->saddr 
++				? skb->nh.iph->saddr
 +				: skb->nh.iph->daddr),
 +#endif
 +			hash_ip);
@@ -3676,7 +3676,7 @@
 +addip(struct ip_set *set, const void *data, size_t size,
 +      ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_req_ipmap *req = 
++	struct ip_set_req_ipmap *req =
 +	    (struct ip_set_req_ipmap *) data;
 +
 +	if (size != sizeof(struct ip_set_req_ipmap)) {
@@ -3690,25 +3690,25 @@
 +}
 +
 +static int
-+addip_kernel(struct ip_set *set, 
++addip_kernel(struct ip_set *set,
 +	     const struct sk_buff *skb,
 +	     ip_set_ip_t *hash_ip,
 +	     const u_int32_t *flags,
 +	     unsigned char index)
 +{
 +	return __addip(set,
-+		       ntohl(flags[index] & IPSET_SRC 
++		       ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+				? ip_hdr(skb)->saddr 
++				? ip_hdr(skb)->saddr
 +				: ip_hdr(skb)->daddr),
 +#else
-+		       		? skb->nh.iph->saddr 
++		       		? skb->nh.iph->saddr
 +				: skb->nh.iph->daddr),
 +#endif
 +		       hash_ip);
 +}
 +
-+static inline int 
++static inline int
 +__delip(struct ip_set *set, ip_set_ip_t ip, ip_set_ip_t *hash_ip)
 +{
 +	struct ip_set_ipmap *map = (struct ip_set_ipmap *) set->data;
@@ -3720,7 +3720,7 @@
 +	DP("%u.%u.%u.%u, %u.%u.%u.%u", HIPQUAD(ip), HIPQUAD(*hash_ip));
 +	if (!test_and_clear_bit(ip_to_id(map, *hash_ip), map->members))
 +		return -EEXIST;
-+	
++
 +	return 0;
 +}
 +
@@ -3748,12 +3748,12 @@
 +	     unsigned char index)
 +{
 +	return __delip(set,
-+		       ntohl(flags[index] & IPSET_SRC 
++		       ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+				? ip_hdr(skb)->saddr 
++				? ip_hdr(skb)->saddr
 +				: ip_hdr(skb)->daddr),
 +#else
-+				? skb->nh.iph->saddr 
++				? skb->nh.iph->saddr
 +				: skb->nh.iph->daddr),
 +#endif
 +		       hash_ip);
@@ -3797,12 +3797,12 @@
 +	} else {
 +		unsigned int mask_bits, netmask_bits;
 +		ip_set_ip_t mask;
-+		
++
 +		map->first_ip &= map->netmask;	/* Should we better bark? */
-+		
++
 +		mask = range_to_mask(map->first_ip, map->last_ip, &mask_bits);
 +		netmask_bits = mask_to_bits(map->netmask);
-+		
++
 +		if ((!mask && (map->first_ip || map->last_ip != 0xFFFFFFFF))
 +		    || netmask_bits <= mask_bits)
 +			return -ENOEXEC;
@@ -3827,7 +3827,7 @@
 +		return -ENOMEM;
 +	}
 +	memset(map->members, 0, newbytes);
-+	
++
 +	set->data = map;
 +	return 0;
 +}
@@ -3835,10 +3835,10 @@
 +static void destroy(struct ip_set *set)
 +{
 +	struct ip_set_ipmap *map = (struct ip_set_ipmap *) set->data;
-+	
++
 +	kfree(map->members);
 +	kfree(map);
-+	
++
 +	set->data = NULL;
 +}
 +
@@ -3919,7 +3919,7 @@
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.  
++ * published by the Free Software Foundation.
 + */
 +
 +/* Kernel module implementing an ip+port hash set */
@@ -3961,7 +3961,7 @@
 +	switch (iph->protocol) {
 +	case IPPROTO_TCP: {
 +		struct tcphdr tcph;
-+		
++
 +		/* See comments at tcp_match in ip_tables.c */
 +		if (offset)
 +			return INVALID_PORT;
@@ -3973,7 +3973,7 @@
 +#endif
 +			/* No choice either */
 +			return INVALID_PORT;
-+	     	
++
 +	     	return ntohs(flags & IPSET_SRC ?
 +			     tcph.source : tcph.dest);
 +	    }
@@ -3990,7 +3990,7 @@
 +#endif
 +			/* No choice either */
 +			return INVALID_PORT;
-+	     	
++
 +	     	return ntohs(flags & IPSET_SRC ?
 +			     udph.source : udph.dest);
 +	    }
@@ -4011,7 +4011,7 @@
 +hash_id(struct ip_set *set, ip_set_ip_t ip, ip_set_ip_t port,
 +	ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_ipporthash *map = 
++	struct ip_set_ipporthash *map =
 +		(struct ip_set_ipporthash *) set->data;
 +	__u32 id;
 +	u_int16_t i;
@@ -4020,7 +4020,7 @@
 +	*hash_ip = HASH_IP(map, ip, port);
 +	DP("set: %s, ipport:%u.%u.%u.%u:%u, %u.%u.%u.%u",
 +	   set->name, HIPQUAD(ip), port, HIPQUAD(*hash_ip));
-+	
++
 +	for (i = 0; i < map->probes; i++) {
 +		id = jhash_ip(map, i, *hash_ip) % map->hashsize;
 +		DP("hash key: %u", id);
@@ -4038,7 +4038,7 @@
 +	 ip_set_ip_t *hash_ip)
 +{
 +	struct ip_set_ipporthash *map = (struct ip_set_ipporthash *) set->data;
-+	
++
 +	if (ip < map->first_ip || ip > map->last_ip)
 +		return -ERANGE;
 +
@@ -4049,7 +4049,7 @@
 +testip(struct ip_set *set, const void *data, size_t size,
 +       ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_req_ipporthash *req = 
++	struct ip_set_req_ipporthash *req =
 +	    (struct ip_set_req_ipporthash *) data;
 +
 +	if (size != sizeof(struct ip_set_req_ipporthash)) {
@@ -4062,7 +4062,7 @@
 +}
 +
 +static int
-+testip_kernel(struct ip_set *set, 
++testip_kernel(struct ip_set *set,
 +	      const struct sk_buff *skb,
 +	      ip_set_ip_t *hash_ip,
 +	      const u_int32_t *flags,
@@ -4073,7 +4073,7 @@
 +
 +	if (flags[index+1] == 0)
 +		return 0;
-+		
++
 +	port = get_port(skb, flags[index+1]);
 +
 +	DP("flag: %s src: %u.%u.%u.%u dst: %u.%u.%u.%u",
@@ -4086,24 +4086,24 @@
 +	   NIPQUAD(skb->nh.iph->daddr));
 +#endif
 +	DP("flag %s port %u",
-+	   flags[index+1] & IPSET_SRC ? "SRC" : "DST", 
-+	   port);	
++	   flags[index+1] & IPSET_SRC ? "SRC" : "DST",
++	   port);
 +	if (port == INVALID_PORT)
-+		return 0;	
++		return 0;
 +
 +	res =  __testip(set,
-+			ntohl(flags[index] & IPSET_SRC 
++			ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+					? ip_hdr(skb)->saddr 
++					? ip_hdr(skb)->saddr
 +					: ip_hdr(skb)->daddr),
 +#else
-+					? skb->nh.iph->saddr 
++					? skb->nh.iph->saddr
 +					: skb->nh.iph->daddr),
 +#endif
 +			port,
 +			hash_ip);
 +	return (res < 0 ? 0 : res);
-+	
++
 +}
 +
 +static inline int
@@ -4138,7 +4138,7 @@
 +		return -ERANGE;
 +
 +	*hash_ip = HASH_IP(map, ip, port);
-+	
++
 +	return __add_haship(map, *hash_ip);
 +}
 +
@@ -4146,7 +4146,7 @@
 +addip(struct ip_set *set, const void *data, size_t size,
 +        ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_req_ipporthash *req = 
++	struct ip_set_req_ipporthash *req =
 +	    (struct ip_set_req_ipporthash *) data;
 +
 +	if (size != sizeof(struct ip_set_req_ipporthash)) {
@@ -4155,12 +4155,12 @@
 +			      size);
 +		return -EINVAL;
 +	}
-+	return __addip((struct ip_set_ipporthash *) set->data, 
++	return __addip((struct ip_set_ipporthash *) set->data,
 +			req->ip, req->port, hash_ip);
 +}
 +
 +static int
-+addip_kernel(struct ip_set *set, 
++addip_kernel(struct ip_set *set,
 +	     const struct sk_buff *skb,
 +	     ip_set_ip_t *hash_ip,
 +	     const u_int32_t *flags,
@@ -4170,7 +4170,7 @@
 +
 +	if (flags[index+1] == 0)
 +		return -EINVAL;
-+		
++
 +	port = get_port(skb, flags[index+1]);
 +
 +	DP("flag: %s src: %u.%u.%u.%u dst: %u.%u.%u.%u",
@@ -4182,19 +4182,19 @@
 +	   NIPQUAD(skb->nh.iph->saddr),
 +	   NIPQUAD(skb->nh.iph->daddr));
 +#endif
-+	DP("flag %s port %u", 
-+	   flags[index+1] & IPSET_SRC ? "SRC" : "DST", 
-+	   port);	
++	DP("flag %s port %u",
++	   flags[index+1] & IPSET_SRC ? "SRC" : "DST",
++	   port);
 +	if (port == INVALID_PORT)
-+		return -EINVAL;	
++		return -EINVAL;
 +
 +	return __addip((struct ip_set_ipporthash *) set->data,
-+		       ntohl(flags[index] & IPSET_SRC 
++		       ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+				? ip_hdr(skb)->saddr 
++				? ip_hdr(skb)->saddr
 +				: ip_hdr(skb)->daddr),
 +#else
-+		       		? skb->nh.iph->saddr 
++		       		? skb->nh.iph->saddr
 +				: skb->nh.iph->daddr),
 +#endif
 +		       port,
@@ -4209,23 +4209,23 @@
 +	u_int32_t i, hashsize = map->hashsize;
 +	int res;
 +	struct ip_set_ipporthash *tmp;
-+	
++
 +	if (map->resize == 0)
 +		return -ERANGE;
 +
 +    again:
 +    	res = 0;
-+    	
++
 +	/* Calculate new hash size */
 +	hashsize += (hashsize * map->resize)/100;
 +	if (hashsize == map->hashsize)
 +		hashsize++;
-+	
++
 +	ip_set_printk("rehashing of set %s triggered: "
 +		      "hashsize grows from %u to %u",
 +		      set->name, map->hashsize, hashsize);
 +
-+	tmp = kmalloc(sizeof(struct ip_set_ipporthash) 
++	tmp = kmalloc(sizeof(struct ip_set_ipporthash)
 +		      + map->probes * sizeof(uint32_t), GFP_ATOMIC);
 +	if (!tmp) {
 +		DP("out of memory for %d bytes",
@@ -4246,11 +4246,11 @@
 +	tmp->first_ip = map->first_ip;
 +	tmp->last_ip = map->last_ip;
 +	memcpy(tmp->initval, map->initval, map->probes * sizeof(uint32_t));
-+	
++
 +	write_lock_bh(&set->lock);
 +	map = (struct ip_set_ipporthash *) set->data; /* Play safe */
 +	for (i = 0; i < map->hashsize && res == 0; i++) {
-+		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);	
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);
 +		if (*elem)
 +			res = __add_haship(tmp, *elem);
 +	}
@@ -4261,7 +4261,7 @@
 +		kfree(tmp);
 +		goto again;
 +	}
-+	
++
 +	/* Success at resizing! */
 +	members = map->members;
 +
@@ -4290,7 +4290,7 @@
 +
 +	if (id == UINT_MAX)
 +		return -EEXIST;
-+		
++
 +	elem = HARRAY_ELEM(map->members, ip_set_ip_t *, id);
 +	*elem = 0;
 +	map->elements--;
@@ -4315,7 +4315,7 @@
 +}
 +
 +static int
-+delip_kernel(struct ip_set *set, 
++delip_kernel(struct ip_set *set,
 +	     const struct sk_buff *skb,
 +	     ip_set_ip_t *hash_ip,
 +	     const u_int32_t *flags,
@@ -4325,7 +4325,7 @@
 +
 +	if (flags[index+1] == 0)
 +		return -EINVAL;
-+		
++
 +	port = get_port(skb, flags[index+1]);
 +
 +	DP("flag: %s src: %u.%u.%u.%u dst: %u.%u.%u.%u",
@@ -4338,18 +4338,18 @@
 +	   NIPQUAD(skb->nh.iph->daddr));
 +#endif
 +	DP("flag %s port %u",
-+	   flags[index+1] & IPSET_SRC ? "SRC" : "DST", 
-+	   port);	
++	   flags[index+1] & IPSET_SRC ? "SRC" : "DST",
++	   port);
 +	if (port == INVALID_PORT)
-+		return -EINVAL;	
++		return -EINVAL;
 +
 +	return __delip(set,
-+		       ntohl(flags[index] & IPSET_SRC 
++		       ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+				? ip_hdr(skb)->saddr 
++				? ip_hdr(skb)->saddr
 +				: ip_hdr(skb)->daddr),
 +#else
-+		       		? skb->nh.iph->saddr 
++		       		? skb->nh.iph->saddr
 +				: skb->nh.iph->daddr),
 +#endif
 +		       port,
@@ -4380,7 +4380,7 @@
 +		return -ENOEXEC;
 +	}
 +
-+	map = kmalloc(sizeof(struct ip_set_ipporthash) 
++	map = kmalloc(sizeof(struct ip_set_ipporthash)
 +		      + req->probes * sizeof(uint32_t), GFP_KERNEL);
 +	if (!map) {
 +		DP("out of memory for %d bytes",
@@ -4450,7 +4450,7 @@
 +	ip_set_ip_t i, *elem;
 +
 +	for (i = 0; i < map->hashsize; i++) {
-+		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);	
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);
 +		((ip_set_ip_t *)data)[i] = *elem;
 +	}
 +}
@@ -4503,7 +4503,7 @@
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.  
++ * published by the Free Software Foundation.
 + */
 +
 +/* Kernel module implementing an IP set type: the iptree type */
@@ -4532,8 +4532,8 @@
 +
 +/* Garbage collection interval in seconds: */
 +#define IPTREE_GC_TIME		5*60
-+/* Sleep so many milliseconds before trying again 
-+ * to delete the gc timer at destroying/flushing a set */ 
++/* Sleep so many milliseconds before trying again
++ * to delete the gc timer at destroying/flushing a set */
 +#define IPTREE_DESTROY_SLEEP	100
 +
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,21)
@@ -4580,7 +4580,7 @@
 +
 +	if (!ip)
 +		return -ERANGE;
-+	
++
 +	*hash_ip = ip;
 +	ABCD(a, b, c, d, hash_ip);
 +	DP("%u %u %u %u timeout %u", a, b, c, d, map->timeout);
@@ -4597,7 +4597,7 @@
 +testip(struct ip_set *set, const void *data, size_t size,
 +       ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_req_iptree *req = 
++	struct ip_set_req_iptree *req =
 +	    (struct ip_set_req_iptree *) data;
 +
 +	if (size != sizeof(struct ip_set_req_iptree)) {
@@ -4610,14 +4610,14 @@
 +}
 +
 +static int
-+testip_kernel(struct ip_set *set, 
++testip_kernel(struct ip_set *set,
 +	      const struct sk_buff *skb,
 +	      ip_set_ip_t *hash_ip,
 +	      const u_int32_t *flags,
 +	      unsigned char index)
 +{
 +	int res;
-+	
++
 +	DP("flag: %s src: %u.%u.%u.%u dst: %u.%u.%u.%u",
 +	   flags[index] & IPSET_SRC ? "SRC" : "DST",
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
@@ -4629,12 +4629,12 @@
 +#endif
 +
 +	res =  __testip(set,
-+			ntohl(flags[index] & IPSET_SRC 
++			ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+				? ip_hdr(skb)->saddr 
++				? ip_hdr(skb)->saddr
 +				: ip_hdr(skb)->daddr),
 +#else
-+				? skb->nh.iph->saddr 
++				? skb->nh.iph->saddr
 +				: skb->nh.iph->daddr),
 +#endif
 +			hash_ip);
@@ -4654,7 +4654,7 @@
 +		(map)->tree[elem] = branch;			\
 +		DP("alloc %u", elem);				\
 +	}							\
-+} while (0)	
++} while (0)
 +
 +static inline int
 +__addip(struct ip_set *set, ip_set_ip_t ip, unsigned int timeout,
@@ -4666,12 +4666,12 @@
 +	struct ip_set_iptreed *dtree;
 +	unsigned char a,b,c,d;
 +	int ret = 0;
-+	
++
 +	if (!ip || map->elements >= limit)
 +		/* We could call the garbage collector
 +		 * but it's probably overkill */
 +		return -ERANGE;
-+	
++
 +	*hash_ip = ip;
 +	ABCD(a, b, c, d, hash_ip);
 +	DP("%u %u %u %u timeout %u", a, b, c, d, timeout);
@@ -4696,7 +4696,7 @@
 +      ip_set_ip_t *hash_ip)
 +{
 +	struct ip_set_iptree *map = (struct ip_set_iptree *) set->data;
-+	struct ip_set_req_iptree *req = 
++	struct ip_set_req_iptree *req =
 +		(struct ip_set_req_iptree *) data;
 +
 +	if (size != sizeof(struct ip_set_req_iptree)) {
@@ -4712,7 +4712,7 @@
 +}
 +
 +static int
-+addip_kernel(struct ip_set *set, 
++addip_kernel(struct ip_set *set,
 +	     const struct sk_buff *skb,
 +	     ip_set_ip_t *hash_ip,
 +	     const u_int32_t *flags,
@@ -4721,12 +4721,12 @@
 +	struct ip_set_iptree *map = (struct ip_set_iptree *) set->data;
 +
 +	return __addip(set,
-+		       ntohl(flags[index] & IPSET_SRC 
++		       ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+				? ip_hdr(skb)->saddr 
++				? ip_hdr(skb)->saddr
 +				: ip_hdr(skb)->daddr),
 +#else
-+		       		? skb->nh.iph->saddr 
++		       		? skb->nh.iph->saddr
 +				: skb->nh.iph->daddr),
 +#endif
 +		       map->timeout,
@@ -4740,7 +4740,7 @@
 +		return -EEXIST;			\
 +} while (0)
 +
-+static inline int 
++static inline int
 +__delip(struct ip_set *set, ip_set_ip_t ip, ip_set_ip_t *hash_ip)
 +{
 +	struct ip_set_iptree *map = (struct ip_set_iptree *) set->data;
@@ -4748,10 +4748,10 @@
 +	struct ip_set_iptreec *ctree;
 +	struct ip_set_iptreed *dtree;
 +	unsigned char a,b,c,d;
-+	
++
 +	if (!ip)
 +		return -ERANGE;
-+		
++
 +	*hash_ip = ip;
 +	ABCD(a, b, c, d, hash_ip);
 +	DELIP_WALK(map, a, btree);
@@ -4783,19 +4783,19 @@
 +}
 +
 +static int
-+delip_kernel(struct ip_set *set, 
++delip_kernel(struct ip_set *set,
 +	     const struct sk_buff *skb,
 +	     ip_set_ip_t *hash_ip,
 +	     const u_int32_t *flags,
 +	     unsigned char index)
 +{
 +	return __delip(set,
-+		       ntohl(flags[index] & IPSET_SRC 
++		       ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+				? ip_hdr(skb)->saddr 
++				? ip_hdr(skb)->saddr
 +				: ip_hdr(skb)->daddr),
 +#else
-+		       		? skb->nh.iph->saddr 
++		       		? skb->nh.iph->saddr
 +				: skb->nh.iph->daddr),
 +#endif
 +		       hash_ip);
@@ -4874,7 +4874,7 @@
 +	}
 +	LOOP_WALK_END;
 +	write_unlock_bh(&set->lock);
-+	
++
 +	map->gc.expires = jiffies + map->gc_interval * HZ;
 +	add_timer(&map->gc);
 +}
@@ -4958,7 +4958,7 @@
 +{
 +	struct ip_set_iptree *map = (struct ip_set_iptree *) set->data;
 +	unsigned int timeout = map->timeout;
-+	
++
 +	/* gc might be running */
 +	while (!del_timer(&map->gc))
 +		msleep(IPTREE_DESTROY_SLEEP);
@@ -5021,7 +5021,7 @@
 +		    && (!map->timeout || time_after(dtree->expires[d], jiffies))) {
 +		    	entry = (struct ip_set_req_iptree *)(data + offset);
 +		    	entry->ip = ((a << 24) | (b << 16) | (c << 8) | d);
-+		    	entry->timeout = !map->timeout ? 0 
++		    	entry->timeout = !map->timeout ? 0
 +				: (dtree->expires[d] - jiffies)/HZ;
 +			offset += sizeof(struct ip_set_req_iptree);
 +		}
@@ -5061,7 +5061,7 @@
 +static int __init ip_set_iptree_init(void)
 +{
 +	int ret;
-+	
++
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
 +	branch_cachep = kmem_cache_create("ip_set_iptreeb",
 +				sizeof(struct ip_set_iptreeb),
@@ -5095,7 +5095,7 @@
 +		goto out;
 +
 +	kmem_cache_destroy(leaf_cachep);
-+    free_branch:	
++    free_branch:
 +	kmem_cache_destroy(branch_cachep);
 +    out:
 +	return ret;
@@ -5411,13 +5411,13 @@
 +{
 +	int res;
 +
-+	res = __testip(set, 
-+		       ntohl(flags[index] & IPSET_SRC 
++	res = __testip(set,
++		       ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+				? ip_hdr(skb)->saddr 
++				? ip_hdr(skb)->saddr
 +				: ip_hdr(skb)->daddr),
 +#else
-+				? skb->nh.iph->saddr 
++				? skb->nh.iph->saddr
 +				: skb->nh.iph->daddr),
 +#endif
 +		       hash_ip);
@@ -5501,12 +5501,12 @@
 +{
 +
 +	return __addip_single(set,
-+			ntohl(flags[index] & IPSET_SRC 
++			ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+				? ip_hdr(skb)->saddr 
++				? ip_hdr(skb)->saddr
 +				: ip_hdr(skb)->daddr),
 +#else
-+				? skb->nh.iph->saddr 
++				? skb->nh.iph->saddr
 +				: skb->nh.iph->daddr),
 +#endif
 +			hash_ip);
@@ -5586,13 +5586,13 @@
 +static int
 +delip_kernel(struct ip_set *set, const struct sk_buff *skb, ip_set_ip_t *hash_ip, const u_int32_t *flags, unsigned char index)
 +{
-+	return __delip_single(set, 
-+			ntohl(flags[index] & IPSET_SRC 
++	return __delip_single(set,
++			ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+				? ip_hdr(skb)->saddr 
++				? ip_hdr(skb)->saddr
 +				: ip_hdr(skb)->daddr),
 +#else
-+				? skb->nh.iph->saddr 
++				? skb->nh.iph->saddr
 +				: skb->nh.iph->daddr),
 +#endif
 +			hash_ip,
@@ -5844,12 +5844,12 @@
 +	int a;
 +
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
-+	cachep_b = kmem_cache_create("ip_set_iptreemap_b", 
-+				     sizeof(struct ip_set_iptreemap_b), 
++	cachep_b = kmem_cache_create("ip_set_iptreemap_b",
++				     sizeof(struct ip_set_iptreemap_b),
 +				     0, 0, NULL);
 +#else
-+	cachep_b = kmem_cache_create("ip_set_iptreemap_b", 
-+				     sizeof(struct ip_set_iptreemap_b), 
++	cachep_b = kmem_cache_create("ip_set_iptreemap_b",
++				     sizeof(struct ip_set_iptreemap_b),
 +				     0, 0, NULL, NULL);
 +#endif
 +	if (!cachep_b) {
@@ -5858,11 +5858,11 @@
 +	}
 +
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23)
-+	cachep_c = kmem_cache_create("ip_set_iptreemap_c", 
++	cachep_c = kmem_cache_create("ip_set_iptreemap_c",
 +				     sizeof(struct ip_set_iptreemap_c),
 +				     0, 0, NULL);
 +#else
-+	cachep_c = kmem_cache_create("ip_set_iptreemap_c", 
++	cachep_c = kmem_cache_create("ip_set_iptreemap_c",
 +				     sizeof(struct ip_set_iptreemap_c),
 +				     0, 0, NULL, NULL);
 +#endif
@@ -5953,7 +5953,7 @@
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.  
++ * published by the Free Software Foundation.
 + */
 +
 +/* Kernel module implementing an IP set type: the macipmap type */
@@ -5978,7 +5978,7 @@
 +testip(struct ip_set *set, const void *data, size_t size, ip_set_ip_t *hash_ip)
 +{
 +	struct ip_set_macipmap *map = (struct ip_set_macipmap *) set->data;
-+	struct ip_set_macip *table = (struct ip_set_macip *) map->members;	
++	struct ip_set_macip *table = (struct ip_set_macip *) map->members;
 +	struct ip_set_req_macipmap *req = (struct ip_set_req_macipmap *) data;
 +
 +	if (size != sizeof(struct ip_set_req_macipmap)) {
@@ -5993,7 +5993,7 @@
 +
 +	*hash_ip = req->ip;
 +	DP("set: %s, ip:%u.%u.%u.%u, %u.%u.%u.%u",
-+	   set->name, HIPQUAD(req->ip), HIPQUAD(*hash_ip));		
++	   set->name, HIPQUAD(req->ip), HIPQUAD(*hash_ip));
 +	if (test_bit(IPSET_MACIP_ISSET,
 +		     (void *) &table[req->ip - map->first_ip].flags)) {
 +		return (memcmp(req->ethernet,
@@ -6005,7 +6005,7 @@
 +}
 +
 +static int
-+testip_kernel(struct ip_set *set, 
++testip_kernel(struct ip_set *set,
 +	      const struct sk_buff *skb,
 +	      ip_set_ip_t *hash_ip,
 +	      const u_int32_t *flags,
@@ -6016,10 +6016,10 @@
 +	struct ip_set_macip *table =
 +	    (struct ip_set_macip *) map->members;
 +	ip_set_ip_t ip;
-+	
++
 +	ip = ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+			? ip_hdr(skb)->saddr 
++			? ip_hdr(skb)->saddr
 +			: ip_hdr(skb)->daddr);
 +#else
 +			? skb->nh.iph->saddr
@@ -6029,9 +6029,9 @@
 +	if (ip < map->first_ip || ip > map->last_ip)
 +		return 0;
 +
-+	*hash_ip = ip;	
++	*hash_ip = ip;
 +	DP("set: %s, ip:%u.%u.%u.%u, %u.%u.%u.%u",
-+	   set->name, HIPQUAD(ip), HIPQUAD(*hash_ip));		
++	   set->name, HIPQUAD(ip), HIPQUAD(*hash_ip));
 +	if (test_bit(IPSET_MACIP_ISSET,
 +	    (void *) &table[ip - map->first_ip].flags)) {
 +		/* Is mac pointer valid?
@@ -6053,7 +6053,7 @@
 +
 +/* returns 0 on success */
 +static inline int
-+__addip(struct ip_set *set, 
++__addip(struct ip_set *set,
 +	ip_set_ip_t ip, unsigned char *ethernet, ip_set_ip_t *hash_ip)
 +{
 +	struct ip_set_macipmap *map =
@@ -6063,7 +6063,7 @@
 +
 +	if (ip < map->first_ip || ip > map->last_ip)
 +		return -ERANGE;
-+	if (test_and_set_bit(IPSET_MACIP_ISSET, 
++	if (test_and_set_bit(IPSET_MACIP_ISSET,
 +			     (void *) &table[ip - map->first_ip].flags))
 +		return -EEXIST;
 +
@@ -6090,17 +6090,17 @@
 +}
 +
 +static int
-+addip_kernel(struct ip_set *set, 
++addip_kernel(struct ip_set *set,
 +	     const struct sk_buff *skb,
 +	     ip_set_ip_t *hash_ip,
 +	     const u_int32_t *flags,
 +	     unsigned char index)
 +{
 +	ip_set_ip_t ip;
-+	
++
 +	ip = ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+			? ip_hdr(skb)->saddr 
++			? ip_hdr(skb)->saddr
 +			: ip_hdr(skb)->daddr);
 +#else
 +			? skb->nh.iph->saddr
@@ -6129,7 +6129,7 @@
 +
 +	if (ip < map->first_ip || ip > map->last_ip)
 +		return -ERANGE;
-+	if (!test_and_clear_bit(IPSET_MACIP_ISSET, 
++	if (!test_and_clear_bit(IPSET_MACIP_ISSET,
 +				(void *)&table[ip - map->first_ip].flags))
 +		return -EEXIST;
 +
@@ -6162,12 +6162,12 @@
 +	     unsigned char index)
 +{
 +	return __delip(set,
-+		       ntohl(flags[index] & IPSET_SRC 
++		       ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+				? ip_hdr(skb)->saddr 
++				? ip_hdr(skb)->saddr
 +				: ip_hdr(skb)->daddr),
 +#else
-+		       		? skb->nh.iph->saddr 
++		       		? skb->nh.iph->saddr
 +				: skb->nh.iph->daddr),
 +#endif
 +		       hash_ip);
@@ -6224,7 +6224,7 @@
 +		return -ENOMEM;
 +	}
 +	memset(map->members, 0, newbytes);
-+	
++
 +	set->data = map;
 +	return 0;
 +}
@@ -6328,7 +6328,7 @@
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.  
++ * published by the Free Software Foundation.
 + */
 +
 +/* Kernel module implementing a cidr nethash set */
@@ -6371,7 +6371,7 @@
 +	ip_set_ip_t *elem;
 +
 +	*hash_ip = pack(ip, cidr);
-+	
++
 +	for (i = 0; i < map->probes; i++) {
 +		id = jhash_ip(map, i, *hash_ip) % map->hashsize;
 +	   	DP("hash key: %u", id);
@@ -6416,7 +6416,7 @@
 +testip(struct ip_set *set, const void *data, size_t size,
 +       ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_req_nethash *req = 
++	struct ip_set_req_nethash *req =
 +	    (struct ip_set_req_nethash *) data;
 +
 +	if (size != sizeof(struct ip_set_req_nethash)) {
@@ -6430,19 +6430,19 @@
 +}
 +
 +static int
-+testip_kernel(struct ip_set *set, 
++testip_kernel(struct ip_set *set,
 +	      const struct sk_buff *skb,
 +	      ip_set_ip_t *hash_ip,
 +	      const u_int32_t *flags,
 +	      unsigned char index)
 +{
 +	return __testip(set,
-+			ntohl(flags[index] & IPSET_SRC 
++			ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+				? ip_hdr(skb)->saddr 
++				? ip_hdr(skb)->saddr
 +				: ip_hdr(skb)->daddr),
 +#else
-+				? skb->nh.iph->saddr 
++				? skb->nh.iph->saddr
 +				: skb->nh.iph->daddr),
 +#endif
 +			hash_ip);
@@ -6454,7 +6454,7 @@
 +	__u32 probe;
 +	u_int16_t i;
 +	ip_set_ip_t *elem;
-+	
++
 +	for (i = 0; i < map->probes; i++) {
 +		probe = jhash_ip(map, i, ip) % map->hashsize;
 +		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, probe);
@@ -6476,10 +6476,10 @@
 +{
 +	if (!ip || map->elements >= limit)
 +		return -ERANGE;
-+	
++
 +	*hash_ip = pack(ip, cidr);
 +	DP("%u.%u.%u.%u/%u, %u.%u.%u.%u", HIPQUAD(ip), cidr, HIPQUAD(*hash_ip));
-+	
++
 +	return __addip_base(map, *hash_ip);
 +}
 +
@@ -6488,7 +6488,7 @@
 +{
 +	unsigned char next;
 +	int i;
-+	
++
 +	for (i = 0; i < 30 && map->cidr[i]; i++) {
 +		if (map->cidr[i] == cidr) {
 +			return;
@@ -6506,7 +6506,7 @@
 +addip(struct ip_set *set, const void *data, size_t size,
 +        ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_req_nethash *req = 
++	struct ip_set_req_nethash *req =
 +	    (struct ip_set_req_nethash *) data;
 +	int ret;
 +
@@ -6516,18 +6516,18 @@
 +			      size);
 +		return -EINVAL;
 +	}
-+	ret = __addip((struct ip_set_nethash *) set->data, 
++	ret = __addip((struct ip_set_nethash *) set->data,
 +		      req->ip, req->cidr, hash_ip);
-+	
++
 +	if (ret == 0)
 +		update_cidr_sizes((struct ip_set_nethash *) set->data,
 +				  req->cidr);
-+	
++
 +	return ret;
 +}
 +
 +static int
-+addip_kernel(struct ip_set *set, 
++addip_kernel(struct ip_set *set,
 +	     const struct sk_buff *skb,
 +	     ip_set_ip_t *hash_ip,
 +	     const u_int32_t *flags,
@@ -6535,18 +6535,18 @@
 +{
 +	struct ip_set_nethash *map = (struct ip_set_nethash *) set->data;
 +	int ret = -ERANGE;
-+	ip_set_ip_t ip = ntohl(flags[index] & IPSET_SRC 
++	ip_set_ip_t ip = ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+					? ip_hdr(skb)->saddr 
++					? ip_hdr(skb)->saddr
 +					: ip_hdr(skb)->daddr);
 +#else
 +					? skb->nh.iph->saddr
 +					: skb->nh.iph->daddr);
 +#endif
-+	
++
 +	if (map->cidr[0])
 +		ret = __addip(map, ip, map->cidr[0], hash_ip);
-+		
++
 +	return ret;
 +}
 +
@@ -6558,23 +6558,23 @@
 +	u_int32_t i, hashsize = map->hashsize;
 +	int res;
 +	struct ip_set_nethash *tmp;
-+	
++
 +	if (map->resize == 0)
 +		return -ERANGE;
 +
 +    again:
 +    	res = 0;
-+    	
++
 +	/* Calculate new parameters */
 +	hashsize += (hashsize * map->resize)/100;
 +	if (hashsize == map->hashsize)
 +		hashsize++;
-+	
++
 +	ip_set_printk("rehashing of set %s triggered: "
 +		      "hashsize grows from %u to %u",
 +		      set->name, map->hashsize, hashsize);
 +
-+	tmp = kmalloc(sizeof(struct ip_set_nethash) 
++	tmp = kmalloc(sizeof(struct ip_set_nethash)
 +		      + map->probes * sizeof(uint32_t), GFP_ATOMIC);
 +	if (!tmp) {
 +		DP("out of memory for %d bytes",
@@ -6594,11 +6594,11 @@
 +	tmp->resize = map->resize;
 +	memcpy(tmp->initval, map->initval, map->probes * sizeof(uint32_t));
 +	memcpy(tmp->cidr, map->cidr, 30 * sizeof(unsigned char));
-+	
++
 +	write_lock_bh(&set->lock);
 +	map = (struct ip_set_nethash *) set->data; /* Play safe */
 +	for (i = 0; i < map->hashsize && res == 0; i++) {
-+		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);	
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);
 +		if (*elem)
 +			res = __addip_base(tmp, *elem);
 +	}
@@ -6609,10 +6609,10 @@
 +		kfree(tmp);
 +		goto again;
 +	}
-+	
++
 +	/* Success at resizing! */
 +	members = map->members;
-+	
++
 +	map->hashsize = tmp->hashsize;
 +	map->members = tmp->members;
 +	write_unlock_bh(&set->lock);
@@ -6631,11 +6631,11 @@
 +
 +	if (!ip)
 +		return -ERANGE;
-+	
++
 +	id = hash_id_cidr(map, ip, cidr, hash_ip);
 +	if (id == UINT_MAX)
 +		return -EEXIST;
-+		
++
 +	elem = HARRAY_ELEM(map->members, ip_set_ip_t *, id);
 +	*elem = 0;
 +	map->elements--;
@@ -6655,13 +6655,13 @@
 +			      size);
 +		return -EINVAL;
 +	}
-+	/* TODO: no garbage collection in map->cidr */		
-+	return __delip((struct ip_set_nethash *) set->data, 
++	/* TODO: no garbage collection in map->cidr */
++	return __delip((struct ip_set_nethash *) set->data,
 +		       req->ip, req->cidr, hash_ip);
 +}
 +
 +static int
-+delip_kernel(struct ip_set *set, 
++delip_kernel(struct ip_set *set,
 +	     const struct sk_buff *skb,
 +	     ip_set_ip_t *hash_ip,
 +	     const u_int32_t *flags,
@@ -6669,18 +6669,18 @@
 +{
 +	struct ip_set_nethash *map = (struct ip_set_nethash *) set->data;
 +	int ret = -ERANGE;
-+	ip_set_ip_t ip = ntohl(flags[index] & IPSET_SRC 
++	ip_set_ip_t ip = ntohl(flags[index] & IPSET_SRC
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
-+					? ip_hdr(skb)->saddr 
++					? ip_hdr(skb)->saddr
 +					: ip_hdr(skb)->daddr);
 +#else
 +					? skb->nh.iph->saddr
 +					: skb->nh.iph->daddr);
 +#endif
-+	
++
 +	if (map->cidr[0])
 +		ret = __delip(map, ip, map->cidr[0], hash_ip);
-+	
++
 +	return ret;
 +}
 +
@@ -6728,7 +6728,7 @@
 +		kfree(map);
 +		return -ENOMEM;
 +	}
-+	
++
 +	set->data = map;
 +	return 0;
 +}
@@ -6775,7 +6775,7 @@
 +	ip_set_ip_t i, *elem;
 +
 +	for (i = 0; i < map->hashsize; i++) {
-+		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);	
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);
 +		((ip_set_ip_t *)data)[i] = *elem;
 +	}
 +}
@@ -6828,7 +6828,7 @@
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.  
++ * published by the Free Software Foundation.
 + */
 +
 +/* Kernel module implementing a port set type as a bitmap */
@@ -6863,7 +6863,7 @@
 +	switch (iph->protocol) {
 +	case IPPROTO_TCP: {
 +		struct tcphdr tcph;
-+		
++
 +		/* See comments at tcp_match in ip_tables.c */
 +		if (offset)
 +			return INVALID_PORT;
@@ -6875,7 +6875,7 @@
 +#endif
 +			/* No choice either */
 +			return INVALID_PORT;
-+	     	
++
 +	     	return ntohs(flags & IPSET_SRC ?
 +			     tcph.source : tcph.dest);
 +	    }
@@ -6892,7 +6892,7 @@
 +#endif
 +			/* No choice either */
 +			return INVALID_PORT;
-+	     	
++
 +	     	return ntohs(flags & IPSET_SRC ?
 +			     udph.source : udph.dest);
 +	    }
@@ -6908,7 +6908,7 @@
 +
 +	if (port < map->first_port || port > map->last_port)
 +		return -ERANGE;
-+		
++
 +	*hash_port = port;
 +	DP("set: %s, port:%u, %u", set->name, port, *hash_port);
 +	return !!test_bit(port - map->first_port, map->members);
@@ -6918,7 +6918,7 @@
 +testport(struct ip_set *set, const void *data, size_t size,
 +         ip_set_ip_t *hash_port)
 +{
-+	struct ip_set_req_portmap *req = 
++	struct ip_set_req_portmap *req =
 +	    (struct ip_set_req_portmap *) data;
 +
 +	if (size != sizeof(struct ip_set_req_portmap)) {
@@ -6931,7 +6931,7 @@
 +}
 +
 +static int
-+testport_kernel(struct ip_set *set, 
++testport_kernel(struct ip_set *set,
 +	        const struct sk_buff *skb,
 +	        ip_set_ip_t *hash_port,
 +	        const u_int32_t *flags,
@@ -6940,12 +6940,12 @@
 +	int res;
 +	ip_set_ip_t port = get_port(skb, flags[index]);
 +
-+	DP("flag %s port %u", flags[index] & IPSET_SRC ? "SRC" : "DST", port);	
++	DP("flag %s port %u", flags[index] & IPSET_SRC ? "SRC" : "DST", port);
 +	if (port == INVALID_PORT)
-+		return 0;	
++		return 0;
 +
 +	res =  __testport(set, port, hash_port);
-+	
++
 +	return (res < 0 ? 0 : res);
 +}
 +
@@ -6958,7 +6958,7 @@
 +		return -ERANGE;
 +	if (test_and_set_bit(port - map->first_port, map->members))
 +		return -EEXIST;
-+		
++
 +	*hash_port = port;
 +	DP("port %u", port);
 +	return 0;
@@ -6968,7 +6968,7 @@
 +addport(struct ip_set *set, const void *data, size_t size,
 +        ip_set_ip_t *hash_port)
 +{
-+	struct ip_set_req_portmap *req = 
++	struct ip_set_req_portmap *req =
 +	    (struct ip_set_req_portmap *) data;
 +
 +	if (size != sizeof(struct ip_set_req_portmap)) {
@@ -6981,14 +6981,14 @@
 +}
 +
 +static int
-+addport_kernel(struct ip_set *set, 
++addport_kernel(struct ip_set *set,
 +	       const struct sk_buff *skb,
 +	       ip_set_ip_t *hash_port,
 +	       const u_int32_t *flags,
 +	       unsigned char index)
 +{
 +	ip_set_ip_t port = get_port(skb, flags[index]);
-+	
++
 +	if (port == INVALID_PORT)
 +		return -EINVAL;
 +
@@ -7004,7 +7004,7 @@
 +		return -ERANGE;
 +	if (!test_and_clear_bit(port - map->first_port, map->members))
 +		return -EEXIST;
-+		
++
 +	*hash_port = port;
 +	DP("port %u", port);
 +	return 0;
@@ -7027,14 +7027,14 @@
 +}
 +
 +static int
-+delport_kernel(struct ip_set *set, 
++delport_kernel(struct ip_set *set,
 +	       const struct sk_buff *skb,
 +	       ip_set_ip_t *hash_port,
 +	       const u_int32_t *flags,
 +	       unsigned char index)
 +{
 +	ip_set_ip_t port = get_port(skb, flags[index]);
-+	
++
 +	if (port == INVALID_PORT)
 +		return -EINVAL;
 +
@@ -7180,7 +7180,7 @@
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.  
++ * published by the Free Software Foundation.
 + */
 +
 +/* Kernel module to match an IP set. */
@@ -7198,7 +7198,7 @@
 +match_set(const struct ipt_set_info *info,
 +	  const struct sk_buff *skb,
 +	  int inv)
-+{	
++{
 +	if (ip_set_testip_kernel(info->index, skb, info->flags))
 +		inv = !inv;
 +	return inv;
@@ -7225,7 +7225,7 @@
 +#endif
 +{
 +	const struct ipt_set_info_match *info = matchinfo;
-+		
++
 +	return match_set(&info->match_set,
 +			 skb,
 +			 info->match_set.flags[0] & IPSET_MATCH_INV);
@@ -7251,7 +7251,7 @@
 +#endif
 +	   unsigned int hook_mask)
 +{
-+	struct ipt_set_info_match *info = 
++	struct ipt_set_info_match *info =
 +		(struct ipt_set_info_match *) matchinfo;
 +	ip_set_id_t index;
 +
@@ -7263,7 +7263,7 @@
 +#endif
 +
 +	index = ip_set_get_byindex(info->match_set.index);
-+		
++
 +	if (index == IP_SET_INVALID_ID) {
 +		ip_set_printk("Cannot find set indentified by id %u to match",
 +			      info->match_set.index);
@@ -7343,7 +7343,7 @@
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.  
++ * published by the Free Software Foundation.
 + */
 +
 +/* ipt_SET.c - netfilter target to manipulate IP sets */
@@ -7386,7 +7386,7 @@
 +#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
 +	struct sk_buff *skb = *pskb;
 +#endif
-+	
++
 +	if (info->add_set.index != IP_SET_INVALID_ID)
 +		ip_set_addip_kernel(info->add_set.index,
 +				    skb,
@@ -7415,11 +7415,11 @@
 +#endif
 +	   void *targinfo,
 +#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
-+	   unsigned int targinfosize, 
++	   unsigned int targinfosize,
 +#endif
 +	   unsigned int hook_mask)
 +{
-+	struct ipt_set_info_target *info = 
++	struct ipt_set_info_target *info =
 +		(struct ipt_set_info_target *) targinfo;
 +	ip_set_id_t index;
 +

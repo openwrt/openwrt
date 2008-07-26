@@ -21,7 +21,7 @@
 +	spin_lock(&sequence_lock);
 +	seq = ++uevent_seqnum;
 +	spin_unlock(&sequence_lock);
-+	
++
 +	return seq;
 +}
 +EXPORT_SYMBOL_GPL(uevent_next_seqnum);

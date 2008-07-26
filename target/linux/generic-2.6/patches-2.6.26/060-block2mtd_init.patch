@@ -35,23 +35,20 @@
 +
  	if (!dev->mtd.name)
  		goto devinit_err;
-+	
-+	strcpy(dev->mtd.name, mtdname);
  
 -	sprintf(dev->mtd.name, "block2mtd: %s", devname);
--
++	strcpy(dev->mtd.name, mtdname);
+ 
 -	dev->mtd.size = dev->blkdev->bd_inode->i_size & PAGE_MASK;
 +	dev->mtd.size = dev->blkdev->bd_inode->i_size & PAGE_MASK & ~(erase_size - 1);
  	dev->mtd.erasesize = erase_size;
  	dev->mtd.writesize = 1;
  	dev->mtd.type = MTD_RAM;
-@@ -298,15 +304,18 @@
- 	dev->mtd.read = block2mtd_read;
+@@ -299,14 +305,17 @@
  	dev->mtd.priv = dev;
  	dev->mtd.owner = THIS_MODULE;
--
+ 
 -	if (add_mtd_device(&dev->mtd)) {
-+	
 +	part = kzalloc(sizeof(struct mtd_partition), GFP_KERNEL);
 +	part->name = dev->mtd.name;
 +	part->offset = 0;
