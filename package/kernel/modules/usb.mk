@@ -574,6 +574,25 @@ endef
 $(eval $(call KernelPackage,usb-net-asix))
 
 
+define KernelPackage/usb-net-hso
+  $(call usbdep,kmod-usb-net @LINUX_2_6)
+  TITLE:=Kernel module for Option USB High Speed Mobile Devices
+  KCONFIG:= \
+	CONFIG_RFKILL \
+	CONFIG_USB_HSO
+  FILES:= \
+	$(LINUX_DIR)/net/rfkill/rfkill.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/$(USBNET_DIR)/hso.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,61,rfkill hso)
+endef
+
+define KernelPackage/usb-net-hso/description
+ Kernel module for Option USB High Speed Mobile Devices
+endef
+
+$(eval $(call KernelPackage,usb-net-hso))
+
+
 define KernelPackage/usb-net-kaweth
   $(call usbdep,kmod-usb-net @LINUX_2_6)
   TITLE:=Kernel module for USB-to-Ethernet Kaweth convertors
