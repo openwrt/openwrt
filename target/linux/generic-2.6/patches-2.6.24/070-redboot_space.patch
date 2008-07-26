@@ -15,15 +15,15 @@
 +				parts[i].size = fl->next->img->flash_base;
 +				parts[i].size &= ~(master->erasesize - 1);
 +				parts[i].size -= parts[i].offset;
-+			}
 +#ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
-+			else {
++				nrparts--;
++			} else {
 +				i++;
 +				parts[i].offset = parts[i-1].size + parts[i-1].offset;
 +				parts[i].size = fl->next->img->flash_base - parts[i].offset;
 +				parts[i].name = nullname;
-+			}
  #endif
++			}
 +		}
  		tmp_fl = fl;
  		fl = fl->next;
