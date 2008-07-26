@@ -1,5 +1,5 @@
---- linux-2.6.25.10.n/arch/arm/mach-at91/Kconfig	2008-07-04 13:07:01.000000000 +0200
-+++ linux-2.6.25.10/arch/arm/mach-at91/Kconfig	2008-07-03 13:44:35.000000000 +0200
+--- a/arch/arm/mach-at91/Kconfig
++++ b/arch/arm/mach-at91/Kconfig
 @@ -151,6 +151,12 @@
  	help
  	  Select this if you are using Toptech's TT9200 board.
@@ -13,8 +13,8 @@
  endif
  
  # ----------------------------------------------------------
---- linux-2.6.25.10.n/arch/arm/mach-at91/Makefile	2008-07-04 13:05:05.000000000 +0200
-+++ linux-2.6.25.10/arch/arm/mach-at91/Makefile	2008-07-03 13:44:35.000000000 +0200
+--- a/arch/arm/mach-at91/Makefile
++++ b/arch/arm/mach-at91/Makefile
 @@ -29,6 +29,7 @@
  obj-$(CONFIG_MACH_ATEB9200)	+= board-eb9200.o
  obj-$(CONFIG_MACH_KAFA)		+= board-kafa.o
@@ -23,8 +23,8 @@
  obj-$(CONFIG_MACH_PICOTUX2XX)	+= board-picotux200.o
  obj-$(CONFIG_MACH_HOMEMATIC)	+= board-homematic.o
  obj-$(CONFIG_MACH_ECBAT91)	+= board-ecbat91.o
---- linux-2.6.25.10.n/arch/arm/mach-at91/board-vlink.c	2008-07-04 13:06:19.000000000 +0200
-+++ linux-2.6.25.10/arch/arm/mach-at91/board-vlink.c	2008-07-04 12:45:48.000000000 +0200
+--- /dev/null
++++ b/arch/arm/mach-at91/board-vlink.c
 @@ -0,0 +1,201 @@
 +/*
 + * linux/arch/arm/mach-at91/board-vlink.c

@@ -19,11 +19,9 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
 ---
 
-diff --git a/drivers/gpio/gpiolib.c b/drivers/gpio/gpiolib.c
-index 2ba6127..24c62b8 100644
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
-@@ -43,6 +43,7 @@ struct gpio_desc {
+@@ -43,6 +43,7 @@
  /* flag symbols are bit numbers */
  #define FLAG_REQUESTED	0
  #define FLAG_IS_OUT	1
@@ -31,7 +29,7 @@ index 2ba6127..24c62b8 100644
  
  #ifdef CONFIG_DEBUG_FS
  	const char		*label;
-@@ -88,9 +89,10 @@ static int gpiochip_find_base(int ngpio)
+@@ -88,9 +89,10 @@
  	int base = -ENOSPC;
  
  	for (i = ARCH_NR_GPIOS - 1; i >= 0 ; i--) {
@@ -44,7 +42,7 @@ index 2ba6127..24c62b8 100644
  			spare++;
  			if (spare == ngpio) {
  				base = i;
-@@ -98,7 +100,8 @@ static int gpiochip_find_base(int ngpio)
+@@ -98,7 +100,8 @@
  			}
  		} else {
  			spare = 0;
@@ -54,7 +52,7 @@ index 2ba6127..24c62b8 100644
  		}
  	}
  
-@@ -108,6 +111,47 @@ static int gpiochip_find_base(int ngpio)
+@@ -108,6 +111,47 @@
  }
  
  /**
@@ -102,11 +100,9 @@ index 2ba6127..24c62b8 100644
   * gpiochip_add() - register a gpio_chip
   * @chip: the chip to register, with chip->base initialized
   * Context: potentially before irqs or kmalloc will work
-diff --git a/include/asm-generic/gpio.h b/include/asm-generic/gpio.h
-index 464c5b3..ecf675a 100644
 --- a/include/asm-generic/gpio.h
 +++ b/include/asm-generic/gpio.h
-@@ -74,6 +74,7 @@ struct gpio_chip {
+@@ -74,6 +74,7 @@
  
  extern const char *gpiochip_is_requested(struct gpio_chip *chip,
  			unsigned offset);

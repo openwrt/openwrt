@@ -1,6 +1,5 @@
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/Kconfig linux-2.6/arch/arm/mach-at91/Kconfig
---- linux-2.6.25/arch/arm/mach-at91/Kconfig	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/Kconfig	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/Kconfig
++++ b/arch/arm/mach-at91/Kconfig
 @@ -12,18 +12,28 @@
  
  config ARCH_AT91SAM9260
@@ -165,9 +164,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/Kconfig linux-2.6/arch/arm/mach
  config AT91_TIMER_HZ
         int "Kernel HZ (jiffies per second)"
         range 32 1024
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/Makefile linux-2.6/arch/arm/mach-at91/Makefile
---- linux-2.6.25/arch/arm/mach-at91/Makefile	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/Makefile	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/Makefile
++++ b/arch/arm/mach-at91/Makefile
 @@ -28,16 +28,26 @@
  obj-$(CONFIG_MACH_KB9200)	+= board-kb9202.o
  obj-$(CONFIG_MACH_ATEB9200)	+= board-eb9200.o
@@ -207,9 +205,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/Makefile linux-2.6/arch/arm/mac
  
  ifeq ($(CONFIG_PM_DEBUG),y)
  CFLAGS_pm.o += -DDEBUG
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91cap9.c linux-2.6/arch/arm/mach-at91/at91cap9.c
---- linux-2.6.25/arch/arm/mach-at91/at91cap9.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/at91cap9.c	2008-05-05 22:01:39.000000000 +0200
+--- a/arch/arm/mach-at91/at91cap9.c
++++ b/arch/arm/mach-at91/at91cap9.c
 @@ -13,12 +13,15 @@
   */
  
@@ -260,9 +257,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91cap9.c linux-2.6/arch/arm/m
  }
  
  /* --------------------------------------------------------------------
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91cap9_devices.c linux-2.6/arch/arm/mach-at91/at91cap9_devices.c
---- linux-2.6.25/arch/arm/mach-at91/at91cap9_devices.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/at91cap9_devices.c	2008-05-05 22:01:39.000000000 +0200
+--- a/arch/arm/mach-at91/at91cap9_devices.c
++++ b/arch/arm/mach-at91/at91cap9_devices.c
 @@ -13,18 +13,20 @@
   */
  #include <asm/mach/arch.h>
@@ -554,9 +550,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91cap9_devices.c linux-2.6/ar
  	return 0;
  }
  
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91rm9200_devices.c linux-2.6/arch/arm/mach-at91/at91rm9200_devices.c
---- linux-2.6.25/arch/arm/mach-at91/at91rm9200_devices.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/at91rm9200_devices.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/at91rm9200_devices.c
++++ b/arch/arm/mach-at91/at91rm9200_devices.c
 @@ -513,7 +513,18 @@
   *  SPI
   * -------------------------------------------------------------------- */
@@ -734,9 +729,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91rm9200_devices.c linux-2.6/
  	return 0;
  }
  
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91rm9200_time.c linux-2.6/arch/arm/mach-at91/at91rm9200_time.c
---- linux-2.6.25/arch/arm/mach-at91/at91rm9200_time.c	2008-05-03 00:15:33.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/at91rm9200_time.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/at91rm9200_time.c
++++ b/arch/arm/mach-at91/at91rm9200_time.c
 @@ -136,8 +136,6 @@
  	u32		alm;
  	int		status = 0;
@@ -746,9 +740,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91rm9200_time.c linux-2.6/arc
  	/* Use "raw" primitives so we behave correctly on RT kernels. */
  	raw_local_irq_save(flags);
  
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam9260.c linux-2.6/arch/arm/mach-at91/at91sam9260.c
---- linux-2.6.25/arch/arm/mach-at91/at91sam9260.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/at91sam9260.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/at91sam9260.c
++++ b/arch/arm/mach-at91/at91sam9260.c
 @@ -11,6 +11,7 @@
   */
  
@@ -785,9 +778,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam9260.c linux-2.6/arch/ar
  	at91_extern_irq = (1 << AT91SAM9260_ID_IRQ0) | (1 << AT91SAM9260_ID_IRQ1)
  			| (1 << AT91SAM9260_ID_IRQ2);
  
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam9260_devices.c linux-2.6/arch/arm/mach-at91/at91sam9260_devices.c
---- linux-2.6.25/arch/arm/mach-at91/at91sam9260_devices.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/at91sam9260_devices.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/at91sam9260_devices.c
++++ b/arch/arm/mach-at91/at91sam9260_devices.c
 @@ -19,8 +19,8 @@
  #include <asm/arch/board.h>
  #include <asm/arch/gpio.h>
@@ -958,9 +950,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam9260_devices.c linux-2.6
  	return 0;
  }
  
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam9261.c linux-2.6/arch/arm/mach-at91/at91sam9261.c
---- linux-2.6.25/arch/arm/mach-at91/at91sam9261.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/at91sam9261.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/at91sam9261.c
++++ b/arch/arm/mach-at91/at91sam9261.c
 @@ -11,12 +11,14 @@
   */
  
@@ -996,9 +987,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam9261.c linux-2.6/arch/ar
  	at91_extern_irq = (1 << AT91SAM9261_ID_IRQ0) | (1 << AT91SAM9261_ID_IRQ1)
  			| (1 << AT91SAM9261_ID_IRQ2);
  
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam9261_devices.c linux-2.6/arch/arm/mach-at91/at91sam9261_devices.c
---- linux-2.6.25/arch/arm/mach-at91/at91sam9261_devices.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/at91sam9261_devices.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/at91sam9261_devices.c
++++ b/arch/arm/mach-at91/at91sam9261_devices.c
 @@ -24,7 +24,7 @@
  #include <asm/arch/gpio.h>
  #include <asm/arch/at91sam9261.h>
@@ -1116,9 +1106,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam9261_devices.c linux-2.6
  	return 0;
  }
  
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam9263.c linux-2.6/arch/arm/mach-at91/at91sam9263.c
---- linux-2.6.25/arch/arm/mach-at91/at91sam9263.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/at91sam9263.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/at91sam9263.c
++++ b/arch/arm/mach-at91/at91sam9263.c
 @@ -11,12 +11,14 @@
   */
  
@@ -1154,9 +1143,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam9263.c linux-2.6/arch/ar
  	at91_extern_irq = (1 << AT91SAM9263_ID_IRQ0) | (1 << AT91SAM9263_ID_IRQ1);
  
  	/* Init clock subsystem */
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam9263_devices.c linux-2.6/arch/arm/mach-at91/at91sam9263_devices.c
---- linux-2.6.25/arch/arm/mach-at91/at91sam9263_devices.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/at91sam9263_devices.c	2008-04-25 21:16:23.000000000 +0200
+--- a/arch/arm/mach-at91/at91sam9263_devices.c
++++ b/arch/arm/mach-at91/at91sam9263_devices.c
 @@ -22,8 +22,8 @@
  #include <asm/arch/board.h>
  #include <asm/arch/gpio.h>
@@ -1297,9 +1285,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam9263_devices.c linux-2.6
  	return 0;
  }
  
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam926x_time.c linux-2.6/arch/arm/mach-at91/at91sam926x_time.c
---- linux-2.6.25/arch/arm/mach-at91/at91sam926x_time.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/at91sam926x_time.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/at91sam926x_time.c
++++ b/arch/arm/mach-at91/at91sam926x_time.c
 @@ -1,23 +1,20 @@
  /*
 - * linux/arch/arm/mach-at91/at91sam926x_time.c
@@ -1534,9 +1521,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam926x_time.c linux-2.6/ar
 +	.resume		= at91sam926x_pit_reset,
  };
 -
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam9rl.c linux-2.6/arch/arm/mach-at91/at91sam9rl.c
---- linux-2.6.25/arch/arm/mach-at91/at91sam9rl.c	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/at91sam9rl.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/at91sam9rl.c
++++ b/arch/arm/mach-at91/at91sam9rl.c
 @@ -10,6 +10,7 @@
   */
  
@@ -1573,9 +1559,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam9rl.c linux-2.6/arch/arm
  	at91_extern_irq = (1 << AT91SAM9RL_ID_IRQ0);
  
  	/* Init clock subsystem */
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam9rl_devices.c linux-2.6/arch/arm/mach-at91/at91sam9rl_devices.c
---- linux-2.6.25/arch/arm/mach-at91/at91sam9rl_devices.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/at91sam9rl_devices.c	2008-05-02 00:52:36.000000000 +0200
+--- a/arch/arm/mach-at91/at91sam9rl_devices.c
++++ b/arch/arm/mach-at91/at91sam9rl_devices.c
 @@ -20,12 +20,107 @@
  #include <asm/arch/gpio.h>
  #include <asm/arch/at91sam9rl.h>
@@ -1873,9 +1858,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/at91sam9rl_devices.c linux-2.6/
  	return 0;
  }
  
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-cam60.c linux-2.6/arch/arm/mach-at91/board-cam60.c
---- linux-2.6.25/arch/arm/mach-at91/board-cam60.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-cam60.c	2008-04-25 21:15:43.000000000 +0200
+--- /dev/null
++++ b/arch/arm/mach-at91/board-cam60.c
 @@ -0,0 +1,180 @@
 +/*
 + * KwikByte CAM60 (KB9260)
@@ -2057,9 +2041,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-cam60.c linux-2.6/arch/ar
 +	.init_irq	= cam60_init_irq,
 +	.init_machine	= cam60_board_init,
 +MACHINE_END
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-cap9adk.c linux-2.6/arch/arm/mach-at91/board-cap9adk.c
---- linux-2.6.25/arch/arm/mach-at91/board-cap9adk.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-cap9adk.c	2008-05-05 22:01:39.000000000 +0200
+--- a/arch/arm/mach-at91/board-cap9adk.c
++++ b/arch/arm/mach-at91/board-cap9adk.c
 @@ -36,16 +36,14 @@
  #include <asm/hardware.h>
  #include <asm/setup.h>
@@ -2119,9 +2102,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-cap9adk.c linux-2.6/arch/
  	at91_add_device_lcdc(&cap9adk_lcdc_data);
  	/* AC97 */
  	at91_add_device_ac97(&cap9adk_ac97_data);
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-carmeva.c linux-2.6/arch/arm/mach-at91/board-carmeva.c
---- linux-2.6.25/arch/arm/mach-at91/board-carmeva.c	2008-05-03 00:15:33.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-carmeva.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/board-carmeva.c
++++ b/arch/arm/mach-at91/board-carmeva.c
 @@ -40,24 +40,21 @@
  #include "generic.h"
  
@@ -2197,9 +2179,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-carmeva.c linux-2.6/arch/
  }
  
  MACHINE_START(CARMEVA, "Carmeva")
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-chub.c linux-2.6/arch/arm/mach-at91/board-chub.c
---- linux-2.6.25/arch/arm/mach-at91/board-chub.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-chub.c	2008-04-25 21:15:43.000000000 +0200
+--- /dev/null
++++ b/arch/arm/mach-at91/board-chub.c
 @@ -0,0 +1,132 @@
 +/*
 + * linux/arch/arm/mach-at91/board-chub.c
@@ -2333,9 +2314,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-chub.c linux-2.6/arch/arm
 +	.init_irq	= chub_init_irq,
 +	.init_machine	= chub_board_init,
 +MACHINE_END
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-csb337.c linux-2.6/arch/arm/mach-at91/board-csb337.c
---- linux-2.6.25/arch/arm/mach-at91/board-csb337.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-csb337.c	2008-05-02 00:05:42.000000000 +0200
+--- a/arch/arm/mach-at91/board-csb337.c
++++ b/arch/arm/mach-at91/board-csb337.c
 @@ -61,6 +61,7 @@
  
  	/* Setup the LEDs */
@@ -2368,9 +2348,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-csb337.c linux-2.6/arch/a
  };
  
  
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-csb637.c linux-2.6/arch/arm/mach-at91/board-csb637.c
---- linux-2.6.25/arch/arm/mach-at91/board-csb637.c	2008-05-03 00:15:33.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-csb637.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/board-csb637.c
++++ b/arch/arm/mach-at91/board-csb637.c
 @@ -40,27 +40,16 @@
  #include "generic.h"
  
@@ -2423,9 +2402,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-csb637.c linux-2.6/arch/a
  	/* Serial */
  	at91_add_device_serial();
  	/* Ethernet */
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-dk.c linux-2.6/arch/arm/mach-at91/board-dk.c
---- linux-2.6.25/arch/arm/mach-at91/board-dk.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-dk.c	2008-05-03 00:44:06.000000000 +0200
+--- a/arch/arm/mach-at91/board-dk.c
++++ b/arch/arm/mach-at91/board-dk.c
 @@ -25,6 +25,7 @@
  #include <linux/init.h>
  #include <linux/mm.h>
@@ -2680,9 +2658,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-dk.c linux-2.6/arch/arm/m
  }
  
  MACHINE_START(AT91RM9200DK, "Atmel AT91RM9200-DK")
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-eb9200.c linux-2.6/arch/arm/mach-at91/board-eb9200.c
---- linux-2.6.25/arch/arm/mach-at91/board-eb9200.c	2008-05-03 00:15:33.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-eb9200.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/board-eb9200.c
++++ b/arch/arm/mach-at91/board-eb9200.c
 @@ -40,24 +40,24 @@
  #include "generic.h"
  
@@ -2721,9 +2698,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-eb9200.c linux-2.6/arch/a
  }
  
  static void __init eb9200_init_irq(void)
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-ecbat91.c linux-2.6/arch/arm/mach-at91/board-ecbat91.c
---- linux-2.6.25/arch/arm/mach-at91/board-ecbat91.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-ecbat91.c	2008-04-25 21:15:43.000000000 +0200
+--- /dev/null
++++ b/arch/arm/mach-at91/board-ecbat91.c
 @@ -0,0 +1,178 @@
 +/*
 + * linux/arch/arm/mach-at91rm9200/board-ecbat91.c
@@ -2903,9 +2879,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-ecbat91.c linux-2.6/arch/
 +	.init_irq	= ecb_at91init_irq,
 +	.init_machine	= ecb_at91board_init,
 +MACHINE_END
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-ek.c linux-2.6/arch/arm/mach-at91/board-ek.c
---- linux-2.6.25/arch/arm/mach-at91/board-ek.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-ek.c	2008-05-03 00:44:38.000000000 +0200
+--- a/arch/arm/mach-at91/board-ek.c
++++ b/arch/arm/mach-at91/board-ek.c
 @@ -25,6 +25,7 @@
  #include <linux/init.h>
  #include <linux/mm.h>
@@ -3157,9 +3132,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-ek.c linux-2.6/arch/arm/m
  }
  
  MACHINE_START(AT91RM9200EK, "Atmel AT91RM9200-EK")
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-homematic.c linux-2.6/arch/arm/mach-at91/board-homematic.c
---- linux-2.6.25/arch/arm/mach-at91/board-homematic.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-homematic.c	2008-04-25 21:15:43.000000000 +0200
+--- /dev/null
++++ b/arch/arm/mach-at91/board-homematic.c
 @@ -0,0 +1,163 @@
 +/*
 + * linux/arch/arm/mach-at91/board-homematic.c
@@ -3324,9 +3298,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-homematic.c linux-2.6/arc
 +	.init_irq	= homematic_init_irq,
 +	.init_machine	= homematic_board_init,
 +MACHINE_END
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-kb9202.c linux-2.6/arch/arm/mach-at91/board-kb9202.c
---- linux-2.6.25/arch/arm/mach-at91/board-kb9202.c	2008-05-03 00:15:33.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-kb9202.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/board-kb9202.c
++++ b/arch/arm/mach-at91/board-kb9202.c
 @@ -37,19 +37,10 @@
  #include <asm/arch/board.h>
  #include <asm/arch/gpio.h>
@@ -3430,9 +3403,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-kb9202.c linux-2.6/arch/a
  }
  
  MACHINE_START(KB9200, "KB920x")
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-qil-a9260.c linux-2.6/arch/arm/mach-at91/board-qil-a9260.c
---- linux-2.6.25/arch/arm/mach-at91/board-qil-a9260.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-qil-a9260.c	2008-04-25 21:15:43.000000000 +0200
+--- /dev/null
++++ b/arch/arm/mach-at91/board-qil-a9260.c
 @@ -0,0 +1,255 @@
 +/*
 + * linux/arch/arm/mach-at91/board-qil-a9260.c
@@ -3689,9 +3661,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-qil-a9260.c linux-2.6/arc
 +	.init_irq	= ek_init_irq,
 +	.init_machine	= ek_board_init,
 +MACHINE_END
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-sam9-l9260.c linux-2.6/arch/arm/mach-at91/board-sam9-l9260.c
---- linux-2.6.25/arch/arm/mach-at91/board-sam9-l9260.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-sam9-l9260.c	2008-04-25 21:15:43.000000000 +0200
+--- /dev/null
++++ b/arch/arm/mach-at91/board-sam9-l9260.c
 @@ -0,0 +1,199 @@
 +/*
 + * linux/arch/arm/mach-at91/board-sam9-l9260.c
@@ -3892,9 +3863,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-sam9-l9260.c linux-2.6/ar
 +	.init_irq	= ek_init_irq,
 +	.init_machine	= ek_board_init,
 +MACHINE_END
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-sam9260ek.c linux-2.6/arch/arm/mach-at91/board-sam9260ek.c
---- linux-2.6.25/arch/arm/mach-at91/board-sam9260ek.c	2008-05-03 00:15:33.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-sam9260ek.c	2008-05-01 23:56:24.000000000 +0200
+--- a/arch/arm/mach-at91/board-sam9260ek.c
++++ b/arch/arm/mach-at91/board-sam9260ek.c
 @@ -25,6 +25,10 @@
  #include <linux/module.h>
  #include <linux/platform_device.h>
@@ -4087,9 +4057,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-sam9260ek.c linux-2.6/arc
  }
  
  MACHINE_START(AT91SAM9260EK, "Atmel AT91SAM9260-EK")
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-sam9261ek.c linux-2.6/arch/arm/mach-at91/board-sam9261ek.c
---- linux-2.6.25/arch/arm/mach-at91/board-sam9261ek.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-sam9261ek.c	2008-05-01 23:53:20.000000000 +0200
+--- a/arch/arm/mach-at91/board-sam9261ek.c
++++ b/arch/arm/mach-at91/board-sam9261ek.c
 @@ -26,6 +26,8 @@
  #include <linux/platform_device.h>
  #include <linux/spi/spi.h>
@@ -4296,9 +4265,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-sam9261ek.c linux-2.6/arc
  }
  
  MACHINE_START(AT91SAM9261EK, "Atmel AT91SAM9261-EK")
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-sam9263ek.c linux-2.6/arch/arm/mach-at91/board-sam9263ek.c
---- linux-2.6.25/arch/arm/mach-at91/board-sam9263ek.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-sam9263ek.c	2008-05-01 23:53:20.000000000 +0200
+--- a/arch/arm/mach-at91/board-sam9263ek.c
++++ b/arch/arm/mach-at91/board-sam9263ek.c
 @@ -43,29 +43,24 @@
  
  #include <asm/arch/board.h>
@@ -4378,9 +4346,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-sam9263ek.c linux-2.6/arc
  }
  
  MACHINE_START(AT91SAM9263EK, "Atmel AT91SAM9263-EK")
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-sam9rlek.c linux-2.6/arch/arm/mach-at91/board-sam9rlek.c
---- linux-2.6.25/arch/arm/mach-at91/board-sam9rlek.c	2008-05-03 00:15:33.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-sam9rlek.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/board-sam9rlek.c
++++ b/arch/arm/mach-at91/board-sam9rlek.c
 @@ -29,29 +29,24 @@
  
  #include <asm/arch/board.h>
@@ -4454,9 +4421,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-sam9rlek.c linux-2.6/arch
  }
  
  MACHINE_START(AT91SAM9RLEK, "Atmel AT91SAM9RL-EK")
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-tms.c linux-2.6/arch/arm/mach-at91/board-tms.c
---- linux-2.6.25/arch/arm/mach-at91/board-tms.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-tms.c	2008-04-25 21:15:43.000000000 +0200
+--- /dev/null
++++ b/arch/arm/mach-at91/board-tms.c
 @@ -0,0 +1,198 @@
 +/*
 +* linux/arch/arm/mach-at91/board-tms.c
@@ -4656,9 +4622,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-tms.c linux-2.6/arch/arm/
 +	.init_irq	= tms_init_irq,
 +	.init_machine	= tms_board_init,
 +MACHINE_END
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-tt9200.c linux-2.6/arch/arm/mach-at91/board-tt9200.c
---- linux-2.6.25/arch/arm/mach-at91/board-tt9200.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-tt9200.c	2008-04-25 21:15:43.000000000 +0200
+--- /dev/null
++++ b/arch/arm/mach-at91/board-tt9200.c
 @@ -0,0 +1,192 @@
 +/*
 + * linux/arch/arm/mach-at91rm9200/board-tt9200.c
@@ -4852,9 +4817,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-tt9200.c linux-2.6/arch/a
 +	.init_irq	= tt9200_init_irq,
 +	.init_machine	= tt9200_board_init,
 +MACHINE_END
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-usb-a9260.c linux-2.6/arch/arm/mach-at91/board-usb-a9260.c
---- linux-2.6.25/arch/arm/mach-at91/board-usb-a9260.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-usb-a9260.c	2008-04-25 21:15:43.000000000 +0200
+--- /dev/null
++++ b/arch/arm/mach-at91/board-usb-a9260.c
 @@ -0,0 +1,215 @@
 +/*
 + * linux/arch/arm/mach-at91/board-usb-a9260.c
@@ -5071,9 +5035,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-usb-a9260.c linux-2.6/arc
 +	.init_irq	= ek_init_irq,
 +	.init_machine	= ek_board_init,
 +MACHINE_END
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-usb-a9263.c linux-2.6/arch/arm/mach-at91/board-usb-a9263.c
---- linux-2.6.25/arch/arm/mach-at91/board-usb-a9263.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/board-usb-a9263.c	2008-04-25 21:15:43.000000000 +0200
+--- /dev/null
++++ b/arch/arm/mach-at91/board-usb-a9263.c
 @@ -0,0 +1,230 @@
 +/*
 + * linux/arch/arm/mach-at91/board-usb-a9263.c
@@ -5305,9 +5268,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/board-usb-a9263.c linux-2.6/arc
 +	.init_irq	= ek_init_irq,
 +	.init_machine	= ek_board_init,
 +MACHINE_END
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/clock.c linux-2.6/arch/arm/mach-at91/clock.c
---- linux-2.6.25/arch/arm/mach-at91/clock.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/clock.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/clock.c
++++ b/arch/arm/mach-at91/clock.c
 @@ -32,6 +32,7 @@
  #include <asm/arch/cpu.h>
  
@@ -5433,9 +5395,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/clock.c linux-2.6/arch/arm/mach
  	/* MCK and CPU clock are "always on" */
  	clk_enable(&mck);
  
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/generic.h linux-2.6/arch/arm/mach-at91/generic.h
---- linux-2.6.25/arch/arm/mach-at91/generic.h	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/generic.h	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/generic.h
++++ b/arch/arm/mach-at91/generic.h
 @@ -41,6 +41,7 @@
   /* Power Management */
  extern void at91_irq_suspend(void);
@@ -5444,9 +5405,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/generic.h linux-2.6/arch/arm/ma
  
   /* GPIO */
  #define AT91RM9200_PQFP		3	/* AT91RM9200 PQFP package has 3 banks */
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/gpio.c linux-2.6/arch/arm/mach-at91/gpio.c
---- linux-2.6.25/arch/arm/mach-at91/gpio.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/gpio.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/gpio.c
++++ b/arch/arm/mach-at91/gpio.c
 @@ -490,7 +490,8 @@
  
  /*--------------------------------------------------------------------------*/
@@ -5465,9 +5425,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/gpio.c linux-2.6/arch/arm/mach-
  		if (last && last->id == data->id)
  			last->next = data;
  	}
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/ics1523.c linux-2.6/arch/arm/mach-at91/ics1523.c
---- linux-2.6.25/arch/arm/mach-at91/ics1523.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/ics1523.c	2008-04-25 21:15:43.000000000 +0200
+--- /dev/null
++++ b/arch/arm/mach-at91/ics1523.c
 @@ -0,0 +1,208 @@
 +/*
 + * arch/arm/mach-at91rm9200/ics1523.c
@@ -5677,9 +5636,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/ics1523.c linux-2.6/arch/arm/ma
 +
 +	return ack;
 +}
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/pm.c linux-2.6/arch/arm/mach-at91/pm.c
---- linux-2.6.25/arch/arm/mach-at91/pm.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/pm.c	2008-04-25 21:15:43.000000000 +0200
+--- a/arch/arm/mach-at91/pm.c
++++ b/arch/arm/mach-at91/pm.c
 @@ -26,12 +26,144 @@
  #include <asm/mach-types.h>
  
@@ -5940,9 +5898,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/pm.c linux-2.6/arch/arm/mach-at
  	return 0;
  }
  arch_initcall(at91_pm_init);
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/pm_slowclock.S linux-2.6/arch/arm/mach-at91/pm_slowclock.S
---- linux-2.6.25/arch/arm/mach-at91/pm_slowclock.S	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/arch/arm/mach-at91/pm_slowclock.S	2008-05-03 01:00:33.000000000 +0200
+--- /dev/null
++++ b/arch/arm/mach-at91/pm_slowclock.S
 @@ -0,0 +1,283 @@
 +/*
 + * arch/arm/mach-at91/pm_slow_clock.S
@@ -6227,9 +6184,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-at91/pm_slowclock.S linux-2.6/arch/a
 +
 +ENTRY(at91_slow_clock_sz)
 +	.word .-at91_slow_clock
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-ks8695/Makefile linux-2.6/arch/arm/mach-ks8695/Makefile
---- linux-2.6.25/arch/arm/mach-ks8695/Makefile	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-ks8695/Makefile	2007-12-31 15:04:45.000000000 +0200
+--- a/arch/arm/mach-ks8695/Makefile
++++ b/arch/arm/mach-ks8695/Makefile
 @@ -11,5 +11,8 @@
  # PCI support is optional
  obj-$(CONFIG_PCI)		+= pci.o
@@ -6239,9 +6195,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-ks8695/Makefile linux-2.6/arch/arm/m
 +
  # Board-specific support
  obj-$(CONFIG_MACH_KS8695)	+= board-micrel.o
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-ks8695/devices.c linux-2.6/arch/arm/mach-ks8695/devices.c
---- linux-2.6.25/arch/arm/mach-ks8695/devices.c	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6/arch/arm/mach-ks8695/devices.c	2007-12-31 10:43:55.000000000 +0200
+--- a/arch/arm/mach-ks8695/devices.c
++++ b/arch/arm/mach-ks8695/devices.c
 @@ -176,6 +176,27 @@
  #endif
  
@@ -6270,9 +6225,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-ks8695/devices.c linux-2.6/arch/arm/
  /* -------------------------------------------------------------------- */
  
  /*
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-ks8695/gpio.c linux-2.6/arch/arm/mach-ks8695/gpio.c
---- linux-2.6.25/arch/arm/mach-ks8695/gpio.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-ks8695/gpio.c	2007-12-31 14:49:20.000000000 +0200
+--- a/arch/arm/mach-ks8695/gpio.c
++++ b/arch/arm/mach-ks8695/gpio.c
 @@ -136,9 +136,9 @@
  	/* set line state */
  	x = __raw_readl(KS8695_GPIO_VA + KS8695_IOPD);
@@ -6306,9 +6260,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-ks8695/gpio.c linux-2.6/arch/arm/mac
  }
  EXPORT_SYMBOL(gpio_get_value);
  
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-ks8695/leds.c linux-2.6/arch/arm/mach-ks8695/leds.c
---- linux-2.6.25/arch/arm/mach-ks8695/leds.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/arch/arm/mach-ks8695/leds.c	2007-12-31 15:18:25.000000000 +0200
+--- /dev/null
++++ b/arch/arm/mach-ks8695/leds.c
 @@ -0,0 +1,94 @@
 +/*
 + * LED driver for KS8695-based boards.
@@ -6404,9 +6357,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-ks8695/leds.c linux-2.6/arch/arm/mac
 +}
 +
 +__initcall(leds_init);
-diff -urN -x CVS linux-2.6.25/arch/arm/mach-ks8695/pci.c linux-2.6/arch/arm/mach-ks8695/pci.c
---- linux-2.6.25/arch/arm/mach-ks8695/pci.c	2008-05-03 00:15:44.000000000 +0200
-+++ linux-2.6/arch/arm/mach-ks8695/pci.c	2008-05-08 22:03:41.000000000 +0200
+--- a/arch/arm/mach-ks8695/pci.c
++++ b/arch/arm/mach-ks8695/pci.c
 @@ -141,7 +141,7 @@
  	.write	= ks8695_pci_writeconfig,
  };
@@ -6416,9 +6368,8 @@ diff -urN -x CVS linux-2.6.25/arch/arm/mach-ks8695/pci.c linux-2.6/arch/arm/mach
  {
  	return pci_scan_bus(sys->busnr, &ks8695_pci_ops, sys);
  }
-diff -urN -x CVS linux-2.6.25/drivers/char/Kconfig linux-2.6/drivers/char/Kconfig
---- linux-2.6.25/drivers/char/Kconfig	2008-05-03 00:15:47.000000000 +0200
-+++ linux-2.6/drivers/char/Kconfig	2008-03-09 15:14:46.000000000 +0200
+--- a/drivers/char/Kconfig
++++ b/drivers/char/Kconfig
 @@ -1056,5 +1056,21 @@
  
  source "drivers/s390/char/Kconfig"
@@ -6441,9 +6392,8 @@ diff -urN -x CVS linux-2.6.25/drivers/char/Kconfig linux-2.6/drivers/char/Kconfi
 +
  endmenu
  
-diff -urN -x CVS linux-2.6.25/drivers/char/Makefile linux-2.6/drivers/char/Makefile
---- linux-2.6.25/drivers/char/Makefile	2008-05-03 00:15:47.000000000 +0200
-+++ linux-2.6/drivers/char/Makefile	2008-03-09 15:14:46.000000000 +0200
+--- a/drivers/char/Makefile
++++ b/drivers/char/Makefile
 @@ -98,6 +98,8 @@
  obj-$(CONFIG_GPIO_VR41XX)	+= vr41xx_giu.o
  obj-$(CONFIG_GPIO_TB0219)	+= tb0219.o
@@ -6453,9 +6403,8 @@ diff -urN -x CVS linux-2.6.25/drivers/char/Makefile linux-2.6/drivers/char/Makef
  
  obj-$(CONFIG_MWAVE)		+= mwave/
  obj-$(CONFIG_AGP)		+= agp/
-diff -urN -x CVS linux-2.6.25/drivers/char/at91_spi.c linux-2.6/drivers/char/at91_spi.c
---- linux-2.6.25/drivers/char/at91_spi.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/drivers/char/at91_spi.c	2008-04-18 17:38:01.000000000 +0200
+--- /dev/null
++++ b/drivers/char/at91_spi.c
 @@ -0,0 +1,337 @@
 +/*
 + * Serial Peripheral Interface (SPI) driver for the Atmel AT91RM9200 (Thunder)
@@ -6794,9 +6743,8 @@ diff -urN -x CVS linux-2.6.25/drivers/char/at91_spi.c linux-2.6/drivers/char/at9
 +MODULE_AUTHOR("Andrew Victor")
 +MODULE_DESCRIPTION("SPI driver for Atmel AT91RM9200")
 +MODULE_ALIAS("platform:at91_spi");
-diff -urN -x CVS linux-2.6.25/drivers/char/at91_spidev.c linux-2.6/drivers/char/at91_spidev.c
---- linux-2.6.25/drivers/char/at91_spidev.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/drivers/char/at91_spidev.c	2007-12-31 15:18:43.000000000 +0200
+--- /dev/null
++++ b/drivers/char/at91_spidev.c
 @@ -0,0 +1,233 @@
 +/*
 + * User-space interface to the SPI bus on Atmel AT91RM9200
@@ -7031,9 +6979,8 @@ diff -urN -x CVS linux-2.6.25/drivers/char/at91_spidev.c linux-2.6/drivers/char/
 +MODULE_LICENSE("GPL")
 +MODULE_AUTHOR("Andrew Victor")
 +MODULE_DESCRIPTION("SPI /dev interface for Atmel AT91RM9200")
-diff -urN -x CVS linux-2.6.25/drivers/i2c/busses/Kconfig linux-2.6/drivers/i2c/busses/Kconfig
---- linux-2.6.25/drivers/i2c/busses/Kconfig	2008-05-03 00:15:47.000000000 +0200
-+++ linux-2.6/drivers/i2c/busses/Kconfig	2008-04-02 22:11:28.000000000 +0200
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
 @@ -88,6 +88,14 @@
  	  to support combined I2C messages.  Use the i2c-gpio driver
  	  unless your system can cope with those limitations.
@@ -7064,9 +7011,8 @@ diff -urN -x CVS linux-2.6.25/drivers/i2c/busses/Kconfig linux-2.6/drivers/i2c/b
  config I2C_PCA_ISA
  	tristate "PCA9564 on an ISA bus"
  	depends on ISA
-diff -urN -x CVS linux-2.6.25/drivers/i2c/busses/Makefile linux-2.6/drivers/i2c/busses/Makefile
---- linux-2.6.25/drivers/i2c/busses/Makefile	2008-05-03 00:15:47.000000000 +0200
-+++ linux-2.6/drivers/i2c/busses/Makefile	2008-03-09 15:14:46.000000000 +0200
+--- a/drivers/i2c/busses/Makefile
++++ b/drivers/i2c/busses/Makefile
 @@ -29,6 +29,7 @@
  obj-$(CONFIG_I2C_PARPORT)	+= i2c-parport.o
  obj-$(CONFIG_I2C_PARPORT_LIGHT)	+= i2c-parport-light.o
@@ -7075,9 +7021,8 @@ diff -urN -x CVS linux-2.6.25/drivers/i2c/busses/Makefile linux-2.6/drivers/i2c/
  obj-$(CONFIG_I2C_PCA_ISA)	+= i2c-pca-isa.o
  obj-$(CONFIG_I2C_PIIX4)		+= i2c-piix4.o
  obj-$(CONFIG_I2C_PMCMSP)	+= i2c-pmcmsp.o
-diff -urN -x CVS linux-2.6.25/drivers/i2c/busses/i2c-at91.c linux-2.6/drivers/i2c/busses/i2c-at91.c
---- linux-2.6.25/drivers/i2c/busses/i2c-at91.c	2008-05-03 00:15:35.000000000 +0200
-+++ linux-2.6/drivers/i2c/busses/i2c-at91.c	2008-01-16 13:15:34.000000000 +0200
+--- a/drivers/i2c/busses/i2c-at91.c
++++ b/drivers/i2c/busses/i2c-at91.c
 @@ -31,8 +31,11 @@
  #include <asm/arch/board.h>
  #include <asm/arch/cpu.h>
@@ -7118,9 +7063,8 @@ diff -urN -x CVS linux-2.6.25/drivers/i2c/busses/i2c-at91.c linux-2.6/drivers/i2
  	}
  
  	at91_twi_write(AT91_TWI_CWGR, (ckdiv << 16) | (cdiv << 8) | cdiv);
-diff -urN -x CVS linux-2.6.25/drivers/i2c/busses/i2c-pca.c linux-2.6/drivers/i2c/busses/i2c-pca.c
---- linux-2.6.25/drivers/i2c/busses/i2c-pca.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/drivers/i2c/busses/i2c-pca.c	2007-12-31 15:18:43.000000000 +0200
+--- /dev/null
++++ b/drivers/i2c/busses/i2c-pca.c
 @@ -0,0 +1,213 @@
 +/*
 + *  Platform driver for PCA9564 I2C bus controller.
@@ -7335,9 +7279,8 @@ diff -urN -x CVS linux-2.6.25/drivers/i2c/busses/i2c-pca.c linux-2.6/drivers/i2c
 +MODULE_AUTHOR("Andrew Victor");
 +MODULE_DESCRIPTION("PCA9564 platform driver");
 +MODULE_LICENSE("GPL");
-diff -urN -x CVS linux-2.6.25/drivers/mmc/host/at91_mci.c linux-2.6/drivers/mmc/host/at91_mci.c
---- linux-2.6.25/drivers/mmc/host/at91_mci.c	2008-05-03 00:15:48.000000000 +0200
-+++ linux-2.6/drivers/mmc/host/at91_mci.c	2008-04-18 17:32:40.000000000 +0200
+--- a/drivers/mmc/host/at91_mci.c
++++ b/drivers/mmc/host/at91_mci.c
 @@ -659,13 +659,14 @@
  	/* maybe switch power to the card */
  	if (host->board->vcc_pin) {
@@ -7360,9 +7303,8 @@ diff -urN -x CVS linux-2.6.25/drivers/mmc/host/at91_mci.c linux-2.6/drivers/mmc/
  		}
  	}
  }
-diff -urN -x CVS linux-2.6.25/drivers/mtd/devices/Kconfig linux-2.6/drivers/mtd/devices/Kconfig
---- linux-2.6.25/drivers/mtd/devices/Kconfig	2008-05-03 00:15:36.000000000 +0200
-+++ linux-2.6/drivers/mtd/devices/Kconfig	2007-12-31 10:44:25.000000000 +0200
+--- a/drivers/mtd/devices/Kconfig
++++ b/drivers/mtd/devices/Kconfig
 @@ -270,5 +270,17 @@
  	  LinuxBIOS or if you need to recover a DiskOnChip Millennium on which
  	  you have managed to wipe the first block.
@@ -7382,17 +7324,15 @@ diff -urN -x CVS linux-2.6.25/drivers/mtd/devices/Kconfig linux-2.6/drivers/mtd/
 +	  Always add the whole DataFlash device when using MTD partitions.
  
 +endmenu
-diff -urN -x CVS linux-2.6.25/drivers/mtd/devices/Makefile linux-2.6/drivers/mtd/devices/Makefile
---- linux-2.6.25/drivers/mtd/devices/Makefile	2008-05-03 00:15:36.000000000 +0200
-+++ linux-2.6/drivers/mtd/devices/Makefile	2007-12-31 10:48:27.000000000 +0200
+--- a/drivers/mtd/devices/Makefile
++++ b/drivers/mtd/devices/Makefile
 @@ -17,3 +17,4 @@
  obj-$(CONFIG_MTD_BLOCK2MTD)	+= block2mtd.o
  obj-$(CONFIG_MTD_DATAFLASH)	+= mtd_dataflash.o
  obj-$(CONFIG_MTD_M25P80)	+= m25p80.o
 +obj-$(CONFIG_MTD_AT91_DATAFLASH)+= at91_dataflash.o
-diff -urN -x CVS linux-2.6.25/drivers/mtd/devices/at91_dataflash.c linux-2.6/drivers/mtd/devices/at91_dataflash.c
---- linux-2.6.25/drivers/mtd/devices/at91_dataflash.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/drivers/mtd/devices/at91_dataflash.c	2007-12-31 15:18:43.000000000 +0200
+--- /dev/null
++++ b/drivers/mtd/devices/at91_dataflash.c
 @@ -0,0 +1,673 @@
 +/*
 + * Atmel DataFlash driver for Atmel AT91RM9200 (Thunder)
@@ -8067,9 +8007,8 @@ diff -urN -x CVS linux-2.6.25/drivers/mtd/devices/at91_dataflash.c linux-2.6/dri
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Andrew Victor");
 +MODULE_DESCRIPTION("DataFlash driver for Atmel AT91RM9200");
-diff -urN -x CVS linux-2.6.25/drivers/mtd/nand/Kconfig linux-2.6/drivers/mtd/nand/Kconfig
---- linux-2.6.25/drivers/mtd/nand/Kconfig	2008-05-03 00:15:48.000000000 +0200
-+++ linux-2.6/drivers/mtd/nand/Kconfig	2008-04-18 17:52:53.000000000 +0200
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
 @@ -273,12 +273,53 @@
  	  If you say "m", the module will be called "cs553x_nand.ko".
  
@@ -8125,9 +8064,8 @@ diff -urN -x CVS linux-2.6.25/drivers/mtd/nand/Kconfig linux-2.6/drivers/mtd/nan
  config MTD_NAND_CM_X270
  	tristate "Support for NAND Flash on CM-X270 modules"
  	depends on MTD_NAND && MACH_ARMCORE
-diff -urN -x CVS linux-2.6.25/drivers/mtd/nand/at91_nand.c linux-2.6/drivers/mtd/nand/at91_nand.c
---- linux-2.6.25/drivers/mtd/nand/at91_nand.c	2008-05-03 00:15:48.000000000 +0200
-+++ linux-2.6/drivers/mtd/nand/at91_nand.c	2008-05-03 00:53:39.000000000 +0200
+--- a/drivers/mtd/nand/at91_nand.c
++++ b/drivers/mtd/nand/at91_nand.c
 @@ -9,6 +9,15 @@
   *  Derived from drivers/mtd/spia.c
   *	 Copyright (C) 2000 Steven J. Hill (sjhill@cotw.com)
@@ -8677,9 +8615,8 @@ diff -urN -x CVS linux-2.6.25/drivers/mtd/nand/at91_nand.c linux-2.6/drivers/mtd
  MODULE_AUTHOR("Rick Bronson");
 -MODULE_DESCRIPTION("NAND/SmartMedia driver for AT91RM9200");
 +MODULE_DESCRIPTION("NAND/SmartMedia driver for AT91RM9200 / AT91SAM9 / AT91CAP9");
-diff -urN -x CVS linux-2.6.25/drivers/net/arm/Kconfig linux-2.6/drivers/net/arm/Kconfig
---- linux-2.6.25/drivers/net/arm/Kconfig	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6/drivers/net/arm/Kconfig	2008-03-04 21:52:40.000000000 +0200
+--- a/drivers/net/arm/Kconfig
++++ b/drivers/net/arm/Kconfig
 @@ -47,3 +47,10 @@
  	help
  	  This is a driver for the ethernet hardware included in EP93xx CPUs.
@@ -8691,17 +8628,15 @@ diff -urN -x CVS linux-2.6.25/drivers/net/arm/Kconfig linux-2.6/drivers/net/arm/
 +	help
 +	  If you wish to compile a kernel for an KS8695-based board
 +	  and enable Ethernet support, then select this option.
-diff -urN -x CVS linux-2.6.25/drivers/net/arm/Makefile linux-2.6/drivers/net/arm/Makefile
---- linux-2.6.25/drivers/net/arm/Makefile	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6/drivers/net/arm/Makefile	2008-03-04 21:51:41.000000000 +0200
+--- a/drivers/net/arm/Makefile
++++ b/drivers/net/arm/Makefile
 @@ -9,3 +9,4 @@
  obj-$(CONFIG_ARM_ETHER1)	+= ether1.o
  obj-$(CONFIG_ARM_AT91_ETHER)	+= at91_ether.o
  obj-$(CONFIG_EP93XX_ETH)	+= ep93xx_eth.o
 +obj-$(CONFIG_ARM_KS8695_ETHER)	+= ks8695_ether.o
-diff -urN -x CVS linux-2.6.25/drivers/net/arm/at91_ether.c linux-2.6/drivers/net/arm/at91_ether.c
---- linux-2.6.25/drivers/net/arm/at91_ether.c	2008-05-03 00:15:48.000000000 +0200
-+++ linux-2.6/drivers/net/arm/at91_ether.c	2008-05-08 21:47:22.000000000 +0200
+--- a/drivers/net/arm/at91_ether.c
++++ b/drivers/net/arm/at91_ether.c
 @@ -220,7 +220,7 @@
  		if (!(phy & (1 << 0)))
  			goto done;
@@ -8892,9 +8827,8 @@ diff -urN -x CVS linux-2.6.25/drivers/net/arm/at91_ether.c linux-2.6/drivers/net
  MODULE_DESCRIPTION("AT91RM9200 EMAC Ethernet driver");
  MODULE_AUTHOR("Andrew Victor");
 +MODULE_ALIAS("platform:" DRV_NAME);
-diff -urN -x CVS linux-2.6.25/drivers/net/arm/at91_ether.h linux-2.6/drivers/net/arm/at91_ether.h
---- linux-2.6.25/drivers/net/arm/at91_ether.h	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6/drivers/net/arm/at91_ether.h	2008-05-08 21:47:31.000000000 +0200
+--- a/drivers/net/arm/at91_ether.h
++++ b/drivers/net/arm/at91_ether.h
 @@ -48,6 +48,9 @@
  /* Altima AC101L PHY */
  #define MII_AC101L_ID		0x00225520
@@ -8913,9 +8847,8 @@ diff -urN -x CVS linux-2.6.25/drivers/net/arm/at91_ether.h linux-2.6/drivers/net
  	struct mii_if_info mii;			/* ethtool support */
  	struct at91_eth_data board_data;	/* board-specific configuration */
  	struct clk *ether_clk;			/* clock */
-diff -urN -x CVS linux-2.6.25/drivers/net/arm/ks8695_ether.c linux-2.6/drivers/net/arm/ks8695_ether.c
---- linux-2.6.25/drivers/net/arm/ks8695_ether.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/drivers/net/arm/ks8695_ether.c	2008-05-08 21:52:35.000000000 +0200
+--- /dev/null
++++ b/drivers/net/arm/ks8695_ether.c
 @@ -0,0 +1,1009 @@
 +/*
 + * Ethernet driver for the Kendin/Micrel KS8695.
@@ -9926,9 +9859,8 @@ diff -urN -x CVS linux-2.6.25/drivers/net/arm/ks8695_ether.c linux-2.6/drivers/n
 +MODULE_DESCRIPTION("KS8695 Ethernet driver");
 +MODULE_AUTHOR("Andrew Victor");
 +MODULE_ALIAS("platform:" DRV_NAME);
-diff -urN -x CVS linux-2.6.25/drivers/net/arm/ks8695_ether.h linux-2.6/drivers/net/arm/ks8695_ether.h
---- linux-2.6.25/drivers/net/arm/ks8695_ether.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/drivers/net/arm/ks8695_ether.h	2008-05-08 21:51:23.000000000 +0200
+--- /dev/null
++++ b/drivers/net/arm/ks8695_ether.h
 @@ -0,0 +1,92 @@
 +/*
 + * Ethernet driver for the Micrel/Kendin KS8695 (Centaur)
@@ -10022,9 +9954,8 @@ diff -urN -x CVS linux-2.6.25/drivers/net/arm/ks8695_ether.h linux-2.6/drivers/n
 +};
 +
 +#endif
-diff -urN -x CVS linux-2.6.25/drivers/rtc/Kconfig linux-2.6/drivers/rtc/Kconfig
---- linux-2.6.25/drivers/rtc/Kconfig	2008-05-03 00:15:49.000000000 +0200
-+++ linux-2.6/drivers/rtc/Kconfig	2008-04-15 21:48:11.000000000 +0200
+--- a/drivers/rtc/Kconfig
++++ b/drivers/rtc/Kconfig
 @@ -487,12 +487,12 @@
  	  this is powered by the backup power supply.
  
@@ -10042,9 +9973,8 @@ diff -urN -x CVS linux-2.6.25/drivers/rtc/Kconfig linux-2.6/drivers/rtc/Kconfig
  
  	  (On AT91SAM9rl chips you probably want to use the dedicated RTC
  	  module and leave the RTT available for other uses.)
-diff -urN -x CVS linux-2.6.25/drivers/rtc/rtc-at91rm9200.c linux-2.6/drivers/rtc/rtc-at91rm9200.c
---- linux-2.6.25/drivers/rtc/rtc-at91rm9200.c	2008-05-03 00:15:49.000000000 +0200
-+++ linux-2.6/drivers/rtc/rtc-at91rm9200.c	2008-04-25 23:15:05.000000000 +0200
+--- a/drivers/rtc/rtc-at91rm9200.c
++++ b/drivers/rtc/rtc-at91rm9200.c
 @@ -29,9 +29,6 @@
  #include <linux/completion.h>
  
@@ -10068,9 +9998,8 @@ diff -urN -x CVS linux-2.6.25/drivers/rtc/rtc-at91rm9200.c linux-2.6/drivers/rtc
  	rtc = rtc_device_register(pdev->name, &pdev->dev,
  				&at91_rtc_ops, THIS_MODULE);
  	if (IS_ERR(rtc)) {
-diff -urN -x CVS linux-2.6.25/drivers/rtc/rtc-at91sam9.c linux-2.6/drivers/rtc/rtc-at91sam9.c
---- linux-2.6.25/drivers/rtc/rtc-at91sam9.c	2008-05-03 00:15:49.000000000 +0200
-+++ linux-2.6/drivers/rtc/rtc-at91sam9.c	2008-05-05 22:01:39.000000000 +0200
+--- a/drivers/rtc/rtc-at91sam9.c
++++ b/drivers/rtc/rtc-at91sam9.c
 @@ -21,6 +21,7 @@
  
  #include <asm/mach/time.h>
@@ -10110,12 +10039,11 @@ diff -urN -x CVS linux-2.6.25/drivers/rtc/rtc-at91sam9.c linux-2.6/drivers/rtc/r
  	platform_set_drvdata(pdev, rtc);
  	rtc->rtt = (void __force __iomem *) (AT91_VA_BASE_SYS - AT91_BASE_SYS);
  	rtc->rtt += r->start;
-diff -urN -x CVS linux-2.6.25/drivers/spi/Kconfig linux-2.6/drivers/spi/Kconfig
---- linux-2.6.25/drivers/spi/Kconfig	2008-05-03 00:15:50.000000000 +0200
-+++ linux-2.6/drivers/spi/Kconfig	2008-03-09 15:14:53.000000000 +0200
-@@ -105,6 +105,15 @@
- 	  inexpensive battery powered microcontroller evaluation board.
- 	  This same cable can be used to flash new firmware.
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -113,6 +113,15 @@
+ 
+ 	  If unsure, say N.
  
 +config SPI_AT91
 +	tristate "AT91RM9200 Bitbang SPI Master"
@@ -10129,9 +10057,8 @@ diff -urN -x CVS linux-2.6.25/drivers/spi/Kconfig linux-2.6/drivers/spi/Kconfig
  config SPI_IMX
  	tristate "Freescale iMX SPI controller"
  	depends on SPI_MASTER && ARCH_IMX && EXPERIMENTAL
-diff -urN -x CVS linux-2.6.25/drivers/spi/Makefile linux-2.6/drivers/spi/Makefile
---- linux-2.6.25/drivers/spi/Makefile	2008-05-03 00:15:50.000000000 +0200
-+++ linux-2.6/drivers/spi/Makefile	2008-03-09 17:54:27.000000000 +0200
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
 @@ -29,6 +29,7 @@
  obj-$(CONFIG_SPI_TXX9)			+= spi_txx9.o
  obj-$(CONFIG_SPI_XILINX)		+= xilinx_spi.o
@@ -10140,9 +10067,8 @@ diff -urN -x CVS linux-2.6.25/drivers/spi/Makefile linux-2.6/drivers/spi/Makefil
  # 	... add above this line ...
  
  # SPI protocol drivers (device/link on bus)
-diff -urN -x CVS linux-2.6.25/drivers/spi/spi_at91_bitbang.c linux-2.6/drivers/spi/spi_at91_bitbang.c
---- linux-2.6.25/drivers/spi/spi_at91_bitbang.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/drivers/spi/spi_at91_bitbang.c	2008-04-18 17:38:19.000000000 +0200
+--- /dev/null
++++ b/drivers/spi/spi_at91_bitbang.c
 @@ -0,0 +1,208 @@
 +/*
 + * at91_spi.c - at91 SPI driver (BOOTSTRAP/BITBANG VERSION)
@@ -10352,9 +10278,8 @@ diff -urN -x CVS linux-2.6.25/drivers/spi/spi_at91_bitbang.c linux-2.6/drivers/s
 +MODULE_AUTHOR("David Brownell");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:at91_spi");
-diff -urN -x CVS linux-2.6.25/drivers/usb/gadget/Kconfig linux-2.6/drivers/usb/gadget/Kconfig
---- linux-2.6.25/drivers/usb/gadget/Kconfig	2008-05-03 00:15:50.000000000 +0200
-+++ linux-2.6/drivers/usb/gadget/Kconfig	2008-04-18 19:23:34.000000000 +0200
+--- a/drivers/usb/gadget/Kconfig
++++ b/drivers/usb/gadget/Kconfig
 @@ -118,10 +118,10 @@
  config USB_GADGET_ATMEL_USBA
  	boolean "Atmel USBA"
@@ -10368,9 +10293,8 @@ diff -urN -x CVS linux-2.6.25/drivers/usb/gadget/Kconfig linux-2.6/drivers/usb/g
  
  config USB_ATMEL_USBA
  	tristate
-diff -urN -x CVS linux-2.6.25/drivers/usb/gadget/at91_udc.c linux-2.6/drivers/usb/gadget/at91_udc.c
---- linux-2.6.25/drivers/usb/gadget/at91_udc.c	2008-05-03 00:15:50.000000000 +0200
-+++ linux-2.6/drivers/usb/gadget/at91_udc.c	2008-04-15 21:48:12.000000000 +0200
+--- a/drivers/usb/gadget/at91_udc.c
++++ b/drivers/usb/gadget/at91_udc.c
 @@ -1827,7 +1827,7 @@
  	 */
  	if ((!udc->suspended && udc->addr)
@@ -10380,9 +10304,8 @@ diff -urN -x CVS linux-2.6.25/drivers/usb/gadget/at91_udc.c linux-2.6/drivers/us
  		pullup(udc, 0);
  		wake = 0;
  	} else
-diff -urN -x CVS linux-2.6.25/drivers/usb/gadget/atmel_usba_udc.c linux-2.6/drivers/usb/gadget/atmel_usba_udc.c
---- linux-2.6.25/drivers/usb/gadget/atmel_usba_udc.c	2008-05-03 00:15:50.000000000 +0200
-+++ linux-2.6/drivers/usb/gadget/atmel_usba_udc.c	2008-05-03 01:07:46.000000000 +0200
+--- a/drivers/usb/gadget/atmel_usba_udc.c
++++ b/drivers/usb/gadget/atmel_usba_udc.c
 @@ -18,6 +18,7 @@
  #include <linux/platform_device.h>
  #include <linux/usb/ch9.h>
@@ -10633,9 +10556,8 @@ diff -urN -x CVS linux-2.6.25/drivers/usb/gadget/atmel_usba_udc.c linux-2.6/driv
  		usba_ep_cleanup_debugfs(&usba_ep[i]);
  	usba_cleanup_debugfs(udc);
  
-diff -urN -x CVS linux-2.6.25/drivers/usb/host/ohci-at91.c linux-2.6/drivers/usb/host/ohci-at91.c
---- linux-2.6.25/drivers/usb/host/ohci-at91.c	2008-05-03 00:15:50.000000000 +0200
-+++ linux-2.6/drivers/usb/host/ohci-at91.c	2008-04-15 21:48:12.000000000 +0200
+--- a/drivers/usb/host/ohci-at91.c
++++ b/drivers/usb/host/ohci-at91.c
 @@ -330,7 +330,7 @@
  	 *
  	 * REVISIT: some boards will be able to turn VBUS off...
@@ -10645,9 +10567,8 @@ diff -urN -x CVS linux-2.6.25/drivers/usb/host/ohci-at91.c linux-2.6/drivers/usb
  		ohci_usb_reset (ohci);
  		at91_stop_clock();
  	}
-diff -urN -x CVS linux-2.6.25/drivers/video/Kconfig linux-2.6/drivers/video/Kconfig
---- linux-2.6.25/drivers/video/Kconfig	2008-05-03 00:15:50.000000000 +0200
-+++ linux-2.6/drivers/video/Kconfig	2008-04-02 22:11:30.000000000 +0200
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
 @@ -889,6 +889,17 @@
  	  framebuffer.  Product specs at
  	  <http://www.erd.epson.com/vdc/html/products.htm>.
@@ -10666,9 +10587,8 @@ diff -urN -x CVS linux-2.6.25/drivers/video/Kconfig linux-2.6/drivers/video/Kcon
  config FB_S1D13XXX
  	tristate "Epson S1D13XXX framebuffer support"
  	depends on FB
-diff -urN -x CVS linux-2.6.25/drivers/video/Makefile linux-2.6/drivers/video/Makefile
---- linux-2.6.25/drivers/video/Makefile	2008-05-03 00:15:50.000000000 +0200
-+++ linux-2.6/drivers/video/Makefile	2008-04-02 22:11:30.000000000 +0200
+--- a/drivers/video/Makefile
++++ b/drivers/video/Makefile
 @@ -87,7 +87,8 @@
  obj-$(CONFIG_FB_SA1100)           += sa1100fb.o
  obj-$(CONFIG_FB_HIT)              += hitfb.o
@@ -10679,9 +10599,8 @@ diff -urN -x CVS linux-2.6.25/drivers/video/Makefile linux-2.6/drivers/video/Mak
  obj-$(CONFIG_FB_PVR2)             += pvr2fb.o
  obj-$(CONFIG_FB_VOODOO1)          += sstfb.o
  obj-$(CONFIG_FB_ARMCLCD)	  += amba-clcd.o
-diff -urN -x CVS linux-2.6.25/drivers/video/atmel_lcdfb.c linux-2.6/drivers/video/atmel_lcdfb.c
---- linux-2.6.25/drivers/video/atmel_lcdfb.c	2008-05-03 00:15:50.000000000 +0200
-+++ linux-2.6/drivers/video/atmel_lcdfb.c	2008-04-03 00:27:47.000000000 +0200
+--- a/drivers/video/atmel_lcdfb.c
++++ b/drivers/video/atmel_lcdfb.c
 @@ -31,7 +31,7 @@
  #define ATMEL_LCDC_CVAL_DEFAULT		0xc8
  #define ATMEL_LCDC_DMA_BURST_LEN	8
@@ -10740,9 +10659,8 @@ diff -urN -x CVS linux-2.6.25/drivers/video/atmel_lcdfb.c linux-2.6/drivers/vide
  	.driver		= {
  		.name	= "atmel_lcdfb",
  		.owner	= THIS_MODULE,
-diff -urN -x CVS linux-2.6.25/drivers/video/backlight/Kconfig linux-2.6/drivers/video/backlight/Kconfig
---- linux-2.6.25/drivers/video/backlight/Kconfig	2008-05-03 00:15:50.000000000 +0200
-+++ linux-2.6/drivers/video/backlight/Kconfig	2008-03-09 18:51:50.000000000 +0200
+--- a/drivers/video/backlight/Kconfig
++++ b/drivers/video/backlight/Kconfig
 @@ -112,3 +112,11 @@
  	help
  	  If you have a Intel LE80578 (Carillo Ranch) say Y to enable the
@@ -10755,17 +10673,15 @@ diff -urN -x CVS linux-2.6.25/drivers/video/backlight/Kconfig linux-2.6/drivers/
 +	help
 +	  If you have a KwikByte KB9202 board, say Y to enable the
 +	  backlight driver.
-diff -urN -x CVS linux-2.6.25/drivers/video/backlight/Makefile linux-2.6/drivers/video/backlight/Makefile
---- linux-2.6.25/drivers/video/backlight/Makefile	2008-05-03 00:15:50.000000000 +0200
-+++ linux-2.6/drivers/video/backlight/Makefile	2008-03-09 15:14:55.000000000 +0200
+--- a/drivers/video/backlight/Makefile
++++ b/drivers/video/backlight/Makefile
 @@ -10,3 +10,4 @@
  obj-$(CONFIG_BACKLIGHT_OMAP1)	+= omap1_bl.o
  obj-$(CONFIG_BACKLIGHT_PROGEAR) += progear_bl.o
  obj-$(CONFIG_BACKLIGHT_CARILLO_RANCH) += cr_bllcd.o
 +obj-$(CONFIG_BACKLIGHT_KB920x)	+= kb920x_bl.o
-diff -urN -x CVS linux-2.6.25/drivers/video/backlight/kb920x_bl.c linux-2.6/drivers/video/backlight/kb920x_bl.c
---- linux-2.6.25/drivers/video/backlight/kb920x_bl.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/drivers/video/backlight/kb920x_bl.c	2008-03-09 21:41:20.000000000 +0200
+--- /dev/null
++++ b/drivers/video/backlight/kb920x_bl.c
 @@ -0,0 +1,164 @@
 +/*
 + * Backlight Driver for KB9202
@@ -10931,9 +10847,8 @@ diff -urN -x CVS linux-2.6.25/drivers/video/backlight/kb920x_bl.c linux-2.6/driv
 +MODULE_AUTHOR("KwikByte <kb9200_dev@kwikbyte.com>");
 +MODULE_DESCRIPTION("KB9202 Backlight Driver");
 +MODULE_LICENSE("GPL");
-diff -urN -x CVS linux-2.6.25/drivers/video/s1d15605fb.c linux-2.6/drivers/video/s1d15605fb.c
---- linux-2.6.25/drivers/video/s1d15605fb.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/drivers/video/s1d15605fb.c	2008-05-03 00:36:04.000000000 +0200
+--- /dev/null
++++ b/drivers/video/s1d15605fb.c
 @@ -0,0 +1,655 @@
 +/*
 + *  drivers/video/s1d15605.c
@@ -11590,9 +11505,8 @@ diff -urN -x CVS linux-2.6.25/drivers/video/s1d15605fb.c linux-2.6/drivers/video
 +MODULE_AUTHOR("KwikByte");
 +MODULE_DESCRIPTION("Epson S1D15605 LCD Controller framebuffer driver");
 +MODULE_LICENSE("GPL");
-diff -urN -x CVS linux-2.6.25/drivers/watchdog/Kconfig linux-2.6/drivers/watchdog/Kconfig
---- linux-2.6.25/drivers/watchdog/Kconfig	2008-05-03 00:15:50.000000000 +0200
-+++ linux-2.6/drivers/watchdog/Kconfig	2008-03-09 15:14:55.000000000 +0200
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
 @@ -66,6 +66,14 @@
  	  Watchdog timer embedded into AT91RM9200 chips. This will reboot your
  	  system when the timeout is reached.
@@ -11608,9 +11522,8 @@ diff -urN -x CVS linux-2.6.25/drivers/watchdog/Kconfig linux-2.6/drivers/watchdo
  config 21285_WATCHDOG
  	tristate "DC21285 watchdog"
  	depends on FOOTBRIDGE
-diff -urN -x CVS linux-2.6.25/drivers/watchdog/Makefile linux-2.6/drivers/watchdog/Makefile
---- linux-2.6.25/drivers/watchdog/Makefile	2008-05-03 00:15:50.000000000 +0200
-+++ linux-2.6/drivers/watchdog/Makefile	2008-03-09 15:14:55.000000000 +0200
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
 @@ -26,6 +26,7 @@
  
  # ARM Architecture
@@ -11619,9 +11532,8 @@ diff -urN -x CVS linux-2.6.25/drivers/watchdog/Makefile linux-2.6/drivers/watchd
  obj-$(CONFIG_OMAP_WATCHDOG) += omap_wdt.o
  obj-$(CONFIG_21285_WATCHDOG) += wdt285.o
  obj-$(CONFIG_977_WATCHDOG) += wdt977.o
-diff -urN -x CVS linux-2.6.25/drivers/watchdog/at91sam9_wdt.c linux-2.6/drivers/watchdog/at91sam9_wdt.c
---- linux-2.6.25/drivers/watchdog/at91sam9_wdt.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/drivers/watchdog/at91sam9_wdt.c	2008-04-15 21:53:41.000000000 +0200
+--- /dev/null
++++ b/drivers/watchdog/at91sam9_wdt.c
 @@ -0,0 +1,259 @@
 +/*
 + * Watchdog driver for Atmel AT91SAM9x processors.
@@ -11882,9 +11794,8 @@ diff -urN -x CVS linux-2.6.25/drivers/watchdog/at91sam9_wdt.c linux-2.6/drivers/
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS_MISCDEV(WATCHDOG_MINOR);
 +MODULE_ALIAS("platform:at91_wdt");
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91_ecc.h linux-2.6/include/asm-arm/arch-at91/at91_ecc.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91_ecc.h	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91_ecc.h	2008-05-07 23:49:32.000000000 +0200
+--- a/include/asm-arm/arch-at91/at91_ecc.h
++++ b/include/asm-arm/arch-at91/at91_ecc.h
 @@ -1,6 +1,9 @@
  /*
   * include/asm-arm/arch-at91/at91_ecc.h
@@ -11927,9 +11838,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91_ecc.h linux-2.6/inc
  #define		AT91_ECC_NPARITY	(0xffff << 0)		/* NParity */
  
  #endif
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91_pit.h linux-2.6/include/asm-arm/arch-at91/at91_pit.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91_pit.h	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91_pit.h	2008-05-07 23:49:57.000000000 +0200
+--- a/include/asm-arm/arch-at91/at91_pit.h
++++ b/include/asm-arm/arch-at91/at91_pit.h
 @@ -1,6 +1,9 @@
  /*
   * include/asm-arm/arch-at91/at91_pit.h
@@ -11940,9 +11850,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91_pit.h linux-2.6/inc
   * Periodic Interval Timer (PIT) - System peripherals regsters.
   * Based on AT91SAM9261 datasheet revision D.
   *
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91_pmc.h linux-2.6/include/asm-arm/arch-at91/at91_pmc.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91_pmc.h	2008-05-03 00:15:51.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91_pmc.h	2008-05-05 22:01:39.000000000 +0200
+--- a/include/asm-arm/arch-at91/at91_pmc.h
++++ b/include/asm-arm/arch-at91/at91_pmc.h
 @@ -23,6 +23,7 @@
  #define		AT91_PMC_PCK		(1 <<  0)		/* Processor Clock */
  #define		AT91RM9200_PMC_UDP	(1 <<  1)		/* USB Devcice Port Clock [AT91RM9200 only] */
@@ -12011,9 +11920,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91_pmc.h linux-2.6/inc
 +#define AT91_PMC_VER		(AT91_PMC + 0xfc)	/* PMC Module Version [AT91CAP9 only] */
 +
  #endif
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91_rstc.h linux-2.6/include/asm-arm/arch-at91/at91_rstc.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91_rstc.h	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91_rstc.h	2008-05-07 23:50:10.000000000 +0200
+--- a/include/asm-arm/arch-at91/at91_rstc.h
++++ b/include/asm-arm/arch-at91/at91_rstc.h
 @@ -1,6 +1,9 @@
  /*
   * include/asm-arm/arch-at91/at91_rstc.h
@@ -12024,9 +11932,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91_rstc.h linux-2.6/in
   * Reset Controller (RSTC) - System peripherals regsters.
   * Based on AT91SAM9261 datasheet revision D.
   *
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91_rtt.h linux-2.6/include/asm-arm/arch-at91/at91_rtt.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91_rtt.h	2008-05-03 00:15:51.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91_rtt.h	2008-05-07 23:51:11.000000000 +0200
+--- a/include/asm-arm/arch-at91/at91_rtt.h
++++ b/include/asm-arm/arch-at91/at91_rtt.h
 @@ -1,6 +1,9 @@
  /*
   * include/asm-arm/arch-at91/at91_rtt.h
@@ -12037,9 +11944,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91_rtt.h linux-2.6/inc
   * Real-time Timer (RTT) - System peripherals regsters.
   * Based on AT91SAM9261 datasheet revision D.
   *
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91_shdwc.h linux-2.6/include/asm-arm/arch-at91/at91_shdwc.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91_shdwc.h	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91_shdwc.h	2008-05-07 23:50:23.000000000 +0200
+--- a/include/asm-arm/arch-at91/at91_shdwc.h
++++ b/include/asm-arm/arch-at91/at91_shdwc.h
 @@ -1,6 +1,9 @@
  /*
   * include/asm-arm/arch-at91/at91_shdwc.h
@@ -12063,9 +11969,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91_shdwc.h linux-2.6/i
 +#define		AT91_SHDW_RTCWK		(1 << 17)		/* Real-time Clock Wake-up [SAM9RL] */
  
  #endif
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91_tsc.h linux-2.6/include/asm-arm/arch-at91/at91_tsc.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91_tsc.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91_tsc.h	2008-05-07 23:51:32.000000000 +0200
+--- /dev/null
++++ b/include/asm-arm/arch-at91/at91_tsc.h
 @@ -0,0 +1,76 @@
 +/*
 + * include/asm-arm/arch-at91/at91_tsc.h
@@ -12143,9 +12048,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91_tsc.h linux-2.6/inc
 +
 +#endif
 +
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91_wdt.h linux-2.6/include/asm-arm/arch-at91/at91_wdt.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91_wdt.h	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91_wdt.h	2008-05-07 23:51:43.000000000 +0200
+--- a/include/asm-arm/arch-at91/at91_wdt.h
++++ b/include/asm-arm/arch-at91/at91_wdt.h
 @@ -1,6 +1,9 @@
  /*
   * include/asm-arm/arch-at91/at91_wdt.h
@@ -12156,9 +12060,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91_wdt.h linux-2.6/inc
   * Watchdog Timer (WDT) - System peripherals regsters.
   * Based on AT91SAM9261 datasheet revision D.
   *
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91cap9.h linux-2.6/include/asm-arm/arch-at91/at91cap9.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91cap9.h	2008-05-03 00:15:51.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91cap9.h	2008-05-05 22:01:39.000000000 +0200
+--- a/include/asm-arm/arch-at91/at91cap9.h
++++ b/include/asm-arm/arch-at91/at91cap9.h
 @@ -101,7 +101,10 @@
  #define AT91_RTT	(0xfffffd20 - AT91_BASE_SYS)
  #define AT91_PIT	(0xfffffd30 - AT91_BASE_SYS)
@@ -12180,9 +12083,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91cap9.h linux-2.6/inc
  #define AT91CAP9_UHP_BASE	0x00700000	/* USB Host controller */
  
  #define CONFIG_DRAM_BASE	AT91_CHIPSELECT_6
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91cap9_ddrsdr.h linux-2.6/include/asm-arm/arch-at91/at91cap9_ddrsdr.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91cap9_ddrsdr.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91cap9_ddrsdr.h	2008-05-07 21:33:47.000000000 +0200
+--- /dev/null
++++ b/include/asm-arm/arch-at91/at91cap9_ddrsdr.h
 @@ -0,0 +1,102 @@
 +/*
 + * include/asm-arm/arch-at91/at91cap9_ddrsdr.h
@@ -12286,9 +12188,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91cap9_ddrsdr.h linux-
 +
 +
 +#endif
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91cap9_matrix.h linux-2.6/include/asm-arm/arch-at91/at91cap9_matrix.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91cap9_matrix.h	2008-05-03 00:15:51.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91cap9_matrix.h	2008-04-18 19:20:34.000000000 +0200
+--- a/include/asm-arm/arch-at91/at91cap9_matrix.h
++++ b/include/asm-arm/arch-at91/at91cap9_matrix.h
 @@ -106,6 +106,11 @@
  #define AT91_MPBS0_SFR		(AT91_MATRIX + 0x114)	/* MPBlock Slave 0 Special Function Register */
  #define AT91_MPBS1_SFR		(AT91_MATRIX + 0x11C)	/* MPBlock Slave 1 Special Function Register */
@@ -12301,9 +12202,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91cap9_matrix.h linux-
  #define AT91_MATRIX_EBICSA	(AT91_MATRIX + 0x120)	/* EBI Chip Select Assignment Register */
  #define		AT91_MATRIX_EBI_CS1A		(1 << 1)	/* Chip Select 1 Assignment */
  #define			AT91_MATRIX_EBI_CS1A_SMC		(0 << 1)
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91sam9260_matrix.h linux-2.6/include/asm-arm/arch-at91/at91sam9260_matrix.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91sam9260_matrix.h	2008-05-03 00:15:51.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91sam9260_matrix.h	2008-05-07 12:07:13.000000000 +0200
+--- a/include/asm-arm/arch-at91/at91sam9260_matrix.h
++++ b/include/asm-arm/arch-at91/at91sam9260_matrix.h
 @@ -1,6 +1,8 @@
  /*
   * include/asm-arm/arch-at91/at91sam9260_matrix.h
@@ -12313,9 +12213,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91sam9260_matrix.h lin
   * Memory Controllers (MATRIX, EBI) - System peripherals registers.
   * Based on AT91SAM9260 datasheet revision B.
   *
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91sam9261_matrix.h linux-2.6/include/asm-arm/arch-at91/at91sam9261_matrix.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91sam9261_matrix.h	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91sam9261_matrix.h	2008-05-07 12:07:24.000000000 +0200
+--- a/include/asm-arm/arch-at91/at91sam9261_matrix.h
++++ b/include/asm-arm/arch-at91/at91sam9261_matrix.h
 @@ -1,6 +1,8 @@
  /*
   * include/asm-arm/arch-at91/at91sam9261_matrix.h
@@ -12325,9 +12224,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91sam9261_matrix.h lin
   * Memory Controllers (MATRIX, EBI) - System peripherals registers.
   * Based on AT91SAM9261 datasheet revision D.
   *
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91sam926x_mc.h linux-2.6/include/asm-arm/arch-at91/at91sam926x_mc.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91sam926x_mc.h	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91sam926x_mc.h	1970-01-01 02:00:00.000000000 +0200
+--- a/include/asm-arm/arch-at91/at91sam926x_mc.h
++++ /dev/null
 @@ -1,141 +0,0 @@
 -/*
 - * include/asm-arm/arch-at91/at91sam926x_mc.h
@@ -12470,9 +12368,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91sam926x_mc.h linux-2
 -#endif
 -
 -#endif
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91sam9_sdramc.h linux-2.6/include/asm-arm/arch-at91/at91sam9_sdramc.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91sam9_sdramc.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91sam9_sdramc.h	2008-05-07 23:51:59.000000000 +0200
+--- /dev/null
++++ b/include/asm-arm/arch-at91/at91sam9_sdramc.h
 @@ -0,0 +1,86 @@
 +/*
 + * include/asm-arm/arch-at91/at91sam9_sdramc.h
@@ -12560,9 +12457,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91sam9_sdramc.h linux-
 +
 +
 +#endif
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91sam9_smc.h linux-2.6/include/asm-arm/arch-at91/at91sam9_smc.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91sam9_smc.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91sam9_smc.h	2008-05-07 23:52:15.000000000 +0200
+--- /dev/null
++++ b/include/asm-arm/arch-at91/at91sam9_smc.h
 @@ -0,0 +1,76 @@
 +/*
 + * include/asm-arm/arch-at91/at91sam9_smc.h
@@ -12640,9 +12536,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91sam9_smc.h linux-2.6
 +#endif
 +
 +#endif
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91sam9rl.h linux-2.6/include/asm-arm/arch-at91/at91sam9rl.h
---- linux-2.6.25/include/asm-arm/arch-at91/at91sam9rl.h	2008-05-03 00:15:51.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/at91sam9rl.h	2008-04-18 19:22:02.000000000 +0200
+--- a/include/asm-arm/arch-at91/at91sam9rl.h
++++ b/include/asm-arm/arch-at91/at91sam9rl.h
 @@ -110,6 +110,6 @@
  #define AT91SAM9RL_ROM_SIZE	(2 * SZ_16K)	/* Internal ROM size (32Kb) */
  
@@ -12651,9 +12546,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/at91sam9rl.h linux-2.6/i
 +#define AT91SAM9RL_UDPHS_FIFO	0x00600000	/* USB Device HS controller */
  
  #endif
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/board.h linux-2.6/include/asm-arm/arch-at91/board.h
---- linux-2.6.25/include/asm-arm/arch-at91/board.h	2008-05-03 00:15:51.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/board.h	2008-05-02 00:40:32.000000000 +0200
+--- a/include/asm-arm/arch-at91/board.h
++++ b/include/asm-arm/arch-at91/board.h
 @@ -36,6 +36,7 @@
  #include <linux/i2c.h>
  #include <linux/leds.h>
@@ -12682,9 +12576,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/board.h linux-2.6/includ
   /* LEDs */
  extern void __init at91_init_leds(u8 cpu_led, u8 timer_led);
  extern void __init at91_gpio_leds(struct gpio_led *leds, int nr);
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/cpu.h linux-2.6/include/asm-arm/arch-at91/cpu.h
---- linux-2.6.25/include/asm-arm/arch-at91/cpu.h	2008-05-03 00:15:51.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/cpu.h	2008-05-05 22:10:58.000000000 +0200
+--- a/include/asm-arm/arch-at91/cpu.h
++++ b/include/asm-arm/arch-at91/cpu.h
 @@ -48,6 +48,17 @@
  	return (at91_sys_read(AT91_DBGU_CIDR) & AT91_CIDR_ARCH);
  }
@@ -12716,9 +12609,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/cpu.h linux-2.6/include/
  #endif
  
  /*
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/ics1523.h linux-2.6/include/asm-arm/arch-at91/ics1523.h
---- linux-2.6.25/include/asm-arm/arch-at91/ics1523.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/ics1523.h	2008-01-16 21:24:29.000000000 +0200
+--- /dev/null
++++ b/include/asm-arm/arch-at91/ics1523.h
 @@ -0,0 +1,154 @@
 +//*----------------------------------------------------------------------------
 +//*         ATMEL Microcontroller Software Support  -  ROUSSET  -
@@ -12874,9 +12766,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/ics1523.h linux-2.6/incl
 +int at91_ics1523_init(void);
 +
 +#endif /* ics1523_h */
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/spi.h linux-2.6/include/asm-arm/arch-at91/spi.h
---- linux-2.6.25/include/asm-arm/arch-at91/spi.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/spi.h	2008-01-16 21:24:29.000000000 +0200
+--- /dev/null
++++ b/include/asm-arm/arch-at91/spi.h
 @@ -0,0 +1,54 @@
 +/*
 + * Serial Peripheral Interface (SPI) driver for the Atmel AT91RM9200
@@ -12932,9 +12823,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/spi.h linux-2.6/include/
 +extern int spi_transfer(struct spi_transfer_list* list);
 +
 +#endif
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/timex.h linux-2.6/include/asm-arm/arch-at91/timex.h
---- linux-2.6.25/include/asm-arm/arch-at91/timex.h	2008-05-03 00:15:51.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-at91/timex.h	2008-04-18 18:30:40.000000000 +0200
+--- a/include/asm-arm/arch-at91/timex.h
++++ b/include/asm-arm/arch-at91/timex.h
 @@ -27,14 +27,29 @@
  
  #define CLOCK_TICK_RATE		(AT91_SLOW_CLOCK)
@@ -12966,9 +12856,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-at91/timex.h linux-2.6/includ
  #define CLOCK_TICK_RATE		(AT91SAM9_MASTER_CLOCK/16)
  
  #elif defined(CONFIG_ARCH_AT91SAM9RL)
-diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-ks8695/devices.h linux-2.6/include/asm-arm/arch-ks8695/devices.h
---- linux-2.6.25/include/asm-arm/arch-ks8695/devices.h	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6/include/asm-arm/arch-ks8695/devices.h	2007-12-31 10:44:34.000000000 +0200
+--- a/include/asm-arm/arch-ks8695/devices.h
++++ b/include/asm-arm/arch-ks8695/devices.h
 @@ -18,6 +18,11 @@
  extern void __init ks8695_add_device_lan(void);
  extern void __init ks8695_add_device_hpna(void);
@@ -12981,9 +12870,8 @@ diff -urN -x CVS linux-2.6.25/include/asm-arm/arch-ks8695/devices.h linux-2.6/in
   /* PCI */
  #define KS8695_MODE_PCI		0
  #define KS8695_MODE_MINIPCI	1
-diff -urN -x CVS linux-2.6.25/include/linux/clk.h linux-2.6/include/linux/clk.h
---- linux-2.6.25/include/linux/clk.h	2007-10-09 22:31:38.000000000 +0200
-+++ linux-2.6/include/linux/clk.h	2007-12-31 10:44:34.000000000 +0200
+--- a/include/linux/clk.h
++++ b/include/linux/clk.h
 @@ -121,4 +121,24 @@
   */
  struct clk *clk_get_parent(struct clk *clk);
@@ -13009,9 +12897,8 @@ diff -urN -x CVS linux-2.6.25/include/linux/clk.h linux-2.6/include/linux/clk.h
 +int clk_must_disable(struct clk *clk);
 +
  #endif
-diff -urN -x CVS linux-2.6.25/include/linux/i2c-id.h linux-2.6/include/linux/i2c-id.h
---- linux-2.6.25/include/linux/i2c-id.h	2008-05-03 00:15:52.000000000 +0200
-+++ linux-2.6/include/linux/i2c-id.h	2008-03-09 15:43:48.000000000 +0200
+--- a/include/linux/i2c-id.h
++++ b/include/linux/i2c-id.h
 @@ -131,6 +131,7 @@
  
  /* --- PCA 9564 based algorithms */
@@ -13020,9 +12907,8 @@ diff -urN -x CVS linux-2.6.25/include/linux/i2c-id.h linux-2.6/include/linux/i2c
  
  /* --- PowerPC on-chip adapters						*/
  #define I2C_HW_OCP		0x120000 /* IBM on-chip I2C adapter */
-diff -urN -x CVS linux-2.6.25/include/linux/usb/atmel_usba_udc.h linux-2.6/include/linux/usb/atmel_usba_udc.h
---- linux-2.6.25/include/linux/usb/atmel_usba_udc.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6/include/linux/usb/atmel_usba_udc.h	2008-05-03 00:31:09.000000000 +0200
+--- /dev/null
++++ b/include/linux/usb/atmel_usba_udc.h
 @@ -0,0 +1,23 @@
 +/*
 +* Platform data definitions for Atmel USBA gadget driver.
@@ -13047,9 +12933,8 @@ diff -urN -x CVS linux-2.6.25/include/linux/usb/atmel_usba_udc.h linux-2.6/inclu
 +
 +#endif /* __LINUX_USB_USBA_H */
 +
-diff -urN -x CVS linux-2.6.25/include/video/atmel_lcdc.h linux-2.6/include/video/atmel_lcdc.h
---- linux-2.6.25/include/video/atmel_lcdc.h	2008-05-03 00:15:53.000000000 +0200
-+++ linux-2.6/include/video/atmel_lcdc.h	2008-03-09 15:53:40.000000000 +0200
+--- a/include/video/atmel_lcdc.h
++++ b/include/video/atmel_lcdc.h
 @@ -39,6 +39,7 @@
  	u8			bl_power;
  #endif
@@ -13058,9 +12943,8 @@ diff -urN -x CVS linux-2.6.25/include/video/atmel_lcdc.h linux-2.6/include/video
  
  	u8			default_bpp;
  	unsigned int		default_lcdcon2;
-diff -urN -x CVS linux-2.6.25/sound/soc/at91/eti_b1_wm8731.c linux-2.6/sound/soc/at91/eti_b1_wm8731.c
---- linux-2.6.25/sound/soc/at91/eti_b1_wm8731.c	2008-05-03 00:15:56.000000000 +0200
-+++ linux-2.6/sound/soc/at91/eti_b1_wm8731.c	2008-03-09 15:15:07.000000000 +0200
+--- a/sound/soc/at91/eti_b1_wm8731.c
++++ b/sound/soc/at91/eti_b1_wm8731.c
 @@ -33,8 +33,7 @@
  #include <sound/soc.h>
  #include <sound/soc-dapm.h>
@@ -13119,9 +13003,8 @@ diff -urN -x CVS linux-2.6.25/sound/soc/at91/eti_b1_wm8731.c linux-2.6/sound/soc
  
  	/*
  	 * Set PCK1 parent to PLLB and its rate to 12 Mhz.
-diff -urN -x CVS linux-2.6.25/sound/spi/at73c213.c linux-2.6/sound/spi/at73c213.c
---- linux-2.6.25/sound/spi/at73c213.c	2008-05-03 00:15:56.000000000 +0200
-+++ linux-2.6/sound/spi/at73c213.c	2008-03-09 15:15:07.000000000 +0200
+--- a/sound/spi/at73c213.c
++++ b/sound/spi/at73c213.c
 @@ -114,7 +114,11 @@
  static struct snd_pcm_hardware snd_at73c213_playback_hw = {
  	.info		= SNDRV_PCM_INFO_INTERLEAVED |
