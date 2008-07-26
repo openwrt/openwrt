@@ -65,8 +65,13 @@ start() {
 				c["vlan0ports"] = "0 1 2 3 5*"
 				c["vlan1ports"] = "4 5"
 		}
-
 		if (model == "Dell TrueMobile 2300") {
+			c["lan_ifname"] = "eth0"
+			c["wan_ifname"] = "eth1"
+			c["vlan0ports"] = "0 1 2 3 4 5u"
+			c["vlan1ports"] = ""
+		}
+		if (model == "Dell TrueMobile 2300 v2") {
 			c["vlan0ports"] = "0 1 2 3 5*"
 			c["vlan1ports"] = "4 5"
 		}
