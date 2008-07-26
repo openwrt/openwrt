@@ -866,7 +866,7 @@
  	dev->mtd.priv = dev;
  	dev->mtd.owner = THIS_MODULE;
 +	dev->mtd.refresh_device = block2mtd_refresh;
- 	
+ 
  	part = kzalloc(sizeof(struct mtd_partition), GFP_KERNEL);
  	part->name = dev->mtd.name;
 --- a/drivers/mtd/mtdchar.c

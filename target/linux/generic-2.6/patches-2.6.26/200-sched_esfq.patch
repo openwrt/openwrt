@@ -4,7 +4,7 @@
   *
   *	The only reason for this is efficiency, it is possible
   *	to change these parameters in compile time.
-+ *	
++ *
 + *	If you need to play with these values, use esfq instead.
   */
  
@@ -60,7 +60,7 @@
 +	  flows. The original SFQ discipline hashes by connection; ESFQ add
 +	  several other hashing methods, such as by src IP or by dst IP, which
 +	  can be more fair to users in some networking situations.
-+	  
++
 +	  To compile this code as a module, choose M here: the
 +	  module will be called sch_esfq.
 +
@@ -149,7 +149,7 @@
 +	For more comments look at sch_sfq.c.
 +	The difference is that you can change limit, depth,
 +	hash table size and choose alternate hash types.
-+	
++
 +	classic:	same as in sch_sfq.c
 +	dst:		destination IP address
 +	src:		source IP address
@@ -157,8 +157,8 @@
 +	ctorigdst:	original destination IP address
 +	ctorigsrc:	original source IP address
 +	ctrepldst:	reply destination IP address
-+	ctreplsrc:	reply source IP 
-+	
++	ctreplsrc:	reply source IP
++
 +*/
 +
 +#define ESFQ_HEAD 0
@@ -231,7 +231,7 @@
 +	enum ip_conntrack_info ctinfo;
 +	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
 +#endif
-+	
++
 +	switch (skb->protocol) {
 +	case __constant_htons(ETH_P_IP):
 +	{
@@ -489,13 +489,13 @@
 +	/* No active slots */
 +	if (q->tail == depth)
 +		return NULL;
-+	
++
 +	a = old_a = q->next[q->tail];
-+	
++
 +	/* Grab packet */
 +	skb = __skb_dequeue(&q->qs[a]);
 +	esfq_dec(q, a);
-+	
++
 +	/* Is the slot empty? */
 +	if (q->qs[a].qlen == 0) {
 +		q->ht[q->hash[a]] = depth;
@@ -511,7 +511,7 @@
 +		a = q->next[a];
 +		q->allot[a] += q->quantum;
 +	}
-+	
++
 +	return skb;
 +}
 +
@@ -601,13 +601,13 @@
 +	}
 +	}
 +}
-+	
++
 +static int esfq_q_init(struct esfq_sched_data *q, struct rtattr *opt)
 +{
 +	struct tc_esfq_qopt *ctl = RTA_DATA(opt);
 +	esfq_index p = ~0U/2;
 +	int i;
-+	
++
 +	if (opt && opt->rta_len < RTA_LENGTH(sizeof(*ctl)))
 +		return -EINVAL;
 +
@@ -618,7 +618,7 @@
 +		q->perturb_period = 0;
 +		q->hash_divisor = 1024;
 +		q->tail = q->limit = q->depth = 128;
-+		
++
 +	} else {
 +		struct tc_esfq_qopt *ctl = RTA_DATA(opt);
 +		if (ctl->quantum)
@@ -626,18 +626,18 @@
 +		q->perturb_period = ctl->perturb_period*HZ;
 +		q->hash_divisor = ctl->divisor ? : 1024;
 +		q->tail = q->limit = q->depth = ctl->flows ? : 128;
-+		
++
 +		if ( q->depth > p - 1 )
 +			return -EINVAL;
-+		
++
 +		if (ctl->limit)
 +			q->limit = min_t(u32, ctl->limit, q->depth);
-+		
++
 +		if (ctl->hash_kind) {
 +			q->hash_kind = esfq_check_hash(ctl->hash_kind);
 +		}
 +	}
-+	
++
 +	q->ht = kmalloc(q->hash_divisor*sizeof(esfq_index), GFP_KERNEL);
 +	if (!q->ht)
 +		goto err_case;
@@ -656,7 +656,7 @@
 +	q->qs = kmalloc(q->depth*sizeof(struct sk_buff_head), GFP_KERNEL);
 +	if (!q->qs)
 +		goto err_case;
-+	
++
 +	for (i=0; i< q->hash_divisor; i++)
 +		q->ht[i] = q->depth;
 +	for (i=0; i<q->depth; i++) {
@@ -664,7 +664,7 @@
 +		q->dep[i+q->depth].next = i+q->depth;
 +		q->dep[i+q->depth].prev = i+q->depth;
 +	}
-+	
++
 +	for (i=0; i<q->depth; i++)
 +		esfq_link(q, i);
 +	return 0;
@@ -677,7 +677,7 @@
 +{
 +	struct esfq_sched_data *q = qdisc_priv(sch);
 +	int err;
-+	
++
 +	q->quantum = psched_mtu(sch->dev); /* default */
 +	if ((err = esfq_q_init(q, opt)))
 +		return err;
@@ -689,7 +689,7 @@
 +		q->perturb_timer.expires = jiffies + q->perturb_period;
 +		add_timer(&q->perturb_timer);
 +	}
-+	
++
 +	return 0;
 +}
 +
@@ -699,7 +699,7 @@
 +	struct esfq_sched_data new;
 +	struct sk_buff *skb;
 +	int err;
-+	
++
 +	/* set up new queue */
 +	memset(&new, 0, sizeof(struct esfq_sched_data));
 +	new.quantum = psched_mtu(sch->dev); /* default */
@@ -710,7 +710,7 @@
 +	sch_tree_lock(sch);
 +	while ((skb = esfq_q_dequeue(q)) != NULL)
 +		esfq_q_enqueue(skb, &new, ESFQ_TAIL);
-+	
++
 +	/* clean up the old queue */
 +	esfq_q_destroy(q);
 +
@@ -786,7 +786,7 @@
 +{
 +	return register_qdisc(&esfq_qdisc_ops);
 +}
-+static void __exit esfq_module_exit(void) 
++static void __exit esfq_module_exit(void)
 +{
 +	unregister_qdisc(&esfq_qdisc_ops);
 +}

@@ -50,11 +50,11 @@
 + *             I didn't forget anybody). I apologize again for my lack of time.
 + *
 + *
-+ *             2008/06/17 - 2.6.25 - Changed imq.c to use qdisc_run() instead 
++ *             2008/06/17 - 2.6.25 - Changed imq.c to use qdisc_run() instead
 + *	       of qdisc_restart() and moved qdisc_run() to tasklet to avoid
 + *             recursive locking. New initialization routines to fix 'rmmod' not
 + *             working anymore. Used code from ifb.c. (Jussi Kivilinna)
-+ *	       
++ *
 + *	       Also, many thanks to pablo Sebastian Greco for making the initial
 + *	       patch and to those who helped the testing.
 + *

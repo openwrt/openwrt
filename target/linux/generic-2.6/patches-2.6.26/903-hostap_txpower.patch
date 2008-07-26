@@ -80,7 +80,7 @@
  	/* Get BSSID if we have a valid AP address */
 +
 +	if ( val == HFA384X_LINKSTATUS_CONNECTED ||
-+	     val == HFA384X_LINKSTATUS_DISCONNECTED ) 
++	     val == HFA384X_LINKSTATUS_DISCONNECTED )
 +			hostap_restore_power(local->dev);
 +
  	if (connected) {
@@ -127,7 +127,7 @@
 +{
 +        struct hostap_interface *iface = dev->priv;
 +       local_info_t *local = iface->local;
-+               
++
 +       u16 val;
 +       int ret = 0;
 +

@@ -26,11 +26,9 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
 Signed-off-by: Jeff Garzik <jgarzik@redhat.com>
 ---
 
-diff --git a/drivers/net/Makefile b/drivers/net/Makefile
-index c52738a..c96fe20 100644
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -237,6 +237,7 @@ obj-$(CONFIG_USB_CATC)          += usb/
+@@ -237,6 +237,7 @@
  obj-$(CONFIG_USB_KAWETH)        += usb/
  obj-$(CONFIG_USB_PEGASUS)       += usb/
  obj-$(CONFIG_USB_RTL8150)       += usb/
@@ -38,11 +36,9 @@ index c52738a..c96fe20 100644
  obj-$(CONFIG_USB_USBNET)        += usb/
  obj-$(CONFIG_USB_ZD1201)        += usb/
  
-diff --git a/drivers/net/usb/Kconfig b/drivers/net/usb/Kconfig
-index 0604f3f..68e198b 100644
 --- a/drivers/net/usb/Kconfig
 +++ b/drivers/net/usb/Kconfig
-@@ -154,6 +154,16 @@ config USB_NET_AX8817X
+@@ -154,6 +154,16 @@
  	  This driver creates an interface named "ethX", where X depends on
  	  what other networking devices you have in use.
  
@@ -59,11 +55,9 @@ index 0604f3f..68e198b 100644
  
  config USB_NET_CDCETHER
  	tristate "CDC Ethernet support (smart devices such as cable modems)"
-diff --git a/drivers/net/usb/Makefile b/drivers/net/usb/Makefile
-index 595a539..24800c1 100644
 --- a/drivers/net/usb/Makefile
 +++ b/drivers/net/usb/Makefile
-@@ -6,6 +6,7 @@ obj-$(CONFIG_USB_CATC)		+= catc.o
+@@ -6,6 +6,7 @@
  obj-$(CONFIG_USB_KAWETH)	+= kaweth.o
  obj-$(CONFIG_USB_PEGASUS)	+= pegasus.o
  obj-$(CONFIG_USB_RTL8150)	+= rtl8150.o
@@ -71,9 +65,6 @@ index 595a539..24800c1 100644
  obj-$(CONFIG_USB_NET_AX8817X)	+= asix.o
  obj-$(CONFIG_USB_NET_CDCETHER)	+= cdc_ether.o
  obj-$(CONFIG_USB_NET_DM9601)	+= dm9601.o
-diff --git a/drivers/net/usb/hso.c b/drivers/net/usb/hso.c
-new file mode 100644
-index 0000000..031d07b
 --- /dev/null
 +++ b/drivers/net/usb/hso.c
 @@ -0,0 +1,2836 @@
