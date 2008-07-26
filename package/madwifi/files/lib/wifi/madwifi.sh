@@ -14,7 +14,7 @@ scan_atheros() {
 		
 		config_get mode "$vif" mode
 		case "$mode" in
-			adhoc|ahdemo|sta|ap)
+			adhoc|ahdemo|sta|ap|monitor)
 				append $mode "$vif"
 			;;
 			wds)
@@ -43,7 +43,7 @@ scan_atheros() {
 		*) echo "$device: Invalid mode combination in config"; return 1;;
 	esac
 
-	config_set "$device" vifs "${ap:+$ap }${adhoc:+$adhoc }${ahdemo:+$ahdemo }${sta:+$sta }${wds:+$wds }"
+	config_set "$device" vifs "${ap:+$ap }${adhoc:+$adhoc }${ahdemo:+$ahdemo }${sta:+$sta }${wds:+$wds }${monitor:+$monitor}"
 }
 
 
