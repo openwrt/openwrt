@@ -1,7 +1,7 @@
 Index: zlib-1.2.3/Makefile.in
 ===================================================================
---- zlib-1.2.3.orig/Makefile.in	2007-06-04 13:24:03.760040896 +0200
-+++ zlib-1.2.3/Makefile.in	2007-06-04 13:24:03.839028888 +0200
+--- zlib-1.2.3.orig/Makefile.in	2005-07-18 04:25:21.000000000 +0200
++++ zlib-1.2.3/Makefile.in	2008-07-27 14:57:32.000000000 +0200
 @@ -25,20 +25,23 @@
  #           -Wstrict-prototypes -Wmissing-prototypes
  
@@ -52,7 +52,7 @@ Index: zlib-1.2.3/Makefile.in
  	rm -f $(SHAREDLIB) $(SHAREDLIBM)
  	ln -s $@ $(SHAREDLIB)
  	ln -s $@ $(SHAREDLIBM)
-@@ -90,23 +95,23 @@
+@@ -90,23 +95,22 @@
  	$(CC) $(CFLAGS) -o $@ minigzip.o $(LDFLAGS)
  
  install: $(LIBS)
@@ -79,7 +79,7 @@ Index: zlib-1.2.3/Makefile.in
  	  rm -f $(SHAREDLIB) $(SHAREDLIBM); \
  	  ln -s $(SHAREDLIBV) $(SHAREDLIB); \
  	  ln -s $(SHAREDLIBV) $(SHAREDLIBM); \
- 	  (ldconfig || true)  >/dev/null 2>&1; \
+-	  (ldconfig || true)  >/dev/null 2>&1; \
  	fi
 -	cp zlib.3 $(man3dir)
 -	chmod 644 $(man3dir)/zlib.3
@@ -87,11 +87,11 @@ Index: zlib-1.2.3/Makefile.in
 +	chmod 644 $(DESTDIR)$(man3dir)/zlib.3
  # The ranlib in install is needed on NeXTSTEP which checks file times
  # ldconfig is for Linux
- 
+
 Index: zlib-1.2.3/configure
-===================================================================
---- zlib-1.2.3.orig/configure	2007-06-04 13:24:03.765040136 +0200
-+++ zlib-1.2.3/configure	2007-06-04 13:24:03.839028888 +0200
+=================================================================== 
+--- zlib-1.2.3.orig/configure	2005-07-11 22:11:57.000000000 +0200
++++ zlib-1.2.3/configure	2008-07-27 14:57:24.000000000 +0200
 @@ -23,7 +23,7 @@
  VER=`sed -n -e '/VERSION "/s/.*"\(.*\)".*/\1/p' < zlib.h`
  VER2=`sed -n -e '/VERSION "/s/.*"\([0-9]*\\.[0-9]*\)\\..*/\1/p' < zlib.h`
@@ -206,8 +206,8 @@ Index: zlib-1.2.3/configure
  " > Makefile
 Index: zlib-1.2.3/contrib/minizip/Makefile
 ===================================================================
---- zlib-1.2.3.orig/contrib/minizip/Makefile	2007-06-04 13:24:03.773038920 +0200
-+++ zlib-1.2.3/contrib/minizip/Makefile	2007-06-04 13:24:03.839028888 +0200
+--- zlib-1.2.3.orig/contrib/minizip/Makefile	2005-07-12 20:08:40.000000000 +0200
++++ zlib-1.2.3/contrib/minizip/Makefile	2008-07-27 14:57:24.000000000 +0200
 @@ -1,8 +1,8 @@
  CC=cc
 -CFLAGS=-O -I../..
