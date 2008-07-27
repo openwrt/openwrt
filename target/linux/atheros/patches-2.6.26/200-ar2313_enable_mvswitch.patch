@@ -1,0 +1,34 @@
+--- a/drivers/net/ar2313/ar2313.c
++++ b/drivers/net/ar2313/ar2313.c
+@@ -953,9 +953,9 @@
+ 						((status >> DMA_RX_LEN_SHIFT) & 0x3fff) - CRC_LEN);
+ 
+ 				dev->stats.rx_bytes += skb->len;
+-				skb->protocol = eth_type_trans(skb, dev);
++
+ 				/* pass the packet to upper layers */
+-				netif_rx(skb);
++				sp->rx(skb);
+ 
+ 				skb_new->dev = dev;
+ 				/* 16 bit align */
+@@ -1370,6 +1370,8 @@
+ 		return PTR_ERR(phydev);
+ 	}
+ 
++	sp->rx = phydev->netif_rx;
++
+ 	/* mask with MAC supported features */
+ 	phydev->supported &= (SUPPORTED_10baseT_Half
+ 		| SUPPORTED_10baseT_Full
+--- a/drivers/net/ar2313/ar2313.h
++++ b/drivers/net/ar2313/ar2313.h
+@@ -107,6 +107,8 @@
+  */
+ struct ar2313_private {
+ 	struct net_device *dev;
++	int (*rx)(struct sk_buff *skb);
++
+ 	int version;
+ 	u32 mb[2];
+ 
