@@ -393,7 +393,6 @@ static inline void remove_debug_files(struct admhcd *bus) { }
 static int debug_async_open(struct inode *, struct file *);
 static int debug_periodic_open(struct inode *, struct file *);
 static int debug_registers_open(struct inode *, struct file *);
-static int debug_async_open(struct inode *, struct file *);
 static ssize_t debug_output(struct file*, char __user*, size_t, loff_t*);
 static int debug_close(struct inode *, struct file *);
 
@@ -429,7 +428,8 @@ struct debug_buffer {
 static ssize_t
 show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 {
-	unsigned		temp, size = count;
+	unsigned temp;
+	unsigned size = count;
 
 	if (!ed)
 		return 0;
@@ -488,6 +488,7 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 
 		ed = ed->ed_next;
 	}
+
 	return count - size;
 }
 
@@ -503,9 +504,8 @@ static ssize_t fill_async_buffer(struct debug_buffer *buf)
 	hcd = bus_to_hcd(bus);
 	ahcd = hcd_to_admhcd(hcd);
 
-	/* display control and bulk lists together, for simplicity */
 	spin_lock_irqsave(&ahcd->lock, flags);
-	temp = show_list(ahcd, buf->page, buf->count, ahcd->ed_head);
+	temp = show_list(ahcd, buf->page, PAGE_SIZE, ahcd->ed_head);
 	spin_unlock_irqrestore(&ahcd->lock, flags);
 
 	return temp;
