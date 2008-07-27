@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -80,17 +80,17 @@ $(eval $(call KernelPackage,usb-uhci))
 
 define KernelPackage/usb-uhci-iv
   $(call usbdep,@LINUX_2_4)
-  TITLE:=Support for Intel/VIA UHCI controllers 
+  TITLE:=Support for Intel/VIA UHCI controllers
   KCONFIG:=CONFIG_USB_UHCI
   FILES:=$(LINUX_DIR)/drivers/usb/host/usb-uhci.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,usb-uhci) 
-endef 
+  AUTOLOAD:=$(call AutoLoad,50,usb-uhci)
+endef
 
 define KernelPackage/usb-uhci-iv/description
  Kernel support for Intel/VIA USB UHCI controllers
 endef
 
-$(eval $(call KernelPackage,usb-uhci-iv)) 
+$(eval $(call KernelPackage,usb-uhci-iv))
 
 
 define KernelPackage/usb-ohci
@@ -242,21 +242,21 @@ $(eval $(call KernelPackage,usb-serial))
 
 define KernelPackage/usb-serial-airprime
   $(call usbdep,kmod-usb-serial @LINUX_2_6)
-  TITLE:=Support for Airprime (EVDO) 
+  TITLE:=Support for Airprime (EVDO)
   KCONFIG:=CONFIG_USB_SERIAL_AIRPRIME
   FILES:=$(LINUX_DIR)/drivers/usb/serial/airprime.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,airprime)
 endef
 
 define KernelPackage/usb-serial-airprime/description
- Kernel support for Airprime (EVDO) 
+ Kernel support for Airprime (EVDO)
 endef
 
 $(eval $(call KernelPackage,usb-serial-airprime))
 
 
 define KernelPackage/usb-serial-belkin
-  $(call usbdep,kmod-usb-serial @LINUX_2_6&&@!LINUX_2_6_23)
+  $(call usbdep,kmod-usb-serial)
   TITLE:=Support for Belkin devices
   KCONFIG:=CONFIG_USB_SERIAL_BELKIN
   FILES:=$(LINUX_DIR)/drivers/usb/serial/belkin_sa.$(LINUX_KMOD_SUFFIX)
@@ -271,7 +271,7 @@ $(eval $(call KernelPackage,usb-serial-belkin))
 
 
 define KernelPackage/usb-serial-ch341
-  $(call usbdep,kmod-usb-serial)
+  $(call usbdep,kmod-usb-serial @LINUX_2_6&&@!LINUX_2_6_23)
   TITLE:=Support for CH341 devices
   KCONFIG:=CONFIG_USB_SERIAL_CH341
   FILES:=$(LINUX_DIR)/drivers/usb/serial/ch341.$(LINUX_KMOD_SUFFIX)
