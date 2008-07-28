@@ -1,0 +1,13 @@
+Index: linux-2.6.26/arch/um/Makefile-i386
+===================================================================
+--- linux-2.6.26.orig/arch/um/Makefile-i386	2008-07-28 13:43:40.412036547 +0200
++++ linux-2.6.26/arch/um/Makefile-i386	2008-07-28 13:44:00.234033125 +0200
+@@ -35,7 +35,7 @@
+ # Disable unit-at-a-time mode on pre-gcc-4.0 compilers, it makes gcc use
+ # a lot more stack due to the lack of sharing of stacklots.  Also, gcc
+ # 4.3.0 needs -funit-at-a-time for extern inline functions.
+-KBUILD_CFLAGS += $(shell if [ $(call cc-version) -lt 0400 ] ; then \
++KBUILD_CFLAGS += $(shell if [ $(call cc-version) -lt 0430 ] ; then \
+ 			echo $(call cc-option,-fno-unit-at-a-time); \
+ 			else echo $(call cc-option,-funit-at-a-time); fi ;)
+ 
