@@ -49,7 +49,7 @@ dnsmasq() {
 	append_bool "$cfg" noresolv "-R"
 	append_bool "$cfg" localise_queries "-y"
 	append_bool "$cfg" readethers "-Z"
-	append_bool "$cfg" dbus "-l"
+	append_bool "$cfg" dbus "-1"
 	append_bool "$cfg" boguspriv "-b"
 	append_bool "$cfg" expandhosts "-E"
 
