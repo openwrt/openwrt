@@ -22,6 +22,9 @@ ifneq ($(DUMP),1)
     TARGET:=$(TARGET)-$(PROFILE)
   endif
   LIBGCC_VERSION:=$(GCC_VERSION)
+  ifeq ($(ARCH),x86_64)
+    LIB_SUFFIX:=64
+  endif
 else
   UCLIBC_VERSION:=<UCLIBC_VERSION>
   LIBGCC_VERSION:=<LIBGCC_VERSION>
@@ -173,19 +176,19 @@ endef
 
 define Package/libgcc/install
 	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(TOOLCHAIN_DIR)/lib/libgcc_s.so.* $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib$(LIB_SUFFIX)/libgcc_s.so.* $(1)/lib/
 endef
 
 ifeq ($(word 1,$(subst ., ,$(LIBGCC_VERSION))),4)
   define Package/libssp/install
 	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(TOOLCHAIN_DIR)/lib/libssp.so.* $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib$(LIB_SUFFIX)/libssp.so.* $(1)/lib/
   endef
 endif
 
 define Package/libstdcpp/install
 	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(TOOLCHAIN_DIR)/lib/libstdc++.so.* $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib$(LIB_SUFFIX)/libstdc++.so.* $(1)/lib/
 endef
 
 define Package/libpthread/install
@@ -196,7 +199,7 @@ endef
 
 define Package/uclibc/install
 	$(INSTALL_DIR) $(1)/lib
-	for file in ld-uClibc libc libcrypt libdl libm libnsl libresolv librt libuClibc libutil; do \
+	for file in ld$(LIB_SUFFIX)-uClibc libc libcrypt libdl libm libnsl libresolv librt libuClibc libutil; do \
 		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file.so.* $(1)/lib/; \
 		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file-$(UCLIBC_VERSION).so $(1)/lib/; \
 	done
