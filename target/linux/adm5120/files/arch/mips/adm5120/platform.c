@@ -16,6 +16,7 @@
 #include <linux/kernel.h>
 #include <linux/list.h>
 #include <linux/device.h>
+#include <linux/dma-mapping.h>
 #include <linux/platform_device.h>
 
 #include <asm/bootinfo.h>
@@ -89,16 +90,15 @@ struct resource adm5120_hcd_resources[] = {
 	},
 };
 
-static u64 adm5120_hcd_dma_mask = ~(u32)0;
-
+static u64 adm5120_hcd_dma_mask = DMA_BIT_MASK(24);
 struct platform_device adm5120_hcd_device = {
 	.name		= "adm5120-hcd",
-	.id		= 0,
+	.id		= -1,
 	.num_resources	= ARRAY_SIZE(adm5120_hcd_resources),
 	.resource	= adm5120_hcd_resources,
 	.dev = {
 		.dma_mask	= &adm5120_hcd_dma_mask,
-		.coherent_dma_mask = 0xFFFFFFFF,
+		.coherent_dma_mask = DMA_BIT_MASK(24),
 	}
 };
 
