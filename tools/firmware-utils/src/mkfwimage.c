@@ -48,7 +48,7 @@ typedef struct part_data {
 #define DEFAULT_OUTPUT_FILE 	"firmware-image.bin"
 #define DEFAULT_VERSION		"UNKNOWN"
 
-#define OPTIONS "hv:o:r:k:"
+#define OPTIONS "hv:o:r:k:s:"
 
 #define FIRMWARE_MAX_LENGTH	(0x390000)
 #define partition_startaddr	(0xBFC30000)
