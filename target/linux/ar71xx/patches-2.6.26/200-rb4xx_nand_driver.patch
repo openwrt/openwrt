@@ -1,0 +1,21 @@
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -386,4 +386,8 @@
+ 	  Enables support for NAND Flash chips wired onto Freescale PowerPC
+ 	  processor localbus with User-Programmable Machine support.
+ 
++config MTD_NAND_RB4XX
++	tristate "NAND flash driver for RouterBoard 4xx series"
++	depends on MTD_NAND && ATHEROS_AR71XX
++
+ endif # MTD_NAND
+--- a/drivers/mtd/nand/Makefile
++++ b/drivers/mtd/nand/Makefile
+@@ -29,6 +29,7 @@
+ obj-$(CONFIG_MTD_NAND_BASLER_EXCITE)	+= excite_nandflash.o
+ obj-$(CONFIG_MTD_NAND_PXA3xx)		+= pxa3xx_nand.o
+ obj-$(CONFIG_MTD_NAND_PLATFORM)		+= plat_nand.o
++obj-$(CONFIG_MTD_NAND_RB4XX)		+= rb4xx_nand.o
+ obj-$(CONFIG_MTD_ALAUDA)		+= alauda.o
+ obj-$(CONFIG_MTD_NAND_PASEMI)		+= pasemi_nand.o
+ obj-$(CONFIG_MTD_NAND_ORION)		+= orion_nand.o

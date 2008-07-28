@@ -1,0 +1,70 @@
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -81,6 +81,12 @@
+ 	depends on USB_EHCI_HCD && (440EPX || ARCH_IXP4XX)
+ 	default y
+ 
++config USB_EHCI_AR71XX
++	bool "USB EHCI support for AR71xx"
++	depends on USB_EHCI_HCD && ATHEROS_AR71XX
++	help
++	  Support for Atheros AR71xx built-in EHCI controller
++
+ config USB_EHCI_FSL
+ 	bool "Support for Freescale on-chip EHCI USB controller"
+ 	depends on USB_EHCI_HCD && FSL_SOC
+@@ -152,6 +158,12 @@
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called ohci-hcd.
+ 
++config USB_OHCI_AR71XX
++	bool "USB OHCI support for Atheros AR71xx"
++	depends on USB_OHCI_HCD && ATHEROS_AR71XX
++	help
++	  Support for Atheros AR71xx built-in OHCI controller
++
+ config USB_OHCI_HCD_PPC_SOC
+ 	bool "OHCI support for on-chip PPC USB controller"
+ 	depends on USB_OHCI_HCD && (STB03xxx || PPC_MPC52xx)
+--- a/drivers/usb/host/ehci-hcd.c
++++ b/drivers/usb/host/ehci-hcd.c
+@@ -1034,6 +1034,11 @@
+ #define	PLATFORM_DRIVER		ixp4xx_ehci_driver
+ #endif
+ 
++#ifdef CONFIG_USB_EHCI_AR71XX
++#include "ehci-ar71xx.c"
++#define PLATFORM_DRIVER		ehci_hcd_ar71xx_driver
++#endif
++
+ #if !defined(PCI_DRIVER) && !defined(PLATFORM_DRIVER) && \
+     !defined(PS3_SYSTEM_BUS_DRIVER) && !defined(OF_PLATFORM_DRIVER)
+ #error "missing bus glue for ehci-hcd"
+--- a/drivers/usb/host/ohci.h
++++ b/drivers/usb/host/ohci.h
+@@ -538,6 +538,11 @@
+ #define writel_be(val, addr)	out_be32((__force unsigned *)addr, val)
+ #endif
+ 
++#if defined(CONFIG_ATHEROS_AR71XX)
++#define readl_be(addr)		__raw_readl(addr)
++#define writel_be(val, addr)	__raw_writel(addr, val)
++#endif
++
+ static inline unsigned int _ohci_readl (const struct ohci_hcd *ohci,
+ 					__hc32 __iomem * regs)
+ {
+--- a/drivers/usb/host/ohci-hcd.c
++++ b/drivers/usb/host/ohci-hcd.c
+@@ -1057,6 +1057,11 @@
+ #define SM501_OHCI_DRIVER	ohci_hcd_sm501_driver
+ #endif
+ 
++#ifdef CONFIG_USB_OHCI_AR71XX
++#include "ohci-ar71xx.c"
++#define PLATFORM_DRIVER		ohci_hcd_ar71xx_driver
++#endif
++
+ #if	!defined(PCI_DRIVER) &&		\
+ 	!defined(PLATFORM_DRIVER) &&	\
+ 	!defined(OF_PLATFORM_DRIVER) &&	\
