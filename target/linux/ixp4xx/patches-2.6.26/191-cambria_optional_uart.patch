@@ -72,7 +72,7 @@
  	platform_device_register(&cambria_npec_device);
  	platform_device_register(&cambria_npea_device);
  
-@@ -298,6 +349,22 @@
+@@ -298,6 +349,20 @@
  
  static void __init cambria_gw2358_setup(void)
  {
@@ -90,8 +90,6 @@
 +
 +	platform_device_register(&cambria_optional_uart);
 +
-+	cambria_npec_data.phy = 2;
-+	cambria_npea_data.phy = 1;
  	platform_device_register(&cambria_npec_device);
  	platform_device_register(&cambria_npea_device);
  
