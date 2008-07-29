@@ -217,21 +217,17 @@ define KernelPackage/fs-nfsd
   SUBMENU:=$(FS_MENU)
   TITLE:=NFS kernel server support
   DEPENDS:=kmod-fs-nfs-common
-  KCONFIG:= \
-	CONFIG_NFSD \
-	CONFIG_EXPORTFS \
-	CONFIG_SUNRPC_GSS
-  FILES:= \
-  	$(LINUX_DIR)/fs/nfsd/nfsd.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/fs/exportfs/exportfs.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/sunrpc/auth_gss/auth_rpcgss.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,auth_rpcgss exportfs nfsd)
+  KCONFIG:=CONFIG_NFSD
+  FILES:=$(LINUX_DIR)/fs/nfsd/nfsd.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,nfsd)
 endef
 
 define KernelPackage/fs-nfsd/2.6
-#  KCONFIG+=CONFIG_EXPORTFS
-  FILES+=$(LINUX_DIR)/fs/exportfs/exportfs.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD+=$(call AutoLoad,30,exportfs)
+  KCONFIG+=CONFIG_EXPORTFS \
+  	CONFIG_SUNRPC_GSS
+  FILES+=$(LINUX_DIR)/fs/exportfs/exportfs.$(LINUX_KMOD_SUFFIX) \
+  	$(LINUX_DIR)/net/sunrpc/auth_gss/auth_rpcgss.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD+=$(call AutoLoad,40,auth_rpcgss exportfs nfsd)
 endef
 
 define KernelPackage/fs-nfsd/description
