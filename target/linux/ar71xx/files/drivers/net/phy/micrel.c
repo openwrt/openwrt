@@ -46,7 +46,7 @@ static int ksz8041_config_intr(struct phy_device *phydev)
 
 static struct phy_driver ksz8041_phy_driver = {
 	.phy_id		= 0x00221512,
-	.name		= "Micrel/Kendin KSZ8041",
+	.name		= "Micrel KSZ8041",
 	.phy_id_mask	= 0x001fffff,
 	.features	= PHY_BASIC_FEATURES,
 	.flags		= PHY_HAS_INTERRUPT,
