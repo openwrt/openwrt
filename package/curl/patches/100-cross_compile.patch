@@ -1,0 +1,156 @@
+Index: curl-7.17.1/configure
+===================================================================
+--- curl-7.17.1.orig/configure	2008-04-02 11:38:36.800178755 +0200
++++ curl-7.17.1/configure	2008-04-02 11:39:49.124300271 +0200
+@@ -26922,16 +26922,6 @@
+ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   fi
+ 
+-  if test "$OPENSSL_ENABLED" = "1"; then
+-    if test -n "$LIB_OPENSSL"; then
+-
+-       LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$LIB_OPENSSL"
+-       export LD_LIBRARY_PATH
+-       { echo "$as_me:$LINENO: Added $LIB_OPENSSL to LD_LIBRARY_PATH" >&5
+-echo "$as_me: Added $LIB_OPENSSL to LD_LIBRARY_PATH" >&6;}
+-    fi
+-  fi
+-
+ fi
+ 
+ 
+@@ -27551,15 +27541,6 @@
+    { (exit 1); exit 1; }; }
+   fi
+ 
+-  if test "$LIBSSH2_ENABLED" = "1"; then
+-    if test -n "$LIB_LIBSSH2"; then
+-
+-       LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$LIB_LIBSSH2"
+-       export LD_LIBRARY_PATH
+-       { echo "$as_me:$LINENO: Added $LIB_LIBSSH2 to LD_LIBRARY_PATH" >&5
+-echo "$as_me: Added $LIB_LIBSSH2 to LD_LIBRARY_PATH" >&6;}
+-    fi
+-  fi
+ fi
+ 
+ 
+@@ -27741,18 +27722,6 @@
+ 
+ fi
+ 
+-
+-      if test "x$USE_GNUTLS" = "xyes"; then
+-        { echo "$as_me:$LINENO: detected GnuTLS version $version" >&5
+-echo "$as_me: detected GnuTLS version $version" >&6;}
+-
+-
+-        LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$gtlsprefix/lib$libsuff"
+-        export LD_LIBRARY_PATH
+-        { echo "$as_me:$LINENO: Added $gtlsprefix/lib$libsuff to LD_LIBRARY_PATH" >&5
+-echo "$as_me: Added $gtlsprefix/lib$libsuff to LD_LIBRARY_PATH" >&6;}
+-      fi
+-
+     fi
+ 
+   fi
+@@ -27951,17 +27920,6 @@
+ fi
+ 
+ 
+-      if test "x$USE_NSS" = "xyes"; then
+-        { echo "$as_me:$LINENO: detected NSS version $version" >&5
+-echo "$as_me: detected NSS version $version" >&6;}
+-
+-
+-        LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nssprefix/lib$libsuff"
+-        export LD_LIBRARY_PATH
+-        { echo "$as_me:$LINENO: Added $nssprefix/lib$libsuff to LD_LIBRARY_PATH" >&5
+-echo "$as_me: Added $nssprefix/lib$libsuff to LD_LIBRARY_PATH" >&6;}
+-      fi
+-
+     fi
+ 
+   fi
+Index: curl-7.17.1/configure.ac
+===================================================================
+--- curl-7.17.1.orig/configure.ac	2008-04-02 11:37:43.137120670 +0200
++++ curl-7.17.1/configure.ac	2008-04-02 11:38:33.383984077 +0200
+@@ -1215,19 +1215,6 @@
+         AC_MSG_RESULT([no])
+     ])
+   fi
+-
+-  if test "$OPENSSL_ENABLED" = "1"; then
+-    if test -n "$LIB_OPENSSL"; then
+-       dnl when the ssl shared libs were found in a path that the run-time
+-       dnl linker doesn't search through, we need to add it to LD_LIBRARY_PATH
+-       dnl to prevent further configure tests to fail due to this
+-
+-       LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$LIB_OPENSSL"
+-       export LD_LIBRARY_PATH
+-       AC_MSG_NOTICE([Added $LIB_OPENSSL to LD_LIBRARY_PATH])
+-    fi
+-  fi
+-
+ fi
+ 
+ dnl **********************************************************************
+@@ -1364,17 +1351,6 @@
+     AC_MSG_ERROR([libSSH2 libs and/or directories were not found where specified!])
+   fi
+ 
+-  if test "$LIBSSH2_ENABLED" = "1"; then
+-    if test -n "$LIB_LIBSSH2"; then
+-       dnl when the libssh2 shared libs were found in a path that the run-time
+-       dnl linker doesn't search through, we need to add it to LD_LIBRARY_PATH
+-       dnl to prevent further configure tests to fail due to this
+-
+-       LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$LIB_LIBSSH2"
+-       export LD_LIBRARY_PATH
+-       AC_MSG_NOTICE([Added $LIB_LIBSSH2 to LD_LIBRARY_PATH])
+-    fi
+-  fi
+ fi
+ 
+ dnl **********************************************************************
+@@ -1464,19 +1440,6 @@
+          CPPFLAGS="$CLEANCPPFLAGS"
+        ])
+ 
+-      if test "x$USE_GNUTLS" = "xyes"; then
+-        AC_MSG_NOTICE([detected GnuTLS version $version])
+-
+-        dnl when shared libs were found in a path that the run-time
+-        dnl linker doesn't search through, we need to add it to
+-        dnl LD_LIBRARY_PATH to prevent further configure tests to fail
+-        dnl due to this
+-
+-        LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$gtlsprefix/lib$libsuff"
+-        export LD_LIBRARY_PATH
+-        AC_MSG_NOTICE([Added $gtlsprefix/lib$libsuff to LD_LIBRARY_PATH])
+-      fi
+-
+     fi
+ 
+   fi dnl GNUTLS not disabled
+@@ -1544,19 +1507,6 @@
+          CPPFLAGS="$CLEANCPPFLAGS"
+        ])
+ 
+-      if test "x$USE_NSS" = "xyes"; then
+-        AC_MSG_NOTICE([detected NSS version $version])
+-
+-        dnl when shared libs were found in a path that the run-time
+-        dnl linker doesn't search through, we need to add it to
+-        dnl LD_LIBRARY_PATH to prevent further configure tests to fail
+-        dnl due to this
+-
+-        LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nssprefix/lib$libsuff"
+-        export LD_LIBRARY_PATH
+-        AC_MSG_NOTICE([Added $nssprefix/lib$libsuff to LD_LIBRARY_PATH])
+-      fi
+-
+     fi
+ 
+   fi dnl NSS not disabled

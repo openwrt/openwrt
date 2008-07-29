@@ -1,0 +1,24 @@
+diff -urN curl-7.17.1/Makefile.am curl-7.17.1.new/Makefile.am
+--- curl-7.17.1/Makefile.am	2007-07-12 22:41:22.000000000 +0200
++++ curl-7.17.1.new/Makefile.am	2008-07-29 12:18:00.000000000 +0200
+@@ -29,7 +29,7 @@
+ bin_SCRIPTS = curl-config
+ 
+ SUBDIRS = lib src
+-DIST_SUBDIRS = $(SUBDIRS) tests include packages docs
++DIST_SUBDIRS = $(SUBDIRS) include packages
+ 
+ pkgconfigdir = $(libdir)/pkgconfig
+ pkgconfig_DATA = libcurl.pc
+diff -urN curl-7.17.1/Makefile.in curl-7.17.1.new/Makefile.in
+--- curl-7.17.1/Makefile.in	2007-10-29 15:49:45.000000000 +0100
++++ curl-7.17.1.new/Makefile.in	2008-07-29 12:17:49.000000000 +0200
+@@ -260,7 +260,7 @@
+ 
+ bin_SCRIPTS = curl-config
+ SUBDIRS = lib src
+-DIST_SUBDIRS = $(SUBDIRS) tests include packages docs
++DIST_SUBDIRS = $(SUBDIRS) include packages 
+ pkgconfigdir = $(libdir)/pkgconfig
+ pkgconfig_DATA = libcurl.pc
+ all: all-recursive

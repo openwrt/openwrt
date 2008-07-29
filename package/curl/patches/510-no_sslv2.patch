@@ -1,0 +1,41 @@
+diff -ruN curl-7.14.0-old/lib/ssluse.c curl-7.14.0-new/lib/ssluse.c
+--- curl-7.14.0-old/lib/ssluse.c	2005-04-15 00:52:57.000000000 +0200
++++ curl-7.14.0-new/lib/ssluse.c	2006-12-18 10:48:20.000000000 +0100
+@@ -1144,9 +1144,11 @@
+   case CURL_SSLVERSION_TLSv1:
+     req_method = TLSv1_client_method();
+     break;
++#ifndef OPENSSL_NO_SSL2
+   case CURL_SSLVERSION_SSLv2:
+     req_method = SSLv2_client_method();
+     break;
++#endif
+   case CURL_SSLVERSION_SSLv3:
+     req_method = SSLv3_client_method();
+     break;
+diff -ruN curl-7.14.0-old/src/main.c curl-7.14.0-new/src/main.c
+--- curl-7.14.0-old/src/main.c	2005-05-12 09:28:03.000000000 +0200
++++ curl-7.14.0-new/src/main.c	2006-12-18 10:47:48.000000000 +0100
+@@ -425,7 +425,9 @@
+     " -z/--time-cond <time> Transfer based on a time condition",
+     " -0/--http1.0       Use HTTP 1.0 (H)",
+     " -1/--tlsv1         Use TLSv1 (SSL)",
++#ifndef OPENSSL_NO_SSL2
+     " -2/--sslv2         Use SSLv2 (SSL)",
++#endif
+     " -3/--sslv3         Use SSLv3 (SSL)",
+     "    --3p-quote      like -Q for the source URL for 3rd party transfer (F)",
+     "    --3p-url        source URL to activate 3rd party transfer (F)",
+@@ -1671,10 +1673,12 @@
+       /* TLS version 1 */
+       config->ssl_version = CURL_SSLVERSION_TLSv1;
+       break;
++#ifndef OPENSSL_NO_SSL2
+     case '2':
+       /* SSL version 2 */
+       config->ssl_version = CURL_SSLVERSION_SSLv2;
+       break;
++#endif
+     case '3':
+       /* SSL version 3 */
+       config->ssl_version = CURL_SSLVERSION_SSLv3;
