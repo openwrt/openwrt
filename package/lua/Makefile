@@ -24,6 +24,11 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(INCLUDE_DIR)/package.mk
 
+ifeq ($(ARCH),powerpc)
+  FPIC:=-fPIC
+endif
+
+
 define Package/lua/Default
   SUBMENU:=LUA
   SECTION:=lang
@@ -96,7 +101,7 @@ define Build/Compile
 		AR="$(TARGET_CROSS)ar rcu" \
 		RANLIB="$(TARGET_CROSS)ranlib" \
 		INSTALL_ROOT=/usr \
-		CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS) -fPIC" \
+		CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS) $(FPIC)" \
 		MYLDFLAGS="$(TARGET_LDFLAGS)" \
 		PKG_VERSION=$(PKG_VERSION) \
 		all linux 
