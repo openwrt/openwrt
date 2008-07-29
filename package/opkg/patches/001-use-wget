@@ -75,3 +75,34 @@ Index: opkg-4561/configure.ac
  
  
  dnl **********
+Index: opkg-4561/libopkg/opkg.c
+===================================================================
+--- opkg-4561/libopkg/opkg.c-orig	2008-07-28 16:27:53.000000000 -0500
++++ opkg-4561/libopkg/opkg.c	2008-07-29 07:46:42.000000000 -0500
+@@ -1013,8 +1013,9 @@
+ 
+   return package;
+ }
+-
++#ifdef HAVE_CURL
+ #include <curl/curl.h>
++#endif
+ /**
+  * @brief Check the accessibility of repositories. It will try to access the repository to check if the respository is accessible throught current network status. 
+  * @param opkg The opkg_t
+@@ -1064,6 +1065,7 @@
+     repositories--;
+ 
+     err = opkg_download(opkg->conf, iter1->data, "/dev/null", NULL, NULL);
++    #ifdef HAVE_CURL
+     if (!(err == CURLE_OK || 
+ 		err == CURLE_HTTP_RETURNED_ERROR || 
+ 		err == CURLE_FILE_COULDNT_READ_FILE ||
+@@ -1072,6 +1074,7 @@
+ 		)) {
+ 	    ret++;
+     }
++    #endif
+     str_list_elt_deinit(iter1);
+     free(iter1);
+   }
