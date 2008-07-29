@@ -1,6 +1,6 @@
 # Makefile for OpenWrt
 #
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -112,7 +112,9 @@ endif
 package_index: $(TOPDIR)/tmp/ipkg.conf FORCE
 	@echo
 	@echo Building package index...
-	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages) >/dev/null 2>/dev/null
+	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages && \
+		gzip -9c Packages > Packages.gz \
+	) >/dev/null 2>/dev/null
 	$(IPKG) update
 
 package_install: FORCE

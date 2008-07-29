@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006-2007 OpenWrt.org
+#
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -45,7 +45,9 @@ $(curdir)/rootfs-prepare: $(TMP_DIR)/.build
 	$(if $(CONFIG_CLEAN_IPKG),rm -rf $(TARGET_DIR)/usr/lib/ipkg)
 
 $(curdir)/index: FORCE
-	@(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages)
+	@(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages && \
+		gzip -9c Packages > Packages.gz \
+	)
 
 $(curdir)/flags-install:= -j1
 
