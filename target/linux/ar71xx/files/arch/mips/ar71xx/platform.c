@@ -143,12 +143,46 @@ static void __init ar71xx_add_device_uart(void)
 }
 #endif /* CONFIG_AR71XX_EARLY_SERIAL */
 
+static struct resource ar71xx_mdio_resources[] = {
+	{
+		.name	= "mdio_base",
+		.flags	= IORESOURCE_MEM,
+		.start	= AR71XX_GE0_BASE + 0x20,
+		.end	= AR71XX_GE0_BASE + 0x38 - 1,
+	}
+};
+
+static struct ag71xx_mdio_platform_data ar71xx_mdio_data = {
+	.phy_mask	= 0xffffffff,
+};
+
+static struct platform_device ar71xx_mdio_device = {
+	.name		= "ag71xx-mdio",
+	.id		= -1,
+	.resource	= ar71xx_mdio_resources,
+	.num_resources	= ARRAY_SIZE(ar71xx_mdio_resources),
+	.dev = {
+		.platform_data = &ar71xx_mdio_data,
+	},
+};
+
+void __init ar71xx_add_device_mdio(u32 phy_mask)
+{
+	ar71xx_mdio_data.phy_mask = phy_mask;
+	platform_device_register(&ar71xx_mdio_device);
+}
+
 static struct resource ar71xx_eth0_resources[] = {
 	{
 		.name	= "mac_base",
 		.flags	= IORESOURCE_MEM,
 		.start	= AR71XX_GE0_BASE,
-		.end	= AR71XX_GE0_BASE + AR71XX_GE0_SIZE - 1,
+		.end	= AR71XX_GE0_BASE + 0x20 - 1,
+	}, {
+		.name	= "mac_base2",
+		.flags	= IORESOURCE_MEM,
+		.start	= AR71XX_GE0_BASE + 0x38,
+		.end	= AR71XX_GE0_BASE + 0x200 - 1,
 	}, {
 		.name	= "mii_ctrl",
 		.flags	= IORESOURCE_MEM,
@@ -182,7 +216,12 @@ static struct resource ar71xx_eth1_resources[] = {
 		.name	= "mac_base",
 		.flags	= IORESOURCE_MEM,
 		.start	= AR71XX_GE1_BASE,
-		.end	= AR71XX_GE1_BASE + AR71XX_GE1_SIZE - 1,
+		.end	= AR71XX_GE1_BASE + 0x20 - 1,
+	}, {
+		.name	= "mac_base2",
+		.flags	= IORESOURCE_MEM,
+		.start	= AR71XX_GE1_BASE + 0x38,
+		.end	= AR71XX_GE1_BASE + 0x200 - 1,
 	}, {
 		.name	= "mii_ctrl",
 		.flags	= IORESOURCE_MEM,
@@ -211,6 +250,7 @@ static struct platform_device ar71xx_eth1_device = {
 	},
 };
 
+static int ar71xx_eth_instance __initdata;
 void __init ar71xx_add_device_eth(unsigned int id, phy_interface_t phy_if_mode,
 				u32 phy_mask)
 {
@@ -235,6 +275,7 @@ void __init ar71xx_add_device_eth(unsigned int id, phy_interface_t phy_if_mode,
 			BUG();
 		}
 		memcpy(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, ETH_ALEN);
+		ar71xx_eth0_data.mac_addr[5] += ar71xx_eth_instance;
 		ar71xx_eth0_data.phy_if_mode = phy_if_mode;
 		ar71xx_eth0_data.phy_mask = phy_mask;
 		pdev = &ar71xx_eth0_device;
@@ -251,7 +292,7 @@ void __init ar71xx_add_device_eth(unsigned int id, phy_interface_t phy_if_mode,
 			BUG();
 		}
 		memcpy(ar71xx_eth1_data.mac_addr, ar71xx_mac_base, ETH_ALEN);
-		ar71xx_eth1_data.mac_addr[5] += id;
+		ar71xx_eth1_data.mac_addr[5] += ar71xx_eth_instance;
 		ar71xx_eth1_data.phy_if_mode = phy_if_mode;
 		ar71xx_eth1_data.phy_mask = phy_mask;
 		pdev = &ar71xx_eth1_device;
@@ -261,8 +302,10 @@ void __init ar71xx_add_device_eth(unsigned int id, phy_interface_t phy_if_mode,
 		break;
 	}
 
-	if (pdev)
+	if (pdev) {
 		platform_device_register(pdev);
+		ar71xx_eth_instance++;
+	}
 }
 
 static struct resource ar71xx_spi_resources[] = {

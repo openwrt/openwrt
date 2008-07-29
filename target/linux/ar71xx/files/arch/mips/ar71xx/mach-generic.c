@@ -49,8 +49,9 @@ static void __init ar71xx_generic_init(void)
 	ar71xx_add_device_spi(NULL, ar71xx_generic_spi_info,
 				ARRAY_SIZE(ar71xx_generic_spi_info));
 
-	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x001f0000);
-	ar71xx_add_device_eth(1, PHY_INTERFACE_MODE_RMII, 0xffffffff);
+	ar71xx_add_device_mdio(0xffe0ffff);
+	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x000f0000);
+	ar71xx_add_device_eth(1, PHY_INTERFACE_MODE_RMII, 0x00100000);
 
 	ar71xx_add_device_usb();
 

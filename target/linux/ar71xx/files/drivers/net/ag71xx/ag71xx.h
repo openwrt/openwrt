@@ -15,6 +15,7 @@
 #define __AG71XX_H
 
 #include <linux/kernel.h>
+#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/types.h>
@@ -36,7 +37,7 @@
 #define ETH_FCS_LEN	4
 
 #define AG71XX_DRV_NAME		"ag71xx"
-#define AG71XX_DRV_VERSION	"0.3.10"
+#define AG71XX_DRV_VERSION	"0.4.0"
 
 #define AG71XX_NAPI_TX		1
 
@@ -67,8 +68,8 @@
 
 #define AG71XX_RX_RING_SIZE	128
 
-#undef DEBUG
-#ifdef DEBUG
+#undef AG71XX_DEBUG
+#ifdef AG71XX_DEBUG
 #define DBG(fmt, args...)	printk(KERN_DEBUG fmt, ## args)
 #else
 #define DBG(fmt, args...)	do {} while (0)
@@ -104,8 +105,15 @@ struct ag71xx_ring {
 	unsigned int		size;
 };
 
+struct ag71xx_mdio {
+	struct mii_bus	mii_bus;
+	int		mii_irq[PHY_MAX_ADDR];
+	void __iomem	*mdio_base;
+};
+
 struct ag71xx {
 	void __iomem		*mac_base;
+	void __iomem		*mac_base2;
 	void __iomem		*mii_ctrl;
 
 	spinlock_t		lock;
@@ -116,8 +124,8 @@ struct ag71xx {
 	struct ag71xx_ring	rx_ring;
 	struct ag71xx_ring	tx_ring;
 
+	struct mii_bus		*mii_bus;
 	struct phy_device	*phy_dev;
-	struct mii_bus		mii_bus;
 
 	unsigned int		link;
 	unsigned int		speed;
@@ -126,40 +134,18 @@ struct ag71xx {
 
 extern struct ethtool_ops ag71xx_ethtool_ops;
 
-extern int ag71xx_mdio_init(struct ag71xx *ag, int id);
-extern void ag71xx_mdio_cleanup(struct ag71xx *ag);
-extern int ag71xx_mii_peek(struct ag71xx *ag);
-extern void ag71xx_mii_ctrl_set_if(struct ag71xx *ag, unsigned int mii_if);
-extern void ag71xx_mii_ctrl_set_speed(struct ag71xx *ag, unsigned int speed);
-extern void ag71xx_link_update(struct ag71xx *ag);
+extern struct ag71xx_mdio *ag71xx_mdio_bus;
+extern int ag71xx_mdio_driver_init(void) __init;
+extern void ag71xx_mdio_driver_exit(void);
+
+extern int ag71xx_phy_connect(struct ag71xx *ag);
+extern void ag71xx_phy_disconnect(struct ag71xx *ag);
+extern void ag71xx_phy_start(struct ag71xx *ag);
+extern void ag71xx_phy_stop(struct ag71xx *ag);
 
 static inline struct ag71xx_platform_data *ag71xx_get_pdata(struct ag71xx *ag)
 {
 	return ag->pdev->dev.platform_data;
-}
-
-static inline void ag71xx_wr(struct ag71xx *ag, unsigned reg, u32 value)
-{
-	__raw_writel(value, ag->mac_base + reg);
-}
-
-static inline u32 ag71xx_rr(struct ag71xx *ag, unsigned reg)
-{
-	return __raw_readl(ag->mac_base + reg);
-}
-
-static inline void ag71xx_sb(struct ag71xx *ag, unsigned reg, u32 mask)
-{
-	void __iomem *r = ag->mac_base + reg;
-
-	__raw_writel(__raw_readl(r) | mask, r);
-}
-
-static inline void ag71xx_cb(struct ag71xx *ag, unsigned reg, u32 mask)
-{
-	void __iomem *r = ag->mac_base + reg;
-
-	__raw_writel(__raw_readl(r) & ~mask, r);
 }
 
 static inline int ag71xx_desc_empty(struct ag71xx_desc *desc)
@@ -242,6 +228,7 @@ static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
 #define MII_CFG_CLK_DIV_14	5
 #define MII_CFG_CLK_DIV_20	6
 #define MII_CFG_CLK_DIV_28	7
+#define MII_CFG_RESET		BIT(31)
 
 #define MII_CMD_WRITE		0x0
 #define MII_CMD_READ		0x1
@@ -263,11 +250,80 @@ static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
 
 #define FIFO_CFG5_BYTE_PER_CLK	BIT(19)
 
-#define MII_CTRL_SPEED_S	4
-#define MII_CTRL_SPEED_M	3
+#define MII_CTRL_IF_MASK	3
+#define MII_CTRL_SPEED_SHIFT	4
+#define MII_CTRL_SPEED_MASK	3
 #define MII_CTRL_SPEED_10	0
 #define MII_CTRL_SPEED_100	1
 #define MII_CTRL_SPEED_1000	2
+
+static inline void ag71xx_wr(struct ag71xx *ag, unsigned reg, u32 value)
+{
+	switch (reg) {
+	case AG71XX_REG_MAC_CFG1 ... AG71XX_REG_MAC_MFL:
+		__raw_writel(value, ag->mac_base + reg);
+		break;
+	case AG71XX_REG_MAC_IFCTL ... AG71XX_REG_INT_STATUS:
+		reg -= AG71XX_REG_MAC_IFCTL;
+		__raw_writel(value, ag->mac_base2 + reg);
+		break;
+	default:
+		BUG();
+	}
+}
+
+static inline u32 ag71xx_rr(struct ag71xx *ag, unsigned reg)
+{
+	u32 ret;
+
+	switch (reg) {
+	case AG71XX_REG_MAC_CFG1 ... AG71XX_REG_MAC_MFL:
+		ret = __raw_readl(ag->mac_base + reg);
+		break;
+	case AG71XX_REG_MAC_IFCTL ... AG71XX_REG_INT_STATUS:
+		reg -= AG71XX_REG_MAC_IFCTL;
+		ret = __raw_readl(ag->mac_base2 + reg);
+		break;
+	}
+
+	return ret;
+}
+
+static inline void ag71xx_sb(struct ag71xx *ag, unsigned reg, u32 mask)
+{
+	void __iomem *r;
+
+	switch (reg) {
+	case AG71XX_REG_MAC_CFG1 ... AG71XX_REG_MAC_MFL:
+		r = ag->mac_base + reg;
+		__raw_writel(__raw_readl(r) | mask, r);
+		break;
+	case AG71XX_REG_MAC_IFCTL ... AG71XX_REG_INT_STATUS:
+		r = ag->mac_base2 + reg - AG71XX_REG_MAC_IFCTL;
+		__raw_writel(__raw_readl(r) | mask, r);
+		break;
+	default:
+		BUG();
+	}
+}
+
+static inline void ag71xx_cb(struct ag71xx *ag, unsigned reg, u32 mask)
+{
+	void __iomem *r;
+
+	switch (reg) {
+	case AG71XX_REG_MAC_CFG1 ... AG71XX_REG_MAC_MFL:
+		r = ag->mac_base + reg;
+		__raw_writel(__raw_readl(r) & ~mask, r);
+		break;
+	case AG71XX_REG_MAC_IFCTL ... AG71XX_REG_INT_STATUS:
+		r = ag->mac_base2 + reg - AG71XX_REG_MAC_IFCTL;
+		__raw_writel(__raw_readl(r) & ~mask, r);
+		break;
+	default:
+		BUG();
+	}
+}
 
 static inline void ag71xx_int_enable(struct ag71xx *ag, u32 ints)
 {
@@ -277,6 +333,38 @@ static inline void ag71xx_int_enable(struct ag71xx *ag, u32 ints)
 static inline void ag71xx_int_disable(struct ag71xx *ag, u32 ints)
 {
 	ag71xx_cb(ag, AG71XX_REG_INT_ENABLE, ints);
+}
+
+static inline void ag71xx_mii_ctrl_wr(struct ag71xx *ag, u32 value)
+{
+	__raw_writel(value, ag->mii_ctrl);
+}
+
+static inline u32 ag71xx_mii_ctrl_rr(struct ag71xx *ag)
+{
+	return __raw_readl(ag->mii_ctrl);
+}
+
+static void inline ag71xx_mii_ctrl_set_if(struct ag71xx *ag,
+					  unsigned int mii_if)
+{
+	u32 t;
+
+	t = ag71xx_mii_ctrl_rr(ag);
+	t &= ~(MII_CTRL_IF_MASK);
+	t |= (mii_if & MII_CTRL_IF_MASK);
+	ag71xx_mii_ctrl_wr(ag, t);
+}
+
+static void inline ag71xx_mii_ctrl_set_speed(struct ag71xx *ag,
+					     unsigned int speed)
+{
+	u32 t;
+
+	t = ag71xx_mii_ctrl_rr(ag);
+	t &= ~(MII_CTRL_SPEED_MASK << MII_CTRL_SPEED_SHIFT);
+	t |= (speed & MII_CTRL_SPEED_MASK) << MII_CTRL_SPEED_SHIFT;
+	ag71xx_mii_ctrl_wr(ag, t);
 }
 
 #endif /* _AG71XX_H */
