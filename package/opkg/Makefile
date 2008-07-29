@@ -22,6 +22,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/opkg
   SECTION:=base
   CATEGORY:=Base system
+  DEPENDS:=+libcurl
   TITLE:=opkg package management system
   URL:=http://wiki.openmoko.org/wiki/Opkg
 endef
