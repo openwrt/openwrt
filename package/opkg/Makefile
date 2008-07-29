@@ -22,7 +22,6 @@ include $(INCLUDE_DIR)/package.mk
 define Package/opkg
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+libcurl
   TITLE:=opkg package management system
   URL:=http://wiki.openmoko.org/wiki/Opkg
 endef
@@ -46,7 +45,7 @@ CONFIGURE_ARGS += \
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
-		./autogen.sh \
+		autoreconf -v --install || exit 1 \
 	);
 	$(call Build/Configure/Default)
 endef
