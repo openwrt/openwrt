@@ -153,6 +153,7 @@ static void __init rb411_setup(void)
 {
 	rb4xx_add_device_spi();
 
+	ar71xx_add_device_mdio(0xfffffffe);
 	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x00000001);
 
 	platform_device_register(&rb4xx_leds_gpio_device);
@@ -167,8 +168,9 @@ static void __init rb433_setup(void)
 {
 	rb433_add_device_spi();
 
-	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x00000001);
-	ar71xx_add_device_eth(1, PHY_INTERFACE_MODE_RMII, 0xffffffff);
+	ar71xx_add_device_mdio(0xffffffec);
+	ar71xx_add_device_eth(1, PHY_INTERFACE_MODE_RMII, 0x00000010);
+	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x00000003);
 
 	platform_device_register(&rb4xx_leds_gpio_device);
 	platform_device_register(&rb4xx_nand_device);
@@ -182,8 +184,9 @@ static void __init rb450_setup(void)
 {
 	rb4xx_add_device_spi();
 
-	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x00000001);
-	ar71xx_add_device_eth(1, PHY_INTERFACE_MODE_RMII, 0xffffffff);
+	ar71xx_add_device_mdio(0xffffffe0);
+	ar71xx_add_device_eth(1, PHY_INTERFACE_MODE_RMII, 0x00000010);
+	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x0000000f);
 
 	platform_device_register(&rb4xx_leds_gpio_device);
 	platform_device_register(&rb4xx_nand_device);

@@ -26,6 +26,10 @@ struct ag71xx_platform_data {
 	u8		mac_addr[ETH_ALEN];
 };
 
+struct ag71xx_mdio_platform_data {
+	u32		phy_mask;
+};
+
 struct ar71xx_spi_platform_data {
 	unsigned	bus_num;
 	unsigned	num_chipselect;
@@ -42,5 +46,7 @@ extern void ar71xx_add_device_spi(struct ar71xx_spi_platform_data *pdata,
 extern void ar71xx_set_mac_base(char *mac_str) __init;
 extern void ar71xx_add_device_eth(unsigned int id, phy_interface_t phy_if_mode,
 				u32 phy_mask) __init;
+
+extern void ar71xx_add_device_mdio(u32 phy_mask) __init;
 
 #endif /* __ASM_MACH_AR71XX_PLATFORM_H */

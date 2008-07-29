@@ -22,16 +22,6 @@ static void ag71xx_dump_regs(struct ag71xx *ag)
 		ag71xx_rr(ag, AG71XX_REG_MAC_IPG),
 		ag71xx_rr(ag, AG71XX_REG_MAC_HDX),
 		ag71xx_rr(ag, AG71XX_REG_MAC_MFL));
-	DBG("%s: mii_cfg=%08x, mii_cmd=%08x, mii_addr=%08x\n",
-		ag->dev->name,
-		ag71xx_rr(ag, AG71XX_REG_MII_CFG),
-		ag71xx_rr(ag, AG71XX_REG_MII_CMD),
-		ag71xx_rr(ag, AG71XX_REG_MII_ADDR));
-	DBG("%s: mii_ctrl=%08x, mii_status=%08x, mii_ind=%08x\n",
-		ag->dev->name,
-		ag71xx_rr(ag, AG71XX_REG_MII_CTRL),
-		ag71xx_rr(ag, AG71XX_REG_MII_STATUS),
-		ag71xx_rr(ag, AG71XX_REG_MII_IND));
 	DBG("%s: mac_ifctl=%08x, mac_addr1=%08x, mac_addr2=%08x\n",
 		ag->dev->name,
 		ag71xx_rr(ag, AG71XX_REG_MAC_IFCTL),
@@ -286,8 +276,6 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 
 	ag71xx_mii_ctrl_set_if(ag, pdata->mii_if);
 
-	ag71xx_wr(ag, AG71XX_REG_MII_CFG, MII_CFG_CLK_DIV_28);
-
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG1, 0x0fff0000);
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG2, 0x00001fff);
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG4, 0x0000ffff);
@@ -325,14 +313,7 @@ static int ag71xx_open(struct net_device *dev)
 	napi_enable(&ag->napi);
 
 	netif_carrier_off(dev);
-	if (ag->phy_dev) {
-		phy_start(ag->phy_dev);
-	} else {
-		ag->duplex = DUPLEX_FULL;
-		ag->speed = SPEED_100;
-		ag->link = 1;
-		ag71xx_link_update(ag);
-	}
+	ag71xx_phy_start(ag);
 
 	ag71xx_wr(ag, AG71XX_REG_TX_DESC, ag->tx_ring.descs_dma);
 	ag71xx_wr(ag, AG71XX_REG_RX_DESC, ag->rx_ring.descs_dma);
@@ -362,14 +343,7 @@ static int ag71xx_stop(struct net_device *dev)
 	ag71xx_hw_stop(ag);
 
 	netif_carrier_off(dev);
-	if (ag->phy_dev) {
-		phy_stop(ag->phy_dev);
-	} else {
-		ag->duplex = -1;
-		ag->link = 0;
-		ag->speed = 0;
-		ag71xx_link_update(ag);
-	}
+	ag71xx_phy_stop(ag);
 
 	napi_disable(&ag->napi);
 
@@ -717,6 +691,7 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 	ag = netdev_priv(dev);
 	ag->pdev = pdev;
 	ag->dev = dev;
+	ag->mii_bus = &ag71xx_mdio_bus->mii_bus;
 	spin_lock_init(&ag->lock);
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mac_base");
@@ -733,18 +708,32 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 		goto err_free_dev;
 	}
 
+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mac_base2");
+	if (!res) {
+		dev_err(&pdev->dev, "no mac_base2 resource found\n");
+		err = -ENXIO;
+		goto err_unmap_base1;
+	}
+
+	ag->mac_base2 = ioremap_nocache(res->start, res->end - res->start + 1);
+	if (!ag->mac_base) {
+		dev_err(&pdev->dev, "unable to ioremap mac_base2\n");
+		err = -ENOMEM;
+		goto err_unmap_base1;
+	}
+
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mii_ctrl");
 	if (!res) {
 		dev_err(&pdev->dev, "no mii_ctrl resource found\n");
 		err = -ENXIO;
-		goto err_unmap_base;
+		goto err_unmap_base2;
 	}
 
 	ag->mii_ctrl = ioremap_nocache(res->start, res->end - res->start + 1);
 	if (!ag->mii_ctrl) {
 		dev_err(&pdev->dev, "unable to ioremap mii_ctrl\n");
 		err = -ENOMEM;
-		goto err_unmap_base;
+		goto err_unmap_base2;
 	}
 
 	dev->irq = platform_get_irq(pdev, 0);
@@ -790,7 +779,14 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 
 	ag71xx_dump_regs(ag);
 
-	err = ag71xx_mdio_init(ag, pdev->id);
+	/* Reset the mdio bus explicitly */
+	if (ag->mii_bus) {
+		mutex_lock(&ag->mii_bus->mdio_lock);
+		ag->mii_bus->reset(ag->mii_bus);
+		mutex_unlock(&ag->mii_bus->mdio_lock);
+	}
+
+	err = ag71xx_phy_connect(ag);
 	if (err)
 		goto err_unregister_netdev;
 
@@ -804,7 +800,9 @@ err_free_irq:
 	free_irq(dev->irq, dev);
 err_unmap_mii_ctrl:
 	iounmap(ag->mii_ctrl);
-err_unmap_base:
+err_unmap_base2:
+	iounmap(ag->mac_base2);
+err_unmap_base1:
 	iounmap(ag->mac_base);
 err_free_dev:
 	kfree(dev);
@@ -820,12 +818,11 @@ static int __exit ag71xx_remove(struct platform_device *pdev)
 	if (dev) {
 		struct ag71xx *ag = netdev_priv(dev);
 
-		if (ag->phy_dev)
-			phy_disconnect(ag->phy_dev);
-		ag71xx_mdio_cleanup(ag);
+		ag71xx_phy_disconnect(ag);
 		unregister_netdev(dev);
 		free_irq(dev->irq, dev);
 		iounmap(ag->mii_ctrl);
+		iounmap(ag->mac_base2);
 		iounmap(ag->mac_base);
 		kfree(dev);
 		platform_set_drvdata(pdev, NULL);
@@ -844,7 +841,22 @@ static struct platform_driver ag71xx_driver = {
 
 static int __init ag71xx_module_init(void)
 {
-	return platform_driver_register(&ag71xx_driver);
+	int ret;
+
+	ret = ag71xx_mdio_driver_init();
+	if (ret)
+		goto err_out;
+
+	ret = platform_driver_register(&ag71xx_driver);
+	if (ret)
+		goto err_mdio_exit;
+
+	return 0;
+
+err_mdio_exit:
+	ag71xx_mdio_driver_exit();
+err_out:
+	return ret;
 }
 
 static void __exit ag71xx_module_exit(void)

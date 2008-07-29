@@ -13,134 +13,23 @@
 
 #include "ag71xx.h"
 
-#define AG71XX_MII_RETRY	1000
-#define AG71XX_MII_DELAY	5
-
-static inline void ag71xx_mii_ctrl_wr(struct ag71xx *ag, u32 value)
-{
-	__raw_writel(value, ag->mii_ctrl);
-}
-
-static inline u32 ag71xx_mii_ctrl_rr(struct ag71xx *ag)
-{
-	return __raw_readl(ag->mii_ctrl);
-}
-
-void ag71xx_mii_ctrl_set_if(struct ag71xx *ag, unsigned int mii_if)
-{
-	u32 t;
-
-	t = ag71xx_mii_ctrl_rr(ag);
-	t &= ~(0x3);
-	t |= (mii_if & 0x3);
-	ag71xx_mii_ctrl_wr(ag, t);
-}
-
-void ag71xx_mii_ctrl_set_speed(struct ag71xx *ag, unsigned int speed)
-{
-	u32 t;
-
-	t = ag71xx_mii_ctrl_rr(ag);
-	t &= ~(0x3 << 4);
-	t |= (speed & 0x3) << 4;
-	ag71xx_mii_ctrl_wr(ag, t);
-}
-
-static int ag71xx_mii_read(struct ag71xx *ag, int addr, int reg)
-{
-	int ret;
-	int i;
-
-	ag71xx_wr(ag, AG71XX_REG_MII_CMD, MII_CMD_WRITE);
-	ag71xx_wr(ag, AG71XX_REG_MII_ADDR,
-			((addr & 0xff) << MII_ADDR_S) | (reg & 0xff));
-	ag71xx_wr(ag, AG71XX_REG_MII_CMD, MII_CMD_READ);
-
-	i = AG71XX_MII_RETRY;
-	while (ag71xx_rr(ag, AG71XX_REG_MII_IND) & MII_IND_BUSY) {
-		if (i-- == 0) {
-			printk(KERN_ERR "%s: mii_read timed out\n",
-				ag->dev->name);
-			ret = 0xffff;
-			goto out;
-		}
-		udelay(AG71XX_MII_DELAY);
-	}
-
-	ret = ag71xx_rr(ag, AG71XX_REG_MII_STATUS) & 0xffff;
-	ag71xx_wr(ag, AG71XX_REG_MII_CMD, MII_CMD_WRITE);
-
-	DBG("mii_read: addr=%04x, reg=%04x, value=%04x\n", addr, reg, ret);
-
-out:
-	return ret;
-}
-
-static void ag71xx_mii_write(struct ag71xx *ag, int addr, int reg, u16 val)
-{
-	int i;
-
-	DBG("mii_write: addr=%04x, reg=%04x, value=%04x\n", addr, reg, val);
-
-	ag71xx_wr(ag, AG71XX_REG_MII_ADDR,
-			((addr & 0xff) << MII_ADDR_S) | (reg & 0xff));
-	ag71xx_wr(ag, AG71XX_REG_MII_CTRL, val);
-
-	i = AG71XX_MII_RETRY;
-	while (ag71xx_rr(ag, AG71XX_REG_MII_IND) & MII_IND_BUSY) {
-		if (i-- == 0) {
-			printk(KERN_ERR "%s: mii_write timed out\n",
-				ag->dev->name);
-			break;
-		}
-		udelay(AG71XX_MII_DELAY);
-	}
-}
-
-int ag71xx_mii_peek(struct ag71xx *ag)
-{
-	int cnt;
-	int i;
-
-	cnt = 0;
-	for (i = 0; i < PHY_MAX_ADDR; i++) {
-		u16 bmsr, id1, id2, bmcr, advert, lpa;
-
-		bmsr = ag71xx_mii_read(ag, i, MII_BMSR);
-		bmcr = ag71xx_mii_read(ag, i, MII_BMCR);
-		id1 = ag71xx_mii_read(ag, i, MII_PHYSID1);
-		id2 = ag71xx_mii_read(ag, i, MII_PHYSID2);
-		advert = ag71xx_mii_read(ag, i, MII_ADVERTISE);
-		lpa = ag71xx_mii_read(ag, i, MII_LPA);
-		DBG("%s: phy%02d bmsr=%04x, bmcr=%04x, "
-			"id=%04x.%04x, advertise=%04x, lpa=%04x\n",
-			ag->dev->name, i,
-			bmsr, bmcr, id1, id2, advert, lpa);
-
-		if ((bmsr | bmcr | id1 | id2 | advert | lpa) != 0)
-			cnt++;
-	}
-
-	return cnt;
-}
-
 #define PLL_SEC_CONFIG		0x18050004
 #define PLL_ETH0_INT_CLOCK	0x18050010
 #define PLL_ETH1_INT_CLOCK	0x18050014
 #define PLL_ETH_EXT_CLOCK	0x18050018
 
-#define ag7100_pll_shift(_ag)   (((_ag)->pdev->id) ? 19 : 17)
-#define ag7100_pll_offset(_ag)	(((_ag)->pdev->id) ? PLL_ETH1_INT_CLOCK \
+#define ag71xx_pll_shift(_ag)   (((_ag)->pdev->id) ? 19 : 17)
+#define ag71xx_pll_offset(_ag)	(((_ag)->pdev->id) ? PLL_ETH1_INT_CLOCK \
 						   : PLL_ETH0_INT_CLOCK)
 
 static void ag71xx_set_pll(struct ag71xx *ag, u32 pll_val)
 {
-	void __iomem *pll_reg = ioremap_nocache(ag7100_pll_offset(ag), 4);
+	void __iomem *pll_reg = ioremap_nocache(ag71xx_pll_offset(ag), 4);
 	void __iomem *pll_cfg = ioremap_nocache(PLL_SEC_CONFIG, 4);
 	u32 s;
 	u32 t;
 
-	s = ag7100_pll_shift(ag);
+	s = ag71xx_pll_shift(ag);
 
 	t = __raw_readl(pll_cfg);
 	t &= ~(3 << s);
@@ -188,7 +77,7 @@ static unsigned char *ag71xx_speed_str(struct ag71xx *ag)
 #define PLL_VAL_10	0x09991999
 #endif
 
-void ag71xx_link_update(struct ag71xx *ag)
+static void ag71xx_phy_link_update(struct ag71xx *ag)
 {
 	u32 cfg2;
 	u32 ifctl;
@@ -264,7 +153,7 @@ void ag71xx_link_update(struct ag71xx *ag)
 		ag71xx_mii_ctrl_rr(ag));
 }
 
-static void ag71xx_link_adjust(struct net_device *dev)
+static void ag71xx_phy_link_adjust(struct net_device *dev)
 {
 	struct ag71xx *ag = netdev_priv(dev);
 	struct phy_device *phydev = ag->phy_dev;
@@ -292,33 +181,36 @@ static void ag71xx_link_adjust(struct net_device *dev)
 	ag->speed = phydev->speed;
 
 	if (status_change)
-		ag71xx_link_update(ag);
+		ag71xx_phy_link_update(ag);
 
 	spin_unlock_irqrestore(&ag->lock, flags);
 }
 
-static int ag71xx_mdio_read(struct mii_bus *bus, int addr, int reg)
+void ag71xx_phy_start(struct ag71xx *ag)
 {
-	struct ag71xx *ag = bus->priv;
-
-	return ag71xx_mii_read(ag, addr, reg);
+	if (ag->phy_dev) {
+		phy_start(ag->phy_dev);
+	} else {
+		ag->duplex = DUPLEX_FULL;
+		ag->speed = SPEED_100;
+		ag->link = 1;
+		ag71xx_phy_link_update(ag);
+	}
 }
 
-static int ag71xx_mdio_write(struct mii_bus *bus, int addr, int reg, u16 val)
+void ag71xx_phy_stop(struct ag71xx *ag)
 {
-	struct ag71xx *ag = bus->priv;
-
-	ag71xx_mii_write(ag, addr, reg, val);
-	return 0;
+	if (ag->phy_dev) {
+		phy_stop(ag->phy_dev);
+	} else {
+		ag->duplex = -1;
+		ag->link = 0;
+		ag->speed = 0;
+		ag71xx_phy_link_update(ag);
+	}
 }
 
-static int ag71xx_mdio_reset(struct mii_bus *bus)
-{
-	/* TODO */
-	return 0;
-}
-
-static int ag71xx_mdio_probe(struct ag71xx *ag)
+int ag71xx_phy_connect(struct ag71xx *ag)
 {
 	struct net_device *dev = ag->dev;
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
@@ -326,22 +218,25 @@ static int ag71xx_mdio_probe(struct ag71xx *ag)
 	int phy_count = 0;
 	int phy_addr;
 
-	for (phy_addr = 0; phy_addr < PHY_MAX_ADDR; phy_addr++) {
-		if (!(pdata->phy_mask & (1 << phy_addr)))
-			continue;
+	if (ag->mii_bus) {
+		/* TODO: use mutex of the mdio bus */
+		for (phy_addr = 0; phy_addr < PHY_MAX_ADDR; phy_addr++) {
+			if (!(pdata->phy_mask & (1 << phy_addr)))
+				continue;
 
-		if (ag->mii_bus.phy_map[phy_addr] == NULL)
-			continue;
+			if (ag->mii_bus->phy_map[phy_addr] == NULL)
+				continue;
 
-		DBG("%s: PHY found at %s, uid=%08x\n",
-			dev->name,
-			ag->mii_bus.phy_map[phy_addr]->dev.bus_id,
-			ag->mii_bus.phy_map[phy_addr]->phy_id);
+			DBG("%s: PHY found at %s, uid=%08x\n",
+				dev->name,
+				ag->mii_bus->phy_map[phy_addr]->dev.bus_id,
+				ag->mii_bus->phy_map[phy_addr]->phy_id);
 
-		if (phydev == NULL)
-			phydev = ag->mii_bus.phy_map[phy_addr];
+			if (phydev == NULL)
+				phydev = ag->mii_bus->phy_map[phy_addr];
 
-		phy_count++;
+			phy_count++;
+		}
 	}
 
 	switch (phy_count) {
@@ -350,7 +245,7 @@ static int ag71xx_mdio_probe(struct ag71xx *ag)
 		return -ENODEV;
 	case 1:
 		ag->phy_dev = phy_connect(dev, phydev->dev.bus_id,
-			&ag71xx_link_adjust, 0, pdata->phy_if_mode);
+			&ag71xx_phy_link_adjust, 0, pdata->phy_if_mode);
 
 		if (IS_ERR(ag->phy_dev)) {
 			printk(KERN_ERR "%s: could not connect to PHY at %s\n",
@@ -388,49 +283,8 @@ static int ag71xx_mdio_probe(struct ag71xx *ag)
 	return 0;
 }
 
-int ag71xx_mdio_init(struct ag71xx *ag, int id)
+void ag71xx_phy_disconnect(struct ag71xx *ag)
 {
-	int err;
-	int i;
-
-	ag->mii_bus.name = "ag71xx_mii";
-	ag->mii_bus.read = ag71xx_mdio_read;
-	ag->mii_bus.write = ag71xx_mdio_write;
-	ag->mii_bus.reset = ag71xx_mdio_reset;
-	ag->mii_bus.id = id;
-	ag->mii_bus.priv = ag;
-	ag->mii_bus.dev = &ag->dev->dev;
-
-	ag->mii_bus.irq = kmalloc(sizeof(*ag->mii_bus.irq) * PHY_MAX_ADDR,
-				  GFP_KERNEL);
-	if (!ag->mii_bus.irq) {
-		err = -ENOMEM;
-		goto err_out;
-	}
-
-	for (i = 0; i < PHY_MAX_ADDR; i++)
-		ag->mii_bus.irq[i] = PHY_POLL;
-
-	err = mdiobus_register(&ag->mii_bus);
-	if (err)
-		goto err_free_irqs;
-
-	err = ag71xx_mdio_probe(ag);
-	if (err)
-		goto err_unregister_bus;
-
-	return 0;
-
-err_unregister_bus:
-	mdiobus_unregister(&ag->mii_bus);
-err_free_irqs:
-	kfree(ag->mii_bus.irq);
-err_out:
-	return err;
-}
-
-void ag71xx_mdio_cleanup(struct ag71xx *ag)
-{
-	mdiobus_unregister(&ag->mii_bus);
-	kfree(ag->mii_bus.irq);
+	if (ag->phy_dev)
+		phy_disconnect(ag->phy_dev);
 }
