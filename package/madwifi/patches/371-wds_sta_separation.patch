@@ -1,0 +1,421 @@
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
+@@ -202,6 +202,7 @@
+ 	struct ieee80211com *ic = vap->iv_ic;
+ 	struct net_device *dev = vap->iv_dev;
+ 	struct ieee80211_node *ni_wds = NULL;
++	struct net_device_stats *stats;
+ 	struct ieee80211_frame *wh;
+ 	struct ieee80211_key *key;
+ 	struct ether_header *eh;
+@@ -562,11 +563,14 @@
+ 				if (ni_wds != NULL) {
+ 					ieee80211_unref_node(&ni);
+ 					ni = ieee80211_ref_node(ni_wds);
++				} else if (!ni->ni_subif &&
++						(vap->iv_flags_ext & IEEE80211_FEXT_WDSSEP)) {
++					ieee80211_wds_addif(ni);
+ 				}
+ 			}
+ 
+ 			/* XXX: Useless node mgmt API; make better */
+-			if ((dir == IEEE80211_FC1_DIR_DSTODS) && !ni_wds) {
++			if ((dir == IEEE80211_FC1_DIR_DSTODS) && !ni_wds && !ni->ni_subif) {
+ 				struct ieee80211_node_table *nt = &ic->ic_sta;
+ 				struct ieee80211_frame_addr4 *wh4;
+ 
+@@ -698,8 +702,12 @@
+ 		if (! accept_data_frame(vap, ni, key, skb, eh))
+ 			goto out;
+ 
+-		vap->iv_devstats.rx_packets++;
+-		vap->iv_devstats.rx_bytes += skb->len;
++		if (ni->ni_subif && ((eh)->ether_type != __constant_htons(ETHERTYPE_PAE)))
++			stats = &ni->ni_subif->iv_devstats;
++		else
++			stats = &vap->iv_devstats;
++		stats->rx_packets++;
++		stats->rx_bytes += skb->len;
+ 		IEEE80211_NODE_STAT(ni, rx_data);
+ 		IEEE80211_NODE_STAT_ADD(ni, rx_bytes, skb->len);
+ 		ic->ic_lastdata = jiffies;
+@@ -1132,6 +1140,11 @@
+ 		dev = vap->iv_xrvap->iv_dev;
+ #endif
+ 
++	/* if the node has a wds subif, move data frames there,
++	 * but keep EAP traffic on the master */
++	if (ni->ni_subif && ((eh)->ether_type != __constant_htons(ETHERTYPE_PAE)))
++		dev = ni->ni_subif->iv_dev;
++
+ 	/* perform as a bridge within the vap */
+ 	/* XXX intra-vap bridging only */
+ 	if (vap->iv_opmode == IEEE80211_M_HOSTAP &&
+@@ -1157,6 +1170,7 @@
+ 			if (ni1 != NULL) {
+ 				if (ni1->ni_vap == vap &&
+ 				    ieee80211_node_is_authorized(ni1) &&
++					!ni->ni_subif &&
+ 				    ni1 != vap->iv_bss) {
+ 					skb1 = skb;
+ 					skb = NULL;
+--- a/net80211/ieee80211_ioctl.h
++++ b/net80211/ieee80211_ioctl.h
+@@ -649,6 +649,7 @@
+ 	IEEE80211_PARAM_BGSCAN_THRESH		= 79,	/* bg scan rssi threshold */
+ 	IEEE80211_PARAM_RSSI_DIS_THR	= 80,	/* rssi threshold for disconnection */
+ 	IEEE80211_PARAM_RSSI_DIS_COUNT	= 81,	/* counter for rssi threshold */
++	IEEE80211_PARAM_WDS_SEP			= 82,	/* move wds stations into separate interfaces */
+ };
+ 
+ #define	SIOCG80211STATS			(SIOCDEVPRIVATE+2)
+--- a/net80211/ieee80211_node.h
++++ b/net80211/ieee80211_node.h
+@@ -92,11 +92,12 @@
+  * the ieee80211com structure.
+  */
+ struct ieee80211_node {
+-	struct ieee80211vap *ni_vap;
++	struct ieee80211vap *ni_vap, *ni_subif;
+ 	struct ieee80211com *ni_ic;
+ 	struct ieee80211_node_table *ni_table;
+ 	TAILQ_ENTRY(ieee80211_node) ni_list;
+ 	LIST_ENTRY(ieee80211_node) ni_hash;
++	struct work_struct ni_destroy;	/* task for destroying a subif */
+ 	atomic_t ni_refcnt;
+ 	u_int ni_scangen;			/* gen# for timeout scan */
+ 	u_int8_t ni_authmode;			/* authentication algorithm */
+@@ -430,5 +431,6 @@
+ void ieee80211_node_leave(struct ieee80211_node *);
+ u_int8_t ieee80211_getrssi(struct ieee80211com *);
+ int32_t ieee80211_get_node_count(struct ieee80211com *);
++void ieee80211_wds_addif(struct ieee80211_node *ni);
+ #endif /* _NET80211_IEEE80211_NODE_H_ */
+ 
+--- a/net80211/ieee80211_var.h
++++ b/net80211/ieee80211_var.h
+@@ -322,6 +322,7 @@
+ 	u_int8_t ic_myaddr[IEEE80211_ADDR_LEN];
+ 	struct timer_list ic_inact;		/* mgmt/inactivity timer */
+ 
++	unsigned int ic_subifs;
+ 	u_int32_t ic_flags;			/* state flags */
+ 	u_int32_t ic_flags_ext;			/* extension of state flags */
+ 	u_int32_t ic_caps;			/* capabilities */
+@@ -625,6 +626,7 @@
+ #define IEEE80211_FEXT_DROPUNENC_EAPOL	0x00000800	/* CONF: drop unencrypted eapol frames */
+ #define IEEE80211_FEXT_APPIE_UPDATE	0x00001000	/* STATE: beacon APP IE updated */
+ #define IEEE80211_FEXT_BGSCAN_THR	0x00002000	/* bgscan due to low rssi */
++#define IEEE80211_FEXT_WDSSEP		0x00004000	/* move wds clients into separate interfaces */
+ 
+ #define IEEE80211_COM_UAPSD_ENABLE(_ic)		((_ic)->ic_flags_ext |= IEEE80211_FEXT_UAPSD)
+ #define IEEE80211_COM_UAPSD_DISABLE(_ic)	((_ic)->ic_flags_ext &= ~IEEE80211_FEXT_UAPSD)
+--- a/net80211/ieee80211_wireless.c
++++ b/net80211/ieee80211_wireless.c
+@@ -2867,6 +2867,14 @@
+ 		else
+ 			vap->iv_minrateindex = 0;
+ 		break;
++	case IEEE80211_PARAM_WDS_SEP:
++		if (vap->iv_opmode != IEEE80211_M_HOSTAP)
++			retv = -EINVAL;
++		else if (value)
++			vap->iv_flags_ext |= IEEE80211_FEXT_WDSSEP;
++		else
++			vap->iv_flags_ext &= ~IEEE80211_FEXT_WDSSEP;
++		break;
+ #ifdef ATH_REVERSE_ENGINEERING
+ 	case IEEE80211_PARAM_DUMPREGS:
+ 		ieee80211_dump_registers(dev, info, w, extra);
+@@ -3223,6 +3231,9 @@
+ 	case IEEE80211_PARAM_MINRATE:
+ 		param[0] = vap->iv_minrateindex;
+ 		break;
++	case IEEE80211_PARAM_WDS_SEP:
++		param[0] = !!(vap->iv_flags_ext & IEEE80211_FEXT_WDSSEP);
++		break;
+ 	default:
+ 		return -EOPNOTSUPP;
+ 	}
+@@ -5767,6 +5778,10 @@
+ 	 0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_minrate"},
+ 	{ IEEE80211_IOCTL_SETSCANLIST,
+ 	 IW_PRIV_TYPE_CHAR | 255, 0, "setscanlist"},
++	{ IEEE80211_PARAM_WDS_SEP,
++	 IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "wdssep"},
++	{ IEEE80211_PARAM_WDS_SEP,
++	 0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_wdssep"},
+ 
+ #ifdef ATH_REVERSE_ENGINEERING
+ 	/*
+--- a/net80211/ieee80211_node.c
++++ b/net80211/ieee80211_node.c
+@@ -47,6 +47,7 @@
+ #include <linux/netdevice.h>
+ #include <linux/etherdevice.h>
+ #include <linux/random.h>
++#include <linux/rtnetlink.h>
+ 
+ #include "if_media.h"
+ 
+@@ -236,7 +237,11 @@
+ ieee80211_node_vdetach(struct ieee80211vap *vap)
+ {
+ 	struct ieee80211com *ic = vap->iv_ic;
++	struct ieee80211_node *ni;
+ 
++	ni = vap->iv_wdsnode;
++	if (ni)
++		ni->ni_subif = NULL;
+ 	ieee80211_node_table_reset(&ic->ic_sta, vap);
+ 	if (vap->iv_bss != NULL) {
+ 		ieee80211_unref_node(&vap->iv_bss);
+@@ -1134,6 +1139,40 @@
+ 	return ni;
+ }
+ 
++#define WDSIFNAME ".sta%d"
++void ieee80211_wds_addif(struct ieee80211_node *ni)
++{
++	struct ieee80211vap *vap = ni->ni_vap;
++	struct ieee80211com *ic = vap->iv_ic;
++	struct ieee80211vap *avp;
++	char *name;
++
++	/* check if the node is split out already */
++	if (ni->ni_subif)
++		return;
++
++	name = kmalloc(strlen(vap->iv_dev->name) + sizeof(WDSIFNAME) + 1, GFP_KERNEL);
++	if (!name)
++		return;
++
++	strcpy(name, vap->iv_dev->name);
++	strcat(name, WDSIFNAME);
++	rtnl_lock();
++	avp = ieee80211_create_vap(ic, name, ic->ic_dev, IEEE80211_M_WDS, 0, vap);
++	kfree(name);
++	if (!avp)
++		goto done;
++
++	memcpy(avp->wds_mac, ni->ni_bssid, IEEE80211_ADDR_LEN);
++	avp->iv_wdsnode = ieee80211_ref_node(ni);
++	ni->ni_subif = avp;
++	ic->ic_subifs++;
++
++done:
++	rtnl_unlock();
++}
++#undef WDSIFNAME
++
+ /* Add wds address to the node table */
+ int
+ #ifdef IEEE80211_DEBUG_REFCNT
+@@ -2254,6 +2293,28 @@
+ 	}
+ }
+ 
++static void
++ieee80211_subif_destroy(struct work_struct *work)
++{
++	struct ieee80211_node *ni = container_of(work, struct ieee80211_node, ni_destroy);
++	struct ieee80211vap *vap = ni->ni_subif;
++	struct ieee80211com *ic;
++
++	if (!vap)
++		goto done;
++
++	rtnl_lock();
++	ic = vap->iv_ic;
++	ni->ni_subif = NULL;
++	ieee80211_stop(vap->iv_dev);
++	ic->ic_vap_delete(vap);
++	ic->ic_subifs--;
++	rtnl_unlock();
++
++done:
++	ieee80211_unref_node(&ni);
++}
++
+ /*
+  * Handle bookkeeping for a station/neighbor leaving
+  * the bss when operating in ap or adhoc modes.
+@@ -2270,6 +2331,12 @@
+ 			ni, "station with aid %d leaves (refcnt %u)",
+ 			IEEE80211_NODE_AID(ni), atomic_read(&ni->ni_refcnt));
+ 
++	if (ni->ni_subif) {
++		ieee80211_ref_node(ni);
++		IEEE80211_INIT_WORK(&ni->ni_destroy, ieee80211_subif_destroy);
++		schedule_work(&ni->ni_destroy);
++	}
++
+ 	/* From this point onwards we can no longer find the node,
+ 	 * so no more references are generated
+ 	 */
+--- a/net80211/ieee80211_linux.h
++++ b/net80211/ieee80211_linux.h
+@@ -81,6 +81,12 @@
+ #endif
+ }
+ 
++#ifndef container_of
++#define container_of(ptr, type, member) ({          \
++    const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
++	    (type *)( (char *)__mptr - offsetof(type,member) );})
++#endif
++
+ /*
+  * Task deferral
+  *
+@@ -113,6 +119,29 @@
+ 
+ #define	IEEE80211_RESCHEDULE	schedule
+ 
++#include <linux/sched.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,5,41)
++#include <linux/tqueue.h>
++#define work_struct			tq_struct
++#define schedule_work(t)		schedule_task((t))
++#define flush_scheduled_work()		flush_scheduled_tasks()
++#define IEEE80211_INIT_WORK(t, f) do { 			\
++	memset((t), 0, sizeof(struct tq_struct)); \
++	(t)->routine = (void (*)(void*)) (f); 	\
++	(t)->data=(void *) (t);			\
++} while (0)
++#else
++#include <linux/workqueue.h>
++
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
++#define IEEE80211_INIT_WORK(_t, _f)	INIT_WORK((_t), (void (*)(void *))(_f), (_t));
++#else
++#define IEEE80211_INIT_WORK(_t, _f)	INIT_WORK((_t), (_f));
++#endif
++
++#endif /* KERNEL_VERSION < 2.5.41 */
++
++
+ /* Locking */
+ /* NB: beware, spin_is_locked() is not usefully defined for !(DEBUG || SMP)
+  * because spinlocks do not exist in this configuration. Instead IRQs 
+@@ -167,6 +196,18 @@
+ 	IEEE80211_VAPS_LOCK_ASSERT(_ic);		\
+ 	spin_unlock_bh(&(_ic)->ic_vapslock);		\
+ } while (0)
++#define	IEEE80211_VAPS_LOCK_IRQ(_ic) do {					\
++	unsigned long __vlockflags;					\
++	IEEE80211_VAPS_LOCK_CHECK(_ic);					\
++	spin_lock_irqsave(&(_ic)->ic_vapslock, __vlockflags);
++#define	IEEE80211_VAPS_UNLOCK_IRQ(_ic)					\
++	IEEE80211_VAPS_LOCK_ASSERT(_ic);					\
++	spin_unlock_irqrestore(&(_ic)->ic_vapslock, __vlockflags);	\
++} while (0)
++#define	IEEE80211_VAPS_UNLOCK_IRQ_EARLY(_ic)					\
++	IEEE80211_VAPS_LOCK_ASSERT(_ic);					\
++	spin_unlock_irqrestore(&(_ic)->ic_vapslock, __vlockflags);
++
+ 
+ #if (defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)) && defined(spin_is_locked)
+ #define IEEE80211_VAPS_LOCK_ASSERT(_ic) \
+--- a/net80211/ieee80211_proto.c
++++ b/net80211/ieee80211_proto.c
+@@ -1081,6 +1081,8 @@
+ int
+ ieee80211_open(struct net_device *dev)
+ {
++	struct ieee80211vap *vap = dev->priv;
++
+ 	return ieee80211_init(dev, 0);
+ }
+ 
+@@ -1116,11 +1118,33 @@
+ 	struct ieee80211vap *vap = dev->priv;
+ 	struct ieee80211com *ic = vap->iv_ic;
+ 	struct net_device *parent = ic->ic_dev;
++	struct ieee80211_node *tni, *ni;
+ 
+ 	IEEE80211_DPRINTF(vap,
+ 		IEEE80211_MSG_STATE | IEEE80211_MSG_DEBUG,
+ 		"%s\n", "stop running");
+ 
++	/* get rid of all wds nodes while we're still locked */
++	do {
++		ni = NULL;
++
++		IEEE80211_NODE_TABLE_LOCK_IRQ(&ic->ic_sta);
++		TAILQ_FOREACH(tni, &ic->ic_sta.nt_node, ni_list) {
++			if (tni->ni_vap != vap)
++				continue;
++			if (!tni->ni_subif)
++				continue;
++			ni = tni;
++			break;
++		}
++		IEEE80211_NODE_TABLE_UNLOCK_IRQ(&ic->ic_sta);
++
++		if (!ni)
++			break;
++
++		ieee80211_node_leave(ni);
++	} while (1);
++
+ 	ieee80211_new_state(vap, IEEE80211_S_INIT, -1);
+ 	if (dev->flags & IFF_RUNNING) {
+ 		dev->flags &= ~IFF_RUNNING;		/* mark us stopped */
+@@ -1342,9 +1366,9 @@
+ 	struct ieee80211com *ic = vap->iv_ic;
+ 	int rc;
+ 
+-	IEEE80211_VAPS_LOCK_BH(ic);
++	IEEE80211_VAPS_LOCK_IRQ(ic);
+ 	rc = vap->iv_newstate(vap, nstate, arg);
+-	IEEE80211_VAPS_UNLOCK_BH(ic);
++	IEEE80211_VAPS_UNLOCK_IRQ(ic);
+ 	return rc;
+ }
+ 
+--- a/net80211/ieee80211.c
++++ b/net80211/ieee80211.c
+@@ -599,8 +599,10 @@
+ 
+ 	IEEE80211_CANCEL_TQUEUE(&vap->iv_stajoin1tq);
+ 	IEEE80211_LOCK_IRQ(ic);
+-	if (vap->iv_wdsnode)
++	if (vap->iv_wdsnode) {
++		vap->iv_wdsnode->ni_subif = NULL;
+ 		ieee80211_unref_node(&vap->iv_wdsnode);
++	}
+ 	if ((vap->iv_opmode == IEEE80211_M_WDS) &&
+ 		(vap->iv_master != NULL))
+ 		TAILQ_REMOVE(&vap->iv_master->iv_wdslinks, vap, iv_wdsnext);
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
+@@ -79,28 +79,6 @@
+ #define	tasklet_enable(t)	do { (void) t; local_bh_enable(); } while (0)
+ #endif /* !DECLARE_TASKLET */
+ 
+-#include <linux/sched.h>
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,5,41)
+-#include <linux/tqueue.h>
+-#define work_struct			tq_struct
+-#define schedule_work(t)		schedule_task((t))
+-#define flush_scheduled_work()		flush_scheduled_tasks()
+-#define ATH_INIT_WORK(t, f) do { 			\
+-	memset((t), 0, sizeof(struct tq_struct)); \
+-	(t)->routine = (void (*)(void*)) (f); 	\
+-	(t)->data=(void *) (t);			\
+-} while (0)
+-#else
+-#include <linux/workqueue.h>
+-
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
+-#define ATH_INIT_WORK(_t, _f)	INIT_WORK((_t), (void (*)(void *))(_f), (_t));
+-#else
+-#define ATH_INIT_WORK(_t, _f)	INIT_WORK((_t), (_f));
+-#endif
+-
+-#endif /* KERNEL_VERSION < 2.5.41 */
+-
+ /*
+  * Guess how the interrupt handler should work.
+  */
