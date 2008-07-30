@@ -23,9 +23,11 @@ uci_load() {
 	local RET
 
 	_C=0
-	export ${NO_EXPORT:+-n} CONFIG_SECTIONS=
-	export ${NO_EXPORT:+-n} CONFIG_NUM_SECTIONS=0
-	export ${NO_EXPORT:+-n} CONFIG_SECTION=
+	if [ -z "$CONFIG_APPEND" ]; then
+		export ${NO_EXPORT:+-n} CONFIG_SECTIONS=
+		export ${NO_EXPORT:+-n} CONFIG_NUM_SECTIONS=0
+		export ${NO_EXPORT:+-n} CONFIG_SECTION=
+	fi
 
 	DATA="$(/sbin/uci ${LOAD_STATE:+-P /var/state} -S -n export "$PACKAGE" 2>/dev/null)"
 	RET="$?"
