@@ -37,13 +37,6 @@ define Package/uci
   TITLE:=Utility for the Unified Configuration Interface (UCI)
 endef
 
-define Package/uci-sh
-  SECTION:=base
-  CATEGORY:=Base system
-  DEPENDS:=@!PACKAGE_uci
-  TITLE:=Old shell/awk implementation of UCI
-endef
-
 define Package/libuci-lua
   SECTION=libs
   CATEGORY=Libraries
@@ -84,11 +77,6 @@ define Package/uci/install
 	$(CP) ./files/uci/* $(1)/
 endef
 
-define Package/uci-sh/install
-	$(INSTALL_DIR) $(1)
-	$(CP) ./files/uci-sh/* $(1)/
-endef
-
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_BUILD_DIR)/uci{,_config}.h $(1)/usr/include
@@ -99,4 +87,3 @@ endef
 $(eval $(call BuildPackage,uci))
 $(eval $(call BuildPackage,libuci))
 $(eval $(call BuildPackage,libuci-lua))
-$(eval $(call BuildPackage,uci-sh))
