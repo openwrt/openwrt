@@ -1,0 +1,12 @@
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
+@@ -238,6 +238,9 @@
+ 	if (vap->iv_opmode == IEEE80211_M_MONITOR)
+ 		goto out;
+ 
++	if (!skb->data)
++		goto out;
++
+ 	if (skb->len < sizeof(struct ieee80211_frame_min)) {
+ 		IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_ANY,
+ 			ni->ni_macaddr, NULL,
