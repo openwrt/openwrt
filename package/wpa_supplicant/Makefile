@@ -23,6 +23,7 @@ define Package/wpa-supplicant
   SECTION:=net
   CATEGORY:=Network
   TITLE:=WPA Supplicant
+  DEPENDS:=$(if $(CONFIG_WPA_SUPPLICANT_OPENSSL),+libopenssl)
   URL:=http://hostap.epitest.fi/wpa_supplicant/
 endef
 
@@ -52,6 +53,7 @@ TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include/madwifi $(if $(CONFIG_WPA_SUPPLICA
 define Build/Configure
 	cp $(CONFIG) $(PKG_BUILD_DIR)/wpa_supplicant/.config
 	$(if $(CONFIG_PACKAGE_kmod-madwifi),,$(SED) 's,^CONFIG_DRIVER_MADWIFI,#CONFIG_DRIVER_MADWIFI,g' $(PKG_BUILD_DIR)/wpa_supplicant/.config)
+	$(if $(CONFIG_WPA_SUPPLICANT_OPENSSL),$(SED) 's|^CONFIG_TLS.*|CONFIG_TLS=openssl|g' $(PKG_BUILD_DIR)/wpa_supplicant/.config)
 endef
 
 define Build/Compile
