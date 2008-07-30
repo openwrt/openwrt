@@ -24,6 +24,20 @@ append() {
 	eval "export ${NO_EXPORT:+-n} -- \"$var=\${$var:+\${$var}\${value:+\$sep}}\$value\""
 }
 
+list_remove() {
+	local var="$1"
+	local remove="$2"
+	local val
+
+	eval "val=\" \${$var} \""
+	val1="${val%% $remove *}"
+	[ "$val1" = "$val" ] && return
+	val2="${val##* $remove }"
+	[ "$val2" = "$val" ] && return
+	val="${val1## } ${val2%% }"
+	eval "export ${NO_EXPORT:+-n} -- \"$var=\$val\""
+}
+
 config_load() {
 	[ -n "$IPKG_INSTROOT" ] && return 0
 	uci_load "$@"
