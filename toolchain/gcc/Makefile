@@ -40,6 +40,12 @@ BUILD_DIR2:=$(BUILD_DIR_HOST)/gcc-$(PKG_VERSION)-final
 SEP:=,
 TARGET_LANGUAGES:="c$(if $(CONFIG_INSTALL_LIBSTDCPP),$(SEP)c++)$(if $(CONFIG_INSTALL_LIBGCJ),$(SEP)java)"
 
+ifeq ($(CONFIG_SSP_SUPPORT),y)
+  SSP:=--enable-ssp
+else
+  SSP:=--disable-ssp
+endif
+
 EXTRA_TARGET=$(if $(CONFIG_EXTRA_TARGET_ARCH),--enable-biarch --enable-targets=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-linux-uclibc)
 
 define Stage1/Configure
@@ -62,6 +68,7 @@ define Stage1/Configure
 		--disable-nls \
 		--disable-libmudflap \
 		--disable-multilib \
+		$(SSP) \
 		$(EXTRA_TARGET) \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
@@ -96,6 +103,7 @@ define Stage2/Configure
 		--disable-nls \
 		--disable-libmudflap \
 		--disable-multilib \
+		$(SSP) \
 		$(EXTRA_TARGET) \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
