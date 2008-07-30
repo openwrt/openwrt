@@ -27,6 +27,9 @@ include $(INCLUDE_DIR)/package.mk
 ifeq ($(ARCH),powerpc)
   FPIC:=-fPIC
 endif
+ifeq ($(ARCH),x86_64)
+  FPIC:=-fPIC
+endif
 
 
 define Package/lua/Default
