@@ -184,8 +184,8 @@ setup_interface() {
 			
 			[ -z "$ipaddr" ] || $DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask" broadcast "${bcast:-+}"
 			[ -z "$ip6addr" ] || $DEBUG ifconfig "$iface" add "$ip6addr"
-			[ -z "$gateway" ] || $DEBUG route add default gw "$gateway"
-			[ -z "$ip6gw" ] || $DEBUG route -A inet6 add default gw "$ip6gw"
+			[ -z "$gateway" ] || $DEBUG route add default gw "$gateway" dev "$iface"
+			[ -z "$ip6gw" ] || $DEBUG route -A inet6 add default gw "$ip6gw" dev "$iface"
 			[ -z "$dns" ] || {
 				for ns in $dns; do
 					grep "$ns" /tmp/resolv.conf.auto 2>/dev/null >/dev/null || {
