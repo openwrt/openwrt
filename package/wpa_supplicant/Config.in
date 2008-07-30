@@ -6,4 +6,16 @@ config WPA_SUPPLICANT_NO_TIMESTAMP_CHECK
 	help
 	  This disables the timestamp check for certificates in wpa_supplicant
 	  Useful for devices without RTC that cannot reliably get the real date/time
+choice
+        prompt "Choose TLS provider"
+        default WPA_SUPPLICANT_INTERNAL
+	depends PACKAGE_wpa-supplicant
 
+config WPA_SUPPLICANT_INTERNAL
+	bool "internal"
+
+config WPA_SUPPLICANT_OPENSSL
+	bool "openssl"
+	select PACKAGE_libopenssl
+
+endchoice
