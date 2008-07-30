@@ -565,8 +565,10 @@ $(eval $(call KernelPackage,input-gpio-buttons))
 define KernelPackage/mmc-spi
   SUBMENU:=$(OTHER_MENU)
   TITLE:=MMC/SD over SPI Support
-  DEPENDS:=@LINUX_2_6 +kmod-mmc +kmod-spi +kmod-crc-itu-t +kmod-crc7
-  KCONFIG:=CONFIG_MMC_SPI
+  DEPENDS:=@LINUX_2_6 +kmod-mmc +kmod-crc-itu-t +kmod-crc7
+  KCONFIG:=CONFIG_MMC_SPI \
+          CONFIG_SPI=y \
+          CONFIG_SPI_MASTER=y
   FILES:=$(LINUX_DIR)/drivers/mmc/host/mmc_spi.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,mmc_spi)
 endef
@@ -592,26 +594,13 @@ endef
 
 $(eval $(call KernelPackage,mmc-atmelmci))
 
-define KernelPackage/spi
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Serial Peripheral Interface support
-  DEPENDS:=@LINUX_2_6
-  KCONFIG:=\
-	CONFIG_SPI=y \
-	CONFIG_SPI_MASTER=y
-endef
-
-define KernelPackage/spi/description
- This package contains the Serial Peripheral Interface Master driver
-endef
-
-$(eval $(call KernelPackage,spi))
-
 define KernelPackage/spi-bitbang
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Serial Peripheral Interface bitbanging library
-  DEPENDS:=@LINUX_2_6 +kmod-spi
-  KCONFIG:=CONFIG_SPI_BITBANG
+  DEPENDS:=@LINUX_2_6
+  KCONFIG:=CONFIG_SPI_BITBANG \
+          CONFIG_SPI=y \
+          CONFIG_SPI_MASTER=y
   FILES:=$(LINUX_DIR)/drivers/spi/spi_bitbang.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,91,spi_bitbang)
 endef
@@ -640,8 +629,10 @@ $(eval $(call KernelPackage,spi-gpio))
 define KernelPackage/spi-dev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=User mode SPI device driver
-  DEPENDS:=@LINUX_2_6 +kmod-spi
-  KCONFIG:=CONFIG_SPI_SPIDEV
+  DEPENDS:=@LINUX_2_6
+  KCONFIG:=CONFIG_SPI_SPIDEV \
+          CONFIG_SPI=y \
+          CONFIG_SPI_MASTER=y
   FILES:=$(LINUX_DIR)/drivers/spi/spidev.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,91,spidev)
 endef
