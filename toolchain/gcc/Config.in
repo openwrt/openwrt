@@ -53,6 +53,13 @@ config EXTRA_GCC_CONFIG_OPTIONS
 	help
 	    Any additional gcc options you may want to include....
 
+config SSP_SUPPORT
+	bool
+	prompt "Enable Smash Stacking Protection support" if TOOLCHAINOPTS
+	default n
+	help
+	    Enable Smash Stacking Protection support
+
 config INSTALL_LIBSTDCPP
 	bool
 	prompt "Build/install c++ compiler and libstdc++?" if TOOLCHAINOPTS
