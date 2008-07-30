@@ -64,6 +64,16 @@ add_vlan() {
 	}
 }
 
+# sort the device list, drop duplicates
+sort_list() {
+	local arg="$*"
+	(
+		for item in $arg; do
+			echo "$item"
+		done
+	) | sort -u
+}
+
 # Create the interface, if necessary.
 # Return status 0 indicates that the setup_interface() call should continue
 # Return status 1 means that everything is set up already.
@@ -94,6 +104,13 @@ prepare_interface() {
 		bridge)
 			[ -x /usr/sbin/brctl ] && {
 				ifconfig "br-$config" 2>/dev/null >/dev/null && {
+					local newdevs=
+
+					config_get devices "$config" device
+					for dev in $(sort_list "$devices" "$iface"); do
+						append newdevs "$dev"
+					done
+					uci_set_state network "$config" device "$newdevs"
 					$DEBUG brctl addif "br-$config" "$iface"
 					# Bridge existed already. No further processing necesary
 				} || {
