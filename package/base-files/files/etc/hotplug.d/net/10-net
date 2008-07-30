@@ -30,11 +30,32 @@ addif() {
 	done
 }
 
+
+delif() {
+	scan_interfaces
+
+	# find all vlan configurations for this interface and nuke 'em
+	for ifc in $interfaces; do
+		config_get iftype "$ifc" type
+		config_get ifs "$ifc" device
+		confdevs="$(uci get network.$ifc.ifname)"
+		for dev in $ifs; do
+			[ "${dev%%\.*}" = "$INTERFACE" ] && {
+				list_contains confdevs "$dev" || list_remove ifs "$dev"
+			}
+		done
+		uci_set_state "network" "$ifc" device "$ifs"
+	done
+}
+
 case "$ACTION" in
 	add|register)
 		case "$PHYSDEVDRIVER" in
 			natsemi) sleep 1;;
 		esac
 		addif
+	;;
+	remove|unregister)
+		delif
 	;;
 esac
