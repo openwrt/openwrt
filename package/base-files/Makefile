@@ -147,6 +147,7 @@ define Package/base-files$(TARGET)/install
 			$(CP) $(PLATFORM_SUBDIR)/base-files-$(PROFILE)/* $(1)/; \
 		fi \
 	)
+	$(if $(CONFIG_BUSYBOX_CONFIG_FEATURE_SHADOWPASSWDS),cp $(1)/etc/passwd $(1)/etc/shadow)
 	$(SED) 's,$$$$R,$(REVISION),g' $(1)/etc/banner
 	$(SED) 's,$$$$S,$(BOARD),g' -e 's,$$$$A,$(ARCH),g' $(1)/etc/ipkg.conf
 	mkdir -p $(1)/dev
