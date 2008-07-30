@@ -120,6 +120,9 @@ enable_atheros() {
 			iwpriv "$ifname" ff "$ff"
 		fi
 
+		config_get wdssep "$vif" wdssep
+		[ -n "$wdssep" ] && iwpriv "$ifname" wdssep "$wdssep"
+
 		config_get wds "$vif" wds
 		case "$wds" in
 			1|on|enabled) wds=1;;

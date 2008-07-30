@@ -214,9 +214,8 @@ define Build/InstallDev
 endef
 
 define KernelPackage/madwifi/install
-	$(INSTALL_DIR) $(1)/lib/wifi
-	$(INSTALL_DATA) ./files/lib/wifi/madwifi.sh $(1)/lib/wifi
 	$(INSTALL_DIR) $(1)/usr/sbin
+	$(CP) ./files/* $(1)/
 	$(CP) $(PKG_BUILD_DIR)/tools/{madwifi_multi,$(MADWIFI_APPLETS)} $(1)/usr/sbin/
 endef
 
