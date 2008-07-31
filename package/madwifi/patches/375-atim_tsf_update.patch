@@ -1,0 +1,59 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -2785,6 +2785,44 @@
+ 	return 1;
+ }
+ 
++/* Fix up the ATIM window after TSF resync */
++static int
++ath_hw_check_atim(struct ath_softc *sc, int window)
++{
++#define AR5K_TIMER0_5210       0x802c  /* Next beacon time register */
++#define AR5K_TIMER0_5211       0x8028
++#define AR5K_TIMER3_5210       0x8038  /* End of ATIM window time register */
++#define AR5K_TIMER3_5211       0x8034
++	struct ath_hal *ah = sc->sc_ah;
++	unsigned int nbtt, atim;
++	int dev = ar_device(sc->devid);
++
++	switch(dev) {
++	case 5210:
++		nbtt = OS_REG_READ(ah, AR5K_TIMER0_5210);
++		atim = OS_REG_READ(ah, AR5K_TIMER3_5210);
++		if (atim - nbtt != window) {
++			OS_REG_WRITE(ah, AR5K_TIMER3_5210, nbtt + window );
++			return atim - nbtt;
++		}
++		break;
++	case 5211:
++	case 5212:
++		nbtt = OS_REG_READ(ah, AR5K_TIMER0_5211);
++		atim = OS_REG_READ(ah, AR5K_TIMER3_5211);
++		if (atim - nbtt != window) {
++			OS_REG_WRITE(ah, AR5K_TIMER3_5211, nbtt + window );
++			return atim - nbtt;
++		}
++		break;
++	/* NB: 5416+ doesn't do ATIM in hw */
++	default:
++		break;
++	}
++	return 0;
++}
++
++
+ /*
+  * Reset the hardware w/o losing operational state.  This is
+  * basically a more efficient way of doing ath_stop, ath_init,
+@@ -6391,6 +6429,11 @@
+ 			DPRINTF(sc, ATH_DEBUG_BEACON, 
+ 				"Updated beacon timers\n");
+ 		}
++		if ((sc->sc_opmode == IEEE80211_M_IBSS) &&
++				IEEE80211_ADDR_EQ(ni->ni_bssid, vap->iv_bss->ni_bssid) &&
++				ath_hw_check_atim(sc, 1)) {
++			DPRINTF(sc, ATH_DEBUG_ANY, "Fixed ATIM window after beacon recv\n");
++		}
+ 		/* NB: Fall Through */
+ 	case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
+ 		if (vap->iv_opmode == IEEE80211_M_IBSS &&
