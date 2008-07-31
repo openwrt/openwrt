@@ -27,6 +27,7 @@ empty:=
 space:= $(empty) $(empty)
 merge=$(subst $(space),,$(1))
 confvar=$(call merge,$(foreach v,$(1),$(if $($(v)),y,n)))
+strip_last=$(patsubst %.$(lastword $(subst .,$(space),$(1))),%,$(1))
 
 _SINGLE=MAKEFLAGS=$(space)
 ARCH:=$(call qstrip,$(shell echo $(CONFIG_ARCH) | sed -e 's/i[3-9]86/i386/'))
