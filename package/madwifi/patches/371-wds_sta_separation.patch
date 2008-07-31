@@ -39,19 +39,21 @@
  		IEEE80211_NODE_STAT(ni, rx_data);
  		IEEE80211_NODE_STAT_ADD(ni, rx_bytes, skb->len);
  		ic->ic_lastdata = jiffies;
-@@ -1132,6 +1140,11 @@
+@@ -1132,6 +1140,13 @@
  		dev = vap->iv_xrvap->iv_dev;
  #endif
  
 +	/* if the node has a wds subif, move data frames there,
 +	 * but keep EAP traffic on the master */
-+	if (ni->ni_subif && ((eh)->ether_type != __constant_htons(ETHERTYPE_PAE)))
-+		dev = ni->ni_subif->iv_dev;
++	if (ni->ni_subif && ((eh)->ether_type != __constant_htons(ETHERTYPE_PAE))) {
++		vap = ni->ni_subif;
++		dev = vap->iv_dev;
++	}
 +
  	/* perform as a bridge within the vap */
  	/* XXX intra-vap bridging only */
  	if (vap->iv_opmode == IEEE80211_M_HOSTAP &&
-@@ -1157,6 +1170,7 @@
+@@ -1157,6 +1172,7 @@
  			if (ni1 != NULL) {
  				if (ni1->ni_vap == vap &&
  				    ieee80211_node_is_authorized(ni1) &&
@@ -419,3 +421,14 @@
  /*
   * Guess how the interrupt handler should work.
   */
+--- a/net80211/ieee80211_output.c
++++ b/net80211/ieee80211_output.c
+@@ -786,6 +786,8 @@
+ 		hdrsize = sizeof(struct ieee80211_frame);
+ 
+ 	SKB_CB(skb)->auth_pkt = (eh.ether_type == __constant_htons(ETHERTYPE_PAE));
++	if (!SKB_CB(skb)->auth_pkt && ni->ni_subif)
++		vap = ni->ni_subif;
+ 
+ 	switch (vap->iv_opmode) {
+ 	case IEEE80211_M_IBSS:
