@@ -1,0 +1,26 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -5495,6 +5495,8 @@
+ 		ath_hal_intrset(ah, sc->sc_imask);
+ 		ath_set_beacon_cal(sc, 0);
+ 	} else {
++		unsigned long flags;
++
+ 		ath_hal_intrset(ah, 0);
+ 		if (reset_tsf)
+ 			intval |= HAL_BEACON_RESET_TSF;
+@@ -5514,11 +5516,14 @@
+ 		ath_beacon_dturbo_config(vap, intval &
+ 				~(HAL_BEACON_RESET_TSF | HAL_BEACON_ENA));
+ #endif
++		local_irq_save(flags);
+ 		if ((nexttbtt & HAL_BEACON_PERIOD) - (ath_hal_gettsf32(ah) >> 10)
+ 				<= ath_hal_sw_beacon_response_time)
+ 			nexttbtt += intval;
+ 		sc->sc_nexttbtt = nexttbtt;
+ 		ath_hal_beaconinit(ah, nexttbtt, intval);
++		local_irq_restore(flags);
++
+ 		if (intval & HAL_BEACON_RESET_TSF) {
+ 			sc->sc_last_tsf = 0;
+ 		}
