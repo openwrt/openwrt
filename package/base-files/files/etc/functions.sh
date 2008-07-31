@@ -44,6 +44,7 @@ list_remove() {
 	val2="${val##* $remove }"
 	[ "$val2" = "$val" ] && return
 	val="${val1## } ${val2%% }"
+	val="${val%% }"
 	eval "export ${NO_EXPORT:+-n} -- \"$var=\$val\""
 }
 
@@ -107,8 +108,8 @@ config_unset() {
 config_clear() {
 	local SECTION="$1"
 	local oldvar
-	
-	export ${NO_EXPORT:+-n} CONFIG_SECTIONS="$(echo " $CONFIG_SECTIONS " | sed -e "s, $OLD , ,")"
+
+	list_remove CONFIG_SECTIONS "$SECTION"
 	export ${NO_EXPORT:+-n} CONFIG_SECTIONS="${SECTION:+$CONFIG_SECTIONS}"
 
 	for oldvar in `set | grep ^CONFIG_${SECTION:+${SECTION}_} | \
