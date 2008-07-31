@@ -1087,6 +1087,7 @@ static void register_leds(struct led_t *l)
 	gpio_outen(mask, oe_mask);
 	gpio_control(mask, 0);
 	gpio_out(mask, val);
+	gpio_intmask(mask, 0);
 }
 
 static void unregister_leds(struct led_t *l)
