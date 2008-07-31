@@ -42,6 +42,9 @@ ifneq ($(strip $(PKG_UNPACK)),)
   endef
 endif
 
+export PKG_CONFIG_PATH=$(STAGING_DIR)/usr/lib/pkgconfig:$(STAGING_DIR_HOST)/usr/lib/pkgconfig
+export PKG_CONFIG_LIBDIR=$(STAGING_DIR)/usr/lib/pkgconfig
+
 CONFIGURE_PREFIX:=/usr
 CONFIGURE_ARGS = \
 		--target=$(GNU_TARGET_NAME) \
@@ -67,8 +70,8 @@ CONFIGURE_VARS = \
 		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS)" \
 		CPPFLAGS="$(TARGET_CPPFLAGS) $(EXTRA_CPPFLAGS)" \
 		LDFLAGS="$(TARGET_LDFLAGS) $(EXTRA_LDFLAGS)" \
-		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig:$(STAGING_DIR_HOST)/usr/lib/pkgconfig" \
-		PKG_CONFIG_LIBDIR="$(STAGING_DIR)/usr/lib/pkgconfig"
+		PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" \
+		PKG_CONFIG_LIBDIR="$(PKG_CONFIG_LIBDIR)"
 
 CONFIGURE_PATH = .
 CONFIGURE_CMD = ./configure
