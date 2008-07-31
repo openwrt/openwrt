@@ -27,13 +27,13 @@
 +
 +static struct plat_serial8250_port cambria_optional_uart_data[] = {
 +	{
-+		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST,
++		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST | UPF_BUGGY_UART,
 +		.iotype		= UPIO_MEM,
 +		.regshift	= 0,
 +		.uartclk	= 1843200,
 +	},
 +	{
-+		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST,
++		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST | UPF_BUGGY_UART,
 +		.iotype		= UPIO_MEM,
 +		.regshift	= 0,
 +		.uartclk	= 1843200,
