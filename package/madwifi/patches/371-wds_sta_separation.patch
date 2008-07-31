@@ -150,6 +150,37 @@
  
  #ifdef ATH_REVERSE_ENGINEERING
  	/*
+@@ -5890,6 +5905,8 @@
+ ieee80211_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+ {
+ 	struct ieee80211vap *vap = dev->priv;
++	struct ieee80211com *ic = vap->iv_ic;
++	struct ieee80211_node *ni;
+ 
+ 	switch (cmd) {
+ 	case SIOCG80211STATS:
+@@ -5898,8 +5915,20 @@
+ 	case SIOC80211IFDESTROY:
+ 		if (!capable(CAP_NET_ADMIN))
+ 			return -EPERM;
++		/* drop all node subifs */
++		TAILQ_FOREACH(ni, &ic->ic_sta.nt_node, ni_list) {
++			struct ieee80211vap *avp = ni->ni_subif;
++
++			if (ni->ni_vap != vap)
++				continue;
++			if (!avp)
++				continue;
++			ni->ni_subif = NULL;
++			ieee80211_stop(avp->iv_dev);
++			ic->ic_vap_delete(avp);
++		}
+ 		ieee80211_stop(vap->iv_dev);	/* force state before cleanup */
+-		vap->iv_ic->ic_vap_delete(vap);
++		ic->ic_vap_delete(vap);
+ 		return 0;
+ 	case IEEE80211_IOCTL_GETKEY:
+ 		return ieee80211_ioctl_getkey(dev, (struct iwreq *) ifr);
 --- a/net80211/ieee80211_node.c
 +++ b/net80211/ieee80211_node.c
 @@ -47,6 +47,7 @@
