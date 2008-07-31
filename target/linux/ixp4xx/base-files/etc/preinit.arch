@@ -6,3 +6,10 @@ do
 		ifconfig $npe hw ether $(fconfig -s -r -d /dev/$RB_CONFIG -n npe_"$npe"_esa)
 	fi
 done
+
+# Some developers should be shot on sight at Zcom/Netgear
+# -- Fixup for the WG302v1, need someone with a WAG302v1 to fix that, too
+
+if [ "$(ifconfig eth0 2>/dev/null | grep -c 00:00:00:00:00:00)" == "1" ]; then
+		ifconfig eth0 hw ether $(fconfig -s -r -d /dev/$RB_CONFIG -n zcom_npe_esa)
+fi
