@@ -5,13 +5,25 @@ config MADWIFI_DEBUG
 	depends on EXPERIMENTAL && PACKAGE_kmod-madwifi
 	default n
 
-config MADWIFI_TESTING
-	bool "Use the testing version of MadWiFi"
+choice
+	prompt "Madwifi version"
 	depends on PACKAGE_kmod-madwifi
-	default n
+	default MADWIFI_STABLE
 	help
-	  Use the testing version of MadWiFi, which is newer, but also less tested
-	  May contain unexpected bugs :)
+	  This option allows you to select the version of MadiWifi to be built.
+
+config MADWIFI_STABLE
+	bool "Use the OpenWrt stable version of madwifi"
+
+config MADWIFI_TESTING
+	depends BROKEN
+	bool "Use the OpenWrt testing version of madwifi"
+
+config MADWIFI_UPSTREAM
+	depends !LINUX_2_6_26
+	bool "Use the upstream release version 0.9.4"
+
+endchoice
 
 choice
 	prompt "Rate control algorithm selection"

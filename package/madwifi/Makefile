@@ -10,20 +10,34 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=madwifi
-PKG_REV:=$(if $(CONFIG_MADWIFI_TESTING),3776,3314)
-PKG_VERSION:=r$(PKG_REV)
+
+ifneq ($(CONFIG_MADWIFI_UPSTREAM),)
+  PKG_VERSION:=0.9.4
+  PKG_RELEASE:=1
+
+  PKG_SOURCE:=madwifi-$(PKG_VERSION).tar.gz
+  PKG_SOURCE_URL:=http://downloads.sourceforge.net/madwifi/
+  PKG_MD5SUM:=399d20de8d855a59f20058857c2178ad
+
+  PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/madwifi-$(PKG_VERSION)
+
+  PATCH_DIR=./patches-upstream
+else
 # PKG_BRANCH:=madwifi-dfs
-PKG_RELEASE:=1
+  PKG_REV:=$(if $(CONFIG_MADWIFI_TESTING),3776,3314)
+  PKG_VERSION:=r$(PKG_REV)
+  PKG_RELEASE:=1
 
-PKG_SOURCE_PROTO:=svn
-PKG_SOURCE_VERSION:=$(PKG_REV)
-PKG_SOURCE_SUBDIR:=$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trunk)-$(PKG_VERSION)
-PKG_SOURCE_URL:=http://svn.madwifi.org/madwifi/$(if $(PKG_BRANCH),branches/$(PKG_BRANCH),trunk)
-PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
+  PKG_SOURCE_PROTO:=svn
+  PKG_SOURCE_VERSION:=$(PKG_REV)
+  PKG_SOURCE_SUBDIR:=$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trunk)-$(PKG_VERSION)
+  PKG_SOURCE_URL:=http://svn.madwifi.org/madwifi/$(if $(PKG_BRANCH),branches/$(PKG_BRANCH),trunk)
+  PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trunk)-$(PKG_VERSION)
+  PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trunk)-$(PKG_VERSION)
 
-PATCH_DIR=$(if $(CONFIG_MADWIFI_TESTING),./patches-testing,./patches)
+  PATCH_DIR=$(if $(CONFIG_MADWIFI_TESTING),./patches-testing,./patches)
+endif
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -120,11 +134,13 @@ ifeq ($(findstring PCI,$(BUS)),PCI)
   MADWIFI_AUTOLOAD+= ath_pci
 endif
 
-MADWIFI_APPLETS:=80211stats,athchans,athctrl,athkey,athstats,wlanconfig,$(if $(CONFIG_MADWIFI_TESTING),ath_info/)ath_info
+MADWIFI_APPLETS:=80211stats athchans athctrl athkey athstats wlanconfig $(if $(CONFIG_MADWIFI_TESTING),ath_info/)ath_info
 ifdef CONFIG_MADWIFI_DEBUG
-  MADWIFI_APPLETS:=$(strip $(MADWIFI_APPLETS)),athdebug,80211debug
+  MADWIFI_APPLETS += athdebug 80211debug
 endif
-
+ifndef CONFIG_MADWIFI_UPSTREAM
+  MADWIFI_APPLETS += madwifi_multi
+endif
 
 define KernelPackage/madwifi
   SUBMENU:=Wireless Drivers
@@ -164,15 +180,23 @@ endif
 MAKE_VARS:= \
 	COPTS="-DCONFIG_ATHEROS_RATE_DEFAULT='\"$(RATE_CONTROL)\"' -DATH_REVERSE_ENGINEERING=1" \
 
-HALFILE:=$(lastword $(sort $(wildcard ./ath_hal-*.tgz)))
+ifeq ($(CONFIG_MADWIFI_UPSTREAM),)
+  HALFILE:=$(lastword $(sort $(wildcard ./ath_hal-*.tgz)))
+endif
+
 ifneq ($(HALFILE),)
-  define Build/Prepare
-	$(call Build/Prepare/Default)
+  define Build/Prepare/HAL
 	rm -rf $(PKG_BUILD_DIR)/tmp
 	mkdir -p $(PKG_BUILD_DIR)/tmp
 	tar xvzf $(HALFILE) -C $(PKG_BUILD_DIR)/tmp
 	$(CP) $(PKG_BUILD_DIR)/tmp/ath_hal*/* $(PKG_BUILD_DIR)/hal/
 	rm -rf $(PKG_BUILD_DIR)/tmp
+  endef
+endif
+
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(call Build/Prepare/HAL)
 	# patch cflags
 	$(SED) 's, -E[LB],,' \
 		-e 's, -mips2,,' \
@@ -180,8 +204,7 @@ ifneq ($(HALFILE),)
 		$(PKG_BUILD_DIR)/hal/public/*.inc
 	$(SED) 's,march=armv4,march=armv5te,' \
 		$(PKG_BUILD_DIR)/hal/public/xscale*.inc
-  endef
-endif
+endef
 
 ifeq ($(findstring AHB,$(BUS)),AHB)
   define Build/Compile/ahb
@@ -216,7 +239,7 @@ endef
 define KernelPackage/madwifi/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) ./files/* $(1)/
-	$(CP) $(PKG_BUILD_DIR)/tools/{madwifi_multi,$(MADWIFI_APPLETS)} $(1)/usr/sbin/
+	$(CP) $(foreach applet,$(MADWIFI_APPLETS),$(PKG_BUILD_DIR)/tools/$(applet)) $(1)/usr/sbin/
 endef
 
 $(eval $(call KernelPackage,madwifi))
