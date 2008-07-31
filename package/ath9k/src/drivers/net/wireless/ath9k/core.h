@@ -156,13 +156,6 @@ static inline void list_cut_position(struct list_head *list,
 		}				\
 	} while (0)
 
-#define KASSERT(exp, msg) do {			\
-		if (unlikely(!(exp))) {         \
-			printk msg;		\
-			BUG();			\
-		}				\
-	} while (0)
-
 /* XXX: remove */
 #define memzero(_buf, _len) memset(_buf, 0, _len)
 
@@ -184,23 +177,29 @@ static inline unsigned long get_timestamp(void)
 /*************/
 
 enum ATH_DEBUG {
-	ATH_DEBUG_XMIT          = 0x00000001,   /* basic xmit operation */
-	ATH_DEBUG_RECV          = 0x00000002,   /* basic recv operation */
-	ATH_DEBUG_BEACON        = 0x00000004,   /* beacon handling */
-	ATH_DEBUG_TX_PROC       = 0x00000008,   /* tx ISR proc */
-	ATH_DEBUG_RX_PROC       = 0x00000010,   /* rx ISR proc */
-	ATH_DEBUG_BEACON_PROC   = 0x00000020,   /* beacon ISR proc */
-	ATH_DEBUG_RATE          = 0x00000040,   /* rate control */
-	ATH_DEBUG_CONFIG        = 0x00000080,   /* configuration */
-	ATH_DEBUG_KEYCACHE      = 0x00000100,   /* key cache management */
-	ATH_DEBUG_NODE          = 0x00000200,   /* node management */
-	ATH_DEBUG_AGGR		= 0x00000400,	/* Aggregation */
-	ATH_DEBUG_CWM		= 0x00000800,	/* Channel Width Management */
-	ATH_DEBUG_FATAL         = 0x00001000,   /* fatal errors */
-	ATH_DEBUG_ANY           = 0xffffffff
+	ATH_DBG_RESET		= 0x00000001,
+	ATH_DBG_PHY_IO		= 0x00000002,
+	ATH_DBG_REG_IO		= 0x00000004,
+	ATH_DBG_QUEUE		= 0x00000008,
+	ATH_DBG_EEPROM		= 0x00000010,
+	ATH_DBG_NF_CAL		= 0x00000020,
+	ATH_DBG_CALIBRATE	= 0x00000040,
+	ATH_DBG_CHANNEL		= 0x00000080,
+	ATH_DBG_INTERRUPT	= 0x00000100,
+	ATH_DBG_REGULATORY	= 0x00000200,
+	ATH_DBG_ANI		= 0x00000400,
+	ATH_DBG_POWER_MGMT	= 0x00000800,
+	ATH_DBG_XMIT		= 0x00001000,
+	ATH_DBG_BEACON		= 0x00002000,
+	ATH_DBG_RATE		= 0x00004000,
+	ATH_DBG_CONFIG		= 0x00008000,
+	ATH_DBG_KEYCACHE	= 0x00010000,
+	ATH_DBG_AGGR		= 0x00020000,
+	ATH_DBG_FATAL		= 0x00040000,
+	ATH_DBG_ANY		= 0xffffffff
 };
 
-#define DBG_DEFAULT (ATH_DEBUG_FATAL)
+#define DBG_DEFAULT (ATH_DBG_FATAL)
 
 #define	DPRINTF(sc, _m, _fmt, ...) do {			\
 		if (sc->sc_debug & (_m))                \
@@ -214,7 +213,6 @@ enum ATH_DEBUG {
 /* Per-instance load-time (note: NOT run-time) configurations
  * for Atheros Device */
 struct ath_config {
-	u_int8_t    chainmask_sel; /* enable automatic tx chainmask selection */
 	u_int32_t   ath_aggr_prot;
 	u_int16_t   txpowlimit;
 	u_int16_t   txpowlimit_override;
@@ -249,6 +247,7 @@ struct ath_chainmask_sel {
 };
 
 int ath_chainmask_sel_logic(struct ath_softc *sc, struct ath_node *an);
+void ath_update_chainmask(struct ath_softc *sc, int is_ht);
 
 /*************************/
 /* Descriptor Management */
@@ -452,9 +451,8 @@ struct ath_arx {
 	struct ath_arx_tid  tid[WME_NUM_TID];
 };
 
-void ath_setrxfilter(struct ath_softc *sc);
 int ath_startrecv(struct ath_softc *sc);
-enum hal_bool ath_stoprecv(struct ath_softc *sc);
+bool ath_stoprecv(struct ath_softc *sc);
 void ath_flushrecv(struct ath_softc *sc);
 u_int32_t ath_calcrxfilter(struct ath_softc *sc);
 void ath_rx_node_init(struct ath_softc *sc, struct ath_node *an);
@@ -635,9 +633,9 @@ struct ath_tx_stat {
 struct ath_txq *ath_txq_setup(struct ath_softc *sc, int qtype, int subtype);
 void ath_tx_cleanupq(struct ath_softc *sc, struct ath_txq *txq);
 int ath_tx_setup(struct ath_softc *sc, int haltype);
-void ath_draintxq(struct ath_softc *sc, enum hal_bool retry_tx);
+void ath_draintxq(struct ath_softc *sc, bool retry_tx);
 void ath_tx_draintxq(struct ath_softc *sc,
-	struct ath_txq *txq, enum hal_bool retry_tx);
+	struct ath_txq *txq, bool retry_tx);
 void ath_tx_node_init(struct ath_softc *sc, struct ath_node *an);
 void ath_tx_node_cleanup(struct ath_softc *sc,
 	struct ath_node *an, bool bh_flag);
@@ -695,7 +693,7 @@ void ath_tx_complete(struct ath_softc *sc, struct sk_buff *skb,
 
 #define ATH_DS_BA_SEQ(_ds)               ((_ds)->ds_us.tx.ts_seqnum)
 #define ATH_DS_BA_BITMAP(_ds)            (&(_ds)->ds_us.tx.ba_low)
-#define ATH_DS_TX_BA(_ds)                ((_ds)->ds_us.tx.ts_flags & HAL_TX_BA)
+#define ATH_DS_TX_BA(_ds)	((_ds)->ds_us.tx.ts_flags & ATH9K_TX_BA)
 #define ATH_AN_2_TID(_an, _tidno)        (&(_an)->an_aggr.tx.tid[(_tidno)])
 
 enum ATH_AGGR_STATUS {
@@ -822,10 +820,6 @@ void ath_update_beacon_info(struct ath_softc *sc, int avgbrssi);
 void ath_get_beaconconfig(struct ath_softc *sc,
 			  int if_id,
 			  struct ath_beacon_config *conf);
-struct sk_buff *ath_get_beacon(struct ath_softc *sc,
-			       int if_id,
-			       struct ath_beacon_offset *bo,
-			       struct ath_tx_control *txctl);
 int ath_update_beacon(struct ath_softc *sc,
 		      int if_id,
 		      struct ath_beacon_offset *bo,
@@ -880,23 +874,11 @@ struct ath_vap {
 int ath_vap_attach(struct ath_softc *sc,
 		   int if_id,
 		   struct ieee80211_vif *if_data,
-		   enum hal_opmode opmode,
-		   enum hal_opmode iv_opmode,
-		   int nostabeacons);
+		   enum hal_opmode opmode);
 int ath_vap_detach(struct ath_softc *sc, int if_id);
 int ath_vap_config(struct ath_softc *sc,
 	int if_id, struct ath_vap_config *if_config);
-int ath_vap_down(struct ath_softc *sc, int if_id, u_int flags);
 int ath_vap_listen(struct ath_softc *sc, int if_id);
-int ath_vap_join(struct ath_softc *sc,
-		 int if_id,
-		 const u_int8_t bssid[ETH_ALEN],
-		 u_int flags);
-int ath_vap_up(struct ath_softc *sc,
-	       int if_id,
-	       const u_int8_t bssid[ETH_ALEN],
-	       u_int8_t aid,
-	       u_int flags);
 
 /*********************/
 /* Antenna diversity */
@@ -972,12 +954,6 @@ void ath_setdefantenna(void *sc, u_int antenna);
 
 #define ATH_TXPOWER_MAX         100     /* .5 dBm units */
 
-#define ATH_ISR_NOSCHED         0x0000	/* Do not schedule bottom half */
-/* Schedule the bottom half for execution */
-#define ATH_ISR_SCHED           0x0001
-/* This was not my interrupt, for shared IRQ's */
-#define ATH_ISR_NOTMINE         0x0002
-
 #define RSSI_LPF_THRESHOLD         -20
 #define ATH_RSSI_EP_MULTIPLIER     (1<<7)  /* pow2 to optimize out * and / */
 #define ATH_RATE_DUMMY_MARKER      0
@@ -1042,34 +1018,13 @@ struct ath_softc {
 	enum hal_opmode         sc_opmode;  /* current operating mode */
 
 	/* Properties, Config */
-	unsigned int
-		sc_invalid             : 1, /* being detached */
-		sc_mrretry             : 1, /* multi-rate retry support */
-		sc_needmib             : 1, /* enable MIB stats intr */
-		sc_hasdiversity        : 1, /* rx diversity available */
-		sc_diversity           : 1, /* enable rx diversity */
-		sc_hasveol             : 1, /* tx VEOL support */
-		sc_beacons             : 1, /* beacons running */
-		sc_hasbmask            : 1, /* bssid mask support */
-		sc_hastsfadd           : 1, /* tsf adjust support */
-		sc_scanning            : 1, /* scanning active */
-		sc_nostabeacons        : 1, /* no beacons for station */
-		sc_hasclrkey           : 1, /* CLR key supported */
-		sc_stagbeacons         : 1, /* use staggered beacons */
-		sc_txaggr              : 1, /* enable 11n tx aggregation */
-		sc_rxaggr              : 1, /* enable 11n rx aggregation */
-		sc_hasautosleep        : 1, /* automatic sleep after TIM */
-		sc_waitbeacon          : 1, /* waiting for first beacon
-						after waking up */
-		sc_no_tx_3_chains      : 1, /* user, hardware, regulatory
-					or country may disallow transmit on
-					three chains. */
-		sc_update_chainmask    : 1, /* change chain mask */
-		sc_rx_chainmask_detect : 1, /* enable rx chain mask detection */
-		sc_rx_chainmask_start  : 1, /* start rx chain mask detection */
-		sc_hashtsupport        : 1, /* supports 11n */
-		sc_full_reset          : 1, /* force full reset */
-		sc_slowAntDiv          : 1; /* enable slow antenna diversity */
+	u_int8_t                sc_invalid;	/* being detached */
+	u_int8_t                sc_beacons;	/* beacons running */
+	u_int8_t                sc_scanning;	/* scanning active */
+	u_int8_t                sc_txaggr;	/* enable 11n tx aggregation */
+	u_int8_t                sc_rxaggr;	/* enable 11n rx aggregation */
+	u_int8_t                sc_update_chainmask;	/* change chain mask */
+	u_int8_t                sc_full_reset;		/* force full reset */
 	enum wireless_mode      sc_curmode;     /* current phy mode */
 	u_int16_t               sc_curtxpow;    /* current tx power limit */
 	u_int16_t               sc_curaid;      /* current association id */
@@ -1119,7 +1074,7 @@ struct ath_softc {
 
 	/* Crypto */
 	u_int                   sc_keymax;      /* size of key cache */
-	u_int8_t                sc_keymap[ATH_KEYBYTES];/* key use bit map */
+	DECLARE_BITMAP		(sc_keymap, ATH_KEYBYTES);/* key use bit map */
 	u_int8_t		sc_splitmic;	/* split TKIP MIC keys */
 	int                     sc_keytype;     /* type of the key being used */
 
@@ -1181,7 +1136,7 @@ int ath_init(u_int16_t devid, struct ath_softc *sc);
 void ath_deinit(struct ath_softc *sc);
 int ath_open(struct ath_softc *sc, struct hal_channel *initial_chan);
 int ath_suspend(struct ath_softc *sc);
-int ath_intr(struct ath_softc *sc);
+irqreturn_t ath_isr(int irq, void *dev);
 int ath_reset(struct ath_softc *sc);
 void ath_scan_start(struct ath_softc *sc);
 void ath_scan_end(struct ath_softc *sc);
@@ -1202,7 +1157,6 @@ void ath_setup_rate(struct ath_softc *sc,
 /* Utility Functions */
 /*********************/
 
-void ath_set_macmode(struct ath_softc *sc, enum hal_ht_macmode macmode);
 void ath_key_reset(struct ath_softc *sc, u_int16_t keyix, int freeslot);
 int ath_keyset(struct ath_softc *sc,
 	       u_int16_t keyix,

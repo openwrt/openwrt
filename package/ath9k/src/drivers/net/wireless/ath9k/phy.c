@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "ath9k.h"
+#include "core.h"
 #include "hw.h"
 #include "reg.h"
 #include "phy.h"
@@ -28,7 +28,7 @@ ath9k_hw_write_regs(struct ath_hal *ah, u_int modesIndex, u_int freqIndex,
 	REG_WRITE_ARRAY(&ahp->ah_iniBB_RfGain, freqIndex, regWrites);
 }
 
-enum hal_bool
+bool
 ath9k_hw_set_channel(struct ath_hal *ah, struct hal_channel_internal *chan)
 {
 	u_int32_t channelSel = 0;
@@ -51,10 +51,10 @@ ath9k_hw_set_channel(struct ath_hal *ah, struct hal_channel_internal *chan)
 			channelSel = ((freq - 704) * 2 - 3040) / 10;
 			bModeSynth = 1;
 		} else {
-			HDPRINTF(ah, HAL_DBG_CHANNEL,
+			DPRINTF(ah->ah_sc, ATH_DBG_CHANNEL,
 				 "%s: invalid channel %u MHz\n", __func__,
 				 freq);
-			return AH_FALSE;
+			return false;
 		}
 
 		channelSel = (channelSel << 2) & 0xff;
@@ -85,9 +85,9 @@ ath9k_hw_set_channel(struct ath_hal *ah, struct hal_channel_internal *chan)
 		channelSel = ath9k_hw_reverse_bits((freq - 4800) / 5, 8);
 		aModeRefSel = ath9k_hw_reverse_bits(1, 2);
 	} else {
-		HDPRINTF(ah, HAL_DBG_CHANNEL,
+		DPRINTF(ah->ah_sc, ATH_DBG_CHANNEL,
 			 "%s: invalid channel %u MHz\n", __func__, freq);
-		return AH_FALSE;
+		return false;
 	}
 
 	reg32 =
@@ -100,10 +100,10 @@ ath9k_hw_set_channel(struct ath_hal *ah, struct hal_channel_internal *chan)
 
 	AH5416(ah)->ah_curchanRadIndex = -1;
 
-	return AH_TRUE;
+	return true;
 }
 
-enum hal_bool
+bool
 ath9k_hw_ar9280_set_channel(struct ath_hal *ah,
 			    struct hal_channel_internal *chan)
 {
@@ -150,8 +150,8 @@ ath9k_hw_ar9280_set_channel(struct ath_hal *ah,
 			refDivA = 1;
 			channelSel = (freq * 0x8000) / 15;
 
-			OS_REG_RMW_FIELD(ah, AR_AN_SYNTH9,
-					 AR_AN_SYNTH9_REFDIVA, refDivA);
+			REG_RMW_FIELD(ah, AR_AN_SYNTH9,
+				      AR_AN_SYNTH9_REFDIVA, refDivA);
 		}
 		if (!fracMode) {
 			ndiv = (freq * (refDivA >> aModeRefSel)) / 60;
@@ -171,7 +171,7 @@ ath9k_hw_ar9280_set_channel(struct ath_hal *ah,
 
 	AH5416(ah)->ah_curchanRadIndex = -1;
 
-	return AH_TRUE;
+	return true;
 }
 
 static void
@@ -201,7 +201,7 @@ ath9k_phy_modify_rx_buffer(u_int32_t *rfBuf, u_int32_t reg32,
 	}
 }
 
-enum hal_bool
+bool
 ath9k_hw_set_rf_regs(struct ath_hal *ah, struct hal_channel_internal *chan,
 		     u_int16_t modesIndex)
 {
@@ -213,7 +213,7 @@ ath9k_hw_set_rf_regs(struct ath_hal *ah, struct hal_channel_internal *chan,
 	int regWrites = 0;
 
 	if (AR_SREV_9280_10_OR_LATER(ah))
-		return AH_TRUE;
+		return true;
 
 	eepMinorRev = ath9k_hw_get_eeprom(ahp, EEP_MINOR_REV);
 
@@ -266,7 +266,7 @@ ath9k_hw_set_rf_regs(struct ath_hal *ah, struct hal_channel_internal *chan,
 	REG_WRITE_RF_ARRAY(&ahp->ah_iniBank7, ahp->ah_analogBank7Data,
 			   regWrites);
 
-	return AH_TRUE;
+	return true;
 }
 
 void
@@ -312,11 +312,11 @@ ath9k_hw_rfdetach(struct ath_hal *ah)
 	}
 }
 
-enum hal_bool
+bool
 ath9k_hw_get_chip_power_limits(struct ath_hal *ah,
 			       struct hal_channel *chans, u_int32_t nchans)
 {
-	enum hal_bool retVal = AH_TRUE;
+	bool retVal = true;
 	int i;
 
 	for (i = 0; i < nchans; i++) {
@@ -327,7 +327,7 @@ ath9k_hw_get_chip_power_limits(struct ath_hal *ah,
 }
 
 
-enum hal_bool ath9k_hw_init_rf(struct ath_hal *ah, enum hal_status *status)
+bool ath9k_hw_init_rf(struct ath_hal *ah, enum hal_status *status)
 {
 	struct ath_hal_5416 *ahp = AH5416(ah);
 
@@ -362,11 +362,11 @@ enum hal_bool ath9k_hw_init_rf(struct ath_hal *ah, enum hal_status *status)
 		    || ahp->ah_analogBank6Data == NULL
 		    || ahp->ah_analogBank6TPCData == NULL
 		    || ahp->ah_analogBank7Data == NULL) {
-			HDPRINTF(ah, HAL_DBG_MALLOC,
+			DPRINTF(ah->ah_sc, ATH_DBG_FATAL,
 				 "%s: cannot allocate RF banks\n",
 				 __func__);
 			*status = HAL_ENOMEM;
-			return AH_FALSE;
+			return false;
 		}
 
 		ahp->ah_addac5416_21 =
@@ -374,26 +374,26 @@ enum hal_bool ath9k_hw_init_rf(struct ath_hal *ah, enum hal_status *status)
 			     ahp->ah_iniAddac.ia_rows *
 			     ahp->ah_iniAddac.ia_columns), GFP_KERNEL);
 		if (ahp->ah_addac5416_21 == NULL) {
-			HDPRINTF(ah, HAL_DBG_MALLOC,
+			DPRINTF(ah->ah_sc, ATH_DBG_FATAL,
 				 "%s: cannot allocate ah_addac5416_21\n",
 				 __func__);
 			*status = HAL_ENOMEM;
-			return AH_FALSE;
+			return false;
 		}
 
 		ahp->ah_bank6Temp =
 		    kzalloc((sizeof(u_int32_t) *
 			     ahp->ah_iniBank6.ia_rows), GFP_KERNEL);
 		if (ahp->ah_bank6Temp == NULL) {
-			HDPRINTF(ah, HAL_DBG_MALLOC,
+			DPRINTF(ah->ah_sc, ATH_DBG_FATAL,
 				 "%s: cannot allocate ah_bank6Temp\n",
 				 __func__);
 			*status = HAL_ENOMEM;
-			return AH_FALSE;
+			return false;
 		}
 	}
 
-	return AH_TRUE;
+	return true;
 }
 
 void

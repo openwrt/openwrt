@@ -80,7 +80,7 @@ static int ath_bar_rx(struct ath_softc *sc,
 	/* look at BAR contents	 */
 
 	bar = (struct ieee80211_bar *)skb->data;
-	tidno = (bar->control & IEEE80211_BAR_CTL_TID_M)
+	tidno = (le16_to_cpu(bar->control) & IEEE80211_BAR_CTL_TID_M)
 		>> IEEE80211_BAR_CTL_TID_S;
 	seqno = le16_to_cpu(bar->start_seq_num) >> IEEE80211_SEQ_SEQ_SHIFT;
 
@@ -385,60 +385,6 @@ static void ath_rx_flush_tid(struct ath_softc *sc,
 	spin_unlock_bh(&rxtid->tidlock);
 }
 
-static u_int8_t ath_rx_detect_antenna(struct ath_softc *sc,
-	struct ath_rx_status *rxstat)
-{
-#define ATH_RX_CHAINMASK_CLR(_chainmask, _chain) \
-	((_chainmask) &= ~(1 << (_chain)))
-	u_int8_t rx_chainmask = sc->sc_rx_chainmask;
-	int rssiRef, detectThresh, detectDelta;
-
-	if (IS_CHAN_5GHZ(&sc->sc_curchan)) {
-		detectThresh = sc->sc_rxchaindetect_thresh5GHz;
-		detectDelta = sc->sc_rxchaindetect_delta5GHz;
-	} else {
-		detectThresh = sc->sc_rxchaindetect_thresh2GHz;
-		detectDelta = sc->sc_rxchaindetect_delta2GHz;
-	}
-
-	switch (sc->sc_rxchaindetect_ref) {
-	case 0:
-		rssiRef = rxstat->rs_rssi;
-		if (rssiRef < detectThresh)
-			return 0;
-
-		if (rssiRef - rxstat->rs_rssi_ctl1 > detectDelta)
-			ATH_RX_CHAINMASK_CLR(rx_chainmask, 1);
-
-		if (rssiRef - rxstat->rs_rssi_ctl2 > detectDelta)
-			ATH_RX_CHAINMASK_CLR(rx_chainmask, 2);
-
-		break;
-	case 1:
-		rssiRef = rxstat->rs_rssi_ctl1;
-		if (rssiRef < detectThresh)
-			return 0;
-
-		if (rssiRef - rxstat->rs_rssi_ctl2 > detectDelta)
-			ATH_RX_CHAINMASK_CLR(rx_chainmask, 2);
-
-		break;
-	case 2:
-		rssiRef = rxstat->rs_rssi_ctl2;
-		if (rssiRef < detectThresh)
-			return 0;
-
-		if (rssiRef - rxstat->rs_rssi_ctl1 > detectDelta)
-			ATH_RX_CHAINMASK_CLR(rx_chainmask, 1);
-
-		break;
-	}
-
-	return rx_chainmask;
-#undef IS_CHAN_5GHZ
-#undef ATH_RX_CHAINMASK_CLR
-}
-
 static struct sk_buff *ath_rxbuf_alloc(struct ath_softc *sc,
 	u_int32_t len)
 {
@@ -457,7 +403,7 @@ static struct sk_buff *ath_rxbuf_alloc(struct ath_softc *sc,
 		if (off != 0)
 			skb_reserve(skb, sc->sc_cachelsz - off);
 	} else {
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: skbuff alloc of size %u failed\n",
 			__func__, len);
 		return NULL;
@@ -532,7 +478,7 @@ static void ath_opmode_init(struct ath_softc *sc)
 	ath9k_hw_setrxfilter(ah, rfilt);
 
 	/* configure bssid mask */
-	if (sc->sc_hasbmask)
+	if (ah->ah_caps.halBssIdMaskSupport)
 		ath9k_hw_setbssidmask(ah, sc->sc_bssidmask);
 
 	/* configure operational mode */
@@ -545,7 +491,7 @@ static void ath_opmode_init(struct ath_softc *sc)
 	mfilt[0] = mfilt[1] = ~0;
 
 	ath9k_hw_setmcastfilter(ah, mfilt[0], mfilt[1]);
-	DPRINTF(sc, ATH_DEBUG_RECV ,
+	DPRINTF(sc, ATH_DBG_CONFIG ,
 		"%s: RX filter 0x%x, MC filter %08x:%08x\n",
 		__func__, rfilt, mfilt[0], mfilt[1]);
 }
@@ -571,7 +517,7 @@ int ath_rx_init(struct ath_softc *sc, int nbufs)
 					   min(sc->sc_cachelsz,
 					       (u_int16_t)64));
 
-		DPRINTF(sc, ATH_DEBUG_CONFIG, "%s: cachelsz %u rxbufsize %u\n",
+		DPRINTF(sc, ATH_DBG_CONFIG, "%s: cachelsz %u rxbufsize %u\n",
 			__func__, sc->sc_cachelsz, sc->sc_rxbufsize);
 
 		/* Initialize rx descriptors */
@@ -579,7 +525,7 @@ int ath_rx_init(struct ath_softc *sc, int nbufs)
 		error = ath_descdma_setup(sc, &sc->sc_rxdma, &sc->sc_rxbuf,
 					  "rx", nbufs, 1);
 		if (error != 0) {
-			DPRINTF(sc, ATH_DEBUG_FATAL,
+			DPRINTF(sc, ATH_DBG_FATAL,
 				"%s: failed to allocate rx descriptors: %d\n",
 				__func__, error);
 			break;
@@ -669,7 +615,7 @@ u_int32_t ath_calcrxfilter(struct ath_softc *sc)
 	}
 
 	if (sc->sc_opmode == HAL_M_STA || sc->sc_opmode == HAL_M_IBSS ||
-	    sc->sc_nostabeacons || sc->sc_scanning)
+	    sc->sc_scanning)
 		rfilt |= HAL_RX_FILTER_BEACON;
 
 	/* If in HOSTAP mode, want to enable reception of PSPOLL frames
@@ -728,11 +674,11 @@ start_recv:
 
 /* Disable the receive h/w in preparation for a reset. */
 
-enum hal_bool ath_stoprecv(struct ath_softc *sc)
+bool ath_stoprecv(struct ath_softc *sc)
 {
 	struct ath_hal *ah = sc->sc_ah;
 	u_int64_t tsf;
-	enum hal_bool stopped;
+	bool stopped;
 
 	ath9k_hw_stoppcurecv(ah);	/* disable PCU */
 	ath9k_hw_setrxfilter(ah, 0);	/* clear recv filter */
@@ -798,11 +744,9 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush)
 	struct ath_hal *ah = sc->sc_ah;
 	int type, rx_processed = 0;
 	u_int phyerr;
-	u_int8_t rxchainmask, chainreset = 0;
+	u_int8_t chainreset = 0;
 	enum hal_status retval;
 	__le16 fc;
-
-	DPRINTF(sc, ATH_DEBUG_RX_PROC, "%s\n", __func__);
 
 	do {
 		/* If handling rx interrupt and flush is in progress => exit */
@@ -961,14 +905,14 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush)
 #endif
 			/* fall thru for monitor mode handling... */
 		} else if (ds->ds_rxstat.rs_status != 0) {
-			if (ds->ds_rxstat.rs_status & HAL_RXERR_CRC)
+			if (ds->ds_rxstat.rs_status & ATH9K_RXERR_CRC)
 				rx_status.flags |= ATH_RX_FCS_ERROR;
-			if (ds->ds_rxstat.rs_status & HAL_RXERR_PHY) {
+			if (ds->ds_rxstat.rs_status & ATH9K_RXERR_PHY) {
 				phyerr = ds->ds_rxstat.rs_phyerr & 0x1f;
 				goto rx_next;
 			}
 
-			if (ds->ds_rxstat.rs_status & HAL_RXERR_DECRYPT) {
+			if (ds->ds_rxstat.rs_status & ATH9K_RXERR_DECRYPT) {
 				/*
 				 * Decrypt error. We only mark packet status
 				 * here and always push up the frame up to let
@@ -977,7 +921,7 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush)
 				 * error. This let us keep statistics there.
 				 */
 				rx_status.flags |= ATH_RX_DECRYPT_ERROR;
-			} else if (ds->ds_rxstat.rs_status & HAL_RXERR_MIC) {
+			} else if (ds->ds_rxstat.rs_status & ATH9K_RXERR_MIC) {
 				/*
 				 * Demic error. We only mark frame status here
 				 * and always push up the frame up to let
@@ -992,7 +936,7 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush)
 					 * Remove these mic errors.
 					 */
 					ds->ds_rxstat.rs_status &=
-						~HAL_RXERR_MIC;
+						~ATH9K_RXERR_MIC;
 				else
 					rx_status.flags |= ATH_RX_MIC_ERROR;
 			}
@@ -1003,12 +947,12 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush)
 			 */
 			if (sc->sc_opmode == HAL_M_MONITOR) {
 				if (ds->ds_rxstat.rs_status &
-				    ~(HAL_RXERR_DECRYPT | HAL_RXERR_MIC |
-					HAL_RXERR_CRC))
+				    ~(ATH9K_RXERR_DECRYPT | ATH9K_RXERR_MIC |
+					ATH9K_RXERR_CRC))
 					goto rx_next;
 			} else {
 				if (ds->ds_rxstat.rs_status &
-				    ~(HAL_RXERR_DECRYPT | HAL_RXERR_MIC)) {
+				    ~(ATH9K_RXERR_DECRYPT | ATH9K_RXERR_MIC)) {
 					goto rx_next;
 				}
 			}
@@ -1026,7 +970,7 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush)
 		 * to receive another frame.
 		 */
 		skb_put(skb, ds->ds_rxstat.rs_datalen);
-		skb->protocol = ETH_P_CONTROL;
+		skb->protocol = cpu_to_be16(ETH_P_CONTROL);
 		rx_status.tsf = ath_extend_tsf(sc, ds->ds_rxstat.rs_tstamp);
 		rx_status.rateieee =
 			sc->sc_hwmap[ds->ds_rxstat.rs_rate].ieeerate;
@@ -1037,12 +981,12 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush)
 		/* HT rate */
 		if (rx_status.ratecode & 0x80) {
 			/* TODO - add table to avoid division */
-			if (ds->ds_rxstat.rs_flags & HAL_RX_2040) {
+			if (ds->ds_rxstat.rs_flags & ATH9K_RX_2040) {
 				rx_status.flags |= ATH_RX_40MHZ;
 				rx_status.rateKbps =
 					(rx_status.rateKbps * 27) / 13;
 			}
-			if (ds->ds_rxstat.rs_flags & HAL_RX_GI)
+			if (ds->ds_rxstat.rs_flags & ATH9K_RX_GI)
 				rx_status.rateKbps =
 					(rx_status.rateKbps * 10) / 9;
 			else
@@ -1074,7 +1018,7 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush)
 				 PCI_DMA_FROMDEVICE);
 
 		/* XXX: Ah! make me more readable, use a helper */
-		if (sc->sc_hashtsupport) {
+		if (ah->ah_caps.halHTSupport) {
 			if (ds->ds_rxstat.rs_moreaggr == 0) {
 				rx_status.rssictl[0] =
 					ds->ds_rxstat.rs_rssi_ctl0;
@@ -1083,7 +1027,7 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush)
 				rx_status.rssictl[2] =
 					ds->ds_rxstat.rs_rssi_ctl2;
 				rx_status.rssi = ds->ds_rxstat.rs_rssi;
-				if (ds->ds_rxstat.rs_flags & HAL_RX_2040) {
+				if (ds->ds_rxstat.rs_flags & ATH9K_RX_2040) {
 					rx_status.rssiextn[0] =
 						ds->ds_rxstat.rs_rssi_ext0;
 					rx_status.rssiextn[1] =
@@ -1110,41 +1054,20 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush)
 		type = ath_rx_indicate(sc, skb,
 			&rx_status, ds->ds_rxstat.rs_keyix);
 
-		if (sc->sc_diversity) {
-			/*
-			 * When using hardware fast diversity, change the
-			 * default rx antenna if rx diversity chooses the
-			 * other antenna 3 times in a row.
-			 */
-			if (sc->sc_defant != ds->ds_rxstat.rs_antenna) {
-				if (++sc->sc_rxotherant >= 3)
-					ath_setdefantenna(sc,
-						  ds->ds_rxstat.rs_antenna);
-			} else {
-				sc->sc_rxotherant = 0;
-			}
-		}
 		/*
-		 * redo antenna detection for Lenovo devices
+		 * change the default rx antenna if rx diversity chooses the
+		 * other antenna 3 times in a row.
 		 */
-		if (sc->sc_rx_chainmask_detect && sc->sc_rx_chainmask_start) {
-			rxchainmask = ath_rx_detect_antenna(sc, &ds->ds_rxstat);
-			if (rxchainmask) {
-				sc->sc_rx_chainmask_detect = 0;
-				sc->sc_rx_chainmask_start  = 0;
-				if (sc->sc_rx_chainmask != rxchainmask) {
-					sc->sc_rx_chainmask = rxchainmask;
-
-					/* we have to do an reset to
-					 * change chain mask */
-					chainreset = 1;
-				}
-			}
+		if (sc->sc_defant != ds->ds_rxstat.rs_antenna) {
+			if (++sc->sc_rxotherant >= 3)
+				ath_setdefantenna(sc,
+						ds->ds_rxstat.rs_antenna);
+		} else {
+			sc->sc_rxotherant = 0;
 		}
 
 #ifdef CONFIG_SLOW_ANT_DIV
-		if (sc->sc_slowAntDiv &&
-		    (rx_status.flags & ATH_RX_RSSI_VALID) &&
+		if ((rx_status.flags & ATH_RX_RSSI_VALID) &&
 		    ieee80211_is_beacon(fc)) {
 			ath_slow_ant_div(&sc->sc_antdiv, hdr, &ds->ds_rxstat);
 		}
@@ -1162,7 +1085,7 @@ rx_next:
 	} while (TRUE);
 
 	if (chainreset) {
-		DPRINTF(sc, ATH_DEBUG_CONFIG,
+		DPRINTF(sc, ATH_DBG_CONFIG,
 			"%s: Reset rx chain mask. "
 			"Do internal reset\n", __func__);
 		ASSERT(flush == 0);
@@ -1191,7 +1114,7 @@ int ath_rx_aggr_start(struct ath_softc *sc,
 	spin_unlock_bh(&sc->node_lock);
 
 	if (!an) {
-		DPRINTF(sc, ATH_DEBUG_AGGR,
+		DPRINTF(sc, ATH_DBG_AGGR,
 			"%s: Node not found to initialize RX aggregation\n",
 			__func__);
 		return -1;
@@ -1216,7 +1139,7 @@ int ath_rx_aggr_start(struct ath_softc *sc,
 		rxtid->seq_next = *ssn;
 
 		/* Allocate the receive buffers for this TID */
-		DPRINTF(sc, ATH_DEBUG_AGGR,
+		DPRINTF(sc, ATH_DBG_AGGR,
 			"%s: Allcating rxbuffer for TID %d\n", __func__, tid);
 
 		if (rxtid->rxbuf == NULL) {
@@ -1231,7 +1154,7 @@ int ath_rx_aggr_start(struct ath_softc *sc,
 				sizeof(struct ath_rxbuf), GFP_ATOMIC);
 		}
 		if (rxtid->rxbuf == NULL) {
-			DPRINTF(sc, ATH_DEBUG_AGGR,
+			DPRINTF(sc, ATH_DBG_AGGR,
 				"%s: Unable to allocate RX buffer, "
 				"refusing ADDBA\n", __func__);
 		} else {
@@ -1239,7 +1162,7 @@ int ath_rx_aggr_start(struct ath_softc *sc,
 			 * pointers are null) */
 			memzero(rxtid->rxbuf, ATH_TID_MAX_BUFS *
 				sizeof(struct ath_rxbuf));
-			DPRINTF(sc, ATH_DEBUG_AGGR,
+			DPRINTF(sc, ATH_DBG_AGGR,
 				"%s: Allocated @%p\n", __func__, rxtid->rxbuf);
 
 			/* Allow aggregation reception */
@@ -1264,7 +1187,7 @@ int ath_rx_aggr_stop(struct ath_softc *sc,
 	spin_unlock_bh(&sc->node_lock);
 
 	if (!an) {
-		DPRINTF(sc, ATH_DEBUG_AGGR,
+		DPRINTF(sc, ATH_DBG_AGGR,
 			"%s: RX aggr stop for non-existent node\n", __func__);
 		return -1;
 	}
@@ -1290,7 +1213,7 @@ void ath_rx_aggr_teardown(struct ath_softc *sc,
 	/* De-allocate the receive buffer array allocated when addba started */
 
 	if (rxtid->rxbuf) {
-		DPRINTF(sc, ATH_DEBUG_AGGR,
+		DPRINTF(sc, ATH_DBG_AGGR,
 			"%s: Deallocating TID %d rxbuff @%p\n",
 			__func__, tid, rxtid->rxbuf);
 		kfree(rxtid->rxbuf);

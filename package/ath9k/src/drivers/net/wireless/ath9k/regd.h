@@ -19,9 +19,6 @@
 
 #include "ath9k.h"
 
-#define ATH9K_MODE_11A_TURBO  ATH9K_MODE_SEL_108A
-#define ATH9K_MODE_11G_TURBO  ATH9K_MODE_SEL_108G
-
 #define BMLEN 2
 #define BMZERO {(u_int64_t) 0, (u_int64_t) 0}
 
@@ -124,7 +121,7 @@
 	(((_mode == ATH9K_MODE_SEL_11NA_HT40PLUS  || \
 	_mode == ATH9K_MODE_SEL_11NG_HT40PLUS    || \
 	_mode == ATH9K_MODE_SEL_11NA_HT40MINUS   || \
-	_mode == ATH9K_MODE_SEL_11NG_HT40MINUS) ? AH_TRUE : AH_FALSE))
+	_mode == ATH9K_MODE_SEL_11NG_HT40MINUS) ? true : false))
 
 #define CHAN_FLAGS      (CHANNEL_ALL|CHANNEL_HALF|CHANNEL_QUARTER)
 
@@ -172,13 +169,13 @@ struct country_code_to_enum_rd {
 	u_int16_t regDmnEnum;
 	const char *isoName;
 	const char *name;
-	enum hal_bool allow11g;
-	enum hal_bool allow11aTurbo;
-	enum hal_bool allow11gTurbo;
-	enum hal_bool allow11ng20;
-	enum hal_bool allow11ng40;
-	enum hal_bool allow11na20;
-	enum hal_bool allow11na40;
+	bool allow11g;
+	bool allow11aTurbo;
+	bool allow11gTurbo;
+	bool allow11ng20;
+	bool allow11ng40;
+	bool allow11na20;
+	bool allow11na40;
 	u_int16_t outdoorChanStart;
 };
 
@@ -213,8 +210,8 @@ struct cmode {
 	u_int32_t flags;
 };
 
-#define YES AH_TRUE
-#define NO  AH_FALSE
+#define YES true
+#define NO  false
 
 struct japan_bandcheck {
 	u_int16_t freqbandbit;

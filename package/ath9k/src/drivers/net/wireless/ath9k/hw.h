@@ -711,7 +711,7 @@ struct ath_hal_5416 {
 	u_int32_t ah_txUrnInterruptMask;
 	struct hal_tx_queue_info ah_txq[HAL_NUM_TX_QUEUES];
 	enum hal_power_mode ah_powerMode;
-	enum hal_bool ah_chipFullSleep;
+	bool ah_chipFullSleep;
 	u_int32_t ah_atimWindow;
 	enum hal_ant_setting ah_diversityControl;
 	u_int16_t ah_antennaSwitchSwap;
@@ -754,7 +754,7 @@ struct ath_hal_5416 {
 	u_int32_t ah_tx6PowerInHalfDbm;
 	u_int32_t ah_staId1Defaults;
 	u_int32_t ah_miscMode;
-	enum hal_bool ah_tpcEnabled;
+	bool ah_tpcEnabled;
 	u_int32_t ah_beaconInterval;
 	enum {
 		AUTO_32KHZ,
@@ -780,9 +780,9 @@ struct ath_hal_5416 {
 	u_int32_t ah_gpioSelect;
 	u_int32_t ah_polarity;
 	u_int32_t ah_gpioBit;
-	enum hal_bool ah_eepEnabled;
+	bool ah_eepEnabled;
 	u_int32_t ah_procPhyErr;
-	enum hal_bool ah_hasHwPhyCounters;
+	bool ah_hasHwPhyCounters;
 	u_int32_t ah_aniPeriod;
 	struct ar5416AniState *ah_curani;
 	struct ar5416AniState ah_ani[255];
@@ -792,7 +792,7 @@ struct ath_hal_5416 {
 	int ah_firpwr[5];
 	u_int16_t ah_ratesArray[16];
 	u_int32_t ah_intrTxqs;
-	enum hal_bool ah_intrMitigation;
+	bool ah_intrMitigation;
 	u_int32_t ah_cycleCount;
 	u_int32_t ah_ctlBusy;
 	u_int32_t ah_extBusy;
@@ -899,8 +899,8 @@ struct ath_hal_5416 {
 #define HAL_ANI_CCK_TRIG_HIGH           200
 #define HAL_ANI_CCK_TRIG_LOW            100
 #define HAL_ANI_NOISE_IMMUNE_LVL        4
-#define HAL_ANI_USE_OFDM_WEAK_SIG       AH_TRUE
-#define HAL_ANI_CCK_WEAK_SIG_THR        AH_FALSE
+#define HAL_ANI_USE_OFDM_WEAK_SIG       true
+#define HAL_ANI_CCK_WEAK_SIG_THR        false
 #define HAL_ANI_SPUR_IMMUNE_LVL         7
 #define HAL_ANI_FIRSTEP_LVL             0
 #define HAL_ANI_RSSI_THR_HIGH           40

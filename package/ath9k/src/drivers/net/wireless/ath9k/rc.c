@@ -1149,7 +1149,7 @@ void ath_rate_findrate(struct ath_softc *sc,
 {
 	struct ath_vap         *avp = ath_rc_priv->avp;
 
-	DPRINTF(sc, ATH_DEBUG_RATE, "%s", __func__);
+	DPRINTF(sc, ATH_DBG_RATE, "%s", __func__);
 	if (!num_rates || !num_tries)
 		return;
 
@@ -1652,7 +1652,7 @@ static void ath_rate_tx_complete(struct ath_softc *sc,
 
 	avp = rc_priv->avp;
 	if ((avp->av_config.av_fixed_rateset != IEEE80211_FIXED_RATE_NONE)
-			|| info_priv->tx.ts_status & HAL_TXERR_FILT)
+			|| info_priv->tx.ts_status & ATH9K_TXERR_FILT)
 		return;
 
 	if (info_priv->tx.ts_rssi > 0) {
@@ -1667,14 +1667,14 @@ static void ath_rate_tx_complete(struct ath_softc *sc,
 	 * times. This affects how ratectrl updates PER for the failed rate.
 	 */
 	if (info_priv->tx.ts_flags &
-		(HAL_TX_DATA_UNDERRUN | HAL_TX_DELIM_UNDERRUN) &&
+		(ATH9K_TX_DATA_UNDERRUN | ATH9K_TX_DELIM_UNDERRUN) &&
 		((sc->sc_ah->ah_txTrigLevel) >= tx_triglevel_max)) {
 		tx_status = 1;
 		is_underrun = 1;
 	}
 
-	if ((info_priv->tx.ts_status & HAL_TXERR_XRETRY) ||
-			(info_priv->tx.ts_status & HAL_TXERR_FIFO))
+	if ((info_priv->tx.ts_status & ATH9K_TXERR_XRETRY) ||
+			(info_priv->tx.ts_status & ATH9K_TXERR_FIFO))
 		tx_status = 1;
 
 	ath_rc_update(sc, rc_priv, info_priv, final_ts_idx, tx_status,
@@ -1822,7 +1822,7 @@ static void ath_setup_rates(struct ieee80211_local *local, struct sta_info *sta)
 	struct ath_rate_node *rc_priv = sta->rate_ctrl_priv;
 	int i, j = 0;
 
-	DPRINTF(sc, ATH_DEBUG_RATE, "%s", __func__);
+	DPRINTF(sc, ATH_DBG_RATE, "%s", __func__);
 	sband =  local->hw.wiphy->bands[local->hw.conf.channel->band];
 	for (i = 0; i < sband->n_bitrates; i++) {
 		if (sta->supp_rates[local->hw.conf.channel->band] & BIT(i)) {
@@ -1920,7 +1920,7 @@ static void ath_tx_aggr_resp(struct ath_softc *sc,
 		txtid->addba_exchangeinprogress = 0;
 		txtid->baw_size = buffersize;
 
-		DPRINTF(sc, ATH_DEBUG_AGGR,
+		DPRINTF(sc, ATH_DBG_AGGR,
 			"%s: Resuming tid, buffersize: %d\n",
 			__func__,
 			buffersize);
@@ -1949,7 +1949,7 @@ static void ath_get_rate(void *priv, struct net_device *dev,
 	u8 *qc, tid;
 	DECLARE_MAC_BUF(mac);
 
-	DPRINTF(sc, ATH_DEBUG_RATE, "%s\n", __func__);
+	DPRINTF(sc, ATH_DBG_RATE, "%s\n", __func__);
 
 	/* allocate driver private area of tx_info */
 	tx_info->driver_data[0] = kzalloc(sizeof(*tx_info_priv), GFP_ATOMIC);
@@ -1974,8 +1974,8 @@ static void ath_get_rate(void *priv, struct net_device *dev,
 			  ATH_RC_PROBE_ALLOWED,
 			  tx_info_priv->rcs,
 			  &is_probe,
-			  AH_FALSE);
-	if (is_probe == AH_TRUE)
+			  false);
+	if (is_probe)
 		sel->probe_idx = ((struct ath_tx_ratectrl *)
 			sta->rate_ctrl_priv)->probe_rate;
 
@@ -1999,7 +1999,7 @@ static void ath_get_rate(void *priv, struct net_device *dev,
 			spin_unlock_bh(&sc->node_lock);
 
 			if (!an) {
-				DPRINTF(sc, ATH_DEBUG_AGGR,
+				DPRINTF(sc, ATH_DBG_AGGR,
 					"%s: Node not found to "
 					"init/chk TX aggr\n", __func__);
 				return;
@@ -2010,13 +2010,13 @@ static void ath_get_rate(void *priv, struct net_device *dev,
 				ret = ieee80211_start_tx_ba_session(hw,
 					hdr->addr1, tid);
 				if (ret)
-					DPRINTF(sc, ATH_DEBUG_AGGR,
+					DPRINTF(sc, ATH_DBG_AGGR,
 						"%s: Unable to start tx "
 						"aggr for: %s\n",
 						__func__,
 						print_mac(mac, hdr->addr1));
 				else
-					DPRINTF(sc, ATH_DEBUG_AGGR,
+					DPRINTF(sc, ATH_DBG_AGGR,
 						"%s: Started tx aggr for: %s\n",
 						__func__,
 						print_mac(mac, hdr->addr1));
@@ -2034,21 +2034,15 @@ static void ath_rate_init(void *priv, void *priv_sta,
 	struct ieee80211_hw *hw = local_to_hw(local);
 	struct ieee80211_conf *conf = &local->hw.conf;
 	struct ath_softc *sc = hw->priv;
-	struct hal_channel hchan;
 	int i, j = 0;
 
-	DPRINTF(sc, ATH_DEBUG_RATE, "%s", __func__);
+	DPRINTF(sc, ATH_DBG_RATE, "%s\n", __func__);
 
 	sband = local->hw.wiphy->bands[local->hw.conf.channel->band];
 	sta->txrate_idx = rate_lowest_index(local, sband, sta);
 
-	hchan.channel = conf->channel->center_freq;
-	hchan.channelFlags = ath_chan2flags(conf->channel, sc);
-	if (ath_set_channel(sc, &hchan) < 0)
-		DPRINTF(sc, ATH_DEBUG_FATAL, "%s: Unable to set channel\n",
-			__func__);
 	ath_setup_rates(local, sta);
-	if (conf->flags&IEEE80211_CONF_SUPPORT_HT_MODE) {
+	if (conf->flags & IEEE80211_CONF_SUPPORT_HT_MODE) {
 		for (i = 0; i < MCS_SET_SIZE; i++) {
 			if (conf->ht_conf.supp_mcs_set[i/8] & (1<<(i%8)))
 				((struct ath_rate_node *)
@@ -2071,7 +2065,7 @@ static void *ath_rate_alloc(struct ieee80211_local *local)
 	struct ieee80211_hw *hw = local_to_hw(local);
 	struct ath_softc *sc = hw->priv;
 
-	DPRINTF(sc, ATH_DEBUG_RATE, "%s", __func__);
+	DPRINTF(sc, ATH_DBG_RATE, "%s", __func__);
 	return local->hw.priv;
 }
 
@@ -2086,10 +2080,10 @@ static void *ath_rate_alloc_sta(void *priv, gfp_t gfp)
 	struct ath_vap *avp = sc->sc_vaps[0];
 	struct ath_rate_node *rate_priv;
 
-	DPRINTF(sc, ATH_DEBUG_RATE, "%s", __func__);
+	DPRINTF(sc, ATH_DBG_RATE, "%s", __func__);
 	rate_priv = ath_rate_node_alloc(avp, sc->sc_rc, gfp);
 	if (!rate_priv) {
-		DPRINTF(sc, ATH_DEBUG_FATAL, "%s:Unable to allocate"
+		DPRINTF(sc, ATH_DBG_FATAL, "%s:Unable to allocate"
 				"private rate control structure", __func__);
 		return NULL;
 	}
@@ -2102,7 +2096,7 @@ static void ath_rate_free_sta(void *priv, void *priv_sta)
 	struct ath_rate_node *rate_priv = priv_sta;
 	struct ath_softc *sc = priv;
 
-	DPRINTF(sc, ATH_DEBUG_RATE, "%s", __func__);
+	DPRINTF(sc, ATH_DBG_RATE, "%s", __func__);
 	ath_rate_node_free(rate_priv);
 }
 
