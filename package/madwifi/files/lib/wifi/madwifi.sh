@@ -193,9 +193,6 @@ enable_atheros() {
 		config_get rts "$vif" rts
 		[ -n "$rts" ] && iwconfig "$ifname" rts "${rts%%.*}"
 
-		config_get_bool doth "$vif" 80211h
-		[ -n "$doth" ] && iwpriv "$ifname" doth "$doth"
-
 		config_get_bool comp "$vif" compression
 		[ -n "$comp" ] && iwpriv "$ifname" compression "$comp"
 
