@@ -19,7 +19,7 @@
 #include "core.h"
 #include "regd.h"
 
-static int ath_outdoor = AH_FALSE;		/* enable outdoor use */
+static int ath_outdoor;		/* enable outdoor use */
 
 static const u_int8_t ath_bcast_mac[ETH_ALEN] =
     { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
@@ -65,7 +65,7 @@ static void ath_setcurmode(struct ath_softc *sc, enum wireless_mode mode)
 
 	memset(sc->sc_rixmap, 0xff, sizeof(sc->sc_rixmap));
 	rt = sc->sc_rates[mode];
-	KASSERT(rt != NULL, ("no h/w rate set for phy mode %u", mode));
+	BUG_ON(!rt);
 
 	for (i = 0; i < rt->rateCount; i++)
 		sc->sc_rixmap[rt->info[i].rateCode] = (u_int8_t) i;
@@ -152,7 +152,7 @@ static int ath_rate_setup(struct ath_softc *sc, enum wireless_mode mode)
 				ATH9K_MODE_SEL_11NG_HT40MINUS);
 		break;
 	default:
-		DPRINTF(sc, ATH_DEBUG_FATAL, "%s: invalid mode %u\n",
+		DPRINTF(sc, ATH_DBG_FATAL, "%s: invalid mode %u\n",
 			__func__, mode);
 		return 0;
 	}
@@ -176,8 +176,8 @@ static int ath_rate_setup(struct ath_softc *sc, enum wireless_mode mode)
 
 static int ath_getchannels(struct ath_softc *sc,
 			   u_int cc,
-			   enum hal_bool outDoor,
-			   enum hal_bool xchanMode)
+			   bool outDoor,
+			   bool xchanMode)
 {
 	struct ath_hal *ah = sc->sc_ah;
 	struct hal_channel *chans;
@@ -187,7 +187,7 @@ static int ath_getchannels(struct ath_softc *sc,
 
 	chans = kmalloc(ATH_CHAN_MAX * sizeof(struct hal_channel), GFP_KERNEL);
 	if (chans == NULL) {
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: unable to allocate channel table\n", __func__);
 		return -ENOMEM;
 	}
@@ -205,7 +205,7 @@ static int ath_getchannels(struct ath_softc *sc,
 				      xchanMode)) {
 		u_int32_t rd = ah->ah_currentRD;
 
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: unable to collect channel list from hal; "
 			"regdomain likely %u country code %u\n",
 			__func__, rd, cc);
@@ -290,7 +290,7 @@ static int ath_stop(struct ath_softc *sc)
 {
 	struct ath_hal *ah = sc->sc_ah;
 
-	DPRINTF(sc, ATH_DEBUG_CONFIG, "%s: invalid %u\n",
+	DPRINTF(sc, ATH_DBG_CONFIG, "%s: invalid %u\n",
 		__func__, sc->sc_invalid);
 
 	/*
@@ -311,7 +311,7 @@ static int ath_stop(struct ath_softc *sc)
 
 	if (!sc->sc_invalid)
 		ath9k_hw_set_interrupts(ah, 0);
-	ath_draintxq(sc, AH_FALSE);
+	ath_draintxq(sc, false);
 	if (!sc->sc_invalid) {
 		ath_stoprecv(sc);
 		ath9k_hw_phy_disable(ah);
@@ -342,7 +342,7 @@ void ath_scan_start(struct ath_softc *sc)
 
 	/* Restore previous power management state. */
 
-	DPRINTF(sc, ATH_DEBUG_CONFIG, "%d.%03d | %s: RX filter 0x%x aid 0\n",
+	DPRINTF(sc, ATH_DBG_CONFIG, "%d.%03d | %s: RX filter 0x%x aid 0\n",
 		now / 1000, now % 1000, __func__, rfilt);
 }
 
@@ -361,11 +361,13 @@ void ath_scan_end(struct ath_softc *sc)
 	u_int32_t now = (u_int32_t) jiffies_to_msecs(get_timestamp());
 
 	sc->sc_scanning = 0;
+	/* Request for a full reset due to rx packet filter changes */
+	sc->sc_full_reset = 1;
 	rfilt = ath_calcrxfilter(sc);
 	ath9k_hw_setrxfilter(ah, rfilt);
 	ath9k_hw_write_associd(ah, sc->sc_curbssid, sc->sc_curaid);
 
-	DPRINTF(sc, ATH_DEBUG_CONFIG, "%d.%03d | %s: RX filter 0x%x aid 0x%x\n",
+	DPRINTF(sc, ATH_DBG_CONFIG, "%d.%03d | %s: RX filter 0x%x aid 0x%x\n",
 		now / 1000, now % 1000, __func__, rfilt, sc->sc_curaid);
 }
 
@@ -379,13 +381,13 @@ void ath_scan_end(struct ath_softc *sc)
 int ath_set_channel(struct ath_softc *sc, struct hal_channel *hchan)
 {
 	struct ath_hal *ah = sc->sc_ah;
-	enum hal_bool fastcc = AH_TRUE, stopped;
+	bool fastcc = true, stopped;
 	enum hal_ht_macmode ht_macmode;
 
 	if (sc->sc_invalid)	/* if the device is invalid or removed */
 		return -EIO;
 
-	DPRINTF(sc, ATH_DEBUG_CONFIG,
+	DPRINTF(sc, ATH_DBG_CONFIG,
 		"%s: %u (%u MHz) -> %u (%u MHz), cflags:%x\n",
 		__func__,
 		ath9k_hw_mhz2ieee(ah, sc->sc_curchan.channel,
@@ -410,7 +412,7 @@ int ath_set_channel(struct ath_softc *sc, struct hal_channel *hchan)
 		 * the relevant bits of the h/w.
 		 */
 		ath9k_hw_set_interrupts(ah, 0);	/* disable interrupts */
-		ath_draintxq(sc, AH_FALSE);	/* clear pending tx frames */
+		ath_draintxq(sc, false);	/* clear pending tx frames */
 		stopped = ath_stoprecv(sc);	/* turn off frame recv */
 
 		/* XXX: do not flush receive queue here. We don't want
@@ -418,7 +420,7 @@ int ath_set_channel(struct ath_softc *sc, struct hal_channel *hchan)
 		 * changing channel. */
 
 		if (!stopped || sc->sc_full_reset)
-			fastcc = AH_FALSE;
+			fastcc = false;
 
 		spin_lock_bh(&sc->sc_resetlock);
 		if (!ath9k_hw_reset(ah, sc->sc_opmode, hchan,
@@ -426,7 +428,7 @@ int ath_set_channel(struct ath_softc *sc, struct hal_channel *hchan)
 					sc->sc_rx_chainmask,
 					sc->sc_ht_extprotspacing,
 					fastcc, &status)) {
-			DPRINTF(sc, ATH_DEBUG_FATAL,
+			DPRINTF(sc, ATH_DBG_FATAL,
 				"%s: unable to reset channel %u (%uMhz) "
 				"flags 0x%x hal status %u\n", __func__,
 				ath9k_hw_mhz2ieee(ah, hchan->channel,
@@ -443,7 +445,7 @@ int ath_set_channel(struct ath_softc *sc, struct hal_channel *hchan)
 
 		/* Re-enable rx framework */
 		if (ath_startrecv(sc) != 0) {
-			DPRINTF(sc, ATH_DEBUG_FATAL,
+			DPRINTF(sc, ATH_DBG_FATAL,
 				"%s: unable to restart recv logic\n", __func__);
 			return -EIO;
 		}
@@ -507,10 +509,10 @@ int ath_chainmask_sel_logic(struct ath_softc *sc, struct ath_node *an)
 	 * sc_chainmask_auto_sel is used for internal global auto-switching
 	 * enabled/disabled setting
 	 */
-	if ((sc->sc_no_tx_3_chains == AH_FALSE) ||
-	    (sc->sc_config.chainmask_sel == AH_FALSE))
+	if (sc->sc_ah->ah_caps.halTxChainMask != ATH_CHAINMASK_SEL_3X3) {
 		cm->cur_tx_mask = sc->sc_tx_chainmask;
 		return cm->cur_tx_mask;
+	}
 
 	if (cm->tx_avgrssi == ATH_RSSI_DUMMY_MARKER)
 		return cm->cur_tx_mask;
@@ -541,55 +543,30 @@ int ath_chainmask_sel_logic(struct ath_softc *sc, struct ath_node *an)
 	return cm->cur_tx_mask;
 }
 
+/*
+ * Update tx/rx chainmask. For legacy association,
+ * hard code chainmask to 1x1, for 11n association, use
+ * the chainmask configuration.
+ */
+
+void ath_update_chainmask(struct ath_softc *sc, int is_ht)
+{
+	sc->sc_update_chainmask = 1;
+	if (is_ht) {
+		sc->sc_tx_chainmask = sc->sc_ah->ah_caps.halTxChainMask;
+		sc->sc_rx_chainmask = sc->sc_ah->ah_caps.halRxChainMask;
+	} else {
+		sc->sc_tx_chainmask = 1;
+		sc->sc_rx_chainmask = 1;
+	}
+
+	DPRINTF(sc, ATH_DBG_CONFIG, "%s: tx chmask: %d, rx chmask: %d\n",
+		__func__, sc->sc_tx_chainmask, sc->sc_rx_chainmask);
+}
+
 /******************/
 /* VAP management */
 /******************/
-
-/*
- *  Down VAP instance
- *
- *  This routine will stop the indicated VAP and put it in a "down" state.
- *  The down state is basically an initialization state that can be brought
- *  back up by calling the opposite up routine.
- *  This routine will bring the interface out of power save mode, set the
- *  LED states, update the rate control processing, stop DMA transfers, and
- *  set the VAP into the down state.
-*/
-
-int ath_vap_down(struct ath_softc *sc, int if_id, u_int flags)
-{
-	struct ath_hal *ah = sc->sc_ah;
-	struct ath_vap *avp;
-
-	avp = sc->sc_vaps[if_id];
-	if (avp == NULL) {
-		DPRINTF(sc, ATH_DEBUG_FATAL, "%s: invalid interface id %u\n",
-			__func__, if_id);
-		return -EINVAL;
-	}
-
-#ifdef CONFIG_SLOW_ANT_DIV
-	if (sc->sc_slowAntDiv)
-		ath_slow_ant_div_stop(&sc->sc_antdiv);
-#endif
-
-	/* update ratectrl about the new state */
-	ath_rate_newstate(sc, avp, 0);
-
-	/* Reclaim beacon resources */
-	if (sc->sc_opmode == HAL_M_HOSTAP || sc->sc_opmode == HAL_M_IBSS) {
-		ath9k_hw_stoptxdma(ah, sc->sc_bhalq);
-		ath_beacon_return(sc, avp);
-	}
-
-	if (flags & ATH_IF_HW_OFF) {
-		sc->sc_imask &= ~(HAL_INT_SWBA | HAL_INT_BMISS);
-		ath9k_hw_set_interrupts(ah, sc->sc_imask & ~HAL_INT_GLOBAL);
-		sc->sc_beacons = 0;
-	}
-
-	return 0;
-}
 
 /*
  *  VAP in Listen mode
@@ -608,14 +585,13 @@ int ath_vap_listen(struct ath_softc *sc, int if_id)
 
 	avp = sc->sc_vaps[if_id];
 	if (avp == NULL) {
-		DPRINTF(sc, ATH_DEBUG_FATAL, "%s: invalid interface id %u\n",
+		DPRINTF(sc, ATH_DBG_FATAL, "%s: invalid interface id %u\n",
 			__func__, if_id);
 		return -EINVAL;
 	}
 
 #ifdef CONFIG_SLOW_ANT_DIV
-	if (sc->sc_slowAntDiv)
-		ath_slow_ant_div_stop(&sc->sc_antdiv);
+	ath_slow_ant_div_stop(&sc->sc_antdiv);
 #endif
 
 	/* update ratectrl about the new state */
@@ -630,7 +606,7 @@ int ath_vap_listen(struct ath_softc *sc, int if_id)
 	} else
 		sc->sc_curaid = 0;
 
-	DPRINTF(sc, ATH_DEBUG_CONFIG,
+	DPRINTF(sc, ATH_DBG_CONFIG,
 		"%s: RX filter 0x%x bssid %s aid 0x%x\n",
 		__func__, rfilt, print_mac(mac,
 			sc->sc_curbssid), sc->sc_curaid);
@@ -648,210 +624,25 @@ int ath_vap_listen(struct ath_softc *sc, int if_id)
 	return 0;
 }
 
-int ath_vap_join(struct ath_softc *sc, int if_id,
-		 const u_int8_t bssid[ETH_ALEN], u_int flags)
-{
-	struct ath_hal *ah = sc->sc_ah;
-	struct ath_vap *avp;
-	u_int32_t rfilt = 0;
-	DECLARE_MAC_BUF(mac);
-
-	avp = sc->sc_vaps[if_id];
-	if (avp == NULL) {
-		DPRINTF(sc, ATH_DEBUG_FATAL, "%s: invalid interface id %u\n",
-			__func__, if_id);
-		return -EINVAL;
-	}
-
-	/* update ratectrl about the new state */
-	ath_rate_newstate(sc, avp, 0);
-
-	rfilt = ath_calcrxfilter(sc);
-	ath9k_hw_setrxfilter(ah, rfilt);
-
-	memcpy(sc->sc_curbssid, bssid, ETH_ALEN);
-	sc->sc_curaid = 0;
-	ath9k_hw_write_associd(ah, sc->sc_curbssid, sc->sc_curaid);
-
-	DPRINTF(sc, ATH_DEBUG_CONFIG,
-		"%s: RX filter 0x%x bssid %s aid 0x%x\n",
-		__func__, rfilt,
-		print_mac(mac, sc->sc_curbssid), sc->sc_curaid);
-
-	/*
-	 * Update tx/rx chainmask. For legacy association,
-	 * hard code chainmask to 1x1, for 11n association, use
-	 * the chainmask configuration.
-	 */
-	sc->sc_update_chainmask = 1;
-	if (flags & ATH_IF_HT) {
-		sc->sc_tx_chainmask = ah->ah_caps.halTxChainMask;
-		sc->sc_rx_chainmask = ah->ah_caps.halRxChainMask;
-	} else {
-		sc->sc_tx_chainmask = 1;
-		sc->sc_rx_chainmask = 1;
-	}
-
-	/* Enable rx chain mask detection if configured to do so */
-
-	sc->sc_rx_chainmask_detect = 0;
-
-	/* Set aggregation protection mode parameters */
-
-	sc->sc_config.ath_aggr_prot = 0;
-
-	/*
-	 * Reset our TSF so that its value is lower than the beacon that we are
-	 * trying to catch. Only then hw will update its TSF register with the
-	 * new beacon. Reset the TSF before setting the BSSID to avoid allowing
-	 * in any frames that would update our TSF only to have us clear it
-	 * immediately thereafter.
-	 */
-	ath9k_hw_reset_tsf(ah);
-
-	/*
-	 * XXXX
-	 * Disable BMISS interrupt when we're not associated
-	 */
-	ath9k_hw_set_interrupts(ah,
-		sc->sc_imask & ~(HAL_INT_SWBA | HAL_INT_BMISS));
-	sc->sc_imask &= ~(HAL_INT_SWBA | HAL_INT_BMISS);
-	/* need to reconfigure the beacons when it moves to RUN */
-	sc->sc_beacons = 0;
-
-	return 0;
-}
-
-int ath_vap_up(struct ath_softc *sc,
-	       int if_id,
-	       const u_int8_t bssid[ETH_ALEN],
-	       u_int8_t aid, u_int flags)
-{
-	struct ath_hal *ah = sc->sc_ah;
-	struct ath_vap *avp;
-	u_int32_t rfilt = 0;
-	int i, error = 0;
-	DECLARE_MAC_BUF(mac);
-
-	ASSERT(if_id != ATH_IF_ID_ANY);
-	avp = sc->sc_vaps[if_id];
-	if (avp == NULL) {
-		DPRINTF(sc, ATH_DEBUG_FATAL, "%s: invalid interface id %u\n",
-			__func__, if_id);
-		return -EINVAL;
-	}
-
-	/* update ratectrl about the new state */
-	ath_rate_newstate(sc, avp, 1);
-
-	rfilt = ath_calcrxfilter(sc);
-	ath9k_hw_setrxfilter(ah, rfilt);
-
-	if (avp->av_opmode == HAL_M_STA || avp->av_opmode == HAL_M_IBSS) {
-		memcpy(sc->sc_curbssid, bssid, ETH_ALEN);
-		sc->sc_curaid = aid;
-		ath9k_hw_write_associd(ah, sc->sc_curbssid, sc->sc_curaid);
-	}
-
-	DPRINTF(sc, ATH_DEBUG_CONFIG,
-		"%s: RX filter 0x%x bssid %s aid 0x%x\n",
-		__func__, rfilt,
-		print_mac(mac, sc->sc_curbssid), sc->sc_curaid);
-
-	if ((avp->av_opmode != IEEE80211_IF_TYPE_STA) &&
-		(flags & ATH_IF_PRIVACY)) {
-		for (i = 0; i < IEEE80211_WEP_NKID; i++)
-			if (ath9k_hw_keyisvalid(ah, (u_int16_t) i))
-				ath9k_hw_keysetmac(ah, (u_int16_t) i, bssid);
-	}
-
-	switch (avp->av_opmode) {
-	case HAL_M_HOSTAP:
-	case HAL_M_IBSS:
-		/*
-		 * Allocate and setup the beacon frame.
-		 *
-		 * Stop any previous beacon DMA.  This may be
-		 * necessary, for example, when an ibss merge
-		 * causes reconfiguration; there will be a state
-		 * transition from RUN->RUN that means we may
-		 * be called with beacon transmission active.
-		 */
-		ath9k_hw_stoptxdma(ah, sc->sc_bhalq);
-
-		error = ath_beacon_alloc(sc, if_id);
-		if (error != 0)
-			goto bad;
-
-		if (flags & ATH_IF_BEACON_ENABLE)
-			sc->sc_beacons = 0;
-
-		break;
-	case HAL_M_STA:
-		/*
-		 * start rx chain mask detection if it is enabled.
-		 * Use the default chainmask as starting point.
-		 */
-		if (sc->sc_rx_chainmask_detect) {
-			if (flags & ATH_IF_HT)
-				sc->sc_rx_chainmask =
-					ah->ah_caps.halRxChainMask;
-			else
-				sc->sc_rx_chainmask = 1;
-
-			sc->sc_rx_chainmask_start = 1;
-		}
-		break;
-	default:
-		break;
-	}
-	/* Moved beacon_config after dfs_wait check
-	 * so that ath_beacon_config won't be called duing dfswait
-	 * period - this will fix the beacon stuck afer DFS
-	 * CAC period issue
-	 * Configure the beacon and sleep timers. */
-
-	if (!sc->sc_beacons && !(flags & ATH_IF_BEACON_SYNC)) {
-		ath_beacon_config(sc, if_id);
-		sc->sc_beacons = 1;
-	}
-
-	/* Reset rssi stats; maybe not the best place... */
-	if (flags & ATH_IF_HW_ON) {
-		sc->sc_halstats.ns_avgbrssi = ATH_RSSI_DUMMY_MARKER;
-		sc->sc_halstats.ns_avgrssi = ATH_RSSI_DUMMY_MARKER;
-		sc->sc_halstats.ns_avgtxrssi = ATH_RSSI_DUMMY_MARKER;
-		sc->sc_halstats.ns_avgtxrate = ATH_RATE_DUMMY_MARKER;
-	}
-bad:
-	return error;
-}
-
 int ath_vap_attach(struct ath_softc *sc,
 		   int if_id,
 		   struct ieee80211_vif *if_data,
-		   enum hal_opmode opmode,
-		   enum hal_opmode iv_opmode,
-		   int nostabeacons)
+		   enum hal_opmode opmode)
 {
 	struct ath_vap *avp;
 
 	if (if_id >= ATH_BCBUF || sc->sc_vaps[if_id] != NULL) {
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: Invalid interface id = %u\n", __func__, if_id);
 		return -EINVAL;
 	}
 
 	switch (opmode) {
 	case HAL_M_STA:
-		sc->sc_nostabeacons = nostabeacons;
-		break;
 	case HAL_M_IBSS:
 	case HAL_M_MONITOR:
 		break;
 	case HAL_M_HOSTAP:
-		/* copy nostabeacons - for WDS client */
-		sc->sc_nostabeacons = nostabeacons;
 		/* XXX not right, beacon buffer is allocated on RUN trans */
 		if (list_empty(&sc->sc_bbuf))
 			return -ENOMEM;
@@ -868,24 +659,13 @@ int ath_vap_attach(struct ath_softc *sc,
 	memzero(avp, sizeof(struct ath_vap));
 	avp->av_if_data = if_data;
 	/* Set the VAP opmode */
-	avp->av_opmode = iv_opmode;
+	avp->av_opmode = opmode;
 	avp->av_bslot = -1;
 	INIT_LIST_HEAD(&avp->av_mcastq.axq_q);
 	INIT_LIST_HEAD(&avp->av_mcastq.axq_acq);
 	spin_lock_init(&avp->av_mcastq.axq_lock);
-	if (opmode == HAL_M_HOSTAP || opmode == HAL_M_IBSS) {
-		if (sc->sc_hastsfadd) {
-			/*
-			 * Multiple vaps are to transmit beacons and we
-			 * have h/w support for TSF adjusting; enable use
-			 * of staggered beacons.
-			 */
-			/* XXX check for beacon interval too small */
-			sc->sc_stagbeacons = 1;
-		}
-	}
-	if (sc->sc_hastsfadd)
-		ath9k_hw_set_tsfadjust(sc->sc_ah, sc->sc_stagbeacons);
+
+	ath9k_hw_set_tsfadjust(sc->sc_ah, 1);
 
 	sc->sc_vaps[if_id] = avp;
 	sc->sc_nvaps++;
@@ -906,7 +686,7 @@ int ath_vap_detach(struct ath_softc *sc, int if_id)
 
 	avp = sc->sc_vaps[if_id];
 	if (avp == NULL) {
-		DPRINTF(sc, ATH_DEBUG_FATAL, "%s: invalid interface id %u\n",
+		DPRINTF(sc, ATH_DBG_FATAL, "%s: invalid interface id %u\n",
 			__func__, if_id);
 		return -EINVAL;
 	}
@@ -919,32 +699,17 @@ int ath_vap_detach(struct ath_softc *sc, int if_id)
 	 * XXX can we do this w/o affecting other vap's?
 	 */
 	ath9k_hw_set_interrupts(ah, 0);	/* disable interrupts */
-	ath_draintxq(sc, AH_FALSE);	/* stop xmit side */
+	ath_draintxq(sc, false);	/* stop xmit side */
 	ath_stoprecv(sc);	/* stop recv side */
 	ath_flushrecv(sc);	/* flush recv queue */
 
 	/* Reclaim any pending mcast bufs on the vap. */
-	ath_tx_draintxq(sc, &avp->av_mcastq, AH_FALSE);
-
-	if (sc->sc_opmode == HAL_M_HOSTAP && sc->sc_nostabeacons)
-		sc->sc_nostabeacons = 0;
+	ath_tx_draintxq(sc, &avp->av_mcastq, false);
 
 	kfree(avp);
 	sc->sc_vaps[if_id] = NULL;
 	sc->sc_nvaps--;
 
-	/* restart H/W in case there are other VAPs */
-	if (sc->sc_nvaps) {
-		/* Restart rx+tx machines if device is still running. */
-		if (ath_startrecv(sc) != 0)	/* restart recv */
-			DPRINTF(sc, ATH_DEBUG_FATAL,
-				"%s: unable to start recv logic\n", __func__);
-		if (sc->sc_beacons)
-			/* restart beacons */
-			ath_beacon_config(sc, ATH_IF_ID_ANY);
-
-		ath9k_hw_set_interrupts(ah, sc->sc_imask);
-	}
 	return 0;
 }
 
@@ -954,7 +719,7 @@ int ath_vap_config(struct ath_softc *sc,
 	struct ath_vap *avp;
 
 	if (if_id >= ATH_BCBUF) {
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: Invalid interface id = %u\n", __func__, if_id);
 		return -EINVAL;
 	}
@@ -979,7 +744,7 @@ int ath_open(struct ath_softc *sc, struct hal_channel *initial_chan)
 	int error = 0;
 	enum hal_ht_macmode ht_macmode = ath_cwm_macmode(sc);
 
-	DPRINTF(sc, ATH_DEBUG_CONFIG, "%s: mode %d\n", __func__, sc->sc_opmode);
+	DPRINTF(sc, ATH_DBG_CONFIG, "%s: mode %d\n", __func__, sc->sc_opmode);
 
 	/*
 	 * Stop anything previously setup.  This is safe
@@ -1006,8 +771,8 @@ int ath_open(struct ath_softc *sc, struct hal_channel *initial_chan)
 	spin_lock_bh(&sc->sc_resetlock);
 	if (!ath9k_hw_reset(ah, sc->sc_opmode, &sc->sc_curchan, ht_macmode,
 			   sc->sc_tx_chainmask, sc->sc_rx_chainmask,
-			   sc->sc_ht_extprotspacing, AH_FALSE, &status)) {
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+			   sc->sc_ht_extprotspacing, false, &status)) {
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: unable to reset hardware; hal status %u "
 			"(freq %u flags 0x%x)\n", __func__, status,
 			sc->sc_curchan.channel, sc->sc_curchan.channelFlags);
@@ -1030,7 +795,7 @@ int ath_open(struct ath_softc *sc, struct hal_channel *initial_chan)
 	 * here except setup the interrupt mask.
 	 */
 	if (ath_startrecv(sc) != 0) {
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: unable to start recv logic\n", __func__);
 		error = -EIO;
 		goto done;
@@ -1043,14 +808,14 @@ int ath_open(struct ath_softc *sc, struct hal_channel *initial_chan)
 	if (ah->ah_caps.halGTTSupport)
 		sc->sc_imask |= HAL_INT_GTT;
 
-	if (sc->sc_hashtsupport)
+	if (ah->ah_caps.halHTSupport)
 		sc->sc_imask |= HAL_INT_CST;
 
 	/*
 	 * Enable MIB interrupts when there are hardware phy counters.
 	 * Note we only do this (at the moment) for station mode.
 	 */
-	if (sc->sc_needmib &&
+	if (ath9k_hw_phycounters(ah) &&
 	    ((sc->sc_opmode == HAL_M_STA) || (sc->sc_opmode == HAL_M_IBSS)))
 		sc->sc_imask |= HAL_INT_MIB;
 	/*
@@ -1101,7 +866,7 @@ static int ath_reset_end(struct ath_softc *sc, u_int32_t flag)
 	struct ath_hal *ah = sc->sc_ah;
 
 	if (ath_startrecv(sc) != 0)	/* restart recv */
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: unable to start recv logic\n", __func__);
 
 	/*
@@ -1143,8 +908,8 @@ int ath_reset(struct ath_softc *sc)
 	if (!ath9k_hw_reset(ah, sc->sc_opmode, &sc->sc_curchan,
 			   ht_macmode,
 			   sc->sc_tx_chainmask, sc->sc_rx_chainmask,
-			   sc->sc_ht_extprotspacing, AH_FALSE, &status)) {
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+			   sc->sc_ht_extprotspacing, false, &status)) {
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: unable to reset hardware; hal status %u\n",
 			__func__, status);
 		error = -EIO;
@@ -1180,11 +945,12 @@ int ath_suspend(struct ath_softc *sc)
 /* Interrupt handler.  Most of the actual processing is deferred.
  * It's the caller's responsibility to ensure the chip is awake. */
 
-int ath_intr(struct ath_softc *sc)
+irqreturn_t ath_isr(int irq, void *dev)
 {
+	struct ath_softc *sc = dev;
 	struct ath_hal *ah = sc->sc_ah;
 	enum hal_int status;
-	int sched = ATH_ISR_NOSCHED;
+	bool sched = false;
 
 	do {
 		if (sc->sc_invalid) {
@@ -1193,10 +959,10 @@ int ath_intr(struct ath_softc *sc)
 			 * touch anything. Note this can happen early
 			 * on if the IRQ is shared.
 			 */
-			return ATH_ISR_NOTMINE;
+			return IRQ_NONE;
 		}
 		if (!ath9k_hw_intrpend(ah)) {	/* shared irq, not for us */
-			return ATH_ISR_NOTMINE;
+			return IRQ_NONE;
 		}
 
 		/*
@@ -1215,16 +981,16 @@ int ath_intr(struct ath_softc *sc)
 		 */
 
 		if (!status)
-			return ATH_ISR_NOTMINE;
+			return IRQ_NONE;
 
 		sc->sc_intrstatus = status;
 
 		if (status & HAL_INT_FATAL) {
 			/* need a chip reset */
-			sched = ATH_ISR_SCHED;
+			sched = true;
 		} else if (status & HAL_INT_RXORN) {
 			/* need a chip reset */
-			sched = ATH_ISR_SCHED;
+			sched = true;
 		} else {
 			if (status & HAL_INT_SWBA) {
 				/* schedule a tasklet for beacon handling */
@@ -1236,22 +1002,22 @@ int ath_intr(struct ath_softc *sc)
 				 *     RXE bit is written, but it doesn't work
 				 *     at least on older hardware revs.
 				 */
-				sched = ATH_ISR_SCHED;
+				sched = true;
 			}
 
 			if (status & HAL_INT_TXURN)
 				/* bump tx trigger level */
-				ath9k_hw_updatetxtriglevel(ah, AH_TRUE);
+				ath9k_hw_updatetxtriglevel(ah, true);
 			/* XXX: optimize this */
 			if (status & HAL_INT_RX)
-				sched = ATH_ISR_SCHED;
+				sched = true;
 			if (status & HAL_INT_TX)
-				sched = ATH_ISR_SCHED;
+				sched = true;
 			if (status & HAL_INT_BMISS)
-				sched = ATH_ISR_SCHED;
+				sched = true;
 			/* carrier sense timeout */
 			if (status & HAL_INT_CST)
-				sched = ATH_ISR_SCHED;
+				sched = true;
 			if (status & HAL_INT_MIB) {
 				/*
 				 * Disable interrupts until we service the MIB
@@ -1268,26 +1034,23 @@ int ath_intr(struct ath_softc *sc)
 				ath9k_hw_set_interrupts(ah, sc->sc_imask);
 			}
 			if (status & HAL_INT_TIM_TIMER) {
-				if (!sc->sc_hasautosleep) {
+				if (!ah->ah_caps.halAutoSleepSupport) {
 					/* Clear RxAbort bit so that we can
 					 * receive frames */
 					ath9k_hw_setrxabort(ah, 0);
-					/* Set flag indicating we're waiting
-					 * for a beacon */
-					sc->sc_waitbeacon = 1;
-
-					sched = ATH_ISR_SCHED;
+					sched = true;
 				}
 			}
 		}
 	} while (0);
 
-	if (sched == ATH_ISR_SCHED)
+	if (sched) {
 		/* turn off every interrupt except SWBA */
 		ath9k_hw_set_interrupts(ah, (sc->sc_imask & HAL_INT_SWBA));
+		tasklet_schedule(&sc->intr_tq);
+	}
 
-	return sched;
-
+	return IRQ_HANDLED;
 }
 
 /* Deferred interrupt processing  */
@@ -1335,11 +1098,6 @@ static void ath9k_tasklet(unsigned long data)
 	ath9k_hw_set_interrupts(sc->sc_ah, sc->sc_imask);
 }
 
-void ath_set_macmode(struct ath_softc *sc, enum hal_ht_macmode macmode)
-{
-	ath9k_hw_set11nmac2040(sc->sc_ah, macmode);
-}
-
 int ath_init(u_int16_t devid, struct ath_softc *sc)
 {
 	struct ath_hal *ah = NULL;
@@ -1352,7 +1110,7 @@ int ath_init(u_int16_t devid, struct ath_softc *sc)
 	sc->sc_invalid = 1;
 
 	sc->sc_debug = DBG_DEFAULT;
-	DPRINTF(sc, ATH_DEBUG_CONFIG, "%s: devid 0x%x\n", __func__, devid);
+	DPRINTF(sc, ATH_DBG_CONFIG, "%s: devid 0x%x\n", __func__, devid);
 
 	/* Initialize tasklet */
 	tasklet_init(&sc->intr_tq, ath9k_tasklet, (unsigned long)sc);
@@ -1371,7 +1129,7 @@ int ath_init(u_int16_t devid, struct ath_softc *sc)
 
 	ah = ath9k_hw_attach(devid, sc, sc->mem, &status);
 	if (ah == NULL) {
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: unable to attach hardware; HAL status %u\n",
 			__func__, status);
 		error = -ENXIO;
@@ -1382,29 +1140,10 @@ int ath_init(u_int16_t devid, struct ath_softc *sc)
 	/* Get the chipset-specific aggr limit. */
 	sc->sc_rtsaggrlimit = ah->ah_caps.halRtsAggrLimit;
 
-	/*
-	 * Check if the MAC has multi-rate retry support.
-	 * We do this by trying to setup a fake extended
-	 * descriptor.  MAC's that don't have support will
-	 * return false w/o doing anything.  MAC's that do
-	 * support it will return true w/o doing anything.
-	 *
-	 *  XXX This is lame.  Just query a hal property, Luke!
-	 */
-	sc->sc_mrretry = ath9k_hw_setupxtxdesc(ah, NULL, 0, 0, 0, 0, 0, 0);
-
-	/*
-	 * Check if the device has hardware counters for PHY
-	 * errors.  If so we need to enable the MIB interrupt
-	 * so we can act on stat triggers.
-	 */
-	if (ath9k_hw_phycounters(ah))
-		sc->sc_needmib = 1;
-
 	/* Get the hardware key cache size. */
 	sc->sc_keymax = ah->ah_caps.halKeyCacheSize;
 	if (sc->sc_keymax > ATH_KEYMAX) {
-		DPRINTF(sc, ATH_DEBUG_KEYCACHE,
+		DPRINTF(sc, ATH_DBG_KEYCACHE,
 			"%s: Warning, using only %u entries in %u key cache\n",
 			__func__, ATH_KEYMAX, sc->sc_keymax);
 		sc->sc_keymax = ATH_KEYMAX;
@@ -1463,14 +1202,14 @@ int ath_init(u_int16_t devid, struct ath_softc *sc)
 	 */
 	sc->sc_bhalq = ath_beaconq_setup(ah);
 	if (sc->sc_bhalq == -1) {
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: unable to setup a beacon xmit queue\n", __func__);
 		error = -EIO;
 		goto bad2;
 	}
 	sc->sc_cabq = ath_txq_setup(sc, HAL_TX_QUEUE_CAB, 0);
 	if (sc->sc_cabq == NULL) {
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: unable to setup CAB xmit queue\n", __func__);
 		error = -EIO;
 		goto bad2;
@@ -1485,7 +1224,7 @@ int ath_init(u_int16_t devid, struct ath_softc *sc)
 	/* Setup data queues */
 	/* NB: ensure BK queue is the lowest priority h/w queue */
 	if (!ath_tx_setup(sc, HAL_WME_AC_BK)) {
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: unable to setup xmit queue for BK traffic\n",
 			__func__);
 		error = -EIO;
@@ -1493,29 +1232,26 @@ int ath_init(u_int16_t devid, struct ath_softc *sc)
 	}
 
 	if (!ath_tx_setup(sc, HAL_WME_AC_BE)) {
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: unable to setup xmit queue for BE traffic\n",
 			__func__);
 		error = -EIO;
 		goto bad2;
 	}
 	if (!ath_tx_setup(sc, HAL_WME_AC_VI)) {
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: unable to setup xmit queue for VI traffic\n",
 			__func__);
 		error = -EIO;
 		goto bad2;
 	}
 	if (!ath_tx_setup(sc, HAL_WME_AC_VO)) {
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: unable to setup xmit queue for VO traffic\n",
 			__func__);
 		error = -EIO;
 		goto bad2;
 	}
-
-	if (ah->ah_caps.halHTSupport)
-		sc->sc_hashtsupport = 1;
 
 	sc->sc_rc = ath_rate_attach(ah);
 	if (sc->sc_rc == NULL) {
@@ -1532,8 +1268,6 @@ int ath_init(u_int16_t devid, struct ath_softc *sc)
 		 */
 		ath9k_hw_setcapability(sc->sc_ah, HAL_CAP_TKIP_MIC, 0, 1, NULL);
 	}
-	sc->sc_hasclrkey = ath9k_hw_getcapability(ah, HAL_CAP_CIPHER,
-						  HAL_CIPHER_CLR, NULL);
 
 	/*
 	 * Check whether the separate key cache entries
@@ -1556,25 +1290,10 @@ int ath_init(u_int16_t devid, struct ath_softc *sc)
 	sc->sc_config.txpowlimit_override = 0;
 
 	/* 11n Capabilities */
-	if (sc->sc_hashtsupport) {
+	if (ah->ah_caps.halHTSupport) {
 		sc->sc_txaggr = 1;
 		sc->sc_rxaggr = 1;
 	}
-
-	/* Check for misc other capabilities. */
-	sc->sc_hasbmask = ah->ah_caps.halBssIdMaskSupport ? 1 : 0;
-	sc->sc_hastsfadd =
-		ath9k_hw_getcapability(ah, HAL_CAP_TSF_ADJUST, 0, NULL);
-
-	/*
-	 * If we cannot transmit on three chains, prevent chain mask
-	 * selection logic from switching between 2x2 and 3x3 chain
-	 * masks based on RSSI.
-	 */
-	sc->sc_no_tx_3_chains =
-	    (ah->ah_caps.halTxChainMask == ATH_CHAINMASK_SEL_3X3) ?
-		AH_TRUE : AH_FALSE;
-	sc->sc_config.chainmask_sel = sc->sc_no_tx_3_chains;
 
 	sc->sc_tx_chainmask = ah->ah_caps.halTxChainMask;
 	sc->sc_rx_chainmask = ah->ah_caps.halRxChainMask;
@@ -1586,37 +1305,15 @@ int ath_init(u_int16_t devid, struct ath_softc *sc)
 	sc->sc_rxchaindetect_delta5GHz = 30;
 	sc->sc_rxchaindetect_delta2GHz = 30;
 
-	/*
-	 * Query the hal about antenna support
-	 * Enable rx fast diversity if hal has support
-	 */
-	if (ath9k_hw_getcapability(ah, HAL_CAP_DIVERSITY, 0, NULL)) {
-		sc->sc_hasdiversity = 1;
-		ath9k_hw_setcapability(ah, HAL_CAP_DIVERSITY,
-			1, AH_TRUE, NULL);
-		sc->sc_diversity = 1;
-	} else {
-		sc->sc_hasdiversity = 0;
-		sc->sc_diversity = 0;
-		ath9k_hw_setcapability(ah, HAL_CAP_DIVERSITY,
-			1, AH_FALSE, NULL);
-	}
+	ath9k_hw_setcapability(ah, HAL_CAP_DIVERSITY, 1, true, NULL);
 	sc->sc_defant = ath9k_hw_getdefantenna(ah);
 
-	/*
-	 * Not all chips have the VEOL support we want to
-	 * use with IBSS beacons; check here for it.
-	 */
-	sc->sc_hasveol = ah->ah_caps.halVEOLSupport;
-
 	ath9k_hw_getmac(ah, sc->sc_myaddr);
-	if (sc->sc_hasbmask) {
+	if (ah->ah_caps.halBssIdMaskSupport) {
 		ath9k_hw_getbssidmask(ah, sc->sc_bssidmask);
 		ATH_SET_VAP_BSSID_MASK(sc->sc_bssidmask);
 		ath9k_hw_setbssidmask(ah, sc->sc_bssidmask);
 	}
-	sc->sc_hasautosleep = ah->ah_caps.halAutoSleepSupport;
-	sc->sc_waitbeacon = 0;
 	sc->sc_slottime = HAL_SLOT_TIME_9;	/* default to short slot time */
 
 	/* initialize beacon slots */
@@ -1627,11 +1324,8 @@ int ath_init(u_int16_t devid, struct ath_softc *sc)
 	sc->sc_config.swBeaconProcess = 1;
 
 #ifdef CONFIG_SLOW_ANT_DIV
-	sc->sc_slowAntDiv = 1;
 	/* range is 40 - 255, we use something in the middle */
 	ath_slow_ant_div_init(&sc->sc_antdiv, sc, 0x127);
-#else
-	sc->sc_slowAntDiv = 0;
 #endif
 
 	return 0;
@@ -1651,7 +1345,7 @@ void ath_deinit(struct ath_softc *sc)
 	struct ath_hal *ah = sc->sc_ah;
 	int i;
 
-	DPRINTF(sc, ATH_DEBUG_CONFIG, "%s\n", __func__);
+	DPRINTF(sc, ATH_DBG_CONFIG, "%s\n", __func__);
 
 	ath_stop(sc);
 	if (!sc->sc_invalid)
@@ -1695,9 +1389,6 @@ struct ath_node *ath_node_attach(struct ath_softc *sc, u8 *addr, int if_id)
 	ath_chainmask_sel_timerstart(&an->an_chainmask_sel);
 	list_add(&an->list, &sc->node_list);
 
-	DPRINTF(sc, ATH_DEBUG_NODE, "%s: an %p for: %s\n",
-		__func__, an, print_mac(mac, addr));
-
 	return an;
 }
 
@@ -1720,9 +1411,6 @@ void ath_node_detach(struct ath_softc *sc, struct ath_node *an, bool bh_flag)
 	list_del(&an->list);
 
 	spin_unlock_irqrestore(&sc->node_lock, flags);
-
-	DPRINTF(sc, ATH_DEBUG_NODE, "%s: an %p for: %s\n",
-		__func__, an, print_mac(mac, an->an_addr));
 
 	kfree(an);
 }
@@ -1799,6 +1487,7 @@ void ath_newassoc(struct ath_softc *sc,
 /**************/
 /* Encryption */
 /**************/
+
 void ath_key_reset(struct ath_softc *sc, u_int16_t keyix, int freeslot)
 {
 	ath9k_hw_keyreset(sc->sc_ah, keyix);
@@ -1811,12 +1500,12 @@ int ath_keyset(struct ath_softc *sc,
 	       struct hal_keyval *hk,
 	       const u_int8_t mac[ETH_ALEN])
 {
-	enum hal_bool status;
+	bool status;
 
 	status = ath9k_hw_set_keycache_entry(sc->sc_ah,
-		keyix, hk, mac, AH_FALSE);
+		keyix, hk, mac, false);
 
-	return status != AH_FALSE;
+	return status != false;
 }
 
 /***********************/
@@ -2020,12 +1709,12 @@ int ath_descdma_setup(struct ath_softc *sc,
 	struct ath_buf *bf;
 	int i, bsize, error;
 
-	DPRINTF(sc, ATH_DEBUG_CONFIG, "%s: %s DMA: %u buffers %u desc/buf\n",
+	DPRINTF(sc, ATH_DBG_CONFIG, "%s: %s DMA: %u buffers %u desc/buf\n",
 		__func__, name, nbuf, ndesc);
 
 	/* ath_desc must be a multiple of DWORDs */
 	if ((sizeof(struct ath_desc) % 4) != 0) {
-		DPRINTF(sc, ATH_DEBUG_FATAL, "%s: ath_desc not DWORD aligned\n",
+		DPRINTF(sc, ATH_DBG_FATAL, "%s: ath_desc not DWORD aligned\n",
 			__func__);
 		ASSERT((sizeof(struct ath_desc) % 4) == 0);
 		error = -ENOMEM;
@@ -2062,7 +1751,7 @@ int ath_descdma_setup(struct ath_softc *sc,
 		goto fail;
 	}
 	ds = dd->dd_desc;
-	DPRINTF(sc, ATH_DEBUG_CONFIG, "%s: %s DMA map: %p (%u) -> %llx (%u)\n",
+	DPRINTF(sc, ATH_DBG_CONFIG, "%s: %s DMA map: %p (%u) -> %llx (%u)\n",
 		__func__, dd->dd_name, ds, (u_int32_t) dd->dd_desc_len,
 		ito64(dd->dd_desc_paddr), /*XXX*/(u_int32_t) dd->dd_desc_len);
 
@@ -2141,14 +1830,6 @@ void ath_internal_reset(struct ath_softc *sc)
 	ath_reset_start(sc, 0);
 	ath_reset(sc);
 	ath_reset_end(sc, 0);
-}
-
-void ath_setrxfilter(struct ath_softc *sc)
-{
-	u_int32_t rxfilt;
-
-	rxfilt = ath_calcrxfilter(sc);
-	ath9k_hw_setrxfilter(sc->sc_ah, rxfilt);
 }
 
 int ath_get_hal_qnum(u16 queue, struct ath_softc *sc)

@@ -17,19 +17,19 @@
 #ifndef PHY_H
 #define PHY_H
 
-enum hal_bool ath9k_hw_ar9280_set_channel(struct ath_hal *ah,
+bool ath9k_hw_ar9280_set_channel(struct ath_hal *ah,
 					  struct hal_channel_internal
 					  *chan);
-enum hal_bool ath9k_hw_set_channel(struct ath_hal *ah,
+bool ath9k_hw_set_channel(struct ath_hal *ah,
 				   struct hal_channel_internal *chan);
 void ath9k_hw_write_regs(struct ath_hal *ah, u_int modesIndex,
 			 u_int freqIndex, int regWrites);
-enum hal_bool ath9k_hw_set_rf_regs(struct ath_hal *ah,
+bool ath9k_hw_set_rf_regs(struct ath_hal *ah,
 				   struct hal_channel_internal *chan,
 				   u_int16_t modesIndex);
 void ath9k_hw_decrease_chain_power(struct ath_hal *ah,
 				   struct hal_channel *chan);
-enum hal_bool ath9k_hw_init_rf(struct ath_hal *ah,
+bool ath9k_hw_init_rf(struct ath_hal *ah,
 			       enum hal_status *status);
 
 #define AR_PHY_BASE     0x9800
@@ -518,7 +518,7 @@ enum hal_bool ath9k_hw_init_rf(struct ath_hal *ah,
 		int r;							\
 		for (r = 0; r < ((iniarray)->ia_rows); r++) {		\
 			REG_WRITE(ah, INI_RA((iniarray), r, 0), (regData)[r]); \
-			HDPRINTF(ah, HAL_DBG_CHANNEL, \
+			DPRINTF(ah->ah_sc, ATH_DBG_CHANNEL, \
 				"RF 0x%x V 0x%x\n", \
 				INI_RA((iniarray), r, 0), (regData)[r]); \
 			DO_DELAY(regWr);				\

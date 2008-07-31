@@ -45,7 +45,7 @@ static int ath_beaconq_config(struct ath_softc *sc)
 	}
 
 	if (!ath9k_hw_settxqueueprops(ah, sc->sc_bhalq, &qi)) {
-		DPRINTF(sc, ATH_DEBUG_FATAL,
+		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: unable to update h/w beacon queue parameters\n",
 			__func__);
 		return 0;
@@ -76,7 +76,7 @@ static void ath_beacon_setup(struct ath_softc *sc,
 	int ctsduration = 0;
 	struct hal_11n_rate_series  series[4];
 
-	DPRINTF(sc, ATH_DEBUG_BEACON, "%s: m %p len %u\n",
+	DPRINTF(sc, ATH_DBG_BEACON, "%s: m %p len %u\n",
 		__func__, skb, skb->len);
 
 	/* setup descriptors */
@@ -84,7 +84,7 @@ static void ath_beacon_setup(struct ath_softc *sc,
 
 	flags = HAL_TXDESC_NOACK;
 
-	if (sc->sc_opmode == HAL_M_IBSS && sc->sc_hasveol) {
+	if (sc->sc_opmode == HAL_M_IBSS && ah->ah_caps.halVEOLSupport) {
 		ds->ds_link = bf->bf_daddr; /* self-linked */
 		flags |= HAL_TXDESC_VEOL;
 		/* Let hardware handle antenna switching. */
@@ -97,11 +97,7 @@ static void ath_beacon_setup(struct ath_softc *sc,
 		 * SWBA's
 		 * XXX assumes two antenna
 		 */
-		if (sc->sc_stagbeacons)
-			antenna = ((sc->ast_be_xmit /
-					sc->sc_nbcnvaps) & 1 ? 2 : 1);
-		else
-			antenna = (sc->ast_be_xmit & 1 ? 2 : 1);
+		antenna = ((sc->ast_be_xmit / sc->sc_nbcnvaps) & 1 ? 2 : 1);
 	}
 
 	ds->ds_data = bf->bf_buf_addr;
@@ -128,8 +124,8 @@ static void ath_beacon_setup(struct ath_softc *sc,
 	/* NB: beacon's BufLen must be a multiple of 4 bytes */
 	ath9k_hw_filltxdesc(ah, ds
 			   , roundup(skb->len, 4) /* buffer length */
-			   , AH_TRUE /* first segment */
-			   , AH_TRUE /* last segment */
+			   , true /* first segment */
+			   , true /* last segment */
 			   , ds /* first descriptor */
 		);
 
@@ -219,7 +215,7 @@ static struct ath_buf *ath_beacon_generate(struct ath_softc *sc, int if_id)
 	ASSERT(avp);
 
 	if (avp->av_bcbuf == NULL) {
-		DPRINTF(sc, ATH_DEBUG_BEACON, "%s: avp=%p av_bcbuf=%p\n",
+		DPRINTF(sc, ATH_DBG_BEACON, "%s: avp=%p av_bcbuf=%p\n",
 			__func__, avp, avp->av_bcbuf);
 		return NULL;
 	}
@@ -272,9 +268,9 @@ static struct ath_buf *ath_beacon_generate(struct ath_softc *sc, int if_id)
 		 * the lock again which is a common function and that
 		 * acquires txq lock inside.
 		 */
-		if (sc->sc_nvaps > 1 && sc->sc_stagbeacons) {
-			ath_tx_draintxq(sc, cabq, AH_FALSE);
-			DPRINTF(sc, ATH_DEBUG_BEACON,
+		if (sc->sc_nvaps > 1) {
+			ath_tx_draintxq(sc, cabq, false);
+			DPRINTF(sc, ATH_DBG_BEACON,
 				"%s: flush previous cabq traffic\n", __func__);
 		}
 	}
@@ -309,7 +305,7 @@ static void ath_beacon_start_adhoc(struct ath_softc *sc, int if_id)
 	ASSERT(avp);
 
 	if (avp->av_bcbuf == NULL) {
-		DPRINTF(sc, ATH_DEBUG_BEACON, "%s: avp=%p av_bcbuf=%p\n",
+		DPRINTF(sc, ATH_DBG_BEACON, "%s: avp=%p av_bcbuf=%p\n",
 			__func__, avp, avp != NULL ? avp->av_bcbuf : NULL);
 		return;
 	}
@@ -322,7 +318,7 @@ static void ath_beacon_start_adhoc(struct ath_softc *sc, int if_id)
 	/* NB: caller is known to have already stopped tx dma */
 	ath9k_hw_puttxbuf(ah, sc->sc_bhalq, bf->bf_daddr);
 	ath9k_hw_txstart(ah, sc->sc_bhalq);
-	DPRINTF(sc, ATH_DEBUG_BEACON, "%s: TXDP%u = %llx (%p)\n", __func__,
+	DPRINTF(sc, ATH_DBG_BEACON, "%s: TXDP%u = %llx (%p)\n", __func__,
 		sc->sc_bhalq, ito64(bf->bf_daddr), bf->bf_desc);
 }
 
@@ -377,7 +373,8 @@ int ath_beacon_alloc(struct ath_softc *sc, int if_id)
 				struct ath_buf, list);
 		list_del(&avp->av_bcbuf->list);
 
-		if (sc->sc_opmode == HAL_M_HOSTAP || !sc->sc_hasveol) {
+		if (sc->sc_opmode == HAL_M_HOSTAP ||
+			!sc->sc_ah->ah_caps.halVEOLSupport) {
 			int slot;
 			/*
 			 * Assign the vap to a beacon xmit slot. As
@@ -399,8 +396,7 @@ int ath_beacon_alloc(struct ath_softc *sc, int if_id)
 					avp->av_bslot = slot;
 					/* NB: keep looking for a double slot */
 				}
-			KASSERT(sc->sc_bslot[avp->av_bslot] == ATH_IF_ID_ANY,
-				("beacon slot %u not empty?", avp->av_bslot));
+			BUG_ON(sc->sc_bslot[avp->av_bslot] != ATH_IF_ID_ANY);
 			sc->sc_bslot[avp->av_bslot] = if_id;
 			sc->sc_nbcnvaps++;
 		}
@@ -409,14 +405,10 @@ int ath_beacon_alloc(struct ath_softc *sc, int if_id)
 	/* release the previous beacon frame , if it already exists. */
 	bf = avp->av_bcbuf;
 	if (bf->bf_mpdu != NULL) {
-		struct ath_xmit_status tx_status;
-
-		skb = (struct sk_buff *) bf->bf_mpdu;
+		skb = (struct sk_buff *)bf->bf_mpdu;
 		ath_skb_unmap_single(sc, skb, PCI_DMA_TODEVICE,
 				     get_dma_mem_context(bf, bf_dmacontext));
-		tx_status.flags = 0;
-		tx_status.retries = 0;
-		ath_tx_complete(sc, skb, &tx_status, NULL);
+		dev_kfree_skb_any(skb);
 		bf->bf_mpdu = NULL;
 	}
 
@@ -424,10 +416,12 @@ int ath_beacon_alloc(struct ath_softc *sc, int if_id)
 	 * NB: the beacon data buffer must be 32-bit aligned;
 	 * we assume the wbuf routines will return us something
 	 * with this alignment (perhaps should assert).
+	 * FIXME: Fill avp->av_boff.bo_tim,avp->av_btxctl.txpower and
+	 * avp->av_btxctl.shortPreamble
 	 */
-	skb = ath_get_beacon(sc, if_id, &avp->av_boff, &avp->av_btxctl);
+	skb = ieee80211_beacon_get(sc->hw, avp->av_if_data);
 	if (skb == NULL) {
-		DPRINTF(sc, ATH_DEBUG_BEACON, "%s: cannot get skb\n",
+		DPRINTF(sc, ATH_DBG_BEACON, "%s: cannot get skb\n",
 			__func__);
 		return -ENOMEM;
 	}
@@ -438,8 +432,9 @@ int ath_beacon_alloc(struct ath_softc *sc, int if_id)
 	 * of the beacon frame leaves the tstamp field immediately
 	 * following the header.
 	 */
-	if (sc->sc_stagbeacons && avp->av_bslot > 0) {
+	if (avp->av_bslot > 0) {
 		u_int64_t tsfadjust;
+		__le64 val;
 		int intval;
 
 		/* FIXME: Use default value for now: Sujith */
@@ -458,15 +453,15 @@ int ath_beacon_alloc(struct ath_softc *sc, int if_id)
 		 * others get a timestamp aligned to the next interval.
 		 */
 		tsfadjust = (intval * (ATH_BCBUF - avp->av_bslot)) / ATH_BCBUF;
-		tsfadjust = cpu_to_le64(tsfadjust<<10);     /* TU->TSF */
+		val = cpu_to_le64(tsfadjust << 10);     /* TU->TSF */
 
-		DPRINTF(sc, ATH_DEBUG_BEACON,
+		DPRINTF(sc, ATH_DBG_BEACON,
 			"%s: %s beacons, bslot %d intval %u tsfadjust %llu\n",
-			__func__, sc->sc_stagbeacons ? "stagger" : "burst",
+			__func__, "stagger",
 			avp->av_bslot, intval, (unsigned long long)tsfadjust);
 
 		wh = (struct ieee80211_hdr *)skb->data;
-		memcpy(&wh[1], &tsfadjust, sizeof(tsfadjust));
+		memcpy(&wh[1], &val, sizeof(val));
 	}
 
 	bf->bf_buf_addr = ath_skb_map_single(sc, skb, PCI_DMA_TODEVICE,
@@ -495,14 +490,10 @@ void ath_beacon_return(struct ath_softc *sc, struct ath_vap *avp)
 
 		bf = avp->av_bcbuf;
 		if (bf->bf_mpdu != NULL) {
-			struct sk_buff *skb = (struct sk_buff *) bf->bf_mpdu;
-			struct ath_xmit_status tx_status;
-
+			struct sk_buff *skb = (struct sk_buff *)bf->bf_mpdu;
 			ath_skb_unmap_single(sc, skb, PCI_DMA_TODEVICE,
 				get_dma_mem_context(bf, bf_dmacontext));
-			tx_status.flags = 0;
-			tx_status.retries = 0;
-			ath_tx_complete(sc, skb, &tx_status, NULL);
+			dev_kfree_skb_any(skb);
 			bf->bf_mpdu = NULL;
 		}
 		list_add_tail(&bf->list, &sc->sc_bbuf);
@@ -527,13 +518,9 @@ void ath_beacon_free(struct ath_softc *sc)
 	list_for_each_entry(bf, &sc->sc_bbuf, list) {
 		if (bf->bf_mpdu != NULL) {
 			struct sk_buff *skb = (struct sk_buff *) bf->bf_mpdu;
-			struct ath_xmit_status tx_status;
-
 			ath_skb_unmap_single(sc, skb, PCI_DMA_TODEVICE,
 				get_dma_mem_context(bf, bf_dmacontext));
-			tx_status.flags = 0;
-			tx_status.retries = 0;
-			ath_tx_complete(sc, skb, &tx_status, NULL);
+			dev_kfree_skb_any(skb);
 			bf->bf_mpdu = NULL;
 		}
 	}
@@ -562,6 +549,9 @@ void ath9k_beacon_tasklet(unsigned long data)
 	u_int32_t rx_clear = 0, rx_frame = 0, tx_frame = 0;
 	u_int32_t show_cycles = 0;
 	u_int32_t bc = 0; /* beacon count */
+	u_int64_t tsf;
+	u_int32_t tsftu;
+	u_int16_t intval;
 
 	if (sc->sc_noreset) {
 		show_cycles = ath9k_hw_GetMibCycleCountsPct(ah,
@@ -586,7 +576,7 @@ void ath9k_beacon_tasklet(unsigned long data)
 		 */
 		if (sc->sc_bmisscount < BSTUCK_THRESH) {
 			if (sc->sc_noreset) {
-				DPRINTF(sc, ATH_DEBUG_BEACON,
+				DPRINTF(sc, ATH_DBG_BEACON,
 					"%s: missed %u consecutive beacons\n",
 					__func__, sc->sc_bmisscount);
 				if (show_cycles) {
@@ -596,19 +586,19 @@ void ath9k_beacon_tasklet(unsigned long data)
 					 * stickiness.
 					 */
 					DPRINTF(sc,
-						ATH_DEBUG_BEACON,
+						ATH_DBG_BEACON,
 						"%s: busy times: rx_clear=%d, "
 						"rx_frame=%d, tx_frame=%d\n",
 						__func__, rx_clear, rx_frame,
 						tx_frame);
 				} else {
 					DPRINTF(sc,
-						ATH_DEBUG_BEACON,
+						ATH_DBG_BEACON,
 						"%s: unable to obtain "
 						"busy times\n", __func__);
 				}
 			} else {
-				DPRINTF(sc, ATH_DEBUG_BEACON,
+				DPRINTF(sc, ATH_DBG_BEACON,
 					"%s: missed %u consecutive beacons\n",
 					__func__, sc->sc_bmisscount);
 			}
@@ -616,13 +606,13 @@ void ath9k_beacon_tasklet(unsigned long data)
 			if (sc->sc_noreset) {
 				if (sc->sc_bmisscount == BSTUCK_THRESH) {
 					DPRINTF(sc,
-						ATH_DEBUG_BEACON,
+						ATH_DBG_BEACON,
 						"%s: beacon is officially "
 						"stuck\n", __func__);
 					ath9k_hw_dmaRegDump(ah);
 				}
 			} else {
-				DPRINTF(sc, ATH_DEBUG_BEACON,
+				DPRINTF(sc, ATH_DBG_BEACON,
 					"%s: beacon is officially stuck\n",
 					__func__);
 				ath_bstuck_process(sc);
@@ -634,11 +624,11 @@ void ath9k_beacon_tasklet(unsigned long data)
 	if (sc->sc_bmisscount != 0) {
 		if (sc->sc_noreset) {
 			DPRINTF(sc,
-				ATH_DEBUG_BEACON,
+				ATH_DBG_BEACON,
 				"%s: resume beacon xmit after %u misses\n",
 				__func__, sc->sc_bmisscount);
 		} else {
-			DPRINTF(sc, ATH_DEBUG_BEACON,
+			DPRINTF(sc, ATH_DBG_BEACON,
 				"%s: resume beacon xmit after %u misses\n",
 				__func__, sc->sc_bmisscount);
 		}
@@ -646,55 +636,29 @@ void ath9k_beacon_tasklet(unsigned long data)
 	}
 
 	/*
-	 * Generate beacon frames.  If we are sending frames
-	 * staggered then calculate the slot for this frame based
+	 * Generate beacon frames. we are sending frames
+	 * staggered so calculate the slot for this frame based
 	 * on the tsf to safeguard against missing an swba.
-	 * Otherwise we are bursting all frames together and need
-	 * to generate a frame for each vap that is up and running.
 	 */
-	if (sc->sc_stagbeacons) {
-		/* staggered beacons */
-		u_int64_t tsf;
-		u_int32_t tsftu;
-		u_int16_t intval;
 
-		/* FIXME: Use default value for now - Sujith */
-		intval = ATH_DEFAULT_BINTVAL;
+	/* FIXME: Use default value for now - Sujith */
+	intval = ATH_DEFAULT_BINTVAL;
 
-		tsf = ath9k_hw_gettsf64(ah);
-		tsftu = TSF_TO_TU(tsf>>32, tsf);
-		slot = ((tsftu % intval) * ATH_BCBUF) / intval;
-		if_id = sc->sc_bslot[(slot + 1) % ATH_BCBUF];
-		DPRINTF(sc, ATH_DEBUG_BEACON,
+	tsf = ath9k_hw_gettsf64(ah);
+	tsftu = TSF_TO_TU(tsf>>32, tsf);
+	slot = ((tsftu % intval) * ATH_BCBUF) / intval;
+	if_id = sc->sc_bslot[(slot + 1) % ATH_BCBUF];
+	DPRINTF(sc, ATH_DBG_BEACON,
 			"%s: slot %d [tsf %llu tsftu %u intval %u] if_id %d\n",
 			__func__, slot, (unsigned long long) tsf, tsftu,
 			intval, if_id);
-		bfaddr = 0;
-		if (if_id != ATH_IF_ID_ANY) {
-			bf = ath_beacon_generate(sc, if_id);
-			if (bf != NULL) {
-				bfaddr = bf->bf_daddr;
-				bc = 1;
-			}
+	bfaddr = 0;
+	if (if_id != ATH_IF_ID_ANY) {
+		bf = ath_beacon_generate(sc, if_id);
+		if (bf != NULL) {
+			bfaddr = bf->bf_daddr;
+			bc = 1;
 		}
-	} else {
-		/* XXX: Clean this up, move work to a helper */
-		/* burst'd beacons */
-		u_int32_t *bflink;
-		bflink = &bfaddr;
-		/* XXX rotate/randomize order? */
-		for (slot = 0; slot < ATH_BCBUF; slot++) {
-			if_id = sc->sc_bslot[slot];
-			if (if_id != ATH_IF_ID_ANY) {
-				bf = ath_beacon_generate(sc, if_id);
-				if (bf != NULL) {
-					*bflink = bf->bf_daddr;
-					bflink = &bf->bf_desc->ds_link;
-					bc++;
-				}
-			}
-		}
-		*bflink = 0;    /* link of last frame */
 	}
 	/*
 	 * Handle slot time change when a non-ERP station joins/leaves
@@ -719,27 +683,6 @@ void ath9k_beacon_tasklet(unsigned long data)
 	} else if (sc->sc_updateslot == COMMIT && sc->sc_slotupdate == slot)
 		ath_setslottime(sc);        /* commit change to hardware */
 
-	if ((!sc->sc_stagbeacons || slot == 0) && (!sc->sc_diversity)) {
-		int otherant;
-		/*
-		 * Check recent per-antenna transmit statistics and flip
-		 * the default rx antenna if noticeably more frames went out
-		 * on the non-default antenna.  Only do this if rx diversity
-		 * is off.
-		 * XXX assumes 2 anntenae
-		 */
-		otherant = sc->sc_defant & 1 ? 2 : 1;
-		if (sc->sc_ant_tx[otherant] > sc->sc_ant_tx[sc->sc_defant] +
-			ATH_ANTENNA_DIFF) {
-			DPRINTF(sc, ATH_DEBUG_BEACON,
-				"%s: flip defant to %u, %u > %u\n",
-				__func__, otherant, sc->sc_ant_tx[otherant],
-				sc->sc_ant_tx[sc->sc_defant]);
-			ath_setdefantenna(sc, otherant);
-		}
-		sc->sc_ant_tx[1] = sc->sc_ant_tx[2] = 0;
-	}
-
 	if (bfaddr != 0) {
 		/*
 		 * Stop any current dma and put the new frame(s) on the queue.
@@ -747,7 +690,7 @@ void ath9k_beacon_tasklet(unsigned long data)
 		 * are still pending on the queue.
 		 */
 		if (!ath9k_hw_stoptxdma(ah, sc->sc_bhalq)) {
-			DPRINTF(sc, ATH_DEBUG_FATAL,
+			DPRINTF(sc, ATH_DBG_FATAL,
 				"%s: beacon queue %u did not stop?\n",
 				__func__, sc->sc_bhalq);
 			/* NB: the HAL still stops DMA, so proceed */
@@ -771,7 +714,7 @@ void ath9k_beacon_tasklet(unsigned long data)
 
 void ath_bstuck_process(struct ath_softc *sc)
 {
-	DPRINTF(sc, ATH_DEBUG_BEACON,
+	DPRINTF(sc, ATH_DBG_BEACON,
 		"%s: stuck beacon; resetting (bmiss count %u)\n",
 		__func__, sc->sc_bmisscount);
 	ath_internal_reset(sc);
@@ -834,11 +777,7 @@ void ath_beacon_config(struct ath_softc *sc, int if_id)
 		 */
 		/* NB: the beacon interval is kept internally in TU's */
 		intval = conf.beacon_interval & HAL_BEACON_PERIOD;
-		if (sc->sc_stagbeacons)
-			intval /= ATH_BCBUF;    /* for staggered beacons */
-		if ((sc->sc_nostabeacons) &&
-		    (av_opmode == HAL_M_HOSTAP))
-			nexttbtt = 0;
+		intval /= ATH_BCBUF;    /* for staggered beacons */
 	} else {
 		intval = conf.beacon_interval & HAL_BEACON_PERIOD;
 	}
@@ -847,13 +786,10 @@ void ath_beacon_config(struct ath_softc *sc, int if_id)
 		nexttbtt = intval;
 	else if (intval)        /* NB: can be 0 for monitor mode */
 		nexttbtt = roundup(nexttbtt, intval);
-	DPRINTF(sc, ATH_DEBUG_BEACON, "%s: nexttbtt %u intval %u (%u)\n",
+	DPRINTF(sc, ATH_DBG_BEACON, "%s: nexttbtt %u intval %u (%u)\n",
 		__func__, nexttbtt, intval, conf.beacon_interval);
 	/* Check for HAL_M_HOSTAP and sc_nostabeacons for WDS client */
-	if ((sc->sc_opmode == HAL_M_STA) ||
-	     ((sc->sc_opmode == HAL_M_HOSTAP) &&
-	      (av_opmode == HAL_M_STA) &&
-	      (sc->sc_nostabeacons))) {
+	if (sc->sc_opmode == HAL_M_STA) {
 		struct hal_beacon_state bs;
 		u_int64_t tsf;
 		u_int32_t tsftu;
@@ -936,7 +872,7 @@ void ath_beacon_config(struct ath_softc *sc, int if_id)
 		if (bs.bs_sleepduration > bs.bs_dtimperiod)
 			bs.bs_sleepduration = bs.bs_dtimperiod;
 
-		DPRINTF(sc, ATH_DEBUG_BEACON,
+		DPRINTF(sc, ATH_DBG_BEACON,
 			"%s: tsf %llu "
 			"tsf:tu %u "
 			"intval %u "
@@ -963,12 +899,10 @@ void ath_beacon_config(struct ath_softc *sc, int if_id)
 			, bs.bs_timoffset
 			);
 
-		if (!(sc->sc_nostabeacons)) {
-			ath9k_hw_set_interrupts(ah, 0);
-			ath9k_hw_set_sta_beacon_timers(ah, &bs);
-			sc->sc_imask |= HAL_INT_BMISS;
-			ath9k_hw_set_interrupts(ah, sc->sc_imask);
-		}
+		ath9k_hw_set_interrupts(ah, 0);
+		ath9k_hw_set_sta_beacon_timers(ah, &bs);
+		sc->sc_imask |= HAL_INT_BMISS;
+		ath9k_hw_set_interrupts(ah, sc->sc_imask);
 	} else {
 		u_int64_t tsf;
 		u_int32_t tsftu;
@@ -990,7 +924,7 @@ void ath_beacon_config(struct ath_softc *sc, int if_id)
 				} while (nexttbtt < tsftu);
 			}
 #undef FUDGE
-			DPRINTF(sc, ATH_DEBUG_BEACON,
+			DPRINTF(sc, ATH_DBG_BEACON,
 				"%s: IBSS nexttbtt %u intval %u (%u)\n",
 				__func__, nexttbtt,
 				intval & ~HAL_BEACON_RESET_TSF,
@@ -1004,7 +938,7 @@ void ath_beacon_config(struct ath_softc *sc, int if_id)
 			 * deal with things.
 			 */
 			intval |= HAL_BEACON_ENA;
-			if (!sc->sc_hasveol)
+			if (!ah->ah_caps.halVEOLSupport)
 				sc->sc_imask |= HAL_INT_SWBA;
 			ath_beaconq_config(sc);
 		} else if (sc->sc_opmode == HAL_M_HOSTAP) {
@@ -1023,7 +957,7 @@ void ath_beacon_config(struct ath_softc *sc, int if_id)
 		 * When using a self-linked beacon descriptor in
 		 * ibss mode load it once here.
 		 */
-		if (sc->sc_opmode == HAL_M_IBSS && sc->sc_hasveol)
+		if (sc->sc_opmode == HAL_M_IBSS && ah->ah_caps.halVEOLSupport)
 			ath_beacon_start_adhoc(sc, 0);
 	}
 #undef TSF_TO_TU
