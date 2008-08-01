@@ -229,7 +229,7 @@ $(eval $(call KernelPackage,crypto-misc))
 define KernelPackage/crypto-ocf
   SUBMENU:=$(CRYPTO_MENU)
   TITLE:=OCF modules
-  DEPENDS:=+kmod-crypto-core
+  DEPENDS:=+kmod-crypto-core @!TARGET_uml
   KCONFIG:= \
 	CONFIG_OCF_OCF \
 	CONFIG_OCF_CRYPTODEV \
