@@ -18,14 +18,13 @@ scan_atheros() {
 				append $mode "$vif"
 			;;
 			wds)
-				config_get addr "$vif" bssid
 				config_get ssid "$vif" ssid
-				[ -z "$addr" -a -n "$ssid" ] && {
-					config_set "$vif" wds 1
-					config_set "$vif" mode sta
-					mode="sta"
-					addr="$ssid"
-				}
+				[ -z "$ssid" ] && continue
+
+				config_set "$vif" wds 1
+				config_set "$vif" mode sta
+				mode="sta"
+				addr="$ssid"
 				${addr:+append $mode "$vif"}
 			;;
 			*) echo "$device($vif): Invalid mode, ignored."; continue;;
@@ -150,10 +149,6 @@ enable_atheros() {
 		esac
 
 		case "$mode" in
-			wds)
-				config_get addr "$vif" bssid
-				iwpriv "$ifname" wds_add "$addr"
-			;;
 			adhoc|ahdemo)
 				config_get addr "$vif" bssid
 				[ -z "$addr" ] || { 
