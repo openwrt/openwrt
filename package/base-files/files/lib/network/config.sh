@@ -61,7 +61,9 @@ add_vlan() {
 	[ "$1" = "$vif" ] || ifconfig "$1" >/dev/null 2>/dev/null || {
 		ifconfig "$vif" up 2>/dev/null >/dev/null || add_vlan "$vif"
 		$DEBUG vconfig add "$vif" "${1##*\.}"
+		return 0
 	}
+	return 1
 }
 
 # sort the device list, drop duplicates
@@ -94,7 +96,7 @@ prepare_interface() {
 	}
 
 	# Setup VLAN interfaces
-	add_vlan "$iface"
+	add_vlan "$iface" && return 1
 	ifconfig "$iface" 2>/dev/null >/dev/null || return 0
 
 	# Setup bridging
