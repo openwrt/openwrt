@@ -48,6 +48,7 @@ start() {
 	ln -sf /tmp/resolv.conf.auto /tmp/resolv.conf
 	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
 
+	killall -q hotplug2
 	[ -x /sbin/hotplug2 ] && /sbin/hotplug2 --override --persistent \
 			--max-children 1 --no-coldplug &
 
