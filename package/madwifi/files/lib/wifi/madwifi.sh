@@ -119,15 +119,17 @@ enable_atheros() {
 			iwpriv "$ifname" ff "$ff"
 		fi
 
-		config_get wdssep "$vif" wdssep
-		[ -n "$wdssep" ] && iwpriv "$ifname" wdssep "$wdssep"
-
 		config_get wds "$vif" wds
 		case "$wds" in
 			1|on|enabled) wds=1;;
 			*) wds=0;;
 		esac
 		iwpriv "$ifname" wds "$wds"
+
+		[ "$mode" = ap -a "$wds" = 1 ] && {
+			config_get_bool wdssep "$vif" wdssep 1
+			[ -n "$wdssep" ] && iwpriv "$ifname" wdssep "$wdssep"
+		}
 
 		wpa=
 		case "$enc" in
