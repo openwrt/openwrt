@@ -22,6 +22,8 @@ PKG_TARGETS:=bin
 
 include $(INCLUDE_DIR)/package.mk
 
+export grub_cv_prog_objcopy_absolute=yes
+
 define Package/grub
   SECTION:=boot
   DEPENDS:=@TARGET_x86
