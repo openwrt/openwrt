@@ -579,6 +579,7 @@ define KernelPackage/usb-net-hso
   TITLE:=Kernel module for Option USB High Speed Mobile Devices
   KCONFIG:= \
 	CONFIG_RFKILL \
+	CONFIG_RFKILL_INPUT
 	CONFIG_USB_HSO
   FILES:= \
 	$(LINUX_DIR)/net/rfkill/rfkill.$(LINUX_KMOD_SUFFIX) \
