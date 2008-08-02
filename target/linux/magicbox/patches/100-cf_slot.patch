@@ -1,6 +1,17 @@
 --- a/drivers/ide/ide.c
 +++ b/drivers/ide/ide.c
-@@ -494,6 +494,9 @@
+@@ -78,6 +78,10 @@
+ /* default maximum number of failures */
+ #define IDE_DEFAULT_MAX_FAILURES 	1
+ 
++#ifdef CONFIG_BLK_DEV_MAGICBOX_IDE
++extern void __init ide_magicbox_init(void);
++#endif
++
+ struct class *ide_port_class;
+ 
+ static const u8 ide_hwif_to_major[] = { IDE0_MAJOR, IDE1_MAJOR,
+@@ -494,6 +498,9 @@
  
  	return -EPERM;
  #endif
