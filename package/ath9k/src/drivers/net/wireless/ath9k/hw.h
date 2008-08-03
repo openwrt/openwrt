@@ -21,43 +21,43 @@
 #include <linux/delay.h>
 
 struct ar5416_desc {
-	u_int32_t ds_link;
-	u_int32_t ds_data;
-	u_int32_t ds_ctl0;
-	u_int32_t ds_ctl1;
+	u32 ds_link;
+	u32 ds_data;
+	u32 ds_ctl0;
+	u32 ds_ctl1;
 	union {
 		struct {
-			u_int32_t ctl2;
-			u_int32_t ctl3;
-			u_int32_t ctl4;
-			u_int32_t ctl5;
-			u_int32_t ctl6;
-			u_int32_t ctl7;
-			u_int32_t ctl8;
-			u_int32_t ctl9;
-			u_int32_t ctl10;
-			u_int32_t ctl11;
-			u_int32_t status0;
-			u_int32_t status1;
-			u_int32_t status2;
-			u_int32_t status3;
-			u_int32_t status4;
-			u_int32_t status5;
-			u_int32_t status6;
-			u_int32_t status7;
-			u_int32_t status8;
-			u_int32_t status9;
+			u32 ctl2;
+			u32 ctl3;
+			u32 ctl4;
+			u32 ctl5;
+			u32 ctl6;
+			u32 ctl7;
+			u32 ctl8;
+			u32 ctl9;
+			u32 ctl10;
+			u32 ctl11;
+			u32 status0;
+			u32 status1;
+			u32 status2;
+			u32 status3;
+			u32 status4;
+			u32 status5;
+			u32 status6;
+			u32 status7;
+			u32 status8;
+			u32 status9;
 		} tx;
 		struct {
-			u_int32_t status0;
-			u_int32_t status1;
-			u_int32_t status2;
-			u_int32_t status3;
-			u_int32_t status4;
-			u_int32_t status5;
-			u_int32_t status6;
-			u_int32_t status7;
-			u_int32_t status8;
+			u32 status0;
+			u32 status1;
+			u32 status2;
+			u32 status3;
+			u32 status4;
+			u32 status5;
+			u32 status6;
+			u32 status7;
+			u32 status8;
 		} rx;
 	} u;
 } __packed;
@@ -326,13 +326,13 @@ struct ar5416_desc {
 
 #define set11nPktDurRTSCTS(_series, _index)				\
 	(SM((_series)[_index].PktDuration, AR_PacketDur##_index) |	\
-	((_series)[_index].RateFlags & HAL_RATESERIES_RTS_CTS   ?	\
+	((_series)[_index].RateFlags & ATH9K_RATESERIES_RTS_CTS   ?	\
 		AR_RTSCTSQual##_index : 0))
 
 #define set11nRateFlags(_series, _index)				\
-	(((_series)[_index].RateFlags & HAL_RATESERIES_2040 ? \
+	(((_series)[_index].RateFlags & ATH9K_RATESERIES_2040 ? \
 		AR_2040_##_index : 0) \
-	|((_series)[_index].RateFlags & HAL_RATESERIES_HALFGI ? \
+	|((_series)[_index].RateFlags & ATH9K_RATESERIES_HALFGI ? \
 		AR_GI##_index : 0) \
 	|SM((_series)[_index].ChSel, AR_ChainSel##_index))
 
@@ -350,27 +350,27 @@ struct ar5416_desc {
 #define CCK_OFDM_GAIN_DELTA         15
 
 struct ar5416AniState {
-	struct hal_channel c;
-	u_int8_t noiseImmunityLevel;
-	u_int8_t spurImmunityLevel;
-	u_int8_t firstepLevel;
-	u_int8_t ofdmWeakSigDetectOff;
-	u_int8_t cckWeakSigThreshold;
-	u_int32_t listenTime;
-	u_int32_t ofdmTrigHigh;
-	u_int32_t ofdmTrigLow;
+	struct ath9k_channel c;
+	u8 noiseImmunityLevel;
+	u8 spurImmunityLevel;
+	u8 firstepLevel;
+	u8 ofdmWeakSigDetectOff;
+	u8 cckWeakSigThreshold;
+	u32 listenTime;
+	u32 ofdmTrigHigh;
+	u32 ofdmTrigLow;
 	int32_t cckTrigHigh;
 	int32_t cckTrigLow;
 	int32_t rssiThrLow;
 	int32_t rssiThrHigh;
-	u_int32_t noiseFloor;
-	u_int32_t txFrameCount;
-	u_int32_t rxFrameCount;
-	u_int32_t cycleCount;
-	u_int32_t ofdmPhyErrCount;
-	u_int32_t cckPhyErrCount;
-	u_int32_t ofdmPhyErrBase;
-	u_int32_t cckPhyErrBase;
+	u32 noiseFloor;
+	u32 txFrameCount;
+	u32 rxFrameCount;
+	u32 cycleCount;
+	u32 ofdmPhyErrCount;
+	u32 cckPhyErrCount;
+	u32 ofdmPhyErrBase;
+	u32 cckPhyErrBase;
 	int16_t pktRssi[2];
 	int16_t ofdmErrRssi[2];
 	int16_t cckErrRssi[2];
@@ -384,23 +384,23 @@ struct ar5416AniState {
     ((AH5416(ah)->ah_procPhyErr & HAL_PROCESS_ANI))
 
 struct ar5416Stats {
-	u_int32_t ast_ani_niup;
-	u_int32_t ast_ani_nidown;
-	u_int32_t ast_ani_spurup;
-	u_int32_t ast_ani_spurdown;
-	u_int32_t ast_ani_ofdmon;
-	u_int32_t ast_ani_ofdmoff;
-	u_int32_t ast_ani_cckhigh;
-	u_int32_t ast_ani_ccklow;
-	u_int32_t ast_ani_stepup;
-	u_int32_t ast_ani_stepdown;
-	u_int32_t ast_ani_ofdmerrs;
-	u_int32_t ast_ani_cckerrs;
-	u_int32_t ast_ani_reset;
-	u_int32_t ast_ani_lzero;
-	u_int32_t ast_ani_lneg;
-	struct hal_mib_stats ast_mibstats;
-	struct hal_node_stats ast_nodestats;
+	u32 ast_ani_niup;
+	u32 ast_ani_nidown;
+	u32 ast_ani_spurup;
+	u32 ast_ani_spurdown;
+	u32 ast_ani_ofdmon;
+	u32 ast_ani_ofdmoff;
+	u32 ast_ani_cckhigh;
+	u32 ast_ani_ccklow;
+	u32 ast_ani_stepup;
+	u32 ast_ani_stepdown;
+	u32 ast_ani_ofdmerrs;
+	u32 ast_ani_cckerrs;
+	u32 ast_ani_reset;
+	u32 ast_ani_lzero;
+	u32 ast_ani_lneg;
+	struct ath9k_mib_stats ast_mibstats;
+	struct ath9k_node_stats ast_nodestats;
 };
 
 #define AR5416_OPFLAGS_11A           0x01
@@ -495,100 +495,100 @@ enum ar5416_rates {
 };
 
 struct base_eep_header {
-	u_int16_t length;
-	u_int16_t checksum;
-	u_int16_t version;
-	u_int8_t opCapFlags;
-	u_int8_t eepMisc;
-	u_int16_t regDmn[2];
-	u_int8_t macAddr[6];
-	u_int8_t rxMask;
-	u_int8_t txMask;
-	u_int16_t rfSilent;
-	u_int16_t blueToothOptions;
-	u_int16_t deviceCap;
-	u_int32_t binBuildNumber;
-	u_int8_t deviceType;
-	u_int8_t pwdclkind;
-	u_int8_t futureBase[32];
+	u16 length;
+	u16 checksum;
+	u16 version;
+	u8 opCapFlags;
+	u8 eepMisc;
+	u16 regDmn[2];
+	u8 macAddr[6];
+	u8 rxMask;
+	u8 txMask;
+	u16 rfSilent;
+	u16 blueToothOptions;
+	u16 deviceCap;
+	u32 binBuildNumber;
+	u8 deviceType;
+	u8 pwdclkind;
+	u8 futureBase[32];
 } __packed;
 
 struct spur_chan {
-	u_int16_t spurChan;
-	u_int8_t spurRangeLow;
-	u_int8_t spurRangeHigh;
+	u16 spurChan;
+	u8 spurRangeLow;
+	u8 spurRangeHigh;
 } __packed;
 
 struct modal_eep_header {
-	u_int32_t antCtrlChain[AR5416_MAX_CHAINS];
-	u_int32_t antCtrlCommon;
-	u_int8_t antennaGainCh[AR5416_MAX_CHAINS];
-	u_int8_t switchSettling;
-	u_int8_t txRxAttenCh[AR5416_MAX_CHAINS];
-	u_int8_t rxTxMarginCh[AR5416_MAX_CHAINS];
-	u_int8_t adcDesiredSize;
-	u_int8_t pgaDesiredSize;
-	u_int8_t xlnaGainCh[AR5416_MAX_CHAINS];
-	u_int8_t txEndToXpaOff;
-	u_int8_t txEndToRxOn;
-	u_int8_t txFrameToXpaOn;
-	u_int8_t thresh62;
-	u_int8_t noiseFloorThreshCh[AR5416_MAX_CHAINS];
-	u_int8_t xpdGain;
-	u_int8_t xpd;
-	u_int8_t iqCalICh[AR5416_MAX_CHAINS];
-	u_int8_t iqCalQCh[AR5416_MAX_CHAINS];
-	u_int8_t pdGainOverlap;
-	u_int8_t ob;
-	u_int8_t db;
-	u_int8_t xpaBiasLvl;
-	u_int8_t pwrDecreaseFor2Chain;
-	u_int8_t pwrDecreaseFor3Chain;
-	u_int8_t txFrameToDataStart;
-	u_int8_t txFrameToPaOn;
-	u_int8_t ht40PowerIncForPdadc;
-	u_int8_t bswAtten[AR5416_MAX_CHAINS];
-	u_int8_t bswMargin[AR5416_MAX_CHAINS];
-	u_int8_t swSettleHt40;
-	u_int8_t xatten2Db[AR5416_MAX_CHAINS];
-	u_int8_t xatten2Margin[AR5416_MAX_CHAINS];
-	u_int8_t ob_ch1;
-	u_int8_t db_ch1;
-	u_int8_t useAnt1:1,
+	u32 antCtrlChain[AR5416_MAX_CHAINS];
+	u32 antCtrlCommon;
+	u8 antennaGainCh[AR5416_MAX_CHAINS];
+	u8 switchSettling;
+	u8 txRxAttenCh[AR5416_MAX_CHAINS];
+	u8 rxTxMarginCh[AR5416_MAX_CHAINS];
+	u8 adcDesiredSize;
+	u8 pgaDesiredSize;
+	u8 xlnaGainCh[AR5416_MAX_CHAINS];
+	u8 txEndToXpaOff;
+	u8 txEndToRxOn;
+	u8 txFrameToXpaOn;
+	u8 thresh62;
+	u8 noiseFloorThreshCh[AR5416_MAX_CHAINS];
+	u8 xpdGain;
+	u8 xpd;
+	u8 iqCalICh[AR5416_MAX_CHAINS];
+	u8 iqCalQCh[AR5416_MAX_CHAINS];
+	u8 pdGainOverlap;
+	u8 ob;
+	u8 db;
+	u8 xpaBiasLvl;
+	u8 pwrDecreaseFor2Chain;
+	u8 pwrDecreaseFor3Chain;
+	u8 txFrameToDataStart;
+	u8 txFrameToPaOn;
+	u8 ht40PowerIncForPdadc;
+	u8 bswAtten[AR5416_MAX_CHAINS];
+	u8 bswMargin[AR5416_MAX_CHAINS];
+	u8 swSettleHt40;
+	u8 xatten2Db[AR5416_MAX_CHAINS];
+	u8 xatten2Margin[AR5416_MAX_CHAINS];
+	u8 ob_ch1;
+	u8 db_ch1;
+	u8 useAnt1:1,
 	    force_xpaon:1,
 	    local_bias:1,
 	    femBandSelectUsed:1, xlnabufin:1, xlnaisel:2, xlnabufmode:1;
-	u_int8_t futureModalar9280;
-	u_int16_t xpaBiasLvlFreq[3];
-	u_int8_t futureModal[6];
+	u8 futureModalar9280;
+	u16 xpaBiasLvlFreq[3];
+	u8 futureModal[6];
 
 	struct spur_chan spurChans[AR5416_EEPROM_MODAL_SPURS];
 } __packed;
 
 struct cal_data_per_freq {
-	u_int8_t pwrPdg[AR5416_NUM_PD_GAINS][AR5416_PD_GAIN_ICEPTS];
-	u_int8_t vpdPdg[AR5416_NUM_PD_GAINS][AR5416_PD_GAIN_ICEPTS];
+	u8 pwrPdg[AR5416_NUM_PD_GAINS][AR5416_PD_GAIN_ICEPTS];
+	u8 vpdPdg[AR5416_NUM_PD_GAINS][AR5416_PD_GAIN_ICEPTS];
 } __packed;
 
 struct cal_target_power_leg {
-	u_int8_t bChannel;
-	u_int8_t tPow2x[4];
+	u8 bChannel;
+	u8 tPow2x[4];
 } __packed;
 
 struct cal_target_power_ht {
-	u_int8_t bChannel;
-	u_int8_t tPow2x[8];
+	u8 bChannel;
+	u8 tPow2x[8];
 } __packed;
 
 #ifdef __BIG_ENDIAN_BITFIELD
 struct cal_ctl_edges {
-	u_int8_t bChannel;
-	u_int8_t flag:2, tPower:6;
+	u8 bChannel;
+	u8 flag:2, tPower:6;
 } __packed;
 #else
 struct cal_ctl_edges {
-	u_int8_t bChannel;
-	u_int8_t tPower:6, flag:2;
+	u8 bChannel;
+	u8 tPower:6, flag:2;
 } __packed;
 #endif
 
@@ -599,10 +599,10 @@ struct cal_ctl_data {
 
 struct ar5416_eeprom {
 	struct base_eep_header baseEepHeader;
-	u_int8_t custData[64];
+	u8 custData[64];
 	struct modal_eep_header modalHeader[2];
-	u_int8_t calFreqPier5G[AR5416_NUM_5G_CAL_PIERS];
-	u_int8_t calFreqPier2G[AR5416_NUM_2G_CAL_PIERS];
+	u8 calFreqPier5G[AR5416_NUM_5G_CAL_PIERS];
+	u8 calFreqPier2G[AR5416_NUM_2G_CAL_PIERS];
 	struct cal_data_per_freq
 	 calPierData5G[AR5416_MAX_CHAINS][AR5416_NUM_5G_CAL_PIERS];
 	struct cal_data_per_freq
@@ -621,19 +621,19 @@ struct ar5416_eeprom {
 	 calTargetPower2GHT20[AR5416_NUM_2G_20_TARGET_POWERS];
 	struct cal_target_power_ht
 	 calTargetPower2GHT40[AR5416_NUM_2G_40_TARGET_POWERS];
-	u_int8_t ctlIndex[AR5416_NUM_CTLS];
+	u8 ctlIndex[AR5416_NUM_CTLS];
 	struct cal_ctl_data ctlData[AR5416_NUM_CTLS];
-	u_int8_t padding;
+	u8 padding;
 } __packed;
 
 struct ar5416IniArray {
-	u_int32_t *ia_array;
-	u_int32_t ia_rows;
-	u_int32_t ia_columns;
+	u32 *ia_array;
+	u32 ia_rows;
+	u32 ia_columns;
 };
 
 #define INIT_INI_ARRAY(iniarray, array, rows, columns) do {	\
-		(iniarray)->ia_array = (u_int32_t *)(array);    \
+		(iniarray)->ia_array = (u32 *)(array);    \
 		(iniarray)->ia_rows = (rows);			\
 		(iniarray)->ia_columns = (columns);		\
 	} while (0)
@@ -681,10 +681,10 @@ enum hal_cal_state {
 
 struct hal_percal_data {
 	enum hal_cal_types calType;
-	u_int32_t calNumSamples;
-	u_int32_t calCountMax;
+	u32 calNumSamples;
+	u32 calCountMax;
 	void (*calCollect) (struct ath_hal *);
-	void (*calPostProc) (struct ath_hal *, u_int8_t);
+	void (*calPostProc) (struct ath_hal *, u8);
 };
 
 struct hal_cal_list {
@@ -696,25 +696,25 @@ struct hal_cal_list {
 struct ath_hal_5416 {
 	struct ath_hal ah;
 	struct ar5416_eeprom ah_eeprom;
-	u_int8_t ah_macaddr[ETH_ALEN];
-	u_int8_t ah_bssid[ETH_ALEN];
-	u_int8_t ah_bssidmask[ETH_ALEN];
-	u_int16_t ah_assocId;
+	u8 ah_macaddr[ETH_ALEN];
+	u8 ah_bssid[ETH_ALEN];
+	u8 ah_bssidmask[ETH_ALEN];
+	u16 ah_assocId;
 	int16_t ah_curchanRadIndex;
-	u_int32_t ah_maskReg;
+	u32 ah_maskReg;
 	struct ar5416Stats ah_stats;
-	u_int32_t ah_txDescMask;
-	u_int32_t ah_txOkInterruptMask;
-	u_int32_t ah_txErrInterruptMask;
-	u_int32_t ah_txDescInterruptMask;
-	u_int32_t ah_txEolInterruptMask;
-	u_int32_t ah_txUrnInterruptMask;
-	struct hal_tx_queue_info ah_txq[HAL_NUM_TX_QUEUES];
-	enum hal_power_mode ah_powerMode;
+	u32 ah_txDescMask;
+	u32 ah_txOkInterruptMask;
+	u32 ah_txErrInterruptMask;
+	u32 ah_txDescInterruptMask;
+	u32 ah_txEolInterruptMask;
+	u32 ah_txUrnInterruptMask;
+	struct ath9k_tx_queue_info ah_txq[ATH9K_NUM_TX_QUEUES];
+	enum ath9k_power_mode ah_powerMode;
 	bool ah_chipFullSleep;
-	u_int32_t ah_atimWindow;
-	enum hal_ant_setting ah_diversityControl;
-	u_int16_t ah_antennaSwitchSwap;
+	u32 ah_atimWindow;
+	enum ath9k_ant_setting ah_diversityControl;
+	u16 ah_antennaSwitchSwap;
 	enum hal_cal_types ah_suppCals;
 	struct hal_cal_list ah_iqCalData;
 	struct hal_cal_list ah_adcGainCalData;
@@ -735,73 +735,73 @@ struct ath_hal_5416 {
 #define ah_totalAdcDcOffsetQOddPhase  ah_Meas2.sign
 #define ah_totalAdcDcOffsetQEvenPhase ah_Meas3.sign
 	union {
-		u_int32_t unsign[AR5416_MAX_CHAINS];
+		u32 unsign[AR5416_MAX_CHAINS];
 		int32_t sign[AR5416_MAX_CHAINS];
 	} ah_Meas0;
 	union {
-		u_int32_t unsign[AR5416_MAX_CHAINS];
+		u32 unsign[AR5416_MAX_CHAINS];
 		int32_t sign[AR5416_MAX_CHAINS];
 	} ah_Meas1;
 	union {
-		u_int32_t unsign[AR5416_MAX_CHAINS];
+		u32 unsign[AR5416_MAX_CHAINS];
 		int32_t sign[AR5416_MAX_CHAINS];
 	} ah_Meas2;
 	union {
-		u_int32_t unsign[AR5416_MAX_CHAINS];
+		u32 unsign[AR5416_MAX_CHAINS];
 		int32_t sign[AR5416_MAX_CHAINS];
 	} ah_Meas3;
-	u_int16_t ah_CalSamples;
-	u_int32_t ah_tx6PowerInHalfDbm;
-	u_int32_t ah_staId1Defaults;
-	u_int32_t ah_miscMode;
+	u16 ah_CalSamples;
+	u32 ah_tx6PowerInHalfDbm;
+	u32 ah_staId1Defaults;
+	u32 ah_miscMode;
 	bool ah_tpcEnabled;
-	u_int32_t ah_beaconInterval;
+	u32 ah_beaconInterval;
 	enum {
 		AUTO_32KHZ,
 		USE_32KHZ,
 		DONT_USE_32KHZ,
 	} ah_enable32kHzClock;
-	u_int32_t *ah_analogBank0Data;
-	u_int32_t *ah_analogBank1Data;
-	u_int32_t *ah_analogBank2Data;
-	u_int32_t *ah_analogBank3Data;
-	u_int32_t *ah_analogBank6Data;
-	u_int32_t *ah_analogBank6TPCData;
-	u_int32_t *ah_analogBank7Data;
-	u_int32_t *ah_addac5416_21;
-	u_int32_t *ah_bank6Temp;
-	u_int32_t ah_ofdmTxPower;
+	u32 *ah_analogBank0Data;
+	u32 *ah_analogBank1Data;
+	u32 *ah_analogBank2Data;
+	u32 *ah_analogBank3Data;
+	u32 *ah_analogBank6Data;
+	u32 *ah_analogBank6TPCData;
+	u32 *ah_analogBank7Data;
+	u32 *ah_addac5416_21;
+	u32 *ah_bank6Temp;
+	u32 ah_ofdmTxPower;
 	int16_t ah_txPowerIndexOffset;
-	u_int ah_slottime;
-	u_int ah_acktimeout;
-	u_int ah_ctstimeout;
-	u_int ah_globaltxtimeout;
-	u_int8_t ah_gBeaconRate;
-	u_int32_t ah_gpioSelect;
-	u_int32_t ah_polarity;
-	u_int32_t ah_gpioBit;
+	u32 ah_slottime;
+	u32 ah_acktimeout;
+	u32 ah_ctstimeout;
+	u32 ah_globaltxtimeout;
+	u8 ah_gBeaconRate;
+	u32 ah_gpioSelect;
+	u32 ah_polarity;
+	u32 ah_gpioBit;
 	bool ah_eepEnabled;
-	u_int32_t ah_procPhyErr;
+	u32 ah_procPhyErr;
 	bool ah_hasHwPhyCounters;
-	u_int32_t ah_aniPeriod;
+	u32 ah_aniPeriod;
 	struct ar5416AniState *ah_curani;
 	struct ar5416AniState ah_ani[255];
 	int ah_totalSizeDesired[5];
 	int ah_coarseHigh[5];
 	int ah_coarseLow[5];
 	int ah_firpwr[5];
-	u_int16_t ah_ratesArray[16];
-	u_int32_t ah_intrTxqs;
+	u16 ah_ratesArray[16];
+	u32 ah_intrTxqs;
 	bool ah_intrMitigation;
-	u_int32_t ah_cycleCount;
-	u_int32_t ah_ctlBusy;
-	u_int32_t ah_extBusy;
-	enum hal_ht_extprotspacing ah_extprotspacing;
-	u_int8_t ah_txchainmask;
-	u_int8_t ah_rxchainmask;
+	u32 ah_cycleCount;
+	u32 ah_ctlBusy;
+	u32 ah_extBusy;
+	enum ath9k_ht_extprotspacing ah_extprotspacing;
+	u8 ah_txchainmask;
+	u8 ah_rxchainmask;
 	int ah_hwp;
 	void __iomem *ah_cal_mem;
-	enum hal_ani_cmd ah_ani_function;
+	enum ath9k_ani_cmd ah_ani_function;
 	struct ar5416IniArray ah_iniModes;
 	struct ar5416IniArray ah_iniCommon;
 	struct ar5416IniArray ah_iniBank0;
@@ -853,8 +853,8 @@ struct ath_hal_5416 {
 #define HT40_CHANNEL_CENTER_SHIFT   10
 
 #define ar5416CheckOpMode(_opmode)					\
-	((_opmode == HAL_M_STA) || (_opmode == HAL_M_IBSS) ||		\
-	 (_opmode == HAL_M_HOSTAP) || (_opmode == HAL_M_MONITOR))
+	((_opmode == ATH9K_M_STA) || (_opmode == ATH9K_M_IBSS) ||	\
+	 (_opmode == ATH9K_M_HOSTAP) || (_opmode == ATH9K_M_MONITOR))
 
 #define AR5416_EEPROM_MAGIC_OFFSET  0x0
 
@@ -894,18 +894,18 @@ struct ath_hal_5416 {
 #define HAL_SPUR_IMMUNE_MAX             7
 #define HAL_FIRST_STEP_MAX              2
 
-#define HAL_ANI_OFDM_TRIG_HIGH          500
-#define HAL_ANI_OFDM_TRIG_LOW           200
-#define HAL_ANI_CCK_TRIG_HIGH           200
-#define HAL_ANI_CCK_TRIG_LOW            100
-#define HAL_ANI_NOISE_IMMUNE_LVL        4
-#define HAL_ANI_USE_OFDM_WEAK_SIG       true
-#define HAL_ANI_CCK_WEAK_SIG_THR        false
-#define HAL_ANI_SPUR_IMMUNE_LVL         7
-#define HAL_ANI_FIRSTEP_LVL             0
-#define HAL_ANI_RSSI_THR_HIGH           40
-#define HAL_ANI_RSSI_THR_LOW            7
-#define HAL_ANI_PERIOD                  100
+#define ATH9K_ANI_OFDM_TRIG_HIGH          500
+#define ATH9K_ANI_OFDM_TRIG_LOW           200
+#define ATH9K_ANI_CCK_TRIG_HIGH           200
+#define ATH9K_ANI_CCK_TRIG_LOW            100
+#define ATH9K_ANI_NOISE_IMMUNE_LVL        4
+#define ATH9K_ANI_USE_OFDM_WEAK_SIG       true
+#define ATH9K_ANI_CCK_WEAK_SIG_THR        false
+#define ATH9K_ANI_SPUR_IMMUNE_LVL         7
+#define ATH9K_ANI_FIRSTEP_LVL             0
+#define ATH9K_ANI_RSSI_THR_HIGH           40
+#define ATH9K_ANI_RSSI_THR_LOW            7
+#define ATH9K_ANI_PERIOD                  100
 
 #define AR_GPIOD_MASK                   0x00001FFF
 #define AR_GPIO_BIT(_gpio)              (1 << (_gpio))
@@ -916,7 +916,7 @@ struct ath_hal_5416 {
 	((((x)%(mul)) >= ((mul)/2)) ? ((x) + ((mul) - 1)) / (mul) : (x)/(mul))
 #define BEACON_RSSI(ahp) \
 	HAL_EP_RND(ahp->ah_stats.ast_nodestats.ns_avgbrssi, \
-		HAL_RSSI_EP_MULTIPLIER)
+		ATH9K_RSSI_EP_MULTIPLIER)
 
 #define ah_mibStats     ah_stats.ast_mibstats
 
@@ -963,7 +963,7 @@ struct ath_hal_5416 {
 #define OFDM_PLCP_BITS_QUARTER      22
 #define OFDM_SYMBOL_TIME_QUARTER    16
 
-u_int32_t ath9k_hw_get_eeprom(struct ath_hal_5416 *ahp,
+u32 ath9k_hw_get_eeprom(struct ath_hal_5416 *ahp,
 			      enum eeprom_param param);
 
 #endif

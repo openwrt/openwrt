@@ -75,7 +75,7 @@ static int ath_bar_rx(struct ath_softc *sc,
 	struct sk_buff *tskb;
 	struct ath_recv_status *rx_status;
 	int tidno, index, cindex;
-	u_int16_t seqno;
+	u16 seqno;
 
 	/* look at BAR contents	 */
 
@@ -148,8 +148,8 @@ static int ath_ampdu_input(struct ath_softc *sc,
 	struct ieee80211_hdr *hdr;
 	struct ath_arx_tid *rxtid;
 	struct ath_rxbuf *rxbuf;
-	u_int8_t type, subtype;
-	u_int16_t rxseq;
+	u8 type, subtype;
+	u16 rxseq;
 	int tid = 0, index, cindex, rxdiff;
 	__le16 fc;
 	u8 *qc;
@@ -184,7 +184,7 @@ static int ath_ampdu_input(struct ath_softc *sc,
 		tid = qc[0] & 0xf;
 	}
 
-	if (sc->sc_opmode == HAL_M_STA) {
+	if (sc->sc_opmode == ATH9K_M_STA) {
 		/* Drop the frame not belonging to me. */
 		if (memcmp(hdr->addr1, sc->sc_myaddr, ETH_ALEN)) {
 			dev_kfree_skb(skb);
@@ -386,10 +386,10 @@ static void ath_rx_flush_tid(struct ath_softc *sc,
 }
 
 static struct sk_buff *ath_rxbuf_alloc(struct ath_softc *sc,
-	u_int32_t len)
+	u32 len)
 {
 	struct sk_buff *skb;
-	u_int off;
+	u32 off;
 
 	/*
 	 * Cache-line-align.  This is important (for the
@@ -441,7 +441,7 @@ static void ath_rx_requeue(struct ath_softc *sc, struct sk_buff *skb)
 static int ath_rx_indicate(struct ath_softc *sc,
 			   struct sk_buff *skb,
 			   struct ath_recv_status *status,
-			   u_int16_t keyix)
+			   u16 keyix)
 {
 	struct ath_buf *bf = ATH_RX_CONTEXT(skb)->ctx_rxbuf;
 	struct sk_buff *nskb;
@@ -471,7 +471,7 @@ static int ath_rx_indicate(struct ath_softc *sc,
 static void ath_opmode_init(struct ath_softc *sc)
 {
 	struct ath_hal *ah = sc->sc_ah;
-	u_int32_t rfilt, mfilt[2];
+	u32 rfilt, mfilt[2];
 
 	/* configure rx filter */
 	rfilt = ath_calcrxfilter(sc);
@@ -515,7 +515,7 @@ int ath_rx_init(struct ath_softc *sc, int nbufs)
 		 */
 		sc->sc_rxbufsize = roundup(IEEE80211_MAX_MPDU_LEN,
 					   min(sc->sc_cachelsz,
-					       (u_int16_t)64));
+					       (u16)64));
 
 		DPRINTF(sc, ATH_DBG_CONFIG, "%s: cachelsz %u rxbufsize %u\n",
 			__func__, sc->sc_cachelsz, sc->sc_rxbufsize);
@@ -594,34 +594,34 @@ void ath_rx_cleanup(struct ath_softc *sc)
  *   - when scanning
  */
 
-u_int32_t ath_calcrxfilter(struct ath_softc *sc)
+u32 ath_calcrxfilter(struct ath_softc *sc)
 {
-#define	RX_FILTER_PRESERVE	(HAL_RX_FILTER_PHYERR | HAL_RX_FILTER_PHYRADAR)
-	u_int32_t rfilt;
+#define	RX_FILTER_PRESERVE (ATH9K_RX_FILTER_PHYERR | ATH9K_RX_FILTER_PHYRADAR)
+	u32 rfilt;
 
 	rfilt = (ath9k_hw_getrxfilter(sc->sc_ah) & RX_FILTER_PRESERVE)
-		| HAL_RX_FILTER_UCAST | HAL_RX_FILTER_BCAST
-		| HAL_RX_FILTER_MCAST;
+		| ATH9K_RX_FILTER_UCAST | ATH9K_RX_FILTER_BCAST
+		| ATH9K_RX_FILTER_MCAST;
 
 	/* If not a STA, enable processing of Probe Requests */
-	if (sc->sc_opmode != HAL_M_STA)
-		rfilt |= HAL_RX_FILTER_PROBEREQ;
+	if (sc->sc_opmode != ATH9K_M_STA)
+		rfilt |= ATH9K_RX_FILTER_PROBEREQ;
 
 	/* Can't set HOSTAP into promiscous mode */
-	if (sc->sc_opmode == HAL_M_MONITOR) {
-		rfilt |= HAL_RX_FILTER_PROM;
+	if (sc->sc_opmode == ATH9K_M_MONITOR) {
+		rfilt |= ATH9K_RX_FILTER_PROM;
 		/* ??? To prevent from sending ACK */
-		rfilt &= ~HAL_RX_FILTER_UCAST;
+		rfilt &= ~ATH9K_RX_FILTER_UCAST;
 	}
 
-	if (sc->sc_opmode == HAL_M_STA || sc->sc_opmode == HAL_M_IBSS ||
+	if (sc->sc_opmode == ATH9K_M_STA || sc->sc_opmode == ATH9K_M_IBSS ||
 	    sc->sc_scanning)
-		rfilt |= HAL_RX_FILTER_BEACON;
+		rfilt |= ATH9K_RX_FILTER_BEACON;
 
 	/* If in HOSTAP mode, want to enable reception of PSPOLL frames
 	   & beacon frames */
-	if (sc->sc_opmode == HAL_M_HOSTAP)
-		rfilt |= (HAL_RX_FILTER_BEACON | HAL_RX_FILTER_PSPOLL);
+	if (sc->sc_opmode == ATH9K_M_HOSTAP)
+		rfilt |= (ATH9K_RX_FILTER_BEACON | ATH9K_RX_FILTER_PSPOLL);
 	return rfilt;
 #undef RX_FILTER_PRESERVE
 }
@@ -677,7 +677,7 @@ start_recv:
 bool ath_stoprecv(struct ath_softc *sc)
 {
 	struct ath_hal *ah = sc->sc_ah;
-	u_int64_t tsf;
+	u64 tsf;
 	bool stopped;
 
 	ath9k_hw_stoppcurecv(ah);	/* disable PCU */
@@ -743,9 +743,9 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush)
 	struct ath_recv_status rx_status;
 	struct ath_hal *ah = sc->sc_ah;
 	int type, rx_processed = 0;
-	u_int phyerr;
-	u_int8_t chainreset = 0;
-	enum hal_status retval;
+	u32 phyerr;
+	u8 chainreset = 0;
+	int retval;
 	__le16 fc;
 
 	do {
@@ -812,7 +812,7 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush)
 					     bf->bf_daddr,
 					     PA2DESC(sc, ds->ds_link),
 					     0);
-		if (HAL_EINPROGRESS == retval) {
+		if (retval == -EINPROGRESS) {
 			struct ath_buf *tbf;
 			struct ath_desc *tds;
 
@@ -838,7 +838,7 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush)
 			retval = ath9k_hw_rxprocdesc(ah,
 				tds, tbf->bf_daddr,
 				PA2DESC(sc, tds->ds_link), 0);
-			if (HAL_EINPROGRESS == retval) {
+			if (retval == -EINPROGRESS) {
 				spin_unlock_bh(&sc->sc_rxbuflock);
 				break;
 			}
@@ -900,7 +900,7 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush)
 			 * Enable this if you want to see
 			 * error frames in Monitor mode.
 			 */
-			if (sc->sc_opmode != HAL_M_MONITOR)
+			if (sc->sc_opmode != ATH9K_M_MONITOR)
 				goto rx_next;
 #endif
 			/* fall thru for monitor mode handling... */
@@ -945,7 +945,7 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush)
 			 * decryption and MIC failures. For monitor mode,
 			 * we also ignore the CRC error.
 			 */
-			if (sc->sc_opmode == HAL_M_MONITOR) {
+			if (sc->sc_opmode == ATH9K_M_MONITOR) {
 				if (ds->ds_rxstat.rs_status &
 				    ~(ATH9K_RXERR_DECRYPT | ATH9K_RXERR_MIC |
 					ATH9K_RXERR_CRC))
@@ -1199,7 +1199,7 @@ int ath_rx_aggr_stop(struct ath_softc *sc,
 /* Rx aggregation tear down */
 
 void ath_rx_aggr_teardown(struct ath_softc *sc,
-	struct ath_node *an, u_int8_t tid)
+	struct ath_node *an, u8 tid)
 {
 	struct ath_arx_tid *rxtid = &an->an_aggr.rx.tid[tid];
 

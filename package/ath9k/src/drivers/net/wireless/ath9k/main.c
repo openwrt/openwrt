@@ -41,44 +41,60 @@ static struct pci_device_id ath_pci_id_table[] __devinitdata = {
 	{ 0 }
 };
 
-static int test_update_chan(enum ieee80211_band band,
-			    const struct hal_channel *chan,
-			    struct ath_softc *sc)
+static int ath_get_channel(struct ath_softc *sc,
+			   struct ieee80211_channel *chan)
 {
 	int i;
 
-	for (i = 0; i < sc->sbands[band].n_channels; i++) {
-		if (sc->channels[band][i].center_freq == chan->channel)
-			return 1;
+	for (i = 0; i < sc->sc_ah->ah_nchan; i++) {
+		if (sc->sc_ah->ah_channels[i].channel == chan->center_freq)
+			return i;
 	}
 
-	return 0;
+	return -1;
 }
 
-static int ath_check_chanflags(struct ieee80211_channel *chan,
-			       u_int32_t mode,
-			       struct ath_softc *sc)
+static u32 ath_get_extchanmode(struct ath_softc *sc,
+				     struct ieee80211_channel *chan)
 {
-	struct ieee80211_hw *hw = sc->hw;
-	struct ieee80211_supported_band *band;
-	struct ieee80211_channel *band_channel;
-	int i;
+	u32 chanmode = 0;
+	u8 ext_chan_offset = sc->sc_ht_info.ext_chan_offset;
+	enum ath9k_ht_macmode tx_chan_width = sc->sc_ht_info.tx_chan_width;
 
-	band = hw->wiphy->bands[chan->band];
-
-	for (i = 0; i < band->n_channels; i++) {
-		band_channel = &band->channels[i];
-
-		if ((band_channel->center_freq == chan->center_freq) &&
-		    ((band_channel->hw_value & mode) == mode))
-			return 1;
+	switch (chan->band) {
+	case IEEE80211_BAND_2GHZ:
+		if ((ext_chan_offset == IEEE80211_HT_IE_CHA_SEC_NONE) &&
+		    (tx_chan_width == ATH9K_HT_MACMODE_20))
+			chanmode = CHANNEL_G_HT20;
+		if ((ext_chan_offset == IEEE80211_HT_IE_CHA_SEC_ABOVE) &&
+		    (tx_chan_width == ATH9K_HT_MACMODE_2040))
+			chanmode = CHANNEL_G_HT40PLUS;
+		if ((ext_chan_offset == IEEE80211_HT_IE_CHA_SEC_BELOW) &&
+		    (tx_chan_width == ATH9K_HT_MACMODE_2040))
+			chanmode = CHANNEL_G_HT40MINUS;
+		break;
+	case IEEE80211_BAND_5GHZ:
+		if ((ext_chan_offset == IEEE80211_HT_IE_CHA_SEC_NONE) &&
+		    (tx_chan_width == ATH9K_HT_MACMODE_20))
+			chanmode = CHANNEL_A_HT20;
+		if ((ext_chan_offset == IEEE80211_HT_IE_CHA_SEC_ABOVE) &&
+		    (tx_chan_width == ATH9K_HT_MACMODE_2040))
+			chanmode = CHANNEL_A_HT40PLUS;
+		if ((ext_chan_offset == IEEE80211_HT_IE_CHA_SEC_BELOW) &&
+		    (tx_chan_width == ATH9K_HT_MACMODE_2040))
+			chanmode = CHANNEL_A_HT40MINUS;
+		break;
+	default:
+		break;
 	}
-	return 0;
+
+	return chanmode;
 }
+
 
 static int ath_setkey_tkip(struct ath_softc *sc,
 			   struct ieee80211_key_conf *key,
-			   struct hal_keyval *hk,
+			   struct ath9k_keyval *hk,
 			   const u8 *addr)
 {
 	u8 *key_rxmic = NULL;
@@ -123,7 +139,7 @@ static int ath_key_config(struct ath_softc *sc,
 			  struct ieee80211_key_conf *key)
 {
 	struct ieee80211_vif *vif;
-	struct hal_keyval hk;
+	struct ath9k_keyval hk;
 	const u8 *mac = NULL;
 	int ret = 0;
 	enum ieee80211_if_types opmode;
@@ -132,13 +148,13 @@ static int ath_key_config(struct ath_softc *sc,
 
 	switch (key->alg) {
 	case ALG_WEP:
-		hk.kv_type = HAL_CIPHER_WEP;
+		hk.kv_type = ATH9K_CIPHER_WEP;
 		break;
 	case ALG_TKIP:
-		hk.kv_type = HAL_CIPHER_TKIP;
+		hk.kv_type = ATH9K_CIPHER_TKIP;
 		break;
 	case ALG_CCMP:
-		hk.kv_type = HAL_CIPHER_AES_CCM;
+		hk.kv_type = ATH9K_CIPHER_AES_CCM;
 		break;
 	default:
 		return -EINVAL;
@@ -266,10 +282,11 @@ static void ath9k_rx_prepare(struct ath_softc *sc,
 	rx_status->mactime = status->tsf;
 	rx_status->band = curchan->band;
 	rx_status->freq =  curchan->center_freq;
-	rx_status->signal = (status->rssi * 64) / 100;
 	rx_status->noise = ATH_DEFAULT_NOISE_FLOOR;
+	rx_status->signal = rx_status->noise + status->rssi;
 	rx_status->rate_idx = ath_rate2idx(sc, (status->rateKbps / 100));
 	rx_status->antenna = status->antenna;
+	rx_status->qual = status->rssi * 100 / 64;
 
 	if (status->flags & ATH_RX_MIC_ERROR)
 		rx_status->flag |= RX_FLAG_MMIC_ERROR;
@@ -279,7 +296,7 @@ static void ath9k_rx_prepare(struct ath_softc *sc,
 	rx_status->flag |= RX_FLAG_TSFT;
 }
 
-static u_int8_t parse_mpdudensity(u_int8_t mpdudensity)
+static u8 parse_mpdudensity(u8 mpdudensity)
 {
 	/*
 	 * 802.11n D2.0 defined values for "Minimum MPDU Start Spacing":
@@ -318,19 +335,24 @@ static int ath9k_start(struct ieee80211_hw *hw)
 {
 	struct ath_softc *sc = hw->priv;
 	struct ieee80211_channel *curchan = hw->conf.channel;
-	struct hal_channel hchan;
-	int error = 0;
+	int error = 0, pos;
 
 	DPRINTF(sc, ATH_DBG_CONFIG, "%s: Starting driver with "
 		"initial channel: %d MHz\n", __func__, curchan->center_freq);
 
 	/* setup initial channel */
 
-	hchan.channel = curchan->center_freq;
-	hchan.channelFlags = ath_chan2flags(curchan, sc);
+	pos = ath_get_channel(sc, curchan);
+	if (pos == -1) {
+		DPRINTF(sc, ATH_DBG_FATAL, "%s: Invalid channel\n", __func__);
+		return -EINVAL;
+	}
+
+	sc->sc_ah->ah_channels[pos].chanmode =
+		(curchan->band == IEEE80211_BAND_2GHZ) ? CHANNEL_G : CHANNEL_A;
 
 	/* open ath_dev */
-	error = ath_open(sc, &hchan);
+	error = ath_open(sc, &sc->sc_ah->ah_channels[pos]);
 	if (error) {
 		DPRINTF(sc, ATH_DBG_FATAL,
 			"%s: Unable to complete ath_open\n", __func__);
@@ -399,10 +421,10 @@ static int ath9k_add_interface(struct ieee80211_hw *hw,
 
 	switch (conf->type) {
 	case IEEE80211_IF_TYPE_STA:
-		ic_opmode = HAL_M_STA;
+		ic_opmode = ATH9K_M_STA;
 		break;
 	case IEEE80211_IF_TYPE_IBSS:
-		ic_opmode = HAL_M_IBSS;
+		ic_opmode = ATH9K_M_IBSS;
 		break;
 	default:
 		DPRINTF(sc, ATH_DBG_FATAL,
@@ -447,17 +469,17 @@ static void ath9k_remove_interface(struct ieee80211_hw *hw,
 #endif
 
 	/* Update ratectrl */
-	ath_rate_newstate(sc, avp, 0);
+	ath_rate_newstate(sc, avp);
 
 	/* Reclaim beacon resources */
-	if (sc->sc_opmode == HAL_M_HOSTAP || sc->sc_opmode == HAL_M_IBSS) {
+	if (sc->sc_opmode == ATH9K_M_HOSTAP || sc->sc_opmode == ATH9K_M_IBSS) {
 		ath9k_hw_stoptxdma(sc->sc_ah, sc->sc_bhalq);
 		ath_beacon_return(sc, avp);
 	}
 
 	/* Set interrupt mask */
-	sc->sc_imask &= ~(HAL_INT_SWBA | HAL_INT_BMISS);
-	ath9k_hw_set_interrupts(sc->sc_ah, sc->sc_imask & ~HAL_INT_GLOBAL);
+	sc->sc_imask &= ~(ATH9K_INT_SWBA | ATH9K_INT_BMISS);
+	ath9k_hw_set_interrupts(sc->sc_ah, sc->sc_imask & ~ATH9K_INT_GLOBAL);
 	sc->sc_beacons = 0;
 
 	error = ath_vap_detach(sc, 0);
@@ -472,18 +494,24 @@ static int ath9k_config(struct ieee80211_hw *hw,
 {
 	struct ath_softc *sc = hw->priv;
 	struct ieee80211_channel *curchan = hw->conf.channel;
-	struct hal_channel hchan;
+	int pos;
 
 	DPRINTF(sc, ATH_DBG_CONFIG, "%s: Set channel: %d MHz\n",
 		__func__,
 		curchan->center_freq);
 
-	hchan.channel = curchan->center_freq;
-	hchan.channelFlags = ath_chan2flags(curchan, sc);
+	pos = ath_get_channel(sc, curchan);
+	if (pos == -1) {
+		DPRINTF(sc, ATH_DBG_FATAL, "%s: Invalid channel\n", __func__);
+		return -EINVAL;
+	}
+
+	sc->sc_ah->ah_channels[pos].chanmode =
+		(curchan->band == IEEE80211_BAND_2GHZ) ? CHANNEL_G : CHANNEL_A;
 	sc->sc_config.txpowlimit = 2 * conf->power_level;
 
 	/* set h/w channel */
-	if (ath_set_channel(sc, &hchan) < 0)
+	if (ath_set_channel(sc, &sc->sc_ah->ah_channels[pos]) < 0)
 		DPRINTF(sc, ATH_DBG_FATAL, "%s: Unable to set channel\n",
 			__func__);
 
@@ -496,7 +524,7 @@ static int ath9k_config_interface(struct ieee80211_hw *hw,
 {
 	struct ath_softc *sc = hw->priv;
 	struct ath_vap *avp;
-	u_int32_t rfilt = 0;
+	u32 rfilt = 0;
 	int error, i;
 	DECLARE_MAC_BUF(mac);
 
@@ -513,7 +541,7 @@ static int ath9k_config_interface(struct ieee80211_hw *hw,
 		case IEEE80211_IF_TYPE_STA:
 		case IEEE80211_IF_TYPE_IBSS:
 			/* Update ratectrl about the new state */
-			ath_rate_newstate(sc, avp, 0);
+			ath_rate_newstate(sc, avp);
 
 			/* Set rx filter */
 			rfilt = ath_calcrxfilter(sc);
@@ -541,9 +569,9 @@ static int ath9k_config_interface(struct ieee80211_hw *hw,
 
 			/* Disable BMISS interrupt when we're not associated */
 			ath9k_hw_set_interrupts(sc->sc_ah,
-						sc->sc_imask &
-						~(HAL_INT_SWBA | HAL_INT_BMISS));
-			sc->sc_imask &= ~(HAL_INT_SWBA | HAL_INT_BMISS);
+					sc->sc_imask &
+					~(ATH9K_INT_SWBA | ATH9K_INT_BMISS));
+			sc->sc_imask &= ~(ATH9K_INT_SWBA | ATH9K_INT_BMISS);
 
 			DPRINTF(sc, ATH_DBG_CONFIG,
 				"%s: RX filter 0x%x bssid %s aid 0x%x\n",
@@ -581,9 +609,9 @@ static int ath9k_config_interface(struct ieee80211_hw *hw,
 	/* Check for WLAN_CAPABILITY_PRIVACY ? */
 	if ((avp->av_opmode != IEEE80211_IF_TYPE_STA)) {
 		for (i = 0; i < IEEE80211_WEP_NKID; i++)
-			if (ath9k_hw_keyisvalid(sc->sc_ah, (u_int16_t)i))
+			if (ath9k_hw_keyisvalid(sc->sc_ah, (u16)i))
 				ath9k_hw_keysetmac(sc->sc_ah,
-						   (u_int16_t)i,
+						   (u16)i,
 						   sc->sc_curbssid);
 	}
 
@@ -672,7 +700,7 @@ static int ath9k_conf_tx(struct ieee80211_hw *hw,
 			 const struct ieee80211_tx_queue_params *params)
 {
 	struct ath_softc *sc = hw->priv;
-	struct hal_txq_info qi;
+	struct ath9k_txq_info qi;
 	int ret = 0, qnum;
 
 	if (queue >= WME_NUM_AC)
@@ -728,7 +756,7 @@ static int ath9k_set_key(struct ieee80211_hw *hw,
 	case DISABLE_KEY:
 		ath_key_delete(sc, key);
 		clear_bit(key->keyidx, sc->sc_keymap);
-		sc->sc_keytype = HAL_CIPHER_CLR;
+		sc->sc_keytype = ATH9K_CIPHER_CLR;
 		break;
 	default:
 		ret = -EINVAL;
@@ -752,9 +780,9 @@ static void ath9k_ht_conf(struct ath_softc *sc,
 			IEEE80211_HT_CAP_40MHZ_INTOLERANT) &&
 			    (bss_conf->ht_bss_conf->bss_cap &
 				IEEE80211_HT_IE_CHA_WIDTH))
-			ht_info->tx_chan_width = HAL_HT_MACMODE_2040;
+			ht_info->tx_chan_width = ATH9K_HT_MACMODE_2040;
 		else
-			ht_info->tx_chan_width = HAL_HT_MACMODE_20;
+			ht_info->tx_chan_width = ATH9K_HT_MACMODE_20;
 
 		ath9k_hw_set11nmac2040(sc->sc_ah, ht_info->tx_chan_width);
 		ht_info->maxampdu = 1 << (IEEE80211_HTCAP_MAXRXAMPDU_FACTOR +
@@ -772,8 +800,8 @@ static void ath9k_bss_assoc_info(struct ath_softc *sc,
 {
 	struct ieee80211_hw *hw = sc->hw;
 	struct ieee80211_channel *curchan = hw->conf.channel;
-	struct hal_channel hchan;
 	struct ath_vap *avp;
+	int pos;
 	DECLARE_MAC_BUF(mac);
 
 	if (bss_conf->assoc) {
@@ -788,11 +816,8 @@ static void ath9k_bss_assoc_info(struct ath_softc *sc,
 			return;
 		}
 
-		/* Update ratectrl about the new state */
-		ath_rate_newstate(sc, avp, 1);
-
 		/* New association, store aid */
-		if (avp->av_opmode == HAL_M_STA) {
+		if (avp->av_opmode == ATH9K_M_STA) {
 			sc->sc_curaid = bss_conf->aid;
 			ath9k_hw_write_associd(sc->sc_ah, sc->sc_curbssid,
 					       sc->sc_curaid);
@@ -820,14 +845,30 @@ static void ath9k_bss_assoc_info(struct ath_softc *sc,
 			__func__,
 			curchan->center_freq);
 
-		hchan.channel = curchan->center_freq;
-		hchan.channelFlags = ath_chan2flags(curchan, sc);
+		pos = ath_get_channel(sc, curchan);
+		if (pos == -1) {
+			DPRINTF(sc, ATH_DBG_FATAL,
+				"%s: Invalid channel\n", __func__);
+			return;
+		}
+
+		if (hw->conf.ht_conf.ht_supported)
+			sc->sc_ah->ah_channels[pos].chanmode =
+				ath_get_extchanmode(sc, curchan);
+		else
+			sc->sc_ah->ah_channels[pos].chanmode =
+				(curchan->band == IEEE80211_BAND_2GHZ) ?
+				CHANNEL_G : CHANNEL_A;
 
 		/* set h/w channel */
-		if (ath_set_channel(sc, &hchan) < 0)
+		if (ath_set_channel(sc, &sc->sc_ah->ah_channels[pos]) < 0)
 			DPRINTF(sc, ATH_DBG_FATAL,
 				"%s: Unable to set channel\n",
 				__func__);
+
+		ath_rate_newstate(sc, avp);
+		/* Update ratectrl about the new state */
+		ath_rc_node_update(hw, avp->rc_node);
 	} else {
 		DPRINTF(sc, ATH_DBG_CONFIG,
 		"%s: Bss Info DISSOC\n", __func__);
@@ -880,7 +921,7 @@ static void ath9k_bss_info_changed(struct ieee80211_hw *hw,
 
 static u64 ath9k_get_tsf(struct ieee80211_hw *hw)
 {
-	u_int64_t tsf;
+	u64 tsf;
 	struct ath_softc *sc = hw->priv;
 	struct ath_hal *ah = sc->sc_ah;
 
@@ -974,143 +1015,6 @@ static struct ieee80211_ops ath9k_ops = {
 	.ampdu_action       = ath9k_ampdu_action
 };
 
-u_int32_t ath_chan2flags(struct ieee80211_channel *chan,
-				struct ath_softc *sc)
-{
-	struct ieee80211_hw *hw = sc->hw;
-	struct ath_ht_info *ht_info = &sc->sc_ht_info;
-
-	if (sc->sc_scanning) {
-		if (chan->band == IEEE80211_BAND_5GHZ) {
-			if (ath_check_chanflags(chan, CHANNEL_A_HT20, sc))
-				return CHANNEL_A_HT20;
-			else
-				return CHANNEL_A;
-		} else {
-			if (ath_check_chanflags(chan, CHANNEL_G_HT20, sc))
-				return CHANNEL_G_HT20;
-			else if (ath_check_chanflags(chan, CHANNEL_G, sc))
-				return CHANNEL_G;
-			else
-				return CHANNEL_B;
-		}
-	} else {
-		if (chan->band == IEEE80211_BAND_2GHZ) {
-			if (!hw->conf.ht_conf.ht_supported) {
-				if (ath_check_chanflags(chan, CHANNEL_G, sc))
-					return CHANNEL_G;
-				else
-					return CHANNEL_B;
-			}
-			if ((ht_info->ext_chan_offset ==
-			     IEEE80211_HT_IE_CHA_SEC_NONE) &&
-			    (ht_info->tx_chan_width == HAL_HT_MACMODE_20))
-				return CHANNEL_G_HT20;
-			if ((ht_info->ext_chan_offset ==
-			     IEEE80211_HT_IE_CHA_SEC_ABOVE) &&
-			    (ht_info->tx_chan_width == HAL_HT_MACMODE_2040))
-				return CHANNEL_G_HT40PLUS;
-			if ((ht_info->ext_chan_offset ==
-			     IEEE80211_HT_IE_CHA_SEC_BELOW) &&
-			    (ht_info->tx_chan_width == HAL_HT_MACMODE_2040))
-				return CHANNEL_G_HT40MINUS;
-			return CHANNEL_B;
-		} else {
-			if (!hw->conf.ht_conf.ht_supported)
-				return CHANNEL_A;
-			if ((ht_info->ext_chan_offset ==
-			     IEEE80211_HT_IE_CHA_SEC_NONE) &&
-			    (ht_info->tx_chan_width == HAL_HT_MACMODE_20))
-				return CHANNEL_A_HT20;
-			if ((ht_info->ext_chan_offset ==
-			     IEEE80211_HT_IE_CHA_SEC_ABOVE) &&
-			    (ht_info->tx_chan_width == HAL_HT_MACMODE_2040))
-				return CHANNEL_A_HT40PLUS;
-			if ((ht_info->ext_chan_offset ==
-			     IEEE80211_HT_IE_CHA_SEC_BELOW) &&
-			    (ht_info->tx_chan_width == HAL_HT_MACMODE_2040))
-				return CHANNEL_A_HT40MINUS;
-			return CHANNEL_A;
-		}
-	}
-}
-
-void ath_setup_channel_list(struct ath_softc *sc,
-			    enum ieee80211_clist_cmd cmd,
-			    const struct hal_channel *chans,
-			    int nchan,
-			    const u_int8_t *regclassids,
-			    u_int nregclass,
-			    int countrycode)
-{
-	const struct hal_channel *c;
-	int i, a = 0, b = 0, flags;
-
-	if (countrycode == CTRY_DEFAULT) {
-		for (i = 0; i < nchan; i++) {
-			c = &chans[i];
-			flags = 0;
-			/* XXX: Ah! make more readable, and
-			 * idententation friendly */
-			if (IS_CHAN_2GHZ(c) &&
-			    !test_update_chan(IEEE80211_BAND_2GHZ, c, sc)) {
-				sc->channels[IEEE80211_BAND_2GHZ][a].band =
-					IEEE80211_BAND_2GHZ;
-				sc->channels[IEEE80211_BAND_2GHZ][a].
-					center_freq =
-					c->channel;
-				sc->channels[IEEE80211_BAND_2GHZ][a].max_power =
-					c->maxTxPower;
-				sc->channels[IEEE80211_BAND_2GHZ][a].hw_value =
-					c->channelFlags;
-
-				if (c->privFlags & CHANNEL_DISALLOW_ADHOC)
-					flags |= IEEE80211_CHAN_NO_IBSS;
-				if (IS_CHAN_PASSIVE(c))
-					flags |= IEEE80211_CHAN_PASSIVE_SCAN;
-
-				sc->channels[IEEE80211_BAND_2GHZ][a].flags =
-					flags;
-				sc->sbands[IEEE80211_BAND_2GHZ].n_channels++;
-				a++;
-				DPRINTF(sc, ATH_DBG_CONFIG,
-					"%s: 2MHz channel: %d, "
-					"channelFlags: 0x%x\n",
-					__func__,
-					c->channel,
-					c->channelFlags);
-			} else if (IS_CHAN_5GHZ(c) &&
-			 !test_update_chan(IEEE80211_BAND_5GHZ, c, sc)) {
-				sc->channels[IEEE80211_BAND_5GHZ][b].band =
-					IEEE80211_BAND_5GHZ;
-				sc->channels[IEEE80211_BAND_5GHZ][b].
-					center_freq =
-					c->channel;
-				sc->channels[IEEE80211_BAND_5GHZ][b].max_power =
-					c->maxTxPower;
-				sc->channels[IEEE80211_BAND_5GHZ][b].hw_value =
-					c->channelFlags;
-
-				if (c->privFlags & CHANNEL_DISALLOW_ADHOC)
-					flags |= IEEE80211_CHAN_NO_IBSS;
-				if (IS_CHAN_PASSIVE(c))
-					flags |= IEEE80211_CHAN_PASSIVE_SCAN;
-
-				sc->channels[IEEE80211_BAND_5GHZ][b].
-					flags = flags;
-				sc->sbands[IEEE80211_BAND_5GHZ].n_channels++;
-				b++;
-				DPRINTF(sc, ATH_DBG_CONFIG,
-					"%s: 5MHz channel: %d, "
-					"channelFlags: 0x%x\n",
-					__func__,
-					c->channel,
-					c->channelFlags);
-			}
-		}
-	}
-}
-
 void ath_get_beaconconfig(struct ath_softc *sc,
 			  int if_id,
 			  struct ath_beacon_config *conf)
@@ -1168,7 +1072,7 @@ void ath_tx_complete(struct ath_softc *sc, struct sk_buff *skb,
 int ath__rx_indicate(struct ath_softc *sc,
 		     struct sk_buff *skb,
 		     struct ath_recv_status *status,
-		     u_int16_t keyix)
+		     u16 keyix)
 {
 	struct ieee80211_hw *hw = sc->hw;
 	struct ath_node *an = NULL;
@@ -1191,7 +1095,7 @@ int ath__rx_indicate(struct ath_softc *sc,
 	/* Prepare rx status */
 	ath9k_rx_prepare(sc, skb, status, &rx_status);
 
-	if (!(keyix == HAL_RXKEYIX_INVALID) &&
+	if (!(keyix == ATH9K_RXKEYIX_INVALID) &&
 	    !(status->flags & ATH_RX_DECRYPT_ERROR)) {
 		rx_status.flag |= RX_FLAG_DECRYPTED;
 	} else if ((le16_to_cpu(hdr->frame_control) & IEEE80211_FCTL_PROTECTED)
@@ -1236,7 +1140,7 @@ int ath_rx_subframe(struct ath_node *an,
 	return 0;
 }
 
-enum hal_ht_macmode ath_cwm_macmode(struct ath_softc *sc)
+enum ath9k_ht_macmode ath_cwm_macmode(struct ath_softc *sc)
 {
 	return sc->sc_ht_info.tx_chan_width;
 }
@@ -1244,7 +1148,7 @@ enum hal_ht_macmode ath_cwm_macmode(struct ath_softc *sc)
 void ath_setup_rate(struct ath_softc *sc,
 		    enum wireless_mode wMode,
 		    enum RATE_TYPE type,
-		    const struct hal_rate_table *rt)
+		    const struct ath9k_rate_table *rt)
 {
 	int i, maxrates, a = 0, b = 0;
 	struct ieee80211_supported_band *band_2ghz;
@@ -1335,7 +1239,7 @@ static int ath_detach(struct ath_softc *sc)
 	return 0;
 }
 
-static int ath_attach(u_int16_t devid,
+static int ath_attach(u16 devid,
 		      struct ath_softc *sc)
 {
 	struct ieee80211_hw *hw = sc->hw;
@@ -1432,7 +1336,7 @@ static int ath_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	struct ath_softc *sc;
 	struct ieee80211_hw *hw;
 	const char *athname;
-	u_int8_t csz;
+	u8 csz;
 	u32 val;
 	int ret = 0;
 
@@ -1459,7 +1363,7 @@ static int ath_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		 * DMA to work so force a reasonable value here if it
 		 * comes up zero.
 		 */
-		csz = L1_CACHE_BYTES / sizeof(u_int32_t);
+		csz = L1_CACHE_BYTES / sizeof(u32);
 		pci_write_config_byte(pdev, PCI_CACHE_LINE_SIZE, csz);
 	}
 	/*
@@ -1498,6 +1402,9 @@ static int ath_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		printk(KERN_ERR "ath_pci: no memory for ieee80211_hw\n");
 		goto bad2;
 	}
+
+	hw->flags = IEEE80211_HW_SIGNAL_DBM |
+		IEEE80211_HW_NOISE_DBM;
 
 	SET_IEEE80211_DEV(hw, &pdev->dev);
 	pci_set_drvdata(pdev, hw);

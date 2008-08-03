@@ -29,10 +29,10 @@
 static int ath_beaconq_config(struct ath_softc *sc)
 {
 	struct ath_hal *ah = sc->sc_ah;
-	struct hal_txq_info qi;
+	struct ath9k_txq_info qi;
 
 	ath9k_hw_gettxqueueprops(ah, sc->sc_bhalq, &qi);
-	if (sc->sc_opmode == HAL_M_HOSTAP) {
+	if (sc->sc_opmode == ATH9K_M_HOSTAP) {
 		/* Always burst out beacon and CAB traffic. */
 		qi.tqi_aifs = 1;
 		qi.tqi_cwmin = 0;
@@ -70,11 +70,11 @@ static void ath_beacon_setup(struct ath_softc *sc,
 	struct ath_hal *ah = sc->sc_ah;
 	struct ath_desc *ds;
 	int flags, antenna;
-	const struct hal_rate_table *rt;
-	u_int8_t rix, rate;
+	const struct ath9k_rate_table *rt;
+	u8 rix, rate;
 	int ctsrate = 0;
 	int ctsduration = 0;
-	struct hal_11n_rate_series  series[4];
+	struct ath9k_11n_rate_series  series[4];
 
 	DPRINTF(sc, ATH_DBG_BEACON, "%s: m %p len %u\n",
 		__func__, skb, skb->len);
@@ -82,11 +82,11 @@ static void ath_beacon_setup(struct ath_softc *sc,
 	/* setup descriptors */
 	ds = bf->bf_desc;
 
-	flags = HAL_TXDESC_NOACK;
+	flags = ATH9K_TXDESC_NOACK;
 
-	if (sc->sc_opmode == HAL_M_IBSS && ah->ah_caps.halVEOLSupport) {
+	if (sc->sc_opmode == ATH9K_M_IBSS && ah->ah_caps.halVEOLSupport) {
 		ds->ds_link = bf->bf_daddr; /* self-linked */
-		flags |= HAL_TXDESC_VEOL;
+		flags |= ATH9K_TXDESC_VEOL;
 		/* Let hardware handle antenna switching. */
 		antenna = 0;
 	} else {
@@ -114,10 +114,10 @@ static void ath_beacon_setup(struct ath_softc *sc,
 
 	ath9k_hw_set11n_txdesc(ah, ds
 			      , skb->len + FCS_LEN /* frame length */
-			      , HAL_PKT_TYPE_BEACON /* Atheros packet type */
+			      , ATH9K_PKT_TYPE_BEACON /* Atheros packet type */
 			      , avp->av_btxctl.txpower /* txpower XXX */
-			      , HAL_TXKEYIX_INVALID /* no encryption */
-			      , HAL_KEY_TYPE_CLEAR /* no encryption */
+			      , ATH9K_TXKEYIX_INVALID /* no encryption */
+			      , ATH9K_KEY_TYPE_CLEAR /* no encryption */
 			      , flags /* no ack, veol for beacons */
 		);
 
@@ -129,11 +129,11 @@ static void ath_beacon_setup(struct ath_softc *sc,
 			   , ds /* first descriptor */
 		);
 
-	memzero(series, sizeof(struct hal_11n_rate_series) * 4);
+	memzero(series, sizeof(struct ath9k_11n_rate_series) * 4);
 	series[0].Tries = 1;
 	series[0].Rate = rate;
 	series[0].ChSel = sc->sc_tx_chainmask;
-	series[0].RateFlags = (ctsrate) ? HAL_RATESERIES_RTS_CTS : 0;
+	series[0].RateFlags = (ctsrate) ? ATH9K_RATESERIES_RTS_CTS : 0;
 	ath9k_hw_set11n_ratescenario(ah, ds, ds, 0,
 		ctsrate, ctsduration, series, 4, 0);
 }
@@ -325,7 +325,7 @@ static void ath_beacon_start_adhoc(struct ath_softc *sc, int if_id)
 /*
  *  Setup a h/w transmit queue for beacons.
  *
- *  This function allocates an information structure (struct hal_txq_info)
+ *  This function allocates an information structure (struct ath9k_txq_info)
  *  on the stack, sets some specific parameters (zero out channel width
  *  min/max, and enable aifs). The info structure does not need to be
  *  persistant.
@@ -333,14 +333,14 @@ static void ath_beacon_start_adhoc(struct ath_softc *sc, int if_id)
 
 int ath_beaconq_setup(struct ath_hal *ah)
 {
-	struct hal_txq_info qi;
+	struct ath9k_txq_info qi;
 
 	memzero(&qi, sizeof(qi));
 	qi.tqi_aifs = 1;
 	qi.tqi_cwmin = 0;
 	qi.tqi_cwmax = 0;
 	/* NB: don't enable any interrupts */
-	return ath9k_hw_setuptxqueue(ah, HAL_TX_QUEUE_BEACON, &qi);
+	return ath9k_hw_setuptxqueue(ah, ATH9K_TX_QUEUE_BEACON, &qi);
 }
 
 
@@ -373,7 +373,7 @@ int ath_beacon_alloc(struct ath_softc *sc, int if_id)
 				struct ath_buf, list);
 		list_del(&avp->av_bcbuf->list);
 
-		if (sc->sc_opmode == HAL_M_HOSTAP ||
+		if (sc->sc_opmode == ATH9K_M_HOSTAP ||
 			!sc->sc_ah->ah_caps.halVEOLSupport) {
 			int slot;
 			/*
@@ -433,7 +433,7 @@ int ath_beacon_alloc(struct ath_softc *sc, int if_id)
 	 * following the header.
 	 */
 	if (avp->av_bslot > 0) {
-		u_int64_t tsfadjust;
+		u64 tsfadjust;
 		__le64 val;
 		int intval;
 
@@ -539,19 +539,19 @@ void ath_beacon_free(struct ath_softc *sc)
 void ath9k_beacon_tasklet(unsigned long data)
 {
 #define TSF_TO_TU(_h,_l)					\
-	((((u_int32_t)(_h)) << 22) | (((u_int32_t)(_l)) >> 10))
+	((((u32)(_h)) << 22) | (((u32)(_l)) >> 10))
 
 	struct ath_softc *sc = (struct ath_softc *)data;
 	struct ath_hal *ah = sc->sc_ah;
 	struct ath_buf *bf = NULL;
 	int slot, if_id;
-	u_int32_t bfaddr;
-	u_int32_t rx_clear = 0, rx_frame = 0, tx_frame = 0;
-	u_int32_t show_cycles = 0;
-	u_int32_t bc = 0; /* beacon count */
-	u_int64_t tsf;
-	u_int32_t tsftu;
-	u_int16_t intval;
+	u32 bfaddr;
+	u32 rx_clear = 0, rx_frame = 0, tx_frame = 0;
+	u32 show_cycles = 0;
+	u32 bc = 0; /* beacon count */
+	u64 tsf;
+	u32 tsftu;
+	u16 intval;
 
 	if (sc->sc_noreset) {
 		show_cycles = ath9k_hw_GetMibCycleCountsPct(ah,
@@ -739,11 +739,11 @@ void ath_bstuck_process(struct ath_softc *sc)
 void ath_beacon_config(struct ath_softc *sc, int if_id)
 {
 #define TSF_TO_TU(_h,_l)					\
-	((((u_int32_t)(_h)) << 22) | (((u_int32_t)(_l)) >> 10))
+	((((u32)(_h)) << 22) | (((u32)(_l)) >> 10))
 	struct ath_hal *ah = sc->sc_ah;
-	u_int32_t nexttbtt, intval;
+	u32 nexttbtt, intval;
 	struct ath_beacon_config conf;
-	enum hal_opmode av_opmode;
+	enum ath9k_opmode av_opmode;
 
 	if (if_id != ATH_IF_ID_ANY)
 		av_opmode = sc->sc_vaps[if_id]->av_opmode;
@@ -768,7 +768,7 @@ void ath_beacon_config(struct ath_softc *sc, int if_id)
 	nexttbtt = TSF_TO_TU(LE_READ_4(conf.u.last_tstamp + 4),
 			     LE_READ_4(conf.u.last_tstamp));
 	/* XXX conditionalize multi-bss support? */
-	if (sc->sc_opmode == HAL_M_HOSTAP) {
+	if (sc->sc_opmode == ATH9K_M_HOSTAP) {
 		/*
 		 * For multi-bss ap support beacons are either staggered
 		 * evenly over N slots or burst together.  For the former
@@ -776,10 +776,10 @@ void ath_beacon_config(struct ath_softc *sc, int if_id)
 		 * Slots that are not occupied will generate nothing.
 		 */
 		/* NB: the beacon interval is kept internally in TU's */
-		intval = conf.beacon_interval & HAL_BEACON_PERIOD;
+		intval = conf.beacon_interval & ATH9K_BEACON_PERIOD;
 		intval /= ATH_BCBUF;    /* for staggered beacons */
 	} else {
-		intval = conf.beacon_interval & HAL_BEACON_PERIOD;
+		intval = conf.beacon_interval & ATH9K_BEACON_PERIOD;
 	}
 
 	if (nexttbtt == 0)      /* e.g. for ap mode */
@@ -788,11 +788,11 @@ void ath_beacon_config(struct ath_softc *sc, int if_id)
 		nexttbtt = roundup(nexttbtt, intval);
 	DPRINTF(sc, ATH_DBG_BEACON, "%s: nexttbtt %u intval %u (%u)\n",
 		__func__, nexttbtt, intval, conf.beacon_interval);
-	/* Check for HAL_M_HOSTAP and sc_nostabeacons for WDS client */
-	if (sc->sc_opmode == HAL_M_STA) {
-		struct hal_beacon_state bs;
-		u_int64_t tsf;
-		u_int32_t tsftu;
+	/* Check for ATH9K_M_HOSTAP and sc_nostabeacons for WDS client */
+	if (sc->sc_opmode == ATH9K_M_STA) {
+		struct ath9k_beacon_state bs;
+		u64 tsf;
+		u32 tsftu;
 		int dtimperiod, dtimcount, sleepduration;
 		int cfpperiod, cfpcount;
 
@@ -901,24 +901,24 @@ void ath_beacon_config(struct ath_softc *sc, int if_id)
 
 		ath9k_hw_set_interrupts(ah, 0);
 		ath9k_hw_set_sta_beacon_timers(ah, &bs);
-		sc->sc_imask |= HAL_INT_BMISS;
+		sc->sc_imask |= ATH9K_INT_BMISS;
 		ath9k_hw_set_interrupts(ah, sc->sc_imask);
 	} else {
-		u_int64_t tsf;
-		u_int32_t tsftu;
+		u64 tsf;
+		u32 tsftu;
 		ath9k_hw_set_interrupts(ah, 0);
 		if (nexttbtt == intval)
-			intval |= HAL_BEACON_RESET_TSF;
-		if (sc->sc_opmode == HAL_M_IBSS) {
+			intval |= ATH9K_BEACON_RESET_TSF;
+		if (sc->sc_opmode == ATH9K_M_IBSS) {
 			/*
 			 * Pull nexttbtt forward to reflect the current
 			 * TSF .
 			 */
 #define FUDGE   2
-			if (!(intval & HAL_BEACON_RESET_TSF)) {
+			if (!(intval & ATH9K_BEACON_RESET_TSF)) {
 				tsf = ath9k_hw_gettsf64(ah);
-				tsftu = TSF_TO_TU((u_int32_t)(tsf>>32),
-					(u_int32_t)tsf) + FUDGE;
+				tsftu = TSF_TO_TU((u32)(tsf>>32),
+					(u32)tsf) + FUDGE;
 				do {
 					nexttbtt += intval;
 				} while (nexttbtt < tsftu);
@@ -927,7 +927,7 @@ void ath_beacon_config(struct ath_softc *sc, int if_id)
 			DPRINTF(sc, ATH_DBG_BEACON,
 				"%s: IBSS nexttbtt %u intval %u (%u)\n",
 				__func__, nexttbtt,
-				intval & ~HAL_BEACON_RESET_TSF,
+				intval & ~ATH9K_BEACON_RESET_TSF,
 				conf.beacon_interval);
 
 			/*
@@ -937,17 +937,17 @@ void ath_beacon_config(struct ath_softc *sc, int if_id)
 			 * self-linked tx descriptor and let the hardware
 			 * deal with things.
 			 */
-			intval |= HAL_BEACON_ENA;
+			intval |= ATH9K_BEACON_ENA;
 			if (!ah->ah_caps.halVEOLSupport)
-				sc->sc_imask |= HAL_INT_SWBA;
+				sc->sc_imask |= ATH9K_INT_SWBA;
 			ath_beaconq_config(sc);
-		} else if (sc->sc_opmode == HAL_M_HOSTAP) {
+		} else if (sc->sc_opmode == ATH9K_M_HOSTAP) {
 			/*
 			 * In AP mode we enable the beacon timers and
 			 * SWBA interrupts to prepare beacon frames.
 			 */
-			intval |= HAL_BEACON_ENA;
-			sc->sc_imask |= HAL_INT_SWBA;   /* beacon prepare */
+			intval |= ATH9K_BEACON_ENA;
+			sc->sc_imask |= ATH9K_INT_SWBA;   /* beacon prepare */
 			ath_beaconq_config(sc);
 		}
 		ath9k_hw_beaconinit(ah, nexttbtt, intval);
@@ -957,7 +957,7 @@ void ath_beacon_config(struct ath_softc *sc, int if_id)
 		 * When using a self-linked beacon descriptor in
 		 * ibss mode load it once here.
 		 */
-		if (sc->sc_opmode == HAL_M_IBSS && ah->ah_caps.halVEOLSupport)
+		if (sc->sc_opmode == ATH9K_M_IBSS && ah->ah_caps.halVEOLSupport)
 			ath_beacon_start_adhoc(sc, 0);
 	}
 #undef TSF_TO_TU
