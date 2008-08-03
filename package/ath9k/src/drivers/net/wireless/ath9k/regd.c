@@ -17,13 +17,14 @@
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include "core.h"
+#include "hw.h"
 #include "regd.h"
 #include "regd_common.h"
 
 static int ath9k_regd_chansort(const void *a, const void *b)
 {
-	const struct hal_channel_internal *ca = a;
-	const struct hal_channel_internal *cb = b;
+	const struct ath9k_channel *ca = a;
+	const struct ath9k_channel *cb = b;
 
 	return (ca->channel == cb->channel) ?
 	    (ca->channelFlags & CHAN_FLAGS) -
@@ -31,26 +32,26 @@ static int ath9k_regd_chansort(const void *a, const void *b)
 }
 
 static void
-ath9k_regd_sort(void *a, u_int32_t n, u_int32_t size, ath_hal_cmp_t *cmp)
+ath9k_regd_sort(void *a, u32 n, u32 size, ath_hal_cmp_t *cmp)
 {
-	u_int8_t *aa = a;
-	u_int8_t *ai, *t;
+	u8 *aa = a;
+	u8 *ai, *t;
 
 	for (ai = aa + size; --n >= 1; ai += size)
 		for (t = ai; t > aa; t -= size) {
-			u_int8_t *u = t - size;
+			u8 *u = t - size;
 			if (cmp(u, t) <= 0)
 				break;
 			swap(u, t, size);
 		}
 }
 
-static u_int16_t ath9k_regd_get_eepromRD(struct ath_hal *ah)
+static u16 ath9k_regd_get_eepromRD(struct ath_hal *ah)
 {
 	return ah->ah_currentRD & ~WORLDWIDE_ROAMING_FLAG;
 }
 
-static bool ath9k_regd_is_chan_bm_zero(u_int64_t *bitmask)
+static bool ath9k_regd_is_chan_bm_zero(u64 *bitmask)
 {
 	int i;
 
@@ -63,11 +64,11 @@ static bool ath9k_regd_is_chan_bm_zero(u_int64_t *bitmask)
 
 static bool ath9k_regd_is_eeprom_valid(struct ath_hal *ah)
 {
-	u_int16_t rd = ath9k_regd_get_eepromRD(ah);
+	u16 rd = ath9k_regd_get_eepromRD(ah);
 	int i;
 
 	if (rd & COUNTRY_ERD_FLAG) {
-		u_int16_t cc = rd & ~COUNTRY_ERD_FLAG;
+		u16 cc = rd & ~COUNTRY_ERD_FLAG;
 		for (i = 0; i < ARRAY_SIZE(allCountries); i++)
 			if (allCountries[i].countryCode == cc)
 				return true;
@@ -84,7 +85,7 @@ static bool ath9k_regd_is_eeprom_valid(struct ath_hal *ah)
 
 static bool ath9k_regd_is_fcc_midband_supported(struct ath_hal *ah)
 {
-	u_int32_t regcap;
+	u32 regcap;
 
 	regcap = ah->ah_caps.halRegCap;
 
@@ -95,9 +96,9 @@ static bool ath9k_regd_is_fcc_midband_supported(struct ath_hal *ah)
 }
 
 static bool ath9k_regd_is_ccode_valid(struct ath_hal *ah,
-				      u_int16_t cc)
+				      u16 cc)
 {
-	u_int16_t rd;
+	u16 rd;
 	int i;
 
 	if (cc == CTRY_DEFAULT)
@@ -130,12 +131,12 @@ static bool ath9k_regd_is_ccode_valid(struct ath_hal *ah,
 	return false;
 }
 
-static u_int
+static u32
 ath9k_regd_get_wmodes_nreg(struct ath_hal *ah,
 			   struct country_code_to_enum_rd *country,
 			   struct regDomain *rd5GHz)
 {
-	u_int modesAvail;
+	u32 modesAvail;
 
 	modesAvail = ah->ah_caps.halWirelessModes;
 
@@ -174,7 +175,7 @@ ath9k_regd_get_wmodes_nreg(struct ath_hal *ah,
 
 bool ath9k_regd_is_public_safety_sku(struct ath_hal *ah)
 {
-	u_int16_t rd;
+	u16 rd;
 
 	rd = ath9k_regd_get_eepromRD(ah);
 
@@ -192,7 +193,7 @@ bool ath9k_regd_is_public_safety_sku(struct ath_hal *ah)
 }
 
 static struct country_code_to_enum_rd*
-ath9k_regd_find_country(u_int16_t countryCode)
+ath9k_regd_find_country(u16 countryCode)
 {
 	int i;
 
@@ -203,15 +204,15 @@ ath9k_regd_find_country(u_int16_t countryCode)
 	return NULL;
 }
 
-static u_int16_t ath9k_regd_get_default_country(struct ath_hal *ah)
+static u16 ath9k_regd_get_default_country(struct ath_hal *ah)
 {
-	u_int16_t rd;
+	u16 rd;
 	int i;
 
 	rd = ath9k_regd_get_eepromRD(ah);
 	if (rd & COUNTRY_ERD_FLAG) {
 		struct country_code_to_enum_rd *country = NULL;
-		u_int16_t cc = rd & ~COUNTRY_ERD_FLAG;
+		u16 cc = rd & ~COUNTRY_ERD_FLAG;
 
 		country = ath9k_regd_find_country(cc);
 		if (country != NULL)
@@ -260,16 +261,16 @@ static bool ath9k_regd_is_valid_reg_domainPair(int regDmnPair)
 
 static bool
 ath9k_regd_get_wmode_regdomain(struct ath_hal *ah, int regDmn,
-			       u_int16_t channelFlag, struct regDomain *rd)
+			       u16 channelFlag, struct regDomain *rd)
 {
 	int i, found;
-	u_int64_t flags = NO_REQ;
+	u64 flags = NO_REQ;
 	struct reg_dmn_pair_mapping *regPair = NULL;
 	int regOrg;
 
 	regOrg = regDmn;
 	if (regDmn == CTRY_DEFAULT) {
-		u_int16_t rdnum;
+		u16 rdnum;
 		rdnum = ath9k_regd_get_eepromRD(ah);
 
 		if (!(rdnum & COUNTRY_ERD_FLAG)) {
@@ -323,14 +324,14 @@ ath9k_regd_get_wmode_regdomain(struct ath_hal *ah, int regDmn,
 	}
 }
 
-static bool ath9k_regd_is_bit_set(int bit, u_int64_t *bitmask)
+static bool ath9k_regd_is_bit_set(int bit, u64 *bitmask)
 {
 	int byteOffset, bitnum;
-	u_int64_t val;
+	u64 val;
 
 	byteOffset = bit / 64;
 	bitnum = bit - byteOffset * 64;
-	val = ((u_int64_t) 1) << bitnum;
+	val = ((u64) 1) << bitnum;
 	if (bitmask[byteOffset] & val)
 		return true;
 	else
@@ -338,8 +339,8 @@ static bool ath9k_regd_is_bit_set(int bit, u_int64_t *bitmask)
 }
 
 static void
-ath9k_regd_add_reg_classid(u_int8_t *regclassids, u_int maxregids,
-			   u_int *nregids, u_int8_t regclassid)
+ath9k_regd_add_reg_classid(u8 *regclassids, u32 maxregids,
+			   u32 *nregids, u8 regclassid)
 {
 	int i;
 
@@ -372,7 +373,7 @@ ath9k_regd_get_eeprom_reg_ext_bits(struct ath_hal *ah,
 
 #ifdef ATH_NF_PER_CHAN
 
-static void ath9k_regd_init_rf_buffer(struct hal_channel_internal *ichans,
+static void ath9k_regd_init_rf_buffer(struct ath9k_channel *ichans,
 				      int nchans)
 {
 	int i, j, next;
@@ -384,7 +385,7 @@ static void ath9k_regd_init_rf_buffer(struct hal_channel_internal *ichans,
 			    AR_PHY_CCA_MAX_GOOD_VALUE;
 			ichans[next].nfCalHist[i].invalidNFcount =
 			    AR_PHY_CCA_FILTERWINDOW_LENGTH;
-			for (j = 0; j < HAL_NF_CAL_HIST_MAX; j++) {
+			for (j = 0; j < ATH9K_NF_CAL_HIST_MAX; j++) {
 				ichans[next].nfCalHist[i].nfCalBuffer[j] =
 				    AR_PHY_CCA_MAX_GOOD_VALUE;
 			}
@@ -393,22 +394,40 @@ static void ath9k_regd_init_rf_buffer(struct hal_channel_internal *ichans,
 }
 #endif
 
+static int ath9k_regd_is_chan_present(struct ath_hal *ah,
+				      u16 c)
+{
+	int i;
+
+	for (i = 0; i < 150; i++) {
+		if (!ah->ah_channels[i].channel)
+			return -1;
+		else if (ah->ah_channels[i].channel == c)
+			return i;
+	}
+
+	return -1;
+}
+
 static bool
 ath9k_regd_add_channel(struct ath_hal *ah,
-		       u_int16_t c,
-		       u_int16_t c_lo,
-		       u_int16_t c_hi,
-		       u_int16_t maxChan,
-		       u_int8_t ctl,
+		       u16 c,
+		       u16 c_lo,
+		       u16 c_hi,
+		       u16 maxChan,
+		       u8 ctl,
 		       int pos,
 		       struct regDomain rd5GHz,
 		       struct RegDmnFreqBand *fband,
 		       struct regDomain *rd,
 		       const struct cmode *cm,
-		       struct hal_channel_internal *ichans,
+		       struct ath9k_channel *ichans,
 		       bool enableExtendedChannels)
 {
-	struct hal_channel_internal icv;
+	struct ath9k_channel *chan;
+	int ret;
+	u32 channelFlags = 0;
+	u8 privFlags = 0;
 
 	if (!(c_lo <= c && c <= c_hi)) {
 		DPRINTF(ah->ah_sc, ATH_DBG_REGULATORY,
@@ -445,7 +464,7 @@ ath9k_regd_add_channel(struct ath_hal *ah,
 		return false;
 	}
 
-	if ((rd->flags & NO_HOSTAP) && (ah->ah_opmode == HAL_M_HOSTAP)) {
+	if ((rd->flags & NO_HOSTAP) && (ah->ah_opmode == ATH9K_M_HOSTAP)) {
 		DPRINTF(ah->ah_sc, ATH_DBG_REGULATORY,
 			"Skipping HOSTAP channel\n");
 		return false;
@@ -478,54 +497,50 @@ ath9k_regd_add_channel(struct ath_hal *ah,
 		return false;
 	}
 
-	memset(&icv, 0, sizeof(icv));
-	icv.channel = c;
-	icv.channelFlags = cm->flags;
+	/* Calculate channel flags */
+
+	channelFlags = cm->flags;
 
 	switch (fband->channelBW) {
 	case CHANNEL_HALF_BW:
-		icv.channelFlags |= CHANNEL_HALF;
+		channelFlags |= CHANNEL_HALF;
 		break;
 	case CHANNEL_QUARTER_BW:
-		icv.channelFlags |= CHANNEL_QUARTER;
+		channelFlags |= CHANNEL_QUARTER;
 		break;
 	}
 
-	icv.maxRegTxPower = fband->powerDfs;
-	icv.antennaMax = fband->antennaMax;
-	icv.regDmnFlags = rd->flags;
-	icv.conformanceTestLimit = ctl;
 	if (fband->usePassScan & rd->pscan)
-		icv.channelFlags |= CHANNEL_PASSIVE;
+		channelFlags |= CHANNEL_PASSIVE;
 	else
-		icv.channelFlags &= ~CHANNEL_PASSIVE;
+		channelFlags &= ~CHANNEL_PASSIVE;
 	if (fband->useDfs & rd->dfsMask)
-		icv.privFlags = CHANNEL_DFS;
+		privFlags = CHANNEL_DFS;
 	else
-		icv.privFlags = 0;
+		privFlags = 0;
 	if (rd->flags & LIMIT_FRAME_4MS)
-		icv.privFlags |= CHANNEL_4MS_LIMIT;
-	if (icv.privFlags & CHANNEL_DFS)
-		icv.privFlags |= CHANNEL_DISALLOW_ADHOC;
-	if (icv.regDmnFlags & ADHOC_PER_11D)
-		icv.privFlags |= CHANNEL_PER_11D_ADHOC;
+		privFlags |= CHANNEL_4MS_LIMIT;
+	if (privFlags & CHANNEL_DFS)
+		privFlags |= CHANNEL_DISALLOW_ADHOC;
+	if (rd->flags & ADHOC_PER_11D)
+		privFlags |= CHANNEL_PER_11D_ADHOC;
 
-	if (icv.channelFlags & CHANNEL_PASSIVE) {
-		if ((icv.channel < 2412) || (icv.channel > 2462)) {
+	if (channelFlags & CHANNEL_PASSIVE) {
+		if ((c < 2412) || (c > 2462)) {
 			if (rd5GHz.regDmnEnum == MKK1 ||
 			    rd5GHz.regDmnEnum == MKK2) {
-				u_int32_t regcap = ah->ah_caps.halRegCap;
+				u32 regcap = ah->ah_caps.halRegCap;
 				if (!(regcap &
 				      (AR_EEPROM_EEREGCAP_EN_KK_U1_EVEN |
 				       AR_EEPROM_EEREGCAP_EN_KK_U2 |
 				       AR_EEPROM_EEREGCAP_EN_KK_MIDBAND)) &&
-				    isUNII1OddChan(icv.channel)) {
-					icv.channelFlags &= ~CHANNEL_PASSIVE;
+				    isUNII1OddChan(c)) {
+					channelFlags &= ~CHANNEL_PASSIVE;
 				} else {
-					icv.privFlags |= CHANNEL_DISALLOW_ADHOC;
+					privFlags |= CHANNEL_DISALLOW_ADHOC;
 				}
 			} else {
-				icv.privFlags |= CHANNEL_DISALLOW_ADHOC;
+				privFlags |= CHANNEL_DISALLOW_ADHOC;
 			}
 		}
 	}
@@ -534,14 +549,39 @@ ath9k_regd_add_channel(struct ath_hal *ah,
 			ATH9K_MODE_SEL_11NA_HT20 |
 			ATH9K_MODE_SEL_11NA_HT40PLUS |
 			ATH9K_MODE_SEL_11NA_HT40MINUS)) {
-		if (icv.regDmnFlags & (ADHOC_NO_11A | DISALLOW_ADHOC_11A))
-			icv.privFlags |= CHANNEL_DISALLOW_ADHOC;
+		if (rd->flags & (ADHOC_NO_11A | DISALLOW_ADHOC_11A))
+			privFlags |= CHANNEL_DISALLOW_ADHOC;
 	}
 
-	memcpy(&ichans[pos], &icv,
-	       sizeof(struct hal_channel_internal));
+	/* Fill in channel details */
 
-	return true;
+	ret = ath9k_regd_is_chan_present(ah, c);
+	if (ret == -1) {
+		chan = &ah->ah_channels[pos];
+		chan->channel = c;
+		chan->maxRegTxPower = fband->powerDfs;
+		chan->antennaMax = fband->antennaMax;
+		chan->regDmnFlags = rd->flags;
+		chan->maxTxPower = AR5416_MAX_RATE_POWER;
+		chan->minTxPower = AR5416_MAX_RATE_POWER;
+		chan->channelFlags = channelFlags;
+		chan->privFlags = privFlags;
+	} else {
+		chan = &ah->ah_channels[ret];
+		chan->channelFlags |= channelFlags;
+		chan->privFlags |= privFlags;
+	}
+
+	/* Set CTLs */
+
+	if ((cm->flags & CHANNEL_ALL) == CHANNEL_A)
+		chan->conformanceTestLimit[0] = ctl;
+	else if ((cm->flags & CHANNEL_ALL) == CHANNEL_B)
+		chan->conformanceTestLimit[1] = ctl;
+	else if ((cm->flags & CHANNEL_ALL) == CHANNEL_G)
+		chan->conformanceTestLimit[2] = ctl;
+
+	return (ret == -1) ? true : false;
 }
 
 static bool ath9k_regd_japan_check(struct ath_hal *ah,
@@ -550,7 +590,7 @@ static bool ath9k_regd_japan_check(struct ath_hal *ah,
 {
 	bool skipband = false;
 	int i;
-	u_int32_t regcap;
+	u32 regcap;
 
 	for (i = 0; i < ARRAY_SIZE(j_bandcheck); i++) {
 		if (j_bandcheck[i].freqbandbit == b) {
@@ -575,22 +615,22 @@ static bool ath9k_regd_japan_check(struct ath_hal *ah,
 
 bool
 ath9k_regd_init_channels(struct ath_hal *ah,
-			 struct hal_channel *chans, u_int maxchans,
-			 u_int *nchans, u_int8_t *regclassids,
-			 u_int maxregids, u_int *nregids, u_int16_t cc,
-			 u_int32_t modeSelect, bool enableOutdoor,
+			 u32 maxchans,
+			 u32 *nchans, u8 *regclassids,
+			 u32 maxregids, u32 *nregids, u16 cc,
+			 u32 modeSelect, bool enableOutdoor,
 			 bool enableExtendedChannels)
 {
-	u_int modesAvail;
-	u_int16_t maxChan = 7000;
+	u32 modesAvail;
+	u16 maxChan = 7000;
 	struct country_code_to_enum_rd *country = NULL;
 	struct regDomain rd5GHz, rd2GHz;
 	const struct cmode *cm;
-	struct hal_channel_internal *ichans = &ah->ah_channels[0];
+	struct ath9k_channel *ichans = &ah->ah_channels[0];
 	int next = 0, b;
-	u_int8_t ctl;
+	u8 ctl;
 	int regdmn;
-	u_int16_t chanSep;
+	u16 chanSep;
 
 	DPRINTF(ah->ah_sc, ATH_DBG_REGULATORY, "%s: cc %u mode 0x%x%s%s\n",
 		 __func__, cc, modeSelect,
@@ -699,8 +739,8 @@ ath9k_regd_init_channels(struct ath_hal *ah,
 		maxchans = ARRAY_SIZE(ah->ah_channels);
 
 	for (cm = modes; cm < &modes[ARRAY_SIZE(modes)]; cm++) {
-		u_int16_t c, c_hi, c_lo;
-		u_int64_t *channelBM = NULL;
+		u16 c, c_hi, c_lo;
+		u64 *channelBM = NULL;
 		struct regDomain *rd = NULL;
 		struct RegDmnFreqBand *fband = NULL, *freqs;
 		int8_t low_adj = 0, hi_adj = 0;
@@ -843,26 +883,17 @@ done:
 		ath9k_regd_init_rf_buffer(ichans, next);
 #endif
 		ath9k_regd_sort(ichans, next,
-				sizeof(struct hal_channel_internal),
+				sizeof(struct ath9k_channel),
 				ath9k_regd_chansort);
+
 		ah->ah_nchan = next;
 
 		DPRINTF(ah->ah_sc, ATH_DBG_REGULATORY, "Channel list:\n");
 		for (i = 0; i < next; i++) {
 			DPRINTF(ah->ah_sc, ATH_DBG_REGULATORY,
 				"chan: %d flags: 0x%x\n",
-				ichans[i].channel,
-				ichans[i].channelFlags);
-			chans[i].channel = ichans[i].channel;
-			chans[i].channelFlags = ichans[i].channelFlags;
-			chans[i].privFlags = ichans[i].privFlags;
-			chans[i].maxRegTxPower = ichans[i].maxRegTxPower;
-		}
-
-		ath9k_hw_get_chip_power_limits(ah, chans, next);
-		for (i = 0; i < next; i++) {
-			ichans[i].maxTxPower = chans[i].maxTxPower;
-			ichans[i].minTxPower = chans[i].minTxPower;
+				ah->ah_channels[i].channel,
+				ah->ah_channels[i].channelFlags);
 		}
 	}
 	*nchans = next;
@@ -883,11 +914,11 @@ done:
 	return next != 0;
 }
 
-struct hal_channel_internal*
+struct ath9k_channel*
 ath9k_regd_check_channel(struct ath_hal *ah,
-			 const struct hal_channel *c)
+			 const struct ath9k_channel *c)
 {
-	struct hal_channel_internal *base, *cc;
+	struct ath9k_channel *base, *cc;
 
 	int flags = c->channelFlags & CHAN_FLAGS;
 	int n, lim;
@@ -936,11 +967,11 @@ ath9k_regd_check_channel(struct ath_hal *ah,
 	return NULL;
 }
 
-u_int
+u32
 ath9k_regd_get_antenna_allowed(struct ath_hal *ah,
-			       struct hal_channel *chan)
+			       struct ath9k_channel *chan)
 {
-	struct hal_channel_internal *ichan = NULL;
+	struct ath9k_channel *ichan = NULL;
 
 	ichan = ath9k_regd_check_channel(ah, chan);
 	if (!ichan)
@@ -949,10 +980,10 @@ ath9k_regd_get_antenna_allowed(struct ath_hal *ah,
 	return ichan->antennaMax;
 }
 
-u_int ath9k_regd_get_ctl(struct ath_hal *ah, struct hal_channel *chan)
+u32 ath9k_regd_get_ctl(struct ath_hal *ah, struct ath9k_channel *chan)
 {
-	u_int ctl = NO_CTL;
-	struct hal_channel_internal *ichan;
+	u32 ctl = NO_CTL;
+	struct ath9k_channel *ichan;
 
 	if (ah->ah_countryCode == CTRY_DEFAULT && isWwrSKU(ah)) {
 		if (IS_CHAN_B(chan))
@@ -964,9 +995,15 @@ u_int ath9k_regd_get_ctl(struct ath_hal *ah, struct hal_channel *chan)
 	} else {
 		ichan = ath9k_regd_check_channel(ah, chan);
 		if (ichan != NULL) {
-			ctl = ichan->conformanceTestLimit;
+			/* FIXME */
+			if (IS_CHAN_A(ichan))
+				ctl = ichan->conformanceTestLimit[0];
+			else if (IS_CHAN_B(ichan))
+				ctl = ichan->conformanceTestLimit[1];
+			else if (IS_CHAN_G(ichan))
+				ctl = ichan->conformanceTestLimit[2];
 
-			if (IS_CHAN_PUREG(chan) && (ctl & 0xf) == CTL_11B)
+			if (IS_CHAN_G(chan) && (ctl & 0xf) == CTL_11B)
 				ctl = (ctl & ~0xf) | CTL_11G;
 		}
 	}
@@ -974,9 +1011,9 @@ u_int ath9k_regd_get_ctl(struct ath_hal *ah, struct hal_channel *chan)
 }
 
 void ath9k_regd_get_current_country(struct ath_hal *ah,
-				    struct hal_country_entry *ctry)
+				    struct ath9k_country_entry *ctry)
 {
-	u_int16_t rd = ath9k_regd_get_eepromRD(ah);
+	u16 rd = ath9k_regd_get_eepromRD(ah);
 
 	ctry->isMultidomain = false;
 	if (rd == CTRY_DEFAULT)

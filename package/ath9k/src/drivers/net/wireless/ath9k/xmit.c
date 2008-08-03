@@ -37,7 +37,7 @@
 
 #define OFDM_SIFS_TIME    	    16
 
-static u_int32_t bits_per_symbol[][2] = {
+static u32 bits_per_symbol[][2] = {
 	/* 20MHz 40MHz */
 	{    26,   54 },     /*  0: BPSK */
 	{    52,  108 },     /*  1: QPSK 1/2 */
@@ -180,7 +180,7 @@ static void ath_tx_txqaddbuf(struct ath_softc *sc,
 
 /* Get transmit rate index using rate in Kbps */
 
-static int ath_tx_findindex(const struct hal_rate_table *rt, int rate)
+static int ath_tx_findindex(const struct ath9k_rate_table *rt, int rate)
 {
 	int i;
 	int ndx = 0;
@@ -198,7 +198,7 @@ static int ath_tx_findindex(const struct hal_rate_table *rt, int rate)
 /* Check if it's okay to send out aggregates */
 
 static int ath_aggr_query(struct ath_softc *sc,
-	struct ath_node *an, u_int8_t tidno)
+	struct ath_node *an, u8 tidno)
 {
 	struct ath_atx_tid *tid;
 	tid = ATH_AN_2_TID(an, tidno);
@@ -209,9 +209,9 @@ static int ath_aggr_query(struct ath_softc *sc,
 		return 0;
 }
 
-static enum hal_pkt_type get_hal_packet_type(struct ieee80211_hdr *hdr)
+static enum ath9k_pkt_type get_hal_packet_type(struct ieee80211_hdr *hdr)
 {
-	enum hal_pkt_type htype;
+	enum ath9k_pkt_type htype;
 	__le16 fc;
 
 	fc = hdr->frame_control;
@@ -219,15 +219,15 @@ static enum hal_pkt_type get_hal_packet_type(struct ieee80211_hdr *hdr)
 	/* Calculate Atheros packet type from IEEE80211 packet header */
 
 	if (ieee80211_is_beacon(fc))
-		htype = HAL_PKT_TYPE_BEACON;
+		htype = ATH9K_PKT_TYPE_BEACON;
 	else if (ieee80211_is_probe_resp(fc))
-		htype = HAL_PKT_TYPE_PROBE_RESP;
+		htype = ATH9K_PKT_TYPE_PROBE_RESP;
 	else if (ieee80211_is_atim(fc))
-		htype = HAL_PKT_TYPE_ATIM;
+		htype = ATH9K_PKT_TYPE_ATIM;
 	else if (ieee80211_is_pspoll(fc))
-		htype = HAL_PKT_TYPE_PSPOLL;
+		htype = ATH9K_PKT_TYPE_PSPOLL;
 	else
-		htype = HAL_PKT_TYPE_NORMAL;
+		htype = ATH9K_PKT_TYPE_NORMAL;
 
 	return htype;
 }
@@ -248,7 +248,8 @@ static void fill_min_rates(struct sk_buff *skb, struct ath_tx_control *txctl)
 		txctl->min_rate = tx_info_priv->min_rate;
 	} else if (ieee80211_is_data(fc)) {
 		if (ieee80211_is_nullfunc(fc) ||
-		    (tx_info->flags & IEEE80211_TX_CTL_EAPOL_FRAME)) {
+			/* Port Access Entity (IEEE 802.1X) */
+			(skb->protocol == cpu_to_be16(0x888E))) {
 			txctl->use_minrate = 1;
 			txctl->min_rate = tx_info_priv->min_rate;
 		}
@@ -268,11 +269,11 @@ static int ath_tx_prepare(struct ath_softc *sc,
 	struct ieee80211_hdr *hdr;
 	struct ath_rc_series *rcs;
 	struct ath_txq *txq = NULL;
-	const struct hal_rate_table *rt;
+	const struct ath9k_rate_table *rt;
 	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(skb);
 	struct ath_tx_info_priv *tx_info_priv;
 	int hdrlen;
-	u_int8_t rix, antenna;
+	u8 rix, antenna;
 	__le16 fc;
 	u8 *qc;
 
@@ -307,19 +308,19 @@ static int ath_tx_prepare(struct ath_softc *sc,
 
 	/* Fill Key related fields */
 
-	txctl->keytype = HAL_KEY_TYPE_CLEAR;
-	txctl->keyix = HAL_TXKEYIX_INVALID;
+	txctl->keytype = ATH9K_KEY_TYPE_CLEAR;
+	txctl->keyix = ATH9K_TXKEYIX_INVALID;
 
-	if (!(tx_info->flags & IEEE80211_TX_CTL_DO_NOT_ENCRYPT)) {
+	if (tx_info->control.hw_key) {
 		txctl->keyix = tx_info->control.hw_key->hw_key_idx;
 		txctl->frmlen += tx_info->control.icv_len;
 
-		if (sc->sc_keytype == HAL_CIPHER_WEP)
-			txctl->keytype = HAL_KEY_TYPE_WEP;
-		else if (sc->sc_keytype == HAL_CIPHER_TKIP)
-			txctl->keytype = HAL_KEY_TYPE_TKIP;
-		else if (sc->sc_keytype == HAL_CIPHER_AES_CCM)
-			txctl->keytype = HAL_KEY_TYPE_AES;
+		if (sc->sc_keytype == ATH9K_CIPHER_WEP)
+			txctl->keytype = ATH9K_KEY_TYPE_WEP;
+		else if (sc->sc_keytype == ATH9K_CIPHER_TKIP)
+			txctl->keytype = ATH9K_KEY_TYPE_TKIP;
+		else if (sc->sc_keytype == ATH9K_CIPHER_AES_CCM)
+			txctl->keytype = ATH9K_KEY_TYPE_AES;
 	}
 
 	/* Fill packet type */
@@ -353,12 +354,12 @@ static int ath_tx_prepare(struct ath_softc *sc,
 
 	/* Fill flags */
 
-	txctl->flags = HAL_TXDESC_CLRDMASK;    /* needed for crypto errors */
+	txctl->flags = ATH9K_TXDESC_CLRDMASK;    /* needed for crypto errors */
 
 	if (tx_info->flags & IEEE80211_TX_CTL_NO_ACK)
-		tx_info->flags |= HAL_TXDESC_NOACK;
+		tx_info->flags |= ATH9K_TXDESC_NOACK;
 	if (tx_info->flags & IEEE80211_TX_CTL_USE_RTS_CTS)
-		tx_info->flags |= HAL_TXDESC_RTSENA;
+		tx_info->flags |= ATH9K_TXDESC_RTSENA;
 
 	/*
 	 * Setup for rate calculations.
@@ -373,7 +374,7 @@ static int ath_tx_prepare(struct ath_softc *sc,
 			    (tx_info->flags & IEEE80211_TX_CTL_AMPDU));
 
 		if (is_multicast_ether_addr(hdr->addr1)) {
-			rcs[0].rix = (u_int8_t)
+			rcs[0].rix = (u8)
 				ath_tx_findindex(rt, txctl->mcast_rate);
 
 			/*
@@ -390,7 +391,7 @@ static int ath_tx_prepare(struct ath_softc *sc,
 		 * not overridden, since it has been
 		 * incremented by the fragmentation routine.
 		 */
-		if (likely(!(txctl->flags & HAL_TXDESC_FRAG_IS_ON)) &&
+		if (likely(!(txctl->flags & ATH9K_TXDESC_FRAG_IS_ON)) &&
 			txctl->ht && sc->sc_txaggr) {
 			struct ath_atx_tid *tid;
 
@@ -416,8 +417,8 @@ static int ath_tx_prepare(struct ath_softc *sc,
 	 * Calculate duration.  This logically belongs in the 802.11
 	 * layer but it lacks sufficient information to calculate it.
 	 */
-	if ((txctl->flags & HAL_TXDESC_NOACK) == 0 && !ieee80211_is_ctl(fc)) {
-		u_int16_t dur;
+	if ((txctl->flags & ATH9K_TXDESC_NOACK) == 0 && !ieee80211_is_ctl(fc)) {
+		u16 dur;
 		/*
 		 * XXX not right with fragmentation.
 		 */
@@ -475,7 +476,7 @@ static int ath_tx_prepare(struct ath_softc *sc,
 	 */
 	spin_lock_bh(&txq->axq_lock);
 	if ((++txq->axq_intrcnt >= sc->sc_txintrperiod)) {
-		txctl->flags |= HAL_TXDESC_INTREQ;
+		txctl->flags |= ATH9K_TXDESC_INTREQ;
 		txq->axq_intrcnt = 0;
 	}
 	spin_unlock_bh(&txq->axq_lock);
@@ -619,8 +620,8 @@ static int ath_tx_num_badfrms(struct ath_softc *sc,
 	int isnodegone = (an->an_flags & ATH_NODE_CLEAN);
 	struct ath_buf *bf_last = bf->bf_lastbf;
 	struct ath_desc *ds = bf_last->bf_desc;
-	u_int16_t seq_st = 0;
-	u_int32_t ba[WME_BA_BMP_SIZE >> 5];
+	u16 seq_st = 0;
+	u32 ba[WME_BA_BMP_SIZE >> 5];
 	int ba_index;
 	int nbad = 0;
 	int isaggr = 0;
@@ -685,16 +686,16 @@ static void ath_tx_update_baw(struct ath_softc *sc,
  * half_gi - to use 4us v/s 3.6 us for symbol time
  */
 
-static u_int32_t ath_pkt_duration(struct ath_softc *sc,
-				  u_int8_t rix,
+static u32 ath_pkt_duration(struct ath_softc *sc,
+				  u8 rix,
 				  struct ath_buf *bf,
 				  int width,
 				  int half_gi,
 				  bool shortPreamble)
 {
-	const struct hal_rate_table *rt = sc->sc_currates;
-	u_int32_t nbits, nsymbits, duration, nsymbols;
-	u_int8_t rc;
+	const struct ath9k_rate_table *rt = sc->sc_currates;
+	u32 nbits, nsymbits, duration, nsymbols;
+	u8 rc;
 	int streams, pktlen;
 
 	pktlen = bf->bf_isaggr ? bf->bf_al : bf->bf_frmlen;
@@ -734,14 +735,14 @@ static u_int32_t ath_pkt_duration(struct ath_softc *sc,
 static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf)
 {
 	struct ath_hal *ah = sc->sc_ah;
-	const struct hal_rate_table *rt;
+	const struct ath9k_rate_table *rt;
 	struct ath_desc *ds = bf->bf_desc;
 	struct ath_desc *lastds = bf->bf_lastbf->bf_desc;
-	struct hal_11n_rate_series series[4];
+	struct ath9k_11n_rate_series series[4];
 	int i, flags, rtsctsena = 0, dynamic_mimops = 0;
-	u_int ctsduration = 0;
-	u_int8_t rix = 0, cix, ctsrate = 0;
-	u_int32_t aggr_limit_with_rts = sc->sc_rtsaggrlimit;
+	u32 ctsduration = 0;
+	u8 rix = 0, cix, ctsrate = 0;
+	u32 aggr_limit_with_rts = sc->sc_rtsaggrlimit;
 	struct ath_node *an = (struct ath_node *) bf->bf_node;
 
 	/*
@@ -754,7 +755,7 @@ static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf)
 			break;
 		}
 	}
-	flags = (bf->bf_flags & (HAL_TXDESC_RTSENA | HAL_TXDESC_CTSENA));
+	flags = (bf->bf_flags & (ATH9K_TXDESC_RTSENA | ATH9K_TXDESC_CTSENA));
 	cix = rt->info[rix].controlRate;
 
 	/*
@@ -765,11 +766,11 @@ static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf)
 	if (sc->sc_protmode != PROT_M_NONE &&
 	    (rt->info[rix].phy == PHY_OFDM ||
 	     rt->info[rix].phy == PHY_HT) &&
-	    (bf->bf_flags & HAL_TXDESC_NOACK) == 0) {
+	    (bf->bf_flags & ATH9K_TXDESC_NOACK) == 0) {
 		if (sc->sc_protmode == PROT_M_RTSCTS)
-			flags = HAL_TXDESC_RTSENA;
+			flags = ATH9K_TXDESC_RTSENA;
 		else if (sc->sc_protmode == PROT_M_CTSONLY)
-			flags = HAL_TXDESC_CTSENA;
+			flags = ATH9K_TXDESC_CTSENA;
 
 		cix = rt->info[sc->sc_protrix].controlRate;
 		rtsctsena = 1;
@@ -786,14 +787,14 @@ static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf)
 		 * 802.11g protection not needed, use our default behavior
 		 */
 		if (!rtsctsena)
-			flags = HAL_TXDESC_RTSENA;
+			flags = ATH9K_TXDESC_RTSENA;
 		/*
 		 * For dynamic MIMO PS, RTS needs to precede the first aggregate
 		 * and the second aggregate should have any protection at all.
 		 */
 		if (an->an_smmode == ATH_SM_PWRSAV_DYNAMIC) {
 			if (!bf->bf_aggrburst) {
-				flags = HAL_TXDESC_RTSENA;
+				flags = ATH9K_TXDESC_RTSENA;
 				dynamic_mimops = 1;
 			} else {
 				flags = 0;
@@ -806,7 +807,7 @@ static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf)
 	 */
 	if (sc->sc_config.ath_aggr_prot &&
 	    (!bf->bf_isaggr || (bf->bf_isaggr && bf->bf_al < 8192))) {
-		flags = HAL_TXDESC_RTSENA;
+		flags = ATH9K_TXDESC_RTSENA;
 		cix = rt->info[sc->sc_protrix].controlRate;
 		rtsctsena = 1;
 	}
@@ -820,7 +821,7 @@ static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf)
 		 * while we are bursting the second aggregate the
 		 * RTS is cleared.
 		 */
-		flags &= ~(HAL_TXDESC_RTSENA);
+		flags &= ~(ATH9K_TXDESC_RTSENA);
 	}
 
 	/*
@@ -836,7 +837,7 @@ static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf)
 	/*
 	 * Setup HAL rate series
 	 */
-	memzero(series, sizeof(struct hal_11n_rate_series) * 4);
+	memzero(series, sizeof(struct ath9k_11n_rate_series) * 4);
 
 	for (i = 0; i < 4; i++) {
 		if (!bf->bf_rcs[i].tries)
@@ -851,11 +852,11 @@ static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf)
 
 		series[i].RateFlags = (
 			(bf->bf_rcs[i].flags & ATH_RC_RTSCTS_FLAG) ?
-				HAL_RATESERIES_RTS_CTS : 0) |
+				ATH9K_RATESERIES_RTS_CTS : 0) |
 			((bf->bf_rcs[i].flags & ATH_RC_CW40_FLAG) ?
-				HAL_RATESERIES_2040 : 0) |
+				ATH9K_RATESERIES_2040 : 0) |
 			((bf->bf_rcs[i].flags & ATH_RC_SGI_FLAG) ?
-				HAL_RATESERIES_HALFGI : 0);
+				ATH9K_RATESERIES_HALFGI : 0);
 
 		series[i].PktDuration = ath_pkt_duration(
 			sc, rix, bf,
@@ -882,14 +883,14 @@ static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf)
 		}
 
 		if (rtsctsena)
-			series[i].RateFlags |= HAL_RATESERIES_RTS_CTS;
+			series[i].RateFlags |= ATH9K_RATESERIES_RTS_CTS;
 
 		/*
 		 * Set RTS for all rates if node is in dynamic powersave
 		 * mode and we are using dual stream rates.
 		 */
 		if (dynamic_mimops && (bf->bf_rcs[i].flags & ATH_RC_DS_FLAG))
-			series[i].RateFlags |= HAL_RATESERIES_RTS_CTS;
+			series[i].RateFlags |= ATH9K_RATESERIES_RTS_CTS;
 	}
 
 	/*
@@ -906,7 +907,7 @@ static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf)
 		 * NB: CTS is assumed the same size as an ACK so we can
 		 *     use the precalculated ACK durations.
 		 */
-		if (flags & HAL_TXDESC_RTSENA) {    /* SIFS + CTS */
+		if (flags & ATH9K_TXDESC_RTSENA) {    /* SIFS + CTS */
 			ctsduration += bf->bf_shpreamble ?
 				rt->info[cix].spAckDuration :
 				rt->info[cix].lpAckDuration;
@@ -914,7 +915,7 @@ static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf)
 
 		ctsduration += series[0].PktDuration;
 
-		if ((bf->bf_flags & HAL_TXDESC_NOACK) == 0) {  /* SIFS + ACK */
+		if ((bf->bf_flags & ATH9K_TXDESC_NOACK) == 0) { /* SIFS + ACK */
 			ctsduration += bf->bf_shpreamble ?
 				rt->info[rix].spAckDuration :
 				rt->info[rix].lpAckDuration;
@@ -924,7 +925,7 @@ static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf)
 		 * Disable multi-rate retry when using RTS/CTS by clearing
 		 * series 1, 2 and 3.
 		 */
-		memzero(&series[1], sizeof(struct hal_11n_rate_series) * 3);
+		memzero(&series[1], sizeof(struct ath9k_11n_rate_series) * 3);
 	}
 
 	/*
@@ -1019,8 +1020,8 @@ static void ath_tx_complete_aggr_rifs(struct ath_softc *sc,
 	struct ath_desc *ds = bf_last->bf_desc;
 	struct ath_buf *bf_next, *bf_lastq = NULL;
 	struct list_head bf_head, bf_pending;
-	u_int16_t seq_st = 0;
-	u_int32_t ba[WME_BA_BMP_SIZE >> 5];
+	u16 seq_st = 0;
+	u32 ba[WME_BA_BMP_SIZE >> 5];
 	int isaggr, txfail, txpending, sendbar = 0, needreset = 0;
 	int isnodegone = (an->an_flags & ATH_NODE_CLEAN);
 
@@ -1046,7 +1047,7 @@ static void ath_tx_complete_aggr_rifs(struct ath_softc *sc,
 				 * when perform internal reset in this routine.
 				 * Only enable reset in STA mode for now.
 				 */
-				if (sc->sc_opmode == HAL_M_STA)
+				if (sc->sc_opmode == ATH9K_M_STA)
 					needreset = 1;
 			}
 		} else {
@@ -1258,7 +1259,7 @@ static int ath_tx_processq(struct ath_softc *sc, struct ath_txq *txq)
 	struct ieee80211_tx_info *tx_info;
 	struct ath_tx_info_priv *tx_info_priv;
 	int nacked, txok, nbad = 0, isrifs = 0;
-	enum hal_status status;
+	int status;
 
 	DPRINTF(sc, ATH_DBG_QUEUE,
 		"%s: tx queue %d (%x), link %p\n", __func__,
@@ -1307,7 +1308,7 @@ static int ath_tx_processq(struct ath_softc *sc, struct ath_txq *txq)
 		ds = lastbf->bf_desc;    /* NB: last decriptor */
 
 		status = ath9k_hw_txprocdesc(ah, ds);
-		if (status == HAL_EINPROGRESS) {
+		if (status == -EINPROGRESS) {
 			spin_unlock_bh(&txq->axq_lock);
 			break;
 		}
@@ -1363,7 +1364,7 @@ static int ath_tx_processq(struct ath_softc *sc, struct ath_txq *txq)
 		if (ds->ds_txstat.ts_status & ATH9K_TXERR_FILT)
 			tx_info->flags |= IEEE80211_TX_STAT_TX_FILTERED;
 		if ((ds->ds_txstat.ts_status & ATH9K_TXERR_FILT) == 0 &&
-				(bf->bf_flags & HAL_TXDESC_NOACK) == 0) {
+				(bf->bf_flags & ATH9K_TXDESC_NOACK) == 0) {
 			if (ds->ds_txstat.ts_status == 0)
 				nacked++;
 
@@ -1429,11 +1430,11 @@ static void ath_drain_txdataq(struct ath_softc *sc, bool retry_tx)
 	struct ath_hal *ah = sc->sc_ah;
 	int i;
 	int npend = 0;
-	enum hal_ht_macmode ht_macmode = ath_cwm_macmode(sc);
+	enum ath9k_ht_macmode ht_macmode = ath_cwm_macmode(sc);
 
 	/* XXX return value */
 	if (!sc->sc_invalid) {
-		for (i = 0; i < HAL_NUM_TX_QUEUES; i++) {
+		for (i = 0; i < ATH9K_NUM_TX_QUEUES; i++) {
 			if (ATH_TXQ_SETUP(sc, i)) {
 				ath_tx_stopdma(sc, &sc->sc_txq[i]);
 
@@ -1446,7 +1447,7 @@ static void ath_drain_txdataq(struct ath_softc *sc, bool retry_tx)
 	}
 
 	if (npend) {
-		enum hal_status status;
+		int status;
 
 		/* TxDMA not stopped, reset the hal */
 		DPRINTF(sc, ATH_DBG_XMIT,
@@ -1466,7 +1467,7 @@ static void ath_drain_txdataq(struct ath_softc *sc, bool retry_tx)
 		spin_unlock_bh(&sc->sc_resetlock);
 	}
 
-	for (i = 0; i < HAL_NUM_TX_QUEUES; i++) {
+	for (i = 0; i < ATH9K_NUM_TX_QUEUES; i++) {
 		if (ATH_TXQ_SETUP(sc, i))
 			ath_tx_draintxq(sc, &sc->sc_txq[i], retry_tx);
 	}
@@ -1559,15 +1560,15 @@ static int ath_tx_send_ampdu(struct ath_softc *sc,
  * returns aggr limit based on lowest of the rates
  */
 
-static u_int32_t ath_lookup_rate(struct ath_softc *sc,
+static u32 ath_lookup_rate(struct ath_softc *sc,
 				 struct ath_buf *bf)
 {
-	const struct hal_rate_table *rt = sc->sc_currates;
+	const struct ath9k_rate_table *rt = sc->sc_currates;
 	struct sk_buff *skb;
 	struct ieee80211_tx_info *tx_info;
 	struct ath_tx_info_priv *tx_info_priv;
-	u_int32_t max_4ms_framelen, frame_length;
-	u_int16_t aggr_limit, legacy = 0, maxampdu;
+	u32 max_4ms_framelen, frame_length;
+	u16 aggr_limit, legacy = 0, maxampdu;
 	int i;
 
 
@@ -1607,7 +1608,7 @@ static u_int32_t ath_lookup_rate(struct ath_softc *sc,
 		return 0;
 
 	aggr_limit = min(max_4ms_framelen,
-		(u_int32_t)ATH_AMPDU_LIMIT_DEFAULT);
+		(u32)ATH_AMPDU_LIMIT_DEFAULT);
 
 	/*
 	 * h/w can accept aggregates upto 16 bit lengths (65535).
@@ -1629,12 +1630,12 @@ static u_int32_t ath_lookup_rate(struct ath_softc *sc,
 
 static int ath_compute_num_delims(struct ath_softc *sc,
 				  struct ath_buf *bf,
-				  u_int16_t frmlen)
+				  u16 frmlen)
 {
-	const struct hal_rate_table *rt = sc->sc_currates;
-	u_int32_t nsymbits, nsymbols, mpdudensity;
-	u_int16_t minlen;
-	u_int8_t rc, flags, rix;
+	const struct ath9k_rate_table *rt = sc->sc_currates;
+	u32 nsymbits, nsymbols, mpdudensity;
+	u16 minlen;
+	u8 rc, flags, rix;
 	int width, half_gi, ndelim, mindelim;
 
 	/* Select standard number of delimiters based on frame length alone */
@@ -1646,7 +1647,7 @@ static int ath_compute_num_delims(struct ath_softc *sc,
 	 * TODO - this could be improved to be dependent on the rate.
 	 *      The hardware can keep up at lower rates, but not higher rates
 	 */
-	if (bf->bf_keytype != HAL_KEY_TYPE_CLEAR)
+	if (bf->bf_keytype != ATH9K_KEY_TYPE_CLEAR)
 		ndelim += ATH_AGGR_ENCRYPTDELIM;
 
 	/*
@@ -1707,7 +1708,7 @@ static enum ATH_AGGR_STATUS ath_tx_form_aggr(struct ath_softc *sc,
 	struct ath_buf *bf, *tbf, *bf_first, *bf_prev = NULL;
 	struct list_head bf_head;
 	int rl = 0, nframes = 0, ndelim;
-	u_int16_t aggr_limit = 0, al = 0, bpad = 0,
+	u16 aggr_limit = 0, al = 0, bpad = 0,
 		al_delta, h_baw = tid->baw_size / 2;
 	enum ATH_AGGR_STATUS status = ATH_AGGR_DONE;
 	int prev_al = 0, is_ds_rate = 0;
@@ -1981,7 +1982,7 @@ static void ath_txq_drain_pending_buffers(struct ath_softc *sc,
 static int ath_tx_start_dma(struct ath_softc *sc,
 			    struct sk_buff *skb,
 			    struct scatterlist *sg,
-			    u_int32_t n_sg,
+			    u32 n_sg,
 			    struct ath_tx_control *txctl)
 {
 	struct ath_node *an = txctl->an;
@@ -2047,7 +2048,7 @@ static int ath_tx_start_dma(struct ath_softc *sc,
 			       ds,
 			       bf->bf_frmlen, /* frame length */
 			       txctl->atype, /* Atheros packet type */
-			       min(txctl->txpower, (u_int16_t)60), /* txpower */
+			       min(txctl->txpower, (u16)60), /* txpower */
 			       txctl->keyix,            /* key cache index */
 			       txctl->keytype,          /* key type */
 			       txctl->flags);           /* flags */
@@ -2208,14 +2209,14 @@ int ath_tx_cleanup(struct ath_softc *sc)
 struct ath_txq *ath_txq_setup(struct ath_softc *sc, int qtype, int subtype)
 {
 	struct ath_hal *ah = sc->sc_ah;
-	struct hal_txq_info qi;
+	struct ath9k_txq_info qi;
 	int qnum;
 
 	memzero(&qi, sizeof(qi));
 	qi.tqi_subtype = subtype;
-	qi.tqi_aifs = HAL_TXQ_USEDEFAULT;
-	qi.tqi_cwmin = HAL_TXQ_USEDEFAULT;
-	qi.tqi_cwmax = HAL_TXQ_USEDEFAULT;
+	qi.tqi_aifs = ATH9K_TXQ_USEDEFAULT;
+	qi.tqi_cwmin = ATH9K_TXQ_USEDEFAULT;
+	qi.tqi_cwmax = ATH9K_TXQ_USEDEFAULT;
 	qi.tqi_compBuf = 0;
 
 	/*
@@ -2233,7 +2234,7 @@ struct ath_txq *ath_txq_setup(struct ath_softc *sc, int qtype, int subtype)
 	 * The UAPSD queue is an exception, since we take a desc-
 	 * based intr on the EOSP frames.
 	 */
-	if (qtype == HAL_TX_QUEUE_UAPSD)
+	if (qtype == ATH9K_TX_QUEUE_UAPSD)
 		qi.tqi_qflags = TXQ_FLAG_TXDESCINT_ENABLE;
 	else
 		qi.tqi_qflags = TXQ_FLAG_TXEOLINT_ENABLE |
@@ -2299,7 +2300,7 @@ int ath_tx_setup(struct ath_softc *sc, int haltype)
 			__func__, haltype, ARRAY_SIZE(sc->sc_haltype2q));
 		return 0;
 	}
-	txq = ath_txq_setup(sc, HAL_TX_QUEUE_DATA, haltype);
+	txq = ath_txq_setup(sc, ATH9K_TX_QUEUE_DATA, haltype);
 	if (txq != NULL) {
 		sc->sc_haltype2q[haltype] = txq->axq_qnum;
 		return 1;
@@ -2312,7 +2313,7 @@ int ath_tx_get_qnum(struct ath_softc *sc, int qtype, int haltype)
 	int qnum;
 
 	switch (qtype) {
-	case HAL_TX_QUEUE_DATA:
+	case ATH9K_TX_QUEUE_DATA:
 		if (haltype >= ARRAY_SIZE(sc->sc_haltype2q)) {
 			DPRINTF(sc, ATH_DBG_FATAL,
 				"%s: HAL AC %u out of range, max %zu!\n",
@@ -2322,10 +2323,10 @@ int ath_tx_get_qnum(struct ath_softc *sc, int qtype, int haltype)
 		}
 		qnum = sc->sc_haltype2q[haltype];
 		break;
-	case HAL_TX_QUEUE_BEACON:
+	case ATH9K_TX_QUEUE_BEACON:
 		qnum = sc->sc_bhalq;
 		break;
-	case HAL_TX_QUEUE_CAB:
+	case ATH9K_TX_QUEUE_CAB:
 		qnum = sc->sc_cabq->axq_qnum;
 		break;
 	default:
@@ -2336,11 +2337,11 @@ int ath_tx_get_qnum(struct ath_softc *sc, int qtype, int haltype)
 
 /* Update parameters for a transmit queue */
 
-int ath_txq_update(struct ath_softc *sc, int qnum, struct hal_txq_info *qi0)
+int ath_txq_update(struct ath_softc *sc, int qnum, struct ath9k_txq_info *qi0)
 {
 	struct ath_hal *ah = sc->sc_ah;
 	int error = 0;
-	struct hal_txq_info qi;
+	struct ath9k_txq_info qi;
 
 	if (qnum == sc->sc_bhalq) {
 		/*
@@ -2375,7 +2376,7 @@ int ath_txq_update(struct ath_softc *sc, int qnum, struct hal_txq_info *qi0)
 
 int ath_cabq_update(struct ath_softc *sc)
 {
-	struct hal_txq_info qi;
+	struct ath9k_txq_info qi;
 	int qnum = sc->sc_cabq->axq_qnum;
 	struct ath_beacon_config conf;
 
@@ -2383,10 +2384,10 @@ int ath_cabq_update(struct ath_softc *sc)
 	/*
 	 * Ensure the readytime % is within the bounds.
 	 */
-	if (sc->sc_config.cabqReadytime < HAL_READY_TIME_LO_BOUND)
-		sc->sc_config.cabqReadytime = HAL_READY_TIME_LO_BOUND;
-	else if (sc->sc_config.cabqReadytime > HAL_READY_TIME_HI_BOUND)
-		sc->sc_config.cabqReadytime = HAL_READY_TIME_HI_BOUND;
+	if (sc->sc_config.cabqReadytime < ATH9K_READY_TIME_LO_BOUND)
+		sc->sc_config.cabqReadytime = ATH9K_READY_TIME_LO_BOUND;
+	else if (sc->sc_config.cabqReadytime > ATH9K_READY_TIME_HI_BOUND)
+		sc->sc_config.cabqReadytime = ATH9K_READY_TIME_HI_BOUND;
 
 	ath_get_beaconconfig(sc, ATH_IF_ID_ANY, &conf);
 	qi.tqi_readyTime =
@@ -2422,16 +2423,16 @@ int ath_tx_start(struct ath_softc *sc, struct sk_buff *skb)
 
 void ath_tx_tasklet(struct ath_softc *sc)
 {
-	u_int64_t tsf = ath9k_hw_gettsf64(sc->sc_ah);
+	u64 tsf = ath9k_hw_gettsf64(sc->sc_ah);
 	int i, nacked = 0;
-	u_int32_t qcumask = ((1 << HAL_NUM_TX_QUEUES) - 1);
+	u32 qcumask = ((1 << ATH9K_NUM_TX_QUEUES) - 1);
 
 	ath9k_hw_gettxintrtxqs(sc->sc_ah, &qcumask);
 
 	/*
 	 * Process each active queue.
 	 */
-	for (i = 0; i < HAL_NUM_TX_QUEUES; i++) {
+	for (i = 0; i < ATH9K_NUM_TX_QUEUES; i++) {
 		if (ATH_TXQ_SETUP(sc, i) && (qcumask & (1 << i)))
 			nacked += ath_tx_processq(sc, &sc->sc_txq[i]);
 	}
@@ -2516,12 +2517,12 @@ void ath_draintxq(struct ath_softc *sc, bool retry_tx)
 	ath_drain_txdataq(sc, retry_tx);
 }
 
-u_int32_t ath_txq_depth(struct ath_softc *sc, int qnum)
+u32 ath_txq_depth(struct ath_softc *sc, int qnum)
 {
 	return sc->sc_txq[qnum].axq_depth;
 }
 
-u_int32_t ath_txq_aggr_depth(struct ath_softc *sc, int qnum)
+u32 ath_txq_aggr_depth(struct ath_softc *sc, int qnum)
 {
 	return sc->sc_txq[qnum].axq_aggr_depth;
 }
@@ -2620,7 +2621,7 @@ int ath_tx_aggr_stop(struct ath_softc *sc,
  */
 
 void ath_tx_aggr_teardown(struct ath_softc *sc,
-	struct ath_node *an, u_int8_t tid)
+	struct ath_node *an, u8 tid)
 {
 	struct ath_atx_tid *txtid = ATH_AN_2_TID(an, tid);
 	struct ath_txq *txq = &sc->sc_txq[txtid->ac->qnum];
@@ -2784,19 +2785,19 @@ void ath_tx_node_init(struct ath_softc *sc, struct ath_node *an)
 			switch (acno) {
 			case WME_AC_BE:
 				ac->qnum = ath_tx_get_qnum(sc,
-					HAL_TX_QUEUE_DATA, HAL_WME_AC_BE);
+					ATH9K_TX_QUEUE_DATA, ATH9K_WME_AC_BE);
 				break;
 			case WME_AC_BK:
 				ac->qnum = ath_tx_get_qnum(sc,
-					HAL_TX_QUEUE_DATA, HAL_WME_AC_BK);
+					ATH9K_TX_QUEUE_DATA, ATH9K_WME_AC_BK);
 				break;
 			case WME_AC_VI:
 				ac->qnum = ath_tx_get_qnum(sc,
-					HAL_TX_QUEUE_DATA, HAL_WME_AC_VI);
+					ATH9K_TX_QUEUE_DATA, ATH9K_WME_AC_VI);
 				break;
 			case WME_AC_VO:
 				ac->qnum = ath_tx_get_qnum(sc,
-					HAL_TX_QUEUE_DATA, HAL_WME_AC_VO);
+					ATH9K_TX_QUEUE_DATA, ATH9K_WME_AC_VO);
 				break;
 			}
 		}
@@ -2812,7 +2813,7 @@ void ath_tx_node_cleanup(struct ath_softc *sc,
 	struct ath_atx_ac *ac, *ac_tmp;
 	struct ath_atx_tid *tid, *tid_tmp;
 	struct ath_txq *txq;
-	for (i = 0; i < HAL_NUM_TX_QUEUES; i++) {
+	for (i = 0; i < ATH9K_NUM_TX_QUEUES; i++) {
 		if (ATH_TXQ_SETUP(sc, i)) {
 			txq = &sc->sc_txq[i];
 

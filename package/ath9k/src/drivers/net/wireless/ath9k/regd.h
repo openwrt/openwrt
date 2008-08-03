@@ -20,57 +20,57 @@
 #include "ath9k.h"
 
 #define BMLEN 2
-#define BMZERO {(u_int64_t) 0, (u_int64_t) 0}
+#define BMZERO {(u64) 0, (u64) 0}
 
 #define BM(_fa, _fb, _fc, _fd, _fe, _ff, _fg, _fh, _fi, _fj, _fk, _fl) \
 	{((((_fa >= 0) && (_fa < 64)) ? \
-		(((u_int64_t) 1) << _fa) : (u_int64_t) 0) | \
+		(((u64) 1) << _fa) : (u64) 0) | \
 	(((_fb >= 0) && (_fb < 64)) ? \
-		(((u_int64_t) 1) << _fb) : (u_int64_t) 0) | \
+		(((u64) 1) << _fb) : (u64) 0) | \
 	(((_fc >= 0) && (_fc < 64)) ? \
-		(((u_int64_t) 1) << _fc) : (u_int64_t) 0) | \
+		(((u64) 1) << _fc) : (u64) 0) | \
 	(((_fd >= 0) && (_fd < 64)) ? \
-		(((u_int64_t) 1) << _fd) : (u_int64_t) 0) | \
+		(((u64) 1) << _fd) : (u64) 0) | \
 	(((_fe >= 0) && (_fe < 64)) ? \
-		(((u_int64_t) 1) << _fe) : (u_int64_t) 0) | \
+		(((u64) 1) << _fe) : (u64) 0) | \
 	(((_ff >= 0) && (_ff < 64)) ? \
-		(((u_int64_t) 1) << _ff) : (u_int64_t) 0) | \
+		(((u64) 1) << _ff) : (u64) 0) | \
 	(((_fg >= 0) && (_fg < 64)) ? \
-		(((u_int64_t) 1) << _fg) : (u_int64_t) 0) | \
+		(((u64) 1) << _fg) : (u64) 0) | \
 	(((_fh >= 0) && (_fh < 64)) ? \
-		(((u_int64_t) 1) << _fh) : (u_int64_t) 0) | \
+		(((u64) 1) << _fh) : (u64) 0) | \
 	(((_fi >= 0) && (_fi < 64)) ? \
-		(((u_int64_t) 1) << _fi) : (u_int64_t) 0) | \
+		(((u64) 1) << _fi) : (u64) 0) | \
 	(((_fj >= 0) && (_fj < 64)) ? \
-		(((u_int64_t) 1) << _fj) : (u_int64_t) 0) | \
+		(((u64) 1) << _fj) : (u64) 0) | \
 	(((_fk >= 0) && (_fk < 64)) ? \
-		(((u_int64_t) 1) << _fk) : (u_int64_t) 0) | \
+		(((u64) 1) << _fk) : (u64) 0) | \
 	(((_fl >= 0) && (_fl < 64)) ? \
-		(((u_int64_t) 1) << _fl) : (u_int64_t) 0) | \
+		(((u64) 1) << _fl) : (u64) 0) | \
 			((((_fa > 63) && (_fa < 128)) ? \
-			(((u_int64_t) 1) << (_fa - 64)) : (u_int64_t) 0) | \
+			(((u64) 1) << (_fa - 64)) : (u64) 0) | \
 	(((_fb > 63) && (_fb < 128)) ? \
-		(((u_int64_t) 1) << (_fb - 64)) : (u_int64_t) 0) | \
+		(((u64) 1) << (_fb - 64)) : (u64) 0) | \
 	(((_fc > 63) && (_fc < 128)) ? \
-		(((u_int64_t) 1) << (_fc - 64)) : (u_int64_t) 0) | \
+		(((u64) 1) << (_fc - 64)) : (u64) 0) | \
 	(((_fd > 63) && (_fd < 128)) ? \
-		(((u_int64_t) 1) << (_fd - 64)) : (u_int64_t) 0) | \
+		(((u64) 1) << (_fd - 64)) : (u64) 0) | \
 	(((_fe > 63) && (_fe < 128)) ? \
-		(((u_int64_t) 1) << (_fe - 64)) : (u_int64_t) 0) | \
+		(((u64) 1) << (_fe - 64)) : (u64) 0) | \
 	(((_ff > 63) && (_ff < 128)) ? \
-		(((u_int64_t) 1) << (_ff - 64)) : (u_int64_t) 0) | \
+		(((u64) 1) << (_ff - 64)) : (u64) 0) | \
 	(((_fg > 63) && (_fg < 128)) ? \
-		(((u_int64_t) 1) << (_fg - 64)) : (u_int64_t) 0) | \
+		(((u64) 1) << (_fg - 64)) : (u64) 0) | \
 	(((_fh > 63) && (_fh < 128)) ? \
-		(((u_int64_t) 1) << (_fh - 64)) : (u_int64_t) 0) | \
+		(((u64) 1) << (_fh - 64)) : (u64) 0) | \
 	(((_fi > 63) && (_fi < 128)) ? \
-		(((u_int64_t) 1) << (_fi - 64)) : (u_int64_t) 0) | \
+		(((u64) 1) << (_fi - 64)) : (u64) 0) | \
 	(((_fj > 63) && (_fj < 128)) ? \
-		(((u_int64_t) 1) << (_fj - 64)) : (u_int64_t) 0) | \
+		(((u64) 1) << (_fj - 64)) : (u64) 0) | \
 	(((_fk > 63) && (_fk < 128)) ? \
-		(((u_int64_t) 1) << (_fk - 64)) : (u_int64_t) 0) | \
+		(((u64) 1) << (_fk - 64)) : (u64) 0) | \
 	(((_fl > 63) && (_fl < 128)) ? \
-		(((u_int64_t) 1) << (_fl - 64)) : (u_int64_t) 0)))}
+		(((u64) 1) << (_fl - 64)) : (u64) 0)))}
 
 #define DEF_REGDMN      FCC1_FCCA
 #define DEF_DMN_5       FCC1
@@ -126,10 +126,10 @@
 #define CHAN_FLAGS      (CHANNEL_ALL|CHANNEL_HALF|CHANNEL_QUARTER)
 
 #define swap(_a, _b, _size) {                   \
-	u_int8_t *s = _b;                       \
+	u8 *s = _b;                       \
 	int i = _size;                          \
 	do {                                    \
-		u_int8_t tmp = *_a;             \
+		u8 tmp = *_a;             \
 		*_a++ = *s;                     \
 		*s++ = tmp;                     \
 	} while (--i);                          \
@@ -150,23 +150,23 @@
 typedef int ath_hal_cmp_t(const void *, const void *);
 
 struct reg_dmn_pair_mapping {
-	u_int16_t regDmnEnum;
-	u_int16_t regDmn5GHz;
-	u_int16_t regDmn2GHz;
-	u_int32_t flags5GHz;
-	u_int32_t flags2GHz;
-	u_int64_t pscanMask;
-	u_int16_t singleCC;
+	u16 regDmnEnum;
+	u16 regDmn5GHz;
+	u16 regDmn2GHz;
+	u32 flags5GHz;
+	u32 flags2GHz;
+	u64 pscanMask;
+	u16 singleCC;
 };
 
 struct ccmap {
 	char isoName[3];
-	u_int16_t countryCode;
+	u16 countryCode;
 };
 
 struct country_code_to_enum_rd {
-	u_int16_t countryCode;
-	u_int16_t regDmnEnum;
+	u16 countryCode;
+	u16 regDmnEnum;
 	const char *isoName;
 	const char *name;
 	bool allow11g;
@@ -176,52 +176,52 @@ struct country_code_to_enum_rd {
 	bool allow11ng40;
 	bool allow11na20;
 	bool allow11na40;
-	u_int16_t outdoorChanStart;
+	u16 outdoorChanStart;
 };
 
 struct RegDmnFreqBand {
-	u_int16_t lowChannel;
-	u_int16_t highChannel;
-	u_int8_t powerDfs;
-	u_int8_t antennaMax;
-	u_int8_t channelBW;
-	u_int8_t channelSep;
-	u_int64_t useDfs;
-	u_int64_t usePassScan;
-	u_int8_t regClassId;
+	u16 lowChannel;
+	u16 highChannel;
+	u8 powerDfs;
+	u8 antennaMax;
+	u8 channelBW;
+	u8 channelSep;
+	u64 useDfs;
+	u64 usePassScan;
+	u8 regClassId;
 };
 
 struct regDomain {
-	u_int16_t regDmnEnum;
-	u_int8_t conformanceTestLimit;
-	u_int64_t dfsMask;
-	u_int64_t pscan;
-	u_int32_t flags;
-	u_int64_t chan11a[BMLEN];
-	u_int64_t chan11a_turbo[BMLEN];
-	u_int64_t chan11a_dyn_turbo[BMLEN];
-	u_int64_t chan11b[BMLEN];
-	u_int64_t chan11g[BMLEN];
-	u_int64_t chan11g_turbo[BMLEN];
+	u16 regDmnEnum;
+	u8 conformanceTestLimit;
+	u64 dfsMask;
+	u64 pscan;
+	u32 flags;
+	u64 chan11a[BMLEN];
+	u64 chan11a_turbo[BMLEN];
+	u64 chan11a_dyn_turbo[BMLEN];
+	u64 chan11b[BMLEN];
+	u64 chan11g[BMLEN];
+	u64 chan11g_turbo[BMLEN];
 };
 
 struct cmode {
-	u_int32_t mode;
-	u_int32_t flags;
+	u32 mode;
+	u32 flags;
 };
 
 #define YES true
 #define NO  false
 
 struct japan_bandcheck {
-	u_int16_t freqbandbit;
-	u_int32_t eepromflagtocheck;
+	u16 freqbandbit;
+	u32 eepromflagtocheck;
 };
 
 struct common_mode_power {
-	u_int16_t lchan;
-	u_int16_t hchan;
-	u_int8_t pwrlvl;
+	u16 lchan;
+	u16 hchan;
+	u8 pwrlvl;
 };
 
 enum CountryCode {
@@ -407,6 +407,6 @@ enum CountryCode {
 };
 
 void ath9k_regd_get_current_country(struct ath_hal *ah,
-				    struct hal_country_entry *ctry);
+				    struct ath9k_country_entry *ctry);
 
 #endif

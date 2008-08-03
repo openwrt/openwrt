@@ -149,31 +149,31 @@ struct ath_rate_table {
 		int valid;            /* Valid for use in rate control */
 		int valid_single_stream;/* Valid for use in rate control
 					for single stream operation */
-		u_int8_t phy;              /* CCK/OFDM/TURBO/XR */
-		u_int32_t ratekbps;         /* Rate in Kbits per second */
-		u_int32_t user_ratekbps;     /* User rate in KBits per second */
-		u_int8_t ratecode;         /* rate that goes into
+		u8 phy;              /* CCK/OFDM/TURBO/XR */
+		u32 ratekbps;         /* Rate in Kbits per second */
+		u32 user_ratekbps;     /* User rate in KBits per second */
+		u8 ratecode;         /* rate that goes into
 					hw descriptors */
-		u_int8_t short_preamble;    /* Mask for enabling short preamble
+		u8 short_preamble;    /* Mask for enabling short preamble
 						in rate code for CCK */
-		u_int8_t dot11rate;        /* Value that goes into supported
+		u8 dot11rate;        /* Value that goes into supported
 					rates info element of MLME */
-		u_int8_t ctrl_rate;      /* Index of next lower basic rate,
+		u8 ctrl_rate;      /* Index of next lower basic rate,
 					used for duration computation */
 		int8_t rssi_ack_validmin;  /* Rate control related */
 		int8_t rssi_ack_deltamin;  /* Rate control related */
-		u_int8_t base_index;        /* base rate index */
-		u_int8_t cw40index;        /* 40cap rate index */
-		u_int8_t sgi_index;         /* shortgi rate index */
-		u_int8_t ht_index;          /* shortgi rate index */
-		u_int32_t max_4ms_framelen;   /* Maximum frame length(bytes)
+		u8 base_index;        /* base rate index */
+		u8 cw40index;        /* 40cap rate index */
+		u8 sgi_index;         /* shortgi rate index */
+		u8 ht_index;          /* shortgi rate index */
+		u32 max_4ms_framelen;   /* Maximum frame length(bytes)
 						for 4ms tx duration */
 	} info[RATE_TABLE_SIZE];
-	u_int32_t probe_interval;        /* interval for ratectrl to
+	u32 probe_interval;        /* interval for ratectrl to
 					probe for other rates */
-	u_int32_t rssi_reduce_interval;   /* interval for ratectrl
+	u32 rssi_reduce_interval;   /* interval for ratectrl
 						to reduce RSSI */
-	u_int8_t initial_ratemax;   /* the initial ratemax value used
+	u8 initial_ratemax;   /* the initial ratemax value used
 					in ath_rc_sib_update() */
 };
 
@@ -182,10 +182,10 @@ struct ath_rate_table {
 #define ATH_RC_SHORT_PREAMBLE           0x00000004
 
 struct ath_rc_series {
-	u_int8_t    rix;
-	u_int8_t    tries;
-	u_int8_t    flags;
-	u_int32_t   max_4ms_framelen;
+	u8    rix;
+	u8    tries;
+	u8    flags;
+	u32   max_4ms_framelen;
 };
 
 /* rcs_flags definition */
@@ -203,7 +203,7 @@ struct ath_rc_series {
 
 struct ath_tx_ratectrl_state {
 	int8_t rssi_thres; /* required rssi for this rate (dB) */
-	u_int8_t per; /* recent estimate of packet error rate (%) */
+	u8 per; /* recent estimate of packet error rate (%) */
 };
 
 struct ath_tx_ratectrl {
@@ -215,34 +215,34 @@ struct ath_tx_ratectrl {
 	int32_t rssi_sum_cnt;        /* count of rssi_sum for averaging */
 	int32_t rssi_sum_rate;       /* rate that we are averaging */
 	int32_t rssi_sum;           /* running sum of rssi for averaging */
-	u_int32_t valid_txrate_mask;   /* mask of valid rates */
-	u_int8_t rate_table_size;      /* rate table size */
-	u_int8_t rate_max;            /* max rate that has recently worked */
-	u_int8_t probe_rate;          /* rate we are probing at */
-	u_int32_t rssi_time;          /* msec timestamp for last ack rssi */
-	u_int32_t rssi_down_time;      /* msec timestamp for last down step */
-	u_int32_t probe_time;         /* msec timestamp for last probe */
-	u_int8_t hw_maxretry_pktcnt;   /* num packets since we got
+	u32 valid_txrate_mask;   /* mask of valid rates */
+	u8 rate_table_size;      /* rate table size */
+	u8 rate_max;            /* max rate that has recently worked */
+	u8 probe_rate;          /* rate we are probing at */
+	u32 rssi_time;          /* msec timestamp for last ack rssi */
+	u32 rssi_down_time;      /* msec timestamp for last down step */
+	u32 probe_time;         /* msec timestamp for last probe */
+	u8 hw_maxretry_pktcnt;   /* num packets since we got
 					HW max retry error */
-	u_int8_t max_valid_rate;       /* maximum number of valid rate */
-	u_int8_t valid_rate_index[MAX_TX_RATE_TBL]; /* valid rate index */
-	u_int32_t per_down_time;       /* msec timstamp for last
+	u8 max_valid_rate;       /* maximum number of valid rate */
+	u8 valid_rate_index[MAX_TX_RATE_TBL]; /* valid rate index */
+	u32 per_down_time;       /* msec timstamp for last
 					PER down step */
 
 	/* 11n state */
-	u_int8_t  valid_phy_ratecnt[WLAN_RC_PHY_MAX]; /* valid rate count */
-	u_int8_t  valid_phy_rateidx[WLAN_RC_PHY_MAX][MAX_TX_RATE_TBL];
-	u_int8_t  rc_phy_mode;
-	u_int8_t  rate_max_phy;        /* Phy index for the max rate */
-	u_int32_t rate_max_lastused;   /* msec timstamp of when we
+	u8  valid_phy_ratecnt[WLAN_RC_PHY_MAX]; /* valid rate count */
+	u8  valid_phy_rateidx[WLAN_RC_PHY_MAX][MAX_TX_RATE_TBL];
+	u8  rc_phy_mode;
+	u8  rate_max_phy;        /* Phy index for the max rate */
+	u32 rate_max_lastused;   /* msec timstamp of when we
 					last used rateMaxPhy */
-	u_int32_t probe_interval;     /* interval for ratectrl to probe
+	u32 probe_interval;     /* interval for ratectrl to probe
 					for other rates */
 };
 
 struct ath_rateset {
-	u_int8_t rs_nrates;
-	u_int8_t rs_rates[ATH_RATE_MAX];
+	u8 rs_nrates;
+	u8 rs_rates[ATH_RATE_MAX];
 };
 
 /* per-device state */
@@ -255,18 +255,18 @@ struct ath_rate_softc {
 /* per-node state */
 struct ath_rate_node {
 	struct ath_tx_ratectrl tx_ratectrl;	/* rate control state proper */
-	u_int32_t prev_data_rix;	/* rate idx of last data frame */
+	u32 prev_data_rix;	/* rate idx of last data frame */
 
 	/* map of rate ix -> negotiated rate set ix */
-	u_int8_t rixmap[MAX_TX_RATE_TBL];
+	u8 rixmap[MAX_TX_RATE_TBL];
 
 	/* map of ht rate ix -> negotiated rate set ix */
-	u_int8_t ht_rixmap[MAX_TX_RATE_TBL];
+	u8 ht_rixmap[MAX_TX_RATE_TBL];
 
-	u_int8_t ht_cap;		/* ht capabilities */
-	u_int8_t ant_tx;		/* current transmit antenna */
+	u8 ht_cap;		/* ht capabilities */
+	u8 ant_tx;		/* current transmit antenna */
 
-	u_int8_t single_stream;   /* When TRUE, only single
+	u8 single_stream;   /* When TRUE, only single
 				stream Tx possible */
 	struct ath_rateset neg_rates;	/* Negotiated rates */
 	struct ath_rateset neg_ht_rates;	/* Negotiated HT rates */
@@ -280,7 +280,7 @@ struct ath_tx_info_priv {
 	struct ath_tx_status tx;
 	int n_frames;
 	int n_bad_frames;
-	u_int8_t min_rate;
+	u8 min_rate;
 };
 
 /*
@@ -294,7 +294,8 @@ void ath_rate_detach(struct ath_rate_softc *asc);
  * Important mostly as the analog to ath_rate_newassoc when operating
  * in station mode.
  */
-void ath_rate_newstate(struct ath_softc *sc, struct ath_vap *avp, int up);
+void ath_rc_node_update(struct ieee80211_hw *hw, struct ath_rate_node *rc_priv);
+void ath_rate_newstate(struct ath_softc *sc, struct ath_vap *avp);
 
 /*
  * Return the tx rate series.
@@ -306,8 +307,8 @@ void ath_rate_findrate(struct ath_softc *sc, struct ath_rate_node *ath_rc_priv,
 /*
  * Return rate index for given Dot11 Rate.
  */
-u_int8_t ath_rate_findrateix(struct ath_softc *sc,
-			     u_int8_t dot11_rate);
+u8 ath_rate_findrateix(struct ath_softc *sc,
+			     u8 dot11_rate);
 
 /* Routines to register/unregister rate control algorithm */
 int ath_rate_control_register(void);

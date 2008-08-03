@@ -20,7 +20,7 @@
 #include "phy.h"
 
 void
-ath9k_hw_write_regs(struct ath_hal *ah, u_int modesIndex, u_int freqIndex,
+ath9k_hw_write_regs(struct ath_hal *ah, u32 modesIndex, u32 freqIndex,
 		    int regWrites)
 {
 	struct ath_hal_5416 *ahp = AH5416(ah);
@@ -29,20 +29,20 @@ ath9k_hw_write_regs(struct ath_hal *ah, u_int modesIndex, u_int freqIndex,
 }
 
 bool
-ath9k_hw_set_channel(struct ath_hal *ah, struct hal_channel_internal *chan)
+ath9k_hw_set_channel(struct ath_hal *ah, struct ath9k_channel *chan)
 {
-	u_int32_t channelSel = 0;
-	u_int32_t bModeSynth = 0;
-	u_int32_t aModeRefSel = 0;
-	u_int32_t reg32 = 0;
-	u_int16_t freq;
+	u32 channelSel = 0;
+	u32 bModeSynth = 0;
+	u32 aModeRefSel = 0;
+	u32 reg32 = 0;
+	u16 freq;
 	struct chan_centers centers;
 
 	ath9k_hw_get_channel_centers(ah, chan, &centers);
 	freq = centers.synth_center;
 
 	if (freq < 4800) {
-		u_int32_t txctl;
+		u32 txctl;
 
 		if (((freq - 2192) % 5) == 0) {
 			channelSel = ((freq - 672) * 2 - 3040) / 10;
@@ -105,12 +105,12 @@ ath9k_hw_set_channel(struct ath_hal *ah, struct hal_channel_internal *chan)
 
 bool
 ath9k_hw_ar9280_set_channel(struct ath_hal *ah,
-			    struct hal_channel_internal *chan)
+			    struct ath9k_channel *chan)
 {
-	u_int16_t bMode, fracMode, aModeRefSel = 0;
-	u_int32_t freq, ndiv, channelSel = 0, channelFrac = 0, reg32 = 0;
+	u16 bMode, fracMode, aModeRefSel = 0;
+	u32 freq, ndiv, channelSel = 0, channelFrac = 0, reg32 = 0;
 	struct chan_centers centers;
-	u_int32_t refDivA = 24;
+	u32 refDivA = 24;
 
 	ath9k_hw_get_channel_centers(ah, chan, &centers);
 	freq = centers.synth_center;
@@ -119,7 +119,7 @@ ath9k_hw_ar9280_set_channel(struct ath_hal *ah,
 	reg32 &= 0xc0000000;
 
 	if (freq < 4800) {
-		u_int32_t txctl;
+		u32 txctl;
 
 		bMode = 1;
 		fracMode = 1;
@@ -175,11 +175,11 @@ ath9k_hw_ar9280_set_channel(struct ath_hal *ah,
 }
 
 static void
-ath9k_phy_modify_rx_buffer(u_int32_t *rfBuf, u_int32_t reg32,
-			   u_int32_t numBits, u_int32_t firstBit,
-			   u_int32_t column)
+ath9k_phy_modify_rx_buffer(u32 *rfBuf, u32 reg32,
+			   u32 numBits, u32 firstBit,
+			   u32 column)
 {
-	u_int32_t tmp32, mask, arrayEntry, lastBit;
+	u32 tmp32, mask, arrayEntry, lastBit;
 	int32_t bitPosition, bitsLeft;
 
 	tmp32 = ath9k_hw_reverse_bits(reg32, numBits);
@@ -202,14 +202,14 @@ ath9k_phy_modify_rx_buffer(u_int32_t *rfBuf, u_int32_t reg32,
 }
 
 bool
-ath9k_hw_set_rf_regs(struct ath_hal *ah, struct hal_channel_internal *chan,
-		     u_int16_t modesIndex)
+ath9k_hw_set_rf_regs(struct ath_hal *ah, struct ath9k_channel *chan,
+		     u16 modesIndex)
 {
 	struct ath_hal_5416 *ahp = AH5416(ah);
 
-	u_int32_t eepMinorRev;
-	u_int32_t ob5GHz = 0, db5GHz = 0;
-	u_int32_t ob2GHz = 0, db2GHz = 0;
+	u32 eepMinorRev;
+	u32 ob5GHz = 0, db5GHz = 0;
+	u32 ob2GHz = 0, db2GHz = 0;
 	int regWrites = 0;
 
 	if (AR_SREV_9280_10_OR_LATER(ah))
@@ -312,47 +312,32 @@ ath9k_hw_rfdetach(struct ath_hal *ah)
 	}
 }
 
-bool
-ath9k_hw_get_chip_power_limits(struct ath_hal *ah,
-			       struct hal_channel *chans, u_int32_t nchans)
-{
-	bool retVal = true;
-	int i;
-
-	for (i = 0; i < nchans; i++) {
-		chans[i].maxTxPower = AR5416_MAX_RATE_POWER;
-		chans[i].minTxPower = AR5416_MAX_RATE_POWER;
-	}
-	return retVal;
-}
-
-
-bool ath9k_hw_init_rf(struct ath_hal *ah, enum hal_status *status)
+bool ath9k_hw_init_rf(struct ath_hal *ah, int *status)
 {
 	struct ath_hal_5416 *ahp = AH5416(ah);
 
 	if (!AR_SREV_9280_10_OR_LATER(ah)) {
 
 		ahp->ah_analogBank0Data =
-		    kzalloc((sizeof(u_int32_t) *
+		    kzalloc((sizeof(u32) *
 			     ahp->ah_iniBank0.ia_rows), GFP_KERNEL);
 		ahp->ah_analogBank1Data =
-		    kzalloc((sizeof(u_int32_t) *
+		    kzalloc((sizeof(u32) *
 			     ahp->ah_iniBank1.ia_rows), GFP_KERNEL);
 		ahp->ah_analogBank2Data =
-		    kzalloc((sizeof(u_int32_t) *
+		    kzalloc((sizeof(u32) *
 			     ahp->ah_iniBank2.ia_rows), GFP_KERNEL);
 		ahp->ah_analogBank3Data =
-		    kzalloc((sizeof(u_int32_t) *
+		    kzalloc((sizeof(u32) *
 			     ahp->ah_iniBank3.ia_rows), GFP_KERNEL);
 		ahp->ah_analogBank6Data =
-		    kzalloc((sizeof(u_int32_t) *
+		    kzalloc((sizeof(u32) *
 			     ahp->ah_iniBank6.ia_rows), GFP_KERNEL);
 		ahp->ah_analogBank6TPCData =
-		    kzalloc((sizeof(u_int32_t) *
+		    kzalloc((sizeof(u32) *
 			     ahp->ah_iniBank6TPC.ia_rows), GFP_KERNEL);
 		ahp->ah_analogBank7Data =
-		    kzalloc((sizeof(u_int32_t) *
+		    kzalloc((sizeof(u32) *
 			     ahp->ah_iniBank7.ia_rows), GFP_KERNEL);
 
 		if (ahp->ah_analogBank0Data == NULL
@@ -365,30 +350,30 @@ bool ath9k_hw_init_rf(struct ath_hal *ah, enum hal_status *status)
 			DPRINTF(ah->ah_sc, ATH_DBG_FATAL,
 				 "%s: cannot allocate RF banks\n",
 				 __func__);
-			*status = HAL_ENOMEM;
+			*status = -ENOMEM;
 			return false;
 		}
 
 		ahp->ah_addac5416_21 =
-		    kzalloc((sizeof(u_int32_t) *
+		    kzalloc((sizeof(u32) *
 			     ahp->ah_iniAddac.ia_rows *
 			     ahp->ah_iniAddac.ia_columns), GFP_KERNEL);
 		if (ahp->ah_addac5416_21 == NULL) {
 			DPRINTF(ah->ah_sc, ATH_DBG_FATAL,
 				 "%s: cannot allocate ah_addac5416_21\n",
 				 __func__);
-			*status = HAL_ENOMEM;
+			*status = -ENOMEM;
 			return false;
 		}
 
 		ahp->ah_bank6Temp =
-		    kzalloc((sizeof(u_int32_t) *
+		    kzalloc((sizeof(u32) *
 			     ahp->ah_iniBank6.ia_rows), GFP_KERNEL);
 		if (ahp->ah_bank6Temp == NULL) {
 			DPRINTF(ah->ah_sc, ATH_DBG_FATAL,
 				 "%s: cannot allocate ah_bank6Temp\n",
 				 __func__);
-			*status = HAL_ENOMEM;
+			*status = -ENOMEM;
 			return false;
 		}
 	}
@@ -397,27 +382,27 @@ bool ath9k_hw_init_rf(struct ath_hal *ah, enum hal_status *status)
 }
 
 void
-ath9k_hw_decrease_chain_power(struct ath_hal *ah, struct hal_channel *chan)
+ath9k_hw_decrease_chain_power(struct ath_hal *ah, struct ath9k_channel *chan)
 {
 	int i, regWrites = 0;
 	struct ath_hal_5416 *ahp = AH5416(ah);
-	u_int32_t bank6SelMask;
-	u_int32_t *bank6Temp = ahp->ah_bank6Temp;
+	u32 bank6SelMask;
+	u32 *bank6Temp = ahp->ah_bank6Temp;
 
 	switch (ahp->ah_diversityControl) {
-	case HAL_ANT_FIXED_A:
+	case ATH9K_ANT_FIXED_A:
 		bank6SelMask =
 		    (ahp->
 		     ah_antennaSwitchSwap & ANTSWAP_AB) ? REDUCE_CHAIN_0 :
 		    REDUCE_CHAIN_1;
 		break;
-	case HAL_ANT_FIXED_B:
+	case ATH9K_ANT_FIXED_B:
 		bank6SelMask =
 		    (ahp->
 		     ah_antennaSwitchSwap & ANTSWAP_AB) ? REDUCE_CHAIN_1 :
 		    REDUCE_CHAIN_0;
 		break;
-	case HAL_ANT_VARIABLE:
+	case ATH9K_ANT_VARIABLE:
 		return;
 		break;
 	default:

@@ -52,54 +52,54 @@
 #endif
 
 struct ath_tx_status {
-	u_int32_t ts_tstamp;
-	u_int16_t ts_seqnum;
-	u_int8_t ts_status;
-	u_int8_t ts_ratecode;
-	u_int8_t ts_rateindex;
+	u32 ts_tstamp;
+	u16 ts_seqnum;
+	u8 ts_status;
+	u8 ts_ratecode;
+	u8 ts_rateindex;
 	int8_t ts_rssi;
-	u_int8_t ts_shortretry;
-	u_int8_t ts_longretry;
-	u_int8_t ts_virtcol;
-	u_int8_t ts_antenna;
-	u_int8_t ts_flags;
+	u8 ts_shortretry;
+	u8 ts_longretry;
+	u8 ts_virtcol;
+	u8 ts_antenna;
+	u8 ts_flags;
 	int8_t ts_rssi_ctl0;
 	int8_t ts_rssi_ctl1;
 	int8_t ts_rssi_ctl2;
 	int8_t ts_rssi_ext0;
 	int8_t ts_rssi_ext1;
 	int8_t ts_rssi_ext2;
-	u_int8_t pad[3];
-	u_int32_t ba_low;
-	u_int32_t ba_high;
-	u_int32_t evm0;
-	u_int32_t evm1;
-	u_int32_t evm2;
+	u8 pad[3];
+	u32 ba_low;
+	u32 ba_high;
+	u32 evm0;
+	u32 evm1;
+	u32 evm2;
 };
 
 struct ath_rx_status {
-	u_int32_t rs_tstamp;
-	u_int16_t rs_datalen;
-	u_int8_t rs_status;
-	u_int8_t rs_phyerr;
+	u32 rs_tstamp;
+	u16 rs_datalen;
+	u8 rs_status;
+	u8 rs_phyerr;
 	int8_t rs_rssi;
-	u_int8_t rs_keyix;
-	u_int8_t rs_rate;
-	u_int8_t rs_antenna;
-	u_int8_t rs_more;
+	u8 rs_keyix;
+	u8 rs_rate;
+	u8 rs_antenna;
+	u8 rs_more;
 	int8_t rs_rssi_ctl0;
 	int8_t rs_rssi_ctl1;
 	int8_t rs_rssi_ctl2;
 	int8_t rs_rssi_ext0;
 	int8_t rs_rssi_ext1;
 	int8_t rs_rssi_ext2;
-	u_int8_t rs_isaggr;
-	u_int8_t rs_moreaggr;
-	u_int8_t rs_num_delims;
-	u_int8_t rs_flags;
-	u_int32_t evm0;
-	u_int32_t evm1;
-	u_int32_t evm2;
+	u8 rs_isaggr;
+	u8 rs_moreaggr;
+	u8 rs_num_delims;
+	u8 rs_flags;
+	u32 evm0;
+	u32 evm1;
+	u32 evm2;
 };
 
 #define ATH9K_RXERR_CRC           0x01
@@ -116,15 +116,15 @@ struct ath_rx_status {
 #define ATH9K_RX_DELIM_CRC_POST   0x20
 #define ATH9K_RX_DECRYPT_BUSY     0x40
 
-#define	HAL_RXKEYIX_INVALID	((u_int8_t)-1)
-#define	HAL_TXKEYIX_INVALID	((u_int)-1)
+#define ATH9K_RXKEYIX_INVALID	((u8)-1)
+#define ATH9K_TXKEYIX_INVALID	((u32)-1)
 
 struct ath_desc {
-	u_int32_t ds_link;
-	u_int32_t ds_data;
-	u_int32_t ds_ctl0;
-	u_int32_t ds_ctl1;
-	u_int32_t ds_hw[20];
+	u32 ds_link;
+	u32 ds_data;
+	u32 ds_ctl0;
+	u32 ds_ctl1;
+	u32 ds_hw[20];
 	union {
 		struct ath_tx_status tx;
 		struct ath_rx_status rx;
@@ -137,18 +137,18 @@ struct ath_desc {
 #define	ds_rxstat	ds_us.rx
 #define ds_stat		ds_us.stats
 
-#define	HAL_TXDESC_CLRDMASK	0x0001
-#define	HAL_TXDESC_NOACK	0x0002
-#define	HAL_TXDESC_RTSENA	0x0004
-#define	HAL_TXDESC_CTSENA	0x0008
-#define	HAL_TXDESC_INTREQ	0x0010
-#define	HAL_TXDESC_VEOL		0x0020
-#define HAL_TXDESC_EXT_ONLY     0x0040
-#define HAL_TXDESC_EXT_AND_CTL  0x0080
-#define HAL_TXDESC_VMF          0x0100
-#define HAL_TXDESC_FRAG_IS_ON   0x0200
+#define ATH9K_TXDESC_CLRDMASK		0x0001
+#define ATH9K_TXDESC_NOACK		0x0002
+#define ATH9K_TXDESC_RTSENA		0x0004
+#define ATH9K_TXDESC_CTSENA		0x0008
+#define ATH9K_TXDESC_INTREQ		0x0010
+#define ATH9K_TXDESC_VEOL		0x0020
+#define ATH9K_TXDESC_EXT_ONLY		0x0040
+#define ATH9K_TXDESC_EXT_AND_CTL	0x0080
+#define ATH9K_TXDESC_VMF		0x0100
+#define ATH9K_TXDESC_FRAG_IS_ON 	0x0200
 
-#define	HAL_RXDESC_INTREQ	0x0020
+#define ATH9K_RXDESC_INTREQ		0x0020
 
 enum hal_capability_type {
 	HAL_CAP_CIPHER = 0,
@@ -168,7 +168,7 @@ enum hal_capability_type {
 };
 
 struct hal_capabilities {
-	u_int halChanSpreadSupport:1,
+	u32 halChanSpreadSupport:1,
 		halChapTuningSupport:1,
 		halMicAesCcmSupport:1,
 		halMicCkipSupport:1,
@@ -192,20 +192,20 @@ struct hal_capabilities {
 		halAutoSleepSupport:1,
 		hal4kbSplitTransSupport:1,
 		halWowMatchPatternExact:1;
-	u_int32_t halWirelessModes;
-	u_int16_t halTotalQueues;
-	u_int16_t halKeyCacheSize;
-	u_int16_t halLow5GhzChan, halHigh5GhzChan;
-	u_int16_t halLow2GhzChan, halHigh2GhzChan;
-	u_int16_t halNumMRRetries;
-	u_int16_t halRtsAggrLimit;
-	u_int8_t halTxChainMask;
-	u_int8_t halRxChainMask;
-	u_int16_t halTxTrigLevelMax;
-	u_int16_t halRegCap;
-	u_int8_t halNumGpioPins;
-	u_int8_t halNumAntCfg2GHz;
-	u_int8_t halNumAntCfg5GHz;
+	u32 halWirelessModes;
+	u16 halTotalQueues;
+	u16 halKeyCacheSize;
+	u16 halLow5GhzChan, halHigh5GhzChan;
+	u16 halLow2GhzChan, halHigh2GhzChan;
+	u16 halNumMRRetries;
+	u16 halRtsAggrLimit;
+	u8 halTxChainMask;
+	u8 halRxChainMask;
+	u16 halTxTrigLevelMax;
+	u16 halRegCap;
+	u8 halNumGpioPins;
+	u8 halNumAntCfg2GHz;
+	u8 halNumAntCfg5GHz;
 };
 
 struct hal_ops_config {
@@ -214,28 +214,28 @@ struct hal_ops_config {
 	int ath_hal_additional_swba_backoff;
 	int ath_hal_6mb_ack;
 	int ath_hal_cwmIgnoreExtCCA;
-	u_int8_t ath_hal_pciePowerSaveEnable;
-	u_int8_t ath_hal_pcieL1SKPEnable;
-	u_int8_t ath_hal_pcieClockReq;
-	u_int32_t ath_hal_pcieWaen;
+	u8 ath_hal_pciePowerSaveEnable;
+	u8 ath_hal_pcieL1SKPEnable;
+	u8 ath_hal_pcieClockReq;
+	u32 ath_hal_pcieWaen;
 	int ath_hal_pciePowerReset;
-	u_int8_t ath_hal_pcieRestore;
-	u_int8_t ath_hal_analogShiftReg;
-	u_int8_t ath_hal_htEnable;
-	u_int32_t ath_hal_ofdmTrigLow;
-	u_int32_t ath_hal_ofdmTrigHigh;
-	u_int32_t ath_hal_cckTrigHigh;
-	u_int32_t ath_hal_cckTrigLow;
-	u_int32_t ath_hal_enableANI;
-	u_int8_t ath_hal_noiseImmunityLvl;
-	u_int32_t ath_hal_ofdmWeakSigDet;
-	u_int32_t ath_hal_cckWeakSigThr;
-	u_int8_t ath_hal_spurImmunityLvl;
-	u_int8_t ath_hal_firStepLvl;
+	u8 ath_hal_pcieRestore;
+	u8 ath_hal_analogShiftReg;
+	u8 ath_hal_htEnable;
+	u32 ath_hal_ofdmTrigLow;
+	u32 ath_hal_ofdmTrigHigh;
+	u32 ath_hal_cckTrigHigh;
+	u32 ath_hal_cckTrigLow;
+	u32 ath_hal_enableANI;
+	u8 ath_hal_noiseImmunityLvl;
+	u32 ath_hal_ofdmWeakSigDet;
+	u32 ath_hal_cckWeakSigThr;
+	u8 ath_hal_spurImmunityLvl;
+	u8 ath_hal_firStepLvl;
 	int8_t ath_hal_rssiThrHigh;
 	int8_t ath_hal_rssiThrLow;
-	u_int16_t ath_hal_diversityControl;
-	u_int16_t ath_hal_antennaSwitchSwap;
+	u16 ath_hal_diversityControl;
+	u16 ath_hal_antennaSwitchSwap;
 	int ath_hal_serializeRegMode;
 	int ath_hal_intrMitigation;
 #define SPUR_DISABLE        	0
@@ -250,29 +250,29 @@ struct hal_ops_config {
 #define AR_SPUR_FEEQ_BOUND_HT40 19
 #define AR_SPUR_FEEQ_BOUND_HT20 10
 	int ath_hal_spurMode;
-	u_int16_t ath_hal_spurChans[AR_EEPROM_MODAL_SPURS][2];
+	u16 ath_hal_spurChans[AR_EEPROM_MODAL_SPURS][2];
 };
 
-enum hal_tx_queue {
-	HAL_TX_QUEUE_INACTIVE = 0,
-	HAL_TX_QUEUE_DATA,
-	HAL_TX_QUEUE_BEACON,
-	HAL_TX_QUEUE_CAB,
-	HAL_TX_QUEUE_UAPSD,
-	HAL_TX_QUEUE_PSPOLL
+enum ath9k_tx_queue {
+	ATH9K_TX_QUEUE_INACTIVE = 0,
+	ATH9K_TX_QUEUE_DATA,
+	ATH9K_TX_QUEUE_BEACON,
+	ATH9K_TX_QUEUE_CAB,
+	ATH9K_TX_QUEUE_UAPSD,
+	ATH9K_TX_QUEUE_PSPOLL
 };
 
-#define	HAL_NUM_TX_QUEUES 10
+#define	ATH9K_NUM_TX_QUEUES 10
 
-enum hal_tx_queue_subtype {
-	HAL_WME_AC_BK = 0,
-	HAL_WME_AC_BE,
-	HAL_WME_AC_VI,
-	HAL_WME_AC_VO,
-	HAL_WME_UPSD
+enum ath9k_tx_queue_subtype {
+	ATH9K_WME_AC_BK = 0,
+	ATH9K_WME_AC_BE,
+	ATH9K_WME_AC_VI,
+	ATH9K_WME_AC_VO,
+	ATH9K_WME_UPSD
 };
 
-enum hal_tx_queue_flags {
+enum ath9k_tx_queue_flags {
 	TXQ_FLAG_TXOKINT_ENABLE = 0x0001,
 	TXQ_FLAG_TXERRINT_ENABLE = 0x0001,
 	TXQ_FLAG_TXDESCINT_ENABLE = 0x0002,
@@ -284,150 +284,141 @@ enum hal_tx_queue_flags {
 	TXQ_FLAG_FRAG_BURST_BACKOFF_ENABLE = 0x0080,
 };
 
-struct hal_txq_info {
-	u_int32_t tqi_ver;
-	enum hal_tx_queue_subtype tqi_subtype;
-	enum hal_tx_queue_flags tqi_qflags;
-	u_int32_t tqi_priority;
-	u_int32_t tqi_aifs;
-	u_int32_t tqi_cwmin;
-	u_int32_t tqi_cwmax;
-	u_int16_t tqi_shretry;
-	u_int16_t tqi_lgretry;
-	u_int32_t tqi_cbrPeriod;
-	u_int32_t tqi_cbrOverflowLimit;
-	u_int32_t tqi_burstTime;
-	u_int32_t tqi_readyTime;
-	u_int32_t tqi_compBuf;
+struct ath9k_txq_info {
+	u32 tqi_ver;
+	enum ath9k_tx_queue_subtype tqi_subtype;
+	enum ath9k_tx_queue_flags tqi_qflags;
+	u32 tqi_priority;
+	u32 tqi_aifs;
+	u32 tqi_cwmin;
+	u32 tqi_cwmax;
+	u16 tqi_shretry;
+	u16 tqi_lgretry;
+	u32 tqi_cbrPeriod;
+	u32 tqi_cbrOverflowLimit;
+	u32 tqi_burstTime;
+	u32 tqi_readyTime;
+	u32 tqi_compBuf;
 };
 
-#define HAL_TQI_NONVAL 0xffff
+#define ATH9K_TXQ_USEDEFAULT ((u32) -1)
 
-#define	HAL_TXQ_USEDEFAULT ((u_int32_t) -1)
+#define ATH9K_DECOMP_MASK_SIZE     128
+#define ATH9K_READY_TIME_LO_BOUND  50
+#define ATH9K_READY_TIME_HI_BOUND  96
 
-#define HAL_COMP_BUF_MAX_SIZE    9216
-#define HAL_COMP_BUF_ALIGN_SIZE  512
-#define HAL_DECOMP_MASK_SIZE     128
-
-#define HAL_READY_TIME_LO_BOUND  50
-#define HAL_READY_TIME_HI_BOUND  96
-
-enum hal_pkt_type {
-	HAL_PKT_TYPE_NORMAL = 0,
-	HAL_PKT_TYPE_ATIM,
-	HAL_PKT_TYPE_PSPOLL,
-	HAL_PKT_TYPE_BEACON,
-	HAL_PKT_TYPE_PROBE_RESP,
-	HAL_PKT_TYPE_CHIRP,
-	HAL_PKT_TYPE_GRP_POLL,
+enum ath9k_pkt_type {
+	ATH9K_PKT_TYPE_NORMAL = 0,
+	ATH9K_PKT_TYPE_ATIM,
+	ATH9K_PKT_TYPE_PSPOLL,
+	ATH9K_PKT_TYPE_BEACON,
+	ATH9K_PKT_TYPE_PROBE_RESP,
+	ATH9K_PKT_TYPE_CHIRP,
+	ATH9K_PKT_TYPE_GRP_POLL,
 };
 
-struct hal_tx_queue_info {
-	u_int32_t tqi_ver;
-	enum hal_tx_queue tqi_type;
-	enum hal_tx_queue_subtype tqi_subtype;
-	enum hal_tx_queue_flags tqi_qflags;
-	u_int32_t tqi_priority;
-	u_int32_t tqi_aifs;
-	u_int32_t tqi_cwmin;
-	u_int32_t tqi_cwmax;
-	u_int16_t tqi_shretry;
-	u_int16_t tqi_lgretry;
-	u_int32_t tqi_cbrPeriod;
-	u_int32_t tqi_cbrOverflowLimit;
-	u_int32_t tqi_burstTime;
-	u_int32_t tqi_readyTime;
-	u_int32_t tqi_physCompBuf;
-	u_int32_t tqi_intFlags;
+struct ath9k_tx_queue_info {
+	u32 tqi_ver;
+	enum ath9k_tx_queue tqi_type;
+	enum ath9k_tx_queue_subtype tqi_subtype;
+	enum ath9k_tx_queue_flags tqi_qflags;
+	u32 tqi_priority;
+	u32 tqi_aifs;
+	u32 tqi_cwmin;
+	u32 tqi_cwmax;
+	u16 tqi_shretry;
+	u16 tqi_lgretry;
+	u32 tqi_cbrPeriod;
+	u32 tqi_cbrOverflowLimit;
+	u32 tqi_burstTime;
+	u32 tqi_readyTime;
+	u32 tqi_physCompBuf;
+	u32 tqi_intFlags;
 };
 
-enum hal_rx_filter {
-	HAL_RX_FILTER_UCAST = 0x00000001,
-	HAL_RX_FILTER_MCAST = 0x00000002,
-	HAL_RX_FILTER_BCAST = 0x00000004,
-	HAL_RX_FILTER_CONTROL = 0x00000008,
-	HAL_RX_FILTER_BEACON = 0x00000010,
-	HAL_RX_FILTER_PROM = 0x00000020,
-	HAL_RX_FILTER_PROBEREQ = 0x00000080,
-	HAL_RX_FILTER_PSPOLL = 0x00004000,
-	HAL_RX_FILTER_PHYERR = 0x00000100,
-	HAL_RX_FILTER_PHYRADAR = 0x00002000,
+enum ath9k_rx_filter {
+	ATH9K_RX_FILTER_UCAST = 0x00000001,
+	ATH9K_RX_FILTER_MCAST = 0x00000002,
+	ATH9K_RX_FILTER_BCAST = 0x00000004,
+	ATH9K_RX_FILTER_CONTROL = 0x00000008,
+	ATH9K_RX_FILTER_BEACON = 0x00000010,
+	ATH9K_RX_FILTER_PROM = 0x00000020,
+	ATH9K_RX_FILTER_PROBEREQ = 0x00000080,
+	ATH9K_RX_FILTER_PSPOLL = 0x00004000,
+	ATH9K_RX_FILTER_PHYERR = 0x00000100,
+	ATH9K_RX_FILTER_PHYRADAR = 0x00002000,
 };
 
-enum hal_int {
-	HAL_INT_RX = 0x00000001,
-	HAL_INT_RXDESC = 0x00000002,
-	HAL_INT_RXNOFRM = 0x00000008,
-	HAL_INT_RXEOL = 0x00000010,
-	HAL_INT_RXORN = 0x00000020,
-	HAL_INT_TX = 0x00000040,
-	HAL_INT_TXDESC = 0x00000080,
-	HAL_INT_TIM_TIMER = 0x00000100,
-	HAL_INT_TXURN = 0x00000800,
-	HAL_INT_MIB = 0x00001000,
-	HAL_INT_RXPHY = 0x00004000,
-	HAL_INT_RXKCM = 0x00008000,
-	HAL_INT_SWBA = 0x00010000,
-	HAL_INT_BMISS = 0x00040000,
-	HAL_INT_BNR = 0x00100000,
-	HAL_INT_TIM = 0x00200000,
-	HAL_INT_DTIM = 0x00400000,
-	HAL_INT_DTIMSYNC = 0x00800000,
-	HAL_INT_GPIO = 0x01000000,
-	HAL_INT_CABEND = 0x02000000,
-	HAL_INT_CST = 0x10000000,
-	HAL_INT_GTT = 0x20000000,
-	HAL_INT_FATAL = 0x40000000,
-	HAL_INT_GLOBAL = 0x80000000,
-	HAL_INT_BMISC = HAL_INT_TIM
-	    | HAL_INT_DTIM | HAL_INT_DTIMSYNC | HAL_INT_CABEND,
-	HAL_INT_COMMON = HAL_INT_RXNOFRM
-	    | HAL_INT_RXDESC
-	    | HAL_INT_RXEOL
-	    | HAL_INT_RXORN
-	    | HAL_INT_TXURN
-	    | HAL_INT_TXDESC
-	    | HAL_INT_MIB
-	    | HAL_INT_RXPHY
-	    | HAL_INT_RXKCM | HAL_INT_SWBA | HAL_INT_BMISS | HAL_INT_GPIO,
-	HAL_INT_NOCARD = 0xffffffff
+enum ath9k_int {
+	ATH9K_INT_RX = 0x00000001,
+	ATH9K_INT_RXDESC = 0x00000002,
+	ATH9K_INT_RXNOFRM = 0x00000008,
+	ATH9K_INT_RXEOL = 0x00000010,
+	ATH9K_INT_RXORN = 0x00000020,
+	ATH9K_INT_TX = 0x00000040,
+	ATH9K_INT_TXDESC = 0x00000080,
+	ATH9K_INT_TIM_TIMER = 0x00000100,
+	ATH9K_INT_TXURN = 0x00000800,
+	ATH9K_INT_MIB = 0x00001000,
+	ATH9K_INT_RXPHY = 0x00004000,
+	ATH9K_INT_RXKCM = 0x00008000,
+	ATH9K_INT_SWBA = 0x00010000,
+	ATH9K_INT_BMISS = 0x00040000,
+	ATH9K_INT_BNR = 0x00100000,
+	ATH9K_INT_TIM = 0x00200000,
+	ATH9K_INT_DTIM = 0x00400000,
+	ATH9K_INT_DTIMSYNC = 0x00800000,
+	ATH9K_INT_GPIO = 0x01000000,
+	ATH9K_INT_CABEND = 0x02000000,
+	ATH9K_INT_CST = 0x10000000,
+	ATH9K_INT_GTT = 0x20000000,
+	ATH9K_INT_FATAL = 0x40000000,
+	ATH9K_INT_GLOBAL = 0x80000000,
+	ATH9K_INT_BMISC = ATH9K_INT_TIM |
+		ATH9K_INT_DTIM |
+		ATH9K_INT_DTIMSYNC |
+		ATH9K_INT_CABEND,
+	ATH9K_INT_COMMON = ATH9K_INT_RXNOFRM |
+		ATH9K_INT_RXDESC |
+		ATH9K_INT_RXEOL |
+		ATH9K_INT_RXORN |
+		ATH9K_INT_TXURN |
+		ATH9K_INT_TXDESC |
+		ATH9K_INT_MIB |
+		ATH9K_INT_RXPHY |
+		ATH9K_INT_RXKCM |
+		ATH9K_INT_SWBA |
+		ATH9K_INT_BMISS |
+		ATH9K_INT_GPIO,
+	ATH9K_INT_NOCARD = 0xffffffff
 };
 
-struct hal_rate_table {
+struct ath9k_rate_table {
 	int rateCount;
-	u_int8_t rateCodeToIndex[256];
+	u8 rateCodeToIndex[256];
 	struct {
-		u_int8_t valid;
-		u_int8_t phy;
-		u_int32_t rateKbps;
-		u_int8_t rateCode;
-		u_int8_t shortPreamble;
-		u_int8_t dot11Rate;
-		u_int8_t controlRate;
-		u_int16_t lpAckDuration;
-		u_int16_t spAckDuration;
+		u8 valid;
+		u8 phy;
+		u32 rateKbps;
+		u8 rateCode;
+		u8 shortPreamble;
+		u8 dot11Rate;
+		u8 controlRate;
+		u16 lpAckDuration;
+		u16 spAckDuration;
 	} info[32];
 };
 
-#define HAL_RATESERIES_RTS_CTS  0x0001
-#define HAL_RATESERIES_2040     0x0002
-#define HAL_RATESERIES_HALFGI   0x0004
+#define ATH9K_RATESERIES_RTS_CTS  0x0001
+#define ATH9K_RATESERIES_2040     0x0002
+#define ATH9K_RATESERIES_HALFGI   0x0004
 
-struct hal_11n_rate_series {
-	u_int Tries;
-	u_int Rate;
-	u_int PktDuration;
-	u_int ChSel;
-	u_int RateFlags;
-};
-
-struct hal_channel {
-	u_int16_t channel;
-	u_int32_t channelFlags;
-	u_int8_t privFlags;
-	int8_t maxRegTxPower;
-	int8_t maxTxPower;
-	int8_t minTxPower;
+struct ath9k_11n_rate_series {
+	u32 Tries;
+	u32 Rate;
+	u32 PktDuration;
+	u32 ChSel;
+	u32 RateFlags;
 };
 
 #define CHANNEL_CW_INT    0x00002
@@ -452,7 +443,6 @@ struct hal_channel {
 
 #define CHANNEL_A           (CHANNEL_5GHZ|CHANNEL_OFDM)
 #define CHANNEL_B           (CHANNEL_2GHZ|CHANNEL_CCK)
-#define CHANNEL_PUREG       (CHANNEL_2GHZ|CHANNEL_OFDM)
 #define CHANNEL_G           (CHANNEL_2GHZ|CHANNEL_OFDM)
 #define CHANNEL_G_HT20      (CHANNEL_2GHZ|CHANNEL_HT20)
 #define CHANNEL_A_HT20      (CHANNEL_5GHZ|CHANNEL_HT20)
@@ -469,38 +459,26 @@ struct hal_channel {
 	 CHANNEL_HT40PLUS |			\
 	 CHANNEL_HT40MINUS)
 
-struct hal_channel_internal {
-	u_int16_t channel;
-	u_int32_t channelFlags;
-	u_int8_t privFlags;
+struct ath9k_channel {
+	u16 channel;
+	u32 channelFlags;
+	u8 privFlags;
 	int8_t maxRegTxPower;
 	int8_t maxTxPower;
 	int8_t minTxPower;
-	bool bssSendHere;
-	u_int8_t gainI;
-	bool iqCalValid;
+	u32 chanmode;
 	int32_t CalValid;
 	bool oneTimeCalsDone;
 	int8_t iCoff;
 	int8_t qCoff;
 	int16_t rawNoiseFloor;
-	int16_t noiseFloorAdjust;
 	int8_t antennaMax;
-	u_int32_t regDmnFlags;
-	u_int32_t conformanceTestLimit;
-	u_int64_t ah_tsf_last;
-	u_int64_t ah_channel_time;
-	u_int16_t mainSpur;
-	u_int64_t dfsTsf;
+	u32 regDmnFlags;
+	u32 conformanceTestLimit[3]; /* 0:11a, 1: 11b, 2:11g */
 #ifdef ATH_NF_PER_CHAN
-	struct hal_nfcal_hist nfCalHist[NUM_NF_READINGS];
+	struct ath9k_nfcal_hist nfCalHist[NUM_NF_READINGS];
 #endif
 };
-
-#define HAL_SPUR_VAL_MASK       0x3FFF
-#define HAL_SPUR_CHAN_WIDTH     87
-#define HAL_BIN_WIDTH_BASE_100HZ    3125
-#define HAL_MAX_BINS_ALLOWED        28
 
 #define IS_CHAN_A(_c) ((((_c)->channelFlags & CHANNEL_A) == CHANNEL_A) || \
        (((_c)->channelFlags & CHANNEL_A_HT20) == CHANNEL_A_HT20) || \
@@ -511,8 +489,6 @@ struct hal_channel_internal {
        (((_c)->channelFlags & CHANNEL_G_HT20) == CHANNEL_G_HT20) || \
        (((_c)->channelFlags & CHANNEL_G_HT40PLUS) == CHANNEL_G_HT40PLUS) || \
        (((_c)->channelFlags & CHANNEL_G_HT40MINUS) == CHANNEL_G_HT40MINUS))
-#define IS_CHAN_PUREG(_c) \
-	(((_c)->channelFlags & CHANNEL_PUREG) == CHANNEL_PUREG)
 #define IS_CHAN_CCK(_c) (((_c)->channelFlags & CHANNEL_CCK) != 0)
 #define IS_CHAN_OFDM(_c) (((_c)->channelFlags & CHANNEL_OFDM) != 0)
 #define IS_CHAN_5GHZ(_c) (((_c)->channelFlags & CHANNEL_5GHZ) != 0)
@@ -520,40 +496,46 @@ struct hal_channel_internal {
 #define IS_CHAN_PASSIVE(_c) (((_c)->channelFlags & CHANNEL_PASSIVE) != 0)
 #define IS_CHAN_HALF_RATE(_c) (((_c)->channelFlags & CHANNEL_HALF) != 0)
 #define IS_CHAN_QUARTER_RATE(_c) (((_c)->channelFlags & CHANNEL_QUARTER) != 0)
-#define IS_CHAN_HT20(_c) (((_c)->channelFlags & CHANNEL_HT20) != 0)
-#define IS_CHAN_HT40(_c) ((((_c)->channelFlags & CHANNEL_HT40PLUS) != 0) \
-			  || (((_c)->channelFlags & CHANNEL_HT40MINUS) != 0))
+
+/* These macros check chanmode and not channelFlags */
+#define IS_CHAN_HT20(_c) (((_c)->chanmode == CHANNEL_A_HT20) ||	\
+			  ((_c)->chanmode == CHANNEL_G_HT20))
+#define IS_CHAN_HT40(_c) (((_c)->chanmode == CHANNEL_A_HT40PLUS) ||	\
+			  ((_c)->chanmode == CHANNEL_A_HT40MINUS) ||	\
+			  ((_c)->chanmode == CHANNEL_G_HT40PLUS) ||	\
+			  ((_c)->chanmode == CHANNEL_G_HT40MINUS))
 #define IS_CHAN_HT(_c) (IS_CHAN_HT20((_c)) || IS_CHAN_HT40((_c)))
+
 #define IS_CHAN_IN_PUBLIC_SAFETY_BAND(_c) ((_c) > 4940 && (_c) < 4990)
-#define IS_CHAN_A_5MHZ_SPACED(_c) \
-	((((_c)->channelFlags & CHANNEL_5GHZ) != 0) && \
-	(((_c)->channel % 20) != 0) &&	\
-	(((_c)->channel % 10) != 0))
+#define IS_CHAN_A_5MHZ_SPACED(_c)			\
+	((((_c)->channelFlags & CHANNEL_5GHZ) != 0) &&	\
+	 (((_c)->channel % 20) != 0) &&			\
+	 (((_c)->channel % 10) != 0))
 
-struct hal_keyval {
-	u_int8_t kv_type;
-	u_int8_t kv_pad;
-	u_int16_t kv_len;
-	u_int8_t kv_val[16];
-	u_int8_t kv_mic[8];
-	u_int8_t kv_txmic[8];
+struct ath9k_keyval {
+	u8 kv_type;
+	u8 kv_pad;
+	u16 kv_len;
+	u8 kv_val[16];
+	u8 kv_mic[8];
+	u8 kv_txmic[8];
 };
 
-enum hal_key_type {
-	HAL_KEY_TYPE_CLEAR,
-	HAL_KEY_TYPE_WEP,
-	HAL_KEY_TYPE_AES,
-	HAL_KEY_TYPE_TKIP,
+enum ath9k_key_type {
+	ATH9K_KEY_TYPE_CLEAR,
+	ATH9K_KEY_TYPE_WEP,
+	ATH9K_KEY_TYPE_AES,
+	ATH9K_KEY_TYPE_TKIP,
 };
 
-enum hal_cipher {
-	HAL_CIPHER_WEP = 0,
-	HAL_CIPHER_AES_OCB = 1,
-	HAL_CIPHER_AES_CCM = 2,
-	HAL_CIPHER_CKIP = 3,
-	HAL_CIPHER_TKIP = 4,
-	HAL_CIPHER_CLR = 5,
-	HAL_CIPHER_MIC = 127
+enum ath9k_cipher {
+	ATH9K_CIPHER_WEP = 0,
+	ATH9K_CIPHER_AES_OCB = 1,
+	ATH9K_CIPHER_AES_CCM = 2,
+	ATH9K_CIPHER_CKIP = 3,
+	ATH9K_CIPHER_TKIP = 4,
+	ATH9K_CIPHER_CLR = 5,
+	ATH9K_CIPHER_MIC = 127
 };
 
 #define AR_EEPROM_EEPCAP_COMPRESS_DIS   0x0001
@@ -596,10 +578,8 @@ enum hal_cipher {
 #define AR_EEPROM_RFSILENT_POLARITY     0x0002
 #define AR_EEPROM_RFSILENT_POLARITY_S   1
 
-enum {
-	CTRY_DEBUG = 0x1ff,
-	CTRY_DEFAULT = 0
-};
+#define CTRY_DEBUG 0x1ff
+#define	CTRY_DEFAULT 0
 
 enum reg_ext_bitmap {
 	REG_EXT_JAPAN_MIDBAND = 1,
@@ -608,13 +588,13 @@ enum reg_ext_bitmap {
 	REG_EXT_JAPAN_DFS_HT40 = 4
 };
 
-struct hal_country_entry {
-	u_int16_t countryCode;
-	u_int16_t regDmnEnum;
-	u_int16_t regDmn5G;
-	u_int16_t regDmn2G;
-	u_int8_t isMultidomain;
-	u_int8_t iso[3];
+struct ath9k_country_entry {
+	u16 countryCode;
+	u16 regDmnEnum;
+	u16 regDmn5G;
+	u16 regDmn2G;
+	u8 isMultidomain;
+	u8 iso[3];
 };
 
 #define REG_WRITE(_ah, _reg, _val) iowrite32(_val, _ah->ah_sh + _reg)
@@ -632,10 +612,10 @@ struct hal_country_entry {
 #define REG_CLR_BIT(_a, _r, _f) \
 	REG_WRITE(_a, _r, REG_READ(_a, _r) & ~_f)
 
-#define HAL_COMP_BUF_MAX_SIZE   9216
-#define HAL_COMP_BUF_ALIGN_SIZE 512
+#define ATH9K_COMP_BUF_MAX_SIZE   9216
+#define ATH9K_COMP_BUF_ALIGN_SIZE 512
 
-#define HAL_TXQ_USE_LOCKOUT_BKOFF_DIS   0x00000001
+#define ATH9K_TXQ_USE_LOCKOUT_BKOFF_DIS   0x00000001
 
 #define INIT_AIFS       2
 #define INIT_CWMIN      15
@@ -667,47 +647,22 @@ struct hal_country_entry {
 #define MAX_RATE_POWER 63
 
 #define LE_READ_2(p)							\
-	((u_int16_t)							\
-	 ((((const u_int8_t *)(p))[0]) | \
-		(((const u_int8_t *)(p))[1] << 8)))
+	((u16)							\
+	 ((((const u8 *)(p))[0]) | \
+		(((const u8 *)(p))[1] << 8)))
 
 #define LE_READ_4(p)							\
-	((u_int32_t)							\
-	 ((((const u_int8_t *)(p))[0]) | \
-		(((const u_int8_t *)(p))[1] << 8) | \
-		(((const u_int8_t *)(p))[2] << 16) | \
-			(((const u_int8_t *)(p))[3] << 24)))
+	((u32)							\
+	 ((((const u8 *)(p))[0]) | \
+		(((const u8 *)(p))[1] << 8) | \
+		(((const u8 *)(p))[2] << 16) | \
+			(((const u8 *)(p))[3] << 24)))
 
-enum hal_status {
-	HAL_OK = 0,
-	HAL_ENXIO,
-	HAL_ENOMEM,
-	HAL_EIO,
-	HAL_EEMAGIC,
-	HAL_EEVERSION,
-	HAL_EELOCKED,
-	HAL_EEBADSUM,
-	HAL_EEREAD,
-	HAL_EEBADMAC,
-	HAL_EESIZE,
-	HAL_EEWRITE,
-	HAL_EINVAL,
-	HAL_ENOTSUPP,
-	HAL_ESELFTEST,
-	HAL_EINPROGRESS
-};
-
-enum hal_power_mode {
-	HAL_PM_AWAKE = 0,
-	HAL_PM_FULL_SLEEP,
-	HAL_PM_NETWORK_SLEEP,
-	HAL_PM_UNDEFINED
-};
-
-enum hal_rfgain {
-	HAL_RFGAIN_INACTIVE = 0,
-	HAL_RFGAIN_READ_REQUESTED,
-	HAL_RFGAIN_NEED_CHANGE
+enum ath9k_power_mode {
+	ATH9K_PM_AWAKE = 0,
+	ATH9K_PM_FULL_SLEEP,
+	ATH9K_PM_NETWORK_SLEEP,
+	ATH9K_PM_UNDEFINED
 };
 
 #define HAL_ANTENNA_MIN_MODE  0
@@ -715,47 +670,44 @@ enum hal_rfgain {
 #define HAL_ANTENNA_FIXED_B   2
 #define HAL_ANTENNA_MAX_MODE  3
 
-struct hal_mib_stats {
-	u_int32_t ackrcv_bad;
-	u_int32_t rts_bad;
-	u_int32_t rts_good;
-	u_int32_t fcs_bad;
-	u_int32_t beacons;
+struct ath9k_mib_stats {
+	u32 ackrcv_bad;
+	u32 rts_bad;
+	u32 rts_good;
+	u32 fcs_bad;
+	u32 beacons;
 };
 
-enum hal_ant_setting {
-	HAL_ANT_VARIABLE = 0,
-	HAL_ANT_FIXED_A,
-	HAL_ANT_FIXED_B
+enum ath9k_ant_setting {
+	ATH9K_ANT_VARIABLE = 0,
+	ATH9K_ANT_FIXED_A,
+	ATH9K_ANT_FIXED_B
 };
 
-enum hal_opmode {
-	HAL_M_STA = 1,
-	HAL_M_IBSS = 0,
-	HAL_M_HOSTAP = 6,
-	HAL_M_MONITOR = 8
+enum ath9k_opmode {
+	ATH9K_M_STA = 1,
+	ATH9K_M_IBSS = 0,
+	ATH9K_M_HOSTAP = 6,
+	ATH9K_M_MONITOR = 8
 };
 
-enum {
-	HAL_SLOT_TIME_6 = 6,
-	HAL_SLOT_TIME_9 = 9,
-	HAL_SLOT_TIME_20 = 20,
+#define ATH9K_SLOT_TIME_6 6
+#define ATH9K_SLOT_TIME_9 9
+#define ATH9K_SLOT_TIME_20 20
+
+enum ath9k_ht_macmode {
+	ATH9K_HT_MACMODE_20 = 0,
+	ATH9K_HT_MACMODE_2040 = 1,
 };
 
-
-enum hal_ht_macmode {
-	HAL_HT_MACMODE_20 = 0,
-	HAL_HT_MACMODE_2040 = 1,
+enum ath9k_ht_extprotspacing {
+	ATH9K_HT_EXTPROTSPACING_20 = 0,
+	ATH9K_HT_EXTPROTSPACING_25 = 1,
 };
 
-enum hal_ht_extprotspacing {
-	HAL_HT_EXTPROTSPACING_20 = 0,
-	HAL_HT_EXTPROTSPACING_25 = 1,
-};
-
-struct hal_ht_cwm {
-	enum hal_ht_macmode ht_macmode;
-	enum hal_ht_extprotspacing ht_extprotspacing;
+struct ath9k_ht_cwm {
+	enum ath9k_ht_macmode ht_macmode;
+	enum ath9k_ht_extprotspacing ht_extprotspacing;
 };
 
 enum hal_freq_band {
@@ -763,25 +715,16 @@ enum hal_freq_band {
 	HAL_FREQ_BAND_2GHZ = 1,
 };
 
-enum {
-	HAL_TRUE_CHIP = 1
-};
-
-enum hal_bus_type {
-	HAL_BUS_TYPE_PCI,
-	HAL_BUS_TYPE_AHB
-};
-
-enum hal_ani_cmd {
-	HAL_ANI_PRESENT = 0x1,
-	HAL_ANI_NOISE_IMMUNITY_LEVEL = 0x2,
-	HAL_ANI_OFDM_WEAK_SIGNAL_DETECTION = 0x4,
-	HAL_ANI_CCK_WEAK_SIGNAL_THR = 0x8,
-	HAL_ANI_FIRSTEP_LEVEL = 0x10,
-	HAL_ANI_SPUR_IMMUNITY_LEVEL = 0x20,
-	HAL_ANI_MODE = 0x40,
-	HAL_ANI_PHYERR_RESET = 0x80,
-	HAL_ANI_ALL = 0xff
+enum ath9k_ani_cmd {
+	ATH9K_ANI_PRESENT = 0x1,
+	ATH9K_ANI_NOISE_IMMUNITY_LEVEL = 0x2,
+	ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION = 0x4,
+	ATH9K_ANI_CCK_WEAK_SIGNAL_THR = 0x8,
+	ATH9K_ANI_FIRSTEP_LEVEL = 0x10,
+	ATH9K_ANI_SPUR_IMMUNITY_LEVEL = 0x20,
+	ATH9K_ANI_MODE = 0x40,
+	ATH9K_ANI_PHYERR_RESET = 0x80,
+	ATH9K_ANI_ALL = 0xff
 };
 
 enum phytype {
@@ -800,12 +743,12 @@ enum start_adhoc_option {
 	START_ADHOC_IN_11B,
 };
 
-enum hal_tp_scale {
-	HAL_TP_SCALE_MAX = 0,
-	HAL_TP_SCALE_50,
-	HAL_TP_SCALE_25,
-	HAL_TP_SCALE_12,
-	HAL_TP_SCALE_MIN
+enum ath9k_tp_scale {
+	ATH9K_TP_SCALE_MAX = 0,
+	ATH9K_TP_SCALE_50,
+	ATH9K_TP_SCALE_25,
+	ATH9K_TP_SCALE_12,
+	ATH9K_TP_SCALE_MIN
 };
 
 enum ser_reg_mode {
@@ -820,97 +763,95 @@ enum ser_reg_mode {
 #define AR_PHY_CCA_FILTERWINDOW_LENGTH_INIT     3
 #define AR_PHY_CCA_FILTERWINDOW_LENGTH          5
 
-#define HAL_NF_CAL_HIST_MAX             5
+#define ATH9K_NF_CAL_HIST_MAX           5
 #define NUM_NF_READINGS                 6
 
-struct hal_nfcal_hist {
-	int16_t nfCalBuffer[HAL_NF_CAL_HIST_MAX];
-	u_int8_t currIndex;
+struct ath9k_nfcal_hist {
+	int16_t nfCalBuffer[ATH9K_NF_CAL_HIST_MAX];
+	u8 currIndex;
 	int16_t privNF;
-	u_int8_t invalidNFcount;
+	u8 invalidNFcount;
 };
 
-struct hal_beacon_state {
-	u_int32_t bs_nexttbtt;
-	u_int32_t bs_nextdtim;
-	u_int32_t bs_intval;
-#define HAL_BEACON_PERIOD       0x0000ffff
-#define HAL_BEACON_ENA          0x00800000
-#define HAL_BEACON_RESET_TSF    0x01000000
-	u_int32_t bs_dtimperiod;
-	u_int16_t bs_cfpperiod;
-	u_int16_t bs_cfpmaxduration;
-	u_int32_t bs_cfpnext;
-	u_int16_t bs_timoffset;
-	u_int16_t bs_bmissthreshold;
-	u_int32_t bs_sleepduration;
+struct ath9k_beacon_state {
+	u32 bs_nexttbtt;
+	u32 bs_nextdtim;
+	u32 bs_intval;
+#define ATH9K_BEACON_PERIOD       0x0000ffff
+#define ATH9K_BEACON_ENA          0x00800000
+#define ATH9K_BEACON_RESET_TSF    0x01000000
+	u32 bs_dtimperiod;
+	u16 bs_cfpperiod;
+	u16 bs_cfpmaxduration;
+	u32 bs_cfpnext;
+	u16 bs_timoffset;
+	u16 bs_bmissthreshold;
+	u32 bs_sleepduration;
 };
 
-struct hal_node_stats {
-	u_int32_t ns_avgbrssi;
-	u_int32_t ns_avgrssi;
-	u_int32_t ns_avgtxrssi;
-	u_int32_t ns_avgtxrate;
+struct ath9k_node_stats {
+	u32 ns_avgbrssi;
+	u32 ns_avgrssi;
+	u32 ns_avgtxrssi;
+	u32 ns_avgtxrate;
 };
 
-#define HAL_RSSI_EP_MULTIPLIER  (1<<7)
-#define HAL_RATE_EP_MULTIPLIER  (1<<7)
+#define ATH9K_RSSI_EP_MULTIPLIER  (1<<7)
 
-enum hal_gpio_output_mux_type {
-	HAL_GPIO_OUTPUT_MUX_AS_OUTPUT,
-	HAL_GPIO_OUTPUT_MUX_AS_PCIE_ATTENTION_LED,
-	HAL_GPIO_OUTPUT_MUX_AS_PCIE_POWER_LED,
-	HAL_GPIO_OUTPUT_MUX_AS_MAC_NETWORK_LED,
-	HAL_GPIO_OUTPUT_MUX_AS_MAC_POWER_LED,
-	HAL_GPIO_OUTPUT_MUX_NUM_ENTRIES
+enum ath9k_gpio_output_mux_type {
+	ATH9K_GPIO_OUTPUT_MUX_AS_OUTPUT,
+	ATH9K_GPIO_OUTPUT_MUX_AS_PCIE_ATTENTION_LED,
+	ATH9K_GPIO_OUTPUT_MUX_AS_PCIE_POWER_LED,
+	ATH9K_GPIO_OUTPUT_MUX_AS_MAC_NETWORK_LED,
+	ATH9K_GPIO_OUTPUT_MUX_AS_MAC_POWER_LED,
+	ATH9K_GPIO_OUTPUT_MUX_NUM_ENTRIES
 };
 
 enum {
-	HAL_RESET_POWER_ON,
-	HAL_RESET_WARM,
-	HAL_RESET_COLD,
+	ATH9K_RESET_POWER_ON,
+	ATH9K_RESET_WARM,
+	ATH9K_RESET_COLD,
 };
 
 #define AH_USE_EEPROM   0x1
-#define AH_IS_HB63      0x2
 
 struct ath_hal {
-	u_int32_t ah_magic;
-	u_int16_t ah_devid;
-	u_int16_t ah_subvendorid;
+	u32 ah_magic;
+	u16 ah_devid;
+	u16 ah_subvendorid;
 	struct ath_softc *ah_sc;
 	void __iomem *ah_sh;
-	u_int16_t ah_countryCode;
-	u_int32_t ah_macVersion;
-	u_int16_t ah_macRev;
-	u_int16_t ah_phyRev;
-	u_int16_t ah_analog5GhzRev;
-	u_int16_t ah_analog2GhzRev;
-	u_int8_t ah_decompMask[HAL_DECOMP_MASK_SIZE];
-	u_int32_t ah_flags;
-	enum hal_opmode ah_opmode;
+	u16 ah_countryCode;
+	u32 ah_macVersion;
+	u16 ah_macRev;
+	u16 ah_phyRev;
+	u16 ah_analog5GhzRev;
+	u16 ah_analog2GhzRev;
+	u8 ah_decompMask[ATH9K_DECOMP_MASK_SIZE];
+	u32 ah_flags;
+	enum ath9k_opmode ah_opmode;
 	struct hal_ops_config ah_config;
 	struct hal_capabilities ah_caps;
 	int16_t ah_powerLimit;
-	u_int16_t ah_maxPowerLevel;
-	u_int ah_tpScale;
-	u_int16_t ah_currentRD;
-	u_int16_t ah_currentRDExt;
-	u_int16_t ah_currentRDInUse;
-	u_int16_t ah_currentRD5G;
-	u_int16_t ah_currentRD2G;
+	u16 ah_maxPowerLevel;
+	u32 ah_tpScale;
+	u16 ah_currentRD;
+	u16 ah_currentRDExt;
+	u16 ah_currentRDInUse;
+	u16 ah_currentRD5G;
+	u16 ah_currentRD2G;
 	char ah_iso[4];
 	enum start_adhoc_option ah_adHocMode;
 	bool ah_commonMode;
-	struct hal_channel_internal ah_channels[150];
-	u_int ah_nchan;
-	struct hal_channel_internal *ah_curchan;
-	u_int16_t ah_rfsilent;
+	struct ath9k_channel ah_channels[150];
+	u32 ah_nchan;
+	struct ath9k_channel *ah_curchan;
+	u16 ah_rfsilent;
 	bool ah_rfkillEnabled;
 	bool ah_isPciExpress;
-	u_int16_t ah_txTrigLevel;
+	u16 ah_txTrigLevel;
 #ifndef ATH_NF_PER_CHAN
-	struct hal_nfcal_hist nfCalHist[NUM_NF_READINGS];
+	struct ath9k_nfcal_hist nfCalHist[NUM_NF_READINGS];
 #endif
 };
 
@@ -946,199 +887,195 @@ enum {
 };
 
 struct chan_centers {
-	u_int16_t synth_center;
-	u_int16_t ctl_center;
-	u_int16_t ext_center;
+	u16 synth_center;
+	u16 ctl_center;
+	u16 ext_center;
 };
 
-enum hal_status ath_hal_getcapability(struct ath_hal *ah,
-				      enum hal_capability_type type,
-				      u_int32_t capability,
-				      u_int32_t *result);
-const struct hal_rate_table *ath9k_hw_getratetable(struct ath_hal *ah,
-						   u_int mode);
+int ath_hal_getcapability(struct ath_hal *ah,
+			  enum hal_capability_type type,
+			  u32 capability,
+			  u32 *result);
+const struct ath9k_rate_table *ath9k_hw_getratetable(struct ath_hal *ah,
+						     u32 mode);
 void ath9k_hw_detach(struct ath_hal *ah);
-struct ath_hal *ath9k_hw_attach(u_int16_t devid,
+struct ath_hal *ath9k_hw_attach(u16 devid,
 				struct ath_softc *sc,
 				void __iomem *mem,
-				enum hal_status *error);
+				int *error);
 bool ath9k_regd_init_channels(struct ath_hal *ah,
-			      struct hal_channel *chans,
-			      u_int maxchans, u_int *nchans,
-			      u_int8_t *regclassids,
-			      u_int maxregids, u_int *nregids,
-			      u_int16_t cc, u_int32_t modeSelect,
+			      u32 maxchans, u32 *nchans,
+			      u8 *regclassids,
+			      u32 maxregids, u32 *nregids,
+			      u16 cc, u32 modeSelect,
 			      bool enableOutdoor,
 			      bool enableExtendedChannels);
-u_int ath9k_hw_mhz2ieee(struct ath_hal *ah, u_int freq, u_int flags);
-enum hal_int ath9k_hw_set_interrupts(struct ath_hal *ah,
-				     enum hal_int ints);
-bool ath9k_hw_reset(struct ath_hal *ah, enum hal_opmode opmode,
-		    struct hal_channel *chan,
-		    enum hal_ht_macmode macmode,
-		    u_int8_t txchainmask, u_int8_t rxchainmask,
-		    enum hal_ht_extprotspacing extprotspacing,
+u32 ath9k_hw_mhz2ieee(struct ath_hal *ah, u32 freq, u32 flags);
+enum ath9k_int ath9k_hw_set_interrupts(struct ath_hal *ah,
+				     enum ath9k_int ints);
+bool ath9k_hw_reset(struct ath_hal *ah, enum ath9k_opmode opmode,
+		    struct ath9k_channel *chan,
+		    enum ath9k_ht_macmode macmode,
+		    u8 txchainmask, u8 rxchainmask,
+		    enum ath9k_ht_extprotspacing extprotspacing,
 		    bool bChannelChange,
-		    enum hal_status *status);
+		    int *status);
 bool ath9k_hw_phy_disable(struct ath_hal *ah);
-void ath9k_hw_reset_calvalid(struct ath_hal *ah, struct hal_channel *chan,
+void ath9k_hw_reset_calvalid(struct ath_hal *ah, struct ath9k_channel *chan,
 			     bool *isCalDone);
 void ath9k_hw_ani_monitor(struct ath_hal *ah,
-			  const struct hal_node_stats *stats,
-			  struct hal_channel *chan);
+			  const struct ath9k_node_stats *stats,
+			  struct ath9k_channel *chan);
 bool ath9k_hw_calibrate(struct ath_hal *ah,
-			struct hal_channel *chan,
-			u_int8_t rxchainmask,
+			struct ath9k_channel *chan,
+			u8 rxchainmask,
 			bool longcal,
 			bool *isCalDone);
 int16_t ath9k_hw_getchan_noise(struct ath_hal *ah,
-			       struct hal_channel *chan);
-void ath9k_hw_write_associd(struct ath_hal *ah, const u_int8_t *bssid,
-			    u_int16_t assocId);
-void ath9k_hw_setrxfilter(struct ath_hal *ah, u_int32_t bits);
-void ath9k_hw_write_associd(struct ath_hal *ah, const u_int8_t *bssid,
-			    u_int16_t assocId);
-bool ath9k_hw_stoptxdma(struct ath_hal *ah, u_int q);
+			       struct ath9k_channel *chan);
+void ath9k_hw_write_associd(struct ath_hal *ah, const u8 *bssid,
+			    u16 assocId);
+void ath9k_hw_setrxfilter(struct ath_hal *ah, u32 bits);
+void ath9k_hw_write_associd(struct ath_hal *ah, const u8 *bssid,
+			    u16 assocId);
+bool ath9k_hw_stoptxdma(struct ath_hal *ah, u32 q);
 void ath9k_hw_reset_tsf(struct ath_hal *ah);
-bool ath9k_hw_keyisvalid(struct ath_hal *ah, u_int16_t entry);
-bool ath9k_hw_keysetmac(struct ath_hal *ah, u_int16_t entry,
-			const u_int8_t *mac);
+bool ath9k_hw_keyisvalid(struct ath_hal *ah, u16 entry);
+bool ath9k_hw_keysetmac(struct ath_hal *ah, u16 entry,
+			const u8 *mac);
 bool ath9k_hw_set_keycache_entry(struct ath_hal *ah,
-				 u_int16_t entry,
-				 const struct hal_keyval *k,
-				 const u_int8_t *mac,
+				 u16 entry,
+				 const struct ath9k_keyval *k,
+				 const u8 *mac,
 				 int xorKey);
 bool ath9k_hw_set_tsfadjust(struct ath_hal *ah,
-			    u_int32_t setting);
+			    u32 setting);
 void ath9k_hw_configpcipowersave(struct ath_hal *ah, int restore);
 bool ath9k_hw_intrpend(struct ath_hal *ah);
-bool ath9k_hw_getisr(struct ath_hal *ah, enum hal_int *masked);
+bool ath9k_hw_getisr(struct ath_hal *ah, enum ath9k_int *masked);
 bool ath9k_hw_updatetxtriglevel(struct ath_hal *ah,
 				bool bIncTrigLevel);
 void ath9k_hw_procmibevent(struct ath_hal *ah,
-			   const struct hal_node_stats *stats);
+			   const struct ath9k_node_stats *stats);
 bool ath9k_hw_setrxabort(struct ath_hal *ah, bool set);
-void ath9k_hw_set11nmac2040(struct ath_hal *ah, enum hal_ht_macmode mode);
+void ath9k_hw_set11nmac2040(struct ath_hal *ah, enum ath9k_ht_macmode mode);
 bool ath9k_hw_phycounters(struct ath_hal *ah);
-bool ath9k_hw_keyreset(struct ath_hal *ah, u_int16_t entry);
+bool ath9k_hw_keyreset(struct ath_hal *ah, u16 entry);
 bool ath9k_hw_getcapability(struct ath_hal *ah,
 			    enum hal_capability_type type,
-			    u_int32_t capability,
-			    u_int32_t *result);
+			    u32 capability,
+			    u32 *result);
 bool ath9k_hw_setcapability(struct ath_hal *ah,
 			    enum hal_capability_type type,
-			    u_int32_t capability,
-			    u_int32_t setting,
-			    enum hal_status *status);
-u_int ath9k_hw_getdefantenna(struct ath_hal *ah);
-void ath9k_hw_getmac(struct ath_hal *ah, u_int8_t *mac);
-void ath9k_hw_getbssidmask(struct ath_hal *ah, u_int8_t *mask);
+			    u32 capability,
+			    u32 setting,
+			    int *status);
+u32 ath9k_hw_getdefantenna(struct ath_hal *ah);
+void ath9k_hw_getmac(struct ath_hal *ah, u8 *mac);
+void ath9k_hw_getbssidmask(struct ath_hal *ah, u8 *mask);
 bool ath9k_hw_setbssidmask(struct ath_hal *ah,
-			   const u_int8_t *mask);
+			   const u8 *mask);
 bool ath9k_hw_setpower(struct ath_hal *ah,
-		       enum hal_power_mode mode);
-enum hal_int ath9k_hw_intrget(struct ath_hal *ah);
-u_int64_t ath9k_hw_gettsf64(struct ath_hal *ah);
-u_int ath9k_hw_getdefantenna(struct ath_hal *ah);
-bool ath9k_hw_setslottime(struct ath_hal *ah, u_int us);
+		       enum ath9k_power_mode mode);
+enum ath9k_int ath9k_hw_intrget(struct ath_hal *ah);
+u64 ath9k_hw_gettsf64(struct ath_hal *ah);
+u32 ath9k_hw_getdefantenna(struct ath_hal *ah);
+bool ath9k_hw_setslottime(struct ath_hal *ah, u32 us);
 bool ath9k_hw_setantennaswitch(struct ath_hal *ah,
-			       enum hal_ant_setting settings,
-			       struct hal_channel *chan,
-			       u_int8_t *tx_chainmask,
-			       u_int8_t *rx_chainmask,
-			       u_int8_t *antenna_cfgd);
-void ath9k_hw_setantenna(struct ath_hal *ah, u_int antenna);
-enum hal_status ath9k_hw_select_antconfig(struct ath_hal *ah,
-					  u_int32_t cfg);
-bool ath9k_hw_puttxbuf(struct ath_hal *ah, u_int q,
-		       u_int32_t txdp);
-bool ath9k_hw_txstart(struct ath_hal *ah, u_int q);
-u_int16_t ath9k_hw_computetxtime(struct ath_hal *ah,
-				 const struct hal_rate_table *rates,
-				 u_int32_t frameLen, u_int16_t rateix,
+			       enum ath9k_ant_setting settings,
+			       struct ath9k_channel *chan,
+			       u8 *tx_chainmask,
+			       u8 *rx_chainmask,
+			       u8 *antenna_cfgd);
+void ath9k_hw_setantenna(struct ath_hal *ah, u32 antenna);
+int ath9k_hw_select_antconfig(struct ath_hal *ah,
+			      u32 cfg);
+bool ath9k_hw_puttxbuf(struct ath_hal *ah, u32 q,
+		       u32 txdp);
+bool ath9k_hw_txstart(struct ath_hal *ah, u32 q);
+u16 ath9k_hw_computetxtime(struct ath_hal *ah,
+				 const struct ath9k_rate_table *rates,
+				 u32 frameLen, u16 rateix,
 				 bool shortPreamble);
 void ath9k_hw_set11n_ratescenario(struct ath_hal *ah, struct ath_desc *ds,
 				  struct ath_desc *lastds,
-				  u_int durUpdateEn, u_int rtsctsRate,
-				  u_int rtsctsDuration,
-				  struct hal_11n_rate_series series[],
-				  u_int nseries, u_int flags);
+				  u32 durUpdateEn, u32 rtsctsRate,
+				  u32 rtsctsDuration,
+				  struct ath9k_11n_rate_series series[],
+				  u32 nseries, u32 flags);
 void ath9k_hw_set11n_burstduration(struct ath_hal *ah,
 				   struct ath_desc *ds,
-				   u_int burstDuration);
+				   u32 burstDuration);
 void ath9k_hw_cleartxdesc(struct ath_hal *ah, struct ath_desc *ds);
-u_int32_t ath9k_hw_reverse_bits(u_int32_t val, u_int32_t n);
-bool ath9k_hw_resettxqueue(struct ath_hal *ah, u_int q);
-u_int ath9k_regd_get_ctl(struct ath_hal *ah, struct hal_channel *chan);
-u_int ath9k_regd_get_antenna_allowed(struct ath_hal *ah,
-				     struct hal_channel *chan);
-u_int ath9k_hw_mhz2ieee(struct ath_hal *ah, u_int freq, u_int flags);
+u32 ath9k_hw_reverse_bits(u32 val, u32 n);
+bool ath9k_hw_resettxqueue(struct ath_hal *ah, u32 q);
+u32 ath9k_regd_get_ctl(struct ath_hal *ah, struct ath9k_channel *chan);
+u32 ath9k_regd_get_antenna_allowed(struct ath_hal *ah,
+				     struct ath9k_channel *chan);
+u32 ath9k_hw_mhz2ieee(struct ath_hal *ah, u32 freq, u32 flags);
 bool ath9k_hw_gettxqueueprops(struct ath_hal *ah, int q,
-			      struct hal_txq_info *qInfo);
+			      struct ath9k_txq_info *qInfo);
 bool ath9k_hw_settxqueueprops(struct ath_hal *ah, int q,
-			      const struct hal_txq_info *qInfo);
-struct hal_channel_internal *ath9k_regd_check_channel(struct ath_hal *ah,
-					      const struct hal_channel *c);
+			      const struct ath9k_txq_info *qInfo);
+struct ath9k_channel *ath9k_regd_check_channel(struct ath_hal *ah,
+					      const struct ath9k_channel *c);
 void ath9k_hw_set11n_txdesc(struct ath_hal *ah, struct ath_desc *ds,
-			    u_int pktLen, enum hal_pkt_type type,
-			    u_int txPower, u_int keyIx,
-			    enum hal_key_type keyType, u_int flags);
+			    u32 pktLen, enum ath9k_pkt_type type,
+			    u32 txPower, u32 keyIx,
+			    enum ath9k_key_type keyType, u32 flags);
 bool ath9k_hw_filltxdesc(struct ath_hal *ah, struct ath_desc *ds,
-			 u_int segLen, bool firstSeg,
+			 u32 segLen, bool firstSeg,
 			 bool lastSeg,
 			 const struct ath_desc *ds0);
-u_int32_t ath9k_hw_GetMibCycleCountsPct(struct ath_hal *ah,
-					u_int32_t *rxc_pcnt,
-					u_int32_t *rxf_pcnt,
-					u_int32_t *txf_pcnt);
+u32 ath9k_hw_GetMibCycleCountsPct(struct ath_hal *ah,
+					u32 *rxc_pcnt,
+					u32 *rxf_pcnt,
+					u32 *txf_pcnt);
 void ath9k_hw_dmaRegDump(struct ath_hal *ah);
 void ath9k_hw_beaconinit(struct ath_hal *ah,
-			 u_int32_t next_beacon, u_int32_t beacon_period);
+			 u32 next_beacon, u32 beacon_period);
 void ath9k_hw_set_sta_beacon_timers(struct ath_hal *ah,
-				    const struct hal_beacon_state *bs);
+				    const struct ath9k_beacon_state *bs);
 bool ath9k_hw_setuprxdesc(struct ath_hal *ah, struct ath_desc *ds,
-			  u_int32_t size, u_int flags);
-void ath9k_hw_putrxbuf(struct ath_hal *ah, u_int32_t rxdp);
+			  u32 size, u32 flags);
+void ath9k_hw_putrxbuf(struct ath_hal *ah, u32 rxdp);
 void ath9k_hw_rxena(struct ath_hal *ah);
 void ath9k_hw_setopmode(struct ath_hal *ah);
-bool ath9k_hw_setmac(struct ath_hal *ah, const u_int8_t *mac);
-void ath9k_hw_setmcastfilter(struct ath_hal *ah, u_int32_t filter0,
-			     u_int32_t filter1);
-u_int32_t ath9k_hw_getrxfilter(struct ath_hal *ah);
+bool ath9k_hw_setmac(struct ath_hal *ah, const u8 *mac);
+void ath9k_hw_setmcastfilter(struct ath_hal *ah, u32 filter0,
+			     u32 filter1);
+u32 ath9k_hw_getrxfilter(struct ath_hal *ah);
 void ath9k_hw_startpcureceive(struct ath_hal *ah);
 void ath9k_hw_stoppcurecv(struct ath_hal *ah);
 bool ath9k_hw_stopdmarecv(struct ath_hal *ah);
-enum hal_status ath9k_hw_rxprocdesc(struct ath_hal *ah,
-				    struct ath_desc *ds, u_int32_t pa,
-				    struct ath_desc *nds, u_int64_t tsf);
-u_int32_t ath9k_hw_gettxbuf(struct ath_hal *ah, u_int q);
-enum hal_status ath9k_hw_txprocdesc(struct ath_hal *ah,
-				    struct ath_desc *ds);
+int ath9k_hw_rxprocdesc(struct ath_hal *ah,
+			struct ath_desc *ds, u32 pa,
+			struct ath_desc *nds, u64 tsf);
+u32 ath9k_hw_gettxbuf(struct ath_hal *ah, u32 q);
+int ath9k_hw_txprocdesc(struct ath_hal *ah,
+			struct ath_desc *ds);
 void ath9k_hw_set11n_aggr_middle(struct ath_hal *ah, struct ath_desc *ds,
-				 u_int numDelims);
+				 u32 numDelims);
 void ath9k_hw_set11n_aggr_first(struct ath_hal *ah, struct ath_desc *ds,
-				u_int aggrLen);
+				u32 aggrLen);
 void ath9k_hw_set11n_aggr_last(struct ath_hal *ah, struct ath_desc *ds);
-bool ath9k_hw_releasetxqueue(struct ath_hal *ah, u_int q);
-void ath9k_hw_gettxintrtxqs(struct ath_hal *ah, u_int32_t *txqs);
+bool ath9k_hw_releasetxqueue(struct ath_hal *ah, u32 q);
+void ath9k_hw_gettxintrtxqs(struct ath_hal *ah, u32 *txqs);
 void ath9k_hw_clr11n_aggr(struct ath_hal *ah, struct ath_desc *ds);
 void ath9k_hw_set11n_virtualmorefrag(struct ath_hal *ah,
-				     struct ath_desc *ds, u_int vmf);
-bool ath9k_hw_set_txpowerlimit(struct ath_hal *ah, u_int32_t limit);
+				     struct ath_desc *ds, u32 vmf);
+bool ath9k_hw_set_txpowerlimit(struct ath_hal *ah, u32 limit);
 bool ath9k_regd_is_public_safety_sku(struct ath_hal *ah);
-int ath9k_hw_setuptxqueue(struct ath_hal *ah, enum hal_tx_queue type,
-			  const struct hal_txq_info *qInfo);
-u_int32_t ath9k_hw_numtxpending(struct ath_hal *ah, u_int q);
-const char *ath9k_hw_probe(u_int16_t vendorid, u_int16_t devid);
+int ath9k_hw_setuptxqueue(struct ath_hal *ah, enum ath9k_tx_queue type,
+			  const struct ath9k_txq_info *qInfo);
+u32 ath9k_hw_numtxpending(struct ath_hal *ah, u32 q);
+const char *ath9k_hw_probe(u16 vendorid, u16 devid);
 bool ath9k_hw_disable(struct ath_hal *ah);
 void ath9k_hw_rfdetach(struct ath_hal *ah);
 void ath9k_hw_get_channel_centers(struct ath_hal *ah,
-				  struct hal_channel_internal *chan,
+				  struct ath9k_channel *chan,
 				  struct chan_centers *centers);
 bool ath9k_get_channel_edges(struct ath_hal *ah,
-			     u_int16_t flags, u_int16_t *low,
-			     u_int16_t *high);
-bool ath9k_hw_get_chip_power_limits(struct ath_hal *ah,
-				    struct hal_channel *chans,
-				    u_int32_t nchans);
+			     u16 flags, u16 *low,
+			     u16 *high);
 #endif
