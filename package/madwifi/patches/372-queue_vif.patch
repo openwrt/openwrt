@@ -1,6 +1,6 @@
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -1183,6 +1183,7 @@
+@@ -1174,6 +1174,7 @@
  		}
  		if (skb1 != NULL) {
  			struct ieee80211_node *ni_tmp;
@@ -8,7 +8,7 @@
  			skb1->dev = dev;
  			skb_reset_mac_header(skb1);
  			skb_set_network_header(skb1, sizeof(struct ether_header));
-@@ -1190,7 +1191,12 @@
+@@ -1181,7 +1182,12 @@
  			skb1->protocol = __constant_htons(ETH_P_802_2);
  			/* XXX insert vlan tag before queue it? */
  			ni_tmp = SKB_CB(skb1)->ni; /* remember node so we can free it */
@@ -24,7 +24,7 @@
  				vap->iv_devstats.tx_dropped++;
 --- a/net80211/ieee80211_output.c
 +++ b/net80211/ieee80211_output.c
-@@ -329,9 +329,10 @@
+@@ -333,9 +333,10 @@
  	/* Dispatch the packet to the parent device */
  	skb->dev = vap->iv_ic->ic_dev;
  
