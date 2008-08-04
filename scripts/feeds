@@ -280,10 +280,12 @@ sub install_package {
 	};
 
 	# install all dependencies
-	foreach my $dep (@{$pkg->{depends}}, @{$pkg->{builddepends}}) {
-		next if $dep =~ /@/;
-		$dep =~ s/^\+//;
-		install_package($feed, $dep) == 0 or $ret = 1;
+	foreach my $vpkg (@{$srcpackage{$src}}) {
+		foreach my $dep (@{$vpkg->{depends}}, @{$vpkg->{builddepends}}) {
+			next if $dep =~ /@/;
+			$dep =~ s/^\+//;
+			install_package($feed, $dep) == 0 or $ret = 1;
+		}
 	}
 
 	return $ret;
