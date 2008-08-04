@@ -93,11 +93,9 @@ static struct platform_device ar5315_spiflash = {
 };
 
 #ifdef CONFIG_LEDS_GPIO
-static struct gpio_led ar5315_leds[] = {
-	{ .name = "wlan", .gpio = 0, .active_low = 1, },
-};
+static struct gpio_led ar5315_leds[8];
 
-static const struct gpio_led_platform_data ar5315_led_data = {
+static struct gpio_led_platform_data ar5315_led_data = {
 	.num_leds = ARRAY_SIZE(ar5315_leds),
 	.leds = (void *) ar5315_leds,
 };
@@ -111,10 +109,7 @@ static struct platform_device ar5315_gpio_leds = {
 };
 #endif
 
-
 static __initdata struct platform_device *ar5315_devs[5];
-
-
 
 static void *flash_regs;
 
@@ -147,12 +142,12 @@ static __u8 spiflash_probe(void)
 	spiflash_regwrite32(SPI_FLASH_OPCODE, 0xab);
 
 	reg = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | 4 |
-        	(1 << 4) | SPI_CTL_START;
+		(1 << 4) | SPI_CTL_START;
 
 	spiflash_regwrite32(SPI_FLASH_CTL, reg);
 
 	do {
-  		reg = spiflash_regread32(SPI_FLASH_CTL);
+		reg = spiflash_regread32(SPI_FLASH_CTL);
 	} while (reg & SPI_CTL_BUSY);
 
 	reg = (__u32) spiflash_regread32(SPI_FLASH_DATA);
@@ -206,6 +201,10 @@ int __init ar5315_init_devices(void)
 	struct ar531x_config *config;
 	struct ar531x_boarddata *bcfg;
 	int dev = 0;
+#ifdef CONFIG_LEDS_GPIO
+	int i;
+	char *tmp;
+#endif
 
 	if (!is_5315)
 		return 0;
@@ -246,7 +245,31 @@ int __init ar5315_init_devices(void)
 	ar5315_devs[dev++] = &ar5315_spiflash;
 
 #ifdef CONFIG_LEDS_GPIO
-	ar5315_leds[0].gpio = bcfg->sysLedGpio;
+	ar5315_led_data.num_leds = 0;
+	for(i = 0; i < 8; i++)
+	{
+		if((i != AR5315_RESET_GPIO) && (i != bcfg->resetConfigGpio))
+		{
+			if(i == bcfg->sysLedGpio)
+			{
+				tmp = kstrdup("wlan", GFP_KERNEL);
+			} else {
+				tmp = kmalloc(6, GFP_KERNEL);
+				if(tmp)
+					sprintf((char*)tmp, "gpio%d", i);
+			}
+			if(tmp)
+			{
+				ar5315_leds[ar5315_led_data.num_leds].name = tmp;
+				ar5315_leds[ar5315_led_data.num_leds].gpio = i;
+				ar5315_leds[ar5315_led_data.num_leds].active_low = 0;
+				ar5315_led_data.num_leds++;
+			} else {
+				printk("failed to alloc led string\n");
+				continue;
+			}
+		}
+	}
 	ar5315_devs[dev++] = &ar5315_gpio_leds;
 #endif
 
