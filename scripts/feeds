@@ -245,7 +245,7 @@ sub install_package {
 	$feed or do {
 		$installed{$name} and return 0;
 		# TODO: check if it's already installed within ./package directory
-		warn "WARNING: No feed for package '$name' found, maybe it's already part of the standard packages?\n";
+		$srcpackage{$name} or -d "./package/$name" or warn "WARNING: No feed for package '$name' found, maybe it's already part of the standard packages?\n";
 		return 0;
 	};
 
