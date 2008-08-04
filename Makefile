@@ -56,8 +56,19 @@ dirclean: clean
 	rm -rf $(STAGING_DIR) $(STAGING_DIR_HOST) $(STAGING_DIR_TOOLCHAIN) $(TOOLCHAIN_DIR) $(BUILD_DIR_HOST)
 	rm -rf $(TMP_DIR)
 
+tmp/.prereq_packages: .config
+	unset ERROR; \
+	for package in $(sort $(prereq-y) $(prereq-m)); do \
+		$(NO_TRACE_MAKE) -s -r -C package/$$package prereq || ERROR=1; \
+	done; \
+	if [ -n "$$ERROR" ]; then \
+		echo "Package prerequisite check failed."; \
+		false; \
+	fi
+	touch $@
+
 # check prerequisites before starting to build
-prereq: $(package/stamp-prereq) $(target/stamp-prereq) ;
+prereq: $(target/stamp-prereq) tmp/.prereq_packages
 
 prepare: .config $(tools/stamp-install) $(toolchain/stamp-install)
 world: prepare $(target/stamp-compile) $(package/stamp-cleanup) $(package/stamp-compile) $(package/stamp-install) $(package/stamp-rootfs-prepare) $(target/stamp-install) FORCE
