@@ -86,6 +86,7 @@ static struct mtd_partition rb1xx_nand_parts[] = {
 static struct platform_device *rb1xx_devices[] __initdata = {
 	&adm5120_flash0_device,
 	&adm5120_nand_device,
+	&adm5120_buttons_device,
 };
 
 /*
@@ -132,6 +133,7 @@ static struct platform_device rb153_cf_device = {
 static struct platform_device *rb153_devices[] __initdata = {
 	&adm5120_flash0_device,
 	&adm5120_nand_device,
+	&adm5120_buttons_device,
 	&rb153_cf_device,
 };
 
@@ -275,7 +277,7 @@ static void __init rb150_setup(void)
 
 	adm5120_buttons_data.nbuttons = 1;
 	adm5120_buttons[0].desc = "reset button";
-	adm5120_buttons[0].gpio = ADM5120_GPIO_PIN1;
+	adm5120_buttons[0].gpio = ADM5120_GPIO_PIN1; /* FIXME: valid? */
 
 	adm5120_flash0_data.window_size = 512*1024;
 
