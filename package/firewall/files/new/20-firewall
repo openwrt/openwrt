@@ -1,0 +1,41 @@
+. /lib/firewall/uci_firewall.sh
+unset ZONE
+config_get ifname $INTERFACE ifname
+INTERFACE=$ifname
+[ "$INTERFACE" == "lo" ] && exit 0
+load_zones() {
+	local name
+	local network
+	config_get name $1 name
+	config_get network $1 network
+	[ -z "$network" ] && return
+	for n in $network; do
+		local ifname
+		config_get ifname $n ifname
+		list_contains ifname $INTERFACE && { 
+			list_contains ZONE $name || ZONE="$ZONE $name"
+		}
+	done
+}
+
+config_foreach load_zones zone
+
+IFACE=$(find_config $INTERFACE)
+[ -n "$IFACE" ] && 
+	list_contains ZONE $IFACE || ZONE="$ZONE $IFACE"
+
+[ ifup = "$ACTION" ] && {
+	for z in $ZONE; do 
+		local loaded
+		config_get loaded core loaded
+		[ -n "$loaded" ] && addif $INTERFACE $z
+	done
+}
+
+[ ifdown = "$ACTION" ] && {
+	for z in $ZONE; do 
+		local up
+		config_get up $z up
+		[ "$up" == "1" ] && delif $INTERFACE $z
+	done
+}

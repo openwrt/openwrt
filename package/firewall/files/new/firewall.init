@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008 OpenWrt.org
+
+START=45
+
+start() {
+	. /lib/firewall/uci_firewall.sh
+	fw_init
+}
+
+stop() {
+	. /lib/firewall/uci_firewall.sh
+	fw_stop	
+}
