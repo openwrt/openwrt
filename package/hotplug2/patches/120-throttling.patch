@@ -1,5 +1,7 @@
---- a/hotplug2.c
-+++ b/hotplug2.c
+Index: hotplug2-0.9/hotplug2.c
+===================================================================
+--- hotplug2-0.9.orig/hotplug2.c	2008-08-04 10:02:27.000000000 +0200
++++ hotplug2-0.9/hotplug2.c	2008-08-04 10:03:04.000000000 +0200
 @@ -21,6 +21,7 @@
  #include <sys/mman.h>
  #include <linux/types.h>
@@ -29,7 +31,7 @@
  	
  	if (netlink_socket == -1) {
  		ERROR("netlink init","Unable to open netlink socket.");
-@@ -642,20 +650,45 @@
+@@ -642,20 +650,44 @@
  	 * Main loop reading uevents
  	 */
  	while (!terminate) {
@@ -59,7 +61,6 @@
 +				msg_poll.revents = 0;
 +				fds = poll(&msg_poll, 1, HOTPLUG2_THROTTLE_INTERVAL);
 +				if (fds < 0) {
-+					perror("POLL FAILED");
 +					continue;
 +				}
 +				if (fds == 0)
@@ -87,7 +88,7 @@
  		}
  		
  		/*
-@@ -706,13 +739,16 @@
+@@ -706,13 +738,16 @@
  			 * Unless, of course, we've specified otherwise and no rules that match
  			 * need throttling.
  			 */
@@ -111,8 +112,10 @@
  			}
  			
  			sigemptyset(&block_mask);
---- a/hotplug2.h
-+++ b/hotplug2.h
+Index: hotplug2-0.9/hotplug2.h
+===================================================================
+--- hotplug2-0.9.orig/hotplug2.h	2008-08-04 10:02:27.000000000 +0200
++++ hotplug2-0.9/hotplug2.h	2008-08-04 10:02:27.000000000 +0200
 @@ -45,9 +45,9 @@
  #define DBG(action, fmt, arg...)
  #endif
