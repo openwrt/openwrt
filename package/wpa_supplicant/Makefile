@@ -35,7 +35,6 @@ define Package/wpa-supplicant/config
 	source "$(SOURCE)/Config.in"
 endef
 
-
 define Package/wpa-cli
   SECTION:=net
   CATEGORY:=Network
