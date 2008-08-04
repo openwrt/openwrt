@@ -103,6 +103,10 @@ $(eval $(call RequireCommand,perl, \
 	Please install perl. \
 ))
 
+$(eval $(call RequireCommand,python, \
+	Please install python. \
+))
+
 $(eval $(call RequireCommand,wget, \
 	Please install wget. \
 ))
