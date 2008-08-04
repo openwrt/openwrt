@@ -380,14 +380,14 @@ sub mconf_depends($$) {
 			$depend = join("||", map { "PACKAGE_".$_ } @$vdep);
 		} else {
 			$flags =~ /\+/ and do {
-				next if $only_dep;
-				$m = "select";
-
 				# Menuconfig will not treat 'select FOO' as a real dependency
 				# thus if FOO depends on other config options, these dependencies
 				# will not be checked. To fix this, we simply emit all of FOO's
 				# depends here as well.
 				$package{$depend} and mconf_depends($package{$depend}->{depends}, 1, $dep);
+
+				$m = "select";
+				next if $only_dep;
 			};
 			$flags =~ /@/ or $depend = "PACKAGE_$depend";
 		}
