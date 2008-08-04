@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,19 +8,26 @@
 
 CRYPTO_MENU:=Cryptographic API modules
 
-# XXX: added CRYPTO_GENERIC as a workaround for modules renamed in 2.6.24:
-#  - aes > aes_generic
-#  - des > des_generic
-#  - sha1 > sha1_generic
-#  - sha256 > sha256_generic
+# XXX: added workarounds for modules renamed in 2.6 series:
+#  - aes > aes_generic (2.6.24)
+#  - blkcipher -> crypto_blkcipher (2.6.25)
+#  - des > des_generic (2.6.24)
+#  - sha1 > sha1_generic (2.6.24)
+#  - sha256 > sha256_generic (2.6.24)
+#  - sha512 > sha512_generic (2.6.26)
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.24)),1)
   CRYPTO_GENERIC:=_generic
+  AES_SUFFIX:=$(CRYPTO_GENERIC)
+  DES_SUFFIX:=$(CRYPTO_GENERIC)
+  SHA1_SUFFIX:=$(CRYPTO_GENERIC)
+  SHA256_SUFFIX:=$(CRYPTO_GENERIC)
 endif
-
-# XXX: added CRYPTO_PREFIX as a workaround for modules renamed in 2.6.25:
-#  - blkcipher -> crypto_blkcipher
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.25)),1)
   CRYPTO_PREFIX:=crypto_
+  BLKCIPHER_PREFIX:=$(CRYPTO_PREFIX)
+endif
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.26)),1)
+  SHA512_SUFFIX:=$(CRYPTO_GENERIC)
 endif
 
 # XXX: added CONFIG_CRYPTO_HMAC to KCONFIG so that CONFIG_CRYPTO_HASH is 
@@ -40,7 +47,7 @@ define KernelPackage/crypto-core
 	CONFIG_CRYPTO_MANAGER
   FILES:= \
 	$(LINUX_DIR)/crypto/crypto_algapi.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/$(CRYPTO_PREFIX)blkcipher.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/crypto/$(BLKCIPHER_PREFIX)blkcipher.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/cbc.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/deflate.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/ecb.$(LINUX_KMOD_SUFFIX) \
@@ -50,7 +57,7 @@ define KernelPackage/crypto-core
 	crypto_algapi \
 	cryptomgr \
 	crypto_hash \
-	$(CRYPTO_PREFIX)blkcipher \
+	$(BLKCIPHER_PREFIX)blkcipher \
 	cbc \
 	ecb \
 	deflate \
@@ -72,8 +79,8 @@ define KernelPackage/crypto-aes
   KCONFIG:= \
 	CONFIG_CRYPTO_AES \
 	CONFIG_CRYPTO_AES_586
-  FILES:=$(LINUX_DIR)/crypto/aes$(CRYPTO_GENERIC).$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,09,aes$(CRYPTO_GENERIC))
+  FILES:=$(LINUX_DIR)/crypto/aes$(AES_SUFFIX).$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,09,aes$(AES_SUFFIX))
 endef
 
 define KernelPackage/crypto-aes/x86-2.6
@@ -124,8 +131,8 @@ define KernelPackage/crypto-des
   TITLE:=DES/3DES cipher CryptoAPI module
   DEPENDS:=+kmod-crypto-core
   KCONFIG:=CONFIG_CRYPTO_DES
-  FILES:=$(LINUX_DIR)/crypto/des$(CRYPTO_GENERIC).$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,09,des$(CRYPTO_GENERIC))
+  FILES:=$(LINUX_DIR)/crypto/des$(DES_SUFFIX).$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,09,des$(DES_SUFFIX))
 endef
 
 $(eval $(call KernelPackage,crypto-des))
@@ -172,8 +179,8 @@ define KernelPackage/crypto-sha1
   TITLE:=SHA1 digest CryptoAPI module
   DEPENDS:=+kmod-crypto-core
   KCONFIG:=CONFIG_CRYPTO_SHA1
-  FILES:=$(LINUX_DIR)/crypto/sha1$(CRYPTO_GENERIC).$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,09,sha1$(CRYPTO_GENERIC))
+  FILES:=$(LINUX_DIR)/crypto/sha1$(SHA1_SUFFIX).$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,09,sha1$(SHA1_SUFFIX))
 endef
 
 $(eval $(call KernelPackage,crypto-sha1))
@@ -209,8 +216,8 @@ define KernelPackage/crypto-misc
 	$(LINUX_DIR)/crypto/khazad.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/md4.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/serpent.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/sha256$(CRYPTO_GENERIC).$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/sha512.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/crypto/sha256$(SHA256_SUFFIX).$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/crypto/sha512$(SHA512_SUFFIX).$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/tea.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/twofish.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/wp512.$(LINUX_KMOD_SUFFIX)
