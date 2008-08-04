@@ -76,7 +76,13 @@ sub parse_package_metadata($) {
 		/^Provides: \s*(.+)\s*$/ and do {
 			my @vpkg = split /\s+/, $1;
 			foreach my $vpkg (@vpkg) {
-				$package{$vpkg} or $package{$vpkg} = { vdepends => [] };
+				$package{$vpkg} or $package{$vpkg} = {
+					name => $vpkg,
+					vdepends => [],
+					src => $src,
+					subdir => $subdir,
+					makefile => $makefile
+				};
 				push @{$package{$vpkg}->{vdepends}}, $pkg->{name};
 			}
 		};
