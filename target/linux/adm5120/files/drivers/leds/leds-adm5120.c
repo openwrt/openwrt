@@ -27,7 +27,7 @@
 #include <adm5120_info.h>
 
 #define DRV_DESC	"LED driver for the ADM5120 based boards"
-#define DRV_VERSION	"0.2.0"
+#define DRV_VERSION	"0.2.1"
 
 #define NUM_LEDS_MAX	23
 #define ADM5120_GPIO_xxxx	0x100	/* an unknown pin */
@@ -176,6 +176,10 @@ LED_ARRAY(rb133) {
 	LED_STD(ADM5120_GPIO_PIN5, "user",		NULL),
         LED_INV(ADM5120_GPIO_P2L1, "lan1_speed", 	NULL), /* untested */
         LED_INV(ADM5120_GPIO_P2L0, "lan1_lnkact", 	NULL), /* untested */
+        LED_INV(ADM5120_GPIO_P1L1, "lan2_speed", 	NULL), /* untested */
+        LED_INV(ADM5120_GPIO_P1L0, "lan2_lnkact", 	NULL), /* untested */
+        LED_INV(ADM5120_GPIO_P0L1, "lan3_speed", 	NULL), /* untested */
+        LED_INV(ADM5120_GPIO_P0L0, "lan3_lnkact", 	NULL), /* untested */
 };
 
 LED_ARRAY(rb133c) {
@@ -183,10 +187,6 @@ LED_ARRAY(rb133c) {
 	LED_STD(ADM5120_GPIO_PIN5, "user",		NULL),
         LED_INV(ADM5120_GPIO_P2L1, "lan1_speed", 	NULL), /* untested */
         LED_INV(ADM5120_GPIO_P2L0, "lan1_lnkact", 	NULL), /* untested */
-        LED_INV(ADM5120_GPIO_P1L1, "lan2_speed", 	NULL), /* untested */
-        LED_INV(ADM5120_GPIO_P1L0, "lan2_lnkact", 	NULL), /* untested */
-        LED_INV(ADM5120_GPIO_P0L1, "lan3_speed", 	NULL), /* untested */
-        LED_INV(ADM5120_GPIO_P0L0, "lan3_lnkact", 	NULL), /* untested */
 };
 
 LED_ARRAY(rb150) {
