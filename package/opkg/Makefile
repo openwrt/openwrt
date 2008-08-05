@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=opkg
-PKG_REV:=4561
+PKG_REV:=4564
 PKG_VERSION:=$(PKG_REV)
 PKG_RELEASE:=1
 
