@@ -8,13 +8,15 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define Build/Clean
+ifneq ($(CONFIG_AVR32_UBOOT),)
+  define Build/Clean
 	$(MAKE) -C u-boot clean
-endef
+  endef
 
-define Build/Compile
+  define Build/Compile
 	$(MAKE) -C u-boot compile
-endef
+  endef
+endif
 
 define Image/Prepare
 	cp $(LINUX_DIR)/arch/avr32/boot/images/uImage $(KDIR)/uImage
