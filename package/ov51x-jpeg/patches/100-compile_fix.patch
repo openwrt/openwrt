@@ -1,0 +1,20 @@
+--- a/ov51x-jpeg-core.c
++++ b/ov51x-jpeg-core.c
+@@ -753,7 +753,7 @@
+ 	 * -claudio
+ 	 */
+ 
+-	ov51x_jpeg_proc_entry = create_proc_entry("ov51x-jpeg", S_IFDIR, &proc_root);
++	ov51x_jpeg_proc_entry = create_proc_entry("ov51x-jpeg", S_IFDIR, NULL);
+ 	if (ov51x_jpeg_proc_entry)
+ 		ov51x_jpeg_proc_entry->owner = THIS_MODULE;
+ 	else
+@@ -771,7 +771,7 @@
+ 
+ 	/* Destroy proc entry */
+ 	PDEBUG(4, "destroying /proc/ov51x-jpeg");
+-	remove_proc_entry("ov51x-jpeg", &proc_root);
++	remove_proc_entry("ov51x-jpeg", NULL);
+ 	ov51x_jpeg_proc_entry = NULL;
+ 
+ }
