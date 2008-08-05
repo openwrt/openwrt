@@ -22,6 +22,13 @@
 #include <adm5120_platform.h>
 #include <adm5120_irq.h>
 
+#define NP27G_GPIO_DEV_MASK	(1 << ADM5120_GPIO_PIN5)
+#define NP28G_GPIO_DEV_MASK	( 1 << ADM5120_GPIO_PIN5 \
+				| 1 << ADM5120_GPIO_PIN4)
+
+#define WP54_GPIO_DEV_MASK	( 1 << ADM5120_GPIO_PIN5 \
+				| 1 << ADM5120_GPIO_PIN3)
+
 static struct adm5120_pci_irq wp54_pci_irqs[] __initdata = {
 	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI0),
 };
@@ -104,6 +111,7 @@ static void __init np27g_setup(void)
 
 	/* setup data for flash0 device */
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
+	adm5120_gpiodev_resource.start &= ~NP27G_GPIO_DEV_MASK;
 
 	/* TODO: setup mac address */
 }
@@ -118,6 +126,8 @@ static void __init np28g_setup(void)
 
 	/* setup data for flash0 device */
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
+
+	adm5120_gpiodev_resource.start &= ~NP28G_GPIO_DEV_MASK;
 
 	/* TODO: setup mac address */
 }
@@ -136,6 +146,8 @@ static void __init wp54_setup(void)
 	adm5120_buttons_data.nbuttons = 1;
 	adm5120_buttons[0].desc = "reset button";
 	adm5120_buttons[0].gpio = ADM5120_GPIO_PIN2;
+
+	adm5120_gpiodev_resource.start &= ~WP54_GPIO_DEV_MASK;
 
 	/* TODO: setup mac address */
 }

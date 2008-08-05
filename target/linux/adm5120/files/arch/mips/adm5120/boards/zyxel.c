@@ -22,6 +22,8 @@
 #include <adm5120_platform.h>
 #include <adm5120_irq.h>
 
+#define P33X_GPIO_DEV_MASK	(1 << ADM5120_GPIO_PIN5)
+
 static void switch_bank_gpio5(unsigned bank)
 {
 	switch (bank) {
@@ -83,6 +85,7 @@ static void __init p33x_setup(void)
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(p33x_partitions);
 	adm5120_flash0_data.parts = p33x_partitions;
 
+	adm5120_gpiodev_resource.start &= ~P33X_GPIO_DEV_MASK;
 	/* TODO: setup mac address */
 }
 

@@ -64,6 +64,8 @@ static inline void adm5120_pci_set_irq_map(unsigned int nr_irqs,
 
 #define ADM5120_NUM_BUTTONS	5
 
+extern struct resource adm5120_gpiodev_resource;
+
 extern struct adm5120_flash_platform_data adm5120_flash0_data;
 extern struct adm5120_flash_platform_data adm5120_flash1_data;
 extern struct platform_nand_data adm5120_nand_data;
@@ -79,6 +81,7 @@ extern struct platform_device adm5120_nand_device;
 extern struct platform_device adm5120_hcd_device;
 extern struct platform_device adm5120_switch_device;
 extern struct platform_device adm5120_buttons_device;
+extern struct platform_device adm5120_gpiodev_device;
 extern struct amba_device adm5120_uart0_device;
 extern struct amba_device adm5120_uart1_device;
 
