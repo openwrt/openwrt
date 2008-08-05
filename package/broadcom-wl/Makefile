@@ -165,6 +165,11 @@ define Build/Compile
 	$(TARGET_CC) -o $(PKG_BUILD_DIR)/wl $(PKG_BUILD_DIR)/wl_exe.o
 endef
 
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/router/shared/libshared.a $(1)/usr/lib/
+endef
+
 define Package/wlc/install
 	$(CP) ./files/* $(1)/
 	$(INSTALL_DIR) $(1)/sbin
