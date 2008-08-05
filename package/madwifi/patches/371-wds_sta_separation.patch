@@ -66,7 +66,19 @@
  			}
  			break;
  		case IEEE80211_M_IBSS:
-@@ -548,7 +536,7 @@
+@@ -541,6 +529,11 @@
+ 				vap->iv_stats.is_rx_notassoc++;
+ 				goto err;
+ 			}
++
++			/* subif isn't fully set up yet, drop the frame */
++			if (ni->ni_subif == ni->ni_vap)
++				goto err;
++
+ 			/*
+ 			 * If we're a 4 address packet, make sure we have an entry in
+ 			 * the node table for the packet source address (addr4).
+@@ -548,9 +541,16 @@
  			 */
  
  			/* check for wds link first */
@@ -74,14 +86,17 @@
 +			if ((dir == IEEE80211_FC1_DIR_DSTODS) && !ni->ni_subif) {
  				struct ieee80211vap *avp;
  
- 				TAILQ_FOREACH(avp, &vap->iv_wdslinks, iv_wdsnext) {
-@@ -562,11 +550,13 @@
- 				if (ni_wds != NULL) {
- 					ieee80211_unref_node(&ni);
- 					ni = ieee80211_ref_node(ni_wds);
-+				} else if (vap->iv_flags_ext & IEEE80211_FEXT_WDSSEP) {
++				if (vap->iv_flags_ext & IEEE80211_FEXT_WDSSEP) {
 +					ieee80211_wds_addif(ni);
- 				}
++					/* we must drop frames here until the interface has
++					 * been fully separated, otherwise a bridge might get
++					 * confused */
++					goto err;
++				}
+ 				TAILQ_FOREACH(avp, &vap->iv_wdslinks, iv_wdsnext) {
+ 					if (!memcmp(avp->wds_mac, wh->i_addr2, IEEE80211_ADDR_LEN)) {
+ 						IEEE80211_LOCK_IRQ(ni->ni_ic);
+@@ -566,7 +566,7 @@
  			}
  
  			/* XXX: Useless node mgmt API; make better */
@@ -90,7 +105,7 @@
  				struct ieee80211_node_table *nt = &ic->ic_sta;
  				struct ieee80211_frame_addr4 *wh4;
  
-@@ -626,6 +616,11 @@
+@@ -626,6 +626,11 @@
  			goto out;
  		}
  
@@ -102,7 +117,7 @@
  		/*
  		 * Handle privacy requirements.  Note that we
  		 * must not be preempted from here until after
-@@ -698,8 +693,12 @@
+@@ -698,8 +703,12 @@
  		if (! accept_data_frame(vap, ni, key, skb, eh))
  			goto out;
  
@@ -117,7 +132,7 @@
  		IEEE80211_NODE_STAT(ni, rx_data);
  		IEEE80211_NODE_STAT_ADD(ni, rx_bytes, skb->len);
  		ic->ic_lastdata = jiffies;
-@@ -1132,6 +1131,13 @@
+@@ -1132,6 +1141,13 @@
  		dev = vap->iv_xrvap->iv_dev;
  #endif
  
@@ -131,14 +146,22 @@
  	/* perform as a bridge within the vap */
  	/* XXX intra-vap bridging only */
  	if (vap->iv_opmode == IEEE80211_M_HOSTAP &&
-@@ -1157,6 +1163,7 @@
+@@ -1157,7 +1173,15 @@
  			if (ni1 != NULL) {
  				if (ni1->ni_vap == vap &&
  				    ieee80211_node_is_authorized(ni1) &&
-+					!ni->ni_subif &&
++					!ni1->ni_subif &&
  				    ni1 != vap->iv_bss) {
++
++					/* tried to bridge to a subif, drop the packet */
++					if (ni->ni_subif) {
++						ieee80211_dev_kfree_skb(&skb);
++						return;
++					}
++
  					skb1 = skb;
  					skb = NULL;
+ 				}
 --- a/net80211/ieee80211_ioctl.h
 +++ b/net80211/ieee80211_ioctl.h
 @@ -649,6 +649,7 @@
@@ -218,7 +241,25 @@
  	default:
  		return -EOPNOTSUPP;
  	}
-@@ -5767,6 +5778,10 @@
+@@ -4447,6 +4458,8 @@
+ 	struct ieee80211vap *vap = ni->ni_vap;
+ 	size_t ielen;
+ 
++	if (req->vap->iv_wdsnode && ni->ni_subif)
++		vap = ni->ni_subif;
+ 	if (vap != req->vap && vap != req->vap->iv_xrvap)	/* only entries for this vap */
+ 		return;
+ 	if ((vap->iv_opmode == IEEE80211_M_HOSTAP ||
+@@ -4466,6 +4479,8 @@
+ 	size_t ielen, len;
+ 	u_int8_t *cp;
+ 
++	if (req->vap->iv_wdsnode && ni->ni_subif)
++		vap = ni->ni_subif;
+ 	if (vap != req->vap && vap != req->vap->iv_xrvap)	/* only entries for this vap (or) xrvap */
+ 		return;
+ 	if ((vap->iv_opmode == IEEE80211_M_HOSTAP ||
+@@ -5767,6 +5782,10 @@
  	 0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_minrate"},
  	{ IEEE80211_IOCTL_SETSCANLIST,
  	 IW_PRIV_TYPE_CHAR | 255, 0, "setscanlist"},
@@ -229,7 +270,7 @@
  
  #ifdef ATH_REVERSE_ENGINEERING
  	/*
-@@ -5890,6 +5905,8 @@
+@@ -5890,6 +5909,8 @@
  ieee80211_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
  {
  	struct ieee80211vap *vap = dev->priv;
@@ -238,7 +279,7 @@
  
  	switch (cmd) {
  	case SIOCG80211STATS:
-@@ -5898,8 +5915,20 @@
+@@ -5898,8 +5919,20 @@
  	case SIOC80211IFDESTROY:
  		if (!capable(CAP_NET_ADMIN))
  			return -EPERM;
