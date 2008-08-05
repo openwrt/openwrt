@@ -243,7 +243,7 @@ struct r6040_private {
 };
 
 struct net_device *parent_dev;
-static char *parent;
+static char *parent = "wlan0";
 module_param(parent, charp, 0444);
 MODULE_PARM_DESC(parent, "Parent network device name to get the MAC address from");
 
