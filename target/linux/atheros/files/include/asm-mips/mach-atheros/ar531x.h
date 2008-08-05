@@ -54,7 +54,7 @@ extern void (*board_time_init)(void);
 
 /* GPIO Interrupts [0..7], share AR531X_MISC_IRQ_GPIO */
 #define AR531X_GPIO_IRQ_NONE            AR531X_GPIO_IRQ_BASE+0
-#define AR531X_GPIO_IRQ(n)              AR531X_GPIO_IRQ_BASE+(n)+1
+#define AR531X_GPIO_IRQ(n)              AR531X_GPIO_IRQ_BASE+n
 #define AR531X_GPIO_IRQ_COUNT           22
 
 #define sysRegRead(phys)	\

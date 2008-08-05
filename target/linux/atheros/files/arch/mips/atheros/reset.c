@@ -9,7 +9,7 @@
 #include <asm/uaccess.h>
 #include <ar531x.h>
 
-#define AR531X_RESET_GPIO_IRQ	(AR531X_GPIO_IRQ_BASE + bcfg->resetConfigGpio)
+#define AR531X_RESET_GPIO_IRQ	(AR531X_GPIO_IRQ(bcfg->resetConfigGpio))
 
 struct event_t {
 	struct work_struct wq;
