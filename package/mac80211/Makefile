@@ -23,7 +23,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/mac80211
   SUBMENU:=Wireless Drivers
   TITLE:=Linux 802.11 Wireless Networking Stack
-  DEPENDS:=@LINUX_2_6 +kmod-crypto-arc4 +kmod-crypto-aes +wireless-tools
+  DEPENDS:=@LINUX_2_6 +kmod-crypto-arc4 +kmod-crypto-aes +wireless-tools @!TARGET_avr32
   FILES:= \
 	$(PKG_BUILD_DIR)/net/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/net/wireless/cfg80211.$(LINUX_KMOD_SUFFIX)
