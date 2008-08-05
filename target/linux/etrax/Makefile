@@ -15,7 +15,7 @@ LINUX_VERSION:=2.6.25.12
 include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:="zImage"
-DEFAULT_PACKAGES += foxboard-utils
+#DEFAULT_PACKAGES += foxboard-utils
 
 define Target/Description
 	Build firmware images for the FOXBOARD made by acmesystems.it
