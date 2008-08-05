@@ -1,0 +1,24 @@
+. /etc/functions.sh
+do_button () {
+	local button
+	local action
+	local handler
+	local min
+	local max
+
+	config_get button $1 button
+	config_get action $1 action
+	config_get handler $1 handler
+	config_get min $1 min
+	config_get max $1 max
+	
+	[ "$ACTION" = "$action" -a "$BUTTON" = "$button" -a -n "$handler" ] && {
+		[ -z "$min" -o -z "$max" ] && eval $handler 
+		[ -n "$min" -a -n "$max" ] && {
+			[ $min -le $SEEN -a $max -ge $SEEN ] && eval $handler 
+		}
+	}
+}
+
+config_load system
+config_foreach do_button button

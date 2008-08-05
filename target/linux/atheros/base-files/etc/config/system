@@ -1,0 +1,17 @@
+config system
+	option hostname OpenWrt
+	option timezone UTC
+
+config button
+	option button	reset
+	option action	released
+	option handler	"logger reboot"
+	option min		0
+	option max		4
+
+config button
+	option button	reset
+	option action	released
+	option handler	"logger factory default"
+	option min		5
+	option max		30

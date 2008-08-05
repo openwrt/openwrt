@@ -18,6 +18,7 @@ struct event_t {
 };
 
 static struct ar531x_boarddata *bcfg;
+static struct timer_list rst_button_timer;
 
 extern struct sock *uevent_sock;
 extern u64 uevent_next_seqnum(void);
@@ -71,6 +72,37 @@ done:
 	kfree(event);
 }
 
+static int no_release_workaround = 1;
+
+static void
+reset_button_poll(unsigned long unused)
+{
+	struct event_t *event;
+	int gpio = ~0;
+
+	if(!no_release_workaround)
+		return;
+
+	DO_AR5315(gpio = sysRegRead(AR5315_GPIO_DI);)
+    gpio &= 1 << (AR531X_RESET_GPIO_IRQ - AR531X_GPIO_IRQ_BASE);
+	if(gpio)
+	{
+		rst_button_timer.expires = jiffies + (HZ / 4);
+		add_timer(&rst_button_timer);
+	} else {
+		event = (struct event_t *) kzalloc(sizeof(struct event_t), GFP_ATOMIC);
+		if (!event)
+		{
+			printk("Could not alloc hotplug event\n");
+			return;
+		}
+		event->set = 0;
+		event->jiffies = jiffies;
+		INIT_WORK(&event->wq, (void *)(void *)hotplug_button);
+		schedule_work(&event->wq);
+	}
+}
+
 static irqreturn_t button_handler(int irq, void *dev_id)
 {
 	static int pressed = 0;
@@ -87,13 +119,20 @@ static irqreturn_t button_handler(int irq, void *dev_id)
 	gpio &= 1 << (irq - AR531X_GPIO_IRQ_BASE);
 
 	event->set = gpio;
+	if(!event->set)
+		no_release_workaround = 0;
+
 	event->jiffies = jiffies;
 
 	INIT_WORK(&event->wq, (void *)(void *)hotplug_button);
 	schedule_work(&event->wq);
 
 	seen = jiffies;
-
+	if(event->set && no_release_workaround)
+	{
+		rst_button_timer.expires = jiffies + (HZ / 4);
+		add_timer(&rst_button_timer);
+	}
 	return IRQ_HANDLED;
 }
 
@@ -109,6 +148,11 @@ int __init ar531x_init_reset(void)
 	bcfg = (struct ar531x_boarddata *) board_config;
 
 	seen = jiffies;
+
+	init_timer(&rst_button_timer);
+	rst_button_timer.function = reset_button_poll;
+	rst_button_timer.expires = jiffies + HZ / 50;
+	add_timer(&rst_button_timer);
 
 	request_irq(AR531X_RESET_GPIO_IRQ, &button_handler, IRQF_SAMPLE_RANDOM, "ar531x_reset", NULL);
 
