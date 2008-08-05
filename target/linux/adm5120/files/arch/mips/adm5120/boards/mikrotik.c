@@ -44,11 +44,19 @@
 #define RB150_GPIO_NAND_NCE	ADM5120_GPIO_PIN1
 #define RB150_GPIO_NAND_CLE	ADM5120_GPIO_P2L2
 #define RB150_GPIO_NAND_ALE	ADM5120_GPIO_P3L2
+#define RB150_GPIO_DEV_MASK	( 1 << RB150_GPIO_NAND_READY	\
+				| 1 << RB150_GPIO_NAND_NCE	\
+				| 1 << RB150_GPIO_NAND_CLE	\
+				| 1 << RB150_GPIO_NAND_ALE)
 
 #define RB150_NAND_DELAY	100
 
 #define RB150_NAND_WRITE(v) \
 	writeb((v), (void __iomem *)KSEG1ADDR(RB150_NAND_BASE))
+
+#define RB153_GPIO_DEV_MASK	( 1 << ADM5120_GPIO_PIN0 \
+				| 1 << ADM5120_GPIO_PIN3 \
+				| 1 << ADM5120_GPIO_PIN4 )
 
 /*--------------------------------------------------------------------------*/
 
@@ -279,6 +287,8 @@ static void __init rb150_setup(void)
 	adm5120_buttons[0].desc = "reset button";
 	adm5120_buttons[0].gpio = ADM5120_GPIO_PIN1; /* FIXME: valid? */
 
+	adm5120_gpiodev_resource.start &= ~RB150_GPIO_DEV_MASK;
+
 	adm5120_flash0_data.window_size = 512*1024;
 
 	rb1xx_flash_setup();
@@ -293,6 +303,8 @@ static void __init rb153_setup(void)
 	adm5120_gpio_ew_enable();
 
 	rb1xx_setup();
+
+	adm5120_gpiodev_resource.start &= ~RB153_GPIO_DEV_MASK;
 }
 
 /*--------------------------------------------------------------------------*/

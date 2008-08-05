@@ -216,6 +216,18 @@ struct platform_device adm5120_buttons_device = {
 	.dev.platform_data = &adm5120_buttons_data,
 };
 
+/* GPIO char device */
+struct resource adm5120_gpiodev_resource = {
+	.start	= 0x3fffff,
+};
+
+struct platform_device adm5120_gpiodev_device =	{
+	.name		= "GPIODEV",
+	.id		= -1,
+	.num_resources	= 1,
+	.resource	= &adm5120_gpiodev_resource,
+};
+
 void adm5120_uart_set_mctrl(struct amba_device *dev, void __iomem *base,
 		unsigned int mctrl)
 {

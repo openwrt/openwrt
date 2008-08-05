@@ -24,6 +24,9 @@
 #include <adm5120_platform.h>
 #include <adm5120_info.h>
 
+#define EASY_PQFP_GPIO_DEV_MASK	(1 << ADM5120_GPIO_PIN3)
+#define EASY_BGA_GPIO_DEV_MASK	(1 << ADM5120_GPIO_PIN5)
+
 static void switch_bank_gpio3(unsigned bank)
 {
 	switch (bank) {
@@ -99,6 +102,8 @@ static void __init easy_setup_pqfp(void)
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(easy_partitions);
 	adm5120_flash0_data.parts = easy_partitions;
 
+	adm5120_gpiodev_resource.start &= ~EASY_PQFP_GPIO_DEV_MASK;
+
 	/* TODO: setup mac addresses */
 }
 
@@ -111,6 +116,8 @@ static void __init easy_setup_bga(void)
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(easy_partitions);
 	adm5120_flash0_data.parts = easy_partitions;
+
+	adm5120_gpiodev_resource.start &= ~EASY_BGA_GPIO_DEV_MASK;
 
 	/* TODO: setup mac addresses */
 }

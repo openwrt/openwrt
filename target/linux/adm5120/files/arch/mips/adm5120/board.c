@@ -93,6 +93,11 @@ static int __init adm5120_board_setup(void)
 	/* register built-in ethernet switch */
 	platform_device_register(&adm5120_switch_device);
 
+	if (adm5120_package_pqfp())
+		adm5120_gpiodev_resource.start &= ~0xf0;
+
+	platform_device_register(&adm5120_gpiodev_device);
+
 	/* setup PCI irq map */
 	adm5120_pci_set_irq_map(board->pci_nr_irqs, board->pci_irq_map);
 

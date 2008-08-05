@@ -22,6 +22,10 @@
 #include <adm5120_platform.h>
 #include <adm5120_irq.h>
 
+#define CAS6XX_GPIO_DEV_MASK	(1 << ADM5120_GPIO_PIN5)
+#define CAS7XX_GPIO_DEV_MASK	(1 << ADM5120_GPIO_PIN5)
+#define NFS_GPIO_DEV_MASK	(1 << ADM5120_GPIO_PIN5)
+
 static void switch_bank_gpio5(unsigned bank)
 {
 	switch (bank) {
@@ -104,6 +108,8 @@ static void __init cas6xx_setup(void)
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(cas6xx_partitions);
 	adm5120_flash0_data.parts = cas6xx_partitions;
 
+	adm5120_gpiodev_resource.start &= ~CAS6XX_GPIO_DEV_MASK;
+
 	/* TODO: setup mac address */
 }
 
@@ -117,6 +123,8 @@ static void __init cas7xx_setup(void)
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(cas7xx_partitions);
 	adm5120_flash0_data.parts = cas7xx_partitions;
 
+	adm5120_gpiodev_resource.start &= ~CAS7XX_GPIO_DEV_MASK;
+
 	/* TODO: setup mac address */
 }
 
@@ -129,6 +137,8 @@ static void __init nfs_setup(void)
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(cas6xx_partitions);
 	adm5120_flash0_data.parts = cas6xx_partitions;
+
+	adm5120_gpiodev_resource.start &= ~NFS_GPIO_DEV_MASK;
 
 	/* TODO: setup mac address */
 }
