@@ -1,0 +1,12 @@
+--- linux-2.6.25.12/drivers/usb/class/cdc-acm.c	2008-07-24 18:14:20.000000000 +0200
++++ linux-2.6.25.12.new/drivers/usb/class/cdc-acm.c	2008-08-05 21:39:35.000000000 +0200
+@@ -531,8 +531,8 @@
+ 	tasklet_schedule(&acm->urb_task);
+ 
+ done:
+-err_out:
+ 	mutex_unlock(&acm->mutex);
++err_out:
+ 	mutex_unlock(&open_mutex);
+ 	return rv;
+ 
