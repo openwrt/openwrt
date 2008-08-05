@@ -1,6 +1,5 @@
-diff -ruN qc-usb-0.6.6-orig/qc-driver.c qc-usb-0.6.6/qc-driver.c
---- qc-usb-0.6.6-orig/qc-driver.c	2006-10-24 04:06:19.000000000 +0200
-+++ qc-usb-0.6.6/qc-driver.c	2008-04-12 18:01:01.000000000 +0200
+--- a/qc-driver.c
++++ b/qc-driver.c
 @@ -821,7 +821,9 @@
  	if (!cr) goto fail2;
  	urb->transfer_buffer = kmalloc(qc_i2c_maxbufsize*sizeof(u8), GFP_KERNEL);	/* Allocate maximum ever needed */
@@ -21,3 +20,25 @@ diff -ruN qc-usb-0.6.6-orig/qc-driver.c qc-usb-0.6.6/qc-driver.c
  	minor:		-1,
  #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
  	release:	qc_v4l_release,
+--- a/qc-memory.c
++++ b/qc-memory.c
+@@ -78,15 +78,19 @@
+ #endif
+ 
+ #if LINUX_VERSION_CODE>=KERNEL_VERSION(2,5,3) || defined(pte_offset_map)
++#ifndef pte_offset
+ #define pte_offset(pmd,adr)	pte_offset_map(pmd,adr)	/* Emulation for a kernel using the new rmap-vm */
++#endif
+ #endif							/* Fix by Michele Balistreri <brain87@gmx.net> */
+ 
++#ifndef SETPAGEFLAG
+ #ifndef SetPageReserved
+ #define SetPageReserved(p)	mem_map_reserve(p)
+ #endif
+ #ifndef ClearPageReserved
+ #define ClearPageReserved(p)	mem_map_unreserve(p)
+ #endif
++#endif /* SETPAGEFLAG */
+ /* }}} */
+ 
+ /* {{{ [fold] kvirt_to_pa(): obtain physical address from virtual address obtained by vmalloc() */
