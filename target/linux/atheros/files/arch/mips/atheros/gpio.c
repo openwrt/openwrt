@@ -162,7 +162,7 @@ static void ar5315_gpio_intr_enable(unsigned int irq) {
 
 			/* Set the gpio level trigger mode */
 /*			reg &= ~(AR5315_GPIO_INT_LVL_M(i)); */
-			reg |= AR5315_GPIO_INT_LVL(i);
+			reg |= AR5315_GPIO_INT_LVL(def_lvl);
 
 			/* Enable the gpio pin */
 			reg &= ~(AR5315_GPIO_INT_M);
