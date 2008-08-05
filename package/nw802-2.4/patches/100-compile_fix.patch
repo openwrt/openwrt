@@ -1,0 +1,134 @@
+--- a/nw8xx_jpgl.c
++++ b/nw8xx_jpgl.c
+@@ -111,18 +111,18 @@
+ // Clamping table
+ #define SAFE_CLAMP
+ #ifdef SAFE_CLAMP
+-inline unsigned char clamp(int x) {
++inline unsigned char nw8xx_clamp(int x) {
+ 	if ( x > 255 )
+ 		return 255;
+ 	if ( x < 0 )
+ 		return 0;
+ 	return x;
+ }
+-#define clamp_adjust(x) clamp(x+128)
++#define nw8xx_clamp_adjust(x) nw8xx_clamp(x+128)
+ #else
+-#define clamp(x) clampTbl[(x)+512]
+-#define clamp_adjust(x) clampTbl[(x)+640]
+-static char clampTbl[1280];
++#define nw8xx_clamp(x) nw8xx_clampTbl[(x)+512]
++#define nw8xx_clamp_adjust(x) nw8xx_clampTbl[(x)+640]
++static char nw8xx_clampTbl[1280];
+ #endif
+ 
+ // Code to initialize those tables
+@@ -195,19 +195,19 @@
+ }
+ 
+ #ifndef SAFE_CLAMP
+-static void clampTbl_init(void)
++static void nw8xx_clampTbl_init(void)
+ {
+ 	// Instead of doing if(...) to test for overrange, we use
+-	// a clamping table
++	// a nw8xx_clamping table
+ 	
+ 	int i;
+ 
+ 	for (i=0 ; i < 512 ; i++)
+-		clampTbl[i] = 0;
++		nw8xx_clampTbl[i] = 0;
+ 	for (i=512 ; i < 768 ; i++ )
+-		clampTbl[i] = i - 512;
++		nw8xx_clampTbl[i] = i - 512;
+ 	for (i=768 ; i < 1280 ; i++ )
+-		clampTbl[i] = 255;
++		nw8xx_clampTbl[i] = 255;
+ 
+ }
+ #endif
+@@ -521,16 +521,16 @@
+ 				for ( x=0 ; x<4 ; x++ )
+ 				{
+ 					// Y block
+-					Yline[ 0] = clamp_adjust(block_y[block_idx   ]);
+-					Yline[ 4] = clamp_adjust(block_y[block_idx+16]);
+-					Yline[ 8] = clamp_adjust(block_y[block_idx+32]);
+-					Yline[12] = clamp_adjust(block_y[block_idx+48]);
++					Yline[ 0] = nw8xx_clamp_adjust(block_y[block_idx   ]);
++					Yline[ 4] = nw8xx_clamp_adjust(block_y[block_idx+16]);
++					Yline[ 8] = nw8xx_clamp_adjust(block_y[block_idx+32]);
++					Yline[12] = nw8xx_clamp_adjust(block_y[block_idx+48]);
+ 
+ 					// U block
+-					*Uline = clamp_adjust(block_u[block_idx]);
++					*Uline = nw8xx_clamp_adjust(block_u[block_idx]);
+ 
+ 					// V block
+-					*Vline = clamp_adjust(block_v[block_idx]);
++					*Vline = nw8xx_clamp_adjust(block_v[block_idx]);
+ 
+ 					// Ajust pointers & index
+ 					block_idx++;
+@@ -596,9 +596,9 @@
+ 				vc = Vline[0];
+ 
+ 					// B G R
+-				*(fb++) = clamp(( yc + yuvTbl_v2[vc] ) >> 16);
+-				*(fb++) = clamp(( yc - yuvTbl_u2[uc] - yuvTbl_v1[vc] ) >> 16);
+-				*(fb++) = clamp(( yc + yuvTbl_u1[uc] ) >> 16);
++				*(fb++) = nw8xx_clamp(( yc + yuvTbl_v2[vc] ) >> 16);
++				*(fb++) = nw8xx_clamp(( yc - yuvTbl_u2[uc] - yuvTbl_v1[vc] ) >> 16);
++				*(fb++) = nw8xx_clamp(( yc + yuvTbl_u1[uc] ) >> 16);
+ #ifdef _JPGL_TEST_
+ 				fb++;
+ #endif
+@@ -609,9 +609,9 @@
+ 				vc = ( 3*Vline[0] + Vline[1] ) >> 2;
+ 				
+ 					// B G R
+-				*(fb++) = clamp(( yc + yuvTbl_v2[vc] ) >> 16);
+-				*(fb++) = clamp(( yc - yuvTbl_u2[uc] - yuvTbl_v1[vc] ) >> 16);
+-				*(fb++) = clamp(( yc + yuvTbl_u1[uc] ) >> 16);
++				*(fb++) = nw8xx_clamp(( yc + yuvTbl_v2[vc] ) >> 16);
++				*(fb++) = nw8xx_clamp(( yc - yuvTbl_u2[uc] - yuvTbl_v1[vc] ) >> 16);
++				*(fb++) = nw8xx_clamp(( yc + yuvTbl_u1[uc] ) >> 16);
+ #ifdef _JPGL_TEST_
+ 				fb++;
+ #endif
+@@ -622,9 +622,9 @@
+ 				vc = ( Vline[0] + Vline[1] ) >> 1;
+ 
+ 					// B G R
+-				*(fb++) = clamp(( yc + yuvTbl_v2[vc] ) >> 16);
+-				*(fb++) = clamp(( yc - yuvTbl_u2[uc] - yuvTbl_v1[vc] ) >> 16);
+-				*(fb++) = clamp(( yc + yuvTbl_u1[uc] ) >> 16);
++				*(fb++) = nw8xx_clamp(( yc + yuvTbl_v2[vc] ) >> 16);
++				*(fb++) = nw8xx_clamp(( yc - yuvTbl_u2[uc] - yuvTbl_v1[vc] ) >> 16);
++				*(fb++) = nw8xx_clamp(( yc + yuvTbl_u1[uc] ) >> 16);
+ #ifdef _JPGL_TEST_
+ 				fb++;
+ #endif
+@@ -635,9 +635,9 @@
+ 				vc = ( Vline[0] + 3*Vline[1] ) >> 2;
+ 
+ 					// B G R
+-				*(fb++) = clamp(( yc + yuvTbl_v2[vc] ) >> 16);
+-				*(fb++) = clamp(( yc - yuvTbl_u2[uc] - yuvTbl_v1[vc] ) >> 16);
+-				*(fb++) = clamp(( yc + yuvTbl_u1[uc] ) >> 16);
++				*(fb++) = nw8xx_clamp(( yc + yuvTbl_v2[vc] ) >> 16);
++				*(fb++) = nw8xx_clamp(( yc - yuvTbl_u2[uc] - yuvTbl_v1[vc] ) >> 16);
++				*(fb++) = nw8xx_clamp(( yc + yuvTbl_u1[uc] ) >> 16);
+ #ifdef _JPGL_TEST_
+ 				fb++;
+ #endif
+@@ -707,6 +707,6 @@
+ 	vlcTbl_init();
+ 	yuvTbl_init();
+ #ifndef SAFE_CLAMP
+-	clampTbl_init();
++	nw8xx_clampTbl_init();
+ #endif
+ }
