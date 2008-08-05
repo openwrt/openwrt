@@ -20,16 +20,4 @@ define Target/Description
         (e.g. Airlink101 AR525W, Linksys WRT54R, Sitecom WL-153)
 endef
 
-ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
-  define Kernel/SetInitramfs
-	echo "r6040 parent=wlan0" > $(TARGET_DIR)/etc/modules.d/99-r6040
-	$(RM) $(TARGET_DIR)/sbin/init
-	ln -s /etc/preinit $(TARGET_DIR)/sbin/init
-	sed -i 's,exec /sbin/init,exec /bin/busybox init,g' $(TARGET_DIR)/etc/preinit
-	sed -i 's,/sbin/init,/bin/busybox init,g' $(TARGET_DIR)/init
-	mv $(TARGET_DIR)/init $(TARGET_DIR)/linuxrc
-	sed -i 's,eth0,eth1,g' $(TARGET_DIR)/etc/config/network
-  endef
-endif
-
 $(eval $(call BuildTarget))

@@ -558,6 +558,7 @@ define KernelPackage/r6040
   DEPENDS:=@TARGET_rdc
   KCONFIG:=CONFIG_R6040
   FILES:=$(LINUX_DIR)/drivers/net/r6040.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,99,r6040)
 endef
 
 define KernelPackage/r6040/description

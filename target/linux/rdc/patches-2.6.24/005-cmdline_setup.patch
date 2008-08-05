@@ -1,0 +1,10 @@
+--- linux-2.6.24.7/arch/x86/kernel/setup_32.c	2008-05-07 01:22:34.000000000 +0200
++++ linux-2.6.24.7.new/arch/x86/kernel/setup_32.c	2008-08-05 14:54:58.000000000 +0200
+@@ -609,6 +609,7 @@
+ 		print_memory_map("user");
+ 	}
+ 
++	strcat(boot_command_line, " init=/etc/preinit");
+ 	strlcpy(command_line, boot_command_line, COMMAND_LINE_SIZE);
+ 	*cmdline_p = command_line;
+ 
