@@ -1,8 +1,6 @@
-Index: linux-2.6.21.7/arch/arm/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/arch/arm/Kconfig
-+++ linux-2.6.21.7/arch/arm/Kconfig
-@@ -505,6 +505,8 @@ config PCI_HOST_VIA82C505
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -505,6 +505,8 @@
  	depends on PCI && ARCH_SHARK
  	default y
  
@@ -11,38 +9,16 @@ Index: linux-2.6.21.7/arch/arm/Kconfig
  source "drivers/pci/Kconfig"
  
  source "drivers/pcmcia/Kconfig"
-Index: linux-2.6.21.7/drivers/Makefile
-===================================================================
---- linux-2.6.21.7.orig/drivers/Makefile
-+++ linux-2.6.21.7/drivers/Makefile
-@@ -81,3 +81,4 @@ obj-$(CONFIG_GENERIC_TIME)	+= clocksourc
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -81,3 +81,4 @@
  obj-$(CONFIG_DMA_ENGINE)	+= dma/
  obj-$(CONFIG_HID)		+= hid/
  obj-$(CONFIG_PPC_PS3)		+= ps3/
 +obj-$(CONFIG_PROC_GPIO)		+= gpio/
-Index: linux-2.6.21.7/drivers/gpio/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/drivers/gpio/Kconfig
-+++ linux-2.6.21.7/drivers/gpio/Kconfig
-@@ -2,14 +2,27 @@ menuconfig NEW_GPIO
- 	bool "GPIO Support"
- 	depends on GENERIC_GPIO
- 	help
--	  Say Y to enable Linux GPIO device support.  This allows control of 
--	  GPIO pins using a character device 
-+	  Say Y to enable Linux GPIO device support.  This allows control of
-+	  GPIO pins using a character device
- 
- if NEW_GPIO
- 
- config GPIO_DEVICE
- 	tristate "GPIO device support"
- 	help
--	  This option enables the gpio character device 
-+	  This option enables the gpio character device
- 
- endif # NEW_GPIO
-+
+--- /dev/null
++++ b/drivers/gpio/Kconfig
+@@ -0,0 +1,13 @@
 +config PROC_GPIO
 +	tristate "GPIO /proc interface"
 +	depends on PXA25x || PXA27x
@@ -55,19 +31,14 @@ Index: linux-2.6.21.7/drivers/gpio/Kconfig
 +	depends on PROC_GPIO
 +	help
 +	  This enables printk logging of activity done through /proc/gpio
-Index: linux-2.6.21.7/drivers/gpio/Makefile
-===================================================================
---- linux-2.6.21.7.orig/drivers/gpio/Makefile
-+++ linux-2.6.21.7/drivers/gpio/Makefile
-@@ -1 +1,4 @@
- obj-$(CONFIG_GPIO_DEVICE)	+= gpio_dev.o
 +
+--- /dev/null
++++ b/drivers/gpio/Makefile
+@@ -0,0 +1,2 @@
 +# Expose GPIOs under /proc
 +obj-$(CONFIG_PROC_GPIO)		+= proc_gpio.o
-Index: linux-2.6.21.7/drivers/gpio/proc_gpio.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/drivers/gpio/proc_gpio.c
++++ b/drivers/gpio/proc_gpio.c
 @@ -0,0 +1,276 @@
 +/*
 + *

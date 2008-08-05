@@ -432,6 +432,22 @@ endef
 $(eval $(call KernelPackage,ledtrig-morse))
 
 
+define KernelPackage/gpio-dev
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Generic GPIO char device support
+  DEPENDS:=@GPIO_SUPPORT
+  KCONFIG:=CONFIG_GPIO_DEVICE
+  FILES:=$(LINUX_DIR)/drivers/char/gpio_dev.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,gpio_dev)
+endef
+
+define KernelPackage/gpio-dev/description
+  Kernel module to allows control of GPIO pins using a character device.
+endef
+
+$(eval $(call KernelPackage,gpio-dev))
+
+
 define KernelPackage/nsc-gpio
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Natsemi GPIO support
