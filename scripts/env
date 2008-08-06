@@ -158,7 +158,7 @@ env_delete() {
 env_switch() {
 	local name="${1##*/}"
 	[ -z "$name" ] && usage
-	[ -f "$envdir/.git/refs/heads/$name" ] || error "environment '$name' not found"
+	[ -f "$ENVDIR/.git/refs/heads/$name" ] || error "environment '$name' not found"
 
 	env_init
 	env_ask_sync
