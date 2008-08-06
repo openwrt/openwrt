@@ -29,7 +29,7 @@ define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
 		$(TARGET_CONFIGURE_OPTS) \
 		LDSHARED="$(TARGET_CC) -shared -Wl,-soname,libz.so.1" \
-		CFLAGS="$(TARGET_CFLAGS) -fPIC $(CFLAGS_LARGEFILE)" \
+		CFLAGS="$(TARGET_CFLAGS) $(FPIC) $(CFLAGS_LARGEFILE)" \
 		UNAME_S="Linux" \
 		./configure \
 			--prefix=/usr \

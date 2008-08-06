@@ -217,6 +217,8 @@ define Build/Configure
 		clean
 endef
 
+TARGET_CFLAGS += $(FPIC)
+
 define Build/Compile
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \

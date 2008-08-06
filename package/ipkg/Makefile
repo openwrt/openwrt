@@ -38,6 +38,7 @@ define Package/ipkg/description
  ipkg knows how to install both .ipk and .deb packages.
 endef
 
+TARGET_CFLAGS += $(FPIC)
 CONFIGURE_ARGS += $(DISABLE_LARGEFILE)
 
 define Build/Compile

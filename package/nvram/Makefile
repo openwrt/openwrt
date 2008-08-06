@@ -29,6 +29,8 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)
 endef
 
+TARGET_CFLAGS += $(FPIC)
+
 define Build/InstallDev
 	mkdir -p $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/libnvram*.so $(1)/usr/lib/
