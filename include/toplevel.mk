@@ -113,10 +113,10 @@ help:
 	cat README
 
 docs docs/compile: FORCE
-	@$(_SINGLE)$(SUBMAKE) -j1 -C docs compile
+	@$(SUBMAKE) -j1 -C docs compile
 
 docs/clean: FORCE
-	@$(_SINGLE)$(SUBMAKE) -j1 -C docs clean
+	@$(SUBMAKE) -j1 -C docs clean
 
 distclean:
 	rm -rf tmp build_dir staging_dir dl .config* feeds package/feeds package/openwrt-packages bin
