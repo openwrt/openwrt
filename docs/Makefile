@@ -38,7 +38,7 @@ $(eval $(call RequireCommand,latex, \
 	You need to install LaTeX to build the OpenWrt documentation \
 ))
 $(eval $(call RequireCommand,pdflatex, \
-	You need to install LaTeX to build the OpenWrt documentation \
+	You need to install PDFLaTeX to build the OpenWrt documentation \
 ))
 $(eval $(call RequireCommand,htlatex, \
 	You need to install tex4ht to build the OpenWrt documentation \
