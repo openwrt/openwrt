@@ -24,7 +24,7 @@
 #include <asm/mach-ar71xx/ar71xx.h>
 
 #define DRV_NAME        "rb4xx-nand"
-#define DRV_VERSION     "0.1.9"
+#define DRV_VERSION     "0.1.10"
 #define DRV_DESC        "NAND flash driver for RouterBoard 4xx series"
 
 #define USE_FAST_READ	1
@@ -84,6 +84,12 @@ static struct nand_ecclayout rb4xx_nand_ecclayout = {
 
 static struct mtd_partition rb4xx_nand_partitions[] = {
 	{
+		.name	= "booter",
+		.offset	= 0,
+		.size	= (256 * 1024),
+		.mask_flags = MTD_WRITEABLE,
+	},
+	{
 		.name	= "kernel",
 		.offset	= (256 * 1024),
 		.size	= (4 * 1024 * 1024) - (256 * 1024),
@@ -93,12 +99,6 @@ static struct mtd_partition rb4xx_nand_partitions[] = {
 		.offset	= MTDPART_OFS_NXTBLK,
 		.size	= MTDPART_SIZ_FULL,
 	},
-	{
-		.name	= "booter",
-		.offset	= 0,
-		.size	= (256 * 1024),
-		.mask_flags = MTD_WRITEABLE,
-	}
 };
 
 #if USE_FAST_READ
