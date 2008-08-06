@@ -30,6 +30,8 @@ define Package/libpcap/description
  packet capture.
 endef
 
+TARGET_CFLAGS += $(FPIC)
+
 CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-static \

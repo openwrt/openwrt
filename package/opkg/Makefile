@@ -36,6 +36,7 @@ define Package/opkg/description
   opkg knows how to install both .ipk and .deb packages.
 endef
 
+TARGET_CFLAGS += $(FPIC)
 EXTRA_CFLAGS+=-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/lib
 EXTRA_LDFLAGS+=-L$(STAGING_DIR)/usr/lib -Wl,-rpath-link,$(STAGING_DIR)/usr/lib
 

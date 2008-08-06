@@ -28,6 +28,8 @@ endef
 define Build/Configure
 endef
 
+TARGET_CFLAGS += $(FPIC)
+
 define Build/Compile
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)

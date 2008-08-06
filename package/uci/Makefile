@@ -47,6 +47,7 @@ endef
 define Build/Configure
 endef
 
+TARGET_CFLAGS += $(FPIC)
 UCI_MAKEOPTS = \
 		$(TARGET_CONFIGURE_OPTS) \
 		COPTS="$(TARGET_CFLAGS)" \
