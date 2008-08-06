@@ -39,6 +39,12 @@ SUBDIR:=$(patsubst $(TOPDIR)/%,%,${CURDIR})
 
 OPTIMIZE_FOR_CPU=$(ARCH)
 
+ifeq ($(ARCH),powerpc)
+  FPIC:=-fPIC
+else
+  FPIC:=-fpic
+endif
+
 DL_DIR:=$(if $(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(TOPDIR)/dl)
 BIN_DIR:=$(TOPDIR)/bin
 INCLUDE_DIR:=$(TOPDIR)/include
