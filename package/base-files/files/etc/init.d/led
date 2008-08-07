@@ -12,6 +12,8 @@ load_led() {
 	local dev
 	local mode
 	local default
+	local delayon
+	local delayoff
 
 	config_get name $1 name
 	config_get sysfs $1 sysfs
@@ -19,6 +21,8 @@ load_led() {
 	config_get dev $1 dev
 	config_get mode $1 mode
 	config_get default $1 default
+	config_get delayon $1 delayon
+	config_get delayoff $1 delayoff
 
 	[ -e /sys/class/leds/${sysfs}/brightness -a -n "$name" ] && {
 		logger "setting up led : $name"
@@ -34,6 +38,10 @@ load_led() {
 			echo $dev > /sys/class/leds/${sysfs}/device_name
 			echo $mode > /sys/class/leds/${sysfs}/mode
 		} 
+		[ "$trigger" == "timer" ] && {
+			[ -n "$delayon" ] && echo $delayon > /sys/class/leds/${sysfs}/delay_on
+			[ -n "$delayoff" ] && echo $delayoff > /sys/class/leds/${sysfs}/delay_off
+		}
 	}
 }
 
