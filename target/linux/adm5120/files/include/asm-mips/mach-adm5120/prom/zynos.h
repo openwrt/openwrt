@@ -66,6 +66,7 @@ struct zynos_board_info {
 #define ZYNOS_BOARD_P334WH	0x00E0	/* Prestige 334WH */
 #define ZYNOS_BOARD_P334WHD	0x00E1	/* Prestige 334WHD */
 #define ZYNOS_BOARD_P334WT	0x9FEF	/* Prestige 334WT */
+#define ZYNOS_BOARD_P334WT_ALT	0x9F02	/* Prestige 334WT alternative */
 #define ZYNOS_BOARD_P335	0x9FED	/* Prestige 335/335WT */
 #define ZYNOS_BOARD_P335PLUS	0x0025	/* Prestige 335Plus */
 #define ZYNOS_BOARD_P335U	0x9FDC	/* Prestige 335U */

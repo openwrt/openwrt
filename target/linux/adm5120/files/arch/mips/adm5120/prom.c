@@ -137,6 +137,7 @@ static struct {
 	ZYXEL_BOARD(ZYNOS_BOARD_P334WH,	MACH_ADM5120_P334WH),
 	ZYXEL_BOARD(ZYNOS_BOARD_P334WHD, MACH_ADM5120_P334WHD),
 	ZYXEL_BOARD(ZYNOS_BOARD_P334WT,	MACH_ADM5120_P334WT),
+	ZYXEL_BOARD(ZYNOS_BOARD_P334WT_ALT,	MACH_ADM5120_P334WT),
 	ZYXEL_BOARD(ZYNOS_BOARD_P335,	MACH_ADM5120_P335),
 	ZYXEL_BOARD(ZYNOS_BOARD_P335PLUS, MACH_ADM5120_P335PLUS),
 	ZYXEL_BOARD(ZYNOS_BOARD_P335U,	MACH_ADM5120_P335U)
@@ -144,19 +145,19 @@ static struct {
 
 static unsigned long __init detect_machtype_bootbase(void)
 {
-	unsigned long ret;
 	int i;
 
-	ret = MACH_ADM5120_GENERIC;
 	for (i = 0; i < ARRAY_SIZE(zynos_boards); i++) {
 		if (zynos_boards[i].vendor_id == bootbase_info.vendor_id &&
 			zynos_boards[i].board_id == bootbase_info.board_id) {
-			ret = zynos_boards[i].mach_type;
+			return zynos_boards[i].mach_type;
 			break;
 		}
 	}
 
-	return ret;
+	printk(KERN_WARNING "Unknown ZyXEL model (%u)\n",
+				bootbase_info.board_id);
+	return MACH_ADM5120_GENERIC;
 }
 
 static struct {
