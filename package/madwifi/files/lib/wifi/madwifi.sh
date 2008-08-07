@@ -103,7 +103,11 @@ enable_atheros() {
 				*b) agmode=11b;;
 				*bg) agmode=11g;;
 				*g) agmode=11g; pureg=1;;
+				*gdt) agmode=11gdt;;
 				*a) agmode=11a;;
+				*adt) agmode=11adt;;
+				*ast) agmode=11ast;;
+				*fh) agmode=fh;;
 				*) agmode=auto;;
 			esac
 			iwpriv "$ifname" mode "$agmode"
