@@ -1,17 +1,16 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -18,6 +18,21 @@
+@@ -18,6 +18,20 @@
  	prompt "System type"
  	default SGI_IP22
  
-+config MIPS_ADM5120
-+	bool "ADM5120 SoC based machines"
++config ADM5120
++	bool "Infineon/ADMtek ADM5120 SoC based machines"
 +	select CEVT_R4K
 +	select CSRC_R4K
 +	select SYS_HAS_CPU_MIPS32_R1
 +	select SYS_HAS_EARLY_PRINTK
 +	select DMA_NONCOHERENT
-+	select HW_HAS_PCI
 +	select IRQ_CPU
 +	select SYS_SUPPORTS_LITTLE_ENDIAN
 +	select SYS_SUPPORTS_BIG_ENDIAN
@@ -22,7 +21,7 @@
  config MACH_ALCHEMY
  	bool "Alchemy processor based machines"
  
-@@ -687,6 +702,7 @@
+@@ -687,6 +701,7 @@
  
  endchoice
  
@@ -32,18 +31,22 @@
  source "arch/mips/jazz/Kconfig"
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -174,6 +174,16 @@
+@@ -174,6 +174,20 @@
  load-$(CONFIG_MACH_JAZZ)	+= 0xffffffff80080000
  
  #
-+# ADMtek 5120
++# Infineon/ADMtek ADM5120
 +#
-+
-+libs-$(CONFIG_MIPS_ADM5120)	+= arch/mips/adm5120/prom/
-+core-$(CONFIG_MIPS_ADM5120)	+= arch/mips/adm5120/
-+core-$(CONFIG_MIPS_ADM5120)	+= arch/mips/adm5120/boards/
-+cflags-$(CONFIG_MIPS_ADM5120)	+= -Iinclude/asm-mips/mach-adm5120
-+load-$(CONFIG_MIPS_ADM5120)	+= 0xffffffff80001000
++libs-$(CONFIG_ADM5120)			+= arch/mips/adm5120/prom/
++core-$(CONFIG_ADM5120)			+= arch/mips/adm5120/common/
++core-$(CONFIG_ADM5120_OEM_CELLVISION)	+= arch/mips/adm5120/cellvision/
++core-$(CONFIG_ADM5120_OEM_COMPEX)	+= arch/mips/adm5120/compex/
++core-$(CONFIG_ADM5120_OEM_EDIMAX)	+= arch/mips/adm5120/edimax/
++core-$(CONFIG_ADM5120_OEM_INFINEON)	+= arch/mips/adm5120/infineon/
++core-$(CONFIG_ADM5120_OEM_MIKROTIK)	+= arch/mips/adm5120/mikrotik/
++core-$(CONFIG_ADM5120_OEM_ZYXEL)	+= arch/mips/adm5120/zyxel/
++cflags-$(CONFIG_ADM5120)		+= -Iinclude/asm-mips/mach-adm5120
++load-$(CONFIG_ADM5120)			+= 0xffffffff80001000
 +
 +#
  # Common Alchemy Au1x00 stuff
@@ -51,61 +54,57 @@
  core-$(CONFIG_SOC_AU1X00)	+= arch/mips/au1000/common/
 --- a/include/asm-mips/bootinfo.h
 +++ b/include/asm-mips/bootinfo.h
-@@ -94,6 +94,58 @@
+@@ -94,6 +94,54 @@
  #define MACH_MSP7120_FPGA       5	/* PMC-Sierra MSP7120 Emulation */
  #define MACH_MSP_OTHER        255	/* PMC-Sierra unknown board type */
  
 +/*
-+ * Valid machtype for group ADMtek ADM5120
++ * Valid machtype for group ADM5120
 + */
 +#define MACH_ADM5120_GENERIC	0	/* Generic board */
 +#define MACH_ADM5120_WP54G_WRT	1	/* Compex WP54G-WRT */
-+#define MACH_ADM5120_WP54G	2	/* Compex WP54G */
-+#define MACH_ADM5120_WP54AG	3	/* Compex WP54AG */
-+#define MACH_ADM5120_WPP54G	4	/* Compex WPP54G */
-+#define MACH_ADM5120_WPP54AG	5	/* Compex WPP54AG */
-+#define MACH_ADM5120_NP28G	6	/* Compex NP28G */
-+#define MACH_ADM5120_NP28GHS	7	/* Compex NP28G HotSpot */
-+#define MACH_ADM5120_NP27G	8	/* Compex NP27G */
-+#define MACH_ADM5120_WP54Gv1C	9	/* Compex WP54G version 1C */
-+#define MACH_ADM5120_RB_111	10	/* Mikrotik RouterBOARD 111 */
-+#define MACH_ADM5120_RB_112	11	/* Mikrotik RouterBOARD 112 */
-+#define MACH_ADM5120_RB_133	12	/* Mikrotik RouterBOARD 133 */
-+#define MACH_ADM5120_RB_133C	13	/* Mikrotik RouterBOARD 133c */
-+#define MACH_ADM5120_RB_150	14	/* Mikrotik RouterBOARD 150 */
-+#define MACH_ADM5120_RB_153	15	/* Mikrotik RouterBOARD 153 */
-+#define MACH_ADM5120_HS100	16	/* ZyXEL HomeSafe 100/100W */
-+#define MACH_ADM5120_P334	17	/* ZyXEL Prestige 334 */
-+#define MACH_ADM5120_P334U	18	/* ZyXEL Prestige 334U */
-+#define MACH_ADM5120_P334W	19	/* ZyXEL Prestige 334W */
-+#define MACH_ADM5120_P334WH	20	/* ZyXEL Prestige 334WH */
-+#define MACH_ADM5120_P334WHD	21	/* ZyXEL Prestige 334WHD */
-+#define MACH_ADM5120_P334WT	22	/* ZyXEL Prestige 334WT */
-+#define MACH_ADM5120_P335	23	/* ZyXEL Prestige 335/335WT */
-+#define MACH_ADM5120_P335PLUS	24	/* ZyXEL Prestige 335Plus */
-+#define MACH_ADM5120_P335U	25	/* ZyXEL Prestige 335U */
-+#define MACH_ADM5120_ES2108	26	/* ZyXEL Ethernet Switch 2108 */
-+#define MACH_ADM5120_ES2108F	27	/* ZyXEL Ethernet Switch 2108-F */
-+#define MACH_ADM5120_ES2108G	28	/* ZyXEL Ethernet Switch 2108-G */
-+#define MACH_ADM5120_ES2108LC	29	/* ZyXEL Ethernet Switch 2108-LC */
-+#define MACH_ADM5120_ES2108PWR	30	/* ZyXEL Ethernet Switch 2108-PWR */
-+#define MACH_ADM5120_ES2024A	31	/* ZyXEL Ethernet Switch 2024A */
-+#define MACH_ADM5120_ES2024PWR	32	/* ZyXEL Ethernet Switch 2024PWR */
-+#define MACH_ADM5120_CAS630	33	/* Cellvision CAS-630/630W */
-+#define MACH_ADM5120_CAS670	34	/* Cellvision CAS-670/670W */
-+#define MACH_ADM5120_CAS700	36	/* Cellvision CAS-700/700W */
-+#define MACH_ADM5120_CAS771	37	/* Cellvision CAS-771/771W */
-+#define MACH_ADM5120_CAS790	38	/* Cellvision CAS-790 */
-+#define MACH_ADM5120_CAS861	39	/* Cellvision CAS-861/861W */
-+#define MACH_ADM5120_NFS101U	40	/* Cellvision NFS-101U/101WU */
-+#define MACH_ADM5120_NFS202U	41	/* Cellvision NFS-202U/202WU */
-+#define MACH_ADM5120_EASY5120PATA 42	/* Infineon EASY 5120P-ATA */
-+#define MACH_ADM5120_EASY5120RT 43	/* Infineon EASY 5120-RT */
-+#define MACH_ADM5120_EASY5120WVOIP 44	/* Infineon EASY 5120-WVoIP */
-+#define MACH_ADM5120_EASY83000	45	/* Infineon EASY-83000 */
-+#define MACH_ADM5120_BR6104K	46	/* Edimax BR-6104K/BR-6104KP */
-+#define MACH_ADM5120_RB_192	47	/* Mikrotik RouterBOARD 192 */
-+#define MACH_ADM5120_BR61x4WG	48	/* Edimax BR-6104Wg/BR-6114WG */
++#define MACH_ADM5120_WP54	2	/* Compex WP54G/WP54AG/WPP54G/WPP54AG */
++#define MACH_ADM5120_NP28G	3	/* Compex NP28G */
++#define MACH_ADM5120_NP28GHS	4	/* Compex NP28G HotSpot */
++#define MACH_ADM5120_NP27G	5	/* Compex NP27G */
++#define MACH_ADM5120_WP54Gv1C	6	/* Compex WP54G version 1C */
++#define MACH_ADM5120_RB_11X	7	/* Mikrotik RouterBOARD 111/112 */
++#define MACH_ADM5120_RB_133	8	/* Mikrotik RouterBOARD 133 */
++#define MACH_ADM5120_RB_133C	9	/* Mikrotik RouterBOARD 133c */
++#define MACH_ADM5120_RB_150	10	/* Mikrotik RouterBOARD 150 */
++#define MACH_ADM5120_RB_153	11	/* Mikrotik RouterBOARD 153 */
++#define MACH_ADM5120_RB_192	12	/* Mikrotik RouterBOARD 192 */
++#define MACH_ADM5120_HS100	13	/* ZyXEL HomeSafe 100/100W */
++#define MACH_ADM5120_P334U	14	/* ZyXEL Prestige 334U */
++#define MACH_ADM5120_P334W	15	/* ZyXEL Prestige 334W */
++#define MACH_ADM5120_P334WH	16	/* ZyXEL Prestige 334WH */
++#define MACH_ADM5120_P334WHD	17	/* ZyXEL Prestige 334WHD */
++#define MACH_ADM5120_P334WT	18	/* ZyXEL Prestige 334WT */
++#define MACH_ADM5120_P335	19	/* ZyXEL Prestige 335/335WT */
++#define MACH_ADM5120_P335PLUS	20	/* ZyXEL Prestige 335Plus */
++#define MACH_ADM5120_P335U	21	/* ZyXEL Prestige 335U */
++#define MACH_ADM5120_ES2108	22	/* ZyXEL Ethernet Switch 2108 */
++#define MACH_ADM5120_ES2108F	23	/* ZyXEL Ethernet Switch 2108-F */
++#define MACH_ADM5120_ES2108G	24	/* ZyXEL Ethernet Switch 2108-G */
++#define MACH_ADM5120_ES2108LC	25	/* ZyXEL Ethernet Switch 2108-LC */
++#define MACH_ADM5120_ES2108PWR	26	/* ZyXEL Ethernet Switch 2108-PWR */
++#define MACH_ADM5120_ES2024A	27	/* ZyXEL Ethernet Switch 2024A */
++#define MACH_ADM5120_ES2024PWR	28	/* ZyXEL Ethernet Switch 2024PWR */
++#define MACH_ADM5120_CAS630	29	/* Cellvision CAS-630/630W */
++#define MACH_ADM5120_CAS670	30	/* Cellvision CAS-670/670W */
++#define MACH_ADM5120_CAS700	31	/* Cellvision CAS-700/700W */
++#define MACH_ADM5120_CAS771	32	/* Cellvision CAS-771/771W */
++#define MACH_ADM5120_CAS790	33	/* Cellvision CAS-790 */
++#define MACH_ADM5120_CAS861	34	/* Cellvision CAS-861/861W */
++#define MACH_ADM5120_NFS101U	35	/* Cellvision NFS-101U/101WU */
++#define MACH_ADM5120_NFS202U	36	/* Cellvision NFS-202U/202WU */
++#define MACH_ADM5120_EASY5120PATA 37	/* Infineon EASY 5120P-ATA */
++#define MACH_ADM5120_EASY5120RT 38	/* Infineon EASY 5120-RT */
++#define MACH_ADM5120_EASY5120WVOIP 39	/* Infineon EASY 5120-WVoIP */
++#define MACH_ADM5120_EASY83000	40	/* Infineon EASY-83000 */
++#define MACH_ADM5120_BR6104K	41	/* Edimax BR-6104K */
++#define MACH_ADM5120_BR6104KP	42	/* Edimax BR-6104KP */
++#define MACH_ADM5120_BR61X4WG	43	/* Edimax BR-6104Wg/BR-6114WG */
 +
  #define CL_SIZE			COMMAND_LINE_SIZE
  

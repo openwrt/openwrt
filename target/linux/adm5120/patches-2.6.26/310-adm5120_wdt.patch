@@ -6,7 +6,7 @@
  
 +config ADM5120_WDT
 +	tristate "Infineon ADM5120 SoC hardware watchdog"
-+	depends on WATCHDOG && MIPS_ADM5120
++	depends on WATCHDOG && ADM5120
 +	help
 +	  This is a driver for hardware watchdog integrated in Infineon
 +	  ADM5120 SoC. This watchdog simply watches your kernel to make sure
