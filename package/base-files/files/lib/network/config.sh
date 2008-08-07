@@ -142,6 +142,66 @@ set_interface_ifname() {
 	uci_set_state network "$config" device "$device"
 }
 
+setup_interface_static() {
+	local iface="$1"
+	local config="$2"
+
+	config_get ipaddr "$config" ipaddr
+	config_get netmask "$config" netmask
+	config_get ip6addr "$config" ip6addr
+	[ -z "$ipaddr" -o -z "$netmask" ] && [ -z "$ip6addr" ] && return 1
+	
+	config_get gateway "$config" gateway
+	config_get ip6gw "$config" ip6gw
+	config_get dns "$config" dns
+	config_get bcast "$config" broadcast
+	
+	[ -z "$ipaddr" ] || $DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask" broadcast "${bcast:-+}"
+	[ -z "$ip6addr" ] || $DEBUG ifconfig "$iface" add "$ip6addr"
+	[ -z "$gateway" ] || $DEBUG route add default gw "$gateway" dev "$iface"
+	[ -z "$ip6gw" ] || $DEBUG route -A inet6 add default gw "$ip6gw" dev "$iface"
+	[ -z "$dns" ] || {
+		for ns in $dns; do
+			grep "$ns" /tmp/resolv.conf.auto 2>/dev/null >/dev/null || {
+				echo "nameserver $ns" >> /tmp/resolv.conf.auto
+			}
+		done
+	}
+
+	env -i ACTION="ifup" INTERFACE="$config" DEVICE="$iface" PROTO=static /sbin/hotplug-call "iface" &
+}
+
+setup_interface_alias() {
+	local config="$1"
+	local parent="$2"
+	local iface="$3"
+
+	config_get cfg "$config" interface
+	[ "$parent" == "$cfg" ] || return 0
+
+	# alias counter
+	config_get ctr "$parent" alias_count
+	ctr="$(($ctr + 1))"
+	config_set "$parent" alias_count "$ctr"
+
+	# alias list
+	config_get list "$parent" aliases
+	append list "$config"
+	config_set "$parent" aliases "$list"
+
+	set_interface_ifname "$config" "$iface:$ctr"
+	config_get proto "$config" proto
+	case "${proto:-static}" in
+		static)
+			setup_interface_static "$iface:$ctr" "$config"
+		;;
+		*) 
+			echo "Unsupported type '$proto' for alias config '$config'"
+			return 1
+		;;
+	esac
+}
+
 setup_interface() {
 	local iface="$1"
 	local config="$2"
@@ -174,52 +234,30 @@ setup_interface() {
 	pidfile="/var/run/$iface.pid"
 	case "$proto" in
 		static)
-			config_get ipaddr "$config" ipaddr
-			config_get netmask "$config" netmask
-			config_get ip6addr "$config" ip6addr
-			[ -z "$ipaddr" -o -z "$netmask" ] && [ -z "$ip6addr" ] && return 1
-			
-			config_get gateway "$config" gateway
-			config_get ip6gw "$config" ip6gw
-			config_get dns "$config" dns
-			config_get bcast "$config" broadcast
-			
-			[ -z "$ipaddr" ] || $DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask" broadcast "${bcast:-+}"
-			[ -z "$ip6addr" ] || $DEBUG ifconfig "$iface" add "$ip6addr"
-			[ -z "$gateway" ] || $DEBUG route add default gw "$gateway" dev "$iface"
-			[ -z "$ip6gw" ] || $DEBUG route -A inet6 add default gw "$ip6gw" dev "$iface"
-			[ -z "$dns" ] || {
-				for ns in $dns; do
-					grep "$ns" /tmp/resolv.conf.auto 2>/dev/null >/dev/null || {
-						echo "nameserver $ns" >> /tmp/resolv.conf.auto
-					}
-				done
-			}
-
-			env -i ACTION="ifup" INTERFACE="$config" DEVICE="$iface" PROTO=static /sbin/hotplug-call "iface" &
+			setup_interface_static "$iface" "$config"
 		;;
 		dhcp)
 			# prevent udhcpc from starting more than once
 			lock "/var/lock/dhcp-$iface"
 			pid="$(cat "$pidfile" 2>/dev/null)"
-			[ -d "/proc/$pid" ] && grep udhcpc "/proc/${pid}/cmdline" >/dev/null 2>/dev/null && {
+			if [ -d "/proc/$pid" ] && grep udhcpc "/proc/${pid}/cmdline" >/dev/null 2>/dev/null; then
 				lock -u "/var/lock/dhcp-$iface"
-				return 0
-			}
+			else
 
-			config_get ipaddr "$config" ipaddr
-			config_get netmask "$config" netmask
-			config_get hostname "$config" hostname
-			config_get proto1 "$config" proto
-			config_get clientid "$config" clientid
+				config_get ipaddr "$config" ipaddr
+				config_get netmask "$config" netmask
+				config_get hostname "$config" hostname
+				config_get proto1 "$config" proto
+				config_get clientid "$config" clientid
 
-			[ -z "$ipaddr" ] || \
-				$DEBUG ifconfig "$iface" "$ipaddr" ${netmask:+netmask "$netmask"}
+				[ -z "$ipaddr" ] || \
+					$DEBUG ifconfig "$iface" "$ipaddr" ${netmask:+netmask "$netmask"}
 
-			# don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
-			[ ."$proto1" != ."$proto" ] && dhcpopts="-n -q"
-			$DEBUG eval udhcpc -t 0 -i "$iface" ${ipaddr:+-r $ipaddr} ${hostname:+-H $hostname} ${clientid:+-c $clientid} -b -p "$pidfile" ${dhcpopts:- -R &}
-			lock -u "/var/lock/dhcp-$iface"
+				# don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
+				[ ."$proto1" != ."$proto" ] && dhcpopts="-n -q"
+				$DEBUG eval udhcpc -t 0 -i "$iface" ${ipaddr:+-r $ipaddr} ${hostname:+-H $hostname} ${clientid:+-c $clientid} -b -p "$pidfile" ${dhcpopts:- -R &}
+				lock -u "/var/lock/dhcp-$iface"
+			fi
 		;;
 		*)
 			if ( eval "type setup_interface_$proto" ) >/dev/null 2>/dev/null; then
@@ -230,6 +268,11 @@ setup_interface() {
 			fi
 		;;
 	esac
+	config_set "$config" aliases ""
+	config_set "$config" alias_count 0
+	config_foreach setup_interface_alias alias "$config" "$iface"
+	config_get aliases "$config" aliases
+	[ -z "$aliases" ] || uci_set_state network "$config" aliases "$aliases"
 }
 
 unbridge() {
