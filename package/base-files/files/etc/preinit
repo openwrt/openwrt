@@ -62,6 +62,8 @@ dd if=/dev/console of=/dev/null bs=1 count=0 >/dev/null 2>/dev/null && {
 exec <$M0 >$M1 2>&0
 
 echo "- preinit -"
+echo "Press CTRL-C for failsafe"
+trap 'FAILSAFE=true' INT
 trap 'FAILSAFE=true' USR1
 [ -e /etc/preinit.arch ] && . /etc/preinit.arch
 set_state preinit
