@@ -64,4 +64,8 @@ config_get iftype "$cfg" type
 # remove the interface's network state
 uci_revert_state network "$1"
 
-
+# revert aliases state as well
+config_get aliases "$1" aliases
+for config in $aliases; do
+	uci_revert_state network "$config"
+done
