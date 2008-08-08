@@ -43,11 +43,10 @@
 #include <sys/stat.h>
 #include <sys/reboot.h>
 #include <linux/reboot.h>
-
 #include "mtd-api.h"
+#include "mtd.h"
 
 #define TRX_MAGIC       0x30524448      /* "HDR0" */
-#define BUFSIZE (16 * 1024)
 #define MAX_ARGS 8
 
 #define DEBUG
@@ -66,9 +65,10 @@ struct trx_header {
 	uint32_t offsets[3];    /* Offsets of partitions from start of header */
 };
 
-static char buf[BUFSIZE];
-static char *imagefile;
-static int buflen;
+static char *buf = NULL;
+static char *imagefile = NULL;
+static char *jffs2file = NULL, *jffs2dir = JFFS2_DEFAULT_DIR;
+static int buflen = 0;
 int quiet;
 int mtdsize = 0;
 int erasesize = 0;
@@ -134,7 +134,7 @@ int mtd_erase_block(int fd, int offset)
 	}
 }
 
-int mtd_write_buffer(int fd, char *buf, int offset, int length)
+int mtd_write_buffer(int fd, const char *buf, int offset, int length)
 {
 	lseek(fd, offset, SEEK_SET);
 	write(fd, buf, length);
@@ -204,6 +204,9 @@ static int mtd_check(const char *mtd)
 	fd = mtd_check_open(mtd);
 	if (!fd)
 		return 0;
+
+	if (!buf)
+		buf = malloc(erasesize);
 
 	close(fd);
 	return 1;
@@ -316,15 +319,29 @@ mtd_write(int imagefd, const char *mtd)
 
 	for (;;) {
 		/* buffer may contain data already (from trx check) */
-		r = buflen;
-		r += read(imagefd, buf + buflen, BUFSIZE - buflen);
-		w += r;
+		r = read(imagefd, buf + buflen, erasesize - buflen);
+		if (r < 0)
+			break;
 
-		/* EOF */
-		if (r <= 0) break;
+		buflen += r;
+
+		if (jffs2file) {
+			if (memcmp(buf, JFFS2_EOF, sizeof(JFFS2_EOF)) == 0) {
+				if (!quiet)
+					fprintf(stderr, "\b\b\b   ");
+				if (quiet < 2)
+					fprintf(stderr, "\nAppending jffs2 data to from %s to %s...", jffs2file, mtd);
+				/* got an EOF marker - this is the place to add some jffs2 data */
+				mtd_replace_jffs2(fd, e, jffs2file);
+				goto done;
+			}
+			/* no EOF marker, make sure we figure out the last inode number
+			 * before appending some data */
+			mtd_parse_jffs2data(buf, jffs2dir);
+		}
 
 		/* need to erase the next block before writing data to it */
-		while (w > e) {
+		while (w + buflen > e) {
 			if (!quiet)
 				fprintf(stderr, "\b\b\b[e]");
 
@@ -337,7 +354,7 @@ mtd_write(int imagefd, const char *mtd)
 		if (!quiet)
 			fprintf(stderr, "\b\b\b[w]");
 		
-		if ((result = write(fd, buf, r)) < r) {
+		if ((result = write(fd, buf, buflen)) < buflen) {
 			if (result < 0) {
 				fprintf(stderr, "Error writing image.\n");
 				exit(1);
@@ -346,12 +363,18 @@ mtd_write(int imagefd, const char *mtd)
 				exit(1);
 			}
 		}
-		
+		w += buflen;
+
+		/* not enough data - eof */
+		if (buflen < erasesize)
+			break;
+
 		buflen = 0;
 	}
 	if (!quiet)
 		fprintf(stderr, "\b\b\b\b");
 
+done:
 	if (quiet < 2)
 		fprintf(stderr, "\n");
 
@@ -376,6 +399,7 @@ static void usage(void)
 	"        -f                      force write without trx checks\n"
 	"        -e <device>             erase <device> before executing the command\n"
 	"        -d <name>               directory for jffs2write, defaults to \"tmp\"\n"
+	"        -j <name>               integrate <file> into jffs2 data when writing an image\n"
 	"\n"
 	"Example: To write linux.trx to mtd4 labeled as linux and reboot afterwards\n"
 	"         mtd -r write linux.trx linux\n\n");
@@ -399,7 +423,6 @@ int main (int argc, char **argv)
 {
 	int ch, i, boot, unlock, imagefd, force, unlocked;
 	char *erase[MAX_ARGS], *device;
-	char *jffs2dir = JFFS2_DEFAULT_DIR;
 	enum {
 		CMD_ERASE,
 		CMD_WRITE,
@@ -414,13 +437,16 @@ int main (int argc, char **argv)
 	buflen = 0;
 	quiet = 0;
 
-	while ((ch = getopt(argc, argv, "frqe:d:")) != -1)
+	while ((ch = getopt(argc, argv, "frqe:d:j:")) != -1)
 		switch (ch) {
 			case 'f':
 				force = 1;
 				break;
 			case 'r':
 				boot = 1;
+				break;
+			case 'j':
+				jffs2file = optarg;
 				break;
 			case 'q':
 				quiet++;
@@ -470,17 +496,14 @@ int main (int argc, char **argv)
 			}
 		}
 	
+		if (!mtd_check(device)) {
+			fprintf(stderr, "Can't open device for writing!\n");
+			exit(1);
+		}
 		/* check trx file before erasing or writing anything */
-		if (!image_check(imagefd, device)) {
-			if (!force) {
-				fprintf(stderr, "Image check failed.\n");
-				exit(1);
-			}
-		} else {
-			if (!mtd_check(device)) {
-				fprintf(stderr, "Can't open device for writing!\n");
-				exit(1);
-			}
+		if (!image_check(imagefd, device) && !force) {
+			fprintf(stderr, "Image check failed.\n");
+			exit(1);
 		}
 	} else if ((strcmp(argv[0], "jffs2write") == 0) && (argc == 3)) {
 		cmd = CMD_JFFS2WRITE;
