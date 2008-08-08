@@ -11,6 +11,10 @@ use Cwd 'abs_path';
 chdir "$FindBin::Bin/..";
 $ENV{TOPDIR}=getcwd();
 
+my $mk=`which gmake`;	# select the right 'make' program
+chomp($mk);		# trim trailing newline
+$mk or $mk = "make";	# default to 'make'
+
 my @feeds;
 my %build_packages;
 my %installed;
@@ -48,8 +52,8 @@ sub update_index($)
 	-d "./feeds/$name.tmp" or mkdir "./feeds/$name.tmp" or return 1;
 	-d "./feeds/$name.tmp/info" or mkdir "./feeds/$name.tmp/info" or return 1;
 
-	system("make -s prepare-mk TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
-	system("make -s -f include/scan.mk IS_TTY=1 SCAN_TARGET=\"packageinfo\" SCAN_DIR=\"feeds/$name\" SCAN_NAME=\"package\" SCAN_DEPS=\"$ENV{TOPDIR}/include/package*.mk\" SCAN_DEPTH=4 SCAN_EXTRA=\"\" TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
+	system("$mk -s prepare-mk TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
+	system("$mk -s -f include/scan.mk IS_TTY=1 SCAN_TARGET=\"packageinfo\" SCAN_DIR=\"feeds/$name\" SCAN_NAME=\"package\" SCAN_DEPS=\"$ENV{TOPDIR}/include/package*.mk\" SCAN_DEPTH=4 SCAN_EXTRA=\"\" TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
 	system("ln -sf $name.tmp/.packageinfo ./feeds/$name.index");
 
 	return 0;
@@ -117,7 +121,7 @@ sub get_feed($) {
 }
 
 sub get_installed() {
-	system("make -s prepare-tmpinfo");
+	system("$mk -s prepare-tmpinfo");
 	clear_packages();
 	parse_package_metadata("./tmp/.packageinfo");
 	%installed = %package;
@@ -299,9 +303,9 @@ sub refresh_config {
 
 	# refresh the config
 	if ($default) { 
-		system("make oldconfig CONFDEFAULT=\"$default\" Config.in >/dev/null 2>/dev/null");
+		system("$mk oldconfig CONFDEFAULT=\"$default\" Config.in >/dev/null 2>/dev/null");
 	} else {
-		system("make defconfig Config.in >/dev/null 2>/dev/null");
+		system("$mk defconfig Config.in >/dev/null 2>/dev/null");
 	}
 }
 
