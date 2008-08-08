@@ -14,7 +14,6 @@
 #define PAD(x) (((x)+3)&~3)
 
 #define CLEANMARKER "\x85\x19\x03\x20\x0c\x00\x00\x00\xb1\xb0\x1e\xe4"
-#define JFFS2_EOF "\xde\xad\xc0\xde"
 
 static int last_ino = 0;
 static int last_version = 0;
@@ -22,6 +21,7 @@ static char *buf = NULL;
 static int ofs = 0;
 static int outfd = 0;
 static int mtdofs = 0;
+static int target_ino = 0;
 
 static void prep_eraseblock(void);
 
@@ -65,7 +65,7 @@ static void prep_eraseblock(void)
 	add_data(CLEANMARKER, sizeof(CLEANMARKER) - 1);
 }
 
-static int add_dirent(char *name, char type, int parent)
+static int add_dirent(const char *name, const char type, int parent)
 {
 	struct jffs2_raw_dirent *de;
 
@@ -97,7 +97,7 @@ static int add_dirent(char *name, char type, int parent)
 	return de->ino;
 }
 
-static int add_dir(char *name, int parent)
+static int add_dir(const char *name, int parent)
 {
 	struct jffs2_raw_inode ri;
 	int inode;
@@ -128,12 +128,13 @@ static int add_dir(char *name, int parent)
 	return inode;
 }
 
-static void add_file(char *name, int parent)
+static void add_file(const char *name, int parent)
 {
 	int inode, f_offset = 0, fd;
 	struct jffs2_raw_inode ri;
 	struct stat st;
-	char wbuf[4096], *fname;
+	char wbuf[4096];
+	const char *fname;
 	FILE *f;
 
 	if (stat(name, &st)) {
@@ -204,9 +205,53 @@ static void add_file(char *name, int parent)
 	close(fd);
 }
 
-int mtd_write_jffs2(char *mtd, char *filename, char *dir)
+int mtd_replace_jffs2(int fd, int ofs, const char *filename)
 {
-	int target_ino = 0;
+	outfd = fd;
+	mtdofs = ofs;
+
+	buf = malloc(erasesize);
+	target_ino = 1;
+	if (!last_ino)
+		last_ino = 1;
+	add_file(filename, target_ino);
+	pad(erasesize);
+
+	/* add eof marker, pad to eraseblock size and write the data */
+	add_data(JFFS2_EOF, sizeof(JFFS2_EOF) - 1);
+	pad(erasesize);
+	free(buf);
+}
+
+void mtd_parse_jffs2data(const char *buf, const char *dir)
+{
+	struct jffs2_unknown_node *node = (struct jffs2_unknown_node *) buf;
+	unsigned int ofs = 0;
+
+	while (ofs < erasesize) {
+		node = (struct jffs2_unknown_node *) (buf + ofs);
+		if (node->magic != 0x1985)
+			break;
+
+		ofs += PAD(node->totlen);
+		if (node->nodetype == JFFS2_NODETYPE_DIRENT) {
+			struct jffs2_raw_dirent *de = (struct jffs2_raw_dirent *) node;
+
+			/* is this the right directory name and is it a subdirectory of / */
+			if (*dir && (de->pino == 1) && !strncmp(de->name, dir, de->nsize))
+				target_ino = de->ino;
+
+			/* store the last inode and version numbers for adding extra files */
+			if (last_ino < de->ino)
+				last_ino = de->ino;
+			if (last_version < de->version)
+				last_version = de->version;
+		}
+	}
+}
+
+int mtd_write_jffs2(const char *mtd, const char *filename, const char *dir)
+{
 	int err = -1, fdeof = 0;
 	off_t offset;
 
@@ -230,7 +275,6 @@ int mtd_write_jffs2(char *mtd, char *filename, char *dir)
 	 * locate the directory that the file is going to be placed in */
 	for(;;) {
 		struct jffs2_unknown_node *node = (struct jffs2_unknown_node *) buf;
-		unsigned int ofs = 0;
 
 		if (read(outfd, buf, erasesize) != erasesize) {
 			fdeof = 1;
@@ -248,27 +292,7 @@ int mtd_write_jffs2(char *mtd, char *filename, char *dir)
 		if (node->magic != 0x1985)
 			break;
 
-		while (ofs < erasesize) {
-			node = (struct jffs2_unknown_node *) (buf + ofs);
-			if (node->magic == 0x1985) {
-				ofs += PAD(node->totlen);
-				if (node->nodetype == JFFS2_NODETYPE_DIRENT) {
-					struct jffs2_raw_dirent *de = (struct jffs2_raw_dirent *) node;
-					
-					/* is this the right directory name and is it a subdirectory of / */
-					if (*dir && (de->pino == 1) && !strncmp(de->name, dir, de->nsize))
-						target_ino = de->ino;
-
-					/* store the last inode and version numbers for adding extra files */
-					if (last_ino < de->ino)
-						last_ino = de->ino;
-					if (last_version < de->version)
-						last_version = de->version;
-				}
-			} else {
-				ofs = ~0;
-			}
-		}
+		mtd_parse_jffs2data(buf, dir);
 	}
 
 	if (fdeof) {
