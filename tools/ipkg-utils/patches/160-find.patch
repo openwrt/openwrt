@@ -5,8 +5,8 @@
  
  version=1.0
 -
-+FIND="$(which gfind)"
-+FIND="${FIND:-$(which find)}"
++FIND="$(which find)"
++FIND="${FIND:-$(which gfind)}"
  TAR="${TAR:-$(which tar)}"
  
  ipkg_extract_value() {
