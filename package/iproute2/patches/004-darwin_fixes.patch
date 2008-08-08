@@ -6,7 +6,7 @@ Index: iproute-2.6.20-070313/netem/maketable.c
  #include <stdio.h>
  #include <stdlib.h>
  #include <math.h>
-+#ifndef __APPLE__
++#if !defined(__APPLE__) && !defined(__FreeBSD__)
  #include <malloc.h>
 +#endif
  #include <string.h>
@@ -20,7 +20,7 @@ Index: iproute-2.6.20-070313/netem/normal.c
  #include <string.h>
  #include <limits.h>
  
-+#ifndef __APPLE__
++#if !defined(__APPLE__) && !defined(__FreeBSD__)
  #include <linux/types.h>
  #include <linux/pkt_sched.h>
 +#else
@@ -37,7 +37,7 @@ Index: iproute-2.6.20-070313/netem/pareto.c
  #include <math.h>
  #include <limits.h>
  
-+#ifndef __APPLE__
++#if !defined(__APPLE__) && !defined(__FreeBSD__)
  #include <linux/types.h>
  #include <linux/pkt_sched.h>
 +#else
@@ -54,7 +54,7 @@ Index: iproute-2.6.20-070313/netem/paretonormal.c
  #include <string.h>
  #include <math.h>
  #include <limits.h>
-+#ifndef __APPLE__
++#if !defined(__APPLE__) && !defined(__FreeBSD__)
  #include <malloc.h>
 -
  #include <linux/types.h>
