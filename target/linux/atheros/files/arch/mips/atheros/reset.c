@@ -129,10 +129,8 @@ static irqreturn_t button_handler(int irq, void *dev_id)
 
 	seen = jiffies;
 	if(event->set && no_release_workaround)
-	{
-		rst_button_timer.expires = jiffies + (HZ / 4);
-		add_timer(&rst_button_timer);
-	}
+		mod_timer(&rst_button_timer, jiffies + (HZ / 4));
+
 	return IRQ_HANDLED;
 }
 
