@@ -24,7 +24,10 @@ scan_broadcom() {
 			;;
 			wds)
 				config_get addr "$vif" bssid
-				[ -z "$addr" ] || append wds "$addr"
+				[ -z "$addr" ] || {
+					addr=$(echo "$addr" | tr 'A-F' 'a-f')
+					append wds "$addr"
+				}
 			;;
 			monitor)
 				mon=1
