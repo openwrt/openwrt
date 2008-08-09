@@ -86,7 +86,7 @@ kernel_menuconfig: .config FORCE
 tmp/.prereq-build: include/prereq-build.mk
 	mkdir -p tmp
 	rm -f tmp/.host.mk
-	@$(NO_TRACE_MAKE) -j1 -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
+	@$(_SINGLE)$(NO_TRACE_MAKE) -j1 -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
 	}
@@ -120,7 +120,7 @@ docs/clean: FORCE
 
 distclean:
 	rm -rf tmp build_dir staging_dir dl .config* feeds package/feeds package/openwrt-packages bin
-	@$(_SINGLE)$(SUBMAKE) -j1 -C scripts/config clean
+	@$(SUBMAKE) -j1 -C scripts/config clean
 
 ifeq ($(findstring v,$(DEBUG)),)
   .SILENT: symlinkclean clean dirclean distclean config-clean download help tmpinfo-clean .config scripts/config/mconf scripts/config/conf menuconfig tmp/.prereq-build tmp/.prereq-package prepare-tmpinfo
