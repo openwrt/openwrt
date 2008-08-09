@@ -86,7 +86,7 @@ kernel_menuconfig: .config FORCE
 tmp/.prereq-build: include/prereq-build.mk
 	mkdir -p tmp
 	rm -f tmp/.host.mk
-	@$(_SINGLE)$(NO_TRACE_MAKE) -j1 -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
+	@$(NO_TRACE_MAKE) -j1 -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
 	}
