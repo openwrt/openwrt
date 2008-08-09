@@ -31,7 +31,20 @@ setup_broadcom_wds() {
 		
 			[ "$encryption" != "none" ] && {
 				sleep 1
-				nas4not lan "$iface" up auto aes "$encryption" "$key" "$ssid" 
+				case "$encryption" in
+					psk|PSK)
+						nas4not "$network" "$iface" up auto tkip psk "$key" "$ssid"
+						;;
+					psk2|PSK2)
+						nas4not "$network" "$iface" up auto aes psk "$key" "$ssid"
+						;;
+					psk+psk2|psk2+psk|PSK+PSK2|PSK2+PSK)
+						nas4not "$network" "$iface" up auto aes+tkip psk "$key" "$ssid"
+						;;
+					*)
+						nas4not lan "$iface" up auto aes "$encryption" "$key" "$ssid"
+						;;
+					esac
 			}
 		}
 	}

@@ -211,6 +211,67 @@ config wifi-iface
 
 \end{itemize}
 
+\paragraph{Wireless Distribution System}
+
+WDS is a non-standard mode which will be working between two Broadcom devices for instance
+but not between a Broadcom and Atheros device.
+
+\subparagraph{Unencrypted WDS connections}
+
+This configuration example shows you how to setup unencrypted WDS connections.
+We assume that the peer configured as below as the BSSID ca:fe:ba:be:00:01
+and the remote WDS endpoint ca:fe:ba:be:00:02 (option bssid field).
+
+\begin{Verbatim}
+config wifi-device      "wl0"
+    option type		"broadcom"
+    option channel      "5"
+
+config wifi-iface
+    option device       "wl0"
+    option network  	lan
+    option mode         "ap"
+    option ssid         "OpenWrt"
+    option hidden       "0"
+    option encryption   "none"
+
+config wifi-iface
+    option device       "wl0"
+    option network      lan
+    option mode         wds
+    option ssid         "OpenWrt WDS"
+    option bssid        "ca:fe:ba:be:00:02"
+\end{Verbatim}
+
+\subparagraph{Encrypted WDS connections}
+
+It is also possible to encrypt WDS connections. \texttt{psk}, \texttt{psk2} and
+\texttt{psk+psk2} modes are supported. Configuration below is an example
+configuration using Pre-Shared-Keys with AES algorithm.
+
+\begin{Verbatim}
+config wifi-device  wl0
+    option type     broadcom
+    option channel  5
+
+config wifi-iface
+    option device   "wl0"
+    option network  lan
+    option mode     ap
+    option ssid     "OpenWrt"
+    option encryption  psk2
+    option key      "<key for clients>"
+
+config wifi-iface
+    option device   "wl0"
+    option network  lan
+    option mode     wds
+    option bssid    ca:fe:ba:be:00:02
+    option ssid     "OpenWrt WDS"
+    option encryption	psk2
+    option key      "<psk for WDS>"
+\end{Verbatim}
+
 
 \paragraph{Limitations:}
 
@@ -242,7 +303,7 @@ Only the following mode combinations are supported:
 
 \paragraph{Adding a new driver configuration}
 
-Since we currently only support two different wireless drivers : Broadcom and Atheros,
+Since we currently only support thread different wireless drivers : Broadcom, Atheros and mac80211,
 you might be interested in adding support for another driver like Ralink RT2x00, 
 Texas Instruments ACX100/111.
 
