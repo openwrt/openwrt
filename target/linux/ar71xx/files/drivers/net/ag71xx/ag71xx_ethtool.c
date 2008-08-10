@@ -47,9 +47,25 @@ static void ag71xx_ethtool_get_drvinfo(struct net_device *dev,
 	strcpy(info->bus_info, ag->pdev->dev.bus_id);
 }
 
+static u32 ag71xx_ethtool_get_msglevel(struct net_device *dev)
+{
+	struct ag71xx *ag = netdev_priv(dev);
+
+	return ag->msg_enable;
+}
+
+static void ag71xx_ethtool_set_msglevel(struct net_device *dev, u32 msg_level)
+{
+	struct ag71xx *ag = netdev_priv(dev);
+
+	ag->msg_enable = msg_level;
+}
+
 struct ethtool_ops ag71xx_ethtool_ops = {
 	.set_settings	= ag71xx_ethtool_set_settings,
 	.get_settings	= ag71xx_ethtool_get_settings,
 	.get_drvinfo	= ag71xx_ethtool_get_drvinfo,
+	.get_msglevel	= ag71xx_ethtool_get_msglevel,
+	.set_msglevel	= ag71xx_ethtool_set_msglevel,
 	.get_link	= ethtool_op_get_link,
 };

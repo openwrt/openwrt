@@ -37,7 +37,7 @@
 #define ETH_FCS_LEN	4
 
 #define AG71XX_DRV_NAME		"ag71xx"
-#define AG71XX_DRV_VERSION	"0.4.0"
+#define AG71XX_DRV_VERSION	"0.4.1"
 
 #define AG71XX_NAPI_TX		1
 
@@ -120,6 +120,7 @@ struct ag71xx {
 	struct platform_device	*pdev;
 	struct net_device	*dev;
 	struct napi_struct	napi;
+	u32			msg_enable;
 
 	struct ag71xx_ring	rx_ring;
 	struct ag71xx_ring	tx_ring;

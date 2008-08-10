@@ -13,6 +13,21 @@
 
 #include "ag71xx.h"
 
+#define AG71XX_DEFAULT_MSG_ENABLE	\
+	( NETIF_MSG_DRV 		\
+	| NETIF_MSG_PROBE		\
+	| NETIF_MSG_LINK		\
+	| NETIF_MSG_TIMER		\
+	| NETIF_MSG_IFDOWN		\
+	| NETIF_MSG_IFUP		\
+	| NETIF_MSG_RX_ERR		\
+	| NETIF_MSG_TX_ERR )
+
+static int ag71xx_debug = -1;
+
+module_param(ag71xx_debug, int, 0);
+MODULE_PARM_DESC(ag71xx_debug, "Debug level (-1=defaults,0=none,...,16=all)");
+
 static void ag71xx_dump_regs(struct ag71xx *ag)
 {
 	DBG("%s: mac_cfg1=%08x, mac_cfg2=%08x, ipg=%08x, hdx=%08x, mfl=%08x\n",
@@ -601,8 +616,9 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 	}
 
 	if (status & AG71XX_INT_RX_OF) {
-		printk(KERN_ALERT "%s: rx owerflow, restarting dma\n",
-			dev->name);
+		if (netif_msg_rx_err(ag))
+			printk(KERN_ALERT "%s: rx owerflow, restarting dma\n",
+				dev->name);
 
 		/* ack interrupt */
 		ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_OF);
@@ -692,6 +708,8 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 	ag->pdev = pdev;
 	ag->dev = dev;
 	ag->mii_bus = &ag71xx_mdio_bus->mii_bus;
+	ag->msg_enable = netif_msg_init(ag71xx_debug,
+					AG71XX_DEFAULT_MSG_ENABLE);
 	spin_lock_init(&ag->lock);
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mac_base");

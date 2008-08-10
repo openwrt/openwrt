@@ -87,7 +87,8 @@ static void ag71xx_phy_link_update(struct ag71xx *ag)
 
 	if (!ag->link) {
 		netif_carrier_off(ag->dev);
-		printk(KERN_INFO "%s: link down\n", ag->dev->name);
+		if (netif_msg_link(ag))
+			printk(KERN_INFO "%s: link down\n", ag->dev->name);
 		return;
 	}
 
@@ -133,10 +134,11 @@ static void ag71xx_phy_link_update(struct ag71xx *ag)
 	ag71xx_wr(ag, AG71XX_REG_MAC_IFCTL, ifctl);
 
 	netif_carrier_on(ag->dev);
-	printk(KERN_INFO "%s: link up (%sMbps/%s duplex)\n",
-		ag->dev->name,
-		ag71xx_speed_str(ag),
-		(DUPLEX_FULL == ag->duplex) ? "Full" : "Half");
+	if (netif_msg_link(ag))
+		printk(KERN_INFO "%s: link up (%sMbps/%s duplex)\n",
+			ag->dev->name,
+			ag71xx_speed_str(ag),
+			(DUPLEX_FULL == ag->duplex) ? "Full" : "Half");
 
 	DBG("%s: fifo1=%#x, fifo2=%#x, fifo3=%#x, fifo4=%#x, fifo5=%#x\n",
 		ag->dev->name,
