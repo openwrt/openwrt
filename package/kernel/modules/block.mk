@@ -136,10 +136,17 @@ define KernelPackage/ide-core/2.4
   AUTOLOAD+=$(call AutoLoad,30,ide-detect)
 endef
 
-define KernelPackage/ide-core/2.6
-  FILES+=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD+=$(call AutoLoad,30,ide-generic)
-endef
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.26)),1)
+  define KernelPackage/ide-core/2.6
+    FILES+=$(LINUX_DIR)/drivers/ide/pci/ide-pci-generic.$(LINUX_KMOD_SUFFIX)
+    AUTOLOAD+=$(call AutoLoad,30,ide-pci-generic)
+  endef
+else
+  define KernelPackage/ide-core/2.6
+    FILES+=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX)
+    AUTOLOAD+=$(call AutoLoad,30,ide-generic)
+  endef
+endif
 
 define KernelPackage/ide-core/description
  Kernel support for IDE, useful for usb mass storage devices (e.g. on WL-HDD)
