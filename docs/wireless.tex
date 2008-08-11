@@ -272,6 +272,39 @@ config wifi-iface
     option key      "<psk for WDS>"
 \end{Verbatim}
 
+\paragraph{802.1x configurations}
+
+OpenWrt supports both 802.1x client and Access Point
+configurations. 802.1x client is only working with
+Atheros or mac80211 drivers. Configuration only
+supports EAP types TLS, TTLS or PEAP.
+
+\subparagraph{EAP-TLS}
+
+\begin{Verbatim}
+config wifi-iface
+    option device         "ath0"
+    option network        lan
+    option ssid           OpenWrt
+    option eap_type       tls
+    option ca_cert        "/etc/config/certs/ca.crt"
+    option priv_key       "/etc/config/certs/priv.crt"
+    option priv_key_pwd   "PKCS#12 passphrase"
+\end{Verbatim}
+
+\subparagraph{EAP-PEAP}
+
+\begin{Verbatim}
+config wifi-iface
+    option device         "ath0"
+    option network        lan
+    option ssid           OpenWrt
+    option eap_type       peap
+    option ca_cert        "/etc/config/certs/ca.crt"
+    option auth           MSCHAPV2
+    option identity       username
+    option password       password
+\end{Verbatim}
 
 \paragraph{Limitations:}
 

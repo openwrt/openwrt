@@ -81,6 +81,7 @@ enable_atheros() {
 		nosbeacon=
 		config_get ifname "$vif" ifname
 		config_get enc "$vif" encryption
+		config_get eap_type "$vif" eap_type
 		config_get mode "$vif" mode
 		
 		[ "$mode" = sta ] && config_get nosbeacon "$device" nosbeacon
@@ -301,8 +302,46 @@ network={
 }
 EOF
 					;;
-					WPA|wpa|WPA2|wpa2)
-						#add wpa_supplicant calls here
+					WPA|wpa|WPA2|wpa2i|8021x|8021X)
+						config_get ca_cert "$vif" ca_cert
+						eap_type=$(echo $eap_type | tr 'a-z' 'A-Z')
+						case "$eap_type" in
+							tls|TLS)
+								proto='proto=WPA2'
+								pairwise='pairwise=CCMP'
+								group='group=CCMP'
+								config_get priv_key "$vif" priv_key
+								config_get priv_key_pwd "$vif" priv_key_pwd
+								priv_key="private_key=\"$priv_key\""
+								priv_key_pwd="private_key_passwd=\"$priv_key_pwd\""
+							;;
+							peap|PEAP|ttls|TTLS)
+								proto='proto=WPA2'
+								config_get auth "$vif" auth
+								config_get identity "$vif" identity
+								config_get password "$vif" password
+								phase2="phase2=\"auth=${auth:-MSCHAPV2}\""
+								identity="identity=\"$identity\""
+								password="password=\"$password\""
+							;;
+						esac
+						cat > /var/run/wpa_supplicant-$ifname.conf <<EOF
+network={
+	scan_ssid=1
+	ssid="$ssid"
+	key_mgmt=WPA-EAP
+	$proto
+	$pairwise
+	$group
+	eap=$eap_type
+	ca_cert="$ca_cert"
+	$priv_key
+	$priv_key_pwd
+	$phase2
+	$identity
+	$password
+}
+EOF
 					;;
 				esac
 				[ -z "$proto" ] || wpa_supplicant ${bridge:+ -b $bridge} -B -D madwifi -i "$ifname" -c /var/run/wpa_supplicant-$ifname.conf
