@@ -20,8 +20,8 @@ start_daemon() {
 		*) encaps=0;;
 	esac
         case "$payload" in
-                1|bridged) payload=1;;
-                *) payload=0;;
+                0|routed) payload=0;;
+                *) payload=1;;
         esac
 	br2684ctl -b -c "$unit" -e "$encaps" -p "$payload" -a "${atmdev:+$atmdev.}${vpi:-8}.${vci:-35}"	
 }
