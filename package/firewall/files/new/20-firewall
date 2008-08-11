@@ -8,7 +8,7 @@ load_zones() {
 	local network
 	config_get name $1 name
 	config_get network $1 network
-	[ -z "$network" ] && return
+	[ -z "$network" ] && network=$name 
 	for n in $network; do
 		local ifname
 		config_get ifname $n ifname
