@@ -91,10 +91,6 @@ load_synflood() {
 	$IPTABLES -A INPUT -p tcp --syn -j SYN_FLOOD
 }
 
-create_network_zone() {
-	create_zone "$1" "$1"
-}
-
 fw_defaults() {
 	load_policy $1
 	DEF_INPUT=$input
@@ -261,8 +257,6 @@ fw_init() {
 	config_foreach fw_defaults defaults
 	echo "Loading zones"
 	config_foreach fw_zone zone
-	echo "Loading interfaces"
-	config_foreach create_network_zone interface
 	echo "Loading rules"
 	config_foreach fw_rule rule
 	echo "Loading forwarding"
