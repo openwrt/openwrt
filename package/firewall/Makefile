@@ -22,7 +22,7 @@ define Package/firewall
 endef
 
 define Package/firewall/description
- firewall for openwrt, you can select if you want to use the old version or the new uci based script
+ uci based firewall for openwrt
 endef
 
 define Build/Compile
