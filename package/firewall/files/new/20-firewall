@@ -20,9 +20,7 @@ load_zones() {
 
 config_foreach load_zones zone
 
-IFACE=$(find_config $INTERFACE)
-[ -n "$IFACE" ] && 
-	list_contains ZONE $IFACE || ZONE="$ZONE $IFACE"
+[ -z "$ZONE" ] && exit 0
 
 [ ifup = "$ACTION" ] && {
 	for z in $ZONE; do 
