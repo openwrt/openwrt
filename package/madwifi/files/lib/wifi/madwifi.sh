@@ -262,7 +262,7 @@ enable_atheros() {
 
 				if eval "type hostapd_setup_vif" 2>/dev/null >/dev/null; then
 					hostapd_setup_vif "$vif" madwifi || {
-						echo "enable_atheros($device): Failed to set up wpa for interface $ifname" >&2
+						echo "enable_atheros($device): Failed to set up hostapd for interface $ifname" >&2
 						# make sure this wifi interface won't accidentally stay open without encryption
 						ifconfig "$ifname" down
 						wlanconfig "$ifname" destroy
@@ -271,80 +271,14 @@ enable_atheros() {
 				fi
 			;;
 			wds|sta)
-				config_get_bool usepassphrase "$vif" passphrase 1
-				case "$enc" in
-					PSK|psk|PSK2|psk2)
-						case "$enc" in
-							PSK|psk)
-								proto='proto=WPA'
-								if [ "$usepassphrase" = "1" ]; then
-									passphrase="psk=\"${key}\""
-								else
-									passphrase="psk=${key}"
-								fi
-								;;
-							PSK2|psk2)
-								proto='proto=RSN'
-                                                                if [ "$usepassphrase" = "1" ]; then
-                                                                        passphrase="psk=\"${key}\""
-                                                                else
-                                                                        passphrase="psk=${key}"
-                                                                fi
-								;;
-						esac
-						cat > /var/run/wpa_supplicant-$ifname.conf <<EOF
-network={
-	scan_ssid=1
-	ssid="$ssid"
-	key_mgmt=WPA-PSK
-	$proto
-	$passphrase
-}
-EOF
-					;;
-					WPA|wpa|WPA2|wpa2i|8021x|8021X)
-						config_get ca_cert "$vif" ca_cert
-						eap_type=$(echo $eap_type | tr 'a-z' 'A-Z')
-						case "$eap_type" in
-							tls|TLS)
-								proto='proto=WPA2'
-								pairwise='pairwise=CCMP'
-								group='group=CCMP'
-								config_get priv_key "$vif" priv_key
-								config_get priv_key_pwd "$vif" priv_key_pwd
-								priv_key="private_key=\"$priv_key\""
-								priv_key_pwd="private_key_passwd=\"$priv_key_pwd\""
-							;;
-							peap|PEAP|ttls|TTLS)
-								proto='proto=WPA2'
-								config_get auth "$vif" auth
-								config_get identity "$vif" identity
-								config_get password "$vif" password
-								phase2="phase2=\"auth=${auth:-MSCHAPV2}\""
-								identity="identity=\"$identity\""
-								password="password=\"$password\""
-							;;
-						esac
-						cat > /var/run/wpa_supplicant-$ifname.conf <<EOF
-network={
-	scan_ssid=1
-	ssid="$ssid"
-	key_mgmt=WPA-EAP
-	$proto
-	$pairwise
-	$group
-	eap=$eap_type
-	ca_cert="$ca_cert"
-	$priv_key
-	$priv_key_pwd
-	$phase2
-	$identity
-	$password
-}
-EOF
-					;;
-				esac
-				[ -z "$proto" ] || wpa_supplicant ${bridge:+ -b $bridge} -B -D madwifi -i "$ifname" -c /var/run/wpa_supplicant-$ifname.conf
+				if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
+					wpa_supplicant_setup_vif "$vif" madwifi || {
+						echo "enable_atheros($device): Failed to set up wpa_supplicant for interface $ifname" >&2
+						ifconfig "$ifname" down
+						wlanconfig "$ifname" destroy
+						continue
+					}
+				fi
 			;;
 		esac
 		first=0
