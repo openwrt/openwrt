@@ -47,7 +47,6 @@
 #include <asm/rc32434/rc32434.h>
 
 static unsigned long r4k_offset; /* Amount to incr compare reg each time */
-static unsigned long r4k_cur;    /* What counter should be at next timer irq */
 extern unsigned int mips_hpt_frequency;
 extern unsigned int idt_cpu_freq;
 

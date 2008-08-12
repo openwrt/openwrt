@@ -11,9 +11,9 @@ BOARD:=rb532
 BOARDNAME:=Mikrotik RouterBoard 532
 FEATURES:=jffs2 pci tgz
 
-LINUX_VERSION:=2.6.23.17
+LINUX_VERSION:=2.6.24.7
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES += madwifi
+DEFAULT_PACKAGES += kmod-madwifi
 
 $(eval $(call BuildTarget))
