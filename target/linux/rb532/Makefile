@@ -14,5 +14,6 @@ FEATURES:=jffs2 pci tgz
 LINUX_VERSION:=2.6.23.17
 
 include $(INCLUDE_DIR)/target.mk
+DEFAULT_PACKAGES += madwifi
 
 $(eval $(call BuildTarget))
