@@ -63,6 +63,11 @@ echo "chmod ugo+x /" > /tmp/wget2nand-rootfs/etc/uci-defaults/set_root_permissio
 sync
 ls /tmp/wget2nand-kernel/
 ls /tmp/wget2nand-rootfs/
+# use kexec if present
+[ -x /usr/sbin/kexec ] && {
+	kexec -l /tmp/wget2nand-kernel/kernel --command-line="$(cat /proc/cmdline) rootfstype=yaffs2 root=$mtd_kernel"
+	kexec -e
+}
 # unmount the partitions and remove the directories into which they were mounted
 umount /tmp/wget2nand-kernel
 umount /tmp/wget2nand-rootfs

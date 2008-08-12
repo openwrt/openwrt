@@ -53,6 +53,11 @@ echo "Copying filesystem..."
 ( cd /tmp/cf2nand/rootfs; tar c . ) | ( cd /tmp/cf2nand/p2; tar x )
 echo "chmod ugo+x /" > /tmp/cf2nand/p2/etc/uci-defaults/set_root_permission
 sync
+# Use kexec is present
+[ -x /usr/bin/kexec ] && {
+	kexec -l /tmp/cf2nand/p1/kernel --command-line="$(cat /proc/cmdline) root=/dev/mtdblock1 rootfstype=yaffs2 init=/etc/preinit"
+	kexec -e
+}
 umount /tmp/cf2nand/p2
 rmdir /tmp/cf2nand/p2
 
