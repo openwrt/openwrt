@@ -75,6 +75,8 @@ define Package/wpa-supplicant/install
 		$(PKG_BUILD_DIR)/wpa_supplicant/wpa_supplicant \
 		$(PKG_BUILD_DIR)/wpa_supplicant/wpa_passphrase \
 		$(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/lib/wifi
+	$(INSTALL_DATA) ./files/wpa_supplicant.sh $(1)/lib/wifi/wpa_supplicant.sh
 endef
 
 define Package/wpa-cli/install

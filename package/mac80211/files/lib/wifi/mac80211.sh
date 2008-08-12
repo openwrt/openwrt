@@ -55,6 +55,7 @@ enable_mac80211() {
 	for vif in $vifs; do
 		config_get ifname "$vif" ifname
 		config_get enc "$vif" encryption
+		config_get eap_type "$vif" eap_type
 		config_get mode "$vif" mode
 		
 		config_get ifname "$vif" ifname
@@ -145,30 +146,14 @@ enable_mac80211() {
 				fi
 			;;
 			sta)
-				case "$enc" in 
-					PSK|psk|PSK2|psk2)
-						case "$enc" in
-							PSK|psk)
-								proto='proto=WPA';;
-							PSK2|psk2)
-								proto='proto=RSN';;
-						esac
-						cat > /var/run/wpa_supplicant-$ifname.conf <<EOF
-ctrl_interface=/var/run/wpa_supplicant
-network={
-	scan_ssid=1
-	ssid="$ssid"
-	key_mgmt=WPA-PSK
-	$proto
-	psk="$key"
-}
-EOF
-					;;
-					WPA|wpa|WPA2|wpa2)
-						#add wpa_supplicant calls here
-					;;
-				esac
-				[ -z "$proto" ] || wpa_supplicant ${bridge:+ -b $bridge} -B -D wext -i "$ifname" -c /var/run/wpa_supplicant-$ifname.conf
+				if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
+					wpa_supplicant_setup_vif "$vif" wext || {
+						echo "enable_mac80211($device): Failed to set up wpa_supplicant for interface $ifname" >&2
+						# make sure this wifi interface won't accidentally stay open without encryption
+						ifconfig "$ifname" down
+						continue
+					}
+				fi
 			;;
 		esac
 		first=0
