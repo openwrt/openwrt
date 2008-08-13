@@ -40,7 +40,7 @@ static struct gpio_button wp54_gpio_buttons[] __initdata = {
 		.type		= EV_KEY,
 		.code		= BTN_0,
 		.threshold	= 5,
-		.gpio		= ADM5120_GPIO_PIN2,
+		.gpio		= ADM5120_GPIO_PIN4,
 	}
 };
 
