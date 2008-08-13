@@ -13,14 +13,14 @@ scan_mac80211() {
 		
 		config_get mode "$vif" mode
 		case "$mode" in
-			adhoc|sta|ap)
+			adhoc|sta|ap|monitor)
 				append $mode "$vif"
 			;;
 			*) echo "$device($vif): Invalid mode, ignored."; continue;;
 		esac
 	done
 
-	config_set "$device" vifs "${ap:+$ap }${adhoc:+$adhoc }${ahdemo:+$ahdemo }${sta:+$sta }${wds:+$wds }"
+	config_set "$device" vifs "${ap:+$ap }${adhoc:+$adhoc }${ahdemo:+$ahdemo }${sta:+$sta }${wds:+$wds }${monitor:+$monitor}"
 }
 
 
@@ -53,6 +53,7 @@ enable_mac80211() {
 	
 	local first=1
 	for vif in $vifs; do
+		ifconfig "$ifname" down
 		config_get ifname "$vif" ifname
 		config_get enc "$vif" encryption
 		config_get eap_type "$vif" eap_type
@@ -73,10 +74,14 @@ enable_mac80211() {
 				sleep 1
 				iwconfig "$ifname" mode ad-hoc >/dev/null 2>/dev/null
 			fi
-			ifconfig "$ifname" up
 			sleep 1
 			iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null
 		}
+		if [ "$mode" = sta ]; then
+			iwconfig "$ifname" mode managed >/dev/null 2>/dev/null
+		else
+			iwconfig "$ifname" mode $mode >/dev/null 2>/dev/null
+		fi
 	
 		wpa=
 		case "$enc" in
