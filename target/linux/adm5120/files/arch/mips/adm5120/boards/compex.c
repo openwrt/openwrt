@@ -145,7 +145,7 @@ static void __init wp54_setup(void)
 
 	adm5120_buttons_data.nbuttons = 1;
 	adm5120_buttons[0].desc = "reset button";
-	adm5120_buttons[0].gpio = ADM5120_GPIO_PIN2;
+	adm5120_buttons[0].gpio = ADM5120_GPIO_PIN4;
 
 	adm5120_gpiodev_resource.start &= ~WP54_GPIO_DEV_MASK;
 
