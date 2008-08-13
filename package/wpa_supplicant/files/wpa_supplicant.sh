@@ -32,6 +32,7 @@ wpa_supplicant_setup_vif() {
 			proto='WPA2'
 			key_mgmt='WPA-EAP'
 			config_get ca_cert "$vif" ca_cert
+			ca_cert="ca_cert=\"$ca_cert\""
 			case "$eap_type" in
 				tls|TLS)
 					pairwise='pairwise=CCMP'
@@ -50,12 +51,12 @@ wpa_supplicant_setup_vif() {
 					password="password=\"$password\""
 				;;
 			esac
+			eap_type="eap_type=$(echo $eap_type | tr 'a-z' 'A-Z')"
 		;;
 	esac
 	config_get ifname "$vif" ifname
 	config_get bridge "$vif" bridge
 	config_get ssid "$vif" ssid
-	eap_type=$(echo $eap_type | tr 'a-z' 'A-Z')
 	cat > /var/run/wpa_supplicant-$ifname.conf <<EOF
 network={
 	scan_ssid=1
@@ -65,8 +66,8 @@ network={
 	$passphrase
 	$pairwise
 	$group
-	eap=$eap_type
-	ca_cert="$ca_cert"
+	$eap_type
+	$ca_cert
 	$priv_key
 	$priv_key_pwd
 	$phase2
