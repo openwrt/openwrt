@@ -9,14 +9,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_VERSION:=0.6.3
+PKG_VERSION:=0.6.4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_SOURCE_SUBDIR:=hostapd-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_REV)
-PKG_MD5SUM:=516653e8d307bd6ec4ab33ba56962ed8
+PKG_MD5SUM:=62876f2179f316db0621cc33adf04c19
 PKG_BUILD_DEPENDS:=madwifi mac80211 libnl openssl
 
 include $(INCLUDE_DIR)/package.mk
