@@ -1,7 +1,7 @@
 /*
  *  Custom GPIO-based I2C driver
  *
- *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2007-2008 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2 as
@@ -51,7 +51,7 @@
 
 #define DRV_NAME	"i2c-gpio-custom"
 #define DRV_DESC	"Custom GPIO-based I2C driver"
-#define DRV_VERSION	"0.1.0"
+#define DRV_VERSION	"0.1.1"
 
 #define PFX		DRV_NAME ": "
 
@@ -96,7 +96,7 @@ static void i2c_gpio_custom_cleanup(void)
 
 	for (i = 0; i < nr_devices; i++)
 		if (devices[i])
-			platform_device_unregister(devices[i]);
+			platform_device_put(devices[i]);
 }
 
 static int __init i2c_gpio_custom_add_one(unsigned int id, unsigned int *params)
@@ -120,8 +120,6 @@ static int __init i2c_gpio_custom_add_one(unsigned int id, unsigned int *params)
 		goto err;
 	}
 
-	devices[nr_devices++] = pdev;
-
 	pdata.sda_pin = params[BUS_PARAM_SDA];
 	pdata.scl_pin = params[BUS_PARAM_SCL];
 	pdata.udelay = params[BUS_PARAM_UDELAY];
@@ -132,14 +130,17 @@ static int __init i2c_gpio_custom_add_one(unsigned int id, unsigned int *params)
 
 	err = platform_device_add_data(pdev, &pdata, sizeof(pdata));
 	if (err)
-		goto err;
+		goto err_put;
 
-	err = platform_device_register(pdev);
+	err = platform_device_add(pdev);
 	if (err)
-		goto err;
+		goto err_put;
 
+	devices[nr_devices++] = pdev;
 	return 0;
 
+err_put:
+	platform_device_put(pdev);
 err:
 	return err;
 }
@@ -192,6 +193,6 @@ subsys_initcall(i2c_gpio_custom_probe);
 #endif /* MODULE*/
 
 MODULE_LICENSE("GPL v2");
-MODULE_AUTHOR("Gabor Juhos <juhosg at openwrt.org >");
+MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org >");
 MODULE_DESCRIPTION(DRV_DESC);
 MODULE_VERSION(DRV_VERSION);
