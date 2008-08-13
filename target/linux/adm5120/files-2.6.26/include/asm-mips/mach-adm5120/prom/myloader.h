@@ -170,6 +170,7 @@ struct myloader_info {
 	u32	did;
 	u32	svid;
 	u32	sdid;
+	uint8_t macs[MYLO_ETHADDR_COUNT][6];
 };
 
 extern struct myloader_info myloader_info;
