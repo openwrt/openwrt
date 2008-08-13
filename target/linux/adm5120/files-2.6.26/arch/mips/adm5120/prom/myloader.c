@@ -36,6 +36,7 @@ int __init myloader_present(void)
 	struct mylo_system_params *sysp;
 	struct mylo_board_params *boardp;
 	struct mylo_partition_table *parts;
+	int i;
 
 	if (myloader_found)
 		goto out;
@@ -54,6 +55,12 @@ int __init myloader_present(void)
 	myloader_info.did = le32_to_cpu(sysp->did);
 	myloader_info.svid = le32_to_cpu(sysp->svid);
 	myloader_info.sdid = le32_to_cpu(sysp->sdid);
+
+	for (i = 0; i < MYLO_ETHADDR_COUNT; i++) {
+		int j;
+		for (j = 0; j < 6; j++)
+			myloader_info.macs[i][j] = boardp->addr[i].mac[j];
+	}
 
 	myloader_found = 1;
 
