@@ -1326,7 +1326,7 @@ int __devinit r6040_init_one(struct pci_dev *pdev,
 			       dev->name);
 			memcpy(dev->dev_addr, dflt_addr, ETH_ALEN);
 		}
-		dev->dev_addr[ETH_ALEN-1] += card_idx; /* + 0 or 1 */
+		dev->dev_addr[ETH_ALEN-1] += card_idx ^ 1; /* + 0 or 1 */
 	}
 
 #ifdef CONFIG_NET_POLL_CONTROLLER
