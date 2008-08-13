@@ -29,6 +29,13 @@ PKG_FWCUTTER_SOURCE:=$(PKG_FWCUTTER_NAME)-$(PKG_FWCUTTER_VERSION).tar.bz2
 PKG_FWCUTTER_SOURCE_URL:=http://bu3sch.de/b43/fwcutter/
 PKG_FWCUTTER_MD5SUM:=3db2f4de85a459451f5b391cf67a8d44
 
+PKG_SRC_NAME:=b43-src
+PKG_SRC_VERSION:=2008-08-06
+
+PKG_SRC_SOURCE:=compat-wireless-$(PKG_SRC_VERSION).tar.bz2
+PKG_SRC_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/08/
+PKG_SRC_MD5SUM:=9563ceeed86bca0859ad5f010623277c
+
 define KernelPackage/b43
   SUBMENU:=Wireless Drivers
   TITLE:=Broadcom 43xx wireless support
@@ -72,9 +79,10 @@ $(DL_DIR)/$(PKG_FWCUTTER_SOURCE):
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)/
 	tar xjf "$(DL_DIR)/$(PKG_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
 	tar xjf "$(DL_DIR)/$(PKG_FWCUTTER_SOURCE)" -C "$(PKG_BUILD_DIR)"
+	tar xjf "$(DL_DIR)/$(PKG_SRC_SOURCE)" -C "$(PKG_BUILD_DIR)"
+	$(CP) $(PKG_BUILD_DIR)/compat-wireless-$(PKG_SRC_VERSION)/drivers/net/wireless/b43/* $(PKG_BUILD_DIR)/
 	$(Build/Patch)
 	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
 endef
