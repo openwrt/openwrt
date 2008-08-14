@@ -1,8 +1,6 @@
-Index: linux-2.6.23.17/drivers/ssb/Kconfig
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/Kconfig
-+++ linux-2.6.23.17/drivers/ssb/Kconfig
-@@ -105,6 +105,12 @@ config SSB_DRIVER_MIPS
+--- a/drivers/ssb/Kconfig
++++ b/drivers/ssb/Kconfig
+@@ -105,6 +105,12 @@
  
  	  If unsure, say N
  
@@ -15,10 +13,8 @@ Index: linux-2.6.23.17/drivers/ssb/Kconfig
  config SSB_DRIVER_EXTIF
  	bool "SSB Broadcom EXTIF core driver (EXPERIMENTAL)"
  	depends on SSB_DRIVER_MIPS && EXPERIMENTAL
-Index: linux-2.6.23.17/drivers/ssb/Makefile
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/Makefile
-+++ linux-2.6.23.17/drivers/ssb/Makefile
+--- a/drivers/ssb/Makefile
++++ b/drivers/ssb/Makefile
 @@ -1,5 +1,6 @@
  # core
  ssb-y					+= main.o scan.o
@@ -26,11 +22,9 @@ Index: linux-2.6.23.17/drivers/ssb/Makefile
  
  # host support
  ssb-$(CONFIG_SSB_PCIHOST)		+= pci.o pcihost_wrapper.o
-Index: linux-2.6.23.17/drivers/ssb/driver_extif.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/driver_extif.c
-+++ linux-2.6.23.17/drivers/ssb/driver_extif.c
-@@ -37,6 +37,12 @@ static inline u32 extif_write32_masked(s
+--- a/drivers/ssb/driver_extif.c
++++ b/drivers/ssb/driver_extif.c
+@@ -37,6 +37,12 @@
  	return value;
  }
  
@@ -43,10 +37,8 @@ Index: linux-2.6.23.17/drivers/ssb/driver_extif.c
  #ifdef CONFIG_SSB_SERIAL
  static bool serial_exists(u8 *regs)
  {
-Index: linux-2.6.23.17/drivers/ssb/embedded.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/ssb/embedded.c
++++ b/drivers/ssb/embedded.c
 @@ -0,0 +1,26 @@
 +/*
 + * Sonics Silicon Backplane
@@ -74,11 +66,9 @@ Index: linux-2.6.23.17/drivers/ssb/embedded.c
 +	}
 +	return -ENODEV;
 +}
-Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_chipcommon.h
-===================================================================
---- linux-2.6.23.17.orig/include/linux/ssb/ssb_driver_chipcommon.h
-+++ linux-2.6.23.17/include/linux/ssb/ssb_driver_chipcommon.h
-@@ -360,6 +360,11 @@ struct ssb_chipcommon {
+--- a/include/linux/ssb/ssb_driver_chipcommon.h
++++ b/include/linux/ssb/ssb_driver_chipcommon.h
+@@ -360,6 +360,11 @@
  	u16 fast_pwrup_delay;
  };
  
@@ -90,11 +80,9 @@ Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_chipcommon.h
  extern void ssb_chipcommon_init(struct ssb_chipcommon *cc);
  
  #include <linux/pm.h>
-Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_extif.h
-===================================================================
---- linux-2.6.23.17.orig/include/linux/ssb/ssb_driver_extif.h
-+++ linux-2.6.23.17/include/linux/ssb/ssb_driver_extif.h
-@@ -178,6 +178,9 @@ u32 ssb_extif_gpio_outen(struct ssb_exti
+--- a/include/linux/ssb/ssb_driver_extif.h
++++ b/include/linux/ssb/ssb_driver_extif.h
+@@ -178,6 +178,9 @@
  u32 ssb_extif_gpio_polarity(struct ssb_extif *extif, u32 mask, u32 value);
  u32 ssb_extif_gpio_intmask(struct ssb_extif *extif, u32 mask, u32 value);
  
@@ -104,7 +92,7 @@ Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_extif.h
  #ifdef CONFIG_SSB_SERIAL
  extern int ssb_extif_serial_init(struct ssb_extif *extif,
  				 struct ssb_serial_port *ports);
-@@ -201,5 +204,11 @@ void ssb_extif_get_clockcontrol(struct s
+@@ -201,5 +204,11 @@
  {
  }
  
@@ -116,10 +104,8 @@ Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_extif.h
 +
  #endif /* CONFIG_SSB_DRIVER_EXTIF */
  #endif /* LINUX_SSB_EXTIFCORE_H_ */
-Index: linux-2.6.23.17/include/linux/ssb/ssb_embedded.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/include/linux/ssb/ssb_embedded.h
++++ b/include/linux/ssb/ssb_embedded.h
 @@ -0,0 +1,10 @@
 +#ifndef LINUX_SSB_EMBEDDED_H_
 +#define LINUX_SSB_EMBEDDED_H_

@@ -13,11 +13,9 @@ Signed-off-by: David Brownell <dbrownell@users.sourceforge.net>
 Signed-off-by: Greg Kroah-Hartman <gregkh@suse.de>
 ---
 
-Index: linux-2.6.23.17/drivers/usb/host/Kconfig
-===================================================================
---- linux-2.6.23.17.orig/drivers/usb/host/Kconfig
-+++ linux-2.6.23.17/drivers/usb/host/Kconfig
-@@ -154,6 +154,19 @@ config USB_OHCI_HCD_PCI
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -154,6 +154,19 @@
  	  Enables support for PCI-bus plug-in USB controller cards.
  	  If unsure, say Y.
  
@@ -37,11 +35,9 @@ Index: linux-2.6.23.17/drivers/usb/host/Kconfig
  config USB_OHCI_BIG_ENDIAN_DESC
  	bool
  	depends on USB_OHCI_HCD
-Index: linux-2.6.23.17/drivers/usb/host/ohci-hcd.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/usb/host/ohci-hcd.c
-+++ linux-2.6.23.17/drivers/usb/host/ohci-hcd.c
-@@ -926,11 +926,17 @@ MODULE_LICENSE ("GPL");
+--- a/drivers/usb/host/ohci-hcd.c
++++ b/drivers/usb/host/ohci-hcd.c
+@@ -926,11 +926,17 @@
  #define PS3_SYSTEM_BUS_DRIVER	ps3_ohci_driver
  #endif
  
@@ -60,7 +56,7 @@ Index: linux-2.6.23.17/drivers/usb/host/ohci-hcd.c
  #error "missing bus glue for ohci-hcd"
  #endif
  
-@@ -975,10 +981,20 @@ static int __init ohci_hcd_mod_init(void
+@@ -975,10 +981,20 @@
  		goto error_pci;
  #endif
  
@@ -81,7 +77,7 @@ Index: linux-2.6.23.17/drivers/usb/host/ohci-hcd.c
   error_pci:
  #endif
  #ifdef SA1111_DRIVER
-@@ -1003,6 +1019,9 @@ module_init(ohci_hcd_mod_init);
+@@ -1003,6 +1019,9 @@
  
  static void __exit ohci_hcd_mod_exit(void)
  {
@@ -91,10 +87,8 @@ Index: linux-2.6.23.17/drivers/usb/host/ohci-hcd.c
  #ifdef PCI_DRIVER
  	pci_unregister_driver(&PCI_DRIVER);
  #endif
-Index: linux-2.6.23.17/drivers/usb/host/ohci-ssb.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/usb/host/ohci-ssb.c
++++ b/drivers/usb/host/ohci-ssb.c
 @@ -0,0 +1,247 @@
 +/*
 + * Sonics Silicon Backplane

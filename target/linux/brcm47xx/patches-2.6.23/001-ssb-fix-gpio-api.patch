@@ -1,8 +1,6 @@
-Index: linux-2.6.23.17/drivers/ssb/driver_chipcommon.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/driver_chipcommon.c
-+++ linux-2.6.23.17/drivers/ssb/driver_chipcommon.c
-@@ -39,12 +39,14 @@ static inline void chipco_write32(struct
+--- a/drivers/ssb/driver_chipcommon.c
++++ b/drivers/ssb/driver_chipcommon.c
+@@ -39,12 +39,14 @@
  	ssb_write32(cc->dev, offset, value);
  }
  
@@ -19,7 +17,7 @@ Index: linux-2.6.23.17/drivers/ssb/driver_chipcommon.c
  }
  
  void ssb_chipco_set_clockmode(struct ssb_chipcommon *cc,
-@@ -355,16 +357,37 @@ u32 ssb_chipco_gpio_in(struct ssb_chipco
+@@ -355,16 +357,37 @@
  {
  	return chipco_read32(cc, SSB_CHIPCO_GPIOIN) & mask;
  }
@@ -61,11 +59,9 @@ Index: linux-2.6.23.17/drivers/ssb/driver_chipcommon.c
  
  #ifdef CONFIG_SSB_SERIAL
  int ssb_chipco_serial_init(struct ssb_chipcommon *cc,
-Index: linux-2.6.23.17/drivers/ssb/driver_extif.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/driver_extif.c
-+++ linux-2.6.23.17/drivers/ssb/driver_extif.c
-@@ -27,12 +27,14 @@ static inline void extif_write32(struct 
+--- a/drivers/ssb/driver_extif.c
++++ b/drivers/ssb/driver_extif.c
+@@ -27,12 +27,14 @@
  	ssb_write32(extif->dev, offset, value);
  }
  
@@ -82,7 +78,7 @@ Index: linux-2.6.23.17/drivers/ssb/driver_extif.c
  }
  
  #ifdef CONFIG_SSB_SERIAL
-@@ -114,16 +116,30 @@ u32 ssb_extif_gpio_in(struct ssb_extif *
+@@ -114,16 +116,30 @@
  {
  	return extif_read32(extif, SSB_EXTIF_GPIO_IN) & mask;
  }
@@ -115,11 +111,9 @@ Index: linux-2.6.23.17/drivers/ssb/driver_extif.c
 +	return extif_write32_masked(extif, SSB_EXTIF_GPIO_INTMASK, mask, value);
 +}
 +EXPORT_SYMBOL(ssb_extif_gpio_intmask);
-Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_chipcommon.h
-===================================================================
---- linux-2.6.23.17.orig/include/linux/ssb/ssb_driver_chipcommon.h
-+++ linux-2.6.23.17/include/linux/ssb/ssb_driver_chipcommon.h
-@@ -382,11 +382,13 @@ extern void ssb_chipco_set_clockmode(str
+--- a/include/linux/ssb/ssb_driver_chipcommon.h
++++ b/include/linux/ssb/ssb_driver_chipcommon.h
+@@ -382,11 +382,13 @@
  extern void ssb_chipco_watchdog_timer_set(struct ssb_chipcommon *cc,
  					  u32 ticks);
  
@@ -137,11 +131,9 @@ Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_chipcommon.h
  
  #ifdef CONFIG_SSB_SERIAL
  extern int ssb_chipco_serial_init(struct ssb_chipcommon *cc,
-Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_extif.h
-===================================================================
---- linux-2.6.23.17.orig/include/linux/ssb/ssb_driver_extif.h
-+++ linux-2.6.23.17/include/linux/ssb/ssb_driver_extif.h
-@@ -171,11 +171,12 @@ extern void ssb_extif_get_clockcontrol(s
+--- a/include/linux/ssb/ssb_driver_extif.h
++++ b/include/linux/ssb/ssb_driver_extif.h
+@@ -171,11 +171,12 @@
  extern void ssb_extif_timing_init(struct ssb_extif *extif,
  				  unsigned long ns);
  

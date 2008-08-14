@@ -1,8 +1,6 @@
-Index: linux-2.6.23.17/arch/mips/mm/init.c
-===================================================================
---- linux-2.6.23.17.orig/arch/mips/mm/init.c
-+++ linux-2.6.23.17/arch/mips/mm/init.c
-@@ -211,7 +211,7 @@ void copy_user_highpage(struct page *to,
+--- a/arch/mips/mm/init.c
++++ b/arch/mips/mm/init.c
+@@ -211,7 +211,7 @@
  	void *vfrom, *vto;
  
  	vto = kmap_atomic(to, KM_USER1);
@@ -11,7 +9,7 @@ Index: linux-2.6.23.17/arch/mips/mm/init.c
  		vfrom = kmap_coherent(from, vaddr);
  		copy_page(vto, vfrom);
  		kunmap_coherent();
-@@ -234,7 +234,7 @@ void copy_to_user_page(struct vm_area_st
+@@ -234,7 +234,7 @@
  	struct page *page, unsigned long vaddr, void *dst, const void *src,
  	unsigned long len)
  {
@@ -20,7 +18,7 @@ Index: linux-2.6.23.17/arch/mips/mm/init.c
  		void *vto = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
  		memcpy(vto, src, len);
  		kunmap_coherent();
-@@ -250,7 +250,7 @@ void copy_from_user_page(struct vm_area_
+@@ -250,7 +250,7 @@
  	struct page *page, unsigned long vaddr, void *dst, const void *src,
  	unsigned long len)
  {
@@ -29,10 +27,8 @@ Index: linux-2.6.23.17/arch/mips/mm/init.c
  		void *vfrom =
  			kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
  		memcpy(dst, vfrom, len);
-Index: linux-2.6.23.17/include/asm-mips/mach-bcm947xx/cpu-feature-overrides.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/include/asm-mips/mach-bcm947xx/cpu-feature-overrides.h
++++ b/include/asm-mips/mach-bcm947xx/cpu-feature-overrides.h
 @@ -0,0 +1,13 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -47,10 +43,8 @@ Index: linux-2.6.23.17/include/asm-mips/mach-bcm947xx/cpu-feature-overrides.h
 +#define cpu_use_kmap_coherent	0
 +
 +#endif /* __ASM_MACH_BCM947XX_CPU_FEATURE_OVERRIDES_H */
-Index: linux-2.6.23.17/include/asm-mips/cpu-features.h
-===================================================================
---- linux-2.6.23.17.orig/include/asm-mips/cpu-features.h
-+++ linux-2.6.23.17/include/asm-mips/cpu-features.h
+--- a/include/asm-mips/cpu-features.h
++++ b/include/asm-mips/cpu-features.h
 @@ -101,6 +101,9 @@
  #ifndef cpu_has_pindexed_dcache
  #define cpu_has_pindexed_dcache	(cpu_data[0].dcache.flags & MIPS_CACHE_PINDEX)

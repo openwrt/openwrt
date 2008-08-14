@@ -1,8 +1,6 @@
-Index: linux-2.6.23.17/drivers/ssb/Kconfig
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/Kconfig
-+++ linux-2.6.23.17/drivers/ssb/Kconfig
-@@ -120,4 +120,13 @@ config SSB_DRIVER_EXTIF
+--- a/drivers/ssb/Kconfig
++++ b/drivers/ssb/Kconfig
+@@ -120,4 +120,13 @@
  
  	  If unsure, say N
  
@@ -16,11 +14,9 @@ Index: linux-2.6.23.17/drivers/ssb/Kconfig
 +	  If unsure, say N
 +
  endmenu
-Index: linux-2.6.23.17/drivers/ssb/Makefile
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/Makefile
-+++ linux-2.6.23.17/drivers/ssb/Makefile
-@@ -11,6 +11,7 @@ ssb-y					+= driver_chipcommon.o
+--- a/drivers/ssb/Makefile
++++ b/drivers/ssb/Makefile
+@@ -11,6 +11,7 @@
  ssb-$(CONFIG_SSB_DRIVER_MIPS)		+= driver_mipscore.o
  ssb-$(CONFIG_SSB_DRIVER_EXTIF)		+= driver_extif.o
  ssb-$(CONFIG_SSB_DRIVER_PCICORE)	+= driver_pcicore.o
@@ -28,10 +24,8 @@ Index: linux-2.6.23.17/drivers/ssb/Makefile
  
  # b43 pci-ssb-bridge driver
  # Not strictly a part of SSB, but kept here for convenience
-Index: linux-2.6.23.17/drivers/ssb/driver_gige.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/drivers/ssb/driver_gige.c
++++ b/drivers/ssb/driver_gige.c
 @@ -0,0 +1,294 @@
 +/*
 + * Sonics Silicon Backplane
@@ -327,10 +321,8 @@ Index: linux-2.6.23.17/drivers/ssb/driver_gige.c
 +{
 +	return ssb_driver_register(&ssb_gige_driver);
 +}
-Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_gige.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.23.17/include/linux/ssb/ssb_driver_gige.h
++++ b/include/linux/ssb/ssb_driver_gige.h
 @@ -0,0 +1,174 @@
 +#ifndef LINUX_SSB_DRIVER_GIGE_H_
 +#define LINUX_SSB_DRIVER_GIGE_H_
@@ -506,11 +498,9 @@ Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_gige.h
 +
 +#endif /* CONFIG_SSB_DRIVER_GIGE */
 +#endif /* LINUX_SSB_DRIVER_GIGE_H_ */
-Index: linux-2.6.23.17/drivers/ssb/driver_pcicore.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/driver_pcicore.c
-+++ linux-2.6.23.17/drivers/ssb/driver_pcicore.c
-@@ -60,74 +60,6 @@ static DEFINE_SPINLOCK(cfgspace_lock);
+--- a/drivers/ssb/driver_pcicore.c
++++ b/drivers/ssb/driver_pcicore.c
+@@ -60,74 +60,6 @@
  /* Core to access the external PCI config space. Can only have one. */
  static struct ssb_pcicore *extpci_core;
  
@@ -585,7 +575,7 @@ Index: linux-2.6.23.17/drivers/ssb/driver_pcicore.c
  
  static u32 get_cfgspace_addr(struct ssb_pcicore *pc,
  			     unsigned int bus, unsigned int dev,
-@@ -317,6 +249,92 @@ static struct pci_controller ssb_pcicore
+@@ -317,6 +249,92 @@
  	.mem_offset	= 0x24000000,
  };
  
@@ -678,10 +668,8 @@ Index: linux-2.6.23.17/drivers/ssb/driver_pcicore.c
  static void ssb_pcicore_init_hostmode(struct ssb_pcicore *pc)
  {
  	u32 val;
-Index: linux-2.6.23.17/drivers/ssb/embedded.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/embedded.c
-+++ linux-2.6.23.17/drivers/ssb/embedded.c
+--- a/drivers/ssb/embedded.c
++++ b/drivers/ssb/embedded.c
 @@ -10,6 +10,9 @@
  
  #include <linux/ssb/ssb.h>
@@ -692,7 +680,7 @@ Index: linux-2.6.23.17/drivers/ssb/embedded.c
  
  #include "ssb_private.h"
  
-@@ -130,3 +133,90 @@ u32 ssb_gpio_polarity(struct ssb_bus *bu
+@@ -130,3 +133,90 @@
  	return res;
  }
  EXPORT_SYMBOL(ssb_gpio_polarity);
@@ -783,11 +771,9 @@ Index: linux-2.6.23.17/drivers/ssb/embedded.c
 +
 +	return -ENODEV;
 +}
-Index: linux-2.6.23.17/include/linux/ssb/ssb.h
-===================================================================
---- linux-2.6.23.17.orig/include/linux/ssb/ssb.h
-+++ linux-2.6.23.17/include/linux/ssb/ssb.h
-@@ -422,5 +422,12 @@ extern int ssb_bus_powerup(struct ssb_bu
+--- a/include/linux/ssb/ssb.h
++++ b/include/linux/ssb/ssb.h
+@@ -422,5 +422,12 @@
  extern u32 ssb_admatch_base(u32 adm);
  extern u32 ssb_admatch_size(u32 adm);
  
@@ -800,10 +786,8 @@ Index: linux-2.6.23.17/include/linux/ssb/ssb.h
 +#endif /* CONFIG_SSB_EMBEDDED */
  
  #endif /* LINUX_SSB_H_ */
-Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_pci.h
-===================================================================
---- linux-2.6.23.17.orig/include/linux/ssb/ssb_driver_pci.h
-+++ linux-2.6.23.17/include/linux/ssb/ssb_driver_pci.h
+--- a/include/linux/ssb/ssb_driver_pci.h
++++ b/include/linux/ssb/ssb_driver_pci.h
 @@ -1,6 +1,11 @@
  #ifndef LINUX_SSB_PCICORE_H_
  #define LINUX_SSB_PCICORE_H_
@@ -816,7 +800,7 @@ Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_pci.h
  #ifdef CONFIG_SSB_DRIVER_PCICORE
  
  /* PCI core registers. */
-@@ -88,6 +93,9 @@ extern void ssb_pcicore_init(struct ssb_
+@@ -88,6 +93,9 @@
  extern int ssb_pcicore_dev_irqvecs_enable(struct ssb_pcicore *pc,
  					  struct ssb_device *dev);
  
@@ -826,7 +810,7 @@ Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_pci.h
  
  #else /* CONFIG_SSB_DRIVER_PCICORE */
  
-@@ -107,5 +115,16 @@ int ssb_pcicore_dev_irqvecs_enable(struc
+@@ -107,5 +115,16 @@
  	return 0;
  }
  
@@ -843,10 +827,8 @@ Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_pci.h
 +
  #endif /* CONFIG_SSB_DRIVER_PCICORE */
  #endif /* LINUX_SSB_PCICORE_H_ */
-Index: linux-2.6.23.17/drivers/ssb/main.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/main.c
-+++ linux-2.6.23.17/drivers/ssb/main.c
+--- a/drivers/ssb/main.c
++++ b/drivers/ssb/main.c
 @@ -14,6 +14,7 @@
  #include <linux/io.h>
  #include <linux/ssb/ssb.h>
@@ -855,7 +837,7 @@ Index: linux-2.6.23.17/drivers/ssb/main.c
  #include <linux/dma-mapping.h>
  #include <linux/pci.h>
  
-@@ -68,6 +69,25 @@ found:
+@@ -68,6 +69,25 @@
  }
  #endif /* CONFIG_SSB_PCIHOST */
  
@@ -881,7 +863,7 @@ Index: linux-2.6.23.17/drivers/ssb/main.c
  static struct ssb_device *ssb_device_get(struct ssb_device *dev)
  {
  	if (dev)
-@@ -1175,7 +1195,14 @@ static int __init ssb_modinit(void)
+@@ -1175,7 +1195,14 @@
  	err = b43_pci_ssb_bridge_init();
  	if (err) {
  		ssb_printk(KERN_ERR "Broadcom 43xx PCI-SSB-bridge "
@@ -897,7 +879,7 @@ Index: linux-2.6.23.17/drivers/ssb/main.c
  		/* don't fail SSB init because of this */
  		err = 0;
  	}
-@@ -1189,6 +1216,7 @@ fs_initcall(ssb_modinit);
+@@ -1189,6 +1216,7 @@
  
  static void __exit ssb_modexit(void)
  {
@@ -905,11 +887,9 @@ Index: linux-2.6.23.17/drivers/ssb/main.c
  	b43_pci_ssb_bridge_exit();
  	bus_unregister(&ssb_bustype);
  }
-Index: linux-2.6.23.17/drivers/ssb/ssb_private.h
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/ssb_private.h
-+++ linux-2.6.23.17/drivers/ssb/ssb_private.h
-@@ -118,6 +118,8 @@ extern u32 ssb_calc_clock_rate(u32 pllty
+--- a/drivers/ssb/ssb_private.h
++++ b/drivers/ssb/ssb_private.h
+@@ -118,6 +118,8 @@
  extern int ssb_devices_freeze(struct ssb_bus *bus);
  extern int ssb_devices_thaw(struct ssb_bus *bus);
  extern struct ssb_bus *ssb_pci_dev_to_bus(struct pci_dev *pdev);
@@ -918,10 +898,8 @@ Index: linux-2.6.23.17/drivers/ssb/ssb_private.h
  
  /* b43_pci_bridge.c */
  #ifdef CONFIG_SSB_PCIHOST
-Index: linux-2.6.23.17/drivers/net/tg3.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/net/tg3.c
-+++ linux-2.6.23.17/drivers/net/tg3.c
+--- a/drivers/net/tg3.c
++++ b/drivers/net/tg3.c
 @@ -38,6 +38,7 @@
  #include <linux/workqueue.h>
  #include <linux/prefetch.h>
@@ -930,7 +908,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  
  #include <net/checksum.h>
  #include <net/ip.h>
-@@ -410,8 +411,9 @@ static void _tw32_flush(struct tg3 *tp, 
+@@ -410,8 +411,9 @@
  static inline void tw32_mailbox_flush(struct tg3 *tp, u32 off, u32 val)
  {
  	tp->write32_mbox(tp, off, val);
@@ -942,7 +920,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  		tp->read32_mbox(tp, off);
  }
  
-@@ -623,7 +625,7 @@ static void tg3_switch_clocks(struct tg3
+@@ -623,7 +625,7 @@
  
  #define PHY_BUSY_LOOPS	5000
  
@@ -951,7 +929,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  {
  	u32 frame_val;
  	unsigned int loops;
-@@ -637,7 +639,7 @@ static int tg3_readphy(struct tg3 *tp, i
+@@ -637,7 +639,7 @@
  
  	*val = 0x0;
  
@@ -960,7 +938,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  		      MI_COM_PHY_ADDR_MASK);
  	frame_val |= ((reg << MI_COM_REG_ADDR_SHIFT) &
  		      MI_COM_REG_ADDR_MASK);
-@@ -672,7 +674,12 @@ static int tg3_readphy(struct tg3 *tp, i
+@@ -672,7 +674,12 @@
  	return ret;
  }
  
@@ -974,7 +952,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  {
  	u32 frame_val;
  	unsigned int loops;
-@@ -688,7 +695,7 @@ static int tg3_writephy(struct tg3 *tp, 
+@@ -688,7 +695,7 @@
  		udelay(80);
  	}
  
@@ -983,7 +961,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  		      MI_COM_PHY_ADDR_MASK);
  	frame_val |= ((reg << MI_COM_REG_ADDR_SHIFT) &
  		      MI_COM_REG_ADDR_MASK);
-@@ -721,6 +728,11 @@ static int tg3_writephy(struct tg3 *tp, 
+@@ -721,6 +728,11 @@
  	return ret;
  }
  
@@ -995,7 +973,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  static void tg3_phy_toggle_automdix(struct tg3 *tp, int enable)
  {
  	u32 phy;
-@@ -1988,6 +2000,14 @@ static int tg3_setup_copper_phy(struct t
+@@ -1988,6 +2000,14 @@
  		tp->link_config.active_duplex = current_duplex;
  	}
  
@@ -1010,7 +988,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  	if (current_link_up == 1 &&
  	    (tp->link_config.active_duplex == DUPLEX_FULL) &&
  	    (tp->link_config.autoneg == AUTONEG_ENABLE)) {
-@@ -4813,6 +4833,11 @@ static int tg3_poll_fw(struct tg3 *tp)
+@@ -4813,6 +4833,11 @@
  	int i;
  	u32 val;
  
@@ -1022,7 +1000,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  	if (GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5906) {
  		/* Wait up to 20ms for init done. */
  		for (i = 0; i < 200; i++) {
-@@ -5040,6 +5065,14 @@ static int tg3_chip_reset(struct tg3 *tp
+@@ -5040,6 +5065,14 @@
  		tw32(0x5000, 0x400);
  	}
  
@@ -1037,7 +1015,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  	tw32(GRC_MODE, tp->grc_mode);
  
  	if (tp->pci_chip_rev_id == CHIPREV_ID_5705_A0) {
-@@ -5308,9 +5341,12 @@ static int tg3_halt_cpu(struct tg3 *tp, 
+@@ -5308,9 +5341,12 @@
  		return -ENODEV;
  	}
  
@@ -1053,7 +1031,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  	return 0;
  }
  
-@@ -5391,6 +5427,11 @@ static int tg3_load_5701_a0_firmware_fix
+@@ -5391,6 +5427,11 @@
  	struct fw_info info;
  	int err, i;
  
@@ -1065,7 +1043,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  	info.text_base = TG3_FW_TEXT_ADDR;
  	info.text_len = TG3_FW_TEXT_LEN;
  	info.text_data = &tg3FwText[0];
-@@ -5949,6 +5990,11 @@ static int tg3_load_tso_firmware(struct 
+@@ -5949,6 +5990,11 @@
  	unsigned long cpu_base, cpu_scratch_base, cpu_scratch_size;
  	int err, i;
  
@@ -1077,7 +1055,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  	if (tp->tg3_flags2 & TG3_FLG2_HW_TSO)
  		return 0;
  
-@@ -6850,6 +6896,11 @@ static void tg3_timer(unsigned long __op
+@@ -6850,6 +6896,11 @@
  
  	spin_lock(&tp->lock);
  
@@ -1089,7 +1067,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  	if (!(tp->tg3_flags & TG3_FLAG_TAGGED_STATUS)) {
  		/* All of this garbage is because when using non-tagged
  		 * IRQ status the mailbox/status_block protocol the chip
-@@ -8432,6 +8483,11 @@ static int tg3_test_nvram(struct tg3 *tp
+@@ -8432,6 +8483,11 @@
  	u32 *buf, csum, magic;
  	int i, j, err = 0, size;
  
@@ -1101,7 +1079,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  	if (tg3_nvram_read_swab(tp, 0, &magic) != 0)
  		return -EIO;
  
-@@ -9154,7 +9210,7 @@ static int tg3_ioctl(struct net_device *
+@@ -9154,7 +9210,7 @@
  			return -EAGAIN;
  
  		spin_lock_bh(&tp->lock);
@@ -1110,7 +1088,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  		spin_unlock_bh(&tp->lock);
  
  		data->val_out = mii_regval;
-@@ -9173,7 +9229,7 @@ static int tg3_ioctl(struct net_device *
+@@ -9173,7 +9229,7 @@
  			return -EAGAIN;
  
  		spin_lock_bh(&tp->lock);
@@ -1119,7 +1097,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  		spin_unlock_bh(&tp->lock);
  
  		return err;
-@@ -9571,6 +9627,12 @@ static void __devinit tg3_get_5906_nvram
+@@ -9571,6 +9627,12 @@
  /* Chips other than 5700/5701 use the NVRAM for fetching info. */
  static void __devinit tg3_nvram_init(struct tg3 *tp)
  {
@@ -1132,7 +1110,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  	tw32_f(GRC_EEPROM_ADDR,
  	     (EEPROM_ADDR_FSM_RESET |
  	      (EEPROM_DEFAULT_CLOCK_PERIOD <<
-@@ -9706,6 +9768,9 @@ static int tg3_nvram_read(struct tg3 *tp
+@@ -9706,6 +9768,9 @@
  {
  	int ret;
  
@@ -1142,7 +1120,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  	if (!(tp->tg3_flags & TG3_FLAG_NVRAM))
  		return tg3_nvram_read_using_eeprom(tp, offset, val);
  
-@@ -9938,6 +10003,9 @@ static int tg3_nvram_write_block(struct 
+@@ -9938,6 +10003,9 @@
  {
  	int ret;
  
@@ -1152,7 +1130,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  	if (tp->tg3_flags & TG3_FLAG_EEPROM_WRITE_PROT) {
  		tw32_f(GRC_LOCAL_CTRL, tp->grc_local_ctrl &
  		       ~GRC_LCLCTRL_GPIO_OUTPUT1);
-@@ -10804,7 +10872,6 @@ static int __devinit tg3_get_invariants(
+@@ -10804,7 +10872,6 @@
  		tp->write32 = tg3_write_flush_reg32;
  	}
  
@@ -1160,7 +1138,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  	if ((tp->tg3_flags & TG3_FLAG_TXD_MBOX_HWBUG) ||
  	    (tp->tg3_flags & TG3_FLAG_MBOX_WRITE_REORDER)) {
  		tp->write32_tx_mbox = tg3_write32_tx_mbox;
-@@ -10840,6 +10907,11 @@ static int __devinit tg3_get_invariants(
+@@ -10840,6 +10907,11 @@
  	      GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5701)))
  		tp->tg3_flags |= TG3_FLAG_SRAM_USE_CONFIG;
  
@@ -1172,7 +1150,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  	/* Get eeprom hw config before calling tg3_set_power_state().
  	 * In particular, the TG3_FLG2_IS_NIC flag must be
  	 * determined before calling tg3_set_power_state() so that
-@@ -11184,6 +11256,10 @@ static int __devinit tg3_get_device_addr
+@@ -11184,6 +11256,10 @@
  	}
  
  	if (!is_valid_ether_addr(&dev->dev_addr[0])) {
@@ -1183,7 +1161,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  #ifdef CONFIG_SPARC64
  		if (!tg3_get_default_macaddr_sparc(tp))
  			return 0;
-@@ -11675,6 +11751,7 @@ static char * __devinit tg3_phy_string(s
+@@ -11675,6 +11751,7 @@
  	case PHY_ID_BCM5704:	return "5704";
  	case PHY_ID_BCM5705:	return "5705";
  	case PHY_ID_BCM5750:	return "5750";
@@ -1191,7 +1169,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  	case PHY_ID_BCM5752:	return "5752";
  	case PHY_ID_BCM5714:	return "5714";
  	case PHY_ID_BCM5780:	return "5780";
-@@ -11859,6 +11936,13 @@ static int __devinit tg3_init_one(struct
+@@ -11859,6 +11936,13 @@
  		tp->msg_enable = tg3_debug;
  	else
  		tp->msg_enable = TG3_DEF_MSG_ENABLE;
@@ -1205,11 +1183,9 @@ Index: linux-2.6.23.17/drivers/net/tg3.c
  
  	/* The word/byte swap controls here control register access byte
  	 * swapping.  DMA data byte swapping is controlled in the GRC_MODE
-Index: linux-2.6.23.17/drivers/net/tg3.h
-===================================================================
---- linux-2.6.23.17.orig/drivers/net/tg3.h
-+++ linux-2.6.23.17/drivers/net/tg3.h
-@@ -2279,6 +2279,10 @@ struct tg3 {
+--- a/drivers/net/tg3.h
++++ b/drivers/net/tg3.h
+@@ -2279,6 +2279,10 @@
  #define TG3_FLG2_PHY_JITTER_BUG		0x20000000
  #define TG3_FLG2_NO_FWARE_REPORTED	0x40000000
  #define TG3_FLG2_PHY_ADJUST_TRIM	0x80000000
@@ -1220,7 +1196,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.h
  
  	struct timer_list		timer;
  	u16				timer_counter;
-@@ -2333,6 +2337,7 @@ struct tg3 {
+@@ -2333,6 +2337,7 @@
  #define PHY_ID_BCM5714			0x60008340
  #define PHY_ID_BCM5780			0x60008350
  #define PHY_ID_BCM5755			0xbc050cc0
@@ -1228,7 +1204,7 @@ Index: linux-2.6.23.17/drivers/net/tg3.h
  #define PHY_ID_BCM5787			0xbc050ce0
  #define PHY_ID_BCM5756			0xbc050ed0
  #define PHY_ID_BCM5906			0xdc00ac40
-@@ -2364,7 +2369,8 @@ struct tg3 {
+@@ -2364,7 +2369,8 @@
  	 (X) == PHY_ID_BCM5752 || (X) == PHY_ID_BCM5714 || \
  	 (X) == PHY_ID_BCM5780 || (X) == PHY_ID_BCM5787 || \
  	 (X) == PHY_ID_BCM5755 || (X) == PHY_ID_BCM5756 || \
@@ -1238,11 +1214,9 @@ Index: linux-2.6.23.17/drivers/net/tg3.h
  
  	struct tg3_hw_stats		*hw_stats;
  	dma_addr_t			stats_mapping;
-Index: linux-2.6.23.17/drivers/ssb/driver_mipscore.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/driver_mipscore.c
-+++ linux-2.6.23.17/drivers/ssb/driver_mipscore.c
-@@ -212,6 +212,7 @@ void ssb_mipscore_init(struct ssb_mipsco
+--- a/drivers/ssb/driver_mipscore.c
++++ b/drivers/ssb/driver_mipscore.c
+@@ -212,6 +212,7 @@
  			/* fallthrough */
  		case SSB_DEV_PCI:
  		case SSB_DEV_ETHERNET:

@@ -1,8 +1,6 @@
-Index: linux-2.6.23.17/drivers/ssb/driver_pcicore.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/driver_pcicore.c
-+++ linux-2.6.23.17/drivers/ssb/driver_pcicore.c
-@@ -66,6 +66,7 @@ int pcibios_plat_dev_init(struct pci_dev
+--- a/drivers/ssb/driver_pcicore.c
++++ b/drivers/ssb/driver_pcicore.c
+@@ -66,6 +66,7 @@
  			base = &ssb_pcicore_pcibus_iobase;
  		else
  			base = &ssb_pcicore_pcibus_membase;
@@ -10,7 +8,7 @@ Index: linux-2.6.23.17/drivers/ssb/driver_pcicore.c
  		if (res->end) {
  			size = res->end - res->start + 1;
  			if (*base & (size - 1))
-@@ -88,10 +89,12 @@ int pcibios_plat_dev_init(struct pci_dev
+@@ -88,10 +89,12 @@
  
  static void __init ssb_fixup_pcibridge(struct pci_dev *dev)
  {
@@ -24,7 +22,7 @@ Index: linux-2.6.23.17/drivers/ssb/driver_pcicore.c
  
  	/* Enable PCI bridge bus mastering and memory space */
  	pci_set_master(dev);
-@@ -101,7 +104,10 @@ static void __init ssb_fixup_pcibridge(s
+@@ -101,7 +104,10 @@
  	pci_write_config_dword(dev, SSB_BAR1_CONTROL, 3);
  
  	/* Make sure our latency is high enough to handle the devices behind us */
@@ -36,7 +34,7 @@ Index: linux-2.6.23.17/drivers/ssb/driver_pcicore.c
  }
  DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, ssb_fixup_pcibridge);
  
-@@ -279,14 +285,14 @@ static struct resource ssb_pcicore_mem_r
+@@ -279,14 +285,14 @@
  	.name	= "SSB PCIcore external memory",
  	.start	= SSB_PCI_DMA,
  	.end	= SSB_PCI_DMA + SSB_PCI_DMA_SZ - 1,
@@ -53,7 +51,7 @@ Index: linux-2.6.23.17/drivers/ssb/driver_pcicore.c
  };
  
  static struct pci_controller ssb_pcicore_controller = {
-@@ -344,7 +350,8 @@ static void ssb_pcicore_init_hostmode(st
+@@ -344,7 +350,8 @@
  	/* Ok, ready to run, register it to the system.
  	 * The following needs change, if we want to port hostmode
  	 * to non-MIPS platform. */

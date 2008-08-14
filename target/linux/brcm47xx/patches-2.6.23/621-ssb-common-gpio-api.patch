@@ -1,8 +1,6 @@
-Index: linux-2.6.23.17/drivers/ssb/driver_chipcommon.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/driver_chipcommon.c
-+++ linux-2.6.23.17/drivers/ssb/driver_chipcommon.c
-@@ -361,37 +361,31 @@ u32 ssb_chipco_gpio_in(struct ssb_chipco
+--- a/drivers/ssb/driver_chipcommon.c
++++ b/drivers/ssb/driver_chipcommon.c
+@@ -361,37 +361,31 @@
  {
  	return chipco_read32(cc, SSB_CHIPCO_GPIOIN) & mask;
  }
@@ -40,11 +38,9 @@ Index: linux-2.6.23.17/drivers/ssb/driver_chipcommon.c
  
  #ifdef CONFIG_SSB_SERIAL
  int ssb_chipco_serial_init(struct ssb_chipcommon *cc,
-Index: linux-2.6.23.17/drivers/ssb/driver_extif.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/driver_extif.c
-+++ linux-2.6.23.17/drivers/ssb/driver_extif.c
-@@ -122,30 +122,25 @@ u32 ssb_extif_gpio_in(struct ssb_extif *
+--- a/drivers/ssb/driver_extif.c
++++ b/drivers/ssb/driver_extif.c
+@@ -122,30 +122,25 @@
  {
  	return extif_read32(extif, SSB_EXTIF_GPIO_IN) & mask;
  }
@@ -75,10 +71,8 @@ Index: linux-2.6.23.17/drivers/ssb/driver_extif.c
  	return extif_write32_masked(extif, SSB_EXTIF_GPIO_INTMASK, mask, value);
  }
 -EXPORT_SYMBOL(ssb_extif_gpio_intmask);
-Index: linux-2.6.23.17/drivers/ssb/embedded.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/embedded.c
-+++ linux-2.6.23.17/drivers/ssb/embedded.c
+--- a/drivers/ssb/embedded.c
++++ b/drivers/ssb/embedded.c
 @@ -11,6 +11,8 @@
  #include <linux/ssb/ssb.h>
  #include <linux/ssb/ssb_embedded.h>
@@ -88,7 +82,7 @@ Index: linux-2.6.23.17/drivers/ssb/embedded.c
  
  int ssb_watchdog_timer_set(struct ssb_bus *bus, u32 ticks)
  {
-@@ -24,3 +26,107 @@ int ssb_watchdog_timer_set(struct ssb_bu
+@@ -24,3 +26,107 @@
  	}
  	return -ENODEV;
  }
@@ -196,11 +190,9 @@ Index: linux-2.6.23.17/drivers/ssb/embedded.c
 +	return res;
 +}
 +EXPORT_SYMBOL(ssb_gpio_polarity);
-Index: linux-2.6.23.17/include/linux/ssb/ssb.h
-===================================================================
---- linux-2.6.23.17.orig/include/linux/ssb/ssb.h
-+++ linux-2.6.23.17/include/linux/ssb/ssb.h
-@@ -283,6 +283,11 @@ struct ssb_bus {
+--- a/include/linux/ssb/ssb.h
++++ b/include/linux/ssb/ssb.h
+@@ -283,6 +283,11 @@
  	/* Contents of the SPROM. */
  	struct ssb_sprom sprom;
  
@@ -212,10 +204,8 @@ Index: linux-2.6.23.17/include/linux/ssb/ssb.h
  	/* Internal-only stuff follows. Do not touch. */
  	struct list_head list;
  #ifdef CONFIG_SSB_DEBUG
-Index: linux-2.6.23.17/include/linux/ssb/ssb_embedded.h
-===================================================================
---- linux-2.6.23.17.orig/include/linux/ssb/ssb_embedded.h
-+++ linux-2.6.23.17/include/linux/ssb/ssb_embedded.h
+--- a/include/linux/ssb/ssb_embedded.h
++++ b/include/linux/ssb/ssb_embedded.h
 @@ -7,4 +7,12 @@
  
  extern int ssb_watchdog_timer_set(struct ssb_bus *bus, u32 ticks);
@@ -229,11 +219,9 @@ Index: linux-2.6.23.17/include/linux/ssb/ssb_embedded.h
 +u32 ssb_gpio_polarity(struct ssb_bus *bus, u32 mask, u32 value);
 +
  #endif /* LINUX_SSB_EMBEDDED_H_ */
-Index: linux-2.6.23.17/drivers/ssb/main.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/main.c
-+++ linux-2.6.23.17/drivers/ssb/main.c
-@@ -571,6 +571,9 @@ static int ssb_bus_register(struct ssb_b
+--- a/drivers/ssb/main.c
++++ b/drivers/ssb/main.c
+@@ -571,6 +571,9 @@
  
  	spin_lock_init(&bus->bar_lock);
  	INIT_LIST_HEAD(&bus->list);
