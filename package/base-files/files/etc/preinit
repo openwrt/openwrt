@@ -20,7 +20,7 @@ failsafe() {
 mount proc /proc -t proc
 mount sysfs /sys -t sysfs
 
-size=$(awk '/MemTotal:/ {l=5242880;mt=($2*1024);print((s=mt/2)<l)?mt-l:s}' /proc/meminfo)
+size=$(awk '/MemTotal:/ {l=5242880;mt=($2*1024);print((s=mt/2)<l)&&(mt>l)?mt-l:s}' /proc/meminfo)
 mount tmpfs /tmp -t tmpfs -o size=$size,nosuid,nodev,mode=1777
 
 if grep devfs /proc/filesystems > /dev/null; then
