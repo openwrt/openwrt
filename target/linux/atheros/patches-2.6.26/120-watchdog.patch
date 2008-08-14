@@ -1,0 +1,29 @@
+Index: linux-2.6.26.2/drivers/watchdog/Kconfig
+===================================================================
+--- linux-2.6.26.2.orig/drivers/watchdog/Kconfig	2008-08-14 16:54:30.000000000 +0200
++++ linux-2.6.26.2/drivers/watchdog/Kconfig	2008-08-14 16:55:40.000000000 +0200
+@@ -683,6 +683,12 @@
+ 	help
+ 	  Hardware driver for the built-in watchdog timer on TXx9 MIPS SoCs.
+ 
++config ATHEROS_WDT
++	tristate "Atheros wisoc Watchdog Timer"
++	depends on ATHEROS
++	help
++	  Hardware driver for the Atheros wisoc Watchdog Timer.
++
+ # PARISC Architecture
+ 
+ # POWERPC Architecture
+Index: linux-2.6.26.2/drivers/watchdog/Makefile
+===================================================================
+--- linux-2.6.26.2.orig/drivers/watchdog/Makefile	2008-08-14 16:55:44.000000000 +0200
++++ linux-2.6.26.2/drivers/watchdog/Makefile	2008-08-14 16:58:16.000000000 +0200
+@@ -97,6 +97,7 @@
+ obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
+ obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
+ obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
++obj-$(CONFIG_ATHEROS_WDT) += ar2315-wtd.o
+ 
+ # PARISC Architecture
+ 
