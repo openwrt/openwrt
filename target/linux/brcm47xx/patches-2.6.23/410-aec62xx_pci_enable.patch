@@ -1,8 +1,6 @@
-Index: linux-2.6.23.17/drivers/ide/pci/aec62xx.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ide/pci/aec62xx.c
-+++ linux-2.6.23.17/drivers/ide/pci/aec62xx.c
-@@ -248,7 +248,14 @@ static int __devinit init_setup_aec62xx(
+--- a/drivers/ide/pci/aec62xx.c
++++ b/drivers/ide/pci/aec62xx.c
+@@ -248,7 +248,14 @@
  
  static int __devinit init_setup_aec6x80(struct pci_dev *dev, ide_pci_device_t *d)
  {
@@ -18,7 +16,7 @@ Index: linux-2.6.23.17/drivers/ide/pci/aec62xx.c
  
  	if (inb(dma_base + 2) & 0x10) {
  		d->name = (dev->device == PCI_DEVICE_ID_ARTOP_ATP865R) ?
-@@ -256,7 +263,11 @@ static int __devinit init_setup_aec6x80(
+@@ -256,7 +263,11 @@
  		d->udma_mask = 0x7f; /* udma0-6 */
  	}
  

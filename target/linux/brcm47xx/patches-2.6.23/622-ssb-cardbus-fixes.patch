@@ -1,7 +1,5 @@
-Index: linux-2.6.23.17/drivers/ssb/driver_pcicore.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/driver_pcicore.c
-+++ linux-2.6.23.17/drivers/ssb/driver_pcicore.c
+--- a/drivers/ssb/driver_pcicore.c
++++ b/drivers/ssb/driver_pcicore.c
 @@ -11,6 +11,7 @@
  #include <linux/ssb/ssb.h>
  #include <linux/pci.h>
@@ -10,7 +8,7 @@ Index: linux-2.6.23.17/drivers/ssb/driver_pcicore.c
  
  #include "ssb_private.h"
  
-@@ -27,6 +28,18 @@ void pcicore_write32(struct ssb_pcicore 
+@@ -27,6 +28,18 @@
  	ssb_write32(pc->dev, offset, value);
  }
  
@@ -29,7 +27,7 @@ Index: linux-2.6.23.17/drivers/ssb/driver_pcicore.c
  /**************************************************
   * Code for hostmode operation.
   **************************************************/
-@@ -123,8 +136,10 @@ static u32 get_cfgspace_addr(struct ssb_
+@@ -123,8 +136,10 @@
  	u32 addr = 0;
  	u32 tmp;
  
@@ -41,7 +39,7 @@ Index: linux-2.6.23.17/drivers/ssb/driver_pcicore.c
  	if (bus == 0) {
  		/* Type 0 transaction */
  		if (unlikely(dev >= SSB_PCI_SLOT_MAX))
-@@ -324,7 +339,16 @@ static void ssb_pcicore_init_hostmode(st
+@@ -324,7 +339,16 @@
  	pcicore_write32(pc, SSB_PCICORE_ARBCTL, val);
  	udelay(1); /* Assertion time demanded by the PCI standard */
  
@@ -59,11 +57,9 @@ Index: linux-2.6.23.17/drivers/ssb/driver_pcicore.c
  
  	/* 64MB I/O window */
  	pcicore_write32(pc, SSB_PCICORE_SBTOPCI0,
-Index: linux-2.6.23.17/drivers/ssb/main.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/main.c
-+++ linux-2.6.23.17/drivers/ssb/main.c
-@@ -559,6 +559,7 @@ static int ssb_fetch_invariants(struct s
+--- a/drivers/ssb/main.c
++++ b/drivers/ssb/main.c
+@@ -559,6 +559,7 @@
  		goto out;
  	memcpy(&bus->boardinfo, &iv.boardinfo, sizeof(iv.boardinfo));
  	memcpy(&bus->sprom, &iv.sprom, sizeof(iv.sprom));
@@ -71,11 +67,9 @@ Index: linux-2.6.23.17/drivers/ssb/main.c
  out:
  	return err;
  }
-Index: linux-2.6.23.17/include/linux/ssb/ssb.h
-===================================================================
---- linux-2.6.23.17.orig/include/linux/ssb/ssb.h
-+++ linux-2.6.23.17/include/linux/ssb/ssb.h
-@@ -282,6 +282,8 @@ struct ssb_bus {
+--- a/include/linux/ssb/ssb.h
++++ b/include/linux/ssb/ssb.h
+@@ -282,6 +282,8 @@
  	struct ssb_boardinfo boardinfo;
  	/* Contents of the SPROM. */
  	struct ssb_sprom sprom;
@@ -84,7 +78,7 @@ Index: linux-2.6.23.17/include/linux/ssb/ssb.h
  
  #ifdef CONFIG_SSB_EMBEDDED
  	/* Lock for GPIO register access. */
-@@ -299,8 +301,13 @@ struct ssb_bus {
+@@ -299,8 +301,13 @@
  
  /* The initialization-invariants. */
  struct ssb_init_invariants {
@@ -98,10 +92,8 @@ Index: linux-2.6.23.17/include/linux/ssb/ssb.h
  };
  /* Type of function to fetch the invariants. */
  typedef int (*ssb_invariants_func_t)(struct ssb_bus *bus,
-Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_pci.h
-===================================================================
---- linux-2.6.23.17.orig/include/linux/ssb/ssb_driver_pci.h
-+++ linux-2.6.23.17/include/linux/ssb/ssb_driver_pci.h
+--- a/include/linux/ssb/ssb_driver_pci.h
++++ b/include/linux/ssb/ssb_driver_pci.h
 @@ -51,6 +51,11 @@
  #define  SSB_PCICORE_SBTOPCI1_MASK	0xFC000000
  #define SSB_PCICORE_SBTOPCI2		0x0108	/* Backplane to PCI translation 2 (sbtopci2) */

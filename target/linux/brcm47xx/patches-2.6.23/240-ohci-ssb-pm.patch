@@ -13,11 +13,9 @@ Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
 Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
 ---
 
-Index: linux-2.6.23.17/drivers/usb/host/ohci-ssb.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/usb/host/ohci-ssb.c
-+++ linux-2.6.23.17/drivers/usb/host/ohci-ssb.c
-@@ -117,8 +117,10 @@ static const struct hc_driver ssb_ohci_h
+--- a/drivers/usb/host/ohci-ssb.c
++++ b/drivers/usb/host/ohci-ssb.c
+@@ -117,8 +117,10 @@
  	.hub_status_data	= ohci_hub_status_data,
  	.hub_control		= ohci_hub_control,
  	.hub_irq_enable		= ohci_rhsc_enable,

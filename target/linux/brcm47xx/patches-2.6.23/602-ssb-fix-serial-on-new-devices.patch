@@ -1,8 +1,6 @@
-Index: linux-2.6.23.17/drivers/ssb/driver_chipcommon.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/driver_chipcommon.c
-+++ linux-2.6.23.17/drivers/ssb/driver_chipcommon.c
-@@ -403,6 +403,7 @@ int ssb_chipco_serial_init(struct ssb_ch
+--- a/drivers/ssb/driver_chipcommon.c
++++ b/drivers/ssb/driver_chipcommon.c
+@@ -403,6 +403,7 @@
  	unsigned int irq;
  	u32 baud_base, div;
  	u32 i, n;
@@ -10,7 +8,7 @@ Index: linux-2.6.23.17/drivers/ssb/driver_chipcommon.c
  
  	plltype = (cc->capabilities & SSB_CHIPCO_CAP_PLLT);
  	irq = ssb_mips_irq(cc->dev);
-@@ -414,14 +415,39 @@ int ssb_chipco_serial_init(struct ssb_ch
+@@ -414,14 +415,39 @@
  						chipco_read32(cc, SSB_CHIPCO_CLOCK_M2));
  		div = 1;
  	} else {
@@ -53,7 +51,7 @@ Index: linux-2.6.23.17/drivers/ssb/driver_chipcommon.c
  			/* Internal backplane clock */
  			baud_base = ssb_clockspeed(bus);
  			div = chipco_read32(cc, SSB_CHIPCO_CLKDIV)
-@@ -433,7 +459,7 @@ int ssb_chipco_serial_init(struct ssb_ch
+@@ -433,7 +459,7 @@
  		}
  
  		/* Clock source depends on strapping if UartClkOverride is unset */
@@ -62,7 +60,7 @@ Index: linux-2.6.23.17/drivers/ssb/driver_chipcommon.c
  		    !(chipco_read32(cc, SSB_CHIPCO_CORECTL) & SSB_CHIPCO_CORECTL_UARTCLK0)) {
  			if ((cc->capabilities & SSB_CHIPCO_CAP_UARTCLK) ==
  			    SSB_CHIPCO_CAP_UARTCLK_INT) {
-@@ -455,7 +481,7 @@ int ssb_chipco_serial_init(struct ssb_ch
+@@ -455,7 +481,7 @@
  		cc_mmio = cc->dev->bus->mmio + (cc->dev->core_index * SSB_CORE_SIZE);
  		uart_regs = cc_mmio + SSB_CHIPCO_UART0_DATA;
  		/* Offset changed at after rev 0 */
@@ -71,10 +69,8 @@ Index: linux-2.6.23.17/drivers/ssb/driver_chipcommon.c
  			uart_regs += (i * 8);
  		else
  			uart_regs += (i * 256);
-Index: linux-2.6.23.17/include/linux/ssb/ssb_driver_chipcommon.h
-===================================================================
---- linux-2.6.23.17.orig/include/linux/ssb/ssb_driver_chipcommon.h
-+++ linux-2.6.23.17/include/linux/ssb/ssb_driver_chipcommon.h
+--- a/include/linux/ssb/ssb_driver_chipcommon.h
++++ b/include/linux/ssb/ssb_driver_chipcommon.h
 @@ -51,9 +51,12 @@
  #define  SSB_CHIPCO_CAP_JTAGM		0x00400000	/* JTAG master present */
  #define  SSB_CHIPCO_CAP_BROM		0x00800000	/* Internal boot ROM active */

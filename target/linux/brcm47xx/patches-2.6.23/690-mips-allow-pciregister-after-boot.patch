@@ -1,10 +1,8 @@
 Allow registering PCI devices after early boot.
 
 This is an ugly hack and needs to be rewritten before going upstream.
-Index: linux-2.6.23.17/arch/mips/pci/pci.c
-===================================================================
---- linux-2.6.23.17.orig/arch/mips/pci/pci.c
-+++ linux-2.6.23.17/arch/mips/pci/pci.c
+--- a/arch/mips/pci/pci.c
++++ b/arch/mips/pci/pci.c
 @@ -21,6 +21,17 @@
   */
  int pci_probe_only;
@@ -23,7 +21,7 @@ Index: linux-2.6.23.17/arch/mips/pci/pci.c
  #define PCI_ASSIGN_ALL_BUSSES	1
  
  unsigned int pci_probe = PCI_ASSIGN_ALL_BUSSES;
-@@ -75,8 +86,32 @@ pcibios_align_resource(void *data, struc
+@@ -75,8 +86,32 @@
  	res->start = start;
  }
  
@@ -57,7 +55,7 @@ Index: linux-2.6.23.17/arch/mips/pci/pci.c
  	if (request_resource(&iomem_resource, hose->mem_resource) < 0)
  		goto out;
  	if (request_resource(&ioport_resource, hose->io_resource) < 0) {
-@@ -84,9 +119,6 @@ void __devinit register_pci_controller(s
+@@ -84,9 +119,6 @@
  		goto out;
  	}
  
@@ -67,7 +65,7 @@ Index: linux-2.6.23.17/arch/mips/pci/pci.c
  	/*
  	 * Do not panic here but later - this might hapen before console init.
  	 */
-@@ -94,41 +126,47 @@ void __devinit register_pci_controller(s
+@@ -94,41 +126,47 @@
  		printk(KERN_WARNING
  		       "registering PCI controller with io_map_base unset\n");
  	}
@@ -138,7 +136,7 @@ Index: linux-2.6.23.17/arch/mips/pci/pci.c
  
  	/* Scan all of the recorded PCI controllers.  */
  	for (next_busno = 0, hose = hose_head; hose; hose = hose->next) {
-@@ -157,6 +195,7 @@ static int __init pcibios_init(void)
+@@ -157,6 +195,7 @@
  	if (!pci_probe_only)
  		pci_assign_unassigned_resources();
  	pci_fixup_irqs(common_swizzle, pcibios_map_irq);
@@ -146,11 +144,9 @@ Index: linux-2.6.23.17/arch/mips/pci/pci.c
  
  	return 0;
  }
-Index: linux-2.6.23.17/drivers/ssb/main.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/main.c
-+++ linux-2.6.23.17/drivers/ssb/main.c
-@@ -1185,9 +1185,7 @@ static int __init ssb_modinit(void)
+--- a/drivers/ssb/main.c
++++ b/drivers/ssb/main.c
+@@ -1185,9 +1185,7 @@
  /* ssb must be initialized after PCI but before the ssb drivers.
   * That means we must use some initcall between subsys_initcall
   * and device_initcall. */

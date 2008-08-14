@@ -1,8 +1,6 @@
-Index: linux-2.6.23.17/scripts/gen_initramfs_list.sh
-===================================================================
---- linux-2.6.23.17.orig/scripts/gen_initramfs_list.sh
-+++ linux-2.6.23.17/scripts/gen_initramfs_list.sh
-@@ -287,7 +287,7 @@ if [ ! -z ${output_file} ]; then
+--- a/scripts/gen_initramfs_list.sh
++++ b/scripts/gen_initramfs_list.sh
+@@ -287,7 +287,7 @@
  	if [ "${is_cpio_compressed}" = "compressed" ]; then
  		cat ${cpio_tfile} > ${output_file}
  	else
@@ -11,11 +9,9 @@ Index: linux-2.6.23.17/scripts/gen_initramfs_list.sh
  	fi
  	[ -z ${cpio_file} ] && rm ${cpio_tfile}
  fi
-Index: linux-2.6.23.17/init/initramfs.c
-===================================================================
---- linux-2.6.23.17.orig/init/initramfs.c
-+++ linux-2.6.23.17/init/initramfs.c
-@@ -441,6 +441,69 @@ static void __init flush_window(void)
+--- a/init/initramfs.c
++++ b/init/initramfs.c
+@@ -441,6 +441,69 @@
  	outcnt = 0;
  }
  
@@ -85,7 +81,7 @@ Index: linux-2.6.23.17/init/initramfs.c
  static char * __init unpack_to_rootfs(char *buf, unsigned len, int check_only)
  {
  	int written;
-@@ -475,12 +538,28 @@ static char * __init unpack_to_rootfs(ch
+@@ -475,12 +538,28 @@
  		inptr = 0;
  		outcnt = 0;		/* bytes in output buffer */
  		bytes_out = 0;

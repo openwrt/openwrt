@@ -1,8 +1,6 @@
-Index: linux-2.6.23.17/drivers/ssb/main.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/ssb/main.c
-+++ linux-2.6.23.17/drivers/ssb/main.c
-@@ -1163,7 +1163,9 @@ static int __init ssb_modinit(void)
+--- a/drivers/ssb/main.c
++++ b/drivers/ssb/main.c
+@@ -1163,7 +1163,9 @@
  /* ssb must be initialized after PCI but before the ssb drivers.
   * That means we must use some initcall between subsys_initcall
   * and device_initcall. */

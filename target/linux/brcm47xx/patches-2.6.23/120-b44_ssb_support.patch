@@ -1,7 +1,5 @@
-Index: linux-2.6.23.17/drivers/net/b44.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/net/b44.c
-+++ linux-2.6.23.17/drivers/net/b44.c
+--- a/drivers/net/b44.c
++++ b/drivers/net/b44.c
 @@ -1,7 +1,9 @@
 -/* b44.c: Broadcom 4400 device driver.
 +/* b44.c: Broadcom 4400/47xx device driver.
@@ -39,7 +37,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  MODULE_LICENSE("GPL");
  MODULE_VERSION(DRV_MODULE_VERSION);
  
-@@ -96,18 +100,11 @@ static int b44_debug = -1;	/* -1 == use 
+@@ -96,18 +100,11 @@
  module_param(b44_debug, int, 0);
  MODULE_PARM_DESC(b44_debug, "B44 bitmapped debugging message enable value");
  
@@ -61,7 +59,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  static void b44_halt(struct b44 *);
  static void b44_init_rings(struct b44 *);
  
-@@ -119,6 +116,7 @@ static void b44_init_hw(struct b44 *, in
+@@ -119,6 +116,7 @@
  
  static int dma_desc_align_mask;
  static int dma_desc_sync_size;
@@ -69,7 +67,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  
  static const char b44_gstrings[][ETH_GSTRING_LEN] = {
  #define _B44(x...)	# x,
-@@ -126,35 +124,24 @@ B44_STAT_REG_DECLARE
+@@ -126,35 +124,24 @@
  #undef _B44
  };
  
@@ -123,7 +121,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  }
  
  static int b44_wait_bit(struct b44 *bp, unsigned long reg,
-@@ -182,117 +169,29 @@ static int b44_wait_bit(struct b44 *bp, 
+@@ -182,117 +169,29 @@
  	return 0;
  }
  
@@ -254,7 +252,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  {
  	u32 val;
  
-@@ -328,14 +227,14 @@ static void b44_enable_ints(struct b44 *
+@@ -328,14 +227,14 @@
  	bw32(bp, B44_IMASK, bp->imask);
  }
  
@@ -271,7 +269,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  			     (reg << MDIO_DATA_RA_SHIFT) |
  			     (MDIO_TA_VALID << MDIO_DATA_TA_SHIFT)));
  	err = b44_wait_bit(bp, B44_EMAC_ISTAT, EMAC_INT_MII, 100, 0);
-@@ -344,18 +243,34 @@ static int b44_readphy(struct b44 *bp, i
+@@ -344,18 +243,34 @@
  	return err;
  }
  
@@ -308,7 +306,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  /* miilib interface */
  /* FIXME FIXME: phy_id is ignored, bp->phy_addr use is unconditional
   * due to code existing before miilib use was added to this driver.
-@@ -384,6 +299,8 @@ static int b44_phy_reset(struct b44 *bp)
+@@ -384,6 +299,8 @@
  	u32 val;
  	int err;
  
@@ -317,7 +315,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  	err = b44_writephy(bp, MII_BMCR, BMCR_RESET);
  	if (err)
  		return err;
-@@ -442,11 +359,27 @@ static void b44_set_flow_ctrl(struct b44
+@@ -442,11 +359,27 @@
  	__b44_set_flow_ctrl(bp, pause_enab);
  }
  
@@ -345,7 +343,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  	if ((err = b44_readphy(bp, B44_MII_ALEDCTRL, &val)) != 0)
  		goto out;
  	if ((err = b44_writephy(bp, B44_MII_ALEDCTRL,
-@@ -542,6 +475,19 @@ static void b44_check_phy(struct b44 *bp
+@@ -542,6 +475,19 @@
  {
  	u32 bmsr, aux;
  
@@ -365,7 +363,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  	if (!b44_readphy(bp, MII_BMSR, &bmsr) &&
  	    !b44_readphy(bp, B44_MII_AUXCTRL, &aux) &&
  	    (bmsr != 0xffff)) {
-@@ -617,10 +563,10 @@ static void b44_tx(struct b44 *bp)
+@@ -617,10 +563,10 @@
  
  		BUG_ON(skb == NULL);
  
@@ -378,7 +376,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  		rp->skb = NULL;
  		dev_kfree_skb_irq(skb);
  	}
-@@ -657,9 +603,9 @@ static int b44_alloc_rx_skb(struct b44 *
+@@ -657,9 +603,9 @@
  	if (skb == NULL)
  		return -ENOMEM;
  
@@ -390,7 +388,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  
  	/* Hardware bug work-around, the chip is unable to do PCI DMA
  	   to/from anything above 1GB :-( */
-@@ -667,18 +613,18 @@ static int b44_alloc_rx_skb(struct b44 *
+@@ -667,18 +613,18 @@
  		mapping + RX_PKT_BUF_SZ > DMA_30BIT_MASK) {
  		/* Sigh... */
  		if (!dma_mapping_error(mapping))
@@ -413,7 +411,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  			dev_kfree_skb_any(skb);
  			return -ENOMEM;
  		}
-@@ -705,9 +651,9 @@ static int b44_alloc_rx_skb(struct b44 *
+@@ -705,9 +651,9 @@
  	dp->addr = cpu_to_le32((u32) mapping + RX_PKT_OFFSET + bp->dma_offset);
  
  	if (bp->flags & B44_FLAG_RX_RING_HACK)
@@ -426,7 +424,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  
  	return RX_PKT_BUF_SZ;
  }
-@@ -734,9 +680,9 @@ static void b44_recycle_rx(struct b44 *b
+@@ -734,9 +680,9 @@
  			   pci_unmap_addr(src_map, mapping));
  
  	if (bp->flags & B44_FLAG_RX_RING_HACK)
@@ -439,7 +437,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  
  	ctrl = src_desc->ctrl;
  	if (dest_idx == (B44_RX_RING_SIZE - 1))
-@@ -750,13 +696,13 @@ static void b44_recycle_rx(struct b44 *b
+@@ -750,13 +696,13 @@
  	src_map->skb = NULL;
  
  	if (bp->flags & B44_FLAG_RX_RING_HACK)
@@ -458,7 +456,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  }
  
  static int b44_rx(struct b44 *bp, int budget)
-@@ -776,9 +722,9 @@ static int b44_rx(struct b44 *bp, int bu
+@@ -776,9 +722,9 @@
  		struct rx_header *rh;
  		u16 len;
  
@@ -470,7 +468,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  		rh = (struct rx_header *) skb->data;
  		len = le16_to_cpu(rh->len);
  		if ((len > (RX_PKT_BUF_SZ - RX_PKT_OFFSET)) ||
-@@ -810,8 +756,8 @@ static int b44_rx(struct b44 *bp, int bu
+@@ -810,8 +756,8 @@
  			skb_size = b44_alloc_rx_skb(bp, cons, bp->rx_prod);
  			if (skb_size < 0)
  				goto drop_it;
@@ -481,7 +479,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  			/* Leave out rx_header */
                  	skb_put(skb, len + RX_PKT_OFFSET);
              	        skb_pull(skb, RX_PKT_OFFSET);
-@@ -982,24 +928,24 @@ static int b44_start_xmit(struct sk_buff
+@@ -982,24 +928,24 @@
  		goto err_out;
  	}
  
@@ -512,7 +510,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  			dev_kfree_skb_any(bounce_skb);
  			goto err_out;
  		}
-@@ -1022,9 +968,9 @@ static int b44_start_xmit(struct sk_buff
+@@ -1022,9 +968,9 @@
  	bp->tx_ring[entry].addr = cpu_to_le32((u32) mapping+bp->dma_offset);
  
  	if (bp->flags & B44_FLAG_TX_RING_HACK)
@@ -525,7 +523,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  
  	entry = NEXT_TX(entry);
  
-@@ -1097,10 +1043,10 @@ static void b44_free_rings(struct b44 *b
+@@ -1097,10 +1043,10 @@
  
  		if (rp->skb == NULL)
  			continue;
@@ -538,7 +536,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  		dev_kfree_skb_any(rp->skb);
  		rp->skb = NULL;
  	}
-@@ -1111,10 +1057,10 @@ static void b44_free_rings(struct b44 *b
+@@ -1111,10 +1057,10 @@
  
  		if (rp->skb == NULL)
  			continue;
@@ -551,7 +549,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  		dev_kfree_skb_any(rp->skb);
  		rp->skb = NULL;
  	}
-@@ -1136,14 +1082,14 @@ static void b44_init_rings(struct b44 *b
+@@ -1136,14 +1082,14 @@
  	memset(bp->tx_ring, 0, B44_TX_RING_BYTES);
  
  	if (bp->flags & B44_FLAG_RX_RING_HACK)
@@ -572,7 +570,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  
  	for (i = 0; i < bp->rx_pending; i++) {
  		if (b44_alloc_rx_skb(bp, -1, i) < 0)
-@@ -1163,24 +1109,24 @@ static void b44_free_consistent(struct b
+@@ -1163,24 +1109,24 @@
  	bp->tx_buffers = NULL;
  	if (bp->rx_ring) {
  		if (bp->flags & B44_FLAG_RX_RING_HACK) {
@@ -605,7 +603,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  					    bp->tx_ring, bp->tx_ring_dma);
  		bp->tx_ring = NULL;
  		bp->flags &= ~B44_FLAG_TX_RING_HACK;
-@@ -1206,7 +1152,7 @@ static int b44_alloc_consistent(struct b
+@@ -1206,7 +1152,7 @@
  		goto out_err;
  
  	size = DMA_TABLE_BYTES;
@@ -614,7 +612,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  	if (!bp->rx_ring) {
  		/* Allocation may have failed due to pci_alloc_consistent
  		   insisting on use of GFP_DMA, which is more restrictive
-@@ -1218,9 +1164,9 @@ static int b44_alloc_consistent(struct b
+@@ -1218,9 +1164,9 @@
  		if (!rx_ring)
  			goto out_err;
  
@@ -627,7 +625,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  
  		if (dma_mapping_error(rx_ring_dma) ||
  			rx_ring_dma + size > DMA_30BIT_MASK) {
-@@ -1233,9 +1179,9 @@ static int b44_alloc_consistent(struct b
+@@ -1233,9 +1179,9 @@
  		bp->flags |= B44_FLAG_RX_RING_HACK;
  	}
  
@@ -639,7 +637,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  		   insisting on use of GFP_DMA, which is more restrictive
  		   than necessary...  */
  		struct dma_desc *tx_ring;
-@@ -1245,9 +1191,9 @@ static int b44_alloc_consistent(struct b
+@@ -1245,9 +1191,9 @@
  		if (!tx_ring)
  			goto out_err;
  
@@ -652,7 +650,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  
  		if (dma_mapping_error(tx_ring_dma) ||
  			tx_ring_dma + size > DMA_30BIT_MASK) {
-@@ -1282,7 +1228,9 @@ static void b44_clear_stats(struct b44 *
+@@ -1282,7 +1228,9 @@
  /* bp->lock is held. */
  static void b44_chip_reset(struct b44 *bp)
  {
@@ -663,7 +661,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  		bw32(bp, B44_RCV_LAZY, 0);
  		bw32(bp, B44_ENET_CTRL, ENET_CTRL_DISABLE);
  		b44_wait_bit(bp, B44_ENET_CTRL, ENET_CTRL_DISABLE, 200, 1);
-@@ -1294,19 +1242,24 @@ static void b44_chip_reset(struct b44 *b
+@@ -1294,19 +1242,24 @@
  		}
  		bw32(bp, B44_DMARX_CTRL, 0);
  		bp->rx_prod = bp->rx_cons = 0;
@@ -696,7 +694,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  	br32(bp, B44_MDIO_CTRL);
  
  	if (!(br32(bp, B44_DEVCTRL) & DEVCTRL_IPP)) {
-@@ -1349,6 +1302,7 @@ static int b44_set_mac_addr(struct net_d
+@@ -1349,6 +1302,7 @@
  {
  	struct b44 *bp = netdev_priv(dev);
  	struct sockaddr *addr = p;
@@ -704,7 +702,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  
  	if (netif_running(dev))
  		return -EBUSY;
-@@ -1359,7 +1313,11 @@ static int b44_set_mac_addr(struct net_d
+@@ -1359,7 +1313,11 @@
  	memcpy(dev->dev_addr, addr->sa_data, dev->addr_len);
  
  	spin_lock_irq(&bp->lock);
@@ -717,7 +715,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  	spin_unlock_irq(&bp->lock);
  
  	return 0;
-@@ -1445,18 +1403,6 @@ out:
+@@ -1445,18 +1403,6 @@
  	return err;
  }
  
@@ -736,7 +734,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  #ifdef CONFIG_NET_POLL_CONTROLLER
  /*
   * Polling receive - used by netconsole and other diagnostic tools
-@@ -1570,7 +1516,6 @@ static void b44_setup_pseudo_magicp(stru
+@@ -1570,7 +1516,6 @@
  static void b44_setup_wol(struct b44 *bp)
  {
  	u32 val;
@@ -744,7 +742,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  
  	bw32(bp, B44_RXCONFIG, RXCONFIG_ALLMULTI);
  
-@@ -1594,13 +1539,6 @@ static void b44_setup_wol(struct b44 *bp
+@@ -1594,13 +1539,6 @@
   	} else {
   		b44_setup_pseudo_magicp(bp);
   	}
@@ -758,7 +756,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  }
  
  static int b44_close(struct net_device *dev)
-@@ -1700,7 +1638,7 @@ static void __b44_set_rx_mode(struct net
+@@ -1700,7 +1638,7 @@
  
  	val = br32(bp, B44_RXCONFIG);
  	val &= ~(RXCONFIG_PROMISC | RXCONFIG_ALLMULTI);
@@ -767,7 +765,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  		val |= RXCONFIG_PROMISC;
  		bw32(bp, B44_RXCONFIG, val);
  	} else {
-@@ -1747,12 +1685,8 @@ static void b44_set_msglevel(struct net_
+@@ -1747,12 +1685,8 @@
  
  static void b44_get_drvinfo (struct net_device *dev, struct ethtool_drvinfo *info)
  {
@@ -780,7 +778,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  }
  
  static int b44_nway_reset(struct net_device *dev)
-@@ -2035,6 +1969,245 @@ static const struct ethtool_ops b44_etht
+@@ -2035,6 +1969,245 @@
  	.get_ethtool_stats	= b44_get_ethtool_stats,
  };
  
@@ -1026,7 +1024,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  static int b44_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
  {
  	struct mii_ioctl_data *data = if_mii(ifr);
-@@ -2044,40 +2217,64 @@ static int b44_ioctl(struct net_device *
+@@ -2044,40 +2217,64 @@
  	if (!netif_running(dev))
  		goto out;
  
@@ -1116,7 +1114,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  
  	if (!is_valid_ether_addr(&bp->dev->dev_addr[0])){
  		printk(KERN_ERR PFX "Invalid MAC address found in EEPROM\n");
-@@ -2086,103 +2283,52 @@ static int __devinit b44_get_invariants(
+@@ -2086,103 +2283,52 @@
  
  	memcpy(bp->dev->perm_addr, bp->dev->dev_addr, bp->dev->addr_len);
  
@@ -1229,7 +1227,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  	bp->rx_pending = B44_DEF_RX_RING_PENDING;
  	bp->tx_pending = B44_DEF_TX_RING_PENDING;
  
-@@ -2201,16 +2347,16 @@ static int __devinit b44_init_one(struct
+@@ -2201,16 +2347,16 @@
  	dev->poll_controller = b44_poll_controller;
  #endif
  	dev->change_mtu = b44_change_mtu;
@@ -1249,7 +1247,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  	}
  
  	bp->mii_if.dev = dev;
-@@ -2229,61 +2375,52 @@ static int __devinit b44_init_one(struct
+@@ -2229,61 +2375,52 @@
  
  	err = register_netdev(dev);
  	if (err) {
@@ -1327,7 +1325,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  
  	del_timer_sync(&bp->timer);
  
-@@ -2301,33 +2438,22 @@ static int b44_suspend(struct pci_dev *p
+@@ -2301,33 +2438,22 @@
  		b44_init_hw(bp, B44_PARTIAL_RESET);
  		b44_setup_wol(bp);
  	}
@@ -1364,7 +1362,7 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  		return rc;
  	}
  
-@@ -2346,29 +2472,31 @@ static int b44_resume(struct pci_dev *pd
+@@ -2346,29 +2472,31 @@
  	return 0;
  }
  
@@ -1402,10 +1400,8 @@ Index: linux-2.6.23.17/drivers/net/b44.c
  }
  
  module_init(b44_init);
-Index: linux-2.6.23.17/drivers/net/b44.h
-===================================================================
---- linux-2.6.23.17.orig/drivers/net/b44.h
-+++ linux-2.6.23.17/drivers/net/b44.h
+--- a/drivers/net/b44.h
++++ b/drivers/net/b44.h
 @@ -129,6 +129,7 @@
  #define  RXCONFIG_FLOW		0x00000020 /* Flow Control Enable */
  #define  RXCONFIG_FLOW_ACCEPT	0x00000040 /* Accept Unicast Flow Control Frame */
@@ -1493,7 +1489,7 @@ Index: linux-2.6.23.17/drivers/net/b44.h
  
  /* 4400 PHY registers */
  #define B44_MII_AUXCTRL		24	/* Auxiliary Control */
-@@ -346,10 +281,12 @@ struct rx_header {
+@@ -346,10 +281,12 @@
  
  struct ring_info {
  	struct sk_buff		*skb;
@@ -1507,7 +1503,7 @@ Index: linux-2.6.23.17/drivers/net/b44.h
  
  #define	B44_STAT_REG_DECLARE		\
  	_B44(tx_good_octets)		\
-@@ -425,9 +362,10 @@ struct b44 {
+@@ -425,9 +362,10 @@
  
  	u32			dma_offset;
  	u32			flags;
@@ -1519,7 +1515,7 @@ Index: linux-2.6.23.17/drivers/net/b44.h
  #define B44_FLAG_PAUSE_AUTO	0x00008000
  #define B44_FLAG_FULL_DUPLEX	0x00010000
  #define B44_FLAG_100_BASE_T	0x00020000
-@@ -450,8 +388,7 @@ struct b44 {
+@@ -450,8 +388,7 @@
  	struct net_device_stats	stats;
  	struct b44_hw_stats	hw_stats;
  
@@ -1529,11 +1525,9 @@ Index: linux-2.6.23.17/drivers/net/b44.h
  	struct net_device	*dev;
  
  	dma_addr_t		rx_ring_dma, tx_ring_dma;
-Index: linux-2.6.23.17/drivers/net/Kconfig
-===================================================================
---- linux-2.6.23.17.orig/drivers/net/Kconfig
-+++ linux-2.6.23.17/drivers/net/Kconfig
-@@ -1577,7 +1577,7 @@ config APRICOT
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -1577,7 +1577,7 @@
  
  config B44
  	tristate "Broadcom 4400 ethernet support"
