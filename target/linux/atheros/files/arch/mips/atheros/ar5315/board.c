@@ -109,7 +109,13 @@ static struct platform_device ar5315_gpio_leds = {
 };
 #endif
 
-static __initdata struct platform_device *ar5315_devs[5];
+static struct platform_device ar5315_wdt =
+{
+	.id = 0,
+	.name = "ar2315_wdt",
+};
+
+static __initdata struct platform_device *ar5315_devs[6];
 
 static void *flash_regs;
 
@@ -243,6 +249,7 @@ int __init ar5315_init_devices(void)
 	ar5315_devs[dev++] = &ar5315_eth;
 	ar5315_devs[dev++] = &ar5315_wmac;
 	ar5315_devs[dev++] = &ar5315_spiflash;
+	ar5315_devs[dev++] = &ar5315_wdt;
 
 #ifdef CONFIG_LEDS_GPIO
 	ar5315_led_data.num_leds = 0;
