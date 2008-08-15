@@ -178,6 +178,8 @@ fw_rule() {
 	[ -z "$target" ] && target=DROP
 	[ -n "$src" ] && ZONE=zone_$src || ZONE=INPUT
 	[ -n "$dest" ] && TARGET=zone_${dest}_$target || TARGET=$target
+	[ -n "$dest_port" -a -z "$proto" ] && { \
+		echo "dport may only be used it proto is defined"; return; }
 	$IPTABLES -I $ZONE 1 \
 		${proto:+-p $proto} \
 		${src_ip:+-s $src_ip} \
@@ -220,6 +222,8 @@ fw_redirect() {
 	config_get protocol $1 protocol
 	[ -z "$src" -o -z "$dest_ip" ] && { \
 		echo "redirect needs src and dest_ip"; return ; }
+	[ -n "$dest_port" -a -z "$proto" ] && { \
+		echo "dport may only be used it proto is defined"; return; }
 	$IPTABLES -A zone_${src}_prerouting -t nat \
 		${protocol:+-p $protocol} \
 		${src_ip:+-s $srcdip} \
