@@ -148,6 +148,7 @@ enable_broadcom() {
 		config_get mode "$vif" mode
 		append vif_pre_up "vif $_c" "$N"
 		append vif_post_up "vif $_c" "$N"
+		append vif_do_up "vif $_c" "$N"
 		
 		[ "$mode" = "sta" ] || {
 			config_get_bool hidden "$vif" hidden 0
