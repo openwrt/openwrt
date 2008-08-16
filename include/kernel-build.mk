@@ -80,25 +80,18 @@ define BuildKernel
 	[ -e "$(LINUX_CONFIG)" ] || touch "$(LINUX_CONFIG)"
 	$(LINUX_CONFCMD) > $(LINUX_DIR)/.config
 	touch $(LINUX_CONFIG)
-	$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) $$@
+	$(_SINGLE)$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) $$@
 	$(SCRIPT_DIR)/kconfig.pl '>' $(GENERIC_LINUX_CONFIG) $(LINUX_DIR)/.config > $(LINUX_CONFIG)
 	$(Kernel/Configure)
 
   install: $(LINUX_DIR)/.image
-	TARGET_BUILD="" $(MAKE) -C image compile install
+	+$(MAKE) -C image compile install TARGET_BUILD=
 
   clean: FORCE
 	rm -rf $(KERNEL_BUILD_DIR)
 
-  rebuild: FORCE
-	@$(MAKE) mostlyclean
-	@if [ -f $(LINUX_KERNEL) ]; then \
-		$(MAKE) clean; \
-	fi
-	@$(MAKE) compile
-
   image-prereq:
-	@$(NO_TRACE_MAKE) -s -C image prereq TARGET_BUILD=
+	@+$(NO_TRACE_MAKE) -s -C image prereq TARGET_BUILD=
 
   prereq: image-prereq
 

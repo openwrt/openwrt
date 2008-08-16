@@ -29,7 +29,7 @@ merge=$(subst $(space),,$(1))
 confvar=$(call merge,$(foreach v,$(1),$(if $($(v)),y,n)))
 strip_last=$(patsubst %.$(lastword $(subst .,$(space),$(1))),%,$(1))
 
-_SINGLE=MAKEFLAGS=$(space)
+_SINGLE=export MAKEFLAGS=$(space);
 ARCH:=$(call qstrip,$(shell echo $(CONFIG_ARCH) | sed -e 's/i[3-9]86/i386/'))
 BOARD:=$(call qstrip,$(CONFIG_TARGET_BOARD))
 TARGET_OPTIMIZATION:=$(call qstrip,$(CONFIG_TARGET_OPTIMIZATION))

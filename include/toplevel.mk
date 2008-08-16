@@ -47,22 +47,22 @@ prepare-tmpinfo: FORCE
 .config: ./scripts/config/conf prepare-tmpinfo $(if $(CONFIG_HAVE_DOT_CONFIG),,FORCE)
 	@+if [ \! -f .config ] || ! grep CONFIG_HAVE_DOT_CONFIG .config >/dev/null; then \
 		[ -e $(HOME)/.openwrt/defconfig ] && cp $(HOME)/.openwrt/defconfig .config; \
-		$(NO_TRACE_MAKE) menuconfig $(PREP_MK); \
+		$(_SINGLE)$(NO_TRACE_MAKE) menuconfig $(PREP_MK); \
 	fi
 
 scripts/config/mconf:
-	@$(SUBMAKE) -s -j1 -C scripts/config all
+	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config all
 
 $(eval $(call rdep,scripts/config,scripts/config/mconf))
 
 scripts/config/conf:
-	@$(SUBMAKE) -s -j1 -C scripts/config conf
+	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config conf
 
 config: scripts/config/conf prepare-tmpinfo FORCE
 	$< Config.in
 
 config-clean: FORCE
-	$(NO_TRACE_MAKE) -C scripts/config clean
+	$(_SINGLE)$(NO_TRACE_MAKE) -C scripts/config clean
 
 defconfig: scripts/config/conf prepare-tmpinfo FORCE
 	touch .config
@@ -78,10 +78,10 @@ menuconfig: scripts/config/mconf prepare-tmpinfo FORCE
 	$< Config.in
 
 kernel_oldconfig: .config FORCE
-	$(NO_TRACE_MAKE) -C target/linux oldconfig
+	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux oldconfig
 
 kernel_menuconfig: .config FORCE
-	$(NO_TRACE_MAKE) -C target/linux menuconfig
+	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux menuconfig
 
 tmp/.prereq-build: include/prereq-build.mk
 	mkdir -p tmp
@@ -103,7 +103,7 @@ clean dirclean: .config
 
 prereq:: .config
 	@+$(MAKE) -s tmp/.prereq-build $(PREP_MK)
-	@$(NO_TRACE_MAKE) -s $@
+	@+$(NO_TRACE_MAKE) -s $@
 
 %::
 	@+$(PREP_MK) $(NO_TRACE_MAKE) -s prereq
@@ -113,14 +113,14 @@ help:
 	cat README
 
 docs docs/compile: FORCE
-	@$(SUBMAKE) -j1 -C docs compile
+	@$(_SINGLE)$(SUBMAKE) -C docs compile
 
 docs/clean: FORCE
-	@$(SUBMAKE) -j1 -C docs clean
+	@$(_SINGLE)$(SUBMAKE) -C docs clean
 
 distclean:
 	rm -rf tmp build_dir staging_dir dl .config* feeds package/feeds package/openwrt-packages bin
-	@$(SUBMAKE) -j1 -C scripts/config clean
+	@$(_SINGLE)$(SUBMAKE) -C scripts/config clean
 
 ifeq ($(findstring v,$(DEBUG)),)
   .SILENT: symlinkclean clean dirclean distclean config-clean download help tmpinfo-clean .config scripts/config/mconf scripts/config/conf menuconfig tmp/.prereq-build tmp/.prereq-package prepare-tmpinfo

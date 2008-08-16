@@ -10,4 +10,4 @@ include $(INCLUDE_DIR)/target.mk
 export TARGET_BUILD=1
 
 prereq clean download prepare compile install menuconfig oldconfig update refresh: FORCE
-	@$(NO_TRACE_MAKE) -C $(BOARD) $@
+	@+$(NO_TRACE_MAKE) -C $(BOARD) $@
