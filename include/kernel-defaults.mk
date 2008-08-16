@@ -69,11 +69,11 @@ endif
 
 define Kernel/Configure/2.4
 	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile
-	$(MAKE) $(KERNEL_MAKEOPTS) oldconfig include/linux/compile.h include/linux/version.h
-	$(MAKE) $(KERNEL_MAKEOPTS) dep
+	$(_SINGLE)$(MAKE) $(KERNEL_MAKEOPTS) oldconfig include/linux/compile.h include/linux/version.h
+	$(_SINGLE)$(MAKE) $(KERNEL_MAKEOPTS) dep
 endef
 define Kernel/Configure/2.6
-	-$(MAKE) $(KERNEL_MAKEOPTS) oldconfig prepare scripts
+	-$(_SINGLE)$(MAKE) $(KERNEL_MAKEOPTS) oldconfig prepare scripts
 endef
 define Kernel/Configure/Default
 	$(LINUX_CONFCMD) > $(LINUX_DIR)/.config.target
@@ -86,12 +86,12 @@ endef
 
 define Kernel/CompileModules/Default
 	rm -f $(LINUX_DIR)/vmlinux $(LINUX_DIR)/System.map
-	$(MAKE) $(KERNEL_MAKEOPTS) modules
+	+$(MAKE) $(KERNEL_MAKEOPTS) modules
 endef
 
 define Kernel/CompileImage/Default
 	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),,rm -f $(TARGET_DIR)/init)
-	$(MAKE) $(KERNEL_MAKEOPTS) $(KERNELNAME)
+	+$(MAKE) $(KERNEL_MAKEOPTS) $(KERNELNAME)
 	$(KERNEL_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)
 	$(KERNEL_CROSS)objcopy -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux.elf
 endef
@@ -99,7 +99,7 @@ endef
 define Kernel/Clean/Default
 	rm -f $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/.configured
 	rm -f $(LINUX_KERNEL)
-	$(MAKE) -C $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION) clean
+	$(_SINGLE)$(MAKE) -C $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION) clean
 endef
 
 

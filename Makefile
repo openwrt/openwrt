@@ -20,7 +20,7 @@ ifneq ($(OPENWRT_BUILD),1)
   # but we can't include that file in this context
   empty:=
   space:= $(empty) $(empty)
-  _SINGLE=MAKEFLAGS=$(space)
+  _SINGLE=export MAKEFLAGS=$(space);
 
   override OPENWRT_BUILD=1
   export OPENWRT_BUILD
@@ -50,7 +50,7 @@ $(BUILD_DIR)/.prepared: Makefile
 
 clean: FORCE
 	rm -rf $(BUILD_DIR) $(BIN_DIR)
-	$(SUBMAKE) target/linux/clean
+	$(_SINGLE)$(SUBMAKE) target/linux/clean
 
 dirclean: clean
 	rm -rf $(STAGING_DIR) $(STAGING_DIR_HOST) $(STAGING_DIR_TOOLCHAIN) $(TOOLCHAIN_DIR) $(BUILD_DIR_HOST)
@@ -59,7 +59,7 @@ dirclean: clean
 tmp/.prereq_packages: .config
 	unset ERROR; \
 	for package in $(sort $(prereq-y) $(prereq-m)); do \
-		$(NO_TRACE_MAKE) -s -r -C package/$$package prereq || ERROR=1; \
+		$(_SINGLE)$(NO_TRACE_MAKE) -s -r -C package/$$package prereq || ERROR=1; \
 	done; \
 	if [ -n "$$ERROR" ]; then \
 		echo "Package prerequisite check failed."; \
@@ -72,7 +72,7 @@ prereq: $(target/stamp-prereq) tmp/.prereq_packages
 
 prepare: .config $(tools/stamp-install) $(toolchain/stamp-install)
 world: prepare $(target/stamp-compile) $(package/stamp-cleanup) $(package/stamp-compile) $(package/stamp-install) $(package/stamp-rootfs-prepare) $(target/stamp-install) FORCE
-	$(SUBMAKE) package/index
+	$(_SINGLE)$(SUBMAKE) package/index
 
 # update all feeds, re-create index files, install symlinks
 package/symlinks:
