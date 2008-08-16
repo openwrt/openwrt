@@ -222,7 +222,7 @@ fw_redirect() {
 	config_get protocol $1 protocol
 	[ -z "$src" -o -z "$dest_ip" ] && { \
 		echo "redirect needs src and dest_ip"; return ; }
-	[ -n "$dest_port" -a -z "$proto" ] && { \
+	[ -n "$dest_port" -a -z "$protocol" ] && { \
 		echo "dport may only be used it proto is defined"; return; }
 	$IPTABLES -A zone_${src}_prerouting -t nat \
 		${protocol:+-p $protocol} \
