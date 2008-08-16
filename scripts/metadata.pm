@@ -54,6 +54,7 @@ sub parse_package_metadata($) {
 			$srcpackage{$src} = [];
 			undef $pkg;
 		};
+		next unless $src;
 		/^Package:\s*(.+?)\s*$/ and do {
 			$pkg = {};
 			$pkg->{src} = $src;
