@@ -133,7 +133,7 @@ config BUSYBOX_CONFIG_GZIP
 
 config BUSYBOX_CONFIG_IPKG
 	bool "ipkg"
-	default y
+	default n
 	select BUSYBOX_CONFIG_MD5SUM
 	select BUSYBOX_CONFIG_WGET
 	select BUSYBOX_CONFIG_DIFF
