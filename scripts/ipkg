@@ -116,7 +116,7 @@ Valid destinations are directories or one of the dest names from $IPKG_CONF:" >&
 	fi
 
 	# Global ipkg state directories
-	IPKG_DIR_PREFIX=usr/lib/ipkg
+	IPKG_DIR_PREFIX=usr/lib/opkg
 	IPKG_LISTS_DIR=$IPKG_OFFLINE_ROOT/$IPKG_DIR_PREFIX/lists
 	IPKG_PENDING_DIR=$IPKG_OFFLINE_ROOT/$IPKG_DIR_PREFIX/pending
 	if [ -z "$IPKG_TMP" ]; then

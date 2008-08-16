@@ -36,6 +36,10 @@ define Package/opkg/description
   opkg knows how to install both .ipk and .deb packages.
 endef
 
+define Package/opkg/conffiles
+/etc/opkg.conf
+endef
+
 TARGET_CFLAGS += $(FPIC)
 EXTRA_CFLAGS+=-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/lib
 EXTRA_LDFLAGS+=-L$(STAGING_DIR)/usr/lib -Wl,-rpath-link,$(STAGING_DIR)/usr/lib
@@ -59,8 +63,12 @@ define Build/Compile
 endef
 
 define Package/opkg/install
-	$(INSTALL_BIN) ./files/postinst $(1)/CONTROL/postinst
+	$(INSTALL_DIR) $(1)/usr/lib/opkg
 	$(INSTALL_DIR) $(1)/bin
+	$(INSTALL_DIR) $(1)/etc
+	$(INSTALL_DATA) ./files/opkg.conf $(1)/etc/
+	$(SED) 's,$$$$S,$(BOARD),g' -e 's,$$$$A,$(ARCH),g' $(1)/etc/opkg.conf
+	$(SED) 's,$$$$S,$(BOARD),g' $(1)/etc/opkg.conf
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/opkg-cl $(1)/bin/opkg
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libopkg.so.* $(1)/usr/lib/

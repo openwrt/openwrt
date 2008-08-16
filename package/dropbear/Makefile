@@ -88,9 +88,9 @@ define Package/dropbear/install
 	$(INSTALL_DATA) ./files/dropbear.config $(1)/etc/config/dropbear
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/dropbear.init $(1)/etc/init.d/dropbear
-	$(INSTALL_DIR) $(1)/usr/lib/ipkg/info
-	echo /etc/dropbear/dropbear_rsa_host_key > $(1)/usr/lib/ipkg/info/dropbear.conffiles
-	echo /etc/dropbear/dropbear_dss_host_key >> $(1)/usr/lib/ipkg/info/dropbear.conffiles
+	$(INSTALL_DIR) $(1)/usr/lib/opkg/info
+	echo /etc/dropbear/dropbear_rsa_host_key > $(1)/usr/lib/opkg/info/dropbear.conffiles
+	echo /etc/dropbear/dropbear_dss_host_key >> $(1)/usr/lib/opkg/info/dropbear.conffiles
 endef
 
 define Package/dropbearconvert/install
