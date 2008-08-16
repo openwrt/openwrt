@@ -231,13 +231,13 @@
  			break;
  		}
 +
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-+		processed++;
-+#endif
 +		if (rx_limit-- < 2) {
 +			early_stop = 1;
 +			break;
 +		}
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
++		processed++;
++#endif
 +
  		skb = bf->bf_skb;
  		if (skb == NULL) {
