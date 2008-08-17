@@ -23,7 +23,9 @@ sub parse_config() {
 	my $line = 0;
 	my %name;
 
-	open FEEDS, "feeds.conf";
+	open FEEDS, "feeds.conf" or
+		open FEEDS, "feeds.conf.default" or
+		die "Unable to open feeds configuration";
 	while (<FEEDS>) {
 		chomp;
 		s/#.+$//;
