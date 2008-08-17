@@ -8,7 +8,7 @@
 TMP_DIR ?= $(TOPDIR)/tmp
 -include $(TMP_DIR)/.host.mk
 
-export TAR
+export TAR FIND
 
 ifneq ($(__host_inc),1)
 __host_inc:=1
@@ -34,10 +34,10 @@ $(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
 		[ -n "$$FIND" -a -x "$$FIND" ] || FIND=`which find 2>/dev/null`; \
 		echo "FIND:=$$FIND" >> $@; \
 		echo "BASH:=$(shell which bash)" >> $@; \
-		if find -L /tmp -maxdepth 0 >/dev/null 2>/dev/null; then \
-			echo 'FIND_L=find -L $$(1)' >>$@; \
+		if $$FIND -L /tmp -maxdepth 0 >/dev/null 2>/dev/null; then \
+			echo "FIND_L=$$FIND -L \$$(1)" >>$@; \
 		else \
-			echo 'FIND_L=find $$(1) -follow' >> $@; \
+			echo "FIND_L=$$FIND \$$(1) -follow" >> $@; \
 		fi; \
 		if xargs --help 2>&1 | grep 'gnu.org' >/dev/null; then \
 			echo 'XARGS:=xargs -r' >> $@; \
