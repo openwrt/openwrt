@@ -163,6 +163,7 @@ fw_rule() {
 	local dest_port
 	local proto
 	local target
+	local ruleset
 
 	config_get src $1 src
 	config_get src_ip $1 src_ip
@@ -226,7 +227,7 @@ fw_redirect() {
 		echo "dport may only be used it proto is defined"; return; }
 	$IPTABLES -A zone_${src}_prerouting -t nat \
 		${protocol:+-p $protocol} \
-		${src_ip:+-s $srcdip} \
+		${src_ip:+-s $src_ip} \
 		${src_port:+--sport $src_port} \
 		${src_dport:+--dport $src_dport} \
 		${src_mac:+-m mac --mac-source $src_mac} \
@@ -234,7 +235,7 @@ fw_redirect() {
 	$IPTABLES -I zone_${src}_forward 1 \
 		${protocol:+-p $protocol} \
 		-d $dest_ip \
-		${src_ip:+-s $srcdip} \
+		${src_ip:+-s $src_ip} \
 		${src_port:+--sport $src_port} \
 		${dest_port:+--dport $dest_port} \
 		${src_mac:+-m mac --mac-source $src_mac} \
