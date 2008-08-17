@@ -6,7 +6,6 @@
 #
 curdir:=target
 
-$(curdir)/builddirs-parallel:=linux
 $(curdir)/builddirs:=linux sdk imagebuilder
 $(curdir)/builddirs-default:=linux
 $(curdir)/builddirs-install:=linux $(if $(CONFIG_SDK),sdk) $(if $(CONFIG_IB),imagebuilder)

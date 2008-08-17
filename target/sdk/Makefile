@@ -10,6 +10,8 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/host.mk
 
+override MAKEFLAGS=
+
 PKG_OS:=$(shell uname -s)
 PKG_CPU:=$(shell uname -m)
 
