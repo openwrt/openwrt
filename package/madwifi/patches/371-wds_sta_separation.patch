@@ -17,31 +17,42 @@
  		if (skb->len < hdrspace) {
  			IEEE80211_DISCARD(vap, IEEE80211_MSG_ANY,
  				wh, "data", "too short: len %u, expecting %u",
-@@ -446,15 +447,20 @@
+@@ -445,16 +446,26 @@
+ 		}
  		switch (vap->iv_opmode) {
  		case IEEE80211_M_STA:
- 			if ((dir != IEEE80211_FC1_DIR_FROMDS) &&
+-			if ((dir != IEEE80211_FC1_DIR_FROMDS) &&
 -			    (!((vap->iv_flags_ext & IEEE80211_FEXT_WDS) &&
 -			    (dir == IEEE80211_FC1_DIR_DSTODS)))) {
-+			    (!(vap->iv_flags_ext & IEEE80211_FEXT_WDS) &&
-+			     (dir == IEEE80211_FC1_DIR_DSTODS))) {
- 				IEEE80211_DISCARD(vap, IEEE80211_MSG_ANY,
- 					wh, "data", "invalid dir 0x%x", dir);
- 				vap->iv_stats.is_rx_wrongdir++;
- 				goto out;
+-				IEEE80211_DISCARD(vap, IEEE80211_MSG_ANY,
+-					wh, "data", "invalid dir 0x%x", dir);
+-				vap->iv_stats.is_rx_wrongdir++;
+-				goto out;
++			{
++				int accept;
++
++				if (vap->iv_flags_ext & IEEE80211_FEXT_WDS)
++					accept = IEEE80211_FC1_DIR_DSTODS;
++				else
++					accept = IEEE80211_FC1_DIR_FROMDS;
++				if (dir != accept) {
++					IEEE80211_DISCARD(vap, IEEE80211_MSG_ANY,
++						wh, "data", "invalid dir 0x%x", dir);
++					vap->iv_stats.is_rx_wrongdir++;
++					goto out;
++				}
  			}
  
 -	        	if (IEEE80211_IS_MULTICAST(wh->i_addr1)) {
 +			if (IEEE80211_IS_MULTICAST(wh->i_addr1)) {
 +				/* ignore 3-addr mcast if we're WDS STA */
-+				if ((vap->iv_flags_ext & IEEE80211_FEXT_WDS) &&
-+					(dir != IEEE80211_FC1_DIR_DSTODS))
++				if (vap->iv_flags_ext & IEEE80211_FEXT_WDS)
 +					goto out;
 +
  				/* Discard multicast if IFF_MULTICAST not set */
  				if ((0 != memcmp(wh->i_addr3, dev->broadcast, ETH_ALEN)) && 
  					(0 == (dev->flags & IFF_MULTICAST))) {
-@@ -482,24 +488,6 @@
+@@ -482,24 +493,10 @@
  					vap->iv_stats.is_rx_mcastecho++;
  					goto out;
  				}
@@ -63,10 +74,14 @@
 -						goto out;
 -					}
 -				}
++			} else {
++				/* Same BSSID, but not meant for us to receive */
++				if (!IEEE80211_ADDR_EQ(wh->i_addr1, vap->iv_myaddr))
++					goto out;
  			}
  			break;
  		case IEEE80211_M_IBSS:
-@@ -541,6 +529,11 @@
+@@ -541,6 +538,11 @@
  				vap->iv_stats.is_rx_notassoc++;
  				goto err;
  			}
@@ -78,7 +93,7 @@
  			/*
  			 * If we're a 4 address packet, make sure we have an entry in
  			 * the node table for the packet source address (addr4).
-@@ -548,9 +541,16 @@
+@@ -548,9 +550,16 @@
  			 */
  
  			/* check for wds link first */
@@ -96,7 +111,7 @@
  				TAILQ_FOREACH(avp, &vap->iv_wdslinks, iv_wdsnext) {
  					if (!memcmp(avp->wds_mac, wh->i_addr2, IEEE80211_ADDR_LEN)) {
  						IEEE80211_LOCK_IRQ(ni->ni_ic);
-@@ -566,7 +566,7 @@
+@@ -566,7 +575,7 @@
  			}
  
  			/* XXX: Useless node mgmt API; make better */
@@ -105,7 +120,7 @@
  				struct ieee80211_node_table *nt = &ic->ic_sta;
  				struct ieee80211_frame_addr4 *wh4;
  
-@@ -626,6 +626,11 @@
+@@ -626,6 +635,11 @@
  			goto out;
  		}
  
@@ -117,7 +132,7 @@
  		/*
  		 * Handle privacy requirements.  Note that we
  		 * must not be preempted from here until after
-@@ -698,8 +703,12 @@
+@@ -698,8 +712,12 @@
  		if (! accept_data_frame(vap, ni, key, skb, eh))
  			goto out;
  
@@ -132,7 +147,7 @@
  		IEEE80211_NODE_STAT(ni, rx_data);
  		IEEE80211_NODE_STAT_ADD(ni, rx_bytes, skb->len);
  		ic->ic_lastdata = jiffies;
-@@ -1132,6 +1141,13 @@
+@@ -1132,6 +1150,13 @@
  		dev = vap->iv_xrvap->iv_dev;
  #endif
  
@@ -146,7 +161,7 @@
  	/* perform as a bridge within the vap */
  	/* XXX intra-vap bridging only */
  	if (vap->iv_opmode == IEEE80211_M_HOSTAP &&
-@@ -1157,7 +1173,15 @@
+@@ -1157,7 +1182,16 @@
  			if (ni1 != NULL) {
  				if (ni1->ni_vap == vap &&
  				    ieee80211_node_is_authorized(ni1) &&
@@ -155,6 +170,7 @@
 +
 +					/* tried to bridge to a subif, drop the packet */
 +					if (ni->ni_subif) {
++						ieee80211_unref_node(&ni1);
 +						ieee80211_dev_kfree_skb(&skb);
 +						return;
 +					}
@@ -780,7 +796,7 @@
  		hdrsize = sizeof(struct ieee80211_frame);
  
  	SKB_CB(skb)->auth_pkt = (eh.ether_type == __constant_htons(ETHERTYPE_PAE));
-+	if (!SKB_CB(skb)->auth_pkt && ni->ni_subif)
++	if (ni->ni_subif)
 +		vap = ni->ni_subif;
  
  	switch (vap->iv_opmode) {
