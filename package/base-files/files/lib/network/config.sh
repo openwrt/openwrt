@@ -142,6 +142,10 @@ set_interface_ifname() {
 	uci_set_state network "$config" device "$device"
 }
 
+setup_interface_none() {
+	env -i ACTION="ifup" INTERFACE="$config" DEVICE="$iface" PROTO=none /sbin/hotplug-call "iface" &
+}
+
 setup_interface_static() {
 	local iface="$1"
 	local config="$2"
@@ -258,6 +262,9 @@ setup_interface() {
 				$DEBUG eval udhcpc -t 0 -i "$iface" ${ipaddr:+-r $ipaddr} ${hostname:+-H $hostname} ${clientid:+-c $clientid} -b -p "$pidfile" ${dhcpopts:- -R &}
 				lock -u "/var/lock/dhcp-$iface"
 			fi
+		;;
+		none)
+			setup_interface_none "$iface" "$config"
 		;;
 		*)
 			if ( eval "type setup_interface_$proto" ) >/dev/null 2>/dev/null; then
