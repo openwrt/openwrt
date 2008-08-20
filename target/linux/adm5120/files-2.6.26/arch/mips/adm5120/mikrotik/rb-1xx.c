@@ -101,15 +101,13 @@ struct gpio_button rb1xx_gpio_buttons[] __initdata = {
 
 static void __init rb1xx_mac_setup(void)
 {
-	int i, j;
+	if (rb_hs.mac_base != NULL && is_valid_ether_addr(rb_hs.mac_base)) {
+		adm5120_setup_eth_macs(rb_hs.mac_base);
+	} else {
+		u8 mac[ETH_ALEN];
 
-	if (!rb_hs.mac_base)
-		return;
-
-	for (i = 0; i < 6; i++) {
-		for (j = 0; j < 5; j++)
-			adm5120_eth_macs[i][j] = rb_hs.mac_base[j];
-		adm5120_eth_macs[i][5] = rb_hs.mac_base[5]+i;
+		random_ether_addr(mac);
+		adm5120_setup_eth_macs(mac);
 	}
 }
 

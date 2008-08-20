@@ -11,9 +11,9 @@
 
 #include <linux/kernel.h>
 #include <linux/init.h>
+#include <linux/gpio.h>
 
 #include <asm/bootinfo.h>
-#include <linux/gpio.h>
 
 #include <asm/mach-adm5120/adm5120_board.h>
 #include <asm/mach-adm5120/adm5120_platform.h>

@@ -13,6 +13,7 @@
 #include <linux/init.h>
 #include <linux/delay.h>
 #include <linux/gpio.h>
+#include <linux/etherdevice.h>
 
 #include <asm/bootinfo.h>
 

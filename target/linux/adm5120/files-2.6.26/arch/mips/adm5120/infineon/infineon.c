@@ -11,6 +11,11 @@
 
 #include "infineon.h"
 
+#include <prom/admboot.h>
+
+#define EASY_CONFIG_OFFSET	0x10000
+#define EASY_CONFIG_SIZE	0x1000
+
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition easy_partitions[] = {
 	{
@@ -29,6 +34,20 @@ static struct mtd_partition easy_partitions[] = {
 	}
 };
 #endif /* CONFIG_MTD_PARTITIONS */
+
+static __init void easy_setup_mac(void)
+{
+	u8 mac_base[6];
+	int err;
+
+	err = admboot_get_mac_base(EASY_CONFIG_OFFSET,
+				   EASY_CONFIG_SIZE, mac_base);
+
+	if ((err) || !is_valid_ether_addr(mac_base))
+		random_ether_addr(mac_base);
+
+	adm5120_setup_eth_macs(mac_base);
+}
 
 static void switch_bank_gpio3(unsigned bank)
 {
@@ -55,6 +74,8 @@ void __init easy_setup_pqfp(void)
 #endif /* CONFIG_MTD_PARTITIONS */
 
 	adm5120_add_device_flash(0);
+
+	easy_setup_mac();
 }
 
 static void switch_bank_gpio5(unsigned bank)
@@ -82,4 +103,6 @@ void __init easy_setup_bga(void)
 #endif /* CONFIG_MTD_PARTITIONS */
 
 	adm5120_add_device_flash(0);
+
+	easy_setup_mac();
 }

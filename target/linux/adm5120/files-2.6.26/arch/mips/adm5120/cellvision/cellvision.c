@@ -11,8 +11,13 @@
 
 #include "cellvision.h"
 
+#include <prom/admboot.h>
+
 #define CELLVISION_GPIO_FLASH_A20	ADM5120_GPIO_PIN5
 #define CELLVISION_GPIO_DEV_MASK	(1 << CELLVISION_GPIO_FLASH_A20)
+
+#define CELLVISION_CONFIG_OFFSET	0x8000
+#define CELLVISION_CONFIG_SIZE		0x1000
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition cas6xx_partitions[] = {
@@ -84,6 +89,20 @@ static void __init cellvision_flash_setup(void)
 	adm5120_add_device_flash(0);
 }
 
+void __init cellvision_mac_setup(void)
+{
+	u8 mac_base[6];
+	int err;
+
+	err = admboot_get_mac_base(CELLVISION_CONFIG_OFFSET,
+				   CELLVISION_CONFIG_SIZE, mac_base);
+
+	if ((err) || !is_valid_ether_addr(mac_base))
+		random_ether_addr(mac_base);
+
+	adm5120_setup_eth_macs(mac_base);
+}
+
 void __init cas6xx_flash_setup(void)
 {
 #ifdef CONFIG_MTD_PARTITIONS
@@ -118,6 +137,8 @@ ADM5120_BOARD(MACH_ADM5120_CAS670, "Cellvision CAS-670/670W", cas6xx_setup);
 void __init cas7xx_setup(void)
 {
 	cas7xx_flash_setup();
+
+	cellvision_mac_setup();
 	adm5120_add_device_switch(1, NULL);
 }
 
