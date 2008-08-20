@@ -11,9 +11,10 @@
 
 #include <linux/kernel.h>
 #include <linux/init.h>
+#include <linux/gpio.h>
+#include <linux/etherdevice.h>
 
 #include <asm/bootinfo.h>
-#include <linux/gpio.h>
 
 #include <asm/mach-adm5120/adm5120_defs.h>
 #include <asm/mach-adm5120/adm5120_irq.h>

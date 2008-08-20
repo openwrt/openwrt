@@ -57,6 +57,8 @@ static inline void adm5120_pci_set_irq_map(unsigned int nr_irqs,
 }
 #endif
 
+extern void adm5120_setup_eth_macs(u8 *mac_base) __init;
+
 extern struct adm5120_flash_platform_data adm5120_flash0_data;
 extern struct adm5120_flash_platform_data adm5120_flash1_data;
 

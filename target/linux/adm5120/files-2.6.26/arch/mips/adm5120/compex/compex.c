@@ -9,20 +9,9 @@
  *
  */
 
-#include <linux/kernel.h>
-#include <linux/init.h>
-#include <linux/gpio.h>
-
-#include <asm/bootinfo.h>
-
-#include <asm/mach-adm5120/adm5120_info.h>
-#include <asm/mach-adm5120/adm5120_board.h>
-#include <asm/mach-adm5120/adm5120_platform.h>
-#include <asm/mach-adm5120/adm5120_irq.h>
+#include "compex.h"
 
 #include <asm/mach-adm5120/prom/myloader.h>
-
-#include "compex.h"
 
 #define COMPEX_GPIO_DEV_MASK	(1 << ADM5120_GPIO_PIN5)
 
@@ -40,14 +29,22 @@ static void switch_bank_gpio5(unsigned bank)
 
 void __init compex_mac_setup(void)
 {
-	int i, j;
+	if (myloader_present()) {
+		int i;
 
-	if (!myloader_present())
-		return;
+		for (i = 0; i < 6; i++) {
+			if (is_valid_ether_addr(myloader_info.macs[i]))
+				memcpy(myloader_info.macs[i],
+						adm5120_eth_macs[i], ETH_ALEN);
+			else
+				random_ether_addr(adm5120_eth_macs[i]);
+		}
+	} else {
+		u8 mac[ETH_ALEN];
 
-	for (i = 0; i < 6; i++)
-		for (j = 0; j < 6; j++)
-			adm5120_eth_macs[i][j] = myloader_info.macs[i][j];
+		random_ether_addr(mac);
+		adm5120_setup_eth_macs(mac);
+	}
 }
 
 void __init compex_generic_setup(void)

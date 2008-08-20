@@ -11,7 +11,12 @@
 
 #include "br-61xx.h"
 
+#include <prom/admboot.h>
+
 #define BR61XX_GPIO_DEV_MASK	0
+
+#define BR61XX_CONFIG_OFFSET	0x8000
+#define BR61XX_CONFIG_SIZE		0x1000
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition br61xx_partitions[] = {
@@ -46,6 +51,20 @@ static u8 br61xx_vlans[6] __initdata = {
 	0x41, 0x42, 0x44, 0x48, 0x50, 0x00
 };
 
+static void __init br61xx_mac_setup(void)
+{
+	u8 mac_base[6];
+	int err;
+
+	err = admboot_get_mac_base(BR61XX_CONFIG_OFFSET,
+				   BR61XX_CONFIG_SIZE, mac_base);
+
+	if ((err) || !is_valid_ether_addr(mac_base))
+		random_ether_addr(mac_base);
+
+	adm5120_setup_eth_macs(mac_base);
+}
+
 void __init br61xx_generic_setup(void)
 {
 
@@ -56,9 +75,10 @@ void __init br61xx_generic_setup(void)
 	adm5120_add_device_flash(0);
 
 	adm5120_add_device_gpio(BR61XX_GPIO_DEV_MASK);
+
 	adm5120_add_device_switch(5, br61xx_vlans);
 	adm5120_add_device_gpio_buttons(ARRAY_SIZE(br61xx_gpio_buttons),
 					br61xx_gpio_buttons);
 
-	/* TODO: setup mac addresses */
+	br61xx_mac_setup();
 }

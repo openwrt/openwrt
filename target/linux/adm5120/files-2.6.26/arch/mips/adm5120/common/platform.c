@@ -50,6 +50,26 @@ unsigned char adm5120_eth_vlans[6] = {
 EXPORT_SYMBOL_GPL(adm5120_eth_vlans);
 #endif
 
+void __init adm5120_setup_eth_macs(u8 *mac_base)
+{
+	u32 t;
+	int i, j;
+
+	t = ((u32) mac_base[3] << 16) | ((u32) mac_base[4] << 8)
+		| ((u32) mac_base[5]);
+
+	for (i = 0; i < ARRAY_SIZE(adm5120_eth_macs); i++) {
+		for (j = 0; j < 3; j++)
+			adm5120_eth_macs[i][j] = mac_base[j];
+
+		adm5120_eth_macs[i][3] = (t >> 16) & 0xff;
+		adm5120_eth_macs[i][4] = (t >> 8) & 0xff;
+		adm5120_eth_macs[i][5] = t & 0xff;
+
+		t++;
+	}
+}
+
 /*
  * Built-in ethernet switch
  */

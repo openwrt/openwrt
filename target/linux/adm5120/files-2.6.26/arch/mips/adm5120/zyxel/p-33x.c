@@ -11,6 +11,8 @@
 
 #include "p-33x.h"
 
+#include <prom/zynos.h>
+
 #define P33X_GPIO_FLASH_A20	ADM5120_GPIO_PIN5
 #define P33X_GPIO_DEV_MASK	(1 << P33X_GPIO_FLASH_A20)
 
@@ -76,6 +78,8 @@ void __init p33x_generic_setup(void)
 	adm5120_add_device_flash(0);
 
 	adm5120_add_device_gpio(P33X_GPIO_DEV_MASK);
+
+	adm5120_setup_eth_macs(bootbase_info.mac);
 	adm5120_add_device_switch(5, p33x_vlans);
 
 	adm5120_pci_set_irq_map(ARRAY_SIZE(p33x_pci_irqs), p33x_pci_irqs);

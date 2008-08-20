@@ -53,6 +53,14 @@ static inline u32 bootbase_get_bootext_addr(void)
 	return prom_read_be32(&board_info->bootext_addr);
 }
 
+static inline void bootbase_get_mac(u8 *mac)
+{
+	int	i;
+
+	for (i = 0; i < 6; i++)
+		mac[i] = board_info->mac[i];
+}
+
 static inline u16 bootbase_get_vendor_id(void)
 {
 #define CHECK_VENDOR(n) (strnicmp(board_info->vendor, (n), strlen(n)) == 0)
@@ -102,6 +110,7 @@ int __init bootbase_present(void)
 
 	bootbase_info.vendor_id = bootbase_get_vendor_id();
 	bootbase_info.board_id = bootbase_get_board_id();
+	bootbase_get_mac(bootbase_info.mac);
 
 	bootbase_found = 1;
 
