@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/ath9k
   SUBMENU:=Wireless Drivers
   TITLE:=Atheros AR9xxx and AR5416/AR5418 wireless support
-  DEPENDS:=+kmod-mac80211 @!TARGET_brcm47xx @!TARGET_uml
+  DEPENDS:=+kmod-mac80211 @!TARGET_brcm47xx @PCI_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath9k/ath9k.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,ath9k)
 endef
