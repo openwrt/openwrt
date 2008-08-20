@@ -146,7 +146,7 @@ Valid destinations are directories or one of the dest names from $IPKG_CONF:" >&
 		export no_proxy="$IPKG_NO_PROXY"
 	fi
 
-	IPKG_STATUS_FIELDS='\(Package\|Status\|Essential\|Version\|Conffiles\|Root\)'
+	IPKG_STATUS_FIELDS='\(Package\|Status\|Essential\|Version\|Conffiles\|Root\|Architecture\)'
 }
 
 ipkg_usage() {
