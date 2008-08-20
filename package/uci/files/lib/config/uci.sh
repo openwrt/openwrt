@@ -60,7 +60,7 @@ uci_set_state() {
 	local OPTION="$3"
 	local VALUE="$4"
 
-	[ -z "$VALUE" ] && return 0
+	[ "$#" = 4 ] || return 0
 	/sbin/uci -P /var/state set "$PACKAGE.$CONFIG${OPTION:+.$OPTION}=$VALUE"
 }
 
