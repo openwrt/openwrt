@@ -11,6 +11,7 @@ N="
 _C=0
 NO_EXPORT=1
 LOAD_STATE=1
+LIST_SEP=" "
 
 hotplug_dev() {
 	env -i ACTION=$1 INTERFACE=$2 /sbin/hotplug-call net
@@ -56,6 +57,7 @@ config_load() {
 reset_cb() {
 	config_cb() { return 0; }
 	option_cb() { return 0; }
+	list_cb() { return 0; }
 }
 reset_cb
 
@@ -78,9 +80,22 @@ config () {
 option () {
 	local varname="$1"; shift
 	local value="$*"
-	
+
 	export ${NO_EXPORT:+-n} "CONFIG_${CONFIG_SECTION}_${varname}=$value"
 	[ -n "$NO_CALLBACK" ] || option_cb "$varname" "$*"
+}
+
+list() {
+	local varname="$1"; shift
+	local value="$*"
+	local len
+
+	config_get len "$CONFIG_SECTION" "${varname}_LENGTH" 
+	len="$((${len:-0} + 1))"
+	config_set "$CONFIG_SECTION" "${varname}_ITEM$len" "$value"
+	config_set "$CONFIG_SECTION" "${varname}_LENGTH" "$len"
+	append "CONFIG_${CONFIG_SECTION}_${varname}" "$value" "$LIST_SEP"
+	list_cb "$varname" "$*"
 }
 
 config_rename() {
@@ -159,6 +174,24 @@ config_foreach() {
 		config_get cfgtype "$section" TYPE
 		[ -n "$type" -a "x$cfgtype" != "x$type" ] && continue
 		eval "$function \"\$section\" \"\$@\""
+	done
+}
+
+config_list_foreach() {
+	[ "$#" -ge 3 ] || return 0
+	local section="$1"; shift
+	local option="$1"; shift
+	local function="$1"; shift
+	local val
+	local len
+	local c=1
+
+	config_get len "${section}" "${option}_LENGTH"
+	[ -z "$len" ] && return 0
+	while [ $c -le "$len" ]; do
+		config_get val "${section}" "${option}_ITEM$c"
+		eval "$function \"\$val\" \"$@\""
+		c="$(($c + 1))"
 	done
 }
 
