@@ -1,0 +1,9 @@
+--- a/coreutils/basename.c
++++ b/coreutils/basename.c
+@@ -48,5 +48,5 @@
+ 
+ 	/* puts(s) will do, but we can do without stdio this way: */
+ 	s[m++] = '\n';
+-	return full_write(STDOUT_FILENO, s, m) == (ssize_t)m;
++	return full_write(STDOUT_FILENO, s, m) != (ssize_t)m;
+ }

@@ -97,14 +97,23 @@ config BUSYBOX_CONFIG_VI
 	  you may wish to use something else.
 
 config BUSYBOX_CONFIG_FEATURE_VI_MAX_LEN
-	int "Maximum line length in vi"
+	int "Maximum screen width in vi"
 	range 256 16384
 	default 1024
 	depends on BUSYBOX_CONFIG_VI
 	help
-	  vi uses on-stack buffers for intermediate line buffers.
-	  You may want to decrease this parameter if your target machine
-	  benefits from smaller stack usage.
+	  Contrary to what you may think, this is not eating much.
+	  Make it smaller than 4k only if you are very limited on memory.
+
+config BUSYBOX_CONFIG_FEATURE_VI_8BIT
+	bool "Allow vi to display 8-bit chars (otherwise shows dots)"
+	default n
+	depends on BUSYBOX_CONFIG_VI
+	help
+	  If your terminal can display characters with high bit set,
+	  you may want to enable this. Note: vi is not Unicode-capable.
+	  If your terminal combines several 8-bit bytes into one character
+	  (as in Unicode mode), this will not work properly.
 
 config BUSYBOX_CONFIG_FEATURE_VI_COLON
 	bool "Enable \":\" colon commands (no \"ex\" mode)"

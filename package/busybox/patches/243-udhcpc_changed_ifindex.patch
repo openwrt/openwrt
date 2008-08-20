@@ -1,10 +1,8 @@
-Index: busybox-1.7.2/networking/udhcp/dhcpc.c
-===================================================================
---- busybox-1.7.2.orig/networking/udhcp/dhcpc.c	2007-10-30 15:35:01.000000000 -0500
-+++ busybox-1.7.2/networking/udhcp/dhcpc.c	2007-10-30 15:35:02.000000000 -0500
-@@ -309,6 +309,12 @@
-  jump_in:
- 		tv.tv_usec = 0;
+--- a/networking/udhcp/dhcpc.c
++++ b/networking/udhcp/dhcpc.c
+@@ -319,6 +319,12 @@
+ 	for (;;) {
+ 		unsigned timestamp_before_wait;
  
 +		/* When running on a bridge, the ifindex may have changed (e.g. if
 +		 * member interfaces were added/removed or if the status of the

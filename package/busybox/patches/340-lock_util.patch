@@ -1,20 +1,28 @@
-Index: busybox-1.8.1/include/applets.h
-===================================================================
---- busybox-1.8.1.orig/include/applets.h	2007-11-10 16:54:28.318054115 +0100
-+++ busybox-1.8.1/include/applets.h	2007-11-10 17:39:21.487529096 +0100
-@@ -218,6 +218,7 @@
+--- a/include/applets.h
++++ b/include/applets.h
+@@ -220,6 +220,7 @@
  USE_LOAD_POLICY(APPLET(load_policy, _BB_DIR_USR_SBIN, _BB_SUID_NEVER))
  USE_LOADFONT(APPLET(loadfont, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
  USE_LOADKMAP(APPLET(loadkmap, _BB_DIR_SBIN, _BB_SUID_NEVER))
-+USE_LOCK(APPLET_NOUSAGE(lock, lock, _BB_DIR_BIN, _BB_SUID_NEVER))
++USE_LOCK(APPLET(lock, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_LOGGER(APPLET(logger, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
  USE_LOGIN(APPLET(login, _BB_DIR_BIN, _BB_SUID_ALWAYS))
  USE_LOGNAME(APPLET_NOFORK(logname, logname, _BB_DIR_USR_BIN, _BB_SUID_NEVER, logname))
-Index: busybox-1.8.1/miscutils/Config.in
-===================================================================
---- busybox-1.8.1.orig/miscutils/Config.in	2007-11-10 16:54:16.477379354 +0100
-+++ busybox-1.8.1/miscutils/Config.in	2007-11-10 16:54:28.366056851 +0100
-@@ -244,6 +244,12 @@
+--- a/include/usage.h
++++ b/include/usage.h
+@@ -2138,6 +2138,9 @@
+ #define loadkmap_example_usage \
+        "$ loadkmap < /etc/i18n/lang-keymap\n"
+ 
++#define lock_trivial_usage NOUSAGE_STR
++#define lock_full_usage ""
++
+ #define logger_trivial_usage \
+        "[OPTION]... [MESSAGE]"
+ #define logger_full_usage "\n\n" \
+--- a/miscutils/Config.in
++++ b/miscutils/Config.in
+@@ -364,6 +364,12 @@
  	  Enables the 'hdparm -d' option to get/set using_dma flag.
  	  This is dangerous stuff, so you should probably say N.
  
@@ -27,22 +35,18 @@ Index: busybox-1.8.1/miscutils/Config.in
  config MAKEDEVS
  	bool "makedevs"
  	default n
-Index: busybox-1.8.1/miscutils/Kbuild
-===================================================================
---- busybox-1.8.1.orig/miscutils/Kbuild	2007-11-10 16:54:16.481379580 +0100
-+++ busybox-1.8.1/miscutils/Kbuild	2007-11-10 16:54:28.370057076 +0100
-@@ -16,6 +16,7 @@
- lib-$(CONFIG_HDPARM)      += hdparm.o
- lib-$(CONFIG_LAST)        += last.o
+--- a/miscutils/Kbuild
++++ b/miscutils/Kbuild
+@@ -20,6 +20,7 @@
+ lib-$(CONFIG_FEATURE_LAST_SMALL)+= last.o
+ lib-$(CONFIG_FEATURE_LAST_FANCY)+= last_fancy.o
  lib-$(CONFIG_LESS)        += less.o
 +lib-$(CONFIG_LOCK)        += lock.o
  lib-$(CONFIG_MAKEDEVS)    += makedevs.o
+ lib-$(CONFIG_MAN)         += man.o
  lib-$(CONFIG_MICROCOM)    += microcom.o
- lib-$(CONFIG_MOUNTPOINT)  += mountpoint.o
-Index: busybox-1.8.1/miscutils/lock.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.8.1/miscutils/lock.c	2007-11-10 17:40:37.203843924 +0100
+--- /dev/null
++++ b/miscutils/lock.c
 @@ -0,0 +1,132 @@
 +/*
 + * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>

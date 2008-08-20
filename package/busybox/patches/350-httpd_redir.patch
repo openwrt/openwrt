@@ -1,31 +1,27 @@
-Index: busybox-1.8.1/include/usage.h
-===================================================================
---- busybox-1.8.1.orig/include/usage.h	2007-11-10 16:54:16.433376848 +0100
-+++ busybox-1.8.1/include/usage.h	2007-11-10 16:54:29.970148260 +0100
-@@ -1418,7 +1418,8 @@
+--- a/include/usage.h
++++ b/include/usage.h
+@@ -1558,7 +1558,8 @@
  	USE_FEATURE_HTTPD_BASIC_AUTH(" [-r realm]") \
  	USE_FEATURE_HTTPD_AUTH_MD5(" [-m pass]") \
         " [-h home]" \
 -       " [-d/-e string]"
 +       " [-d/-e string]" \
 +       " [-R <path> [-H <host>]]"
- #define httpd_full_usage \
-        "Listen for incoming HTTP requests" \
-        "\n\nOptions:" \
-@@ -1436,6 +1437,8 @@
-        "\n	-h HOME		Home directory (default .)" \
-        "\n	-e STRING	HTML encode STRING" \
-        "\n	-d STRING	URL decode STRING" \
-+       "\n	-R PATH 	Redirect target path" \
-+       "\n	-H HOST 	Redirect target host" \
+ #define httpd_full_usage "\n\n" \
+        "Listen for incoming HTTP requests\n" \
+      "\nOptions:" \
+@@ -1576,6 +1577,8 @@
+      "\n	-h HOME		Home directory (default .)" \
+      "\n	-e STRING	HTML encode STRING" \
+      "\n	-d STRING	URL decode STRING" \
++     "\n	-R PATH 	Redirect target path" \
++     "\n	-H HOST 	Redirect target host" \
  
  #define hwclock_trivial_usage \
  	USE_GETOPT_LONG( \
-Index: busybox-1.8.1/networking/httpd.c
-===================================================================
---- busybox-1.8.1.orig/networking/httpd.c	2007-11-10 16:54:28.346055711 +0100
-+++ busybox-1.8.1/networking/httpd.c	2007-11-10 16:54:56.639668071 +0100
-@@ -253,6 +253,8 @@
+--- a/networking/httpd.c
++++ b/networking/httpd.c
+@@ -247,6 +247,8 @@
  
  	const char *found_mime_type;
  	const char *found_moved_temporarily;
@@ -34,8 +30,8 @@ Index: busybox-1.8.1/networking/httpd.c
  	Htaccess_IP *ip_a_d;    /* config allow/deny lines */
  
  	USE_FEATURE_HTTPD_BASIC_AUTH(const char *g_realm;)
-@@ -297,6 +299,8 @@
- #define home_httpd        (G.home_httpd       )
+@@ -292,6 +294,8 @@
+ #define index_page        (G.index_page       )
  #define found_mime_type   (G.found_mime_type  )
  #define found_moved_temporarily (G.found_moved_temporarily)
 +#define redirect_path     (G.redirect_path    )
@@ -43,7 +39,7 @@ Index: busybox-1.8.1/networking/httpd.c
  #define last_mod          (G.last_mod         )
  #define ip_a_d            (G.ip_a_d           )
  #define g_realm           (G.g_realm          )
-@@ -988,8 +992,11 @@
+@@ -991,8 +995,11 @@
  	}
  #endif
  	if (responseNum == HTTP_MOVED_TEMPORARILY) {
@@ -56,21 +52,21 @@ Index: busybox-1.8.1/networking/httpd.c
  				(g_query ? "?" : ""),
  				(g_query ? g_query : ""));
  	}
-@@ -1907,8 +1914,12 @@
- 	*++urlp = '\0';       /* so keep last character */
- 	tptr = urlp;          /* end ptr */
+@@ -1912,8 +1919,12 @@
+ 	} while (*++tptr);
+ 	*++urlp = '\0';       /* terminate after last character */
  
 +	/* redirect active */
 +	if (redirect_path && (strncmp(urlcopy, redirect_path, strlen(redirect_path)) != 0))
 +		found_moved_temporarily = redirect_path;
 +
  	/* If URL is a directory, add '/' */
--	if (tptr[-1] != '/') {
-+	if (!redirect_path && (tptr[-1] != '/')) {
+-	if (urlp[-1] != '/') {
++	if (!redirect_path && (urlp[-1] != '/')) {
  		if (is_directory(urlcopy + 1, 1, &sb)) {
  			found_moved_temporarily = urlcopy;
  		}
-@@ -2252,7 +2263,9 @@
+@@ -2263,7 +2274,9 @@
  #endif
  
  enum {
@@ -81,10 +77,10 @@ Index: busybox-1.8.1/networking/httpd.c
  	d_opt_decode_url,
  	h_opt_home_httpd,
  	USE_FEATURE_HTTPD_ENCODE_URL_STR(e_opt_encode_url,)
-@@ -2301,12 +2314,13 @@
+@@ -2312,12 +2325,13 @@
  	/* We do not "absolutize" path given by -h (home) opt.
- 	 * If user gives relative path in -h, $SCRIPT_FILENAME can end up
- 	 * relative too. */
+ 	 * If user gives relative path in -h,
+ 	 * $SCRIPT_FILENAME will not be set. */
 -	opt = getopt32(argv, "c:d:h:"
 +	opt = getopt32(argv, "R:H:c:d:h:"
  			USE_FEATURE_HTTPD_ENCODE_URL_STR("e:")

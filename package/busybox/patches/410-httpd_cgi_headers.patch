@@ -1,9 +1,7 @@
-Index: busybox-1.7.2/networking/httpd.c
-===================================================================
---- busybox-1.7.2.orig/networking/httpd.c	2007-10-30 15:35:03.000000000 -0500
-+++ busybox-1.7.2/networking/httpd.c	2007-10-30 15:35:04.000000000 -0500
-@@ -1316,10 +1316,10 @@
- 						if (full_write(1, HTTP_200, sizeof(HTTP_200)-1) != sizeof(HTTP_200)-1)
+--- a/networking/httpd.c
++++ b/networking/httpd.c
+@@ -1247,10 +1247,10 @@
+ 						if (full_write(STDOUT_FILENO, HTTP_200, sizeof(HTTP_200)-1) != sizeof(HTTP_200)-1)
  							break;
  					}
 -					/* Commented out:

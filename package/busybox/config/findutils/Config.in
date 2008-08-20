@@ -22,7 +22,7 @@ config BUSYBOX_CONFIG_FEATURE_FIND_PRINT0
 	  interpreted by other programs.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_MTIME
-	bool "Enable modified time matching (-mtime) option"
+	bool "Enable modified time matching (-mtime option)"
 	default n
 	depends on BUSYBOX_CONFIG_FIND
 	help
@@ -30,7 +30,7 @@ config BUSYBOX_CONFIG_FEATURE_FIND_MTIME
 	  files, in days.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_MMIN
-	bool "Enable modified time matching (-mmin) option"
+	bool "Enable modified time matching (-mmin option)"
 	default n
 	depends on BUSYBOX_CONFIG_FIND
 	help
@@ -38,14 +38,14 @@ config BUSYBOX_CONFIG_FEATURE_FIND_MMIN
 	  files, in minutes.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_PERM
-	bool "Enable permissions matching (-perm) option"
+	bool "Enable permissions matching (-perm option)"
 	default y
 	depends on BUSYBOX_CONFIG_FIND
 	help
 	  Enable searching based on file permissions.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_TYPE
-	bool "Enable filetype matching (-type) option"
+	bool "Enable filetype matching (-type option)"
 	default y
 	depends on BUSYBOX_CONFIG_FIND
 	help
@@ -53,7 +53,7 @@ config BUSYBOX_CONFIG_FEATURE_FIND_TYPE
 	  directory, socket, device, etc.).
 
 config BUSYBOX_CONFIG_FEATURE_FIND_XDEV
-	bool "Enable stay in filesystem (-xdev) option"
+	bool "Enable 'stay in filesystem' option (-xdev)"
 	default y
 	depends on BUSYBOX_CONFIG_FIND
 	help
@@ -75,14 +75,14 @@ config BUSYBOX_CONFIG_FEATURE_FIND_NEWER
 	  a modified time that is more recent than the specified FILE.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_INUM
-	bool "Enable inode number matching (-inum) option"
+	bool "Enable inode number matching (-inum option)"
 	default n
 	depends on BUSYBOX_CONFIG_FIND
 	help
 	  Support the 'find -inum' option for searching by inode number.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_EXEC
-	bool "Enable (-exec) option allowing execution of commands"
+	bool "Enable -exec option allowing execution of commands"
 	default y
 	depends on BUSYBOX_CONFIG_FIND
 	help
@@ -90,14 +90,14 @@ config BUSYBOX_CONFIG_FEATURE_FIND_EXEC
 	  the files matched.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_USER
-	bool "Enable username/uid matching (-user) option"
+	bool "Enable username/uid matching (-user option)"
 	default y
 	depends on BUSYBOX_CONFIG_FIND
 	help
 	  Support the 'find -user' option for searching by username or uid.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_GROUP
-	bool "Enable group/gid matching (-group) option"
+	bool "Enable group/gid matching (-group option)"
 	default y
 	depends on BUSYBOX_CONFIG_FIND
 	help
@@ -127,14 +127,14 @@ config BUSYBOX_CONFIG_FEATURE_FIND_PAREN
 	  Enable usage of parens '(' to specify logical order of arguments.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_SIZE
-	bool "Enable (-size) option allowing matching for file size"
+	bool "Enable -size option allowing matching for file size"
 	default y
 	depends on BUSYBOX_CONFIG_FIND
 	help
 	  Support the 'find -size' option for searching by file size.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_PRUNE
-	bool "Enable (-prune) option allowing to exclude subdirectories"
+	bool "Enable -prune option allowing to exclude subdirectories"
 	default y
 	depends on BUSYBOX_CONFIG_FIND
 	help
@@ -165,7 +165,7 @@ config BUSYBOX_CONFIG_FEATURE_FIND_REGEX
 	  The -regex option matches whole pathname against regular expression.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_CONTEXT
-	bool "Enable (-context) option for matching security context"
+	bool "Enable -context option for matching security context"
 	default n
 	depends on BUSYBOX_CONFIG_FIND && BUSYBOX_CONFIG_SELINUX
 	help

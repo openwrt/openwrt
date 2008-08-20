@@ -5,6 +5,36 @@
 
 menu "Linux Module Utilities"
 
+config BUSYBOX_CONFIG_DEPMOD
+	bool "depmod"
+	default n
+	help
+	  depmod generates modules.dep (FIXME: elaborate)
+
+config BUSYBOX_CONFIG_FEATURE_DEPMOD_PRUNE_FANCY
+	bool "fancy dependency pruning"
+	default n
+	depends on BUSYBOX_CONFIG_DEPMOD
+	help
+	  By default modules.dep contains all dependencies as listed by
+	  the modules.
+	  If you enable this option then we remove implied modules from
+	  the dependencies.
+	  This makes depmod somewhat bigger but generates a smaller
+	  modules.dep file.
+
+	  If unsure, say N.
+
+config BUSYBOX_CONFIG_FEATURE_DEPMOD_ALIAS
+	bool "alias support"
+	default n
+	depends on BUSYBOX_CONFIG_DEPMOD
+	help
+	  By default modules.dep does not contain alias information.
+	  Enable this to emit aliases of the form:
+
+	    alias pcmcia:m*c*f03fn*pfn*pa*pb*pc*pd* parport_cs
+
 config BUSYBOX_CONFIG_INSMOD
 	bool "insmod"
 	default y
@@ -73,7 +103,7 @@ config BUSYBOX_CONFIG_LSMOD
 	  lsmod is used to display a list of loaded modules.
 
 config BUSYBOX_CONFIG_FEATURE_LSMOD_PRETTY_2_6_OUTPUT
-	bool "lsmod pretty output for 2.6.x Linux kernels "
+	bool "Pretty output for 2.6.x Linux kernels"
 	default y
 	depends on BUSYBOX_CONFIG_LSMOD
 	help
@@ -92,7 +122,7 @@ config BUSYBOX_CONFIG_MODPROBE
 
 config BUSYBOX_CONFIG_FEATURE_MODPROBE_MULTIPLE_OPTIONS
 	bool
-	prompt "Multiple options parsing" if BUSYBOX_CONFIG_NITPICK
+	prompt "Multiple options parsing"
 	default n
 	depends on BUSYBOX_CONFIG_MODPROBE
 	help
@@ -109,7 +139,7 @@ config BUSYBOX_CONFIG_FEATURE_MODPROBE_MULTIPLE_OPTIONS
 
 config BUSYBOX_CONFIG_FEATURE_MODPROBE_FANCY_ALIAS
 	bool
-	prompt "Fancy alias parsing" if BUSYBOX_CONFIG_NITPICK
+	prompt "Fancy alias parsing"
 	default n
 	depends on BUSYBOX_CONFIG_MODPROBE && BUSYBOX_CONFIG_FEATURE_2_6_MODULES
 	help
@@ -117,8 +147,20 @@ config BUSYBOX_CONFIG_FEATURE_MODPROBE_FANCY_ALIAS
 	  mismatch between module name and file name, along with bus-specific
 	  aliases (such as pci:... or usb:... aliases).
 
+config BUSYBOX_CONFIG_FEATURE_MODPROBE_BLACKLIST
+	bool
+	prompt "Blacklist support"
+	default n
+	depends on BUSYBOX_CONFIG_MODPROBE && BUSYBOX_CONFIG_FEATURE_2_6_MODULES
+	help
+	  Say 'y' here to enable support for the 'blacklist' command in
+	  modprobe.conf. This prevents the alias resolver to resolve
+	  blacklisted modules. This is useful if you want to prevent your
+	  hardware autodetection scripts to load modules like evdev, frame
+	  buffer drivers etc.
+
 comment "Options common to multiple modutils"
-	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE || BUSYBOX_CONFIG_LSMOD
+	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE || BUSYBOX_CONFIG_LSMOD || BUSYBOX_CONFIG_DEPMOD
 
 config BUSYBOX_CONFIG_FEATURE_CHECK_TAINTED_MODULE
 	# Simulate indentation
@@ -139,6 +181,9 @@ config BUSYBOX_CONFIG_FEATURE_2_4_MODULES
 	help
 	  Support module loading for 2.2.x and 2.4.x Linux kernels.
 
+	  Note:
+	  This is automatically enabled if 2.6 modules are not enabled.
+
 config BUSYBOX_CONFIG_FEATURE_2_6_MODULES
 	# Simulate indentation
 	bool "Support version 2.6.x Linux kernels"
@@ -147,12 +192,27 @@ config BUSYBOX_CONFIG_FEATURE_2_6_MODULES
 	help
 	  Support module loading for newer 2.6.x Linux kernels.
 
+config BUSYBOX_CONFIG_DEFAULT_MODULES_DIR
+	# Simulate indentation
+	string "Default directory containing modules"
+	default "/lib/modules"
+	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE || BUSYBOX_CONFIG_DEPMOD
+	help
+	  Directory that contains kernel modules.
+	  Defaults to "/lib/modules"
+
+config BUSYBOX_CONFIG_DEFAULT_DEPMOD_FILE
+	# Simulate indentation
+	string "Default name of modules.dep"
+	default "modules.dep"
+	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE || BUSYBOX_CONFIG_DEPMOD
+	help
+	  Filename that contains kernel modules dependencies.
+	  Defaults to "modules.dep"
 
 config BUSYBOX_CONFIG_FEATURE_QUERY_MODULE_INTERFACE
 	bool
 	default n
 	depends on BUSYBOX_CONFIG_FEATURE_2_4_MODULES && !BUSYBOX_CONFIG_FEATURE_2_6_MODULES
 
-
 endmenu
-

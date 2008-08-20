@@ -1,8 +1,6 @@
-Index: busybox-1.7.2/networking/wget.c
-===================================================================
---- busybox-1.7.2.orig/networking/wget.c	2007-10-30 15:35:00.000000000 -0500
-+++ busybox-1.7.2/networking/wget.c	2007-10-30 15:35:00.000000000 -0500
-@@ -140,7 +140,7 @@
+--- a/networking/wget.c
++++ b/networking/wget.c
+@@ -437,7 +437,7 @@
  		"directory-prefix\0" Required_argument "P"
  		"proxy\0"            Required_argument "Y"
  		"user-agent\0"       Required_argument "U"
@@ -10,4 +8,4 @@ Index: busybox-1.7.2/networking/wget.c
 +		"passive-ftp\0"      No_argument       "\xfd"
  		"header\0"           Required_argument "\xfe"
  		;
- 	applet_long_options = wget_longopts;
+ #endif

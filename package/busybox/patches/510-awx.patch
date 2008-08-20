@@ -1,8 +1,6 @@
-Index: busybox-1.8.1/editors/awk.c
-===================================================================
---- busybox-1.8.1.orig/editors/awk.c	2007-11-10 16:55:07.032260312 +0100
-+++ busybox-1.8.1/editors/awk.c	2007-11-10 17:07:04.493146078 +0100
-@@ -33,6 +33,11 @@
+--- a/editors/awk.c
++++ b/editors/awk.c
+@@ -32,6 +32,11 @@
  /* these flags are static, don't change them when value is changed */
  #define	VF_DONTTOUCH    (VF_ARRAY | VF_SPECIAL | VF_WALK | VF_CHILD | VF_DIRTY)
  
@@ -14,23 +12,22 @@ Index: busybox-1.8.1/editors/awk.c
  /* Variable */
  typedef struct var_s {
  	unsigned type;            /* flags */
-@@ -54,9 +59,14 @@
+@@ -53,9 +58,14 @@
  } chain;
  
  /* Function */
 +typedef var *(*awk_cfunc)(var *res, var *args, int nargs);
  typedef struct func_s {
  	unsigned nargs;
--	struct chain_s body;
 +	enum { AWKFUNC, CFUNC } type;
 +	union {
 +		awk_cfunc cfunc;
-+		struct chain_s body;
+ 	struct chain_s body;
 +	} x;
  } func;
  
  /* I/O stream */
-@@ -1400,7 +1410,8 @@
+@@ -1395,7 +1405,8 @@
  			next_token(TC_FUNCTION);
  			g_pos++;
  			f = newfunc(t_string);
@@ -40,7 +37,7 @@ Index: busybox-1.8.1/editors/awk.c
  			f->nargs = 0;
  			while (next_token(TC_VARIABLE | TC_SEQTERM) & TC_VARIABLE) {
  				v = findvar(ahash, t_string);
-@@ -1409,7 +1420,7 @@
+@@ -1404,7 +1415,7 @@
  				if (next_token(TC_COMMA | TC_SEQTERM) & TC_SEQTERM)
  					break;
  			}
@@ -49,7 +46,7 @@ Index: busybox-1.8.1/editors/awk.c
  			chain_group();
  			clear_array(ahash);
  
-@@ -2372,7 +2383,8 @@
+@@ -2367,7 +2378,8 @@
  			break;
  
  		case XC( OC_FUNC ):
@@ -59,7 +56,7 @@ Index: busybox-1.8.1/editors/awk.c
  				syntax_error(EMSG_UNDEF_FUNC);
  
  			X.v = R.v = nvalloc(op->r.f->nargs+1);
-@@ -2389,7 +2401,10 @@
+@@ -2384,7 +2396,10 @@
  			fnargs = X.v;
  
  			L.s = g_progname;
@@ -71,7 +68,7 @@ Index: busybox-1.8.1/editors/awk.c
  			g_progname = L.s;
  
  			nvfree(fnargs);
-@@ -2753,6 +2768,12 @@
+@@ -2748,6 +2763,12 @@
  }
  
  int awk_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
@@ -84,7 +81,7 @@ Index: busybox-1.8.1/editors/awk.c
  int awk_main(int argc, char **argv)
  {
  	unsigned opt;
-@@ -2817,6 +2838,11 @@
+@@ -2812,6 +2833,11 @@
  			*s1 = '=';
  		}
  	}
@@ -93,13 +90,11 @@ Index: busybox-1.8.1/editors/awk.c
 +	do_awx(argc, argv);
 +#endif
 +
- 	opt_complementary = "v::f::";
- 	opt = getopt32(argv, "F:v:f:W:", &opt_F, &opt_v, &opt_f, &opt_W);
+ 	opt_complementary = "v::f::"; /* -v and -f can occur multiple times */
+ 	opt = getopt32(argv, "F:v:f:W:", &opt_F, &list_v, &list_f, &opt_W);
  	argv += optind;
-Index: busybox-1.8.1/editors/awx.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.8.1/editors/awx.c	2007-11-10 17:06:19.258568308 +0100
+--- /dev/null
++++ b/editors/awx.c
 @@ -0,0 +1,636 @@
 +/*
 + * awk web extension
@@ -737,10 +732,8 @@ Index: busybox-1.8.1/editors/awx.c
 +	return awk_main(argc, argv);
 +}
 +
-Index: busybox-1.8.1/editors/awx_parser.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.8.1/editors/awx_parser.h	2007-11-10 17:06:19.266568760 +0100
+--- /dev/null
++++ b/editors/awx_parser.h
 @@ -0,0 +1,38 @@
 +#ifndef __TEMPLATE_PARSER_H
 +#define __TEMPLATE_PARSER_H
@@ -780,10 +773,8 @@ Index: busybox-1.8.1/editors/awx_parser.h
 +void free_template(struct template_cb *cb, struct template_element *e);
 +
 +#endif
-Index: busybox-1.8.1/editors/awx_parser.l
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.8.1/editors/awx_parser.l	2007-11-10 17:06:19.270568989 +0100
+--- /dev/null
++++ b/editors/awx_parser.l
 @@ -0,0 +1,302 @@
 +%{
 +#include <stdio.h>
@@ -1087,10 +1078,8 @@ Index: busybox-1.8.1/editors/awx_parser.l
 +	free(e);
 +	return free_template(cb, next);
 +}
-Index: busybox-1.8.1/editors/Config.in
-===================================================================
---- busybox-1.8.1.orig/editors/Config.in	2007-11-10 02:40:54.000000000 +0100
-+++ busybox-1.8.1/editors/Config.in	2007-11-10 17:06:19.274569218 +0100
+--- a/editors/Config.in
++++ b/editors/Config.in
 @@ -12,6 +12,13 @@
  	  Awk is used as a pattern scanning and processing language.  This is
  	  the BusyBox implementation of that programming language.
@@ -1105,10 +1094,8 @@ Index: busybox-1.8.1/editors/Config.in
  config FEATURE_AWK_MATH
  	bool "Enable math functions (requires libm)"
  	default y
-Index: busybox-1.8.1/editors/Kbuild
-===================================================================
---- busybox-1.8.1.orig/editors/Kbuild	2007-11-10 02:40:54.000000000 +0100
-+++ busybox-1.8.1/editors/Kbuild	2007-11-10 17:06:19.278569448 +0100
+--- a/editors/Kbuild
++++ b/editors/Kbuild
 @@ -12,3 +12,12 @@
  lib-$(CONFIG_PATCH)     += patch.o
  lib-$(CONFIG_SED)       += sed.o
@@ -1122,22 +1109,30 @@ Index: busybox-1.8.1/editors/Kbuild
 +editors/awx_parser.o: editors/awx_parser.c FORCE
 +	$(call cmd,force_checksrc)
 +	$(call if_changed_rule,cc_o_c)
-Index: busybox-1.8.1/include/applets.h
-===================================================================
---- busybox-1.8.1.orig/include/applets.h	2007-11-10 17:03:38.957433264 +0100
-+++ busybox-1.8.1/include/applets.h	2007-11-10 17:06:19.282569674 +0100
-@@ -83,6 +83,7 @@
+--- a/include/applets.h
++++ b/include/applets.h
+@@ -77,6 +77,7 @@
  USE_ARPING(APPLET(arping, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
- USE_ASH(APPLET_NOUSAGE(ash, ash, _BB_DIR_BIN, _BB_SUID_NEVER))
+ USE_ASH(APPLET(ash, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_AWK(APPLET_NOEXEC(awk, awk, _BB_DIR_USR_BIN, _BB_SUID_NEVER, awk))
-+USE_AWX(APPLET_NOUSAGE(awx, awx, _BB_DIR_USR_BIN, _BB_SUID_NEVER)) 
++USE_AWK(APPLET_ODDNAME(awx, awk, _BB_DIR_USR_BIN, _BB_SUID_NEVER, awx)) 
  USE_BASENAME(APPLET_NOFORK(basename, basename, _BB_DIR_USR_BIN, _BB_SUID_NEVER, basename))
  USE_BBCONFIG(APPLET(bbconfig, _BB_DIR_BIN, _BB_SUID_NEVER))
  //USE_BBSH(APPLET(bbsh, _BB_DIR_BIN, _BB_SUID_NEVER))
-Index: busybox-1.8.1/include/cgi.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.8.1/include/cgi.h	2007-11-10 17:06:19.282569674 +0100
+--- a/include/usage.h
++++ b/include/usage.h
+@@ -114,6 +114,9 @@
+      "\n	-F sep		Use sep as field separator" \
+      "\n	-f file		Read program from file" \
+ 
++#define awx_trivial_usage NOUSAGE_STR
++#define awx_full_usage ""
++
+ #define basename_trivial_usage \
+        "FILE [SUFFIX]"
+ #define basename_full_usage "\n\n" \
+--- /dev/null
++++ b/include/cgi.h
 @@ -0,0 +1,8 @@
 +#ifndef CGI_H
 +#define CGI_H
@@ -1147,10 +1142,8 @@ Index: busybox-1.8.1/include/cgi.h
 +int cgi_init(var_handler);
 +
 +#endif
-Index: busybox-1.8.1/libbb/cgi.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.8.1/libbb/cgi.c	2007-11-10 17:06:19.282569674 +0100
+--- /dev/null
++++ b/libbb/cgi.c
 @@ -0,0 +1,457 @@
 +/* --------------------------------------------------------------------------
 + * functions for processing cgi form data
@@ -1609,11 +1602,9 @@ Index: busybox-1.8.1/libbb/cgi.c
 +
 +	return retval;
 +} 
-Index: busybox-1.8.1/libbb/Kbuild
-===================================================================
---- busybox-1.8.1.orig/libbb/Kbuild	2007-11-10 17:04:07.547062497 +0100
-+++ busybox-1.8.1/libbb/Kbuild	2007-11-10 17:06:19.282569674 +0100
-@@ -101,6 +101,7 @@
+--- a/libbb/Kbuild
++++ b/libbb/Kbuild
+@@ -112,6 +112,7 @@
  lib-y += xreadlink.o
  
  # conditionally compiled objects:

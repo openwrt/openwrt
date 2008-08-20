@@ -1,7 +1,5 @@
-Index: busybox-1.7.2/archival/libipkg/ipkg_conf.c
-===================================================================
---- busybox-1.7.2.orig/archival/libipkg/ipkg_conf.c	2007-10-30 15:38:45.000000000 -0500
-+++ busybox-1.7.2/archival/libipkg/ipkg_conf.c	2007-10-30 15:38:47.000000000 -0500
+--- a/archival/libipkg/ipkg_conf.c
++++ b/archival/libipkg/ipkg_conf.c
 @@ -66,6 +66,8 @@
  	  { "offline_root_pre_script_cmd", IPKG_OPT_TYPE_STRING, &conf->offline_root_pre_script_cmd },
  	  { "proxy_passwd", IPKG_OPT_TYPE_STRING, &conf->proxy_passwd },
@@ -21,10 +19,8 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_conf.c
       pkg_hash_init("pkg-hash", &conf->pkg_hash, IPKG_CONF_DEFAULT_HASH_LEN);
       hash_table_init("file-hash", &conf->file_hash, IPKG_CONF_DEFAULT_HASH_LEN);
       hash_table_init("obs-file-hash", &conf->obs_file_hash, IPKG_CONF_DEFAULT_HASH_LEN);
-Index: busybox-1.7.2/archival/libipkg/ipkg_conf.h
-===================================================================
---- busybox-1.7.2.orig/archival/libipkg/ipkg_conf.h	2007-10-30 15:38:45.000000000 -0500
-+++ busybox-1.7.2/archival/libipkg/ipkg_conf.h	2007-10-30 15:38:47.000000000 -0500
+--- a/archival/libipkg/ipkg_conf.h
++++ b/archival/libipkg/ipkg_conf.h
 @@ -79,6 +79,10 @@
       char *proxy_user;
       char *proxy_passwd;
@@ -36,10 +32,8 @@ Index: busybox-1.7.2/archival/libipkg/ipkg_conf.h
       hash_table_t pkg_hash;
       hash_table_t file_hash;
       hash_table_t obs_file_hash;
-Index: busybox-1.7.2/archival/libipkg/ipkg_download.c
-===================================================================
---- busybox-1.7.2.orig/archival/libipkg/ipkg_download.c	2007-10-30 15:38:45.000000000 -0500
-+++ busybox-1.7.2/archival/libipkg/ipkg_download.c	2007-10-30 15:38:47.000000000 -0500
+--- a/archival/libipkg/ipkg_download.c
++++ b/archival/libipkg/ipkg_download.c
 @@ -69,8 +69,12 @@
      }
  

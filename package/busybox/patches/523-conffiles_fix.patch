@@ -1,7 +1,5 @@
-Index: busybox-1.8.2/archival/libipkg/pkg.c
-===================================================================
---- busybox-1.8.2.orig/archival/libipkg/pkg.c	2008-01-03 17:25:55.000000000 +0100
-+++ busybox-1.8.2/archival/libipkg/pkg.c	2008-01-03 17:33:57.000000000 +0100
+--- a/archival/libipkg/pkg.c
++++ b/archival/libipkg/pkg.c
 @@ -575,25 +575,28 @@
  		    return temp;
  	       }
@@ -36,16 +34,10 @@ Index: busybox-1.8.2/archival/libipkg/pkg.c
  	  } else if (strcasecmp(field, "Conflicts") == 0) {
  	       int i;
  
-Index: busybox-1.8.2/archival/libipkg/pkg_parse.c
-===================================================================
---- busybox-1.8.2.orig/archival/libipkg/pkg_parse.c	2008-01-03 17:25:55.000000000 +0100
-+++ busybox-1.8.2/archival/libipkg/pkg_parse.c	2008-01-03 17:30:14.000000000 +0100
- -85,20 +85,17 @@
- {
-     char file_name[1048], md5sum[1048];  /* please tell me there aren't any longer that 1k */
- 
--    if(!strncmp(raw, "Conffiles:", 10))
-+    if(!strncmp(raw, "Conffiles:",10))
+--- a/archival/libipkg/pkg_parse.c
++++ b/archival/libipkg/pkg_parse.c
+@@ -88,17 +88,14 @@
+     if(!strncmp(raw, "Conffiles:", 10))
  	raw += strlen("Conffiles:");
  
 +    while(*raw && isspace(*raw)) raw++;
@@ -55,14 +47,13 @@ Index: busybox-1.8.2/archival/libipkg/pkg_parse.c
 -	while (*raw && isspace(*raw)) {
 -	    raw++;
 -	}
--	raw += strlen(file_name);
+ 	raw += strlen(file_name);
 -	while (*raw && isspace(*raw)) {
 -	    raw++;
 -	}
--	raw += strlen(md5sum);
-+        raw += strlen(file_name);
 +	while(*raw && isspace(*raw)) raw++;
-+        raw += strlen(md5sum);
-+        while(*raw && isspace(*raw)) raw++;
+ 	raw += strlen(md5sum);
++	while(*raw && isspace(*raw)) raw++;
      }
- }
+ }    
+ 

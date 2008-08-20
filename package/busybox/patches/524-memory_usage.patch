@@ -1,7 +1,5 @@
-Index: busybox-1.8.2/archival/libipkg/pkg.c
-===================================================================
---- busybox-1.8.2.orig/archival/libipkg/pkg.c	2008-01-06 03:14:12.003658206 +0100
-+++ busybox-1.8.2/archival/libipkg/pkg.c	2008-01-06 03:24:18.187737063 +0100
+--- a/archival/libipkg/pkg.c
++++ b/archival/libipkg/pkg.c
 @@ -224,8 +224,7 @@
       if (err) { return err; }
  
@@ -12,10 +10,8 @@ Index: busybox-1.8.2/archival/libipkg/pkg.c
  
       fclose(control_file);
  
-Index: busybox-1.8.2/archival/libipkg/pkg_hash.c
-===================================================================
---- busybox-1.8.2.orig/archival/libipkg/pkg_hash.c	2008-01-06 03:14:12.231671203 +0100
-+++ busybox-1.8.2/archival/libipkg/pkg_hash.c	2008-01-06 03:28:38.218555373 +0100
+--- a/archival/libipkg/pkg_hash.c
++++ b/archival/libipkg/pkg_hash.c
 @@ -89,20 +89,20 @@
  			   pkg_src_t *src, pkg_dest_t *dest, int is_status_file)
  {
@@ -58,11 +54,9 @@ Index: busybox-1.8.2/archival/libipkg/pkg_hash.c
       return 0;
  }
  
-Index: busybox-1.8.2/archival/libipkg/pkg_parse.c
-===================================================================
---- busybox-1.8.2.orig/archival/libipkg/pkg_parse.c	2008-01-06 03:14:12.283674167 +0100
-+++ busybox-1.8.2/archival/libipkg/pkg_parse.c	2008-01-06 03:38:24.111943535 +0100
-@@ -227,6 +227,161 @@
+--- a/archival/libipkg/pkg_parse.c
++++ b/archival/libipkg/pkg_parse.c
+@@ -224,6 +224,161 @@
     Enhances, perhaps we could generalize all of these and save some
     code duplication.
  */
@@ -224,7 +218,7 @@ Index: busybox-1.8.2/archival/libipkg/pkg_parse.c
  int pkg_parse_raw(pkg_t *pkg, char ***raw, pkg_src_t *src, pkg_dest_t *dest)
  {
      int reading_conffiles, reading_description;
-@@ -345,6 +500,7 @@
+@@ -342,6 +497,7 @@
  	return EINVAL;
      }
  }
@@ -232,10 +226,8 @@ Index: busybox-1.8.2/archival/libipkg/pkg_parse.c
  
  int pkg_valorize_other_field(pkg_t *pkg, char ***raw)
  {
-Index: busybox-1.8.2/archival/libipkg/pkg_parse.h
-===================================================================
---- busybox-1.8.2.orig/archival/libipkg/pkg_parse.h	2008-01-06 03:14:12.303675307 +0100
-+++ busybox-1.8.2/archival/libipkg/pkg_parse.h	2008-01-06 03:39:03.954214018 +0100
+--- a/archival/libipkg/pkg_parse.h
++++ b/archival/libipkg/pkg_parse.h
 @@ -25,7 +25,10 @@
  char ** parseDependsString(char * raw, int * depends_count);
  int parseVersion(pkg_t *pkg, char *raw);

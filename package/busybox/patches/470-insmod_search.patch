@@ -1,7 +1,5 @@
-Index: busybox-1.8.1/modutils/insmod.c
-===================================================================
---- busybox-1.8.1.orig/modutils/insmod.c	2007-11-10 02:40:49.000000000 +0100
-+++ busybox-1.8.1/modutils/insmod.c	2007-11-10 17:28:44.391223047 +0100
+--- a/modutils/insmod.c
++++ b/modutils/insmod.c
 @@ -61,21 +61,117 @@
  #include "libbb.h"
  #include <libgen.h>
@@ -27,9 +25,9 @@ Index: busybox-1.8.1/modutils/insmod.c
  #if ENABLE_FEATURE_2_6_MODULES
 -static int insmod_ng_main(int argc, char **argv);
 +int insmod_main_26(int argc, char **argv);
-+#endif
+ #endif
 +int insmod_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-+
+ 
 +static char *g_filename = NULL;
 +#define _PATH_MODULES	"/lib/modules"
 +
@@ -69,7 +67,7 @@ Index: busybox-1.8.1/modutils/insmod.c
 +	if (k_version <= 4)
 +		suffix = ".o";
 +	else
- #endif
++#endif
 +		suffix = ".ko";
 +
 +	len = strlen(filename);
@@ -111,7 +109,7 @@ Index: busybox-1.8.1/modutils/insmod.c
 +		ret = 0;
 +	else
 +		free(g_filename);
- 
++
 +done:
 +	free(filename);
 +
@@ -125,23 +123,50 @@ Index: busybox-1.8.1/modutils/insmod.c
  #if ENABLE_FEATURE_INSMOD_LOADINKMEM
  #define LOADBITS 0
  #else
-@@ -673,7 +769,6 @@
+@@ -184,7 +280,6 @@
+ /* Microblaze */
+ #if defined(__microblaze__)
+ #define USE_SINGLE
+-#include <linux/elf-em.h>
+ #define MATCH_MACHINE(x) (x == EM_XILINX_MICROBLAZE)
+ #define SHT_RELM	SHT_RELA
+ #define Elf32_RelM	Elf32_Rela
+@@ -452,7 +547,7 @@
+ /* The system calls unchanged between 2.0 and 2.1.  */
+ 
+ unsigned long create_module(const char *, size_t);
+-int delete_module(const char *module, unsigned int flags);
++int delete_module(const char *);
+ 
+ 
+ #endif /* module.h */
+@@ -652,7 +747,7 @@
+ 
+ static enum obj_reloc arch_apply_relocation(struct obj_file *f,
+ 				      struct obj_section *targsec,
+-				      /*struct obj_section *symsec,*/
++				      struct obj_section *symsec,
+ 				      struct obj_symbol *sym,
+ 				      ElfW(RelM) *rel, ElfW(Addr) value);
+ 
+@@ -673,6 +768,7 @@
+ #define SPFX	""
  #endif
  
- 
--#define _PATH_MODULES	"/lib/modules"
++
  enum { STRVERSIONLEN = 64 };
  
  /*======================================================================*/
-@@ -789,27 +884,6 @@
+@@ -788,28 +884,6 @@
  static char *m_fullName;
  
  
 -/*======================================================================*/
 -
 -
--static int check_module_name_match(const char *filename, struct stat *statbuf,
--				void *userdata, int depth)
+-static int check_module_name_match(const char *filename,
+-		struct stat *statbuf ATTRIBUTE_UNUSED,
+-		void *userdata, int depth ATTRIBUTE_UNUSED)
 -{
 -	char *fullname = (char *) userdata;
 -	char *tmp;
@@ -161,7 +186,170 @@ Index: busybox-1.8.1/modutils/insmod.c
  
  /*======================================================================*/
  
-@@ -3897,145 +3971,57 @@
+@@ -835,27 +909,18 @@
+ static enum obj_reloc
+ arch_apply_relocation(struct obj_file *f,
+ 				struct obj_section *targsec,
+-				/*struct obj_section *symsec,*/
++				struct obj_section *symsec,
+ 				struct obj_symbol *sym,
+ 				ElfW(RelM) *rel, ElfW(Addr) v)
+ {
+-#if defined(__arm__) || defined(__i386__) || defined(__mc68000__) \
+- || defined(__sh__) || defined(__s390__) || defined(__x86_64__)
+ 	struct arch_file *ifile = (struct arch_file *) f;
+-#endif
+ 	enum obj_reloc ret = obj_reloc_ok;
+ 	ElfW(Addr) *loc = (ElfW(Addr) *) (targsec->contents + rel->r_offset);
+-#if defined(__arm__) || defined(__H8300H__) || defined(__H8300S__) \
+- || defined(__i386__) || defined(__mc68000__) || defined(__microblaze__) \
+- || defined(__mips__) || defined(__nios2__) || defined(__powerpc__) \
+- || defined(__s390__) || defined(__sh__) || defined(__x86_64__)
+ 	ElfW(Addr) dot = targsec->header.sh_addr + rel->r_offset;
+-#endif
+ #if defined(USE_GOT_ENTRIES) || defined(USE_PLT_ENTRIES)
+ 	struct arch_symbol *isym = (struct arch_symbol *) sym;
+ #endif
+-#if defined(__arm__) || defined(__i386__) || defined(__mc68000__) \
+- || defined(__sh__) || defined(__s390__)
++#if defined(__arm__) || defined(__i386__) || defined(__mc68000__) || defined(__sh__) || defined(__s390__)
+ #if defined(USE_GOT_ENTRIES)
+ 	ElfW(Addr) got = ifile->got ? ifile->got->header.sh_addr : 0;
+ #endif
+@@ -953,7 +1018,6 @@
+ 
+ 		case R_386_PLT32:
+ 		case R_386_PC32:
+-		case R_386_GOTOFF:
+ 			*loc += v - dot;
+ 			break;
+ 
+@@ -972,6 +1036,9 @@
+ 
+ 		case R_386_GOT32:
+ 			goto bb_use_got;
++
++		case R_386_GOTOFF:
++			*loc += v - got;
+ 			break;
+ 
+ #elif defined(__microblaze__)
+@@ -1758,7 +1825,7 @@
+ 
+ #if defined(USE_SINGLE)
+ 
+-static int arch_single_init(/*ElfW(RelM) *rel,*/ struct arch_single_entry *single,
++static int arch_single_init(ElfW(RelM) *rel, struct arch_single_entry *single,
+ 			     int offset, int size)
+ {
+ 	if (single->allocated == 0) {
+@@ -1906,7 +1973,7 @@
+ #if defined(USE_GOT_ENTRIES)
+ 			if (got_allocate) {
+ 				got_offset += arch_single_init(
+-						/*rel,*/ &intsym->gotent,
++						rel, &intsym->gotent,
+ 						got_offset, GOT_ENTRY_SIZE);
+ 
+ 				got_needed = 1;
+@@ -1920,7 +1987,7 @@
+ 						plt_offset, PLT_ENTRY_SIZE);
+ #else
+ 				plt_offset += arch_single_init(
+-						/*rel,*/ &intsym->pltent,
++						rel, &intsym->pltent,
+ 						plt_offset, PLT_ENTRY_SIZE);
+ #endif
+ 				plt_needed = 1;
+@@ -1958,8 +2025,7 @@
+ 	while (n > 0) {
+ 		ch = *name++;
+ 		h = (h << 4) + ch;
+-		g = (h & 0xf0000000);
+-		if (g != 0) {
++		if ((g = (h & 0xf0000000)) != 0) {
+ 			h ^= g >> 24;
+ 			h &= ~g;
+ 		}
+@@ -2038,7 +2104,7 @@
+ 	int n_type = ELF_ST_TYPE(info);
+ 	int n_binding = ELF_ST_BIND(info);
+ 
+-	for (sym = f->symtab[hash]; sym; sym = sym->next) {
++	for (sym = f->symtab[hash]; sym; sym = sym->next)
+ 		if (f->symbol_cmp(sym->name, name) == 0) {
+ 			int o_secidx = sym->secidx;
+ 			int o_info = sym->info;
+@@ -2097,14 +2163,14 @@
+ 				return sym;
+ 			}
+ 		}
+-	}
+ 
+ 	/* Completely new symbol.  */
+ 	sym = arch_new_symbol();
+ 	sym->next = f->symtab[hash];
+ 	f->symtab[hash] = sym;
+ 	sym->ksymidx = -1;
+-	if (ELF_ST_BIND(info) == STB_LOCAL && symidx != (unsigned long)(-1)) {
++
++	if (ELF_ST_BIND(info) == STB_LOCAL && symidx != -1) {
+ 		if (symidx >= f->local_symtab_size)
+ 			bb_error_msg("local symbol %s with index %ld exceeds local_symtab_size %ld",
+ 					name, (long) symidx, (long) f->local_symtab_size);
+@@ -3227,7 +3293,7 @@
+ 
+ 			/* Do it! */
+ 			switch (arch_apply_relocation
+-					(f, targsec, /*symsec,*/ intsym, rel, value)
++					(f, targsec, symsec, intsym, rel, value)
+ 			) {
+ 			case obj_reloc_ok:
+ 				break;
+@@ -3306,11 +3372,11 @@
+ 
+ /*======================================================================*/
+ 
+-static struct obj_file *obj_load(FILE * fp, int loadprogbits ATTRIBUTE_UNUSED)
++static struct obj_file *obj_load(FILE * fp, int loadprogbits)
+ {
+ 	struct obj_file *f;
+ 	ElfW(Shdr) * section_headers;
+-	size_t shnum, i;
++	int shnum, i;
+ 	char *shstrtab;
+ 
+ 	/* Read the file header.  */
+@@ -3582,7 +3648,7 @@
+ 		while (ptr < endptr) {
+ 			value = strchr(ptr, '=');
+ 			if (value && strncmp(ptr, "license", value-ptr) == 0) {
+-				unsigned i;
++				int i;
+ 				if (license)
+ 					*license = value+1;
+ 				for (i = 0; i < ARRAY_SIZE(gpl_licenses); ++i) {
+@@ -3686,9 +3752,6 @@
+  * start of some sections.  this info is used by ksymoops to do better
+  * debugging.
+  */
+-#if !ENABLE_FEATURE_INSMOD_VERSION_CHECKING
+-#define get_module_version(f, str) get_module_version(str)
+-#endif
+ static int
+ get_module_version(struct obj_file *f, char str[STRVERSIONLEN])
+ {
+@@ -3721,8 +3784,7 @@
+ 	struct obj_symbol *sym;
+ 	char *name, *absolute_filename;
+ 	char str[STRVERSIONLEN];
+-	unsigned i;
+-	int l, lm_name, lfilename, use_ksymtab, version;
++	int i, l, lm_name, lfilename, use_ksymtab, version;
+ 	struct stat statbuf;
+ 
+ 	/* WARNING: was using realpath, but replaced by readlink to stop using
+@@ -3909,145 +3971,57 @@
  void print_load_map(struct obj_file *f);
  #endif
  
@@ -257,10 +445,8 @@ Index: busybox-1.8.1/modutils/insmod.c
 -	} else {
 -		free(tmp1);
 -		tmp1 = NULL;       /* flag for free(m_name) before exit() */
-+		tmp = xstrdup(arg1);
-+		m_name = basename(tmp);
- 	}
- 
+-	}
+-
 -	/* Get a filedesc for the module.  Check that we have a complete path */
 -	if (stat(arg1, &st) < 0 || !S_ISREG(st.st_mode)
 -	 || (fp = fopen(arg1, "r")) == NULL
@@ -271,7 +457,7 @@ Index: busybox-1.8.1/modutils/insmod.c
 -			char *module_dir;
 -			char *tmdn;
 -
--			tmdn = concat_path_file(_PATH_MODULES, myuname.release);
+-			tmdn = concat_path_file(CONFIG_DEFAULT_MODULES_DIR, myuname.release);
 -			/* Jump through hoops in case /lib/modules/`uname -r`
 -			 * is a symlink.  We do not want recursive_action to
 -			 * follow symlinks, but we do want to follow the
@@ -293,9 +479,9 @@ Index: busybox-1.8.1/modutils/insmod.c
 -
 -			free(m_filename);
 -			m_filename = NULL;
--			module_dir = xmalloc_readlink(_PATH_MODULES);
+-			module_dir = xmalloc_readlink(CONFIG_DEFAULT_MODULES_DIR);
 -			if (!module_dir)
--				module_dir = xstrdup(_PATH_MODULES);
+-				module_dir = xstrdup(CONFIG_DEFAULT_MODULES_DIR);
 -			/* No module found under /lib/modules/`uname -r`, this
 -			 * time cast the net a bit wider.  Search /lib/modules/ */
 -			r = recursive_action(module_dir, ACTION_RECURSE,
@@ -308,10 +494,12 @@ Index: busybox-1.8.1/modutils/insmod.c
 -			) {
 -				bb_error_msg_and_die("%s: module not found", m_fullName);
 -			}
--		}
++		tmp = xstrdup(arg1);
++		m_name = basename(tmp);
+ 		}
 -	} else
 -		m_filename = xstrdup(arg1);
--
+ 
 -	if (flag_verbose)
 -		printf("Using %s\n", m_filename);
 -
@@ -329,7 +517,7 @@ Index: busybox-1.8.1/modutils/insmod.c
  
  	f = obj_load(fp, LOADBITS);
  
-@@ -4062,7 +4048,7 @@
+@@ -4074,7 +4048,7 @@
  				"\t%s was compiled for kernel version %s\n"
  				"\twhile this kernel is version %s",
  				flag_force_load ? "warning: " : "",
@@ -338,7 +526,7 @@ Index: busybox-1.8.1/modutils/insmod.c
  			if (!flag_force_load)
  				goto out;
  		}
-@@ -4104,7 +4090,7 @@
+@@ -4116,7 +4090,7 @@
  	hide_special_symbols(f);
  
  #if ENABLE_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
@@ -347,7 +535,37 @@ Index: busybox-1.8.1/modutils/insmod.c
  #endif /* FEATURE_INSMOD_KSYMOOPS_SYMBOLS */
  
  	new_create_module_ksymtab(f);
-@@ -4147,18 +4133,19 @@
+@@ -4125,7 +4099,7 @@
+ 	m_size = obj_load_size(f);
+ 
+ 	m_addr = create_module(m_name, m_size);
+-	if (m_addr == (ElfW(Addr))(-1)) switch (errno) {
++	if (m_addr == -1) switch (errno) {
+ 		case EEXIST:
+ 			bb_error_msg_and_die("a module named %s already exists", m_name);
+ 		case ENOMEM:
+@@ -4141,36 +4115,37 @@
+ 	 * now we can load them directly into the kernel memory
+ 	 */
+ 	if (!obj_load_progbits(fp, f, (char*)m_addr)) {
+-		delete_module(m_name, 0);
++		delete_module(m_name);
+ 		goto out;
+ 	}
+ #endif
+ 
+ 	if (!obj_relocate(f, m_addr)) {
+-		delete_module(m_name, 0);
++		delete_module(m_name);
+ 		goto out;
+ 	}
+ 
+ 	if (!new_init_module(m_name, f, m_size)) {
+-		delete_module(m_name, 0);
++		delete_module(m_name);
+ 		goto out;
+ 	}
+ 
  	if (flag_print_load_map)
  		print_load_map(f);
  
@@ -372,19 +590,34 @@ Index: busybox-1.8.1/modutils/insmod.c
  }
  
  #endif /* ENABLE_FEATURE_2_4_MODULES */
-@@ -4190,23 +4177,32 @@
+@@ -4182,15 +4157,8 @@
+ #if ENABLE_FEATURE_2_6_MODULES
+ 
+ #include <sys/mman.h>
+-
+-#if defined __UCLIBC__ && !ENABLE_FEATURE_2_4_MODULES
+-/* big time suckage. The old prototype above renders our nice fwd-decl wrong */
+-extern int init_module(void *module, unsigned long len, const char *options);
+-#else
+ #include <asm/unistd.h>
+ #include <sys/syscall.h>
+-#define init_module(mod, len, opts) syscall(__NR_init_module, mod, len, opts)
+-#endif
+ 
+ /* We use error numbers in a loose translation... */
+ static const char *moderror(int err)
+@@ -4209,22 +4177,32 @@
  	}
  }
  
 -#if !ENABLE_FEATURE_2_4_MODULES
 -int insmod_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
--int insmod_main(int argc, char **argv)
+-int insmod_main(int argc ATTRIBUTE_UNUSED, char **argv)
 -#else
--static int insmod_ng_main(int argc, char **argv)
+-static int insmod_ng_main(int argc ATTRIBUTE_UNUSED, char **argv)
 -#endif
 +int insmod_main_26(int argc, char **argv)
  {
--	long ret;
 -	size_t len;
 +	char *filename, *options;
 +	struct utsname myuname;
@@ -414,12 +647,20 @@ Index: busybox-1.8.1/modutils/insmod.c
  	/* Rest is options */
  	options = xzalloc(1);
  	optlen = 0;
-@@ -4216,36 +4212,47 @@
+@@ -4234,41 +4212,47 @@
  		optlen += sprintf(options + optlen, (strchr(*argv,' ') ? "\"%s\" " : "%s "), *argv);
  	}
  
 -#if 0
--	/* Any special reason why mmap? It isn't performace critical... */
+-	/* Any special reason why mmap? It isn't performance critical. -vda */
+-	/* Yes, xmalloc'ing can use *alot* of RAM. Don't forget that there are
+-	 * modules out there that are half a megabyte! mmap()ing is way nicer
+-	 * for small mem boxes, i guess. */
+-	/* But after load, these modules will take up that 0.5mb in kernel
+-	 * anyway. Using malloc here causes only a transient spike to 1mb,
+-	 * after module is loaded, we go back to normal 0.5mb usage
+-	 * (in kernel). Also, mmap isn't magic - when we touch mapped data,
+-	 * we use memory. -vda */
 -	int fd;
 -	struct stat st;
 -	unsigned long len;
@@ -440,18 +681,19 @@ Index: busybox-1.8.1/modutils/insmod.c
  	len = MAXINT(ssize_t);
 -	map = xmalloc_open_read_close(filename, &len);
 -#endif
--
 +	map = xmalloc_open_read_close(g_filename, &len);
- 	ret = syscall(__NR_init_module, map, len, options);
- 	if (ret != 0) {
- 		bb_perror_msg_and_die("cannot insert '%s': %s (%li)",
--				filename, moderror(errno), ret);
++	ret = syscall(__NR_init_module, map, len, options);
++	if (ret != 0) {
++		bb_perror_msg_and_die("cannot insert '%s': %s (%li)",
 +				g_filename, moderror(errno), ret);
- 	}
++	}
 +done:
 +	if (g_filename && (g_filename != filename))
 +		free(g_filename);
  
+-	if (init_module(map, len, options) != 0)
+-		bb_error_msg_and_die("cannot insert '%s': %s",
+-				filename, moderror(errno));
 -	return 0;
 +	return ret;
  }
