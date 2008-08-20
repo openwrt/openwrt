@@ -13,7 +13,7 @@ config BUSYBOX_CONFIG_INIT
 	  init is the first program run when the system boots.
 
 config BUSYBOX_CONFIG_DEBUG_INIT
-	bool "debugging aid"
+	bool "Debugging aid"
 	default n
 	depends on BUSYBOX_CONFIG_INIT
 	help
@@ -27,16 +27,39 @@ config BUSYBOX_CONFIG_FEATURE_USE_INITTAB
 	help
 	  Allow init to read an inittab file when the system boot.
 
+config BUSYBOX_CONFIG_FEATURE_KILL_REMOVED
+	bool "Support killing processes that have been removed from inittab"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_USE_INITTAB
+	help
+	  When respawn entries are removed from inittab and a SIGHUP is
+	  sent to init, this feature will kill the processes that have
+	  been removed.
+
+config BUSYBOX_CONFIG_FEATURE_KILL_DELAY
+	int "How long to wait between TERM and KILL (0 - send TERM only)" if FEATURE_KILL_REMOVED
+	range 0 1024
+	default 0
+	help
+	  With nonzero setting, init sends TERM, forks, child waits N
+	  seconds, sends KILL and exits. Setting it too high is unwise
+	  (child will hang around for too long and can actually kill
+	  wrong process!)
+
 config BUSYBOX_CONFIG_FEATURE_INIT_SCTTY
-	bool "Support running commands with a controlling-tty"
+	bool "Run commands with leading dash with controlling tty"
 	default n
 	depends on BUSYBOX_CONFIG_INIT
 	help
-	  If this option is enabled a command starting with hyphen (-)
-	  is run in its own session (setsid(2)) and possibly with a
-	  controlling tty (TIOCSCTTY).  This is not the traditional init
-	  behavour, but is often what you want in an embedded system where
-	  the console is only accessed during development or for maintenance.
+	  If this option is enabled, init will try to give a controlling
+	  tty to any command which has leading hyphen (often it's "-/bin/sh").
+	  More precisely, init will do "ioctl(STDIN_FILENO, TIOCSCTTY, 0)".
+	  If device attached to STDIN_FILENO can be a ctty but is not yet
+	  a ctty for other session, it will become this process' ctty.
+	  This is not the traditional init behavour, but is often what you want
+	  in an embedded system where the console is only accessed during
+	  development or for maintenance.
+	  NB: using cttyhack applet may work better.
 
 config BUSYBOX_CONFIG_FEATURE_INIT_SYSLOG
 	bool "Enable init to write to syslog"

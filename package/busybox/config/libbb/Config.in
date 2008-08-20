@@ -13,7 +13,7 @@ config BUSYBOX_CONFIG_PASSWORD_MINLEN
 	  Minimum allowable password length.
 
 config BUSYBOX_CONFIG_MD5_SIZE_VS_SPEED
-	int " MD5: Trade Bytes for Speed"
+	int "MD5: Trade Bytes for Speed"
 	default 2
 	range 0 3
 	help
@@ -56,14 +56,6 @@ config BUSYBOX_CONFIG_FEATURE_EDITING_MAX_LEN
 	  Line editing code uses on-stack buffers for storage.
 	  You may want to decrease this parameter if your target machine
 	  benefits from smaller stack usage.
-
-config BUSYBOX_CONFIG_FEATURE_EDITING_FANCY_KEYS
-	bool "Additional editing keys"
-	default y
-	depends on BUSYBOX_CONFIG_FEATURE_EDITING
-	help
-	  Enable additonal editing keys (Ctrl-E, Ctrl-U etc).
-	  Arrow keys, Home/End/Delete and Ctrl-W work even without this option.
 
 config BUSYBOX_CONFIG_FEATURE_EDITING_VI
 	bool "vi-style line editing commands"
@@ -110,6 +102,31 @@ config BUSYBOX_CONFIG_FEATURE_EDITING_FANCY_PROMPT
 	  Setting this option allows for prompts to use things like \w and
 	  \$ and escape codes.
 
+config BUSYBOX_CONFIG_FEATURE_VERBOSE_CP_MESSAGE
+	bool "Give more precise messages when copy fails (cp, mv etc)"
+	default n
+	help
+	  Error messages with this feature enabled:
+	    $ cp file /does_not_exist/file
+	    cp: cannot create '/does_not_exist/file': Path does not exist
+	    $ cp file /vmlinuz/file
+	    cp: cannot stat '/vmlinuz/file': Path has non-directory component
+	  If this feature is not enabled, they will be, respectively:
+	    cp: cannot remove '/does_not_exist/file': No such file or directory
+	    cp: cannot stat '/vmlinuz/file': Not a directory
+	  respectively.
+	  This will cost you ~60 bytes.
+
+config BUSYBOX_CONFIG_FEATURE_COPYBUF_KB
+	int "Copy buffer size, in kilobytes"
+	range 1 1024
+	default 4
+	help
+	  Size of buffer used by cp, mv, install etc.
+	  Buffers which are 4 kb or less will be allocated on stack.
+	  Bigger buffers will be allocated with mmap, with fallback to 4 kb
+	  stack buffer if mmap fails.
+
 config BUSYBOX_CONFIG_MONOTONIC_SYSCALL
 	bool "Use clock_gettime(CLOCK_MONOTONIC) syscall"
 	default n
@@ -127,4 +144,11 @@ config BUSYBOX_CONFIG_IOCTL_HEX2STR_ERROR
 	  Use ioctl names rather than hex values in error messages
 	  (e.g. VT_DISALLOCATE rather than 0x5608). If disabled this
 	  saves about 1400 bytes.
+
+config BUSYBOX_CONFIG_FEATURE_HWIB
+	bool "Support infiniband HW"
+	default n
+	help
+	  Support for printing infiniband addresses in
+	  network applets.
 endmenu

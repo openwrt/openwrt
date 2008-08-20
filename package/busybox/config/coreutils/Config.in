@@ -135,6 +135,13 @@ config BUSYBOX_CONFIG_DF
 	  df reports the amount of disk space used and available
 	  on filesystems.
 
+config BUSYBOX_CONFIG_FEATURE_DF_INODE
+	bool "Enable -i (inode information)"
+	default n
+	depends on BUSYBOX_CONFIG_DF
+	help
+	  This option enables support for df -i.
+
 config BUSYBOX_CONFIG_DIRNAME
 	bool "dirname"
 	default y
@@ -481,6 +488,14 @@ config BUSYBOX_CONFIG_RMDIR
 	help
 	  rmdir is used to remove empty directories.
 
+config BUSYBOX_CONFIG_FEATURE_RMDIR_LONG_OPTIONS
+	bool "Enable long options"
+	default n
+	depends on BUSYBOX_CONFIG_RMDIR && BUSYBOX_CONFIG_GETOPT_LONG
+	help
+	  Support long options for the rmdir applet, including
+	  --ignore-fail-on-non-empty for compatibility with GNU rmdir.
+
 config BUSYBOX_CONFIG_SEQ
 	bool "seq"
 	default y
@@ -513,7 +528,7 @@ config BUSYBOX_CONFIG_SORT
 	  sort is used to sort lines of text in specified files.
 
 config BUSYBOX_CONFIG_FEATURE_SORT_BIG
-	bool "full SuSv3 compliant sort (Support -ktcsbdfiozgM)"
+	bool "Full SuSv3 compliant sort (support -ktcsbdfiozgM)"
 	default n
 	depends on BUSYBOX_CONFIG_SORT
 	help
@@ -531,7 +546,7 @@ config BUSYBOX_CONFIG_SPLIT
 	  split a file into pieces.
 
 config BUSYBOX_CONFIG_FEATURE_SPLIT_FANCY
-	bool "fancy extensions"
+	bool "Fancy extensions"
 	default n
 	depends on BUSYBOX_CONFIG_SPLIT
 	help
@@ -572,6 +587,12 @@ config BUSYBOX_CONFIG_SYNC
 	help
 	  sync is used to flush filesystem buffers.
 
+config BUSYBOX_CONFIG_TAC
+	bool "tac"
+	default n
+	help
+	  tac is used to concatenate and print files in reverse.
+
 config BUSYBOX_CONFIG_TAIL
 	bool "tail"
 	default y
@@ -595,7 +616,7 @@ config BUSYBOX_CONFIG_TEE
 	  to standard output and files.
 
 config BUSYBOX_CONFIG_FEATURE_TEE_USE_BLOCK_IO
-	bool "Enable block i/o (larger/faster) instead of byte i/o."
+	bool "Enable block I/O (larger/faster) instead of byte I/O"
 	default y
 	depends on BUSYBOX_CONFIG_TEE
 	help

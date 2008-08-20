@@ -99,6 +99,21 @@ config BUSYBOX_CONFIG_FEATURE_PS_WIDE
 	  If given once, 132 chars are printed and given more than
 	  one, the length is unlimited.
 
+config BUSYBOX_CONFIG_FEATURE_PS_TIME
+	bool "Enable time and elapsed time output"
+	default n
+	depends on BUSYBOX_CONFIG_PS && BUSYBOX_CONFIG_DESKTOP
+	help
+	  Support -o time and -o etime output specifiers.
+
+config BUSYBOX_CONFIG_FEATURE_PS_UNUSUAL_SYSTEMS
+	bool "Support Linux prior to 2.4.0 and non-ELF systems"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_PS_TIME
+	help
+	  Include support for measuring HZ on old kernels and non-ELF systems
+	  (if you are on Linux 2.4.0+ and use ELF, you don't need this)
+
 config BUSYBOX_CONFIG_RENICE
 	bool "renice"
 	default n

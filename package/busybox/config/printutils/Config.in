@@ -1,0 +1,21 @@
+menu "Print Utilities"
+
+config BUSYBOX_CONFIG_LPD
+	bool "lpd"
+	default n
+	help
+	  lpd is a print spooling daemon.
+
+config BUSYBOX_CONFIG_LPR
+	bool "lpr"
+	default n
+	help
+	  lpr sends files (or standard input) to a print spooling daemon.
+
+config BUSYBOX_CONFIG_LPQ
+	bool "lpq"
+	default n
+	help
+	  lpq is a print spool queue examination and manipulation program.
+
+endmenu

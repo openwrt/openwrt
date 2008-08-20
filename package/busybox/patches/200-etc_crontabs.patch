@@ -1,9 +1,7 @@
-Index: busybox-1.7.2/miscutils/crond.c
-===================================================================
---- busybox-1.7.2.orig/miscutils/crond.c	2007-10-30 15:35:00.000000000 -0500
-+++ busybox-1.7.2/miscutils/crond.c	2007-10-30 15:35:00.000000000 -0500
-@@ -15,7 +15,7 @@
- #include "libbb.h"
+--- a/miscutils/crond.c
++++ b/miscutils/crond.c
+@@ -24,7 +24,7 @@
+ 
  
  #ifndef CRONTABS
 -#define CRONTABS        "/var/spool/cron/crontabs"
@@ -11,10 +9,8 @@ Index: busybox-1.7.2/miscutils/crond.c
  #endif
  #ifndef TMPDIR
  #define TMPDIR          "/var/spool/cron"
-Index: busybox-1.7.2/miscutils/crontab.c
-===================================================================
---- busybox-1.7.2.orig/miscutils/crontab.c	2007-10-30 15:35:00.000000000 -0500
-+++ busybox-1.7.2/miscutils/crontab.c	2007-10-30 15:35:00.000000000 -0500
+--- a/miscutils/crontab.c
++++ b/miscutils/crontab.c
 @@ -13,7 +13,7 @@
  #include "libbb.h"
  
@@ -22,5 +18,5 @@ Index: busybox-1.7.2/miscutils/crontab.c
 -#define CRONTABS        "/var/spool/cron/crontabs"
 +#define CRONTABS        "/etc/crontabs"
  #endif
- #ifndef TMPDIR
- #define TMPDIR          "/var/spool/cron"
+ #ifndef CRONUPDATE
+ #define CRONUPDATE      "cron.update"

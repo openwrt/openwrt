@@ -1,10 +1,8 @@
-Index: busybox-1.7.2/networking/httpd.c
-===================================================================
---- busybox-1.7.2.orig/networking/httpd.c	2007-10-30 15:35:04.000000000 -0500
-+++ busybox-1.7.2/networking/httpd.c	2007-10-30 15:35:04.000000000 -0500
-@@ -1618,6 +1618,7 @@
- #if ENABLE_FEATURE_HTTPD_BASIC_AUTH
- 	int credentials = -1;  /* if not required this is Ok */
+--- a/networking/httpd.c
++++ b/networking/httpd.c
+@@ -1797,6 +1797,7 @@
+ 	char *header_ptr = header_ptr;
+ 	Htaccess_Proxy *proxy_entry;
  #endif
 +	xchdir(home_httpd);
  

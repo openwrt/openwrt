@@ -42,6 +42,14 @@ config BUSYBOX_CONFIG_FEATURE_REMOTE_LOG
 	  measure to prevent system logs from being tampered with
 	  by an intruder.
 
+config BUSYBOX_CONFIG_FEATURE_SYSLOGD_DUP
+	bool "Support -D (drop dups) option"
+	default n
+	depends on BUSYBOX_CONFIG_SYSLOGD
+	help
+	  Option -D instructs syslogd to drop consecutive messages
+	  which are totally the same.
+
 config BUSYBOX_CONFIG_FEATURE_IPC_SYSLOG
 	bool "Circular Buffer support"
 	default y
@@ -57,7 +65,7 @@ config BUSYBOX_CONFIG_FEATURE_IPC_SYSLOG
 	  break badly.
 
 config BUSYBOX_CONFIG_FEATURE_IPC_SYSLOG_BUFFER_SIZE
-	int "    Circular buffer size in Kbytes (minimum 4KB)"
+	int "Circular buffer size in Kbytes (minimum 4KB)"
 	default 16
 	range 4 2147483647
 	depends on BUSYBOX_CONFIG_FEATURE_IPC_SYSLOG
@@ -76,7 +84,7 @@ config BUSYBOX_CONFIG_LOGREAD
 	  stored in the syslogd circular buffer.
 
 config BUSYBOX_CONFIG_FEATURE_LOGREAD_REDUCED_LOCKING
-	bool "logread double buffering"
+	bool "Double buffering"
 	default n
 	depends on BUSYBOX_CONFIG_LOGREAD
 	help

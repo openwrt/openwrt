@@ -1,37 +1,43 @@
-Index: busybox-1.7.2/include/applets.h
-===================================================================
---- busybox-1.7.2.orig/include/applets.h	2007-10-30 15:34:59.000000000 -0500
-+++ busybox-1.7.2/include/applets.h	2007-10-30 15:35:03.000000000 -0500
-@@ -241,6 +241,7 @@
+--- a/include/applets.h
++++ b/include/applets.h
+@@ -257,6 +257,7 @@
  USE_MV(APPLET(mv, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_NAMEIF(APPLET(nameif, _BB_DIR_SBIN, _BB_SUID_NEVER))
  USE_NC(APPLET(nc, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
-+USE_NETMSG(APPLET_NOUSAGE(netmsg, netmsg, _BB_DIR_BIN, _BB_SUID_ALWAYS))
++USE_NETMSG(APPLET(netmsg, _BB_DIR_BIN, _BB_SUID_ALWAYS))
  USE_NETSTAT(APPLET(netstat, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_NICE(APPLET(nice, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_NMETER(APPLET(nmeter, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
-Index: busybox-1.7.2/networking/Config.in
-===================================================================
---- busybox-1.7.2.orig/networking/Config.in	2007-10-30 15:34:59.000000000 -0500
-+++ busybox-1.7.2/networking/Config.in	2007-10-30 15:35:03.000000000 -0500
-@@ -508,6 +508,12 @@
- 	help
+--- a/include/usage.h
++++ b/include/usage.h
+@@ -2815,6 +2815,9 @@
+ 
+ #endif
+ 
++#define netmsg_trivial_usage NOUSAGE_STR
++#define netmsg_full_usage ""
++
+ #define netstat_trivial_usage \
+        "[-laentuwxr"USE_FEATURE_NETSTAT_WIDE("W")"]"
+ #define netstat_full_usage "\n\n" \
+--- a/networking/Config.in
++++ b/networking/Config.in
+@@ -602,6 +602,12 @@
  	  A simple Unix utility which reads and writes data across network
  	  connections.
-+	  
+ 
 +config NETMSG
 +	bool "netmsg"
 +	default n
 +	help
 +	  simple program for sending udp broadcast messages
- 
++
  config NC_SERVER
  	bool "Netcat server options (-l)"
-Index: busybox-1.7.2/networking/Kbuild
-===================================================================
---- busybox-1.7.2.orig/networking/Kbuild	2007-10-30 15:34:59.000000000 -0500
-+++ busybox-1.7.2/networking/Kbuild	2007-10-30 15:35:03.000000000 -0500
-@@ -21,6 +21,7 @@
+ 	default n
+--- a/networking/Kbuild
++++ b/networking/Kbuild
+@@ -24,6 +24,7 @@
  lib-$(CONFIG_IPCALC)       += ipcalc.o
  lib-$(CONFIG_NAMEIF)       += nameif.o
  lib-$(CONFIG_NC)           += nc.o
@@ -39,10 +45,8 @@ Index: busybox-1.7.2/networking/Kbuild
  lib-$(CONFIG_NETSTAT)      += netstat.o
  lib-$(CONFIG_NSLOOKUP)     += nslookup.o
  lib-$(CONFIG_PING)         += ping.o
-Index: busybox-1.7.2/networking/netmsg.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ busybox-1.7.2/networking/netmsg.c	2007-10-30 15:35:03.000000000 -0500
+--- /dev/null
++++ b/networking/netmsg.c
 @@ -0,0 +1,63 @@
 +/*
 + * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>

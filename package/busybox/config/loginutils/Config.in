@@ -13,45 +13,71 @@ config BUSYBOX_CONFIG_FEATURE_SHADOWPASSWDS
 	  readable by root and thus the encrypted passwords are no longer
 	  publicly readable.
 
-config BUSYBOX_CONFIG_USE_BB_SHADOW
-	bool "  Use busybox shadow password functions"
-	default n
-	depends on BUSYBOX_CONFIG_USE_BB_PWD_GRP && BUSYBOX_CONFIG_FEATURE_SHADOWPASSWDS
-	help
-	    If you leave this disabled, busybox will use the system's shadow
-	    password handling functions.  And if you are using the GNU C library
-	    (glibc), you will then need to install the /etc/nsswitch.conf
-	    configuration file and the required /lib/libnss_* libraries in
-	    order for the shadow password functions to work.  This generally
-	    makes your embedded system quite a bit larger.
-
-	    Enabling this option will cause busybox to directly access the
-	    system's /etc/shadow file when handling shadow passwords.  This
-	    makes your system smaller and I will get fewer emails asking about
-	    how glibc NSS works).  When this option is enabled, you will not be
-	    able to use PAM to access shadow passwords from remote LDAP
-	    password servers and whatnot.
-
 config BUSYBOX_CONFIG_USE_BB_PWD_GRP
 	bool "Use internal password and group functions rather than system functions"
 	default n
 	help
-	    If you leave this disabled, busybox will use the system's password
-	    and group functions.  And if you are using the GNU C library
-	    (glibc), you will then need to install the /etc/nsswitch.conf
-	    configuration file and the required /lib/libnss_* libraries in
-	    order for the password and group functions to work.  This generally
-	    makes your embedded system quite a bit larger.
+	  If you leave this disabled, busybox will use the system's password
+	  and group functions.  And if you are using the GNU C library
+	  (glibc), you will then need to install the /etc/nsswitch.conf
+	  configuration file and the required /lib/libnss_* libraries in
+	  order for the password and group functions to work.  This generally
+	  makes your embedded system quite a bit larger.
 
-	    Enabling this option will cause busybox to directly access the
-	    system's /etc/password, /etc/group files (and your system will be
-	    smaller, and I will get fewer emails asking about how glibc NSS
-	    works).  When this option is enabled, you will not be able to use
-	    PAM to access remote LDAP password servers and whatnot.  And if you
-	    want hostname resolution to work with glibc, you still need the
-	    /lib/libnss_* libraries.
+	  Enabling this option will cause busybox to directly access the
+	  system's /etc/password, /etc/group files (and your system will be
+	  smaller, and I will get fewer emails asking about how glibc NSS
+	  works).  When this option is enabled, you will not be able to use
+	  PAM to access remote LDAP password servers and whatnot.  And if you
+	  want hostname resolution to work with glibc, you still need the
+	  /lib/libnss_* libraries.
 
-	    If you enable this option, it will add about 1.5k to busybox.
+	  If you need to use glibc's nsswitch.conf mechanism
+	  (e.g. if user/group database is NOT stored in /etc/passwd etc),
+	  you must NOT use this option.
+
+	  If you enable this option, it will add about 1.5k.
+
+config BUSYBOX_CONFIG_USE_BB_SHADOW
+	bool "Use internal shadow password functions"
+	default n
+	depends on BUSYBOX_CONFIG_USE_BB_PWD_GRP && BUSYBOX_CONFIG_FEATURE_SHADOWPASSWDS
+	help
+	  If you leave this disabled, busybox will use the system's shadow
+	  password handling functions.  And if you are using the GNU C library
+	  (glibc), you will then need to install the /etc/nsswitch.conf
+	  configuration file and the required /lib/libnss_* libraries in
+	  order for the shadow password functions to work.  This generally
+	  makes your embedded system quite a bit larger.
+
+	  Enabling this option will cause busybox to directly access the
+	  system's /etc/shadow file when handling shadow passwords.  This
+	  makes your system smaller (and I will get fewer emails asking about
+	  how glibc NSS works).  When this option is enabled, you will not be
+	  able to use PAM to access shadow passwords from remote LDAP
+	  password servers and whatnot.
+
+config BUSYBOX_CONFIG_USE_BB_CRYPT
+	bool "Use internal DES and MD5 crypt functions"
+	default n
+	help
+	  Busybox has internal DES and MD5 crypt functions.
+	  They produce results which are identical to corresponding
+	  standard C library functions.
+
+	  If you leave this disabled, busybox will use the system's
+	  crypt functions.  Most C libraries use large (~70k)
+	  static buffers there, and also combine them with more general
+	  DES encryption/decryption.
+
+	  For busybox, having large static buffers is undesirable,
+	  especially on NOMMU machines. Busybox also doesn't need
+	  DES encryption/decryption and can do with smaller code.
+
+	  If you enable this option, it will add about 4.8k of code
+	  if you are building dynamically linked executable.
+	  In static build, it makes code _smaller_ by about 1.2k,
+	  and likely many kilobytes less of bss.
 
 config BUSYBOX_CONFIG_ADDGROUP
 	bool "addgroup"
@@ -82,11 +108,30 @@ config BUSYBOX_CONFIG_FEATURE_DEL_USER_FROM_GROUP
 	  If called with two non-option arguments, deluser
 	  or delgroup will remove an user from a specified group.
 
+config BUSYBOX_CONFIG_FEATURE_CHECK_NAMES
+	bool "Enable sanity check on user/group names in adduser and addgroup"
+	default n
+	depends on BUSYBOX_CONFIG_ADDUSER || BUSYBOX_CONFIG_ADDGROUP
+	help
+	  Enable sanity check on user and group names in adduser and addgroup.
+	  To avoid problems, the user or group name should consist only of
+	  letters, digits, underscores, periods, at signs and dashes,
+	  and not start with a dash (as defined by IEEE Std 1003.1-2001).
+	  For compatibility with Samba machine accounts "$" is also supported
+	  at the end of the user or group name.
+
 config BUSYBOX_CONFIG_ADDUSER
 	bool "adduser"
 	default n
 	help
 	  Utility for creating a new user account.
+
+config BUSYBOX_CONFIG_FEATURE_ADDUSER_LONG_OPTIONS
+	bool "Enable long options"
+	default n
+	depends on BUSYBOX_CONFIG_ADDUSER && BUSYBOX_CONFIG_GETOPT_LONG
+	help
+	  Support long options for the adduser applet.
 
 config BUSYBOX_CONFIG_DELUSER
 	bool "deluser"
@@ -236,4 +281,3 @@ config BUSYBOX_CONFIG_VLOCK
 	  work properly.
 
 endmenu
-

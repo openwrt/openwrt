@@ -20,9 +20,9 @@ config BUSYBOX_CONFIG_FEATURE_SH_IS_HUSH
 	select BUSYBOX_CONFIG_HUSH
 	bool "hush"
 
-config BUSYBOX_CONFIG_FEATURE_SH_IS_LASH
-	select BUSYBOX_CONFIG_LASH
-	bool "lash"
+####config FEATURE_SH_IS_LASH
+####	select LASH
+####	bool "lash"
 
 config BUSYBOX_CONFIG_FEATURE_SH_IS_MSH
 	select BUSYBOX_CONFIG_MSH
@@ -36,7 +36,6 @@ endchoice
 config BUSYBOX_CONFIG_ASH
 	bool "ash"
 	default y
-	select BUSYBOX_CONFIG_TEST
 	help
 	  Tha 'ash' shell adds about 60k in the default configuration and is
 	  the most complete and most pedantically correct shell included with
@@ -46,6 +45,13 @@ config BUSYBOX_CONFIG_ASH
 
 comment "Ash Shell Options"
 	depends on BUSYBOX_CONFIG_ASH
+
+config BUSYBOX_CONFIG_ASH_BASH_COMPAT
+	bool "bash-compatible extensions"
+	default y
+	depends on BUSYBOX_CONFIG_ASH
+	help
+	  Enable bash-conpatible extensions.
 
 config BUSYBOX_CONFIG_ASH_JOB_CONTROL
 	bool "Job control"
@@ -104,15 +110,20 @@ config BUSYBOX_CONFIG_ASH_GETOPTS
 config BUSYBOX_CONFIG_ASH_BUILTIN_ECHO
 	bool "Builtin version of 'echo'"
 	default y
-	select BUSYBOX_CONFIG_ECHO
 	depends on BUSYBOX_CONFIG_ASH
 	help
 	  Enable support for echo, builtin to ash.
 
+config BUSYBOX_CONFIG_ASH_BUILTIN_PRINTF
+	bool "Builtin version of 'printf'"
+	default y
+	depends on BUSYBOX_CONFIG_ASH
+	help
+	  Enable support for printf, builtin to ash.
+
 config BUSYBOX_CONFIG_ASH_BUILTIN_TEST
 	bool "Builtin version of 'test'"
 	default y
-	select BUSYBOX_CONFIG_TEST
 	depends on BUSYBOX_CONFIG_ASH
 	help
 	  Enable support for test, builtin to ash.
@@ -163,9 +174,6 @@ config BUSYBOX_CONFIG_ASH_EXPAND_PRMT
 config BUSYBOX_CONFIG_HUSH
 	bool "hush"
 	default n
-	select BUSYBOX_CONFIG_TRUE
-	select BUSYBOX_CONFIG_FALSE
-	select BUSYBOX_CONFIG_TEST
 	help
 	  hush is a very small shell (just 18k) and it has fairly complete
 	  Bourne shell grammar.  It even handles all the normal flow control
@@ -228,24 +236,13 @@ config BUSYBOX_CONFIG_HUSH_LOOPS
 config BUSYBOX_CONFIG_LASH
 	bool "lash"
 	default n
-	select BUSYBOX_CONFIG_TRUE
-	select BUSYBOX_CONFIG_FALSE
-	select BUSYBOX_CONFIG_TEST
+	select BUSYBOX_CONFIG_HUSH
 	help
-	  lash is the very smallest shell (adds just 10k) and it is quite
-	  usable as a command prompt, but it is not suitable for any but the
-	  most trivial scripting (such as an initrd that calls insmod a few
-	  times) since it does not understand any Bourne shell grammar.  It
-	  does handle pipes, redirects, and job control though.  Adding in
-	  command editing makes it a very nice lightweight command prompt.
-
+	  lash is deprecated and will be removed, please migrate to hush.
 
 config BUSYBOX_CONFIG_MSH
 	bool "msh"
 	default n
-	select BUSYBOX_CONFIG_TRUE
-	select BUSYBOX_CONFIG_FALSE
-	select BUSYBOX_CONFIG_TEST
 	help
 	  The minix shell (adds just 30k) is quite complete and handles things
 	  like for/do/done, case/esac and all the things you expect a Bourne
@@ -296,6 +293,23 @@ config BUSYBOX_CONFIG_FEATURE_SH_STANDALONE
 #	  run '/bin/busybox'.  If you do not have the busybox binary sitting in
 #	  that exact location with that exact name, this option will not work at
 #	  all.
+
+config BUSYBOX_CONFIG_FEATURE_SH_NOFORK
+	bool "Run 'nofork' applets directly"
+	default n
+	depends on (BUSYBOX_CONFIG_MSH || BUSYBOX_CONFIG_LASH || BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_ASH) && BUSYBOX_CONFIG_FEATURE_PREFER_APPLETS
+	help
+	  This option causes busybox shells [currently only ash]
+	  to not execute typical fork/exec/wait sequence, but call <applet>_main
+	  directly, if possible. (Sometimes it is not possible: for example,
+	  this is not possible in pipes).
+
+	  This will be done only for some applets (those which are marked
+	  NOFORK in include/applets.h).
+
+	  This may significantly speed up some shell scripts.
+
+	  This feature is relatively new. Use with care.
 
 config BUSYBOX_CONFIG_CTTYHACK
 	bool "cttyhack"

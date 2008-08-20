@@ -1,0 +1,43 @@
+--- a/archival/libipkg/pkg.c
++++ b/archival/libipkg/pkg.c
+@@ -1139,8 +1139,12 @@
+      return 0;
+ }
+ 
+-int pkg_name_version_and_architecture_compare(pkg_t *a, pkg_t *b)
++int pkg_name_version_and_architecture_compare(const void *pkg_a, const void *pkg_b)
+ {
++     pkg_t * const *p1 = pkg_a;
++     pkg_t * const *p2 = pkg_b;
++     const pkg_t *a = *p1;
++     const pkg_t *b = *p2;
+      int namecmp;
+      int vercmp;
+      if (!a->name || !b->name) {
+@@ -1167,8 +1171,12 @@
+      return 0;
+ }
+ 
+-int abstract_pkg_name_compare(abstract_pkg_t *a, abstract_pkg_t *b)
++int abstract_pkg_name_compare(const void *apkg_a, const void *apkg_b)
+ {
++     abstract_pkg_t * const *ap1 = apkg_a;
++     abstract_pkg_t * const *ap2 = apkg_b;
++     const abstract_pkg_t *a = *ap1;
++     const abstract_pkg_t *b = *ap2;
+      if (!a->name || !b->name) {
+        fprintf(stderr, "abstract_pkg_name_compare: a=%p a->name=%p b=%p b->name=%p\n",
+ 	       a, a->name, b, b->name);
+--- a/archival/libipkg/pkg.h
++++ b/archival/libipkg/pkg.h
+@@ -191,8 +191,8 @@
+ char *pkg_version_str_alloc(pkg_t *pkg);
+ 
+ int pkg_compare_versions(const pkg_t *pkg, const pkg_t *ref_pkg);
+-int pkg_name_version_and_architecture_compare(pkg_t *a, pkg_t *b);
+-int abstract_pkg_name_compare(abstract_pkg_t *a, abstract_pkg_t *b);
++int pkg_name_version_and_architecture_compare(const void *pkg_a, const void *pkg_b);
++int abstract_pkg_name_compare(const void *apkg_a, const void *apkg_b);
+ 
+ char * pkg_formatted_info(pkg_t *pkg );
+ char * pkg_formatted_field(pkg_t *pkg, const char *field );

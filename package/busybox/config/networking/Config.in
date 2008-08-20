@@ -12,6 +12,21 @@ config BUSYBOX_CONFIG_FEATURE_IPV6
 	  Enable IPv6 support in busybox.
 	  This adds IPv6 support in the networking applets.
 
+config BUSYBOX_CONFIG_FEATURE_PREFER_IPV4_ADDRESS
+	bool "Preferentially use IPv4 addresses from DNS queries"
+	default y
+	depends on BUSYBOX_CONFIG_FEATURE_IPV6
+	help
+	  Use IPv4 address of network host if it has one.
+
+	  If this option is off, the first returned address will be used.
+	  This may cause problems when your DNS server is IPv6-capable and
+	  is returning IPv6 host addresses too. If IPv6 address
+	  precedes IPv4 one in DNS reply, busybox network applets
+	  (e.g. wget) will use IPv6 address. On an IPv6-incapable host
+	  or network applets will fail to connect to the host
+	  using IPv6 address.
+
 config BUSYBOX_CONFIG_VERBOSE_RESOLUTION_ERRORS
 	bool "Verbose resolution errors"
 	default y
@@ -31,6 +46,32 @@ config BUSYBOX_CONFIG_ARPING
 	default y
 	help
 	  Ping hosts by ARP packets.
+
+config BUSYBOX_CONFIG_BRCTL
+	bool "brctl"
+	default n
+	help
+	  Manage ethernet bridges.
+	  Supports addbr/delbr and addif/delif.
+
+config BUSYBOX_CONFIG_FEATURE_BRCTL_FANCY
+	bool "Fancy options"
+	default n
+	depends on BUSYBOX_CONFIG_BRCTL
+	help
+	  Add support for extended option like:
+	    setageing, setfd, sethello, setmaxage,
+	    setpathcost, setportprio, setbridgeprio,
+	    stp
+	  This adds about 600 bytes.
+
+config BUSYBOX_CONFIG_FEATURE_BRCTL_SHOW
+	bool "Support show, showmac and showstp"
+	default n
+	depends on BUSYBOX_CONFIG_BRCTL && BUSYBOX_CONFIG_FEATURE_BRCTL_FANCY
+	help
+	  Add support for option which prints the current config:
+	    showmacs, showstp, show
 
 config BUSYBOX_CONFIG_DNSD
 	bool "dnsd"
@@ -101,7 +142,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_USE_SENDFILE
 	  instead of read/write loop.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_RELOAD_CONFIG_SIGHUP
-	bool "Support reloading the global config file using hup signal"
+	bool "Support reloading of global config file on HUP signal"
 	default y
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
@@ -151,7 +192,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_CGI
 	  when specific URLs are requested.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
-	bool "Enable support for running scripts through an interpreter"
+	bool "Support for running scripts through an interpreter"
 	default y
 	depends on BUSYBOX_CONFIG_FEATURE_HTTPD_CGI
 	help
@@ -162,7 +203,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
 	  *.php:/path/to/your/php
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_SET_REMOTE_PORT_TO_ENV
-	bool "Support the REMOTE_PORT environment variable for CGI"
+	bool "Set REMOTE_PORT environment variable for CGI"
 	default y
 	depends on BUSYBOX_CONFIG_FEATURE_HTTPD_CGI
 	help
@@ -170,17 +211,17 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_SET_REMOTE_PORT_TO_ENV
 	  references that contain a unique port number.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_ENCODE_URL_STR
-	bool "Enable the -e option for shell script CGI simplification."
+	bool "Enable -e option (useful for CGIs written as shell scripts)"
 	default y
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
-	  This option allows html encoding arbitrary
-	  strings for display of the browser.  Output goes to stdout.
-	  For example, httpd -e "<Hello World>" as
+	  This option allows html encoding of arbitrary strings for display
+	  by the browser.  Output goes to stdout.
+	  For example, httpd -e "<Hello World>" produces
 	  "&#60Hello&#32World&#62".
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_ERROR_PAGES
-	bool "Enable support for custom error pages"
+	bool "Support for custom error pages"
 	default y
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
@@ -193,7 +234,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_ERROR_PAGES
 	  message.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_PROXY
-	bool "Enable support for reverse proxy"
+	bool "Support for reverse proxy"
 	default n
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
@@ -250,6 +291,13 @@ config BUSYBOX_CONFIG_FEATURE_IFCONFIG_BROADCAST_PLUS
 	help
 	  Setting this will make ifconfig attempt to find the broadcast
 	  automatically if the value '+' is used.
+
+config BUSYBOX_CONFIG_IFENSLAVE
+	bool "ifenslave"
+	default n
+	help
+	  Userspace application to bind several interfaces
+	  to a logical interface (use with kernel bonding driver).
 
 config BUSYBOX_CONFIG_IFUPDOWN
 	bool "ifupdown"
@@ -315,14 +363,14 @@ config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IFCONFIG_BUILTIN
 	  work.
 
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IPV4
-	bool "Enable support for IPv4"
+	bool "Support for IPv4"
 	default n
 	depends on BUSYBOX_CONFIG_IFUPDOWN
 	help
 	  If you want ifup/ifdown to talk IPv4, leave this on.
 
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IPV6
-	bool "Enable support for IPv6"
+	bool "Support for IPv6"
 	default n
 	depends on BUSYBOX_CONFIG_IFUPDOWN && BUSYBOX_CONFIG_FEATURE_IPV6
 	help
@@ -330,7 +378,7 @@ config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IPV6
 
 ### UNUSED
 ###config FEATURE_IFUPDOWN_IPX
-###	bool "Enable support for IPX"
+###	bool "Support for IPX"
 ###	default n
 ###	depends on IFUPDOWN
 ###	help
@@ -346,7 +394,7 @@ config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_MAPPING
 	  a weird network setup you don't need it.
 
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_EXTERNAL_DHCP
-	bool "Enable support for external dhcp clients"
+	bool "Support for external dhcp clients"
 	default n
 	depends on BUSYBOX_CONFIG_IFUPDOWN
 	help
@@ -449,7 +497,7 @@ config BUSYBOX_CONFIG_FEATURE_IP_RULE
 	  Add support for rule commands to "ip".
 
 config BUSYBOX_CONFIG_FEATURE_IP_SHORT_FORMS
-	bool "Support short forms of ip commands."
+	bool "Support short forms of ip commands"
 	default n
 	depends on BUSYBOX_CONFIG_IP
 	help
@@ -528,11 +576,24 @@ config BUSYBOX_CONFIG_NAMEIF
 	  Renamed interfaces MUST be in the down state.
 	  It is possible to use a file (default: /etc/mactab)
 	  with list of new interface names and MACs.
-	  Maximum interface name length: IF_NAMESIZE = 16
+	  Maximum interface name length: IFNAMSIZ = 16
 	  File fields are separated by space or tab.
 	  File format:
 	  # Comment
 	  new_interface_name    XX:XX:XX:XX:XX:XX
+
+config BUSYBOX_CONFIG_FEATURE_NAMEIF_EXTENDED
+	bool "Extended nameif"
+	default n
+	depends on BUSYBOX_CONFIG_NAMEIF
+	help
+	  This extends the nameif syntax to support the bus_info and driver
+	  checks. The syntax is compatible to the normal nameif.
+	  File format:
+	    new_interface_name  driver=asix bus=usb-0000:00:08.2-3
+	    new_interface_name  bus=usb-0000:00:08.2-3 00:80:C8:38:91:B5
+	    new_interface_name  mac=00:80:C8:38:91:B5
+	    new_interface_name  00:80:C8:38:91:B5
 
 config BUSYBOX_CONFIG_NC
 	bool "nc"
@@ -540,7 +601,7 @@ config BUSYBOX_CONFIG_NC
 	help
 	  A simple Unix utility which reads and writes data across network
 	  connections.
-	  
+
 config BUSYBOX_CONFIG_NETMSG
 	bool "netmsg"
 	default y
@@ -570,7 +631,7 @@ config BUSYBOX_CONFIG_NETSTAT
 	  netstat prints information about the Linux networking subsystem.
 
 config BUSYBOX_CONFIG_FEATURE_NETSTAT_WIDE
-	bool "  Enable wide netstat output"
+	bool "Enable wide netstat output"
 	default y
 	depends on BUSYBOX_CONFIG_NETSTAT
 	help
@@ -597,12 +658,6 @@ config BUSYBOX_CONFIG_PING6
 	help
 	  This will give you a ping that can talk IPv6.
 
-config BUSYBOX_CONFIG_PSCAN
-	bool "pscan"
-	default n
-	help
-	  Simple network port scanner.
-
 config BUSYBOX_CONFIG_FEATURE_FANCY_PING
 	bool "Enable fancy ping output"
 	default y
@@ -611,11 +666,29 @@ config BUSYBOX_CONFIG_FEATURE_FANCY_PING
 	  Make the output from the ping applet include statistics, and at the
 	  same time provide full support for ICMP packets.
 
+config BUSYBOX_CONFIG_PSCAN
+	bool "pscan"
+	default n
+	help
+	  Simple network port scanner.
+
 config BUSYBOX_CONFIG_ROUTE
 	bool "route"
 	default y
 	help
 	  Route displays or manipulates the kernel's IP routing tables.
+
+config BUSYBOX_CONFIG_SENDMAIL
+	bool "sendmail"
+	default n
+	help
+	  Barebones sendmail.
+
+config BUSYBOX_CONFIG_FETCHMAIL
+	bool "fetchmail"
+	default n
+	help
+	  Barebones fetchmail.
 
 config BUSYBOX_CONFIG_SLATTACH
 	bool "slattach"
@@ -707,28 +780,41 @@ config BUSYBOX_CONFIG_TFTP
 	  is usually used for simple, small transfers such as a root image
 	  for a network-enabled bootloader.
 
+config BUSYBOX_CONFIG_TFTPD
+	bool "tftpd"
+	default n
+	help
+	  This enables the Trivial File Transfer Protocol server program.
+	  It expects that stdin is a datagram socket and a packet
+	  is already pending on it. It will exit after one transfer.
+	  In other words: it should be run from inetd in nowait mode,
+	  or from udpsvd. Example: "udpsvd -E 0 69 tftpd DIR"
+
 config BUSYBOX_CONFIG_FEATURE_TFTP_GET
 	bool "Enable \"get\" command"
 	default n
-	depends on BUSYBOX_CONFIG_TFTP
+	depends on BUSYBOX_CONFIG_TFTP || BUSYBOX_CONFIG_TFTPD
 	help
 	  Add support for the GET command within the TFTP client.  This allows
 	  a client to retrieve a file from a TFTP server.
+	  Also enable upload support in tftpd, if tftpd is selected.
 
 config BUSYBOX_CONFIG_FEATURE_TFTP_PUT
 	bool "Enable \"put\" command"
 	default n
-	depends on BUSYBOX_CONFIG_TFTP
+	depends on BUSYBOX_CONFIG_TFTP || BUSYBOX_CONFIG_TFTPD
 	help
 	  Add support for the PUT command within the TFTP client.  This allows
 	  a client to transfer a file to a TFTP server.
+	  Also enable download support in tftpd, if tftpd is selected.
 
 config BUSYBOX_CONFIG_FEATURE_TFTP_BLOCKSIZE
-	bool "Enable \"blocksize\" command"
+	bool "Enable \"blksize\" protocol option"
 	default n
-	depends on BUSYBOX_CONFIG_TFTP
+	depends on BUSYBOX_CONFIG_TFTP || BUSYBOX_CONFIG_TFTPD
 	help
-	  Allow the client to specify the desired block size for transfers.
+	  Allow tftp to specify block size, and tftpd to understand
+	  "blksize" option.
 
 config BUSYBOX_CONFIG_DEBUG_TFTP
 	bool "Enable debug"
@@ -815,5 +901,17 @@ config BUSYBOX_CONFIG_ZCIP
 
 	  See http://www.zeroconf.org for further details, and "zcip.script"
 	  in the busybox examples.
+
+config BUSYBOX_CONFIG_TCPSVD
+	bool "tcpsvd"
+	default n
+	help
+	  tcpsvd listens on a TCP port and runs a program for each new connection
+
+config BUSYBOX_CONFIG_UDPSVD
+	bool "udpsvd"
+	default n
+	help
+	  udpsvd listens on an UDP port and runs a program for each new connection
 
 endmenu
