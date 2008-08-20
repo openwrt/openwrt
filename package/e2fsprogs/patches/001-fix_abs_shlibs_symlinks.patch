@@ -1,0 +1,12 @@
+diff -ruN e2fsprogs-1.40.11.orig/lib/Makefile.elf-lib e2fsprogs-1.40.11/lib/Makefile.elf-lib
+--- e2fsprogs-1.40.11.orig/lib/Makefile.elf-lib	2008-01-01 22:47:01.000000000 +0100
++++ e2fsprogs-1.40.11/lib/Makefile.elf-lib	2008-08-13 13:32:47.206558190 +0200
+@@ -45,7 +45,7 @@
+ 	@echo "	SYMLINK $(ELF_INSTALL_DIR)/$(ELF_SONAME)"
+ 	@$(LN_S) -f $(ELF_LIB) $(DESTDIR)$(ELF_INSTALL_DIR)/$(ELF_SONAME)
+ 	@echo "	SYMLINK $(libdir)/$(ELF_IMAGE).so"
+-	@$(LN_S) -f $(ELF_INSTALL_DIR)/$(ELF_SONAME) \
++	@$(LN_S) -f $(ELF_SONAME) \
+ 		$(DESTDIR)$(libdir)/$(ELF_IMAGE).so
+ 	@echo "	LDCONFIG"
+ 	@-$(LDCONFIG)
