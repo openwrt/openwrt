@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,13 +9,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux-ng
 PKG_VERSION:=2.13.0.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.13
 PKG_MD5SUM:=c841dc8743905c8f0db20c9db5094f57
 
-PKG_BUILD_DEPENDS=libblkid libuuid
+PKG_BUILD_DEPENDS=e2fsprogs
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -38,9 +38,9 @@ endef
 
 define Package/cfdisk
 $(call Package/util-linux/Default)
+  SUBMENU:=disc
   TITLE:=Partition table manipulation utility
   DEPENDS:= +libncurses
-  SUBMENU:=disc
 endef
 
 define Package/cfdisk/description
@@ -59,6 +59,7 @@ endef
 define Package/mount-utils
 $(call Package/util-linux/Default)
   TITLE:=Devices mount/unmounting utilities
+  DEPENDS+= +libblkid +libuuid
 endef
 
 define Package/mount-utils/description
@@ -67,8 +68,9 @@ endef
 
 define Package/swap-utils
 $(call Package/util-linux/Default)
-  TITLE:=Swap space management utilities
   SUBMENU:=disc
+  TITLE:=Swap space management utilities
+  DEPENDS+= +libuuid
 endef
 
 define Package/swap-utils/description
