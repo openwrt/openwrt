@@ -143,7 +143,7 @@ set_interface_ifname() {
 }
 
 setup_interface_none() {
-	env -i ACTION="ifup" INTERFACE="$config" DEVICE="$iface" PROTO=none /sbin/hotplug-call "iface" &
+	env -i ACTION="ifup" INTERFACE="$2" DEVICE="$1" PROTO=none /sbin/hotplug-call "iface" &
 }
 
 setup_interface_static() {
