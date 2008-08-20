@@ -1,8 +1,0 @@
-NAME=ipsec
-CTLFILE="/var/run/pluto.ctl"
-
-[ "$ACTION" = "ifup" -a "$INTERFACE" = "wan" ] || exit
-
-[ -e "$CTLFILE" ] || exit
-
-/etc/init.d/ipsec update
