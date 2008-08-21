@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -173,6 +173,22 @@ define KernelPackage/ide-aec62xx/description
 endef
 
 $(eval $(call KernelPackage,ide-aec62xx))
+
+
+define KernelPackage/ide-magicbox
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Magicbox 2.0 IDE CF driver
+  DEPENDS:=@TARGET_magicbox +kmod-ide-core
+  KCONFIG:=CONFIG_BLK_DEV_MAGICBOX_IDE
+  FILES:=$(LINUX_DIR)/drivers/ide/ppc/magicbox_ide.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,magicbox_ide)
+endef
+
+define KernelPackage/ide-magicbox/description
+ Support for Magicbox 2.0 onboard CF slot.
+endef
+
+$(eval $(call KernelPackage,ide-magicbox))
 
 
 define KernelPackage/ide-pdc202xx
