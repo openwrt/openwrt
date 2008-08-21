@@ -1,26 +1,3 @@
---- a/drivers/ide/ide.c
-+++ b/drivers/ide/ide.c
-@@ -78,6 +78,10 @@
- /* default maximum number of failures */
- #define IDE_DEFAULT_MAX_FAILURES 	1
- 
-+#ifdef CONFIG_BLK_DEV_MAGICBOX_IDE
-+extern void __init ide_magicbox_init(void);
-+#endif
-+
- struct class *ide_port_class;
- 
- static const u8 ide_hwif_to_major[] = { IDE0_MAJOR, IDE1_MAJOR,
-@@ -494,6 +498,9 @@
- 
- 	return -EPERM;
- #endif
-+#ifdef CONFIG_BLK_DEV_MAGICBOX_IDE
-+	ide_magicbox_init();
-+#endif
- }
- 
- int set_pio_mode(ide_drive_t *drive, int arg)
 --- a/drivers/ide/Kconfig
 +++ b/drivers/ide/Kconfig
 @@ -928,6 +928,14 @@
@@ -28,7 +5,7 @@
  	  If unsure, say N.
  
 +config BLK_DEV_MAGICBOX_IDE
-+	bool "MagicBox 2.0 CF IDE support"
++	tristate "MagicBox 2.0 CF IDE support"
 +	depends on 4xx && IDE
 +	help
 +	  This option provides support for IDE on MagicBox 2.0 boards.
