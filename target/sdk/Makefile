@@ -32,9 +32,11 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 		$(SDK_BUILD_DIR)/target/linux/*/files \
 		$(SDK_BUILD_DIR)/target/linux/*/patches
 	$(CP) \
+		$(TOPDIR)/LICENSE \
 		$(TOPDIR)/feeds.conf.default \
 		$(TOPDIR)/rules.mk \
 		$(TOPDIR)/.config \
+		./files/Config.in \
 		./files/Makefile \
 		./files/README.SDK \
 		$(SDK_BUILD_DIR)/
