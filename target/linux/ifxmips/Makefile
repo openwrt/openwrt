@@ -10,7 +10,7 @@ ARCH:=mips
 BOARD:=ifxmips
 BOARDNAME:=Infineon Mips
 FEATURES:=squashfs jffs2
-LINUX_VERSION:=2.6.25.15
+LINUX_VERSION:=2.6.25.16
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES:=uboot-ifxmips

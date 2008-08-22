@@ -6510,7 +6510,7 @@
 +
 --- a/drivers/crypto/padlock-aes.c
 +++ b/drivers/crypto/padlock-aes.c
-@@ -385,12 +385,12 @@
+@@ -411,12 +411,12 @@
  	int ret;
  
  	if (!cpu_has_xcrypt) {
@@ -6527,7 +6527,7 @@
  
 --- a/drivers/crypto/padlock-sha.c
 +++ b/drivers/crypto/padlock-sha.c
-@@ -254,12 +254,12 @@
+@@ -263,12 +263,12 @@
  	int rc = -ENODEV;
  
  	if (!cpu_has_phe) {
