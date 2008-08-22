@@ -472,7 +472,7 @@ sub print_package_config_category($) {
 
 sub gen_package_config() {
 	parse_package_metadata($ARGV[0]) or exit 1;
-	print "menuconfig UCI_PRECONFIG\n\tbool \"Image configuration\"\n";
+	print "menuconfig UCI_PRECONFIG\n\tbool \"Image configuration\"\n" if %preconfig;
 	foreach my $preconfig (keys %preconfig) {
 		foreach my $cfg (keys %{$preconfig{$preconfig}}) {
 			my $conf = $preconfig{$preconfig}->{$cfg}->{id};
