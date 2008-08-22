@@ -79,7 +79,7 @@ info: FORCE
 $(TOPDIR)/tmp/ipkg.conf: FORCE
 	@mkdir -p $(TOPDIR)/tmp
 	@echo 'dest root /' > $@
-	@echo 'src packages file:$(TOPDIR)/packages' >> $@
+	@echo 'src packages file:$(PACKAGE_DIR)' >> $@
 
 BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $(PACKAGES) $($(PROFILE)_PACKAGES) kernel)
 ifeq ($(KERNEL),2.4)
