@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -32,6 +32,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 		$(SDK_BUILD_DIR)/target/linux/*/files \
 		$(SDK_BUILD_DIR)/target/linux/*/patches
 	$(CP) \
+		$(TOPDIR)/feeds.conf.default \
 		$(TOPDIR)/rules.mk \
 		$(TOPDIR)/.config \
 		./files/Makefile \
