@@ -1,7 +1,5 @@
-Index: linux-2.6.26.2/drivers/mtd/redboot.c
-===================================================================
---- linux-2.6.26.2.orig/drivers/mtd/redboot.c	2008-08-19 19:32:17.000000000 +0200
-+++ linux-2.6.26.2/drivers/mtd/redboot.c	2008-08-19 19:47:34.000000000 +0200
+--- a/drivers/mtd/redboot.c
++++ b/drivers/mtd/redboot.c
 @@ -13,6 +13,8 @@
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
@@ -19,7 +17,7 @@ Index: linux-2.6.26.2/drivers/mtd/redboot.c
  	int nrparts = 0;
  	struct fis_image_desc *buf;
  	struct mtd_partition *parts;
-@@ -217,14 +220,14 @@
+@@ -211,14 +214,14 @@
  		}
  	}
  #endif
@@ -36,7 +34,7 @@ Index: linux-2.6.26.2/drivers/mtd/redboot.c
  #ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
  	if (nulllen > 0) {
  		strcpy(nullname, nullstring);
-@@ -243,6 +246,8 @@
+@@ -237,6 +240,8 @@
  	}
  #endif
  	for ( ; i<nrparts; i++) {
@@ -45,7 +43,7 @@ Index: linux-2.6.26.2/drivers/mtd/redboot.c
  		parts[i].size = fl->img->size;
  		parts[i].offset = fl->img->flash_base;
  		parts[i].name = names;
-@@ -276,6 +281,14 @@
+@@ -270,6 +275,14 @@
  		fl = fl->next;
  		kfree(tmp_fl);
  	}

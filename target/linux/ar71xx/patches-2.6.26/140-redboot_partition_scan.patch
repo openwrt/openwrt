@@ -1,6 +1,6 @@
 --- a/drivers/mtd/redboot.c
 +++ b/drivers/mtd/redboot.c
-@@ -59,31 +59,32 @@
+@@ -62,31 +62,32 @@
  	static char nullstring[] = "unallocated";
  #endif
  
@@ -40,7 +40,7 @@
  	printk(KERN_NOTICE "Searching for RedBoot partition table in %s at offset 0x%lx\n",
  	       master->name, offset);
  
-@@ -155,6 +156,11 @@
+@@ -158,6 +159,11 @@
  	}
  	if (i == numslots) {
  		/* Didn't find it */
