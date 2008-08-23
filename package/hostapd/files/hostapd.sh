@@ -62,15 +62,19 @@ hostapd_setup_vif() {
 			append hostapd_cfg "wpa_gmk_rekey=640" "$N"
 		;;
 		*)
-			return 0;
+			wpa=0
 		;;
 	esac
 	config_get ifname "$vif" ifname
 	config_get bridge "$vif" bridge
 	config_get ssid "$vif" ssid
+	config_get device "$vif" device
+	config_get channel "$device" channel
 	cat > /var/run/hostapd-$ifname.conf <<EOF
 driver=$driver
 interface=$ifname
+hw_mode=g
+channel=$channel
 ${bridge:+bridge=$bridge}
 ssid=$ssid
 debug=0
