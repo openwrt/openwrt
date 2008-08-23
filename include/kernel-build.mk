@@ -81,7 +81,7 @@ define BuildKernel
 	$(LINUX_CONFCMD) > $(LINUX_DIR)/.config
 	touch $(LINUX_CONFIG)
 	$(_SINGLE)$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) $$@
-	$(SCRIPT_DIR)/kconfig.pl '>' $(GENERIC_LINUX_CONFIG) $(LINUX_DIR)/.config > $(LINUX_CONFIG)
+	$(SCRIPT_DIR)/kconfig.pl '>' $(GENERIC_LINUX_CONFIG) $(LINUX_DIR)/.config > $(if $(LINUX_SUBCONFIG),$(LINUX_SUBCONFIG),$(LINUX_CONFIG))
 	$(Kernel/Configure)
 
   install: $(LINUX_DIR)/.image
