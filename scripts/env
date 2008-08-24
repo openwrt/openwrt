@@ -62,8 +62,8 @@ env_init() {
 		git init &&
 		touch .config &&
 		mkdir files &&
-		git-add . && 
-		git-commit -q -m "Initial import"
+		git add . && 
+		git commit -q -m "Initial import"
 	} || {
 		rm -rf .git
 		error "Failed to initialize the environment directory"
@@ -72,14 +72,14 @@ env_init() {
 
 env_sync_data() {
 	[ \! -L "$BASEDIR/.config" -a -f "$BASEDIR/.config" ] && mv "$BASEDIR/.config" "$ENVDIR"
-	git-add .
-	git-add -u
+	git add .
+	git add -u
 }
 
 env_sync() {
 	local STR="$1"
 	env_sync_data
-	git-commit -m "${STR:-Update} at $(date)"
+	git commit -m "${STR:-Update} at $(date)"
 }
 
 env_link_config() {
@@ -90,19 +90,19 @@ env_link_config() {
 }
 
 env_do_reset() {
-	git-reset --hard HEAD
-	git-clean -d -f
+	git reset --hard HEAD
+	git clean -d -f
 }
 
 env_list() {
 	env_init
-	git-branch | grep -vE '^. master$'
+	git branch | grep -vE '^. master$'
 }
 
 env_diff() {
 	env_init
 	env_sync_data
-	git-diff --cached
+	git diff --cached
 }
 
 env_save() {
@@ -150,9 +150,9 @@ env_delete() {
 	local name="${1##*/}"
 	[ -z "$name" ] && usage
 	[ -f "$envdir/.git/refs/heads/$name" ] || error "environment '$name' not found"
-	branch="$(git-branch | grep '^\* ' | awk '{print $2}')"
+	branch="$(git branch | grep '^\* ' | awk '{print $2}')"
 	[ "$name" = "branch" ] && error "cannot delete the currently selected environment"
-	git-branch -D "$name"
+	git branch -D "$name"
 }
 
 env_switch() {
@@ -162,14 +162,14 @@ env_switch() {
 
 	env_init
 	env_ask_sync
-	git-checkout "$name"
+	git checkout "$name"
 	env_link_config
 }
 
 env_rename() {
 	local NAME="${1##*/}"
 	env_init
-	git-branch -m "$NAME"
+	git branch -m "$NAME"
 }
 
 env_new() {
@@ -180,7 +180,7 @@ env_new() {
 	[ -z "$NAME" ] && usage
 	env_init 1
 	
-	branch="$(git-branch | grep '^\* ' | awk '{print $2}')"
+	branch="$(git branch | grep '^\* ' | awk '{print $2}')"
 	if [ -n "$branch" -a "$branch" != "master" ]; then
 		env_ask_sync
 		if ask_bool 0 "Do you want to clone the current environment?"; then
@@ -188,7 +188,7 @@ env_new() {
 		fi
 		rm -f "$BASEDIR/.config" "$BASEDIR/files"
 	fi
-	git-checkout -b "$1" "$from"
+	git checkout -b "$1" "$from"
 	if [ -f "$BASEDIR/.config" -o -d "$BASEDIR/files" ]; then
 		if ask_bool 1 "Do you want to keep your current config and files?"; then
 			[ -d "$BASEDIR/files" -a \! -L "$BASEDIR/files" ] && {
