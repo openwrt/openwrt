@@ -1,6 +1,7 @@
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/Makefile lua-5.1.3-patched/src/Makefile
---- ../lua-5.1.3/src/Makefile	2008-01-19 21:37:58.000000000 +0200
-+++ lua-5.1.3-patched/src/Makefile	2008-03-26 13:05:24.000000000 +0200
+Index: lua-5.1.4/src/Makefile
+===================================================================
+--- lua-5.1.4.orig/src/Makefile	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/Makefile	2008-08-24 16:48:20.000000000 +0200
 @@ -25,7 +25,7 @@
  LUA_A=	liblua.a
  CORE_O=	lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o \
@@ -37,9 +38,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/Makefile lua-5.1.3
 +print.c: lnum.h
 +
  # (end of Makefile)
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lapi.c lua-5.1.3-patched/src/lapi.c
---- ../lua-5.1.3/src/lapi.c	2008-01-03 17:20:39.000000000 +0200
-+++ lua-5.1.3-patched/src/lapi.c	2008-03-19 09:52:15.000000000 +0200
+Index: lua-5.1.4/src/lapi.c
+===================================================================
+--- lua-5.1.4.orig/src/lapi.c	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/lapi.c	2008-08-24 16:48:20.000000000 +0200
 @@ -28,7 +28,7 @@
  #include "ltm.h"
  #include "lundump.h"
@@ -49,7 +51,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lapi.c lua-5.1.3-p
  
  
  const char lua_ident[] =
-@@ -242,12 +242,13 @@
+@@ -241,12 +241,13 @@
  
  LUA_API int lua_type (lua_State *L, int idx) {
    StkId o = index2adr(L, idx);
@@ -64,7 +66,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lapi.c lua-5.1.3-p
    return (t == LUA_TNONE) ? "no value" : luaT_typenames[t];
  }
  
-@@ -265,6 +266,14 @@
+@@ -264,6 +265,14 @@
  }
  
  
@@ -79,7 +81,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lapi.c lua-5.1.3-p
  LUA_API int lua_isstring (lua_State *L, int idx) {
    int t = lua_type(L, idx);
    return (t == LUA_TSTRING || t == LUA_TNUMBER);
-@@ -310,31 +319,66 @@
+@@ -309,31 +318,66 @@
  }
  
  
@@ -156,7 +158,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lapi.c lua-5.1.3-p
  LUA_API int lua_toboolean (lua_State *L, int idx) {
    const TValue *o = index2adr(L, idx);
    return !l_isfalse(o);
-@@ -365,6 +409,7 @@
+@@ -364,6 +408,7 @@
      case LUA_TSTRING: return tsvalue(o)->len;
      case LUA_TUSERDATA: return uvalue(o)->len;
      case LUA_TTABLE: return luaH_getn(hvalue(o));
@@ -164,7 +166,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lapi.c lua-5.1.3-p
      case LUA_TNUMBER: {
        size_t l;
        lua_lock(L);  /* `luaV_tostring' may create a new string */
-@@ -427,6 +472,8 @@
+@@ -426,6 +471,8 @@
  }
  
  
@@ -173,7 +175,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lapi.c lua-5.1.3-p
  LUA_API void lua_pushnumber (lua_State *L, lua_Number n) {
    lua_lock(L);
    setnvalue(L->top, n);
-@@ -435,12 +482,22 @@
+@@ -434,12 +481,22 @@
  }
  
  
@@ -198,7 +200,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lapi.c lua-5.1.3-p
  
  
  LUA_API void lua_pushlstring (lua_State *L, const char *s, size_t len) {
-@@ -570,7 +627,7 @@
+@@ -569,7 +626,7 @@
    lua_lock(L);
    o = index2adr(L, idx);
    api_check(L, ttistable(o));
@@ -207,7 +209,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lapi.c lua-5.1.3-p
    api_incr_top(L);
    lua_unlock(L);
  }
-@@ -598,6 +655,9 @@
+@@ -597,6 +654,9 @@
      case LUA_TUSERDATA:
        mt = uvalue(obj)->metatable;
        break;
@@ -217,7 +219,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lapi.c lua-5.1.3-p
      default:
        mt = G(L)->mt[ttype(obj)];
        break;
-@@ -688,7 +748,7 @@
+@@ -687,7 +747,7 @@
    api_checknelems(L, 1);
    o = index2adr(L, idx);
    api_check(L, ttistable(o));
@@ -226,7 +228,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lapi.c lua-5.1.3-p
    luaC_barriert(L, hvalue(o), L->top-1);
    L->top--;
    lua_unlock(L);
-@@ -722,7 +782,7 @@
+@@ -721,7 +781,7 @@
        break;
      }
      default: {
@@ -235,7 +237,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lapi.c lua-5.1.3-p
        break;
      }
    }
-@@ -1083,3 +1143,32 @@
+@@ -1085,3 +1145,32 @@
    return name;
  }
  
@@ -268,9 +270,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lapi.c lua-5.1.3-p
 +  else lua_pushnumber( L, nvalue_fast(o) );
 +  return 1;
 +}
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lapi.h lua-5.1.3-patched/src/lapi.h
---- ../lua-5.1.3/src/lapi.h	2007-12-27 15:02:25.000000000 +0200
-+++ lua-5.1.3-patched/src/lapi.h	2008-03-03 12:47:53.000000000 +0200
+Index: lua-5.1.4/src/lapi.h
+===================================================================
+--- lua-5.1.4.orig/src/lapi.h	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/lapi.h	2008-08-24 16:48:20.000000000 +0200
 @@ -13,4 +13,6 @@
  
  LUAI_FUNC void luaA_pushobject (lua_State *L, const TValue *o);
@@ -278,10 +281,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lapi.h lua-5.1.3-p
 +int lua_pushvalue_as_number (lua_State *L, int idx);
 +
  #endif
-Binary files ../lua-5.1.3/src/lapi.o and lua-5.1.3-patched/src/lapi.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lauxlib.c lua-5.1.3-patched/src/lauxlib.c
---- ../lua-5.1.3/src/lauxlib.c	2008-01-21 15:20:51.000000000 +0200
-+++ lua-5.1.3-patched/src/lauxlib.c	2008-03-19 09:51:27.000000000 +0200
+Index: lua-5.1.4/src/lauxlib.c
+===================================================================
+--- lua-5.1.4.orig/src/lauxlib.c	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/lauxlib.c	2008-08-24 16:48:20.000000000 +0200
 @@ -23,7 +23,7 @@
  #include "lua.h"
  
@@ -328,9 +331,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lauxlib.c lua-5.1.
  LUALIB_API int luaL_getmetafield (lua_State *L, int obj, const char *event) {
    if (!lua_getmetatable(L, obj))  /* no metatable? */
      return 0;
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lauxlib.h lua-5.1.3-patched/src/lauxlib.h
---- ../lua-5.1.3/src/lauxlib.h	2007-12-27 15:02:25.000000000 +0200
-+++ lua-5.1.3-patched/src/lauxlib.h	2008-03-12 23:15:22.000000000 +0200
+Index: lua-5.1.4/src/lauxlib.h
+===================================================================
+--- lua-5.1.4.orig/src/lauxlib.h	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/lauxlib.h	2008-08-24 16:48:20.000000000 +0200
 @@ -57,6 +57,12 @@
  LUALIB_API lua_Integer (luaL_checkinteger) (lua_State *L, int numArg);
  LUALIB_API lua_Integer (luaL_optinteger) (lua_State *L, int nArg,
@@ -344,10 +348,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lauxlib.h lua-5.1.
  
  LUALIB_API void (luaL_checkstack) (lua_State *L, int sz, const char *msg);
  LUALIB_API void (luaL_checktype) (lua_State *L, int narg, int t);
-Binary files ../lua-5.1.3/src/lauxlib.o and lua-5.1.3-patched/src/lauxlib.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lbaselib.c lua-5.1.3-patched/src/lbaselib.c
---- ../lua-5.1.3/src/lbaselib.c	2008-01-20 15:53:22.000000000 +0200
-+++ lua-5.1.3-patched/src/lbaselib.c	2008-03-13 10:42:50.000000000 +0200
+Index: lua-5.1.4/src/lbaselib.c
+===================================================================
+--- lua-5.1.4.orig/src/lbaselib.c	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/lbaselib.c	2008-08-24 16:48:20.000000000 +0200
 @@ -18,7 +18,9 @@
  
  #include "lauxlib.h"
@@ -408,7 +412,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lbaselib.c lua-5.1
        return 1;
      }
    }
-@@ -629,6 +636,8 @@
+@@ -631,6 +638,8 @@
    luaL_register(L, "_G", base_funcs);
    lua_pushliteral(L, LUA_VERSION);
    lua_setglobal(L, "_VERSION");  /* set global _VERSION */
@@ -417,10 +421,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lbaselib.c lua-5.1
    /* `ipairs' and `pairs' need auxliliary functions as upvalues */
    auxopen(L, "ipairs", luaB_ipairs, ipairsaux);
    auxopen(L, "pairs", luaB_pairs, luaB_next);
-Binary files ../lua-5.1.3/src/lbaselib.o and lua-5.1.3-patched/src/lbaselib.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lcode.c lua-5.1.3-patched/src/lcode.c
---- ../lua-5.1.3/src/lcode.c	2007-12-28 17:32:23.000000000 +0200
-+++ lua-5.1.3-patched/src/lcode.c	2008-03-19 10:02:51.000000000 +0200
+Index: lua-5.1.4/src/lcode.c
+===================================================================
+--- lua-5.1.4.orig/src/lcode.c	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/lcode.c	2008-08-24 16:48:20.000000000 +0200
 @@ -22,13 +22,18 @@
  #include "lopcodes.h"
  #include "lparser.h"
@@ -634,9 +638,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lcode.c lua-5.1.3-
    switch (op) {
      case OPR_MINUS: {
        if (!isnumeral(e))
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lcode.h lua-5.1.3-patched/src/lcode.h
---- ../lua-5.1.3/src/lcode.h	2007-12-27 15:02:25.000000000 +0200
-+++ lua-5.1.3-patched/src/lcode.h	2008-03-03 12:47:53.000000000 +0200
+Index: lua-5.1.4/src/lcode.h
+===================================================================
+--- lua-5.1.4.orig/src/lcode.h	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/lcode.h	2008-08-24 16:48:20.000000000 +0200
 @@ -71,6 +71,6 @@
  LUAI_FUNC void luaK_infix (FuncState *fs, BinOpr op, expdesc *v);
  LUAI_FUNC void luaK_posfix (FuncState *fs, BinOpr op, expdesc *v1, expdesc *v2);
@@ -645,11 +650,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lcode.h lua-5.1.3-
 +LUAI_FUNC int luaK_integerK (FuncState *fs, lua_Integer r);
  
  #endif
-Binary files ../lua-5.1.3/src/lcode.o and lua-5.1.3-patched/src/lcode.o differ
-Binary files ../lua-5.1.3/src/ldblib.o and lua-5.1.3-patched/src/ldblib.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/ldebug.c lua-5.1.3-patched/src/ldebug.c
---- ../lua-5.1.3/src/ldebug.c	2007-12-28 17:32:23.000000000 +0200
-+++ lua-5.1.3-patched/src/ldebug.c	2008-03-06 22:41:08.000000000 +0200
+Index: lua-5.1.4/src/ldebug.c
+===================================================================
+--- lua-5.1.4.orig/src/ldebug.c	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/ldebug.c	2008-08-24 16:48:20.000000000 +0200
 @@ -183,7 +183,7 @@
      int *lineinfo = f->l.p->lineinfo;
      int i;
@@ -659,7 +663,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/ldebug.c lua-5.1.3
      sethvalue(L, L->top, t); 
    }
    incr_top(L);
-@@ -550,7 +550,7 @@
+@@ -566,7 +566,7 @@
  
  void luaG_typeerror (lua_State *L, const TValue *o, const char *op) {
    const char *name = NULL;
@@ -668,7 +672,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/ldebug.c lua-5.1.3
    const char *kind = (isinstack(L->ci, o)) ?
                           getobjname(L, L->ci, cast_int(o - L->base), &name) :
                           NULL;
-@@ -578,8 +578,8 @@
+@@ -594,8 +594,8 @@
  
  
  int luaG_ordererror (lua_State *L, const TValue *p1, const TValue *p2) {
@@ -679,10 +683,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/ldebug.c lua-5.1.3
    if (t1[2] == t2[2])
      luaG_runerror(L, "attempt to compare two %s values", t1);
    else
-Binary files ../lua-5.1.3/src/ldebug.o and lua-5.1.3-patched/src/ldebug.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/ldo.c lua-5.1.3-patched/src/ldo.c
---- ../lua-5.1.3/src/ldo.c	2008-01-19 00:31:22.000000000 +0200
-+++ lua-5.1.3-patched/src/ldo.c	2008-03-06 22:41:31.000000000 +0200
+Index: lua-5.1.4/src/ldo.c
+===================================================================
+--- lua-5.1.4.orig/src/ldo.c	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/ldo.c	2008-08-24 16:48:20.000000000 +0200
 @@ -219,9 +219,9 @@
      luaC_checkGC(L);
      htab = luaH_new(L, nvar, 1);  /* create `arg' table */
@@ -695,10 +699,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/ldo.c lua-5.1.3-pa
    }
  #endif
    /* move fixed parameters to final position */
-Binary files ../lua-5.1.3/src/ldo.o and lua-5.1.3-patched/src/ldo.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/ldump.c lua-5.1.3-patched/src/ldump.c
---- ../lua-5.1.3/src/ldump.c	2007-12-27 15:02:25.000000000 +0200
-+++ lua-5.1.3-patched/src/ldump.c	2008-03-03 12:47:53.000000000 +0200
+Index: lua-5.1.4/src/ldump.c
+===================================================================
+--- lua-5.1.4.orig/src/ldump.c	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/ldump.c	2008-08-24 16:48:20.000000000 +0200
 @@ -52,6 +52,11 @@
   DumpVar(x,D);
  }
@@ -724,14 +728,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/ldump.c lua-5.1.3-
     case LUA_TSTRING:
  	DumpString(rawtsvalue(o),D);
  	break;
-Binary files ../lua-5.1.3/src/ldump.o and lua-5.1.3-patched/src/ldump.o differ
-Binary files ../lua-5.1.3/src/lfunc.o and lua-5.1.3-patched/src/lfunc.o differ
-Binary files ../lua-5.1.3/src/lgc.o and lua-5.1.3-patched/src/lgc.o differ
-Binary files ../lua-5.1.3/src/liblua.a and lua-5.1.3-patched/src/liblua.a differ
-Binary files ../lua-5.1.3/src/linit.o and lua-5.1.3-patched/src/linit.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/liolib.c lua-5.1.3-patched/src/liolib.c
---- ../lua-5.1.3/src/liolib.c	2008-01-18 19:47:43.000000000 +0200
-+++ lua-5.1.3-patched/src/liolib.c	2008-03-19 10:10:09.000000000 +0200
+Index: lua-5.1.4/src/liolib.c
+===================================================================
+--- lua-5.1.4.orig/src/liolib.c	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/liolib.c	2008-08-24 16:48:20.000000000 +0200
 @@ -9,6 +9,7 @@
  #include <stdio.h>
  #include <stdlib.h>
@@ -846,10 +846,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/liolib.c lua-5.1.3
    int res = setvbuf(f, NULL, mode[op], sz);
    return pushresult(L, res == 0, NULL);
  }
-Binary files ../lua-5.1.3/src/liolib.o and lua-5.1.3-patched/src/liolib.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/llex.c lua-5.1.3-patched/src/llex.c
---- ../lua-5.1.3/src/llex.c	2007-12-27 15:02:25.000000000 +0200
-+++ lua-5.1.3-patched/src/llex.c	2008-03-04 11:10:30.000000000 +0200
+Index: lua-5.1.4/src/llex.c
+===================================================================
+--- lua-5.1.4.orig/src/llex.c	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/llex.c	2008-08-24 16:48:20.000000000 +0200
 @@ -22,6 +22,7 @@
  #include "lstring.h"
  #include "ltable.h"
@@ -962,9 +962,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/llex.c lua-5.1.3-p
          }
          else if (isalpha(ls->current) || ls->current == '_') {
            /* identifier or reserved word */
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/llex.h lua-5.1.3-patched/src/llex.h
---- ../lua-5.1.3/src/llex.h	2007-12-27 15:02:25.000000000 +0200
-+++ lua-5.1.3-patched/src/llex.h	2008-03-04 11:12:08.000000000 +0200
+Index: lua-5.1.4/src/llex.h
+===================================================================
+--- lua-5.1.4.orig/src/llex.h	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/llex.h	2008-08-24 16:48:20.000000000 +0200
 @@ -29,19 +29,22 @@
    TK_RETURN, TK_THEN, TK_TRUE, TK_UNTIL, TK_WHILE,
    /* other terminal symbols */
@@ -993,10 +994,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/llex.h lua-5.1.3-p
    TString *ts;
  } SemInfo;  /* semantics information */
  
-Binary files ../lua-5.1.3/src/llex.o and lua-5.1.3-patched/src/llex.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/llimits.h lua-5.1.3-patched/src/llimits.h
---- ../lua-5.1.3/src/llimits.h	2007-12-27 15:02:25.000000000 +0200
-+++ lua-5.1.3-patched/src/llimits.h	2008-03-04 11:16:43.000000000 +0200
+Index: lua-5.1.4/src/llimits.h
+===================================================================
+--- lua-5.1.4.orig/src/llimits.h	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/llimits.h	2008-08-24 16:48:20.000000000 +0200
 @@ -49,6 +49,7 @@
  
  /* result of a `usual argument conversion' over lua_Number */
@@ -1013,9 +1014,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/llimits.h lua-5.1.
  /*
  ** type for virtual-machine instructions
  ** must be an unsigned with (at least) 4 bytes (see details in lopcodes.h)
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lmathlib.c lua-5.1.3-patched/src/lmathlib.c
---- ../lua-5.1.3/src/lmathlib.c	2007-12-27 15:02:25.000000000 +0200
-+++ lua-5.1.3-patched/src/lmathlib.c	2008-03-26 11:32:25.000000000 +0200
+Index: lua-5.1.4/src/lmathlib.c
+===================================================================
+--- lua-5.1.4.orig/src/lmathlib.c	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/lmathlib.c	2008-08-24 16:48:20.000000000 +0200
 @@ -4,7 +4,6 @@
  ** See Copyright Notice in lua.h
  */
@@ -1429,11 +1431,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lmathlib.c lua-5.1
  #if defined(LUA_COMPAT_MOD)
    lua_getfield(L, -1, "fmod");
    lua_setfield(L, -2, "mod");
-Binary files ../lua-5.1.3/src/lmathlib.o and lua-5.1.3-patched/src/lmathlib.o differ
-Binary files ../lua-5.1.3/src/lmem.o and lua-5.1.3-patched/src/lmem.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lnum.c lua-5.1.3-patched/src/lnum.c
---- ../lua-5.1.3/src/lnum.c	1970-01-01 02:00:00.000000000 +0200
-+++ lua-5.1.3-patched/src/lnum.c	2008-03-26 11:32:25.000000000 +0200
+Index: lua-5.1.4/src/lnum.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ lua-5.1.4/src/lnum.c	2008-08-24 16:48:20.000000000 +0200
 @@ -0,0 +1,312 @@
 +/*
 +** $Id: lnum.c,v ... $
@@ -1747,9 +1748,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lnum.c lua-5.1.3-p
 +  return 0;
 +}
 +
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lnum.h lua-5.1.3-patched/src/lnum.h
---- ../lua-5.1.3/src/lnum.h	1970-01-01 02:00:00.000000000 +0200
-+++ lua-5.1.3-patched/src/lnum.h	2008-03-19 11:35:51.000000000 +0200
+Index: lua-5.1.4/src/lnum.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ lua-5.1.4/src/lnum.h	2008-08-24 16:48:20.000000000 +0200
 @@ -0,0 +1,116 @@
 +/*
 +** $Id: lnum.h,v ... $
@@ -1867,10 +1869,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lnum.h lua-5.1.3-p
 +{ lua_Integer _i; if (tt_integer_valued(o,&_i)) setivalue(o,_i); }
 +
 +#endif
-Binary files ../lua-5.1.3/src/lnum.o and lua-5.1.3-patched/src/lnum.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lnum_config.h lua-5.1.3-patched/src/lnum_config.h
---- ../lua-5.1.3/src/lnum_config.h	1970-01-01 02:00:00.000000000 +0200
-+++ lua-5.1.3-patched/src/lnum_config.h	2008-03-26 11:32:25.000000000 +0200
+Index: lua-5.1.4/src/lnum_config.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ lua-5.1.4/src/lnum_config.h	2008-08-24 16:48:20.000000000 +0200
 @@ -0,0 +1,221 @@
 +/*
 +** $Id: lnum_config.h,v ... $
@@ -2093,10 +2095,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lnum_config.h lua-
 +
 +#endif
 +
-Binary files ../lua-5.1.3/src/loadlib.o and lua-5.1.3-patched/src/loadlib.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lobject.c lua-5.1.3-patched/src/lobject.c
---- ../lua-5.1.3/src/lobject.c	2007-12-27 15:02:25.000000000 +0200
-+++ lua-5.1.3-patched/src/lobject.c	2008-03-14 11:08:49.000000000 +0200
+Index: lua-5.1.4/src/lobject.c
+===================================================================
+--- lua-5.1.4.orig/src/lobject.c	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/lobject.c	2008-08-24 16:48:20.000000000 +0200
 @@ -21,7 +21,8 @@
  #include "lstate.h"
  #include "lstring.h"
@@ -2181,9 +2183,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lobject.c lua-5.1.
    }
  }
 +
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lobject.h lua-5.1.3-patched/src/lobject.h
---- ../lua-5.1.3/src/lobject.h	2007-12-27 15:02:25.000000000 +0200
-+++ lua-5.1.3-patched/src/lobject.h	2008-03-19 11:40:13.000000000 +0200
+Index: lua-5.1.4/src/lobject.h
+===================================================================
+--- lua-5.1.4.orig/src/lobject.h	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/lobject.h	2008-08-24 16:48:20.000000000 +0200
 @@ -17,7 +17,11 @@
  
  
@@ -2317,11 +2320,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lobject.h lua-5.1.
 -
  #endif
  
-Binary files ../lua-5.1.3/src/lobject.o and lua-5.1.3-patched/src/lobject.o differ
-Binary files ../lua-5.1.3/src/lopcodes.o and lua-5.1.3-patched/src/lopcodes.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/loslib.c lua-5.1.3-patched/src/loslib.c
---- ../lua-5.1.3/src/loslib.c	2008-01-18 18:38:18.000000000 +0200
-+++ lua-5.1.3-patched/src/loslib.c	2008-03-19 11:02:22.000000000 +0200
+Index: lua-5.1.4/src/loslib.c
+===================================================================
+--- lua-5.1.4.orig/src/loslib.c	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/loslib.c	2008-08-24 16:48:20.000000000 +0200
 @@ -186,15 +186,30 @@
    }
    if (t == (time_t)(-1))
@@ -2355,10 +2357,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/loslib.c lua-5.1.3
    return 1;
  }
  
-Binary files ../lua-5.1.3/src/loslib.o and lua-5.1.3-patched/src/loslib.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lparser.c lua-5.1.3-patched/src/lparser.c
---- ../lua-5.1.3/src/lparser.c	2007-12-28 17:32:23.000000000 +0200
-+++ lua-5.1.3-patched/src/lparser.c	2008-03-06 21:58:41.000000000 +0200
+Index: lua-5.1.4/src/lparser.c
+===================================================================
+--- lua-5.1.4.orig/src/lparser.c	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/lparser.c	2008-08-24 16:48:20.000000000 +0200
 @@ -33,7 +33,6 @@
  
  #define luaY_checklimit(fs,v,l,m)	if ((v)>(l)) errorlimit(fs,l,m)
@@ -2404,9 +2406,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lparser.c lua-5.1.
      luaK_reserveregs(fs, 1);
    }
    forbody(ls, base, line, 1, 1);
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lparser.h lua-5.1.3-patched/src/lparser.h
---- ../lua-5.1.3/src/lparser.h	2007-12-27 15:02:25.000000000 +0200
-+++ lua-5.1.3-patched/src/lparser.h	2008-03-06 22:01:11.000000000 +0200
+Index: lua-5.1.4/src/lparser.h
+===================================================================
+--- lua-5.1.4.orig/src/lparser.h	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/lparser.h	2008-08-24 16:48:20.000000000 +0200
 @@ -31,7 +31,11 @@
    VRELOCABLE,	/* info = instruction pc */
    VNONRELOC,	/* info = result register */
@@ -2428,13 +2431,11 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lparser.h lua-5.1.
    } u;
    int t;  /* patch list of `exit when true' */
    int f;  /* patch list of `exit when false' */
-Binary files ../lua-5.1.3/src/lparser.o and lua-5.1.3-patched/src/lparser.o differ
-Binary files ../lua-5.1.3/src/lstate.o and lua-5.1.3-patched/src/lstate.o differ
-Binary files ../lua-5.1.3/src/lstring.o and lua-5.1.3-patched/src/lstring.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lstrlib.c lua-5.1.3-patched/src/lstrlib.c
---- ../lua-5.1.3/src/lstrlib.c	2007-12-28 17:32:23.000000000 +0200
-+++ lua-5.1.3-patched/src/lstrlib.c	2008-03-12 23:15:22.000000000 +0200
-@@ -42,8 +42,8 @@
+Index: lua-5.1.4/src/lstrlib.c
+===================================================================
+--- lua-5.1.4.orig/src/lstrlib.c	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/lstrlib.c	2008-08-24 16:48:20.000000000 +0200
+@@ -43,8 +43,8 @@
  static int str_sub (lua_State *L) {
    size_t l;
    const char *s = luaL_checklstring(L, 1, &l);
@@ -2445,7 +2446,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lstrlib.c lua-5.1.
    if (start < 1) start = 1;
    if (end > (ptrdiff_t)l) end = (ptrdiff_t)l;
    if (start <= end)
-@@ -105,8 +105,8 @@
+@@ -106,8 +106,8 @@
  static int str_byte (lua_State *L) {
    size_t l;
    const char *s = luaL_checklstring(L, 1, &l);
@@ -2456,7 +2457,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lstrlib.c lua-5.1.
    int n, i;
    if (posi <= 0) posi = 1;
    if ((size_t)pose > l) pose = l;
-@@ -495,7 +495,7 @@
+@@ -496,7 +496,7 @@
    size_t l1, l2;
    const char *s = luaL_checklstring(L, 1, &l1);
    const char *p = luaL_checklstring(L, 2, &l2);
@@ -2465,7 +2466,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lstrlib.c lua-5.1.
    if (init < 0) init = 0;
    else if ((size_t)(init) > l1) init = (ptrdiff_t)l1;
    if (find && (lua_toboolean(L, 4) ||  /* explicit request? */
-@@ -689,7 +689,7 @@
+@@ -690,7 +690,7 @@
  ** maximum size of each format specification (such as '%-099.99d')
  ** (+10 accounts for %99.99x plus margin of error)
  */
@@ -2474,7 +2475,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lstrlib.c lua-5.1.
  
  
  static void addquoted (lua_State *L, luaL_Buffer *b, int arg) {
-@@ -746,9 +746,9 @@
+@@ -747,9 +747,9 @@
  static void addintlen (char *form) {
    size_t l = strlen(form);
    char spec = form[l - 1];
@@ -2487,7 +2488,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lstrlib.c lua-5.1.
  }
  
  
-@@ -776,12 +776,12 @@
+@@ -777,12 +777,12 @@
          }
          case 'd':  case 'i': {
            addintlen(form);
@@ -2502,10 +2503,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lstrlib.c lua-5.1.
            break;
          }
          case 'e':  case 'E': case 'f':
-Binary files ../lua-5.1.3/src/lstrlib.o and lua-5.1.3-patched/src/lstrlib.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/ltable.c lua-5.1.3-patched/src/ltable.c
---- ../lua-5.1.3/src/ltable.c	2007-12-28 17:32:23.000000000 +0200
-+++ lua-5.1.3-patched/src/ltable.c	2008-03-26 13:04:20.000000000 +0200
+Index: lua-5.1.4/src/ltable.c
+===================================================================
+--- lua-5.1.4.orig/src/ltable.c	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/ltable.c	2008-08-24 16:48:20.000000000 +0200
 @@ -33,6 +33,7 @@
  #include "lobject.h"
  #include "lstate.h"
@@ -2779,9 +2780,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/ltable.c lua-5.1.3
      else i = m;
    }
    return i;
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/ltable.h lua-5.1.3-patched/src/ltable.h
---- ../lua-5.1.3/src/ltable.h	2007-12-27 15:02:25.000000000 +0200
-+++ lua-5.1.3-patched/src/ltable.h	2008-03-16 20:49:18.000000000 +0200
+Index: lua-5.1.4/src/ltable.h
+===================================================================
+--- lua-5.1.4.orig/src/ltable.h	2008-08-24 16:46:37.000000000 +0200
++++ lua-5.1.4/src/ltable.h	2008-08-24 16:48:20.000000000 +0200
 @@ -18,8 +18,8 @@
  #define key2tval(n)	(&(n)->i_key.tvk)
  
@@ -2793,11 +2795,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/ltable.h lua-5.1.3
  LUAI_FUNC const TValue *luaH_getstr (Table *t, TString *key);
  LUAI_FUNC TValue *luaH_setstr (lua_State *L, Table *t, TString *key);
  LUAI_FUNC const TValue *luaH_get (Table *t, const TValue *key);
-Binary files ../lua-5.1.3/src/ltable.o and lua-5.1.3-patched/src/ltable.o differ
-Binary files ../lua-5.1.3/src/ltablib.o and lua-5.1.3-patched/src/ltablib.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/ltm.c lua-5.1.3-patched/src/ltm.c
---- ../lua-5.1.3/src/ltm.c	2007-12-27 15:02:25.000000000 +0200
-+++ lua-5.1.3-patched/src/ltm.c	2008-03-06 22:47:33.000000000 +0200
+Index: lua-5.1.4/src/ltm.c
+===================================================================
+--- lua-5.1.4.orig/src/ltm.c	2008-08-24 16:46:38.000000000 +0200
++++ lua-5.1.4/src/ltm.c	2008-08-24 16:48:20.000000000 +0200
 @@ -19,7 +19,6 @@
  #include "ltm.h"
  
@@ -2816,10 +2817,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/ltm.c lua-5.1.3-pa
      default:
        mt = G(L)->mt[ttype(o)];
    }
-Binary files ../lua-5.1.3/src/ltm.o and lua-5.1.3-patched/src/ltm.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lua.c lua-5.1.3-patched/src/lua.c
---- ../lua-5.1.3/src/lua.c	2007-12-28 17:32:23.000000000 +0200
-+++ lua-5.1.3-patched/src/lua.c	2008-03-26 11:32:25.000000000 +0200
+Index: lua-5.1.4/src/lua.c
+===================================================================
+--- lua-5.1.4.orig/src/lua.c	2008-08-24 16:46:38.000000000 +0200
++++ lua-5.1.4/src/lua.c	2008-08-24 16:48:20.000000000 +0200
 @@ -16,7 +16,7 @@
  
  #include "lauxlib.h"
@@ -2845,12 +2846,13 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lua.c lua-5.1.3-pa
    s.argc = argc;
    s.argv = argv;
    status = lua_cpcall(L, &pmain, &s);
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lua.h lua-5.1.3-patched/src/lua.h
---- ../lua-5.1.3/src/lua.h	2008-01-03 17:41:15.000000000 +0200
-+++ lua-5.1.3-patched/src/lua.h	2008-03-19 11:19:34.000000000 +0200
+Index: lua-5.1.4/src/lua.h
+===================================================================
+--- lua-5.1.4.orig/src/lua.h	2008-08-24 16:46:38.000000000 +0200
++++ lua-5.1.4/src/lua.h	2008-08-24 16:48:20.000000000 +0200
 @@ -19,7 +19,7 @@
  #define LUA_VERSION	"Lua 5.1"
- #define LUA_RELEASE	"Lua 5.1.3"
+ #define LUA_RELEASE	"Lua 5.1.4"
  #define LUA_VERSION_NUM	501
 -#define LUA_COPYRIGHT	"Copyright (C) 1994-2008 Lua.org, PUC-Rio"
 +#define LUA_COPYRIGHT	"Copyright (C) 1994-2008 Lua.org, PUC-Rio" " (" LUA_LNUM ")"
@@ -2922,12 +2924,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lua.h lua-5.1.3-pa
  
  #endif
 +
-Binary files ../lua-5.1.3/src/lua.o and lua-5.1.3-patched/src/lua.o differ
-Binary files ../lua-5.1.3/src/luac and lua-5.1.3-patched/src/luac differ
-Binary files ../lua-5.1.3/src/luac.o and lua-5.1.3-patched/src/luac.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/luaconf.h lua-5.1.3-patched/src/luaconf.h
---- ../lua-5.1.3/src/luaconf.h	2008-01-18 19:07:48.000000000 +0200
-+++ lua-5.1.3-patched/src/luaconf.h	2008-03-24 20:28:57.000000000 +0200
+Index: lua-5.1.4/src/luaconf.h
+===================================================================
+--- lua-5.1.4.orig/src/luaconf.h	2008-08-24 16:46:38.000000000 +0200
++++ lua-5.1.4/src/luaconf.h	2008-08-24 16:48:20.000000000 +0200
 @@ -10,7 +10,9 @@
  
  #include <limits.h>
@@ -3152,10 +3152,11 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/luaconf.h lua-5.1.
  /* =================================================================== */
  
  /*
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lundump.c lua-5.1.3-patched/src/lundump.c
---- ../lua-5.1.3/src/lundump.c	2008-01-18 18:39:11.000000000 +0200
-+++ lua-5.1.3-patched/src/lundump.c	2008-03-26 04:33:51.000000000 +0200
-@@ -74,6 +74,13 @@
+Index: lua-5.1.4/src/lundump.c
+===================================================================
+--- lua-5.1.4.orig/src/lundump.c	2008-08-24 16:46:38.000000000 +0200
++++ lua-5.1.4/src/lundump.c	2008-08-24 16:48:20.000000000 +0200
+@@ -73,6 +73,13 @@
   return x;
  }
  
@@ -3169,7 +3170,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lundump.c lua-5.1.
  static TString* LoadString(LoadState* S)
  {
   size_t size;
-@@ -120,6 +127,9 @@
+@@ -119,6 +126,9 @@
     case LUA_TNUMBER:
  	setnvalue(o,LoadNumber(S));
  	break;
@@ -3179,7 +3180,7 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lundump.c lua-5.1.
     case LUA_TSTRING:
  	setsvalue2n(S->L,o,LoadString(S));
  	break;
-@@ -221,5 +231,22 @@
+@@ -223,5 +233,22 @@
   *h++=(char)sizeof(size_t);
   *h++=(char)sizeof(Instruction);
   *h++=(char)sizeof(lua_Number);
@@ -3203,10 +3204,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lundump.c lua-5.1.
 +#endif
 +    );
  }
-Binary files ../lua-5.1.3/src/lundump.o and lua-5.1.3-patched/src/lundump.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lvm.c lua-5.1.3-patched/src/lvm.c
---- ../lua-5.1.3/src/lvm.c	2007-12-28 17:32:23.000000000 +0200
-+++ lua-5.1.3-patched/src/lvm.c	2008-03-14 11:13:17.000000000 +0200
+Index: lua-5.1.4/src/lvm.c
+===================================================================
+--- lua-5.1.4.orig/src/lvm.c	2008-08-24 16:46:38.000000000 +0200
++++ lua-5.1.4/src/lvm.c	2008-08-24 16:48:20.000000000 +0200
 @@ -25,22 +25,35 @@
  #include "ltable.h"
  #include "ltm.h"
@@ -3755,9 +3756,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lvm.c lua-5.1.3-pa
            luaC_barriert(L, h, val);
          }
          continue;
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lvm.h lua-5.1.3-patched/src/lvm.h
---- ../lua-5.1.3/src/lvm.h	2007-12-27 15:02:25.000000000 +0200
-+++ lua-5.1.3-patched/src/lvm.h	2008-03-19 10:49:34.000000000 +0200
+Index: lua-5.1.4/src/lvm.h
+===================================================================
+--- lua-5.1.4.orig/src/lvm.h	2008-08-24 16:46:38.000000000 +0200
++++ lua-5.1.4/src/lvm.h	2008-08-24 16:48:20.000000000 +0200
 @@ -15,11 +15,9 @@
  
  #define tostring(L,o) ((ttype(o) == LUA_TSTRING) || (luaV_tostring(L, o)))
@@ -3772,11 +3774,10 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/lvm.h lua-5.1.3-pa
  
  
  LUAI_FUNC int luaV_lessthan (lua_State *L, const TValue *l, const TValue *r);
-Binary files ../lua-5.1.3/src/lvm.o and lua-5.1.3-patched/src/lvm.o differ
-Binary files ../lua-5.1.3/src/lzio.o and lua-5.1.3-patched/src/lzio.o differ
-diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/print.c lua-5.1.3-patched/src/print.c
---- ../lua-5.1.3/src/print.c	2007-03-26 03:17:38.000000000 +0300
-+++ lua-5.1.3-patched/src/print.c	2008-03-19 11:04:51.000000000 +0200
+Index: lua-5.1.4/src/print.c
+===================================================================
+--- lua-5.1.4.orig/src/print.c	2008-08-24 16:46:38.000000000 +0200
++++ lua-5.1.4/src/print.c	2008-08-24 16:48:20.000000000 +0200
 @@ -14,6 +14,7 @@
  #include "lobject.h"
  #include "lopcodes.h"
@@ -3803,4 +3804,3 @@ diff -urN --exclude=.svn --exclude=.DS_Store ../lua-5.1.3/src/print.c lua-5.1.3-
  	break;
    case LUA_TSTRING:
  	PrintString(rawtsvalue(o));
-Binary files ../lua-5.1.3/src/print.o and lua-5.1.3-patched/src/print.o differ
