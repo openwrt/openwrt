@@ -12,6 +12,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/gpio.h>
+#include <linux/irq.h>
 #include <linux/etherdevice.h>
 
 #include <asm/bootinfo.h>
@@ -19,7 +20,6 @@
 #include <asm/mach-adm5120/adm5120_info.h>
 #include <asm/mach-adm5120/adm5120_board.h>
 #include <asm/mach-adm5120/adm5120_platform.h>
-#include <asm/mach-adm5120/adm5120_irq.h>
 
 extern void cellvision_mac_setup(void) __init;
 

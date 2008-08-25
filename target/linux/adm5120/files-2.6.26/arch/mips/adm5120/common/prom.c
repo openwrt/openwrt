@@ -241,9 +241,7 @@ static void __init prom_init_cmdline(void)
 	/* init command line, register a default kernel command line */
 	cmd = &_image_cmdline + 8;
 	if (strlen(cmd) > 0)
-		strcpy(arcs_cmdline, cmd);
-	else
-		strcpy(arcs_cmdline, CONFIG_CMDLINE);
+		strlcpy(arcs_cmdline, cmd, sizeof(arcs_cmdline));
 
 }
 
@@ -262,7 +260,6 @@ void __init prom_putchar(char ch)
 void __init prom_init(void)
 {
 	prom_detect_machtype();
-
 	prom_init_cmdline();
 }
 

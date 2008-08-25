@@ -13,17 +13,17 @@
 #include <linux/init.h>
 #include <linux/types.h>
 #include <linux/module.h>
+#include <linux/irq.h>
 #include <linux/delay.h>
 #include <linux/platform_device.h>
 #include <linux/io.h>
+#include <linux/gpio.h>
 
 #include <asm/addrspace.h>
-#include <linux/gpio.h>
 
 #include <asm/mach-adm5120/adm5120_defs.h>
 #include <asm/mach-adm5120/adm5120_info.h>
 #include <asm/mach-adm5120/adm5120_switch.h>
-#include <asm/mach-adm5120/adm5120_irq.h>
 
 #define GPIO_READ(r)		__raw_readl((r))
 #define GPIO_WRITE(v, r)	__raw_writel((v), (r))

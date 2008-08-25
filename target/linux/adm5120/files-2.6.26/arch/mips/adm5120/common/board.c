@@ -12,6 +12,7 @@
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/list.h>
+#include <linux/string.h>
 #include <linux/device.h>
 #include <linux/platform_device.h>
 
@@ -19,7 +20,6 @@
 
 #include <asm/mach-adm5120/adm5120_info.h>
 #include <asm/mach-adm5120/adm5120_defs.h>
-#include <asm/mach-adm5120/adm5120_irq.h>
 #include <asm/mach-adm5120/adm5120_board.h>
 #include <asm/mach-adm5120/adm5120_platform.h>
 
@@ -60,9 +60,9 @@ static int __init adm5120_board_setup(void)
 			mips_machtype);
 
 	if (board->name[0])
-		memcpy(adm5120_board_name, board->name, ADM5120_BOARD_NAMELEN);
+		strlcpy(adm5120_board_name, board->name, ADM5120_BOARD_NAMELEN);
 
-	printk(KERN_INFO PFX "board is '%s'\n", board->name);
+	printk(KERN_INFO PFX "board is '%s'\n", adm5120_board_name);
 
 	adm5120_gpio_init();
 

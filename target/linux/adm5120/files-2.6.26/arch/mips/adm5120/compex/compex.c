@@ -34,8 +34,8 @@ void __init compex_mac_setup(void)
 
 		for (i = 0; i < 6; i++) {
 			if (is_valid_ether_addr(myloader_info.macs[i]))
-				memcpy(myloader_info.macs[i],
-						adm5120_eth_macs[i], ETH_ALEN);
+				memcpy(adm5120_eth_macs[i],
+					myloader_info.macs[i], ETH_ALEN);
 			else
 				random_ether_addr(adm5120_eth_macs[i]);
 		}
