@@ -44,6 +44,7 @@ CONFIGURE_ARGS += \
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
+	[ "$(PKG_VERSION)" = "1.0.6" ] || ln -s configure.in configure.ac; \
 	autoconf; \
 	./configure $(CONFIGURE_ARGS) \
 	)
