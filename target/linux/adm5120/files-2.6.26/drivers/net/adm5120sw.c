@@ -24,19 +24,17 @@
 #include <linux/ioport.h>
 #include <linux/spinlock.h>
 #include <linux/platform_device.h>
+#include <linux/io.h>
+#include <linux/irq.h>
 
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/skbuff.h>
 
-#include <linux/io.h>
-#include <linux/irq.h>
-
 #include <asm/mipsregs.h>
 
 #include <asm/mach-adm5120/adm5120_info.h>
 #include <asm/mach-adm5120/adm5120_defs.h>
-#include <asm/mach-adm5120/adm5120_irq.h>
 #include <asm/mach-adm5120/adm5120_switch.h>
 
 #include "adm5120sw.h"

@@ -69,7 +69,7 @@ static void adm5120_halt(void)
 	while (1) {
 		if (cpu_wait)
 			cpu_wait();
-	};
+	}
 }
 
 void __init plat_time_init(void)

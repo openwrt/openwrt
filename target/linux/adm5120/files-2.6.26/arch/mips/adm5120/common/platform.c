@@ -16,12 +16,12 @@
 #include <linux/dma-mapping.h>
 #include <linux/platform_device.h>
 #include <linux/gpio.h>
+#include <linux/irq.h>
 
 #include <asm/bootinfo.h>
 
 #include <asm/mach-adm5120/adm5120_defs.h>
 #include <asm/mach-adm5120/adm5120_info.h>
-#include <asm/mach-adm5120/adm5120_irq.h>
 #include <asm/mach-adm5120/adm5120_switch.h>
 #include <asm/mach-adm5120/adm5120_nand.h>
 #include <asm/mach-adm5120/adm5120_platform.h>

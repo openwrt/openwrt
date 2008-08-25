@@ -12,20 +12,18 @@
  *	2 of the License, or (at your option) any later version.
  *
  */
-
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/fs.h>
 #include <linux/miscdevice.h>
 #include <linux/watchdog.h>
+#include <linux/irq.h>
 
 #include <asm/bootinfo.h>
 
 #include <asm/mach-adm5120/adm5120_info.h>
 #include <asm/mach-adm5120/adm5120_defs.h>
-#include <asm/mach-adm5120/adm5120_irq.h>
 #include <asm/mach-adm5120/adm5120_switch.h>
-
 
 #define DEFAULT_TIMEOUT	15		/* (secs) Default is 15 seconds */
 #define MAX_TIMEOUT	327

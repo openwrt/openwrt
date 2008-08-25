@@ -12,17 +12,16 @@
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
+#include <linux/irq.h>
 #include <linux/interrupt.h>
 #include <linux/ioport.h>
 #include <linux/io.h>
 
-#include <asm/irq.h>
 #include <asm/irq_cpu.h>
 #include <asm/mipsregs.h>
 #include <asm/bitops.h>
 
 #include <asm/mach-adm5120/adm5120_defs.h>
-#include <asm/mach-adm5120/adm5120_irq.h>
 
 static void adm5120_intc_irq_unmask(unsigned int irq);
 static void adm5120_intc_irq_mask(unsigned int irq);
@@ -121,9 +120,7 @@ static void adm5120_intc_irq_dispatch(void)
 	unsigned long status;
 	int irq;
 
-	/* dispatch only one IRQ at a time */
 	status = intc_read_reg(INTC_REG_IRQ_STATUS) & INTC_INT_ALL;
-
 	if (status) {
 		irq = ADM5120_INTC_IRQ_BASE + fls(status) - 1;
 		do_IRQ(irq);
