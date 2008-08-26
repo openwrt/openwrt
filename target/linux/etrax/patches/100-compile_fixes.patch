@@ -1,14 +1,29 @@
---- a/arch/cris/arch-v10/boot/Makefile
-+++ b/arch/cris/arch-v10/boot/Makefile
-@@ -2,7 +2,6 @@
+diff -urN linux-2.6.25.7/arch/cris/Makefile linux-2.6.25.7.cris/arch/cris/Makefile
+--- linux-2.6.25.7/arch/cris/Makefile	2008-06-16 22:24:36.000000000 +0200
++++ linux-2.6.25.7.cris/arch/cris/Makefile	2008-06-24 13:22:48.000000000 +0200
+@@ -33,7 +33,7 @@
+ 
+ LD = $(CROSS_COMPILE)ld -mcrislinux
+ 
+-OBJCOPYFLAGS := -O binary -R .note -R .comment -S
++OBJCOPYFLAGS := -O binary -R .bss -R .note -R .note.gnu.build-id -R .comment -S
+ 
+ CPPFLAGS_vmlinux.lds = -DDRAM_VIRTUAL_BASE=0x$(CONFIG_ETRAX_DRAM_VIRTUAL_BASE)
+ 
+diff -urN linux-2.6.25.7/arch/cris/arch-v10/boot/Makefile linux-2.6.25.7.cris/arch/cris/arch-v10/boot/Makefile
+--- linux-2.6.25.7/arch/cris/arch-v10/boot/Makefile	2008-06-16 22:24:36.000000000 +0200
++++ linux-2.6.25.7.cris/arch/cris/arch-v10/boot/Makefile	2008-06-24 13:23:03.000000000 +0200
+@@ -2,9 +2,6 @@
  # arch/cris/arch-v10/boot/Makefile
  #
  
 -OBJCOPY = objcopy-cris
- OBJCOPYFLAGS = -O binary --remove-section=.bss
- 
+-OBJCOPYFLAGS = -O binary --remove-section=.bss
+-
  subdir- := compressed rescue
-@@ -14,7 +13,6 @@
+ targets := Image
+ 
+@@ -14,7 +11,6 @@
  
  $(obj)/compressed/vmlinux: $(obj)/Image FORCE
  	$(Q)$(MAKE) $(build)=$(obj)/compressed $@
@@ -16,115 +31,48 @@
  
  $(obj)/zImage:  $(obj)/compressed/vmlinux
  	@cp $< $@
---- a/arch/cris/arch-v10/boot/compressed/Makefile
-+++ b/arch/cris/arch-v10/boot/compressed/Makefile
-@@ -2,12 +2,10 @@
+diff -urN linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/Makefile linux-2.6.25.7.cris/arch/cris/arch-v10/boot/compressed/Makefile
+--- linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/Makefile	2008-06-16 22:24:36.000000000 +0200
++++ linux-2.6.25.7.cris/arch/cris/arch-v10/boot/compressed/Makefile	2008-06-24 13:23:14.000000000 +0200
+@@ -2,13 +2,9 @@
  # arch/cris/arch-v10/boot/compressed/Makefile
  #
  
 -CC = gcc-cris -melf $(LINUXINCLUDE)
  ccflags-y += -O2
 -LD = ld-cris
-+LD = $(CROSS_COMPILE)ld -m criself
  ldflags-y += -T $(obj)/decompress.ld
  OBJECTS = $(obj)/head.o $(obj)/misc.o
 -OBJCOPY = objcopy-cris
- OBJCOPYFLAGS = -O binary --remove-section=.bss
+-OBJCOPYFLAGS = -O binary --remove-section=.bss
  
  quiet_cmd_image = BUILD   $@
-@@ -22,10 +20,10 @@
+ cmd_image = cat $(obj)/decompress.bin $(obj)/piggy.gz > $@
+@@ -22,10 +18,10 @@
  	$(call if_changed,objcopy)
  
  $(obj)/head.o: $(obj)/head.S .config
 -	@$(CC) -D__ASSEMBLY__ -traditional -c $< -o $@
-+	@$(CC) -D__ASSEMBLY__  -traditional -Wa,--em=criself -c $< -o $@
++	@$(CC) -Iinclude  -D__ASSEMBLY__ -traditional -Wa,--em=criself -c $< -o $@
  
  $(obj)/misc.o: $(obj)/misc.c .config
 -	@$(CC) -D__KERNEL__ -c $< -o $@
-+	@$(CC) -D__KERNEL__ -Wa,--em=criself -c $< -o $@
++	@$(CC) -Iinclude -D__KERNEL__ -Wa,--em=criself -c $< -o $@
  
  $(obj)/vmlinux: $(obj)/piggy.gz $(obj)/decompress.bin FORCE
  	$(call if_changed,image)
---- a/arch/cris/arch-v10/boot/compressed/misc.c
-+++ b/arch/cris/arch-v10/boot/compressed/misc.c
-@@ -5,7 +5,7 @@
-  * adapted for Linux.
-  *
-  * malloc by Hannu Savolainen 1993 and Matthias Urlichs 1994
-- * puts by Nick Holloway 1993, better puts by Martin Mares 1995
-+ * putstr by Nick Holloway 1993, better putstr by Martin Mares 1995
-  * adaptation for Linux/CRIS Axis Communications AB, 1999
-  *
-  */
-@@ -99,12 +99,12 @@
- static void gzip_mark(void **);
- static void gzip_release(void **);
-  
--static void puts(const char *);
-+static void putstr(const char *);
+diff -urN linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/decompress.ld linux-2.6.25.7.cris/arch/cris/arch-v10/boot/compressed/decompress.ld
+--- linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/decompress.ld	2008-06-16 22:24:36.000000000 +0200
++++ linux-2.6.25.7.cris/arch/cris/arch-v10/boot/compressed/decompress.ld	2008-06-24 12:57:25.000000000 +0200
+@@ -1,4 +1,4 @@
+-OUTPUT_FORMAT(elf32-us-cris)
++OUTPUT_FORMAT(elf32-cris)
  
- /* the "heap" is put directly after the BSS ends, at end */
-   
--extern int end;
--static long free_mem_ptr = (long)&end;
-+extern int _end;
-+static long free_mem_ptr = (long)&_end;
-  
- #include "../../../../../lib/inflate.c"
- 
-@@ -139,7 +139,7 @@
- /* decompressor info and error messages to serial console */
- 
- static void
--puts(const char *s)
-+putstr(const char *s)
- {
- #ifndef CONFIG_ETRAX_DEBUG_PORT_NULL
- 	while(*s) {
-@@ -209,9 +209,9 @@
- static void
- error(char *x)
- {
--	puts("\n\n");
--	puts(x);
--	puts("\n\n -- System halted\n");
-+	putstr("\n\n");
-+	putstr(x);
-+	putstr("\n\n -- System halted\n");
- 
- 	while(1);	/* Halt */
- }
-@@ -257,14 +257,7 @@
- 
- 	makecrc();
- 
--	__asm__ volatile ("move vr,%0" : "=rm" (revision));
--	if (revision < 10)
--	{
--		puts("You need an ETRAX 100LX to run linux 2.6\n");
--		while(1);
--	}
--
--	puts("Uncompressing Linux...\n");
-+	putstr("Uncompressing Linux...\n");
- 	gunzip();
--	puts("Done. Now booting the kernel.\n");
-+	putstr("Done. Now booting the kernel.\n");
- }
---- a/arch/cris/arch-v10/mm/init.c
-+++ b/arch/cris/arch-v10/mm/init.c
-@@ -184,6 +184,9 @@
- 
- 	free_area_init_node(0, &contig_page_data, zones_size, PAGE_OFFSET >> PAGE_SHIFT, 0);
- }
-+void free_initrd_mem(unsigned long start, unsigned long end)
-+{
-+}
- 
- /* Initialize remaps of some I/O-ports. It is important that this
-  * is called before any driver is initialized.
---- a/arch/cris/arch-v10/boot/compressed/head.S
-+++ b/arch/cris/arch-v10/boot/compressed/head.S
+ MEMORY 
+ 	{
+diff -urN linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/head.S linux-2.6.25.7.cris/arch/cris/arch-v10/boot/compressed/head.S
+--- linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/head.S	2008-06-16 22:24:36.000000000 +0200
++++ linux-2.6.25.7.cris/arch/cris/arch-v10/boot/compressed/head.S	2008-06-24 13:24:50.000000000 +0200
 @@ -10,13 +10,14 @@
  
  #define ASSEMBLER_MACROS_ONLY
@@ -279,11 +227,83 @@
 +cmd_line_addr:
  	.dword 0
  #include "../../lib/hw_settings.S"
---- a/arch/cris/arch-v10/boot/compressed/decompress.ld
-+++ b/arch/cris/arch-v10/boot/compressed/decompress.ld
-@@ -1,4 +1,4 @@
--OUTPUT_FORMAT(elf32-us-cris)
-+OUTPUT_FORMAT(elf32-cris)
+diff -urN linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/misc.c linux-2.6.25.7.cris/arch/cris/arch-v10/boot/compressed/misc.c
+--- linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/misc.c	2008-06-16 22:24:36.000000000 +0200
++++ linux-2.6.25.7.cris/arch/cris/arch-v10/boot/compressed/misc.c	2008-06-24 12:57:25.000000000 +0200
+@@ -5,7 +5,7 @@
+  * adapted for Linux.
+  *
+  * malloc by Hannu Savolainen 1993 and Matthias Urlichs 1994
+- * puts by Nick Holloway 1993, better puts by Martin Mares 1995
++ * putstr by Nick Holloway 1993, better putstr by Martin Mares 1995
+  * adaptation for Linux/CRIS Axis Communications AB, 1999
+  *
+  */
+@@ -99,12 +99,12 @@
+ static void gzip_mark(void **);
+ static void gzip_release(void **);
+  
+-static void puts(const char *);
++static void putstr(const char *);
  
- MEMORY 
- 	{
+ /* the "heap" is put directly after the BSS ends, at end */
+   
+-extern int end;
+-static long free_mem_ptr = (long)&end;
++extern int _end;
++static long free_mem_ptr = (long)&_end;
+  
+ #include "../../../../../lib/inflate.c"
+ 
+@@ -139,7 +139,7 @@
+ /* decompressor info and error messages to serial console */
+ 
+ static void
+-puts(const char *s)
++putstr(const char *s)
+ {
+ #ifndef CONFIG_ETRAX_DEBUG_PORT_NULL
+ 	while(*s) {
+@@ -209,9 +209,9 @@
+ static void
+ error(char *x)
+ {
+-	puts("\n\n");
+-	puts(x);
+-	puts("\n\n -- System halted\n");
++	putstr("\n\n");
++	putstr(x);
++	putstr("\n\n -- System halted\n");
+ 
+ 	while(1);	/* Halt */
+ }
+@@ -257,14 +257,7 @@
+ 
+ 	makecrc();
+ 
+-	__asm__ volatile ("move vr,%0" : "=rm" (revision));
+-	if (revision < 10)
+-	{
+-		puts("You need an ETRAX 100LX to run linux 2.6\n");
+-		while(1);
+-	}
+-
+-	puts("Uncompressing Linux...\n");
++	putstr("Uncompressing Linux...\n");
+ 	gunzip();
+-	puts("Done. Now booting the kernel.\n");
++	putstr("Done. Now booting the kernel.\n");
+ }
+diff -urN linux-2.6.25.7/arch/cris/arch-v10/mm/init.c linux-2.6.25.7.cris/arch/cris/arch-v10/mm/init.c
+--- linux-2.6.25.7/arch/cris/arch-v10/mm/init.c	2008-06-16 22:24:36.000000000 +0200
++++ linux-2.6.25.7.cris/arch/cris/arch-v10/mm/init.c	2008-06-24 12:57:25.000000000 +0200
+@@ -184,6 +184,9 @@
+ 
+ 	free_area_init_node(0, &contig_page_data, zones_size, PAGE_OFFSET >> PAGE_SHIFT, 0);
+ }
++void free_initrd_mem(unsigned long start, unsigned long end)
++{
++}
+ 
+ /* Initialize remaps of some I/O-ports. It is important that this
+  * is called before any driver is initialized.
