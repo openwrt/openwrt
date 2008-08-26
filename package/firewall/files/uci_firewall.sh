@@ -181,6 +181,8 @@ fw_rule() {
 	[ -n "$dest" ] && TARGET=zone_${dest}_$target || TARGET=$target
 	[ -n "$dest_port" -a -z "$proto" ] && { \
 		echo "dport may only be used it proto is defined"; return; }
+	[ -n "$src_port" -a -z "$proto" ] && { \
+		echo "sport may only be used it proto is defined"; return; }
 	$IPTABLES -I $ZONE 1 \
 		${proto:+-p $proto} \
 		${src_ip:+-s $src_ip} \
@@ -225,6 +227,8 @@ fw_redirect() {
 		echo "redirect needs src and dest_ip"; return ; }
 	[ -n "$dest_port" -a -z "$proto" ] && { \
 		echo "dport may only be used it proto is defined"; return; }
+	[ -n "$src_port" -a -z "$proto" ] && { \
+		echo "sport may only be used it proto is defined"; return; }
 	$IPTABLES -A zone_${src}_prerouting -t nat \
 		${proto:+-p $proto} \
 		${src_ip:+-s $src_ip} \
