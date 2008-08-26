@@ -211,7 +211,7 @@ fw_redirect() {
 	local src_mac
 	local dest_ip
 	local dest_port
-	local protocol
+	local proto
 	
 	config_get src $1 src
 	config_get src_ip $1 src_ip
@@ -220,20 +220,20 @@ fw_redirect() {
 	config_get src_mac $1 src_mac
 	config_get dest_ip $1 dest_ip
 	config_get dest_port $1 dest_port
-	config_get protocol $1 protocol
+	config_get proto $1 proto
 	[ -z "$src" -o -z "$dest_ip" ] && { \
 		echo "redirect needs src and dest_ip"; return ; }
-	[ -n "$dest_port" -a -z "$protocol" ] && { \
+	[ -n "$dest_port" -a -z "$proto" ] && { \
 		echo "dport may only be used it proto is defined"; return; }
 	$IPTABLES -A zone_${src}_prerouting -t nat \
-		${protocol:+-p $protocol} \
+		${proto:+-p $proto} \
 		${src_ip:+-s $src_ip} \
 		${src_port:+--sport $src_port} \
 		${src_dport:+--dport $src_dport} \
 		${src_mac:+-m mac --mac-source $src_mac} \
 		-j DNAT --to-destination $dest_ip${dest_port:+:$dest_port}
 	$IPTABLES -I zone_${src}_forward 1 \
-		${protocol:+-p $protocol} \
+		${proto:+-p $proto} \
 		-d $dest_ip \
 		${src_ip:+-s $src_ip} \
 		${src_port:+--sport $src_port} \
