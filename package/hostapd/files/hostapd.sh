@@ -39,7 +39,11 @@ hostapd_setup_vif() {
 	case "$enc" in
 		*psk*|*PSK*)
 			config_get psk "$vif" key
-			append hostapd_cfg "wpa_passphrase=$psk" "$N"
+			if [ ${#psk} -eq 64 ]; then
+				append hostapd_cfg "wpa_psk=$psk" "$N"
+			else
+				append hostapd_cfg "wpa_passphrase=$psk" "$N"
+			fi
 		;;
 		*wpa*|*WPA*)
 		        # required fields? formats?
