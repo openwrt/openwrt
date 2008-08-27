@@ -53,6 +53,10 @@ create_zone() {
 }
 
 addif() {
+	local dev
+	config_get dev core $2
+	[ -n "$dev" -a "$dev" != "$1" ] && delif "$dev" "$2"
+	[ -n "$dev" -a "$dev" == "$1" ] && return
 	logger "adding $1 to firewall zone $2"
 	$IPTABLES -A INPUT -i $1 -j zone_$2
 	$IPTABLES -I zone_$2_ACCEPT 1 -o $1 -j ACCEPT
@@ -64,6 +68,7 @@ addif() {
 	$IPTABLES -I zone_$2_nat 1 -t nat -o $1 -j MASQUERADE 
 	$IPTABLES -I PREROUTING 1 -t nat -i $1 -j zone_$2_prerouting 
 	$IPTABLES -A FORWARD -i $1 -j zone_$2_forward
+	uci_set_state firewall core "$2" "$1"
 }
 
 delif() {
@@ -78,6 +83,7 @@ delif() {
 	$IPTABLES -D zone_$2_nat -t nat -o $1 -j MASQUERADE 
 	$IPTABLES -D PREROUTING -t nat -i $1 -j zone_$2_prerouting 
 	$IPTABLES -D FORWARD -i $1 -j zone_$2_forward
+	uci_revert_state firewall core "$2"
 }
 
 load_synflood() {
@@ -106,6 +112,9 @@ fw_defaults() {
 	do
 		echo 0 > $f
 	done                                                                   
+	
+	uci_revert_state firewall core
+	uci_set_state firewall core "" firewall_state 
 
 	$IPTABLES -F
 	$IPTABLES -t nat -F
@@ -306,8 +315,6 @@ fw_init() {
 	fw_custom_chains
 	echo "Loading includes"
 	config_foreach fw_include include
-
-	uci_set_state firewall core "" firewall_state 
 	uci_set_state firewall core loaded 1
 	unset CONFIG_APPEND
 	config_load network
