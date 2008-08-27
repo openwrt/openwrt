@@ -67,7 +67,7 @@ define Build/Patch/Default
 endef
 
 define Kernel/Patch/Default
-	$(if $(QUILT),rm -rf $(PKG_BUILD_DIR)/patches; mkdir -p $(PKG_BUILD_DIR)/patches)
+	rm -rf $(PKG_BUILD_DIR)/patches; mkdir -p $(PKG_BUILD_DIR)/patches
 	if [ -d $(GENERIC_FILES_DIR) ]; then $(CP) $(GENERIC_FILES_DIR)/* $(LINUX_DIR)/; fi
 	if [ -d $(FILES_DIR) ]; then \
 		$(CP) $(FILES_DIR)/* $(LINUX_DIR)/; \
