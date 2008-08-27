@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2007-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -129,6 +129,14 @@ define KernelPackage/net-zd1211rw
   AUTOLOAD:=$(call AutoLoad,60,zd1211rw)
 endef
 
+define KernelPackage/ath5k
+  SUBMENU:=Wireless Drivers
+  TITLE:=Atheros 5xxx wireless cards support
+  DEPENDS+= @PCI_SUPPORT +kmod-mac80211
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath5k/ath5k.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,27,ath5k)
+endef
+
 BUILDFLAGS:= \
 	$(foreach opt,$(CONFOPTS),-DCONFIG_$(opt)) \
 	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS) \
@@ -187,6 +195,7 @@ define KernelPackage/rt73-usb/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rt73.bin $(1)/lib/firmware/
 endef
 
+$(eval $(call KernelPackage,ath5k))
 $(eval $(call KernelPackage,net-zd1211rw))
 $(eval $(call KernelPackage,mac80211))
 $(eval $(call KernelPackage,rt2x00-lib))
