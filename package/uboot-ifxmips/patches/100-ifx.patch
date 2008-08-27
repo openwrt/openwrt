@@ -1,6 +1,5 @@
-diff -urN u-boot-1.1.5.a/Makefile u-boot/Makefile
---- u-boot-1.1.5.a/Makefile	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/Makefile	2008-05-11 14:14:55.000000000 +0100
+--- a/Makefile
++++ b/Makefile
 @@ -24,7 +24,7 @@
  VERSION = 1
  PATCHLEVEL = 1
@@ -311,10 +310,8 @@ diff -urN u-boot-1.1.5.a/Makefile u-boot/Makefile
  	rm -f $(obj)tools/crc32.c $(obj)tools/environment.c $(obj)tools/env/crc32.c
  	rm -f $(obj)tools/inca-swap-bytes $(obj)cpu/mpc824x/bedbug_603e.c
  	rm -f $(obj)include/asm/proc $(obj)include/asm/arch $(obj)include/asm
-Binary files u-boot-1.1.5.a/bootstrap and u-boot/bootstrap differ
-diff -urN u-boot-1.1.5.a/build_danube.sh u-boot/build_danube.sh
---- u-boot-1.1.5.a/build_danube.sh	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/build_danube.sh	2008-05-11 14:02:24.000000000 +0100
+--- /dev/null
++++ b/build_danube.sh
 @@ -0,0 +1,28 @@
 +#!/bin/sh
 +IFX_CONFIG_FLASH_SIZE=8
@@ -344,9 +341,8 @@ diff -urN u-boot-1.1.5.a/build_danube.sh u-boot/build_danube.sh
 +       echo -n > .config_ok
 +
 +CROSS_COMPILE="mips-linux-uclibc-" CROSS_COMPILE_UCLIBC=1 COMPRESS=${UBOOT_COMPRESS} PLATFORM_CPU=mips32r2 IFX_CFLAGS="${UBOOT_CFLAGS}" make UBOOT_RAM_TEXT_BASE=${CONFIG_RAM_TEXT_BASE} BOOTSTRAP_PRINTF_STATUS=$2 CPU_TYPE=${IFX_CONFIG_CPU} ifx_all
-diff -urN u-boot-1.1.5.a/common/Makefile u-boot/common/Makefile
---- u-boot-1.1.5.a/common/Makefile	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/common/Makefile	2008-05-11 14:53:59.000000000 +0100
+--- a/common/Makefile
++++ b/common/Makefile
 @@ -46,7 +46,7 @@
  	  env_nand.o env_dataflash.o env_flash.o env_eeprom.o \
  	  env_nvram.o env_nowhere.o \
@@ -365,9 +361,8 @@ diff -urN u-boot-1.1.5.a/common/Makefile u-boot/common/Makefile
  	$(AR) $(ARFLAGS) $@ $(OBJS)
  
  $(obj)environment.o: $(src)environment.c $(obj)../tools/envcrc
-diff -urN u-boot-1.1.5.a/common/cmd_bootm.c u-boot/common/cmd_bootm.c
---- u-boot-1.1.5.a/common/cmd_bootm.c	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/common/cmd_bootm.c	2007-03-09 09:47:46.000000000 +0000
+--- a/common/cmd_bootm.c
++++ b/common/cmd_bootm.c
 @@ -31,6 +31,7 @@
  #include <malloc.h>
  #include <zlib.h>
@@ -451,9 +446,8 @@ diff -urN u-boot-1.1.5.a/common/cmd_bootm.c u-boot/common/cmd_bootm.c
  #endif /* CONFIG_LYNXKDI */
 +
 +#endif /* ! CFG_HEAD_CODE */
-diff -urN u-boot-1.1.5.a/common/cmd_flash.c u-boot/common/cmd_flash.c
---- u-boot-1.1.5.a/common/cmd_flash.c	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/common/cmd_flash.c	2007-03-09 09:47:46.000000000 +0000
+--- a/common/cmd_flash.c
++++ b/common/cmd_flash.c
 @@ -196,9 +196,17 @@
  }
  
@@ -773,9 +767,8 @@ diff -urN u-boot-1.1.5.a/common/cmd_flash.c u-boot/common/cmd_flash.c
  	"erase   - erase FLASH memory\n",
  	"start end\n"
  	"    - erase FLASH from addr 'start' to addr 'end'\n"
-diff -urN u-boot-1.1.5.a/common/cmd_nvedit.c u-boot/common/cmd_nvedit.c
---- u-boot-1.1.5.a/common/cmd_nvedit.c	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/common/cmd_nvedit.c	2007-03-09 09:47:46.000000000 +0000
+--- a/common/cmd_nvedit.c
++++ b/common/cmd_nvedit.c
 @@ -540,8 +540,19 @@
  	extern char * env_name_spec;
  
@@ -797,9 +790,8 @@ diff -urN u-boot-1.1.5.a/common/cmd_nvedit.c u-boot/common/cmd_nvedit.c
  }
  
  
-diff -urN u-boot-1.1.5.a/common/console.c u-boot/common/console.c
---- u-boot-1.1.5.a/common/console.c	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/common/console.c	2007-03-09 09:47:46.000000000 +0000
+--- a/common/console.c
++++ b/common/console.c
 @@ -324,7 +324,7 @@
  #endif
  
@@ -831,9 +823,8 @@ diff -urN u-boot-1.1.5.a/common/console.c u-boot/common/console.c
  
  #endif /* CFG_CONSOLE_IS_IN_ENV */
 +#endif	//CFG_HEAD_CODE
-diff -urN u-boot-1.1.5.a/common/devices.c u-boot/common/devices.c
---- u-boot-1.1.5.a/common/devices.c	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/common/devices.c	2007-03-09 09:47:46.000000000 +0000
+--- a/common/devices.c
++++ b/common/devices.c
 @@ -39,6 +39,7 @@
  list_t devlist = 0;
  device_t *stdio_devices[] = { NULL, NULL, NULL };
@@ -848,9 +839,8 @@ diff -urN u-boot-1.1.5.a/common/devices.c u-boot/common/devices.c
  }
 +#endif //CFG_HEAD_CODE
 +
-diff -urN u-boot-1.1.5.a/common/env_common.c u-boot/common/env_common.c
---- u-boot-1.1.5.a/common/env_common.c	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/common/env_common.c	2008-05-11 13:26:45.000000000 +0100
+--- a/common/env_common.c
++++ b/common/env_common.c
 @@ -219,7 +219,9 @@
  	 * We must allocate a buffer for the environment
  	 */
@@ -896,9 +886,8 @@ diff -urN u-boot-1.1.5.a/common/env_common.c u-boot/common/env_common.c
  	gd->env_addr = (ulong)&(env_ptr->data);
  
  #ifdef CONFIG_AMIGAONEG3SE
-diff -urN u-boot-1.1.5.a/common/env_flash.c u-boot/common/env_flash.c
---- u-boot-1.1.5.a/common/env_flash.c	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/common/env_flash.c	2008-05-11 14:55:45.000000000 +0100
+--- a/common/env_flash.c
++++ b/common/env_flash.c
 @@ -66,7 +66,6 @@
  #endif
  
@@ -988,9 +977,8 @@ diff -urN u-boot-1.1.5.a/common/env_flash.c u-boot/common/env_flash.c
  		return 1;
  
  	puts ("Writing to Flash... ");
-diff -urN u-boot-1.1.5.a/common/hush.c u-boot/common/hush.c
---- u-boot-1.1.5.a/common/hush.c	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/common/hush.c	2008-05-10 18:56:37.000000000 +0100
+--- a/common/hush.c
++++ b/common/hush.c
 @@ -3167,9 +3167,11 @@
  	int code = 0;
  #endif
@@ -1053,9 +1041,8 @@ diff -urN u-boot-1.1.5.a/common/hush.c u-boot/common/hush.c
  	setup_string_in_str(&input, s);
  	return parse_stream_outer(&input, flag);
  #ifdef __U_BOOT__
-diff -urN u-boot-1.1.5.a/config.mk u-boot/config.mk
---- u-boot-1.1.5.a/config.mk	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/config.mk	2008-05-11 12:23:31.000000000 +0100
+--- a/config.mk
++++ b/config.mk
 @@ -77,7 +77,7 @@
  sinclude $(TOPDIR)/$(ARCH)_config.mk	# include architecture dependend rules
  endif
@@ -1123,9 +1110,8 @@ diff -urN u-boot-1.1.5.a/config.mk u-boot/config.mk
  
  #########################################################################
  
-diff -urN u-boot-1.1.5.a/drivers/Makefile u-boot/drivers/Makefile
---- u-boot-1.1.5.a/drivers/Makefile	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/drivers/Makefile	2008-05-11 14:54:11.000000000 +0100
+--- a/drivers/Makefile
++++ b/drivers/Makefile
 @@ -50,14 +50,14 @@
  	  videomodes.o w83c553f.o \
  	  ks8695eth.o \
@@ -1143,9 +1129,8 @@ diff -urN u-boot-1.1.5.a/drivers/Makefile u-boot/drivers/Makefile
  	$(AR) $(ARFLAGS) $@ $(OBJS)
  
  #########################################################################
-diff -urN u-boot-1.1.5.a/include/asm-mips/mipsregs.h u-boot/include/asm-mips/mipsregs.h
---- u-boot-1.1.5.a/include/asm-mips/mipsregs.h	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/include/asm-mips/mipsregs.h	2008-05-11 12:31:57.000000000 +0100
+--- a/include/asm-mips/mipsregs.h
++++ b/include/asm-mips/mipsregs.h
 @@ -48,6 +48,7 @@
  #define CP0_CAUSE $13
  #define CP0_EPC $14
@@ -1213,9 +1198,8 @@ diff -urN u-boot-1.1.5.a/include/asm-mips/mipsregs.h u-boot/include/asm-mips/mip
 +#define ECCF_WST	(0x1 << ECCB_WST)
 +
  #endif /* _ASM_MIPSREGS_H */
-diff -urN u-boot-1.1.5.a/include/cmd_confdefs.h u-boot/include/cmd_confdefs.h
---- u-boot-1.1.5.a/include/cmd_confdefs.h	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/include/cmd_confdefs.h	2007-03-09 09:47:46.000000000 +0000
+--- a/include/cmd_confdefs.h
++++ b/include/cmd_confdefs.h
 @@ -94,6 +94,7 @@
  #define CFG_CMD_EXT2	0x1000000000000000ULL	/* EXT2 Support			*/
  #define CFG_CMD_SNTP	0x2000000000000000ULL	/* SNTP support			*/
@@ -1232,22 +1216,19 @@ diff -urN u-boot-1.1.5.a/include/cmd_confdefs.h u-boot/include/cmd_confdefs.h
  			CFG_CMD_VFD	)
  
  /* Default configuration
-diff -urN u-boot-1.1.5.a/include/config.h u-boot/include/config.h
---- u-boot-1.1.5.a/include/config.h	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/include/config.h	2008-05-11 14:02:25.000000000 +0100
+--- /dev/null
++++ b/include/config.h
 @@ -0,0 +1,2 @@
 +/* Automatically generated - do not edit */
 +#include <configs/danube.h>
-diff -urN u-boot-1.1.5.a/include/config.mk u-boot/include/config.mk
---- u-boot-1.1.5.a/include/config.mk	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/include/config.mk	2008-05-11 14:02:25.000000000 +0100
+--- /dev/null
++++ b/include/config.mk
 @@ -0,0 +1,3 @@
 +ARCH   = mips
 +CPU    = mips
 +BOARD  = danube
-diff -urN u-boot-1.1.5.a/include/flash.h u-boot/include/flash.h
---- u-boot-1.1.5.a/include/flash.h	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/include/flash.h	2008-05-11 12:31:57.000000000 +0100
+--- a/include/flash.h
++++ b/include/flash.h
 @@ -79,7 +79,7 @@
  extern unsigned long flash_init (void);
  extern void flash_print_info (flash_info_t *);
@@ -1279,9 +1260,8 @@ diff -urN u-boot-1.1.5.a/include/flash.h u-boot/include/flash.h
  #define FLASH_UNKNOWN	0xFFFF		/* unknown flash type			*/
  
  
-diff -urN u-boot-1.1.5.a/include/image.h u-boot/include/image.h
---- u-boot-1.1.5.a/include/image.h	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/include/image.h	2007-03-09 09:47:46.000000000 +0000
+--- a/include/image.h
++++ b/include/image.h
 @@ -132,6 +132,7 @@
  #define IH_COMP_NONE		0	/*  No	 Compression Used	*/
  #define IH_COMP_GZIP		1	/* gzip	 Compression Used	*/
@@ -1290,9 +1270,8 @@ diff -urN u-boot-1.1.5.a/include/image.h u-boot/include/image.h
  
  #define IH_MAGIC	0x27051956	/* Image Magic Number		*/
  #define IH_NMLEN		32	/* Image Name Length		*/
-diff -urN u-boot-1.1.5.a/include/syscall.h u-boot/include/syscall.h
---- u-boot-1.1.5.a/include/syscall.h	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/include/syscall.h	2007-03-09 09:47:46.000000000 +0000
+--- /dev/null
++++ b/include/syscall.h
 @@ -0,0 +1,42 @@
 +#ifndef __MON_SYS_CALL_H__
 +#define __MON_SYS_CALL_H__
@@ -1336,14 +1315,12 @@ diff -urN u-boot-1.1.5.a/include/syscall.h u-boot/include/syscall.h
 +#define SYSCALL_GET_TIMER     10
 +
 +#endif
-diff -urN u-boot-1.1.5.a/include/version_autogenerated.h u-boot/include/version_autogenerated.h
---- u-boot-1.1.5.a/include/version_autogenerated.h	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/include/version_autogenerated.h	2008-05-11 14:02:26.000000000 +0100
+--- /dev/null
++++ b/include/version_autogenerated.h
 @@ -0,0 +1 @@
-+#define U_BOOT_VERSION "U-Boot 1.1.5-IFX-LXDB"
-diff -urN u-boot-1.1.5.a/ld_uboot.conf u-boot/ld_uboot.conf
---- u-boot-1.1.5.a/ld_uboot.conf	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/ld_uboot.conf	2006-11-04 15:03:01.000000000 +0000
++#define U_BOOT_VERSION "U-Boot 1.1.5-IFX-LXDB-g71af1545"
+--- /dev/null
++++ b/ld_uboot.conf
 @@ -0,0 +1,8 @@
 +TAG_DWNLD() 
 +{ 
@@ -1353,9 +1330,8 @@ diff -urN u-boot-1.1.5.a/ld_uboot.conf u-boot/ld_uboot.conf
 +{
 +   0xA0B00000
 +}; /* Start u-boot image */
-diff -urN u-boot-1.1.5.a/lib_generic/Makefile u-boot/lib_generic/Makefile
---- u-boot-1.1.5.a/lib_generic/Makefile	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/lib_generic/Makefile	2007-03-09 09:47:46.000000000 +0000
+--- a/lib_generic/Makefile
++++ b/lib_generic/Makefile
 @@ -28,7 +28,7 @@
  COBJS	= bzlib.o bzlib_crctable.o bzlib_decompress.o \
  	  bzlib_randtable.o bzlib_huffman.o \
@@ -1365,9 +1341,8 @@ diff -urN u-boot-1.1.5.a/lib_generic/Makefile u-boot/lib_generic/Makefile
  
  SRCS 	:= $(COBJS:.o=.c)
  OBJS	:= $(addprefix $(obj),$(COBJS))
-diff -urN u-boot-1.1.5.a/lib_mips/board.c u-boot/lib_mips/board.c
---- u-boot-1.1.5.a/lib_mips/board.c	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/lib_mips/board.c	2008-05-11 13:17:00.000000000 +0100
+--- a/lib_mips/board.c
++++ b/lib_mips/board.c
 @@ -29,6 +29,25 @@
  #include <net.h>
  #include <environment.h>
@@ -1631,16 +1606,14 @@ diff -urN u-boot-1.1.5.a/lib_mips/board.c u-boot/lib_mips/board.c
  
  void hang (void)
  {
-diff -urN u-boot-1.1.5.a/lib_mips/head.h u-boot/lib_mips/head.h
---- u-boot-1.1.5.a/lib_mips/head.h	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot/lib_mips/head.h	2007-03-09 09:47:46.000000000 +0000
+--- /dev/null
++++ b/lib_mips/head.h
 @@ -0,0 +1,3 @@
 +
 +//#define CFG_HEAD_LEN		0x00006000
 +#define CFG_UBOOT_OFFSET	CFG_HEAD_LEN
-diff -urN u-boot-1.1.5.a/lib_mips/time.c u-boot/lib_mips/time.c
---- u-boot-1.1.5.a/lib_mips/time.c	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/lib_mips/time.c	2007-03-09 09:47:46.000000000 +0000
+--- a/lib_mips/time.c
++++ b/lib_mips/time.c
 @@ -80,6 +80,17 @@
  		/*NOP*/;
  }
@@ -1659,10 +1632,8 @@ diff -urN u-boot-1.1.5.a/lib_mips/time.c u-boot/lib_mips/time.c
  /*
   * This function is derived from PowerPC code (read timebase as long long).
   * On MIPS it just returns the timer value.
-Binary files u-boot-1.1.5.a/mkbootimg.incaip2 and u-boot/mkbootimg.incaip2 differ
-diff -urN u-boot-1.1.5.a/net/eth.c u-boot/net/eth.c
---- u-boot-1.1.5.a/net/eth.c	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/net/eth.c	2008-05-11 12:58:45.000000000 +0100
+--- a/net/eth.c
++++ b/net/eth.c
 @@ -25,6 +25,9 @@
  #include <command.h>
  #include <net.h>
@@ -1694,47 +1665,8 @@ diff -urN u-boot-1.1.5.a/net/eth.c u-boot/net/eth.c
  	if (!eth_devices) {
  		puts ("No ethernet found.\n");
  	} else {
-Binary files u-boot-1.1.5.a/post/cache.o and u-boot/post/cache.o differ
-Binary files u-boot-1.1.5.a/post/cache_8xx.o and u-boot/post/cache_8xx.o differ
-Binary files u-boot-1.1.5.a/post/codec.o and u-boot/post/codec.o differ
-Binary files u-boot-1.1.5.a/post/cpu/andi.o and u-boot/post/cpu/andi.o differ
-Binary files u-boot-1.1.5.a/post/cpu/asm.o and u-boot/post/cpu/asm.o differ
-Binary files u-boot-1.1.5.a/post/cpu/b.o and u-boot/post/cpu/b.o differ
-Binary files u-boot-1.1.5.a/post/cpu/cmp.o and u-boot/post/cpu/cmp.o differ
-Binary files u-boot-1.1.5.a/post/cpu/cmpi.o and u-boot/post/cpu/cmpi.o differ
-Binary files u-boot-1.1.5.a/post/cpu/complex.o and u-boot/post/cpu/complex.o differ
-Binary files u-boot-1.1.5.a/post/cpu/cr.o and u-boot/post/cpu/cr.o differ
-Binary files u-boot-1.1.5.a/post/cpu/libcpu.a and u-boot/post/cpu/libcpu.a differ
-Binary files u-boot-1.1.5.a/post/cpu/load.o and u-boot/post/cpu/load.o differ
-Binary files u-boot-1.1.5.a/post/cpu/multi.o and u-boot/post/cpu/multi.o differ
-Binary files u-boot-1.1.5.a/post/cpu/rlwimi.o and u-boot/post/cpu/rlwimi.o differ
-Binary files u-boot-1.1.5.a/post/cpu/rlwinm.o and u-boot/post/cpu/rlwinm.o differ
-Binary files u-boot-1.1.5.a/post/cpu/rlwnm.o and u-boot/post/cpu/rlwnm.o differ
-Binary files u-boot-1.1.5.a/post/cpu/srawi.o and u-boot/post/cpu/srawi.o differ
-Binary files u-boot-1.1.5.a/post/cpu/store.o and u-boot/post/cpu/store.o differ
-Binary files u-boot-1.1.5.a/post/cpu/string.o and u-boot/post/cpu/string.o differ
-Binary files u-boot-1.1.5.a/post/cpu/three.o and u-boot/post/cpu/three.o differ
-Binary files u-boot-1.1.5.a/post/cpu/threei.o and u-boot/post/cpu/threei.o differ
-Binary files u-boot-1.1.5.a/post/cpu/threex.o and u-boot/post/cpu/threex.o differ
-Binary files u-boot-1.1.5.a/post/cpu/two.o and u-boot/post/cpu/two.o differ
-Binary files u-boot-1.1.5.a/post/cpu/twox.o and u-boot/post/cpu/twox.o differ
-Binary files u-boot-1.1.5.a/post/cpu.o and u-boot/post/cpu.o differ
-Binary files u-boot-1.1.5.a/post/dsp.o and u-boot/post/dsp.o differ
-Binary files u-boot-1.1.5.a/post/ether.o and u-boot/post/ether.o differ
-Binary files u-boot-1.1.5.a/post/i2c.o and u-boot/post/i2c.o differ
-Binary files u-boot-1.1.5.a/post/libpost.a and u-boot/post/libpost.a differ
-Binary files u-boot-1.1.5.a/post/memory.o and u-boot/post/memory.o differ
-Binary files u-boot-1.1.5.a/post/post.o and u-boot/post/post.o differ
-Binary files u-boot-1.1.5.a/post/rtc.o and u-boot/post/rtc.o differ
-Binary files u-boot-1.1.5.a/post/spr.o and u-boot/post/spr.o differ
-Binary files u-boot-1.1.5.a/post/sysmon.o and u-boot/post/sysmon.o differ
-Binary files u-boot-1.1.5.a/post/tests.o and u-boot/post/tests.o differ
-Binary files u-boot-1.1.5.a/post/uart.o and u-boot/post/uart.o differ
-Binary files u-boot-1.1.5.a/post/usb.o and u-boot/post/usb.o differ
-Binary files u-boot-1.1.5.a/post/watchdog.o and u-boot/post/watchdog.o differ
-diff -urN u-boot-1.1.5.a/tools/Makefile u-boot/tools/Makefile
---- u-boot-1.1.5.a/tools/Makefile	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/tools/Makefile	2007-03-09 09:47:46.000000000 +0000
+--- a/tools/Makefile
++++ b/tools/Makefile
 @@ -23,7 +23,7 @@
  
  BIN_FILES	= img2srec$(SFX) mkimage$(SFX) envcrc$(SFX) gen_eth_addr$(SFX) bmp_logo$(SFX)
@@ -1803,23 +1735,17 @@ diff -urN u-boot-1.1.5.a/tools/Makefile u-boot/tools/Makefile
  
  $(LOGO_H):	$(obj)bmp_logo $(LOGO_BMP)
  		$(obj)./bmp_logo $(LOGO_BMP) >$@
-Binary files u-boot-1.1.5.a/tools/bmp_logo and u-boot/tools/bmp_logo differ
-Binary files u-boot-1.1.5.a/tools/bmp_logo.o and u-boot/tools/bmp_logo.o differ
-Binary files u-boot-1.1.5.a/tools/crc32_danube.o and u-boot/tools/crc32_danube.o differ
-Binary files u-boot-1.1.5.a/tools/envcrc and u-boot/tools/envcrc differ
-Binary files u-boot-1.1.5.a/tools/envcrc.o and u-boot/tools/envcrc.o differ
-Binary files u-boot-1.1.5.a/tools/environment_danube.o and u-boot/tools/environment_danube.o differ
-Binary files u-boot-1.1.5.a/tools/gen_eth_addr and u-boot/tools/gen_eth_addr differ
-Binary files u-boot-1.1.5.a/tools/gen_eth_addr.o and u-boot/tools/gen_eth_addr.o differ
-Binary files u-boot-1.1.5.a/tools/img2srec and u-boot/tools/img2srec differ
-Binary files u-boot-1.1.5.a/tools/img2srec.o and u-boot/tools/img2srec.o differ
-Binary files u-boot-1.1.5.a/tools/inca-swap-bytes and u-boot/tools/inca-swap-bytes differ
-Binary files u-boot-1.1.5.a/tools/inca-swap-bytes.o and u-boot/tools/inca-swap-bytes.o differ
-Binary files u-boot-1.1.5.a/tools/mkimage and u-boot/tools/mkimage differ
-diff -urN u-boot-1.1.5.a/tools/mkimage.c u-boot/tools/mkimage.c
---- u-boot-1.1.5.a/tools/mkimage.c	2006-10-20 16:54:33.000000000 +0100
-+++ u-boot/tools/mkimage.c	2007-03-09 09:47:46.000000000 +0000
-@@ -138,6 +138,7 @@
+--- a/tools/mkimage.c
++++ b/tools/mkimage.c
+@@ -28,6 +28,7 @@
+ #ifndef __WIN32__
+ #include <netinet/in.h>		/* for host / network byte order conversions	*/
+ #endif
++#include <sys/types.h>
+ #include <sys/mman.h>
+ #include <sys/stat.h>
+ #include <time.h>
+@@ -138,6 +139,7 @@
      {	IH_COMP_NONE,	"none",		"uncompressed",		},
      {	IH_COMP_BZIP2,	"bzip2",	"bzip2 compressed",	},
      {	IH_COMP_GZIP,	"gzip",		"gzip compressed",	},
@@ -1827,4 +1753,21 @@ diff -urN u-boot-1.1.5.a/tools/mkimage.c u-boot/tools/mkimage.c
      {	-1,		"",		"",			},
  };
  
-Binary files u-boot-1.1.5.a/tools/mkimage.o and u-boot/tools/mkimage.o differ
+@@ -445,7 +447,7 @@
+ 	}
+ 
+ 	/* We're a bit of paranoid */
+-#if defined(_POSIX_SYNCHRONIZED_IO) && !defined(__sun__) && !defined(__FreeBSD__)
++#if defined(_POSIX_SYNCHRONIZED_IO) && !defined(__sun__) && !defined(__FreeBSD__) && !defined(__APPLE__)
+ 	(void) fdatasync (ifd);
+ #else
+ 	(void) fsync (ifd);
+@@ -495,7 +497,7 @@
+ 	(void) munmap((void *)ptr, sbuf.st_size);
+ 
+ 	/* We're a bit of paranoid */
+-#if defined(_POSIX_SYNCHRONIZED_IO) && !defined(__sun__) && !defined(__FreeBSD__)
++#if defined(_POSIX_SYNCHRONIZED_IO) && !defined(__sun__) && !defined(__FreeBSD__) && !defined(__APPLE__)
+ 	(void) fdatasync (ifd);
+ #else
+ 	(void) fsync (ifd);
