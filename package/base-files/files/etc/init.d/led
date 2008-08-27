@@ -26,8 +26,9 @@ load_led() {
 		logger "setting up led : $name"
 		[ -n "$default" ] && { 
 			[ $default -eq 1 ] && 
-				echo 1 >/sys/class/leds/${sysfs}/brightness \
-				|| echo 0 >/sys/class/leds/${sysfs}/brightness
+				echo 1 >/sys/class/leds/${sysfs}/brightness 
+			[ $default -eq 1 ] ||
+				echo 0 >/sys/class/leds/${sysfs}/brightness
 		}
 		[ -z "$trigger" ] && trigger=none
 		echo $trigger > /sys/class/leds/${sysfs}/trigger
