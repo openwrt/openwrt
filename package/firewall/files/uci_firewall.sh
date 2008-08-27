@@ -302,10 +302,10 @@ fw_init() {
 	config_foreach fw_forwarding forwarding
 	echo "Loading redirects"
 	config_foreach fw_redirect redirect
-	echo "Loading includes"
-	config_foreach fw_include include
 	echo "Adding custom chains"
 	fw_custom_chains
+	echo "Loading includes"
+	config_foreach fw_include include
 
 	uci_set_state firewall core "" firewall_state 
 	uci_set_state firewall core loaded 1
