@@ -303,14 +303,21 @@ fw_addif() {
 fw_custom_chains() {
 	$IPTABLES -N input_rule
 	$IPTABLES -N output_rule
-	$IPTABLES -N forward_rule
+	$IPTABLES -N forwarding_rule
 	$IPTABLES -N prerouting_rule -t nat
 	$IPTABLES -N postrouting_rule -t nat
+	$IPTABLES -N input_wan
+	$IPTABLES -N forwarding_wan
+	$IPTABLES -N prerouting_wan -t nat
+			
 	$IPTABLES -A INPUT -j input_rule
 	$IPTABLES -A OUTPUT -j output_rule
-	$IPTABLES -A FORWARD -j forward_rule
+	$IPTABLES -A FORWARD -j forwarding_rule
 	$IPTABLES -A PREROUTING -t nat -j prerouting_rule
 	$IPTABLES -A POSTROUTING -t nat -j postrouting_rule
+	$IPTABLES -A zone_wan -j input_wan
+	$IPTABLES -A zone_wan_forward -j forwarding_wan
+	$IPTABLES -A zone_wan_prerouting -t nat -j prerouting_wan
 }
 
 fw_init() {
