@@ -188,18 +188,24 @@ fw_rule() {
 	[ -z "$target" ] && target=DROP
 	[ -n "$src" ] && ZONE=zone_$src || ZONE=INPUT
 	[ -n "$dest" ] && TARGET=zone_${dest}_$target || TARGET=$target
-	[ -n "$dest_port" -a -z "$proto" ] && { \
-		echo "dport may only be used it proto is defined"; return; }
-	[ -n "$src_port" -a -z "$proto" ] && { \
-		echo "sport may only be used it proto is defined"; return; }
-	$IPTABLES -I $ZONE 1 \
-		${proto:+-p $proto} \
-		${src_ip:+-s $src_ip} \
-		${src_port:+--sport $src_port} \
-		${src_mac:+-m mac --mac-source $src_mac} \
-		${dest_ip:+-d $dest_ip} \
-		${dest_port:+--dport $dest_port} \
-		-j $TARGET 
+	add_rule() {
+		$IPTABLES -I $ZONE 1 \
+			${proto:+-p $proto} \
+			${src_ip:+-s $src_ip} \
+			${src_port:+--sport $src_port} \
+			${src_mac:+-m mac --mac-source $src_mac} \
+			${dest_ip:+-d $dest_ip} \
+			${dest_port:+--dport $dest_port} \
+			-j $TARGET 
+	}
+	[ "$proto" == "tcpudp" -o -z "$proto" ] && {
+		proto=tcp
+		add_rule
+		proto=udp
+		add_rule
+		return
+	}
+	add_rule
 }
 
 fw_forwarding() {
@@ -221,7 +227,7 @@ fw_redirect() {
 	local src_dport
 	local src_mac
 	local dest_ip
-	local dest_port
+	local dest_port dest_port2
 	local proto
 	
 	config_get src $1 src
@@ -234,11 +240,7 @@ fw_redirect() {
 	config_get proto $1 proto
 	[ -z "$src" -o -z "$dest_ip" ] && { \
 		echo "redirect needs src and dest_ip"; return ; }
-	[ -n "$dest_port" -a -z "$proto" ] && { \
-		echo "dport may only be used it proto is defined"; return; }
-	[ -n "$src_port" -a -z "$proto" ] && { \
-		echo "sport may only be used it proto is defined"; return; }
-
+	
 	src_port_first=${src_port%-*}
 	src_port_last=${src_port#*-}
 	[ "$src_port_first" -ne "$src_port_last" ] && { \
@@ -249,27 +251,38 @@ fw_redirect() {
 	[ "$src_dport_first" -ne "$src_dport_last" ] && { \
 		src_dport="$src_dport_first:$src_dport_last"; }
 
-	$IPTABLES -A zone_${src}_prerouting -t nat \
-		${proto:+-p $proto} \
-		${src_ip:+-s $src_ip} \
-		${src_port:+--sport $src_port} \
-		${src_dport:+--dport $src_dport} \
-		${src_mac:+-m mac --mac-source $src_mac} \
-		-j DNAT --to-destination $dest_ip${dest_port:+:$dest_port}
-
-	dest_port_first=${dest_port%-*}
-	dest_port_last=${dest_port#*-}
+	destport2=destport
+	dest_port_first=${dest_port2%-*}
+	dest_port_last=${dest_port2#*-}
 	[ "$dest_port_first" -ne "$dest_port_last" ] && { \
-		dest_port="$dest_port_first:$dest_port_last"; }
+		dest_port2="$dest_port_first:$dest_port_last"; }
 
-	$IPTABLES -I zone_${src}_forward 1 \
-		${proto:+-p $proto} \
-		-d $dest_ip \
-		${src_ip:+-s $src_ip} \
-		${src_port:+--sport $src_port} \
-		${dest_port:+--dport $dest_port} \
-		${src_mac:+-m mac --mac-source $src_mac} \
-		-j ACCEPT 
+	add_rule() {
+		$IPTABLES -A zone_${src}_prerouting -t nat \
+			${proto:+-p $proto} \
+			${src_ip:+-s $src_ip} \
+			${src_port:+--sport $src_port} \
+			${src_dport:+--dport $src_dport} \
+			${src_mac:+-m mac --mac-source $src_mac} \
+			-j DNAT --to-destination $dest_ip${dest_port:+:$dest_port}
+
+		$IPTABLES -I zone_${src}_forward 1 \
+			${proto:+-p $proto} \
+			-d $dest_ip \
+			${src_ip:+-s $src_ip} \
+			${src_port:+--sport $src_port} \
+			${dest_port2:+--dport $dest_port2} \
+			${src_mac:+-m mac --mac-source $src_mac} \
+			-j ACCEPT 
+	}
+	[ "$proto" == "tcpudp" -o -z "$proto" ] && {
+		proto=tcp
+		add_rule
+		proto=udp
+		add_rule
+		return
+	}
+	add_rule
 }
 
 fw_include() {
