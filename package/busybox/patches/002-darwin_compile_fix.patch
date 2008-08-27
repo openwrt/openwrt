@@ -1,0 +1,13 @@
+--- a/include/libbb.h
++++ b/include/libbb.h
+@@ -83,7 +83,10 @@
+ extern char **environ;
+ 
+ /* Set the group set for the current user to GROUPS (N of them).  */
++#if !defined(__APPLE__)
+ int setgroups(size_t n, const gid_t *groups);
++#endif
++
+ #if defined(__GLIBC__) && __GLIBC__ < 2
+ int vdprintf(int d, const char *format, va_list ap);
+ #endif
