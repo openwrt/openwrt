@@ -51,7 +51,7 @@ define DownloadMethod/cvs
                 cd $(TMP_DIR)/dl && \
                 rm -rf $(SUBDIR) && \
                 [ \! -d $(SUBDIR) ] && \
-                cvs co -r$(VERSION) $(URL) $(SUBDIR) && \
+                cvs -d $(URL) co -r $(VERSION) $(SUBDIR) && \
                 find $(SUBDIR) -name CVS | xargs rm -rf && \
                 echo "Packing checkout..." && \
                 $(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
