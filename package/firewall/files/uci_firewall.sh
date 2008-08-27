@@ -323,4 +323,5 @@ fw_stop() {
 	$IPTABLES -P INPUT ACCEPT
 	$IPTABLES -P OUTPUT ACCEPT
 	$IPTABLES -P FORWARD ACCEPT
+	uci_revert_state firewall core
 }
