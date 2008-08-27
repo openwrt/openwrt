@@ -126,7 +126,7 @@ $(call KernelPackage/$(1)/config)
     endef
   endif
 
-  ifneq ($(if $(KCONFIG),$(filter m,$(foreach c,$(filter-out %=y %=n %=m,$(KCONFIG)),$($(c)))),.),)
+  ifneq ($(if $(filter-out %=y %=n %=m,$(KCONFIG)),$(filter m,$(foreach c,$(filter-out %=y %=n %=m,$(KCONFIG)),$($(c)))),.),)
     ifneq ($(strip $(FILES)),)
       define Package/kmod-$(1)/install
 		  mkdir -p $$(1)/lib/modules/$(LINUX_VERSION)
