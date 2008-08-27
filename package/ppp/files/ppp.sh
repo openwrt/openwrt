@@ -2,7 +2,7 @@ scan_ppp() {
 	config_get ifname "$1" ifname
 	pppdev="${pppdev:-0}"
 	config_get unit "$1" unit
-	[ -z "$unit" ] && {
+	[ -z "$unit" -a "${ifname%%[0-9]*}" != ppp ] && {
 		config_set "$1" ifname "ppp$pppdev"
 		config_set "$1" unit "$pppdev"
 		pppdev="$(($pppdev + 1))"
