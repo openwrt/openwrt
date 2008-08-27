@@ -261,6 +261,19 @@ fw_addif() {
 	(ACTION="ifup" INTERFACE="$1" . /etc/hotplug.d/iface/20-firewall)
 }
 
+fw_custom_chains() {
+	$IPTABLES -N input_rule
+	$IPTABLES -N output_rule
+	$IPTABLES -N forward_rule
+	$IPTABLES -N prerouting_rule -t nat
+	$IPTABLES -N postrouting_rule -t nat
+	$IPTABLES -A INPUT -j input_rule
+	$IPTABLES -A OUTPUT -j output_rule
+	$IPTABLES -A FORWARD -j forward_rule
+	$IPTABLES -A PREROUTING -t nat -j prerouting_rule
+	$IPTABLES -A POSTROUTING -t nat -j postrouting_rule
+}
+
 fw_init() {
 	echo "Loading defaults"
 	config_foreach fw_defaults defaults
@@ -274,7 +287,9 @@ fw_init() {
 	config_foreach fw_redirect redirect
 	echo "Loading includes"
 	config_foreach fw_include include
-	
+	echo "Adding custom chains"
+	fw_custom_chains
+
 	uci_set_state firewall core "" firewall_state 
 	uci_set_state firewall core loaded 1
 	unset CONFIG_APPEND
