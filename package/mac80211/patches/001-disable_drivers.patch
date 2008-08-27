@@ -1,13 +1,10 @@
-diff -urN compat-wireless-2008-05-26/config.mk compat-wireless-2008-05-26.new/config.mk
---- compat-wireless-2008-05-26/config.mk	2008-05-20 09:37:02.000000000 +0200
-+++ compat-wireless-2008-05-26.new/config.mk	2008-07-14 10:52:01.000000000 +0200
-@@ -28,73 +28,6 @@
- # PCI Drivers
- ifneq ($(CONFIG_PCI),)
+diff -urN compat-wireless-2008-08-06/config.mk compat-wireless-2008-08-06.new/config.mk
+--- compat-wireless-2008-08-06/config.mk	2008-07-18 06:11:03.000000000 +0200
++++ compat-wireless-2008-08-06.new/config.mk	2008-08-20 17:30:13.000000000 +0200
+@@ -72,70 +72,6 @@
+ CONFIG_ATH5K=m
+ CONFIG_ATH5K_DEBUG=n
  
--CONFIG_ATH5K=m
--CONFIG_ATH5K_DEBUG=n
--
 -# Required for older kernels which still use this flag.
 -CONFIG_IWLWIFI=m
 -
@@ -75,7 +72,7 @@ diff -urN compat-wireless-2008-05-26/config.mk compat-wireless-2008-05-26.new/co
  CONFIG_RT2X00_LIB_PCI=m
  CONFIG_RT2400PCI=m
  CONFIG_RT2500PCI=m
-@@ -118,32 +51,6 @@
+@@ -159,32 +95,6 @@
  ifneq ($(CONFIG_USB),)
  CONFIG_ZD1211RW=m
  
@@ -108,7 +105,7 @@ diff -urN compat-wireless-2008-05-26/config.mk compat-wireless-2008-05-26.new/co
  # RT2500USB does not require firmware
  CONFIG_RT2500USB=m
  CONFIG_RT2X00_LIB_USB=m
-@@ -168,39 +75,6 @@
+@@ -209,39 +119,6 @@
  CONFIG_RT2X00_LIB_FIRMWARE=y
  endif
  
