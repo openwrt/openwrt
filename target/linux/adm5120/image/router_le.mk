@@ -298,6 +298,10 @@ define Image/Build/Profile/EASY5120RT
 	$(call Image/Build/Template/Infineon/$(1),easy-5120-rt)
 endef
 
+define Image/Build/Profile/EASY5120PATA
+	$(call Image/Build/Template/Infineon/$(1),easy-5120p-ata)
+endef
+
 define Image/Build/Profile/RouterBoard
 	$(call Image/Build/Template/Mikrotik/$(1))
 endef
@@ -333,6 +337,7 @@ define Image/Build/Profile/Generic
 	# Infineon
 	$(call Image/Build/Profile/EASY83000,$(1))
 	$(call Image/Build/Profile/EASY5120RT,$(1))
+	$(call Image/Build/Profile/EASY5120PATA,$(1))
 	# Mikrotik
 	$(call Image/Build/Profile/RB1xx/$(1))
 	$(call Image/Build/Experimental,$(1))

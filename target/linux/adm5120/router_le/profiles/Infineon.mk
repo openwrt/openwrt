@@ -15,3 +15,13 @@ define Profile/EASY5120RT/Description
 endef
 
 $(eval $(call Profile,EASY5120RT))
+
+define Profile/EASY5120PATA
+	NAME:=Infineon EASY 5120P-ATA Reference Board
+endef
+
+define Profile/EASY5120RT/Description
+	Package set optimized for the Infineon EASY 5120P-ATA Reference Board
+endef
+
+$(eval $(call Profile,EASY5120PATA))
