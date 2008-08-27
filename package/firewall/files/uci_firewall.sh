@@ -229,6 +229,17 @@ fw_redirect() {
 		echo "dport may only be used it proto is defined"; return; }
 	[ -n "$src_port" -a -z "$proto" ] && { \
 		echo "sport may only be used it proto is defined"; return; }
+
+	src_port_first=${src_port%-*}
+	src_port_last=${src_port#*-}
+	[ "$src_port_first" -ne "$src_port_last" ] && { \
+		src_port="$src_port_first:$src_port_last"; }
+
+	src_dport_first=${src_dport%-*}
+	src_dport_last=${src_dport#*-}
+	[ "$src_dport_first" -ne "$src_dport_last" ] && { \
+		src_dport="$src_dport_first:$src_dport_last"; }
+
 	$IPTABLES -A zone_${src}_prerouting -t nat \
 		${proto:+-p $proto} \
 		${src_ip:+-s $src_ip} \
@@ -236,6 +247,12 @@ fw_redirect() {
 		${src_dport:+--dport $src_dport} \
 		${src_mac:+-m mac --mac-source $src_mac} \
 		-j DNAT --to-destination $dest_ip${dest_port:+:$dest_port}
+
+	dest_port_first=${dest_port%-*}
+	dest_port_last=${dest_port#*-}
+	[ "$dest_port_first" -ne "$dest_port_last" ] && { \
+		dest_port="$dest_port_first:$dest_port_last"; }
+
 	$IPTABLES -I zone_${src}_forward 1 \
 		${proto:+-p $proto} \
 		-d $dest_ip \
