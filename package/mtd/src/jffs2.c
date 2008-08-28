@@ -7,13 +7,18 @@
 #include <string.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <endian.h>
 #include "jffs2.h"
 #include "crc32.h"
 #include "mtd.h"
 
 #define PAD(x) (((x)+3)&~3)
 
-#define CLEANMARKER "\x85\x19\x03\x20\x0c\x00\x00\x00\xb1\xb0\x1e\xe4"
+#if BYTE_ORDER == BIG_ENDIAN
+# define CLEANMARKER "\x19\x85\x20\x03\x00\x00\x00\x0c\xf0\x60\xdc\x98"
+#else
+# define CLEANMARKER "\x85\x19\x03\x20\x0c\x00\x00\x00\xb1\xb0\x1e\xe4"
+#endif
 
 static int last_ino = 0;
 static int last_version = 0;
