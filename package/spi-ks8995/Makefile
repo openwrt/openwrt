@@ -20,6 +20,7 @@ define KernelPackage/spi-ks8995
   FILES:=$(PKG_BUILD_DIR)/spi_ks8995.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=CONFIG_SPI=y \
 	CONFIG_SPI_MASTER=y
+  AUTOLOAD:=$(call AutoLoad,50,spi_ks8995)
 endef
 
 define KernelPackage/spi-ks8995/description
