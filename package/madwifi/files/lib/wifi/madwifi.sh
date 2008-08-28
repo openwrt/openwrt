@@ -78,6 +78,7 @@ enable_atheros() {
 
 	local first=1
 	for vif in $vifs; do
+		local start_hostapd
 		nosbeacon=
 		config_get ifname "$vif" ifname
 		config_get enc "$vif" encryption
@@ -137,7 +138,6 @@ enable_atheros() {
 			[ -n "$wdssep" ] && iwpriv "$ifname" wdssep "$wdssep"
 		}
 
-		wpa=
 		case "$enc" in
 			WEP|wep)
 				for idx in 1 2 3 4; do
@@ -152,6 +152,7 @@ enable_atheros() {
 				esac
 			;;
 			PSK|psk|PSK2|psk2)
+				start_hostapd=1
 				config_get key "$vif" key
 			;;
 		esac
@@ -261,7 +262,7 @@ enable_atheros() {
 				config_get_bool isolate "$vif" isolate 0
 				iwpriv "$ifname" ap_bridge "$((isolate^1))"
 
-				if eval "type hostapd_setup_vif" 2>/dev/null >/dev/null; then
+				if [ -n "$start_hostapd" ] && eval "type hostapd_setup_vif" 2>/dev/null >/dev/null; then
 					hostapd_setup_vif "$vif" madwifi || {
 						echo "enable_atheros($device): Failed to set up hostapd for interface $ifname" >&2
 						# make sure this wifi interface won't accidentally stay open without encryption
