@@ -45,6 +45,7 @@ start() {
 	chown 0700 /tmp/.uci
 	touch /var/log/wtmp
 	touch /var/log/lastlog
+	touch /tmp/resolv.conf.auto
 	ln -sf /tmp/resolv.conf.auto /tmp/resolv.conf
 	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
 
