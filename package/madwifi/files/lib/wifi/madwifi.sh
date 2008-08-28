@@ -151,9 +151,8 @@ enable_atheros() {
 					*) iwconfig "$ifname" enc "$key";;
 				esac
 			;;
-			PSK|psk|PSK2|psk2)
+			psk*|wpa*)
 				start_hostapd=1
-				config_get key "$vif" key
 			;;
 		esac
 
