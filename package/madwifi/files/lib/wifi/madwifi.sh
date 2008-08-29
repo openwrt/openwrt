@@ -153,6 +153,7 @@ enable_atheros() {
 			;;
 			psk*|wpa*)
 				start_hostapd=1
+				config_get key "$vif" key
 			;;
 		esac
 
