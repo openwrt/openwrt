@@ -15,7 +15,9 @@ $(strip \
       $(if $(filter git://%,$(1)),git, \
         $(if $(filter svn://%,$(1)),svn, \
           $(if $(filter cvs://%,$(1)),cvs, \
-            unknown \
+            $(if $(filter hg://%,$(1)),hg, \
+	       unknown \
+	    ) \
 	  ) \
         ) \
       ) \
@@ -24,7 +26,7 @@ $(strip \
 )
 endef
 
-# code for creating tarballs from cvs/svn/git checkouts - useful for mirror support
+# code for creating tarballs from cvs/svn/git/hg checkouts - useful for mirror support
 dl_pack/bz2=$(TAR) cfj $(1) $(2)
 dl_pack/gz=$(TAR) cfz $(1) $(2)
 dl_pack/unknown=echo "ERROR: Unknown pack format for file $(1)"; false
@@ -91,9 +93,25 @@ define DownloadMethod/git
 	)
 endef
 
+define DownloadMethod/hg
+	$(call wrap_mirror, \
+		echo "Checking out files from the hg repository..."; \
+		mkdir -p $(TMP_DIR)/dl && \
+		cd $(TMP_DIR)/dl && \
+		rm -rf $(SUBDIR) && \
+		[ \! -d $(SUBDIR) ] && \
+		hg clone -r $(VERSION) $(URL) $(SUBDIR) && \
+		find $(SUBDIR) -name .hg | xargs rm -rf && \
+		echo "Packing checkout..." && \
+		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
+		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/; \
+	)
+endef
+
 Validate/cvs=VERSION SUBDIR
 Validate/svn=VERSION SUBDIR
 Validate/git=VERSION SUBDIR
+Validate/hg=VERSION SUBDIR
 
 define Download/Defaults
   URL:=
