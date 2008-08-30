@@ -54,11 +54,20 @@ ifneq ($(CONFIG_TARGET_ar7)$(CONFIG_TARGET_uml),)
   BUS:=
 endif
 
-ifeq ($(ARCH),mips)
-  HAL_TARGET:=mips-be-elf
-endif
-ifeq ($(ARCH),mipsel)
-  HAL_TARGET:=mips-le-elf
+ifneq ($(CONFIG_CPU_MIPS32_R2),)
+  ifeq ($(ARCH),mips)
+    HAL_TARGET:=mips32r2-be-elf
+  endif
+  ifeq ($(ARCH),mipsel)
+    HAL_TARGET:=mips32r2-le-elf
+  endif
+else
+  ifeq ($(ARCH),mips)
+    HAL_TARGET:=mips32-be-elf
+  endif
+  ifeq ($(ARCH),mipsel)
+    HAL_TARGET:=mips32-le-elf
+  endif
 endif
 ifeq ($(ARCH),i386)
   HAL_TARGET:=i386-elf
