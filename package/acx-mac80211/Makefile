@@ -10,12 +10,15 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=acx-mac80211
-PKG_VERSION:=20080210
+PKG_REV:=11edba2
+PKG_VERSION:=20080805
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=@SF/acx100
-PKG_MD5SUM:=d1c38b3ff24ce9162eb678298763ec88
+PKG_SOURCE_URL:=git://gitorious.org/acx-mac80211/mainline.git
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE_VERSION:=$(PKG_REV)
 
 PKG_FW_C16_NAME:=tiacx111c16
 PKG_FW_C16_URL:=http://teknoraver.net/software/acx-mac80211/
