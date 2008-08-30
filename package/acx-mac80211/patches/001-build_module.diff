@@ -1,11 +1,11 @@
---- acx-mac80211-20070610/Makefile	2007-06-10 20:23:27.000000000 +0200
-+++ acx-mac80211-20070610//Makefile	2007-07-23 17:00:34.000000000 +0200
-@@ -4,7 +4,7 @@
- acx-mac80211-obj-$(CONFIG_ACX_MAC80211_USB) += usb.o
- 
- #acx-mac80211-objs := wlan.o conv.o ioctl.o common.o $(acx-mac80211-obj-y)
--acx-mac80211-objs :=  common.o $(acx-mac80211-obj-y)
-+acx-mac80211-objs :=  common.o $(acx-mac80211-obj-m)
- 
- # Use this if you have proper Kconfig integration:
- 
+--- acx-mac80211-20080802/Makefile	2008-08-02 17:34:09.000000000 +0200
++++ acx-mac80211-20080802-b/Makefile	2008-08-04 22:24:25.000000000 +0200
+@@ -28,7 +28,7 @@
+ 	obj-$(CONFIG_ACX_MAC80211) += acx-mac80211.o
+ 	acx-mac80211-obj-$(CONFIG_ACX_MAC80211_PCI) += pci.o
+ 	acx-mac80211-obj-$(CONFIG_ACX_MAC80211_USB) += usb.o
+-	acx-mac80211-objs := common.o $(acx-mac80211-obj-y)
++	acx-mac80211-objs := common.o $(acx-mac80211-obj-m)
+ else
+ # Otherwise we were called directly from the command line: the the kernel build
+ # system must be explicitly invoked.
