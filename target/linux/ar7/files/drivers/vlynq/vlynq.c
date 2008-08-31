@@ -304,20 +304,36 @@ static int vlynq_device_match(struct device *dev,
 	struct plat_vlynq_ops *ops = dev->platform_data;
 	struct vlynq_device_id *ids = vdrv->id_table;
 	u32 id = 0;
-	int result;
+	int result, flag;
 
 	while (ids->id) {
-		vdev->divisor = ids->divisor;
-		result = __vlynq_enable_device(vdev);
-		if (result == 0) {
-			id = vlynq_reg_read(vdev->remote->chip);
-			ops->off(vdev);
-			if (ids->id == id) {
-				vlynq_set_drvdata(vdev, ids);
-				return 1;
-			}
+		flag = 0;
+		if (ids->divisor != vlynq_div_auto
+				&& vdev->divisor == vlynq_div_auto) {
+			flag = 1;
+			vdev->divisor = ids->divisor;
+			result = __vlynq_enable_device(vdev);
+			if (result == 0) {
+				id = vlynq_reg_read(vdev->remote->chip);
+				vlynq_reg_write(vdev->local->control, 0);
+				vlynq_reg_write(vdev->remote->control, 0);
+				ops->off(vdev);
+			} else
+				id = vdev->dev_id;
+		} else
+			id = vdev->dev_id;
+		if (ids->id == id) {
+			vdev->dev_id = id;
+			vlynq_set_drvdata(vdev, ids);
+			printk(KERN_INFO "Driver found for VLYNQ " \
+				"device: %08x\n", id);
+			return 1;
 		}
+		printk(KERN_INFO "Not using the %08x VLYNQ device's " \
+			"driver for VLYNQ device: %08x\n", ids->id, id);
 		ids++;
+		if (flag)
+			vdev->divisor = vlynq_div_auto;
 	}
 	return 0;
 }
@@ -602,6 +618,18 @@ static int vlynq_probe(struct platform_device *pdev)
 	       dev->dev.bus_id, (void *)dev->regs_start, dev->irq,
 	       (void *)dev->mem_start);
 
+	dev->divisor = vlynq_div_auto;
+	result = __vlynq_enable_device(dev);
+	if (result == 0) {
+		dev->dev_id = vlynq_reg_read(dev->remote->chip);
+		vlynq_reg_write(dev->local->control, 0);
+		vlynq_reg_write(dev->remote->control, 0);
+		((struct plat_vlynq_ops *)(dev->dev.platform_data))->off(dev);
+	} else
+		dev->dev_id = 0;
+	if (dev->dev_id)
+		printk(KERN_INFO "Found a VLYNQ device: %08x\n", dev->dev_id);
+
 	return 0;
 
 fail_register:
@@ -626,7 +654,7 @@ static int vlynq_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static struct platform_driver vlynq_driver = {
+static struct platform_driver vlynq_platform_driver = {
 	.driver.name = "vlynq",
 	.probe = vlynq_probe,
 	.remove = __devexit_p(vlynq_remove),
@@ -648,7 +676,7 @@ static int __devinit vlynq_init(void)
 	if (res)
 		goto fail_bus;
 
-	res = platform_driver_register(&vlynq_driver);
+	res = platform_driver_register(&vlynq_platform_driver);
 	if (res)
 		goto fail_platform;
 
@@ -662,7 +690,7 @@ fail_bus:
 
 static void __devexit vlynq_exit(void)
 {
-	platform_driver_unregister(&vlynq_driver);
+	platform_driver_unregister(&vlynq_platform_driver);
 	bus_unregister(&vlynq_bus_type);
 }
 
