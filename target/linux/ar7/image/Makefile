@@ -78,6 +78,7 @@ define Image/Build
 	$(call Image/Build/CyberTAN,$(1),WA21,WA21,$(1))
 	$(call Image/Build/CyberTAN,$(1),WA22,WA22,$(1))
 	$(call Image/Build/CyberTAN,$(1),WAG2,WAG2,$(1))
+	$(call Image/Build/CyberTAN,$(1),AG310,AV2A -b -r 1.0,$(1))
 	$(call Image/Build/CyberTAN,$(1),AG241v2,AG3A -b -r 2.0,$(1))
 	$(call Image/Build/CyberTAN,$(1),AG241v2b,AG3B -b -r 2.0,$(1))
 	$(call Image/Build/CyberTAN,$(1),AG241v1,AG3A -b,$(1))
