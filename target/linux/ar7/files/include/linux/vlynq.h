@@ -59,7 +59,7 @@ struct vlynq_device_id {
 
 struct vlynq_regs;
 struct vlynq_device {
-	u32 id;
+	u32 id, dev_id;
 	int local_irq;
 	int remote_irq;
 	enum vlynq_divisor divisor;
