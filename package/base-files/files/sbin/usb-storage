@@ -10,7 +10,7 @@ while [ $i -le 10 ]; do
 	cd /sys${DEVPATH}
 	for blk in `find host* -type d 2>/dev/null`; do
 		cd /sys/${DEVPATH}/${blk}
-		BLK=$(find block* -type l 2>/dev/null)
+		BLK=$(find block* -type d 2>/dev/null)
 		[ -n "${BLK}" ] && {
 			cd /sys${DEVPATH}/${blk}/${BLK}
 			ls /dev/ > /tmp/d
