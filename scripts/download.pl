@@ -134,7 +134,21 @@ foreach my $mirror (@ARGV) {
 		push @mirrors, "http://ftp.de.kernel.org/pub/$1";
 		push @mirrors, "ftp://ftp.fr.kernel.org/pub/$1";
 		push @mirrors, "http://ftp.fr.kernel.org/pub/$1";
-	} else {
+    } elsif ($mirror =~ /^\@GNOME\/(.+)$/) {
+		push @mirrors, "http://ftp.gnome.org/pub/GNOME/sources/$1";
+		push @mirrors, "http://ftp.unina.it/pub/linux/GNOME/sources/$1";
+		push @mirrors, "http://fr2.rpmfind.net/linux/gnome.org/sources/$1";
+		push @mirrors, "ftp://ftp.dit.upm.es/pub/GNOME/sources/$1";
+		push @mirrors, "ftp://ftp.no.gnome.org/pub/GNOME/sources/$1";
+		push @mirrors, "http://ftp.acc.umu.se/pub/GNOME/sources/$1";
+		push @mirrors, "http://ftp.belnet.be/mirror/ftp.gnome.org/sources/$1";
+		push @mirrors, "http://linorg.usp.br/gnome/sources/$1";
+		push @mirrors, "http://mirror.aarnet.edu.au/pub/GNOME/sources/$1";
+		push @mirrors, "http://mirrors.ibiblio.org/pub/mirrors/gnome/sources/$1";
+		push @mirrors, "ftp://ftp.cse.buffalo.edu/pub/Gnome/sources/$1";
+		push @mirrors, "ftp://ftp.nara.wide.ad.jp/pub/X11/GNOME/sources/$1";
+    }
+    else {
 		push @mirrors, $mirror;
 	}
 }
