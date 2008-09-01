@@ -30,6 +30,7 @@
 
 #define AR71XX_SYS_TYPE_LEN	64
 #define AR71XX_BASE_FREQ	40000000
+#define AR91XX_BASE_FREQ	5000000
 
 #define AR71XX_MEM_SIZE_MIN	0x0200000
 #define AR71XX_MEM_SIZE_MAX	0x8000000
@@ -128,6 +129,9 @@ static void __init ar71xx_detect_sys_type(void)
 	case REV_ID_CHIP_AR7161:
 		chip = "7161";
 		break;
+	case REV_ID_CHIP_AR9130:
+		chip = "9130";
+		break;
 	default:
 		chip = "71xx";
 	}
@@ -136,7 +140,7 @@ static void __init ar71xx_detect_sys_type(void)
 		chip, rev, id);
 }
 
-static void __init ar71xx_detect_sys_frequency(void)
+static void __init ar91xx_detect_sys_frequency(void)
 {
 	u32 pll;
 	u32 freq;
@@ -144,16 +148,41 @@ static void __init ar71xx_detect_sys_frequency(void)
 
 	pll = ar71xx_pll_rr(PLL_REG_CPU_PLL_CFG);
 
-	div = ((pll >> PLL_DIV_SHIFT) & PLL_DIV_MASK) + 1;
-	freq = div * AR71XX_BASE_FREQ;
+	div = ((pll >> AR91XX_PLL_DIV_SHIFT) & AR91XX_PLL_DIV_MASK);
+	freq = div * AR91XX_BASE_FREQ;
 
-	div = ((pll >> CPU_DIV_SHIFT) & CPU_DIV_MASK) + 1;
-	ar71xx_cpu_freq = freq / div;
+	ar71xx_cpu_freq = freq;
 
-	div = ((pll >> DDR_DIV_SHIFT) & DDR_DIV_MASK) + 1;
+	div = ((pll >> AR91XX_DDR_DIV_SHIFT) & AR91XX_DDR_DIV_MASK) + 1;
 	ar71xx_ddr_freq = freq / div;
 
-	div = (((pll >> AHB_DIV_SHIFT) & AHB_DIV_MASK) + 1) * 2;
+	div = (((pll >> AR91XX_AHB_DIV_SHIFT) & AR91XX_AHB_DIV_MASK) + 1) * 2;
+	ar71xx_ahb_freq = ar71xx_cpu_freq / div;
+}
+
+static void __init ar71xx_detect_sys_frequency(void)
+{
+	u32 pll;
+	u32 freq;
+	u32 div;
+
+	if ((ar71xx_reset_rr(RESET_REG_REV_ID) & REV_ID_MASK) >=
+			REV_ID_CHIP_AR9130) {
+		return ar91xx_detect_sys_frequency();
+	}
+
+	pll = ar71xx_pll_rr(PLL_REG_CPU_PLL_CFG);
+
+	div = ((pll >> AR71XX_PLL_DIV_SHIFT) & AR71XX_PLL_DIV_MASK) + 1;
+	freq = div * AR71XX_BASE_FREQ;
+
+	div = ((pll >> AR71XX_CPU_DIV_SHIFT) & AR71XX_CPU_DIV_MASK) + 1;
+	ar71xx_cpu_freq = freq / div;
+
+	div = ((pll >> AR71XX_DDR_DIV_SHIFT) & AR71XX_DDR_DIV_MASK) + 1;
+	ar71xx_ddr_freq = freq / div;
+
+	div = (((pll >> AR71XX_AHB_DIV_SHIFT) & AR71XX_AHB_DIV_MASK) + 1) * 2;
 	ar71xx_ahb_freq = ar71xx_cpu_freq / div;
 }
 
