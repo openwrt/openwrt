@@ -26,6 +26,7 @@
 #include <linux/platform_device.h>
 #include <linux/interrupt.h>
 #include <linux/device.h>
+#include <linux/delay.h>
 #include <linux/io.h>
 
 #include <linux/vlynq.h>
@@ -301,39 +302,19 @@ static int vlynq_device_match(struct device *dev,
 {
 	struct vlynq_device *vdev = to_vlynq_device(dev);
 	struct vlynq_driver *vdrv = to_vlynq_driver(drv);
-	struct plat_vlynq_ops *ops = dev->platform_data;
 	struct vlynq_device_id *ids = vdrv->id_table;
-	u32 id = 0;
-	int result, flag;
 
 	while (ids->id) {
-		flag = 0;
-		if (ids->divisor != vlynq_div_auto
-				&& vdev->divisor == vlynq_div_auto) {
-			flag = 1;
+		if (ids->id == vdev->dev_id) {
 			vdev->divisor = ids->divisor;
-			result = __vlynq_enable_device(vdev);
-			if (result == 0) {
-				id = vlynq_reg_read(vdev->remote->chip);
-				vlynq_reg_write(vdev->local->control, 0);
-				vlynq_reg_write(vdev->remote->control, 0);
-				ops->off(vdev);
-			} else
-				id = vdev->dev_id;
-		} else
-			id = vdev->dev_id;
-		if (ids->id == id) {
-			vdev->dev_id = id;
 			vlynq_set_drvdata(vdev, ids);
 			printk(KERN_INFO "Driver found for VLYNQ " \
-				"device: %08x\n", id);
+				"device: %08x\n", vdev->dev_id);
 			return 1;
 		}
-		printk(KERN_INFO "Not using the %08x VLYNQ device's " \
-			"driver for VLYNQ device: %08x\n", ids->id, id);
+		printk(KERN_DEBUG "Not using the %08x VLYNQ device's driver" \
+			" for VLYNQ device: %08x\n", ids->id, vdev->dev_id);
 		ids++;
-		if (flag)
-			vdev->divisor = vlynq_div_auto;
 	}
 	return 0;
 }
@@ -385,20 +366,20 @@ static int __vlynq_enable_device(struct vlynq_device *dev)
 	if (result)
 		return result;
 
-	vlynq_reg_write(dev->local->control, 0);
-	vlynq_reg_write(dev->remote->control, 0);
-	if (vlynq_linked(dev)) {
-		printk(KERN_DEBUG "%s: using external clock\n",
-			dev->dev.bus_id);
-		return 0;
-	}
-
 	switch (dev->divisor) {
 	case vlynq_div_auto:
 		/* Only try locally supplied clock, others cause problems */
 		vlynq_reg_write(dev->local->control, 0);
 		vlynq_reg_write(dev->remote->control, 0);
-		for (i = vlynq_ldiv2; i <= vlynq_ldiv8; i++) {
+		if (vlynq_linked(dev)) {
+			dev->divisor = vlynq_div_external;
+			printk(KERN_DEBUG "%s: using external clock\n",
+				dev->dev.bus_id);
+			return 0;
+		}
+		for (i = dev->dev_id ? vlynq_ldiv2 : vlynq_ldiv8; dev->dev_id ?
+				i <= vlynq_ldiv8 : i >= vlynq_ldiv2;
+				dev->dev_id ? i++ : i--) {
 			vlynq_reg_write(dev->local->control,
 					VLYNQ_CTRL_CLOCK_INT |
 					VLYNQ_CTRL_CLOCK_DIV(i - vlynq_ldiv1));
@@ -618,15 +599,13 @@ static int vlynq_probe(struct platform_device *pdev)
 	       dev->dev.bus_id, (void *)dev->regs_start, dev->irq,
 	       (void *)dev->mem_start);
 
+	dev->dev_id = 0;
 	dev->divisor = vlynq_div_auto;
 	result = __vlynq_enable_device(dev);
 	if (result == 0) {
 		dev->dev_id = vlynq_reg_read(dev->remote->chip);
-		vlynq_reg_write(dev->local->control, 0);
-		vlynq_reg_write(dev->remote->control, 0);
 		((struct plat_vlynq_ops *)(dev->dev.platform_data))->off(dev);
-	} else
-		dev->dev_id = 0;
+	}
 	if (dev->dev_id)
 		printk(KERN_INFO "Found a VLYNQ device: %08x\n", dev->dev_id);
 

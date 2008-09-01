@@ -493,11 +493,11 @@ static int __init ar7_register_devices(void)
 	if (res)
 		return res;
 
+	ar7_device_disable(vlynq_low_data.reset_bit);
 	res = platform_device_register(&vlynq_low);
 	if (res)
 		return res;
 
-	ar7_device_disable(vlynq_low_data.reset_bit);
 	if (ar7_has_high_vlynq()) {
 		ar7_device_disable(vlynq_high_data.reset_bit);
 		res = platform_device_register(&vlynq_high);
