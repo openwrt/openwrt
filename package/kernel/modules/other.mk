@@ -254,7 +254,7 @@ define KernelPackage/mmc-at91
   TITLE:=MMC/SD Card Support on AT91
   DEPENDS:=@TARGET_at91 +kmod-mmc
   KCONFIG:=CONFIG_MMC_AT91
-  FILES:=$(LINUX_DIR)/drivers/mmc/at91_mci.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/mmc/host/at91_mci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,at91_mci)
 endef
 
