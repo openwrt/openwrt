@@ -103,14 +103,21 @@ extern u32 ar71xx_ddr_freq;
 #define PLL_REG_ETH_EXT_CLK	0x18
 #define PLL_REG_PCI_CLK		0x1c
 
-#define PLL_DIV_SHIFT		3
-#define PLL_DIV_MASK		0x1f
-#define CPU_DIV_SHIFT		16
-#define CPU_DIV_MASK		0x3
-#define DDR_DIV_SHIFT		18
-#define DDR_DIV_MASK		0x3
-#define AHB_DIV_SHIFT		20
-#define AHB_DIV_MASK		0x7
+#define AR71XX_PLL_DIV_SHIFT		3
+#define AR71XX_PLL_DIV_MASK		0x1f
+#define AR71XX_CPU_DIV_SHIFT		16
+#define AR71XX_CPU_DIV_MASK		0x3
+#define AR71XX_DDR_DIV_SHIFT		18
+#define AR71XX_DDR_DIV_MASK		0x3
+#define AR71XX_AHB_DIV_SHIFT		20
+#define AR71XX_AHB_DIV_MASK		0x7
+
+#define AR91XX_PLL_DIV_SHIFT		0
+#define AR91XX_PLL_DIV_MASK		0x3ff
+#define AR91XX_DDR_DIV_SHIFT		22
+#define AR91XX_DDR_DIV_MASK		0x3
+#define AR91XX_AHB_DIV_SHIFT		19
+#define AR91XX_AHB_DIV_MASK		0x1
 
 extern void __iomem *ar71xx_pll_base;
 
@@ -306,6 +313,7 @@ extern void ar71xx_ddr_flush(u32 reg);
 #define REV_ID_CHIP_AR7130	0xa0
 #define REV_ID_CHIP_AR7141	0xa1
 #define REV_ID_CHIP_AR7161	0xa2
+#define REV_ID_CHIP_AR9130	0xb0
 
 #define REV_ID_REVISION_MASK	0x3
 #define REV_ID_REVISION_SHIFT	2
