@@ -17,30 +17,24 @@
  		if (skb->len < hdrspace) {
  			IEEE80211_DISCARD(vap, IEEE80211_MSG_ANY,
  				wh, "data", "too short: len %u, expecting %u",
-@@ -445,16 +446,26 @@
+@@ -445,16 +446,24 @@
  		}
  		switch (vap->iv_opmode) {
  		case IEEE80211_M_STA:
 -			if ((dir != IEEE80211_FC1_DIR_FROMDS) &&
 -			    (!((vap->iv_flags_ext & IEEE80211_FEXT_WDS) &&
 -			    (dir == IEEE80211_FC1_DIR_DSTODS)))) {
--				IEEE80211_DISCARD(vap, IEEE80211_MSG_ANY,
--					wh, "data", "invalid dir 0x%x", dir);
--				vap->iv_stats.is_rx_wrongdir++;
--				goto out;
-+			{
-+				int accept;
-+
++			switch(dir) {
++			case IEEE80211_FC1_DIR_FROMDS:
++				break;
++			case IEEE80211_FC1_DIR_DSTODS:
 +				if (vap->iv_flags_ext & IEEE80211_FEXT_WDS)
-+					accept = IEEE80211_FC1_DIR_DSTODS;
-+				else
-+					accept = IEEE80211_FC1_DIR_FROMDS;
-+				if (dir != accept) {
-+					IEEE80211_DISCARD(vap, IEEE80211_MSG_ANY,
-+						wh, "data", "invalid dir 0x%x", dir);
-+					vap->iv_stats.is_rx_wrongdir++;
-+					goto out;
-+				}
++					break;
++			default:
+ 				IEEE80211_DISCARD(vap, IEEE80211_MSG_ANY,
+ 					wh, "data", "invalid dir 0x%x", dir);
+ 				vap->iv_stats.is_rx_wrongdir++;
+ 				goto out;
  			}
  
 -	        	if (IEEE80211_IS_MULTICAST(wh->i_addr1)) {
@@ -52,7 +46,7 @@
  				/* Discard multicast if IFF_MULTICAST not set */
  				if ((0 != memcmp(wh->i_addr3, dev->broadcast, ETH_ALEN)) && 
  					(0 == (dev->flags & IFF_MULTICAST))) {
-@@ -482,24 +493,10 @@
+@@ -482,24 +491,10 @@
  					vap->iv_stats.is_rx_mcastecho++;
  					goto out;
  				}
@@ -81,7 +75,7 @@
  			}
  			break;
  		case IEEE80211_M_IBSS:
-@@ -541,6 +538,11 @@
+@@ -541,6 +536,11 @@
  				vap->iv_stats.is_rx_notassoc++;
  				goto err;
  			}
@@ -93,7 +87,7 @@
  			/*
  			 * If we're a 4 address packet, make sure we have an entry in
  			 * the node table for the packet source address (addr4).
-@@ -548,9 +550,16 @@
+@@ -548,9 +548,16 @@
  			 */
  
  			/* check for wds link first */
@@ -111,7 +105,7 @@
  				TAILQ_FOREACH(avp, &vap->iv_wdslinks, iv_wdsnext) {
  					if (!memcmp(avp->wds_mac, wh->i_addr2, IEEE80211_ADDR_LEN)) {
  						IEEE80211_LOCK_IRQ(ni->ni_ic);
-@@ -566,7 +575,7 @@
+@@ -566,7 +573,7 @@
  			}
  
  			/* XXX: Useless node mgmt API; make better */
@@ -120,7 +114,7 @@
  				struct ieee80211_node_table *nt = &ic->ic_sta;
  				struct ieee80211_frame_addr4 *wh4;
  
-@@ -626,6 +635,11 @@
+@@ -626,6 +633,11 @@
  			goto out;
  		}
  
@@ -132,7 +126,7 @@
  		/*
  		 * Handle privacy requirements.  Note that we
  		 * must not be preempted from here until after
-@@ -698,8 +712,12 @@
+@@ -698,8 +710,12 @@
  		if (! accept_data_frame(vap, ni, key, skb, eh))
  			goto out;
  
@@ -147,7 +141,7 @@
  		IEEE80211_NODE_STAT(ni, rx_data);
  		IEEE80211_NODE_STAT_ADD(ni, rx_bytes, skb->len);
  		ic->ic_lastdata = jiffies;
-@@ -1132,6 +1150,13 @@
+@@ -1132,6 +1148,13 @@
  		dev = vap->iv_xrvap->iv_dev;
  #endif
  
@@ -161,7 +155,7 @@
  	/* perform as a bridge within the vap */
  	/* XXX intra-vap bridging only */
  	if (vap->iv_opmode == IEEE80211_M_HOSTAP &&
-@@ -1157,7 +1182,16 @@
+@@ -1157,7 +1180,16 @@
  			if (ni1 != NULL) {
  				if (ni1->ni_vap == vap &&
  				    ieee80211_node_is_authorized(ni1) &&
