@@ -506,7 +506,7 @@
  	((wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK) == IEEE80211_FC0_SUBTYPE_PS_POLL)
  	struct ieee80211_node_table *nt;
  	struct ieee80211_node *ni;
-+	u_int8_t *addr;
++	const u_int8_t *addr;
 +
 +	if (IS_CTL(wh) && !IS_PSPOLL(wh) /*&& !IS_RTS(ah)*/)
 +		addr = wh->i_addr1;
