@@ -81,6 +81,8 @@ define Build/DefaultTargets
 	$(foreach hook,$(Hooks/Compile/Pre),$(call $(hook))$(sep))
 	$(Build/Compile)
 	$(foreach hook,$(Hooks/Compile/Post),$(call $(hook))$(sep))
+	$(Build/Install)
+	$(foreach hook,$(Hooks/Install/Post),$(call $(hook))$(sep))
 	touch $$@
 
   $(STAMP_INSTALLED): $(STAMP_BUILT)
