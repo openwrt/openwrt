@@ -367,8 +367,8 @@ static int __vlynq_enable_device(struct vlynq_device *dev)
 		return result;
 
 	switch (dev->divisor) {
+	case vlynq_div_external:
 	case vlynq_div_auto:
-		/* Only try locally supplied clock, others cause problems */
 		vlynq_reg_write(dev->local->control, 0);
 		vlynq_reg_write(dev->remote->control, 0);
 		if (vlynq_linked(dev)) {
@@ -377,6 +377,8 @@ static int __vlynq_enable_device(struct vlynq_device *dev)
 				dev->dev.bus_id);
 			return 0;
 		}
+
+		/* Only try locally supplied clock, others cause problems */
 		for (i = dev->dev_id ? vlynq_ldiv2 : vlynq_ldiv8; dev->dev_id ?
 				i <= vlynq_ldiv8 : i >= vlynq_ldiv2;
 				dev->dev_id ? i++ : i--) {
