@@ -26,8 +26,11 @@ $(STAGING_DIR)/.prepared: $(TMP_DIR)/.build
 	$(INSTALL_DATA) $(TOPDIR)/tools/include/*.h $(STAGING_DIR_HOST)/include/
 	touch $@
 
-$(curdir)//prepare = $(STAGING_DIR)/.prepared
-$(curdir)//compile = $(STAGING_DIR)/.prepared
+$(STAGING_DIR_HOST)/bin/find:
+	[ -x "$(FIND)" ] && ln -sf "$(FIND)" $@
+
+$(curdir)//prepare = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/bin/find
+$(curdir)//compile = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/bin/find
 
 # prerequisites for the individual targets
 $(curdir)/ := .config prereq
