@@ -39,7 +39,7 @@ struct env_var {
 
 static struct env_var adam2_env[MAX_ENTRY] = { { 0, }, };
 
-char *prom_getenv(char *name)
+char *prom_getenv(const char *name)
 {
 	int i;
 	for (i = 0; (i < MAX_ENTRY) && adam2_env[i].name; i++)
@@ -288,7 +288,7 @@ int prom_putchar(char c)
 }
 
 /* from adm5120/prom.c */
-void prom_printf(char *fmt, ...)
+void prom_printf(const char *fmt, ...)
 {
 	va_list args;
 	int l;
