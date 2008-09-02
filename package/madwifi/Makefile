@@ -63,10 +63,10 @@ ifneq ($(CONFIG_CPU_MIPS32_R2),)
   endif
 else
   ifeq ($(ARCH),mips)
-    HAL_TARGET:=mips32-be-elf
+    HAL_TARGET:=$(if $(CONFIG_MADWIFI_UPSTREAM),mips-be-elf,mips32-be-elf)
   endif
   ifeq ($(ARCH),mipsel)
-    HAL_TARGET:=mips32-le-elf
+    HAL_TARGET:=$(if $(CONFIG_MADWIFI_UPSTREAM),mips-le-elf,mips32-le-elf)
   endif
 endif
 ifeq ($(ARCH),i386)
