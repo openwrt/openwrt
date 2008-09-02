@@ -30,6 +30,7 @@ PKG_SOURCE_URL:=ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-$(PKG_VER
 PKG_SOURCE:=gcc-$(PKG_VERSION).tar.bz2
 STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
 BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
+override CONFIG_AUTOREBUILD=
 
 include $(INCLUDE_DIR)/host-build.mk
 
