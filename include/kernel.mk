@@ -126,6 +126,8 @@ $(call KernelPackage/$(1)/config)
     endef
   endif
 
+  $(STAMP_BUILT): $(LINUX_DIR)/.config
+
   ifneq ($(if $(filter-out %=y %=n %=m,$(KCONFIG)),$(filter m,$(foreach c,$(filter-out %=y %=n %=m,$(KCONFIG)),$($(c)))),.),)
     ifneq ($(strip $(FILES)),)
       define Package/kmod-$(1)/install
