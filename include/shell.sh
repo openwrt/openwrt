@@ -30,5 +30,8 @@ trapret() {(
 )}
 
 md5s() {
-	which md5sum 2>&1 >/dev/null && md5sum "$@" | awk '{print $1}' || md5 "$@"
+	cat "$@" | (
+		md5sum 2>/dev/null ||
+		md5 
+	) | awk '{print $1}'
 }
