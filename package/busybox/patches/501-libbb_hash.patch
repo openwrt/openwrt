@@ -1,6 +1,6 @@
 --- a/include/libbb.h
 +++ b/include/libbb.h
-@@ -1211,6 +1211,7 @@
+@@ -1214,6 +1214,7 @@
  extern const char bb_uuenc_tbl_std[];
  void bb_uuencode(char *store, const void *s, int length, const char *tbl);
  
@@ -8,7 +8,7 @@
  typedef struct sha1_ctx_t {
  	uint32_t count[2];
  	uint32_t hash[5];
-@@ -1232,6 +1233,8 @@
+@@ -1235,6 +1236,8 @@
  void md5_begin(md5_ctx_t *ctx);
  void md5_hash(const void *data, size_t length, md5_ctx_t *ctx);
  void *md5_end(void *resbuf, md5_ctx_t *ctx);
