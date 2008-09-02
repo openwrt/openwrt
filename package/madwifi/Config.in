@@ -10,7 +10,7 @@ choice
 	depends on PACKAGE_kmod-madwifi
 	default MADWIFI_STABLE
 	help
-	  This option allows you to select the version of MadiWifi to be built.
+	  This option allows you to select the version of MadWifi to be built.
 
 config MADWIFI_STABLE
 	bool "Use the OpenWrt stable version of madwifi"
@@ -21,6 +21,7 @@ config MADWIFI_TESTING
 
 config MADWIFI_UPSTREAM
 	depends !LINUX_2_6_26
+	depends !TARGET_atheros
 	bool "Use the upstream release version 0.9.4"
 
 endchoice
