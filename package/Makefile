@@ -36,7 +36,7 @@ $(curdir)/rootfs-prepare: $(TMP_DIR)/.build
 		cd $(TARGET_DIR); \
 		for script in ./etc/init.d/*; do \
 			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
-			IPKG_INSTROOT=$(TARGET_DIR) $(which bash) ./etc/rc.common $$script enable; \
+			IPKG_INSTROOT=$(TARGET_DIR) $$(which bash) ./etc/rc.common $$script enable; \
 		done || true \
 	)
 	@-find $(TARGET_DIR) -name CVS   | $(XARGS) rm -rf
