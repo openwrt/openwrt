@@ -150,7 +150,6 @@ env_delete() {
 	local name="${1##*/}"
 	env_init
 	[ -z "$name" ] && usage
-	[ -f "$ENVDIR/.git/refs/heads/$name" ] || error "environment '$name' not found"
 	branch="$(git branch | grep '^\* ' | awk '{print $2}')"
 	[ "$name" = "$branch" ] && error "cannot delete the currently selected environment"
 	git branch -D "$name"
@@ -159,11 +158,10 @@ env_delete() {
 env_switch() {
 	local name="${1##*/}"
 	[ -z "$name" ] && usage
-	[ -f "$ENVDIR/.git/refs/heads/$name" ] || error "environment '$name' not found"
 
 	env_init
 	env_ask_sync
-	git checkout "$name"
+	git checkout "$name" || error "environment '$name' not found"
 	env_link_config
 }
 
