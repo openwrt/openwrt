@@ -27,11 +27,23 @@ $(STAGING_DIR)/.prepared: $(TMP_DIR)/.build
 	$(INSTALL_DATA) $(TOPDIR)/tools/include/*.h $(STAGING_DIR_HOST)/include/
 	touch $@
 
-$(STAGING_DIR_HOST)/bin/find:
+$(STAGING_DIR_HOST)/bin/md5sum: $(STAGING_DIR)/.prepared
+	@MD5SUM=`which md5sum 2>/dev/null`; \
+	if [ "$@" != "$$MD5SUM" ]; then \
+		if [ -x "$$MD5SUM" ]; then \
+			ln -sf "$$MD5SUM" "$@"; \
+		else \
+			cp $(SCRIPT_DIR)/md5sum $(STAGING_DIR_HOST)/bin/; \
+		fi; \
+	fi
+
+$(STAGING_DIR_HOST)/bin/find: $(STAGING_DIR)/.prepared
 	[ -x "$(FIND)" ] && ln -sf "$(FIND)" $@
 
-$(curdir)//prepare = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/bin/find
-$(curdir)//compile = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/bin/find
+
+$(curdir)/cmddeps = $(patsubst %,$(STAGING_DIR_HOST)/bin/%,find md5sum)
+$(curdir)//prepare = $(STAGING_DIR)/.prepared $($(curdir)/cmddeps)
+$(curdir)//compile = $(STAGING_DIR)/.prepared $($(curdir)/cmddeps)
 
 # prerequisites for the individual targets
 $(curdir)/ := .config prereq
