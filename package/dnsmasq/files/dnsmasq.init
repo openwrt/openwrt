@@ -66,6 +66,7 @@ dnsmasq() {
 
 	config_get leasefile $cfg leasefile
 	[ -e "$leasefile" ] || touch "$leasefile"
+	config_get_bool cachelocal "$cfg" cachelocal 1
 }
 
 dhcp_subscrid_add() {
@@ -202,7 +203,7 @@ dhcp_add() {
 	[ -n "$ifname" ] || return 0
 
 	config_get dnsserver "$net" dns
-	[ -n "$dnsserver" ] && {
+	[ "$cachelocal" = "0" -a -n "$dnsserver" ] && {
 		DNS_SERVERS="$DNS_SERVERS $dnsserver"
 	}
 
