@@ -134,3 +134,11 @@ endef
 $(eval $(call Require,gnu-find, \
 	Please install GNU find \
 ))
+
+define Require/getopt-extended
+	getopt --long - - >/dev/null
+endef
+
+$(eval $(call Require,getopt-extended, \
+	Please install an extended getopt version that supports --long \
+))
