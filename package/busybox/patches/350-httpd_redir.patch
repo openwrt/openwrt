@@ -52,7 +52,7 @@
  				(g_query ? "?" : ""),
  				(g_query ? g_query : ""));
  	}
-@@ -1912,8 +1919,12 @@
+@@ -1923,8 +1930,12 @@
  	} while (*++tptr);
  	*++urlp = '\0';       /* terminate after last character */
  
@@ -66,7 +66,7 @@
  		if (is_directory(urlcopy + 1, 1, &sb)) {
  			found_moved_temporarily = urlcopy;
  		}
-@@ -2263,7 +2274,9 @@
+@@ -2274,7 +2285,9 @@
  #endif
  
  enum {
@@ -77,7 +77,7 @@
  	d_opt_decode_url,
  	h_opt_home_httpd,
  	USE_FEATURE_HTTPD_ENCODE_URL_STR(e_opt_encode_url,)
-@@ -2312,12 +2325,13 @@
+@@ -2323,12 +2336,13 @@
  	/* We do not "absolutize" path given by -h (home) opt.
  	 * If user gives relative path in -h,
  	 * $SCRIPT_FILENAME will not be set. */
