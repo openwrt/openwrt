@@ -102,6 +102,10 @@ MAKE_FLAGS = \
 	CROSS="$(TARGET_CROSS)" \
 	ARCH="$(ARCH)"
 
+MAKE_INSTALL_FLAGS = \
+	$(MAKE_FLAGS) \
+	DESTDIR="$(PKG_INSTALL_DIR)"
+
 MAKE_PATH = .
 
 define Build/Compile/Default
@@ -109,4 +113,11 @@ define Build/Compile/Default
 	$(MAKE) -C $(PKG_BUILD_DIR)/$(MAKE_PATH) \
 		$(MAKE_FLAGS) \
 		$(1);
+endef
+
+define Build/Install/Default
+	$(MAKE_VARS) \
+	$(MAKE) -C $(PKG_BUILD_DIR)/$(MAKE_PATH) \
+		$(MAKE_INSTALL_FLAGS) \
+		$(1) install;
 endef
