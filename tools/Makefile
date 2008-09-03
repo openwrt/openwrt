@@ -38,7 +38,7 @@ $(STAGING_DIR_HOST)/bin/md5sum: $(STAGING_DIR)/.prepared
 	fi
 
 $(STAGING_DIR_HOST)/bin/find: $(STAGING_DIR)/.prepared
-	[ -x "$(FIND)" ] && ln -sf "$(FIND)" $@
+	[ -x "$(FIND)" -a "$(FIND)" != "$@" ] && ln -sf "$(FIND)" $@
 
 
 $(curdir)/cmddeps = $(patsubst %,$(STAGING_DIR_HOST)/bin/%,find md5sum)
