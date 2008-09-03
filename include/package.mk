@@ -150,17 +150,10 @@ define pkg_install_bin
 	$(foreach install_apps,$(1),$(INSTALL_DIR) $(3)/`dirname $(install_apps)`; $(INSTALL_BIN) $(2)/$(install_apps) $(3)/`dirname $(install_apps)`;)
 endef
 
-define Build/Prepare
-  $(call Build/Prepare/Default,)
-endef
-
-define Build/Configure
-  $(call Build/Configure/Default,)
-endef
-
-define Build/Compile
-  $(call Build/Compile/Default,)
-endef
+Build/Prepare=$(call Build/Prepare/Default,)
+Build/Configure=$(call Build/Configure/Default,)
+Build/Compile=$(call Build/Compile/Default,)
+Build/Install=$(if $(PKG_INSTALL),$(call Build/Install/Default,))
 
 $(PACKAGE_DIR):
 	mkdir -p $@
