@@ -72,12 +72,10 @@ int usb_ehci_ar71xx_probe(const struct hc_driver *driver,
 
 	ar71xx_start_ehci(pdev);
 
-#if 0
 	ehci		= hcd_to_ehci(hcd);
 	ehci->caps	= hcd->regs;
 	ehci->regs	= hcd->regs + HC_LENGTH(readl(&ehci->caps->hc_capbase));
 	ehci->hcs_params = readl(&ehci->caps->hcs_params);
-#endif
 
 	ret = usb_add_hcd(hcd, irq, IRQF_DISABLED | IRQF_SHARED);
 	if (ret)
