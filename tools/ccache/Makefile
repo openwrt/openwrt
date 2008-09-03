@@ -23,9 +23,7 @@ ifneq ($(strip $(shell which ccache >/dev/null && echo found)),found)
   endef
 
   define Build/Install
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(STAGING_DIR_HOST)" \
-		install
+	$(MAKE) -C $(PKG_BUILD_DIR) install
   endef
 
   define Build/Clean
