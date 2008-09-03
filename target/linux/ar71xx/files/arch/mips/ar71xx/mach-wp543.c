@@ -48,8 +48,8 @@ static void __init wp543_setup(void)
 {
 	ar71xx_add_device_spi(NULL, wp543_spi_info, ARRAY_SIZE(wp543_spi_info));
 
-	ar71xx_add_device_mdio(0xfffffffe);
-	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x00000001);
+	ar71xx_add_device_mdio(0xfffffff7);
+	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x00000008);
 
 	ar71xx_pci_init(ARRAY_SIZE(wp543_pci_irqs), wp543_pci_irqs);
 }
