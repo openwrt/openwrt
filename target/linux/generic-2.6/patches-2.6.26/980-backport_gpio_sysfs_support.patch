@@ -978,7 +978,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  
  static inline int gpio_is_valid(int number)
  {
-@@ -137,6 +152,20 @@
+@@ -137,6 +152,22 @@
  	gpio_set_value(gpio, value);
  }
  
@@ -986,6 +986,8 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
 +#endif /* !CONFIG_HAVE_GPIO_LIB */
 +
 +#ifndef CONFIG_GPIO_SYSFS
++
++#include <asm/errno.h>
 +
 +/* sysfs support is only available with gpiolib, where it's optional */
 +
