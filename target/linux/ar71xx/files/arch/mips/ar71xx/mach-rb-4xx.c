@@ -15,6 +15,7 @@
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 #include <linux/spi/mmc_spi.h>
+#include <linux/input.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
@@ -22,6 +23,9 @@
 #include <asm/mach-ar71xx/platform.h>
 
 #define RB4XX_GPIO_USER_LED	4
+#define RB4XX_GPIO_RESET_SWITCH	7
+
+#define RB4XX_BUTTONS_POLL_INTERVAL	20
 
 static struct gpio_led rb4xx_leds_gpio[] __initdata = {
 	{
@@ -29,6 +33,17 @@ static struct gpio_led rb4xx_leds_gpio[] __initdata = {
 		.gpio		= RB4XX_GPIO_USER_LED,
 		.active_low	= 0,
 	},
+};
+
+static struct gpio_button rb4xx_gpio_buttons[] __initdata = {
+	{
+		.desc		= "reset_switch",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.threshold	= 5,
+		.gpio		= RB4XX_GPIO_RESET_SWITCH,
+		.active_low	= 1,
+	}
 };
 
 static struct platform_device rb4xx_nand_device = {
@@ -145,6 +160,10 @@ static void __init rb411_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
 					rb4xx_leds_gpio);
 
+	ar71xx_add_device_gpio_buttons(-1, RB4XX_BUTTONS_POLL_INTERVAL,
+					ARRAY_SIZE(rb4xx_gpio_buttons),
+					rb4xx_gpio_buttons);
+
 	platform_device_register(&rb4xx_nand_device);
 
 	ar71xx_pci_init(ARRAY_SIZE(rb4xx_pci_irqs), rb4xx_pci_irqs);
@@ -163,6 +182,10 @@ static void __init rb433_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
 					rb4xx_leds_gpio);
 
+	ar71xx_add_device_gpio_buttons(-1, RB4XX_BUTTONS_POLL_INTERVAL,
+					ARRAY_SIZE(rb4xx_gpio_buttons),
+					rb4xx_gpio_buttons);
+
 	platform_device_register(&rb4xx_nand_device);
 
 	ar71xx_pci_init(ARRAY_SIZE(rb4xx_pci_irqs), rb4xx_pci_irqs);
@@ -180,6 +203,10 @@ static void __init rb450_setup(void)
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
 					rb4xx_leds_gpio);
+
+	ar71xx_add_device_gpio_buttons(-1, RB4XX_BUTTONS_POLL_INTERVAL,
+					ARRAY_SIZE(rb4xx_gpio_buttons),
+					rb4xx_gpio_buttons);
 
 	platform_device_register(&rb4xx_nand_device);
 }
