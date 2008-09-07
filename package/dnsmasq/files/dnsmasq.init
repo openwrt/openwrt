@@ -242,13 +242,9 @@ dhcp_option_add() {
 	local cfg="$1"
 	local name="$2"
 
-	for count in $(seq 0 100); do
-		eval current_value=\$CONFIG_"$cfg"_dhcp"$count"
-		if [ -z "$current_value" ]; then
-			let "count-=1"
-			break
-		fi
-		append args "-O $name","$current_value"
+	config_get dhcp_option "$cfg" dhcp_option
+	for o in $dhcp_option; do
+		append args "-O $name","$o"
 	done
 
 }
