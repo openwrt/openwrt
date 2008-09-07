@@ -15,7 +15,6 @@
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 #include <linux/spi/mmc_spi.h>
-#include <linux/leds.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
@@ -24,25 +23,12 @@
 
 #define RB4XX_GPIO_USER_LED	4
 
-static struct gpio_led rb4xx_leds_gpio[] = {
+static struct gpio_led rb4xx_leds_gpio[] __initdata = {
 	{
 		.name		= "rb4xx:yellow:user",
 		.gpio		= RB4XX_GPIO_USER_LED,
 		.active_low	= 0,
 	},
-};
-
-static struct gpio_led_platform_data rb4xx_leds_gpio_data = {
-	.leds		= rb4xx_leds_gpio,
-	.num_leds	= ARRAY_SIZE(rb4xx_leds_gpio),
-};
-
-static struct platform_device rb4xx_leds_gpio_device = {
-	.name	= "leds-gpio",
-	.id	= -1,
-	.dev = {
-		.platform_data = &rb4xx_leds_gpio_data,
-	}
 };
 
 static struct platform_device rb4xx_nand_device = {
@@ -156,7 +142,9 @@ static void __init rb411_setup(void)
 	ar71xx_add_device_mdio(0xfffffffe);
 	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x00000001);
 
-	platform_device_register(&rb4xx_leds_gpio_device);
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
+					rb4xx_leds_gpio);
+
 	platform_device_register(&rb4xx_nand_device);
 
 	ar71xx_pci_init(ARRAY_SIZE(rb4xx_pci_irqs), rb4xx_pci_irqs);
@@ -172,7 +160,9 @@ static void __init rb433_setup(void)
 	ar71xx_add_device_eth(1, PHY_INTERFACE_MODE_RMII, 0x00000010);
 	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x00000003);
 
-	platform_device_register(&rb4xx_leds_gpio_device);
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
+					rb4xx_leds_gpio);
+
 	platform_device_register(&rb4xx_nand_device);
 
 	ar71xx_pci_init(ARRAY_SIZE(rb4xx_pci_irqs), rb4xx_pci_irqs);
@@ -188,7 +178,9 @@ static void __init rb450_setup(void)
 	ar71xx_add_device_eth(1, PHY_INTERFACE_MODE_RMII, 0x00000010);
 	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x0000000f);
 
-	platform_device_register(&rb4xx_leds_gpio_device);
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
+					rb4xx_leds_gpio);
+
 	platform_device_register(&rb4xx_nand_device);
 }
 

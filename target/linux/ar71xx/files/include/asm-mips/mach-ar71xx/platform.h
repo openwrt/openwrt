@@ -16,6 +16,7 @@
 #include <linux/skbuff.h>
 #include <linux/phy.h>
 #include <linux/spi/spi.h>
+#include <linux/leds.h>
 
 struct ag71xx_platform_data {
 	u32		reset_bit;
@@ -48,5 +49,9 @@ extern void ar71xx_add_device_eth(unsigned int id, phy_interface_t phy_if_mode,
 				u32 phy_mask) __init;
 
 extern void ar71xx_add_device_mdio(u32 phy_mask) __init;
+
+extern void ar71xx_add_device_leds_gpio(int id,
+				   unsigned num_leds,
+				   struct gpio_led *leds) __init;
 
 #endif /* __ASM_MACH_AR71XX_PLATFORM_H */
