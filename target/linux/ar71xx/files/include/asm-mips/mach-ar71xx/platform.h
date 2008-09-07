@@ -17,6 +17,7 @@
 #include <linux/phy.h>
 #include <linux/spi/spi.h>
 #include <linux/leds.h>
+#include <linux/gpio_buttons.h>
 
 struct ag71xx_platform_data {
 	u32		reset_bit;
@@ -53,5 +54,10 @@ extern void ar71xx_add_device_mdio(u32 phy_mask) __init;
 extern void ar71xx_add_device_leds_gpio(int id,
 				   unsigned num_leds,
 				   struct gpio_led *leds) __init;
+
+extern void ar71xx_add_device_gpio_buttons(int id,
+				   unsigned poll_interval,
+				   unsigned nbuttons,
+				   struct gpio_button *buttons) __init;
 
 #endif /* __ASM_MACH_AR71XX_PLATFORM_H */

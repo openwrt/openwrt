@@ -12,17 +12,22 @@
 #include <linux/platform_device.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
+#include <linux/input.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
 #include <asm/mach-ar71xx/platform.h>
 
+#define WP543_GPIO_SW6		2
 #define WP543_GPIO_LED_1	3
 #define WP543_GPIO_LED_2	4
 #define WP543_GPIO_LED_WLAN	5
 #define WP543_GPIO_LED_CONN	6
 #define WP543_GPIO_LED_DIAG	7
+#define WP543_GPIO_SW4		8
+
+#define WP543_BUTTONS_POLL_INTERVAL	20
 
 static struct flash_platform_data wp543_flash_data = {
 	/* TODO: add partition map */
@@ -74,6 +79,22 @@ static struct gpio_led wp543_leds_gpio[] __initdata = {
 	}
 };
 
+static struct gpio_button wp543_gpio_buttons[] __initdata = {
+	{
+		.desc		= "sw6",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.threshold	= 5,
+		.gpio		= WP543_GPIO_SW6,
+	}, {
+		.desc		= "sw4",
+		.type		= EV_KEY,
+		.code		= BTN_1,
+		.threshold	= 5,
+		.gpio		= WP543_GPIO_SW4,
+	}
+};
+
 static void __init wp543_setup(void)
 {
 	ar71xx_add_device_spi(NULL, wp543_spi_info, ARRAY_SIZE(wp543_spi_info));
@@ -87,6 +108,10 @@ static void __init wp543_setup(void)
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wp543_leds_gpio),
 					wp543_leds_gpio);
+
+	ar71xx_add_device_gpio_buttons(-1, WP543_BUTTONS_POLL_INTERVAL,
+					ARRAY_SIZE(wp543_gpio_buttons),
+					wp543_gpio_buttons);
 }
 
 MIPS_MACHINE(MACH_AR71XX_WP543, "Compex WP543", wp543_setup);
