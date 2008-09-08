@@ -22,16 +22,15 @@ define Build/Configure
 endef
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR)
+	export SHELL="$(BASH)"; $(MAKE) -C $(PKG_BUILD_DIR)
 endef
 
 define Build/Install
-	$(MAKE) -C $(PKG_BUILD_DIR) install
+	export SHELL="$(BASH)"; $(MAKE) -C $(PKG_BUILD_DIR) install
 endef
 
 define Build/Clean
-	$(MAKE) -C $(PKG_BUILD_DIR) uninstall
-	$(MAKE) -C $(PKG_BUILD_DIR) clean
+	export SHELL="$(BASH)"; $(MAKE) -C $(PKG_BUILD_DIR) uninstall
 	$(call Build/Clean/Default)
 endef
 
