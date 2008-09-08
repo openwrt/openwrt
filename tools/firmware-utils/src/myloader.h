@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2006,2007 Gabor Juhos
+ *  Copyright (C) 2006-2008 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute  it and/or modify it
  *  under  the terms of  the GNU General  Public License as published by the
@@ -56,6 +56,9 @@
 #define DEVID_COMPEX_WPP54AG	0x0550
 #define DEVID_COMPEX_WPP54G	0x0555
 
+/* Devices based on the Atheros AR71xx */
+#define DEVID_COMPEX_WP543	0x0640
+
 /* Devices based on the IXP422 */
 #define DEVID_COMPEX_WP18	0x047E
 #define DEVID_COMPEX_NP18A	0x0489
@@ -108,6 +111,7 @@ struct mylo_partition {
 #define PARTIIION_FLAG_RAMLOAD	0x1000 /* FIXME: load this partition into the RAM? */
 #define PARTITION_FLAG_PRELOAD	0x0800 /* the partition data preloaded to RAM
 					* before decompression */
+#define PARTITION_FLAG_LZMA	0x0100 /* the partition data compressed with LZMA */
 #define PARTITION_FLAG_HAVEHDR  0x0002 /* the partition data have a header */
 
 #define PARTITION_TYPE_FREE	0
