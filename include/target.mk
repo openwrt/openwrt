@@ -133,7 +133,7 @@ ifeq ($(DUMP),1)
     ifneq ($(CONFIG_PCI),)
       FEATURES += pci
     endif
-    ifneq ($(CONFIG_USB),)
+    ifneq ($(CONFIG_USB)$(CONFIG_USB_SUPPORT),)
       FEATURES += usb
     endif
     ifneq ($(CONFIG_PCMCIA)$(CONFIG_PCCARD),)
