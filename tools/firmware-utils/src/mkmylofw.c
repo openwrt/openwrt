@@ -1,7 +1,5 @@
 /*
- *  $Id$
- *
- *  Copyright (C) 2006,2007 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2006-2008 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License
@@ -72,15 +70,24 @@ struct cpx_board {
 	uint16_t        svid;   /* sub vendor id */
 	uint16_t        sdid;   /* sub device id */
 	uint32_t        flash_size;     /* size of flash */
+	uint32_t	part_offset;	/* offset of the partition_table */
+	uint32_t	part_size;	/* size of the partition_table */
 };
 
-#define BOARD(_vid, _did, _svid, _sdid, _flash, _mod, _name, _desc) {		\
-	.model = _mod, .name = _name, .desc = _desc,   				\
+#define BOARD(_vid, _did, _svid, _sdid, _flash, _mod, _name, _desc, _po, _ps) {		\
+	.model = _mod, .name = _name, .desc = _desc,   			\
 	.vid = _vid, .did = _did, .svid = _svid, .sdid = _sdid,         \
-	.flash_size = (_flash << 20)	}
+	.flash_size = (_flash << 20),					\
+	.part_offset = _po, .part_size = _ps }
 
-#define CPX_BOARD(_did, _flash, _mod, _name, _desc) \
-	BOARD(VENID_COMPEX, _did, VENID_COMPEX, _did, _flash, _mod, _name, _desc)
+#define CPX_BOARD(_did, _flash, _mod, _name, _desc, _po, _ps) \
+	BOARD(VENID_COMPEX, _did, VENID_COMPEX, _did, _flash, _mod, _name, _desc, _po, _ps)
+
+#define CPX_BOARD_ADM(_did, _flash, _mod, _name, _desc) \
+	CPX_BOARD(_did, _flash, _mod, _name, _desc, 0x10000, 0x10000)
+
+#define CPX_BOARD_AR71XX(_did, _flash, _mod, _name, _desc) \
+	CPX_BOARD(_did, _flash, _mod, _name, _desc, 0x20000, 0x8000)
 
 #define ALIGN(x,y)	((x)+((y)-1)) & ~((y)-1)
 
@@ -95,44 +102,48 @@ int	verblevel = 0;
 struct mylo_fw_header fw_header;
 struct mylo_partition fw_partitions[MYLO_MAX_PARTITIONS];
 struct fw_block fw_blocks[MAX_FW_BLOCKS];
+struct cpx_board *board;
 
 struct cpx_board boards[] = {
-	CPX_BOARD(DEVID_COMPEX_NP18A, 4,
+	CPX_BOARD_ADM(DEVID_COMPEX_NP18A, 4,
 		"NP18A", "Compex NetPassage 18A",
 		"Dualband Wireless A+G Internet Gateway"),
-	CPX_BOARD(DEVID_COMPEX_NP26G8M, 2,
+	CPX_BOARD_ADM(DEVID_COMPEX_NP26G8M, 2,
 		"NP26G8M", "Compex NetPassage 26G (8M)",
 		"Wireless-G Broadband Multimedia Gateway"),
-	CPX_BOARD(DEVID_COMPEX_NP26G16M, 4,
+	CPX_BOARD_ADM(DEVID_COMPEX_NP26G16M, 4,
 		"NP26G16M", "Compex NetPassage 26G (16M)",
 		"Wireless-G Broadband Multimedia Gateway"),
-	CPX_BOARD(DEVID_COMPEX_NP27G, 4,
+	CPX_BOARD_ADM(DEVID_COMPEX_NP27G, 4,
 		"NP27G", "Compex NetPassage 27G",
 		"Wireless-G 54Mbps eXtended Range Router"),
-	CPX_BOARD(DEVID_COMPEX_NP28G, 4,
+	CPX_BOARD_ADM(DEVID_COMPEX_NP28G, 4,
 		"NP28G", "Compex NetPassage 28G",
 		"Wireless 108Mbps Super-G XR Multimedia Router with 4 USB Ports"),
-	CPX_BOARD(DEVID_COMPEX_NP28GHS, 4,
+	CPX_BOARD_ADM(DEVID_COMPEX_NP28GHS, 4,
 		"NP28GHS", "Compex NetPassage 28G (HotSpot)",
 		"HotSpot Solution"),
-	CPX_BOARD(DEVID_COMPEX_WP18, 4,
+	CPX_BOARD_ADM(DEVID_COMPEX_WP18, 4,
 		"WP18", "Compex NetPassage WP18",
 		"Wireless-G 54Mbps A+G Dualband Access Point"),
-	CPX_BOARD(DEVID_COMPEX_WP54G, 4,
+	CPX_BOARD_ADM(DEVID_COMPEX_WP54G, 4,
 		"WP54G", "Compex WP54G",
 		"Wireless-G 54Mbps XR Access Point"),
-	CPX_BOARD(DEVID_COMPEX_WP54Gv1C, 2,
+	CPX_BOARD_ADM(DEVID_COMPEX_WP54Gv1C, 2,
 		"WP54Gv1C", "Compex WP54G rev.1C",
 		"Wireless-G 54Mbps XR Access Point"),
-	CPX_BOARD(DEVID_COMPEX_WP54AG, 4,
+	CPX_BOARD_ADM(DEVID_COMPEX_WP54AG, 4,
 		"WP54AG", "Compex WP54AG",
 		"Wireless-AG 54Mbps XR Access Point"),
-	CPX_BOARD(DEVID_COMPEX_WPP54G, 4,
+	CPX_BOARD_ADM(DEVID_COMPEX_WPP54G, 4,
 		"WPP54G", "Compex WPP54G",
 		"Outdoor Access Point"),
-	CPX_BOARD(DEVID_COMPEX_WPP54AG, 4,
+	CPX_BOARD_ADM(DEVID_COMPEX_WPP54AG, 4,
 		"WPP54AG", "Compex WPP54AG",
 		"Outdoor Access Point"),
+	CPX_BOARD_AR71XX(DEVID_COMPEX_WP543, 2,
+		"WP543", "Compex WP543",
+		"BareBoard"),
 	{.model = NULL}
 };
 
@@ -213,6 +224,7 @@ usage(int status)
 "                      a:  this is the active partition. The bootloader loads\n"
 "                          the firmware from this partition.\n"
 "                      h:  the partition data have a header.\n"
+"                      l:  the partition data uses LZMA compression.\n"
 "                      p:  the bootloader loads data from this partition to\n"
 "                          the RAM before decompress it.\n"
 "  -h              show this screen\n"
@@ -624,11 +636,10 @@ write_out_blocks(FILE *outfile, uint32_t *crc)
 	 * for the partition table
 	 */
 	if (fw_num_partitions > 0) {
-
 		desc.type = HOST_TO_LE32(FW_DESC_TYPE_USED);
-		desc.addr = HOST_TO_LE32(0x10000);
+		desc.addr = HOST_TO_LE32(board->part_offset);
 		desc.dlen = HOST_TO_LE32(sizeof(struct mylo_partition_table));
-		desc.blen = HOST_TO_LE32(0x10000);
+		desc.blen = HOST_TO_LE32(board->part_size);
 
 		if (write_out_desc(outfile, &desc, crc) != 0)
 		        return -1;
@@ -1014,6 +1025,9 @@ parse_opt_partition(char ch, char *arg)
 			case 'p':
 				part->flags |= PARTITION_FLAG_PRELOAD;
 				break;
+			case 'l':
+				part->flags |= PARTITION_FLAG_LZMA;
+				break;
 			case 'h':
 				part->flags |= PARTITION_FLAG_HAVEHDR;
 				break;
@@ -1068,8 +1082,6 @@ err_out:
 int
 parse_opt_board(char ch, char *arg)
 {
-	struct cpx_board *board;
-
 	if (required_arg(ch, arg)) {
 		goto err_out;
 	}
@@ -1186,6 +1198,11 @@ main(int argc, char *argv[])
 
 	if (optind < argc) {
 		errmsg(0, "invalid option: %s", argv[optind]);
+		goto out;
+	}
+
+	if (!board) {
+		errmsg(0, "no board specified");
 		goto out;
 	}
 
