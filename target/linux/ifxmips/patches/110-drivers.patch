@@ -1,6 +1,8 @@
---- a/drivers/char/Makefile
-+++ b/drivers/char/Makefile
-@@ -113,6 +113,10 @@
+Index: linux-2.6.26.2/drivers/char/Makefile
+===================================================================
+--- linux-2.6.26.2.orig/drivers/char/Makefile	2008-09-09 01:44:53.000000000 +0200
++++ linux-2.6.26.2/drivers/char/Makefile	2008-09-09 01:45:41.000000000 +0200
+@@ -114,6 +114,10 @@
  obj-$(CONFIG_JS_RTC)		+= js-rtc.o
  js-rtc-y = rtc.o
  
@@ -11,15 +13,19 @@
  # Files generated that shall be removed upon make clean
  clean-files := consolemap_deftbl.c defkeymap.c
  
---- a/drivers/mtd/maps/Makefile
-+++ b/drivers/mtd/maps/Makefile
-@@ -68,3 +68,4 @@
+Index: linux-2.6.26.2/drivers/mtd/maps/Makefile
+===================================================================
+--- linux-2.6.26.2.orig/drivers/mtd/maps/Makefile	2008-09-09 01:44:51.000000000 +0200
++++ linux-2.6.26.2/drivers/mtd/maps/Makefile	2008-09-09 01:45:41.000000000 +0200
+@@ -67,3 +67,4 @@
  obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
  obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o
  obj-$(CONFIG_MTD_INTEL_VR_NOR)	+= intel_vr_nor.o
 +obj-$(CONFIG_MTD_IFXMIPS)  += ifxmips.o
---- a/drivers/net/Kconfig
-+++ b/drivers/net/Kconfig
+Index: linux-2.6.26.2/drivers/net/Kconfig
+===================================================================
+--- linux-2.6.26.2.orig/drivers/net/Kconfig	2008-09-09 01:44:53.000000000 +0200
++++ linux-2.6.26.2/drivers/net/Kconfig	2008-09-09 01:45:41.000000000 +0200
 @@ -351,6 +351,12 @@
  
  source "drivers/net/arm/Kconfig"
@@ -33,9 +39,11 @@
  config AX88796
  	tristate "ASIX AX88796 NE2000 clone support"
  	depends on ARM || MIPS || SUPERH
---- a/drivers/serial/Kconfig
-+++ b/drivers/serial/Kconfig
-@@ -1327,6 +1327,14 @@
+Index: linux-2.6.26.2/drivers/serial/Kconfig
+===================================================================
+--- linux-2.6.26.2.orig/drivers/serial/Kconfig	2008-09-09 01:44:51.000000000 +0200
++++ linux-2.6.26.2/drivers/serial/Kconfig	2008-09-09 01:45:41.000000000 +0200
+@@ -1334,6 +1334,14 @@
  	  Currently, only 8250 compatible ports are supported, but
  	  others can easily be added.
  
@@ -50,17 +58,20 @@
  config SERIAL_QE
  	tristate "Freescale QUICC Engine serial port support"
  	depends on QUICC_ENGINE
---- a/drivers/serial/Makefile
-+++ b/drivers/serial/Makefile
-@@ -66,4 +66,5 @@
- obj-$(CONFIG_SERIAL_NETX) += netx-serial.o
- obj-$(CONFIG_SERIAL_OF_PLATFORM) += of_serial.o
+Index: linux-2.6.26.2/drivers/serial/Makefile
+===================================================================
+--- linux-2.6.26.2.orig/drivers/serial/Makefile	2008-09-09 01:44:51.000000000 +0200
++++ linux-2.6.26.2/drivers/serial/Makefile	2008-09-09 01:46:23.000000000 +0200
+@@ -68,3 +68,4 @@
  obj-$(CONFIG_SERIAL_KS8695) += serial_ks8695.o
-+obj-$(CONFIG_SERIAL_IFXMIPS) += ifxmips_asc.o
+ obj-$(CONFIG_KGDB_SERIAL_CONSOLE) += kgdboc.o
  obj-$(CONFIG_SERIAL_QE) += ucc_uart.o
---- a/drivers/watchdog/Makefile
-+++ b/drivers/watchdog/Makefile
-@@ -96,6 +96,7 @@
++obj-$(CONFIG_SERIAL_IFXMIPS) += ifxmips_asc.o
+Index: linux-2.6.26.2/drivers/watchdog/Makefile
+===================================================================
+--- linux-2.6.26.2.orig/drivers/watchdog/Makefile	2008-09-09 01:44:51.000000000 +0200
++++ linux-2.6.26.2/drivers/watchdog/Makefile	2008-09-09 01:45:41.000000000 +0200
+@@ -97,6 +97,7 @@
  obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
  obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
  obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
@@ -68,15 +79,20 @@
  
  # PARISC Architecture
  
---- a/drivers/net/Makefile
-+++ b/drivers/net/Makefile
-@@ -254,3 +254,4 @@
- obj-$(CONFIG_NETXEN_NIC) += netxen/
+Index: linux-2.6.26.2/drivers/net/Makefile
+===================================================================
+--- linux-2.6.26.2.orig/drivers/net/Makefile	2008-09-09 01:44:53.000000000 +0200
++++ linux-2.6.26.2/drivers/net/Makefile	2008-09-09 01:47:02.000000000 +0200
+@@ -256,4 +256,4 @@
  obj-$(CONFIG_NIU) += niu.o
  obj-$(CONFIG_VIRTIO_NET) += virtio_net.o
+ obj-$(CONFIG_SFC) += sfc/
+-
 +obj-$(CONFIG_IFXMIPS_MII0) += ifxmips_mii0.o
---- a/drivers/crypto/Kconfig
-+++ b/drivers/crypto/Kconfig
+Index: linux-2.6.26.2/drivers/crypto/Kconfig
+===================================================================
+--- linux-2.6.26.2.orig/drivers/crypto/Kconfig	2008-09-09 01:44:53.000000000 +0200
++++ linux-2.6.26.2/drivers/crypto/Kconfig	2008-09-09 01:45:41.000000000 +0200
 @@ -9,6 +9,9 @@
  	  If you say N, all options in this submenu will be skipped and disabled.
  
@@ -87,38 +103,35 @@
  
  config CRYPTO_DEV_PADLOCK
  	tristate "Support for VIA PadLock ACE"
---- a/drivers/crypto/Makefile
-+++ b/drivers/crypto/Makefile
-@@ -2,3 +2,4 @@
- obj-$(CONFIG_CRYPTO_DEV_PADLOCK_SHA) += padlock-sha.o
- obj-$(CONFIG_CRYPTO_DEV_GEODE) += geode-aes.o
+Index: linux-2.6.26.2/drivers/crypto/Makefile
+===================================================================
+--- linux-2.6.26.2.orig/drivers/crypto/Makefile	2008-09-09 01:44:53.000000000 +0200
++++ linux-2.6.26.2/drivers/crypto/Makefile	2008-09-09 01:47:30.000000000 +0200
+@@ -4,3 +4,4 @@
  obj-$(CONFIG_CRYPTO_DEV_HIFN_795X) += hifn_795x.o
+ obj-$(CONFIG_CRYPTO_DEV_TALITOS) += talitos.o
+ obj-$(CONFIG_CRYPTO_DEV_IXP4XX) += ixp4xx_crypto.o
 +obj-$(CONFIG_CRYPTO_DEV_IFXMIPS) += ifxdeu-aes.o ifxdeu-des.o ifxdeu-dma.o ifxdeu-generic.o ifxdeu-md5.o ifxdeu-sha1.o
---- a/drivers/usb/host/Kconfig
-+++ b/drivers/usb/host/Kconfig
-@@ -260,3 +260,9 @@
- 	  To compile this driver as a module, choose M here: the
- 	  module will be called r8a66597-hcd.
- 
+Index: linux-2.6.26.2/drivers/usb/host/Kconfig
+===================================================================
+--- linux-2.6.26.2.orig/drivers/usb/host/Kconfig	2008-09-09 01:44:51.000000000 +0200
++++ linux-2.6.26.2/drivers/usb/host/Kconfig	2008-09-09 01:48:14.000000000 +0200
+@@ -305,3 +305,10 @@
+ 	help
+ 	   This driver enables support for the on-chip R8A66597 in the
+ 	   SH7366 and SH7723 processors.
++
 +config USB_DWC_HCD
 +	tristate "IFXMIPS USB Host Controller Driver"
-+	depends on USB && IFXMIPS
++	depends on USB && IFXMIPS 
 +	default y
 +	help
-+		Danube USB Host Controller
---- a/drivers/usb/host/Makefile
-+++ b/drivers/usb/host/Makefile
-@@ -16,4 +16,6 @@
- obj-$(CONFIG_USB_SL811_CS)	+= sl811_cs.o
- obj-$(CONFIG_USB_U132_HCD)	+= u132-hcd.o
- obj-$(CONFIG_USB_R8A66597_HCD)	+= r8a66597-hcd.o
--
-+obj-$(CONFIG_USB_DWC_HCD) += dwc_otg_hcd.o dwc_otg_hcd_intr.o dwc_otg_hcd_queue.o \
-+			dwc_otg_attr.o dwc_otg_driver.o dwc_otg_cil.o \
-+			dwc_otg_cil_intr.o dwc_otg_proc.o dwc_otg_ifx.o
---- a/drivers/leds/Kconfig
-+++ b/drivers/leds/Kconfig
-@@ -151,6 +151,12 @@
++       Danube USB Host Controller
+Index: linux-2.6.26.2/drivers/leds/Kconfig
+===================================================================
+--- linux-2.6.26.2.orig/drivers/leds/Kconfig	2008-09-09 01:44:53.000000000 +0200
++++ linux-2.6.26.2/drivers/leds/Kconfig	2008-09-09 01:45:41.000000000 +0200
+@@ -153,6 +153,12 @@
  	  To compile this driver as a module, choose M here: the
  	  module will be called leds-clevo-mail.
  
@@ -131,19 +144,23 @@
  comment "LED Triggers"
  
  config LEDS_TRIGGERS
---- a/drivers/leds/Makefile
-+++ b/drivers/leds/Makefile
+Index: linux-2.6.26.2/drivers/leds/Makefile
+===================================================================
+--- linux-2.6.26.2.orig/drivers/leds/Makefile	2008-09-09 01:44:53.000000000 +0200
++++ linux-2.6.26.2/drivers/leds/Makefile	2008-09-09 01:49:25.000000000 +0200
 @@ -22,6 +22,7 @@
- obj-$(CONFIG_LEDS_CM_X270)              += leds-cm-x270.o
  obj-$(CONFIG_LEDS_CLEVO_MAIL)		+= leds-clevo-mail.o
  obj-$(CONFIG_LEDS_HP6XX)		+= leds-hp6xx.o
-+obj-$(CONFIG_LEDS_IFXMIPS)  += leds-ifxmips.o
+ obj-$(CONFIG_LEDS_FSG)			+= leds-fsg.o
++obj-$(CONFIG_LEDS_IFXMIPS)		+= leds-ifxmips.o
  
  # LED Triggers
  obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledtrig-timer.o
---- a/drivers/watchdog/Kconfig
-+++ b/drivers/watchdog/Kconfig
-@@ -670,6 +670,12 @@
+Index: linux-2.6.26.2/drivers/watchdog/Kconfig
+===================================================================
+--- linux-2.6.26.2.orig/drivers/watchdog/Kconfig	2008-09-09 01:44:51.000000000 +0200
++++ linux-2.6.26.2/drivers/watchdog/Kconfig	2008-09-09 01:45:41.000000000 +0200
+@@ -683,6 +683,12 @@
  	help
  	  Hardware driver for the built-in watchdog timer on TXx9 MIPS SoCs.
  
