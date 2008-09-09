@@ -1,0 +1,24 @@
+diff -urN autoconf-2.62/lib/Makefile.am autoconf-2.62.new/lib/Makefile.am
+--- autoconf-2.62/lib/Makefile.am	2008-04-04 19:17:16.000000000 +0200
++++ autoconf-2.62.new/lib/Makefile.am	2008-09-09 16:51:40.000000000 +0200
+@@ -16,7 +16,7 @@
+ # You should have received a copy of the GNU General Public License
+ # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ 
+-SUBDIRS = Autom4te m4sugar autoconf autotest autoscan emacs
++SUBDIRS = Autom4te m4sugar autoconf autotest autoscan
+ nodist_pkgdata_DATA = autom4te.cfg
+ EXTRA_DIST = autom4te.in freeze.mk
+ 
+diff -urN autoconf-2.62/lib/Makefile.in autoconf-2.62.new/lib/Makefile.in
+--- autoconf-2.62/lib/Makefile.in	2008-04-06 00:57:18.000000000 +0200
++++ autoconf-2.62.new/lib/Makefile.in	2008-09-09 16:51:33.000000000 +0200
+@@ -165,7 +165,7 @@
+ top_build_prefix = @top_build_prefix@
+ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+-SUBDIRS = Autom4te m4sugar autoconf autotest autoscan emacs
++SUBDIRS = Autom4te m4sugar autoconf autotest autoscan
+ nodist_pkgdata_DATA = autom4te.cfg
+ EXTRA_DIST = autom4te.in freeze.mk
+ edit = sed \
