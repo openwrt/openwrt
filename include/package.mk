@@ -1,9 +1,10 @@
-# 
-# Copyright (C) 2006-2007 OpenWrt.org
+#
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+# $Id$
 
 all: $(if $(DUMP),dumpinfo,compile)
 
@@ -89,7 +90,14 @@ define Build/DefaultTargets
 	$(SUBMAKE) -j1 clean-staging
 	rm -rf $(TMP_DIR)/stage-$(PKG_NAME)
 	mkdir -p $(TMP_DIR)/stage-$(PKG_NAME)/host $(STAGING_DIR)/packages $(STAGING_DIR_HOST)/packages
+	$(foreach hook,$(Hooks/InstallDev/Pre),\
+		$(call $(hook),$(TMP_DIR)/stage-$(PKG_NAME),$(TMP_DIR)/stage-$(PKG_NAME)/host)$(sep)\
+	)
 	$(call Build/InstallDev,$(TMP_DIR)/stage-$(PKG_NAME),$(TMP_DIR)/stage-$(PKG_NAME)/host)
+	$(foreach hook,$(Hooks/InstallDev/Post),\
+		$(call $(hook),$(TMP_DIR)/stage-$(PKG_NAME),$(TMP_DIR)/stage-$(PKG_NAME)/host
+)$(sep)\
+	)
 	if [ -d $(TMP_DIR)/stage-$(PKG_NAME) ]; then \
 		(cd $(TMP_DIR)/stage-$(PKG_NAME); find ./ > $(STAGING_DIR)/packages/$(PKG_NAME).list); \
 		$(CP) $(TMP_DIR)/stage-$(PKG_NAME)/* $(STAGING_DIR)/; \
