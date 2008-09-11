@@ -113,24 +113,6 @@ static inline int irq_to_gpio(unsigned irq) {
 	return (irq - (AR531X_GPIO_IRQ(0)));
 }
 
-/* #include <asm-generic/gpio.h> */ /* cansleep wrappers */
-/* platforms that don't directly support access to GPIOs through I2C, SPI,
- * or other blocking infrastructure can use these wrappers.
- */
-
-static inline int gpio_cansleep(unsigned gpio) {
-        return 0;
-}
-
-static inline int gpio_get_value_cansleep(unsigned gpio) {
-        might_sleep();
-        return gpio_get_value(gpio);
-}
-
-static inline void gpio_set_value_cansleep(unsigned gpio, int value) {
-        might_sleep();
-        gpio_set_value(gpio, value);
-}
+#include <asm-generic/gpio.h> /* cansleep wrappers */
 
 #endif
-
