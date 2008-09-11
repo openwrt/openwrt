@@ -95,8 +95,7 @@ define Build/DefaultTargets
 	)
 	$(call Build/InstallDev,$(TMP_DIR)/stage-$(PKG_NAME),$(TMP_DIR)/stage-$(PKG_NAME)/host)
 	$(foreach hook,$(Hooks/InstallDev/Post),\
-		$(call $(hook),$(TMP_DIR)/stage-$(PKG_NAME),$(TMP_DIR)/stage-$(PKG_NAME)/host
-)$(sep)\
+		$(call $(hook),$(TMP_DIR)/stage-$(PKG_NAME),$(TMP_DIR)/stage-$(PKG_NAME)/host)$(sep)\
 	)
 	if [ -d $(TMP_DIR)/stage-$(PKG_NAME) ]; then \
 		(cd $(TMP_DIR)/stage-$(PKG_NAME); find ./ > $(STAGING_DIR)/packages/$(PKG_NAME).list); \
