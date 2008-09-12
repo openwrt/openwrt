@@ -7,11 +7,13 @@ RAMFS_COPY_DATA=""	# extra data files
 export INTERACTIVE=0
 export VERBOSE=1
 export SAVE_CONFIG=1
+export DELAY=
 
 # parse options
 while [ -n "$1" ]; do 
 	case "$1" in
 		-i) export INTERACTIVE=1;;
+		-d) export DELAY="$2"; shift;;
 		-v) export VERBOSE="$(($VERBOSE + 1))";;
 		-q) export VERBOSE="$(($VERBOSE - 1))";;
 		-*)
@@ -34,9 +36,10 @@ export ARGC="$#"
 Usage: $0 [options] <image file or URL>
 
 Options:
-	-i	interactive mode
-	-v	more verbose
-	-q	less verbose
+	-d <delay>   add a delay before rebooting
+	-i           interactive mode
+	-q           less verbose
+	-v           more verbose
 
 EOF
 	exit 1
