@@ -147,5 +147,6 @@ do_upgrade() {
 			jffs2_copy_config
 		fi
 	}
+	[ -n "$DELAY" ] && sleep "$DELAY"
 	ask_bool 1 "Reboot" && reboot
 }
