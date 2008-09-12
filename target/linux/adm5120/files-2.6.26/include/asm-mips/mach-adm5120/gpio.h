@@ -9,8 +9,12 @@
  *
  */
 
-#ifndef _ASM_MACH_ADM5120_GPIO_H
-#define _ASM_MACH_ADM5120_GPIO_H
+#ifndef _ASM_MIPS_MACH_ADM5120_GPIO_H
+#define _ASM_MIPS_MACH_ADM5120_GPIO_H
+
+#define ARCH_NR_GPIOS	64
+
+#include <asm-generic/gpio.h>
 
 #include <asm/mach-adm5120/adm5120_switch.h>
 
@@ -55,46 +59,45 @@
 #define ADM5120_GPIO_10M_ACT	(ADM5120_GPIO_SWITCH | LED_MODE_10M_ACT)
 #define ADM5120_GPIO_100M_ACT	(ADM5120_GPIO_SWITCH | LED_MODE_100M_ACT)
 
-extern int adm5120_gpio_direction_input(unsigned gpio);
-extern int adm5120_gpio_direction_output(unsigned gpio, int value);
-extern int adm5120_gpio_get_value(unsigned gpio);
-extern void adm5120_gpio_set_value(unsigned gpio, int value);
-extern int adm5120_gpio_request(unsigned gpio, const char *label);
-extern void adm5120_gpio_free(unsigned gpio);
-extern int adm5120_gpio_to_irq(unsigned gpio);
-extern int adm5120_irq_to_gpio(unsigned irq);
-
-/*
- * Wrappers for the generic GPIO layer
- */
-static inline int gpio_direction_input(unsigned gpio)
-{
-	return adm5120_gpio_direction_input(gpio);
-}
-
-static inline int gpio_direction_output(unsigned gpio, int value)
-{
-	return adm5120_gpio_direction_output(gpio,value);
-}
+extern int  __adm5120_gpio0_get_value(unsigned gpio);
+extern void __adm5120_gpio0_set_value(unsigned gpio, int value);
+extern int  __adm5120_gpio1_get_value(unsigned gpio);
+extern void __adm5120_gpio1_set_value(unsigned gpio, int value);
+extern int  adm5120_gpio_to_irq(unsigned gpio);
+extern int  adm5120_irq_to_gpio(unsigned irq);
 
 static inline int gpio_get_value(unsigned gpio)
 {
-	return adm5120_gpio_get_value(gpio);
+	int ret;
+
+	switch (gpio) {
+	case ADM5120_GPIO_PIN0 ... ADM5120_GPIO_PIN7:
+		ret = __adm5120_gpio0_get_value(gpio);
+		break;
+	case ADM5120_GPIO_P0L0 ... ADM5120_GPIO_P4L2:
+		ret = __adm5120_gpio1_get_value(gpio - ADM5120_GPIO_P0L0);
+		break;
+	default:
+		ret = __gpio_get_value(gpio);
+		break;
+	}
+
+	return ret;
 }
 
 static inline void gpio_set_value(unsigned gpio, int value)
 {
-	adm5120_gpio_set_value(gpio, value);
-}
-
-static inline int gpio_request(unsigned gpio, const char *label)
-{
-	return adm5120_gpio_request(gpio, label);
-}
-
-static inline void gpio_free(unsigned gpio)
-{
-	adm5120_gpio_free(gpio);
+	switch (gpio) {
+	case ADM5120_GPIO_PIN0 ... ADM5120_GPIO_PIN7:
+		__adm5120_gpio0_set_value(gpio, value);
+		break;
+	case ADM5120_GPIO_P0L0 ... ADM5120_GPIO_P4L2:
+		__adm5120_gpio1_set_value(gpio - ADM5120_GPIO_P0L0, value);
+		break;
+	default:
+		__gpio_set_value(gpio, value);
+		break;
+	}
 }
 
 static inline int gpio_to_irq(unsigned gpio)
@@ -107,6 +110,6 @@ static inline int irq_to_gpio(unsigned irq)
 	return adm5120_irq_to_gpio(irq);
 }
 
-#include <asm-generic/gpio.h> /* cansleep wrappers */
+#define gpio_cansleep	__gpio_cansleep
 
-#endif /* _ASM_MACH_ADM5120_GPIO_H */
+#endif /* _ASM_MIPS_MACH_ADM5120_GPIO_H */

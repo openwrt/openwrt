@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -18,6 +18,20 @@
+@@ -18,6 +18,21 @@
  	prompt "System type"
  	default SGI_IP22
  
@@ -16,6 +16,7 @@
 +	select SYS_SUPPORTS_BIG_ENDIAN
 +	select SYS_SUPPORTS_32BIT_KERNEL
 +	select GENERIC_GPIO
++	select HAVE_GPIO_LIB
 +	select SWAP_IO_SPACE if CPU_BIG_ENDIAN
 +
  config MACH_ALCHEMY
