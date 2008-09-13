@@ -106,6 +106,18 @@ menuconfig BUILDOPTS
 	bool
 	prompt "Build Options" if DEVEL
 
+config DEBUG
+	bool
+	prompt "Enable debugging" if BUILDOPTS
+	select NO_STRIP
+	default n
+	help
+		Disables stripping and adds -g3 to the CFLAGS
+
+config NO_STRIP
+	bool "Do not strip generated binaries (enable for native compiling)" if DEVEL
+	default n
+
 config CLEAN_IPKG
 	bool
 	prompt "Clean all ipkg files before building the rootfs" if BUILDOPTS
@@ -141,10 +153,6 @@ config EXTERNAL_KERNEL_TREE
 	string
 	prompt "Use external kernel tree" if DEVEL
 	default ""
-
-config BUILD_DEVELOPER_SYSTEM
-	bool "build a non-stripped system, so gcc can be run natively on target" if DEVEL
-	default n
 
 source "toolchain/Config.in"
 menuconfig BUILDSYSTEM_SETTINGS
