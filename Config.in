@@ -98,6 +98,11 @@ config BROKEN
 	prompt "Show broken platforms / packages" if DEVEL
 	default n
 
+config DOWNLOAD_FOLDER
+	string
+	prompt "Download folder" if DEVEL
+	default ""
+
 config LOCALMIRROR
 	string
 	prompt "Local mirror for source packages" if DEVEL
@@ -115,7 +120,7 @@ config DEBUG
 		Disables stripping and adds -g3 to the CFLAGS
 
 config NO_STRIP
-	bool "Do not strip generated binaries (enable for native compiling)" if DEVEL
+	bool "Do not strip generated binaries (enable for native compiling)" if BUILDOPTS
 	default n
 
 config CLEAN_IPKG
@@ -151,18 +156,11 @@ config CCACHE
 
 config EXTERNAL_KERNEL_TREE
 	string
-	prompt "Use external kernel tree" if DEVEL
+	prompt "Use external kernel tree" if BUILDOPTS
 	default ""
 
 source "toolchain/Config.in"
-menuconfig BUILDSYSTEM_SETTINGS
-    bool "Buildsystem settings" 
 
-config DOWNLOAD_FOLDER
-	string
-	prompt "Download folder"
-	default ""
-	depends BUILDSYSTEM_SETTINGS 
 source "target/imagebuilder/Config.in"
 source "target/sdk/Config.in"
 
