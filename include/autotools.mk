@@ -1,9 +1,10 @@
-# 
-# Copyright (C) 2007 OpenWrt.org
+#
+# Copyright (C) 2007-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+# $Id$
 
 define replace
 	if [ -f "$(PKG_BUILD_DIR)/$(3)$(1)" -a -e "$(2)/$(1)" ]; then \
@@ -18,8 +19,10 @@ update_libtool=$(call replace,libtool,$(STAGING_DIR)/host/bin,$(CONFIGURE_PATH)/
 
 # prevent libtool from linking against host development libraries
 define libtool_fixup_libdir
-	find $(PKG_BUILD_DIR) -name '*.la' | $(XARGS) \
-		$(SED) "s,^libdir='/usr/lib',libdir='$(if $(PKG_INSTALL_DIR),$(PKG_INSTALL_DIR),$(STAGING_DIR))/usr/lib',g"
+	find $(1) -name '*.la' | $(XARGS) \
+		$(SED) "s,\(^libdir='\| \|-L\|^dependency_libs='\)/usr/lib,\1$(STAGING_DIR)/usr/lib,g"
+	find $(2) -name '*.la' | $(XARGS) \
+		$(SED) "s,\(^libdir='\| \|-L\|^dependency_libs='\)/usr/lib,\1$(STAGING_DIR)/usr/lib,g"
 endef
 
 define remove_version_check
@@ -34,5 +37,5 @@ ifneq ($(filter libtool,$(PKG_FIXUP)),)
   PKG_BUILD_DEPENDS += libtool
   Hooks/Configure/Pre += update_libtool remove_version_check
   Hooks/Configure/Post += update_libtool
-  Hooks/Compile/Post += libtool_fixup_libdir
+  Hooks/InstallDev/Post += libtool_fixup_libdir
 endif
