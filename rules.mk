@@ -1,9 +1,10 @@
-# 
-# Copyright (C) 2006-2007 OpenWrt.org
+#
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+# $Id$
 
 ifneq ($(__rules_inc),1)
 __rules_inc=1
@@ -65,7 +66,7 @@ IPKG_STATE_DIR:=$(TARGET_DIR)/usr/lib/ipkg
 TARGET_PATH:=$(TOOLCHAIN_DIR)/bin:$(STAGING_DIR_HOST)/bin:$(STAGING_DIR)/host/bin:$(PATH)
 TARGET_CFLAGS:=$(TARGET_OPTIMIZATION) $(if $(CONFIG_DEBUG),-g3)
 TARGET_CPPFLAGS:=-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include
-TARGET_LDFLAGS:=-L$(TOOLCHAIN_DIR)/lib -L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib -Wl,-rpath-link=$(STAGING_DIR)/usr/lib
+TARGET_LDFLAGS:=-L$(TOOLCHAIN_DIR)/lib -L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib
 
 ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
   -include $(TOOLCHAIN_DIR)/info.mk
