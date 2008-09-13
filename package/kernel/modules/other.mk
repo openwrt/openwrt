@@ -321,22 +321,6 @@ endef
 $(eval $(call KernelPackage,leds-gpio))
 
 
-define KernelPackage/leds-adm5120
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=ADM5120 LED support
-  DEPENDS:=@TARGET_adm5120 +kmod-leds-gpio @LINUX_2_6_25
-  KCONFIG:=CONFIG_LEDS_ADM5120
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-adm5120.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,59,leds-adm5120)
-endef
-
-define KernelPackage/leds-adm5120/description
- Kernel module for LEDs on ADM5120 based boards.
-endef
-
-$(eval $(call KernelPackage,leds-adm5120))
-
-
 define KernelPackage/ledtrig-adm5120-switch
   SUBMENU:=$(OTHER_MENU)
   TITLE:=LED ADM5120 Switch Port Status Trigger
