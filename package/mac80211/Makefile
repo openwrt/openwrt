@@ -54,12 +54,11 @@ $(eval $(call Download,rt71w))
 define KernelPackage/rt2x00/Default
   SUBMENU:=Wireless Drivers
   TITLE:=Ralink Drivers for RT2x00 cards
-  DEPENDS:=@LINUX_2_6_24||LINUX_2_6_25
 endef
 
 define KernelPackage/rt2x00-lib
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT||USB_SUPPORT +kmod-mac80211
+  DEPENDS+= @PCI_SUPPORT||USB_SUPPORT +kmod-mac80211 +kmod-crc-itu-t
   TITLE+= (LIB)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00lib.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,blkcipher ecb arc4 rt2x00lib)
@@ -99,7 +98,7 @@ endef
 
 define KernelPackage/rt2500-usb
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb +kmod-crc-itu-t
+  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb
   TITLE+= (RT2500 USB)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2500usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2500usb)
@@ -107,7 +106,7 @@ endef
 
 define KernelPackage/rt61-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci +kmod-crc-itu-t
+  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci
   TITLE+= (RT2x61 PCI)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt61pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt61pci)
