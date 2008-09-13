@@ -22,8 +22,8 @@ load_led() {
 	config_get delayon $1 delayon
 	config_get delayoff $1 delayoff
 
-	[ -e /sys/class/leds/${sysfs}/brightness -a -n "$name" ] && {
-		logger "setting up led : $name"
+	[ -e /sys/class/leds/${sysfs}/brightness ] && {
+		logger "setting up led : ${name:-$sysfs}"
 		[ -n "$default" ] && { 
 			[ $default -eq 1 ] && 
 				echo 1 >/sys/class/leds/${sysfs}/brightness 
