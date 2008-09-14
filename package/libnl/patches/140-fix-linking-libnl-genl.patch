@@ -1,0 +1,71 @@
+diff -U 3 -H -d -r -N -- libnl-1.1.o/include/netlink/genl/mngt.h libnl-1.1/include/netlink/genl/mngt.h
+--- libnl-1.1.o/include/netlink/genl/mngt.h	2008-01-14 18:48:45.000000000 +0300
++++ libnl-1.1/include/netlink/genl/mngt.h	2008-08-18 19:18:54.000000000 +0400
+@@ -22,6 +22,15 @@
+ 
+ struct nl_cache_ops;
+ 
++struct genl_info
++{
++        struct sockaddr_nl *    who;
++        struct nlmsghdr *       nlh;
++	struct genlmsghdr *     genlhdr;
++	void *                  userhdr;
++	struct nlattr **        attrs;
++};
++
+ /**
+  * @ingroup genl_mngt
+  * Generic Netlink Command
+diff -U 3 -H -d -r -N -- libnl-1.1.o/include/netlink-types.h libnl-1.1/include/netlink-types.h
+--- libnl-1.1.o/include/netlink-types.h	2008-01-14 18:48:45.000000000 +0300
++++ libnl-1.1/include/netlink-types.h	2008-08-18 19:18:30.000000000 +0400
+@@ -95,15 +95,6 @@
+ 
+ struct nl_parser_param;
+ 
+-struct genl_info
+-{
+-	struct sockaddr_nl *	who;
+-	struct nlmsghdr *	nlh;
+-	struct genlmsghdr *	genlhdr;
+-	void *			userhdr;
+-	struct nlattr **	attrs;
+-};
+-
+ #define LOOSE_FLAG_COMPARISON	1
+ 
+ #define NL_OBJ_MARK		1
+diff -U 3 -H -d -r -N -- libnl-1.1.o/src/nl-list-caches.c libnl-1.1/src/nl-list-caches.c
+--- libnl-1.1.o/src/nl-list-caches.c	2008-01-14 18:48:45.000000000 +0300
++++ libnl-1.1/src/nl-list-caches.c	2008-08-18 19:20:05.000000000 +0400
+@@ -10,6 +10,7 @@
+  */
+ 
+ #include "utils.h"
++#include <netlink-local.h>
+ 
+ static void print_usage(void)
+ {
+diff -U 3 -H -d -r -N -- libnl-1.1.o/src/utils.c libnl-1.1/src/utils.c
+--- libnl-1.1.o/src/utils.c	2008-01-14 18:48:45.000000000 +0300
++++ libnl-1.1/src/utils.c	2008-08-18 19:20:39.000000000 +0400
+@@ -12,6 +12,7 @@
+ #include "utils.h"
+ 
+ #include <stdlib.h>
++#include <stdarg.h>
+ 
+ int nltool_init(int argc, char *argv[])
+ {
+diff -U 3 -H -d -r -N -- libnl-1.1.o/src/utils.h libnl-1.1/src/utils.h
+--- libnl-1.1.o/src/utils.h	2008-01-14 18:48:45.000000000 +0300
++++ libnl-1.1/src/utils.h	2008-08-18 19:21:11.000000000 +0400
+@@ -22,7 +22,6 @@
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ 
+-#include <netlink-local.h>
+ #include <netlink/netlink.h>
+ #include <netlink/utils.h>
+ #include <netlink/addr.h>
