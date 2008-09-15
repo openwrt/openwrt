@@ -251,7 +251,7 @@ fw_redirect() {
 	[ "$src_dport_first" -ne "$src_dport_last" ] && { \
 		src_dport="$src_dport_first:$src_dport_last"; }
 
-	destport2=destport
+	dest_port2=$dest_port
 	dest_port_first=${dest_port2%-*}
 	dest_port_last=${dest_port2#*-}
 	[ "$dest_port_first" -ne "$dest_port_last" ] && { \
