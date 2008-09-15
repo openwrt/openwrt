@@ -70,7 +70,7 @@ define Package/swap-utils
 $(call Package/util-linux/Default)
   SUBMENU:=disc
   TITLE:=Swap space management utilities
-  DEPENDS+= +libuuid
+  DEPENDS+= +libblkid +libuuid
 endef
 
 define Package/swap-utils/description
