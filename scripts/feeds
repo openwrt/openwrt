@@ -286,7 +286,7 @@ sub install_package {
 	};
 
 	# install all dependencies
-	foreach my $vpkg (@{$srcpackage{$src}}) {
+	foreach my $vpkg (@{$srcpackage{$src}}, $pkg) {
 		foreach my $dep (@{$vpkg->{depends}}, @{$vpkg->{builddepends}}) {
 			next if $dep =~ /@/;
 			$dep =~ s/^\+//;
