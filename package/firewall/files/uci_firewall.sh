@@ -49,7 +49,7 @@ create_zone() {
 	$IPTABLES -A OUTPUT -j zone_$1_$4
 	$IPTABLES -N zone_$1_nat -t nat
 	$IPTABLES -N zone_$1_prerouting -t nat
-	[ "$6" == "1" ] && $IPTABLES -t nat -A POSTROUTING -j zone_$2_nat
+	[ "$6" == "1" ] && $IPTABLES -t nat -A POSTROUTING -j zone_$1_nat
 }
 
 addif() {
