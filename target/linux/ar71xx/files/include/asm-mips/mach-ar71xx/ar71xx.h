@@ -368,16 +368,6 @@ extern void ar71xx_device_start(u32 mask);
 #define MII1_CTRL_IF_RGMII	0
 #define MII1_CTRL_IF_RMII	1
 
-#include <asm/bootinfo.h>
-#include <linux/init.h>
-
-#define ar71xx_print_cmdline() do {					\
-		printk(KERN_DEBUG "%s:%d arcs_cmdline:'%s'\n",		\
-			__FUNCTION__, __LINE__, arcs_cmdline);		\
-		printk(KERN_DEBUG "%s:%d boot_command_line:'%s'\n",	\
-			__FUNCTION__, __LINE__,	boot_command_line);	\
-	} while (0)
-
 #endif /* __ASSEMBLER__ */
 
 #endif /* __ASM_MACH_AR71XX_H */

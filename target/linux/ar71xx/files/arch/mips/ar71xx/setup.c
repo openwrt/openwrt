@@ -244,8 +244,6 @@ void __init plat_mem_setup(void)
 
 	board_be_handler = ar71xx_be_handler;
 
-	ar71xx_print_cmdline();
-
 	ar71xx_early_serial_setup();
 }
 
