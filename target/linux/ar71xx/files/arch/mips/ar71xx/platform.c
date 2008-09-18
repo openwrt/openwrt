@@ -414,7 +414,12 @@ err_free_buttons:
 	kfree(p);
 }
 
-void __init ar71xx_set_mac_base(char *mac_str)
+void __init ar71xx_set_mac_base(unsigned char *mac)
+{
+	memcpy(ar71xx_mac_base, mac, ETH_ALEN);
+}
+
+void __init ar71xx_parse_mac_addr(char *mac_str)
 {
 	u8 tmp[ETH_ALEN];
 	int t;
@@ -423,7 +428,7 @@ void __init ar71xx_set_mac_base(char *mac_str)
 			&tmp[0], &tmp[1], &tmp[2], &tmp[3], &tmp[4], &tmp[5]);
 
 	if (t == ETH_ALEN)
-		memcpy(ar71xx_mac_base, tmp, ETH_ALEN);
+		ar71xx_set_mac_base(tmp);
 	else
 		printk(KERN_DEBUG "AR71XX: failed to parse mac address "
 				"\"%s\"\n", mac_str);
