@@ -1,0 +1,76 @@
+http://gcc.gnu.org/bugzilla/show_bug.cgi?id=37014
+
+--- a/gcc/dojump.c
++++ b/gcc/dojump.c
+@@ -307,8 +307,6 @@
+ 	break;
+       }
+ 
+-    case TRUTH_ANDIF_EXPR:
+-    case TRUTH_ORIF_EXPR:
+     case COMPOUND_EXPR:
+       /* Lowered by gimplify.c.  */
+       gcc_unreachable ();
+@@ -518,6 +516,7 @@
+       if (BRANCH_COST >= 4 || TREE_SIDE_EFFECTS (TREE_OPERAND (exp, 1)))
+ 	goto normal;
+ 
++    case TRUTH_ANDIF_EXPR:
+       if (if_false_label == NULL_RTX)
+         {
+ 	  drop_through_label = gen_label_rtx ();
+@@ -538,6 +537,7 @@
+       if (BRANCH_COST >= 4 || TREE_SIDE_EFFECTS (TREE_OPERAND (exp, 1)))
+ 	goto normal;
+ 
++    case TRUTH_ORIF_EXPR:
+       if (if_true_label == NULL_RTX)
+ 	{
+           drop_through_label = gen_label_rtx ();
+--- a/gcc/expr.c
++++ b/gcc/expr.c
+@@ -8556,7 +8556,10 @@
+       /* If no set-flag instruction, must generate a conditional store
+ 	 into a temporary variable.  Drop through and handle this
+ 	 like && and ||.  */
+-
++      /* Although TRUTH_{AND,OR}IF_EXPR aren't present in GIMPLE, they
++	 are occassionally created by folding during expansion.  */
++    case TRUTH_ANDIF_EXPR:
++    case TRUTH_ORIF_EXPR:
+       if (! ignore
+ 	  && (target == 0
+ 	      || modifier == EXPAND_STACK_PARM
+@@ -8754,8 +8767,6 @@
+     case POSTDECREMENT_EXPR:
+     case LOOP_EXPR:
+     case EXIT_EXPR:
+-    case TRUTH_ANDIF_EXPR:
+-    case TRUTH_ORIF_EXPR:
+       /* Lowered by gimplify.c.  */
+       gcc_unreachable ();
+ 
+--- /dev/null
++++ b/gcc/testsuite/gcc.c-torture/compile/20080812-1.c
+@@ -0,0 +1,21 @@
++/* PR middle-end/37014 */
++
++void bar (signed char *);
++
++void
++foo (int x, int y)
++{
++  int i;
++  signed char a[123], b[123], c;
++  for (i = 0; i < 123; i++)
++    {
++      int e = y - x;
++      int d = e < 0 ? -e : e;
++      c = d < 75;
++      a[y] = c;
++      b[y] = c;
++      y--;
++    }
++  bar (b);
++  bar (a);
++}
