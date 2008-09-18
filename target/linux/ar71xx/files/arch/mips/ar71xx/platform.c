@@ -436,8 +436,6 @@ void __init ar71xx_parse_mac_addr(char *mac_str)
 
 static int __init ar71xx_machine_setup(void)
 {
-	ar71xx_print_cmdline();
-
 	ar71xx_gpio_init();
 
 	ar71xx_add_device_uart();
