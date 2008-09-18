@@ -45,7 +45,8 @@ extern void ar71xx_add_device_spi(struct ar71xx_spi_platform_data *pdata,
 				struct spi_board_info const *info,
 				unsigned n) __init;
 
-extern void ar71xx_set_mac_base(char *mac_str) __init;
+extern void ar71xx_set_mac_base(unsigned char *mac) __init;
+extern void ar71xx_parse_mac_addr(char *mac_str) __init;
 extern void ar71xx_add_device_eth(unsigned int id, phy_interface_t phy_if_mode,
 				u32 phy_mask) __init;
 
