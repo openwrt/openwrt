@@ -219,23 +219,6 @@ int __init ar5315_init_devices(void)
 	ar531x_find_config(ar5315_flash_limit());
 	bcfg = (struct ar531x_boarddata *) board_config;
 
-#if 0
-	{
-	/* Detect the hardware based on the device ID */
-	u32 devid = sysRegRead(AR5315_SREV) & AR5315_REV_MAJ >> AR5315_REV_MAJ_S;
-		switch(devid) {
-		case 0x9:
-			mips_machtype = MACH_ATHEROS_AR2317;
-			break;
-		/* FIXME: how can we detect AR2316? */
-		case 0x8:
-		default:
-			mips_machtype = MACH_ATHEROS_AR2315;
-			break;
-		}
-	}
-#endif
-
 	config = (struct ar531x_config *) kzalloc(sizeof(struct ar531x_config), GFP_KERNEL);
 	config->board = board_config;
 	config->radio = radio_config;
@@ -296,7 +279,6 @@ static void ar5315_power_off(void)
 
 static void ar5315_restart(char *command)
 {
-	unsigned int reg;
 	for(;;) {
 		/* reset the system */
 		sysRegWrite(AR5315_COLD_RESET,AR5317_RESET_SYSTEM);
@@ -380,7 +362,7 @@ static void __init ar5315_time_init(void)
 
 void __init ar5315_prom_init(void)
 {
-	u32 memsize, memcfg;
+	u32 memsize, memcfg, devid;
 
 	is_5315 = 1;
 	memcfg = sysRegRead(AR5315_MEM_CFG);
@@ -390,9 +372,17 @@ void __init ar5315_prom_init(void)
 	memsize <<= 3;
 	add_memory_region(0, memsize, BOOT_MEM_RAM);
 
-	/* Initialize it to AR2315 for now. Real detection will be done
-	 * in ar5315_init_devices() */
-	mips_machtype = MACH_ATHEROS_AR2315;
+	/* Detect the hardware based on the device ID */
+	devid = sysRegRead(AR5315_SREV) & AR5315_REV_CHIP;
+	switch(devid) {
+		case 0x90:
+		case 0x91:
+			mips_machtype = MACH_ATHEROS_AR2317;
+			break;
+		default:
+			mips_machtype = MACH_ATHEROS_AR2315;
+			break;
+	}
 }
 
 void __init ar5315_plat_setup(void)

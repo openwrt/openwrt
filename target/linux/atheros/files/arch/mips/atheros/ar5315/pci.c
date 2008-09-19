@@ -22,6 +22,7 @@
 #include <linux/spinlock.h>
 #include <linux/delay.h>
 #include <linux/irq.h>
+#include <asm/bootinfo.h>
 #include <asm/paccess.h>
 #include <asm/irq_cpu.h>
 #include <asm/io.h>
@@ -185,6 +186,9 @@ DECLARE_PCI_FIXUP_HEADER(PCI_ANY_ID, PCI_ANY_ID, ar5315_pci_fixup);
 int __init ar5315_pci_init(void)
 {
 	u32 reg;
+
+	if (mips_machtype != MACH_ATHEROS_AR2315)
+		return -ENODEV;
 
 	printk("AR531x PCI init... \n");
 
