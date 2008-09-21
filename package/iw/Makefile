@@ -9,15 +9,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iw
-PKG_REV:=4d3a72da3f21761bf4f2866a6a3400d4ecf67365
-PKG_VERSION:=20080414_$(PKG_REV)
+PKG_VERSION:=0.9.5
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://git.sipsolutions.net/iw.git
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=$(PKG_REV)
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:=http://wireless.kernel.org/download/iw/
 PKG_BUILD_DEPENDS:=mac80211 libnl
 
 include $(INCLUDE_DIR)/package.mk
@@ -26,7 +22,7 @@ define Package/iw
   SECTION:=net
   CATEGORY:=Network
   TITLE:=cfg80211 interface configuration utility
-  URL:=http://git.sipsolutions.net/?p=iw.git
+  URL:=http://wireless.kernel.org/en/users/Documentation/iw
   DEPENDS:=@!TARGET_avr32 @!TARGET_etrax +libnl
 endef
 
