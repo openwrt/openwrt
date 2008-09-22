@@ -46,6 +46,10 @@
 #include "mtd-api.h"
 #include "mtd.h"
 
+#ifdef target_brcm47xx
+#define target_brcm 1
+#endif
+
 #define TRX_MAGIC       0x30524448      /* "HDR0" */
 #define MAX_ARGS 8
 
