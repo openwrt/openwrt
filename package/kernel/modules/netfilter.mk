@@ -10,23 +10,67 @@ NF_MENU:=Netfilter Extensions
 NF_KMOD:=1
 include $(INCLUDE_DIR)/netfilter.mk
 
+define KernelPackage/ipt-core
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netfilter core
+  KCONFIG:=$(KCONFIG_IPT_CORE)
+  FILES:=$(foreach mod,$(IPT_CORE-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_CORE-m)))
+endef
+
+define KernelPackage/ipt-core/description
+ Netfilter core kernel modules
+ Includes:
+ - limit
+ - LOG
+ - mac
+ - multiport
+ - TCPMSS
+ - REJECT
+endef
+
+$(eval $(call KernelPackage,ipt-core))
+
+
 define KernelPackage/ipt-conntrack
   SUBMENU:=$(NF_MENU)
-  TITLE:=Modules for connection tracking
+  TITLE:=Basic connection tracking modules
   KCONFIG:=$(KCONFIG_IPT_CONNTRACK)
   FILES:=$(foreach mod,$(IPT_CONNTRACK-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_CONNTRACK-m)))
+  AUTOLOAD:=$(call AutoLoad,41,$(notdir $(IPT_CONNTRACK-m)))
+  DEPENDS:= kmod-ipt-core
 endef
 
 define KernelPackage/ipt-conntrack/description
  Netfilter (IPv4) kernel modules for connection tracking
  Includes:
- - ipt_conntrack
- - ipt_helper
- - ipt_connmark/CONNMARK
+ - state
 endef
 
 $(eval $(call KernelPackage,ipt-conntrack))
+
+
+define KernelPackage/ipt-conntrack-extra
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Extra connection tracking modules
+  KCONFIG:=$(KCONFIG_IPT_CONNTRACK_EXTRA)
+  FILES:=$(foreach mod,$(IPT_CONNTRACK_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  AUTOLOAD:=$(call AutoLoad,42,$(notdir $(IPT_CONNTRACK_EXTRA-m)))
+  DEPENDS:= kmod-ipt-core +kmod-ipt-conntrack
+endef
+
+define KernelPackage/ipt-conntrack-extra/description
+ Netfilter (IPv4) extra kernel modules for connection tracking
+ Includes:
+ - connbytes
+ - connmark/CONNMARK
+ - conntrack
+ - helper
+ - recent
+ - NOTRACK
+endef
+
+$(eval $(call KernelPackage,ipt-conntrack-extra))
 
 
 define KernelPackage/ipt-filter
@@ -34,7 +78,8 @@ define KernelPackage/ipt-filter
   TITLE:=Modules for packet content inspection
   KCONFIG:=$(KCONFIG_IPT_FILTER)
   FILES:=$(foreach mod,$(IPT_FILTER-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_FILTER-m)))
+  AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_FILTER-m)))
+  DEPENDS:= kmod-ipt-core
 endef
 
 define KernelPackage/ipt-filter/description
@@ -52,7 +97,8 @@ define KernelPackage/ipt-ipopt
   TITLE:=Modules for matching/changing IP packet options
   KCONFIG:=$(KCONFIG_IPT_IPOPT)
   FILES:=$(foreach mod,$(IPT_IPOPT-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_IPOPT-m)))
+  AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_IPOPT-m)))
+  DEPENDS:= kmod-ipt-core
 endef
 
 define KernelPackage/ipt-ipopt/description
@@ -62,7 +108,6 @@ define KernelPackage/ipt-ipopt/description
  - ipt_dscp/DSCP
  - ipt_ecn/ECN
  - ipt_length
- - ipt_mac
  - ipt_tos/TOS
  - ipt_tcpmms
  - ipt_ttl/TTL
@@ -77,7 +122,8 @@ define KernelPackage/ipt-ipsec
   TITLE:=Modules for matching IPSec packets
   KCONFIG:=$(KCONFIG_IPT_IPSEC)
   FILES:=$(foreach mod,$(IPT_IPSEC-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_IPSEC-m)))
+  AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_IPSEC-m)))
+  DEPENDS:= kmod-ipt-core
 endef
 
 define KernelPackage/ipt-ipsec/description
@@ -92,38 +138,60 @@ $(eval $(call KernelPackage,ipt-ipsec))
 
 define KernelPackage/ipt-nat
   SUBMENU:=$(NF_MENU)
-  TITLE:=Modules for extra NAT targets
+  TITLE:=Basic NAT targets
   KCONFIG:=$(KCONFIG_IPT_NAT)
   FILES:=$(foreach mod,$(IPT_NAT-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_NAT-m)))
+  AUTOLOAD:=$(call AutoLoad,42,$(notdir $(IPT_NAT-m)))
+  DEPENDS:= kmod-ipt-core +kmod-ipt-conntrack
 endef
 
 define KernelPackage/ipt-nat/description
- Netfilter (IPv4) modules for extra NAT targets
+ Netfilter (IPv4) kernel modules for basic NAT targets
  Includes:
- - ipt_REDIRECT
- - ipt_NETMAP
+ - MASQUERADE
 endef
 
 $(eval $(call KernelPackage,ipt-nat))
 
 
+define KernelPackage/ipt-nat-extra
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Extra NAT targets
+  KCONFIG:=$(KCONFIG_IPT_NAT_EXTRA)
+  FILES:=$(foreach mod,$(IPT_NAT_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  AUTOLOAD:=$(call AutoLoad,43,$(notdir $(IPT_NAT_EXTRA-m)))
+  DEPENDS:= kmod-ipt-core +kmod-ipt-nat
+endef
+
+define KernelPackage/ipt-nat-extra/description
+ Netfilter (IPv4) kernel modules for extra NAT targets
+ Includes:
+ - MIRROR
+ - NETMAP
+ - REDIRECT
+endef
+
+$(eval $(call KernelPackage,ipt-nat-extra))
+
+
 define KernelPackage/ipt-nathelper
   SUBMENU:=$(NF_MENU)
-  TITLE:=Default Conntrack and NAT helpers
+  TITLE:=Basic Conntrack and NAT helpers
   KCONFIG:=$(KCONFIG_IPT_NATHELPER)
   FILES:=$(foreach mod,$(IPT_NATHELPER-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_NATHELPER-m)))
+  AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_NATHELPER-m)))
+  DEPENDS:= kmod-ipt-core +kmod-ipt-nat
 endef
 
 define KernelPackage/ipt-nathelper/description
  Default Netfilter (IPv4) Conntrack and NAT helpers
  Includes:
- - ip_conntrack_ftp
- - ip_nat_ftp
- - ip_conntrack_irc
- - ip_nat_irc
- - ip_conntrack_tftp
+ - conntrack_ftp
+ - nat_ftp
+ - conntrack_irc
+ - nat_irc
+ - conntrack_tftp
+ - nat_tftp
 endef
 
 $(eval $(call KernelPackage,ipt-nathelper))
@@ -134,7 +202,8 @@ define KernelPackage/ipt-nathelper-extra
   TITLE:=Extra Conntrack and NAT helpers
   KCONFIG:=$(KCONFIG_IPT_NATHELPER_EXTRA)
   FILES:=$(foreach mod,$(IPT_NATHELPER_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_NATHELPER_EXTRA-m)))
+  AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_NATHELPER_EXTRA-m)))
+  DEPENDS:= kmod-ipt-core +kmod-ipt-nat
 endef
 
 define KernelPackage/ipt-nathelper-extra/description
@@ -164,10 +233,11 @@ define KernelPackage/ipt-imq
   FILES:= \
 	$(LINUX_DIR)/drivers/net/imq.$(LINUX_KMOD_SUFFIX) \
 	$(foreach mod,$(IPT_IMQ-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir \
+  AUTOLOAD:=$(call AutoLoad,45,$(notdir \
 	$(LINUX_DIR)/drivers/net/imq.$(LINUX_KMOD_SUFFIX) \
 	$(IPT_IMQ-m) \
   ))
+  DEPENDS:= kmod-ipt-core
 endef
 
 define KernelPackage/ipt-imq/description
@@ -182,13 +252,14 @@ define KernelPackage/ipt-queue
   TITLE:=Module for user-space packet queueing
   KCONFIG:=$(KCONFIG_IPT_QUEUE)
   FILES:=$(foreach mod,$(IPT_QUEUE-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_QUEUE-m)))
+  AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_QUEUE-m)))
+  DEPENDS:= kmod-ipt-core
 endef
 
 define KernelPackage/ipt-queue/description
  Netfilter (IPv4) module for user-space packet queueing
  Includes:
- - ipt_QUEUE
+ - QUEUE
 endef
 
 $(eval $(call KernelPackage,ipt-queue))
@@ -199,7 +270,8 @@ define KernelPackage/ipt-ulog
   TITLE:=Module for user-space packet logging
   KCONFIG:=$(KCONFIG_IPT_ULOG)
   FILES:=$(foreach mod,$(IPT_ULOG-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_ULOG-m)))
+  AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_ULOG-m)))
+  DEPENDS:= kmod-ipt-core
 endef
 
 define KernelPackage/ipt-ulog/description
@@ -215,7 +287,8 @@ define KernelPackage/ipt-iprange
   SUBMENU:=$(NF_MENU)
   TITLE:=Module for matching ip ranges
   FILES:=$(foreach mod,$(IPT_IPRANGE-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_IPRANGE-m)))
+  AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_IPRANGE-m)))
+  DEPENDS:= kmod-ipt-core
 endef
 
 define KernelPackage/ipt-iprange/description
@@ -232,7 +305,8 @@ define KernelPackage/ipt-ipset
   TITLE:=IPSET Modules
   KCONFIG:=$(KCONFIG_IPT_IPSET)
   FILES:=$(foreach mod,$(IPT_IPSET-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_IPSET-m)))
+  AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_IPSET-m)))
+  DEPENDS:= kmod-ipt-core
 endef
 
 define KernelPackage/ipt-ipset/description
@@ -259,13 +333,13 @@ define KernelPackage/ipt-extra
   TITLE:=Extra modules
   KCONFIG:=$(KCONFIG_IPT_EXTRA)
   FILES:=$(foreach mod,$(IPT_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_EXTRA-m)))
+  AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_EXTRA-m)))
+  DEPENDS:= kmod-ipt-core
 endef
 
 define KernelPackage/ipt-extra/description
  Other Netfilter (IPv4) kernel modules
  Includes:
- - ipt_limit
  - ipt_owner
  - ipt_physdev
  - ipt_pkttype

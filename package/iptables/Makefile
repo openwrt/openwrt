@@ -56,15 +56,38 @@ define Package/iptables
 $(call Package/iptables/Default)
   TITLE:=IPv4 firewall administration tool
   MENU:=1
+  DEPENDS+= +kmod-ipt-core
+endef
+
+define Package/iptables/description
+ IPv4 firewall administration tool.
+ Includes support for:
+ - limit
+ - LOG
+ - mac
+ - multiport
+ - REJECT
+ - TCPMSS
 endef
 
 define Package/iptables-mod-conntrack
 $(call Package/iptables/Module, +kmod-ipt-conntrack)
-  TITLE:=connection tracking modules
+  TITLE:=Basic connection tracking extensions
 endef
 
 define Package/iptables-mod-conntrack/description
- iptables extensions for connection tracking.
+ Basic iptables extensions for connection tracking.
+ Includes:
+ - state
+endef
+
+define Package/iptables-mod-conntrack-extra
+$(call Package/iptables/Module, +kmod-ipt-conntrack-extra)
+  TITLE:=Extra connection tracking extensions
+endef
+
+define Package/iptables-mod-conntrack-extra/description
+ Extra iptables extensions for connection tracking.
  Includes:
  - libipt_conntrack
  - libipt_helper
@@ -73,7 +96,7 @@ endef
 
 define Package/iptables-mod-filter
 $(call Package/iptables/Module, +kmod-ipt-filter)
-  TITLE:=filter modules
+  TITLE:=Content inspection extensions
 endef
 
 define Package/iptables-mod-filter/description
@@ -96,11 +119,11 @@ endef
 
 define Package/iptables-mod-ipopt
 $(call Package/iptables/Module, +kmod-ipt-ipopt)
-  TITLE:=IP/Packet option modules
+  TITLE:=IP/Packet option extensions
 endef
 
 define Package/iptables-mod-ipopt/description
- iptables extensions for matching/changing IP packet options.\\\
+ iptables extensions for matching/changing IP packet options.
  Includes:
  - libipt_CLASSIFY
  - libipt_dscp/DSCP
@@ -117,7 +140,7 @@ endef
 
 define Package/iptables-mod-ipsec
 $(call Package/iptables/Module, +kmod-ipt-ipsec)
-  TITLE:=IPSec extensions
+  TITLE:=IPsec extensions
 endef
 
 define Package/iptables-mod-ipsec/description
@@ -130,13 +153,26 @@ endef
 
 define Package/iptables-mod-nat
 $(call Package/iptables/Module, +kmod-ipt-nat)
-  TITLE:=extra NAT targets
+  TITLE:=Basic NAT extensions
 endef
 
 define Package/iptables-mod-nat/description
- iptables extensions for different NAT targets.
+ iptables extensions for basic NAT targets.
  Includes:
- - libipt_REDIRECT
+ - MASQUERADE
+ - SNAT
+ - DNAT
+endef
+
+define Package/iptables-mod-nat-extra
+$(call Package/iptables/Module, +kmod-ipt-nat-extra)
+  TITLE:=Extra NAT extensions
+endef
+
+define Package/iptables-mod-nat-extra/description
+ iptables extensions for extra NAT targets.
+ Includes:
+ - REDIRECT
 endef
 
 define Package/iptables-mod-ulog
@@ -152,7 +188,7 @@ endef
 
 define Package/iptables-mod-iprange
 $(call Package/iptables/Module, +kmod-ipt-iprange)
-  TITLE:=ip range module
+  TITLE:=IP range extension
 endef
 
 define Package/iptables-mod-iprange/description
@@ -163,13 +199,12 @@ endef
 
 define Package/iptables-mod-extra
 $(call Package/iptables/Module, +kmod-ipt-extra)
-  TITLE:=other extra iptables extensions
+  TITLE:=Other extra iptables extensions
 endef
 
 define Package/iptables-mod-extra/description
  other extra iptables extensions.
  Includes:
- - libipt_limit
  - libipt_owner
  - libipt_physdev
  - libipt_pkttype
@@ -183,7 +218,7 @@ endef
 
 define Package/iptables-mod-ipset
 $(call Package/iptables/Module, +kmod-ipt-ipset)
-  TITLE:=ipset iptables extension
+  TITLE:=IPset extension
 endef
 
 define Package/iptables-utils
@@ -296,6 +331,7 @@ L7_INSTALL:=\
 $(eval $(call BuildPackage,iptables))
 $(eval $(call BuildPackage,iptables-utils))
 $(eval $(call BuildPlugin,iptables-mod-conntrack,$(IPT_CONNTRACK-m)))
+$(eval $(call BuildPlugin,iptables-mod-conntrack-extra,$(IPT_CONNTRACK_EXTRA-m)))
 $(eval $(call BuildPlugin,iptables-mod-extra,$(IPT_EXTRA-m)))
 $(eval $(call BuildPlugin,iptables-mod-ipset,$(IPT_IPSET-m)))
 $(eval $(call BuildPlugin,iptables-mod-filter,$(IPT_FILTER-m),$(L7_INSTALL)))
@@ -303,6 +339,7 @@ $(eval $(call BuildPlugin,iptables-mod-imq,$(IPT_IMQ-m)))
 $(eval $(call BuildPlugin,iptables-mod-ipopt,$(IPT_IPOPT-m)))
 $(eval $(call BuildPlugin,iptables-mod-ipsec,$(IPT_IPSEC-m)))
 $(eval $(call BuildPlugin,iptables-mod-nat,$(IPT_NAT-m)))
+$(eval $(call BuildPlugin,iptables-mod-nat-extra,$(IPT_NAT_EXTRA-m)))
 $(eval $(call BuildPlugin,iptables-mod-iprange,$(IPT_IPRANGE-m)))
 $(eval $(call BuildPlugin,iptables-mod-ulog,$(IPT_ULOG-m)))
 $(eval $(call BuildPackage,ip6tables))
