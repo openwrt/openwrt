@@ -1,0 +1,136 @@
+--- a/editors/vi.c
++++ b/editors/vi.c
+@@ -147,10 +147,10 @@
+ #endif
+ 
+ 	smallint editing;        // >0 while we are editing a file
+-	                         // [code audit says "can be 0 or 1 only"]
++	                         // [code audit says "can be 0, 1 or 2 only"]
+ 	smallint cmd_mode;       // 0=command  1=insert 2=replace
+ 	int file_modified;       // buffer contents changed (counter, not flag!)
+-	int last_file_modified; // = -1;
++	int last_file_modified;  // = -1;
+ 	int fn_start;            // index of first cmd line file name
+ 	int save_argc;           // how many file names on cmd line
+ 	int cmdcnt;              // repetition count
+@@ -623,7 +623,7 @@
+ 		// These are commands that change text[].
+ 		// Remember the input for the "." command
+ 		if (!adding2q && ioq_start == NULL
+-		 && strchr(modifying_cmds, c)
++		 && c != '\0' && strchr(modifying_cmds, c)
+ 		) {
+ 			start_new_cmd_q(c);
+ 		}
+@@ -645,8 +645,8 @@
+ 	}
+ 	//-------------------------------------------------------------------
+ 
+-	place_cursor(rows, 0, FALSE);	// go to bottom of screen
+-	clear_to_eol();		// Erase to end of line
++	place_cursor(rows - 1, 0, FALSE); // go to bottom of screen
++	clear_to_eol(); // erase to end of line
+ 	cookmode();
+ #undef cur_line
+ }
+@@ -2009,9 +2009,9 @@
+ {
+ 	// get buffer for new cmd
+ 	// if there is a current cmd count put it in the buffer first
+-	if (cmdcnt > 0)
++	if (cmdcnt > 0) {
+ 		lmc_len = sprintf(last_modifying_cmd, "%d%c", cmdcnt, c);
+-	else { // just save char c onto queue
++	} else { // just save char c onto queue
+ 		last_modifying_cmd[0] = c;
+ 		lmc_len = 1;
+ 	}
+@@ -2247,18 +2247,20 @@
+ 
+ 	fflush(stdout);
+ 	n = chars_to_parse;
+-	// get input from User- are there already input chars in Q?
++	// get input from User - are there already input chars in Q?
+ 	if (n <= 0) {
+ 		// the Q is empty, wait for a typed char
++ again:
+ 		n = safe_read(STDIN_FILENO, readbuffer, sizeof(readbuffer));
+-		if (n < 0) {
+-			if (errno == EBADF || errno == EFAULT || errno == EINVAL
+-			 || errno == EIO)
+-				editing = 0; // want to exit
+-			errno = 0;
+-		}
+-		if (n <= 0)
+-			return 0;       // error
++		if (n <= 0) {
++			place_cursor(rows - 1, 0, FALSE); // go to bottom of screen
++			clear_to_eol(); // erase to end of line
++			cookmode(); // terminal to "cooked"
++			bb_error_msg_and_die("can't read user input");
++		}
++		/* elsewhere we can get very confused by NULs */
++		if (readbuffer[0] == '\0')
++			goto again;
+ 		if (readbuffer[0] == 27) {
+ 			// This is an ESC char. Is this Esc sequence?
+ 			// Could be bare Esc key. See if there are any
+--- a/miscutils/crontab.c
++++ b/miscutils/crontab.c
+@@ -93,6 +93,7 @@
+ 	char *new_fname;
+ 	char *user_name;  /* -u USER */
+ 	int fd;
++	int src_fd;
+ 	int opt_ler;
+ 
+ 	/* file [opts]     Replace crontab from file
+@@ -144,15 +145,15 @@
+ 		bb_show_usage();
+ 
+ 	/* Read replacement file under user's UID/GID/group vector */
++	src_fd = STDIN_FILENO;
+ 	if (!opt_ler) { /* Replace? */
+ 		if (!argv[0])
+ 			bb_show_usage();
+ 		if (NOT_LONE_DASH(argv[0])) {
+-			fd = open_as_user(pas, argv[0]);
+-			if (fd < 0)
++			src_fd = open_as_user(pas, argv[0]);
++			if (src_fd < 0)
+ 				bb_error_msg_and_die("user %s cannot read %s",
+ 						pas->pw_name, argv[0]);
+-			xmove_fd(fd, STDIN_FILENO);
+ 		}
+ 	}
+ 
+@@ -180,23 +181,23 @@
+ 		tmp_fname = xasprintf("%s.%u", crontab_dir, (unsigned)getpid());
+ 		/* No O_EXCL: we don't want to be stuck if earlier crontabs
+ 		 * were killed, leaving stale temp file behind */
+-		fd = xopen3(tmp_fname, O_RDWR|O_CREAT|O_TRUNC, 0600);
+-		xmove_fd(fd, STDIN_FILENO);
+-		fchown(STDIN_FILENO, pas->pw_uid, pas->pw_gid);
++		src_fd = xopen3(tmp_fname, O_RDWR|O_CREAT|O_TRUNC, 0600);
++		fchown(src_fd, pas->pw_uid, pas->pw_gid);
+ 		fd = open(pas->pw_name, O_RDONLY);
+ 		if (fd >= 0) {
+-			bb_copyfd_eof(fd, STDIN_FILENO);
++			bb_copyfd_eof(fd, src_fd);
+ 			close(fd);
++			xlseek(src_fd, 0, SEEK_SET);
+ 		}
++		close_on_exec_on(src_fd); /* don't want editor to see this fd */
+ 		edit_file(pas, tmp_fname);
+-		xlseek(STDIN_FILENO, 0, SEEK_SET);
+ 		/* fall through */
+ 
+ 	case 0: /* Replace (no -l, -e, or -r were given) */
+ 		new_fname = xasprintf("%s.new", pas->pw_name);
+ 		fd = open(new_fname, O_WRONLY|O_CREAT|O_TRUNC|O_APPEND, 0600);
+ 		if (fd >= 0) {
+-			bb_copyfd_eof(STDIN_FILENO, fd);
++			bb_copyfd_eof(src_fd, fd);
+ 			close(fd);
+ 			xrename(new_fname, pas->pw_name);
+ 		} else {

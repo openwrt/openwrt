@@ -186,7 +186,7 @@
  
  /*======================================================================*/
  
-@@ -835,27 +909,18 @@
+@@ -835,32 +909,20 @@
  static enum obj_reloc
  arch_apply_relocation(struct obj_file *f,
  				struct obj_section *targsec,
@@ -196,7 +196,8 @@
  				ElfW(RelM) *rel, ElfW(Addr) v)
  {
 -#if defined(__arm__) || defined(__i386__) || defined(__mc68000__) \
-- || defined(__sh__) || defined(__s390__) || defined(__x86_64__)
+- || defined(__sh__) || defined(__s390__) || defined(__x86_64__) \
+- || defined(__powerpc__) || defined(__mips__)
  	struct arch_file *ifile = (struct arch_file *) f;
 -#endif
  	enum obj_reloc ret = obj_reloc_ok;
@@ -212,11 +213,14 @@
  #endif
 -#if defined(__arm__) || defined(__i386__) || defined(__mc68000__) \
 - || defined(__sh__) || defined(__s390__)
-+#if defined(__arm__) || defined(__i386__) || defined(__mc68000__) || defined(__sh__) || defined(__s390__)
  #if defined(USE_GOT_ENTRIES)
  	ElfW(Addr) got = ifile->got ? ifile->got->header.sh_addr : 0;
  #endif
-@@ -953,7 +1018,6 @@
+-#endif
+ #if defined(USE_PLT_ENTRIES)
+ 	ElfW(Addr) plt = ifile->plt ? ifile->plt->header.sh_addr : 0;
+ 	unsigned long *ip;
+@@ -954,7 +1016,6 @@
  
  		case R_386_PLT32:
  		case R_386_PC32:
@@ -224,7 +228,7 @@
  			*loc += v - dot;
  			break;
  
-@@ -972,6 +1036,9 @@
+@@ -973,6 +1034,9 @@
  
  		case R_386_GOT32:
  			goto bb_use_got;
@@ -234,7 +238,7 @@
  			break;
  
  #elif defined(__microblaze__)
-@@ -1758,7 +1825,7 @@
+@@ -1759,7 +1823,7 @@
  
  #if defined(USE_SINGLE)
  
@@ -243,7 +247,7 @@
  			     int offset, int size)
  {
  	if (single->allocated == 0) {
-@@ -1906,7 +1973,7 @@
+@@ -1907,7 +1971,7 @@
  #if defined(USE_GOT_ENTRIES)
  			if (got_allocate) {
  				got_offset += arch_single_init(
@@ -252,7 +256,7 @@
  						got_offset, GOT_ENTRY_SIZE);
  
  				got_needed = 1;
-@@ -1920,7 +1987,7 @@
+@@ -1921,7 +1985,7 @@
  						plt_offset, PLT_ENTRY_SIZE);
  #else
  				plt_offset += arch_single_init(
@@ -261,7 +265,7 @@
  						plt_offset, PLT_ENTRY_SIZE);
  #endif
  				plt_needed = 1;
-@@ -1958,8 +2025,7 @@
+@@ -1959,8 +2023,7 @@
  	while (n > 0) {
  		ch = *name++;
  		h = (h << 4) + ch;
@@ -271,7 +275,7 @@
  			h ^= g >> 24;
  			h &= ~g;
  		}
-@@ -2038,7 +2104,7 @@
+@@ -2039,7 +2102,7 @@
  	int n_type = ELF_ST_TYPE(info);
  	int n_binding = ELF_ST_BIND(info);
  
@@ -280,7 +284,7 @@
  		if (f->symbol_cmp(sym->name, name) == 0) {
  			int o_secidx = sym->secidx;
  			int o_info = sym->info;
-@@ -2097,14 +2163,14 @@
+@@ -2098,14 +2161,14 @@
  				return sym;
  			}
  		}
@@ -297,7 +301,7 @@
  		if (symidx >= f->local_symtab_size)
  			bb_error_msg("local symbol %s with index %ld exceeds local_symtab_size %ld",
  					name, (long) symidx, (long) f->local_symtab_size);
-@@ -3227,7 +3293,7 @@
+@@ -3228,7 +3291,7 @@
  
  			/* Do it! */
  			switch (arch_apply_relocation
@@ -306,7 +310,7 @@
  			) {
  			case obj_reloc_ok:
  				break;
-@@ -3306,11 +3372,11 @@
+@@ -3307,11 +3370,11 @@
  
  /*======================================================================*/
  
@@ -320,7 +324,7 @@
  	char *shstrtab;
  
  	/* Read the file header.  */
-@@ -3582,7 +3648,7 @@
+@@ -3583,7 +3646,7 @@
  		while (ptr < endptr) {
  			value = strchr(ptr, '=');
  			if (value && strncmp(ptr, "license", value-ptr) == 0) {
@@ -329,7 +333,7 @@
  				if (license)
  					*license = value+1;
  				for (i = 0; i < ARRAY_SIZE(gpl_licenses); ++i) {
-@@ -3686,9 +3752,6 @@
+@@ -3687,9 +3750,6 @@
   * start of some sections.  this info is used by ksymoops to do better
   * debugging.
   */
@@ -339,7 +343,7 @@
  static int
  get_module_version(struct obj_file *f, char str[STRVERSIONLEN])
  {
-@@ -3721,8 +3784,7 @@
+@@ -3722,8 +3782,7 @@
  	struct obj_symbol *sym;
  	char *name, *absolute_filename;
  	char str[STRVERSIONLEN];
@@ -349,7 +353,7 @@
  	struct stat statbuf;
  
  	/* WARNING: was using realpath, but replaced by readlink to stop using
-@@ -3909,145 +3971,57 @@
+@@ -3910,145 +3969,57 @@
  void print_load_map(struct obj_file *f);
  #endif
  
@@ -404,7 +408,7 @@
 +	if (arg1 == NULL)
  		bb_show_usage();
 -	}
--
+ 
 -	/* Grab the module name */
 -	tmp1 = xstrdup(arg1);
 -	tmp = basename(tmp1);
@@ -428,7 +432,7 @@
 -			len -= 2;
 -			tmp[len] = '\0';
 -		}
- 
+-
 -
 -#if ENABLE_FEATURE_2_6_MODULES
 -	if (k_version > 4)
@@ -517,7 +521,7 @@
  
  	f = obj_load(fp, LOADBITS);
  
-@@ -4074,7 +4048,7 @@
+@@ -4075,7 +4046,7 @@
  				"\t%s was compiled for kernel version %s\n"
  				"\twhile this kernel is version %s",
  				flag_force_load ? "warning: " : "",
@@ -526,7 +530,7 @@
  			if (!flag_force_load)
  				goto out;
  		}
-@@ -4116,7 +4090,7 @@
+@@ -4117,7 +4088,7 @@
  	hide_special_symbols(f);
  
  #if ENABLE_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
@@ -535,7 +539,7 @@
  #endif /* FEATURE_INSMOD_KSYMOOPS_SYMBOLS */
  
  	new_create_module_ksymtab(f);
-@@ -4125,7 +4099,7 @@
+@@ -4126,7 +4097,7 @@
  	m_size = obj_load_size(f);
  
  	m_addr = create_module(m_name, m_size);
@@ -544,7 +548,7 @@
  		case EEXIST:
  			bb_error_msg_and_die("a module named %s already exists", m_name);
  		case ENOMEM:
-@@ -4141,36 +4115,37 @@
+@@ -4142,36 +4113,37 @@
  	 * now we can load them directly into the kernel memory
  	 */
  	if (!obj_load_progbits(fp, f, (char*)m_addr)) {
@@ -590,7 +594,7 @@
  }
  
  #endif /* ENABLE_FEATURE_2_4_MODULES */
-@@ -4182,15 +4157,8 @@
+@@ -4183,15 +4155,8 @@
  #if ENABLE_FEATURE_2_6_MODULES
  
  #include <sys/mman.h>
@@ -606,7 +610,7 @@
  
  /* We use error numbers in a loose translation... */
  static const char *moderror(int err)
-@@ -4209,22 +4177,32 @@
+@@ -4210,22 +4175,32 @@
  	}
  }
  
@@ -647,7 +651,7 @@
  	/* Rest is options */
  	options = xzalloc(1);
  	optlen = 0;
-@@ -4234,41 +4212,47 @@
+@@ -4235,41 +4210,47 @@
  		optlen += sprintf(options + optlen, (strchr(*argv,' ') ? "\"%s\" " : "%s "), *argv);
  	}
  
