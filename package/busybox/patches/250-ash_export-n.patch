@@ -1,6 +1,6 @@
 --- a/shell/ash.c
 +++ b/shell/ash.c
-@@ -11875,8 +11875,17 @@
+@@ -11909,8 +11909,17 @@
  	const char *p;
  	char **aptr;
  	int flag = argv[0][0] == 'r'? VREADONLY : VEXPORT;
@@ -19,7 +19,7 @@
  		aptr = argptr;
  		name = *aptr;
  		if (name) {
-@@ -11888,10 +11897,12 @@
+@@ -11922,10 +11931,12 @@
  					vp = *findvar(hashvar(name), name);
  					if (vp) {
  						vp->flags |= flag;
