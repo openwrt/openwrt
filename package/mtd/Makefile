@@ -35,7 +35,7 @@ endef
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) -Dtarget_$(BOARD)=1"
+		CFLAGS="$(TARGET_CFLAGS) -Dtarget_$(firstword $(subst -, ,$(BOARD)))=1"
 endef
 
 define Package/mtd/install
