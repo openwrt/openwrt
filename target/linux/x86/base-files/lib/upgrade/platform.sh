@@ -1,3 +1,5 @@
+USE_REFRESH=1
+
 platform_check_image() {
 	[ "$ARGC" -gt 1 ] && return 1
 

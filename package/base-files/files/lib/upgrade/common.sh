@@ -130,11 +130,24 @@ jffs2_copy_config() {
 	fi
 }
 
+default_do_upgrade() {
+	if [ "$SAVE_CONFIG" -eq 1 -a -z "$USE_REFRESH" ]; then
+		get_image "$1" | mtd -j "$CONF_TAR" write - "${PART_NAME:-image}"
+	else
+		get_image "$1" | mtd write - "${PART_NAME:-image}"
+	fi
+	sync
+}
+
 do_upgrade() {
 	v "Performing system upgrade..."
-	platform_do_upgrade "$ARGV"
+	if type 'platform_do_upgrade' >/dev/null 2>/dev/null; then
+		platform_do_upgrade "$ARGV"
+	else
+		default_do_upgrade "$ARGV"
+	fi
 	
-	[ "$SAVE_CONFIG" -eq 1 ] && {
+	[ "$SAVE_CONFIG" -eq 1 -a -n "$USE_REFRESH" ] && {
 		v "Refreshing partitions"
 		if type 'platform_refresh_partitions' >/dev/null 2>/dev/null; then
 			platform_refresh_partitions
