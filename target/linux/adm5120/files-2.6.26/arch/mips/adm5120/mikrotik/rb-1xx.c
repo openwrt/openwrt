@@ -141,6 +141,9 @@ void __init rb1xx_generic_setup(void)
 		adm5120_pci_set_irq_map(ARRAY_SIZE(rb1xx_pci_irqs),
 					rb1xx_pci_irqs);
 
+	adm5120_add_device_uart(0);
+	adm5120_add_device_uart(1);
+
 	adm5120_add_device_gpio_buttons(ARRAY_SIZE(rb1xx_gpio_buttons),
 					rb1xx_gpio_buttons);
 
