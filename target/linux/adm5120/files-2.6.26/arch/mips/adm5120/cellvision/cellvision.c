@@ -127,6 +127,8 @@ void __init cas7xx_flash_setup(void)
 void __init cas6xx_setup(void)
 {
 	cas6xx_flash_setup();
+	adm5120_add_device_uart(0);
+	adm5120_add_device_uart(1);
 	adm5120_add_device_switch(1, NULL);
 }
 
@@ -137,8 +139,9 @@ ADM5120_BOARD(MACH_ADM5120_CAS670, "Cellvision CAS-670/670W", cas6xx_setup);
 void __init cas7xx_setup(void)
 {
 	cas7xx_flash_setup();
-
 	cellvision_mac_setup();
+	adm5120_add_device_uart(0);
+	adm5120_add_device_uart(1);
 	adm5120_add_device_switch(1, NULL);
 }
 

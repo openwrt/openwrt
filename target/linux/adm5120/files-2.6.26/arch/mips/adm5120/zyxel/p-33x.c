@@ -77,6 +77,9 @@ void __init p33x_generic_setup(void)
 #endif /* CONFIG_MTD_PARTITIONS */
 	adm5120_add_device_flash(0);
 
+	adm5120_add_device_uart(0);
+	adm5120_add_device_uart(1);
+
 	adm5120_add_device_gpio(P33X_GPIO_DEV_MASK);
 
 	adm5120_setup_eth_macs(bootbase_info.mac);

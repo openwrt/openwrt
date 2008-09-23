@@ -66,9 +66,6 @@ static int __init adm5120_board_setup(void)
 
 	adm5120_gpio_init();
 
-	adm5120_add_device_uart(0);
-	adm5120_add_device_uart(1);
-
 	if (board->board_setup)
 		board->board_setup();
 
@@ -83,6 +80,9 @@ void __init adm5120_board_register(struct adm5120_board *board)
 
 static void __init adm5120_generic_board_setup(void)
 {
+	adm5120_add_device_uart(0);
+	adm5120_add_device_uart(1);
+
 	adm5120_add_device_flash(0);
 	adm5120_add_device_switch(6, NULL);
 }

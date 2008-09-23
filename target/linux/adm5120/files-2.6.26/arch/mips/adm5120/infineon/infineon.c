@@ -73,6 +73,9 @@ void __init easy_setup_pqfp(void)
 	adm5120_flash0_data.parts = easy_partitions;
 #endif /* CONFIG_MTD_PARTITIONS */
 
+	adm5120_add_device_uart(0);
+	adm5120_add_device_uart(1);
+
 	adm5120_add_device_flash(0);
 
 	easy_setup_mac();
@@ -101,6 +104,9 @@ void __init easy_setup_bga(void)
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(easy_partitions);
 	adm5120_flash0_data.parts = easy_partitions;
 #endif /* CONFIG_MTD_PARTITIONS */
+
+	adm5120_add_device_uart(0);
+	adm5120_add_device_uart(1);
 
 	adm5120_add_device_flash(0);
 

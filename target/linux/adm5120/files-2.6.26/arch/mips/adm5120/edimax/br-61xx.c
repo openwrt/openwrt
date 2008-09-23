@@ -76,6 +76,9 @@ void __init br61xx_generic_setup(void)
 
 	adm5120_add_device_gpio(BR61XX_GPIO_DEV_MASK);
 
+	adm5120_add_device_uart(0);
+	adm5120_add_device_uart(1);
+
 	adm5120_add_device_switch(5, br61xx_vlans);
 	adm5120_add_device_gpio_buttons(ARRAY_SIZE(br61xx_gpio_buttons),
 					br61xx_gpio_buttons);

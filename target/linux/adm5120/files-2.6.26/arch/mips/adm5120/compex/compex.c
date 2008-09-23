@@ -55,6 +55,9 @@ void __init compex_generic_setup(void)
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
 	adm5120_add_device_flash(0);
 
+	adm5120_add_device_uart(0);
+	adm5120_add_device_uart(1);
+
 	adm5120_add_device_gpio(COMPEX_GPIO_DEV_MASK);
 
 	compex_mac_setup();

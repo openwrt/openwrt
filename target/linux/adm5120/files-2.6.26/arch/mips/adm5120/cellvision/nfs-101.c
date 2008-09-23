@@ -18,8 +18,10 @@ static u8 nfs101_vlans[6] __initdata = { /* TODO: not tested */
 static void __init nfs101_setup(void)
 {
 	cas6xx_flash_setup();
-
 	cellvision_mac_setup();
+
+	adm5120_add_device_uart(0);
+	adm5120_add_device_uart(1);
 	adm5120_add_device_switch(5, nfs101_vlans);
 }
 
