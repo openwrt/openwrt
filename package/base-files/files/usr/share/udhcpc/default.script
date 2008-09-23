@@ -56,7 +56,11 @@ case "$1" in
 			mv "${RESOLV_CONF}.tmp" "$RESOLV_CONF"
 		}
 		
-		hotplug_event ifup
+		if [ "$1" = "renew" ]; then
+			hotplug_event update
+		else
+			hotplug_event ifup
+		fi
 		
 		# user rules
 		[ -f /etc/udhcpc.user ] && . /etc/udhcpc.user
