@@ -4,7 +4,8 @@
  * LZMA compressed kernel decompressor for ADM5120 boards
  *
  * Copyright (C) 2005 by Oleg I. Vdovikin <oleg@cs.msu.su>
- * Copyright (C) 2007 OpenWrt.org
+ * Copyright (C) 2007-2008 OpenWrt.org
+ * Copyright (C) 2007-2008 Gabor Juhos <juhosg@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -293,7 +294,7 @@ void decompress_entry(unsigned long reg_a0, unsigned long reg_a1,
 	board_init();
 
 	printf("\n\nLZMA loader for " CONFIG_BOARD_NAME
-			", Copyright (C) 2007 OpenWrt.org\n\n");
+			", Copyright (C) 2007-2008 OpenWrt.org\n\n");
 
 	decompress_init();
 

@@ -1,8 +1,8 @@
 /*
  * ADM5120 specific board support for LZMA decompressor
  *
- * Copyright (C) 2007 OpenWrt.org
- * Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ * Copyright (C) 2007-2008 OpenWrt.org
+ * Copyright (C) 2007-2008 Gabor Juhos <juhosg@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "config.h"
 #include <stddef.h>
 
 #define READREG(r)	*(volatile unsigned int *)(r)
@@ -35,7 +36,8 @@
 /*
  * UART definitions
  */
-#define UART_BASE	0xB2600000
+#define UART0_BASE	0xB2600000
+#define UART1_BASE	0xB2800000
 /* UART registers */
 #define UART_REG_DATA	0x00	/* Data register */
 #define UART_REG_ECR	0x04	/* Error Clear register */
@@ -91,8 +93,13 @@
  * UART routines
  */
 
-#define UART_READ(r)	READREG(UART_BASE+(r))
-#define UART_WRITE(r,v)	WRITEREG(UART_BASE+(r),(v))
+#if defined(CONFIG_USE_UART0)
+#  define UART_READ(r)		READREG(UART0_BASE+(r))
+#  define UART_WRITE(r,v)	WRITEREG(UART0_BASE+(r),(v))
+#else
+#  define UART_READ(r)		READREG(UART1_BASE+(r))
+#  define UART_WRITE(r,v)	WRITEREG(UART1_BASE+(r),(v))
+#endif
 
 static void uart_init(void)
 {

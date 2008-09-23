@@ -123,6 +123,13 @@ config ADM5120_MACH_RB_192
 	select ADM5120_OEM_MIKROTIK
 	default y
 
+config ADM5120_MACH_PMUGW
+	bool "Motorola Powerline MU Gateway"
+	depends on CPU_LITTLE_ENDIAN
+	select ADM5120_SOC_BGA
+	select ADM5120_OEM_MOTOROLA
+	default y
+
 config ADM5120_MACH_P_334WT
 	bool "ZyXEL Prestige 334WT"
 	depends on CPU_BIG_ENDIAN
@@ -156,6 +163,9 @@ config ADM5120_OEM_INFINEON
 	def_bool n
 
 config ADM5120_OEM_MIKROTIK
+	def_bool n
+
+config ADM5120_OEM_MOTOROLA
 	def_bool n
 
 config ADM5120_OEM_ZYXEL

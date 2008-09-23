@@ -98,6 +98,14 @@
 #endif
 
 /*
+ * Motorola boards
+ */
+#if defined(CONFIG_BOARD_POWERLINEMUGW)
+#  define CONFIG_BOARD_NAME	"Powerline MU Gateway"
+#  define CONFIG_USE_UART1	1
+#endif
+
+/*
  * ZyXEL boards
  */
 #if defined(CONFIG_BOARD_P334WT)
@@ -119,6 +127,10 @@
 
 #ifndef CONFIG_FLASH_SIZE
 #  define CONFIG_FLASH_SIZE	FLASH_2M
+#endif
+
+#if !defined(CONFIG_USE_UART0) && !defined(CONFIG_USE_UART1)
+#  define CONFIG_USE_UART0
 #endif
 
 #endif /* _CONFIG_H_ */

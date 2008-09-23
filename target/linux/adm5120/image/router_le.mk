@@ -302,6 +302,10 @@ define Image/Build/Profile/EASY5120PATA
 	$(call Image/Build/Template/Infineon/$(1),easy-5120p-ata)
 endef
 
+define Image/Build/Profile/PMUGW
+	$(call Image/Build/Template/Infineon/$(1),powerline-mugw)
+endef
+
 define Image/Build/Profile/RouterBoard
 	$(call Image/Build/Template/Mikrotik/$(1))
 endef
@@ -321,6 +325,8 @@ ifeq ($(CONFIG_BROKEN),y)
 	$(call Image/Build/Profile/CAS861W,$(1))
 	$(call Image/Build/Profile/NFS101U,$(1))
 	$(call Image/Build/Profile/NFS101WU,$(1))
+	# Motorola
+	$(call Image/Build/Profile/PMUGW,$(1))
   endef
 endif
 
@@ -340,6 +346,7 @@ define Image/Build/Profile/Generic
 	$(call Image/Build/Profile/EASY5120PATA,$(1))
 	# Mikrotik
 	$(call Image/Build/Profile/RB1xx/$(1))
+
 	$(call Image/Build/Experimental,$(1))
 endef
 
