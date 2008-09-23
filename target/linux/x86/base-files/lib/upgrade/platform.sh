@@ -21,7 +21,7 @@ x86_prepare_ext2() {
 	# if we're running from ext2, we need to make sure that we have a mtd 
 	# partition that points to the active rootfs partition.
 	# however this only matters if we actually need to preserve the config files
-	[ "$SAVE_CONFIG" -eq 1 ] && return 0
+	[ "$SAVE_CONFIG" -eq 1 ] || return 0
 	grep rootfs /proc/mtd >/dev/null || {
 		echo /dev/hda2,65536,rootfs > /sys/module/block2mtd/parameters/block2mtd
 	}
