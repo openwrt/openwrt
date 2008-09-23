@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # 
 # SlugImage : Manipulate NSLU2 firmware images
 #             Dwayne Fontenot (jacques)
