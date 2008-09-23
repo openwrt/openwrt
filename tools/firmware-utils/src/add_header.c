@@ -122,7 +122,7 @@ int main(int argc, char **argv)
 	memcpy(buf, &header, sizeof(header));
 
 	// write the buf
-	if ((fd = open(argv[3], O_CREAT|O_WRONLY,0644)) < 0
+	if ((fd = open(argv[3], O_CREAT|O_WRONLY|O_TRUNC,0644)) < 0
 	|| write(fd, buf, buflen) != buflen
 	|| close(fd) < 0)
 	{
