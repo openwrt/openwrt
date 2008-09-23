@@ -16,7 +16,7 @@
  #endif /* _ATH_COMPAT_H_ */
 --- a/net80211/ieee80211_linux.h
 +++ b/net80211/ieee80211_linux.h
-@@ -350,13 +350,6 @@
+@@ -338,13 +338,6 @@
  #define	ACL_LOCK_CHECK(_as)
  #endif
  
@@ -30,7 +30,7 @@
  /*
   * Per-node power-save queue definitions.  Beware of control
   * flow with IEEE80211_NODE_SAVEQ_LOCK/IEEE80211_NODE_SAVEQ_UNLOCK.
-@@ -400,16 +393,16 @@
+@@ -388,16 +381,16 @@
  	_skb = __skb_dequeue(&(_ni)->ni_savedq);		\
  	(_qlen) = skb_queue_len(&(_ni)->ni_savedq);		\
  } while (0)
