@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # 
 # Copyright (C) 2006 OpenWrt.org
 #
