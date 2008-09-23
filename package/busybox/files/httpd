@@ -12,7 +12,7 @@ system_config() {
 
 httpd_config() {
 	local cfg="$1"
-	local c_file port realm home
+	local c_file port realm home args
 
 	config_get c_file "$cfg" c_file
 	[ -n "$c_file" -a -f "$c_file" ] && append args "-c \"$c_file\""
