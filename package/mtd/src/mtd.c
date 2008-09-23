@@ -46,20 +46,8 @@
 #include "mtd-api.h"
 #include "mtd.h"
 
-#ifdef target_brcm47xx
-#define target_brcm 1
-#endif
-
-#define TRX_MAGIC       0x30524448      /* "HDR0" */
 #define MAX_ARGS 8
-
-#define DEBUG
-
 #define JFFS2_DEFAULT_DIR	"" /* directory name without /, empty means root dir */
-
-#define SYSTYPE_UNKNOWN     0
-#define SYSTYPE_BROADCOM    1
-/* to be continued */
 
 struct trx_header {
 	uint32_t magic;		/* "HDR0" */
@@ -77,7 +65,7 @@ int quiet;
 int mtdsize = 0;
 int erasesize = 0;
 
-int mtd_open(const char *mtd)
+int mtd_open(const char *mtd, bool block)
 {
 	FILE *fp;
 	char dev[PATH_MAX];
@@ -88,9 +76,9 @@ int mtd_open(const char *mtd)
 	if ((fp = fopen("/proc/mtd", "r"))) {
 		while (fgets(dev, sizeof(dev), fp)) {
 			if (sscanf(dev, "mtd%d:", &i) && strstr(dev, mtd)) {
-				snprintf(dev, sizeof(dev), "/dev/mtd/%d", i);
+				snprintf(dev, sizeof(dev), "/dev/mtd%s/%d", (block ? "block" : ""), i);
 				if ((ret=open(dev, flags))<0) {
-					snprintf(dev, sizeof(dev), "/dev/mtd%d", i);
+					snprintf(dev, sizeof(dev), "/dev/mtd%s%d", (block ? "block" : ""), i);
 					ret=open(dev, flags);
 				}
 				fclose(fp);
@@ -108,7 +96,7 @@ int mtd_check_open(const char *mtd)
 	struct mtd_info_user mtdInfo;
 	int fd;
 
-	fd = mtd_open(mtd);
+	fd = mtd_open(mtd, false);
 	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		return 0;
@@ -136,68 +124,22 @@ int mtd_erase_block(int fd, int offset)
 		fprintf(stderr, "Erasing mtd failed.\n");
 		exit(1);
 	}
+	return 0;
 }
 
 int mtd_write_buffer(int fd, const char *buf, int offset, int length)
 {
 	lseek(fd, offset, SEEK_SET);
 	write(fd, buf, length);
+	return 0;
 }
 
-
-#ifdef target_brcm
-static int
-image_check_brcm(int imagefd, const char *mtd)
-{
-	struct trx_header *trx = (struct trx_header *) buf;
-	int fd;
-
-	if (strcmp(mtd, "linux") != 0)
-		return 1;
-	
-	buflen = read(imagefd, buf, 32);
-	if (buflen < 32) {
-		fprintf(stdout, "Could not get image header, file too small (%ld bytes)\n", buflen);
-		return 0;
-	}
-
-	if (trx->magic != TRX_MAGIC || trx->len < sizeof(struct trx_header)) {
-		if (quiet < 2) {
-			fprintf(stderr, "Bad trx header\n");
-			fprintf(stderr, "This is not the correct file format; refusing to flash.\n"
-					"Please specify the correct file or use -f to force.\n");
-		}
-		return 0;
-	}
-
-	/* check if image fits to mtd device */
-	fd = mtd_check_open(mtd);
-	if(fd < 0) {
-		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
-		exit(1);
-	}
-
-	if(mtdsize < trx->len) {
-		fprintf(stderr, "Image too big for partition: %s\n", mtd);
-		close(fd);
-		return 0;
-	}	
-	
-	close(fd);
-	return 1;
-}
-#endif /* target_brcm */
 
 static int
 image_check(int imagefd, const char *mtd)
 {
-	int fd, systype;
-	size_t count;
-	char *c;
-	FILE *f;
-
 #ifdef target_brcm
-	return image_check_brcm(imagefd, mtd);
+	return trx_check(imagefd, mtd, buf, &buflen);
 #endif
 }
 
@@ -303,10 +245,8 @@ mtd_refresh(const char *mtd)
 static int
 mtd_write(int imagefd, const char *mtd)
 {
-	int fd, i, result;
+	int fd, result;
 	size_t r, w, e;
-	struct erase_info_user mtdEraseInfo;
-	int ret = 0;
 
 	fd = mtd_check_open(mtd);
 	if(fd < 0) {
@@ -336,7 +276,7 @@ mtd_write(int imagefd, const char *mtd)
 				if (quiet < 2)
 					fprintf(stderr, "\nAppending jffs2 data to from %s to %s...", jffs2file, mtd);
 				/* got an EOF marker - this is the place to add some jffs2 data */
-				mtd_replace_jffs2(fd, e, jffs2file);
+				mtd_replace_jffs2(mtd, fd, e, jffs2file);
 				goto done;
 			}
 			/* no EOF marker, make sure we figure out the last inode number
@@ -425,15 +365,15 @@ static void do_reboot(void)
 
 int main (int argc, char **argv)
 {
-	int ch, i, boot, unlock, imagefd, force, unlocked;
-	char *erase[MAX_ARGS], *device;
+	int ch, i, boot, imagefd = 0, force, unlocked;
+	char *erase[MAX_ARGS], *device = NULL;
 	enum {
 		CMD_ERASE,
 		CMD_WRITE,
 		CMD_UNLOCK,
 		CMD_REFRESH,
 		CMD_JFFS2WRITE
-	} cmd;
+	} cmd = -1;
 	
 	erase[0] = NULL;
 	boot = 0;

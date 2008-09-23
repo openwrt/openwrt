@@ -140,7 +140,6 @@ static void add_file(const char *name, int parent)
 	struct stat st;
 	char wbuf[4096];
 	const char *fname;
-	FILE *f;
 
 	if (stat(name, &st)) {
 		fprintf(stderr, "File %s does not exist\n", name);
@@ -210,7 +209,7 @@ static void add_file(const char *name, int parent)
 	close(fd);
 }
 
-int mtd_replace_jffs2(int fd, int ofs, const char *filename)
+int mtd_replace_jffs2(const char *mtd, int fd, int ofs, const char *filename)
 {
 	outfd = fd;
 	mtdofs = ofs;
@@ -226,6 +225,11 @@ int mtd_replace_jffs2(int fd, int ofs, const char *filename)
 	add_data(JFFS2_EOF, sizeof(JFFS2_EOF) - 1);
 	pad(erasesize);
 	free(buf);
+
+#ifdef target_brcm
+	trx_fixup(outfd, mtd);
+#endif
+	return 0;
 }
 
 void mtd_parse_jffs2data(const char *buf, const char *dir)
@@ -258,7 +262,6 @@ void mtd_parse_jffs2data(const char *buf, const char *dir)
 int mtd_write_jffs2(const char *mtd, const char *filename, const char *dir)
 {
 	int err = -1, fdeof = 0;
-	off_t offset;
 
 	outfd = mtd_check_open(mtd);
 	if (!outfd)
@@ -325,6 +328,10 @@ int mtd_write_jffs2(const char *mtd, const char *filename, const char *dir)
 	pad(erasesize);
 
 	err = 0;
+
+#ifdef target_brcm
+	trx_fixup(outfd, mtd);
+#endif
 
 done:
 	close(outfd);
