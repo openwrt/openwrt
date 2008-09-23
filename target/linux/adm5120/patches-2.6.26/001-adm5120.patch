@@ -32,7 +32,7 @@
  source "arch/mips/jazz/Kconfig"
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -174,6 +174,20 @@
+@@ -174,6 +174,21 @@
  load-$(CONFIG_MACH_JAZZ)	+= 0xffffffff80080000
  
  #
@@ -45,6 +45,7 @@
 +core-$(CONFIG_ADM5120_OEM_EDIMAX)	+= arch/mips/adm5120/edimax/
 +core-$(CONFIG_ADM5120_OEM_INFINEON)	+= arch/mips/adm5120/infineon/
 +core-$(CONFIG_ADM5120_OEM_MIKROTIK)	+= arch/mips/adm5120/mikrotik/
++core-$(CONFIG_ADM5120_OEM_MOTOROLA)	+= arch/mips/adm5120/motorola/
 +core-$(CONFIG_ADM5120_OEM_ZYXEL)	+= arch/mips/adm5120/zyxel/
 +cflags-$(CONFIG_ADM5120)		+= -Iinclude/asm-mips/mach-adm5120
 +load-$(CONFIG_ADM5120)			+= 0xffffffff80001000
@@ -55,7 +56,7 @@
  core-$(CONFIG_SOC_AU1X00)	+= arch/mips/au1000/common/
 --- a/include/asm-mips/bootinfo.h
 +++ b/include/asm-mips/bootinfo.h
-@@ -94,6 +94,54 @@
+@@ -94,6 +94,55 @@
  #define MACH_MSP7120_FPGA       5	/* PMC-Sierra MSP7120 Emulation */
  #define MACH_MSP_OTHER        255	/* PMC-Sierra unknown board type */
  
@@ -106,6 +107,7 @@
 +#define MACH_ADM5120_BR6104K	41	/* Edimax BR-6104K */
 +#define MACH_ADM5120_BR6104KP	42	/* Edimax BR-6104KP */
 +#define MACH_ADM5120_BR61X4WG	43	/* Edimax BR-6104Wg/BR-6114WG */
++#define MACH_ADM5120_PMUGW	44	/* Motorola Powerline MU Gateway */
 +
  #define CL_SIZE			COMMAND_LINE_SIZE
  

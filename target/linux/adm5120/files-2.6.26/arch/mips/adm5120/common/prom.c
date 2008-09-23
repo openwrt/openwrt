@@ -67,6 +67,8 @@ static struct board_desc common_boards[] __initdata = {
 	DEFBOARD("153",		MACH_ADM5120_RB_153),
 	DEFBOARD("192",		MACH_ADM5120_RB_192),
 	DEFBOARD("miniROUTER",	MACH_ADM5120_RB_150),
+	/* Motorola boards */
+	DEFBOARD("Powerline MU Gateway",MACH_ADM5120_PMUGW),
 };
 
 static unsigned long __init find_machtype_byname(char *name)
