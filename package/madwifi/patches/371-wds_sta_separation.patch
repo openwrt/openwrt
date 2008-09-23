@@ -486,25 +486,6 @@
  /* Locking */
  /* NB: beware, spin_is_locked() is not usefully defined for !(DEBUG || SMP)
   * because spinlocks do not exist in this configuration. Instead IRQs 
-@@ -167,6 +196,18 @@
- 	IEEE80211_VAPS_LOCK_ASSERT(_ic);		\
- 	spin_unlock_bh(&(_ic)->ic_vapslock);		\
- } while (0)
-+#define	IEEE80211_VAPS_LOCK_IRQ(_ic) do {					\
-+	unsigned long __vlockflags;					\
-+	IEEE80211_VAPS_LOCK_CHECK(_ic);					\
-+	spin_lock_irqsave(&(_ic)->ic_vapslock, __vlockflags);
-+#define	IEEE80211_VAPS_UNLOCK_IRQ(_ic)					\
-+	IEEE80211_VAPS_LOCK_ASSERT(_ic);					\
-+	spin_unlock_irqrestore(&(_ic)->ic_vapslock, __vlockflags);	\
-+} while (0)
-+#define	IEEE80211_VAPS_UNLOCK_IRQ_EARLY(_ic)					\
-+	IEEE80211_VAPS_LOCK_ASSERT(_ic);					\
-+	spin_unlock_irqrestore(&(_ic)->ic_vapslock, __vlockflags);
-+
- 
- #if (defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)) && defined(spin_is_locked)
- #define IEEE80211_VAPS_LOCK_ASSERT(_ic) \
 --- a/net80211/ieee80211_proto.c
 +++ b/net80211/ieee80211_proto.c
 @@ -1081,6 +1081,8 @@
@@ -550,18 +531,6 @@
  	ieee80211_new_state(vap, IEEE80211_S_INIT, -1);
  	if (dev->flags & IFF_RUNNING) {
  		dev->flags &= ~IFF_RUNNING;		/* mark us stopped */
-@@ -1342,9 +1366,9 @@
- 	struct ieee80211com *ic = vap->iv_ic;
- 	int rc;
- 
--	IEEE80211_VAPS_LOCK_BH(ic);
-+	IEEE80211_VAPS_LOCK_IRQ(ic);
- 	rc = vap->iv_newstate(vap, nstate, arg);
--	IEEE80211_VAPS_UNLOCK_BH(ic);
-+	IEEE80211_VAPS_UNLOCK_IRQ(ic);
- 	return rc;
- }
- 
 @@ -1630,6 +1654,7 @@
  		 */
  		if (ni->ni_authmode != IEEE80211_AUTH_8021X)

@@ -5,21 +5,17 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -8328,6 +8328,18 @@
+@@ -8328,6 +8328,14 @@
  #endif
  				if (ts->ts_status & HAL_TXERR_XRETRY) {
  					sc->sc_stats.ast_tx_xretries++;
-+					if (SKB_CB(bf->bf_skb)->auth_pkt && (ni->ni_vap->iv_opmode == IEEE80211_M_STA)) {
-+						struct ieee80211com *ic = &sc->sc_ic;
++					if (SKB_CB(bf->bf_skb)->auth_pkt &&
++						(ni->ni_vap->iv_opmode == IEEE80211_M_STA)) {
++						struct ieee80211vap *vap = ni->ni_vap;
 +
 +						/* if roaming is enabled, try reassociating, otherwise
 +						 * disassociate and go back to the scan state */
-+						IEEE80211_VAPS_LOCK_BH(ic);
-+						if (ic->ic_roaming == IEEE80211_ROAMING_AUTO)
-+							ni->ni_vap->iv_newstate(ni->ni_vap, IEEE80211_S_ASSOC, 1);
-+						else
-+							ni->ni_vap->iv_newstate(ni->ni_vap, IEEE80211_S_SCAN, 0);
-+						IEEE80211_VAPS_UNLOCK_BH(ic);
++						vap->iv_mgtsend.function(vap->iv_mgtsend.data);
 +					}
  					if (ni->ni_flags & IEEE80211_NODE_UAPSD_TRIG) {
  						ni->ni_stats.ns_tx_eosplost++;
