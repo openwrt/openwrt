@@ -170,7 +170,7 @@ int main(int argc, char **argv)
 			exit(3);
 		} else {
 			// all is well, write the file without the prefix
-			if ((fd = open(argv[3], O_CREAT|O_WRONLY,0644)) < 0
+			if ((fd = open(argv[3], O_CREAT|O_WRONLY|O_TRUNC,0644)) < 0
 			|| write(fd, trx + sizeof(struct motorola), len - sizeof(struct motorola)) !=  len - sizeof(struct motorola)
 			|| close(fd) < 0)
 			{
@@ -211,7 +211,7 @@ int main(int argc, char **argv)
 		firmware->crc = htonl(crc32buf((unsigned char *)&firmware->flags, sizeof(firmware->flags) + len));
 
 		// write the firmware
-		if ((fd = open(argv[3], O_CREAT|O_WRONLY,0644)) < 0
+		if ((fd = open(argv[3], O_CREAT|O_WRONLY|O_TRUNC,0644)) < 0
 		|| write(fd, firmware, sizeof(struct motorola) + len) != sizeof(struct motorola) + len
 		|| close(fd) < 0)
 		{
