@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mtd
-PKG_RELEASE:=7
+PKG_RELEASE:=8
 
 PKG_BUILD_DIR := $(KERNEL_BUILD_DIR)/$(PKG_NAME)
 
@@ -32,10 +32,13 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
+target=$(firstword $(subst -, ,$(BOARD)))
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) -Dtarget_$(firstword $(subst -, ,$(BOARD)))=1"
+		TARGET=$(target) \
+		CFLAGS="$(TARGET_CFLAGS) -Dtarget_$(target)=1 -Wall"
 endef
 
 define Package/mtd/install
