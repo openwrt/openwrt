@@ -46,6 +46,10 @@
 
 #define BH_ERR(fmt, args...) printk(KERN_ERR "%s: " fmt, DRV_NAME, ##args )
 
+#ifndef BIT_MASK
+#define BIT_MASK(nr)            (1UL << ((nr) % BITS_PER_LONG))
+#endif
+
 struct bh_priv {
 	unsigned long		seen[BH_BTN_COUNT];
 	struct input_handle	handle;
