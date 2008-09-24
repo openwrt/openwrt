@@ -46,7 +46,7 @@ create_zone() {
 	$IPTABLES -N zone_$1_forward
 	$IPTABLES -A zone_$1_forward -j zone_$1_$5
 	$IPTABLES -A zone_$1 -j zone_$1_$3
-	$IPTABLES -A OUTPUT -j zone_$1_$4
+	$IPTABLES -A output -j zone_$1_$4
 	$IPTABLES -N zone_$1_nat -t nat
 	$IPTABLES -N zone_$1_prerouting -t nat
 	[ "$6" == "1" ] && $IPTABLES -t nat -A POSTROUTING -j zone_$1_nat
@@ -58,43 +58,52 @@ addif() {
 	[ -n "$dev" -a "$dev" != "$1" ] && delif "$dev" "$2"
 	[ -n "$dev" -a "$dev" == "$1" ] && return
 	logger "adding $1 to firewall zone $2"
-	$IPTABLES -A INPUT -i $1 -j zone_$2
+	$IPTABLES -A input -i $1 -j zone_$2
 	$IPTABLES -I zone_$2_ACCEPT 1 -o $1 -j ACCEPT
 	$IPTABLES -I zone_$2_DROP 1 -o $1 -j DROP
-	$IPTABLES -I zone_$2_REJECT 1 -o $1 -j REJECT
+	$IPTABLES -I zone_$2_REJECT 1 -o $1 -j reject
 	$IPTABLES -I zone_$2_ACCEPT 1 -i $1 -j ACCEPT
 	$IPTABLES -I zone_$2_DROP 1 -i $1 -j DROP
-	$IPTABLES -I zone_$2_REJECT 1 -i $1 -j REJECT
+	$IPTABLES -I zone_$2_REJECT 1 -i $1 -j reject
 	$IPTABLES -I zone_$2_nat 1 -t nat -o $1 -j MASQUERADE 
 	$IPTABLES -I PREROUTING 1 -t nat -i $1 -j zone_$2_prerouting 
-	$IPTABLES -A FORWARD -i $1 -j zone_$2_forward
+	$IPTABLES -A forward -i $1 -j zone_$2_forward
 	uci_set_state firewall core "$2" "$1"
 }
 
 delif() {
 	logger "removing $1 from firewall zone $2"
-	$IPTABLES -D INPUT -i $1 -j zone_$2
+	$IPTABLES -D input -i $1 -j zone_$2
 	$IPTABLES -D zone_$2_ACCEPT -o $1 -j ACCEPT
 	$IPTABLES -D zone_$2_DROP -o $1 -j DROP
-	$IPTABLES -D zone_$2_REJECT -o $1 -j REJECT
+	$IPTABLES -D zone_$2_REJECT -o $1 -j reject
 	$IPTABLES -D zone_$2_ACCEPT -i $1 -j ACCEPT
 	$IPTABLES -D zone_$2_DROP -i $1 -j DROP
-	$IPTABLES -D zone_$2_REJECT -i $1 -j REJECT
+	$IPTABLES -D zone_$2_REJECT -i $1 -j reject
 	$IPTABLES -D zone_$2_nat -t nat -o $1 -j MASQUERADE 
 	$IPTABLES -D PREROUTING -t nat -i $1 -j zone_$2_prerouting 
-	$IPTABLES -D FORWARD -i $1 -j zone_$2_forward
+	$IPTABLES -D forward -i $1 -j zone_$2_forward
 	uci_revert_state firewall core "$2"
 }
 
 load_synflood() {
+	local rate=${1:-25}
+	local burst=${2:-50}
 	echo "Loading synflood protection"
-	$IPTABLES -N SYN_FLOOD
-	$IPTABLES -A SYN_FLOOD -p tcp --syn -m limit --limit ${1}/second --limit-burst $2 -j RETURN
-	$IPTABLES -A SYN_FLOOD -p ! tcp -j RETURN
-	$IPTABLES -A SYN_FLOOD -p tcp ! --syn -j RETURN
-	$IPTABLES -A SYN_FLOOD -j LOG --log-prefix "syn_flood: " 
-	$IPTABLES -A SYN_FLOOD -j DROP
-	$IPTABLES -A INPUT -p tcp --syn -j SYN_FLOOD
+	$IPTABLES -N syn_flood
+	$IPTABLES -A syn_flood -p tcp --syn -m limit --limit $rate/second --limit-burst $burst -j RETURN
+	$IPTABLES -A syn_flood -j DROP
+	$IPTABLES -A INPUT -p tcp --syn -j syn_flood
+}
+
+fw_set_chain_policy() {
+	local chain=$1
+	local target=$2
+	[ "$target" == "REJECT" ] && {
+		$IPTABLES -A $chain -j reject
+		target=DROP
+	}
+	$IPTABLES -P $chain $target
 }
 
 fw_defaults() {
@@ -116,21 +125,23 @@ fw_defaults() {
 	uci_revert_state firewall core
 	uci_set_state firewall core "" firewall_state 
 
+	$IPTABLES -P INPUT DROP
+	$IPTABLES -P OUTPUT DROP
+	$IPTABLES -P FORWARD DROP
+
 	$IPTABLES -F
-	$IPTABLES -t nat -F
 	$IPTABLES -t mangle -F
-	$IPTABLES -X -t nat
+	$IPTABLES -t nat -F
+	$IPTABLES -t mangle -X
+	$IPTABLES -t nat -X
 	$IPTABLES -X
 	
-	$IPTABLES -P INPUT $input
 	$IPTABLES -A INPUT -m state --state INVALID -j DROP
 	$IPTABLES -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 		
-	$IPTABLES -P OUTPUT $output
 	$IPTABLES -A OUTPUT -m state --state INVALID -j DROP
 	$IPTABLES -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 	
-	$IPTABLES -P FORWARD $forward
 	$IPTABLES -A FORWARD -m state --state INVALID -j DROP
 	$IPTABLES -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 	$IPTABLES -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
@@ -141,10 +152,19 @@ fw_defaults() {
 	config_get syn_flood $1 syn_flood
 	config_get syn_rate $1 syn_rate
 	config_get syn_burst $1 syn_burst
-
-	[ -z "$syn_rate" ] && syn_rate=25
-	[ -z "$syn_burst" ] && syn_burst=50
 	[ "$syn_flood" == "1" ] && load_synflood $syn_rate $syn_burst
+
+	$IPTABLES -N input
+	$IPTABLES -N output
+	$IPTABLES -N forward
+
+	$IPTABLES -A INPUT -j input
+	$IPTABLES -A OUTPUT -j output
+	$IPTABLES -A FORWARD -j forward
+
+	$IPTABLES -N reject
+	$IPTABLES -A reject -p tcp -j REJECT --reject-with tcp-reset
+	$IPTABLES -A reject -j REJECT --reject-with icmp-port-unreachable
 }
 
 fw_zone() {
@@ -186,7 +206,7 @@ fw_rule() {
 	config_get ruleset $1 ruleset
 
 	[ -z "$target" ] && target=DROP
-	[ -n "$src" ] && ZONE=zone_$src || ZONE=INPUT
+	[ -n "$src" ] && ZONE=zone_$src || ZONE=input
 	[ -n "$dest" ] && TARGET=zone_${dest}_$target || TARGET=$target
 	add_rule() {
 		$IPTABLES -I $ZONE 1 \
@@ -215,7 +235,7 @@ fw_forwarding() {
 
 	config_get src $1 src
 	config_get dest $1 dest
-	[ -n "$src" ] && z_src=zone_${src}_forward || z_src=FORWARD
+	[ -n "$src" ] && z_src=zone_${src}_forward || z_src=forward
 	[ -n "$dest" ] && z_dest=zone_${dest}_ACCEPT || z_dest=ACCEPT
 	$IPTABLES -I $z_src 1 -j $z_dest
 }
@@ -339,13 +359,17 @@ fw_init() {
 	unset CONFIG_APPEND
 	config_load network
 	config_foreach fw_addif interface
+	fw_set_chain_policy INPUT $input
+	fw_set_chain_policy OUTPUT $output
+	fw_set_chain_policy FORWARD $forward
 }
 
 fw_stop() {
 	$IPTABLES -F
-	$IPTABLES -t nat -F
 	$IPTABLES -t mangle -F
-	$IPTABLES -X -t nat
+	$IPTABLES -t nat -F
+	$IPTABLES -t mangle -X
+	$IPTABLES -t nat -X
 	$IPTABLES -X
 	$IPTABLES -P INPUT ACCEPT
 	$IPTABLES -P OUTPUT ACCEPT
