@@ -19,6 +19,8 @@ SDK_NAME:=OpenWrt-SDK-$(BOARD)-for-$(PKG_OS)-$(PKG_CPU)
 SDK_BUILD_DIR:=$(BUILD_DIR)/$(SDK_NAME)
 EXCLUDE_DIRS:=*/ccache */stamp */man */share */stampfiles */info
 
+SVN_PACKAGE_URL=$(shell svn info ../../package | awk '/^URL:/ { print $$2; }')
+
 all: compile
 
 $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
@@ -33,7 +35,6 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 		$(SDK_BUILD_DIR)/target/linux/*/patches
 	$(CP) \
 		$(TOPDIR)/LICENSE \
-		$(TOPDIR)/feeds.conf.default \
 		$(TOPDIR)/rules.mk \
 		$(TOPDIR)/.config \
 		./files/Config.in \
@@ -44,6 +45,10 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 		./files/package/rules.mk \
 		$(TOPDIR)/package/Makefile \
 		$(SDK_BUILD_DIR)/package/
+	echo "src-svn trunk $(SVN_PACKAGE_URL)" \
+		> $(SDK_BUILD_DIR)/feeds.conf.default
+	cat $(TOPDIR)/feeds.conf.default \
+		>> $(SDK_BUILD_DIR)/feeds.conf.default
 	echo REVISION:="$(REVISION)" > $(SDK_BUILD_DIR)/include/version.mk
 	find $(SDK_BUILD_DIR) -name .git | $(XARGS) rm -rf
 	find $(SDK_BUILD_DIR) -name .svn | $(XARGS) rm -rf
