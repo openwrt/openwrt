@@ -86,5 +86,9 @@ static inline void gpio_set_value_cansleep(unsigned gpio, int value) {
         gpio_set_value(gpio, value);
 }
 
-#endif
+static inline int gpio_is_valid(int number)
+{
+	return ((unsigned)number) < 8;
+}
 
+#endif
