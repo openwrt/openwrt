@@ -247,7 +247,7 @@ void mtd_parse_jffs2data(const char *buf, const char *dir)
 			struct jffs2_raw_dirent *de = (struct jffs2_raw_dirent *) node;
 
 			/* is this the right directory name and is it a subdirectory of / */
-			if (*dir && (de->pino == 1) && !strncmp(de->name, dir, de->nsize))
+			if (*dir && (de->pino == 1) && !strncmp((char *) de->name, dir, de->nsize))
 				target_ino = de->ino;
 
 			/* store the last inode and version numbers for adding extra files */
