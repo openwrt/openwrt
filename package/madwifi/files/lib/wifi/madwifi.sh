@@ -182,6 +182,9 @@ enable_atheros() {
 		config_get distance "$device" distance
 		[ -n "$distance" ] && athctrl -i "$device" -d "$distance" >&-
 
+		config_get_bool softled "$device" softled 1
+		[ -n "$softled" ] && sysctl -w dev."$device".softled="$softled" >&-
+
 		config_get txpwr "$vif" txpower
 		[ -n "$txpwr" ] && iwconfig "$ifname" txpower "${txpwr%%.*}"
 
