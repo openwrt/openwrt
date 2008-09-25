@@ -246,7 +246,7 @@ static int
 mtd_write(int imagefd, const char *mtd)
 {
 	int fd, result;
-	size_t r, w, e;
+	ssize_t r, w, e;
 
 	fd = mtd_check_open(mtd);
 	if(fd < 0) {
@@ -263,11 +263,27 @@ mtd_write(int imagefd, const char *mtd)
 
 	for (;;) {
 		/* buffer may contain data already (from trx check) */
-		r = read(imagefd, buf + buflen, erasesize - buflen);
-		if (r < 0)
-			break;
+		do {
+			r = read(imagefd, buf + buflen, erasesize - buflen);
+			if (r < 0) {
+				if ((errno == EINTR) || (errno == EAGAIN))
+					continue;
+				else {
+					perror("read");
+					break;
+				}
+			}
 
-		buflen += r;
+			if (r == 0) {
+				fprintf(stderr, "No more data left\n");
+				break;
+			}
+
+			buflen += r;
+		} while (buflen < erasesize);
+
+		if (buflen == 0)
+			break;
 
 		if (jffs2file) {
 			if (memcmp(buf, JFFS2_EOF, sizeof(JFFS2_EOF)) == 0) {
@@ -308,10 +324,6 @@ mtd_write(int imagefd, const char *mtd)
 			}
 		}
 		w += buflen;
-
-		/* not enough data - eof */
-		if (buflen < erasesize)
-			break;
 
 		buflen = 0;
 	}
