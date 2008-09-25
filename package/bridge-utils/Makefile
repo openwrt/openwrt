@@ -42,11 +42,13 @@ endef
 CONFIGURE_ARGS += \
 	--with-linux-headers="$(LINUX_DIR)" \
 
-define Build/Configure
-	(cd $(PKG_BUILD_DIR); \
-	[ "$(PKG_VERSION)" = "1.0.6" ] || ln -s configure.in configure.ac; \
-	autoconf; \
-	./configure $(CONFIGURE_ARGS) \
+define Build/Prepare
+$(call Build/Prepare/Default)
+	( cd $(PKG_BUILD_DIR) ; \
+		[ -f ./configure ] || { \
+			ln -sf configure.in configure.ac ; \
+			autoconf ; \
+		} \
 	)
 endef
 
