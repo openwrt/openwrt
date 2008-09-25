@@ -1,7 +1,7 @@
 ARCH:=mips
 SUBTARGET:=router_be
 BOARDNAME:=Big Endian
-FEATURES:=squashfs jffs2 broken
+FEATURES:=squashfs jffs2
 
 define Target/Description
 	Build firmware images for Infineon/ADMTek ADM5120 based boards
