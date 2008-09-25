@@ -1,0 +1,200 @@
+--- a/ath_rate/minstrel/minstrel.c
++++ b/ath_rate/minstrel/minstrel.c
+@@ -111,27 +111,13 @@
+ #include <net80211/ieee80211_var.h>
+ #include <net80211/ieee80211_rate.h>
+ 
++#include "if_ath_debug.h"
+ #include "if_athvar.h"
+ #include "if_ath_hal.h"
+ #include "ah_desc.h"
+ 
+ #include "minstrel.h"
+ 
+-#ifdef AR_DEBUG
+-#define	MINSTREL_DEBUG
+-#endif
+-#ifdef MINSTREL_DEBUG
+-enum {
+-		ATH_DEBUG_RATE		= 0x00000010	/* rate control */
+-};
+-#define	DPRINTF(sc, _fmt, ...) do {		\
+-		if (sc->sc_debug & ATH_DEBUG_RATE)	\
+-			printk(_fmt, __VA_ARGS__);		\
+-} while (0)
+-#else
+-#define	DPRINTF(sc, _fmt, ...)
+-#endif
+-
+ #define ONE_SECOND (1000 * 1000)  /* 1 second, or 1000 milliseconds; eternity, in other words */
+ 
+ #include "release.h"
+@@ -689,17 +675,17 @@
+ 			 * the node.  We know the rate is there because the
+ 			 * rate set is checked when the station associates. */
+ 			/* NB: the rate set is assumed sorted */
+-			for (; (srate >= 0) && (ni->ni_rates.rs_rates[srate] & IEEE80211_RATE_VAL) != vap->iv_fixed_rate; srate--);
+-
+-			KASSERT(srate >= 0,
+-				("fixed rate %d not in rate set", vap->iv_fixed_rate));
++			for (; (srate > 0) && (ni->ni_rates.rs_rates[srate] & IEEE80211_RATE_VAL) != vap->iv_fixed_rate; srate--);
+ 
+ 			sn->static_rate_ndx = srate;
+ 			ni->ni_txrate = srate;
+-			DPRINTF(sc, "%s: %s " MAC_FMT " fixed rate %d%sMbps\n",
+-				dev_info, __func__, MAC_ADDR(ni->ni_macaddr),
+-				sn->rates[srate].rate / 2,
+-				(sn->rates[srate].rate % 2) ? ".5 " : " ");
++			if ((ni->ni_rates.rs_rates[srate] & IEEE80211_RATE_VAL) != vap->iv_fixed_rate)
++				EPRINTF(sc, "Invalid static rate, falling back to basic rate\n");
++			else
++				DPRINTF(sc, "%s: %s " MAC_FMT " fixed rate %d%sMbps\n",
++					dev_info, __func__, MAC_ADDR(ni->ni_macaddr),
++					sn->rates[srate].rate / 2,
++					(sn->rates[srate].rate % 2) ? ".5 " : " ");
+ 			return;
+ 		}
+ 
+--- a/ath_rate/amrr/amrr.c
++++ b/ath_rate/amrr/amrr.c
+@@ -64,24 +64,13 @@
+ #include <net80211/ieee80211_var.h>
+ #include <net80211/ieee80211_rate.h>
+ 
++#include "if_ath_debug.h"
+ #include "if_athvar.h"
+ #include "if_ath_hal.h"
+ #include "ah_desc.h"
+ 
+ #include "amrr.h"
+ 
+-#ifdef AR_DEBUG
+-#define	AMRR_DEBUG
+-#endif
+-#ifdef AMRR_DEBUG
+-#define	DPRINTF(sc, _fmt, ...) do {					\
+-	if (sc->sc_debug & 0x10)					\
+-		printk(_fmt, __VA_ARGS__);				\
+-} while (0)
+-#else
+-#define	DPRINTF(sc, _fmt, ...)
+-#endif
+-
+ static int ath_rateinterval = 1000;		/* rate ctl interval (ms)  */
+ static int ath_rate_max_success_threshold = 10;
+ static int ath_rate_min_success_threshold = 1;
+@@ -297,9 +286,9 @@
+ 		 * rate set is checked when the station associates.
+ 		 */
+ 		srate = ni->ni_rates.rs_nrates - 1;
+-		for (; srate >= 0 && RATE(srate) != vap->iv_fixed_rate; srate--);
+-		KASSERT(srate >= 0,
+-			("fixed rate %d not in rate set", vap->iv_fixed_rate));
++		for (; srate > 0 && RATE(srate) != vap->iv_fixed_rate; srate--);
++		if (RATE(srate) != vap->iv_fixed_rate)
++			EPRINTF(sc, "Invalid static rate, falling back to basic rate\n");
+ 	}
+ 	ath_rate_update(sc, ni, srate);
+ #undef RATE
+--- a/ath_rate/onoe/onoe.c
++++ b/ath_rate/onoe/onoe.c
+@@ -60,27 +60,13 @@
+ #include <net80211/ieee80211_var.h>
+ #include <net80211/ieee80211_rate.h>
+ 
++#include "if_ath_debug.h"
+ #include "if_athvar.h"
+ #include "if_ath_hal.h"
+ #include "ah_desc.h"
+ 
+ #include "onoe.h"
+ 
+-#ifdef AR_DEBUG
+-#define	ONOE_DEBUG
+-#endif
+-#ifdef ONOE_DEBUG
+-enum {
+-	ATH_DEBUG_RATE	= 0x00000010,	/* rate control */
+-};
+-#define	DPRINTF(sc, _fmt, ...) do {				\
+-	if (sc->sc_debug & ATH_DEBUG_RATE)			\
+-		printk(_fmt, __VA_ARGS__);			\
+-} while (0)
+-#else
+-#define	DPRINTF(sc, _fmt, ...)
+-#endif
+-
+ /*
+  * Default parameters for the rate control algorithm.  These are
+  * all tunable with sysctls.  The rate controller runs periodically
+@@ -283,9 +269,9 @@
+ 		 */
+ 		/* NB: the rate set is assumed sorted */
+ 		srate = ni->ni_rates.rs_nrates - 1;
+-		for (; srate >= 0 && RATE(srate) != vap->iv_fixed_rate; srate--);
+-		KASSERT(srate >= 0,
+-			("fixed rate %d not in rate set", vap->iv_fixed_rate));
++		for (; srate > 0 && RATE(srate) != vap->iv_fixed_rate; srate--);
++		if (RATE(srate) != vap->iv_fixed_rate)
++			EPRINTF(sc, "Invalid static rate, falling back to basic rate\n");
+ 	}
+ 	ath_rate_update(sc, ni, srate);
+ #undef RATE
+--- a/ath_rate/sample/sample.c
++++ b/ath_rate/sample/sample.c
+@@ -62,30 +62,13 @@
+ #include <net80211/ieee80211_var.h>
+ #include <net80211/ieee80211_rate.h>
+ 
++#include "if_ath_debug.h"
+ #include "if_athvar.h"
+ #include "if_ath_hal.h"
+ #include "ah_desc.h"
+ 
+ #include "sample.h"
+ 
+-#ifdef AR_DEBUG
+-#define SAMPLE_DEBUG
+-#endif
+-#ifdef SAMPLE_DEBUG
+-enum {
+-	ATH_DEBUG_RATE		= 0x00000010,	/* rate control */
+-	ATH_DEBUG_ANY		= 0xffffffff
+-};
+-#define	DPRINTF(sc, m, fmt, ...) do {				\
+-	if (sc->sc_debug & (m))					\
+-		printk(fmt, __VA_ARGS__);			\
+-} while (0)
+-#else
+-#define	DPRINTF(sc, m, fmt, ...) do {				\
+-	(void) sc;						\
+-} while (0)
+-#endif
+-
+ /*
+  * This file is an implementation of the SampleRate algorithm
+  * in "Bit-rate Selection in Wireless Networks"
+@@ -886,15 +869,16 @@
+ 			if ((ni->ni_rates.rs_rates[x] & IEEE80211_RATE_VAL) == vap->iv_fixed_rate)
+ 				srate = x;
+ 
+-		KASSERT(((ni->ni_rates.rs_rates[srate] & IEEE80211_RATE_VAL) == vap->iv_fixed_rate),
+-			("fixed rate %u not in rate set", vap->iv_fixed_rate));
+-
+ 		sn->static_rate_ndx = srate;
+ 		ni->ni_txrate = srate;
+-		DPRINTF(sc, ATH_DEBUG_RATE, "%s: %s " MAC_FMT " fixed rate %u%sMbps\n",
+-			dev_info, __func__, MAC_ADDR(ni->ni_macaddr),
+-			sn->rates[srate].rate / 2,
+-			(sn->rates[srate].rate % 0x1) ? ".5" : " ");
++
++		if ((ni->ni_rates.rs_rates[srate] & IEEE80211_RATE_VAL) != vap->iv_fixed_rate)
++			EPRINTF(sc, "Invalid static rate, falling back to basic rate\n");
++		else
++			DPRINTF(sc, ATH_DEBUG_RATE, "%s: %s " MAC_FMT " fixed rate %u%sMbps\n",
++				dev_info, __func__, MAC_ADDR(ni->ni_macaddr),
++				sn->rates[srate].rate / 2,
++				(sn->rates[srate].rate % 0x1) ? ".5" : " ");
+ 		return;
+ 	}
+ 
