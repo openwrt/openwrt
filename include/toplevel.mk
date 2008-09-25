@@ -24,6 +24,9 @@ export REVISION
 export OPENWRTVERSION
 export IS_TTY=$(shell tty -s && echo 1 || echo 0)
 
+# make sure that a predefined CFLAGS variable does not disturb packages
+export CFLAGS=
+
 ifeq ($(FORCE),)
   .config scripts/config/conf scripts/config/mconf: tmp/.prereq-build
 endif
