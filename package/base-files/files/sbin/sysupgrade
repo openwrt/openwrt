@@ -16,7 +16,7 @@ while [ -n "$1" ]; do
 		-d) export DELAY="$2"; shift;;
 		-v) export VERBOSE="$(($VERBOSE + 1))";;
 		-q) export VERBOSE="$(($VERBOSE - 1))";;
-		-n) export SAVE_CONFIG=0
+		-n) export SAVE_CONFIG=0;;
 		-*)
 			echo "Invalid option: $1"
 			exit 1
