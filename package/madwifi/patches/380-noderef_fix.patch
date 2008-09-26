@@ -1,0 +1,58 @@
+--- a/net80211/ieee80211_node.c
++++ b/net80211/ieee80211_node.c
+@@ -316,7 +316,7 @@
+ 	 */
+ 	ni = ieee80211_find_node(&ic->ic_sta, vap->iv_myaddr);
+ 	if (ni == NULL) {
+-		ni = ieee80211_alloc_node_table(vap, vap->iv_myaddr);
++		ni = ieee80211_alloc_node(vap, vap->iv_myaddr);
+ 		IEEE80211_DPRINTF(vap, IEEE80211_MSG_ASSOC,
+ 				  "%s: ni:%p allocated for " MAC_FMT "\n",
+ 				  __func__, ni, MAC_ADDR(vap->iv_myaddr));
+@@ -421,14 +421,14 @@
+ 	/* XXX multi-bss wrong */
+ 	ieee80211_reset_erp(ic, ic->ic_curmode);
+ 
+-	ni = ieee80211_alloc_node_table(vap, vap->iv_myaddr);
++	ni = ieee80211_alloc_node(vap, vap->iv_myaddr);
+ 	IEEE80211_DPRINTF(vap, IEEE80211_MSG_ASSOC,
+ 			  "%s: ni:%p allocated for " MAC_FMT "\n",
+ 			  __func__, ni, MAC_ADDR(vap->iv_myaddr));
+ 	KASSERT(ni != NULL, ("unable to setup inital BSS node"));
+ 
+ 	vap->iv_bss = PASS_NODE(ni);
+-	KASSERT((atomic_read(&vap->iv_bss->ni_refcnt) == 2), 
++	KASSERT((atomic_read(&vap->iv_bss->ni_refcnt) == 1),
+ 		("wrong refcount for new node."));
+ 
+ 	if (obss != NULL) {
+@@ -630,6 +630,7 @@
+ 		ieee80211_fix_rate(selbs, IEEE80211_F_DODEL);
+ 	}
+ 
++	IEEE80211_VAPS_LOCK_BH(ic);
+ 	/*
+ 	 * Committed to selbs, setup state.
+ 	 */
+@@ -642,8 +643,9 @@
+ 		(vap->iv_state == IEEE80211_S_RUN) && bssid_equal(obss, selbs)); */
+ 	vap->iv_bss = selbs;
+ 	IEEE80211_ADDR_COPY(vap->iv_bssid, selbs->ni_bssid);
+-	if (obss != NULL)
++	if ((obss != NULL) && (obss != selbs))
+ 		ieee80211_unref_node(&obss);
++	IEEE80211_VAPS_UNLOCK_BH(ic);
+ 	ic->ic_bsschan = selbs->ni_chan;
+ 	ic->ic_curchan = ic->ic_bsschan;
+ 	ic->ic_curmode = ieee80211_chan2mode(ic->ic_curchan);
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
+@@ -3110,7 +3110,7 @@
+ 	u_int8_t qosinfo;
+ 
+ 	if (ni_or_null == NULL)
+-		ni = vap->iv_bss;
++		ni = ieee80211_ref_node(vap->iv_bss);
+ 
+ 	wh = (struct ieee80211_frame *) skb->data;
+ 	frm = (u_int8_t *)&wh[1];
