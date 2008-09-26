@@ -45,14 +45,4 @@
  	ic->ic_bsschan = selbs->ni_chan;
  	ic->ic_curchan = ic->ic_bsschan;
  	ic->ic_curmode = ieee80211_chan2mode(ic->ic_curchan);
---- a/net80211/ieee80211_input.c
-+++ b/net80211/ieee80211_input.c
-@@ -3110,7 +3110,7 @@
- 	u_int8_t qosinfo;
- 
- 	if (ni_or_null == NULL)
--		ni = vap->iv_bss;
-+		ni = ieee80211_ref_node(vap->iv_bss);
- 
- 	wh = (struct ieee80211_frame *) skb->data;
- 	frm = (u_int8_t *)&wh[1];
+
