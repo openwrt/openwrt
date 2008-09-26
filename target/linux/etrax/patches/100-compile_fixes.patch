@@ -1,6 +1,5 @@
-diff -urN linux-2.6.25.7/arch/cris/Makefile linux-2.6.25.7.cris/arch/cris/Makefile
---- linux-2.6.25.7/arch/cris/Makefile	2008-06-16 22:24:36.000000000 +0200
-+++ linux-2.6.25.7.cris/arch/cris/Makefile	2008-06-24 13:22:48.000000000 +0200
+--- a/arch/cris/Makefile
++++ b/arch/cris/Makefile
 @@ -33,7 +33,7 @@
  
  LD = $(CROSS_COMPILE)ld -mcrislinux
@@ -10,9 +9,8 @@ diff -urN linux-2.6.25.7/arch/cris/Makefile linux-2.6.25.7.cris/arch/cris/Makefi
  
  CPPFLAGS_vmlinux.lds = -DDRAM_VIRTUAL_BASE=0x$(CONFIG_ETRAX_DRAM_VIRTUAL_BASE)
  
-diff -urN linux-2.6.25.7/arch/cris/arch-v10/boot/Makefile linux-2.6.25.7.cris/arch/cris/arch-v10/boot/Makefile
---- linux-2.6.25.7/arch/cris/arch-v10/boot/Makefile	2008-06-16 22:24:36.000000000 +0200
-+++ linux-2.6.25.7.cris/arch/cris/arch-v10/boot/Makefile	2008-06-24 13:23:03.000000000 +0200
+--- a/arch/cris/arch-v10/boot/Makefile
++++ b/arch/cris/arch-v10/boot/Makefile
 @@ -2,9 +2,6 @@
  # arch/cris/arch-v10/boot/Makefile
  #
@@ -31,9 +29,8 @@ diff -urN linux-2.6.25.7/arch/cris/arch-v10/boot/Makefile linux-2.6.25.7.cris/ar
  
  $(obj)/zImage:  $(obj)/compressed/vmlinux
  	@cp $< $@
-diff -urN linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/Makefile linux-2.6.25.7.cris/arch/cris/arch-v10/boot/compressed/Makefile
---- linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/Makefile	2008-06-16 22:24:36.000000000 +0200
-+++ linux-2.6.25.7.cris/arch/cris/arch-v10/boot/compressed/Makefile	2008-06-24 13:23:14.000000000 +0200
+--- a/arch/cris/arch-v10/boot/compressed/Makefile
++++ b/arch/cris/arch-v10/boot/compressed/Makefile
 @@ -2,13 +2,9 @@
  # arch/cris/arch-v10/boot/compressed/Makefile
  #
@@ -61,18 +58,16 @@ diff -urN linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/Makefile linux-2.6.2
  
  $(obj)/vmlinux: $(obj)/piggy.gz $(obj)/decompress.bin FORCE
  	$(call if_changed,image)
-diff -urN linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/decompress.ld linux-2.6.25.7.cris/arch/cris/arch-v10/boot/compressed/decompress.ld
---- linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/decompress.ld	2008-06-16 22:24:36.000000000 +0200
-+++ linux-2.6.25.7.cris/arch/cris/arch-v10/boot/compressed/decompress.ld	2008-06-24 12:57:25.000000000 +0200
+--- a/arch/cris/arch-v10/boot/compressed/decompress.ld
++++ b/arch/cris/arch-v10/boot/compressed/decompress.ld
 @@ -1,4 +1,4 @@
 -OUTPUT_FORMAT(elf32-us-cris)
 +OUTPUT_FORMAT(elf32-cris)
  
  MEMORY 
  	{
-diff -urN linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/head.S linux-2.6.25.7.cris/arch/cris/arch-v10/boot/compressed/head.S
---- linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/head.S	2008-06-16 22:24:36.000000000 +0200
-+++ linux-2.6.25.7.cris/arch/cris/arch-v10/boot/compressed/head.S	2008-06-24 13:24:50.000000000 +0200
+--- a/arch/cris/arch-v10/boot/compressed/head.S
++++ b/arch/cris/arch-v10/boot/compressed/head.S
 @@ -10,13 +10,14 @@
  
  #define ASSEMBLER_MACROS_ONLY
@@ -227,9 +222,8 @@ diff -urN linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/head.S linux-2.6.25.
 +cmd_line_addr:
  	.dword 0
  #include "../../lib/hw_settings.S"
-diff -urN linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/misc.c linux-2.6.25.7.cris/arch/cris/arch-v10/boot/compressed/misc.c
---- linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/misc.c	2008-06-16 22:24:36.000000000 +0200
-+++ linux-2.6.25.7.cris/arch/cris/arch-v10/boot/compressed/misc.c	2008-06-24 12:57:25.000000000 +0200
+--- a/arch/cris/arch-v10/boot/compressed/misc.c
++++ b/arch/cris/arch-v10/boot/compressed/misc.c
 @@ -5,7 +5,7 @@
   * adapted for Linux.
   *
@@ -294,9 +288,8 @@ diff -urN linux-2.6.25.7/arch/cris/arch-v10/boot/compressed/misc.c linux-2.6.25.
 -	puts("Done. Now booting the kernel.\n");
 +	putstr("Done. Now booting the kernel.\n");
  }
-diff -urN linux-2.6.25.7/arch/cris/arch-v10/mm/init.c linux-2.6.25.7.cris/arch/cris/arch-v10/mm/init.c
---- linux-2.6.25.7/arch/cris/arch-v10/mm/init.c	2008-06-16 22:24:36.000000000 +0200
-+++ linux-2.6.25.7.cris/arch/cris/arch-v10/mm/init.c	2008-06-24 12:57:25.000000000 +0200
+--- a/arch/cris/arch-v10/mm/init.c
++++ b/arch/cris/arch-v10/mm/init.c
 @@ -184,6 +184,9 @@
  
  	free_area_init_node(0, &contig_page_data, zones_size, PAGE_OFFSET >> PAGE_SHIFT, 0);

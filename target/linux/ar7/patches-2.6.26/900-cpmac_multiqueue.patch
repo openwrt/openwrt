@@ -17,8 +17,8 @@ because other drivers do it in the same way.
 
         Signed-off-by: Stefan Weil <weil@mail.berlios.de>
 
---- a/drivers/net/cpmac.c	2008-07-13 23:51:29.000000000 +0200
-+++ b/drivers/net/cpmac.c	2008-08-14 20:48:49.000000000 +0200
+--- a/drivers/net/cpmac.c
++++ b/drivers/net/cpmac.c
 @@ -627,7 +627,7 @@
  		dev_kfree_skb_irq(desc->skb);
  		desc->skb = NULL;

@@ -1,6 +1,6 @@
 --- a/drivers/net/cpmac.c
 +++ b/drivers/net/cpmac.c
-@@ -936,7 +936,8 @@
+@@ -948,7 +948,8 @@
  	int new_state = 0;
  
  	spin_lock(&priv->lock);
@@ -10,7 +10,7 @@
  		netif_start_queue(dev);
  		if (priv->phy->duplex != priv->oldduplex) {
  			new_state = 1;
-@@ -948,11 +949,11 @@
+@@ -960,11 +961,11 @@
  			priv->oldspeed = priv->phy->speed;
  		}
  

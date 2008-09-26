@@ -26,7 +26,7 @@
  
 --- a/arch/mips/kernel/traps.c
 +++ b/arch/mips/kernel/traps.c
-@@ -1112,9 +1112,22 @@
+@@ -1188,9 +1188,22 @@
  
  	exception_handlers[n] = handler;
  	if (n == 0 && cpu_has_divec) {

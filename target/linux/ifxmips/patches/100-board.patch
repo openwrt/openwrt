@@ -22,7 +22,7 @@
  config MACH_DECSTATION
  	bool "DECstations"
  	select BOOT_ELF32
-@@ -693,6 +708,7 @@
+@@ -697,6 +712,7 @@
  source "arch/mips/tx4927/Kconfig"
  source "arch/mips/tx4938/Kconfig"
  source "arch/mips/vr41xx/Kconfig"
@@ -63,7 +63,7 @@
  extern char *system_type;
 --- a/arch/mips/kernel/traps.c
 +++ b/arch/mips/kernel/traps.c
-@@ -1379,6 +1379,7 @@
+@@ -1464,6 +1464,7 @@
  	 */
  	if (cpu_has_mips_r2) {
  		cp0_compare_irq = (read_c0_intctl() >> 29) & 7;

@@ -1,7 +1,5 @@
-Index: linux-2.6.26/drivers/Kconfig
-===================================================================
---- linux-2.6.26.orig/drivers/Kconfig	2008-07-13 23:51:29.000000000 +0200
-+++ linux-2.6.26/drivers/Kconfig	2008-07-14 12:28:00.186793402 +0200
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
 @@ -100,5 +100,7 @@
  
  source "drivers/uio/Kconfig"
@@ -10,10 +8,8 @@ Index: linux-2.6.26/drivers/Kconfig
 +
  source "drivers/xen/Kconfig"
  endmenu
-Index: linux-2.6.26/drivers/Makefile
-===================================================================
---- linux-2.6.26.orig/drivers/Makefile	2008-07-13 23:51:29.000000000 +0200
-+++ linux-2.6.26/drivers/Makefile	2008-07-14 12:27:34.362789842 +0200
+--- a/drivers/Makefile
++++ b/drivers/Makefile
 @@ -92,5 +92,6 @@
  obj-$(CONFIG_HID)		+= hid/
  obj-$(CONFIG_PPC_PS3)		+= ps3/
