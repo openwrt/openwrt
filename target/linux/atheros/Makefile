@@ -11,7 +11,7 @@ BOARD:=atheros
 BOARDNAME:=Atheros 231x/5312
 FEATURES:=squashfs jffs2
 
-LINUX_VERSION:=2.6.26.3
+LINUX_VERSION:=2.6.26.5
 
 include $(INCLUDE_DIR)/target.mk
 
