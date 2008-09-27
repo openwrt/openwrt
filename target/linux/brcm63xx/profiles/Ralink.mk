@@ -7,7 +7,7 @@
 
 define Profile/Ralink
   NAME:=Ralink WiFi
-  PACKAGES:=kmod-rt61
+  PACKAGES:=kmod-rt61-pci
 endef
 $(eval $(call Profile,Ralink))
 
