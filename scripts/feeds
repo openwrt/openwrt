@@ -31,18 +31,19 @@ sub parse_config() {
 		s/#.+$//;
 		next unless /\S/;
 		my @line = split /\s+/, $_, 3;
+		my @src;
 		$line++;
 
 		my $valid = 1;
 		$line[0] =~ /^src-\w+$/ or $valid = 0;
 		$line[1] =~ /^\w+$/ or $valid = 0;
-		$line[2] =~ /\s/ and $valid = 0;
+		@src = split /\s+/, $line[2];
 		$valid or die "Syntax error in feeds.list, line: $line\n";
 
 		$name{$line[1]} and die "Duplicate feed name '$line[1]', line: $line\n";
 		$name{$line[1]} = 1;
 
-		push @feeds, [@line];
+		push @feeds, [$line[0], $line[1], \@src];
 	}
 	close FEEDS;
 }
@@ -192,7 +193,7 @@ sub list {
 	}
 	if ($opts{s}) {
 		foreach my $feed (@feeds) {
-			printf "\%-32s\tURL: %s\n", $feed->[1], $feed->[2];
+			printf "\%-32s\tURL: %s\n", $feed->[1], join(", ", @{$feed->[2]});
 		}
 		return 0;
 	}
@@ -419,8 +420,14 @@ sub update_feed($$$$)
 		return 1;
 	};
 	$perform_update and do {
-		warn "Updating feed '$name' from '$src' ...\n";
-		&{$update_method{$type}}($name, $src) == 0 or do {
+		my $failed = 1;
+		foreach my $feedsrc (@$src) {
+			warn "Updating feed '$name' from '$feedsrc' ...\n";
+			next unless &{$update_method{$type}}($name, $feedsrc) == 0;
+			$failed = 0;
+			last;
+		}
+		$failed and do {
 			warn "failed.\n";
 			return 1;
 		};
