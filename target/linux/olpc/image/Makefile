@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2007 OpenWrt.org
+#
+# Copyright (C) 2007-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -11,38 +11,40 @@ export PATH=$(TARGET_PATH):/sbin
 ROOTPART=$(strip $(subst ",, $(CONFIG_OLPC_BOOTSCRIPT_ROOTPART)))
 #"))")) # fix vim's broken syntax highlighting
 
+ROOTDELAY=5
 
 ifeq ($(CONFIG_OLPC_BOOTSCRIPT_IMAGES),y)
   define Image/cmdline/squashfs
-    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=squashfs init=/etc/preinit
+    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=squashfs init=/etc/preinit rootdelay=$(ROOTDELAY)
   endef
 
   define Image/cmdline/jffs2-64k
-    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=jffs2 init=/etc/preinit
+    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=jffs2 init=/etc/preinit rootdelay=$(ROOTDELAY)
   endef
 
   define Image/cmdline/jffs2-128k
-    block2mtd.block2mtd=$(ROOTPART),131072,rootfs root=/dev/mtdblock0 rootfstype=jffs2 init=/etc/preinit
+    block2mtd.block2mtd=$(ROOTPART),131072,rootfs root=/dev/mtdblock0 rootfstype=jffs2 init=/etc/preinit rootdelay=$(ROOTDELAY)
   endef
 
   define Image/cmdline/ext2
     root=$(ROOTPART) rootfstype=ext2 init=/etc/preinit
   endef
-  
+
   define Image/Build/bootscript
 	# left here because the image builder doesnt need these
 	$(INSTALL_DIR) $(KDIR)/root.bootscript/boot
 	$(CP) $(KDIR)/bzImage $(KDIR)/root.bootscript/boot/vmlinuz
-	$(CP) ./olpc.fth $(KDIR)/root.bootscript/boot/olpc.fth
+	sed -e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1))) $(BOOTOPTS)#g' \
+		./olpc.fth > $(KDIR)/root.bootscript/boot/olpc.fth
 	PADDING="$(CONFIG_OLPC_BOOTSCRIPT_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(1).image $(CONFIG_OLPC_BOOTSCRIPT_KERNELPART) $(KDIR)/root.bootscript $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
   endef
 endif
 
 define Image/Prepare
-	cp $(LINUX_DIR)/arch/*86/boot/bzImage $(KDIR)/bzImage
+	cp $(LINUX_DIR)/arch/x86/boot/bzImage $(KDIR)/bzImage
 	$(call Image/Prepare/bootscript)
 endef
-  
+
 define Image/Build/squashfs
     $(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
