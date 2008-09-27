@@ -36,7 +36,8 @@ define Package/ebtables/description
 endef
 
 MAKE_FLAGS += \
-	CFLAGS="$(TARGET_CFLAGS)"
+	CFLAGS="$(TARGET_CFLAGS)" \
+	LIBDIR="/usr/lib/ebtables"
 
 define Package/ebtables/install
 	$(INSTALL_DIR) $(1)/etc
