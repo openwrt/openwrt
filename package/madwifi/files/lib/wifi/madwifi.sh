@@ -258,6 +258,7 @@ enable_atheros() {
 			config_set "$vif" bridge "$bridge"
 			start_net "$ifname" "$net_cfg"
 		}
+		[ -n "$ssid" ] && iwconfig "$ifname" essid on
 		iwconfig "$ifname" essid "$ssid"
 		set_wifi_up "$vif" "$ifname"
 		case "$mode" in
