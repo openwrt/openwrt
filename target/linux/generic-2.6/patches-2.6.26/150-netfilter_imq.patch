@@ -79,7 +79,7 @@
 +
 +struct imq_private {
 +	struct tasklet_struct tasklet;
-+	int tasklet_pending;
++	unsigned long tasklet_pending;
 +};
 +
 +static nf_hookfn imq_nf_hook;
