@@ -72,6 +72,50 @@ endef
 $(eval $(call KernelPackage,crypto-core))
 
 
+define KernelPackage/crypto-hw-padlock
+  SUBMENU:=$(CRYPTO_MENU)
+  TITLE:=VIA PadLock ACE with AES/SHA hw crypto module
+  DEPENDS:=+kmod-crypto-core
+  KCONFIG:= \
+	CONFIG_CRYPTO_DEV_PADLOCK \
+	CONFIG_CRYPTO_DEV_PADLOCK_AES \
+	CONFIG_CRYPTO_DEV_PADLOCK_SHA
+  FILES:= \
+	$(LINUX_DIR)/drivers/crypto/padlock-aes.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/crypto/padlock-sha.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,09,padlock-aes padlock-sha)
+endef
+
+$(eval $(call KernelPackage,crypto-hw-padlock))
+
+
+define KernelPackage/crypto-hw-geode
+  SUBMENU:=$(CRYPTO_MENU)
+  TITLE:=AMD Geode hardware crypto module
+  DEPENDS:=+kmod-crypto-core
+  KCONFIG:= \
+	CONFIG_CRYPTO_DEV_GEODE
+  FILES:=$(LINUX_DIR)/drivers/crypto/geode-aes.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,09,geode-aes)
+endef
+
+$(eval $(call KernelPackage,crypto-hw-geode))
+
+
+define KernelPackage/crypto-hw-hifn-795x
+  SUBMENU:=$(CRYPTO_MENU)
+  TITLE:=HIFN 795x crypto accelerator
+  DEPENDS:=+kmod-crypto-core +kmod-crypto-des
+  KCONFIG:= \
+	CONFIG_CRYPTO_DEV_HIFN_795X \
+	CONFIG_CRYPTO_DEV_HIFN_795X_RNG=y
+  FILES:=$(LINUX_DIR)/drivers/crypto/hifn_795x.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,09,hifn_795x)
+endef
+
+$(eval $(call KernelPackage,crypto-hw-hifn-795x))
+
+
 define KernelPackage/crypto-aes
   SUBMENU:=$(CRYPTO_MENU)
   TITLE:=AES cipher CryptoAPI module
