@@ -16,6 +16,7 @@ config_load firewall
 config fw_zones
 ZONE_LIST=$CONFIG_SECTION
 
+CUSTOM_CHAINS=1
 DEF_INPUT=DROP
 DEF_OUTPUT=DROP
 DEF_FORWARD=DROP
@@ -25,9 +26,9 @@ load_policy() {
 	config_get output $1 output
 	config_get forward $1 forward
 
-	[ -z "$input" ] && input=$DEF_INPUT
-	[ -z "$output" ] && output=$DEF_OUTPUT
-	[ -z "$forward" ] && forward=$DEF_FORWARD
+	DEF_INPUT="${input:-$DEF_INPUT}"
+	DEF_OUTPUT="${output:-$DEF_OUTPUT}"
+	DEF_FORWARD="${forward:-$DEF_FORWARD}"
 }
 
 create_zone() {
@@ -107,10 +108,13 @@ fw_set_chain_policy() {
 }
 
 fw_defaults() {
-	load_policy $1
-	DEF_INPUT=$input
-	DEF_OUTPUT=$output
-	DEF_FORWARD=$forward
+	[ -n "$DEFAULTS_APPLIED" ] && {
+		echo "Error: multiple defaults sections detected"
+		return;
+	}
+	DEFAULTS_APPLIED=1
+
+	load_policy "$1"
 
 	echo 1 > /proc/sys/net/ipv4/tcp_syncookies
 	for f in /proc/sys/net/ipv4/conf/*/accept_redirects 
@@ -165,6 +169,13 @@ fw_defaults() {
 	$IPTABLES -N reject
 	$IPTABLES -A reject -p tcp -j REJECT --reject-with tcp-reset
 	$IPTABLES -A reject -j REJECT --reject-with icmp-port-unreachable
+
+	echo "Adding custom chains"
+	fw_custom_chains
+
+	fw_set_chain_policy INPUT "$DEF_INPUT"
+	fw_set_chain_policy OUTPUT "$DEF_OUTPUT"
+	fw_set_chain_policy FORWARD "$DEF_FORWARD"
 }
 
 fw_zone() {
@@ -179,6 +190,7 @@ fw_zone() {
 
 	[ -z "$network" ] && network=$name
 	create_zone "$name" "$network" "$input" "$output" "$forward" "$masq"
+	fw_custom_chains_zone "$name"
 }
 
 fw_rule() {
@@ -321,26 +333,35 @@ fw_addif() {
 }
 
 fw_custom_chains() {
+	[ -n "$CUSTOM_CHAINS" ] || return 0
 	$IPTABLES -N input_rule
 	$IPTABLES -N output_rule
 	$IPTABLES -N forwarding_rule
 	$IPTABLES -N prerouting_rule -t nat
 	$IPTABLES -N postrouting_rule -t nat
-	$IPTABLES -N input_wan
-	$IPTABLES -N forwarding_wan
-	$IPTABLES -N prerouting_wan -t nat
 			
 	$IPTABLES -A INPUT -j input_rule
 	$IPTABLES -A OUTPUT -j output_rule
 	$IPTABLES -A FORWARD -j forwarding_rule
 	$IPTABLES -A PREROUTING -t nat -j prerouting_rule
 	$IPTABLES -A POSTROUTING -t nat -j postrouting_rule
-	$IPTABLES -A zone_wan -j input_wan
-	$IPTABLES -A zone_wan_forward -j forwarding_wan
-	$IPTABLES -A zone_wan_prerouting -t nat -j prerouting_wan
+}
+
+fw_custom_chains_zone() {
+	local zone="$1"
+
+	[ -n "$CUSTOM_CHAINS" ] || return 0
+	$IPTABLES -N input_${zone}
+	$IPTABLES -N forwarding_${zone}
+	$IPTABLES -N prerouting_${zone} -t nat
+	$IPTABLES -A zone_${zone} -j input_${zone}
+	$IPTABLES -A zone_${zone}_forward -j forwarding_${zone}
+	$IPTABLES -A zone_${zone}_prerouting -t nat -j prerouting_${zone}
 }
 
 fw_init() {
+	DEFAULTS_APPLIED=
+
 	echo "Loading defaults"
 	config_foreach fw_defaults defaults
 	echo "Loading zones"
@@ -351,17 +372,12 @@ fw_init() {
 	config_foreach fw_forwarding forwarding
 	echo "Loading redirects"
 	config_foreach fw_redirect redirect
-	echo "Adding custom chains"
-	fw_custom_chains
 	echo "Loading includes"
 	config_foreach fw_include include
 	uci_set_state firewall core loaded 1
 	unset CONFIG_APPEND
 	config_load network
 	config_foreach fw_addif interface
-	fw_set_chain_policy INPUT $input
-	fw_set_chain_policy OUTPUT $output
-	fw_set_chain_policy FORWARD $forward
 }
 
 fw_stop() {
