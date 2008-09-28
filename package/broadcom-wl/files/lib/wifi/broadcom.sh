@@ -5,10 +5,12 @@ scan_broadcom() {
 	local wds
 	local adhoc sta apmode mon
 	local adhoc_if sta_if ap_if mon_if
+	local _c=0
 
 	config_get vifs "$device" vifs
 	for vif in $vifs; do
 		config_get mode "$vif" mode
+		_c=$(($_c + 1))
 		case "$mode" in
 			adhoc)
 				adhoc=1
@@ -53,7 +55,11 @@ scan_broadcom() {
 
 	ap=1
 	infra=1
-	mssid=1
+	if [ "$_c" -gt 1 ]; then
+		mssid=1
+	else
+		mssid=
+	fi
 	apsta=0
 	radio=1
 	monitor=0
