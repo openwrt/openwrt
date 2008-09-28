@@ -354,9 +354,9 @@ fw_custom_chains_zone() {
 	$IPTABLES -N input_${zone}
 	$IPTABLES -N forwarding_${zone}
 	$IPTABLES -N prerouting_${zone} -t nat
-	$IPTABLES -A zone_${zone} -j input_${zone}
-	$IPTABLES -A zone_${zone}_forward -j forwarding_${zone}
-	$IPTABLES -A zone_${zone}_prerouting -t nat -j prerouting_${zone}
+	$IPTABLES -I zone_${zone} 1 -j input_${zone}
+	$IPTABLES -I zone_${zone}_forward 1 -j forwarding_${zone}
+	$IPTABLES -I zone_${zone}_prerouting 1 -t nat -j prerouting_${zone}
 }
 
 fw_init() {
