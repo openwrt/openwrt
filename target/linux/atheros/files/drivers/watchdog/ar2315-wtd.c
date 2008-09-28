@@ -81,7 +81,7 @@ ar2315_wdt_interrupt(int irq, void *dev_id)
 	if(started)
 	{
 		printk(KERN_CRIT "watchdog expired, rebooting system\n");
-		sysRegWrite(AR5315_COLD_RESET, RESET_SYSTEM);
+		emergency_restart();
 	} else {
 		sysRegWrite(AR5315_WDC, 0);
 		sysRegWrite(AR5315_WD, 0);
