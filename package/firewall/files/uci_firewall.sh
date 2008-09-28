@@ -216,10 +216,13 @@ fw_rule() {
 	config_get proto $1 proto
 	config_get target $1 target
 	config_get ruleset $1 ruleset
-
+	
+	ZONE=input
+	TARGET=$target
 	[ -z "$target" ] && target=DROP
-	[ -n "$src" ] && ZONE=zone_$src || ZONE=input
-	[ -n "$dest" ] && TARGET=zone_${dest}_$target || TARGET=$target
+	[ -n "$src" -a -z "$dest" ] && ZONE=zone_$src
+	[ -n "$src" -a -n "$dest" ] && ZONE=zone_${src}_forward
+	[ -n "$dest" ] && TARGET=zone_${dest}_$target
 	add_rule() {
 		$IPTABLES -I $ZONE 1 \
 			${proto:+-p $proto} \
