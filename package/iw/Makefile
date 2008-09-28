@@ -28,6 +28,7 @@ endef
 
 define Build/Configure
 	$(CP) $(PKG_BUILD_DIR)/defconfig $(PKG_BUILD_DIR)/.config
+	echo "#define IW_VERSION \"$(VERSION)\"" > $(PKG_BUILD_DIR)/version.h
 endef
 
 MAKE_FLAGS += \
