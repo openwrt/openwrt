@@ -1,0 +1,11 @@
+--- a/arch/mips/kernel/head.S
++++ b/arch/mips/kernel/head.S
+@@ -120,6 +120,8 @@
+ #endif
+ 	.endm
+ 
++	j kernel_entry
++	nop
+ #ifndef CONFIG_NO_EXCEPT_FILL
+ 	/*
+ 	 * Reserved space for exception handlers.

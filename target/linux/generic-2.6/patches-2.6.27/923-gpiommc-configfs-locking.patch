@@ -1,0 +1,58 @@
+The gpiommc configfs context structure needs locking, as configfs
+does not lock access between files.
+
+--- a/drivers/mmc/host/gpiommc.c
++++ b/drivers/mmc/host/gpiommc.c
+@@ -143,6 +143,8 @@
+ 	struct platform_device *pdev;
+ 	/* The configuration */
+ 	struct gpiommc_platform_data pdata;
++	/* Mutex to protect this structure */
++	struct mutex mutex;
+ };
+ 
+ #define GPIO_INVALID	-1
+@@ -233,6 +235,8 @@
+ 	unsigned int gpio;
+ 	int err = 0;
+ 
++	mutex_lock(&dev->mutex);
++
+ 	if (attr == &gpiommc_attr_DI) {
+ 		gpio = dev->pdata.pins.gpio_di;
+ 		if (gpio == GPIO_INVALID)
+@@ -293,6 +297,8 @@
+ 	WARN_ON(1);
+ 	err = -ENOSYS;
+ out:
++	mutex_unlock(&dev->mutex);
++
+ 	return err ? err : count;
+ }
+ 
+@@ -352,6 +358,8 @@
+ 	int err = -EINVAL;
+ 	unsigned long data;
+ 
++	mutex_lock(&dev->mutex);
++
+ 	if (attr == &gpiommc_attr_register) {
+ 		err = strict_strtoul(page, 10, &data);
+ 		if (err)
+@@ -477,6 +485,8 @@
+ 	WARN_ON(1);
+ 	err = -ENOSYS;
+ out:
++	mutex_unlock(&dev->mutex);
++
+ 	return err ? err : count;
+ }
+ 
+@@ -513,6 +523,7 @@
+ 	if (!dev)
+ 		return NULL;
+ 
++	mutex_init(&dev->mutex);
+ 	config_item_init_type_name(&dev->item, name,
+ 				   &gpiommc_dev_ci_type);
+ 
