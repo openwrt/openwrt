@@ -1,0 +1,12 @@
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -577,6 +577,9 @@
+ #
+ core-$(CONFIG_TOSHIBA_RBTX4938) += arch/mips/txx9/rbtx4938/
+ 
++# temporary until string.h is fixed
++cflags-y += -ffreestanding
++
+ cflags-y			+= -Iinclude/asm-mips/mach-generic
+ drivers-$(CONFIG_PCI)		+= arch/mips/pci/
+ 

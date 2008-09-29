@@ -1,0 +1,11 @@
+--- a/include/asm-mips/system.h
++++ b/include/asm-mips/system.h
+@@ -185,7 +185,7 @@
+    if something tries to do an invalid xchg().  */
+ extern void __xchg_called_with_bad_pointer(void);
+ 
+-static inline unsigned long __xchg(unsigned long x, volatile void * ptr, int size)
++static __always_inline unsigned long __xchg(unsigned long x, volatile void * ptr, int size)
+ {
+ 	switch (size) {
+ 	case 4:
