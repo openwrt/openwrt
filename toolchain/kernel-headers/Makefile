@@ -53,6 +53,11 @@ define Build/Prepare
 	ln -sf linux-$(LINUX_VERSION) $(LINUX_HEADERS_DIR)
 	yes '' | $(KMAKE) oldconfig
 	$(KMAKE) include/linux/version.h include/asm
+	if [ -d $(PKG_BUILD_DIR)/arch/$(LINUX_KARCH)/include/asm ]; then \
+		$(CP) \
+			$(PKG_BUILD_DIR)/arch/$(LINUX_KARCH)/include/asm/. \
+			$(PKG_BUILD_DIR)/include/asm-$(LINUX_KARCH)/; \
+	fi
 	$(call Build/Configure/$(ARCH))
 endef
 
