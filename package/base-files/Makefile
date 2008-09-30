@@ -146,7 +146,12 @@ define Package/base-files$(TARGET)/install
 			$(CP) $(PLATFORM_SUBDIR)/base-files-$(PROFILE)/* $(1)/; \
 		fi \
 	)
-	$(if $(CONFIG_BUSYBOX_CONFIG_FEATURE_SHADOWPASSWDS),cp $(1)/etc/passwd $(1)/etc/shadow)
+# Form valid /etc/shadow entries, by copying the user:pw pairs
+# from /etc/passwd, and adding on pw change data
+	$(if $(CONFIG_BUSYBOX_CONFIG_FEATURE_SHADOWPASSWDS), \
+		cut -d ':' -f 1-2 $(1)/etc/passwd > $(1)/etc/shadow; \
+		$(SED) 's/$$$$/:13848:0:99999:7:::/' $(1)/etc/shadow \
+	)
 	$(SED) 's,$$$$R,$(REVISION),g' $(1)/etc/banner
 	mkdir -p $(1)/dev
 	mkdir -p $(1)/etc/crontabs
