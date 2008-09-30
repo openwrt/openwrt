@@ -275,6 +275,13 @@ extern void ar71xx_ddr_flush(u32 reg);
 #define RESET_REG_PERFC1		0x34
 #define RESET_REG_REV_ID		0x90
 
+#define WDOG_CTRL_LAST_RESET		BIT(31)
+#define WDOG_CTRL_ACTION_MASK		3
+#define WDOG_CTRL_ACTION_NONE		0	/* no action */
+#define WDOG_CTRL_ACTION_GPI		1	/* general purpose interrupt */
+#define WDOG_CTRL_ACTION_NMI		2	/* NMI */
+#define WDOG_CTRL_ACTION_FCR		3	/* full chip reset */
+
 #define MISC_INT_DMA			BIT(7)
 #define MISC_INT_OHCI			BIT(6)
 #define MISC_INT_PERFC			BIT(5)

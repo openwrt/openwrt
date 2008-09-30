@@ -414,6 +414,11 @@ err_free_buttons:
 	kfree(p);
 }
 
+void __init ar71xx_add_device_wdt(void)
+{
+	platform_device_register_simple("ar71xx-wdt", -1, NULL, 0);
+}
+
 void __init ar71xx_set_mac_base(unsigned char *mac)
 {
 	memcpy(ar71xx_mac_base, mac, ETH_ALEN);
@@ -439,6 +444,7 @@ static int __init ar71xx_machine_setup(void)
 	ar71xx_gpio_init();
 
 	ar71xx_add_device_uart();
+	ar71xx_add_device_wdt();
 
 	mips_machine_setup();
 	return 0;
