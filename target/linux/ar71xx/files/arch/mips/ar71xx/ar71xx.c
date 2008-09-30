@@ -16,10 +16,19 @@
 #include <asm/mach-ar71xx/ar71xx.h>
 
 void __iomem *ar71xx_ddr_base;
+EXPORT_SYMBOL_GPL(ar71xx_ddr_base);
+
 void __iomem *ar71xx_pll_base;
+EXPORT_SYMBOL_GPL(ar71xx_pll_base);
+
 void __iomem *ar71xx_reset_base;
+EXPORT_SYMBOL_GPL(ar71xx_reset_base);
+
 void __iomem *ar71xx_gpio_base;
+EXPORT_SYMBOL_GPL(ar71xx_gpio_base);
+
 void __iomem *ar71xx_usb_ctrl_base;
+EXPORT_SYMBOL_GPL(ar71xx_usb_ctrl_base);
 
 void ar71xx_device_stop(u32 mask)
 {
