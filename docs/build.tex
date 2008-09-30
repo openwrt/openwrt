@@ -384,6 +384,59 @@ After you have created your \texttt{package/\textit{<name>}/Makefile}, the new p
 will automatically show in the menu the next time you run "make menuconfig" and if selected
 will be built automatically the next time "\texttt{make}" is run.
 
+\subsection{Creating binary packages}
+
+You might want to create binary packages and include them in the resulting images as packages.
+To do so, you can use the following template, which basically sets to nothing the Configure and
+Compile templates.
+
+\begin{Verbatim}[frame=single,numbers=left]
+# $Id: $
+
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=binpkg
+PKG_VERSION:=1.0
+PKG_RELEASE:=1
+
+PKG_SOURCE:=binpkg-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=http://server
+PKG_MD5SUM:=9b7dc52656f5cbec846a7ba3299f73bd
+PKG_CAT:=zcat
+
+include $(INCLUDE_DIR)/package.mk
+
+define Package/binpkg
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=Binary package
+endef
+
+define Package/bridge/description
+  Binary package
+endef
+
+define Build/Configure
+endef
+
+define Build/Compile
+endef
+
+define Package/bridge/install
+    $(INSTALL_DIR) $(1)/usr/sbin
+    $(INSTALL_BIN) $(PKG_BUILD_DIR)/* $(1)/usr/sbin/
+endef
+
+$(eval $(call BuildPackage,bridge))
+\end{Verbatim}
+
+Provided that the tarball which contains the binaries reflects the final
+directory layout (/usr, /lib ...), it becomes very easy to get your package
+look like one build from sources.
+
+Note that using the same technique, you can easily create binary pcakages
+for your proprietary kernel modules as well.
+
 \subsection{Creating kernel modules packages}
 
 The OpenWrt distribution makes the distinction between two kind of kernel modules, those coming along with the mainline kernel, and the others available as a separate project. We will see later that a common template is used for both of them.
