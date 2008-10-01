@@ -17,7 +17,7 @@ PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_SOURCE_SUBDIR:=hostapd-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_MD5SUM:=62876f2179f316db0621cc33adf04c19
-PKG_BUILD_DEPENDS:=madwifi mac80211 libnl openssl
+PKG_BUILD_DEPENDS:=PACKAGE_kmod-madwifi:madwifi PACKAGE_kmod-mac80211:mac80211 PACKAGE_kmod-mac80211:libnl
 
 include $(INCLUDE_DIR)/package.mk
 STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(call confvar,CONFIG_PACKAGE_kmod-mac80211 CONFIG_PACKAGE_kmod-madwifi CONFIG_PACKAGE_hostapd CONFIG_PACKAGE_hostapd-mini)
@@ -33,7 +33,7 @@ endef
 define Package/hostapd
 $(call Package/hostapd/Default)
   TITLE+= (full)
-  DEPENDS+= +libopenssl
+  DEPENDS+= +PACKAGE_hostapd:libopenssl
 endef
 
 #define Package/hostapd/conffiles

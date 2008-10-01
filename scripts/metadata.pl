@@ -223,6 +223,7 @@ EOF
 			$flags = $1;
 			$name = $2;
 
+			next if $name =~ /:/;
 			$flags =~ /-/ and $mode = "deselect";
 			$flags =~ /\+/ and $mode = "select";
 			$flags =~ /@/ and $confstr .= "\t$mode $name\n";
@@ -374,8 +375,13 @@ sub mconf_depends($$) {
 		my $m = "depends";
 		$depend =~ s/^([@\+]+)//;
 		my $flags = $1;
+		my $condition;
 		my $vdep;
 
+		if ($depend =~ /^(.+):(.+)$/) {
+			$condition = $1;
+			$depend = $2;
+		}
 		if ($vdep = $package{$depend}->{vdepends}) {
 			$depend = join("||", map { "PACKAGE_".$_ } @$vdep);
 		} else {
@@ -390,6 +396,7 @@ sub mconf_depends($$) {
 				next if $only_dep;
 			};
 			$flags =~ /@/ or $depend = "PACKAGE_$depend";
+			$condition and $depend = "$depend if $condition";
 		}
 		$dep->{$depend} =~ /select/ or $dep->{$depend} = $m;
 	}
@@ -535,6 +542,13 @@ sub gen_package_mk() {
 		my $depline = "";
 		foreach my $deps (@srcdeps) {
 			my $idx;
+			my $condition;
+
+			if ($deps =~ /^(.+):(.+)/) {
+				$condition = $1;
+				$deps = $2;
+			}
+
 			my $pkg_dep = $package{$deps};
 			my @deps;
 
@@ -556,12 +570,19 @@ sub gen_package_mk() {
 					next if $pkg->{src} eq $pkg_dep->{src};
 					next if $dep{$pkg->{src}."->".$idx};
 					next if $dep{$pkg->{src}."->($dep)".$idx};
+					my $depstr;
+
 					if ($pkg_dep->{vdepends}) {
-						$depline .= " \$(if \$(CONFIG_PACKAGE_$dep),\$(curdir)/$idx/compile)";
+						$depstr = "\$(if \$(CONFIG_PACKAGE_$dep),\$(curdir)/$idx/compile)";
 						$dep{$pkg->{src}."->($dep)".$idx} = 1;
 					} else {
-						$depline .= " \$(curdir)/$idx/compile";
+						$depstr = "\$(curdir)/$idx/compile";
 						$dep{$pkg->{src}."->".$idx} = 1;
+					}
+					if ($condition) {
+						$depline .= " \$(if \$(CONFIG_$condition),$depstr)";
+					} else {
+						$depline .= " $depstr";
 					}
 				}
 			}
