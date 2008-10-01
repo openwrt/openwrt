@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ebtables
 PKG_VERSION:=2.0.8-2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-v$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/ebtables
@@ -28,11 +28,20 @@ define Package/ebtables
   URL:=http://ebtables.sourceforge.net/
 endef
 
+define Package/ebtables-utils
+  $(call Package/ebtables)
+  TITLE:=ebtables save/restore utilities
+endef
+
 define Package/ebtables/description
 	The ebtables program is a filtering tool for a bridging firewall. The
 	filtering is focussed on the Link Layer Ethernet frame fields. Apart
 	from filtering, it also gives the ability to alter the Ethernet MAC
 	addresses and implement a brouter.
+endef
+
+define Package/ebtables-utils/description
+	$(call Package/ebtables/description)
 endef
 
 MAKE_FLAGS += \
@@ -47,8 +56,12 @@ define Package/ebtables/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/extensions/*.so $(1)/usr/lib/ebtables/
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ebtables $(1)/usr/sbin/
+endef
+
+define Package/ebtables-utils/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ebtables-save $(1)/usr/sbin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ebtables-restore $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,ebtables))
+$(eval $(call BuildPackage,ebtables-utils))
