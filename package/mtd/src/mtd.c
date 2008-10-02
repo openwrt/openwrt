@@ -138,7 +138,7 @@ int mtd_write_buffer(int fd, const char *buf, int offset, int length)
 static int
 image_check(int imagefd, const char *mtd)
 {
-	int ret = 0;
+	int ret = 1;
 #ifdef target_brcm
 	ret = trx_check(imagefd, mtd, buf, &buflen);
 #endif
