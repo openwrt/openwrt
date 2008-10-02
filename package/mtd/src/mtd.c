@@ -276,10 +276,8 @@ mtd_write(int imagefd, const char *mtd)
 				}
 			}
 
-			if (r == 0) {
-				fprintf(stderr, "No more data left\n");
+			if (r == 0)
 				break;
-			}
 
 			buflen += r;
 		} while (buflen < erasesize);
