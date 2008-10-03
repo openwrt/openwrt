@@ -22,6 +22,11 @@ define BuildIPKGVariable
   $(1)_COMMANDS += var2file "$(call shvar,Package/$(1)/$(2))" $(2);
 endef
 
+dep_split=$(subst :,$(space),$(1))
+dep_confvar=CONFIG_$(word 1,$(call dep_split,$(1)))
+dep_val=$(word 2,$(call dep_split,$(1)))
+filter_deps=$(foreach dep,$(1),$(if $(findstring :,$(dep)),$(if $($(call dep_confvar,$(dep))),$(call dep_val,$(dep))),$(dep)))
+
 ifeq ($(DUMP),)
   define BuildTarget/ipkg
     IPKG_$(1):=$(PACKAGE_DIR)/$(1)_$(VERSION)_$(PKGARCH).ipk
@@ -42,7 +47,7 @@ ifeq ($(DUMP),)
       endif
     endif
 
-    IDEPEND_$(1):=$$(strip $$(DEPENDS))
+    IDEPEND_$(1):=$$(call filter_deps,$$(strip $$(DEPENDS)))
   
     $(eval $(call BuildIPKGVariable,$(1),conffiles))
     $(eval $(call BuildIPKGVariable,$(1),preinst))
