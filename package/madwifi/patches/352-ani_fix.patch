@@ -23,7 +23,7 @@
  	return 0;
  bad3:
  	ieee80211_ifdetach(ic);
-@@ -2351,16 +2354,6 @@
+@@ -2349,16 +2352,6 @@
  		}
  		if (status & HAL_INT_MIB) {
  			sc->sc_stats.ast_mib++;
@@ -40,7 +40,7 @@
  			/* Let the HAL handle the event. */
  			ath_hal_mibevent(ah, &sc->sc_halstats);
  		}
-@@ -2430,6 +2423,43 @@
+@@ -2428,6 +2421,43 @@
  	return flags;
  }
  
@@ -84,7 +84,7 @@
  /*
   * Context: process context
   */
-@@ -2495,8 +2525,7 @@
+@@ -2493,8 +2523,7 @@
  	if (sc->sc_softled)
  		ath_hal_gpioCfgOutput(ah, sc->sc_ledpin);
  
@@ -94,7 +94,7 @@
  
  	/*
  	 * This is needed only to setup initial state
-@@ -2532,7 +2561,7 @@
+@@ -2530,7 +2559,7 @@
  	 * Enable MIB interrupts when there are hardware phy counters.
  	 * Note we only do this (at the moment) for station mode.
  	 */
@@ -103,7 +103,7 @@
  		sc->sc_imask |= HAL_INT_MIB;
  	ath_hal_intrset(ah, sc->sc_imask);
  
-@@ -2789,9 +2818,7 @@
+@@ -2787,9 +2816,7 @@
  		EPRINTF(sc, "Unable to reset hardware: '%s' (HAL status %u)\n",
  			ath_get_hal_status_desc(status), status);
  
@@ -114,7 +114,7 @@
  	ath_update_txpow(sc);		/* update tx power state */
  	ath_radar_update(sc);
  	ath_setdefantenna(sc, sc->sc_defant);
-@@ -4176,6 +4203,8 @@
+@@ -4174,6 +4201,8 @@
  	if (sc->sc_nmonvaps > 0)
  		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON |
  			  HAL_RX_FILTER_PROBEREQ | HAL_RX_FILTER_PROM);
@@ -123,7 +123,7 @@
  	if (sc->sc_curchan.privFlags & CHANNEL_DFS)
  		rfilt |= (HAL_RX_FILTER_PHYERR | HAL_RX_FILTER_PHYRADAR);
  	return rfilt;
-@@ -6526,9 +6555,6 @@
+@@ -6524,9 +6553,6 @@
  			rs->rs_rssi = 0;
  
  		len = rs->rs_datalen;
@@ -133,7 +133,7 @@
  
  		if (rs->rs_more) {
  			/*
-@@ -8880,9 +8906,7 @@
+@@ -8874,9 +8900,7 @@
  		if (sc->sc_softled)
  			ath_hal_gpioCfgOutput(ah, sc->sc_ledpin);
  
@@ -144,7 +144,7 @@
  		sc->sc_curchan = hchan;
  		ath_update_txpow(sc);		/* update tx power state */
  		ath_radar_update(sc);
-@@ -10659,9 +10683,54 @@
+@@ -10653,9 +10677,54 @@
  	ATH_RP_IGNORED 		= 24,
  	ATH_RADAR_IGNORED       = 25,
  	ATH_MAXVAPS  		= 26,
@@ -199,7 +199,7 @@
  ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl, write, filp, buffer, lenp, ppos)
  {
  	struct ath_softc *sc = ctl->extra1;
-@@ -10847,6 +10916,11 @@
+@@ -10841,6 +10910,11 @@
  			case ATH_RADAR_IGNORED:
  				sc->sc_radar_ignored = val;
  				break;
@@ -211,7 +211,7 @@
  			default:
  				ret = -EINVAL;
  				break;
-@@ -10913,6 +10987,11 @@
+@@ -10907,6 +10981,11 @@
  		case ATH_RADAR_IGNORED:
  			val = sc->sc_radar_ignored;
  			break;
@@ -223,7 +223,7 @@
  		default:
  			ret = -EINVAL;
  			break;
-@@ -11090,6 +11169,24 @@
+@@ -11084,6 +11163,24 @@
  	  .proc_handler = ath_sysctl_halparam,
  	  .extra2	= (void *)ATH_RADAR_IGNORED,
  	},

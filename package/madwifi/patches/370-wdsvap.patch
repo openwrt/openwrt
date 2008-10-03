@@ -67,7 +67,7 @@
  	/* override with driver methods */
  	vap = &avp->av_vap;
  	avp->av_newstate = vap->iv_newstate;
-@@ -4201,8 +4203,7 @@
+@@ -4199,8 +4201,7 @@
  	if (ic->ic_opmode == IEEE80211_M_STA ||
  	    sc->sc_opmode == HAL_M_IBSS ||	/* NB: AHDEMO too */
  	    (sc->sc_nostabeacons) || sc->sc_scanning ||
@@ -77,7 +77,7 @@
  		rfilt |= HAL_RX_FILTER_BEACON;
  	if (sc->sc_nmonvaps > 0)
  		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON |
-@@ -9026,8 +9027,6 @@
+@@ -9020,8 +9021,6 @@
  		 * set sc->beacons if we might need to restart
                   * them after ath_reset. */
  		if (!sc->sc_beacons &&

@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -3241,7 +3241,6 @@
+@@ -3239,7 +3239,6 @@
  	struct ath_softc *sc = dev->priv;
  	struct ieee80211_node *ni = NULL;
  	struct ath_buf *bf = NULL;
@@ -8,7 +8,7 @@
  	ath_bufhead bf_head;
  	struct ath_buf *tbf, *tempbf;
  	struct sk_buff *tskb;
-@@ -3253,6 +3252,7 @@
+@@ -3251,6 +3250,7 @@
  	*/
  	int requeue = 0;
  #ifdef ATH_SUPERG_FF
@@ -16,7 +16,7 @@
  	unsigned int pktlen;
  	struct ieee80211com *ic = &sc->sc_ic;
  	struct ath_node *an;
-@@ -3318,27 +3318,9 @@
+@@ -3316,27 +3316,9 @@
  		requeue = 1;
  		goto hardstart_fail;
  	}
