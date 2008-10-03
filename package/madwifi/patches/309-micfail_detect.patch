@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -6459,6 +6459,7 @@
+@@ -6457,6 +6457,7 @@
  	int type;
  	u_int phyerr;
  	u_int processed = 0, early_stop = 0;
@@ -8,7 +8,7 @@
  
  	DPRINTF(sc, ATH_DEBUG_RX_PROC, "invoked\n");
  process_rx_again:
-@@ -6560,24 +6561,8 @@
+@@ -6558,24 +6559,8 @@
  			}
  			if (rs->rs_status & HAL_RXERR_MIC) {
  				sc->sc_stats.ast_rx_badmic++;
@@ -35,7 +35,7 @@
  			}
  			/*
  			 * Reject error frames if we have no vaps that
-@@ -6616,8 +6601,9 @@
+@@ -6614,8 +6599,9 @@
  		/*
  		 * Finished monitor mode handling, now reject
  		 * error frames before passing to other vaps
@@ -46,7 +46,7 @@
  			ieee80211_dev_kfree_skb(&skb);
  			goto rx_next;
  		}
-@@ -6625,6 +6611,26 @@
+@@ -6623,6 +6609,26 @@
  		/* remove the CRC */
  		skb_trim(skb, skb->len - IEEE80211_CRC_LEN);
  
@@ -73,7 +73,7 @@
  		/*
  		 * From this point on we assume the frame is at least
  		 * as large as ieee80211_frame_min; verify that.
-@@ -6637,6 +6643,7 @@
+@@ -6635,6 +6641,7 @@
  			goto rx_next;
  		}
  

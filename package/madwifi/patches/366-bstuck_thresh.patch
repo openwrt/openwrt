@@ -32,7 +32,7 @@
  MODULE_PARM_DESC(autocreate, "Create ath device in "
  		"[sta|ap|wds|adhoc|ahdemo|monitor] mode. defaults to sta, use "
  		"'none' to disable");
-@@ -5064,7 +5068,7 @@
+@@ -5062,7 +5066,7 @@
  		DPRINTF(sc, ATH_DEBUG_BEACON_PROC,
  			"Missed %u consecutive beacons (n_beacon=%u)\n",
  			sc->sc_bmisscount, n_beacon);
@@ -41,7 +41,7 @@
  			ATH_SCHEDULE_TQUEUE(&sc->sc_bstucktq, needmark);
  		return;
  	}
-@@ -5220,7 +5224,7 @@
+@@ -5218,7 +5222,7 @@
  	 *     check will be true, in which case return
  	 *     without resetting the driver.
  	 */

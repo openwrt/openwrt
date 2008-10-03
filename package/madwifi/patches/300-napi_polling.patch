@@ -52,7 +52,7 @@
  	status &= sc->sc_imask;			/* discard unasked for bits */
  	/* As soon as we know we have a real interrupt we intend to service, 
  	 * we will check to see if we need an initial hardware TSF reading. 
-@@ -2277,7 +2290,23 @@
+@@ -2277,7 +2290,21 @@
  		}
  		if (status & (HAL_INT_RX | HAL_INT_RXPHY)) {
  			ath_uapsd_processtriggers(sc, hw_tsf);
@@ -64,10 +64,8 @@
 +			if (netif_rx_schedule_prep(dev))
 +#endif
 +			{
-+#ifndef ATH_PRECISE_TSF
 +				sc->sc_imask &= ~HAL_INT_RX;
 +				ath_hal_intrset(ah, sc->sc_imask);
-+#endif
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 +				__netif_rx_schedule(dev, &sc->sc_napi);
 +#else
@@ -77,7 +75,7 @@
  		}
  		if (status & HAL_INT_TX) {
  #ifdef ATH_SUPERG_DYNTURBO
-@@ -2303,6 +2332,11 @@
+@@ -2303,6 +2330,11 @@
  				}
  			}
  #endif
@@ -89,7 +87,7 @@
  			ATH_SCHEDULE_TQUEUE(&sc->sc_txtq, &needmark);
  		}
  		if (status & HAL_INT_BMISS) {
-@@ -2515,6 +2549,7 @@
+@@ -2515,6 +2547,7 @@
  	if (sc->sc_tx99 != NULL)
  		sc->sc_tx99->start(sc->sc_tx99);
  #endif
@@ -97,7 +95,7 @@
  
  done:
  	ATH_UNLOCK(sc);
-@@ -2555,6 +2590,9 @@
+@@ -2555,6 +2588,9 @@
  		if (sc->sc_tx99 != NULL)
  			sc->sc_tx99->stop(sc->sc_tx99);
  #endif
@@ -107,7 +105,7 @@
  		netif_stop_queue(dev);	/* XXX re-enabled by ath_newstate */
  		dev->flags &= ~IFF_RUNNING;	/* NB: avoid recursion */
  		ieee80211_stop_running(ic);	/* stop all VAPs */
-@@ -4013,12 +4051,47 @@
+@@ -4013,12 +4049,47 @@
  	return ath_keyset(sc, k, mac, vap->iv_bss);
  }
  
@@ -155,7 +153,7 @@
  static void
  ath_key_update_begin(struct ieee80211vap *vap)
  {
-@@ -4032,14 +4105,9 @@
+@@ -4032,14 +4103,9 @@
  	 * When called from the rx tasklet we cannot use
  	 * tasklet_disable because it will block waiting
  	 * for us to complete execution.
@@ -172,7 +170,7 @@
  }
  
  static void
-@@ -4051,9 +4119,9 @@
+@@ -4051,9 +4117,9 @@
  #endif
  
  	DPRINTF(sc, ATH_DEBUG_KEYCACHE, "End\n");
@@ -185,7 +183,7 @@
  }
  
  /*
-@@ -6360,15 +6428,25 @@
+@@ -6360,15 +6426,25 @@
  	sc->sc_rxotherant = 0;
  }
  
@@ -215,7 +213,7 @@
  	struct ieee80211com *ic = &sc->sc_ic;
  	struct ath_hal *ah = sc ? sc->sc_ah : NULL;
  	struct ath_desc *ds;
-@@ -6378,8 +6456,10 @@
+@@ -6378,8 +6454,10 @@
  	unsigned int len;
  	int type;
  	u_int phyerr;
@@ -226,7 +224,7 @@
  	do {
  		bf = STAILQ_FIRST(&sc->sc_rxbuf);
  		if (bf == NULL) {		/* XXX ??? can this happen */
-@@ -6403,6 +6483,15 @@
+@@ -6403,6 +6481,15 @@
  			/* NB: never process the self-linked entry at the end */
  			break;
  		}
@@ -242,7 +240,7 @@
  		skb = bf->bf_skb;
  		if (skb == NULL) {
  			EPRINTF(sc, "Dropping; buffer contains NULL skbuff.\n");
-@@ -6450,6 +6539,7 @@
+@@ -6450,6 +6537,7 @@
  				sc->sc_stats.ast_rx_phyerr++;
  				phyerr = rs->rs_phyerr & 0x1f;
  				sc->sc_stats.ast_rx_phy[phyerr]++;
@@ -250,7 +248,7 @@
  			}
  			if (rs->rs_status & HAL_RXERR_DECRYPT) {
  				/*
-@@ -6645,9 +6735,43 @@
+@@ -6645,9 +6733,39 @@
  		STAILQ_INSERT_TAIL(&sc->sc_rxbuf, bf, bf_list);
  		ATH_RXBUF_UNLOCK_IRQ(sc);
  	} while (ath_rxbuf_init(sc, bf) == 0);
@@ -259,7 +257,6 @@
 +		/* Check if more data is received while we were
 +		 * processing the descriptor chain.
 +		 */
-+#ifndef ATH_PRECISE_TSF
 +		local_irq_save(flags);
 +		if (sc->sc_isr & HAL_INT_RX) {
 +			u_int64_t hw_tsf = ath_hal_gettsf64(ah);
@@ -268,12 +265,7 @@
 +			ath_uapsd_processtriggers(sc, hw_tsf);
 +			goto process_rx_again;
 +		}
-+#endif
-+#ifndef ATH_PRECISE_TSF
-+		sc->sc_imask |= HAL_INT_RX;
-+		ath_hal_intrset(ah, sc->sc_imask);
 +		local_irq_restore(flags);
-+#endif
 +	}
 +
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
@@ -283,6 +275,8 @@
 +	*budget -= processed;
 +	dev->quota -= processed;
 +#endif
++	sc->sc_imask |= HAL_INT_RX;
++	ath_hal_intrset(ah, sc->sc_imask);
  
  	/* rx signal state monitoring */
  	ath_hal_rxmonitor(ah, &sc->sc_halstats, &sc->sc_curchan);
@@ -294,7 +288,7 @@
  #undef PA2DESC
  }
  
-@@ -8298,12 +8422,24 @@
+@@ -8298,12 +8416,24 @@
  {
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
@@ -319,7 +313,7 @@
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -8319,7 +8455,9 @@
+@@ -8319,7 +8449,9 @@
  {
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
@@ -329,7 +323,7 @@
  	/*
  	 * Process each active queue.
  	 */
-@@ -8340,6 +8478,16 @@
+@@ -8340,6 +8472,16 @@
  	if (sc->sc_uapsdq && txqactive(sc->sc_ah, sc->sc_uapsdq->axq_qnum))
  		ath_tx_processq(sc, sc->sc_uapsdq);
  
@@ -346,7 +340,7 @@
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -8355,13 +8503,25 @@
+@@ -8355,13 +8497,25 @@
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
  	unsigned int i;
@@ -372,7 +366,7 @@
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -10296,9 +10456,9 @@
+@@ -10296,9 +10450,9 @@
  	dev->mtu = mtu;
  	if ((dev->flags & IFF_RUNNING) && !sc->sc_invalid) {
  		/* NB: the rx buffers may need to be reallocated */

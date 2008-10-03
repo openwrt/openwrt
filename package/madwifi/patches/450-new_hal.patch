@@ -93,7 +93,7 @@
   * The functions in this section are not intended to be invoked by MadWifi
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -592,6 +592,14 @@
+@@ -593,6 +593,14 @@
  	}
  	sc->sc_ah = ah;
  
@@ -108,7 +108,7 @@
  	/*
  	 * Check if the MAC has multi-rate retry support.
  	 * We do this by trying to setup a fake extended
-@@ -7348,7 +7356,7 @@
+@@ -7382,7 +7390,7 @@
  	if (qtype == HAL_TX_QUEUE_UAPSD)
  		qi.tqi_qflags = HAL_TXQ_TXDESCINT_ENABLE;
  	else

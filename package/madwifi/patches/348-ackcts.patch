@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -2725,6 +2725,9 @@
+@@ -2723,6 +2723,9 @@
  static int
  ath_set_ack_bitrate(struct ath_softc *sc, int high)
  {
@@ -10,7 +10,7 @@
  	if (ar_device(sc->devid) == 5212 || ar_device(sc->devid) == 5213) {
  		/* set ack to be sent at low bit-rate */
  		/* registers taken from the OpenBSD 5212 HAL */
-@@ -10795,8 +10798,13 @@
+@@ -10789,8 +10792,13 @@
  				break;
  #endif
  			case ATH_ACKRATE:
