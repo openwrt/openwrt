@@ -37,7 +37,7 @@
 +	struct ath_hal *ah = sc->sc_ah;
 +	int dev = sc->sc_ah->ah_macType;
 +	unsigned int nbtt, atim;
-+	bool is_5210 = false;
++	bool is_5210 = 0;
 +
 +	/*
 +	 * check if the ATIM window is still correct:
@@ -50,7 +50,7 @@
 +	case 5210:
 +		nbtt = OS_REG_READ(ah, AR5K_TIMER0_5210);
 +		atim = OS_REG_READ(ah, AR5K_TIMER3_5210);
-+		is_5210 = true;
++		is_5210 = 1;
 +		break;
 +	case 5211:
 +	case 5212:
