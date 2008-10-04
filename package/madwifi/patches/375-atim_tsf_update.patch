@@ -37,7 +37,7 @@
 +	struct ath_hal *ah = sc->sc_ah;
 +	int dev = sc->sc_ah->ah_macType;
 +	unsigned int nbtt, atim;
-+	bool is_5210 = 0;
++	int is_5210 = 0;
 +
 +	/*
 +	 * check if the ATIM window is still correct:
