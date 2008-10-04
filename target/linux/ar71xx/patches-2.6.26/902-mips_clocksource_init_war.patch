@@ -1,45 +1,65 @@
---- a/include/asm-mips/hazards.h
-+++ b/include/asm-mips/hazards.h
-@@ -64,7 +64,7 @@
- 	_ehb
- 	)
- ASMMACRO(back_to_back_c0_hazard,
--	 _ehb
-+	 _ssnop; _ssnop; _ssnop; _ehb
- 	)
- /*
-  * gcc has a tradition of misscompiling the previous construct using the
 --- a/arch/mips/kernel/cevt-r4k.c
 +++ b/arch/mips/kernel/cevt-r4k.c
-@@ -187,7 +187,7 @@
+@@ -13,6 +13,22 @@
+ #include <asm/smtc_ipi.h>
+ #include <asm/time.h>
+ 
++/*
++ * Compare interrupt can be routed and latched outside the core,
++ * so a single execution hazard barrier may not be enough to give
++ * it time to clear as seen in the Cause register.  4 time the
++ * pipeline depth seems reasonably conservative, and empirically
++ * works better in configurations with high CPU/bus clock ratios.
++ */
++
++#define compare_change_hazard() \
++	do { \
++		irq_disable_hazard(); \
++		irq_disable_hazard(); \
++		irq_disable_hazard(); \
++		irq_disable_hazard(); \
++	} while (0)
++
+ static int mips_next_event(unsigned long delta,
+                            struct clock_event_device *evt)
+ {
+@@ -28,6 +44,7 @@
+ 	cnt = read_c0_count();
+ 	cnt += delta;
+ 	write_c0_compare(cnt);
++	compare_change_hazard();
+ 	res = ((int)(read_c0_count() - cnt) > 0) ? -ETIME : 0;
+ #ifdef CONFIG_MIPS_MT_SMTC
+ 	evpe(vpflags);
+@@ -187,7 +204,7 @@
  	 */
  	if (c0_compare_int_pending()) {
  		write_c0_compare(read_c0_count());
 -		irq_disable_hazard();
-+		back_to_back_c0_hazard();
++		compare_change_hazard();
  		if (c0_compare_int_pending())
  			return 0;
  	}
-@@ -196,7 +196,7 @@
+@@ -196,7 +213,7 @@
  		cnt = read_c0_count();
  		cnt += delta;
  		write_c0_compare(cnt);
 -		irq_disable_hazard();
-+		back_to_back_c0_hazard();
++		compare_change_hazard();
  		if ((int)(read_c0_count() - cnt) < 0)
  		    break;
  		/* increase delta if the timer was already expired */
-@@ -205,11 +205,12 @@
+@@ -205,11 +222,12 @@
  	while ((int)(read_c0_count() - cnt) <= 0)
  		;	/* Wait for expiry  */
  
-+	back_to_back_c0_hazard();
++	compare_change_hazard();
  	if (!c0_compare_int_pending())
  		return 0;
  
  	write_c0_compare(read_c0_count());
 -	irq_disable_hazard();
-+	back_to_back_c0_hazard();
++	compare_change_hazard();
  	if (c0_compare_int_pending())
  		return 0;
  
