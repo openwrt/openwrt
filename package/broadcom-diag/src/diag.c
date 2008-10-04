@@ -67,6 +67,7 @@ enum {
 	/* ASUS */
 	WLHDD,
 	WL300G,
+	WL320GE,
 	WL500G,
 	WL500GD,
 	WL500GP,
@@ -293,6 +294,17 @@ static struct platform_t __initdata platforms[] = {
 		},
 		.leds		= {
 			{ .name = "power",	.gpio = 1 << 0, .polarity = REVERSE },
+		},
+	},
+	[WL320GE] = {
+		.name		= "ASUS WL-320gE/WL-320gP",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+		},
+		.leds		= {
+			{ .name = "wlan",	.gpio = 1 << 0, .polarity = REVERSE },
+			{ .name = "power",	.gpio = 1 << 2, .polarity = REVERSE },
+			{ .name = "link",	.gpio = 1 << 11, .polarity = REVERSE },
 		},
 	},
 	[WL500G] = {
@@ -825,6 +837,8 @@ static struct platform_t __init *platform_detect(void)
 				return &platforms[WL500GP];
 			else if (!strcmp(boardtype,"0x0472"))
 				return &platforms[WL500W];
+			else if (!strcmp(boardtype,"0x467"))
+				return &platforms[WL320GE];
 			else
 				return &platforms[WL500GD];
 		}
