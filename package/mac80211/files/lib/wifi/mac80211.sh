@@ -53,7 +53,7 @@ enable_mac80211() {
 	
 	local first=1
 	for vif in $vifs; do
-		ifconfig "$ifname" down
+		ifconfig "$ifname" down 2>/dev/null
 		config_get ifname "$vif" ifname
 		config_get enc "$vif" encryption
 		config_get eap_type "$vif" eap_type
