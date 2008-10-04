@@ -367,7 +367,9 @@ sub mconf_depends($$) {
 	my $only_dep = shift;
 	my $res;
 	my $dep = shift;
+	my $seen = shift;
 	$dep or $dep = {};
+	$seen or $seen = {};
 
 	$depends or return;
 	my @depends = @$depends;
@@ -382,6 +384,8 @@ sub mconf_depends($$) {
 			$condition = $1;
 			$depend = $2;
 		}
+		next if $seen->{$depend};
+		$seen->{$depend} = 1;
 		if ($vdep = $package{$depend}->{vdepends}) {
 			$depend = join("||", map { "PACKAGE_".$_ } @$vdep);
 		} else {
@@ -390,7 +394,7 @@ sub mconf_depends($$) {
 				# thus if FOO depends on other config options, these dependencies
 				# will not be checked. To fix this, we simply emit all of FOO's
 				# depends here as well.
-				$package{$depend} and mconf_depends($package{$depend}->{depends}, 1, $dep);
+				$package{$depend} and mconf_depends($package{$depend}->{depends}, 1, $dep, $seen);
 
 				$m = "select";
 				next if $only_dep;
