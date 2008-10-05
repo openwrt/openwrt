@@ -37,7 +37,7 @@
 
 static int dev_major;
 static unsigned int gpio_access_mask;
-static struct class *gpio_class;
+static struct class *gpiodev_class;
 
 /* Counter is 1, if the device is not opened and zero (or less) if opened. */
 static atomic_t gpio_open_cnt = ATOMIC_INIT(1);
@@ -141,8 +141,8 @@ gpio_probe(struct platform_device *dev)
 		goto out;
 	}
 
-	gpio_class = class_create(THIS_MODULE, DEVNAME);
-	class_device_create(gpio_class, NULL, MKDEV(dev_major, 0), NULL, DEVNAME);
+	gpiodev_class = class_create(THIS_MODULE, DRVNAME);
+	class_device_create(gpiodev_class, NULL, MKDEV(dev_major, 0), NULL, DEVNAME);
 
 	printk(KERN_INFO DRVNAME ": gpio device registered with major %d\n", dev_major);
 
