@@ -18,13 +18,23 @@
  	mode = S_IALLUGO;
  	err = vfs_symlink(hidden_sto_dir_dentry->d_inode,
  			  hidden_sto_dentry, symname, mode);
-@@ -1151,7 +1151,9 @@
+@@ -1128,7 +1128,7 @@
+ #endif
+ 
+ STATIC int
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27))
+ mini_fo_permission(inode_t *inode, int mask, struct nameidata *nd)
+ #else
+ mini_fo_permission(inode_t *inode, int mask)
+@@ -1150,8 +1150,9 @@
+ 	 *	if (err)
  	 *		goto out;
  	 */
- 
+-
 -#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27)
-+	err = generic_permission(hidden_inode, mask, NULL);
++	err = inode_permission(hidden_inode, mask);
 +#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
  	err = permission(hidden_inode, mask, nd);
  #else
