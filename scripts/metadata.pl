@@ -237,6 +237,7 @@ EOF
 
 sub gen_target_config() {
 	my @target = parse_target_metadata();
+	my %defaults;
 
 	my @target_sort = sort {
 		target_name($a) cmp target_name($b);
@@ -290,6 +291,7 @@ EOF
 			my @pkglist = merge_package_lists($target->{packages}, $profile->{packages});
 			foreach my $pkg (@pkglist) {
 				print "\tselect DEFAULT_$pkg\n";
+				$defaults{$pkg} = 1;
 			}
 			print "\n";
 		}
@@ -318,6 +320,10 @@ EOF
 config LINUX_$v
 	bool
 EOF
+	}
+	foreach my $def (sort keys %defaults) {
+		print "\tconfig DEFAULT_".$def."\n";
+		print "\t\tbool\n\n";
 	}
 }
 
@@ -431,8 +437,6 @@ sub print_package_config_category($) {
 			}
 			$menus{$menu} or $menus{$menu} = [];
 			push @{$menus{$menu}}, $pkg;
-			print "\tconfig DEFAULT_".$pkg->{name}."\n";
-			print "\t\tbool\n\n";
 		}
 	}
 	my @menus = sort {
