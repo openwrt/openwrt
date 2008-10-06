@@ -12,9 +12,16 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 PKG_RELEASE:=1
 
-PKG_VERSION:=2008-08-06
+ifneq ($(CONFIG_LINUX_2_6_27),)
+  PKG_VERSION:=2008-09-28
+  PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/09
+else
+  PKG_VERSION:=2008-08-06
+  PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/08
+  PATCH_DIR:=./patches-old
+endif
+
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/08/
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
@@ -137,9 +144,11 @@ define KernelPackage/ath5k
 endef
 
 BUILDFLAGS:= \
+	-I$(PKG_BUILD_DIR)/include \
 	$(foreach opt,$(CONFOPTS),-DCONFIG_$(opt)) \
 	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS) \
-	-D__CONFIG_MAC80211_RC_DEFAULT=pid \
+	$(if $(CONFIG_DEBUG_FS), -DCONFIG_MAC80211_DEBUGFS) \
+	-D__CONFIG_MAC80211_RC_DEFAULT=minstrel \
 
 MAKE_OPTS:= \
 	CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -148,9 +157,11 @@ MAKE_OPTS:= \
 	$(foreach opt,$(CONFOPTS),CONFIG_$(opt)=m) \
 	CONFIG_NL80211=y \
 	CONFIG_MAC80211_RC_PID=y \
+	CONFIG_MAC80211_RC_MINSTREL=y \
 	CONFIG_MAC80211_LEDS=$(CONFIG_LEDS_TRIGGERS) \
-	LINUXINCLUDE="-I$(PKG_BUILD_DIR)/include -I$(LINUX_DIR)/include -include linux/autoconf.h" \
+	CONFIG_MAC80211_DEBUGFS=$(CONFIG_DEBUG_FS) \
 	KLIB_BUILD="$(LINUX_DIR)" \
+	MODPROBE=:
 
 define Build/Prepare
 	rm -rf $(PKG_BUILD_DIR)
@@ -160,7 +171,7 @@ define Build/Prepare
 	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
 	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT61FW)
 	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT71FW)
-	rm -rf $(PKG_BUILD_DIR)/include/linux/ssb
+	$(if $(CONFIG_TARGET_brcm47xx),rm -rf $(PKG_BUILD_DIR)/include/linux/ssb)
 endef
 
 ifneq ($(CONFIG_PACKAGE_kmod-mac80211),)

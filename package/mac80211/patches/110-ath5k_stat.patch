@@ -1,0 +1,53 @@
+This patch removes the unnecessary ATH_STAT_MRRETRY flag and turns
+other ATH_STAT_* defines into an enum
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+--- a/drivers/net/wireless/ath5k/base.c
++++ b/drivers/net/wireless/ath5k/base.c
+@@ -707,19 +707,6 @@
+ 	ATH5K_DBG(sc, ATH5K_DEBUG_ANY, "devid 0x%x\n", pdev->device);
+ 
+ 	/*
+-	 * Check if the MAC has multi-rate retry support.
+-	 * We do this by trying to setup a fake extended
+-	 * descriptor.  MAC's that don't have support will
+-	 * return false w/o doing anything.  MAC's that do
+-	 * support it will return true w/o doing anything.
+-	 */
+-	ret = ah->ah_setup_mrr_tx_desc(ah, NULL, 0, 0, 0, 0, 0, 0);
+-	if (ret < 0)
+-		goto err;
+-	if (ret > 0)
+-		__set_bit(ATH_STAT_MRRETRY, sc->status);
+-
+-	/*
+ 	 * Reset the key cache since some parts do not
+ 	 * reset the contents on initial power up.
+ 	 */
+--- a/drivers/net/wireless/ath5k/base.h
++++ b/drivers/net/wireless/ath5k/base.h
+@@ -99,6 +99,12 @@
+ #define ATH_CHAN_MAX	(14+14+14+252+20)
+ #endif
+ 
++enum {
++	ATH_STAT_INVALID,		/* disable hardware accesses */
++	ATH_STAT_PROMISC,
++	ATH_STAT_LEDSOFT		/* enable LED gpio status */
++};
++
+ /* Software Carrier, keeps track of the driver state
+  * associated with an instance of a device */
+ struct ath5k_softc {
+@@ -129,10 +135,6 @@
+ 	u16			cachelsz;	/* cache line size */
+ 
+ 	DECLARE_BITMAP(status, 4);
+-#define ATH_STAT_INVALID	0		/* disable hardware accesses */
+-#define ATH_STAT_MRRETRY	1		/* multi-rate retry support */
+-#define ATH_STAT_PROMISC	2
+-#define ATH_STAT_LEDSOFT	3		/* enable LED gpio status */
+ 
+ 	unsigned int		filter_flags;	/* HW flags, AR5K_RX_FILTER_* */
+ 	unsigned int		curmode;	/* current phy mode */
