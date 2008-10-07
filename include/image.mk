@@ -78,6 +78,13 @@ else
   endef
 endif
 
+define Image/Checksum
+	( cd ${BIN_DIR} ; \
+		$(FIND) -maxdepth 1 -type f \! -name 'md5sums'  -printf "%P\n" | xargs \
+		md5sum > md5sums \
+	)
+endef
+
 
 ifeq ($(CONFIG_TARGET_ROOTFS_EXT2FS),y)
   E2SIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_FSPART)*1024)))
@@ -128,6 +135,7 @@ ifneq ($(IB),1)
 	$(call Image/mkfs/cpiogz)
 	$(call Image/mkfs/ext2)
 	$(call Image/mkfs/iso)
+	$(call Image/Checksum)
 else
   install: compile install-targets
 	$(call Image/BuildKernel)
@@ -137,6 +145,7 @@ else
 	$(call Image/mkfs/cpiogz)
 	$(call Image/mkfs/ext2)
 	$(call Image/mkfs/iso)
+	$(call Image/Checksum)
 endif
 
 ifneq ($(IB),1)
