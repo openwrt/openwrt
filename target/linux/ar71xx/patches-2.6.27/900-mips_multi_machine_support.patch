@@ -113,7 +113,7 @@
 +
 --- a/arch/mips/kernel/Makefile
 +++ b/arch/mips/kernel/Makefile
-@@ -82,6 +82,7 @@
+@@ -83,6 +83,7 @@
  
  obj-$(CONFIG_KEXEC)		+= machine_kexec.o relocate_kernel.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
@@ -123,7 +123,7 @@
  
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -614,6 +614,7 @@
+@@ -615,6 +615,7 @@
  
  endchoice
  
@@ -131,7 +131,7 @@
  source "arch/mips/au1000/Kconfig"
  source "arch/mips/basler/excite/Kconfig"
  source "arch/mips/jazz/Kconfig"
-@@ -787,6 +788,9 @@
+@@ -788,6 +789,9 @@
  config SYNC_R4K
  	bool
  

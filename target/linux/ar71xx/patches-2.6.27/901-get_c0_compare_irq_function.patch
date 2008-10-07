@@ -8,7 +8,7 @@
  
  extern void check_wait(void);
  extern asmlinkage void r4k_wait(void);
-@@ -1482,6 +1483,8 @@
+@@ -1484,6 +1485,8 @@
  	 */
  	if (cpu_has_mips_r2) {
  		cp0_compare_irq = (read_c0_intctl() >> 29) & 7;
