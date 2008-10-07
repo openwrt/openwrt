@@ -1,0 +1,13 @@
+--- a/net80211/ieee80211_var.h
++++ b/net80211/ieee80211_var.h
+@@ -61,8 +61,8 @@
+ #define	IEEE80211_DTIM_MIN		1	/* min DTIM period */
+ #define	IEEE80211_DTIM_DEFAULT		1	/* default DTIM period */
+ 
+-#define	IEEE80211_BINTVAL_MAX		1000	/* max beacon interval (TUs) */
+-#define	IEEE80211_BINTVAL_MIN		25	/* min beacon interval (TUs) */
++#define	IEEE80211_BINTVAL_MAX		5000	/* max beacon interval (TUs) */
++#define	IEEE80211_BINTVAL_MIN		10	/* min beacon interval (TUs) */
+ #define	IEEE80211_BINTVAL_DEFAULT 	100	/* default beacon interval (TUs) */
+ #define IEEE80211_BINTVAL_VALID(_bi) \
+ 	((IEEE80211_BINTVAL_MIN <= (_bi)) && \
