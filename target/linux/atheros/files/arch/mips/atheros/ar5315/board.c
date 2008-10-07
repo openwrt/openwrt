@@ -236,7 +236,7 @@ int __init ar5315_init_devices(void)
 
 #ifdef CONFIG_LEDS_GPIO
 	ar5315_led_data.num_leds = 0;
-	for(i = 0; i < 8; i++)
+	for(i = 1; i < 8; i++)
 	{
 		if((i != AR5315_RESET_GPIO) && (i != bcfg->resetConfigGpio))
 		{
