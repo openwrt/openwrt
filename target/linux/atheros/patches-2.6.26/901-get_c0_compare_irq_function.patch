@@ -34,7 +34,7 @@
      board_time_init();
  }
 +
-+unsigned int __init get_c0_compare_irq(void)
++unsigned int __cpuinit get_c0_compare_irq(void)
 +{
 +	return CP0_LEGACY_COMPARE_IRQ;
 +}
