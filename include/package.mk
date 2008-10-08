@@ -31,7 +31,11 @@ include $(INCLUDE_DIR)/package-bin.mk
 include $(INCLUDE_DIR)/autotools.mk
 
 override MAKEFLAGS=
-export CONFIG_SITE:=$(INCLUDE_DIR)/site/$(patsubst %gnueabi,%,$(REAL_GNU_TARGET_NAME))
+CONFIG_SITE:=$(INCLUDE_DIR)/site/$(patsubst %gnueabi,%,$(REAL_GNU_TARGET_NAME))
+ifneq ($(CONFIG_LINUX_2_4),)
+  CONFIG_SITE:=$(subst linux-,linux2.4-,$(CONFIG_SITE))
+endif
+export CONFIG_SITE
 CUR_MAKEFILE:=$(filter-out Makefile,$(firstword $(MAKEFILE_LIST)))
 SUBMAKE:=$(NO_TRACE_MAKE) $(if $(CUR_MAKEFILE),-f $(CUR_MAKEFILE))
 
