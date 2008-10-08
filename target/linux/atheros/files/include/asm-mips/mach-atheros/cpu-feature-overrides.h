@@ -60,7 +60,7 @@
 
 #define cpu_has_mips32r1		1
 
-#if !defined(CONFIG_ATHEROS_5312)
+#if !defined(CONFIG_ATHEROS_AR5312)
 #  define cpu_has_mips32r2		1
 #endif
 
