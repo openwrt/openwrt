@@ -11,22 +11,3 @@
  
  # enable mesh networking too
  CONFIG_MAC80211_MESH=y
---- a/include/linux/compat_autoconf.h
-+++ b/include/linux/compat_autoconf.h
-@@ -18,11 +18,14 @@
- #define CONFIG_MAC80211 1
- #endif /* CONFIG_MAC80211 */ 
- #ifndef CONFIG_MAC80211_RC_DEFAULT
--#define CONFIG_MAC80211_RC_DEFAULT "pid"
--#endif /* CONFIG_MAC80211_RC_DEFAULT */ 
-+#define CONFIG_MAC80211_RC_DEFAULT "minstrel"
-+#endif /* CONFIG_MAC80211_RC_DEFAULT */
- #ifndef CONFIG_MAC80211_RC_PID
- #define CONFIG_MAC80211_RC_PID 1
- #endif /* CONFIG_MAC80211_RC_PID */ 
-+#ifndef CONFIG_MAC80211_RC_MINSTREL
-+#define CONFIG_MAC80211_RC_MINSTREL 1
-+#endif /* CONFIG_MAC80211_RC_MINSTREL */
- #ifndef CONFIG_MAC80211_MESH
- #define CONFIG_MAC80211_MESH 1
- #endif /* CONFIG_MAC80211_MESH */ 
