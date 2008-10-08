@@ -119,12 +119,12 @@ env_revert() {
 }
 
 env_ask_sync() {
+	env_sync_data
 	LINES="$(env_diff | wc -l)" # implies env_init
 	[ "$LINES" -gt 0 ] && {
 		if ask_bool 1 "Do you want to save your changes"; then
 			env_sync
 		else
-			env_sync_data
 			env_do_reset
 		fi
 	}
