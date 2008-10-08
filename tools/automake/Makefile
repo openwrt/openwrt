@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -27,6 +27,9 @@ endef
 
 define Build/Install
 	$(MAKE) -C $(PKG_BUILD_DIR) install
+	mv $(STAGING_DIR_HOST)/bin/aclocal $(STAGING_DIR_HOST)/bin/aclocal.real
+	$(INSTALL_BIN) ./files/aclocal $(STAGING_DIR_HOST)/bin
+	ln -f $(STAGING_DIR_HOST)/bin/aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.9
 endef
 
 define Build/Clean
