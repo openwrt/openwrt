@@ -23,7 +23,7 @@
  static struct latch_led cambria_latch_leds[] = {
  	{
 @@ -337,6 +352,11 @@
- 	cambria_optional_uart_data[1].membase	= (void __iomem *)ioremap(IXP4XX_EXP_BUS_BASE(3), 0x0fff);
+ 	cambria_optional_uart_data[1].membase	= (void __iomem *)ioremap(0x53FF0000, 0x0fff);
  	cambria_optional_uart_data[1].irq		= IRQ_IXP4XX_GPIO4;
  
 +	cambria_gpio_resources[0].start = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) |\
@@ -34,7 +34,7 @@
  	platform_device_register(&cambria_optional_uart);
  	platform_device_register(&cambria_npec_device);
  	platform_device_register(&cambria_npea_device);
-@@ -361,6 +381,10 @@
+@@ -363,6 +383,10 @@
  	cambria_optional_uart_data[1].membase	= (void __iomem *)ioremap(0x53F80000, 0x0fff);
  	cambria_optional_uart_data[1].irq		= IRQ_IXP4XX_GPIO4;
  
