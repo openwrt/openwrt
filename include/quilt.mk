@@ -148,7 +148,7 @@ define Build/Quilt
   refresh: quilt-check
 	@cd $(PKG_BUILD_DIR); quilt pop -a -f >/dev/null 2>/dev/null
 	@cd $(PKG_BUILD_DIR); while quilt next 2>/dev/null >/dev/null && quilt push; do \
-		quilt refresh -p ab --no-index --quiltrc=/dev/null --no-timestamps; \
+		QUILT_DIFF_OPTS="-p" quilt refresh -p ab --no-index --quiltrc=/dev/null --no-timestamps; \
 	done; ! quilt next 2>/dev/null >/dev/null
 	$(Quilt/Refresh)
 	
