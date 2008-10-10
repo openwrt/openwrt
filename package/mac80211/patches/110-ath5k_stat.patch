@@ -5,7 +5,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/drivers/net/wireless/ath5k/base.c
 +++ b/drivers/net/wireless/ath5k/base.c
-@@ -707,19 +707,6 @@
+@@ -724,19 +724,6 @@ ath5k_attach(struct pci_dev *pdev, struc
  	ATH5K_DBG(sc, ATH5K_DEBUG_ANY, "devid 0x%x\n", pdev->device);
  
  	/*
@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	 */
 --- a/drivers/net/wireless/ath5k/base.h
 +++ b/drivers/net/wireless/ath5k/base.h
-@@ -99,6 +99,12 @@
+@@ -99,6 +99,12 @@ struct ath5k_led
  #define ATH_CHAN_MAX	(14+14+14+252+20)
  #endif
  
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  /* Software Carrier, keeps track of the driver state
   * associated with an instance of a device */
  struct ath5k_softc {
-@@ -129,10 +135,6 @@
+@@ -129,10 +135,6 @@ struct ath5k_softc {
  	u16			cachelsz;	/* cache line size */
  
  	DECLARE_BITMAP(status, 4);

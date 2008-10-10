@@ -1,0 +1,98 @@
+Fix the b43 tx status reporting.
+
+If the hardware uses RTS/CTS reporting and the actual RTS/CTS
+handshake failed, it will switch to the fallback rate, even
+though the main rate was never actually attempted.
+Make sure that this does not screw up rate control statistics.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+--- a/drivers/net/wireless/b43/b43.h
++++ b/drivers/net/wireless/b43/b43.h
+@@ -778,6 +778,9 @@ struct b43_wldev {
+ #ifdef CONFIG_B43_DEBUG
+ 	struct b43_dfsentry *dfsentry;
+ #endif
++
++	/* necessary for figuring out the correct tx status */
++	int short_retry;
+ };
+ 
+ static inline struct b43_wl *hw_to_b43_wl(struct ieee80211_hw *hw)
+--- a/drivers/net/wireless/b43/dma.c
++++ b/drivers/net/wireless/b43/dma.c
+@@ -1393,7 +1393,7 @@ void b43_dma_handle_txstatus(struct b43_
+ 			 * Call back to inform the ieee80211 subsystem about
+ 			 * the status of the transmission.
+ 			 */
+-			frame_succeed = b43_fill_txstatus_report(info, status);
++			frame_succeed = b43_fill_txstatus_report(dev, info, status);
+ #ifdef CONFIG_B43_DEBUG
+ 			if (frame_succeed)
+ 				ring->nr_succeed_tx_packets++;
+--- a/drivers/net/wireless/b43/main.c
++++ b/drivers/net/wireless/b43/main.c
+@@ -3892,6 +3892,7 @@ static void b43_set_retry_limits(struct 
+ 			short_retry);
+ 	b43_shm_write16(dev, B43_SHM_SCRATCH, B43_SHM_SC_LRLIMIT,
+ 			long_retry);
++	dev->short_retry = short_retry;
+ }
+ 
+ static void b43_set_synth_pu_delay(struct b43_wldev *dev, bool idle)
+--- a/drivers/net/wireless/b43/pio.c
++++ b/drivers/net/wireless/b43/pio.c
+@@ -589,7 +589,7 @@ void b43_pio_handle_txstatus(struct b43_
+ 	info = IEEE80211_SKB_CB(pack->skb);
+ 	memset(&info->status, 0, sizeof(info->status));
+ 
+-	b43_fill_txstatus_report(info, status);
++	b43_fill_txstatus_report(dev, info, status);
+ 
+ 	total_len = pack->skb->len + b43_txhdr_size(dev);
+ 	total_len = roundup(total_len, 4);
+--- a/drivers/net/wireless/b43/xmit.c
++++ b/drivers/net/wireless/b43/xmit.c
+@@ -687,7 +687,8 @@ void b43_handle_txstatus(struct b43_wlde
+ /* Fill out the mac80211 TXstatus report based on the b43-specific
+  * txstatus report data. This returns a boolean whether the frame was
+  * successfully transmitted. */
+-bool b43_fill_txstatus_report(struct ieee80211_tx_info *report,
++bool b43_fill_txstatus_report(struct b43_wldev *dev,
++			      struct ieee80211_tx_info *report,
+ 			      const struct b43_txstatus *status)
+ {
+ 	bool frame_success = 1;
+@@ -706,8 +707,19 @@ bool b43_fill_txstatus_report(struct iee
+ 	if (status->frame_count == 0) {
+ 		/* The frame was not transmitted at all. */
+ 		report->status.retry_count = 0;
+-	} else
++	} else if (status->rts_count > dev->short_retry) {
++		/*
++		 * If the short retries (RTS, not data frame) have exceeded
++		 * the limit, the hw will not have tried the selected rate,
++		 * but will have used the fallback rate instead.
++		 * Don't let the rate control count attempts for the selected
++		 * rate in this case, otherwise the statistics will be off.
++		 */
++		report->tx_rate_idx = 0;
++		report->status.retry_count = 0;
++	} else {
+ 		report->status.retry_count = status->frame_count - 1;
++	}
+ 
+ 	return frame_success;
+ }
+--- a/drivers/net/wireless/b43/xmit.h
++++ b/drivers/net/wireless/b43/xmit.h
+@@ -294,7 +294,8 @@ void b43_rx(struct b43_wldev *dev, struc
+ 
+ void b43_handle_txstatus(struct b43_wldev *dev,
+ 			 const struct b43_txstatus *status);
+-bool b43_fill_txstatus_report(struct ieee80211_tx_info *report,
++bool b43_fill_txstatus_report(struct b43_wldev *dev,
++			      struct ieee80211_tx_info *report,
+ 			      const struct b43_txstatus *status);
+ 
+ void b43_tx_suspend(struct b43_wldev *dev);
