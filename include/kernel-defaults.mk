@@ -34,19 +34,31 @@ endif
 # defined in quilt.mk
 Kernel/Patch:=$(Kernel/Patch/Default)
 ifeq ($(strip $(CONFIG_EXTERNAL_KERNEL_TREE)),"")
-define Kernel/Prepare/Default
+  ifeq ($(strip $(CONFIG_KERNEL_GIT_CLONE_URI)),"")
+    define Kernel/Prepare/Default
 	bzcat $(DL_DIR)/$(LINUX_SOURCE) | $(TAR) -C $(KERNEL_BUILD_DIR) $(TAR_OPTIONS)
 	$(Kernel/Patch)
 	touch $(LINUX_DIR)/.quilt_used
-endef
-else
+    endef
+  else
+    ifeq ($(strip $(CONFIG_KERNEL_GIT_LOCAL_REPOSITORY)),"")
 define Kernel/Prepare/Default
+	git clone $(CONFIG_KERNEL_GIT_CLONE_URI) $(LINUX_DIR)
+    endef
+  else
+    define Kernel/Prepare/Default
+	git clone --reference $(CONFIG_KERNEL_GIT_LOCAL_REPOSITORY) $(CONFIG_KERNEL_GIT_CLONE_URI) $(LINUX_DIR) 
+    endef
+  endif
+endif
+else
+  define Kernel/Prepare/Default
 	mkdir -p $(KERNEL_BUILD_DIR)
 	if [ -d $(LINUX_DIR) ]; then \
 		rmdir $(LINUX_DIR); \
 	fi
 	ln -s $(CONFIG_EXTERNAL_KERNEL_TREE) $(LINUX_DIR)
-endef
+  endef
 endif
 
 ifeq ($(KERNEL),2.6)
