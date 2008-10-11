@@ -1,0 +1,259 @@
+Subject: mac80211: kill hw.conf.antenna_sel_{rx,tx}
+
+Never actually used.
+
+Signed-off-by: Johannes Berg <johannes@sipsolutions.net>
+---
+ drivers/net/wireless/b43/main.c            |   25 +++----------------------
+ drivers/net/wireless/b43legacy/main.c      |   18 ++----------------
+ drivers/net/wireless/p54/p54common.c       |    3 +--
+ drivers/net/wireless/rt2x00/rt2x00config.c |   20 ++++----------------
+ drivers/net/wireless/rt2x00/rt2x00dev.c    |    6 ++----
+ include/net/mac80211.h                     |    7 +------
+ net/mac80211/debugfs.c                     |    8 --------
+ net/mac80211/ieee80211_i.h                 |    2 --
+ net/mac80211/tx.c                          |    1 -
+ 9 files changed, 13 insertions(+), 77 deletions(-)
+
+--- everything.orig/net/mac80211/debugfs.c	2008-10-08 22:35:20.000000000 +0200
++++ everything/net/mac80211/debugfs.c	2008-10-08 22:35:26.000000000 +0200
+@@ -47,10 +47,6 @@ static const struct file_operations name
+ 
+ DEBUGFS_READONLY_FILE(frequency, 20, "%d",
+ 		      local->hw.conf.channel->center_freq);
+-DEBUGFS_READONLY_FILE(antenna_sel_tx, 20, "%d",
+-		      local->hw.conf.antenna_sel_tx);
+-DEBUGFS_READONLY_FILE(antenna_sel_rx, 20, "%d",
+-		      local->hw.conf.antenna_sel_rx);
+ DEBUGFS_READONLY_FILE(rts_threshold, 20, "%d",
+ 		      local->rts_threshold);
+ DEBUGFS_READONLY_FILE(fragmentation_threshold, 20, "%d",
+@@ -202,8 +198,6 @@ void debugfs_hw_add(struct ieee80211_loc
+ 	local->debugfs.keys = debugfs_create_dir("keys", phyd);
+ 
+ 	DEBUGFS_ADD(frequency);
+-	DEBUGFS_ADD(antenna_sel_tx);
+-	DEBUGFS_ADD(antenna_sel_rx);
+ 	DEBUGFS_ADD(rts_threshold);
+ 	DEBUGFS_ADD(fragmentation_threshold);
+ 	DEBUGFS_ADD(short_retry_limit);
+@@ -258,8 +252,6 @@ void debugfs_hw_add(struct ieee80211_loc
+ void debugfs_hw_del(struct ieee80211_local *local)
+ {
+ 	DEBUGFS_DEL(frequency);
+-	DEBUGFS_DEL(antenna_sel_tx);
+-	DEBUGFS_DEL(antenna_sel_rx);
+ 	DEBUGFS_DEL(rts_threshold);
+ 	DEBUGFS_DEL(fragmentation_threshold);
+ 	DEBUGFS_DEL(short_retry_limit);
+--- everything.orig/net/mac80211/ieee80211_i.h	2008-10-08 22:35:01.000000000 +0200
++++ everything/net/mac80211/ieee80211_i.h	2008-10-08 22:35:10.000000000 +0200
+@@ -727,8 +727,6 @@ struct ieee80211_local {
+ 		struct dentry *rcdir;
+ 		struct dentry *rcname;
+ 		struct dentry *frequency;
+-		struct dentry *antenna_sel_tx;
+-		struct dentry *antenna_sel_rx;
+ 		struct dentry *rts_threshold;
+ 		struct dentry *fragmentation_threshold;
+ 		struct dentry *short_retry_limit;
+--- everything.orig/include/net/mac80211.h	2008-10-08 22:35:30.000000000 +0200
++++ everything/include/net/mac80211.h	2008-10-08 22:39:56.000000000 +0200
+@@ -324,7 +324,7 @@ struct ieee80211_tx_altrate {
+  * @flags: transmit info flags, defined above
+  * @band: TBD
+  * @tx_rate_idx: TBD
+- * @antenna_sel_tx: TBD
++ * @antenna_sel_tx: antenna to use, 0 for automatic diversity
+  * @control: union for control data
+  * @status: union for status data
+  * @driver_data: array of driver_data pointers
+@@ -474,9 +474,6 @@ static inline int __deprecated __IEEE802
+  * @listen_interval: listen interval in units of beacon interval
+  * @flags: configuration flags defined above
+  * @power_level: requested transmit power (in dBm)
+- * @antenna_sel_tx: transmit antenna selection, 0: default/diversity,
+- *	1/2: antenna 0/1
+- * @antenna_sel_rx: receive antenna selection, like @antenna_sel_tx
+  * @ht_cap: describes current self configuration of 802.11n HT capabilities
+  * @ht_bss_conf: describes current BSS configuration of 802.11n HT parameters
+  * @channel: the channel to tune to
+@@ -488,8 +485,6 @@ struct ieee80211_conf {
+ 	u16 listen_interval;
+ 	u32 flags;
+ 	int power_level;
+-	u8 antenna_sel_tx;
+-	u8 antenna_sel_rx;
+ 
+ 	struct ieee80211_channel *channel;
+ 
+--- everything.orig/net/mac80211/tx.c	2008-10-08 22:37:05.000000000 +0200
++++ everything/net/mac80211/tx.c	2008-10-08 22:37:22.000000000 +0200
+@@ -1975,7 +1975,6 @@ struct sk_buff *ieee80211_beacon_get(str
+ 	    sband->bitrates[rsel.rate_idx].flags & IEEE80211_RATE_SHORT_PREAMBLE)
+ 		info->flags |= IEEE80211_TX_CTL_SHORT_PREAMBLE;
+ 
+-	info->antenna_sel_tx = local->hw.conf.antenna_sel_tx;
+ 	info->control.retry_limit = 1;
+ 
+ out:
+--- everything.orig/drivers/net/wireless/b43/main.c	2008-10-08 22:40:06.000000000 +0200
++++ everything/drivers/net/wireless/b43/main.c	2008-10-08 22:40:45.000000000 +0200
+@@ -1339,25 +1339,6 @@ u8 b43_ieee80211_antenna_sanitize(struct
+ 	return antenna_nr;
+ }
+ 
+-static int b43_antenna_from_ieee80211(struct b43_wldev *dev, u8 antenna)
+-{
+-	antenna = b43_ieee80211_antenna_sanitize(dev, antenna);
+-	switch (antenna) {
+-	case 0:		/* default/diversity */
+-		return B43_ANTENNA_DEFAULT;
+-	case 1:		/* Antenna 0 */
+-		return B43_ANTENNA0;
+-	case 2:		/* Antenna 1 */
+-		return B43_ANTENNA1;
+-	case 3:		/* Antenna 2 */
+-		return B43_ANTENNA2;
+-	case 4:		/* Antenna 3 */
+-		return B43_ANTENNA3;
+-	default:
+-		return B43_ANTENNA_DEFAULT;
+-	}
+-}
+-
+ /* Convert a b43 antenna number value to the PHY TX control value. */
+ static u16 b43_antenna_to_phyctl(int antenna)
+ {
+@@ -1399,7 +1380,7 @@ static void b43_write_beacon_template(st
+ 				  len, ram_offset, shm_size_offset, rate);
+ 
+ 	/* Write the PHY TX control parameters. */
+-	antenna = b43_antenna_from_ieee80211(dev, info->antenna_sel_tx);
++	antenna = B43_ANTENNA_DEFAULT;
+ 	antenna = b43_antenna_to_phyctl(antenna);
+ 	ctl = b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_BEACPHYCTL);
+ 	/* We can't send beacons with short preamble. Would get PHY errors. */
+@@ -3399,9 +3380,9 @@ static int b43_op_config(struct ieee8021
+ 	}
+ 
+ 	/* Antennas for RX and management frame TX. */
+-	antenna = b43_antenna_from_ieee80211(dev, conf->antenna_sel_tx);
++	antenna = B43_ANTENNA_DEFAULT;
+ 	b43_mgmtframe_txantenna(dev, antenna);
+-	antenna = b43_antenna_from_ieee80211(dev, conf->antenna_sel_rx);
++	antenna = B43_ANTENNA_DEFAULT;
+ 	if (phy->ops->set_rx_antenna)
+ 		phy->ops->set_rx_antenna(dev, antenna);
+ 
+--- everything.orig/drivers/net/wireless/b43legacy/main.c	2008-10-08 22:41:36.000000000 +0200
++++ everything/drivers/net/wireless/b43legacy/main.c	2008-10-08 22:41:59.000000000 +0200
+@@ -2556,20 +2556,6 @@ init_failure:
+ 	return err;
+ }
+ 
+-static int b43legacy_antenna_from_ieee80211(u8 antenna)
+-{
+-	switch (antenna) {
+-	case 0: /* default/diversity */
+-		return B43legacy_ANTENNA_DEFAULT;
+-	case 1: /* Antenna 0 */
+-		return B43legacy_ANTENNA0;
+-	case 2: /* Antenna 1 */
+-		return B43legacy_ANTENNA1;
+-	default:
+-		return B43legacy_ANTENNA_DEFAULT;
+-	}
+-}
+-
+ static int b43legacy_op_dev_config(struct ieee80211_hw *hw,
+ 				   struct ieee80211_conf *conf)
+ {
+@@ -2583,8 +2569,8 @@ static int b43legacy_op_dev_config(struc
+ 	int err = 0;
+ 	u32 savedirqs;
+ 
+-	antenna_tx = b43legacy_antenna_from_ieee80211(conf->antenna_sel_tx);
+-	antenna_rx = b43legacy_antenna_from_ieee80211(conf->antenna_sel_rx);
++	antenna_tx = B43legacy_ANTENNA_DEFAULT;
++	antenna_rx = B43legacy_ANTENNA_DEFAULT;
+ 
+ 	mutex_lock(&wl->mutex);
+ 	dev = wl->current_dev;
+--- everything.orig/drivers/net/wireless/p54/p54common.c	2008-10-08 22:43:54.000000000 +0200
++++ everything/drivers/net/wireless/p54/p54common.c	2008-10-08 22:44:12.000000000 +0200
+@@ -1211,8 +1211,7 @@ static int p54_config(struct ieee80211_h
+ 	struct p54_common *priv = dev->priv;
+ 
+ 	mutex_lock(&priv->conf_mutex);
+-	priv->rx_antenna = (conf->antenna_sel_rx == 0) ?
+-		2 : conf->antenna_sel_tx - 1;
++	priv->rx_antenna = 2; /* automatic */
+ 	priv->output_power = conf->power_level << 2;
+ 	ret = p54_set_freq(dev, cpu_to_le16(conf->channel->center_freq));
+ 	p54_set_vdcf(dev);
+--- everything.orig/drivers/net/wireless/rt2x00/rt2x00config.c	2008-10-08 22:44:57.000000000 +0200
++++ everything/drivers/net/wireless/rt2x00/rt2x00config.c	2008-10-08 22:45:36.000000000 +0200
+@@ -199,23 +199,15 @@ void rt2x00lib_config(struct rt2x00_dev 
+ 	 * to work with untill the link tuner decides that an antenna
+ 	 * switch should be performed.
+ 	 */
+-	if (!conf->antenna_sel_rx &&
+-	    default_ant->rx != ANTENNA_SW_DIVERSITY &&
++	if (default_ant->rx != ANTENNA_SW_DIVERSITY &&
+ 	    default_ant->rx != active_ant->rx)
+ 		flags |= CONFIG_UPDATE_ANTENNA;
+-	else if (conf->antenna_sel_rx &&
+-		 conf->antenna_sel_rx != active_ant->rx)
+-		flags |= CONFIG_UPDATE_ANTENNA;
+ 	else if (active_ant->rx == ANTENNA_SW_DIVERSITY)
+ 		flags |= CONFIG_UPDATE_ANTENNA;
+ 
+-	if (!conf->antenna_sel_tx &&
+-	    default_ant->tx != ANTENNA_SW_DIVERSITY &&
++	if (default_ant->tx != ANTENNA_SW_DIVERSITY &&
+ 	    default_ant->tx != active_ant->tx)
+ 		flags |= CONFIG_UPDATE_ANTENNA;
+-	else if (conf->antenna_sel_tx &&
+-		 conf->antenna_sel_tx != active_ant->tx)
+-		flags |= CONFIG_UPDATE_ANTENNA;
+ 	else if (active_ant->tx == ANTENNA_SW_DIVERSITY)
+ 		flags |= CONFIG_UPDATE_ANTENNA;
+ 
+@@ -252,18 +244,14 @@ config:
+ 	}
+ 
+ 	if (flags & CONFIG_UPDATE_ANTENNA) {
+-		if (conf->antenna_sel_rx)
+-			libconf.ant.rx = conf->antenna_sel_rx;
+-		else if (default_ant->rx != ANTENNA_SW_DIVERSITY)
++		if (default_ant->rx != ANTENNA_SW_DIVERSITY)
+ 			libconf.ant.rx = default_ant->rx;
+ 		else if (active_ant->rx == ANTENNA_SW_DIVERSITY)
+ 			libconf.ant.rx = ANTENNA_B;
+ 		else
+ 			libconf.ant.rx = active_ant->rx;
+ 
+-		if (conf->antenna_sel_tx)
+-			libconf.ant.tx = conf->antenna_sel_tx;
+-		else if (default_ant->tx != ANTENNA_SW_DIVERSITY)
++		if (default_ant->tx != ANTENNA_SW_DIVERSITY)
+ 			libconf.ant.tx = default_ant->tx;
+ 		else if (active_ant->tx == ANTENNA_SW_DIVERSITY)
+ 			libconf.ant.tx = ANTENNA_B;
+--- everything.orig/drivers/net/wireless/rt2x00/rt2x00dev.c	2008-10-08 22:44:28.000000000 +0200
++++ everything/drivers/net/wireless/rt2x00/rt2x00dev.c	2008-10-08 22:44:43.000000000 +0200
+@@ -249,11 +249,9 @@ static void rt2x00lib_evaluate_antenna(s
+ 	rt2x00dev->link.ant.flags &= ~ANTENNA_RX_DIVERSITY;
+ 	rt2x00dev->link.ant.flags &= ~ANTENNA_TX_DIVERSITY;
+ 
+-	if (rt2x00dev->hw->conf.antenna_sel_rx == 0 &&
+-	    rt2x00dev->default_ant.rx == ANTENNA_SW_DIVERSITY)
++	if (rt2x00dev->default_ant.rx == ANTENNA_SW_DIVERSITY)
+ 		rt2x00dev->link.ant.flags |= ANTENNA_RX_DIVERSITY;
+-	if (rt2x00dev->hw->conf.antenna_sel_tx == 0 &&
+-	    rt2x00dev->default_ant.tx == ANTENNA_SW_DIVERSITY)
++	if (rt2x00dev->default_ant.tx == ANTENNA_SW_DIVERSITY)
+ 		rt2x00dev->link.ant.flags |= ANTENNA_TX_DIVERSITY;
+ 
+ 	if (!(rt2x00dev->link.ant.flags & ANTENNA_RX_DIVERSITY) &&
