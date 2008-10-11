@@ -18,7 +18,7 @@
 +			if (ret == NETDEV_TX_BUSY)
 +				ieee80211_dev_kfree_skb(&skb1);
 +
-+			if (ret != NETDEV_TX_OK) {
++			else if (ret != NETDEV_TX_OK) {
  				/* If queue dropped the packet because device was
  				 * too busy */
  				vap->iv_devstats.tx_dropped++;
