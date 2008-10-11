@@ -1,0 +1,27 @@
+Subject: mac80211: fix debugfs netdev rename
+
+If, for some reason, a netdev has no debugfs dir, we shouldn't
+try to rename that dir.
+
+Signed-off-by: Johannes Berg <johannes@sipsolutions.net>
+Cc: Robin Holt <holt@sgi.com>
+---
+ net/mac80211/debugfs_netdev.c |    6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+--- everything.orig/net/mac80211/debugfs_netdev.c	2008-10-08 10:08:23.000000000 +0200
++++ everything/net/mac80211/debugfs_netdev.c	2008-10-08 10:22:52.000000000 +0200
+@@ -481,8 +481,12 @@ static int netdev_notify(struct notifier
+ 
+ 	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+ 
+-	sprintf(buf, "netdev:%s", dev->name);
+ 	dir = sdata->debugfsdir;
++
++	if (!dir)
++		return 0;
++
++	sprintf(buf, "netdev:%s", dev->name);
+ 	if (!debugfs_rename(dir->d_parent, dir, dir->d_parent, buf))
+ 		printk(KERN_ERR "mac80211: debugfs: failed to rename debugfs "
+ 		       "dir to %s\n", buf);
