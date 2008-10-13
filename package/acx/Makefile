@@ -75,6 +75,8 @@ define KernelPackage/acx/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(DL_DIR)/$(C16_FW) $(1)/lib/firmware/
 	$(INSTALL_DATA) $(DL_DIR)/$(C19_FW) $(1)/lib/firmware/
+	$(INSTALL_DIR) $(1)/lib/wifi
+	$(INSTALL_DATA) ./files/lib/wifi/acx.sh $(1)/lib/wifi/
 endef
 
 $(eval $(call KernelPackage,acx))
