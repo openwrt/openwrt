@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -30,6 +30,7 @@ define Build/Compile
 	$(call cc,lzma2eva,-lz)
 	$(call cc,mkcasfw)
 	$(call cc,mkfwimage,-lz)
+	$(call cc,mkfwimage2,-lz)
 	$(call cc,imagetag)
 	$(call cc,add_header)
 endef
