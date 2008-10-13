@@ -34,7 +34,7 @@ define Image/BuildKernel
 endef
 
 define Image/Build/MyLoader
-	$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) \
+	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) \
 		-p0x30000:0xd0000:ahl:0x80060000 \
 		-p0x100000:0 \
 		-b0x30000:0xd0000:h:$(KDIR)/vmlinux.lzma \
