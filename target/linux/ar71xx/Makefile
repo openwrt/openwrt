@@ -9,13 +9,13 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=ar71xx
 BOARDNAME:=Atheros AR71xx
-FEATURES:=squashfs tgz broken
+FEATURES:=squashfs tgz
 
 LINUX_VERSION:=2.6.26.5
 
 include $(INCLUDE_DIR)/target.mk
 
-#DEFAULT_PACKAGES += kmod-madwifi
+DEFAULT_PACKAGES += kmod-madwifi
 
 define Target/Description
 	Build firmware images for Atheros AR71xx based boards
