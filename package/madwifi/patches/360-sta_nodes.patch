@@ -51,15 +51,6 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  				vap->iv_flags &= ~IEEE80211_F_SIBSS;	/* XXX */
  				if (ic->ic_roaming == IEEE80211_ROAMING_AUTO)
  					ieee80211_check_scan(vap,
-@@ -1484,7 +1487,7 @@
- 				vap->iv_state = ostate;	/* stay RUN */
- 				break;
- 			case IEEE80211_FC0_SUBTYPE_DEAUTH:
--				ieee80211_sta_leave(ni);
-+				ieee80211_node_leave(ni);
- 				if (ic->ic_roaming == IEEE80211_ROAMING_AUTO) {
- 					/* try to reauth */
- 					IEEE80211_SEND_MGMT(ni,
 @@ -1511,7 +1514,7 @@
  				IEEE80211_FC0_SUBTYPE_ASSOC_REQ, 0);
  			break;
