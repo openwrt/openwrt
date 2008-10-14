@@ -157,6 +157,9 @@ fw_defaults() {
 	config_get syn_rate $1 syn_rate
 	config_get syn_burst $1 syn_burst
 	[ "$syn_flood" == "1" ] && load_synflood $syn_rate $syn_burst
+	
+	echo "Adding custom chains"
+	fw_custom_chains
 
 	$IPTABLES -N input
 	$IPTABLES -N output
@@ -169,9 +172,6 @@ fw_defaults() {
 	$IPTABLES -N reject
 	$IPTABLES -A reject -p tcp -j REJECT --reject-with tcp-reset
 	$IPTABLES -A reject -j REJECT --reject-with icmp-port-unreachable
-
-	echo "Adding custom chains"
-	fw_custom_chains
 
 	fw_set_chain_policy INPUT "$DEF_INPUT"
 	fw_set_chain_policy OUTPUT "$DEF_OUTPUT"
