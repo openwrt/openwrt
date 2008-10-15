@@ -1,6 +1,6 @@
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -45,6 +45,16 @@
+@@ -45,6 +45,16 @@ config MTD_PARTITIONS
  	  devices. Partitioning on NFTL 'devices' is a different - that's the
  	  'normal' form of partitioning used on a block device.
  
@@ -28,7 +28,7 @@
  
  /* Our partition linked list */
  static LIST_HEAD(mtd_partitions);
-@@ -37,7 +39,7 @@
+@@ -37,7 +39,7 @@ struct mtd_part {
   * the pointer to that structure with this macro.
   */
  #define PART(x)  ((struct mtd_part *)(x))
@@ -37,7 +37,7 @@
  
  /*
   * MTD methods which simply translate the effective address and pass through
-@@ -489,6 +491,148 @@
+@@ -489,6 +491,148 @@ out_register:
  	return slave;
  }
  
@@ -186,7 +186,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -502,14 +646,29 @@
+@@ -502,14 +646,29 @@ int add_mtd_partitions(struct mtd_info *
  {
  	struct mtd_part *slave;
  	u_int32_t cur_offset = 0;
@@ -219,7 +219,7 @@
  		cur_offset = slave->offset + slave->mtd.size;
  	}
  
-@@ -517,6 +676,32 @@
+@@ -517,6 +676,32 @@ int add_mtd_partitions(struct mtd_info *
  }
  EXPORT_SYMBOL(add_mtd_partitions);
  
@@ -254,7 +254,7 @@
  
 --- a/drivers/mtd/devices/block2mtd.c
 +++ b/drivers/mtd/devices/block2mtd.c
-@@ -29,6 +29,8 @@
+@@ -29,6 +29,8 @@ struct block2mtd_dev {
  	struct block_device *blkdev;
  	struct mtd_info mtd;
  	struct mutex write_mutex;
@@ -263,7 +263,7 @@
  };
  
  
-@@ -81,6 +83,12 @@
+@@ -81,6 +83,12 @@ static int block2mtd_erase(struct mtd_in
  	size_t len = instr->len;
  	int err;
  
@@ -276,7 +276,7 @@
  	instr->state = MTD_ERASING;
  	mutex_lock(&dev->write_mutex);
  	err = _block2mtd_erase(dev, from, len);
-@@ -93,6 +101,10 @@
+@@ -93,6 +101,10 @@ static int block2mtd_erase(struct mtd_in
  
  	instr->state = MTD_ERASE_DONE;
  	mtd_erase_callback(instr);
@@ -287,7 +287,7 @@
  	return err;
  }
  
-@@ -104,10 +116,14 @@
+@@ -104,10 +116,14 @@ static int block2mtd_read(struct mtd_inf
  	struct page *page;
  	int index = from >> PAGE_SHIFT;
  	int offset = from & (PAGE_SIZE-1);
@@ -305,7 +305,7 @@
  	if (from + len > mtd->size)
  		len = mtd->size - from;
  
-@@ -122,10 +138,14 @@
+@@ -122,10 +138,14 @@ static int block2mtd_read(struct mtd_inf
  		len = len - cpylen;
  
  		page = page_read(dev->blkdev->bd_inode->i_mapping, index);
@@ -324,7 +324,7 @@
  
  		memcpy(buf, page_address(page) + offset, cpylen);
  		page_cache_release(page);
-@@ -136,7 +156,10 @@
+@@ -136,7 +156,10 @@ static int block2mtd_read(struct mtd_inf
  		offset = 0;
  		index++;
  	}
@@ -336,7 +336,7 @@
  }
  
  
-@@ -188,12 +211,22 @@
+@@ -188,12 +211,22 @@ static int block2mtd_write(struct mtd_in
  		size_t *retlen, const u_char *buf)
  {
  	struct block2mtd_dev *dev = mtd->priv;
@@ -363,7 +363,7 @@
  	if (to + len > mtd->size)
  		len = mtd->size - to;
  
-@@ -202,6 +235,9 @@
+@@ -202,6 +235,9 @@ static int block2mtd_write(struct mtd_in
  	mutex_unlock(&dev->write_mutex);
  	if (err > 0)
  		err = 0;
@@ -373,7 +373,7 @@
  	return err;
  }
  
-@@ -210,7 +246,12 @@
+@@ -210,7 +246,12 @@ static int block2mtd_write(struct mtd_in
  static void block2mtd_sync(struct mtd_info *mtd)
  {
  	struct block2mtd_dev *dev = mtd->priv;
@@ -387,7 +387,7 @@
  	return;
  }
  
-@@ -231,31 +272,22 @@
+@@ -231,31 +272,22 @@ static void block2mtd_free_device(struct
  	kfree(dev);
  }
  
@@ -422,7 +422,7 @@
  		if (devt) {
  			bdev = open_by_devnum(devt, FMODE_WRITE | FMODE_READ);
  		}
-@@ -263,17 +295,96 @@
+@@ -263,17 +295,96 @@ static struct block2mtd_dev *add_device(
  #endif
  
  	if (IS_ERR(bdev)) {
@@ -522,7 +522,7 @@
  
  	if (!mtdname)
  		mtdname = devname;
-@@ -297,6 +408,7 @@
+@@ -297,6 +408,7 @@ static struct block2mtd_dev *add_device(
  	dev->mtd.read = block2mtd_read;
  	dev->mtd.priv = dev;
  	dev->mtd.owner = THIS_MODULE;
@@ -540,7 +540,7 @@
  
  #include <asm/uaccess.h>
  
-@@ -771,6 +772,13 @@
+@@ -771,6 +772,13 @@ static int mtd_ioctl(struct inode *inode
  		file->f_pos = 0;
  		break;
  	}
@@ -556,7 +556,7 @@
  		ret = -ENOTTY;
 --- a/include/linux/mtd/mtd.h
 +++ b/include/linux/mtd/mtd.h
-@@ -96,6 +96,7 @@
+@@ -96,6 +96,7 @@ struct mtd_oob_ops {
  	uint8_t		*oobbuf;
  };
  
@@ -564,7 +564,7 @@
  struct mtd_info {
  	u_char type;
  	u_int32_t flags;
-@@ -211,6 +212,9 @@
+@@ -211,6 +212,9 @@ struct mtd_info {
  	struct module *owner;
  	int usecount;
  
@@ -584,7 +584,7 @@
  struct mtd_partition {
  	char *name;			/* identifier string */
  	u_int32_t size;			/* partition size */
-@@ -41,6 +42,7 @@
+@@ -41,6 +42,7 @@ struct mtd_partition {
  	u_int32_t mask_flags;		/* master MTD flags to mask out for this partition */
  	struct nand_ecclayout *ecclayout;	/* out of band layout for this partition (NAND only)*/
  	struct mtd_info **mtdp;		/* pointer to store the MTD object */
@@ -592,7 +592,7 @@
  };
  
  #define MTDPART_OFS_NXTBLK	(-2)
-@@ -50,6 +52,7 @@
+@@ -50,6 +52,7 @@ struct mtd_partition {
  
  int add_mtd_partitions(struct mtd_info *, const struct mtd_partition *, int);
  int del_mtd_partitions(struct mtd_info *);
@@ -602,7 +602,7 @@
   * Functions dealing with the various ways of partitioning the space
 --- a/include/mtd/mtd-abi.h
 +++ b/include/mtd/mtd-abi.h
-@@ -93,6 +93,7 @@
+@@ -93,6 +93,7 @@ struct otp_info {
  #define ECCGETLAYOUT		_IOR('M', 17, struct nand_ecclayout)
  #define ECCGETSTATS		_IOR('M', 18, struct mtd_ecc_stats)
  #define MTDFILEMODE		_IO('M', 19)

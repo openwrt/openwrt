@@ -1,6 +1,6 @@
 --- a/fs/mini_fo/main.c
 +++ b/fs/mini_fo/main.c
-@@ -79,6 +79,7 @@
+@@ -79,6 +79,7 @@ mini_fo_tri_interpose(dentry_t *hidden_d
  	 * of the new inode's fields
  	 */
  
@@ -8,7 +8,7 @@
  	/*
  	 * original: inode = iget(sb, hidden_inode->i_ino);
  	 */
-@@ -87,6 +88,13 @@
+@@ -87,6 +88,13 @@ mini_fo_tri_interpose(dentry_t *hidden_d
  		err = -EACCES;		/* should be impossible??? */
  		goto out;
  	}
@@ -22,7 +22,7 @@
  
  	/*
  	 * interpose the inode if not already interposed
-@@ -184,9 +192,9 @@
+@@ -184,9 +192,9 @@ mini_fo_parse_options(super_block_t *sb,
  				hidden_root = ERR_PTR(err);
  				goto out;
  			}
@@ -35,7 +35,7 @@
  
  		} else if(!strncmp("sto=", options, 4)) {
  			/* parse the storage dir */
-@@ -204,9 +212,9 @@
+@@ -204,9 +212,9 @@ mini_fo_parse_options(super_block_t *sb,
  				hidden_root2 = ERR_PTR(err);
  				goto out;
  			}
@@ -50,7 +50,7 @@
  			/* validate storage dir, this is done in
 --- a/fs/mini_fo/mini_fo.h
 +++ b/fs/mini_fo/mini_fo.h
-@@ -302,6 +302,10 @@
+@@ -302,6 +302,10 @@ extern int mini_fo_tri_interpose(dentry_
  extern int mini_fo_cp_cont(dentry_t *tgt_dentry, struct vfsmount *tgt_mnt,
  			   dentry_t *src_dentry, struct vfsmount *src_mnt);
  
@@ -61,7 +61,7 @@
  #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
  extern int mini_fo_create(inode_t *dir, dentry_t *dentry, int mode, struct nameidata *nd);
  
-@@ -501,6 +505,29 @@
+@@ -501,6 +505,29 @@ static inline void double_unlock(struct 
  #endif  /* if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
  #endif /* __KERNEL__ */
  
@@ -93,7 +93,7 @@
   */
 --- a/fs/mini_fo/super.c
 +++ b/fs/mini_fo/super.c
-@@ -262,10 +262,31 @@
+@@ -262,10 +262,31 @@ mini_fo_umount_begin(super_block_t *sb)
  }
  #endif
  
@@ -127,7 +127,7 @@
  #endif /* defined(FIST_DEBUG) || defined(FIST_FILTER_SCA) */
 --- a/fs/mini_fo/aux.c
 +++ b/fs/mini_fo/aux.c
-@@ -164,11 +164,11 @@
+@@ -164,11 +164,11 @@ dentry_t *bpath_walk(super_block_t *sb, 
  	err = vfs_path_lookup(mnt->mnt_root, mnt, bpath+1, 0, &nd);
  
  	/* validate */

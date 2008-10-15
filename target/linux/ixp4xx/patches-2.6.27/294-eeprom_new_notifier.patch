@@ -9,7 +9,7 @@
  
  /* Addresses to scan */
  static const unsigned short normal_i2c[] = { 0x50, 0x51, 0x52, 0x53, 0x54,
-@@ -35,25 +37,7 @@
+@@ -35,25 +37,7 @@ static const unsigned short normal_i2c[]
  /* Insmod parameters */
  I2C_CLIENT_INSMOD_1(eeprom);
  
@@ -36,7 +36,7 @@
  
  static void eeprom_update_client(struct i2c_client *client, u8 slice)
  {
-@@ -178,6 +162,7 @@
+@@ -178,6 +162,7 @@ static int eeprom_probe(struct i2c_clien
  	i2c_set_clientdata(client, data);
  	mutex_init(&data->update_lock);
  	data->nature = UNKNOWN;
@@ -44,7 +44,7 @@
  
  	/* Detect the Vaio nature of EEPROMs.
  	   We use the "PCG-" or "VGN-" prefix as the signature. */
-@@ -202,6 +187,9 @@
+@@ -202,6 +187,9 @@ static int eeprom_probe(struct i2c_clien
  	if (err)
  		goto exit_kfree;
  
@@ -54,7 +54,7 @@
  	return 0;
  
  exit_kfree:
-@@ -236,6 +224,41 @@
+@@ -236,6 +224,41 @@ static struct i2c_driver eeprom_driver =
  	.address_data	= &addr_data,
  };
  
@@ -172,7 +172,7 @@
 +#endif /* _LINUX_EEPROM_H */
 --- a/include/linux/notifier.h
 +++ b/include/linux/notifier.h
-@@ -256,5 +256,8 @@
+@@ -256,5 +256,8 @@ extern struct blocking_notifier_head reb
  #define VT_UPDATE		0x0004 /* A bigger update occurred */
  #define VT_PREWRITE		0x0005 /* A char is about to be written to the console */
  

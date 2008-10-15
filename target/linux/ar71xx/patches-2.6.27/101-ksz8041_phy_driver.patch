@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -77,6 +77,11 @@
+@@ -77,6 +77,11 @@ config MVSWITCH_PHY
  	---help---
  	  Currently supports the Marvell 88E6060 switch.
  
@@ -14,7 +14,7 @@
  	depends on PHYLIB=y
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -15,6 +15,7 @@
+@@ -15,6 +15,7 @@ obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o
  obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
  obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
  obj-$(CONFIG_REALTEK_PHY)	+= realtek.o

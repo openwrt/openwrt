@@ -1,6 +1,6 @@
 --- a/drivers/net/ar2313/ar2313.c
 +++ b/drivers/net/ar2313/ar2313.c
-@@ -953,9 +953,9 @@
+@@ -953,9 +953,9 @@ static int ar2313_rx_int(struct net_devi
  						((status >> DMA_RX_LEN_SHIFT) & 0x3fff) - CRC_LEN);
  
  				dev->stats.rx_bytes += skb->len;
@@ -12,7 +12,7 @@
  
  				skb_new->dev = dev;
  				/* 16 bit align */
-@@ -1370,6 +1370,8 @@
+@@ -1370,6 +1370,8 @@ static int mdiobus_probe (struct net_dev
  		return PTR_ERR(phydev);
  	}
  
@@ -23,7 +23,7 @@
  		| SUPPORTED_10baseT_Full
 --- a/drivers/net/ar2313/ar2313.h
 +++ b/drivers/net/ar2313/ar2313.h
-@@ -107,6 +107,8 @@
+@@ -107,6 +107,8 @@ typedef struct {
   */
  struct ar2313_private {
  	struct net_device *dev;

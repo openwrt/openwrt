@@ -477,7 +477,7 @@
 +
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -109,6 +109,129 @@
+@@ -109,6 +109,129 @@ config EQUALIZER
  	  To compile this driver as a module, choose M here: the module
  	  will be called eql.  If unsure, say N.
  
@@ -609,7 +609,7 @@
  	select CRC32
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -144,6 +144,7 @@
+@@ -144,6 +144,7 @@ obj-$(CONFIG_SLHC) += slhc.o
  obj-$(CONFIG_XEN_NETDEV_FRONTEND) += xen-netfront.o
  
  obj-$(CONFIG_DUMMY) += dummy.o
@@ -653,7 +653,7 @@
 +#endif /* _IP6T_IMQ_H */
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -302,6 +302,10 @@
+@@ -302,6 +302,10 @@ struct sk_buff {
  	struct nf_conntrack	*nfct;
  	struct sk_buff		*nfct_reasm;
  #endif
@@ -664,7 +664,7 @@
  #ifdef CONFIG_BRIDGE_NETFILTER
  	struct nf_bridge_info	*nf_bridge;
  #endif
-@@ -1642,6 +1646,10 @@
+@@ -1642,6 +1646,10 @@ static inline void __nf_copy(struct sk_b
  	dst->nfct_reasm = src->nfct_reasm;
  	nf_conntrack_get_reasm(src->nfct_reasm);
  #endif
@@ -687,7 +687,7 @@
  #include <linux/proc_fs.h>
  #include <linux/seq_file.h>
  #include <linux/stat.h>
-@@ -1624,7 +1627,11 @@
+@@ -1624,7 +1627,11 @@ int dev_hard_start_xmit(struct sk_buff *
  			struct netdev_queue *txq)
  {
  	if (likely(!skb->next)) {
@@ -774,7 +774,7 @@
 +MODULE_LICENSE("GPL");
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -145,6 +145,17 @@
+@@ -145,6 +145,17 @@ config IP_NF_FILTER
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -794,7 +794,7 @@
  	depends on IP_NF_FILTER
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -59,6 +59,7 @@
+@@ -59,6 +59,7 @@ obj-$(CONFIG_IP_NF_MATCH_IPP2P) += ipt_i
  obj-$(CONFIG_IP_NF_TARGET_CLUSTERIP) += ipt_CLUSTERIP.o
  obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_ECN.o
  obj-$(CONFIG_IP_NF_TARGET_LOG) += ipt_LOG.o
@@ -876,7 +876,7 @@
 +MODULE_LICENSE("GPL");
 --- a/net/ipv6/netfilter/Kconfig
 +++ b/net/ipv6/netfilter/Kconfig
-@@ -179,6 +179,15 @@
+@@ -179,6 +179,15 @@ config IP6_NF_MANGLE
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -904,7 +904,7 @@
  obj-$(CONFIG_IP6_NF_SECURITY) += ip6table_security.o
 --- a/net/sched/sch_generic.c
 +++ b/net/sched/sch_generic.c
-@@ -188,6 +188,7 @@
+@@ -188,6 +188,7 @@ void __qdisc_run(struct Qdisc *q)
  
  	clear_bit(__QDISC_STATE_RUNNING, &q->state);
  }
