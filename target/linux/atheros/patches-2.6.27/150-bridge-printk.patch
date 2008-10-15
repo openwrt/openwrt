@@ -1,6 +1,6 @@
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3983,8 +3983,8 @@
+@@ -3984,8 +3984,8 @@ int register_netdevice(struct net_device
  	/* Fix illegal SG+CSUM combinations. */
  	if ((dev->features & NETIF_F_SG) &&
  	    !(dev->features & NETIF_F_ALL_CSUM)) {
@@ -11,7 +11,7 @@
  		dev->features &= ~NETIF_F_SG;
  	}
  
-@@ -3997,9 +3997,9 @@
+@@ -3998,9 +3998,9 @@ int register_netdevice(struct net_device
  	}
  	if (dev->features & NETIF_F_UFO) {
  		if (!(dev->features & NETIF_F_HW_CSUM)) {

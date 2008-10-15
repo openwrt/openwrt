@@ -611,7 +611,7 @@
 +module_exit(gpiommc_modexit);
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
-@@ -180,3 +180,28 @@
+@@ -180,3 +180,28 @@ config MMC_TMIO
  	help
  	  This provides support for the SD/MMC cell found in TC6393XB,
  	  T7L66XB and also ipaq ASIC3
@@ -642,7 +642,7 @@
 +	  if configfs is available.
 --- a/drivers/mmc/host/Makefile
 +++ b/drivers/mmc/host/Makefile
-@@ -22,4 +22,5 @@
+@@ -22,4 +22,5 @@ obj-$(CONFIG_MMC_SPI)		+= mmc_spi.o
  obj-$(CONFIG_MMC_S3C)   	+= s3cmci.o
  obj-$(CONFIG_MMC_SDRICOH_CS)	+= sdricoh_cs.o
  obj-$(CONFIG_MMC_TMIO)		+= tmio_mmc.o
@@ -824,7 +824,7 @@
 +be done automatically.
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -1833,6 +1833,11 @@
+@@ -1833,6 +1833,11 @@ L:	gigaset307x-common@lists.sourceforge.
  W:	http://gigaset307x.sourceforge.net/
  S:	Maintained
  

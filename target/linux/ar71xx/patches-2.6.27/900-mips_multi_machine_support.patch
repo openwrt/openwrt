@@ -113,7 +113,7 @@
 +
 --- a/arch/mips/kernel/Makefile
 +++ b/arch/mips/kernel/Makefile
-@@ -83,6 +83,7 @@
+@@ -83,6 +83,7 @@ obj-$(CONFIG_GPIO_TXX9)		+= gpio_txx9.o
  
  obj-$(CONFIG_KEXEC)		+= machine_kexec.o relocate_kernel.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
@@ -123,7 +123,7 @@
  
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -615,6 +615,7 @@
+@@ -615,6 +615,7 @@ config WR_PPMC
  
  endchoice
  
@@ -131,7 +131,7 @@
  source "arch/mips/au1000/Kconfig"
  source "arch/mips/basler/excite/Kconfig"
  source "arch/mips/jazz/Kconfig"
-@@ -788,6 +789,9 @@
+@@ -788,6 +789,9 @@ config MYLOADER
  config SYNC_R4K
  	bool
  

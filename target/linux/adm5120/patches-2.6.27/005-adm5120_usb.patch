@@ -13,7 +13,7 @@
  	depends on USB
 --- a/drivers/usb/host/Makefile
 +++ b/drivers/usb/host/Makefile
-@@ -10,6 +10,7 @@
+@@ -10,6 +10,7 @@ isp1760-objs := isp1760-hcd.o isp1760-if
  
  obj-$(CONFIG_PCI)		+= pci-quirks.o
  
@@ -23,7 +23,7 @@
  obj-$(CONFIG_USB_OHCI_HCD)	+= ohci-hcd.o
 --- a/drivers/usb/Makefile
 +++ b/drivers/usb/Makefile
-@@ -16,6 +16,7 @@
+@@ -16,6 +16,7 @@ obj-$(CONFIG_USB_UHCI_HCD)	+= host/
  obj-$(CONFIG_USB_SL811_HCD)	+= host/
  obj-$(CONFIG_USB_U132_HCD)	+= host/
  obj-$(CONFIG_USB_R8A66597_HCD)	+= host/

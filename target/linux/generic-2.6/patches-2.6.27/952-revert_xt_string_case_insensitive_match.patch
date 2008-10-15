@@ -12,7 +12,7 @@
  struct xt_string_info
  {
  	u_int16_t from_offset;
-@@ -16,15 +11,7 @@
+@@ -16,15 +11,7 @@ struct xt_string_info
  	char	  algo[XT_STRING_MAX_ALGO_NAME_SIZE];
  	char 	  pattern[XT_STRING_MAX_PATTERN_SIZE];
  	u_int8_t  patlen;
@@ -31,7 +31,7 @@
  	struct ts_config __attribute__((aligned(8))) *config;
 --- a/net/netfilter/xt_string.c
 +++ b/net/netfilter/xt_string.c
-@@ -29,16 +29,12 @@
+@@ -29,16 +29,12 @@ string_mt(const struct sk_buff *skb, con
  {
  	const struct xt_string_info *conf = matchinfo;
  	struct ts_state state;
@@ -49,7 +49,7 @@
  }
  
  #define STRING_TEXT_PRIV(m) ((struct xt_string_info *)(m))
-@@ -50,7 +46,6 @@
+@@ -50,7 +46,6 @@ string_mt_check(const char *tablename, c
  {
  	struct xt_string_info *conf = matchinfo;
  	struct ts_config *ts_conf;
@@ -57,7 +57,7 @@
  
  	/* Damn, can't handle this case properly with iptables... */
  	if (conf->from_offset > conf->to_offset)
-@@ -59,15 +54,8 @@
+@@ -59,15 +54,8 @@ string_mt_check(const char *tablename, c
  		return false;
  	if (conf->patlen > XT_STRING_MAX_PATTERN_SIZE)
  		return false;
@@ -74,7 +74,7 @@
  	if (IS_ERR(ts_conf))
  		return false;
  
-@@ -84,17 +72,6 @@
+@@ -84,17 +72,6 @@ static void string_mt_destroy(const stru
  static struct xt_match string_mt_reg[] __read_mostly = {
  	{
  		.name 		= "string",
@@ -92,7 +92,7 @@
  		.family		= AF_INET,
  		.checkentry	= string_mt_check,
  		.match 		= string_mt,
-@@ -104,17 +81,6 @@
+@@ -104,17 +81,6 @@ static struct xt_match string_mt_reg[] _
  	},
  	{
  		.name 		= "string",

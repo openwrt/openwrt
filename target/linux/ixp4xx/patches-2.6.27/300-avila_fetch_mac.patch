@@ -33,7 +33,7 @@
  static struct flash_platform_data avila_flash_data = {
  	.map_name	= "cfi_probe",
  	.width		= 2,
-@@ -163,10 +178,160 @@
+@@ -163,10 +178,160 @@ static struct platform_device *avila_dev
  	&avila_uart
  };
  
@@ -194,7 +194,7 @@
  	avila_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
  	avila_flash_resource.end =
  		IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size - 1;
-@@ -184,9 +349,28 @@
+@@ -184,9 +349,28 @@ static void __init avila_init(void)
  
  	platform_device_register(&avila_pata);
  

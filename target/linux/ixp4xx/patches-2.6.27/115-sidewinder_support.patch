@@ -15,7 +15,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 
 --- a/arch/arm/mach-ixp4xx/Kconfig
 +++ b/arch/arm/mach-ixp4xx/Kconfig
-@@ -81,6 +81,14 @@
+@@ -81,6 +81,14 @@ config MACH_PRONGHORN
  config MACH_PRONGHORNMETRO
  	def_bool MACH_PRONGHORN
  
@@ -30,7 +30,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  config ARCH_IXDP425
  	bool "IXDP425"
  	help
-@@ -163,7 +171,7 @@
+@@ -163,7 +171,7 @@ config MACH_FSG
  #
  config CPU_IXP46X
  	bool
@@ -41,7 +41,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  config CPU_IXP43X
 --- a/arch/arm/mach-ixp4xx/Makefile
 +++ b/arch/arm/mach-ixp4xx/Makefile
-@@ -18,6 +18,7 @@
+@@ -18,6 +18,7 @@ obj-pci-$(CONFIG_MACH_WG302V1)		+= wg302
  obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
  obj-pci-$(CONFIG_MACH_FSG)		+= fsg-pci.o
  obj-pci-$(CONFIG_MACH_PRONGHORN)	+= pronghorn-pci.o
@@ -49,7 +49,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  
  obj-y	+= common.o
  
-@@ -34,6 +35,7 @@
+@@ -34,6 +35,7 @@ obj-$(CONFIG_MACH_WG302V1)	+= wg302v1-se
  obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
  obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o
  obj-$(CONFIG_MACH_PRONGHORN)	+= pronghorn-setup.o

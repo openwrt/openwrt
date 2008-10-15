@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-ixp4xx/cambria-setup.c
 +++ b/arch/arm/mach-ixp4xx/cambria-setup.c
-@@ -214,6 +214,21 @@
+@@ -214,6 +214,21 @@ static struct platform_device cambria_gp
  	.dev.platform_data = &cambria_gpio_leds_data,
  };
  
@@ -22,7 +22,7 @@
  
  static struct latch_led cambria_latch_leds[] = {
  	{
-@@ -337,6 +352,11 @@
+@@ -337,6 +352,11 @@ static void __init cambria_gw2350_setup(
  	cambria_optional_uart_data[1].membase	= (void __iomem *)ioremap(0x53FF0000, 0x0fff);
  	cambria_optional_uart_data[1].irq		= IRQ_IXP4XX_GPIO4;
  
@@ -34,7 +34,7 @@
  	platform_device_register(&cambria_optional_uart);
  	platform_device_register(&cambria_npec_device);
  	platform_device_register(&cambria_npea_device);
-@@ -363,6 +383,10 @@
+@@ -363,6 +383,10 @@ static void __init cambria_gw2358_setup(
  	cambria_optional_uart_data[1].membase	= (void __iomem *)ioremap(0x53F80000, 0x0fff);
  	cambria_optional_uart_data[1].irq		= IRQ_IXP4XX_GPIO4;
  

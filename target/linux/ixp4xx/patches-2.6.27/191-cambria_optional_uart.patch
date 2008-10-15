@@ -8,7 +8,7 @@
  
  struct cambria_board_info {
  	unsigned char	*model;
-@@ -105,6 +106,43 @@
+@@ -105,6 +106,43 @@ static struct platform_device cambria_ua
  	.resource	= &cambria_uart_resource,
  };
  
@@ -52,7 +52,7 @@
  static struct resource cambria_pata_resources[] = {
  	{
  		.flags	= IORESOURCE_MEM
-@@ -287,6 +325,19 @@
+@@ -287,6 +325,19 @@ static void __init cambria_gw23xx_setup(
  #ifdef CONFIG_SENSORS_EEPROM
  static void __init cambria_gw2350_setup(void)
  {
@@ -72,7 +72,7 @@
  	platform_device_register(&cambria_npec_device);
  	platform_device_register(&cambria_npea_device);
  
-@@ -294,10 +345,26 @@
+@@ -294,10 +345,26 @@ static void __init cambria_gw2350_setup(
  	platform_device_register(&cambria_usb1_device);
  
  	platform_device_register(&cambria_gpio_leds_device);

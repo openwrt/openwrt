@@ -1,6 +1,6 @@
 --- a/fs/mini_fo/inode.c
 +++ b/fs/mini_fo/inode.c
-@@ -439,7 +439,7 @@
+@@ -439,7 +439,7 @@ mini_fo_symlink(inode_t *dir, dentry_t *
  	int err=0;
  	dentry_t *hidden_sto_dentry;
  	dentry_t *hidden_sto_dir_dentry;
@@ -9,7 +9,7 @@
          umode_t mode;
  #endif
  
-@@ -466,7 +466,7 @@
+@@ -466,7 +466,7 @@ mini_fo_symlink(inode_t *dir, dentry_t *
  	down(&hidden_sto_dir_dentry->d_inode->i_sem);
  #endif
  
@@ -18,7 +18,7 @@
  	mode = S_IALLUGO;
  	err = vfs_symlink(hidden_sto_dir_dentry->d_inode,
  			  hidden_sto_dentry, symname, mode);
-@@ -1128,7 +1128,7 @@
+@@ -1128,7 +1128,7 @@ void mini_fo_put_link(struct dentry *den
  #endif
  
  STATIC int
@@ -27,7 +27,7 @@
  mini_fo_permission(inode_t *inode, int mask, struct nameidata *nd)
  #else
  mini_fo_permission(inode_t *inode, int mask)
-@@ -1150,8 +1150,9 @@
+@@ -1150,8 +1150,9 @@ mini_fo_permission(inode_t *inode, int m
  	 *	if (err)
  	 *		goto out;
  	 */
