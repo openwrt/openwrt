@@ -193,8 +193,10 @@ void ag71xx_phy_start(struct ag71xx *ag)
 	if (ag->phy_dev) {
 		phy_start(ag->phy_dev);
 	} else {
-		ag->duplex = DUPLEX_FULL;
-		ag->speed = SPEED_100;
+		struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
+
+		ag->duplex = pdata->duplex;
+		ag->speed = pdata->speed;
 		ag->link = 1;
 		ag71xx_phy_link_update(ag);
 	}
@@ -220,8 +222,8 @@ int ag71xx_phy_connect(struct ag71xx *ag)
 	int phy_count = 0;
 	int phy_addr;
 
-	if (ag->mii_bus) {
-		/* TODO: use mutex of the mdio bus */
+	if (ag->mii_bus && pdata->phy_mask) {
+		/* TODO: use mutex of the mdio bus? */
 		for (phy_addr = 0; phy_addr < PHY_MAX_ADDR; phy_addr++) {
 			if (!(pdata->phy_mask & (1 << phy_addr)))
 				continue;
@@ -242,9 +244,6 @@ int ag71xx_phy_connect(struct ag71xx *ag)
 	}
 
 	switch (phy_count) {
-	case 0:
-		printk(KERN_ERR "%s: no PHY found\n", dev->name);
-		return -ENODEV;
 	case 1:
 		ag->phy_dev = phy_connect(dev, phydev->dev.bus_id,
 			&ag71xx_phy_link_adjust, 0, pdata->phy_if_mode);
@@ -275,9 +274,10 @@ int ag71xx_phy_connect(struct ag71xx *ag)
 		ag->speed = 0;
 		ag->duplex = -1;
 		break;
+
 	default:
 		ag->phy_dev = NULL;
-		printk(KERN_DEBUG "%s: connected to multiple PHYs (%d)\n",
+		printk(KERN_DEBUG "%s: connected to %d PHYs\n",
 			dev->name, phy_count);
 		break;
 	}

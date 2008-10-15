@@ -25,6 +25,8 @@ struct ag71xx_platform_data {
 	u32		phy_mask;
 	phy_interface_t	phy_if_mode;
 	u32		mii_if;
+	int		speed;
+	int		duplex;
 	u8		mac_addr[ETH_ALEN];
 };
 
