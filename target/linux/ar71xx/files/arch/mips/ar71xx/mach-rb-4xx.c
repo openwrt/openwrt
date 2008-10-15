@@ -212,3 +212,26 @@ static void __init rb450_setup(void)
 }
 
 MIPS_MACHINE(MACH_AR71XX_RB_450, "MikroTik RouterBOARD 450", rb450_setup);
+
+static void __init rb493_setup(void)
+{
+	rb4xx_add_device_spi();
+
+#if 0
+	ar71xx_add_device_mdio(0x3fffff00);
+	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x00000000);
+	ar71xx_add_device_eth(1, PHY_INTERFACE_MODE_RMII, 0x00000001);
+#endif
+
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
+					rb4xx_leds_gpio);
+
+	ar71xx_add_device_gpio_buttons(-1, RB4XX_BUTTONS_POLL_INTERVAL,
+					ARRAY_SIZE(rb4xx_gpio_buttons),
+					rb4xx_gpio_buttons);
+
+	platform_device_register(&rb4xx_nand_device);
+}
+
+MIPS_MACHINE(MACH_AR71XX_RB_493, "MikroTik RouterBOARD 493/AH", rb493_setup);
+
