@@ -40,6 +40,9 @@ static struct board_rec boards[] __initdata = {
 	}, {
 		.name		= "450",
 		.mach_type	= MACH_AR71XX_RB_450,
+	}, {
+		.name		= "493",
+		.mach_type	= MACH_AR71XX_RB_493,
 	}
 };
 
