@@ -85,7 +85,10 @@ enable_atheros() {
 		config_get eap_type "$vif" eap_type
 		config_get mode "$vif" mode
 		
-		[ "$mode" = sta ] && config_get nosbeacon "$device" nosbeacon
+		case "$mode" in
+			sta) config_get nosbeacon "$device" nosbeacon;;
+			adhoc) config_get nosbeacon "$vif" sw_merge;;
+		esac
 		
 		config_get ifname "$vif" ifname
 		ifname=$(wlanconfig "$ifname" create wlandev "$device" wlanmode "$mode" ${nosbeacon:+nosbeacon})
