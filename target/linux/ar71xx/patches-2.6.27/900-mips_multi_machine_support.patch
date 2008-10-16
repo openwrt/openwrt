@@ -123,15 +123,7 @@
  
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -615,6 +615,7 @@ config WR_PPMC
- 
- endchoice
- 
-+source "arch/mips/ar71xx/Kconfig"
- source "arch/mips/au1000/Kconfig"
- source "arch/mips/basler/excite/Kconfig"
- source "arch/mips/jazz/Kconfig"
-@@ -788,6 +789,9 @@ config MYLOADER
+@@ -789,6 +789,9 @@ config MYLOADER
  config SYNC_R4K
  	bool
  
