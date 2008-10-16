@@ -15,10 +15,6 @@ choice
 config MADWIFI_STABLE
 	bool "Use the OpenWrt stable version of madwifi"
 
-config MADWIFI_TESTING
-	depends BROKEN
-	bool "Use the OpenWrt testing version of madwifi"
-
 config MADWIFI_UPSTREAM
 	depends !LINUX_2_6_26
 	depends !TARGET_atheros
