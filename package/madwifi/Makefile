@@ -24,7 +24,7 @@ ifneq ($(CONFIG_MADWIFI_UPSTREAM),)
   PATCH_DIR=./patches-upstream
 else
 # PKG_BRANCH:=madwifi-dfs
-  PKG_REV:=$(if $(CONFIG_MADWIFI_TESTING),3776,3314)
+  PKG_REV:=3314
   PKG_VERSION:=r$(PKG_REV)
   PKG_RELEASE:=1
 
@@ -36,7 +36,7 @@ else
 
   PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trunk)-$(PKG_VERSION)
 
-  PATCH_DIR=$(if $(CONFIG_MADWIFI_TESTING),./patches-testing,./patches)
+  PATCH_DIR=./patches
 endif
 
 include $(INCLUDE_DIR)/package.mk
@@ -143,7 +143,7 @@ ifeq ($(findstring PCI,$(BUS)),PCI)
   MADWIFI_AUTOLOAD+= ath_pci
 endif
 
-MADWIFI_APPLETS:=80211stats athchans athctrl athkey athstats wlanconfig $(if $(CONFIG_MADWIFI_TESTING),ath_info/)ath_info
+MADWIFI_APPLETS:=80211stats athchans athctrl athkey athstats wlanconfig ath_info
 ifdef CONFIG_MADWIFI_DEBUG
   MADWIFI_APPLETS += athdebug 80211debug
 endif
@@ -178,13 +178,8 @@ MAKE_ARGS:= \
 	KERNELPATH="$(LINUX_DIR)" \
 	LDOPTS="--no-warn-mismatch " \
 	ATH_RATE="ath_rate/$(RATE_CONTROL)" \
-	DO_MULTI=1
-
-ifneq ($(CONFIG_MADWIFI_TESTING),)
-  MAKE_ARGS += $(if $(CONFIG_MADWIFI_DEBUG),,ATH_DEBUG=)
-else
-  MAKE_ARGS += $(if $(CONFIG_MADWIFI_DEBUG),,DEBUG=) WARNINGS="-Wno-unused"
-endif
+	DO_MULTI=1 \
+	$(if $(CONFIG_MADWIFI_DEBUG),,DEBUG=) WARNINGS="-Wno-unused"
 
 MAKE_VARS:= \
 	COPTS="-DCONFIG_ATHEROS_RATE_DEFAULT='\"$(RATE_CONTROL)\"' -DATH_REVERSE_ENGINEERING=1" \
