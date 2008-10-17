@@ -127,10 +127,19 @@ define KernelPackage/rt73-usb
   AUTOLOAD:=$(call AutoLoad,27,rt73usb)
 endef
 
-define KernelPackage/net-zd1211rw
+ZD1211FW_NAME:=zd1211-firmware
+ZD1211FW_VERSION:=1.4
+define Download/zd1211rw
+  FILE:=$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
+  URL:=@SF/zd1211/
+  MD5SUM:=19f28781d76569af8551c9d11294c870
+endef
+$(eval $(call Download,zd1211rw))
+
+define KernelPackage/zd1211rw
   SUBMENU:=Wireless Drivers
   TITLE:=Zydas ZD1211 support
-  DEPENDS:=@LINUX_2_6_24||LINUX_2_6_25 @USB_SUPPORT +kmod-ieee80211-softmac
+  DEPENDS:=@LINUX_2_6_24||@LINUX_2_6_25||@LINUX_2_6_26||@LINUX_2_6_27 @USB_SUPPORT +kmod-usb-core +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/zd1211rw/zd1211rw.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,zd1211rw)
 endef
@@ -171,6 +180,7 @@ define Build/Prepare
 	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
 	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT61FW)
 	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT71FW)
+	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
 	$(if $(CONFIG_TARGET_brcm47xx),rm -rf $(PKG_BUILD_DIR)/include/linux/ssb)
 endef
 
@@ -205,8 +215,12 @@ define KernelPackage/rt73-usb/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rt73.bin $(1)/lib/firmware/
 endef
 
+define KernelPackage/zd1211rw/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(ZD1211FW_NAME)/zd1211* $(1)/lib/firmware/
+endef
+
 $(eval $(call KernelPackage,ath5k))
-$(eval $(call KernelPackage,net-zd1211rw))
 $(eval $(call KernelPackage,mac80211))
 $(eval $(call KernelPackage,rt2x00-lib))
 $(eval $(call KernelPackage,rt2x00-pci))
@@ -216,3 +230,4 @@ $(eval $(call KernelPackage,rt2500-pci))
 $(eval $(call KernelPackage,rt2500-usb))
 $(eval $(call KernelPackage,rt61-pci))
 $(eval $(call KernelPackage,rt73-usb))
+$(eval $(call KernelPackage,zd1211rw))
