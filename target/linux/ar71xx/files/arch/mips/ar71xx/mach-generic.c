@@ -50,8 +50,15 @@ static void __init ar71xx_generic_init(void)
 				ARRAY_SIZE(ar71xx_generic_spi_info));
 
 	ar71xx_add_device_mdio(0xffe0ffff);
-	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x000f0000);
-	ar71xx_add_device_eth(1, PHY_INTERFACE_MODE_RMII, 0x00100000);
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_mask = 0x000f0000;
+
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
+	ar71xx_eth1_data.phy_mask = 0x00100000;
+
+	ar71xx_add_device_eth(0);
+	ar71xx_add_device_eth(1);
 
 	ar71xx_add_device_usb();
 

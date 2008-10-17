@@ -124,7 +124,10 @@ static void __init wp543_setup(void)
 	ar71xx_add_device_spi(NULL, wp543_spi_info, ARRAY_SIZE(wp543_spi_info));
 
 	ar71xx_add_device_mdio(0xfffffff7);
-	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x00000008);
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_mask = 0x00000008;
+	ar71xx_add_device_eth(0);
 
 	ar71xx_add_device_usb();
 
