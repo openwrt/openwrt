@@ -682,3 +682,16 @@ endef
 
 $(eval $(call KernelPackage,usb-test))
 
+define KernelPackage/usb-phidget
+  $(call usbdep,@LINUX_2_6)
+  TITLE:=USB Phidget Driver
+  KCONFIG:=CONFIG_USB_PHIDGET CONFIG_USB_PHIDGETKIT CONFIG_USB_PHIDGETMOTORCONTROL CONFIG_USB_PHIDGETSERVO
+  FILES:=$(LINUX_DIR)/drivers/usb/misc/phidget*.ko
+endef
+
+define KernelPackage/usb-phidget/description
+ Kernel support for USB Phidget devices.
+endef
+
+$(eval $(call KernelPackage,usb-phidget))
+
