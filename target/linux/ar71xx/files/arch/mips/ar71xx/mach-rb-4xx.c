@@ -155,7 +155,11 @@ static void __init rb411_setup(void)
 	rb4xx_add_device_spi();
 
 	ar71xx_add_device_mdio(0xfffffffe);
-	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x00000001);
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_mask = 0x00000001;
+
+	ar71xx_add_device_eth(0);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
 					rb4xx_leds_gpio);
@@ -176,8 +180,15 @@ static void __init rb433_setup(void)
 	rb433_add_device_spi();
 
 	ar71xx_add_device_mdio(0xffffffec);
-	ar71xx_add_device_eth(1, PHY_INTERFACE_MODE_RMII, 0x00000010);
-	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x00000003);
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_mask = 0x00000003;
+
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
+	ar71xx_eth1_data.phy_mask = 0x00000010;
+
+	ar71xx_add_device_eth(1);
+	ar71xx_add_device_eth(0);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
 					rb4xx_leds_gpio);
@@ -198,8 +209,15 @@ static void __init rb450_setup(void)
 	rb4xx_add_device_spi();
 
 	ar71xx_add_device_mdio(0xffffffe0);
-	ar71xx_add_device_eth(1, PHY_INTERFACE_MODE_RMII, 0x00000010);
-	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x0000000f);
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_mask = 0x0000000f;
+
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
+	ar71xx_eth1_data.phy_mask = 0x00000010;
+
+	ar71xx_add_device_eth(1);
+	ar71xx_add_device_eth(0);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
 					rb4xx_leds_gpio);
@@ -217,10 +235,19 @@ static void __init rb493_setup(void)
 {
 	rb4xx_add_device_spi();
 
-#if 0
 	ar71xx_add_device_mdio(0x3fffff00);
-	ar71xx_add_device_eth(0, PHY_INTERFACE_MODE_MII, 0x00000000);
-	ar71xx_add_device_eth(1, PHY_INTERFACE_MODE_RMII, 0x00000001);
+
+#if 0
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_mask = 0;
+	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
+	ar71xx_eth1_data.phy_mask = 0x00000001;
+
+	ar71xx_add_device_eth(0);
+	ar71xx_add_device_eth(1);
 #endif
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),

@@ -20,13 +20,13 @@
 #include <linux/gpio_buttons.h>
 
 struct ag71xx_platform_data {
-	u32		reset_bit;
-	u32		flush_reg;
-	u32		phy_mask;
 	phy_interface_t	phy_if_mode;
-	u32		mii_if;
+	u32		phy_mask;
 	int		speed;
 	int		duplex;
+	u32		reset_bit;
+	u32		flush_reg;
+	u32		mii_if;
 	u8		mac_addr[ETH_ALEN];
 };
 
@@ -49,8 +49,10 @@ extern void ar71xx_add_device_spi(struct ar71xx_spi_platform_data *pdata,
 
 extern void ar71xx_set_mac_base(unsigned char *mac) __init;
 extern void ar71xx_parse_mac_addr(char *mac_str) __init;
-extern void ar71xx_add_device_eth(unsigned int id, phy_interface_t phy_if_mode,
-				u32 phy_mask) __init;
+
+extern struct ag71xx_platform_data ar71xx_eth0_data;
+extern struct ag71xx_platform_data ar71xx_eth1_data;
+extern void ar71xx_add_device_eth(unsigned int id) __init;
 
 extern void ar71xx_add_device_mdio(u32 phy_mask) __init;
 

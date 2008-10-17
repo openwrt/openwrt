@@ -196,7 +196,7 @@ static struct resource ar71xx_eth0_resources[] = {
 	},
 };
 
-static struct ag71xx_platform_data ar71xx_eth0_data = {
+struct ag71xx_platform_data ar71xx_eth0_data = {
 	.reset_bit	= RESET_MODULE_GE0_MAC,
 	.flush_reg	= DDR_REG_FLUSH_GE0,
 };
@@ -235,7 +235,7 @@ static struct resource ar71xx_eth1_resources[] = {
 	},
 };
 
-static struct ag71xx_platform_data ar71xx_eth1_data = {
+struct ag71xx_platform_data ar71xx_eth1_data = {
 	.reset_bit	= RESET_MODULE_GE1_MAC,
 	.flush_reg	= DDR_REG_FLUSH_GE1,
 };
@@ -251,14 +251,13 @@ static struct platform_device ar71xx_eth1_device = {
 };
 
 static int ar71xx_eth_instance __initdata;
-void __init ar71xx_add_device_eth(unsigned int id, phy_interface_t phy_if_mode,
-				u32 phy_mask)
+void __init ar71xx_add_device_eth(unsigned int id)
 {
 	struct platform_device *pdev;
 
 	switch (id) {
 	case 0:
-		switch (phy_if_mode) {
+		switch (ar71xx_eth0_data.phy_if_mode) {
 		case PHY_INTERFACE_MODE_MII:
 			ar71xx_eth0_data.mii_if = MII0_CTRL_IF_MII;
 			break;
@@ -276,12 +275,10 @@ void __init ar71xx_add_device_eth(unsigned int id, phy_interface_t phy_if_mode,
 		}
 		memcpy(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, ETH_ALEN);
 		ar71xx_eth0_data.mac_addr[5] += ar71xx_eth_instance;
-		ar71xx_eth0_data.phy_if_mode = phy_if_mode;
-		ar71xx_eth0_data.phy_mask = phy_mask;
 		pdev = &ar71xx_eth0_device;
 		break;
 	case 1:
-		switch (phy_if_mode) {
+		switch (ar71xx_eth1_data.phy_if_mode) {
 		case PHY_INTERFACE_MODE_RMII:
 			ar71xx_eth1_data.mii_if = MII1_CTRL_IF_RMII;
 			break;
@@ -293,8 +290,6 @@ void __init ar71xx_add_device_eth(unsigned int id, phy_interface_t phy_if_mode,
 		}
 		memcpy(ar71xx_eth1_data.mac_addr, ar71xx_mac_base, ETH_ALEN);
 		ar71xx_eth1_data.mac_addr[5] += ar71xx_eth_instance;
-		ar71xx_eth1_data.phy_if_mode = phy_if_mode;
-		ar71xx_eth1_data.phy_mask = phy_mask;
 		pdev = &ar71xx_eth1_device;
 		break;
 	default:
