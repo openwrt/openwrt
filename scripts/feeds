@@ -290,8 +290,9 @@ sub install_package {
 	foreach my $vpkg (@{$srcpackage{$src}}, $pkg) {
 		foreach my $dep (@{$vpkg->{depends}}, @{$vpkg->{builddepends}}) {
 			next if $dep =~ /@/;
-			next if $dep =~ /:/;
 			$dep =~ s/^\+//;
+			$dep =~ s/^.+://;
+			next unless $dep;
 			install_package($feed, $dep) == 0 or $ret = 1;
 		}
 	}
