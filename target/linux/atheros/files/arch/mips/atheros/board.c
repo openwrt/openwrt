@@ -22,16 +22,54 @@
 #include <linux/kernel.h>
 #include <linux/serial.h>
 #include <linux/serial_core.h>
+#include <linux/random.h>
 #include <asm/bootinfo.h>
 #include <asm/irq_cpu.h>
 #include <asm/io.h>
 #include <ar531x.h>
 
-char *board_config, *radio_config;
+char *board_config = NULL;
+char *radio_config = NULL;
+int broken_boarddata = 0;
 
 extern int early_serial_setup(struct uart_port *port);
 
-static u8 *find_board_config(char *flash_limit)
+static inline bool
+check_radio_magic(unsigned char *addr)
+{
+	addr += 0x7a; /* offset for flash magic */
+	if ((addr[0] == 0x5a) && (addr[1] == 0xa5)) {
+		return 1;
+	}
+	return 0;
+}
+
+static inline bool
+check_board_data(unsigned char *flash_limit, unsigned char *addr, bool broken)
+{
+	/* config magic found */
+	if ( *(int *)addr == 0x35333132)
+		return 1;
+
+	if (!broken)
+		return 0;
+
+	if (check_radio_magic(addr + 0xf8))
+		radio_config = addr + 0xf8;
+	if ((addr < flash_limit + 0x10000) &&
+	     check_radio_magic(addr + 0x10000))
+		radio_config = addr + 0x10000;
+
+	if (radio_config) {
+		/* broken board data detected, use radio data to find the offset,
+		 * user will fix this */
+		broken_boarddata = 1;
+		return 1;
+	}
+	return 0;
+}
+
+static u8 *find_board_config(char *flash_limit, bool broken)
 {
 	char *addr;
 	int found = 0;
@@ -40,17 +78,14 @@ static u8 *find_board_config(char *flash_limit)
 		addr >= (char *) (flash_limit - 0x30000);
 		addr -= 0x1000) {
 
-		if ( *(int *)addr == 0x35333131) {
-			/* config magic found */
+		if (check_board_data(flash_limit, addr, broken)) {
 			found = 1;
 			break;
 		}
 	}
 
-	if (!found) {
-		printk("WARNING: No board configuration data found!\n");
+	if (!found)
 		addr = NULL;
-	}
 
 	return addr;
 }
@@ -58,7 +93,7 @@ static u8 *find_board_config(char *flash_limit)
 static u8 *find_radio_config(char *flash_limit, char *board_config)
 {
 	int dataFound;
-	u32 radio_config;
+	char *radio_config;
 
 	/*
 	 * Now find the start of Radio Configuration data, using heuristics:
@@ -66,10 +101,11 @@ static u8 *find_radio_config(char *flash_limit, char *board_config)
 	 * at a time until we find non-0xffffffff.
 	 */
 	dataFound = 0;
-	for (radio_config = (u32) board_config + 0x1000;
-	     (radio_config < (u32) flash_limit);
+	for (radio_config = board_config + 0x1000;
+	     (radio_config < flash_limit);
 	     radio_config += 0x1000) {
-		if (*(int *)radio_config != 0xffffffff) {
+		if ((*(u32 *)radio_config != 0xffffffff) &&
+		    check_radio_magic(radio_config)) {
 			dataFound = 1;
 			break;
 		}
@@ -77,10 +113,11 @@ static u8 *find_radio_config(char *flash_limit, char *board_config)
 
 #ifdef CONFIG_ATHEROS_AR5315
 	if (!dataFound) { /* AR2316 relocates radio config to new location */
-	    for (radio_config = (u32) board_config + 0xf8;
-	     	(radio_config < (u32) flash_limit - 0x1000 + 0xf8);
+	    for (radio_config = board_config + 0xf8;
+	     	(radio_config < flash_limit - 0x1000 + 0xf8);
 			 radio_config += 0x1000) {
-			if (*(int *)radio_config != 0xffffffff) {
+			if ((*(u32 *)radio_config != 0xffffffff) &&
+				check_radio_magic(radio_config)) {
 				dataFound = 1;
 				break;
 			}
@@ -98,6 +135,7 @@ static u8 *find_radio_config(char *flash_limit, char *board_config)
 
 int __init ar531x_find_config(char *flash_limit)
 {
+	struct ar531x_boarddata *bd;
 	unsigned int rcfg_size;
 	char *bcfg, *rcfg;
 
@@ -105,23 +143,45 @@ int __init ar531x_find_config(char *flash_limit)
 	 * spiflash driver, accessing the mapped memory directly is no
 	 * longer safe */
 
-	bcfg = find_board_config(flash_limit);
+	bcfg = find_board_config(flash_limit, false);
 	if (!bcfg)
+		bcfg = find_board_config(flash_limit, true);
+	if (!bcfg) {
+		printk("WARNING: No board configuration data found!\n");
 		return -ENODEV;
+	}
 
 	board_config = kzalloc(BOARD_CONFIG_BUFSZ, GFP_KERNEL);
 	memcpy(board_config, bcfg, 0x100);
+	if (broken_boarddata) {
+		printk("WARNING: broken board data detected\n");
+		bd = (struct ar531x_boarddata *)board_config;
+		if (!memcmp(bd->enet0Mac, "\x00\x00\x00\x00\x00\x00", 6)) {
+			printk("Fixing up empty mac addresses\n");
+			bd->enet0Mac[1] = 0x13;
+			bd->enet0Mac[2] = 0x37;
+			get_random_bytes(bd->enet0Mac + 3, 3);
+			bd->wlan0Mac[1] = 0x13;
+			bd->wlan0Mac[2] = 0x37;
+			get_random_bytes(bd->wlan0Mac + 3, 3);
+		}
+	}
+
 
 	/* Radio config starts 0x100 bytes after board config, regardless
 	 * of what the physical layout on the flash chip looks like */
 
-	rcfg = find_radio_config(flash_limit, bcfg);
+	if (radio_config)
+		rcfg = radio_config;
+	else
+		rcfg = find_radio_config(flash_limit, bcfg);
+
 	if (!rcfg)
 		return -ENODEV;
 
 	radio_config = board_config + 0x100 + ((rcfg - bcfg) & 0xfff);
 	printk("Radio config found at offset 0x%x(0x%x)\n", rcfg - bcfg, radio_config - board_config);
-	rcfg_size = BOARD_CONFIG_BUFSZ - ((0x100 + rcfg - bcfg) & (BOARD_CONFIG_BUFSZ - 1));
+	rcfg_size = BOARD_CONFIG_BUFSZ - (radio_config - board_config);
 	memcpy(radio_config, rcfg, rcfg_size);
 
 	return 0;
