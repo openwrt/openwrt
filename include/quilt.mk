@@ -68,11 +68,8 @@ endef
 
 define Kernel/Patch/Default
 	rm -rf $(PKG_BUILD_DIR)/patches; mkdir -p $(PKG_BUILD_DIR)/patches
-	if [ -d $(GENERIC_FILES_DIR) ]; then $(CP) $(GENERIC_FILES_DIR)/* $(LINUX_DIR)/; fi
-	if [ -d $(FILES_DIR) ]; then \
-		$(CP) $(FILES_DIR)/* $(LINUX_DIR)/; \
-		find $(LINUX_DIR)/ -name \*.rej | xargs rm -f; \
-	fi
+	$(CP) $(foreach fdir,$(GENERIC_FILES_DIR) $(FILES_DIR),$(fdir)/.) $(LINUX_DIR)/
+	find $(LINUX_DIR)/ -name \*.rej -or -name \*.orig | $(XARGS) rm -f
 	$(call PatchDir,$(GENERIC_PATCH_DIR),generic/)
 	$(call PatchDir,$(PATCH_DIR),platform/)
 endef
