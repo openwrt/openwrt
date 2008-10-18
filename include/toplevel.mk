@@ -75,7 +75,7 @@ oldconfig: scripts/config/conf prepare-tmpinfo FORCE
 	$< -$(if $(CONFDEFAULT),$(CONFDEFAULT),o) Config.in
 
 menuconfig: scripts/config/mconf prepare-tmpinfo FORCE
-	if [ \! -f .config -a -e $(HOME)/.openwrt/defconfig ]; then \
+	if [ \! -e .config -a -e $(HOME)/.openwrt/defconfig ]; then \
 		cp $(HOME)/.openwrt/defconfig .config; \
 	fi
 	$< Config.in
