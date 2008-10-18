@@ -31,7 +31,7 @@ else
   endif
 
   PATCH_DIR ?= ./patches$(shell [ -d "./patches-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
-  FILES_DIR ?= ./files$(shell [ -d "./files-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
+  FILES_DIR ?= $(foreach dir,$(wildcard ./files ./files-$(KERNEL_PATCHVER)),"$(dir)")
   KERNEL_BUILD_DIR ?= $(BUILD_DIR_BASE)/linux-$(BOARD)$(if $(SUBTARGET),_$(SUBTARGET))$(if $(BUILD_SUFFIX),_$(BUILD_SUFFIX))
   LINUX_DIR ?= $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
 
