@@ -230,11 +230,7 @@ int conf_read_file(FILE *in, struct symbol *sym){
 				}
 				break;
 			case yes:
-				if (cs->user.tri != no) {
-					conf_warning("%s creates inconsistent choice state", sym->name);
-					cs->flags |= SYMBOL_NEW;
-				} else
-					cs->user.val = sym;
+				cs->user.val = sym;
 				break;
 			}
 			cs->user.tri = E_OR(cs->user.tri, sym->user.tri);
