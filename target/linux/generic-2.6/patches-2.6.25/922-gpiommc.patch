@@ -1,12 +1,12 @@
---- /dev/null
-+++ b/drivers/mmc/host/gpiommc.c
-@@ -0,0 +1,608 @@
+Index: linux-2.6.25.17/drivers/mmc/host/gpiommc.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.25.17/drivers/mmc/host/gpiommc.c	2008-10-18 23:33:54.000000000 +0200
+@@ -0,0 +1,605 @@
 +/*
 + * Driver an MMC/SD card on a bitbanging GPIO SPI bus.
 + * This module hooks up the mmc_spi and spi_gpio modules and also
 + * provides a configfs interface.
-+ *
-+ * Copyright 2008 Michael Buesch <mb@bu3sch.de>
 + *
 + * Licensed under the GNU/GPL. See COPYING for details.
 + */
@@ -32,7 +32,6 @@
 +
 +
 +MODULE_DESCRIPTION("GPIO based MMC driver");
-+MODULE_AUTHOR("Michael Buesch");
 +MODULE_LICENSE("GPL");
 +
 +
@@ -609,9 +608,11 @@
 +	platform_driver_unregister(&gpiommc_plat_driver);
 +}
 +module_exit(gpiommc_modexit);
---- a/drivers/mmc/host/Kconfig
-+++ b/drivers/mmc/host/Kconfig
-@@ -130,3 +130,27 @@
+Index: linux-2.6.25.17/drivers/mmc/host/Kconfig
+===================================================================
+--- linux-2.6.25.17.orig/drivers/mmc/host/Kconfig	2008-10-18 23:30:41.000000000 +0200
++++ linux-2.6.25.17/drivers/mmc/host/Kconfig	2008-10-18 23:32:54.000000000 +0200
+@@ -130,3 +130,27 @@ config MMC_SPI
  
  	  If unsure, or if your system has no SPI master driver, say N.
  
@@ -639,21 +640,23 @@
 +	help
 +	  This option automatically enables configfs support for gpiommc
 +	  if configfs is available.
---- a/drivers/mmc/host/Makefile
-+++ b/drivers/mmc/host/Makefile
-@@ -17,4 +17,4 @@
+Index: linux-2.6.25.17/drivers/mmc/host/Makefile
+===================================================================
+--- linux-2.6.25.17.orig/drivers/mmc/host/Makefile	2008-10-18 23:30:41.000000000 +0200
++++ linux-2.6.25.17/drivers/mmc/host/Makefile	2008-10-18 23:32:54.000000000 +0200
+@@ -17,4 +17,4 @@ obj-$(CONFIG_MMC_OMAP)		+= omap.o
  obj-$(CONFIG_MMC_AT91)		+= at91_mci.o
  obj-$(CONFIG_MMC_TIFM_SD)	+= tifm_sd.o
  obj-$(CONFIG_MMC_SPI)		+= mmc_spi.o
 -
 +obj-$(CONFIG_GPIOMMC)		+= gpiommc.o
---- /dev/null
-+++ b/include/linux/mmc/gpiommc.h
-@@ -0,0 +1,71 @@
+Index: linux-2.6.25.17/include/linux/mmc/gpiommc.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.25.17/include/linux/mmc/gpiommc.h	2008-10-18 23:34:21.000000000 +0200
+@@ -0,0 +1,69 @@
 +/*
 + * Device driver for MMC/SD cards driven over a GPIO bus.
-+ *
-+ * Copyright (c) 2008 Michael Buesch
 + *
 + * Licensed under the GNU/GPL version 2.
 + */
@@ -721,8 +724,10 @@
 +int gpiommc_next_id(void);
 +
 +#endif /* LINUX_GPIOMMC_H_ */
---- /dev/null
-+++ b/Documentation/gpiommc.txt
+Index: linux-2.6.25.17/Documentation/gpiommc.txt
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.25.17/Documentation/gpiommc.txt	2008-10-18 23:32:54.000000000 +0200
 @@ -0,0 +1,97 @@
 +GPIOMMC - Driver for an MMC/SD card on a bitbanging GPIO SPI bus
 +================================================================
@@ -821,17 +826,3 @@
 +(/config/gpiommc/my_mmc in this example).
 +There's no need to first unregister the device before removing it. That will
 +be done automatically.
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -1736,6 +1736,11 @@
- W:	http://gigaset307x.sourceforge.net/
- S:	Maintained
- 
-+GPIOMMC DRIVER
-+P:	Michael Buesch
-+M:	mb@bu3sch.de
-+S:	Maintained
-+
- HARDWARE MONITORING
- P:	Mark M. Hoffman
- M:	mhoffman@lightlink.com
