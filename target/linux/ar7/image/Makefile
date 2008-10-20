@@ -52,6 +52,10 @@ define align/jffs2-128k
 bs=131072 conv=sync
 endef
 
+define align/squashfs
+bs=65536 conv=sync
+endef
+
 define Image/Build/CyberTAN
 	(dd if=/dev/zero bs=16 count=1; cat $(BIN_DIR)/openwrt-$(BOARD)-$(1).bin) | \
 		$(STAGING_DIR_HOST)/bin/addpattern -p $(3) -o $(BIN_DIR)/openwrt-$(2)-$(4)-code.bin
@@ -65,9 +69,10 @@ endef
 #endef
 
 define Image/Build/EVA
-	$(STAGING_DIR_HOST)/bin/lzma2eva $(KERNEL_ENTRY) $(KERNEL_ENTRY) $(KDIR)/vmlinux.lzma $(BIN_DIR)/openwrt-$(2)-$(1).bin
-	cat $(KDIR)/root.$(1) >> $(BIN_DIR)/openwrt-$(2)-$(1).bin
-	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(2)-$(1).bin)
+	$(STAGING_DIR_HOST)/bin/lzma2eva $(EVA_LOADADDR) 0x$${shell $(TARGET_CROSS)nm $(KDIR)/linux-*/vmlinux | grep kernel_entry | cut -d' ' -f1} $(KDIR)/vmlinux.lzma $(KDIR)/loader.eva 
+	dd if=$(KDIR)/loader.eva $(call align/$(1)) > $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin
+	cat $(KDIR)/root.$(1) >> $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin 
+	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin)
 endef
 
 define Image/Build
