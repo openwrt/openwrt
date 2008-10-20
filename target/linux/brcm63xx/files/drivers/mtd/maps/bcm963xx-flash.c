@@ -30,14 +30,14 @@
  *
  */
 
-#include <asm/io.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/mtd/map.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/vmalloc.h>
-#include <board.h>
+
+#include <asm/io.h>
 
 #define WINDOW_ADDR 0x1FC00000         /* Real address of the flash */
 #define WINDOW_SIZE 0x400000           /* Size of flash */
