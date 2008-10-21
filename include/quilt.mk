@@ -66,9 +66,10 @@ define Build/Patch/Default
 	$(call PatchDir,$(PATCH_DIR),)
 endef
 
+kernel_files=$(foreach fdir,$(GENERIC_FILES_DIR) $(FILES_DIR),$(fdir)/.)
 define Kernel/Patch/Default
 	rm -rf $(PKG_BUILD_DIR)/patches; mkdir -p $(PKG_BUILD_DIR)/patches
-	$(CP) $(foreach fdir,$(GENERIC_FILES_DIR) $(FILES_DIR),$(fdir)/.) $(LINUX_DIR)/
+	$(if $(kernel_files),$(CP) $(kernel_files) $(LINUX_DIR)/)
 	find $(LINUX_DIR)/ -name \*.rej -or -name \*.orig | $(XARGS) rm -f
 	$(call PatchDir,$(GENERIC_PATCH_DIR),generic/)
 	$(call PatchDir,$(PATCH_DIR),platform/)
