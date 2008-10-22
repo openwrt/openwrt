@@ -1,4 +1,4 @@
-From b95a2bbbcae5423e5404a7b3c8dd1685e1786f13 Mon Sep 17 00:00:00 2001
+From 16dc080062a37c21642bc77fde5391a3416729a4 Mon Sep 17 00:00:00 2001
 From: Maxime Bizon <mbizon@freebox.fr>
 Date: Wed, 17 Sep 2008 15:55:36 +0200
 Subject: [PATCH] [MIPS] BCM63XX: Add preliminary board support.
@@ -9,12 +9,12 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  arch/mips/bcm63xx/Makefile                     |    2 +
  arch/mips/bcm63xx/boards/Kconfig               |   10 +
  arch/mips/bcm63xx/boards/Makefile              |    1 +
- arch/mips/bcm63xx/boards/board_bcm963xx.c      |  322 ++++++++++++++++++++++++
+ arch/mips/bcm63xx/boards/board_bcm963xx.c      |  328 ++++++++++++++++++++++++
  arch/mips/bcm63xx/prom.c                       |    4 +
  arch/mips/bcm63xx/setup.c                      |   16 +-
  include/asm-mips/mach-bcm63xx/bcm63xx_board.h  |   12 +
  include/asm-mips/mach-bcm63xx/board_bcm963xx.h |   50 ++++
- 9 files changed, 417 insertions(+), 2 deletions(-)
+ 9 files changed, 423 insertions(+), 2 deletions(-)
  create mode 100644 arch/mips/bcm63xx/boards/Kconfig
  create mode 100644 arch/mips/bcm63xx/boards/Makefile
  create mode 100644 arch/mips/bcm63xx/boards/board_bcm963xx.c
@@ -66,10 +66,10 @@ index 0000000..af07c1a
 +obj-$(CONFIG_BOARD_BCM963XX)		+= board_bcm963xx.o
 diff --git a/arch/mips/bcm63xx/boards/board_bcm963xx.c b/arch/mips/bcm63xx/boards/board_bcm963xx.c
 new file mode 100644
-index 0000000..de52a2a
+index 0000000..6e2b4ae
 --- /dev/null
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -0,0 +1,322 @@
+@@ -0,0 +1,328 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -231,8 +231,14 @@ index 0000000..de52a2a
 +	}
 +
 +	/* bail out if board is not found, will complain later */
-+	if (!board.name)
++	if (!board.name[0]) {
++		char name[17];
++		memcpy(name, nvram.name, 16);
++		name[16] = 0;
++		printk(KERN_ERR PFX "unknown bcm963xx board: %s\n",
++		       name);
 +		return;
++	}
 +
 +	/* setup pin multiplexing depending on board enabled device,
 +	 * this has to be done this early since PCI init is done
@@ -271,7 +277,7 @@ index 0000000..de52a2a
 + */
 +void __init board_setup(void)
 +{
-+	if (!board.name)
++	if (!board.name[0])
 +		panic("unable to detect bcm963xx board");
 +	printk(KERN_INFO PFX "board name: %s\n", board.name);
 +
