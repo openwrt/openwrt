@@ -177,34 +177,41 @@ enable_atheros() {
 		config_get antrx "$device" rxantenna
 		config_get anttx "$device" txantenna
 		config_get_bool softled "$device" softled 1
+		config_get_bool	gpioctl	"$device" gpioctl
 
 		devname="$(cat /proc/sys/dev/$device/dev_name)"
 		antgpio=
 		case "$devname" in
-			NanoStation2) antgpio=7;;
+			NanoStation2) antgpio=wifi; [ -n "$gpioctl" ] && gpioctl=0;;
 			NanoStation5) antgpio=1;;
 		esac
 		if [ -n "$antgpio" ]; then
 			softled=0
-			config_get polarity "$device" polarity
-			case "$polarity" in
+			config_get antenna "$device" antenna
+			case "$antenna" in
+				external) antdiv=0; antrx=1; anttx=1 ;;
 				horizontal) antdiv=0; antrx=1; anttx=1 ;;
 				vertical) antdiv=0; antrx=2; anttx=2 ;;
 				auto) antdiv=1; antrx=0; anttx=0 ;;
 			esac
-			config_get antenna "$device" antenna
+			
 			[ -x "$(which gpioctl 2>/dev/null)" ] || antenna=
 			case "$antenna" in
-				internal)
-					gpioctl "dirout" "$antgpio" >/dev/null 2>&1
-					gpioctl "set" "$antgpio" >/dev/null 2>&1
+				horizontal|vertical|auto)
+					if [ "$gpioctl" = "0" ]; then
+						echo 0 >/sys/class/leds/$antgpio/brightness 2>&1
+					else
+						gpioctl "dirout" "$antgpio" >/dev/null 2>&1
+						gpioctl "set" "$antgpio" >/dev/null 2>&1
+					fi
 				;;
 				external)
-					gpioctl "dirout" "$antgpio" >/dev/null 2>&1
-					gpioctl "clear" "$antgpio" >/dev/null 2>&1
-					antdiv=0
-					antrx=1
-					anttx=1
+					if [ "$gpioctl" = "0" ]; then
+						echo 0 >/sys/class/leds/$antgpio/brightness
+					else
+						gpioctl "dirout" "$antgpio" >/dev/null 2>&1
+						gpioctl "clear" "$antgpio" >/dev/null 2>&1
+					fi
 				;;
 			esac
 		fi
