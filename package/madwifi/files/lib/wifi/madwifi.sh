@@ -174,19 +174,48 @@ enable_atheros() {
 		[ -n "$bgscan" ] && iwpriv "$ifname" bgscan "$bgscan"
 
 		config_get_bool antdiv "$device" diversity
-		[ -n "$antdiv" ] && sysctl -w dev."$device".diversity="$antdiv" >&-
-
 		config_get antrx "$device" rxantenna
-		[ -n "$antrx" ] && sysctl -w dev."$device".rxantenna="$antrx" >&-
-
 		config_get anttx "$device" txantenna
+		config_get_bool softled "$device" softled 1
+
+		devname="$(cat /proc/sys/dev/$device/dev_name)"
+		antgpio=
+		case "$devname" in
+			NanoStation2) antgpio=7;;
+			NanoStation5) antgpio=1;;
+		esac
+		if [ -n "$antgpio" ]; then
+			softled=0
+			config_get polarity "$device" polarity
+			case "$antenna" in
+				horizontal) antdiv=0; antrx=1; anttx=1 ;;
+				vertical) antdiv=0; antrx=2; anttx=2 ;;
+				auto) antdiv=1; antrx=0; anttx=0 ;;
+			esac
+			config_get antenna "$device" antenna
+			[ -x "$(which gpioctl 2>/dev/null)" ] || antenna=
+			case "$antenna" in
+				internal)
+					gpioctl "dirout" "$antgpio" >/dev/null 2>&1
+					gpioctl "set" "$antgpio" >/dev/null 2>&1
+				;;
+				external)
+					gpioctl "dirout" "$antgpio" >/dev/null 2>&1
+					gpioctl "clear" "$antgpio" >/dev/null 2>&1
+					antdiv=0
+					antrx=1
+					anttx=1
+				;;
+			esac
+		fi
+
+		[ -n "$antdiv" ] && sysctl -w dev."$device".diversity="$antdiv" >&-
+		[ -n "$antrx" ] && sysctl -w dev."$device".rxantenna="$antrx" >&-
 		[ -n "$anttx" ] && sysctl -w dev."$device".txantenna="$anttx" >&-
+		[ -n "$softled" ] && sysctl -w dev."$device".softled="$softled" >&-
 
 		config_get distance "$device" distance
 		[ -n "$distance" ] && athctrl -i "$device" -d "$distance" >&-
-
-		config_get_bool softled "$device" softled 1
-		[ -n "$softled" ] && sysctl -w dev."$device".softled="$softled" >&-
 
 		config_get txpwr "$vif" txpower
 		[ -n "$txpwr" ] && iwconfig "$ifname" txpower "${txpwr%%.*}"
@@ -300,12 +329,22 @@ detect_atheros() {
 	[ -d ath ] || return
 	for dev in $(ls -d wifi* 2>&-); do
 		config_get type "$dev" type
+		devname="$(cat /proc/sys/dev/$dev/dev_name)"
+		case "$devname" in
+			NanoStation*)
+				EXTRA_DEV="
+# Ubiquiti NanoStation features
+	option antenna	internal
+	option polarity	auto # (auto|horizontal|vertical)
+"
+			;;
+		esac
 		[ "$type" = atheros ] && return
 		cat <<EOF
 config wifi-device  $dev
 	option type     atheros
 	option channel  auto
-
+$EXTRA_DEV
 	# REMOVE THIS LINE TO ENABLE WIFI:
 	option disabled 1
 
