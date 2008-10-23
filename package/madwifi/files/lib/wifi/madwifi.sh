@@ -341,8 +341,7 @@ detect_atheros() {
 			NanoStation*)
 				EXTRA_DEV="
 # Ubiquiti NanoStation features
-	option antenna	internal
-	option polarity	auto # (auto|horizontal|vertical)
+	option antenna	auto # (auto|horizontal|vertical|external)
 "
 			;;
 		esac
