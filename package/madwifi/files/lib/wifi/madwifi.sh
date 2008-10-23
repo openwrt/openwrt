@@ -182,7 +182,7 @@ enable_atheros() {
 		devname="$(cat /proc/sys/dev/$device/dev_name)"
 		antgpio=
 		case "$devname" in
-			NanoStation2) antgpio=wifi; [ -n "$gpioctl" ] && gpioctl=0;;
+			NanoStation2) antgpio=wlan; [ -n "$gpioctl" ] && gpioctl=0;;
 			NanoStation5) antgpio=1;;
 		esac
 		if [ -n "$antgpio" ]; then
@@ -199,7 +199,7 @@ enable_atheros() {
 			case "$antenna" in
 				horizontal|vertical|auto)
 					if [ "$gpioctl" = "0" ]; then
-						echo 0 >/sys/class/leds/$antgpio/brightness 2>&1
+						echo 1 >/sys/class/leds/$antgpio/brightness 2>&1
 					else
 						gpioctl "dirout" "$antgpio" >/dev/null 2>&1
 						gpioctl "set" "$antgpio" >/dev/null 2>&1
