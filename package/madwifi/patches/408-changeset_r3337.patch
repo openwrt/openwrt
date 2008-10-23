@@ -1,6 +1,6 @@
 --- a/THANKS
 +++ b/THANKS
-@@ -129,6 +129,7 @@
+@@ -129,6 +129,7 @@ Derek J Smithies
  jhansen
  Benoit Papillault
  Russell Harmon
@@ -10,7 +10,7 @@
  Please let us know if you think your name should be mentioned here!
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -3059,7 +3059,7 @@
+@@ -3093,7 +3093,7 @@ ath_tx_startraw(struct net_device *dev, 
  	struct ath_softc *sc = dev->priv;
  	struct ath_hal *ah = sc->sc_ah;
  	struct ieee80211_phy_params *ph = (struct ieee80211_phy_params *)
@@ -21,7 +21,7 @@
  	HAL_PKT_TYPE atype;
 --- a/net80211/ieee80211_monitor.c
 +++ b/net80211/ieee80211_monitor.c
-@@ -128,8 +128,8 @@
+@@ -128,8 +128,8 @@ struct ar5212_openbsd_desc {
  void
  ieee80211_monitor_encap(struct ieee80211vap *vap, struct sk_buff *skb)
  {
