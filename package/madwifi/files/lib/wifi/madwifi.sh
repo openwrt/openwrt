@@ -187,7 +187,7 @@ enable_atheros() {
 		if [ -n "$antgpio" ]; then
 			softled=0
 			config_get polarity "$device" polarity
-			case "$antenna" in
+			case "$polarity" in
 				horizontal) antdiv=0; antrx=1; anttx=1 ;;
 				vertical) antdiv=0; antrx=2; anttx=2 ;;
 				auto) antdiv=1; antrx=0; anttx=0 ;;
