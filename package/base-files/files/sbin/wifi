@@ -67,6 +67,7 @@ start_net() {(
 	local iface="$1"
 	local config="$2"
 
+	[ -f "/var/run/$iface.pid" ] && kill "$(cat /var/run/${iface}.pid)" 2>/dev/null
 	include /lib/network
 	scan_interfaces
 	setup_interface "$1" "$2"
