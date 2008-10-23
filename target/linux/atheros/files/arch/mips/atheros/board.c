@@ -48,7 +48,7 @@ static inline bool
 check_board_data(unsigned char *flash_limit, unsigned char *addr, bool broken)
 {
 	/* config magic found */
-	if ( *(int *)addr == 0x35333132)
+	if ( *(int *)addr == 0x35333131)
 		return 1;
 
 	if (!broken)
