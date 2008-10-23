@@ -1,0 +1,317 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -62,6 +62,7 @@
+ #include <linux/if_arp.h>
+ #include <linux/rtnetlink.h>
+ #include <linux/time.h>
++#include <linux/pci.h>
+ #include <asm/uaccess.h>
+ 
+ #include "if_ethersubr.h"		/* for ETHER_IS_MULTICAST */
+@@ -401,6 +402,15 @@ static int outdoor = -1;
+ static int xchanmode = -1;
+ static int beacon_cal = 1;
+ 
++static const struct ath_hw_detect generic_hw_info = {
++	.vendor_name = "Unknown",
++	.card_name = "Generic",
++	.vendor = PCI_ANY_ID,
++	.id = PCI_ANY_ID,
++	.subvendor = PCI_ANY_ID,
++	.subid = PCI_ANY_ID
++};
++
+ static const char *hal_status_desc[] = {
+ 	"No error",
+ 	"No hardware present or device not yet supported",
+@@ -542,6 +552,8 @@ ath_attach(u_int16_t devid, struct net_d
+ 	DPRINTF(sc, ATH_DEBUG_ANY, "%s: devid 0x%x\n", __func__, devid);
+ #endif
+ 
++	sc->sc_hwinfo = &generic_hw_info;
++
+ 	/* Allocate space for dynamically determined maximum VAP count */
+ 	sc->sc_bslot = 
+ 		kmalloc(ath_maxvaps * sizeof(struct ieee80211vap*), GFP_KERNEL);
+@@ -1508,6 +1520,28 @@ ath_vap_create(struct ieee80211com *ic, 
+ 	return vap;
+ }
+ 
++void
++ath_hw_detect(struct ath_softc *sc, const struct ath_hw_detect *cards, int n_cards, u32 vendor, u32 id, u32 subvendor, u32 subid)
++{
++	int i;
++
++	for (i = 0; i < n_cards; i++) {
++		const struct ath_hw_detect *c = &cards[i];
++
++		if ((c->vendor != PCI_ANY_ID) && c->vendor != vendor)
++			continue;
++		if ((c->id != PCI_ANY_ID) && c->id != id)
++			continue;
++		if ((c->subvendor != PCI_ANY_ID) && c->subvendor != subvendor)
++			continue;
++		if ((c->subid != PCI_ANY_ID) && c->subid != subid)
++			continue;
++
++		sc->sc_hwinfo = c;
++		break;
++	}
++}
++
+ static void
+ ath_vap_delete(struct ieee80211vap *vap)
+ {
+@@ -10819,6 +10853,12 @@ ath_ioctl(struct net_device *dev, struct
+  * is to add module parameters.
+  */
+ 
++/* sysctls for hardware info */
++enum {
++	ATH_CARD_VENDOR,
++	ATH_CARD_NAME,
++};
++
+ /*
+  * Dynamic (i.e. per-device) sysctls.  These are automatically
+  * mirrored in /proc/sys.
+@@ -10898,6 +10938,38 @@ ath_sysctl_get_intmit(struct ath_softc *
+ }
+ 
+ static int
++ATH_SYSCTL_DECL(ath_sysctl_hwinfo, ctl, write, filp, buffer, lenp, ppos)
++{
++	struct ath_softc *sc = ctl->extra1;
++	struct ath_hal *ah = sc->sc_ah;
++	int ret = 0;
++
++	if (write)
++		return -EINVAL;
++
++	ATH_LOCK(sc);
++	switch((long)ctl->extra2) {
++	case ATH_CARD_VENDOR:
++		ctl->data = (char *)sc->sc_hwinfo->vendor_name;
++		break;
++	case ATH_CARD_NAME:
++		ctl->data = (char *)sc->sc_hwinfo->card_name;
++		break;
++	default:
++		ret = -EINVAL;
++		break;
++	}
++	if (ret == 0) {
++		ctl->maxlen = strlen(ctl->data);
++		ret = ATH_SYSCTL_PROC_DOSTRING(ctl, write, filp,
++				buffer, lenp, ppos);
++	}
++	ATH_UNLOCK(sc);
++
++	return ret;
++}
++
++static int
+ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl, write, filp, buffer, lenp, ppos)
+ {
+ 	struct ath_softc *sc = ctl->extra1;
+@@ -11177,6 +11249,24 @@ static int maxint = 0x7fffffff;		/* 32-b
+ 
+ static const ctl_table ath_sysctl_template[] = {
+ 	{ .ctl_name	= CTL_AUTO,
++	  .procname	= "dev_vendor",
++	  .mode		= 0644,
++	  .proc_handler	= ath_sysctl_hwinfo,
++	  .strategy   = &sysctl_string,
++	  .data		= "N/A",
++	  .maxlen   = 1,
++	  .extra2	= (void *)ATH_CARD_VENDOR,
++	},
++	{ .ctl_name	= CTL_AUTO,
++	  .procname	= "dev_name",
++	  .mode		= 0644,
++	  .proc_handler	= ath_sysctl_hwinfo,
++	  .strategy   = &sysctl_string,
++	  .data		= "N/A",
++	  .maxlen   = 1,
++	  .extra2	= (void *)ATH_CARD_NAME,
++	},
++	{ .ctl_name	= CTL_AUTO,
+ 	  .procname	= "slottime",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
+@@ -168,12 +168,16 @@ static inline struct net_device *_alloc_
+ 	  void __user *buffer, size_t *lenp)
+ #define	ATH_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer, lenp, ppos) \
+ 	proc_dointvec(ctl, write, filp, buffer, lenp)
++#define	ATH_SYSCTL_PROC_DOSTRING(ctl, write, filp, buffer, lenp, ppos) \
++	proc_dostring(ctl, write, filp, buffer, lenp)
+ #else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,8) */
+ #define	ATH_SYSCTL_DECL(f, ctl, write, filp, buffer, lenp, ppos) \
+ 	f(ctl_table *ctl, int write, struct file *filp, \
+ 	  void __user *buffer, size_t *lenp, loff_t *ppos)
+ #define	ATH_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer, lenp, ppos) \
+ 	proc_dointvec(ctl, write, filp, buffer, lenp, ppos)
++#define	ATH_SYSCTL_PROC_DOSTRING(ctl, write, filp, buffer, lenp, ppos) \
++	proc_dostring(ctl, write, filp, buffer, lenp, ppos)
+ #endif
+ 
+ #define	ATH_TIMEOUT	1000
+@@ -469,6 +473,7 @@ struct ath_hal;
+ struct ath_desc;
+ struct ath_ratectrl;
+ struct ath_tx99;
++struct ath_hw_detect;
+ struct proc_dir_entry;
+ 
+ /*
+@@ -629,6 +634,7 @@ struct ath_softc {
+ 	struct ath_ratectrl *sc_rc;		/* tx rate control support */
+ 	struct ath_tx99 *sc_tx99; 		/* tx99 support */
+ 	void (*sc_setdefantenna)(struct ath_softc *, u_int);
++	const struct ath_hw_detect *sc_hwinfo;
+ 
+ 	unsigned int 	sc_invalid:1;		/* being detached */
+ 	unsigned int	sc_mrretry:1;		/* multi-rate retry support */
+@@ -929,4 +935,15 @@ int ar_device(int devid);
+ 
+ void ath_radar_detected(struct ath_softc *sc, const char* message);
+ 
++struct ath_hw_detect {
++	const char *vendor_name;
++	const char *card_name;
++	u32 vendor;
++	u32 id;
++	u32 subvendor;
++	u32 subid;
++};
++
++extern void ath_hw_detect(struct ath_softc *sc, const struct ath_hw_detect *cards, int n_cards, u32 vendor, u32 id, u32 subvendor, u32 subid);
++
+ #endif /* _DEV_ATH_ATHVAR_H */
+--- a/ath/if_ath_ahb.c
++++ b/ath/if_ath_ahb.c
+@@ -20,6 +20,7 @@
+ #include <linux/netdevice.h>
+ #include <linux/cache.h>
+ #include <linux/platform_device.h>
++#include <linux/pci.h>
+ 
+ #include <asm/io.h>
+ #include <asm/uaccess.h>
+@@ -181,12 +182,97 @@ exit_ath_wmac(u_int16_t wlanNum, struct 
+ 	return 0;
+ }
+ 
++static const char ubnt[] = "Ubiquiti Networks";
++static const struct ath_hw_detect cards[] = {
++	{
++		.vendor_name = ubnt,
++		.card_name = "PowerStation2 (18V)",
++		.vendor = PCI_ANY_ID,
++		.id = PCI_ANY_ID,
++		.subvendor = PCI_ANY_ID,
++		.subid = 0xb102,
++	},
++	{
++		.vendor_name = ubnt,
++		.card_name = "PowerStation2 (16D)",
++		.vendor = PCI_ANY_ID,
++		.id = PCI_ANY_ID,
++		.subvendor = PCI_ANY_ID,
++		.subid = 0xb202,
++	},
++	{
++		.vendor_name = ubnt,
++		.card_name = "PowerStation2 (EXT)",
++		.vendor = PCI_ANY_ID,
++		.id = PCI_ANY_ID,
++		.subvendor = PCI_ANY_ID,
++		.subid = 0xb302,
++	},
++	{
++		.vendor_name = ubnt,
++		.card_name = "PowerStation5 (22V)",
++		.vendor = PCI_ANY_ID,
++		.id = PCI_ANY_ID,
++		.subvendor = PCI_ANY_ID,
++		.subid = 0xb105,
++	},
++	{
++		.vendor_name = ubnt,
++		.card_name = "PowerStation5 (EXT)",
++		.vendor = PCI_ANY_ID,
++		.id = PCI_ANY_ID,
++		.subvendor = PCI_ANY_ID,
++		.subid = 0xb305,
++	},
++	{
++		.vendor_name = ubnt,
++		.card_name = "WispStation5",
++		.vendor = PCI_ANY_ID,
++		.id = PCI_ANY_ID,
++		.subvendor = PCI_ANY_ID,
++		.subid = 0xa105,
++	},
++	{
++		.vendor_name = ubnt,
++		.card_name = "LiteStation2",
++		.vendor = PCI_ANY_ID,
++		.id = PCI_ANY_ID,
++		.subvendor = PCI_ANY_ID,
++		.subid = 0xa002,
++	},
++	{
++		.vendor_name = ubnt,
++		.card_name = "LiteStation5",
++		.vendor = PCI_ANY_ID,
++		.id = PCI_ANY_ID,
++		.subvendor = PCI_ANY_ID,
++		.subid = 0xa005,
++	},
++	{
++		.vendor_name = ubnt,
++		.card_name = "NanoStation2",
++		.vendor = PCI_ANY_ID,
++		.id = PCI_ANY_ID,
++		.subvendor = PCI_ANY_ID,
++		.subid = 0xc002,
++	},
++	{
++		.vendor_name = ubnt,
++		.card_name = "NanoStation5",
++		.vendor = PCI_ANY_ID,
++		.id = PCI_ANY_ID,
++		.subvendor = PCI_ANY_ID,
++		.subid = 0xc005,
++	},
++};
++
+ static int
+ init_ath_wmac(u_int16_t devid, u_int16_t wlanNum, struct ar531x_config *config)
+ {
+ 	const char *athname;
+ 	struct net_device *dev;
+ 	struct ath_ahb_softc *sc;
++	u16 *radio_data;
+ 
+ 	if (((wlanNum != 0) && (wlanNum != 1)) ||
+ 		(sclist[wlanNum] != NULL))
+@@ -248,6 +334,16 @@ init_ath_wmac(u_int16_t devid, u_int16_t
+ 	sc->aps_sc.sc_softled = 1; /* SoftLED over GPIO */
+ 	sc->aps_sc.sc_ledpin = config->board->sysLedGpio;
+ 	sc->aps_sc.sc_invalid = 0;
++	radio_data = (u16 *) config->radio;
++	if (radio_data) {
++		u16 vendor, id, subvendor, subid;
++		vendor = radio_data[1];
++		id = radio_data[0];
++		subvendor = radio_data[8];
++		subid = radio_data[7];
++		ath_hw_detect(&sc->aps_sc, cards, ARRAY_SIZE(cards), vendor, id, subvendor, subid);
++	}
++
+ 	return 0;
+ 
+  bad4:
