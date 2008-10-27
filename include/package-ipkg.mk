@@ -25,7 +25,8 @@ endef
 dep_split=$(subst :,$(space),$(1))
 dep_confvar=CONFIG_$(word 1,$(call dep_split,$(1)))
 dep_val=$(word 2,$(call dep_split,$(1)))
-filter_deps=$(foreach dep,$(1),$(if $(findstring :,$(dep)),$(if $($(call dep_confvar,$(dep))),$(call dep_val,$(dep))),$(dep)))
+strip_deps=$(strip $(subst +,,$(filter-out @%,$(1))))
+filter_deps=$(foreach dep,$(call strip_deps,$(1)),$(if $(findstring :,$(dep)),$(if $($(call dep_confvar,$(dep))),$(call dep_val,$(dep))),$(dep)))
 
 ifeq ($(DUMP),)
   define BuildTarget/ipkg
@@ -47,7 +48,7 @@ ifeq ($(DUMP),)
       endif
     endif
 
-    IDEPEND_$(1):=$$(call filter_deps,$$(strip $$(DEPENDS)))
+    IDEPEND_$(1):=$$(call filter_deps,$$(DEPENDS))
   
     $(eval $(call BuildIPKGVariable,$(1),conffiles))
     $(eval $(call BuildIPKGVariable,$(1),preinst))
