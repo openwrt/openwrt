@@ -12,7 +12,7 @@ PKG_NAME:=genext2fs
 PKG_VERSION:=1.4rc1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=@SF/$(PKG_NAME)
+PKG_SOURCE_URL:=http://superb-west.dl.sourceforge.net/sourceforge/
 PKG_MD5SUM:=664431bf6737df1c265500e1f0b5d40c
 PKG_CAT:=zcat
 
