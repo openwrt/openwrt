@@ -1,0 +1,8 @@
+# Copyright (C) 2008 OpenWrt.org
+
+ash -c ". /etc/functions.sh
+hdr=\$(find_mtd_part productinfo)
+[ \$(find_mtd_part productinfo_parthdr) ] || rev=reverse
+[ \"\$hdr\" ] && mac=\$(hexdump -n 6 -e '6/1 \",0x%X\"' \$hdr |cut -c2-)
+[ \"\$mac\" = \"0x0,0x0,0x0,0x0,0x0,0x0\" ] && unset mac
+[ \"\$mac\" ] && insmod r6040 \$rev mac_base=\$mac"
