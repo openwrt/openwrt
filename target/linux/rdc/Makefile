@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=i386
 BOARD:=rdc
 BOARDNAME:=RDC 321x
-FEATURES:=squashfs jffs2 pci
+FEATURES:=squashfs jffs2 pci usb
 
 LINUX_VERSION:=2.6.24.7
 
@@ -17,7 +17,7 @@ include $(INCLUDE_DIR)/target.mk
 
 define Target/Description
         Build firmware images for RDC321x based routers
-        (e.g. Airlink101 AR525W, Linksys WRT54R, Sitecom WL-153)
+        (e.g. Airlink101 AR525W, Linksys WRT54GR, Sitecom WL-153)
 endef
 
 $(eval $(call BuildTarget))
