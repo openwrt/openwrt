@@ -33,6 +33,7 @@ define Build/Compile
 	$(call cc,mkfwimage2,-lz)
 	$(call cc,imagetag)
 	$(call cc,add_header)
+	$(call cc,makeamitbin)
 endef
 
 define Build/Install
