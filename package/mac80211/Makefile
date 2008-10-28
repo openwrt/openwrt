@@ -216,8 +216,8 @@ define KernelPackage/rt73-usb/install
 endef
 
 define KernelPackage/zd1211rw/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(ZD1211FW_NAME)/zd1211* $(1)/lib/firmware/
+	$(INSTALL_DIR) $(1)/lib/firmware/zd1211
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(ZD1211FW_NAME)/zd1211* $(1)/lib/firmware/zd1211
 endef
 
 $(eval $(call KernelPackage,ath5k))
