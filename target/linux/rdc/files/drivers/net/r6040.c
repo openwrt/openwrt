@@ -242,14 +242,21 @@ struct r6040_private {
 	void __iomem *base;
 };
 
-struct net_device *parent_dev;
 static char *parent = "wlan0";
 module_param(parent, charp, 0444);
 MODULE_PARM_DESC(parent, "Parent network device name to get the MAC address from");
 
-static char version[] __devinitdata = KERN_INFO DRV_NAME
+static u8 mac_base[ETH_ALEN] = {0,0x50,0xfc,2,3,4};
+module_param_array(mac_base, byte, NULL, 0444);
+MODULE_PARM_DESC(mac_base, "Starting MAC address");
+
+static int reverse = 1;
+module_param(reverse, invbool, 0444);
+MODULE_PARM_DESC(reverse, "Reverse card indices");
+
+static char version[] __devinitdata = DRV_NAME
 	": RDC R6040 NAPI net driver,"
-	"version "DRV_VERSION " (" DRV_RELDATE ")\n";
+	"version "DRV_VERSION " (" DRV_RELDATE ")";
 
 static int phy_table[] = { PHY1_ADDR, PHY2_ADDR };
 
@@ -1226,12 +1233,11 @@ static struct ethtool_ops netdev_ethtool_ops = {
 int __devinit r6040_init_one(struct pci_dev *pdev,
 					 const struct pci_device_id *ent)
 {
-	struct net_device *dev;
+	struct net_device *dev, *parent_dev;
 	struct r6040_private *lp;
 	void __iomem *ioaddr;
 	int err, io_size = R6040_IO_SIZE;
 	static int card_idx = -1;
-	int bar = 0;
 	long pioaddr;
 
 	printk(KERN_INFO "%s\n", version);
@@ -1276,7 +1282,7 @@ int __devinit r6040_init_one(struct pci_dev *pdev,
 		goto err_out_disable;
 	}
 
-	ioaddr = pci_iomap(pdev, bar, io_size);
+	ioaddr = pci_iomap(pdev, 0, io_size);
 	if (!ioaddr) {
 		printk(KERN_ERR "ioremap failed for device %s\n",
 			pci_name(pdev));
@@ -1313,21 +1319,18 @@ int __devinit r6040_init_one(struct pci_dev *pdev,
 	dev->tx_timeout = &r6040_tx_timeout;
 	dev->watchdog_timeo = TX_TIMEOUT;
 
-	{
-	/* TODO: fix the setting of the MAC address.
-	   Right now you must either specify a netdevice with "parent=", whose
-	   address is copied or the (default) address of the Sitecom WL-153
-	   bootloader is used */
-		static const u8 dflt_addr[ETH_ALEN] = {0,0x50,0xfc,2,3,4};
-		if (parent_dev) {
+	/*
+	You must specify a netdevice with a "parent=" parameter, whose address
+	is copied, or an array of bytes comprising a literal address; otherwise
+	the (default) address of the Sitecom WL-153 bootloader is used.
+	*/
+	memcpy(dev->dev_addr, mac_base, ETH_ALEN);
+	if (parent) {
+		parent_dev = __dev_get_by_name(&init_net, parent);
+		if (parent_dev)
 			memcpy(dev->dev_addr, parent_dev->dev_addr, ETH_ALEN);
-		} else {
-			printk(KERN_WARNING "%s: no parent - using default mac address\n",
-			       dev->name);
-			memcpy(dev->dev_addr, dflt_addr, ETH_ALEN);
-		}
-		dev->dev_addr[ETH_ALEN-1] += card_idx ^ 1; /* + 0 or 1 */
 	}
+	dev->dev_addr[ETH_ALEN-1] += card_idx ^ reverse; /* + 0 or 1 */
 
 #ifdef CONFIG_NET_POLL_CONTROLLER
 	dev->poll_controller = r6040_poll_controller;
@@ -1339,6 +1342,14 @@ int __devinit r6040_init_one(struct pci_dev *pdev,
 	lp->mii_if.phy_id = lp->phy_addr;
 	lp->mii_if.phy_id_mask = 0x1f;
 	lp->mii_if.reg_num_mask = 0x1f;
+
+	if (reverse && ((card_idx & 1) == 0) && (dev_alloc_name(dev, dev->name)
+			>= 0))
+		for (err = strlen(dev->name); err; err--) {
+			if (dev->name[err - 1]++ != '9')
+				break;
+			dev->name[err - 1] = '0';
+		}
 
 	/* Register net device. After this dev->name assign */
 	err = register_netdev(dev);
@@ -1388,9 +1399,6 @@ static struct pci_driver r6040_driver = {
 
 static int __init r6040_init(void)
 {
-	if (parent)
-		parent_dev = dev_get_by_name(&init_net, parent);
-	
 	return pci_register_driver(&r6040_driver);
 }
 
