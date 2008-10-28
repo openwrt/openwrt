@@ -338,6 +338,7 @@ mvswitch_config_init(struct phy_device *pdev)
 	);
 
 	/* hook into the tx function */
+	pdev->pkt_align = 2;
 	priv->hardstart = dev->hard_start_xmit;
 	pdev->netif_receive_skb = mvswitch_netif_receive_skb;
 	pdev->netif_rx = mvswitch_netif_rx;
