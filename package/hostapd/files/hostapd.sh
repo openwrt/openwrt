@@ -79,7 +79,10 @@ hostapd_setup_vif() {
 		11a) agmode=a;;
 		11b) agmode=b;;
 		11g) agmode=g;;
-		*) agmode=;;
+		*)
+			agmode=
+			[ "$channel" -gt 14 ] && agmode=a
+		;;
 	esac
 	cat > /var/run/hostapd-$ifname.conf <<EOF
 driver=$driver
