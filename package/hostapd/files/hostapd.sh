@@ -96,6 +96,6 @@ wpa=$wpa
 wpa_pairwise=$crypto
 $hostapd_cfg
 EOF
-	hostapd -B /var/run/hostapd-$ifname.conf
+	hostapd -P /var/run/wifi-$ifname.conf -B /var/run/hostapd-$ifname.conf
 }
 

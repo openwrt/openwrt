@@ -75,5 +75,5 @@ network={
 	$password
 }
 EOF
-	[ -z "$proto" ] || wpa_supplicant ${bridge:+ -b $bridge} -B -D ${driver:-wext} -i "$ifname" -c /var/run/wpa_supplicant-$ifname.conf
+	[ -z "$proto" ] || wpa_supplicant ${bridge:+ -b $bridge} -B -P "/var/run/wifi-${ifname}.pid" -D ${driver:-wext} -i "$ifname" -c /var/run/wpa_supplicant-$ifname.conf
 }
