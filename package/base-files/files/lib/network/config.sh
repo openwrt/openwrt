@@ -90,8 +90,8 @@ prepare_interface() {
 	[ "br-$config" = "$iface" -o -e "$iface" ] && return 0;
 	
 	ifconfig "$iface" 2>/dev/null >/dev/null && {
-		# make sure the interface is removed from any existing bridge and brought down
-		ifconfig "$iface" down
+		# make sure the interface is removed from any existing bridge and deconfigured 
+		ifconfig "$iface" 0.0.0.0
 		unbridge "$iface"
 	}
 
