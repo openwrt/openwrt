@@ -50,18 +50,14 @@ disable_atheros() (
 	local device="$1"
 
 	set_wifi_down "$device"
-	# kill all running hostapd and wpa_supplicant processes that
-	# are running on atheros vifs 
-	for pid in `pidof hostapd wpa_supplicant`; do
-		grep ath /proc/$pid/cmdline >/dev/null && \
-			kill $pid
-	done
 	
 	include /lib/network
 	cd /proc/sys/net
 	for dev in *; do
 		grep "$device" "$dev/%parent" >/dev/null 2>/dev/null && {
-			ifconfig "$dev" down 
+			[ -f "/var/run/wifi-${dev}.pid" ] &&
+				kill "$(cat "/var/run/wifi-${dev}.pid")"
+			ifconfig "$dev" down
 			unbridge "$dev"
 			wlanconfig "$dev" destroy
 		}

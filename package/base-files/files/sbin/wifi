@@ -84,6 +84,8 @@ set_wifi_down() {
 	local cfg="$1"
 	local vifs vif vifstr
 
+	[ -f "/var/run/wifi-${cfg}.pid" ] &&
+		kill "$(cat "/var/run/wifi-${cfg}.pid")"
 	uci_revert_state wireless "$cfg"
 	config_get vifs "$cfg" vifs
 	for vif in $vifs; do
