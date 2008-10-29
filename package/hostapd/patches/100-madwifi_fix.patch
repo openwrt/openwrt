@@ -1,0 +1,27 @@
+--- a/hostapd/driver_madwifi.c
++++ b/hostapd/driver_madwifi.c
+@@ -298,6 +298,7 @@ madwifi_set_iface_flags(void *priv, int 
+ {
+ 	struct madwifi_driver_data *drv = priv;
+ 	struct ifreq ifr;
++	short flags;
+ 
+ 	wpa_printf(MSG_DEBUG, "%s: dev_up=%d", __func__, dev_up);
+ 
+@@ -312,10 +313,14 @@ madwifi_set_iface_flags(void *priv, int 
+ 		return -1;
+ 	}
+ 
++	flags = ifr.ifr_flags;
+ 	if (dev_up)
+-		ifr.ifr_flags |= IFF_UP;
++		flags |= IFF_UP;
+ 	else
+-		ifr.ifr_flags &= ~IFF_UP;
++		flags &= ~IFF_UP;
++
++	if (flags == ifr.ifr_flags)
++		return 0;
+ 
+ 	if (ioctl(drv->ioctl_sock, SIOCSIFFLAGS, &ifr) != 0) {
+ 		perror("ioctl[SIOCSIFFLAGS]");
