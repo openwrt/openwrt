@@ -1,0 +1,22 @@
+--- opkg-4564/libopkg/opkg_download.c-orig	2008-10-29 22:38:18.000000000 -0500
++++ opkg-4564/libopkg/opkg_download.c	2008-10-29 22:39:13.000000000 -0500
+@@ -335,7 +335,6 @@
+ 
+     return status;
+ #else
+-    opkg_message (conf, OPKG_NOTICE, "Signature check for %s was skipped because GPG support was not enabled in this build\n");
+     return 0;
+ #endif
+ }
+--- opkg-4564/libopkg/opkg_cmd.c-orig	2008-10-29 22:38:25.000000000 -0500
++++ opkg-4564/libopkg/opkg_cmd.c	2008-10-29 22:39:49.000000000 -0500
+@@ -287,9 +287,6 @@
+ 	  unlink (tmp_file_name);
+ 	  free (tmp_file_name);
+ 	  free (url);
+-#else
+-	  opkg_message (conf, OPKG_NOTICE, "Signiture check for %s skipped "
+-              "because GPG support was not enabled in this build\n", src->name);
+ #endif
+ 	  free(list_file_name);
+      }
