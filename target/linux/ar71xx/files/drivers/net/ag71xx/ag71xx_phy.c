@@ -276,6 +276,17 @@ int ag71xx_phy_connect(struct ag71xx *ag)
 		break;
 
 	default:
+		switch (pdata->speed) {
+		case SPEED_10:
+		case SPEED_100:
+		case SPEED_1000:
+			break;
+		default:
+			printk(KERN_ERR "%s: invalid speed specified\n",
+				dev->name);
+			return -EINVAL;
+		}
+
 		ag->phy_dev = NULL;
 		printk(KERN_DEBUG "%s: connected to %d PHYs\n",
 			dev->name, phy_count);

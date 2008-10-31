@@ -183,6 +183,8 @@ static void __init rb433_setup(void)
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.phy_mask = 0x00000003;
+	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth1_data.phy_mask = 0x00000010;
@@ -212,6 +214,8 @@ static void __init rb450_setup(void)
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.phy_mask = 0x0000000f;
+	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth1_data.phy_mask = 0x00000010;
