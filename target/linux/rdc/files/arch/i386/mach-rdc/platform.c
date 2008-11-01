@@ -239,16 +239,19 @@ static __init int rdc_board_setup(void)
 		rdc_flash_parts[1].name = "rootfs";
 		rdc_flash_parts[1].offset = 0x100000;
 		rdc_flash_parts[1].size = rdc_map_info.size - 0x140000;
-		rdc_flash_parts[2].name = "config";
-		rdc_flash_parts[2].offset = rdc_map_info.size - 0x40000;
-		rdc_flash_parts[2].size = 0x10000;
-		rdc_flash_parts[3].name = "productinfo";
-		rdc_flash_parts[3].offset = rdc_map_info.size - 0x30000;
+		rdc_flash_parts[2].name = "linux";
+		rdc_flash_parts[2].offset = 0;
+		rdc_flash_parts[2].size = rdc_map_info.size - 0x40000;
+		rdc_flash_parts[3].name = "config";
+		rdc_flash_parts[3].offset = rdc_map_info.size - 0x40000;
 		rdc_flash_parts[3].size = 0x10000;
-		rdc_flash_parts[4].name = "bootloader";
-		rdc_flash_parts[4].offset = rdc_map_info.size - 0x20000;
-		rdc_flash_parts[4].size = 0x20000;
-		rdc_flash_data.nr_parts = 5;
+		rdc_flash_parts[4].name = "productinfo";
+		rdc_flash_parts[4].offset = rdc_map_info.size - 0x30000;
+		rdc_flash_parts[4].size = 0x10000;
+		rdc_flash_parts[5].name = "bootloader";
+		rdc_flash_parts[5].offset = rdc_map_info.size - 0x20000;
+		rdc_flash_parts[5].size = 0x20000;
+		rdc_flash_data.nr_parts = 6;
 	}
 #endif
 	return platform_add_devices(rdc321x_devs, ARRAY_SIZE(rdc321x_devs));
