@@ -1,6 +1,6 @@
 --- a/net80211/ieee80211_crypto_ccmp.c
 +++ b/net80211/ieee80211_crypto_ccmp.c
-@@ -475,6 +475,9 @@
+@@ -475,6 +475,9 @@ ccmp_encrypt(struct ieee80211_key *key, 
  	uint8_t *mic, *pos;
  	u_int space;
  
@@ -10,7 +10,7 @@
  	ctx->cc_vap->iv_stats.is_crypto_ccmp++;
  
  	skb = skb0;
-@@ -589,6 +592,9 @@
+@@ -589,6 +592,9 @@ ccmp_decrypt(struct ieee80211_key *key, 
  	uint8_t *pos, *mic;
  	u_int space;
  

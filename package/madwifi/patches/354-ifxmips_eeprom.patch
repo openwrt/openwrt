@@ -1,6 +1,6 @@
 --- a/ath_hal/ah_os.c
 +++ b/ath_hal/ah_os.c
-@@ -343,6 +343,46 @@
+@@ -343,6 +343,46 @@ EXPORT_SYMBOL(ath_hal_func);
   * NB: see the comments in ah_osdep.h about byte-swapping register
   *     reads and writes to understand what's going on below.
   */
@@ -47,7 +47,7 @@
  void __ahdecl
  ath_hal_reg_write(struct ath_hal *ah, u_int reg, u_int32_t val)
  {
-@@ -351,20 +391,33 @@
+@@ -351,20 +391,33 @@ ath_hal_reg_write(struct ath_hal *ah, u_
  		ath_hal_printf(ah, "%s: WRITE 0x%x <= 0x%x\n", 
  				(ath_hal_func ?: "unknown"), reg, val);
  #endif
@@ -85,7 +85,7 @@
  				(ath_hal_func ?: "unknown"), reg, val);
  #endif
  	return val;
-@@ -581,7 +634,9 @@
+@@ -581,7 +634,9 @@ init_ath_hal(void)
  {
  	const char *sep;
  	int i;

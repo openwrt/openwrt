@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -6457,6 +6457,7 @@
+@@ -6457,6 +6457,7 @@ ath_rx_poll(struct net_device *dev, int 
  	int type;
  	u_int phyerr;
  	u_int processed = 0, early_stop = 0;
@@ -8,7 +8,7 @@
  
  	DPRINTF(sc, ATH_DEBUG_RX_PROC, "invoked\n");
  process_rx_again:
-@@ -6558,24 +6559,8 @@
+@@ -6558,24 +6559,8 @@ process_rx_again:
  			}
  			if (rs->rs_status & HAL_RXERR_MIC) {
  				sc->sc_stats.ast_rx_badmic++;
@@ -35,7 +35,7 @@
  			}
  			/*
  			 * Reject error frames if we have no vaps that
-@@ -6614,8 +6599,9 @@
+@@ -6614,8 +6599,9 @@ rx_accept:
  		/*
  		 * Finished monitor mode handling, now reject
  		 * error frames before passing to other vaps
@@ -46,7 +46,7 @@
  			ieee80211_dev_kfree_skb(&skb);
  			goto rx_next;
  		}
-@@ -6623,6 +6609,26 @@
+@@ -6623,6 +6609,26 @@ rx_accept:
  		/* remove the CRC */
  		skb_trim(skb, skb->len - IEEE80211_CRC_LEN);
  
@@ -73,7 +73,7 @@
  		/*
  		 * From this point on we assume the frame is at least
  		 * as large as ieee80211_frame_min; verify that.
-@@ -6635,6 +6641,7 @@
+@@ -6635,6 +6641,7 @@ rx_accept:
  			goto rx_next;
  		}
  
@@ -83,7 +83,7 @@
  		 */
 --- a/net80211/ieee80211_crypto_ccmp.c
 +++ b/net80211/ieee80211_crypto_ccmp.c
-@@ -73,7 +73,7 @@
+@@ -73,7 +73,7 @@ static int ccmp_setkey(struct ieee80211_
  static int ccmp_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  static int ccmp_decap(struct ieee80211_key *, struct sk_buff *, int);
  static int ccmp_enmic(struct ieee80211_key *, struct sk_buff *, int);
@@ -92,7 +92,7 @@
  
  static const struct ieee80211_cipher ccmp = {
  	.ic_name	= "AES-CCM",
-@@ -308,7 +308,7 @@
+@@ -308,7 +308,7 @@ ccmp_decap(struct ieee80211_key *k, stru
   * Verify and strip MIC from the frame.
   */
  static int
@@ -103,7 +103,7 @@
  }
 --- a/net80211/ieee80211_crypto.h
 +++ b/net80211/ieee80211_crypto.h
-@@ -145,7 +145,7 @@
+@@ -145,7 +145,7 @@ struct ieee80211_cipher {
  	int (*ic_encap)(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  	int (*ic_decap)(struct ieee80211_key *, struct sk_buff *, int);
  	int (*ic_enmic)(struct ieee80211_key *, struct sk_buff *, int);
@@ -112,7 +112,7 @@
  };
  extern const struct ieee80211_cipher ieee80211_cipher_none;
  
-@@ -163,10 +163,10 @@
+@@ -163,10 +163,10 @@ struct ieee80211_key *ieee80211_crypto_d
   */
  static __inline int
  ieee80211_crypto_demic(struct ieee80211vap *vap, struct ieee80211_key *k,
@@ -127,7 +127,7 @@
  /*
 --- a/net80211/ieee80211_crypto_none.c
 +++ b/net80211/ieee80211_crypto_none.c
-@@ -52,7 +52,7 @@
+@@ -52,7 +52,7 @@ static int none_setkey(struct ieee80211_
  static int none_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  static int none_decap(struct ieee80211_key *, struct sk_buff *, int);
  static int none_enmic(struct ieee80211_key *, struct sk_buff *, int);
@@ -136,7 +136,7 @@
  
  const struct ieee80211_cipher ieee80211_cipher_none = {
  	.ic_name	= "NONE",
-@@ -137,7 +137,7 @@
+@@ -137,7 +137,7 @@ none_enmic(struct ieee80211_key *k, stru
  }
  
  static int
@@ -147,7 +147,7 @@
  
 --- a/net80211/ieee80211_crypto_tkip.c
 +++ b/net80211/ieee80211_crypto_tkip.c
-@@ -57,7 +57,7 @@
+@@ -57,7 +57,7 @@ static int tkip_setkey(struct ieee80211_
  static int tkip_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  static int tkip_enmic(struct ieee80211_key *, struct sk_buff *, int);
  static int tkip_decap(struct ieee80211_key *, struct sk_buff *, int);
@@ -156,7 +156,7 @@
  
  static const struct ieee80211_cipher tkip  = {
  	.ic_name	= "TKIP",
-@@ -339,7 +339,7 @@
+@@ -339,7 +339,7 @@ tkip_decap(struct ieee80211_key *k, stru
   * Verify and strip MIC from the frame.
   */
  static int
@@ -165,7 +165,7 @@
  {
  	struct tkip_ctx *ctx = k->wk_private;
  	struct sk_buff *skb;
-@@ -355,7 +355,7 @@
+@@ -355,7 +355,7 @@ tkip_demic(struct ieee80211_key *k, stru
  	}
  	wh = (struct ieee80211_frame *) skb0->data;
  	/* NB: skb left pointing at last in chain */
@@ -176,7 +176,7 @@
  		u8 mic0[IEEE80211_WEP_MICLEN];
 --- a/net80211/ieee80211_crypto_wep.c
 +++ b/net80211/ieee80211_crypto_wep.c
-@@ -54,7 +54,7 @@
+@@ -54,7 +54,7 @@ static int wep_setkey(struct ieee80211_k
  static int wep_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
  static int wep_decap(struct ieee80211_key *, struct sk_buff *, int);
  static int wep_enmic(struct ieee80211_key *, struct sk_buff *, int);
@@ -185,7 +185,7 @@
  
  static const struct ieee80211_cipher wep = {
  	.ic_name	= "WEP",
-@@ -244,7 +244,7 @@
+@@ -244,7 +244,7 @@ wep_decap(struct ieee80211_key *k, struc
   * Verify and strip MIC from the frame.
   */
  static int
@@ -196,7 +196,7 @@
  }
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -669,7 +669,7 @@
+@@ -669,7 +669,7 @@ ieee80211_input(struct ieee80211vap * va
  		 * Next strip any MSDU crypto bits.
  		 */
  		if (key != NULL &&
@@ -205,7 +205,7 @@
  			IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
  				ni->ni_macaddr, "data", "%s", "demic error");
  			IEEE80211_NODE_STAT(ni, rx_demicfail);
-@@ -4293,6 +4293,47 @@
+@@ -4293,6 +4293,47 @@ ath_eth_type_trans(struct sk_buff *skb, 
  }
  #endif
  
@@ -255,7 +255,7 @@
   * Debugging support.
 --- a/net80211/ieee80211_proto.h
 +++ b/net80211/ieee80211_proto.h
-@@ -90,6 +90,7 @@
+@@ -90,6 +90,7 @@ int ieee80211_iserp_rateset(struct ieee8
  void ieee80211_set11gbasicrates(struct ieee80211_rateset *, enum ieee80211_phymode);
  enum ieee80211_phymode ieee80211_get11gbasicrates(struct ieee80211_rateset *);
  void ieee80211_send_pspoll(struct ieee80211_node *);
@@ -265,7 +265,7 @@
   * Return the size of the 802.11 header for a management or data frame.
 --- a/net80211/ieee80211_linux.c
 +++ b/net80211/ieee80211_linux.c
-@@ -337,8 +337,8 @@
+@@ -337,8 +337,8 @@ ieee80211_notify_replay_failure(struct i
  	/* TODO: needed parameters: count, keyid, key type, src address, TSC */
  	snprintf(buf, sizeof(buf), "%s(keyid=%d %scast addr=" MAC_FMT ")", tag,
  		k->wk_keyix,
@@ -278,7 +278,7 @@
  	wireless_send_event(dev, IWEVCUSTOM, &wrqu, buf);
 --- a/net80211/ieee80211_output.c
 +++ b/net80211/ieee80211_output.c
-@@ -1074,13 +1074,16 @@
+@@ -1074,13 +1074,16 @@ ieee80211_encap(struct ieee80211_node *n
  			cip = (struct ieee80211_cipher *) key->wk_cipher;
  			ciphdrsize = cip->ic_header;
  			tailsize += (cip->ic_trailer + cip->ic_miclen);
@@ -300,7 +300,7 @@
  		 * Allocate sk_buff for each subsequent fragment; First fragment
 --- a/net80211/ieee80211_node.c
 +++ b/net80211/ieee80211_node.c
-@@ -2264,11 +2264,13 @@
+@@ -2264,11 +2264,13 @@ ieee80211_node_leave(struct ieee80211_no
  	/* From this point onwards we can no longer find the node,
  	 * so no more references are generated
  	 */

@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -3239,7 +3239,6 @@
+@@ -3239,7 +3239,6 @@ ath_hardstart(struct sk_buff *skb, struc
  	struct ath_softc *sc = dev->priv;
  	struct ieee80211_node *ni = NULL;
  	struct ath_buf *bf = NULL;
@@ -8,7 +8,7 @@
  	ath_bufhead bf_head;
  	struct ath_buf *tbf, *tempbf;
  	struct sk_buff *tskb;
-@@ -3251,6 +3250,7 @@
+@@ -3251,6 +3250,7 @@ ath_hardstart(struct sk_buff *skb, struc
  	*/
  	int requeue = 0;
  #ifdef ATH_SUPERG_FF
@@ -16,7 +16,7 @@
  	unsigned int pktlen;
  	struct ieee80211com *ic = &sc->sc_ic;
  	struct ath_node *an;
-@@ -3316,27 +3316,9 @@
+@@ -3316,27 +3316,9 @@ ath_hardstart(struct sk_buff *skb, struc
  		requeue = 1;
  		goto hardstart_fail;
  	}
@@ -46,7 +46,7 @@
  	ATH_TXQ_LOCK_IRQ(txq);
 --- a/net80211/ieee80211_output.c
 +++ b/net80211/ieee80211_output.c
-@@ -283,7 +283,7 @@
+@@ -283,7 +283,7 @@ ieee80211_hardstart(struct sk_buff *skb,
  	 * normal vap. */
  	if (vap->iv_xrvap && (ni == vap->iv_bss) &&
  	    vap->iv_xrvap->iv_sta_assoc) {
@@ -55,7 +55,7 @@
  		if (skb1) {
  			memset(SKB_CB(skb1), 0, sizeof(struct ieee80211_cb));
  #ifdef IEEE80211_DEBUG_REFCNT
-@@ -566,7 +566,7 @@
+@@ -566,7 +566,7 @@ ieee80211_skbhdr_adjust(struct ieee80211
  	struct ieee80211_key *key, struct sk_buff *skb, int ismulticast)
  {
  	/* XXX pre-calculate per node? */
@@ -64,7 +64,7 @@
  	int need_tailroom = 0;
  #ifdef ATH_SUPERG_FF
  	int isff = ATH_FF_MAGIC_PRESENT(skb);
-@@ -608,109 +608,56 @@
+@@ -608,109 +608,56 @@ ieee80211_skbhdr_adjust(struct ieee80211
  				need_tailroom += cip->ic_miclen;
  	}
  
@@ -214,7 +214,7 @@
  #define	KEY_UNDEFINED(k)	((k).wk_cipher == &ieee80211_cipher_none)
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -204,7 +204,6 @@
+@@ -204,7 +204,6 @@ ieee80211_input(struct ieee80211vap * va
  	struct ieee80211_frame *wh;
  	struct ieee80211_key *key;
  	struct ether_header *eh;
@@ -222,7 +222,7 @@
  #ifdef ATH_SUPERG_FF
  	struct llc *llc;
  #endif
-@@ -244,20 +243,6 @@
+@@ -244,20 +243,6 @@ ieee80211_input(struct ieee80211vap * va
  		vap->iv_stats.is_rx_tooshort++;
  		goto out;
  	}
@@ -243,7 +243,7 @@
  
  	/*
  	 * Bit of a cheat here, we use a pointer for a 3-address
-@@ -738,7 +723,7 @@
+@@ -738,7 +723,7 @@ ieee80211_input(struct ieee80211vap * va
  			/* ether_type must be length as FF frames are always LLC/SNAP encap'd */ 
  			frame_len = ntohs(eh_tmp->ether_type); 
  
@@ -252,7 +252,7 @@
  			if (skb1 == NULL)
  				goto err;
  			ieee80211_skb_copy_noderef(skb, skb1);
-@@ -1137,7 +1122,7 @@
+@@ -1137,7 +1122,7 @@ ieee80211_deliver_data(struct ieee80211_
  
  		if (ETHER_IS_MULTICAST(eh->ether_dhost) && !netif_queue_stopped(dev)) {
  			/* Create a SKB for the BSS to send out. */

@@ -2,7 +2,7 @@ Merged from madwifi trunk r3551, r3552
 
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -8251,6 +8251,17 @@
+@@ -8251,6 +8251,17 @@ ath_tx_processq(struct ath_softc *sc, st
  			goto bf_fail;
  		}
  
@@ -22,7 +22,7 @@ Merged from madwifi trunk r3551, r3552
  
 --- a/ath/if_athvar.h
 +++ b/ath/if_athvar.h
-@@ -586,7 +586,8 @@
+@@ -586,7 +586,8 @@ struct ath_vap {
  } while (0)
  #define ATH_TXQ_REMOVE_HEAD(_tq, _field) do { \
  	STAILQ_REMOVE_HEAD(&(_tq)->axq_q, _field); \

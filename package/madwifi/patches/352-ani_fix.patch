@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -1014,9 +1014,7 @@
+@@ -1014,9 +1014,7 @@ ath_attach(u_int16_t devid, struct net_d
  	 */
  	sc->sc_hasveol = ath_hal_hasveol(ah);
  
@@ -11,7 +11,7 @@
  	sc->sc_hasintmit = ath_hal_hasintmit(ah);
  
  	/* get mac address from hardware */
-@@ -1144,6 +1142,11 @@
+@@ -1144,6 +1142,11 @@ ath_attach(u_int16_t devid, struct net_d
  	sc->sc_rp_lasttsf	= 0;
  	sc->sc_last_tsf		= 0;
  
@@ -23,7 +23,7 @@
  	return 0;
  bad3:
  	ieee80211_ifdetach(ic);
-@@ -2428,6 +2431,43 @@
+@@ -2428,6 +2431,43 @@ ath_chan2flags(struct ieee80211_channel 
  	return flags;
  }
  
@@ -67,7 +67,7 @@
  /*
   * Context: process context
   */
-@@ -2493,8 +2533,7 @@
+@@ -2493,8 +2533,7 @@ ath_init(struct net_device *dev)
  	if (sc->sc_softled)
  		ath_hal_gpioCfgOutput(ah, sc->sc_ledpin);
  
@@ -77,7 +77,7 @@
  
  	/*
  	 * This is needed only to setup initial state
-@@ -2530,7 +2569,7 @@
+@@ -2530,7 +2569,7 @@ ath_init(struct net_device *dev)
  	 * Enable MIB interrupts when there are hardware phy counters.
  	 * Note we only do this (at the moment) for station mode.
  	 */
@@ -86,7 +86,7 @@
  		sc->sc_imask |= HAL_INT_MIB;
  	ath_hal_intrset(ah, sc->sc_imask);
  
-@@ -2787,9 +2826,7 @@
+@@ -2787,9 +2826,7 @@ ath_reset(struct net_device *dev)
  		EPRINTF(sc, "Unable to reset hardware: '%s' (HAL status %u)\n",
  			ath_get_hal_status_desc(status), status);
  
@@ -97,7 +97,7 @@
  	ath_update_txpow(sc);		/* update tx power state */
  	ath_radar_update(sc);
  	ath_setdefantenna(sc, sc->sc_defant);
-@@ -4174,6 +4211,8 @@
+@@ -4174,6 +4211,8 @@ ath_calcrxfilter(struct ath_softc *sc)
  	if (sc->sc_nmonvaps > 0)
  		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON |
  			  HAL_RX_FILTER_PROBEREQ | HAL_RX_FILTER_PROM);
@@ -106,7 +106,7 @@
  	if (sc->sc_curchan.privFlags & CHANNEL_DFS)
  		rfilt |= (HAL_RX_FILTER_PHYERR | HAL_RX_FILTER_PHYRADAR);
  	return rfilt;
-@@ -6524,9 +6563,6 @@
+@@ -6524,9 +6563,6 @@ process_rx_again:
  			rs->rs_rssi = 0;
  
  		len = rs->rs_datalen;
@@ -116,7 +116,7 @@
  
  		if (rs->rs_more) {
  			/*
-@@ -8874,9 +8910,7 @@
+@@ -8874,9 +8910,7 @@ ath_chan_set(struct ath_softc *sc, struc
  		if (sc->sc_softled)
  			ath_hal_gpioCfgOutput(ah, sc->sc_ledpin);
  
@@ -127,7 +127,7 @@
  		sc->sc_curchan = hchan;
  		ath_update_txpow(sc);		/* update tx power state */
  		ath_radar_update(sc);
-@@ -10653,9 +10687,54 @@
+@@ -10653,9 +10687,54 @@ enum {
  	ATH_RP_IGNORED 		= 24,
  	ATH_RADAR_IGNORED       = 25,
  	ATH_MAXVAPS  		= 26,
@@ -182,7 +182,7 @@
  ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl, write, filp, buffer, lenp, ppos)
  {
  	struct ath_softc *sc = ctl->extra1;
-@@ -10841,6 +10920,11 @@
+@@ -10841,6 +10920,11 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
  			case ATH_RADAR_IGNORED:
  				sc->sc_radar_ignored = val;
  				break;
@@ -194,7 +194,7 @@
  			default:
  				ret = -EINVAL;
  				break;
-@@ -10907,6 +10991,11 @@
+@@ -10907,6 +10991,11 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
  		case ATH_RADAR_IGNORED:
  			val = sc->sc_radar_ignored;
  			break;
@@ -206,7 +206,7 @@
  		default:
  			ret = -EINVAL;
  			break;
-@@ -11084,6 +11173,24 @@
+@@ -11084,6 +11173,24 @@ static const ctl_table ath_sysctl_templa
  	  .proc_handler = ath_sysctl_halparam,
  	  .extra2	= (void *)ATH_RADAR_IGNORED,
  	},
@@ -233,7 +233,7 @@
  
 --- a/ath/if_athvar.h
 +++ b/ath/if_athvar.h
-@@ -693,6 +693,10 @@
+@@ -693,6 +693,10 @@ struct ath_softc {
  	unsigned int sc_txcont_power; /* Continuous transmit power in 0.5dBm units */
  	unsigned int sc_txcont_rate;  /* Continuous transmit rate in Mbps */
  
@@ -246,7 +246,7 @@
  	const HAL_RATE_TABLE *sc_currates;	/* current rate table */
 --- a/ath/if_ath_hal.h
 +++ b/ath/if_ath_hal.h
-@@ -67,14 +67,14 @@
+@@ -67,14 +67,14 @@ static inline HAL_POWER_MODE ath_hal_get
  
  static inline HAL_BOOL ath_hal_getdiagstate(struct ath_hal *ah, int request,
  					    const void *args, u_int32_t argsize,

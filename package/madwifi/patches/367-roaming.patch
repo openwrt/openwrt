@@ -2,7 +2,7 @@ Patch adapted from ubnt madwifi patchset
 
 --- a/net80211/ieee80211_node.c
 +++ b/net80211/ieee80211_node.c
-@@ -659,7 +659,7 @@
+@@ -659,7 +659,7 @@ ieee80211_sta_join1(struct ieee80211_nod
  		 */
  		if (canreassoc) {
  			vap->iv_nsparams.newstate = IEEE80211_S_ASSOC;
@@ -13,7 +13,7 @@ Patch adapted from ubnt madwifi patchset
  			vap->iv_nsparams.newstate = IEEE80211_S_AUTH;
 --- a/net80211/ieee80211_scan_sta.c
 +++ b/net80211/ieee80211_scan_sta.c
-@@ -748,14 +748,17 @@
+@@ -748,14 +748,17 @@ notfound:
   * a reference to an entry w/o holding the lock on the table.
   */
  static struct sta_entry *
@@ -33,7 +33,7 @@ Patch adapted from ubnt madwifi patchset
  			break;
  	SCAN_STA_UNLOCK_IRQ(st);
  
-@@ -772,7 +775,7 @@
+@@ -772,7 +775,7 @@ sta_roam_check(struct ieee80211_scan_sta
  	u_int8_t roamRate, curRate;
  	int8_t roamRssi, curRssi;
  
@@ -42,7 +42,7 @@ Patch adapted from ubnt madwifi patchset
  	if (se == NULL) {
  		/* XXX something is wrong */
  		return;
-@@ -866,8 +869,8 @@
+@@ -866,8 +869,8 @@ sta_age(struct ieee80211_scan_state *ss)
  	 */
  	KASSERT(vap->iv_opmode == IEEE80211_M_STA,
  		("wrong mode %u", vap->iv_opmode));
@@ -53,7 +53,7 @@ Patch adapted from ubnt madwifi patchset
  	    vap->iv_state >= IEEE80211_S_RUN)
  		/* XXX vap is implicit */
  		sta_roam_check(ss, vap);
-@@ -922,7 +925,11 @@
+@@ -922,7 +925,11 @@ sta_assoc_fail(struct ieee80211_scan_sta
  	struct sta_table *st = ss->ss_priv;
  	struct sta_entry *se;
  
@@ -66,7 +66,7 @@ Patch adapted from ubnt madwifi patchset
  	if (se != NULL) {
  		se->se_fails++;
  		se->se_lastfail = jiffies;
-@@ -939,7 +946,7 @@
+@@ -939,7 +946,7 @@ sta_assoc_success(struct ieee80211_scan_
  	struct sta_table *st = ss->ss_priv;
  	struct sta_entry *se;
  

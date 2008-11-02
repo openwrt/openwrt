@@ -1,6 +1,6 @@
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -1275,14 +1275,8 @@
+@@ -1275,14 +1275,8 @@ ieee80211_decap(struct ieee80211vap *vap
  		eh->ether_type = ether_type;
  
  	if (!ALIGNED_POINTER(skb->data + sizeof(*eh), u_int32_t)) {

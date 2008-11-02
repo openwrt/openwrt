@@ -1,6 +1,6 @@
 --- a/ath/if_athvar.h
 +++ b/ath/if_athvar.h
-@@ -126,6 +126,11 @@
+@@ -126,6 +126,11 @@ typedef void irqreturn_t;
  #define ATH_GET_NETDEV_DEV(ndev)	((ndev)->class_dev.dev)
  #endif
  
@@ -30,7 +30,7 @@
  	const char *name;
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -4705,6 +4705,46 @@
+@@ -4705,6 +4705,46 @@ ath_beacon_setup(struct ath_softc *sc, s
  #undef USE_SHPREAMBLE
  }
  

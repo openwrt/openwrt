@@ -7,7 +7,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -3400,12 +3400,17 @@
+@@ -3400,12 +3400,17 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  			}
  
  			/* WDS/Repeater: re-schedule software beacon timer for 
@@ -31,7 +31,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  			 * Otherwise, check if it's the right time to do
 --- a/net80211/ieee80211_proto.c
 +++ b/net80211/ieee80211_proto.c
-@@ -1209,6 +1209,8 @@
+@@ -1209,6 +1209,8 @@ ieee80211_beacon_miss(struct ieee80211co
  	}
  	/* XXX locking */
  	TAILQ_FOREACH(vap, &ic->ic_vaps, iv_next) {
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		IEEE80211_DPRINTF(vap,
  			IEEE80211_MSG_STATE | IEEE80211_MSG_DEBUG,
  			"%s\n", "beacon miss");
-@@ -1221,6 +1223,29 @@
+@@ -1221,6 +1223,29 @@ ieee80211_beacon_miss(struct ieee80211co
  		if (vap->iv_opmode != IEEE80211_M_STA ||
  		    vap->iv_state != IEEE80211_S_RUN)
  			continue;
@@ -70,7 +70,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		if (ic->ic_roaming == IEEE80211_ROAMING_AUTO) {
  #ifdef ATH_SUPERG_DYNTURBO
  			/* 
-@@ -1621,14 +1646,14 @@
+@@ -1621,14 +1646,14 @@ __ieee80211_newstate(struct ieee80211vap
  		}
  
  		/* WDS/Repeater: Start software beacon timer for STA */
@@ -92,7 +92,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
 --- a/net80211/ieee80211_var.h
 +++ b/net80211/ieee80211_var.h
-@@ -283,6 +283,7 @@
+@@ -283,6 +283,7 @@ struct ieee80211vap {
  
  	struct timer_list iv_swbmiss;			/* software beacon miss timer */
  	u_int16_t iv_swbmiss_period; 			/* software beacon miss timer period */

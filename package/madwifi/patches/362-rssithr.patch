@@ -5,7 +5,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/net80211/ieee80211_ioctl.h
 +++ b/net80211/ieee80211_ioctl.h
-@@ -647,6 +647,8 @@
+@@ -647,6 +647,8 @@ enum {
  	IEEE80211_PARAM_PROTMODE_RSSI		= 77,	/* RSSI Threshold for enabling protection mode */
  	IEEE80211_PARAM_PROTMODE_TIMEOUT	= 78,	/* Timeout for expiring protection mode */
  	IEEE80211_PARAM_BGSCAN_THRESH		= 79,	/* bg scan rssi threshold */
@@ -16,7 +16,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #define	SIOCG80211STATS			(SIOCDEVPRIVATE+2)
 --- a/net80211/ieee80211_wireless.c
 +++ b/net80211/ieee80211_wireless.c
-@@ -2799,6 +2799,12 @@
+@@ -2799,6 +2799,12 @@ ieee80211_ioctl_setparam(struct net_devi
  	case IEEE80211_PARAM_ROAM_RATE_11G:
  		vap->iv_roam.rate11b = value;
  		break;
@@ -29,7 +29,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	case IEEE80211_PARAM_UAPSDINFO:
  		if (vap->iv_opmode == IEEE80211_M_HOSTAP) {
  			if (ic->ic_caps & IEEE80211_C_UAPSD) {
-@@ -3184,6 +3190,12 @@
+@@ -3184,6 +3190,12 @@ ieee80211_ioctl_getparam(struct net_devi
  	case IEEE80211_PARAM_ROAM_RATE_11G:
  		param[0] = vap->iv_roam.rate11b;
  		break;
@@ -42,7 +42,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	case IEEE80211_PARAM_UAPSDINFO:
  		if (vap->iv_opmode == IEEE80211_M_HOSTAP) {
  			if (IEEE80211_VAP_UAPSD_ENABLED(vap))
-@@ -5733,6 +5745,14 @@
+@@ -5733,6 +5745,14 @@ static const struct iw_priv_args ieee802
  	  IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "rate11g" },
  	{ IEEE80211_PARAM_ROAM_RATE_11G,
  	  0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_rate11g" },
@@ -59,7 +59,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	{ IEEE80211_PARAM_UAPSDINFO,
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -3261,6 +3261,19 @@
+@@ -3261,6 +3261,19 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  			memcpy(ni->ni_tstamp.data, scan.tstamp,
  				sizeof(ni->ni_tstamp));
  
@@ -81,7 +81,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  			if (!(ic->ic_flags & IEEE80211_F_SCAN) && (rssi < vap->iv_bgscanthr) &&
 --- a/net80211/ieee80211_var.h
 +++ b/net80211/ieee80211_var.h
-@@ -223,6 +223,9 @@
+@@ -223,6 +223,9 @@ struct ieee80211vap {
  	u_int iv_bgscanintvl;				/* bg scan min interval */
  	u_int iv_bgscanthr;					/* bg scan rssi threshold */
  	u_int iv_bgscantrintvl;				/* bg scan trigger interval */

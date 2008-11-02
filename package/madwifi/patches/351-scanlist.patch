@@ -1,6 +1,6 @@
 --- a/net80211/ieee80211_scan_sta.c
 +++ b/net80211/ieee80211_scan_sta.c
-@@ -317,147 +317,6 @@
+@@ -317,147 +317,6 @@ found:
  #undef ISPROBE
  }
  
@@ -148,7 +148,7 @@
  /*
   * Start a station-mode scan by populating the channel list.
   */
-@@ -466,81 +325,14 @@
+@@ -466,81 +325,14 @@ sta_start(struct ieee80211_scan_state *s
  {
  	struct ieee80211com *ic = vap->iv_ic;
  	struct sta_table *st = ss->ss_priv;
@@ -232,7 +232,7 @@
  	/* XXX tunables */
  	/* 
  	 * The scanner will stay on station for ss_maxdwell ms (using a 
-@@ -749,17 +541,7 @@
+@@ -749,17 +541,7 @@ match_bss(struct ieee80211vap *vap,
  	fail = 0;
  	if (isclr(ic->ic_chan_active, ieee80211_chan2ieee(ic, se->se_chan)))
  		fail |= 0x01;
@@ -251,7 +251,7 @@
  	if (vap->iv_opmode == IEEE80211_M_IBSS) {
  		if ((se->se_capinfo & IEEE80211_CAPINFO_IBSS) == 0)
  			fail |= 0x02;
-@@ -1168,78 +950,6 @@
+@@ -1168,78 +950,6 @@ static const struct ieee80211_scanner st
  	.scan_default		= ieee80211_sta_join,
  };
  
@@ -330,7 +330,7 @@
  
  /*
   * Select a channel to start an adhoc network on.
-@@ -1405,7 +1115,7 @@
+@@ -1405,7 +1115,7 @@ static const struct ieee80211_scanner ad
  	.scan_name		= "default",
  	.scan_attach		= sta_attach,
  	.scan_detach		= sta_detach,
@@ -341,7 +341,7 @@
  	.scan_end		= adhoc_pick_bss,
 --- a/net80211/ieee80211.c
 +++ b/net80211/ieee80211.c
-@@ -278,6 +278,11 @@
+@@ -278,6 +278,11 @@ ieee80211_ifattach(struct ieee80211com *
  			("channel with bogus ieee number %u", c->ic_ieee));
  		setbit(ic->ic_chan_avail, c->ic_ieee);
  
@@ -355,7 +355,7 @@
  			ic->ic_modecaps |= 1 << IEEE80211_MODE_11A;
 --- a/net80211/_ieee80211.h
 +++ b/net80211/_ieee80211.h
-@@ -132,6 +132,11 @@
+@@ -132,6 +132,11 @@ enum ieee80211_scanmode {
  	IEEE80211_SCAN_FIRST	= 2,	/* take first suitable candidate */
  };
  
@@ -367,7 +367,7 @@
  /*
   * Channels are specified by frequency and attributes.
   */
-@@ -142,6 +147,7 @@
+@@ -142,6 +147,7 @@ struct ieee80211_channel {
  	int8_t ic_maxregpower;	/* maximum regulatory tx power in dBm */
  	int8_t ic_maxpower;	/* maximum tx power in dBm */
  	int8_t ic_minpower;	/* minimum tx power in dBm */
@@ -377,7 +377,7 @@
  #define	IEEE80211_CHAN_MAX	255
 --- a/net80211/ieee80211_ioctl.h
 +++ b/net80211/ieee80211_ioctl.h
-@@ -555,6 +555,7 @@
+@@ -555,6 +555,7 @@ struct ieee80211req_scan_result {
  #define	IEEE80211_IOCTL_WDSADDMAC	(SIOCIWFIRSTPRIV+26)
  #define	IEEE80211_IOCTL_WDSDELMAC	(SIOCIWFIRSTPRIV+28)
  #define	IEEE80211_IOCTL_KICKMAC		(SIOCIWFIRSTPRIV+30)
@@ -387,7 +387,7 @@
  	IEEE80211_WMMPARAMS_CWMIN       = 1,
 --- a/net80211/ieee80211_scan_ap.c
 +++ b/net80211/ieee80211_scan_ap.c
-@@ -129,131 +129,7 @@
+@@ -129,131 +129,7 @@ struct ap_state {
  
  static int ap_flush(struct ieee80211_scan_state *);
  static void action_tasklet(IEEE80211_TQUEUE_ARG);
@@ -519,7 +519,7 @@
  
  /*
   * Attach prior to any scanning work.
-@@ -327,29 +203,6 @@
+@@ -327,29 +203,6 @@ saveie(u_int8_t **iep, const u_int8_t *i
  		ieee80211_saveie(iep, ie);
  }
  
@@ -549,7 +549,7 @@
  /*
   * Start an ap scan by populating the channel list.
   */
-@@ -358,8 +211,6 @@
+@@ -358,8 +211,6 @@ ap_start(struct ieee80211_scan_state *ss
  {
  	struct ap_state *as 	    = ss->ss_priv;
  	struct ieee80211com *ic     = NULL;
@@ -558,7 +558,7 @@
  	int i;
  	unsigned int mode = 0;
  
-@@ -368,80 +219,8 @@
+@@ -368,80 +219,8 @@ ap_start(struct ieee80211_scan_state *ss
  	/* Determine mode flags to match, or leave zero for auto mode */
  	as->as_vap_desired_mode = vap->iv_des_mode;
  	as->as_required_mode    = 0;
@@ -640,7 +640,7 @@
  	ss->ss_next = 0;
  	/* XXX tunables */
  	ss->ss_mindwell = msecs_to_jiffies(200);	/* 200ms */
-@@ -761,13 +540,6 @@
+@@ -761,13 +540,6 @@ pick_channel(struct ieee80211_scan_state
  		if (IEEE80211_IS_CHAN_RADAR(c->chan))
  			continue;
  
@@ -656,7 +656,7 @@
  				as->as_required_mode)
 --- a/net80211/ieee80211_scan.c
 +++ b/net80211/ieee80211_scan.c
-@@ -958,6 +958,80 @@
+@@ -958,6 +958,80 @@ ieee80211_scan_flush(struct ieee80211com
  	}
  }
  
@@ -739,7 +739,7 @@
   * signal is detected.  AP mode only.  Return 1 on success, 0 on
 --- a/net80211/ieee80211_scan.h
 +++ b/net80211/ieee80211_scan.h
-@@ -219,4 +219,7 @@
+@@ -219,4 +219,7 @@ void ieee80211_scanner_register(enum iee
  void ieee80211_scanner_unregister(enum ieee80211_opmode,
  	const struct ieee80211_scanner *);
  void ieee80211_scanner_unregister_all(const struct ieee80211_scanner *);
@@ -749,7 +749,7 @@
  #endif /* _NET80211_IEEE80211_SCAN_H_ */
 --- a/net80211/ieee80211_wireless.c
 +++ b/net80211/ieee80211_wireless.c
-@@ -3873,6 +3873,106 @@
+@@ -3873,6 +3873,106 @@ ieee80211_ioctl_kickmac(struct net_devic
  	return ieee80211_ioctl_setmlme(dev, info, w, (char *)&mlme);
  }
  
@@ -856,7 +856,7 @@
  static int
  ieee80211_ioctl_addmac(struct net_device *dev, struct iw_request_info *info,
  	void *w, char *extra)
-@@ -5656,6 +5756,8 @@
+@@ -5656,6 +5756,8 @@ static const struct iw_priv_args ieee802
  	 IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "minrate"},
  	{IEEE80211_PARAM_MINRATE,
  	 0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_minrate"},
@@ -865,7 +865,7 @@
  
  #ifdef ATH_REVERSE_ENGINEERING
  	/*
-@@ -5753,6 +5855,7 @@
+@@ -5753,6 +5855,7 @@ static const iw_handler ieee80211_priv_h
  	set_priv(IEEE80211_IOCTL_WDSADDMAC, ieee80211_ioctl_wdsmac),
  	set_priv(IEEE80211_IOCTL_WDSDELMAC, ieee80211_ioctl_wdsdelmac),
  	set_priv(IEEE80211_IOCTL_KICKMAC, ieee80211_ioctl_kickmac),

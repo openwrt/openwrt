@@ -6,7 +6,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/net80211/ieee80211_ioctl.h
 +++ b/net80211/ieee80211_ioctl.h
-@@ -646,6 +646,7 @@
+@@ -646,6 +646,7 @@ enum {
  	IEEE80211_PARAM_MINRATE			= 76,	/* Maximum rate (by table index) */
  	IEEE80211_PARAM_PROTMODE_RSSI		= 77,	/* RSSI Threshold for enabling protection mode */
  	IEEE80211_PARAM_PROTMODE_TIMEOUT	= 78,	/* Timeout for expiring protection mode */
@@ -25,7 +25,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #define IEEE80211_COVERAGE_CLASS_MAX	31	/* max coverage class */
  #define IEEE80211_REGCLASSIDS_MAX	10	/* max regclass id list */
  
-@@ -219,6 +221,10 @@
+@@ -219,6 +221,10 @@ struct ieee80211vap {
  	u_int8_t iv_nickname[IEEE80211_NWID_LEN];
  	u_int iv_bgscanidle;				/* bg scan idle threshold */
  	u_int iv_bgscanintvl;				/* bg scan min interval */
@@ -36,7 +36,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	u_int iv_scanvalid;				/* scan cache valid threshold */
  	struct ieee80211_roam iv_roam;			/* sta-mode roaming state */
  
-@@ -608,6 +614,7 @@
+@@ -608,6 +614,7 @@ MALLOC_DECLARE(M_80211_VAP);
  #define IEEE80211_FEXT_SWBMISS		0x00000400	/* CONF: use software beacon timer */
  #define IEEE80211_FEXT_DROPUNENC_EAPOL	0x00000800	/* CONF: drop unencrypted eapol frames */
  #define IEEE80211_FEXT_APPIE_UPDATE	0x00001000	/* STATE: beacon APP IE updated */
@@ -46,7 +46,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #define IEEE80211_COM_UAPSD_DISABLE(_ic)	((_ic)->ic_flags_ext &= ~IEEE80211_FEXT_UAPSD)
 --- a/net80211/ieee80211_wireless.c
 +++ b/net80211/ieee80211_wireless.c
-@@ -2744,6 +2744,9 @@
+@@ -2744,6 +2744,9 @@ ieee80211_ioctl_setparam(struct net_devi
  		else
  			retv = EINVAL;
  		break;
@@ -56,7 +56,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	case IEEE80211_PARAM_MCAST_RATE:
  		/* units are in KILObits per second */
  		if (value >= 256 && value <= 54000)
-@@ -3144,6 +3147,9 @@
+@@ -3144,6 +3147,9 @@ ieee80211_ioctl_getparam(struct net_devi
  	case IEEE80211_PARAM_BGSCAN_INTERVAL:
  		param[0] = vap->iv_bgscanintvl / HZ;	/* seconds */
  		break;
@@ -66,7 +66,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	case IEEE80211_PARAM_MCAST_RATE:
  		param[0] = vap->iv_mcast_rate;	/* seconds */
  		break;
-@@ -5666,6 +5672,10 @@
+@@ -5666,6 +5672,10 @@ static const struct iw_priv_args ieee802
  	  IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "bgscanintvl" },
  	{ IEEE80211_PARAM_BGSCAN_INTERVAL,
  	  0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_bgscanintvl" },
@@ -79,7 +79,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	{ IEEE80211_PARAM_MCAST_RATE,
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -3013,8 +3013,10 @@
+@@ -3013,8 +3013,10 @@ contbgscan(struct ieee80211vap *vap)
  {
  	struct ieee80211com *ic = vap->iv_ic;
  
@@ -91,7 +91,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
  
  static __inline int
-@@ -3258,6 +3260,25 @@
+@@ -3258,6 +3260,25 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  			/* record tsf of last beacon */
  			memcpy(ni->ni_tstamp.data, scan.tstamp,
  				sizeof(ni->ni_tstamp));
@@ -119,7 +119,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  						"beacon interval divergence: "
 --- a/net80211/ieee80211_scan.c
 +++ b/net80211/ieee80211_scan.c
-@@ -616,6 +616,7 @@
+@@ -616,6 +616,7 @@ ieee80211_cancel_scan(struct ieee80211va
  
  		/* clear bg scan NOPICK and mark cancel request */
  		ss->ss_flags &= ~IEEE80211_SCAN_NOPICK;
@@ -127,7 +127,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		SCAN_PRIVATE(ss)->ss_iflags |= ISCAN_CANCEL;
  		ss->ss_ops->scan_cancel(ss, vap);
  		/* force it to fire asap */
-@@ -782,7 +783,7 @@
+@@ -782,7 +783,7 @@ again:
  				ieee80211_sta_pwrsave(vap, 0);
  				if (ss->ss_next >= ss->ss_last) {
  					ieee80211_notify_scan_done(vap);
@@ -138,7 +138,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  			SCAN_PRIVATE(ss)->ss_iflags &= ~ISCAN_CANCEL;
 --- a/net80211/ieee80211_proto.c
 +++ b/net80211/ieee80211_proto.c
-@@ -1450,6 +1450,7 @@
+@@ -1450,6 +1450,7 @@ __ieee80211_newstate(struct ieee80211vap
  		}
  		break;
  	case IEEE80211_S_AUTH:
@@ -148,7 +148,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		KASSERT(vap->iv_opmode == IEEE80211_M_STA || 
 --- a/net80211/ieee80211_output.c
 +++ b/net80211/ieee80211_output.c
-@@ -238,7 +238,8 @@
+@@ -238,7 +238,8 @@ ieee80211_hardstart(struct sk_buff *skb,
  	}
  	
  	/* Cancel any running BG scan */

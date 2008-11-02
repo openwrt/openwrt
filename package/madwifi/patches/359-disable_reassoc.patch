@@ -5,7 +5,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/net80211/ieee80211_node.c
 +++ b/net80211/ieee80211_node.c
-@@ -599,10 +599,9 @@
+@@ -599,10 +599,9 @@ ieee80211_ibss_merge(struct ieee80211_no
  EXPORT_SYMBOL(ieee80211_ibss_merge);
  
  static __inline int
@@ -18,7 +18,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
  
  /*
-@@ -634,8 +633,8 @@
+@@ -634,8 +633,8 @@ ieee80211_sta_join1(struct ieee80211_nod
  	 * Check if old+new node have the same ssid in which
  	 * case we can reassociate when operating in sta mode.
  	 */
