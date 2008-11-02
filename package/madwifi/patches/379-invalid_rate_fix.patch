@@ -29,7 +29,7 @@
  #define ONE_SECOND (1000 * 1000)  /* 1 second, or 1000 milliseconds; eternity, in other words */
  
  #include "release.h"
-@@ -471,11 +457,11 @@
+@@ -471,11 +457,11 @@ ath_rate_tx_complete(struct ath_softc *s
  		final_rate = sc->sc_hwmap[ts->ts_rate & ~HAL_TXSTAT_ALTRATE].ieeerate;
  		final_ndx = rate_to_ndx(sn, final_rate);
  		if (final_ndx >= sn->num_rates) {
@@ -43,7 +43,7 @@
  			final_ndx = 0;
  		}
  
-@@ -485,7 +471,7 @@
+@@ -485,7 +471,7 @@ ath_rate_tx_complete(struct ath_softc *s
  		tries = ts->ts_longretry + 1;
  
  		if (sn->num_rates <= 0) {
@@ -52,7 +52,7 @@
  				MAC_ADDR(an->an_node.ni_macaddr), __func__);
  			return;
  		}
-@@ -551,7 +537,7 @@
+@@ -551,7 +537,7 @@ ath_rate_tx_complete(struct ath_softc *s
  static void
  ath_rate_newassoc(struct ath_softc *sc, struct ath_node *an, int isnew)
  {
@@ -61,7 +61,7 @@
  			MAC_ADDR(an->an_node.ni_macaddr), __func__);
  		if (isnew)
  			ath_rate_ctl_reset(sc, &an->an_node);
-@@ -601,7 +587,7 @@
+@@ -601,7 +587,7 @@ ath_fill_sample_table(struct minstrel_no
  			    p = rates + sprintf(rates, "rates :: %d ", column_index);
  			    for (i = 0; i < num_sample_rates; i++)
  			            p += sprintf(p, "%2u ", sn->rs_sampleTable[i][column_index]);
@@ -70,7 +70,7 @@
  		};
  #endif
  }
-@@ -628,7 +614,7 @@
+@@ -628,7 +614,7 @@ ath_rate_ctl_reset(struct ath_softc *sc,
  		sn->is_sampling = 0;
  
  		if (rt == NULL) {
@@ -79,7 +79,7 @@
  			return;
  		}
  		sn->static_rate_ndx = -1;
-@@ -658,7 +644,7 @@
+@@ -658,7 +644,7 @@ ath_rate_ctl_reset(struct ath_softc *sc,
  			sn->rates[x].rix = sc->sc_rixmap[sn->rates[x].rate];
  			}
  			if (sn->rates[x].rix == 0xff) {
@@ -88,7 +88,7 @@
  					dev_info, __func__, x);
  				continue;
  			}
-@@ -673,7 +659,7 @@
+@@ -673,7 +659,7 @@ ath_rate_ctl_reset(struct ath_softc *sc,
  		ni->ni_txrate = 0;
  
  		if (sn->num_rates <= 0) {
@@ -97,7 +97,7 @@
  				dev_info, __func__, MAC_ADDR(ni->ni_macaddr),
  				vap->iv_fixed_rate);
  			/* There are no rates yet; we're done */
-@@ -689,23 +675,23 @@
+@@ -689,23 +675,23 @@ ath_rate_ctl_reset(struct ath_softc *sc,
  			 * the node.  We know the rate is there because the
  			 * rate set is checked when the station associates. */
  			/* NB: the rate set is assumed sorted */
@@ -130,7 +130,7 @@
  					dev_info, __func__, x);
  				continue;
  			}
-@@ -735,9 +721,9 @@
+@@ -735,9 +721,9 @@ ath_rate_ctl_reset(struct ath_softc *sc,
  		}
  
  #if 0
@@ -142,7 +142,7 @@
  #endif
  
  		/* Set the initial rate */
-@@ -781,10 +767,10 @@
+@@ -781,10 +767,10 @@ ath_timer_function(unsigned long data)
  		unsigned int interval = ath_timer_interval;
  
  		if (dev == NULL)
@@ -155,7 +155,7 @@
  
  		ic = &sc->sc_ic;
  
-@@ -808,7 +794,7 @@
+@@ -808,7 +794,7 @@ ath_timer_function(unsigned long data)
  
  		timer  = &(ssc->timer);
  		if (timer == NULL)
@@ -164,7 +164,7 @@
  
  		timer->expires = jiffies + ((HZ * interval) / 1000);
  		add_timer(timer);
-@@ -904,7 +890,7 @@
+@@ -904,7 +890,7 @@ static struct ath_ratectrl *
  ath_rate_attach(struct ath_softc *sc)
  {
  		struct minstrel_softc *osc;
@@ -173,7 +173,7 @@
  
  		_MOD_INC_USE(THIS_MODULE, return NULL);
  		osc = kmalloc(sizeof(struct minstrel_softc), GFP_ATOMIC);
-@@ -963,7 +949,7 @@
+@@ -963,7 +949,7 @@ ath_proc_read_nodes(struct ieee80211vap 
  					p += sprintf(p, "out of room for node " MAC_FMT "\n\n", MAC_ADDR(ni->ni_macaddr));
  					break;
  				}
@@ -210,7 +210,7 @@
  static int ath_rateinterval = 1000;		/* rate ctl interval (ms)  */
  static int ath_rate_max_success_threshold = 10;
  static int ath_rate_min_success_threshold = 1;
-@@ -197,7 +186,7 @@
+@@ -197,7 +186,7 @@ ath_rate_update(struct ath_softc *sc, st
  
  	KASSERT(rt != NULL, ("no rate table, mode %u", sc->sc_curmode));
  
@@ -219,7 +219,7 @@
  		__func__, MAC_ADDR(ni->ni_macaddr),
  		ni->ni_rates.rs_nrates > 0 ?
  			(ni->ni_rates.rs_rates[rate] & IEEE80211_RATE_VAL) / 2 : 0);
-@@ -297,9 +286,9 @@
+@@ -297,9 +286,9 @@ ath_rate_ctl_start(struct ath_softc *sc,
  		 * rate set is checked when the station associates.
  		 */
  		srate = ni->ni_rates.rs_nrates - 1;
@@ -232,7 +232,7 @@
  	}
  	ath_rate_update(sc, ni, srate);
  #undef RATE
-@@ -377,7 +366,7 @@
+@@ -377,7 +366,7 @@ ath_rate_ctl(void *arg, struct ieee80211
  
  	old_rate = ni->ni_txrate;
  
@@ -241,7 +241,7 @@
  		 amn->amn_tx_try0_cnt,
  		 amn->amn_tx_try1_cnt,
  		 amn->amn_tx_try2_cnt,
-@@ -390,7 +379,7 @@
+@@ -390,7 +379,7 @@ ath_rate_ctl(void *arg, struct ieee80211
    			amn->amn_recovery = 1;
    			amn->amn_success = 0;
    			ni->ni_txrate++;
@@ -250,7 +250,7 @@
    		} else
  			amn->amn_recovery = 0;
    	} else if (is_failure(amn)) {
-@@ -401,12 +390,12 @@
+@@ -401,12 +390,12 @@ ath_rate_ctl(void *arg, struct ieee80211
    				amn->amn_success_threshold *= 2;
    				amn->amn_success_threshold = min(amn->amn_success_threshold,
  								  (u_int)ath_rate_max_success_threshold);
@@ -296,7 +296,7 @@
  /*
   * Default parameters for the rate control algorithm.  These are
   * all tunable with sysctls.  The rate controller runs periodically
-@@ -186,7 +172,7 @@
+@@ -186,7 +172,7 @@ ath_rate_update(struct ath_softc *sc, st
  
  	KASSERT(rt != NULL, ("no rate table, mode %u", sc->sc_curmode));
  
@@ -305,7 +305,7 @@
  		__func__, MAC_ADDR(ni->ni_macaddr),
  		ni->ni_rates.rs_nrates > 0 ?
  			(ni->ni_rates.rs_rates[rate] & IEEE80211_RATE_VAL) / 2 : 0);
-@@ -283,9 +269,9 @@
+@@ -283,9 +269,9 @@ ath_rate_ctl_start(struct ath_softc *sc,
  		 */
  		/* NB: the rate set is assumed sorted */
  		srate = ni->ni_rates.rs_nrates - 1;
@@ -318,7 +318,7 @@
  	}
  	ath_rate_update(sc, ni, srate);
  #undef RATE
-@@ -364,7 +350,7 @@
+@@ -364,7 +350,7 @@ ath_rate_ctl(void *arg, struct ieee80211
  	    on->on_tx_retr < (on->on_tx_ok * ath_rate_raise) / 100)
  		dir = 1;
  
@@ -327,7 +327,7 @@
  		MAC_ADDR(ni->ni_macaddr),
  		on->on_tx_ok, on->on_tx_err, on->on_tx_retr,
  		on->on_tx_upper, dir);
-@@ -395,7 +381,7 @@
+@@ -395,7 +381,7 @@ ath_rate_ctl(void *arg, struct ieee80211
  	}
  
  	if (nrate != ni->ni_txrate) {
@@ -370,7 +370,7 @@
  /*
   * This file is an implementation of the SampleRate algorithm
   * in "Bit-rate Selection in Wireless Networks"
-@@ -740,7 +723,7 @@
+@@ -740,7 +723,7 @@ ath_rate_tx_complete(struct ath_softc *s
  		ndx[3] = rate_to_ndx(sn, rate[3]);
  
  #if 0
@@ -379,7 +379,7 @@
  			dev_info, MAC_ADDR(an->an_node.ni_macaddr),
  			bin_to_size(size_to_bin(frame_size)),
  			finalTSIdx,
-@@ -886,15 +869,16 @@
+@@ -886,15 +869,16 @@ ath_rate_ctl_reset(struct ath_softc *sc,
  			if ((ni->ni_rates.rs_rates[x] & IEEE80211_RATE_VAL) == vap->iv_fixed_rate)
  				srate = x;
  

@@ -1,6 +1,6 @@
 --- a/ath_hal/ah_os.h
 +++ b/ath_hal/ah_os.h
-@@ -194,10 +194,6 @@
+@@ -194,10 +194,6 @@ extern u_int32_t __ahdecl ath_hal_getupt
   */
  #if (AH_BYTE_ORDER == AH_BIG_ENDIAN)
  #define is_reg_le(__reg) ((0x4000 <= (__reg) && (__reg) < 0x5000))
@@ -11,7 +11,7 @@
  #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,12)
  #define _OS_REG_WRITE(_ah, _reg, _val) do {			\
  	 is_reg_le(_reg) ?					\
-@@ -219,6 +215,21 @@
+@@ -219,6 +215,21 @@ extern u_int32_t __ahdecl ath_hal_getupt
  	 readl((_ah)->ah_sh + (_reg)) :				\
  	 cpu_to_le32(readl((_ah)->ah_sh + (_reg))))
  #endif				/* KERNEL_VERSION(2,6,12) */

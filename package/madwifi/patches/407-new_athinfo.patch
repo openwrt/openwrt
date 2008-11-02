@@ -81,7 +81,7 @@
  
  #include <stdio.h>
  #include <stdlib.h>
-@@ -130,109 +60,103 @@
+@@ -130,109 +60,103 @@ fprintf(stderr, "#ERR %s: " fmt "\n", __
   */
  #define AR5K_GPIODI	0x401c
  
@@ -263,7 +263,7 @@
  #define AR5K_RESET_CTL_MAC	0x00000004	/* MAC reset (PCU+Baseband?) -5210 only */
  #define AR5K_RESET_CTL_PHY	0x00000008	/* PHY reset -5210 only */
  #define AR5K_RESET_CTL_PCI	0x00000010	/* PCI Core reset (interrupts etc) */
-@@ -253,7 +177,7 @@
+@@ -253,7 +177,7 @@ static const struct ath5k_srev_name ath5
  #define AR5K_SLEEP_CTL_SLE_UNITS	0x00000008	/* not on 5210 */
  
  #define AR5K_PCICFG			0x4010	/* Register Address */
@@ -272,7 +272,7 @@
  #define AR5K_PCICFG_CLKRUNEN		0x00000004	/* CLKRUN enable [5211+] */
  #define AR5K_PCICFG_EESIZE		0x00000018	/* Mask for EEPROM size [5211+] */
  #define AR5K_PCICFG_EESIZE_S		3
-@@ -264,26 +188,118 @@
+@@ -264,26 +188,118 @@ static const struct ath5k_srev_name ath5
  
  #define AR5K_PCICFG_SPWR_DN		0x00010000	/* Mask for power status (5210) */
  
@@ -395,7 +395,7 @@
  #define AR5K_EEPROM_CMD_READ	0x00000001	/* EEPROM read */
  #define AR5K_EEPROM_CMD_WRITE	0x00000002	/* EEPROM write */
  #define AR5K_EEPROM_CMD_RESET	0x00000004	/* EEPROM reset */
-@@ -291,43 +307,163 @@
+@@ -291,43 +307,163 @@ static const struct ath5k_srev_name ath5
  /*
   * EEPROM status register
   */
@@ -587,7 +587,7 @@
  
  /*
   * Read data by masking
-@@ -350,7 +486,6 @@
+@@ -350,7 +486,6 @@ static const struct ath5k_srev_name ath5
  	(*((volatile u_int32_t *)(mem + (_reg))) = (_val))
  #endif
  
@@ -595,7 +595,7 @@
  #define AR5K_REG_ENABLE_BITS(_reg, _flags)	\
  	AR5K_REG_WRITE(_reg, AR5K_REG_READ(_reg) | (_flags))
  
-@@ -359,7 +494,12 @@
+@@ -359,7 +494,12 @@ static const struct ath5k_srev_name ath5
  
  #define AR5K_TUNE_REGISTER_TIMEOUT		20000
  
@@ -609,7 +609,7 @@
  struct eeprom_entry {
  	const char *name;
  	int addr;
-@@ -375,8 +515,6 @@
+@@ -375,8 +515,6 @@ static const struct eeprom_entry eeprom_
  	{"regdomain", AR5K_EEPROM_REG_DOMAIN},
  };
  
@@ -618,7 +618,7 @@
  static int force_write = 0;
  static int verbose = 0;
  
-@@ -398,8 +536,8 @@
+@@ -398,8 +536,8 @@ static u_int32_t ath5k_hw_bitswap(u_int3
  /*
   * Get the PHY Chip revision
   */
@@ -629,7 +629,7 @@
  {
  	int i;
  	u_int32_t srev;
-@@ -427,7 +565,7 @@
+@@ -427,7 +565,7 @@ ath5k_hw_radio_revision(u_int16_t mac_ve
  	for (i = 0; i < 8; i++)
  		AR5K_REG_WRITE(AR5K_PHY(0x20), 0x00010000);
  
@@ -638,7 +638,7 @@
  		srev = AR5K_REG_READ(AR5K_PHY(256) >> 28) & 0xf;
  
  		ret = (u_int16_t)ath5k_hw_bitswap(srev, 4) + 1;
-@@ -447,9 +585,8 @@
+@@ -447,9 +585,8 @@ ath5k_hw_radio_revision(u_int16_t mac_ve
  /*
   * Write to EEPROM
   */
@@ -650,7 +650,7 @@
  {
  	u_int32_t status, timeout;
  
-@@ -457,7 +594,7 @@
+@@ -457,7 +594,7 @@ ath5k_hw_eeprom_write(void *mem, u_int32
  	 * Initialize EEPROM access
  	 */
  
@@ -659,7 +659,7 @@
  
  		AR5K_REG_ENABLE_BITS(AR5K_PCICFG, AR5K_PCICFG_EEAE);
  
-@@ -466,7 +603,7 @@
+@@ -466,7 +603,7 @@ ath5k_hw_eeprom_write(void *mem, u_int32
  
  	} else {
  		/* not 5210 */
@@ -668,7 +668,7 @@
  		AR5K_REG_WRITE(AR5K_EEPROM_CMD, AR5K_EEPROM_CMD_RESET);
  		usleep(5);
  
-@@ -484,7 +621,7 @@
+@@ -484,7 +621,7 @@ ath5k_hw_eeprom_write(void *mem, u_int32
  		status = AR5K_REG_READ(AR5K_EEPROM_STATUS);
  		if (status & AR5K_EEPROM_STAT_WRDONE) {
  			if (status & AR5K_EEPROM_STAT_WRERR) {
@@ -677,7 +677,7 @@
  				    offset);
  				return 1;
  			}
-@@ -499,16 +636,15 @@
+@@ -499,16 +636,15 @@ ath5k_hw_eeprom_write(void *mem, u_int32
  /*
   * Read from EEPROM
   */
@@ -697,7 +697,7 @@
  		AR5K_REG_ENABLE_BITS(AR5K_PCICFG, AR5K_PCICFG_EEAE);
  		(void)AR5K_REG_READ(AR5K_EEPROM_BASE + (4 * offset));
  	} else {
-@@ -531,50 +667,701 @@
+@@ -531,50 +667,701 @@ ath5k_hw_eeprom_read(void *mem, u_int32_
  	return 1;
  }
  
@@ -1419,7 +1419,7 @@
  {
  #define MAX_NR_WRITES 16
  	struct {
-@@ -635,7 +1422,7 @@
+@@ -635,7 +1422,7 @@ do_write_pairs(int anr, int argc, char *
  		}
  		anr++;
  		i++;
@@ -1428,7 +1428,7 @@
  
  	if (!(wr_ops_len = i)) {
  		err("no (addr,val) pairs given");
-@@ -702,20 +1489,22 @@
+@@ -702,20 +1489,22 @@ do_write_pairs(int anr, int argc, char *
  	}
  
  	return errors ? 11 : 0;
@@ -1455,7 +1455,7 @@
  		"<base_address>  device base address (see lspci output)\n\n");
  
  	fprintf(stderr,
-@@ -725,8 +1514,8 @@
+@@ -725,8 +1514,8 @@ static void usage(const char *n)
  		"  %s -w <base_address> regdomain N\n\n"
  		"- set a PCI id field to value N:\n"
  		"  %s -w <base_address> <field> N\n"
@@ -1466,7 +1466,7 @@
  		fprintf(stderr, " %s", eeprom_addr[i].name);
  	fprintf(stderr, "\n\n");
  	fprintf(stderr,
-@@ -739,19 +1528,457 @@
+@@ -739,19 +1528,457 @@ static void usage(const char *n)
  		"unlawful radio transmissions!\n\n");
  }
  
@@ -1930,7 +1930,7 @@
  
  	struct {
  		int valid;
-@@ -759,7 +1986,7 @@
+@@ -759,7 +1986,7 @@ CMD(athinfo)(int argc, char *argv[])
  	} gpio_set[AR5K_NUM_GPIO];
  	int nr_gpio_set = 0;
  
@@ -1939,7 +1939,7 @@
  		gpio_set[i].valid = 0;
  
  	if (argc < 2) {
-@@ -769,6 +1996,15 @@
+@@ -769,6 +1996,15 @@ CMD(athinfo)(int argc, char *argv[])
  
  	while (anr < argc && argv[anr][0] == '-') {
  		switch (argv[anr][1]) {
@@ -1955,7 +1955,7 @@
  		case 'w':
  			do_write = 1;
  			break;
-@@ -777,7 +2013,7 @@
+@@ -777,7 +2013,7 @@ CMD(athinfo)(int argc, char *argv[])
  			if (strlen(argv[anr]) != 3 || argv[anr][1] != ':' ||
  			    argv[anr][0] < '0' || argv[anr][0] > '5' ||
  			    (argv[anr][2] != '0' && argv[anr][2] != '1')) {
@@ -1964,7 +1964,7 @@
  				return 2;
  			}
  			gpio_set[argv[anr][0] - '0'].valid = 1;
-@@ -797,6 +2033,25 @@
+@@ -797,6 +2033,25 @@ CMD(athinfo)(int argc, char *argv[])
  			do_dump = 1;
  			break;
  
@@ -1990,7 +1990,7 @@
  		case 'h':
  			usage(argv[0]);
  			return 0;
-@@ -805,10 +2060,10 @@
+@@ -805,10 +2060,10 @@ CMD(athinfo)(int argc, char *argv[])
  		default:
  			err("unknown option %s", argv[anr]);
  			return 2;
@@ -2003,7 +2003,7 @@
  
  	if (anr >= argc) {
  		err("missing device address");
-@@ -816,7 +2071,7 @@
+@@ -816,7 +2071,7 @@ CMD(athinfo)(int argc, char *argv[])
  		return 3;
  	}
  
@@ -2012,7 +2012,7 @@
  
  	fd = open("/dev/mem", O_RDWR);
  	if (fd < 0) {
-@@ -828,7 +2083,7 @@
+@@ -828,7 +2083,7 @@ CMD(athinfo)(int argc, char *argv[])
  		   MAP_SHARED | MAP_FILE, fd, dev_addr);
  
  	if (mem == MAP_FAILED) {
@@ -2021,7 +2021,7 @@
  		       "%s\n", dev_addr, AR5K_PCI_MEM_SIZE, strerror(errno));
  		return -3;
  	}
-@@ -856,10 +2111,31 @@
+@@ -856,10 +2111,31 @@ CMD(athinfo)(int argc, char *argv[])
  	AR5K_REG_DISABLE_BITS(AR5K_PCICFG, AR5K_PCICFG_SPWR_DN);
  	usleep(500);
  
@@ -2055,7 +2055,7 @@
  	error = ath5k_hw_eeprom_read(mem, AR5K_EEPROM_MAGIC, &ee_magic,
  				     mac_version);
  
-@@ -872,157 +2148,114 @@
+@@ -872,157 +2148,114 @@ CMD(athinfo)(int argc, char *argv[])
  		printf("Warning: Invalid EEPROM Magic number!\n");
  	}
  
@@ -2285,7 +2285,7 @@
  	       AR5K_REG_READ(AR5K_GPIOCR), AR5K_REG_READ(AR5K_GPIODO),
  	       AR5K_REG_READ(AR5K_GPIODI));
  
-@@ -1030,18 +2263,18 @@
+@@ -1030,18 +2263,18 @@ CMD(athinfo)(int argc, char *argv[])
  		u_int16_t data;
  		FILE *dumpfile = fopen("ath-eeprom-dump.bin", "w");
  
@@ -2309,7 +2309,7 @@
  			fwrite(&data, 2, 1, dumpfile);
  		}
  		printf("\n==============================================\n");
-@@ -1054,18 +2287,18 @@
+@@ -1054,18 +2287,18 @@ CMD(athinfo)(int argc, char *argv[])
  		u_int32_t old_cr = rcr, old_do = rdo;
  		int rc;
  
@@ -2332,7 +2332,7 @@
  			if (gpio_set[i].valid) {
  				rcr |= AR5K_GPIOCR_OUT(i);	/* we use mode 3 */
  				rcr &= ~AR5K_GPIOCR_INT_SEL(i);
-@@ -1111,5 +2344,17 @@
+@@ -1111,5 +2344,17 @@ CMD(athinfo)(int argc, char *argv[])
  
  		return rc;
  	}
