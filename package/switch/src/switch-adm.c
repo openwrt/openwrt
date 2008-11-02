@@ -524,9 +524,8 @@ static int detect_adm(void)
 		eedi = 5;
 
 		ret = 1;
-	} else
-		printk("BFL_ENETADM not set in boardflags. Use force=1 to ignore.\n");
-		
+	}
+
 	if (eecs)
 		eecs = (1 << eecs);
 	if (eesk)
