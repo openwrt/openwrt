@@ -1,7 +1,16 @@
 Index: linux-2.6.25.17/drivers/net/b44.c
 ===================================================================
---- linux-2.6.25.17.orig/drivers/net/b44.c	2008-10-02 00:36:09.000000000 +0100
-+++ linux-2.6.25.17/drivers/net/b44.c	2008-10-02 20:34:42.000000000 +0100
+--- linux-2.6.25.17.orig/drivers/net/b44.c	2008-10-16 23:13:19.000000000 +0200
++++ linux-2.6.25.17/drivers/net/b44.c	2008-11-02 12:13:38.000000000 +0100
+@@ -339,7 +339,7 @@ static int b44_phy_reset(struct b44 *bp)
+ 		}
+ 	}
+ 
+-	return 0;
++	return err;
+ }
+ 
+ static void __b44_set_flow_ctrl(struct b44 *bp, u32 pause_flags)
 @@ -384,7 +384,7 @@ static void b44_set_flow_ctrl(struct b44
  	__b44_set_flow_ctrl(bp, pause_enab);
  }
@@ -11,41 +20,14 @@ Index: linux-2.6.25.17/drivers/net/b44.c
  extern char *nvram_get(char *name);
  static void b44_wap54g10_workaround(struct b44 *bp)
  {
-@@ -2066,6 +2066,28 @@ out:
- 	return err;
- }
+@@ -2211,6 +2211,10 @@ static int __devinit b44_init_one(struct
+ 	 */
+ 	b44_chip_reset(bp, B44_CHIP_RESET_FULL);
  
-+#ifdef CONFIG_SSB_DRIVER_MIPS
-+static void b44_wrtsl54gs_workaround(struct b44 *bp)
-+{
-+	const char *str;
-+
-+	/*
-+	 * workaround for physical wiring in Linksys WRSL54GS
-+	 * see https://dev.openwrt.org/ticket/2662 and 3903
-+	 * eth1 PHY is probably on BCM5325 switch accessed via eth0
-+	 */
-+	str = nvram_get("boardnum");
-+	if (!str)
-+		return;
-+	if (simple_strtoul(str, NULL, 0) == 42) {
++	/* do a phy reset to test if there is an active phy */
++	if (b44_phy_reset(bp) < 0)
 +		bp->phy_addr = B44_PHY_ADDR_NO_PHY;
-+	}
-+	return;
-+}
-+#else
-+static void b44_wrtsl54gs_workaround(struct b44 *bp) { }
-+#endif
 +
- static int __devinit b44_get_invariants(struct b44 *bp)
- {
- 	struct ssb_device *sdev = bp->sdev;
-@@ -2087,6 +2109,8 @@ static int __devinit b44_get_invariants(
- 	 * valid PHY address. */
- 	bp->phy_addr &= 0x1F;
+ 	printk(KERN_INFO "%s: Broadcom 44xx/47xx 10/100BaseT Ethernet %s\n",
+ 	       dev->name, print_mac(mac, dev->dev_addr));
  
-+	b44_wrtsl54gs_workaround(bp);
-+
- 	memcpy(bp->dev->dev_addr, addr, 6);
- 
- 	if (!is_valid_ether_addr(&bp->dev->dev_addr[0])){
